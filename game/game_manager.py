@@ -304,12 +304,10 @@ class GameManager:
         # 敵を生成
         enemy = create_random_enemy()
         
-        # 最終階層ならボスを強化
+        # 最終階層ならボスに強化
+        # Enemyクラスのbecome_boss()メソッドを使用
         if self.floor == self.max_floor:
-            enemy.name = f"ボス・{enemy.name}"
-            enemy.max_hp *= 2
-            enemy.current_hp = enemy.max_hp
-            enemy.attack_damage = int(enemy.attack_damage * 1.5)
+            enemy.become_boss()
         
         # バトルを作成して実行
         battle = Battle(self.player, enemy)
