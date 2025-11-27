@@ -1,0 +1,72 @@
+# Pythonの一般的な除外ファイル
+
+# バイトコードキャッシュ
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C拡張
+*.so
+
+# 配布 / パッケージング
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# インストーラーログ
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 単体テスト / カバレッジレポート
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 環境変数
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# エディタ設定
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
