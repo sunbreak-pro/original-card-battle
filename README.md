@@ -16,3 +16,5 @@ VSCode を開く 4.
 READ.me があれば OK！ 5.
 なければターミナルから [git@github.com:sunbreak-pro/roguelike-card.git] 6.
 もしそれでも無理なら AI に聞く 7.
+
+###
