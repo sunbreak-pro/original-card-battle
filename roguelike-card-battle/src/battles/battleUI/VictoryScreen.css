@@ -1,0 +1,420 @@
+/* ==========================================
+   Victory Screen Container
+   ========================================== */
+.victory-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #0a1a0a 0%, #1a2a1a 50%, #0a1a0a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 10000;
+  animation: victoryFadeIn 0.8s ease-out;
+}
+
+@keyframes victoryFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==========================================
+   Background Effects
+   ========================================== */
+.victory-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.victory-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+      3px 3px at 20% 30%,
+      rgba(212, 175, 55, 0.8),
+      transparent
+    ),
+    radial-gradient(3px 3px at 60% 70%, rgba(212, 175, 55, 0.6), transparent),
+    radial-gradient(2px 2px at 50% 50%, rgba(255, 215, 0, 0.4), transparent),
+    radial-gradient(2px 2px at 80% 10%, rgba(212, 175, 55, 0.5), transparent),
+    radial-gradient(3px 3px at 90% 60%, rgba(255, 215, 0, 0.7), transparent);
+  background-size: 200% 200%;
+  animation: particlesFloat 15s ease-in-out infinite;
+}
+
+@keyframes particlesFloat {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translate(10px, -10px);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-10px, 10px);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translate(10px, 10px);
+    opacity: 1;
+  }
+}
+
+.victory-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  height: 80%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle,
+    rgba(212, 175, 55, 0.3) 0%,
+    transparent 70%
+  );
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+/* ==========================================
+   Content Container
+   ========================================== */
+.victory-content {
+  position: relative;
+  z-index: 10;
+  max-width: 900px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+  padding: 2rem;
+}
+
+/* ==========================================
+   Title Section
+   ========================================== */
+.victory-title {
+  text-align: center;
+  animation: titleSlideDown 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes titleSlideDown {
+  from {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.victory-text {
+  font-size: 6rem;
+  font-weight: bold;
+  color: #d4af37;
+  text-shadow: 0 0 30px rgba(212, 175, 55, 0.8), 0 0 60px rgba(212, 175, 55, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.5rem;
+  margin: 0;
+  animation: textGlow 2s ease-in-out infinite;
+}
+
+@keyframes textGlow {
+  0%,
+  100% {
+    text-shadow: 0 0 30px rgba(212, 175, 55, 0.8),
+      0 0 60px rgba(212, 175, 55, 0.5), 0 4px 8px rgba(0, 0, 0, 0.8);
+  }
+  50% {
+    text-shadow: 0 0 40px rgba(212, 175, 55, 1), 0 0 80px rgba(212, 175, 55, 0.7),
+      0 4px 8px rgba(0, 0, 0, 0.8);
+  }
+}
+
+.victory-subtitle {
+  font-size: 1.5rem;
+  color: rgba(212, 175, 55, 0.8);
+  margin-top: 1rem;
+  font-style: italic;
+  letter-spacing: 0.2rem;
+}
+
+/* ==========================================
+   Battle Stats
+   ========================================== */
+.battle-stats {
+  display: flex;
+  gap: 2rem;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s ease-out;
+}
+
+.battle-stats.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stat-card {
+  background: linear-gradient(135deg, rgba(26, 42, 26, 0.8), rgba(42, 62, 42, 0.8));
+  border: 2px solid rgba(212, 175, 55, 0.5);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 150px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 20px rgba(212, 175, 55, 0.2);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(212, 175, 55, 0.8);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #d4af37;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+}
+
+/* ==========================================
+   Rewards Section
+   ========================================== */
+.rewards-section {
+  width: 100%;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s ease-out 0.3s;
+}
+
+.rewards-section.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.rewards-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #d4af37;
+  text-align: center;
+  margin-bottom: 2rem;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
+}
+
+.rewards-grid {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.reward-item {
+  background: linear-gradient(135deg, rgba(26, 42, 26, 0.9), rgba(42, 62, 42, 0.9));
+  border: 2px solid rgba(212, 175, 55, 0.5);
+  border-radius: 12px;
+  padding: 2rem 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  animation: rewardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes rewardPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.reward-item.gold {
+  animation-delay: 0.2s;
+}
+
+.reward-item.experience {
+  animation-delay: 0.4s;
+}
+
+.reward-icon {
+  font-size: 3rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+}
+
+.reward-amount {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #d4af37;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ==========================================
+   Card Rewards
+   ========================================== */
+.card-rewards {
+  margin-top: 2rem;
+}
+
+.card-rewards-title {
+  font-size: 1.5rem;
+  color: #d4af37;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.card-rewards-list {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.reward-card {
+  background: linear-gradient(135deg, rgba(42, 62, 42, 0.9), rgba(26, 42, 26, 0.9));
+  border: 2px solid rgba(212, 175, 55, 0.6);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 120px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  animation: cardSlideIn 0.5s ease-out backwards;
+}
+
+@keyframes cardSlideIn {
+  from {
+    transform: translateX(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.reward-card-name {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  text-align: center;
+}
+
+.reward-card-rarity {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+}
+
+/* ==========================================
+   Continue Button
+   ========================================== */
+.continue-button {
+  padding: 1.5rem 4rem;
+  background: linear-gradient(135deg, #2a4a2a 0%, #4a7a4a 100%);
+  border: 3px solid #d4af37;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.2rem;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 30px rgba(212, 175, 55, 0.3);
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.continue-button.show {
+  opacity: 1;
+  transform: scale(1);
+  transition: all 0.6s ease-out 0.8s;
+}
+
+.continue-button:hover {
+  background: linear-gradient(135deg, #3a5a3a 0%, #5a8a5a 100%);
+  border-color: #ffd700;
+  transform: scale(1.05);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 40px rgba(212, 175, 55, 0.5);
+}
+
+.continue-button:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+/* ==========================================
+   Responsive
+   ========================================== */
+@media (max-width: 768px) {
+  .victory-text {
+    font-size: 4rem;
+  }
+
+  .battle-stats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .rewards-grid {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .continue-button {
+    padding: 1rem 3rem;
+    font-size: 1.2rem;
+  }
+}
