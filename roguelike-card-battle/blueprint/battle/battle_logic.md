@@ -1,7 +1,8 @@
 # BATTLE SYSTEM LOGIC SPECIFICATION (Ver 2.0)
 
 ## 1. 概要
-本ドキュメントは「ローグライトカードRPG」のコアバトルシステムの論理仕様である。
+
+本ドキュメントは「ローグライトカード RPG」のコアバトルシステムの論理仕様である。
 アーマー（耐久値）とガード（一時防御）の分離、状態異常の重症度進化（軽度/重度）、およびダンジョン深度による環境変化のロジックを定義する。
 
 ---
@@ -11,33 +12,38 @@
 防御機構を「持ち越し可能な装備耐久」と「ターンごとの防御行動」に分離する。
 
 ### 2.1 定義
-* **HP (Health Points):** キャラクターの生命力。0になると死亡。
-* **AP (Armor Points):** 装備の耐久値。
-    * 戦闘終了後も**現在値が次回戦闘へ持ち越される**。
-    * 最大値は装備アイテムの性能に依存。
-    * 原則として戦闘中に自動回復しない（修理カード/アイテムが必要）。
-* **GP (Guard Points):** カード効果による一時的な防御壁。
-    * **プレイヤーターンの開始時に残っていれば消滅する**（0になる）。
-    * APを守るための手段や、APが亡くなった時のHPダメージの緩和として機能する。
+
+- **HP (Health Points):** キャラクターの生命力。0 になると死亡。
+- **AP (Armor Points):** 装備の耐久値。
+  - 戦闘終了後も**現在値が次回戦闘へ持ち越される**。
+  - 最大値は装備アイテムの性能に依存。
+  - 原則として戦闘中に自動回復しない（修理カード/アイテムが必要）。
+- **GP (Guard Points):** カード効果による一時的な防御壁。
+  - **プレイヤーターンの開始時に残っていれば消滅する**（0 になる）。
+  - AP を守るための手段や、AP が亡くなった時の HP ダメージの緩和として機能する。
 
 ### 2.2 ダメージ受容優先度
+
 基本原則として、以下の順序でダメージを減算する。
+
 1.  **Guard**（盾で防ぐ）
 2.  **AP**（鎧で受ける）
 3.  **HP**（肉体で受ける）
 
 ### 2.3 アーマーブレイク (Armor Break)
-* **条件:** `AP` が `0` になった状態。
-* **効果 (貫通ペナルティ):**
-    * APが0の状態では、**敵攻撃ダメージの50%がGuardを無視して直接HPにヒットする**。
-    * 残りの25%は通常通りGuardで受ける。
-    * *意図:* 鎧が壊れた生身の状態では、盾の上から衝撃が通るリアリティの表現。
+
+- **条件:** `AP` が `0` になった状態。
+- **効果 (貫通ペナルティ):**
+  - AP が 0 の状態では、**敵攻撃ダメージの 50%が Guard を無視して直接 HP にヒットする**。
+  - 残りの 25%は通常通り Guard で受ける。
+  - _意図:_ 鎧が壊れた生身の状態では、盾の上から衝撃が通るリアリティの表現。
 
 ---
 
 ## 3. ダメージ計算ロジック (Damage Formula)
 
 ### 3.1 計算フロー
+
 攻撃発生時、以下のアルゴリズムで最終ダメージを決定する。
 
 ```typescript
@@ -76,15 +82,15 @@ function calculateDamage(
   // 深度適正、ステータス、バフ/デバフの適用
   const baseDmg = card.power;
   const depthMod = getDepthModifier(currentDepth); // ダンジョン深度によるカード適正
-  
+
   // 攻撃バフ・デバフ計算
   // 軽度:脱力(x0.75) / 重度:無力(x0.5)
   let atkMultiplier = 1.0 + attacker.atk_buff_percent;
   if (attacker.hasStatus("脱力")) atkMultiplier *= 0.75;
-  if (attacker.hasStatus("無力")) atkMultiplier *= 0.50;
+  if (attacker.hasStatus("無力")) atkMultiplier *= 0.5;
 
   // 麻痺(威力半減)の適用
-  if (attacker.hasStatus("麻痺")) atkMultiplier *= 0.50;
+  if (attacker.hasStatus("麻痺")) atkMultiplier *= 0.5;
 
   // クリティカル判定 ("無力"状態なら発生しない)
   let critMod = 1.0;
@@ -100,12 +106,12 @@ function calculateDamage(
   // 軽度:弱体(x1.25) / 重度:脆弱(x1.5)
   let vulnMod = 1.0;
   if (defender.hasStatus("弱体")) vulnMod = 1.25;
-  if (defender.hasStatus("脆弱")) vulnMod = 1.50;
-  if (defender.hasStatus("気絶")) vulnMod *= 1.50; // 確定クリティカル扱いとして計算
+  if (defender.hasStatus("脆弱")) vulnMod = 1.5;
+  if (defender.hasStatus("気絶")) vulnMod *= 1.5; // 確定クリティカル扱いとして計算
 
   // 装備DEF軽減 (例: 0.2 = 20%軽減)
   const defMitigation = defender.equipment_def_percent;
-  
+
   const incomingDmg = Math.floor(finalAtk * vulnMod * (1.0 - defMitigation));
 
   // --- Phase 3: ダメージ配分 (Allocation) ---
@@ -114,7 +120,7 @@ function calculateDamage(
   return {
     finalDamage: incomingDmg,
     isCritical: isCritical,
-    penetrationDamage: penetrationDamage
+    penetrationDamage: penetrationDamage,
   };
 }
 
@@ -202,21 +208,22 @@ function applyDamageAllocation(defender: Character, damage: number): number {
 ## 4. 状態異常システム (Status Effects)
 
 ### 4.1 重症度進化 (Severity Progression)
-* **軽度 (Light):** 初回付与時の状態。
-* **重度 (Heavy):** 軽度の状態で同じ状態異常が付与されると進化する。
-* **仕様:** 重度の状態でさらに重ねがけしても、持続ターンのみ延長される。
+
+- **軽度 (Light):** 初回付与時の状態。
+- **重度 (Heavy):** 軽度の状態で同じ状態異常が付与されると進化する。
+- **仕様:** 重度の状態でさらに重ねがけしても、持続ターンのみ延長される。
 
 ### 4.2 状態異常マトリクス
 
-| ID | 系統 | 名称 (Light) | 名称 (Heavy) | 対象 | 軽度 (Light) 効果 | 重度 (Heavy) 効果 | 減衰ルール |
-|---|---|---|---|---|---|---|---|
-| Psn | 継続 | 毒<br>(Poison) | 猛毒<br>(Deadly) | HP | 開始時 Stack dmg | 開始時 + 終了時 Stack dmg | Stack -1<br>(End Turn) |
-| Bld | 反動 | 出血<br>(Bleed) | 大出血<br>(Hemorrhage) | HP | 攻撃時 Stack dmg | 全行動時 Stack*1.5 dmg | Duration -1<br>(3 Turn) |
-| Oxi | 環境 | 酸化<br>(Oxidize) | 溶解<br>(Melt) | AP | 終了時 AP10%削り | 終了時 AP15%削り +<br>Guard効果半減 | Duration -1<br>(3 Turn) |
-| Stg | 行動 | よろめき<br>(Stagger) | 気絶<br>(Stun) | Act | Energy -1<br>(行動は可能) | 行動不能 (Skip Turn) | Duration -1<br>(1 Turn) |
-| Frz | 行動 | 凍結<br>(Freeze) | 氷獄<br>(Glacial) | Hand | 手札1枚禁止 | 手札全て禁止 | Duration -1<br>(1 Turn) |
-| Wek | 弱体 | 弱体<br>(Weaken) | 脆弱<br>(Vulnerable) | Def | 被ダメージ x1.25 | 被ダメージ x1.50 +<br>Guard不可 | Duration -1<br>(2 Turn) |
-| Fbl | 脱力 | 脱力<br>(Exhaust) | 無力<br>(Powerless) | Atk | 与ダメージ x0.75 | 与ダメージ x0.50 +<br>Critical不可 | Duration -1<br>(2 Turn) |
+| ID  | 系統 | 名称 (Light)          | 名称 (Heavy)           | 対象 | 軽度 (Light) 効果         | 重度 (Heavy) 効果                    | 減衰ルール              |
+| --- | ---- | --------------------- | ---------------------- | ---- | ------------------------- | ------------------------------------ | ----------------------- |
+| Psn | 継続 | 火傷<br>(burn)        | 大火傷<br>(inflamed)   | HP   | 開始時 Stack dmg          | 開始時 + 終了時 Stack dmg            | Stack -1<br>(End Turn)  |
+| Bld | 反動 | 出血<br>(Bleed)       | 大出血<br>(Hemorrhage) | HP   | 攻撃時 Stack dmg          | 全行動時 Stack\*1.5 dmg              | Duration -1<br>(3 Turn) |
+| Oxi | 環境 | 酸化<br>(Oxidize)     | 溶解<br>(Melt)         | AP   | 終了時 AP10%削り          | 終了時 AP15%削り +<br>Guard 効果半減 | Duration -1<br>(3 Turn) |
+| Stg | 行動 | よろめき<br>(Stagger) | 気絶<br>(Stun)         | Act  | Energy -1<br>(行動は可能) | 行動不能 (Skip Turn)                 | Duration -1<br>(1 Turn) |
+| Frz | 行動 | 凍結<br>(Freeze)      | 氷獄<br>(Glacial)      | Hand | 手札 1 枚禁止             | 手札全て禁止                         | Duration -1<br>(1 Turn) |
+| Wek | 弱体 | 弱体<br>(Weaken)      | 脆弱<br>(Vulnerable)   | Def  | 被ダメージ x1.25          | 被ダメージ x1.50 +<br>Guard 不可     | Duration -1<br>(2 Turn) |
+| Fbl | 脱力 | 脱力<br>(Exhaust)     | 無力<br>(Powerless)    | Atk  | 与ダメージ x0.75          | 与ダメージ x0.50 +<br>Critical 不可  | Duration -1<br>(2 Turn) |
 
 ※ ID はプログラム内部での識別子として使用する。
 
@@ -228,17 +235,17 @@ function applyDamageAllocation(defender: Character, damage: number): number {
  */
 enum StatusSeverity {
   LIGHT = "Light",
-  HEAVY = "Heavy"
+  HEAVY = "Heavy",
 }
 
 /**
  * 状態異常インターフェース
  */
 interface StatusEffect {
-  id: string;           // Psn, Bld, Oxi, Stg, Frz, Wek, Fbl
+  id: string; // Psn, Bld, Oxi, Stg, Frz, Wek, Fbl
   severity: StatusSeverity;
-  duration: number;     // 残りターン数
-  stack: number;        // スタック数（毒・出血など）
+  duration: number; // 残りターン数
+  stack: number; // スタック数（毒・出血など）
 }
 
 /**
@@ -252,7 +259,7 @@ class StatusManager {
    */
   applyStatus(id: string, duration: number, stack: number = 1): void {
     const existing = this.effects.get(id);
-    
+
     if (existing) {
       // 既存の状態異常がある場合
       if (existing.severity === StatusSeverity.LIGHT) {
@@ -271,7 +278,7 @@ class StatusManager {
         id,
         severity: StatusSeverity.LIGHT,
         duration,
-        stack
+        stack,
       });
     }
   }
@@ -320,24 +327,28 @@ class StatusManager {
 厳密な処理順序を以下に定める。
 
 ### **Turn Start Phase**
-* **[System]** 前ターンのGuard消滅（残っていた場合、0になる）
-* エナジー回復 / カードドロー
-* **[Effect]** 毒/猛毒 ダメージ発生 (HP直接)
-* **[Effect]** リジェネ (HP/AP回復)
+
+- **[System]** 前ターンの Guard 消滅（残っていた場合、0 になる）
+- エナジー回復 / カードドロー
+- **[Effect]** 毒/猛毒 ダメージ発生 (HP 直接)
+- **[Effect]** リジェネ (HP/AP 回復)
 
 ### **Player Action Phase**
-* カード使用
-* **[Trigger]** 出血/大出血 ダメージ発生 (HP直接)
+
+- カード使用
+- **[Trigger]** 出血/大出血 ダメージ発生 (HP 直接)
 
 ### **Turn End Phase**
-* 手札を捨てる
-* **[System]** Guard は消滅しない（次ターン開始時まで持続）
-* **[Effect]** 毒(猛毒のみ) ダメージ発生
-* **[Effect]** 酸化/溶解 ダメージ発生 (AP減少)
+
+- 手札を捨てる
+- **[System]** Guard は消滅しない（次ターン開始時まで持続）
+- **[Effect]** 毒(猛毒のみ) ダメージ発生
+- **[Effect]** 酸化/溶解 ダメージ発生 (AP 減少)
 
 ### **Enemy Action Phase**
-* 敵の行動
-* 敵のバフ/デバフ カウント減少
+
+- 敵の行動
+- 敵のバフ/デバフ カウント減少
 
 ### 5.1 ターン管理クラス例
 
@@ -352,16 +363,16 @@ class TurnManager {
   executeTurnStartPhase(player: Character): void {
     // 前ターンのGuard消滅
     player.guard = 0;
-    
+
     // エナジー回復
     player.energy = player.maxEnergy;
-    
+
     // カードドロー
     this.drawCards(player, 5);
-    
+
     // 毒ダメージ処理
     this.applyPoisonDamage(player);
-    
+
     // リジェネ処理
     this.applyRegeneration(player);
   }
@@ -372,7 +383,7 @@ class TurnManager {
   executePlayerActionPhase(player: Character, action: Action): void {
     // カード使用
     this.playCard(player, action.card);
-    
+
     // 出血ダメージトリガー
     this.applyBleedDamage(player);
   }
@@ -383,13 +394,13 @@ class TurnManager {
   executeTurnEndPhase(player: Character): void {
     // 手札を捨てる
     this.discardHand(player);
-    
+
     // Guardは消滅しない（次ターン開始時まで持続）
     // player.guard = 0; ← これはターン開始時に実行
-    
+
     // 猛毒の終了時ダメージ
     this.applyDeadlyPoisonEndDamage(player);
-    
+
     // 酸化/溶解ダメージ
     this.applyOxidizeDamage(player);
   }
@@ -401,22 +412,42 @@ class TurnManager {
     for (const enemy of enemies) {
       this.executeEnemyAction(enemy);
     }
-    
+
     // バフ/デバフの減衰
     this.decrementStatusEffects(enemies);
   }
 
   // 各種ヘルパーメソッド実装...
-  private applyPoisonDamage(character: Character): void { /* ... */ }
-  private applyBleedDamage(character: Character): void { /* ... */ }
-  private applyOxidizeDamage(character: Character): void { /* ... */ }
-  private drawCards(player: Character, count: number): void { /* ... */ }
-  private playCard(player: Character, card: Card): void { /* ... */ }
-  private discardHand(player: Character): void { /* ... */ }
-  private executeEnemyAction(enemy: Character): void { /* ... */ }
-  private decrementStatusEffects(characters: Character[]): void { /* ... */ }
-  private applyRegeneration(character: Character): void { /* ... */ }
-  private applyDeadlyPoisonEndDamage(character: Character): void { /* ... */ }
+  private applyPoisonDamage(character: Character): void {
+    /* ... */
+  }
+  private applyBleedDamage(character: Character): void {
+    /* ... */
+  }
+  private applyOxidizeDamage(character: Character): void {
+    /* ... */
+  }
+  private drawCards(player: Character, count: number): void {
+    /* ... */
+  }
+  private playCard(player: Character, card: Card): void {
+    /* ... */
+  }
+  private discardHand(player: Character): void {
+    /* ... */
+  }
+  private executeEnemyAction(enemy: Character): void {
+    /* ... */
+  }
+  private decrementStatusEffects(characters: Character[]): void {
+    /* ... */
+  }
+  private applyRegeneration(character: Character): void {
+    /* ... */
+  }
+  private applyDeadlyPoisonEndDamage(character: Character): void {
+    /* ... */
+  }
 }
 
 interface Action {
@@ -431,13 +462,13 @@ interface Action {
 
 ダンジョンの階層（深度）による敵パラメータの変化定義。
 
-| 深度 | 名称 | 魔力倍率 | 物理/HP倍率 | 敵AI・環境特性 |
-|---|---|---|---|---|
-| 1 | 上層 | x1.0 | x1.0 | 基本行動のみ |
-| 2 | 中層 | x2.0 | x1.2 | 重度(Heavy) 状態異常の使用開始 |
-| 3 | 下層 | x4.0 | x1.5 | 連携行動 (Role分担)<br>自己バフ使用 |
-| 4 | 深層 | x8.0 | x2.0 | アーマー貫通攻撃を使用<br>高火力魔法 |
-| 5 | 深淵 | x16.0 | x3.0 | 学習AI、多回行動 |
+| 深度 | 名称 | 魔力倍率 | 物理/HP 倍率 | 敵 AI・環境特性                      |
+| ---- | ---- | -------- | ------------ | ------------------------------------ |
+| 1    | 上層 | x1.0     | x1.0         | 基本行動のみ                         |
+| 2    | 中層 | x2.0     | x1.2         | 重度(Heavy) 状態異常の使用開始       |
+| 3    | 下層 | x4.0     | x1.5         | 連携行動 (Role 分担)<br>自己バフ使用 |
+| 4    | 深層 | x8.0     | x2.0         | アーマー貫通攻撃を使用<br>高火力魔法 |
+| 5    | 深淵 | x16.0    | x3.0         | 学習 AI、多回行動                    |
 
 ### 6.1 深度スケーリングクラス例
 
@@ -459,46 +490,61 @@ interface DepthInfo {
  */
 class DepthScaling {
   private static readonly DEPTH_TABLE: Map<number, DepthInfo> = new Map([
-    [1, {
-      depth: 1,
-      name: "上層",
-      magicMultiplier: 1.0,
-      physicalMultiplier: 1.0,
-      hpMultiplier: 1.0,
-      aiLevel: "basic"
-    }],
-    [2, {
-      depth: 2,
-      name: "中層",
-      magicMultiplier: 2.0,
-      physicalMultiplier: 1.2,
-      hpMultiplier: 1.2,
-      aiLevel: "heavy_status"
-    }],
-    [3, {
-      depth: 3,
-      name: "下層",
-      magicMultiplier: 4.0,
-      physicalMultiplier: 1.5,
-      hpMultiplier: 1.5,
-      aiLevel: "cooperative"
-    }],
-    [4, {
-      depth: 4,
-      name: "深層",
-      magicMultiplier: 8.0,
-      physicalMultiplier: 2.0,
-      hpMultiplier: 2.0,
-      aiLevel: "penetration"
-    }],
-    [5, {
-      depth: 5,
-      name: "深淵",
-      magicMultiplier: 16.0,
-      physicalMultiplier: 3.0,
-      hpMultiplier: 3.0,
-      aiLevel: "learning"
-    }]
+    [
+      1,
+      {
+        depth: 1,
+        name: "上層",
+        magicMultiplier: 1.0,
+        physicalMultiplier: 1.0,
+        hpMultiplier: 1.0,
+        aiLevel: "basic",
+      },
+    ],
+    [
+      2,
+      {
+        depth: 2,
+        name: "中層",
+        magicMultiplier: 2.0,
+        physicalMultiplier: 1.2,
+        hpMultiplier: 1.2,
+        aiLevel: "heavy_status",
+      },
+    ],
+    [
+      3,
+      {
+        depth: 3,
+        name: "下層",
+        magicMultiplier: 4.0,
+        physicalMultiplier: 1.5,
+        hpMultiplier: 1.5,
+        aiLevel: "cooperative",
+      },
+    ],
+    [
+      4,
+      {
+        depth: 4,
+        name: "深層",
+        magicMultiplier: 8.0,
+        physicalMultiplier: 2.0,
+        hpMultiplier: 2.0,
+        aiLevel: "penetration",
+      },
+    ],
+    [
+      5,
+      {
+        depth: 5,
+        name: "深淵",
+        magicMultiplier: 16.0,
+        physicalMultiplier: 3.0,
+        hpMultiplier: 3.0,
+        aiLevel: "learning",
+      },
+    ],
   ]);
 
   /**
@@ -517,13 +563,13 @@ class DepthScaling {
    */
   static scaleEnemyStats(baseEnemy: Character, depth: number): Character {
     const info = this.getDepthInfo(depth);
-    
+
     return {
       ...baseEnemy,
       hp: Math.floor(baseEnemy.hp * info.hpMultiplier),
       maxHp: Math.floor(baseEnemy.hp * info.hpMultiplier),
       attack: Math.floor(baseEnemy.attack * info.physicalMultiplier),
-      magicPower: Math.floor(baseEnemy.magicPower * info.magicMultiplier)
+      magicPower: Math.floor(baseEnemy.magicPower * info.magicMultiplier),
     };
   }
 }
@@ -534,12 +580,14 @@ class DepthScaling {
 ## 7. 実装上の注意点
 
 ### 7.1 用語の区別
-* **Depth (深度)** はダンジョンの階層（敵の強さ）を指す。
-* **Severity (重症度)** は状態異常のレベル（Light/Heavy）を指す。
-* これらを混同しないように変数名を設計すること。
 
-### 7.2 出血のHPダメージ
-* 出血ダメージはAP/Guardに吸われず、直接HPを減らすこと。
+- **Depth (深度)** はダンジョンの階層（敵の強さ）を指す。
+- **Severity (重症度)** は状態異常のレベル（Light/Heavy）を指す。
+- これらを混同しないように変数名を設計すること。
+
+### 7.2 出血の HP ダメージ
+
+- 出血ダメージは AP/Guard に吸われず、直接 HP を減らすこと。
 
 ```typescript
 /**
@@ -548,7 +596,7 @@ class DepthScaling {
 function applyBleedDamage(character: Character, bleedStack: number): void {
   // 出血は直接HP減算
   character.hp -= bleedStack;
-  
+
   // 大出血の場合は1.5倍
   if (character.hasStatus("大出血")) {
     character.hp -= Math.floor(bleedStack * 0.5);
@@ -557,7 +605,8 @@ function applyBleedDamage(character: Character, bleedStack: number): void {
 ```
 
 ### 7.3 アーマー持ち越し
-* 戦闘終了時の `current_ap` は必ず保存し、次回の戦闘開始時に適用すること。
+
+- 戦闘終了時の `current_ap` は必ず保存し、次回の戦闘開始時に適用すること。
 
 ```typescript
 /**
@@ -572,22 +621,23 @@ interface BattleEndState {
 
 function saveBattleState(player: Character): BattleEndState {
   return {
-    currentAp: player.ap,  // 重要: 現在のAP値を保存
+    currentAp: player.ap, // 重要: 現在のAP値を保存
     maxAp: player.maxAp,
-    currentHp: player.hp
+    currentHp: player.hp,
   };
 }
 
 function loadBattleState(player: Character, savedState: BattleEndState): void {
-  player.ap = savedState.currentAp;  // 前回のAP値を復元
+  player.ap = savedState.currentAp; // 前回のAP値を復元
   player.maxAp = savedState.maxAp;
   player.hp = savedState.currentHp;
-  player.guard = 0;  // Guardは必ず0から開始
+  player.guard = 0; // Guardは必ず0から開始
 }
 ```
 
-### 7.4 貫通のUI表示
-* アーマーブレイク時（AP=0）や、敵の貫通攻撃時は、ダメージ予測UIにおいて「HPへの直接ダメージ」を明確に色分け（例: 赤色点滅）して表示すること。
+### 7.4 貫通の UI 表示
+
+- アーマーブレイク時（AP=0）や、敵の貫通攻撃時は、ダメージ予測 UI において「HP への直接ダメージ」を明確に色分け（例: 赤色点滅）して表示すること。
 
 ```typescript
 /**
@@ -598,8 +648,8 @@ interface DamagePreview {
   guardDamage: number;
   apDamage: number;
   hpDamage: number;
-  penetrationDamage: number;  // 貫通ダメージ（赤色表示用）
-  isArmorBreak: boolean;      // アーマーブレイク状態フラグ
+  penetrationDamage: number; // 貫通ダメージ（赤色表示用）
+  isArmorBreak: boolean; // アーマーブレイク状態フラグ
 }
 
 /**
@@ -613,46 +663,46 @@ function calculateDamagePreview(
 ): DamagePreview {
   // ダメージ計算（実際には適用しない）
   const result = calculateDamage(attacker, defender, card, currentDepth);
-  
+
   // 配分をシミュレート
   let remainingDmg = result.finalDamage;
   let guardDmg = 0;
   let apDmg = 0;
   let hpDmg = 0;
   let penetrationDmg = 0;
-  
+
   const isArmorBreak = defender.ap <= 0;
-  
+
   if (isArmorBreak) {
     penetrationDmg = Math.floor(remainingDmg * 0.25);
     hpDmg += penetrationDmg;
     remainingDmg -= penetrationDmg;
   }
-  
+
   // Guard
   if (defender.guard > 0) {
     guardDmg = Math.min(defender.guard, remainingDmg);
     remainingDmg -= guardDmg;
   }
-  
+
   // AP
   if (remainingDmg > 0 && defender.ap > 0) {
     apDmg = Math.min(defender.ap, remainingDmg);
     remainingDmg -= apDmg;
   }
-  
+
   // HP
   if (remainingDmg > 0) {
     hpDmg += remainingDmg;
   }
-  
+
   return {
     totalDamage: result.finalDamage,
     guardDamage: guardDmg,
     apDamage: apDmg,
     hpDamage: hpDmg,
     penetrationDamage: penetrationDmg,
-    isArmorBreak: isArmorBreak
+    isArmorBreak: isArmorBreak,
   };
 }
 ```
@@ -663,12 +713,12 @@ function calculateDamagePreview(
 
 本仕様書は、以下の点を重視して設計されています：
 
-1. **明確な防御レイヤー構造**: Guard（使い捨て）とAP（持ち越し）の分離により、戦略的な深みを提供
-2. **状態異常の段階的進化**: Light/Heavyの2段階により、直感的で分かりやすい状態管理
+1. **明確な防御レイヤー構造**: Guard（使い捨て）と AP（持ち越し）の分離により、戦略的な深みを提供
+2. **状態異常の段階的進化**: Light/Heavy の 2 段階により、直感的で分かりやすい状態管理
 3. **深度による難易度スケーリング**: ダンジョンが深くなるほど敵が強化される明確な仕組み
 4. **厳密なタイミング定義**: ターンフェーズを明確化し、バグを防止
 
-実装時は、TypeScriptの型システムを活用し、バグの少ない堅牢なシステムを構築してください。
+実装時は、TypeScript の型システムを活用し、バグの少ない堅牢なシステムを構築してください。
 
 ---
 
