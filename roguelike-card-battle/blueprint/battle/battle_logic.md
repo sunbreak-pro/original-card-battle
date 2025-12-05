@@ -328,9 +328,10 @@ class StatusManager {
 
 ### **Turn Start Phase**
 
-- **[System]** 前ターンの Guard 消滅（残っていた場合、0 になる）
+1 **[System]** 前ターンの Guard 消滅（残っていた場合、0 になる）
+
 - エナジー回復 / カードドロー
-- **[Effect]** 毒/猛毒 ダメージ発生 (HP 直接)
+- **[Effect]** 火傷/大火傷 ダメージ発生
 - **[Effect]** リジェネ (HP/AP 回復)
 
 ### **Player Action Phase**
@@ -342,13 +343,13 @@ class StatusManager {
 
 - 手札を捨てる
 - **[System]** Guard は消滅しない（次ターン開始時まで持続）
-- **[Effect]** 毒(猛毒のみ) ダメージ発生
+- **[System]**敵のバフ/デバフ カウント減少
+- **[Effect]** 大火傷 ダメージ発生
 - **[Effect]** 酸化/溶解 ダメージ発生 (AP 減少)
 
 ### **Enemy Action Phase**
 
 - 敵の行動
-- 敵のバフ/デバフ カウント減少
 
 ### 5.1 ターン管理クラス例
 
