@@ -1,6 +1,7 @@
-// import { useState } from "react";
+import { useState } from "react";
 import type { Depth } from "../../cards/type/cardType";
 import { useBattleLogic } from "../logic/useBattleLogic";
+import { selectRandomEnemy } from "../logic/enemyAI";
 import StatusEffectDisplay from "../../components/StatusEffect";
 import { CardComponent } from "../../cards/component/CardComponent"; // ★ 変更: 別ファイルからインポート
 import { BattlingCardPileModal } from "../../cards/cardUI/CardModalDisplay"; // ★ 追加
@@ -63,16 +64,24 @@ const BattleScreen = ({
 }) => {
   const theme = depthThemes[depth];
 
+  // 遭遇カウント管理
+  const [encounterCount, setEncounterCount] = useState(0);
+
   const {
     playerRef,
     enemyRef,
+    currentEnemy,
     playerHp,
     playerMaxHp,
-    playerShield,
+    playerAp,
+    playerMaxAp,
+    playerGuard,
     playerBuffs,
     enemyHp,
     enemyMaxHp,
-    enemyShield,
+    enemyAp,
+    enemyMaxAp,
+    enemyGuard,
     enemyBuffs,
     energy,
     maxEnergy,
@@ -86,21 +95,43 @@ const BattleScreen = ({
     getDiscardingCards,
     handleCardPlay,
     handleEndTurn,
+    resetForNextEnemy,
     openedPileType,
     openDrawPile,
     openDiscardPile,
     closePileModal,
     battleResult,
     battleStats,
+    swordEnergy,
   } = useBattleLogic(depth);
+
+  // 次の敵に遷移する関数
+  const handleContinueToNextBattle = () => {
+    const nextEncounter = encounterCount + 1;
+    setEncounterCount(nextEncounter);
+
+    // 遭遇タイプを決定（7回目までは通常敵、8回目はボス）
+    let encounterType: "normal" | "group" | "boss" = "normal";
+    if (nextEncounter === 7) {
+      encounterType = "boss";
+    } else if (nextEncounter % 3 === 0) {
+      // 3回ごとに複数敵
+      encounterType = "group";
+    }
+
+    // 次の敵を選択
+    const { enemies } = selectRandomEnemy(depth, encounterType);
+    const nextEnemy = enemies[0];
+
+    // 敵データを更新してバトルを再開
+    resetForNextEnemy(nextEnemy);
+  };
 
   // 勝利画面の処理
   if (battleResult === "victory") {
     return (
       <VictoryScreen
-        onContinue={() => {
-          if (onReturnToCamp) onReturnToCamp();
-        }}
+        onContinue={handleContinueToNextBattle}
         rewards={{
           gold: 100 + turn * 10,
           experience: 50 + turn * 5,
@@ -154,7 +185,7 @@ const BattleScreen = ({
       {/* ヘッダー */}
       <div className="battle-header">
         <div className="depth-info">
-          Depth {depth} - Turn {turn}
+          {depth}-{encounterCount === 6 ? "BOSS" : encounterCount + 1} | Turn {turn}
         </div>
         <div className="depth-controls">
           {[1, 2, 3, 4, 5].map((d) => (
@@ -173,33 +204,55 @@ const BattleScreen = ({
       <div className="battle-field">
         {/* 敵 */}
         <div className="character-section">
-          <div className="character-name">Shadow Beast</div>
+          <div className="character-name">{currentEnemy.nameJa}</div>
           <div className="character-visual" ref={enemyRef}>
-            <img
-              className="enemy-image"
-              src="/Gemini_Generated_Image_ixo5jrixo5jrixo5.png"
-              alt="Shadow Beast"
-            />
+            {currentEnemy.imagePath ? (
+              <img
+                className="enemy-image"
+                src={currentEnemy.imagePath}
+                alt={currentEnemy.nameJa}
+              />
+            ) : (
+              <div style={{ fontSize: "10vh" }}>👹</div>
+            )}
           </div>
           <div className="status-container">
-            {/* シールドがある場合のみ表示 (Playerと同じロジックにする場合) */}
-            {enemyShield > 0 && (
+            {/* Guardがある場合のみ表示 */}
+            {enemyGuard > 0 && (
               <div className="status-row">
-                <span className="status-label shield-num">
-                  Shield: {enemyShield}
+                <span className="status-label guard-num">
+                  Guard: {enemyGuard}
                 </span>
                 <span className="bar-frame">
                   <div
-                    className="bar-gauge shield"
-                    style={{ width: `${(enemyShield / 20) * 100}%` }}
+                    className="bar-gauge guard"
+                    style={{
+                      width: `${Math.min(100, (enemyGuard / 30) * 100)}%`,
+                    }}
+                  ></div>
+                </span>
+              </div>
+            )}
+            {/* APの行 */}
+            {enemyAp > 0 && (
+              <div className="status-row">
+                <span className="status-label ap-num">
+                  AP: {enemyAp}/{enemyMaxAp}
+                </span>
+                <span className="bar-frame">
+                  <div
+                    className="bar-gauge ap"
+                    style={{ width: `${(enemyAp / enemyMaxAp) * 100}%` }}
                   ></div>
                 </span>
               </div>
             )}
             {/* HPの行 */}
             <div className="status-row">
-              <span className="status-label hp-num">HP : {enemyHp}</span>
-              <span className=" bar-frame">
+              <span className="status-label hp-num">
+                HP: {enemyHp}/{enemyMaxHp}
+              </span>
+              <span className="bar-frame">
                 <div
                   className="bar-gauge hp"
                   style={{ width: `${(enemyHp / enemyMaxHp) * 100}%` }}
@@ -218,21 +271,39 @@ const BattleScreen = ({
             ⚔️
           </div>
           <div className="status-container">
-            {playerShield > 0 && (
+            {/* Guardがある場合のみ表示 */}
+            {playerGuard > 0 && (
               <div className="status-row">
-                <span className="status-label shield-num">
-                  Shield: {playerShield}
+                <span className="status-label guard-num">
+                  Guard: {playerGuard}
                 </span>
                 <span className="bar-frame">
                   <div
-                    className="bar-gauge shield"
-                    style={{ width: `${(playerShield / 20) * 100}%` }}
+                    className="bar-gauge guard"
+                    style={{
+                      width: `${Math.min(100, (playerGuard / 30) * 100)}%`,
+                    }}
                   />
                 </span>
               </div>
             )}
+            {/* APの行 */}
             <div className="status-row">
-              <span className="status-label hp-num">HP: {playerHp}</span>
+              <span className="status-label ap-num">
+                AP: {playerAp}/{playerMaxAp}
+              </span>
+              <span className="bar-frame">
+                <div
+                  className="bar-gauge ap"
+                  style={{ width: `${(playerAp / playerMaxAp) * 100}%` }}
+                />
+              </span>
+            </div>
+            {/* HPの行 */}
+            <div className="status-row">
+              <span className="status-label hp-num">
+                HP: {playerHp}/{playerMaxHp}
+              </span>
               <span className="bar-frame">
                 <div
                   className="bar-gauge hp"
@@ -265,6 +336,30 @@ const BattleScreen = ({
           {Array.from({ length: maxEnergy }).map((_, i) => (
             <div key={i} className={`orb ${i < energy ? "filled" : ""}`} />
           ))}
+        </div>
+      </div>
+
+      {/* 剣気ゲージ */}
+      <div className="sword-energy-display">
+        <div className="sword-energy-label">剣気</div>
+        <div className="sword-energy-bar-container">
+          <div className="sword-energy-bar">
+            <div
+              className="sword-energy-fill"
+              style={{ width: `${(swordEnergy.current / swordEnergy.max) * 100}%` }}
+            />
+            <span className="sword-energy-text">
+              {swordEnergy.current}/{swordEnergy.max}
+            </span>
+          </div>
+          <span className="sword-energy-bonus">
+            +{swordEnergy.current * 5} DMG
+          </span>
+        </div>
+        <div className="sword-energy-effects">
+          {swordEnergy.current >= 5 && <span className="effect-badge crit">Crit+20%</span>}
+          {swordEnergy.current >= 8 && <span className="effect-badge pierce">貫通+30%</span>}
+          {swordEnergy.current >= 10 && <span className="effect-badge max">MAX!</span>}
         </div>
       </div>
       <button className="end-turn-btn" onClick={handleEndTurn}>

@@ -36,13 +36,40 @@ const BUFF_DEBUFF_ICONS: Record<BuffDebuffType, string> = {
   magicUp: "✨↑",
   physicalUp: "💪↑",
   penetrationUp: "🎯↑",
-  // バフ - 特殊
+  critical: "⭐",
+  // バフ - 回復・防御系
   regeneration: "💚",
   shieldRegen: "🛡️",
   reflect: "🔄",
   evasion: "💨",
-  critical: "⭐",
   immunity: "✨",
+  // バフ - リソース管理系
+  energyRegen: "⚡🔄",
+  drawPower: "🃏",
+  costReduction: "💰↓",
+  // バフ - 戦闘スタイル変化系
+  thorns: "🌹",
+  lifesteal: "🩸💚",
+  doubleStrike: "⚔️⚔️",
+  splash: "💥",
+  // バフ - キャラクター固有系（剣士）
+  swordEnergyGain: "⚔️⚡",
+  swordEnergyEfficiency: "⚔️✨",
+  // バフ - キャラクター固有系（魔術士）
+  resonanceExtension: "🔮⏳",
+  elementalMastery: "🔮✨",
+  // バフ - キャラクター固有系（召喚士）
+  summonDuration: "👻⏳",
+  summonPower: "👻✨",
+  sacrificeBonus: "💀",
+  // バフ - 特殊効果系
+  barrier: "🛡️✨",
+  damageReduction: "🛡️",
+  focus: "🎯",
+  momentum: "🔥↑",
+  cleanse: "✨💧",
+  tenacity: "💪",
+  lastStand: "⚔️🔥",
 };
 
 const StatusEffectDisplay = ({

@@ -131,13 +131,24 @@ export const calculateStartTurnHealing = (
   map.forEach((buff) => {
     switch (buff.type) {
       case "regeneration":
-        hp += buff.value;
+        hp += buff.value * buff.stacks;
         break;
       case "shieldRegen":
-        shield += buff.value;
+        shield += buff.value * buff.stacks;
         break;
     }
   });
+
+  // 呪いによる回復効果減少
+  if (map.has("curse")) {
+    hp = Math.floor(hp * 0.5);
+  }
+
+  // 回復効果減少デバフ
+  if (map.has("healingDown")) {
+    const healingDown = map.get("healingDown")!;
+    hp = Math.floor(hp * (1 - healingDown.value / 100));
+  }
 
   return { hp, shield };
 };
@@ -211,7 +222,58 @@ export const calculateEnergyModifier = (map: BuffDebuffMap): number => {
     if (buff.type === "slow") {
       modifier -= 1;
     }
+    if (buff.type === "energyRegen") {
+      modifier += buff.value * buff.stacks;
+    }
   });
 
   return modifier;
+};
+
+/**
+ * ドロー枚数の修正値を計算
+ */
+export const calculateDrawModifier = (map: BuffDebuffMap): number => {
+  let modifier = 0;
+
+  map.forEach((buff) => {
+    if (buff.type === "drawPower") {
+      modifier += buff.value * buff.stacks;
+    }
+  });
+
+  return modifier;
+};
+
+/**
+ * 指定数のデバフをランダムに解除
+ */
+export const removeDebuffs = (map: BuffDebuffMap, count: number): BuffDebuffMap => {
+  const debuffs: BuffDebuffType[] = [];
+
+  map.forEach((_, type) => {
+    if (BuffDebuffEffects[type].isDebuff) {
+      debuffs.push(type);
+    }
+  });
+
+  // ランダムにシャッフル
+  const shuffled = debuffs.sort(() => Math.random() - 0.5);
+  const toRemove = shuffled.slice(0, Math.min(count, shuffled.length));
+
+  const newMap = new Map(map);
+  toRemove.forEach(type => newMap.delete(type));
+
+  return newMap;
+};
+
+/**
+ * デバフが付与可能かチェック（immunity判定）
+ */
+export const canApplyDebuff = (map: BuffDebuffMap, debuffType: BuffDebuffType): boolean => {
+  // immunityバフがある場合、デバフ無効
+  if (map.has("immunity")) {
+    return !BuffDebuffEffects[debuffType].isDebuff;
+  }
+  return true;
 };

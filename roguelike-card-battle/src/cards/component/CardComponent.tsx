@@ -21,7 +21,7 @@ export const CardComponent: React.FC<CardComponentProps> = ({
     heal: "#4ade80",
   };
   const catColor = categoryColors[card.category] || "#ccc";
-  const power = card.basePower ? calculateEffectivePower(card, depth) : null;
+  const damage = card.baseDamage ? calculateEffectivePower(card, depth) : null;
 
   return (
     <div
@@ -38,7 +38,7 @@ export const CardComponent: React.FC<CardComponentProps> = ({
       <div className="card-name">{card.name}</div>
       <div className="card-desc-box">
         <div className="card-desc-text">{card.description}</div>
-        {power && <div className="card-power">Power: {power}</div>}
+        {damage && <div className="card-power">Damage: {damage}</div>}
       </div>
       <div className="mastery-info">
         <div className="mastery-labels">

@@ -1,37 +1,24 @@
-import { DEPTH_CURVES, MAGIC_MULTIPLIERS, MASTERY_BONUSES, MASTERY_THRESHOLDS } from "../type/cardType";
-import type { Card, Depth, DepthCurveType, MasteryLevel } from "../type/cardType";
+import type { Card, Depth, MasteryLevel } from "../type/cardType";
+import { MASTERY_THRESHOLDS } from "../type/cardType";
 // ==========================================
 // ヘルパー関数
 // ==========================================
 
 /**
- * 深度適正カーブから特定深度の倍率を取得
+ * カードの実効威力を計算（深度ボーナス廃止、熟練度とジェムのみ）
  */
-export function getDepthEfficiency(curveType: DepthCurveType, depth: Depth): number {
-  return DEPTH_CURVES[curveType][depth - 1];
-}
+export function calculateEffectivePower(card: Card, _currentDepth: Depth): number {
+  if (!card.baseDamage) return 0;
 
-/**
- * カードの実効威力を計算
- */
-export function calculateEffectivePower(card: Card, currentDepth: Depth): number {
-  if (!card.basePower) return 0;
+  let damage = card.baseDamage;
 
-  let power = card.basePower;
+  // 熟練度ボーナス (Lv0: 1.0, Lv1: 1.1, Lv2: 1.2, Lv3: 1.3)
+  const masteryBonus = 1 + card.masteryLevel * 0.1;
 
-  const depthEfficiency = getDepthEfficiency(card.depthCurveType, currentDepth);
-  power *= depthEfficiency;
+  // ジェムレベルボーナス
+  damage *= (masteryBonus + card.gemLevel * 0.5);
 
-  if (card.category === 'magic') {
-    power *= MAGIC_MULTIPLIERS[currentDepth];
-  }
-
-  const masteryBonus = MASTERY_BONUSES[card.masteryLevel];
-  power *= masteryBonus;
-
-  power *= (1 + card.gemLevel * 0.5);
-
-  return Math.round(power);
+  return Math.round(damage);
 }
 
 /**

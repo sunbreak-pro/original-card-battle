@@ -20,13 +20,40 @@ export type BuffDebuffType =
   | "magicUp" // 魔力上昇
   | "physicalUp" // 物理攻撃力上昇
   | "penetrationUp" // 貫通力上昇
-  // バフ - 特殊
+  | "critical" // クリティカル率上昇
+  // バフ - 回復・防御系
   | "regeneration" // 再生（毎ターン回復）
   | "shieldRegen" // シールド再生
   | "reflect" // 反撃
   | "evasion" // 回避率上昇
-  | "critical" // クリティカル率上昇
-  | "immunity"; // デバフ無効
+  | "immunity" // デバフ無効
+  // バフ - リソース管理系
+  | "energyRegen" // エナジー再生
+  | "drawPower" // ドロー強化
+  | "costReduction" // コスト軽減
+  // バフ - 戦闘スタイル変化系
+  | "thorns" // 棘の鎧
+  | "lifesteal" // 吸血
+  | "doubleStrike" // 連撃
+  | "splash" // 範囲拡大
+  // バフ - キャラクター固有系（剣士）
+  | "swordEnergyGain" // 剣気増幅
+  | "swordEnergyEfficiency" // 剣気効率
+  // バフ - キャラクター固有系（魔術士）
+  | "resonanceExtension" // 共鳴延長
+  | "elementalMastery" // 属性熟練
+  // バフ - キャラクター固有系（召喚士）
+  | "summonDuration" // 召喚延長
+  | "summonPower" // 召喚強化
+  | "sacrificeBonus" // 犠牲強化
+  // バフ - 特殊効果系
+  | "barrier" // バリア
+  | "damageReduction" // ダメージ軽減
+  | "focus" // 集中
+  | "momentum" // 勢い
+  | "cleanse" // 自動浄化
+  | "tenacity" // 不屈
+  | "lastStand"; // 背水の陣
 
 export interface BuffDebuff {
   type: BuffDebuffType;

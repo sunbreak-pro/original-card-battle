@@ -168,9 +168,13 @@
   text-align: center;
   min-width: 9.2vh;
 }
-.shield-num{
-  color: #4a8ed9;
-  text-shadow: turquoise 0 0 0.5vh;
+.guard-num{
+  color: #88ccff;
+  text-shadow: #66aaff 0 0 0.5vh;
+}
+.ap-num{
+  color: #ffaa44;
+  text-shadow: #ff9922 0 0 0.5vh;
 }
 .hp-num{
   color: #d94a4a;
@@ -192,8 +196,9 @@
   height: 100%;
   transition: width 0.3s ease;
 }
-.bar-gauge.shield { background: linear-gradient(90deg, #2e5c9d 0%, #4a8ed9 100%); }
-.bar-gauge.hp {  background: linear-gradient(90deg, #d94a4a 0%, #ff6b6b 100%); }
+.bar-gauge.guard { background: linear-gradient(90deg, #4488cc 0%, #6699ff 100%); }
+.bar-gauge.ap { background: linear-gradient(90deg, #cc8844 0%, #ffaa44 100%); }
+.bar-gauge.hp { background: linear-gradient(90deg, #d94a4a 0%, #ff6b6b 100%); }
 
 .next-action { margin-top: 1vh; text-align: center; }
 .action-value { font-size: 2.5vh; color: #d94a4a; font-weight: bold; }
@@ -577,4 +582,117 @@
 @keyframes scaleIn {
   from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+/* =========================================
+   剣気ゲージ (Sword Energy)
+   ========================================= */
+.sword-energy-display {
+  position: absolute;
+  left: 2vw;
+  bottom: 36vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5vh;
+  padding: 1vh 1vw;
+  border: 0.2vh solid #ff6b35;
+  border-radius: 1vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 50;
+  min-width: 10vw;
+}
+
+.sword-energy-label {
+  font-size: 1.8vh;
+  font-weight: bold;
+  color: #ff9f66;
+  text-shadow: 0 0 0.5vh #ff6b35;
+}
+
+.sword-energy-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  width: 100%;
+}
+
+.sword-energy-bar {
+  flex: 1;
+  height: 2.5vh;
+  background: rgba(0, 0, 0, 0.6);
+  border: 0.2vh solid #ff6b35;
+  border-radius: 0.5vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.sword-energy-bonus {
+  font-size: 1.4vh;
+  font-weight: bold;
+  color: #ffcc80;
+  text-shadow: 0 0 0.5vh #ff6b35;
+  white-space: nowrap;
+}
+
+.sword-energy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b35 0%, #ff9f66 50%, #ffcc80 100%);
+  transition: width 0.3s ease;
+  box-shadow: 0 0 1vh #ff6b35;
+}
+
+.sword-energy-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5vh;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 0.5vh black;
+}
+
+.sword-energy-effects {
+  display: flex;
+  gap: 0.5vw;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.effect-badge {
+  font-size: 1.2vh;
+  padding: 0.2vh 0.5vw;
+  border-radius: 0.3vh;
+  font-weight: bold;
+}
+
+.effect-badge.crit {
+  background: rgba(255, 215, 0, 0.3);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+}
+
+.effect-badge.pierce {
+  background: rgba(100, 200, 255, 0.3);
+  border: 1px solid #64c8ff;
+  color: #64c8ff;
+}
+
+.effect-badge.max {
+  background: rgba(255, 50, 50, 0.4);
+  border: 1px solid #ff3232;
+  color: #ff3232;
+  animation: maxEnergyPulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes maxEnergyPulse {
+  from {
+    box-shadow: 0 0 0.5vh #ff3232;
+    transform: scale(1);
+  }
+  to {
+    box-shadow: 0 0 1.5vh #ff3232;
+    transform: scale(1.1);
+  }
 }

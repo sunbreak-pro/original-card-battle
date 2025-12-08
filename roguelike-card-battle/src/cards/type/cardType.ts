@@ -3,7 +3,7 @@
 // ==========================================
 export type Depth = 1 | 2 | 3 | 4 | 5;
 
-export type CardCategory = 'physical' | 'magic' | 'defense' | 'heal';
+export type CardCategory = 'physical' | 'magic' | 'defense' | 'heal' | 'swordEnergy';
 
 export type DepthCurveType = 'shallow' | 'neutral' | 'deep' | 'madness' | 'adversity';
 
@@ -23,7 +23,7 @@ export interface Card {
     useCount: number;
     masteryLevel: MasteryLevel;
     gemLevel: GemLevel;
-    basePower?: number;
+    baseDamage?: number;
     effectivePower?: number;
     talentProgress?: number;
     talentThreshold?: number;
@@ -41,18 +41,24 @@ export interface Card {
     }[];
     tags: string[];
     rarity: Rarity;
+
+    // 剣士固有プロパティ
+    swordEnergyGain?: number;      // 剣気蓄積量
+    swordEnergyConsume?: number;   // 剣気消費量（0=全消費）
+    swordEnergyMultiplier?: number; // 剣気ダメージ倍率
+    hitCount?: number;             // 多段攻撃の回数
+    penetration?: number;          // 貫通率（0-1）
+    isPreemptive?: boolean;        // 先制攻撃
+    healAmount?: number;           // 回復量
+    guardAmount?: number;          // シールド付与量
+    nextCardCostReduction?: number; // 次のカードのコスト軽減
+    characterClass?: 'swordsman' | 'mage' | 'summoner'; // キャラクター専用
 }
 
 // ==========================================
 // 定数
 // ==========================================
-export const DEPTH_CURVES: Record<DepthCurveType, [number, number, number, number, number]> = {
-    shallow: [1.30, 1.10, 0.90, 0.70, 0.50],
-    neutral: [1.00, 1.00, 1.00, 1.00, 1.00],
-    deep: [0.60, 0.80, 1.10, 1.50, 2.00],
-    madness: [0.80, 1.00, 1.20, 1.60, 3.00],
-    adversity: [1.50, 1.20, 1.00, 0.80, 1.20],
-};
+
 
 export const MAGIC_MULTIPLIERS: Record<Depth, number> = {
     1: 1,
@@ -81,6 +87,7 @@ export const CARD_CATEGORY_NAMES: Record<CardCategory, string> = {
     magic: 'Magic',
     defense: 'Defense',
     heal: 'Heal',
+    swordEnergy: 'Sword Energy',
 };
 
 export const RARITY_COLORS: Record<Rarity, string> = {

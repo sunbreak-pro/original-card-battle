@@ -12,7 +12,8 @@ export type DeckAction =
   | { type: "END_TURN"; cardsToDiscard: Card[] }
   | { type: "CARD_PLAY"; card: Card }
   | { type: "SET_PILES"; newDrawPile: Card[]; newDiscardPile: Card[] }
-  | { type: "ADD_TO_HAND"; cards: Card[] };
+  | { type: "ADD_TO_HAND"; cards: Card[] }
+  | { type: "RESET_DECK"; hand: Card[]; drawPile: Card[]; discardPile: Card[] };
 
 export const deckReducer = (
   state: DeckState,
@@ -50,6 +51,14 @@ export const deckReducer = (
       return {
         ...state,
         hand: [...state.hand, ...action.cards],
+      };
+    }
+
+    case "RESET_DECK": {
+      return {
+        hand: action.hand,
+        drawPile: action.drawPile,
+        discardPile: action.discardPile,
       };
     }
 
