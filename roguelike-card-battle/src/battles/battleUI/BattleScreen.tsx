@@ -186,7 +186,8 @@ const BattleScreen = ({
       {/* ヘッダー */}
       <div className="battle-header">
         <div className="depth-info">
-          {depth}-{encounterCount === 6 ? "BOSS" : encounterCount + 1} | Turn {turn}
+          {depth}-{encounterCount === 6 ? "BOSS" : encounterCount + 1} | Turn{" "}
+          {turn}
         </div>
         <div className="depth-controls">
           {[1, 2, 3, 4, 5].map((d) => (
@@ -205,68 +206,122 @@ const BattleScreen = ({
       <div className="battle-field">
         {/* 敵セクション（新コンポーネント） */}
         <EnemyDisplay
-          enemies={[{
-            enemy: currentEnemy,
-            hp: enemyHp,
-            maxHp: enemyMaxHp,
-            ap: enemyAp,
-            maxAp: enemyMaxAp,
-            guard: enemyGuard,
-            buffs: enemyBuffs,
-            turnCount: turn,
-          }]}
+          enemies={[
+            {
+              enemy: currentEnemy,
+              hp: enemyHp,
+              maxHp: enemyMaxHp,
+              ap: enemyAp,
+              maxAp: enemyMaxAp,
+              guard: enemyGuard,
+              buffs: enemyBuffs,
+              turnCount: turn,
+            },
+          ]}
           enemyRefs={[enemyRef]}
           theme={theme}
         />
 
         {/* プレイヤー */}
-        <div className="character-section">
-          <div className="character-name">Player</div>
-          <div className="character-visual player" ref={playerRef}>
-            ⚔️
-          </div>
-          <div className="status-container">
-            {/* Guardがある場合のみ表示 */}
-            {playerGuard > 0 && (
+        <div className="player-section">
+          <div className="player-field">
+            <div className="character-name">Player</div>
+            <div className="character-visual player" ref={playerRef}>
+              ⚔️
+            </div>
+            <div className="status-container">
+              {/* Guardがある場合のみ表示 */}
+              {playerGuard > 0 && (
+                <div className="status-row">
+                  <span className="status-label guard-num">
+                    Guard: {playerGuard}
+                  </span>
+                  <span className="bar-frame">
+                    <div
+                      className="bar-gauge guard"
+                      style={{
+                        width: `${Math.min(100, (playerGuard / 30) * 100)}%`,
+                      }}
+                    />
+                  </span>
+                </div>
+              )}
+              {/* APの行 */}
               <div className="status-row">
-                <span className="status-label guard-num">
-                  Guard: {playerGuard}
+                <span className="status-label ap-num">
+                  AP: {playerAp}/{playerMaxAp}
                 </span>
                 <span className="bar-frame">
                   <div
-                    className="bar-gauge guard"
-                    style={{
-                      width: `${Math.min(100, (playerGuard / 30) * 100)}%`,
-                    }}
+                    className="bar-gauge ap"
+                    style={{ width: `${(playerAp / playerMaxAp) * 100}%` }}
                   />
                 </span>
               </div>
-            )}
-            {/* APの行 */}
-            <div className="status-row">
-              <span className="status-label ap-num">
-                AP: {playerAp}/{playerMaxAp}
-              </span>
-              <span className="bar-frame">
-                <div
-                  className="bar-gauge ap"
-                  style={{ width: `${(playerAp / playerMaxAp) * 100}%` }}
-                />
-              </span>
+              {/* HPの行 */}
+              <div className="status-row">
+                <span className="status-label hp-num">
+                  HP: {playerHp}/{playerMaxHp}
+                </span>
+                <span className="bar-frame">
+                  <div
+                    className="bar-gauge hp"
+                    style={{ width: `${(playerHp / playerMaxHp) * 100}%` }}
+                  />
+                </span>
+              </div>
+              <StatusEffectDisplay buffsDebuffs={playerBuffs} theme={theme} />
             </div>
-            {/* HPの行 */}
-            <div className="status-row">
-              <span className="status-label hp-num">
-                HP: {playerHp}/{playerMaxHp}
-              </span>
-              <span className="bar-frame">
-                <div
-                  className="bar-gauge hp"
-                  style={{ width: `${(playerHp / playerMaxHp) * 100}%` }}
-                />
-              </span>
+          </div>
+          <div className="energy-and-ability">
+            <div className="energy-display">
+              <div>ENERGY</div>
+              <div className="energy-orbs">
+                {Array.from({ length: maxEnergy }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`orb ${i < energy ? "filled" : ""}`}
+                  />
+                ))}
+              </div>
             </div>
-            <StatusEffectDisplay buffsDebuffs={playerBuffs} theme={theme} />
+
+            {/* 剣気ゲージ */}
+            <div className="sword-energy-display">
+              <div className="sword-energy-label">
+                剣気
+                <span className="sword-energy-bonus">
+                  +{swordEnergy.current * 5} DMG
+                </span>
+              </div>
+
+              <div className="sword-energy-bar-container">
+                <div className="sword-energy-bar">
+                  <div
+                    className="sword-energy-fill"
+                    style={{
+                      width: `${
+                        (swordEnergy.current / swordEnergy.max) * 100
+                      }%`,
+                    }}
+                  />
+                  <span className="sword-energy-text">
+                    {swordEnergy.current}/{swordEnergy.max}
+                  </span>
+                </div>
+              </div>
+              <div className="sword-energy-effects">
+                {swordEnergy.current >= 5 && (
+                  <span className="effect-badge crit">Crit+20%</span>
+                )}
+                {swordEnergy.current >= 8 && (
+                  <span className="effect-badge pierce">貫通+30%</span>
+                )}
+                {swordEnergy.current >= 10 && (
+                  <span className="effect-badge max">MAX!</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -285,38 +340,6 @@ const BattleScreen = ({
         <div className="pile-count">捨て札: {discardPile.length}</div>
       </div>
 
-      <div className="energy-display">
-        <div>ENERGY</div>
-        <div className="energy-orbs">
-          {Array.from({ length: maxEnergy }).map((_, i) => (
-            <div key={i} className={`orb ${i < energy ? "filled" : ""}`} />
-          ))}
-        </div>
-      </div>
-
-      {/* 剣気ゲージ */}
-      <div className="sword-energy-display">
-        <div className="sword-energy-label">剣気</div>
-        <div className="sword-energy-bar-container">
-          <div className="sword-energy-bar">
-            <div
-              className="sword-energy-fill"
-              style={{ width: `${(swordEnergy.current / swordEnergy.max) * 100}%` }}
-            />
-            <span className="sword-energy-text">
-              {swordEnergy.current}/{swordEnergy.max}
-            </span>
-          </div>
-          <span className="sword-energy-bonus">
-            +{swordEnergy.current * 5} DMG
-          </span>
-        </div>
-        <div className="sword-energy-effects">
-          {swordEnergy.current >= 5 && <span className="effect-badge crit">Crit+20%</span>}
-          {swordEnergy.current >= 8 && <span className="effect-badge pierce">貫通+30%</span>}
-          {swordEnergy.current >= 10 && <span className="effect-badge max">MAX!</span>}
-        </div>
-      </div>
       <button className="end-turn-btn" onClick={handleEndTurn}>
         End Turn
       </button>

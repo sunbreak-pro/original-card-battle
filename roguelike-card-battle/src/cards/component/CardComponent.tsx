@@ -11,7 +11,6 @@ interface CardComponentProps {
 
 export const CardComponent: React.FC<CardComponentProps> = ({
   card,
-  depth,
   isPlayable = false,
 }) => {
   const categoryColors: Record<string, string> = {
@@ -51,11 +50,6 @@ export const CardComponent: React.FC<CardComponentProps> = ({
             style={{ width: `${(card.useCount / 8) * 100}%` }}
           />
         </div>
-      </div>
-      <div className="depth-dots">
-        {[1, 2, 3, 4, 5].map((d) => (
-          <div key={d} className={`depth-dot ${d === depth ? "active" : ""}`} />
-        ))}
       </div>
     </div>
   );

@@ -1,12 +1,10 @@
 /**
  * 戦闘ロジック関連の処理
  */
-
 /**
  * ダメージをエンティティに適用（シールド優先）
  * @param damage ダメージ量
  * @param currentHp 現在のHP
- * @param currentShield 現在のシールド
  * @returns 新しいHPとシールド
  */
 export const applyDamage = (
@@ -58,14 +56,7 @@ export const applyShield = (
   return currentShield + shieldAmount;
 };
 
-/**
- * 敵の行動を決定（簡易AI）
- * @returns ダメージ量
- */
-export const determineEnemyAction = (): number => {
-  // 簡易実装：8-12のランダムダメージ
-  return Math.floor(Math.random() * 5) + 8;
-};
+
 
 /**
  * 戦闘終了判定
