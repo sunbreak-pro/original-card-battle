@@ -1,4 +1,4 @@
-import type { Card, Depth, MasteryLevel } from "../type/cardType";
+import type { Card, MasteryLevel } from "../type/cardType";
 import { MASTERY_THRESHOLDS } from "../type/cardType";
 // ==========================================
 // ヘルパー関数
@@ -7,7 +7,7 @@ import { MASTERY_THRESHOLDS } from "../type/cardType";
 /**
  * カードの実効威力を計算（深度ボーナス廃止、熟練度とジェムのみ）
  */
-export function calculateEffectivePower(card: Card, _currentDepth: Depth): number {
+export function calculateEffectivePower(card: Card): number {
   if (!card.baseDamage) return 0;
 
   let damage = card.baseDamage;
@@ -88,9 +88,8 @@ export interface CardEffectResult {
  */
 export function calculateCardEffect(
   card: Card,
-  currentDepth: Depth
 ): CardEffectResult {
-  const effectivePower = calculateEffectivePower(card, currentDepth);
+  const effectivePower = calculateEffectivePower(card);
   const result: CardEffectResult = {};
 
   switch (card.category) {

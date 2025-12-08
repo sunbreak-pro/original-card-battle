@@ -3,8 +3,9 @@ import type { Depth } from "../../cards/type/cardType";
 import { useBattleLogic } from "../logic/useBattleLogic";
 import { selectRandomEnemy } from "../logic/enemyAI";
 import StatusEffectDisplay from "../../components/StatusEffect";
-import { CardComponent } from "../../cards/component/CardComponent"; // ★ 変更: 別ファイルからインポート
-import { BattlingCardPileModal } from "../../cards/cardUI/CardModalDisplay"; // ★ 追加
+import { CardComponent } from "../../cards/component/CardComponent";
+import { BattlingCardPileModal } from "../../cards/cardUI/CardModalDisplay";
+import EnemyDisplay from "./EnemyDisplay";
 import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
 import "./BattleScreen.css";
@@ -202,67 +203,21 @@ const BattleScreen = ({
 
       {/* フィールド */}
       <div className="battle-field">
-        {/* 敵 */}
-        <div className="character-section">
-          <div className="character-name">{currentEnemy.nameJa}</div>
-          <div className="character-visual" ref={enemyRef}>
-            {currentEnemy.imagePath ? (
-              <img
-                className="enemy-image"
-                src={currentEnemy.imagePath}
-                alt={currentEnemy.nameJa}
-              />
-            ) : (
-              <div style={{ fontSize: "10vh" }}>👹</div>
-            )}
-          </div>
-          <div className="status-container">
-            {/* Guardがある場合のみ表示 */}
-            {enemyGuard > 0 && (
-              <div className="status-row">
-                <span className="status-label guard-num">
-                  Guard: {enemyGuard}
-                </span>
-                <span className="bar-frame">
-                  <div
-                    className="bar-gauge guard"
-                    style={{
-                      width: `${Math.min(100, (enemyGuard / 30) * 100)}%`,
-                    }}
-                  ></div>
-                </span>
-              </div>
-            )}
-            {/* APの行 */}
-            {enemyAp > 0 && (
-              <div className="status-row">
-                <span className="status-label ap-num">
-                  AP: {enemyAp}/{enemyMaxAp}
-                </span>
-                <span className="bar-frame">
-                  <div
-                    className="bar-gauge ap"
-                    style={{ width: `${(enemyAp / enemyMaxAp) * 100}%` }}
-                  ></div>
-                </span>
-              </div>
-            )}
-            {/* HPの行 */}
-            <div className="status-row">
-              <span className="status-label hp-num">
-                HP: {enemyHp}/{enemyMaxHp}
-              </span>
-              <span className="bar-frame">
-                <div
-                  className="bar-gauge hp"
-                  style={{ width: `${(enemyHp / enemyMaxHp) * 100}%` }}
-                ></div>
-              </span>
-            </div>
-
-            <StatusEffectDisplay buffsDebuffs={enemyBuffs} theme={theme} />
-          </div>
-        </div>
+        {/* 敵セクション（新コンポーネント） */}
+        <EnemyDisplay
+          enemies={[{
+            enemy: currentEnemy,
+            hp: enemyHp,
+            maxHp: enemyMaxHp,
+            ap: enemyAp,
+            maxAp: enemyMaxAp,
+            guard: enemyGuard,
+            buffs: enemyBuffs,
+            turnCount: turn,
+          }]}
+          enemyRefs={[enemyRef]}
+          theme={theme}
+        />
 
         {/* プレイヤー */}
         <div className="character-section">

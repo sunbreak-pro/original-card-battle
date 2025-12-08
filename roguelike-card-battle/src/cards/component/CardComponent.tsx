@@ -21,7 +21,7 @@ export const CardComponent: React.FC<CardComponentProps> = ({
     heal: "#4ade80",
   };
   const catColor = categoryColors[card.category] || "#ccc";
-  const damage = card.baseDamage ? calculateEffectivePower(card, depth) : null;
+  const damage = card.baseDamage ? calculateEffectivePower(card) : null;
 
   return (
     <div

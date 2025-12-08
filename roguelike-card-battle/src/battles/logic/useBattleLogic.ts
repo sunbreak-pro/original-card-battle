@@ -142,7 +142,7 @@ export const useBattleLogic = (depth: Depth, initialEnemy?: Enemy) => {
         if (!canPlayCard(card, energy, turnPhase === "player")) return;
 
         setEnergy(e => e - card.cost);
-        const effect = calculateCardEffect(card, depth);
+        const effect = calculateCardEffect(card);
 
         // アニメーション
         if (cardElement) {

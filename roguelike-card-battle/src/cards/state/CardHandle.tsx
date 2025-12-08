@@ -1,4 +1,4 @@
-import type { Card, Depth } from "../type/cardType.ts";
+import type { Card } from "../type/cardType.ts";
 import { calculateEffectivePower } from "./card";
 import type { BuffDebuffType } from "../type/baffType.ts";
 
@@ -27,14 +27,12 @@ export interface CardEffectResult {
 /**
  * カードの効果を計算
  * @param card プレイするカード
- * @param currentDepth 現在の深度
  * @returns カード効果の結果
  */
 export const calculateCardEffect = (
-  card: Card,
-  currentDepth: Depth
+  card: Card
 ): CardEffectResult => {
-  const effectivePower = calculateEffectivePower(card, currentDepth);
+  const effectivePower = calculateEffectivePower(card);
   const result: CardEffectResult = {};
 
   // 基本効果
