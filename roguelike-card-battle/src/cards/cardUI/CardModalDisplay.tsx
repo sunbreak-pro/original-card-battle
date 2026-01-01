@@ -2,7 +2,7 @@
 import React from "react";
 import type { Card, Depth } from "../type/cardType";
 import { CardComponent } from "./CardComponent"; // さっき作ったファイルをインポート
-import "../../battles/battleUI/BattleScreen.css"; // CSSは既存のファイルに追記する形でOK
+import "../../battles/battleUI/UIcss/BattleScreen.css"; // CSSは既存のファイルに追記する形でOK
 
 interface CardPileModalProps {
   isOpen: boolean;

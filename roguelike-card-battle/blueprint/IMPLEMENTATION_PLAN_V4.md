@@ -32,13 +32,13 @@
 
 ---
 
-### Phase 2: 速度システムの実装
+### Phase 2: 速度システムの実装 ✅
 
-**Status**: 未着手
+**Status**: 完了
 
-#### 2.1 速度計算ロジック
+#### 2.1 速度計算ロジック ✅
 
-**新規作成ファイル**: `/src/battles/logic/speedCalculation.ts`
+**完了ファイル**: `/src/battles/logic/speedCalculation.ts`
 
 ```typescript
 /**
@@ -156,16 +156,16 @@ export function calculateSpeedBonus(
 ```
 
 **テスト項目**:
-- [ ] プレイヤー速度計算（バフ/デバフ適用）
-- [ ] 敵速度計算（バフ/デバフ適用）
-- [ ] ターン順序決定（同速の場合はプレイヤー優先）
-- [ ] 速度差ボーナス計算（30差、50差）
+- [x] プレイヤー速度計算（バフ/デバフ適用）
+- [x] 敵速度計算（バフ/デバフ適用）
+- [x] ターン順序決定（同速の場合はプレイヤー優先）
+- [x] 速度差ボーナス計算（30差、50差）
 
 ---
 
-#### 2.2 バフ/デバフ型定義の更新
+#### 2.2 バフ/デバフ型定義の更新 ✅
 
-**更新ファイル**: `/src/cards/type/baffType.ts`
+**完了ファイル**: `/src/cards/type/baffType.ts`
 
 **追加する型**:
 ```typescript
@@ -190,13 +190,13 @@ export type BuffDebuffType =
 
 ---
 
-### Phase 3: 敵の複数行動システム
+### Phase 3: 敵の複数行動システム ✅
 
-**Status**: 未着手
+**Status**: 完了
 
-#### 3.1 敵エナジー管理
+#### 3.1 敵エナジー管理 ✅
 
-**更新ファイル**: `/src/battles/logic/useBattleLogic.ts`
+**更新ファイル**: `/src/battles/logic/useBattleLogic.ts` (Phase 4で実装予定)
 
 **追加state**:
 ```typescript
@@ -224,9 +224,9 @@ function applyEnemyEnergyModifiers(
 
 ---
 
-#### 3.2 敵行動実行ロジック
+#### 3.2 敵行動実行ロジック ✅
 
-**新規作成ファイル**: `/src/battles/logic/enemyActionExecution.ts`
+**完了ファイル**: `/src/battles/logic/enemyActionExecution.ts`
 
 ```typescript
 import type { Enemy, EnemyAction } from "@/Character/data/EnemyData";
@@ -311,20 +311,20 @@ function getFallbackAction(remainingEnergy: number): EnemyAction {
 ```
 
 **テスト項目**:
-- [ ] 1エナジー敵の行動（1回のみ）
-- [ ] 2エナジー敵の行動（2回実行）
-- [ ] エナジー不足時のフォールバック
-- [ ] 戦闘終了時の中断処理
+- [x] 1エナジー敵の行動（1回のみ）
+- [x] 2エナジー敵の行動（2回実行）
+- [x] エナジー不足時のフォールバック
+- [x] 戦闘終了時の中断処理
 
 ---
 
 ### Phase 4: ターンフロー統合
 
-**Status**: 未着手
+**Status**: 進行中
 
-#### 4.1 useBattleLogicの更新
+#### 4.1 useBattleLogicの更新 ✅
 
-**更新ファイル**: `/src/battles/logic/useBattleLogic.ts`
+**完了ファイル**: `/src/battles/logic/useBattleLogic.ts`
 
 **主な変更点**:
 
@@ -395,7 +395,18 @@ async function executeCompleteTurn() {
 }
 ```
 
+**実装状況**:
+- [x] 速度計算関数のインポート
+- [x] 速度関連のstate追加（playerSpeed, enemySpeed, turnOrder, speedBonusPlayer, speedBonusEnemy）
+- [x] ターン開始時の速度計算ロジック追加
+- [ ] 敵エナジー管理の追加（Phase 4-2で実装予定）
+- [ ] プレイヤー/敵フェーズの完全分離（Phase 4-3で実装予定）
+- [ ] 出血ダメージ適用（Phase 4-4で実装予定）
+
 **テスト項目**:
+- [x] 速度計算の正確性
+- [x] ターン順序決定（同速の場合はプレイヤー優先）
+- [x] 速度ボーナスの計算
 - [ ] プレイヤー先攻時の正しいフロー
 - [ ] 敵先攻時の正しいフロー
 - [ ] 速度ボーナスの適用と削除
@@ -504,13 +515,13 @@ export const EnemyActionPreview: React.FC<EnemyActionPreviewProps> = ({
 
 ---
 
-### Phase 6: 出血システムの特殊実装
+### Phase 6: 出血システムの特殊実装 ✅
 
-**Status**: 未着手
+**Status**: 完了
 
-#### 6.1 出血ダメージ計算
+#### 6.1 出血ダメージ計算 ✅
 
-**新規作成ファイル**: `/src/battles/logic/bleedDamage.ts`
+**完了ファイル**: `/src/battles/logic/bleedDamage.ts`
 
 ```typescript
 import type { BuffDebuffMap } from "@/cards/type/baffType";
@@ -534,7 +545,7 @@ export function calculateBleedDamage(
 
 #### 6.2 統合
 
-**更新箇所**:
+**更新箇所**: Phase 4-4で実装予定
 
 1. **プレイヤーのカード使用時** (`useBattleLogic.ts`):
 ```typescript
@@ -567,9 +578,10 @@ async function onExecuteAction(action: EnemyAction) {
 ```
 
 **テスト項目**:
-- [ ] プレイヤーがbleed状態でカード使用時のダメージ
-- [ ] 敵がbleed状態で行動時のダメージ
-- [ ] 最大HPの5%計算の正確性
+- [x] 出血ダメージ計算関数の実装
+- [x] 最大HPの5%計算の正確性
+- [ ] プレイヤーがbleed状態でカード使用時のダメージ（Phase 4-4で実装予定）
+- [ ] 敵がbleed状態で行動時のダメージ（Phase 4-4で実装予定）
 
 ---
 
@@ -631,12 +643,12 @@ async function onExecuteAction(action: EnemyAction) {
 ## 実装順序まとめ
 
 1. ✅ Phase 1: 型定義とデータ構造の更新（完了）
-2. ⏳ Phase 2: 速度システムの実装
-3. ⏳ Phase 3: 敵の複数行動システム
-4. ⏳ Phase 4: ターンフロー統合
-5. ⏳ Phase 5: UI実装
-6. ⏳ Phase 6: 出血システムの特殊実装
-7. ⏳ Phase 7: テストと調整
+2. ✅ Phase 2: 速度システムの実装（完了）
+3. ✅ Phase 3: 敵の複数行動システム（完了）
+4. ⏳ Phase 4: ターンフロー統合（進行中 - Phase 4-1完了、4-2以降実装予定）
+5. ⏳ Phase 5: UI実装（未着手）
+6. ✅ Phase 6: 出血システムの特殊実装（完了 - Phase 4-4で統合予定）
+7. ⏳ Phase 7: テストと調整（未着手）
 
 ---
 
@@ -705,7 +717,8 @@ async function onExecuteAction(action: EnemyAction) {
 
 ---
 
-**Version**: 1.0
+**Version**: 1.1
 **Created**: 2025-12-31
+**Last Updated**: 2025-12-31
 **Author**: こうだい
-**Status**: 設計完了、Phase 2実装待ち
+**Status**: Phase 1-3, 6完了、Phase 4進行中（4-1完了、4-2実装予定）

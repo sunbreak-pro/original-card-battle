@@ -2,7 +2,7 @@ import {} from "react";
 
 export interface Player {
   id: string;
-  name: string;
+  classGrade: string[];
   level: number;
   experience: number;
   health: number;
@@ -17,7 +17,7 @@ export interface Player {
 
 export const swordMaster: Player = {
   id: "sword_master",
-  name: "剣聖",
+  classGrade: ["見習い剣士", "剣士", "剣聖"],
   level: 1,
   experience: 0,
   health: 100,

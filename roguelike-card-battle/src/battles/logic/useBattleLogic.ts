@@ -2,6 +2,7 @@ import { useState, useRef, useReducer, useEffect, useCallback, createRef, useMem
 import type { Card, Depth } from "../../cards/type/cardType";
 import type { BuffDebuffMap } from "../../cards/type/baffType";
 import type { Enemy } from "../../Character/data/EnemyData";
+import { swordMaster } from "../../Character/data/PlayerData";
 
 // 複数敵用の状態インターフェース
 export interface EnemyBattleState {
@@ -52,6 +53,15 @@ import {
     enemyActionToCard,
     selectRandomEnemy,
 } from "../../battles/logic/enemyAI";
+import {
+    calculatePlayerSpeed,
+    calculateEnemySpeed,
+    determineTurnOrder,
+    calculateSpeedBonus,
+    type SpeedBonus,
+} from "./speedCalculation";
+import { calculateBleedDamage } from "./bleedDamage";
+import { executeEnemyActions, previewEnemyActions } from "./enemyActionExecution";
 import { deckReducer } from "../decks/deckReducter";
 import { createInitialDeck, drawCards } from "../../battles/decks/deck";
 import { SWORDSMAN_CARDS_ARRAY } from "../../cards/data/SwordsmanCards";
@@ -136,7 +146,9 @@ export const useBattleLogic = (depth: Depth, initialEnemies?: Enemy[]) => {
     }, [enemies]); const enemyTurnCount = enemies[0]?.turnCount ?? 1;
 
     // --- 基本ステータス State ---
-    const [playerHp, setPlayerHp] = useState(80);
+    const [playerName] = useState("eires"); // プレイヤー名（将来のカスタマイズ用に維持）
+    const [playerClassName] = useState(swordMaster.classGrade[0]); // プレイヤークラス名
+    const [playerHp, setPlayerHp] = useState(100);
     const [playerMaxHp] = useState(100);
     const [playerAp, setPlayerAp] = useState(30); // AP（装備耐久値）
     const [playerMaxAp] = useState(30);
@@ -148,6 +160,16 @@ export const useBattleLogic = (depth: Depth, initialEnemies?: Enemy[]) => {
 
     // --- バフ State ---
     const [playerBuffs, setPlayerBuffs] = useState<BuffDebuffMap>(new Map());
+
+    // --- Ver 4.0: 速度システム State ---
+    const [playerSpeed, setPlayerSpeed] = useState(50); // プレイヤーの速度
+    const [enemySpeed, setEnemySpeed] = useState(0); // 敵の速度
+    const [turnOrder, setTurnOrder] = useState<"player" | "enemy">("player"); // ターン順序
+    const [speedBonusPlayer, setSpeedBonusPlayer] = useState<SpeedBonus | null>(null); // プレイヤーの速度ボーナス
+    const [speedBonusEnemy, setSpeedBonusEnemy] = useState<SpeedBonus | null>(null); // 敵の速度ボーナス
+
+    // --- Ver 4.0: 敵エナジー管理 State ---
+    const [enemyEnergy, setEnemyEnergy] = useState(0); // 敵の現在のエナジー（行動回数）
 
     // 敵の状態を更新するヘルパー関数
     const updateEnemy = useCallback((index: number, updater: (state: EnemyBattleState) => Partial<EnemyBattleState>) => {
@@ -220,6 +242,31 @@ export const useBattleLogic = (depth: Depth, initialEnemies?: Enemy[]) => {
         damageDealt: 0,
         damageTaken: 0,
     });
+
+    // --- Ver 4.0: 敵エナジー計算関数 ---
+    /**
+     * 敵の基本エナジーを計算
+     */
+    const calculateEnemyEnergy = useCallback((enemy: Enemy): number => {
+        return enemy.baseEnemyEnergy;
+    }, []);
+
+    /**
+     * 敵エナジーにバフ/デバフを適用
+     * Ver 4.0では slow はエナジーに影響しない（速度のみ）
+     */
+    const applyEnemyEnergyModifiers = useCallback((
+        baseEnergy: number,
+        _buffs: BuffDebuffMap // 将来の拡張のために予約（現在未使用）
+    ): number => {
+        let energy = baseEnergy;
+
+        // 将来的に energyRegen などのバフを追加可能
+        // 現状では slow はエナジーに影響しない
+        // _buffsパラメータは将来の拡張のために予約
+
+        return Math.max(1, energy); // 最低1エナジー保証
+    }, []);
 
     // --- ロジック: カードプレイ ---
     const handleCardPlay = async (card: Card, cardElement?: HTMLElement) => {
@@ -416,10 +463,46 @@ export const useBattleLogic = (depth: Depth, initialEnemies?: Enemy[]) => {
         // カード熟練度を上昇させて、デッキに反映
         const updatedCard = incrementUseCount(card);
         dispatch({ type: "CARD_PLAY", card: updatedCard });
+
+        // Ver 4.0: 出血ダメージ適用（カード使用毎）
+        const bleedDamage = calculateBleedDamage(playerMaxHp, playerBuffs);
+        if (bleedDamage > 0) {
+            setPlayerHp(prev => Math.max(0, prev - bleedDamage));
+            if (playerRef.current) {
+                showDamageEffect(playerRef.current, bleedDamage, false);
+            }
+            await new Promise(r => setTimeout(r, 300)); // 出血ダメージ表示のディレイ
+        }
     };
 
     // --- ロジック: プレイヤーのターン開始 ---
     const startPlayerTurn = useCallback(async () => {
+        // Ver 4.0: 速度計算
+        const calcPlayerSpeed = calculatePlayerSpeed(playerBuffs);
+        const calcEnemySpeed = currentEnemy ? calculateEnemySpeed(currentEnemy, enemyBuffs) : 0;
+        setPlayerSpeed(calcPlayerSpeed);
+        setEnemySpeed(calcEnemySpeed);
+
+        // ターン順序決定
+        const order = determineTurnOrder(calcPlayerSpeed, calcEnemySpeed);
+        setTurnOrder(order);
+
+        // 速度ボーナス計算（プレイヤーが先攻の場合）
+        if (order === "player") {
+            const bonus = calculateSpeedBonus(calcPlayerSpeed, calcEnemySpeed);
+            setSpeedBonusPlayer(bonus);
+            setSpeedBonusEnemy(null);
+        } else {
+            setSpeedBonusPlayer(null);
+        }
+
+        // Ver 4.0: 敵エナジー計算
+        if (currentEnemy) {
+            const baseEnergy = calculateEnemyEnergy(currentEnemy);
+            const modifiedEnergy = applyEnemyEnergyModifiers(baseEnergy, enemyBuffs);
+            setEnemyEnergy(modifiedEnergy);
+        }
+
         await new Promise<void>(r => showMessage("プレイヤーのターン", 2500, r));
 
         // 1. Guardの消滅
@@ -483,7 +566,7 @@ export const useBattleLogic = (depth: Depth, initialEnemies?: Enemy[]) => {
         } else if (drawnCards.length > 0) {
             setIsDrawingAnimation(true);
         }
-    }, [playerBuffs, playerMaxHp, showMessage, maxEnergy, showHealEffect, showShieldEffect, setEnemyBuffs]);
+    }, [playerBuffs, playerMaxHp, showMessage, maxEnergy, showHealEffect, showShieldEffect, setEnemyBuffs, currentEnemy, enemyBuffs, calculateEnemyEnergy, applyEnemyEnergyModifiers]);
 
     // --- ロジック: 敵のターン実行 ---
     const executeEnemyTurn = useCallback(async () => {
@@ -512,86 +595,109 @@ export const useBattleLogic = (depth: Depth, initialEnemies?: Enemy[]) => {
 
         await new Promise(r => setTimeout(r, 800));
 
-        // 4. 敵のAIによる行動決定
-        const enemyAction = determineEnemyAction(currentEnemy, enemyHp, enemyTurnCount);
-
-        // Guardを付与する行動の場合
-        if (enemyAction.guardGain && enemyAction.guardGain > 0) {
-            setEnemyGuard(g => g + enemyAction.guardGain!);
-            await new Promise(r => setTimeout(r, 800));
-            setEnemyTurnCount(c => c + 1);
-            startPlayerTurn();
-            return;
-        }
-
-        const playerChar: Character = {
-            hp: playerHp,
-            maxHp: playerMaxHp,
-            ap: playerAp,
-            maxAp: playerMaxAp,
-            guard: playerGuard,
-            buffDebuffs: playerBuffs,
+        // Ver 4.0: 敵の複数行動システム
+        // 敵エナジーに基づいて複数回行動を実行
+        const checkBattleEnd = () => {
+            return playerHp <= 0 || enemyHp <= 0;
         };
 
-        const enemyChar: Character = {
-            hp: enemyHp,
-            maxHp: enemyMaxHp,
-            ap: enemyAp,
-            maxAp: enemyMaxAp,
-            guard: enemyGuard,
-            buffDebuffs: enemyBuffs,
+        const onExecuteAction = async (action: import("../../Character/data/EnemyData").EnemyAction) => {
+            // Guardを付与する行動の場合
+            if (action.guardGain && action.guardGain > 0) {
+                setEnemyGuard(g => g + action.guardGain!);
+                return;
+            }
+
+            const playerChar: Character = {
+                hp: playerHp,
+                maxHp: playerMaxHp,
+                ap: playerAp,
+                maxAp: playerMaxAp,
+                guard: playerGuard,
+                buffDebuffs: playerBuffs,
+            };
+
+            const enemyChar: Character = {
+                hp: enemyHp,
+                maxHp: enemyMaxHp,
+                ap: enemyAp,
+                maxAp: enemyMaxAp,
+                guard: enemyGuard,
+                buffDebuffs: enemyBuffs,
+            };
+
+            // 敵の行動をCard形式に変換
+            const enemyAttackCard = enemyActionToCard(action);
+
+            // ダメージ計算と適用（連続攻撃の場合は複数回）
+            const hitCount = action.hitCount || 1;
+            for (let i = 0; i < hitCount; i++) {
+                const damageResult = calculateDamage(enemyChar, playerChar, enemyAttackCard);
+                const allocation = applyDamageAllocation(playerChar, damageResult.finalDamage);
+
+                // ダメージ適用
+                setPlayerGuard(g => Math.max(0, g - allocation.guardDamage));
+                setPlayerAp(a => Math.max(0, a - allocation.apDamage));
+                setPlayerHp(h => Math.max(0, h - allocation.hpDamage));
+
+                if (playerRef.current) {
+                    showDamageEffect(playerRef.current, damageResult.finalDamage, false);
+                }
+
+                // 反撃ダメージ
+                if (damageResult.reflectDamage > 0) {
+                    setEnemyHp(h => Math.max(0, h - damageResult.reflectDamage));
+                    if (enemyRef.current) showDamageEffect(enemyRef.current, damageResult.reflectDamage, false);
+                }
+
+                // 統計追跡
+                setBattleStats(stats => ({
+                    ...stats,
+                    damageTaken: stats.damageTaken + damageResult.finalDamage,
+                }));
+
+                if (i < hitCount - 1) {
+                    await new Promise(r => setTimeout(r, 500));
+                }
+            }
+
+            // デバフ付与
+            if (action.applyDebuffs && action.applyDebuffs.length > 0) {
+                let newBuffs = playerBuffs;
+                action.applyDebuffs.forEach(debuff => {
+                    newBuffs = addOrUpdateBuffDebuff(
+                        newBuffs,
+                        debuff.type,
+                        debuff.stacks,
+                        debuff.duration,
+                        debuff.value,
+                        debuff.isPermanent
+                    );
+                });
+                setPlayerBuffs(newBuffs);
+            }
+
+            // Ver 4.0: 出血ダメージ適用（敵の1行動実行後）
+            const bleedDamage = calculateBleedDamage(enemyMaxHp, enemyBuffs);
+            if (bleedDamage > 0) {
+                setEnemyHp(h => Math.max(0, h - bleedDamage));
+                if (enemyRef.current) {
+                    showDamageEffect(enemyRef.current, bleedDamage, false);
+                }
+                await new Promise(r => setTimeout(r, 300));
+            }
         };
 
-        // 敵の行動をCard形式に変換
-        const enemyAttackCard = enemyActionToCard(enemyAction);
-
-        // ダメージ計算と適用（連続攻撃の場合は複数回）
-        const hitCount = enemyAction.hitCount || 1;
-        for (let i = 0; i < hitCount; i++) {
-            const damageResult = calculateDamage(enemyChar, playerChar, enemyAttackCard);
-            const allocation = applyDamageAllocation(playerChar, damageResult.finalDamage);
-
-            // ダメージ適用
-            setPlayerGuard(g => Math.max(0, g - allocation.guardDamage));
-            setPlayerAp(a => Math.max(0, a - allocation.apDamage));
-            setPlayerHp(h => Math.max(0, h - allocation.hpDamage));
-
-            if (playerRef.current) {
-                showDamageEffect(playerRef.current, damageResult.finalDamage, false);
-            }
-
-            // 反撃ダメージ
-            if (damageResult.reflectDamage > 0) {
-                setEnemyHp(h => Math.max(0, h - damageResult.reflectDamage));
-                if (enemyRef.current) showDamageEffect(enemyRef.current, damageResult.reflectDamage, false);
-            }
-
-            // 統計追跡
-            setBattleStats(stats => ({
-                ...stats,
-                damageTaken: stats.damageTaken + damageResult.finalDamage,
-            }));
-
-            if (i < hitCount - 1) {
-                await new Promise(r => setTimeout(r, 500));
-            }
-        }
-
-        // デバフ付与
-        if (enemyAction.applyDebuffs && enemyAction.applyDebuffs.length > 0) {
-            let newBuffs = playerBuffs;
-            enemyAction.applyDebuffs.forEach(debuff => {
-                newBuffs = addOrUpdateBuffDebuff(
-                    newBuffs,
-                    debuff.type,
-                    debuff.stacks,
-                    debuff.duration,
-                    debuff.value,
-                    debuff.isPermanent
-                );
-            });
-            setPlayerBuffs(newBuffs);
-        }
+        // 敵エナジー分の行動を実行
+        await executeEnemyActions(
+            currentEnemy,
+            enemyHp,
+            enemyMaxHp,
+            enemyTurnCount,
+            enemyEnergy,
+            onExecuteAction,
+            checkBattleEnd
+        );
 
         await new Promise(r => setTimeout(r, 800));
 
@@ -617,6 +723,7 @@ export const useBattleLogic = (depth: Depth, initialEnemies?: Enemy[]) => {
         enemyMaxAp,
         enemyGuard,
         enemyTurnCount,
+        enemyEnergy,
         playerHp,
         playerMaxHp,
         playerAp,
@@ -733,6 +840,14 @@ export const useBattleLogic = (depth: Depth, initialEnemies?: Enemy[]) => {
     // 生存している敵のリスト
     const aliveEnemies = enemies.filter(e => e.hp > 0);
 
+    // Ver 4.0: 敵の次ターン行動プレビュー
+    const nextEnemyActions = useMemo(() => {
+        if (!currentEnemy || enemyHp <= 0) {
+            return [];
+        }
+        return previewEnemyActions(currentEnemy, enemyHp, turn + 1);
+    }, [currentEnemy, enemyHp, turn]);
+
     return {
         // Refs
         playerRef, enemyRef,
@@ -744,10 +859,16 @@ export const useBattleLogic = (depth: Depth, initialEnemies?: Enemy[]) => {
         updateEnemy,
         updateAllEnemies,
         // Stats（後方互換性）
-        playerHp, playerMaxHp, playerAp, playerMaxAp, playerGuard, playerBuffs,
+        playerName, playerClassName, playerHp, playerMaxHp, playerAp, playerMaxAp, playerGuard, playerBuffs,
         enemyHp, enemyMaxHp, enemyAp, enemyMaxAp, enemyGuard, enemyBuffs,
         energy, maxEnergy, turn, turnPhase,
         turnMessage, showTurnMessage,
+        // Ver 4.0: Speed System
+        playerSpeed, enemySpeed, turnOrder, speedBonusPlayer, speedBonusEnemy,
+        // Ver 4.0: Enemy Energy
+        enemyEnergy,
+        // Ver 4.0: Next Enemy Actions Preview
+        nextEnemyActions,
         // Sword Energy
         swordEnergy,
         // Deck

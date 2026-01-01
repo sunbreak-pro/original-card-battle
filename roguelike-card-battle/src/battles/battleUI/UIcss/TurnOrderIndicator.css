@@ -1,0 +1,151 @@
+/**
+ * TurnOrderIndicator styles
+ * Battle System Ver 4.0
+ */
+
+.turn-order-indicator {
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 280px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.indicator-header {
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.speed-comparison {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.actor-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.first-actor {
+  background: rgba(74, 157, 109, 0.3);
+  border: 2px solid #4a9d6d;
+  box-shadow: 0 0 10px rgba(74, 157, 109, 0.5);
+}
+
+.second-actor {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.actor-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ccc;
+  text-transform: uppercase;
+}
+
+.speed-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.first-actor .speed-value {
+  color: #4a9d6d;
+}
+
+.speed-bonus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.player-bonus {
+  background: rgba(74, 157, 109, 0.4);
+  color: #4a9d6d;
+  border: 1px solid #4a9d6d;
+}
+
+.enemy-bonus {
+  background: rgba(220, 53, 69, 0.4);
+  color: #dc3545;
+  border: 1px solid #dc3545;
+}
+
+.bonus-icon {
+  font-size: 14px;
+}
+
+.bonus-name {
+  font-weight: bold;
+}
+
+.first-indicator {
+  font-size: 10px;
+  font-weight: bold;
+  color: #4a9d6d;
+  background: rgba(74, 157, 109, 0.2);
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.vs-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.vs-icon {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .turn-order-indicator {
+    min-width: 240px;
+    padding: 10px;
+  }
+
+  .speed-value {
+    font-size: 18px;
+  }
+
+  .bonus-name {
+    font-size: 10px;
+  }
+}

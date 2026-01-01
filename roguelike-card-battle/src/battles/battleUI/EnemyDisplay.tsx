@@ -42,11 +42,13 @@ const EnemyCard: React.FC<{
 }> = ({ state, enemyRef, theme, size = "normal" }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  // 次の行動を予測
+  // 次の行動を予測（Ver 4.0対応）
   const nextAction: EnemyAction = determineEnemyAction(
     state.enemy,
     state.hp,
-    state.turnCount + 1
+    state.maxHp,
+    state.turnCount + 1,
+    state.enemy.baseEnemyEnergy // 敵の基本エナジー
   );
 
   const sizeClass = size === "small" ? "enemy-card-small" : "";

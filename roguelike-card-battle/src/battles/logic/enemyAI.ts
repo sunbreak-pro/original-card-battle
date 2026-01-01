@@ -8,16 +8,20 @@ import { DEPTH1_ENEMIES } from "../../Character/data/EnemyData";
 import type { Card } from "../../cards/type/cardType";
 
 /**
- * 敵の行動を決定する
+ * 敵の行動を決定する（Ver 4.0対応）
  * @param enemy 敵データ
  * @param currentHp 現在のHP
+ * @param maxHp 最大HP
  * @param turnNumber 現在のターン番号
+ * @param remainingEnergy 残りエナジー（将来的にAIで使用可能）
  * @returns 実行する行動
  */
 export function determineEnemyAction(
   enemy: Enemy,
   currentHp: number,
-  turnNumber: number
+  maxHp: number,
+  turnNumber: number,
+  remainingEnergy: number
 ): EnemyAction {
   // ターン番号に一致し、条件を満たすパターンを抽出
   const validPatterns = enemy.aiPatterns.filter((pattern) => {
@@ -25,7 +29,7 @@ export function determineEnemyAction(
     const turnMatch = pattern.turnNumber === 0 || pattern.turnNumber === turnNumber;
 
     // 条件チェック（条件がない場合はtrue）
-    const conditionMatch = !pattern.condition || pattern.condition(currentHp, enemy.maxHp);
+    const conditionMatch = !pattern.condition || pattern.condition(currentHp, maxHp);
 
     return turnMatch && conditionMatch;
   });

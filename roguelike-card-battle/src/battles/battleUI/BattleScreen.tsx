@@ -6,9 +6,10 @@ import StatusEffectDisplay from "../../components/StatusEffect";
 import { CardComponent } from "../../cards/cardUI/CardComponent";
 import { BattlingCardPileModal } from "../../cards/cardUI/CardModalDisplay";
 import EnemyDisplay from "./EnemyDisplay";
+import { EnemyActionPreview } from "./EnemyActionPreview";
 import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
-import "./BattleScreen.css";
+import "./UIcss/BattleScreen.css";
 
 // 深度ごとのテーマカラー定義 (JSオブジェクト)
 const depthThemes = {
@@ -72,6 +73,8 @@ const BattleScreen = ({
     playerRef,
     enemyRef,
     currentEnemy,
+    playerName,
+    playerClassName,
     playerHp,
     playerMaxHp,
     playerAp,
@@ -104,6 +107,8 @@ const BattleScreen = ({
     battleResult,
     battleStats,
     swordEnergy,
+    enemyEnergy,
+    nextEnemyActions,
   } = useBattleLogic(depth);
 
   // 次の敵に遷移する関数
@@ -202,6 +207,12 @@ const BattleScreen = ({
         </div>
       </div>
 
+      {/* 敵の次の行動プレビュー */}
+      <EnemyActionPreview
+        actions={nextEnemyActions}
+        enemyEnergy={enemyEnergy}
+      />
+
       {/* フィールド */}
       <div className="battle-field">
         {/* 敵セクション（新コンポーネント） */}
@@ -225,7 +236,9 @@ const BattleScreen = ({
         {/* プレイヤー */}
         <div className="player-section">
           <div className="player-field">
-            <div className="character-name">Player</div>
+            <div className="character-name">
+              {playerName} [{playerClassName}]
+            </div>
             <div className="character-visual player" ref={playerRef}>
               ⚔️
             </div>
@@ -288,12 +301,7 @@ const BattleScreen = ({
 
             {/* 剣気ゲージ */}
             <div className="sword-energy-display">
-              <div className="sword-energy-label">
-                剣気
-                <span className="sword-energy-bonus">
-                  +{swordEnergy.current * 2} DMG
-                </span>
-              </div>
+              <div className="sword-energy-label">剣気:</div>
 
               <div className="sword-energy-bar-container">
                 <div className="sword-energy-bar">

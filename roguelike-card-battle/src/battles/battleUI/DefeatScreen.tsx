@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import "./DefeatScreen.css";
+import "./UIcss/DefeatScreen.css";
 
 interface DefeatScreenProps {
   onRetry: () => void;
