@@ -86,15 +86,6 @@ export function calculateAttackMultiplier(buffDebuffs: BuffDebuffMap): number {
     multiplier += buff.value / 100;
   }
 
-  if (buffDebuffs.has("physicalUp")) {
-    const buff = buffDebuffs.get("physicalUp")!;
-    multiplier += buff.value / 100;
-  }
-
-  if (buffDebuffs.has("magicUp")) {
-    const buff = buffDebuffs.get("magicUp")!;
-    multiplier += buff.value / 100;
-  }
 
   // Momentum（勢い）バフ - スタック数に応じて累積
   if (buffDebuffs.has("momentum")) {
@@ -106,10 +97,6 @@ export function calculateAttackMultiplier(buffDebuffs: BuffDebuffMap): number {
   if (buffDebuffs.has("weak")) {
     const weak = buffDebuffs.get("weak")!;
     multiplier *= 1 - weak.value / 100;
-  }
-
-  if (buffDebuffs.has("paralyze")) {
-    multiplier *= 0.5;
   }
 
   if (buffDebuffs.has("atkDown")) {
@@ -144,21 +131,11 @@ function calculateDefenseModifier(buffDebuffs: BuffDebuffMap): {
   let vulnerabilityMod = 1.0;
   let damageReductionMod = 1.0;
 
-  // 防御力低下デバフ
-  if (buffDebuffs.has("defDown")) {
-    const defDown = buffDebuffs.get("defDown")!;
-    vulnerabilityMod *= 1 + defDown.value / 100;
-  }
 
   // ダメージ軽減バフ
   if (buffDebuffs.has("damageReduction")) {
     const reduction = buffDebuffs.get("damageReduction")!;
     damageReductionMod *= 1 - reduction.value / 100;
-  }
-
-  if (buffDebuffs.has("defUp")) {
-    const defUp = buffDebuffs.get("defUp")!;
-    damageReductionMod *= 1 - defUp.value / 100;
   }
 
   // 不屈バフ - デバフの効果を軽減
