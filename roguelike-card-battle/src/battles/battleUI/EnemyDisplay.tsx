@@ -152,8 +152,6 @@ const EnemyCard: React.FC<{
     </div>
   );
 };
-
-// main EnemyDisplay component
 const EnemyDisplay: React.FC<EnemyDisplayProps> = ({
   enemies,
   enemyRefs,

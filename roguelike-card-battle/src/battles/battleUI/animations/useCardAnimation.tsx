@@ -8,38 +8,24 @@ import {
   shakeElement,
 } from "./animationEngine";
 
-/**
- * カードアニメーション用のカスタムフック（強化版）
- * 新しいアニメーションエンジンを使用した滑らかなアニメーション
- */
 export const useCardAnimation = () => {
-  // 破棄中のカード（破棄アニメーション用）
   const [discardingCards, setDiscardingCards] = useState<Card[]>([]);
-  // 新しくドローされたカードのIDセット（ドローアニメーション用）
   const [newCardIds, setNewCardIds] = useState<Set<string>>(new Set());
-
-  /**
-   * カードを1枚ずつドローするアニメーション（強化版）
-   * 1枚ずつフェードインさせる
-   */
   const drawCardsWithAnimation = async (
     cards: Card[],
     onAllCardsDrawn: (cards: Card[]) => void,
-    interval: number = 150 // カード間の出現間隔
+    interval: number = 150
   ): Promise<void> => {
-    // 1. まず、アニメーション対象の全カードIDを「ドロー中」としてマークする
-    //    これにより、BattleScreen.tsx で .drawing クラスが付与されます。
     const newIds = new Set(cards.map((c) => c.id));
     setNewCardIds((prev) => new Set([...prev, ...newIds]));
 
     onAllCardsDrawn(cards);
 
-    const animationDuration = 800; // CSSの0.8s
+    const animationDuration = 800;
     const totalDuration = animationDuration + (cards.length - 1) * interval;
 
     await new Promise((resolve) => setTimeout(resolve, totalDuration));
 
-    // 4. アニメーション完了後、「ドロー中」のマークを解除する
     setNewCardIds((prev) => {
       const next = new Set(prev);
       cards.forEach((c) => next.delete(c.id));
@@ -47,24 +33,16 @@ export const useCardAnimation = () => {
     });
   };
 
-  /**
-   * カード要素に対してドローアニメーションを適用
-   */
   const applyDrawAnimation = async (element: HTMLElement): Promise<void> => {
-    // 山札の位置を取得（右下）
     const container = element.closest(".battle-screen") as HTMLElement;
     if (!container) return;
-
     const containerRect = container.getBoundingClientRect();
     const elementRect = element.getBoundingClientRect();
-
-    // 右下の山札位置から開始
     const startX = containerRect.width - 100;
     const startY = containerRect.height - 150;
     const endX = elementRect.left - containerRect.left;
     const endY = elementRect.top - containerRect.top;
 
-    // 初期状態を設定
     element.style.position = "absolute";
     element.style.left = `${startX}px`;
     element.style.top = `${startY}px`;
@@ -72,7 +50,6 @@ export const useCardAnimation = () => {
     element.style.transform = "scale(0.1) rotate(20deg)";
     element.style.zIndex = "100";
 
-    // アニメーション実行
     await animateAsync({
       element,
       duration: 600,
@@ -84,76 +61,56 @@ export const useCardAnimation = () => {
         transform: "scale(1) rotate(0deg)",
       } as Partial<CSSStyleDeclaration>,
     });
-
-    // アニメーション後、positionをリセット
     element.style.position = "";
     element.style.left = "";
     element.style.top = "";
     element.style.zIndex = "";
   };
-
-  /**
-   * カードを破棄するアニメーション（右側から徐々に）
-   */
   const discardCardsWithAnimation = async (
     cards: Card[],
     interval: number = 100,
-    onComplete?: () => void // ★ 修正: コールバックを追加
+    onComplete?: () => void
   ): Promise<void> => {
     if (cards.length === 0) {
-      if (onComplete) onComplete(); // カードがない場合は即時完了
+      if (onComplete) onComplete();
       return;
     }
 
-    // 右側のカードから順番に
     const reversedCards = [...cards].reverse();
 
     for (let i = 0; i < reversedCards.length; i++) {
       const card = reversedCards[i];
 
-      // 破棄リストに追加
       setDiscardingCards((prev) => [...prev, card]);
 
-      // 最後のカード以外は間隔を待機
       if (i < reversedCards.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, interval));
       }
     }
 
-    // 最後のカードのアニメーション完了を待つ
     await new Promise((resolve) => setTimeout(resolve, 500));
-    // 全てクリア
     setDiscardingCards([]);
     if (onComplete) {
       onComplete();
     }
   };
 
-  /**
-   * カード要素に対して破棄アニメーションを適用
-   */
   const applyDiscardAnimation = async (element: HTMLElement): Promise<void> => {
     const container = element.closest(".battle-screen") as HTMLElement;
     if (!container) return;
 
     const containerRect = container.getBoundingClientRect();
     const elementRect = element.getBoundingClientRect();
-
-    // 現在位置
     const startX = elementRect.left - containerRect.left;
     const startY = elementRect.top - containerRect.top;
-
-    // 捨て札の位置（左下）
     const endX = 100;
     const endY = containerRect.height - 150;
 
-    // 初期位置を設定
     element.style.position = "absolute";
     element.style.left = `${startX}px`;
     element.style.top = `${startY}px`;
     element.style.zIndex = "100";
 
-    // パーティクルエフェクト
     createParticles({
       container,
       x: startX + 80,
@@ -164,7 +121,6 @@ export const useCardAnimation = () => {
       spread: 50,
     });
 
-    // アニメーション実行
     await animateAsync({
       element,
       duration: 500,
@@ -178,9 +134,6 @@ export const useCardAnimation = () => {
     });
   };
 
-  /**
-   * カードプレイアニメーション（敵に向かって飛んでいく）
-   */
   const playCardWithAnimation = async (
     element: HTMLElement,
     targetElement: HTMLElement,
@@ -195,17 +148,12 @@ export const useCardAnimation = () => {
     const containerRect = container.getBoundingClientRect();
     const elementRect = element.getBoundingClientRect();
     const targetRect = targetElement.getBoundingClientRect();
-
-    // 開始位置
     const startX = elementRect.left - containerRect.left;
     const startY = elementRect.top - containerRect.top;
-
-    // ターゲット位置（敵の中心）
     const endX = targetRect.left - containerRect.left + targetRect.width / 2;
     const endY = targetRect.top - containerRect.top + targetRect.height / 2;
-
-    // カードをクローン
     const clone = element.cloneNode(true) as HTMLElement;
+
     clone.style.position = "absolute";
     clone.style.left = `${startX}px`;
     clone.style.top = `${startY}px`;
@@ -213,10 +161,8 @@ export const useCardAnimation = () => {
     clone.style.pointerEvents = "none";
     container.appendChild(clone);
 
-    // 元のカードを非表示
     element.style.opacity = "0";
 
-    // トレイルエフェクト（軌跡）
     const createTrail = () => {
       const trail = clone.cloneNode(true) as HTMLElement;
       trail.style.opacity = "0.3";
@@ -231,7 +177,6 @@ export const useCardAnimation = () => {
 
     const trailInterval = setInterval(createTrail, 50);
 
-    // アニメーション実行
     await animateAsync({
       element: clone,
       duration: 400,
@@ -246,7 +191,6 @@ export const useCardAnimation = () => {
 
     clearInterval(trailInterval);
 
-    // 衝撃エフェクト
     createParticles({
       container,
       x: endX,
@@ -258,19 +202,14 @@ export const useCardAnimation = () => {
       gravity: 1,
     });
 
-    // 敵をシェイク
     shakeElement(targetElement, 15, 300);
 
-    // クリーンアップ
     clone.remove();
     element.style.opacity = "";
 
     onComplete();
   };
 
-  /**
-   * ダメージ表示エフェクト
-   */
   const showDamageEffect = (
     targetElement: HTMLElement,
     damage: number,
@@ -294,10 +233,8 @@ export const useCardAnimation = () => {
       isCritical,
     });
 
-    // シェイク
     shakeElement(targetElement, isCritical ? 20 : 10, 300);
 
-    // パーティクル
     createParticles({
       container,
       x,
@@ -309,9 +246,6 @@ export const useCardAnimation = () => {
     });
   };
 
-  /**
-   * 回復表示エフェクト
-   */
   const showHealEffect = (targetElement: HTMLElement, heal: number): void => {
     const container = targetElement.closest(".battle-screen") as HTMLElement;
     if (!container) return;
@@ -330,7 +264,6 @@ export const useCardAnimation = () => {
       color: "#44ff44",
     });
 
-    // 回復パーティクル（上昇）
     for (let i = 0; i < 20; i++) {
       setTimeout(() => {
         const particle = document.createElement("div");
@@ -361,9 +294,6 @@ export const useCardAnimation = () => {
     }
   };
 
-  /**
-   * シールド表示エフェクト
-   */
   const showShieldEffect = (
     targetElement: HTMLElement,
     shield: number
@@ -386,7 +316,6 @@ export const useCardAnimation = () => {
       fontSize: 28,
     });
 
-    // シールドのリング効果
     const ring = document.createElement("div");
     ring.style.position = "absolute";
     ring.style.left = `${x}px`;
@@ -415,32 +344,23 @@ export const useCardAnimation = () => {
     });
   };
 
-  /**
-   * カードが新しくドローされたものかどうかを判定
-   */
   const isNewCard = (cardId: string): boolean => {
     return newCardIds.has(cardId);
   };
 
-  /**
-   * 破棄中のカードを取得
-   */
   const getDiscardingCards = (): Card[] => {
     return discardingCards;
   };
 
   return {
-    // アニメーション関数
     drawCardsWithAnimation,
     discardCardsWithAnimation,
     applyDrawAnimation,
     applyDiscardAnimation,
     playCardWithAnimation,
-    // エフェクト関数
     showDamageEffect,
     showHealEffect,
     showShieldEffect,
-    // 状態判定関数
     isNewCard,
     getDiscardingCards,
   };

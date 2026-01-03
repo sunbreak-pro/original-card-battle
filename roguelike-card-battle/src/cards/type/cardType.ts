@@ -1,24 +1,14 @@
-// ==========================================
-// 型定義
 
 import type { CardBuffSpec } from "./baffType";
-
-// ==========================================
 export type Depth = 1 | 2 | 3 | 4 | 5;
-
 export type CardCategory = 'atk' | 'def' | 'buff' | 'debuff' | 'heal' | 'swordEnergy';
-
 export type DepthCurveType = 'shallow' | 'neutral' | 'deep' | 'madness' | 'adversity';
-
 export type MasteryLevel = 0 | 1 | 2 | 3;
-
 export type GemLevel = 0 | 1 | 2;
-
 export type Rarity = 'common' | 'rare' | 'epic' | 'legend';
-
 export interface Card {
-    id: string;           // ユニークなインスタンスID（例: "sw_001_1", "sw_001_2"）
-    cardTypeId: string;   // カード種類ID（例: "sw_001"） - 熟練度共有に使用
+    id: string;
+    cardTypeId: string;
     name: string;
     description: string;
     cost: number;
@@ -35,25 +25,20 @@ export interface Card {
     applyPlayerBuff?: CardBuffSpec[];
     tags: string[];
     rarity: Rarity;
-    // 剣士固有プロパティ
-    swordEnergyGain?: number;      // 剣気蓄積量
-    swordEnergyConsume?: number;   // 剣気消費量（0=全消費）
-    swordEnergyMultiplier?: number; // 剣気ダメージ倍率
-    hitCount?: number;             // 多段攻撃の回数
-    penetration?: number;          // 貫通率（0-1）
-    isPreemptive?: boolean;        // 先制攻撃
-    healAmount?: number;           // 回復量
-    guardAmount?: number;          // シールド付与量
-    drawCards?: number;            // 手札追加枚数
-    energyGain?: number;           // エナジー回復量
-    nextCardCostReduction?: number; // 次のカードのコスト軽減
-    characterClass?: 'swordsman' | 'mage' | 'summoner'; // キャラクター専用
+    // sword energy specific properties
+    swordEnergyGain?: number;
+    swordEnergyConsume?: number;
+    swordEnergyMultiplier?: number;
+    hitCount?: number;
+    penetration?: number;
+    isPreemptive?: boolean;
+    healAmount?: number;
+    guardAmount?: number;
+    drawCards?: number;
+    energyGain?: number;
+    nextCardCostReduction?: number;
+    characterClass?: 'swordsman' | 'mage' | 'summoner';
 }
-
-// ==========================================
-// 定数
-// ==========================================
-
 
 export const MAGIC_MULTIPLIERS: Record<Depth, number> = {
     1: 1,

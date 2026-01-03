@@ -1,15 +1,6 @@
-/**
- * 剣士専用カード 40枚
- */
-
 import type { Card } from "../type/cardType";
 
-// ==========================================
-// カテゴリ1: 剣気蓄積型（0-1コスト高速攻撃）12枚
-// ==========================================
-
 export const SWORDSMAN_CARDS: Record<string, Card> = {
-  // 01. 迅雷斬（コスト0）
   sw_001: {
     id: "sw_001",
     cardTypeId: "sw_001",
@@ -27,8 +18,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 02. 疾風斬（コスト0）
   sw_002: {
     id: "sw_002",
     cardTypeId: "sw_002",
@@ -47,8 +36,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 03. 連撃（コスト1）
   sw_003: {
     id: "sw_003",
     cardTypeId: "sw_003",
@@ -67,8 +54,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 04. 三段突き（コスト1）
   sw_004: {
     id: "sw_004",
     cardTypeId: "sw_004",
@@ -88,8 +73,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 05. 居合斬り（コスト1）
   sw_005: {
     id: "sw_005",
     cardTypeId: "sw_005",
@@ -108,8 +91,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 06. 双剣乱舞（コスト1）
   sw_006: {
     id: "sw_006",
     cardTypeId: "sw_006",
@@ -128,8 +109,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 07. 斬りつける（コスト1）
   sw_007: {
     id: "sw_007",
     cardTypeId: "sw_007",
@@ -147,8 +126,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 08. 袈裟斬り（コスト1）
   sw_008: {
     id: "sw_008",
     cardTypeId: "sw_008",
@@ -167,8 +144,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 09. 回転斬り（コスト1）
   sw_009: {
     id: "sw_009",
     cardTypeId: "sw_009",
@@ -186,8 +161,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 10. 牙突（コスト1）
   sw_010: {
     id: "sw_010",
     cardTypeId: "sw_010",
@@ -206,8 +179,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 11. 龍牙（コスト1）
   sw_011: {
     id: "sw_011",
     cardTypeId: "sw_011",
@@ -226,8 +197,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 12. 水の如く（コスト2）
   sw_012: {
     id: "sw_012",
     cardTypeId: "sw_012",
@@ -246,12 +215,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // ==========================================
-  // カテゴリ2: 剣気蓄積専用カード 4枚
-  // ==========================================
-
-  // 13. 剣気集中（コスト1）
   sw_013: {
     id: "sw_013",
     cardTypeId: "sw_013",
@@ -269,8 +232,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 14. 瞑想（コスト1）
   sw_014: {
     id: "sw_014",
     cardTypeId: "sw_014",
@@ -288,8 +249,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 15. 闘気解放（コスト2）
   sw_015: {
     id: "sw_015",
     cardTypeId: "sw_015",
@@ -307,8 +266,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 16. 気合（コスト0）
   sw_016: {
     id: "sw_016",
     cardTypeId: "sw_016",
@@ -326,12 +283,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // ==========================================
-  // カテゴリ3: 中火力（2コスト）10枚
-  // ==========================================
-
-  // 17. 断空斬（コスト2）
   sw_017: {
     id: "sw_017",
     cardTypeId: "sw_017",
@@ -350,8 +301,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 18. 鋼鉄斬（コスト2）
   sw_018: {
     id: "sw_018",
     cardTypeId: "sw_018",
@@ -370,8 +319,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 19. 旋風剣（コスト2）
   sw_019: {
     id: "sw_019",
     cardTypeId: "sw_019",
@@ -389,8 +336,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 20. 閃光剣（コスト2）
   sw_020: {
     id: "sw_020",
     cardTypeId: "sw_020",
@@ -409,8 +354,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 21. 爆砕剣（コスト2）
   sw_021: {
     id: "sw_021",
     cardTypeId: "sw_021",
@@ -428,8 +371,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 22. 影纏斬り（コスト2）
   sw_022: {
     id: "sw_022",
     cardTypeId: "sw_022",
@@ -440,7 +381,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     depthCurveType: "neutral",
     baseDamage: 23,
     swordEnergyGain: 2,
-    // applyPlayerBuff: [{ name: "evasion", stacks: 1, duration: 1 }],
     tags: ["swordsman", "evasion"],
     rarity: "rare",
     useCount: 0,
@@ -448,8 +388,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 23. 裂空斬（コスト2）
   sw_023: {
     id: "sw_023",
     cardTypeId: "sw_023",
@@ -468,8 +406,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 24. 烈火剣（コスト2）
   sw_024: {
     id: "sw_024",
     cardTypeId: "sw_024",
@@ -488,8 +424,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 25. 大地斬（コスト2）
   sw_025: {
     id: "sw_025",
     cardTypeId: "sw_025",
@@ -508,8 +442,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 26. 獅子奮迅（コスト2）
   sw_026: {
     id: "sw_026",
     cardTypeId: "sw_026",
@@ -528,12 +460,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // ==========================================
-  // カテゴリ4: 剣気消費技（中火力）6枚
-  // ==========================================
-
-  // 27. 剣気解放（コスト1）
   sw_027: {
     id: "sw_027",
     cardTypeId: "sw_027",
@@ -552,8 +478,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 28. 剣気刃（コスト1）
   sw_028: {
     id: "sw_028",
     cardTypeId: "sw_028",
@@ -573,8 +497,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 29. 剣気連斬（コスト2）
   sw_029: {
     id: "sw_029",
     cardTypeId: "sw_029",
@@ -594,8 +516,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 30. 剣気爆発（コスト2）
   sw_030: {
     id: "sw_030",
     cardTypeId: "sw_030",
@@ -614,8 +534,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 31. 剣気貫通（コスト1）
   sw_031: {
     id: "sw_031",
     cardTypeId: "sw_031",
@@ -635,8 +553,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 32. 剣衝烈波
   sw_032: {
     id: "sw_032",
     cardTypeId: "sw_032",
@@ -656,12 +572,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // ==========================================
-  // カテゴリ5: 剣気全消費技（超火力）4枚
-  // ==========================================
-
-  // 33. 剣神降臨（コスト3） - Ultimate buff card
   sw_033: {
     id: "sw_033",
     cardTypeId: "sw_033",
@@ -685,8 +595,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 34. 至神剣
   sw_034: {
     id: "sw_034",
     cardTypeId: "sw_034",
@@ -705,10 +613,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
-  },
-
-  // 35. 天剣の舞 - Consumes all sword energy for buffs
-  sw_035: {
+  }, sw_035: {
     id: "sw_035",
     cardTypeId: "sw_035",
     name: "天剣の舞",
@@ -730,8 +635,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 36. 剣気殲滅（コスト3）
   sw_036: {
     id: "sw_036",
     cardTypeId: "sw_036",
@@ -752,12 +655,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // ==========================================
-  // カテゴリ6: 防御・補助系 4枚
-  // ==========================================
-
-  // 37. 剣気結界（コスト1）
   sw_037: {
     id: "sw_037",
     cardTypeId: "sw_037",
@@ -773,8 +670,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 39. 不屈の闘志（コスト2）
   sw_039: {
     id: "sw_039",
     cardTypeId: "sw_039",
@@ -791,8 +686,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     gemLevel: 0,
     characterClass: "swordsman",
   },
-
-  // 40. 剣気吸収（コスト2）
   sw_040: {
     id: "sw_040",
     cardTypeId: "sw_040",
@@ -812,11 +705,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     characterClass: "swordsman",
   },
 };
-
-// カード配列としてエクスポート
 export const SWORDSMAN_CARDS_ARRAY: Card[] = Object.values(SWORDSMAN_CARDS);
-
-// IDでカードを取得
 export function getSwordsmanCard(id: string): Card | undefined {
   return SWORDSMAN_CARDS[id];
 }

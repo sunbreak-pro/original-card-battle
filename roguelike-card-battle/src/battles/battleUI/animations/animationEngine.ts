@@ -1,9 +1,4 @@
-/**
- * 高度なアニメーションエンジン
- * requestAnimationFrameとCSSを直接操作する滑らかなアニメーションシステム
- */
-
-// イージング関数
+// easing functions
 export const Easing = {
   linear: (t: number) => t,
   easeInQuad: (t: number) => t * t,
@@ -58,7 +53,6 @@ export const Easing = {
   },
 };
 
-// アニメーションのプロパティ
 export interface AnimationProps {
   element: HTMLElement;
   duration: number;
@@ -69,7 +63,6 @@ export interface AnimationProps {
   onComplete?: () => void;
 }
 
-// アニメーション実行
 type CSSWritableProps = {
   [K in keyof CSSStyleDeclaration]:
   CSSStyleDeclaration[K] extends string ? K : never;
@@ -126,14 +119,11 @@ export const animate = ({
   };
 };
 
-
-// 値の補間
 const interpolateValue = (
   from: string,
   to: string,
   progress: number
 ): string => {
-  // 数値と単位を抽出
   const fromMatch = from.match(/^(-?\d+\.?\d*)(.*)$/);
   const toMatch = to.match(/^(-?\d+\.?\d*)(.*)$/);
 
@@ -148,8 +138,6 @@ const interpolateValue = (
 
   return to;
 };
-
-// 複数のアニメーションを順次実行
 export const animateSequence = async (
   animations: (() => Promise<void>)[]
 ): Promise<void> => {
@@ -158,14 +146,12 @@ export const animateSequence = async (
   }
 };
 
-// 複数のアニメーションを並列実行
 export const animateParallel = async (
   animations: (() => Promise<void>)[]
 ): Promise<void> => {
   await Promise.all(animations.map((anim) => anim()));
 };
 
-// Promise化されたanimate
 export const animateAsync = (props: AnimationProps): Promise<void> => {
   return new Promise((resolve) => {
     animate({
@@ -178,7 +164,6 @@ export const animateAsync = (props: AnimationProps): Promise<void> => {
   });
 };
 
-// パーティクルエフェクト
 export interface ParticleOptions {
   container: HTMLElement;
   x: number;
@@ -251,7 +236,6 @@ export const createParticles = ({
   }
 };
 
-// ダメージ数値の表示
 export interface DamageTextOptions {
   container: HTMLElement;
   x: number;
@@ -321,7 +305,6 @@ export const showDamageText = ({
   requestAnimationFrame(animateText);
 };
 
-// シェイクエフェクト
 export const shakeElement = (
   element: HTMLElement,
   intensity: number = 10,
@@ -350,7 +333,6 @@ export const shakeElement = (
   requestAnimationFrame(shake);
 };
 
-// グローエフェクト
 export const glowPulse = (
   element: HTMLElement,
   color: string,
@@ -364,8 +346,7 @@ export const glowPulse = (
     const progress = (elapsed % duration) / duration;
 
     const glow = Math.sin(progress * Math.PI * 2) * intensity;
-    element.style.boxShadow = `0 0 ${glow}px ${color}, 0 0 ${glow * 2
-      }px ${color}`;
+    element.style.boxShadow = `0 0 ${glow}px ${color}, 0 0 ${glow * 2}px ${color}`;
 
     requestAnimationFrame(pulse);
   };

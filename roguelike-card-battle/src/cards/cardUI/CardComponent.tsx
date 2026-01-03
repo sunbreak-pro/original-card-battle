@@ -6,7 +6,7 @@ import { calculateEffectivePower } from "../state/card";
 interface CardComponentProps {
   card: Card;
   depth: Depth;
-  isPlayable?: boolean; // モーダル表示用などで省略可能にするため ? を付与
+  isPlayable?: boolean;
 }
 
 export const CardComponent: React.FC<CardComponentProps> = ({

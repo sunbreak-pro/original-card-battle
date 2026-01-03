@@ -1,21 +1,7 @@
-/**
- * 敵のAIシステム
- * 敵の行動を決定し、実行する
- */
-
 import type { Enemy, EnemyAction } from "../../Character/data/EnemyData";
 import { DEPTH1_ENEMIES } from "../../Character/data/EnemyData";
 import type { Card } from "../../cards/type/cardType";
 
-/**
- * 敵の行動を決定する（Ver 4.0対応）
- * @param enemy 敵データ
- * @param currentHp 現在のHP
- * @param maxHp 最大HP
- * @param turnNumber 現在のターン番号
- * @param remainingEnergy 残りエナジー（将来的にAIで使用可能）
- * @returns 実行する行動
- */
 export function determineEnemyAction(
   enemy: Enemy,
   currentHp: number,
@@ -23,19 +9,14 @@ export function determineEnemyAction(
   turnNumber: number,
   remainingEnergy: number
 ): EnemyAction {
-  // ターン番号に一致し、条件を満たすパターンを抽出
   const validPatterns = enemy.aiPatterns.filter((pattern) => {
-    // ターン番号チェック（0は全ターン）
     const turnMatch = pattern.turnNumber === 0 || pattern.turnNumber === turnNumber;
-
-    // 条件チェック（条件がない場合はtrue）
     const conditionMatch = !pattern.condition || pattern.condition(currentHp, maxHp);
 
     return turnMatch && conditionMatch;
   });
 
   if (validPatterns.length === 0) {
-    // パターンが見つからない場合、デフォルト行動
     return {
       name: "基本攻撃",
       type: "attack",
@@ -43,7 +24,6 @@ export function determineEnemyAction(
     };
   }
 
-  // 確率を考慮してパターンを選択
   let totalProbability = 0;
   const patternsWithProb = validPatterns.map((pattern) => {
     const prob = pattern.probability ?? 1.0;
@@ -60,16 +40,8 @@ export function determineEnemyAction(
       return pattern.action;
     }
   }
-
-  // フォールバック
   return validPatterns[0].action;
 }
-
-/**
- * 敵の行動をCard形式に変換
- * @param action 敵の行動
- * @returns Cardオブジェクト
- */
 export function enemyAction(action: EnemyAction): Card {
   return {
     id: `enemy_action_${action.name}`,
@@ -95,18 +67,11 @@ export function enemyAction(action: EnemyAction): Card {
   };
 }
 
-/**
- * ランダムに敵を選択
- * @param depth 深度
- * @param encounterType 遭遇タイプ（normal, group, boss）
- * @returns 選択された敵（グループの場合は配列）
- */
 export function selectRandomEnemy(
   depth: number,
   encounterType: "normal" | "group" | "boss" = "normal"
 ): { enemies: Enemy[]; isBoss: boolean } {
   if (depth !== 1) {
-    // 現在は深度1のみ実装
     throw new Error(`Depth ${depth} enemies are not implemented yet`);
   }
 

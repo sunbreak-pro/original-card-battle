@@ -1,12 +1,3 @@
-/**
- * 戦闘ロジック関連の処理
- */
-/**
- * ダメージをエンティティに適用（シールド優先）
- * @param damage ダメージ量
- * @param currentHp 現在のHP
- * @returns 新しいHPとシールド
- */
 export const applyDamage = (
   damage: number,
   currentHp: number,
@@ -16,25 +7,15 @@ export const applyDamage = (
   let newHp = currentHp;
 
   if (currentShield > 0) {
-    // シールドがある場合、シールドから先に減らす
     const remainingDamage = Math.max(0, damage - currentShield);
     newShield = Math.max(0, currentShield - damage);
     newHp = Math.max(0, currentHp - remainingDamage);
   } else {
-    // シールドがない場合、直接HPを減らす
     newHp = Math.max(0, currentHp - damage);
   }
 
   return { newHp, newShield };
 };
-
-/**
- * 回復を適用（最大HPを超えない）
- * @param healAmount 回復量
- * @param currentHp 現在のHP
- * @param maxHp 最大HP
- * @returns 新しいHP
- */
 export const applyHeal = (
   healAmount: number,
   currentHp: number,
@@ -43,12 +24,6 @@ export const applyHeal = (
   return Math.min(maxHp, currentHp + healAmount);
 };
 
-/**
- * シールドを付与
- * @param shieldAmount シールド量
- * @param currentShield 現在のシールド
- * @returns 新しいシールド
- */
 export const applyShield = (
   shieldAmount: number,
   currentShield: number
@@ -56,14 +31,6 @@ export const applyShield = (
   return currentShield + shieldAmount;
 };
 
-
-
-/**
- * 戦闘終了判定
- * @param playerHp プレイヤーのHP
- * @param enemyHp 敵のHP
- * @returns 戦闘結果（"ongoing" | "victory" | "defeat"）
- */
 export const checkBattleEnd = (
   playerHp: number,
   enemyHp: number

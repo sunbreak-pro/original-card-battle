@@ -24,7 +24,6 @@ const VictoryScreen = ({
   const [showRewards, setShowRewards] = useState(false);
 
   useEffect(() => {
-    // アニメーション用のディレイ
     const timer = setTimeout(() => {
       setShowRewards(true);
     }, 1000);
@@ -34,21 +33,17 @@ const VictoryScreen = ({
 
   return (
     <div className="victory-screen">
-      {/* 背景エフェクト */}
       <div className="victory-bg">
         <div className="victory-particles" />
         <div className="victory-glow" />
       </div>
 
-      {/* メインコンテンツ */}
       <div className="victory-content">
-        {/* タイトル */}
         <div className="victory-title">
           <h1 className="victory-text">VICTORY!</h1>
           <div className="victory-subtitle">You have conquered the depths</div>
         </div>
 
-        {/* 戦闘統計 */}
         <div className={`battle-stats ${showRewards ? "show" : ""}`}>
           <div className="stat-card">
             <div className="stat-icon">⚔️</div>
@@ -67,25 +62,20 @@ const VictoryScreen = ({
           </div>
         </div>
 
-        {/* 報酬セクション */}
         <div className={`rewards-section ${showRewards ? "show" : ""}`}>
           <h2 className="rewards-title">Rewards</h2>
 
           <div className="rewards-grid">
-            {/* ゴールド */}
             <div className="reward-item gold">
               <div className="reward-icon">💰</div>
               <div className="reward-amount">+{rewards.gold} Gold</div>
             </div>
-
-            {/* 経験値 */}
             <div className="reward-item experience">
               <div className="reward-icon">⭐</div>
               <div className="reward-amount">+{rewards.experience} EXP</div>
             </div>
           </div>
 
-          {/* カード報酬 */}
           {rewards.cards.length > 0 && (
             <div className="card-rewards">
               <h3 className="card-rewards-title">Card Rewards</h3>
@@ -105,7 +95,6 @@ const VictoryScreen = ({
           )}
         </div>
 
-        {/* 続けるボタン */}
         <button
           className={`continue-button ${showRewards ? "show" : ""}`}
           onClick={onContinue}

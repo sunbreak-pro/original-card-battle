@@ -1,4 +1,3 @@
-// deckReducer.ts
 import { discardCards } from "./deck";
 import type { Card } from "../../cards/type/cardType";
 

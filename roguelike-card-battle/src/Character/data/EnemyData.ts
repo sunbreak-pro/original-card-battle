@@ -10,9 +10,9 @@ export interface EnemyAction {
   applyBuffs?: BuffDebuffState[];
   guardGain?: number;
   hitCount?: number;
-  displayIcon?: string; // UI表示用アイコン
-  priority?: number; // 行動優先度（高いほど優先）デフォルト: 0
-  energyCost?: number; // エナジーコスト（デフォルト: 1）
+  displayIcon?: string;
+  priority?: number;
+  energyCost?: number;
 }
 
 export interface EnemyAIPattern {
@@ -29,8 +29,8 @@ export interface Enemy {
   description: string;
   maxHp: number;
   maxAp: number;
-  speed: number; // 行動速度（0-100）
-  actEnergy: number; // 基本エナジー（1ターンの行動回数）
+  speed: number;
+  actEnergy: number;
   startingGuard: number;
   evasionRate: number;
   immunities: string[];
@@ -48,7 +48,7 @@ export const CORRUPTED_HOUND: Enemy = {
   startingGuard: 0,
   evasionRate: 0,
   immunities: [],
-  actEnergy: 1, // 1ターンに1回行動
+  actEnergy: 1,
   speed: 40,
   aiPatterns: [
     { turnNumber: 1, action: { name: "噛みつき", type: "attack", baseDamage: 7, displayIcon: "⚔️", priority: 0, energyCost: 1 } },
@@ -145,7 +145,7 @@ export const RUSTY_SWORDSMAN: Enemy = {
   evasionRate: 0,
   immunities: [],
   actEnergy: 1,
-  speed: 50, // プレイヤーと同じ基準速度
+  speed: 50,
   aiPatterns: [
     { turnNumber: 1, action: { name: "斬撃", type: "attack", baseDamage: 8, displayIcon: "⚔️", priority: 0, energyCost: 1 } },
     { turnNumber: 2, action: { name: "斬撃", type: "attack", baseDamage: 8, displayIcon: "⚔️", priority: 0, energyCost: 1 } },

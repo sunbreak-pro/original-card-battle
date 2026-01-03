@@ -11,8 +11,6 @@ import { TurnOrderIndicator } from "./TurnOrderIndicator";
 import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
 import "./UIcss/BattleScreen.css";
-
-// 深度ごとのテーマカラー定義 (JSオブジェクト)
 const depthThemes = {
   1: {
     primary: "#1a3326",
@@ -72,7 +70,6 @@ const BattleScreen = ({
 
   const {
     playerRef,
-    // 複数敵データ (Ver 4.0)
     aliveEnemies,
     playerName,
     playerClassName,
@@ -84,6 +81,9 @@ const BattleScreen = ({
     playerBuffs,
     cardEnergy,
     maxEnergy,
+    swordEnergy,
+    enemyEnergy,
+    nextEnemyActions,
     turn,
     turnMessage,
     showTurnMessage,
@@ -101,10 +101,6 @@ const BattleScreen = ({
     closePileModal,
     battleResult,
     battleStats,
-    swordEnergy,
-    enemyEnergy,
-    nextEnemyActions,
-    // Ver 4.0: Speed System
     playerNowSpeed,
     enemyNowSpeed,
     turnOrder,
@@ -112,28 +108,19 @@ const BattleScreen = ({
     speedBonusEnemy,
   } = useBattleLogic(depth);
 
-  // 次の敵に遷移する関数
   const handleContinueToNextBattle = () => {
     const nextEncounter = encounterCount + 1;
     setEncounterCount(nextEncounter);
 
-    // 遭遇タイプを決定（7回目までは通常敵、8回目はボス）
     let encounterType: "normal" | "group" | "boss" = "normal";
     if (nextEncounter === 7) {
       encounterType = "boss";
     } else if (nextEncounter % 3 === 0) {
-      // 3回ごとに複数敵
       encounterType = "group";
     }
-
-    // 次の敵を選択（複数敵対応）
     const { enemies: nextEnemies } = selectRandomEnemy(depth, encounterType);
-
-    // 敵データを更新してバトルを再開（配列全体を渡す）
     resetForNextEnemy(nextEnemies);
   };
-
-  // 勝利画面の処理
   if (battleResult === "victory") {
     return (
       <VictoryScreen
@@ -151,8 +138,6 @@ const BattleScreen = ({
       />
     );
   }
-
-  // 敗北画面の処理
   if (battleResult === "defeat") {
     return (
       <DefeatScreen
@@ -168,8 +153,6 @@ const BattleScreen = ({
       />
     );
   }
-
-  // CSS変数としてテーマカラーを注入
   const containerStyle = {
     "--theme-primary": theme.primary,
     "--theme-secondary": theme.secondary,
@@ -181,14 +164,11 @@ const BattleScreen = ({
 
   return (
     <div className="battle-screen" style={containerStyle}>
-      {/* ターンメッセージ */}
       {showTurnMessage && (
         <div className="turn-message-slide">
           <div className="turn-message-text">{turnMessage}</div>
         </div>
       )}
-
-      {/* ヘッダー */}
       <div className="battle-header">
         <div className="depth-info">
           {depth}-{encounterCount === 6 ? "BOSS" : encounterCount + 1} | Turn{" "}
@@ -206,8 +186,6 @@ const BattleScreen = ({
           ))}
         </div>
       </div>
-
-      {/* 行動順インジケーター（右上隅） */}
       <TurnOrderIndicator
         playerSpeed={playerNowSpeed}
         enemySpeed={enemyNowSpeed}
@@ -215,16 +193,11 @@ const BattleScreen = ({
         playerBonus={speedBonusPlayer}
         enemyBonus={speedBonusEnemy}
       />
-
-      {/* 敵の次の行動プレビュー */}
       <EnemyActionPreview
         actions={nextEnemyActions}
         enemyEnergy={enemyEnergy}
       />
-
-      {/* フィールド */}
       <div className="battle-field">
-        {/* 敵セクション（複数敵対応 Ver 4.0） */}
         <EnemyDisplay
           enemies={aliveEnemies.map((e) => ({
             enemy: e.enemy,
@@ -233,14 +206,13 @@ const BattleScreen = ({
             ap: e.ap,
             maxAp: e.enemy.maxAp,
             guard: e.guard,
+            actEnergy: e.energy,
             buffs: e.buffs,
             turnCount: turn,
           }))}
           enemyRefs={aliveEnemies.map((e) => e.ref)}
           theme={theme}
         />
-
-        {/* プレイヤー */}
         <div className="player-section">
           <div className="player-field">
             <div className="character-name">
@@ -250,7 +222,6 @@ const BattleScreen = ({
               ⚔️
             </div>
             <div className="status-container">
-              {/* Guardがある場合のみ表示 */}
               {playerGuard > 0 && (
                 <div className="status-row">
                   <span className="status-label guard-num">
@@ -278,7 +249,6 @@ const BattleScreen = ({
                   />
                 </span>
               </div>
-              {/* HPの行 */}
               <div className="status-row">
                 <span className="status-label hp-num">
                   HP: {playerHp}/{playerMaxHp}
@@ -305,8 +275,6 @@ const BattleScreen = ({
                 ))}
               </div>
             </div>
-
-            {/* 剣気ゲージ */}
             <div className="sword-energy-display">
               <div className="sword-energy-label">剣気:</div>
 
@@ -360,8 +328,6 @@ const BattleScreen = ({
           </div>
         </div>
       </div>
-
-      {/* コントロール & デッキ */}
       <div className="pile-icon draw" title="Draw Pile" onClick={openDrawPile}>
         <div className="pile-visual">🎴</div>
         <div className="pile-count">山札: {drawPile.length}</div>
@@ -378,8 +344,6 @@ const BattleScreen = ({
       <button className="end-turn-btn" onClick={handleEndTurn}>
         End Turn
       </button>
-
-      {/* 手札 */}
       <div className="hand-container">
         {hand.map((card, index) => {
           const isDrawing = isNewCard(card.id);
@@ -400,11 +364,8 @@ const BattleScreen = ({
               }`}
               style={
                 {
-                  // CSS変数として値を渡す (単位: deg, vh)
                   "--rot": `${rotation}deg`,
                   "--y": `${translateY * 0.5}vh`,
-
-                  // アニメーション遅延
                   animationDelay: isDrawing
                     ? `${index * 0.1}s`
                     : isDiscarding
@@ -423,8 +384,6 @@ const BattleScreen = ({
           );
         })}
       </div>
-
-      {/* カードモーダル（山札・捨て札一覧表示） */}
       <BattlingCardPileModal
         isOpen={openedPileType !== null}
         onClose={closePileModal}

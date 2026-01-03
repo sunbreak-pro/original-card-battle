@@ -1,8 +1,7 @@
-// src/components/CardPileModal.tsx
 import React from "react";
 import type { Card, Depth } from "../type/cardType";
 import { CardComponent } from "./CardComponent";
-import "../../battles/battleUI/UIcss/BattleScreen.css"; // CSS for modal styling
+import "../../battles/battleUI/UIcss/BattleScreen.css";
 
 interface CardPileModalProps {
   isOpen: boolean;

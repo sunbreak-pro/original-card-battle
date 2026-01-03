@@ -27,47 +27,32 @@ export interface SwordEnergyState {
 
 export const SWORD_ENERGY_MAX = 10;
 
-/**
- * 剣気システムの初期状態
- */
+
 export function createInitialSwordEnergy(): SwordEnergyState {
   return {
     current: 0,
     max: SWORD_ENERGY_MAX,
   };
 }
-
-/**
- * カードコストに基づく剣気蓄積量を計算
- * @param cost カードコスト
- * @param isSwordEnergyCard 剣気蓄積専用カードかどうか
- * @param customGain カード固有の剣気蓄積量（設定されている場合）
- */
 export function calculateSwordEnergyGain(
   cost: number,
   isSwordEnergyCard: boolean = false,
   customGain?: number
 ): number {
-  // カード固有の剣気蓄積量が設定されている場合はそれを使用
   if (customGain !== undefined) {
     return customGain;
   }
 
-  // 剣気蓄積専用カード
   if (isSwordEnergyCard) {
     return 4;
   }
 
-  // コストに応じた蓄積量
   if (cost === 0) return 1;
   if (cost === 1) return 1;
-  if (cost === 2) return 2; // 2 or 3、カードごとに設定
-  return 3; // 3コスト以上
+  if (cost === 2) return 2; 
+  return 3; 
 }
 
-/**
- * 剣気を加算（最大値を超えない）
- */
 export function addSwordEnergy(
   state: SwordEnergyState,
   amount: number
@@ -78,9 +63,6 @@ export function addSwordEnergy(
   };
 }
 
-/**
- * 剣気を消費
- */
 export function consumeSwordEnergy(
   state: SwordEnergyState,
   amount: number
@@ -95,9 +77,6 @@ export function consumeSwordEnergy(
   };
 }
 
-/**
- * 剣気を全消費
- */
 export function consumeAllSwordEnergy(
   state: SwordEnergyState
 ): { newState: SwordEnergyState; consumed: number } {
@@ -111,27 +90,18 @@ export function consumeAllSwordEnergy(
   };
 }
 
-/**
- * 剣気によるクリティカル率ボーナスを計算
- */
 export function calculateSwordEnergyCritBonus(swordEnergy: number): number {
-  if (swordEnergy >= 10) return 1.0; // 確定クリティカル
-  if (swordEnergy >= 5) return 0.2; // +20%
+  if (swordEnergy >= 10) return 1.0; 
+  if (swordEnergy >= 5) return 0.2; 
   return 0;
 }
 
-/**
- * 剣気による貫通率ボーナスを計算
- */
 export function calculateSwordEnergyPenetration(swordEnergy: number): number {
-  if (swordEnergy >= 10) return 0.5; // +50%
-  if (swordEnergy >= 8) return 0.3; // +30%
+  if (swordEnergy >= 10) return 0.5;
+  if (swordEnergy >= 8) return 0.3; 
   return 0;
 }
 
-/**
- * 剣気の効果をまとめて取得
- */
 export interface SwordEnergyEffects {
   critBonus: number;
   penetration: number;
@@ -145,13 +115,6 @@ export function getSwordEnergyEffects(swordEnergy: number): SwordEnergyEffects {
     isMaxEnergy: swordEnergy >= SWORD_ENERGY_MAX,
   };
 }
-
-/**
- * 剣気消費技のダメージ計算
- * @param baseDamage 基本威力
- * @param consumedEnergy 消費した剣気
- * @param multiplier 剣気ダメージ倍率（カードごとに異なる）
- */
 export function calculateSwordEnergyConsumeDamage(
   baseDamage: number,
   consumedEnergy: number,

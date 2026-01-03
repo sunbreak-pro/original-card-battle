@@ -4,7 +4,6 @@ import {
   type BuffDebuffType,
   BUFF_EFFECTS,
 } from "../cards/type/baffType";
-// import { BuffDebuffEffects } from "../cards/data/BuffData";
 
 interface StatusEffectDisplayProps {
   buffsDebuffs: BuffDebuffMap;
@@ -16,25 +15,19 @@ interface StatusEffectDisplayProps {
     glow: string;
   };
 }
-
-// Icon mapping for buff/debuff types
 const BUFF_DEBUFF_ICONS: Record<BuffDebuffType, string> = {
-  // Debuff - DoT
   burn: "🔥",
   bleed: "🩸",
   poison: "☠️",
   curse: "👿",
   overCurse: "💀",
-  // Debuff - Status
   stun: "💫",
-  // Debuff - Stat reduction (Minor/Major)
   atkDownMinor: "⚔️↓",
   atkDownMajor: "⚔️⬇️",
   defDownMinor: "🛡️↓",
   defDownMajor: "🛡️⬇️",
   slow: "🐌",
   stall: "🐢",
-  // Buff - Stat increase (Minor/Major)
   atkUpMinor: "⚔️↑",
   atkUpMajor: "⚔️⬆️",
   defUpMinor: "🛡️↑",
@@ -44,28 +37,21 @@ const BUFF_DEBUFF_ICONS: Record<BuffDebuffType, string> = {
   criticalUp: "⭐",
   haste: "⚡",
   superFast: "⚡⚡",
-  // Buff - Heal/Defense
   regeneration: "💚",
   shieldRegen: "🛡️",
   reflect: "🔄",
   immunity: "✨",
-  // Buff - Resource
   energyRegen: "⚡🔄",
   drawPower: "🃏",
   costReduction: "💰↓",
-  // Buff - Combat style
   lifesteal: "🩸💚",
   doubleStrike: "⚔️⚔️",
-  // Buff - Swordsman
   swordEnergyGain: "⚔️⚡",
-  // Buff - Mage
   elementalMastery: "🔮✨",
   fireField: "🔥🌐",
   electroField: "⚡🌐",
-  // Buff - Summoner
   summonPower: "👻✨",
   sacrificeBonus: "💀",
-  // Buff - Special
   focus: "🎯",
   momentum: "🔥↑",
   cleanse: "✨💧",
@@ -78,9 +64,7 @@ const StatusEffectDisplay = ({
   theme,
 }: StatusEffectDisplayProps) => {
   const [hoveredEffect, setHoveredEffect] = useState<string | null>(null);
-
   if (buffsDebuffs.size === 0) return null;
-
   return (
     <div
       style={{
@@ -122,8 +106,6 @@ const StatusEffectDisplay = ({
             onMouseLeave={() => setHoveredEffect(null)}
           >
             {icon}
-
-            {/* スタック数（右上） */}
             {buff.stacks > 1 && (
               <div
                 style={{
@@ -149,8 +131,6 @@ const StatusEffectDisplay = ({
                 {buff.stacks}
               </div>
             )}
-
-            {/* 残りターン数（右下） */}
             {!buff.isPermanent && (
               <div
                 style={{
@@ -176,8 +156,6 @@ const StatusEffectDisplay = ({
                 {buff.duration}
               </div>
             )}
-
-            {/* ホバー時のツールチップ */}
             {hoveredEffect === type && (
               <div
                 style={{
@@ -229,8 +207,6 @@ const StatusEffectDisplay = ({
                         buff.duration !== 1 ? "s" : ""
                       } remaining`}
                 </div>
-
-                {/* ツールチップの矢印 */}
                 <div
                   style={{
                     position: "absolute",

@@ -1,32 +1,16 @@
 import type { Card } from "../../cards/type/cardType";
 
-/**
- * デッキ管理システム
- */
-
-// カード インスタンスIDのカウンター
 let cardInstanceCounter = 0;
-
-/**
- * ユニークなカードインスタンスIDを生成
- */
 const generateCardInstanceId = (baseId: string): string => {
   cardInstanceCounter++;
   return `${baseId}_instance_${cardInstanceCounter}`;
 };
 
-/**
- * デッキの状態
- */
 export interface DeckState {
   drawPile: Card[];
   hand: Card[];
   discardPile: Card[];
 }
-
-/**
- * 配列をシャッフル（Fisher-Yates）
- */
 export const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -36,9 +20,6 @@ export const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffled;
 };
 
-/**
- * 捨て札をシャッフルして山札に戻す
- */
 export const shuffleDiscardIntoDraw = (
   drawPile: Card[],
   discardPile: Card[]
@@ -71,10 +52,8 @@ export const drawCards = (
   const drawnCards: Card[] = [];
 
   for (let i = 0; i < count; i++) {
-    // 山札が空の場合、捨て札をシャッフルして山札に戻す
     if (currentDrawPile.length === 0) {
       if (currentDiscardPile.length === 0) {
-        // 山札も捨て札も空の場合、これ以上引けない
         break;
       }
       const shuffled = shuffleDiscardIntoDraw(
@@ -85,7 +64,6 @@ export const drawCards = (
       currentDiscardPile = shuffled.newDiscardPile;
     }
 
-    // 山札の一番上からカードを引く
     const card = currentDrawPile.pop();
     if (card) {
       drawnCards.push(card);
@@ -99,9 +77,6 @@ export const drawCards = (
   };
 };
 
-/**
- * カードを捨て札に移動
- */
 export const discardCards = (
   cards: Card[],
   discardPile: Card[]
@@ -109,12 +84,6 @@ export const discardCards = (
   return [...discardPile, ...cards];
 };
 
-/**
- * 初期デッキを構成（各カードを指定枚数ずつ含む）
- * @param cardCounts カードIDと枚数のマップ
- * @param allCards 全カードデータ
- * @returns 初期デッキ（シャッフル済み）
- */
 export const createInitialDeck = (
   cardCounts: Record<string, number>,
   allCards: Card[]
@@ -124,8 +93,6 @@ export const createInitialDeck = (
     const card = allCards.find((c) => c.id === cardId || c.cardTypeId === cardId);
     if (card) {
       for (let i = 0; i < count; i++) {
-        // 各カードインスタンスにユニークなIDを付与
-        // cardTypeIdは元のカード種類IDを保持（熟練度共有用）
         deck.push({
           ...card,
           id: generateCardInstanceId(card.cardTypeId || card.id),
