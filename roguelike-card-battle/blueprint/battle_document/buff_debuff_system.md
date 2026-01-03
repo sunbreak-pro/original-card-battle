@@ -26,12 +26,12 @@
  * ※ 重症度システムは廃止されました
  */
 interface BuffDebuff {
-  type: BuffDebuffType;    // バフ/デバフの種類
-  stacks: number;          // スタック数（重ね掛け）
-  duration: number;        // 残りターン数
-  value: number;           // 効果値（倍率やダメージ量）
-  isPermanent: boolean;    // 永続フラグ
-  source?: string;         // 発生源（カードID、装備IDなど）
+  type: BuffDebuffType; // バフ/デバフの種類
+  stacks: number; // スタック数（重ね掛け）
+  duration: number; // 残りターン数
+  value: number; // 効果値（倍率やダメージ量）
+  isPermanent: boolean; // 永続フラグ
+  source?: string; // 発生源（カードID、装備IDなど）
 }
 
 type BuffDebuffMap = Map<BuffDebuffType, BuffDebuff>;
@@ -45,9 +45,8 @@ type BuffDebuffMap = Map<BuffDebuffType, BuffDebuff>;
 - burn, freeze, paralyze, defDown, defUp, physicalUp, magicUp, oxidize, feeble
 
 【新規】
-- speedUp（速度上昇）
-- speedDown（速度低下）
-- haste（加速）
+- 加速（速度上昇）
+- 失速（速度低下）
 
 【変更】
 - bleed: カード使用/行動毎に最大HP5%ダメージに変更
@@ -102,19 +101,19 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-# 3. バフ/デバフデータベース（全30種類）
+# 3. バフ/デバフデータベース（全 30 種類）
 
-## 3.1 デバフ - 持続ダメージ系（3種類）
+## 3.1 デバフ - 持続ダメージ系（3 種類）
 
 ### ID: poison（毒）
 
-| 項目       | 値                                             |
-| ---------- | ---------------------------------------------- |
-| **名称**   | 毒                                             |
-| **対象**   | HP                                             |
-| **効果**   | ターン終了時、スタック × 2 ダメージ（防御無視） |
-| **持続**   | カード依存                                     |
-| **色**     | #66cc00                                        |
+| 項目     | 値                                              |
+| -------- | ----------------------------------------------- |
+| **名称** | 毒                                              |
+| **対象** | HP                                              |
+| **効果** | ターン終了時、スタック × 2 ダメージ（防御無視） |
+| **持続** | カード依存                                      |
+| **色**   | #66cc00                                         |
 
 ```typescript
 {
@@ -130,13 +129,13 @@ export const addOrUpdateBuffDebuff = (
 
 ### ID: bleed（出血）
 
-| 項目       | 値                                                         |
-| ---------- | ---------------------------------------------------------- |
-| **名称**   | 出血                                                       |
-| **対象**   | HP                                                         |
-| **効果**   | プレイヤー: カード使用毎に最大HP5%、敵: 1行動毎に最大HP5% |
-| **持続**   | カード依存                                                 |
-| **色**     | #cc0000                                                    |
+| 項目     | 値                                                           |
+| -------- | ------------------------------------------------------------ |
+| **名称** | 出血                                                         |
+| **対象** | HP                                                           |
+| **効果** | プレイヤー: カード使用毎に最大 HP5%、敵: 1 行動毎に最大 HP5% |
+| **持続** | カード依存                                                   |
+| **色**   | #cc0000                                                      |
 
 ```typescript
 {
@@ -154,13 +153,13 @@ export const addOrUpdateBuffDebuff = (
 
 ### ID: curse（呪い）
 
-| 項目       | 値                                             |
-| ---------- | ---------------------------------------------- |
-| **名称**   | 呪い                                           |
-| **対象**   | HP + 回復                                      |
-| **効果**   | 回復効果-50%、ターン終了時スタック × 2 ダメージ |
-| **持続**   | カード依存                                     |
-| **色**     | #9900cc                                        |
+| 項目     | 値                                              |
+| -------- | ----------------------------------------------- |
+| **名称** | 呪い                                            |
+| **対象** | HP + 回復                                       |
+| **効果** | 回復効果-50%、ターン終了時スタック × 2 ダメージ |
+| **持続** | カード依存                                      |
+| **色**   | #9900cc                                         |
 
 ```typescript
 {
@@ -174,17 +173,17 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-## 3.2 デバフ - 状態異常系（3種類）
+## 3.2 デバフ - 状態異常系（3 種類）
 
 ### ID: slow（スロウ）
 
-| 項目       | 値                                   |
-| ---------- | ------------------------------------ |
-| **名称**   | スロウ                               |
-| **対象**   | Energy + Speed                       |
-| **効果**   | プレイヤー: エナジー-1、両者: 速度-10/スタック |
-| **持続**   | カード依存                           |
-| **色**     | #4488ff                              |
+| 項目     | 値                                             |
+| -------- | ---------------------------------------------- |
+| **名称** | スロウ                                         |
+| **対象** | Energy + Speed                                 |
+| **効果** | プレイヤー: エナジー-1、両者: 速度-10/スタック |
+| **持続** | カード依存                                     |
+| **色**   | #4488ff                                        |
 
 ```typescript
 {
@@ -200,13 +199,13 @@ export const addOrUpdateBuffDebuff = (
 
 ### ID: stun（気絶）
 
-| 項目       | 値                    |
-| ---------- | --------------------- |
-| **名称**   | 気絶                  |
-| **対象**   | Act                   |
-| **効果**   | 行動不能（ターンスキップ） |
-| **持続**   | 1ターン               |
-| **色**     | #ff6600               |
+| 項目     | 値                         |
+| -------- | -------------------------- |
+| **名称** | 気絶                       |
+| **対象** | Act                        |
+| **効果** | 行動不能（ターンスキップ） |
+| **持続** | 1 ターン                   |
+| **色**   | #ff6600                    |
 
 ```typescript
 {
@@ -222,13 +221,13 @@ export const addOrUpdateBuffDebuff = (
 
 ### ID: weak（弱体化）
 
-| 項目       | 値                      |
-| ---------- | ----------------------- |
-| **名称**   | 弱体化                  |
-| **対象**   | Atk                     |
-| **効果**   | 与ダメージ -30%         |
-| **持続**   | カード依存              |
-| **色**     | #888888                 |
+| 項目     | 値              |
+| -------- | --------------- |
+| **名称** | 弱体化          |
+| **対象** | Atk             |
+| **効果** | 与ダメージ -30% |
+| **持続** | カード依存      |
+| **色**   | #888888         |
 
 ```typescript
 {
@@ -242,7 +241,7 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-## 3.3 デバフ - 能力減少系（3種類）
+## 3.3 デバフ - 能力減少系（3 種類）
 
 ### ID: atkDown（攻撃力低下）
 
@@ -282,7 +281,7 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-## 3.4 バフ - 能力上昇系（4種類）
+## 3.4 バフ - 能力上昇系（4 種類）
 
 ### ID: atkUp（攻撃力上昇）
 
@@ -334,7 +333,7 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-## 3.5 バフ - 回復・防御系（6種類）
+## 3.5 バフ - 回復・防御系（6 種類）
 
 ### ID: regeneration（再生）
 
@@ -410,7 +409,7 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-## 3.6 バフ - リソース管理系（3種類）
+## 3.6 バフ - リソース管理系（3 種類）
 
 ### ID: energyRegen（エナジー再生）
 
@@ -450,7 +449,7 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-## 3.7 バフ - 戦闘スタイル変化系（4種類）
+## 3.7 バフ - 戦闘スタイル変化系（4 種類）
 
 ### ID: thorns（棘の鎧）
 
@@ -502,7 +501,7 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-## 3.8 バフ - 特殊効果系（7種類）
+## 3.8 バフ - 特殊効果系（7 種類）
 
 ### ID: barrier（バリア）
 
@@ -590,9 +589,9 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-## 3.9 バフ - キャラクター固有系（7種類）
+## 3.9 バフ - キャラクター固有系（7 種類）
 
-### 剣士用（2種類）
+### 剣士用（2 種類）
 
 ```typescript
 {
@@ -612,7 +611,7 @@ export const addOrUpdateBuffDebuff = (
 }
 ```
 
-### 魔術士用（2種類）
+### 魔術士用（2 種類）
 
 ```typescript
 {
@@ -632,7 +631,7 @@ export const addOrUpdateBuffDebuff = (
 }
 ```
 
-### 召喚士用（3種類）
+### 召喚士用（3 種類）
 
 ```typescript
 {
@@ -712,7 +711,7 @@ function calculateAttackMultiplier(buffDebuffs: BuffDebuffMap): number {
   // 攻撃力低下デバフ
   if (buffDebuffs.has("atkDown")) {
     const atkDown = buffDebuffs.get("atkDown")!;
-    multiplier *= (1 - atkDown.value / 100);
+    multiplier *= 1 - atkDown.value / 100;
   }
 
   // 攻撃力上昇バフ
@@ -775,19 +774,19 @@ function calculateSpeed(baseSpeed: number, buffDebuffs: BuffDebuffMap): number {
 
 ```typescript
 // バフ/デバフの追加・更新
-addOrUpdateBuffDebuff(map, type, stacks, duration, value, isPermanent, source)
+addOrUpdateBuffDebuff(map, type, stacks, duration, value, isPermanent, source);
 
 // バフ/デバフの削除
-removeBuffDebuff(map, type)
+removeBuffDebuff(map, type);
 
 // 全デバフの削除
-removeAllDebuffs(map)
+removeAllDebuffs(map);
 
 // ランダムにデバフを削除
-removeDebuffs(map, count)
+removeDebuffs(map, count);
 
 // 持続時間の減少
-decreaseBuffDebuffDuration(map)
+decreaseBuffDebuffDuration(map);
 ```
 
 ## 6.2 ダメージ・回復計算
