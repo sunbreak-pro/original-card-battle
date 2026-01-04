@@ -28,21 +28,15 @@ const DefeatScreen = ({
 
   return (
     <div className="defeat-screen">
-      {/* 背景エフェクト */}
       <div className="defeat-bg">
         <div className="defeat-particles" />
         <div className="defeat-glow" />
       </div>
-
-      {/* メインコンテンツ */}
       <div className="defeat-content">
-        {/* タイトル */}
         <div className="defeat-title">
           <h1 className="defeat-text">DEFEAT</h1>
           <div className="defeat-subtitle">The darkness has claimed you...</div>
         </div>
-
-        {/* 戦闘統計 */}
         <div className={`defeat-stats ${showOptions ? "show" : ""}`}>
           <div className="defeat-stat-card">
             <div className="defeat-stat-icon">⚔️</div>
@@ -60,8 +54,6 @@ const DefeatScreen = ({
             <div className="defeat-stat-label">Damage Taken</div>
           </div>
         </div>
-
-        {/* オプションボタン */}
         <div className={`defeat-options ${showOptions ? "show" : ""}`}>
           <button className="defeat-button retry" onClick={onRetry}>
             <span className="button-icon">🔄</span>
@@ -72,8 +64,6 @@ const DefeatScreen = ({
             <span className="button-text">Return to Camp</span>
           </button>
         </div>
-
-        {/* メッセージ */}
         <div className={`defeat-message ${showOptions ? "show" : ""}`}>
           <p>Learn from your mistakes and grow stronger...</p>
         </div>
