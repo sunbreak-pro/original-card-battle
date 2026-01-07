@@ -6,7 +6,7 @@ import { calculateDamage, applyDamageAllocation } from "../caluculaters/damageCa
 import { addOrUpdateBuffDebuff } from "../logic/buffLogic";
 import { calculateBleedDamage } from "../logic/bleedDamage";
 import { enemyAction } from "../../characters/enemy/logic/enemyAI";
-
+import type { PlayerCardDamageResult } from "../type/damageType";
 /**
  * Result of processing enemy action damage
  */
@@ -21,7 +21,7 @@ export interface EnemyActionDamageResult {
 /**
  * Calculate damage from a single enemy attack
  */
-export function calculateEnemyAttackDamage(
+export function manageEnemyAttackDamage(
     enemyChar: Enemy,
     playerChar: Player,
     action: EnemyAction
@@ -62,14 +62,13 @@ export function processEnemyActionDebuffs(
             debuff.source
         );
     });
-
     return newBuffs;
 }
 
 /**
  * Calculate bleed damage at end of action
  */
-export function calculateActionBleedDamage(
+export function manageActionBleedDamage(
     maxHp: number,
     buffs: BuffDebuffMap
 ): number {
@@ -77,22 +76,9 @@ export function calculateActionBleedDamage(
 }
 
 /**
- * Process player card damage against enemy
- */
-export interface PlayerCardDamageResult {
-    totalDamage: number;
-    guardDamage: number;
-    apDamage: number;
-    hpDamage: number;
-    isCritical: boolean;
-    lifestealAmount: number;
-    reflectDamage: number;
-}
-
-/**
  * Calculate damage from player card to enemy
  */
-export function calculatePlayerCardDamage(
+export function managePlayerCardDamage(
     playerChar: Player,
     enemyChar: Enemy,
     card: Card

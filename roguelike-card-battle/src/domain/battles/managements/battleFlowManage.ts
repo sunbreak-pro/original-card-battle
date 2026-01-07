@@ -3,19 +3,14 @@
  * Main hook that orchestrates battle state and flow.
  * Uses separated modules for phase management, deck management, and execution logic.
  */
-
 import { useState, useRef, useReducer, useEffect, useCallback, useMemo } from "react";
 import type { Card, Depth } from "../../cards/type/cardType";
 import type { BuffDebuffMap } from "../type/baffType";
-import type { Enemy, EnemyAction } from "../../characters/type/enemyType";
+import type { Enemy } from "../../characters/type/enemyType";
 import type { EnemyBattleState } from "../type/battleStateType";
 import type { Player } from "../../characters/type/playerTypes";
 import type { PhaseQueue } from "../type/phaseType";
-
-// Player data
 import { Swordman_Status } from "../../characters/player/data/PlayerData";
-
-// Sword Energy System
 import {
     type SwordEnergyState,
     createInitialSwordEnergy,
@@ -37,7 +32,7 @@ import { calculateDamage, applyDamageAllocation } from "../caluculaters/damageCa
 
 // Enemy AI
 import { selectRandomEnemy } from "../../characters/enemy/logic/enemyAI";
-import { executeEnemyActions, previewEnemyActions } from "../../characters/enemy/logic/enemyActionExecution";
+import { previewEnemyActions } from "../../characters/enemy/logic/enemyActionExecution";
 
 // Bleed damage
 import { calculateBleedDamage } from "../logic/bleedDamage";
@@ -52,21 +47,13 @@ import { INITIAL_DECK_COUNTS } from "../data/initialDeckConfig";
 import { useCardAnimation } from "../../../ui/commonUI/useCardAnimation";
 import { useTurnTransition } from "../../../ui/commonUI/animations/usePhaseTransition";
 
-// Phase management
 import { useBattlePhase } from "./useBattlePhase";
+import { useCharacterPhaseExecution } from "./executeCharacterManage";
 
 // Execution logic
 import {
-    calculatePlayerPhaseStart,
     calculatePlayerPhaseEnd,
-    applyHealWithCap,
 } from "../execution/playerPhaseExecution";
-import {
-    calculateEnemyPhaseStart,
-    calculateEnemyPhaseEnd,
-    calculateEnemyAttackDamage,
-    applyEnemyDebuffsToPlayer,
-} from "../execution/enemyPhaseExecution";
 
 // Enemy state
 import { createEnemyState } from "../logic/enemyStateLogic";
@@ -94,6 +81,9 @@ export const useBattle = (depth: Depth, initialEnemies?: Enemy[]) => {
 
     // --- Phase management hook ---
     const phaseState = useBattlePhase(Swordman_Status.speed);
+
+    // --- Character phase execution hook ---
+    const { executePlayerPhase: executePlayerPhaseImpl, executeEnemyPhase: executeEnemyPhaseImpl } = useCharacterPhaseExecution();
 
     // --- Refs ---
     const playerRef = useRef<HTMLDivElement>(null);
@@ -134,8 +124,8 @@ export const useBattle = (depth: Depth, initialEnemies?: Enemy[]) => {
     const [playerAp, setPlayerAp] = useState(Swordman_Status.ap);
     const [playerMaxAp] = useState(Swordman_Status.maxAp);
     const [playerGuard, setPlayerGuard] = useState(0);
-    const [playerEnergy, setPlayerEnergy] = useState(Swordman_Status.initialEnergy);
-    const [maxEnergy] = useState(3);
+    const [playerEnergy, setPlayerEnergy] = useState(Swordman_Status.cardActEnergy);
+    const [maxEnergy] = useState(Swordman_Status.cardActEnergy);
     const [playerBuffs, setPlayerBuffs] = useState<BuffDebuffMap>(new Map());
 
     // --- Sword Energy state ---
@@ -206,7 +196,7 @@ export const useBattle = (depth: Depth, initialEnemies?: Enemy[]) => {
         buffDebuffs: playerBuffs,
         level: 1,
         speed: phaseState.playerSpeed,
-        initialEnergy: 3,
+        cardActEnergy: 3,
         gold: 0,
         deck: SWORDSMAN_CARDS_ARRAY,
     }), [playerClass, classGrade, playerName, playerHp, playerMaxHp, playerAp, playerMaxAp, playerGuard, playerBuffs, phaseState.playerSpeed]);
@@ -395,182 +385,85 @@ export const useBattle = (depth: Depth, initialEnemies?: Enemy[]) => {
     };
 
     // ========================================================================
-    // Phase Execution
+    // Phase Execution (using executeCharacterManage hook)
     // ========================================================================
 
     /**
-     * Execute player phase
+     * Execute player phase via context
      */
     const executePlayerPhase = useCallback(async () => {
-        await new Promise<void>(r => showMessage("Player Phase", 2500, r));
-
-        // Set phase state
-        phaseState.setPlayerPhaseActive();
-        phaseState.incrementPhaseCount();
-
-        // Calculate phase start effects
-        const phaseStartResult = calculatePlayerPhaseStart({
+        await executePlayerPhaseImpl({
             playerBuffs,
-            drawPile: deckStateRef.current.drawPile,
-            discardPile: deckStateRef.current.discardPile,
+            playerMaxHp,
+            maxEnergy,
+            deckStateRef,
+            drawnCardsRef,
+            playerRef,
+            setPlayerGuard,
+            setPlayerEnergy,
+            setPlayerBuffs,
+            setPlayerHp,
+            setIsShuffling,
+            setIsDrawingAnimation,
+            showMessage,
+            showHealEffect,
+            showShieldEffect,
+            phaseState: {
+                setPlayerPhaseActive: phaseState.setPlayerPhaseActive,
+                setEnemyPhaseActive: phaseState.setEnemyPhaseActive,
+                incrementPhaseCount: phaseState.incrementPhaseCount,
+                clearActivePhase: phaseState.clearActivePhase,
+            },
+            dispatch,
         });
-
-        // Reset guard and energy
-        setPlayerGuard(0);
-        setPlayerEnergy(maxEnergy);
-
-        // Process buffs
-        setPlayerBuffs(phaseStartResult.newBuffs);
-
-        // Apply healing
-        if (phaseStartResult.healAmount > 0) {
-            setPlayerHp(h => applyHealWithCap(phaseStartResult.healAmount, h, playerMaxHp));
-            if (playerRef.current) showHealEffect(playerRef.current, phaseStartResult.healAmount);
-            await new Promise(r => setTimeout(r, 500));
-        }
-
-        // Apply shield
-        if (phaseStartResult.shieldAmount > 0) {
-            setPlayerGuard(g => g + phaseStartResult.shieldAmount);
-            if (playerRef.current) showShieldEffect(playerRef.current, phaseStartResult.shieldAmount);
-            await new Promise(r => setTimeout(r, 500));
-        }
-
-        // Draw cards
-        drawnCardsRef.current = phaseStartResult.drawnCards;
-        dispatch({
-            type: "SET_PILES",
-            newDrawPile: phaseStartResult.newDrawPile,
-            newDiscardPile: phaseStartResult.newDiscardPile,
-        });
-
-        if (phaseStartResult.needsShuffle) {
-            setIsShuffling(true);
-        } else if (phaseStartResult.drawnCards.length > 0) {
-            setIsDrawingAnimation(true);
-        }
-    }, [playerBuffs, playerMaxHp, showMessage, maxEnergy, showHealEffect, showShieldEffect, phaseState]);
+    }, [
+        executePlayerPhaseImpl,
+        playerBuffs,
+        playerMaxHp,
+        maxEnergy,
+        showMessage,
+        showHealEffect,
+        showShieldEffect,
+        phaseState,
+    ]);
 
     /**
-     * Execute enemy phase
+     * Execute enemy phase via context
      */
     const executeEnemyPhase = useCallback(async () => {
-        await new Promise<void>(r => showMessage("Enemy Phase", 2500, r));
-
-        // Set phase state
-        phaseState.setEnemyPhaseActive();
-        phaseState.incrementPhaseCount();
-
-        // Calculate phase start effects
-        const phaseStartResult = calculateEnemyPhaseStart({
-            enemy: currentEnemy,
-            enemyBuffs,
-        });
-
-        // Apply phase start effects
-        setEnemyGuard(phaseStartResult.guardReset);
-        setEnemyEnergy(phaseStartResult.energyReset);
-        setEnemyBuffs(phaseStartResult.newBuffs);
-
-        // Apply healing
-        if (phaseStartResult.healAmount > 0) {
-            setEnemyHp(h => applyHeal(phaseStartResult.healAmount, h, enemyMaxHp));
-            await new Promise(r => setTimeout(r, 500));
-        }
-
-        // Apply shield
-        if (phaseStartResult.shieldAmount > 0) {
-            setEnemyGuard(g => g + phaseStartResult.shieldAmount);
-            await new Promise(r => setTimeout(r, 500));
-        }
-
-        // Check if stunned
-        if (!phaseStartResult.canPerformAction) {
-            await new Promise(r => setTimeout(r, 1500));
-            phaseState.clearActivePhase();
-            return;
-        }
-
-        await new Promise(r => setTimeout(r, 800));
-
-        // Execute enemy actions
-        const checkCharacterHp = () => playerHp <= 0 || enemyHp <= 0;
-
-        const onExecuteAction = async (action: EnemyAction) => {
-            // Guard-only action
-            if (action.guardGain && action.guardGain > 0 && !action.baseDamage) {
-                setEnemyGuard(g => g + action.guardGain!);
-                return;
-            }
-
-            // Attack action
-            const hitCount = action.hitCount || 1;
-            for (let i = 0; i < hitCount; i++) {
-                const attackResult = calculateEnemyAttackDamage(enemyChar, playerChar, action);
-
-                setPlayerGuard(g => Math.max(0, g - attackResult.guardDamage));
-                setPlayerAp(a => Math.max(0, a - attackResult.apDamage));
-                setPlayerHp(h => Math.max(0, h - attackResult.hpDamage));
-
-                if (playerRef.current) {
-                    showDamageEffect(playerRef.current, attackResult.totalDamage, false);
-                }
-
-                if (attackResult.reflectDamage > 0) {
-                    setEnemyHp(h => Math.max(0, h - attackResult.reflectDamage));
-                    const reflectTarget = getTargetEnemyRef();
-                    if (reflectTarget) showDamageEffect(reflectTarget, attackResult.reflectDamage, false);
-                }
-
-                setBattleStats(stats => ({
-                    ...stats,
-                    damageTaken: stats.damageTaken + attackResult.totalDamage,
-                }));
-
-                if (i < hitCount - 1) {
-                    await new Promise(r => setTimeout(r, 500));
-                }
-            }
-
-            // Apply debuffs
-            if (action.applyDebuffs && action.applyDebuffs.length > 0) {
-                const newBuffs = applyEnemyDebuffsToPlayer(playerBuffs, action.applyDebuffs);
-                setPlayerBuffs(newBuffs);
-            }
-
-            // Bleed damage
-            const bleedDamage = calculateBleedDamage(enemyMaxHp, enemyBuffs);
-            if (bleedDamage > 0) {
-                setEnemyHp(h => Math.max(0, h - bleedDamage));
-                const bleedTarget = getTargetEnemyRef();
-                if (bleedTarget) showDamageEffect(bleedTarget, bleedDamage, false);
-                await new Promise(r => setTimeout(r, 300));
-            }
-        };
-
-        const enemyTurnCount = enemies[0]?.turnCount ?? 1;
-        await executeEnemyActions(
+        await executeEnemyPhaseImpl({
             currentEnemy,
+            enemyBuffs,
             enemyHp,
             enemyMaxHp,
-            enemyTurnCount,
             enemyEnergy,
-            onExecuteAction,
-            checkCharacterHp
-        );
-
-        // Phase end effects
-        await new Promise(r => setTimeout(r, 800));
-        const phaseEndResult = calculateEnemyPhaseEnd({ enemyBuffs });
-        if (phaseEndResult.dotDamage > 0) {
-            setEnemyHp(h => Math.max(0, h - phaseEndResult.dotDamage));
-            const dotTarget = getTargetEnemyRef();
-            if (dotTarget) showDamageEffect(dotTarget, phaseEndResult.dotDamage, false);
-            await new Promise(r => setTimeout(r, 500));
-        }
-
-        phaseState.clearActivePhase();
+            playerHp,
+            playerBuffs,
+            enemies,
+            enemyChar,
+            playerChar,
+            playerRef,
+            setEnemyGuard,
+            setEnemyEnergy,
+            setEnemyBuffs,
+            setEnemyHp,
+            setPlayerGuard,
+            setPlayerAp,
+            setPlayerHp,
+            setPlayerBuffs,
+            setBattleStats,
+            showMessage,
+            showDamageEffect,
+            getTargetEnemyRef,
+            phaseState: {
+                setPlayerPhaseActive: phaseState.setPlayerPhaseActive,
+                setEnemyPhaseActive: phaseState.setEnemyPhaseActive,
+                incrementPhaseCount: phaseState.incrementPhaseCount,
+                clearActivePhase: phaseState.clearActivePhase,
+            },
+        });
     }, [
+        executeEnemyPhaseImpl,
         currentEnemy,
         enemyBuffs,
         enemyHp,
@@ -579,15 +472,15 @@ export const useBattle = (depth: Depth, initialEnemies?: Enemy[]) => {
         playerHp,
         playerBuffs,
         enemies,
-        showMessage,
-        showDamageEffect,
-        setEnemyHp,
-        setEnemyGuard,
-        setEnemyBuffs,
-        getTargetEnemyRef,
-        phaseState,
         enemyChar,
         playerChar,
+        showMessage,
+        showDamageEffect,
+        getTargetEnemyRef,
+        phaseState,
+        setEnemyGuard,
+        setEnemyHp,
+        setEnemyBuffs,
     ]);
 
     // ========================================================================

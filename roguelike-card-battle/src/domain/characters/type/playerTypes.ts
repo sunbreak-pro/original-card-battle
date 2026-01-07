@@ -12,7 +12,7 @@ export interface Player extends Character {
   maxAp: number;
   guard: number;
   speed: number;
-  initialEnergy: number;
+  cardActEnergy: number;
   gold: number;
   deck: Card[];
   buffDebuffs: Character["buffDebuffs"];

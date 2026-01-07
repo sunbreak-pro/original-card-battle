@@ -40,7 +40,7 @@ const BattleScreen = ({
     cardEnergy,
     maxEnergy,
     swordEnergy,
-    enemyEnergy,
+    enemyEnergy: _enemyEnergy,
     phaseCount,
     isPlayerPhase: _isPlayerPhase,
     turnMessage,
