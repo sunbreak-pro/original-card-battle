@@ -153,7 +153,7 @@ const EnemyCard: React.FC<{
         )}
       </div>
 
-      <div className="status-container">
+      <div className="status-container enemy-status-container">
         {/* HP/AP combined bar - AP overlays on HP */}
         {/* Guard bar - value badge on left */}
         {state.guard > 0 && (
@@ -171,10 +171,19 @@ const EnemyCard: React.FC<{
         )}
 
         <div className="status-bar-row hp-row">
-          <div className="value-badge ap-badge">
-            {state.ap}/{state.maxAp}
+          <div
+            {...(state.ap === 0
+              ? { className: "break-badge" }
+              : { className: "value-badge ap-badge" })}
+          >
+            {state.ap > 0 && `${state.ap}/${state.maxAp}`}
+            {state.ap === 0 && `break!`}
           </div>
-          <div className="unified-bar-container hp-bar">
+          <div
+            {...(state.ap > 0
+              ? { className: "Armor-border" }
+              : { className: "unified-bar-container hp-bar" })}
+          >
             {/* AP overlay */}
             {state.ap > 0 && (
               <div

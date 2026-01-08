@@ -169,7 +169,7 @@ const BattleScreen = ({
             <div className="character-visual player" ref={playerRef}>
               ⚔️
             </div>
-            <div className="status-container">
+            <div className="status-container player-status-container">
               {/* HP/AP combined bar - AP overlays on HP */}
               {/* Guard bar - value badge on left */}
               {playerGuard > 0 && (
@@ -187,11 +187,21 @@ const BattleScreen = ({
               )}
 
               <div className="status-bar-row hp-row">
-                <div className="value-badge ap-badge">
-                  {playerAp}/{playerMaxAp}
+                <div
+                  {...(playerAp === 0
+                    ? { className: "break-badge" }
+                    : { className: "value-badge ap-badge" })}
+                >
+                  {" "}
+                  {playerAp > 0 && `${playerAp}/${playerMaxAp}`}
+                  {playerAp === 0 && `break!`}
                 </div>
 
-                <div className="unified-bar-container hp-bar">
+                <div
+                  {...(playerAp > 0
+                    ? { className: "Armor-border" }
+                    : { className: "unified-bar-container hp-bar" })}
+                >
                   {/* AP overlay */}
                   {playerAp > 0 && (
                     <div

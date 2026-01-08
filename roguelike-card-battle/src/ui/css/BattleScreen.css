@@ -178,7 +178,11 @@ align-items: center;
   width: 80%;
   display: flex;
   flex-direction: column;
-  gap: 0.4vh;
+  gap: 1vh;
+}
+
+.status-container.enemy-status-container {
+width: 150%;
 }
 
 /* Common row structure */
@@ -186,7 +190,7 @@ align-items: center;
   display: flex;
   align-items: center;
   width: 100%;
-  height: 2.2vh;
+  height: 2.5vh;
 }
 
 .hp-value {
@@ -206,24 +210,60 @@ align-items: center;
 
 /* Value badge (left side) for AP/Guard/Energy */
 .value-badge {
-  min-width: 4vh;
-  height: 100%;
+  width: 5vh;
+  height: 120%;
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 1.1vh;
   font-weight: bold;
-  border-radius: 0.4vh;
+  border-radius: 0.5vh;
   color: #fff;
   text-shadow: 0 0 0.3vh #000;
   white-space: nowrap;
   margin-right: 0.5vh;
   transition: all 0.3s ease;
 }
+.break-badge{
+  width: 5vh;
+  height: 120%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ff0000;
+  color: rgb(255, 255, 255);
+  border-radius: .5vh;
+  animation: breakFlash 1.8s infinite;
+  margin-right: 0.5vh;
+}
+.Armor-border{
+  flex: 1;
+  position: relative;
+  height: 120%;
+  background: rgba(0, 0, 0, 0.5);
+  border: 0.5vh solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5vh;
+  overflow: hidden;
+}
+
+@keyframes breakFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 25, 0.8);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 1vh 0.5vh rgba(255, 0, 25, 0.5);
+    transform: scale(1.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 0, 25, 0);
+    transform: scale(1);
+  }
+}
 
 .value-badge.ap-badge {
   background: linear-gradient(135deg, #808080 0%, #606060 100%);
-  border: 0.1vh solid #999;
+  border: 0.2vh solid #999;
 }
 
 .value-badge.guard-badge {
