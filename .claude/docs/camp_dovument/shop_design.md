@@ -1,6 +1,7 @@
 # 取引所詳細設計書 (SHOP_DESIGN_V1)
 
 ## 更新履歴
+
 - V1.0: 初版作成（魔石レート調整、セールシステム、装備パック仕様確定）
 
 ---
@@ -22,16 +23,18 @@
 
 ### 2.1 購入システム (Buying)
 
-商品は以下の3カテゴリに分類して表示します。
+商品は以下の 3 カテゴリに分類して表示します。
 
 #### 2.1.1 消耗品 (Consumables)
 
 **基本仕様:**
+
 - ポーション類、状態異常回復薬、バフアイテム
 - 在庫: 無限（Phase 1）
-- 日替わりセールの対象
+- セール枠は一回の探索ごとに２アイテムが対象(成長ツリーによりアイテム数増加)
 
 **主要商品例:**
+
 ```typescript
 // ポーション（小）
 {
@@ -55,11 +58,13 @@
 #### 2.1.2 転移石 (Teleport Stones)
 
 **基本仕様:**
+
 - `return_system.md` に基づき、常に在庫を確保
-- 3種類を常時販売
+- 3 種類を常時販売
 - 日替わりセールの対象
 
 **商品定義:**
+
 ```typescript
 {
   id: "shop_teleport_normal",
@@ -89,20 +94,22 @@
 #### 2.1.3 装備パック (Equipment Packs)
 
 **基本仕様:**
+
 - 中身がランダムな「袋」
 - 購入時に即時開封され、インベントリに追加
-- **1パックで装備スロット6種類すべてが出現**（weapon, armor, helmet, boots, accessory1, accessory2）
-- 各スロットから1個ずつ、合計6個の装備を獲得
+- **1 パックで装備スロット 6 種類すべてが出現**（weapon, armor, helmet, boots, accessory1, accessory2）
+- 各スロットから 1 個ずつ、合計 6 個の装備を獲得
 
 **パック種類と確率:**
 
-| パック名 | 価格 | 保証レアリティ | Common | Rare | Epic | Legendary |
-|---------|------|----------------|--------|------|------|-----------|
-| コモンパック | 300G | Common | 100% | 0% | 0% | 0% |
-| レアパック | 500G | Rare以上 | 60% | 35% | 5% | 0% |
-| エピックパック | 1000G | Epic以上 | 30% | 45% | 20% | 5% |
+| パック名       | 価格  | 保証レアリティ | Common | Rare | Epic | Legendary |
+| -------------- | ----- | -------------- | ------ | ---- | ---- | --------- |
+| コモンパック   | 300G  | Common         | 100%   | 0%   | 0%   | 0%        |
+| レアパック     | 500G  | Rare 以上      | 60%    | 35%  | 5%   | 0%        |
+| エピックパック | 1000G | Epic 以上      | 30%    | 45%  | 20%  | 5%        |
 
 **抽選ロジック:**
+
 ```typescript
 interface EquipmentPack {
   id: string;
@@ -135,13 +142,13 @@ interface EquipmentPack {
 function openEquipmentPack(pack: EquipmentPack): Item[] {
   const slots: EquipmentSlot[] = ['weapon', 'armor', 'helmet', 'boots', 'accessory1', 'accessory2'];
   const items: Item[] = [];
-  
+
   for (const slot of slots) {
     const rarity = rollRarity(pack.probabilities);
     const equipment = createRandomEquipment(slot, rarity);
     items.push(equipment);
   }
-  
+
   return items; // 6個の装備を返す
 }
 ```
@@ -151,19 +158,21 @@ function openEquipmentPack(pack: EquipmentPack): Item[] {
 ### 2.2 売却システム (Selling)
 
 **基本仕様:**
+
 - プレイヤーのインベントリにあるアイテムを売却
 - **装備中のアイテムは売却不可**（リストから除外）
 - 売却価格は Item.sellPrice をそのまま使用
 
 **売却可能アイテムのフィルタリング:**
+
 ```typescript
 // 装備中のアイテムIDリスト
 const equippedIds = getEquippedIds(); // ["weapon_001", "armor_003", ...]
 
 // 売却可能アイテム
-const sellableItems = items.filter(item => {
+const sellableItems = items.filter((item) => {
   if (!item.canSell) return false; // 売却不可フラグ
-  if (item.itemType === 'equipment' && equippedIds.includes(item.id)) {
+  if (item.itemType === "equipment" && equippedIds.includes(item.id)) {
     return false; // 装備中は除外
   }
   return true;
@@ -171,25 +180,27 @@ const sellableItems = items.filter(item => {
 ```
 
 **売却処理:**
+
 ```typescript
 const handleSell = (item: Item) => {
   // 確認ダイアログ表示
   if (!confirm(`${item.name} を ${item.sellPrice}G で売却しますか？`)) {
     return;
   }
-  
+
   // アイテム削除
   removeItem(item.id);
-  
+
   // Gold加算
   addGold(item.sellPrice);
-  
+
   // 売却エフェクト
   playSellAnimation();
 };
 ```
 
 **一括売却（将来拡張）:**
+
 ```typescript
 // Phase 1では未実装
 // Phase 2以降で「コモン装備をすべて選択」などのフィルタ機能を追加
@@ -200,40 +211,44 @@ const handleSell = (item: Item) => {
 ### 2.3 魔石取引 (Magic Stone Exchange)
 
 **基本仕様:**
+
 - 魔石アイテムを Gold に換金
-- 3種類の魔石で異なるレート
+- 3 種類の魔石で異なるレート
 
 **魔石レート:**
+
 ```typescript
 const MAGIC_STONE_RATES = {
-  magic_stone_small: 30,   // 魔石（小）: 30G
+  magic_stone_small: 30, // 魔石（小）: 30G
   magic_stone_medium: 100, // 魔石（中）: 100G
-  magic_stone_large: 350,  // 魔石（大）: 350G
+  magic_stone_large: 350, // 魔石（大）: 350G
 };
 ```
 
-**UI設計:**
+**UI 設計:**
+
 - 所持魔石の総価値を表示
 - スライダーまたは入力ボックスで換金する魔石の個数を指定
 - 価値の低いものから順に消費
 
 **換金処理:**
+
 ```typescript
 const handleExchangeMagicStones = (targetValue: number) => {
   const magicStones = items
-    .filter(item => item.itemType === 'magicStone')
+    .filter((item) => item.itemType === "magicStone")
     .sort((a, b) => (a.magicStoneValue || 0) - (b.magicStoneValue || 0)); // 価値の低い順
-  
+
   let remaining = targetValue;
   const toRemove: string[] = [];
-  
+
   for (const stone of magicStones) {
     if (remaining <= 0) break;
-    
+
     const stoneValue = stone.magicStoneValue || 0;
     const count = stone.stackCount || 1;
     const totalValue = stoneValue * count;
-    
+
     if (totalValue <= remaining) {
       // この魔石を全て消費
       remaining -= totalValue;
@@ -242,18 +257,18 @@ const handleExchangeMagicStones = (targetValue: number) => {
       // 一部だけ消費
       const needCount = Math.ceil(remaining / stoneValue);
       remaining = 0;
-      
+
       // スタック数を減らす
       updateItemStack(stone.id, count - needCount);
     }
   }
-  
+
   // 魔石を削除
-  toRemove.forEach(id => removeItem(id));
-  
+  toRemove.forEach((id) => removeItem(id));
+
   // Gold加算
   addGold(targetValue);
-  
+
   // エフェクト
   playExchangeAnimation();
 };
@@ -264,79 +279,90 @@ const handleExchangeMagicStones = (targetValue: number) => {
 ### 2.4 日替わりセール (Daily Sales)
 
 **トリガー条件:**
-- `encounterCount >= 3` になったら `saleTiming = true`
-- 帰還時（BaseCampに戻った時）にセール内容を更新
+
+- 帰還時（BaseCamp に戻った時）にセール内容を更新
 - ダンジョンに入る時に `saleTiming = false` にリセット
 
 **セール対象:**
+
 - ランダムなカテゴリ（消耗品 / 転移石 / 装備パック）
 - または特定の商品
-- **Epic以上の装備パックはセール対象外**
+- **Epic 以上の装備パックはセール対象外**
 
 **割引率:**
+
 - 10% ~ 30% OFF（ランダム）
 
 **データ構造:**
+
 ```typescript
 interface DailySale {
-  targetCategory?: 'consumable' | 'teleport' | 'equipment_pack';
-  targetItemId?: string;      // 特定商品指定の場合
-  discountRate: number;       // 0.1 = 10% OFF
+  targetCategory?: "consumable" | "teleport" | "equipment_pack";
+  targetItemId?: string; // 特定商品指定の場合
+  discountRate: number; // 0.1 = 10% OFF
   excludeRarities?: string[]; // ['epic', 'legendary'] = Epic以上は対象外
 }
 
 // GameStateContextに追加
 interface GameState {
   // ... 既存フィールド
-  encounterCount: number;         // ✨ 新規
-  saleTiming: boolean;            // ✨ 新規
-  currentSale: DailySale | null;  // ✨ 新規
+  encounterCount: number; // ✨ 新規
+  saleTiming: boolean; // ✨ 新規
+  currentSale: DailySale | null; // ✨ 新規
 }
 ```
 
 **セール生成ロジック:**
+
 ```typescript
 function generateDailySale(): DailySale {
   const patterns = [
     // パターン1: カテゴリ全体
-    { targetCategory: 'consumable', discountRate: 0.2 },
-    { targetCategory: 'teleport', discountRate: 0.15 },
-    { 
-      targetCategory: 'equipment_pack', 
+    { targetCategory: "consumable", discountRate: 0.2 },
+    { targetCategory: "teleport", discountRate: 0.15 },
+    {
+      targetCategory: "equipment_pack",
       discountRate: 0.1,
-      excludeRarities: ['epic', 'legendary'] // ✅ Epic以上は除外
+      excludeRarities: ["epic", "legendary"], // ✅ Epic以上は除外
     },
-    
+
     // パターン2: 特定商品
-    { targetItemId: 'shop_potion_large', discountRate: 0.3 },
-    { targetItemId: 'shop_teleport_blessed', discountRate: 0.25 },
+    { targetItemId: "shop_potion_large", discountRate: 0.3 },
+    { targetItemId: "shop_teleport_blessed", discountRate: 0.25 },
   ];
-  
+
   return patterns[Math.floor(Math.random() * patterns.length)];
 }
 ```
 
 **価格計算:**
+
 ```typescript
-function calculatePrice(basePrice: number, sale: DailySale | null, item: ShopItem): number {
+function calculatePrice(
+  basePrice: number,
+  sale: DailySale | null,
+  item: ShopItem
+): number {
   if (!sale) return basePrice;
-  
+
   // Epic以上の装備パックはセール除外
-  if (item.type === 'equipment_pack' && 
-      ['epic', 'legendary'].includes(item.guaranteedRarity)) {
+  if (
+    item.type === "equipment_pack" &&
+    ["epic", "legendary"].includes(item.guaranteedRarity)
+  ) {
     return basePrice;
   }
-  
+
   // カテゴリセール
   if (sale.targetCategory && sale.targetCategory === item.type) {
     return Math.floor(basePrice * (1 - sale.discountRate));
   }
-  
+
   // 特定商品セール
   if (sale.targetItemId && sale.targetItemId === item.id) {
     return Math.floor(basePrice * (1 - sale.discountRate));
   }
-  
+
   return basePrice;
 }
 ```
@@ -379,6 +405,7 @@ function calculatePrice(basePrice: number, sale: DailySale | null, item: ShopIte
 ### 3.2 購入タブ（Buy）
 
 **カテゴリ選択:**
+
 ```
 ┌─────────────────────────────────────────────┐
 │ [消耗品] [転移石] [装備パック]              │
@@ -387,6 +414,7 @@ function calculatePrice(basePrice: number, sale: DailySale | null, item: ShopIte
 ```
 
 **商品グリッド:**
+
 ```
 ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
 │  🧪          │  │  🧪          │  │  🧪          │
@@ -398,6 +426,7 @@ function calculatePrice(basePrice: number, sale: DailySale | null, item: ShopIte
 ```
 
 **セール表示:**
+
 - SALE バッジ（赤背景）
 - 元の価格に取り消し線
 - 割引後の価格を大きく表示
@@ -405,6 +434,7 @@ function calculatePrice(basePrice: number, sale: DailySale | null, item: ShopIte
 ### 3.3 売却タブ（Sell）
 
 **インベントリグリッド:**
+
 ```
 所持アイテム:
 
@@ -419,6 +449,7 @@ function calculatePrice(basePrice: number, sale: DailySale | null, item: ShopIte
 ```
 
 **売却確認ポップアップ:**
+
 ```
 ┌─────────────────────────────────┐
 │  戦士の鎧 を 80G で売却しますか？│
@@ -430,6 +461,7 @@ function calculatePrice(basePrice: number, sale: DailySale | null, item: ShopIte
 ### 3.4 魔石取引タブ（Exchange）
 
 **魔石リスト:**
+
 ```
 所持魔石:
 
@@ -451,15 +483,17 @@ function calculatePrice(basePrice: number, sale: DailySale | null, item: ShopIte
 ### 3.5 演出 (Feedback)
 
 **購入成功:**
+
 ```
 効果音: チャリーン♪（コインの音）
-アニメーション: 
+アニメーション:
   1. 商品カードがズームアップ
   2. 袋に入る
   3. プレイヤーの方へ飛んでくる
 ```
 
 **装備パック開封:**
+
 ```
 演出フロー:
 1. 購入ボタン押下
@@ -481,6 +515,7 @@ function calculatePrice(basePrice: number, sale: DailySale | null, item: ShopIte
 ```
 
 **魔石換金:**
+
 ```
 効果音: パリーン♪（ガラスが割れる音）
 アニメーション:
@@ -498,26 +533,26 @@ function calculatePrice(basePrice: number, sale: DailySale | null, item: ShopIte
 ```typescript
 // src/types/ShopTypes.ts (新規作成)
 
-import type { ItemType, EquipmentSlot } from './ItemTypes';
+import type { ItemType, EquipmentSlot } from "./ItemTypes";
 
 /**
  * ショップ商品データ
  */
 export interface ShopItem {
-  id: string;                           // 商品ID
-  targetItemId?: string;                // 実際のアイテムID（装備パック以外）
+  id: string; // 商品ID
+  targetItemId?: string; // 実際のアイテムID（装備パック以外）
   name: string;
   description: string;
-  type: 'consumable' | 'teleport' | 'equipment_pack';
+  type: "consumable" | "teleport" | "equipment_pack";
   basePrice: number;
   icon: string;
-  
+
   // 装備パック用設定
   packConfig?: EquipmentPackConfig;
 }
 
 export interface EquipmentPackConfig {
-  guaranteedRarity: 'common' | 'rare' | 'epic';
+  guaranteedRarity: "common" | "rare" | "epic";
   probabilities: {
     common: number;
     rare: number;
@@ -530,22 +565,22 @@ export interface EquipmentPackConfig {
  * セール情報
  */
 export interface DailySale {
-  targetCategory?: 'consumable' | 'teleport' | 'equipment_pack';
+  targetCategory?: "consumable" | "teleport" | "equipment_pack";
   targetItemId?: string;
-  discountRate: number;              // 0.1 = 10% OFF
-  excludeRarities?: ('epic' | 'legendary')[]; // セール除外レアリティ
+  discountRate: number; // 0.1 = 10% OFF
+  excludeRarities?: ("epic" | "legendary")[]; // セール除外レアリティ
 }
 
 /**
  * 商品カテゴリ
  */
-export type ShopCategory = 'consumable' | 'teleport' | 'equipment_pack';
+export type ShopCategory = "consumable" | "teleport" | "equipment_pack";
 
 /**
  * 魔石換金情報
  */
 export interface MagicStoneExchange {
-  totalValue: number;                // 所持魔石の総価値
+  totalValue: number; // 所持魔石の総価値
   breakdown: {
     typeId: string;
     count: number;
@@ -564,22 +599,22 @@ export interface GameState {
   currentScreen: GameScreen;
   battleMode: BattleMode;
   depth: Depth;
-  encounterCount: number;         // ✨ 新規: 戦闘回数
+  encounterCount: number; // ✨ 新規: 戦闘回数
   battleConfig?: BattleConfig;
-  
+
   // Shop用
-  saleTiming: boolean;            // ✨ 新規: セール更新フラグ
-  currentSale: DailySale | null;  // ✨ 新規: 現在のセール
+  saleTiming: boolean; // ✨ 新規: セール更新フラグ
+  currentSale: DailySale | null; // ✨ 新規: 現在のセール
 }
 
 // 初期値
 const initialGameState: GameState = {
-  currentScreen: 'camp',
+  currentScreen: "camp",
   battleMode: null,
   depth: 1,
-  encounterCount: 0,              // ✨ 0から開始
-  saleTiming: false,              // ✨ 初期はfalse
-  currentSale: null,              // ✨ セールなし
+  encounterCount: 0, // ✨ 0から開始
+  saleTiming: false, // ✨ 初期はfalse
+  currentSale: null, // ✨ セールなし
 };
 ```
 
@@ -592,7 +627,7 @@ const initialGameState: GameState = {
 ```typescript
 // src/camps/facilities/Shop/data/ShopData.ts (新規作成)
 
-import type { ShopItem } from '../../../../types/ShopTypes';
+import type { ShopItem } from "../../../../types/ShopTypes";
 
 /**
  * 消耗品カテゴリ
@@ -605,7 +640,7 @@ export const CONSUMABLE_ITEMS: ShopItem[] = [
     description: "HP+30回復",
     type: "consumable",
     basePrice: 50,
-    icon: "🧪"
+    icon: "🧪",
   },
   {
     id: "shop_potion_medium",
@@ -614,7 +649,7 @@ export const CONSUMABLE_ITEMS: ShopItem[] = [
     description: "HP+70回復",
     type: "consumable",
     basePrice: 120,
-    icon: "🧪"
+    icon: "🧪",
   },
   {
     id: "shop_potion_large",
@@ -623,7 +658,7 @@ export const CONSUMABLE_ITEMS: ShopItem[] = [
     description: "HP+150回復",
     type: "consumable",
     basePrice: 240,
-    icon: "🧪"
+    icon: "🧪",
   },
   // ... 他の消耗品
 ];
@@ -639,7 +674,7 @@ export const TELEPORT_ITEMS: ShopItem[] = [
     description: "70%の確率で帰還",
     type: "teleport",
     basePrice: 150,
-    icon: "🔮"
+    icon: "🔮",
   },
   {
     id: "shop_teleport_blessed",
@@ -648,7 +683,7 @@ export const TELEPORT_ITEMS: ShopItem[] = [
     description: "80%の確率で帰還",
     type: "teleport",
     basePrice: 300,
-    icon: "✨"
+    icon: "✨",
   },
   {
     id: "shop_teleport_emergency",
@@ -657,7 +692,7 @@ export const TELEPORT_ITEMS: ShopItem[] = [
     description: "60%の確率で帰還（低コスト）",
     type: "teleport",
     basePrice: 100,
-    icon: "⚡"
+    icon: "⚡",
   },
 ];
 
@@ -678,9 +713,9 @@ export const EQUIPMENT_PACKS: ShopItem[] = [
         common: 1.0,
         rare: 0.0,
         epic: 0.0,
-        legendary: 0.0
-      }
-    }
+        legendary: 0.0,
+      },
+    },
   },
   {
     id: "shop_pack_rare",
@@ -692,12 +727,12 @@ export const EQUIPMENT_PACKS: ShopItem[] = [
     packConfig: {
       guaranteedRarity: "rare",
       probabilities: {
-        common: 0.60,
+        common: 0.6,
         rare: 0.35,
         epic: 0.05,
-        legendary: 0.0
-      }
-    }
+        legendary: 0.0,
+      },
+    },
   },
   {
     id: "shop_pack_epic",
@@ -709,12 +744,12 @@ export const EQUIPMENT_PACKS: ShopItem[] = [
     packConfig: {
       guaranteedRarity: "epic",
       probabilities: {
-        common: 0.30,
+        common: 0.3,
         rare: 0.45,
-        epic: 0.20,
-        legendary: 0.05
-      }
-    }
+        epic: 0.2,
+        legendary: 0.05,
+      },
+    },
   },
 ];
 
@@ -732,11 +767,11 @@ export const ALL_SHOP_ITEMS: ShopItem[] = [
  */
 export function getItemsByCategory(category: ShopCategory): ShopItem[] {
   switch (category) {
-    case 'consumable':
+    case "consumable":
       return CONSUMABLE_ITEMS;
-    case 'teleport':
+    case "teleport":
       return TELEPORT_ITEMS;
-    case 'equipment_pack':
+    case "equipment_pack":
       return EQUIPMENT_PACKS;
     default:
       return [];
@@ -749,59 +784,59 @@ export function getItemsByCategory(category: ShopCategory): ShopItem[] {
 ```typescript
 // src/items/data/MagicStoneData.ts (新規作成)
 
-import type { Item } from '../../types/ItemTypes';
+import type { Item } from "../../types/ItemTypes";
 
 /**
  * 魔石アイテムデータ
  */
 export const MAGIC_STONE_ITEMS: Item[] = [
   {
-    id: 'magic_stone_small_001', // 実際のID（インスタンス用）
-    typeId: 'magic_stone_small',  // タイプID（種類識別用）
-    name: '魔石（小）',
-    description: 'わずかな魔力を帯びた小さな石',
-    itemType: 'magicStone',
-    icon: '💎',
-    magicStoneValue: 30,          // ✅ 30G
-    rarity: 'common',
-    sellPrice: 30,                // 売却価格 = 魔石価値
+    id: "magic_stone_small_001", // 実際のID（インスタンス用）
+    typeId: "magic_stone_small", // タイプID（種類識別用）
+    name: "魔石（小）",
+    description: "わずかな魔力を帯びた小さな石",
+    itemType: "magicStone",
+    icon: "💎",
+    magicStoneValue: 30, // ✅ 30G
+    rarity: "common",
+    sellPrice: 30, // 売却価格 = 魔石価値
     canSell: true,
     canDiscard: false,
     stackable: true,
     maxStack: 99,
-    stackCount: 1
+    stackCount: 1,
   },
   {
-    id: 'magic_stone_medium_001',
-    typeId: 'magic_stone_medium',
-    name: '魔石（中）',
-    description: 'ほのかに光る魔石',
-    itemType: 'magicStone',
-    icon: '💎',
-    magicStoneValue: 100,         // ✅ 100G
-    rarity: 'uncommon',
+    id: "magic_stone_medium_001",
+    typeId: "magic_stone_medium",
+    name: "魔石（中）",
+    description: "ほのかに光る魔石",
+    itemType: "magicStone",
+    icon: "💎",
+    magicStoneValue: 100, // ✅ 100G
+    rarity: "uncommon",
     sellPrice: 100,
     canSell: true,
     canDiscard: false,
     stackable: true,
     maxStack: 99,
-    stackCount: 1
+    stackCount: 1,
   },
   {
-    id: 'magic_stone_large_001',
-    typeId: 'magic_stone_large',
-    name: '魔石（大）',
-    description: '強い魔力を放つ貴重な魔石',
-    itemType: 'magicStone',
-    icon: '💎',
-    magicStoneValue: 350,         // ✅ 350G
-    rarity: 'rare',
+    id: "magic_stone_large_001",
+    typeId: "magic_stone_large",
+    name: "魔石（大）",
+    description: "強い魔力を放つ貴重な魔石",
+    itemType: "magicStone",
+    icon: "💎",
+    magicStoneValue: 350, // ✅ 350G
+    rarity: "rare",
     sellPrice: 350,
     canSell: true,
     canDiscard: false,
     stackable: true,
     maxStack: 99,
-    stackCount: 1
+    stackCount: 1,
   },
 ];
 
@@ -809,9 +844,9 @@ export const MAGIC_STONE_ITEMS: Item[] = [
  * 魔石の換金レート定義
  */
 export const MAGIC_STONE_RATES: Record<string, number> = {
-  'magic_stone_small': 30,
-  'magic_stone_medium': 100,
-  'magic_stone_large': 350,
+  magic_stone_small: 30,
+  magic_stone_medium: 100,
+  magic_stone_large: 350,
 };
 
 /**
@@ -819,11 +854,11 @@ export const MAGIC_STONE_RATES: Record<string, number> = {
  */
 export function calculateMagicStoneValue(items: Item[]): number {
   return items
-    .filter(item => item.itemType === 'magicStone')
+    .filter((item) => item.itemType === "magicStone")
     .reduce((sum, item) => {
       const value = item.magicStoneValue || 0;
       const count = item.stackCount || 1;
-      return sum + (value * count);
+      return sum + value * count;
     }, 0);
 }
 ```
@@ -835,6 +870,7 @@ export function calculateMagicStoneValue(items: Item[]): number {
 ### Phase 1: データ準備（Week 1: Day 1-2）
 
 **Task 1.1: 型定義作成**
+
 ```
 □ src/types/ShopTypes.ts 作成
   □ ShopItem型
@@ -842,7 +878,8 @@ export function calculateMagicStoneValue(items: Item[]): number {
   □ MagicStoneExchange型
 ```
 
-**Task 1.2: GameStateContext拡張**
+**Task 1.2: GameStateContext 拡張**
+
 ```
 □ src/contexts/GameStateContext.tsx 修正
   □ encounterCount追加
@@ -853,6 +890,7 @@ export function calculateMagicStoneValue(items: Item[]): number {
 ```
 
 **Task 1.3: 商品データ作成**
+
 ```
 □ src/camps/facilities/Shop/data/ShopData.ts 作成
   □ CONSUMABLE_ITEMS定義
@@ -862,6 +900,7 @@ export function calculateMagicStoneValue(items: Item[]): number {
 ```
 
 **Task 1.4: 魔石データ作成**
+
 ```
 □ src/items/data/MagicStoneData.ts 作成
   □ MAGIC_STONE_ITEMS定義
@@ -871,25 +910,26 @@ export function calculateMagicStoneValue(items: Item[]): number {
 
 ---
 
-### Phase 2: Shopコンポーネント実装（Week 1-2: Day 3-7）
+### Phase 2: Shop コンポーネント実装（Week 1-2: Day 3-7）
 
-**Task 2.1: Shop.tsx骨組み**
+**Task 2.1: Shop.tsx 骨組み**
+
 ```typescript
 // src/camps/facilities/Shop/Shop.tsx
 
-import { useState } from 'react';
-import { usePlayer } from '../../../contexts/PlayerContext';
-import { useGameState } from '../../../contexts/GameStateContext';
-import { useInventory } from '../../../contexts/InventoryContext';
-import BuyTab from './BuyTab';
-import SellTab from './SellTab';
-import ExchangeTab from './ExchangeTab';
-import './Shop.css';
+import { useState } from "react";
+import { usePlayer } from "../../../contexts/PlayerContext";
+import { useGameState } from "../../../contexts/GameStateContext";
+import { useInventory } from "../../../contexts/InventoryContext";
+import BuyTab from "./BuyTab";
+import SellTab from "./SellTab";
+import ExchangeTab from "./ExchangeTab";
+import "./Shop.css";
 
-type ShopTab = 'buy' | 'sell' | 'exchange';
+type ShopTab = "buy" | "sell" | "exchange";
 
 const Shop: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ShopTab>('buy');
+  const [activeTab, setActiveTab] = useState<ShopTab>("buy");
   const { returnToCamp } = useGameState();
 
   return (
@@ -903,29 +943,29 @@ const Shop: React.FC = () => {
 
       <nav className="shop-tabs">
         <button
-          className={activeTab === 'buy' ? 'active' : ''}
-          onClick={() => setActiveTab('buy')}
+          className={activeTab === "buy" ? "active" : ""}
+          onClick={() => setActiveTab("buy")}
         >
           購入 (Buy)
         </button>
         <button
-          className={activeTab === 'sell' ? 'active' : ''}
-          onClick={() => setActiveTab('sell')}
+          className={activeTab === "sell" ? "active" : ""}
+          onClick={() => setActiveTab("sell")}
         >
           売却 (Sell)
         </button>
         <button
-          className={activeTab === 'exchange' ? 'active' : ''}
-          onClick={() => setActiveTab('exchange')}
+          className={activeTab === "exchange" ? "active" : ""}
+          onClick={() => setActiveTab("exchange")}
         >
           魔石取引 (Exchange)
         </button>
       </nav>
 
       <div className="shop-content">
-        {activeTab === 'buy' && <BuyTab />}
-        {activeTab === 'sell' && <SellTab />}
-        {activeTab === 'exchange' && <ExchangeTab />}
+        {activeTab === "buy" && <BuyTab />}
+        {activeTab === "sell" && <SellTab />}
+        {activeTab === "exchange" && <ExchangeTab />}
       </div>
 
       <button className="back-button" onClick={returnToCamp}>
@@ -938,7 +978,8 @@ const Shop: React.FC = () => {
 export default Shop;
 ```
 
-**Task 2.2: BuyTab実装**
+**Task 2.2: BuyTab 実装**
+
 ```
 □ src/camps/facilities/Shop/BuyTab.tsx 作成
   □ カテゴリ選択UI
@@ -948,7 +989,8 @@ export default Shop;
   □ 装備パック開封（Phase 1では固定装備）
 ```
 
-**Task 2.3: SellTab実装**
+**Task 2.3: SellTab 実装**
+
 ```
 □ src/camps/facilities/Shop/SellTab.tsx 作成
   □ インベントリ表示
@@ -957,7 +999,8 @@ export default Shop;
   □ 売却処理
 ```
 
-**Task 2.4: ExchangeTab実装**
+**Task 2.4: ExchangeTab 実装**
+
 ```
 □ src/camps/facilities/Shop/ExchangeTab.tsx 作成
   □ 魔石リスト表示
@@ -969,31 +1012,32 @@ export default Shop;
 
 ### Phase 3: 装備生成システム（Week 2: Day 1-3）
 
-**Task 3.1: equipmentGenerator.ts作成**
+**Task 3.1: equipmentGenerator.ts 作成**
+
 ```typescript
 // src/items/utils/equipmentGenerator.ts (新規作成)
 
-import type { Item, EquipmentSlot } from '../../types/ItemTypes';
+import type { Item, EquipmentSlot } from "../../types/ItemTypes";
 
 /**
  * ランダムな装備を生成
  */
 export function createRandomEquipment(
   slot: EquipmentSlot,
-  rarity: 'common' | 'rare' | 'epic' | 'legendary'
+  rarity: "common" | "rare" | "epic" | "legendary"
 ): Item {
   // Phase 1: 仮実装（固定装備を返す）
   // Phase 2: EQUIPMENT_AND_ITEMS_DESIGN.mdから抽選
-  
+
   const equipmentPool = getEquipmentPoolBySlotAndRarity(slot, rarity);
   const template = selectRandom(equipmentPool);
-  
+
   return {
     id: generateUniqueId(),
     typeId: template.id,
     name: template.name,
     description: template.description,
-    itemType: 'equipment',
+    itemType: "equipment",
     icon: template.icon,
     equipmentSlot: slot,
     durability: template.maxDurability,
@@ -1002,7 +1046,7 @@ export function createRandomEquipment(
     rarity: rarity,
     sellPrice: template.sellPrice,
     canSell: true,
-    canDiscard: false
+    canDiscard: false,
   };
 }
 
@@ -1014,18 +1058,18 @@ export function rollRarity(probabilities: {
   rare: number;
   epic: number;
   legendary: number;
-}): 'common' | 'rare' | 'epic' | 'legendary' {
+}): "common" | "rare" | "epic" | "legendary" {
   const roll = Math.random();
   let cumulative = 0;
-  
+
   for (const [rarity, prob] of Object.entries(probabilities)) {
     cumulative += prob;
     if (roll < cumulative) {
-      return rarity as 'common' | 'rare' | 'epic' | 'legendary';
+      return rarity as "common" | "rare" | "epic" | "legendary";
     }
   }
-  
-  return 'common'; // フォールバック
+
+  return "common"; // フォールバック
 }
 
 /**
@@ -1033,27 +1077,28 @@ export function rollRarity(probabilities: {
  */
 export function openEquipmentPack(pack: EquipmentPackConfig): Item[] {
   const slots: EquipmentSlot[] = [
-    'weapon',
-    'armor',
-    'helmet',
-    'boots',
-    'accessory1',
-    'accessory2'
+    "weapon",
+    "armor",
+    "helmet",
+    "boots",
+    "accessory1",
+    "accessory2",
   ];
-  
+
   const items: Item[] = [];
-  
+
   for (const slot of slots) {
     const rarity = rollRarity(pack.probabilities);
     const equipment = createRandomEquipment(slot, rarity);
     items.push(equipment);
   }
-  
+
   return items; // 6個の装備
 }
 ```
 
-**Task 3.2: EquipmentData.ts作成（Phase 1: 簡易版）**
+**Task 3.2: EquipmentData.ts 作成（Phase 1: 簡易版）**
+
 ```
 □ src/items/data/EquipmentData.ts 作成
   □ 各スロット×レアリティの基本装備定義
@@ -1066,37 +1111,38 @@ export function openEquipmentPack(pack: EquipmentPackConfig): Item[] {
 ### Phase 4: セールシステム統合（Week 2: Day 4-5）
 
 **Task 4.1: セール生成ロジック**
+
 ```typescript
 // src/camps/facilities/Shop/utils/saleGenerator.ts
 
-import type { DailySale } from '../../../../types/ShopTypes';
+import type { DailySale } from "../../../../types/ShopTypes";
 
 export function generateDailySale(): DailySale {
   const patterns: DailySale[] = [
     {
-      targetCategory: 'consumable',
-      discountRate: 0.2
+      targetCategory: "consumable",
+      discountRate: 0.2,
     },
     {
-      targetCategory: 'teleport',
-      discountRate: 0.15
+      targetCategory: "teleport",
+      discountRate: 0.15,
     },
     {
-      targetCategory: 'equipment_pack',
+      targetCategory: "equipment_pack",
       discountRate: 0.1,
-      excludeRarities: ['epic', 'legendary'] // ✅ Epic以上除外
+      excludeRarities: ["epic", "legendary"], // ✅ Epic以上除外
     },
     // 特定商品
     {
-      targetItemId: 'shop_potion_large',
-      discountRate: 0.3
+      targetItemId: "shop_potion_large",
+      discountRate: 0.3,
     },
     {
-      targetItemId: 'shop_teleport_blessed',
-      discountRate: 0.25
+      targetItemId: "shop_teleport_blessed",
+      discountRate: 0.25,
     },
   ];
-  
+
   return patterns[Math.floor(Math.random() * patterns.length)];
 }
 
@@ -1106,36 +1152,38 @@ export function calculateDiscountedPrice(
   item: ShopItem
 ): number {
   if (!sale) return basePrice;
-  
+
   // Epic以上の装備パックは除外
-  if (item.type === 'equipment_pack' && item.packConfig) {
-    if (['epic', 'legendary'].includes(item.packConfig.guaranteedRarity)) {
+  if (item.type === "equipment_pack" && item.packConfig) {
+    if (["epic", "legendary"].includes(item.packConfig.guaranteedRarity)) {
       return basePrice;
     }
   }
-  
+
   // カテゴリセール
   if (sale.targetCategory === item.type) {
     return Math.floor(basePrice * (1 - sale.discountRate));
   }
-  
+
   // 特定商品セール
   if (sale.targetItemId === item.id) {
     return Math.floor(basePrice * (1 - sale.discountRate));
   }
-  
+
   return basePrice;
 }
 ```
 
-**Task 4.2: BattleScreenとの連携**
+**Task 4.2: BattleScreen との連携**
+
 ```
 □ BattleScreen.tsx修正
   □ 戦闘終了時にencounterCountをインクリメント
   □ encounterCount >= 3 で saleTiming = true
 ```
 
-**Task 4.3: BaseCampとの連携**
+**Task 4.3: BaseCamp との連携**
+
 ```
 □ BaseCamp.tsx修正
   □ マウント時にsaleTimingをチェック
@@ -1147,7 +1195,8 @@ export function calculateDiscountedPrice(
 
 ### Phase 5: UI/アニメーション（Week 3: Day 1-3）
 
-**Task 5.1: CSS実装**
+**Task 5.1: CSS 実装**
+
 ```
 □ Shop.css作成
   □ 商品グリッドレイアウト
@@ -1156,6 +1205,7 @@ export function calculateDiscountedPrice(
 ```
 
 **Task 5.2: アニメーション実装**
+
 ```
 □ 購入エフェクト
   □ コインアニメーション
@@ -1173,9 +1223,10 @@ export function calculateDiscountedPrice(
 
 ---
 
-## 7. Context APIとの連携
+## 7. Context API との連携
 
 ### 7.1 PlayerContext
+
 ```typescript
 // 使用する関数
 const { player, addGold, useGold } = usePlayer();
@@ -1192,15 +1243,16 @@ addGold(item.sellPrice);
 ```
 
 ### 7.2 InventoryContext
+
 ```typescript
 // 使用する関数
-const { 
-  items, 
-  addItem, 
-  removeItem, 
+const {
+  items,
+  addItem,
+  removeItem,
   getEquippedIds,
   getMagicStones,
-  useMagicStones 
+  useMagicStones,
 } = useInventory();
 
 // 購入時
@@ -1219,38 +1271,35 @@ useMagicStones(350); // 350G分の魔石を消費
 ```
 
 ### 7.3 GameStateContext
+
 ```typescript
 // 使用する関数
-const { 
-  gameState, 
-  setGameState, 
-  returnToCamp 
-} = useGameState();
+const { gameState, setGameState, returnToCamp } = useGameState();
 
 // セール確認
 const { currentSale, saleTiming, encounterCount } = gameState;
 
 // 戦闘回数インクリメント（BattleScreenで実行）
-setGameState(prev => ({
+setGameState((prev) => ({
   ...prev,
   encounterCount: prev.encounterCount + 1,
-  saleTiming: prev.encounterCount + 1 >= 3
+  saleTiming: prev.encounterCount + 1 >= 3,
 }));
 
 // セール更新（BaseCampで実行）
 if (saleTiming) {
   const newSale = generateDailySale();
-  setGameState(prev => ({
+  setGameState((prev) => ({
     ...prev,
     currentSale: newSale,
-    saleTiming: false
+    saleTiming: false,
   }));
 }
 
 // ダンジョン入場時（BaseCampで実行）
-setGameState(prev => ({
+setGameState((prev) => ({
   ...prev,
-  saleTiming: false
+  saleTiming: false,
 }));
 ```
 
@@ -1259,6 +1308,7 @@ setGameState(prev => ({
 ## 8. テスト項目
 
 ### 8.1 購入システムテスト
+
 ```
 □ 消耗品購入
   □ Gold支払い
@@ -1276,6 +1326,7 @@ setGameState(prev => ({
 ```
 
 ### 8.2 売却システムテスト
+
 ```
 □ 装備売却
   □ Gold加算
@@ -1287,6 +1338,7 @@ setGameState(prev => ({
 ```
 
 ### 8.3 魔石取引テスト
+
 ```
 □ 魔石換金
   □ 正しいレート計算
@@ -1295,6 +1347,7 @@ setGameState(prev => ({
 ```
 
 ### 8.4 セールシステムテスト
+
 ```
 □ セール発動
   □ encounterCount >= 3
@@ -1312,17 +1365,20 @@ setGameState(prev => ({
 ## 9. 注意事項
 
 ### 9.1 データの不完全性
+
 - 装備データは EQUIPMENT_AND_ITEMS_DESIGN.md を参照
 - バフ/デバフの詳細は後回し
 - 消耗品の効果は簡易実装
 
 ### 9.2 将来拡張
+
 - 在庫制限システム
 - 一括売却機能
 - 品質システム（Quality）
-- ショップNPCとの会話
+- ショップ NPC との会話
 
 ### 9.3 実装優先度
+
 ```
 Phase 1（最優先）:
 - 基本購入・売却
@@ -1363,14 +1419,16 @@ BASE_CAMP_DESIGN_V1
 取引所の設計が完成しました：
 
 **主な決定事項:**
-- ✅ ShopContextは不要（GameStateContext + ローカルstate）
-- ✅ 魔石レート: 小30G / 中100G / 大350G
+
+- ✅ ShopContext は不要（GameStateContext + ローカル state）
+- ✅ 魔石レート: 小 30G / 中 100G / 大 350G
 - ✅ パック価格: Common 300G / Rare 500G / Epic 1000G
-- ✅ 装備パックは1パックで6個（全スロット）
-- ✅ セールはencounterCount >= 3で発動、帰還時に更新
-- ✅ Epic以上はセール対象外
+- ✅ 装備パックは 1 パックで 6 個（全スロット）
+- ✅ セールは encounterCount >= 3 で発動、帰還時に更新
+- ✅ Epic 以上はセール対象外
 
 **実装優先度:**
+
 1. Phase 1: 基本購入・売却（固定装備）
 2. Phase 2: 装備パック確率システム
 3. Phase 3: 魔石取引・セール
