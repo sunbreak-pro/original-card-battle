@@ -1,13 +1,15 @@
-# 取引所（Shop）実装手順書 (SHOP_IMPLEMENTATION_GUIDE_V1)
+# Shop Implementation Guide (SHOP_IMPLEMENTATION_GUIDE_V1)
 
-## 0. 前提条件
+## 0. Prerequisites
 
-### 0.1 完了している必要があるタスク
-- ✅ BaseCamp全体設計（Context API実装済み）
-- ✅ Item型システムの導入
-- ✅ InventoryContextの実装
+### 0.1 Tasks That Must Be Completed
 
-### 0.2 依存関係
+- ✅ BaseCamp Overall Design (Context API Implemented)
+- ✅ Item Type System Introduction
+- ✅ InventoryContext Implementation
+
+### 0.2 Dependency Relationships
+
 ```
 GameStateContext (encounterCount, saleTiming, currentSale)
   ↓
@@ -16,42 +18,44 @@ PlayerContext (gold, useGold, addGold)
 InventoryContext (items, addItem, removeItem, getEquippedIds)
   ↓
 Shop Components (BuyTab, SellTab, ExchangeTab)
+
 ```
 
 ---
 
-## Phase 1: データと型の準備（Week 1: Day 1-2）
+## Phase 1: Data and Type Preparation (Week 1: Day 1-2)
 
-### タスク 1.1: ShopTypes.ts の作成
+### Task 1.1: Create ShopTypes.ts
 
-**優先度:** 🔴 最高
+**Priority:** 🔴 Highest
 
 ```bash
-# ディレクトリ作成
+# Create directory
 mkdir -p src/types
+
 ```
 
 ```typescript
-// src/types/ShopTypes.ts (新規作成)
+// src/types/ShopTypes.ts (New File)
 
-import type { ItemType, EquipmentSlot } from './ItemTypes';
+import type { ItemType, EquipmentSlot } from "./ItemTypes";
 
 /**
- * ショップ商品データ
+ * Shop Item Data
  */
 export interface ShopItem {
   id: string;
   targetItemId?: string;
   name: string;
   description: string;
-  type: 'consumable' | 'teleport' | 'equipment_pack';
+  type: "consumable" | "teleport" | "equipment_pack";
   basePrice: number;
   icon: string;
   packConfig?: EquipmentPackConfig;
 }
 
 export interface EquipmentPackConfig {
-  guaranteedRarity: 'common' | 'rare' | 'epic';
+  guaranteedRarity: "common" | "rare" | "epic";
   probabilities: {
     common: number;
     rare: number;
@@ -61,16 +65,16 @@ export interface EquipmentPackConfig {
 }
 
 /**
- * セール情報
+ * Sale Information
  */
 export interface DailySale {
-  targetCategory?: 'consumable' | 'teleport' | 'equipment_pack';
+  targetCategory?: "consumable" | "teleport" | "equipment_pack";
   targetItemId?: string;
   discountRate: number;
-  excludeRarities?: ('epic' | 'legendary')[];
+  excludeRarities?: ("epic" | "legendary")[];
 }
 
-export type ShopCategory = 'consumable' | 'teleport' | 'equipment_pack';
+export type ShopCategory = "consumable" | "teleport" | "equipment_pack";
 
 export interface MagicStoneExchange {
   totalValue: number;
@@ -83,269 +87,278 @@ export interface MagicStoneExchange {
 }
 ```
 
-**✅ 完了チェック:**
-- [ ] ShopTypes.ts が作成された
-- [ ] コンパイルエラーがない
+**✅ Completion Check:**
+
+- [ ] ShopTypes.ts created.
+- [ ] No compilation errors.
 
 ---
 
-### タスク 1.2: GameStateContext の拡張
+### Task 1.2: Extend GameStateContext
 
 ```typescript
-// src/contexts/GameStateContext.tsx (修正)
+// src/contexts/GameStateContext.tsx (Modification)
 
-import type { DailySale } from '../types/ShopTypes';
+import type { DailySale } from "../types/ShopTypes";
 
 export interface GameState {
   currentScreen: GameScreen;
   battleMode: BattleMode;
   depth: Depth;
-  encounterCount: number;         // ✨ 新規追加
+  encounterCount: number; // ✨ New Addition
   battleConfig?: BattleConfig;
-  
-  // Shop用
-  saleTiming: boolean;            // ✨ 新規追加
-  currentSale: DailySale | null;  // ✨ 新規追加
+
+  // For Shop
+  saleTiming: boolean; // ✨ New Addition
+  currentSale: DailySale | null; // ✨ New Addition
 }
 
-export const GameStateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const GameStateProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [gameState, setGameState] = useState<GameState>({
-    currentScreen: 'camp',
+    currentScreen: "camp",
     battleMode: null,
     depth: 1,
-    encounterCount: 0,              // ✨ 初期値
-    saleTiming: false,              // ✨ 初期値
-    currentSale: null,              // ✨ 初期値
+    encounterCount: 0, // ✨ Initial Value
+    saleTiming: false, // ✨ Initial Value
+    currentSale: null, // ✨ Initial Value
   });
 
-  // ... 既存のコード
+  // ... Existing code
 
-  // ✨ 新規追加：戦闘回数インクリメント
+  // ✨ New Addition: Increment Encounter Count
   const incrementEncounterCount = () => {
-    setGameState(prev => {
+    setGameState((prev) => {
       const newCount = prev.encounterCount + 1;
       return {
         ...prev,
         encounterCount: newCount,
-        saleTiming: newCount >= 3, // 3回以上でセール更新フラグ
+        saleTiming: newCount >= 3, // Sale update flag if 3 or more
       };
     });
   };
 
-  // ✨ 新規追加：セール更新
+  // ✨ New Addition: Update Sale
   const updateSale = (sale: DailySale | null) => {
-    setGameState(prev => ({
+    setGameState((prev) => ({
       ...prev,
       currentSale: sale,
-      saleTiming: false, // フラグをリセット
+      saleTiming: false, // Reset flag
     }));
   };
 
-  // ✨ 新規追加：ダンジョン入場時の処理
+  // ✨ New Addition: Process on Entering Dungeon
   const enterDungeon = () => {
-    setGameState(prev => ({
+    setGameState((prev) => ({
       ...prev,
-      currentScreen: 'dungeon',
-      saleTiming: false, // セールフラグをリセット
+      currentScreen: "dungeon",
+      saleTiming: false, // Reset sale flag
     }));
   };
 
   return (
-    <GameStateContext.Provider value={{ 
-      gameState, 
-      setGameState, 
-      navigateTo, 
-      startBattle, 
-      returnToCamp,
-      incrementEncounterCount,  // ✨ 追加
-      updateSale,               // ✨ 追加
-      enterDungeon,             // ✨ 追加
-    }}>
+    <GameStateContext.Provider
+      value={{
+        gameState,
+        setGameState,
+        navigateTo,
+        startBattle,
+        returnToCamp,
+        incrementEncounterCount, // ✨ Added
+        updateSale, // ✨ Added
+        enterDungeon, // ✨ Added
+      }}
+    >
       {children}
     </GameStateContext.Provider>
   );
 };
 ```
 
-**✅ 完了チェック:**
-- [ ] encounterCount が追加された
-- [ ] saleTiming が追加された
-- [ ] currentSale が追加された
-- [ ] incrementEncounterCount が実装された
+**✅ Completion Check:**
+
+- [ ] encounterCount added.
+- [ ] saleTiming added.
+- [ ] currentSale added.
+- [ ] incrementEncounterCount implemented.
 
 ---
 
-### タスク 1.3: MagicStoneData.ts の作成
+### Task 1.3: Create MagicStoneData.ts
 
 ```bash
 mkdir -p src/items/data
+
 ```
 
 ```typescript
-// src/items/data/MagicStoneData.ts (新規作成)
+// src/items/data/MagicStoneData.ts (New File)
 
-import type { Item } from '../../types/ItemTypes';
+import type { Item } from "../../types/ItemTypes";
 
 export const MAGIC_STONE_ITEMS: Item[] = [
   {
-    id: 'magic_stone_small_001',
-    typeId: 'magic_stone_small',
-    name: '魔石（小）',
-    description: 'わずかな魔力を帯びた小さな石',
-    itemType: 'magicStone',
-    icon: '💎',
+    id: "magic_stone_small_001",
+    typeId: "magic_stone_small",
+    name: "Magic Stone (Small)",
+    description: "Small stone with faint magic.",
+    itemType: "magicStone",
+    icon: "💎",
     magicStoneValue: 30,
-    rarity: 'common',
+    rarity: "common",
     sellPrice: 30,
     canSell: true,
     canDiscard: false,
     stackable: true,
     maxStack: 99,
-    stackCount: 1
+    stackCount: 1,
   },
   {
-    id: 'magic_stone_medium_001',
-    typeId: 'magic_stone_medium',
-    name: '魔石（中）',
-    description: 'ほのかに光る魔石',
-    itemType: 'magicStone',
-    icon: '💎',
+    id: "magic_stone_medium_001",
+    typeId: "magic_stone_medium",
+    name: "Magic Stone (Medium)",
+    description: "Stone glowing dimly.",
+    itemType: "magicStone",
+    icon: "💎",
     magicStoneValue: 100,
-    rarity: 'uncommon',
+    rarity: "uncommon",
     sellPrice: 100,
     canSell: true,
     canDiscard: false,
     stackable: true,
     maxStack: 99,
-    stackCount: 1
+    stackCount: 1,
   },
   {
-    id: 'magic_stone_large_001',
-    typeId: 'magic_stone_large',
-    name: '魔石（大）',
-    description: '強い魔力を放つ貴重な魔石',
-    itemType: 'magicStone',
-    icon: '💎',
+    id: "magic_stone_large_001",
+    typeId: "magic_stone_large",
+    name: "Magic Stone (Large)",
+    description: "Precious stone emitting strong magic.",
+    itemType: "magicStone",
+    icon: "💎",
     magicStoneValue: 350,
-    rarity: 'rare',
+    rarity: "rare",
     sellPrice: 350,
     canSell: true,
     canDiscard: false,
     stackable: true,
     maxStack: 99,
-    stackCount: 1
+    stackCount: 1,
   },
 ];
 
 export const MAGIC_STONE_RATES: Record<string, number> = {
-  'magic_stone_small': 30,
-  'magic_stone_medium': 100,
-  'magic_stone_large': 350,
+  magic_stone_small: 30,
+  magic_stone_medium: 100,
+  magic_stone_large: 350,
 };
 
 export function calculateMagicStoneValue(items: Item[]): number {
   return items
-    .filter(item => item.itemType === 'magicStone')
+    .filter((item) => item.itemType === "magicStone")
     .reduce((sum, item) => {
       const value = item.magicStoneValue || 0;
       const count = item.stackCount || 1;
-      return sum + (value * count);
+      return sum + value * count;
     }, 0);
 }
 ```
 
-**✅ 完了チェック:**
-- [ ] MagicStoneData.ts が作成された
-- [ ] 3種類の魔石データが定義された
-- [ ] calculateMagicStoneValue が実装された
+**✅ Completion Check:**
+
+- [ ] MagicStoneData.ts created.
+- [ ] 3 types of Magic Stone data defined.
+- [ ] calculateMagicStoneValue implemented.
 
 ---
 
-### タスク 1.4: ShopData.ts の作成
+### Task 1.4: Create ShopData.ts
 
 ```bash
 mkdir -p src/camps/facilities/Shop/data
+
 ```
 
 ```typescript
-// src/camps/facilities/Shop/data/ShopData.ts (新規作成)
+// src/camps/facilities/Shop/data/ShopData.ts (New File)
 
-import type { ShopItem, ShopCategory } from '../../../../types/ShopTypes';
+import type { ShopItem, ShopCategory } from "../../../../types/ShopTypes";
 
 /**
- * 消耗品カテゴリ
+ * Consumable Category
  */
 export const CONSUMABLE_ITEMS: ShopItem[] = [
   {
     id: "shop_potion_small",
     targetItemId: "potion_small",
-    name: "小回復ポーション",
-    description: "HP+30回復",
+    name: "Small Healing Potion",
+    description: "Recovers 30 HP",
     type: "consumable",
     basePrice: 50,
-    icon: "🧪"
+    icon: "🧪",
   },
   {
     id: "shop_potion_medium",
     targetItemId: "potion_medium",
-    name: "中回復ポーション",
-    description: "HP+70回復",
+    name: "Medium Healing Potion",
+    description: "Recovers 70 HP",
     type: "consumable",
     basePrice: 120,
-    icon: "🧪"
+    icon: "🧪",
   },
   {
     id: "shop_potion_large",
     targetItemId: "potion_large",
-    name: "大回復ポーション",
-    description: "HP+150回復",
+    name: "Large Healing Potion",
+    description: "Recovers 150 HP",
     type: "consumable",
     basePrice: 240,
-    icon: "🧪"
+    icon: "🧪",
   },
 ];
 
 /**
- * 転移石カテゴリ
+ * Teleport Stone Category
  */
 export const TELEPORT_ITEMS: ShopItem[] = [
   {
     id: "shop_teleport_normal",
     targetItemId: "teleport_normal",
-    name: "転移石（通常）",
-    description: "70%の確率で帰還",
+    name: "Teleport Stone (Normal)",
+    description: "70% Chance to Return",
     type: "teleport",
     basePrice: 150,
-    icon: "🔮"
+    icon: "🔮",
   },
   {
     id: "shop_teleport_blessed",
     targetItemId: "teleport_blessed",
-    name: "転移石（祝福）",
-    description: "80%の確率で帰還",
+    name: "Teleport Stone (Blessed)",
+    description: "80% Chance to Return",
     type: "teleport",
     basePrice: 300,
-    icon: "✨"
+    icon: "✨",
   },
   {
     id: "shop_teleport_emergency",
     targetItemId: "teleport_emergency",
-    name: "転移石（緊急）",
-    description: "60%の確率で帰還",
+    name: "Teleport Stone (Emergency)",
+    description: "60% Chance to Return",
     type: "teleport",
     basePrice: 100,
-    icon: "⚡"
+    icon: "⚡",
   },
 ];
 
 /**
- * 装備パックカテゴリ
+ * Equipment Pack Category
  */
 export const EQUIPMENT_PACKS: ShopItem[] = [
   {
     id: "shop_pack_common",
-    name: "コモン装備パック",
-    description: "6個の装備（Common確定）",
+    name: "Common Equipment Pack",
+    description: "6 items (Guaranteed Common)",
     type: "equipment_pack",
     basePrice: 300,
     icon: "📦",
@@ -355,43 +368,43 @@ export const EQUIPMENT_PACKS: ShopItem[] = [
         common: 1.0,
         rare: 0.0,
         epic: 0.0,
-        legendary: 0.0
-      }
-    }
+        legendary: 0.0,
+      },
+    },
   },
   {
     id: "shop_pack_rare",
-    name: "レア装備パック",
-    description: "6個の装備（Rare以上確定）",
+    name: "Rare Equipment Pack",
+    description: "6 items (Guaranteed Rare+)",
     type: "equipment_pack",
     basePrice: 500,
     icon: "📦",
     packConfig: {
       guaranteedRarity: "rare",
       probabilities: {
-        common: 0.60,
+        common: 0.6,
         rare: 0.35,
         epic: 0.05,
-        legendary: 0.0
-      }
-    }
+        legendary: 0.0,
+      },
+    },
   },
   {
     id: "shop_pack_epic",
-    name: "エピック装備パック",
-    description: "6個の装備（Epic以上確定）",
+    name: "Epic Equipment Pack",
+    description: "6 items (Guaranteed Epic+)",
     type: "equipment_pack",
     basePrice: 1000,
     icon: "📦",
     packConfig: {
       guaranteedRarity: "epic",
       probabilities: {
-        common: 0.30,
+        common: 0.3,
         rare: 0.45,
-        epic: 0.20,
-        legendary: 0.05
-      }
-    }
+        epic: 0.2,
+        legendary: 0.05,
+      },
+    },
   },
 ];
 
@@ -403,11 +416,11 @@ export const ALL_SHOP_ITEMS: ShopItem[] = [
 
 export function getItemsByCategory(category: ShopCategory): ShopItem[] {
   switch (category) {
-    case 'consumable':
+    case "consumable":
       return CONSUMABLE_ITEMS;
-    case 'teleport':
+    case "teleport":
       return TELEPORT_ITEMS;
-    case 'equipment_pack':
+    case "equipment_pack":
       return EQUIPMENT_PACKS;
     default:
       return [];
@@ -415,89 +428,91 @@ export function getItemsByCategory(category: ShopCategory): ShopItem[] {
 }
 ```
 
-**✅ 完了チェック:**
-- [ ] ShopData.ts が作成された
-- [ ] 3カテゴリの商品が定義された
-- [ ] getItemsByCategory が実装された
+**✅ Completion Check:**
+
+- [ ] ShopData.ts created.
+- [ ] Products for 3 categories defined.
+- [ ] getItemsByCategory implemented.
 
 ---
 
-## Phase 2: Shopコンポーネントの実装（Week 1-2: Day 3-7）
+## Phase 2: Shop Component Implementation (Week 1-2: Day 3-7)
 
-### タスク 2.1: Shop.tsx の骨組み
+### Task 2.1: Shop.tsx Skeleton
 
 ```bash
 mkdir -p src/camps/facilities/Shop
+
 ```
 
 ```typescript
-// src/camps/facilities/Shop/Shop.tsx (新規作成)
+// src/camps/facilities/Shop/Shop.tsx (New File)
 
-import { useState } from 'react';
-import { usePlayer } from '../../../contexts/PlayerContext';
-import { useGameState } from '../../../contexts/GameStateContext';
-import { useInventory } from '../../../contexts/InventoryContext';
-import BuyTab from './BuyTab';
-import SellTab from './SellTab';
-import ExchangeTab from './ExchangeTab';
-import './Shop.css';
+import { useState } from "react";
+import { usePlayer } from "../../../contexts/PlayerContext";
+import { useGameState } from "../../../contexts/GameStateContext";
+import { useInventory } from "../../../contexts/InventoryContext";
+import BuyTab from "./BuyTab";
+import SellTab from "./SellTab";
+import ExchangeTab from "./ExchangeTab";
+import "./Shop.css";
 
-type ShopTab = 'buy' | 'sell' | 'exchange';
+type ShopTab = "buy" | "sell" | "exchange";
 
 const Shop: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ShopTab>('buy');
+  const [activeTab, setActiveTab] = useState<ShopTab>("buy");
   const { player } = usePlayer();
   const { returnToCamp } = useGameState();
   const { items } = useInventory();
 
-  // 魔石の総価値を計算
+  // Calculate total Magic Stone value
   const magicStoneValue = items
-    .filter(item => item.itemType === 'magicStone')
+    .filter((item) => item.itemType === "magicStone")
     .reduce((sum, item) => {
       const value = item.magicStoneValue || 0;
       const count = item.stackCount || 1;
-      return sum + (value * count);
+      return sum + value * count;
     }, 0);
 
   return (
     <div className="shop-screen">
       <header className="shop-header">
-        <h1>🏪 取引所 - Merchant's Exchange</h1>
+        <h1>🏪 Merchant's Exchange</h1>
         <div className="resources">
           <div className="gold">💰 {player.gold} G</div>
-          <div className="magic-stones">💎 {magicStoneValue} G相当</div>
+          <div className="magic-stones">💎 {magicStoneValue} G Equivalent</div>
         </div>
       </header>
 
       <nav className="shop-tabs">
         <button
-          className={activeTab === 'buy' ? 'active' : ''}
-          onClick={() => setActiveTab('buy')}
+          className={activeTab === "buy" ? "active" : ""}
+          onClick={() => setActiveTab("buy")}
         >
-          購入 (Buy)
+          Buy
         </button>
         <button
-          className={activeTab === 'sell' ? 'active' : ''}
-          onClick={() => setActiveTab('sell')}
+          className={activeTab === "sell" ? "active" : ""}
+          onClick={() => setActiveTab("sell")}
         >
-          売却 (Sell)
+          Sell
         </button>
         <button
-          className={activeTab === 'exchange' ? 'active' : ''}
-          onClick={() => setActiveTab('exchange')}
+          className={activeTab === "exchange" ? "active" : ""}
+          onClick={() => setActiveTab("exchange")}
         >
-          魔石取引 (Exchange)
+          Exchange
         </button>
       </nav>
 
       <div className="shop-content">
-        {activeTab === 'buy' && <BuyTab />}
-        {activeTab === 'sell' && <SellTab />}
-        {activeTab === 'exchange' && <ExchangeTab />}
+        {activeTab === "buy" && <BuyTab />}
+        {activeTab === "sell" && <SellTab />}
+        {activeTab === "exchange" && <ExchangeTab />}
       </div>
 
       <button className="back-button" onClick={returnToCamp}>
-        キャンプに戻る
+        Return to Camp
       </button>
     </div>
   );
@@ -506,29 +521,31 @@ const Shop: React.FC = () => {
 export default Shop;
 ```
 
-**✅ 完了チェック:**
-- [ ] Shop.tsx が作成された
-- [ ] タブ切り替えが動作する
-- [ ] リソース表示が正しい
+**✅ Completion Check:**
+
+- [ ] Shop.tsx created.
+- [ ] Tab switching works.
+- [ ] Resource display is correct.
 
 ---
 
-### タスク 2.2: BuyTab の実装
+### Task 2.2: BuyTab Implementation
 
 ```typescript
-// src/camps/facilities/Shop/BuyTab.tsx (新規作成)
+// src/camps/facilities/Shop/BuyTab.tsx (New File)
 
-import { useState } from 'react';
-import { usePlayer } from '../../../contexts/PlayerContext';
-import { useGameState } from '../../../contexts/GameStateContext';
-import { useInventory } from '../../../contexts/InventoryContext';
-import { getItemsByCategory } from './data/ShopData';
-import { calculateDiscountedPrice } from './utils/saleCalculator';
-import type { ShopCategory, ShopItem } from '../../../types/ShopTypes';
-import './BuyTab.css';
+import { useState } from "react";
+import { usePlayer } from "../../../contexts/PlayerContext";
+import { useGameState } from "../../../contexts/GameStateContext";
+import { useInventory } from "../../../contexts/InventoryContext";
+import { getItemsByCategory } from "./data/ShopData";
+import { calculateDiscountedPrice } from "./utils/saleCalculator";
+import type { ShopCategory, ShopItem } from "../../../types/ShopTypes";
+import "./BuyTab.css";
 
 const BuyTab: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<ShopCategory>('consumable');
+  const [selectedCategory, setSelectedCategory] =
+    useState<ShopCategory>("consumable");
   const { player, useGold } = usePlayer();
   const { gameState } = useGameState();
   const { addItem } = useInventory();
@@ -537,64 +554,72 @@ const BuyTab: React.FC = () => {
   const { currentSale } = gameState;
 
   const handleBuy = (shopItem: ShopItem) => {
-    const price = calculateDiscountedPrice(shopItem.basePrice, currentSale, shopItem);
+    const price = calculateDiscountedPrice(
+      shopItem.basePrice,
+      currentSale,
+      shopItem
+    );
 
     if (player.gold < price) {
-      alert('Goldが足りません！');
+      alert("Not enough Gold!");
       return;
     }
 
-    if (!confirm(`${shopItem.name} を ${price}G で購入しますか？`)) {
+    if (!confirm(`Buy ${shopItem.name} for ${price}G?`)) {
       return;
     }
 
-    // Gold支払い
+    // Pay Gold
     if (!useGold(price)) {
-      alert('購入に失敗しました');
+      alert("Purchase failed");
       return;
     }
 
-    // アイテム付与（Phase 1: 簡易実装）
-    if (shopItem.type === 'equipment_pack') {
-      // Phase 1では固定装備を6個付与
-      // Phase 2で確率抽選を実装
-      alert('装備パックを開封しました！（Phase 1: 簡易実装）');
+    // Grant Items (Phase 1: Simple Implementation)
+    if (shopItem.type === "equipment_pack") {
+      // Phase 1 grants 6 fixed items
+      // Phase 2 implements probability lottery
+      alert("Equipment pack opened! (Phase 1: Simple Implementation)");
       // TODO: openEquipmentPack(shopItem.packConfig)
     } else {
-      // 消耗品・転移石
+      // Consumables/Teleport Stones
       // TODO: createItemFromId(shopItem.targetItemId)
-      alert(`${shopItem.name} を購入しました！`);
+      alert(`${shopItem.name} purchased!`);
     }
   };
 
   return (
     <div className="buy-tab">
-      {/* カテゴリ選択 */}
+      {/* Category Selection */}
       <nav className="category-tabs">
         <button
-          className={selectedCategory === 'consumable' ? 'active' : ''}
-          onClick={() => setSelectedCategory('consumable')}
+          className={selectedCategory === "consumable" ? "active" : ""}
+          onClick={() => setSelectedCategory("consumable")}
         >
-          消耗品
+          Consumables
         </button>
         <button
-          className={selectedCategory === 'teleport' ? 'active' : ''}
-          onClick={() => setSelectedCategory('teleport')}
+          className={selectedCategory === "teleport" ? "active" : ""}
+          onClick={() => setSelectedCategory("teleport")}
         >
-          転移石
+          Teleport
         </button>
         <button
-          className={selectedCategory === 'equipment_pack' ? 'active' : ''}
-          onClick={() => setSelectedCategory('equipment_pack')}
+          className={selectedCategory === "equipment_pack" ? "active" : ""}
+          onClick={() => setSelectedCategory("equipment_pack")}
         >
-          装備パック
+          Packs
         </button>
       </nav>
 
-      {/* 商品グリッド */}
+      {/* Product Grid */}
       <div className="items-grid">
-        {items.map(item => {
-          const price = calculateDiscountedPrice(item.basePrice, currentSale, item);
+        {items.map((item) => {
+          const price = calculateDiscountedPrice(
+            item.basePrice,
+            currentSale,
+            item
+          );
           const isOnSale = price < item.basePrice;
 
           return (
@@ -602,7 +627,7 @@ const BuyTab: React.FC = () => {
               <div className="item-icon">{item.icon}</div>
               <div className="item-name">{item.name}</div>
               <div className="item-description">{item.description}</div>
-              
+
               <div className="item-price">
                 {isOnSale && (
                   <>
@@ -610,7 +635,9 @@ const BuyTab: React.FC = () => {
                     <span className="original-price">{item.basePrice} G</span>
                   </>
                 )}
-                <span className={isOnSale ? 'discounted-price' : 'normal-price'}>
+                <span
+                  className={isOnSale ? "discounted-price" : "normal-price"}
+                >
                   {price} G
                 </span>
               </div>
@@ -620,7 +647,7 @@ const BuyTab: React.FC = () => {
                 onClick={() => handleBuy(item)}
                 disabled={player.gold < price}
               >
-                {player.gold < price ? 'Gold不足' : '購入'}
+                {player.gold < price ? "No Gold" : "Buy"}
               </button>
             </div>
           );
@@ -633,20 +660,21 @@ const BuyTab: React.FC = () => {
 export default BuyTab;
 ```
 
-**✅ 完了チェック:**
-- [ ] BuyTab.tsx が作成された
-- [ ] カテゴリ選択が動作する
-- [ ] 商品グリッドが表示される
-- [ ] 購入処理が動作する（簡易版）
+**✅ Completion Check:**
+
+- [ ] BuyTab.tsx created.
+- [ ] Category selection works.
+- [ ] Product grid displayed.
+- [ ] Purchase process works (Simple version).
 
 ---
 
-### タスク 2.3: saleCalculator.ts の作成
+### Task 2.3: Create saleCalculator.ts
 
 ```typescript
-// src/camps/facilities/Shop/utils/saleCalculator.ts (新規作成)
+// src/camps/facilities/Shop/utils/saleCalculator.ts (New File)
 
-import type { DailySale, ShopItem } from '../../../../types/ShopTypes';
+import type { DailySale, ShopItem } from "../../../../types/ShopTypes";
 
 export function calculateDiscountedPrice(
   basePrice: number,
@@ -655,19 +683,19 @@ export function calculateDiscountedPrice(
 ): number {
   if (!sale) return basePrice;
 
-  // Epic以上の装備パックは除外
-  if (item.type === 'equipment_pack' && item.packConfig) {
-    if (['epic', 'legendary'].includes(item.packConfig.guaranteedRarity)) {
+  // Exclude Epic+ Equipment Packs
+  if (item.type === "equipment_pack" && item.packConfig) {
+    if (["epic", "legendary"].includes(item.packConfig.guaranteedRarity)) {
       return basePrice;
     }
   }
 
-  // カテゴリセール
+  // Category Sale
   if (sale.targetCategory === item.type) {
     return Math.floor(basePrice * (1 - sale.discountRate));
   }
 
-  // 特定商品セール
+  // Specific Item Sale
   if (sale.targetItemId === item.id) {
     return Math.floor(basePrice * (1 - sale.discountRate));
   }
@@ -678,25 +706,25 @@ export function calculateDiscountedPrice(
 export function generateDailySale(): DailySale {
   const patterns: DailySale[] = [
     {
-      targetCategory: 'consumable',
-      discountRate: 0.2
+      targetCategory: "consumable",
+      discountRate: 0.2,
     },
     {
-      targetCategory: 'teleport',
-      discountRate: 0.15
+      targetCategory: "teleport",
+      discountRate: 0.15,
     },
     {
-      targetCategory: 'equipment_pack',
+      targetCategory: "equipment_pack",
       discountRate: 0.1,
-      excludeRarities: ['epic', 'legendary']
+      excludeRarities: ["epic", "legendary"],
     },
     {
-      targetItemId: 'shop_potion_large',
-      discountRate: 0.3
+      targetItemId: "shop_potion_large",
+      discountRate: 0.3,
     },
     {
-      targetItemId: 'shop_teleport_blessed',
-      discountRate: 0.25
+      targetItemId: "shop_teleport_blessed",
+      discountRate: 0.25,
     },
   ];
 
@@ -704,21 +732,22 @@ export function generateDailySale(): DailySale {
 }
 ```
 
-**✅ 完了チェック:**
-- [ ] saleCalculator.ts が作成された
-- [ ] calculateDiscountedPrice が実装された
-- [ ] generateDailySale が実装された
+**✅ Completion Check:**
+
+- [ ] saleCalculator.ts created.
+- [ ] calculateDiscountedPrice implemented.
+- [ ] generateDailySale implemented.
 
 ---
 
-### タスク 2.4: SellTab の実装
+### Task 2.4: SellTab Implementation
 
 ```typescript
-// src/camps/facilities/Shop/SellTab.tsx (新規作成)
+// src/camps/facilities/Shop/SellTab.tsx (New File)
 
-import { usePlayer } from '../../../contexts/PlayerContext';
-import { useInventory } from '../../../contexts/InventoryContext';
-import './SellTab.css';
+import { usePlayer } from "../../../contexts/PlayerContext";
+import { useInventory } from "../../../contexts/InventoryContext";
+import "./SellTab.css";
 
 const SellTab: React.FC = () => {
   const { addGold } = usePlayer();
@@ -726,39 +755,39 @@ const SellTab: React.FC = () => {
 
   const equippedIds = getEquippedIds();
 
-  // 売却可能アイテムをフィルタリング
-  const sellableItems = items.filter(item => {
+  // Filter sellable items
+  const sellableItems = items.filter((item) => {
     if (!item.canSell) return false;
-    if (item.itemType === 'equipment' && equippedIds.includes(item.id)) {
-      return false; // 装備中は除外
+    if (item.itemType === "equipment" && equippedIds.includes(item.id)) {
+      return false; // Exclude if equipped
     }
     return true;
   });
 
   const handleSell = (item: any) => {
-    if (!confirm(`${item.name} を ${item.sellPrice}G で売却しますか？`)) {
+    if (!confirm(`Sell ${item.name} for ${item.sellPrice}G?`)) {
       return;
     }
 
-    // アイテム削除
+    // Remove Item
     removeItem(item.id);
 
-    // Gold加算
+    // Add Gold
     addGold(item.sellPrice);
 
-    alert(`${item.name} を売却しました！`);
+    alert(`${item.name} sold!`);
   };
 
   return (
     <div className="sell-tab">
-      <h2>所持アイテム</h2>
+      <h2>Items Owned</h2>
 
       {sellableItems.length === 0 && (
-        <p className="no-items">売却可能なアイテムがありません</p>
+        <p className="no-items">No sellable items.</p>
       )}
 
       <div className="items-grid">
-        {sellableItems.map(item => {
+        {sellableItems.map((item) => {
           const isEquipped = equippedIds.includes(item.id);
 
           return (
@@ -767,7 +796,7 @@ const SellTab: React.FC = () => {
               <div className="item-name">{item.name}</div>
               <div className="item-description">{item.description}</div>
 
-              {isEquipped && <div className="equipped-label">(装備中)</div>}
+              {isEquipped && <div className="equipped-label">(Equipped)</div>}
 
               <div className="item-sell-price">{item.sellPrice} G</div>
 
@@ -776,7 +805,7 @@ const SellTab: React.FC = () => {
                 onClick={() => handleSell(item)}
                 disabled={isEquipped}
               >
-                {isEquipped ? '装備中' : '売却'}
+                {isEquipped ? "Equipped" : "Sell"}
               </button>
             </div>
           );
@@ -789,46 +818,47 @@ const SellTab: React.FC = () => {
 export default SellTab;
 ```
 
-**✅ 完了チェック:**
-- [ ] SellTab.tsx が作成された
-- [ ] 装備中フィルタリングが動作する
-- [ ] 売却処理が動作する
+**✅ Completion Check:**
+
+- [ ] SellTab.tsx created.
+- [ ] Equipped item filtering works.
+- [ ] Sell process works.
 
 ---
 
-### タスク 2.5: ExchangeTab の実装
+### Task 2.5: ExchangeTab Implementation
 
 ```typescript
-// src/camps/facilities/Shop/ExchangeTab.tsx (新規作成)
+// src/camps/facilities/Shop/ExchangeTab.tsx (New File)
 
-import { useState } from 'react';
-import { usePlayer } from '../../../contexts/PlayerContext';
-import { useInventory } from '../../../contexts/InventoryContext';
-import './ExchangeTab.css';
+import { useState } from "react";
+import { usePlayer } from "../../../contexts/PlayerContext";
+import { useInventory } from "../../../contexts/InventoryContext";
+import "./ExchangeTab.css";
 
 const ExchangeTab: React.FC = () => {
   const [exchangeValue, setExchangeValue] = useState(0);
   const { addGold } = usePlayer();
   const { items, removeItem, updateItemStack } = useInventory();
 
-  // 魔石リストを取得
+  // Get Magic Stone List
   const magicStones = items
-    .filter(item => item.itemType === 'magicStone')
+    .filter((item) => item.itemType === "magicStone")
     .sort((a, b) => (a.magicStoneValue || 0) - (b.magicStoneValue || 0));
 
   const totalValue = magicStones.reduce((sum, stone) => {
     const value = stone.magicStoneValue || 0;
     const count = stone.stackCount || 1;
-    return sum + (value * count);
+    return sum + value * count;
   }, 0);
 
   const handleExchange = () => {
     if (exchangeValue <= 0 || exchangeValue > totalValue) {
-      alert('換金額が無効です');
+      alert("Invalid exchange amount");
       return;
     }
 
-    if (!confirm(`魔石を ${exchangeValue}G 分換金しますか？`)) {
+    if (!confirm(`Exchange Magic Stones for ${exchangeValue}G?`)) {
       return;
     }
 
@@ -843,40 +873,40 @@ const ExchangeTab: React.FC = () => {
       const totalStoneValue = stoneValue * count;
 
       if (totalStoneValue <= remaining) {
-        // この魔石を全て消費
+        // Consume all of this stone
         remaining -= totalStoneValue;
         toRemove.push(stone.id);
       } else {
-        // 一部だけ消費
+        // Partial consume
         const needCount = Math.ceil(remaining / stoneValue);
         remaining = 0;
 
-        // スタック数を減らす
+        // Reduce stack count
         updateItemStack(stone.id, count - needCount);
       }
     }
 
-    // 魔石を削除
-    toRemove.forEach(id => removeItem(id));
+    // Remove Stones
+    toRemove.forEach((id) => removeItem(id));
 
-    // Gold加算
+    // Add Gold
     addGold(exchangeValue);
 
-    // リセット
+    // Reset
     setExchangeValue(0);
-    alert(`${exchangeValue}G を獲得しました！`);
+    alert(`${exchangeValue}G Acquired!`);
   };
 
   return (
     <div className="exchange-tab">
-      <h2>所持魔石</h2>
+      <h2>Magic Stones Owned</h2>
 
       {magicStones.length === 0 && (
-        <p className="no-stones">魔石を所持していません</p>
+        <p className="no-stones">No Magic Stones owned.</p>
       )}
 
       <div className="magic-stones-list">
-        {magicStones.map(stone => {
+        {magicStones.map((stone) => {
           const value = stone.magicStoneValue || 0;
           const count = stone.stackCount || 1;
           const total = value * count;
@@ -893,11 +923,11 @@ const ExchangeTab: React.FC = () => {
       </div>
 
       <div className="total-value">
-        <strong>合計価値: {totalValue} G</strong>
+        <strong>Total Value: {totalValue} G</strong>
       </div>
 
       <div className="exchange-input">
-        <label>換金する価値:</label>
+        <label>Exchange Amount:</label>
         <input
           type="number"
           min="0"
@@ -905,19 +935,17 @@ const ExchangeTab: React.FC = () => {
           value={exchangeValue}
           onChange={(e) => setExchangeValue(Number(e.target.value))}
         />
-        <span>G （最大: {totalValue}G）</span>
+        <span>G (Max: {totalValue}G)</span>
       </div>
 
-      <div className="exchange-result">
-        換金後の獲得Gold: {exchangeValue} G
-      </div>
+      <div className="exchange-result">Gold Acquired: {exchangeValue} G</div>
 
       <button
         className="exchange-button"
         onClick={handleExchange}
         disabled={exchangeValue <= 0 || exchangeValue > totalValue}
       >
-        換金する
+        Exchange
       </button>
     </div>
   );
@@ -926,55 +954,59 @@ const ExchangeTab: React.FC = () => {
 export default ExchangeTab;
 ```
 
-**✅ 完了チェック:**
-- [ ] ExchangeTab.tsx が作成された
-- [ ] 魔石リストが表示される
-- [ ] 換金処理が動作する
+**✅ Completion Check:**
+
+- [ ] ExchangeTab.tsx created.
+- [ ] Magic Stone list displayed.
+- [ ] Exchange process works.
 
 ---
 
-## Phase 3: セールシステムの統合（Week 2: Day 1-3）
+## Phase 3: Sale System Integration (Week 2: Day 1-3)
 
-### タスク 3.1: BattleScreen との連携
+### Task 3.1: BattleScreen Integration
 
 ```typescript
-// src/battles/battleUI/BattleScreen.tsx (修正)
+// src/battles/battleUI/BattleScreen.tsx (Modification)
 
-const BattleScreen: React.FC<BattleScreenProps> = ({
-  // ... props
-}) => {
-  const { incrementEncounterCount } = useGameState(); // ✨ 追加
+const BattleScreen: React.FC<BattleScreenProps> = (
+  {
+    // ... props
+  }
+) => {
+  const { incrementEncounterCount } = useGameState(); // ✨ Added
 
-  // 戦闘終了時の処理
+  // Process on Battle End
   useEffect(() => {
-    if (battleResult === 'victory') {
-      // ✨ 戦闘回数をインクリメント
+    if (battleResult === "victory") {
+      // ✨ Increment Battle Count
       incrementEncounterCount();
     }
   }, [battleResult, incrementEncounterCount]);
 
-  // ... 残りのコード
+  // ... rest of code
 };
 ```
 
-**✅ 完了チェック:**
-- [ ] BattleScreenで戦闘回数がインクリメントされる
-- [ ] encounterCount >= 3 で saleTiming = true になる
+**✅ Completion Check:**
+
+- [ ] Encounter count increments in BattleScreen.
+- [ ] saleTiming becomes true when encounterCount >= 3.
 
 ---
 
-### タスク 3.2: BaseCamp との連携
+### Task 3.2: BaseCamp Integration
 
 ```typescript
-// src/camps/campsUI/BaseCamp.tsx (修正)
+// src/camps/campsUI/BaseCamp.tsx (Modification)
 
-import { useEffect } from 'react';
-import { generateDailySale } from '../facilities/Shop/utils/saleCalculator';
+import { useEffect } from "react";
+import { generateDailySale } from "../facilities/Shop/utils/saleCalculator";
 
 const BaseCamp = () => {
   const { gameState, updateSale, enterDungeon } = useGameState();
 
-  // マウント時にセール更新をチェック
+  // Check Sale Update on Mount
   useEffect(() => {
     if (gameState.saleTiming) {
       const newSale = generateDailySale();
@@ -985,103 +1017,105 @@ const BaseCamp = () => {
   const facilities: FacilityCardProps[] = [
     {
       type: "dungeon",
-      name: "深淵の入り口",
-      description: "ダンジョン探索",
+      name: "Abyss Entrance",
+      description: "Explore Dungeon",
       icon: "🌀",
       isUnlocked: true,
       onEnter: () => {
-        enterDungeon(); // ✨ セールフラグをリセット
+        enterDungeon(); // ✨ Reset Sale Flag
       },
     },
-    // ... 他の施設
+    // ... Other Facilities
   ];
 
-  // ... 残りのコード
+  // ... Rest of code
 };
 ```
 
-**✅ 完了チェック:**
-- [ ] キャンプ帰還時にセールが更新される
-- [ ] ダンジョン入場時にsaleTimingがfalseになる
+**✅ Completion Check:**
+
+- [ ] Sale updates upon returning to Camp.
+- [ ] saleTiming becomes false upon entering dungeon.
 
 ---
 
-## Phase 4: 装備生成システム（Week 2: Day 4-5）
+## Phase 4: Equipment Generation System (Week 2: Day 4-5)
 
-### タスク 4.1: equipmentGenerator.ts の作成
+### Task 4.1: Create equipmentGenerator.ts
 
 ```bash
 mkdir -p src/items/utils
+
 ```
 
 ```typescript
-// src/items/utils/equipmentGenerator.ts (新規作成)
+// src/items/utils/equipmentGenerator.ts (New File)
 
-import type { Item, EquipmentSlot } from '../../types/ItemTypes';
-import type { EquipmentPackConfig } from '../../types/ShopTypes';
+import type { Item, EquipmentSlot } from "../../types/ItemTypes";
+import type { EquipmentPackConfig } from "../../types/ShopTypes";
 
 /**
- * ユニークIDを生成
+ * Generate Unique ID
  */
 function generateUniqueId(): string {
   return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 /**
- * レアリティ抽選
+ * Roll Rarity
  */
 export function rollRarity(probabilities: {
   common: number;
   rare: number;
   epic: number;
   legendary: number;
-}): 'common' | 'rare' | 'epic' | 'legendary' {
+}): "common" | "rare" | "epic" | "legendary" {
   const roll = Math.random();
   let cumulative = 0;
 
   for (const [rarity, prob] of Object.entries(probabilities)) {
     cumulative += prob;
     if (roll < cumulative) {
-      return rarity as 'common' | 'rare' | 'epic' | 'legendary';
+      return rarity as "common" | "rare" | "epic" | "legendary";
     }
   }
 
-  return 'common';
+  return "common";
 }
 
 /**
- * ランダムな装備を生成（Phase 1: 簡易実装）
+ * Generate Random Equipment (Phase 1: Simple)
  */
 export function createRandomEquipment(
   slot: EquipmentSlot,
-  rarity: 'common' | 'rare' | 'epic' | 'legendary'
+  rarity: "common" | "rare" | "epic" | "legendary"
 ): Item {
-  // Phase 1: 固定装備を返す（仮実装）
-  // Phase 2: EQUIPMENT_AND_ITEMS_DESIGN.mdから抽選
+  // Phase 1: Return Fixed Equipment (Temporary)
+  // Phase 2: Lottery from EQUIPMENT_AND_ITEMS_DESIGN.md
 
   const baseNames: Record<EquipmentSlot, string> = {
-    weapon: '剣',
-    armor: '鎧',
-    helmet: '兜',
-    boots: 'ブーツ',
-    accessory1: '指輪',
-    accessory2: 'お守り',
+    weapon: "Sword",
+    armor: "Armor",
+    helmet: "Helmet",
+    boots: "Boots",
+    accessory1: "Ring",
+    accessory2: "Amulet",
   };
 
   const rarityNames: Record<string, string> = {
-    common: 'コモン',
-    rare: 'レア',
-    epic: 'エピック',
-    legendary: 'レジェンド',
+    common: "Common",
+    rare: "Rare",
+    epic: "Epic",
+    legendary: "Legendary",
   };
 
   return {
     id: generateUniqueId(),
     typeId: `${slot}_${rarity}_template`,
-    name: `${rarityNames[rarity]}の${baseNames[slot]}`,
-    description: '仮の装備です',
-    itemType: 'equipment',
-    icon: '⚔️',
+    name: `${rarityNames[rarity]} ${baseNames[slot]}`,
+    description: "Temporary equipment",
+    itemType: "equipment",
+    icon: "⚔️",
     equipmentSlot: slot,
     durability: 100,
     maxDurability: 100,
@@ -1094,16 +1128,16 @@ export function createRandomEquipment(
 }
 
 /**
- * 装備パック開封
+ * Open Equipment Pack
  */
 export function openEquipmentPack(config: EquipmentPackConfig): Item[] {
   const slots: EquipmentSlot[] = [
-    'weapon',
-    'armor',
-    'helmet',
-    'boots',
-    'accessory1',
-    'accessory2',
+    "weapon",
+    "armor",
+    "helmet",
+    "boots",
+    "accessory1",
+    "accessory2",
   ];
 
   const items: Item[] = [];
@@ -1118,56 +1152,58 @@ export function openEquipmentPack(config: EquipmentPackConfig): Item[] {
 }
 ```
 
-**✅ 完了チェック:**
-- [ ] equipmentGenerator.ts が作成された
-- [ ] rollRarity が実装された
-- [ ] createRandomEquipment が実装された（Phase 1: 簡易版）
-- [ ] openEquipmentPack が実装された
+**✅ Completion Check:**
+
+- [ ] equipmentGenerator.ts created.
+- [ ] rollRarity implemented.
+- [ ] createRandomEquipment implemented (Phase 1: Simple).
+- [ ] openEquipmentPack implemented.
 
 ---
 
-### タスク 4.2: BuyTab に装備パック開封を統合
+### Task 4.2: Integrate Pack Opening into BuyTab
 
 ```typescript
-// src/camps/facilities/Shop/BuyTab.tsx (修正)
+// src/camps/facilities/Shop/BuyTab.tsx (Modification)
 
-import { openEquipmentPack } from '../../../items/utils/equipmentGenerator';
+import { openEquipmentPack } from "../../../items/utils/equipmentGenerator";
 
 const BuyTab: React.FC = () => {
-  // ... 既存のコード
+  // ... Existing code
 
   const handleBuy = (shopItem: ShopItem) => {
-    // ... Gold支払い処理
+    // ... Gold Payment Logic
 
-    if (shopItem.type === 'equipment_pack' && shopItem.packConfig) {
-      // ✨ 装備パック開封
+    if (shopItem.type === "equipment_pack" && shopItem.packConfig) {
+      // ✨ Open Equipment Pack
       const newEquipments = openEquipmentPack(shopItem.packConfig);
-      
-      newEquipments.forEach(eq => {
+
+      newEquipments.forEach((eq) => {
         addItem(eq);
       });
 
-      // TODO: 開封演出
-      alert(`装備パックを開封！${newEquipments.length}個の装備を獲得しました！`);
+      // TODO: Opening Visuals
+      alert(`Pack Opened! Acquired ${newEquipments.length} items!`);
     } else {
-      // 消耗品・転移石
+      // Consumables/Teleport
       // TODO: createItemFromId(shopItem.targetItemId)
     }
   };
 
-  // ... 残りのコード
+  // ... Rest of code
 };
 ```
 
-**✅ 完了チェック:**
-- [ ] 装備パック購入時に6個の装備が生成される
-- [ ] インベントリに正しく追加される
+**✅ Completion Check:**
+
+- [ ] 6 items generated when purchasing equipment pack.
+- [ ] Correctly added to inventory.
 
 ---
 
-## Phase 5: CSS とアニメーション（Week 3）
+## Phase 5: CSS and Animations (Week 3)
 
-### タスク 5.1: Shop.css
+### Task 5.1: Shop.css
 
 ```css
 /* src/camps/facilities/Shop/Shop.css */
@@ -1244,7 +1280,7 @@ const BuyTab: React.FC = () => {
 }
 ```
 
-### タスク 5.2: BuyTab.css
+### Task 5.2: BuyTab.css
 
 ```css
 /* src/camps/facilities/Shop/BuyTab.css */
@@ -1377,71 +1413,75 @@ const BuyTab: React.FC = () => {
 }
 ```
 
-**✅ 完了チェック:**
-- [ ] Shop.css が作成された
-- [ ] BuyTab.css が作成された
-- [ ] スタイルが適用される
+**✅ Completion Check:**
+
+- [ ] Shop.css created.
+- [ ] BuyTab.css created.
+- [ ] Styles applied.
 
 ---
 
-## テスト手順
+## Test Procedure
 
-### 基本動作テスト
+### Basic Operation Test
 
 ```
-□ Shop画面の表示
-  □ リソース表示（Gold, 魔石価値）
-  □ タブ切り替え
+□ Shop Screen Display
+  □ Resource display (Gold, Magic Stone value)
+  □ Tab switching
 
-□ 購入機能
-  □ 商品グリッド表示
-  □ カテゴリ切り替え
-  □ 購入処理
-  □ Gold減算
-  □ アイテム追加
+□ Buy Function
+  □ Product Grid display
+  □ Category switching
+  □ Buy process
+  □ Gold deduction
+  □ Item addition
 
-□ 売却機能
-  □ インベントリ表示
-  □ 装備中フィルタリング
-  □ 売却処理
-  □ Gold加算
+□ Sell Function
+  □ Inventory display
+  □ Equipped filtering
+  □ Sell process
+  □ Gold addition
 
-□ 魔石取引
-  □ 魔石リスト表示
-  □ 換金処理
-  □ 正しいレート計算
+□ Magic Stone Exchange
+  □ Magic Stone list display
+  □ Exchange process
+  □ Correct rate calculation
 
-□ セールシステム
-  □ encounterCount増加
-  □ saleTiming更新
-  □ セール価格表示
-  □ Epic除外
+□ Sale System
+  □ encounterCount increase
+  □ saleTiming update
+  □ Sale price display
+  □ Epic exclusion
+
 ```
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-### よくあるエラー
+### Common Errors
 
 **1. Items not appearing in Shop**
+
 ```
-原因: ShopData.ts のインポートエラー
-解決: パスを確認
+Cause: ShopData.ts import error
+Solution: Check path
+
 ```
 
 **2. Sale not updating**
+
 ```
-原因: BaseCampでuseEffectが動作していない
-解決: dependency arrayを確認
+Cause: useEffect not running in BaseCamp
+Solution: Check dependency array
+
 ```
 
 **3. Equipment pack not opening**
-```
-原因: equipmentGenerator.ts のインポートミス
-解決: インポートパスを確認
-```
 
----
+```
+Cause: equipmentGenerator.ts import error
+Solution: Check import path
 
-**END OF SHOP IMPLEMENTATION GUIDE**
+```
