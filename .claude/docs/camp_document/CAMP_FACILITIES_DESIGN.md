@@ -375,14 +375,22 @@ Warning for Depth 5 (Abyss):
 ```
 [In-Run Resources (Temporary)]
 Gold (Currency): Exploration Reward -> Shop Buy / Blacksmith Upgrade & Repair
-    Survival -> Bring back (Reduced by method)
-    Death -> ZERO (BaseCamp storage is kept)
+    **Resource Structure:**
+      - explorationGold: Gold gained during current run (temporary)
+      - baseCampGold: Gold stored at BaseCamp (permanent)
+      - player.gold = baseCampGold + explorationGold
+    Survival -> explorationGold transferred to baseCampGold (Reduced by method)
+    Death -> explorationGold → ZERO (baseCampGold is kept)
 
 Magic Stones (Currency): Enemy Drops -> Blacksmith / Guild Rumors / Shop
     Types: Small (Value 30), Medium (100), Large (350)
     Does not occupy Inventory (Currency type)
-    Survival -> Bring back (Reduced by method)
-    Death -> ZERO (BaseCamp storage is kept)
+    **Resource Structure:**
+      - explorationMagicStones: Stones gained during current run (temporary)
+      - baseCampMagicStones: Stones stored at BaseCamp (permanent)
+      - player.magicStones = baseCampMagicStones + explorationMagicStones
+    Survival -> explorationMagicStones transferred to baseCampMagicStones (Reduced by method)
+    Death -> explorationMagicStones → ZERO (baseCampMagicStones is kept)
 
 Equipment: Shop/Drops -> Blacksmith Upgrade -> Dismantle
     Survival -> Bring back

@@ -783,13 +783,13 @@ export const MAGIC_STONE_ITEMS: Item[] = [
   {
     id: "magic_stone_small",
     typeId: "magic_stone_small",
-    name: "Magic Stone (Tiny)",
+    name: "Magic Stone (Small)",
     description: "A small stone faintly charged with magic.",
     itemType: "magicStone",
     icon: "💎",
-    magicStoneValue: 1,
+    magicStoneValue: 30, // FIXED: Unified with shop/blacksmith designs
     rarity: "common",
-    sellPrice: 10,
+    sellPrice: 30, // FIXED: Aligned with magicStoneValue
     canSell: true,
     canDiscard: false,
     stackable: true,
@@ -799,20 +799,35 @@ export const MAGIC_STONE_ITEMS: Item[] = [
   {
     id: "magic_stone_medium",
     typeId: "magic_stone_medium",
-    name: "Magic Stone (Small)",
+    name: "Magic Stone (Medium)",
     description: "A magic stone glowing dimly.",
     itemType: "magicStone",
     icon: "💎",
-    magicStoneValue: 5,
+    magicStoneValue: 100, // FIXED: Unified with shop/blacksmith designs
     rarity: "uncommon",
-    sellPrice: 40,
+    sellPrice: 100, // FIXED: Aligned with magicStoneValue
     canSell: true,
     canDiscard: false,
     stackable: true,
     maxStack: 99,
     stackCount: 1,
   },
-  // ... Other Magic Stone sizes
+  {
+    id: "magic_stone_large",
+    typeId: "magic_stone_large",
+    name: "Magic Stone (Large)",
+    description: "Precious stone emitting strong magic.",
+    itemType: "magicStone",
+    icon: "💎",
+    magicStoneValue: 350, // ADDED: Consistent with shop/blacksmith designs
+    rarity: "rare",
+    sellPrice: 350,
+    canSell: true,
+    canDiscard: false,
+    stackable: true,
+    maxStack: 99,
+    stackCount: 1,
+  },
 ];
 ```
 

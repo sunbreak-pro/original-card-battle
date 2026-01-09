@@ -44,7 +44,7 @@ Guarantee: Items in Storage are retained even upon death
 | Item                | Storage (Warehouse)                         | Inventory (On Hand)                   |
 | ------------------- | ------------------------------------------- | ------------------------------------- |
 | **Access Location** | BaseCamp only                               | Anywhere (Combat, Exploration)        |
-| **Capacity**        | Large (100 slots) \*Phase 1                 | Small (20-30 slots)                   |
+| **Capacity**        | Large (100 slots) \*Phase 1                 | Small (30 slots fixed) \*Phase 1      |
 | **Upon Death**      | **Retained**                                | **All Lost**                          |
 | **Usage**           | Long-term storage, spare gear, collectibles | Use during exploration, carrying gear |
 | **Item Types**      | Equipment, Consumables, Materials           | Equipment, Consumables, Materials     |
@@ -175,17 +175,18 @@ function handlePlayerDeath() {
 
 **Phase 1 (MVP):**
 
-- **Capacity:** 100 slots (Fixed)
+- **Storage Capacity:** 100 slots (Fixed)
+- **Inventory Capacity:** 30 slots (Fixed)
 - **Expansion:** None
 
 **Phase 2 (Expansion):**
 
-- **Initial Capacity:** 50 slots
+- **Storage Initial:** 50 slots
+- **Inventory Initial:** 20 slots
 - **Expansion Methods:**
-- Sanctuary "Expanded Bag" Skill: +10, +20, +30
-- Shop "Storage Expansion Ticket": +10 (Purchased with Gold or Magic Stones)
-
-- **Max Capacity:** 150 slots
+  - Sanctuary "Expanded Bag" Skill: +10, +20, +30 (Inventory)
+  - Shop "Storage Expansion Ticket": +10 (Storage, Purchased with Gold or Magic Stones)
+- **Max Capacity:** Storage 150 slots / Inventory 80 slots
 
 #### 2.3.2 Storable Items
 

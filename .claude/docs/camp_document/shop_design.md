@@ -158,11 +158,25 @@ function openEquipmentPack(pack: EquipmentPack): Item[] {
   for (const slot of slots) {
     const rarity = rollRarity(pack.probabilities);
     const equipment = createRandomEquipment(slot, rarity);
+
+    // IMPORTANT: Initial Quality and Level specification
+    equipment.quality = 'normal';  // Always generated as normal quality
+    equipment.level = 0;           // Always generated as Lv0
+
     items.push(equipment);
   }
 
   return items; // Returns 6 items
 }
+
+/**
+ * Equipment Pack Generation Rules:
+ * - All equipment starts at quality: 'normal' (not poor/good/master)
+ * - All equipment starts at level: 0 (not upgraded)
+ * - Rarity (common/rare/epic/legendary) is determined by pack probabilities
+ * - Players must use the Blacksmith to upgrade quality and level
+ * - This ensures consistent starting conditions for all equipment
+ */
 
 ```
 
