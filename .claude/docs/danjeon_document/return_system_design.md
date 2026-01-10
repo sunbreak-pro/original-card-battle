@@ -334,15 +334,6 @@ Current Rate = 80% - (50% × 0.5) = 55%
 ### 4.2.2 Features of Return Combat
 
 ```
-[Weakened Enemies]
-HP: 70%
-Attack: 70%
-Reward Gold: 50%
-Reward Stones: 50%
-Reward Souls: 50% (NEW)
-Skill Learning: None
-
-[Special Rules]
 - Elite enemies do not respawn.
 - Bosses do not respawn.
 - Same enemy types as defeated appear.

@@ -44,7 +44,7 @@ Guarantee: Items in Storage are retained even upon death
 | Item                | Storage (Warehouse)                         | Inventory (On Hand)                   |
 | ------------------- | ------------------------------------------- | ------------------------------------- |
 | **Access Location** | BaseCamp only                               | Anywhere (Combat, Exploration)        |
-| **Capacity**        | Large (100 slots) \*Phase 1                 | Small (30 slots fixed) \*Phase 1      |
+| **Capacity**        | Large (100 slots) \*Phase 1                 | Small (20 slots fixed) \*Phase 1      |
 | **Upon Death**      | **Retained**                                | **All Lost**                          |
 | **Usage**           | Long-term storage, spare gear, collectibles | Use during exploration, carrying gear |
 | **Item Types**      | Equipment, Consumables, Materials           | Equipment, Consumables, Materials     |
@@ -176,7 +176,7 @@ function handlePlayerDeath() {
 **Phase 1 (MVP):**
 
 - **Storage Capacity:** 100 slots (Fixed)
-- **Inventory Capacity:** 30 slots (Fixed)
+- **Inventory Capacity:** 20 slots (Fixed)
 - **Expansion:** None
 
 **Phase 2 (Expansion):**
@@ -184,7 +184,7 @@ function handlePlayerDeath() {
 - **Storage Initial:** 50 slots
 - **Inventory Initial:** 20 slots
 - **Expansion Methods:**
-  - Sanctuary "Expanded Bag" Skill: +10, +20, +30 (Inventory)
+  - Sanctuary "Expanded Bag" Skill: +5, +10, +20 (Inventory)
   - Shop "Storage Expansion Ticket": +10 (Storage, Purchased with Gold or Magic Stones)
 - **Max Capacity:** Storage 150 slots / Inventory 80 slots
 
@@ -250,7 +250,7 @@ function handlePlayerDeath() {
 │                                                        │
 │  ↕ Move Items ↕                                        │
 │                                                        │
-│  ┌───────────── Inventory (15/30) ────────────────┐   │
+│  ┌───────────── Inventory (15/20) ────────────────┐   │
 │  │                                                 │   │
 │  │  ┌──┐ ┌──┐ ┌──┐ ┌──┐                           │   │
 │  │  │⚔️│ │🧪│ │🧪│ │📜│ ...                       │   │
@@ -436,7 +436,7 @@ export interface StorageState {
  */
 export interface InventoryState {
   items: Item[]; // List of items in Inventory
-  maxCapacity: number; // Max capacity (Phase 1: 30)
+  maxCapacity: number; // Max capacity (Phase 1: 20)
   currentCapacity: number; // Current usage (items.length)
 }
 
@@ -538,7 +538,7 @@ const initialPlayer: Player = {
 
   inventory: {
     items: [],
-    maxCapacity: 30,
+    maxCapacity: 20,
     currentCapacity: 0,
   },
 
@@ -891,7 +891,7 @@ Safe Exploration (Shallow levels):
 ```
 □ Max Capacity Check
   □ Cannot add at Storage 100/100
-  □ Cannot add at Inventory 30/30
+  □ Cannot add at Inventory 20/20
 
 □ Capacity Count
   □ Add item: +1
