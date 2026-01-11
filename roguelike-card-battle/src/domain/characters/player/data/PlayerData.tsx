@@ -5,6 +5,18 @@ import {
   getMageTitle,
   getSummonerTitle,
 } from "../logic/tittle";
+import { SWORDSMAN_CARDS } from "../../../cards/data/SwordmanCards";
+
+// Create initial starter deck for testing exams (5 basic cards)
+const createStarterDeck = () => {
+  return [
+    { ...SWORDSMAN_CARDS.sw_001, id: "deck_sw_001_1" },
+    { ...SWORDSMAN_CARDS.sw_001, id: "deck_sw_001_2" },
+    { ...SWORDSMAN_CARDS.sw_002, id: "deck_sw_002_1" },
+    { ...SWORDSMAN_CARDS.sw_002, id: "deck_sw_002_2" },
+    { ...SWORDSMAN_CARDS.sw_003, id: "deck_sw_003_1" },
+  ];
+};
 
 export const Swordman_Status: Player = {
   playerClass: "swordsman",
@@ -18,7 +30,7 @@ export const Swordman_Status: Player = {
   speed: 50,
   cardActEnergy: 3,
   gold: 0,
-  deck: [],
+  deck: createStarterDeck(), // Add starter cards for testing
   equipment: [],
   buffDebuffs: new Map(),
   equipmentAtkPercent: 0,

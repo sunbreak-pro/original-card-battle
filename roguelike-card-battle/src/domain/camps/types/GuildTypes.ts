@@ -99,18 +99,3 @@ export interface GuildState {
  * Character class types
  */
 export type CharacterClass = "swordsman" | "mage" | "summoner";
-
-/**
- * Helper function to get exam availability
- */
-export function canTakeExam(
-  exam: PromotionExam,
-  cardCount: number,
-  gold: number
-): boolean {
-  const meetsCardRequirement = cardCount >= exam.requiredCardCount;
-  const meetsGoldRequirement = exam.requiredGold
-    ? gold >= exam.requiredGold
-    : true;
-  return meetsCardRequirement && meetsGoldRequirement;
-}

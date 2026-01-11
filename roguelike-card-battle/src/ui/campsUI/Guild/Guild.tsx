@@ -1,8 +1,6 @@
-// Guild main component with tab navigation
-
 import { useState } from "react";
 import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
-import PromotionTab from "./PromotionTab";
+import PromotionTab from "./Exam";
 import RumorsTab from "./RumorsTab";
 import QuestsTab from "./QuestsTab";
 import "./Guild.css";
@@ -30,7 +28,7 @@ export const Guild = () => {
           onClick={() => setSelectedTab("promotion")}
         >
           <span className="tab-icon">⚔️</span>
-          <span className="tab-label">Promotion Exams</span>
+          <span className="tab-label">Exams</span>
         </button>
         <button
           className={`guild-tab ${selectedTab === "rumors" ? "active" : ""}`}

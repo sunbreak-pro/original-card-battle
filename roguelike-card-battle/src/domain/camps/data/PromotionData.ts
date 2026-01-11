@@ -7,8 +7,8 @@ import type { PromotionExam, CharacterClass } from "../types/GuildTypes";
  */
 export const SWORDSMAN_EXAMS: PromotionExam[] = [
   {
-    currentGrade: "Apprentice Swordsman",
-    nextGrade: "Swordsman",
+    currentGrade: "見習い剣士", // Apprentice Swordsman
+    nextGrade: "剣士", // Swordsman
     requiredCardCount: 5,
     enemyId: "exam_training_dummy",
     description:
@@ -22,8 +22,8 @@ export const SWORDSMAN_EXAMS: PromotionExam[] = [
     },
   },
   {
-    currentGrade: "Swordsman",
-    nextGrade: "Sword Master",
+    currentGrade: "剣士", // Swordsman
+    nextGrade: "剣豪", // Sword Master
     requiredCardCount: 15,
     requiredGold: 100,
     enemyId: "exam_guild_instructor",
@@ -38,8 +38,8 @@ export const SWORDSMAN_EXAMS: PromotionExam[] = [
     },
   },
   {
-    currentGrade: "Sword Master",
-    nextGrade: "Sword Saint",
+    currentGrade: "剣豪", // Sword Master
+    nextGrade: "剣聖", // Sword Saint
     requiredCardCount: 30,
     requiredGold: 500,
     enemyId: "exam_veteran_warrior",
@@ -54,8 +54,8 @@ export const SWORDSMAN_EXAMS: PromotionExam[] = [
     },
   },
   {
-    currentGrade: "Sword Saint",
-    nextGrade: "Sword God",
+    currentGrade: "剣聖", // Sword Saint
+    nextGrade: "剣神", // Sword God
     requiredCardCount: 50,
     requiredGold: 1000,
     enemyId: "exam_sword_saint_phantom",

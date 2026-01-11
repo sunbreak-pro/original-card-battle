@@ -2,11 +2,14 @@
 
 import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
 import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
-import { getNextExam, canTakeExam } from "../../../domain/camps/data/PromotionData";
+import {
+  getNextExam,
+  canTakeExam,
+} from "../../../domain/camps/data/PromotionData";
 
 const PromotionTab = () => {
   const { player, updateClassGrade } = usePlayer();
-  const { startBattle, returnToCamp } = useGameState();
+  const { startBattle, navigateTo } = useGameState();
 
   // Get next available exam
   const exam = getNextExam(player.playerClass, player.classGrade);
@@ -22,7 +25,8 @@ const PromotionTab = () => {
           <span className="grade-value">{player.classGrade}</span>
         </div>
         <p className="flavor-text">
-          You stand at the pinnacle of your class. There are no more exams to take.
+          You stand at the pinnacle of your class. There are no more exams to
+          take.
         </p>
       </div>
     );
@@ -60,29 +64,54 @@ const PromotionTab = () => {
     // Promote to next grade
     updateClassGrade(exam.nextGrade);
 
-    // TODO: Apply stat bonuses
-    // TODO: Give reward items
+    // Apply stat bonuses (simplified for Phase 2)
+    // TODO Phase 3: Implement actual stat bonus system with specific values
+    // For now, show rewards in notification
 
-    // Return to camp
-    returnToCamp();
+    // Give reward items (placeholder)
+    // TODO Phase 3: Implement actual item reward system
+    // For now, show rewards in notification
 
-    // TODO: Show success notification
+    // Return to guild first, then show notification
+    navigateTo("guild");
+
+    // Show success notification after a brief delay for screen transition
+    setTimeout(() => {
+      alert(
+        `🎉 Promotion Exam Passed!\n\n` +
+          `Congratulations! You have been promoted to:\n` +
+          `${exam.nextGrade}\n\n` +
+          `Rewards:\n` +
+          `${exam.rewards.statBonus}\n\n` +
+          `Your achievements will be recorded in the guild records.`
+      );
+    }, 100);
   };
 
   /**
    * Handle exam failed
    */
   const handleExamFailed = () => {
-    // Return to camp with 1 HP (no other penalties)
-    // Note: Exam doesn't consume exploration count
-    returnToCamp();
+    // Return to guild first
+    navigateTo("guild");
 
-    // TODO: Show failure notification
+    // Show failure notification after a brief delay for screen transition
+    setTimeout(() => {
+      alert(
+        `❌ Promotion Exam Failed\n\n` +
+          `You have been defeated in the exam and returned to the guild.\n\n` +
+          `Don't give up! Train harder and try again.\n` +
+          `The exam can be retaken at any time when you meet the requirements.\n\n` +
+          `Tip: Make sure your HP and AP meet the recommended values before challenging.`
+      );
+    }, 100);
+
+    // Note: Exam doesn't consume exploration count
+    // Player returns with 1 HP (handled by battle system)
   };
 
   return (
     <div className="promotion-tab">
-      {/* Current → Next Grade Display */}
       <div className="grade-progression">
         <div className="grade-box current">
           <span className="grade-label">Current Rank</span>
@@ -99,7 +128,9 @@ const PromotionTab = () => {
       <section className="exam-section">
         <h3 className="section-title">📋 Requirements</h3>
         <div className="requirements-list">
-          <div className={`requirement ${meetsCardRequirement ? "met" : "unmet"}`}>
+          <div
+            className={`requirement ${meetsCardRequirement ? "met" : "unmet"}`}
+          >
             <span className="requirement-icon">
               {meetsCardRequirement ? "✓" : "✗"}
             </span>
@@ -108,7 +139,11 @@ const PromotionTab = () => {
             </span>
           </div>
           {exam.requiredGold && (
-            <div className={`requirement ${meetsGoldRequirement ? "met" : "unmet"}`}>
+            <div
+              className={`requirement ${
+                meetsGoldRequirement ? "met" : "unmet"
+              }`}
+            >
               <span className="requirement-icon">
                 {meetsGoldRequirement ? "✓" : "✗"}
               </span>

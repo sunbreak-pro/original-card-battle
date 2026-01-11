@@ -1,4 +1,5 @@
 import BattleScreen from "./ui/battleUI/BattleScreen.tsx";
+import GuildBattleScreen from "./ui/campsUI/Guild/GuildBattleScreen.tsx";
 import BaseCamp from "./ui/campsUI/BaseCamp.tsx";
 import { Guild } from "./ui/campsUI/Guild/Guild.tsx";
 import {
@@ -7,6 +8,7 @@ import {
 } from "./domain/camps/contexts/GameStateContext.tsx";
 import { PlayerProvider } from "./domain/camps/contexts/PlayerContext.tsx";
 import { InventoryProvider } from "./domain/camps/contexts/InventoryContext.tsx";
+import { getGuildEnemy } from "./domain/camps/data/GuildEnemyData.ts";
 import "./App.css";
 
 /**
@@ -24,11 +26,35 @@ function AppContent() {
 
       {/* Battle Screen */}
       {currentScreen === "battle" && (
-        <BattleScreen
-          depth={depth}
-          onDepthChange={setDepth}
-          // battleMode, enemyIds, onBattleEnd will be added in Phase 2
-        />
+        <>
+          {battleMode === "exam" && battleConfig ? (
+            // Exam battle - use GuildBattleScreen
+            (() => {
+              const examEnemy = getGuildEnemy(battleConfig.enemyIds[0]);
+              if (!examEnemy) {
+                console.error(
+                  "Exam enemy not found:",
+                  battleConfig.enemyIds[0]
+                );
+                return <div>Error: Exam enemy not found</div>;
+              }
+              return (
+                <GuildBattleScreen
+                  examEnemy={examEnemy}
+                  onWin={battleConfig.onWin || (() => {})}
+                  onLose={battleConfig.onLose || (() => {})}
+                />
+              );
+            })()
+          ) : (
+            // Normal dungeon battle - use regular BattleScreen
+            <BattleScreen
+              depth={depth}
+              onDepthChange={setDepth}
+              onReturnToCamp={returnToCamp}
+            />
+          )}
+        </>
       )}
 
       {/* Guild Screen */}
