@@ -52,7 +52,7 @@ export interface Item {
   name: string;
   description: string;
   itemType: ItemType;
-  icon: string; // Emoji or image path
+  type: string; // Emoji or image path
 
   // Equipment-specific properties
   equipmentSlot?: EquipmentSlot;

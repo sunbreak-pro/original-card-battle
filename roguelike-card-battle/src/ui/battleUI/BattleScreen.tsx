@@ -1,16 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Depth } from "../../domain/cards/type/cardType";
 import { useBattle } from "../../domain/battles/managements/battleFlowManage";
 import { selectRandomEnemy } from "../../domain/characters/enemy/logic/enemyAI";
 import { CardComponent } from "../cardUI/CardComponent";
 import { BattlingCardPileModal } from "../cardUI/CardModalDisplay";
-import { TurnOrderIndicator } from "../commonUI/TurnOrderIndicator";
+import { TurnOrderIndicator } from "./TurnOrderIndicator";
 import StatusEffectDisplay from "../commonUI/BuffEffect";
 import EnemyDisplay from "../enemyUI/EnemyDisplay";
-import VictoryScreen from "../commonUI/VictoryScreen";
-import DefeatScreen from "../commonUI/DefeatScreen";
+import VictoryScreen from "./VictoryScreen";
+import DefeatScreen from "./DefeatScreen";
 import "../css/BattleScreen.css";
 import { depthThemes } from "../../domain/dungeon/depth/deptManager";
+import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
+import { handlePlayerDeath } from "../../domain/battles/logic/deathHandler";
 
 const BattleScreen = ({
   depth,
@@ -22,9 +24,11 @@ const BattleScreen = ({
   onReturnToCamp?: () => void;
 }) => {
   const theme = depthThemes[depth];
+  const { player, updatePlayer } = usePlayer();
 
   // 遭遇カウント管理
   const [encounterCount, setEncounterCount] = useState(0);
+  const [deathHandled, setDeathHandled] = useState(false);
 
   const {
     playerRef,
@@ -92,6 +96,17 @@ const BattleScreen = ({
       />
     );
   }
+
+  // Handle player death penalty when defeated
+  useEffect(() => {
+    if (battleResult === "defeat" && !deathHandled) {
+      // Apply death penalty
+      const updatedPlayer = handlePlayerDeath(player);
+      updatePlayer(updatedPlayer);
+      setDeathHandled(true);
+    }
+  }, [battleResult, deathHandled, player, updatePlayer]);
+
   if (battleResult === "defeat") {
     return (
       <DefeatScreen

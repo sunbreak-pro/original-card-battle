@@ -5,7 +5,7 @@ import type {
   GameScreen,
 } from "../../domain/camps/types/CampTypes";
 import "./BaseCamp.css";
-
+import { Swordman_Status } from "../../domain/characters/player/data/PlayerData";
 interface FacilityCardProps {
   type: FacilityType;
   name: string;
@@ -127,7 +127,7 @@ const BaseCamp = () => {
       name: "倉庫",
       description: "Store and manage your items safely",
       icon: "📦",
-      isUnlocked: false,
+      isUnlocked: true,
       onEnter: () => navigateTo("storage"),
     },
   ];
@@ -161,15 +161,17 @@ const BaseCamp = () => {
         <div className="player-stats">
           <div className="stat-item">
             <span className="stat-icon">💰</span>
-            <span className="stat-value">1,250 Gold</span>
+            <span className="stat-value">Gold: {Swordman_Status.gold} </span>
           </div>
           <div className="stat-item">
             <span className="stat-icon">📊</span>
-            <span className="stat-value">Level 5</span>
+            <span className="stat-value">Level:{Swordman_Status.level} </span>
           </div>
           <div className="stat-item">
             <span className="stat-icon">🃏</span>
-            <span className="stat-value">20 Cards</span>
+            <span className="stat-value">
+              Cards: {Swordman_Status.deck.length}
+            </span>
           </div>
         </div>
       </div>

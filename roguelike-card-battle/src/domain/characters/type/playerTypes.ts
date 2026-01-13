@@ -1,9 +1,13 @@
+import type { ExplorationLimit, SanctuaryProgress } from "../../camps/types/CampTypes";
+import type { MagicStones } from "../../camps/types/ItemTypes";
+import type { EquipmentSlots, InventoryState, StorageState } from "../../camps/types/StorageTypes";
 import type { Card } from "../../cards/type/cardType";
 import type { Character } from "./characterType";
-export type PlayerClass = "swordsman" | "mage" | "summoner";
+import type { CharacterClass } from "./characterType";
+
 export interface Player extends Character {
   name?: string;
-  playerClass: PlayerClass;
+  playerClass: CharacterClass;
   classGrade: string;
   level: number;
   hp: number;
@@ -20,4 +24,25 @@ export interface Player extends Character {
   equipmentAtkPercent?: number;
   equipmentDefPercent?: number;
   tittle?: string[];
+}
+/**
+ * Extended Player interface for BaseCamp system
+ * Adds storage, inventory, resources, and progression tracking
+ */
+
+export interface ExtendedPlayer extends Player {
+  // Storage & Inventory (from StorageTypes)
+  storage: StorageState;
+  inventory: InventoryState;
+  equipmentSlots: EquipmentSlots;
+
+  // Resource tracking (separated for death penalty)
+  explorationGold: number; // Lost on death
+  baseCampGold: number; // Kept on death
+  explorationMagicStones: MagicStones; // Lost on death
+  baseCampMagicStones: MagicStones; // Kept on death
+
+  // Progression tracking
+  explorationLimit: ExplorationLimit;
+  sanctuaryProgress: SanctuaryProgress;
 }

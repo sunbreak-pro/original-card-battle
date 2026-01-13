@@ -7,36 +7,14 @@ import React, {
   type ReactNode,
 } from "react";
 import type { Player } from "../../characters/type/playerTypes";
-import type {
-  StorageState,
-  InventoryState,
-  EquipmentSlots,
-} from "../types/StorageTypes";
-import type { ExplorationLimit, SanctuaryProgress } from "../types/CampTypes";
 import type { MagicStones } from "../types/ItemTypes";
 import { Swordman_Status } from "../../characters/player/data/PlayerData";
-
-/**
- * Extended Player interface for BaseCamp system
- * Adds storage, inventory, resources, and progression tracking
- */
-export interface ExtendedPlayer extends Player {
-  // Storage & Inventory (from StorageTypes)
-  storage: StorageState;
-  inventory: InventoryState;
-  equipmentSlots: EquipmentSlots;
-
-  // Resource tracking (separated for death penalty)
-  explorationGold: number; // Lost on death
-  baseCampGold: number; // Kept on death
-  explorationMagicStones: MagicStones; // Lost on death
-  baseCampMagicStones: MagicStones; // Kept on death
-
-  // Progression tracking
-  explorationLimit: ExplorationLimit;
-  sanctuaryProgress: SanctuaryProgress;
-}
-
+import {
+  STORAGE_TEST_ITEMS,
+  INVENTORY_TEST_ITEMS,
+  EQUIPPED_TEST_ITEMS,
+} from "../data/TestItemsData";
+import type { ExtendedPlayer } from "../../characters/type/playerTypes";
 /**
  * PlayerContext value
  */
@@ -63,31 +41,24 @@ const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
 function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
   return {
     ...basePlayer,
-    // Storage & Inventory
+    // Storage & Inventory (with test items)
     storage: {
-      items: [],
+      items: STORAGE_TEST_ITEMS, // Test items for Phase 3
       maxCapacity: 100,
-      currentCapacity: 0,
+      currentCapacity: STORAGE_TEST_ITEMS.length,
     },
     inventory: {
-      items: [],
+      items: INVENTORY_TEST_ITEMS, // Test items for Phase 3
       maxCapacity: 20,
-      currentCapacity: 0,
+      currentCapacity: INVENTORY_TEST_ITEMS.length,
     },
-    equipmentSlots: {
-      weapon: null,
-      armor: null,
-      helmet: null,
-      boots: null,
-      accessory1: null,
-      accessory2: null,
-    },
+    equipmentSlots: EQUIPPED_TEST_ITEMS, // Test equipped items for Phase 3
 
-    // Resources
+    // Resources (with test values)
     explorationGold: 0,
-    baseCampGold: 0,
+    baseCampGold: 1250, // Test value for UI display
     explorationMagicStones: { small: 0, medium: 0, large: 0 },
-    baseCampMagicStones: { small: 0, medium: 0, large: 0 },
+    baseCampMagicStones: { small: 5, medium: 3, large: 1 }, // Test values (450 total)
 
     // Progression
     explorationLimit: {
@@ -111,7 +82,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   // Initialize with Swordsman by default
   const [player, setPlayer] = useState<ExtendedPlayer>(
-    createInitialPlayer(Swordman_Status)
+    createInitialPlayer(Swordman_Status) //Selected character by PlayUser
   );
 
   /**

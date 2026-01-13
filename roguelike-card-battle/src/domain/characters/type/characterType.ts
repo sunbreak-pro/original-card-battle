@@ -1,4 +1,5 @@
 import type { BuffDebuffMap } from "../../battles/type/baffType";
+export type CharacterClass = "swordsman" | "mage" | "summoner";
 export interface Character {
     hp: number;
     maxHp: number;

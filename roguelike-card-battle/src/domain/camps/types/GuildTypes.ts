@@ -98,4 +98,3 @@ export interface GuildState {
 /**
  * Character class types
  */
-export type CharacterClass = "swordsman" | "mage" | "summoner";

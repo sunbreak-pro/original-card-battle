@@ -228,7 +228,7 @@ export const SWORD_SAINT_PHANTOM: Enemy = {
         energyCost: 2,
         applyDebuffs: [
           {
-            name: "weakened",
+            name: "defDownMinor",
             stacks: 1,
             duration: 2,
             value: 20,
@@ -250,7 +250,7 @@ export const SWORD_SAINT_PHANTOM: Enemy = {
         energyCost: 5,
         applyDebuffs: [
           {
-            name: "stunned",
+            name: "stun",
             stacks: 1,
             duration: 1,
             value: 0,
@@ -282,7 +282,7 @@ export const SWORD_SAINT_PHANTOM: Enemy = {
         energyCost: 2,
         applyDebuffs: [
           {
-            name: "weakened",
+            name: "defDownMinor",
             stacks: 1,
             duration: 2,
             value: 20,

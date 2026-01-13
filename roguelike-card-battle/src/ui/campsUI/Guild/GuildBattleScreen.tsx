@@ -6,7 +6,7 @@ import type { Enemy } from "../../../domain/characters/type/enemyType";
 import { useBattle } from "../../../domain/battles/managements/battleFlowManage";
 import { CardComponent } from "../../cardUI/CardComponent";
 import { BattlingCardPileModal } from "../../cardUI/CardModalDisplay";
-import { TurnOrderIndicator } from "../../commonUI/TurnOrderIndicator";
+import { TurnOrderIndicator } from "../../battleUI/TurnOrderIndicator";
 import StatusEffectDisplay from "../../commonUI/BuffEffect";
 import EnemyDisplay from "../../enemyUI/EnemyDisplay";
 import "../../css/BattleScreen.css";

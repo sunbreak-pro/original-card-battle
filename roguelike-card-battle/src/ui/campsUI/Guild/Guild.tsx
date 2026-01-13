@@ -52,7 +52,6 @@ export const Guild = () => {
         {selectedTab === "rumors" && <RumorsTab />}
         {selectedTab === "quests" && <QuestsTab />}
       </div>
-
       {/* Back Button */}
       <button className="guild-back-button" onClick={returnToCamp}>
         ← Back to Camp

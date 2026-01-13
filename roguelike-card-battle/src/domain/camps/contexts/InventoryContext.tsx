@@ -26,8 +26,6 @@ interface InventoryContextValue {
   getInventoryItem: (itemId: string) => Item | undefined;
   getStorageItem: (itemId: string) => Item | undefined;
   getEquippedItem: (slot: EquipmentSlot) => Item | null;
-  getInventorySpace: () => number;
-  getStorageSpace: () => number;
 }
 
 const InventoryContext = createContext<InventoryContextValue | undefined>(
@@ -122,6 +120,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
 
   /**
    * Equip item from inventory or storage
+   * Uses a single updatePlayer call to avoid state race conditions
    */
   const equipItem = (itemId: string, slot: EquipmentSlot): MoveResult => {
     // Try to find item in inventory first
@@ -152,24 +151,51 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
     // Get currently equipped item (if any)
     const currentlyEquipped = player.equipmentSlots[slot];
 
-    // Remove item from source (inventory or storage)
+    // Build all updates in a single object to avoid race conditions
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updates: Record<string, any> = {
+      equipmentSlots: { ...player.equipmentSlots, [slot]: item },
+    };
+
     if (fromInventory) {
-      removeItemFromInventory(itemId);
+      // Remove item from inventory
+      const newInventoryItems = player.inventory.items.filter(
+        (i) => i.id !== itemId
+      );
+
+      // If swapping, add old equipped item to inventory
+      if (currentlyEquipped) {
+        newInventoryItems.push(currentlyEquipped);
+      }
+
+      updates.inventory = {
+        ...player.inventory,
+        items: newInventoryItems,
+        currentCapacity: newInventoryItems.length,
+      };
     } else {
-      removeItemFromStorage(itemId);
+      // Remove item from storage
+      const newStorageItems = player.storage.items.filter(
+        (i) => i.id !== itemId
+      );
+      updates.storage = {
+        ...player.storage,
+        items: newStorageItems,
+        currentCapacity: newStorageItems.length,
+      };
+
+      // If swapping, add old equipped item to inventory
+      if (currentlyEquipped) {
+        updates.inventory = {
+          ...player.inventory,
+          items: [...player.inventory.items, currentlyEquipped],
+          currentCapacity: player.inventory.currentCapacity + 1,
+        };
+      }
     }
 
-    // Update equipment slots
-    const newEquipmentSlots = { ...player.equipmentSlots, [slot]: item };
-
-    // If there was an equipped item, move it to inventory
-    if (currentlyEquipped) {
-      addItemToInventory(currentlyEquipped);
-    }
-
-    updatePlayer({
-      equipmentSlots: newEquipmentSlots,
-    });
+    // Single updatePlayer call with all changes
+    updatePlayer(updates);
 
     return {
       success: true,
@@ -342,20 +368,6 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
     return player.equipmentSlots[slot];
   };
 
-  /**
-   * Get remaining inventory space
-   */
-  const getInventorySpace = (): number => {
-    return player.inventory.maxCapacity - player.inventory.currentCapacity;
-  };
-
-  /**
-   * Get remaining storage space
-   */
-  const getStorageSpace = (): number => {
-    return player.storage.maxCapacity - player.storage.currentCapacity;
-  };
-
   return (
     <InventoryContext.Provider
       value={{
@@ -369,8 +381,6 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
         getInventoryItem,
         getStorageItem,
         getEquippedItem,
-        getInventorySpace,
-        getStorageSpace,
       }}
     >
       {children}

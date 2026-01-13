@@ -66,6 +66,55 @@ Package Manager: npm
 - ❌ Class components - use functional components only
 - ❌ Inline styles
 
+### CSS Unit Standards
+
+**Viewport-Relative Units (REQUIRED for UI sizing):**
+
+To ensure consistent responsive layouts across different screen sizes, always use viewport units for UI element sizing:
+
+- **vh (Viewport Height)**: Use for vertical spacing, padding, margins, and font sizes
+- **vw (Viewport Width)**: Use for horizontal spacing, padding, margins, and widths
+- **Rationale**: Fixed units (rem, px) can cause layout overflow issues when designing full-screen UIs
+
+**Examples:**
+```css
+/* ✅ GOOD - Viewport units scale with screen size */
+.screen-container {
+  height: 100vh;
+  padding: 5vh 3vw;
+}
+
+.title {
+  font-size: 5vh;
+  margin-bottom: 2vh;
+}
+
+.content {
+  max-width: 90vw;
+  gap: 2vw;
+}
+
+/* ❌ BAD - Fixed units can cause overflow */
+.screen-container {
+  padding: 2rem;  /* May overflow on smaller screens */
+}
+
+.title {
+  font-size: 2rem;  /* Doesn't scale with viewport */
+}
+```
+
+**When to use fixed units:**
+- Border widths (2px borders are acceptable)
+- Border radius (8px, 12px)
+- Very small spacing where precision matters (< 0.5rem equivalent)
+
+**Conversion Guidelines:**
+- `1rem` → `1.8vh` (for font sizes)
+- `1rem` → `1.5vh` (for padding/margins vertically)
+- `1rem` → `1vw` (for padding/margins horizontally)
+- Adjust multipliers based on context and testing
+
 ---
 
 ## Project Structure (DDD-Inspired)

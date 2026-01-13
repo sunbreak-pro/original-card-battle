@@ -2,6 +2,7 @@ import BattleScreen from "./ui/battleUI/BattleScreen.tsx";
 import GuildBattleScreen from "./ui/campsUI/Guild/GuildBattleScreen.tsx";
 import BaseCamp from "./ui/campsUI/BaseCamp.tsx";
 import { Guild } from "./ui/campsUI/Guild/Guild.tsx";
+import Storage from "./ui/campsUI/Storage/Storage.tsx";
 import {
   GameStateProvider,
   useGameState,
@@ -91,14 +92,8 @@ function AppContent() {
           <h1>Library (Coming Soon)</h1>
         </div>
       )}
-      {currentScreen === "storage" && (
-        <div className="facility-placeholder">
-          <button className="back-button" onClick={returnToCamp}>
-            ← Back to Camp
-          </button>
-          <h1>Storage (Coming Soon)</h1>
-        </div>
-      )}
+      {/* Storage Screen */}
+      {currentScreen === "storage" && <Storage />}
       {currentScreen === "dungeon" && (
         <div className="facility-placeholder">
           <button className="back-button" onClick={returnToCamp}>
