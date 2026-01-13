@@ -19,7 +19,13 @@ type ItemSource = "storage" | "inventory" | "equipment";
 export const Storage: React.FC = () => {
   const { returnToCamp } = useGameState();
   const { player } = usePlayer();
-  const { moveItem, equipItem, unequipItem, removeItemFromInventory, removeItemFromStorage } = useInventory();
+  const {
+    moveItem,
+    equipItem,
+    unequipItem,
+    removeItemFromInventory,
+    removeItemFromStorage,
+  } = useInventory();
 
   // Component state
   const [activeTab, setActiveTab] = useState<TabType>("items");
@@ -132,7 +138,7 @@ export const Storage: React.FC = () => {
             key={`empty-${source}-${i}`}
             className="item-card-compact item-card-empty"
           >
-            <span className="empty-dot">·</span>
+            <span className="empty-placeholder">empty</span>
           </div>
         );
       }
@@ -241,7 +247,11 @@ export const Storage: React.FC = () => {
                   </span>
                 </div>
                 <div className="compact-grid storage-grid">
-                  {renderCompactGrid(player.storage.items, "storage", player.storage.maxCapacity)}
+                  {renderCompactGrid(
+                    player.storage.items,
+                    "storage",
+                    player.storage.maxCapacity
+                  )}
                 </div>
               </div>
 
@@ -275,7 +285,11 @@ export const Storage: React.FC = () => {
                   </span>
                 </div>
                 <div className="compact-grid inventory-grid">
-                  {renderCompactGrid(player.inventory.items, "inventory", player.inventory.maxCapacity)}
+                  {renderCompactGrid(
+                    player.inventory.items,
+                    "inventory",
+                    player.inventory.maxCapacity
+                  )}
                 </div>
               </div>
             </div>

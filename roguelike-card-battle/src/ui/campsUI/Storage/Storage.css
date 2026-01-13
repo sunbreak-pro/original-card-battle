@@ -96,7 +96,8 @@
 .dual-grid-panel {
   display: flex;
   align-items: flex-start;
-  gap: 1vw;
+  padding: 1vw;
+  gap: 0.5vw;
   flex: 1;
 }
 
@@ -146,7 +147,7 @@
 
 /* Storage grid - 10 columns for larger capacity */
 .compact-grid.storage-grid {
-  grid-template-columns: repeat(10, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 1vh;
 }
 
@@ -192,8 +193,8 @@
   border-color: #8d6e63;
 }
 
-.empty-dot {
-  color: #6d5046;
+.empty-placeholder {
+  color: #cba396;
   font-size: 1.2vh;
 }
 
