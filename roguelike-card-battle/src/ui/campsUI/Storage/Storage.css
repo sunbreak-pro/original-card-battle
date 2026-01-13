@@ -265,13 +265,13 @@
   flex-direction: column;
   gap: 0.8vh;
   overflow-y: auto;
+  justify-content: center;
 }
 
 .item-detail-placeholder {
   color: #8d6e63;
-  font-size: 1.4vh;
+  font-size: 2.5vh;
   text-align: center;
-  margin-top: 3vh;
 }
 
 .item-detail-icon {
