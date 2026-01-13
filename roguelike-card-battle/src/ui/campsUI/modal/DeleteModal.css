@@ -1,0 +1,123 @@
+/* DeleteModal - Confirmation dialog for item deletion */
+
+/* Backdrop */
+.delete-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+/* Modal Container */
+.delete-modal {
+  background: #5d4037;
+  border: 0.3vh solid #ff6f00;
+  border-radius: 1vh;
+  padding: 2vh 2vw;
+  min-width: 25vw;
+  max-width: 40vw;
+  box-shadow: 0 0 3vh rgba(0, 0, 0, 0.5);
+}
+
+/* Header */
+.delete-modal-header {
+  border-bottom: 0.2vh solid #8d6e63;
+  padding-bottom: 1vh;
+  margin-bottom: 1.5vh;
+}
+
+.delete-modal-title {
+  margin: 0;
+  font-size: 2.5vh;
+  color: #ff6f00;
+  text-align: center;
+}
+
+/* Content */
+.delete-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5vh;
+}
+
+.delete-modal-message {
+  margin: 0;
+  font-size: 1.8vh;
+  color: #ffecb3;
+  text-align: center;
+}
+
+.delete-modal-item-info {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 1vh 1.5vw;
+  background: #4e342e;
+  border-radius: 0.5vh;
+  border: 0.15vh solid #8d6e63;
+}
+
+.delete-modal-item-icon {
+  font-size: 2.5vh;
+}
+
+.delete-modal-item-name {
+  font-size: 2vh;
+  font-weight: bold;
+}
+
+.delete-modal-warning {
+  margin: 0;
+  font-size: 1.4vh;
+  color: #ef5350;
+  font-style: italic;
+}
+
+/* Actions */
+.delete-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 2vw;
+  margin-top: 2vh;
+  padding-top: 1.5vh;
+  border-top: 0.2vh solid #8d6e63;
+}
+
+.delete-modal-button {
+  padding: 1vh 2vw;
+  border-radius: 0.5vh;
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 8vw;
+}
+
+.delete-modal-cancel {
+  background: #6d4c41;
+  border: 0.15vh solid #8d6e63;
+  color: #ffecb3;
+}
+
+.delete-modal-cancel:hover {
+  background: #5d4037;
+  border-color: #bcaaa4;
+}
+
+.delete-modal-confirm {
+  background: #c62828;
+  border: 0.15vh solid #ef5350;
+  color: #fff;
+  font-weight: bold;
+}
+
+.delete-modal-confirm:hover {
+  background: #b71c1c;
+  border-color: #e53935;
+}

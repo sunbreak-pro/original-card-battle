@@ -6,6 +6,7 @@ import { calculateMagicStoneValue } from "../../../domain/camps/types/ItemTypes"
 import type { Item } from "../../../domain/camps/types/ItemTypes";
 import ItemCard from "./ItemCard";
 import ItemDetailPanel from "./ItemDetailPanel";
+import DeleteModal from "../modal/DeleteModal";
 import "./Storage.css";
 
 type TabType = "items" | "equipment";
@@ -18,13 +19,14 @@ type ItemSource = "storage" | "inventory" | "equipment";
 export const Storage: React.FC = () => {
   const { returnToCamp } = useGameState();
   const { player } = usePlayer();
-  const { moveItem, equipItem, unequipItem } = useInventory();
+  const { moveItem, equipItem, unequipItem, removeItemFromInventory, removeItemFromStorage } = useInventory();
 
   // Component state
   const [activeTab, setActiveTab] = useState<TabType>("items");
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [selectedSource, setSelectedSource] = useState<ItemSource>("storage");
   const [message, setMessage] = useState<string>("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
   // Calculate total magic stone value
   const totalMagicStones = calculateMagicStoneValue(player.baseCampMagicStones);
@@ -71,6 +73,38 @@ export const Storage: React.FC = () => {
     const result = unequipItem(selectedItem.equipmentSlot);
     showMessage(result.message);
     if (result.success) setSelectedItem(null);
+  };
+
+  // Handle delete button click - opens modal
+  const handleDeleteClick = () => {
+    if (!selectedItem) return;
+    setIsDeleteModalOpen(true);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = () => {
+    if (!selectedItem) return;
+
+    let success = false;
+    if (selectedSource === "storage") {
+      success = removeItemFromStorage(selectedItem.id);
+    } else if (selectedSource === "inventory") {
+      success = removeItemFromInventory(selectedItem.id);
+    }
+
+    if (success) {
+      showMessage(`Deleted ${selectedItem.name}`);
+      setSelectedItem(null);
+    } else {
+      showMessage("Failed to delete item");
+    }
+
+    setIsDeleteModalOpen(false);
+  };
+
+  // Handle delete cancellation
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
   };
 
   // Render compact item grid (4x6 = 24 slots)
@@ -206,8 +240,8 @@ export const Storage: React.FC = () => {
                     {player.storage.maxCapacity}
                   </span>
                 </div>
-                <div className="compact-grid">
-                  {renderCompactGrid(player.storage.items, "storage", 24)}
+                <div className="compact-grid storage-grid">
+                  {renderCompactGrid(player.storage.items, "storage", player.storage.maxCapacity)}
                 </div>
               </div>
 
@@ -240,8 +274,8 @@ export const Storage: React.FC = () => {
                     {player.inventory.maxCapacity}
                   </span>
                 </div>
-                <div className="compact-grid">
-                  {renderCompactGrid(player.inventory.items, "inventory", 24)}
+                <div className="compact-grid inventory-grid">
+                  {renderCompactGrid(player.inventory.items, "inventory", player.inventory.maxCapacity)}
                 </div>
               </div>
             </div>
@@ -255,6 +289,7 @@ export const Storage: React.FC = () => {
                 onMoveToInventory={handleMoveToInventory}
                 onEquip={handleEquip}
                 onUnequip={handleUnequip}
+                onDelete={handleDeleteClick}
               />
             </div>
           </div>
@@ -274,11 +309,22 @@ export const Storage: React.FC = () => {
                 onMoveToInventory={handleMoveToInventory}
                 onEquip={handleEquip}
                 onUnequip={handleUnequip}
+                onDelete={handleDeleteClick}
               />
             </div>
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {selectedItem && (
+        <DeleteModal
+          item={selectedItem}
+          isOpen={isDeleteModalOpen}
+          onConfirm={handleDeleteConfirm}
+          onCancel={handleDeleteCancel}
+        />
+      )}
 
       {/* Message Display */}
       {message && <div className="storage-message">{message}</div>}
