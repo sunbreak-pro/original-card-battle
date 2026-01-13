@@ -11,6 +11,7 @@ interface ItemDetailPanelProps {
   onMoveToInventory: () => void;
   onEquip: () => void;
   onUnequip: () => void;
+  onDelete: () => void;
 }
 
 /**
@@ -24,6 +25,7 @@ export const ItemDetailPanel: React.FC<ItemDetailPanelProps> = ({
   onMoveToInventory,
   onEquip,
   onUnequip,
+  onDelete,
 }) => {
   // If no item selected, show placeholder
   if (!item) {
@@ -192,6 +194,13 @@ export const ItemDetailPanel: React.FC<ItemDetailPanelProps> = ({
               Unequip to Storage
             </button>
           </>
+        )}
+
+        {/* Delete (only from storage or inventory, not equipment) */}
+        {(source === "storage" || source === "inventory") && (
+          <button className="item-action-button delete" onClick={onDelete}>
+            Delete
+          </button>
         )}
       </div>
     </div>
