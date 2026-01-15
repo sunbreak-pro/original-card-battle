@@ -1,7 +1,7 @@
 // ItemCard Component - Displays a single item in storage/inventory grid
 
 import React from "react";
-import type { Item } from "../../../domain/camps/types/ItemTypes";
+import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
 import "./Storage.css";
 
 interface ItemCardProps {
@@ -47,20 +47,15 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   };
 
   // Truncate item name if too long
-  const truncateName = (name: string, maxLength: number = 8) => {
+  const truncateName = (name: string, maxLength: number = 15) => {
     if (name.length <= maxLength) return name;
-    if (name.includes(" ")) {
-      return (
-        <>
-          {name.split(" ").map((word, index) => (
-            <span key={index}>
-              {word}
-              {index === 0 && <br />}
-            </span>
-          ))}
-        </>
-      );
-    }
+    return (
+      <>
+        {name.split(" ").map((word, index) => (
+          <span key={index}>{" " + word}</span>
+        ))}
+      </>
+    );
   };
 
   const cardClass = compact ? "item-card-compact" : "item-card";
@@ -77,6 +72,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       {compact && (
         <div className="item-card-name">{truncateName(item.name)}</div>
       )}
+      {/* Item Icon
+      <div className={compact ? "item-icon-compact" : "item-card-icon"}>
+        {item.type}
+      </div> */}
 
       {/* Item Level Badge (for equipment only) */}
       {item.itemType === "equipment" &&

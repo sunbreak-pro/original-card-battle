@@ -128,7 +128,7 @@ const PromotionTab = () => {
 
         {/* Exam Requirements */}
         <section className="exam-section">
-          <h3 className="section-title">📋 Requirements</h3>
+          <h3 className="guild-section-title">📋 Requirements</h3>
           <div className="requirements-list">
             <div
               className={`requirement ${
@@ -161,7 +161,7 @@ const PromotionTab = () => {
 
         {/* Exam Description */}
         <section className="exam-section">
-          <h3 className="section-title">📜 Exam Details</h3>
+          <h3 className="guild-section-title">📜 Exam Details</h3>
           <p className="exam-description">{exam.description}</p>
         </section>
       </div>
@@ -170,7 +170,7 @@ const PromotionTab = () => {
       <div className="promotion-tab-right">
         {/* Recommendations */}
         <section className="exam-section">
-          <h3 className="section-title">💡 Recommendations</h3>
+          <h3 className="guild-section-title">💡 Recommendations</h3>
           <div className="recommendations">
             <div className="recommendation-item">
               <span className="stat-label">HP:</span>
@@ -189,7 +189,7 @@ const PromotionTab = () => {
 
         {/* Rewards */}
         <section className="exam-section">
-          <h3 className="section-title">🎁 Rewards</h3>
+          <h3 className="guild-section-title">🎁 Rewards</h3>
           <ul className="rewards-list">
             <li>Promotion to {exam.nextGrade}</li>
             <li>{exam.rewards.statBonus}</li>

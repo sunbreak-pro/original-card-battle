@@ -1,6 +1,7 @@
 // Storage and Inventory type definitions
 
-import type { Item, EquipmentSlot } from "./ItemTypes";
+import type { Item } from "../../item_equipment/type/ItemTypes";
+import type { EquipmentSlot } from "../../item_equipment/type/EquipmentType";
 
 /**
  * Storage state
@@ -19,6 +20,17 @@ export interface StorageState {
 export interface InventoryState {
   items: Item[]; // List of items in inventory
   maxCapacity: number; // Max capacity (Phase 1: 20)
+  currentCapacity: number; // Current usage (items.length)
+}
+
+/**
+ * Equipment Inventory state
+ * Specialized inventory for equipment items only (lost on death)
+ * Used during dungeon exploration for quick equipment swaps
+ */
+export interface EquipmentInventoryState {
+  items: Item[]; // List of equipment items only
+  maxCapacity: number; // Max capacity (Phase 1: 3)
   currentCapacity: number; // Current usage (items.length)
 }
 
@@ -43,8 +55,11 @@ export type MoveDirection =
   | "inventory_to_storage"
   | "storage_to_equipment"
   | "equipment_to_storage"
-  | "inventory_to_equipment"
-  | "equipment_to_inventory";
+  | "equipSlotItem_to_storage"
+  | "storage_to_equipment_inventory"
+  | "equipment_inventory_to_storage"
+  | "equipment_inventory_to_equipment"
+  | "equipment_to_equipment_inventory";
 
 /**
  * Result of an item move operation
@@ -104,6 +119,13 @@ export function hasStorageSpace(storage: StorageState, count = 1): boolean {
  */
 export function hasInventorySpace(inventory: InventoryState, count = 1): boolean {
   return inventory.currentCapacity + count <= inventory.maxCapacity;
+}
+
+/**
+ * Helper function to check if equipment inventory has space
+ */
+export function hasEquipmentInventorySpace(equipmentInventory: EquipmentInventoryState, count = 1): boolean {
+  return equipmentInventory.currentCapacity + count <= equipmentInventory.maxCapacity;
 }
 
 /**

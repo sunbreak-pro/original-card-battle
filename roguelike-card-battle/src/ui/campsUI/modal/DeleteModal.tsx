@@ -1,7 +1,7 @@
 // DeleteModal Component - Confirmation modal for item deletion
 
 import React from "react";
-import type { Item } from "../../../domain/camps/types/ItemTypes";
+import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
 import "./DeleteModal.css";
 
 interface DeleteModalProps {
@@ -70,9 +70,7 @@ export const DeleteModal: React.FC<DeleteModalProps> = ({
             </span>
           </div>
 
-          <p className="delete-modal-warning">
-            This action cannot be undone.
-          </p>
+          <p className="delete-modal-warning">This action cannot be undone.</p>
         </div>
 
         <div className="delete-modal-actions">

@@ -66,7 +66,7 @@ const EnemyCard: React.FC<{
   size?: "normal" | "small";
 }> = ({ state, enemyRef, theme, size = "normal" }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [isConsuming, setIsConsuming] = useState(false);
+  const [_isConsuming, setIsConsuming] = useState(false);
   const prevEnergyRef = useRef(state.actEnergy);
 
   // Detect energy consumption and trigger animation

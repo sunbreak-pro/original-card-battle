@@ -1,8 +1,8 @@
 // Test Items Data - For testing Storage UI
 // These items will be removed or replaced with real items later
 
-import type { Item } from "../types/ItemTypes";
-import { createItemInstance } from "../types/ItemTypes";
+import type { Item } from "../type/ItemTypes";
+import { createItemInstance } from "../type/ItemTypes";
 
 // Storage Test Items (5 items)
 export const STORAGE_TEST_ITEMS: Item[] = [

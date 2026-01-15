@@ -2,6 +2,7 @@ import BattleScreen from "./ui/battleUI/BattleScreen.tsx";
 import GuildBattleScreen from "./ui/campsUI/Guild/GuildBattleScreen.tsx";
 import BaseCamp from "./ui/campsUI/BaseCamp.tsx";
 import { Guild } from "./ui/campsUI/Guild/Guild.tsx";
+import { Shop } from "./ui/campsUI/Shop/Shop.tsx";
 import Storage from "./ui/campsUI/Storage/Storage.tsx";
 import {
   GameStateProvider,
@@ -60,14 +61,8 @@ function AppContent() {
 
       {/* Guild Screen */}
       {currentScreen === "guild" && <Guild />}
-      {currentScreen === "shop" && (
-        <div className="facility-placeholder">
-          <button className="back-button" onClick={returnToCamp}>
-            ← Back to Camp
-          </button>
-          <h1>Shop (Coming Soon)</h1>
-        </div>
-      )}
+      {/* Shop Screen */}
+      {currentScreen === "shop" && <Shop />}
       {currentScreen === "blacksmith" && (
         <div className="facility-placeholder">
           <button className="back-button" onClick={returnToCamp}>

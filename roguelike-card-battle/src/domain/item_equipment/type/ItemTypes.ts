@@ -1,5 +1,5 @@
 // Item type definitions for the BaseCamp system
-
+import type { EquipmentSlot, EquipmentEffect, EquipmentQuality } from "./EquipmentType";
 /**
  * Type of item
  */
@@ -11,36 +11,11 @@ export type ItemType =
   | "quest"
   | "key";
 
-/**
- * Equipment slot types
- */
-export type EquipmentSlot =
-  | "weapon"
-  | "armor"
-  | "helmet"
-  | "boots"
-  | "accessory1"
-  | "accessory2";
 
 /**
  * Item rarity levels
  */
 export type ItemRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
-
-/**
- * Equipment quality levels (from Blacksmith system)
- */
-export type EquipmentQuality = "poor" | "normal" | "good" | "master";
-
-/**
- * Equipment effect types
- */
-export interface EquipmentEffect {
-  type: "stat" | "skill" | "passive";
-  target: string; // e.g., "hp", "ap", "attack", "defense"
-  value: number | string;
-  description: string;
-}
 
 /**
  * Base item interface
@@ -85,13 +60,14 @@ export interface MagicStones {
   small: number; // Value: 30 each
   medium: number; // Value: 100 each
   large: number; // Value: 350 each
+  huge: number; // Value: 1000 each
 }
 
 /**
  * Helper function to calculate total magic stone value
  */
 export function calculateMagicStoneValue(stones: MagicStones): number {
-  return stones.small * 30 + stones.medium * 100 + stones.large * 350;
+  return stones.small * 30 + stones.medium * 100 + stones.large * 350 + stones.huge * 1000;
 }
 
 /**

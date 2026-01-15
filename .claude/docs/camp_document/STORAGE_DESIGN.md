@@ -51,7 +51,7 @@ Guarantee: Items in Storage are retained even upon death
 | **Magic Stones**    | Cannot store (Currency)                     | Cannot store (Currency)               |
 | **Gold**            | Cannot store (Currency)                     | Cannot store (Currency)               |
 
-#### 2.1.2 Relationship with Equipment Slots
+#### 2.1.2 Relationship with Equipment Slots and Equipment Inventory
 
 **Equipment Slots:**
 
@@ -59,21 +59,66 @@ Guarantee: Items in Storage are retained even upon death
 - Equipped items are treated **separately from Inventory**.
 - However, **items in Equipment Slots are also completely lost upon death**.
 
+**Equipment Inventory (NEW):**
+
+- A specialized inventory **exclusively for equipment items**
+- **Maximum capacity: 3 slots** (initial design)
+- Used during dungeon exploration to carry spare/found equipment
+- Allows players to swap equipment during exploration
+- **Lost upon death** (same as regular Inventory)
+
+**Key Differences:**
+
+| Feature                | Equipment Slots              | Equipment Inventory         | Storage (Equipment)        |
+| ---------------------- | ---------------------------- | --------------------------- | -------------------------- |
+| **Purpose**            | Currently equipped gear      | Spare equipment for swapping| Long-term equipment storage|
+| **Capacity**           | 6 slots (fixed)              | 3 slots (initial)           | Part of 100 total          |
+| **Access**             | Anywhere                     | Anywhere (exploration)      | BaseCamp only              |
+| **Item Types**         | Equipment only               | Equipment only              | All item types             |
+| **Upon Death**         | **All Lost**                 | **All Lost**                | **Retained**               |
+
 **Relationship Diagram:**
 
 ```
 【Player Possessions】
 
-Storage (Warehouse)      Inventory (On Hand)      Equipment Slots
-BaseCamp Only            Anywhere                 Equipped
-─────────────────        ─────────────────        ─────────────────
-⚔️ Spare Sword           ⚔️ Steel Sword           weapon: ⚔️ Fire Sword
-🛡️ Spare Armor           🧪 Potion               armor:  🛡️ Dragon Armor
-🧪 Potion x10            📜 Scroll               helmet: 👑 Crown
-...                      ...                      boots:  👢 Boots
-                                                  accessory1: 💍 Ring
-Death: Retained          Death: All Lost          Death: All Lost
+Storage (Warehouse)      Inventory (On Hand)      Equipment Inventory      Equipment Slots
+BaseCamp Only            Anywhere                 Anywhere (Equip Only)    Equipped
+─────────────────        ─────────────────        ─────────────────        ─────────────────
+⚔️ Spare Sword           🧪 Potion               ⚔️ Steel Sword           weapon: ⚔️ Fire Sword
+🛡️ Spare Armor           📜 Scroll               🛡️ Iron Armor           armor:  🛡️ Dragon Armor
+🧪 Potion x10            🔑 Key                  👑 Spare Crown           helmet: 👑 Crown
+...                      ...                      (Max 3 slots)            boots:  👢 Boots
+                                                                           accessory1: 💍 Ring
+Death: Retained          Death: All Lost          Death: All Lost          Death: All Lost
 
+```
+
+#### 2.1.3 Dungeon Exploration Equipment Flow
+
+**During Exploration:**
+
+```
+1. Player enters dungeon with:
+   - Equipment Slots: Currently equipped items
+   - Equipment Inventory: Spare equipment (0-3 items)
+
+2. Player finds new equipment:
+   → If Equipment Inventory has space → Add to Equipment Inventory
+   → If full → Must swap or discard
+
+3. Player wants to change equipment mid-dungeon:
+   → Swap between Equipment Slots ⇄ Equipment Inventory
+   → Quick equipment changes without returning to camp
+
+4. Upon returning to camp (survival):
+   → Equipment Inventory items can be stored to Storage
+   → Or kept for next exploration
+
+5. Upon death:
+   → Equipment Slots: All Lost
+   → Equipment Inventory: All Lost
+   → Storage: Retained (safe)
 ```
 
 ---
@@ -378,36 +423,86 @@ Clicking an item displays details on the right:
 
 ---
 
-### 3.5 Equipment Change Function
+### 3.5 Equipment Tab Layout (NEW)
+
+The Equipment tab has a specialized layout with three sections:
+
+**Layout Structure:**
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  📦 Storage                                                            │
+├────────────────────────────────────────────────────────────────────────┤
+│  [Items]  [Equipment]  ← Active Tab                    [🏠 Back]       │
+├────────────────────────────────────────────────────────────────────────┤
+│                                                                        │
+│  ┌─────────── Equipment List ───────────┐  ┌─────── Right Panel ─────┐│
+│  │ (Storage Equipment Items)            │  │                         ││
+│  │                                      │  │ ┌─── Equipment Slots ──┐││
+│  │  ┌──┐ ┌──┐ ┌──┐ ┌──┐ ┌──┐          │  │ │ weapon  armor helmet ││
+│  │  │⚔️│ │🛡️│ │👑│ │👢│ │💍│ ...      │  │ │  ┌─┐    ┌─┐    ┌─┐  ││
+│  │  │Sw│ │Ar│ │Cr│ │Bo│ │Ri│          │  │ │  │⚔│    │🛡│    │👑│  ││
+│  │  └──┘ └──┘ └──┘ └──┘ └──┘          │  │ │  └─┘    └─┘    └─┘  ││
+│  │                                      │  │ │ boots  acc1   acc2  ││
+│  │  Filtered: Equipment items only      │  │ │  ┌─┐    ┌─┐    ┌─┐  ││
+│  │  from Storage                        │  │ │  │👢│    │💍│    │📿│  ││
+│  │                                      │  │ │  └─┘    └─┘    └─┘  ││
+│  │                                      │  │ └─────────────────────┘││
+│  │                                      │  │                         ││
+│  │                                      │  │ ┌─ Equipment Inventory ┐││
+│  │                                      │  │ │    (Max 3 slots)     ││
+│  │                                      │  │ │  ┌──┐ ┌──┐ ┌──┐     ││
+│  │                                      │  │ │  │⚔️│ │🛡️│ │  │     ││
+│  │                                      │  │ │  │Sw│ │Ar│ │--│     ││
+│  │                                      │  │ │  └──┘ └──┘ └──┘     ││
+│  │                                      │  │ │                      ││
+│  │                                      │  │ └──────────────────────┘││
+│  └──────────────────────────────────────┘  └─────────────────────────┘│
+│                                                                        │
+└────────────────────────────────────────────────────────────────────────┘
+
+```
+
+**Equipment Tab Components:**
+
+1. **Left Panel: Equipment List**
+   - Displays **equipment items from Storage only**
+   - Filtered view showing only `itemType: "equipment"`
+   - Click to select → can move to Equipment Slots or Equipment Inventory
+
+2. **Right Panel: Equipment Slots**
+   - 6 slots: weapon, armor, helmet, boots, accessory1, accessory2
+   - Currently equipped items
+   - Click to select → can swap with Equipment Inventory or move to Storage
+
+3. **Right Panel: Equipment Inventory**
+   - 3 slots (maximum capacity)
+   - Spare equipment for dungeon exploration
+   - Click to select → can equip to slot or move to Storage
+
+**Movement Operations:**
+
+| From               | To                  | Action                               |
+| ------------------ | ------------------- | ------------------------------------ |
+| Equipment List     | Equipment Slots     | Equip (swap if slot occupied)        |
+| Equipment List     | Equipment Inventory | Add to inventory (if space)          |
+| Equipment Slots    | Equipment Inventory | Unequip to inventory (if space)      |
+| Equipment Slots    | Equipment List      | Unequip to Storage                   |
+| Equipment Inventory| Equipment Slots     | Equip (swap if slot occupied)        |
+| Equipment Inventory| Equipment List      | Move to Storage                      |
+
+### 3.6 Equipment Change Function
 
 **Direct Equip from Storage Screen:**
 
 ```
-Click weapon in Storage
+Click weapon in Equipment List (Storage)
   ↓
 Click [Equip] button
   ↓
 Swap with currently equipped weapon
-  - Old weapon → Moves to Storage
+  - Old weapon → Moves to Equipment Inventory (if space) or Storage
   - New weapon → Moves to Equipment Slot
-
-```
-
-**Equipment Slot Display:**
-
-Display equipment slots at the top of the Storage screen:
-
-```
-┌───────────────── Current Loadout ─────────────────┐
-│  weapon: ⚔️ Sword of Fire                        │
-│  armor:  🛡️ Dragon Armor                         │
-│  helmet: 👑 Crown                               │
-│  boots:  👢 Boots of Speed                      │
-│  accessory1: 💍 Ring of Power                   │
-│  accessory2: 📿 Amulet of Protection            │
-│                                                 │
-│  [Unequip All]  [Save Loadout]                  │
-└─────────────────────────────────────────────────┘
 
 ```
 
@@ -441,6 +536,17 @@ export interface InventoryState {
 }
 
 /**
+ * Equipment Inventory State (NEW)
+ * Specialized inventory for equipment items only
+ * Used during dungeon exploration for quick equipment swaps
+ */
+export interface EquipmentInventoryState {
+  items: Item[]; // List of equipment items (equipment type only)
+  maxCapacity: number; // Max capacity (Phase 1: 3)
+  currentCapacity: number; // Current usage (items.length)
+}
+
+/**
  * Equipment Slots
  */
 export interface EquipmentSlots {
@@ -461,7 +567,11 @@ export type MoveDirection =
   | "storage_to_equipment"
   | "equipment_to_storage"
   | "inventory_to_equipment"
-  | "equipment_to_inventory";
+  | "equipment_to_inventory"
+  | "storage_to_equipment_inventory"      // NEW: Storage → Equipment Inventory
+  | "equipment_inventory_to_storage"      // NEW: Equipment Inventory → Storage
+  | "equipment_inventory_to_equipment"    // NEW: Equipment Inventory → Equipment Slot
+  | "equipment_to_equipment_inventory";   // NEW: Equipment Slot → Equipment Inventory
 
 /**
  * Move Result
@@ -484,6 +594,7 @@ export interface MoveResult {
 import type {
   StorageState,
   InventoryState,
+  EquipmentInventoryState,  // NEW
   EquipmentSlots,
 } from "../types/StorageTypes";
 
@@ -495,6 +606,9 @@ export interface Player {
 
   // New: Inventory
   inventory: InventoryState;
+
+  // NEW: Equipment Inventory (for spare equipment during exploration)
+  equipmentInventory: EquipmentInventoryState;
 
   // New: Equipment Slots
   equipment: EquipmentSlots;
@@ -539,6 +653,13 @@ const initialPlayer: Player = {
   inventory: {
     items: [],
     maxCapacity: 20,
+    currentCapacity: 0,
+  },
+
+  // NEW: Equipment Inventory
+  equipmentInventory: {
+    items: [],
+    maxCapacity: 3,  // Max 3 equipment items
     currentCapacity: 0,
   },
 
@@ -701,6 +822,13 @@ export function handlePlayerDeath(player: Player): Player {
     // Delete all Inventory
     inventory: {
       ...player.inventory,
+      items: [],
+      currentCapacity: 0,
+    },
+
+    // NEW: Delete all Equipment Inventory
+    equipmentInventory: {
+      ...player.equipmentInventory,
       items: [],
       currentCapacity: 0,
     },

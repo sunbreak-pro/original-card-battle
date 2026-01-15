@@ -1,25 +1,32 @@
 // Death Handler - Manages player death penalty system
 // Clears inventory/equipment but retains storage and base camp resources
 
-import type { Player } from "../../characters/type/playerTypes";
+import type { ExtendedPlayer } from "../../characters/type/playerTypes";
 
 /**
  * Handle Player Death
  *
  * Death Penalty:
- * - LOST: All inventory items, all equipped items, exploration resources
+ * - LOST: All inventory items, all equipment inventory items, all equipped items, exploration resources
  * - KEPT: Storage items, base camp resources, permanent progression
  *
  * @param player - Current player state
  * @returns Updated player state after death penalty
  */
-export function handlePlayerDeath(player: Player): Player {
+export function handlePlayerDeath(player: ExtendedPlayer): ExtendedPlayer {
   return {
     ...player,
 
     // Clear all inventory items
     inventory: {
       ...player.inventory,
+      items: [],
+      currentCapacity: 0,
+    },
+
+    // Clear all equipment inventory items
+    equipmentInventory: {
+      ...player.equipmentInventory,
       items: [],
       currentCapacity: 0,
     },
@@ -40,6 +47,7 @@ export function handlePlayerDeath(player: Player): Player {
       small: 0,
       medium: 0,
       large: 0,
+      huge: 0,
     },
 
     // Reset current run souls (lost on death)
@@ -74,6 +82,6 @@ export function handlePlayerDeath(player: Player): Player {
  * @param player - Current player state
  * @returns true if player is dead, false otherwise
  */
-export function isPlayerDead(player: Player): boolean {
+export function isPlayerDead(player: ExtendedPlayer): boolean {
   return player.hp <= 0;
 }

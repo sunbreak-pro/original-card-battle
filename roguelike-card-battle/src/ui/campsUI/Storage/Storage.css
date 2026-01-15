@@ -88,21 +88,20 @@
 /* Items Tab Content */
 .items-tab-content {
   display: flex;
-  gap: 1.5vw;
+  gap: 1vw;
   height: 100%;
 }
 
 /* Dual Grid Panel (Storage + Inventory) */
 .dual-grid-panel {
   display: flex;
-  align-items: flex-start;
   padding: 1vw;
   gap: 0.5vw;
   flex: 1;
 }
 
 /* Grid Section (Storage or Inventory) */
-.grid-section {
+.storage-grid-section {
   background: #5d4037;
   border: 0.2vh solid #8d6e63;
   border-radius: 0.5vh;
@@ -110,11 +109,12 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  max-height: 70vh;
+  max-width: 33.5vw;
+  max-height: fit-content;
   overflow: hidden;
 }
 
-.grid-header {
+.storage-grid-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -123,13 +123,13 @@
   border-bottom: 0.1vh solid #8d6e63;
 }
 
-.grid-title {
+.storage-grid-title {
   font-size: 2vh;
   color: #ff6f00;
   font-weight: bold;
 }
 
-.grid-count {
+.storage-grid-count {
   font-size: 1.3vh;
   color: #bcaaa4;
 }
@@ -137,29 +137,28 @@
 /* Compact Grid - scrollable container */
 .compact-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5vh;
+  grid-template-columns: repeat(3, 1fr);
   padding: 1vh;
-  flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 /* Storage grid - 10 columns for larger capacity */
 .compact-grid.storage-grid {
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1vh;
 }
 
 /* Inventory grid - 5 columns for smaller capacity */
 .compact-grid.inventory-grid {
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.2vh;
 }
 
 /* Compact Item Card */
 .item-card-compact {
-  width: 100%;
+  width: 11.5vw;
+  height: 9vh;
   aspect-ratio: 1;
   background: #4e342e;
   border: 0.3vh solid #905e4c;
@@ -170,6 +169,7 @@
   cursor: pointer;
   position: relative;
   transition: all 0.15s ease;
+  padding: 0.8vh;
 }
 
 .item-card-compact:hover {
@@ -195,11 +195,7 @@
 
 .empty-placeholder {
   color: #cba396;
-  font-size: 1.2vh;
-}
-
-.item-icon-compact {
-  font-size: 1.8vh;
+  font-size: 1.7vh;
 }
 
 .item-level-compact {
@@ -237,14 +233,15 @@
 .transfer-buttons {
   display: flex;
   flex-direction: column;
-  gap: 0.5vh;
+  margin-block: 1vh;
+  gap: 1vh;
   padding: 0 0.3vw;
   align-self: center;
 }
 
 .transfer-btn {
   width: 2.5vw;
-  height: 3vh;
+  height: 4vh;
   background: #6d4c41;
   border: 0.15vh solid #8d6e63;
   border-radius: 0.3vh;
@@ -269,9 +266,16 @@
 }
 
 /* Detail Panel */
-.detail-panel {
-  width: 22vw;
+.storage-detail-panel {
+  min-width: 24vw;
   flex-shrink: 0;
+  margin-right: 2vw;
+}
+.equip-detail-panel {
+  min-width: 20vw;
+  height: 100%;
+  flex-shrink: 0;
+  margin-right: .5vw;
 }
 
 /* Item Detail Panel - Compact */
@@ -409,25 +413,177 @@
   border-color: #e53935;
 }
 
-/* Equipment Tab Content */
+/* Equipment Tab Content - New Layout */
 .equipment-tab-content {
   display: flex;
+  justify-content: space-between;
   gap: 1.5vw;
   height: 100%;
 }
 
+/* Left Panel: Equipment List */
+.equipment-list-panel {
+  flex: 1;
+  background: #5d4037;
+  border: 0.2vh solid #8d6e63;
+  border-radius: 0.5vh;
+  padding: 0.8vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 45vw;
+  overflow: hidden;
+}
+
+.equipment-list-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1vh;
+  overflow-y: auto;
+}
+
+.empty-list-message {
+  color: #8d6e63;
+  font-size: 1.8vh;
+  text-align: center;
+  padding: 2vh;
+  grid-column: span 4;
+}
+
+/* Right Panel: Equipment Slots + Equipment Inventory */
+.equipment-right-panel {
+  width: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+}
+
+/* Equipment Slots Section */
+.equipment-slots-section {
+  background: #5d4037;
+  border: 0.2vh solid #ff6f00;
+  border-radius: 0.5vh;
+  padding: 1vh;
+}
+
+.storage-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.5vh;
+  margin-bottom: 0.5vh;
+  border-bottom: 0.1vh solid #8d6e63;
+}
+.storage-section-title{
+  font-size: 2vh;
+  color: #ff6f00;
+  font-weight: bold;
+}
+
+.storage-section-count {
+  font-size: 1.3vh;
+  color: #bcaaa4;
+}
+
+/* Compact Equipment Slots Grid */
+.equip-slots-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1vh 1vw;
+}
+
+.equip-slot-compact {
+  background: #4e342e;
+  border: 0.2vh solid #8d6e63;
+  border-radius: 0.5vh;
+  padding: 0.8vh 0.5vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3vh;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.equip-slot-compact:hover {
+  border-color: #ff6f00;
+  transform: translateY(-0.1vh);
+}
+
+.equip-slot-compact.equip-slot-selected {
+  border-color: #ff6f00;
+  box-shadow: 0 0 0.8vh rgba(255, 111, 0, 0.5);
+}
+
+.equip-slot-compact.equip-slot-filled {
+  background: linear-gradient(135deg, #4e342e 0%, #5d4037 100%);
+}
+
+.equip-slot-label-compact {
+  font-size: 1vh;
+  color: #bcaaa4;
+  text-transform: uppercase;
+  letter-spacing: 0.03vw;
+}
+
+.equip-slot-icon-compact {
+  font-size: 2.2vh;
+}
+
+.equip-slot-name-compact {
+  font-size: 1.1vh;
+  color: #ffecb3;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equip-slot-empty-compact {
+  font-size: 1.5vh;
+  color: #6d5046;
+}
+
+/* Equipment Inventory Section */
+.equipment-inventory-section {
+  width: 100%;
+  background: #5d4037;
+  border-radius: 0.5vh;
+  padding: 1vh;
+}
+
+.equipment-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1vh;
+}
+
+/* Equipment Actions */
+.equipment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5vh;
+  padding: 0.8vh;
+  border-radius: 0.5vh;
+  min-height: 5vh;
+}
+
+.equipment-actions .item-action-button {
+  flex: 1;
+  min-width: 8vw;
+}
+
+/* Legacy Equipment Slots (keeping for compatibility) */
 .equipment-grid-panel {
   flex: 1;
   background: #5d4037;
   border: 0.2vh solid #ff6f00;
   border-radius: 0.5vh;
-  padding: 2vh 2vw;
+  padding: 1vh;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Equipment Slots Grid */
 .equip-slots-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -596,7 +752,7 @@
 
 .item-card-name {
   line-height: 1.2;
-  font-size: 1.9vh;
+  font-size: 1.4rem;
   text-align: center;
   color: #ffecb3;
 }

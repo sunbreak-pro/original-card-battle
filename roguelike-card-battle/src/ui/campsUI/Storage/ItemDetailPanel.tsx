@@ -1,17 +1,17 @@
 // ItemDetailPanel Component - Displays detailed information about selected item
 
 import React from "react";
-import type { Item } from "../../../domain/camps/types/ItemTypes";
+import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
 import "./Storage.css";
 
 interface ItemDetailPanelProps {
   item: Item | null;
-  source: "storage" | "inventory" | "equipment";
-  onMoveToStorage: () => void;
-  onMoveToInventory: () => void;
-  onEquip: () => void;
-  onUnequip: () => void;
-  onDelete: () => void;
+  source: "storage" | "inventory" | "equipment" | "equipmentInventory";
+  onMoveToStorage?: () => void;
+  onMoveToInventory?: () => void;
+  onEquip?: () => void;
+  onUnequip?: () => void;
+  onDelete?: () => void;
 }
 
 /**
@@ -170,24 +170,19 @@ export const ItemDetailPanel: React.FC<ItemDetailPanelProps> = ({
         )}
 
         {/* Equip (if equipment from storage or inventory) */}
-        {isEquipment &&
-          (source === "storage" || source === "inventory") &&
-          item.equipmentSlot && (
-            <button className="item-action-button equip" onClick={onEquip}>
-              Equip ({item.equipmentSlot})
-            </button>
-          )}
+        {isEquipment && source === "storage" && item.equipmentSlot && (
+          <button className="item-action-button equip" onClick={onEquip}>
+            Equip ({item.equipmentSlot})
+          </button>
+        )}
 
         {/* Unequip (if from equipment) */}
         {source === "equipment" && (
           <>
-            <button className="item-action-button" onClick={onUnequip}>
-              Unequip to Inventory
-            </button>
             <button
               className="item-action-button"
               onClick={() => {
-                onUnequip();
+                onUnequip?.();
                 // Will unequip to inventory, then user can move to storage
               }}
             >

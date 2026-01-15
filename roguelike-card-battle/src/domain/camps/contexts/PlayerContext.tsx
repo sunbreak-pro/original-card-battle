@@ -7,13 +7,13 @@ import React, {
   type ReactNode,
 } from "react";
 import type { Player } from "../../characters/type/playerTypes";
-import type { MagicStones } from "../types/ItemTypes";
+import type { MagicStones } from "../../item_equipment/type/ItemTypes";
 import { Swordman_Status } from "../../characters/player/data/PlayerData";
 import {
   STORAGE_TEST_ITEMS,
   INVENTORY_TEST_ITEMS,
   EQUIPPED_TEST_ITEMS,
-} from "../data/TestItemsData";
+} from "../../item_equipment/data/TestItemsData";
 import type { ExtendedPlayer } from "../../characters/type/playerTypes";
 /**
  * PlayerContext value
@@ -39,8 +39,14 @@ const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
  * Create initial extended player from base player data
  */
 function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
+  const baseCampGold = 1250; // Test value for UI display
+  const explorationGold = 0;
+
   return {
     ...basePlayer,
+    // Override gold to sync with baseCampGold + explorationGold
+    gold: baseCampGold + explorationGold,
+
     // Storage & Inventory (with test items)
     storage: {
       items: STORAGE_TEST_ITEMS, // Test items for Phase 3
@@ -52,13 +58,18 @@ function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
       maxCapacity: 20,
       currentCapacity: INVENTORY_TEST_ITEMS.length,
     },
+    equipmentInventory: {
+      items: [], // Empty initially, equipment found during exploration goes here
+      maxCapacity: 3,
+      currentCapacity: 0,
+    },
     equipmentSlots: EQUIPPED_TEST_ITEMS, // Test equipped items for Phase 3
 
     // Resources (with test values)
-    explorationGold: 0,
-    baseCampGold: 1250, // Test value for UI display
-    explorationMagicStones: { small: 0, medium: 0, large: 0 },
-    baseCampMagicStones: { small: 5, medium: 3, large: 1 }, // Test values (450 total)
+    explorationGold,
+    baseCampGold,
+    explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
+    baseCampMagicStones: { small: 5, medium: 3, large: 1, huge: 0 }, // Test values (450 total)
 
     // Progression
     explorationLimit: {
@@ -185,6 +196,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
             small: prev.baseCampMagicStones.small + (stones.small || 0),
             medium: prev.baseCampMagicStones.medium + (stones.medium || 0),
             large: prev.baseCampMagicStones.large + (stones.large || 0),
+            huge: prev.baseCampMagicStones.huge + (stones.huge || 0),
           },
         };
       } else {
@@ -194,6 +206,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
             small: prev.explorationMagicStones.small + (stones.small || 0),
             medium: prev.explorationMagicStones.medium + (stones.medium || 0),
             large: prev.explorationMagicStones.large + (stones.large || 0),
+            huge: prev.explorationMagicStones.huge + (stones.huge || 0),
           },
         };
       }
@@ -264,8 +277,11 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
           large:
             prev.baseCampMagicStones.large +
             Math.floor(prev.explorationMagicStones.large * survivalMultiplier),
+          huge:
+            prev.baseCampMagicStones.huge +
+            Math.floor(prev.explorationMagicStones.huge * survivalMultiplier),
         },
-        explorationMagicStones: { small: 0, medium: 0, large: 0 },
+        explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
         sanctuaryProgress: {
           ...prev.sanctuaryProgress,
           totalSouls: prev.sanctuaryProgress.totalSouls + transferredSouls,
@@ -283,7 +299,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
       ...prev,
       explorationGold: 0,
       gold: prev.baseCampGold,
-      explorationMagicStones: { small: 0, medium: 0, large: 0 },
+      explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
       sanctuaryProgress: {
         ...prev.sanctuaryProgress,
         currentRunSouls: 0,
