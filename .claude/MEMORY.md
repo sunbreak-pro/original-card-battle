@@ -2,7 +2,7 @@
 
 ## Current Status
 
-**Last Updated:** 2026-01-16
+**Last Updated:** 2026-01-17
 
 **Development Server:** Running on http://localhost:5174/
 
@@ -29,6 +29,7 @@ Implemented Merchant's Exchange with 3 tabs: Buy, Sell, Exchange. Created `ShopT
 ### Equipment Inventory Feature (2026-01-14)
 
 Added Equipment Inventory system for dungeon exploration:
+
 - **New Type:** `EquipmentInventoryState` in `StorageTypes.ts` (max 3 equipment slots)
 - **Extended Player:** Added `equipmentInventory` to `ExtendedPlayer` type
 - **Death Penalty:** Equipment Inventory items are lost on death (same as regular inventory)
@@ -44,12 +45,14 @@ Added Equipment Inventory system for dungeon exploration:
 Implemented Blacksmith's Forge with 3 tabs: Upgrade, Repair, Dismantle.
 
 **Files Created:**
+
 - **Types:** `BlacksmithTypes.ts` - Tab types, cost interfaces, quality configs
 - **Data:** `BlacksmithData.ts` - Upgrade costs, quality options, repair/dismantle configs
 - **Logic:** `blacksmithLogic.ts` - Level/quality upgrade, repair, dismantle functions
 - **UI:** `Blacksmith.tsx`, `UpgradeTab.tsx`, `RepairTab.tsx`, `DismantleTab.tsx`, `BlacksmithItemCard.tsx`, `Blacksmith.css`
 
 **Features:**
+
 - **Level Upgrade (Lv0-3):** Stats +10-30%, AP +20-60%, costs scale by rarity
 - **Quality Upgrade (3 options):**
   - Normal (1.0x cost, 10-40% success)
@@ -61,22 +64,56 @@ Implemented Blacksmith's Forge with 3 tabs: Upgrade, Repair, Dismantle.
 - **Warning system:** Confirmation modal for valuable items (Rare+, Lv1+, Good+)
 - **Orange/fire themed UI** matching forge aesthetic
 
+### Phase 6: Sanctuary Facility (2026-01-17)
+
+Implemented Sanctuary with radial skill tree and soul system.
+
+**Files Created:**
+
+- **Types:** `SanctuaryTypes.ts` - Node, effect, progress types and constants
+- **Data:** `SanctuaryData.ts` - 17 skill nodes across 3 tiers (HP/Gold/Utility/Class/Exploration branches)
+- **Logic:** `sanctuaryLogic.ts` - Node status, unlock, effect calculation
+- **Logic:** `soulSystem.ts` - Soul acquisition, survival/death handling
+- **UI:** `Sanctuary.tsx`, `SkillTree.tsx`, `SkillNode.tsx`, `NodeDetailPanel.tsx`, `Sanctuary.css`
+
+**Implemented Features:**
+
+- Radial skill tree UI with tier rings and prerequisite connections
+- 17 nodes: HP boost (Lv1-3), Gold multiplier, Soul multiplier, Appraisal abilities, Class-specific bonuses, Exploration limit increase
+- Hold-to-unlock interaction (1.5s)
+- Soul display (totalSouls, currentRunSouls)
+- Progress statistics
+- Purple/mystical themed styling
+- App.tsx routing and PlayerContext integration
+
+**Not Yet Implemented:**
+
+- playerClass hardcoded to "swordsman" (needs actual player class data)
+- Sanctuary effects not applied to game mechanics (battle HP, gold acquisition, etc.)
+- Soul acquisition not connected to battle outcomes
+- Effect application in dungeon/battle systems
+
 ---
 
 ## Remaining Phases
 
-| Phase | Facility     | Priority    | Key Components                                 |
-| ----- | ------------ | ----------- | ---------------------------------------------- |
-| 6     | Sanctuary    | Medium-High | Skill tree, soul system, permanent progression |
-| 7     | Library      | Low-Medium  | Deck builder, encyclopedia, records, save/load |
-| 8     | Dungeon Gate | Medium      | Depth selection (1-5), exploration entry       |
-| 9     | Integration  | Critical    | Full testing, death mechanics, economy balance |
+| Phase | Facility     | Priority   | Key Components                                 |
+| ----- | ------------ | ---------- | ---------------------------------------------- |
+| 7     | Library      | Low-Medium | Deck builder, encyclopedia, records, save/load |
+| 8     | Dungeon Gate | Medium     | Depth selection (1-5), exploration entry       |
+| 9     | Integration  | Critical   | Full testing, death mechanics, economy balance |
 
 ---
 
 ## Next Actions
 
-**Recommended:** Phase 6 (Sanctuary) or Phase 8 (Dungeon Gate)
+**Recommended:** Phase 8 (Dungeon Gate) or Phase 7 (Library)
+
+**Sanctuary follow-up tasks:**
+
+- Connect playerClass to actual player data (currently hardcoded to "swordsman")
+- Apply Sanctuary effects to battle/dungeon systems (HP boost, gold multiplier, etc.)
+- Integrate soul acquisition with battle outcomes
 
 **Pending items:**
 

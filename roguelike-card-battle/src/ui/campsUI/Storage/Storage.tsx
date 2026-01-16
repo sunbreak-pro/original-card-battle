@@ -7,7 +7,7 @@ import {
   calculateMagicStoneValue,
 } from "../../../domain/item_equipment/type/ItemTypes";
 import ItemCard from "./ItemCard";
-import ItemDetailPanel from "./ItemDetailPanel";
+import { ItemDetailPanel, EquipmentDetailPanel } from "./ItemDetailPanel";
 import DeleteModal from "../modal/DeleteModal";
 import "./Storage.css";
 
@@ -68,12 +68,6 @@ export const Storage: React.FC = () => {
     showMessage(result.message);
     if (result.success) setSelectedItem(null);
   };
-  const handleMoveToStorageFromEquipSlots = () => {
-    if (!selectedItem) return;
-    const result = moveItem(selectedItem.id, "equipSlotItem_to_storage");
-    showMessage(result.message);
-    if (result.success) setSelectedItem(null);
-  };
 
   // Handle equip
   const handleEquip = () => {
@@ -129,31 +123,9 @@ export const Storage: React.FC = () => {
   };
 
   // Handle move from equipment inventory to storage
-  const handleMoveEquipmentInventoryToStorage = () => {
+  const handleMoveToStorageFromEquipmentInventory = () => {
     if (!selectedItem) return;
     const result = moveItem(selectedItem.id, "equipment_inventory_to_storage");
-    showMessage(result.message);
-    if (result.success) setSelectedItem(null);
-  };
-
-  // Handle equip from equipment inventory
-  const handleEquipFromEquipmentInventory = () => {
-    if (!selectedItem || !selectedItem.equipmentSlot) return;
-    const result = moveItem(
-      selectedItem.id,
-      "equipment_inventory_to_equipment"
-    );
-    showMessage(result.message);
-    if (result.success) setSelectedItem(null);
-  };
-
-  // Handle unequip to equipment inventory
-  const handleUnequipToEquipmentInventory = () => {
-    if (!selectedItem || !selectedItem.equipmentSlot) return;
-    const result = moveItem(
-      selectedItem.id,
-      "equipment_to_equipment_inventory"
-    );
     showMessage(result.message);
     if (result.success) setSelectedItem(null);
   };
@@ -392,6 +364,7 @@ export const Storage: React.FC = () => {
                 source={selectedSource}
                 onMoveToStorage={handleMoveToStorage}
                 onMoveToInventory={handleMoveToInventory}
+                onMoveToEquipmentInventory={handleMoveToEquipmentInventory}
                 onEquip={handleEquip}
                 onUnequip={handleUnequip}
                 onDelete={handleDeleteClick}
@@ -427,26 +400,74 @@ export const Storage: React.FC = () => {
                 )}
               </div>
             </div>
+            <div className="transfer-buttons">
+              <button
+                className="transfer-btn"
+                onClick={handleMoveToEquipmentInventory}
+                disabled={!selectedItem || selectedSource !== "storage"}
+                title="Move to Inventory"
+              >
+                →
+              </button>
+              <button
+                className="transfer-btn"
+                onClick={handleMoveToStorageFromEquipmentInventory}
+                disabled={
+                  !selectedItem || selectedSource !== "equipmentInventory"
+                }
+                title="Move to Storage"
+              >
+                ←
+              </button>
+            </div>
 
             {/* Right: Equipment Slots + Equipment Inventory */}
             <div className="equipment-right-panel">
               {/* Equipment Slots */}
               <div className="equipment-slots-section">
                 <div className="storage-section-header">
-                  <span className="storage-section-title">
-                    Equipment Inventory
-                  </span>
+                  <span className="storage-section-title">Equipped Item</span>
                 </div>
                 <div className="equip-slots-grid-compact">
                   {renderEquipmentSlotsCompact()}
                 </div>
+              </div>
+              <div className="transfer-buttons-equip">
+                <button
+                  className="transfer-btn"
+                  onClick={() =>
+                    moveItem(
+                      selectedItem!.id,
+                      "equipment_inventory_to_equipment"
+                    )
+                  }
+                  disabled={
+                    !selectedItem || selectedSource !== "equipmentInventory"
+                  }
+                  title="Move to Equipment Slots"
+                >
+                  ↑
+                </button>
+                <button
+                  className="transfer-btn"
+                  onClick={() =>
+                    moveItem(
+                      selectedItem!.id,
+                      "equipment_to_equipment_inventory"
+                    )
+                  }
+                  disabled={!selectedItem || selectedSource !== "equipment"}
+                  title="Move to Equipment Inventory"
+                >
+                  ↓
+                </button>
               </div>
 
               {/* Equipment Inventory */}
               <div className="equipment-inventory-section">
                 <div className="storage-section-header">
                   <span className="storage-section-title">
-                    Equipment Inventory
+                    Equipment's Inventory
                   </span>
                   <span className="storage-section-count">
                     {player.equipmentInventory.currentCapacity}/
@@ -457,81 +478,15 @@ export const Storage: React.FC = () => {
                   {renderEquipmentInventoryGrid()}
                 </div>
               </div>
-
-              {/* Action Buttons for Equipment Tab */}
-              <div className="equipment-actions">
-                {selectedItem && selectedSource === "storage" && (
-                  <>
-                    <button
-                      className="item-action-button equip"
-                      onClick={handleEquip}
-                    >
-                      Equip
-                    </button>
-                    <button
-                      className="item-action-button"
-                      onClick={handleMoveToEquipmentInventory}
-                      disabled={
-                        player.equipmentInventory.currentCapacity >=
-                        player.equipmentInventory.maxCapacity
-                      }
-                    >
-                      To Equipment Inventory
-                    </button>
-                  </>
-                )}
-                {selectedItem && selectedSource === "equipment" && (
-                  <>
-                    <button
-                      className="item-action-button"
-                      onClick={handleUnequipToEquipmentInventory}
-                      disabled={
-                        player.equipmentInventory.currentCapacity >=
-                        player.equipmentInventory.maxCapacity
-                      }
-                    >
-                      To Equipment Inventory
-                    </button>
-                    <button
-                      className="item-action-button"
-                      onClick={handleMoveToStorageFromEquipSlots}
-                    >
-                      To Storage
-                    </button>
-                  </>
-                )}
-                {selectedItem && selectedSource === "equipmentInventory" && (
-                  <>
-                    <button
-                      className="item-action-button equip"
-                      onClick={handleEquipFromEquipmentInventory}
-                    >
-                      Equip
-                    </button>
-                    <button
-                      className="item-action-button"
-                      onClick={handleMoveEquipmentInventoryToStorage}
-                    >
-                      To Storage
-                    </button>
-                    <button
-                      className="item-action-button delete"
-                      onClick={handleDeleteClick}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
             </div>
             <div className="equip-detail-panel">
-              <ItemDetailPanel
+              <EquipmentDetailPanel
                 item={selectedItem}
                 source={selectedSource}
                 onMoveToStorage={handleMoveToStorage}
-                onMoveToInventory={handleMoveToInventory}
+                onMoveToEquipmentInventory={handleMoveToEquipmentInventory}
                 onEquip={handleEquip}
-                onUnequip={handleUnequip}
+                onUnequipToEquipmentInventory={handleUnequip}
                 onDelete={handleDeleteClick}
               />
             </div>

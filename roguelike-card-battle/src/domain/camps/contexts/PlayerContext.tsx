@@ -77,8 +77,8 @@ function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
       max: 10,
     },
     sanctuaryProgress: {
-      currentRunSouls: 0,
-      totalSouls: 0,
+      currentRunSouls: 25, // Test value for current run
+      totalSouls: 150, // Test value for UI testing
       unlockedNodes: [],
       explorationLimitBonus: 0,
     },

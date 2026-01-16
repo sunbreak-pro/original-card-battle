@@ -175,18 +175,20 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
    */
   const equipItem = (itemId: string, slot: EquipmentSlot): MoveResult => {
     // Try to find item in storage first
-    const item = player.storage.items.find((i) => i.id === itemId);
-    if (!item) {
+    const equipmentItem =
+      player.storage.items.find((i) => i.id === itemId) ||
+      player.equipmentInventory.items.find((i) => i.id === itemId);
+    if (!equipmentItem) {
       return {
         success: false,
-        message: "Item not found in inventory or storage",
+        message: "Item not found in Equipment's Inventory or storage",
       };
     }
     // Check if item can be equipped in this slot
-    if (item.equipmentSlot !== slot) {
+    if (equipmentItem.equipmentSlot !== slot) {
       return {
         success: false,
-        message: `Cannot equip ${item.name} in ${slot} slot`,
+        message: `Cannot equip ${equipmentItem.name} in ${slot} slot`,
       };
     }
 
@@ -203,7 +205,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
 
     // Single updatePlayer call with all changes to avoid race conditions
     updatePlayer({
-      equipmentSlots: { ...player.equipmentSlots, [slot]: item },
+      equipmentSlots: { ...player.equipmentSlots, [slot]: equipmentItem },
       storage: {
         ...player.storage,
         items: finalStorageItems,
@@ -213,10 +215,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
 
     return {
       success: true,
-      message: `Equipped ${item.name}, replaced ${
+      message: `Equipped ${equipmentItem.name}, replaced ${
         currentlyEquipped?.name || "nothing"
       }`,
-      movedItem: item,
+      movedItem: equipmentItem,
       replacedItem: currentlyEquipped || undefined,
     };
   };

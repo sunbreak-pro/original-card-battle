@@ -5,6 +5,7 @@ import { Guild } from "./ui/campsUI/Guild/Guild.tsx";
 import { Shop } from "./ui/campsUI/Shop/Shop.tsx";
 import Storage from "./ui/campsUI/Storage/Storage.tsx";
 import { Blacksmith } from "./ui/campsUI/Blacksmith/Blacksmith.tsx";
+import { Sanctuary } from "./ui/campsUI/Sanctuary/Sanctuary.tsx";
 import {
   GameStateProvider,
   useGameState,
@@ -66,14 +67,8 @@ function AppContent() {
       {currentScreen === "shop" && <Shop />}
       {/* Blacksmith Screen */}
       {currentScreen === "blacksmith" && <Blacksmith />}
-      {currentScreen === "sanctuary" && (
-        <div className="facility-placeholder">
-          <button className="back-button" onClick={returnToCamp}>
-            ← Back to Camp
-          </button>
-          <h1>Sanctuary (Coming Soon)</h1>
-        </div>
-      )}
+      {/* Sanctuary Screen */}
+      {currentScreen === "sanctuary" && <Sanctuary />}
       {currentScreen === "library" && (
         <div className="facility-placeholder">
           <button className="back-button" onClick={returnToCamp}>

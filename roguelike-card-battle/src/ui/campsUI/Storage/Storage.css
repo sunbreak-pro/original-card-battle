@@ -265,6 +265,15 @@
   cursor: not-allowed;
 }
 
+.transfer-buttons-equip {
+  display: flex;
+  flex-direction: row;
+  margin-block: 1vh;
+  gap: 1vh;
+  padding: 0 0.3vw;
+  align-self: center;
+}
+
 /* Detail Panel */
 .storage-detail-panel {
   min-width: 24vw;
@@ -280,6 +289,7 @@
 
 /* Item Detail Panel - Compact */
 .item-detail-panel {
+  width: 23vw;
   padding: 1vh 1vw;
   background: #5d4037;
   border: 0.2vh solid #ff6f00;
@@ -299,18 +309,20 @@
 }
 
 .item-detail-icon {
-  font-size: 1.5vh;
+  font-size: 2vh;
   text-align: center;
 }
 
 .item-detail-name {
-  font-size: 2.5vh;
+  background-color: #3e2723;
+  border-radius: 1vh;
+  font-size: 3.1vh;
   margin: 0;
   text-align: center;
 }
 
 .item-detail-rarity {
-  font-size: 1.4vh;
+  font-size: 1.9vh;
   text-align: center;
 }
 
@@ -321,7 +333,7 @@
   padding: 0.6vh 0.5vw;
   background: #4e342e;
   border-radius: 0.3vh;
-  font-size: 1.3vh;
+  font-size: 1.9vh;
 }
 
 .item-detail-stat {
@@ -336,18 +348,18 @@
 
 .item-detail-effects h4 {
   margin: 0 0 0.4vh 0;
-  font-size: 1.4vh;
+  font-size: 1.9vh;
   color: #ff6f00;
 }
 
 .item-detail-effect {
-  font-size: 1.2vh;
+  font-size: 1.9vh;
   color: #90caf9;
   margin-bottom: 0.3vh;
 }
 
 .item-detail-description {
-  font-size: 1.2vh;
+  font-size: 1.8vh;
   line-height: 1.4;
   color: #d7ccc8;
   padding: 0.6vh 0.5vw;
@@ -357,12 +369,12 @@
 }
 
 .item-detail-type {
-  font-size: 1.2vh;
+  font-size: 1.9vh;
   color: #bcaaa4;
 }
 
 .item-detail-sell-price {
-  font-size: 1.3vh;
+  font-size: 1.9vh;
   color: #ffd54f;
 }
 
