@@ -2,7 +2,7 @@
 
 ## Current Status
 
-**Last Updated:** 2026-01-13
+**Last Updated:** 2026-01-16
 
 **Development Server:** Running on http://localhost:5174/
 
@@ -39,23 +39,44 @@ Added Equipment Inventory system for dungeon exploration:
 - **New Operations:** `storage_to_equipment_inventory`, `equipment_inventory_to_storage`, `equipment_inventory_to_equipment`, `equipment_to_equipment_inventory`
 - **Design Document:** Updated `storage_design.md` with Equipment Inventory concept
 
+### Phase 5: Blacksmith Facility (2026-01-16)
+
+Implemented Blacksmith's Forge with 3 tabs: Upgrade, Repair, Dismantle.
+
+**Files Created:**
+- **Types:** `BlacksmithTypes.ts` - Tab types, cost interfaces, quality configs
+- **Data:** `BlacksmithData.ts` - Upgrade costs, quality options, repair/dismantle configs
+- **Logic:** `blacksmithLogic.ts` - Level/quality upgrade, repair, dismantle functions
+- **UI:** `Blacksmith.tsx`, `UpgradeTab.tsx`, `RepairTab.tsx`, `DismantleTab.tsx`, `BlacksmithItemCard.tsx`, `Blacksmith.css`
+
+**Features:**
+- **Level Upgrade (Lv0-3):** Stats +10-30%, AP +20-60%, costs scale by rarity
+- **Quality Upgrade (3 options):**
+  - Normal (1.0x cost, 10-40% success)
+  - Quality Focused (1.5x cost, 15-80% success)
+  - Max Quality (2.0x cost, 25-100% success)
+- **Quality progression:** poor → normal → good → master
+- **Repair:** Cost = (maxAP - currentAP) × 0.5 × rarityMultiplier, Repair All button
+- **Dismantle:** Gold return (10-25% of sell price), bonus magic stone chance for Rare+
+- **Warning system:** Confirmation modal for valuable items (Rare+, Lv1+, Good+)
+- **Orange/fire themed UI** matching forge aesthetic
+
 ---
 
 ## Remaining Phases
 
-| Phase | Facility     | Priority    | Key Components                                      |
-| ----- | ------------ | ----------- | --------------------------------------------------- |
-| 5     | Blacksmith   | Medium      | Upgrade (Lv0-3), quality improve, repair, dismantle |
-| 6     | Sanctuary    | Medium-High | Skill tree, soul system, permanent progression      |
-| 7     | Library      | Low-Medium  | Deck builder, encyclopedia, records, save/load      |
-| 8     | Dungeon Gate | Medium      | Depth selection (1-5), exploration entry            |
-| 9     | Integration  | Critical    | Full testing, death mechanics, economy balance      |
+| Phase | Facility     | Priority    | Key Components                                 |
+| ----- | ------------ | ----------- | ---------------------------------------------- |
+| 6     | Sanctuary    | Medium-High | Skill tree, soul system, permanent progression |
+| 7     | Library      | Low-Medium  | Deck builder, encyclopedia, records, save/load |
+| 8     | Dungeon Gate | Medium      | Depth selection (1-5), exploration entry       |
+| 9     | Integration  | Critical    | Full testing, death mechanics, economy balance |
 
 ---
 
 ## Next Actions
 
-**Recommended:** Phase 5 (Blacksmith) or Phase 6 (Sanctuary)
+**Recommended:** Phase 6 (Sanctuary) or Phase 8 (Dungeon Gate)
 
 **Pending items:**
 
