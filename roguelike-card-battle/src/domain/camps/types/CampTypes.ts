@@ -24,7 +24,8 @@ export type GameScreen =
   | "sanctuary"
   | "library"
   | "storage"
-  | "dungeon";
+  | "dungeon"
+  | "dungeon_map"; // Dungeon node map during exploration
 
 /**
  * Battle mode types

@@ -2,9 +2,9 @@
 
 ## Current Status
 
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-01-20
 
-**Development Server:** Running on http://localhost:5174/
+**Development Server:** http://localhost:5173/
 
 ---
 
@@ -93,21 +93,55 @@ Implemented Sanctuary with radial skill tree and soul system.
 - Soul acquisition not connected to battle outcomes
 - Effect application in dungeon/battle systems
 
+### Phase 8: Dungeon Gate (2026-01-20)
+
+Implemented dungeon gate with node map and battle integration.
+
+**Files Created:**
+
+- **Types:** `domain/dungeon/types/DungeonTypes.ts` - Node, floor, run types and configs
+- **Logic:** `domain/dungeon/logic/dungeonLogic.ts` - Map generation, node progression
+- **Context:** `ui/dungeonUI/DungeonRunContext.tsx` - Dungeon run state management
+- **UI:** `DungeonGate.tsx`, `DungeonGate.css` - Depth selection screen
+- **UI:** `NodeMap.tsx`, `NodeMap.css` - Node map display
+- **UI:** `MapNode.tsx` - Individual node component
+
+**Files Modified:**
+
+- `CampTypes.ts` - Added `"dungeon_map"` to GameScreen
+- `App.tsx` - Added routing, lifted DungeonRunProvider to app level
+- `BattleScreen.tsx` - Added `onWin`/`onLose` props for dungeon callbacks
+
+**Implemented Features:**
+
+- Depth selection (5 depths with themed colors)
+- 7-row node map with connections
+- Node types: battle, elite, boss, event, rest, treasure
+- Battle integration: victory returns to NodeMap, defeat returns to BaseCamp
+- Progress tracking and encounter counting
+
+**Flow:** BaseCamp → DungeonGate → NodeMap → BattleScreen → NodeMap (loop) → BaseCamp
+
 ---
 
 ## Remaining Phases
 
-| Phase | Facility     | Priority   | Key Components                                 |
-| ----- | ------------ | ---------- | ---------------------------------------------- |
-| 7     | Library      | Low-Medium | Deck builder, encyclopedia, records, save/load |
-| 8     | Dungeon Gate | Medium     | Depth selection (1-5), exploration entry       |
-| 9     | Integration  | Critical   | Full testing, death mechanics, economy balance |
+| Phase | Facility    | Priority   | Key Components                                 |
+| ----- | ----------- | ---------- | ---------------------------------------------- |
+| 7     | Library     | Low-Medium | Deck builder, encyclopedia, records, save/load |
+| 9     | Integration | Critical   | Full testing, death mechanics, economy balance |
 
 ---
 
 ## Next Actions
 
-**Recommended:** Phase 8 (Dungeon Gate) or Phase 7 (Library)
+**Recommended:** Phase 9 (Integration) - Connect all systems and test full game loop
+
+**Phase 8 follow-up tasks:**
+
+- Implement event/rest/treasure node functionality (currently complete immediately)
+- Add floor completion reward screen
+- Connect soul acquisition to battle outcomes
 
 **Sanctuary follow-up tasks:**
 
@@ -127,3 +161,38 @@ Implemented Sanctuary with radial skill tree and soul system.
 
 **Language Consistency (2026-01-11):**
 Player grades use Japanese ("見習い剣士") but `PromotionData` initially used English. This caused `getNextExam()` to fail. Always verify language consistency across PlayerData, game data files, and type definitions.
+
+**Context Provider Scope and Screen Navigation (2026-01-20):**
+When state needs to persist across screen transitions (e.g., dungeon run state during battles), the Context Provider must be placed at a high enough level in the component tree. Issues encountered:
+
+1. **Problem:** `DungeonRunProvider` wrapped only `NodeMap` - when navigating to battle screen, NodeMap unmounted and dungeon run state was lost
+2. **Problem:** `BattleScreen` didn't receive `battleConfig.onWin/onLose` callbacks - VictoryScreen called `handleContinueToNextBattle()` instead of returning to dungeon map
+3. **Solution:**
+   - Lift `DungeonRunProvider` to wrap the entire `AppContent` in `App.tsx`
+   - Pass `onWin`/`onLose` props from `battleConfig` to `BattleScreen`
+   - Use these callbacks in `VictoryScreen` and `DefeatScreen`
+
+**Rule:** When implementing features that span multiple screens (dungeon exploration, multi-stage battles), always consider:
+- Where the Context Provider should be placed to maintain state
+- Whether all necessary callbacks are passed through the component chain
+- Test the full navigation flow (A → B → A) before marking complete
+
+**React Hooks Rules of Hooks (2026-01-20):**
+All React Hooks (useState, useEffect, useCallback, useMemo, custom hooks) MUST be called:
+- At the top level of the component
+- Before any conditional returns (if/return)
+- In the same order every render
+
+Common mistake pattern:
+```tsx
+// ❌ BAD - hook after early return
+if (condition) return <Early />;
+useEffect(() => {...});  // This breaks!
+
+// ✅ GOOD - hook before early return
+useEffect(() => {...});  // All hooks first
+if (condition) return <Early />;
+```
+
+Additional note: Use `useRef` instead of `useState` for flags that track whether an effect has run, to avoid ESLint `set-state-in-effect` warnings.
+

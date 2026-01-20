@@ -123,7 +123,7 @@ export const useBattle = (depth: Depth, initialEnemies?: Enemy[]) => {
     const [playerMaxHp] = useState(Swordman_Status.maxHp);
     const [playerAp, setPlayerAp] = useState(Swordman_Status.ap);
     const [playerMaxAp] = useState(Swordman_Status.maxAp);
-    const [playerGuard, setPlayerGuard] = useState(0);
+    const [playerGuard, setPlayerGuard] = useState(Swordman_Status.guard);
     const [playerEnergy, setPlayerEnergy] = useState(Swordman_Status.cardActEnergy);
     const [maxEnergy] = useState(Swordman_Status.cardActEnergy);
     const [playerBuffs, setPlayerBuffs] = useState<BuffDebuffMap>(new Map());

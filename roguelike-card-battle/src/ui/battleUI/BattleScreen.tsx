@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Depth } from "../../domain/cards/type/cardType";
 import { useBattle } from "../../domain/battles/managements/battleFlowManage";
 import { selectRandomEnemy } from "../../domain/characters/enemy/logic/enemyAI";
@@ -18,17 +18,21 @@ const BattleScreen = ({
   depth,
   onDepthChange,
   onReturnToCamp,
+  onWin,
+  onLose,
 }: {
   depth: Depth;
   onDepthChange: (d: Depth) => void;
   onReturnToCamp?: () => void;
+  onWin?: () => void;
+  onLose?: () => void;
 }) => {
   const theme = depthThemes[depth];
   const { player, updatePlayer } = usePlayer();
 
   // 遭遇カウント管理
   const [encounterCount, setEncounterCount] = useState(0);
-  const [deathHandled, setDeathHandled] = useState(false);
+  const deathHandledRef = useRef(false);
 
   const {
     playerRef,
@@ -44,7 +48,6 @@ const BattleScreen = ({
     cardEnergy,
     maxEnergy,
     swordEnergy,
-    enemyEnergy: _enemyEnergy,
     phaseCount,
     turnMessage,
     showTurnMessage,
@@ -66,6 +69,17 @@ const BattleScreen = ({
     currentPhaseIndex,
   } = useBattle(depth);
 
+  // Handle player death penalty when defeated
+  // IMPORTANT: This useEffect must be BEFORE any early returns to follow React's Rules of Hooks
+  useEffect(() => {
+    if (battleResult === "defeat" && !deathHandledRef.current) {
+      // Apply death penalty
+      const updatedPlayer = handlePlayerDeath(player);
+      updatePlayer(updatedPlayer);
+      deathHandledRef.current = true;
+    }
+  }, [battleResult, player, updatePlayer]);
+
   const handleContinueToNextBattle = () => {
     const nextEncounter = encounterCount + 1;
     setEncounterCount(nextEncounter);
@@ -80,9 +94,12 @@ const BattleScreen = ({
     resetForNextEnemy(nextEnemies);
   };
   if (battleResult === "victory") {
+    // If onWin callback is provided (dungeon mode), use it instead of continuing to next battle
+    const handleVictoryContinue = onWin || handleContinueToNextBattle;
+
     return (
       <VictoryScreen
-        onContinue={handleContinueToNextBattle}
+        onContinue={handleVictoryContinue}
         rewards={{
           gold: 100 + phaseCount * 10,
           experience: 50 + phaseCount * 5,
@@ -97,23 +114,20 @@ const BattleScreen = ({
     );
   }
 
-  // Handle player death penalty when defeated
-  useEffect(() => {
-    if (battleResult === "defeat" && !deathHandled) {
-      // Apply death penalty
-      const updatedPlayer = handlePlayerDeath(player);
-      updatePlayer(updatedPlayer);
-      setDeathHandled(true);
-    }
-  }, [battleResult, deathHandled, player, updatePlayer]);
-
   if (battleResult === "defeat") {
+    // If onLose callback is provided (dungeon mode), use it for return to camp
+    const handleDefeatReturnToCamp = () => {
+      if (onLose) {
+        onLose();
+      } else if (onReturnToCamp) {
+        onReturnToCamp();
+      }
+    };
+
     return (
       <DefeatScreen
         onRetry={() => window.location.reload()}
-        onReturnToCamp={() => {
-          if (onReturnToCamp) onReturnToCamp();
-        }}
+        onReturnToCamp={handleDefeatReturnToCamp}
         battleStats={{
           turnCount: phaseCount,
           damageDealt: battleStats.damageDealt,
@@ -261,10 +275,10 @@ const BattleScreen = ({
                       swordEnergy.current >= 10
                         ? "level-max"
                         : swordEnergy.current >= 8
-                        ? "level-high"
-                        : swordEnergy.current >= 5
-                        ? "level-mid"
-                        : ""
+                          ? "level-high"
+                          : swordEnergy.current >= 5
+                            ? "level-mid"
+                            : ""
                     }`}
                     style={{
                       width: `${
@@ -324,7 +338,7 @@ const BattleScreen = ({
         {hand.map((card, index) => {
           const isDrawing = isNewCard(card.id);
           const isDiscarding = getDiscardingCards().some(
-            (c) => c.id === card.id
+            (c) => c.id === card.id,
           );
 
           const totalCards = hand.length;
@@ -345,8 +359,8 @@ const BattleScreen = ({
                   animationDelay: isDrawing
                     ? `${index * 0.1}s`
                     : isDiscarding
-                    ? `${index * 0.05}s`
-                    : "0s",
+                      ? `${index * 0.05}s`
+                      : "0s",
                 } as React.CSSProperties
               }
               onClick={(e) => handleCardPlay(card, e.currentTarget)}

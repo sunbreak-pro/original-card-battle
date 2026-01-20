@@ -6,6 +6,9 @@ import { Shop } from "./ui/campsUI/Shop/Shop.tsx";
 import Storage from "./ui/campsUI/Storage/Storage.tsx";
 import { Blacksmith } from "./ui/campsUI/Blacksmith/Blacksmith.tsx";
 import { Sanctuary } from "./ui/campsUI/Sanctuary/Sanctuary.tsx";
+import { DungeonGate } from "./ui/dungeonUI/DungeonGate.tsx";
+import { NodeMap } from "./ui/dungeonUI/NodeMap.tsx";
+import { DungeonRunProvider } from "./ui/dungeonUI/DungeonRunContext.tsx";
 import {
   GameStateProvider,
   useGameState,
@@ -52,10 +55,13 @@ function AppContent() {
             })()
           ) : (
             // Normal dungeon battle - use regular BattleScreen
+            // Pass battleConfig callbacks for dungeon integration
             <BattleScreen
               depth={depth}
               onDepthChange={setDepth}
               onReturnToCamp={returnToCamp}
+              onWin={battleConfig?.onWin}
+              onLose={battleConfig?.onLose}
             />
           )}
         </>
@@ -79,14 +85,11 @@ function AppContent() {
       )}
       {/* Storage Screen */}
       {currentScreen === "storage" && <Storage />}
-      {currentScreen === "dungeon" && (
-        <div className="facility-placeholder">
-          <button className="back-button" onClick={returnToCamp}>
-            ← Back to Camp
-          </button>
-          <h1>Dungeon Gate (Coming Soon)</h1>
-        </div>
-      )}
+      {/* Dungeon Gate Screen */}
+      {currentScreen === "dungeon" && <DungeonGate />}
+
+      {/* Dungeon Map Screen */}
+      {currentScreen === "dungeon_map" && <NodeMap />}
     </div>
   );
 }
@@ -94,13 +97,16 @@ function AppContent() {
 /**
  * Main App Component
  * Wraps AppContent with all necessary Context Providers
+ * DungeonRunProvider is at app level to persist state across battle transitions
  */
 function App() {
   return (
     <GameStateProvider>
       <PlayerProvider>
         <InventoryProvider>
-          <AppContent />
+          <DungeonRunProvider>
+            <AppContent />
+          </DungeonRunProvider>
         </InventoryProvider>
       </PlayerProvider>
     </GameStateProvider>
