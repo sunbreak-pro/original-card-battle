@@ -13,6 +13,7 @@ import {
   GameStateProvider,
   useGameState,
 } from "./domain/camps/contexts/GameStateContext.tsx";
+import { ResourceProvider } from "./domain/camps/contexts/ResourceContext.tsx";
 import { PlayerProvider } from "./domain/camps/contexts/PlayerContext.tsx";
 import { InventoryProvider } from "./domain/camps/contexts/InventoryContext.tsx";
 import { getGuildEnemy } from "./domain/camps/data/GuildEnemyData.ts";
@@ -102,13 +103,15 @@ function AppContent() {
 function App() {
   return (
     <GameStateProvider>
-      <PlayerProvider>
-        <InventoryProvider>
-          <DungeonRunProvider>
-            <AppContent />
-          </DungeonRunProvider>
-        </InventoryProvider>
-      </PlayerProvider>
+      <ResourceProvider>
+        <PlayerProvider>
+          <InventoryProvider>
+            <DungeonRunProvider>
+              <AppContent />
+            </DungeonRunProvider>
+          </InventoryProvider>
+        </PlayerProvider>
+      </ResourceProvider>
     </GameStateProvider>
   );
 }

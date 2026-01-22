@@ -1,4 +1,5 @@
 // GameStateContext: Manages global game state and screen navigation
+// Note: encounterCount is now managed by DungeonRunContext
 
 import React, {
   createContext,
@@ -15,13 +16,13 @@ import type {
 
 /**
  * Game state interface
- * Tracks current screen, battle configuration, and exploration state
+ * Tracks current screen, battle configuration, and navigation state
+ * Note: encounterCount has been moved to DungeonRunContext
  */
 export interface GameState {
   currentScreen: GameScreen;
   battleMode: BattleMode;
   depth: Depth;
-  encounterCount: number;
   battleConfig?: BattleConfig;
 }
 
@@ -35,7 +36,6 @@ interface GameStateContextValue {
   startBattle: (config: BattleConfig, mode?: BattleMode) => void;
   returnToCamp: () => void;
   setDepth: (depth: Depth) => void;
-  incrementEncounter: () => void;
 }
 
 const GameStateContext = createContext<GameStateContextValue | undefined>(
@@ -49,7 +49,6 @@ const initialGameState: GameState = {
   currentScreen: "camp",
   battleMode: null,
   depth: 1,
-  encounterCount: 0,
 };
 
 /**
@@ -103,16 +102,6 @@ export const GameStateProvider: React.FC<{ children: ReactNode }> = ({
     setGameState((prev) => ({ ...prev, depth }));
   };
 
-  /**
-   * Increment encounter count
-   */
-  const incrementEncounter = () => {
-    setGameState((prev) => ({
-      ...prev,
-      encounterCount: prev.encounterCount + 1,
-    }));
-  };
-
   return (
     <GameStateContext.Provider
       value={{
@@ -122,7 +111,6 @@ export const GameStateProvider: React.FC<{ children: ReactNode }> = ({
         startBattle,
         returnToCamp,
         setDepth,
-        incrementEncounter,
       }}
     >
       {children}

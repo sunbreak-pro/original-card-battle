@@ -3,11 +3,13 @@
 ## CRITICAL: Working Directory
 
 **Current Working Directory:**
+
 ```
 /Users/newlife/Downloads/Desktop/roguelike-card/
 ```
 
 **Project structure:**
+
 ```
 roguelike-card/                    # Git root & Workspace root (CURRENT DIRECTORY)
 ├── package.json                   # Workspace package.json (npm commands work here!)
@@ -16,15 +18,18 @@ roguelike-card/                    # Git root & Workspace root (CURRENT DIRECTOR
     ├── package.json
     ├── src/
     ├── public/
+        ├── assets/         # Static files (images, sounds, JSON data)
     └── ...
 ```
 
 **NPM Commands:**
 You can now run npm commands from EITHER directory:
+
 - ✅ `npm run dev` (from roguelike-card/) - runs workspace script
 - ✅ `cd roguelike-card-battle && npm run dev` - runs directly
 
 **When referencing file paths:**
+
 - ✅ CORRECT: `roguelike-card-battle/src/domain/camps/types/ItemTypes.ts`
 - ❌ WRONG: `src/domain/camps/types/ItemTypes.ts` (this would be git root)
 
@@ -77,6 +82,7 @@ To ensure consistent responsive layouts across different screen sizes, always us
 - **Rationale**: Fixed units (rem, px) can cause layout overflow issues when designing full-screen UIs
 
 **Examples:**
+
 ```css
 /* ✅ GOOD - Viewport units scale with screen size */
 .screen-container {
@@ -96,20 +102,22 @@ To ensure consistent responsive layouts across different screen sizes, always us
 
 /* ❌ BAD - Fixed units can cause overflow */
 .screen-container {
-  padding: 2rem;  /* May overflow on smaller screens */
+  padding: 2rem; /* May overflow on smaller screens */
 }
 
 .title {
-  font-size: 2rem;  /* Doesn't scale with viewport */
+  font-size: 2rem; /* Doesn't scale with viewport */
 }
 ```
 
 **When to use fixed units:**
+
 - Border widths (2px borders are acceptable)
 - Border radius (8px, 12px)
 - Very small spacing where precision matters (< 0.5rem equivalent)
 
 **Conversion Guidelines:**
+
 - `1rem` → `1.8vh` (for font sizes)
 - `1rem` → `1.5vh` (for padding/margins vertically)
 - `1rem` → `1vw` (for padding/margins horizontally)
@@ -125,7 +133,6 @@ To ensure consistent responsive layouts across different screen sizes, always us
 src/
 ├── domain/         # Game logic (cards, battles, equipments, characters, camp, dungeon)
 ├── ui/             # UI components (battleUI, dungeonUI, campUI, commonUI, enemyUI, css)
-├── assets/         # Static files (images, sounds, JSON data)
 └── utils/          # Shared utilities(User)
 ```
 

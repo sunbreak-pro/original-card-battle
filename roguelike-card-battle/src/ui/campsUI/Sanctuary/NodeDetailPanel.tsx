@@ -7,8 +7,10 @@ import type {
   CharacterClass,
 } from "../../../domain/camps/types/SanctuaryTypes";
 import { SANCTUARY_CONSTANTS } from "../../../domain/camps/types/SanctuaryTypes";
-import { CATEGORY_DISPLAY, getNodeById } from "../../../domain/camps/data/SanctuaryData";
-
+import {
+  CATEGORY_DISPLAY,
+  getNodeById,
+} from "../../../domain/camps/data/SanctuaryData";
 interface NodeDetailPanelProps {
   node: SkillNode | null;
   status: NodeStatus;
@@ -191,11 +193,15 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
 
         {/* Cost Section */}
         {status !== "unlocked" && (
-          <div className={`cost-section ${canAfford ? "affordable" : "insufficient"}`}>
+          <div
+            className={`cost-section ${canAfford ? "affordable" : "insufficient"}`}
+          >
             <span className="cost-icon">👻</span>
             <span className="cost-amount">{node.cost}</span>
             <span className="cost-label">
-              Souls ({canAfford ? "Affordable" : `Need ${node.cost - totalSouls} more`})
+              Souls (
+              {canAfford ? "Affordable" : `Need ${node.cost - totalSouls} more`}
+              )
             </span>
           </div>
         )}

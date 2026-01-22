@@ -1,5 +1,12 @@
 import type { BuffDebuffMap } from "../../battles/type/baffType";
-export type CharacterClass = "swordsman" | "mage" | "summoner";
+
+// Re-export CharacterClass from baseTypes for backward compatibility
+export { type CharacterClass, type CardCharacterClass } from "./baseTypes";
+
+/**
+ * @deprecated Use BattleStats from baseTypes.ts instead.
+ * This interface is kept for backward compatibility.
+ */
 export interface Character {
     hp: number;
     maxHp: number;

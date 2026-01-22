@@ -70,7 +70,7 @@ export const addOrUpdateBuffDebuff = (
   duration: number,
   value: number,
   isPermanent: boolean = false,
-  source?: string
+  source?: string,
 ): BuffDebuffMap => {
   const newMap = new Map(map);
   const existing = newMap.get(type);
@@ -383,18 +383,6 @@ export const addOrUpdateBuffDebuff = (
 }
 ```
 
-### ID: evasion（回避率上昇）
-
-```typescript
-{
-  name: "Evasion",
-  nameJa: "回避率上昇",
-  description: "回避率+value%",
-  color: "#66ffcc",
-  isDebuff: false,
-}
-```
-
 ### ID: immunity（デバフ無効）
 
 ```typescript
@@ -668,7 +656,7 @@ export const addOrUpdateBuffDebuff = (
  * ターン経過による持続時間減少
  */
 export const decreaseBuffDebuffDuration = (
-  map: BuffDebuffMap
+  map: BuffDebuffMap,
 ): BuffDebuffMap => {
   const newMap = new Map<BuffDebuffType, BuffDebuff>();
 

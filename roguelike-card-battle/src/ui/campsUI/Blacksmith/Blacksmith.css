@@ -1,15 +1,26 @@
 /* Blacksmith (Forge) Styles - Orange/Fire Theme */
-
+.blacksmith-background{
+  position: absolute;
+  top: -15vh;
+  right: 0vh;
+  width: 55vw;
+  height: 140vh;
+  opacity: 0.8;
+  z-index: 2;
+  pointer-events: none;
+  border: 3px solid #8b1414;
+}
 .blacksmith-screen {
+  position: relative;
   width: 100vw;
   height: 100vh;
   display: grid;
   grid-template-rows: auto auto 1fr auto;
-  background: linear-gradient(135deg, #1a1612 0%, #2a1810 100%);
   color: #e8d5b7;
   padding: 3vh 3vw;
   box-sizing: border-box;
   overflow: hidden;
+  z-index: 1;
 }
 
 /* Header */
@@ -42,7 +53,7 @@
   align-items: center;
   gap: 0.5vw;
   padding: 0.8vh 1.5vw;
-  background: rgba(45, 31, 26, 0.6);
+  background: rgba(45, 31, 26, 0.95);
   border-radius: 6px;
   border: 1px solid rgba(255, 107, 53, 0.3);
 }
@@ -79,7 +90,7 @@
   align-items: center;
   gap: 0.5vh;
   padding: 1.2vh 2vw;
-  background: rgba(45, 31, 26, 0.6);
+  background: rgba(45, 31, 26, 0.95);
   border: 2px solid rgba(255, 107, 53, 0.3);
   border-radius: 8px;
   color: #b89968;
@@ -88,7 +99,7 @@
 }
 
 .blacksmith-tab:hover {
-  background: rgba(45, 31, 26, 0.8);
+  background: rgba(45, 31, 26, 0.98);
   border-color: rgba(255, 107, 53, 0.5);
   transform: translateY(-2px);
 }
@@ -112,7 +123,7 @@
 .blacksmith-content {
   max-width: 90vw;
   margin: 0 auto;
-  background: rgba(26, 20, 16, 0.6);
+  background: rgba(26, 20, 16, 0.95);
   border: 2px solid rgba(255, 107, 53, 0.2);
   border-radius: 12px;
   padding: 2vh 2vw;
@@ -125,7 +136,7 @@
   display: block;
   margin: 1vh auto 0 auto;
   padding: 1.2vh 2vw;
-  background: rgba(45, 31, 26, 0.8);
+  background: rgba(45, 31, 26, 0.95);
   border: 2px solid rgba(255, 107, 53, 0.3);
   border-radius: 8px;
   color: #e8d5b7;
@@ -220,7 +231,7 @@
   flex-direction: column;
   align-items: center;
   padding: 1vh 0.5vw;
-  background: rgba(45, 31, 26, 0.5);
+  background: rgba(45, 31, 26, 0.95);
   border: 2px solid rgba(255, 107, 53, 0.2);
   border-radius: 8px;
   cursor: pointer;
@@ -320,7 +331,7 @@
 /* ========== Detail Panel ========== */
 
 .detail-panel {
-  background: rgba(45, 31, 26, 0.5);
+  background: rgba(45, 31, 26, 0.95);
   border: 2px solid rgba(255, 107, 53, 0.2);
   border-radius: 8px;
   padding: 1.5vh 1.5vw;
@@ -475,14 +486,14 @@
 }
 
 .action-button:disabled {
-  background: rgba(45, 31, 26, 0.6);
+  background: rgba(45, 31, 26, 0.95);
   border-color: rgba(232, 213, 183, 0.3);
   color: #6d5d4b;
   cursor: not-allowed;
 }
 
 .action-button.secondary {
-  background: rgba(45, 31, 26, 0.8);
+  background: rgba(45, 31, 26, 0.95);
   border-color: rgba(255, 107, 53, 0.5);
   color: #e8d5b7;
 }
@@ -533,7 +544,7 @@
   display: flex;
   flex-direction: column;
   padding: 1vh 1vw;
-  background: rgba(45, 31, 26, 0.5);
+  background: rgba(45, 31, 26, 0.95);
   border: 2px solid rgba(255, 107, 53, 0.2);
   border-radius: 8px;
   cursor: pointer;
@@ -592,7 +603,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5vh 1.5vw;
-  background: rgba(255, 107, 53, 0.1);
+  background: rgba(45, 31, 26, 0.95);
   border: 1px solid rgba(255, 107, 53, 0.3);
   border-radius: 8px;
   margin-bottom: 2vh;
@@ -743,7 +754,7 @@
 }
 
 .confirm-button.cancel {
-  background: rgba(45, 31, 26, 0.8);
+  background: rgba(45, 31, 26, 0.95);
   border: 2px solid rgba(255, 107, 53, 0.3);
   color: #e8d5b7;
 }

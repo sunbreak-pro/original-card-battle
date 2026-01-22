@@ -58,10 +58,7 @@ const FacilityCard = ({
       {/* ホバーエフェクト */}
       {isHovered && isUnlocked && (
         <div className="facility-hover-effect">
-          <div
-            className="hover-text"
-            style={{ color: "rgba(124, 220, 77, 1)" }}
-          >
+          <div className="hover-text enter">
             Enter →
           </div>
         </div>

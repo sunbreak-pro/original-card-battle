@@ -14,67 +14,74 @@ export const Blacksmith = () => {
   const { player } = usePlayer();
 
   const totalMagicStoneValue = calculateMagicStoneValue(
-    player.baseCampMagicStones
+    player.baseCampMagicStones,
   );
 
   return (
-    <div className="blacksmith-screen">
-      {/* Header */}
-      <header className="blacksmith-header">
-        <div className="blacksmith-title-row">
-          <h1 className="blacksmith-title">Blacksmith's Forge</h1>
-        </div>
-        <div className="blacksmith-resources">
-          <div className="resource-display gold">
-            <span className="resource-icon">💰</span>
-            <span className="resource-value">{player.baseCampGold} G</span>
+    <>
+      <img
+        className="blacksmith-background"
+        alt="Blacksmith Background"
+        src="/assets/images/Blacksmith-background.png"
+      ></img>
+      <div className="blacksmith-screen">
+        {/* Header */}
+        <header className="blacksmith-header">
+          <div className="blacksmith-title-row">
+            <h1 className="blacksmith-title">Blacksmith's Forge</h1>
           </div>
-          <div className="resource-display stones">
-            <span className="resource-icon">💎</span>
-            <span className="resource-value">
-              {totalMagicStoneValue} G worth
-            </span>
+          <div className="blacksmith-resources">
+            <div className="resource-display gold">
+              <span className="resource-icon">💰</span>
+              <span className="resource-value">{player.baseCampGold} G</span>
+            </div>
+            <div className="resource-display stones">
+              <span className="resource-icon">💎</span>
+              <span className="resource-value">
+                {totalMagicStoneValue} G worth
+              </span>
+            </div>
           </div>
+        </header>
+
+        {/* Tab Navigation */}
+        <nav className="blacksmith-tabs">
+          <button
+            className={`blacksmith-tab ${selectedTab === "upgrade" ? "active" : ""}`}
+            onClick={() => setSelectedTab("upgrade")}
+          >
+            <span className="tab-icon">⚒️</span>
+            <span className="tab-label">Upgrade</span>
+          </button>
+          <button
+            className={`blacksmith-tab ${selectedTab === "repair" ? "active" : ""}`}
+            onClick={() => setSelectedTab("repair")}
+          >
+            <span className="tab-icon">🔧</span>
+            <span className="tab-label">Repair</span>
+          </button>
+          <button
+            className={`blacksmith-tab ${selectedTab === "dismantle" ? "active" : ""}`}
+            onClick={() => setSelectedTab("dismantle")}
+          >
+            <span className="tab-icon">💥</span>
+            <span className="tab-label">Dismantle</span>
+          </button>
+        </nav>
+
+        {/* Tab Content */}
+        <div className="blacksmith-content">
+          {selectedTab === "upgrade" && <UpgradeTab />}
+          {selectedTab === "repair" && <RepairTab />}
+          {selectedTab === "dismantle" && <DismantleTab />}
         </div>
-      </header>
 
-      {/* Tab Navigation */}
-      <nav className="blacksmith-tabs">
-        <button
-          className={`blacksmith-tab ${selectedTab === "upgrade" ? "active" : ""}`}
-          onClick={() => setSelectedTab("upgrade")}
-        >
-          <span className="tab-icon">⚒️</span>
-          <span className="tab-label">Upgrade</span>
+        {/* Back Button */}
+        <button className="blacksmith-back-button" onClick={returnToCamp}>
+          ← Back to Camp
         </button>
-        <button
-          className={`blacksmith-tab ${selectedTab === "repair" ? "active" : ""}`}
-          onClick={() => setSelectedTab("repair")}
-        >
-          <span className="tab-icon">🔧</span>
-          <span className="tab-label">Repair</span>
-        </button>
-        <button
-          className={`blacksmith-tab ${selectedTab === "dismantle" ? "active" : ""}`}
-          onClick={() => setSelectedTab("dismantle")}
-        >
-          <span className="tab-icon">💥</span>
-          <span className="tab-label">Dismantle</span>
-        </button>
-      </nav>
-
-      {/* Tab Content */}
-      <div className="blacksmith-content">
-        {selectedTab === "upgrade" && <UpgradeTab />}
-        {selectedTab === "repair" && <RepairTab />}
-        {selectedTab === "dismantle" && <DismantleTab />}
       </div>
-
-      {/* Back Button */}
-      <button className="blacksmith-back-button" onClick={returnToCamp}>
-        ← Back to Camp
-      </button>
-    </div>
+    </>
   );
 };
 

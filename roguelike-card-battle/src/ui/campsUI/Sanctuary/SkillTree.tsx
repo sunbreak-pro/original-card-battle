@@ -6,7 +6,10 @@ import type {
   CharacterClass,
 } from "../../../domain/camps/types/SanctuaryTypes";
 import type { SanctuaryProgress } from "../../../domain/camps/types/CampTypes";
-import { SKILL_TREE_NODES, getNodeById } from "../../../domain/camps/data/SanctuaryData";
+import {
+  SKILL_TREE_NODES,
+  getNodeById,
+} from "../../../domain/camps/data/SanctuaryData";
 import { getNodeStatus } from "../../../domain/camps/logic/sanctuaryLogic";
 import SkillNode from "./SkillNode";
 
@@ -24,7 +27,7 @@ interface SkillTreeProps {
 function getConnectionStyle(
   fromNode: SkillNodeType,
   toNode: SkillNodeType,
-  treeSize: number
+  treeSize: number,
 ): React.CSSProperties {
   // Convert angles to radians
   const fromRadians = ((fromNode.position.angle - 90) * Math.PI) / 180;
@@ -58,11 +61,11 @@ export const SkillTree: React.FC<SkillTreeProps> = ({
   justUnlockedId,
   onNodeSelect,
 }) => {
-  const treeSize = 50; // Size in vh
+  const treeSize = 60; // Size in vh
 
   // Filter nodes accessible to the player's class
   const accessibleNodes = SKILL_TREE_NODES.filter(
-    (node) => !node.classRestriction || node.classRestriction === playerClass
+    (node) => !node.classRestriction || node.classRestriction === playerClass,
   );
 
   // Create connection data
@@ -89,7 +92,10 @@ export const SkillTree: React.FC<SkillTreeProps> = ({
 
   return (
     <div className="skill-tree-container">
-      <div className="skill-tree" style={{ width: `${treeSize}vh`, height: `${treeSize}vh` }}>
+      <div
+        className="skill-tree"
+        style={{ width: `${treeSize}vh`, height: `${treeSize}vh` }}
+      >
         {/* Tier Rings */}
         <div className="tier-ring tier-1" />
         <div className="tier-ring tier-2" />

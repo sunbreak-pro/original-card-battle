@@ -1,4 +1,5 @@
-// PlayerContext: Manages player state including stats, resources, and progression
+// PlayerContext: Manages player state including stats, storage, inventory, and progression
+// Resource management (gold, magic stones) has been moved to ResourceContext
 
 import React, {
   createContext,
@@ -15,20 +16,27 @@ import {
   EQUIPPED_TEST_ITEMS,
 } from "../../item_equipment/data/TestItemsData";
 import type { ExtendedPlayer } from "../../characters/type/playerTypes";
+import { useResources } from "./ResourceContext";
+
 /**
  * PlayerContext value
+ * Note: Resource-related functions delegate to ResourceContext for actual implementation
  */
 interface PlayerContextValue {
   player: ExtendedPlayer;
   updatePlayer: (updates: Partial<ExtendedPlayer>) => void;
   updateClassGrade: (newGrade: string) => void;
-  addGold: (amount: number, toBaseCamp?: boolean) => void;
-  useGold: (amount: number) => boolean;
   updateHp: (newHp: number) => void;
   updateAp: (newAp: number) => void;
+  addSouls: (amount: number) => void;
+  transferSouls: (survivalMultiplier: number) => void;
+  resetCurrentRunSouls: () => void;
+
+  // Resource operations (delegated to ResourceContext for backward compatibility)
+  addGold: (amount: number, toBaseCamp?: boolean) => void;
+  useGold: (amount: number) => boolean;
   addMagicStones: (stones: Partial<MagicStones>, toBaseCamp?: boolean) => void;
   useMagicStones: (value: number) => boolean;
-  addSouls: (amount: number) => void;
   transferExplorationResources: (survivalMultiplier: number) => void;
   resetExplorationResources: () => void;
 }
@@ -37,39 +45,37 @@ const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
 
 /**
  * Create initial extended player from base player data
+ * Note: Gold and magic stone values come from ResourceContext
  */
 function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
-  const baseCampGold = 1250; // Test value for UI display
-  const explorationGold = 0;
-
   return {
     ...basePlayer,
-    // Override gold to sync with baseCampGold + explorationGold
-    gold: baseCampGold + explorationGold,
+    // Gold will be synced from ResourceContext
+    gold: 0,
 
     // Storage & Inventory (with test items)
     storage: {
-      items: STORAGE_TEST_ITEMS, // Test items for Phase 3
+      items: STORAGE_TEST_ITEMS,
       maxCapacity: 100,
       currentCapacity: STORAGE_TEST_ITEMS.length,
     },
     inventory: {
-      items: INVENTORY_TEST_ITEMS, // Test items for Phase 3
+      items: INVENTORY_TEST_ITEMS,
       maxCapacity: 20,
       currentCapacity: INVENTORY_TEST_ITEMS.length,
     },
     equipmentInventory: {
-      items: [], // Empty initially, equipment found during exploration goes here
+      items: [],
       maxCapacity: 3,
       currentCapacity: 0,
     },
-    equipmentSlots: EQUIPPED_TEST_ITEMS, // Test equipped items for Phase 3
+    equipmentSlots: EQUIPPED_TEST_ITEMS,
 
-    // Resources (with test values)
-    explorationGold,
-    baseCampGold,
+    // Resources (managed by ResourceContext, kept here for compatibility)
+    explorationGold: 0,
+    baseCampGold: 0,
     explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
-    baseCampMagicStones: { small: 5, medium: 3, large: 1, huge: 0 }, // Test values (450 total)
+    baseCampMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
 
     // Progression
     explorationLimit: {
@@ -77,8 +83,8 @@ function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
       max: 10,
     },
     sanctuaryProgress: {
-      currentRunSouls: 25, // Test value for current run
-      totalSouls: 150, // Test value for UI testing
+      currentRunSouls: 25,
+      totalSouls: 150,
       unlockedNodes: [],
       explorationLimitBonus: 0,
     },
@@ -91,10 +97,23 @@ function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
 export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  // Get resource context for delegation
+  const resourceContext = useResources();
+
   // Initialize with Swordsman by default
-  const [player, setPlayer] = useState<ExtendedPlayer>(
-    createInitialPlayer(Swordman_Status) //Selected character by PlayUser
-  );
+  const [player, setPlayer] = useState<ExtendedPlayer>(() => {
+    const initialPlayer = createInitialPlayer(Swordman_Status);
+    // Sync initial values from ResourceContext
+    return {
+      ...initialPlayer,
+      gold: resourceContext.getTotalGold(),
+      baseCampGold: resourceContext.resources.gold.baseCamp,
+      explorationGold: resourceContext.resources.gold.exploration,
+      baseCampMagicStones: resourceContext.resources.magicStones.baseCamp,
+      explorationMagicStones: resourceContext.resources.magicStones.exploration,
+      explorationLimit: resourceContext.resources.explorationLimit,
+    };
+  });
 
   /**
    * Update player with partial updates
@@ -108,60 +127,6 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    */
   const updateClassGrade = (newGrade: string) => {
     setPlayer((prev) => ({ ...prev, classGrade: newGrade }));
-  };
-
-  /**
-   * Add gold to player
-   * @param amount - Amount of gold to add
-   * @param toBaseCamp - If true, add to baseCampGold; otherwise to explorationGold
-   */
-  const addGold = (amount: number, toBaseCamp = false) => {
-    setPlayer((prev) => {
-      if (toBaseCamp) {
-        return {
-          ...prev,
-          baseCampGold: prev.baseCampGold + amount,
-          gold: prev.gold + amount,
-        };
-      } else {
-        return {
-          ...prev,
-          explorationGold: prev.explorationGold + amount,
-          gold: prev.gold + amount,
-        };
-      }
-    });
-  };
-
-  /**
-   * Use gold (deduct from total)
-   * @returns true if successful, false if insufficient gold
-   */
-  const useGold = (amount: number): boolean => {
-    if (player.gold < amount) return false;
-
-    setPlayer((prev) => {
-      const newGold = prev.gold - amount;
-      // Deduct from baseCamp first, then exploration
-      let newBaseCampGold = prev.baseCampGold;
-      let newExplorationGold = prev.explorationGold;
-
-      if (newBaseCampGold >= amount) {
-        newBaseCampGold -= amount;
-      } else {
-        const remaining = amount - newBaseCampGold;
-        newBaseCampGold = 0;
-        newExplorationGold -= remaining;
-      }
-
-      return {
-        ...prev,
-        gold: newGold,
-        baseCampGold: Math.max(0, newBaseCampGold),
-        explorationGold: Math.max(0, newExplorationGold),
-      };
-    });
-    return true;
   };
 
   /**
@@ -185,9 +150,109 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   /**
-   * Add magic stones
+   * Add souls (current run)
+   */
+  const addSouls = (amount: number) => {
+    setPlayer((prev) => ({
+      ...prev,
+      sanctuaryProgress: {
+        ...prev.sanctuaryProgress,
+        currentRunSouls: prev.sanctuaryProgress.currentRunSouls + amount,
+      },
+    }));
+  };
+
+  /**
+   * Transfer souls from current run to total (on survival)
+   */
+  const transferSouls = (survivalMultiplier: number) => {
+    setPlayer((prev) => {
+      const transferredSouls = Math.floor(
+        prev.sanctuaryProgress.currentRunSouls * survivalMultiplier
+      );
+      return {
+        ...prev,
+        sanctuaryProgress: {
+          ...prev.sanctuaryProgress,
+          totalSouls: prev.sanctuaryProgress.totalSouls + transferredSouls,
+          currentRunSouls: 0,
+        },
+      };
+    });
+  };
+
+  /**
+   * Reset current run souls (on death)
+   */
+  const resetCurrentRunSouls = () => {
+    setPlayer((prev) => ({
+      ...prev,
+      sanctuaryProgress: {
+        ...prev.sanctuaryProgress,
+        currentRunSouls: 0,
+      },
+    }));
+  };
+
+  // ============================================================
+  // Resource operations (delegated to ResourceContext)
+  // These are kept for backward compatibility with existing code
+  // ============================================================
+
+  /**
+   * Add gold (delegated to ResourceContext)
+   */
+  const addGold = (amount: number, toBaseCamp = false) => {
+    resourceContext.addGold(amount, toBaseCamp);
+    // Sync player state
+    setPlayer((prev) => ({
+      ...prev,
+      gold: resourceContext.getTotalGold() + amount,
+      baseCampGold: toBaseCamp
+        ? prev.baseCampGold + amount
+        : prev.baseCampGold,
+      explorationGold: toBaseCamp
+        ? prev.explorationGold
+        : prev.explorationGold + amount,
+    }));
+  };
+
+  /**
+   * Use gold (delegated to ResourceContext)
+   */
+  const useGold = (amount: number): boolean => {
+    const success = resourceContext.useGold(amount);
+    if (success) {
+      // Sync player state - recalculate from ResourceContext
+      setPlayer((prev) => {
+        let newBaseCampGold = prev.baseCampGold;
+        let newExplorationGold = prev.explorationGold;
+
+        if (newBaseCampGold >= amount) {
+          newBaseCampGold -= amount;
+        } else {
+          const remaining = amount - newBaseCampGold;
+          newBaseCampGold = 0;
+          newExplorationGold -= remaining;
+        }
+
+        return {
+          ...prev,
+          gold: prev.gold - amount,
+          baseCampGold: Math.max(0, newBaseCampGold),
+          explorationGold: Math.max(0, newExplorationGold),
+        };
+      });
+    }
+    return success;
+  };
+
+  /**
+   * Add magic stones (delegated to ResourceContext)
    */
   const addMagicStones = (stones: Partial<MagicStones>, toBaseCamp = false) => {
+    resourceContext.addMagicStones(stones, toBaseCamp);
+    // Sync player state
     setPlayer((prev) => {
       if (toBaseCamp) {
         return {
@@ -214,96 +279,60 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   /**
-   * Use magic stones (deduct from total value)
-   * @returns true if successful, false if insufficient
+   * Use magic stones (delegated to ResourceContext)
    */
   const useMagicStones = (value: number): boolean => {
-    const baseCampValue =
-      player.baseCampMagicStones.small * 30 +
-      player.baseCampMagicStones.medium * 100 +
-      player.baseCampMagicStones.large * 350;
-
-    const explorationValue =
-      player.explorationMagicStones.small * 30 +
-      player.explorationMagicStones.medium * 100 +
-      player.explorationMagicStones.large * 350;
-
-    const totalValue = baseCampValue + explorationValue;
-    if (totalValue < value) return false;
-
-    // Deduct from baseCamp first, then exploration
-    // TODO: Implement proper stone deduction logic
-    // For now, just check if enough value exists
-    return true;
+    return resourceContext.useMagicStones(value);
   };
 
   /**
-   * Add souls (current run)
+   * Transfer exploration resources to BaseCamp (delegated to ResourceContext)
    */
-  const addSouls = (amount: number) => {
+  const transferExplorationResources = (survivalMultiplier: number) => {
+    resourceContext.transferExplorationToBaseCamp(survivalMultiplier);
+    // Also transfer souls
+    transferSouls(survivalMultiplier);
+    // Sync player state
     setPlayer((prev) => ({
       ...prev,
-      sanctuaryProgress: {
-        ...prev.sanctuaryProgress,
-        currentRunSouls: prev.sanctuaryProgress.currentRunSouls + amount,
+      baseCampGold:
+        prev.baseCampGold +
+        Math.floor(prev.explorationGold * survivalMultiplier),
+      explorationGold: 0,
+      baseCampMagicStones: {
+        small:
+          prev.baseCampMagicStones.small +
+          Math.floor(prev.explorationMagicStones.small * survivalMultiplier),
+        medium:
+          prev.baseCampMagicStones.medium +
+          Math.floor(prev.explorationMagicStones.medium * survivalMultiplier),
+        large:
+          prev.baseCampMagicStones.large +
+          Math.floor(prev.explorationMagicStones.large * survivalMultiplier),
+        huge:
+          prev.baseCampMagicStones.huge +
+          Math.floor(prev.explorationMagicStones.huge * survivalMultiplier),
       },
+      explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
+      gold:
+        prev.baseCampGold +
+        Math.floor(prev.explorationGold * survivalMultiplier),
     }));
   };
 
   /**
-   * Transfer exploration resources to BaseCamp (on survival)
-   * @param survivalMultiplier - Multiplier based on survival method (0.6-1.0)
-   */
-  const transferExplorationResources = (survivalMultiplier: number) => {
-    setPlayer((prev) => {
-      const transferredGold = Math.floor(
-        prev.explorationGold * survivalMultiplier
-      );
-      const transferredSouls = Math.floor(
-        prev.sanctuaryProgress.currentRunSouls * survivalMultiplier
-      );
-
-      return {
-        ...prev,
-        baseCampGold: prev.baseCampGold + transferredGold,
-        explorationGold: 0,
-        baseCampMagicStones: {
-          small:
-            prev.baseCampMagicStones.small +
-            Math.floor(prev.explorationMagicStones.small * survivalMultiplier),
-          medium:
-            prev.baseCampMagicStones.medium +
-            Math.floor(prev.explorationMagicStones.medium * survivalMultiplier),
-          large:
-            prev.baseCampMagicStones.large +
-            Math.floor(prev.explorationMagicStones.large * survivalMultiplier),
-          huge:
-            prev.baseCampMagicStones.huge +
-            Math.floor(prev.explorationMagicStones.huge * survivalMultiplier),
-        },
-        explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
-        sanctuaryProgress: {
-          ...prev.sanctuaryProgress,
-          totalSouls: prev.sanctuaryProgress.totalSouls + transferredSouls,
-          currentRunSouls: 0,
-        },
-      };
-    });
-  };
-
-  /**
-   * Reset exploration resources (on death)
+   * Reset exploration resources (delegated to ResourceContext)
    */
   const resetExplorationResources = () => {
+    resourceContext.resetExplorationResources();
+    // Also reset current run souls
+    resetCurrentRunSouls();
+    // Sync player state
     setPlayer((prev) => ({
       ...prev,
       explorationGold: 0,
       gold: prev.baseCampGold,
       explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
-      sanctuaryProgress: {
-        ...prev.sanctuaryProgress,
-        currentRunSouls: 0,
-      },
     }));
   };
 
@@ -313,13 +342,16 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         player,
         updatePlayer,
         updateClassGrade,
-        addGold,
-        useGold,
         updateHp,
         updateAp,
+        addSouls,
+        transferSouls,
+        resetCurrentRunSouls,
+        // Resource operations (delegated)
+        addGold,
+        useGold,
         addMagicStones,
         useMagicStones,
-        addSouls,
         transferExplorationResources,
         resetExplorationResources,
       }}

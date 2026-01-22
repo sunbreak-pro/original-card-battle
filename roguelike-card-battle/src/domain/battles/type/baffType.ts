@@ -6,11 +6,14 @@ export type BuffDebuffType =
   | "burn"
   | "curse"
   | "overCurse"
+  | "stagger"
   | "stun"
   | "atkDownMinor"
   | "atkDownMajor"
   | "defDownMinor"
   | "defDownMajor"
+  | "weakness"
+  | "prostoration"
   | "slow"
   | "stall"
   | "atkUpMinor"
@@ -45,6 +48,7 @@ export type BuffDebuffType =
 
 export interface BuffEffectDefinition {
   name: string;
+  nameJa: string;
   value: number;
   isDebuff: boolean;
   isPercentage: boolean;

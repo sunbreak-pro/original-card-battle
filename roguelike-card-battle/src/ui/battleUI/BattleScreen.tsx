@@ -143,6 +143,9 @@ const BattleScreen = ({
     "--theme-bg": theme.bg,
     "--theme-glow": theme.glow,
     "--theme-hover": theme.accent,
+    backgroundImage: `linear-gradient(${theme.bg}), url('/assets/images/depth_${depth}-background.png')`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
   } as React.CSSProperties;
 
   return (

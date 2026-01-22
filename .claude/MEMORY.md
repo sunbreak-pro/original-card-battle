@@ -2,7 +2,7 @@
 
 ## Current Status
 
-**Last Updated:** 2026-01-20
+**Last Updated:** 2026-01-21
 
 **Development Server:** http://localhost:5173/
 
@@ -122,6 +122,42 @@ Implemented dungeon gate with node map and battle integration.
 
 **Flow:** BaseCamp → DungeonGate → NodeMap → BattleScreen → NodeMap (loop) → BaseCamp
 
+### Refactoring Phase 3: State Classification & Unification (2026-01-21)
+
+Completed Context restructuring and save/load foundation.
+
+**Files Created:**
+
+- **Context:** `ResourceContext.tsx` - Gold, MagicStones, ExplorationLimit management
+- **Types:** `domain/save/types/saveTypes.ts` - SaveData, PlayerSaveData, ResourceSaveData types
+- **Logic:** `domain/save/logic/saveManager.ts` - LocalStorage save/load operations
+
+**Files Modified:**
+
+- **PlayerContext.tsx** - Removed direct resource management, now delegates to ResourceContext. Added transferSouls, resetCurrentRunSouls functions. Resource functions kept for backward compatibility.
+- **GameStateContext.tsx** - Removed encounterCount (now managed only by DungeonRunContext)
+- **App.tsx** - Added ResourceProvider to provider hierarchy
+- **enemyType.ts** - Fixed Enemy interface to include guard/startingGuard properties
+- **characterType.ts** - Restored Character interface for backward compatibility
+
+**Architecture:**
+
+New Provider hierarchy:
+```
+<GameStateProvider>
+  <ResourceProvider>
+    <PlayerProvider>
+      <InventoryProvider>
+        <DungeonRunProvider>
+          <AppContent />
+```
+
+**State separation:**
+- ResourceContext: Gold (baseCamp/exploration), MagicStones (baseCamp/exploration), ExplorationLimit
+- PlayerContext: Player stats, storage, inventory, equipment, progression (souls)
+- GameStateContext: Screen navigation, battle mode, depth
+- DungeonRunContext: Dungeon run state, encounterCount (single source of truth)
+
 ---
 
 ## Remaining Phases
@@ -135,7 +171,13 @@ Implemented dungeon gate with node map and battle integration.
 
 ## Next Actions
 
-**Recommended:** Phase 9 (Integration) - Connect all systems and test full game loop
+**Recommended:** Phase 4 (Balance Adjustment) or Phase 5 (Asset Integration) from REFACTORING_TODO.md
+
+**Refactoring follow-up tasks:**
+
+- Implement actual save/load UI (continue game, new game prompts)
+- Connect save system to PlayerContext and ResourceContext
+- Add auto-save on key events (dungeon completion, shop purchases, etc.)
 
 **Phase 8 follow-up tasks:**
 

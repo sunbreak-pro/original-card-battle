@@ -1,39 +1,161 @@
 /**
- * 剣士固有アビリティ: 剣気システム
+ * Swordsman Class Ability: Sword Energy System
  *
- * 【剣気ゲージ】
- * 最大値: 10
- * 初期値: 0
+ * [Sword Energy Gauge]
+ * Max: 10
+ * Initial: 0
  *
- * 【剣気の蓄積】
- * 物理攻撃カード使用時、剣気が蓄積
- * - 0コスト: +1剣気
- * - 1コスト: +1剣気
- * - 2コスト: +2 or +3剣気
- * - 3コスト以上: +3剣気
- * - 剣気蓄積専用カード: +4剣気
+ * [Sword Energy Accumulation]
+ * Physical attack cards accumulate sword energy:
+ * - 0 cost: +1 sword energy
+ * - 1 cost: +1 sword energy
+ * - 2 cost: +2 or +3 sword energy
+ * - 3+ cost: +3 sword energy
+ * - Dedicated sword energy cards: +4 sword energy
  *
- * 【剣気の効果】（ナーフ後）
- * - 物理攻撃ダメージ = 基本威力 + (剣気×2)
- * - 剣気5以上: クリティカル率+20%
- * - 剣気8以上: 物理攻撃に貫通+30%
- * - 剣気10(最大): 次の物理攻撃が確定クリティカル+貫通50%
+ * [Sword Energy Effects] (Nerfed)
+ * - Physical damage = base power + (sword energy × 2)
+ * - 5+: Critical rate +20%
+ * - 8+: Physical attacks gain +30% penetration
+ * - 10 (max): Next physical attack is guaranteed critical + 50% penetration
  */
 
-export interface SwordEnergyState {
-  current: number;
-  max: number;
-}
+import type { Card } from "../../../cards/type/cardType";
+import {
+  type SwordEnergyState,
+  SWORD_ENERGY_MAX,
+  createInitialSwordEnergy,
+} from "../../type/classAbilityTypes";
+import type { ClassAbilitySystem, DamageModifier } from "../../classAbility/classAbilitySystem";
 
-export const SWORD_ENERGY_MAX = 10;
+// Re-export for backward compatibility
+export type { SwordEnergyState };
+export { SWORD_ENERGY_MAX, createInitialSwordEnergy };
 
+// ============================================================
+// Sword Energy System Implementation
+// ============================================================
 
-export function createInitialSwordEnergy(): SwordEnergyState {
-  return {
-    current: 0,
-    max: SWORD_ENERGY_MAX,
-  };
-}
+/**
+ * Sword Energy System implementing ClassAbilitySystem interface
+ */
+export const SwordEnergySystem: ClassAbilitySystem<SwordEnergyState> = {
+  /**
+   * Initialize sword energy state
+   */
+  initialize(): SwordEnergyState {
+    return createInitialSwordEnergy();
+  },
+
+  /**
+   * Handle card play - add sword energy for attack cards
+   */
+  onCardPlay(state: SwordEnergyState, card: Card): SwordEnergyState {
+    // Only swordsman cards or physical attacks gain energy
+    if (card.characterClass !== "swordsman" && card.characterClass !== "common") {
+      return state;
+    }
+
+    // Handle energy consumption cards first
+    if (card.swordEnergyConsume !== undefined && card.swordEnergyConsume > 0) {
+      const consumed = Math.min(state.current, card.swordEnergyConsume);
+      return {
+        ...state,
+        current: state.current - consumed,
+      };
+    }
+
+    // Handle energy consumption for "consume all" cards (swordEnergyConsume = 0 with multiplier)
+    if (card.swordEnergyConsume === 0 && card.swordEnergyMultiplier !== undefined) {
+      return {
+        ...state,
+        current: 0, // Consume all
+      };
+    }
+
+    // Handle energy gain
+    const energyGain = card.swordEnergyGain ??
+      calculateSwordEnergyGain(card.cost, card.category === "swordEnergy");
+
+    if (energyGain > 0) {
+      return addSwordEnergy(state, energyGain);
+    }
+
+    return state;
+  },
+
+  /**
+   * Handle turn start
+   */
+  onTurnStart(state: SwordEnergyState): SwordEnergyState {
+    // Sword energy persists between turns
+    return state;
+  },
+
+  /**
+   * Handle turn end
+   */
+  onTurnEnd(state: SwordEnergyState): SwordEnergyState {
+    // Sword energy persists between turns
+    return state;
+  },
+
+  /**
+   * Get damage modifier based on sword energy level
+   */
+  getDamageModifier(state: SwordEnergyState, _card?: Card): DamageModifier {
+    const effects = getSwordEnergyEffects(state.current);
+
+    return {
+      flatBonus: state.current * 2, // +2 damage per sword energy
+      percentMultiplier: 1.0,
+      critBonus: effects.critBonus,
+      penetration: effects.penetration,
+    };
+  },
+
+  /**
+   * Check if sword energy action can be performed
+   */
+  canPerformAction(state: SwordEnergyState, actionId: string): boolean {
+    switch (actionId) {
+      case "consume_3":
+        return state.current >= 3;
+      case "consume_5":
+        return state.current >= 5;
+      case "consume_all":
+        return state.current > 0;
+      case "max_energy_attack":
+        return state.current >= SWORD_ENERGY_MAX;
+      default:
+        return true;
+    }
+  },
+
+  /**
+   * Get description of current sword energy state
+   */
+  getStateDescription(state: SwordEnergyState): string {
+    if (state.current >= SWORD_ENERGY_MAX) {
+      return `剣気 MAX (${state.current}/${state.max}) - 確定クリティカル!`;
+    }
+    if (state.current >= 8) {
+      return `剣気 ${state.current}/${state.max} - 貫通+30%`;
+    }
+    if (state.current >= 5) {
+      return `剣気 ${state.current}/${state.max} - クリティカル+20%`;
+    }
+    return `剣気 ${state.current}/${state.max}`;
+  },
+};
+
+// ============================================================
+// Legacy Helper Functions (Backward Compatibility)
+// ============================================================
+
+/**
+ * Calculate sword energy gain based on card cost
+ */
 export function calculateSwordEnergyGain(
   cost: number,
   isSwordEnergyCard: boolean = false,
@@ -49,10 +171,13 @@ export function calculateSwordEnergyGain(
 
   if (cost === 0) return 1;
   if (cost === 1) return 1;
-  if (cost === 2) return 2; 
-  return 3; 
+  if (cost === 2) return 2;
+  return 3;
 }
 
+/**
+ * Add sword energy to current state
+ */
 export function addSwordEnergy(
   state: SwordEnergyState,
   amount: number
@@ -63,6 +188,9 @@ export function addSwordEnergy(
   };
 }
 
+/**
+ * Consume a specific amount of sword energy
+ */
 export function consumeSwordEnergy(
   state: SwordEnergyState,
   amount: number
@@ -77,6 +205,9 @@ export function consumeSwordEnergy(
   };
 }
 
+/**
+ * Consume all sword energy
+ */
 export function consumeAllSwordEnergy(
   state: SwordEnergyState
 ): { newState: SwordEnergyState; consumed: number } {
@@ -90,24 +221,36 @@ export function consumeAllSwordEnergy(
   };
 }
 
+/**
+ * Calculate critical bonus based on sword energy level
+ */
 export function calculateSwordEnergyCritBonus(swordEnergy: number): number {
-  if (swordEnergy >= 10) return 1.0; 
-  if (swordEnergy >= 5) return 0.2; 
+  if (swordEnergy >= 10) return 1.0;
+  if (swordEnergy >= 5) return 0.2;
   return 0;
 }
 
+/**
+ * Calculate penetration bonus based on sword energy level
+ */
 export function calculateSwordEnergyPenetration(swordEnergy: number): number {
   if (swordEnergy >= 10) return 0.5;
-  if (swordEnergy >= 8) return 0.3; 
+  if (swordEnergy >= 8) return 0.3;
   return 0;
 }
 
+/**
+ * Sword energy effect summary
+ */
 export interface SwordEnergyEffects {
   critBonus: number;
   penetration: number;
   isMaxEnergy: boolean;
 }
 
+/**
+ * Get all sword energy effects at once
+ */
 export function getSwordEnergyEffects(swordEnergy: number): SwordEnergyEffects {
   return {
     critBonus: calculateSwordEnergyCritBonus(swordEnergy),
@@ -115,6 +258,10 @@ export function getSwordEnergyEffects(swordEnergy: number): SwordEnergyEffects {
     isMaxEnergy: swordEnergy >= SWORD_ENERGY_MAX,
   };
 }
+
+/**
+ * Calculate damage when consuming sword energy
+ */
 export function calculateSwordEnergyConsumeDamage(
   baseDamage: number,
   consumedEnergy: number,

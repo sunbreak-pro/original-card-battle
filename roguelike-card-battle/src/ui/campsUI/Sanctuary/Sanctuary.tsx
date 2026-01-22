@@ -82,7 +82,7 @@ export const Sanctuary = () => {
         }, 3000);
       }
     },
-    [sanctuaryProgress, playerClass, updatePlayer]
+    [sanctuaryProgress, playerClass, updatePlayer],
   );
 
   // Get selected node status
@@ -91,95 +91,109 @@ export const Sanctuary = () => {
     : "locked";
 
   return (
-    <div className="sanctuary-screen">
-      {/* Notification Toast */}
-      {notification && (
-        <div className={`sanctuary-notification ${notification.type}`}>
-          {notification.message}
-        </div>
-      )}
+    <>
+      <img
+        className="sanctuary-background"
+        alt="Sanctuary Background"
+        src="/assets/images/Sanctuary-background.png"
+      ></img>
+      <div className="sanctuary-screen">
+        {/* Notification Toast */}
+        {notification && (
+          <div className={`sanctuary-notification ${notification.type}`}>
+            {notification.message}
+          </div>
+        )}
 
-      {/* Header */}
-      <header className="sanctuary-header">
-        <div className="sanctuary-title-row">
-          <h1 className="sanctuary-title">Sanctuary</h1>
-          <p className="sanctuary-subtitle">Unlock eternal blessings with Soul Remnants</p>
-        </div>
+        {/* Header */}
+        <header className="sanctuary-header">
+          <div className="sanctuary-title-row">
+            <h1 className="sanctuary-title">Sanctuary</h1>
+            <p className="sanctuary-subtitle">
+              Unlock eternal blessings with Soul Remnants
+            </p>
+          </div>
 
-        {/* Resources Display */}
-        <div className="sanctuary-resources">
-          <div className="soul-display total">
-            <span className="soul-icon">👻</span>
-            <div className="soul-info">
-              <span className="soul-label">Total Souls</span>
-              <span className="soul-value">{sanctuaryProgress.totalSouls}</span>
+          {/* Resources Display */}
+          <div className="sanctuary-resources">
+            <div className="soul-display total">
+              <span className="soul-icon">👻</span>
+              <div className="soul-info">
+                <span className="soul-label">Total Souls</span>
+                <span className="soul-value">
+                  {sanctuaryProgress.totalSouls}
+                </span>
+              </div>
+            </div>
+
+            <div className="soul-display current-run">
+              <span className="soul-icon">✨</span>
+              <div className="soul-info">
+                <span className="soul-label">This Run</span>
+                <span className="soul-value">
+                  {sanctuaryProgress.currentRunSouls}
+                </span>
+              </div>
+            </div>
+
+            <div className="exploration-display">
+              <span className="exploration-icon">🗺️</span>
+              <span className="exploration-value">
+                {player.explorationLimit.current} /{" "}
+                {player.explorationLimit.max + effects.explorationLimitBonus}
+              </span>
             </div>
           </div>
 
-          <div className="soul-display current-run">
-            <span className="soul-icon">✨</span>
-            <div className="soul-info">
-              <span className="soul-label">This Run</span>
-              <span className="soul-value">{sanctuaryProgress.currentRunSouls}</span>
+          {/* Progress Stats */}
+          <div className="progress-stats">
+            <div className="stat-item">
+              <span className="stat-value">{stats.unlockedCount}</span>
+              <span className="stat-label">Unlocked</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{stats.availableCount}</span>
+              <span className="stat-label">Available</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{stats.completionPercent}%</span>
+              <span className="stat-label">Complete</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{stats.soulsSpent}</span>
+              <span className="stat-label">Spent</span>
             </div>
           </div>
+        </header>
 
-          <div className="exploration-display">
-            <span className="exploration-icon">🗺️</span>
-            <span className="exploration-value">
-              {player.explorationLimit.current} / {player.explorationLimit.max + effects.explorationLimitBonus}
-            </span>
-          </div>
+        {/* Main Content */}
+        <div className="sanctuary-content">
+          {/* Skill Tree */}
+          <SkillTree
+            progress={sanctuaryProgress}
+            playerClass={playerClass}
+            selectedNodeId={selectedNode?.id || null}
+            justUnlockedId={justUnlockedId}
+            onNodeSelect={handleNodeSelect}
+          />
+
+          {/* Detail Panel */}
+          <NodeDetailPanel
+            node={selectedNode}
+            status={selectedNodeStatus}
+            totalSouls={sanctuaryProgress.totalSouls}
+            unlockedNodes={sanctuaryProgress.unlockedNodes}
+            playerClass={playerClass}
+            onUnlock={handleUnlock}
+          />
         </div>
 
-        {/* Progress Stats */}
-        <div className="progress-stats">
-          <div className="stat-item">
-            <span className="stat-value">{stats.unlockedCount}</span>
-            <span className="stat-label">Unlocked</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{stats.availableCount}</span>
-            <span className="stat-label">Available</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{stats.completionPercent}%</span>
-            <span className="stat-label">Complete</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{stats.soulsSpent}</span>
-            <span className="stat-label">Spent</span>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div className="sanctuary-content">
-        {/* Skill Tree */}
-        <SkillTree
-          progress={sanctuaryProgress}
-          playerClass={playerClass}
-          selectedNodeId={selectedNode?.id || null}
-          justUnlockedId={justUnlockedId}
-          onNodeSelect={handleNodeSelect}
-        />
-
-        {/* Detail Panel */}
-        <NodeDetailPanel
-          node={selectedNode}
-          status={selectedNodeStatus}
-          totalSouls={sanctuaryProgress.totalSouls}
-          unlockedNodes={sanctuaryProgress.unlockedNodes}
-          playerClass={playerClass}
-          onUnlock={handleUnlock}
-        />
+        {/* Back Button */}
+        <button className="sanctuary-back-button" onClick={returnToCamp}>
+          ← Back to Camp
+        </button>
       </div>
-
-      {/* Back Button */}
-      <button className="sanctuary-back-button" onClick={returnToCamp}>
-        ← Back to Camp
-      </button>
-    </div>
+    </>
   );
 };
 

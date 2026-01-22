@@ -48,6 +48,7 @@ export function enemyAction(action: EnemyAction): Card {
     cardTypeId: `enemy_action_${action.name}`,
     name: action.name,
     description: "",
+    characterClass: "common",
     cost: 0,
     category: "atk",
     depthCurveType: "neutral",
