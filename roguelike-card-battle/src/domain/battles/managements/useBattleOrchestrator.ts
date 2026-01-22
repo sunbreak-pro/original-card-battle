@@ -25,8 +25,8 @@ import { SWORDSMAN_CARDS_ARRAY } from "../../cards/data/SwordmanCards";
 import { INITIAL_DECK_COUNTS } from "../data/initialDeckConfig";
 
 // Animation hooks
-import { useCardAnimation } from "../../../ui/commonUI/useCardAnimation";
-import { useTurnTransition } from "../../../ui/commonUI/animations/usePhaseTransition";
+import { useCardAnimation } from "../../../ui/commonHtml/useCardAnimation";
+import { useTurnTransition } from "../../../ui/animations/usePhaseTransition";
 
 // Battle hooks
 import { useBattlePhase } from "./useBattlePhase";
@@ -397,7 +397,7 @@ export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) =>
   // ========================================================================
 
   const executeNextPhaseRef = useRef<(queue: PhaseQueue, index: number) => Promise<void>>(
-    async () => {}
+    async () => { }
   );
 
   const executeNextPhaseImpl = useCallback(
@@ -686,7 +686,7 @@ export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) =>
 
     // Deprecated: kept for backward compatibility
     startBattleRound: initializeBattle,
-    onDepthChange: () => {},
+    onDepthChange: () => { },
 
     // Modal controls
     openedPileType,

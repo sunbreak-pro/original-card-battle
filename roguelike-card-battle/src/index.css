@@ -1,46 +1,16 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* =========================================
+   Main Entry Point - index.css
+   =========================================
+   Import core styles and global resets.
+   Individual pages/components import their own CSS.
+   ========================================= */
 
-:root {
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0a0a0a;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* Core CSS (variables, reset) */
+@import "./ui/css/core/variables.css";
+@import "./ui/css/core/reset.css";
 
-body {
-  margin: 0;
-  padding: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background: #0a0a0a;
-}
+/* Shared animations */
+@import "./ui/css/animations/keyframes.css";
 
-#root {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-button {
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
+/* Shared components (optional - pages can import as needed) */
+@import "./ui/css/components/index.css";

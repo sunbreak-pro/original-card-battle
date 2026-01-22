@@ -1,0 +1,114 @@
+/* =========================================
+   Progress Bar Components
+   =========================================
+   Durability bars, mastery bars, progress bars.
+   ========================================= */
+
+/* =========================================
+   Durability Bar (Blacksmith/Storage)
+   ========================================= */
+.durability-bar {
+  width: 100%;
+  height: 0.5vh;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 2px;
+  margin-top: 0.5vh;
+  overflow: hidden;
+}
+
+.durability-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b35, #4ade80);
+  transition: width 0.3s ease;
+}
+
+.durability-fill.low {
+  background: linear-gradient(90deg, #f44336, #ff6b35);
+}
+
+.durability-fill.critical {
+  background: #f44336;
+}
+
+/* Durability display with label */
+.durability-display {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  margin: 1vh 0;
+}
+
+.durability-display .label {
+  font-size: 1.4vh;
+  color: #b89968;
+}
+
+.durability-display .bar {
+  flex: 1;
+  height: 1.5vh;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.durability-display .fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b35, #4ade80);
+  transition: width 0.3s ease;
+}
+
+.durability-display .text {
+  font-size: 1.3vh;
+  color: #f4e4c1;
+  min-width: 6vw;
+  text-align: right;
+}
+
+/* =========================================
+   Mastery Bar
+   ========================================= */
+.mastery-bar-bg {
+  width: 100%;
+  height: 0.6vh;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 0.3vh;
+  overflow: hidden;
+}
+
+.mastery-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--theme-secondary, #666), var(--theme-accent, #aaa));
+  transition: width 0.3s ease;
+}
+
+/* =========================================
+   Generic Progress Bar
+   ========================================= */
+.progress-bar {
+  width: 100%;
+  height: 1vh;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progress-bar-fill.primary {
+  background: linear-gradient(90deg, var(--color-primary, #666), var(--color-accent, #aaa));
+}
+
+.progress-bar-fill.success {
+  background: linear-gradient(90deg, #2e7d32, #4caf50);
+}
+
+.progress-bar-fill.warning {
+  background: linear-gradient(90deg, #ed6c02, #ff9800);
+}
+
+.progress-bar-fill.danger {
+  background: linear-gradient(90deg, #c62828, #f44336);
+}

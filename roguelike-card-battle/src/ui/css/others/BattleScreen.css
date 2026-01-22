@@ -1,0 +1,16 @@
+/* =========================================
+   BattleScreen.css
+   =========================================
+   This file now imports from the modular battle CSS.
+   All styles are organized in pages/battle/*.css
+
+   Structure:
+   - battle-layout.css: Container, header, field layout
+   - battle-status.css: HP, AP, guard, energy bars
+   - battle-hand.css: Hand container, card wrappers, controls
+   - battle-enemy.css: Enemy cards, layouts, tooltips
+   - battle-sword-energy.css: Sword energy display
+   - battle-modals.css: Modal overlays
+   ========================================= */
+
+@import "./pages/battle/index.css";

@@ -17,6 +17,15 @@ import type { ElementType } from "../../characters/type/classAbilityTypes";
 export type Depth = 1 | 2 | 3 | 4 | 5;
 export type CardCategory = "atk" | "def" | "buff" | "debuff" | "heal" | "swordEnergy";
 export type DepthCurveType = "shallow" | "neutral" | "deep" | "madness" | "adversity";
+
+/**
+ * Card Tag System
+ * - attack: Cards that deal damage (baseDamage > 0)
+ * - guard: Cards that provide defense (guardAmount > 0 or category === "def", no damage)
+ * - skill: Temporary buffs/debuffs, utility cards (draw, energy, heal)
+ * - stance: Semi-permanent battle effects (duration >= 99 or isPermanent: true)
+ */
+export type CardTag = "attack" | "guard" | "skill" | "stance";
 export type MasteryLevel = 0 | 1 | 2 | 3;
 export type GemLevel = 0 | 1 | 2;
 export type Rarity = "common" | "rare" | "epic" | "legend";
@@ -75,8 +84,8 @@ export interface Card {
   talentThreshold?: number;
 
   // ---- Tags ----
-  /** Tags for filtering/effects */
-  tags: string[];
+  /** Tags for filtering/effects (attack, guard, skill, stance) */
+  tags: CardTag;
 
   // ---- Common Effects ----
   /** Base damage dealt */

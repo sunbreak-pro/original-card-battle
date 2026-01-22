@@ -1,0 +1,271 @@
+/* =========================================
+   Battle Enemy Display
+   =========================================
+   Enemy cards, layouts, action icons, tooltips.
+   ========================================= */
+
+/* =========================================
+   Enemy Section
+   ========================================= */
+.enemy-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 45%;
+  height: 100%;
+}
+
+/* =========================================
+   Enemy Layouts
+   ========================================= */
+
+/* 1 enemy: centered */
+.enemy-layout-single {
+  justify-content: center;
+}
+
+/* 2 enemies: side by side */
+.enemy-layout-double .enemy-row {
+  display: flex;
+  gap: 3vw;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+/* 3 enemies: triangle formation */
+.enemy-layout-triple {
+  justify-content: center;
+  gap: 1vh;
+}
+
+.enemy-layout-triple .enemy-row-top {
+  display: flex;
+  justify-content: center;
+}
+
+.enemy-layout-triple .enemy-row-bottom {
+  display: flex;
+  gap: 4vw;
+  justify-content: center;
+}
+
+/* =========================================
+   Enemy Card
+   ========================================= */
+.enemy-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vh;
+  position: relative;
+}
+
+.enemy-card-small {
+  transform: scale(0.75);
+  transform-origin: center bottom;
+}
+
+.enemy-name {
+  font-size: 2.5vh;
+  font-weight: bold;
+  text-shadow: 0 0 1vh var(--theme-glow);
+  text-align: center;
+}
+
+.enemy-card-small .enemy-name {
+  font-size: 2vh;
+}
+
+.enemy-visual {
+  border-radius: 1.5vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.enemy-visual:hover {
+  transform: scale(1.05);
+}
+
+.enemy-card-small .enemy-visual {
+  width: 14vh;
+  height: 14vh;
+}
+
+.enemy-emoji {
+  font-size: 10vh;
+}
+
+.enemy-card-small .enemy-emoji {
+  font-size: 7vh;
+}
+
+.enemy-status {
+  width: 100%;
+}
+
+.enemy-card-small .enemy-status {
+  min-width: 12vh;
+}
+
+/* =========================================
+   Enemy Action Icons
+   ========================================= */
+.enemy-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8vh;
+  margin-bottom: 0.5vh;
+}
+
+.action-icon-wrapper {
+  position: relative;
+  cursor: pointer;
+}
+
+.action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3vh;
+  height: 3vh;
+  font-size: 2vh;
+  border-radius: 0.4vh;
+  background: rgba(0, 0, 0, 0.5);
+  border: 0.15vh solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.action-icon:hover {
+  transform: scale(1.1);
+}
+
+.action-icon-attack {
+  border-color: #e24051;
+  background: rgba(255, 0, 25, 0.3);
+}
+
+.action-icon-guard {
+  border-color: #6599ce;
+  background: rgba(68, 136, 204, 0.3);
+}
+
+.action-icon-debuff {
+  border-color: #a457cb;
+  background: rgba(168, 82, 211, 0.3);
+}
+
+.action-icon-special {
+  border-color: #ffaa00;
+  background: rgba(255, 170, 0, 0.3);
+}
+
+.tooltip-energy {
+  font-size: 1.2vh;
+  color: #aaa;
+}
+
+.next-action {
+  margin-top: 1vh;
+  text-align: center;
+}
+
+.action-value {
+  font-size: 2.5vh;
+  color: #d94a4a;
+  font-weight: bold;
+}
+
+/* =========================================
+   Next Action Tooltip
+   ========================================= */
+.next-action-tooltip {
+  position: absolute;
+  top: -2vh;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  background: rgba(0, 0, 0, 0.95);
+  border: 0.2vh solid var(--theme-accent);
+  border-radius: 1vh;
+  padding: 1vh 1.5vw;
+  z-index: 1000;
+  min-width: 12vw;
+  box-shadow: 0 0 2vh var(--theme-glow);
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.tooltip-header {
+  font-size: 1.4vh;
+  color: #888;
+  margin-bottom: 0.5vh;
+  text-align: center;
+}
+
+.tooltip-action-name {
+  font-size: 2vh;
+  font-weight: bold;
+  color: var(--theme-accent);
+  text-align: center;
+  margin-bottom: 0.5vh;
+}
+
+.tooltip-damage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5vw;
+  font-size: 1.8vh;
+  color: #ff6b6b;
+}
+
+.damage-icon {
+  font-size: 1.6vh;
+}
+
+.damage-value {
+  font-weight: bold;
+}
+
+.hit-count {
+  font-size: 1.4vh;
+  color: #ffaa44;
+}
+
+.tooltip-guard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5vw;
+  font-size: 1.8vh;
+  color: #6bafff;
+}
+
+.guard-icon {
+  font-size: 1.6vh;
+}
+
+.guard-value {
+  font-weight: bold;
+}
+
+.tooltip-debuffs {
+  display: flex;
+  gap: 0.5vw;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.5vh;
+}
+
+.debuff-tag {
+  font-size: 1.2vh;
+  padding: 0.2vh 0.5vw;
+  background: rgba(255, 100, 100, 0.3);
+  border: 1px solid #ff6464;
+  border-radius: 0.3vh;
+  color: #ff6464;
+}

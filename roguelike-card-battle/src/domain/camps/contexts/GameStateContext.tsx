@@ -13,6 +13,7 @@ import type {
   Depth,
   BattleConfig,
 } from "../types/CampTypes";
+import { saveManager } from "../../save/logic/saveManager";
 
 /**
  * Game state interface
@@ -43,10 +44,18 @@ const GameStateContext = createContext<GameStateContextValue | undefined>(
 );
 
 /**
+ * Get initial screen based on save state
+ * If no save exists, show character selection first
+ */
+function getInitialScreen(): GameScreen {
+  return saveManager.hasSave() ? "camp" : "character_select";
+}
+
+/**
  * Initial game state
  */
 const initialGameState: GameState = {
-  currentScreen: "camp",
+  currentScreen: getInitialScreen(),
   battleMode: null,
   depth: 1,
 };

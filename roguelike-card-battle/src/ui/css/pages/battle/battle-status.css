@@ -1,0 +1,268 @@
+/* =========================================
+   Battle Status Bars
+   =========================================
+   Unified status bar system for HP, AP, Guard, Energy.
+   ========================================= */
+
+/* =========================================
+   Status Container
+   ========================================= */
+.status-container {
+  position: relative;
+  left: -4%;
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+}
+
+.status-container.enemy-status-container {
+  width: 150%;
+}
+
+/* Common row structure */
+.status-bar-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 2.5vh;
+}
+
+/* =========================================
+   HP Value Display
+   ========================================= */
+.hp-value {
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  font-size: 1.4vh;
+  font-weight: bold;
+  color: #000000;
+  text-shadow: 0 0 0.5vh rgba(255, 100, 100, 0.8);
+  margin-bottom: 0.2vh;
+}
+
+/* =========================================
+   Value Badges (AP/Guard/Energy)
+   ========================================= */
+.value-badge {
+  width: 5vh;
+  height: 120%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.1vh;
+  font-weight: bold;
+  border-radius: 0.5vh;
+  color: #fff;
+  text-shadow: 0 0 0.3vh #000;
+  white-space: nowrap;
+  margin-right: 0.5vh;
+  transition: all 0.3s ease;
+}
+
+.value-badge.ap-badge {
+  background: linear-gradient(135deg, #808080 0%, #606060 100%);
+  border: 0.2vh solid #999;
+}
+
+.value-badge.guard-badge {
+  background: linear-gradient(135deg, #4488cc 0%, #3366aa 100%);
+  border: 0.1vh solid #66aaff;
+}
+
+.value-badge.energy-badge {
+  background: linear-gradient(135deg, #2b9f0e 0%, #1d7a09 100%);
+  border: 0.1vh solid #3cb82a;
+}
+
+.value-badge.consuming {
+  animation: energyConsume 0.6s ease-out;
+}
+
+/* =========================================
+   Break Badge
+   ========================================= */
+.break-badge {
+  width: 5vh;
+  height: 120%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ff0000;
+  color: rgb(255, 255, 255);
+  border-radius: 0.5vh;
+  animation: breakFlash 1.8s infinite;
+  margin-right: 0.5vh;
+}
+
+/* =========================================
+   Armor Border
+   ========================================= */
+.Armor-border {
+  flex: 1;
+  position: relative;
+  height: 120%;
+  background: rgba(0, 0, 0, 0.5);
+  border: 0.5vh solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5vh;
+  overflow: hidden;
+}
+
+/* =========================================
+   Unified Bar Container
+   ========================================= */
+.unified-bar-container {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  border: 0.15vh solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5vh;
+  overflow: hidden;
+}
+
+/* =========================================
+   Bar Fill Styles
+   ========================================= */
+.bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.bar-fill.hp-fill {
+  background: linear-gradient(90deg, #d94a4a 0%, #ff6b6b 100%);
+  box-shadow: inset 0 0 0.5vh rgba(255, 255, 255, 0.2);
+}
+
+.bar-fill.ap-overlay {
+  z-index: 2;
+  opacity: 0.75;
+  height: 100%;
+  background: linear-gradient(90deg, #808080 0%, #a0a0a0 100%);
+}
+
+.bar-fill.guard-fill {
+  background: linear-gradient(90deg, #4488cc 0%, #6699ff 100%);
+}
+
+.bar-fill.energy-fill {
+  background: linear-gradient(90deg, #3cb82a 0%, #1d7a09 100%);
+  box-shadow: 0 0 0.5vh #1d7a09;
+}
+
+/* =========================================
+   Enemy Energy (Orange Color)
+   ========================================= */
+.enemy-energy .bar-fill.energy-fill {
+  background: linear-gradient(90deg, #cc8800 0%, #ffaa00 100%);
+  box-shadow: 0 0 0.5vh rgba(255, 170, 0, 0.5);
+}
+
+.enemy-energy .value-badge.energy-badge {
+  background: linear-gradient(135deg, #cc8800 0%, #aa6600 100%);
+  border: 0.1vh solid #ffaa00;
+}
+
+/* =========================================
+   Enemy Status Specific
+   ========================================= */
+.enemy-status {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3vh;
+}
+
+.enemy-status .status-bar-row {
+  height: 1.8vh;
+}
+
+.enemy-status .bar-value-top {
+  font-size: 1.2vh;
+}
+
+.enemy-status .value-badge {
+  min-width: 3.5vh;
+  font-size: 0.9vh;
+}
+
+.enemy-card-small .enemy-status .status-bar-row {
+  height: 1.5vh;
+}
+
+.enemy-card-small .enemy-status .bar-value-top {
+  font-size: 1vh;
+}
+
+.enemy-card-small .enemy-status .value-badge {
+  min-width: 3vh;
+  font-size: 0.8vh;
+}
+
+/* =========================================
+   Legacy Energy Bar (for compatibility)
+   ========================================= */
+.energy-bar-container {
+  flex: 1;
+  position: relative;
+  height: 80%;
+  display: flex;
+  align-items: center;
+  border: 0.2vh solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.8vh;
+  overflow: hidden;
+}
+
+.energy-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--theme-secondary) 0%, var(--theme-accent) 100%);
+  box-shadow: 0 0 0.5vh var(--theme-glow);
+  transition: width 0.3s ease;
+}
+
+.energy-value {
+  flex: 0.15;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.1vh;
+  font-weight: bold;
+  border-radius: 20%;
+  background-color: #2b9f0e;
+  color: #fff;
+  text-shadow: 0 0 0.3vh #000;
+  white-space: nowrap;
+  height: 100%;
+  margin-right: 0.6vh;
+  transition: background-color 0.3s ease;
+}
+
+/* Enemy Energy Bar - orange/gold color */
+.enemy-energy .energy-bar-fill {
+  background: linear-gradient(90deg, #cc8800 0%, #ffaa00 100%);
+  box-shadow: 0 0 0.5vh rgba(255, 170, 0, 0.5);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.enemy-energy .energy-label {
+  color: #ffaa00;
+  text-shadow: 0 0 0.5vh rgba(255, 170, 0, 0.5);
+}
+
+.enemy-energy .energy-value {
+  transition: all 0.3s ease;
+}
+
+.enemy-energy .energy-value.consuming {
+  animation: energyConsume 0.6s ease-out;
+}

@@ -1,240 +1,142 @@
-# Project Memory - BaseCamp Implementation
+# Project Memory
 
-## Current Status
+## Quick Reference
 
-**Last Updated:** 2026-01-21
-
-**Development Server:** http://localhost:5173/
+- **Current Phase:** Phase 6 Complete + CSS Refactoring
+- **Dev Server:** http://localhost:5173/
+- **Last Updated:** 2026-01-22
 
 ---
 
-## Completed Work
+## Active Tasks
 
-### Phase 1: Foundation (Type Definitions & Context API)
+- Test character selection flow (clear localStorage, verify flow works)
+- Test Library tabs (Cards, Enemies, Tips)
+- Mage/Summoner classes show "Coming Soon" - cards not yet implemented
+- Connect Sanctuary effects to battle/dungeon systems
 
-Created type definitions (`ItemTypes.ts`, `GuildTypes.ts`, `StorageTypes.ts`, `CampTypes.ts`) and Context API (`GameStateContext`, `PlayerContext`, `InventoryContext`). App.tsx integrated with all providers and screen routing.
+---
 
-### Phase 2: Guild Facility
+## Recent Changes (CSS Refactoring)
 
-Implemented promotion exam system with 12 exams (3 classes x 4 ranks). Created `GuildEnemyData.ts` (6 enemies), `PromotionData.ts`, and full UI (`Guild.tsx`, `Exam.tsx`, `GuildBattleScreen.tsx`). Battle callbacks and screen routing functional.
+### CSS Architecture Overhaul (Completed)
 
-### Phase 3: Storage UI
+**Problem Solved:**
+- BattleScreen.css was 1,243 lines with duplicate `@keyframes energyConsume`
+- Facility CSS files had ~400 lines of duplicate patterns each
+- No centralized variables or shared components
 
-Implemented compact high-density layout with Items/Equipment tabs. Storage and Inventory grids side-by-side with transfer buttons. Fixed `equipItem` state race condition by consolidating updates.
-
-### Phase 4: Shop Facility
-
-Implemented Merchant's Exchange with 3 tabs: Buy, Sell, Exchange. Created `ShopTypes.ts`, `ShopData.ts`, `shopLogic.ts`. Features: consumables (potions), teleport stones, equipment packs (gacha with rarity rolling), item selling, and magic stone to gold exchange. Gold/merchant themed UI.
-
-### Equipment Inventory Feature (2026-01-14)
-
-Added Equipment Inventory system for dungeon exploration:
-
-- **New Type:** `EquipmentInventoryState` in `StorageTypes.ts` (max 3 equipment slots)
-- **Extended Player:** Added `equipmentInventory` to `ExtendedPlayer` type
-- **Death Penalty:** Equipment Inventory items are lost on death (same as regular inventory)
-- **Storage.tsx Equipment Tab:** Redesigned with:
-  - Left: Equipment List (equipment items from Storage only)
-  - Right: Equipment Slots (6 slots) + Equipment Inventory (3 slots) + Action buttons
-- **Items Tab:** Now filters out equipment items from inventory display
-- **New Operations:** `storage_to_equipment_inventory`, `equipment_inventory_to_storage`, `equipment_inventory_to_equipment`, `equipment_to_equipment_inventory`
-- **Design Document:** Updated `storage_design.md` with Equipment Inventory concept
-
-### Phase 5: Blacksmith Facility (2026-01-16)
-
-Implemented Blacksmith's Forge with 3 tabs: Upgrade, Repair, Dismantle.
-
-**Files Created:**
-
-- **Types:** `BlacksmithTypes.ts` - Tab types, cost interfaces, quality configs
-- **Data:** `BlacksmithData.ts` - Upgrade costs, quality options, repair/dismantle configs
-- **Logic:** `blacksmithLogic.ts` - Level/quality upgrade, repair, dismantle functions
-- **UI:** `Blacksmith.tsx`, `UpgradeTab.tsx`, `RepairTab.tsx`, `DismantleTab.tsx`, `BlacksmithItemCard.tsx`, `Blacksmith.css`
-
-**Features:**
-
-- **Level Upgrade (Lv0-3):** Stats +10-30%, AP +20-60%, costs scale by rarity
-- **Quality Upgrade (3 options):**
-  - Normal (1.0x cost, 10-40% success)
-  - Quality Focused (1.5x cost, 15-80% success)
-  - Max Quality (2.0x cost, 25-100% success)
-- **Quality progression:** poor → normal → good → master
-- **Repair:** Cost = (maxAP - currentAP) × 0.5 × rarityMultiplier, Repair All button
-- **Dismantle:** Gold return (10-25% of sell price), bonus magic stone chance for Rare+
-- **Warning system:** Confirmation modal for valuable items (Rare+, Lv1+, Good+)
-- **Orange/fire themed UI** matching forge aesthetic
-
-### Phase 6: Sanctuary Facility (2026-01-17)
-
-Implemented Sanctuary with radial skill tree and soul system.
-
-**Files Created:**
-
-- **Types:** `SanctuaryTypes.ts` - Node, effect, progress types and constants
-- **Data:** `SanctuaryData.ts` - 17 skill nodes across 3 tiers (HP/Gold/Utility/Class/Exploration branches)
-- **Logic:** `sanctuaryLogic.ts` - Node status, unlock, effect calculation
-- **Logic:** `soulSystem.ts` - Soul acquisition, survival/death handling
-- **UI:** `Sanctuary.tsx`, `SkillTree.tsx`, `SkillNode.tsx`, `NodeDetailPanel.tsx`, `Sanctuary.css`
-
-**Implemented Features:**
-
-- Radial skill tree UI with tier rings and prerequisite connections
-- 17 nodes: HP boost (Lv1-3), Gold multiplier, Soul multiplier, Appraisal abilities, Class-specific bonuses, Exploration limit increase
-- Hold-to-unlock interaction (1.5s)
-- Soul display (totalSouls, currentRunSouls)
-- Progress statistics
-- Purple/mystical themed styling
-- App.tsx routing and PlayerContext integration
-
-**Not Yet Implemented:**
-
-- playerClass hardcoded to "swordsman" (needs actual player class data)
-- Sanctuary effects not applied to game mechanics (battle HP, gold acquisition, etc.)
-- Soul acquisition not connected to battle outcomes
-- Effect application in dungeon/battle systems
-
-### Phase 8: Dungeon Gate (2026-01-20)
-
-Implemented dungeon gate with node map and battle integration.
-
-**Files Created:**
-
-- **Types:** `domain/dungeon/types/DungeonTypes.ts` - Node, floor, run types and configs
-- **Logic:** `domain/dungeon/logic/dungeonLogic.ts` - Map generation, node progression
-- **Context:** `ui/dungeonUI/DungeonRunContext.tsx` - Dungeon run state management
-- **UI:** `DungeonGate.tsx`, `DungeonGate.css` - Depth selection screen
-- **UI:** `NodeMap.tsx`, `NodeMap.css` - Node map display
-- **UI:** `MapNode.tsx` - Individual node component
-
-**Files Modified:**
-
-- `CampTypes.ts` - Added `"dungeon_map"` to GameScreen
-- `App.tsx` - Added routing, lifted DungeonRunProvider to app level
-- `BattleScreen.tsx` - Added `onWin`/`onLose` props for dungeon callbacks
-
-**Implemented Features:**
-
-- Depth selection (5 depths with themed colors)
-- 7-row node map with connections
-- Node types: battle, elite, boss, event, rest, treasure
-- Battle integration: victory returns to NodeMap, defeat returns to BaseCamp
-- Progress tracking and encounter counting
-
-**Flow:** BaseCamp → DungeonGate → NodeMap → BattleScreen → NodeMap (loop) → BaseCamp
-
-### Refactoring Phase 3: State Classification & Unification (2026-01-21)
-
-Completed Context restructuring and save/load foundation.
-
-**Files Created:**
-
-- **Context:** `ResourceContext.tsx` - Gold, MagicStones, ExplorationLimit management
-- **Types:** `domain/save/types/saveTypes.ts` - SaveData, PlayerSaveData, ResourceSaveData types
-- **Logic:** `domain/save/logic/saveManager.ts` - LocalStorage save/load operations
-
-**Files Modified:**
-
-- **PlayerContext.tsx** - Removed direct resource management, now delegates to ResourceContext. Added transferSouls, resetCurrentRunSouls functions. Resource functions kept for backward compatibility.
-- **GameStateContext.tsx** - Removed encounterCount (now managed only by DungeonRunContext)
-- **App.tsx** - Added ResourceProvider to provider hierarchy
-- **enemyType.ts** - Fixed Enemy interface to include guard/startingGuard properties
-- **characterType.ts** - Restored Character interface for backward compatibility
-
-**Architecture:**
-
-New Provider hierarchy:
+**New Structure:**
 ```
-<GameStateProvider>
-  <ResourceProvider>
-    <PlayerProvider>
-      <InventoryProvider>
-        <DungeonRunProvider>
-          <AppContent />
+src/ui/css/
+├── core/                    # Base layer
+│   ├── variables.css        # CSS variables (colors, spacing, themes)
+│   └── reset.css            # Global reset, scrollbar styling
+│
+├── components/              # Reusable components
+│   ├── notifications.css    # Toast notifications
+│   ├── tabs.css             # Tab navigation
+│   ├── buttons.css          # Back/action buttons
+│   ├── badges.css           # Quality/rarity badges
+│   ├── bars.css             # Progress bars
+│   ├── panels.css           # Detail panels
+│   ├── modals.css           # Modal overlays
+│   └── index.css            # Aggregate import
+│
+├── animations/              # Shared animations
+│   └── keyframes.css        # All @keyframes (no duplicates)
+│
+├── pages/battle/            # Battle screen modules
+│   ├── battle-layout.css    # Container, header, field
+│   ├── battle-status.css    # HP, AP, guard, energy bars
+│   ├── battle-hand.css      # Hand, cards, pile icons
+│   ├── battle-enemy.css     # Enemy cards, tooltips
+│   ├── battle-sword-energy.css
+│   ├── battle-modals.css
+│   └── index.css            # Aggregate import
+│
+└── cards/
+    └── CardUnified.css      # Card styling (unchanged)
 ```
 
-**State separation:**
-- ResourceContext: Gold (baseCamp/exploration), MagicStones (baseCamp/exploration), ExplorationLimit
-- PlayerContext: Player stats, storage, inventory, equipment, progression (souls)
-- GameStateContext: Screen navigation, battle mode, depth
-- DungeonRunContext: Dungeon run state, encounterCount (single source of truth)
+**Files Updated:**
+- `index.css`: Now imports core + animations + components
+- `BattleScreen.css`: Slim import of `pages/battle/index.css`
+- All facility CSS (Shop, Guild, Library, Blacksmith, Sanctuary, Storage): Added shared imports
+
+**Build Result:** Passes, CSS size essentially unchanged (shared styles consolidated)
 
 ---
 
-## Remaining Phases
+## Recent Changes (Card Tag & Theme Simplification)
 
-| Phase | Facility    | Priority   | Key Components                                 |
-| ----- | ----------- | ---------- | ---------------------------------------------- |
-| 7     | Library     | Low-Medium | Deck builder, encyclopedia, records, save/load |
-| 9     | Integration | Critical   | Full testing, death mechanics, economy balance |
+### Card Tag System (Completed)
+
+- **New CardTag type:** `"attack" | "guard" | "skill" | "stance"`
+- **Classification rules:**
+  - `attack`: Cards with `baseDamage > 0` (deals damage)
+  - `guard`: Cards with `guardAmount > 0` or `category === "def"` (no damage)
+  - `skill`: Temporary buffs/debuffs, utility (draw, energy, heal)
+  - `stance`: Semi-permanent battle effects (multi-turn buffs like `sw_033`, `sw_035`)
+- **Files updated:**
+  - `cardType.ts`: Added `CardTag` type, updated `Card.tags` from `string[]` to `CardTag[]`
+  - `SwordmanCards.ts`: All 43 cards updated with new tag system
+  - `enemyAI.ts`: Enemy action cards now use `CardTag[]`
+
+### Depth Theme Removal (Completed)
+
+- **neutralTheme:** Unified purple/dark theme for all UI
+- **All depths now use same colors** - depth indicated via text only
+- **Files updated:**
+  - `deptManager.ts`: Added `neutralTheme`, all `depthThemes` point to it
+  - `BattleScreen.tsx`: Uses `neutralTheme` instead of `depthThemes[depth]`
+  - `DungeonGate.tsx`: `getThemeColors()` returns `neutralTheme`
+  - `NodeMap.tsx`: Theme memo now returns `neutralTheme`
 
 ---
 
-## Next Actions
+## Recent Changes (Phase 6)
 
-**Recommended:** Phase 4 (Balance Adjustment) or Phase 5 (Asset Integration) from REFACTORING_TODO.md
+- **Character Selection Screen:** New players choose class before starting
+- **Library Facility:** Card encyclopedia, enemy bestiary, game tips
+- **Save Integration:** No save = character select, existing save = camp
 
-**Refactoring follow-up tasks:**
+---
 
-- Implement actual save/load UI (continue game, new game prompts)
-- Connect save system to PlayerContext and ResourceContext
-- Add auto-save on key events (dungeon completion, shop purchases, etc.)
-
-**Phase 8 follow-up tasks:**
-
-- Implement event/rest/treasure node functionality (currently complete immediately)
-- Add floor completion reward screen
-- Connect soul acquisition to battle outcomes
-
-**Sanctuary follow-up tasks:**
-
-- Connect playerClass to actual player data (currently hardcoded to "swordsman")
-- Apply Sanctuary effects to battle/dungeon systems (HP boost, gold multiplier, etc.)
-- Integrate soul acquisition with battle outcomes
-
-**Pending items:**
+## Pending Items
 
 - Guild: RumorsTab and QuestsTab are placeholders
 - Shop: Daily sales system (deferred), pack opening animation (deferred)
-- Implement the item and equipment data as soon as the design document is completed.
+- Dungeon: Event/rest/treasure nodes complete immediately (no UI)
+- Sanctuary effects not applied to game mechanics
+
+---
+
+## See Also
+
+- **Detailed Progress:** `.claude/todos/REFACTORING_TODO.md`
+- **Game Design:** `blueprint/` directory
+- **Battle Logic:** `blueprint/battle/battle_logic.md`
 
 ---
 
 ## Critical Lessons Learned
 
-**Language Consistency (2026-01-11):**
-Player grades use Japanese ("見習い剣士") but `PromotionData` initially used English. This caused `getNextExam()` to fail. Always verify language consistency across PlayerData, game data files, and type definitions.
+**Language Consistency:**
+Player grades use Japanese ("見習い剣士") but data files may use English. Always verify language consistency across PlayerData, game data, and type definitions.
 
-**Context Provider Scope and Screen Navigation (2026-01-20):**
-When state needs to persist across screen transitions (e.g., dungeon run state during battles), the Context Provider must be placed at a high enough level in the component tree. Issues encountered:
+**Context Provider Scope:**
+When state needs to persist across screen transitions (dungeon run → battle → dungeon), place the Context Provider high enough in the tree. Test full navigation flow (A → B → A).
 
-1. **Problem:** `DungeonRunProvider` wrapped only `NodeMap` - when navigating to battle screen, NodeMap unmounted and dungeon run state was lost
-2. **Problem:** `BattleScreen` didn't receive `battleConfig.onWin/onLose` callbacks - VictoryScreen called `handleContinueToNextBattle()` instead of returning to dungeon map
-3. **Solution:**
-   - Lift `DungeonRunProvider` to wrap the entire `AppContent` in `App.tsx`
-   - Pass `onWin`/`onLose` props from `battleConfig` to `BattleScreen`
-   - Use these callbacks in `VictoryScreen` and `DefeatScreen`
+**React Hooks Rules:**
+All hooks must be called at the top level, before any conditional returns, in the same order every render.
 
-**Rule:** When implementing features that span multiple screens (dungeon exploration, multi-stage battles), always consider:
-- Where the Context Provider should be placed to maintain state
-- Whether all necessary callbacks are passed through the component chain
-- Test the full navigation flow (A → B → A) before marking complete
-
-**React Hooks Rules of Hooks (2026-01-20):**
-All React Hooks (useState, useEffect, useCallback, useMemo, custom hooks) MUST be called:
-- At the top level of the component
-- Before any conditional returns (if/return)
-- In the same order every render
-
-Common mistake pattern:
 ```tsx
-// ❌ BAD - hook after early return
+// BAD - hook after early return
 if (condition) return <Early />;
-useEffect(() => {...});  // This breaks!
+useEffect(() => {...});
 
-// ✅ GOOD - hook before early return
-useEffect(() => {...});  // All hooks first
+// GOOD - hook before early return
+useEffect(() => {...});
 if (condition) return <Early />;
 ```
-
-Additional note: Use `useRef` instead of `useState` for flags that track whether an effect has run, to avoid ESLint `set-state-in-effect` warnings.
-

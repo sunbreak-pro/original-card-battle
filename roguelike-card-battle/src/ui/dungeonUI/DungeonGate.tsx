@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import type { Depth } from "../../domain/camps/types/CampTypes";
 import { useGameState } from "../../domain/camps/contexts/GameStateContext";
-import { depthThemes } from "../../domain/dungeon/depth/deptManager";
+import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { DEPTH_DISPLAY_INFO } from "../../domain/dungeon/types/DungeonTypes";
 import "./DungeonGate.css";
 
@@ -28,9 +28,9 @@ export function DungeonGate() {
     }
   }, [selectedDepth, setDepth, navigateTo]);
 
-  // Get theme colors for a depth
-  const getThemeColors = (depth: Depth) => {
-    return depthThemes[depth];
+  // Get theme colors (unified neutral theme for all depths)
+  const getThemeColors = (_depth: Depth) => {
+    return neutralTheme;
   };
 
   return (

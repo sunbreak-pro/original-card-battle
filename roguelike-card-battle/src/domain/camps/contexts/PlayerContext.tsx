@@ -8,8 +8,14 @@ import React, {
   type ReactNode,
 } from "react";
 import type { Player } from "../../characters/type/playerTypes";
+import type { CharacterClass } from "../../characters/type/baseTypes";
 import type { MagicStones } from "../../item_equipment/type/ItemTypes";
-import { Swordman_Status } from "../../characters/player/data/PlayerData";
+import {
+  Swordman_Status,
+  Mage_Status,
+  Summon_Status,
+} from "../../characters/player/data/PlayerData";
+import { getCharacterClassInfo } from "../../characters/player/data/CharacterClassData";
 import {
   STORAGE_TEST_ITEMS,
   INVENTORY_TEST_ITEMS,
@@ -31,6 +37,7 @@ interface PlayerContextValue {
   addSouls: (amount: number) => void;
   transferSouls: (survivalMultiplier: number) => void;
   resetCurrentRunSouls: () => void;
+  initializeWithClass: (classType: CharacterClass) => void;
 
   // Resource operations (delegated to ResourceContext for backward compatibility)
   addGold: (amount: number, toBaseCamp?: boolean) => void;
@@ -42,6 +49,22 @@ interface PlayerContextValue {
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
+
+/**
+ * Get base player data by character class
+ */
+function getBasePlayerByClass(classType: CharacterClass): Player {
+  switch (classType) {
+    case "swordsman":
+      return Swordman_Status;
+    case "mage":
+      return Mage_Status;
+    case "summoner":
+      return Summon_Status;
+    default:
+      return Swordman_Status;
+  }
+}
 
 /**
  * Create initial extended player from base player data
@@ -192,6 +215,41 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         currentRunSouls: 0,
       },
     }));
+  };
+
+  /**
+   * Initialize player with a specific character class
+   * Used when starting a new game from character selection
+   */
+  const initializeWithClass = (classType: CharacterClass) => {
+    const basePlayer = getBasePlayerByClass(classType);
+    const classInfo = getCharacterClassInfo(classType);
+
+    // Create player with starter deck from class data
+    const playerWithStarterDeck: Player = {
+      ...basePlayer,
+      deck: classInfo.starterDeck,
+    };
+
+    const newPlayer = createInitialPlayer(playerWithStarterDeck);
+
+    // Sync with ResourceContext
+    setPlayer({
+      ...newPlayer,
+      gold: resourceContext.getTotalGold(),
+      baseCampGold: resourceContext.resources.gold.baseCamp,
+      explorationGold: resourceContext.resources.gold.exploration,
+      baseCampMagicStones: resourceContext.resources.magicStones.baseCamp,
+      explorationMagicStones: resourceContext.resources.magicStones.exploration,
+      explorationLimit: resourceContext.resources.explorationLimit,
+      // Reset souls for new game
+      sanctuaryProgress: {
+        currentRunSouls: 0,
+        totalSouls: 0,
+        unlockedNodes: [],
+        explorationLimitBonus: 0,
+      },
+    });
   };
 
   // ============================================================
@@ -347,6 +405,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         addSouls,
         transferSouls,
         resetCurrentRunSouls,
+        initializeWithClass,
         // Resource operations (delegated)
         addGold,
         useGold,

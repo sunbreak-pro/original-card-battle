@@ -1,0 +1,438 @@
+/* =========================================
+   Library Styles
+   =========================================
+   Purple/Knowledge Theme
+   Imports shared components for consistency.
+   ========================================= */
+
+/* Shared components */
+@import "../../css/core/variables.css";
+@import "../../css/animations/keyframes.css";
+@import "../../css/components/notifications.css";
+@import "../../css/components/tabs.css";
+@import "../../css/components/buttons.css";
+@import "../../css/components/badges.css";
+@import "../../css/components/panels.css";
+@import "../../css/components/modals.css";
+
+/* Card styles */
+@import "../../css/CardUnified.css";
+
+.library-screen {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #0d0815 100%);
+  color: #e8e0f0;
+  padding: 2vh 2vw;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Header */
+.library-header {
+  text-align: center;
+  margin-bottom: 2vh;
+  padding-bottom: 1.5vh;
+  border-bottom: 2px solid rgba(168, 85, 247, 0.3);
+}
+
+.library-title {
+  font-size: 4vh;
+  margin: 0;
+  color: #a855f7;
+  text-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+  letter-spacing: 0.3vw;
+}
+
+.library-subtitle {
+  font-size: 1.6vh;
+  color: #9f7aea;
+  margin: 0.5vh 0 0 0;
+  opacity: 0.6;
+}
+
+/* Tab Navigation */
+.library-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1vw;
+  margin-bottom: 2vh;
+}
+
+.library-tab {
+  padding: 1vh 2vw;
+  background: rgba(30, 20, 50, 0.8);
+  border: 2px solid rgba(100, 100, 100, 0.3);
+  border-radius: 8px;
+  color: #9f7aea;
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.library-tab:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  background: rgba(88, 28, 135, 0.3);
+}
+
+.library-tab.active {
+  background: rgba(88, 28, 135, 0.6);
+  border-color: #a855f7;
+  color: #e9d5ff;
+}
+
+/* Content Area */
+.library-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Filter Bar */
+.library-filters {
+  display: flex;
+  gap: 1vw;
+  margin-bottom: 1.5vh;
+  padding: 1vh 1vw;
+  background: rgba(30, 20, 50, 0.6);
+  border-radius: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
+}
+
+.filter-label {
+  font-size: 1.3vh;
+  color: #9f7aea;
+}
+
+.filter-select {
+  padding: 0.6vh 1vw;
+  background: rgba(88, 28, 135, 0.4);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 4px;
+  color: #e9d5ff;
+  font-size: 1.3vh;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #a855f7;
+}
+
+.search-input {
+  padding: 0.6vh 1vw;
+  background: rgba(30, 20, 50, 0.8);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 4px;
+  color: #e9d5ff;
+  font-size: 1.3vh;
+  width: 15vw;
+}
+
+.search-input::placeholder {
+  color: #6b5b8b;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #a855f7;
+}
+
+/* Card Grid - Fixed width cards for uniform display */
+.card-grid {
+  display: grid;
+  /* Use fixed card width based on card-base-width variable */
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--card-base-width, 15vh) * 0.75 + 1vw), 1fr));
+  gap: 2.1vw;
+  overflow-y: auto;
+  padding: 5vh;
+  flex: 1;
+  justify-items: center;
+}
+
+.encyclopedia-card-wrapper {
+  /* Fixed width using size variant instead of scale */
+  width: calc(var(--card-base-width, 13vh) * 0.75);
+  aspect-ratio: 2 / 3;
+  transition: transform 0.3s ease;
+}
+
+.encyclopedia-card-wrapper:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+/* Enemy Grid */
+.enemy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20vw, 1fr));
+  gap: 1.5vw;
+  overflow-y: auto;
+  padding: 1vh;
+  flex: 1;
+}
+
+.enemy-card {
+  background: rgba(30, 20, 50, 0.9);
+  border: 2px solid rgba(100, 100, 100, 0.3);
+  border-radius: 10px;
+  padding: 1.5vh 1.2vw;
+  transition: all 0.3s ease;
+}
+
+.enemy-card:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  transform: translateY(-0.5vh);
+}
+
+.enemy-card.boss {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(50, 20, 30, 0.9);
+}
+
+.enemy-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1vh;
+  padding-bottom: 0.8vh;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.enemy-name {
+  font-size: 1.8vh;
+  color: #e9d5ff;
+  margin: 0;
+}
+
+.enemy-name-ja {
+  font-size: 1.3vh;
+  color: #9f7aea;
+  margin-top: 0.3vh;
+}
+
+.enemy-badge {
+  padding: 0.3vh 0.8vw;
+  border-radius: 4px;
+  font-size: 1.1vh;
+  font-weight: bold;
+}
+
+.enemy-badge.normal {
+  background: rgba(168, 85, 247, 0.3);
+  color: #d8b4fe;
+}
+
+.enemy-badge.boss {
+  background: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.enemy-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5vh;
+  margin-bottom: 1vh;
+}
+
+.enemy-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5vh;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.enemy-stat-label {
+  font-size: 1vh;
+  color: #9f7aea;
+}
+
+.enemy-stat-value {
+  font-size: 1.4vh;
+  font-weight: bold;
+  color: #e9d5ff;
+}
+
+.enemy-description {
+  font-size: 1.2vh;
+  color: #a78bfa;
+  line-height: 1.5;
+}
+
+/* Tips Section */
+.tips-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  overflow-y: auto;
+  padding: 1vh;
+  flex: 1;
+}
+
+.tips-category {
+  margin-bottom: 1.5vh;
+}
+
+.tips-category-header {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 1vh 1vw;
+  background: rgba(88, 28, 135, 0.4);
+  border-radius: 8px;
+  margin-bottom: 1vh;
+  cursor: pointer;
+}
+
+.tips-category-icon {
+  font-size: 2vh;
+}
+
+.tips-category-title {
+  font-size: 1.8vh;
+  color: #e9d5ff;
+  flex: 1;
+}
+
+.tips-category-count {
+  font-size: 1.3vh;
+  color: #9f7aea;
+}
+
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+  padding-left: 1vw;
+}
+
+.tip-card {
+  background: rgba(30, 20, 50, 0.8);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 8px;
+  padding: 1.2vh 1.2vw;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tip-card:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  background: rgba(88, 28, 135, 0.2);
+}
+
+.tip-card.expanded {
+  background: rgba(88, 28, 135, 0.3);
+  border-color: #a855f7;
+}
+
+.tip-title {
+  font-size: 1.5vh;
+  color: #e9d5ff;
+  margin-bottom: 0.5vh;
+}
+
+.tip-content {
+  font-size: 1.3vh;
+  color: #a78bfa;
+  line-height: 1.6;
+  display: none;
+}
+
+.tip-card.expanded .tip-content {
+  display: block;
+  margin-top: 1vh;
+  padding-top: 1vh;
+  border-top: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+/* Stats Bar */
+.library-stats {
+  display: flex;
+  justify-content: center;
+  gap: 3vw;
+  padding: 1vh;
+  background: rgba(30, 20, 50, 0.6);
+  border-radius: 8px;
+  margin-bottom: 1.5vh;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 2vh;
+  font-weight: bold;
+  color: #a855f7;
+}
+
+.stat-label {
+  font-size: 1.2vh;
+  color: #9f7aea;
+}
+
+/* Back Button */
+.library-back-button {
+  display: block;
+  margin: 1.5vh auto 0 auto;
+  padding: 1.2vh 2.5vw;
+  background: rgba(30, 20, 50, 0.95);
+  border: 2px solid rgba(168, 85, 247, 0.3);
+  border-radius: 8px;
+  color: #e8e0f0;
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.library-back-button:hover {
+  background: rgba(88, 28, 135, 0.4);
+  border-color: #a855f7;
+  transform: scale(1.05);
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6b5b8b;
+}
+
+.empty-state-icon {
+  font-size: 5vh;
+  margin-bottom: 2vh;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 1.8vh;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(15vw, 1fr));
+  }
+
+  .enemy-grid {
+    grid-template-columns: repeat(auto-fill, minmax(28vw, 1fr));
+  }
+}

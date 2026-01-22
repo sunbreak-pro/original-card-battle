@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useEffect } from "react";
 import { useGameState } from "../../domain/camps/contexts/GameStateContext";
 import { useDungeonRun } from "./DungeonRunContext";
-import { depthThemes } from "../../domain/dungeon/depth/deptManager";
+import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { DEPTH_DISPLAY_INFO } from "../../domain/dungeon/types/DungeonTypes";
 import {
   getNodesByRow,
@@ -35,11 +35,10 @@ export function NodeMap() {
     }
   }, [dungeonRun, gameState.depth, initializeRun]);
 
-  // Get theme colors
+  // Get theme colors (unified neutral theme)
   const theme = useMemo(() => {
-    const depth = dungeonRun?.selectedDepth || gameState.depth || 1;
-    return depthThemes[depth];
-  }, [dungeonRun, gameState.depth]);
+    return neutralTheme;
+  }, []);
 
   // Get depth info
   const depthInfo = useMemo(() => {

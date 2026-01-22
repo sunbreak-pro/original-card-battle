@@ -744,21 +744,58 @@ interface BattleContextState {
   - [x] saveTypes.ts 作成 (SaveData型定義)
   - [x] saveManager.ts 作成 (LocalStorage save/load機能)
 
-### Phase 4 進捗: 0%
+### Phase 4 進捗: 100%
 
-- [ ] 4.1 カードバランス
-- [ ] 4.2 敵バランス
-- [ ] 4.3 進行バランス
+- [x] 4.1 カードバランス
+- [x] 4.2 敵バランス
+- [x] 4.3 進行バランス
 
-### Phase 5 進捗: 0%
+### Phase 5 進捗: 100%
 
-- [ ] 5.1 背景画像適用
+- [x] 5.1 背景画像適用
 
-### Phase 6 進捗: 0%
+### Phase 6 進捗: 100% (Library & Character Selection)
 
-- [ ] 6.1 未実装機能
+- [x] 6.1.1 Library施設の実装
+- [x] 6.1.2 キャラクター選択画面
 - [ ] 6.2 Mage実装
 - [ ] 6.3 Summoner実装
+
+### CSS Refactoring: 100% (完了)
+
+**Structure:**
+```
+src/ui/css/
+├── core/
+│   ├── variables.css       # CSS変数一元管理
+│   └── reset.css           # グローバルリセット
+├── components/
+│   ├── notifications.css   # トースト通知
+│   ├── tabs.css            # タブナビ
+│   ├── buttons.css         # ボタン
+│   ├── badges.css          # バッジ
+│   ├── bars.css            # プログレスバー
+│   ├── panels.css          # パネル
+│   ├── modals.css          # モーダル
+│   └── index.css           # 集約インポート
+├── animations/
+│   └── keyframes.css       # @keyframes一元化
+├── pages/battle/
+│   ├── battle-layout.css
+│   ├── battle-status.css
+│   ├── battle-hand.css
+│   ├── battle-enemy.css
+│   ├── battle-sword-energy.css
+│   ├── battle-modals.css
+│   └── index.css
+└── cards/
+    └── CardUnified.css
+```
+
+**Results:**
+- BattleScreen.css: 1,243行 → 16行 (import only)
+- 重複@keyframes energyConsume削除
+- 施設CSS全てに共有コンポーネントインポート追加
 
 ---
 

@@ -1,6 +1,6 @@
 import type { Enemy, EnemyAction } from "../../type/enemyType";
 import { DEPTH1_ENEMIES } from "../data/enemyDepth1";
-import type { Card } from "../../../cards/type/cardType";
+import type { Card, CardTag } from "../../../cards/type/cardType";
 
 export function determineEnemyAction(
   enemy: Enemy,
@@ -43,6 +43,9 @@ export function determineEnemyAction(
   return validPatterns[0].action;
 }
 export function enemyAction(action: EnemyAction): Card {
+  // Determine tag based on action type
+  const tags: CardTag[] = action.baseDamage && action.baseDamage > 0 ? ["attack"] : ["skill"];
+
   return {
     id: `enemy_action_${action.name}`,
     cardTypeId: `enemy_action_${action.name}`,
@@ -51,9 +54,8 @@ export function enemyAction(action: EnemyAction): Card {
     characterClass: "common",
     cost: 0,
     category: "atk",
-    depthCurveType: "neutral",
     baseDamage: action.baseDamage,
-    tags: [],
+    tags,
     rarity: "common",
     useCount: 0,
     masteryLevel: 0,

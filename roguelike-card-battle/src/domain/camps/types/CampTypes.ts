@@ -16,6 +16,7 @@ export type FacilityType =
  * Screen types for navigation
  */
 export type GameScreen =
+  | "character_select" // Character selection screen (shown on first launch)
   | "camp" // BaseCamp main screen
   | "battle" // Battle screen
   | "guild"
