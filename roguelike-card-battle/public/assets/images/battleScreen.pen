@@ -1,0 +1,1562 @@
+{
+  "version": "2.6",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "Battle Screen",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": {
+        "type": "image",
+        "enabled": true,
+        "url": "./depth_1-background.png",
+        "mode": "fill"
+      },
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "LBD7h",
+          "x": 860,
+          "y": 20,
+          "name": "Battle Header",
+          "layout": "vertical",
+          "gap": 10,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "IUJEX",
+              "name": "Depth Info",
+              "fill": "#9B7ED9",
+              "content": "1-1 | Phase 1",
+              "fontFamily": "Segoe UI",
+              "fontSize": 32,
+              "fontWeight": "bold"
+            },
+            {
+              "type": "frame",
+              "id": "C12LG",
+              "name": "Depth Controls",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Wqif4",
+                  "name": "D1 Button",
+                  "width": 50,
+                  "height": 30,
+                  "fill": "#9B7ED9",
+                  "cornerRadius": 5,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "af9ki",
+                      "name": "d1Text",
+                      "fill": "#FFFFFF",
+                      "content": "D1",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vImD8",
+                  "name": "D2 Button",
+                  "width": 50,
+                  "height": 30,
+                  "fill": "rgba(0,0,0,0.5)",
+                  "cornerRadius": 5,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#9B7ED9"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "8pF4X",
+                      "name": "d2Text",
+                      "fill": "#FFFFFF",
+                      "content": "D2",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ddVcb",
+                  "name": "D3 Button",
+                  "width": 50,
+                  "height": 30,
+                  "fill": "rgba(0,0,0,0.5)",
+                  "cornerRadius": 5,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#9B7ED9"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "JGFKo",
+                      "name": "d3Text",
+                      "fill": "#FFFFFF",
+                      "content": "D3",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "rU5zf",
+                  "name": "D4 Button",
+                  "width": 50,
+                  "height": 30,
+                  "fill": "rgba(0,0,0,0.5)",
+                  "cornerRadius": 5,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#9B7ED9"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mHGod",
+                      "name": "d4Text",
+                      "fill": "#FFFFFF",
+                      "content": "D4",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "wktIn",
+                  "name": "D5 Button",
+                  "width": 50,
+                  "height": 30,
+                  "fill": "rgba(0,0,0,0.5)",
+                  "cornerRadius": 5,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#9B7ED9"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "TXMln",
+                      "name": "d5Text",
+                      "fill": "#FFFFFF",
+                      "content": "D5",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "TRZqj",
+          "x": 760,
+          "y": 110,
+          "name": "Turn Order Indicator",
+          "fill": "rgba(0,0,0,0.6)",
+          "cornerRadius": 10,
+          "gap": 8,
+          "padding": [
+            10,
+            20
+          ],
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "raH5W",
+              "name": "turn1",
+              "width": 40,
+              "height": 40,
+              "fill": "#4488cc",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#66aaff"
+              },
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Gjn3I",
+                  "name": "turn1Icon",
+                  "fill": "#FFFFFF",
+                  "content": "P",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "bold"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "9PvLh",
+              "name": "turnArrow1",
+              "fill": "#888888",
+              "content": "→",
+              "fontFamily": "Inter",
+              "fontSize": 20,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "32HtV",
+              "name": "turn2",
+              "width": 40,
+              "height": 40,
+              "fill": "rgba(255,100,100,0.3)",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#ff6666"
+              },
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "hW0rU",
+                  "name": "turn2Icon",
+                  "fill": "#ff6666",
+                  "content": "E",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "bold"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "Cqiqs",
+              "name": "turnArrow2",
+              "fill": "#888888",
+              "content": "→",
+              "fontFamily": "Inter",
+              "fontSize": 20,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "RK6Ap",
+              "name": "turn3",
+              "width": 40,
+              "height": 40,
+              "fill": "rgba(68,136,204,0.3)",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#4488cc"
+              },
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "KB9zQ",
+                  "name": "turn3Icon",
+                  "fill": "#4488cc",
+                  "content": "P",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "bold"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ohHee",
+          "x": 100,
+          "y": 180,
+          "name": "Battle Field",
+          "width": 1720,
+          "height": 400,
+          "justifyContent": "space_around",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "DzIDq",
+              "name": "Enemy Section",
+              "width": 600,
+              "height": 380,
+              "gap": 30,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "eWcyH",
+                  "name": "Enemy Card",
+                  "width": 180,
+                  "height": 280,
+                  "fill": "rgba(0,0,0,0.5)",
+                  "cornerRadius": 15,
+                  "stroke": {
+                    "thickness": 2,
+                    "fill": "#cc4444"
+                  },
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 15,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "iqUMx",
+                      "name": "enemyName",
+                      "fill": "#FFFFFF",
+                      "content": "スライム",
+                      "fontFamily": "Inter",
+                      "fontSize": 18,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "xZc89",
+                      "name": "Enemy Visual",
+                      "width": 120,
+                      "height": 120,
+                      "fill": "rgba(255,100,100,0.2)",
+                      "cornerRadius": 10,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "oB8Jz",
+                          "name": "enemyEmoji",
+                          "content": "👾",
+                          "fontFamily": "Inter",
+                          "fontSize": 60,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "WmvU1",
+                      "name": "Enemy Status",
+                      "width": 150,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "aXdMk",
+                          "name": "enemyHpRow",
+                          "width": "fill_container",
+                          "height": 20,
+                          "gap": 5,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "DgrMJ",
+                              "name": "enemyHpBadge",
+                              "width": 40,
+                              "height": 20,
+                              "fill": "linear-gradient(135deg, #808080 0%, #606060 100%)",
+                              "cornerRadius": 4,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "RuAGz",
+                                  "name": "enemyHpBadgeText",
+                                  "fill": "#FFFFFF",
+                                  "content": "5/5",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "eeutq",
+                              "name": "HP Bar",
+                              "width": "fill_container",
+                              "height": 18,
+                              "fill": "rgba(0,0,0,0.5)",
+                              "cornerRadius": 4,
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "rgba(255,255,255,0.2)"
+                              },
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "E2l8I",
+                                  "name": "enemyHpFill",
+                                  "width": "fill_container",
+                                  "height": "fill_container",
+                                  "fill": "linear-gradient(90deg, #d94a4a 0%, #ff6b6b 100%)",
+                                  "cornerRadius": 3
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "UM0jl",
+                                  "name": "enemyHpText",
+                                  "fill": "#000000",
+                                  "content": "30/30",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Kn0dn",
+                          "name": "enemyEnergyRow",
+                          "width": "fill_container",
+                          "height": 20,
+                          "gap": 5,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "2N9bx",
+                              "name": "enemyEnergyBadge",
+                              "width": 40,
+                              "height": 20,
+                              "fill": "linear-gradient(135deg, #cc8800 0%, #aa6600 100%)",
+                              "cornerRadius": 4,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "8n0R3",
+                                  "name": "enemyEnergyBadgeText",
+                                  "fill": "#FFFFFF",
+                                  "content": "2/3",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "vabM1",
+                              "name": "Energy Bar",
+                              "width": "fill_container",
+                              "height": 18,
+                              "fill": "rgba(0,0,0,0.5)",
+                              "cornerRadius": 4,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "2W2gf",
+                                  "name": "enemyEnergyFill",
+                                  "width": 70,
+                                  "height": "fill_container",
+                                  "fill": "linear-gradient(90deg, #cc8800 0%, #ffaa00 100%)",
+                                  "cornerRadius": 3
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ogJmd",
+              "name": "Player Section",
+              "width": 700,
+              "height": 380,
+              "gap": 30,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "1jerW",
+                  "name": "Player Field",
+                  "width": 250,
+                  "layout": "vertical",
+                  "gap": 15,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "WmxMm",
+                      "name": "playerName",
+                      "fill": "#FFFFFF",
+                      "content": "エイレス [剣士]",
+                      "fontFamily": "Inter",
+                      "fontSize": 24,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OoJUR",
+                      "name": "Player Visual",
+                      "width": 150,
+                      "height": 150,
+                      "fill": "rgba(68,136,204,0.2)",
+                      "cornerRadius": 12,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "VmCMi",
+                          "name": "playerEmoji",
+                          "content": "⚔️",
+                          "fontFamily": "Inter",
+                          "fontSize": 80,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GtO74",
+                      "name": "Player Status",
+                      "width": 200,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "i4sGB",
+                          "name": "guardRow",
+                          "width": "fill_container",
+                          "height": 22,
+                          "gap": 5,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "5autj",
+                              "name": "guardBadge",
+                              "width": 35,
+                              "height": 22,
+                              "fill": "linear-gradient(135deg, #4488cc 0%, #3366aa 100%)",
+                              "cornerRadius": 4,
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "#66aaff"
+                              },
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "kvw5t",
+                                  "name": "guardBadgeText",
+                                  "fill": "#FFFFFF",
+                                  "content": "10",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "G3jA0",
+                              "name": "guardBar",
+                              "width": "fill_container",
+                              "height": 20,
+                              "fill": "rgba(0,0,0,0.5)",
+                              "cornerRadius": 4,
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "rgba(255,255,255,0.2)"
+                              },
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "tEvQo",
+                                  "name": "guardFill",
+                                  "width": 50,
+                                  "height": "fill_container",
+                                  "fill": "linear-gradient(90deg, #4488cc 0%, #6699ff 100%)",
+                                  "cornerRadius": 3
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "EQBE8",
+                          "name": "apHpRow",
+                          "width": "fill_container",
+                          "height": 26,
+                          "gap": 5,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "LpRP1",
+                              "name": "apBadge",
+                              "width": 50,
+                              "height": 26,
+                              "fill": "linear-gradient(135deg, #808080 0%, #606060 100%)",
+                              "cornerRadius": 4,
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "#999999"
+                              },
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Qc6tV",
+                                  "name": "apBadgeText",
+                                  "fill": "#FFFFFF",
+                                  "content": "10/10",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "pqfap",
+                              "name": "HP Bar Container",
+                              "width": "fill_container",
+                              "height": 24,
+                              "fill": "rgba(0,0,0,0.5)",
+                              "cornerRadius": 4,
+                              "stroke": {
+                                "thickness": 3,
+                                "fill": "#808080"
+                              },
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "Sggrz",
+                                  "name": "AP Overlay",
+                                  "opacity": 0.75,
+                                  "width": "fill_container",
+                                  "height": "fill_container",
+                                  "fill": "linear-gradient(90deg, #808080 0%, #a0a0a0 100%)",
+                                  "cornerRadius": 3
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "xdsX6",
+                                  "name": "HP Fill",
+                                  "width": "fill_container",
+                                  "height": "fill_container",
+                                  "fill": "linear-gradient(90deg, #d94a4a 0%, #ff6b6b 100%)",
+                                  "cornerRadius": 3
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "dfZJa",
+                                  "name": "hpText",
+                                  "fill": "#000000",
+                                  "content": "80/80",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ckCH4",
+                          "name": "energyRow",
+                          "width": "fill_container",
+                          "height": 22,
+                          "gap": 5,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "28jY3",
+                              "name": "energyBadge",
+                              "width": 50,
+                              "height": 22,
+                              "fill": "linear-gradient(135deg, #2b9f0e 0%, #1d7a09 100%)",
+                              "cornerRadius": 4,
+                              "stroke": {
+                                "thickness": 1,
+                                "fill": "#3cb82a"
+                              },
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "lCAb7",
+                                  "name": "energyBadgeText",
+                                  "fill": "#FFFFFF",
+                                  "content": "3/3",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "bold"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "a1EY3",
+                              "name": "energyBar",
+                              "width": "fill_container",
+                              "height": 20,
+                              "fill": "rgba(0,0,0,0.5)",
+                              "cornerRadius": 4,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "SWx5H",
+                                  "name": "energyFill",
+                                  "width": "fill_container",
+                                  "height": "fill_container",
+                                  "fill": "linear-gradient(90deg, #3cb82a 0%, #1d7a09 100%)",
+                                  "cornerRadius": 3
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "LYZ6z",
+                  "name": "Sword Energy Display",
+                  "width": 200,
+                  "fill": "rgba(0,0,0,0.4)",
+                  "cornerRadius": 10,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 15,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "EjVDd",
+                      "name": "swordLabel",
+                      "fill": "#FFFFFF",
+                      "content": "剣気:",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "jpaLo",
+                      "name": "swordBarContainer",
+                      "width": "fill_container",
+                      "height": 25,
+                      "fill": "rgba(0,0,0,0.5)",
+                      "cornerRadius": 5,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "gNh1c",
+                          "name": "swordBarFill",
+                          "width": 80,
+                          "height": "fill_container",
+                          "fill": "linear-gradient(90deg, #ffd700 0%, #ffaa00 100%)",
+                          "cornerRadius": 4
+                        },
+                        {
+                          "type": "text",
+                          "id": "TbvYq",
+                          "name": "swordBarText",
+                          "fill": "#FFFFFF",
+                          "content": "5/10",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "bold"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XWLMK",
+                      "name": "swordEffects",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "FVxPe",
+                          "name": "critEffect",
+                          "gap": 5,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "uGTMx",
+                              "name": "critCheck",
+                              "fill": "#00ff00",
+                              "content": "✓",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "AmIws",
+                              "name": "critLabel",
+                              "fill": "#00ff00",
+                              "content": "Crit+20%",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "c2w4d",
+                          "name": "pierceEffect",
+                          "gap": 5,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qGMNo",
+                              "name": "pierceCheck",
+                              "fill": "#888888",
+                              "content": "○",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "rGHyV",
+                              "name": "pierceLabel",
+                              "fill": "#888888",
+                              "content": "貫通+30%",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "xMx3M",
+                          "name": "maxEffect",
+                          "gap": 5,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "s3wDY",
+                              "name": "maxCheck",
+                              "fill": "#888888",
+                              "content": "○",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "5vpGO",
+                              "name": "maxLabel",
+                              "fill": "#888888",
+                              "content": "MAX",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ekqtZ",
+          "x": 1800,
+          "y": 850,
+          "name": "Draw Pile",
+          "layout": "vertical",
+          "gap": 10,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Ktkw9",
+              "name": "drawVisual",
+              "width": 70,
+              "height": 95,
+              "fill": "linear-gradient(135deg, #4a3a6a 0%, #2a1a4a 100%)",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 3,
+                "fill": "#9B7ED9"
+              },
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ABFpw",
+                  "name": "drawEmoji",
+                  "content": "🎴",
+                  "fontFamily": "Inter",
+                  "fontSize": 40,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "H2W3f",
+              "name": "drawCount",
+              "fill": "#FFFFFF",
+              "content": "山札: 20",
+              "fontFamily": "Inter",
+              "fontSize": 18,
+              "fontWeight": "bold"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "culnS",
+          "x": 50,
+          "y": 850,
+          "name": "Discard Pile",
+          "layout": "vertical",
+          "gap": 10,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "isGBL",
+              "name": "discardVisual",
+              "width": 70,
+              "height": 95,
+              "fill": "linear-gradient(135deg, #4a3a6a 0%, #2a1a4a 100%)",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 3,
+                "fill": "#9B7ED9"
+              },
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "1Y0C3",
+                  "name": "discardEmoji",
+                  "content": "🗑️",
+                  "fontFamily": "Inter",
+                  "fontSize": 40,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "isixb",
+              "name": "discardCount",
+              "fill": "#FFFFFF",
+              "content": "捨て札: 5",
+              "fontFamily": "Inter",
+              "fontSize": 18,
+              "fontWeight": "bold"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "7j8XS",
+          "x": 1720,
+          "y": 650,
+          "name": "End Phase Button",
+          "width": 150,
+          "height": 50,
+          "fill": "linear-gradient(135deg, #6a4a9a 0%, #9B7ED9 100%)",
+          "cornerRadius": 10,
+          "stroke": {
+            "thickness": 3,
+            "fill": "#9B7ED9"
+          },
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "QDKBv",
+              "name": "endPhaseText",
+              "fill": "#FFFFFF",
+              "content": "End Phase",
+              "fontFamily": "Inter",
+              "fontSize": 20,
+              "fontWeight": "bold"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "UAICK",
+          "x": 460,
+          "y": 750,
+          "name": "Hand Container",
+          "width": 1000,
+          "height": 280,
+          "gap": -20,
+          "justifyContent": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "yV8Do",
+              "name": "Card 1",
+              "width": 130,
+              "height": 195,
+              "fill": "linear-gradient(145deg, #4a3a6a 0%, #6a4a9a 50%, #4a3a6a 100%)",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#000000"
+              },
+              "layout": "vertical",
+              "padding": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "hw05s",
+                  "name": "card1Cost",
+                  "width": 35,
+                  "height": 35,
+                  "fill": "#2b9f0e",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 3,
+                    "fill": "#000000"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ygjvp",
+                      "name": "card1CostText",
+                      "fill": "#FFFFFF",
+                      "content": "1",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "xlB2D",
+                  "name": "card1Name",
+                  "width": "fill_container",
+                  "height": 28,
+                  "fill": "#444444",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "rgba(255,255,255,0.3)"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "F8nSe",
+                      "name": "card1NameText",
+                      "fill": "#FFFFFF",
+                      "content": "斬撃",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jh8nr",
+                  "name": "card1Desc",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "rgba(0,0,0,0.4)",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "padding": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "MUmK4",
+                      "name": "card1DescText",
+                      "fill": "rgba(255,255,255,0.9)",
+                      "textGrowth": "fixed-width",
+                      "width": 90,
+                      "content": "敵に6ダメージ",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TNH95",
+              "name": "Card 2",
+              "width": 130,
+              "height": 195,
+              "fill": "linear-gradient(145deg, #4a3a6a 0%, #6a4a9a 50%, #4a3a6a 100%)",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#000000"
+              },
+              "layout": "vertical",
+              "padding": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "UCnDd",
+                  "name": "card2Cost",
+                  "width": 35,
+                  "height": 35,
+                  "fill": "#2b9f0e",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 3,
+                    "fill": "#000000"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jxSTQ",
+                      "name": "card2CostText",
+                      "fill": "#FFFFFF",
+                      "content": "2",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "H6OdF",
+                  "name": "card2Name",
+                  "width": "fill_container",
+                  "height": 28,
+                  "fill": "#444444",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "rgba(255,255,255,0.3)"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "j1r6Z",
+                      "name": "card2NameText",
+                      "fill": "#FFFFFF",
+                      "content": "防御",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "tRSdE",
+                  "name": "card2Desc",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "rgba(0,0,0,0.4)",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "padding": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "sIwut",
+                      "name": "card2DescText",
+                      "fill": "rgba(255,255,255,0.9)",
+                      "textGrowth": "fixed-width",
+                      "width": 90,
+                      "content": "ガード+5",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "lKxZB",
+              "name": "Card 3",
+              "width": 130,
+              "height": 195,
+              "fill": "linear-gradient(145deg, #4a3a6a 0%, #6a4a9a 50%, #4a3a6a 100%)",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#000000"
+              },
+              "layout": "vertical",
+              "padding": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "95RfF",
+                  "name": "card3Cost",
+                  "width": 35,
+                  "height": 35,
+                  "fill": "#2b9f0e",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 3,
+                    "fill": "#000000"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "1Kktt",
+                      "name": "card3CostText",
+                      "fill": "#FFFFFF",
+                      "content": "1",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "c846U",
+                  "name": "card3Name",
+                  "width": "fill_container",
+                  "height": 28,
+                  "fill": "#444444",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "rgba(255,255,255,0.3)"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "M4kxj",
+                      "name": "card3NameText",
+                      "fill": "#FFFFFF",
+                      "content": "突き",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "PAcpZ",
+                  "name": "card3Desc",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "rgba(0,0,0,0.4)",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "padding": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ajeKW",
+                      "name": "card3DescText",
+                      "fill": "rgba(255,255,255,0.9)",
+                      "textGrowth": "fixed-width",
+                      "width": 90,
+                      "content": "敵に4ダメージ\n剣気+1",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gbluj",
+              "name": "Card 4",
+              "width": 130,
+              "height": 195,
+              "fill": "linear-gradient(145deg, #4a3a6a 0%, #6a4a9a 50%, #4a3a6a 100%)",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#000000"
+              },
+              "layout": "vertical",
+              "padding": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "5Tqbv",
+                  "name": "card4Cost",
+                  "width": 35,
+                  "height": 35,
+                  "fill": "#cc8800",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 3,
+                    "fill": "#000000"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C6Yi9",
+                      "name": "card4CostText",
+                      "fill": "#FFFFFF",
+                      "content": "3",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "tSHDg",
+                  "name": "card4Name",
+                  "width": "fill_container",
+                  "height": 28,
+                  "fill": "#444444",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "rgba(255,255,255,0.3)"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "iVUWl",
+                      "name": "card4NameText",
+                      "fill": "#FFFFFF",
+                      "content": "必殺技",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "oFVXa",
+                  "name": "card4Desc",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "rgba(0,0,0,0.4)",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "padding": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "xy95M",
+                      "name": "card4DescText",
+                      "fill": "rgba(255,255,255,0.9)",
+                      "textGrowth": "fixed-width",
+                      "width": 90,
+                      "content": "敵に12ダメージ",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TMlL8",
+              "name": "Card 5",
+              "width": 130,
+              "height": 195,
+              "fill": "linear-gradient(145deg, #4a3a6a 0%, #6a4a9a 50%, #4a3a6a 100%)",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 2,
+                "fill": "#000000"
+              },
+              "layout": "vertical",
+              "padding": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "vsU1C",
+                  "name": "card5Cost",
+                  "width": 35,
+                  "height": 35,
+                  "fill": "#2b9f0e",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 3,
+                    "fill": "#000000"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jP5wl",
+                      "name": "card5CostText",
+                      "fill": "#FFFFFF",
+                      "content": "0",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jJRCc",
+                  "name": "card5Name",
+                  "width": "fill_container",
+                  "height": 28,
+                  "fill": "#444444",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "rgba(255,255,255,0.3)"
+                  },
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "pn05d",
+                      "name": "card5NameText",
+                      "fill": "#FFFFFF",
+                      "content": "集中",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "bold"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "kNGSn",
+                  "name": "card5Desc",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "rgba(0,0,0,0.4)",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "padding": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "7a6KM",
+                      "name": "card5DescText",
+                      "fill": "rgba(255,255,255,0.9)",
+                      "textGrowth": "fixed-width",
+                      "width": 90,
+                      "content": "カードを1枚引く",
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
