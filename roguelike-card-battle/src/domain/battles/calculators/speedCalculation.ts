@@ -1,5 +1,12 @@
 import type { BuffDebuffMap } from "../type/baffType";
-import type { Enemy } from "../../characters/type/enemyType";
+
+/**
+ * Minimal interface for speed calculation
+ * Works with both Enemy and EnemyDefinition
+ */
+interface SpeedSource {
+  baseSpeed: number;
+}
 
 // Re-export phase calculation types and functions
 export {
@@ -42,10 +49,10 @@ export function calculatePlayerSpeed(buffs: BuffDebuffMap): number {
 }
 
 export function calculateEnemySpeed(
-  enemy: Enemy,
+  enemy: SpeedSource,
   buffs: BuffDebuffMap
 ): number {
-  let speed = enemy.speed;
+  let speed = enemy.baseSpeed;
   if (buffs.has("haste")) {
     const hasteBuff = buffs.get("haste")!;
     speed += hasteBuff.value;

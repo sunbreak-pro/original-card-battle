@@ -13,12 +13,12 @@ import {
 import BlacksmithItemCard from "./BlacksmithItemCard";
 
 const RepairTab = () => {
-  const { player, updatePlayer, useGold: deductGold } = usePlayer();
+  const { playerData, updatePlayerData, useGold: deductGold } = usePlayer();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   // Get equipment items that need repair from storage
-  const repairableItems = getRepairableItems(player.storage.items);
+  const repairableItems = getRepairableItems(playerData.inventory.storage.items);
   const totalRepairCost = getTotalRepairCost(repairableItems);
 
   const showNotification = (message: string, type: "success" | "error") => {
@@ -28,13 +28,16 @@ const RepairTab = () => {
 
   // Update item in storage
   const updateStorageItem = (updatedItem: Item) => {
-    const newItems = player.storage.items.map((item) =>
+    const newItems = playerData.inventory.storage.items.map((item) =>
       item.id === updatedItem.id ? updatedItem : item
     );
-    updatePlayer({
-      storage: {
-        ...player.storage,
-        items: newItems,
+    updatePlayerData({
+      inventory: {
+        ...playerData.inventory,
+        storage: {
+          ...playerData.inventory.storage,
+          items: newItems,
+        },
       },
     });
     setSelectedItem(updatedItem);
@@ -43,16 +46,19 @@ const RepairTab = () => {
   // Update multiple items in storage
   const updateMultipleStorageItems = (updatedItems: Item[]) => {
     const updatedIds = new Set(updatedItems.map((item) => item.id));
-    const newItems = player.storage.items.map((item) => {
+    const newItems = playerData.inventory.storage.items.map((item) => {
       if (updatedIds.has(item.id)) {
         return updatedItems.find((u) => u.id === item.id) ?? item;
       }
       return item;
     });
-    updatePlayer({
-      storage: {
-        ...player.storage,
-        items: newItems,
+    updatePlayerData({
+      inventory: {
+        ...playerData.inventory,
+        storage: {
+          ...playerData.inventory.storage,
+          items: newItems,
+        },
       },
     });
   };
@@ -67,7 +73,7 @@ const RepairTab = () => {
       return;
     }
 
-    if (!canAffordRepair(player.baseCampGold, cost)) {
+    if (!canAffordRepair(playerData.resources.baseCampGold, cost)) {
       showNotification("Not enough gold", "error");
       return;
     }
@@ -92,7 +98,7 @@ const RepairTab = () => {
       return;
     }
 
-    if (player.baseCampGold < totalRepairCost) {
+    if (playerData.resources.baseCampGold < totalRepairCost) {
       showNotification("Not enough gold for all repairs", "error");
       return;
     }
@@ -120,7 +126,7 @@ const RepairTab = () => {
 
   // Get repair cost for selected item
   const repairCost = selectedItem ? getRepairCost(selectedItem) : null;
-  const canAffordSelectedRepair = repairCost ? canAffordRepair(player.baseCampGold, repairCost) : false;
+  const canAffordSelectedRepair = repairCost ? canAffordRepair(playerData.resources.baseCampGold, repairCost) : false;
 
   return (
     <div className="tab-layout">
@@ -145,7 +151,7 @@ const RepairTab = () => {
             <button
               className="repair-all-button"
               onClick={handleRepairAll}
-              disabled={player.baseCampGold < totalRepairCost}
+              disabled={playerData.resources.baseCampGold < totalRepairCost}
             >
               Repair All
             </button>

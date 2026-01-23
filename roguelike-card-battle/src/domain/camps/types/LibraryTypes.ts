@@ -6,7 +6,7 @@
  */
 
 import type { Card } from "../../cards/type/cardType";
-import type { Enemy } from "../../characters/type/enemyType";
+import type { EnemyDefinition } from "../../characters/type/enemyType";
 
 /**
  * Library tab types
@@ -27,7 +27,7 @@ export interface CardEncyclopediaEntry {
  * Enemy encyclopedia entry
  */
 export interface EnemyEncyclopediaEntry {
-  enemy: Enemy;
+  enemy: EnemyDefinition;
   isEncountered: boolean;
   timesDefeated: number;
   firstEncounteredDate?: string;

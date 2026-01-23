@@ -18,9 +18,9 @@ import {
 } from "../../../domain/camps/logic/shopLogic";
 
 const BuyTab = () => {
-  const { player, useGold } = usePlayer();
+  const { playerData, useGold } = usePlayer();
   const { addItemToInventory } = useInventory();
-  const inventory = player.inventory;
+  const inventory = playerData.inventory.inventory;
   const [notification, setNotification] = useState<string | null>(null);
   const [purchasedPack, setPurchasedPack] = useState<string[] | null>(null);
 
@@ -30,7 +30,8 @@ const BuyTab = () => {
   };
 
   const handleBuyItem = (shopItem: ShopItem) => {
-    if (!canAfford(player.baseCampGold, shopItem.price)) {
+    const totalGold = playerData.resources.baseCampGold + playerData.resources.explorationGold;
+    if (!canAfford(totalGold, shopItem.price)) {
       showNotification("Not enough gold!");
       return;
     }
@@ -53,7 +54,8 @@ const BuyTab = () => {
   };
 
   const handleBuyPack = (pack: EquipmentPackConfig) => {
-    if (!canAfford(player.baseCampGold, pack.price)) {
+    const totalGold = playerData.resources.baseCampGold + playerData.resources.explorationGold;
+    if (!canAfford(totalGold, pack.price)) {
       showNotification("Not enough gold!");
       return;
     }
@@ -74,7 +76,8 @@ const BuyTab = () => {
   };
 
   const renderShopItem = (item: ShopItem) => {
-    const affordable = canAfford(player.baseCampGold, item.price);
+    const totalGold = playerData.resources.baseCampGold + playerData.resources.explorationGold;
+    const affordable = canAfford(totalGold, item.price);
     const hasSpace = hasInventorySpace(
       inventory.currentCapacity,
       inventory.maxCapacity
@@ -103,7 +106,8 @@ const BuyTab = () => {
   };
 
   const renderPackItem = (pack: EquipmentPackConfig) => {
-    const affordable = canAfford(player.baseCampGold, pack.price);
+    const totalGold = playerData.resources.baseCampGold + playerData.resources.explorationGold;
+    const affordable = canAfford(totalGold, pack.price);
     const hasSpace = hasInventorySpace(
       inventory.currentCapacity,
       inventory.maxCapacity,

@@ -1,10 +1,11 @@
 Here is the English translation of the design document.
 
-# Sanctuary Detailed Design Document V2.0 (SANCTUARY_DESIGN_V2)
+# Sanctuary Detailed Design Document V3.0 (SANCTUARY_DESIGN_V3)
 
 ## Revision History
 
 - V2.0: **Fundamental Design Overhaul** - Changed Soul Remnants to an experience point system, added +1 Exploration Count skill, removed roguelite elements (permanent death resets).
+- V3.0: **Lives System Integration** - Removed exploration count extension skills, updated soul acquisition (100% on both survival AND death), integrated with lives system, game over resets sanctuary progress.
 
 ---
 
@@ -12,24 +13,26 @@ Here is the English translation of the design document.
 
 The Sanctuary is a facility where players consume **Soul Remnants** to unlock permanent upgrades.
 
-**Major Changes in V2.0:**
+**Major Changes in V3.0:**
 
 ```
-Old Design:
-Gained Souls on Death → Permanent Upgrades (Roguelite element)
-
-New Design:
+V2.0 Design:
 Gain Souls on Enemy Kill (EXP style) → Add to Total upon Survival → Permanent Upgrades
 Integrated with the Exploration Count Limit system
+
+V3.0 Design:
+Gain Souls on Enemy Kill (EXP style) → Add to Total (100% on BOTH survival AND death)
+Integrated with the Lives System (残機システム)
+Game Over (Lives = 0) → Complete Sanctuary Reset (only achievements persist)
 
 ```
 
 ### Key Roles
 
-1. **Permanent Upgrades**: Improving basic player stats that persist across runs.
+1. **Permanent Upgrades**: Improving basic player stats that persist across runs (until game over).
 2. **Build Diversity**: Selecting growth directions via the skill tree.
 3. **Progress Visualization**: Feeling growth through unlocked nodes.
-4. **Exploration Expansion**: Skill to increase Exploration Count +1 (NEW).
+4. **Risk Mitigation**: Souls are always saved (100%), encouraging exploration even in risky situations.
 
 ---
 
@@ -39,11 +42,11 @@ Integrated with the Exploration Count Limit system
 
 #### 2.1.1 Acquisition Method (Experience System)
 
-**Change in V2.0:**
+**Change in V3.0:**
 
 ```
-Old: Gained upon Death
-New: Gained upon Enemy Kill (Like Experience Points)
+V2.0: Gained on Enemy Kill, Added to Total only on Survival
+V3.0: Gained on Enemy Kill, Added to Total on BOTH Survival AND Death (100%)
 
 ```
 
@@ -54,74 +57,96 @@ New: Gained upon Enemy Kill (Like Experience Points)
 | Minion Kill   | 5 Souls       | Added immediately during combat |
 | Elite Kill    | 15 Souls      | Elite enemies / Mid-bosses      |
 | Boss Kill     | 50 Souls      | Floor Bosses                    |
-| Return Battle | 50% of normal | When using the Return Route     |
+| Return Battle | 100% (same)   | V3.0: No reduction on return    |
 
-**Important Mechanism:**
+**Important Mechanism (V3.0):**
 
 ```typescript
 // Souls gained in this specific run (Temporary)
 currentRunSouls: number;
 
-// Accumulated Souls (Permanent)
+// Accumulated Souls (Permanent until Game Over)
 totalSouls: number;
 
-// Upon Survival
-totalSouls += currentRunSouls × SurvivalMethodMultiplier;
+// Upon Survival (V3.0: 100% always)
+totalSouls += currentRunSouls;  // 100% acquisition
 currentRunSouls = 0;
 
-// Upon Death
-currentRunSouls = 0;  // Souls from this run are lost
-// totalSouls is retained (No change)
+// Upon Death (V3.0: ALSO 100% - major change!)
+totalSouls += currentRunSouls;  // 100% acquisition even on death
+currentRunSouls = 0;
+lives--;  // Lose 1 life
+
+// Upon Game Over (Lives = 0)
+totalSouls = 0;  // Complete reset
+unlockedNodes = [];  // All sanctuary progress lost
+// Only achievements persist
 
 ```
 
-#### 2.1.2 Survival vs. Death Processing
+#### 2.1.2 Survival vs. Death Processing (V3.0 - Major Change)
 
 **Case: Survival**
 
 ```
 Defeat Enemy → Gain Souls (currentRunSouls)
   ↓
-Survive (Return Stone or Return Route)
+Survive (Teleport Stone or Return Route)
   ↓
-Acquired Souls × Method Multiplier → Added to Total
+Acquired Souls → 100% Added to Total (V3.0: No multiplier)
 
-Survival Method Multiplier:
-- Return Route: 100%
-- Normal Return Stone: 70%
-- Blessed Return Stone: 80%
-- Emergency Return Stone: 60%
+V3.0 Changes:
+- Teleport Stone: Unified to 1 type with 100% reward
+- Return Route: 100% reward (unchanged)
+- No reduction penalties
 
-Example: Gained 100 Souls this run, used Normal Return Stone
-→ 100 × 0.7 = 70 Souls added to Total
+Example: Gained 100 Souls this run, used Teleport Stone
+→ 100 Souls added to Total (100%)
 
 ```
 
-**Case: Death**
+**Case: Death (V3.0 - Major Change)**
 
 ```
 Defeat Enemy → Gain Souls (currentRunSouls)
   ↓
 Death
   ↓
-Souls gained this run → Zero
-Accumulated Souls (totalSouls) → Retained (Unchanged)
+V3.0 NEW: Souls gained this run → 100% Added to Total!
+Lives → Decrease by 1
+All Items/Equipment → Lost
 
 Example: Gained 100 Souls this run, Died
-→ The 100 Souls are reset to 0
-→ However, the past accumulated 500 Souls remain safe
+→ 100 Souls ARE added to Total (major change from V2.0!)
+→ Lives: 3 → 2
+→ All items and equipment lost
+
+```
+
+**Case: Game Over (Lives = 0)**
+
+```
+Lives reach 0
+  ↓
+COMPLETE RESET:
+- totalSouls → 0
+- unlockedNodes → Empty
+- All sanctuary progress → Lost
+- Only achievements persist
 
 ```
 
 **Properties:**
 
-- Souls accumulated in the past are **permanently retained**.
-- Souls gained in the current run are not added unless you survive.
+- Souls are **always saved at 100%** (both survival and death).
+- Death penalty is item/equipment loss + life decrease, NOT soul loss.
+- Sanctuary progress is lost on game over.
 - Can only be used in the Sanctuary.
 
 **Initial Possession:**
 
 - New Player: 50 Souls (For tutorial)
+- After Game Over: 50 Souls (Same starting point)
 
 ---
 
@@ -139,10 +164,10 @@ Example: Gained 100 Souls this run, Died
      [HP Branch] [Gold Branch] [Utility Branch]
         │           │           │
     ┌───┼───┐   ┌───┼───┐   ┌───┼───┐
-  [+10] [+20] [+10%][+20%] [Expl.] [Expand]
-    │           │         Count+1   │
-  [+30]       [+30%]        │     [Adv.]
-                         [Count+2]
+  [+10] [+20] [+10%][+20%] [Bag] [Soul+]
+    │           │         Expand   │
+  [+30]       [+30%]        │     [Soul++]
+                         [Adv.]
 
 ```
 
@@ -151,7 +176,7 @@ Example: Gained 100 Souls this run, Died
 - Extends in 4 directions from the center.
 - Each direction has a theme (HP / Gold / Combat / Utility).
 - Higher tier nodes are more powerful but cost more.
-- **Exploration Count +1 is strategically critical (NEW).**
+- **V3.0: Exploration Extension skills removed** (Lives system replaces exploration count).
 
 #### 2.2.2 Node Types
 
@@ -174,7 +199,7 @@ Example: Gained 100 Souls this run, Died
 | Eye of Appraisal           | 👁️   | Displays detailed equipment info | 40   | -                    |
 | Expanded Bag               | 🎒   | Inventory +5                     | 50   | -                    |
 | Boon of Recovery           | 💊   | Recover +5% HP after combat      | 60   | Blessing of Life I   |
-| **Extended Exploration I** | ⏰   | **Exploration Count +1**         | 80   | -                    |
+| Soul Resonance I           | ✨   | Soul Remnants Gain +10%          | 50   | -                    |
 
 **Tier 3 (Ultimate Upgrades): Cost 100-150 Souls**
 
@@ -183,38 +208,40 @@ Example: Gained 100 Souls this run, Died
 | Blessing of Life III        | ❤️❤️❤️ | Initial HP +30                      | 100  | Blessing of Life II   |
 | Blessing of Wealth III      | 💰💰💰 | Initial Gold +30%                   | 100  | Blessing of Wealth II |
 | Indomitable Will            | 🛡️     | Survive with 1 HP once per run      | 120  | Blessing of Life II   |
-| Soul Resonance              | ✨     | Soul Remnants Gain +20%             | 80   | -                     |
+| Soul Resonance II           | ✨✨   | Soul Remnants Gain +20% (Total +30%)| 100  | Soul Resonance I      |
 | True Appraisal              | 👁️‍🗨️     | Displays hidden equipment effects   | 90   | Eye of Appraisal      |
-| **Extended Exploration II** | ⏰⏰   | **Exploration Count +2 (Total +3)** | 150  | Extended Expl. I      |
+| Fortune's Favor             | 🍀    | +10% chance for rare drops          | 110  | Blessing of Wealth II |
 
-#### 2.2.3 Exploration Extension Skills (NEW - Critical)
+#### 2.2.3 Soul Resonance Skills (V3.0 Replacement)
 
-**Extended Exploration Skills:**
+**Soul Acquisition Enhancement Skills:**
 
 ```
-[Tier 2] Extended Exploration I
-Cost: 80 Souls
-Effect: Increases Max Exploration Count by +1
+[Tier 2] Soul Resonance I
+Cost: 50 Souls
+Effect: Soul Remnants Gain +10%
 Prerequisite: None
 
-[Tier 3] Extended Exploration II
-Cost: 150 Souls
-Effect: Increases Max Exploration Count by +2 (Total +3)
-Prerequisite: Extended Exploration I
+[Tier 3] Soul Resonance II
+Cost: 100 Souls
+Effect: Soul Remnants Gain +20% (Total +30%)
+Prerequisite: Soul Resonance I
 
 [Example Effects]
-Default: 10 Explorations
-After unlocking Extended Expl. I: 11 Explorations
-After unlocking Extended Expl. II: 13 Explorations
+Default: 5 Souls per Minion
+After unlocking Soul Resonance I: 5.5 Souls (rounded)
+After unlocking Soul Resonance II: 6.5 Souls (rounded)
 
 ```
 
-**Strategic Value:**
+**Strategic Value (V3.0):**
 
-- Mitigates the exploration limit.
-- Allows for more trial and error.
-- Increases probability of reaching deeper floors.
-- High cost, but extremely high value.
+- Accelerates sanctuary upgrade progression.
+- Since souls are now saved on death too, this is pure value.
+- Helps rebuild faster after game over.
+- Moderate cost, steady value accumulation.
+
+> **V3.0 Note:** Exploration Extension skills were removed because the Lives System replaced the exploration count limit. Players can now explore unlimited times as long as they have lives remaining.
 
 #### 2.2.4 Class Specialization Nodes
 
@@ -278,8 +305,8 @@ Effect: Start with +1 / +2 / +3 Summon Slots
 ┌────────────────────────────────────────────────────────┐
 │  ✨ Sanctuary                                         │
 ├────────────────────────────────────────────────────────┤
-│  Soul Remnants: Total 650 / This Run +85               │  ← NEW
-│  Exploration Limit: 10 Runs (+0)                       │  ← NEW
+│  Soul Remnants: Total 650 / This Run +85               │
+│  Lives: ❤️❤️❤️ (3/3)                                  │  ← V3.0
 │                                                        │
 │              [Skill Tree Display Area]                 │
 │                                                        │
@@ -288,27 +315,27 @@ Effect: Start with +1 / +2 / +3 Summon Slots
 │                        │                               │
 │        ┌───────────────┼───────────────┐               │
 │        │               │               │               │
-│   [Life Bless I]  [Wealth Bless I] [Ext. Explor I]     │  ← NEW
+│   [Life Bless I]  [Wealth Bless I] [Soul Reson. I]     │  ← V3.0
 │   (Unlocked ✨)   (Available 💫)   (Available 💫)      │
-│        │               │           80 Souls            │
-│   [Life Bless II] [Wealth Bless II] [Ext. Explor II]   │  ← NEW
+│        │               │           50 Souls            │
+│   [Life Bless II] [Wealth Bless II] [Soul Reson. II]   │  ← V3.0
 │   (Locked 🔒)     (Locked 🔒)      (Locked 🔒)         │
-│                                    150 Souls           │
+│                                    100 Souls           │
 │                                                        │
 │  ┌──────────────────────────────────────────────────┐  │
 │  │ [Selected Node Details]                           │  │
-│  │ ⏰ Extended Exploration I                        │  │  ← NEW
+│  │ ✨ Soul Resonance I                              │  │  ← V3.0
 │  │                                                  │  │
-│  │ Effect: Increases Max Exploration Count by +1    │  │
-│  │         (Current 10 -> 11)                       │  │
+│  │ Effect: Increases Soul Remnants gain by +10%     │  │
+│  │         (Current 1.0x -> 1.1x)                   │  │
 │  │                                                  │  │
-│  │ Cost: 80 Soul Remnants                            │  │
+│  │ Cost: 50 Soul Remnants                            │  │
 │  │ Currently Held: 650 (Sufficient)                  │  │
 │  │                                                  │  │
 │  │ Prerequisite: None                                │  │
 │  │                                                  │  │
-│  │ * Mitigates exploration limits,                   │  │
-│  │   enabling more attempts.                         │  │
+│  │ * Accelerates sanctuary progression.              │  │
+│  │   Souls are always saved (even on death).         │  │
 │  │                                                  │  │
 │  │ [Long Press to Unlock]                            │  │
 │  └──────────────────────────────────────────────────┘  │
@@ -375,8 +402,8 @@ Node Lights Up
 Holy light spreads
   ↓
 Completion Message
-"Unlocked Extended Exploration I!"
-"Max Exploration Count increased 10 -> 11!"  ← NEW
+"Unlocked Soul Resonance I!"
+"Soul gain increased 1.0x -> 1.1x!"  ← V3.0
 
 ```
 
@@ -397,17 +424,17 @@ Visuals:
   2. Light spreads across the screen.
   3. Stained glass background flashes momentarily.
   4. Node lights up gold.
-  5. Special effect if Exploration Count increased. ← NEW
+  5. Special effect if Soul multiplier increased. ← V3.0
 
 ```
 
-**Soul Remnants Gain (V2.0):**
+**Soul Remnants Gain (V3.0):**
 
 ```
 On Enemy Kill:
   1. Soul orb appears from enemy.
   2. Absorbed by player.
-  3. "+5 Soul Remnants" text.
+  3. "+5 Soul Remnants" text (or +5.5 with Soul Resonance).
   4. Top right "This Run" counter updates.
 
 On Survival:
@@ -416,11 +443,19 @@ On Survival:
   3. "+85 Soul Remnants (Total 650 -> 735)" displayed.
   4. Sparkle effect.
 
-On Death:
-  1. Soul Orb shatters.
-  2. "85 Souls from this run were lost..."
-  3. "Total 650 Souls remain safe."
-  4. Dark/Gloomy visual.
+On Death (V3.0 Change):
+  1. Soul Orb glows warmly (NOT shatters).
+  2. "+85 Soul Remnants saved!" ← V3.0: Souls ARE saved!
+  3. "Total 650 -> 735 Souls"
+  4. "Lives: ❤️❤️❤️ -> ❤️❤️"
+  5. Bittersweet visual (loss + gain).
+
+On Game Over (Lives = 0):
+  1. All Soul Orbs shatter dramatically.
+  2. "All sanctuary progress lost..."
+  3. "Starting anew with 50 Souls."
+  4. "Achievements preserved."
+  5. Dark/Reset visual.
 
 ```
 
@@ -457,8 +492,8 @@ export interface NodeEffect {
     | "stat_boost"
     | "special_ability"
     | "resource_increase"
-    | "exploration_limit"; // NEW
-  target: string; // 'initial_hp', 'initial_gold', 'exploration_limit', etc.
+    | "soul_multiplier"; // V3.0: Replaced exploration_limit
+  target: string; // 'initial_hp', 'initial_gold', 'soul_gain_multiplier', etc.
   value: number | string;
 }
 
@@ -473,12 +508,12 @@ export type NodeStatus = "unlocked" | "available" | "locked";
 export interface SanctuaryProgress {
   unlockedNodes: Set<string>;
 
-  // V2.0: Soul Remnants System
-  currentRunSouls: number; // Souls gained in this run
-  totalSouls: number; // Total accumulated souls (from past runs)
+  // V3.0: Soul Remnants System
+  currentRunSouls: number; // Souls gained in this run (always added to total)
+  totalSouls: number; // Total accumulated souls (reset on game over)
 
-  // NEW: Exploration Extension
-  explorationLimitBonus: number; // Additional exploration count (Default 0)
+  // V3.0: Soul gain multiplier from upgrades
+  soulGainMultiplier: number; // Default 1.0, increased by Soul Resonance skills
 }
 ```
 
@@ -535,18 +570,18 @@ export const TIER2_NODES: SkillNode[] = [
     prerequisites: ["hp_blessing_1"],
     effects: [{ type: "stat_boost", target: "initial_hp", value: 20 }],
   },
-  // NEW: Exploration Extension
+  // V3.0: Soul Resonance (Replaced Exploration Extension)
   {
-    id: "exploration_extension_1",
-    name: "Extended Exploration I",
-    description: "Increases Max Exploration Count by +1",
-    icon: "⏰",
-    cost: 80,
-    category: "exploration",
+    id: "soul_resonance_1",
+    name: "Soul Resonance I",
+    description: "Increases Soul Remnants gain by +10%",
+    icon: "✨",
+    cost: 50,
+    category: "utility",
     tier: 2,
     prerequisites: [],
     effects: [
-      { type: "exploration_limit", target: "max_explorations", value: 1 },
+      { type: "soul_multiplier", target: "soul_gain_multiplier", value: 0.1 },
     ],
   },
   // ... other nodes
@@ -567,19 +602,19 @@ export const TIER3_NODES: SkillNode[] = [
     prerequisites: ["hp_blessing_2"],
     effects: [{ type: "stat_boost", target: "initial_hp", value: 30 }],
   },
-  // NEW: Exploration Extension II
+  // V3.0: Soul Resonance II (Replaced Exploration Extension II)
   {
-    id: "exploration_extension_2",
-    name: "Extended Exploration II",
+    id: "soul_resonance_2",
+    name: "Soul Resonance II",
     description:
-      "Increases Max Exploration Count by an additional +2 (Total +3)",
-    icon: "⏰⏰",
-    cost: 150,
-    category: "exploration",
+      "Increases Soul Remnants gain by an additional +20% (Total +30%)",
+    icon: "✨✨",
+    cost: 100,
+    category: "utility",
     tier: 3,
-    prerequisites: ["exploration_extension_1"],
+    prerequisites: ["soul_resonance_1"],
     effects: [
-      { type: "exploration_limit", target: "max_explorations", value: 2 },
+      { type: "soul_multiplier", target: "soul_gain_multiplier", value: 0.2 },
     ],
   },
   // ... other nodes
@@ -672,7 +707,7 @@ export function calculateTotalEffects(progress: SanctuaryProgress) {
     initial_resonance_level: 0,
     initial_summon_slots: 0,
     inventory_size: 0,
-    exploration_limit_bonus: 0, // NEW
+    soul_gain_multiplier: 1.0, // V3.0: Replaced exploration_limit_bonus
     special_abilities: new Set<string>(),
   };
 
@@ -692,10 +727,10 @@ export function calculateTotalEffects(progress: SanctuaryProgress) {
           // ... other stats
           break;
 
-        // NEW: Exploration Extension
-        case "exploration_limit":
-          if (effect.target === "max_explorations") {
-            effects.exploration_limit_bonus += effect.value as number;
+        // V3.0: Soul Gain Multiplier (Replaced Exploration Extension)
+        case "soul_multiplier":
+          if (effect.target === "soul_gain_multiplier") {
+            effects.soul_gain_multiplier += effect.value as number;
           }
           break;
 
@@ -716,15 +751,17 @@ export function calculateTotalEffects(progress: SanctuaryProgress) {
 }
 ```
 
-### 5.3 Soul Remnants System (V2.0 - New)
+### 5.3 Soul Remnants System (V3.0 - Updated)
 
 ```typescript
-// src/camps/facilities/Sanctuary/logic/soulSystem.ts (New)
+// src/camps/facilities/Sanctuary/logic/soulSystem.ts (V3.0 Updated)
 
 import type { SanctuaryProgress } from "../../../../types/SanctuaryTypes";
+import { calculateTotalEffects } from "./applyEffects";
 
 /**
  * Gain souls upon enemy defeat
+ * V3.0: Apply soul gain multiplier from upgrades
  */
 export function gainSoulFromEnemy(
   progress: SanctuaryProgress,
@@ -737,12 +774,12 @@ export function gainSoulFromEnemy(
     boss: 50,
   };
 
-  let soulsGained = baseSouls[enemyType];
+  // V3.0: Apply soul gain multiplier
+  const effects = calculateTotalEffects(progress);
+  let soulsGained = Math.floor(baseSouls[enemyType] * effects.soul_gain_multiplier);
 
-  // Return Battle yields 50%
-  if (isReturnBattle) {
-    soulsGained = Math.floor(soulsGained * 0.5);
-  }
+  // V3.0: Return Battle now yields 100% (same as normal)
+  // No reduction for return battles
 
   return {
     ...progress,
@@ -752,24 +789,14 @@ export function gainSoulFromEnemy(
 
 /**
  * Add to Total upon Survival
+ * V3.0: Always 100% (teleport stone unified)
  */
 export function completeSurvival(
   progress: SanctuaryProgress,
-  returnMethod:
-    | "return_route"
-    | "teleport_normal"
-    | "teleport_blessed"
-    | "teleport_emergency"
+  returnMethod: "return_route" | "teleport_stone"  // V3.0: Unified stone type
 ): SanctuaryProgress {
-  const multipliers = {
-    return_route: 1.0,
-    teleport_normal: 0.7,
-    teleport_blessed: 0.8,
-    teleport_emergency: 0.6,
-  };
-
-  const multiplier = multipliers[returnMethod];
-  const soulsToAdd = Math.floor(progress.currentRunSouls * multiplier);
+  // V3.0: All return methods yield 100%
+  const soulsToAdd = progress.currentRunSouls;
 
   return {
     ...progress,
@@ -780,12 +807,30 @@ export function completeSurvival(
 
 /**
  * Process upon Death
+ * V3.0 MAJOR CHANGE: Souls are ALSO added to total on death!
  */
 export function handleDeath(progress: SanctuaryProgress): SanctuaryProgress {
+  // V3.0: Souls gained this run ARE added to total (100%)
+  const soulsToAdd = progress.currentRunSouls;
+
   return {
     ...progress,
-    currentRunSouls: 0, // Souls for this run are zeroed
-    // totalSouls is retained (no change)
+    totalSouls: progress.totalSouls + soulsToAdd,
+    currentRunSouls: 0,
+    // Note: Lives decrement is handled in PlayerContext, not here
+  };
+}
+
+/**
+ * Process Game Over (Lives = 0)
+ * V3.0 NEW: Complete sanctuary reset
+ */
+export function handleGameOver(progress: SanctuaryProgress): SanctuaryProgress {
+  return {
+    unlockedNodes: new Set(),  // All progress lost
+    currentRunSouls: 0,
+    totalSouls: 50,  // Reset to starting amount
+    soulGainMultiplier: 1.0,  // Reset
   };
 }
 ```
@@ -795,7 +840,7 @@ export function handleDeath(progress: SanctuaryProgress): SanctuaryProgress {
 ## 6. Integration into PlayerContext
 
 ```typescript
-// src/contexts/PlayerContext.tsx (Major Update)
+// src/contexts/PlayerContext.tsx (V3.0 Major Update)
 
 import type { SanctuaryProgress } from "../types/SanctuaryTypes";
 import { calculateTotalEffects } from "../camps/facilities/Sanctuary/logic/applyEffects";
@@ -803,18 +848,19 @@ import {
   gainSoulFromEnemy,
   completeSurvival,
   handleDeath,
+  handleGameOver,
 } from "../camps/facilities/Sanctuary/logic/soulSystem";
 
 export interface Player {
   // ... existing fields
 
-  // V2.0: Sanctuary Updates
+  // V3.0: Sanctuary Updates
   sanctuaryProgress: SanctuaryProgress;
 
-  // NEW: Exploration Limit
-  explorationLimit: {
-    max: number; // Max exploration count (Default 10 + Bonus)
-    current: number; // Current exploration count
+  // V3.0: Lives System (Replaced Exploration Limit)
+  lives: {
+    max: number; // Lives cap (2 for Hard, 3 for Normal/Easy)
+    current: number; // Current lives remaining
   };
 }
 
@@ -834,11 +880,12 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         unlockedNodes: new Set(),
         currentRunSouls: 0,
         totalSouls: 50, // Initial 50 souls
-        explorationLimitBonus: 0,
+        soulGainMultiplier: 1.0,
       },
-      explorationLimit: {
-        max: 10,
-        current: 0,
+      // V3.0: Lives system (default Normal difficulty)
+      lives: {
+        max: 3,
+        current: 3,
       },
     };
   });
@@ -852,12 +899,12 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
       initialGold: Math.floor(
         player.baseGold * effects.initial_gold_multiplier
       ),
-      explorationLimitMax: 10 + effects.exploration_limit_bonus, // NEW
+      soulGainMultiplier: effects.soul_gain_multiplier, // V3.0
       // ... other stats
     };
   };
 
-  // Gain Souls on Enemy Kill (V2.0 - NEW)
+  // Gain Souls on Enemy Kill (V3.0)
   const gainSouls = (
     enemyType: "minion" | "elite" | "boss",
     isReturnBattle: boolean = false
@@ -872,38 +919,63 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     }));
   };
 
-  // Handle Survival (V2.0 - NEW)
+  // Handle Survival (V3.0: Simplified)
   const handleSurvival = (
-    returnMethod:
-      | "return_route"
-      | "teleport_normal"
-      | "teleport_blessed"
-      | "teleport_emergency"
+    returnMethod: "return_route" | "teleport_stone"  // V3.0: Unified stone type
   ) => {
     setPlayer((prev) => ({
       ...prev,
       sanctuaryProgress: completeSurvival(prev.sanctuaryProgress, returnMethod),
-      explorationLimit: {
-        ...prev.explorationLimit,
-        current: prev.explorationLimit.current + 1,
-      },
+      // V3.0: Lives do NOT decrease on successful return
     }));
   };
 
-  // Handle Death (V2.0 - NEW)
+  // Handle Death (V3.0: Major changes)
   const handlePlayerDeath = () => {
-    setPlayer((prev) => ({
+    setPlayer((prev) => {
+      const newLives = prev.lives.current - 1;
+
+      // Check for game over
+      if (newLives <= 0) {
+        return handlePlayerGameOver(prev);
+      }
+
+      return {
+        ...prev,
+        // V3.0: Souls ARE added to total on death
+        sanctuaryProgress: handleDeath(prev.sanctuaryProgress),
+        lives: {
+          ...prev.lives,
+          current: newLives,
+        },
+        // V3.0: ALL items/equipment lost (including brought items)
+        equipment: [],
+        inventory: [],
+        gold: 0,
+        magicStones: { tiny: 0, small: 0, medium: 0, large: 0, huge: 0 },
+      };
+    });
+  };
+
+  // Handle Game Over (V3.0: NEW)
+  const handlePlayerGameOver = (prev: Player): Player => {
+    return {
       ...prev,
-      sanctuaryProgress: handleDeath(prev.sanctuaryProgress),
-      explorationLimit: {
-        ...prev.explorationLimit,
-        current: prev.explorationLimit.current + 1,
+      // Complete sanctuary reset
+      sanctuaryProgress: handleGameOver(prev.sanctuaryProgress),
+      // Reset lives
+      lives: {
+        ...prev.lives,
+        current: prev.lives.max,
       },
-      // Equipment, Gold, and Magic Stones are lost
-      equipment: [],
-      gold: 0,
+      // Reset all progress
+      equipment: [],  // Initial equipment only
+      inventory: [],
+      gold: 100,  // Initial gold
       magicStones: { tiny: 0, small: 0, medium: 0, large: 0, huge: 0 },
-    }));
+      deck: getInitialDeck(),  // Reset to initial deck
+      // NOTE: Achievements are NOT reset (handled separately)
+    };
   };
 
   return (
@@ -911,9 +983,9 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
       value={{
         player,
         setPlayer,
-        gainSouls, // NEW
-        handleSurvival, // NEW
-        handlePlayerDeath, // NEW
+        gainSouls,
+        handleSurvival,
+        handlePlayerDeath,
         getSanctuaryBoostedStats,
       }}
     >
@@ -930,10 +1002,10 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 ### Phase 1: Data Structures (Week 1: Day 1-2)
 
 ```
-□ Update SanctuaryTypes.ts (Add exploration_limit)
-□ Update SkillTreeData.ts (Add Exploration Extension skills)
+□ Update SanctuaryTypes.ts (Add soul_multiplier, remove exploration_limit)
+□ Update SkillTreeData.ts (Replace Exploration Extension with Soul Resonance)
 □ Add currentRunSouls / totalSouls to PlayerContext
-□ Add explorationLimit to PlayerContext
+□ Add lives system to PlayerContext (replace explorationLimit)
 
 ```
 
@@ -941,11 +1013,12 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 
 ```
 □ nodeStatus.ts (Status determination)
-□ applyEffects.ts (Apply effects, including Exploration Ext.)
-□ soulSystem.ts (V2.0 - New)
-  □ gainSoulFromEnemy (On kill)
-  □ completeSurvival (On survival)
-  □ handleDeath (On death)
+□ applyEffects.ts (Apply effects, including Soul Resonance)
+□ soulSystem.ts (V3.0 - Updated)
+  □ gainSoulFromEnemy (On kill, with multiplier)
+  □ completeSurvival (On survival, 100%)
+  □ handleDeath (On death, V3.0: 100% souls saved!)
+  □ handleGameOver (On game over, complete reset)
 □ Integrate into PlayerContext
 
 ```
@@ -955,10 +1028,10 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 ```
 □ Sanctuary.tsx (Main Container)
   □ Display Total Souls and Run Souls
-  □ Display Max Exploration Count
+  □ Display Lives (❤️ icons)
 □ SkillTree.tsx (Tree display)
 □ SkillNode.tsx (Individual nodes)
-□ NodeDetailPanel.tsx (Details panel with Exploration count info)
+□ NodeDetailPanel.tsx (Details panel with Soul Resonance info)
 
 ```
 
@@ -968,7 +1041,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 □ Implement Long-Press Unlock
 □ Progress Ring UI
 □ Unlock Effects
-□ Special FX for Exploration Extension
+□ Special FX for Soul Resonance
 □ Sound Effects
 
 ```
@@ -976,10 +1049,11 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 ### Phase 5: Battle System Integration (Week 3)
 
 ```
-□ Call gainSouls on enemy defeat
+□ Call gainSouls on enemy defeat (with multiplier)
 □ Call handleSurvival on return
-□ Call handlePlayerDeath on death
-□ Exploration count tracking
+□ Call handlePlayerDeath on death (V3.0: souls saved + lives decrease)
+□ Call handleGameOver on lives=0
+□ Lives tracking and display
 
 ```
 
@@ -1000,30 +1074,32 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 
 - Unlock all Tier 1 in 5-10 runs.
 - Unlock most of Tier 2 in 30-50 runs.
-- Extended Exploration I is a key strategic choice.
-- Extended Exploration II is for high-difficulty players.
+- Soul Resonance I accelerates mid-game progression.
+- Soul Resonance II is for players aiming for quick rebuilds.
 
 ### 8.2 Save Data Impact
 
-**Important:** `sanctuaryProgress` must be persistent.
+**Important:** `sanctuaryProgress` persistence rules changed in V3.0.
 
-- Save to localStorage.
+- Save to localStorage (until game over).
 - Cloud sync (Future).
 - Backup in case of data corruption.
 - `currentRunSouls` is temporary (during run only).
-- `totalSouls` is permanent (always saved).
+- `totalSouls` persists across runs BUT resets on game over.
+- V3.0: All sanctuary progress resets on game over (lives=0).
 
 ---
 
 ## 9. Reference Documents
 
 ```
-GAME_DESIGN_MASTER_V2
-├── return_system_v2.md (Return System)
-└── SANCTUARY_DESIGN_V2 [This Document]
-    ├── SkillTreeData.ts
+GAME_DESIGN_MASTER_V3
+├── return_system_v3.md (Return System with unified teleport stone)
+├── dungeon_exploration_ui_v3.md (Lives system UI)
+└── SANCTUARY_DESIGN_V3 [This Document]
+    ├── SkillTreeData.ts (Soul Resonance skills)
     ├── nodeStatus.ts
-    ├── applyEffects.ts
-    └── soulSystem.ts (NEW)
+    ├── applyEffects.ts (soul_multiplier)
+    └── soulSystem.ts (V3.0: 100% souls on death, game over reset)
 
 ```

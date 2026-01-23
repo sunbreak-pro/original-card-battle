@@ -7,7 +7,7 @@
  * - EnemyBattleState: Runtime battle state
  */
 
-import type { BuffDebuffState, BuffDebuffMap } from "../../battles/type/baffType";
+import type { BuffDebuffState } from "../../battles/type/baffType";
 
 import type { BattleStats } from "./baseTypes";
 import type React from "react";
@@ -114,32 +114,6 @@ export interface EnemyBattleState extends BattleStats {
 }
 
 // ============================================================
-// LEGACY TYPES (Backward Compatibility)
-// ============================================================
-
-/**
- * @deprecated Use EnemyDefinition + EnemyBattleState instead.
- * This type is kept for backward compatibility during migration.
- */
-export interface Enemy {
-  id: string;
-  name: string;
-  nameJa?: string;
-  description: string;
-  maxHp: number;
-  hp: number;
-  maxAp: number;
-  ap: number;
-  guard: number;
-  startingGuard: boolean;
-  speed: number;
-  actEnergy: number;
-  aiPatterns: EnemyAIPattern[];
-  buffDebuffs?: BuffDebuffMap;
-  imagePath?: string;
-}
-
-// ============================================================
 // HELPER FUNCTIONS
 // ============================================================
 
@@ -153,13 +127,13 @@ export function generateEnemyInstanceId(definitionId: string): string {
 /**
  * Check if enemy is alive
  */
-export function isEnemyAlive(enemy: EnemyBattleState | Enemy): boolean {
+export function isEnemyAlive(enemy: EnemyBattleState): boolean {
   return enemy.hp > 0;
 }
 
 /**
  * Get enemy HP percentage
  */
-export function getEnemyHpPercent(enemy: EnemyBattleState | Enemy): number {
+export function getEnemyHpPercent(enemy: EnemyBattleState): number {
   return (enemy.hp / enemy.maxHp) * 100;
 }

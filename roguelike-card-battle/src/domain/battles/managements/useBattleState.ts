@@ -13,12 +13,11 @@
 import { useState, useCallback, useMemo } from "react";
 import type { Depth } from "../../cards/type/cardType";
 import type { BuffDebuffMap } from "../type/baffType";
-import type { Enemy } from "../../characters/type/enemyType";
-import type { EnemyBattleState } from "../type/battleStateType";
-import type { Player } from "../../characters/type/playerTypes";
+import type { EnemyDefinition, EnemyBattleState } from "../../characters/type/enemyType";
+import type { BattleStats, CharacterClass } from "../../characters/type/baseTypes";
 import { Swordman_Status } from "../../characters/player/data/PlayerData";
 import { selectRandomEnemy } from "../../characters/enemy/logic/enemyAI";
-import { createEnemyState } from "../logic/enemyStateLogic";
+import { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
 
 // ============================================================================
 // Types
@@ -37,8 +36,8 @@ export interface PlayerState {
   maxEnergy: number;
   buffs: BuffDebuffMap;
   name: string;
-  playerClass: Player["playerClass"];
-  classGrade: Player["classGrade"];
+  playerClass: CharacterClass;
+  classGrade: string;
 }
 
 /**
@@ -59,7 +58,7 @@ export interface UseBattleStateReturn {
 
   // Enemy state
   enemies: EnemyBattleState[];
-  currentEnemy: Enemy | undefined;
+  currentEnemy: EnemyDefinition | undefined;
   updateEnemyState: (index: number, updates: Partial<EnemyBattleState>) => void;
   updateEnemyByUpdater: (
     index: number,
@@ -94,12 +93,42 @@ export interface UseBattleStateReturn {
   // Enemy energy state (separate for backward compatibility)
   setEnemyEnergy: (value: number) => void;
 
-  // Memoized character objects for calculations
-  playerChar: Player;
-  enemyChar: Enemy;
+  // BattleStats-compatible objects for damage calculations
+  playerBattleStats: BattleStats;
+  enemyBattleStats: BattleStats;
 
   // Reset function for next battle
-  resetForNextEnemy: (nextEnemies: Enemy | Enemy[]) => void;
+  resetForNextEnemy: (nextEnemies: EnemyDefinition | EnemyDefinition[]) => void;
+}
+
+// ============================================================================
+// Types for initial player state
+// ============================================================================
+
+/**
+ * Initial player state passed from PlayerContext
+ */
+export interface InitialPlayerState {
+  /** Current HP from previous battle or exploration start */
+  currentHp: number;
+  /** Current AP from previous battle or exploration start */
+  currentAp: number;
+  /** Max HP */
+  maxHp: number;
+  /** Max AP */
+  maxAp: number;
+  /** Player name */
+  name?: string;
+  /** Player class */
+  playerClass?: CharacterClass;
+  /** Class grade */
+  classGrade?: string;
+  /** Speed */
+  speed?: number;
+  /** Card energy */
+  cardActEnergy?: number;
+  /** Card mastery store - cardTypeId -> useCount */
+  cardMasteryStore?: Map<string, number>;
 }
 
 // ============================================================================
@@ -112,26 +141,45 @@ export interface UseBattleStateReturn {
  * @param depth - Current dungeon depth for enemy selection
  * @param initialEnemies - Optional initial enemies (overrides random selection)
  * @param playerSpeed - Player speed from phase state
+ * @param initialPlayerState - Optional initial player state from PlayerContext
  */
 export function useBattleState(
   depth: Depth,
-  initialEnemies?: Enemy[],
-  playerSpeed: number = Swordman_Status.speed
+  initialEnemies?: EnemyDefinition[],
+  playerSpeed: number = Swordman_Status.speed,
+  initialPlayerState?: InitialPlayerState
 ): UseBattleStateReturn {
   // ========================================================================
   // Player State
+  // Use initialPlayerState if provided, otherwise fall back to defaults
   // ========================================================================
 
-  const [playerName] = useState<Player["name"]>("エイレス");
-  const [playerClass] = useState<Player["playerClass"]>(Swordman_Status.playerClass);
-  const [classGrade] = useState<Player["classGrade"]>(Swordman_Status.classGrade);
-  const [playerHp, setPlayerHpInternal] = useState(Swordman_Status.hp);
-  const [playerMaxHp] = useState(Swordman_Status.maxHp);
-  const [playerAp, setPlayerApInternal] = useState(Swordman_Status.ap);
-  const [playerMaxAp] = useState(Swordman_Status.maxAp);
+  const [playerName] = useState<string>(initialPlayerState?.name ?? "エイレス");
+  const [playerClass] = useState<CharacterClass>(
+    initialPlayerState?.playerClass ?? Swordman_Status.playerClass
+  );
+  const [classGrade] = useState<string>(
+    initialPlayerState?.classGrade ?? Swordman_Status.classGrade
+  );
+  const [playerHp, setPlayerHpInternal] = useState(
+    initialPlayerState?.currentHp ?? Swordman_Status.hp
+  );
+  const [playerMaxHp] = useState(
+    initialPlayerState?.maxHp ?? Swordman_Status.maxHp
+  );
+  const [playerAp, setPlayerApInternal] = useState(
+    initialPlayerState?.currentAp ?? Swordman_Status.ap
+  );
+  const [playerMaxAp] = useState(
+    initialPlayerState?.maxAp ?? Swordman_Status.maxAp
+  );
   const [playerGuard, setPlayerGuardInternal] = useState(Swordman_Status.guard);
-  const [playerEnergy, setPlayerEnergyInternal] = useState(Swordman_Status.cardActEnergy);
-  const [maxEnergy] = useState(Swordman_Status.cardActEnergy);
+  const [playerEnergy, setPlayerEnergyInternal] = useState(
+    initialPlayerState?.cardActEnergy ?? Swordman_Status.cardActEnergy
+  );
+  const [maxEnergy] = useState(
+    initialPlayerState?.cardActEnergy ?? Swordman_Status.cardActEnergy
+  );
   const [playerBuffs, setPlayerBuffsInternal] = useState<BuffDebuffMap>(new Map());
 
   // ========================================================================
@@ -140,26 +188,26 @@ export function useBattleState(
 
   const [enemies, setEnemies] = useState<EnemyBattleState[]>(() => {
     if (initialEnemies && initialEnemies.length > 0) {
-      return initialEnemies.map(createEnemyState);
+      return initialEnemies.map((def) => createEnemyStateFromDefinition(def));
     }
     const { enemies: selectedEnemies } = selectRandomEnemy(depth, "normal");
-    return selectedEnemies.map(createEnemyState);
+    return selectedEnemies.map((def) => createEnemyStateFromDefinition(def));
   });
 
   // Separate enemy energy state for backward compatibility
   const [enemyEnergy, setEnemyEnergy] = useState(enemies[0]?.energy ?? 1);
 
   // ========================================================================
-  // Derived Enemy Values (for backward compatibility)
+  // Derived Enemy Values
   // ========================================================================
 
-  const currentEnemy = enemies[0]?.enemy;
+  const currentEnemy = enemies[0]?.definition;
   const enemyHp = enemies[0]?.hp ?? 0;
-  const enemyMaxHp = enemies[0]?.enemy.maxHp ?? 0;
+  const enemyMaxHp = enemies[0]?.maxHp ?? 0;
   const enemyAp = enemies[0]?.ap ?? 0;
-  const enemyMaxAp = enemies[0]?.enemy.maxAp ?? 0;
+  const enemyMaxAp = enemies[0]?.maxAp ?? 0;
   const enemyGuard = enemies[0]?.guard ?? 0;
-  const enemyBuffs = useMemo(() => enemies[0]?.buffs ?? new Map(), [enemies]);
+  const enemyBuffs = useMemo(() => enemies[0]?.buffDebuffs ?? new Map(), [enemies]);
 
   // ========================================================================
   // Derived Values
@@ -348,7 +396,7 @@ export function useBattleState(
   const setEnemyBuffs = useCallback(
     (updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap)) => {
       updateEnemyByUpdater(0, (e) => ({
-        buffs: typeof updater === "function" ? updater(e.buffs) : updater,
+        buffDebuffs: typeof updater === "function" ? updater(e.buffDebuffs) : updater,
       }));
     },
     [updateEnemyByUpdater]
@@ -358,66 +406,37 @@ export function useBattleState(
   // Character Objects for Calculations (memoized)
   // ========================================================================
 
-  const playerChar = useMemo<Player>(
+  /**
+   * NEW: BattleStats-compatible player object for damage calculations
+   * Use this for new code that expects BattleStats interface.
+   */
+  const playerBattleStats = useMemo<BattleStats>(
     () => ({
-      playerClass,
-      classGrade,
-      name: playerName,
       hp: playerHp,
       maxHp: playerMaxHp,
       ap: playerAp,
       maxAp: playerMaxAp,
       guard: playerGuard,
-      buffDebuffs: playerBuffs,
-      level: 1,
       speed: playerSpeed,
-      cardActEnergy: maxEnergy,
-      gold: 0,
-      deck: [],
+      buffDebuffs: playerBuffs,
     }),
-    [
-      playerClass,
-      classGrade,
-      playerName,
-      playerHp,
-      playerMaxHp,
-      playerAp,
-      playerMaxAp,
-      playerGuard,
-      playerBuffs,
-      playerSpeed,
-      maxEnergy,
-    ]
+    [playerHp, playerMaxHp, playerAp, playerMaxAp, playerGuard, playerSpeed, playerBuffs]
   );
 
-  const enemyChar = useMemo<Enemy>(
-    () =>
-      currentEnemy
-        ? {
-            id: currentEnemy.id,
-            name: currentEnemy.name,
-            description: currentEnemy.description,
-            speed: currentEnemy.speed,
-            actEnergy: currentEnemy.actEnergy,
-            startingGuard: currentEnemy.startingGuard,
-            aiPatterns: currentEnemy.aiPatterns,
-            hp: enemyHp,
-            maxHp: enemyMaxHp,
-            ap: enemyAp,
-            maxAp: enemyMaxAp,
-            guard: enemyGuard,
-            buffDebuffs: enemyBuffs,
-          }
-        : ({} as Enemy),
-    [
-      currentEnemy,
-      enemyHp,
-      enemyMaxHp,
-      enemyAp,
-      enemyMaxAp,
-      enemyGuard,
-      enemyBuffs,
-    ]
+  /**
+   * BattleStats-compatible enemy object for damage calculations
+   */
+  const enemyBattleStats = useMemo<BattleStats>(
+    () => ({
+      hp: enemyHp,
+      maxHp: enemyMaxHp,
+      ap: enemyAp,
+      maxAp: enemyMaxAp,
+      guard: enemyGuard,
+      speed: currentEnemy?.baseSpeed ?? 0,
+      buffDebuffs: enemyBuffs,
+    }),
+    [enemyHp, enemyMaxHp, enemyAp, enemyMaxAp, enemyGuard, enemyBuffs, currentEnemy?.baseSpeed]
   );
 
   // ========================================================================
@@ -425,10 +444,10 @@ export function useBattleState(
   // ========================================================================
 
   const resetForNextEnemy = useCallback(
-    (nextEnemies: Enemy | Enemy[]) => {
-      const enemies = Array.isArray(nextEnemies) ? nextEnemies : [nextEnemies];
-      setEnemies(enemies.map(createEnemyState));
-      setEnemyEnergy(enemies[0]?.actEnergy ?? 1);
+    (nextEnemies: EnemyDefinition | EnemyDefinition[]) => {
+      const enemyDefs = Array.isArray(nextEnemies) ? nextEnemies : [nextEnemies];
+      setEnemies(enemyDefs.map((def) => createEnemyStateFromDefinition(def)));
+      setEnemyEnergy(enemyDefs[0]?.actEnergy ?? 1);
 
       // Reset player temporary state
       setPlayerGuardInternal(0);
@@ -485,9 +504,9 @@ export function useBattleState(
     enemyEnergy,
     setEnemyEnergy,
 
-    // Character objects
-    playerChar,
-    enemyChar,
+    // BattleStats-compatible objects
+    playerBattleStats,
+    enemyBattleStats,
 
     // Reset
     resetForNextEnemy,

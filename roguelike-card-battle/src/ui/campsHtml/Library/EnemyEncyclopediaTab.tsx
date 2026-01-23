@@ -140,15 +140,15 @@ export const EnemyEncyclopediaTab: React.FC = () => {
                 <div className="enemy-stats">
                   <div className="enemy-stat">
                     <span className="enemy-stat-label">HP</span>
-                    <span className="enemy-stat-value">{enemy.maxHp}</span>
+                    <span className="enemy-stat-value">{enemy.baseMaxHp}</span>
                   </div>
                   <div className="enemy-stat">
                     <span className="enemy-stat-label">Speed</span>
-                    <span className="enemy-stat-value">{enemy.speed}</span>
+                    <span className="enemy-stat-value">{enemy.baseSpeed}</span>
                   </div>
                   <div className="enemy-stat">
                     <span className="enemy-stat-label">Guard</span>
-                    <span className="enemy-stat-value">{enemy.guard}</span>
+                    <span className="enemy-stat-value">{enemy.startingGuard ? Math.floor(enemy.baseMaxAp * 0.5) : 0}</span>
                   </div>
                 </div>
 

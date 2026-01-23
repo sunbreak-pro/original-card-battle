@@ -1,5 +1,5 @@
 // Promotion exam definitions for all character classes
-import type { CharacterClass } from "../../characters/type/characterType";
+import type { CharacterClass } from "../../characters/type/baseTypes";
 import type { PromotionExam } from "../types/GuildTypes";
 
 /**

@@ -2,9 +2,9 @@
 
 ## Quick Reference
 
-- **Current Phase:** Phase 6 Complete + CSS Refactoring
+- **Current Phase:** Phase 6 Complete + Lives System + Bug Fixes
 - **Dev Server:** http://localhost:5173/
-- **Last Updated:** 2026-01-22
+- **Last Updated:** 2026-01-23
 
 ---
 
@@ -14,6 +14,51 @@
 - Test Library tabs (Cards, Enemies, Tips)
 - Mage/Summoner classes show "Coming Soon" - cards not yet implemented
 - Connect Sanctuary effects to battle/dungeon systems
+- Test Lives System (death -> lives decrease, game over at 0 lives)
+- Test HP/AP persistence between battles
+
+---
+
+## Recent Changes (Lives System + Bug Fixes)
+
+### Lives System Implementation (Completed)
+
+**New Feature:**
+
+- Replaced `explorationLimit` with `LivesSystem` (残機システム)
+- Lives based on difficulty: easy/normal = 3 lives, hard = 2 lives
+- On death: lives decrease by 1, 100% of souls transferred to permanent pool
+- Game Over when lives reach 0
+
+**Files Changed:**
+
+- `playerTypes.ts`: Added `Difficulty`, `LivesSystem`, `LIVES_BY_DIFFICULTY`
+- `PlayerContext.tsx`: Added `RuntimeBattleState` with lives, `decreaseLives()`, `isGameOver()`, `setDifficulty()`
+- `deathHandler.ts`: Updated to transfer 100% souls on death, added `handlePlayerDeathWithDetails()`
+- `DefeatScreen.tsx`: Shows remaining lives (hearts), souls transferred, game over state
+
+### Battle State Persistence Bug Fixes (Completed)
+
+**Bugs Fixed:**
+
+1. **HP/AP not persisting between battles**
+   - Root cause: `useBattleState.ts` always used `Swordman_Status.hp/ap` constants
+   - Fix: Added `InitialPlayerState` interface, pass runtime HP/AP from PlayerContext
+
+2. **Card mastery not persisting**
+   - Root cause: `createInitialDeck()` always created cards with `useCount: 0`
+   - Fix: Added `cardMasteryStore` to `RuntimeBattleState`, apply mastery from store on deck init
+
+3. **Same card type mastery not shared**
+   - Root cause: `incrementUseCount()` only updated individual card instance
+   - Fix: On victory, collect mastery from all cards by `cardTypeId` and save to store
+
+**Files Changed:**
+
+- `PlayerContext.tsx`: Added `RuntimeBattleState` with `currentHp`, `currentAp`, `cardMasteryStore`
+- `useBattleState.ts`: Added `InitialPlayerState` parameter
+- `useBattleOrchestrator.ts`: Pass initial state, apply mastery to initial deck
+- `BattleScreen.tsx`: Save HP/AP/mastery on victory, pass runtime state to battle
 
 ---
 
@@ -22,11 +67,13 @@
 ### CSS Architecture Overhaul (Completed)
 
 **Problem Solved:**
+
 - BattleScreen.css was 1,243 lines with duplicate `@keyframes energyConsume`
 - Facility CSS files had ~400 lines of duplicate patterns each
 - No centralized variables or shared components
 
 **New Structure:**
+
 ```
 src/ui/css/
 ├── core/                    # Base layer
@@ -60,6 +107,7 @@ src/ui/css/
 ```
 
 **Files Updated:**
+
 - `index.css`: Now imports core + animations + components
 - `BattleScreen.css`: Slim import of `pages/battle/index.css`
 - All facility CSS (Shop, Guild, Library, Blacksmith, Sanctuary, Storage): Added shared imports

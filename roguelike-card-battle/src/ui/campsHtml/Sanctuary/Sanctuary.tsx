@@ -20,7 +20,7 @@ import "../../css/camps/Sanctuary.css";
 
 export const Sanctuary = () => {
   const { returnToCamp } = useGameState();
-  const { player, updatePlayer } = usePlayer();
+  const { playerData, updatePlayerData } = usePlayer();
 
   const [selectedNode, setSelectedNode] = useState<SkillNode | null>(null);
   const [justUnlockedId, setJustUnlockedId] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export const Sanctuary = () => {
   const playerClass: CharacterClass = "swordsman";
 
   // Get sanctuary progress
-  const sanctuaryProgress = player.sanctuaryProgress;
+  const sanctuaryProgress = playerData.progression.sanctuaryProgress;
 
   // Calculate effects
   const effects = calculateTotalEffects(sanctuaryProgress);
@@ -54,8 +54,11 @@ export const Sanctuary = () => {
 
       if (result.success && result.newProgress) {
         // Update player state
-        updatePlayer({
-          sanctuaryProgress: result.newProgress,
+        updatePlayerData({
+          progression: {
+            ...playerData.progression,
+            sanctuaryProgress: result.newProgress,
+          },
         });
 
         // Show success notification
@@ -82,7 +85,7 @@ export const Sanctuary = () => {
         }, 3000);
       }
     },
-    [sanctuaryProgress, playerClass, updatePlayer],
+    [sanctuaryProgress, playerClass, updatePlayerData],
   );
 
   // Get selected node status
@@ -139,8 +142,8 @@ export const Sanctuary = () => {
             <div className="exploration-display">
               <span className="exploration-icon">🗺️</span>
               <span className="exploration-value">
-                {player.explorationLimit.current} /{" "}
-                {player.explorationLimit.max + effects.explorationLimitBonus}
+                {playerData.resources.explorationLimit.current} /{" "}
+                {playerData.resources.explorationLimit.max + effects.explorationLimitBonus}
               </span>
             </div>
           </div>

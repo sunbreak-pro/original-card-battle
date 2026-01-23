@@ -7,11 +7,11 @@ import {
 } from "../../../domain/camps/logic/shopLogic";
 
 const ExchangeTab = () => {
-  const { player, addGold, updatePlayer } = usePlayer();
+  const { playerData, addGold, updatePlayerData } = usePlayer();
   const [exchangeAmount, setExchangeAmount] = useState<number>(0);
   const [notification, setNotification] = useState<string | null>(null);
 
-  const stones = player.baseCampMagicStones;
+  const stones = playerData.resources.baseCampMagicStones;
   const totalValue = calculateMagicStoneTotal(stones);
 
   const showNotification = (message: string) => {
@@ -37,8 +37,11 @@ const ExchangeTab = () => {
     }
 
     // Update player's magic stones
-    updatePlayer({
-      baseCampMagicStones: result.newStones,
+    updatePlayerData({
+      resources: {
+        ...playerData.resources,
+        baseCampMagicStones: result.newStones,
+      },
     });
 
     // Add gold (actual value consumed, may be slightly more than requested)
@@ -60,8 +63,11 @@ const ExchangeTab = () => {
       return;
     }
 
-    updatePlayer({
-      baseCampMagicStones: result.newStones,
+    updatePlayerData({
+      resources: {
+        ...playerData.resources,
+        baseCampMagicStones: result.newStones,
+      },
     });
     addGold(result.actualValue, true);
 
@@ -84,8 +90,11 @@ const ExchangeTab = () => {
       [type]: stones[type] - 1,
     };
 
-    updatePlayer({
-      baseCampMagicStones: newStones,
+    updatePlayerData({
+      resources: {
+        ...playerData.resources,
+        baseCampMagicStones: newStones,
+      },
     });
     addGold(value, true);
 

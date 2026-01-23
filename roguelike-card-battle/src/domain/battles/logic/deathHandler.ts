@@ -1,87 +1,100 @@
 // Death Handler - Manages player death penalty system
-// Clears inventory/equipment but retains storage and base camp resources
+// With new Lives System: On death, lives decrease by 1 and souls are transferred 100%
 
-import type { ExtendedPlayer } from "../../characters/type/playerTypes";
+import type { PlayerData } from "../../characters/type/playerTypes";
 
 /**
- * Handle Player Death
- *
- * Death Penalty:
- * - LOST: All inventory items, all equipment inventory items, all equipped items, exploration resources
- * - KEPT: Storage items, base camp resources, permanent progression
- *
- * @param player - Current player state
- * @returns Updated player state after death penalty
+ * Death result with additional info for UI
  */
-export function handlePlayerDeath(player: ExtendedPlayer): ExtendedPlayer {
-  return {
-    ...player,
-
-    // Clear all inventory items
-    inventory: {
-      ...player.inventory,
-      items: [],
-      currentCapacity: 0,
-    },
-
-    // Clear all equipment inventory items
-    equipmentInventory: {
-      ...player.equipmentInventory,
-      items: [],
-      currentCapacity: 0,
-    },
-
-    // Clear all equipment slots
-    equipmentSlots: {
-      weapon: null,
-      armor: null,
-      helmet: null,
-      boots: null,
-      accessory1: null,
-      accessory2: null,
-    },
-
-    // Reset exploration resources (lost on death)
-    explorationGold: 0,
-    explorationMagicStones: {
-      small: 0,
-      medium: 0,
-      large: 0,
-      huge: 0,
-    },
-
-    // Reset current run souls (lost on death)
-    sanctuaryProgress: {
-      ...player.sanctuaryProgress,
-      currentRunSouls: 0,
-      // totalSouls is RETAINED (permanent progression)
-    },
-
-    // Storage is STRICTLY UNTOUCHED - this is the safety net
-    // storage: { ...player.storage } (no change needed, kept as-is)
-
-    // Base camp resources are RETAINED
-    // baseCampGold: stays the same
-    // baseCampMagicStones: stays the same
-
-    // Increment death counter
-    explorationLimit: {
-      ...player.explorationLimit,
-      current: player.explorationLimit.current + 1,
-    },
-
-    // Return to camp with minimal HP, no AP
-    hp: 1,
-    ap: 0,
-  };
+export interface DeathResult {
+  /** Updates to apply to PlayerData */
+  updates: Partial<PlayerData>;
+  /** Souls transferred to permanent pool (100% of current run souls) */
+  soulsTransferred: number;
 }
 
 /**
- * Check if player is dead (hp <= 0)
+ * Handle Player Death - Returns partial updates to apply to PlayerData
  *
- * @param player - Current player state
- * @returns true if player is dead, false otherwise
+ * NEW Lives System Behavior:
+ * - LOST: All inventory items, all equipment inventory items, all equipped items, exploration resources
+ * - KEPT: Storage items, base camp resources
+ * - SOULS: 100% of current run souls are transferred to totalSouls (残滓システム)
+ *
+ * Note: Lives are managed separately in RuntimeBattleState (not in PlayerData)
+ *
+ * @param playerData - Current player data
+ * @returns DeathResult with updates and transferred souls count
  */
-export function isPlayerDead(player: ExtendedPlayer): boolean {
-  return player.hp <= 0;
+export function handlePlayerDeath(playerData: PlayerData): Partial<PlayerData> {
+  const result = handlePlayerDeathWithDetails(playerData);
+  return result.updates;
+}
+
+/**
+ * Handle Player Death with detailed result
+ * Use this when you need to display the souls transferred amount
+ */
+export function handlePlayerDeathWithDetails(playerData: PlayerData): DeathResult {
+  // Transfer 100% of current run souls to total (残滓システム)
+  const soulsTransferred = playerData.progression.sanctuaryProgress.currentRunSouls;
+
+  return {
+    updates: {
+      // Clear all inventory items (except storage which is RETAINED)
+      inventory: {
+        ...playerData.inventory,
+        // Keep storage as-is (safety net)
+        storage: playerData.inventory.storage,
+        // Clear inventory items
+        inventory: {
+          ...playerData.inventory.inventory,
+          items: [],
+          currentCapacity: 0,
+        },
+        // Clear equipment inventory items
+        equipmentInventory: {
+          ...playerData.inventory.equipmentInventory,
+          items: [],
+          currentCapacity: 0,
+        },
+        // Clear all equipment slots
+        equipmentSlots: {
+          weapon: null,
+          armor: null,
+          helmet: null,
+          boots: null,
+          accessory1: null,
+          accessory2: null,
+        },
+      },
+
+      // Reset exploration resources (lost on death), keep base camp resources
+      resources: {
+        ...playerData.resources,
+        explorationGold: 0,
+        explorationMagicStones: {
+          small: 0,
+          medium: 0,
+          large: 0,
+          huge: 0,
+        },
+        // Note: explorationLimit is deprecated - use Lives system instead
+        explorationLimit: playerData.resources.explorationLimit,
+      },
+
+      // Transfer souls: 100% of current run souls go to totalSouls
+      progression: {
+        ...playerData.progression,
+        sanctuaryProgress: {
+          ...playerData.progression.sanctuaryProgress,
+          // Transfer all current run souls to total
+          totalSouls: playerData.progression.sanctuaryProgress.totalSouls + soulsTransferred,
+          // Reset current run souls to 0
+          currentRunSouls: 0,
+        },
+      },
+    },
+    soulsTransferred,
+  };
 }

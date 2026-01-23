@@ -1,12 +1,13 @@
 import type { BuffDebuffMap, BuffDebuffState } from "../type/baffType";
-import type { Enemy, EnemyAction } from "../../characters/type/enemyType";
-import type { Player } from "../../characters/type/playerTypes";
+import type { EnemyAction } from "../../characters/type/enemyType";
 import type { Card } from "../../cards/type/cardType";
+import type { BattleStats } from "../../characters/type/baseTypes";
 import { calculateDamage, applyDamageAllocation } from "../calculators/damageCalculation";
 import { addOrUpdateBuffDebuff } from "../logic/buffLogic";
 import { calculateBleedDamage } from "../logic/bleedDamage";
 import { enemyAction } from "../../characters/enemy/logic/enemyAI";
 import type { PlayerCardDamageResult } from "../type/damageType";
+
 /**
  * Result of processing enemy action damage
  */
@@ -20,15 +21,19 @@ export interface EnemyActionDamageResult {
 
 /**
  * Calculate damage from a single enemy attack
+ *
+ * @param attacker - BattleStats of the attacking enemy
+ * @param defender - BattleStats of the defending player
+ * @param action - Enemy action being executed
  */
 export function manageEnemyAttackDamage(
-    enemyChar: Enemy,
-    playerChar: Player,
+    attacker: BattleStats,
+    defender: BattleStats,
     action: EnemyAction
 ): EnemyActionDamageResult {
     const enemyAttackCard = enemyAction(action);
-    const damageResult = calculateDamage(enemyChar, playerChar, enemyAttackCard);
-    const allocation = applyDamageAllocation(playerChar, damageResult.finalDamage);
+    const damageResult = calculateDamage(attacker, defender, enemyAttackCard);
+    const allocation = applyDamageAllocation(defender, damageResult.finalDamage);
 
     return {
         totalDamage: damageResult.finalDamage,
@@ -77,14 +82,18 @@ export function manageActionBleedDamage(
 
 /**
  * Calculate damage from player card to enemy
+ *
+ * @param attacker - BattleStats of the attacking player
+ * @param defender - BattleStats of the defending enemy
+ * @param card - Card being played
  */
 export function managePlayerCardDamage(
-    playerChar: Player,
-    enemyChar: Enemy,
+    attacker: BattleStats,
+    defender: BattleStats,
     card: Card
 ): PlayerCardDamageResult {
-    const damageResult = calculateDamage(playerChar, enemyChar, card);
-    const allocation = applyDamageAllocation(enemyChar, damageResult.finalDamage);
+    const damageResult = calculateDamage(attacker, defender, card);
+    const allocation = applyDamageAllocation(defender, damageResult.finalDamage);
 
     return {
         totalDamage: damageResult.finalDamage,

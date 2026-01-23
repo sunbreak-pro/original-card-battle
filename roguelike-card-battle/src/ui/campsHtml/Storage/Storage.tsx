@@ -20,7 +20,7 @@ type ItemSource = "storage" | "inventory" | "equipment" | "equipmentInventory";
  */
 export const Storage: React.FC = () => {
   const { returnToCamp } = useGameState();
-  const { player } = usePlayer();
+  const { playerData } = usePlayer();
   const {
     moveItem,
     equipItem,
@@ -38,7 +38,7 @@ export const Storage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
   // Calculate total magic stone value
-  const totalMagicStones = calculateMagicStoneValue(player.baseCampMagicStones);
+  const totalMagicStones = calculateMagicStoneValue(playerData.resources.baseCampMagicStones);
 
   // Handle item selection
   const handleSelectItem = (item: Item, source: ItemSource) => {
@@ -171,19 +171,19 @@ export const Storage: React.FC = () => {
   // Render equipment slots for Equipment tab (compact version)
   const renderEquipmentSlotsCompact = () => {
     const slots = [
-      { key: "weapon", label: "Weapon", item: player.equipmentSlots.weapon },
-      { key: "armor", label: "Armor", item: player.equipmentSlots.armor },
-      { key: "helmet", label: "Helmet", item: player.equipmentSlots.helmet },
-      { key: "boots", label: "Boots", item: player.equipmentSlots.boots },
+      { key: "weapon", label: "Weapon", item: playerData.inventory.equipmentSlots.weapon },
+      { key: "armor", label: "Armor", item: playerData.inventory.equipmentSlots.armor },
+      { key: "helmet", label: "Helmet", item: playerData.inventory.equipmentSlots.helmet },
+      { key: "boots", label: "Boots", item: playerData.inventory.equipmentSlots.boots },
       {
         key: "accessory1",
         label: "Acc 1",
-        item: player.equipmentSlots.accessory1,
+        item: playerData.inventory.equipmentSlots.accessory1,
       },
       {
         key: "accessory2",
         label: "Acc 2",
-        item: player.equipmentSlots.accessory2,
+        item: playerData.inventory.equipmentSlots.accessory2,
       },
     ];
 
@@ -210,12 +210,12 @@ export const Storage: React.FC = () => {
 
   // Render equipment inventory grid (3 slots max)
   const renderEquipmentInventoryGrid = () => {
-    const maxSlots = player.equipmentInventory.maxCapacity;
+    const maxSlots = playerData.inventory.equipmentInventory.maxCapacity;
     const cells = [];
 
     for (let i = 0; i < maxSlots; i++) {
-      if (i < player.equipmentInventory.items.length) {
-        const item = player.equipmentInventory.items[i];
+      if (i < playerData.inventory.equipmentInventory.items.length) {
+        const item = playerData.inventory.equipmentInventory.items[i];
         cells.push(
           <ItemCard
             key={item.id}
@@ -240,12 +240,12 @@ export const Storage: React.FC = () => {
   };
 
   // Get equipment items from storage
-  const storageEquipmentItems = player.storage.items.filter(
+  const storageEquipmentItems = playerData.inventory.storage.items.filter(
     (item) => item.itemType === "equipment",
   );
 
   // Get non-equipment items from inventory (for Items tab)
-  const inventoryNonEquipmentItems = player.inventory.items.filter(
+  const inventoryNonEquipmentItems = playerData.inventory.inventory.items.filter(
     (item) => item.itemType !== "equipment",
   );
 
@@ -255,7 +255,7 @@ export const Storage: React.FC = () => {
       <div className="storage-header">
         <h1 className="storage-title">Storage</h1>
         <div className="storage-resources">
-          <span className="storage-gold">{player.baseCampGold}G</span>
+          <span className="storage-gold">{playerData.resources.baseCampGold}G</span>
           <span className="storage-magic-stones">💎{totalMagicStones}</span>
         </div>
       </div>
@@ -305,15 +305,15 @@ export const Storage: React.FC = () => {
                 <div className="storage-grid-header">
                   <span className="storage-grid-title">Storage</span>
                   <span className="storage-grid-count">
-                    {player.storage.currentCapacity}/
-                    {player.storage.maxCapacity}
+                    {playerData.inventory.storage.currentCapacity}/
+                    {playerData.inventory.storage.maxCapacity}
                   </span>
                 </div>
                 <div className="compact-grid storage-grid">
                   {renderCompactGrid(
-                    player.storage.items,
+                    playerData.inventory.storage.items,
                     "storage",
-                    player.storage.maxCapacity,
+                    playerData.inventory.storage.maxCapacity,
                   )}
                 </div>
               </div>
@@ -344,14 +344,14 @@ export const Storage: React.FC = () => {
                   <span className="storage-grid-title">Inventory</span>
                   <span className="storage-grid-count">
                     {inventoryNonEquipmentItems.length}/
-                    {player.inventory.maxCapacity}
+                    {playerData.inventory.inventory.maxCapacity}
                   </span>
                 </div>
                 <div className="compact-grid inventory-grid">
                   {renderCompactGrid(
                     inventoryNonEquipmentItems,
                     "inventory",
-                    player.inventory.maxCapacity,
+                    playerData.inventory.inventory.maxCapacity,
                   )}
                 </div>
               </div>
@@ -470,8 +470,8 @@ export const Storage: React.FC = () => {
                     Equipment's Inventory
                   </span>
                   <span className="storage-section-count">
-                    {player.equipmentInventory.currentCapacity}/
-                    {player.equipmentInventory.maxCapacity}
+                    {playerData.inventory.equipmentInventory.currentCapacity}/
+                    {playerData.inventory.equipmentInventory.maxCapacity}
                   </span>
                 </div>
                 <div className="equipment-inventory-grid">

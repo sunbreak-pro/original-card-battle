@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Card } from "../../domain/cards/type/cardType";
-import "../css/VictoryScreen.css";
+import "../css/others/VictoryScreen.css";
 
 interface VictoryScreenProps {
   onContinue: () => void;

@@ -17,11 +17,11 @@
 // Re-export the orchestrator as useBattle for backward compatibility
 export { useBattleOrchestrator as useBattle } from "./useBattleOrchestrator";
 
-// Re-export for backward compatibility
-export { createEnemyState } from "../logic/enemyStateLogic";
+// Re-export for creating enemy state
+export { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
 
 // Re-export individual hooks for advanced usage
-export { useBattleState, type UseBattleStateReturn, type PlayerState } from "./useBattleState";
+export { useBattleState, type UseBattleStateReturn, type PlayerState, type InitialPlayerState } from "./useBattleState";
 export { useBattlePhase, type UseBattlePhaseReturn, type PhaseState } from "./useBattlePhase";
 export { useCardExecution, type UseCardExecutionReturn } from "./useCardExecution";
 export { useEnemyAI, type UseEnemyAIReturn } from "./useEnemyAI";

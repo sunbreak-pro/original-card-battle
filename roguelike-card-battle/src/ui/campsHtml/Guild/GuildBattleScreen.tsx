@@ -2,17 +2,17 @@
 // Simplified version of BattleScreen.tsx without depth/encounter progression
 
 import { useEffect } from "react";
-import type { Enemy } from "../../../domain/characters/type/enemyType";
+import type { EnemyDefinition } from "../../../domain/characters/type/enemyType";
 import { useBattle } from "../../../domain/battles/managements/battleFlowManage";
 import { CardComponent } from "../../cardHtml/CardComponent";
 import { BattlingCardPileModal } from "../../cardHtml/CardModalDisplay";
 import { TurnOrderIndicator } from "../../battleHtml/TurnOrderIndicator";
 import StatusEffectDisplay from "../../commonHtml/BuffEffect";
 import EnemyDisplay from "../../battleHtml/EnemyDisplay";
-import "../../css/BattleScreen.css";
+import "../../css/others/BattleScreen.css";
 
 interface GuildBattleScreenProps {
-  examEnemy: Enemy;
+  examEnemy: EnemyDefinition;
   onWin: () => void;
   onLose: () => void;
 }
@@ -113,14 +113,14 @@ const GuildBattleScreen = ({
       <div className="battle-field">
         <EnemyDisplay
           enemies={aliveEnemies.map((e) => ({
-            enemy: e.enemy,
+            definition: e.definition,
             hp: e.hp,
-            maxHp: e.enemy.maxHp,
+            maxHp: e.maxHp,
             ap: e.ap,
-            maxAp: e.enemy.maxAp,
+            maxAp: e.maxAp,
             guard: e.guard,
             actEnergy: e.energy,
-            buffs: e.buffs,
+            buffDebuffs: e.buffDebuffs,
             turnCount: phaseCount,
           }))}
           enemyRefs={aliveEnemies.map((e) => e.ref)}

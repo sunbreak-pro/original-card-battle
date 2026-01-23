@@ -21,7 +21,64 @@ import type { DeckState } from "../../cards/decks/deckReducter";
 import type { BuffDebuffMap } from "../../battles/type/baffType";
 
 // Re-export CharacterClass for convenience
-export type { CharacterClass } from "./characterType";
+export type { CharacterClass } from "./baseTypes";
+
+// ============================================================
+// LIVES SYSTEM (New Feature)
+// ============================================================
+
+/**
+ * Game difficulty affecting lives and other mechanics
+ */
+export type Difficulty = 'easy' | 'normal' | 'hard';
+
+/**
+ * Lives system configuration
+ * Replaces the old exploration limit system
+ */
+export interface LivesSystem {
+  /** Maximum lives (depends on difficulty) */
+  maxLives: number;
+  /** Current remaining lives */
+  currentLives: number;
+}
+
+/**
+ * Maximum lives by difficulty level
+ */
+export const LIVES_BY_DIFFICULTY: Record<Difficulty, number> = {
+  easy: 3,
+  normal: 3,
+  hard: 2,
+};
+
+/**
+ * Create initial lives system based on difficulty
+ */
+export function createLivesSystem(difficulty: Difficulty): LivesSystem {
+  const maxLives = LIVES_BY_DIFFICULTY[difficulty];
+  return {
+    maxLives,
+    currentLives: maxLives,
+  };
+}
+
+/**
+ * Decrease lives by 1 (on death)
+ */
+export function decreaseLives(lives: LivesSystem): LivesSystem {
+  return {
+    ...lives,
+    currentLives: Math.max(0, lives.currentLives - 1),
+  };
+}
+
+/**
+ * Check if game is over (no lives remaining)
+ */
+export function isGameOver(lives: LivesSystem): boolean {
+  return lives.currentLives <= 0;
+}
 
 // ============================================================
 // NEW ARCHITECTURE - Player Types (Phase 1 Refactoring)

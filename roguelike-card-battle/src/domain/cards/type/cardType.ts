@@ -85,7 +85,7 @@ export interface Card {
 
   // ---- Tags ----
   /** Tags for filtering/effects (attack, guard, skill, stance) */
-  tags: CardTag;
+  tags: CardTag[];
 
   // ---- Common Effects ----
   /** Base damage dealt */

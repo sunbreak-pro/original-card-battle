@@ -1,26 +1,23 @@
 // Guild-specific enemies for promotion exams
 // These enemies only appear in exam battles, not in normal dungeon exploration
 
-import type { Enemy } from "../../characters/type/enemyType";
+import type { EnemyDefinition } from "../../characters/type/enemyType";
 
 /**
  * Swordsman Promotion Exam Enemies
  */
 
 // Rank 1: Apprentice Swordsman → Swordsman
-export const TRAINING_DUMMY: Enemy = {
+export const TRAINING_DUMMY: EnemyDefinition = {
   id: "exam_training_dummy",
   name: "Training Dummy",
   nameJa: "訓練用木人",
   description: "Basic training dummy for practicing swordsmanship",
-  maxHp: 50,
-  hp: 50,
-  maxAp: 0,
-  ap: 0,
+  baseMaxHp: 50,
+  baseMaxAp: 0,
+  baseSpeed: 40,
   startingGuard: false,
-  guard: 0,
   actEnergy: 2,
-  speed: 40,
   aiPatterns: [
     {
       phaseNumber: 0,
@@ -37,19 +34,16 @@ export const TRAINING_DUMMY: Enemy = {
 };
 
 // Rank 2: Swordsman → Sword Master
-export const GUILD_INSTRUCTOR: Enemy = {
+export const GUILD_INSTRUCTOR: EnemyDefinition = {
   id: "exam_guild_instructor",
   name: "Guild Instructor",
   nameJa: "ギルド教官",
   description: "Veteran warrior who trains guild members",
-  maxHp: 120,
-  hp: 120,
-  maxAp: 0,
-  ap: 0,
+  baseMaxHp: 120,
+  baseMaxAp: 0,
+  baseSpeed: 55,
   startingGuard: false,
-  guard: 0,
   actEnergy: 3,
-  speed: 55,
   aiPatterns: [
     {
       phaseNumber: 1,
@@ -103,19 +97,16 @@ export const GUILD_INSTRUCTOR: Enemy = {
 };
 
 // Rank 3: Sword Master → Sword Saint
-export const VETERAN_WARRIOR: Enemy = {
+export const VETERAN_WARRIOR: EnemyDefinition = {
   id: "exam_veteran_warrior",
   name: "Veteran Warrior",
   nameJa: "歴戦の戦士",
   description: "Battle-hardened warrior with decades of experience",
-  maxHp: 200,
-  hp: 200,
-  maxAp: 0,
-  ap: 0,
+  baseMaxHp: 200,
+  baseMaxAp: 0,
+  baseSpeed: 60,
   startingGuard: false,
-  guard: 0,
   actEnergy: 4,
-  speed: 60,
   aiPatterns: [
     {
       phaseNumber: 1,
@@ -191,19 +182,16 @@ export const VETERAN_WARRIOR: Enemy = {
 };
 
 // Rank 4: Sword Saint → Sword God
-export const SWORD_SAINT_PHANTOM: Enemy = {
+export const SWORD_SAINT_PHANTOM: EnemyDefinition = {
   id: "exam_sword_saint_phantom",
   name: "Phantom of the Sword Saint",
   nameJa: "剣聖の幻影",
   description: "Manifestation of a legendary sword saint's spirit",
-  maxHp: 350,
-  hp: 350,
-  maxAp: 0,
-  ap: 0,
+  baseMaxHp: 350,
+  baseMaxAp: 0,
+  baseSpeed: 70,
   startingGuard: false,
-  guard: 0,
   actEnergy: 5,
-  speed: 70,
   aiPatterns: [
     // Phase 1 (HP > 50%)
     {
@@ -299,19 +287,16 @@ export const SWORD_SAINT_PHANTOM: Enemy = {
  * Mage Promotion Exam Enemies
  */
 
-export const MAGIC_GOLEM: Enemy = {
+export const MAGIC_GOLEM: EnemyDefinition = {
   id: "exam_magic_golem",
   name: "Magic Training Golem",
   nameJa: "魔法訓練用ゴーレム",
   description: "Golem designed for mage training",
-  maxHp: 45,
-  hp: 45,
-  maxAp: 0,
-  ap: 0,
+  baseMaxHp: 45,
+  baseMaxAp: 0,
+  baseSpeed: 35,
   startingGuard: true,
-  guard: 10,
   actEnergy: 2,
-  speed: 35,
   aiPatterns: [
     {
       phaseNumber: 0,
@@ -331,19 +316,16 @@ export const MAGIC_GOLEM: Enemy = {
  * Summoner Promotion Exam Enemies
  */
 
-export const WILD_SPIRIT: Enemy = {
+export const WILD_SPIRIT: EnemyDefinition = {
   id: "exam_wild_spirit",
   name: "Wild Spirit",
   nameJa: "野生の精霊",
   description: "Untamed spirit for summoner training",
-  maxHp: 40,
-  hp: 40,
-  maxAp: 0,
-  ap: 0,
+  baseMaxHp: 40,
+  baseMaxAp: 0,
+  baseSpeed: 50,
   startingGuard: false,
-  guard: 0,
   actEnergy: 2,
-  speed: 50,
   aiPatterns: [
     {
       phaseNumber: 0,
@@ -362,7 +344,7 @@ export const WILD_SPIRIT: Enemy = {
 /**
  * Export all guild enemies
  */
-export const GUILD_ENEMIES: Enemy[] = [
+export const GUILD_ENEMIES: EnemyDefinition[] = [
   TRAINING_DUMMY,
   GUILD_INSTRUCTOR,
   VETERAN_WARRIOR,
@@ -374,6 +356,6 @@ export const GUILD_ENEMIES: Enemy[] = [
 /**
  * Helper function to get guild enemy by ID
  */
-export function getGuildEnemy(id: string): Enemy | undefined {
+export function getGuildEnemy(id: string): EnemyDefinition | undefined {
   return GUILD_ENEMIES.find((enemy) => enemy.id === id);
 }

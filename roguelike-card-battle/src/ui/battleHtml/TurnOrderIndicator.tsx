@@ -7,7 +7,7 @@
 
 import React from "react";
 import type { PhaseQueue, PhaseActor } from "../../domain/battles/type/phaseType";
-import "../css/TurnOrderIndicator.css";
+import "../css/others/TurnOrderIndicator.css";
 
 interface TurnOrderIndicatorProps {
   phaseQueue: PhaseQueue | null;

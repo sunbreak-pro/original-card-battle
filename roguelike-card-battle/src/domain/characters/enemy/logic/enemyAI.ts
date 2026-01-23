@@ -1,9 +1,17 @@
-import type { Enemy, EnemyAction } from "../../type/enemyType";
+import type { EnemyDefinition, EnemyAction, EnemyAIPattern } from "../../type/enemyType";
 import { DEPTH1_ENEMIES } from "../data/enemyDepth1";
 import type { Card, CardTag } from "../../../cards/type/cardType";
 
+/**
+ * Minimal interface for determining enemy actions
+ * Works with both Enemy and EnemyDefinition
+ */
+interface EnemyAISource {
+  aiPatterns: EnemyAIPattern[];
+}
+
 export function determineEnemyAction(
-  enemy: Enemy,
+  enemy: EnemyAISource,
   currentHp: number,
   maxHp: number,
   turnNumber: number,
@@ -73,7 +81,7 @@ export function enemyAction(action: EnemyAction): Card {
 export function selectRandomEnemy(
   depth: number,
   encounterType: "normal" | "group" | "boss" = "normal"
-): { enemies: Enemy[]; isBoss: boolean } {
+): { enemies: EnemyDefinition[]; isBoss: boolean } {
   if (depth !== 1) {
     throw new Error(`Depth ${depth} enemies are not implemented yet`);
   }

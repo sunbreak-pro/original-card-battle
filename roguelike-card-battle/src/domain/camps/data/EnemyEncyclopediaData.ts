@@ -6,15 +6,15 @@
  */
 
 import { enemyList } from "../../characters/enemy/data/enemyDepth1";
-import type { Enemy } from "../../characters/type/enemyType";
+import type { EnemyDefinition } from "../../characters/type/enemyType";
 import type { EnemyEncyclopediaEntry } from "../types/LibraryTypes";
 
 /**
  * Get all available enemies for encyclopedia
  * Sorted by HP (ascending) for display order
  */
-export function getAllEnemies(): Enemy[] {
-  return [...enemyList].sort((a, b) => a.maxHp - b.maxHp);
+export function getAllEnemies(): EnemyDefinition[] {
+  return [...enemyList].sort((a, b) => a.baseMaxHp - b.baseMaxHp);
 }
 
 /**
@@ -35,9 +35,9 @@ export function createEnemyEncyclopediaEntries(): EnemyEncyclopediaEntry[] {
 /**
  * Check if enemy is a boss
  */
-export function isBossEnemy(enemy: Enemy): boolean {
+export function isBossEnemy(enemy: EnemyDefinition): boolean {
   // Boss enemies typically have id ending with "boss" or HP > 100
-  return enemy.id.includes("boss") || enemy.maxHp > 100;
+  return enemy.id.includes("boss") || enemy.baseMaxHp > 100;
 }
 
 /**
@@ -86,7 +86,7 @@ export function getEnemyStats(): {
   const enemies = getAllEnemies();
   const bosses = enemies.filter(isBossEnemy);
 
-  const totalHp = enemies.reduce((sum, e) => sum + e.maxHp, 0);
+  const totalHp = enemies.reduce((sum, e) => sum + e.baseMaxHp, 0);
 
   return {
     total: enemies.length,

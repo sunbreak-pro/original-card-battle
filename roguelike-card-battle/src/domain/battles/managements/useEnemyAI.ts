@@ -11,10 +11,9 @@
  */
 
 import { useCallback } from "react";
-import type { Enemy, EnemyAction } from "../../characters/type/enemyType";
-import type { EnemyBattleState } from "../type/battleStateType";
+import type { EnemyDefinition, EnemyAction, EnemyBattleState } from "../../characters/type/enemyType";
 import type { BuffDebuffMap } from "../type/baffType";
-import type { Player } from "../../characters/type/playerTypes";
+import type { BattleStats } from "../../characters/type/baseTypes";
 
 // Enemy AI logic
 import { determineEnemyAction } from "../../characters/enemy/logic/enemyAI";
@@ -40,7 +39,7 @@ import { calculateBleedDamage } from "../logic/bleedDamage";
  * Context for enemy action execution
  */
 export interface EnemyActionContext {
-  enemy: Enemy;
+  enemy: EnemyDefinition;
   enemyHp: number;
   enemyMaxHp: number;
   enemyEnergy: number;
@@ -49,8 +48,8 @@ export interface EnemyActionContext {
 
   playerHp: number;
   playerBuffs: BuffDebuffMap;
-  playerChar: Player;
-  enemyChar: Enemy;
+  playerStats: BattleStats;
+  enemyStats: BattleStats;
 }
 
 /**
@@ -86,7 +85,7 @@ export interface UseEnemyAIReturn {
    * Determine the next action for an enemy
    */
   determineAction: (
-    enemy: Enemy,
+    enemy: EnemyDefinition,
     hp: number,
     maxHp: number,
     turn: number,
@@ -109,8 +108,9 @@ export interface UseEnemyAIReturn {
    * Get preview of next enemy actions for UI display
    */
   getNextActionsPreview: (
-    enemy: Enemy,
+    enemy: EnemyDefinition,
     currentHp: number,
+    maxHp: number,
     nextTurn: number
   ) => EnemyAction[];
 
@@ -137,7 +137,7 @@ export function useEnemyAI(): UseEnemyAIReturn {
 
   const determineAction = useCallback(
     (
-      enemy: Enemy,
+      enemy: EnemyDefinition,
       hp: number,
       maxHp: number,
       turn: number,
@@ -168,8 +168,8 @@ export function useEnemyAI(): UseEnemyAIReturn {
         enemyEnergy,
         enemyBuffs,
         enemyTurnCount,
-        playerChar,
-        enemyChar,
+        playerStats,
+        enemyStats,
       } = context;
 
       const onExecuteAction = async (action: EnemyAction) => {
@@ -183,8 +183,8 @@ export function useEnemyAI(): UseEnemyAIReturn {
         const hitCount = action.hitCount || 1;
         for (let i = 0; i < hitCount; i++) {
           const attackResult = calculateEnemyAttackDamage(
-            enemyChar,
-            playerChar,
+            enemyStats,
+            playerStats,
             action
           );
 
@@ -259,8 +259,8 @@ export function useEnemyAI(): UseEnemyAIReturn {
   // ========================================================================
 
   const getNextActionsPreview = useCallback(
-    (enemy: Enemy, currentHp: number, nextTurn: number): EnemyAction[] => {
-      return previewEnemyActions(enemy, currentHp, nextTurn);
+    (enemy: EnemyDefinition, currentHp: number, maxHp: number, nextTurn: number): EnemyAction[] => {
+      return previewEnemyActions(enemy, currentHp, maxHp, nextTurn);
     },
     []
   );
@@ -276,8 +276,9 @@ export function useEnemyAI(): UseEnemyAIReturn {
       }
 
       const actions = previewEnemyActions(
-        enemyState.enemy,
+        enemyState.definition,
         enemyState.hp,
+        enemyState.maxHp,
         (enemyState.turnCount ?? 0) + 1
       );
 

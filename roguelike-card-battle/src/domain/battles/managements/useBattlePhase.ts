@@ -6,7 +6,7 @@
 import { useState, useCallback } from "react";
 import type { PhaseQueue, PhaseActor, SpeedRandomState } from "../type/phaseType";
 import type { BuffDebuffMap } from "../type/baffType";
-import type { Enemy } from "../../characters/type/enemyType";
+import type { EnemyDefinition } from "../../characters/type/enemyType";
 import {
     calculatePlayerSpeed,
     calculateEnemySpeed,
@@ -38,7 +38,7 @@ export interface UseBattlePhaseReturn {
     // Actions
     generatePhaseQueueFromSpeeds: (
         playerBuffs: BuffDebuffMap,
-        enemy: Enemy | null,
+        enemy: EnemyDefinition | null,
         enemyBuffs: BuffDebuffMap
     ) => PhaseQueue;
     advancePhaseIndex: () => void;
@@ -81,7 +81,7 @@ export function useBattlePhase(initialPlayerSpeed: number): UseBattlePhaseReturn
      */
     const generatePhaseQueueFromSpeeds = useCallback((
         playerBuffs: BuffDebuffMap,
-        enemy: Enemy | null,
+        enemy: EnemyDefinition | null,
         enemyBuffs: BuffDebuffMap
     ): PhaseQueue => {
         // Calculate base speeds

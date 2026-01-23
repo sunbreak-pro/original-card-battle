@@ -1,6 +1,13 @@
 Here is the English translation of the design document.
 
-# Inventory System Design Document
+# Inventory System Design Document V3.0
+
+## Revision History
+
+| Version | Date       | Changes                                                                |
+| ------- | ---------- | ---------------------------------------------------------------------- |
+| V1.0    | -          | Initial creation                                                       |
+| V3.0    | 2026-01-23 | Lives system integration, death penalty update, teleport stone unification |
 
 ## Overview
 
@@ -10,15 +17,16 @@ Here is the English translation of the design document.
 
 - Manage items and equipment acquired during exploration.
 - Strategic decision-making on "what to bring back" within limited capacity.
-- Clarification of penalties upon death and rewards upon survival.
+- V3.0: Death means complete item/equipment loss (including brought items), but souls are 100% saved.
 
 ### Related Documents
 
 | Document                           | Related Content                                       |
 | ---------------------------------- | ----------------------------------------------------- |
 | `EQUIPMENT_AND_ITEMS_DESIGN.md`    | Detailed specifications for equipment and consumables |
-| `return_system.md`                 | Item handling upon survival/death                     |
-| `dungeon_exploration_ui_design.md` | UI layout, Inventory modal                            |
+| `return_system_design.md` (V3.0)   | Item handling upon survival/death, lives system       |
+| `dungeon_exploration_ui_design.md` (V3.0) | UI layout, Inventory modal, lives display       |
+| `game_design_master.md` (V3.0)     | Core game loop with lives system                      |
 
 ---
 
@@ -305,9 +313,7 @@ const STONE_VALUES = {
 | Elixir of Speed            | ×   | ○      | Battle-only buff        |
 | Elixir of Omnipotence      | ×   | ○      | Battle-only buff        |
 | Elixir of Critical         | ×   | ○      | Battle-only buff        |
-| Teleport Stone (Normal)    | ○   | ×      | Map only                |
-| Teleport Stone (Blessed)   | ○   | ×      | Map only                |
-| Teleport Stone (Emergency) | ○   | ○      | Usable in battle        |
+| Teleport Stone (Unified)   | ○   | ×      | V3.0: Single type, 100% reward |
 | Hourglass of Time Stop     | ×   | ○      | Battle only             |
 | Crystal of Magic Explosion | ×   | ○      | Battle only             |
 | Treasure Map               | ○   | ×      | Map only                |
@@ -364,22 +370,39 @@ Inventory Limit Check
 - Choice Event: Grant reward after selection.
 - Hidden Room: Guaranteed reward + Additional reward.
 
-### 6.3 Loss Rules Upon Death
+### 6.3 Loss Rules Upon Death (V3.0 - Major Change)
 
-| Item Type       | Process on Death | Notes                         |
-| --------------- | ---------------- | ----------------------------- |
-| Equipped Gear   | **All Lost**     | Only Legendary items retained |
-| Spare Equipment | **All Lost**     | Only Legendary items retained |
-| Consumables     | **All Lost**     |                               |
-| Magic Stones    | **Becomes 0**    |                               |
-| Gold            | **No Change**    | Gold at base is safe          |
+| Item Type             | Process on Death     | Notes                                   |
+| --------------------- | -------------------- | --------------------------------------- |
+| Equipped Gear         | **ALL Lost**         | V3.0: No exceptions, even Legendary     |
+| Spare Equipment       | **ALL Lost**         | V3.0: No exceptions, even Legendary     |
+| Items Brought to Dungeon | **ALL Lost**      | V3.0: Items brought from base are lost too |
+| Consumables           | **ALL Lost**         |                                         |
+| Magic Stones          | **Becomes 0**        |                                         |
+| Gold                  | **Becomes 0**        | V3.0: Gold is also lost on death        |
+| Soul Remnants         | **100% Saved**       | V3.0: Souls are always saved to total   |
 
-**Legendary Equipment Special Rule**:
+**V3.0 Important Changes**:
 
-- Not lost even upon death.
-- Automatically equipped at the start of the next exploration.
+- **No Safe Items**: Even Legendary equipment is lost on death.
+- **Brought Items Lost**: Items you bring into the dungeon are also lost on death.
+- **Gold Lost**: Gold acquired during exploration is lost (base gold was already 0 at start).
+- **Souls Always Saved**: The only thing guaranteed to persist is soul remnants (100%).
 
-### 6.4 Carry-Back Rules Upon Survival
+**Strategic Implications**:
+
+- Players must carefully consider what equipment to bring into dangerous areas.
+- Losing valuable equipment is a real consequence of death.
+- Soul collection becomes the primary form of permanent progression (until game over).
+- High-risk/high-reward gameplay is encouraged since souls are always saved.
+
+**Lives System Connection**:
+
+- Death decreases lives by 1.
+- When lives reach 0 → Game Over → Complete inventory reset + sanctuary reset.
+- Lives cap: Hard = 2, Normal/Easy = 3.
+
+### 6.4 Carry-Back Rules Upon Survival (V3.0 - Simplified)
 
 **Return on Foot (Return Route)**:
 | Item Type | Carry Back | Notes |
@@ -387,15 +410,19 @@ Inventory Limit Check
 | Equipment | 100% | Bring back all |
 | Consumables | 100% | Bring back all |
 | Magic Stones | 100% | Bring back all |
+| Soul Remnants | 100% | Always saved |
 
-**Teleport Stone Use**:
-| Stone Type | Magic Stones | Soul Remnants | Notes |
-| :--- | :--- | :--- | :--- |
-| Normal (70%) | 70% | 35% | Base rate |
-| Blessed (80%) | 80% | 40% | High reward ver. |
-| Emergency (60%) | 60% | 30% | Usable in battle |
+**Teleport Stone Use (V3.0 - Unified)**:
+| Item Type | Carry Back | Notes |
+| :--- | :--- | :--- |
+| Equipment | 100% | V3.0: No reduction |
+| Consumables | 100% | V3.0: No reduction |
+| Magic Stones | 100% | V3.0: No reduction |
+| Soul Remnants | 100% | Always saved |
 
-> **Note**: Refer to `return_system.md` for details.
+**V3.0 Change**: Teleport stones are now unified into a single type with 100% reward. The multiple stone types (Normal/Blessed/Emergency) have been removed.
+
+> **Note**: Refer to `return_system_design.md` (V3.0) for details.
 
 ---
 
@@ -570,12 +597,13 @@ function equipItem(inventory: PlayerInventory, item: Equipment): boolean {
 - Known Event List (Managed separately).
 - Library Records (Managed separately).
 
-**Carry-Over on Game Over**:
+**Carry-Over on Game Over (V3.0 - Major Change)**:
 
 - Inventory: Reset (Initial state).
-- Known Events: Retained.
-- Library Records: Retained.
-- Unlocked Elements: Retained.
+- Known Events: **Reset** (V3.0 change).
+- Library Records: **Reset** (V3.0 change).
+- Sanctuary Progress: **Reset** (V3.0 change).
+- Achievements: **Retained** (Only achievements persist).
 
 ---
 

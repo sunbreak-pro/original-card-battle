@@ -3,11 +3,20 @@
  * Battle System Ver 4.0
  */
 
-import type { Enemy, EnemyAction } from "../../type/enemyType";
+import type { EnemyAction, EnemyAIPattern } from "../../type/enemyType";
 import { determineEnemyAction } from "./enemyAI";
 
+/**
+ * Minimal interface for enemy action preview
+ * Works with both Enemy and EnemyDefinition
+ */
+interface EnemyActionSource {
+  actEnergy: number;
+  aiPatterns: EnemyAIPattern[];
+}
+
 export async function executeEnemyActions(
-  enemy: Enemy,
+  enemy: EnemyActionSource,
   enemyHp: number,
   enemyMaxHp: number,
   turn: number,
@@ -70,8 +79,9 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 export function previewEnemyActions(
-  enemy: Enemy,
+  enemy: EnemyActionSource,
   currentHp: number,
+  maxHp: number,
   nextTurn: number
 ): EnemyAction[] {
   const totalEnergy = enemy.actEnergy;
@@ -82,7 +92,7 @@ export function previewEnemyActions(
     const action = determineEnemyAction(
       enemy,
       currentHp,
-      enemy.maxHp,
+      maxHp,
       nextTurn,
       remainingEnergy
     );

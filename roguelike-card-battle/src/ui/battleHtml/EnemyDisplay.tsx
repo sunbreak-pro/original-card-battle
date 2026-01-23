@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import type {
-  Enemy,
+  EnemyDefinition,
   EnemyAction,
 } from "../../domain/characters/type/enemyType";
 import type { BuffDebuffMap } from "../../domain/battles/type/baffType";
@@ -34,13 +34,13 @@ const ActionIcon: React.FC<{ type: ActionType }> = ({ type }) => {
 };
 
 interface EnemyState {
-  enemy: Enemy;
+  definition: EnemyDefinition;
   hp: number;
   maxHp: number;
   ap: number;
   maxAp: number;
   guard: number;
-  buffs: BuffDebuffMap;
+  buffDebuffs: BuffDebuffMap;
   actEnergy: number;
   turnCount: number;
 }
@@ -82,11 +82,11 @@ const EnemyCard: React.FC<{
 
   // Preview next action (Ver 4.0)
   const nextAction: EnemyAction = determineEnemyAction(
-    state.enemy,
+    state.definition,
     state.hp,
     state.maxHp,
     state.turnCount + 1,
-    state.enemy.actEnergy, // enemy energy
+    state.definition.actEnergy, // enemy energy
   );
 
   const sizeClass = size === "small" ? "enemy-card-small" : "";
@@ -97,7 +97,7 @@ const EnemyCard: React.FC<{
     <div className={`enemy-card ${sizeClass}`}>
       {/* Enemy name with action icon */}
       <div className="enemy-name-row">
-        <span className="enemy-name">{state.enemy.nameJa}</span>
+        <span className="enemy-name">{state.definition.nameJa}</span>
         <div
           className="action-icon-wrapper"
           onMouseEnter={() => setIsHovered(true)}
@@ -142,11 +142,11 @@ const EnemyCard: React.FC<{
 
       {/* Enemy visual */}
       <div className="enemy-visual" ref={enemyRef}>
-        {state.enemy.imagePath ? (
+        {state.definition.imagePath ? (
           <img
             className="enemy-image"
-            src={state.enemy.imagePath}
-            alt={state.enemy.nameJa}
+            src={state.definition.imagePath}
+            alt={state.definition.nameJa}
           />
         ) : (
           <div className="enemy-emoji">👹</div>
@@ -205,18 +205,18 @@ const EnemyCard: React.FC<{
         {/* Energy bar - value badge on left */}
         <div className="status-bar-row energy-row">
           <div className="value-badge energy-badge">
-            {state.actEnergy}/{state.enemy.actEnergy}
+            {state.actEnergy}/{state.definition.actEnergy}
           </div>
           <div className="unified-bar-container energy-bar">
             <div
               className="bar-fill energy-fill"
               style={{
-                width: `${(state.actEnergy / state.enemy.actEnergy) * 100}%`,
+                width: `${(state.actEnergy / state.definition.actEnergy) * 100}%`,
               }}
             />
           </div>
         </div>
-        <StatusEffectDisplay buffsDebuffs={state.buffs} theme={theme} />
+        <StatusEffectDisplay buffsDebuffs={state.buffDebuffs} theme={theme} />
       </div>
     </div>
   );

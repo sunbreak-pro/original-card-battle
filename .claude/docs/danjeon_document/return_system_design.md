@@ -1,389 +1,347 @@
-Here is the English translation of the design document.
+# 生還システム 完全設計書 V3.0
 
-# Survival System Complete Design Document V2.0
+## 更新履歴
 
-## Revision History
+- V3.0: **残機システム導入** - 転移石統一（100%報酬）、深淵脱出ルート追加、死亡時魂100%獲得、探索回数制限削除
+- V2.0: 魂の残滓を経験値システムに変更、探索回数制限追加
 
-- V2.0: **Fundamental Design Overhaul** - Changed Soul Remnants to an experience point system, added Exploration Count Limit.
-
-## Table of Contents
-
-```
-1. Overview of Survival System
-2. Types of Survival Methods
-3. Teleport Stone System
-4. Return Route System
-5. Special Rules for The Abyss (Depth 5)
-6. Reward Calculation upon Survival
-7. Relationship with Exploration Count Limit (NEW)
-8. Strategic Significance and Balance
-9. Implementation Specifications
-10. Summary
+## 目次
 
 ```
-
----
-
-# 1. Overview of Survival System
-
-## 1.1 Basic Concept
-
-```
-The Survival System offers a trade-off between "Risk Management" and "Resource Preservation".
-
-[Design Philosophy]
-- Deeper levels yield greater rewards but increased risks.
-- Tests the ability to judge when to retreat appropriately.
-- Offers "Strategic Retreat" as an option instead of total death.
-- Closely integrated with Equipment Durability management.
-- Adds weight to each run through the Exploration Count Limit.
-
-```
-
-## 1.2 Difference between Survival and Death
-
-| Item              | Survival                               | Death                                  |
-| ----------------- | -------------------------------------- | -------------------------------------- |
-| Equipment         | **All Retained**                       | All Lost                               |
-| Durability        | **As Is**                              | -                                      |
-| Mastery           | **Usage Count Recorded**               | Usage Count Recorded                   |
-| Gold              | **Full Amount (Reduced by method)**    | Zero                                   |
-| Magic Stones      | **Reduced by method**                  | Zero                                   |
-| Soul Remnants     | **Added to Total (Reduced by method)** | **Zero for this run (Total retained)** |
-| Exploration Log   | Recorded                               | Recorded                               |
-| Exploration Count | **+1**                                 | **+1**                                 |
-
-**Value of Survival:**
-
-- Reliably keep equipment.
-- Mastery usage counts are saved.
-- Bring back Gold, Magic Stones, and Souls.
-- Effective use of Exploration Count.
-
-**Penalty of Death:**
-
-- Complete loss of equipment.
-- All collected Gold, Magic Stones, and resources are lost.
-- **Soul Remnants gained in that run are also zeroed.**
-- However, **accumulated Soul Remnants (Total) from the past are retained.**
-- **Exploration Count is consumed.**
-
-**Important Changes (V2.0):**
-
-```
-Old Design:
-On Death → Gain Soul Remnants "Normally" (Roguelite element)
-
-New Design:
-On Enemy Kill → Gain Soul Remnants (Like EXP)
-Survival → Add to Total
-Death → Zero for that run (Total is retained)
-
+1. 生還システム概要
+2. 生還方法の種類
+3. 転移石システム（統一版）
+4. 帰還ルートシステム
+5. 深淵（Depth 5）特別ルール
+6. 生還時の報酬計算
+7. 死亡時の処理（V3.0変更）
+8. 残機システムとの連携
+9. 戦略的意義とバランス
+10. 実装仕様
+11. まとめ
 ```
 
 ---
 
-# 2. Types of Survival Methods
+# 1. 生還システム概要
 
-## 2.1 List of Survival Methods
-
-```
-[Two Methods of Survival]
-
-1. Teleport Stone (Immediate Return)
-   - Cost: Consumes Item
-   - Risk: None
-   - Reward: Reduced
-   - Restriction: Unusable in Depth 5 (The Abyss)
-
-2. Return Route (Gradual Retreat)
-   - Cost: Time and Combat
-   - Risk: Enemies along the way
-   - Reward: No Reduction
-   - Restriction: Unusable in Depth 5 (The Abyss)
+## 1.1 基本コンセプト
 
 ```
+生還システムは「リスク管理」と「リソース保全」のトレードオフを提供する。
 
-## 2.2 Comparison of Methods
-
-| Method             | Condition    | Immediacy     | Reward Multiplier | Risk | Recommended Scenario |
-| ------------------ | ------------ | ------------- | ----------------- | ---- | -------------------- |
-| Normal Teleport    | Has Item     | **Immediate** | 70%               | None | Early Retreat        |
-| Blessed Teleport   | Has Item     | **Immediate** | 80%               | None | Securing Rewards     |
-| Emergency Teleport | Has Item<br> |
-
-<br>Can use in battle | **Immediate** | 60% | None | Escape during Combat |
-| Return Route | Can Fight | Slow | **100%** | Combat | Max Rewards |
-
-**Important:** In Depth 5 (The Abyss), all survival methods are disabled.
-Once you enter The Abyss, the only choices are "Defeat the Boss or Die".
-
----
-
-# 3. Teleport Stone System
-
-## 3.1 Types of Teleport Stones
-
-### 3.1.1 Normal Teleport Stone
-
-```
-[Basic Specs]
-Name: Teleport Stone of Return
-Effect: Immediately return to base / Reward Multiplier 70%
-Acquisition: Shop / Event / Chest
-
-[Usage Conditions]
-- Cannot use during combat
-- Usable only on map screen
-- Usable only in Depth 1-4 (Invalid in Depth 5)
-
-[Features]
-Rarity: Common
-Recommended amount per run: 1-2
-
+【設計思想】
+- 深層ほど報酬が大きいが、リスクも増大
+- 適切な撤退判断能力を試す
+- 「全滅」ではなく「戦略的撤退」の選択肢
+- 装備耐久度管理との密接な連携
+- 残機システムによる死亡の重み付け
 ```
 
-### 3.1.2 Blessed Teleport Stone
+## 1.2 生還と死亡の違い
+
+| 項目 | 生還 | 死亡 |
+|------|------|------|
+| 装備 | **全て保持** | **全ロスト**（持ち込み含む） |
+| アイテム | **全て保持** | **全ロスト**（持ち込み含む） |
+| 耐久度 | **そのまま** | - |
+| 熟練度 | **使用回数記録** | 使用回数記録 |
+| Gold | **全額持ち帰り** | ゼロ |
+| 魔石 | **全て持ち帰り** | ゼロ |
+| 魂の残滓 | **累計に100%加算** | **累計に100%加算** ★V3.0 |
+| 探索記録 | 記録 | 記録 |
+| 残機 | **変化なし** | **-1** ★V3.0 |
+
+**生還の価値:**
+
+- 装備を確実に保持
+- 熟練度の使用回数を保存
+- Gold・魔石・魂を持ち帰り
+- 残機を温存
+
+**死亡のペナルティ:**
+
+- 所有アイテム・装備の完全喪失
+- 獲得したGold・魔石の喪失
+- **残機が1減少**
+- ただし**魂の残滓は100%獲得**
+
+**重要な変更（V3.0）:**
 
 ```
-[Basic Specs]
-Name: Teleport Stone of Blessing
-Effect: Return + Reward Multiplier 80% (Higher than normal)
-Acquisition: Event / Boss Reward / Hidden Room
+旧設計:
+死亡時 → 魂の残滓はその探索分ゼロ
 
-[Usage Conditions]
-- Cannot use during combat
-- Usable only on map screen
-- Usable only in Depth 1-4 (Invalid in Depth 5)
-
-[Features]
-Rarity: Rare
-High reward retention, bring back more resources.
-
-```
-
-### 3.1.3 Emergency Teleport Stone
-
-```
-[Basic Specs]
-Name: Emergency Teleport Stone
-Effect: Usable even during combat / Reward Multiplier 60%
-Acquisition: Shop / Special Event
-
-[Usage Conditions]
-- Usable anytime
-- Activates even during combat
-- Usable only in Depth 1-4 (Invalid in Depth 5)
-
-[Features]
-Rarity: Epic
-Strategic Value: Last resort insurance during combat.
-Low rewards, but protects life and equipment.
-
+新設計:
+死亡時 → 魂の残滓は100%累計に加算
+       → 残機が1減少
+       → 所有アイテム・装備は全ロスト
 ```
 
 ---
 
-## 3.2 Process Flow for Teleport Stone Usage
+# 2. 生還方法の種類
+
+## 2.1 生還方法一覧
+
+```
+【2つの生還方法】
+
+1. 転移石（即時帰還）
+   - コスト: アイテム消費
+   - リスク: なし
+   - 報酬: 100%
+   - 制限: 深淵（Depth 5）では使用不可
+
+2. 帰還ルート（段階的撤退）
+   - コスト: 時間と戦闘
+   - リスク: 道中の敵
+   - 報酬: 100%
+   - 制限: 深淵（Depth 5）では使用不可
+```
+
+## 2.2 方法の比較
+
+| 方法 | 条件 | 即時性 | 報酬倍率 | リスク | 推奨場面 |
+|------|------|--------|----------|--------|----------|
+| 転移石 | アイテム所持 | **即時** | 100% | なし | 安全優先時 |
+| 帰還ルート | 戦闘可能状態 | 遅い | 100% | 戦闘あり | 追加報酬狙い |
+
+**重要:** 深淵（Depth 5）では全ての生還手段が無効化される。
+深淵に入った時点で「ボスを倒すか、死ぬか」の二択のみ。
+ただし、ボス撃破後は**脱出ルート**が出現する。
+
+---
+
+# 3. 転移石システム（統一版）
+
+## 3.1 転移石の仕様
+
+### 3.1.1 統一された転移石
+
+```
+【V3.0での変更】
+旧: 3種類（通常70%/祝福80%/緊急60%）
+新: 1種類に統一（100%報酬）
+
+【基本仕様】
+名称: 転移石
+効果: 即座に拠点へ帰還 / 報酬倍率100%
+入手: Shop / イベント / 宝箱
+
+【使用条件】
+- 戦闘中使用不可
+- マップ画面でのみ使用可能
+- 深淵（Depth 5）では使用不可
+
+【特徴】
+レアリティ: Uncommon
+推奨所持数: 1-2個/探索
+```
+
+### 3.1.2 帰還ルートとの差別化
+
+| 項目 | 転移石 | 帰還ルート |
+|------|--------|------------|
+| 報酬倍率 | 100% | 100% |
+| リスク | **なし** | 戦闘あり |
+| 追加報酬 | なし | **追加魂・熟練度** |
+| 時間 | **即時** | 数戦闘 |
+| コスト | アイテム消費 | なし |
+
+**差別化ポイント:**
+- 転移石: 完全安全だがアイテム消費
+- 帰還ルート: 戦闘リスクあるが追加報酬あり
+
+---
+
+## 3.2 転移石使用のプロセスフロー
 
 ```typescript
 /**
- * Teleport Stone Usage Process
+ * 転移石使用処理（V3.0）
  */
 interface TeleportStone {
-  type: "normal" | "blessed" | "emergency";
-  rewardMultiplier: number; // 0.7 / 0.8 / 0.6
-  canUseInBattle: boolean;
+  type: 'standard';  // 統一
+  rewardMultiplier: 1.0;  // 100%固定
+  canUseInBattle: false;  // 戦闘中使用不可
 }
 
 function useTeleportStone(
   player: Character,
-  stone: TeleportStone,
   currentDepth: number,
-  defeatedEnemies: number,
-  soulsEarnedThisRun: number // NEW: Souls earned in this run
+  soulsEarnedThisRun: number
 ): ReturnResult {
-  // Check Depth 5 (Abyss)
+  // 深淵チェック
   if (currentDepth === 5) {
     return {
       success: false,
-      message: "Teleport stones are disabled in the Abyss...",
+      message: '深淵では転移石の力が無効化されている...',
     };
   }
 
-  // Check Combat Status
-  if (isInBattle() && !stone.canUseInBattle) {
+  // 戦闘中チェック
+  if (isInBattle()) {
     return {
       success: false,
-      message: "Cannot be used during combat.",
+      message: '戦闘中は使用できない。',
     };
   }
 
-  // Calculate Rewards
-  const baseReward = calculateBaseReward(currentDepth, defeatedEnemies);
-  const finalReward = {
-    gold: Math.floor(baseReward.gold * stone.rewardMultiplier),
-    stones: Math.floor(baseReward.stones * stone.rewardMultiplier),
-    souls: Math.floor(soulsEarnedThisRun * stone.rewardMultiplier), // NEW: Apply multiplier to earned souls
+  // 報酬計算（100%）
+  const rewards = {
+    gold: player.dungeonGold,  // 100%
+    stones: player.dungeonStones,  // 100%
+    souls: soulsEarnedThisRun,  // 100%
   };
 
-  // Equipment/Mastery are fully retained
+  // 装備・熟練度は全て保持
   savePlayerState(player);
 
-  // Add Soul Remnants to Total (NEW)
-  addToTotalSouls(finalReward.souls);
+  // 魂の残滓を累計に加算
+  addToTotalSouls(rewards.souls);
 
-  // Return to Base
+  // 転移石消費
+  consumeItem('teleport_stone');
+
+  // 拠点へ帰還
   return {
     success: true,
-    type: "teleport",
-    rewards: finalReward,
-    message: "Returned to base.",
+    type: 'teleport',
+    rewards: rewards,
+    message: '拠点へ帰還した。',
   };
 }
 ```
 
 ---
 
-## 3.3 Strategic Timing for Teleport Stone
+## 3.3 転移石の戦略的タイミング
 
 ```
-[Recommended Usage Timing]
+【推奨使用タイミング】
 
-1. Equipment Durability Critical
-   - All equipment durability < 20%
-   → Risk of total breakage in next battle.
+1. 装備耐久度が危機的
+   - 全装備の耐久度 < 20%
+   → 次の戦闘で全壊のリスク
 
-2. Low HP/Shield
-   - HP < 40% and no recovery means.
-   → High risk of death in next battle.
+2. HP/シールドが低下
+   - HP < 40% かつ回復手段なし
+   → 次の戦闘で死亡リスク大
 
-3. Acquired Powerful Equipment
-   - Obtained Rare/Epic gear.
-   → Avoid loss due to death.
+3. 強力な装備を獲得した
+   - レア/エピック装備を入手
+   → 死亡による喪失を回避
 
-4. Sufficient Gold/Stones/Souls
-   - Resource goals met.
-   → No need for further risk.
+4. Gold/魔石/魂が十分
+   - リソース目標達成
+   → これ以上のリスクは不要
 
-5. Unprepared for Boss
-   - Lack of consumables.
-   → Restock at base and retry.
-
-6. Low Remaining Exploration Count (NEW)
-   - Remaining 2-3 runs, deep progression required.
-   → Securely bring back souls.
-
+5. ボス戦の準備不足
+   - 消耗品が不足
+   → 拠点で補給してリトライ
 ```
 
 ---
 
-# 4. Return Route System
+# 4. 帰還ルートシステム
 
-## 4.1 Basic Specs
-
-```
-[Concept]
-Run back the way you came to return to base.
-No reward reduction, but encounters occur along the way.
-
-[Pros]
-- 100% Rewards obtained.
-- Additional combat experience.
-- Farm more mastery.
-- Can earn additional Soul Remnants (NEW).
-
-[Cons]
-- Takes time.
-- Risk of combat along the way.
-- Further equipment durability consumption.
-- If you die, ALL souls become zero (NEW).
+## 4.1 基本仕様
 
 ```
+【コンセプト】
+来た道を戻って拠点へ帰還する。
+報酬減少なし、ただし道中でエンカウントが発生する。
 
-## 4.2 Enemies on Return Route
+【メリット】
+- 報酬100%獲得
+- 追加の戦闘経験
+- 熟練度を更に稼げる
+- 追加の魂の残滓を獲得可能
 
-### 4.2.1 Enemy Encounter Rules
+【デメリット】
+- 時間がかかる
+- 道中で戦闘のリスク
+- 装備耐久度を更に消耗
+- 死亡すると全ての魂がゼロになる...わけではない！（V3.0）
+
+【V3.0での変更】
+帰還ルート中に死亡しても、その時点までの魂は100%獲得
+ただし残機-1となり、アイテム・装備は全ロスト
+```
+
+## 4.2 帰還ルート中のエンカウント
+
+### 4.2.1 エンカウント率ルール
 
 ```
-[Variable Encounter Rate System]
-Encounter rate decreases as you progress back.
-→ Becomes safer closer to base.
+【可変エンカウント率システム】
+帰還が進むにつれてエンカウント率が低下
+→ 拠点に近づくほど安全になる
 
-[Initial Encounter Rates by Depth]
-Upper Layer (Depth 1): Start 70% → End 20%
-Middle Layer (Depth 2): Start 75% → End 25%
-Lower Layer (Depth 3): Start 80% → End 30%
-Deep Layer (Depth 4): Start 85% → End 35%
-The Abyss (Depth 5): Return impossible.
+【深度別の初期エンカウント率】
+上層（Depth 1）: 開始70% → 終了20%
+中層（Depth 2）: 開始75% → 終了25%
+下層（Depth 3）: 開始80% → 終了30%
+深層（Depth 4）: 開始85% → 終了35%
+深淵（Depth 5）: 帰還不可
 
-[Encounter Rate Formula]
-Current Rate = Initial Rate - (Progress% × Decrease Coeff)
+【エンカウント率計算式】
+現在レート = 初期レート - (進行度% × 低下係数)
 
-Decrease Coeff:
-- Depth 1: 0.5 (70% → 20% is 50% reduction)
+低下係数:
+- Depth 1: 0.5（70% → 20%は50%の低下）
 - Depth 2: 0.5
 - Depth 3: 0.5
 - Depth 4: 0.5
 
-Example: 50% progress in Depth 3
-Current Rate = 80% - (50% × 0.5) = 55%
-
+例: Depth 3で50%進行時
+現在レート = 80% - (50% × 0.5) = 55%
 ```
 
-### 4.2.2 Features of Return Combat
+### 4.2.2 帰還戦闘の特徴
 
 ```
-- Elite enemies do not respawn.
-- Bosses do not respawn.
-- Same enemy types as defeated appear.
-- Encounter check performed per room.
+- エリートは再出現しない
+- ボスは再出現しない
+- 撃破済みと同種の敵が出現
+- 部屋ごとにエンカウント判定
 
+敵のステータス（V3.0）:
+- HP: 通常の70%
+- 攻撃力: 通常の70%
+- 報酬Gold: 通常の50%
+- 報酬魔石: 通常の50%
+- 報酬魂: 通常の50%
 ```
 
 ---
 
-## 4.3 Process when Selecting Return Route
+## 4.3 帰還ルート選択時のプロセス
 
 ```typescript
 /**
- * Start Return Route Process
+ * 帰還ルート開始処理
  */
 interface ReturnRoute {
   totalRooms: number;
-  currentProgress: number; // Progress 0-100%
-  currentEncounterRate: number; // Current Encounter Rate %
-  passedRooms: number; // Rooms passed
-  encountersCount: number; // Number of encounters
-  additionalSoulsEarned: number; // NEW: Additional souls earned during return
+  currentProgress: number;  // 進行度 0-100%
+  currentEncounterRate: number;  // 現在のエンカウント率 %
+  passedRooms: number;  // 通過した部屋数
+  encountersCount: number;  // エンカウント数
+  additionalSoulsEarned: number;  // 帰還中に獲得した追加魂
 }
 
 /**
- * Encounter Rate Config by Depth
- */
-interface EncounterRateConfig {
-  initialRate: number;
-  finalRate: number;
-  decreaseCoef: number;
-}
-
-const ENCOUNTER_RATES: Record<number, EncounterRateConfig> = {
-  1: { initialRate: 70, finalRate: 20, decreaseCoef: 0.5 },
-  2: { initialRate: 75, finalRate: 25, decreaseCoef: 0.5 },
-  3: { initialRate: 80, finalRate: 30, decreaseCoef: 0.5 },
-  4: { initialRate: 85, finalRate: 35, decreaseCoef: 0.5 },
-};
-
-/**
- * Start Return Route
+ * 帰還ルート開始
  */
 function startReturnRoute(
   currentDepth: number,
   roomsPassed: number
 ): ReturnRoute | null {
-  // Check Depth 5 (Abyss)
+  // 深淵チェック
   if (currentDepth === 5) {
-    return null; // Return impossible
+    return null;  // 帰還不可
   }
 
   const config = ENCOUNTER_RATES[currentDepth];
@@ -394,378 +352,249 @@ function startReturnRoute(
     currentEncounterRate: config.initialRate,
     passedRooms: 0,
     encountersCount: 0,
-    additionalSoulsEarned: 0, // NEW
+    additionalSoulsEarned: 0,
   };
 }
 
 /**
- * Calculate Current Encounter Rate
- */
-function calculateCurrentEncounterRate(
-  depth: number,
-  progressPercent: number
-): number {
-  const config = ENCOUNTER_RATES[depth];
-
-  // Current Rate = Initial - (Progress% * Coeff)
-  const reduction = progressPercent * config.decreaseCoef;
-  const currentRate = config.initialRate - reduction;
-
-  // Does not go below Final Rate
-  return Math.max(currentRate, config.finalRate);
-}
-
-/**
- * Encounter Check per Room
- */
-function checkEncounter(depth: number, progressPercent: number): boolean {
-  const encounterRate = calculateCurrentEncounterRate(depth, progressPercent);
-  const roll = Math.random() * 100;
-
-  return roll < encounterRate;
-}
-
-/**
- * Advance Return Route Process
- */
-function advanceReturnRoute(
-  route: ReturnRoute,
-  depth: number
-): {
-  route: ReturnRoute;
-  encounterOccurred: boolean;
-} {
-  route.passedRooms++;
-  route.currentProgress = (route.passedRooms / route.totalRooms) * 100;
-  route.currentEncounterRate = calculateCurrentEncounterRate(
-    depth,
-    route.currentProgress
-  );
-
-  // Encounter Check
-  const encounterOccurred = checkEncounter(depth, route.currentProgress);
-
-  if (encounterOccurred) {
-    route.encountersCount++;
-  }
-
-  return { route, encounterOccurred };
-}
-
-/**
- * Generate Return Combat Enemy
- */
-function generateReturnEnemy(originalEnemy: Character): Character {
-  return {
-    ...originalEnemy,
-    hp: Math.floor(originalEnemy.hp * 0.7),
-    maxHp: Math.floor(originalEnemy.maxHp * 0.7),
-    attack: Math.floor(originalEnemy.attack * 0.7),
-    rewardGold: Math.floor(originalEnemy.rewardGold * 0.5),
-    rewardStones: Math.floor(originalEnemy.rewardStones * 0.5),
-    rewardSouls: Math.floor(originalEnemy.rewardSouls * 0.5), // NEW
-    canLearnSkill: false, // No skill learning
-  };
-}
-
-/**
- * Calculate Rewards on Return Completion
+ * 帰還完了時の報酬計算
  */
 function completeReturnRoute(
   player: Character,
-  currentDepth: number,
-  defeatedEnemies: number,
-  soulsEarnedThisRun: number, // NEW: Souls from this run
-  additionalSoulsFromReturn: number // NEW: Additional souls from return
+  soulsEarnedThisRun: number,
+  additionalSoulsFromReturn: number
 ): ReturnResult {
-  // 100% Rewards
-  const fullReward = calculateBaseReward(currentDepth, defeatedEnemies);
+  // 100%報酬
+  const fullReward = {
+    gold: player.dungeonGold,
+    stones: player.dungeonStones,
+    souls: soulsEarnedThisRun + additionalSoulsFromReturn,
+  };
 
-  // Total Souls (NEW)
-  const totalSouls = soulsEarnedThisRun + additionalSoulsFromReturn;
-
-  // Keep Equipment/Mastery
+  // 装備・熟練度を保持
   savePlayerState(player);
 
-  // Add to Total Souls (NEW)
-  addToTotalSouls(totalSouls);
+  // 魂を累計に加算
+  addToTotalSouls(fullReward.souls);
 
   return {
     success: true,
-    type: "return_route",
-    rewards: {
-      ...fullReward,
-      souls: totalSouls, // Run + Return Combat
-    },
-    message: "Safely returned to base.",
+    type: 'return_route',
+    rewards: fullReward,
+    message: '無事に拠点へ帰還した。',
   };
 }
 ```
 
 ---
 
-## 4.4 Return Route UI Display
+## 4.4 帰還ルートのUI表示
 
 ```
-[Map Screen Display]
+【マップ画面での表示】
 
 ┌─────────────────────────┐
-│  Select Return Route    │
+│  帰還ルート選択          │
 ├─────────────────────────┤
 │                         │
-│ Location: Lower 8th Rm  │
-│ To Base: 15 Rooms       │
+│ 現在地: 下層 第8部屋     │
+│ 拠点まで: 15部屋         │
 │                         │
-│ Current Enc. Rate: 80%  │
-│ Final Enc. Rate: 30%    │
+│ 現在エンカウント率: 80%  │
+│ 終了エンカウント率: 30%  │
 │                         │
-│ ▼ Rate Trend            │
-│ Start ████████ 80%      │
-│ Mid   █████░░░ 55%      │
-│ End   ███░░░░░ 30%      │
+│ ▼ レート推移             │
+│ 開始 ████████ 80%       │
+│ 中間 █████░░░ 55%       │
+│ 終了 ███░░░░░ 30%       │
 │                         │
-│ Reward Mult: 100%       │
-│ Keep Equip: Yes         │
-│ Add. Souls: Available   │  ← NEW
+│ 報酬倍率: 100%           │
+│ 装備保持: あり           │
+│ 追加魂: 獲得可能         │
 │                         │
-│ * Cannot return from    │
-│   The Abyss (Depth 5)   │
+│ ※ 深淵（Depth 5）では    │
+│   帰還ルートは使用不可   │
 │                         │
-│ [Start Return] [Cancel] │
+│ [帰還開始] [キャンセル]  │
 │                         │
 └─────────────────────────┘
-
 ```
 
 ---
 
-# 5. Special Rules for The Abyss (Depth 5)
+# 5. 深淵（Depth 5）特別ルール
 
-## 5.1 Design Philosophy of No Survival
-
-```
-[Concept]
-The Abyss is the Final Trial.
-→ Only two choices: "Defeat the Boss or Die".
-
-[Intent]
-- Provide maximum tension.
-- Test true resolve.
-- Maximize reward risk.
-- Synergy with Exploration Count Limit (NEW).
+## 5.1 生還不可の設計思想
 
 ```
+【コンセプト】
+深淵は最後の試練。
+→ 「ボスを倒すか、死ぬか」の二択のみ。
 
-## 5.2 Restrictions in The Abyss
+【意図】
+- 最大限の緊張感を提供
+- 真の覚悟を試す
+- 報酬リスクの最大化
+- 残機システムとの相乗効果
 
-```
-[Prohibited]
-✗ Return Route unavailable
-✗ All Teleport Stones disabled
-✗ Mid-way retreat impossible
-
-[Warning Before Entering Abyss]
-"Entering the Abyss will forfeit all means of survival.
- Only two choices remain: Defeat the Boss or Die.
-
- Exploration Count: X Remaining
-
- Do you really want to proceed?"
-
-[Yes - I am resolved] [No - Not yet]
-
+【V3.0での変更】
+ボス撃破後 → 脱出ルートが出現 → 安全に帰還
 ```
 
-## 5.3 Process Upon Entering Abyss
+## 5.2 深淵での制限事項
+
+```
+【禁止事項】
+✗ 帰還ルートは使用不可
+✗ 転移石は全て無効
+✗ 途中撤退は不可能
+
+【深淵進入前の警告】
+「深淵に足を踏み入れると、全ての生還手段が封じられる。
+ 残る選択は「ボスを倒すか、死ぬか」のみ。
+
+ 残機: X
+
+ 本当に進みますか？」
+
+[覚悟はできている] [まだ早い]
+```
+
+## 5.3 脱出ルートシステム（V3.0新規）
+
+```
+【脱出ルートの仕様】
+出現条件: 深淵ボス撃破後
+ルート内容: 戦闘なし（安全な帰還）
+報酬倍率: 100%
+
+【プロセス】
+1. 深淵ボスを撃破
+2. 「深淵からの脱出口が開いた...」
+3. 脱出ルート選択画面
+4. 安全に拠点へ帰還
+5. ゲームクリア（エンディング）
+```
 
 ```typescript
 /**
- * Confirm Enter Abyss
+ * 深淵脱出ルート処理（V3.0新規）
  */
-function confirmEnterAbyss(remainingExplorations: number): boolean {
-  const warning = `
-    ⚠️ WARNING ⚠️
-    
-    Entering the Abyss will forfeit all means of survival.
-    
-    - Return Route: Unavailable
-    - Teleport Stones (All): Disabled
-    - Mid-way Retreat: Impossible
-    
-    Only two choices remain: Defeat the Boss or Die.
-    
-    Exploration Count: ${remainingExplorations} Remaining
-    
-    Do you really want to proceed?
-  `;
-
-  return confirm(warning);
+interface EscapeRoute {
+  trigger: 'boss_defeated';
+  encounters: 'none';
+  rewardMultiplier: 1.0;
 }
 
-/**
- * Check Teleport/Return Availability
- */
-function canReturn(currentDepth: number): {
-  canUseTeleport: boolean;
-  canUseReturnRoute: boolean;
-  reason?: string;
-} {
-  if (currentDepth === 5) {
-    return {
-      canUseTeleport: false,
-      canUseReturnRoute: false,
-      reason: "All survival methods are disabled in the Abyss.",
-    };
-  }
+function activateEscapeRoute(
+  player: Character,
+  soulsEarnedThisRun: number
+): ReturnResult {
+  // 報酬計算（100%）
+  const rewards = {
+    gold: player.dungeonGold,
+    stones: player.dungeonStones,
+    souls: soulsEarnedThisRun,
+  };
+
+  // 装備・熟練度を保持
+  savePlayerState(player);
+
+  // 魂を累計に加算
+  addToTotalSouls(rewards.souls);
 
   return {
-    canUseTeleport: true,
-    canUseReturnRoute: true,
+    success: true,
+    type: 'escape_route',
+    rewards: rewards,
+    message: '深淵からの脱出に成功した...',
+    isGameClear: true,
   };
 }
-
-/**
- * Attempt Teleport in Abyss
- */
-function attemptTeleportInAbyss(): void {
-  showMessage(`
-    The Teleport Stone shattered...
-    The magic of the Abyss nullifies teleportation.
-    There is no way back now.
-  `);
-
-  // Stone is not consumed (since use failed)
-}
 ```
 
-## 5.4 Game Design Significance of The Abyss
+## 5.4 深淵でのゲームデザイン上の意義
 
 ```
-[Strategic Significance]
-1. Extreme Risk/Reward
-   - Highest rewards but no escape.
-   - Complete preparation required.
+【戦略的意義】
+1. 究極のリスク・リターン
+   - 最高の報酬だが逃げ場なし
+   - 完璧な準備が必要
 
-2. Trial of Player Skill
-   - Perfect equipment management.
-   - Mastery of combat techniques.
-   - Precise resource allocation.
+2. プレイヤースキルの試練
+   - 完璧な装備管理
+   - 戦闘テクニックの習熟
+   - 的確なリソース配分
 
-3. Gradual Challenge
-   - Beginner: Retreat by Depth 3.
-   - Intermediate: Use Teleport at Depth 4.
-   - Advanced: Enter The Abyss.
+3. 段階的挑戦
+   - 初心者: Depth 3で帰還
+   - 中級者: Depth 4で転移石使用
+   - 上級者: 深淵に挑む
 
-4. Maximize Sense of Accomplishment
-   - Clearing the Abyss is true glory.
-   - Titles / Special Rewards.
+4. 達成感の最大化
+   - 深淵クリアは真の栄誉
+   - 称号 / 特別報酬
 
-5. Integration with Exploration Count (NEW)
-   - Entering Abyss with few runs left is a gamble.
-   - Failure means no next chance.
-   - Requires careful judgment.
-
+5. 残機との連動（V3.0）
+   - 残機が少ない状態での深淵挑戦は賭け
+   - 失敗すれば次の機会がない可能性
+   - 慎重な判断が求められる
 ```
 
 ---
 
-# 6. Reward Calculation upon Survival
+# 6. 生還時の報酬計算
 
-## 6.1 Base Reward Formula
+## 6.1 基本報酬計算式
 
 ```typescript
 /**
- * Base Reward Calculation
+ * 基本報酬計算（V3.0統一）
  */
 interface BaseReward {
   gold: number;
   stones: MagicStones;
 }
 
-interface MagicStones {
-  tiny: number;
-  small: number;
-  medium: number;
-  large: number;
-  huge: number;
-}
-
-function calculateBaseReward(
-  currentDepth: number,
-  defeatedEnemies: number
-): BaseReward {
-  // Depth Bonus
-  const depthMultiplier: Record<number, number> = {
-    1: 1.0,
-    2: 1.5,
-    3: 2.5,
-    4: 4.0,
-    5: 7.0,
-  };
-
-  const depthBonus = depthMultiplier[currentDepth] || 1.0;
-
-  // Gold Calculation
-  const gold = Math.floor(currentDepth * 50 + defeatedEnemies * 10);
-
-  // Stone Calculation (Types change by depth)
-  const stones = calculateStoneRewards(currentDepth, defeatedEnemies);
-
-  return { gold, stones };
-}
-
-function calculateStoneRewards(depth: number, enemies: number): MagicStones {
-  const base = Math.floor(enemies / 3);
-
-  const distribution: Record<number, MagicStones> = {
-    1: { tiny: base * 4, small: 0, medium: 0, large: 0, huge: 0 },
-    2: { tiny: base, small: base * 3, medium: 0, large: 0, huge: 0 },
-    3: { tiny: base, small: base, medium: base * 2, large: 0, huge: 0 },
-    4: { tiny: 0, small: base, medium: base * 2, large: base, huge: 0 },
-    5: { tiny: 0, small: 0, medium: base, large: base * 2, huge: 1 },
-  };
-
-  return distribution[depth] || distribution[1];
-}
+// V3.0: 全ての生還方法で100%
+const REWARD_MULTIPLIER = 1.0;
 ```
 
 ---
 
-## 6.2 Soul Remnants Calculation (V2.0 - Major Change)
+## 6.2 魂の残滓計算（V3.0 - 重要変更）
 
-**Important Changes:**
-
-```
-Old Design:
-- Gain Souls on Death.
-- Reduced on Survival by method.
-
-New Design:
-- Gain Souls on Enemy Kill (Like EXP).
-- Add to Total on Survival (Reduced by method).
-- Zero for that run on Death (Total is retained).
+**重要な変更:**
 
 ```
+旧設計:
+- 死亡時 → 魂獲得ゼロ
+- 生還時 → 方法に応じた倍率で加算
 
-### 6.2.1 Soul Acquisition Timing
+新設計:
+- 死亡時 → 100%獲得（確実に累計に加算）
+- 生還時 → 100%獲得（全て累計に加算）
+```
+
+### 6.2.1 魂獲得タイミング
 
 ```typescript
 /**
- * Gain Souls on Enemy Kill
+ * 敵撃破時に魂を獲得
  */
 interface SoulGainSystem {
-  // Souls added during combat "Souls earned this run"
+  // 戦闘中に加算される「今回の探索での獲得魂」
   currentRunSouls: number;
 
-  // "Total Souls" accumulated from past runs
+  // 過去の探索で蓄積した「累計魂」
   totalSouls: number;
 }
 
 /**
- * Soul Gain on Enemy Defeat
+ * 敵撃破時の魂獲得
  */
 function defeatEnemy(enemy: Character): number {
-  // Soul amount differs by enemy type
+  // 敵タイプ別の魂量
   const soulsByType: Record<EnemyType, number> = {
     minion: 5,
     elite: 15,
@@ -774,370 +603,271 @@ function defeatEnemy(enemy: Character): number {
 
   const soulsGained = soulsByType[enemy.type] || 5;
 
-  // Add to "Souls earned this run"
+  // 「今回の探索での獲得魂」に加算
   currentRunSouls += soulsGained;
 
   return soulsGained;
 }
-
-/**
- * Soul Gain in Return Combat (50%)
- */
-function defeatReturnEnemy(enemy: Character): number {
-  const baseSouls = enemy.rewardSouls;
-  const reducedSouls = Math.floor(baseSouls * 0.5);
-
-  // Add to "Souls earned this run"
-  currentRunSouls += reducedSouls;
-
-  return reducedSouls;
-}
 ```
 
-### 6.2.2 Soul Processing on Survival
+### 6.2.2 生還時の魂処理
 
 ```typescript
 /**
- * Calculate Soul Remnants on Survival
+ * 生還完了処理（V3.0）
  */
-function calculateSoulReward(
-  soulsEarnedThisRun: number,
-  returnMethod: ReturnMethod
-): number {
-  const multipliers: Record<ReturnMethod, number> = {
-    return_route: 1.0, // 100%
-    teleport_normal: 0.7, // 70%
-    teleport_blessed: 0.8, // 80%
-    teleport_emergency: 0.6, // 60%
-  };
-
-  const multiplier = multipliers[returnMethod];
-  const finalSouls = Math.floor(soulsEarnedThisRun * multiplier);
-
-  return finalSouls;
-}
-
-/**
- * Survival Completion Process
- */
-function completeReturn(
+function completeSurvival(
   player: Character,
   soulsEarnedThisRun: number,
-  returnMethod: ReturnMethod
+  returnMethod: 'teleport' | 'return_route' | 'escape_route'
 ): void {
-  // Soul reduction by method
-  const finalSouls = calculateSoulReward(soulsEarnedThisRun, returnMethod);
+  // V3.0: 全ての方法で100%
+  const finalSouls = soulsEarnedThisRun;
 
-  // Add to Total Souls
+  // 累計魂に加算
   player.totalSouls += finalSouls;
 
-  // Reset souls for this run
+  // 今回の探索魂をリセット
   currentRunSouls = 0;
 
-  // Update available skill points in Sanctuary
+  // Sanctuaryの利用可能スキルポイントを更新
   updateAvailableSkillPoints(player.totalSouls);
 }
 ```
 
-### 6.2.3 Soul Processing on Death
+### 6.2.3 死亡時の魂処理（V3.0変更）
 
 ```typescript
 /**
- * Death Processing
+ * 死亡処理（V3.0）
  */
 function handleDeath(player: Character, soulsEarnedThisRun: number): void {
-  // Souls earned this run become zero
+  // V3.0: 死亡時も魂は100%獲得
+  player.totalSouls += soulsEarnedThisRun;
+
+  // 今回の探索魂をリセット
   currentRunSouls = 0;
 
-  // However, Total Souls are retained
-  // player.totalSouls remains as is
+  // 残機を減少
+  player.lives.current--;
 
-  // Equipment, Gold, Magic Stones are all lost
-  player.equipment = [];
-  player.gold = 0;
-  player.magicStones = { tiny: 0, small: 0, medium: 0, large: 0, huge: 0 };
+  // 所有アイテム・装備は全ロスト
+  player.inventory = getEmptyInventory();
+  player.equippedItems = {};
+  player.dungeonGold = 0;
+  player.dungeonStones = getEmptyStones();
 
-  // Equipment, Cards, Past Total Souls stored at BaseCamp are retained
+  // BaseCampの装備・カード・Goldは保持
+  // player.baseCampEquipment, player.baseCampGold は変更なし
+
+  // 残機0チェック
+  if (player.lives.current <= 0) {
+    triggerGameOver(player);
+  }
 }
 ```
 
 ---
 
-## 6.3 Reward Multiplier by Survival Method
+## 6.3 報酬まとめ（V3.0）
 
 ```
-[Final Reward Formula]
+【最終報酬計算式】
 
-Final Reward = Base Reward × Survival Method Multiplier
+全生還方法で統一:
+- Gold: 100%
+- 魔石: 100%
+- 魂の残滓: 100%
 
-[Survival Method Multipliers]
-Return Route: 1.0 (100%)
-Normal Teleport: 0.7 (70%)
-Blessed Teleport: 0.8 (80%)
-Emergency Teleport: 0.6 (60%)
+【魂の残滓計算（V3.0）】
+生還時:
+- 転移石: 今回の魂 × 100% → 累計に加算
+- 帰還ルート: 今回の魂 × 100% + 追加魂 → 累計に加算
+- 脱出ルート: 今回の魂 × 100% → 累計に加算
 
-[Soul Remnants Calculation (V2.0)]
-On Survival:
-- Return Route: Souls this run × 1.0 → Add to Total
-- Normal Teleport: Souls this run × 0.7 → Add to Total
-- Blessed Teleport: Souls this run × 0.8 → Add to Total
-- Emergency Teleport: Souls this run × 0.6 → Add to Total
+死亡時:
+- 今回の魂 × 100% → 累計に加算
+- 残機 -1
+- アイテム・装備は全ロスト
 
-On Death:
-- Souls this run → Zero
-- Total Souls → Retained (No change)
+計算例:
+今回の探索魂: 100
+過去の累計魂: 500
 
-Calculation Example:
-Souls earned this run: 100
-Past Total Souls: 500
+【生還した場合】
+累計: 500 + 100 = 600
 
-[If Survived]
-Return Route: Add 100 → Total 600
-Normal Teleport: Add 70 → Total 570
-Blessed Teleport: Add 80 → Total 580
-Emergency Teleport: Add 60 → Total 560
-
-[If Died]
-This run: 0
-Total: 500 (No change)
-
+【死亡した場合】
+累計: 500 + 100 = 600
+残機: -1
+アイテム: 全ロスト
 ```
 
 ---
 
-# 7. Relationship with Exploration Count Limit (NEW)
+# 7. 死亡時の処理（V3.0変更）
 
-## 7.1 Basic Rules of Exploration Count Limit
-
-```
-[Limit Mechanism]
-- Exploration Limit: 10 runs (Default)
-- Regardless of survival or death, 1 run = Count +1
-- Defeat Depth 5 Boss within 10 runs → Success
-- Use up 10 runs → Game Over
-
-[Count for 1 Run]
-Enter Dungeon → Survive or Die → Exploration Count +1
+## 7.1 死亡時のペナルティ詳細
 
 ```
+【ロストするもの】
+- 所有装備（持ち込み含む全て）
+- 所有アイテム（持ち込み含む全て）
+- 獲得したGold
+- 獲得した魔石
+- 残機 1つ
 
-## 7.2 Relationship between Survival System and Exploration Count
+【獲得できるもの】
+- 魂の残滓 100%（累計に加算）
 
-```
-[Increased Strategic Value of Survival]
-
-When remaining explorations are low:
-- Risk of death is extremely high.
-- Need to reliably bring back Souls.
-- Value of Teleport Stones increases.
-
-Example: 2 remaining runs
-Option A: Go deep for massive Souls
-→ If you die, 0 Souls, hard to reach deep with 1 run left.
-
-Option B: Reliably survive at mid-layer, accumulate Souls
-→ Upgrade at Sanctuary, challenge deep layer with 1 run left.
-
+【保持されるもの】
+- BaseCampに保管している装備
+- BaseCampのGold残高
+- 過去の累計魂
+- Sanctuary解放状況
+- カードデッキ
 ```
 
-## 7.3 Choosing Survival Method and Exploration Count
+## 7.2 ゲームオーバー条件
 
 ```
-[Recommended Strategy by Remaining Count]
+残機0の状態で死亡 → ゲームオーバー
 
-Remaining 7-10:
-- Return Route recommended (Max rewards)
-- Can recover even if you die
-- Aim for additional Souls
+【ゲームオーバー時の処理】
+完全リセット:
+- Gold: 初期値に戻る
+- 装備: 初期装備のみ
+- 魂の残滓（累計）: 0に戻る
+- Sanctuary解放状況: リセット
+- カードデッキ: 初期デッキに戻る
+- 図鑑記録: リセット
+- 既知イベント情報: リセット
 
-Remaining 4-6:
-- Judgement call
-- Use Teleport if deep
-- Return Route if shallow
-
-Remaining 1-3:
-- Teleport Stone mandatory (Blessed or Emergency)
-- Must avoid death
-- Reliably bring back Souls
-- Final upgrades at Sanctuary
-
-```
-
-## 7.4 Judgment to Enter Abyss
-
-```
-[Conditions to Enter Abyss]
-
-Recommended:
-- Exploration Count: 2+ remaining
-- Equipment: Max Level (Lv3)
-- Sanctuary: Key skills unlocked
-- Consumables: Sufficient stock
-
-Abyss with 1 run left:
-- Final challenge
-- Failure = Game Over
-- Success = Full Clear
-
-Warning Display:
-"Entering the Abyss.
- Exploration Count: 1 Remaining
-
- Failure means no next chance.
- Do you really want to proceed?"
-
+継続されるもの:
+- 実績解除状況のみ
 ```
 
 ---
 
-# 8. Strategic Significance and Balance
+# 8. 残機システムとの連携
 
-## 8.1 Usage of Each Method
+## 8.1 残機システム基本ルール
 
 ```
-[Return Route]
-Recommended:
-- Equipment Durability > 40%
+【残機の仕組み】
+- 難易度別上限: Hard:2, Normal/Easy:3
+- 減少タイミング: 死亡時のみ
+- 回復手段: なし
+- 残機0で死亡: ゲームオーバー
+
+【生還との関係】
+生還時 → 残機変化なし
+死亡時 → 残機-1
+```
+
+## 8.2 生還方法選択と残機
+
+```
+【残機が多い場合（2-3）】
+- 帰還ルート推奨（追加報酬狙い）
+- 多少のリスクは許容できる
+- 死んでも次の機会がある
+
+【残機が少ない場合（1）】
+- 転移石推奨（安全優先）
+- リスクを最小化
+- 死亡は許されない
+
+【深淵への挑戦判断】
+残機2以上: 挑戦可能（失敗しても再挑戦可）
+残機1: 最後の挑戦（失敗＝ゲームオーバーの可能性大）
+```
+
+---
+
+# 9. 戦略的意義とバランス
+
+## 9.1 各方法の使い分け
+
+```
+【転移石】
+推奨:
+- 装備耐久度 < 40%
+- HP < 50%
+- 貴重な装備を獲得
+- 残機が少ない
+→ 確実なリソース確保
+
+【帰還ルート】
+推奨:
+- 装備耐久度 > 40%
 - HP > 60%
-- Consumables available
-- Exploring Depth 1-3
-- Plenty of Exploration Count (5+ left)
-→ Aim for Max Rewards
+- 消耗品あり
+- 残機に余裕がある
+→ 追加報酬を狙う
 
-[Normal Teleport (70%)]
-Recommended:
-- Equipment Durability 20-40%
-- HP 40-60%
-- Acquired Rare Equipment
-- Want to save time
-- Mid-game Exploration Count (4-6 left)
-→ Safe resource securing
-
-[Blessed Teleport (80%)]
-Recommended:
-- Possess High Value Equip/Stones
-- Want to bring back more rewards
-- After exploring Depth 3-4
-- Low Exploration Count (2-3 left)
-→ Balanced type
-
-[Emergency Teleport (60%)]
-Recommended:
-- HP Critical during battle
-- Disadvantageous Boss fight
-- Need immediate escape
-- 1 Exploration Count left
-→ Last resort escape
-
-[Strategy in Abyss]
-Before entering Depth 5:
-- Complete preparations
-- All Teleport Stones disabled
-- Check Exploration Count
-- Enter only with resolve
-→ Victory or Death
-
+【深淵脱出ルート】
+条件:
+- 深淵ボス撃破後のみ
+→ ゲームクリア、最大報酬
 ```
 
 ---
 
-## 8.2 Risk/Reward Balance
+## 9.2 リスク・リターンバランス
 
 ```
-[Trade-off]
+【トレードオフ】
 
-Return Route:
-- Reward: 100% (Max)
-- Risk: 3-7 battles en route
-- Additional Profit: Mastery +15-25 uses, Additional Souls
-- Exploration Count Value: Maximized
-→ Take time and risk for max reward
+転移石:
+- 報酬: 100%
+- リスク: なし
+- コスト: アイテム消費
+→ 安全確実だが追加報酬なし
 
-Normal Teleport:
-- Reward: 70%
-- Risk: None
-- Loss: 30% Gold/Stones/Souls
-- Exploration Count Value: Moderate
-→ Safety first, time saving
+帰還ルート:
+- 報酬: 100% + 追加魂
+- リスク: 3-7戦闘
+- コスト: なし
+→ リスクを取って追加報酬
 
-Blessed Teleport:
-- Reward: 80%
-- Risk: None
-- Loss: 20% Gold/Stones/Souls
-- Exploration Count Value: High
-→ Balanced, relatively high retention
-
-Emergency Teleport:
-- Reward: 60%
-- Risk: None
-- Loss: 40% Gold/Stones/Souls
-- Exploration Count Value: Protects life/gear
-→ Emergency insurance, significant loss
-
-[Strategy by Depth]
+【深度別の推奨】
 
 Depth 1-2:
-- Return Route recommended
-- 70-75% encounter rate but enemies are weak
-- Chance for Mastery/Soul farming
+- 帰還ルート推奨
+- エンカウント率70-75%だが敵が弱い
+- 熟練度・魂稼ぎのチャンス
 
 Depth 3:
-- Judgment call
-- Good Equip + Count to spare → Return Route
-- High wear or Low Count → Blessed Teleport
+- 状況判断
+- 良装備 + 残機余裕 → 帰還ルート
+- 消耗激しい or 残機少ない → 転移石
 
 Depth 4:
-- Teleport recommended
-- 85% encounter rate is high risk
-- Potential Elite enemies
-- Mandatory if Count is low
+- 転移石推奨
+- エンカウント率85%は高リスク
+- エリートが出現する可能性
 
-Depth 5 (Abyss):
-- No survival means
-- Consider retreating at Depth 4 beforehand
-- Check Exploration Count
-- Entry requires resolve
-
+Depth 5（深淵）:
+- 生還手段なし
+- ボス撃破で脱出ルート出現
+- 残機を確認してから進入を決断
 ```
 
 ---
 
-## 8.3 Risk Management Learning Curve
+# 10. 実装仕様
 
-```
-[Early Game (1-5 Runs)]
-Goal: Understanding retreat timing
-→ Use Teleport for safe return
-→ Grasp the feel of Exploration Count
-
-[Mid Game (10-20 Runs)]
-Goal: Utilizing Return Route
-→ Defeat weakened enemies and retreat
-→ Maximize Soul acquisition
-
-[Late Game (30+ Runs)]
-Goal: Push to the limit
-→ Carry only Emergency Teleport
-→ High efficiency runs in Deep/Abyss
-→ Perfect management of Exploration Count
-
-```
-
----
-
-# 9. Implementation Specifications
-
-## 9.1 Data Structure
+## 10.1 データ構造
 
 ```typescript
 /**
- * Survival System Data Types
+ * 生還システムのデータ型（V3.0）
  */
 enum ReturnMethod {
-  RETURN_ROUTE = "return_route",
-  TELEPORT_NORMAL = "teleport_normal",
-  TELEPORT_BLESSED = "teleport_blessed",
-  TELEPORT_EMERGENCY = "teleport_emergency",
+  TELEPORT = 'teleport',
+  RETURN_ROUTE = 'return_route',
+  ESCAPE_ROUTE = 'escape_route',  // V3.0新規
 }
 
 interface ReturnResult {
@@ -1146,409 +876,305 @@ interface ReturnResult {
   rewards: {
     gold: number;
     stones: MagicStones;
-    souls: number; // Souls earned this run and added to total
+    souls: number;
   };
   message: string;
-  penalties?: {
-    goldLoss: number;
-    stoneLoss: number;
-    soulLoss: number; // Soul reduction by method
-  };
+  isGameClear?: boolean;  // V3.0: 脱出ルート用
 }
 
 interface ReturnOption {
   method: ReturnMethod;
   available: boolean;
-  rewardMultiplier: number;
-  risk: "none" | "low" | "medium" | "high" | "dynamic";
-  currentEncounterRate?: number; // For return route
-  finalEncounterRate?: number; // For return route
-  reason?: string; // Reason for unavailability
-}
-
-/**
- * Abyss Check
- */
-interface AbyssRestriction {
-  canUseTeleport: boolean;
-  canUseReturnRoute: boolean;
+  rewardMultiplier: 1.0;  // V3.0: 常に100%
+  risk: 'none' | 'combat';
+  currentEncounterRate?: number;
+  finalEncounterRate?: number;
   reason?: string;
 }
 
 /**
- * Soul Remnants System (V2.0)
+ * 残機システム（V3.0）
  */
-interface SoulSystem {
-  currentRunSouls: number; // Souls earned this run
-  totalSouls: number; // Total accumulated souls
+interface LivesSystem {
+  maxLives: number;  // 難易度による（2 or 3）
+  currentLives: number;
 }
 
 /**
- * Exploration Count Limit (NEW)
+ * 魂の残滓システム（V3.0）
  */
-interface ExplorationLimit {
-  maxExplorations: number; // Max counts (Default 10)
-  currentExplorations: number; // Current counts
-  remainingExplorations: number; // Remaining counts
+interface SoulSystem {
+  currentRunSouls: number;  // 今回の探索での獲得魂
+  totalSouls: number;  // 累計魂
 }
 ```
 
 ---
 
-## 9.2 UI Design Requirements
+## 10.2 UI設計要件
 
 ```
-[Survival Menu Screen]
+【生還メニュー画面（V3.0）】
 
 ┌─────────────────────────────┐
-│  Select Survival Method     │
+│  生還方法を選択              │
 ├─────────────────────────────┤
 │                             │
-│ Location: Lower (Depth 3)   │
-│ Exploration: 7/10 (3 left)  │  ← NEW
+│ 現在地: 下層（Depth 3）      │
+│ 残機: ❤️❤️❤️                 │
 │                             │
-│ Souls earned this run: 85   │  ← NEW
+│ 今回の獲得魂: 85             │
 │                             │
-│ 1. Return Route             │
-│    Reward: 100%             │
-│    Souls: 85 → Add to Total │  ← NEW
-│    Curr Enc Rate: 80%       │
-│    Final Enc Rate: 30%      │
-│    Risk: Medium             │
-│    [Select]                 │
+│ 1. 転移石                    │
+│    報酬: 100%                │
+│    魂: 85 → 累計に加算       │
+│    リスク: なし              │
+│    所持: 2個                 │
+│    [使用]                    │
 │                             │
-│ 2. Teleport (Normal)        │
-│    Reward: 70%              │
-│    Souls: 59 → Add to Total │  ← NEW (85 × 0.7)
-│    Risk: None               │
-│    Held: 2                  │
-│    [Use]                    │
+│ 2. 帰還ルート                │
+│    報酬: 100% + 追加魂       │
+│    現在エンカウント率: 80%   │
+│    リスク: 戦闘あり          │
+│    [選択]                    │
 │                             │
-│ 3. Teleport (Blessed)       │
-│    Reward: 80%              │
-│    Souls: 68 → Add to Total │  ← NEW (85 × 0.8)
-│    Risk: None               │
-│    Held: 1                  │
-│    [Use]                    │
+│ ⚠️ 深淵（Depth 5）では       │
+│   全ての方法が使用不可       │
 │                             │
-│ 4. Teleport (Emergency)     │
-│    Reward: 60%              │
-│    Souls: 51 → Add to Total │  ← NEW (85 × 0.6)
-│    Usable in Combat         │
-│    Held: 0                  │
-│    [None Held]              │
-│                             │
-│ ⚠️ In Abyss (Depth 5)       │
-│   All methods disabled      │
-│                             │
-│ ⚠️ Upon Death, the 85 Souls │  ← NEW
-│   will become zero          │  ← NEW
-│                             │
-│ [Cancel]                    │
+│ [キャンセル]                 │
 │                             │
 └─────────────────────────────┘
 
-[Abyss Entry Warning Screen]
+【深淵進入警告画面】
 
 ┌─────────────────────────────┐
-│  ⚠️ Entering The Abyss ⚠️   │
+│  ⚠️ 深淵への進入 ⚠️          │
 ├─────────────────────────────┤
 │                             │
-│ Ahead lies The Abyss.       │
+│ この先は深淵。               │
 │                             │
-│ In The Abyss:               │
+│ 深淵では:                    │
 │                             │
-│ ✗ Return Route Unavailable  │
-│ ✗ All Teleport Stones Void  │
-│ ✗ No Retreat                │
+│ ✗ 帰還ルート使用不可         │
+│ ✗ 転移石は全て無効           │
+│ ✗ 途中撤退は不可能           │
 │                             │
-│ Defeat the Boss or Die.     │
-│ Only two choices.           │
+│ ボスを倒すか、死ぬか。       │
+│ 二つに一つ。                 │
 │                             │
-│ Exploration: 8/10 (2 left)  │  ← NEW
+│ 残機: ❤️❤️ (2)               │
 │                             │
-│ Souls earned this run: 120  │  ← NEW
-│ * Zeroed upon death         │  ← NEW
+│ 今回の獲得魂: 120            │
+│ ※ 死亡しても魂は獲得        │
 │                             │
-│ Do you really want to proceed?│
+│ 本当に進みますか？           │
 │                             │
-│ [I am resolved]             │
-│ [Not yet]                   │
+│ [覚悟はできている]           │
+│ [まだ早い]                   │
 │                             │
 └─────────────────────────────┘
 
+【死亡時画面（V3.0）】
+
+┌─────────────────────────────┐
+│        探索失敗...           │
+├─────────────────────────────┤
+│                             │
+│ 全てを失った...              │
+│                             │
+│ しかし、魂の残滓は           │
+│ 手に入れた。                 │
+│                             │
+│ 魂の残滓: +85                │
+│ 累計: 565 → 650              │
+│                             │
+│ 残機: ❤️❤️❤️ → ❤️❤️          │
+│                             │
+│ ロストしたもの:              │
+│ - 鋼の剣 Lv2                 │
+│ - 皮の鎧 Lv1                 │
+│ - 回復薬 x3                  │
+│ - Gold 230                   │
+│                             │
+│ [拠点に戻る]                 │
+│                             │
+└─────────────────────────────┘
+
+【ゲームオーバー画面】
+
+┌─────────────────────────────┐
+│         GAME OVER            │
+├─────────────────────────────┤
+│                             │
+│ 残機が尽きた...              │
+│                             │
+│ 最終到達深度: Depth 4        │
+│ 累計獲得魂: 1,250            │
+│ 撃破した敵: 87体             │
+│                             │
+│ [解除された実績は            │
+│  保持されます]               │
+│                             │
+│ [最初からやり直す]           │
+│                             │
+└─────────────────────────────┘
 ```
 
 ---
 
-## 9.3 Confirmation Dialogs
+## 10.3 実装チェックリスト
 
 ```
-[Teleport Stone Confirmation]
+□ 転移石アイテム実装（統一版）
+  □ 100%報酬
+  □ 戦闘中使用不可
 
-┌─────────────────────────────┐
-│  Confirm                    │
-├─────────────────────────────┤
-│                             │
-│ Use Normal Teleport Stone?  │
-│                             │
-│ Current Reward:             │
-│ - Gold: 500 → 350 (-150)    │
-│ - Stones: 15 → 10 (-5)      │
-│ - Souls: 85 → 59 (-26)      │  ← NEW
-│                             │
-│ Reward Mult: 70%            │
-│ Equip/Mastery: All Kept     │
-│                             │
-│ Exploration: 7 → 8 (+1)     │  ← NEW
-│ Remaining: 3 → 2            │  ← NEW
-│                             │
-│ [Use] [Cancel]              │
-│                             │
-└─────────────────────────────┘
+□ 深度チェックシステム
+  □ Depth 5での転移石無効
+  □ Depth 5での帰還ルート無効
+  □ 深淵進入前の警告
 
-[Return Route Confirmation]
+□ 帰還ルートシステム
+  □ 動的エンカウント率計算
+  □ 進行度によるレート低下
+  □ 部屋ごとのエンカウント判定
+  □ 弱体化敵ロジック
 
-┌─────────────────────────────┐
-│  Confirm                    │
-├─────────────────────────────┤
-│                             │
-│ Retreat via Return Route?   │
-│                             │
-│ To Base: 15 Rooms           │
-│ Curr Enc Rate: 80%          │
-│ Final Enc Rate: 30%         │
-│                             │
-│ Reward: 100% (No reduction) │
-│ Est. Combat: 8-10           │
-│                             │
-│ Equip/Mastery: All Kept     │
-│ Add. Mastery: ~20 uses      │
-│ Add. Souls: ~40             │  ← NEW
-│                             │
-│ Exploration: 7 → 8 (+1)     │  ← NEW
-│ Remaining: 3 → 2            │  ← NEW
-│                             │
-│ [Start] [Cancel]            │
-│                             │
-└─────────────────────────────┘
+□ 脱出ルートシステム（V3.0新規）
+  □ ボス撃破後に出現
+  □ 戦闘なし帰還
+  □ ゲームクリアフラグ
 
-```
+□ 報酬計算システム
+  □ 基本報酬計算（Gold/魔石）
+  □ 100%統一倍率
+  □ 魂の残滓計算（生還/死亡共に100%）
 
----
+□ 残機システム（V3.0新規）
+  □ 難易度別上限
+  □ 死亡時減少
+  □ ゲームオーバー判定
 
-## 9.4 Return Route Progress UI
+□ 死亡処理（V3.0変更）
+  □ 魂100%獲得
+  □ 残機減少
+  □ アイテム・装備全ロスト
+  □ ゲームオーバー処理
 
-```
-[Return Route Screen]
+□ UI実装
+  □ 生還メニュー
+  □ 深淵警告
+  □ 転移石確認ダイアログ
+  □ 帰還ルート確認ダイアログ
+  □ 帰還ルート進行画面
+  □ 残機表示
+  □ 死亡時画面（魂獲得表示）
+  □ ゲームオーバー画面
 
-┌─────────────────────────────┐
-│  Returning to Base...       │
-├─────────────────────────────┤
-│                             │
-│ Progress: ████████░░░ 72%   │
-│                             │
-│ Rooms Left: 4 / 15          │
-│ Encounters: 6               │
-│                             │
-│ Location: Mid 3rd Room      │
-│                             │
-│ Next Room Enc Rate: 39%     │
-│ ▼▼▼░░░░░░░ Low Risk         │
-│                             │
-│ Souls earned this run: 105  │  ← NEW
-│ (Return Combat: +20)        │  ← NEW
-│                             │
-│ [To Next Room]              │
-│                             │
-└─────────────────────────────┘
-
-[Encounter Occurred]
-
-┌─────────────────────────────┐
-│  Enemy Encountered!         │
-├─────────────────────────────┤
-│                             │
-│ Corrupt Wolf (Weakened)     │
-│ HP: 21 / 30 (70%)           │
-│ Atk: 5 (Normal: 7)          │
-│ Souls: 2 (Normal: 5)        │  ← NEW
-│                             │
-│ * Return Combat             │
-│   Enemy strength 70%        │
-│   Reward 50%                │
-│                             │
-│ [Start Battle]              │
-│                             │
-└─────────────────────────────┘
-
+□ 統合テスト
+  □ 各生還方法の検証
+  □ Depth 5制限の検証
+  □ 報酬計算の正確性
+  □ 装備・熟練度保持の検証
+  □ 残機システム動作
+  □ 死亡時魂獲得の検証
+  □ ゲームオーバー処理
+  □ 脱出ルート動作
 ```
 
 ---
 
-## 9.5 Implementation Checklist
+# 11. まとめ
+
+## 11.1 主要設計ポイント（V3.0）
 
 ```
-□ Teleport Stone Item Implementation
-  □ Normal (70%)
-  □ Blessed (80%)
-  □ Emergency (60% / In-combat)
+1. 2層構造の生還方法
+   - 転移石（安全/アイテム消費）
+   - 帰還ルート（リスク/追加報酬）
 
-□ Depth Check System
-  □ Disable Teleport at Depth 5
-  □ Disable Return Route at Depth 5
-  □ Warning before entering Abyss
+2. 深淵の絶対的制約
+   - Depth 5では全生還手段が無効
+   - 「ボスを倒すか、死ぬか」の緊張感
+   - ボス撃破で脱出ルート出現
 
-□ Return Route System
-  □ Dynamic Encounter Rate Calculation
-  □ Rate reduction by progress
-  □ Encounter check per room
-  □ Enemy weakening logic
+3. 転移石の統一（V3.0変更）
+   - 3種類 → 1種類に統一
+   - 報酬倍率: 100%固定
+   - 帰還ルートとの差別化は安全性のみ
 
-□ Reward Calculation System
-  □ Base reward calc (Gold/Stones)
-  □ Multiplier application (70% / 80% / 60% / 100%)
-  □ Soul Remnants calc (V2.0)
-    □ Gain on Enemy Kill
-    □ Add to Total on Survival
-    □ Zero on Death
+4. 死亡時の魂100%獲得（V3.0変更）
+   - 死亡しても魂は確実に獲得
+   - ペナルティは「残機減少」と「アイテムロスト」
+   - 成長は止まらない設計
 
-□ Exploration Count Limit System (NEW)
-  □ Count exploration
-  □ Display remaining count
-  □ Game Over condition
-  □ UI Integration
+5. 残機システムとの連携（V3.0新規）
+   - 死亡時のみ残機減少
+   - 生還成功時は残機温存
+   - 残機0でゲームオーバー
 
-□ UI Implementation
-  □ Survival Menu
-  □ Abyss Warning
-  □ Teleport Confirmation Dialog
-  □ Return Route Confirmation Dialog
-  □ Return Route Progress Screen
-  □ Visualization of Encounter Rate
-  □ Visualization of Reward Reduction
-  □ Display Exploration Count (NEW)
-  □ Display Soul Gain Status (NEW)
-
-□ Integration Testing
-  □ Verify each survival method
-  □ Verify Depth 5 restrictions
-  □ Accuracy of reward calc
-  □ Verify Equipment/Mastery retention
-  □ Accuracy of encounter rate calc
-  □ Soul Remnants System operation (V2.0)
-  □ Exploration Count Limit operation (NEW)
-  □ Edge case handling
-
+6. 動的エンカウント率システム
+   - 帰還が進むほど安全に
+   - 深度が深いほど初期レートが高い
+   - 進行度に応じた可視化
 ```
 
----
-
-# 10. Summary
-
-## 10.1 Key Design Points (V2.0)
+## 11.2 プレイヤー体験設計
 
 ```
-1. Two-Tier Survival Methods
-   - Return Route (Variable Risk/Max Reward)
-   - 3 Teleport Stones (Safe/Reduced Reward)
+【初心者（1-10プレイ）】
+- Depth 1-2で帰還ルート練習
+- 転移石をセーフティネットに
+- エンカウント率システムを理解
+- 残機の重みを学ぶ
 
-2. Absolute Constraints of The Abyss
-   - All survival means disabled in Depth 5.
-   - Tension of "Defeat the Boss or Die".
-   - Preparation and resolve required.
+【中級者（11-30プレイ）】
+- Depth 3-4まで探索
+- 状況に応じた生還方法選択
+- 装備耐久度とのバランス
+- 残機管理を意識
 
-3. Dynamic Encounter Rate System
-   - Safer as you progress back.
-   - Higher initial rate at deeper depths.
-   - Visualize progress for player.
+【上級者（31+プレイ）】
+- 深淵に挑戦
+- 転移石を持たずギリギリまで探索
+- 完璧なリソース管理
+- 残機1での深淵挑戦
 
-4. Reward Trade-off
-   - Safety vs Reward Balance.
-   - Choices based on stone type.
-
-5. Integration with Equipment Durability
-   - Durability directly affects survival decision.
-   - Strategic depth.
-   - Importance of resource management.
-
-6. Soul Remnants System (V2.0 - Major Change)
-   - Gain on Kill (EXP style).
-   - Add to Total on Survival (Reduced by method).
-   - Zero for run on Death (Total retained).
-   - Removed Roguelite element.
-
-7. Integration with Exploration Count Limit (NEW)
-   - Counted regardless of survival/death.
-   - Value of survival skyrockets when count is low.
-   - Affects decision to enter Abyss.
-   - Adds weight to each run.
-
+【深淵の位置づけ】
+- 最後の試練
+- 真の覚悟が試される場所
+- 最高報酬とリスク
+- プレイヤースキルの証明
+- 残機システムとの相乗効果
 ```
 
-## 10.2 Player Experience Design
+## 11.3 他システムとの連携
 
 ```
-[Beginner (1-10 Runs)]
-- Practice Return Route in Depth 1-2.
-- Use Teleport Stones as safety net.
-- Understand Encounter Rate system.
-- Understand Soul acquisition (NEW).
-- Grasp Exploration Count (NEW).
+【装備システム】
+- 耐久度が生還判断に直結
+- 修理アイテムの戦略的使用
+- 死亡時の全ロストリスク
 
-[Intermediate (11-30 Runs)]
-- Explore up to Depth 3-4.
-- Choose survival based on situation.
-- Balance with Equipment Durability.
-- Soul accumulation strategy (NEW).
-- Efficient Exploration Count management (NEW).
+【熟練度システム】
+- 帰還ルートで追加経験
+- 転移石使用の機会コスト
 
-[Advanced (31+ Runs)]
-- Challenge The Abyss.
-- Barely scraping by without Stones.
-- Perfect resource management.
-- Maximize Souls (NEW).
-- Perfect Exploration Count management (NEW).
+【報酬システム】
+- 深度ボーナス
+- 全て100%統一
 
-[Positioning of The Abyss]
-- Final Trial.
-- Place where true resolve is tested.
-- Highest Rewards and Risks.
-- Proof of Player Skill.
-- Synergy with Exploration Count Limit (NEW).
+【戦闘システム】
+- シールド持ち越しが帰還に影響
+- 装備破損リスク管理
+- HP管理の重要性
 
-```
+【Sanctuaryシステム】
+- 魂の残滓で恒久強化
+- 死亡時も魂獲得で成長継続
 
-## 10.3 Integration with Other Systems
-
-```
-[Equipment System]
-- Durability directly links to survival decision.
-- Strategic use of repair items.
-
-[Mastery System]
-- Additional EXP in Return Route.
-- Opportunity cost of using Teleport Stones.
-- Risk vs Growth balance.
-
-[Reward System]
-- Depth Bonus.
-- Multiplier by survival method.
-- Soul Remnants calculation (V2.0).
-
-[Combat System]
-- Shield carry-over affects return.
-- Equipment breakage risk management.
-- Importance of HP management.
-
-[Sanctuary System (NEW)]
-- Permanent upgrades with Soul Remnants.
-- Unlock Exploration Count +1 skill.
-- Further enhances value of survival.
-
-[Exploration Count Limit System (NEW)]
-- Strategic importance of Survival/Death.
-- Weight of each run.
-- Tension of the entire game.
-
+【残機システム（V3.0新規）】
+- 生還・死亡の戦略的重要性
+- 各探索の重み
+- ゲーム全体の緊張感
 ```

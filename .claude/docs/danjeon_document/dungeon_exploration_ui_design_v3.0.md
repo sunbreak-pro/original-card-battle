@@ -4,7 +4,7 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 ---
 
-# Dungeon Exploration UI Design Document v2.1
+# Dungeon Exploration UI Design Document v3.0
 
 ## Revision History
 
@@ -12,6 +12,7 @@ To help you visualize the structural concepts and UI layouts described in this d
 | ------- | ---------- | ---------------------------------------------------------------------- |
 | v2.0    | -          | Initial creation                                                       |
 | v2.1    | 2026-01-10 | Resolved contradictions, finalized specifications, unified terminology |
+| v3.0    | 2026-01-23 | Lives system implementation, teleport stone unification, UI updates    |
 
 ---
 
@@ -22,7 +23,7 @@ To help you visualize the structural concepts and UI layouts described in this d
 **"The Descent"** - Expression of psychological pressure via an hourglass-shaped map.
 
 - **Visual experience of being cornered:** The deeper you dive, the narrower the path becomes, creating mental pressure.
-- **Strategic judgment:** The **Exploration Count Limit** forces players to decide "what must be achieved in this run."
+- **Strategic judgment:** The **Lives System** creates tension - death has real consequences, forcing careful risk assessment.
 - **Tension of return:** The risk of returning creates a tense decision on "when to turn back."
 
 ### 1.2 Terminology Definition
@@ -31,27 +32,37 @@ To help you visualize the structural concepts and UI layouts described in this d
 | ----------- | ---------------------------------- | ------------------------------------ |
 | Node / Room | A single point on the map          | Used interchangeably                 |
 | Depth       | Dungeon layer (1-5)                | Also referred to as "Shindo" (Depth) |
-| Exploration | From dungeon entry to return/death | 1 Exploration consumes 1 count       |
+| Exploration | From dungeon entry to return/death | No limit on exploration count        |
+| Lives       | Recovery chances after death       | Difficulty-based cap                 |
 
-### 1.3 Exploration Count System
+### 1.3 Lives System (残機システム)
 
 | Element               | Specification                                                        |
 | --------------------- | -------------------------------------------------------------------- |
-| Initial / Max Value   | **10 Counts** (Same value)                                           |
-| Consumption Timing    | Consumed the moment the dungeon is entered                           |
-| Survival/Death Impact | **Consumed in either case** (Decreases even if you return)           |
+| Lives Cap (Hard)      | **2 Lives**                                                          |
+| Lives Cap (Normal/Easy)| **3 Lives**                                                         |
+| Decrease Timing       | **Death only** (Does NOT decrease on successful return)              |
 | Recovery Method       | **None** (No means of recovery exists)                               |
-| Reaching 0 Counts     | **Game Over**                                                        |
-| Post-Game Over        | Restart with partial carry-over (Unlocked elements, Library records) |
-| UI Position           | Header Top-Right "Exploration: 7/10"                                 |
+| Reaching 0 Lives      | **Game Over** (Complete reset, only achievements persist)            |
+| UI Position           | Header Top-Right (Heart icons: ❤️❤️❤️ or ❤️❤️)                      |
 
 **Strategic Significance:**
 
-- Reaching deep layers requires multiple exploration attempts (Exact counts to be determined in balance adjustments).
-- Failure (Death/Retreat) consumes a count, making reckless charges risky.
-- Requires planning: "I'll farm the shallow layers for upgrades this time," vs "Next time I will aim for Depth 5."
+- Players can explore unlimited times as long as they have lives remaining.
+- Death has real consequences: lose ALL items/equipment + lose 1 life.
+- Success (return alive) preserves all progress with no penalty.
+- Risk assessment becomes critical: "Can I push deeper or should I return safely?"
 
-> **Note:** The specific number of explorations required to reach deep layers will be decided during the difficulty adjustment phase. Undecided at present.
+**Death Penalty Details:**
+
+| Lost on Death              | Gained on Death                |
+| -------------------------- | ------------------------------ |
+| All owned items            | 100% of soul remnants earned   |
+| All equipped items         | (Souls are saved to total)     |
+| Items brought from Base    |                                |
+| 1 Life                     |                                |
+
+> **Note:** The game allows unlimited exploration attempts. The tension comes from the permanent loss of items/equipment on death, not from limited exploration counts.
 
 ---
 
@@ -190,7 +201,7 @@ interface MapGenerationConstraints {
 **Conditions for an event to become Known:**
 
 1. Event encountered at least once in past explorations.
-2. Data is **saved across all explorations** (retained after reset/game over).
+2. Data is **reset on game over** (only achievements persist after game over).
 3. All events are "?" on the very first play.
 
 **Display of Known Events:**
@@ -233,7 +244,7 @@ interface MapGenerationConstraints {
 |  [🎒 Inventory]    |                                |             |
 |  └─ Modal Display  |                                |             |
 +-------------------------------------------------------------------+
-| Exploration: 7/10 | Current Layer: Depth 3 / 5                    |
+| Lives: ❤️❤️❤️ | Current Layer: Depth 3 / 5                        |
 +-------------------------------------------------------------------+
 
 ```
@@ -293,7 +304,7 @@ interface MapGenerationConstraints {
 
 - Normal: `[← Return]` (Grayish, subtle).
 - Hover: `[← Return]` (Orangeish, conspicuous).
-- Warning: `[⚠ Return]` (Reddish, when Exploration Count is 3 or less).
+- Warning: `[⚠ Return]` (Reddish, when Lives = 1 remaining).
 
 ---
 
@@ -354,8 +365,8 @@ interface MapGenerationConstraints {
 
 | Item            | Specification                   |
 | --------------- | ------------------------------- |
-| Enemy Strength  | **Normal** (No weakening)       |
-| Rewards         | **Normal**                      |
+| Enemy Strength  | **70% HP/ATK** (V3.0: Weakened) |
+| Rewards         | **50%** (Gold, Stones, Souls)   |
 | Card Mastery    | **Increases normally**          |
 | Elite Enemies   | **Do not respawn**              |
 | Bosses          | **Do not respawn**              |
@@ -377,7 +388,29 @@ interface MapGenerationConstraints {
 - Immediate return to Base.
 - No combat, no consumption.
 - Consumes 1 Teleport Stone.
-- Reward reduction applies (depending on stone type).
+- **100% resource carry-back** (No reward reduction - unified stone type).
+
+### 5.5 Escape Route (Depth 5 Boss Defeat) - V3.0
+
+**Trigger:** Defeating the Depth 5 (Abyss) Boss.
+
+**Escape Route Specifications:**
+
+| Item            | Specification                   |
+| --------------- | ------------------------------- |
+| Appearance      | After boss defeat               |
+| Combat          | **None** (Safe passage)         |
+| Rewards         | **100%** (Full carry-back)      |
+| Route Length    | Direct path to Base             |
+
+**Process:**
+
+1. Boss defeated → Victory screen displayed.
+2. "Escape Route Opened" notification.
+3. Player can choose to use the escape route.
+4. Safe return to Base with all rewards.
+
+> **Note:** The escape route is the only safe way to return from Depth 5 after boss defeat. Regular return routes from Depth 5 are extremely dangerous.
 
 ---
 
@@ -403,10 +436,10 @@ Eliminate excessive effects; differentiate via color tone, background, and icon 
 - Visually shows distance from current location to Base.
 - Bar decreases as you go deeper.
 
-**Exploration Count Sync:**
+**Lives Warning Display:**
 
-- 3 or less remaining: Header turns pale red.
-- 1 remaining: Entire header turns red, warning icon blinks.
+- 2 lives remaining: Lives icons pulse slightly.
+- 1 life remaining: Last heart icon pulses red, header turns pale red, warning icon appears.
 
 ---
 
@@ -435,7 +468,7 @@ Eliminate excessive effects; differentiate via color tone, background, and icon 
 
 **Phase 3: UX Improvements** (Later)
 
-- [ ] Exploration count sync UI (Header warning colors).
+- [ ] Lives warning UI (Heart icon pulse, header warning colors).
 - [ ] Detailed design differences in node icons.
 - [ ] Smooth scrolling/transition animations.
 - [ ] Gold acquisition animation.
@@ -495,10 +528,17 @@ interface RestData {
 interface ExplorationState {
   currentNodeId: string;
   visitedNodes: string[];
-  remainingExplorations: number; // Available explorations (Init 10)
   currentDepth: 1 | 2 | 3 | 4 | 5;
   playerStatus: PlayerStatus;
-  knownEvents: string[]; // Saved across all explorations
+  knownEvents: string[]; // Reset on game over (only achievements persist)
+}
+
+interface LivesSystem {
+  current: number;           // Current lives remaining
+  max: number;               // Lives cap (2 for Hard, 3 for Normal/Easy)
+  decreaseOnDeath: true;     // Lives decrease only on death
+  decreaseOnReturn: false;   // Lives do NOT decrease on successful return
+  recoveryMechanism: null;   // No recovery mechanism
 }
 ```
 

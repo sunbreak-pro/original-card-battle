@@ -46,13 +46,13 @@
   --color-warning-dark: rgba(255, 193, 7, 0.8);
 
   /* =========================================
-     Rarity Colors
+     Mastery Colors (Card Name Background)
+     寒色→暖色グラデーション
      ========================================= */
-  --color-rarity-common: #343434;
-  --color-rarity-uncommon: #4caf50;
-  --color-rarity-rare: #2196f3;
-  --color-rarity-epic: #9c27b0;
-  --color-rarity-legendary: #ff9800;
+  --color-mastery-0: #343434;      /* 未熟練: グレー */
+  --color-mastery-1: #2196f3;      /* 初級: 青 */
+  --color-mastery-2: #9c27b0;      /* 中級: 紫 */
+  --color-mastery-3: #ff9800;      /* 熟練: 金 */
 
   /* =========================================
      Quality Colors

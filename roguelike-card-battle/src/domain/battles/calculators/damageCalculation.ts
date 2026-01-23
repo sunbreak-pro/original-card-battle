@@ -8,14 +8,14 @@ import {
   reflectBuff,
   calculateLifesteal
 } from "./buffCalculation";
-import type { Character } from "../../characters/type/characterType";
+import type { BattleStats } from "../../characters/type/baseTypes";
 
 // Empty BuffDebuffMap for fallback
 const EMPTY_BUFF_MAP: BuffDebuffMap = new Map();
 
 export function calculateDamage(
-  attacker: Character,
-  defender: Character,
+  attacker: BattleStats,
+  defender: BattleStats,
   card: Card,
 ): DamageResult {
   const baseDmg = card.baseDamage || 0;
@@ -51,7 +51,7 @@ export function calculateDamage(
 }
 
 export function applyDamageAllocation(
-  defender: Character,
+  defender: BattleStats,
   damage: number,
   _isBuffDebuffApplied: boolean = false,
 ): DamageAllocation {

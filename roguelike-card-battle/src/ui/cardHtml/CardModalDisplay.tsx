@@ -1,7 +1,7 @@
 import React from "react";
 import type { Card, Depth } from "../../domain/cards/type/cardType";
 import { CardComponent } from "./CardComponent";
-import "../css/BattleScreen.css";
+import "../css/others/BattleScreen.css";
 
 interface CardPileModalProps {
   isOpen: boolean;

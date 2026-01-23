@@ -11,10 +11,10 @@ import "../../css/camps/Blacksmith.css";
 export const Blacksmith = () => {
   const [selectedTab, setSelectedTab] = useState<BlacksmithTab>("upgrade");
   const { returnToCamp } = useGameState();
-  const { player } = usePlayer();
+  const { playerData } = usePlayer();
 
   const totalMagicStoneValue = calculateMagicStoneValue(
-    player.baseCampMagicStones,
+    playerData.resources.baseCampMagicStones,
   );
 
   return (
@@ -33,7 +33,7 @@ export const Blacksmith = () => {
           <div className="blacksmith-resources">
             <div className="resource-display gold">
               <span className="resource-icon">💰</span>
-              <span className="resource-value">{player.baseCampGold} G</span>
+              <span className="resource-value">{playerData.resources.baseCampGold} G</span>
             </div>
             <div className="resource-display stones">
               <span className="resource-icon">💎</span>

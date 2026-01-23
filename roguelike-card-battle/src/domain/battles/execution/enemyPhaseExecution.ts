@@ -5,8 +5,8 @@
  */
 
 import type { BuffDebuffMap, BuffDebuffState } from "../type/baffType";
-import type { Enemy, EnemyAction } from "../../characters/type/enemyType";
-import type { Player } from "../../characters/type/playerTypes";
+import type { EnemyDefinition, EnemyAction } from "../../characters/type/enemyType";
+import type { BattleStats } from "../../characters/type/baseTypes";
 import {
     calculateStartPhaseHealing,
     calculateEndPhaseDamage,
@@ -25,7 +25,7 @@ import { enemyAction } from "../../characters/enemy/logic/enemyAI";
 // ============================================================================
 
 export interface EnemyPhaseStartInput {
-    enemy: Enemy;
+    enemy: EnemyDefinition;
     enemyBuffs: BuffDebuffMap;
 }
 
@@ -90,7 +90,7 @@ export function calculateEnemyPhaseStart(
     const { hp: healAmount, shield: shieldAmount } = calculateStartPhaseHealing(enemyBuffs);
 
     // Guard reset (restore to initial guard value if startingGuard is true)
-    const guardReset = enemy.startingGuard ? enemy.guard : 0;
+    const guardReset = enemy.startingGuard ? Math.floor(enemy.baseMaxAp * 0.5) : 0;
 
     // Energy recovery to MAX
     const energyReset = enemy.actEnergy;
@@ -126,10 +126,14 @@ export function calculateEnemyPhaseEnd(
 
 /**
  * Calculate damage from a single enemy attack
+ *
+ * @param attacker - BattleStats of the attacking enemy
+ * @param defender - BattleStats of the defending player
+ * @param action - Enemy action to execute
  */
 export function calculateEnemyAttackDamage(
-    enemy: Enemy,
-    player: Player,
+    attacker: BattleStats,
+    defender: BattleStats,
     action: EnemyAction
 ): EnemyAttackResult {
     // Guard-only action
@@ -148,8 +152,8 @@ export function calculateEnemyAttackDamage(
     const enemyAttackCard = enemyAction(action);
 
     // Calculate damage
-    const damageResult = calculateDamage(enemy, player, enemyAttackCard);
-    const allocation = applyDamageAllocation(player, damageResult.finalDamage);
+    const damageResult = calculateDamage(attacker, defender, enemyAttackCard);
+    const allocation = applyDamageAllocation(defender, damageResult.finalDamage);
 
     return {
         totalDamage: damageResult.finalDamage,
@@ -163,10 +167,16 @@ export function calculateEnemyAttackDamage(
 
 /**
  * Process a single enemy action and return all effects
+ *
+ * @param attacker - BattleStats of the attacking enemy
+ * @param defender - BattleStats of the defending player
+ * @param action - Enemy action to execute
+ * @param enemyMaxHp - Maximum HP of the enemy (for bleed calculation)
+ * @param enemyBuffs - Current buffs/debuffs on the enemy
  */
 export function processEnemyAction(
-    enemy: Enemy,
-    player: Player,
+    attacker: BattleStats,
+    defender: BattleStats,
     action: EnemyAction,
     enemyMaxHp: number,
     enemyBuffs: BuffDebuffMap
@@ -182,7 +192,7 @@ export function processEnemyAction(
     }
 
     // Calculate attack damage
-    const attackResult = calculateEnemyAttackDamage(enemy, player, action);
+    const attackResult = calculateEnemyAttackDamage(attacker, defender, action);
 
     // Collect debuffs to apply
     const debuffsToApply = action.applyDebuffs || [];

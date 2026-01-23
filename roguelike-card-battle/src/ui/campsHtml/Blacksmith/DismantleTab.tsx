@@ -13,14 +13,14 @@ import {
 import BlacksmithItemCard from "./BlacksmithItemCard";
 
 const DismantleTab = () => {
-  const { player, addGold, addMagicStones } = usePlayer();
+  const { playerData, addGold, addMagicStones } = usePlayer();
   const { removeItemFromStorage } = useInventory();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   // Get dismantleable equipment items from storage
-  const dismantleableItems = getDismantleableItems(player.storage.items);
+  const dismantleableItems = getDismantleableItems(playerData.inventory.storage.items);
 
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ message, type });

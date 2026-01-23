@@ -1,5 +1,5 @@
 import type { BuffDebuffMap } from "../type/baffType";
-import type { Enemy } from "../../characters/type/enemyType";
+import type { EnemyDefinition } from "../../characters/type/enemyType";
 import {
     calculateStartPhaseHealing,
     calculateEndPhaseDamage,
@@ -69,7 +69,7 @@ export interface EnemyPhaseStartResult {
  * Calculate enemy phase start effects
  */
 export function calculateEnemyPhaseStart(
-    enemy: Enemy,
+    enemy: EnemyDefinition,
     enemyBuffs: BuffDebuffMap,
     _enemyMaxHp: number
 ): EnemyPhaseStartResult {
@@ -82,8 +82,8 @@ export function calculateEnemyPhaseStart(
     // Check if enemy can act (not stunned)
     const canPerformAction = canAct(enemyBuffs);
 
-    // Guard reset value
-    const guardReset = enemy.startingGuard ? enemy.guard : 0;
+    // Guard reset value - calculate from baseMaxAp for startingGuard enemies
+    const guardReset = enemy.startingGuard ? Math.floor(enemy.baseMaxAp * 0.5) : 0;
 
     return {
         newBuffs,

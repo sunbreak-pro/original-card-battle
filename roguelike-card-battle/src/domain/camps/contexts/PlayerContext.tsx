@@ -1,13 +1,27 @@
 // PlayerContext: Manages player state including stats, storage, inventory, and progression
 // Resource management (gold, magic stones) has been moved to ResourceContext
+//
+// NEW ARCHITECTURE: Internally uses PlayerData, exposes both PlayerData and legacy ExtendedPlayer
 
 import React, {
   createContext,
   useContext,
   useState,
+  useMemo,
   type ReactNode,
 } from "react";
-import type { Player } from "../../characters/type/playerTypes";
+import type {
+  Player,
+  ExtendedPlayer,
+  PlayerData,
+  Difficulty,
+  LivesSystem,
+} from "../../characters/type/playerTypes";
+import {
+  createLivesSystem,
+  decreaseLives as decreaseLivesHelper,
+  isGameOver as isGameOverHelper,
+} from "../../characters/type/playerTypes";
 import type { CharacterClass } from "../../characters/type/baseTypes";
 import type { MagicStones } from "../../item_equipment/type/ItemTypes";
 import {
@@ -21,16 +35,76 @@ import {
   INVENTORY_TEST_ITEMS,
   EQUIPPED_TEST_ITEMS,
 } from "../../item_equipment/data/TestItemsData";
-import type { ExtendedPlayer } from "../../characters/type/playerTypes";
 import { useResources } from "./ResourceContext";
 
 /**
+ * Runtime Battle State
+ * Persisted between battles within a single exploration run.
+ * Reset when starting a new exploration.
+ */
+export interface RuntimeBattleState {
+  /** Current HP (persists between battles) */
+  currentHp: number;
+  /** Current AP (persists between battles) */
+  currentAp: number;
+  /** Card mastery store - cardTypeId -> useCount */
+  cardMasteryStore: Map<string, number>;
+  /** Lives system (remaining lives) */
+  lives: LivesSystem;
+  /** Current game difficulty */
+  difficulty: Difficulty;
+}
+
+/**
  * PlayerContext value
- * Note: Resource-related functions delegate to ResourceContext for actual implementation
+ *
+ * Uses PlayerData as the primary interface.
+ * Resource-related functions delegate to ResourceContext for actual implementation.
  */
 interface PlayerContextValue {
-  player: ExtendedPlayer;
-  updatePlayer: (updates: Partial<ExtendedPlayer>) => void;
+  // ============================================================
+  // PlayerData-based interface
+  // ============================================================
+
+  /** Player data */
+  playerData: PlayerData;
+
+  /** Update player data with partial updates */
+  updatePlayerData: (updates: Partial<PlayerData>) => void;
+
+  // ============================================================
+  // Runtime battle state (persists between battles)
+  // ============================================================
+
+  /** Runtime state that persists between battles */
+  runtimeState: RuntimeBattleState;
+
+  /** Update runtime state after battle */
+  updateRuntimeState: (updates: Partial<RuntimeBattleState>) => void;
+
+  /** Update card mastery for a card type */
+  updateCardMastery: (cardTypeId: string, useCount: number) => void;
+
+  /** Reset runtime state for new exploration */
+  resetRuntimeState: () => void;
+
+  // ============================================================
+  // Lives System
+  // ============================================================
+
+  /** Decrease lives by 1 (on death) */
+  decreaseLives: () => void;
+
+  /** Check if game is over (no lives remaining) */
+  isGameOver: () => boolean;
+
+  /** Set game difficulty (affects max lives) */
+  setDifficulty: (difficulty: Difficulty) => void;
+
+  // ============================================================
+  // Common operations
+  // ============================================================
+
   updateClassGrade: (newGrade: string) => void;
   updateHp: (newHp: number) => void;
   updateAp: (newAp: number) => void;
@@ -39,7 +113,7 @@ interface PlayerContextValue {
   resetCurrentRunSouls: () => void;
   initializeWithClass: (classType: CharacterClass) => void;
 
-  // Resource operations (delegated to ResourceContext for backward compatibility)
+  // Resource operations (delegated to ResourceContext)
   addGold: (amount: number, toBaseCamp?: boolean) => void;
   useGold: (amount: number) => boolean;
   addMagicStones: (stones: Partial<MagicStones>, toBaseCamp?: boolean) => void;
@@ -115,6 +189,22 @@ function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
 }
 
 /**
+ * Create initial runtime battle state
+ */
+function createInitialRuntimeState(
+  basePlayer: Player,
+  difficulty: Difficulty = 'normal'
+): RuntimeBattleState {
+  return {
+    currentHp: basePlayer.hp,
+    currentAp: basePlayer.ap,
+    cardMasteryStore: new Map(),
+    lives: createLivesSystem(difficulty),
+    difficulty,
+  };
+}
+
+/**
  * PlayerProvider Component
  */
 export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
@@ -123,8 +213,9 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   // Get resource context for delegation
   const resourceContext = useResources();
 
-  // Initialize with Swordsman by default
-  const [player, setPlayer] = useState<ExtendedPlayer>(() => {
+  // Internal state using ExtendedPlayer for backward compatibility
+  // This is converted to PlayerData for external use
+  const [playerState, setPlayerState] = useState<ExtendedPlayer>(() => {
     const initialPlayer = createInitialPlayer(Swordman_Status);
     // Sync initial values from ResourceContext
     return {
@@ -138,25 +229,23 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     };
   });
 
-  /**
-   * Update player with partial updates
-   */
-  const updatePlayer = (updates: Partial<ExtendedPlayer>) => {
-    setPlayer((prev) => ({ ...prev, ...updates }));
-  };
+  // Runtime battle state - persists between battles within exploration
+  const [runtimeState, setRuntimeState] = useState<RuntimeBattleState>(() =>
+    createInitialRuntimeState(Swordman_Status)
+  );
 
   /**
    * Update class grade (for promotion system)
    */
   const updateClassGrade = (newGrade: string) => {
-    setPlayer((prev) => ({ ...prev, classGrade: newGrade }));
+    setPlayerState((prev) => ({ ...prev, classGrade: newGrade }));
   };
 
   /**
    * Update HP (with bounds checking)
    */
   const updateHp = (newHp: number) => {
-    setPlayer((prev) => ({
+    setPlayerState((prev) => ({
       ...prev,
       hp: Math.max(0, Math.min(newHp, prev.maxHp)),
     }));
@@ -166,7 +255,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    * Update AP (with bounds checking)
    */
   const updateAp = (newAp: number) => {
-    setPlayer((prev) => ({
+    setPlayerState((prev) => ({
       ...prev,
       ap: Math.max(0, Math.min(newAp, prev.maxAp)),
     }));
@@ -176,7 +265,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    * Add souls (current run)
    */
   const addSouls = (amount: number) => {
-    setPlayer((prev) => ({
+    setPlayerState((prev) => ({
       ...prev,
       sanctuaryProgress: {
         ...prev.sanctuaryProgress,
@@ -189,7 +278,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    * Transfer souls from current run to total (on survival)
    */
   const transferSouls = (survivalMultiplier: number) => {
-    setPlayer((prev) => {
+    setPlayerState((prev) => {
       const transferredSouls = Math.floor(
         prev.sanctuaryProgress.currentRunSouls * survivalMultiplier
       );
@@ -208,7 +297,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    * Reset current run souls (on death)
    */
   const resetCurrentRunSouls = () => {
-    setPlayer((prev) => ({
+    setPlayerState((prev) => ({
       ...prev,
       sanctuaryProgress: {
         ...prev.sanctuaryProgress,
@@ -234,7 +323,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     const newPlayer = createInitialPlayer(playerWithStarterDeck);
 
     // Sync with ResourceContext
-    setPlayer({
+    setPlayerState({
       ...newPlayer,
       gold: resourceContext.getTotalGold(),
       baseCampGold: resourceContext.resources.gold.baseCamp,
@@ -263,7 +352,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   const addGold = (amount: number, toBaseCamp = false) => {
     resourceContext.addGold(amount, toBaseCamp);
     // Sync player state
-    setPlayer((prev) => ({
+    setPlayerState((prev) => ({
       ...prev,
       gold: resourceContext.getTotalGold() + amount,
       baseCampGold: toBaseCamp
@@ -282,7 +371,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     const success = resourceContext.useGold(amount);
     if (success) {
       // Sync player state - recalculate from ResourceContext
-      setPlayer((prev) => {
+      setPlayerState((prev) => {
         let newBaseCampGold = prev.baseCampGold;
         let newExplorationGold = prev.explorationGold;
 
@@ -311,7 +400,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   const addMagicStones = (stones: Partial<MagicStones>, toBaseCamp = false) => {
     resourceContext.addMagicStones(stones, toBaseCamp);
     // Sync player state
-    setPlayer((prev) => {
+    setPlayerState((prev) => {
       if (toBaseCamp) {
         return {
           ...prev,
@@ -351,7 +440,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     // Also transfer souls
     transferSouls(survivalMultiplier);
     // Sync player state
-    setPlayer((prev) => ({
+    setPlayerState((prev) => ({
       ...prev,
       baseCampGold:
         prev.baseCampGold +
@@ -386,7 +475,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     // Also reset current run souls
     resetCurrentRunSouls();
     // Sync player state
-    setPlayer((prev) => ({
+    setPlayerState((prev) => ({
       ...prev,
       explorationGold: 0,
       gold: prev.baseCampGold,
@@ -394,11 +483,211 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     }));
   };
 
+  // ============================================================
+  // Runtime Battle State Management
+  // ============================================================
+
+  /**
+   * Update runtime state (HP/AP/mastery between battles)
+   */
+  const updateRuntimeState = (updates: Partial<RuntimeBattleState>) => {
+    setRuntimeState((prev) => ({
+      ...prev,
+      ...updates,
+    }));
+  };
+
+  /**
+   * Update card mastery for a specific card type
+   */
+  const updateCardMastery = (cardTypeId: string, useCount: number) => {
+    setRuntimeState((prev) => {
+      const newStore = new Map(prev.cardMasteryStore);
+      const currentCount = newStore.get(cardTypeId) || 0;
+      newStore.set(cardTypeId, currentCount + useCount);
+      return {
+        ...prev,
+        cardMasteryStore: newStore,
+      };
+    });
+  };
+
+  /**
+   * Reset runtime state for new exploration (return to camp)
+   * Note: This resets HP/AP/mastery but preserves lives
+   */
+  const resetRuntimeState = () => {
+    setRuntimeState(prev => ({
+      ...createInitialRuntimeState(playerState, prev.difficulty),
+      // Preserve lives when returning to camp (not resetting completely)
+      lives: prev.lives,
+      difficulty: prev.difficulty,
+    }));
+  };
+
+  // ============================================================
+  // Lives System Management
+  // ============================================================
+
+  /**
+   * Decrease lives by 1 (on death)
+   */
+  const decreaseLives = () => {
+    setRuntimeState(prev => ({
+      ...prev,
+      lives: decreaseLivesHelper(prev.lives),
+    }));
+  };
+
+  /**
+   * Check if game is over (no lives remaining)
+   */
+  const isGameOver = () => {
+    return isGameOverHelper(runtimeState.lives);
+  };
+
+  /**
+   * Set game difficulty (resets lives to match new difficulty)
+   */
+  const setDifficulty = (difficulty: Difficulty) => {
+    setRuntimeState(prev => ({
+      ...prev,
+      difficulty,
+      lives: createLivesSystem(difficulty),
+    }));
+  };
+
+  // ============================================================
+  // NEW: PlayerData-based interface
+  // ============================================================
+
+  /**
+   * Computed PlayerData from internal ExtendedPlayer state
+   */
+  const playerData = useMemo<PlayerData>(() => ({
+    persistent: {
+      id: `player_${Date.now()}`,
+      name: playerState.name ?? "Adventurer",
+      playerClass: playerState.playerClass,
+      classGrade: playerState.classGrade,
+      level: playerState.level,
+      baseMaxHp: playerState.maxHp,
+      baseMaxAp: playerState.maxAp,
+      baseSpeed: playerState.speed,
+      deckCardIds: playerState.deck.map(card => card.id),
+      titles: playerState.tittle ?? [],
+    },
+    resources: {
+      baseCampGold: playerState.baseCampGold,
+      explorationGold: playerState.explorationGold,
+      baseCampMagicStones: playerState.baseCampMagicStones,
+      explorationMagicStones: playerState.explorationMagicStones,
+      explorationLimit: playerState.explorationLimit,
+    },
+    inventory: {
+      storage: playerState.storage,
+      inventory: playerState.inventory,
+      equipmentInventory: playerState.equipmentInventory,
+      equipmentSlots: playerState.equipmentSlots,
+    },
+    progression: {
+      sanctuaryProgress: playerState.sanctuaryProgress,
+      unlockedDepths: [1], // Default: only depth 1 unlocked
+      completedAchievements: [],
+    },
+  }), [playerState]);
+
+  /**
+   * Update player data using new PlayerData interface
+   * Internally converts to ExtendedPlayer updates for backward compatibility.
+   */
+  const updatePlayerData = (updates: Partial<PlayerData>) => {
+    setPlayerState((prev) => {
+      let updated = { ...prev };
+
+      // Update persistent data
+      if (updates.persistent) {
+        if (updates.persistent.classGrade !== undefined) {
+          updated.classGrade = updates.persistent.classGrade;
+        }
+        if (updates.persistent.level !== undefined) {
+          updated.level = updates.persistent.level;
+        }
+        if (updates.persistent.name !== undefined) {
+          updated.name = updates.persistent.name;
+        }
+        if (updates.persistent.titles !== undefined) {
+          updated.tittle = updates.persistent.titles;
+        }
+      }
+
+      // Update resources
+      if (updates.resources) {
+        if (updates.resources.baseCampGold !== undefined) {
+          updated.baseCampGold = updates.resources.baseCampGold;
+          updated.gold = updates.resources.baseCampGold + (updates.resources.explorationGold ?? prev.explorationGold);
+        }
+        if (updates.resources.explorationGold !== undefined) {
+          updated.explorationGold = updates.resources.explorationGold;
+          updated.gold = (updates.resources.baseCampGold ?? prev.baseCampGold) + updates.resources.explorationGold;
+        }
+        if (updates.resources.baseCampMagicStones !== undefined) {
+          updated.baseCampMagicStones = updates.resources.baseCampMagicStones;
+        }
+        if (updates.resources.explorationMagicStones !== undefined) {
+          updated.explorationMagicStones = updates.resources.explorationMagicStones;
+        }
+        if (updates.resources.explorationLimit !== undefined) {
+          updated.explorationLimit = updates.resources.explorationLimit;
+        }
+      }
+
+      // Update inventory
+      if (updates.inventory) {
+        if (updates.inventory.storage !== undefined) {
+          updated.storage = updates.inventory.storage;
+        }
+        if (updates.inventory.inventory !== undefined) {
+          updated.inventory = updates.inventory.inventory;
+        }
+        if (updates.inventory.equipmentInventory !== undefined) {
+          updated.equipmentInventory = updates.inventory.equipmentInventory;
+        }
+        if (updates.inventory.equipmentSlots !== undefined) {
+          updated.equipmentSlots = updates.inventory.equipmentSlots;
+        }
+      }
+
+      // Update progression
+      if (updates.progression) {
+        if (updates.progression.sanctuaryProgress !== undefined) {
+          updated.sanctuaryProgress = updates.progression.sanctuaryProgress;
+        }
+      }
+
+      return updated;
+    });
+  };
+
   return (
     <PlayerContext.Provider
       value={{
-        player,
-        updatePlayer,
+        // PlayerData-based interface
+        playerData,
+        updatePlayerData,
+
+        // Runtime battle state
+        runtimeState,
+        updateRuntimeState,
+        updateCardMastery,
+        resetRuntimeState,
+
+        // Lives system
+        decreaseLives,
+        isGameOver,
+        setDifficulty,
+
+        // Common operations
         updateClassGrade,
         updateHp,
         updateAp,
@@ -406,6 +695,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         transferSouls,
         resetCurrentRunSouls,
         initializeWithClass,
+
         // Resource operations (delegated)
         addGold,
         useGold,

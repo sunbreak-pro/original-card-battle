@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import type { Depth } from "../../domain/cards/type/cardType";
-import { useBattle } from "../../domain/battles/managements/battleFlowManage";
+import { useState, useEffect, useRef, useMemo } from "react";
+import type { Depth, Card } from "../../domain/cards/type/cardType";
+import { useBattle, type InitialPlayerState } from "../../domain/battles/managements/battleFlowManage";
 import { selectRandomEnemy } from "../../domain/characters/enemy/logic/enemyAI";
 import { CardComponent } from "../cardHtml/CardComponent";
 import { BattlingCardPileModal } from "../cardHtml/CardModalDisplay";
@@ -9,10 +9,30 @@ import StatusEffectDisplay from "../commonHtml/BuffEffect";
 import EnemyDisplay from "./EnemyDisplay";
 import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
-import "../css/BattleScreen.css";
+import "../css/others/BattleScreen.css";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
-import { handlePlayerDeath } from "../../domain/battles/logic/deathHandler";
+import { handlePlayerDeathWithDetails } from "../../domain/battles/logic/deathHandler";
+import { Swordman_Status } from "../../domain/characters/player/data/PlayerData";
+
+/**
+ * Collect mastery from all cards in deck and merge with existing store
+ */
+function collectMasteryFromDeck(
+  cards: Card[],
+  existingStore: Map<string, number>
+): Map<string, number> {
+  const newStore = new Map(existingStore);
+  cards.forEach(card => {
+    const cardTypeId = card.cardTypeId;
+    const currentCount = newStore.get(cardTypeId) ?? 0;
+    // Use the higher value between existing and card's useCount
+    if (card.useCount > currentCount) {
+      newStore.set(cardTypeId, card.useCount);
+    }
+  });
+  return newStore;
+}
 
 const BattleScreen = ({
   depth,
@@ -28,11 +48,33 @@ const BattleScreen = ({
   onLose?: () => void;
 }) => {
   const theme = neutralTheme;
-  const { player, updatePlayer } = usePlayer();
+  const {
+    playerData,
+    updatePlayerData,
+    runtimeState,
+    updateRuntimeState,
+    decreaseLives,
+    isGameOver,
+  } = usePlayer();
 
   // 遭遇カウント管理
   const [encounterCount, setEncounterCount] = useState(0);
   const deathHandledRef = useRef(false);
+  const soulsTransferredRef = useRef(0);
+
+  // Create initial player state from runtime state
+  const initialPlayerState = useMemo<InitialPlayerState>(() => ({
+    currentHp: runtimeState.currentHp,
+    currentAp: runtimeState.currentAp,
+    maxHp: Swordman_Status.maxHp,
+    maxAp: Swordman_Status.maxAp,
+    name: "エイレス",
+    playerClass: Swordman_Status.playerClass,
+    classGrade: Swordman_Status.classGrade,
+    speed: Swordman_Status.speed,
+    cardActEnergy: Swordman_Status.cardActEnergy,
+    cardMasteryStore: runtimeState.cardMasteryStore,
+  }), [runtimeState.currentHp, runtimeState.currentAp, runtimeState.cardMasteryStore]);
 
   const {
     playerRef,
@@ -67,18 +109,23 @@ const BattleScreen = ({
     battleStats,
     phaseQueue,
     currentPhaseIndex,
-  } = useBattle(depth);
+  } = useBattle(depth, undefined, initialPlayerState);
 
   // Handle player death penalty when defeated
   // IMPORTANT: This useEffect must be BEFORE any early returns to follow React's Rules of Hooks
   useEffect(() => {
     if (battleResult === "defeat" && !deathHandledRef.current) {
-      // Apply death penalty
-      const updatedPlayer = handlePlayerDeath(player);
-      updatePlayer(updatedPlayer);
+      // Apply death penalty and get transferred souls
+      const result = handlePlayerDeathWithDetails(playerData);
+      updatePlayerData(result.updates);
+      soulsTransferredRef.current = result.soulsTransferred;
+
+      // Decrease lives (Lives system)
+      decreaseLives();
+
       deathHandledRef.current = true;
     }
-  }, [battleResult, player, updatePlayer]);
+  }, [battleResult, playerData, updatePlayerData, decreaseLives]);
 
   const handleContinueToNextBattle = () => {
     const nextEncounter = encounterCount + 1;
@@ -94,8 +141,25 @@ const BattleScreen = ({
     resetForNextEnemy(nextEnemies);
   };
   if (battleResult === "victory") {
-    // If onWin callback is provided (dungeon mode), use it instead of continuing to next battle
-    const handleVictoryContinue = onWin || handleContinueToNextBattle;
+    // If onWin callback is provided (dungeon mode), wrap it to save HP/AP and mastery first
+    const handleVictoryContinue = () => {
+      // Collect mastery from all cards in deck
+      const allCards = [...hand, ...drawPile, ...discardPile];
+      const updatedMastery = collectMasteryFromDeck(allCards, runtimeState.cardMasteryStore);
+
+      // Save current HP/AP and card mastery to runtime state
+      updateRuntimeState({
+        currentHp: playerHp,
+        currentAp: playerAp,
+        cardMasteryStore: updatedMastery,
+      });
+
+      if (onWin) {
+        onWin();
+      } else {
+        handleContinueToNextBattle();
+      }
+    };
 
     return (
       <VictoryScreen
@@ -124,6 +188,8 @@ const BattleScreen = ({
       }
     };
 
+    const gameOver = isGameOver();
+
     return (
       <DefeatScreen
         onRetry={() => window.location.reload()}
@@ -133,6 +199,10 @@ const BattleScreen = ({
           damageDealt: battleStats.damageDealt,
           damageTaken: battleStats.damageTaken,
         }}
+        remainingLives={runtimeState.lives.currentLives}
+        maxLives={runtimeState.lives.maxLives}
+        soulsTransferred={soulsTransferredRef.current}
+        isGameOver={gameOver}
       />
     );
   }
@@ -169,14 +239,14 @@ const BattleScreen = ({
       <div className="battle-field">
         <EnemyDisplay
           enemies={aliveEnemies.map((e) => ({
-            enemy: e.enemy,
+            definition: e.definition,
             hp: e.hp,
-            maxHp: e.enemy.maxHp,
+            maxHp: e.maxHp,
             ap: e.ap,
-            maxAp: e.enemy.maxAp,
+            maxAp: e.maxAp,
             guard: e.guard,
             actEnergy: e.energy,
-            buffs: e.buffs,
+            buffDebuffs: e.buffDebuffs,
             turnCount: phaseCount,
           }))}
           enemyRefs={aliveEnemies.map((e) => e.ref)}

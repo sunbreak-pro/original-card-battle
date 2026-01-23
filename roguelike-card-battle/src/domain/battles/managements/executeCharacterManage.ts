@@ -6,9 +6,8 @@
 import { useCallback, type RefObject } from "react";
 import type { Card } from "../../cards/type/cardType";
 import type { BuffDebuffMap } from "../type/baffType";
-import type { Enemy, EnemyAction } from "../../characters/type/enemyType";
-import type { Player } from "../../characters/type/playerTypes";
-import type { EnemyBattleState } from "../type/battleStateType";
+import type { EnemyDefinition, EnemyAction, EnemyBattleState } from "../../characters/type/enemyType";
+import type { BattleStats } from "../../characters/type/baseTypes";
 import type { DeckState } from "../../cards/decks/deckReducter";
 
 // Execution logic
@@ -70,7 +69,7 @@ export interface PlayerPhaseContext {
 
 export interface EnemyPhaseContext {
     // State
-    currentEnemy: Enemy;
+    currentEnemy: EnemyDefinition;
     enemyBuffs: BuffDebuffMap;
     enemyHp: number;
     enemyMaxHp: number;
@@ -78,8 +77,8 @@ export interface EnemyPhaseContext {
     playerHp: number;
     playerBuffs: BuffDebuffMap;
     enemies: EnemyBattleState[];
-    enemyChar: Enemy;
-    playerChar: Player;
+    enemyStats: BattleStats;
+    playerStats: BattleStats;
     playerRef: RefObject<HTMLDivElement | null>;
 
     // Setters
@@ -215,7 +214,7 @@ export function useCharacterPhaseExecution() {
             // Attack action
             const hitCount = action.hitCount || 1;
             for (let i = 0; i < hitCount; i++) {
-                const attackResult = calculateEnemyAttackDamage(ctx.enemyChar, ctx.playerChar, action);
+                const attackResult = calculateEnemyAttackDamage(ctx.enemyStats, ctx.playerStats, action);
 
                 ctx.setPlayerGuard(g => Math.max(0, g - attackResult.guardDamage));
                 ctx.setPlayerAp(a => Math.max(0, a - attackResult.apDamage));

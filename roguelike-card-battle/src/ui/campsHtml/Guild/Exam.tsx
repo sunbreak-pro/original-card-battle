@@ -8,11 +8,14 @@ import {
 } from "../../../domain/camps/data/PromotionData";
 
 const PromotionTab = () => {
-  const { player, updateClassGrade } = usePlayer();
+  const { playerData, updateClassGrade } = usePlayer();
   const { startBattle, navigateTo } = useGameState();
 
+  // Calculate total gold
+  const totalGold = playerData.resources.baseCampGold + playerData.resources.explorationGold;
+
   // Get next available exam
-  const exam = getNextExam(player.playerClass, player.classGrade);
+  const exam = getNextExam(playerData.persistent.playerClass, playerData.persistent.classGrade);
 
   // If no exam available (max rank reached)
   if (!exam) {
@@ -22,7 +25,7 @@ const PromotionTab = () => {
         <p>You have achieved the highest rank.</p>
         <div className="current-grade-display">
           <span className="grade-label">Current Rank:</span>
-          <span className="grade-value">{player.classGrade}</span>
+          <span className="grade-value">{playerData.persistent.classGrade}</span>
         </div>
         <p className="flavor-text">
           You stand at the pinnacle of your class. There are no more exams to
@@ -33,11 +36,11 @@ const PromotionTab = () => {
   }
 
   // Check requirements
-  const cardCount = player.deck.length;
-  const canTake = canTakeExam(exam, cardCount, player.gold);
+  const cardCount = playerData.persistent.deckCardIds.length;
+  const canTake = canTakeExam(exam, cardCount, totalGold);
   const meetsCardRequirement = cardCount >= exam.requiredCardCount;
   const meetsGoldRequirement = exam.requiredGold
-    ? player.gold >= exam.requiredGold
+    ? totalGold >= exam.requiredGold
     : true;
 
   /**
@@ -152,7 +155,7 @@ const PromotionTab = () => {
                   {meetsGoldRequirement ? "✓" : "✗"}
                 </span>
                 <span className="requirement-text">
-                  Gold: {player.gold} / {exam.requiredGold}G
+                  Gold: {totalGold} / {exam.requiredGold}G
                 </span>
               </div>
             )}

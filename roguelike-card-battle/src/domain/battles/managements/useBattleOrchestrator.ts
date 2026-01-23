@@ -14,7 +14,7 @@
 
 import { useState, useRef, useReducer, useEffect, useCallback, useMemo } from "react";
 import type { Card, Depth } from "../../cards/type/cardType";
-import type { Enemy } from "../../characters/type/enemyType";
+import type { EnemyDefinition } from "../../characters/type/enemyType";
 import type { PhaseQueue } from "../type/phaseType";
 import { createInitialSwordEnergy } from "../../characters/type/classAbilityTypes";
 
@@ -24,6 +24,9 @@ import { createInitialDeck, shuffleArray } from "../../cards/decks/deck";
 import { SWORDSMAN_CARDS_ARRAY } from "../../cards/data/SwordmanCards";
 import { INITIAL_DECK_COUNTS } from "../data/initialDeckConfig";
 
+// Card mastery management
+import { applyMasteryToCards } from "../../cards/state/masteryManager";
+
 // Animation hooks
 import { useCardAnimation } from "../../../ui/commonHtml/useCardAnimation";
 import { useTurnTransition } from "../../../ui/animations/usePhaseTransition";
@@ -31,7 +34,7 @@ import { useTurnTransition } from "../../../ui/animations/usePhaseTransition";
 // Battle hooks
 import { useBattlePhase } from "./useBattlePhase";
 import { useCharacterPhaseExecution } from "./executeCharacterManage";
-import { useBattleState } from "./useBattleState";
+import { useBattleState, type InitialPlayerState } from "./useBattleState";
 import { useCardExecution, type CardAnimationHandlers, type CardExecutionSetters, type DeckDispatch } from "./useCardExecution";
 import { useEnemyAI } from "./useEnemyAI";
 import { useSwordEnergy } from "./useClassAbility";
@@ -46,7 +49,7 @@ import { calculatePlayerPhaseEnd } from "../execution/playerPhaseExecution";
 import { previewEnemyActions } from "../../characters/enemy/logic/enemyActionExecution";
 
 // Enemy state helper
-import { createEnemyState } from "../logic/enemyStateLogic";
+import { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
 
 // ============================================================================
 // Main Hook
@@ -60,8 +63,13 @@ import { createEnemyState } from "../logic/enemyStateLogic";
  *
  * @param depth - Current dungeon depth for enemy selection
  * @param initialEnemies - Optional initial enemies (overrides random selection)
+ * @param initialPlayerState - Optional initial player state (HP/AP from PlayerContext)
  */
-export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) => {
+export const useBattleOrchestrator = (
+  depth: Depth,
+  initialEnemies?: EnemyDefinition[],
+  initialPlayerState?: InitialPlayerState
+) => {
   // ========================================================================
   // Animation Hooks
   // ========================================================================
@@ -105,7 +113,7 @@ export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) =>
   // Battle State Hook
   // ========================================================================
 
-  const battleState = useBattleState(depth, initialEnemies, phaseState.playerSpeed);
+  const battleState = useBattleState(depth, initialEnemies, phaseState.playerSpeed, initialPlayerState);
 
   const {
     // Player state
@@ -142,9 +150,9 @@ export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) =>
     enemyEnergy,
     setEnemyEnergy,
 
-    // Character objects
-    playerChar,
-    enemyChar,
+    // BattleStats objects
+    playerBattleStats,
+    enemyBattleStats,
   } = battleState;
 
   // ========================================================================
@@ -159,9 +167,15 @@ export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) =>
   // ========================================================================
 
   const initialDeckState = useMemo(() => {
-    const initialDeck = createInitialDeck(INITIAL_DECK_COUNTS, SWORDSMAN_CARDS_ARRAY);
+    let initialDeck = createInitialDeck(INITIAL_DECK_COUNTS, SWORDSMAN_CARDS_ARRAY);
+
+    // Apply mastery from saved store if available
+    if (initialPlayerState?.cardMasteryStore && initialPlayerState.cardMasteryStore.size > 0) {
+      initialDeck = applyMasteryToCards(initialDeck, initialPlayerState.cardMasteryStore);
+    }
+
     return { hand: [], drawPile: initialDeck, discardPile: [] };
-  }, []);
+  }, [initialPlayerState?.cardMasteryStore]);
 
   const [deckState, dispatch] = useReducer(deckReducer, initialDeckState);
   const deckStateRef = useRef(deckState);
@@ -253,8 +267,8 @@ export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) =>
   );
 
   const cardExecution = useCardExecution(
-    playerChar,
-    enemyChar,
+    playerBattleStats,
+    enemyBattleStats,
     playerState.energy,
     playerState.maxEnergy,
     playerState.hp,
@@ -344,8 +358,8 @@ export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) =>
       playerHp: playerState.hp,
       playerBuffs: playerState.buffs,
       enemies,
-      enemyChar,
-      playerChar,
+      enemyStats: enemyBattleStats,
+      playerStats: playerBattleStats,
       playerRef,
       setEnemyGuard,
       setEnemyEnergy,
@@ -376,8 +390,8 @@ export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) =>
     playerState.hp,
     playerState.buffs,
     enemies,
-    enemyChar,
-    playerChar,
+    enemyBattleStats,
+    playerBattleStats,
     setEnemyGuard,
     setEnemyEnergy,
     setEnemyBuffs,
@@ -558,9 +572,9 @@ export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) =>
   // ========================================================================
 
   const resetForNextEnemy = useCallback(
-    (nextEnemy: Enemy | Enemy[]) => {
+    (nextEnemy: EnemyDefinition | EnemyDefinition[]) => {
       const nextEnemies = Array.isArray(nextEnemy) ? nextEnemy : [nextEnemy];
-      setEnemies(nextEnemies.map(createEnemyState));
+      setEnemies(nextEnemies.map((def) => createEnemyStateFromDefinition(def)));
 
       setPlayerGuard(0);
       setPlayerBuffs(new Map());
@@ -614,7 +628,7 @@ export const useBattleOrchestrator = (depth: Depth, initialEnemies?: Enemy[]) =>
     if (!currentEnemy || enemyHp <= 0) {
       return [];
     }
-    return previewEnemyActions(currentEnemy, enemyHp, phaseState.phaseCount + 1);
+    return previewEnemyActions(currentEnemy, enemyHp, enemyMaxHp, phaseState.phaseCount + 1);
   }, [currentEnemy, enemyHp, phaseState.phaseCount]);
 
   // ========================================================================

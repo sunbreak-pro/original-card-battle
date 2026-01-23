@@ -127,20 +127,17 @@
   border: 0.2vh solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
 }
-.card-name.rarity-common {
-  background-color: var(--color-rarity-common);
+.card-name.mastery-0 {
+  background-color: var(--color-mastery-0);
 }
-.card-name.rarity-uncommon {
-  background-color: var(--color-rarity-uncommon);
+.card-name.mastery-1 {
+  background-color: var(--color-mastery-1);
 }
-.card-name.rarity-rare {
-  background-color: var(--color-rarity-rare);
+.card-name.mastery-2 {
+  background-color: var(--color-mastery-2);
 }
-.card-name.rarity-epic {
-  background-color: var(--color-rarity-epic);
-}
-.card-name.rarity-legendary {
-  background-color: var(--color-rarity-legendary);
+.card-name.mastery-3 {
+  background-color: var(--color-mastery-3);
 }
 
 .card-desc-box {

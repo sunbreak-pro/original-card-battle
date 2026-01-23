@@ -10,7 +10,7 @@
 @import "../../animations/keyframes.css";
 
 /* Card system */
-@import "../../CardUnified.css";
+@import "../../others/CardUnified.css";
 
 /* Battle modules */
 @import "./battle-layout.css";

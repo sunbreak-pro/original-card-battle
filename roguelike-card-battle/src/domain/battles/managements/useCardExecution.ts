@@ -15,8 +15,7 @@
 import { useCallback, type RefObject } from "react";
 import type { Card } from "../../cards/type/cardType";
 import type { BuffDebuffMap, BuffDebuffState } from "../type/baffType";
-import type { Player } from "../../characters/type/playerTypes";
-import type { Enemy } from "../../characters/type/enemyType";
+import type { BattleStats } from "../../characters/type/baseTypes";
 import type { DeckState } from "../../cards/decks/deckReducter";
 import type {
   CardExecutionResult,
@@ -134,8 +133,8 @@ export interface UseCardExecutionReturn {
 /**
  * Card execution hook
  *
- * @param playerChar - Current player character state
- * @param enemyChar - Current enemy character state
+ * @param playerStats - Current player battle stats
+ * @param enemyStats - Current enemy battle stats
  * @param playerEnergy - Current player energy
  * @param maxEnergy - Maximum player energy
  * @param playerHp - Current player HP
@@ -152,8 +151,8 @@ export interface UseCardExecutionReturn {
  * @param dispatch - Deck reducer dispatch
  */
 export function useCardExecution(
-  playerChar: Player,
-  enemyChar: Enemy,
+  playerStats: BattleStats,
+  enemyStats: BattleStats,
   playerEnergy: number,
   maxEnergy: number,
   playerHp: number,
@@ -220,7 +219,7 @@ export function useCardExecution(
           ...card,
           baseDamage: (card.baseDamage || 0) + swordEnergyDamageBonus,
         };
-        const damageResult = calculateDamage(playerChar, enemyChar, cardWithBonus);
+        const damageResult = calculateDamage(playerStats, enemyStats, cardWithBonus);
         estimatedDamage = damageResult.finalDamage;
       }
 
@@ -243,7 +242,7 @@ export function useCardExecution(
         enemyDebuffs: effect.enemyDebuffs?.map((b) => b.name) || [],
       };
     },
-    [playerEnergy, isPlayerPhase, swordEnergy, playerChar, enemyChar]
+    [playerEnergy, isPlayerPhase, swordEnergy, playerStats, enemyStats]
   );
 
   // ========================================================================
@@ -335,12 +334,12 @@ export function useCardExecution(
         };
 
         const damageResult = calculateDamage(
-          playerChar,
-          enemyChar,
+          playerStats,
+          enemyStats,
           cardWithSwordEnergy
         );
         const allocation = applyDamageAllocation(
-          enemyChar,
+          enemyStats,
           damageResult.finalDamage
         );
 
@@ -554,8 +553,8 @@ export function useCardExecution(
     },
     [
       canPlayCard,
-      playerChar,
-      enemyChar,
+      playerStats,
+      enemyStats,
       playerHp,
       playerMaxHp,
       playerBuffs,

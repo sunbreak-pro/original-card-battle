@@ -29,7 +29,6 @@ import { createInitialClassAbility } from "../type/classAbilityTypes";
 import type { CharacterClass } from "../type/baseTypes";
 
 import type {
-  Enemy,
   EnemyDefinition,
   EnemyBattleState,
 } from "../type/enemyType";
@@ -349,6 +348,9 @@ export function createEnemyBattleState(
   definition: EnemyDefinition,
   ref: React.RefObject<HTMLDivElement | null>
 ): EnemyBattleState {
+  const buffDebuffs = createEmptyBuffDebuffMap();
+  const guard = definition.startingGuard ? Math.floor(definition.baseMaxAp * 0.5) : 0;
+
   return {
     // Instance identification
     instanceId: generateEnemyInstanceId(definition.id),
@@ -360,9 +362,9 @@ export function createEnemyBattleState(
     maxHp: definition.baseMaxHp,
     ap: definition.baseMaxAp,
     maxAp: definition.baseMaxAp,
-    guard: definition.startingGuard ? Math.floor(definition.baseMaxAp * 0.5) : 0,
+    guard,
     speed: definition.baseSpeed,
-    buffDebuffs: createEmptyBuffDebuffMap(),
+    buffDebuffs,
 
     // Enemy-specific battle state
     energy: definition.actEnergy,
@@ -374,65 +376,3 @@ export function createEnemyBattleState(
   };
 }
 
-/**
- * Extract EnemyDefinition from legacy Enemy type
- *
- * Used for migration from old enemy data.
- */
-export function extractEnemyDefinition(enemy: Enemy): EnemyDefinition {
-  return {
-    id: enemy.id,
-    name: enemy.name,
-    nameJa: enemy.nameJa ?? enemy.name,
-    description: enemy.description,
-    baseMaxHp: enemy.maxHp,
-    baseMaxAp: enemy.maxAp,
-    baseSpeed: enemy.speed,
-    startingGuard: enemy.startingGuard ?? false,
-    actEnergy: enemy.actEnergy,
-    aiPatterns: enemy.aiPatterns,
-    imagePath: enemy.imagePath,
-  };
-}
-
-/**
- * Create EnemyBattleState from legacy Enemy type
- *
- * Used for backward compatibility during migration.
- */
-export function createEnemyBattleStateFromLegacy(
-  enemy: Enemy,
-  ref: React.RefObject<HTMLDivElement | null>
-): EnemyBattleState {
-  const definition = extractEnemyDefinition(enemy);
-  return createEnemyBattleState(definition, ref);
-}
-
-/**
- * Convert EnemyBattleState back to legacy Enemy type
- *
- * Used for backward compatibility with existing UI components.
- */
-export function convertEnemyBattleStateToLegacy(
-  battleState: EnemyBattleState
-): Enemy {
-  const { definition } = battleState;
-
-  return {
-    id: definition.id,
-    name: definition.name,
-    nameJa: definition.nameJa,
-    description: definition.description,
-    hp: battleState.hp,
-    maxHp: battleState.maxHp,
-    ap: battleState.ap,
-    maxAp: battleState.maxAp,
-    guard: battleState.guard,
-    speed: battleState.speed,
-    actEnergy: definition.actEnergy,
-    startingGuard: definition.startingGuard,
-    aiPatterns: definition.aiPatterns,
-    buffDebuffs: battleState.buffDebuffs,
-    imagePath: definition.imagePath,
-  };
-}

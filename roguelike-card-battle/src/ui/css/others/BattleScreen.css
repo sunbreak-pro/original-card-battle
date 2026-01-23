@@ -13,4 +13,4 @@
    - battle-modals.css: Modal overlays
    ========================================= */
 
-@import "./pages/battle/index.css";
+@import "../pages/battle/index.css";

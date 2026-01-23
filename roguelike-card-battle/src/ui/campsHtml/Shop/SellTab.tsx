@@ -5,9 +5,9 @@ import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
 import { calculateSellPrice } from "../../../domain/camps/logic/shopLogic";
 
 const SellTab = () => {
-  const { player, addGold } = usePlayer();
+  const { playerData, addGold } = usePlayer();
   const { removeItemFromInventory, getEquippedItem } = useInventory();
-  const inventory = player.inventory;
+  const inventory = playerData.inventory.inventory;
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 

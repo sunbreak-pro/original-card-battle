@@ -8,7 +8,6 @@
    - Size: card-size-sm, card-size-md, card-size-lg
    - Tag: tag-attack, tag-guard, tag-skill, tag-stance (UI display)
    - Mastery: mastery-0, mastery-1, mastery-2, mastery-3
-   - Rarity: rarity-common, rarity-rare, rarity-epic, rarity-legend
    ========================================= */
 
 /* =========================================
@@ -111,40 +110,6 @@
   }
 }
 
-/* =========================================
-   Rarity Border Styling
-   ========================================= */
-
-/* Common - Gray border */
-
-
-@keyframes legendShimmer {
-  0%, 100% {
-    border-color: #f59e0b;
-    box-shadow:
-      0 0.5vh 2vh rgba(0, 0, 0, 0.8),
-      inset 0 0.5vh 1vh rgba(0, 0, 0, 0.3),
-      0 0 1vh rgba(245, 158, 11, 0.45);
-  }
-  50% {
-    border-color: #fbbf24;
-    box-shadow:
-      0 0.5vh 2vh rgba(0, 0, 0, 0.8),
-      inset 0 0.5vh 1vh rgba(0, 0, 0, 0.3),
-      0 0 1.5vh rgba(251, 191, 36, 0.6);
-  }
-}
-
-/* =========================================
-   Combined Mastery + Rarity Effects
-
-   When both mastery-3 and legend rarity are present,
-   the animations stack for a premium effect.
-   ========================================= */
-
-.card.mastery-3.rarity-legend {
-  animation: masteryGlow 2.5s ease-in-out infinite, legendShimmer 3s ease-in-out infinite;
-}
 
 /* =========================================
    Card Background with Tag Color

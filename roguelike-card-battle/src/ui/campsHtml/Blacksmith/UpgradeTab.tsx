@@ -25,17 +25,17 @@ import {
 import BlacksmithItemCard from "./BlacksmithItemCard";
 
 const UpgradeTab = () => {
-  const { player, updatePlayer, useGold: deductGold } = usePlayer();
+  const { playerData, updatePlayerData, useGold: deductGold } = usePlayer();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [selectedQualityOption, setSelectedQualityOption] = useState<QualityUpOption>("normal");
   const [notification, setNotification] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   // Get equipment items from storage
-  const equipmentItems = player.storage.items.filter(
+  const equipmentItems = playerData.inventory.storage.items.filter(
     (item) => item.itemType === "equipment"
   );
 
-  const totalMagicStoneValue = calculateMagicStoneValue(player.baseCampMagicStones);
+  const totalMagicStoneValue = calculateMagicStoneValue(playerData.resources.baseCampMagicStones);
 
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ message, type });
@@ -44,13 +44,16 @@ const UpgradeTab = () => {
 
   // Update item in storage
   const updateStorageItem = (updatedItem: Item) => {
-    const newItems = player.storage.items.map((item) =>
+    const newItems = playerData.inventory.storage.items.map((item) =>
       item.id === updatedItem.id ? updatedItem : item
     );
-    updatePlayer({
-      storage: {
-        ...player.storage,
-        items: newItems,
+    updatePlayerData({
+      inventory: {
+        ...playerData.inventory,
+        storage: {
+          ...playerData.inventory.storage,
+          items: newItems,
+        },
       },
     });
     setSelectedItem(updatedItem);
@@ -66,7 +69,7 @@ const UpgradeTab = () => {
       return;
     }
 
-    if (!canAfford(player.baseCampGold, totalMagicStoneValue, cost)) {
+    if (!canAfford(playerData.resources.baseCampGold, totalMagicStoneValue, cost)) {
       showNotification("Not enough resources", "error");
       return;
     }
@@ -93,7 +96,7 @@ const UpgradeTab = () => {
 
     const cost = getQualityUpgradeCost(selectedQualityOption);
 
-    if (!canAfford(player.baseCampGold, totalMagicStoneValue, cost)) {
+    if (!canAfford(playerData.resources.baseCampGold, totalMagicStoneValue, cost)) {
       showNotification("Not enough resources", "error");
       return;
     }
@@ -117,7 +120,7 @@ const UpgradeTab = () => {
 
   // Get upgrade preview
   const upgradePreview = selectedItem
-    ? getUpgradePreview(selectedItem, player.baseCampGold, totalMagicStoneValue)
+    ? getUpgradePreview(selectedItem, playerData.resources.baseCampGold, totalMagicStoneValue)
     : null;
 
   // Get quality upgrade info
@@ -125,7 +128,7 @@ const UpgradeTab = () => {
     ? getQualitySuccessChance(selectedItem.quality as EquipmentQuality, selectedQualityOption)
     : 0;
   const qualityCost = getQualityUpgradeCost(selectedQualityOption);
-  const canAffordQuality = canAfford(player.baseCampGold, totalMagicStoneValue, qualityCost);
+  const canAffordQuality = canAfford(playerData.resources.baseCampGold, totalMagicStoneValue, qualityCost);
 
   return (
     <div className="tab-layout">
@@ -214,7 +217,7 @@ const UpgradeTab = () => {
 
                 {/* Cost */}
                 <div className="cost-display">
-                  <span className={`cost-item gold ${player.baseCampGold < upgradePreview.cost.gold ? "insufficient" : ""}`}>
+                  <span className={`cost-item gold ${playerData.resources.baseCampGold < upgradePreview.cost.gold ? "insufficient" : ""}`}>
                     💰 {upgradePreview.cost.gold} G
                   </span>
                   <span className={`cost-item stones ${totalMagicStoneValue < upgradePreview.cost.magicStones ? "insufficient" : ""}`}>
@@ -269,7 +272,7 @@ const UpgradeTab = () => {
                       (selectedItem.quality ?? "normal") as EquipmentQuality,
                       option
                     );
-                    const canAffordOption = canAfford(player.baseCampGold, totalMagicStoneValue, optionCost);
+                    const canAffordOption = canAfford(playerData.resources.baseCampGold, totalMagicStoneValue, optionCost);
 
                     return (
                       <div
@@ -283,7 +286,7 @@ const UpgradeTab = () => {
                         </div>
                         <div className="quality-option-desc">{config.description}</div>
                         <div className="quality-option-cost">
-                          <span className={`cost-item gold ${player.baseCampGold < optionCost.gold ? "insufficient" : ""}`}>
+                          <span className={`cost-item gold ${playerData.resources.baseCampGold < optionCost.gold ? "insufficient" : ""}`}>
                             💰 {optionCost.gold} G
                           </span>
                           <span className={`cost-item stones ${totalMagicStoneValue < optionCost.magicStones ? "insufficient" : ""}`}>
