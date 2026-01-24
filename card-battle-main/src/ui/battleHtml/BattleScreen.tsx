@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import type { Depth, Card } from "../../domain/cards/type/cardType";
-import { useBattle, type InitialPlayerState } from "../../domain/battles/managements/battleFlowManage";
+import {
+  useBattle,
+  type InitialPlayerState,
+} from "../../domain/battles/managements/battleFlowManage";
 import { selectRandomEnemy } from "../../domain/characters/enemy/logic/enemyAI";
 import { CardComponent } from "../cardHtml/CardComponent";
 import { BattlingCardPileModal } from "../cardHtml/CardModalDisplay";
@@ -22,10 +25,10 @@ import { Swordman_Status } from "../../domain/characters/player/data/PlayerData"
  */
 function collectMasteryFromDeck(
   cards: Card[],
-  existingStore: Map<string, number>
+  existingStore: Map<string, number>,
 ): Map<string, number> {
   const newStore = new Map(existingStore);
-  cards.forEach(card => {
+  cards.forEach((card) => {
     const cardTypeId = card.cardTypeId;
     const currentCount = newStore.get(cardTypeId) ?? 0;
     // Use the higher value between existing and card's useCount
@@ -38,7 +41,6 @@ function collectMasteryFromDeck(
 
 const BattleScreen = ({
   depth,
-  onDepthChange,
   onReturnToCamp,
   onWin,
   onLose,
@@ -68,18 +70,25 @@ const BattleScreen = ({
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
 
   // Create initial player state from runtime state
-  const initialPlayerState = useMemo<InitialPlayerState>(() => ({
-    currentHp: runtimeState.currentHp,
-    currentAp: runtimeState.currentAp,
-    maxHp: Swordman_Status.maxHp,
-    maxAp: Swordman_Status.maxAp,
-    name: "エイレス",
-    playerClass: Swordman_Status.playerClass,
-    classGrade: Swordman_Status.classGrade,
-    speed: Swordman_Status.speed,
-    cardActEnergy: Swordman_Status.cardActEnergy,
-    cardMasteryStore: runtimeState.cardMasteryStore,
-  }), [runtimeState.currentHp, runtimeState.currentAp, runtimeState.cardMasteryStore]);
+  const initialPlayerState = useMemo<InitialPlayerState>(
+    () => ({
+      currentHp: runtimeState.currentHp,
+      currentAp: runtimeState.currentAp,
+      maxHp: Swordman_Status.maxHp,
+      maxAp: Swordman_Status.maxAp,
+      name: "エイレス",
+      playerClass: Swordman_Status.playerClass,
+      classGrade: Swordman_Status.classGrade,
+      speed: Swordman_Status.speed,
+      cardActEnergy: Swordman_Status.cardActEnergy,
+      cardMasteryStore: runtimeState.cardMasteryStore,
+    }),
+    [
+      runtimeState.currentHp,
+      runtimeState.currentAp,
+      runtimeState.cardMasteryStore,
+    ],
+  );
 
   const {
     playerRef,
@@ -162,7 +171,10 @@ const BattleScreen = ({
     const handleVictoryContinue = () => {
       // Collect mastery from all cards in deck
       const allCards = [...hand, ...drawPile, ...discardPile];
-      const updatedMastery = collectMasteryFromDeck(allCards, runtimeState.cardMasteryStore);
+      const updatedMastery = collectMasteryFromDeck(
+        allCards,
+        runtimeState.cardMasteryStore,
+      );
 
       // Save current HP/AP and card mastery to runtime state
       updateRuntimeState({
@@ -236,23 +248,12 @@ const BattleScreen = ({
           {depth}-{encounterCount === 6 ? "BOSS" : encounterCount + 1} | Phase{" "}
           {phaseCount}
         </div>
-        <div className="depth-controls">
-          {[1, 2, 3, 4, 5].map((d) => (
-            <button
-              key={d}
-              className={`depth-btn ${depth === d ? "active" : ""}`}
-              onClick={() => onDepthChange(d as Depth)}
-            >
-              D{d}
-            </button>
-          ))}
-        </div>
+        <TurnOrderIndicator
+          phaseQueue={phaseQueue}
+          currentPhaseIndex={currentPhaseIndex}
+        />
       </div>
-      {/* Phase system - TurnOrderIndicator v5.0 horizontal */}
-      <TurnOrderIndicator
-        phaseQueue={phaseQueue}
-        currentPhaseIndex={currentPhaseIndex}
-      />
+
       <div className="battle-field">
         <EnemyDisplay
           enemies={aliveEnemies.map((e) => ({
@@ -400,11 +401,19 @@ const BattleScreen = ({
       <div className="hand-container">
         {/* Left Section: Draw/Discard Piles */}
         <div className="pile-section">
-          <div className="pile-icon draw" title="Draw Pile" onClick={openDrawPile}>
+          <div
+            className="pile-icon draw"
+            title="Draw Pile"
+            onClick={openDrawPile}
+          >
             <div className="pile-visual">🎴</div>
             <div className="pile-count">山札: {drawPile.length}</div>
           </div>
-          <div className="pile-icon discard" title="Discard Pile" onClick={openDiscardPile}>
+          <div
+            className="pile-icon discard"
+            title="Discard Pile"
+            onClick={openDiscardPile}
+          >
             <div className="pile-visual">🗑️</div>
             <div className="pile-count">捨て札: {discardPile.length}</div>
           </div>
@@ -457,10 +466,16 @@ const BattleScreen = ({
           <button className="action-btn end-phase-btn" onClick={handleEndPhase}>
             End Phase
           </button>
-          <button className="action-btn use-item-btn" onClick={() => setIsItemModalOpen(true)}>
+          <button
+            className="action-btn use-item-btn"
+            onClick={() => setIsItemModalOpen(true)}
+          >
             Use Item
           </button>
-          <button className="action-btn flee-btn" onClick={() => console.log("Fleeing Combat: 未実装")}>
+          <button
+            className="action-btn flee-btn"
+            onClick={() => console.log("Fleeing Combat: 未実装")}
+          >
             Fleeing Combat
           </button>
         </div>

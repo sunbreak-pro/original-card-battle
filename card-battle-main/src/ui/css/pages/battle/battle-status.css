@@ -9,13 +9,10 @@
    ========================================= */
 .status-container {
   position: relative;
-  width: 80%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 1vh;
-}
-.status-container {
-  width: 100%;
 }
 
 

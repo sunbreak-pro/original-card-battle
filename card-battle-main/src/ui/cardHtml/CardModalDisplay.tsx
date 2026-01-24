@@ -21,20 +21,20 @@ export const BattlingCardPileModal: React.FC<CardPileModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className="battle-modal-overlay" onClick={onClose}>
+      <div className="battle-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="battle-modal-header">
           <h2>
             {title} ({cards.length})
           </h2>
-          <button className="modal-close-btn" onClick={onClose}>
+          <button className="battle-modal-close-btn" onClick={onClose}>
             ×
           </button>
         </div>
 
-        <div className="modal-body">
+        <div className="battle-modal-body">
           {cards.length === 0 ? (
-            <div className="empty-message">捨て札は空です</div>
+            <div className="battle-empty-message">捨て札は空です</div>
           ) : (
             <div className="card-grid">
               {cards.map((card, index) => (

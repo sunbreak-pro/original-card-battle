@@ -129,6 +129,15 @@
   --library-accent: #e9d5ff;
 
   /* =========================================
+     Battle Theme Variables (Default)
+     ========================================= */
+  --theme-primary: #1a1a24;
+  --theme-secondary: #2a2a3d;
+  --theme-accent: #8b7aa8;
+  --theme-glow: rgba(139, 122, 168, 0.25);
+  --theme-hover: #a090b0;
+
+  /* =========================================
      Spacing (base unit: vh/vw for responsive)
      ========================================= */
   --spacing-xs: 0.5vh;

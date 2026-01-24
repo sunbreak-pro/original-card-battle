@@ -51,7 +51,7 @@ export const TurnOrderIndicator: React.FC<TurnOrderIndicatorProps> = ({
   }
 
   return (
-    <div className="turn-order-indicator-v2">
+    <div className="turn-order-indicator">
       {phasesToShow.map((phase, displayIndex) => (
         <React.Fragment key={`${phase.index}-${displayIndex}`}>
           {phase.actor === "player" ? (

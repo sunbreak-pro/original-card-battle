@@ -157,7 +157,7 @@ const EnemyCard: React.FC<{
           <img
             className="enemy-img"
             alt="enemy-img"
-            src="../../../public/assets/images/enemy1.png"
+            src="../../../public/assets/images/depth_1_schelton.png"
           />
         )}
       </div>

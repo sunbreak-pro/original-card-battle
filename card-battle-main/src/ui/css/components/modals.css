@@ -1,28 +1,4 @@
 /* =========================================
-   Modal Components
-   =========================================
-   Shared modal overlay and content styles.
-   ========================================= */
-
-/* =========================================
-   Modal Overlay Base
-   ========================================= */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(5px);
-  z-index: var(--z-modal, 1000);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.2s ease-out;
-}
-
-/* =========================================
    Modal Content Base
    ========================================= */
 .modal-content {

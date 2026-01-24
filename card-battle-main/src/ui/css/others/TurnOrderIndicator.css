@@ -7,29 +7,22 @@
    NEW: Horizontal Turn Order Indicator v2
    .pen Design Matching - Diamond Icons
    ============================================ */
-.turn-order-indicator-v2 {
-  position: absolute;
-  top: 1.5vh;
-  right: 1.5vw;
-  z-index: 50;
-
+.turn-order-indicator {
   display: flex;
   align-items: center;
   gap: 0.8vh;
-
-  /* Gradient background from .pen design */
   background: linear-gradient(90deg, #000000 0%, #414040 78%, #797878 100%);
   opacity: 0.81;
   border-radius: 1vh;
-  padding: 1.5vh 3vw;
-
+  padding: 1.2vh 2.4vw;
   box-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.4);
+  height: 100%;
 }
 
 /* Diamond-shaped phase icons */
 .phase-icon-diamond {
-  width: 3.5vh;
-  height: 3.5vh;
+  width: 2.6vh;
+  height: 2.6vh;
   transform: rotate(-45deg);
   border-radius: 0.6vh;
   display: flex;
@@ -93,8 +86,8 @@
 }
 
 .phase-icon.active {
-  border-color: var(--theme-accent);
-  box-shadow: 0 0 1vh var(--theme-glow);
+  border-color: black;
+  box-shadow: 0 0 1vh gray;
   transform: scale(1.3);
 }
 
@@ -128,20 +121,6 @@
 /* ============================================
    LEGACY: Old Turn Order Indicator (preserved)
    ============================================ */
-.turn-order-indicator {
-  /* 右上隅に固定配置 */
-  position: absolute;
-  top: 2vh;
-  right: 2vw;
-  z-index: 50;
-
-  background: rgba(0, 0, 0, 0.85);
-  border: 2px solid var(--theme-accent, rgba(255, 255, 255, 0.3));
-  border-radius: 1vh;
-  padding: 1vh 1.5vw;
-  min-width: 12vw;
-  box-shadow: 0 0 1.5vh var(--theme-glow, rgba(0, 0, 0, 0.5));
-}
 
 .indicator-header {
   text-align: center;
