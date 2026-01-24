@@ -1,16 +1,16 @@
 {
-  "name": "roguelike-card-workspace",
+  "name": "card-battle-workspace",
   "version": "1.0.0",
   "private": true,
-  "description": "Workspace root for roguelike card battle game",
+  "description": "Workspace root for card battle game",
   "scripts": {
-    "dev": "cd roguelike-card-battle && npm run dev",
-    "build": "cd roguelike-card-battle && npm run build",
-    "lint": "cd roguelike-card-battle && npm run lint",
-    "preview": "cd roguelike-card-battle && npm run preview",
-    "install-deps": "cd roguelike-card-battle && npm install"
+    "dev": "cd card-battle-main && npm run dev",
+    "build": "cd card-battle-main && npm run build",
+    "lint": "cd card-battle-main && npm run lint",
+    "preview": "cd card-battle-main && npm run preview",
+    "install-deps": "cd card-battle-main && npm install"
   },
   "workspaces": [
-    "roguelike-card-battle"
+    "card-battle-main"
   ]
 }
