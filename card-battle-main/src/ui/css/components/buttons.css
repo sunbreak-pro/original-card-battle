@@ -1,0 +1,353 @@
+/* =========================================
+   Button Components
+   =========================================
+   Shared button styles: back buttons, action buttons.
+   Uses CSS custom properties for theming.
+   ========================================= */
+
+/* =========================================
+   Back Button Base
+   ========================================= */
+.back-button {
+  display: block;
+  margin: 1vh auto 0 auto;
+  padding: 1.2vh 2vw;
+  background: var(--btn-bg, rgba(45, 31, 26, 0.95));
+  border: 2px solid var(--btn-border, rgba(255, 255, 255, 0.3));
+  border-radius: 8px;
+  color: var(--btn-text, #e8d5b7);
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: var(--btn-bg-hover, rgba(45, 31, 26, 1));
+  border-color: var(--btn-accent, #fff);
+  transform: scale(1.05);
+}
+
+/* =========================================
+   Facility-specific back buttons
+   ========================================= */
+
+/* Blacksmith */
+.blacksmith-back-button {
+  display: block;
+  margin: 1vh auto 0 auto;
+  padding: 1.2vh 2vw;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(255, 107, 53, 0.3);
+  border-radius: 8px;
+  color: #e8d5b7;
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.blacksmith-back-button:hover {
+  background: rgba(45, 31, 26, 1);
+  border-color: #ff6b35;
+  transform: scale(1.05);
+}
+
+/* Shop */
+.shop-back-button {
+  display: block;
+  margin: 1vh auto 0 auto;
+  padding: 1.2vh 2vw;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  color: #e8d5b7;
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.shop-back-button:hover {
+  background: rgba(45, 31, 26, 1);
+  border-color: #d4af37;
+  transform: scale(1.05);
+}
+
+/* Sanctuary */
+.sanctuary-back-button {
+  display: block;
+  margin: 1.5vh auto 0 auto;
+  padding: 1.2vh 2.5vw;
+  background: rgba(30, 20, 50, 0.95);
+  border: 2px solid rgba(168, 85, 247, 0.3);
+  border-radius: 8px;
+  color: #e8e0f0;
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sanctuary-back-button:hover {
+  background: rgba(88, 28, 135, 0.4);
+  border-color: #a855f7;
+  transform: scale(1.05);
+}
+
+/* Guild */
+.guild-back-button {
+  display: block;
+  margin: 0 auto 0 auto;
+  padding: 1.5vh 2vw;
+  background: rgba(45, 31, 26, 0.8);
+  border: 2px solid rgba(232, 213, 183, 0.3);
+  border-radius: 8px;
+  color: #e8d5b7;
+  font-size: 1.8vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guild-back-button:hover {
+  background: rgba(45, 31, 26, 1);
+  border-color: #f4e4c1;
+  transform: scale(1.05);
+}
+
+/* Library */
+.library-back-button {
+  display: block;
+  margin: 1.5vh auto 0 auto;
+  padding: 1.2vh 2.5vw;
+  background: rgba(30, 20, 50, 0.95);
+  border: 2px solid rgba(168, 85, 247, 0.3);
+  border-radius: 8px;
+  color: #e8e0f0;
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.library-back-button:hover {
+  background: rgba(88, 28, 135, 0.4);
+  border-color: #a855f7;
+  transform: scale(1.05);
+}
+
+/* Storage */
+.storage-back-button {
+  padding: 1vh 2vw;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(255, 111, 0, 0.3);
+  border-radius: 8px;
+  color: #e8d5b7;
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.storage-back-button:hover {
+  background: rgba(45, 31, 26, 1);
+  border-color: #ff6f00;
+  transform: scale(1.05);
+}
+
+/* =========================================
+   Action Button Base
+   ========================================= */
+.action-button {
+  width: 100%;
+  padding: 1.2vh 0;
+  background: linear-gradient(135deg, var(--btn-gradient-start, #8b3a14) 0%, var(--btn-gradient-end, #ff6b35) 100%);
+  border: 2px solid var(--btn-border-color, #f4e4c1);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1.6vh;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 1vh;
+}
+
+.action-button:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px var(--btn-glow, rgba(255, 107, 53, 0.5));
+}
+
+.action-button:disabled {
+  background: rgba(45, 31, 26, 0.95);
+  border-color: rgba(232, 213, 183, 0.3);
+  color: #6d5d4b;
+  cursor: not-allowed;
+}
+
+.action-button.secondary {
+  background: rgba(45, 31, 26, 0.95);
+  border-color: var(--btn-secondary-border, rgba(255, 107, 53, 0.5));
+  color: #e8d5b7;
+}
+
+.action-button.secondary:hover:not(:disabled) {
+  background: var(--btn-secondary-bg-hover, rgba(255, 107, 53, 0.2));
+}
+
+.action-button.danger {
+  background: linear-gradient(135deg, #8b1414 0%, #f44336 100%);
+}
+
+.action-button.danger:hover:not(:disabled) {
+  box-shadow: 0 0 15px rgba(244, 67, 54, 0.5);
+}
+
+/* =========================================
+   Buy/Sell Buttons
+   ========================================= */
+.buy-button {
+  padding: 0.8vh 1.2vw;
+  background: linear-gradient(135deg, #8b6914 0%, #d4af37 100%);
+  border: 1px solid #f4e4c1;
+  border-radius: 6px;
+  color: #1a1612;
+  font-size: 1.4vh;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.buy-button:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.buy-button:disabled {
+  background: rgba(45, 31, 26, 0.95);
+  border-color: rgba(232, 213, 183, 0.3);
+  color: #6d5d4b;
+  cursor: not-allowed;
+}
+
+.sell-button {
+  width: 100%;
+  padding: 1.2vh 0;
+  background: linear-gradient(135deg, #8b6914 0%, #d4af37 100%);
+  border: 2px solid #f4e4c1;
+  border-radius: 8px;
+  color: #1a1612;
+  font-size: 1.6vh;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sell-button:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+}
+
+/* =========================================
+   Transfer Buttons (Storage)
+   ========================================= */
+.transfer-btn {
+  width: 2.5vw;
+  height: 4vh;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(255, 111, 0, 0.3);
+  border-radius: 6px;
+  color: #e8d5b7;
+  font-size: 1.5vh;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transfer-btn:hover:not(:disabled) {
+  background: rgba(255, 111, 0, 0.3);
+  border-color: #ff6f00;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.transfer-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   Unlock Button (Sanctuary)
+   ========================================= */
+.unlock-button {
+  position: relative;
+  width: 100%;
+  padding: 1.5vh 0;
+  background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%);
+  border: 2px solid #a855f7;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1.6vh;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.unlock-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6b21a8 0%, #8b5cf6 100%);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+}
+
+.unlock-button:disabled {
+  background: rgba(50, 40, 70, 0.95);
+  border-color: rgba(100, 100, 100, 0.3);
+  color: #666;
+  cursor: not-allowed;
+}
+
+.unlock-button .button-text {
+  position: relative;
+  z-index: 2;
+}
+
+.unlock-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(168, 85, 247, 0.4);
+  transition: width 0.05s linear;
+  z-index: 1;
+}
+
+.unlock-button.unlocking {
+  animation: glow-unlock 0.5s ease-in-out infinite alternate;
+}
+
+/* =========================================
+   Confirm Buttons
+   ========================================= */
+.confirm-button {
+  padding: 1vh 2vw;
+  border-radius: 6px;
+  font-size: 1.4vh;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-button.cancel {
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(255, 107, 53, 0.3);
+  color: #e8d5b7;
+}
+
+.confirm-button.cancel:hover {
+  background: rgba(255, 107, 53, 0.2);
+}
+
+.confirm-button.confirm {
+  background: linear-gradient(135deg, #8b1414 0%, #f44336 100%);
+  border: 2px solid #f44336;
+  color: #fff;
+}
+
+.confirm-button.confirm:hover {
+  box-shadow: 0 0 15px rgba(244, 67, 54, 0.5);
+}

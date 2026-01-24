@@ -1,0 +1,170 @@
+/* =========================================
+   Core CSS Variables
+   =========================================
+   Single source of truth for colors, spacing, fonts.
+   All theme colors and shared values are defined here.
+   ========================================= */
+
+:root {
+  /* =========================================
+     Typography
+     ========================================= */
+  --font-primary: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+  --line-height-base: 1.5;
+
+  /* =========================================
+     Base Colors
+     ========================================= */
+  /* --color-bg-dark: #0a0a0a;
+  --color-bg-darker: #0a0a1a;
+  --color-text-primary: rgba(255, 255, 255, 0.87);
+  --color-text-secondary: #b89968;
+  --color-text-muted: #6d5d4b; */
+
+  /* =========================================
+     Status Colors
+     ========================================= */
+  --color-hp: #d94a4a;
+  --color-hp-light: #ff6b6b;
+  --color-ap: #808080;
+  --color-ap-light: #a0a0a0;
+  --color-guard: #4488cc;
+  --color-guard-light: #6699ff;
+  --color-energy: #2b9f0e;
+  --color-energy-light: #3cb82a;
+
+  /* =========================================
+     Notification Colors
+     ========================================= */
+  --color-success: #4caf50;
+  --color-success-dark: rgba(76, 175, 80, 0.9);
+  --color-error: #f44336;
+  --color-error-dark: rgba(244, 67, 54, 0.9);
+  --color-warning: #ffc107;
+  --color-warning-dark: rgba(255, 193, 7, 0.8);
+
+  /* =========================================
+     Mastery Colors (Card Name Background)
+     寒色→暖色グラデーション
+     ========================================= */
+  --color-mastery-0: #343434;      /* 未熟練: グレー */
+  --color-mastery-1: #2196f3;      /* 初級: 青 */
+  --color-mastery-2: #9c27b0;      /* 中級: 紫 */
+  --color-mastery-3: #ff9800;      /* 熟練: 金 */
+
+  /* =========================================
+     Quality Colors
+     ========================================= */
+  --color-quality-poor: #5b5b5b;
+  --color-quality-normal: #9ee2e2;
+  --color-quality-good: #05e758;
+  --color-quality-master: #fb2424;
+
+  /* =========================================
+     Gold/Currency Colors
+     ========================================= */
+  --color-gold: #d4af37;
+  --color-gold-light: #ffd54f;
+  --color-gold-dark: #8b6914;
+  --color-magic-stone: #6495ed;
+
+  /* =========================================
+     Facility Theme Colors
+     ========================================= */
+
+  /* Blacksmith - Orange/Fire */
+  --blacksmith-primary: #ff6b35;
+  --blacksmith-secondary: #ff9f66;
+  --blacksmith-bg: rgba(45, 31, 26, 0.95);
+  --blacksmith-bg-dark: rgba(26, 20, 16, 0.95);
+  --blacksmith-border: rgba(255, 107, 53, 0.3);
+  --blacksmith-text: #e8d5b7;
+  --blacksmith-accent: #f4e4c1;
+
+  /* Shop - Gold/Merchant */
+  --shop-primary: #d4af37;
+  --shop-secondary: #ffd700;
+  --shop-bg: rgba(45, 31, 26, 0.95);
+  --shop-bg-dark: rgba(26, 20, 16, 0.95);
+  --shop-border: rgba(212, 175, 55, 0.3);
+  --shop-text: #e8d5b7;
+  --shop-accent: #f4e4c1;
+
+  /* Sanctuary - Purple/Mystical */
+  --sanctuary-primary: #a855f7;
+  --sanctuary-secondary: #7c3aed;
+  --sanctuary-bg: rgba(30, 20, 50, 0.95);
+  --sanctuary-bg-dark: rgba(88, 28, 135, 0.95);
+  --sanctuary-border: rgba(168, 85, 247, 0.3);
+  --sanctuary-text: #e8e0f0;
+  --sanctuary-accent: #e9d5ff;
+
+  /* Storage - Orange */
+  --storage-primary: #ff6f00;
+  --storage-secondary: #ffa000;
+  --storage-bg: rgba(45, 31, 26, 0.95);
+  --storage-bg-dark: rgba(26, 20, 16, 0.95);
+  --storage-border: rgba(255, 111, 0, 0.3);
+  --storage-text: #e8d5b7;
+  --storage-accent: #f4e4c1;
+
+  /* Guild - Cream/Traditional */
+  --guild-primary: #f4e4c1;
+  --guild-secondary: #e8d5b7;
+  --guild-bg: rgba(45, 31, 26, 0.8);
+  --guild-bg-dark: rgba(26, 20, 16, 0.6);
+  --guild-border: rgba(232, 213, 183, 0.3);
+  --guild-text: #e8d5b7;
+  --guild-accent: #f4e4c1;
+
+  /* Library - Purple/Knowledge */
+  --library-primary: #a855f7;
+  --library-secondary: #9f7aea;
+  --library-bg: rgba(30, 20, 50, 0.8);
+  --library-bg-dark: rgba(15, 10, 26, 0.95);
+  --library-border: rgba(168, 85, 247, 0.3);
+  --library-text: #e8e0f0;
+  --library-accent: #e9d5ff;
+
+  /* =========================================
+     Spacing (base unit: vh/vw for responsive)
+     ========================================= */
+  --spacing-xs: 0.5vh;
+  --spacing-sm: 1vh;
+  --spacing-md: 1.5vh;
+  --spacing-lg: 2vh;
+  --spacing-xl: 3vh;
+
+  /* =========================================
+     Border Radius
+     ========================================= */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-round: 50%;
+
+  /* =========================================
+     Transitions
+     ========================================= */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.4s ease;
+
+  /* =========================================
+     Z-Index Layers
+     ========================================= */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-modal: 1000;
+  --z-notification: 1100;
+  --z-tooltip: 1200;
+
+  /* =========================================
+     Card System
+     ========================================= */
+  --card-base-width: 13vh;
+  --card-aspect-ratio: 2 / 3;
+}

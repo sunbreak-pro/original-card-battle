@@ -1,0 +1,16 @@
+/* =========================================
+   Main Entry Point - index.css
+   =========================================
+   Import core styles and global resets.
+   Individual pages/components import their own CSS.
+   ========================================= */
+
+/* Core CSS (variables, reset) */
+@import "./ui/css/core/variables.css";
+@import "./ui/css/core/reset.css";
+
+/* Shared animations */
+@import "./ui/css/animations/keyframes.css";
+
+/* Shared components (optional - pages can import as needed) */
+@import "./ui/css/components/index.css";

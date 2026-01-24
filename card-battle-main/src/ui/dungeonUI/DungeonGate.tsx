@@ -1,0 +1,109 @@
+// DungeonGate - Depth selection screen
+
+import { useState, useCallback } from "react";
+import type { Depth } from "../../domain/camps/types/CampTypes";
+import { useGameState } from "../../domain/camps/contexts/GameStateContext";
+import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
+import { DEPTH_DISPLAY_INFO } from "../../domain/dungeon/types/DungeonTypes";
+import "./DungeonGate.css";
+
+/**
+ * DungeonGate Component
+ * Allows players to select a dungeon depth to explore
+ */
+export function DungeonGate() {
+  const { returnToCamp, navigateTo, setDepth } = useGameState();
+  const [selectedDepth, setSelectedDepth] = useState<Depth | null>(null);
+
+  // Handle depth card selection
+  const handleDepthSelect = useCallback((depth: Depth) => {
+    setSelectedDepth(depth);
+  }, []);
+
+  // Handle exploration start
+  const handleStartExploration = useCallback(() => {
+    if (selectedDepth !== null) {
+      setDepth(selectedDepth);
+      navigateTo("dungeon_map");
+    }
+  }, [selectedDepth, setDepth, navigateTo]);
+
+  // Get theme colors (unified neutral theme for all depths)
+  const getThemeColors = (_depth: Depth) => {
+    return neutralTheme;
+  };
+
+  return (
+    <div className="dungeon-gate-screen">
+      {/* Header */}
+      <header className="dungeon-gate-header">
+        <h1 className="dungeon-gate-title">Dungeon Gate</h1>
+        <p className="dungeon-gate-subtitle">
+          Those who don the corruption will dwell in madness
+        </p>
+      </header>
+
+      {/* Depth Selection Grid */}
+      <div className="depth-selection-container">
+        <h2 className="depth-selection-title">Select Depth</h2>
+
+        <div className="depth-cards-grid">
+          {([1, 2, 3, 4, 5] as Depth[]).map((depth) => {
+            const theme = getThemeColors(depth);
+            const info = DEPTH_DISPLAY_INFO[depth];
+            const isSelected = selectedDepth === depth;
+
+            return (
+              <button
+                key={depth}
+                className={`depth-card ${isSelected ? "selected" : ""}`}
+                onClick={() => handleDepthSelect(depth)}
+                style={{
+                  "--depth-primary": theme.primary,
+                  "--depth-secondary": theme.secondary,
+                  "--depth-accent": theme.accent,
+                  "--depth-glow": theme.glow,
+                  "--depth-hover": theme.hover,
+                } as React.CSSProperties}
+              >
+                <div className="depth-card-inner">
+                  <div className="depth-number">{depth}</div>
+                  <div className="depth-name-container">
+                    <span className="depth-name-jp">{info.japaneseName}</span>
+                    <span className="depth-name-en">{info.name}</span>
+                  </div>
+                  <p className="depth-description">{info.description}</p>
+                  <div className="depth-level">
+                    Lv. {info.recommendedLevel}+
+                  </div>
+                </div>
+
+                {isSelected && <div className="depth-selected-indicator" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="dungeon-gate-actions">
+        <button
+          className="start-exploration-button"
+          onClick={handleStartExploration}
+          disabled={selectedDepth === null}
+        >
+          {selectedDepth !== null
+            ? `Enter ${DEPTH_DISPLAY_INFO[selectedDepth].japaneseName}`
+            : "Select a Depth"}
+        </button>
+      </div>
+
+      {/* Back Button */}
+      <button className="dungeon-gate-back-button" onClick={returnToCamp}>
+        ← Back to Camp
+      </button>
+    </div>
+  );
+}
+
+export default DungeonGate;
