@@ -5,25 +5,81 @@
 
 /* ============================================
    NEW: Horizontal Turn Order Indicator v2
+   .pen Design Matching - Diamond Icons
    ============================================ */
 .turn-order-indicator-v2 {
   position: absolute;
-  top: 2vh;
-  right: 2vw;
+  top: 1.5vh;
+  right: 1.5vw;
   z-index: 50;
 
   display: flex;
   align-items: center;
   gap: 0.8vh;
 
-  background: rgba(0, 0, 0, 0.75);
-  border: 0.15vh solid var(--theme-accent, rgba(255, 255, 255, 0.3));
-  border-radius: 0.8vh;
-  padding: 0.6vh 1.2vw;
+  /* Gradient background from .pen design */
+  background: linear-gradient(90deg, #000000 0%, #414040 78%, #797878 100%);
+  opacity: 0.81;
+  border-radius: 1vh;
+  padding: 1.5vh 3vw;
 
-  box-shadow: 0 0 1vh var(--theme-glow, rgba(0, 0, 0, 0.5));
+  box-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.4);
 }
 
+/* Diamond-shaped phase icons */
+.phase-icon-diamond {
+  width: 3.5vh;
+  height: 3.5vh;
+  transform: rotate(-45deg);
+  border-radius: 0.6vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.phase-icon-diamond.player {
+  background: #4488cc;
+  border: 2px solid #66aaff;
+}
+
+.phase-icon-diamond.player.active {
+  box-shadow: 0 0 1.2vh rgba(68, 136, 204, 0.8);
+  transform: rotate(-45deg) scale(1.15);
+}
+
+.phase-icon-diamond.enemy {
+  background: #ffffff;
+  border: 1px solid #ff6666;
+}
+
+.phase-icon-diamond.enemy.active {
+  box-shadow: 0 0 1.2vh rgba(255, 102, 102, 0.6);
+  transform: rotate(-45deg) scale(1.15);
+}
+
+.icon-letter {
+  transform: rotate(45deg);
+  font-size: 1.6vh;
+  font-weight: bold;
+}
+
+.phase-icon-diamond.player .icon-letter {
+  color: #ffffff;
+  text-shadow: 0 0 0.3vh rgba(0, 0, 0, 0.5);
+}
+
+.phase-icon-diamond.enemy .icon-letter {
+  color: #ff6666;
+}
+
+.phase-arrow {
+  font-size: 1.6vh;
+  color: #888888;
+  margin: 0 0.3vh;
+}
+
+/* Legacy round icons for backward compatibility */
 .phase-icon {
   width: 3vh;
   height: 3vh;
@@ -67,12 +123,6 @@
   font-weight: bold;
   color: #fff;
   text-shadow: 0 0 0.3vh rgba(0, 0, 0, 0.5);
-}
-
-.phase-arrow {
-  font-size: 1.4vh;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0 0.2vh;
 }
 
 /* ============================================

@@ -188,3 +188,31 @@ useEffect(() => {...});
 useEffect(() => {...});
 if (condition) return <Early />;
 ```
+
+**CSS Class Name Collision (Global CSS Conflict):**
+Plain CSS has no native scoping. When the same class name is defined in multiple files, unintended styles may be applied.
+
+Example: `.enemy-card` defined in both `Library.css` and `battle-status.css` → Library's background color appears on battle screen.
+
+**Solutions:**
+1. **Scope with parent element (Recommended)**
+   ```css
+   /* Library only */
+   .library-screen .enemy-card { background: ...; }
+
+   /* Battle only */
+   .battle-screen .enemy-card { background: ...; }
+   ```
+
+2. **Use BEM naming convention**
+   ```css
+   .library__enemy-card { ... }
+   .battle__enemy-card { ... }
+   ```
+
+3. **Always search for existing class names before creating new CSS**
+   ```bash
+   grep -r "\.enemy-card" src/ui/css/
+   ```
+
+**Rule:** Generic class names (`.card`, `.item`, `.enemy-card`, etc.) must always be scoped with a parent element or prefix.

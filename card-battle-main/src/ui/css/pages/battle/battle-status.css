@@ -9,16 +9,15 @@
    ========================================= */
 .status-container {
   position: relative;
-  left: -4%;
   width: 80%;
   display: flex;
   flex-direction: column;
   gap: 1vh;
 }
-
-.status-container.enemy-status-container {
-  width: 150%;
+.status-container {
+  width: 100%;
 }
+
 
 /* Common row structure */
 .status-bar-row {
@@ -62,7 +61,7 @@
   text-shadow: 0 0 0.3vh #000;
   white-space: nowrap;
   margin-right: 0.5vh;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .value-badge.ap-badge {
@@ -98,6 +97,7 @@
   border-radius: 0.5vh;
   animation: breakFlash 1.8s infinite;
   margin-right: 0.5vh;
+  font-size: 1.2vh;
 }
 
 /* =========================================
@@ -159,54 +159,7 @@
   box-shadow: 0 0 0.5vh #1d7a09;
 }
 
-/* =========================================
-   Enemy Energy (Orange Color)
-   ========================================= */
-.enemy-energy .bar-fill.energy-fill {
-  background: linear-gradient(90deg, #cc8800 0%, #ffaa00 100%);
-  box-shadow: 0 0 0.5vh rgba(255, 170, 0, 0.5);
-}
 
-.enemy-energy .value-badge.energy-badge {
-  background: linear-gradient(135deg, #cc8800 0%, #aa6600 100%);
-  border: 0.1vh solid #ffaa00;
-}
-
-/* =========================================
-   Enemy Status Specific
-   ========================================= */
-.enemy-status {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3vh;
-}
-
-.enemy-status .status-bar-row {
-  height: 1.8vh;
-}
-
-.enemy-status .bar-value-top {
-  font-size: 1.2vh;
-}
-
-.enemy-status .value-badge {
-  min-width: 3.5vh;
-  font-size: 0.9vh;
-}
-
-.enemy-card-small .enemy-status .status-bar-row {
-  height: 1.5vh;
-}
-
-.enemy-card-small .enemy-status .bar-value-top {
-  font-size: 1vh;
-}
-
-.enemy-card-small .enemy-status .value-badge {
-  min-width: 3vh;
-  font-size: 0.8vh;
-}
 
 /* =========================================
    Legacy Energy Bar (for compatibility)
@@ -245,24 +198,4 @@
   height: 100%;
   margin-right: 0.6vh;
   transition: background-color 0.3s ease;
-}
-
-/* Enemy Energy Bar - orange/gold color */
-.enemy-energy .energy-bar-fill {
-  background: linear-gradient(90deg, #cc8800 0%, #ffaa00 100%);
-  box-shadow: 0 0 0.5vh rgba(255, 170, 0, 0.5);
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.enemy-energy .energy-label {
-  color: #ffaa00;
-  text-shadow: 0 0 0.5vh rgba(255, 170, 0, 0.5);
-}
-
-.enemy-energy .energy-value {
-  transition: all 0.3s ease;
-}
-
-.enemy-energy .energy-value.consuming {
-  animation: energyConsume 0.6s ease-out;
 }

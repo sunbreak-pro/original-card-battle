@@ -9,7 +9,9 @@ import StatusEffectDisplay from "../commonHtml/BuffEffect";
 import EnemyDisplay from "./EnemyDisplay";
 import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
+import UseItemModal from "./UseItemModal";
 import "../css/others/BattleScreen.css";
+import type { Item } from "../../domain/item_equipment/type/ItemTypes";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
 import { handlePlayerDeathWithDetails } from "../../domain/battles/logic/deathHandler";
@@ -61,6 +63,9 @@ const BattleScreen = ({
   const [encounterCount, setEncounterCount] = useState(0);
   const deathHandledRef = useRef(false);
   const soulsTransferredRef = useRef(0);
+
+  // Use Item Modal state
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
 
   // Create initial player state from runtime state
   const initialPlayerState = useMemo<InitialPlayerState>(() => ({
@@ -140,6 +145,18 @@ const BattleScreen = ({
     const { enemies: nextEnemies } = selectRandomEnemy(depth, encounterType);
     resetForNextEnemy(nextEnemies);
   };
+
+  // Handle using an item in battle
+  const handleUseItem = (item: Item) => {
+    // TODO: Implement actual item effects based on item type
+    console.log(`Used item: ${item.name}`);
+    // For now, just log the item usage
+    // Future implementation will apply item effects to player state
+  };
+
+  // Get inventory items for the modal
+  const inventoryItems = playerData.inventory.inventory.items;
+
   if (battleResult === "victory") {
     // If onWin callback is provided (dungeon mode), wrap it to save HP/AP and mastery first
     const handleVictoryContinue = () => {
@@ -380,61 +397,73 @@ const BattleScreen = ({
           </div>
         </div>
       </div>
-      <div className="pile-icon draw" title="Draw Pile" onClick={openDrawPile}>
-        <div className="pile-visual">🎴</div>
-        <div className="pile-count">山札: {drawPile.length}</div>
-      </div>
-      <div
-        className="pile-icon discard"
-        title="Discard Pile"
-        onClick={openDiscardPile}
-      >
-        <div className="pile-visual">🗑️</div>
-        <div className="pile-count">捨て札: {discardPile.length}</div>
-      </div>
-
-      <button className="end-turn-btn" onClick={handleEndPhase}>
-        End Phase
-      </button>
       <div className="hand-container">
-        {hand.map((card, index) => {
-          const isDrawing = isNewCard(card.id);
-          const isDiscarding = getDiscardingCards().some(
-            (c) => c.id === card.id,
-          );
+        {/* Left Section: Draw/Discard Piles */}
+        <div className="pile-section">
+          <div className="pile-icon draw" title="Draw Pile" onClick={openDrawPile}>
+            <div className="pile-visual">🎴</div>
+            <div className="pile-count">山札: {drawPile.length}</div>
+          </div>
+          <div className="pile-icon discard" title="Discard Pile" onClick={openDiscardPile}>
+            <div className="pile-visual">🗑️</div>
+            <div className="pile-count">捨て札: {discardPile.length}</div>
+          </div>
+        </div>
 
-          const totalCards = hand.length;
-          const offset = index - (totalCards - 1) / 2;
-          const translateY = Math.abs(offset) * 1.5 - 1.8;
-          const rotation = offset * 4.2;
+        {/* Center Section: Cards */}
+        <div className="card-container">
+          {hand.map((card, index) => {
+            const isDrawing = isNewCard(card.id);
+            const isDiscarding = getDiscardingCards().some(
+              (c) => c.id === card.id,
+            );
 
-          return (
-            <div
-              key={card.id}
-              className={`card-wrapper ${isDrawing ? "drawing" : ""} ${
-                isDiscarding ? "discarding" : ""
-              }`}
-              style={
-                {
-                  "--rot": `${rotation}deg`,
-                  "--y": `${translateY * 0.5}vh`,
-                  animationDelay: isDrawing
-                    ? `${index * 0.1}s`
-                    : isDiscarding
-                      ? `${index * 0.05}s`
-                      : "0s",
-                } as React.CSSProperties
-              }
-              onClick={(e) => handleCardPlay(card, e.currentTarget)}
-            >
-              <CardComponent
-                card={card}
-                depth={depth}
-                isPlayable={card.cost <= cardEnergy && !isDiscarding}
-              />
-            </div>
-          );
-        })}
+            const totalCards = hand.length;
+            const offset = index - (totalCards - 1) / 2;
+            const translateY = Math.abs(offset) * 1.5 - 1.8;
+            const rotation = offset * 4.2;
+
+            return (
+              <div
+                key={card.id}
+                className={`card-wrapper ${isDrawing ? "drawing" : ""} ${
+                  isDiscarding ? "discarding" : ""
+                }`}
+                style={
+                  {
+                    "--rot": `${rotation}deg`,
+                    "--y": `${translateY * 0.5}vh`,
+                    animationDelay: isDrawing
+                      ? `${index * 0.1}s`
+                      : isDiscarding
+                        ? `${index * 0.05}s`
+                        : "0s",
+                  } as React.CSSProperties
+                }
+                onClick={(e) => handleCardPlay(card, e.currentTarget)}
+              >
+                <CardComponent
+                  card={card}
+                  depth={depth}
+                  isPlayable={card.cost <= cardEnergy && !isDiscarding}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Right Section: Action Buttons */}
+        <div className="button-frame">
+          <button className="action-btn end-phase-btn" onClick={handleEndPhase}>
+            End Phase
+          </button>
+          <button className="action-btn use-item-btn" onClick={() => setIsItemModalOpen(true)}>
+            Use Item
+          </button>
+          <button className="action-btn flee-btn" onClick={() => console.log("Fleeing Combat: 未実装")}>
+            Fleeing Combat
+          </button>
+        </div>
       </div>
       <BattlingCardPileModal
         isOpen={openedPileType !== null}
@@ -442,6 +471,12 @@ const BattleScreen = ({
         title={openedPileType === "draw" ? "山札" : "捨て札"}
         cards={openedPileType === "draw" ? drawPile : discardPile}
         depth={depth}
+      />
+      <UseItemModal
+        isOpen={isItemModalOpen}
+        onClose={() => setIsItemModalOpen(false)}
+        items={inventoryItems}
+        onUseItem={handleUseItem}
       />
     </div>
   );

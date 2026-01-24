@@ -29,10 +29,10 @@
   width: 80vw;
   max-width: 1000px;
   height: 80vh;
-  background: var(--theme-bg);
-  border: 0.4vh solid var(--theme-accent);
+  background: var(--modal-background, #121212);
+  border: 0.4vh solid var(--modal-accent, #73ff5c);
   border-radius: 2vh;
-  box-shadow: 0 0 5vh var(--theme-glow);
+  box-shadow: 0 0 5vh var(--modal-glow, #73ff5c);
   display: flex;
   flex-direction: column;
   padding: 2vh;
@@ -102,4 +102,167 @@
   margin-top: 24vh;
   font-size: 7vh;
   color: #888;
+}
+
+/* =========================================
+   Use Item Modal - Matching .pen Design
+   ========================================= */
+
+.use-item-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.use-item-modal-content {
+  width: 80vw;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 90%);
+  border-image: linear-gradient(to right, #2c8f30, #73ff5c) 1;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.use-item-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 60px;
+  background: linear-gradient(180deg, #2c8f30 0%, #1a6b1d 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.use-item-modal-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.use-item-close-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.use-item-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.1);
+}
+
+.use-item-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 24px;
+  overflow-y: auto;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.use-item-card {
+  width: 120px;
+  height: 140px;
+  background: linear-gradient(180deg, #3a2a4a 0%, #2a1a3a 100%);
+  border: 2px solid #4a3a5a;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.use-item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  border-color: #73ff5c;
+}
+
+.item-icon-container {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
+}
+
+.item-icon-container.rarity-common {
+  background: linear-gradient(135deg, #888888 0%, #555555 100%);
+}
+
+.item-icon-container.rarity-uncommon {
+  background: linear-gradient(135deg, #a9e34b 0%, #66a80f 100%);
+}
+
+.item-icon-container.rarity-rare {
+  background: linear-gradient(135deg, #74c0fc 0%, #1c7ed6 100%);
+}
+
+.item-icon-container.rarity-epic {
+  background: linear-gradient(135deg, #b197fc 0%, #7950f2 100%);
+}
+
+.item-icon-container.rarity-legendary {
+  background: linear-gradient(135deg, #ffa94d 0%, #e8590c 100%);
+}
+
+.item-icon {
+  font-size: 28px;
+}
+
+.item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.item-quantity {
+  font-size: 12px;
+  color: #aaaaaa;
+}
+
+.no-items-message {
+  width: 100%;
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 16px;
+  color: #888888;
 }

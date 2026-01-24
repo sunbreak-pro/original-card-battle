@@ -174,7 +174,7 @@
 }
 
 /* Enemy Grid */
-.enemy-grid {
+.library-screen .enemy-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(20vw, 1fr));
   gap: 1.5vw;
@@ -183,7 +183,7 @@
   flex: 1;
 }
 
-.enemy-card {
+.library-screen .enemy-card {
   background: rgba(30, 20, 50, 0.9);
   border: 2px solid rgba(100, 100, 100, 0.3);
   border-radius: 10px;
@@ -191,17 +191,17 @@
   transition: all 0.3s ease;
 }
 
-.enemy-card:hover {
+.library-screen .enemy-card:hover {
   border-color: rgba(168, 85, 247, 0.5);
   transform: translateY(-0.5vh);
 }
 
-.enemy-card.boss {
+.library-screen .enemy-card.boss {
   border-color: rgba(239, 68, 68, 0.5);
   background: rgba(50, 20, 30, 0.9);
 }
 
-.enemy-card-header {
+.library-screen .enemy-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -210,43 +210,43 @@
   border-bottom: 1px solid rgba(168, 85, 247, 0.2);
 }
 
-.enemy-name {
+.library-screen .enemy-name {
   font-size: 1.8vh;
   color: #e9d5ff;
   margin: 0;
 }
 
-.enemy-name-ja {
+.library-screen .enemy-name-ja {
   font-size: 1.3vh;
   color: #9f7aea;
   margin-top: 0.3vh;
 }
 
-.enemy-badge {
+.library-screen .enemy-badge {
   padding: 0.3vh 0.8vw;
   border-radius: 4px;
   font-size: 1.1vh;
   font-weight: bold;
 }
 
-.enemy-badge.normal {
+.library-screen .enemy-badge.normal {
   background: rgba(168, 85, 247, 0.3);
   color: #d8b4fe;
 }
 
-.enemy-badge.boss {
+.library-screen .enemy-badge.boss {
   background: rgba(239, 68, 68, 0.3);
   color: #fca5a5;
 }
 
-.enemy-stats {
+.library-screen .enemy-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5vh;
   margin-bottom: 1vh;
 }
 
-.enemy-stat {
+.library-screen .enemy-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -255,18 +255,18 @@
   border-radius: 4px;
 }
 
-.enemy-stat-label {
+.library-screen .enemy-stat-label {
   font-size: 1vh;
   color: #9f7aea;
 }
 
-.enemy-stat-value {
+.library-screen .enemy-stat-value {
   font-size: 1.4vh;
   font-weight: bold;
   color: #e9d5ff;
 }
 
-.enemy-description {
+.library-screen .enemy-description {
   font-size: 1.2vh;
   color: #a78bfa;
   line-height: 1.5;

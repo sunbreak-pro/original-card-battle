@@ -5,24 +5,27 @@
    ========================================= */
 
 .sword-energy-display {
+  display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 1vh;
-  padding: 0.7vh 0.7vw;
-  border: 0.2vh solid #ff6b35;
-  border-radius: 1vh;
-  background: rgba(0, 0, 0, 0.7);
+  gap: 0.8vh;
+  padding: 1.2vh 0.8vw;
+  border: 0.25vh solid #dcdcdc;
+  border-radius: 0.8vh;
+  background: rgba(253, 190, 190, 0.6);
   z-index: 50;
-  min-width: 10vw;
+  min-width: 8vw;
+  width: 10vw;
+  height: auto;
 }
 
 .sword-energy-label {
-  font-size: 1.8vh;
+  font-size: 1.5vh;
   font-weight: bold;
   color: #ff9f66;
-  text-shadow: 0 0 0.5vh #ff6b35;
-  margin: 0.2vh;
+  text-shadow: 0 0 0.4vh #ff6b35;
+  margin: 0.15vh;
 }
 
 .sword-energy-bar-container {
@@ -34,10 +37,10 @@
 
 .sword-energy-bar {
   flex: 1;
-  height: 2.5vh;
+  height: 2vh;
   background: rgba(0, 0, 0, 0.6);
-  border: 0.2vh solid #ff6b35;
-  border-radius: 0.5vh;
+  border: 0.15vh solid #ff6b35;
+  border-radius: 0.4vh;
   position: relative;
   overflow: hidden;
 }
@@ -99,9 +102,9 @@
 }
 
 .effect-badge {
-  font-size: 1.2vh;
-  padding: 0.3vh 0.6vw;
-  border-radius: 0.3vh;
+  font-size: 1vh;
+  padding: 0.25vh 0.5vw;
+  border-radius: 0.25vh;
   font-weight: bold;
   transition: all 0.3s ease;
 }

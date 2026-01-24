@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import type {
   EnemyDefinition,
   EnemyAction,
@@ -66,19 +66,24 @@ const EnemyCard: React.FC<{
   size?: "normal" | "small";
 }> = ({ state, enemyRef, theme, size = "normal" }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [_isConsuming, setIsConsuming] = useState(false);
-  const prevEnergyRef = useRef(state.actEnergy);
+  const [isConsuming, setIsConsuming] = useState(false);
+  const [prevEnergy, setPrevEnergy] = useState(state.actEnergy);
 
-  // Detect energy consumption and trigger animation
-  useEffect(() => {
-    if (state.actEnergy < prevEnergyRef.current) {
+  // Detect energy consumption during render (React recommended pattern)
+  if (state.actEnergy !== prevEnergy) {
+    setPrevEnergy(state.actEnergy);
+    if (state.actEnergy < prevEnergy) {
       setIsConsuming(true);
+    }
+  }
+
+  // Timer to end animation (reacting to isConsuming change is OK in useEffect)
+  useEffect(() => {
+    if (isConsuming) {
       const timer = setTimeout(() => setIsConsuming(false), 600);
-      prevEnergyRef.current = state.actEnergy;
       return () => clearTimeout(timer);
     }
-    prevEnergyRef.current = state.actEnergy;
-  }, [state.actEnergy]);
+  }, [isConsuming]);
 
   // Preview next action (Ver 4.0)
   const nextAction: EnemyAction = determineEnemyAction(
@@ -144,12 +149,16 @@ const EnemyCard: React.FC<{
       <div className="enemy-visual" ref={enemyRef}>
         {state.definition.imagePath ? (
           <img
-            className="enemy-image"
+            className="enemy-img"
             src={state.definition.imagePath}
             alt={state.definition.nameJa}
           />
         ) : (
-          <div className="enemy-emoji">👹</div>
+          <img
+            className="enemy-img"
+            alt="enemy-img"
+            src="../../../public/assets/images/enemy1.png"
+          />
         )}
       </div>
 
@@ -207,7 +216,9 @@ const EnemyCard: React.FC<{
           <div className="value-badge energy-badge">
             {state.actEnergy}/{state.definition.actEnergy}
           </div>
-          <div className="unified-bar-container energy-bar">
+          <div
+            className={`unified-bar-container energy-bar ${isConsuming ? "energy-consuming" : ""}`}
+          >
             <div
               className="bar-fill energy-fill"
               style={{
@@ -268,30 +279,17 @@ const EnemyDisplay: React.FC<EnemyDisplayProps> = ({
       )}
 
       {enemyCount === 3 && (
-        <>
-          <div className="enemy-row-top">
+        <div className="enemy-row front-row">
+          {enemies.map((enemy, index) => (
             <EnemyCard
-              state={enemies[0]}
-              enemyRef={enemyRefs[0]}
+              key={index}
+              state={enemy}
+              enemyRef={enemyRefs[index]}
               theme={theme}
               size="small"
             />
-          </div>
-          <div className="enemy-row-bottom">
-            <EnemyCard
-              state={enemies[1]}
-              enemyRef={enemyRefs[1]}
-              theme={theme}
-              size="small"
-            />
-            <EnemyCard
-              state={enemies[2]}
-              enemyRef={enemyRefs[2]}
-              theme={theme}
-              size="small"
-            />
-          </div>
-        </>
+          ))}
+        </div>
       )}
     </div>
   );

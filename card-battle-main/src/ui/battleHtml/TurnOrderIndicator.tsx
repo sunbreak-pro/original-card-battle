@@ -6,7 +6,10 @@
  */
 
 import React from "react";
-import type { PhaseQueue, PhaseActor } from "../../domain/battles/type/phaseType";
+import type {
+  PhaseQueue,
+  PhaseActor,
+} from "../../domain/battles/type/phaseType";
 import "../css/others/TurnOrderIndicator.css";
 
 interface TurnOrderIndicatorProps {
@@ -14,18 +17,16 @@ interface TurnOrderIndicatorProps {
   currentPhaseIndex: number;
 }
 
-// Placeholder icons - replace with SVG imports when ready
+// Diamond-shaped icons matching .pen design
 const PlayerIcon: React.FC<{ isActive: boolean }> = ({ isActive }) => (
-  <div className={`phase-icon player-icon ${isActive ? "active" : ""}`}>
-    {/* TODO: Replace with <img src={playerIconSvg} /> */}
-    <span className="icon-placeholder">P</span>
+  <div className={`phase-icon-diamond player ${isActive ? "active" : ""}`}>
+    <span className="icon-letter">P</span>
   </div>
 );
 
 const EnemyIcon: React.FC<{ isActive: boolean }> = ({ isActive }) => (
-  <div className={`phase-icon enemy-icon ${isActive ? "active" : ""}`}>
-    {/* TODO: Replace with <img src={enemyIconSvg} /> */}
-    <span className="icon-placeholder">E</span>
+  <div className={`phase-icon-diamond enemy ${isActive ? "active" : ""}`}>
+    <span className="icon-letter">E</span>
   </div>
 );
 

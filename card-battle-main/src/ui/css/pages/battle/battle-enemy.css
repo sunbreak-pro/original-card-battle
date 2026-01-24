@@ -11,9 +11,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 45%;
-  height: 100%;
+  justify-content: flex-end;
+  width: 20vw;
+  height: 26vw;
+}
+
+.enemy-img{
+  width: 100%;
+  object-fit: contain;
 }
 
 /* =========================================
@@ -21,9 +26,6 @@
    ========================================= */
 
 /* 1 enemy: centered */
-.enemy-layout-single {
-  justify-content: center;
-}
 
 /* 2 enemies: side by side */
 .enemy-layout-double .enemy-row {
@@ -33,12 +35,20 @@
   align-items: flex-end;
 }
 
-/* 3 enemies: triangle formation */
+/* 3 enemies: horizontal row layout */
 .enemy-layout-triple {
   justify-content: center;
-  gap: 1vh;
 }
 
+.enemy-layout-triple .enemy-row.front-row {
+  display: flex;
+  gap: 4vh;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+}
+
+/* Legacy triangle formation styles (deprecated) */
 .enemy-layout-triple .enemy-row-top {
   display: flex;
   justify-content: center;
@@ -48,68 +58,6 @@
   display: flex;
   gap: 4vw;
   justify-content: center;
-}
-
-/* =========================================
-   Enemy Card
-   ========================================= */
-.enemy-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1vh;
-  position: relative;
-}
-
-.enemy-card-small {
-  transform: scale(0.75);
-  transform-origin: center bottom;
-}
-
-.enemy-name {
-  font-size: 2.5vh;
-  font-weight: bold;
-  text-shadow: 0 0 1vh var(--theme-glow);
-  text-align: center;
-}
-
-.enemy-card-small .enemy-name {
-  font-size: 2vh;
-}
-
-.enemy-visual {
-  border-radius: 1.5vh;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.enemy-visual:hover {
-  transform: scale(1.05);
-}
-
-.enemy-card-small .enemy-visual {
-  width: 14vh;
-  height: 14vh;
-}
-
-.enemy-emoji {
-  font-size: 10vh;
-}
-
-.enemy-card-small .enemy-emoji {
-  font-size: 7vh;
-}
-
-.enemy-status {
-  width: 100%;
-}
-
-.enemy-card-small .enemy-status {
-  min-width: 12vh;
 }
 
 /* =========================================
@@ -269,3 +217,79 @@
   border-radius: 0.3vh;
   color: #ff6464;
 }
+
+/* =========================================
+   Energy Consumption Animation
+   ========================================= */
+.energy-consuming {
+  animation: energyConsume 0.6s ease-out;
+}
+
+@keyframes energyConsume {
+  0% {
+    box-shadow: 0 0 0.5vh rgba(255, 170, 0, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 1.5vh rgba(255, 100, 0, 1);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+/* =========================================
+   Enemy Energy (Orange Color)
+   ========================================= */
+.enemy-energy .bar-fill.energy-fill {
+  background: linear-gradient(90deg, #cc8800 0%, #ffaa00 100%);
+  box-shadow: 0 0 0.5vh rgba(255, 170, 0, 0.5);
+}
+
+.enemy-energy .value-badge.energy-badge {
+  background: linear-gradient(135deg, #cc8800 0%, #aa6600 100%);
+  border: 0.1vh solid #ffaa00;
+}
+
+/* =========================================
+   Enemy Status Specific
+   ========================================= */
+.enemy-status {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3vh;
+}
+
+.enemy-status .status-bar-row {
+  height: 1.8vh;
+}
+
+.enemy-status .bar-value-top {
+  font-size: 1.2vh;
+}
+
+.enemy-status .value-badge {
+  min-width: 3.5vh;
+  font-size: 0.9vh;
+}
+
+/* Enemy Energy Bar - orange/gold color */
+.enemy-energy .energy-bar-fill {
+  background: linear-gradient(90deg, #cc8800 0%, #ffaa00 100%);
+  box-shadow: 0 0 0.5vh rgba(255, 170, 0, 0.5);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.enemy-energy .energy-label {
+  color: #ffaa00;
+  text-shadow: 0 0 0.5vh rgba(255, 170, 0, 0.5);
+}
+
+.enemy-energy .energy-value {
+  transition: all 0.3s ease;
+}
+
+.enemy-energy .energy-value.consuming {
+  animation: energyConsume 0.6s ease-out;
+}
+
