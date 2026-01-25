@@ -24,9 +24,9 @@ No test framework is configured. Verify changes manually in the browser.
 ## Architecture Overview
 
 ### Context Provider Hierarchy
-Providers in `App.tsx` wrap the entire app:
+Providers in `App.tsx` wrap the entire app (outermost → innermost):
 ```
-GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider
+GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider → AppContent
 ```
 - `GameStateContext` controls screen routing via `currentScreen`
 - `PlayerContext` manages `RuntimeBattleState` (HP, AP, lives, card mastery) that persists across battles
@@ -103,4 +103,6 @@ Located in `.claude/docs/`:
 - `card_document/` - Card mechanics, character system
 - `camp_document/` - Facility designs (shop, guild, blacksmith, etc.)
 - `enemy_document/` - Enemy data by depth
-- `Overall_document/` - Game design master document
+- `danjeon_document/` - Dungeon exploration, return system
+- `item_document/` - Equipment and items
+- `Overall_document/` - Game design master document, lives system
