@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
-import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
-import { calculateMagicStoneValue } from "../../../domain/item_equipment/type/ItemTypes";
 import BuyTab from "./BuyTab";
 import SellTab from "./SellTab";
 import ExchangeTab from "./ExchangeTab";
+import FacilityHeader from "../../commonHtml/FacilityHeader";
 import "../../css/camps/Shop.css";
 
 type ShopTab = "buy" | "sell" | "exchange";
@@ -12,32 +11,11 @@ type ShopTab = "buy" | "sell" | "exchange";
 export const Shop = () => {
   const [selectedTab, setSelectedTab] = useState<ShopTab>("buy");
   const { returnToCamp } = useGameState();
-  const { playerData } = usePlayer();
-
-  const totalMagicStoneValue = calculateMagicStoneValue(
-    playerData.resources.baseCampMagicStones
-  );
 
   return (
     <div className="shop-screen">
       {/* Header */}
-      <header className="shop-header">
-        <div className="shop-title-row">
-          <h1 className="shop-title">Merchant's Exchange</h1>
-        </div>
-        <div className="shop-resources">
-          <div className="resource-display gold">
-            <span className="resource-icon">💰</span>
-            <span className="resource-value">{playerData.resources.baseCampGold} G</span>
-          </div>
-          <div className="resource-display stones">
-            <span className="resource-icon">💎</span>
-            <span className="resource-value">
-              {totalMagicStoneValue} G worth
-            </span>
-          </div>
-        </div>
-      </header>
+      <FacilityHeader title="取引所" />
 
       {/* Tab Navigation */}
       <nav className="shop-tabs">

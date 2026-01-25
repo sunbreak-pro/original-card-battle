@@ -4,8 +4,8 @@ import type {
   FacilityType,
   GameScreen,
 } from "../../domain/camps/types/CampTypes";
+import FacilityHeader from "../commonHtml/FacilityHeader";
 import "../css/camps/BaseCamp.css";
-import { Swordman_Status } from "../../domain/characters/player/data/PlayerData";
 interface FacilityCardProps {
   type: FacilityType;
   name: string;
@@ -130,12 +130,7 @@ const BaseCamp = () => {
   return (
     <div className="base-camp">
       {/* ヘッダー */}
-      <div className="camp-header">
-        <h1 className="camp-title">Base Camp</h1>
-        <div className="camp-subtitle">
-          A sanctuary amidst the darkness. Choose your path wisely.
-        </div>
-      </div>
+      <FacilityHeader title="basecamp" variant="basecamp" />
 
       {/* 背景装飾 */}
       <div className="camp-background">
@@ -149,26 +144,6 @@ const BaseCamp = () => {
         {facilities.map((facility) => (
           <FacilityCard key={facility.type} {...facility} />
         ))}
-      </div>
-
-      {/* フッター情報 */}
-      <div className="camp-footer">
-        <div className="player-stats">
-          <div className="stat-item">
-            <span className="stat-icon">💰</span>
-            <span className="stat-value">Gold: {Swordman_Status.gold} </span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-icon">📊</span>
-            <span className="stat-value">Level:{Swordman_Status.level} </span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-icon">🃏</span>
-            <span className="stat-value">
-              Cards: {Swordman_Status.deck.length}
-            </span>
-          </div>
-        </div>
       </div>
     </div>
   );

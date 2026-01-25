@@ -1,25 +1,30 @@
 import { useState, useEffect } from "react";
 import type { Card } from "../../domain/cards/type/cardType";
+import type { MagicStones } from "../../domain/item_equipment/type/ItemTypes";
+import type { EnemyType } from "../../domain/camps/logic/soulSystem";
+import { formatMagicStoneDrops } from "../../domain/camps/logic/soulSystem";
 import "../css/others/VictoryScreen.css";
 
 interface VictoryScreenProps {
   onContinue: () => void;
   rewards: {
-    gold: number;
-    experience: number;
+    soulRemnants: number;           // Soul remnants from defeated enemies
+    magicStones: MagicStones;       // Magic stone drops
     cards: Card[];
   };
   battleStats: {
-    turnCount: number;
+    phaseCount: number;             // Number of phases (was turnCount)
     damageDealt: number;
     damageTaken: number;
   };
+  enemyType: EnemyType;
 }
 
 const VictoryScreen = ({
   onContinue,
   rewards,
   battleStats,
+  enemyType,
 }: VictoryScreenProps) => {
   const [showRewards, setShowRewards] = useState(false);
 
@@ -47,8 +52,8 @@ const VictoryScreen = ({
         <div className={`battle-stats ${showRewards ? "show" : ""}`}>
           <div className="stat-card">
             <div className="stat-icon">⚔️</div>
-            <div className="stat-value">{battleStats.turnCount}</div>
-            <div className="stat-label">Turns</div>
+            <div className="stat-value">{battleStats.phaseCount}</div>
+            <div className="stat-label">Phases</div>
           </div>
           <div className="stat-card">
             <div className="stat-icon">💥</div>
@@ -66,13 +71,17 @@ const VictoryScreen = ({
           <h2 className="rewards-title">Rewards</h2>
 
           <div className="rewards-grid">
-            <div className="reward-item gold">
-              <div className="reward-icon">💰</div>
-              <div className="reward-amount">+{rewards.gold} Gold</div>
+            <div className="reward-item souls">
+              <div className="reward-icon">✨</div>
+              <div className="reward-amount">+{rewards.soulRemnants} 魂の残滓</div>
+              <div className="reward-detail">
+                {enemyType === "boss" ? "ボス" : enemyType === "elite" ? "エリート" : "通常"}敵
+              </div>
             </div>
-            <div className="reward-item experience">
-              <div className="reward-icon">⭐</div>
-              <div className="reward-amount">+{rewards.experience} EXP</div>
+            <div className="reward-item magic-stones">
+              <div className="reward-icon">💎</div>
+              <div className="reward-amount">魔石獲得</div>
+              <div className="reward-detail">{formatMagicStoneDrops(rewards.magicStones)}</div>
             </div>
           </div>
 

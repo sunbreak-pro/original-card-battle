@@ -277,12 +277,30 @@
   }
 }
 
-.reward-item.gold {
+.reward-item.souls {
   animation-delay: 0.2s;
+  border-color: rgba(168, 85, 247, 0.6);
 }
 
-.reward-item.experience {
+.reward-item.souls:hover {
+  border-color: rgba(168, 85, 247, 1);
+  box-shadow: 0 12px 32px rgba(168, 85, 247, 0.3);
+}
+
+.reward-item.magic-stones {
   animation-delay: 0.4s;
+  border-color: rgba(96, 165, 250, 0.6);
+}
+
+.reward-item.magic-stones:hover {
+  border-color: rgba(96, 165, 250, 1);
+  box-shadow: 0 12px 32px rgba(96, 165, 250, 0.3);
+}
+
+.reward-detail {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.25rem;
 }
 
 .reward-icon {

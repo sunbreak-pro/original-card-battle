@@ -1,21 +1,15 @@
 import { useState } from "react";
 import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
-import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
-import { calculateMagicStoneValue } from "../../../domain/item_equipment/type/ItemTypes";
 import type { BlacksmithTab } from "../../../domain/camps/types/BlacksmithTypes";
 import UpgradeTab from "./UpgradeTab";
 import RepairTab from "./RepairTab";
 import DismantleTab from "./DismantleTab";
+import FacilityHeader from "../../commonHtml/FacilityHeader";
 import "../../css/camps/Blacksmith.css";
 
 export const Blacksmith = () => {
   const [selectedTab, setSelectedTab] = useState<BlacksmithTab>("upgrade");
   const { returnToCamp } = useGameState();
-  const { playerData } = usePlayer();
-
-  const totalMagicStoneValue = calculateMagicStoneValue(
-    playerData.resources.baseCampMagicStones,
-  );
 
   return (
     <>
@@ -26,23 +20,7 @@ export const Blacksmith = () => {
       ></img>
       <div className="blacksmith-screen">
         {/* Header */}
-        <header className="blacksmith-header">
-          <div className="blacksmith-title-row">
-            <h1 className="blacksmith-title">Blacksmith's Forge</h1>
-          </div>
-          <div className="blacksmith-resources">
-            <div className="resource-display gold">
-              <span className="resource-icon">💰</span>
-              <span className="resource-value">{playerData.resources.baseCampGold} G</span>
-            </div>
-            <div className="resource-display stones">
-              <span className="resource-icon">💎</span>
-              <span className="resource-value">
-                {totalMagicStoneValue} G worth
-              </span>
-            </div>
-          </div>
-        </header>
+        <FacilityHeader title="鍛冶屋" />
 
         {/* Tab Navigation */}
         <nav className="blacksmith-tabs">

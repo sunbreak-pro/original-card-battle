@@ -10,7 +10,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
   box-sizing: border-box;
 }
 
@@ -86,45 +85,9 @@
 }
 
 /* ==========================================
-   Header
+   Header - Uses FacilityHeader component
    ========================================== */
-.camp-header {
-  position: relative;
-  z-index: 10;
-  text-align: center;
-  margin-bottom: 2.5%;
-}
-
-.camp-title {
-  font-size: 3.5rem;
-  font-weight: bold;
-  color: #e0d0f0;
-  text-shadow: 0 0 20px rgba(138, 98, 158, 0.8), 0 0 40px rgba(138, 98, 158, 0.4),
-    0 4px 8px rgba(0, 0, 0, 0.8);
-  letter-spacing: 4px;
-  margin: 0;
-  animation: titleGlow 3s ease-in-out infinite;
-}
-
-@keyframes titleGlow {
-  0%,
-  100% {
-    text-shadow: 0 0 20px rgba(138, 98, 158, 0.8),
-      0 0 40px rgba(138, 98, 158, 0.4), 0 4px 8px rgba(0, 0, 0, 0.8);
-  }
-  50% {
-    text-shadow: 0 0 30px rgba(138, 98, 158, 1), 0 0 60px rgba(138, 98, 158, 0.6),
-      0 4px 8px rgba(0, 0, 0, 0.8);
-  }
-}
-
-.camp-subtitle {
-  font-size: 1.2rem;
-  color: rgba(224, 208, 240, 0.7);
-  margin-top: 0.3rem;
-  font-style: italic;
-  letter-spacing: 2px;
-}
+/* Header styles are now in FacilityHeader.css */
 
 /* ==========================================
    Facilities Grid
@@ -435,37 +398,9 @@
 .camp-footer {
   position: relative;
   z-index: 10;
-  margin-top: 0;
-  padding-top: 2rem;
-}
-
-.player-stats {
-  display: flex;
-  gap: 3rem;
-  justify-content: center;
-  align-items: center;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: rgba(26, 26, 46, 0.8);
-  border: 2px solid rgba(138, 98, 158, 0.4);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-}
-
-.stat-icon {
-  font-size: 1.5rem;
-}
-
-.stat-value {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #e0d0f0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  margin-top: auto;
+  padding-top: 1rem;
+  text-align: center;
 }
 
 /* ==========================================

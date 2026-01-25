@@ -1,0 +1,506 @@
+{
+  "version": "2.6",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "baseCampScreen",
+      "clip": true,
+      "width": 800,
+      "height": 600,
+      "fill": "#FFFFFF",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "LuUuv",
+          "x": 0,
+          "y": 0,
+          "name": "basecamp-header",
+          "clip": true,
+          "width": 800,
+          "height": "fill_container(41)",
+          "fill": "#737db799",
+          "cornerRadius": [
+            0,
+            0,
+            10,
+            10
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "XmV3R",
+              "name": "page-title",
+              "clip": true,
+              "width": 293,
+              "height": "fill_container",
+              "fill": {
+                "type": "gradient",
+                "gradientType": "linear",
+                "enabled": true,
+                "rotation": 0,
+                "size": {
+                  "height": 1
+                },
+                "colors": [
+                  {
+                    "color": "#424242",
+                    "position": 1
+                  },
+                  {
+                    "color": "#999999",
+                    "position": 0
+                  }
+                ]
+              },
+              "cornerRadius": [
+                0,
+                10,
+                10,
+                5
+              ],
+              "stroke": {
+                "align": "inside",
+                "thickness": 3,
+                "fill": "#777777ff"
+              },
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Dt11d",
+                  "fill": "#e9e9e9ff",
+                  "textGrowth": "fixed-width-height",
+                  "width": "fit_content(91)",
+                  "height": "fit_content(18)",
+                  "content": "basecamp",
+                  "textAlign": "right",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "XhN0j",
+                  "name": "Remaining-life",
+                  "clip": true,
+                  "width": 147,
+                  "height": "fill_container",
+                  "cornerRadius": 10,
+                  "layout": "vertical",
+                  "justifyContent": "space_around",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "2vT8N",
+                      "name": "Hearts Container",
+                      "width": 128,
+                      "gap": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "OzRYP",
+                          "name": "1 Heart",
+                          "width": 32,
+                          "height": 32,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "images/generated-1769314219918.png",
+                            "mode": "fill"
+                          }
+                        },
+                        {
+                          "type": "frame",
+                          "id": "8RQec",
+                          "name": "1 Heart",
+                          "width": 32,
+                          "height": 32,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "images/generated-1769314219918.png",
+                            "mode": "fill"
+                          }
+                        },
+                        {
+                          "type": "frame",
+                          "id": "uKPDG",
+                          "name": "1 Heart",
+                          "width": 32,
+                          "height": 32,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "images/generated-1769314219918.png",
+                            "mode": "fill"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "oG2Es",
+              "name": "resource-frame",
+              "clip": true,
+              "width": 382,
+              "height": "fill_container",
+              "justifyContent": "space_around",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "uKF49",
+                  "name": "Gold-frame",
+                  "clip": true,
+                  "width": 121,
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "gradient",
+                    "gradientType": "linear",
+                    "enabled": true,
+                    "rotation": 0,
+                    "size": {
+                      "height": 1
+                    },
+                    "colors": [
+                      {
+                        "color": "#f1fb16",
+                        "position": 0
+                      },
+                      {
+                        "color": "#ffffffff",
+                        "position": 1
+                      }
+                    ]
+                  },
+                  "cornerRadius": 10,
+                  "gap": 8,
+                  "padding": [
+                    4,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "0jHQH",
+                      "name": "gold-icon",
+                      "width": 24,
+                      "height": 24,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "./images/generated-1769312058749.png",
+                        "mode": "fill"
+                      },
+                      "cornerRadius": 12
+                    },
+                    {
+                      "type": "text",
+                      "id": "1bdcz",
+                      "name": "gold-amount",
+                      "fill": "#3d2a0fff",
+                      "content": "12,500",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "4RBOA",
+                  "name": "magic-stone-frame",
+                  "clip": true,
+                  "width": 256,
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "mesh_gradient",
+                    "enabled": true,
+                    "columns": 3,
+                    "rows": 3,
+                    "colors": [
+                      "#7576c5",
+                      "#b15bd9",
+                      "#c71036",
+                      "#7576c5",
+                      "#b15bd9",
+                      "#c71036",
+                      "#7576c5",
+                      "#b15bd9",
+                      "#c71036"
+                    ],
+                    "points": [
+                      [
+                        0,
+                        0
+                      ],
+                      [
+                        0.5,
+                        0
+                      ],
+                      [
+                        1,
+                        0
+                      ],
+                      [
+                        0,
+                        0.5
+                      ],
+                      [
+                        0.5,
+                        0.5
+                      ],
+                      [
+                        1,
+                        0.5
+                      ],
+                      [
+                        0,
+                        1
+                      ],
+                      [
+                        0.5,
+                        1
+                      ],
+                      [
+                        1,
+                        1
+                      ]
+                    ]
+                  },
+                  "cornerRadius": [
+                    10,
+                    0,
+                    0,
+                    10
+                  ],
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": 8,
+                  "padding": 4,
+                  "justifyContent": "space_around",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "M9VN4",
+                      "name": "stone-small",
+                      "clip": true,
+                      "width": 52,
+                      "height": 32,
+                      "fill": "#000000b3",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#000000ff"
+                      },
+                      "padding": [
+                        5,
+                        3,
+                        5,
+                        0
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Bx0qd",
+                          "name": "Water Stone",
+                          "width": 30,
+                          "height": 30,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "./images/generated-1769311768247.png",
+                            "mode": "fill"
+                          },
+                          "cornerRadius": 4
+                        },
+                        {
+                          "type": "text",
+                          "id": "6B1Co",
+                          "fill": "#a8a8a8ff",
+                          "content": "0",
+                          "textAlign": "center",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "u5PQV",
+                      "name": "stone-medium",
+                      "clip": true,
+                      "width": 51,
+                      "height": 32,
+                      "fill": "#000000b3",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#000000ff"
+                      },
+                      "padding": [
+                        5,
+                        3,
+                        5,
+                        0
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "XrvpG",
+                          "name": "Light Stone",
+                          "width": 30,
+                          "height": 30,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "./images/generated-1769311768532.png",
+                            "mode": "fill"
+                          },
+                          "cornerRadius": 4
+                        },
+                        {
+                          "type": "text",
+                          "id": "Lp2Kl",
+                          "fill": "#b6b6b6ff",
+                          "content": "0",
+                          "textAlign": "center",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ak8NM",
+                      "name": "stone-large",
+                      "clip": true,
+                      "width": 58,
+                      "height": 32,
+                      "fill": "#000000b3",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#2c2c2cff"
+                      },
+                      "padding": [
+                        5,
+                        3,
+                        5,
+                        0
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "6aWRs",
+                          "name": "medium-stone",
+                          "width": 32,
+                          "height": 32,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "./images/generated-1769311781159.png",
+                            "mode": "fill"
+                          },
+                          "cornerRadius": 5
+                        },
+                        {
+                          "type": "text",
+                          "id": "pPfVI",
+                          "fill": "#b6b6b6",
+                          "content": "0",
+                          "textAlign": "center",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "KjR0X",
+                      "name": "stone-huge",
+                      "clip": true,
+                      "width": 58,
+                      "height": 34,
+                      "fill": "#000000b3",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#000000ff"
+                      },
+                      "padding": [
+                        5,
+                        3,
+                        5,
+                        0
+                      ],
+                      "justifyContent": "space_around",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "ynPGC",
+                          "name": "extra-large-stone",
+                          "width": 38,
+                          "height": 44,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "./images/generated-1769311781475.png",
+                            "mode": "fill"
+                          },
+                          "cornerRadius": 5
+                        },
+                        {
+                          "type": "text",
+                          "id": "SEoiL",
+                          "fill": "#b6b6b6",
+                          "content": "0",
+                          "textAlign": "center",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

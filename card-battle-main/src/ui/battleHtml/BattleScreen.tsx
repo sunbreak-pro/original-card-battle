@@ -17,8 +17,17 @@ import "../css/others/BattleScreen.css";
 import type { Item } from "../../domain/item_equipment/type/ItemTypes";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
+import { useResources } from "../../domain/camps/contexts/ResourceContext";
+import { useGameState } from "../../domain/camps/contexts/GameStateContext";
 import { handlePlayerDeathWithDetails } from "../../domain/battles/logic/deathHandler";
 import { Swordman_Status } from "../../domain/characters/player/data/PlayerData";
+import { saveManager } from "../../domain/save/logic/saveManager";
+import {
+  gainSoulFromEnemy,
+  getSoulValue,
+  calculateMagicStoneDrops,
+  type EnemyType,
+} from "../../domain/camps/logic/soulSystem";
 
 /**
  * Collect mastery from all cards in deck and merge with existing store
@@ -59,7 +68,13 @@ const BattleScreen = ({
     updateRuntimeState,
     decreaseLives,
     isGameOver,
+    setDifficulty,
   } = usePlayer();
+  const { addMagicStones } = useResources();
+  const { navigateTo, gameState } = useGameState();
+
+  // Get enemy type from battle config (default to "normal")
+  const enemyType: EnemyType = gameState.battleConfig?.enemyType || "normal";
 
   // 遭遇カウント管理
   const [encounterCount, setEncounterCount] = useState(0);
@@ -167,6 +182,10 @@ const BattleScreen = ({
   const inventoryItems = playerData.inventory.inventory.items;
 
   if (battleResult === "victory") {
+    // Calculate rewards based on enemy type
+    const soulRemnants = getSoulValue(enemyType);
+    const magicStones = calculateMagicStoneDrops(enemyType);
+
     // If onWin callback is provided (dungeon mode), wrap it to save HP/AP and mastery first
     const handleVictoryContinue = () => {
       // Collect mastery from all cards in deck
@@ -175,6 +194,24 @@ const BattleScreen = ({
         allCards,
         runtimeState.cardMasteryStore,
       );
+
+      // Gain souls from enemy defeat (updates sanctuary progress)
+      const soulResult = gainSoulFromEnemy(
+        playerData.progression.sanctuaryProgress,
+        enemyType,
+        false, // isReturnBattle
+      );
+
+      // Update player data with new sanctuary progress
+      updatePlayerData({
+        progression: {
+          ...playerData.progression,
+          sanctuaryProgress: soulResult.newProgress,
+        },
+      });
+
+      // Add magic stones to exploration resources
+      addMagicStones(magicStones, false); // false = add to exploration
 
       // Save current HP/AP and card mastery to runtime state
       updateRuntimeState({
@@ -194,35 +231,41 @@ const BattleScreen = ({
       <VictoryScreen
         onContinue={handleVictoryContinue}
         rewards={{
-          gold: 100 + phaseCount * 10,
-          experience: 50 + phaseCount * 5,
+          soulRemnants,
+          magicStones,
           cards: [],
         }}
         battleStats={{
-          turnCount: phaseCount,
+          phaseCount: phaseCount,
           damageDealt: battleStats.damageDealt,
           damageTaken: battleStats.damageTaken,
         }}
+        enemyType={enemyType}
       />
     );
   }
 
   if (battleResult === "defeat") {
-    // If onLose callback is provided (dungeon mode), use it for return to camp
-    const handleDefeatReturnToCamp = () => {
-      if (onLose) {
+    const gameOver = isGameOver();
+
+    // Handle "Return to Camp" or "New Game" depending on game over state
+    const handleDefeatAction = () => {
+      if (gameOver) {
+        // Game Over: Delete save data, reset difficulty, and go to character select
+        saveManager.deleteSave();
+        setDifficulty('normal'); // Reset to default difficulty
+        navigateTo("character_select");
+      } else if (onLose) {
         onLose();
       } else if (onReturnToCamp) {
         onReturnToCamp();
       }
     };
 
-    const gameOver = isGameOver();
-
     return (
       <DefeatScreen
         onRetry={() => window.location.reload()}
-        onReturnToCamp={handleDefeatReturnToCamp}
+        onReturnToCamp={handleDefeatAction}
         battleStats={{
           turnCount: phaseCount,
           damageDealt: battleStats.damageDealt,

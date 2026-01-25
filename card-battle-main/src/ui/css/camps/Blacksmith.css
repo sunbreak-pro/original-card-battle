@@ -21,9 +21,8 @@
   width: 55vw;
   height: 140vh;
   opacity: 0.8;
-  z-index: 2;
+  z-index: 0;
   pointer-events: none;
-  border: 3px solid #8b1414;
 }
 .blacksmith-screen {
   position: relative;
@@ -32,7 +31,6 @@
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   color: #e8d5b7;
-  padding: 3vh 3vw;
   box-sizing: border-box;
   overflow: hidden;
   z-index: 1;

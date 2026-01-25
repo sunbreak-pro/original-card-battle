@@ -2,13 +2,11 @@ import React, { useState } from "react";
 import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
 import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
 import { useInventory } from "../../../domain/camps/contexts/InventoryContext";
-import {
-  type Item,
-  calculateMagicStoneValue,
-} from "../../../domain/item_equipment/type/ItemTypes";
+import { type Item } from "../../../domain/item_equipment/type/ItemTypes";
 import ItemCard from "./ItemCard";
 import { ItemDetailPanel, EquipmentDetailPanel } from "./ItemDetailPanel";
 import DeleteModal from "../modal/DeleteModal";
+import FacilityHeader from "../../commonHtml/FacilityHeader";
 import "../../css/camps/Storage.css";
 
 type TabType = "items" | "equipment";
@@ -36,9 +34,6 @@ export const Storage: React.FC = () => {
   const [selectedSource, setSelectedSource] = useState<ItemSource>("storage");
   const [message, setMessage] = useState<string>("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-
-  // Calculate total magic stone value
-  const totalMagicStones = calculateMagicStoneValue(playerData.resources.baseCampMagicStones);
 
   // Handle item selection
   const handleSelectItem = (item: Item, source: ItemSource) => {
@@ -171,10 +166,26 @@ export const Storage: React.FC = () => {
   // Render equipment slots for Equipment tab (compact version)
   const renderEquipmentSlotsCompact = () => {
     const slots = [
-      { key: "weapon", label: "Weapon", item: playerData.inventory.equipmentSlots.weapon },
-      { key: "armor", label: "Armor", item: playerData.inventory.equipmentSlots.armor },
-      { key: "helmet", label: "Helmet", item: playerData.inventory.equipmentSlots.helmet },
-      { key: "boots", label: "Boots", item: playerData.inventory.equipmentSlots.boots },
+      {
+        key: "weapon",
+        label: "Weapon",
+        item: playerData.inventory.equipmentSlots.weapon,
+      },
+      {
+        key: "armor",
+        label: "Armor",
+        item: playerData.inventory.equipmentSlots.armor,
+      },
+      {
+        key: "helmet",
+        label: "Helmet",
+        item: playerData.inventory.equipmentSlots.helmet,
+      },
+      {
+        key: "boots",
+        label: "Boots",
+        item: playerData.inventory.equipmentSlots.boots,
+      },
       {
         key: "accessory1",
         label: "Acc 1",
@@ -245,20 +256,15 @@ export const Storage: React.FC = () => {
   );
 
   // Get non-equipment items from inventory (for Items tab)
-  const inventoryNonEquipmentItems = playerData.inventory.inventory.items.filter(
-    (item) => item.itemType !== "equipment",
-  );
+  const inventoryNonEquipmentItems =
+    playerData.inventory.inventory.items.filter(
+      (item) => item.itemType !== "equipment",
+    );
 
   return (
     <div className="storage-container">
       {/* Header */}
-      <div className="storage-header">
-        <h1 className="storage-title">Storage</h1>
-        <div className="storage-resources">
-          <span className="storage-gold">{playerData.resources.baseCampGold}G</span>
-          <span className="storage-magic-stones">💎{totalMagicStones}</span>
-        </div>
-      </div>
+      <FacilityHeader title="倉庫" />
 
       {/* Tab Navigation */}
       <nav className="nav">

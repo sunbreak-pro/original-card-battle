@@ -14,16 +14,26 @@
 @import "../../css/components/badges.css";
 @import "../../css/components/panels.css";
 @import "../../css/components/modals.css";
-.guild-screen {
+
+.guild-background {
+  position: absolute;
+  top: 0vh;
+  right: 0vh;
   width: 100vw;
-  height:  100vh;
+  height: 100vh;
+  opacity: 0.8;
+  z-index: 0;
+  pointer-events: none;
+}
+.guild-screen {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
   display: grid;
   grid-template-rows: auto auto 1fr auto;
-  background: linear-gradient(135deg, #1a1410 0%, #2d1f1a 100%);
   color: #e8d5b7;
-  padding: 5vh 3vw;
   box-sizing: border-box;
-  overflow: hidden;
+  z-index: 1;
 }
 
 /* Header */
@@ -94,7 +104,7 @@
 .guild-content {
   max-width: 90vw;
   margin: 0 auto;
-  background: rgba(26, 20, 16, 0.6);
+  background: rgba(26, 20, 16, .95);
   border: 2px solid rgba(232, 213, 183, 0.2);
   border-radius: 12px;
   padding: 2vh 2vw;

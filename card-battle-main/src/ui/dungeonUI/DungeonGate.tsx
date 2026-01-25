@@ -3,8 +3,10 @@
 import { useState, useCallback } from "react";
 import type { Depth } from "../../domain/camps/types/CampTypes";
 import { useGameState } from "../../domain/camps/contexts/GameStateContext";
+import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { DEPTH_DISPLAY_INFO } from "../../domain/dungeon/types/DungeonTypes";
+import FacilityHeader from "../commonHtml/FacilityHeader";
 import "./DungeonGate.css";
 
 /**
@@ -13,6 +15,7 @@ import "./DungeonGate.css";
  */
 export function DungeonGate() {
   const { returnToCamp, navigateTo, setDepth } = useGameState();
+  const { resetRuntimeState } = usePlayer();
   const [selectedDepth, setSelectedDepth] = useState<Depth | null>(null);
 
   // Handle depth card selection
@@ -23,10 +26,12 @@ export function DungeonGate() {
   // Handle exploration start
   const handleStartExploration = useCallback(() => {
     if (selectedDepth !== null) {
+      // Reset runtime state (HP/AP to max) for new exploration
+      resetRuntimeState();
       setDepth(selectedDepth);
       navigateTo("dungeon_map");
     }
-  }, [selectedDepth, setDepth, navigateTo]);
+  }, [selectedDepth, setDepth, navigateTo, resetRuntimeState]);
 
   // Get theme colors (unified neutral theme for all depths)
   const getThemeColors = (_depth: Depth) => {
@@ -36,12 +41,7 @@ export function DungeonGate() {
   return (
     <div className="dungeon-gate-screen">
       {/* Header */}
-      <header className="dungeon-gate-header">
-        <h1 className="dungeon-gate-title">Dungeon Gate</h1>
-        <p className="dungeon-gate-subtitle">
-          Those who don the corruption will dwell in madness
-        </p>
-      </header>
+      <FacilityHeader title="ダンジョンゲート" />
 
       {/* Depth Selection Grid */}
       <div className="depth-selection-container">

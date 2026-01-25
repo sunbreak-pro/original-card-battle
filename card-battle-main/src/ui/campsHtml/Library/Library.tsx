@@ -13,6 +13,7 @@ import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
 import { CardEncyclopediaTab } from "./CardEncyclopediaTab";
 import { EnemyEncyclopediaTab } from "./EnemyEncyclopediaTab";
 import { GameTipsTab } from "./GameTipsTab";
+import FacilityHeader from "../../commonHtml/FacilityHeader";
 import "../../css/camps/Library.css";
 
 export const Library: React.FC = () => {
@@ -41,10 +42,7 @@ export const Library: React.FC = () => {
   return (
     <div className="library-screen">
       {/* Header */}
-      <header className="library-header">
-        <h1 className="library-title">Library</h1>
-        <p className="library-subtitle">Knowledge Archive of the Abyss</p>
-      </header>
+      <FacilityHeader title="図書館" />
 
       {/* Tab Navigation */}
       <nav className="library-tabs">

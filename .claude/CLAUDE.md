@@ -19,6 +19,8 @@ npm run build        # TypeScript check + production build
 npm run lint -- --fix # ESLint with auto-fix
 ```
 
+No test framework is configured. Verify changes manually in the browser.
+
 ## Architecture Overview
 
 ### Context Provider Hierarchy
@@ -27,17 +29,40 @@ Providers in `App.tsx` wrap the entire app:
 GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider
 ```
 - `GameStateContext` controls screen routing via `currentScreen`
+- `PlayerContext` manages `RuntimeBattleState` (HP, AP, lives, card mastery) that persists across battles
 - State that persists across screens (like dungeon runs) must be placed high enough in the tree
 
 ### Domain-Driven Structure
-- **Domain layer** (`src/domain/`) - pure game logic, UI-independent
-- **UI layer** (`src/ui/`) - React components consuming domain logic
-- Type definitions in `src/domain/*/type/` directories
+```
+src/
+├── domain/           # Pure game logic (no React)
+│   ├── battles/      # Battle system
+│   │   ├── managements/  # React hooks (useBattleState, useBattleOrchestrator)
+│   │   ├── execution/    # Phase execution (player, enemy)
+│   │   ├── calculators/  # Damage, buff, speed calculations
+│   │   └── logic/        # Core battle logic
+│   ├── cards/        # Card system (decks, mastery)
+│   ├── characters/   # Player classes, enemies
+│   ├── camps/        # Facility logic & contexts
+│   ├── dungeon/      # Dungeon exploration
+│   └── save/         # Save/load system
+└── ui/               # React components
+    ├── battleHtml/   # Battle screen components
+    ├── campsHtml/    # Facility screens (Shop, Guild, etc.)
+    ├── dungeonUI/    # Dungeon map, gate
+    └── css/          # Modular CSS architecture
+```
 
 ### Battle System Flow
 1. `BattleScreen.tsx` → `useBattleOrchestrator.ts` → `useBattleState.ts`
 2. Phase execution: `playerPhaseExecution.ts`, `enemyPhaseExecution.ts`
 3. Damage calculation: `damageCalculation.ts`, `battleLogic.ts`
+4. Death handling: `deathHandler.ts` → lives system in `PlayerContext`
+
+### Screen Routing
+`GameStateContext.currentScreen` controls routing:
+- `character_select` → `camp` → facilities (`guild`, `shop`, etc.) or `dungeon`
+- `dungeon` → `dungeon_map` → `battle` (loop until completion)
 
 ### CSS Architecture
 Modular CSS in `src/ui/css/`:
@@ -67,6 +92,10 @@ Modular CSS in `src/ui/css/`:
 - Functions: `camelCase` (verb-first)
 - Constants: `UPPER_SNAKE_CASE`
 
+### Language
+- UI text and game data use Japanese (e.g., player grades like "見習い剣士")
+- Code and comments in English
+
 ## Game Design References
 
 Located in `.claude/docs/`:
@@ -74,3 +103,4 @@ Located in `.claude/docs/`:
 - `card_document/` - Card mechanics, character system
 - `camp_document/` - Facility designs (shop, guild, blacksmith, etc.)
 - `enemy_document/` - Enemy data by depth
+- `Overall_document/` - Game design master document

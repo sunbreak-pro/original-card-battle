@@ -16,6 +16,7 @@ import {
 } from "../../../domain/camps/logic/sanctuaryLogic";
 import SkillTree from "./SkillTree";
 import NodeDetailPanel from "./NodeDetailPanel";
+import FacilityHeader from "../../commonHtml/FacilityHeader";
 import "../../css/camps/Sanctuary.css";
 
 export const Sanctuary = () => {
@@ -108,21 +109,17 @@ export const Sanctuary = () => {
           </div>
         )}
 
-        {/* Header */}
-        <header className="sanctuary-header">
-          <div className="sanctuary-title-row">
-            <h1 className="sanctuary-title">Sanctuary</h1>
-            <p className="sanctuary-subtitle">
-              Unlock eternal blessings with Soul Remnants
-            </p>
-          </div>
+        {/* Standard Resources Header */}
+        <FacilityHeader title="聖域" />
 
-          {/* Resources Display */}
+        {/* Sanctuary-specific Soul & Progress Display */}
+        <div className="sanctuary-soul-section">
+          {/* Soul Resources Display */}
           <div className="sanctuary-resources">
             <div className="soul-display total">
               <span className="soul-icon">👻</span>
               <div className="soul-info">
-                <span className="soul-label">Total Souls</span>
+                <span className="soul-label">総ソウル</span>
                 <span className="soul-value">
                   {sanctuaryProgress.totalSouls}
                 </span>
@@ -132,7 +129,7 @@ export const Sanctuary = () => {
             <div className="soul-display current-run">
               <span className="soul-icon">✨</span>
               <div className="soul-info">
-                <span className="soul-label">This Run</span>
+                <span className="soul-label">今回のラン</span>
                 <span className="soul-value">
                   {sanctuaryProgress.currentRunSouls}
                 </span>
@@ -152,22 +149,22 @@ export const Sanctuary = () => {
           <div className="progress-stats">
             <div className="stat-item">
               <span className="stat-value">{stats.unlockedCount}</span>
-              <span className="stat-label">Unlocked</span>
+              <span className="stat-label">解放済</span>
             </div>
             <div className="stat-item">
               <span className="stat-value">{stats.availableCount}</span>
-              <span className="stat-label">Available</span>
+              <span className="stat-label">解放可能</span>
             </div>
             <div className="stat-item">
               <span className="stat-value">{stats.completionPercent}%</span>
-              <span className="stat-label">Complete</span>
+              <span className="stat-label">完了率</span>
             </div>
             <div className="stat-item">
               <span className="stat-value">{stats.soulsSpent}</span>
-              <span className="stat-label">Spent</span>
+              <span className="stat-label">消費済</span>
             </div>
           </div>
-        </header>
+        </div>
 
         {/* Main Content */}
         <div className="sanctuary-content">

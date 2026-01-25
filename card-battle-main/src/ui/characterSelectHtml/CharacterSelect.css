@@ -12,7 +12,7 @@
   color: #e8e0f0;
   padding: 3vh 3vw;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: scroll;
 }
 
 /* Background decoration */
@@ -45,7 +45,7 @@
 }
 
 .character-select-title {
-  font-size: 5vh;
+  font-size: 3vh;
   margin: 0;
   color: #a855f7;
   text-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
@@ -73,6 +73,7 @@
 
 /* Character grid */
 .character-grid {
+  padding: 2vh 3vh;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2vw;
@@ -92,7 +93,7 @@
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  min-height: 35vh;
+  height: auto;
 }
 
 .character-card:hover:not(.disabled) {
@@ -276,7 +277,7 @@
 /* Starter Deck Preview */
 .starter-deck-preview {
   width: 100%;
-  max-width: 75vw;
+  max-width: 65vw;
   background: rgba(30, 20, 50, 0.8);
   border: 2px solid rgba(168, 85, 247, 0.2);
   border-radius: 12px;
@@ -304,13 +305,13 @@
 
 .starter-deck-cards {
   display: flex;
-  justify-content: center;
-  gap: 1.5vw;
+  justify-content: space-between;
+  padding: 2vh 2.3vw 0 0;
+  gap: 3vw;
   flex-wrap: wrap;
 }
 
 .starter-deck-card {
-  /* Use card size variant instead of scale transform */
   width: calc(var(--card-base-width, 13vh) * 0.85);
   aspect-ratio: 2 / 3;
   transition: transform 0.3s ease;

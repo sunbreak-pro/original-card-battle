@@ -49,6 +49,7 @@ export type Depth = 1 | 2 | 3 | 4 | 5;
 export interface BattleConfig {
   enemyIds: string[]; // Specific enemy IDs to spawn
   backgroundType: "dungeon" | "arena" | "guild"; // Battle background
+  enemyType?: "normal" | "elite" | "boss"; // Enemy type for reward calculation
   onWin?: () => void; // Callback on victory
   onLose?: () => void; // Callback on defeat
 }

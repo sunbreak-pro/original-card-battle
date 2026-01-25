@@ -76,12 +76,20 @@ export function NodeMap() {
       selectNodeToVisit(nodeId);
 
       // If it's a battle node, start battle
-      if (node.type === "battle" || node.type === "elite" || node.type === "boss") {
+      if (
+        node.type === "battle" ||
+        node.type === "elite" ||
+        node.type === "boss"
+      ) {
+        // Determine enemy type from node type
+        const enemyType = node.type === "battle" ? "normal" : node.type;
+
         // Start battle with callbacks
         startBattle(
           {
             enemyIds: [], // BattleScreen will handle enemy selection
             backgroundType: "dungeon",
+            enemyType: enemyType as "normal" | "elite" | "boss",
             onWin: () => {
               completeCurrentNode("victory");
               navigateTo("dungeon_map");
@@ -91,15 +99,21 @@ export function NodeMap() {
               returnToCamp();
             },
           },
-          "normal"
+          "normal",
         );
       } else {
-        // For non-battle nodes (event, rest, treasure), complete immediately
         // TODO: Implement event/rest/treasure functionality
         completeCurrentNode("victory");
       }
     },
-    [dungeonRun, selectNodeToVisit, startBattle, completeCurrentNode, navigateTo, returnToCamp]
+    [
+      dungeonRun,
+      selectNodeToVisit,
+      startBattle,
+      completeCurrentNode,
+      navigateTo,
+      returnToCamp,
+    ],
   );
 
   // Handle retreat
@@ -131,12 +145,14 @@ export function NodeMap() {
   return (
     <div
       className="node-map-screen"
-      style={{
-        "--map-primary": theme.primary,
-        "--map-secondary": theme.secondary,
-        "--map-accent": theme.accent,
-        "--map-glow": theme.glow,
-      } as React.CSSProperties}
+      style={
+        {
+          "--map-primary": theme.primary,
+          "--map-secondary": theme.secondary,
+          "--map-accent": theme.accent,
+          "--map-glow": theme.glow,
+        } as React.CSSProperties
+      }
     >
       {/* Header */}
       <header className="node-map-header">
@@ -165,19 +181,31 @@ export function NodeMap() {
             {connections.map((conn) => {
               // Find node positions
               const fromNode = dungeonRun.currentFloor.nodes.find(
-                (n) => n.id === conn.fromId
+                (n) => n.id === conn.fromId,
               );
               const toNode = dungeonRun.currentFloor.nodes.find(
-                (n) => n.id === conn.toId
+                (n) => n.id === conn.toId,
               );
 
               if (!fromNode || !toNode) return null;
 
               // Calculate positions based on row and column
-              const fromX = getNodeX(fromNode.column, nodesByRow[fromNode.row]?.length || 1);
-              const fromY = getNodeY(fromNode.row, dungeonRun.currentFloor.totalRows);
-              const toX = getNodeX(toNode.column, nodesByRow[toNode.row]?.length || 1);
-              const toY = getNodeY(toNode.row, dungeonRun.currentFloor.totalRows);
+              const fromX = getNodeX(
+                fromNode.column,
+                nodesByRow[fromNode.row]?.length || 1,
+              );
+              const fromY = getNodeY(
+                fromNode.row,
+                dungeonRun.currentFloor.totalRows,
+              );
+              const toX = getNodeX(
+                toNode.column,
+                nodesByRow[toNode.row]?.length || 1,
+              );
+              const toY = getNodeY(
+                toNode.row,
+                dungeonRun.currentFloor.totalRows,
+              );
 
               return (
                 <line
@@ -228,7 +256,8 @@ export function NodeMap() {
         <div className="current-node-info">
           <span className="current-node-label">Current:</span>
           <span className="current-node-type">
-            {currentNode.type.charAt(0).toUpperCase() + currentNode.type.slice(1)}
+            {currentNode.type.charAt(0).toUpperCase() +
+              currentNode.type.slice(1)}
           </span>
         </div>
       )}

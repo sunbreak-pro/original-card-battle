@@ -3,6 +3,7 @@
 import type { SanctuaryProgress } from "../types/CampTypes";
 import { SANCTUARY_CONSTANTS } from "../types/SanctuaryTypes";
 import { applySoulMultiplier } from "./sanctuaryLogic";
+import type { MagicStones } from "../../item_equipment/type/ItemTypes";
 
 /**
  * Enemy types for soul calculation
@@ -221,4 +222,41 @@ export function getSoulColor(souls: number): string {
   if (souls < 100) return "#8b5cf6"; // Violet
   if (souls < 200) return "#7c3aed"; // Indigo
   return "#6366f1"; // Deep indigo
+}
+
+/**
+ * Get soul value for a specific enemy type (simple getter)
+ * Use this for VictoryScreen display
+ */
+export function getSoulValue(enemyType: EnemyType): number {
+  return getBaseSoulValue(enemyType);
+}
+
+/**
+ * Calculate magic stone drops based on enemy type
+ * - Normal: small x1
+ * - Elite: small x2, medium x1
+ * - Boss: medium x1, large x1
+ */
+export function calculateMagicStoneDrops(enemyType: EnemyType): MagicStones {
+  switch (enemyType) {
+    case "boss":
+      return { small: 0, medium: 1, large: 1, huge: 0 };
+    case "elite":
+      return { small: 2, medium: 1, large: 0, huge: 0 };
+    default:
+      return { small: 1, medium: 0, large: 0, huge: 0 };
+  }
+}
+
+/**
+ * Format magic stone drops for display
+ */
+export function formatMagicStoneDrops(stones: MagicStones): string {
+  const parts: string[] = [];
+  if (stones.small > 0) parts.push(`小×${stones.small}`);
+  if (stones.medium > 0) parts.push(`中×${stones.medium}`);
+  if (stones.large > 0) parts.push(`大×${stones.large}`);
+  if (stones.huge > 0) parts.push(`極大×${stones.huge}`);
+  return parts.length > 0 ? parts.join(", ") : "なし";
 }

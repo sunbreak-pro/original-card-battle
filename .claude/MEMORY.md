@@ -1,21 +1,93 @@
 # Project Memory
 
+## Operational Rules
+
+**When updating MEMORY.md, always update README.md**
+
+| Timing                                  | Response                                         |
+| --------------------------------------- | ------------------------------------------------ |
+| When completing a task                  | Add the date and summary of changes to README.md |
+| When adding or modifying major features | Record the changes in README.md                  |
+
+**Example　README.md Format (bullet points by date):**
+
+```
+## Change History
+
+### 2026-01-25
+- Lives System implemented
+- Fixed a bug that prevented battle status from persisting
+```
+
+---
+
 ## Quick Reference
 
-- **Current Phase:** Phase 6 Complete + Lives System + Bug Fixes
+- **Current Phase:** Phase 6 Complete + Lives System + Bug Fixes + Testing Complete
 - **Dev Server:** http://localhost:5173/
-- **Last Updated:** 2026-01-23
+- **Last Updated:** 2026-01-25
 
 ---
 
 ## Active Tasks
 
-- Test character selection flow (clear localStorage, verify flow works)
-- Test Library tabs (Cards, Enemies, Tips)
+- **FacilityHeader cleanup**: Unused variables (`subtitle`, `icon`, `playerData`) - see analysis below
 - Mage/Summoner classes show "Coming Soon" - cards not yet implemented
 - Connect Sanctuary effects to battle/dungeon systems
-- Test Lives System (death -> lives decrease, game over at 0 lives)
-- Test HP/AP persistence between battles
+
+---
+
+## FacilityHeader Analysis (2026-01-25)
+
+### Problem
+
+ESLint errors for unused variables in `FacilityHeader.tsx`:
+
+- `subtitle` (line 44) - interface prop, never rendered
+- `icon` (line 45) - interface prop, passed by callers but ignored
+- `playerData` (line 48) - extracted from context, never used
+
+### Root Cause
+
+Component was designed for multiple variants but only "basecamp-variant" was implemented:
+
+- Line 71 hardcodes `className="facility-header basecamp-variant"`
+- CSS has dead styles for "default" variant (`.facility-title-row`, `.facility-icon`)
+- Hearts only show for `variant="basecamp"`, other screens don't show hearts
+
+### Current Callers Passing Unused Props
+
+- `Storage.tsx`: `icon="📦"` (ignored)
+- `Shop.tsx`: `icon="🏪"` (ignored)
+- `Blacksmith.tsx`: `icon="⚒️"` (ignored)
+
+### Decision Needed
+
+- **Option A**: Simplify - remove unused props, keep only basecamp layout
+- **Option B**: Implement - make all variants work, show icons/subtitles
+
+---
+
+## Completed Testing (2026-01-25)
+
+### Test Results: All Pass
+
+1. **Character Selection Flow** - Code verified, flow is correct
+2. **Library Tabs (Cards, Enemies, Tips)** - All filters and functionality working
+3. **Lives System** - Death handling, lives decrease, game over state all working
+4. **HP/AP Persistence** - State persists between battles via RuntimeBattleState
+
+### Bugs Found and Fixed
+
+1. **Game Over "New Game" button didn't start new game**
+   - Problem: Clicking "New Game" on Game Over just returned to camp
+   - Fix: Added save deletion and navigation to character select on game over
+   - Files: `BattleScreen.tsx`
+
+2. **HP/AP not resetting when starting new exploration**
+   - Problem: Starting new dungeon run didn't reset HP/AP to max
+   - Fix: Added `resetRuntimeState()` call when starting exploration
+   - Files: `DungeonGate.tsx`
 
 ---
 
@@ -195,16 +267,23 @@ Plain CSS has no native scoping. When the same class name is defined in multiple
 Example: `.enemy-card` defined in both `Library.css` and `battle-status.css` → Library's background color appears on battle screen.
 
 **Solutions:**
+
 1. **Scope with parent element (Recommended)**
+
    ```css
    /* Library only */
-   .library-screen .enemy-card { background: ...; }
+   .library-screen .enemy-card {
+     background: ...;
+   }
 
    /* Battle only */
-   .battle-screen .enemy-card { background: ...; }
+   .battle-screen .enemy-card {
+     background: ...;
+   }
    ```
 
 2. **Use BEM naming convention**
+
    ```css
    .library__enemy-card { ... }
    .battle__enemy-card { ... }
