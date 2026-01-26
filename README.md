@@ -1,4 +1,4 @@
-# roguelike-card
+# original-card-battle
 
 オリジナルのターン性カードバトル。オクトパストラベラー、slay the spireからインスピレーションをもらい
 typeScriptやReactを学びながらclaude codeと共に作成しようと思った。
