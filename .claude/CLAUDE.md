@@ -49,7 +49,8 @@ src/
 └── ui/               # React components
     ├── battleHtml/   # Battle screen components
     ├── campsHtml/    # Facility screens (Shop, Guild, etc.)
-    ├── dungeonUI/    # Dungeon map, gate
+    ├── dungeonHtml/  # Dungeon map, gate
+    ├── characterSelectHtml/  # Class selection screen
     └── css/          # Modular CSS architecture
 ```
 
@@ -99,10 +100,10 @@ Modular CSS in `src/ui/css/`:
 ## Game Design References
 
 Located in `.claude/docs/`:
-- `battle_document/` - Battle logic, buff/debuff system
-- `card_document/` - Card mechanics, character system
-- `camp_document/` - Facility designs (shop, guild, blacksmith, etc.)
-- `enemy_document/` - Enemy data by depth
-- `danjeon_document/` - Dungeon exploration, return system
-- `item_document/` - Equipment and items
 - `Overall_document/` - Game design master document, lives system
+- `battle_document/` - Battle logic, buff/debuff system
+- `card_document/` - Card mechanics, character classes (Swordsman, Mage, Summoner)
+- `camp_document/` - Facility designs (shop, guild, blacksmith, sanctuary, library, storage)
+- `danjeon_document/` - Dungeon exploration, return system
+- `enemy_document/` - Enemy data by depth (1-5), boss system
+- `item_document/` - Equipment and items

@@ -8,6 +8,7 @@
 import type { CharacterClass } from "../../type/baseTypes";
 import type { Card } from "../../../cards/type/cardType";
 import { SWORDSMAN_CARDS } from "../../../cards/data/SwordmanCards";
+import { INITIAL_DECK_BY_CLASS } from "../../../battles/data/initialDeckConfig";
 
 /**
  * Character class information for selection screen
@@ -32,16 +33,64 @@ export interface CharacterClassInfo {
 }
 
 /**
- * Create Swordsman's starter deck (5 basic cards)
+ * Create starter deck from deck counts configuration
+ * Used for character selection display (shows unique card types as stacks)
+ */
+function createStarterDeckFromCounts(
+  deckCounts: Record<string, number>,
+  cardData: Record<string, Card>
+): Card[] {
+  const deck: Card[] = [];
+  let instanceCounter = 1;
+
+  for (const [cardTypeId, count] of Object.entries(deckCounts)) {
+    const cardTemplate = cardData[cardTypeId];
+    if (!cardTemplate) continue;
+
+    for (let i = 0; i < count; i++) {
+      deck.push({
+        ...cardTemplate,
+        id: `starter_${cardTypeId}_${instanceCounter++}`,
+      });
+    }
+  }
+
+  return deck;
+}
+
+/**
+ * Create Swordsman's starter deck from initial deck config (15 cards)
  */
 function createSwordsmanStarterDeck(): Card[] {
-  return [
-    { ...SWORDSMAN_CARDS.sw_001, id: "starter_sw_001_1" },
-    { ...SWORDSMAN_CARDS.sw_001, id: "starter_sw_001_2" },
-    { ...SWORDSMAN_CARDS.sw_002, id: "starter_sw_002_1" },
-    { ...SWORDSMAN_CARDS.sw_002, id: "starter_sw_002_2" },
-    { ...SWORDSMAN_CARDS.sw_003, id: "starter_sw_003_1" },
-  ];
+  return createStarterDeckFromCounts(
+    INITIAL_DECK_BY_CLASS.swordsman,
+    SWORDSMAN_CARDS
+  );
+}
+
+/**
+ * Get starter deck card stacks for display in character selection
+ * Groups cards by type for a cleaner display
+ */
+export function getStarterDeckStacks(
+  classType: CharacterClass
+): { card: Card; count: number }[] {
+  const deckCounts = INITIAL_DECK_BY_CLASS[classType];
+  if (!deckCounts || Object.keys(deckCounts).length === 0) {
+    return [];
+  }
+
+  const stacks: { card: Card; count: number }[] = [];
+  const cardData = classType === "swordsman" ? SWORDSMAN_CARDS : SWORDSMAN_CARDS;
+
+  for (const [cardTypeId, count] of Object.entries(deckCounts)) {
+    const cardTemplate = cardData[cardTypeId];
+    if (cardTemplate) {
+      stacks.push({ card: cardTemplate, count });
+    }
+  }
+
+  return stacks;
 }
 
 /**

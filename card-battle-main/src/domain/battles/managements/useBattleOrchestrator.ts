@@ -22,7 +22,8 @@ import { createInitialSwordEnergy } from "../../characters/type/classAbilityType
 import { deckReducer } from "../../cards/decks/deckReducter";
 import { createInitialDeck, shuffleArray } from "../../cards/decks/deck";
 import { SWORDSMAN_CARDS_ARRAY } from "../../cards/data/SwordmanCards";
-import { INITIAL_DECK_COUNTS } from "../data/initialDeckConfig";
+import { getInitialDeckCounts } from "../data/initialDeckConfig";
+import type { CharacterClass } from "../../characters/type/baseTypes";
 
 // Card mastery management
 import { applyMasteryToCards } from "../../cards/state/masteryManager";
@@ -50,6 +51,30 @@ import { previewEnemyActions } from "../../characters/enemy/logic/enemyActionExe
 
 // Enemy state helper
 import { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Get card data array for a specific character class
+ * @param classType - The character class
+ * @returns Array of card definitions for that class
+ */
+function getCardDataByClass(classType: CharacterClass): Card[] {
+  switch (classType) {
+    case "swordsman":
+      return SWORDSMAN_CARDS_ARRAY;
+    case "mage":
+      // TODO: Return MAGE_CARDS_ARRAY when implemented
+      return SWORDSMAN_CARDS_ARRAY;
+    case "summoner":
+      // TODO: Return SUMMONER_CARDS_ARRAY when implemented
+      return SWORDSMAN_CARDS_ARRAY;
+    default:
+      return SWORDSMAN_CARDS_ARRAY;
+  }
+}
 
 // ============================================================================
 // Main Hook
@@ -167,7 +192,14 @@ export const useBattleOrchestrator = (
   // ========================================================================
 
   const initialDeckState = useMemo(() => {
-    let initialDeck = createInitialDeck(INITIAL_DECK_COUNTS, SWORDSMAN_CARDS_ARRAY);
+    // Use deck config from player state, falling back to default swordsman deck
+    const deckCounts = initialPlayerState?.deckConfig
+      ?? getInitialDeckCounts(initialPlayerState?.playerClass ?? "swordsman");
+
+    // Get card data for the player's class
+    const cardData = getCardDataByClass(initialPlayerState?.playerClass ?? "swordsman");
+
+    let initialDeck = createInitialDeck(deckCounts, cardData);
 
     // Apply mastery from saved store if available
     if (initialPlayerState?.cardMasteryStore && initialPlayerState.cardMasteryStore.size > 0) {
@@ -175,7 +207,7 @@ export const useBattleOrchestrator = (
     }
 
     return { hand: [], drawPile: initialDeck, discardPile: [] };
-  }, [initialPlayerState?.cardMasteryStore]);
+  }, [initialPlayerState]);
 
   const [deckState, dispatch] = useReducer(deckReducer, initialDeckState);
   const deckStateRef = useRef(deckState);

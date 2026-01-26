@@ -13,13 +13,25 @@
 
 ## Quick Reference
 
-- **Current Phase:** Phase 6 Complete (Lives System, Character Select, Library)
+- **Current Phase:** Phase 6 Complete + Deck System Integration
 - **Dev Server:** http://localhost:5173/
-- **Last Updated:** 2026-01-25
+- **Last Updated:** 2026-01-26
 
 ---
 
 ## Active Tasks
+
+### Recently Completed
+- **Character Select: Unique Card Display (2026-01-26)** - Show one card of each type in starter deck preview
+  - `StarterDeckPreview.tsx` now filters to unique cards by `cardTypeId`
+  - Header still shows total deck size ("15 cards")
+  - Displays 7 unique card types instead of 15 cards with duplicates
+
+- **Deck System Integration (2026-01-26)** - PlayerContext deck now flows to battle correctly
+  - `INITIAL_DECK_BY_CLASS` replaces hardcoded 20-card deck with 15-card class-specific decks
+  - `BattleScreen.tsx` uses `playerData.persistent` instead of `Swordman_Status`
+  - `useBattleOrchestrator.ts` uses `initialPlayerState.deckConfig`
+  - Files modified: `initialDeckConfig.ts`, `useBattleState.ts`, `BattleScreen.tsx`, `useBattleOrchestrator.ts`, `CharacterClassData.ts`
 
 ### Bugs / Issues
 - **FacilityHeader unused props** - ESLint errors for `subtitle`, `icon`, `playerData`

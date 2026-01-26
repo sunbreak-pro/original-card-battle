@@ -7,9 +7,9 @@ import Storage from "./ui/campsHtml/Storage/Storage.tsx";
 import { Blacksmith } from "./ui/campsHtml/Blacksmith/Blacksmith.tsx";
 import { Sanctuary } from "./ui/campsHtml/Sanctuary/Sanctuary.tsx";
 import { Library } from "./ui/campsHtml/Library/Library.tsx";
-import { DungeonGate } from "./ui/dungeonUI/DungeonGate.tsx";
-import { NodeMap } from "./ui/dungeonUI/NodeMap.tsx";
-import { DungeonRunProvider } from "./ui/dungeonUI/DungeonRunContext.tsx";
+import { DungeonGate } from "./ui/dungeonHtml/DungeonGate.tsx";
+import { NodeMap } from "./ui/dungeonHtml/NodeMap.tsx";
+import { DungeonRunProvider } from "./ui/dungeonHtml/DungeonRunContext.tsx";
 import { CharacterSelect } from "./ui/characterSelectHtml/CharacterSelect.tsx";
 import {
   GameStateProvider,

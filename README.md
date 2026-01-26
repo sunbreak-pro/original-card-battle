@@ -26,3 +26,29 @@ READ.me があれば OK！ 5.
 ## 1月25日
 README.mdを描く習慣が全くなくいまさらになって放棄していたことを忘れた。
 手書きで書くのではなく、AIにプログラミング限定の日記をつけてもらうことを徹底するようにする。
+
+## 1月26日
+### デッキシステム統合を実装
+PlayerContextで設定されたデッキがバトルで正しく使用されるようにデータフローを統合した。
+
+**変更点:**
+- `initialDeckConfig.ts`: クラス別デッキ設定(`INITIAL_DECK_BY_CLASS`)を追加。剣士は20枚から15枚に調整。
+- `useBattleState.ts`: `InitialPlayerState`に`deckConfig`フィールドを追加。
+- `BattleScreen.tsx`: ハードコードされた`Swordman_Status`を`playerData.persistent`参照に変更。
+- `useBattleOrchestrator.ts`: `getCardDataByClass()`ヘルパーを追加し、クラス別デッキ生成に対応。
+- `CharacterClassData.ts`: `getStarterDeckStacks()`関数を追加（キャラ選択画面用）。
+
+**新しい剣士デッキ構成（15枚）:**
+- sw_001 x3 (迅雷斬)
+- sw_003 x2 (連撃)
+- sw_007 x2 (斬りつける)
+- sw_013 x2 (剣気集中)
+- sw_037 x2 (剣気円盾)
+- sw_039 x2 (不屈の精神)
+- sw_014 x2 (瞑想)
+
+### キャラクター選択画面のカード表示改善
+スターターデッキのプレビューで、各カードタイプを1枚ずつのみ表示するように変更。
+- 変更前: 15枚全て表示（同じカードが複数表示される）
+- 変更後: 7種類のユニークカードを1枚ずつ表示
+- ヘッダーには「15 cards」と総枚数を維持

@@ -4,7 +4,7 @@
  * Displays the starter deck cards for the selected character class.
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import type { Card } from "../../domain/cards/type/cardType";
 import { CardComponent } from "../cardHtml/CardComponent";
 
@@ -17,6 +17,16 @@ export const StarterDeckPreview: React.FC<StarterDeckPreviewProps> = ({
   cards,
   className = "",
 }) => {
+  // Get unique cards by cardTypeId (show one of each type)
+  const uniqueCards = useMemo(() => {
+    const seen = new Set<string>();
+    return cards.filter((card) => {
+      if (seen.has(card.cardTypeId)) return false;
+      seen.add(card.cardTypeId);
+      return true;
+    });
+  }, [cards]);
+
   if (cards.length === 0) {
     return (
       <div className={`starter-deck-preview ${className}`}>
@@ -38,8 +48,8 @@ export const StarterDeckPreview: React.FC<StarterDeckPreviewProps> = ({
         <span className="starter-deck-count">{cards.length} cards</span>
       </div>
       <div className="starter-deck-cards">
-        {cards.map((card) => (
-          <div key={card.id} className="starter-deck-card">
+        {uniqueCards.map((card) => (
+          <div key={card.cardTypeId} className="starter-deck-card">
             <CardComponent card={card} depth={1} isPlayable={true} />
           </div>
         ))}

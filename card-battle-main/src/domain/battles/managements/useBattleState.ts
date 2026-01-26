@@ -129,6 +129,8 @@ export interface InitialPlayerState {
   cardActEnergy?: number;
   /** Card mastery store - cardTypeId -> useCount */
   cardMasteryStore?: Map<string, number>;
+  /** Deck configuration - maps card type IDs to counts */
+  deckConfig?: Record<string, number>;
 }
 
 // ============================================================================

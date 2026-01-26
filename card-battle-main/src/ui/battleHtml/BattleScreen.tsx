@@ -20,8 +20,8 @@ import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
 import { useResources } from "../../domain/camps/contexts/ResourceContext";
 import { useGameState } from "../../domain/camps/contexts/GameStateContext";
 import { handlePlayerDeathWithDetails } from "../../domain/battles/logic/deathHandler";
-import { Swordman_Status } from "../../domain/characters/player/data/PlayerData";
 import { saveManager } from "../../domain/save/logic/saveManager";
+import { getInitialDeckCounts } from "../../domain/battles/data/initialDeckConfig";
 import {
   gainSoulFromEnemy,
   getSoulValue,
@@ -89,19 +89,21 @@ const BattleScreen = ({
     () => ({
       currentHp: runtimeState.currentHp,
       currentAp: runtimeState.currentAp,
-      maxHp: Swordman_Status.maxHp,
-      maxAp: Swordman_Status.maxAp,
-      name: "エイレス",
-      playerClass: Swordman_Status.playerClass,
-      classGrade: Swordman_Status.classGrade,
-      speed: Swordman_Status.speed,
-      cardActEnergy: Swordman_Status.cardActEnergy,
+      maxHp: playerData.persistent.baseMaxHp,
+      maxAp: playerData.persistent.baseMaxAp,
+      name: playerData.persistent.name,
+      playerClass: playerData.persistent.playerClass,
+      classGrade: playerData.persistent.classGrade,
+      speed: playerData.persistent.baseSpeed,
+      cardActEnergy: 3, // TODO: Add to PlayerData.persistent in future
       cardMasteryStore: runtimeState.cardMasteryStore,
+      deckConfig: getInitialDeckCounts(playerData.persistent.playerClass),
     }),
     [
       runtimeState.currentHp,
       runtimeState.currentAp,
       runtimeState.cardMasteryStore,
+      playerData.persistent,
     ],
   );
 
