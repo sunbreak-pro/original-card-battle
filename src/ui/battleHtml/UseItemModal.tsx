@@ -7,26 +7,31 @@ interface UseItemModalProps {
   onClose: () => void;
   items: Item[];
   onUseItem: (item: Item) => void;
+  itemUsedThisPhase?: boolean;
 }
 
 /**
  * Modal for using items during battle
- * Displays consumable items from player's inventory
+ * Displays consumable items from player's inventory that are usable in battle
  */
 const UseItemModal: React.FC<UseItemModalProps> = ({
   isOpen,
   onClose,
   items,
   onUseItem,
+  itemUsedThisPhase = false,
 }) => {
   if (!isOpen) return null;
 
-  // Filter consumable items only
-  const consumableItems = items.filter(
-    (item) => item.itemType === "consumable"
+  // Filter consumable items that are usable in battle
+  const battleUsableItems = items.filter(
+    (item) =>
+      item.itemType === "consumable" &&
+      (item.usableContext === "battle" || item.usableContext === "anywhere" || !item.usableContext)
   );
 
   const handleItemClick = (item: Item) => {
+    if (itemUsedThisPhase) return;
     onUseItem(item);
     onClose();
   };
@@ -46,12 +51,17 @@ const UseItemModal: React.FC<UseItemModalProps> = ({
             ✕
           </button>
         </div>
+        {itemUsedThisPhase && (
+          <div className="item-used-warning">
+            このフェーズでは既にアイテムを使用しました
+          </div>
+        )}
         <div className="use-item-grid">
-          {consumableItems.length > 0 ? (
-            consumableItems.map((item) => (
+          {battleUsableItems.length > 0 ? (
+            battleUsableItems.map((item) => (
               <div
                 key={item.id}
-                className="use-item-card"
+                className={`use-item-card ${itemUsedThisPhase ? 'disabled' : ''}`}
                 onClick={() => handleItemClick(item)}
               >
                 <div className={`item-icon-container rarity-${item.rarity}`}>
@@ -65,7 +75,7 @@ const UseItemModal: React.FC<UseItemModalProps> = ({
             ))
           ) : (
             <div className="no-items-message">
-              使用可能なアイテムがありません
+              戦闘中に使用可能なアイテムがありません
             </div>
           )}
         </div>

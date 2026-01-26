@@ -10,7 +10,7 @@ import type {
   PhaseQueue,
   PhaseActor,
 } from "../../domain/battles/type/phaseType";
-import "../css/others/TurnOrderIndicator.css";
+import "../css/battle/TurnOrderIndicator.css";
 
 interface TurnOrderIndicatorProps {
   phaseQueue: PhaseQueue | null;

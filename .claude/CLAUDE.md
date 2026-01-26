@@ -11,10 +11,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ```bash
-cd card-battle-main
 npm run dev          # Vite dev server at localhost:5173
 npm run build        # TypeScript check + production build
 npm run lint -- --fix
+npm run preview      # Preview production build
 ```
 
 No test framework configured - verify manually in browser.
@@ -31,9 +31,11 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | Context | Responsibility |
 |---------|---------------|
-| `GameStateContext` | Screen routing via `currentScreen` |
+| `GameStateContext` | Screen routing via `currentScreen`, depth, battleMode |
 | `ResourceContext` | Gold, magic stones |
 | `PlayerContext` | `PlayerData` (persistent) + `RuntimeBattleState` (HP/AP/lives/mastery) |
+| `InventoryContext` | Items, equipment, cards in storage |
+| `DungeonRunProvider` | Persists dungeon state across battle transitions |
 
 ### Battle System Flow
 
@@ -51,6 +53,19 @@ BattleScreen → useBattleOrchestrator → useBattleState
 
 `character_select` → `camp` → facilities or `dungeon` → `dungeon_map` → `battle`
 
+### Domain Layer Structure
+
+```
+src/domain/
+├── battles/       # Battle logic, calculators, phase execution
+├── camps/         # Camp facilities, contexts, shop/guild logic
+├── cards/         # Card data, deck management, card state
+├── characters/    # Player/enemy types, class abilities
+├── dungeon/       # Dungeon map generation, node logic
+├── item_equipment/# Items, equipment types and data
+└── save/          # Save/load system
+```
+
 ## Key Rules
 
 ### Immutable Code (DO NOT MODIFY)
@@ -60,10 +75,11 @@ BattleScreen → useBattleOrchestrator → useBattleState
 
 ### Adding Character Classes
 
-1. Create card data in `src/domain/cards/data/`
+1. Create card data in `src/domain/cards/data/` (e.g., `mageCards.ts`)
 2. Add to `INITIAL_DECK_BY_CLASS` in `initialDeckConfig.ts`
 3. Add case to `getCardDataByClass()` in `useBattleOrchestrator.ts`
-4. Update `CharacterClassData.ts`: `isAvailable: true`
+4. Add `createXxxStarterDeck()` function in `CharacterClassData.ts`
+5. Update class entry: `isAvailable: true`
 
 ### CSS
 
@@ -75,14 +91,14 @@ BattleScreen → useBattleOrchestrator → useBattleState
 - Types: `PascalCase` | Functions: `camelCase` | Constants: `UPPER_SNAKE_CASE`
 - UI text: Japanese | Code/comments: English
 
-## Docs Reference
+## Docs Reference (in `.claude/docs/`)
 
 | Folder | Contents |
 |--------|----------|
 | `Overall_document/` | Master design, lives system |
-| `battle_document/` | Battle logic, buff/debuff |
-| `card_document/` | Cards, character classes |
-| `camp_document/` | Facilities (shop, guild, etc.) |
-| `danjeon_document/` | Dungeon exploration |
-| `enemy_document/` | Enemy data by depth |
-| `item_document/` | Equipment and items |
+| `battle_document/` | Battle logic, buff/debuff system |
+| `card_document/` | Cards by class (40 each), character system |
+| `camp_document/` | Facilities (shop, guild, blacksmith, sanctuary, library) |
+| `danjeon_document/` | Dungeon exploration, return system |
+| `enemy_document/` | Enemy data by depth (1-5), boss system |
+| `item_document/` | Equipment and items design |

@@ -30,8 +30,8 @@ export const Sanctuary = () => {
     type: "success" | "error";
   } | null>(null);
 
-  // Get player class (default to swordsman for now)
-  const playerClass: CharacterClass = "swordsman";
+  // Get player class from player data
+  const playerClass: CharacterClass = playerData.persistent.playerClass;
 
   // Get sanctuary progress
   const sanctuaryProgress = playerData.progression.sanctuaryProgress;
@@ -190,7 +190,7 @@ export const Sanctuary = () => {
 
         {/* Back Button */}
         <button className="sanctuary-back-button" onClick={returnToCamp}>
-          ← Back to Camp
+          ← キャンプに戻る
         </button>
       </div>
     </>

@@ -9,7 +9,7 @@ import { BattlingCardPileModal } from "../../cardHtml/CardModalDisplay";
 import { TurnOrderIndicator } from "../../battleHtml/TurnOrderIndicator";
 import StatusEffectDisplay from "../../commonHtml/BuffEffect";
 import EnemyDisplay from "../../battleHtml/EnemyDisplay";
-import "../../css/others/BattleScreen.css";
+import "../../css/battle/BattleScreen.css";
 
 interface GuildBattleScreenProps {
   examEnemy: EnemyDefinition;

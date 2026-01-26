@@ -3,7 +3,7 @@ import type { Card } from "../../domain/cards/type/cardType";
 import type { MagicStones } from "../../domain/item_equipment/type/ItemTypes";
 import type { EnemyType } from "../../domain/camps/logic/soulSystem";
 import { formatMagicStoneDrops } from "../../domain/camps/logic/soulSystem";
-import "../css/others/VictoryScreen.css";
+import "../css/battle/VictoryScreen.css";
 
 interface VictoryScreenProps {
   onContinue: () => void;

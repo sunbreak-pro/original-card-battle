@@ -16,7 +16,7 @@
 @import "../../css/components/modals.css";
 
 /* Card styles */
-@import "../../css/others/CardUnified.css";
+@import "../../css/battle/CardUnified.css";
 
 .library-screen {
   position: relative;

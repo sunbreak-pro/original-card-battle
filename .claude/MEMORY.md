@@ -16,7 +16,7 @@
 
 ## Quick Reference
 
-- **Current Phase:** Phase 6 Complete + Deck System Integration
+- **Current Phase:** Phase A Complete (Core Loop) - Ready for Phase B
 - **Dev Server:** http://localhost:5173/
 - **Last Updated:** 2026-01-26
 
@@ -24,78 +24,78 @@
 
 ## Active Tasks
 
+### Phase A: Core Loop (COMPLETED)
+
+| Task                     | Status   | Implementation                                                |
+| ------------------------ | -------- | ------------------------------------------------------------- |
+| A1: Lives System         | Complete | `playerTypes.ts`, `PlayerContext.tsx`, `DefeatScreen.tsx`     |
+| A2: Soul Remnants        | Complete | `soulSystem.ts`, `deathHandler.ts` (100% souls on death V3.0) |
+| A3: Sanctuary Skill Tree | Complete | 17 nodes, `Sanctuary.tsx`, `sanctuaryLogic.ts`                |
+| A4: Return System        | Partial  | `retreatFromDungeon()` works, teleport stone item not yet     |
+| A5: Dungeon Map UI       | Complete | `NodeMap.tsx`, `MapNode.tsx`, `dungeonLogic.ts`               |
+
 ### Recently Completed
 
+- **Claude Skills Creation (2026-01-26)** - Created 9 development skills
+  - `card-creator`, `enemy-creator`, `character-class-creator`
+  - `battle-system`, `camp-facility`, `dungeon-system`
+  - `design-research`, `ui-ux-creator`, `debugging-error-prevention`
+  - All skills in English, game text examples in Japanese
+  - Location: `.claude/skill/`
+
+- **MEMORY.md Reorganization (2026-01-26)** - Reduced context size
+  - Created `.claude/LESSONS_LEARNED.md` for detailed documentation
+  - Converted Critical Lessons to compact table format (~30 lines → ~10 lines)
+
+- **Phase A Core Loop Audit (2026-01-26)** - Verified all core systems implemented
+  - Lives System: Type definitions, runtime state, death handling, UI display
+  - Soul System: 100% transfer on death (V3.0), battle integration
+  - Sanctuary: 17 skill nodes (Tier 1-3), unlock logic, effect calculation
+  - Dungeon: Map generation, node progression, battle integration
+
 - **Phase 1: Buff/Debuff Ownership System (2026-01-26)** - Fixed duration timing bug
-  - Added `BuffOwner` type (`'player' | 'enemy' | 'environment'`) to `baffType.ts`
-  - Added `appliedBy` field to `BuffDebuffState` (optional for backward compatibility)
-  - New `decreaseBuffDebuffDurationForPhase(map, currentActor)` in `buffLogic.ts`
-  - Deprecated old `decreaseBuffDebuffDuration()` function
-  - **Fixed critical bug:** Enemy debuffs now decrease at enemy phase, not player phase
-  - **Fixed parameter order bug** in `enemyPhaseExecution.ts:applyEnemyDebuffsToPlayer()`
-  - Files modified: `baffType.ts`, `buffLogic.ts`, `playerPhaseExecution.ts`, `enemyPhaseExecution.ts`, `useCardExecution.ts`
+  - Added `BuffOwner` type to `baffType.ts`
+  - Fixed enemy debuff duration decrease timing
 
-- **Mage Character Selection Enabled (2026-01-26)** - Mage class now playable
-  - Added `MAGE_CARDS` import and `createMageStarterDeck()` function
-  - `getCardDataByClass()` returns `MAGE_CARDS` for mage
-  - Updated mage entry: `isAvailable: true`, `uniqueMechanic: "Elemental Resonance"`
-  - 15-card starter deck with fire/ice/lightning/light elements
-  - File modified: `CharacterClassData.ts`
+- **Mage Character (2026-01-26)** - Mage class now playable
 
-- **Character Select: Unique Card Display (2026-01-26)** - Show one card of each type in starter deck preview
-  - `StarterDeckPreview.tsx` now filters to unique cards by `cardTypeId`
-  - Header still shows total deck size ("15 cards")
-  - Displays 7 unique card types instead of 15 cards with duplicates
-
-- **Deck System Integration (2026-01-26)** - PlayerContext deck now flows to battle correctly
-  - `INITIAL_DECK_BY_CLASS` replaces hardcoded 20-card deck with 15-card class-specific decks
-  - `BattleScreen.tsx` uses `playerData.persistent` instead of `Swordman_Status`
-  - `useBattleOrchestrator.ts` uses `initialPlayerState.deckConfig`
-  - Files modified: `initialDeckConfig.ts`, `useBattleState.ts`, `BattleScreen.tsx`, `useBattleOrchestrator.ts`, `CharacterClassData.ts`
+- **Deck System Integration (2026-01-26)** - PlayerContext deck flows to battle
 
 ### Bugs / Issues
 
-- **FacilityHeader unused props** - ESLint errors for `subtitle`, `icon`, `playerData`
-  - Decision needed: (A) Simplify - remove unused props, or (B) Implement all variants
-  - Callers passing ignored props: Storage, Shop, Blacksmith
+- **FacilityHeader unused props** - ESLint errors (Low priority)
+- **Dungeon event/rest/treasure nodes** - Complete immediately without UI
 
-### Deferred Features
+### Next Phase: B (Game Experience Enhancement)
 
-- Summoner class - cards not yet implemented (shows "Coming Soon")
-- Sanctuary effects - not connected to battle/dungeon systems
-- Guild RumorsTab/QuestsTab - placeholders only
-- Shop daily sales system, pack opening animation
-- Dungeon event/rest/treasure nodes - complete immediately (no UI)
+| Task                          | Priority | Status      |
+| ----------------------------- | -------- | ----------- |
+| B1: Context Separation        | Medium   | Not Started |
+| B2: Summoner Class Cards      | Medium   | Not Started |
+| B3: Shop Full Implementation  | Medium   | Not Started |
+| B4: Guild Full Implementation | Medium   | Not Started |
+| B5: Card Derivation System    | Medium   | Not Started |
 
-### Current Refactoring Status
+### Deferred Features (Phase C)
 
-| Phase   | Status      | Description                  |
-| ------- | ----------- | ---------------------------- |
-| Phase 1 | ✅ Complete | Buff/Debuff Ownership System |
-| Phase 2 | Not Started | Context Separation           |
-| Phase 3 | Not Started | Legacy Interface Deletion    |
-| Phase 4 | Not Started | Multi-Enemy Battle           |
+- Multi-Enemy Battle System
+- Legacy Interface Deletion
+- Exploration Prep Screen
+- Library Full Implementation
 
 ---
 
 ## Critical Lessons Learned
 
-**CSS Class Name Collision:**
-Generic class names (`.card`, `.enemy-card`) must be scoped with parent element:
+| Issue                  | Rule                                                 |
+| ---------------------- | ---------------------------------------------------- | --------------------------- |
+| CSS Class Collision    | Scope with parent: `.battle-screen .card {}`         |
+| Context Provider Scope | Persist state across screens → provider high in tree |
+| React Hooks            | Call at top level, before conditional returns        |
+| React 19 Refs          | No `ref.current` during render → use `useState`      |
+| Language               | UI: Japanese / Code: English                         | <- **Particular attention** |
 
-```css
-.battle-screen .enemy-card { ... }  /* Good */
-.enemy-card { ... }                  /* Bad - conflicts */
-```
-
-**Context Provider Scope:**
-State persisting across screens (dungeon → battle → dungeon) requires provider high in tree.
-
-**React Hooks Rules:**
-All hooks must be called at top level, before any conditional returns.
-
-**Language Consistency:**
-UI uses Japanese (e.g., "見習い剣士") - verify consistency across PlayerData and type definitions.
+**Details:** See `.claude/LESSONS_LEARNED.md`
 
 ---
 

@@ -11,6 +11,14 @@ export type ItemType =
   | "quest"
   | "key";
 
+/**
+ * Context where an item can be used
+ * - battle: Only usable during combat
+ * - map: Only usable on dungeon map
+ * - camp: Only usable in camp facilities
+ * - anywhere: Usable in any context
+ */
+export type UsableContext = 'battle' | 'map' | 'camp' | 'anywhere';
 
 /**
  * Item rarity levels
@@ -41,6 +49,7 @@ export interface Item {
   stackable?: boolean;
   stackCount?: number;
   maxStack?: number;
+  usableContext?: UsableContext;
 
   // Magic Stone-specific properties
   magicStoneValue?: number; // Value in currency (30, 100, 350)

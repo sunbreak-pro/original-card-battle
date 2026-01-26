@@ -283,9 +283,10 @@
 }
 
 .skill-node.available:hover .skill-node-inner {
-  background: rgba(88, 28, 135, 0.6);
-  border-color: #a855f7;
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+  background: rgba(139, 92, 246, 0.95);
+  border-color: #d8b4fe;
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.7), 0 0 40px rgba(139, 92, 246, 0.4);
+  transform: scale(1.1);
 }
 
 .skill-node.unlocked .skill-node-inner {
@@ -307,6 +308,26 @@
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
 }
 
+/* Focus styles for keyboard navigation */
+.skill-node:focus {
+  outline: none;
+}
+
+.skill-node:focus .skill-node-inner {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.skill-node:focus:not(:focus-visible) .skill-node-inner {
+  outline: none;
+}
+
+.skill-node:focus-visible .skill-node-inner {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
 @keyframes pulse-available {
   0%, 100% {
     box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
@@ -319,20 +340,34 @@
 /* Connection Lines */
 .connection-line {
   position: absolute;
-  height: 2px;
-  background: rgba(100, 100, 100, 0.3);
+  height: 3px;
+  background: rgba(120, 100, 140, 0.4);
   transform-origin: left center;
   z-index: 1;
   pointer-events: none;
+  border-radius: 2px;
 }
 
 .connection-line.unlocked {
-  background: linear-gradient(90deg, rgba(168, 85, 247, 0.6) 0%, rgba(139, 92, 246, 0.6) 100%);
-  box-shadow: 0 0 5px rgba(168, 85, 247, 0.3);
+  height: 4px;
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.9) 0%, rgba(139, 92, 246, 0.9) 100%);
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.6), 0 0 16px rgba(168, 85, 247, 0.3);
 }
 
 .connection-line.available {
-  background: rgba(168, 85, 247, 0.3);
+  height: 3px;
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.5) 0%, rgba(139, 92, 246, 0.5) 100%);
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.3);
+  animation: pulse-line 2s ease-in-out infinite;
+}
+
+@keyframes pulse-line {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Detail Panel */
@@ -767,3 +802,132 @@
 .class-restriction.swordsman { border-color: rgba(239, 68, 68, 0.4); }
 .class-restriction.mage { border-color: rgba(59, 130, 246, 0.4); }
 .class-restriction.summoner { border-color: rgba(34, 197, 94, 0.4); }
+
+/* =========================================
+   Responsive Breakpoints
+   ========================================= */
+
+/* Medium screens (tablets) */
+@media (max-width: 1200px) {
+  .sanctuary-content {
+    grid-template-columns: 1fr 35vw;
+    gap: 1.5vw;
+  }
+
+  .skill-tree {
+    width: 45vh;
+    height: 45vh;
+  }
+
+  .skill-node {
+    width: 5vh;
+    height: 5vh;
+  }
+
+  .skill-node .node-icon {
+    font-size: 1.8vh;
+  }
+
+  .skill-node .node-cost {
+    font-size: 0.9vh;
+  }
+
+  .sanctuary-resources {
+    gap: 2vw;
+  }
+
+  .soul-display {
+    padding: 0.8vh 1.5vw;
+  }
+}
+
+/* Small screens (mobile landscape / small tablets) */
+@media (max-width: 900px) {
+  .sanctuary-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    gap: 1vh;
+  }
+
+  .detail-panel {
+    max-height: 30vh;
+    overflow-y: auto;
+  }
+
+  .skill-tree {
+    width: 40vh;
+    height: 40vh;
+  }
+
+  .sanctuary-resources {
+    flex-wrap: wrap;
+    gap: 1vw;
+  }
+
+  .progress-stats {
+    flex-wrap: wrap;
+    gap: 1.5vw;
+  }
+}
+
+/* Very small screens (mobile portrait) */
+@media (max-width: 600px) {
+  .sanctuary-screen {
+    padding: 1vh 1vw;
+  }
+
+  .skill-tree {
+    width: 35vh;
+    height: 35vh;
+  }
+
+  .skill-node {
+    width: 4.5vh;
+    height: 4.5vh;
+  }
+
+  .center-orb {
+    width: 6vh;
+    height: 6vh;
+  }
+
+  .center-orb-icon {
+    font-size: 2vh;
+  }
+
+  .center-orb-value {
+    font-size: 1.2vh;
+  }
+
+  .tier-ring.tier-1 {
+    width: 16vh;
+    height: 16vh;
+  }
+
+  .tier-ring.tier-2 {
+    width: 26vh;
+    height: 26vh;
+  }
+
+  .tier-ring.tier-3 {
+    width: 36vh;
+    height: 36vh;
+  }
+
+  .detail-panel {
+    padding: 1.5vh 1vw;
+  }
+
+  .detail-icon {
+    font-size: 3vh;
+  }
+
+  .detail-name {
+    font-size: 1.6vh;
+  }
+
+  .sanctuary-back-button {
+    padding: 1vh 2vw;
+    font-size: 1.4vh;
+  }
+}

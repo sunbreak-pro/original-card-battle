@@ -1,5 +1,6 @@
 // SkillNode component - individual node in skill tree
 
+import { useCallback } from "react";
 import type { SkillNode as SkillNodeType, NodeStatus } from "../../../domain/camps/types/SanctuaryTypes";
 
 interface SkillNodeProps {
@@ -56,12 +57,36 @@ export const SkillNode: React.FC<SkillNodeProps> = ({
     .filter(Boolean)
     .join(" ");
 
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  }, [onClick]);
+
+  // Generate accessible label
+  const getStatusLabel = () => {
+    switch (status) {
+      case 'unlocked': return '解放済み';
+      case 'available': return '解放可能';
+      case 'locked': return 'ロック中';
+    }
+  };
+
+  const ariaLabel = `${node.name} - ${getStatusLabel()}${status !== 'unlocked' ? ` (${node.cost}ソウル)` : ''}`;
+
   return (
     <div
       className={classNames}
       style={{ left: position.left, top: position.top }}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
       title={node.name}
+      tabIndex={0}
+      role="button"
+      aria-label={ariaLabel}
+      aria-pressed={isSelected}
     >
       <div className="skill-node-inner">
         <span className="node-icon">{node.icon}</span>

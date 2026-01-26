@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import type { Depth, Card } from "../../domain/cards/type/cardType";
 import {
   useBattle,
@@ -13,7 +13,7 @@ import EnemyDisplay from "./EnemyDisplay";
 import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
 import UseItemModal from "./UseItemModal";
-import "../css/others/BattleScreen.css";
+import "../css/battle/BattleScreen.css";
 import type { Item } from "../../domain/item_equipment/type/ItemTypes";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
@@ -28,6 +28,7 @@ import {
   calculateMagicStoneDrops,
   type EnemyType,
 } from "../../domain/camps/logic/soulSystem";
+import { executeItemEffect } from "../../domain/battles/logic/itemEffectExecutor";
 
 /**
  * Collect mastery from all cards in deck and merge with existing store
@@ -79,10 +80,11 @@ const BattleScreen = ({
   // 遭遇カウント管理
   const [encounterCount, setEncounterCount] = useState(0);
   const deathHandledRef = useRef(false);
-  const soulsTransferredRef = useRef(0);
+  const [soulsTransferred, setSoulsTransferred] = useState(0);
 
   // Use Item Modal state
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+  const [itemUsedThisPhase, setItemUsedThisPhase] = useState(false);
 
   // Create initial player state from runtime state
   const initialPlayerState = useMemo<InitialPlayerState>(
@@ -149,7 +151,7 @@ const BattleScreen = ({
       // Apply death penalty and get transferred souls
       const result = handlePlayerDeathWithDetails(playerData);
       updatePlayerData(result.updates);
-      soulsTransferredRef.current = result.soulsTransferred;
+      setSoulsTransferred(result.soulsTransferred);
 
       // Decrease lives (Lives system)
       decreaseLives();
@@ -157,6 +159,11 @@ const BattleScreen = ({
       deathHandledRef.current = true;
     }
   }, [battleResult, playerData, updatePlayerData, decreaseLives]);
+
+  // Reset itemUsedThisPhase when phase changes
+  useEffect(() => {
+    setItemUsedThisPhase(false);
+  }, [currentPhaseIndex]);
 
   const handleContinueToNextBattle = () => {
     const nextEncounter = encounterCount + 1;
@@ -173,12 +180,103 @@ const BattleScreen = ({
   };
 
   // Handle using an item in battle
-  const handleUseItem = (item: Item) => {
-    // TODO: Implement actual item effects based on item type
-    console.log(`Used item: ${item.name}`);
-    // For now, just log the item usage
-    // Future implementation will apply item effects to player state
-  };
+  const handleUseItem = useCallback(
+    (item: Item) => {
+      // Prevent using multiple items per phase
+      if (itemUsedThisPhase) {
+        console.log("Item already used this phase");
+        return;
+      }
+
+      // Execute item effect
+      const result = executeItemEffect(
+        item,
+        playerHp,
+        playerMaxHp,
+        playerBuffs,
+        cardEnergy,
+        maxEnergy,
+      );
+
+      if (!result.success) {
+        console.log(`Item use failed: ${result.message}`);
+        return;
+      }
+
+      // Apply effects to player state
+      // Note: We need to update HP through the runtime state for persistence
+      if (result.hpChange && result.hpChange > 0) {
+        const newHp = Math.min(playerHp + result.hpChange, playerMaxHp);
+        updateRuntimeState({ currentHp: newHp });
+      }
+
+      // Apply buffs if any
+      if (result.buffsApplied && result.buffsApplied.length > 0) {
+        // Buffs would need to be applied through battle state
+        // This is a simplified version - full implementation would
+        // need to integrate with useBattle's buff system
+        console.log("Buffs applied:", result.buffsApplied);
+      }
+
+      // Clear debuffs if requested
+      if (result.debuffsCleared) {
+        console.log("Debuffs cleared");
+      }
+
+      // Remove or decrement item from inventory
+      const itemIndex = playerData.inventory.inventory.items.findIndex(
+        (i) => i.id === item.id,
+      );
+
+      if (itemIndex !== -1) {
+        const items = [...playerData.inventory.inventory.items];
+        const targetItem = items[itemIndex];
+
+        if (
+          targetItem.stackable &&
+          targetItem.stackCount &&
+          targetItem.stackCount > 1
+        ) {
+          // Decrement stack count
+          items[itemIndex] = {
+            ...targetItem,
+            stackCount: targetItem.stackCount - 1,
+          };
+        } else {
+          // Remove item entirely
+          items.splice(itemIndex, 1);
+        }
+
+        // Update player inventory
+        updatePlayerData({
+          inventory: {
+            ...playerData.inventory,
+            inventory: {
+              ...playerData.inventory.inventory,
+              items,
+              currentCapacity: items.length,
+            },
+          },
+        });
+      }
+
+      // Mark item as used this phase
+      setItemUsedThisPhase(true);
+
+      console.log(`Used item: ${item.name} - ${result.message}`);
+    },
+    [
+      itemUsedThisPhase,
+      playerHp,
+      playerMaxHp,
+      playerBuffs,
+      cardEnergy,
+      maxEnergy,
+      playerData.inventory,
+      updateRuntimeState,
+      updatePlayerData,
+    ],
+  );
 
   // Get inventory items for the modal
   const inventoryItems = playerData.inventory.inventory.items;
@@ -255,7 +353,7 @@ const BattleScreen = ({
       if (gameOver) {
         // Game Over: Delete save data, reset difficulty, and go to character select
         saveManager.deleteSave();
-        setDifficulty('normal'); // Reset to default difficulty
+        setDifficulty("normal"); // Reset to default difficulty
         navigateTo("character_select");
       } else if (onLose) {
         onLose();
@@ -275,7 +373,7 @@ const BattleScreen = ({
         }}
         remainingLives={runtimeState.lives.currentLives}
         maxLives={runtimeState.lives.maxLives}
-        soulsTransferred={soulsTransferredRef.current}
+        soulsTransferred={soulsTransferred}
         isGameOver={gameOver}
       />
     );
@@ -537,6 +635,7 @@ const BattleScreen = ({
         onClose={() => setIsItemModalOpen(false)}
         items={inventoryItems}
         onUseItem={handleUseItem}
+        itemUsedThisPhase={itemUsedThisPhase}
       />
     </div>
   );

@@ -1,0 +1,193 @@
+/* EnemyActionPreview.css */
+/* 敵の次ターン行動プレビューUI */
+
+.enemy-action-preview {
+  position: absolute;
+  top: 12vh;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  border: 0.2vh solid var(--theme-accent);
+  border-radius: 1vh;
+  padding: 1vh 1.5vw;
+  z-index: 100;
+  min-width: 20vw;
+  max-width: 40vw;
+  box-shadow: 0 0 2vh var(--theme-glow);
+  animation: previewFadeIn 0.3s ease-out;
+}
+
+@keyframes previewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-1vh);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ヘッダー */
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.8vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 1vh;
+}
+
+.header-text {
+  font-size: 1.6vh;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.1vw;
+}
+
+.energy-badge {
+  font-size: 1.3vh;
+  padding: 0.3vh 0.8vw;
+  background: rgba(255, 165, 0, 0.2);
+  border: 1px solid #ffa500;
+  border-radius: 0.5vh;
+  color: #ffa500;
+  font-weight: bold;
+}
+
+/* 行動リスト */
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+
+/* 個別行動アイテム */
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 0.6vh 0.8vw;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5vh;
+  border-left: 0.3vh solid var(--theme-accent);
+  transition: background 0.2s;
+}
+
+.action-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* アイコンラッパー */
+.action-icon-wrapper {
+  width: 3vh;
+  height: 3vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 0.5vh;
+  flex-shrink: 0;
+}
+
+.action-icon {
+  font-size: 2vh;
+}
+
+/* 行動詳細 */
+.action-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.action-name {
+  font-size: 1.5vh;
+  font-weight: bold;
+  color: var(--theme-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.action-info {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  margin-top: 0.2vh;
+  font-size: 1.3vh;
+}
+
+.damage-value {
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+.hit-count {
+  color: #ffaa44;
+  font-weight: bold;
+}
+
+.guard-value {
+  color: #6bafff;
+  font-weight: bold;
+}
+
+/* エナジーコスト表示 */
+.action-cost {
+  flex-shrink: 0;
+}
+
+.cost-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5vh;
+  height: 2.5vh;
+  background: rgba(255, 165, 0, 0.3);
+  border: 1px solid #ffa500;
+  border-radius: 50%;
+  font-size: 1.3vh;
+  font-weight: bold;
+  color: #ffa500;
+}
+
+/* 複数行動時の区切り線 */
+.action-item + .action-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* レスポンシブ調整 */
+@media (max-height: 700px) {
+  .enemy-action-preview {
+    padding: 0.8vh 1vw;
+    min-width: 18vw;
+  }
+
+  .action-item {
+    padding: 0.4vh 0.6vw;
+  }
+
+  .action-icon-wrapper {
+    width: 2.5vh;
+    height: 2.5vh;
+  }
+
+  .action-icon {
+    font-size: 1.6vh;
+  }
+
+  .action-name {
+    font-size: 1.3vh;
+  }
+
+  .action-info {
+    font-size: 1.1vh;
+  }
+}

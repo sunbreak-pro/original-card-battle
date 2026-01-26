@@ -21,9 +21,9 @@ interface NodeDetailPanelProps {
 }
 
 const STATUS_LABELS: Record<NodeStatus, string> = {
-  unlocked: "Unlocked",
-  available: "Available",
-  locked: "Locked",
+  unlocked: "解放済み",
+  available: "解放可能",
+  locked: "ロック中",
 };
 
 export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
@@ -95,7 +95,7 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
         <div className="no-selection">
           <span className="no-selection-icon">✨</span>
           <span className="no-selection-text">
-            Select a node to view details
+            ノードを選択して詳細を表示
           </span>
         </div>
       </div>
@@ -151,9 +151,10 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
               {node.classRestriction === "summoner" && "👻"}
             </span>
             <span>
-              {node.classRestriction.charAt(0).toUpperCase() +
-                node.classRestriction.slice(1)}{" "}
-              Only
+              {node.classRestriction === "swordsman" && "剣士"}
+              {node.classRestriction === "mage" && "魔法使い"}
+              {node.classRestriction === "summoner" && "召喚師"}
+              専用
             </span>
           </div>
         )}
@@ -163,7 +164,7 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
 
         {/* Effects */}
         <div className="effects-section">
-          <div className="effects-title">Effects</div>
+          <div className="effects-title">効果</div>
           {node.effects.map((effect, index) => (
             <div key={index} className="effect-item">
               <span className="effect-bullet" />
@@ -175,7 +176,7 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
         {/* Prerequisites */}
         {prerequisites.length > 0 && (
           <div className="prerequisites-section">
-            <div className="prerequisites-title">Prerequisites</div>
+            <div className="prerequisites-title">前提条件</div>
             {prerequisites.map((prereq) => (
               <div key={prereq.id} className="prerequisite-item">
                 <span className="prerequisite-status">
@@ -199,8 +200,8 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
             <span className="cost-icon">👻</span>
             <span className="cost-amount">{node.cost}</span>
             <span className="cost-label">
-              Souls (
-              {canAfford ? "Affordable" : `Need ${node.cost - totalSouls} more`}
+              ソウル (
+              {canAfford ? "購入可能" : `あと ${node.cost - totalSouls} 必要`}
               )
             </span>
           </div>
@@ -211,7 +212,7 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
           {status === "unlocked" ? (
             <div className="unlocked-message">
               <span className="unlocked-icon">✨</span>
-              <span>Already Unlocked</span>
+              <span>解放済み</span>
             </div>
           ) : status === "available" ? (
             <button
@@ -229,17 +230,17 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
               />
               <span className="button-text">
                 {isUnlocking
-                  ? "Hold to Unlock..."
+                  ? "長押しで解放中..."
                   : canAfford
-                    ? "Hold to Unlock"
-                    : "Insufficient Souls"}
+                    ? "長押しで解放"
+                    : "ソウル不足"}
               </span>
             </button>
           ) : (
             <div className="locked-message">
               {isClassRestricted
-                ? `Requires ${node.classRestriction} class`
-                : "Complete prerequisites to unlock"}
+                ? `${node.classRestriction === "swordsman" ? "剣士" : node.classRestriction === "mage" ? "魔法使い" : "召喚師"}クラスが必要`
+                : "前提条件を満たす必要があります"}
             </div>
           )}
         </div>

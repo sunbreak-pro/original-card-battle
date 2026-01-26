@@ -91,3 +91,42 @@ PlayerContextで設定されたデッキがバトルで正しく使用される�
 - `playerPhaseExecution.ts` - プレイヤーフェーズで'player'を指定
 - `enemyPhaseExecution.ts` - 敵フェーズで'enemy'を指定、パラメータ順序修正
 - `useCardExecution.ts` - カード効果に'player'を指定
+
+### MEMORY.mdのCritical Lessons Learnedセクションを整理
+コンテキストサイズ削減のため、詳細説明を別ファイルに分離。
+
+**変更内容:**
+- `.claude/LESSONS_LEARNED.md`を新規作成 - 詳細な説明、コード例、エラーメッセージを含む
+- `.claude/MEMORY.md`の「Critical Lessons Learned」セクションをコンパクトなテーブル形式に変更（約30行→約10行）
+
+**テーブル形式に含まれる5つの教訓:**
+| 問題 | ルール |
+|------|--------|
+| CSS Class Collision | 親要素でスコープ: `.battle-screen .card {}` |
+| Context Provider Scope | 画面間で状態を維持 → providerをツリー上位に配置 |
+| React Hooks | トップレベルで呼び出し、条件付きreturnの前に |
+| React 19 Refs | render中に`ref.current`使用不可 → `useState`を使用 |
+| Language | UI: 日本語 / コード: 英語 |
+
+### Claude開発スキルの作成
+ゲーム開発を効率化するためのClaude Skills（9個）を作成。
+
+**作成したスキル:**
+| スキル名 | 用途 |
+|---------|------|
+| `card-creator` | 新カードの追加 |
+| `enemy-creator` | 新敵キャラの追加 |
+| `character-class-creator` | 新クラスの実装 |
+| `battle-system` | バトルシステムの修正・追加 |
+| `camp-facility` | キャンプ施設の機能追加 |
+| `dungeon-system` | ダンジョン探索システムの修正 |
+| `design-research` | 設計ドキュメントの検索 |
+| `ui-ux-creator` | UI/UXデザインガイドライン |
+| `debugging-error-prevention` | デバッグとエラー防止 |
+
+**スキルの内容:**
+- 説明文は英語、ゲーム内テキスト例は日本語を維持
+- 各スキルにワークフロー、コード例、参照ファイル一覧を含む
+- `debugging-error-prevention`には React 19 のベストプラクティスを反映
+
+**配置場所:** `.claude/skill/`
