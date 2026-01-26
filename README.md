@@ -52,3 +52,42 @@ PlayerContextで設定されたデッキがバトルで正しく使用される�
 - 変更前: 15枚全て表示（同じカードが複数表示される）
 - 変更後: 7種類のユニークカードを1枚ずつ表示
 - ヘッダーには「15 cards」と総枚数を維持
+
+### 魔術師クラスを選択可能に
+魔術師(Mage)がキャラクター選択画面で選択可能になった。
+
+**変更点:**
+- `CharacterClassData.ts`: `MAGE_CARDS`インポート追加、`createMageStarterDeck()`関数作成
+- `getCardDataByClass()`: mageケースで`MAGE_CARDS`を返すよう更新
+- 魔術師エントリ: `isAvailable: true`、固有メカニクス「Elemental Resonance」に更新
+
+**魔術師スターターデッキ構成（15枚）:**
+- mg_001 x3 (火球) - 火属性基本攻撃
+- mg_008 x2 (炎の矢) - 0コスト火属性
+- mg_009 x2 (氷結) - 氷属性基本攻撃
+- mg_017 x2 (雷撃) - 雷属性基本攻撃
+- mg_033 x2 (光の槍) - 光属性基本攻撃
+- mg_007 x2 (炎の壁) - 火属性ガード
+- mg_037 x2 (癒しの光) - 光属性回復
+
+### Phase 1: Buff/Debuff Ownership System 実装
+バフ・デバフの持続時間減少タイミングの不具合を修正。
+
+**問題点:**
+- 敵がプレイヤーに「毒（持続3ターン）」を付与
+- プレイヤーフェーズ開始時に持続時間が2に減少（間違い！）
+- 正しくは敵フェーズ開始時に減少すべき
+
+**修正内容:**
+- `BuffOwner`型を追加（`'player' | 'enemy' | 'environment'`）
+- `BuffDebuffState`に`appliedBy`フィールドを追加
+- 新関数`decreaseBuffDebuffDurationForPhase(map, currentActor)`を実装
+- 旧関数`decreaseBuffDebuffDuration()`を非推奨化
+- `enemyPhaseExecution.ts`のパラメータ順序バグも修正
+
+**変更ファイル:**
+- `baffType.ts` - 型定義追加
+- `buffLogic.ts` - 新しい持続時間減少ロジック
+- `playerPhaseExecution.ts` - プレイヤーフェーズで'player'を指定
+- `enemyPhaseExecution.ts` - 敵フェーズで'enemy'を指定、パラメータ順序修正
+- `useCardExecution.ts` - カード効果に'player'を指定

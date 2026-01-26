@@ -4,106 +4,85 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Session Workflow
 
-**Read `.claude/MEMORY.md` first** - contains current project status, active tasks, and recent changes.
-
-Check `.claude/docs/` for game design specs before implementing features.
+1. **Read `.claude/MEMORY.md`** - current status, active tasks, recent changes
+2. **Check `.claude/docs/`** - game design specs before implementing features
+3. **Check `.claude/todos/`** - ongoing refactoring plans
 
 ## Development Commands
 
 ```bash
-# All commands run from card-battle-main/ (React project root)
 cd card-battle-main
-
-npm run dev          # Start dev server at http://localhost:5173/
+npm run dev          # Vite dev server at localhost:5173
 npm run build        # TypeScript check + production build
-npm run lint -- --fix # ESLint with auto-fix
+npm run lint -- --fix
 ```
 
-No test framework is configured. Verify changes manually in the browser.
+No test framework configured - verify manually in browser.
 
-## Architecture Overview
+**Stack:** React 19, TypeScript 5.9, Vite 7
 
-### Context Provider Hierarchy
-Providers in `App.tsx` wrap the entire app (outermost → innermost):
-```
-GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider → AppContent
-```
-- `GameStateContext` controls screen routing via `currentScreen`
-- `PlayerContext` manages `RuntimeBattleState` (HP, AP, lives, card mastery) that persists across battles
-- State that persists across screens (like dungeon runs) must be placed high enough in the tree
+## Architecture
 
-### Domain-Driven Structure
+### Context Provider Hierarchy (App.tsx)
+
 ```
-src/
-├── domain/           # Pure game logic (no React)
-│   ├── battles/      # Battle system
-│   │   ├── managements/  # React hooks (useBattleState, useBattleOrchestrator)
-│   │   ├── execution/    # Phase execution (player, enemy)
-│   │   ├── calculators/  # Damage, buff, speed calculations
-│   │   └── logic/        # Core battle logic
-│   ├── cards/        # Card system (decks, mastery)
-│   ├── characters/   # Player classes, enemies
-│   ├── camps/        # Facility logic & contexts
-│   ├── dungeon/      # Dungeon exploration
-│   └── save/         # Save/load system
-└── ui/               # React components
-    ├── battleHtml/   # Battle screen components
-    ├── campsHtml/    # Facility screens (Shop, Guild, etc.)
-    ├── dungeonHtml/  # Dungeon map, gate
-    ├── characterSelectHtml/  # Class selection screen
-    └── css/          # Modular CSS architecture
+GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider
 ```
+
+| Context | Responsibility |
+|---------|---------------|
+| `GameStateContext` | Screen routing via `currentScreen` |
+| `ResourceContext` | Gold, magic stones |
+| `PlayerContext` | `PlayerData` (persistent) + `RuntimeBattleState` (HP/AP/lives/mastery) |
 
 ### Battle System Flow
-1. `BattleScreen.tsx` → `useBattleOrchestrator.ts` → `useBattleState.ts`
-2. Phase execution: `playerPhaseExecution.ts`, `enemyPhaseExecution.ts`
-3. Damage calculation: `damageCalculation.ts`, `battleLogic.ts`
-4. Death handling: `deathHandler.ts` → lives system in `PlayerContext`
+
+```
+BattleScreen → useBattleOrchestrator → useBattleState
+                    ↓
+    getInitialDeckCounts() → getCardDataByClass() → createInitialDeck()
+                    ↓
+    playerPhaseExecution / enemyPhaseExecution → damageCalculation
+```
+
+**Buff ownership:** `appliedBy: 'player' | 'enemy' | 'environment'` - duration decreases only during applier's phase.
 
 ### Screen Routing
-`GameStateContext.currentScreen` controls routing:
-- `character_select` → `camp` → facilities (`guild`, `shop`, etc.) or `dungeon`
-- `dungeon` → `dungeon_map` → `battle` (loop until completion)
 
-### CSS Architecture
-Modular CSS in `src/ui/css/`:
-- `core/` - variables.css (CSS custom properties), reset.css
-- `components/` - reusable (buttons, tabs, modals, bars)
-- `animations/` - shared @keyframes (single source of truth)
-- `pages/battle/` - battle screen modules
-- `camps/` - facility-specific styles
+`character_select` → `camp` → facilities or `dungeon` → `dungeon_map` → `battle`
 
-## Key Conventions
+## Key Rules
 
-### Immutable Code Zones
-**DO NOT MODIFY** without explicit approval:
-- `src/domain/cards/decks/deck.ts` - Card shuffling logic
-- `src/domain/cards/decks/deckReducter.ts` - Deck state management
+### Immutable Code (DO NOT MODIFY)
 
-### CSS Rules
-- Use viewport units (vh, vw) for sizing; px only for borders
-- **Scope generic class names** with parent element to prevent collisions:
-  ```css
-  .battle-screen .enemy-card { ... }  /* Good */
-  .enemy-card { ... }                  /* Bad - can conflict */
-  ```
+- `src/domain/cards/decks/deck.ts`
+- `src/domain/cards/decks/deckReducter.ts`
+
+### Adding Character Classes
+
+1. Create card data in `src/domain/cards/data/`
+2. Add to `INITIAL_DECK_BY_CLASS` in `initialDeckConfig.ts`
+3. Add case to `getCardDataByClass()` in `useBattleOrchestrator.ts`
+4. Update `CharacterClassData.ts`: `isAvailable: true`
+
+### CSS
+
+- Use `vh/vw` for sizing, `px` only for borders
+- **Scope class names:** `.battle-screen .enemy-card { }` not `.enemy-card { }`
 
 ### Naming
-- Types/Interfaces: `PascalCase`
-- Functions: `camelCase` (verb-first)
-- Constants: `UPPER_SNAKE_CASE`
 
-### Language
-- UI text and game data use Japanese (e.g., player grades like "見習い剣士")
-- Code and comments in English
+- Types: `PascalCase` | Functions: `camelCase` | Constants: `UPPER_SNAKE_CASE`
+- UI text: Japanese | Code/comments: English
 
-## Game Design References
+## Docs Reference
 
-Located in `.claude/docs/`:
-- `Overall_document/` - Game design master document, lives system
-- `battle_document/` - Battle logic, buff/debuff system
-- `card_document/` - Card mechanics, character classes (Swordsman, Mage, Summoner)
-- `camp_document/` - Facility designs (shop, guild, blacksmith, sanctuary, library, storage)
-- `danjeon_document/` - Dungeon exploration, return system
-- `enemy_document/` - Enemy data by depth (1-5), boss system
-- `item_document/` - Equipment and items
+| Folder | Contents |
+|--------|----------|
+| `Overall_document/` | Master design, lives system |
+| `battle_document/` | Battle logic, buff/debuff |
+| `card_document/` | Cards, character classes |
+| `camp_document/` | Facilities (shop, guild, etc.) |
+| `danjeon_document/` | Dungeon exploration |
+| `enemy_document/` | Enemy data by depth |
+| `item_document/` | Equipment and items |

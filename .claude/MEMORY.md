@@ -11,6 +11,9 @@
 
 ---
 
+- Write all design documents and code in English
+- Please output only user chat and README.md in Japanese.
+
 ## Quick Reference
 
 - **Current Phase:** Phase 6 Complete + Deck System Integration
@@ -22,6 +25,23 @@
 ## Active Tasks
 
 ### Recently Completed
+
+- **Phase 1: Buff/Debuff Ownership System (2026-01-26)** - Fixed duration timing bug
+  - Added `BuffOwner` type (`'player' | 'enemy' | 'environment'`) to `baffType.ts`
+  - Added `appliedBy` field to `BuffDebuffState` (optional for backward compatibility)
+  - New `decreaseBuffDebuffDurationForPhase(map, currentActor)` in `buffLogic.ts`
+  - Deprecated old `decreaseBuffDebuffDuration()` function
+  - **Fixed critical bug:** Enemy debuffs now decrease at enemy phase, not player phase
+  - **Fixed parameter order bug** in `enemyPhaseExecution.ts:applyEnemyDebuffsToPlayer()`
+  - Files modified: `baffType.ts`, `buffLogic.ts`, `playerPhaseExecution.ts`, `enemyPhaseExecution.ts`, `useCardExecution.ts`
+
+- **Mage Character Selection Enabled (2026-01-26)** - Mage class now playable
+  - Added `MAGE_CARDS` import and `createMageStarterDeck()` function
+  - `getCardDataByClass()` returns `MAGE_CARDS` for mage
+  - Updated mage entry: `isAvailable: true`, `uniqueMechanic: "Elemental Resonance"`
+  - 15-card starter deck with fire/ice/lightning/light elements
+  - File modified: `CharacterClassData.ts`
+
 - **Character Select: Unique Card Display (2026-01-26)** - Show one card of each type in starter deck preview
   - `StarterDeckPreview.tsx` now filters to unique cards by `cardTypeId`
   - Header still shows total deck size ("15 cards")
@@ -34,16 +54,27 @@
   - Files modified: `initialDeckConfig.ts`, `useBattleState.ts`, `BattleScreen.tsx`, `useBattleOrchestrator.ts`, `CharacterClassData.ts`
 
 ### Bugs / Issues
+
 - **FacilityHeader unused props** - ESLint errors for `subtitle`, `icon`, `playerData`
   - Decision needed: (A) Simplify - remove unused props, or (B) Implement all variants
   - Callers passing ignored props: Storage, Shop, Blacksmith
 
 ### Deferred Features
-- Mage/Summoner classes - cards not yet implemented (shows "Coming Soon")
+
+- Summoner class - cards not yet implemented (shows "Coming Soon")
 - Sanctuary effects - not connected to battle/dungeon systems
 - Guild RumorsTab/QuestsTab - placeholders only
 - Shop daily sales system, pack opening animation
 - Dungeon event/rest/treasure nodes - complete immediately (no UI)
+
+### Current Refactoring Status
+
+| Phase   | Status      | Description                  |
+| ------- | ----------- | ---------------------------- |
+| Phase 1 | ✅ Complete | Buff/Debuff Ownership System |
+| Phase 2 | Not Started | Context Separation           |
+| Phase 3 | Not Started | Legacy Interface Deletion    |
+| Phase 4 | Not Started | Multi-Enemy Battle           |
 
 ---
 
@@ -51,6 +82,7 @@
 
 **CSS Class Name Collision:**
 Generic class names (`.card`, `.enemy-card`) must be scoped with parent element:
+
 ```css
 .battle-screen .enemy-card { ... }  /* Good */
 .enemy-card { ... }                  /* Bad - conflicts */
