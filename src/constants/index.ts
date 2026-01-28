@@ -12,5 +12,6 @@ export { LIVES_BY_DIFFICULTY, SWORD_ENERGY_MAX, MAX_ACTIVE_SUMMONS, MAX_BOND_LEV
 export type { ResonanceEffectConfig } from "./characterConstants";
 export { DEFAULT_DAMAGE_MODIFIER } from "./characterConstants";
 export * from "./dungeonConstants";
+export * from "./itemConstants";
 export * from "./saveConstants";
 export * from "./uiConstants";

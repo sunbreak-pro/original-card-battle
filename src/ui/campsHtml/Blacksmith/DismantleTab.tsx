@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { usePlayer } from "../../../contexts/PlayerContext";
 import { useInventory } from "../../../contexts/InventoryContext";
-import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
-import type { EquipmentQuality } from "../../../domain/item_equipment/type/EquipmentType";
+import type { Item } from '@/types/itemTypes';
+import type { EquipmentQuality } from '@/types/itemTypes';
 import {
   QUALITY_NAMES,
   QUALITY_COLORS,
-} from "../../../domain/camps/types/BlacksmithTypes";
+} from "../../../constants/campConstants";
 import {
   getDismantlePreview,
   performDismantle,

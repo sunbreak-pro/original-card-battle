@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useGameState } from "../../../contexts/GameStateContext";
 import { usePlayer } from "../../../contexts/PlayerContext";
 import { useInventory } from "../../../contexts/InventoryContext";
-import { type Item } from "../../../domain/item_equipment/type/ItemTypes";
+import { type Item } from '@/types/itemTypes';
 import ItemCard from "./ItemCard";
 import { ItemDetailPanel, EquipmentDetailPanel } from "./ItemDetailPanel";
 import DeleteModal from "../modal/DeleteModal";

@@ -11,7 +11,7 @@ import type {
   Rumor,
   Quest,
   QuestObjective,
-} from "../domain/camps/types/GuildTypes";
+} from '@/types/campTypes';
 import { getRumorById, RUMORS } from "../constants/data/camps/RumorData";
 import {
   generateDailyQuests,

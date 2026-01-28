@@ -5,8 +5,8 @@
  * depth display info, and map generation defaults.
  */
 
-import type { Depth } from "../domain/camps/types/CampTypes";
-import type { NodeType, NodeTypeConfig, DepthDisplayInfo, MapGenerationConfig } from "../domain/dungeon/types/DungeonTypes";
+import type { Depth } from '@/types/campTypes';
+import type { NodeType, NodeTypeConfig, DepthDisplayInfo, MapGenerationConfig } from '@/types/dungeonTypes';
 
 // ============================================================
 // Node Type Configuration

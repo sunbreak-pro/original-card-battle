@@ -20,12 +20,12 @@
  * - 10 (max): Next physical attack is guaranteed critical + 50% penetration
  */
 
-import type { Card } from "../../../cards/type/cardType";
+import type { Card } from '@/types/cardTypes';
+import type { SwordEnergyState } from '@/types/characterTypes';
 import {
-  type SwordEnergyState,
   SWORD_ENERGY_MAX,
   createInitialSwordEnergy,
-} from "../../type/classAbilityTypes";
+} from '../../logic/classAbilityUtils';
 import type { ClassAbilitySystem, DamageModifier } from "../../classAbility/classAbilitySystem";
 
 // Re-export for backward compatibility

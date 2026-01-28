@@ -1,6 +1,7 @@
-import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
-import type { EquipmentQuality } from "../../../domain/item_equipment/type/EquipmentType";
-import { QUALITY_NAMES, MAX_EQUIPMENT_LEVEL } from "../../../domain/camps/types/BlacksmithTypes";
+import type { Item } from '@/types/itemTypes';
+import type { EquipmentQuality } from '@/types/itemTypes';
+import { QUALITY_NAMES } from "../../../constants/campConstants";
+import { MAX_EQUIPMENT_LEVEL } from "../../../domain/camps/logic/blacksmithUtils";
 
 interface BlacksmithItemCardProps {
   item: Item;

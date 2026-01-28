@@ -4,9 +4,9 @@ import { useState, useRef, useCallback } from "react";
 import type {
   SkillNode,
   NodeStatus,
-  CharacterClass,
-} from "../../../domain/camps/types/SanctuaryTypes";
-import { SANCTUARY_CONSTANTS } from "../../../domain/camps/types/SanctuaryTypes";
+  CharacterClassForSanctuary as CharacterClass,
+} from '@/types/campTypes';
+import { SANCTUARY_CONSTANTS } from "../../../constants/campConstants";
 import {
   CATEGORY_DISPLAY,
   getNodeById,
@@ -24,6 +24,9 @@ const STATUS_LABELS: Record<NodeStatus, string> = {
   unlocked: "解放済み",
   available: "解放可能",
   locked: "ロック中",
+  current: "現在地",
+  completed: "完了",
+  skipped: "スキップ",
 };
 
 export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({

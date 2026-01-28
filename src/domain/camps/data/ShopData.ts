@@ -1,75 +1,27 @@
 // Shop inventory data for the Merchant's Exchange
 
 import type {
-  ShopItem,
+  ShopListing,
   EquipmentPackConfig,
   RarityProbability,
-} from "../types/ShopTypes";
+} from '@/types/campTypes';
+import { getConsumableData } from "@/constants/data/items/ConsumableItemData";
+import type { ConsumableItemData } from '@/types/itemTypes';
 
 /**
- * Consumable items - Healing potions
+ * Consumable listings - references ConsumableItemData by typeId
  */
-export const CONSUMABLE_ITEMS: ShopItem[] = [
-  {
-    id: "potion_small",
-    name: "Small Healing Potion",
-    description: "Recovers 30 HP. A basic remedy for minor wounds.",
-    icon: "🧪",
-    category: "consumable",
-    price: 50,
-    healAmount: 30,
-  },
-  {
-    id: "potion_medium",
-    name: "Medium Healing Potion",
-    description: "Recovers 70 HP. A reliable restorative draught.",
-    icon: "🧴",
-    category: "consumable",
-    price: 120,
-    healAmount: 70,
-  },
-  {
-    id: "potion_large",
-    name: "Large Healing Potion",
-    description: "Recovers 150 HP. A potent elixir brewed by master alchemists.",
-    icon: "⚗️",
-    category: "consumable",
-    price: 240,
-    healAmount: 150,
-  },
+export const CONSUMABLE_LISTINGS: ShopListing[] = [
+  { itemTypeId: "healing_potion", category: "consumable" },
+  { itemTypeId: "greater_healing_potion", category: "consumable" },
+  { itemTypeId: "full_elixir", category: "consumable" },
 ];
 
 /**
- * Teleport stones - Emergency escape items
+ * Teleport listings - references ConsumableItemData by typeId
  */
-export const TELEPORT_ITEMS: ShopItem[] = [
-  {
-    id: "teleport_emergency",
-    name: "Emergency Teleport Stone",
-    description: "60% chance to return safely. Unreliable but cheap.",
-    icon: "💎",
-    category: "teleport",
-    price: 100,
-    returnChance: 0.6,
-  },
-  {
-    id: "teleport_normal",
-    name: "Teleport Stone",
-    description: "70% chance to return safely. Standard issue for adventurers.",
-    icon: "🔮",
-    category: "teleport",
-    price: 150,
-    returnChance: 0.7,
-  },
-  {
-    id: "teleport_blessed",
-    name: "Blessed Teleport Stone",
-    description: "80% chance to return safely. Imbued with divine protection.",
-    icon: "✨",
-    category: "teleport",
-    price: 300,
-    returnChance: 0.8,
-  },
+export const TELEPORT_LISTINGS: ShopListing[] = [
+  { itemTypeId: "teleport_stone", category: "teleport" },
 ];
 
 /**
@@ -141,26 +93,48 @@ export const EQUIPMENT_PACKS: EquipmentPackConfig[] = [
 ];
 
 /**
- * Get all shop items by category
+ * Resolve a ShopListing to its display info from ConsumableItemData
  */
-export function getShopItemsByCategory(
-  category: "consumable" | "teleport"
-): ShopItem[] {
-  switch (category) {
-    case "consumable":
-      return CONSUMABLE_ITEMS;
-    case "teleport":
-      return TELEPORT_ITEMS;
-    default:
-      return [];
-  }
+export interface ResolvedShopListing {
+  listing: ShopListing;
+  data: ConsumableItemData;
+  price: number;
 }
 
 /**
- * Get shop item by ID
+ * Get resolved listing with display data
  */
-export function getShopItemById(id: string): ShopItem | undefined {
-  return [...CONSUMABLE_ITEMS, ...TELEPORT_ITEMS].find((item) => item.id === id);
+export function resolveShopListing(listing: ShopListing): ResolvedShopListing | null {
+  const data = getConsumableData(listing.itemTypeId);
+  if (!data || data.shopPrice === undefined) return null;
+  return { listing, data, price: data.shopPrice };
+}
+
+/**
+ * Get all resolved consumable listings
+ */
+export function getResolvedConsumableListings(): ResolvedShopListing[] {
+  return CONSUMABLE_LISTINGS
+    .map(resolveShopListing)
+    .filter((r): r is ResolvedShopListing => r !== null);
+}
+
+/**
+ * Get all resolved teleport listings
+ */
+export function getResolvedTeleportListings(): ResolvedShopListing[] {
+  return TELEPORT_LISTINGS
+    .map(resolveShopListing)
+    .filter((r): r is ResolvedShopListing => r !== null);
+}
+
+/**
+ * Get shop listing by typeId
+ */
+export function getShopListingByTypeId(typeId: string): ShopListing | undefined {
+  return [...CONSUMABLE_LISTINGS, ...TELEPORT_LISTINGS].find(
+    (listing) => listing.itemTypeId === typeId
+  );
 }
 
 /**
@@ -168,19 +142,4 @@ export function getShopItemById(id: string): ShopItem | undefined {
  */
 export function getEquipmentPackById(id: string): EquipmentPackConfig | undefined {
   return EQUIPMENT_PACKS.find((pack) => pack.id === id);
-}
-
-/**
- * Get all purchasable items (for display)
- */
-export function getAllShopItems(): {
-  consumables: ShopItem[];
-  teleport: ShopItem[];
-  packs: EquipmentPackConfig[];
-} {
-  return {
-    consumables: CONSUMABLE_ITEMS,
-    teleport: TELEPORT_ITEMS,
-    packs: EQUIPMENT_PACKS,
-  };
 }

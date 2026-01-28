@@ -11,11 +11,11 @@
  */
 
 import { useState, useCallback, useMemo } from "react";
-import type { Depth } from "../../cards/type/cardType";
-import type { BuffDebuffMap } from "../type/baffType";
-import type { EnemyDefinition, EnemyBattleState } from "../../characters/type/enemyType";
-import type { BattleStats, CharacterClass } from "../../characters/type/baseTypes";
-import { Swordman_Status } from "../../characters/player/data/PlayerData";
+import type { Depth } from '@/types/cardTypes';
+import type { BuffDebuffMap } from '@/types/battleTypes';
+import type { EnemyDefinition, EnemyBattleState } from '@/types/characterTypes';
+import type { BattleStats, CharacterClass } from '@/types/characterTypes';
+import { Swordman_Status } from "../../../constants/data/characters/PlayerData";
 import { selectRandomEnemy } from "../../characters/enemy/logic/enemyAI";
 import { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
 

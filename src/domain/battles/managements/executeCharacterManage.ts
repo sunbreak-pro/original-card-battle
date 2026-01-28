@@ -4,10 +4,10 @@
  */
 
 import { useCallback, type RefObject } from "react";
-import type { Card } from "../../cards/type/cardType";
-import type { BuffDebuffMap } from "../type/baffType";
-import type { EnemyDefinition, EnemyAction, EnemyBattleState } from "../../characters/type/enemyType";
-import type { BattleStats } from "../../characters/type/baseTypes";
+import type { Card } from '@/types/cardTypes';
+import type { BuffDebuffMap } from '@/types/battleTypes';
+import type { EnemyDefinition, EnemyAction, EnemyBattleState } from '@/types/characterTypes';
+import type { BattleStats } from '@/types/characterTypes';
 import type { DeckState } from "../../cards/decks/deckReducter";
 
 // Execution logic

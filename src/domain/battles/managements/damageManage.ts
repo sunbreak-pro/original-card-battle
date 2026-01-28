@@ -1,12 +1,12 @@
-import type { BuffDebuffMap, BuffDebuffState } from "../type/baffType";
-import type { EnemyAction } from "../../characters/type/enemyType";
-import type { Card } from "../../cards/type/cardType";
-import type { BattleStats } from "../../characters/type/baseTypes";
+import type { BuffDebuffMap, BuffDebuffState } from '@/types/battleTypes';
+import type { EnemyAction } from '@/types/characterTypes';
+import type { Card } from '@/types/cardTypes';
+import type { BattleStats } from '@/types/characterTypes';
 import { calculateDamage, applyDamageAllocation } from "../calculators/damageCalculation";
 import { addOrUpdateBuffDebuff } from "../logic/buffLogic";
 import { calculateBleedDamage } from "../logic/bleedDamage";
 import { enemyAction } from "../../characters/enemy/logic/enemyAI";
-import type { PlayerCardDamageResult } from "../type/damageType";
+import type { PlayerCardDamageResult } from '@/types/battleTypes';
 
 /**
  * Result of processing enemy action damage

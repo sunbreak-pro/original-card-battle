@@ -1,11 +1,11 @@
 // itemEffectExecutor.ts - Executes consumable item effects in battle
 
-import type { Item } from "../../item_equipment/type/ItemTypes";
-import type { BuffDebuffMap, BuffDebuffType } from "../type/baffType";
-import type { ItemEffectResult, ConsumableEffect } from "../../item_equipment/type/ConsumableEffectTypes";
-import { getConsumableData, isUsableInBattle } from "../../item_equipment/data/ConsumableItemData";
-import { createBuffState } from "../type/baffType";
-import { BUFF_EFFECTS } from "../data/buffData";
+import type { Item } from '@/types/itemTypes';
+import type { BuffDebuffMap, BuffDebuffType } from '@/types/battleTypes';
+import type { ItemEffectResult, ConsumableEffect } from '@/types/itemTypes';
+import { getConsumableData, isUsableInBattle } from "@/constants/data/items/ConsumableItemData";
+import { createBuffState } from '../logic/buffLogic';
+import { BUFF_EFFECTS } from "@/constants/data/battles/buffData";
 
 /**
  * Execute a consumable item's effects in battle
@@ -211,7 +211,7 @@ function executeFallbackEffect(
 
   // Basic healing inference
   if (itemName.includes('potion') || itemName.includes('heal') ||
-      typeId.includes('potion') || typeId.includes('heal')) {
+    typeId.includes('potion') || typeId.includes('heal')) {
     // Lesser = 15, normal = 30, greater = 60
     let healAmount = 30;
     if (itemName.includes('lesser') || typeId.includes('lesser')) {

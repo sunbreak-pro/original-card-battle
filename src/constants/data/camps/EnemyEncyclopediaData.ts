@@ -6,8 +6,8 @@
  */
 
 import { enemyList } from "../characters/enemy/enemyDepth1";
-import type { EnemyDefinition } from "../../../domain/characters/type/enemyType";
-import type { EnemyEncyclopediaEntry } from "../../../domain/camps/types/LibraryTypes";
+import type { EnemyDefinition } from "@/types/characterTypes";
+import type { EnemyEncyclopediaEntry } from "@/types/campTypes";
 
 /**
  * Get all available enemies for encyclopedia

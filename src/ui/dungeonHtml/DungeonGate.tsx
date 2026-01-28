@@ -1,11 +1,11 @@
 // DungeonGate - Depth selection screen
 
 import { useState, useCallback } from "react";
-import type { Depth } from "../../domain/camps/types/CampTypes";
+import type { Depth } from '@/types/campTypes';
 import { useGameState } from "../../contexts/GameStateContext";
 import { usePlayer } from "../../contexts/PlayerContext";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
-import { DEPTH_DISPLAY_INFO } from "../../domain/dungeon/types/DungeonTypes";
+import { DEPTH_DISPLAY_INFO } from "../../constants/dungeonConstants";
 import FacilityHeader from "../componentsHtml/FacilityHeader";
 import "./DungeonGate.css";
 

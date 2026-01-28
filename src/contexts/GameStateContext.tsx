@@ -12,7 +12,7 @@ import type {
   BattleMode,
   Depth,
   BattleConfig,
-} from "../domain/camps/types/CampTypes";
+} from '@/types/campTypes';
 import { saveManager } from "../domain/save/logic/saveManager";
 
 /**

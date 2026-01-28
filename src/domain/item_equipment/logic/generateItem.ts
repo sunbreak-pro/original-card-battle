@@ -1,4 +1,8 @@
-import type { Item } from "../type/ItemTypes";
+import type { Item, ItemRarity } from '@/types/itemTypes';
+import { EQUIPMENT_TEMPLATES } from "../../../constants/data/items/EquipmentData";
+import { getConsumableData } from "@/constants/data/items/ConsumableItemData";
+import type { EquipmentSlot } from '@/types/itemTypes';
+import { RARITY_SELL_PRICES } from "../../../constants/itemConstants";
 
 /**
  * Helper function to create a new item instance
@@ -13,44 +17,53 @@ export function createItemInstance(
     };
 }
 
-export function generateConsumableItem(shopItem: ShopItem): Item {
-    // Include heal amount in description for runtime use
-    const description = shopItem.healAmount
-        ? `${shopItem.description} (Heals ${shopItem.healAmount} HP)`
-        : shopItem.description;
+/**
+ * Generate a consumable Item from ConsumableItemData by typeId
+ * Returns null if the typeId is not found
+ */
+export function generateConsumableFromData(typeId: string): Item | null {
+    const data = getConsumableData(typeId);
+    if (!data) return null;
 
-    return createItemInstance(shopItem.id, {
-        typeId: shopItem.id,
-        name: shopItem.name,
-        description: description,
-        itemType: "consumable",
-        type: shopItem.icon,
-        rarity: "common",
-        sellPrice: Math.floor(shopItem.price * 0.5),
+    const itemType = typeId === "teleport_stone" ? "key" : "consumable";
+
+    return createItemInstance(typeId, {
+        typeId: data.typeId,
+        name: data.name,
+        description: data.description,
+        itemType,
+        type: data.icon,
+        rarity: data.rarity,
+        sellPrice: data.sellPrice,
         canSell: true,
         canDiscard: true,
         stackable: true,
         stackCount: 1,
-        maxStack: 99,
+        maxStack: data.maxStack,
     });
 }
 
 /**
- * Create teleport item from shop item
+ * Generate equipment from a slot and rarity
  */
-export function generateTeleportItem(shopItem: ShopItem): Item {
-    return createItemInstance(shopItem.id, {
-        typeId: shopItem.id,
-        name: shopItem.name,
-        description: shopItem.description,
-        itemType: "key",
-        type: shopItem.icon,
-        rarity: "uncommon",
-        sellPrice: Math.floor(shopItem.price * 0.5),
+export function generateEquipmentItem(slot: EquipmentSlot, rarity: ItemRarity): Item {
+    const template = EQUIPMENT_TEMPLATES[slot][rarity];
+
+    return createItemInstance(`${slot}_${rarity}`, {
+        typeId: `${slot}_${rarity}`,
+        name: template.name,
+        description: `A ${rarity} ${slot} piece of equipment.`,
+        itemType: "equipment",
+        type: template.icon,
+        equipmentSlot: slot,
+        rarity: rarity,
+        quality: "normal",
+        level: 0,
+        durability: 100,
+        maxDurability: 100,
+        sellPrice: RARITY_SELL_PRICES[rarity],
         canSell: true,
         canDiscard: true,
-        stackable: true,
-        stackCount: 1,
-        maxStack: 10,
+        effects: [],
     });
 }

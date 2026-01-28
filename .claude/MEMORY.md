@@ -18,7 +18,8 @@
 
 - **Current Phase:** Phase A Complete (Core Loop) - Ready for Phase B
 - **Dev Server:** http://localhost:5173/
-- **Last Updated:** 2026-01-26
+- **Last Updated:** 2026-01-28
+- **Type System:** `src/types/` に集約済み（`@/types/*` でimport）
 
 ---
 
@@ -35,6 +36,25 @@
 | A5: Dungeon Map UI       | Complete | `NodeMap.tsx`, `MapNode.tsx`, `dungeonLogic.ts`               |
 
 ### Recently Completed
+
+- **型定義リファクタリング完了 (2026-01-28)**
+  - `src/types/` に8ファイル作成、全型定義を集約
+  - `@/types/*` パスエイリアス導入（tsconfig + vite）
+  - 旧 `domain/*/type(s)/` は削除（1 shimのみ残存: immutable deck用）
+  - ~95ファイルのimport更新、ビルド確認済み
+  - 詳細: `.claude/todos/REFACTORING_PLAN_TYPES.md`
+
+- **Shop Refactoring & ExchangeTab Bug Fix (2026-01-28)**
+  - **Bug Fix:** ExchangeTab magic stone→gold conversion now syncs with FacilityHeader
+    - Added `setBaseCampMagicStones()` to ResourceContext
+    - Added `updateBaseCampMagicStones()` to PlayerContext (delegates to ResourceContext)
+    - ExchangeTab now updates ResourceContext directly instead of only PlayerState
+  - **Data Normalization:** Removed ShopItem duplication, single source of truth
+    - Created `ConsumableItemData.ts` in `domain/item_equipment/data/` with `shopPrice`
+    - Replaced `ShopItem` type with `ShopListing` (references ConsumableItemData by typeId)
+    - `generateItem.ts`: New `generateConsumableFromData(typeId)` replaces old shop-dependent functions
+    - `nodeEventLogic.ts`: Fixed broken import + hardcoded items → `generateConsumableFromData()`
+  - **Architecture:** Shop data flow is now `ShopListing → ConsumableItemData → generateItem`
 
 - **Claude Skills Creation (2026-01-26)** - Created 9 development skills
   - `card-creator`, `enemy-creator`, `character-class-creator`
@@ -65,6 +85,7 @@
 
 - **FacilityHeader unused props** - ESLint errors (Low priority)
 - **Dungeon event/rest/treasure nodes** - Complete immediately without UI
+- ~~**ExchangeTab magic stone header not updating**~~ - Fixed (2026-01-28)
 
 ### Next Phase: B (Game Experience Enhancement)
 
@@ -72,7 +93,7 @@
 | ----------------------------- | -------- | ----------- |
 | B1: Context Separation        | Medium   | Not Started |
 | B2: Summoner Class Cards      | Medium   | Not Started |
-| B3: Shop Full Implementation  | Medium   | Not Started |
+| B3: Shop Full Implementation  | Medium   | In Progress (ShopListing refactor done, BuyTab/ExchangeTab working) |
 | B4: Guild Full Implementation | Medium   | Not Started |
 | B5: Card Derivation System    | Medium   | Not Started |
 

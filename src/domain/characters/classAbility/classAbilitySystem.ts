@@ -6,8 +6,8 @@
  * their specific ability state type.
  */
 
-import type { Card } from "../../cards/type/cardType";
-import type { ClassAbilityState } from "../type/classAbilityTypes";
+import type { Card } from '@/types/cardTypes';
+import type { ClassAbilityState } from '@/types/characterTypes';
 
 // ============================================================
 // Damage Modifier Interface

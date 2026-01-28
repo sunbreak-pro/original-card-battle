@@ -6,8 +6,8 @@ import { usePlayer } from "../../../contexts/PlayerContext";
 import type {
   SkillNode,
   NodeStatus,
-  CharacterClass,
-} from "../../../domain/camps/types/SanctuaryTypes";
+  CharacterClassForSanctuary as CharacterClass,
+} from '@/types/campTypes';
 import {
   getNodeStatus,
   unlockNode,
@@ -34,7 +34,8 @@ export const Sanctuary = () => {
   const playerClass: CharacterClass = playerData.persistent.playerClass;
 
   // Get sanctuary progress
-  const sanctuaryProgress = playerData.progression.sanctuaryProgress;
+  const { progression } = playerData;
+  const sanctuaryProgress = progression.sanctuaryProgress;
 
   // Calculate effects
   const effects = calculateTotalEffects(sanctuaryProgress);
@@ -57,7 +58,7 @@ export const Sanctuary = () => {
         // Update player state
         updatePlayerData({
           progression: {
-            ...playerData.progression,
+            ...progression,
             sanctuaryProgress: result.newProgress,
           },
         });
@@ -86,7 +87,7 @@ export const Sanctuary = () => {
         }, 3000);
       }
     },
-    [sanctuaryProgress, playerClass, updatePlayerData],
+    [sanctuaryProgress, progression, playerClass, updatePlayerData],
   );
 
   // Get selected node status

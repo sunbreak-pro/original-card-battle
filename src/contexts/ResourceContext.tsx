@@ -8,9 +8,9 @@ import React, {
   useCallback,
   type ReactNode,
 } from "react";
-import type { MagicStones } from "../domain/item_equipment/type/ItemTypes";
-import { calculateMagicStoneValue } from "../domain/item_equipment/type/ItemTypes";
-import type { ExplorationLimit } from "../domain/camps/types/CampTypes";
+import type { MagicStones } from '@/types/itemTypes';
+import { calculateMagicStoneValue } from "../domain/item_equipment/logic/itemUtils";
+import type { ExplorationLimit } from '@/types/campTypes';
 
 /**
  * Resource state structure
@@ -41,6 +41,7 @@ interface ResourceContextValue {
 
   // Magic stones operations
   addMagicStones: (stones: Partial<MagicStones>, toBaseCamp?: boolean) => void;
+  setBaseCampMagicStones: (newStones: MagicStones) => void;
   useMagicStones: (value: number) => boolean;
   getTotalMagicStonesValue: () => number;
   getBaseCampMagicStones: () => MagicStones;
@@ -176,6 +177,19 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
     },
     [],
   );
+
+  /**
+   * Set baseCamp magic stones to a specific value (for exchange operations)
+   */
+  const setBaseCampMagicStones = useCallback((newStones: MagicStones) => {
+    setResources((prev) => ({
+      ...prev,
+      magicStones: {
+        ...prev.magicStones,
+        baseCamp: newStones,
+      },
+    }));
+  }, []);
 
   /**
    * Use magic stones by value
@@ -343,6 +357,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
         useGold,
         getTotalGold,
         addMagicStones,
+        setBaseCampMagicStones,
         useMagicStones,
         getTotalMagicStonesValue,
         getBaseCampMagicStones,

@@ -2,7 +2,7 @@
  * Phase Calculation Module
  * Handles phase queue generation and speed randomness for the phase-based battle system.
  */
-import type { PhaseActor, SpeedRandomState, PhaseCalculationResult } from "../type/phaseType";
+import type { PhaseActor, SpeedRandomState, PhaseCalculationResult } from '@/types/battleTypes';
 import {
   VARIANCE_PERCENT,
   MEAN_REVERSION_FACTOR,

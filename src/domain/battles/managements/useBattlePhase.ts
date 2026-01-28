@@ -4,9 +4,9 @@
  */
 
 import { useState, useCallback } from "react";
-import type { PhaseQueue, PhaseActor, SpeedRandomState } from "../type/phaseType";
-import type { BuffDebuffMap } from "../type/baffType";
-import type { EnemyDefinition } from "../../characters/type/enemyType";
+import type { PhaseQueue, PhaseActor, SpeedRandomState } from '@/types/battleTypes';
+import type { BuffDebuffMap } from '@/types/battleTypes';
+import type { EnemyDefinition } from '@/types/characterTypes';
 import {
     calculatePlayerSpeed,
     calculateEnemySpeed,

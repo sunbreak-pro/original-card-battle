@@ -1,7 +1,7 @@
-import type { Card } from "../type/cardType.ts";
-import { calculateEffectivePower } from "./card.ts";
-import type { BuffDebuffState } from "../../battles/type/baffType.ts";
-import { createBuffState } from "../../battles/type/baffType.ts";
+import type { Card } from '@/types/cardTypes';
+import { calculateEffectivePower } from "./card";
+import type { BuffDebuffState } from '@/types/battleTypes';
+import { createBuffState } from '../../battles/logic/buffLogic';
 
 export interface CardEffectResult {
   damageToEnemy?: number;

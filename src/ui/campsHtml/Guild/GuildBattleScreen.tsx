@@ -2,7 +2,7 @@
 // Simplified version of BattleScreen.tsx without depth/encounter progression
 
 import { useEffect } from "react";
-import type { EnemyDefinition } from "../../../domain/characters/type/enemyType";
+import type { EnemyDefinition } from '@/types/characterTypes';
 import { useBattle } from "../../../domain/battles/managements/battleFlowManage";
 import { CardComponent } from "../../cardHtml/CardComponent";
 import { BattlingCardPileModal } from "../../cardHtml/CardModalDisplay";

@@ -6,11 +6,11 @@
  */
 
 import React, { useState } from "react";
-import type { CharacterClass } from "../../domain/characters/type/baseTypes";
+import type { CharacterClass } from "@/types/characterTypes";
 import {
   getAllClasses,
   type CharacterClassInfo,
-} from "../../domain/characters/player/data/CharacterClassData";
+} from "@/constants/data/characters/CharacterClassData";
 import { CharacterCard } from "./CharacterCard";
 import { StarterDeckPreview } from "./StarterDeckPreview";
 import { useGameState } from "../../contexts/GameStateContext";

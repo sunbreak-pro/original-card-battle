@@ -1,5 +1,5 @@
-import { useState, useRef, useMemo, useCallback } from "react";
-import type { Depth, Card } from "../../domain/cards/type/cardType";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import type { Depth, Card } from "@/types/cardTypes";
 import {
   useBattle,
   type InitialPlayerState,
@@ -9,19 +9,19 @@ import { CardComponent } from "../cardHtml/CardComponent";
 import { BattlingCardPileModal } from "../cardHtml/CardModalDisplay";
 import { TurnOrderIndicator } from "./TurnOrderIndicator";
 import EnemyFrame from "./EnemyFrame";
-import PlayerFrame from "./playerFrame";
+import PlayerFrame from "./PlayerFrame";
 import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
 import UseItemModal from "./UseItemModal";
 import "../css/battle/BattleScreen.css";
-import type { Item } from "../../domain/item_equipment/type/ItemTypes";
+import type { Item } from "@/types/itemTypes";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { usePlayer } from "../../contexts/PlayerContext";
 import { useResources } from "../../contexts/ResourceContext";
 import { useGameState } from "../../contexts/GameStateContext";
 import { handlePlayerDeathWithDetails } from "../../domain/battles/logic/deathHandler";
 import { saveManager } from "../../domain/save/logic/saveManager";
-import { getInitialDeckCounts } from "../../domain/battles/data/initialDeckConfig";
+import { getInitialDeckCounts } from "../../constants/data/battles/initialDeckConfig";
 import {
   gainSoulFromEnemy,
   getSoulValue,
@@ -80,7 +80,7 @@ const BattleScreen = ({
   // 遭遇カウント管理
   const [encounterCount, setEncounterCount] = useState(0);
   const deathHandledRef = useRef(false);
-  const soulsTransferredRef = useRef(0);
+  const [soulsTransferred, setSoulsTransferred] = useState(0);
 
   // Use Item Modal state
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -145,19 +145,22 @@ const BattleScreen = ({
   } = useBattle(depth, undefined, initialPlayerState);
 
   // Handle player death penalty when defeated
-  // Runs once when defeat is detected; uses ref to avoid re-render
-  if (battleResult === "defeat" && !deathHandledRef.current) {
-    const result = handlePlayerDeathWithDetails(playerData);
-    updatePlayerData(result.updates);
-    soulsTransferredRef.current = result.soulsTransferred;
-    decreaseLives();
-    deathHandledRef.current = true;
-  }
+  // Side effect (updatePlayerData, decreaseLives) must run in useEffect, not during render
+  useEffect(() => {
+    if (battleResult === "defeat" && !deathHandledRef.current) {
+      const result = handlePlayerDeathWithDetails(playerData);
+      updatePlayerData(result.updates);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init guarded by ref
+      setSoulsTransferred(result.soulsTransferred);
+      decreaseLives();
+      deathHandledRef.current = true;
+    }
+  }, [battleResult, playerData, updatePlayerData, decreaseLives]);
 
   // Reset itemUsedThisPhase when phase changes (render-time setState pattern)
-  const prevPhaseIndexRef = useRef(currentPhaseIndex);
-  if (currentPhaseIndex !== prevPhaseIndexRef.current) {
-    prevPhaseIndexRef.current = currentPhaseIndex;
+  const [prevPhaseIndex, setPrevPhaseIndex] = useState(currentPhaseIndex);
+  if (currentPhaseIndex !== prevPhaseIndex) {
+    setPrevPhaseIndex(currentPhaseIndex);
     setItemUsedThisPhase(false);
   }
 
@@ -369,7 +372,7 @@ const BattleScreen = ({
         }}
         remainingLives={runtimeState.lives.currentLives}
         maxLives={runtimeState.lives.maxLives}
-        soulsTransferred={soulsTransferredRef.current}
+        soulsTransferred={soulsTransferred}
         isGameOver={gameOver}
       />
     );

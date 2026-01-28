@@ -1,6 +1,6 @@
-import type { Card } from "../../cards/type/cardType";
-import type { DamageAllocation, DamageResult } from "../type/damageType";
-import type { BuffDebuffMap } from "../type/baffType";
+import type { Card } from '@/types/cardTypes';
+import type { DamageAllocation, DamageResult } from '@/types/battleTypes';
+import type { BuffDebuffMap } from '@/types/battleTypes';
 import {
   attackBuffDebuff,
   criticalRateBuff,
@@ -8,7 +8,7 @@ import {
   reflectBuff,
   calculateLifesteal
 } from "./buffCalculation";
-import type { BattleStats } from "../../characters/type/baseTypes";
+import type { BattleStats } from '@/types/characterTypes';
 import { CRIT_DAMAGE_MULTIPLIER, GUARD_BLEED_THROUGH_MULTIPLIER } from "../../../constants";
 
 // Empty BuffDebuffMap for fallback

@@ -1,6 +1,6 @@
-import type { EnemyDefinition, EnemyAction, EnemyAIPattern } from "../../type/enemyType";
+import type { EnemyDefinition, EnemyAction, EnemyAIPattern } from '@/types/characterTypes';
 import { DEPTH1_ENEMIES } from "../data/enemyDepth1";
-import type { Card, CardTag } from "../../../cards/type/cardType";
+import type { Card, CardTag } from '@/types/cardTypes';
 
 /**
  * Minimal interface for determining enemy actions

@@ -1,7 +1,7 @@
 // Guild-specific enemies for promotion exams
 // These enemies only appear in exam battles, not in normal dungeon exploration
 
-import type { EnemyDefinition } from "../../../domain/characters/type/enemyType";
+import type { EnemyDefinition } from "@/types/characterTypes";
 
 /**
  * Swordsman Promotion Exam Enemies

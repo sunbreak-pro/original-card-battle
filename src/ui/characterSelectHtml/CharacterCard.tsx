@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import type { CharacterClassInfo } from "../../domain/characters/player/data/CharacterClassData";
+import type { CharacterClassInfo } from "@/constants/data/characters/CharacterClassData";
 
 interface CharacterCardProps {
   classInfo: CharacterClassInfo;

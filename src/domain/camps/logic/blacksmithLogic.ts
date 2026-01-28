@@ -1,6 +1,6 @@
 // Blacksmith facility business logic
-import type { Item } from "../../item_equipment/type/ItemTypes";
-import type { EquipmentQuality } from "../../item_equipment/type/EquipmentType";
+import type { Item } from '@/types/itemTypes';
+import type { EquipmentQuality } from '@/types/itemTypes';
 import type {
   UpgradeCost,
   RepairCost,
@@ -9,17 +9,19 @@ import type {
   UpgradePreview,
   QualityUpgradePreview,
   QualityUpOption,
-} from "../types/BlacksmithTypes";
+} from '@/types/campTypes';
 import {
   LEVEL_STAT_MODIFIERS,
   LEVEL_AP_MODIFIERS,
   QUALITY_MODIFIERS,
+} from '@/constants/campConstants';
+import {
   getNextQuality,
   canUpgradeLevel,
   canUpgradeQuality,
   needsRepair as needsRepairCheck,
   canDismantle as canDismantleCheck,
-} from "../types/BlacksmithTypes";
+} from '../logic/blacksmithUtils';
 import {
   QUALITY_UP_OPTIONS,
   DISMANTLE_CONFIG,

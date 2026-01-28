@@ -3,8 +3,8 @@
 // The orchestrator remains the internal implementation; contexts provide focused slices
 
 import React, { useMemo, type ReactNode } from "react";
-import type { Depth } from "../../cards/type/cardType";
-import type { EnemyDefinition } from "../../characters/type/enemyType";
+import type { Depth } from '@/types/cardTypes';
+import type { EnemyDefinition } from '@/types/characterTypes';
 import type { InitialPlayerState } from "../managements/useBattleState";
 import { useBattle } from "../managements/battleFlowManage";
 import { PlayerBattleProvider } from "./PlayerBattleContext";

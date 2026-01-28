@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { usePlayer } from "../../../contexts/PlayerContext";
-import type { MagicStones } from "../../../domain/item_equipment/type/ItemTypes";
+import type { MagicStones } from '@/types/itemTypes';
 import {
   calculateMagicStoneTotal,
   calculateStonesToConsume,
 } from "../../../domain/camps/logic/shopLogic";
 
 const ExchangeTab = () => {
-  const { playerData, addGold, updatePlayerData } = usePlayer();
+  const { playerData, addGold, updateBaseCampMagicStones } = usePlayer();
   const [exchangeAmount, setExchangeAmount] = useState<number>(0);
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -36,13 +36,8 @@ const ExchangeTab = () => {
       return;
     }
 
-    // Update player's magic stones
-    updatePlayerData({
-      resources: {
-        ...playerData.resources,
-        baseCampMagicStones: result.newStones,
-      },
-    });
+    // Update player's magic stones (via ResourceContext for header sync)
+    updateBaseCampMagicStones(result.newStones);
 
     // Add gold (actual value consumed, may be slightly more than requested)
     addGold(result.actualValue, true);
@@ -63,12 +58,7 @@ const ExchangeTab = () => {
       return;
     }
 
-    updatePlayerData({
-      resources: {
-        ...playerData.resources,
-        baseCampMagicStones: result.newStones,
-      },
-    });
+    updateBaseCampMagicStones(result.newStones);
     addGold(result.actualValue, true);
 
     showNotification(`Exchanged for ${result.actualValue} G!`);
@@ -90,12 +80,7 @@ const ExchangeTab = () => {
       [type]: stones[type] - 1,
     };
 
-    updatePlayerData({
-      resources: {
-        ...playerData.resources,
-        baseCampMagicStones: newStones,
-      },
-    });
+    updateBaseCampMagicStones(newStones);
     addGold(value, true);
 
     showNotification(`Exchanged for ${value} G!`);

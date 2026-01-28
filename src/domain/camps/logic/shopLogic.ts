@@ -1,33 +1,10 @@
 // Shop transaction logic
 
-import { type Item, type ItemRarity, type MagicStones } from "../../item_equipment/type/ItemTypes";
-import { createItemInstance } from "../../item_equipment/logic/createItem";
-import type { ShopItem, EquipmentPackConfig } from "../types/ShopTypes";
-import { getShopItemById, getEquipmentPackById } from "../data/ShopData";
-import type { EquipmentSlot } from "../../item_equipment/type/EquipmentType";
-import { EQUIPMENT_TEMPLATES } from "../../item_equipment/data/EquipmentData";
-/**
- * Equipment slots for pack generation
- */
-const EQUIPMENT_SLOTS: EquipmentSlot[] = [
-  "weapon",
-  "armor",
-  "helmet",
-  "boots",
-  "accessory1",
-  "accessory2",
-];
-
-/**
- * Sell prices by rarity
- */
-const RARITY_SELL_PRICES: Record<ItemRarity, number> = {
-  common: 50,
-  uncommon: 100,
-  rare: 150,
-  epic: 400,
-  legendary: 1000,
-};
+import type { Item, ItemRarity, MagicStones } from '@/types/itemTypes';
+import { generateConsumableFromData, generateEquipmentItem } from "../../item_equipment/logic/generateItem";
+import { EQUIPMENT_SLOTS } from "../../../constants/itemConstants";
+import type { EquipmentPackConfig, ShopListing } from '@/types/campTypes';
+import { getEquipmentPackById, resolveShopListing } from "../data/ShopData";
 
 /**
  * Check if player can afford an item
@@ -47,50 +24,6 @@ export function hasInventorySpace(
   return currentCapacity + itemCount <= maxCapacity;
 }
 
-/**
- * Create consumable item from shop item
- */
-export function createConsumableItem(shopItem: ShopItem): Item {
-  // Include heal amount in description for runtime use
-  const description = shopItem.healAmount
-    ? `${shopItem.description} (Heals ${shopItem.healAmount} HP)`
-    : shopItem.description;
-
-  return createItemInstance(shopItem.id, {
-    typeId: shopItem.id,
-    name: shopItem.name,
-    description: description,
-    itemType: "consumable",
-    type: shopItem.icon,
-    rarity: "common",
-    sellPrice: Math.floor(shopItem.price * 0.5),
-    canSell: true,
-    canDiscard: true,
-    stackable: true,
-    stackCount: 1,
-    maxStack: 99,
-  });
-}
-
-/**
- * Create teleport item from shop item
- */
-export function createTeleportItem(shopItem: ShopItem): Item {
-  return createItemInstance(shopItem.id, {
-    typeId: shopItem.id,
-    name: shopItem.name,
-    description: shopItem.description,
-    itemType: "key",
-    type: shopItem.icon,
-    rarity: "uncommon",
-    sellPrice: Math.floor(shopItem.price * 0.5),
-    canSell: true,
-    canDiscard: true,
-    stackable: true,
-    stackCount: 1,
-    maxStack: 10,
-  });
-}
 
 /**
  * Roll rarity based on pack probabilities
@@ -105,31 +38,6 @@ function rollRarity(pack: EquipmentPackConfig): ItemRarity {
   if ((cumulative += probs.rare) > roll) return "rare";
   if ((cumulative += probs.epic) > roll) return "epic";
   return "legendary";
-}
-
-/**
- * Generate equipment from a slot and rarity
- */
-function generateEquipmentItem(slot: EquipmentSlot, rarity: ItemRarity): Item {
-  const template = EQUIPMENT_TEMPLATES[slot][rarity];
-
-  return createItemInstance(`${slot}_${rarity}`, {
-    typeId: `${slot}_${rarity}`,
-    name: template.name,
-    description: `A ${rarity} ${slot} piece of equipment.`,
-    itemType: "equipment",
-    type: template.icon,
-    equipmentSlot: slot,
-    rarity: rarity,
-    quality: "normal",
-    level: 0,
-    durability: 100,
-    maxDurability: 100,
-    sellPrice: RARITY_SELL_PRICES[rarity],
-    canSell: true,
-    canDiscard: true,
-    effects: [],
-  });
 }
 
 /**
@@ -207,21 +115,18 @@ export function calculateStonesToConsume(
 }
 
 /**
- * Get item by shop ID and create instance
+ * Purchase an item from a ShopListing
+ * Creates an Item instance from ConsumableItemData
  */
-export function purchaseShopItem(shopItemId: string): Item | null {
-  const shopItem = getShopItemById(shopItemId);
-  if (!shopItem) return null;
+export function purchaseItem(listing: ShopListing): Item | null {
+  return generateConsumableFromData(listing.itemTypeId);
+}
 
-  if (shopItem.category === "consumable") {
-    return createConsumableItem(shopItem);
-  } else if (shopItem.category === "teleport") {
-    return createTeleportItem(shopItem);
-  }
-  else if (shopItem.category === "battleItem") {
-    // return createEquipemnt(); Not implemented.
-    return null;
-  }
-
-  return null;
+/**
+ * Get the price for a ShopListing
+ * Returns undefined if the listing cannot be resolved
+ */
+export function getListingPrice(listing: ShopListing): number | undefined {
+  const resolved = resolveShopListing(listing);
+  return resolved?.price;
 }

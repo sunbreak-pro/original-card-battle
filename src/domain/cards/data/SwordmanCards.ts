@@ -1,4 +1,4 @@
-import type { Card } from "../type/cardType";
+import type { Card } from '@/types/cardTypes';
 
 export const SWORDSMAN_CARDS: Record<string, Card> = {
   sw_001: {

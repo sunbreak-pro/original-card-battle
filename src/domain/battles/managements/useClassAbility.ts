@@ -11,11 +11,11 @@
  */
 
 import { useState, useCallback } from "react";
-import type { Card } from "../../cards/type/cardType";
+import type { Card } from '@/types/cardTypes';
 import type {
   ClassAbilityState,
   SwordEnergyState,
-} from "../../characters/type/classAbilityTypes";
+} from '@/types/characterTypes';
 import type {
   ClassAbilitySystem,
   DamageModifier,

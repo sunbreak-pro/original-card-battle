@@ -1,7 +1,7 @@
 // ItemDetailPanel Component - Displays detailed information about selected item
 
 import React from "react";
-import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
+import type { Item } from '@/types/itemTypes';
 import "../../css/camps/Storage.css";
 interface ItemDetailPanelProps {
   item: Item | null;

@@ -22,7 +22,8 @@
       "WebSearch",
       "Bash(xargs:*)",
       "Bash(comm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

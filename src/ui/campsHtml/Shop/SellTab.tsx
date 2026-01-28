@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { usePlayer } from "../../../contexts/PlayerContext";
 import { useInventory } from "../../../contexts/InventoryContext";
-import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
+import type { Item } from '@/types/itemTypes';
 import { calculateSellPrice } from "../../../domain/camps/logic/shopLogic";
 
 const SellTab = () => {

@@ -1,6 +1,6 @@
 // src/ui/cardUI/CardComponent.tsx
 import React from "react";
-import type { Card, Depth } from "../../domain/cards/type/cardType";
+import type { Card, Depth } from '@/types/cardTypes';
 import { calculateEffectivePower } from "../../domain/cards/state/card";
 
 interface CardComponentProps {

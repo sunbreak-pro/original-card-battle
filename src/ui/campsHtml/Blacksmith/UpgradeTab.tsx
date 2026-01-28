@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { usePlayer } from "../../../contexts/PlayerContext";
-import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
-import { calculateMagicStoneValue } from "../../../domain/item_equipment/type/ItemTypes";
-import type { EquipmentQuality } from "../../../domain/item_equipment/type/EquipmentType";
-import type { QualityUpOption } from "../../../domain/camps/types/BlacksmithTypes";
+import type { Item } from '@/types/itemTypes';
+import { calculateMagicStoneValue } from "../../../domain/item_equipment/logic/itemUtils";
+import type { EquipmentQuality } from '@/types/itemTypes';
+import type { QualityUpOption } from '@/types/campTypes';
 import {
   QUALITY_NAMES,
   QUALITY_COLORS,
+} from "../../../constants/campConstants";
+import {
   MAX_EQUIPMENT_LEVEL,
   getNextQuality,
-} from "../../../domain/camps/types/BlacksmithTypes";
+} from "../../../domain/camps/logic/blacksmithUtils";
 import { QUALITY_UP_OPTIONS } from "../../../domain/camps/data/BlacksmithData";
 import {
   canLevelUpgrade,

@@ -10,7 +10,7 @@ import {
   isBossEnemy,
   getEnemyStats,
 } from "../../../domain/camps/data/EnemyEncyclopediaData";
-import type { EnemyFilterOptions } from "../../../domain/camps/types/LibraryTypes";
+import type { EnemyFilterOptions } from '@/types/campTypes';
 
 export const EnemyEncyclopediaTab: React.FC = () => {
   const [filters, setFilters] = useState<EnemyFilterOptions>({

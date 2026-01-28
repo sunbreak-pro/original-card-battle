@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from "react";
-import type { LibraryTab } from "../../../domain/camps/types/LibraryTypes";
+import type { LibraryTab } from '@/types/campTypes';
 import { useGameState } from "../../../contexts/GameStateContext";
 import { CardEncyclopediaTab } from "./CardEncyclopediaTab";
 import { EnemyEncyclopediaTab } from "./EnemyEncyclopediaTab";

@@ -1,14 +1,13 @@
-import type { BuffDebuffMap } from "../type/baffType";
-import { BUFF_EFFECTS } from "../data/buffData";
-import type { BuffDebuffType } from "../type/baffType";
+import type { BuffDebuffMap, BuffDebuffType } from '@/types/battleTypes';
+import { BUFF_EFFECTS } from "@/constants/data/battles/buffData";
 import {
-  BASE_CRIT_RATE,
-  MAX_CRIT_RATE,
-  BASE_HIT_RATE,
-  MAX_HIT_RATE,
-  CURSE_HEALING_MULTIPLIER,
-  OVER_CURSE_HEALING_MULTIPLIER,
-  FIRE_FIELD_BONUS_MULTIPLIER,
+    BASE_CRIT_RATE,
+    MAX_CRIT_RATE,
+    BASE_HIT_RATE,
+    MAX_HIT_RATE,
+    CURSE_HEALING_MULTIPLIER,
+    OVER_CURSE_HEALING_MULTIPLIER,
+    FIRE_FIELD_BONUS_MULTIPLIER,
 } from "../../../constants";
 
 export function attackBuffDebuff(buffDebuffs: BuffDebuffMap): number {

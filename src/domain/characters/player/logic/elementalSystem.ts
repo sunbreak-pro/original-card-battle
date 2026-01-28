@@ -18,12 +18,12 @@
  * - Light: Cleanse, heal
  */
 
-import type { Card } from "../../../cards/type/cardType";
-import type { ElementalState, ElementType, ResonanceLevel } from "../../type/classAbilityTypes";
-import { createInitialElemental } from "../../type/classAbilityTypes";
+import type { Card } from '@/types/cardTypes';
+import type { ElementalState, ElementType, ResonanceLevel } from '@/types/characterTypes';
+import { createInitialElemental } from '../../logic/classAbilityUtils';
 import type { ClassAbilitySystem, DamageModifier } from "../../classAbility/classAbilitySystem";
 import { DEFAULT_DAMAGE_MODIFIER } from "../../classAbility/classAbilitySystem";
-import type { BuffDebuffType } from "../../../battles/type/baffType";
+import type { BuffDebuffType } from '@/types/battleTypes';
 import { MAX_RESONANCE_LEVEL, RESONANCE_MULTIPLIER } from "../../../../constants";
 
 // ============================================================

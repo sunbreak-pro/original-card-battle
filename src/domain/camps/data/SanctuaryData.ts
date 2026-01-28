@@ -1,6 +1,6 @@
 // Sanctuary skill tree data
 
-import type { SkillNode } from "../types/SanctuaryTypes";
+import type { SkillNode } from '@/types/campTypes';
 
 /**
  * Complete skill tree data

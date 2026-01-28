@@ -1,5 +1,5 @@
-import type { Card, MasteryLevel } from "../type/cardType";
-import { MASTERY_THRESHOLDS } from "../type/cardType";
+import type { Card, MasteryLevel } from '@/types/cardTypes';
+import { MASTERY_THRESHOLDS } from '@/constants/cardConstants';
 export type MasteryStore = Map<string, number>;
 
 export function createMasteryStore(): MasteryStore {

@@ -1,5 +1,5 @@
 import React from "react";
-import type { Item } from "../../domain/item_equipment/type/ItemTypes";
+import type { Item } from '@/types/itemTypes';
 import "../css/pages/battle/battle-modals.css";
 
 interface UseItemModalProps {

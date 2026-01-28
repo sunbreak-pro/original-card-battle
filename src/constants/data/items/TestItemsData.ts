@@ -1,8 +1,8 @@
 // Test Items Data - For testing Storage UI
 // These items will be removed or replaced with real items later
 
-import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
-import { createItemInstance } from "../../../domain/item_equipment/type/ItemTypes";
+import type { Item } from "@/types/itemTypes";
+import { createItemInstance } from "../../../domain/item_equipment/logic/generateItem";
 
 // Storage Test Items (5 items)
 export const STORAGE_TEST_ITEMS: Item[] = [

@@ -5,9 +5,8 @@
  * sanctuary configuration, and shop pricing.
  */
 
-import type { EquipmentQuality } from "../domain/item_equipment/type/EquipmentType";
-import type { ItemRarity } from "../domain/item_equipment/type/ItemTypes";
-import type { SanctuaryEffects } from "../domain/camps/types/SanctuaryTypes";
+import type { EquipmentQuality } from '@/types/itemTypes';
+import type { SanctuaryEffects } from '@/types/campTypes';
 
 // ============================================================
 // Blacksmith Constants
@@ -106,19 +105,6 @@ export const SANCTUARY_CONSTANTS = {
     3: 3,
   } as const,
 } as const;
-
-// ============================================================
-// Shop Constants
-// ============================================================
-
-/** Sell prices by item rarity */
-export const RARITY_SELL_PRICES: Record<ItemRarity, number> = {
-  common: 50,
-  uncommon: 100,
-  rare: 150,
-  epic: 400,
-  legendary: 1000,
-};
 
 // ============================================================
 // Capacity Constants

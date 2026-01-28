@@ -1,7 +1,7 @@
 // DeleteModal Component - Confirmation modal for item deletion
 
 import React from "react";
-import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
+import type { Item } from '@/types/itemTypes';
 import "../../css/camps/DeleteModal.css";
 
 interface DeleteModalProps {

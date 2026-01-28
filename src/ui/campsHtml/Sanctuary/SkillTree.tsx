@@ -3,9 +3,9 @@
 import type {
   SkillNode as SkillNodeType,
   NodeStatus,
-  CharacterClass,
-} from "../../../domain/camps/types/SanctuaryTypes";
-import type { SanctuaryProgress } from "../../../domain/camps/types/CampTypes";
+  CharacterClassForSanctuary as CharacterClass,
+  SanctuaryProgress,
+} from '@/types/campTypes';
 import {
   SKILL_TREE_NODES,
   getNodeById,

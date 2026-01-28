@@ -1,8 +1,8 @@
 // MapNode - Individual node component for the dungeon map
 
 import { useMemo } from "react";
-import type { DungeonNode } from "../../domain/dungeon/types/DungeonTypes";
-import { NODE_TYPE_CONFIG } from "../../domain/dungeon/types/DungeonTypes";
+import type { DungeonNode } from '@/types/dungeonTypes';
+import { NODE_TYPE_CONFIG } from "../../constants/dungeonConstants";
 
 interface MapNodeProps {
   node: DungeonNode;

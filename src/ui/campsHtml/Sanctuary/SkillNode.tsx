@@ -1,7 +1,7 @@
 // SkillNode component - individual node in skill tree
 
 import { useCallback } from "react";
-import type { SkillNode as SkillNodeType, NodeStatus } from "../../../domain/camps/types/SanctuaryTypes";
+import type { SkillNode as SkillNodeType, NodeStatus } from '@/types/campTypes';
 
 interface SkillNodeProps {
   node: SkillNodeType;

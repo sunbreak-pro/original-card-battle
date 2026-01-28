@@ -1,4 +1,4 @@
-import type { EnemyDefinition } from "../../../../domain/characters/type/enemyType";
+import type { EnemyDefinition } from "@/types/characterTypes";
 
 export const CORRUPTED_HOUND: EnemyDefinition = {
   id: "depth1_hound",

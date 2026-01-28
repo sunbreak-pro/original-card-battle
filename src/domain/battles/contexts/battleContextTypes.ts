@@ -2,13 +2,12 @@
 // Defines the interfaces for the three split battle contexts
 
 import type { RefObject } from "react";
-import type { Card } from "../../cards/type/cardType";
-import type { SwordEnergyState } from "../../characters/type/classAbilityTypes";
-import type { BuffDebuffMap } from "../type/baffType";
-import type { EnemyBattleState } from "../../characters/type/enemyType";
-import type { EnemyDefinition, EnemyAction } from "../../characters/type/enemyType";
-import type { CharacterClass } from "../../characters/type/baseTypes";
-import type { PhaseQueue } from "../type/phaseType";
+import type { Card } from '@/types/cardTypes';
+import type { SwordEnergyState } from '@/types/characterTypes';
+import type { BuffDebuffMap } from '@/types/battleTypes';
+import type { EnemyBattleState, EnemyDefinition, EnemyAction } from '@/types/characterTypes';
+import type { CharacterClass } from '@/types/characterTypes';
+import type { PhaseQueue } from '@/types/battleTypes';
 
 // ========================================================================
 // Immutable Snapshot Types (for cross-context communication)

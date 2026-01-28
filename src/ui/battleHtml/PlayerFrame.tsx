@@ -1,6 +1,6 @@
 import React from "react";
-import type { BuffDebuffMap } from "../../domain/battles/type/baffType";
-import type { SwordEnergyState } from "../../domain/characters/player/logic/swordEnergySystem";
+import type { BuffDebuffMap } from '@/types/battleTypes';
+import type { SwordEnergyState } from '@/types/characterTypes';
 import StatusEffectDisplay from "../componentsHtml/BuffEffect";
 import { GUARD_BAR_DISPLAY_MAX } from "../../constants";
 

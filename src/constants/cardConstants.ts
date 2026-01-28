@@ -5,8 +5,8 @@
  * magic multipliers, rarity colors, and category names.
  */
 
-import type { CardCategory, MasteryLevel, Rarity } from "../domain/cards/type/cardType";
-import type { Depth } from "../domain/camps/types/CampTypes";
+import type { CardCategory, MasteryLevel, Rarity } from '@/types/cardTypes';
+import type { Depth } from '@/types/campTypes';
 
 // ============================================================
 // Magic & Mastery Constants

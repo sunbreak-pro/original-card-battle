@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useGameState } from "../../../contexts/GameStateContext";
-import type { BlacksmithTab } from "../../../domain/camps/types/BlacksmithTypes";
+import type { BlacksmithTab } from '@/types/campTypes';
 import UpgradeTab from "./UpgradeTab";
 import RepairTab from "./RepairTab";
 import DismantleTab from "./DismantleTab";

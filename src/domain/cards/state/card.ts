@@ -1,5 +1,5 @@
-import type { Card, MasteryLevel } from "../type/cardType";
-import { MASTERY_THRESHOLDS } from "../type/cardType";
+import type { Card, MasteryLevel } from '@/types/cardTypes';
+import { MASTERY_THRESHOLDS } from '@/constants/cardConstants';
 
 export function calculateEffectivePower(card: Card): number {
   if (!card.baseDamage) return 0;
@@ -38,8 +38,8 @@ export function canPlayCard(
   return isPlayerTurn && card.cost <= currentEnergy;
 }
 
-import type { BuffDebuffState } from "../../battles/type/baffType";
-import { createBuffState } from "../../battles/type/baffType";
+import type { BuffDebuffState } from '@/types/battleTypes';
+import { createBuffState } from '../../battles/logic/buffLogic';
 
 export interface CardEffectResult {
   damageToEnemy?: number;

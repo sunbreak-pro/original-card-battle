@@ -5,10 +5,10 @@ import type {
   NodeStatus,
   UnlockResult,
   SanctuaryEffects,
-  CharacterClass,
-} from "../types/SanctuaryTypes";
-import { DEFAULT_SANCTUARY_EFFECTS } from "../types/SanctuaryTypes";
-import type { SanctuaryProgress } from "../types/CampTypes";
+  SanctuaryProgress,
+} from '@/types/campTypes';
+import type { CharacterClass } from '@/types/characterTypes';
+import { DEFAULT_SANCTUARY_EFFECTS } from '@/constants/campConstants';
 import { SKILL_TREE_NODES, getNodeById } from "../data/SanctuaryData";
 
 /**

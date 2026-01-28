@@ -1,7 +1,7 @@
 import { createRef } from "react";
-import type { EnemyBattleState, EnemyDefinition } from "../../characters/type/enemyType";
-import { generateEnemyInstanceId } from "../../characters/type/enemyType";
-import { createEmptyBuffDebuffMap } from "../../characters/type/baseTypes";
+import type { EnemyBattleState, EnemyDefinition } from '@/types/characterTypes';
+import { generateEnemyInstanceId } from '../../characters/logic/enemyUtils';
+import { createEmptyBuffDebuffMap } from '../../characters/logic/characterUtils';
 import { GUARD_INIT_MULTIPLIER } from "../../../constants";
 
 /**

@@ -2,12 +2,12 @@
 
 import React, { createContext, useContext, type ReactNode } from "react";
 import { usePlayer } from "./PlayerContext";
-import type { Item } from "../domain/item_equipment/type/ItemTypes";
-import type { EquipmentSlot } from "../domain/item_equipment/type/EquipmentType";
+import type { Item } from '@/types/itemTypes';
+import type { EquipmentSlot } from '@/types/itemTypes';
 import type {
   MoveDirection,
   MoveResult,
-} from "../domain/camps/types/StorageTypes";
+} from '@/types/campTypes';
 
 /**
  * InventoryContext value

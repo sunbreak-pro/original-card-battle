@@ -16,25 +16,25 @@ import type {
   PlayerData,
   Difficulty,
   LivesSystem,
-} from "../domain/characters/type/playerTypes";
+  CharacterClass,
+} from "@/types/characterTypes";
+import type { MagicStones } from "@/types/itemTypes";
 import {
   createLivesSystem,
   decreaseLives as decreaseLivesHelper,
   isGameOver as isGameOverHelper,
-} from "../domain/characters/type/playerTypes";
-import type { CharacterClass } from "../domain/characters/type/baseTypes";
-import type { MagicStones } from "../domain/item_equipment/type/ItemTypes";
+} from "../domain/characters/logic/playerUtils";
 import {
   Swordman_Status,
   Mage_Status,
   Summon_Status,
-} from "../domain/characters/player/data/PlayerData";
-import { getCharacterClassInfo } from "../domain/characters/player/data/CharacterClassData";
+} from "../constants/data/characters/PlayerData";
+import { getCharacterClassInfo } from "@/constants/data/characters/CharacterClassData";
 import {
   STORAGE_TEST_ITEMS,
   INVENTORY_TEST_ITEMS,
   EQUIPPED_TEST_ITEMS,
-} from "../domain/item_equipment/data/TestItemsData";
+} from "../constants/data/items/TestItemsData";
 import { useResources } from "./ResourceContext";
 import {
   STORAGE_MAX_CAPACITY,
@@ -123,6 +123,7 @@ interface PlayerContextValue {
   addGold: (amount: number, toBaseCamp?: boolean) => void;
   useGold: (amount: number) => boolean;
   addMagicStones: (stones: Partial<MagicStones>, toBaseCamp?: boolean) => void;
+  updateBaseCampMagicStones: (newStones: MagicStones) => void;
   useMagicStones: (value: number) => boolean;
   transferExplorationResources: (survivalMultiplier: number) => void;
   resetExplorationResources: () => void;
@@ -430,6 +431,19 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   /**
+   * Set baseCamp magic stones directly (delegated to ResourceContext)
+   * Used by ExchangeTab when converting stones to gold
+   */
+  const updateBaseCampMagicStones = (newStones: MagicStones) => {
+    resourceContext.setBaseCampMagicStones(newStones);
+    // Sync player state
+    setPlayerState((prev) => ({
+      ...prev,
+      baseCampMagicStones: newStones,
+    }));
+  };
+
+  /**
    * Use magic stones (delegated to ResourceContext)
    */
   const useMagicStones = (value: number): boolean => {
@@ -611,7 +625,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    */
   const updatePlayerData = (updates: Partial<PlayerData>) => {
     setPlayerState((prev) => {
-      let updated = { ...prev };
+      const updated = { ...prev };
 
       // Update persistent data
       if (updates.persistent) {
@@ -713,6 +727,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         addGold,
         useGold,
         addMagicStones,
+        updateBaseCampMagicStones,
         useMagicStones,
         transferExplorationResources,
         resetExplorationResources,

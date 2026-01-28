@@ -1,7 +1,7 @@
 // Quest template definitions for the Guild facility
 // Daily and weekly quests with procedural generation
 
-import type { Quest, QuestObjective, QuestReward } from "../../../domain/camps/types/GuildTypes";
+import type { Quest, QuestObjective, QuestReward } from "@/types/campTypes";
 
 /**
  * Quest template for procedural generation

@@ -1,9 +1,9 @@
 // Soul acquisition and management system
 
-import type { SanctuaryProgress } from "../types/CampTypes";
-import { SANCTUARY_CONSTANTS } from "../types/SanctuaryTypes";
+import type { SanctuaryProgress } from '@/types/campTypes';
+import { SANCTUARY_CONSTANTS } from '@/constants/campConstants';
 import { applySoulMultiplier } from "./sanctuaryLogic";
-import type { MagicStones } from "../../item_equipment/type/ItemTypes";
+import type { MagicStones } from '@/types/itemTypes';
 
 /**
  * Enemy types for soul calculation

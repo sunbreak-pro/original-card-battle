@@ -4,7 +4,7 @@ import { useCallback, useMemo, useEffect } from "react";
 import { useGameState } from "../../contexts/GameStateContext";
 import { useDungeonRun } from "./DungeonRunContext";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
-import { DEPTH_DISPLAY_INFO } from "../../domain/dungeon/types/DungeonTypes";
+import { DEPTH_DISPLAY_INFO } from "../../constants/dungeonConstants";
 import {
   getNodesByRow,
   getConnectionLines,

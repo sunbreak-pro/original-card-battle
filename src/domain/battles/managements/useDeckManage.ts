@@ -5,12 +5,12 @@
  */
 
 import { useReducer, useRef, useEffect, useState, useCallback } from "react";
-import type { Card } from "../../cards/type/cardType";
+import type { Card } from '@/types/cardTypes';
 import { deckReducer, type DeckState } from "../../cards/decks/deckReducter";
 import { createInitialDeck, drawCards, shuffleArray } from "../../cards/decks/deck";
 import { useCardAnimation } from "../../../ui/componentsHtml/useCardAnimation";
 import { SWORDSMAN_CARDS_ARRAY } from "../../cards/data/SwordmanCards";
-import { INITIAL_DECK_COUNTS } from "../data/initialDeckConfig";
+import { INITIAL_DECK_COUNTS } from "@/constants/data/battles/initialDeckConfig";
 
 // Get the return type of useCardAnimation
 type CardAnimationReturn = ReturnType<typeof useCardAnimation>;

@@ -5,8 +5,8 @@
  * stats, descriptions, unique mechanics, and starter decks.
  */
 
-import type { CharacterClass } from "../../../domain/characters/type/baseTypes";
-import type { Card } from "../../../domain/cards/type/cardType";
+import type { CharacterClass } from "@/types/characterTypes";
+import type { Card } from "@/types/cardTypes";
 import { SWORDSMAN_CARDS } from "../../../domain/cards/data/SwordmanCards";
 import { MAGE_CARDS } from "../../../domain/cards/data/mageCards";
 import { INITIAL_DECK_BY_CLASS } from "../battles/initialDeckConfig";

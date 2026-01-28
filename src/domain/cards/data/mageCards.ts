@@ -5,7 +5,7 @@
  * Cards feature the element property for the resonance system.
  */
 
-import type { Card } from "../type/cardType";
+import type { Card } from '@/types/cardTypes';
 
 export const MAGE_CARDS: Record<string, Card> = {
   // ============================================================

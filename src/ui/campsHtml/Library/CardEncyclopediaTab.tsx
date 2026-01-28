@@ -9,7 +9,7 @@ import {
   createCardEncyclopediaEntries,
   getCardStats,
 } from "../../../domain/camps/data/CardEncyclopediaData";
-import type { CardFilterOptions } from "../../../domain/camps/types/LibraryTypes";
+import type { CardFilterOptions } from '@/types/campTypes';
 import { CardComponent } from "../../cardHtml/CardComponent";
 
 export const CardEncyclopediaTab: React.FC = () => {

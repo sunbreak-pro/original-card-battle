@@ -2,18 +2,16 @@ import { useState } from "react";
 import { usePlayer } from "../../../contexts/PlayerContext";
 import { useInventory } from "../../../contexts/InventoryContext";
 import {
-  CONSUMABLE_ITEMS,
-  TELEPORT_ITEMS,
+  getResolvedConsumableListings,
+  getResolvedTeleportListings,
   EQUIPMENT_PACKS,
+  type ResolvedShopListing,
 } from "../../../domain/camps/data/ShopData";
-import type {
-  ShopItem,
-  EquipmentPackConfig,
-} from "../../../domain/camps/types/ShopTypes";
+import type { EquipmentPackConfig } from '@/types/campTypes';
 import {
   canAfford,
   hasInventorySpace,
-  purchaseShopItem,
+  purchaseItem,
   openEquipmentPack,
 } from "../../../domain/camps/logic/shopLogic";
 
@@ -24,15 +22,18 @@ const BuyTab = () => {
   const [notification, setNotification] = useState<string | null>(null);
   const [purchasedPack, setPurchasedPack] = useState<string[] | null>(null);
 
+  const consumableListings = getResolvedConsumableListings();
+  const teleportListings = getResolvedTeleportListings();
+
   const showNotification = (message: string) => {
     setNotification(message);
     setTimeout(() => setNotification(null), 2000);
   };
 
-  const handleBuyItem = (shopItem: ShopItem) => {
+  const handleBuyItem = (resolved: ResolvedShopListing) => {
     const totalGold =
       playerData.resources.baseCampGold + playerData.resources.explorationGold;
-    if (!canAfford(totalGold, shopItem.price)) {
+    if (!canAfford(totalGold, resolved.price)) {
       showNotification("Not enough gold!");
       return;
     }
@@ -42,15 +43,15 @@ const BuyTab = () => {
       return;
     }
 
-    const item = purchaseShopItem(shopItem.id);
+    const item = purchaseItem(resolved.listing);
     if (!item) {
       showNotification("Purchase failed!");
       return;
     }
 
-    if (useGold(shopItem.price)) {
+    if (useGold(resolved.price)) {
       addItemToInventory(item);
-      showNotification(`Purchased ${shopItem.name}!`);
+      showNotification(`Purchased ${resolved.data.name}!`);
     }
   };
 
@@ -77,10 +78,10 @@ const BuyTab = () => {
     }
   };
 
-  const renderShopItem = (item: ShopItem) => {
+  const renderListing = (resolved: ResolvedShopListing) => {
     const totalGold =
       playerData.resources.baseCampGold + playerData.resources.explorationGold;
-    const affordable = canAfford(totalGold, item.price);
+    const affordable = canAfford(totalGold, resolved.price);
     const hasSpace = hasInventorySpace(
       inventory.currentCapacity,
       inventory.maxCapacity,
@@ -88,18 +89,18 @@ const BuyTab = () => {
 
     return (
       <div
-        key={item.id}
+        key={resolved.data.typeId}
         className={`shop-item ${!affordable ? "unaffordable" : ""}`}
       >
-        <div className="item-icon">{item.icon}</div>
+        <div className="item-icon">{resolved.data.icon}</div>
         <div className="item-info">
-          <div className="item-name">{item.name}</div>
-          <div className="item-description">{item.description}</div>
+          <div className="item-name">{resolved.data.name}</div>
+          <div className="item-description">{resolved.data.description}</div>
         </div>
-        <div className="item-price">{item.price} G</div>
+        <div className="item-price">{resolved.price} G</div>
         <button
           className="buy-button"
-          onClick={() => handleBuyItem(item)}
+          onClick={() => handleBuyItem(resolved)}
           disabled={!affordable || !hasSpace}
         >
           Buy
@@ -161,14 +162,14 @@ const BuyTab = () => {
       <section className="shop-section">
         <h2 className="section-title">Consumables</h2>
         <div className="shop-items-grid">
-          {CONSUMABLE_ITEMS.map(renderShopItem)}
+          {consumableListings.map(renderListing)}
         </div>
       </section>
 
       <section className="shop-section">
         <h2 className="section-title">Teleport Stones</h2>
         <div className="shop-items-grid">
-          {TELEPORT_ITEMS.map(renderShopItem)}
+          {teleportListings.map(renderListing)}
         </div>
       </section>
 

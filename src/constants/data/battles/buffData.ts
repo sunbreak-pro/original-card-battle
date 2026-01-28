@@ -1,4 +1,4 @@
-import type { BuffDebuffType, BuffEffectDefinition } from "../../../domain/battles/type/baffType";
+import type { BuffDebuffType, BuffEffectDefinition } from "@/types/battleTypes";
 
 export const BUFF_EFFECTS: Record<BuffDebuffType, BuffEffectDefinition> = {
     bleed: { name: "Bleed", nameJa: "出血", value: 3, isDebuff: true, isPercentage: true, stackable: true, description: () => `${BUFF_EFFECTS.bleed.value}% maxHP damage per card use` },

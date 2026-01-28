@@ -10,8 +10,8 @@ import type {
   SaveResult,
   LoadResult,
   SaveMetadata,
-} from "../types/saveTypes";
-import { SAVE_KEY, SAVE_VERSION } from "../types/saveTypes";
+} from '@/types/saveTypes';
+import { SAVE_KEY, SAVE_VERSION } from '@/constants/saveConstants';
 
 /**
  * Save Manager object with all save/load operations

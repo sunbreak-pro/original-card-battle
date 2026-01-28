@@ -5,9 +5,9 @@
  * Used during the migration period to maintain backward compatibility.
  */
 
-import type { Card } from "../../cards/type/cardType";
+import type { Card } from '@/types/cardTypes';
 import type { DeckState } from "../../cards/decks/deckReducter";
-import type { EquipmentSlots } from "../../camps/types/StorageTypes";
+import type { EquipmentSlots } from '@/types/campTypes';
 import type React from "react";
 
 import type {
@@ -16,24 +16,22 @@ import type {
   PlayerPersistentData,
   PlayerData,
   PlayerBattleState,
-} from "../type/playerTypes";
+  CharacterClass,
+  EnemyDefinition,
+  EnemyBattleState,
+} from '@/types/characterTypes';
 
 import {
   createEmptyMagicStones,
   createDefaultExplorationLimit,
   createDefaultSanctuaryProgress,
-} from "../type/playerTypes";
+} from '../logic/playerUtils';
 
-import { createEmptyBuffDebuffMap } from "../type/baseTypes";
-import { createInitialClassAbility } from "../type/classAbilityTypes";
-import type { CharacterClass } from "../type/baseTypes";
+import { createEmptyBuffDebuffMap } from '../logic/characterUtils';
+import { createInitialClassAbility } from '../logic/classAbilityUtils';
 import { STORAGE_MAX_CAPACITY, INVENTORY_MAX_CAPACITY, EQUIPMENT_INVENTORY_MAX, GUARD_INIT_MULTIPLIER } from "../../../constants";
 
-import type {
-  EnemyDefinition,
-  EnemyBattleState,
-} from "../type/enemyType";
-import { generateEnemyInstanceId } from "../type/enemyType";
+import { generateEnemyInstanceId } from '../logic/enemyUtils';
 
 // ============================================================
 // Player Type Converters

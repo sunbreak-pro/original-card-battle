@@ -5,7 +5,7 @@
  */
 
 import React, { useMemo } from "react";
-import type { Card } from "../../domain/cards/type/cardType";
+import type { Card } from '@/types/cardTypes';
 import { CardComponent } from "../cardHtml/CardComponent";
 
 interface StarterDeckPreviewProps {

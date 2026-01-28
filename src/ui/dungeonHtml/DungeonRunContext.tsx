@@ -7,12 +7,12 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import type { Depth } from "../../domain/camps/types/CampTypes";
+import type { Depth } from '@/types/campTypes';
 import type {
   DungeonRun,
   DungeonNode,
   NodeCompletionResult,
-} from "../../domain/dungeon/types/DungeonTypes";
+} from '@/types/dungeonTypes';
 import {
   initializeDungeonRun,
   selectNode,

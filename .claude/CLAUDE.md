@@ -19,7 +19,7 @@ npm run preview      # Preview production build
 
 No test framework configured - verify manually in browser.
 
-**Stack:** React 19, TypeScript 5.9, Vite 7
+**Stack:** React 19.2, TypeScript 5.9, Vite 7
 
 ## Architecture
 
@@ -37,6 +37,29 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 | `InventoryContext`   | Items, equipment, cards in storage                                     |
 | `DungeonRunProvider` | Persists dungeon state across battle transitions                       |
 
+### Type System
+
+All types consolidated in `src/types/` with `@/types/*` path alias:
+
+```typescript
+// Import types
+import type { Card } from '@/types/cardTypes';
+import type { Player, Enemy } from '@/types/characterTypes';
+import type { BuffDebuffState } from '@/types/battleTypes';
+// Or barrel import
+import type { Card, Player, BuffDebuffState } from '@/types';
+```
+
+| File                | Contents                                      |
+| ------------------- | --------------------------------------------- |
+| `cardTypes.ts`      | Card, Rarity, CardCategory, Depth             |
+| `characterTypes.ts` | Player, Enemy, CharacterClass                 |
+| `battleTypes.ts`    | BuffDebuffType, DamageResult, BuffOwner       |
+| `itemTypes.ts`      | Item, Equipment, ConsumableEffect             |
+| `campTypes.ts`      | Shop, Guild, Blacksmith, Sanctuary types      |
+| `dungeonTypes.ts`   | DungeonNode, DungeonFloor                     |
+| `saveTypes.ts`      | SaveData, SaveResult                          |
+
 ### Battle System Flow
 
 ```
@@ -49,6 +72,15 @@ BattleScreen → useBattleOrchestrator → useBattleState
 
 **Buff ownership:** `appliedBy: 'player' | 'enemy' | 'environment'` - duration decreases only during applier's phase.
 
+### Shop/Item Data Flow
+
+```
+ShopListing (typeId) → ConsumableItemData (name/price/effect) → generateConsumableFromData() → Item
+```
+
+- `ConsumableItemData.ts` is the single source of truth for consumable items
+- `ShopListing` references items by `typeId`, not by duplicating data
+
 ### Screen Routing
 
 `character_select` → `camp` → facilities or `dungeon` → `dungeon_map` → `battle`
@@ -57,8 +89,9 @@ BattleScreen → useBattleOrchestrator → useBattleState
 
 ```
 src/
-├── constants/         # Constants mirroring domain folders (battle, camp, card, character, dungeon, save, UI)
-├── context/
+├── types/             # All type definitions (8 files, use @/types/*)
+├── constants/         # Constants only (no type definitions)
+├── contexts/          # React context providers
 ├── domain/            # Core business logic (see below)
 ├── ui/                # React components by screen area
 │   ├── animations/    # Animation hooks and engine
@@ -73,11 +106,11 @@ src/
 
 src/domain/
 ├── battles/       # Battle logic, calculators, phase execution, contexts
-├── camps/         # Camp facilities, contexts, shop/guild logic
+├── camps/         # Camp facilities, shop/guild logic
 ├── cards/         # Card data, deck management, card state
-├── characters/    # Player/enemy types, class abilities
+├── characters/    # Player/enemy data, class abilities
 ├── dungeon/       # Dungeon map generation, node logic
-├── item_equipment/# Items, equipment types and data
+├── item_equipment/# Items, equipment data and generation
 └── save/          # Save/load system
 ```
 
@@ -105,7 +138,7 @@ Two conflicting rules require careful handling:
 | `react-hooks/refs`                | No `ref.current` read/write during render | Use `useState` for render-time values |
 | `react-hooks/set-state-in-effect` | No `setState` in useEffect                | Move to render-time setState pattern  |
 
-**Render-time setState (推奨パターン):**
+**Render-time setState pattern:**
 
 ```typescript
 // Track previous value with useState, NOT useRef

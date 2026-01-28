@@ -9,7 +9,7 @@ export * from "./battles/initialDeckConfig";
 export * from "./battles/buffData";
 
 // Camp data
-export * from "./camps/ShopData";
+// ShopData migrated to domain/camps/data/ShopData.ts using ShopListing pattern
 export * from "./camps/SanctuaryData";
 export * from "./camps/BlacksmithData";
 export * from "./camps/QuestData";

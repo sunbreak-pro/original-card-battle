@@ -1,6 +1,6 @@
 // Promotion exam definitions for all character classes
-import type { CharacterClass } from "../../characters/type/baseTypes";
-import type { PromotionExam } from "../types/GuildTypes";
+import type { CharacterClass } from '@/types/characterTypes';
+import type { PromotionExam } from '@/types/campTypes';
 
 /**
  * Swordsman Promotion Exams

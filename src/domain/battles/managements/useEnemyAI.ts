@@ -11,9 +11,9 @@
  */
 
 import { useCallback } from "react";
-import type { EnemyDefinition, EnemyAction, EnemyBattleState } from "../../characters/type/enemyType";
-import type { BuffDebuffMap } from "../type/baffType";
-import type { BattleStats } from "../../characters/type/baseTypes";
+import type { EnemyDefinition, EnemyAction, EnemyBattleState } from '@/types/characterTypes';
+import type { BuffDebuffMap } from '@/types/battleTypes';
+import type { BattleStats } from '@/types/characterTypes';
 
 // Enemy AI logic
 import { determineEnemyAction } from "../../characters/enemy/logic/enemyAI";

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import type { Card } from "../../domain/cards/type/cardType";
-import type { MagicStones } from "../../domain/item_equipment/type/ItemTypes";
+import type { Card } from '@/types/cardTypes';
+import type { MagicStones } from '@/types/itemTypes';
 import type { EnemyType } from "../../domain/camps/logic/soulSystem";
 import { formatMagicStoneDrops } from "../../domain/camps/logic/soulSystem";
 import "../css/battle/VictoryScreen.css";

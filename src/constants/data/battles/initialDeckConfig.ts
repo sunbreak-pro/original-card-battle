@@ -3,7 +3,7 @@
  * Maps card type IDs to their initial counts
  */
 
-import type { CharacterClass } from "../../../domain/characters/type/baseTypes";
+import type { CharacterClass } from "@/types/characterTypes";
 
 /**
  * Initial deck configuration by class

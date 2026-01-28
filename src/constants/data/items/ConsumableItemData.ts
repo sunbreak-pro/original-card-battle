@@ -1,6 +1,6 @@
 // ConsumableItemData.ts - Registry of all consumable items and their effects
 
-import type { ConsumableItemData } from "../../../domain/item_equipment/type/ConsumableEffectTypes";
+import type { ConsumableItemData } from "@/types/itemTypes";
 
 /**
  * Registry of all consumable items with their effects
@@ -10,14 +10,27 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
   // ============================================================================
   // BATTLE-USABLE ITEMS
   // ============================================================================
-
+  healing_small_potion: {
+    typeId: "poor_healing_potion",
+    name: "Poor Healing Potion",
+    nameJa: "下級回復薬",
+    description: "Recovers 30 HP. A basic remedy for minor wounds.",
+    descriptionJa: "HPを30回復する。軽傷用の基本的な治療薬。",
+    effects: [{ type: "heal", value: 30 }],
+    usableContext: "battle",
+    icon: "🧪",
+    rarity: "common",
+    sellPrice: 25,
+    maxStack: 99,
+    shopPrice: 50,
+  },
   healing_potion: {
-    typeId: "healing_potion",
-    name: "Healing Potion",
-    nameJa: "回復薬",
+    typeId: "intermediate_healing_potion",
+    name: "Intermediate Healing Potion",
+    nameJa: "中級回復薬",
     description: "Restores 30 HP when consumed.",
     descriptionJa: "使用時にHPを30回復する。",
-    effects: [{ type: 'heal', value: 30 }],
+    effects: [{ type: 'heal', value: 60 }],
     usableContext: 'battle',
     icon: "🧪",
     rarity: 'common',
@@ -31,7 +44,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     nameJa: "上級回復薬",
     description: "Restores 60 HP when consumed.",
     descriptionJa: "使用時にHPを60回復する。",
-    effects: [{ type: 'heal', value: 60 }],
+    effects: [{ type: 'heal', value: 100 }],
     usableContext: 'battle',
     icon: "🧪",
     rarity: 'uncommon',

@@ -3,7 +3,7 @@ import { useGameState } from "../../contexts/GameStateContext";
 import type {
   FacilityType,
   GameScreen,
-} from "../../domain/camps/types/CampTypes";
+} from '@/types/campTypes';
 import FacilityHeader from "../componentsHtml/FacilityHeader";
 import "../css/camps/BaseCamp.css";
 interface FacilityCardProps {

@@ -1,7 +1,7 @@
 // Rumor definitions for the Guild facility
 // Temporary buffs purchased with magic stones that affect exploration
 
-import type { Rumor } from "../../../domain/camps/types/GuildTypes";
+import type { Rumor } from "@/types/campTypes";
 
 /**
  * All available rumors that can be purchased at the Guild

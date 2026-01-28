@@ -1,5 +1,5 @@
-import type { Card } from "../type/cardType";
-import type { SwordEnergyState } from "../../characters/player/logic/swordEnergySystem";
+import type { Card } from '@/types/cardTypes';
+import type { SwordEnergyState } from '@/types/characterTypes';
 import {
     consumeSwordEnergy,
     consumeAllSwordEnergy,

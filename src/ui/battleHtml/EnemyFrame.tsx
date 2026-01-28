@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import type {
   EnemyDefinition,
   EnemyAction,
-} from "../../domain/characters/type/enemyType";
-import type { BuffDebuffMap } from "../../domain/battles/type/baffType";
+} from '@/types/characterTypes';
+import type { BuffDebuffMap } from '@/types/battleTypes';
 import StatusEffectDisplay from "../componentsHtml/BuffEffect";
 import { determineEnemyAction } from "../../domain/characters/enemy/logic/enemyAI";
 import { GUARD_BAR_DISPLAY_MAX, ENERGY_ANIMATION } from "../../constants";

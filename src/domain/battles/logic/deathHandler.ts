@@ -1,7 +1,7 @@
 // Death Handler - Manages player death penalty system
 // With new Lives System: On death, lives decrease by 1 and souls are transferred 100%
 
-import type { PlayerData } from "../../characters/type/playerTypes";
+import type { PlayerData } from '@/types/characterTypes';
 
 /**
  * Death result with additional info for UI

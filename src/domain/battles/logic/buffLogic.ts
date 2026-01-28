@@ -1,5 +1,38 @@
-import { type BuffDebuffType, type BuffDebuffState, type BuffDebuffMap, type BuffOwner } from "../type/baffType";
-import { BUFF_EFFECTS } from "../data/buffData";
+import type { BuffDebuffType, BuffDebuffState, BuffDebuffMap, BuffOwner, CardBuffSpec } from '@/types/battleTypes';
+import { BUFF_EFFECTS } from "@/constants/data/battles/buffData";
+
+// ============================================================
+// Buff Query and Factory Functions (moved from baffType.ts)
+// ============================================================
+
+export function getBuffValue(type: BuffDebuffType): number {
+  return BUFF_EFFECTS[type].value;
+}
+
+export function isStackable(type: BuffDebuffType): boolean {
+  return BUFF_EFFECTS[type].stackable;
+}
+
+export function createBuffState(
+  buff: CardBuffSpec,
+  source?: string,
+  appliedBy: BuffOwner = 'environment'
+): BuffDebuffState {
+  const effectDef = BUFF_EFFECTS[buff.name];
+  return {
+    name: buff.name,
+    stacks: effectDef.stackable ? buff.stacks : 1,
+    duration: buff.duration,
+    value: effectDef.value,
+    isPermanent: buff.isPermanent ?? false,
+    source,
+    appliedBy,
+  };
+}
+
+// ============================================================
+// Buff Map Operations
+// ============================================================
 export const addOrUpdateBuffDebuff = (
   map: BuffDebuffMap,
   name: BuffDebuffState["name"],

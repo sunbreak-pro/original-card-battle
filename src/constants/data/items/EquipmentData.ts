@@ -1,5 +1,5 @@
-import type { ItemRarity } from "../../../domain/item_equipment/type/ItemTypes";
-import type { EquipmentSlot } from "../../../domain/item_equipment/type/EquipmentType";
+import type { ItemRarity } from "@/types/itemTypes";
+import type { EquipmentSlot } from "@/types/itemTypes";
 export const EquipmentData = {
 }
 export const EQUIPMENT_TEMPLATES: Record<

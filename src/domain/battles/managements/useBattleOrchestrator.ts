@@ -13,18 +13,18 @@
  */
 
 import { useState, useRef, useReducer, useEffect, useCallback, useMemo } from "react";
-import type { Card, Depth } from "../../cards/type/cardType";
-import type { EnemyDefinition } from "../../characters/type/enemyType";
-import type { PhaseQueue } from "../type/phaseType";
-import { createInitialSwordEnergy } from "../../characters/type/classAbilityTypes";
+import type { Card, Depth } from '@/types/cardTypes';
+import type { EnemyDefinition } from '@/types/characterTypes';
+import type { PhaseQueue } from '@/types/battleTypes';
+import { createInitialSwordEnergy } from '../../characters/logic/classAbilityUtils';
 
 // Deck management (IMMUTABLE ZONE - DO NOT MODIFY)
 import { deckReducer } from "../../cards/decks/deckReducter";
 import { createInitialDeck, shuffleArray } from "../../cards/decks/deck";
 import { SWORDSMAN_CARDS_ARRAY } from "../../cards/data/SwordmanCards";
 import { MAGE_CARDS_ARRAY } from "../../cards/data/mageCards";
-import { getInitialDeckCounts } from "../data/initialDeckConfig";
-import type { CharacterClass } from "../../characters/type/baseTypes";
+import { getInitialDeckCounts } from "@/constants/data/battles/initialDeckConfig";
+import type { CharacterClass } from '@/types/characterTypes';
 
 // Card mastery management
 import { applyMasteryToCards } from "../../cards/state/masteryManager";
@@ -661,7 +661,7 @@ export const useBattleOrchestrator = (
       return [];
     }
     return previewEnemyActions(currentEnemy, enemyHp, enemyMaxHp, phaseState.phaseCount + 1);
-  }, [currentEnemy, enemyHp, phaseState.phaseCount]);
+  }, [currentEnemy, enemyHp, enemyMaxHp, phaseState.phaseCount]);
 
   // ========================================================================
   // Return - Backward Compatible Interface

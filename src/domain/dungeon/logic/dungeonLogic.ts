@@ -1,6 +1,6 @@
 // Dungeon map generation and progression logic
 
-import type { Depth } from "../../camps/types/CampTypes";
+import type { Depth } from '@/types/dungeonTypes';
 import type {
   DungeonNode,
   DungeonFloor,
@@ -9,8 +9,8 @@ import type {
   NodeStatus,
   NodeCompletionResult,
   MapGenerationConfig,
-} from "../types/DungeonTypes";
-import { DEFAULT_MAP_CONFIG } from "../types/DungeonTypes";
+} from '@/types/dungeonTypes';
+import { DEFAULT_MAP_CONFIG } from '@/constants/dungeonConstants';
 
 /**
  * Generate a unique ID for nodes

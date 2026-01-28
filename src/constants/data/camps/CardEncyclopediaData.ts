@@ -6,8 +6,8 @@
  */
 
 import { SWORDSMAN_CARDS } from "../../../domain/cards/data/SwordmanCards";
-import type { Card } from "../../../domain/cards/type/cardType";
-import type { CardEncyclopediaEntry } from "../../../domain/camps/types/LibraryTypes";
+import type { Card } from "@/types/cardTypes";
+import type { CardEncyclopediaEntry } from "@/types/campTypes";
 
 /**
  * Get all available cards for encyclopedia

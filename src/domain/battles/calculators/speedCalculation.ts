@@ -1,4 +1,4 @@
-import type { BuffDebuffMap } from "../type/baffType";
+import type { BuffDebuffMap } from '@/types/battleTypes';
 import { BASE_PLAYER_SPEED } from "../../../constants";
 
 /**

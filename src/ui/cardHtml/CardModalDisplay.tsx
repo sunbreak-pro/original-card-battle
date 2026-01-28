@@ -1,5 +1,5 @@
 import React from "react";
-import type { Card, Depth } from "../../domain/cards/type/cardType";
+import type { Card, Depth } from '@/types/cardTypes';
 import { CardComponent } from "./CardComponent";
 import "../css/battle/BattleScreen.css";
 

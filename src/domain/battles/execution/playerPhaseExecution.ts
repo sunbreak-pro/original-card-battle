@@ -4,8 +4,8 @@
  * State updates are handled via callbacks in the main hook.
  */
 
-import type { BuffDebuffMap } from "../type/baffType";
-import type { Card } from "../../cards/type/cardType";
+import type { BuffDebuffMap } from '@/types/battleTypes';
+import type { Card } from '@/types/cardTypes';
 import {
     calculateStartPhaseHealing,
     calculateEndPhaseDamage,

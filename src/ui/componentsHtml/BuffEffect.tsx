@@ -1,9 +1,9 @@
 import { useState } from "react";
-import type { BuffDebuffMap } from "../../domain/battles/type/baffType";
+import type { BuffDebuffMap } from "@/types/battleTypes";
 import {
   BUFF_EFFECTS,
   BUFF_DEBUFF_ICONS,
-} from "../../domain/battles/data/buffData";
+} from "@/constants/data/battles/buffData";
 export interface StatusEffectDisplayProps {
   buffsDebuffs: BuffDebuffMap;
   theme: {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Card } from "../../domain/cards/type/cardType";
+import type { Card } from '@/types/cardTypes';
 import {
   animateAsync,
   Easing,

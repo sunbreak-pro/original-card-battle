@@ -10,7 +10,7 @@ import {
   getTipStats,
   CATEGORY_NAMES,
 } from "../../../domain/camps/data/GameTipsData";
-import type { TipCategory } from "../../../domain/camps/types/LibraryTypes";
+import type { TipCategory } from '@/types/campTypes';
 
 /**
  * Category icons

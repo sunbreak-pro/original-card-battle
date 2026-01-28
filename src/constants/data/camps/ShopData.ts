@@ -1,6 +1,23 @@
-// Shop inventory data for the Merchant's Exchange
+// Shop inventory data for the Merchant's Exchange (legacy)
+// This file is kept for reference but is no longer re-exported.
+// Active shop data lives in src/domain/camps/data/ShopData.ts
 
-import type { ShopItem } from "../../../domain/camps/types/ShopTypes";
+import type { ShopCategory } from "@/types/campTypes";
+
+/**
+ * Legacy ShopItem type (kept locally for backward compatibility of this file)
+ */
+interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: ShopCategory;
+  price: number;
+  stock?: number;
+  healAmount?: number;
+  returnChance?: number;
+}
 
 /**
  * Consumable items - Healing potions

@@ -1,5 +1,5 @@
-import type { BuffDebuffMap } from "../type/baffType";
-import type { EnemyDefinition } from "../../characters/type/enemyType";
+import type { BuffDebuffMap } from '@/types/battleTypes';
+import type { EnemyDefinition } from '@/types/characterTypes';
 import {
     calculateStartPhaseHealing,
     calculateEndPhaseDamage,

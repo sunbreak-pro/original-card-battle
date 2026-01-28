@@ -9,7 +9,7 @@ import React from "react";
 import type {
   PhaseQueue,
   PhaseActor,
-} from "../../domain/battles/type/phaseType";
+} from '@/types/battleTypes';
 import "../css/battle/TurnOrderIndicator.css";
 import { MAX_TURN_ORDER_DISPLAY } from "../../constants";
 

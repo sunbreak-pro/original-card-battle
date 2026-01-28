@@ -13,16 +13,16 @@
  */
 
 import { useCallback, type RefObject } from "react";
-import type { Card } from "../../cards/type/cardType";
-import type { BuffDebuffMap, BuffDebuffState } from "../type/baffType";
-import type { BattleStats } from "../../characters/type/baseTypes";
+import type { Card } from '@/types/cardTypes';
+import type { BuffDebuffMap, BuffDebuffState } from '@/types/battleTypes';
+import type { BattleStats } from '@/types/characterTypes';
 import type { DeckState } from "../../cards/decks/deckReducter";
 import type {
   CardExecutionResult,
   CardEffectPreview,
-} from "../type/cardExecutionTypes";
-import { createDefaultExecutionResult } from "../type/cardExecutionTypes";
-import type { SwordEnergyState } from "../../characters/type/classAbilityTypes";
+} from '@/types/battleTypes';
+import { createDefaultExecutionResult } from '../logic/cardExecutionLogic';
+import type { SwordEnergyState } from '@/types/characterTypes';
 
 // Card logic
 import { calculateCardEffect, canPlayCard as canPlayCardCheck, incrementUseCount } from "../../cards/state/card";

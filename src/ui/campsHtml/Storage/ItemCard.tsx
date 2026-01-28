@@ -1,7 +1,7 @@
 // ItemCard Component - Displays a single item in storage/inventory grid
 
 import React from "react";
-import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
+import type { Item } from '@/types/itemTypes';
 import "../../css/camps/Storage.css";
 
 interface ItemCardProps {

@@ -3,7 +3,7 @@
  * Battle System Ver 4.0
  */
 
-import type { EnemyAction, EnemyAIPattern } from "../../type/enemyType";
+import type { EnemyAction, EnemyAIPattern } from '@/types/characterTypes';
 import { determineEnemyAction } from "./enemyAI";
 
 /**

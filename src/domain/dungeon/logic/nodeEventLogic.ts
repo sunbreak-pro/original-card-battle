@@ -1,8 +1,8 @@
 // Node Event Logic (BF.2)
 // Handles rest, treasure, and event node interactions
 
-import type { Item } from "../../item_equipment/type/ItemTypes";
-import { createItemInstance } from "../../item_equipment/type/ItemTypes";
+import type { Item } from '@/types/itemTypes';
+import { generateConsumableFromData } from "../../item_equipment/logic/generateItem";
 
 /**
  * Result of a node event interaction
@@ -86,24 +86,10 @@ const TREASURE_LOOT_TABLE: TreasureLoot[] = [
   {
     weight: 15,
     description: "回復薬の詰め合わせ",
-    generate: () => ({
-      items: [
-        createItemInstance("potion_small", {
-          typeId: "potion_small",
-          name: "Small Healing Potion",
-          description: "Recovers 30 HP.",
-          itemType: "consumable",
-          type: "🧪",
-          rarity: "common",
-          sellPrice: 25,
-          canSell: true,
-          canDiscard: true,
-          stackable: true,
-          stackCount: 1,
-          maxStack: 99,
-        }),
-      ],
-    }),
+    generate: () => {
+      const potion = generateConsumableFromData("healing_potion");
+      return { items: potion ? [potion] : [] };
+    },
   },
   {
     weight: 10,
@@ -166,24 +152,10 @@ const RANDOM_EVENTS: RandomEvent[] = [
     weight: 25,
     title: "落とし物",
     descriptionFactory: () => "地面に落ちたポーションを見つけた。",
-    rewardFactory: () => ({
-      items: [
-        createItemInstance("potion_small", {
-          typeId: "potion_small",
-          name: "Small Healing Potion",
-          description: "Recovers 30 HP.",
-          itemType: "consumable",
-          type: "🧪",
-          rarity: "common",
-          sellPrice: 25,
-          canSell: true,
-          canDiscard: true,
-          stackable: true,
-          stackCount: 1,
-          maxStack: 99,
-        }),
-      ],
-    }),
+    rewardFactory: () => {
+      const potion = generateConsumableFromData("healing_potion");
+      return { items: potion ? [potion] : [] };
+    },
   },
   {
     weight: 20,

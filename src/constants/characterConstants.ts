@@ -5,10 +5,11 @@
  * class abilities, summon system, and elemental system.
  */
 
-import type { Difficulty } from "../domain/characters/type/playerTypes";
-import type { ResonanceLevel, ElementType } from "../domain/characters/type/classAbilityTypes";
-import type { BuffDebuffType } from "../domain/battles/type/baffType";
+import type { Difficulty } from '@/types/characterTypes';
+import type { ResonanceLevel, ElementType } from '@/types/characterTypes';
 import type { DamageModifier } from "../domain/characters/classAbility/classAbilitySystem";
+import type { ResonanceEffectConfig } from '@/types/characterTypes';
+export type { ResonanceEffectConfig } from '@/types/characterTypes';
 
 // ============================================================
 // Lives System Constants
@@ -66,18 +67,6 @@ export const RESONANCE_MULTIPLIER: Record<ResonanceLevel, number> = {
   1: 1.15,  // +15%
   2: 1.30,  // +30%
 };
-
-/** Resonance effect configuration */
-export interface ResonanceEffectConfig {
-  burn?: { stacks: number; duration: number };
-  freeze?: { duration: number };
-  stun?: { duration: number };
-  lifesteal?: number;
-  cleanse?: number;
-  heal?: number;
-  weakness?: { duration: number };
-  fieldBuff?: BuffDebuffType;
-}
 
 /** Resonance effects table by element and level */
 export const RESONANCE_EFFECTS: Record<ElementType, Record<1 | 2, ResonanceEffectConfig>> = {
