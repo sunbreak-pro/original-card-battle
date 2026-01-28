@@ -1,4 +1,5 @@
 import type { BuffDebuffMap } from "../type/baffType";
+import { BASE_PLAYER_SPEED } from "../../../constants";
 
 /**
  * Minimal interface for speed calculation
@@ -23,7 +24,7 @@ export interface SpeedBonus {
 }
 
 export function calculatePlayerSpeed(buffs: BuffDebuffMap): number {
-  let speed = 50;
+  let speed = BASE_PLAYER_SPEED;
 
   if (buffs.has("haste")) {
     const hasteBuff = buffs.get("haste")!;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
+import { usePlayer } from "../../../contexts/PlayerContext";
 import type { MagicStones } from "../../../domain/item_equipment/type/ItemTypes";
 import {
   calculateMagicStoneTotal,
@@ -77,7 +77,7 @@ const ExchangeTab = () => {
   // Exchange a single stone of a specific type
   const handleExchangeSingleStone = (
     type: keyof MagicStones,
-    value: number
+    value: number,
   ) => {
     if (stones[type] <= 0) {
       showNotification("No stones of this type!");
@@ -105,7 +105,7 @@ const ExchangeTab = () => {
     type: keyof MagicStones,
     label: string,
     value: number,
-    icon: string
+    icon: string,
   ) => {
     const count = stones[type];
     return (

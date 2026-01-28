@@ -12,8 +12,8 @@ import type {
   BattleMode,
   Depth,
   BattleConfig,
-} from "../types/CampTypes";
-import { saveManager } from "../../save/logic/saveManager";
+} from "../domain/camps/types/CampTypes";
+import { saveManager } from "../domain/save/logic/saveManager";
 
 /**
  * Game state interface
@@ -40,7 +40,7 @@ interface GameStateContextValue {
 }
 
 const GameStateContext = createContext<GameStateContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 /**

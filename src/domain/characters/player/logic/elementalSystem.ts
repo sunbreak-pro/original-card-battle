@@ -24,20 +24,7 @@ import { createInitialElemental } from "../../type/classAbilityTypes";
 import type { ClassAbilitySystem, DamageModifier } from "../../classAbility/classAbilitySystem";
 import { DEFAULT_DAMAGE_MODIFIER } from "../../classAbility/classAbilitySystem";
 import type { BuffDebuffType } from "../../../battles/type/baffType";
-
-// ============================================================
-// Constants
-// ============================================================
-
-/** Maximum resonance level */
-export const MAX_RESONANCE_LEVEL: ResonanceLevel = 2;
-
-/** Damage multiplier per resonance level */
-export const RESONANCE_MULTIPLIER: Record<ResonanceLevel, number> = {
-  0: 1.0,
-  1: 1.15,  // +15%
-  2: 1.30,  // +30%
-};
+import { MAX_RESONANCE_LEVEL, RESONANCE_MULTIPLIER } from "../../../../constants";
 
 // ============================================================
 // Resonance Effects

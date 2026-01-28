@@ -21,19 +21,7 @@ import type { Card } from "../../../cards/type/cardType";
 import type { SummonState, Summon, SummonType } from "../../type/classAbilityTypes";
 import { createInitialSummon } from "../../type/classAbilityTypes";
 import type { ClassAbilitySystem, DamageModifier } from "../../classAbility/classAbilitySystem";
-
-// ============================================================
-// Constants
-// ============================================================
-
-/** Maximum active summons */
-export const MAX_ACTIVE_SUMMONS = 3;
-
-/** Maximum bond level */
-export const MAX_BOND_LEVEL = 10;
-
-/** Bond level damage bonus per level */
-export const BOND_DAMAGE_BONUS_PER_LEVEL = 0.05; // 5% per level
+import { MAX_BOND_LEVEL, BOND_DAMAGE_BONUS_PER_LEVEL } from "../../../../constants";
 
 // ============================================================
 // Summon System Implementation (STUB)

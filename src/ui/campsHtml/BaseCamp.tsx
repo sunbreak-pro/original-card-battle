@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useGameState } from "../../domain/camps/contexts/GameStateContext";
+import { useGameState } from "../../contexts/GameStateContext";
 import type {
   FacilityType,
   GameScreen,
 } from "../../domain/camps/types/CampTypes";
-import FacilityHeader from "../commonHtml/FacilityHeader";
+import FacilityHeader from "../componentsHtml/FacilityHeader";
 import "../css/camps/BaseCamp.css";
 interface FacilityCardProps {
   type: FacilityType;

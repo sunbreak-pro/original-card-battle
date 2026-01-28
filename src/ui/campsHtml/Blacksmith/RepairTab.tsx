@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
+import { usePlayer } from "../../../contexts/PlayerContext";
 import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
 import type { EquipmentQuality } from "../../../domain/item_equipment/type/EquipmentType";
-import { QUALITY_NAMES, QUALITY_COLORS } from "../../../domain/camps/types/BlacksmithTypes";
+import {
+  QUALITY_NAMES,
+  QUALITY_COLORS,
+} from "../../../domain/camps/types/BlacksmithTypes";
 import {
   getRepairCost,
   performRepair,
@@ -15,10 +18,15 @@ import BlacksmithItemCard from "./BlacksmithItemCard";
 const RepairTab = () => {
   const { playerData, updatePlayerData, useGold: deductGold } = usePlayer();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const [notification, setNotification] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   // Get equipment items that need repair from storage
-  const repairableItems = getRepairableItems(playerData.inventory.storage.items);
+  const repairableItems = getRepairableItems(
+    playerData.inventory.storage.items,
+  );
   const totalRepairCost = getTotalRepairCost(repairableItems);
 
   const showNotification = (message: string, type: "success" | "error") => {
@@ -29,7 +37,7 @@ const RepairTab = () => {
   // Update item in storage
   const updateStorageItem = (updatedItem: Item) => {
     const newItems = playerData.inventory.storage.items.map((item) =>
-      item.id === updatedItem.id ? updatedItem : item
+      item.id === updatedItem.id ? updatedItem : item,
     );
     updatePlayerData({
       inventory: {
@@ -88,7 +96,10 @@ const RepairTab = () => {
     const repairedItem = performRepair(selectedItem);
     updateStorageItem(repairedItem);
 
-    showNotification(`${selectedItem.name} has been fully repaired!`, "success");
+    showNotification(
+      `${selectedItem.name} has been fully repaired!`,
+      "success",
+    );
   };
 
   // Handle repair all
@@ -114,8 +125,13 @@ const RepairTab = () => {
     updateMultipleStorageItems(repairedItems);
 
     // Clear selection if the selected item was repaired
-    if (selectedItem && repairableItems.some((item) => item.id === selectedItem.id)) {
-      const repairedSelected = repairedItems.find((item) => item.id === selectedItem.id);
+    if (
+      selectedItem &&
+      repairableItems.some((item) => item.id === selectedItem.id)
+    ) {
+      const repairedSelected = repairedItems.find(
+        (item) => item.id === selectedItem.id,
+      );
       if (repairedSelected) {
         setSelectedItem(repairedSelected);
       }
@@ -126,7 +142,9 @@ const RepairTab = () => {
 
   // Get repair cost for selected item
   const repairCost = selectedItem ? getRepairCost(selectedItem) : null;
-  const canAffordSelectedRepair = repairCost ? canAffordRepair(playerData.resources.baseCampGold, repairCost) : false;
+  const canAffordSelectedRepair = repairCost
+    ? canAffordRepair(playerData.resources.baseCampGold, repairCost)
+    : false;
 
   return (
     <div className="tab-layout">
@@ -146,7 +164,9 @@ const RepairTab = () => {
               <span className="repair-all-title">
                 Repair All ({repairableItems.length} items)
               </span>
-              <span className="repair-all-cost">Total Cost: {totalRepairCost} G</span>
+              <span className="repair-all-cost">
+                Total Cost: {totalRepairCost} G
+              </span>
             </div>
             <button
               className="repair-all-button"
@@ -191,12 +211,23 @@ const RepairTab = () => {
               <div className="detail-title">
                 <h4 className="detail-name">{selectedItem.name}</h4>
                 <div className="detail-badges">
-                  <span className="badge level">Lv.{selectedItem.level ?? 0}</span>
+                  <span className="badge level">
+                    Lv.{selectedItem.level ?? 0}
+                  </span>
                   <span
                     className={`badge quality-${selectedItem.quality ?? "normal"}`}
-                    style={{ color: QUALITY_COLORS[(selectedItem.quality ?? "normal") as EquipmentQuality] }}
+                    style={{
+                      color:
+                        QUALITY_COLORS[
+                          (selectedItem.quality ?? "normal") as EquipmentQuality
+                        ],
+                    }}
                   >
-                    {QUALITY_NAMES[(selectedItem.quality ?? "normal") as EquipmentQuality]}
+                    {
+                      QUALITY_NAMES[
+                        (selectedItem.quality ?? "normal") as EquipmentQuality
+                      ]
+                    }
                   </span>
                 </div>
               </div>
@@ -214,7 +245,8 @@ const RepairTab = () => {
                 />
               </div>
               <span className="text">
-                {selectedItem.durability ?? 0} / {selectedItem.maxDurability ?? 100}
+                {selectedItem.durability ?? 0} /{" "}
+                {selectedItem.maxDurability ?? 100}
               </span>
             </div>
 
@@ -226,17 +258,24 @@ const RepairTab = () => {
                 <div className="stats-section">
                   <div className="stat-row">
                     <span className="label">Durability to Restore</span>
-                    <span className="value improved">+{repairCost.durabilityRestored}</span>
+                    <span className="value improved">
+                      +{repairCost.durabilityRestored}
+                    </span>
                   </div>
                   <div className="stat-row">
                     <span className="label">After Repair</span>
-                    <span className="value">{selectedItem.maxDurability ?? 100} / {selectedItem.maxDurability ?? 100}</span>
+                    <span className="value">
+                      {selectedItem.maxDurability ?? 100} /{" "}
+                      {selectedItem.maxDurability ?? 100}
+                    </span>
                   </div>
                 </div>
 
                 {/* Cost */}
                 <div className="cost-display">
-                  <span className={`cost-item gold ${!canAffordSelectedRepair ? "insufficient" : ""}`}>
+                  <span
+                    className={`cost-item gold ${!canAffordSelectedRepair ? "insufficient" : ""}`}
+                  >
                     💰 {repairCost.gold} G
                   </span>
                 </div>
@@ -254,7 +293,10 @@ const RepairTab = () => {
             {/* Already Repaired */}
             {!repairCost && (
               <div className="action-section">
-                <div className="empty-message" style={{ height: "auto", padding: "1vh 0" }}>
+                <div
+                  className="empty-message"
+                  style={{ height: "auto", padding: "1vh 0" }}
+                >
                   This equipment is fully repaired
                 </div>
               </div>

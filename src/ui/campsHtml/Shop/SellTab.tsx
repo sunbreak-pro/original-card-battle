@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
-import { useInventory } from "../../../domain/camps/contexts/InventoryContext";
+import { usePlayer } from "../../../contexts/PlayerContext";
+import { useInventory } from "../../../contexts/InventoryContext";
 import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
 import { calculateSellPrice } from "../../../domain/camps/logic/shopLogic";
 
@@ -89,7 +89,7 @@ const SellTab = () => {
                 <span className="detail-icon">{selectedItem.type}</span>
                 <h3
                   className={`detail-name ${getRarityClass(
-                    selectedItem.rarity
+                    selectedItem.rarity,
                   )}`}
                 >
                   {selectedItem.name}

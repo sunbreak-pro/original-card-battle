@@ -2,9 +2,12 @@
 
 import React, { createContext, useContext, type ReactNode } from "react";
 import { usePlayer } from "./PlayerContext";
-import type { Item } from "../../item_equipment/type/ItemTypes";
-import type { EquipmentSlot } from "../../item_equipment/type/EquipmentType";
-import type { MoveDirection, MoveResult } from "../types/StorageTypes";
+import type { Item } from "../domain/item_equipment/type/ItemTypes";
+import type { EquipmentSlot } from "../domain/item_equipment/type/EquipmentType";
+import type {
+  MoveDirection,
+  MoveResult,
+} from "../domain/camps/types/StorageTypes";
 
 /**
  * InventoryContext value
@@ -33,7 +36,7 @@ interface InventoryContextValue {
 }
 
 const InventoryContext = createContext<InventoryContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 /**
@@ -49,7 +52,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
    * @returns true if successful, false if inventory full
    */
   const addItemToInventory = (item: Item): boolean => {
-    if (playerData.inventory.inventory.currentCapacity >= playerData.inventory.inventory.maxCapacity) {
+    if (
+      playerData.inventory.inventory.currentCapacity >=
+      playerData.inventory.inventory.maxCapacity
+    ) {
       return false;
     }
 
@@ -71,7 +77,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
    * @returns true if successful, false if storage full
    */
   const addItemToStorage = (item: Item): boolean => {
-    if (playerData.inventory.storage.currentCapacity >= playerData.inventory.storage.maxCapacity) {
+    if (
+      playerData.inventory.storage.currentCapacity >=
+      playerData.inventory.storage.maxCapacity
+    ) {
       return false;
     }
 
@@ -92,7 +101,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
    * Remove item from inventory
    */
   const removeItemFromInventory = (itemId: string): boolean => {
-    const itemIndex = playerData.inventory.inventory.items.findIndex((i) => i.id === itemId);
+    const itemIndex = playerData.inventory.inventory.items.findIndex(
+      (i) => i.id === itemId,
+    );
     if (itemIndex === -1) return false;
 
     const newItems = [...playerData.inventory.inventory.items];
@@ -115,7 +126,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
    * Remove item from storage
    */
   const removeItemFromStorage = (itemId: string): boolean => {
-    const itemIndex = playerData.inventory.storage.items.findIndex((i) => i.id === itemId);
+    const itemIndex = playerData.inventory.storage.items.findIndex(
+      (i) => i.id === itemId,
+    );
     if (itemIndex === -1) return false;
 
     const newItems = [...playerData.inventory.storage.items];
@@ -155,7 +168,8 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
         equipmentInventory: {
           ...playerData.inventory.equipmentInventory,
           items: [...playerData.inventory.equipmentInventory.items, item],
-          currentCapacity: playerData.inventory.equipmentInventory.currentCapacity + 1,
+          currentCapacity:
+            playerData.inventory.equipmentInventory.currentCapacity + 1,
         },
       },
     });
@@ -167,7 +181,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
    */
   const removeItemFromEquipmentInventory = (itemId: string): boolean => {
     const itemIndex = playerData.inventory.equipmentInventory.items.findIndex(
-      (i) => i.id === itemId
+      (i) => i.id === itemId,
     );
     if (itemIndex === -1) return false;
 
@@ -180,7 +194,8 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
         equipmentInventory: {
           ...playerData.inventory.equipmentInventory,
           items: newItems,
-          currentCapacity: playerData.inventory.equipmentInventory.currentCapacity - 1,
+          currentCapacity:
+            playerData.inventory.equipmentInventory.currentCapacity - 1,
         },
       },
     });
@@ -195,7 +210,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
     // Try to find item in storage first
     const equipmentItem =
       playerData.inventory.storage.items.find((i) => i.id === itemId) ||
-      playerData.inventory.equipmentInventory.items.find((i) => i.id === itemId);
+      playerData.inventory.equipmentInventory.items.find(
+        (i) => i.id === itemId,
+      );
     if (!equipmentItem) {
       return {
         success: false,
@@ -214,7 +231,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
     const currentlyEquipped = playerData.inventory.equipmentSlots[slot];
 
     // Remove the new equipment from storage
-    const newStorageItems = playerData.inventory.storage.items.filter((i) => i.id !== itemId);
+    const newStorageItems = playerData.inventory.storage.items.filter(
+      (i) => i.id !== itemId,
+    );
 
     // If swapping, add old equipped item back to storage
     const finalStorageItems = currentlyEquipped
@@ -225,7 +244,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
     updatePlayerData({
       inventory: {
         ...playerData.inventory,
-        equipmentSlots: { ...playerData.inventory.equipmentSlots, [slot]: equipmentItem },
+        equipmentSlots: {
+          ...playerData.inventory.equipmentSlots,
+          [slot]: equipmentItem,
+        },
         storage: {
           ...playerData.inventory.storage,
           items: finalStorageItems,
@@ -258,7 +280,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
     }
 
     // Check if inventory has space
-    if (playerData.inventory.inventory.currentCapacity >= playerData.inventory.inventory.maxCapacity) {
+    if (
+      playerData.inventory.inventory.currentCapacity >=
+      playerData.inventory.inventory.maxCapacity
+    ) {
       return {
         success: false,
         message: "Inventory is full",
@@ -266,7 +291,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
     }
 
     // Remove from equipment slot
-    const newEquipmentSlots = { ...playerData.inventory.equipmentSlots, [slot]: null };
+    const newEquipmentSlots = {
+      ...playerData.inventory.equipmentSlots,
+      [slot]: null,
+    };
 
     updatePlayerData({
       inventory: {
@@ -291,11 +319,16 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
   const moveItem = (itemId: string, direction: MoveDirection): MoveResult => {
     switch (direction) {
       case "storage_to_inventory": {
-        const item = playerData.inventory.storage.items.find((i) => i.id === itemId);
+        const item = playerData.inventory.storage.items.find(
+          (i) => i.id === itemId,
+        );
         if (!item) {
           return { success: false, message: "Item not found in storage" };
         }
-        if (playerData.inventory.inventory.currentCapacity >= playerData.inventory.inventory.maxCapacity) {
+        if (
+          playerData.inventory.inventory.currentCapacity >=
+          playerData.inventory.inventory.maxCapacity
+        ) {
           return { success: false, message: "Inventory is full" };
         }
         removeItemFromStorage(itemId);
@@ -309,12 +342,15 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
 
       case "inventory_to_storage": {
         const inventoryItem = playerData.inventory.inventory.items.find(
-          (i) => i.id === itemId
+          (i) => i.id === itemId,
         );
         if (!inventoryItem) {
           return { success: false, message: "Item not found in inventory" };
         }
-        if (playerData.inventory.storage.currentCapacity >= playerData.inventory.storage.maxCapacity) {
+        if (
+          playerData.inventory.storage.currentCapacity >=
+          playerData.inventory.storage.maxCapacity
+        ) {
           return { success: false, message: "Storage is full" };
         }
         removeItemFromInventory(itemId);
@@ -346,7 +382,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
       case "equipment_to_storage": {
         // Find which slot the item is in
         const slot = Object.entries(playerData.inventory.equipmentSlots).find(
-          ([, item]) => item?.id === itemId
+          ([, item]) => item?.id === itemId,
         )?.[0] as EquipmentSlot | undefined;
 
         if (!slot) {
@@ -359,8 +395,16 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
         }
 
         // Unequip first
-        const newEquipmentSlots = { ...playerData.inventory.equipmentSlots, [slot]: null };
-        updatePlayerData({ inventory: { ...playerData.inventory, equipmentSlots: newEquipmentSlots } });
+        const newEquipmentSlots = {
+          ...playerData.inventory.equipmentSlots,
+          [slot]: null,
+        };
+        updatePlayerData({
+          inventory: {
+            ...playerData.inventory,
+            equipmentSlots: newEquipmentSlots,
+          },
+        });
 
         // Then add to destination
         if (direction === "equipment_to_storage") {
@@ -385,13 +429,17 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
       }
       case "equipSlotItem_to_storage": {
         const slot = Object.entries(playerData.inventory.equipmentSlots).find(
-          ([, item]) => item?.id === itemId
+          ([, item]) => item?.id === itemId,
         )?.[0] as EquipmentSlot | undefined;
-        const equippedItem = playerData.inventory.equipmentSlots[slot as EquipmentSlot];
+        const equippedItem =
+          playerData.inventory.equipmentSlots[slot as EquipmentSlot];
         if (!equippedItem) {
           return { success: false, message: "Unequip error" };
         }
-        if (playerData.inventory.storage.currentCapacity >= playerData.inventory.storage.maxCapacity) {
+        if (
+          playerData.inventory.storage.currentCapacity >=
+          playerData.inventory.storage.maxCapacity
+        ) {
           return { success: false, message: "Storage is full" };
         }
         unequipItem(equippedItem.equipmentSlot as EquipmentSlot);
@@ -404,7 +452,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       case "storage_to_equipment_inventory": {
-        const item = playerData.inventory.storage.items.find((i) => i.id === itemId);
+        const item = playerData.inventory.storage.items.find(
+          (i) => i.id === itemId,
+        );
         if (!item) {
           return { success: false, message: "Item not found in storage" };
         }
@@ -431,7 +481,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
 
       case "equipment_inventory_to_storage": {
         const item = playerData.inventory.equipmentInventory.items.find(
-          (i) => i.id === itemId
+          (i) => i.id === itemId,
         );
         if (!item) {
           return {
@@ -439,7 +489,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
             message: "Item not found in equipment inventory",
           };
         }
-        if (playerData.inventory.storage.currentCapacity >= playerData.inventory.storage.maxCapacity) {
+        if (
+          playerData.inventory.storage.currentCapacity >=
+          playerData.inventory.storage.maxCapacity
+        ) {
           return { success: false, message: "Storage is full" };
         }
         removeItemFromEquipmentInventory(itemId);
@@ -453,7 +506,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
 
       case "equipment_inventory_to_equipment": {
         const item = playerData.inventory.equipmentInventory.items.find(
-          (i) => i.id === itemId
+          (i) => i.id === itemId,
         );
         if (!item || !item.equipmentSlot) {
           return {
@@ -467,12 +520,17 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
 
         // Remove from equipment inventory
         const newEquipmentInventoryItems =
-          playerData.inventory.equipmentInventory.items.filter((i) => i.id !== itemId);
+          playerData.inventory.equipmentInventory.items.filter(
+            (i) => i.id !== itemId,
+          );
 
         updatePlayerData({
           inventory: {
             ...playerData.inventory,
-            equipmentSlots: { ...playerData.inventory.equipmentSlots, [slot]: item },
+            equipmentSlots: {
+              ...playerData.inventory.equipmentSlots,
+              [slot]: item,
+            },
             equipmentInventory: {
               ...playerData.inventory.equipmentInventory,
               items: currentlyEquipped
@@ -496,7 +554,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
       case "equipment_to_equipment_inventory": {
         // Find which slot the item is in
         const slot = Object.entries(playerData.inventory.equipmentSlots).find(
-          ([, item]) => item?.id === itemId
+          ([, item]) => item?.id === itemId,
         )?.[0] as EquipmentSlot | undefined;
 
         if (!slot) {
@@ -516,8 +574,16 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
         }
 
         // Unequip and add to equipment inventory
-        const newEquipmentSlots = { ...playerData.inventory.equipmentSlots, [slot]: null };
-        updatePlayerData({ inventory: { ...playerData.inventory, equipmentSlots: newEquipmentSlots } });
+        const newEquipmentSlots = {
+          ...playerData.inventory.equipmentSlots,
+          [slot]: null,
+        };
+        updatePlayerData({
+          inventory: {
+            ...playerData.inventory,
+            equipmentSlots: newEquipmentSlots,
+          },
+        });
         addItemToEquipmentInventory(item);
 
         return {
@@ -557,7 +623,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
    * Get item from equipment inventory by ID
    */
   const getEquipmentInventoryItem = (itemId: string): Item | undefined => {
-    return playerData.inventory.equipmentInventory.items.find((i) => i.id === itemId);
+    return playerData.inventory.equipmentInventory.items.find(
+      (i) => i.id === itemId,
+    );
   };
 
   return (

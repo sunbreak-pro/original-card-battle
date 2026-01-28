@@ -2,11 +2,11 @@
 
 import { useState, useCallback } from "react";
 import type { Depth } from "../../domain/camps/types/CampTypes";
-import { useGameState } from "../../domain/camps/contexts/GameStateContext";
-import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
+import { useGameState } from "../../contexts/GameStateContext";
+import { usePlayer } from "../../contexts/PlayerContext";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { DEPTH_DISPLAY_INFO } from "../../domain/dungeon/types/DungeonTypes";
-import FacilityHeader from "../commonHtml/FacilityHeader";
+import FacilityHeader from "../componentsHtml/FacilityHeader";
 import "./DungeonGate.css";
 
 /**
@@ -58,13 +58,15 @@ export function DungeonGate() {
                 key={depth}
                 className={`depth-card ${isSelected ? "selected" : ""}`}
                 onClick={() => handleDepthSelect(depth)}
-                style={{
-                  "--depth-primary": theme.primary,
-                  "--depth-secondary": theme.secondary,
-                  "--depth-accent": theme.accent,
-                  "--depth-glow": theme.glow,
-                  "--depth-hover": theme.hover,
-                } as React.CSSProperties}
+                style={
+                  {
+                    "--depth-primary": theme.primary,
+                    "--depth-secondary": theme.secondary,
+                    "--depth-accent": theme.accent,
+                    "--depth-glow": theme.glow,
+                    "--depth-hover": theme.hover,
+                  } as React.CSSProperties
+                }
               >
                 <div className="depth-card-inner">
                   <div className="depth-number">{depth}</div>

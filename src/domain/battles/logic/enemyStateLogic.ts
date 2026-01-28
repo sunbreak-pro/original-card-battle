@@ -2,6 +2,7 @@ import { createRef } from "react";
 import type { EnemyBattleState, EnemyDefinition } from "../../characters/type/enemyType";
 import { generateEnemyInstanceId } from "../../characters/type/enemyType";
 import { createEmptyBuffDebuffMap } from "../../characters/type/baseTypes";
+import { GUARD_INIT_MULTIPLIER } from "../../../constants";
 
 /**
  * Create initial battle state for an enemy from EnemyDefinition
@@ -25,7 +26,7 @@ export function createEnemyStateFromDefinition(
         maxHp: definition.baseMaxHp,
         ap: definition.baseMaxAp,
         maxAp: definition.baseMaxAp,
-        guard: definition.startingGuard ? Math.floor(definition.baseMaxAp * 0.5) : 0,
+        guard: definition.startingGuard ? Math.floor(definition.baseMaxAp * GUARD_INIT_MULTIPLIER) : 0,
         speed: definition.baseSpeed,
         buffDebuffs,
 

@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
+import { useGameState } from "../../../contexts/GameStateContext";
 import type { BlacksmithTab } from "../../../domain/camps/types/BlacksmithTypes";
 import UpgradeTab from "./UpgradeTab";
 import RepairTab from "./RepairTab";
 import DismantleTab from "./DismantleTab";
-import FacilityHeader from "../../commonHtml/FacilityHeader";
+import FacilityHeader from "../../componentsHtml/FacilityHeader";
 import "../../css/camps/Blacksmith.css";
 
 export const Blacksmith = () => {

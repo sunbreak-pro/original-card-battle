@@ -3,12 +3,14 @@
  * Handles phase queue generation and speed randomness for the phase-based battle system.
  */
 import type { PhaseActor, SpeedRandomState, PhaseCalculationResult } from "../type/phaseType";
-
-const VARIANCE_PERCENT = 5;
-const MEAN_REVERSION_FACTOR = 0.3;
-const HISTORY_LENGTH = 5;
-const CONSECUTIVE_PHASE_THRESHOLD = 15; // Speed diff >= 15 for 2 phases
-const ADDITIONAL_PHASE_INTERVAL = 10; // +1 phase per 10 additional diff
+import {
+  VARIANCE_PERCENT,
+  MEAN_REVERSION_FACTOR,
+  HISTORY_LENGTH,
+  CONSECUTIVE_PHASE_THRESHOLD,
+  ADDITIONAL_PHASE_INTERVAL,
+  MIN_PHASES_FOR_PREDICTION,
+} from "../../../constants";
 
 /**
  * Apply speed randomness with mean-reversion
@@ -73,8 +75,6 @@ export function calculateConsecutivePhases(speedDiff: number): number {
   );
 }
 
-// Minimum phases to generate for UI prediction display
-const MIN_PHASES_FOR_PREDICTION = 8;
 
 /**
  * Generate a single round pattern based on speed difference

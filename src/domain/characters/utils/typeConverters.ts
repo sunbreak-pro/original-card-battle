@@ -27,6 +27,7 @@ import {
 import { createEmptyBuffDebuffMap } from "../type/baseTypes";
 import { createInitialClassAbility } from "../type/classAbilityTypes";
 import type { CharacterClass } from "../type/baseTypes";
+import { STORAGE_MAX_CAPACITY, INVENTORY_MAX_CAPACITY, EQUIPMENT_INVENTORY_MAX, GUARD_INIT_MULTIPLIER } from "../../../constants";
 
 import type {
   EnemyDefinition,
@@ -241,9 +242,9 @@ export function createDefaultPlayerData(
       explorationLimit: createDefaultExplorationLimit(),
     },
     inventory: {
-      storage: { items: [], maxCapacity: 100, currentCapacity: 0 },
-      inventory: { items: [], maxCapacity: 20, currentCapacity: 0 },
-      equipmentInventory: { items: [], maxCapacity: 3, currentCapacity: 0 },
+      storage: { items: [], maxCapacity: STORAGE_MAX_CAPACITY, currentCapacity: 0 },
+      inventory: { items: [], maxCapacity: INVENTORY_MAX_CAPACITY, currentCapacity: 0 },
+      equipmentInventory: { items: [], maxCapacity: EQUIPMENT_INVENTORY_MAX, currentCapacity: 0 },
       equipmentSlots: {
         weapon: null,
         armor: null,
@@ -352,7 +353,7 @@ export function createEnemyBattleState(
   ref: React.RefObject<HTMLDivElement | null>
 ): EnemyBattleState {
   const buffDebuffs = createEmptyBuffDebuffMap();
-  const guard = definition.startingGuard ? Math.floor(definition.baseMaxAp * 0.5) : 0;
+  const guard = definition.startingGuard ? Math.floor(definition.baseMaxAp * GUARD_INIT_MULTIPLIER) : 0;
 
   return {
     // Instance identification

@@ -30,7 +30,7 @@ import type { CharacterClass } from "../../characters/type/baseTypes";
 import { applyMasteryToCards } from "../../cards/state/masteryManager";
 
 // Animation hooks
-import { useCardAnimation } from "../../../ui/commonHtml/useCardAnimation";
+import { useCardAnimation } from "../../../ui/componentsHtml/useCardAnimation";
 import { useTurnTransition } from "../../../ui/animations/usePhaseTransition";
 
 // Battle hooks

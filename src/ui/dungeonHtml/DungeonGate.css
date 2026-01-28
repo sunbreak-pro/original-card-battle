@@ -8,7 +8,7 @@
   align-items: center;
   background: linear-gradient(135deg, #0a0a0f 0%, #151520 50%, #0d0d15 100%);
   color: #e0e0e5;
-  padding: 3vh 3vw;
+  padding-bottom: 3vh;
   box-sizing: border-box;
   overflow: hidden;
 }

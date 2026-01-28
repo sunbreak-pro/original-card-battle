@@ -1,7 +1,7 @@
 // PromotionTab: Displays promotion exam information and start button
 
-import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
-import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
+import { usePlayer } from "../../../contexts/PlayerContext";
+import { useGameState } from "../../../contexts/GameStateContext";
 import {
   getNextExam,
   canTakeExam,
@@ -12,10 +12,14 @@ const PromotionTab = () => {
   const { startBattle, navigateTo } = useGameState();
 
   // Calculate total gold
-  const totalGold = playerData.resources.baseCampGold + playerData.resources.explorationGold;
+  const totalGold =
+    playerData.resources.baseCampGold + playerData.resources.explorationGold;
 
   // Get next available exam
-  const exam = getNextExam(playerData.persistent.playerClass, playerData.persistent.classGrade);
+  const exam = getNextExam(
+    playerData.persistent.playerClass,
+    playerData.persistent.classGrade,
+  );
 
   // If no exam available (max rank reached)
   if (!exam) {
@@ -25,7 +29,9 @@ const PromotionTab = () => {
         <p>You have achieved the highest rank.</p>
         <div className="current-grade-display">
           <span className="grade-label">Current Rank:</span>
-          <span className="grade-value">{playerData.persistent.classGrade}</span>
+          <span className="grade-value">
+            {playerData.persistent.classGrade}
+          </span>
         </div>
         <p className="flavor-text">
           You stand at the pinnacle of your class. There are no more exams to
@@ -56,7 +62,7 @@ const PromotionTab = () => {
         onWin: handleExamPassed,
         onLose: handleExamFailed,
       },
-      "exam"
+      "exam",
     );
   };
 
@@ -86,7 +92,7 @@ const PromotionTab = () => {
           `${exam.nextGrade}\n\n` +
           `Rewards:\n` +
           `${exam.rewards.statBonus}\n\n` +
-          `Your achievements will be recorded in the guild records.`
+          `Your achievements will be recorded in the guild records.`,
       );
     }, 100);
   };
@@ -105,7 +111,7 @@ const PromotionTab = () => {
           `You have been defeated in the exam and returned to the guild.\n\n` +
           `Don't give up! Train harder and try again.\n` +
           `The exam can be retaken at any time when you meet the requirements.\n\n` +
-          `Tip: Make sure your HP and AP meet the recommended values before challenging.`
+          `Tip: Make sure your HP and AP meet the recommended values before challenging.`,
       );
     }, 100);
 

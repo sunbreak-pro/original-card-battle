@@ -32,7 +32,7 @@
   display: grid;
   grid-template-rows: auto 1fr auto;
   color: #e8e0f0;
-  padding: 2vh 2vw;
+  padding-bottom: 3vh;
   box-sizing: border-box;
   overflow: hidden;
   z-index: 1;
@@ -138,6 +138,7 @@
 .sanctuary-content {
   display: grid;
   grid-template-columns: 1fr 28vw;
+  padding-inline: 3vw;
   gap: 2vw;
   overflow: hidden;
 }

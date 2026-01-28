@@ -16,6 +16,7 @@ import {
     removeAllDebuffs,
 } from "../logic/buffLogic";
 import { drawCards } from "../../cards/decks/deck";
+import { PLAYER_BASE_DRAW_COUNT } from "../../../constants";
 
 // ============================================================================
 // Types
@@ -64,7 +65,7 @@ export interface PlayerPhaseEndResult {
 export function calculatePlayerPhaseStart(
     input: PlayerPhaseStartInput
 ): PlayerPhaseStartResult {
-    const { playerBuffs, drawPile, discardPile, baseDrawCount = 5 } = input;
+    const { playerBuffs, drawPile, discardPile, baseDrawCount = PLAYER_BASE_DRAW_COUNT } = input;
 
     // Process buff/debuff durations - only decrease player-applied buffs
     let newBuffs = decreaseBuffDebuffDurationForPhase(playerBuffs, 'player');

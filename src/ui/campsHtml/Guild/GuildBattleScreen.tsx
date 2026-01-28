@@ -7,8 +7,8 @@ import { useBattle } from "../../../domain/battles/managements/battleFlowManage"
 import { CardComponent } from "../../cardHtml/CardComponent";
 import { BattlingCardPileModal } from "../../cardHtml/CardModalDisplay";
 import { TurnOrderIndicator } from "../../battleHtml/TurnOrderIndicator";
-import StatusEffectDisplay from "../../commonHtml/BuffEffect";
-import EnemyDisplay from "../../battleHtml/EnemyDisplay";
+import StatusEffectDisplay from "../../componentsHtml/BuffEffect";
+import EnemyDisplay from "../../battleHtml/EnemyFrame";
 import "../../css/battle/BattleScreen.css";
 
 interface GuildBattleScreenProps {

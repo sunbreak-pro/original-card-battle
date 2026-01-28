@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
+import { useGameState } from "../../../contexts/GameStateContext";
 import BuyTab from "./BuyTab";
 import SellTab from "./SellTab";
 import ExchangeTab from "./ExchangeTab";
-import FacilityHeader from "../../commonHtml/FacilityHeader";
+import FacilityHeader from "../../componentsHtml/FacilityHeader";
 import "../../css/camps/Shop.css";
 
 type ShopTab = "buy" | "sell" | "exchange";

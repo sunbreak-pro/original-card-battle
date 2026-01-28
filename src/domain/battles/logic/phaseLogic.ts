@@ -10,6 +10,7 @@ import {
     decreaseBuffDebuffDuration,
     removeAllDebuffs,
 } from "./buffLogic";
+import { PLAYER_BASE_DRAW_COUNT, GUARD_INIT_MULTIPLIER } from "../../../constants";
 
 /**
  * Result of player phase start calculations
@@ -27,7 +28,7 @@ export interface PlayerPhaseStartResult {
  */
 export function calculatePlayerPhaseStart(
     playerBuffs: BuffDebuffMap,
-    baseDrawCount: number = 5
+    baseDrawCount: number = PLAYER_BASE_DRAW_COUNT
 ): PlayerPhaseStartResult {
     // Process buff/debuff durations
     let newBuffs = decreaseBuffDebuffDuration(playerBuffs);
@@ -83,7 +84,7 @@ export function calculateEnemyPhaseStart(
     const canPerformAction = canAct(enemyBuffs);
 
     // Guard reset value - calculate from baseMaxAp for startingGuard enemies
-    const guardReset = enemy.startingGuard ? Math.floor(enemy.baseMaxAp * 0.5) : 0;
+    const guardReset = enemy.startingGuard ? Math.floor(enemy.baseMaxAp * GUARD_INIT_MULTIPLIER) : 0;
 
     return {
         newBuffs,

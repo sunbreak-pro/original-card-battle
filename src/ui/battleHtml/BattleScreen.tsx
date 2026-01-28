@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import type { Depth, Card } from "../../domain/cards/type/cardType";
 import {
   useBattle,
@@ -8,17 +8,17 @@ import { selectRandomEnemy } from "../../domain/characters/enemy/logic/enemyAI";
 import { CardComponent } from "../cardHtml/CardComponent";
 import { BattlingCardPileModal } from "../cardHtml/CardModalDisplay";
 import { TurnOrderIndicator } from "./TurnOrderIndicator";
-import StatusEffectDisplay from "../commonHtml/BuffEffect";
-import EnemyDisplay from "./EnemyDisplay";
+import EnemyFrame from "./EnemyFrame";
+import PlayerFrame from "./playerFrame";
 import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
 import UseItemModal from "./UseItemModal";
 import "../css/battle/BattleScreen.css";
 import type { Item } from "../../domain/item_equipment/type/ItemTypes";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
-import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
-import { useResources } from "../../domain/camps/contexts/ResourceContext";
-import { useGameState } from "../../domain/camps/contexts/GameStateContext";
+import { usePlayer } from "../../contexts/PlayerContext";
+import { useResources } from "../../contexts/ResourceContext";
+import { useGameState } from "../../contexts/GameStateContext";
 import { handlePlayerDeathWithDetails } from "../../domain/battles/logic/deathHandler";
 import { saveManager } from "../../domain/save/logic/saveManager";
 import { getInitialDeckCounts } from "../../domain/battles/data/initialDeckConfig";
@@ -80,7 +80,7 @@ const BattleScreen = ({
   // 遭遇カウント管理
   const [encounterCount, setEncounterCount] = useState(0);
   const deathHandledRef = useRef(false);
-  const [soulsTransferred, setSoulsTransferred] = useState(0);
+  const soulsTransferredRef = useRef(0);
 
   // Use Item Modal state
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
@@ -145,25 +145,21 @@ const BattleScreen = ({
   } = useBattle(depth, undefined, initialPlayerState);
 
   // Handle player death penalty when defeated
-  // IMPORTANT: This useEffect must be BEFORE any early returns to follow React's Rules of Hooks
-  useEffect(() => {
-    if (battleResult === "defeat" && !deathHandledRef.current) {
-      // Apply death penalty and get transferred souls
-      const result = handlePlayerDeathWithDetails(playerData);
-      updatePlayerData(result.updates);
-      setSoulsTransferred(result.soulsTransferred);
+  // Runs once when defeat is detected; uses ref to avoid re-render
+  if (battleResult === "defeat" && !deathHandledRef.current) {
+    const result = handlePlayerDeathWithDetails(playerData);
+    updatePlayerData(result.updates);
+    soulsTransferredRef.current = result.soulsTransferred;
+    decreaseLives();
+    deathHandledRef.current = true;
+  }
 
-      // Decrease lives (Lives system)
-      decreaseLives();
-
-      deathHandledRef.current = true;
-    }
-  }, [battleResult, playerData, updatePlayerData, decreaseLives]);
-
-  // Reset itemUsedThisPhase when phase changes
-  useEffect(() => {
+  // Reset itemUsedThisPhase when phase changes (render-time setState pattern)
+  const prevPhaseIndexRef = useRef(currentPhaseIndex);
+  if (currentPhaseIndex !== prevPhaseIndexRef.current) {
+    prevPhaseIndexRef.current = currentPhaseIndex;
     setItemUsedThisPhase(false);
-  }, [currentPhaseIndex]);
+  }
 
   const handleContinueToNextBattle = () => {
     const nextEncounter = encounterCount + 1;
@@ -373,7 +369,7 @@ const BattleScreen = ({
         }}
         remainingLives={runtimeState.lives.currentLives}
         maxLives={runtimeState.lives.maxLives}
-        soulsTransferred={soulsTransferred}
+        soulsTransferred={soulsTransferredRef.current}
         isGameOver={gameOver}
       />
     );
@@ -398,7 +394,7 @@ const BattleScreen = ({
       </div>
 
       <div className="battle-field">
-        <EnemyDisplay
+        <EnemyFrame
           enemies={aliveEnemies.map((e) => ({
             definition: e.definition,
             hp: e.hp,
@@ -413,133 +409,21 @@ const BattleScreen = ({
           enemyRefs={aliveEnemies.map((e) => e.ref)}
           theme={theme}
         />
-        <div className="player-section">
-          <div className="player-field">
-            <div className="character-name">
-              {playerName} [{playerClass}]
-            </div>
-            <div className="character-visual player" ref={playerRef}>
-              ⚔️
-            </div>
-            <div className="status-container player-status-container">
-              {/* HP/AP combined bar - AP overlays on HP */}
-              {/* Guard bar - value badge on left */}
-              {playerGuard > 0 && (
-                <div className="status-bar-row guard-row">
-                  <div className="value-badge guard-badge">{playerGuard}</div>
-                  <div className="unified-bar-container guard-bar">
-                    <div
-                      className="bar-fill guard-fill"
-                      style={{
-                        width: `${Math.min(100, (playerGuard / 30) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="status-bar-row hp-row">
-                <div
-                  {...(playerAp === 0
-                    ? { className: "break-badge" }
-                    : { className: "value-badge ap-badge" })}
-                >
-                  {" "}
-                  {playerAp > 0 && `${playerAp}/${playerMaxAp}`}
-                  {playerAp === 0 && `break!`}
-                </div>
-
-                <div
-                  {...(playerAp > 0
-                    ? { className: "Armor-border" }
-                    : { className: "unified-bar-container hp-bar" })}
-                >
-                  {/* AP overlay */}
-                  {playerAp > 0 && (
-                    <div
-                      className="bar-fill ap-overlay"
-                      style={{ width: `${(playerAp / playerMaxAp) * 100}%` }}
-                    />
-                  )}
-                  {/* HP bar */}
-                  <div
-                    className="bar-fill hp-fill"
-                    style={{ width: `${(playerHp / playerMaxHp) * 100}%` }}
-                  />
-                  <span className="hp-value">
-                    {playerHp}/{playerMaxHp}
-                  </span>
-                </div>
-              </div>
-
-              {/* Energy bar - value badge on left */}
-              <div className="status-bar-row energy-row">
-                <div className="value-badge energy-badge">
-                  {cardEnergy}/{maxEnergy}
-                </div>
-                <div className="unified-bar-container energy-bar">
-                  <div
-                    className="bar-fill energy-fill"
-                    style={{ width: `${(cardEnergy / maxEnergy) * 100}%` }}
-                  />
-                </div>
-              </div>
-              <StatusEffectDisplay buffsDebuffs={playerBuffs} theme={theme} />
-            </div>
-          </div>
-          <div className="energy-and-ability">
-            <div className="sword-energy-display">
-              <div className="sword-energy-label">剣気:</div>
-
-              <div className="sword-energy-bar-container">
-                <div className="sword-energy-bar">
-                  <div
-                    className={`sword-energy-fill ${
-                      swordEnergy.current >= 10
-                        ? "level-max"
-                        : swordEnergy.current >= 8
-                          ? "level-high"
-                          : swordEnergy.current >= 5
-                            ? "level-mid"
-                            : ""
-                    }`}
-                    style={{
-                      width: `${
-                        (swordEnergy.current / swordEnergy.max) * 100
-                      }%`,
-                    }}
-                  />
-                  <span className="sword-energy-text">
-                    {swordEnergy.current}/{swordEnergy.max}
-                  </span>
-                </div>
-              </div>
-              <div className="sword-energy-effects">
-                <span
-                  className={`effect-badge crit ${
-                    swordEnergy.current >= 5 ? "active" : "inactive"
-                  }`}
-                >
-                  {swordEnergy.current >= 5 ? "✓" : "○"} Crit+20%
-                </span>
-                <span
-                  className={`effect-badge pierce ${
-                    swordEnergy.current >= 8 ? "active" : "inactive"
-                  }`}
-                >
-                  {swordEnergy.current >= 8 ? "✓" : "○"} 貫通+30%
-                </span>
-                <span
-                  className={`effect-badge max ${
-                    swordEnergy.current >= 10 ? "active" : "inactive"
-                  }`}
-                >
-                  {swordEnergy.current >= 10 ? "✓" : "○"} MAX
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PlayerFrame
+          playerName={playerName}
+          playerClass={playerClass}
+          playerRef={playerRef}
+          playerHp={playerHp}
+          playerMaxHp={playerMaxHp}
+          playerAp={playerAp}
+          playerMaxAp={playerMaxAp}
+          playerGuard={playerGuard}
+          playerBuffs={playerBuffs}
+          cardEnergy={cardEnergy}
+          maxEnergy={maxEnergy}
+          swordEnergy={swordEnergy}
+          theme={theme}
+        />
       </div>
       <div className="hand-container">
         {/* Left Section: Draw/Discard Piles */}

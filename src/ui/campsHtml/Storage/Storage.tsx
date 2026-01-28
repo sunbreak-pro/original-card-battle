@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
-import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
-import { useInventory } from "../../../domain/camps/contexts/InventoryContext";
+import { useGameState } from "../../../contexts/GameStateContext";
+import { usePlayer } from "../../../contexts/PlayerContext";
+import { useInventory } from "../../../contexts/InventoryContext";
 import { type Item } from "../../../domain/item_equipment/type/ItemTypes";
 import ItemCard from "./ItemCard";
 import { ItemDetailPanel, EquipmentDetailPanel } from "./ItemDetailPanel";
 import DeleteModal from "../modal/DeleteModal";
-import FacilityHeader from "../../commonHtml/FacilityHeader";
+import FacilityHeader from "../../componentsHtml/FacilityHeader";
 import "../../css/camps/Storage.css";
 
 type TabType = "items" | "equipment";

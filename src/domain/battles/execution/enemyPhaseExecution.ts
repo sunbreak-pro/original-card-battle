@@ -19,6 +19,7 @@ import {
 import { calculateDamage, applyDamageAllocation } from "../calculators/damageCalculation";
 import { calculateBleedDamage } from "../logic/bleedDamage";
 import { enemyAction } from "../../characters/enemy/logic/enemyAI";
+import { GUARD_INIT_MULTIPLIER } from "../../../constants";
 
 // ============================================================================
 // Types
@@ -90,7 +91,7 @@ export function calculateEnemyPhaseStart(
     const { hp: healAmount, shield: shieldAmount } = calculateStartPhaseHealing(enemyBuffs);
 
     // Guard reset (restore to initial guard value if startingGuard is true)
-    const guardReset = enemy.startingGuard ? Math.floor(enemy.baseMaxAp * 0.5) : 0;
+    const guardReset = enemy.startingGuard ? Math.floor(enemy.baseMaxAp * GUARD_INIT_MULTIPLIER) : 0;
 
     // Energy recovery to MAX
     const energyReset = enemy.actEnergy;

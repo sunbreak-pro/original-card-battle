@@ -1,8 +1,8 @@
 // Sanctuary main component
 
 import { useState, useCallback } from "react";
-import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
-import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
+import { useGameState } from "../../../contexts/GameStateContext";
+import { usePlayer } from "../../../contexts/PlayerContext";
 import type {
   SkillNode,
   NodeStatus,
@@ -16,7 +16,7 @@ import {
 } from "../../../domain/camps/logic/sanctuaryLogic";
 import SkillTree from "./SkillTree";
 import NodeDetailPanel from "./NodeDetailPanel";
-import FacilityHeader from "../../commonHtml/FacilityHeader";
+import FacilityHeader from "../../componentsHtml/FacilityHeader";
 import "../../css/camps/Sanctuary.css";
 
 export const Sanctuary = () => {
@@ -140,7 +140,8 @@ export const Sanctuary = () => {
               <span className="exploration-icon">🗺️</span>
               <span className="exploration-value">
                 {playerData.resources.explorationLimit.current} /{" "}
-                {playerData.resources.explorationLimit.max + effects.explorationLimitBonus}
+                {playerData.resources.explorationLimit.max +
+                  effects.explorationLimitBonus}
               </span>
             </div>
           </div>

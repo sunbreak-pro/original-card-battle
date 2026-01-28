@@ -8,9 +8,9 @@ import React, {
   useCallback,
   type ReactNode,
 } from "react";
-import type { MagicStones } from "../../item_equipment/type/ItemTypes";
-import { calculateMagicStoneValue } from "../../item_equipment/type/ItemTypes";
-import type { ExplorationLimit } from "../types/CampTypes";
+import type { MagicStones } from "../domain/item_equipment/type/ItemTypes";
+import { calculateMagicStoneValue } from "../domain/item_equipment/type/ItemTypes";
+import type { ExplorationLimit } from "../domain/camps/types/CampTypes";
 
 /**
  * Resource state structure
@@ -57,7 +57,7 @@ interface ResourceContextValue {
 }
 
 const ResourceContext = createContext<ResourceContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 /**
@@ -88,7 +88,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [resources, setResources] = useState<ResourceState>(
-    createInitialResourceState()
+    createInitialResourceState(),
   );
 
   /**
@@ -141,7 +141,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
       });
       return true;
     },
-    [resources.gold.baseCamp, resources.gold.exploration]
+    [resources.gold.baseCamp, resources.gold.exploration],
   );
 
   /**
@@ -174,7 +174,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
         };
       });
     },
-    []
+    [],
   );
 
   /**
@@ -186,10 +186,10 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
   const useMagicStones = useCallback(
     (value: number): boolean => {
       const baseCampValue = calculateMagicStoneValue(
-        resources.magicStones.baseCamp
+        resources.magicStones.baseCamp,
       );
       const explorationValue = calculateMagicStoneValue(
-        resources.magicStones.exploration
+        resources.magicStones.exploration,
       );
       const totalValue = baseCampValue + explorationValue;
 
@@ -200,7 +200,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
       // A proper implementation would deduct specific stones
       return true;
     },
-    [resources.magicStones.baseCamp, resources.magicStones.exploration]
+    [resources.magicStones.baseCamp, resources.magicStones.exploration],
   );
 
   /**
@@ -208,10 +208,10 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
    */
   const getTotalMagicStonesValue = useCallback((): number => {
     const baseCampValue = calculateMagicStoneValue(
-      resources.magicStones.baseCamp
+      resources.magicStones.baseCamp,
     );
     const explorationValue = calculateMagicStoneValue(
-      resources.magicStones.exploration
+      resources.magicStones.exploration,
     );
     return baseCampValue + explorationValue;
   }, [resources.magicStones.baseCamp, resources.magicStones.exploration]);
@@ -277,7 +277,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
     (survivalMultiplier: number) => {
       setResources((prev) => {
         const transferredGold = Math.floor(
-          prev.gold.exploration * survivalMultiplier
+          prev.gold.exploration * survivalMultiplier,
         );
 
         return {
@@ -291,22 +291,22 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
               small:
                 prev.magicStones.baseCamp.small +
                 Math.floor(
-                  prev.magicStones.exploration.small * survivalMultiplier
+                  prev.magicStones.exploration.small * survivalMultiplier,
                 ),
               medium:
                 prev.magicStones.baseCamp.medium +
                 Math.floor(
-                  prev.magicStones.exploration.medium * survivalMultiplier
+                  prev.magicStones.exploration.medium * survivalMultiplier,
                 ),
               large:
                 prev.magicStones.baseCamp.large +
                 Math.floor(
-                  prev.magicStones.exploration.large * survivalMultiplier
+                  prev.magicStones.exploration.large * survivalMultiplier,
                 ),
               huge:
                 prev.magicStones.baseCamp.huge +
                 Math.floor(
-                  prev.magicStones.exploration.huge * survivalMultiplier
+                  prev.magicStones.exploration.huge * survivalMultiplier,
                 ),
             },
             exploration: { small: 0, medium: 0, large: 0, huge: 0 },
@@ -314,7 +314,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
         };
       });
     },
-    []
+    [],
   );
 
   /**

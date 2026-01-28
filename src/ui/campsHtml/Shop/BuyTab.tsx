@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
-import { useInventory } from "../../../domain/camps/contexts/InventoryContext";
+import { usePlayer } from "../../../contexts/PlayerContext";
+import { useInventory } from "../../../contexts/InventoryContext";
 import {
   CONSUMABLE_ITEMS,
   TELEPORT_ITEMS,
@@ -30,7 +30,8 @@ const BuyTab = () => {
   };
 
   const handleBuyItem = (shopItem: ShopItem) => {
-    const totalGold = playerData.resources.baseCampGold + playerData.resources.explorationGold;
+    const totalGold =
+      playerData.resources.baseCampGold + playerData.resources.explorationGold;
     if (!canAfford(totalGold, shopItem.price)) {
       showNotification("Not enough gold!");
       return;
@@ -54,7 +55,8 @@ const BuyTab = () => {
   };
 
   const handleBuyPack = (pack: EquipmentPackConfig) => {
-    const totalGold = playerData.resources.baseCampGold + playerData.resources.explorationGold;
+    const totalGold =
+      playerData.resources.baseCampGold + playerData.resources.explorationGold;
     if (!canAfford(totalGold, pack.price)) {
       showNotification("Not enough gold!");
       return;
@@ -76,11 +78,12 @@ const BuyTab = () => {
   };
 
   const renderShopItem = (item: ShopItem) => {
-    const totalGold = playerData.resources.baseCampGold + playerData.resources.explorationGold;
+    const totalGold =
+      playerData.resources.baseCampGold + playerData.resources.explorationGold;
     const affordable = canAfford(totalGold, item.price);
     const hasSpace = hasInventorySpace(
       inventory.currentCapacity,
-      inventory.maxCapacity
+      inventory.maxCapacity,
     );
 
     return (
@@ -106,12 +109,13 @@ const BuyTab = () => {
   };
 
   const renderPackItem = (pack: EquipmentPackConfig) => {
-    const totalGold = playerData.resources.baseCampGold + playerData.resources.explorationGold;
+    const totalGold =
+      playerData.resources.baseCampGold + playerData.resources.explorationGold;
     const affordable = canAfford(totalGold, pack.price);
     const hasSpace = hasInventorySpace(
       inventory.currentCapacity,
       inventory.maxCapacity,
-      6
+      6,
     );
 
     return (

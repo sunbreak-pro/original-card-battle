@@ -1,4 +1,5 @@
 import type { BuffDebuffMap } from "../type/baffType";
+import { BLEED_DAMAGE_RATE } from "../../../constants";
 
 export function calculateBleedDamage(
   maxHp: number,
@@ -7,7 +8,7 @@ export function calculateBleedDamage(
   if (!buffDebuffs.has("bleed")) {
     return 0;
   }
-  const bleedDamage = Math.floor(maxHp * 0.05);
+  const bleedDamage = Math.floor(maxHp * BLEED_DAMAGE_RATE);
   return bleedDamage;
 }
 

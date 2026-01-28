@@ -13,14 +13,14 @@ import {
 } from "../../domain/characters/player/data/CharacterClassData";
 import { CharacterCard } from "./CharacterCard";
 import { StarterDeckPreview } from "./StarterDeckPreview";
-import { useGameState } from "../../domain/camps/contexts/GameStateContext";
-import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
+import { useGameState } from "../../contexts/GameStateContext";
+import { usePlayer } from "../../contexts/PlayerContext";
 import { saveManager } from "../../domain/save/logic/saveManager";
 import "./CharacterSelect.css";
 
 export const CharacterSelect: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<CharacterClass | null>(
-    null
+    null,
   );
   const { navigateTo } = useGameState();
   const { initializeWithClass } = usePlayer();

@@ -14,10 +14,10 @@ import { CharacterSelect } from "./ui/characterSelectHtml/CharacterSelect.tsx";
 import {
   GameStateProvider,
   useGameState,
-} from "./domain/camps/contexts/GameStateContext.tsx";
-import { ResourceProvider } from "./domain/camps/contexts/ResourceContext.tsx";
-import { PlayerProvider } from "./domain/camps/contexts/PlayerContext.tsx";
-import { InventoryProvider } from "./domain/camps/contexts/InventoryContext.tsx";
+} from "./contexts/GameStateContext.tsx";
+import { ResourceProvider } from "./contexts/ResourceContext.tsx";
+import { PlayerProvider } from "./contexts/PlayerContext.tsx";
+import { InventoryProvider } from "./contexts/InventoryContext.tsx";
 import { getGuildEnemy } from "./domain/camps/data/GuildEnemyData.ts";
 import "./App.css";
 

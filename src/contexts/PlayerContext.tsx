@@ -16,26 +16,32 @@ import type {
   PlayerData,
   Difficulty,
   LivesSystem,
-} from "../../characters/type/playerTypes";
+} from "../domain/characters/type/playerTypes";
 import {
   createLivesSystem,
   decreaseLives as decreaseLivesHelper,
   isGameOver as isGameOverHelper,
-} from "../../characters/type/playerTypes";
-import type { CharacterClass } from "../../characters/type/baseTypes";
-import type { MagicStones } from "../../item_equipment/type/ItemTypes";
+} from "../domain/characters/type/playerTypes";
+import type { CharacterClass } from "../domain/characters/type/baseTypes";
+import type { MagicStones } from "../domain/item_equipment/type/ItemTypes";
 import {
   Swordman_Status,
   Mage_Status,
   Summon_Status,
-} from "../../characters/player/data/PlayerData";
-import { getCharacterClassInfo } from "../../characters/player/data/CharacterClassData";
+} from "../domain/characters/player/data/PlayerData";
+import { getCharacterClassInfo } from "../domain/characters/player/data/CharacterClassData";
 import {
   STORAGE_TEST_ITEMS,
   INVENTORY_TEST_ITEMS,
   EQUIPPED_TEST_ITEMS,
-} from "../../item_equipment/data/TestItemsData";
+} from "../domain/item_equipment/data/TestItemsData";
 import { useResources } from "./ResourceContext";
+import {
+  STORAGE_MAX_CAPACITY,
+  INVENTORY_MAX_CAPACITY,
+  EQUIPMENT_INVENTORY_MAX,
+  DEFAULT_EXPLORATION_LIMIT,
+} from "../constants";
 
 /**
  * Runtime Battle State
@@ -153,17 +159,17 @@ function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
     // Storage & Inventory (with test items)
     storage: {
       items: STORAGE_TEST_ITEMS,
-      maxCapacity: 100,
+      maxCapacity: STORAGE_MAX_CAPACITY,
       currentCapacity: STORAGE_TEST_ITEMS.length,
     },
     inventory: {
       items: INVENTORY_TEST_ITEMS,
-      maxCapacity: 20,
+      maxCapacity: INVENTORY_MAX_CAPACITY,
       currentCapacity: INVENTORY_TEST_ITEMS.length,
     },
     equipmentInventory: {
       items: [],
-      maxCapacity: 3,
+      maxCapacity: EQUIPMENT_INVENTORY_MAX,
       currentCapacity: 0,
     },
     equipmentSlots: EQUIPPED_TEST_ITEMS,
@@ -177,7 +183,7 @@ function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
     // Progression
     explorationLimit: {
       current: 0,
-      max: 10,
+      max: DEFAULT_EXPLORATION_LIMIT,
     },
     sanctuaryProgress: {
       currentRunSouls: 25,
@@ -193,7 +199,7 @@ function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
  */
 function createInitialRuntimeState(
   basePlayer: Player,
-  difficulty: Difficulty = 'normal'
+  difficulty: Difficulty = "normal",
 ): RuntimeBattleState {
   return {
     currentHp: basePlayer.hp,
@@ -231,7 +237,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 
   // Runtime battle state - persists between battles within exploration
   const [runtimeState, setRuntimeState] = useState<RuntimeBattleState>(() =>
-    createInitialRuntimeState(Swordman_Status)
+    createInitialRuntimeState(Swordman_Status),
   );
 
   /**
@@ -280,7 +286,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   const transferSouls = (survivalMultiplier: number) => {
     setPlayerState((prev) => {
       const transferredSouls = Math.floor(
-        prev.sanctuaryProgress.currentRunSouls * survivalMultiplier
+        prev.sanctuaryProgress.currentRunSouls * survivalMultiplier,
       );
       return {
         ...prev,
@@ -355,9 +361,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     setPlayerState((prev) => ({
       ...prev,
       gold: resourceContext.getTotalGold() + amount,
-      baseCampGold: toBaseCamp
-        ? prev.baseCampGold + amount
-        : prev.baseCampGold,
+      baseCampGold: toBaseCamp ? prev.baseCampGold + amount : prev.baseCampGold,
       explorationGold: toBaseCamp
         ? prev.explorationGold
         : prev.explorationGold + amount,
@@ -517,7 +521,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    * Note: This resets HP/AP/mastery but preserves lives
    */
   const resetRuntimeState = () => {
-    setRuntimeState(prev => ({
+    setRuntimeState((prev) => ({
       ...createInitialRuntimeState(playerState, prev.difficulty),
       // Preserve lives when returning to camp (not resetting completely)
       lives: prev.lives,
@@ -533,7 +537,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    * Decrease lives by 1 (on death)
    */
   const decreaseLives = () => {
-    setRuntimeState(prev => ({
+    setRuntimeState((prev) => ({
       ...prev,
       lives: decreaseLivesHelper(prev.lives),
     }));
@@ -550,7 +554,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    * Set game difficulty (resets lives to match new difficulty)
    */
   const setDifficulty = (difficulty: Difficulty) => {
-    setRuntimeState(prev => ({
+    setRuntimeState((prev) => ({
       ...prev,
       difficulty,
       lives: createLivesSystem(difficulty),
@@ -564,39 +568,42 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   /**
    * Computed PlayerData from internal ExtendedPlayer state
    */
-  const playerData = useMemo<PlayerData>(() => ({
-    persistent: {
-      id: `player_${Date.now()}`,
-      name: playerState.name ?? "Adventurer",
-      playerClass: playerState.playerClass,
-      classGrade: playerState.classGrade,
-      level: playerState.level,
-      baseMaxHp: playerState.maxHp,
-      baseMaxAp: playerState.maxAp,
-      baseSpeed: playerState.speed,
-      cardActEnergy: playerState.cardActEnergy,
-      deckCardIds: playerState.deck.map(card => card.id),
-      titles: playerState.tittle ?? [],
-    },
-    resources: {
-      baseCampGold: playerState.baseCampGold,
-      explorationGold: playerState.explorationGold,
-      baseCampMagicStones: playerState.baseCampMagicStones,
-      explorationMagicStones: playerState.explorationMagicStones,
-      explorationLimit: playerState.explorationLimit,
-    },
-    inventory: {
-      storage: playerState.storage,
-      inventory: playerState.inventory,
-      equipmentInventory: playerState.equipmentInventory,
-      equipmentSlots: playerState.equipmentSlots,
-    },
-    progression: {
-      sanctuaryProgress: playerState.sanctuaryProgress,
-      unlockedDepths: [1], // Default: only depth 1 unlocked
-      completedAchievements: [],
-    },
-  }), [playerState]);
+  const playerData = useMemo<PlayerData>(
+    () => ({
+      persistent: {
+        id: `player_${Date.now()}`,
+        name: playerState.name ?? "Adventurer",
+        playerClass: playerState.playerClass,
+        classGrade: playerState.classGrade,
+        level: playerState.level,
+        baseMaxHp: playerState.maxHp,
+        baseMaxAp: playerState.maxAp,
+        baseSpeed: playerState.speed,
+        cardActEnergy: playerState.cardActEnergy,
+        deckCardIds: playerState.deck.map((card) => card.id),
+        titles: playerState.tittle ?? [],
+      },
+      resources: {
+        baseCampGold: playerState.baseCampGold,
+        explorationGold: playerState.explorationGold,
+        baseCampMagicStones: playerState.baseCampMagicStones,
+        explorationMagicStones: playerState.explorationMagicStones,
+        explorationLimit: playerState.explorationLimit,
+      },
+      inventory: {
+        storage: playerState.storage,
+        inventory: playerState.inventory,
+        equipmentInventory: playerState.equipmentInventory,
+        equipmentSlots: playerState.equipmentSlots,
+      },
+      progression: {
+        sanctuaryProgress: playerState.sanctuaryProgress,
+        unlockedDepths: [1], // Default: only depth 1 unlocked
+        completedAchievements: [],
+      },
+    }),
+    [playerState],
+  );
 
   /**
    * Update player data using new PlayerData interface
@@ -626,17 +633,22 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
       if (updates.resources) {
         if (updates.resources.baseCampGold !== undefined) {
           updated.baseCampGold = updates.resources.baseCampGold;
-          updated.gold = updates.resources.baseCampGold + (updates.resources.explorationGold ?? prev.explorationGold);
+          updated.gold =
+            updates.resources.baseCampGold +
+            (updates.resources.explorationGold ?? prev.explorationGold);
         }
         if (updates.resources.explorationGold !== undefined) {
           updated.explorationGold = updates.resources.explorationGold;
-          updated.gold = (updates.resources.baseCampGold ?? prev.baseCampGold) + updates.resources.explorationGold;
+          updated.gold =
+            (updates.resources.baseCampGold ?? prev.baseCampGold) +
+            updates.resources.explorationGold;
         }
         if (updates.resources.baseCampMagicStones !== undefined) {
           updated.baseCampMagicStones = updates.resources.baseCampMagicStones;
         }
         if (updates.resources.explorationMagicStones !== undefined) {
-          updated.explorationMagicStones = updates.resources.explorationMagicStones;
+          updated.explorationMagicStones =
+            updates.resources.explorationMagicStones;
         }
         if (updates.resources.explorationLimit !== undefined) {
           updated.explorationLimit = updates.resources.explorationLimit;

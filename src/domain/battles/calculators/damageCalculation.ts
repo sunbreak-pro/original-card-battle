@@ -9,6 +9,7 @@ import {
   calculateLifesteal
 } from "./buffCalculation";
 import type { BattleStats } from "../../characters/type/baseTypes";
+import { CRIT_DAMAGE_MULTIPLIER, GUARD_BLEED_THROUGH_MULTIPLIER } from "../../../constants";
 
 // Empty BuffDebuffMap for fallback
 const EMPTY_BUFF_MAP: BuffDebuffMap = new Map();
@@ -32,7 +33,7 @@ export function calculateDamage(
     isCritical = Math.random() < critRate;
 
     if (isCritical) {
-      critMod = 1.5;
+      critMod = CRIT_DAMAGE_MULTIPLIER;
       const critBuff = attackerBuffs.get("criticalUp")!;
       critMod += critBuff.value / 100;
     }
@@ -65,7 +66,7 @@ export function applyDamageAllocation(
   if (hadGuard) {
     if (defender.guard >= remainingDmg && defender.ap <= 0) {
       guardDmg = remainingDmg;
-      hpDmg = Math.floor(remainingDmg * 0.75);
+      hpDmg = Math.floor(remainingDmg * GUARD_BLEED_THROUGH_MULTIPLIER);
       remainingDmg = 0;
       return { guardDamage: guardDmg, apDamage: apDmg, hpDamage: hpDmg };
     } else if (defender.guard >= remainingDmg) {

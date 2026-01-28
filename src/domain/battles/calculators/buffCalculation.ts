@@ -1,6 +1,15 @@
 import type { BuffDebuffMap } from "../type/baffType";
 import { BUFF_EFFECTS } from "../data/buffData";
 import type { BuffDebuffType } from "../type/baffType";
+import {
+  BASE_CRIT_RATE,
+  MAX_CRIT_RATE,
+  BASE_HIT_RATE,
+  MAX_HIT_RATE,
+  CURSE_HEALING_MULTIPLIER,
+  OVER_CURSE_HEALING_MULTIPLIER,
+  FIRE_FIELD_BONUS_MULTIPLIER,
+} from "../../../constants";
 
 export function attackBuffDebuff(buffDebuffs: BuffDebuffMap): number {
     let multiplier = 1.0;
@@ -58,20 +67,20 @@ export function defenseBuffDebuff(buffDebuffs: BuffDebuffMap): {
     return { vulnerabilityMod, damageReductionMod };
 }
 export function criticalRateBuff(buffDebuffs: BuffDebuffMap): number {
-    let rate = 0.1;
+    let rate = BASE_CRIT_RATE;
     if (buffDebuffs.has("criticalUp")) {
         const buff = buffDebuffs.get("criticalUp")!;
         rate += buff.value / 100;
     }
-    return Math.min(0.8, rate);
+    return Math.min(MAX_CRIT_RATE, rate);
 }
 export function hitRateBuff(buffDebuffs: BuffDebuffMap): number {
-    let rate = 0.1;
+    let rate = BASE_HIT_RATE;
     if (buffDebuffs.has("hitRateUp")) {
         const buff = buffDebuffs.get("hitRateUp")!;
         rate += buff.value / 100;
     }
-    return Math.min(0.99, rate);
+    return Math.min(MAX_HIT_RATE, rate);
 }
 
 export function reflectBuff(
@@ -104,10 +113,10 @@ export const calculateStartPhaseHealing = (
         }
     });
     if (map.has("curse")) {
-        hp = Math.floor(hp * 0.2);
+        hp = Math.floor(hp * CURSE_HEALING_MULTIPLIER);
     }
     if (map.has("overCurse")) {
-        hp = Math.floor(hp * 0.5);
+        hp = Math.floor(hp * OVER_CURSE_HEALING_MULTIPLIER);
     }
 
     return { hp, shield };
@@ -133,7 +142,7 @@ export const calculateEndPhaseDamage = (map: BuffDebuffMap): number => {
             case "burn":
                 buffDamage += buff.value;
                 if (map.has("fireField")) {
-                    buffDamage += buff.value * 0.5;
+                    buffDamage += buff.value * FIRE_FIELD_BONUS_MULTIPLIER;
                 }
                 break;
             case "poison":

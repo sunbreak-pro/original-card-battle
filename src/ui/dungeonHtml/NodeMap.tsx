@@ -1,7 +1,7 @@
 // NodeMap - Dungeon map display component
 
 import { useCallback, useMemo, useEffect } from "react";
-import { useGameState } from "../../domain/camps/contexts/GameStateContext";
+import { useGameState } from "../../contexts/GameStateContext";
 import { useDungeonRun } from "./DungeonRunContext";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { DEPTH_DISPLAY_INFO } from "../../domain/dungeon/types/DungeonTypes";

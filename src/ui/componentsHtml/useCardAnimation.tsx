@@ -7,6 +7,12 @@ import {
   showDamageText,
   shakeElement,
 } from "../animations/animationEngine";
+import {
+  CARD_ANIMATION,
+  DAMAGE_ANIMATION,
+  HEAL_ANIMATION,
+  SHIELD_ANIMATION,
+} from "../../constants";
 
 export const useCardAnimation = () => {
   const [discardingCards, setDiscardingCards] = useState<Card[]>([]);
@@ -14,15 +20,14 @@ export const useCardAnimation = () => {
   const drawCardsWithAnimation = async (
     cards: Card[],
     onAllCardsDrawn: (cards: Card[]) => void,
-    interval: number = 150,
+    interval: number = CARD_ANIMATION.DRAW_INTERVAL,
   ): Promise<void> => {
     const newIds = new Set(cards.map((c) => c.id));
     setNewCardIds((prev) => new Set([...prev, ...newIds]));
 
     onAllCardsDrawn(cards);
 
-    const animationDuration = 800;
-    const totalDuration = animationDuration + (cards.length - 1) * interval;
+    const totalDuration = CARD_ANIMATION.DRAW_DURATION + (cards.length - 1) * interval;
 
     await new Promise((resolve) => setTimeout(resolve, totalDuration));
 
@@ -38,8 +43,8 @@ export const useCardAnimation = () => {
     if (!container) return;
     const containerRect = container.getBoundingClientRect();
     const elementRect = element.getBoundingClientRect();
-    const startX = containerRect.width - 100;
-    const startY = containerRect.height - 150;
+    const startX = containerRect.width - CARD_ANIMATION.DRAW_START_OFFSET_X;
+    const startY = containerRect.height - CARD_ANIMATION.DRAW_START_OFFSET_Y;
     const endX = elementRect.left - containerRect.left;
     const endY = elementRect.top - containerRect.top;
 
@@ -47,8 +52,8 @@ export const useCardAnimation = () => {
     element.style.left = `${startX}px`;
     element.style.top = `${startY}px`;
     element.style.opacity = "0";
-    element.style.transform = "scale(0.1) rotate(20deg)";
-    element.style.zIndex = "100";
+    element.style.transform = `scale(${CARD_ANIMATION.DRAW_INITIAL_SCALE}) rotate(${CARD_ANIMATION.DRAW_INITIAL_ROTATION}deg)`;
+    element.style.zIndex = String(CARD_ANIMATION.DRAW_Z_INDEX);
 
     await animateAsync({
       element,
@@ -68,7 +73,7 @@ export const useCardAnimation = () => {
   };
   const discardCardsWithAnimation = async (
     cards: Card[],
-    interval: number = 100,
+    interval: number = CARD_ANIMATION.DISCARD_INTERVAL,
     onComplete?: () => void,
   ): Promise<void> => {
     if (cards.length === 0) {
@@ -88,7 +93,7 @@ export const useCardAnimation = () => {
       }
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, CARD_ANIMATION.DISCARD_DURATION));
     setDiscardingCards([]);
     if (onComplete) {
       onComplete();
@@ -103,33 +108,33 @@ export const useCardAnimation = () => {
     const elementRect = element.getBoundingClientRect();
     const startX = elementRect.left - containerRect.left;
     const startY = elementRect.top - containerRect.top;
-    const endX = 100;
-    const endY = containerRect.height - 150;
+    const endX = CARD_ANIMATION.DISCARD_END_OFFSET_X;
+    const endY = containerRect.height - CARD_ANIMATION.DISCARD_END_OFFSET_Y;
 
     element.style.position = "absolute";
     element.style.left = `${startX}px`;
     element.style.top = `${startY}px`;
-    element.style.zIndex = "100";
+    element.style.zIndex = String(CARD_ANIMATION.DRAW_Z_INDEX);
 
     createParticles({
       container,
       x: startX + 80,
       y: startY + 100,
-      count: 10,
-      color: "rgba(100, 100, 255, 0.6)",
-      size: 3,
-      spread: 50,
+      count: CARD_ANIMATION.DISCARD_PARTICLE_COUNT,
+      color: `rgba(100, 100, 255, ${CARD_ANIMATION.DISCARD_PARTICLE_OPACITY})`,
+      size: CARD_ANIMATION.DISCARD_PARTICLE_SIZE,
+      spread: CARD_ANIMATION.DISCARD_PARTICLE_SPREAD,
     });
 
     await animateAsync({
       element,
-      duration: 500,
+      duration: CARD_ANIMATION.DISCARD_DURATION,
       easing: Easing.easeInCubic,
       to: {
         left: `${endX}px`,
         top: `${endY}px`,
         opacity: "0",
-        transform: "scale(0.1) rotate(-25deg)",
+        transform: `scale(${CARD_ANIMATION.DRAW_INITIAL_SCALE}) rotate(-${CARD_ANIMATION.DISCARD_ROTATION}deg)`,
       } as Partial<CSSStyleDeclaration>,
     });
   };
@@ -157,7 +162,7 @@ export const useCardAnimation = () => {
     clone.style.position = "absolute";
     clone.style.left = `${startX}px`;
     clone.style.top = `${startY}px`;
-    clone.style.zIndex = "200";
+    clone.style.zIndex = String(CARD_ANIMATION.PLAY_Z_INDEX);
     clone.style.pointerEvents = "none";
     container.appendChild(clone);
 
@@ -175,17 +180,17 @@ export const useCardAnimation = () => {
       }, 200);
     };
 
-    const trailInterval = setInterval(createTrail, 50);
+    const trailInterval = setInterval(createTrail, CARD_ANIMATION.PLAY_TRAIL_INTERVAL);
 
     await animateAsync({
       element: clone,
-      duration: 400,
+      duration: CARD_ANIMATION.PLAY_DURATION,
       easing: Easing.easeInQuad,
       to: {
         left: `${endX}px`,
         top: `${endY}px`,
-        transform: "scale(0.5) rotate(360deg)",
-        opacity: "0.8",
+        transform: `scale(${CARD_ANIMATION.PLAY_FINAL_SCALE}) rotate(${CARD_ANIMATION.PLAY_FINAL_ROTATION}deg)`,
+        opacity: String(CARD_ANIMATION.PLAY_PARTICLE_OPACITY),
       } as Partial<CSSStyleDeclaration>,
     });
 
@@ -195,10 +200,10 @@ export const useCardAnimation = () => {
       container,
       x: endX,
       y: endY,
-      count: 30,
-      color: "rgba(255, 200, 100, 0.8)",
-      size: 5,
-      spread: 150,
+      count: CARD_ANIMATION.PLAY_PARTICLE_COUNT,
+      color: `rgba(255, 200, 100, ${CARD_ANIMATION.PLAY_PARTICLE_OPACITY})`,
+      size: CARD_ANIMATION.PLAY_PARTICLE_SIZE,
+      spread: CARD_ANIMATION.PLAY_PARTICLE_SPREAD,
       gravity: 1,
     });
 
@@ -233,16 +238,20 @@ export const useCardAnimation = () => {
       isCritical,
     });
 
-    shakeElement(targetElement, isCritical ? 20 : 10, 300);
+    shakeElement(
+      targetElement,
+      isCritical ? DAMAGE_ANIMATION.CRIT_SHAKE_AMPLITUDE : DAMAGE_ANIMATION.NORMAL_SHAKE_AMPLITUDE,
+      DAMAGE_ANIMATION.SHAKE_DURATION,
+    );
 
     createParticles({
       container,
       x,
       y,
-      count: isCritical ? 40 : 20,
+      count: isCritical ? DAMAGE_ANIMATION.CRIT_PARTICLE_COUNT : DAMAGE_ANIMATION.NORMAL_PARTICLE_COUNT,
       color: isCritical ? "#ff6600" : "#ff4444",
-      size: isCritical ? 6 : 4,
-      spread: isCritical ? 200 : 100,
+      size: isCritical ? DAMAGE_ANIMATION.CRIT_PARTICLE_SIZE : DAMAGE_ANIMATION.NORMAL_PARTICLE_SIZE,
+      spread: isCritical ? DAMAGE_ANIMATION.CRIT_PARTICLE_SPREAD : DAMAGE_ANIMATION.NORMAL_PARTICLE_SPREAD,
     });
   };
 
@@ -264,33 +273,33 @@ export const useCardAnimation = () => {
       color: "#44ff44",
     });
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < HEAL_ANIMATION.PARTICLE_COUNT; i++) {
       setTimeout(() => {
         const particle = document.createElement("div");
         particle.style.position = "absolute";
         particle.style.left = `${x + (Math.random() - 0.5) * 100}px`;
-        particle.style.top = `${y + 50}px`;
-        particle.style.width = "8px";
-        particle.style.height = "8px";
+        particle.style.top = `${y + HEAL_ANIMATION.PARTICLE_Y_OFFSET}px`;
+        particle.style.width = `${HEAL_ANIMATION.PARTICLE_SIZE}px`;
+        particle.style.height = `${HEAL_ANIMATION.PARTICLE_SIZE}px`;
         particle.style.backgroundColor = "#44ff44";
         particle.style.borderRadius = "50%";
         particle.style.pointerEvents = "none";
         particle.style.zIndex = "9999";
-        particle.style.boxShadow = "0 0 10px #44ff44";
+        particle.style.boxShadow = `0 0 ${HEAL_ANIMATION.GLOW_BLUR}px #44ff44`;
         container.appendChild(particle);
 
         animateAsync({
           element: particle,
-          duration: 1000,
+          duration: HEAL_ANIMATION.PARTICLE_DURATION,
           easing: Easing.easeOutQuad,
           to: {
-            top: `${y - 100}px`,
+            top: `${y - HEAL_ANIMATION.PARTICLE_FINAL_Y}px`,
             opacity: "0",
           } as Partial<CSSStyleDeclaration>,
         }).then(() => {
           particle.remove();
         });
-      }, i * 30);
+      }, i * HEAL_ANIMATION.PARTICLE_INTERVAL);
     }
   };
 
@@ -313,30 +322,30 @@ export const useCardAnimation = () => {
       y,
       value: shield,
       color: "#4488ff",
-      fontSize: 28,
+      fontSize: SHIELD_ANIMATION.TEXT_FONT_SIZE,
     });
 
     const ring = document.createElement("div");
     ring.style.position = "absolute";
     ring.style.left = `${x}px`;
     ring.style.top = `${y}px`;
-    ring.style.width = "20px";
-    ring.style.height = "20px";
-    ring.style.border = "3px solid #4488ff";
+    ring.style.width = `${SHIELD_ANIMATION.RING_INITIAL_SIZE}px`;
+    ring.style.height = `${SHIELD_ANIMATION.RING_INITIAL_SIZE}px`;
+    ring.style.border = `${SHIELD_ANIMATION.RING_BORDER}px solid #4488ff`;
     ring.style.borderRadius = "50%";
     ring.style.pointerEvents = "none";
     ring.style.zIndex = "9999";
     ring.style.transform = "translate(-50%, -50%)";
-    ring.style.boxShadow = "0 0 20px #4488ff";
+    ring.style.boxShadow = `0 0 ${SHIELD_ANIMATION.RING_GLOW_BLUR}px #4488ff`;
     container.appendChild(ring);
 
     animateAsync({
       element: ring,
-      duration: 800,
+      duration: SHIELD_ANIMATION.RING_DURATION,
       easing: Easing.easeOutQuad,
       to: {
-        width: "200px",
-        height: "200px",
+        width: `${SHIELD_ANIMATION.RING_FINAL_SIZE}px`,
+        height: `${SHIELD_ANIMATION.RING_FINAL_SIZE}px`,
         opacity: "0",
       } as Partial<CSSStyleDeclaration>,
     }).then(() => {

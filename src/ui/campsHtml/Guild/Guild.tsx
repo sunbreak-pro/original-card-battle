@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
+import { useGameState } from "../../../contexts/GameStateContext";
 import PromotionTab from "./Exam";
 import RumorsTab from "./RumorsTab";
 import QuestsTab from "./QuestsTab";
-import FacilityHeader from "../../commonHtml/FacilityHeader";
+import FacilityHeader from "../../componentsHtml/FacilityHeader";
 import "../../css/camps/Guild.css";
 
 type GuildTab = "promotion" | "rumors" | "quests";

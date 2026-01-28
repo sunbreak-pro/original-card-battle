@@ -8,8 +8,8 @@
  */
 
 import React from "react";
-import { usePlayer } from "../../domain/camps/contexts/PlayerContext";
-import { useResources } from "../../domain/camps/contexts/ResourceContext";
+import { usePlayer } from "../../contexts/PlayerContext";
+import { useResources } from "../../contexts/ResourceContext";
 import "../css/components/FacilityHeader.css";
 
 // Pencil-generated image assets

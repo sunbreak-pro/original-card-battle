@@ -11,7 +11,7 @@ export type ShopTab = "buy" | "sell" | "exchange";
 /**
  * Shop item category
  */
-export type ShopCategory = "consumable" | "teleport" | "equipmentPack";
+export type ShopCategory = "consumable" | "teleport" | "equipmentPack" | "battleItem" | "mapItem";
 
 /**
  * Shop item definition (catalog entry, not inventory instance)
@@ -40,7 +40,6 @@ export interface ShopItem {
  * Equipment pack types
  */
 export type EquipmentPackType = "common" | "rare" | "epic";
-
 /**
  * Equipment pack configuration
  */
@@ -65,6 +64,7 @@ export interface RarityProbability {
   rare: number;
   epic: number;
   legendary: number;
+  mitheic?: number; // For future use
 }
 
 /**

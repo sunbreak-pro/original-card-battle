@@ -1,6 +1,7 @@
 // Shop transaction logic
 
-import { type Item, type ItemRarity, type MagicStones, createItemInstance } from "../../item_equipment/type/ItemTypes";
+import { type Item, type ItemRarity, type MagicStones } from "../../item_equipment/type/ItemTypes";
+import { createItemInstance } from "../../item_equipment/logic/createItem";
 import type { ShopItem, EquipmentPackConfig } from "../types/ShopTypes";
 import { getShopItemById, getEquipmentPackById } from "../data/ShopData";
 import type { EquipmentSlot } from "../../item_equipment/type/EquipmentType";
@@ -216,6 +217,10 @@ export function purchaseShopItem(shopItemId: string): Item | null {
     return createConsumableItem(shopItem);
   } else if (shopItem.category === "teleport") {
     return createTeleportItem(shopItem);
+  }
+  else if (shopItem.category === "battleItem") {
+    // return createEquipemnt(); Not implemented.
+    return null;
   }
 
   return null;

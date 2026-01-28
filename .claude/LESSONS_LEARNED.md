@@ -104,14 +104,16 @@ return <Component value={value} />;
 ```
 
 **Fixed Instance:**
-- `BattleScreen.tsx`: Changed `soulsTransferredRef` → `soulsTransferred` (useState)
+- `BattleScreen.tsx`: Changed `soulsTransferredRef` → `soulsTransferred` (useState), moved death handling to useEffect
+- `BattleScreen.tsx`: Changed `prevPhaseIndexRef` → `prevPhaseIndex` (useState) for render-time phase tracking
 
 **When to Use Refs vs State:**
 | Use Refs | Use State |
 |----------|-----------|
 | DOM element access | Values displayed in UI |
 | Mutable values without re-render | Values that trigger re-render |
-| Storing previous values | Values passed to child props |
+| One-time guards (e.g., `deathHandledRef`) | Values passed to child props |
+| Values only read in effects/callbacks | Previous value tracking for derived state |
 
 ---
 
@@ -129,6 +131,42 @@ return <Component value={value} />;
 
 ---
 
+## 6. React 19 `set-state-in-effect` vs `refs` の衝突
+
+**Problem:** Two React 19 lint rules conflict — moving code from render to useEffect triggers `set-state-in-effect`, while keeping it in render triggers `refs`.
+
+**Pattern A — Render-time derived state (no side effects):**
+```typescript
+// Use useState to track previous values (NOT useRef)
+const [prevValue, setPrevValue] = useState(currentValue);
+if (currentValue !== prevValue) {
+  setPrevValue(currentValue);
+  setDerivedState(newValue); // OK: render-time setState is fine
+}
+```
+
+**Pattern B — Side effects that need setState:**
+```typescript
+// Use useEffect + eslint-disable for the setState line
+const guardRef = useRef(false);
+useEffect(() => {
+  if (!guardRef.current) {
+    doSideEffect();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init guarded by ref
+    setSomeState(value);
+    guardRef.current = true;
+  }
+}, [deps]);
+```
+
+**Decision rule:** If the code has side effects (API calls, context updates, etc.) → Pattern B (useEffect). If it's pure derived state → Pattern A (render-time setState).
+
+**Fixed Instance:**
+- `BattleScreen.tsx`: Death handling → Pattern B (useEffect + eslint-disable)
+- `BattleScreen.tsx`: Phase index tracking → Pattern A (render-time useState)
+
+---
+
 ## Quick Reference
 
 | Issue | One-Line Rule |
@@ -137,4 +175,5 @@ return <Component value={value} />;
 | Context Provider Scope | Persist state across screens → provider high in tree |
 | React Hooks | Call at top level, before conditional returns |
 | React 19 Refs | No `ref.current` during render → use `useState` |
+| React 19 Rules Conflict | Side effects → useEffect + eslint-disable; Derived state → render-time useState |
 | Language | UI: Japanese / Code: English |

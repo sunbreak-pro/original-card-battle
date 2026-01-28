@@ -4,8 +4,9 @@ import type {
   EnemyAction,
 } from "../../domain/characters/type/enemyType";
 import type { BuffDebuffMap } from "../../domain/battles/type/baffType";
-import StatusEffectDisplay from "../commonHtml/BuffEffect";
+import StatusEffectDisplay from "../componentsHtml/BuffEffect";
 import { determineEnemyAction } from "../../domain/characters/enemy/logic/enemyAI";
+import { GUARD_BAR_DISPLAY_MAX, ENERGY_ANIMATION } from "../../constants";
 
 // Action type determination for icon display
 type ActionType = "attack" | "guard" | "debuff" | "special";
@@ -45,7 +46,7 @@ interface EnemyState {
   turnCount: number;
 }
 
-interface EnemyDisplayProps {
+interface EnemyLocateProps {
   enemies: EnemyState[];
   enemyRefs: React.RefObject<HTMLDivElement | null>[];
   theme: {
@@ -59,10 +60,10 @@ interface EnemyDisplayProps {
 }
 
 // Individual Enemy Card Component
-const EnemyCard: React.FC<{
+const EnemyLocate: React.FC<{
   state: EnemyState;
   enemyRef: React.RefObject<HTMLDivElement | null>;
-  theme: EnemyDisplayProps["theme"];
+  theme: EnemyLocateProps["theme"];
   size?: "normal" | "small";
 }> = ({ state, enemyRef, theme, size = "normal" }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -80,7 +81,10 @@ const EnemyCard: React.FC<{
   // Timer to end animation (reacting to isConsuming change is OK in useEffect)
   useEffect(() => {
     if (isConsuming) {
-      const timer = setTimeout(() => setIsConsuming(false), 600);
+      const timer = setTimeout(
+        () => setIsConsuming(false),
+        ENERGY_ANIMATION.CONSUMPTION_TIMEOUT,
+      );
       return () => clearTimeout(timer);
     }
   }, [isConsuming]);
@@ -94,12 +98,12 @@ const EnemyCard: React.FC<{
     state.definition.actEnergy, // enemy energy
   );
 
-  const sizeClass = size === "small" ? "enemy-card-small" : "";
+  const sizeClass = size === "small" ? "enemy-locate-small" : "";
 
   const actionType = getActionType(nextAction);
 
   return (
-    <div className={`enemy-card ${sizeClass}`}>
+    <div className={`enemy-locate ${sizeClass}`}>
       {/* Enemy name with action icon */}
       <div className="enemy-name-row">
         <span className="enemy-name">{state.definition.nameJa}</span>
@@ -172,7 +176,7 @@ const EnemyCard: React.FC<{
               <div
                 className="bar-fill guard-fill"
                 style={{
-                  width: `${Math.min(100, (state.guard / 30) * 100)}%`,
+                  width: `${Math.min(100, (state.guard / GUARD_BAR_DISPLAY_MAX) * 100)}%`,
                 }}
               />
             </div>
@@ -232,7 +236,7 @@ const EnemyCard: React.FC<{
     </div>
   );
 };
-const EnemyDisplay: React.FC<EnemyDisplayProps> = ({
+const EnemyFrame: React.FC<EnemyLocateProps> = ({
   enemies,
   enemyRefs,
   theme,
@@ -256,7 +260,7 @@ const EnemyDisplay: React.FC<EnemyDisplayProps> = ({
   return (
     <div className={`enemy-section ${getLayoutClass()}`}>
       {enemyCount === 1 && (
-        <EnemyCard
+        <EnemyLocate
           state={enemies[0]}
           enemyRef={enemyRefs[0]}
           theme={theme}
@@ -267,7 +271,7 @@ const EnemyDisplay: React.FC<EnemyDisplayProps> = ({
       {enemyCount === 2 && (
         <div className="enemy-row">
           {enemies.map((enemy, index) => (
-            <EnemyCard
+            <EnemyLocate
               key={index}
               state={enemy}
               enemyRef={enemyRefs[index]}
@@ -281,7 +285,7 @@ const EnemyDisplay: React.FC<EnemyDisplayProps> = ({
       {enemyCount === 3 && (
         <div className="enemy-row front-row">
           {enemies.map((enemy, index) => (
-            <EnemyCard
+            <EnemyLocate
               key={index}
               state={enemy}
               enemyRef={enemyRefs[index]}
@@ -295,4 +299,4 @@ const EnemyDisplay: React.FC<EnemyDisplayProps> = ({
   );
 };
 
-export default EnemyDisplay;
+export default EnemyFrame;

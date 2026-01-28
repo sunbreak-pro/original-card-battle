@@ -11,6 +11,7 @@ import type {
   PhaseActor,
 } from "../../domain/battles/type/phaseType";
 import "../css/battle/TurnOrderIndicator.css";
+import { MAX_TURN_ORDER_DISPLAY } from "../../constants";
 
 interface TurnOrderIndicatorProps {
   phaseQueue: PhaseQueue | null;
@@ -39,7 +40,7 @@ export const TurnOrderIndicator: React.FC<TurnOrderIndicatorProps> = ({
   }
 
   // Display 2-4 phases from current position
-  const displayCount = Math.min(4, phaseQueue.phases.length);
+  const displayCount = Math.min(MAX_TURN_ORDER_DISPLAY, phaseQueue.phases.length);
   const phasesToShow: { actor: PhaseActor; index: number }[] = [];
 
   for (let i = 0; i < displayCount; i++) {

@@ -9,11 +9,11 @@
 
 import React, { useState } from "react";
 import type { LibraryTab } from "../../../domain/camps/types/LibraryTypes";
-import { useGameState } from "../../../domain/camps/contexts/GameStateContext";
+import { useGameState } from "../../../contexts/GameStateContext";
 import { CardEncyclopediaTab } from "./CardEncyclopediaTab";
 import { EnemyEncyclopediaTab } from "./EnemyEncyclopediaTab";
 import { GameTipsTab } from "./GameTipsTab";
-import FacilityHeader from "../../commonHtml/FacilityHeader";
+import FacilityHeader from "../../componentsHtml/FacilityHeader";
 import "../../css/camps/Library.css";
 
 export const Library: React.FC = () => {

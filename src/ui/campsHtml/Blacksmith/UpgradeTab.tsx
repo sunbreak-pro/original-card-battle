@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { usePlayer } from "../../../domain/camps/contexts/PlayerContext";
+import { usePlayer } from "../../../contexts/PlayerContext";
 import type { Item } from "../../../domain/item_equipment/type/ItemTypes";
 import { calculateMagicStoneValue } from "../../../domain/item_equipment/type/ItemTypes";
 import type { EquipmentQuality } from "../../../domain/item_equipment/type/EquipmentType";
@@ -27,15 +27,21 @@ import BlacksmithItemCard from "./BlacksmithItemCard";
 const UpgradeTab = () => {
   const { playerData, updatePlayerData, useGold: deductGold } = usePlayer();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const [selectedQualityOption, setSelectedQualityOption] = useState<QualityUpOption>("normal");
-  const [notification, setNotification] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [selectedQualityOption, setSelectedQualityOption] =
+    useState<QualityUpOption>("normal");
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   // Get equipment items from storage
   const equipmentItems = playerData.inventory.storage.items.filter(
-    (item) => item.itemType === "equipment"
+    (item) => item.itemType === "equipment",
   );
 
-  const totalMagicStoneValue = calculateMagicStoneValue(playerData.resources.baseCampMagicStones);
+  const totalMagicStoneValue = calculateMagicStoneValue(
+    playerData.resources.baseCampMagicStones,
+  );
 
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ message, type });
@@ -45,7 +51,7 @@ const UpgradeTab = () => {
   // Update item in storage
   const updateStorageItem = (updatedItem: Item) => {
     const newItems = playerData.inventory.storage.items.map((item) =>
-      item.id === updatedItem.id ? updatedItem : item
+      item.id === updatedItem.id ? updatedItem : item,
     );
     updatePlayerData({
       inventory: {
@@ -69,7 +75,9 @@ const UpgradeTab = () => {
       return;
     }
 
-    if (!canAfford(playerData.resources.baseCampGold, totalMagicStoneValue, cost)) {
+    if (
+      !canAfford(playerData.resources.baseCampGold, totalMagicStoneValue, cost)
+    ) {
       showNotification("Not enough resources", "error");
       return;
     }
@@ -86,7 +94,7 @@ const UpgradeTab = () => {
 
     showNotification(
       `Level upgraded! ${selectedItem.name} is now Lv.${upgradedItem.level}`,
-      "success"
+      "success",
     );
   };
 
@@ -96,7 +104,9 @@ const UpgradeTab = () => {
 
     const cost = getQualityUpgradeCost(selectedQualityOption);
 
-    if (!canAfford(playerData.resources.baseCampGold, totalMagicStoneValue, cost)) {
+    if (
+      !canAfford(playerData.resources.baseCampGold, totalMagicStoneValue, cost)
+    ) {
       showNotification("Not enough resources", "error");
       return;
     }
@@ -120,15 +130,26 @@ const UpgradeTab = () => {
 
   // Get upgrade preview
   const upgradePreview = selectedItem
-    ? getUpgradePreview(selectedItem, playerData.resources.baseCampGold, totalMagicStoneValue)
+    ? getUpgradePreview(
+        selectedItem,
+        playerData.resources.baseCampGold,
+        totalMagicStoneValue,
+      )
     : null;
 
   // Get quality upgrade info
   const qualitySuccessChance = selectedItem?.quality
-    ? getQualitySuccessChance(selectedItem.quality as EquipmentQuality, selectedQualityOption)
+    ? getQualitySuccessChance(
+        selectedItem.quality as EquipmentQuality,
+        selectedQualityOption,
+      )
     : 0;
   const qualityCost = getQualityUpgradeCost(selectedQualityOption);
-  const canAffordQuality = canAfford(playerData.resources.baseCampGold, totalMagicStoneValue, qualityCost);
+  const canAffordQuality = canAfford(
+    playerData.resources.baseCampGold,
+    totalMagicStoneValue,
+    qualityCost,
+  );
 
   return (
     <div className="tab-layout">
@@ -141,7 +162,9 @@ const UpgradeTab = () => {
 
       {/* Equipment List */}
       <div className="equipment-list-section">
-        <h3 className="blacksmith-section-title">Equipment ({equipmentItems.length})</h3>
+        <h3 className="blacksmith-section-title">
+          Equipment ({equipmentItems.length})
+        </h3>
 
         {equipmentItems.length === 0 ? (
           <div className="empty-message">No equipment in storage</div>
@@ -171,12 +194,23 @@ const UpgradeTab = () => {
               <div className="detail-title">
                 <h4 className="detail-name">{selectedItem.name}</h4>
                 <div className="detail-badges">
-                  <span className="badge level">Lv.{selectedItem.level ?? 0}</span>
+                  <span className="badge level">
+                    Lv.{selectedItem.level ?? 0}
+                  </span>
                   <span
                     className={`badge quality-${selectedItem.quality ?? "normal"}`}
-                    style={{ color: QUALITY_COLORS[(selectedItem.quality ?? "normal") as EquipmentQuality] }}
+                    style={{
+                      color:
+                        QUALITY_COLORS[
+                          (selectedItem.quality ?? "normal") as EquipmentQuality
+                        ],
+                    }}
                   >
-                    {QUALITY_NAMES[(selectedItem.quality ?? "normal") as EquipmentQuality]}
+                    {
+                      QUALITY_NAMES[
+                        (selectedItem.quality ?? "normal") as EquipmentQuality
+                      ]
+                    }
                   </span>
                 </div>
               </div>
@@ -209,7 +243,8 @@ const UpgradeTab = () => {
                     <div key={index} className="stat-row">
                       <span className="label">{change.stat.toUpperCase()}</span>
                       <span className="value">
-                        {change.before} → <span className="improved">{change.after}</span>
+                        {change.before} →{" "}
+                        <span className="improved">{change.after}</span>
                       </span>
                     </div>
                   ))}
@@ -217,10 +252,14 @@ const UpgradeTab = () => {
 
                 {/* Cost */}
                 <div className="cost-display">
-                  <span className={`cost-item gold ${playerData.resources.baseCampGold < upgradePreview.cost.gold ? "insufficient" : ""}`}>
+                  <span
+                    className={`cost-item gold ${playerData.resources.baseCampGold < upgradePreview.cost.gold ? "insufficient" : ""}`}
+                  >
                     💰 {upgradePreview.cost.gold} G
                   </span>
-                  <span className={`cost-item stones ${totalMagicStoneValue < upgradePreview.cost.magicStones ? "insufficient" : ""}`}>
+                  <span
+                    className={`cost-item stones ${totalMagicStoneValue < upgradePreview.cost.magicStones ? "insufficient" : ""}`}
+                  >
                     💎 {upgradePreview.cost.magicStones} G
                   </span>
                 </div>
@@ -238,7 +277,10 @@ const UpgradeTab = () => {
             {/* Max Level Message */}
             {!canLevelUpgrade(selectedItem) && (
               <div className="action-section">
-                <div className="empty-message" style={{ height: "auto", padding: "1vh 0" }}>
+                <div
+                  className="empty-message"
+                  style={{ height: "auto", padding: "1vh 0" }}
+                >
                   Maximum level reached (Lv.{MAX_EQUIPMENT_LEVEL})
                 </div>
               </div>
@@ -253,49 +295,96 @@ const UpgradeTab = () => {
                 <div className="stat-row">
                   <span className="label">Quality</span>
                   <span className="value">
-                    <span style={{ color: QUALITY_COLORS[(selectedItem.quality ?? "normal") as EquipmentQuality] }}>
-                      {QUALITY_NAMES[(selectedItem.quality ?? "normal") as EquipmentQuality]}
+                    <span
+                      style={{
+                        color:
+                          QUALITY_COLORS[
+                            (selectedItem.quality ??
+                              "normal") as EquipmentQuality
+                          ],
+                      }}
+                    >
+                      {
+                        QUALITY_NAMES[
+                          (selectedItem.quality ?? "normal") as EquipmentQuality
+                        ]
+                      }
                     </span>
                     {" → "}
-                    <span style={{ color: QUALITY_COLORS[getNextQuality((selectedItem.quality ?? "normal") as EquipmentQuality) ?? "normal"] }}>
-                      {QUALITY_NAMES[getNextQuality((selectedItem.quality ?? "normal") as EquipmentQuality) ?? "normal"]}
+                    <span
+                      style={{
+                        color:
+                          QUALITY_COLORS[
+                            getNextQuality(
+                              (selectedItem.quality ??
+                                "normal") as EquipmentQuality,
+                            ) ?? "normal"
+                          ],
+                      }}
+                    >
+                      {
+                        QUALITY_NAMES[
+                          getNextQuality(
+                            (selectedItem.quality ??
+                              "normal") as EquipmentQuality,
+                          ) ?? "normal"
+                        ]
+                      }
                     </span>
                   </span>
                 </div>
 
                 {/* Quality Options */}
                 <div className="quality-options">
-                  {(Object.keys(QUALITY_UP_OPTIONS) as QualityUpOption[]).map((option) => {
-                    const config = QUALITY_UP_OPTIONS[option];
-                    const optionCost = getQualityUpgradeCost(option);
-                    const chance = getQualitySuccessChance(
-                      (selectedItem.quality ?? "normal") as EquipmentQuality,
-                      option
-                    );
-                    const canAffordOption = canAfford(playerData.resources.baseCampGold, totalMagicStoneValue, optionCost);
+                  {(Object.keys(QUALITY_UP_OPTIONS) as QualityUpOption[]).map(
+                    (option) => {
+                      const config = QUALITY_UP_OPTIONS[option];
+                      const optionCost = getQualityUpgradeCost(option);
+                      const chance = getQualitySuccessChance(
+                        (selectedItem.quality ?? "normal") as EquipmentQuality,
+                        option,
+                      );
+                      const canAffordOption = canAfford(
+                        playerData.resources.baseCampGold,
+                        totalMagicStoneValue,
+                        optionCost,
+                      );
 
-                    return (
-                      <div
-                        key={option}
-                        className={`quality-option ${selectedQualityOption === option ? "selected" : ""} ${!canAffordOption ? "disabled" : ""}`}
-                        onClick={() => canAffordOption && setSelectedQualityOption(option)}
-                      >
-                        <div className="quality-option-header">
-                          <span className="quality-option-name">{config.label}</span>
-                          <span className="quality-option-chance">{Math.floor(chance * 100)}%</span>
+                      return (
+                        <div
+                          key={option}
+                          className={`quality-option ${selectedQualityOption === option ? "selected" : ""} ${!canAffordOption ? "disabled" : ""}`}
+                          onClick={() =>
+                            canAffordOption && setSelectedQualityOption(option)
+                          }
+                        >
+                          <div className="quality-option-header">
+                            <span className="quality-option-name">
+                              {config.label}
+                            </span>
+                            <span className="quality-option-chance">
+                              {Math.floor(chance * 100)}%
+                            </span>
+                          </div>
+                          <div className="quality-option-desc">
+                            {config.description}
+                          </div>
+                          <div className="quality-option-cost">
+                            <span
+                              className={`cost-item gold ${playerData.resources.baseCampGold < optionCost.gold ? "insufficient" : ""}`}
+                            >
+                              💰 {optionCost.gold} G
+                            </span>
+                            <span
+                              className={`cost-item stones ${totalMagicStoneValue < optionCost.magicStones ? "insufficient" : ""}`}
+                            >
+                              💎 {optionCost.magicStones} G
+                            </span>
+                          </div>
                         </div>
-                        <div className="quality-option-desc">{config.description}</div>
-                        <div className="quality-option-cost">
-                          <span className={`cost-item gold ${playerData.resources.baseCampGold < optionCost.gold ? "insufficient" : ""}`}>
-                            💰 {optionCost.gold} G
-                          </span>
-                          <span className={`cost-item stones ${totalMagicStoneValue < optionCost.magicStones ? "insufficient" : ""}`}>
-                            💎 {optionCost.magicStones} G
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    },
+                  )}
                 </div>
 
                 <button
@@ -303,7 +392,8 @@ const UpgradeTab = () => {
                   onClick={handleQualityUpgrade}
                   disabled={!canAffordQuality}
                 >
-                  Attempt Quality Upgrade ({Math.floor(qualitySuccessChance * 100)}%)
+                  Attempt Quality Upgrade (
+                  {Math.floor(qualitySuccessChance * 100)}%)
                 </button>
               </div>
             )}
@@ -311,7 +401,10 @@ const UpgradeTab = () => {
             {/* Max Quality Message */}
             {!canQualityUpgrade(selectedItem) && (
               <div className="action-section">
-                <div className="empty-message" style={{ height: "auto", padding: "1vh 0" }}>
+                <div
+                  className="empty-message"
+                  style={{ height: "auto", padding: "1vh 0" }}
+                >
                   Maximum quality reached (Master)
                 </div>
               </div>
