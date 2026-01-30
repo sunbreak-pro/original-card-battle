@@ -1,4 +1,4 @@
-import type { EnemyDefinition } from "@/types/characterTypes";
+import type { EnemyDefinition, EncounterPattern, DepthEnemyData } from "@/types/characterTypes";
 
 export const HELL_HOUND: EnemyDefinition = {
   id: "depth4_hell_hound",
@@ -153,13 +153,31 @@ export const DEMON_LORD_VARGATH: EnemyDefinition = {
   ],
 };
 
-export const DEPTH4_ENEMIES = {
-  normal: [HELL_HOUND, SHADOW_DEMON, BLOOD_KNIGHT, DARK_SORCERER],
-  groups: [
-    { enemy: IMP_TRICKSTER, count: 3 },
-    { enemy: CURSED_GARGOYLE, count: 2 },
-    { enemy: HELLFIRE_WISP, count: 4 },
-  ],
+const SINGLE_PATTERNS: EncounterPattern[] = [
+  { id: "d4_s_hellhound", nameJa: "地獄の番犬",     enemies: [HELL_HOUND] },
+  { id: "d4_s_shadow",    nameJa: "影の悪魔",       enemies: [SHADOW_DEMON] },
+  { id: "d4_s_knight",    nameJa: "血の騎士",       enemies: [BLOOD_KNIGHT] },
+  { id: "d4_s_sorcerer",  nameJa: "闇の魔術師",     enemies: [DARK_SORCERER] },
+];
+
+const DOUBLE_PATTERNS: EncounterPattern[] = [
+  { id: "d4_d_gargoyles",      nameJa: "ガーゴイルの組",   enemies: [CURSED_GARGOYLE, CURSED_GARGOYLE] },
+  { id: "d4_d_hound_shadow",   nameJa: "番犬と影の悪魔",   enemies: [HELL_HOUND, SHADOW_DEMON] },
+  { id: "d4_d_imp_wisp",       nameJa: "小悪魔と鬼火",     enemies: [IMP_TRICKSTER, HELLFIRE_WISP] },
+  { id: "d4_d_knight_sorcerer", nameJa: "血の騎士と魔術師", enemies: [BLOOD_KNIGHT, DARK_SORCERER] },
+];
+
+const THREE_PATTERNS: EncounterPattern[] = [
+  { id: "d4_t_imps",     nameJa: "小悪魔の群",     enemies: [IMP_TRICKSTER, IMP_TRICKSTER, IMP_TRICKSTER] },
+  { id: "d4_t_wisps",    nameJa: "地獄鬼火の群",   enemies: [HELLFIRE_WISP, HELLFIRE_WISP, HELLFIRE_WISP] },
+  { id: "d4_t_mixed",    nameJa: "魔界の混成群",   enemies: [IMP_TRICKSTER, CURSED_GARGOYLE, HELLFIRE_WISP] },
+  { id: "d4_t_imp_wisp", nameJa: "悪魔と鬼火の群", enemies: [IMP_TRICKSTER, IMP_TRICKSTER, HELLFIRE_WISP] },
+];
+
+export const DEPTH4_ENEMIES: DepthEnemyData = {
+  single: SINGLE_PATTERNS,
+  double: DOUBLE_PATTERNS,
+  three: THREE_PATTERNS,
   boss: DEMON_LORD_VARGATH,
 };
 

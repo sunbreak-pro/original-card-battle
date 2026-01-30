@@ -1,4 +1,4 @@
-import type { EnemyDefinition } from '@/types/characterTypes';
+import type { EnemyDefinition, EncounterPattern, DepthEnemyData } from '@/types/characterTypes';
 
 export const CORRUPTED_HOUND: EnemyDefinition = {
   id: "depth1_hound",
@@ -140,13 +140,31 @@ export const FALLEN_GUARDIAN: EnemyDefinition = {
   ],
 };
 
-export const DEPTH1_ENEMIES = {
-  normal: [CORRUPTED_HOUND, MUTATED_CROW, BONE_WANDERER, SHADOW_CRAWLER],
-  groups: [
-    { enemy: FLESH_EATER, count: 3 },
-    { enemy: RUSTY_SWORDSMAN, count: 2 },
-    { enemy: POISON_SPIDER, count: 4 },
-  ],
+const SINGLE_PATTERNS: EncounterPattern[] = [
+  { id: "d1_s_hound",    nameJa: "腐敗の野犬",     enemies: [CORRUPTED_HOUND] },
+  { id: "d1_s_crow",     nameJa: "変異した腐食鴉", enemies: [MUTATED_CROW] },
+  { id: "d1_s_skeleton", nameJa: "徘徊する骨人",   enemies: [BONE_WANDERER] },
+  { id: "d1_s_shadow",   nameJa: "這いずる影",     enemies: [SHADOW_CRAWLER] },
+];
+
+const DOUBLE_PATTERNS: EncounterPattern[] = [
+  { id: "d1_d_swords",        nameJa: "錆びた剣士の組",   enemies: [RUSTY_SWORDSMAN, RUSTY_SWORDSMAN] },
+  { id: "d1_d_hound_crow",    nameJa: "野犬と腐食鴉",     enemies: [CORRUPTED_HOUND, MUTATED_CROW] },
+  { id: "d1_d_shadow_spider", nameJa: "影と毒蜘蛛",       enemies: [SHADOW_CRAWLER, POISON_SPIDER] },
+  { id: "d1_d_bone_eater",    nameJa: "骨人と腐肉喰",     enemies: [BONE_WANDERER, FLESH_EATER] },
+];
+
+const THREE_PATTERNS: EncounterPattern[] = [
+  { id: "d1_t_flesh",     nameJa: "腐肉喰らいの群",   enemies: [FLESH_EATER, FLESH_EATER, FLESH_EATER] },
+  { id: "d1_t_spiders",   nameJa: "毒蜘蛛の巣",       enemies: [POISON_SPIDER, POISON_SPIDER, POISON_SPIDER] },
+  { id: "d1_t_mixed",     nameJa: "混成の群れ",        enemies: [CORRUPTED_HOUND, FLESH_EATER, POISON_SPIDER] },
+  { id: "d1_t_shadow_sp", nameJa: "影と蜘蛛の群",     enemies: [SHADOW_CRAWLER, POISON_SPIDER, POISON_SPIDER] },
+];
+
+export const DEPTH1_ENEMIES: DepthEnemyData = {
+  single: SINGLE_PATTERNS,
+  double: DOUBLE_PATTERNS,
+  three: THREE_PATTERNS,
   boss: FALLEN_GUARDIAN,
 };
 

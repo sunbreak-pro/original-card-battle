@@ -326,7 +326,11 @@ The 5 element nodes fan out from `mage_insight` in the class branch (240–300 d
        (Tier 2) ...    ...     ...   (Tier 2)
 ```
 
-### 8.5 Soul Cost Analysis
+### 8.5 Implementation Status
+
+> **Implemented:** All 5 element enhancement nodes exist in `src/domain/camps/data/SanctuaryData.ts` as Tier 2 nodes (IDs: `fire_enhancement`, `ice_enhancement`, `lightning_enhancement`, `dark_enhancement`, `light_enhancement`). Each costs 60 souls and requires `mage_insight`.
+
+### 8.6 Soul Cost Analysis
 
 Total cost for one enhanced element: `mage_insight` (30) + element node (60) = **90 souls**.
 This positions element specialization as a mid-game investment.

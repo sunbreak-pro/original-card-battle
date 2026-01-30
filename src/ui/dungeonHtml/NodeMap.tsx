@@ -92,16 +92,17 @@ export function NodeMap() {
         node.type === "elite" ||
         node.type === "boss"
       ) {
-        // Determine enemy type from node type
-        // "battle" nodes use "group" to allow multi-enemy encounters
-        const enemyType = node.type === "battle" ? "group" : node.type;
+        // Determine encounter size from node type
+        const enemyType = node.type === "battle" ? "double"
+                        : node.type === "elite" ? "three"
+                        : node.type; // "boss" passes through
 
         // Start battle with callbacks
         startBattle(
           {
             enemyIds: [], // BattleScreen will handle enemy selection
             backgroundType: "dungeon",
-            enemyType: enemyType as "normal" | "elite" | "boss" | "group",
+            enemyType: enemyType as "single" | "double" | "three" | "boss",
             onWin: () => {
               completeCurrentNode("victory");
               navigateTo("dungeon_map");
@@ -188,7 +189,7 @@ export function NodeMap() {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time modal show on floor completion event
         setFloorClearModal("depth");
       } else {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time modal show on floor completion event
+         
         setFloorClearModal("floor");
       }
     }

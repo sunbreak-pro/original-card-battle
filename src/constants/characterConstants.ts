@@ -94,9 +94,9 @@ export const RESONANCE_EFFECTS: Record<ElementType, Record<1 | 2, ResonanceEffec
     1: {},
     2: {},
   },
-  shock: {
+  impact: {
     1: {},
-    2: { stun: { duration: 1 } },
+    2: {},
   },
   guard: {
     1: {},

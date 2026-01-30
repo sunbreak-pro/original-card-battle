@@ -1,5 +1,5 @@
 /* Character Selection Screen - Dark Fantasy Theme */
-@import "../css/battle/CardUnified.css";
+@import "../css/components/CardUnified.css";
 
 .character-select-screen {
   position: relative;

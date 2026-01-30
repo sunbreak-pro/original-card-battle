@@ -1,6 +1,7 @@
 // Sanctuary skill tree data
 
 import type { SkillNode } from '@/types/campTypes';
+import { ELEMENT_MAGIC_ICONS } from '@/constants/uiConstants';
 
 /**
  * Complete skill tree data
@@ -273,6 +274,113 @@ export const SKILL_TREE_NODES: SkillNode[] = [
       },
     ],
     position: { angle: 45, radius: 2 },
+  },
+
+  // Class: Mage Element Enhancement Nodes
+  {
+    id: "fire_enhancement",
+    name: "Fire Mastery",
+    description:
+      "Deepen your bond with fire. Enhanced fire resonance effects.",
+    icon: ELEMENT_MAGIC_ICONS.fire!,
+    cost: 60,
+    category: "class",
+    tier: 2,
+    prerequisites: ["mage_insight"],
+    effects: [
+      {
+        type: "element_enhancement",
+        target: "fire",
+        value: 1,
+        description: "Enhanced Fire Resonance",
+      },
+    ],
+    classRestriction: "mage",
+    position: { angle: 248, radius: 2 },
+  },
+  {
+    id: "ice_enhancement",
+    name: "Ice Mastery",
+    description:
+      "Deepen your bond with ice. Enhanced ice resonance effects.",
+    icon: ELEMENT_MAGIC_ICONS.ice!,
+    cost: 60,
+    category: "class",
+    tier: 2,
+    prerequisites: ["mage_insight"],
+    effects: [
+      {
+        type: "element_enhancement",
+        target: "ice",
+        value: 1,
+        description: "Enhanced Ice Resonance",
+      },
+    ],
+    classRestriction: "mage",
+    position: { angle: 260, radius: 2 },
+  },
+  {
+    id: "lightning_enhancement",
+    name: "Lightning Mastery",
+    description:
+      "Deepen your bond with lightning. Enhanced lightning resonance effects.",
+    icon: ELEMENT_MAGIC_ICONS.lightning!,
+    cost: 60,
+    category: "class",
+    tier: 2,
+    prerequisites: ["mage_insight"],
+    effects: [
+      {
+        type: "element_enhancement",
+        target: "lightning",
+        value: 1,
+        description: "Enhanced Lightning Resonance",
+      },
+    ],
+    classRestriction: "mage",
+    position: { angle: 272, radius: 2 },
+  },
+  {
+    id: "dark_enhancement",
+    name: "Dark Mastery",
+    description:
+      "Deepen your bond with darkness. Enhanced dark resonance effects.",
+    icon: ELEMENT_MAGIC_ICONS.dark!,
+    cost: 60,
+    category: "class",
+    tier: 2,
+    prerequisites: ["mage_insight"],
+    effects: [
+      {
+        type: "element_enhancement",
+        target: "dark",
+        value: 1,
+        description: "Enhanced Dark Resonance",
+      },
+    ],
+    classRestriction: "mage",
+    position: { angle: 284, radius: 2 },
+  },
+  {
+    id: "light_enhancement",
+    name: "Light Mastery",
+    description:
+      "Deepen your bond with light. Enhanced light resonance effects.",
+    icon: ELEMENT_MAGIC_ICONS.light!,
+    cost: 60,
+    category: "class",
+    tier: 2,
+    prerequisites: ["mage_insight"],
+    effects: [
+      {
+        type: "element_enhancement",
+        target: "light",
+        value: 1,
+        description: "Enhanced Light Resonance",
+      },
+    ],
+    classRestriction: "mage",
+    position: { angle: 296, radius: 2 },
   },
 
   // ==================== TIER 3 (100-150 Souls) ====================

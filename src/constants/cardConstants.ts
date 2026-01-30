@@ -28,6 +28,7 @@ export const MASTERY_THRESHOLDS = {
   1: 8,
   2: 16,
   3: 24,
+  4: 30,
 };
 
 /** Damage bonus multipliers per mastery level */
@@ -36,6 +37,7 @@ export const MASTERY_BONUSES: Record<MasteryLevel, number> = {
   1: 1.2,
   2: 1.4,
   3: 2.0,
+  4: 2.5,
 };
 
 // ============================================================
@@ -67,7 +69,7 @@ export const RARITY_COLORS: Record<Rarity, string> = {
 /** Element Unicode icons for UI display */
 export const ELEMENT_ICON_MAP: Record<ElementType, string> = {
   slash: "⚔️",
-  shock: "💥",
+  impact: "💥",
   guard: "🛡️",
   fire: "🔥",
   ice: "❄️",
@@ -82,7 +84,7 @@ export const ELEMENT_ICON_MAP: Record<ElementType, string> = {
 /** Element Japanese display names */
 export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
   slash: "斬撃",
-  shock: "衝撃",
+  impact: "衝撃",
   guard: "防御",
   fire: "火",
   ice: "氷",
@@ -97,7 +99,7 @@ export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
 /** Element CSS colors */
 export const ELEMENT_COLOR_MAP: Record<ElementType, string> = {
   slash: "#c0c0c0",
-  shock: "#ff8c00",
+  impact: "#ff8c00",
   guard: "#4682b4",
   fire: "#ff4500",
   ice: "#00bfff",
@@ -108,3 +110,18 @@ export const ELEMENT_COLOR_MAP: Record<ElementType, string> = {
   enhance: "#00ced1",
   sacrifice: "#8b0000",
 };
+
+/** Magic elements that can trigger Mage resonance chain */
+export const MAGIC_ELEMENTS: ReadonlySet<ElementType> = new Set([
+  "fire", "ice", "lightning", "dark", "light",
+]);
+
+/** Physical elements used by Swordsman class */
+export const PHYSICAL_ELEMENTS: ReadonlySet<ElementType> = new Set([
+  "slash", "impact", "guard",
+]);
+
+/** Summoner-specific elements */
+export const SUMMONER_ELEMENTS: ReadonlySet<ElementType> = new Set([
+  "summon", "enhance", "sacrifice",
+]);

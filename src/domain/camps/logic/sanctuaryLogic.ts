@@ -7,7 +7,7 @@ import type {
   SanctuaryEffects,
   SanctuaryProgress,
 } from '@/types/campTypes';
-import type { CharacterClass } from '@/types/characterTypes';
+import type { CharacterClass, ElementType } from '@/types/characterTypes';
 import { DEFAULT_SANCTUARY_EFFECTS } from '@/constants/campConstants';
 import { SKILL_TREE_NODES, getNodeById } from "../data/SanctuaryData";
 
@@ -125,7 +125,10 @@ export function unlockNode(
 export function calculateTotalEffects(
   progress: SanctuaryProgress
 ): SanctuaryEffects {
-  const effects: SanctuaryEffects = { ...DEFAULT_SANCTUARY_EFFECTS };
+  const effects: SanctuaryEffects = {
+    ...DEFAULT_SANCTUARY_EFFECTS,
+    enhancedElements: new Set<ElementType>(),
+  };
 
   for (const nodeId of progress.unlockedNodes) {
     const node = getNodeById(nodeId);
@@ -185,6 +188,10 @@ export function calculateTotalEffects(
               effects.hasIndomitableWill = true;
               break;
           }
+          break;
+
+        case "element_enhancement":
+          effects.enhancedElements.add(effect.target as ElementType);
           break;
       }
     }

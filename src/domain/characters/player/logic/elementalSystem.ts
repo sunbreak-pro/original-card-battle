@@ -19,85 +19,12 @@
  */
 
 import type { Card } from '@/types/cardTypes';
-import type { ElementalState, ElementType, ResonanceLevel } from '@/types/characterTypes';
+import type { ElementalState, ElementType, ResonanceLevel, ResonanceEffectConfig } from '@/types/characterTypes';
 import { createInitialElemental } from '../../logic/classAbilityUtils';
 import type { ClassAbilitySystem, DamageModifier } from "../../classAbility/classAbilitySystem";
 import { DEFAULT_DAMAGE_MODIFIER } from "../../classAbility/classAbilitySystem";
-import type { BuffDebuffType } from '@/types/battleTypes';
-import { MAX_RESONANCE_LEVEL, RESONANCE_MULTIPLIER } from "../../../../constants";
-
-// ============================================================
-// Resonance Effects
-// ============================================================
-
-export interface ResonanceEffectConfig {
-  /** Burn debuff config */
-  burn?: { stacks: number; duration: number };
-  /** Freeze debuff config */
-  freeze?: { duration: number };
-  /** Stun debuff config */
-  stun?: { duration: number };
-  /** Lifesteal percentage */
-  lifesteal?: number;
-  /** Number of debuffs to cleanse */
-  cleanse?: number;
-  /** Heal amount */
-  heal?: number;
-  /** Weakness debuff config */
-  weakness?: { duration: number };
-  /** Field buff to apply */
-  fieldBuff?: BuffDebuffType;
-}
-
-/**
- * Resonance effects table by element and level
- */
-export const RESONANCE_EFFECTS: Record<ElementType, Record<1 | 2, ResonanceEffectConfig>> = {
-  fire: {
-    1: { burn: { stacks: 1, duration: 2 } },
-    2: { burn: { stacks: 2, duration: 3 }, fieldBuff: "fireField" },
-  },
-  ice: {
-    1: { freeze: { duration: 2 } },
-    2: { freeze: { duration: 3 }, fieldBuff: "iceField" },
-  },
-  lightning: {
-    1: {},  // No effect at level 1
-    2: { stun: { duration: 1 }, fieldBuff: "electroField" },
-  },
-  dark: {
-    1: { lifesteal: 30 },
-    2: { weakness: { duration: 3 }, lifesteal: 40, fieldBuff: "darkField" },
-  },
-  light: {
-    1: { cleanse: 1 },
-    2: { cleanse: 2, heal: 10, fieldBuff: "lightField" },
-  },
-  slash: {
-    1: {},
-    2: {},
-  },
-  shock: {
-    1: {},
-    2: { stun: { duration: 1 } },
-  },
-  guard: {
-    1: {},
-    2: {},
-  },
-  summon: {
-    1: {},
-    2: {},
-  },
-  enhance: {
-    1: {},
-    2: {},
-  },
-  sacrifice: {
-    1: {},
-    2: {},
-  },
-};
+import { MAX_RESONANCE_LEVEL, RESONANCE_MULTIPLIER, RESONANCE_EFFECTS } from "../../../../constants";
+import { MAGIC_ELEMENTS } from '@/constants/cardConstants';
 
 // ============================================================
 // Elemental System Implementation
@@ -118,9 +45,9 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
    * Handle card play - update resonance if elemental card
    */
   onCardPlay(state: ElementalState, card: Card): ElementalState {
-    // Only process cards with element property
-    if (!card.element) {
-      // Non-elemental card breaks the resonance
+    // Only magic elements can build/maintain resonance chain
+    if (!card.element || !MAGIC_ELEMENTS.has(card.element)) {
+      // Non-magic element card breaks the resonance
       return {
         ...state,
         lastElement: null,
@@ -213,7 +140,7 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
       dark: "闇",
       light: "光",
       slash: "斬",
-      shock: "衝",
+      impact: "衝",
       guard: "盾",
       summon: "召",
       enhance: "強",
@@ -231,17 +158,58 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
 // ============================================================
 
 /**
- * Get resonance effects for a given element and level
+ * Get resonance effects for a given element and level.
+ * When enhancedElements is provided and contains the element,
+ * the base resonance effects are strengthened.
  */
 export function getResonanceEffects(
   element: ElementType,
-  level: ResonanceLevel
+  level: ResonanceLevel,
+  enhancedElements?: ReadonlySet<ElementType>
 ): ResonanceEffectConfig & { damageMultiplier: number } {
-  const effects = level > 0 ? RESONANCE_EFFECTS[element][level as 1 | 2] : {};
-  return {
-    ...effects,
+  const baseEffects = level > 0 ? RESONANCE_EFFECTS[element][level as 1 | 2] : {};
+  const result: ResonanceEffectConfig & { damageMultiplier: number } = {
+    ...baseEffects,
     damageMultiplier: RESONANCE_MULTIPLIER[level],
   };
+
+  // Apply sanctuary element enhancement bonuses
+  if (enhancedElements?.has(element) && level > 0) {
+    switch (element) {
+      case "fire":
+        if (result.burn) {
+          result.burn = { ...result.burn, stacks: result.burn.stacks + 1 };
+        }
+        break;
+      case "ice":
+        if (result.freeze) {
+          result.freeze = { ...result.freeze, duration: result.freeze.duration + 1 };
+        }
+        break;
+      case "lightning":
+        if (!result.stun) {
+          result.stun = { duration: 1 };
+        }
+        break;
+      case "dark":
+        if (result.lifesteal !== undefined) {
+          result.lifesteal = result.lifesteal + 10;
+        }
+        break;
+      case "light":
+        if (result.cleanse !== undefined) {
+          result.cleanse = result.cleanse + 1;
+        }
+        if (result.heal !== undefined) {
+          result.heal = result.heal + 5;
+        } else {
+          result.heal = 5;
+        }
+        break;
+    }
+  }
+
+  return result;
 }
 
 /**

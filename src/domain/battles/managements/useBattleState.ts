@@ -13,7 +13,7 @@
 import { useState, useCallback, useMemo } from "react";
 import type { Depth } from '@/types/cardTypes';
 import type { BuffDebuffMap } from '@/types/battleTypes';
-import type { EnemyDefinition, EnemyBattleState } from '@/types/characterTypes';
+import type { EnemyDefinition, EnemyBattleState, EncounterSize } from '@/types/characterTypes';
 import type { BattleStats, CharacterClass } from '@/types/characterTypes';
 import { Swordman_Status } from "../../../constants/data/characters/PlayerData";
 import { selectRandomEnemy } from "../../characters/enemy/logic/enemyAI";
@@ -162,7 +162,7 @@ export function useBattleState(
   initialEnemies?: EnemyDefinition[],
   playerSpeed: number = Swordman_Status.speed,
   initialPlayerState?: InitialPlayerState,
-  encounterType: "normal" | "group" | "boss" = "normal"
+  encounterType: EncounterSize = "single"
 ): UseBattleStateReturn {
   // ========================================================================
   // Player State

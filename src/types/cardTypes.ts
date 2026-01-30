@@ -27,7 +27,7 @@ export type DepthCurveType = "shallow" | "neutral" | "deep" | "madness" | "adver
  * - stance: Semi-permanent battle effects (duration >= 99 or isPermanent: true)
  */
 export type CardTag = "attack" | "guard" | "skill" | "stance";
-export type MasteryLevel = 0 | 1 | 2 | 3;
+export type MasteryLevel = 0 | 1 | 2 | 3 | 4;
 export type GemLevel = 0 | 1 | 2;
 export type Rarity = "common" | "rare" | "epic" | "legend";
 
@@ -67,7 +67,7 @@ export interface Card {
   // ---- Mastery System ----
   /** Times this card has been used */
   useCount: number;
-  /** Current mastery level (0-3) */
+  /** Current mastery level (0-4) */
   masteryLevel: MasteryLevel;
   /** Gem enhancement level (0-2) */
   gemLevel: GemLevel;

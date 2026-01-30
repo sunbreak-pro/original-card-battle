@@ -11,6 +11,7 @@ import type { Item, ItemRarity } from './itemTypes';
 import type { EquipmentSlot, EquipmentQuality } from './itemTypes';
 import type { Card } from './cardTypes';
 import type { Depth } from './cardTypes';
+import type { ElementType } from './characterTypes';
 
 // Re-export Depth from cardTypes for convenience
 export type { Depth } from './cardTypes';
@@ -50,7 +51,7 @@ export type BattleMode =
 export interface BattleConfig {
   enemyIds: string[];
   backgroundType: "dungeon" | "arena" | "guild";
-  enemyType?: "normal" | "elite" | "boss" | "group";
+  enemyType?: "single" | "double" | "three" | "boss";
   onWin?: () => void;
   onLose?: () => void;
 }
@@ -324,7 +325,8 @@ export type NodeEffectType =
   | "resource_increase"
   | "exploration_limit"
   | "gold_multiplier"
-  | "soul_multiplier";
+  | "soul_multiplier"
+  | "element_enhancement";
 
 export interface NodeEffect {
   type: NodeEffectType;
@@ -371,6 +373,7 @@ export interface SanctuaryEffects {
     mage: number;
     summoner: number;
   };
+  enhancedElements: Set<ElementType>;
 }
 
 export interface EnemySoulValues {

@@ -1,4 +1,4 @@
-import type { EnemyDefinition } from "@/types/characterTypes";
+import type { EnemyDefinition, EncounterPattern, DepthEnemyData } from "@/types/characterTypes";
 
 export const STORM_ELEMENTAL: EnemyDefinition = {
   id: "depth5_storm_elemental",
@@ -155,13 +155,31 @@ export const CHRONOS_GUARDIAN: EnemyDefinition = {
   ],
 };
 
-export const DEPTH5_ENEMIES = {
-  normal: [STORM_ELEMENTAL, MAGMA_TITAN, FROST_WRAITH, DIVINE_SENTINEL],
-  groups: [
-    { enemy: CRYSTAL_SPRITE, count: 3 },
-    { enemy: ANCIENT_GOLEM, count: 2 },
-    { enemy: PHOENIX_HATCHLING, count: 4 },
-  ],
+const SINGLE_PATTERNS: EncounterPattern[] = [
+  { id: "d5_s_storm",    nameJa: "嵐の精霊",       enemies: [STORM_ELEMENTAL] },
+  { id: "d5_s_magma",    nameJa: "溶岩の巨人",     enemies: [MAGMA_TITAN] },
+  { id: "d5_s_frost",    nameJa: "霜の亡霊",       enemies: [FROST_WRAITH] },
+  { id: "d5_s_sentinel", nameJa: "神聖なる守護者", enemies: [DIVINE_SENTINEL] },
+];
+
+const DOUBLE_PATTERNS: EncounterPattern[] = [
+  { id: "d5_d_golems",        nameJa: "太古のゴーレムの組", enemies: [ANCIENT_GOLEM, ANCIENT_GOLEM] },
+  { id: "d5_d_storm_frost",   nameJa: "嵐と霜の精霊",       enemies: [STORM_ELEMENTAL, FROST_WRAITH] },
+  { id: "d5_d_sprite_phoenix", nameJa: "結晶と不死鳥",      enemies: [CRYSTAL_SPRITE, PHOENIX_HATCHLING] },
+  { id: "d5_d_magma_sentinel", nameJa: "溶岩と守護者",      enemies: [MAGMA_TITAN, DIVINE_SENTINEL] },
+];
+
+const THREE_PATTERNS: EncounterPattern[] = [
+  { id: "d5_t_sprites",  nameJa: "結晶精霊の群",   enemies: [CRYSTAL_SPRITE, CRYSTAL_SPRITE, CRYSTAL_SPRITE] },
+  { id: "d5_t_phoenix",  nameJa: "不死鳥の群",     enemies: [PHOENIX_HATCHLING, PHOENIX_HATCHLING, PHOENIX_HATCHLING] },
+  { id: "d5_t_mixed",    nameJa: "神殿の混成群",   enemies: [CRYSTAL_SPRITE, ANCIENT_GOLEM, PHOENIX_HATCHLING] },
+  { id: "d5_t_sprite_ph", nameJa: "結晶と不死鳥群", enemies: [CRYSTAL_SPRITE, CRYSTAL_SPRITE, PHOENIX_HATCHLING] },
+];
+
+export const DEPTH5_ENEMIES: DepthEnemyData = {
+  single: SINGLE_PATTERNS,
+  double: DOUBLE_PATTERNS,
+  three: THREE_PATTERNS,
   boss: CHRONOS_GUARDIAN,
 };
 

@@ -2,112 +2,100 @@
 
 ## Operational Rules
 
-**When updating MEMORY.md, always update README.md**
-
-| Timing                                  | Response                                         |
-| --------------------------------------- | ------------------------------------------------ |
-| When completing a task                  | Add the date and summary of changes to README.md |
-| When adding or modifying major features | Record the changes in README.md                  |
+- Write all design documents and code in English
+- Please output only user chat in Japanese.
 
 ---
-
-- Write all design documents and code in English
-- Please output only user chat and README.md in Japanese.
 
 ## Quick Reference
 
-- **Current Phase:** Phase C (Extended Features) — IN PROGRESS
+- **Current Phase:** Phase C (Extended Features) — NEARLY COMPLETE
 - **Dev Server:** http://localhost:5173/
-- **Last Updated:** 2026-01-29
-- **Type System:** `src/types/` に集約済み（`@/types/*` でimport）
+- **Last Updated:** 2026-01-30
+- **Type System:** `src/types/` with barrel export (`@/types/*`)
 
 ---
 
-## Active Tasks
+## Implementation Status
 
-### Phase C: Extended Features (IN PROGRESS)
+| Category | Status | Notes |
+|----------|--------|-------|
+| Battle System | 95% | Core, elemental chain, escape, element system, multi-enemy all complete. AoE cards pending |
+| Camp Facilities | 95% | Shop, Guild (Exam/Quests/Rumors), Library (Card+Enemy encyclopedias), Blacksmith, Storage all complete |
+| Dungeon System | 90% | Map generation, battle/event/rest/treasure nodes, 5-floor progression, depth 1-5 enemies |
+| Progression System | 95% | Lives + Souls + Sanctuary + equipment stat bonuses + card derivation + mastery all complete |
+| Save System | Implemented | `src/domain/save/logic/saveManager.ts` |
 
-| Task | Status | Summary |
-|------|--------|---------|
-| C1: Exploration Prep Screen | Complete | `DungeonGate.tsx` with depth selection |
-| C2: Legacy Interface Deletion | Complete | Deleted `Player`/`ExtendedPlayer`, created `BasePlayerStats`, refactored `PlayerContext.tsx` |
-| C4: Library Full Implementation | Complete | All 3 class cards in encyclopedia, CardDerivationTree component, enemy depth 1-5 data, depth filter |
-| B4: Guild Quests/Rumors | Complete | QuestsTab (daily/weekly, accept/track/claim), RumorsTab (purchase buffs), CSS styles |
-| C5: Dungeon Events | Complete | `nodeEventLogic.ts` has 6 events, rest/treasure nodes, modal UI |
-| C3: Multi-Enemy Battle | Complete | Target selection, per-enemy phase turns, auto-retarget, multi-enemy phase queue |
+---
 
-### Build Fix (2026-01-29) ✅
+## Completed Phases
 
-| Fix | Summary |
-|-----|---------|
-| Element backfill | Added `element` field to all 42 swordsman + 40 summoner cards |
-| Element system | Added 6 new elements (slash, shock, guard, summon, enhance, sacrifice) to resonance system |
-| Enemy AI fallback | Added `element: "slash"` to fallback card in `enemyAI.ts` |
+### Phase A: Core Loop — COMPLETED
+Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 
-### Phase B: Game Experience Enhancement (COMPLETED 2026-01-29)
+### Phase B: Game Experience Enhancement — COMPLETED
+- B1: Context Separation (PlayerBattleContext, EnemyBattleContext, BattleSessionContext)
+- B2: Summoner Class (40 cards)
+- B3: Shop Full Implementation (daily rotation, equipment)
+- B4: Guild Full Implementation (Exam, Quests, Rumors)
+- B5: Card Derivation System
+- B6: Mage Elemental Chain
+- B7: Dungeon Floor Progression (5 floors per depth)
+- B8: Escape System
+- B9: Exam Reward Application
+- B10: Equipment Stat Bonuses
+- B11: Magic Stone Constants
+- FIX-1~3: Dead code cleanup, dungeon node UI, huge stone calc
 
-| Task | Status | Summary |
-|------|--------|---------|
-| B2: Summoner Class | Complete | 40 cards, summon system hook, starter deck, class available |
-| B3: Shop Full Implementation | Complete | Daily equipment rotation, individual equipment purchase |
-| B5: Card Derivation System | Complete | `derivedFrom`, `unlockMasteryLevel`, `derivesInto` on Card type, `cardDerivation.ts` |
-| B6: Mage Elemental Chain | Complete | `useElementalChain.ts` hook, wired to factory |
-| B7: Dungeon Floor Progression | Complete | 5 floors per depth, floor/depth clear modals |
-| B8: Escape System | Complete | `escapeLogic.ts`, BattleScreen escape button, boss-disabled |
-| B9: Exam Reward Application | Complete | `updateBaseMaxHp`/`updateBaseMaxAp` in PlayerContext |
-| B10: Equipment Stat Bonuses | Complete | `EQUIPMENT_STAT_BONUSES` data (6 slots × 5 rarities) |
-| B11: Magic Stone Constants | Complete | `MAGIC_STONE_VALUES` in itemConstants.ts |
-| FIX-1~3 | Complete | Dead code cleanup, dungeon node UI, huge stone calc |
+### Phase C: Extended Features — IN PROGRESS
+- C1: Exploration Prep Screen (DungeonGate.tsx) — COMPLETE
+- C2: Legacy Interface Deletion — COMPLETE
+- C3: Multi-Enemy Battle — COMPLETE (target selection, per-enemy phase, auto-retarget)
+- C4: Library Full Implementation — COMPLETE
+- C5: Dungeon Events — COMPLETE
 
-### Bugs / Issues
+---
 
-#### LOW
+## Remaining Work
 
-| Issue | File |
-|-------|------|
-| FacilityHeader unused props | ESLint errors in Storage, Shop, Blacksmith |
-| EnemyFrame emoji icons | `EnemyFrame.tsx:31` |
-| Storage.tsx commented-out code | `Storage.tsx:53` |
+### Features Not Yet Implemented
 
-### Remaining Features (Phase C)
+| Feature | Priority | Notes |
+|---------|----------|-------|
+| AoE card support | LOW | Cards that damage all enemies — no logic exists yet |
+| EnemyFrame SVG icons | LOW | Currently uses emoji placeholders (TODO in code) |
+| FacilityHeader unused `variant` prop | LOW | Prop accepted but not used |
 
-- AoE card support (cards that hit all enemies) — future enhancement
-- Encyclopedia data moved from `domain/camps/data/` → `constants/data/camps/` (canonical source)
+### Class Ability Hooks
 
-### Asset Reorganization (2026-01-29)
+All class hooks implemented and wired via `useClassAbility.ts`:
+- Swordsman: `useSwordEnergy()` (inside useClassAbility.ts)
+- Mage: `useElementalChain.ts`
+- Summoner: `useSummonSystem.ts`
 
-Image assets restructured from flat layout to subdirectory structure:
+---
 
-| Old Path | New Path |
-|----------|----------|
-| `public/assets/images/Blacksmith-background.png` etc. | `public/assets/images/facility-backgrounds/` |
-| `public/assets/images/depth_1_background.png` etc. | `public/assets/images/depth-backgrounds/` |
-| (new) | `public/assets/images/elements/` — element icons |
-| (new) | `public/assets/images/enemies/` — enemy sprites |
+## Asset Structure
 
-### New Files Added (Phase B-C)
-
-| File | Purpose |
-|------|---------|
-| `src/domain/battles/logic/escapeLogic.ts` | Escape logic (disabled for boss battles) |
-| `src/domain/battles/managements/useElementalChain.ts` | Mage elemental chain hook |
-| `src/domain/battles/managements/useSummonSystem.ts` | Summoner summon system hook |
-| `src/domain/cards/logic/cardDerivation.ts` | Card derivation system |
-| `src/domain/characters/enemy/data/enemyDepth2.ts` ~ `enemyDepth5.ts` | Enemy data for depths 2-5 |
-| `src/ui/campsHtml/Library/CardDerivationTree.tsx` | Card derivation tree UI component |
-| `public/assets/pencil/cardComponent.pen` | Card UI design template |
+| Directory | Contents |
+|-----------|----------|
+| `public/assets/images/facility-backgrounds/` | Camp facility backgrounds |
+| `public/assets/images/depth-backgrounds/` | Dungeon depth backgrounds |
+| `public/assets/images/elements/` | Element icons |
+| `public/assets/images/enemies/` | Enemy sprites |
+| `public/assets/images/icons/` | UI icons |
 
 ---
 
 ## Critical Lessons Learned
 
-| Issue                  | Rule                                                           |
-| ---------------------- | -------------------------------------------------------------- |
-| CSS Class Collision    | Scope with parent: `.battle-screen .card {}`                   |
-| Context Provider Scope | Persist state across screens → provider high in tree           |
-| React Hooks            | Call at top level, before conditional returns                   |
-| React 19 Refs          | No `ref.current` during render → use `useState`                |
-| Language               | UI: Japanese / Code: English ← **Particular attention**        |
+| Issue | Rule |
+|-------|------|
+| CSS Class Collision | Scope with parent: `.battle-screen .card {}` |
+| Context Provider Scope | Persist state across screens -> provider high in tree |
+| React Hooks | Call at top level, before conditional returns |
+| React 19 Refs | No `ref.current` during render -> use `useState` |
+| Language | UI: Japanese / Code: English |
 
 **Details:** See `.claude/LESSONS_LEARNED.md`
 

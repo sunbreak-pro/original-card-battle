@@ -1,4 +1,4 @@
-import type { EnemyDefinition } from "@/types/characterTypes";
+import type { EnemyDefinition, EncounterPattern, DepthEnemyData } from "@/types/characterTypes";
 
 export const IRON_AUTOMATON: EnemyDefinition = {
   id: "depth2_iron_automaton",
@@ -147,13 +147,31 @@ export const IRON_REVENANT: EnemyDefinition = {
   ],
 };
 
-export const DEPTH2_ENEMIES = {
-  normal: [IRON_AUTOMATON, GHOUL, CAVE_BAT_SWARM, RUNIC_GOLEM],
-  groups: [
-    { enemy: SKELETON_ARCHER, count: 3 },
-    { enemy: CLOCKWORK_SPIDER, count: 2 },
-    { enemy: GHOST_WISP, count: 4 },
-  ],
+const SINGLE_PATTERNS: EncounterPattern[] = [
+  { id: "d2_s_automaton", nameJa: "鉄の自動人形",     enemies: [IRON_AUTOMATON] },
+  { id: "d2_s_ghoul",     nameJa: "食屍鬼",           enemies: [GHOUL] },
+  { id: "d2_s_bat",       nameJa: "洞窟蝙蝠の群れ",   enemies: [CAVE_BAT_SWARM] },
+  { id: "d2_s_golem",     nameJa: "ルーンの石像兵",   enemies: [RUNIC_GOLEM] },
+];
+
+const DOUBLE_PATTERNS: EncounterPattern[] = [
+  { id: "d2_d_spiders",       nameJa: "機械蜘蛛の組",     enemies: [CLOCKWORK_SPIDER, CLOCKWORK_SPIDER] },
+  { id: "d2_d_ghoul_bat",     nameJa: "食屍鬼と蝙蝠",     enemies: [GHOUL, CAVE_BAT_SWARM] },
+  { id: "d2_d_automaton_wisp", nameJa: "自動人形と幽霊灯", enemies: [IRON_AUTOMATON, GHOST_WISP] },
+  { id: "d2_d_archer_spider", nameJa: "射手と機械蜘蛛",   enemies: [SKELETON_ARCHER, CLOCKWORK_SPIDER] },
+];
+
+const THREE_PATTERNS: EncounterPattern[] = [
+  { id: "d2_t_archers",  nameJa: "骸骨射手の隊",     enemies: [SKELETON_ARCHER, SKELETON_ARCHER, SKELETON_ARCHER] },
+  { id: "d2_t_wisps",    nameJa: "幽霊灯火の群",     enemies: [GHOST_WISP, GHOST_WISP, GHOST_WISP] },
+  { id: "d2_t_mixed",    nameJa: "遺跡の混成群",     enemies: [SKELETON_ARCHER, CLOCKWORK_SPIDER, GHOST_WISP] },
+  { id: "d2_t_wisp_sp",  nameJa: "幽霊と機械の群",   enemies: [GHOST_WISP, GHOST_WISP, CLOCKWORK_SPIDER] },
+];
+
+export const DEPTH2_ENEMIES: DepthEnemyData = {
+  single: SINGLE_PATTERNS,
+  double: DOUBLE_PATTERNS,
+  three: THREE_PATTERNS,
   boss: IRON_REVENANT,
 };
 

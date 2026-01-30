@@ -14,6 +14,7 @@ import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
 import UseItemModal from "./UseItemModal";
 import "../css/battle/BattleScreen.css";
+import { DEPTH_BACKGROUND_IMAGES } from "../../constants/uiConstants";
 import type { Item } from "@/types/itemTypes";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { usePlayer } from "../../contexts/PlayerContext";
@@ -22,13 +23,18 @@ import { useGameState } from "../../contexts/GameStateContext";
 import { handlePlayerDeathWithDetails } from "../../domain/battles/logic/deathHandler";
 import { saveManager } from "../../domain/save/logic/saveManager";
 import { getInitialDeckCounts } from "../../constants/data/battles/initialDeckConfig";
+import type { EncounterSize } from "@/types/characterTypes";
 import {
   gainSoulFromEnemy,
   getSoulValue,
   calculateMagicStoneDrops,
   type EnemyType,
 } from "../../domain/camps/logic/soulSystem";
-import { executeItemEffect } from "../../domain/battles/logic/itemEffectExecutor";
+import {
+  executeItemEffect,
+  applyBuffsToMap,
+  clearDebuffsFromMap,
+} from "../../domain/battles/logic/itemEffectExecutor";
 import {
   attemptEscape,
   calculateEscapeChance,
@@ -78,8 +84,13 @@ const BattleScreen = ({
   const { addMagicStones } = useResources();
   const { navigateTo, gameState } = useGameState();
 
-  // Get enemy type from battle config (default to "normal")
-  const enemyType: EnemyType = gameState.battleConfig?.enemyType || "normal";
+  // Get encounter size from battle config (default to "single")
+  const encounterSize: EncounterSize = gameState.battleConfig?.enemyType || "single";
+  // Map encounter size to EnemyType for soul/reward system
+  const enemyType: EnemyType = encounterSize === "double" ? "double"
+                              : encounterSize === "three" ? "three"
+                              : encounterSize === "boss" ? "boss"
+                              : "single";
 
   // 遭遇カウント管理
   const [encounterCount, setEncounterCount] = useState(0);
@@ -152,7 +163,8 @@ const BattleScreen = ({
     selectedTargetIndex,
     setSelectedTargetIndex,
     isPlayerPhase,
-  } = useBattle(depth, undefined, initialPlayerState, enemyType === "elite" ? "group" : enemyType);
+    setPlayerBuffs,
+  } = useBattle(depth, undefined, initialPlayerState, encounterSize);
 
   // Handle player death penalty when defeated
   // Side effect (updatePlayerData, decreaseLives) must run in useEffect, not during render
@@ -178,13 +190,15 @@ const BattleScreen = ({
     const nextEncounter = encounterCount + 1;
     setEncounterCount(nextEncounter);
 
-    let encounterType: "normal" | "group" | "boss" = "normal";
+    let nextEncounterSize: EncounterSize = "single";
     if (nextEncounter === 7) {
-      encounterType = "boss";
+      nextEncounterSize = "boss";
     } else if (nextEncounter % 3 === 0) {
-      encounterType = "group";
+      nextEncounterSize = "three";
+    } else if (nextEncounter % 2 === 0) {
+      nextEncounterSize = "double";
     }
-    const { enemies: nextEnemies } = selectRandomEnemy(depth, encounterType);
+    const { enemies: nextEnemies } = selectRandomEnemy(depth, nextEncounterSize);
     resetForNextEnemy(nextEnemies);
   };
 
@@ -221,15 +235,12 @@ const BattleScreen = ({
 
       // Apply buffs if any
       if (result.buffsApplied && result.buffsApplied.length > 0) {
-        // Buffs would need to be applied through battle state
-        // This is a simplified version - full implementation would
-        // need to integrate with useBattle's buff system
-        console.log("Buffs applied:", result.buffsApplied);
+        setPlayerBuffs((prev) => applyBuffsToMap(prev, result.buffsApplied!));
       }
 
       // Clear debuffs if requested
       if (result.debuffsCleared) {
-        console.log("Debuffs cleared");
+        setPlayerBuffs((prev) => clearDebuffsFromMap(prev));
       }
 
       // Remove or decrement item from inventory
@@ -284,6 +295,7 @@ const BattleScreen = ({
       playerData.inventory,
       updateRuntimeState,
       updatePlayerData,
+      setPlayerBuffs,
     ],
   );
 
@@ -432,7 +444,7 @@ const BattleScreen = ({
   }
 
   return (
-    <div className="battle-screen">
+    <div className="battle-screen" style={{ backgroundImage: `url('${DEPTH_BACKGROUND_IMAGES[depth] ?? DEPTH_BACKGROUND_IMAGES[4]}')` }}>
       {showTurnMessage && (
         <div className="turn-message-slide">
           <div className="turn-message-text">{turnMessage}</div>

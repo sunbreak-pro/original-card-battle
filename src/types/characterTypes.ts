@@ -79,12 +79,12 @@ export interface SwordEnergyState {
 /**
  * Element types for all classes
  * - Magic: fire, ice, lightning, dark, light (Mage primary)
- * - Physical: slash, shock, guard (Swordsman primary)
+ * - Physical: slash, impact, guard (Swordsman primary)
  * - Summoner: summon, enhance, sacrifice (Summoner primary)
  */
 export type ElementType =
   | "fire" | "ice" | "lightning" | "dark" | "light"
-  | "slash" | "shock" | "guard"
+  | "slash" | "impact" | "guard"
   | "summon" | "enhance" | "sacrifice";
 
 /**
@@ -149,6 +149,28 @@ export interface SummonState {
 
 /** Union type for all class ability states */
 export type ClassAbilityState = SwordEnergyState | ElementalState | SummonState;
+
+// ============================================================
+// Encounter Pattern Types
+// ============================================================
+
+/** Encounter size categories */
+export type EncounterSize = "single" | "double" | "three" | "boss";
+
+/** Fixed enemy encounter pattern */
+export interface EncounterPattern {
+  id: string;
+  nameJa: string;
+  enemies: EnemyDefinition[];
+}
+
+/** Depth-level enemy data organized by encounter size */
+export interface DepthEnemyData {
+  single: EncounterPattern[];
+  double: EncounterPattern[];
+  three: EncounterPattern[];
+  boss: EnemyDefinition;
+}
 
 // ============================================================
 // Enemy Types

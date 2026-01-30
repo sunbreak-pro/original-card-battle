@@ -1,4 +1,4 @@
-import type { EnemyDefinition } from "@/types/characterTypes";
+import type { EnemyDefinition, EncounterPattern, DepthEnemyData } from "@/types/characterTypes";
 
 export const BLIGHTED_TREANT: EnemyDefinition = {
   id: "depth3_treant",
@@ -147,13 +147,31 @@ export const ELDER_BASILISK: EnemyDefinition = {
   ],
 };
 
-export const DEPTH3_ENEMIES = {
-  normal: [BLIGHTED_TREANT, DIRE_WOLF, VENOMOUS_VINE, CORRUPTED_STAG],
-  groups: [
-    { enemy: FUNGAL_SPORE, count: 3 },
-    { enemy: THORN_LIZARD, count: 2 },
-    { enemy: SWARM_HORNET, count: 4 },
-  ],
+const SINGLE_PATTERNS: EncounterPattern[] = [
+  { id: "d3_s_treant", nameJa: "穢れた樹人",     enemies: [BLIGHTED_TREANT] },
+  { id: "d3_s_wolf",   nameJa: "凶暴な大狼",     enemies: [DIRE_WOLF] },
+  { id: "d3_s_vine",   nameJa: "猛毒の蔦",       enemies: [VENOMOUS_VINE] },
+  { id: "d3_s_stag",   nameJa: "穢れし鹿",       enemies: [CORRUPTED_STAG] },
+];
+
+const DOUBLE_PATTERNS: EncounterPattern[] = [
+  { id: "d3_d_lizards",     nameJa: "棘蜥蜴の組",     enemies: [THORN_LIZARD, THORN_LIZARD] },
+  { id: "d3_d_wolf_vine",   nameJa: "大狼と毒蔦",     enemies: [DIRE_WOLF, VENOMOUS_VINE] },
+  { id: "d3_d_spore_lizard", nameJa: "胞子と棘蜥蜴",  enemies: [FUNGAL_SPORE, THORN_LIZARD] },
+  { id: "d3_d_stag_hornet", nameJa: "鹿と群れ蜂",     enemies: [CORRUPTED_STAG, SWARM_HORNET] },
+];
+
+const THREE_PATTERNS: EncounterPattern[] = [
+  { id: "d3_t_spores",  nameJa: "菌糸胞子の群",   enemies: [FUNGAL_SPORE, FUNGAL_SPORE, FUNGAL_SPORE] },
+  { id: "d3_t_hornets", nameJa: "群れ蜂の巣",     enemies: [SWARM_HORNET, SWARM_HORNET, SWARM_HORNET] },
+  { id: "d3_t_mixed",   nameJa: "森の混成群",     enemies: [FUNGAL_SPORE, THORN_LIZARD, SWARM_HORNET] },
+  { id: "d3_t_hornet_sp", nameJa: "蜂と胞子の群", enemies: [SWARM_HORNET, SWARM_HORNET, FUNGAL_SPORE] },
+];
+
+export const DEPTH3_ENEMIES: DepthEnemyData = {
+  single: SINGLE_PATTERNS,
+  double: DOUBLE_PATTERNS,
+  three: THREE_PATTERNS,
   boss: ELDER_BASILISK,
 };
 

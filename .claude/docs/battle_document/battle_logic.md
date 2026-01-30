@@ -71,32 +71,34 @@ export interface EnemyAction {
   energyCost: number; // エナジーコスト（デフォルト1）
 }
 
-export interface Enemy {
+export interface EnemyDefinition {
   id: string;
   name: string;
   nameJa: string;
   description: string;
 
   // 基礎ステータス
-  maxHp: number;
-  maxAp: number;
-  startingGuard: number;
+  baseMaxHp: number;
+  baseMaxAp: number;
+  startingGuard: boolean; // ※boolean型。trueの場合baseMaxApからGuard初期値を計算
   evasionRate: number;
   immunities: string[];
 
-  // Ver 4.0 新規追加
-  baseEnemyEnergy: number; // 基本エナジー（行動回数）
-  speed: number; // 行動速度（0-100）
+  // 行動・速度
+  actEnergy: number; // 行動回数（depth1では常に1）
+  baseSpeed: number; // 行動速度（0-100）
 
   // AI パターン
-  aiPatterns: EnemyAIPattern[]; //AIパターンは複雑化しやすいため初期テスト時には固定の動きのみ
+  aiPatterns: EnemyAIPattern[];
   imagePath?: string;
 }
 ```
 
 ---
 
-## 3. 行動速度システム (Ver 4.0 新規)
+## 3. 行動速度システム (Ver 4.0 新規) — 連続フェーズシステム
+
+> **Source of truth:** `src/domain/battles/calculators/phaseCalculation.ts`
 
 ### 3.1 速度パラメータ
 
@@ -105,78 +107,89 @@ export interface Enemy {
 ```typescript
 interface SpeedStats {
   baseSpeed: number; // 基本速度（プレイヤー: 50、敵: 固有値）
-  currentSpeed: number; // バフ/デバフ適用後の速度
+  // バフ/デバフ適用後の速度は都度計算
+}
+
+// 速度ランダム性（±5%分散、平均回帰あり）
+interface SpeedRandomState {
+  varianceHistory: number[]; // 分散履歴（直近N回分）
 }
 ```
 
 ### 3.2 速度計算
 
+速度バフ/デバフは `haste`/`superFast`/`slow`/`stall` の4種類を使用する。
+
 ```typescript
-/**
- * プレイヤーの速度計算
- */
-function calculatePlayerSpeed(buffs: BuffDebuffMap): number {
-  let speed = player.speed; // 基本速度
+function calculateSpeed(baseSpeed: number, buffs: BuffDebuffMap): number {
+  let speed = baseSpeed;
 
-  // 速度上昇バフ
-  if (buffs.has("speedUp")) {
-    const speedBuff = buffs.get("speedUp")!;
-    speed += speedBuff.value * speedBuff.stacks;
-  }
-
-  // スロウデバフ
+  // slowデバフ: -10/スタック（固定値）
   if (buffs.has("slow")) {
-    const slowDebuff = buffs.get("slow")!;
-    speed -= slowDebuff.value * 10; // -10/スタック
+    const slow = buffs.get("slow")!;
+    speed -= slow.value * slow.stacks; // value=10
   }
 
-  // 速度低下デバフ
-  if (buffs.has("speedDown")) {
-    const speedDown = buffs.get("speedDown")!;
-    speed -= speedDown.value;
+  // stallデバフ: -15/スタック
+  if (buffs.has("stall")) {
+    const stall = buffs.get("stall")!;
+    speed -= stall.value * stall.stacks; // value=15
   }
 
-  return Math.max(0, speed);
-}
-
-/**
- * 敵の速度計算
- */
-function calculateEnemySpeed(enemy: Enemy, buffs: BuffDebuffMap): number {
-  let speed = enemy.speed; // 敵固有の速度
-
-  // バフ/デバフ適用（プレイヤーと同じロジック）
-  if (buffs.has("speedUp")) {
-    const speedBuff = buffs.get("speedUp")!;
-    speed += speedBuff.value * speedBuff.stacks;
+  // hasteバフ: +15/スタック
+  if (buffs.has("haste")) {
+    const haste = buffs.get("haste")!;
+    speed += haste.value * haste.stacks; // value=15
   }
 
-  if (buffs.has("slow")) {
-    const slowDebuff = buffs.get("slow")!;
-    speed -= slowDebuff.value * 10;
+  // superFastバフ: +30/スタック
+  if (buffs.has("superFast")) {
+    const superFast = buffs.get("superFast")!;
+    speed += superFast.value * superFast.stacks; // value=30
   }
 
   return Math.max(0, speed);
 }
 ```
 
-### 3.3 ターン順序決定
+速度にはランダム性（±5%分散）があり、平均回帰因子で偏りを防ぐ。
+
+### 3.3 連続フェーズシステム（ターン順序決定）
+
+単純な「先攻/後攻」ではなく、**速度差に基づく連続フェーズ**制を採用する。
 
 ```typescript
+const CONSECUTIVE_PHASE_THRESHOLD = 15;
+const ADDITIONAL_PHASE_INTERVAL = 10;
+
 /**
- * ターン順序を決定
+ * 連続フェーズ数の計算
+ *
+ * ルール:
+ * - 速度差 < 15: 交互フェーズ（高速側→低速側→高速側→...）
+ * - 速度差 >= 15: 高速側が2連続フェーズ
+ * - 速度差 >= 25: 高速側が3連続フェーズ
+ * - 以降+10ごとに+1フェーズ追加
  */
-function determineTurnOrder(
-  playerSpeed: number,
-  enemySpeed: number,
-): "player" | "enemy" {
-  if (playerSpeed >= enemySpeed) {
-    return "player";
-  } else if (enemySpeed > playerSpeed) {
-    return "enemy";
+function calculateConsecutivePhases(speedDiff: number): number {
+  if (speedDiff < CONSECUTIVE_PHASE_THRESHOLD) {
+    return 1; // 交互
   }
+  return 2 + Math.floor(
+    (speedDiff - CONSECUTIVE_PHASE_THRESHOLD) / ADDITIONAL_PHASE_INTERVAL
+  );
 }
+
+/**
+ * フェーズキューの生成例
+ *
+ * Player:50, Enemy:50 (diff=0)  → [P, E, P, E, P, E, ...]
+ * Player:65, Enemy:50 (diff=15) → [P, P, E, P, P, E, ...]
+ * Player:30, Enemy:60 (diff=30) → [E, E, E, P, E, E, E, P, ...]
+ */
 ```
+
+このシステムにより、速度差が大きいほど高速側が多くの行動機会を得る。
 
 ---
 
@@ -242,44 +255,28 @@ async function executePlayerPhase(
 }
 
 function onPlayerTurnStart(): void {
-  // 1. Guardの消滅
   setPlayerGuard(0);
-
-  // 2. バフ/デバフの持続時間減少
   decreaseBuffDebuffDuration(playerBuffs);
   decreaseBuffDebuffDuration(enemyBuffs);
-
-  // 3. 再生・シールド再生処理
   const healing = calculateStartTurnHealing(playerBuffs);
   applyHealing(healing.hp);
   applyShield(healing.shield);
-
-  // 4. エナジー回復
   const energyGain = calculateEnergyGain(playerBuffs);
   setEnergy(energyGain);
-
-  // 5. カードドロー
   const drawCount = calculateDrawCount(playerBuffs);
   drawCards(drawCount);
-
-  // 6. 自動浄化
   if (playerBuffs.has("cleanse")) {
     const cleanse = playerBuffs.get("cleanse")!;
     removeDebuffs(playerBuffs, cleanse.value * cleanse.stacks);
   }
-
-  // 7. 行動不可チェック
   if (!canAct(playerBuffs)) {
     autoEndTurn();
   }
 }
 
 function onPlayerTurnEnd(): void {
-  // 1. 持続ダメージ処理
   const dotDamage = calculateEndTurnDamage(playerBuffs);
   applyDamageToPlayer(dotDamage);
-
-  // 2. Momentum（勢い）のスタック増加
   if (playerBuffs.has("momentum")) {
     const momentum = playerBuffs.get("momentum")!;
     momentum.stacks += 1;
@@ -294,26 +291,19 @@ async function executeEnemyPhase(
   enemySpeed: number,
   playerSpeed: number,
 ): Promise<void> {
-  // 1. フェーズ開始処理
   onEnemyTurnStart();
 
-  // 2. 速度ボーナス適用
   const speedBonus = calculateSpeedBonus(enemySpeed, playerSpeed);
   if (speedBonus) {
     applyTemporaryBuff("enemySpeedBonus", speedBonus);
   }
 
-  // 3. 敵のエナジー計算
   const baseEnergy = currentEnemy.baseEnemyEnergy;
   const finalEnergy = applyEnemyEnergyModifiers(baseEnergy, enemyBuffs);
 
-  // 4. 行動実行
   await executeEnemyActions(finalEnergy);
 
-  // 5. フェーズ終了処理
   onEnemyTurnEnd();
-
-  // 6. 速度ボーナス削除
   if (speedBonus) {
     removeTemporaryBuff("enemySpeedBonus");
   }
@@ -1133,7 +1123,7 @@ function previewEnemyActions(
   nextTurn: number,
 ): EnemyActionPreview {
   // エナジー計算
-  const totalEnergy = enemy.baseEnemyEnergy;
+  const totalEnergy = enemy.actEnergy;
 
   // 行動決定（予告用）
   const actions: EnemyAction[] = [];
@@ -1174,16 +1164,17 @@ function previewEnemyActions(
 
 - **非対称エナジーシステム**: プレイヤー（カードコスト用）と敵（行動回数）で異なるエナジー概念を導入
 - **行動速度システム**: 速度パラメータによるターン順序決定
-- **速度差ボーナス**: 速度差 30 以上で「先制」、50 以上で「電光石火」ボーナス
+- **連続フェーズシステム**: 速度差15以上で2連続フェーズ、+10ごとに+1（閾値: `CONSECUTIVE_PHASE_THRESHOLD=15`, `ADDITIONAL_PHASE_INTERVAL=10`）
 - **敵の複数行動システム**: 敵エナジーによる 1 ターン内の複数回行動
 - **ターン順序 UI**: 次のターンの行動順を可視化
 - **敵の行動予告**: 敵の次の行動を事前表示
 
 **追加されたバフ/デバフ:**
 
-- `speedUp`: 速度+value
-- `speedDown`: 速度-value
-- `haste`: 速度+30（先制確定級）
+- `haste`: 速度+15
+- `superFast`: 速度+30
+- `slow`: 速度-10/スタック
+- `stall`: 速度-15
 
 **特殊実装に変更:**
 
@@ -1191,11 +1182,9 @@ function previewEnemyActions(
 
 ### 敵データ構造拡張
 
-- `baseEnemyEnergy`: 敵の基本エナジー（行動回数）
-- `speed`: 行動速度値（0-100）
-- `energyCost`: 各行動のエナジーコスト
-- `displayIcon`: UI 表示用アイコン
-- `priority`: 行動優先度
+- `actEnergy`: 敵の行動回数（depth1では常に1）
+- `baseSpeed`: 行動速度値（0-100）
+- `startingGuard`: boolean型に変更（trueの場合baseMaxApからGuard初期値を計算）
 
 ### システム仕様変更
 
@@ -1208,6 +1197,6 @@ function previewEnemyActions(
 
 ---
 
-**Version:** 4.0
-**Updated:** 2025-12-31
-**Status:** 設計完了、実装待ち
+**Version:** 4.1
+**Updated:** 2026-01-30
+**Status:** コード実装済み（連続フェーズシステム、敵インターフェース更新済み）

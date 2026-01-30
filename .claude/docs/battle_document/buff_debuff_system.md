@@ -1,14 +1,14 @@
-# バフ/デバフシステム 統合設計書 (Ver 4.0)
+# バフ/デバフシステム 統合設計書 (Ver 5.0)
 
-**更新日:** 2025-12-31
-**ステータス:** 設計完了
+**更新日:** 2026-01-30
+**ステータス:** コード実装済み
 
 ## 目次
 
 ```
 1. バフ/デバフシステム概要
 2. スタックシステム
-3. バフ/デバフデータベース（全30種類）
+3. バフ/デバフデータベース（全44種類）
 4. 持続時間管理
 5. 計算優先度
 6. 実装関数一覧
@@ -22,8 +22,7 @@
 
 ```typescript
 /**
- * バフ/デバフインターフェース (Ver 4.0)
- * ※ 重症度システムは廃止されました
+ * バフ/デバフインターフェース (Ver 5.0)
  */
 interface BuffDebuff {
   type: BuffDebuffType; // バフ/デバフの種類
@@ -37,20 +36,33 @@ interface BuffDebuff {
 type BuffDebuffMap = Map<BuffDebuffType, BuffDebuff>;
 ```
 
-## 1.2 Ver 4.0 変更点
+## 1.2 Ver 5.0 変更点
 
 ```
-【廃止】
-- 重症度システム（Light → Heavy進化）
-- burn, freeze, paralyze, defDown, defUp, physicalUp, magicUp, oxidize, feeble
+【Ver 4.0からの変更】
+- 種類数: 30 → 44（デバフ19 + バフ25）
+- weak/atkDown/speedDown/healingDown → atkDownMinor/atkDownMajor/defDownMinor/defDownMajor/weakness/prostoration
+- speedUp/speedDown → haste/superFast/slow/stall
+- guardUp/thorns/barrier/damageReduction/splash → 削除
+- swordEnergyBoost/swordEnergyEfficiency → swordEnergyGain
+- resonanceExtension → 削除、elementalMastery + フィールドバフ5種に変更
+- summonDuration → 削除
+- tenacity: デバフ効果-value% → HP30%以下で全能力+value%
+- lastStand: HP30%以下で全能力+value% → 致死ダメージを1回生存
 
-【新規】
-- 加速（速度上昇）
-- 失速（速度低下）
+【追加】
+- burn（火傷）、overCurse（重呪い）、stagger（よろめき）、freeze（凍結）
+- atkDownMinor/Major、defDownMinor/Major、weakness、prostoration
+- stall（失速）
+- atkUpMinor/Major、defUpMinor/Major、penetrationUp、hitRateUp、criticalUp
+- superFast（高速）
+- fireField/iceField/electroField/darkField/lightField
 
 【変更】
-- bleed: カード使用/行動毎に最大HP5%ダメージに変更
-- 全てのバフ/デバフがシンプルなスタック制に統一
+- curse: 回復-50% → 回復-20%（overCurseが-50%）
+- poison: スタック×2 → 固定5ダメージ/ターン（スタック可能）
+- bleed: 最大HP5% → 最大HP3%
+- haste: 速度+30（固定） → 速度+15
 ```
 
 ---
@@ -61,7 +73,7 @@ type BuffDebuffMap = Map<BuffDebuffType, BuffDebuff>;
 
 ```typescript
 /**
- * バフ/デバフを追加または更新 (Ver 4.0)
+ * バフ/デバフを追加または更新 (Ver 5.0)
  */
 export const addOrUpdateBuffDebuff = (
   map: BuffDebuffMap,
@@ -101,551 +113,353 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-# 3. バフ/デバフデータベース（全 30 種類）
+# 3. バフ/デバフデータベース（全 44 種類）
 
-## 3.1 デバフ - 持続ダメージ系（3 種類）
+> **Source of truth:** `src/constants/data/battles/buffData.ts`
+
+## 3.1 デバフ - 持続ダメージ系（5 種類）
 
 ### ID: poison（毒）
 
-| 項目     | 値                                              |
-| -------- | ----------------------------------------------- |
-| **名称** | 毒                                              |
-| **対象** | HP                                              |
-| **効果** | ターン終了時、スタック × 2 ダメージ（防御無視） |
-| **持続** | カード依存                                      |
-| **色**   | #66cc00                                         |
-
-```typescript
-{
-  name: "Poison",
-  nameJa: "毒",
-  description: "毎ターン終了時、スタック×2のダメージ（防御無視）",
-  color: "#66cc00",
-  isDebuff: true,
-}
-```
-
----
+| 項目     | 値                                   |
+| -------- | ------------------------------------ |
+| **名称** | 毒                                   |
+| **効果** | ターン終了時、固定5ダメージ（防御無視）|
+| **スタック** | 可能                              |
+| **色**   | #66cc00                              |
 
 ### ID: bleed（出血）
 
-| 項目     | 値                                                           |
-| -------- | ------------------------------------------------------------ |
-| **名称** | 出血                                                         |
-| **対象** | HP                                                           |
-| **効果** | プレイヤー: カード使用毎に最大 HP5%、敵: 1 行動毎に最大 HP5% |
-| **持続** | カード依存                                                   |
-| **色**   | #cc0000                                                      |
+| 項目     | 値                                              |
+| -------- | ----------------------------------------------- |
+| **名称** | 出血                                            |
+| **効果** | カード使用毎/行動毎に最大HPの**3%**ダメージ     |
+| **スタック** | 可能                                         |
+| **色**   | #cc0000                                         |
 
-```typescript
-{
-  name: "Bleed",
-  nameJa: "出血",
-  description: "プレイヤー: カード使用毎に最大HPの5%ダメージ、敵: 1行動毎に最大HPの5%ダメージ（防御無視）",
-  color: "#cc0000",
-  isDebuff: true,
-}
-```
+### ID: burn（火傷）
 
-**特殊実装:** `bleedDamage.ts` で個別処理
-
----
+| 項目     | 値                                   |
+| -------- | ------------------------------------ |
+| **名称** | 火傷                                 |
+| **効果** | ターン終了時、固定3ダメージ（防御無視）|
+| **スタック** | 可能                              |
+| **色**   | #ff4500                              |
 
 ### ID: curse（呪い）
 
-| 項目     | 値                                              |
-| -------- | ----------------------------------------------- |
-| **名称** | 呪い                                            |
-| **対象** | HP + 回復                                       |
-| **効果** | 回復効果-50%、ターン終了時スタック × 2 ダメージ |
-| **持続** | カード依存                                      |
-| **色**   | #9900cc                                         |
+| 項目     | 値                |
+| -------- | ----------------- |
+| **名称** | 呪い              |
+| **効果** | 回復効果**-20%**  |
+| **スタック** | 可能           |
+| **色**   | #9900cc           |
 
-```typescript
-{
-  name: "Curse",
-  nameJa: "呪い",
-  description: "回復効果-50%、毎ターン終了時スタック×2のダメージ",
-  color: "#9900cc",
-  isDebuff: true,
-}
-```
+### ID: overCurse（重呪い）
+
+| 項目     | 値                |
+| -------- | ----------------- |
+| **名称** | 重呪い            |
+| **効果** | 回復効果**-50%**  |
+| **スタック** | 可能           |
+| **色**   | #660066           |
 
 ---
 
 ## 3.2 デバフ - 状態異常系（3 種類）
 
-### ID: slow（スロウ）
+### ID: stagger（よろめき）
 
-| 項目     | 値                                             |
-| -------- | ---------------------------------------------- |
-| **名称** | スロウ                                         |
-| **対象** | Energy + Speed                                 |
-| **効果** | プレイヤー: エナジー-1、両者: 速度-10/スタック |
-| **持続** | カード依存                                     |
-| **色**   | #4488ff                                        |
-
-```typescript
-{
-  name: "Slow",
-  nameJa: "スロウ",
-  description: "エナジー-1（プレイヤーのみ）、速度-10/スタック（両者）",
-  color: "#4488ff",
-  isDebuff: true,
-}
-```
-
----
+| 項目     | 値                         |
+| -------- | -------------------------- |
+| **名称** | よろめき                   |
+| **効果** | 行動不能                   |
+| **スタック** | 可能                    |
 
 ### ID: stun（気絶）
 
 | 項目     | 値                         |
 | -------- | -------------------------- |
 | **名称** | 気絶                       |
-| **対象** | Act                        |
 | **効果** | 行動不能（ターンスキップ） |
-| **持続** | 1 ターン                   |
-| **色**   | #ff6600                    |
+| **スタック** | 可能                    |
 
-```typescript
-{
-  name: "Stun",
-  nameJa: "気絶",
-  description: "行動不能（ターンスキップ）",
-  color: "#ff6600",
-  isDebuff: true,
-}
-```
+### ID: freeze（凍結）
+
+| 項目     | 値                    |
+| -------- | --------------------- |
+| **名称** | 凍結                  |
+| **効果** | 行動不能（氷属性）    |
+| **スタック** | 不可              |
 
 ---
 
-### ID: weak（弱体化）
+## 3.3 デバフ - 能力減少系（8 種類）
 
-| 項目     | 値              |
-| -------- | --------------- |
-| **名称** | 弱体化          |
-| **対象** | Atk             |
-| **効果** | 与ダメージ -30% |
-| **持続** | カード依存      |
-| **色**   | #888888         |
+### ID: atkDownMinor（脱力）
 
-```typescript
-{
-  name: "Weak",
-  nameJa: "弱体化",
-  description: "与ダメージ-30%",
-  color: "#888888",
-  isDebuff: true,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 攻撃力**-15%** |
+| **スタック** | 不可 |
 
----
+### ID: atkDownMajor（無力）
 
-## 3.3 デバフ - 能力減少系（3 種類）
+| 項目 | 値 |
+|------|-----|
+| **効果** | 攻撃力**-30%** |
+| **スタック** | 不可 |
 
-### ID: atkDown（攻撃力低下）
+### ID: defDownMinor（軟弱）
 
-```typescript
-{
-  name: "Attack Down",
-  nameJa: "攻撃力低下",
-  description: "攻撃力がvalue%低下",
-  color: "#ff4444",
-  isDebuff: true,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 防御力**-15%** |
+| **スタック** | 不可 |
 
-### ID: speedDown（速度低下）
+### ID: defDownMajor（無防備）
 
-```typescript
-{
-  name: "Speed Down",
-  nameJa: "速度低下",
-  description: "速度がvalue低下",
-  color: "#6688aa",
-  isDebuff: true,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 防御力**-30%** |
+| **スタック** | 不可 |
 
-### ID: healingDown（回復効果減少）
+### ID: weakness（衰弱）
 
-```typescript
-{
-  name: "Healing Down",
-  nameJa: "回復効果減少",
-  description: "回復効果がvalue%減少",
-  color: "#cc6666",
-  isDebuff: true,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 全能力**-20%** |
+| **スタック** | 可能 |
+
+### ID: prostoration（虚弱）
+
+| 項目 | 値 |
+|------|-----|
+| **効果** | 全能力**-50%** |
+| **スタック** | 可能 |
+
+### ID: slow（鈍足）
+
+| 項目 | 値 |
+|------|-----|
+| **効果** | 速度**-10**（固定値）/スタック |
+| **スタック** | 可能 |
+
+### ID: stall（失速）
+
+| 項目 | 値 |
+|------|-----|
+| **効果** | 速度**-15** |
+| **スタック** | 可能 |
 
 ---
 
-## 3.4 バフ - 能力上昇系（4 種類）
+## 3.4 バフ - 能力上昇系（9 種類）
 
-### ID: atkUp（攻撃力上昇）
+### ID: atkUpMinor（剛力）
 
-```typescript
-{
-  name: "Attack Up",
-  nameJa: "攻撃力上昇",
-  description: "攻撃力がvalue%上昇",
-  color: "#ff6666",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 攻撃力**+15%** |
+| **スタック** | 不可 |
 
-### ID: critical（クリティカル率上昇）
+### ID: atkUpMajor（豪力）
 
-```typescript
-{
-  name: "Critical",
-  nameJa: "クリティカル率上昇",
-  description: "クリティカル率+value%（最大80%）",
-  color: "#ff6600",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 攻撃力**+30%** |
+| **スタック** | 不可 |
 
-### ID: speedUp（速度上昇）【Ver 4.0 新規】
+### ID: defUpMinor（堅牢）
 
-```typescript
-{
-  name: "Speed Up",
-  nameJa: "速度上昇",
-  description: "速度 += value × stacks",
-  color: "#66ccff",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 防御力**+15%** |
+| **スタック** | 不可 |
 
-### ID: haste（加速）【Ver 4.0 新規】
+### ID: defUpMajor（金剛）
 
-```typescript
-{
-  name: "Haste",
-  nameJa: "加速",
-  description: "速度 +30（固定値）",
-  color: "#00ccff",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 防御力**+30%** |
+| **スタック** | 不可 |
+
+### ID: penetrationUp（衝撃力アップ）
+
+| 項目 | 値 |
+|------|-----|
+| **効果** | 貫通**+30%** |
+| **スタック** | 可能 |
+
+### ID: hitRateUp（会心率アップ）
+
+| 項目 | 値 |
+|------|-----|
+| **効果** | 命中率**+15%** |
+| **スタック** | 可能 |
+
+### ID: criticalUp（会心力アップ）
+
+| 項目 | 値 |
+|------|-----|
+| **効果** | クリティカルダメージ**+15%** |
+| **スタック** | 可能 |
+
+### ID: haste（加速）
+
+| 項目 | 値 |
+|------|-----|
+| **効果** | 速度**+15** |
+| **スタック** | 可能 |
+
+### ID: superFast（高速）
+
+| 項目 | 値 |
+|------|-----|
+| **効果** | 速度**+30** |
+| **スタック** | 可能 |
 
 ---
 
-## 3.5 バフ - 回復・防御系（6 種類）
+## 3.5 バフ - 回復・防御系（4 種類）
 
 ### ID: regeneration（再生）
 
-```typescript
-{
-  name: "Regeneration",
-  nameJa: "再生",
-  description: "毎ターン開始時、value × stacks HP回復",
-  color: "#44ff44",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 毎ターン開始時、5 HP回復 |
+| **スタック** | 可能（value × stacks） |
 
-### ID: guardUp（防御強化）
+### ID: shieldRegen（鉄の構え）
 
-```typescript
-{
-  name: "Guard Up",
-  nameJa: "防御強化",
-  description: "Guard獲得量+value%",
-  color: "#6666ff",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 毎ターン開始時、Guard+5 |
+| **スタック** | 可能（value × stacks） |
 
-### ID: shieldRegen（シールド再生）
+### ID: reflect（流転の構え）
 
-```typescript
-{
-  name: "Shield Regeneration",
-  nameJa: "シールド再生",
-  description: "毎ターン開始時、value × stacks Guard付与",
-  color: "#4488ff",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 被ダメージの**30%**を反射 |
+| **スタック** | 可能 |
 
-### ID: reflect（反撃）
+### ID: immunity（免疫）
 
-```typescript
-{
-  name: "Reflect",
-  nameJa: "反撃",
-  description: "被ダメージのvalue%を反撃",
-  color: "#ffaa00",
-  isDebuff: false,
-}
-```
-
-### ID: immunity（デバフ無効）
-
-```typescript
-{
-  name: "Immunity",
-  nameJa: "デバフ無効",
-  description: "デバフを無効化",
-  color: "#ffffff",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | ダメージ無効化 |
+| **スタック** | 可能 |
 
 ---
 
 ## 3.6 バフ - リソース管理系（3 種類）
 
-### ID: energyRegen（エナジー再生）
+### ID: energyRegen（完璧な呼吸）
 
-```typescript
-{
-  name: "Energy Regeneration",
-  nameJa: "エナジー再生",
-  description: "毎ターン開始時、valueエナジー回復",
-  color: "#ffdd44",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 毎ターン開始時、+1エナジー |
+| **スタック** | 可能 |
 
-### ID: drawPower（ドロー強化）
+### ID: drawPower（冷静な俯瞰）
 
-```typescript
-{
-  name: "Draw Power",
-  nameJa: "ドロー強化",
-  description: "毎ターン開始時、value枚追加ドロー",
-  color: "#44ddff",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 毎ターン開始時、+1ドロー |
+| **スタック** | 可能 |
 
-### ID: costReduction（コスト軽減）
+### ID: costReduction（体力温存）
 
-```typescript
-{
-  name: "Cost Reduction",
-  nameJa: "コスト軽減",
-  description: "カードコスト-value",
-  color: "#ffaa44",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | カードコスト-1 |
+| **スタック** | 可能 |
 
 ---
 
-## 3.7 バフ - 戦闘スタイル変化系（4 種類）
-
-### ID: thorns（棘の鎧）
-
-```typescript
-{
-  name: "Thorns",
-  nameJa: "棘の鎧",
-  description: "物理攻撃を受けた時、攻撃者にvalueダメージ",
-  color: "#996633",
-  isDebuff: false,
-}
-```
+## 3.7 バフ - 戦闘スタイル変化系（2 種類）
 
 ### ID: lifesteal（吸血）
 
-```typescript
-{
-  name: "Lifesteal",
-  nameJa: "吸血",
-  description: "与ダメージのvalue%をHP回復",
-  color: "#cc3366",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 与ダメージの**30%**をHP回復 |
+| **スタック** | 可能 |
 
-### ID: doubleStrike（連撃）
+### ID: doubleStrike（はやぶさの構え）
 
-```typescript
-{
-  name: "Double Strike",
-  nameJa: "連撃",
-  description: "攻撃カードが2回発動（威力value%）",
-  color: "#ff9933",
-  isDebuff: false,
-}
-```
-
-### ID: splash（範囲拡大）
-
-```typescript
-{
-  name: "Splash Damage",
-  nameJa: "範囲拡大",
-  description: "単体攻撃が隣接敵にもvalue%ダメージ",
-  color: "#6699ff",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 次の攻撃カードが2回発動（威力50%） |
+| **スタック** | 可能 |
 
 ---
 
-## 3.8 バフ - 特殊効果系（7 種類）
-
-### ID: barrier（バリア）
-
-```typescript
-{
-  name: "Barrier",
-  nameJa: "バリア",
-  description: "valueダメージまで無効化する障壁",
-  color: "#44ccff",
-  isDebuff: false,
-}
-```
-
-### ID: damageReduction（ダメージ軽減）
-
-```typescript
-{
-  name: "Damage Reduction",
-  nameJa: "ダメージ軽減",
-  description: "全ダメージ-value%",
-  color: "#6666ff",
-  isDebuff: false,
-}
-```
+## 3.8 バフ - 特殊効果系（4 種類）
 
 ### ID: focus（集中）
 
-```typescript
-{
-  name: "Focus",
-  nameJa: "集中",
-  description: "次のカードの効果+value%",
-  color: "#ffcc66",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 次のカードの効果**+50%** |
+| **スタック** | 可能 |
 
 ### ID: momentum（勢い）
 
-```typescript
-{
-  name: "Momentum",
-  nameJa: "勢い",
-  description: "ターン終了ごとにスタック+1、攻撃力+value%/スタック",
-  color: "#ff8844",
-  isDebuff: false,
-}
-```
-
-### ID: cleanse（自動浄化）
-
-```typescript
-{
-  name: "Auto Cleanse",
-  nameJa: "自動浄化",
-  description: "毎ターン開始時、デバフをvalue × stacks個解除",
-  color: "#ffffff",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | カード使用ごとに攻撃力**+5%** |
+| **スタック** | 可能（ターン終了時にスタック+1） |
 
 ### ID: tenacity（不屈）
 
-```typescript
-{
-  name: "Tenacity",
-  nameJa: "不屈",
-  description: "デバフの効果-value%",
-  color: "#ffaa66",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | HP30%以下で全能力**+30%** |
+| **スタック** | 可能 |
 
-### ID: lastStand（背水の陣）
+### ID: lastStand（再誕）
 
-```typescript
-{
-  name: "Last Stand",
-  nameJa: "背水の陣",
-  description: "HP30%以下で全能力+value%",
-  color: "#cc4444",
-  isDebuff: false,
-}
-```
+| 項目 | 値 |
+|------|-----|
+| **効果** | 致死ダメージを1回生存 |
+| **スタック** | 可能 |
+
+### ID: cleanse（浄化）
+
+| 項目 | 値 |
+|------|-----|
+| **効果** | ターン終了時にデバフ1つ解除 |
+| **スタック** | 可能 |
 
 ---
 
-## 3.9 バフ - キャラクター固有系（7 種類）
+## 3.9 バフ - キャラクター固有系（8 種類）
 
-### 剣士用（2 種類）
+### 剣士用（1 種類）
 
-```typescript
-{
-  name: "Sword Energy Boost",
-  nameJa: "剣気増幅",
-  description: "攻撃時の剣気獲得量+value",
-  color: "#ff4444",
-  isDebuff: false,
-}
+| ID | 名称 | 効果 |
+|----|------|------|
+| `swordEnergyGain` | 剣気精錬 | 攻撃時の剣気獲得量+3% |
 
-{
-  name: "Sword Energy Efficiency",
-  nameJa: "剣気効率",
-  description: "剣気ダメージ+value%",
-  color: "#ff6666",
-  isDebuff: false,
-}
-```
+### 魔術士用（6 種類）
 
-### 魔術士用（2 種類）
+| ID | 名称 | 効果 |
+|----|------|------|
+| `elementalMastery` | 元素熟達 | 属性ダメージ+30% |
+| `fireField` | 爆焔界 | 火属性カード効果+50% |
+| `iceField` | 冷静界 | 氷属性ダメージ+50% |
+| `electroField` | 雷鳴界 | 雷カード使用時+10ダメージ |
+| `darkField` | 闇界 | 闇属性ダメージ+50% |
+| `lightField` | 光界 | 光属性ダメージ+50% |
 
-```typescript
-{
-  name: "Resonance Extension",
-  nameJa: "共鳴延長",
-  description: "属性共鳴の持続+valueターン",
-  color: "#9966ff",
-  isDebuff: false,
-}
+### 召喚士用（2 種類）
 
-{
-  name: "Elemental Mastery",
-  nameJa: "属性熟練",
-  description: "共鳴ボーナス+value%",
-  color: "#cc66ff",
-  isDebuff: false,
-}
-```
-
-### 召喚士用（3 種類）
-
-```typescript
-{
-  name: "Summon Duration",
-  nameJa: "召喚延長",
-  description: "召喚獣の持続+valueターン",
-  color: "#66cc99",
-  isDebuff: false,
-}
-
-{
-  name: "Summon Power",
-  nameJa: "召喚強化",
-  description: "召喚獣の能力+value%",
-  color: "#66ff99",
-  isDebuff: false,
-}
-
-{
-  name: "Sacrifice Bonus",
-  nameJa: "犠牲強化",
-  description: "犠牲効果+value%",
-  color: "#993366",
-  isDebuff: false,
-}
-```
+| ID | 名称 | 効果 |
+|----|------|------|
+| `summonPower` | 召喚力 | 召喚獣の能力+30% |
+| `sacrificeBonus` | 犠牲の恩恵 | 犠牲効果+30% |
 
 ---
 
@@ -686,26 +500,36 @@ export const decreaseBuffDebuffDuration = (
 
 ```typescript
 /**
- * 攻撃力の倍率計算 (Ver 4.0)
+ * 攻撃力の倍率計算 (Ver 5.0)
+ * コードの実際のバフ/デバフ名を使用
  */
 function calculateAttackMultiplier(buffDebuffs: BuffDebuffMap): number {
   let multiplier = 1.0;
 
-  // 弱体化デバフ
-  if (buffDebuffs.has("weak")) {
-    multiplier *= 0.7; // -30%
+  // 攻撃力上昇バフ
+  if (buffDebuffs.has("atkUpMinor")) {
+    multiplier += 0.15; // +15%
+  }
+  if (buffDebuffs.has("atkUpMajor")) {
+    multiplier += 0.30; // +30%
   }
 
   // 攻撃力低下デバフ
-  if (buffDebuffs.has("atkDown")) {
-    const atkDown = buffDebuffs.get("atkDown")!;
-    multiplier *= 1 - atkDown.value / 100;
+  if (buffDebuffs.has("atkDownMinor")) {
+    multiplier *= 0.85; // -15%
+  }
+  if (buffDebuffs.has("atkDownMajor")) {
+    multiplier *= 0.70; // -30%
   }
 
-  // 攻撃力上昇バフ
-  if (buffDebuffs.has("atkUp")) {
-    const atkUp = buffDebuffs.get("atkUp")!;
-    multiplier += atkUp.value / 100;
+  // 衰弱デバフ（全能力-20%）
+  if (buffDebuffs.has("weakness")) {
+    multiplier *= 0.80;
+  }
+
+  // 虚弱デバフ（全能力-50%）
+  if (buffDebuffs.has("prostoration")) {
+    multiplier *= 0.50;
   }
 
   // 勢いバフ（スタック累積）
@@ -713,6 +537,9 @@ function calculateAttackMultiplier(buffDebuffs: BuffDebuffMap): number {
     const momentum = buffDebuffs.get("momentum")!;
     multiplier += (momentum.value / 100) * momentum.stacks;
   }
+
+  // 不屈バフ（HP30%以下で+30%）
+  // ※HP判定はダメージ計算側で行う
 
   return multiplier;
 }
@@ -722,32 +549,34 @@ function calculateAttackMultiplier(buffDebuffs: BuffDebuffMap): number {
 
 ```typescript
 /**
- * 速度計算 (Ver 4.0)
+ * 速度計算 (Ver 5.0)
+ * haste/superFast/slow/stall を使用
  */
 function calculateSpeed(baseSpeed: number, buffDebuffs: BuffDebuffMap): number {
   let speed = baseSpeed;
 
-  // slowデバフ: 速度-10/スタック
+  // slowデバフ: 速度-10/スタック（固定値）
   if (buffDebuffs.has("slow")) {
     const slow = buffDebuffs.get("slow")!;
-    speed -= 10 * slow.stacks;
+    speed -= slow.value * slow.stacks; // value=10
   }
 
-  // speedDownデバフ: 速度-value
-  if (buffDebuffs.has("speedDown")) {
-    const speedDown = buffDebuffs.get("speedDown")!;
-    speed -= speedDown.value;
+  // stallデバフ: 速度-15
+  if (buffDebuffs.has("stall")) {
+    const stall = buffDebuffs.get("stall")!;
+    speed -= stall.value * stall.stacks; // value=15
   }
 
-  // speedUpバフ: 速度 += value × stacks
-  if (buffDebuffs.has("speedUp")) {
-    const speedUp = buffDebuffs.get("speedUp")!;
-    speed += speedUp.value * speedUp.stacks;
-  }
-
-  // hasteバフ: 速度+30（固定）
+  // hasteバフ: 速度+15
   if (buffDebuffs.has("haste")) {
-    speed += 30;
+    const haste = buffDebuffs.get("haste")!;
+    speed += haste.value * haste.stacks; // value=15
+  }
+
+  // superFastバフ: 速度+30
+  if (buffDebuffs.has("superFast")) {
+    const superFast = buffDebuffs.get("superFast")!;
+    speed += superFast.value * superFast.stacks; // value=30
   }
 
   return Math.max(0, speed);
@@ -781,10 +610,10 @@ decreaseBuffDebuffDuration(map);
 
 ```typescript
 // ターン終了時の持続ダメージ
-calculateEndTurnDamage(map): number  // poison, curse
+calculateEndTurnDamage(map): number  // poison, burn, curse
 
 // 出血ダメージ（特別処理）
-calculateBleedDamage(maxHp, map): number
+calculateBleedDamage(maxHp, map): number  // 3% maxHP
 
 // ターン開始時の回復・再生
 calculateStartTurnHealing(map): { hp: number; shield: number }
@@ -799,10 +628,10 @@ calculateSpeed(baseSpeed, map): number
 ## 6.3 状態判定
 
 ```typescript
-// 行動可能判定（stun, freeze考慮）
+// 行動可能判定（stun, stagger, freeze考慮）
 canAct(map): boolean
 
-// エナジー修正値計算（slow, energyRegen考慮）
+// エナジー修正値計算（energyRegen考慮）
 calculateEnergyModifier(map): number
 
 // ドロー修正値計算（drawPower考慮）
@@ -815,9 +644,10 @@ calculateDrawModifier(map): number
 
 ```
 battle_logic.md (Ver 4.0) [マスター文書]
-└── buff_debuff_system.md (Ver 4.0) [本文書]
-    ├── ダメージ計算 → damageCalculation.ts
-    ├── 速度計算 → speedCalculation.ts
-    ├── 出血ダメージ → bleedDamage.ts
-    └── バフ管理 → buff.ts
+└── buff_debuff_system.md (Ver 5.0) [本文書]
+    ├── バフデータ → src/constants/data/battles/buffData.ts
+    ├── ダメージ計算 → src/domain/battles/calculators/damageCalculation.ts
+    ├── 速度計算 → src/domain/battles/calculators/phaseCalculation.ts
+    ├── バフ管理 → src/domain/battles/logic/buffLogic.ts
+    └── バフ計算 → src/domain/battles/calculators/buffCalculation.ts
 ```

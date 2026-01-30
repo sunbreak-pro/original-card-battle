@@ -1,4 +1,4 @@
-import type { EnemyDefinition, EnemyAction, EnemyAIPattern } from '@/types/characterTypes';
+import type { EnemyDefinition, EnemyAction, EnemyAIPattern, EncounterSize, DepthEnemyData } from '@/types/characterTypes';
 import { DEPTH1_ENEMIES } from "../data/enemyDepth1";
 import { DEPTH2_ENEMIES } from "../data/enemyDepth2";
 import { DEPTH3_ENEMIES } from "../data/enemyDepth3";
@@ -85,9 +85,9 @@ export function enemyAction(action: EnemyAction): Card {
 
 export function selectRandomEnemy(
   depth: number,
-  encounterType: "normal" | "group" | "boss" = "normal"
+  encounterSize: EncounterSize = "single"
 ): { enemies: EnemyDefinition[]; isBoss: boolean } {
-  const depthEnemies: Record<number, typeof DEPTH1_ENEMIES> = {
+  const depthEnemies: Record<number, DepthEnemyData> = {
     1: DEPTH1_ENEMIES,
     2: DEPTH2_ENEMIES,
     3: DEPTH3_ENEMIES,
@@ -95,33 +95,32 @@ export function selectRandomEnemy(
     5: DEPTH5_ENEMIES,
   };
 
-  const enemies = depthEnemies[depth];
-  if (!enemies) {
+  const data = depthEnemies[depth];
+  if (!data) {
     throw new Error(`Depth ${depth} enemies are not defined`);
   }
 
-  switch (encounterType) {
-    case "normal": {
-      const enemy = enemies.normal[
-        Math.floor(Math.random() * enemies.normal.length)
-      ];
-      return { enemies: [enemy], isBoss: false };
+  switch (encounterSize) {
+    case "single": {
+      const pattern = data.single[Math.floor(Math.random() * data.single.length)];
+      return { enemies: pattern.enemies, isBoss: false };
     }
 
-    case "group": {
-      const group =
-        enemies.groups[
-        Math.floor(Math.random() * enemies.groups.length)
-        ];
-      const groupEnemies = Array(group.count).fill(group.enemy);
-      return { enemies: groupEnemies, isBoss: false };
+    case "double": {
+      const pattern = data.double[Math.floor(Math.random() * data.double.length)];
+      return { enemies: pattern.enemies, isBoss: false };
+    }
+
+    case "three": {
+      const pattern = data.three[Math.floor(Math.random() * data.three.length)];
+      return { enemies: pattern.enemies, isBoss: false };
     }
 
     case "boss": {
-      return { enemies: [enemies.boss], isBoss: true };
+      return { enemies: [data.boss], isBoss: true };
     }
 
     default:
-      return { enemies: [enemies.normal[0]], isBoss: false };
+      return { enemies: data.single[0].enemies, isBoss: false };
   }
 }

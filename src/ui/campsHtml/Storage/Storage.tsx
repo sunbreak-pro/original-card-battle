@@ -50,7 +50,6 @@ export const Storage: React.FC = () => {
   // Handle move to storage
   const handleMoveToStorage = () => {
     if (!selectedItem) return;
-    // if()return;
     const result = moveItem(selectedItem.id, "inventory_to_storage");
     showMessage(result.message);
     if (result.success) setSelectedItem(null);

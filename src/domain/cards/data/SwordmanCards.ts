@@ -441,7 +441,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
-    element: "shock",
+    element: "impact",
   },
   sw_026: {
     id: "sw_026",
@@ -571,7 +571,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
-    element: "shock",
+    element: "impact",
   },
   sw_033: {
     id: "sw_033",

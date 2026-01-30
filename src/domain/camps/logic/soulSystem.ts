@@ -8,7 +8,7 @@ import type { MagicStones } from '@/types/itemTypes';
 /**
  * Enemy types for soul calculation
  */
-export type EnemyType = "normal" | "elite" | "boss" | "group";
+export type EnemyType = "single" | "double" | "three" | "boss";
 
 /**
  * Return method types for survival calculation
@@ -49,10 +49,10 @@ export interface DeathResult {
  */
 export function getBaseSoulValue(enemyType: EnemyType): number {
   switch (enemyType) {
-    case "normal":
+    case "single":
       return SANCTUARY_CONSTANTS.SOUL_VALUES.normal;
-    case "elite":
-    case "group":
+    case "double":
+    case "three":
       return SANCTUARY_CONSTANTS.SOUL_VALUES.elite;
     case "boss":
       return SANCTUARY_CONSTANTS.SOUL_VALUES.boss;
@@ -243,8 +243,8 @@ export function calculateMagicStoneDrops(enemyType: EnemyType): MagicStones {
   switch (enemyType) {
     case "boss":
       return { small: 0, medium: 1, large: 1, huge: 0 };
-    case "elite":
-    case "group":
+    case "double":
+    case "three":
       return { small: 2, medium: 1, large: 0, huge: 0 };
     default:
       return { small: 1, medium: 0, large: 0, huge: 0 };

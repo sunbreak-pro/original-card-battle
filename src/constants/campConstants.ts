@@ -7,6 +7,7 @@
 
 import type { EquipmentQuality } from '@/types/itemTypes';
 import type { SanctuaryEffects } from '@/types/campTypes';
+import type { ElementType } from '@/types/characterTypes';
 
 // ============================================================
 // Blacksmith Constants
@@ -78,6 +79,7 @@ export const DEFAULT_SANCTUARY_EFFECTS: SanctuaryEffects = {
     mage: 0,
     summoner: 0,
   },
+  enhancedElements: new Set<ElementType>(),
 };
 
 /** Sanctuary system constants */

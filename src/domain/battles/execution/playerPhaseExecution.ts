@@ -118,7 +118,7 @@ export function calculatePlayerPhaseEnd(
     const dotDamage = calculateEndPhaseDamage(playerBuffs);
 
     // Handle momentum buff stacking
-    let newBuffs = new Map(playerBuffs);
+    const newBuffs = new Map(playerBuffs);
     if (newBuffs.has("momentum")) {
         const momentum = newBuffs.get("momentum")!;
         newBuffs.set("momentum", { ...momentum, stacks: momentum.stacks + 1 });

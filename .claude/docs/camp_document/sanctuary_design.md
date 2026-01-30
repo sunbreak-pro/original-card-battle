@@ -176,7 +176,7 @@ COMPLETE RESET:
 - Extends in 4 directions from the center.
 - Each direction has a theme (HP / Gold / Combat / Utility).
 - Higher tier nodes are more powerful but cost more.
-- **V3.0: Exploration Extension skills removed** (Lives system replaces exploration count).
+- **V3.0 Note:** The design intended to remove Exploration Extension skills, but `SanctuaryData.ts` still contains `extended_exploration_1` and `extended_exploration_2` nodes. These remain in code alongside the Lives system.
 
 #### 2.2.2 Node Types
 
@@ -241,7 +241,9 @@ After unlocking Soul Resonance II: 6.5 Souls (rounded)
 - Helps rebuild faster after game over.
 - Moderate cost, steady value accumulation.
 
-> **V3.0 Note:** Exploration Extension skills were removed because the Lives System replaced the exploration count limit. Players can now explore unlimited times as long as they have lives remaining.
+> **V3.0 Note:** The design intended to remove Exploration Extension skills in favor of the Lives System. However, `SanctuaryData.ts` still contains `extended_exploration_1` (Tier 2, 80 Souls) and `extended_exploration_2` (Tier 3, 150 Souls) nodes. These coexist with the Lives system in the current codebase.
+
+> **Implementation Note:** `SanctuaryData.ts` contains **25 skill nodes total** (7 Tier 1 + 12 Tier 2 + 6 Tier 3), including 5 Mage element enhancement nodes (`fire_enhancement`, `ice_enhancement`, `lightning_enhancement`, `dark_enhancement`, `light_enhancement`) at Tier 2, 60 Souls each, requiring `mage_insight`.
 
 #### 2.2.4 Class Specialization Nodes
 

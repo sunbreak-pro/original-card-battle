@@ -14,7 +14,7 @@
 
 import { useState, useRef, useReducer, useEffect, useCallback, useMemo } from "react";
 import type { Card, Depth } from '@/types/cardTypes';
-import type { EnemyDefinition, BattleStats, EnemyBattleState, CharacterClass } from '@/types/characterTypes';
+import type { EnemyDefinition, BattleStats, EnemyBattleState, CharacterClass, EncounterSize } from '@/types/characterTypes';
 import type { PhaseQueue, PhaseEntry, BuffDebuffMap } from '@/types/battleTypes';
 import { createInitialSwordEnergy } from '../../characters/logic/classAbilityUtils';
 
@@ -148,7 +148,7 @@ export const useBattleOrchestrator = (
   depth: Depth,
   initialEnemies?: EnemyDefinition[],
   initialPlayerState?: InitialPlayerState,
-  encounterType: "normal" | "group" | "boss" = "normal"
+  encounterType: EncounterSize = "single"
 ) => {
   // ========================================================================
   // Animation Hooks
@@ -844,5 +844,8 @@ export const useBattleOrchestrator = (
     // Battle result
     battleResult: actualBattleResult,
     battleStats,
+
+    // State setters (for item effects, etc.)
+    setPlayerBuffs,
   };
 };

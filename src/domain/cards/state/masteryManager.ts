@@ -7,6 +7,7 @@ export function createMasteryStore(): MasteryStore {
 }
 
 export function calculateMasteryLevel(useCount: number): MasteryLevel {
+  if (useCount >= MASTERY_THRESHOLDS[4]) return 4;
   if (useCount >= MASTERY_THRESHOLDS[3]) return 3;
   if (useCount >= MASTERY_THRESHOLDS[2]) return 2;
   if (useCount >= MASTERY_THRESHOLDS[1]) return 1;

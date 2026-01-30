@@ -10,17 +10,8 @@
 import React from "react";
 import { usePlayer } from "../../contexts/PlayerContext";
 import { useResources } from "../../contexts/ResourceContext";
+import { HEADER_ICONS } from "@/constants/uiConstants";
 import "../css/components/FacilityHeader.css";
-
-// Pencil-generated image assets
-const HEADER_IMAGES = {
-  heart: "/assets/pencil/images/generated-1769314219918.png",
-  gold: "/assets/pencil/images/gold-icon.png",
-  stoneSmall: "/assets/pencil/images/magic-stone-small.png",
-  stoneMedium: "/assets/pencil/images/magic-stone-medium.png",
-  stoneLarge: "/assets/pencil/images/magic-stone-large.png",
-  stoneHuge: "/assets/pencil/images/magic-stone-huge.png",
-};
 
 interface FacilityHeaderProps {
   title: string;
@@ -67,7 +58,7 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
             {Array.from({ length: currentLives }).map((_, i) => (
               <img
                 key={i}
-                src={HEADER_IMAGES.heart}
+                src={HEADER_ICONS.heart}
                 alt="life"
                 className="heart-icon"
               />
@@ -76,14 +67,14 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
         )}
 
         <div className="gold-frame">
-          <img src={HEADER_IMAGES.gold} alt="gold" className="gold-icon" />
+          <img src={HEADER_ICONS.gold} alt="gold" className="gold-icon" />
           <span className="gold-amount">{getTotalGold()} G</span>
         </div>
         {/* Magic stone frame */}
         <div className="magic-stone-frame">
           <div className="stone-item" title="小魔石 (30G)">
             <img
-              src={HEADER_IMAGES.stoneSmall}
+              src={HEADER_ICONS.stoneSmall}
               alt="small stone"
               className="stone-icon small"
             />
@@ -91,7 +82,7 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
           </div>
           <div className="stone-item" title="中魔石 (100G)">
             <img
-              src={HEADER_IMAGES.stoneMedium}
+              src={HEADER_ICONS.stoneMedium}
               alt="medium stone"
               className="stone-icon medium"
             />
@@ -99,7 +90,7 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
           </div>
           <div className="stone-item" title="大魔石 (350G)">
             <img
-              src={HEADER_IMAGES.stoneLarge}
+              src={HEADER_ICONS.stoneLarge}
               alt="large stone"
               className="stone-icon large"
             />
@@ -107,7 +98,7 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
           </div>
           <div className="stone-item" title="極大魔石 (1000G)">
             <img
-              src={HEADER_IMAGES.stoneHuge}
+              src={HEADER_ICONS.stoneHuge}
               alt="huge stone"
               className="stone-icon huge"
             />

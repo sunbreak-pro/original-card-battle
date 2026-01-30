@@ -75,7 +75,7 @@ const VictoryScreen = ({
               <div className="reward-icon">✨</div>
               <div className="reward-amount">+{rewards.soulRemnants} 魂の残滓</div>
               <div className="reward-detail">
-                {enemyType === "boss" ? "ボス" : enemyType === "elite" ? "エリート" : "通常"}敵
+                {enemyType === "boss" ? "ボス" : enemyType === "three" ? "3体" : enemyType === "double" ? "2体" : "単体"}敵
               </div>
             </div>
             <div className="reward-item magic-stones">

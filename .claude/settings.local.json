@@ -24,7 +24,8 @@
       "Bash(comm:*)",
       "Bash(grep:*)",
       "Bash(done)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

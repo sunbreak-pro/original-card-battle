@@ -68,47 +68,52 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 ## 2. Map Structure Specifications
 
-### 2.1 Concrete Hourglass Design
+### 2.1 Map Structure (Current Implementation)
 
-**Map Width and Rows per Depth**
+> **Source of truth:** `src/constants/dungeonConstants.ts` → `DEFAULT_MAP_CONFIG`
 
-| Depth | Theme   | Columns | Rows | Total Nodes (Approx) | Notes                             |
-| ----- | ------- | ------- | ---- | -------------------- | --------------------------------- |
-| 1     | Decay   | 3-4     | 7    | 21-28                | Intro, moderate choices           |
-| 2     | Madness | 4-5     | 7    | 28-35                | Choices begin to increase         |
-| 3     | Chaos   | **5-6** | 7    | 35-42                | **Max Width**, highest freedom    |
-| 4     | Void    | 3-4     | 7    | 21-28                | Rapid convergence, choices vanish |
-| 5     | Abyss   | 1-2     | 7    | 7-14                 | Almost linear, no escape          |
+**Current Implementation:** All depths share the same fixed map structure.
 
-**Player Choices:**
+| Config          | Value                 | Notes                                    |
+| --------------- | --------------------- | ---------------------------------------- |
+| Total Rows      | **7**                 | Fixed for all depths                     |
+| Nodes Per Row   | **[1, 2, 2, 2, 2, 2, 1]** | Start=1, middle=2, boss=1          |
+| Total Nodes     | **12**                | Per floor                                |
 
-- Average 5-7 node selections per layer (Base is 7 rows = 7 selections).
-- Horizontal movement is possible; taking detours can result in 8-10 selections.
-- Shortest route takes about 5 nodes to reach the next layer.
+**Node Type Probabilities (fixed, same for all depths):**
+
+| Type     | Chance | Notes                        |
+| -------- | ------ | ---------------------------- |
+| Elite    | 15%    | Stronger enemies             |
+| Event    | 10%    | Random events                |
+| Rest     | 10%    | Recovery nodes               |
+| Treasure | 5%     | Loot nodes                   |
+| Battle   | 60%    | Default (remaining chance)   |
+
+**Special rows:**
+- Row 0 (first): Always `battle` (entry point)
+- Row 6 (last): Always `boss`
 
 **Visual Image of Map Shape:**
 
 ```text
-      [Base Camp]          ← Base (Safe Zone)
-          │
-    ┌───┼───┐
-   [ Depth 1 ]            ← 3-4 Cols (Narrow)
-    │ │ │ │
-  ┌─┴─┼─┼─┴─┐
- [ Depth 2 ]              ← 4-5 Cols (Expanding)
-  │ │ │ │ │
- ┌┴─┼─┼─┼─┴┐
-[ Depth 3 ]               ← 5-6 Cols (Max Width)
- │ │ │ │ │
-  └─┬─┼─┬─┘
-   [ Depth 4 ]            ← 3-4 Cols (Rapid Shrink)
-    │ │ │
-     └┬┘
-   [ Depth 5 ]            ← 1-2 Cols (Linear)
-      │
-   [Boss / Abyss]
-
+   [Start Node]           ← Row 0: 1 node (always battle)
+       │
+    ┌──┴──┐
+   [○]   [○]              ← Row 1: 2 nodes
+    │  ╲╱  │
+   [○]   [○]              ← Row 2: 2 nodes
+    │  ╲╱  │
+   [○]   [○]              ← Row 3: 2 nodes
+    │  ╲╱  │
+   [○]   [○]              ← Row 4: 2 nodes
+    │  ╲╱  │
+   [○]   [○]              ← Row 5: 2 nodes
+    └──┬──┘
+   [Boss Node]             ← Row 6: 1 node (always boss)
 ```
+
+> **Design vs Implementation:** The original design envisioned variable width per depth (hourglass shape with 3-6 columns). The current implementation uses a fixed structure for all depths. The variable-width hourglass design may be implemented in a future update.
 
 ### 2.2 Node Connection Rules
 
@@ -131,28 +136,24 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 ### 2.3 Node Appearance Ratios
 
-**Ratio of Enemy/Event/Rest per Layer**
+> **Current Implementation:** Probabilities are uniform across all depths (not depth-dependent).
 
-| Depth | Combat | Event | Rest | Notes                             |
-| ----- | ------ | ----- | ---- | --------------------------------- |
-| 1     | 50%    | 30%   | 20%  | Base. High rest for easier intro  |
-| 2     | 55%    | 30%   | 15%  | Combat increases slightly         |
-| 3     | 60%    | 30%   | 10%  | Combat becomes dominant           |
-| 4     | 65%    | 30%   | 5%   | Almost no rest, harsh environment |
-| 5     | 70%    | 25%   | 5%   | Combat focused, fewer events      |
+**Implemented Ratios (from `DEFAULT_MAP_CONFIG`):**
 
-**Event Content Breakdown:**
+| Type     | Probability | Notes                  |
+| -------- | ----------- | ---------------------- |
+| Battle   | 60%         | Default (remainder)    |
+| Elite    | 15%         | Strong enemies         |
+| Event    | 10%         | Random events          |
+| Rest     | 10%         | Recovery               |
+| Treasure | 5%          | Loot                   |
 
-- **30-40% of Event Nodes contain Rest elements.**
-- Rest Choice: Select either **AP Recovery** or **HP Recovery**.
-- Example: "Found a cave. Rest? (Recover HP or Recover AP)"
+> **Design vs Implementation:** The original design had depth-dependent ratios (50-70% combat scaling by depth). The current implementation uses flat probabilities. Depth-dependent tuning may be added later.
 
-- Alternative rewards for not choosing rest are not implemented at this stage.
+**Placement Logic (implemented):**
 
-**Placement Logic:**
-
-- At least one "Non-Combat Node" per row (prevents complete dead ends).
-- At least one Rest Node in the row immediately preceding a Boss (Preparation opportunity).
+- Row 0 always `battle`, last row always `boss`.
+- Middle rows use random selection based on above probabilities.
 
 ### 2.4 Map Generation Constraints
 

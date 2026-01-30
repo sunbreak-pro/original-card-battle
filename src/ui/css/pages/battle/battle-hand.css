@@ -1,7 +1,7 @@
 /* =========================================
    Battle Hand Area
    =========================================
-   Hand container, card wrappers, pile icons, controls.
+   Hand container, pile icons, controls.
    ========================================= */
 
 /* =========================================
@@ -44,19 +44,7 @@
   padding: 0.8vh 0.8vw;
 }
 
-/* =========================================
-   Card Container (Center)
-   ========================================= */
-.card-container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  flex: 1;
-  height: 100%;
-  padding: 0;
-  gap: -2vh;
-  margin-right: 10vh;
-}
+
 
 /* =========================================
    Button Frame (Right)
@@ -122,165 +110,8 @@
   background: linear-gradient(180deg, #8b2a2a 0%, #ff766c 100%);
 }
 
-/* =========================================
-   Card Wrapper (Fan Layout)
-   ========================================= */
-.card-wrapper {
-  position: relative;
-  width: 11vh;
-  aspect-ratio: 2 / 3;
-  margin-left: -1.5vh;
-  transform-origin: center bottom;
-  transform: translateY(var(--y)) rotate(var(--rot));
-  transition: transform 0.15s ease-out;
-  cursor: pointer;
-  animation-fill-mode: both;
-  will-change: transform;
-}
 
-.card-wrapper:first-child {
-  margin-left: 0;
-}
 
-/* Hover: lift and straighten card */
-.card-wrapper:hover {
-  z-index: 1000 !important;
-  transform: translateX(1vh) translateY(-1vh) rotate(0deg) scale(1.15) !important;
-}
-
-/* Adjacent card shifts right (GPU-accelerated, no reflow) */
-.card-wrapper:hover + .card-wrapper {
-  transform: translateX(2vh) translateY(var(--y)) rotate(var(--rot));
-}
-
-/* =========================================
-   Card Base
-   ========================================= */
-.card {
-  width: 125%;
-  height: 125%;
-  border: 0.25vh solid #000;
-  border-radius: 1vh;
-  padding: 1vh;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.8), inset 0 0.5vh 1vh rgba(0, 0, 0, 0.3);
-}
-
-.card.playable {
-  border: 0.1vh solid #cfcfcf;
-}
-
-.card.unplayable {
-  opacity: 0.6;
-  filter: grayscale(0.5);
-}
-
-/* =========================================
-   Card Elements
-   ========================================= */
-.card-cost {
-  position: absolute;
-  top: -1.2vh;
-  left: -1.2vh;
-  width: 3.5vh;
-  height: 3.5vh;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 2.2vh;
-  color: #ffffff;
-  border: 0.3vh solid #000;
-  box-shadow: 0 0 .3vh #000;
-  z-index: 5;
-}
-
-.card-badge {
-  position: absolute;
-  top: 0.5vh;
-  right: 0.5vh;
-  padding: 0.3vh 0.6vh;
-  border-radius: 0.5vh;
-  font-size: 1.2vh;
-  font-weight: bold;
-  text-transform: uppercase;
-  text-shadow: 0 0 0.5vh #000;
-  box-shadow: 0 .2vw rgba(0, 0, 0, 0.5);
-}
-
-.card-name {
-  font-size: 1.8vh;
-  font-weight: bold;
-  text-align: center;
-  margin-top: 2.8vh;
-  margin-bottom: 0.5vh;
-  text-shadow: 0 0 .2vh;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: white;
-  border: 0.2vh solid rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
-}
-.card-name.mastery-0 {
-  background-color: var(--color-mastery-0);
-}
-.card-name.mastery-1 {
-  background-color: var(--color-mastery-1);
-}
-.card-name.mastery-2 {
-  background-color: var(--color-mastery-2);
-}
-.card-name.mastery-3 {
-  background-color: var(--color-mastery-3);
-}
-
-.card-desc-box {
-  flex: 1;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 0.8vh;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-top: .5vh;
-  padding: 0.5vh;
-  overflow: hidden;
-}
-
-.card-desc-text {
-  font-size: 1.43vh;
-  text-align: center;
-  line-height: 1.3;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.card-power {
-  margin-top: 0.5vh;
-  font-size: 1.6vh;
-  font-weight: bold;
-  color: #f9ed7f;
-}
-
-/* =========================================
-   Mastery Info
-   ========================================= */
-.mastery-info {
-  margin-top: auto;
-}
-
-.mastery-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 1.2vh;
-  margin-bottom: 0.2vh;
-}
-
-/* Mastery bar styles are defined in components/bars.css */
 
 /* =========================================
    Pile Icons (Draw/Discard)
@@ -345,18 +176,3 @@
 }
 
 /* Old end-turn-btn styles removed - now using .action-btn in button-frame */
-
-/* =========================================
-   Draw/Discard Animations
-   ========================================= */
-.card-wrapper.drawing {
-  pointer-events: none;
-  z-index: 1000;
-  animation: cardDrawIn 0.8s cubic-bezier(0, 0, 0.9, 1) both;
-}
-
-.card-wrapper.discarding {
-  pointer-events: none;
-  z-index: 1000;
-  animation: discardToPile 0.6s cubic-bezier(0.8, -0.38, 0.035, 0.025) forwards;
-}
