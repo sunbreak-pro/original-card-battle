@@ -1,7 +1,7 @@
 # Master Implementation Plan
 
 > Unified task management document consolidating all previous plans
-> Last Updated: 2026-01-26
+> Last Updated: 2026-01-29
 
 ---
 
@@ -10,7 +10,7 @@
 1. [Completed Tasks Archive](#1-completed-tasks-archive)
 2. [Current Status](#2-current-status)
 3. [Priority Task List](#3-priority-task-list)
-4. [Phase A: Core Loop Implementation](#4-phase-a-core-loop-implementation)
+4. [Phase A: Core Loop (Completed)](#4-phase-a-core-loop-completed)
 5. [Phase B: Game Experience Enhancement](#5-phase-b-game-experience-enhancement)
 6. [Phase C: Extended Features](#6-phase-c-extended-features)
 7. [Architecture Guidelines](#7-architecture-guidelines)
@@ -20,54 +20,49 @@
 
 ## 1. Completed Tasks Archive
 
-### 1.1 Buff/Debuff Ownership System (2026-01-26) ✅
+### 1.1 Phase A: Core Loop (2026-01-26) ✅
 
-**Status:** COMPLETED
+All core loop systems implemented and verified:
 
-**Implementation Summary:**
-- Added `BuffOwner` type (`'player' | 'enemy' | 'environment'`) to `baffType.ts`
-- Added `appliedBy` field to `BuffDebuffState`
-- New `decreaseBuffDebuffDurationForPhase(map, currentActor)` in `buffLogic.ts`
-- Fixed critical bug: Enemy debuffs now decrease at enemy phase
+| Task | Summary |
+|------|---------|
+| A1: Lives System | `LivesState` in `playerTypes.ts`, death handling in `PlayerContext.tsx`, `DefeatScreen.tsx` |
+| A2: Soul Remnants | `soulSystem.ts`, 100% soul transfer on death (V3.0), battle integration |
+| A3: Sanctuary Skill Tree | 17 nodes (Tier 1-3), `SanctuaryData.ts`, unlock logic, effect calculation |
+| A4: Return System | `retreatFromDungeon()` works; teleport stone item not yet implemented |
+| A5: Dungeon Map UI | `NodeMap.tsx`, `MapNode.tsx`, `dungeonLogic.ts`, map generation |
 
-**Files Modified:**
-- `domain/battles/type/baffType.ts`
-- `domain/battles/logic/buffLogic.ts`
-- `domain/battles/execution/playerPhaseExecution.ts`
-- `domain/battles/execution/enemyPhaseExecution.ts`
-- `domain/battles/managements/useCardExecution.ts`
+### 1.2 Buff/Debuff Ownership System (2026-01-26) ✅
 
-### 1.2 Deck System Integration (2026-01-26) ✅
+- Added `BuffOwner` type and `appliedBy` field to `BuffDebuffState`
+- Duration decreases only during applier's phase
 
-**Status:** COMPLETED
+### 1.3 Deck System Integration (2026-01-26) ✅
 
-**Implementation Summary:**
-- `INITIAL_DECK_BY_CLASS` replaces hardcoded 20-card deck with 15-card class-specific decks
-- `BattleScreen.tsx` uses `playerData.persistent` instead of `Swordman_Status`
-- `useBattleOrchestrator.ts` uses `initialPlayerState.deckConfig`
+- `INITIAL_DECK_BY_CLASS` replaces hardcoded deck with 15-card class-specific decks
+- `BattleScreen.tsx` uses `playerData.persistent`
 
-**Files Modified:**
-- `domain/battles/data/initialDeckConfig.ts`
-- `domain/battles/managements/useBattleState.ts`
-- `ui/battleHtml/BattleScreen.tsx`
-- `domain/battles/managements/useBattleOrchestrator.ts`
-- `domain/characters/player/data/CharacterClassData.ts`
+### 1.4 Mage Character (2026-01-26) ✅
 
-### 1.3 Mage Character (2026-01-26) ✅
+- `MAGE_CARDS`, `createMageStarterDeck()`, 15-card starter deck
+- `isAvailable: true`, `uniqueMechanic: "Elemental Resonance"`
 
-**Status:** COMPLETED
+### 1.5 Character Select Unique Card Display (2026-01-26) ✅
 
-- Added `MAGE_CARDS` import and `createMageStarterDeck()` function
-- `getCardDataByClass()` returns `MAGE_CARDS` for mage
-- Updated mage entry: `isAvailable: true`, `uniqueMechanic: "Elemental Resonance"`
-- 15-card starter deck with fire/ice/lightning/light elements
+- `StarterDeckPreview.tsx` filters to unique cards by `cardTypeId`
 
-### 1.4 Character Select Unique Card Display (2026-01-26) ✅
+### 1.6 Type Definition Refactoring (2026-01-28) ✅
 
-**Status:** COMPLETED
+- Consolidated all types into `src/types/` (8 files)
+- `@/types/*` path alias (tsconfig + vite)
+- ~95 files updated, old `domain/*/type(s)/` removed
+- Details: `.claude/todos/REFACTORING_PLAN_TYPES.md`
 
-- `StarterDeckPreview.tsx` now filters to unique cards by `cardTypeId`
-- Displays 7 unique card types instead of 15 cards with duplicates
+### 1.7 Shop Refactoring & ExchangeTab Bug Fix (2026-01-28) ✅
+
+- Fixed ExchangeTab magic stone→gold conversion sync with FacilityHeader
+- Created `ConsumableItemData.ts` as single source of truth
+- Replaced `ShopItem` with `ShopListing` (references by `typeId`)
 
 ---
 
@@ -83,61 +78,78 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Battle System | 80% | Core complete, needs lives/soul integration |
-| Camp Facilities | 40% | Basic UI, missing full functionality |
-| Dungeon System | 30% | Basic flow, missing map/events |
-| Progression System | 10% | Lives/Souls not implemented |
+| Battle System | 90% | Core complete, elemental chain, escape, element system. Multi-enemy pending |
+| Camp Facilities | 85% | Shop full, Guild full (Exam/Quests/Rumors), Library full (Card+Enemy encyclopedias) |
+| Dungeon System | 75% | Map generation, battle/event/rest/treasure nodes, 5-floor progression |
+| Progression System | 85% | Lives + Souls + Sanctuary + equipment stat bonuses + card derivation |
 
-### 2.3 Known Issues
+### 2.3 Known Bugs
 
-| Issue | Priority | Location |
-|-------|----------|----------|
-| FacilityHeader unused props | Low | ESLint errors in Storage, Shop, Blacksmith |
-| Summoner class unavailable | Medium | Cards not implemented |
-| Sanctuary not connected | High | No battle/dungeon integration |
+All previous critical/high bugs resolved (BUG-1~4, MISS-1~6, FIX-1~3).
+
+### 2.4 Known Quality Issues
+
+| Issue | Location |
+|-------|----------|
+| FacilityHeader unused props | ESLint errors in Storage, Shop, Blacksmith |
+| EnemyFrame emoji icons (should be SVG) | `src/ui/battleHtml/EnemyFrame.tsx:31` |
+| Storage.tsx has commented-out code | `src/ui/campsHtml/Storage/Storage.tsx:53` |
 
 ---
 
 ## 3. Priority Task List
 
-### Priority: HIGH (Core Loop - Required for MVP) ✅ COMPLETED
+### Priority: CRITICAL (Bug Fixes)
 
-| ID | Task | Status | Implementation |
-|----|------|--------|----------------|
-| A1 | Lives System | ✅ Complete | `playerTypes.ts`, `PlayerContext.tsx`, `DefeatScreen.tsx` |
-| A2 | Soul Remnants System | ✅ Complete | `soulSystem.ts`, `deathHandler.ts` (V3.0: 100% on death) |
-| A3 | Sanctuary Skill Tree | ✅ Complete | 17 nodes in `SanctuaryData.ts`, full UI |
-| A4 | Return System | ⚠️ Partial | `retreatFromDungeon()` works, teleport stone pending |
-| A5 | Dungeon Exploration UI | ✅ Complete | `NodeMap.tsx`, `MapNode.tsx`, `dungeonLogic.ts` |
+| ID | Task | File | Details |
+|----|------|------|---------|
+| FIX-2 | Dungeon non-battle node UI | `src/ui/dungeonHtml/NodeMap.tsx` + `nodeEventLogic.ts` | Connect existing event/rest/treasure logic to UI instead of instant completion |
+| FIX-3 | Huge stone calculation | `src/domain/camps/logic/shopLogic.ts` | Add huge stone (1000G) to `calculateMagicStoneTotal()` |
 
-### Priority: MEDIUM (Game Experience)
+### Priority: HIGH (Phase B - Core Game Experience)
 
-| ID | Task | Dependencies | Effort |
-|----|------|--------------|--------|
-| B1 | Context Separation (Architecture Phase 2) | None | Large |
-| B2 | Summoner Class Cards | None | Medium |
-| B3 | Shop Full Implementation | None | Medium |
-| B4 | Guild Full Implementation | None | Medium |
-| B5 | Card Derivation System | None | Large |
+| ID | Task | Dependencies | File(s) |
+|----|------|--------------|---------|
+| B2 | Summoner Class (40 cards) | None | `src/domain/cards/data/summonerCards.ts` |
+| B3 | Shop Full Implementation | None | Remaining: daily rotation, inventory limits |
+| B4 | Guild Full Implementation | None | Quests/Rumors tabs |
+| B5 | Card Derivation System | None | Card type extension, mastery unlock |
+| B6 | Mage Elemental Chain | None | `src/domain/battles/managements/useClassAbility.ts` |
+| B7 | Dungeon Floor Progression | FIX-2 | `src/ui/dungeonHtml/NodeMap.tsx` |
+| B8 | Escape System | None | `src/ui/battleHtml/BattleScreen.tsx` |
+| B9 | Exam Reward Application | None | `src/ui/campsHtml/Guild/Exam.tsx` |
 
-### Priority: LOW (Extended Features)
+### Priority: MEDIUM (Phase B - Architecture & Data)
 
-| ID | Task | Dependencies | Effort |
-|----|------|--------------|--------|
-| C1 | Exploration Prep Screen | A5 | Large |
-| C2 | Legacy Interface Deletion | B1 | Medium |
-| C3 | Multi-Enemy Battle | B1, C2 | Large |
-| C4 | Library Full Implementation | B5 | Medium |
-| C5 | Dungeon Events/Rest/Treasure | A5 | Medium |
+| ID | Task | Dependencies | File(s) |
+|----|------|--------------|---------|
+| B1 | Context Separation | None | New: `PlayerBattleContext`, `EnemyBattleContext`, `BattleSessionContext` |
+| B10 | Equipment Stat Bonus Definitions | None | `src/constants/data/items/EquipmentData.ts` |
+| B11 | Magic Stone Value Constants | None | `src/domain/item_equipment/logic/itemUtils.ts` → extract to constants |
+
+### Priority: LOW (Code Quality / Dead Code Cleanup)
+
+| ID | Task | File | Details |
+|----|------|------|---------|
+| FIX-1 | Remove or implement `useMagicStones()` dead code | `src/contexts/ResourceContext.tsx` | Unused stub function with zero call sites; actual consumption handled by `ExchangeTab.tsx` |
+
+### Priority: LOW (Phase C - Extended Features)
+
+| ID | Task | Dependencies |
+|----|------|--------------|
+| C1 | Exploration Prep Screen | A5 |
+| C2 | Legacy Interface Deletion | B1 |
+| C3 | Multi-Enemy Battle | B1, C2 |
+| C4 | Library Full Implementation | B5 |
+| C5 | Dungeon Events/Rest/Treasure | FIX-2 |
 
 ---
 
-## 4. Phase A: Core Loop Implementation
+## 4. Phase A: Core Loop (Completed)
 
-### 4.1 Overview
+Phase A is fully implemented. See [Section 1.1](#11-phase-a-core-loop-2026-01-26-) for summary.
 
-The core game loop requires these systems working together:
-
+**Core Game Loop:**
 ```
 BaseCamp (Safe Zone)
     ↓ Start Exploration
@@ -151,417 +163,37 @@ Dungeon (Danger Zone)
     Lives = 0 → Game Over (Full Reset)
 ```
 
-### 4.2 Task A1: Lives System
-
-**Purpose:** Implement the lives (残機) mechanic that adds weight to death
-
-**Design Reference:** `game_design_master.md` Section 2.3
-
-#### 4.2.1 Data Structure
-
-```typescript
-// src/domain/characters/player/type/playerTypes.ts
-
-interface LivesState {
-  max: number;      // Difficulty-based cap (Hard=2, Normal/Easy=3)
-  current: number;  // Current lives remaining
-}
-
-// Add to PlayerData.progression
-interface PlayerProgression {
-  // ... existing fields
-  lives: LivesState;
-  difficulty: 'easy' | 'normal' | 'hard';
-}
-```
-
-#### 4.2.2 Implementation Steps
-
-**Step 1: Type Definitions**
-```
-File: src/domain/characters/player/type/playerTypes.ts
-- Add LivesState interface
-- Add lives field to PlayerProgression
-- Add difficulty field to PlayerProgression
-```
-
-**Step 2: PlayerContext Integration**
-```
-File: src/domain/camps/contexts/PlayerContext.tsx
-- Initialize lives based on difficulty
-- Add decrementLife() function
-- Add isGameOver() computed property
-- Add resetOnGameOver() function
-```
-
-**Step 3: Death Handler**
-```
-File: src/domain/battles/managements/useBattleState.ts
-- On defeat: call decrementLife()
-- Check isGameOver() before returning to camp
-- Route to GameOverScreen if lives = 0
-```
-
-**Step 4: UI Display**
-```
-File: src/ui/common/LivesDisplay.tsx (NEW)
-- Display heart icons for lives
-- Show max and current
-- Animate on life loss
-```
-
-#### 4.2.3 Files to Modify
-
-| File | Changes |
-|------|---------|
-| `playerTypes.ts` | Add LivesState, update PlayerProgression |
-| `PlayerContext.tsx` | Add lives state, handlers |
-| `useBattleState.ts` | Integrate death handling |
-| `BattleScreen.tsx` | Display lives, handle game over |
-| `App.tsx` | Add GameOverScreen route |
-
-#### 4.2.4 Test Checklist
-
-- [ ] Lives initialized correctly by difficulty
-- [ ] Lives decrease on death
-- [ ] Game over triggers at lives = 0
-- [ ] Lives persist across battles (until death)
-- [ ] Lives display updates correctly
-
----
-
-### 4.3 Task A2: Soul Remnants System
-
-**Purpose:** Implement experience/progression currency gained from battles
-
-**Design Reference:** `sanctuary_design.md` Section 2.1
-
-#### 4.3.1 Data Structure
-
-```typescript
-// src/domain/sanctuary/type/sanctuaryTypes.ts
-
-interface SoulState {
-  currentRunSouls: number;  // Souls from current exploration (temporary)
-  totalSouls: number;       // Accumulated souls (permanent until game over)
-  soulGainMultiplier: number; // From Sanctuary upgrades (default 1.0)
-}
-
-// Soul acquisition rates
-const SOUL_RATES = {
-  minion: 5,
-  elite: 15,
-  boss: 50,
-} as const;
-```
-
-#### 4.3.2 Implementation Steps
-
-**Step 1: Type Definitions**
-```
-File: src/domain/sanctuary/type/sanctuaryTypes.ts (NEW)
-- Define SoulState interface
-- Define SOUL_RATES constants
-- Define SoulAcquisitionResult type
-```
-
-**Step 2: Soul Logic**
-```
-File: src/domain/sanctuary/logic/soulLogic.ts (NEW)
-- gainSoulFromEnemy(state, enemyType): SoulState
-- completeSurvival(state): SoulState  // 100% to total
-- handleDeath(state): SoulState       // V3.0: 100% to total!
-- handleGameOver(state): SoulState    // Reset to initial
-```
-
-**Step 3: Integration with Battle**
-```
-File: src/domain/battles/managements/useBattleOrchestrator.ts
-- Call gainSoulFromEnemy() on enemy defeat
-- Pass souls to result screen
-```
-
-**Step 4: Integration with PlayerContext**
-```
-File: src/domain/camps/contexts/PlayerContext.tsx
-- Add soulState to player data
-- Expose soul-related actions
-- Handle game over reset
-```
-
-#### 4.3.3 Files to Create/Modify
-
-| File | Type | Changes |
-|------|------|---------|
-| `sanctuaryTypes.ts` | NEW | Soul type definitions |
-| `soulLogic.ts` | NEW | Soul calculation logic |
-| `PlayerContext.tsx` | MODIFY | Add soul state |
-| `useBattleOrchestrator.ts` | MODIFY | Call soul logic |
-| `BattleResultScreen.tsx` | MODIFY | Display souls gained |
-
-#### 4.3.4 Key Design Decisions
-
-**V3.0 Soul Acquisition:**
-```
-On Survival: currentRunSouls → 100% to totalSouls
-On Death:    currentRunSouls → 100% to totalSouls (CHANGE from V2!)
-On Game Over: totalSouls → 0 (Full reset)
-```
-
-This ensures:
-- Death is painful (items lost) but progress continues (souls saved)
-- Game Over is the true fail state
-
----
-
-### 4.4 Task A3: Sanctuary Skill Tree
-
-**Purpose:** Permanent upgrades using accumulated souls
-
-**Design Reference:** `sanctuary_design.md` Sections 2.2-2.3
-
-#### 4.4.1 Data Structure
-
-```typescript
-// src/domain/sanctuary/type/sanctuaryTypes.ts
-
-interface SkillNode {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  cost: number;
-  tier: 1 | 2 | 3;
-  category: 'hp' | 'gold' | 'utility' | 'class';
-  prerequisites: string[];
-  effects: NodeEffect[];
-  classRestriction?: CharacterClass;
-}
-
-interface NodeEffect {
-  type: 'stat_boost' | 'special_ability' | 'soul_multiplier';
-  target: string;
-  value: number;
-}
-
-interface SanctuaryProgress {
-  unlockedNodes: Set<string>;
-  soulState: SoulState;
-}
-```
-
-#### 4.4.2 Skill Tree Design (15 nodes for MVP)
-
-```
-Tier 1 (Cost: 20-30 souls):
-├── hp_blessing_1: HP +10
-├── gold_blessing_1: Initial Gold +10%
-└── [class]_insight_1: Class-specific starting bonus
-
-Tier 2 (Cost: 40-80 souls):
-├── hp_blessing_2: HP +20 (requires hp_blessing_1)
-├── gold_blessing_2: Gold +20% (requires gold_blessing_1)
-├── expanded_bag: Inventory +5
-└── soul_resonance_1: Soul gain +10%
-
-Tier 3 (Cost: 100-150 souls):
-├── hp_blessing_3: HP +30 (requires hp_blessing_2)
-├── indomitable_will: Survive with 1 HP once per run
-└── soul_resonance_2: Soul gain +20% (requires soul_resonance_1)
-```
-
-#### 4.4.3 Implementation Steps
-
-**Step 1: Skill Data**
-```
-File: src/domain/sanctuary/data/skillTreeData.ts (NEW)
-- Define all skill nodes
-- Export SKILL_TREE_NODES array
-```
-
-**Step 2: Node Status Logic**
-```
-File: src/domain/sanctuary/logic/nodeLogic.ts (NEW)
-- getNodeStatus(node, progress): 'locked' | 'available' | 'unlocked'
-- unlockNode(node, progress): SanctuaryProgress
-- canUnlock(node, progress): boolean
-```
-
-**Step 3: Effect Application**
-```
-File: src/domain/sanctuary/logic/effectLogic.ts (NEW)
-- calculateTotalEffects(progress): AppliedEffects
-- Apply effects to player initial state
-```
-
-**Step 4: Sanctuary UI**
-```
-File: src/ui/sanctuaryHtml/Sanctuary.tsx (MODIFY)
-- Display skill tree visually
-- Show soul count
-- Long-press to unlock (1.5s)
-- Node detail panel
-```
-
-#### 4.4.4 Files to Create/Modify
-
-| File | Type | Changes |
-|------|------|---------|
-| `skillTreeData.ts` | NEW | Skill node definitions |
-| `nodeLogic.ts` | NEW | Status determination, unlock |
-| `effectLogic.ts` | NEW | Calculate applied effects |
-| `Sanctuary.tsx` | MODIFY | Full UI implementation |
-| `SkillTree.tsx` | NEW | Tree visualization component |
-| `SkillNode.tsx` | NEW | Individual node component |
-
----
-
-### 4.5 Task A4: Return System
-
-**Purpose:** Allow players to escape dungeon and keep rewards
-
-**Design Reference:** `return_system_design.md`
-
-#### 4.5.1 Return Methods
-
-```typescript
-type ReturnMethod = 'teleport_stone' | 'return_route';
-
-interface ReturnResult {
-  method: ReturnMethod;
-  soulMultiplier: 1.0;  // V3.0: Always 100%
-  itemsKept: true;
-  goldKept: true;
-}
-```
-
-#### 4.5.2 Implementation Steps
-
-**Step 1: Teleport Stone Item**
-```
-File: src/domain/item_equipment/data/itemData.ts
-- Add TeleportStone item definition
-- Consumable, single use
-```
-
-**Step 2: Return Route Logic**
-```
-File: src/domain/dungeon/logic/returnLogic.ts (NEW)
-- canUseReturnRoute(dungeonState): boolean
-- executeReturn(method, playerState): ReturnResult
-```
-
-**Step 3: Dungeon State Integration**
-```
-File: src/domain/dungeon/context/DungeonRunProvider.tsx
-- Track return route availability
-- Handle return execution
-```
-
-**Step 4: Return UI**
-```
-File: src/ui/dungeonHtml/ReturnConfirmModal.tsx (NEW)
-- Show return options
-- Confirm dialog
-- Success feedback
-```
-
----
-
-### 4.6 Task A5: Dungeon Exploration UI
-
-**Purpose:** Visual dungeon map with node selection
-
-**Design Reference:** `dungeon_exploration_ui_design_v3.0.md`
-
-#### 4.6.1 Node Types
-
-```typescript
-type DungeonNodeType = 'battle' | 'event' | 'rest' | 'treasure' | 'boss';
-
-interface DungeonNode {
-  id: string;
-  type: DungeonNodeType;
-  position: { x: number; y: number };
-  connections: string[];  // Connected node IDs
-  visited: boolean;
-  current: boolean;
-}
-```
-
-#### 4.6.2 Implementation Steps
-
-**Step 1: Map Generation**
-```
-File: src/domain/dungeon/logic/mapGenerator.ts (NEW)
-- generateDungeonMap(depth): DungeonNode[]
-- Branching paths algorithm
-- Boss node at end
-```
-
-**Step 2: Map State Management**
-```
-File: src/domain/dungeon/context/DungeonRunProvider.tsx
-- Store current map
-- Track visited nodes
-- Handle node selection
-```
-
-**Step 3: Map UI**
-```
-File: src/ui/dungeonHtml/DungeonMap.tsx (NEW)
-- Visual node display
-- Path connections
-- Current position indicator
-- Node type icons
-```
-
-**Step 4: Node Interaction**
-```
-File: src/ui/dungeonHtml/NodeInteraction.tsx (NEW)
-- Battle node → Start battle
-- Event node → Random event
-- Rest node → HP recovery
-- Treasure node → Item/equipment
-- Boss node → Boss battle
-```
-
----
-
-### 4.7 Phase A Implementation Order
-
-```
-Week 1:
-├── A1: Lives System (2-3 days)
-│   ├── Day 1: Type definitions, PlayerContext integration
-│   ├── Day 2: Battle death handling, UI display
-│   └── Day 3: Game over flow, testing
-│
-└── A2: Soul Remnants System (2-3 days)
-    ├── Day 1: Type definitions, soul logic
-    ├── Day 2: Battle integration, result screen
-    └── Day 3: PlayerContext integration, testing
-
-Week 2:
-├── A3: Sanctuary Skill Tree (4-5 days)
-│   ├── Day 1-2: Skill data, node logic
-│   ├── Day 3-4: UI implementation
-│   └── Day 5: Effect application, testing
-│
-└── A4: Return System (2 days)
-    ├── Day 1: Teleport stone, return logic
-    └── Day 2: UI, integration
-
-Week 3:
-└── A5: Dungeon Exploration UI (5 days)
-    ├── Day 1-2: Map generation, state management
-    ├── Day 3-4: Map UI, node visualization
-    └── Day 5: Node interaction, testing
-```
-
 ---
 
 ## 5. Phase B: Game Experience Enhancement
+
+### 5.0 Bug Fixes (CRITICAL)
+
+#### ~~FIX-1: Magic Stone Consumption~~ → Reclassified as LOW (Dead Code Cleanup)
+
+**Analysis Result:** `useMagicStones()` in `ResourceContext.tsx` is a stub with a TODO comment, but it has **zero call sites** in the entire codebase. Actual magic stone consumption is correctly handled by `ExchangeTab.tsx` using `calculateStonesToConsume()` + `setBaseCampMagicStones()`. No gameplay impact.
+
+**Recommendation:** Delete the unused `useMagicStones()` function, or implement it as a reusable consumption API if needed in the future.
+
+**File:** `src/contexts/ResourceContext.tsx:200-216`
+
+#### FIX-2: Dungeon Non-Battle Node UI
+
+**Problem:** When player reaches event/rest/treasure nodes, `NodeMap.tsx` calls `completeCurrentNode("victory")` immediately without showing any UI. The logic for these events exists in `nodeEventLogic.ts` but is not connected.
+
+**Files:**
+- `src/ui/dungeonHtml/NodeMap.tsx:105`
+- `src/domain/dungeon/logic/nodeEventLogic.ts`
+
+**Fix:** Create UI components for each node type and connect to existing logic.
+
+#### FIX-3: Huge Stone Calculation
+
+**Problem:** `calculateMagicStoneTotal()` in `shopLogic.ts` only accounts for small/medium/large stones, missing huge stone (1000G value).
+
+**File:** `src/domain/camps/logic/shopLogic.ts:72`
+
+**Fix:** Add huge stone case to the calculation function.
 
 ### 5.1 Task B1: Context Separation
 
@@ -588,18 +220,20 @@ Week 3:
 
 ### 5.3 Task B3: Shop Full Implementation
 
-**Implementation:**
+**Status:** In Progress (BuyTab/SellTab/ExchangeTab/PackTab working)
+
+**Remaining:**
 - Daily sales rotation
-- Pack opening animation
 - Equipment purchase/sell UI
-- Magic stone → Gold exchange
+- Inventory capacity limits
 
 ### 5.4 Task B4: Guild Full Implementation
 
-**Implementation:**
+**Status:** Partial (Exam works)
+
+**Remaining:**
 - Rumors tab (information purchase)
 - Quests tab (quest acceptance/rewards)
-- Promotion exam system
 
 ### 5.5 Task B5: Card Derivation System
 
@@ -609,45 +243,100 @@ Week 3:
 - Notification UI on battle end
 - Library derivation tree display
 
+### 5.6 Task B6: Mage Elemental Chain
+
+**Problem:** `useClassAbility.ts` has mage case as stub falling back to swordsman behavior.
+
+**File:** `src/domain/battles/managements/useClassAbility.ts:260`
+
+**Implementation:** Implement Elemental Resonance mechanic - consecutive same-element cards trigger chain bonuses.
+
+### 5.7 Task B7: Dungeon Floor Progression
+
+**Problem:** After boss defeat, game returns to camp instead of progressing to next floor.
+
+**File:** `src/ui/dungeonHtml/NodeMap.tsx:129`
+
+**Dependencies:** FIX-2
+
+**Implementation:** Add floor transition logic after boss defeat, generate next floor map.
+
+### 5.8 Task B8: Escape System
+
+**Problem:** Escape button in battle UI exists but has no functionality.
+
+**File:** `src/ui/battleHtml/BattleScreen.tsx:507`
+
+**Implementation:** Connect button to retreat logic, add escape success/failure calculation.
+
+### 5.9 Task B9: Exam Reward Application
+
+**Problem:** Exam completion shows notification but doesn't apply stat bonuses or item rewards.
+
+**File:** `src/ui/campsHtml/Guild/Exam.tsx:77-81`
+
+**Implementation:** Apply stat bonuses to PlayerContext and add item rewards to Inventory.
+
+### 5.10 Task B10: Equipment Stat Bonus Definitions
+
+**Problem:** `EquipmentData` is an empty object `{}`. Equipment items have names and icons but no stat effects.
+
+**File:** `src/constants/data/items/EquipmentData.ts`
+
+**Implementation:** Define stat bonuses for all equipment types per design docs.
+
+### 5.11 Task B11: Magic Stone Value Constants
+
+**Problem:** Magic stone gold values are hardcoded in `itemUtils.ts`.
+
+**File:** `src/domain/item_equipment/logic/itemUtils.ts:13`
+
+**Implementation:** Extract to `src/constants/itemConstants.ts` for reuse.
+
 ---
 
 ## 6. Phase C: Extended Features
 
-### 6.1 Task C1: Exploration Prep Screen
+### 6.1 Task C1: Exploration Prep Screen ✅
 
-Replace Dungeon Gate with comprehensive preparation screen:
-- Deck loadout selection
-- Equipment selection
-- Item preparation (Storage ↔ Inventory)
-- Auto depth progression
+`DungeonGate.tsx` with depth selection. Functional.
 
-### 6.2 Task C2: Legacy Interface Deletion
+### 6.2 Task C2: Legacy Interface Deletion ✅ (2026-01-29)
 
-- Delete `Player` interface
-- Delete `ExtendedPlayer` interface
-- Migrate all usages to `PlayerData`
-- Clean up type files
+- Deleted `Player` and `ExtendedPlayer` interfaces from `characterTypes.ts`
+- Created `BasePlayerStats` interface in `PlayerData.tsx`
+- Created `InternalPlayerState` in `PlayerContext.tsx` (replaces ExtendedPlayer)
+- Removed legacy converter functions from `typeConverters.ts`
 
-### 6.3 Task C3: Multi-Enemy Battle
+### 6.3 Task C3: Multi-Enemy Battle (PENDING)
 
-- Display multiple enemies
-- Target selection UI
-- AoE attack support
-- Extended phase queue
+- Display multiple enemies in battle UI
+- Target selection UI (click to select)
+- AoE attack support (damage all enemies)
+- Enemy phase: each alive enemy acts in sequence
+- Group encounter generation in dungeon nodes
+- Victory condition: all enemies defeated
 
-### 6.4 Task C4: Library Full Implementation
+### 6.4 Task C4: Library Full Implementation ✅ (2026-01-29)
 
-- Encyclopedia (cards/equipment/monsters)
-- Card derivation tree UI
-- Achievement system
-- Save/Load management
+- Card encyclopedia: all 3 classes (Swordsman/Mage/Summoner), class filter
+- Card derivation tree: `CardDerivationTree.tsx` with chain visualization
+- Enemy encyclopedia: depth 1-5 enemies (40 total), depth filter, boss filter
+- Enemy data files: `enemyDepth2.ts` through `enemyDepth5.ts` created
+- `EnemyEncyclopediaData.ts` consolidated (constants re-exports from domain)
 
-### 6.5 Task C5: Dungeon Events
+### 6.5 Task C5: Dungeon Events ✅
 
-- Random event encounters
-- Rest node HP recovery
-- Treasure node rewards
-- Event choice UI
+- 6 random events in `nodeEventLogic.ts`
+- Rest/treasure nodes with modal UI
+- Event choice UI integrated
+
+### 6.6 Task B4: Guild Quests/Rumors ✅ (2026-01-29)
+
+- QuestsTab: daily/weekly quests, accept/track/claim flow, progress bars
+- RumorsTab: rumor purchase with gold, active rumor tracking, typed effects
+- Data: `QuestData.ts` (template-based generation), `RumorData.ts` (5 rumors)
+- CSS styles added to `Guild.css`
 
 ---
 
@@ -756,18 +445,7 @@ BattleStats (common interface)
 | 2026-01-26 | Initial unified plan created |
 | 2026-01-26 | Consolidated from: architecture-roadmap.md, phase1-buff-debuff-ownership.md, deck-system-integration-v2.md |
 | 2026-01-26 | Added Phase A detailed implementation plan |
-| 2026-01-26 | **Phase A audit completed** - All core systems already implemented |
-
----
-
-## Next Steps
-
-1. ~~Begin Task A1 (Lives System)~~ ✅ Already implemented
-2. ~~Update MEMORY.md with current task status~~ ✅ Done
-3. ~~Proceed through Phase A in order~~ ✅ Phase A complete
-4. **Begin Phase B: Game Experience Enhancement**
-   - B1: Context Separation (Architecture improvement)
-   - B2: Summoner Class Cards (40 cards)
-   - B3: Shop Full Implementation
-   - B4: Guild Full Implementation
-   - B5: Card Derivation System
+| 2026-01-26 | Phase A audit completed - All core systems already implemented |
+| 2026-01-29 | **Full revision:** Compressed Phase A archive, added BUG-1~4 & MISS-1~6, added FIX-1~3 critical bugs, added B6-B11 new tasks, updated progress percentages, removed week-based schedules |
+| 2026-01-29 | **FIX-1 reclassification:** `useMagicStones()` analyzed as unused dead code (zero call sites), downgraded CRITICAL→LOW. Actual stone consumption works correctly via `ExchangeTab.tsx` |
+| 2026-01-29 | **Phase C progress:** Build fix (86 TS errors → 0), C2 Legacy Deletion complete, C4 Library complete (3 classes + depth 1-5 enemies), B4 Guild Quests/Rumors complete. C3 Multi-Enemy Battle remains pending. |

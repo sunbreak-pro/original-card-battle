@@ -5,19 +5,43 @@
  */
 
 // ============================================================
-// Pencil-generated Image Assets
+// Generated Icon Assets
 // ============================================================
 
 /** Header image asset paths */
-export const HEADER_IMAGES = {
-  heart: "/assets/pencil/images/generated-1769314219918.png",
-  gold: "/assets/pencil/images/gold-icon.png",
-  stoneSmall: "/assets/pencil/images/magic-stone-small.png",
-  stoneMedium: "/assets/pencil/images/magic-stone-medium.png",
-  stoneLarge: "/assets/pencil/images/magic-stone-large.png",
-  stoneHuge: "/assets/pencil/images/magic-stone-huge.png",
+export const HEADER_ICONS = {
+  heart: "../../public/assets/images/icons/heart-icon.png",
+  gold: "../../public/assets/images/icons/gold-icon.png",
+  stoneSmall: "../../public/assets/images/icons/magic-stone-small.png",
+  stoneMedium: "../../public/assets/images/icons/magic-stone-medium.png",
+  stoneLarge: "../../public/assets/images/icons/magic-stone-large.png",
+  stoneHuge: "../../public/assets/images/icons/magic-stone-huge.png",
 };
 
+export const ELEMENT_MAGIC_ICONS = {
+  fire: "../../public/assets/images/elements/element-fire.png",
+  ice: "../../public/assets/images/elements/element-ice.png",
+  lightning: "../../public/assets/images/elements/element-lightning.png",
+  dark: "../../public/assets/images/elements/element-dark.png",
+  light: "../../public/assets/images/elements/element-light.png",
+};
+export const ELEMENT_PHYSICAL_ICONS = {
+  slash: "../../public/assets/images/elements/element-slash.png",
+  impact: "../../public/assets/images/elements/element-impact.png",
+  guard: "../../public/assets/images/elements/element-guard.png",
+};
+
+// ============================================================
+// Background Image Assets
+// ============================================================
+
+export const DEPTH_BACKGROUND_IMAGES = {
+  1: "../../public/assets/images/depth-backgrounds/depth_1_background.png",
+  2: "../../public/assets/images/depth-backgrounds/depth_2_background.png",
+  3: "../../public/assets/images/depth-backgrounds/depth_3_background.png",
+  4: "../../public/assets/images/depth-backgrounds/depth_4_background.png",
+  5: "../../public/assets/images/depth-backgrounds/depth_5_background.png",
+};
 // ============================================================
 // Battle UI Constants
 // ============================================================

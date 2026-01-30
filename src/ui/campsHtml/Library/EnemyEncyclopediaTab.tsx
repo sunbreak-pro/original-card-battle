@@ -2,6 +2,7 @@
  * EnemyEncyclopediaTab Component
  *
  * Displays all enemies in the bestiary with filtering options.
+ * Supports depth filtering for enemies from all 5 dungeon levels.
  */
 
 import React, { useState, useMemo } from "react";
@@ -9,8 +10,12 @@ import {
   createEnemyEncyclopediaEntries,
   isBossEnemy,
   getEnemyStats,
-} from "../../../domain/camps/data/EnemyEncyclopediaData";
-import type { EnemyFilterOptions } from '@/types/campTypes';
+  getEnemiesByDepth,
+} from "../../../constants/data/camps/EnemyEncyclopediaData";
+import type { EnemyFilterOptions } from "@/types/campTypes";
+import type { Depth } from "@/types/cardTypes";
+
+const DEPTHS: Depth[] = [1, 2, 3, 4, 5];
 
 export const EnemyEncyclopediaTab: React.FC = () => {
   const [filters, setFilters] = useState<EnemyFilterOptions>({
@@ -23,8 +28,19 @@ export const EnemyEncyclopediaTab: React.FC = () => {
   const stats = useMemo(() => getEnemyStats(), []);
 
   const filteredEntries = useMemo(() => {
+    // If depth filter is active, get depth-specific enemies
+    const depthEnemyIds =
+      filters.depth !== null
+        ? new Set(getEnemiesByDepth(filters.depth as Depth).map((e) => e.id))
+        : null;
+
     return allEntries.filter((entry) => {
       const { enemy } = entry;
+
+      // Depth filter
+      if (depthEnemyIds !== null && !depthEnemyIds.has(enemy.id)) {
+        return false;
+      }
 
       // Boss filter
       if (filters.isBoss !== null) {
@@ -75,6 +91,27 @@ export const EnemyEncyclopediaTab: React.FC = () => {
       {/* Filters */}
       <div className="library-filters">
         <div className="filter-group">
+          <span className="filter-label">Depth:</span>
+          <div className="depth-filter-buttons">
+            <button
+              className={`depth-filter-btn ${filters.depth === null ? "active" : ""}`}
+              onClick={() => setFilters({ ...filters, depth: null })}
+            >
+              All
+            </button>
+            {DEPTHS.map((d) => (
+              <button
+                key={d}
+                className={`depth-filter-btn ${filters.depth === d ? "active" : ""}`}
+                onClick={() => setFilters({ ...filters, depth: d })}
+              >
+                Depth {d}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="filter-group">
           <span className="filter-label">Type:</span>
           <select
             className="filter-select"
@@ -118,12 +155,12 @@ export const EnemyEncyclopediaTab: React.FC = () => {
         <div className="enemy-grid">
           {filteredEntries.map((entry) => {
             const { enemy } = entry;
-            const isBoss = isBossEnemy(enemy);
+            const boss = isBossEnemy(enemy);
 
             return (
               <div
                 key={enemy.id}
-                className={`enemy-card ${isBoss ? "boss" : ""}`}
+                className={`enemy-card ${boss ? "boss" : ""}`}
               >
                 <div className="enemy-card-header">
                   <div>
@@ -132,8 +169,8 @@ export const EnemyEncyclopediaTab: React.FC = () => {
                       <p className="enemy-name-ja">{enemy.nameJa}</p>
                     )}
                   </div>
-                  <span className={`enemy-badge ${isBoss ? "boss" : "normal"}`}>
-                    {isBoss ? "BOSS" : "Normal"}
+                  <span className={`enemy-badge ${boss ? "boss" : "normal"}`}>
+                    {boss ? "BOSS" : "Normal"}
                   </span>
                 </div>
 
@@ -148,7 +185,11 @@ export const EnemyEncyclopediaTab: React.FC = () => {
                   </div>
                   <div className="enemy-stat">
                     <span className="enemy-stat-label">Guard</span>
-                    <span className="enemy-stat-value">{enemy.startingGuard ? Math.floor(enemy.baseMaxAp * 0.5) : 0}</span>
+                    <span className="enemy-stat-value">
+                      {enemy.startingGuard
+                        ? Math.floor(enemy.baseMaxAp * 0.5)
+                        : 0}
+                    </span>
                   </div>
                 </div>
 

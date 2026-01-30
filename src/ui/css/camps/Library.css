@@ -428,6 +428,160 @@
   font-size: 1.8vh;
 }
 
+/* Card Derivation Tree */
+.library-derivation-tree {
+  background: rgba(30, 20, 50, 0.95);
+  border: 2px solid rgba(168, 85, 247, 0.5);
+  border-radius: 10px;
+  padding: 1.5vh 1.5vw;
+  margin-bottom: 1.5vh;
+}
+
+.derivation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1vh;
+}
+
+.derivation-title {
+  font-size: 2vh;
+  color: #e9d5ff;
+  margin: 0;
+}
+
+.derivation-close {
+  background: rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 4px;
+  color: #fca5a5;
+  font-size: 1.4vh;
+  padding: 0.3vh 0.8vw;
+  cursor: pointer;
+}
+
+.derivation-close:hover {
+  background: rgba(239, 68, 68, 0.5);
+}
+
+.derivation-info {
+  display: flex;
+  gap: 1vw;
+  margin-bottom: 1vh;
+  font-size: 1.3vh;
+}
+
+.derivation-class {
+  color: #9f7aea;
+  text-transform: capitalize;
+}
+
+.derivation-element {
+  color: #a78bfa;
+}
+
+.derivation-description {
+  font-size: 1.3vh;
+  color: #a78bfa;
+  margin-bottom: 1vh;
+  line-height: 1.5;
+}
+
+.derivation-stats {
+  display: flex;
+  gap: 1.5vw;
+  margin-bottom: 1vh;
+  font-size: 1.2vh;
+  color: #d8b4fe;
+}
+
+.derivation-chain {
+  border-top: 1px solid rgba(168, 85, 247, 0.3);
+  padding-top: 1vh;
+}
+
+.derivation-chain-title {
+  font-size: 1.4vh;
+  color: #a855f7;
+  margin: 0 0 1vh 0;
+}
+
+.derivation-chain-list {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  flex-wrap: wrap;
+}
+
+.derivation-chain-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.8vh 1vw;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(100, 100, 100, 0.3);
+  border-radius: 6px;
+  min-width: 8vw;
+}
+
+.derivation-chain-node.active {
+  background: rgba(88, 28, 135, 0.4);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+}
+
+.chain-node-name {
+  font-size: 1.2vh;
+  color: #e9d5ff;
+  font-weight: bold;
+}
+
+.chain-node-rarity {
+  font-size: 1vh;
+  text-transform: capitalize;
+}
+
+.chain-node-mastery {
+  font-size: 0.9vh;
+  color: #f59e0b;
+  margin-top: 0.3vh;
+}
+
+.derivation-arrow {
+  font-size: 2vh;
+  color: #a855f7;
+}
+
+.derivation-no-chain {
+  text-align: center;
+  padding: 1vh;
+  color: #6b5b8b;
+  font-size: 1.3vh;
+  border-top: 1px solid rgba(168, 85, 247, 0.3);
+  padding-top: 1vh;
+}
+
+/* Depth Filter for enemies */
+.library-screen .depth-filter-buttons {
+  display: flex;
+  gap: 0.5vw;
+}
+
+.library-screen .depth-filter-btn {
+  padding: 0.5vh 1vw;
+  background: rgba(88, 28, 135, 0.3);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 4px;
+  color: #9f7aea;
+  font-size: 1.2vh;
+  cursor: pointer;
+}
+
+.library-screen .depth-filter-btn.active {
+  background: rgba(88, 28, 135, 0.6);
+  border-color: #a855f7;
+  color: #e9d5ff;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .card-grid {

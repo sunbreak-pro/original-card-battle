@@ -8,9 +8,9 @@ import React, {
   useCallback,
   type ReactNode,
 } from "react";
-import type { MagicStones } from '@/types/itemTypes';
+import type { MagicStones } from "@/types/itemTypes";
 import { calculateMagicStoneValue } from "../domain/item_equipment/logic/itemUtils";
-import type { ExplorationLimit } from '@/types/campTypes';
+import type { ExplorationLimit } from "@/types/campTypes";
 
 /**
  * Resource state structure
@@ -42,7 +42,6 @@ interface ResourceContextValue {
   // Magic stones operations
   addMagicStones: (stones: Partial<MagicStones>, toBaseCamp?: boolean) => void;
   setBaseCampMagicStones: (newStones: MagicStones) => void;
-  useMagicStones: (value: number) => boolean;
   getTotalMagicStonesValue: () => number;
   getBaseCampMagicStones: () => MagicStones;
   getExplorationMagicStones: () => MagicStones;
@@ -192,32 +191,6 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   /**
-   * Use magic stones by value
-   * Deducts from baseCamp first, then exploration
-   * @param value - Total value to deduct
-   * @returns true if successful, false if insufficient
-   */
-  const useMagicStones = useCallback(
-    (value: number): boolean => {
-      const baseCampValue = calculateMagicStoneValue(
-        resources.magicStones.baseCamp,
-      );
-      const explorationValue = calculateMagicStoneValue(
-        resources.magicStones.exploration,
-      );
-      const totalValue = baseCampValue + explorationValue;
-
-      if (totalValue < value) return false;
-
-      // TODO: Implement proper stone deduction logic
-      // For now, just check if enough value exists
-      // A proper implementation would deduct specific stones
-      return true;
-    },
-    [resources.magicStones.baseCamp, resources.magicStones.exploration],
-  );
-
-  /**
    * Get total magic stones value
    */
   const getTotalMagicStonesValue = useCallback((): number => {
@@ -249,19 +222,23 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
    * @returns true if successful, false if limit exceeded
    */
   const useExplorationPoint = useCallback((): boolean => {
-    if (resources.explorationLimit.current >= resources.explorationLimit.max) {
-      return false;
-    }
+    let success = false;
+    setResources((prev) => {
+      if (prev.explorationLimit.current >= prev.explorationLimit.max) {
+        return prev; // 変更なし
+      }
 
-    setResources((prev) => ({
-      ...prev,
-      explorationLimit: {
-        ...prev.explorationLimit,
-        current: prev.explorationLimit.current + 1,
-      },
-    }));
-    return true;
-  }, [resources.explorationLimit.current, resources.explorationLimit.max]);
+      success = true;
+      return {
+        ...prev,
+        explorationLimit: {
+          ...prev.explorationLimit,
+          current: prev.explorationLimit.current + 1,
+        },
+      };
+    });
+    return success;
+  }, []);
 
   /**
    * Reset exploration limit (e.g., on new day or resting)
@@ -328,7 +305,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
         };
       });
     },
-    [],
+    [setResources],
   );
 
   /**
@@ -358,7 +335,6 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
         getTotalGold,
         addMagicStones,
         setBaseCampMagicStones,
-        useMagicStones,
         getTotalMagicStonesValue,
         getBaseCampMagicStones,
         getExplorationMagicStones,

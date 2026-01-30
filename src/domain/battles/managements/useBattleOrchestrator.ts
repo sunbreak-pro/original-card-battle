@@ -14,8 +14,8 @@
 
 import { useState, useRef, useReducer, useEffect, useCallback, useMemo } from "react";
 import type { Card, Depth } from '@/types/cardTypes';
-import type { EnemyDefinition } from '@/types/characterTypes';
-import type { PhaseQueue } from '@/types/battleTypes';
+import type { EnemyDefinition, BattleStats, EnemyBattleState, CharacterClass } from '@/types/characterTypes';
+import type { PhaseQueue, PhaseEntry, BuffDebuffMap } from '@/types/battleTypes';
 import { createInitialSwordEnergy } from '../../characters/logic/classAbilityUtils';
 
 // Deck management (IMMUTABLE ZONE - DO NOT MODIFY)
@@ -23,8 +23,8 @@ import { deckReducer } from "../../cards/decks/deckReducter";
 import { createInitialDeck, shuffleArray } from "../../cards/decks/deck";
 import { SWORDSMAN_CARDS_ARRAY } from "../../cards/data/SwordmanCards";
 import { MAGE_CARDS_ARRAY } from "../../cards/data/mageCards";
+import { SUMMONER_CARDS_ARRAY } from "../../cards/data/summonerCards";
 import { getInitialDeckCounts } from "@/constants/data/battles/initialDeckConfig";
-import type { CharacterClass } from '@/types/characterTypes';
 
 // Card mastery management
 import { applyMasteryToCards } from "../../cards/state/masteryManager";
@@ -67,11 +67,67 @@ function getCardDataByClass(classType: CharacterClass): Card[] {
     case "mage":
       return MAGE_CARDS_ARRAY;
     case "summoner":
-      // TODO: Return SUMMONER_CARDS_ARRAY when implemented
-      return SWORDSMAN_CARDS_ARRAY;
+      return SUMMONER_CARDS_ARRAY;
     default:
       return SWORDSMAN_CARDS_ARRAY;
   }
+}
+
+/**
+ * Expand phase queue entries so each alive enemy gets its own turn
+ * within each "enemy" phase slot.
+ *
+ * For a single enemy, this is a no-op (same as before).
+ * For multiple enemies, each "enemy" entry is expanded to one entry per alive enemy.
+ *
+ * @param queue - The base phase queue (player vs single enemy)
+ * @param allEnemies - All enemies array (to find alive ones by index)
+ */
+function expandPhaseEntriesForMultipleEnemies(
+  queue: PhaseQueue,
+  allEnemies: EnemyBattleState[]
+): PhaseEntry[] {
+  // Find indices of alive enemies
+  const aliveIndices = allEnemies
+    .map((e, i) => ({ alive: e.hp > 0, index: i }))
+    .filter(item => item.alive)
+    .map(item => item.index);
+
+  if (aliveIndices.length <= 1) {
+    // Single enemy: just use the standard entries
+    return queue.entries;
+  }
+
+  const expanded: PhaseEntry[] = [];
+  for (const entry of queue.entries) {
+    if (entry.actor === "player") {
+      expanded.push(entry);
+    } else {
+      // Each alive enemy gets a turn in this enemy phase slot
+      for (const idx of aliveIndices) {
+        expanded.push({
+          actor: "enemy",
+          enemyIndex: idx,
+        });
+      }
+    }
+  }
+  return expanded;
+}
+
+/**
+ * Build BattleStats for a specific enemy
+ */
+function buildEnemyBattleStats(enemy: EnemyBattleState): BattleStats {
+  return {
+    hp: enemy.hp,
+    maxHp: enemy.maxHp,
+    ap: enemy.ap,
+    maxAp: enemy.maxAp,
+    guard: enemy.guard,
+    speed: enemy.definition.baseSpeed,
+    buffDebuffs: enemy.buffDebuffs,
+  };
 }
 
 // ============================================================================
@@ -91,7 +147,8 @@ function getCardDataByClass(classType: CharacterClass): Card[] {
 export const useBattleOrchestrator = (
   depth: Depth,
   initialEnemies?: EnemyDefinition[],
-  initialPlayerState?: InitialPlayerState
+  initialPlayerState?: InitialPlayerState,
+  encounterType: "normal" | "group" | "boss" = "normal"
 ) => {
   // ========================================================================
   // Animation Hooks
@@ -138,7 +195,7 @@ export const useBattleOrchestrator = (
   // Battle State Hook
   // ========================================================================
 
-  const battleState = useBattleState(depth, initialEnemies, phaseState.playerSpeed, initialPlayerState);
+  const battleState = useBattleState(depth, initialEnemies, phaseState.playerSpeed, initialPlayerState, encounterType);
 
   const {
     // Player state
@@ -160,6 +217,10 @@ export const useBattleOrchestrator = (
     updateEnemyByUpdater,
     updateAllEnemies,
 
+    // Target selection
+    selectedTargetIndex,
+    setSelectedTargetIndex,
+
     // Derived values
     aliveEnemies,
     isPlayerAlive,
@@ -173,7 +234,6 @@ export const useBattleOrchestrator = (
     enemyGuard,
     enemyBuffs,
     enemyEnergy,
-    setEnemyEnergy,
 
     // BattleStats objects
     playerBattleStats,
@@ -245,9 +305,15 @@ export const useBattleOrchestrator = (
   // ========================================================================
 
   const getTargetEnemyRef = useCallback(() => {
+    // Return the ref of the selected target enemy
+    const selectedEnemy = battleState.selectedEnemy;
+    if (selectedEnemy && selectedEnemy.hp > 0) {
+      return selectedEnemy.ref.current;
+    }
+    // Fallback: first alive enemy
     const aliveEnemy = enemies.find((e) => e.hp > 0);
     return aliveEnemy?.ref.current ?? null;
-  }, [enemies]);
+  }, [enemies, battleState.selectedEnemy]);
 
   // Legacy updateEnemy for backward compatibility
   const updateEnemy = useCallback(
@@ -380,23 +446,55 @@ export const useBattleOrchestrator = (
     phaseState,
   ]);
 
-  const executeEnemyPhase = useCallback(async () => {
+  /**
+   * Execute enemy phase for a specific enemy index.
+   * Each alive enemy gets its own turn in multi-enemy battles.
+   */
+  const executeEnemyPhaseForIndex = useCallback(async (enemyIndex: number) => {
+    const enemy = enemies[enemyIndex];
+    if (!enemy || enemy.hp <= 0) return; // Skip dead enemies
+
+    const enemyDef = enemy.definition;
+    const eStats = buildEnemyBattleStats(enemy);
+
+    // Build index-scoped setters
+    const scopedSetEnemyGuard = (updater: number | ((prev: number) => number)) => {
+      updateEnemyByUpdater(enemyIndex, (e) => ({
+        guard: typeof updater === "function" ? updater(e.guard) : updater,
+      }));
+    };
+    const scopedSetEnemyHp = (updater: number | ((prev: number) => number)) => {
+      updateEnemyByUpdater(enemyIndex, (e) => ({
+        hp: typeof updater === "function" ? updater(e.hp) : updater,
+      }));
+    };
+    const scopedSetEnemyBuffs = (updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap)) => {
+      updateEnemyByUpdater(enemyIndex, (e) => ({
+        buffDebuffs: typeof updater === "function" ? updater(e.buffDebuffs) : updater,
+      }));
+    };
+    const scopedSetEnemyEnergy = (value: number) => {
+      updateEnemyByUpdater(enemyIndex, () => ({ energy: value }));
+    };
+    const getEnemyRef = () => enemy.ref.current;
+
     await executeEnemyPhaseImpl({
-      currentEnemy: currentEnemy!,
-      enemyBuffs,
-      enemyHp,
-      enemyMaxHp,
-      enemyEnergy,
+      currentEnemy: enemyDef,
+      enemyBuffs: enemy.buffDebuffs,
+      enemyHp: enemy.hp,
+      enemyMaxHp: enemy.maxHp,
+      enemyEnergy: enemy.energy,
       playerHp: playerState.hp,
       playerBuffs: playerState.buffs,
       enemies,
-      enemyStats: enemyBattleStats,
+      enemyIndex,
+      enemyStats: eStats,
       playerStats: playerBattleStats,
       playerRef,
-      setEnemyGuard,
-      setEnemyEnergy,
-      setEnemyBuffs,
-      setEnemyHp,
+      setEnemyGuard: scopedSetEnemyGuard,
+      setEnemyEnergy: scopedSetEnemyEnergy,
+      setEnemyBuffs: scopedSetEnemyBuffs,
+      setEnemyHp: scopedSetEnemyHp,
       setPlayerGuard,
       setPlayerAp,
       setPlayerHp,
@@ -404,7 +502,7 @@ export const useBattleOrchestrator = (
       setBattleStats,
       showMessage,
       showDamageEffect,
-      getTargetEnemyRef,
+      getTargetEnemyRef: getEnemyRef,
       phaseState: {
         setPlayerPhaseActive: phaseState.setPlayerPhaseActive,
         setEnemyPhaseActive: phaseState.setEnemyPhaseActive,
@@ -414,29 +512,20 @@ export const useBattleOrchestrator = (
     });
   }, [
     executeEnemyPhaseImpl,
-    currentEnemy,
-    enemyBuffs,
-    enemyHp,
-    enemyMaxHp,
-    enemyEnergy,
+    enemies,
+    updateEnemyByUpdater,
     playerState.hp,
     playerState.buffs,
-    enemies,
-    enemyBattleStats,
     playerBattleStats,
-    setEnemyGuard,
-    setEnemyEnergy,
-    setEnemyBuffs,
-    setEnemyHp,
     setPlayerGuard,
     setPlayerAp,
     setPlayerHp,
     setPlayerBuffs,
     showMessage,
     showDamageEffect,
-    getTargetEnemyRef,
     phaseState,
   ]);
+
 
   // ========================================================================
   // Battle Flow Control
@@ -453,7 +542,10 @@ export const useBattleOrchestrator = (
         return;
       }
 
-      if (index >= queue.phases.length) {
+      // Use expanded entries for multi-enemy support
+      const expandedEntries = expandPhaseEntriesForMultipleEnemies(queue, enemies);
+
+      if (index >= expandedEntries.length) {
         // All phases complete - generate new queue and start new round
         const newQueue = phaseState.generatePhaseQueueFromSpeeds(
           playerState.buffs,
@@ -467,13 +559,17 @@ export const useBattleOrchestrator = (
       // Update current phase index for UI display
       phaseState.setPhaseIndex(index);
 
-      const currentActor = queue.phases[index];
+      const currentEntry = expandedEntries[index];
 
-      if (currentActor === "player") {
+      if (currentEntry.actor === "player") {
         await executePlayerPhase();
         // Player phase waits for handleEndPhase to advance
       } else {
-        await executeEnemyPhase();
+        const enemyIdx = currentEntry.enemyIndex ?? 0;
+        // Skip dead enemies
+        if (enemies[enemyIdx] && enemies[enemyIdx].hp > 0) {
+          await executeEnemyPhaseForIndex(enemyIdx);
+        }
         // Enemy phase auto-advances
         await executeNextPhaseRef.current(queue, index + 1);
       }
@@ -481,8 +577,9 @@ export const useBattleOrchestrator = (
     [
       areAllEnemiesDead,
       isPlayerAlive,
+      enemies,
       executePlayerPhase,
-      executeEnemyPhase,
+      executeEnemyPhaseForIndex,
       phaseState,
       playerState.buffs,
       currentEnemy,
@@ -678,6 +775,10 @@ export const useBattleOrchestrator = (
     aliveEnemies,
     updateEnemy,
     updateAllEnemies,
+
+    // Target selection
+    selectedTargetIndex,
+    setSelectedTargetIndex,
 
     // Player state
     playerName: playerState.name,

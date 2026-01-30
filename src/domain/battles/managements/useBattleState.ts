@@ -70,7 +70,19 @@ export interface UseBattleStateReturn {
   setEnemies: React.Dispatch<React.SetStateAction<EnemyBattleState[]>>;
   removeEnemy: (index: number) => void;
 
-  // Legacy setters for backward compatibility with battleFlowManage
+  // Target selection for multi-enemy battles
+  selectedTargetIndex: number;
+  setSelectedTargetIndex: (index: number) => void;
+  selectedEnemy: EnemyBattleState | undefined;
+
+  // Targeted enemy setters (use selectedTargetIndex)
+  setTargetedEnemyHp: (updater: number | ((prev: number) => number)) => void;
+  setTargetedEnemyAp: (updater: number | ((prev: number) => number)) => void;
+  setTargetedEnemyGuard: (updater: number | ((prev: number) => number)) => void;
+  setTargetedEnemyEnergy: (updater: number | ((prev: number) => number)) => void;
+  setTargetedEnemyBuffs: (updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap)) => void;
+
+  // Legacy setters for backward compatibility (index 0 / selected target)
   setEnemyHp: (updater: number | ((prev: number) => number)) => void;
   setEnemyAp: (updater: number | ((prev: number) => number)) => void;
   setEnemyGuard: (updater: number | ((prev: number) => number)) => void;
@@ -81,7 +93,7 @@ export interface UseBattleStateReturn {
   isPlayerAlive: boolean;
   areAllEnemiesDead: boolean;
 
-  // Legacy derived values for backward compatibility
+  // Legacy derived values for backward compatibility (selected target)
   enemyHp: number;
   enemyMaxHp: number;
   enemyAp: number;
@@ -149,7 +161,8 @@ export function useBattleState(
   depth: Depth,
   initialEnemies?: EnemyDefinition[],
   playerSpeed: number = Swordman_Status.speed,
-  initialPlayerState?: InitialPlayerState
+  initialPlayerState?: InitialPlayerState,
+  encounterType: "normal" | "group" | "boss" = "normal"
 ): UseBattleStateReturn {
   // ========================================================================
   // Player State
@@ -192,7 +205,7 @@ export function useBattleState(
     if (initialEnemies && initialEnemies.length > 0) {
       return initialEnemies.map((def) => createEnemyStateFromDefinition(def));
     }
-    const { enemies: selectedEnemies } = selectRandomEnemy(depth, "normal");
+    const { enemies: selectedEnemies } = selectRandomEnemy(depth, encounterType);
     return selectedEnemies.map((def) => createEnemyStateFromDefinition(def));
   });
 
@@ -200,16 +213,43 @@ export function useBattleState(
   const [enemyEnergy, setEnemyEnergy] = useState(enemies[0]?.energy ?? 1);
 
   // ========================================================================
-  // Derived Enemy Values
+  // Target Selection State
   // ========================================================================
 
-  const currentEnemy = enemies[0]?.definition;
-  const enemyHp = enemies[0]?.hp ?? 0;
-  const enemyMaxHp = enemies[0]?.maxHp ?? 0;
-  const enemyAp = enemies[0]?.ap ?? 0;
-  const enemyMaxAp = enemies[0]?.maxAp ?? 0;
-  const enemyGuard = enemies[0]?.guard ?? 0;
-  const enemyBuffs = useMemo(() => enemies[0]?.buffDebuffs ?? new Map(), [enemies]);
+  const [selectedTargetIndex, setSelectedTargetIndexInternal] = useState(0);
+
+  // ========================================================================
+  // Derived Enemy Values (use selectedTargetIndex for legacy compatibility)
+  // ========================================================================
+
+  // Find the actual index in the enemies array for the selected alive enemy
+  const aliveEnemiesForTarget = useMemo(
+    () => enemies.map((e, i) => ({ state: e, originalIndex: i })).filter(item => item.state.hp > 0),
+    [enemies]
+  );
+
+  // Clamp selectedTargetIndex to valid range
+  const clampedTargetIndex = useMemo(() => {
+    if (aliveEnemiesForTarget.length === 0) return 0;
+    return Math.min(selectedTargetIndex, aliveEnemiesForTarget.length - 1);
+  }, [selectedTargetIndex, aliveEnemiesForTarget]);
+
+  // The actual enemy array index of the selected target
+  const selectedEnemyArrayIndex = aliveEnemiesForTarget[clampedTargetIndex]?.originalIndex ?? 0;
+
+  const selectedEnemy = enemies[selectedEnemyArrayIndex];
+
+  const setSelectedTargetIndex = useCallback((index: number) => {
+    setSelectedTargetIndexInternal(index);
+  }, []);
+
+  const currentEnemy = selectedEnemy?.definition ?? enemies[0]?.definition;
+  const enemyHp = selectedEnemy?.hp ?? 0;
+  const enemyMaxHp = selectedEnemy?.maxHp ?? 0;
+  const enemyAp = selectedEnemy?.ap ?? 0;
+  const enemyMaxAp = selectedEnemy?.maxAp ?? 0;
+  const enemyGuard = selectedEnemy?.guard ?? 0;
+  const enemyBuffs = useMemo(() => selectedEnemy?.buffDebuffs ?? new Map(), [selectedEnemy]);
 
   // ========================================================================
   // Derived Values
@@ -365,43 +405,92 @@ export function useBattleState(
   }, []);
 
   // ========================================================================
-  // Legacy Enemy Setters (for backward compatibility with battleFlowManage)
+  // Targeted Enemy Setters (use selectedTargetIndex)
+  // ========================================================================
+
+  const setTargetedEnemyHp = useCallback(
+    (updater: number | ((prev: number) => number)) => {
+      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
+        hp: typeof updater === "function" ? updater(e.hp) : updater,
+      }));
+    },
+    [updateEnemyByUpdater, selectedEnemyArrayIndex]
+  );
+
+  const setTargetedEnemyAp = useCallback(
+    (updater: number | ((prev: number) => number)) => {
+      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
+        ap: typeof updater === "function" ? updater(e.ap) : updater,
+      }));
+    },
+    [updateEnemyByUpdater, selectedEnemyArrayIndex]
+  );
+
+  const setTargetedEnemyGuard = useCallback(
+    (updater: number | ((prev: number) => number)) => {
+      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
+        guard: typeof updater === "function" ? updater(e.guard) : updater,
+      }));
+    },
+    [updateEnemyByUpdater, selectedEnemyArrayIndex]
+  );
+
+  const setTargetedEnemyEnergy = useCallback(
+    (updater: number | ((prev: number) => number)) => {
+      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
+        energy: typeof updater === "function" ? updater(e.energy) : updater,
+      }));
+    },
+    [updateEnemyByUpdater, selectedEnemyArrayIndex]
+  );
+
+  const setTargetedEnemyBuffs = useCallback(
+    (updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap)) => {
+      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
+        buffDebuffs: typeof updater === "function" ? updater(e.buffDebuffs) : updater,
+      }));
+    },
+    [updateEnemyByUpdater, selectedEnemyArrayIndex]
+  );
+
+  // ========================================================================
+  // Legacy Enemy Setters (route through selected target for card damage)
   // ========================================================================
 
   const setEnemyHp = useCallback(
     (updater: number | ((prev: number) => number)) => {
-      updateEnemyByUpdater(0, (e) => ({
+      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
         hp: typeof updater === "function" ? updater(e.hp) : updater,
       }));
     },
-    [updateEnemyByUpdater]
+    [updateEnemyByUpdater, selectedEnemyArrayIndex]
   );
 
   const setEnemyAp = useCallback(
     (updater: number | ((prev: number) => number)) => {
-      updateEnemyByUpdater(0, (e) => ({
+      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
         ap: typeof updater === "function" ? updater(e.ap) : updater,
       }));
     },
-    [updateEnemyByUpdater]
+    [updateEnemyByUpdater, selectedEnemyArrayIndex]
   );
 
   const setEnemyGuard = useCallback(
     (updater: number | ((prev: number) => number)) => {
-      updateEnemyByUpdater(0, (e) => ({
+      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
         guard: typeof updater === "function" ? updater(e.guard) : updater,
       }));
     },
-    [updateEnemyByUpdater]
+    [updateEnemyByUpdater, selectedEnemyArrayIndex]
   );
 
   const setEnemyBuffs = useCallback(
     (updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap)) => {
-      updateEnemyByUpdater(0, (e) => ({
+      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
         buffDebuffs: typeof updater === "function" ? updater(e.buffDebuffs) : updater,
       }));
     },
-    [updateEnemyByUpdater]
+    [updateEnemyByUpdater, selectedEnemyArrayIndex]
   );
 
   // ========================================================================
@@ -427,6 +516,7 @@ export function useBattleState(
 
   /**
    * BattleStats-compatible enemy object for damage calculations
+   * Uses the currently selected target enemy
    */
   const enemyBattleStats = useMemo<BattleStats>(
     () => ({
@@ -450,6 +540,7 @@ export function useBattleState(
       const enemyDefs = Array.isArray(nextEnemies) ? nextEnemies : [nextEnemies];
       setEnemies(enemyDefs.map((def) => createEnemyStateFromDefinition(def)));
       setEnemyEnergy(enemyDefs[0]?.actEnergy ?? 1);
+      setSelectedTargetIndexInternal(0);
 
       // Reset player temporary state
       setPlayerGuardInternal(0);
@@ -485,7 +576,19 @@ export function useBattleState(
     setEnemies,
     removeEnemy,
 
-    // Legacy setters
+    // Target selection
+    selectedTargetIndex: clampedTargetIndex,
+    setSelectedTargetIndex,
+    selectedEnemy,
+
+    // Targeted enemy setters
+    setTargetedEnemyHp,
+    setTargetedEnemyAp,
+    setTargetedEnemyGuard,
+    setTargetedEnemyEnergy,
+    setTargetedEnemyBuffs,
+
+    // Legacy setters (routed through selected target)
     setEnemyHp,
     setEnemyAp,
     setEnemyGuard,
@@ -496,7 +599,7 @@ export function useBattleState(
     isPlayerAlive,
     areAllEnemiesDead,
 
-    // Legacy derived values
+    // Legacy derived values (selected target)
     enemyHp,
     enemyMaxHp,
     enemyAp,

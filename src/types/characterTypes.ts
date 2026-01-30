@@ -10,7 +10,6 @@
  */
 
 import type { BuffDebuffMap, BuffDebuffState, BuffDebuffType } from './battleTypes';
-import type { Card } from './cardTypes';
 import type { ExplorationLimit, SanctuaryProgress, Depth } from './campTypes';
 import type { MagicStones } from './itemTypes';
 import type { EquipmentSlots, InventoryState, StorageState, EquipmentInventoryState } from './campTypes';
@@ -78,10 +77,15 @@ export interface SwordEnergyState {
 // ============================================================
 
 /**
- * Element types for Mage class
- * Limited to 5 elements for initial implementation
+ * Element types for all classes
+ * - Magic: fire, ice, lightning, dark, light (Mage primary)
+ * - Physical: slash, shock, guard (Swordsman primary)
+ * - Summoner: summon, enhance, sacrifice (Summoner primary)
  */
-export type ElementType = "fire" | "ice" | "lightning" | "dark" | "light";
+export type ElementType =
+  | "fire" | "ice" | "lightning" | "dark" | "light"
+  | "slash" | "shock" | "guard"
+  | "summon" | "enhance" | "sacrifice";
 
 /**
  * Resonance level for elemental chain effects
@@ -295,50 +299,6 @@ export interface PlayerBattleState extends BattleStats {
   currentDeck: DeckState;
   equipmentAtkPercent: number;
   equipmentDefPercent: number;
-}
-
-// ============================================================
-// LEGACY TYPES (Backward Compatibility)
-// ============================================================
-
-/**
- * @deprecated Use PlayerPersistentData + PlayerBattleState instead.
- */
-export interface Player {
-  name?: string;
-  playerClass: CharacterClass;
-  classGrade: string;
-  level: number;
-  hp: number;
-  maxHp: number;
-  ap: number;
-  maxAp: number;
-  guard: number;
-  speed: number;
-  cardActEnergy: number;
-  gold: number;
-  deck: Card[];
-  buffDebuffs: BuffDebuffMap;
-  equipment?: string[];
-  equipmentAtkPercent?: number;
-  equipmentDefPercent?: number;
-  tittle?: string[];
-}
-
-/**
- * @deprecated Use PlayerData instead.
- */
-export interface ExtendedPlayer extends Player {
-  storage: StorageState;
-  inventory: InventoryState;
-  equipmentInventory: EquipmentInventoryState;
-  equipmentSlots: EquipmentSlots;
-  explorationGold: number;
-  baseCampGold: number;
-  explorationMagicStones: MagicStones;
-  baseCampMagicStones: MagicStones;
-  explorationLimit: ExplorationLimit;
-  sanctuaryProgress: SanctuaryProgress;
 }
 
 // ============================================================

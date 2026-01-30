@@ -19,6 +19,7 @@ export const SWORDSMAN_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "maxHP+10, Quest Slot+1",
+      maxHpBonus: 10,
     },
   },
   {
@@ -35,6 +36,8 @@ export const SWORDSMAN_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "ATK+5%, Reward Bonus",
+      maxHpBonus: 15,
+      maxApBonus: 5,
     },
   },
   {
@@ -51,6 +54,8 @@ export const SWORDSMAN_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "All Stats+5%, Critical Rate+10%",
+      maxHpBonus: 20,
+      maxApBonus: 10,
     },
   },
   {
@@ -67,6 +72,8 @@ export const SWORDSMAN_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "Unlock Unique Legend Skill, All Stats+10%",
+      maxHpBonus: 30,
+      maxApBonus: 15,
     },
   },
 ];
@@ -88,6 +95,8 @@ export const MAGE_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "maxHP+8, maxAP+5",
+      maxHpBonus: 8,
+      maxApBonus: 5,
     },
   },
   {
@@ -103,6 +112,8 @@ export const MAGE_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "Magic Power+10%, Spell Cost-5%",
+      maxHpBonus: 12,
+      maxApBonus: 8,
     },
   },
   {
@@ -118,6 +129,8 @@ export const MAGE_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "All Stats+5%, Mana Regeneration+1",
+      maxHpBonus: 18,
+      maxApBonus: 12,
     },
   },
   {
@@ -134,6 +147,8 @@ export const MAGE_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "Unlock Unique Legend Spell, All Stats+10%",
+      maxHpBonus: 25,
+      maxApBonus: 15,
     },
   },
 ];
@@ -155,6 +170,7 @@ export const SUMMONER_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "maxHP+9, Summon Slot+1",
+      maxHpBonus: 9,
     },
   },
   {
@@ -171,6 +187,8 @@ export const SUMMONER_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "Summon Power+8%, Beast Bond+1",
+      maxHpBonus: 13,
+      maxApBonus: 6,
     },
   },
   {
@@ -187,6 +205,8 @@ export const SUMMONER_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "All Stats+5%, Summon Duration+2",
+      maxHpBonus: 20,
+      maxApBonus: 10,
     },
   },
   {
@@ -203,6 +223,8 @@ export const SUMMONER_EXAMS: PromotionExam[] = [
     },
     rewards: {
       statBonus: "Unlock Unique Legend Summon, All Stats+10%",
+      maxHpBonus: 28,
+      maxApBonus: 14,
     },
   },
 ];

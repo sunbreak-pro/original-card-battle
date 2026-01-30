@@ -28,6 +28,12 @@ import {
   createInitialSwordEnergy,
 } from "../../characters/player/logic/swordEnergySystem";
 
+// Elemental Chain System
+import { useElementalChain } from "./useElementalChain";
+
+// Summon System
+import { useSummonSystem } from "./useSummonSystem";
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -257,13 +263,9 @@ export function createClassAbilityHook(
     case "swordsman":
       return useSwordEnergy as () => UseClassAbilityReturn<ClassAbilityState>;
     case "mage":
-      // TODO: Implement useElementalChain when Mage is ready
-      // For now, return a stub that uses sword energy structure
-      return useSwordEnergy as () => UseClassAbilityReturn<ClassAbilityState>;
+      return useElementalChain as () => UseClassAbilityReturn<ClassAbilityState>;
     case "summoner":
-      // TODO: Implement useSummons when Summoner is ready
-      // For now, return a stub that uses sword energy structure
-      return useSwordEnergy as () => UseClassAbilityReturn<ClassAbilityState>;
+      return useSummonSystem as () => UseClassAbilityReturn<ClassAbilityState>;
     default:
       return useSwordEnergy as () => UseClassAbilityReturn<ClassAbilityState>;
   }

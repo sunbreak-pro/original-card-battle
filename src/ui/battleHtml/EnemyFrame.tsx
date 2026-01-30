@@ -57,6 +57,9 @@ interface EnemyLocateProps {
     glow: string;
     hover: string;
   };
+  selectedTargetIndex?: number;
+  onSelectTarget?: (index: number) => void;
+  isPlayerPhase?: boolean;
 }
 
 // Individual Enemy Card Component
@@ -65,7 +68,10 @@ const EnemyLocate: React.FC<{
   enemyRef: React.RefObject<HTMLDivElement | null>;
   theme: EnemyLocateProps["theme"];
   size?: "normal" | "small";
-}> = ({ state, enemyRef, theme, size = "normal" }) => {
+  isTargeted?: boolean;
+  onClick?: () => void;
+  isClickable?: boolean;
+}> = ({ state, enemyRef, theme, size = "normal", isTargeted = false, onClick, isClickable = false }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isConsuming, setIsConsuming] = useState(false);
   const [prevEnergy, setPrevEnergy] = useState(state.actEnergy);
@@ -102,8 +108,14 @@ const EnemyLocate: React.FC<{
 
   const actionType = getActionType(nextAction);
 
+  const targetedClass = isTargeted ? "enemy-targeted" : "";
+  const clickableClass = isClickable ? "enemy-clickable" : "";
+
   return (
-    <div className={`enemy-locate ${sizeClass}`}>
+    <div
+      className={`enemy-locate ${sizeClass} ${targetedClass} ${clickableClass}`}
+      onClick={isClickable ? onClick : undefined}
+    >
       {/* Enemy name with action icon */}
       <div className="enemy-name-row">
         <span className="enemy-name">{state.definition.nameJa}</span>
@@ -240,8 +252,13 @@ const EnemyFrame: React.FC<EnemyLocateProps> = ({
   enemies,
   enemyRefs,
   theme,
+  selectedTargetIndex = 0,
+  onSelectTarget,
+  isPlayerPhase = false,
 }) => {
   const enemyCount = enemies.length;
+  const hasMultipleEnemies = enemyCount > 1;
+  const isClickable = hasMultipleEnemies && isPlayerPhase;
 
   // determine layout class
   const getLayoutClass = () => {
@@ -265,6 +282,7 @@ const EnemyFrame: React.FC<EnemyLocateProps> = ({
           enemyRef={enemyRefs[0]}
           theme={theme}
           size="normal"
+          isTargeted={true}
         />
       )}
 
@@ -277,6 +295,9 @@ const EnemyFrame: React.FC<EnemyLocateProps> = ({
               enemyRef={enemyRefs[index]}
               theme={theme}
               size="small"
+              isTargeted={index === selectedTargetIndex}
+              isClickable={isClickable}
+              onClick={() => onSelectTarget?.(index)}
             />
           ))}
         </div>
@@ -291,6 +312,9 @@ const EnemyFrame: React.FC<EnemyLocateProps> = ({
               enemyRef={enemyRefs[index]}
               theme={theme}
               size="small"
+              isTargeted={index === selectedTargetIndex}
+              isClickable={isClickable}
+              onClick={() => onSelectTarget?.(index)}
             />
           ))}
         </div>

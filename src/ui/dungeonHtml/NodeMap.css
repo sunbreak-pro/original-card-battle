@@ -385,6 +385,99 @@
   border-color: rgba(140, 140, 160, 0.5);
 }
 
+/* Node Event Overlay */
+.node-map-screen .node-event-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.node-map-screen .node-event-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid rgba(150, 130, 200, 0.5);
+  border-radius: 12px;
+  padding: 4vh 4vw;
+  max-width: 50vw;
+  min-width: 30vw;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(100, 80, 160, 0.3);
+}
+
+.node-map-screen .node-event-title {
+  font-size: 3vh;
+  margin: 0 0 2vh 0;
+  color: #e0d0f0;
+  text-shadow: 0 0 10px rgba(200, 160, 220, 0.5);
+}
+
+.node-map-screen .node-event-description {
+  font-size: 1.8vh;
+  color: #b0b0c0;
+  margin: 0 0 2.5vh 0;
+  line-height: 1.6;
+}
+
+.node-map-screen .node-event-rewards {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 3vh 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+
+.node-map-screen .reward-item {
+  font-size: 1.6vh;
+  padding: 0.6vh 1.5vw;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.node-map-screen .reward-positive {
+  color: #5dea5d;
+}
+
+.node-map-screen .reward-negative {
+  color: #ea5d5d;
+}
+
+.node-map-screen .reward-gold {
+  color: #ffd700;
+}
+
+.node-map-screen .reward-stone {
+  color: #a98de0;
+}
+
+.node-map-screen .reward-item-drop {
+  color: #60c0e0;
+}
+
+.node-map-screen .node-event-confirm {
+  padding: 1.2vh 4vw;
+  font-size: 1.8vh;
+  font-weight: bold;
+  color: #e0e0e5;
+  background: rgba(80, 60, 120, 0.7);
+  border: 2px solid rgba(150, 120, 200, 0.6);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.node-map-screen .node-event-confirm:hover {
+  background: rgba(100, 80, 150, 0.8);
+  border-color: rgba(180, 150, 220, 0.8);
+  transform: scale(1.05);
+}
+
 /* Responsive */
 @media (max-width: 1000px) {
   .node-map-grid {

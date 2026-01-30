@@ -23,7 +23,8 @@
       "Bash(xargs:*)",
       "Bash(comm:*)",
       "Bash(grep:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

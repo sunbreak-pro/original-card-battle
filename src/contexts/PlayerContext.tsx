@@ -1,7 +1,5 @@
 // PlayerContext: Manages player state including stats, storage, inventory, and progression
 // Resource management (gold, magic stones) has been moved to ResourceContext
-//
-// NEW ARCHITECTURE: Internally uses PlayerData, exposes both PlayerData and legacy ExtendedPlayer
 
 import React, {
   createContext,
@@ -11,14 +9,21 @@ import React, {
   type ReactNode,
 } from "react";
 import type {
-  Player,
-  ExtendedPlayer,
   PlayerData,
   Difficulty,
   LivesSystem,
   CharacterClass,
 } from "@/types/characterTypes";
 import type { MagicStones } from "@/types/itemTypes";
+import type { Card } from "@/types/cardTypes";
+import type {
+  StorageState,
+  InventoryState,
+  EquipmentInventoryState,
+  EquipmentSlots,
+  ExplorationLimit,
+  SanctuaryProgress,
+} from "@/types/campTypes";
 import {
   createLivesSystem,
   decreaseLives as decreaseLivesHelper,
@@ -29,6 +34,7 @@ import {
   Mage_Status,
   Summon_Status,
 } from "../constants/data/characters/PlayerData";
+import type { BasePlayerStats } from "../constants/data/characters/PlayerData";
 import { getCharacterClassInfo } from "@/constants/data/characters/CharacterClassData";
 import {
   STORAGE_TEST_ITEMS,
@@ -42,6 +48,44 @@ import {
   EQUIPMENT_INVENTORY_MAX,
   DEFAULT_EXPLORATION_LIMIT,
 } from "../constants";
+
+/**
+ * Internal player state used by PlayerContext.
+ * Combines base stats with storage, inventory, and resource tracking.
+ */
+interface InternalPlayerState {
+  // Base stats
+  name?: string;
+  playerClass: CharacterClass;
+  classGrade: string;
+  level: number;
+  hp: number;
+  maxHp: number;
+  ap: number;
+  maxAp: number;
+  guard: number;
+  speed: number;
+  cardActEnergy: number;
+  gold: number;
+  deck: Card[];
+  tittle?: string[];
+
+  // Storage & Inventory
+  storage: StorageState;
+  inventory: InventoryState;
+  equipmentInventory: EquipmentInventoryState;
+  equipmentSlots: EquipmentSlots;
+
+  // Resources
+  explorationGold: number;
+  baseCampGold: number;
+  explorationMagicStones: MagicStones;
+  baseCampMagicStones: MagicStones;
+
+  // Progression
+  explorationLimit: ExplorationLimit;
+  sanctuaryProgress: SanctuaryProgress;
+}
 
 /**
  * Runtime Battle State
@@ -112,6 +156,8 @@ interface PlayerContextValue {
   // ============================================================
 
   updateClassGrade: (newGrade: string) => void;
+  updateBaseMaxHp: (delta: number) => void;
+  updateBaseMaxAp: (delta: number) => void;
   updateHp: (newHp: number) => void;
   updateAp: (newAp: number) => void;
   addSouls: (amount: number) => void;
@@ -124,7 +170,6 @@ interface PlayerContextValue {
   useGold: (amount: number) => boolean;
   addMagicStones: (stones: Partial<MagicStones>, toBaseCamp?: boolean) => void;
   updateBaseCampMagicStones: (newStones: MagicStones) => void;
-  useMagicStones: (value: number) => boolean;
   transferExplorationResources: (survivalMultiplier: number) => void;
   resetExplorationResources: () => void;
 }
@@ -134,7 +179,7 @@ const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
 /**
  * Get base player data by character class
  */
-function getBasePlayerByClass(classType: CharacterClass): Player {
+function getBasePlayerByClass(classType: CharacterClass): BasePlayerStats {
   switch (classType) {
     case "swordsman":
       return Swordman_Status;
@@ -148,10 +193,10 @@ function getBasePlayerByClass(classType: CharacterClass): Player {
 }
 
 /**
- * Create initial extended player from base player data
+ * Create initial internal player state from base stats
  * Note: Gold and magic stone values come from ResourceContext
  */
-function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
+function createInitialPlayerState(basePlayer: BasePlayerStats): InternalPlayerState {
   return {
     ...basePlayer,
     // Gold will be synced from ResourceContext
@@ -199,7 +244,7 @@ function createInitialPlayer(basePlayer: Player): ExtendedPlayer {
  * Create initial runtime battle state
  */
 function createInitialRuntimeState(
-  basePlayer: Player,
+  basePlayer: { hp: number; ap: number },
   difficulty: Difficulty = "normal",
 ): RuntimeBattleState {
   return {
@@ -220,10 +265,9 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   // Get resource context for delegation
   const resourceContext = useResources();
 
-  // Internal state using ExtendedPlayer for backward compatibility
-  // This is converted to PlayerData for external use
-  const [playerState, setPlayerState] = useState<ExtendedPlayer>(() => {
-    const initialPlayer = createInitialPlayer(Swordman_Status);
+  // Internal state
+  const [playerState, setPlayerState] = useState<InternalPlayerState>(() => {
+    const initialPlayer = createInitialPlayerState(Swordman_Status);
     // Sync initial values from ResourceContext
     return {
       ...initialPlayer,
@@ -246,6 +290,28 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    */
   const updateClassGrade = (newGrade: string) => {
     setPlayerState((prev) => ({ ...prev, classGrade: newGrade }));
+  };
+
+  /**
+   * Permanently increase base max HP
+   */
+  const updateBaseMaxHp = (delta: number) => {
+    setPlayerState((prev) => ({
+      ...prev,
+      maxHp: prev.maxHp + delta,
+      hp: prev.hp + delta,
+    }));
+  };
+
+  /**
+   * Permanently increase base max AP
+   */
+  const updateBaseMaxAp = (delta: number) => {
+    setPlayerState((prev) => ({
+      ...prev,
+      maxAp: prev.maxAp + delta,
+      ap: prev.ap + delta,
+    }));
   };
 
   /**
@@ -322,12 +388,12 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     const classInfo = getCharacterClassInfo(classType);
 
     // Create player with starter deck from class data
-    const playerWithStarterDeck: Player = {
+    const playerWithStarterDeck: BasePlayerStats = {
       ...basePlayer,
       deck: classInfo.starterDeck,
     };
 
-    const newPlayer = createInitialPlayer(playerWithStarterDeck);
+    const newPlayer = createInitialPlayerState(playerWithStarterDeck);
 
     // Sync with ResourceContext
     setPlayerState({
@@ -441,13 +507,6 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
       ...prev,
       baseCampMagicStones: newStones,
     }));
-  };
-
-  /**
-   * Use magic stones (delegated to ResourceContext)
-   */
-  const useMagicStones = (value: number): boolean => {
-    return resourceContext.useMagicStones(value);
   };
 
   /**
@@ -576,11 +635,11 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   // ============================================================
-  // NEW: PlayerData-based interface
+  // PlayerData interface
   // ============================================================
 
   /**
-   * Computed PlayerData from internal ExtendedPlayer state
+   * Computed PlayerData from internal state
    */
   const playerData = useMemo<PlayerData>(
     () => ({
@@ -620,8 +679,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   /**
-   * Update player data using new PlayerData interface
-   * Internally converts to ExtendedPlayer updates for backward compatibility.
+   * Update player data using PlayerData interface
    */
   const updatePlayerData = (updates: Partial<PlayerData>) => {
     setPlayerState((prev) => {
@@ -716,6 +774,8 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 
         // Common operations
         updateClassGrade,
+        updateBaseMaxHp,
+        updateBaseMaxAp,
         updateHp,
         updateAp,
         addSouls,
@@ -728,7 +788,6 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         useGold,
         addMagicStones,
         updateBaseCampMagicStones,
-        useMagicStones,
         transferExplorationResources,
         resetExplorationResources,
       }}

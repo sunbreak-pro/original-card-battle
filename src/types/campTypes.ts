@@ -50,7 +50,7 @@ export type BattleMode =
 export interface BattleConfig {
   enemyIds: string[];
   backgroundType: "dungeon" | "arena" | "guild";
-  enemyType?: "normal" | "elite" | "boss";
+  enemyType?: "normal" | "elite" | "boss" | "group";
   onWin?: () => void;
   onLose?: () => void;
 }
@@ -184,6 +184,8 @@ export interface PromotionExam {
   recommendations: { hp: number; ap: number; };
   rewards: {
     statBonus: string;
+    maxHpBonus?: number;
+    maxApBonus?: number;
     items?: string[];
   };
 }

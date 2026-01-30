@@ -81,7 +81,10 @@ export interface EnemyPhaseContext {
     playerStats: BattleStats;
     playerRef: RefObject<HTMLDivElement | null>;
 
-    // Setters
+    /** Index of the acting enemy in the enemies array */
+    enemyIndex: number;
+
+    // Setters (scoped to the acting enemy)
     setEnemyGuard: (updater: number | ((prev: number) => number)) => void;
     setEnemyEnergy: (value: number) => void;
     setEnemyBuffs: (updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap)) => void;
@@ -256,7 +259,7 @@ export function useCharacterPhaseExecution() {
             }
         };
 
-        const enemyPhaseCount = ctx.enemies[0]?.turnCount ?? 1;
+        const enemyPhaseCount = ctx.enemies[ctx.enemyIndex]?.turnCount ?? 1;
         await executeEnemyActions(
             ctx.currentEnemy,
             ctx.enemyHp,

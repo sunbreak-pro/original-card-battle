@@ -80,6 +80,10 @@ export interface Card {
   /** Tags for filtering/effects (attack, guard, skill, stance) */
   tags: CardTag[];
 
+  // ---- Element ----
+  /** Element type (every card has one) */
+  element: ElementType;
+
   // ---- Common Effects ----
   /** Base damage dealt */
   baseDamage?: number;
@@ -115,8 +119,6 @@ export interface Card {
   swordEnergyMultiplier?: number;
 
   // ---- Mage-Specific (Future) ----
-  /** Element type for elemental chain */
-  element?: ElementType;
   /** Bonus damage/effect for elemental chains */
   elementalChainBonus?: number;
 
@@ -127,4 +129,12 @@ export interface Card {
   summonEnhancement?: number;
   /** Requires active summon to play */
   requiresSummon?: boolean;
+
+  // ---- Card Derivation ----
+  /** Card type ID this card was derived from */
+  derivedFrom?: string;
+  /** Mastery level required on parent card to unlock this card */
+  unlockMasteryLevel?: MasteryLevel;
+  /** Card type IDs this card can derive into */
+  derivesInto?: string[];
 }

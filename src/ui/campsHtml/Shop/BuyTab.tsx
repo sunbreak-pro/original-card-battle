@@ -5,7 +5,9 @@ import {
   getResolvedConsumableListings,
   getResolvedTeleportListings,
   EQUIPMENT_PACKS,
+  generateDailyEquipmentInventory,
   type ResolvedShopListing,
+  type EquipmentListing,
 } from "../../../domain/camps/data/ShopData";
 import type { EquipmentPackConfig } from '@/types/campTypes';
 import {
@@ -14,6 +16,7 @@ import {
   purchaseItem,
   openEquipmentPack,
 } from "../../../domain/camps/logic/shopLogic";
+import { generateEquipmentItem } from "../../../domain/item_equipment/logic/generateItem";
 
 const BuyTab = () => {
   const { playerData, useGold } = usePlayer();
@@ -24,6 +27,8 @@ const BuyTab = () => {
 
   const consumableListings = getResolvedConsumableListings();
   const teleportListings = getResolvedTeleportListings();
+  const dayNumber = Math.floor(Date.now() / 86400000);
+  const dailyEquipment = generateDailyEquipmentInventory(dayNumber);
 
   const showNotification = (message: string) => {
     setNotification(message);
@@ -52,6 +57,26 @@ const BuyTab = () => {
     if (useGold(resolved.price)) {
       addItemToInventory(item);
       showNotification(`Purchased ${resolved.data.name}!`);
+    }
+  };
+
+  const handleBuyEquipment = (listing: EquipmentListing) => {
+    const totalGold =
+      playerData.resources.baseCampGold + playerData.resources.explorationGold;
+    if (!canAfford(totalGold, listing.price)) {
+      showNotification("ゴールドが足りません！");
+      return;
+    }
+
+    if (!hasInventorySpace(inventory.currentCapacity, inventory.maxCapacity)) {
+      showNotification("インベントリがいっぱいです！");
+      return;
+    }
+
+    if (useGold(listing.price)) {
+      const item = generateEquipmentItem(listing.slot, listing.rarity);
+      addItemToInventory(item);
+      showNotification(`${listing.name} を購入しました！`);
     }
   };
 
@@ -142,6 +167,39 @@ const BuyTab = () => {
     );
   };
 
+  const renderEquipmentListing = (listing: EquipmentListing, idx: number) => {
+    const totalGold =
+      playerData.resources.baseCampGold + playerData.resources.explorationGold;
+    const affordable = canAfford(totalGold, listing.price);
+    const hasSpace = hasInventorySpace(
+      inventory.currentCapacity,
+      inventory.maxCapacity,
+    );
+
+    return (
+      <div
+        key={`${listing.slot}_${listing.rarity}_${idx}`}
+        className={`shop-item equipment-item rarity-${listing.rarity} ${!affordable ? "unaffordable" : ""}`}
+      >
+        <div className="item-icon">{listing.icon}</div>
+        <div className="item-info">
+          <div className="item-name">{listing.name}</div>
+          <div className="item-description">
+            {listing.slot} - {listing.rarity}
+          </div>
+        </div>
+        <div className="item-price">{listing.price} G</div>
+        <button
+          className="buy-button"
+          onClick={() => handleBuyEquipment(listing)}
+          disabled={!affordable || !hasSpace}
+        >
+          Buy
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="buy-tab">
       {notification && <div className="shop-notification">{notification}</div>}
@@ -170,6 +228,13 @@ const BuyTab = () => {
         <h2 className="section-title">Teleport Stones</h2>
         <div className="shop-items-grid">
           {teleportListings.map(renderListing)}
+        </div>
+      </section>
+
+      <section className="shop-section">
+        <h2 className="section-title">本日の装備 (Daily)</h2>
+        <div className="shop-items-grid">
+          {dailyEquipment.map(renderEquipmentListing)}
         </div>
       </section>
 

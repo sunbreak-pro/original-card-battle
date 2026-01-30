@@ -13,6 +13,16 @@ export const EQUIPMENT_SLOTS: EquipmentSlot[] = [
 ];
 
 /**
+ * Magic stone gold values by size
+ */
+export const MAGIC_STONE_VALUES = {
+  small: 30,
+  medium: 100,
+  large: 350,
+  huge: 1000,
+} as const;
+
+/**
  * Sell prices by rarity
  */
 export const RARITY_SELL_PRICES: Record<ItemRarity, number> = {
@@ -21,4 +31,15 @@ export const RARITY_SELL_PRICES: Record<ItemRarity, number> = {
     rare: 150,
     epic: 400,
     legendary: 1000,
+};
+
+/**
+ * Buy prices for individual equipment by rarity
+ */
+export const EQUIPMENT_BUY_PRICES: Record<ItemRarity, number> = {
+    common: 120,
+    uncommon: 250,
+    rare: 400,
+    epic: 900,
+    legendary: 2500,
 };

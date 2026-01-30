@@ -137,8 +137,16 @@ export interface PlayerCardDamageResult {
 
 export type PhaseActor = "player" | "enemy";
 
+export interface PhaseEntry {
+  actor: PhaseActor;
+  /** Index into enemies array, only relevant when actor === "enemy" */
+  enemyIndex?: number;
+}
+
 export interface PhaseQueue {
   phases: PhaseActor[];
+  /** Extended phase entries with per-enemy index info */
+  entries: PhaseEntry[];
   currentIndex: number;
 }
 

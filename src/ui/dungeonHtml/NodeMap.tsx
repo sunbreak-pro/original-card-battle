@@ -1,7 +1,10 @@
 // NodeMap - Dungeon map display component
 
-import { useCallback, useMemo, useEffect } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import { useGameState } from "../../contexts/GameStateContext";
+import { usePlayer } from "../../contexts/PlayerContext";
+import { useResources } from "../../contexts/ResourceContext";
+import { useInventory } from "../../contexts/InventoryContext";
 import { useDungeonRun } from "./DungeonRunContext";
 import { neutralTheme } from "../../domain/dungeon/depth/deptManager";
 import { DEPTH_DISPLAY_INFO } from "../../constants/dungeonConstants";
@@ -10,6 +13,8 @@ import {
   getConnectionLines,
   getFloorProgress,
 } from "../../domain/dungeon/logic/dungeonLogic";
+import { processNodeEvent } from "../../domain/dungeon/logic/nodeEventLogic";
+import type { NodeEventResult } from "../../domain/dungeon/logic/nodeEventLogic";
 import MapNode from "./MapNode";
 import "./NodeMap.css";
 
@@ -19,14 +24,20 @@ import "./NodeMap.css";
  */
 export function NodeMap() {
   const { returnToCamp, navigateTo, startBattle, gameState } = useGameState();
+  const { playerData, updateHp } = usePlayer();
+  const { addGold, addMagicStones } = useResources();
+  const { addItemToInventory } = useInventory();
+  const [eventResult, setEventResult] = useState<NodeEventResult | null>(null);
   const {
     dungeonRun,
     initializeRun,
     selectNodeToVisit,
     completeCurrentNode,
+    advanceToNextFloor,
     retreatFromDungeon,
     getCurrentNode,
   } = useDungeonRun();
+  const [floorClearModal, setFloorClearModal] = useState<"floor" | "depth" | null>(null);
 
   // Initialize run if not already active
   useEffect(() => {
@@ -82,14 +93,15 @@ export function NodeMap() {
         node.type === "boss"
       ) {
         // Determine enemy type from node type
-        const enemyType = node.type === "battle" ? "normal" : node.type;
+        // "battle" nodes use "group" to allow multi-enemy encounters
+        const enemyType = node.type === "battle" ? "group" : node.type;
 
         // Start battle with callbacks
         startBattle(
           {
             enemyIds: [], // BattleScreen will handle enemy selection
             backgroundType: "dungeon",
-            enemyType: enemyType as "normal" | "elite" | "boss",
+            enemyType: enemyType as "normal" | "elite" | "boss" | "group",
             onWin: () => {
               completeCurrentNode("victory");
               navigateTo("dungeon_map");
@@ -102,8 +114,12 @@ export function NodeMap() {
           "normal",
         );
       } else {
-        // TODO: Implement event/rest/treasure functionality
-        completeCurrentNode("victory");
+        // Non-battle node: process event and show modal
+        const nodeType = node.type as "rest" | "treasure" | "event";
+        const currentHp = playerData.persistent.baseMaxHp; // Use runtime HP when available
+        const maxHp = playerData.persistent.baseMaxHp;
+        const result = processNodeEvent(nodeType, currentHp, maxHp);
+        setEventResult(result);
       }
     },
     [
@@ -113,8 +129,51 @@ export function NodeMap() {
       completeCurrentNode,
       navigateTo,
       returnToCamp,
+      playerData.persistent.baseMaxHp,
     ],
   );
+
+  // Handle event modal confirm - apply rewards and complete node
+  const handleEventConfirm = useCallback(() => {
+    if (!eventResult) return;
+
+    const { rewards } = eventResult;
+
+    // Apply HP restore (can be negative for traps)
+    if (rewards.hpRestore) {
+      const currentHp = playerData.persistent.baseMaxHp; // Simplified for now
+      const maxHp = playerData.persistent.baseMaxHp;
+      const newHp = Math.max(0, Math.min(currentHp + rewards.hpRestore, maxHp));
+      updateHp(newHp);
+    }
+    if (rewards.hpRestorePercent && !rewards.hpRestore) {
+      const maxHp = playerData.persistent.baseMaxHp;
+      const restoreAmount = Math.floor(maxHp * rewards.hpRestorePercent);
+      const currentHp = maxHp; // Simplified
+      const newHp = Math.min(currentHp + restoreAmount, maxHp);
+      updateHp(newHp);
+    }
+
+    // Apply gold reward
+    if (rewards.gold) {
+      addGold(rewards.gold, false); // exploration gold
+    }
+
+    // Apply magic stones reward
+    if (rewards.magicStones) {
+      addMagicStones(rewards.magicStones, false); // exploration stones
+    }
+
+    // Apply item rewards
+    if (rewards.items) {
+      for (const item of rewards.items) {
+        addItemToInventory(item);
+      }
+    }
+
+    completeCurrentNode("victory");
+    setEventResult(null);
+  }, [eventResult, playerData.persistent.baseMaxHp, updateHp, addGold, addMagicStones, addItemToInventory, completeCurrentNode]);
 
   // Handle retreat
   const handleRetreat = useCallback(() => {
@@ -125,11 +184,15 @@ export function NodeMap() {
   // Handle floor completion
   useEffect(() => {
     if (dungeonRun?.currentFloor.isCompleted) {
-      // Floor completed - return to camp for now
-      // TODO: Show victory screen or advance to next floor
-      returnToCamp();
+      if (dungeonRun.floorNumber >= 5) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time modal show on floor completion event
+        setFloorClearModal("depth");
+      } else {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time modal show on floor completion event
+        setFloorClearModal("floor");
+      }
     }
-  }, [dungeonRun?.currentFloor.isCompleted, returnToCamp]);
+  }, [dungeonRun?.currentFloor.isCompleted, dungeonRun?.floorNumber]);
 
   // Show loading if run not initialized
   if (!dungeonRun) {
@@ -158,7 +221,7 @@ export function NodeMap() {
       <header className="node-map-header">
         <div className="node-map-title-row">
           <span className="node-map-depth-badge">{depthInfo.japaneseName}</span>
-          <h1 className="node-map-title">Floor Map</h1>
+          <h1 className="node-map-title">Floor {dungeonRun.floorNumber} / 5</h1>
         </div>
 
         <div className="node-map-stats">
@@ -273,6 +336,87 @@ export function NodeMap() {
       <button className="node-map-back-button" onClick={returnToCamp}>
         ← Back to Camp
       </button>
+
+      {/* Floor Clear Modal */}
+      {floorClearModal && (
+        <div className="node-event-overlay">
+          <div className="node-event-modal">
+            {floorClearModal === "floor" ? (
+              <>
+                <h2 className="node-event-title">Floor {dungeonRun.floorNumber} Clear!</h2>
+                <p className="node-event-description">
+                  Next floor awaits. Prepare for stronger enemies.
+                </p>
+                <button
+                  className="node-event-confirm"
+                  onClick={() => {
+                    setFloorClearModal(null);
+                    advanceToNextFloor();
+                  }}
+                >
+                  Next Floor
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 className="node-event-title">Depth Clear!</h2>
+                <p className="node-event-description">
+                  All 5 floors conquered. Returning to camp with your spoils.
+                </p>
+                <button
+                  className="node-event-confirm"
+                  onClick={() => {
+                    setFloorClearModal(null);
+                    retreatFromDungeon();
+                    returnToCamp();
+                  }}
+                >
+                  Return to Camp
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Node Event Modal */}
+      {eventResult && (
+        <div className="node-event-overlay">
+          <div className="node-event-modal">
+            <h2 className="node-event-title">{eventResult.title}</h2>
+            <p className="node-event-description">{eventResult.description}</p>
+            <ul className="node-event-rewards">
+              {eventResult.rewards.hpRestore != null && eventResult.rewards.hpRestore > 0 && (
+                <li className="reward-item reward-positive">HP +{eventResult.rewards.hpRestore}</li>
+              )}
+              {eventResult.rewards.hpRestore != null && eventResult.rewards.hpRestore < 0 && (
+                <li className="reward-item reward-negative">HP {eventResult.rewards.hpRestore}</li>
+              )}
+              {eventResult.rewards.hpRestorePercent != null && !eventResult.rewards.hpRestore && (
+                <li className="reward-item reward-positive">HP +{Math.floor(eventResult.rewards.hpRestorePercent * 100)}%</li>
+              )}
+              {eventResult.rewards.gold != null && eventResult.rewards.gold > 0 && (
+                <li className="reward-item reward-gold">{eventResult.rewards.gold} ゴールド</li>
+              )}
+              {eventResult.rewards.magicStones?.small != null && eventResult.rewards.magicStones.small > 0 && (
+                <li className="reward-item reward-stone">小魔石 x{eventResult.rewards.magicStones.small}</li>
+              )}
+              {eventResult.rewards.magicStones?.medium != null && eventResult.rewards.magicStones.medium > 0 && (
+                <li className="reward-item reward-stone">中魔石 x{eventResult.rewards.magicStones.medium}</li>
+              )}
+              {eventResult.rewards.magicStones?.large != null && eventResult.rewards.magicStones.large > 0 && (
+                <li className="reward-item reward-stone">大魔石 x{eventResult.rewards.magicStones.large}</li>
+              )}
+              {eventResult.rewards.items != null && eventResult.rewards.items.length > 0 && (
+                <li className="reward-item reward-item-drop">アイテム x{eventResult.rewards.items.length}</li>
+              )}
+            </ul>
+            <button className="node-event-confirm" onClick={handleEventConfirm}>
+              続ける
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import {
 } from "../../../domain/camps/data/PromotionData";
 
 const PromotionTab = () => {
-  const { playerData, updateClassGrade } = usePlayer();
+  const { playerData, updateClassGrade, updateBaseMaxHp, updateBaseMaxAp } = usePlayer();
   const { startBattle, navigateTo } = useGameState();
 
   // Calculate total gold
@@ -73,13 +73,13 @@ const PromotionTab = () => {
     // Promote to next grade
     updateClassGrade(exam.nextGrade);
 
-    // Apply stat bonuses (simplified for Phase 2)
-    // TODO Phase 3: Implement actual stat bonus system with specific values
-    // For now, show rewards in notification
-
-    // Give reward items (placeholder)
-    // TODO Phase 3: Implement actual item reward system
-    // For now, show rewards in notification
+    // Apply stat bonuses
+    if (exam.rewards.maxHpBonus) {
+      updateBaseMaxHp(exam.rewards.maxHpBonus);
+    }
+    if (exam.rewards.maxApBonus) {
+      updateBaseMaxAp(exam.rewards.maxApBonus);
+    }
 
     // Return to guild first, then show notification
     navigateTo("guild");

@@ -46,6 +46,18 @@ export interface EquipmentData {
   effects: EquipmentEffect[];
 }
 
+/**
+ * Equipment stat bonuses applied when equipped
+ */
+export interface EquipmentStatBonuses {
+  hpBonus?: number;
+  apBonus?: number;
+  atkPercent?: number;
+  defPercent?: number;
+  speedBonus?: number;
+  energyBonus?: number;
+}
+
 // ============================================================
 // Item Types
 // ============================================================

@@ -17,6 +17,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_002: {
     id: "sw_002",
@@ -34,6 +35,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_003: {
     id: "sw_003",
@@ -51,6 +53,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_004: {
     id: "sw_004",
@@ -69,6 +72,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_005: {
     id: "sw_005",
@@ -86,6 +90,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_006: {
     id: "sw_006",
@@ -103,6 +108,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_007: {
     id: "sw_007",
@@ -119,6 +125,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_008: {
     id: "sw_008",
@@ -136,6 +143,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_009: {
     id: "sw_009",
@@ -152,6 +160,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_010: {
     id: "sw_010",
@@ -169,6 +178,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_011: {
     id: "sw_011",
@@ -186,6 +196,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_012: {
     id: "sw_012",
@@ -203,6 +214,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_013: {
     id: "sw_013",
@@ -219,6 +231,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_014: {
     id: "sw_014",
@@ -235,6 +248,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_015: {
     id: "sw_015",
@@ -251,6 +265,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_016: {
     id: "sw_016",
@@ -267,6 +282,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_017: {
     id: "sw_017",
@@ -284,6 +300,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_018: {
     id: "sw_018",
@@ -301,6 +318,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_019: {
     id: "sw_019",
@@ -317,6 +335,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_020: {
     id: "sw_020",
@@ -334,6 +353,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_021: {
     id: "sw_021",
@@ -350,6 +370,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_022: {
     id: "sw_022",
@@ -366,6 +387,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_023: {
     id: "sw_023",
@@ -383,6 +405,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_024: {
     id: "sw_024",
@@ -400,6 +423,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_025: {
     id: "sw_025",
@@ -417,6 +441,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "shock",
   },
   sw_026: {
     id: "sw_026",
@@ -434,6 +459,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_027: {
     id: "sw_027",
@@ -451,6 +477,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_028: {
     id: "sw_028",
@@ -469,6 +496,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_029: {
     id: "sw_029",
@@ -487,6 +515,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_030: {
     id: "sw_030",
@@ -504,6 +533,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_031: {
     id: "sw_031",
@@ -522,6 +552,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_032: {
     id: "sw_032",
@@ -540,6 +571,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "shock",
   },
   sw_033: {
     id: "sw_033",
@@ -562,6 +594,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_034: {
     id: "sw_034",
@@ -580,6 +613,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_035: {
     id: "sw_035",
@@ -601,6 +635,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_036: {
     id: "sw_036",
@@ -620,6 +655,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_037: {
     id: "sw_037",
@@ -634,6 +670,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "guard",
   },
   sw_039: {
     id: "sw_039",
@@ -649,6 +686,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "guard",
   },
   sw_040: {
     id: "sw_040",
@@ -666,6 +704,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
   sw_041: {
     id: "sw_041",
@@ -683,6 +722,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "guard",
   },
   sw_042: {
     id: "sw_042",
@@ -699,6 +739,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "guard",
   },
   sw_043: {
     id: "sw_043",
@@ -717,6 +758,7 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     masteryLevel: 0,
     gemLevel: 0,
     characterClass: "swordsman",
+    element: "slash",
   },
 };
 export const SWORDSMAN_CARDS_ARRAY: Card[] = Object.values(SWORDSMAN_CARDS);

@@ -29,6 +29,10 @@ import {
   type EnemyType,
 } from "../../domain/camps/logic/soulSystem";
 import { executeItemEffect } from "../../domain/battles/logic/itemEffectExecutor";
+import {
+  attemptEscape,
+  calculateEscapeChance,
+} from "../../domain/battles/logic/escapeLogic";
 
 /**
  * Collect mastery from all cards in deck and merge with existing store
@@ -86,6 +90,9 @@ const BattleScreen = ({
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [itemUsedThisPhase, setItemUsedThisPhase] = useState(false);
 
+  // Escape state
+  const [escapeMessage, setEscapeMessage] = useState<string | null>(null);
+
   // Create initial player state from runtime state
   const initialPlayerState = useMemo<InitialPlayerState>(
     () => ({
@@ -142,7 +149,10 @@ const BattleScreen = ({
     battleStats,
     phaseQueue,
     currentPhaseIndex,
-  } = useBattle(depth, undefined, initialPlayerState);
+    selectedTargetIndex,
+    setSelectedTargetIndex,
+    isPlayerPhase,
+  } = useBattle(depth, undefined, initialPlayerState, enemyType === "elite" ? "group" : enemyType);
 
   // Handle player death penalty when defeated
   // Side effect (updatePlayerData, decreaseLives) must run in useEffect, not during render
@@ -277,6 +287,49 @@ const BattleScreen = ({
     ],
   );
 
+  // Escape logic
+  const isBossBattle = enemyType === "boss";
+  const avgEnemySpeed =
+    aliveEnemies.length > 0
+      ? aliveEnemies.reduce((sum, e) => sum + e.definition.baseSpeed, 0) /
+        aliveEnemies.length
+      : 10;
+  const escapeChance = calculateEscapeChance(
+    playerData.persistent.baseSpeed,
+    avgEnemySpeed,
+  );
+
+  const handleEscape = useCallback(() => {
+    if (isBossBattle) return;
+
+    const success = attemptEscape(
+      playerData.persistent.baseSpeed,
+      avgEnemySpeed,
+    );
+    if (success) {
+      // Escape succeeded - return to dungeon map or camp
+      if (onWin) {
+        // In dungeon mode, go back to dungeon map
+        navigateTo("dungeon_map");
+      } else if (onReturnToCamp) {
+        onReturnToCamp();
+      }
+    } else {
+      // Escape failed - show message and end phase (enemy gets to act)
+      setEscapeMessage("逃走失敗！");
+      setTimeout(() => setEscapeMessage(null), 1800);
+      handleEndPhase();
+    }
+  }, [
+    isBossBattle,
+    playerData.persistent.baseSpeed,
+    avgEnemySpeed,
+    onWin,
+    onReturnToCamp,
+    navigateTo,
+    handleEndPhase,
+  ]);
+
   // Get inventory items for the modal
   const inventoryItems = playerData.inventory.inventory.items;
 
@@ -385,6 +438,11 @@ const BattleScreen = ({
           <div className="turn-message-text">{turnMessage}</div>
         </div>
       )}
+      {escapeMessage && (
+        <div className="turn-message-slide">
+          <div className="turn-message-text">{escapeMessage}</div>
+        </div>
+      )}
       <div className="battle-header">
         <div className="depth-info">
           {depth}-{encounterCount === 6 ? "BOSS" : encounterCount + 1} | Phase{" "}
@@ -411,6 +469,9 @@ const BattleScreen = ({
           }))}
           enemyRefs={aliveEnemies.map((e) => e.ref)}
           theme={theme}
+          selectedTargetIndex={selectedTargetIndex}
+          onSelectTarget={setSelectedTargetIndex}
+          isPlayerPhase={isPlayerPhase}
         />
         <PlayerFrame
           playerName={playerName}
@@ -504,9 +565,15 @@ const BattleScreen = ({
           </button>
           <button
             className="action-btn flee-btn"
-            onClick={() => console.log("Fleeing Combat: 未実装")}
+            onClick={handleEscape}
+            disabled={isBossBattle}
+            title={
+              isBossBattle
+                ? "ボス戦では逃走不可"
+                : `逃走確率: ${Math.round(escapeChance * 100)}%`
+            }
           >
-            Fleeing Combat
+            {isBossBattle ? "逃走不可" : "逃走"}
           </button>
         </div>
       </div>

@@ -1,8 +1,7 @@
 /**
  * Type Converter Utilities
  *
- * Provides functions to convert between legacy types and new architecture types.
- * Used during the migration period to maintain backward compatibility.
+ * Provides functions to create battle state and player data objects.
  */
 
 import type { Card } from '@/types/cardTypes';
@@ -11,9 +10,6 @@ import type { EquipmentSlots } from '@/types/campTypes';
 import type React from "react";
 
 import type {
-  Player,
-  ExtendedPlayer,
-  PlayerPersistentData,
   PlayerData,
   PlayerBattleState,
   CharacterClass,
@@ -49,7 +45,7 @@ export function createPlayerBattleState(
 ): PlayerBattleState {
   const { persistent, inventory } = playerData;
 
-  // Calculate equipment bonuses (placeholder - actual calculation depends on equipment system)
+  // Calculate equipment bonuses
   const equipmentAtkPercent = calculateEquipmentAtkBonus(inventory.equipmentSlots);
   const equipmentDefPercent = calculateEquipmentDefBonus(inventory.equipmentSlots);
 
@@ -72,135 +68,6 @@ export function createPlayerBattleState(
     // Equipment bonuses
     equipmentAtkPercent,
     equipmentDefPercent,
-  };
-}
-
-/**
- * Create PlayerBattleState from legacy Player type
- *
- * Used for backward compatibility during migration.
- */
-export function createPlayerBattleStateFromLegacy(
-  player: Player,
-  initialDeck: DeckState
-): PlayerBattleState {
-  return {
-    // BattleStats base
-    hp: player.hp,
-    maxHp: player.maxHp,
-    ap: player.ap,
-    maxAp: player.maxAp,
-    guard: player.guard,
-    speed: player.speed,
-    buffDebuffs: player.buffDebuffs ?? createEmptyBuffDebuffMap(),
-
-    // Player-specific battle state
-    cardEnergy: player.cardActEnergy,
-    maxCardEnergy: 3,
-    classAbility: createInitialClassAbility(player.playerClass),
-    currentDeck: initialDeck,
-
-    // Equipment bonuses
-    equipmentAtkPercent: player.equipmentAtkPercent ?? 0,
-    equipmentDefPercent: player.equipmentDefPercent ?? 0,
-  };
-}
-
-/**
- * Extract PlayerPersistentData from legacy Player type
- *
- * Used for migration from old save data.
- */
-export function extractPersistentData(player: Player): PlayerPersistentData {
-  return {
-    id: generatePlayerId(),
-    name: player.name ?? "Adventurer",
-    playerClass: player.playerClass,
-    classGrade: player.classGrade,
-    level: player.level,
-    baseMaxHp: player.maxHp,
-    baseMaxAp: player.maxAp,
-    baseSpeed: player.speed,
-    cardActEnergy: player.cardActEnergy,
-    deckCardIds: player.deck.map(card => card.id),
-    titles: player.tittle ?? [],
-  };
-}
-
-/**
- * Convert legacy ExtendedPlayer to new PlayerData
- *
- * Full conversion for migration purposes.
- */
-export function convertExtendedPlayerToPlayerData(extendedPlayer: ExtendedPlayer): PlayerData {
-  return {
-    persistent: extractPersistentData(extendedPlayer),
-    resources: {
-      baseCampGold: extendedPlayer.baseCampGold,
-      explorationGold: extendedPlayer.explorationGold,
-      baseCampMagicStones: extendedPlayer.baseCampMagicStones,
-      explorationMagicStones: extendedPlayer.explorationMagicStones,
-      explorationLimit: extendedPlayer.explorationLimit,
-    },
-    inventory: {
-      storage: extendedPlayer.storage,
-      inventory: extendedPlayer.inventory,
-      equipmentInventory: extendedPlayer.equipmentInventory,
-      equipmentSlots: extendedPlayer.equipmentSlots,
-    },
-    progression: {
-      sanctuaryProgress: extendedPlayer.sanctuaryProgress,
-      unlockedDepths: [1], // Default: only depth 1 unlocked
-      completedAchievements: [],
-    },
-  };
-}
-
-/**
- * Convert PlayerData back to legacy ExtendedPlayer
- *
- * Used for backward compatibility with existing UI components.
- */
-export function convertPlayerDataToExtendedPlayer(
-  playerData: PlayerData,
-  deck: Card[]
-): ExtendedPlayer {
-  const { persistent, resources, inventory, progression } = playerData;
-
-  return {
-    // Character base
-    hp: persistent.baseMaxHp,
-    maxHp: persistent.baseMaxHp,
-    ap: persistent.baseMaxAp,
-    maxAp: persistent.baseMaxAp,
-    guard: 0,
-    speed: persistent.baseSpeed,
-    buffDebuffs: createEmptyBuffDebuffMap(),
-
-    // Player properties
-    name: persistent.name,
-    playerClass: persistent.playerClass,
-    classGrade: persistent.classGrade,
-    level: persistent.level,
-    cardActEnergy: 3,
-    gold: resources.baseCampGold + resources.explorationGold,
-    deck,
-    equipment: [],
-    equipmentAtkPercent: calculateEquipmentAtkBonus(inventory.equipmentSlots),
-    equipmentDefPercent: calculateEquipmentDefBonus(inventory.equipmentSlots),
-    tittle: persistent.titles,
-
-    // ExtendedPlayer properties
-    storage: inventory.storage,
-    inventory: inventory.inventory,
-    equipmentInventory: inventory.equipmentInventory,
-    equipmentSlots: inventory.equipmentSlots,
-    explorationGold: resources.explorationGold,
-    baseCampGold: resources.baseCampGold,
-    explorationMagicStones: resources.explorationMagicStones,
-    baseCampMagicStones: resources.baseCampMagicStones,
-    explorationLimit: resources.explorationLimit,
-    sanctuaryProgress: progression.sanctuaryProgress,
   };
 }
 
@@ -300,7 +167,6 @@ function getBaseStatsForClass(playerClass: CharacterClass): {
 function calculateEquipmentAtkBonus(equipmentSlots: EquipmentSlots): number {
   let bonus = 0;
 
-  // Iterate through all equipment slots and sum attack bonuses
   const slots = Object.values(equipmentSlots);
   for (const item of slots) {
     if (item?.effects) {
@@ -321,7 +187,6 @@ function calculateEquipmentAtkBonus(equipmentSlots: EquipmentSlots): number {
 function calculateEquipmentDefBonus(equipmentSlots: EquipmentSlots): number {
   let bonus = 0;
 
-  // Iterate through all equipment slots and sum defense bonuses
   const slots = Object.values(equipmentSlots);
   for (const item of slots) {
     if (item?.effects) {
@@ -377,4 +242,3 @@ export function createEnemyBattleState(
     ref,
   };
 }
-

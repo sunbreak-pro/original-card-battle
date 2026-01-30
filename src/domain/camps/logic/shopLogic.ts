@@ -2,7 +2,7 @@
 
 import type { Item, ItemRarity, MagicStones } from '@/types/itemTypes';
 import { generateConsumableFromData, generateEquipmentItem } from "../../item_equipment/logic/generateItem";
-import { EQUIPMENT_SLOTS } from "../../../constants/itemConstants";
+import { EQUIPMENT_SLOTS, MAGIC_STONE_VALUES } from "../../../constants/itemConstants";
 import type { EquipmentPackConfig, ShopListing } from '@/types/campTypes';
 import { getEquipmentPackById, resolveShopListing } from "../data/ShopData";
 
@@ -69,7 +69,10 @@ export function calculateSellPrice(item: Item): number {
  * Calculate total magic stone value
  */
 export function calculateMagicStoneTotal(stones: MagicStones): number {
-  return stones.small * 30 + stones.medium * 100 + stones.large * 350;
+  return stones.small * MAGIC_STONE_VALUES.small
+    + stones.medium * MAGIC_STONE_VALUES.medium
+    + stones.large * MAGIC_STONE_VALUES.large
+    + stones.huge * MAGIC_STONE_VALUES.huge;
 }
 
 /**
@@ -87,22 +90,28 @@ export function calculateStonesToConsume(
   let remaining = targetValue;
   const newStones: MagicStones = { ...stones };
 
-  // Consume small stones first (30 each)
+  // Consume small stones first
   while (remaining > 0 && newStones.small > 0) {
     newStones.small--;
-    remaining -= 30;
+    remaining -= MAGIC_STONE_VALUES.small;
   }
 
-  // Then medium stones (100 each)
+  // Then medium stones
   while (remaining > 0 && newStones.medium > 0) {
     newStones.medium--;
-    remaining -= 100;
+    remaining -= MAGIC_STONE_VALUES.medium;
   }
 
-  // Finally large stones (350 each)
+  // Then large stones
   while (remaining > 0 && newStones.large > 0) {
     newStones.large--;
-    remaining -= 350;
+    remaining -= MAGIC_STONE_VALUES.large;
+  }
+
+  // Finally huge stones
+  while (remaining > 0 && newStones.huge > 0) {
+    newStones.huge--;
+    remaining -= MAGIC_STONE_VALUES.huge;
   }
 
   // Calculate actual value consumed (may be more than target due to stone denominations)

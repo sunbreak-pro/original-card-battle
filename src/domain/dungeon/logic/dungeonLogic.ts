@@ -284,6 +284,7 @@ export function initializeDungeonRun(depth: Depth): DungeonRun {
     runId: generateRunId(),
     selectedDepth: depth,
     currentFloor: generateFloorMap(depth),
+    floorNumber: 1,
     encounterCount: 0,
     isActive: true,
     startedAt: Date.now(),

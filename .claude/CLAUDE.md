@@ -21,6 +21,10 @@ No test framework configured - verify manually in browser.
 
 **Stack:** React 19.2, TypeScript 5.9, Vite 7
 
+**Path alias:** `@/*` → `src/*` (configured in both `vite.config.ts` and `tsconfig.app.json`). Use `@/domain/...`, `@/ui/...`, etc.
+
+**TypeScript strictness:** `noUnusedLocals` and `noUnusedParameters` are enabled — remove unused variables rather than prefixing with `_`. `verbatimModuleSyntax` is enabled — use `import type` for type-only imports.
+
 ## Architecture
 
 ### Context Provider Hierarchy (App.tsx)

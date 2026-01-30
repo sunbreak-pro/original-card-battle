@@ -7,6 +7,7 @@
 
 import type { CardCategory, MasteryLevel, Rarity } from '@/types/cardTypes';
 import type { Depth } from '@/types/campTypes';
+import type { ElementType } from '@/types/characterTypes';
 
 // ============================================================
 // Magic & Mastery Constants
@@ -57,4 +58,53 @@ export const RARITY_COLORS: Record<Rarity, string> = {
   rare: "#3b82f6",
   epic: "#a855f7",
   legend: "#f59e0b",
+};
+
+// ============================================================
+// Element Constants
+// ============================================================
+
+/** Element Unicode icons for UI display */
+export const ELEMENT_ICON_MAP: Record<ElementType, string> = {
+  slash: "⚔️",
+  shock: "💥",
+  guard: "🛡️",
+  fire: "🔥",
+  ice: "❄️",
+  lightning: "⚡",
+  dark: "🌑",
+  light: "✨",
+  summon: "🔮",
+  enhance: "💎",
+  sacrifice: "💀",
+};
+
+/** Element Japanese display names */
+export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
+  slash: "斬撃",
+  shock: "衝撃",
+  guard: "防御",
+  fire: "火",
+  ice: "氷",
+  lightning: "雷",
+  dark: "闇",
+  light: "光",
+  summon: "召喚",
+  enhance: "強化",
+  sacrifice: "生贄",
+};
+
+/** Element CSS colors */
+export const ELEMENT_COLOR_MAP: Record<ElementType, string> = {
+  slash: "#c0c0c0",
+  shock: "#ff8c00",
+  guard: "#4682b4",
+  fire: "#ff4500",
+  ice: "#00bfff",
+  lightning: "#ffd700",
+  dark: "#6a0dad",
+  light: "#fffacd",
+  summon: "#9370db",
+  enhance: "#00ced1",
+  sacrifice: "#8b0000",
 };

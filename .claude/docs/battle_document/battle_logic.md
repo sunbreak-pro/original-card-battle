@@ -168,43 +168,13 @@ function calculateEnemySpeed(enemy: Enemy, buffs: BuffDebuffMap): number {
  */
 function determineTurnOrder(
   playerSpeed: number,
-  enemySpeed: number
+  enemySpeed: number,
 ): "player" | "enemy" {
   if (playerSpeed >= enemySpeed) {
     return "player";
   } else if (enemySpeed > playerSpeed) {
     return "enemy";
   }
-}
-```
-
-### 3.4 速度差によるボーナス
-
-```typescript
-/**
- * 速度差ボーナスの計算
- */
-function calculateSpeedBonus(
-  actorSpeed: number,
-  targetSpeed: number
-): SpeedBonus {
-  const speedDiff = actorSpeed - targetSpeed;
-
-  if (speedDiff >= 50) {
-    return {
-      name: "電光石火",
-      attackBonus: 0.15, // 攻撃力+15%
-      criticalBonus: 0.2, // クリティカル率+20%
-    };
-  } else if (speedDiff >= 30) {
-    return {
-      name: "先制",
-      attackBonus: 0.15, // 攻撃力+15%
-      criticalBonus: 0,
-    };
-  }
-
-  return null; // ボーナスなし
 }
 ```
 
@@ -247,7 +217,7 @@ function executeCompleteTurn() {
 ```typescript
 async function executePlayerPhase(
   playerSpeed: number,
-  enemySpeed: number
+  enemySpeed: number,
 ): Promise<void> {
   // 1. フェーズ開始処理
   onPlayerTurnStart();
@@ -322,7 +292,7 @@ function onPlayerTurnEnd(): void {
 ```typescript
 async function executeEnemyPhase(
   enemySpeed: number,
-  playerSpeed: number
+  playerSpeed: number,
 ): Promise<void> {
   // 1. フェーズ開始処理
   onEnemyTurnStart();
@@ -388,7 +358,7 @@ async function executeEnemyActions(enemyEnergy: number): Promise<void> {
       enemyHp,
       enemyMaxHp,
       turn,
-      remainingEnergy
+      remainingEnergy,
     );
 
     const actionCost = action.energyCost ?? 1;
@@ -407,7 +377,7 @@ async function executeEnemyActions(enemyEnergy: number): Promise<void> {
   // 行動を順次実行（アニメーション付き）
   for (let i = 0; i < actionsToExecute.length; i++) {
     showMessage(
-      `${currentEnemy.nameJa}の行動 ${i + 1}/${actionsToExecute.length}`
+      `${currentEnemy.nameJa}の行動 ${i + 1}/${actionsToExecute.length}`,
     );
 
     await executeEnemyAction(actionsToExecute[i]);
@@ -536,7 +506,7 @@ function addOrUpdateBuffDebuff(
   duration: number,
   value: number,
   isPermanent: boolean = false,
-  source?: string
+  source?: string,
 ): BuffDebuffMap {
   const newMap = new Map(map);
   const existing = newMap.get(type);
@@ -629,7 +599,7 @@ interface DamageResult {
 function calculateDamage(
   attacker: Character,
   defender: Character,
-  card: Card
+  card: Card,
 ): DamageResult {
   // --- Phase 1: 基本攻撃力計算 ---
   const baseDmg = card.power;
@@ -682,20 +652,20 @@ function calculateDamage(
   // --- Phase 6: ダメージ配分 ---
   const { penetrationDamage, actualDamage } = applyDamageAllocation(
     defender,
-    incomingDmg
+    incomingDmg,
   );
 
   // --- Phase 7: 特殊効果処理 ---
   // 反撃ダメージ
   const reflectDamage = calculateReflectDamage(
     defender.buffDebuffs,
-    actualDamage
+    actualDamage,
   );
 
   // 吸血回復
   const lifestealAmount = calculateLifesteal(
     attacker.buffDebuffs,
-    actualDamage
+    actualDamage,
   );
 
   // 棘の鎧ダメージ
@@ -751,7 +721,7 @@ function calculateCriticalRate(buffDebuffs: BuffDebuffMap): number {
  */
 function calculateReflectDamage(
   buffDebuffs: BuffDebuffMap,
-  damage: number
+  damage: number,
 ): number {
   let reflectDamage = 0;
 
@@ -768,7 +738,7 @@ function calculateReflectDamage(
  */
 function calculateLifesteal(
   buffDebuffs: BuffDebuffMap,
-  damage: number
+  damage: number,
 ): number {
   let healAmount = 0;
 
@@ -817,7 +787,7 @@ function calculateEndTurnDamage(buffDebuffs: BuffDebuffMap): number {
  */
 function calculateBleedDamage(
   maxHp: number,
-  buffDebuffs: BuffDebuffMap
+  buffDebuffs: BuffDebuffMap,
 ): number {
   if (!buffDebuffs.has("bleed")) {
     return 0;
@@ -941,7 +911,7 @@ function getDepthInfo(depth: number): DepthInfo {
  */
 function selectEnemyForDepth(
   depth: number,
-  encounterType: "normal" | "elite" | "boss"
+  encounterType: "normal" | "elite" | "boss",
 ): Enemy {
   const enemyPool = getEnemyPoolForDepth(depth, encounterType);
   return enemyPool[Math.floor(Math.random() * enemyPool.length)];
@@ -1054,7 +1024,7 @@ function calculateDamagePreview(
   attacker: Character,
   defender: Character,
   card: Card,
-  currentDepth: number
+  currentDepth: number,
 ): DamagePreview {
   // ダメージ計算（実際には適用しない）
   const result = calculateDamage(attacker, defender, card, currentDepth);
@@ -1117,7 +1087,7 @@ interface TurnOrderPreview {
 function calculateTurnOrderPreview(
   playerBuffs: BuffDebuffMap,
   enemyBuffs: BuffDebuffMap,
-  currentEnemy: Enemy
+  currentEnemy: Enemy,
 ): TurnOrderPreview {
   const playerSpeed = calculatePlayerSpeed(playerBuffs);
   const enemySpeed = calculateEnemySpeed(currentEnemy, enemyBuffs);
@@ -1160,7 +1130,7 @@ interface EnemyActionPreview {
 function previewEnemyActions(
   enemy: Enemy,
   currentHp: number,
-  nextTurn: number
+  nextTurn: number,
 ): EnemyActionPreview {
   // エナジー計算
   const totalEnergy = enemy.baseEnemyEnergy;
@@ -1175,7 +1145,7 @@ function previewEnemyActions(
       currentHp,
       enemy.maxHp,
       nextTurn,
-      remainingEnergy
+      remainingEnergy,
     );
 
     const actionCost = action.energyCost ?? 1;

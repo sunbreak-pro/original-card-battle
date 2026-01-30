@@ -2,19 +2,47 @@
  * Enemy Encyclopedia Data
  *
  * Provides all enemies for the bestiary display.
- * Currently only Depth 1 enemies are available.
+ * Includes enemies from all 5 depths.
  */
 
-import { enemyList } from "../characters/enemy/enemyDepth1";
-import type { EnemyDefinition } from "@/types/characterTypes";
-import type { EnemyEncyclopediaEntry } from "@/types/campTypes";
+import { enemyList as depth1Enemies } from "../../../domain/characters/enemy/data/enemyDepth1";
+import { enemyList as depth2Enemies } from "../../../domain/characters/enemy/data/enemyDepth2";
+import { enemyList as depth3Enemies } from "../../../domain/characters/enemy/data/enemyDepth3";
+import { enemyList as depth4Enemies } from "../../../domain/characters/enemy/data/enemyDepth4";
+import { enemyList as depth5Enemies } from "../../../domain/characters/enemy/data/enemyDepth5";
+import type { EnemyDefinition } from '@/types/characterTypes';
+import type { EnemyEncyclopediaEntry } from '@/types/campTypes';
+import type { Depth } from '@/types/cardTypes';
+
+/** Enemy list indexed by depth */
+const ENEMIES_BY_DEPTH: Record<Depth, EnemyDefinition[]> = {
+  1: depth1Enemies,
+  2: depth2Enemies,
+  3: depth3Enemies,
+  4: depth4Enemies,
+  5: depth5Enemies,
+};
 
 /**
  * Get all available enemies for encyclopedia
  * Sorted by HP (ascending) for display order
  */
 export function getAllEnemies(): EnemyDefinition[] {
-  return [...enemyList].sort((a, b) => a.baseMaxHp - b.baseMaxHp);
+  const all = [
+    ...depth1Enemies,
+    ...depth2Enemies,
+    ...depth3Enemies,
+    ...depth4Enemies,
+    ...depth5Enemies,
+  ];
+  return all.sort((a, b) => a.baseMaxHp - b.baseMaxHp);
+}
+
+/**
+ * Get enemies for a specific depth
+ */
+export function getEnemiesByDepth(depth: Depth): EnemyDefinition[] {
+  return ENEMIES_BY_DEPTH[depth] ?? [];
 }
 
 /**

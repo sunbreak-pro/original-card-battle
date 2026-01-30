@@ -47,6 +47,7 @@ export interface DungeonRun {
   runId: string;
   selectedDepth: Depth;
   currentFloor: DungeonFloor;
+  floorNumber: number;
   encounterCount: number;
   isActive: boolean;
   startedAt: number;

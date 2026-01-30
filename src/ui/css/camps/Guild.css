@@ -475,3 +475,457 @@
 .feature-preview li {
   margin-bottom: 1vh;
 }
+
+/* =========================================
+   Quests Tab
+   ========================================= */
+
+.quests-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+  padding: 1vh 1vw;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Quest Stats Bar */
+.guild-quest-stats {
+  display: flex;
+  justify-content: center;
+  gap: 3vw;
+  padding: 1.2vh 2vw;
+  background: rgba(30, 20, 10, 0.6);
+  border: 1px solid rgba(232, 213, 183, 0.15);
+  border-radius: 8px;
+}
+
+.guild-quest-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3vh;
+}
+
+.guild-quest-stat-value {
+  font-size: 2.2vh;
+  font-weight: bold;
+  color: #f4e4c1;
+}
+
+.guild-quest-stat-label {
+  font-size: 1.2vh;
+  color: #b89968;
+}
+
+/* Quest Filters */
+.guild-quest-filters {
+  display: flex;
+  gap: 0.8vw;
+  justify-content: center;
+}
+
+.guild-quest-filter-btn {
+  padding: 0.8vh 1.5vw;
+  background: rgba(30, 20, 10, 0.7);
+  border: 1px solid rgba(232, 213, 183, 0.2);
+  border-radius: 6px;
+  color: #b89968;
+  font-size: 1.4vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guild-quest-filter-btn:hover {
+  border-color: rgba(232, 213, 183, 0.5);
+  background: rgba(60, 40, 20, 0.6);
+}
+
+.guild-quest-filter-btn.active {
+  background: rgba(184, 153, 104, 0.3);
+  border-color: #f4e4c1;
+  color: #f4e4c1;
+}
+
+/* Quest List */
+.guild-quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.guild-quest-empty {
+  text-align: center;
+  padding: 3vh;
+  color: #6b5b48;
+  font-size: 1.6vh;
+}
+
+/* Quest Card */
+.guild-quest-card {
+  background: rgba(30, 20, 10, 0.85);
+  border: 2px solid rgba(232, 213, 183, 0.15);
+  border-radius: 10px;
+  padding: 1.5vh 1.5vw;
+  transition: all 0.3s ease;
+}
+
+.guild-quest-card:hover {
+  border-color: rgba(232, 213, 183, 0.4);
+}
+
+.guild-quest-card.active {
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.guild-quest-card.completed {
+  opacity: 0.6;
+  border-color: rgba(100, 100, 100, 0.3);
+}
+
+.guild-quest-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8vh;
+}
+
+.guild-quest-title {
+  font-size: 1.6vh;
+  color: #f4e4c1;
+  margin: 0;
+}
+
+.guild-quest-type-badge {
+  padding: 0.3vh 0.8vw;
+  border-radius: 4px;
+  font-size: 1.1vh;
+  font-weight: bold;
+}
+
+.guild-quest-type-badge.daily {
+  background: rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+}
+
+.guild-quest-type-badge.weekly {
+  background: rgba(168, 85, 247, 0.3);
+  color: #d8b4fe;
+}
+
+.guild-quest-description {
+  font-size: 1.3vh;
+  color: #b89968;
+  margin: 0.5vh 0 1vh 0;
+  line-height: 1.5;
+}
+
+/* Quest Objectives */
+.guild-quest-objectives {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  margin-bottom: 1vh;
+}
+
+.guild-quest-objective {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  font-size: 1.2vh;
+}
+
+.guild-quest-obj-desc {
+  color: #d4b896;
+  flex: 1;
+}
+
+.guild-quest-obj-progress {
+  color: #f4e4c1;
+  font-weight: bold;
+  min-width: 5vw;
+  text-align: right;
+}
+
+.guild-quest-progress-bar {
+  width: 8vw;
+  height: 0.6vh;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.guild-quest-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Quest Rewards */
+.guild-quest-rewards {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  margin-bottom: 1vh;
+  font-size: 1.2vh;
+}
+
+.guild-quest-rewards-label {
+  color: #b89968;
+}
+
+.guild-quest-reward-item {
+  padding: 0.2vh 0.6vw;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.guild-quest-reward-item.gold {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.guild-quest-reward-item.stones {
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+}
+
+/* Quest Actions */
+.guild-quest-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.guild-quest-accept-btn {
+  padding: 0.8vh 1.5vw;
+  background: rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  border-radius: 6px;
+  color: #93c5fd;
+  font-size: 1.3vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guild-quest-accept-btn:hover {
+  background: rgba(59, 130, 246, 0.5);
+  border-color: #3b82f6;
+}
+
+.guild-quest-claim-btn {
+  padding: 0.8vh 1.5vw;
+  background: rgba(34, 197, 94, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  border-radius: 6px;
+  color: #86efac;
+  font-size: 1.3vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.guild-quest-claim-btn:hover {
+  background: rgba(34, 197, 94, 0.5);
+  border-color: #22c55e;
+}
+
+.guild-quest-in-progress {
+  color: #fbbf24;
+  font-size: 1.3vh;
+  font-style: italic;
+}
+
+.guild-quest-claimed {
+  color: #6b7280;
+  font-size: 1.3vh;
+}
+
+/* =========================================
+   Rumors Tab
+   ========================================= */
+
+.rumors-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+  padding: 1vh 1vw;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Active Rumors Section */
+.guild-active-rumors {
+  background: rgba(30, 20, 10, 0.6);
+  border: 1px solid rgba(232, 213, 183, 0.2);
+  border-radius: 8px;
+  padding: 1.2vh 1.5vw;
+}
+
+.guild-active-rumors-title {
+  font-size: 1.6vh;
+  color: #f4e4c1;
+  margin: 0 0 1vh 0;
+}
+
+.guild-active-rumor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+}
+
+.guild-active-rumor-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  padding: 0.5vh 1vw;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font-size: 1.3vh;
+}
+
+.guild-active-rumor-icon {
+  font-size: 1.6vh;
+}
+
+.guild-active-rumor-name {
+  color: #d4b896;
+  flex: 1;
+}
+
+.guild-active-rumor-runs {
+  color: #fbbf24;
+  font-weight: bold;
+}
+
+/* Rumor Grid */
+.guild-rumor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(22vw, 1fr));
+  gap: 1.5vw;
+}
+
+/* Rumor Card */
+.guild-rumor-card {
+  background: rgba(30, 20, 10, 0.85);
+  border: 2px solid rgba(100, 100, 100, 0.3);
+  border-radius: 10px;
+  padding: 1.5vh 1.2vw;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+
+.guild-rumor-card:hover {
+  transform: translateY(-0.3vh);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.guild-rumor-card.purchased {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.guild-rumor-card.common {
+  border-color: rgba(156, 163, 175, 0.4);
+}
+
+.guild-rumor-card.rare {
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.guild-rumor-card.epic {
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.guild-rumor-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+}
+
+.guild-rumor-icon {
+  font-size: 2.5vh;
+}
+
+.guild-rumor-name {
+  font-size: 1.5vh;
+  color: #f4e4c1;
+  margin: 0;
+}
+
+.guild-rumor-rarity {
+  font-size: 1vh;
+  font-weight: bold;
+  letter-spacing: 0.1vw;
+}
+
+.guild-rumor-description {
+  font-size: 1.2vh;
+  color: #b89968;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.guild-rumor-effect {
+  display: flex;
+  gap: 0.5vw;
+  font-size: 1.2vh;
+  padding: 0.5vh 0.8vw;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.guild-rumor-effect-label {
+  color: #b89968;
+}
+
+.guild-rumor-effect-value {
+  color: #4ade80;
+  font-weight: bold;
+}
+
+.guild-rumor-duration {
+  font-size: 1.1vh;
+  color: #9ca3af;
+}
+
+.guild-rumor-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.8vh;
+  border-top: 1px solid rgba(232, 213, 183, 0.1);
+}
+
+.guild-rumor-cost {
+  font-size: 1.4vh;
+  font-weight: bold;
+  color: #fbbf24;
+}
+
+.guild-rumor-buy-btn {
+  padding: 0.6vh 1.2vw;
+  background: rgba(184, 153, 104, 0.3);
+  border: 1px solid rgba(232, 213, 183, 0.4);
+  border-radius: 6px;
+  color: #f4e4c1;
+  font-size: 1.2vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guild-rumor-buy-btn:hover {
+  background: rgba(184, 153, 104, 0.5);
+  border-color: #f4e4c1;
+}
+
+.guild-rumor-purchased-badge {
+  font-size: 1.2vh;
+  color: #6b7280;
+  font-style: italic;
+}

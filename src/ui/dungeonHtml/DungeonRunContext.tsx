@@ -18,6 +18,7 @@ import {
   selectNode,
   completeNode,
   getNodeById,
+  generateFloorMap,
 } from "../../domain/dungeon/logic/dungeonLogic";
 
 /**
@@ -35,6 +36,9 @@ interface DungeonRunContextValue {
 
   // Complete the current node with a result
   completeCurrentNode: (result: NodeCompletionResult) => void;
+
+  // Advance to next floor (after boss defeat)
+  advanceToNextFloor: () => void;
 
   // Retreat from the dungeon (back to camp)
   retreatFromDungeon: () => void;
@@ -114,6 +118,20 @@ export function DungeonRunProvider({
     });
   }, []);
 
+  // Advance to next floor
+  const advanceToNextFloor = useCallback(() => {
+    setDungeonRun((prev) => {
+      if (!prev || prev.floorNumber >= 5) return prev;
+      const nextFloorNumber = prev.floorNumber + 1;
+      const nextFloor = generateFloorMap(prev.selectedDepth);
+      return {
+        ...prev,
+        currentFloor: nextFloor,
+        floorNumber: nextFloorNumber,
+      };
+    });
+  }, []);
+
   // Retreat from dungeon
   const retreatFromDungeon = useCallback(() => {
     setDungeonRun((prev) => {
@@ -152,6 +170,7 @@ export function DungeonRunProvider({
     initializeRun,
     selectNodeToVisit,
     completeCurrentNode,
+    advanceToNextFloor,
     retreatFromDungeon,
     getCurrentNode,
     incrementEncounter,

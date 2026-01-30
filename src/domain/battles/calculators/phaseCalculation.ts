@@ -2,7 +2,7 @@
  * Phase Calculation Module
  * Handles phase queue generation and speed randomness for the phase-based battle system.
  */
-import type { PhaseActor, SpeedRandomState, PhaseCalculationResult } from '@/types/battleTypes';
+import type { PhaseActor, PhaseEntry, SpeedRandomState, PhaseCalculationResult } from '@/types/battleTypes';
 import {
   VARIANCE_PERCENT,
   MEAN_REVERSION_FACTOR,
@@ -137,9 +137,16 @@ export function generatePhaseQueue(
     phases.push(...roundPattern);
   }
 
+  // Build entries with default enemyIndex 0 for backward compatibility
+  const entries: PhaseEntry[] = phases.map(actor => ({
+    actor,
+    enemyIndex: actor === "enemy" ? 0 : undefined,
+  }));
+
   return {
     queue: {
       phases,
+      entries,
       currentIndex: 0,
     },
     playerSpeed,

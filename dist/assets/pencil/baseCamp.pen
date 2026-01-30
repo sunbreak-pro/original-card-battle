@@ -84,68 +84,68 @@
                   "fontFamily": "Inter",
                   "fontSize": 16,
                   "fontWeight": "normal"
-                },
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "XhN0j",
+              "name": "Remaining-life",
+              "clip": true,
+              "width": 147,
+              "height": "fill_container",
+              "cornerRadius": 10,
+              "layout": "vertical",
+              "justifyContent": "space_around",
+              "alignItems": "center",
+              "children": [
                 {
                   "type": "frame",
-                  "id": "XhN0j",
-                  "name": "Remaining-life",
-                  "clip": true,
-                  "width": 147,
-                  "height": "fill_container",
-                  "cornerRadius": 10,
-                  "layout": "vertical",
-                  "justifyContent": "space_around",
+                  "id": "2vT8N",
+                  "name": "Hearts Container",
+                  "width": 128,
+                  "gap": 8,
+                  "justifyContent": "center",
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
-                      "id": "2vT8N",
-                      "name": "Hearts Container",
-                      "width": 128,
-                      "gap": 8,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "OzRYP",
-                          "name": "1 Heart",
-                          "width": 32,
-                          "height": 32,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "images/generated-1769314219918.png",
-                            "mode": "fill"
-                          }
-                        },
-                        {
-                          "type": "frame",
-                          "id": "8RQec",
-                          "name": "1 Heart",
-                          "width": 32,
-                          "height": 32,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "images/generated-1769314219918.png",
-                            "mode": "fill"
-                          }
-                        },
-                        {
-                          "type": "frame",
-                          "id": "uKPDG",
-                          "name": "1 Heart",
-                          "width": 32,
-                          "height": 32,
-                          "fill": {
-                            "type": "image",
-                            "enabled": true,
-                            "url": "images/generated-1769314219918.png",
-                            "mode": "fill"
-                          }
-                        }
-                      ]
+                      "id": "OzRYP",
+                      "name": "1 Heart",
+                      "width": 32,
+                      "height": 32,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "images/generated-1769314219918.png",
+                        "mode": "fill"
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "8RQec",
+                      "name": "1 Heart",
+                      "width": 32,
+                      "height": 32,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "images/generated-1769314219918.png",
+                        "mode": "fill"
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uKPDG",
+                      "name": "1 Heart",
+                      "width": 32,
+                      "height": 32,
+                      "fill": {
+                        "type": "image",
+                        "enabled": true,
+                        "url": "images/generated-1769314219918.png",
+                        "mode": "fill"
+                      }
                     }
                   ]
                 }

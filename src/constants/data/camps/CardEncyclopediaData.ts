@@ -2,19 +2,25 @@
  * Card Encyclopedia Data
  *
  * Provides all cards for the encyclopedia display.
- * Currently only Swordsman cards are available.
+ * Includes Swordsman, Mage, and Summoner cards.
  */
 
 import { SWORDSMAN_CARDS } from "../../../domain/cards/data/SwordmanCards";
-import type { Card } from "@/types/cardTypes";
-import type { CardEncyclopediaEntry } from "@/types/campTypes";
+import { MAGE_CARDS } from "../../../domain/cards/data/mageCards";
+import { SUMMONER_CARDS } from "../../../domain/cards/data/summonerCards";
+import type { Card } from '@/types/cardTypes';
+import type { CardEncyclopediaEntry } from '@/types/campTypes';
 
 /**
  * Get all available cards for encyclopedia
  * Sorted by cost, then by rarity
  */
 export function getAllCards(): Card[] {
-  const cards = Object.values(SWORDSMAN_CARDS);
+  const cards = [
+    ...Object.values(SWORDSMAN_CARDS),
+    ...Object.values(MAGE_CARDS),
+    ...Object.values(SUMMONER_CARDS),
+  ];
 
   // Sort by cost (ascending), then by rarity
   const rarityOrder = { common: 0, rare: 1, epic: 2, legend: 3 };
@@ -114,20 +120,24 @@ export function getCardStats(): {
   total: number;
   byRarity: Record<string, number>;
   byCategory: Record<string, number>;
+  byClass: Record<string, number>;
 } {
   const cards = getAllCards();
 
   const byRarity: Record<string, number> = {};
   const byCategory: Record<string, number> = {};
+  const byClass: Record<string, number> = {};
 
   cards.forEach((card) => {
     byRarity[card.rarity] = (byRarity[card.rarity] || 0) + 1;
     byCategory[card.category] = (byCategory[card.category] || 0) + 1;
+    byClass[card.characterClass] = (byClass[card.characterClass] || 0) + 1;
   });
 
   return {
     total: cards.length,
     byRarity,
     byCategory,
+    byClass,
   };
 }

@@ -90,4 +90,28 @@ export const RESONANCE_EFFECTS: Record<ElementType, Record<1 | 2, ResonanceEffec
     1: { cleanse: 1 },
     2: { cleanse: 2, heal: 10, fieldBuff: "lightField" },
   },
+  slash: {
+    1: {},
+    2: {},
+  },
+  shock: {
+    1: {},
+    2: { stun: { duration: 1 } },
+  },
+  guard: {
+    1: {},
+    2: {},
+  },
+  summon: {
+    1: {},
+    2: {},
+  },
+  enhance: {
+    1: {},
+    2: {},
+  },
+  sacrifice: {
+    1: {},
+    2: {},
+  },
 };

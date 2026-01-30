@@ -344,3 +344,47 @@ import type { Card, Player } from '@/types';
 | shim残存 | 1ファイル（immutable deck用） |
 
 **詳細:** `.claude/todos/REFACTORING_PLAN_TYPES.md`
+
+## 1月29日
+
+### Phase B: Game Experience Enhancement 完了
+
+Phase Bの全タスクを完了。
+
+| タスク | 内容 |
+|--------|------|
+| B2: 召喚士クラス | 40枚のカード、召喚システムフック、スターターデッキ |
+| B3: ショップ完全実装 | 日替わり装備ローテーション、個別装備購入 |
+| B5: カード派生システム | derivedFrom/unlockMasteryLevel/derivesIntoフィールド追加 |
+| B6: Mage属性連鎖 | useElementalChain.tsフック実装 |
+| B7: ダンジョンフロア進行 | 各depthに5フロア、クリアモーダル |
+| B8: 逃走システム | escapeLogic.ts、ボス戦では無効 |
+| B9: 試験報酬適用 | updateBaseMaxHp/updateBaseMaxAp |
+| B10: 装備ステータスボーナス | 6スロット×5レアリティ |
+| B11: 魔石定数 | MAGIC_STONE_VALUES |
+| FIX-1~3 | デッドコード削除、ダンジョンノードUI、巨大石計算修正 |
+
+### Phase C: Extended Features 開始
+
+| タスク | 内容 |
+|--------|------|
+| C1: 探索準備画面 | DungeonGate.tsxでdepth選択 |
+| C2: レガシーインターフェース削除 | Player/ExtendedPlayer削除、BasePlayerStats作成 |
+| C3: 複数敵バトル | ターゲット選択、自動リターゲット |
+| C4: ライブラリ完全実装 | 全3クラスカード図鑑、敵図鑑depth1-5 |
+| C5: ダンジョンイベント | 6種イベント、休憩/宝箱ノード |
+| B4: ギルドクエスト/噂 | デイリー/ウィークリークエスト、噂バフ購入 |
+
+### ビルド修正
+
+- 全42枚の剣士カード + 40枚の召喚士カードにelement追加
+- 6新属性を共鳴システムに追加（slash, shock, guard, summon, enhance, sacrifice）
+- enemyAIフォールバックカード修正
+
+### 画像アセット再構成
+
+フラット構造からサブディレクトリ構造に変更：
+- `facility-backgrounds/` — キャンプ施設背景（Blacksmith, Guild, Sanctuary, Shop, Storage）
+- `depth-backgrounds/` — ダンジョン背景（depth 1-4）
+- `elements/` — 属性アイコン
+- `enemies/` — 敵スプライト

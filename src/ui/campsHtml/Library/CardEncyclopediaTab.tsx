@@ -2,15 +2,18 @@
  * CardEncyclopediaTab Component
  *
  * Displays all cards in the encyclopedia with filtering options.
+ * Supports Swordsman, Mage, and Summoner cards with class filtering.
  */
 
 import React, { useState, useMemo } from "react";
 import {
   createCardEncyclopediaEntries,
   getCardStats,
-} from "../../../domain/camps/data/CardEncyclopediaData";
+} from "../../../constants/data/camps/CardEncyclopediaData";
 import type { CardFilterOptions } from '@/types/campTypes';
 import { CardComponent } from "../../cardHtml/CardComponent";
+import { CardDerivationTree } from "./CardDerivationTree";
+import type { Card } from "@/types/cardTypes";
 
 export const CardEncyclopediaTab: React.FC = () => {
   const [filters, setFilters] = useState<CardFilterOptions>({
@@ -19,6 +22,7 @@ export const CardEncyclopediaTab: React.FC = () => {
     characterClass: null,
     searchText: "",
   });
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
   const allEntries = useMemo(() => createCardEncyclopediaEntries(), []);
   const stats = useMemo(() => getCardStats(), []);
@@ -70,25 +74,37 @@ export const CardEncyclopediaTab: React.FC = () => {
           <span className="stat-label">Total Cards</span>
         </div>
         <div className="stat-item">
-          <span className="stat-value">{stats.byRarity.common || 0}</span>
-          <span className="stat-label">Common</span>
+          <span className="stat-value">{stats.byClass?.swordsman || 0}</span>
+          <span className="stat-label">Swordsman</span>
         </div>
         <div className="stat-item">
-          <span className="stat-value">{stats.byRarity.rare || 0}</span>
-          <span className="stat-label">Rare</span>
+          <span className="stat-value">{stats.byClass?.mage || 0}</span>
+          <span className="stat-label">Mage</span>
         </div>
         <div className="stat-item">
-          <span className="stat-value">{stats.byRarity.epic || 0}</span>
-          <span className="stat-label">Epic</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{stats.byRarity.legend || 0}</span>
-          <span className="stat-label">Legend</span>
+          <span className="stat-value">{stats.byClass?.summoner || 0}</span>
+          <span className="stat-label">Summoner</span>
         </div>
       </div>
 
       {/* Filters */}
       <div className="library-filters">
+        <div className="filter-group">
+          <span className="filter-label">Class:</span>
+          <select
+            className="filter-select"
+            value={filters.characterClass || ""}
+            onChange={(e) =>
+              setFilters({ ...filters, characterClass: e.target.value || null })
+            }
+          >
+            <option value="">All Classes</option>
+            <option value="swordsman">Swordsman</option>
+            <option value="mage">Mage</option>
+            <option value="summoner">Summoner</option>
+          </select>
+        </div>
+
         <div className="filter-group">
           <span className="filter-label">Rarity:</span>
           <select
@@ -138,6 +154,14 @@ export const CardEncyclopediaTab: React.FC = () => {
         </div>
       </div>
 
+      {/* Derivation Tree (shown when card selected) */}
+      {selectedCard && (
+        <CardDerivationTree
+          card={selectedCard}
+          onClose={() => setSelectedCard(null)}
+        />
+      )}
+
       {/* Card Grid */}
       {filteredEntries.length === 0 ? (
         <div className="empty-state">
@@ -147,7 +171,11 @@ export const CardEncyclopediaTab: React.FC = () => {
       ) : (
         <div className="card-grid">
           {filteredEntries.map((entry) => (
-            <div key={entry.card.id} className="encyclopedia-card-wrapper">
+            <div
+              key={entry.card.id}
+              className="encyclopedia-card-wrapper"
+              onClick={() => setSelectedCard(entry.card)}
+            >
               <CardComponent card={entry.card} depth={1} isPlayable={true} />
             </div>
           ))}

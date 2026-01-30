@@ -1,11 +1,31 @@
 import {} from "react";
-import type { Player } from "@/types/characterTypes";
+import type { CharacterClass } from "@/types/characterTypes";
+import type { Card } from "@/types/cardTypes";
 import {
   getSwordsmanTitle,
   getMageTitle,
   getSummonerTitle,
 } from "../../../domain/characters/player/logic/tittle";
 import { SWORDSMAN_CARDS } from "../../../domain/cards/data/SwordmanCards";
+
+/**
+ * Base player stats used to initialize a new character.
+ * Contains only the core stats needed before PlayerContext adds
+ * storage, inventory, and resource tracking.
+ */
+export interface BasePlayerStats {
+  playerClass: CharacterClass;
+  classGrade: string;
+  level: number;
+  hp: number;
+  maxHp: number;
+  ap: number;
+  maxAp: number;
+  guard: number;
+  speed: number;
+  cardActEnergy: number;
+  deck: Card[];
+}
 
 // Create initial starter deck for testing exams (5 basic cards)
 const createStarterDeck = () => {
@@ -18,7 +38,7 @@ const createStarterDeck = () => {
   ];
 };
 
-export const Swordman_Status: Player = {
+export const Swordman_Status: BasePlayerStats = {
   playerClass: "swordsman",
   classGrade: getSwordsmanTitle(0),
   level: 1,
@@ -29,15 +49,10 @@ export const Swordman_Status: Player = {
   guard: 0,
   speed: 50,
   cardActEnergy: 3,
-  gold: 0,
-  deck: createStarterDeck(), // Add starter cards for testing
-  equipment: [],
-  buffDebuffs: new Map(),
-  equipmentAtkPercent: 0,
-  equipmentDefPercent: 0,
+  deck: createStarterDeck(),
 };
 
-export const Mage_Status: Player = {
+export const Mage_Status: BasePlayerStats = {
   playerClass: "mage",
   classGrade: getMageTitle(0),
   level: 1,
@@ -48,15 +63,10 @@ export const Mage_Status: Player = {
   guard: 0,
   speed: 50,
   cardActEnergy: 3,
-  gold: 0,
   deck: [],
-  equipment: [],
-  buffDebuffs: new Map(),
-  equipmentAtkPercent: 0,
-  equipmentDefPercent: 0,
 };
 
-export const Summon_Status: Player = {
+export const Summon_Status: BasePlayerStats = {
   playerClass: "summoner",
   classGrade: getSummonerTitle(0),
   level: 1,
@@ -67,10 +77,5 @@ export const Summon_Status: Player = {
   guard: 0,
   speed: 50,
   cardActEnergy: 3,
-  gold: 0,
   deck: [],
-  equipment: [],
-  equipmentAtkPercent: 0,
-  equipmentDefPercent: 0,
-  buffDebuffs: new Map(),
 };

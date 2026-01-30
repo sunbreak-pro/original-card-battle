@@ -1,5 +1,9 @@
 import type { EnemyDefinition, EnemyAction, EnemyAIPattern } from '@/types/characterTypes';
 import { DEPTH1_ENEMIES } from "../data/enemyDepth1";
+import { DEPTH2_ENEMIES } from "../data/enemyDepth2";
+import { DEPTH3_ENEMIES } from "../data/enemyDepth3";
+import { DEPTH4_ENEMIES } from "../data/enemyDepth4";
+import { DEPTH5_ENEMIES } from "../data/enemyDepth5";
 import type { Card, CardTag } from '@/types/cardTypes';
 
 /**
@@ -64,6 +68,7 @@ export function enemyAction(action: EnemyAction): Card {
     category: "atk",
     baseDamage: action.baseDamage,
     tags,
+    element: "slash",
     rarity: "common",
     useCount: 0,
     masteryLevel: 0,
@@ -82,32 +87,41 @@ export function selectRandomEnemy(
   depth: number,
   encounterType: "normal" | "group" | "boss" = "normal"
 ): { enemies: EnemyDefinition[]; isBoss: boolean } {
-  if (depth !== 1) {
-    throw new Error(`Depth ${depth} enemies are not implemented yet`);
+  const depthEnemies: Record<number, typeof DEPTH1_ENEMIES> = {
+    1: DEPTH1_ENEMIES,
+    2: DEPTH2_ENEMIES,
+    3: DEPTH3_ENEMIES,
+    4: DEPTH4_ENEMIES,
+    5: DEPTH5_ENEMIES,
+  };
+
+  const enemies = depthEnemies[depth];
+  if (!enemies) {
+    throw new Error(`Depth ${depth} enemies are not defined`);
   }
 
   switch (encounterType) {
     case "normal": {
-      const enemy = DEPTH1_ENEMIES.normal[
-        Math.floor(Math.random() * DEPTH1_ENEMIES.normal.length)
+      const enemy = enemies.normal[
+        Math.floor(Math.random() * enemies.normal.length)
       ];
       return { enemies: [enemy], isBoss: false };
     }
 
     case "group": {
       const group =
-        DEPTH1_ENEMIES.groups[
-        Math.floor(Math.random() * DEPTH1_ENEMIES.groups.length)
+        enemies.groups[
+        Math.floor(Math.random() * enemies.groups.length)
         ];
-      const enemies = Array(group.count).fill(group.enemy);
-      return { enemies, isBoss: false };
+      const groupEnemies = Array(group.count).fill(group.enemy);
+      return { enemies: groupEnemies, isBoss: false };
     }
 
     case "boss": {
-      return { enemies: [DEPTH1_ENEMIES.boss], isBoss: true };
+      return { enemies: [enemies.boss], isBoss: true };
     }
 
     default:
-      return { enemies: [DEPTH1_ENEMIES.normal[0]], isBoss: false };
+      return { enemies: [enemies.normal[0]], isBoss: false };
   }
 }

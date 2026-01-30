@@ -29,7 +29,14 @@ export const INITIAL_DECK_BY_CLASS: Record<CharacterClass, Record<string, number
         mg_037: 2,  // 癒しの光 - Light heal
     },
     summoner: {
-        // TODO: Add summoner cards when implemented
+        sm_001: 2,  // 火精霊召喚 - Fire spirit summon
+        sm_002: 2,  // 水精霊召喚 - Water spirit summon
+        sm_003: 2,  // 風精霊召喚 - Wind spirit summon
+        sm_013: 2,  // 召喚獣強化 - Summon enhancement
+        sm_025: 2,  // 精霊弾 - Spirit shot
+        sm_026: 2,  // 使い魔の一撃 - Familiar strike
+        sm_033: 1,  // 生命の供物 - Life offering (sacrifice/heal)
+        sm_034: 2,  // エーテル還元 - Ether return (sacrifice/AP)
     },
 };
 
