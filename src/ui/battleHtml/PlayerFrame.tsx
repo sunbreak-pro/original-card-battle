@@ -1,11 +1,13 @@
 import React from "react";
-import type { BuffDebuffMap } from '@/types/battleTypes';
+import type { BuffDebuffMap } from "@/types/battleTypes";
+import type { CharacterClass } from "@/types/characterTypes";
 import StatusEffectDisplay from "../componentsHtml/BuffEffect";
 import { GUARD_BAR_DISPLAY_MAX } from "../../constants";
+import { PLAYER_CHARACTER_IMAGES } from "../../constants/uiConstants";
 
 interface PlayerFrameProps {
   playerName: string;
-  playerClass: string;
+  playerClass: CharacterClass;
   playerRef: React.RefObject<HTMLDivElement | null>;
   playerHp: number;
   playerMaxHp: number;
@@ -42,11 +44,12 @@ const PlayerFrame: React.FC<PlayerFrameProps> = ({
   return (
     <div className="player-section">
       <div className="player-field">
-        <div className="character-name">
-          {playerName} [{playerClass}]
-        </div>
         <div className="character-visual player" ref={playerRef}>
-          ⚔️
+          <img
+            className="player-image"
+            src={PLAYER_CHARACTER_IMAGES[playerClass]}
+            alt={playerName}
+          />
         </div>
         <div className="status-container player-status-container">
           {/* Guard bar - value badge on left */}

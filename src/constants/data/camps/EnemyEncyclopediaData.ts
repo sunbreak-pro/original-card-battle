@@ -5,11 +5,11 @@
  * Includes enemies from all 5 depths.
  */
 
-import { enemyList as depth1Enemies } from "../../../domain/characters/enemy/data/enemyDepth1";
-import { enemyList as depth2Enemies } from "../../../domain/characters/enemy/data/enemyDepth2";
-import { enemyList as depth3Enemies } from "../../../domain/characters/enemy/data/enemyDepth3";
-import { enemyList as depth4Enemies } from "../../../domain/characters/enemy/data/enemyDepth4";
-import { enemyList as depth5Enemies } from "../../../domain/characters/enemy/data/enemyDepth5";
+import { enemyList as depth1Enemies } from "../characters/enemy/enemyDepth1";
+import { enemyList as depth2Enemies } from "../characters/enemy/enemyDepth2";
+import { enemyList as depth3Enemies } from "../characters/enemy/enemyDepth3";
+import { enemyList as depth4Enemies } from "../characters/enemy/enemyDepth4";
+import { enemyList as depth5Enemies } from "../characters/enemy/enemyDepth5";
 import type { EnemyDefinition } from '@/types/characterTypes';
 import type { EnemyEncyclopediaEntry } from '@/types/campTypes';
 import type { Depth } from '@/types/cardTypes';

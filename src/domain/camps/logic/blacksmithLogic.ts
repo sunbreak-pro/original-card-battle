@@ -30,7 +30,7 @@ import {
   calculateRepairCost,
   calculateDismantleGold,
   calculateBonusStoneChance,
-} from "../data/BlacksmithData";
+} from "@/constants/data/camps/BlacksmithData";
 
 // ==================== LEVEL UPGRADE ====================
 

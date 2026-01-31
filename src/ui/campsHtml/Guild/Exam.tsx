@@ -5,7 +5,7 @@ import { useGameState } from "../../../contexts/GameStateContext";
 import {
   getNextExam,
   canTakeExam,
-} from "../../../domain/camps/data/PromotionData";
+} from "@/constants/data/camps/PromotionData";
 
 const PromotionTab = () => {
   const { playerData, updateClassGrade, updateBaseMaxHp, updateBaseMaxAp } = usePlayer();

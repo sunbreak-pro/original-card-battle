@@ -23,6 +23,7 @@ import type {
 } from '@/types/battleTypes';
 import { createDefaultExecutionResult } from '../logic/cardExecutionLogic';
 import type { SwordEnergyState } from '@/types/characterTypes';
+import type { DamageModifier } from "../../characters/classAbility/classAbilitySystem";
 
 // Card logic
 import { calculateCardEffect, canPlayCard as canPlayCardCheck, incrementUseCount } from "../../cards/state/card";
@@ -92,6 +93,7 @@ export interface CardExecutionSetters {
       damageTaken: number;
     }
   ) => void;
+  getElementalDamageModifier?: (card?: Card) => DamageModifier;
 }
 
 /**
@@ -205,11 +207,22 @@ export function useCardExecution(
       if (effect.damageToEnemy) {
         // Apply sword energy flat bonus to base damage
         const swordEnergyFlatBonus = swordEnergy.current;
-        const cardWithBonus = swordEnergyFlatBonus > 0 && card.baseDamage !== undefined
-          ? { ...card, baseDamage: card.baseDamage + swordEnergyFlatBonus }
+        let adjustedBase = card.baseDamage !== undefined
+          ? card.baseDamage + swordEnergyFlatBonus
+          : undefined;
+
+        // Apply elemental resonance multiplier
+        const elementalMod = setters.getElementalDamageModifier?.(card);
+        if (elementalMod && adjustedBase !== undefined) {
+          adjustedBase = Math.round(adjustedBase * elementalMod.percentMultiplier);
+        }
+
+        const cardWithBonus = adjustedBase !== undefined && adjustedBase !== card.baseDamage
+          ? { ...card, baseDamage: adjustedBase }
           : card;
         const damageResult = calculateDamage(playerStats, enemyStats, cardWithBonus);
-        estimatedDamage = damageResult.finalDamage;
+        const hitCount = card.hitCount || 1;
+        estimatedDamage = damageResult.finalDamage * hitCount;
       }
 
       return {
@@ -231,7 +244,7 @@ export function useCardExecution(
         enemyDebuffs: effect.enemyDebuffs?.map((b) => b.name) || [],
       };
     },
-    [playerEnergy, isPlayerPhase, swordEnergy, playerStats, enemyStats]
+    [playerEnergy, isPlayerPhase, swordEnergy, playerStats, enemyStats, setters]
   );
 
   // ========================================================================
@@ -303,74 +316,94 @@ export function useCardExecution(
       // ====================================================================
 
       if (effect.damageToEnemy) {
-        // Apply sword energy flat bonus to base damage
+        // Apply sword energy flat bonus to base damage (calculated once before loop)
         const swordEnergyFlatBonus = swordEnergy.current;
-        const cardWithBonus = swordEnergyFlatBonus > 0 && card.baseDamage !== undefined
-          ? { ...card, baseDamage: card.baseDamage + swordEnergyFlatBonus }
+        let adjustedBaseDamage = card.baseDamage !== undefined
+          ? card.baseDamage + swordEnergyFlatBonus
+          : undefined;
+
+        // Apply elemental resonance multiplier (Mage class ability)
+        const elementalMod = setters.getElementalDamageModifier?.(card);
+        if (elementalMod && adjustedBaseDamage !== undefined) {
+          adjustedBaseDamage = Math.round(adjustedBaseDamage * elementalMod.percentMultiplier);
+        }
+
+        const cardWithBonus = adjustedBaseDamage !== undefined && adjustedBaseDamage !== card.baseDamage
+          ? { ...card, baseDamage: adjustedBaseDamage }
           : card;
-        const damageResult = calculateDamage(
-          playerStats,
-          enemyStats,
-          cardWithBonus
-        );
-        const allocation = applyDamageAllocation(
-          enemyStats,
-          damageResult.finalDamage
-        );
 
-        result.damageDealt = damageResult.finalDamage;
-        result.isCritical = damageResult.isCritical;
+        const hitCount = card.hitCount || 1;
 
-        setters.setEnemyGuard((g) => Math.max(0, g - allocation.guardDamage));
-        setters.setEnemyAp((a) => Math.max(0, a - allocation.apDamage));
-        setters.setEnemyHp((h) => Math.max(0, h - allocation.hpDamage));
-
-        const enemyTarget = getTargetEnemyRef();
-        if (enemyTarget) {
-          animations.showDamageEffect(
-            enemyTarget,
-            damageResult.finalDamage,
-            damageResult.isCritical
+        for (let hit = 0; hit < hitCount; hit++) {
+          const damageResult = calculateDamage(
+            playerStats,
+            enemyStats,
+            cardWithBonus
           );
-        }
-
-        // Lifesteal
-        if (damageResult.lifestealAmount > 0) {
-          const newHp = applyHeal(
-            damageResult.lifestealAmount,
-            playerHp,
-            playerMaxHp
+          const allocation = applyDamageAllocation(
+            enemyStats,
+            damageResult.finalDamage
           );
-          setters.setPlayerHp(newHp);
-          result.lifestealAmount = damageResult.lifestealAmount;
-          if (playerRef.current) {
-            animations.showHealEffect(
-              playerRef.current,
-              damageResult.lifestealAmount
-            );
-          }
-        }
 
-        // Reflect damage
-        if (damageResult.reflectDamage > 0) {
-          setters.setPlayerHp((h) => Math.max(0, h - damageResult.reflectDamage));
-          result.reflectDamage = damageResult.reflectDamage;
-          if (playerRef.current) {
+          result.damageDealt += damageResult.finalDamage;
+          if (damageResult.isCritical) result.isCritical = true;
+
+          setters.setEnemyGuard((g) => Math.max(0, g - allocation.guardDamage));
+          setters.setEnemyAp((a) => Math.max(0, a - allocation.apDamage));
+          setters.setEnemyHp((h) => Math.max(0, h - allocation.hpDamage));
+
+          const enemyTarget = getTargetEnemyRef();
+          if (enemyTarget) {
             animations.showDamageEffect(
-              playerRef.current,
-              damageResult.reflectDamage,
-              false
+              enemyTarget,
+              damageResult.finalDamage,
+              damageResult.isCritical
             );
+          }
+
+          // Lifesteal
+          if (damageResult.lifestealAmount > 0) {
+            const newHp = applyHeal(
+              damageResult.lifestealAmount,
+              playerHp,
+              playerMaxHp
+            );
+            setters.setPlayerHp(newHp);
+            result.lifestealAmount += damageResult.lifestealAmount;
+            if (playerRef.current) {
+              animations.showHealEffect(
+                playerRef.current,
+                damageResult.lifestealAmount
+              );
+            }
+          }
+
+          // Reflect damage
+          if (damageResult.reflectDamage > 0) {
+            setters.setPlayerHp((h) => Math.max(0, h - damageResult.reflectDamage));
+            result.reflectDamage += damageResult.reflectDamage;
+            if (playerRef.current) {
+              animations.showDamageEffect(
+                playerRef.current,
+                damageResult.reflectDamage,
+                false
+              );
+            }
+          }
+
+          // Update battle stats
+          setters.setBattleStats((stats) => ({
+            ...stats,
+            damageDealt: stats.damageDealt + damageResult.finalDamage,
+          }));
+
+          // Delay between hits (not after last hit)
+          if (hit < hitCount - 1) {
+            await new Promise((r) => setTimeout(r, 500));
           }
         }
 
-        // Update battle stats
-        setters.setBattleStats((stats) => ({
-          ...stats,
-          damageDealt: stats.damageDealt + damageResult.finalDamage,
-        }));
-
-        // Auto-bleed from sword energy (swordsman attack cards only)
+        // Auto-bleed from sword energy (swordsman attack cards only) — applied once after all hits
         if (card.characterClass === "swordsman" && card.tags.includes("attack")) {
           const bleedChance = getSwordEnergyBleedChance(swordEnergy);
           if (bleedChance > 0 && Math.random() < bleedChance) {

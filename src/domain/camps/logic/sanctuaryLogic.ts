@@ -9,7 +9,7 @@ import type {
 } from '@/types/campTypes';
 import type { CharacterClass, ElementType } from '@/types/characterTypes';
 import { DEFAULT_SANCTUARY_EFFECTS } from '@/constants/campConstants';
-import { SKILL_TREE_NODES, getNodeById } from "../data/SanctuaryData";
+import { SKILL_TREE_NODES, getNodeById } from "@/constants/data/camps/SanctuaryData";
 
 /**
  * Determine the status of a skill node

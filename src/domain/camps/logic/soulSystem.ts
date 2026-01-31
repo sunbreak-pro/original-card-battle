@@ -64,7 +64,7 @@ export function getBaseSoulValue(enemyType: EnemyType): number {
 /**
  * Get survival multiplier for return method
  */
-export function getSurvivalMultiplier(returnMethod: ReturnMethod): number {
+function getSurvivalMultiplier(returnMethod: ReturnMethod): number {
   switch (returnMethod) {
     case "early":
       return SANCTUARY_CONSTANTS.SURVIVAL_MULTIPLIERS.earlyReturn;
@@ -174,55 +174,6 @@ export function getSoulsNeededForNextUpgrade(
   const needed = minCost - progress.totalSouls;
 
   return needed > 0 ? needed : 0;
-}
-
-/**
- * Get soul earning summary for display
- */
-export function getSoulEarningSummary(enemiesDefeated: {
-  normal: number;
-  elite: number;
-  boss: number;
-}): {
-  normalSouls: number;
-  eliteSouls: number;
-  bossSouls: number;
-  total: number;
-} {
-  const normalSouls =
-    enemiesDefeated.normal * SANCTUARY_CONSTANTS.SOUL_VALUES.normal;
-  const eliteSouls =
-    enemiesDefeated.elite * SANCTUARY_CONSTANTS.SOUL_VALUES.elite;
-  const bossSouls =
-    enemiesDefeated.boss * SANCTUARY_CONSTANTS.SOUL_VALUES.boss;
-
-  return {
-    normalSouls,
-    eliteSouls,
-    bossSouls,
-    total: normalSouls + eliteSouls + bossSouls,
-  };
-}
-
-/**
- * Format soul value for display
- */
-export function formatSouls(souls: number): string {
-  if (souls >= 1000) {
-    return `${(souls / 1000).toFixed(1)}K`;
-  }
-  return souls.toString();
-}
-
-/**
- * Get soul display color based on amount
- */
-export function getSoulColor(souls: number): string {
-  if (souls === 0) return "#6b7280"; // Gray
-  if (souls < 50) return "#a855f7"; // Purple
-  if (souls < 100) return "#8b5cf6"; // Violet
-  if (souls < 200) return "#7c3aed"; // Indigo
-  return "#6366f1"; // Deep indigo
 }
 
 /**

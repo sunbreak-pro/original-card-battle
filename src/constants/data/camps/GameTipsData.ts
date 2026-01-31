@@ -4,7 +4,7 @@
  * Collection of game tips and tutorials organized by category.
  */
 
-import type { GameTip } from "@/types/campTypes";
+import type { GameTip } from '@/types/campTypes';
 
 /**
  * All game tips

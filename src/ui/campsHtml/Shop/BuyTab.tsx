@@ -8,7 +8,7 @@ import {
   generateDailyEquipmentInventory,
   type ResolvedShopListing,
   type EquipmentListing,
-} from "../../../domain/camps/data/ShopData";
+} from "@/constants/data/camps/ShopData";
 import type { EquipmentPackConfig } from '@/types/campTypes';
 import {
   canAfford,
@@ -20,8 +20,8 @@ import { generateEquipmentItem } from "../../../domain/item_equipment/logic/gene
 
 const BuyTab = () => {
   const { playerData, useGold } = usePlayer();
-  const { addItemToInventory } = useInventory();
-  const inventory = playerData.inventory.inventory;
+  const { addItemToStorage } = useInventory();
+  const storage = playerData.inventory.storage;
   const [notification, setNotification] = useState<string | null>(null);
   const [purchasedPack, setPurchasedPack] = useState<string[] | null>(null);
 
@@ -43,8 +43,8 @@ const BuyTab = () => {
       return;
     }
 
-    if (!hasInventorySpace(inventory.currentCapacity, inventory.maxCapacity)) {
-      showNotification("Inventory full!");
+    if (!hasInventorySpace(storage.currentCapacity, storage.maxCapacity)) {
+      showNotification("倉庫がいっぱいです！");
       return;
     }
 
@@ -55,7 +55,7 @@ const BuyTab = () => {
     }
 
     if (useGold(resolved.price)) {
-      addItemToInventory(item);
+      addItemToStorage(item);
       showNotification(`Purchased ${resolved.data.name}!`);
     }
   };
@@ -68,14 +68,14 @@ const BuyTab = () => {
       return;
     }
 
-    if (!hasInventorySpace(inventory.currentCapacity, inventory.maxCapacity)) {
-      showNotification("インベントリがいっぱいです！");
+    if (!hasInventorySpace(storage.currentCapacity, storage.maxCapacity)) {
+      showNotification("倉庫がいっぱいです！");
       return;
     }
 
     if (useGold(listing.price)) {
       const item = generateEquipmentItem(listing.slot, listing.rarity);
-      addItemToInventory(item);
+      addItemToStorage(item);
       showNotification(`${listing.name} を購入しました！`);
     }
   };
@@ -89,15 +89,15 @@ const BuyTab = () => {
     }
 
     if (
-      !hasInventorySpace(inventory.currentCapacity, inventory.maxCapacity, 6)
+      !hasInventorySpace(storage.currentCapacity, storage.maxCapacity, 6)
     ) {
-      showNotification("Need 6 inventory slots!");
+      showNotification("倉庫に6枠の空きが必要です！");
       return;
     }
 
     if (useGold(pack.price)) {
       const items = openEquipmentPack(pack.id);
-      items.forEach((item) => addItemToInventory(item));
+      items.forEach((item) => addItemToStorage(item));
       setPurchasedPack(items.map((i) => `${i.type} ${i.name} (${i.rarity})`));
       setTimeout(() => setPurchasedPack(null), 4000);
     }
@@ -108,8 +108,8 @@ const BuyTab = () => {
       playerData.resources.baseCampGold + playerData.resources.explorationGold;
     const affordable = canAfford(totalGold, resolved.price);
     const hasSpace = hasInventorySpace(
-      inventory.currentCapacity,
-      inventory.maxCapacity,
+      storage.currentCapacity,
+      storage.maxCapacity,
     );
 
     return (
@@ -139,8 +139,8 @@ const BuyTab = () => {
       playerData.resources.baseCampGold + playerData.resources.explorationGold;
     const affordable = canAfford(totalGold, pack.price);
     const hasSpace = hasInventorySpace(
-      inventory.currentCapacity,
-      inventory.maxCapacity,
+      storage.currentCapacity,
+      storage.maxCapacity,
       6,
     );
 
@@ -172,8 +172,8 @@ const BuyTab = () => {
       playerData.resources.baseCampGold + playerData.resources.explorationGold;
     const affordable = canAfford(totalGold, listing.price);
     const hasSpace = hasInventorySpace(
-      inventory.currentCapacity,
-      inventory.maxCapacity,
+      storage.currentCapacity,
+      storage.maxCapacity,
     );
 
     return (

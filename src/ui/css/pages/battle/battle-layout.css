@@ -72,8 +72,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  width: 22vw;
-  height: 100%;
 }
 
 .player-field {
@@ -94,19 +92,13 @@
 /* =========================================
    Character Display
    ========================================= */
-.character-name {
-  font-size: 2vh;
-  font-weight: bold;
-  text-shadow: 0 0 1vh var(--theme-glow);
-}
-
 .character-visual {
-  width: 16vh;
-  height: 16vh;
+  width: 30vw;
+  height: 30vh;
   border-radius: 1.5vh;
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: start;
   justify-content: center;
   font-size: 8vh;
 }

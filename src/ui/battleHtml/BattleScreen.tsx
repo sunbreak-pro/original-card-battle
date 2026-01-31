@@ -13,6 +13,7 @@ import PlayerFrame from "./PlayerFrame";
 import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
 import UseItemModal from "./UseItemModal";
+import { ElementalResonanceDisplay } from "./ElementalResonanceDisplay";
 import "../css/battle/BattleScreen.css";
 import { DEPTH_BACKGROUND_IMAGES } from "../../constants/uiConstants";
 import type { Item } from "@/types/itemTypes";
@@ -80,6 +81,8 @@ const BattleScreen = ({
     decreaseLives,
     isGameOver,
     setDifficulty,
+    deckCards,
+    applyEquipmentDurabilityDamage,
   } = usePlayer();
   const { addMagicStones } = useResources();
   const { navigateTo, gameState } = useGameState();
@@ -124,13 +127,19 @@ const BattleScreen = ({
       speed: playerData.persistent.baseSpeed,
       cardActEnergy: playerData.persistent.cardActEnergy,
       cardMasteryStore: runtimeState.cardMasteryStore,
-      deckConfig: getInitialDeckCounts(playerData.persistent.playerClass),
+      deckConfig: deckCards.length > 0
+        ? deckCards.reduce<Record<string, number>>((acc, card) => {
+            acc[card.cardTypeId] = (acc[card.cardTypeId] ?? 0) + 1;
+            return acc;
+          }, {})
+        : getInitialDeckCounts(playerData.persistent.playerClass),
     }),
     [
       runtimeState.currentHp,
       runtimeState.currentAp,
       runtimeState.cardMasteryStore,
       playerData.persistent,
+      deckCards,
     ],
   );
 
@@ -171,7 +180,10 @@ const BattleScreen = ({
     setSelectedTargetIndex,
     isPlayerPhase,
     setPlayerBuffs,
-  } = useBattle(depth, undefined, initialPlayerState, encounterSize);
+    elementalState,
+  } = useBattle(depth, undefined, initialPlayerState, encounterSize, {
+    onApDamage: applyEquipmentDurabilityDamage,
+  });
 
   // Handle player death penalty when defeated
   // Side effect (updatePlayerData, decreaseLives) must run in useEffect, not during render
@@ -495,6 +507,11 @@ const BattleScreen = ({
               </span>
             </div>
           </div>
+        </div>
+      )}
+      {playerClass === "mage" && (
+        <div className="class-ability-header">
+          <ElementalResonanceDisplay elementalState={elementalState} />
         </div>
       )}
 

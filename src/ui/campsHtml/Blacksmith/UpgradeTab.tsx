@@ -12,7 +12,7 @@ import {
   MAX_EQUIPMENT_LEVEL,
   getNextQuality,
 } from "../../../domain/camps/logic/blacksmithUtils";
-import { QUALITY_UP_OPTIONS } from "../../../domain/camps/data/BlacksmithData";
+import { QUALITY_UP_OPTIONS } from "@/constants/data/camps/BlacksmithData";
 import {
   canLevelUpgrade,
   canQualityUpgrade,

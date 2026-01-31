@@ -68,7 +68,7 @@ type CSSWritableProps = {
   CSSStyleDeclaration[K] extends string ? K : never;
 }[keyof CSSStyleDeclaration];
 
-export const animate = ({
+const animate = ({
   element,
   duration,
   easing = Easing.easeOutCubic,
@@ -138,20 +138,6 @@ const interpolateValue = (
 
   return to;
 };
-export const animateSequence = async (
-  animations: (() => Promise<void>)[]
-): Promise<void> => {
-  for (const animation of animations) {
-    await animation();
-  }
-};
-
-export const animateParallel = async (
-  animations: (() => Promise<void>)[]
-): Promise<void> => {
-  await Promise.all(animations.map((anim) => anim()));
-};
-
 export const animateAsync = (props: AnimationProps): Promise<void> => {
   return new Promise((resolve) => {
     animate({
@@ -333,23 +319,3 @@ export const shakeElement = (
   requestAnimationFrame(shake);
 };
 
-export const glowPulse = (
-  element: HTMLElement,
-  color: string,
-  duration: number = 1000,
-  intensity: number = 20
-): void => {
-  const startTime = performance.now();
-
-  const pulse = (currentTime: number) => {
-    const elapsed = currentTime - startTime;
-    const progress = (elapsed % duration) / duration;
-
-    const glow = Math.sin(progress * Math.PI * 2) * intensity;
-    element.style.boxShadow = `0 0 ${glow}px ${color}, 0 0 ${glow * 2}px ${color}`;
-
-    requestAnimationFrame(pulse);
-  };
-
-  requestAnimationFrame(pulse);
-};

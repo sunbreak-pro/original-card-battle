@@ -1,188 +1,243 @@
-// Shop inventory data for the Merchant's Exchange (legacy)
-// This file is kept for reference but is no longer re-exported.
-// Active shop data lives in src/domain/camps/data/ShopData.ts
+// Shop inventory data for the Merchant's Exchange
 
-import type { ShopCategory } from "@/types/campTypes";
-
-/**
- * Legacy ShopItem type (kept locally for backward compatibility of this file)
- */
-interface ShopItem {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  category: ShopCategory;
-  price: number;
-  stock?: number;
-  healAmount?: number;
-  returnChance?: number;
-}
+import type {
+  ShopListing,
+  EquipmentPackConfig,
+  RarityProbability,
+} from '@/types/campTypes';
+import type { EquipmentSlot, ItemRarity } from '@/types/itemTypes';
+import { getConsumableData } from "@/constants/data/items/ConsumableItemData";
+import type { ConsumableItemData } from '@/types/itemTypes';
+import { EQUIPMENT_TEMPLATES } from "@/constants/data/items/EquipmentData";
+import { EQUIPMENT_SLOTS, EQUIPMENT_BUY_PRICES } from "@/constants/itemConstants";
 
 /**
- * Consumable items - Healing potions
+ * Consumable listings - references ConsumableItemData by typeId
  */
-export const CONSUMABLE_ITEMS: ShopItem[] = [
-  {
-    id: "potion_small",
-    name: "Small Healing Potion",
-    description: "Recovers 30 HP. A basic remedy for minor wounds.",
-    icon: "🧪",
-    category: "consumable",
-    price: 50,
-    healAmount: 30,
-  },
-  {
-    id: "potion_medium",
-    name: "Medium Healing Potion",
-    description: "Recovers 70 HP. A reliable restorative draught.",
-    icon: "🧴",
-    category: "consumable",
-    price: 120,
-    healAmount: 70,
-  },
-  {
-    id: "potion_large",
-    name: "Large Healing Potion",
-    description: "Recovers 150 HP. A potent elixir brewed by master alchemists.",
-    icon: "⚗️",
-    category: "consumable",
-    price: 240,
-    healAmount: 150,
-  },
+export const CONSUMABLE_LISTINGS: ShopListing[] = [
+  { itemTypeId: "healing_potion", category: "consumable" },
+  { itemTypeId: "greater_healing_potion", category: "consumable" },
+  { itemTypeId: "full_elixir", category: "consumable" },
 ];
 
 /**
- * Teleport stones - Emergency escape items
+ * Teleport listings - references ConsumableItemData by typeId
  */
-export const TELEPORT_ITEMS: ShopItem[] = [
+export const TELEPORT_LISTINGS: ShopListing[] = [
+  { itemTypeId: "teleport_stone", category: "teleport" },
+];
+
+/**
+ * Rarity probability distributions for equipment packs
+ */
+const COMMON_PACK_PROBABILITIES: RarityProbability = {
+  common: 1.0,
+  uncommon: 0,
+  rare: 0,
+  epic: 0,
+  legendary: 0,
+};
+
+const RARE_PACK_PROBABILITIES: RarityProbability = {
+  common: 0.6,
+  uncommon: 0,
+  rare: 0.35,
+  epic: 0.05,
+  legendary: 0,
+};
+
+const EPIC_PACK_PROBABILITIES: RarityProbability = {
+  common: 0.3,
+  uncommon: 0,
+  rare: 0.45,
+  epic: 0.2,
+  legendary: 0.05,
+};
+
+/**
+ * Equipment packs - Gacha system
+ */
+export const EQUIPMENT_PACKS: EquipmentPackConfig[] = [
   {
-    id: "teleport_emergency",
-    name: "Emergency Teleport Stone",
-    description: "60% chance to return safely. Unreliable but cheap.",
-    icon: "💎",
-    category: "teleport",
-    price: 100,
-    returnChance: 0.6,
-  },
-  {
-    id: "teleport_normal",
-    name: "Teleport Stone",
-    description: "70% chance to return safely. Standard issue for adventurers.",
-    icon: "🔮",
-    category: "teleport",
-    price: 150,
-    returnChance: 0.7,
-  },
-  {
-    id: "teleport_blessed",
-    name: "Blessed Teleport Stone",
-    description: "80% chance to return safely. Imbued with divine protection.",
-    icon: "✨",
-    category: "teleport",
+    id: "pack_common",
+    name: "Common Equipment Pack",
+    description: "Contains 6 common equipment pieces. One for each slot.",
+    icon: "📦",
     price: 300,
-    returnChance: 0.8,
+    packType: "common",
+    guaranteedRarity: "common",
+    itemCount: 6,
+    rarityProbabilities: COMMON_PACK_PROBABILITIES,
+  },
+  {
+    id: "pack_rare",
+    name: "Rare Equipment Pack",
+    description:
+      "Contains 6 equipment pieces. Guaranteed Rare or better quality.",
+    icon: "🎁",
+    price: 500,
+    packType: "rare",
+    guaranteedRarity: "rare",
+    itemCount: 6,
+    rarityProbabilities: RARE_PACK_PROBABILITIES,
+  },
+  {
+    id: "pack_epic",
+    name: "Epic Equipment Pack",
+    description:
+      "Contains 6 equipment pieces. Guaranteed Epic or better quality. May contain Legendary items!",
+    icon: "🏆",
+    price: 1000,
+    packType: "epic",
+    guaranteedRarity: "epic",
+    itemCount: 6,
+    rarityProbabilities: EPIC_PACK_PROBABILITIES,
   },
 ];
 
 /**
- * Battle consumables - Items usable during combat
+ * Resolve a ShopListing to its display info from ConsumableItemData
  */
-export const BATTLE_ITEMS: ShopItem[] = [
-  {
-    id: "smoke_bomb",
-    name: "Smoke Bomb",
-    description: "Escape from a non-boss battle. Consumed on use.",
-    icon: "💨",
-    category: "battleItem",
-    price: 80,
-  },
-  {
-    id: "attack_powder",
-    name: "Attack Powder",
-    description: "Increases ATK by 20% for the current battle.",
-    icon: "🔥",
-    category: "battleItem",
-    price: 120,
-  },
-  {
-    id: "guard_charm",
-    name: "Guard Charm",
-    description: "Grants 10 Guard at the start of a battle.",
-    icon: "🛡️",
-    category: "battleItem",
-    price: 100,
-  },
-];
-
-/**
- * Map items - Items usable on the dungeon map
- */
-export const MAP_ITEMS: ShopItem[] = [
-  {
-    id: "scout_lantern",
-    name: "Scout Lantern",
-    description: "Reveals the types of adjacent unrevealed nodes.",
-    icon: "🔦",
-    category: "mapItem",
-    price: 60,
-  },
-  {
-    id: "camp_kit",
-    name: "Camp Kit",
-    description: "Restore 50 HP at any map node. Single use.",
-    icon: "⛺",
-    category: "mapItem",
-    price: 90,
-    healAmount: 50,
-  },
-];
-
-/**
- * Get all shop items by category
- */
-export function getShopItemsByCategory(
-  category: "consumable" | "teleport" | "battleItem" | "mapItem"
-): ShopItem[] {
-  switch (category) {
-    case "consumable":
-      return CONSUMABLE_ITEMS;
-    case "teleport":
-      return TELEPORT_ITEMS;
-    case "battleItem":
-      return BATTLE_ITEMS;
-    case "mapItem":
-      return MAP_ITEMS;
-    default:
-      return [];
-  }
+export interface ResolvedShopListing {
+  listing: ShopListing;
+  data: ConsumableItemData;
+  price: number;
 }
 
 /**
- * Get shop item by ID
+ * Get resolved listing with display data
  */
-export function getShopItemById(id: string): ShopItem | undefined {
-  return [
-    ...CONSUMABLE_ITEMS,
-    ...TELEPORT_ITEMS,
-    ...BATTLE_ITEMS,
-    ...MAP_ITEMS,
-  ].find((item) => item.id === id);
+export function resolveShopListing(listing: ShopListing): ResolvedShopListing | null {
+  const data = getConsumableData(listing.itemTypeId);
+  if (!data || data.shopPrice === undefined) return null;
+  return { listing, data, price: data.shopPrice };
 }
 
 /**
- * Get all purchasable items (for display)
+ * Get all resolved consumable listings
  */
-export function getAllShopItems(): {
-  consumables: ShopItem[];
-  teleport: ShopItem[];
-  battleItems: ShopItem[];
-  mapItems: ShopItem[];
-} {
-  return {
-    consumables: CONSUMABLE_ITEMS,
-    teleport: TELEPORT_ITEMS,
-    battleItems: BATTLE_ITEMS,
-    mapItems: MAP_ITEMS,
+export function getResolvedConsumableListings(): ResolvedShopListing[] {
+  return CONSUMABLE_LISTINGS
+    .map(resolveShopListing)
+    .filter((r): r is ResolvedShopListing => r !== null);
+}
+
+/**
+ * Get all resolved teleport listings
+ */
+export function getResolvedTeleportListings(): ResolvedShopListing[] {
+  return TELEPORT_LISTINGS
+    .map(resolveShopListing)
+    .filter((r): r is ResolvedShopListing => r !== null);
+}
+
+/**
+ * Get shop listing by typeId
+ */
+export function getShopListingByTypeId(typeId: string): ShopListing | undefined {
+  return [...CONSUMABLE_LISTINGS, ...TELEPORT_LISTINGS].find(
+    (listing) => listing.itemTypeId === typeId
+  );
+}
+
+/**
+ * Get equipment pack by ID
+ */
+export function getEquipmentPackById(id: string): EquipmentPackConfig | undefined {
+  return EQUIPMENT_PACKS.find((pack) => pack.id === id);
+}
+
+// ============================================================
+// Daily Equipment Inventory
+// ============================================================
+
+/**
+ * Individual equipment listing for direct purchase
+ */
+export interface EquipmentListing {
+  slot: EquipmentSlot;
+  rarity: ItemRarity;
+  name: string;
+  icon: string;
+  price: number;
+}
+
+/**
+ * Simple seeded random number generator for deterministic daily rotation
+ */
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0x7fffffff;
+    return s / 0x7fffffff;
   };
+}
+
+/** Available rarities for daily shop rotation */
+const SHOP_RARITIES: ItemRarity[] = ["common", "uncommon", "rare", "epic"];
+
+/**
+ * Generate deterministic daily equipment inventory
+ * Shows 4 equipment pieces per day, rotating based on dayCount seed.
+ * @param dayCount - The current day number (used as seed)
+ * @returns Array of equipment listings available today
+ */
+export function generateDailyEquipmentInventory(dayCount: number): EquipmentListing[] {
+  const rng = seededRandom(dayCount * 7919 + 31);
+  const listings: EquipmentListing[] = [];
+
+  // Pick 4 random slot+rarity combinations
+  const numItems = 4;
+  const usedSlots = new Set<string>();
+
+  for (let i = 0; i < numItems; i++) {
+    // Pick a slot (avoid duplicates within same day)
+    let slotIdx = Math.floor(rng() * EQUIPMENT_SLOTS.length);
+    let attempts = 0;
+    while (usedSlots.has(EQUIPMENT_SLOTS[slotIdx]) && attempts < 10) {
+      slotIdx = (slotIdx + 1) % EQUIPMENT_SLOTS.length;
+      attempts++;
+    }
+    const slot = EQUIPMENT_SLOTS[slotIdx];
+    usedSlots.add(slot);
+
+    // Pick rarity (weighted toward lower rarities)
+    const rarityRoll = rng();
+    let rarity: ItemRarity;
+    if (rarityRoll < 0.4) rarity = "common";
+    else if (rarityRoll < 0.7) rarity = "uncommon";
+    else if (rarityRoll < 0.9) rarity = "rare";
+    else rarity = "epic";
+
+    const template = EQUIPMENT_TEMPLATES[slot][rarity];
+    listings.push({
+      slot,
+      rarity,
+      name: template.name,
+      icon: template.icon,
+      price: EQUIPMENT_BUY_PRICES[rarity],
+    });
+  }
+
+  return listings;
+}
+
+/**
+ * Get all available equipment for direct purchase (non-rotating, full list)
+ */
+export function getAllEquipmentListings(): EquipmentListing[] {
+  const listings: EquipmentListing[] = [];
+  for (const slot of EQUIPMENT_SLOTS) {
+    for (const rarity of SHOP_RARITIES) {
+      const template = EQUIPMENT_TEMPLATES[slot][rarity];
+      listings.push({
+        slot,
+        rarity,
+        name: template.name,
+        icon: template.icon,
+        price: EQUIPMENT_BUY_PRICES[rarity],
+      });
+    }
+  }
+  return listings;
 }

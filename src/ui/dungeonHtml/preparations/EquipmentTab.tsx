@@ -1,8 +1,9 @@
 // EquipmentTab - Read-only display of equipped items
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { EquipmentSlots } from "@/types/campTypes";
 import type { Item, EquipmentSlot } from "@/types/itemTypes";
+import { calculateEquipmentAP } from "@/domain/item_equipment/logic/equipmentStats";
 
 interface EquipmentTabProps {
   equipmentSlots: EquipmentSlots;
@@ -32,10 +33,19 @@ export function EquipmentTab({
 }: EquipmentTabProps) {
   const [tooltipItem, setTooltipItem] = useState<Item | null>(null);
 
+  const equipmentAP = useMemo(
+    () => calculateEquipmentAP(equipmentSlots),
+    [equipmentSlots],
+  );
+
   const slots = Object.entries(SLOT_LABELS) as [EquipmentSlot, string][];
 
   return (
     <div className="equipment-tab">
+      <div className="equipment-ap-summary">
+        <span className="ap-label">装備AP:</span>
+        <span className="ap-value">{equipmentAP.totalAP}/{equipmentAP.maxAP}</span>
+      </div>
       <div className="equipment-slots-list">
         {slots.map(([slotKey, slotLabel]) => {
           const item = equipmentSlots[slotKey];
@@ -57,6 +67,11 @@ export function EquipmentTab({
               >
                 {item ? item.name : "---"}
               </span>
+              {slotKey !== "weapon" && equipmentAP.perSlot[slotKey] !== undefined && (
+                <span className="slot-ap-badge">
+                  AP +{equipmentAP.perSlot[slotKey]}/{equipmentAP.perSlotMax[slotKey]}
+                </span>
+              )}
             </div>
           );
         })}

@@ -40,6 +40,7 @@ import { useBattleState, type InitialPlayerState } from "./useBattleState";
 import { useCardExecution, type CardAnimationHandlers, type CardExecutionSetters, type DeckDispatch } from "./useCardExecution";
 import { useEnemyAI } from "./useEnemyAI";
 import { useSwordEnergy } from "./useClassAbility";
+import { useElementalChain } from "./useElementalChain";
 
 
 // Phase execution
@@ -144,11 +145,17 @@ function buildEnemyBattleStats(enemy: EnemyBattleState): BattleStats {
  * @param initialEnemies - Optional initial enemies (overrides random selection)
  * @param initialPlayerState - Optional initial player state (HP/AP from PlayerContext)
  */
+export interface BattleOrchestratorOptions {
+  /** Callback when AP absorbs damage — distributes to equipment durability */
+  onApDamage?: (apDamage: number) => { currentAp: number; maxAp: number };
+}
+
 export const useBattleOrchestrator = (
   depth: Depth,
   initialEnemies?: EnemyDefinition[],
   initialPlayerState?: InitialPlayerState,
-  encounterType: EncounterSize = "single"
+  encounterType: EncounterSize = "single",
+  options?: BattleOrchestratorOptions,
 ) => {
   // ========================================================================
   // Animation Hooks
@@ -246,6 +253,10 @@ export const useBattleOrchestrator = (
 
   const swordEnergyHook = useSwordEnergy();
   const { abilityState: swordEnergy, setAbilityState: setSwordEnergy } = swordEnergyHook;
+
+  // Elemental Chain (Mage) - called unconditionally per React hooks rules
+  const elementalChainHook = useElementalChain();
+  const { abilityState: elementalState } = elementalChainHook;
 
   // ========================================================================
   // Deck State
@@ -350,6 +361,7 @@ export const useBattleOrchestrator = (
       setEnemyBuffs,
       setSwordEnergy,
       setBattleStats,
+      getElementalDamageModifier: elementalChainHook.getDamageModifier,
     }),
     [
       setPlayerEnergy,
@@ -361,6 +373,7 @@ export const useBattleOrchestrator = (
       setEnemyGuard,
       setEnemyBuffs,
       setSwordEnergy,
+      elementalChainHook.getDamageModifier,
     ]
   );
 
@@ -398,8 +411,9 @@ export const useBattleOrchestrator = (
   const handleCardPlay = useCallback(
     async (card: Card, cardElement?: HTMLElement) => {
       await cardExecution.executeCard(card, cardElement);
+      elementalChainHook.onCardPlayed(card);
     },
-    [cardExecution]
+    [cardExecution, elementalChainHook]
   );
 
   // ========================================================================
@@ -503,6 +517,7 @@ export const useBattleOrchestrator = (
       showMessage,
       showDamageEffect,
       getTargetEnemyRef: getEnemyRef,
+      onApDamage: options?.onApDamage,
       phaseState: {
         setPlayerPhaseActive: phaseState.setPlayerPhaseActive,
         setEnemyPhaseActive: phaseState.setEnemyPhaseActive,
@@ -524,6 +539,7 @@ export const useBattleOrchestrator = (
     showMessage,
     showDamageEffect,
     phaseState,
+    options?.onApDamage,
   ]);
 
 
@@ -610,6 +626,9 @@ export const useBattleOrchestrator = (
     // Clear phase state
     phaseState.clearActivePhase();
 
+    // Reset elemental chain at end of player phase
+    elementalChainHook.onTurnEnd();
+
     // Calculate phase end effects
     const phaseEndResult = calculatePlayerPhaseEnd({ playerBuffs: playerState.buffs });
 
@@ -644,6 +663,7 @@ export const useBattleOrchestrator = (
     deckState.hand,
     discardCardsWithAnimation,
     executeNextPhase,
+    elementalChainHook,
   ]);
 
   // ========================================================================
@@ -709,6 +729,7 @@ export const useBattleOrchestrator = (
       setPlayerBuffs(new Map());
       setPlayerEnergy(playerState.maxEnergy);
       setSwordEnergy(createInitialSwordEnergy());
+      elementalChainHook.resetAbility();
 
       // Collect all cards and shuffle
       const allCards = [
@@ -733,6 +754,7 @@ export const useBattleOrchestrator = (
       setPlayerBuffs,
       setPlayerEnergy,
       setSwordEnergy,
+      elementalChainHook,
       playerState.maxEnergy,
       phaseState,
     ]
@@ -821,6 +843,9 @@ export const useBattleOrchestrator = (
 
     // Sword Energy
     swordEnergy,
+
+    // Elemental Chain (Mage)
+    elementalState,
 
     // Deck state
     hand: deckState.hand,

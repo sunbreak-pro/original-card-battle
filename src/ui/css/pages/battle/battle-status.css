@@ -15,13 +15,18 @@
   gap: 1vh;
 }
 
-
 /* Common row structure */
 .status-bar-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   width: 100%;
   height: 2.5vh;
+}
+.player-status-container{
+  display: flex;
+  width: 75%;
+  justify-content: center;
 }
 
 /* =========================================

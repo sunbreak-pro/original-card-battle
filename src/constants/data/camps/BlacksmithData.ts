@@ -1,6 +1,6 @@
 // Blacksmith facility data constants
-import type { ItemRarity } from "@/types/itemTypes";
-import type { UpgradeCost, QualityUpConfig, QualityUpOption } from "@/types/campTypes";
+import type { ItemRarity } from '@/types/itemTypes';
+import type { UpgradeCost, QualityUpConfig, QualityUpOption } from '@/types/campTypes';
 
 /**
  * Upgrade costs by rarity and target level

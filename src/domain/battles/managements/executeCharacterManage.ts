@@ -94,6 +94,8 @@ export interface EnemyPhaseContext {
     setPlayerHp: (updater: number | ((prev: number) => number)) => void;
     setPlayerBuffs: (updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap)) => void;
     setBattleStats: (updater: (prev: { damageDealt: number; damageTaken: number }) => { damageDealt: number; damageTaken: number }) => void;
+    /** Callback to apply AP damage to equipment durability. Returns new AP values. */
+    onApDamage?: (apDamage: number) => { currentAp: number; maxAp: number };
 
     // Animation
     showMessage: (message: string, duration: number, callback?: () => void) => void;
@@ -222,6 +224,11 @@ export function useCharacterPhaseExecution() {
                 ctx.setPlayerGuard(g => Math.max(0, g - attackResult.guardDamage));
                 ctx.setPlayerAp(a => Math.max(0, a - attackResult.apDamage));
                 ctx.setPlayerHp(h => Math.max(0, h - attackResult.hpDamage));
+
+                // Distribute AP damage to equipment durability
+                if (attackResult.apDamage > 0 && ctx.onApDamage) {
+                    ctx.onApDamage(attackResult.apDamage);
+                }
 
                 if (ctx.playerRef.current) {
                     ctx.showDamageEffect(ctx.playerRef.current, attackResult.totalDamage, false);

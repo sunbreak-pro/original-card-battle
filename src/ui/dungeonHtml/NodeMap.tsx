@@ -249,7 +249,7 @@ export function NodeMap() {
         </div>
         <div className="player-status-badge">
           <span className="status-icon">💖</span>
-          <span className="status-value">{runtimeState.lives.remaining}</span>
+          <span className="status-value">{runtimeState.lives.currentLives}</span>
         </div>
         <div className="player-status-badge">
           <span className="status-icon">💰</span>

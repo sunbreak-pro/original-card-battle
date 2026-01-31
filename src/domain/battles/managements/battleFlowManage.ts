@@ -15,7 +15,7 @@
  */
 
 // Re-export the orchestrator as useBattle for backward compatibility
-export { useBattleOrchestrator as useBattle } from "./useBattleOrchestrator";
+export { useBattleOrchestrator as useBattle, type BattleOrchestratorOptions } from "./useBattleOrchestrator";
 
 // Re-export for creating enemy state
 export { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";

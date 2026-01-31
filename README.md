@@ -109,9 +109,9 @@ src/
 │   └── GuildContext.tsx        # ギルド状態
 ├── domain/         # ビジネスロジック（純粋関数中心）
 │   ├── battles/    # バトルシステム（フック、ロジック、計算）
-│   ├── camps/      # キャンプ施設（ショップ、鍛冶屋、聖域等）
+│   ├── camps/      # キャンプ施設ロジック（データは constants/data/camps/）
 │   ├── cards/      # デッキ管理、熟練度（カードデータは constants/data/cards/）
-│   ├── characters/ # プレイヤー・敵キャラクター
+│   ├── characters/ # プレイヤー・敵キャラクター（データは constants/data/characters/）
 │   ├── dungeon/    # ダンジョン生成・イベント
 │   ├── item_equipment/ # アイテム・装備ロジック
 │   └── save/       # セーブシステム
@@ -132,11 +132,7 @@ src/
 GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider
 ```
 
-バトル中のみ追加:
-```
-PlayerBattleContext + EnemyBattleContext + BattleSessionContext
-（BattleProviderStack.tsx で管理）
-```
+バトル状態は `useBattleOrchestrator` フックが直接管理（別途Contextなし）。
 
 ### バトルシステムフロー
 
@@ -148,10 +144,10 @@ BattleScreen → useBattleOrchestrator → useBattleState
     playerPhaseExecution / enemyPhaseExecution → damageCalculation
 ```
 
-クラス別バトルフック（`useClassAbility.ts` で統合）:
-- Swordsman: `useSwordEnergy()` — エネルギーゲージ
-- Mage: `useElementalChain()` — 属性共鳴コンボ
-- Summoner: `useSummonSystem()` — 召喚獣の生成・減衰・消滅
+クラス別バトルフック（`useBattleOrchestrator` 内で統合）:
+- Swordsman: `useSwordEnergy()` — エネルギーゲージ（`useClassAbility.ts`）
+- Mage: `useElementalChain()` — 属性共鳴コンボ + ダメージ倍率（`useElementalChain.ts`）
+- Summoner: `useSummonSystem()` — 召喚獣の生成・減衰・消滅（`useSummonSystem.ts`）
 
 ### ショップデータフロー
 
@@ -165,16 +161,19 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 
 | カテゴリ | 進捗 | 備考 |
 |---------|------|------|
-| バトルシステム | 95% | コア、複数敵、逃走、属性完了。AoEカード未実装 |
+| バトルシステム | 98% | コア、複数敵、逃走、属性共鳴、マルチヒット完了。AoEカード未実装 |
 | キャンプ施設 | 95% | 全6施設稼働 |
 | ダンジョン | 90% | マップ、ノード、イベント、5フロア進行、Depth 1-5 |
-| 進行システム | 95% | ライフ、ソウル、聖域、装備、熟練度、カード派生 |
+| 進行システム | 98% | ライフ、ソウル、聖域、装備耐久度、熟練度、カード派生、カスタムデッキ |
 | セーブ | 実装済 | `src/domain/save/logic/saveManager.ts` |
+| キャラ画像 | 90% | プレイヤー画像バトル表示。敵imagePath全設定済（画像ファイル未作成） |
 
 ### 未実装
 
 - AoEカード（全敵同時ダメージ）
 - EnemyFrame の SVG アイコン化（現在は絵文字）
+- 敵画像アセット（全45体の imagePath は設定済、PNGファイル未作成）
+- 召喚士キャラクター画像（現在は Mage.png をプレースホルダー使用）
 
 ## Coding Conventions
 
@@ -237,6 +236,20 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 - カードデータを `src/constants/data/cards/` に移行
 - 探索準備画面（preparations/）追加
 - テレポートストーンアイテム実装
+
+### 2026年2月1日
+- バトルコンテキスト簡素化（BattleProviderStack/Player/Enemy/SessionContext 削除）
+- キャンプデータ移行（`domain/camps/data/` → `constants/data/camps/`）
+- 敵データ移行（`domain/characters/enemy/data/` → `constants/data/characters/enemy/`）
+- typeConverters.ts 削除（未使用）
+- 属性共鳴ダメージ倍率をカード実行に統合
+- ElementalResonanceDisplay UI（Mage クラス）追加
+- マルチヒットカード実行ループ実装（hit毎のダメージ計算）
+- 装備耐久度システム（equipmentStats.ts）追加
+- カスタムデッキ対応（PlayerContext の deckCards）
+- プレイヤーキャラクター画像をバトルフィールドに表示
+- 全45体の敵に imagePath フィールド追加
+- soulSystem.ts デッドコード削除
 
 </details>
 

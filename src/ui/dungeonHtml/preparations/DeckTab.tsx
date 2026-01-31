@@ -5,6 +5,7 @@ import type { Card, Depth } from "@/types/cardTypes";
 import type { CharacterClass } from "@/types/characterTypes";
 import { CardComponent } from "@/ui/cardHtml/CardComponent";
 import { getCardDataByClass } from "@/constants/data/characters/CharacterClassData";
+import { MAX_CARD_COPIES, MIN_DECK_SIZE, MAX_DECK_SIZE } from "@/constants/uiConstants";
 
 interface DeckTabProps {
   deckCards: Card[];
@@ -68,7 +69,16 @@ export function DeckTab({
     return deckCards.map((c) => c.cardTypeId);
   }, [deckCards]);
 
+  const deckSize = deckCards.length;
+  const isAtMaxSize = deckSize >= MAX_DECK_SIZE;
+
+  const getCardCount = (cardTypeId: string): number => {
+    return currentCardTypeIds.filter((id) => id === cardTypeId).length;
+  };
+
   const handleAddCard = (cardTypeId: string) => {
+    if (isAtMaxSize) return;
+    if (getCardCount(cardTypeId) >= MAX_CARD_COPIES) return;
     onUpdateDeck([...currentCardTypeIds, cardTypeId]);
   };
 
@@ -93,7 +103,13 @@ export function DeckTab({
       <div className="deck-section">
         <div className="deck-section-header">
           <h3 className="deck-section-title">
-            現在のデッキ ({deckCards.length}枚)
+            現在のデッキ ({deckSize}/{MIN_DECK_SIZE}~{MAX_DECK_SIZE}枚)
+            {deckSize < MIN_DECK_SIZE && (
+              <span className="deck-warning"> ⚠ 最低{MIN_DECK_SIZE}枚必要</span>
+            )}
+            {isAtMaxSize && (
+              <span className="deck-limit-reached"> (上限)</span>
+            )}
           </h3>
         </div>
         {deckStacks.length === 0 ? (
@@ -162,16 +178,21 @@ export function DeckTab({
                     </div>
                   )}
                 </div>
-                {isSelected && (
-                  <div className="deck-edit-btn-container">
-                    <button
-                      className="deck-edit-btn deck-add-btn"
-                      onClick={() => handleAddCard(stack.cardTypeId)}
-                    >
-                      + 追加
-                    </button>
-                  </div>
-                )}
+                {isSelected && (() => {
+                  const atCopyLimit = getCardCount(stack.cardTypeId) >= MAX_CARD_COPIES;
+                  const disabled = isAtMaxSize || atCopyLimit;
+                  return (
+                    <div className="deck-edit-btn-container">
+                      <button
+                        className="deck-edit-btn deck-add-btn"
+                        onClick={() => handleAddCard(stack.cardTypeId)}
+                        disabled={disabled}
+                      >
+                        {atCopyLimit ? `上限 (${MAX_CARD_COPIES}枚)` : "+ 追加"}
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}

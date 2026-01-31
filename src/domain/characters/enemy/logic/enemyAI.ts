@@ -1,9 +1,9 @@
 import type { EnemyDefinition, EnemyAction, EnemyAIPattern, EncounterSize, DepthEnemyData } from '@/types/characterTypes';
-import { DEPTH1_ENEMIES } from "../data/enemyDepth1";
-import { DEPTH2_ENEMIES } from "../data/enemyDepth2";
-import { DEPTH3_ENEMIES } from "../data/enemyDepth3";
-import { DEPTH4_ENEMIES } from "../data/enemyDepth4";
-import { DEPTH5_ENEMIES } from "../data/enemyDepth5";
+import { DEPTH1_ENEMIES } from "@/constants/data/characters/enemy/enemyDepth1";
+import { DEPTH2_ENEMIES } from "@/constants/data/characters/enemy/enemyDepth2";
+import { DEPTH3_ENEMIES } from "@/constants/data/characters/enemy/enemyDepth3";
+import { DEPTH4_ENEMIES } from "@/constants/data/characters/enemy/enemyDepth4";
+import { DEPTH5_ENEMIES } from "@/constants/data/characters/enemy/enemyDepth5";
 import type { Card, CardTag } from '@/types/cardTypes';
 
 /**

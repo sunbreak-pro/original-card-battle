@@ -4,7 +4,17 @@
  * Centralized UI-related constants including asset paths.
  */
 
-import type { ElementType } from '@/types/characterTypes';
+import type { ElementType, CharacterClass } from '@/types/characterTypes';
+
+// ============================================================
+// Player Character Image Assets
+// ============================================================
+
+export const PLAYER_CHARACTER_IMAGES: Record<CharacterClass, string> = {
+  swordsman: "/assets/images/player-character/Swordman.png",
+  mage: "/assets/images/player-character/Mage.png",
+  summoner: "/assets/images/player-character/Summoner.png",
+};
 
 // ============================================================
 // Generated Icon Assets
@@ -56,6 +66,19 @@ export const DEPTH_BACKGROUND_IMAGES: Record<number, string> = {
 export function getElementIcon(element: ElementType): string | undefined {
   return ELEMENT_MAGIC_ICONS[element] ?? ELEMENT_UTILITY_ICONS[element];
 }
+
+// ============================================================
+// Deck Limit Constants
+// ============================================================
+
+/** Maximum copies of a single card in a deck */
+export const MAX_CARD_COPIES = 3;
+
+/** Minimum deck size to start exploration */
+export const MIN_DECK_SIZE = 15;
+
+/** Maximum deck size */
+export const MAX_DECK_SIZE = 30;
 
 // ============================================================
 // Battle UI Constants

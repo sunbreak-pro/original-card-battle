@@ -10,7 +10,7 @@ import { SANCTUARY_CONSTANTS } from "../../../constants/campConstants";
 import {
   CATEGORY_DISPLAY,
   getNodeById,
-} from "../../../domain/camps/data/SanctuaryData";
+} from "@/constants/data/camps/SanctuaryData";
 interface NodeDetailPanelProps {
   node: SkillNode | null;
   status: NodeStatus;

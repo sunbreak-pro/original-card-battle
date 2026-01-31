@@ -18,7 +18,7 @@ import {
 import { ResourceProvider } from "./contexts/ResourceContext.tsx";
 import { PlayerProvider } from "./contexts/PlayerContext.tsx";
 import { InventoryProvider } from "./contexts/InventoryContext.tsx";
-import { getGuildEnemy } from "./domain/camps/data/GuildEnemyData.ts";
+import { getGuildEnemy } from "@/constants/data/camps/GuildEnemyData";
 import "./App.css";
 
 /**

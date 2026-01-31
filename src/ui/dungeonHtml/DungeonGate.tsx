@@ -5,6 +5,7 @@ import type { Depth } from "@/types/campTypes";
 import { useGameState } from "../../contexts/GameStateContext";
 import { usePlayer } from "../../contexts/PlayerContext";
 import { DEPTH_DISPLAY_INFO } from "../../constants/dungeonConstants";
+import { MIN_DECK_SIZE } from "../../constants/uiConstants";
 import FacilityHeader from "../componentsHtml/FacilityHeader";
 import { DepthSelector } from "./preparations/DepthSelector";
 import { PlayerStatusPanel } from "./preparations/PlayerStatusPanel";
@@ -110,10 +111,15 @@ export function DungeonGate() {
             onDepthSelect={handleDepthSelect}
           />
 
+          {deckCards.length < MIN_DECK_SIZE && (
+            <div className="deck-size-warning">
+              デッキが{MIN_DECK_SIZE}枚未満です（現在{deckCards.length}枚）
+            </div>
+          )}
           <button
             className="start-invasion-button"
             onClick={handleStartExploration}
-            disabled={selectedDepth === null}
+            disabled={selectedDepth === null || deckCards.length < MIN_DECK_SIZE}
           >
             {selectedDepth !== null
               ? `${DEPTH_DISPLAY_INFO[selectedDepth].japaneseName}へ侵攻`

@@ -175,7 +175,7 @@ const EnemyLocate: React.FC<{
           <img
             className="enemy-img"
             alt="enemy-img"
-            src="../../../public/assets/images/depth_1_schelton.png"
+            src="/assets/images/enemies/depth_1_schelton.png"
           />
         )}
       </div>

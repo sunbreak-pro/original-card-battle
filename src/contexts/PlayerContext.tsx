@@ -51,6 +51,11 @@ import {
   EQUIPMENT_INVENTORY_MAX,
   DEFAULT_EXPLORATION_LIMIT,
 } from "../constants";
+import {
+  calculateEquipmentAP,
+  applyDurabilityDamage,
+  distributeApDamageToEquipment,
+} from "../domain/item_equipment/logic/equipmentStats";
 
 /**
  * Internal player state used by PlayerContext.
@@ -177,6 +182,13 @@ interface PlayerContextValue {
   resetCurrentRunSouls: () => void;
   initializeWithClass: (classType: CharacterClass) => void;
 
+  // Equipment AP system
+  /** Apply durability damage to equipment and update AP. Returns new AP values. */
+  applyEquipmentDurabilityDamage: (apDamage: number) => {
+    currentAp: number;
+    maxAp: number;
+  };
+
   // Resource operations (delegated to ResourceContext)
   addGold: (amount: number, toBaseCamp?: boolean) => void;
   useGold: (amount: number) => boolean;
@@ -208,7 +220,9 @@ function getBasePlayerByClass(classType: CharacterClass): BasePlayerStats {
  * Create initial internal player state from base stats
  * Note: Gold and magic stone values come from ResourceContext
  */
-function createInitialPlayerState(basePlayer: BasePlayerStats): InternalPlayerState {
+function createInitialPlayerState(
+  basePlayer: BasePlayerStats,
+): InternalPlayerState {
   return {
     ...basePlayer,
     // Gold will be synced from ResourceContext
@@ -452,6 +466,50 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   // ============================================================
+  // Equipment AP System
+  // ============================================================
+
+  /**
+   * Apply durability damage to defense equipment when AP absorbs damage.
+   * Distributes damage proportionally across defense slots.
+   * Returns the new AP values after the durability reduction.
+   */
+  const applyEquipmentDurabilityDamage = (
+    apDamage: number,
+  ): { currentAp: number; maxAp: number } => {
+    if (apDamage <= 0) {
+      const ap = calculateEquipmentAP(playerState.equipmentSlots);
+      return { currentAp: ap.totalAP, maxAp: ap.maxAP };
+    }
+
+    const durabilityDamage = distributeApDamageToEquipment(
+      apDamage,
+      playerState.equipmentSlots,
+    );
+    const updatedSlots = applyDurabilityDamage(
+      playerState.equipmentSlots,
+      durabilityDamage,
+    );
+
+    // Update equipment slots in player state
+    setPlayerState((prev) => ({
+      ...prev,
+      equipmentSlots: updatedSlots,
+    }));
+
+    // Calculate new AP from updated equipment
+    const newAP = calculateEquipmentAP(updatedSlots);
+
+    // Also update runtime state AP
+    setRuntimeState((prev) => ({
+      ...prev,
+      currentAp: newAP.totalAP,
+    }));
+
+    return { currentAp: newAP.totalAP, maxAp: newAP.maxAP };
+  };
+
+  // ============================================================
   // Resource operations (delegated to ResourceContext)
   // These are kept for backward compatibility with existing code
   // ============================================================
@@ -631,8 +689,13 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    * Note: This resets HP/AP/mastery but preserves lives
    */
   const resetRuntimeState = () => {
+    // AP is derived from equipment durability — not reset to a base value
+    const equipAP = calculateEquipmentAP(playerState.equipmentSlots);
     setRuntimeState((prev) => ({
-      ...createInitialRuntimeState(playerState, prev.difficulty),
+      ...createInitialRuntimeState(
+        { hp: playerState.maxHp, ap: equipAP.totalAP },
+        prev.difficulty,
+      ),
       // Preserve lives when returning to camp (not resetting completely)
       lives: prev.lives,
       difficulty: prev.difficulty,
@@ -678,6 +741,12 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   /**
    * Computed PlayerData from internal state
    */
+  // Derive AP from equipment
+  const equipmentAP = useMemo(
+    () => calculateEquipmentAP(playerState.equipmentSlots),
+    [playerState.equipmentSlots],
+  );
+
   const playerData = useMemo<PlayerData>(
     () => ({
       persistent: {
@@ -687,7 +756,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         classGrade: playerState.classGrade,
         level: playerState.level,
         baseMaxHp: playerState.maxHp,
-        baseMaxAp: playerState.maxAp,
+        baseMaxAp: equipmentAP.maxAP,
         baseSpeed: playerState.speed,
         cardActEnergy: playerState.cardActEnergy,
         deckCardIds: playerState.deck.map((card) => card.id),
@@ -712,7 +781,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         completedAchievements: [],
       },
     }),
-    [playerState],
+    [playerState, equipmentAP],
   );
 
   /**
@@ -823,7 +892,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         transferSouls,
         resetCurrentRunSouls,
         initializeWithClass,
-
+        applyEquipmentDurabilityDamage,
         // Resource operations (delegated)
         addGold,
         useGold,

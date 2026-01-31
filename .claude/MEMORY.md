@@ -9,9 +9,9 @@
 
 ## Quick Reference
 
-- **Current Phase:** Phase C (Extended Features) — NEARLY COMPLETE
+- **Current Phase:** Phase C (Extended Features) — COMPLETE
 - **Dev Server:** http://localhost:5173/
-- **Last Updated:** 2026-01-31
+- **Last Updated:** 2026-02-01
 - **Type System:** `src/types/` with barrel export (`@/types/*`)
 
 ---
@@ -20,11 +20,12 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Battle System | 95% | Core, elemental chain, escape, element system, multi-enemy all complete. AoE cards pending |
+| Battle System | 98% | Core, elemental chain + resonance display, escape, element system, multi-enemy, multi-hit loop all complete. AoE cards pending |
 | Camp Facilities | 95% | Shop, Guild (Exam/Quests/Rumors), Library (Card+Enemy encyclopedias), Blacksmith, Storage all complete |
 | Dungeon System | 90% | Map generation, battle/event/rest/treasure nodes, 5-floor progression, depth 1-5 enemies |
-| Progression System | 95% | Lives + Souls + Sanctuary + equipment stat bonuses + card derivation + mastery all complete |
+| Progression System | 98% | Lives + Souls + Sanctuary + equipment stat bonuses + equipment durability + card derivation + mastery + custom deck all complete |
 | Save System | Implemented | `src/domain/save/logic/saveManager.ts` |
+| Character Images | 90% | Player images (Swordsman/Mage) displayed in battle. Summoner uses placeholder. All 40 enemies have imagePath set (images not yet created) |
 
 ---
 
@@ -34,7 +35,7 @@
 Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 
 ### Phase B: Game Experience Enhancement — COMPLETED
-- B1: Context Separation (PlayerBattleContext, EnemyBattleContext, BattleSessionContext)
+- B1: Context Separation (later removed — see Phase C cleanup)
 - B2: Summoner Class (40 cards)
 - B3: Shop Full Implementation (daily rotation, equipment)
 - B4: Guild Full Implementation (Exam, Quests, Rumors)
@@ -47,7 +48,7 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 - B11: Magic Stone Constants
 - FIX-1~3: Dead code cleanup, dungeon node UI, huge stone calc
 
-### Phase C: Extended Features — NEARLY COMPLETE
+### Phase C: Extended Features — COMPLETE
 - C1: Exploration Prep Screen (DungeonGate.tsx + preparations/) — COMPLETE
 - C2: Legacy Interface Deletion — COMPLETE
 - C3: Multi-Enemy Battle — COMPLETE (target selection, per-enemy phase, auto-retarget)
@@ -56,7 +57,19 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 - Element Refactor: slash/impact → physics unified — COMPLETE
 - Card data migration: `src/domain/cards/data/` → `src/constants/data/cards/` — COMPLETE
 - Teleport stone item — COMPLETE
-- FIX: Sword energy flat damage bonus now applied in `useCardExecution.ts` (preview + execute) — COMPLETE
+- FIX: Sword energy flat damage bonus in `useCardExecution.ts` — COMPLETE
+- Battle context cleanup: Removed `BattleProviderStack`, `PlayerBattleContext`, `EnemyBattleContext`, `BattleSessionContext` — COMPLETE
+- Camp data migration: `src/domain/camps/data/` → `src/constants/data/camps/` — COMPLETE
+- Enemy data migration: `src/domain/characters/enemy/data/` → `src/constants/data/characters/enemy/` — COMPLETE
+- Deleted `src/domain/characters/utils/typeConverters.ts` (unused) — COMPLETE
+- Elemental chain damage modifier integrated into card execution — COMPLETE
+- ElementalResonanceDisplay UI for Mage class — COMPLETE
+- Multi-hit card execution loop (per-hit damage calculation with animation delays) — COMPLETE
+- Equipment durability system (`equipmentStats.ts`, `applyEquipmentDurabilityDamage`) — COMPLETE
+- Custom deck support from PlayerContext (`deckCards`) — COMPLETE
+- Player character images in battle (PlayerFrame `<img>` tag) — COMPLETE
+- Enemy `imagePath` field added to all 40 enemies + 5 bosses — COMPLETE
+- Dead code removal from `soulSystem.ts` — COMPLETE
 
 ---
 
@@ -68,15 +81,35 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 |---------|----------|-------|
 | AoE card support | LOW | Cards that damage all enemies — no logic exists yet |
 | EnemyFrame SVG icons | LOW | Currently uses emoji placeholders (TODO in code) |
+| Enemy image assets | MEDIUM | All 40 enemies have `imagePath` set but no actual PNG files exist yet (fallback image shown) |
+| Summoner character image | LOW | Currently uses Mage.png as placeholder |
 | FacilityHeader unused `variant` prop | LOW | Prop accepted but not used |
-| Build errors (pre-existing) | MEDIUM | `useDeckManage.ts:12` wrong import path; `NodeMap.tsx:252` missing `.remaining` on LivesSystem |
+| Build error (pre-existing) | MEDIUM | `NodeMap.tsx:252` — `Property 'remaining' does not exist on type 'LivesSystem'` |
 
 ### Class Ability Hooks
 
-All class hooks implemented and wired via `useClassAbility.ts`:
-- Swordsman: `useSwordEnergy()` (inside useClassAbility.ts)
-- Mage: `useElementalChain.ts`
-- Summoner: `useSummonSystem.ts`
+All class hooks implemented and wired via `useBattleOrchestrator`:
+- Swordsman: `useSwordEnergy()` (inside `useClassAbility.ts`)
+- Mage: `useElementalChain()` (in `useElementalChain.ts`, integrated into orchestrator + `ElementalResonanceDisplay` UI)
+- Summoner: `useSummonSystem()` (in `useSummonSystem.ts`)
+
+---
+
+## Recent Architecture Changes
+
+### Battle Context Simplification
+The separate battle contexts (`BattleProviderStack`, `PlayerBattleContext`, `EnemyBattleContext`, `BattleSessionContext`) have been **removed**. `useBattleOrchestrator` directly returns all battle state — no intermediate contexts needed.
+
+### Data Location Migration
+- Camp data: `src/domain/camps/data/` → `src/constants/data/camps/`
+- Enemy data: `src/domain/characters/enemy/data/` → `src/constants/data/characters/enemy/`
+- Card data was already migrated to `src/constants/data/cards/`
+
+### Card Execution Multi-Hit
+`useCardExecution.ts` now executes a per-hit loop for cards with `hitCount > 1`. Each hit independently calculates damage, allocation, lifesteal, and reflect, with 500ms delays between hits.
+
+### Elemental Resonance Integration
+`useElementalChain` hook is called unconditionally in `useBattleOrchestrator`. `getElementalDamageModifier` is passed into `CardExecutionSetters` and applied as a `percentMultiplier` to base damage during both preview and execution.
 
 ---
 
@@ -87,8 +120,9 @@ All class hooks implemented and wired via `useClassAbility.ts`:
 | `public/assets/images/facility-backgrounds/` | Camp facility backgrounds |
 | `public/assets/images/depth-backgrounds/` | Dungeon depth backgrounds |
 | `public/assets/images/elements/` | Element icons |
-| `public/assets/images/enemies/` | Enemy sprites |
+| `public/assets/images/enemies/` | Enemy sprites (most pending creation) |
 | `public/assets/images/icons/` | UI icons |
+| `public/assets/images/player-character/` | Player class images (Swordman.png, Mage.png, Summoner.png placeholder) |
 
 ---
 

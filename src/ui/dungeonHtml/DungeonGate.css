@@ -309,7 +309,6 @@
 .dungeon-gate-screen .prep-card-wrapper.selected {
   z-index: 10;
   transform: scale(1.05) !important;
-  box-shadow: #c7c7c7 0 0 0.2vh;
 }
 
 /* Card slot (wrapper + button) */
@@ -333,9 +332,9 @@
 
 /* Count badge on deck cards */
 .dungeon-gate-screen .card-count {
-  position: relative;
-  top: .75vh;
-  right: -10vw;
+  position: absolute;
+  top: -.75vh;
+  right: -1.5vw;
   background: rgba(201, 160, 220, 0.95);
   color: #fff;
   font-size: 1.3vh;

@@ -9,7 +9,7 @@ import type {
 import {
   SKILL_TREE_NODES,
   getNodeById,
-} from "../../../domain/camps/data/SanctuaryData";
+} from "@/constants/data/camps/SanctuaryData";
 import { getNodeStatus } from "../../../domain/camps/logic/sanctuaryLogic";
 import SkillNode from "./SkillNode";
 

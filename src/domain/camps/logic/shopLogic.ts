@@ -4,7 +4,7 @@ import type { Item, ItemRarity, MagicStones } from '@/types/itemTypes';
 import { generateConsumableFromData, generateEquipmentItem } from "../../item_equipment/logic/generateItem";
 import { EQUIPMENT_SLOTS, MAGIC_STONE_VALUES } from "../../../constants/itemConstants";
 import type { EquipmentPackConfig, ShopListing } from '@/types/campTypes';
-import { getEquipmentPackById, resolveShopListing } from "../data/ShopData";
+import { getEquipmentPackById, resolveShopListing } from "@/constants/data/camps/ShopData";
 
 /**
  * Check if player can afford an item

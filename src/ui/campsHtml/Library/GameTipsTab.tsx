@@ -9,7 +9,7 @@ import {
   getAllTips,
   getTipStats,
   CATEGORY_NAMES,
-} from "../../../domain/camps/data/GameTipsData";
+} from "@/constants/data/camps/GameTipsData";
 import type { TipCategory } from '@/types/campTypes';
 
 /**
