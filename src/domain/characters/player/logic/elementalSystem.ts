@@ -45,9 +45,11 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
    * Handle card play - update resonance if elemental card
    */
   onCardPlay(state: ElementalState, card: Card): ElementalState {
-    // Only magic elements can build/maintain resonance chain
-    if (!card.element || !MAGIC_ELEMENTS.has(card.element)) {
-      // Non-magic element card breaks the resonance
+    // Find a magic element in the card's element array
+    const magicElement = card.element.find(e => MAGIC_ELEMENTS.has(e));
+
+    if (!magicElement) {
+      // No magic element - breaks the resonance
       return {
         ...state,
         lastElement: null,
@@ -55,9 +57,10 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
       };
     }
 
-    const isSameElement = state.lastElement === card.element;
+    // Check if any element in the array matches the current chain
+    const continuesChain = state.lastElement !== null && card.element.includes(state.lastElement);
 
-    if (isSameElement) {
+    if (continuesChain) {
       // Continue resonance - increase level up to max
       const newLevel = Math.min(MAX_RESONANCE_LEVEL, state.resonanceLevel + 1) as ResonanceLevel;
       return {
@@ -65,10 +68,10 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
         resonanceLevel: newLevel,
       };
     } else {
-      // Different element - reset and start new resonance
+      // Different element - reset and start new resonance with found magic element
       return {
         ...state,
-        lastElement: card.element,
+        lastElement: magicElement,
         resonanceLevel: 0,
       };
     }
@@ -98,7 +101,7 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
    */
   getDamageModifier(state: ElementalState, card?: Card): DamageModifier {
     // Only apply bonus if playing an elemental card matching current element
-    if (!card?.element || card.element !== state.lastElement) {
+    if (!card?.element || !state.lastElement || !card.element.includes(state.lastElement)) {
       return DEFAULT_DAMAGE_MODIFIER;
     }
 
@@ -139,12 +142,14 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
       lightning: "雷",
       dark: "闇",
       light: "光",
-      slash: "斬",
-      impact: "衝",
+      physics: "物",
       guard: "盾",
       summon: "召",
       enhance: "強",
       sacrifice: "犠",
+      buff: "強",
+      debuff: "弱",
+      heal: "癒",
     };
 
     const elementName = state.lastElement ? elementNames[state.lastElement] : "";
@@ -219,7 +224,7 @@ export function updateResonance(
   state: ElementalState,
   cardElement: ElementType | undefined
 ): ElementalState {
-  return ElementalSystem.onCardPlay(state, { element: cardElement } as Card);
+  return ElementalSystem.onCardPlay(state, { element: cardElement ? [cardElement] : [] } as Card);
 }
 
 /**
@@ -238,7 +243,7 @@ export function resetResonance(state: ElementalState): ElementalState {
  */
 export function isMatchingElement(
   state: ElementalState,
-  element: ElementType | undefined
+  elements: ElementType[] | undefined
 ): boolean {
-  return element !== undefined && state.lastElement === element;
+  return elements !== undefined && state.lastElement !== null && elements.includes(state.lastElement);
 }

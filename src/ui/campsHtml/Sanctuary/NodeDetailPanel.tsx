@@ -37,44 +37,30 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
   playerClass,
   onUnlock,
 }) => {
-  const [unlockProgress, setUnlockProgress] = useState(0);
   const [isUnlocking, setIsUnlocking] = useState(false);
-  const holdTimerRef = useRef<number | null>(null);
-  const progressIntervalRef = useRef<number | null>(null);
+  const completionTimerRef = useRef<number | null>(null);
 
   const canAfford = node ? totalSouls >= node.cost : false;
   const canUnlock = status === "available" && canAfford;
 
   const clearTimers = useCallback(() => {
-    if (holdTimerRef.current) {
-      clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = null;
-    }
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
+    if (completionTimerRef.current) {
+      clearTimeout(completionTimerRef.current);
+      completionTimerRef.current = null;
     }
     setIsUnlocking(false);
-    setUnlockProgress(0);
   }, []);
 
   const startUnlock = useCallback(() => {
     if (!node || !canUnlock) return;
 
     setIsUnlocking(true);
-    const startTime = Date.now();
-    const duration = SANCTUARY_CONSTANTS.UNLOCK_HOLD_DURATION;
 
-    progressIntervalRef.current = window.setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min((elapsed / duration) * 100, 100);
-      setUnlockProgress(progress);
-
-      if (progress >= 100) {
-        clearTimers();
-        onUnlock(node);
-      }
-    }, 16); // ~60fps
+    // CSS transition handles the visual progress; setTimeout detects completion
+    completionTimerRef.current = window.setTimeout(() => {
+      clearTimers();
+      onUnlock(node);
+    }, SANCTUARY_CONSTANTS.UNLOCK_HOLD_DURATION);
   }, [node, canUnlock, clearTimers, onUnlock]);
 
   const handleMouseDown = useCallback(() => {
@@ -227,10 +213,7 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
               onTouchStart={handleMouseDown}
               onTouchEnd={handleMouseUp}
             >
-              <div
-                className="unlock-progress"
-                style={{ width: `${unlockProgress}%` }}
-              />
+              <div className="unlock-progress" />
               <span className="button-text">
                 {isUnlocking
                   ? "長押しで解放中..."

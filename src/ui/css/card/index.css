@@ -1,0 +1,9 @@
+/* =========================================
+   Card CSS - Index
+   =========================================
+   Import this file to get all shared card styles.
+   For battle-specific styles, also import card-battle.css.
+   For grid/collection displays, also import card-grid.css.
+   ========================================= */
+
+@import "./card-base.css";

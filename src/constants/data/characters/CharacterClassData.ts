@@ -7,9 +7,9 @@
 
 import type { CharacterClass } from "@/types/characterTypes";
 import type { Card } from "@/types/cardTypes";
-import { SWORDSMAN_CARDS } from "../../../domain/cards/data/SwordmanCards";
-import { MAGE_CARDS } from "../../../domain/cards/data/mageCards";
-import { SUMMONER_CARDS } from "../../../domain/cards/data/summonerCards";
+import { SWORDSMAN_CARDS } from "../cards/SwordmanCards";
+import { MAGE_CARDS } from "../cards/mageCards";
+import { SUMMONER_CARDS } from "../cards/summonerCards";
 import { INITIAL_DECK_BY_CLASS } from "../battles/initialDeckConfig";
 
 /**
@@ -94,7 +94,7 @@ function createSummonerStarterDeck(): Card[] {
  * Get card data by character class
  * Returns the card definitions for a specific class
  */
-function getCardDataByClass(classType: CharacterClass): Record<string, Card> {
+export function getCardDataByClass(classType: CharacterClass): Record<string, Card> {
   switch (classType) {
     case "swordsman":
       return SWORDSMAN_CARDS;
@@ -136,68 +136,68 @@ export function getStarterDeckStacks(
  * Character class data for all playable classes
  */
 export const CHARACTER_CLASS_DATA: Record<CharacterClass, CharacterClassInfo> =
-  {
-    swordsman: {
-      class: "swordsman",
-      name: "Swordsman",
-      japaneseName: "剣士",
-      description:
-        "剣気を操る近接戦闘のスペシャリスト。攻撃を重ねるごとに剣気が蓄積され、強力な必殺技を放つことができる。バランスの取れたステータスと安定した戦闘スタイルが特徴。",
-      uniqueMechanic: "Sword Energy",
-      mechanicDescription:
-        "攻撃カードを使用するたびに剣気が蓄積。剣気を消費して強力な技を発動できる。",
-      stats: {
-        hp: 100,
-        ap: 30,
-        speed: 50,
-        cardActEnergy: 3,
-      },
-      starterDeck: createSwordsmanStarterDeck(),
-      isAvailable: true,
-      themeColor: "#ef4444", // Red
-      icon: "sword",
+{
+  swordsman: {
+    class: "swordsman",
+    name: "Swordsman",
+    japaneseName: "剣士",
+    description:
+      "剣気を操る近接戦闘のスペシャリスト。攻撃を重ねるごとに剣気が蓄積され、強力な必殺技を放つことができる。バランスの取れたステータスと安定した戦闘スタイルが特徴。",
+    uniqueMechanic: "Sword Energy",
+    mechanicDescription:
+      "攻撃カードを使用するたびに剣気が蓄積。剣気を消費して強力な技を発動できる。",
+    stats: {
+      hp: 100,
+      ap: 30,
+      speed: 50,
+      cardActEnergy: 3,
     },
-    mage: {
-      class: "mage",
-      name: "Mage",
-      japaneseName: "魔術師",
-      description:
-        "火・水・雷の三属性を操る魔法使い。属性の連鎖により威力が増幅され、敵を焼き尽くす。HPは低いが、高い火力と豊富な範囲攻撃を持つ。",
-      uniqueMechanic: "Elemental Resonance",
-      mechanicDescription:
-        "同属性カードを連続使用すると共鳴レベルが上昇。最大Lv2でダメージ+30%と属性効果発動。",
-      stats: {
-        hp: 60,
-        ap: 20,
-        speed: 60,
-        cardActEnergy: 3,
-      },
-      starterDeck: createMageStarterDeck(),
-      isAvailable: true,
-      themeColor: "#3b82f6", // Blue
-      icon: "staff",
+    starterDeck: createSwordsmanStarterDeck(),
+    isAvailable: true,
+    themeColor: "#ef4444", // Red
+    icon: "sword",
+  },
+  mage: {
+    class: "mage",
+    name: "Mage",
+    japaneseName: "魔術師",
+    description:
+      "火・水・雷の三属性を操る魔法使い。属性の連鎖により威力が増幅され、敵を焼き尽くす。HPは低いが、高い火力と豊富な範囲攻撃を持つ。",
+    uniqueMechanic: "Elemental Resonance",
+    mechanicDescription:
+      "同属性カードを連続使用すると共鳴レベルが上昇。最大Lv2でダメージ+30%と属性効果発動。",
+    stats: {
+      hp: 60,
+      ap: 20,
+      speed: 60,
+      cardActEnergy: 3,
     },
-    summoner: {
-      class: "summoner",
-      name: "Summoner",
-      japaneseName: "召喚士",
-      description:
-        "異界の生物を召喚し戦わせるテクニカルなクラス。召喚獣が戦闘を代行し、本人は後方から支援を行う。召喚獣の組み合わせにより多彩な戦略が可能。",
-      uniqueMechanic: "Summon System",
-      mechanicDescription:
-        "召喚獣を場に出して戦わせる。召喚獣は独自のHPを持ち、自動で攻撃を行う。",
-      stats: {
-        hp: 80,
-        ap: 25,
-        speed: 40,
-        cardActEnergy: 3,
-      },
-      starterDeck: createSummonerStarterDeck(),
-      isAvailable: true,
-      themeColor: "#22c55e", // Green
-      icon: "summon",
+    starterDeck: createMageStarterDeck(),
+    isAvailable: true,
+    themeColor: "#3b82f6", // Blue
+    icon: "staff",
+  },
+  summoner: {
+    class: "summoner",
+    name: "Summoner",
+    japaneseName: "召喚士",
+    description:
+      "異界の生物を召喚し戦わせるテクニカルなクラス。召喚獣が戦闘を代行し、本人は後方から支援を行う。召喚獣の組み合わせにより多彩な戦略が可能。",
+    uniqueMechanic: "Summon System",
+    mechanicDescription:
+      "召喚獣を場に出して戦わせる。召喚獣は独自のHPを持ち、自動で攻撃を行う。",
+    stats: {
+      hp: 80,
+      ap: 25,
+      speed: 40,
+      cardActEnergy: 3,
     },
-  };
+    starterDeck: createSummonerStarterDeck(),
+    isAvailable: true,
+    themeColor: "#22c55e", // Green
+    icon: "summon",
+  },
+};
 
 /**
  * Get character class info by class type

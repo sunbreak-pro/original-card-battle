@@ -84,8 +84,9 @@ export interface SwordEnergyState {
  */
 export type ElementType =
   | "fire" | "ice" | "lightning" | "dark" | "light"
-  | "slash" | "impact" | "guard"
-  | "summon" | "enhance" | "sacrifice";
+  | "physics" | "guard"
+  | "summon" | "enhance" | "sacrifice"
+  | "buff" | "debuff" | "heal";
 
 /**
  * Resonance level for elemental chain effects
@@ -226,6 +227,8 @@ export interface EnemyDefinition {
 
   // Display
   imagePath?: string;
+  /** Display width in vw units (Minion: 14-16, Standard: 18-20, Elite: 22-24, Boss: 28-32) */
+  displayWidth?: number;
 }
 
 /**

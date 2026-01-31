@@ -12,7 +12,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  width: 32vw;
+  width: fit-content;
+  max-width: 50vw;
   height: 26vw;
 }
 
@@ -28,12 +29,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 28vw;
   cursor: default;
-}
-
-.enemy-locate-small {
-  width: 18vw;
+  /* width is set via inline style from displayWidth */
 }
 
 .enemy-name {

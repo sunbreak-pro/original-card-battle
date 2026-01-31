@@ -11,7 +11,7 @@
 
 - **Current Phase:** Phase C (Extended Features) — NEARLY COMPLETE
 - **Dev Server:** http://localhost:5173/
-- **Last Updated:** 2026-01-30
+- **Last Updated:** 2026-01-31
 - **Type System:** `src/types/` with barrel export (`@/types/*`)
 
 ---
@@ -47,12 +47,15 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 - B11: Magic Stone Constants
 - FIX-1~3: Dead code cleanup, dungeon node UI, huge stone calc
 
-### Phase C: Extended Features — IN PROGRESS
-- C1: Exploration Prep Screen (DungeonGate.tsx) — COMPLETE
+### Phase C: Extended Features — NEARLY COMPLETE
+- C1: Exploration Prep Screen (DungeonGate.tsx + preparations/) — COMPLETE
 - C2: Legacy Interface Deletion — COMPLETE
 - C3: Multi-Enemy Battle — COMPLETE (target selection, per-enemy phase, auto-retarget)
 - C4: Library Full Implementation — COMPLETE
 - C5: Dungeon Events — COMPLETE
+- Element Refactor: slash/impact → physics unified — COMPLETE
+- Card data migration: `src/domain/cards/data/` → `src/constants/data/cards/` — COMPLETE
+- Teleport stone item — COMPLETE
 
 ---
 
@@ -65,6 +68,7 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 | AoE card support | LOW | Cards that damage all enemies — no logic exists yet |
 | EnemyFrame SVG icons | LOW | Currently uses emoji placeholders (TODO in code) |
 | FacilityHeader unused `variant` prop | LOW | Prop accepted but not used |
+| Build errors (pre-existing) | MEDIUM | `useDeckManage.ts:12` wrong import path; `NodeMap.tsx:252` missing `.remaining` on LivesSystem |
 
 ### Class Ability Hooks
 

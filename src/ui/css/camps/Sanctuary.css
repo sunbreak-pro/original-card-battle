@@ -280,7 +280,8 @@
 .skill-node.available .skill-node-inner {
   background: rgba(88, 28, 135, 0.95);
   border-color: rgba(168, 85, 247, 0.6);
-  animation: pulse-available 2s ease-in-out infinite;
+  animation: pulse-available 3s ease-in-out infinite;
+  will-change: box-shadow;
 }
 
 .skill-node.available:hover .skill-node-inner {
@@ -331,10 +332,10 @@
 
 @keyframes pulse-available {
   0%, 100% {
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
   }
   50% {
-    box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+    box-shadow: 0 0 18px rgba(168, 85, 247, 0.5);
   }
 }
 
@@ -637,21 +638,29 @@
   top: 0;
   left: 0;
   height: 100%;
+  width: 0%;
   background: rgba(168, 85, 247, 0.4);
-  transition: width 0.05s linear;
   z-index: 1;
 }
 
+.unlock-button.unlocking .unlock-progress {
+  width: 100%;
+  transition: width 1500ms linear;
+}
+
 .unlock-button.unlocking {
-  animation: glow-unlock 0.5s ease-in-out infinite alternate;
+  animation: glow-unlock 1.5s ease-in-out;
 }
 
 @keyframes glow-unlock {
-  from {
-    box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+  0% {
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
   }
-  to {
+  50% {
     box-shadow: 0 0 25px rgba(168, 85, 247, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
   }
 }
 

@@ -10,6 +10,7 @@ export const IRON_AUTOMATON: EnemyDefinition = {
   baseSpeed: 30,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 20,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "鉄拳", type: "attack", baseDamage: 10, displayIcon: "🤖", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "蒸気噴射", type: "debuff", baseDamage: 8, applyDebuffs: [{ name: "burn", stacks: 1, duration: 2, value: 4, isPermanent: false }], displayIcon: "💨", priority: 1, energyCost: 1 } },
@@ -29,6 +30,7 @@ export const GHOUL: EnemyDefinition = {
   baseSpeed: 40,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 18,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "腐爪", type: "debuff", baseDamage: 9, applyDebuffs: [{ name: "poison", stacks: 1, duration: 3, value: 4, isPermanent: false }], displayIcon: "🦴", priority: 1, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "噛みつき", type: "attack", baseDamage: 11, displayIcon: "🦷", priority: 0, energyCost: 1 } },
@@ -47,6 +49,7 @@ export const CAVE_BAT_SWARM: EnemyDefinition = {
   baseSpeed: 65,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 16,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "群れの襲撃", type: "attack", baseDamage: 5, hitCount: 3, displayIcon: "🦇", priority: 0, energyCost: 1 }, probability: 0.7 },
     { phaseNumber: 0, action: { name: "超音波", type: "debuff", baseDamage: 4, applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "🔊", priority: 1, energyCost: 1 }, probability: 0.3 },
@@ -63,6 +66,7 @@ export const RUNIC_GOLEM: EnemyDefinition = {
   baseSpeed: 20,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 22,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "岩砕き", type: "attack", baseDamage: 15, displayIcon: "🪨", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "ルーン防壁", type: "buff", baseDamage: 0, guardGain: 15, displayIcon: "🛡️", priority: 1, energyCost: 1 } },
@@ -82,6 +86,7 @@ export const SKELETON_ARCHER: EnemyDefinition = {
   baseSpeed: 50,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 15,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "骨矢", type: "attack", baseDamage: 8, displayIcon: "🏹", priority: 0, energyCost: 1 }, probability: 0.7 },
     { phaseNumber: 0, action: { name: "毒矢", type: "debuff", baseDamage: 6, applyDebuffs: [{ name: "poison", stacks: 1, duration: 2, value: 3, isPermanent: false }], displayIcon: "☠️", priority: 1, energyCost: 1 }, probability: 0.3 },
@@ -98,6 +103,7 @@ export const CLOCKWORK_SPIDER: EnemyDefinition = {
   baseSpeed: 55,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 16,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "鋼糸", type: "debuff", baseDamage: 8, applyDebuffs: [{ name: "slow", stacks: 1, duration: 2, value: 10, isPermanent: false }], displayIcon: "🕸️", priority: 1, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "電撃噛みつき", type: "debuff", baseDamage: 10, applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "⚡", priority: 1, energyCost: 1 } },
@@ -116,6 +122,7 @@ export const GHOST_WISP: EnemyDefinition = {
   baseSpeed: 70,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 14,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "霊火", type: "attack", baseDamage: 9, displayIcon: "👻", priority: 0, energyCost: 1 }, probability: 0.6 },
     { phaseNumber: 0, action: { name: "呪縛の光", type: "debuff", baseDamage: 5, applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 2, value: 15, isPermanent: false }], displayIcon: "🔮", priority: 1, energyCost: 1 }, probability: 0.4 },
@@ -132,6 +139,7 @@ export const IRON_REVENANT: EnemyDefinition = {
   baseSpeed: 45,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 30,
   aiPatterns: [
     // Phase 1: HP > 66% - Heavy physical attacks
     { phaseNumber: 1, condition: (hp, maxHp) => hp > maxHp * 0.66, action: { name: "鉄槌", type: "attack", baseDamage: 12, displayIcon: "🔨", priority: 0, energyCost: 1 } },

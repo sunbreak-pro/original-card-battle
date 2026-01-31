@@ -61,8 +61,8 @@ const GuildBattleScreen = ({
     openDiscardPile,
     closePileModal,
     battleResult,
-    phaseQueue,
     currentPhaseIndex,
+    expandedPhaseEntries,
   } = useBattle(1, [examEnemy]); // Fixed depth=1, specific enemy
 
   // Handle battle result callbacks
@@ -106,8 +106,9 @@ const GuildBattleScreen = ({
 
       {/* Phase system - TurnOrderIndicator */}
       <TurnOrderIndicator
-        phaseQueue={phaseQueue}
+        expandedEntries={expandedPhaseEntries}
         currentPhaseIndex={currentPhaseIndex}
+        enemyCount={aliveEnemies.length}
       />
 
       <div className="battle-field">

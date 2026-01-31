@@ -43,14 +43,19 @@ npm run lint      # ESLint
 | クラス | 固有メカニクス | カード枚数 |
 |--------|--------------|-----------|
 | 剣士 (Swordsman) | 剣気ゲージ（エネルギー蓄積で強力な技を発動） | 全42枚 |
-| 魔術師 (Mage) | 属性共鳴（属性連鎖でダメージ倍率上昇+フィールドバフ） | 全40枚以上 |
+| 魔術師 (Mage) | 属性共鳴（属性連鎖でダメージ倍率上昇+フィールドバフ） | 全40枚 |
 | 召喚士 (Summoner) | 召喚システム（最大3体の召喚獣、絆レベルで強化） | 全40枚 |
 
 スターターデッキは各クラス15枚。
 
 ### 属性システム
 
-fire, ice, lightning, dark, light, slash, shock, guard, summon, enhance, sacrifice
+| カテゴリ | 属性 |
+|---------|------|
+| 魔法系 | fire, ice, lightning, dark, light |
+| 物理系 | physics, guard |
+| 召喚系 | summon, enhance, sacrifice |
+| ユーティリティ系 | buff, debuff, heal |
 
 ### バトルシステム
 
@@ -105,7 +110,7 @@ src/
 ├── domain/         # ビジネスロジック（純粋関数中心）
 │   ├── battles/    # バトルシステム（フック、ロジック、計算）
 │   ├── camps/      # キャンプ施設（ショップ、鍛冶屋、聖域等）
-│   ├── cards/      # カードデータ、デッキ管理、熟練度
+│   ├── cards/      # デッキ管理、熟練度（カードデータは constants/data/cards/）
 │   ├── characters/ # プレイヤー・敵キャラクター
 │   ├── dungeon/    # ダンジョン生成・イベント
 │   ├── item_equipment/ # アイテム・装備ロジック
@@ -113,11 +118,11 @@ src/
 ├── ui/             # React コンポーネント（画面別）
 │   ├── battleHtml/     # バトル画面
 │   ├── campsHtml/      # キャンプ施設UI
-│   ├── dungeonHtml/    # ダンジョンマップ + DungeonRunContext
+│   ├── dungeonHtml/    # ダンジョンマップ + DungeonRunContext + preparations/
 │   ├── cardHtml/       # カード表示
 │   ├── characterSelectHtml/ # キャラ選択
 │   ├── componentsHtml/ # 共通コンポーネント
-│   └── css/            # スタイルシート
+│   └── css/            # スタイルシート（battle/, card/, camps/, core/, components/, pages/, animations/）
 └── utils/          # ユーティリティ
 ```
 
@@ -169,7 +174,6 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 ### 未実装
 
 - AoEカード（全敵同時ダメージ）
-- テレポートストーンアイテム
 - EnemyFrame の SVG アイコン化（現在は絵文字）
 
 ## Coding Conventions
@@ -227,6 +231,12 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 - Phase C ほぼ完了（C1-C5 + B4 全完了）
 - 属性システム拡張（6新属性追加）
 - 全カードにelement追加
+
+### 2025年1月31日
+- slash/impact 属性を physics に統合
+- カードデータを `src/constants/data/cards/` に移行
+- 探索準備画面（preparations/）追加
+- テレポートストーンアイテム実装
 
 </details>
 

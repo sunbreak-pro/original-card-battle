@@ -104,16 +104,18 @@ const EnemyLocate: React.FC<{
     state.definition.actEnergy, // enemy energy
   );
 
-  const sizeClass = size === "small" ? "enemy-locate-small" : "";
-
   const actionType = getActionType(nextAction);
 
   const targetedClass = isTargeted ? "enemy-targeted" : "";
   const clickableClass = isClickable ? "enemy-clickable" : "";
 
+  // Use displayWidth from definition, with fallback based on size
+  const widthVw = state.definition.displayWidth ?? (size === "small" ? 18 : 28);
+
   return (
     <div
-      className={`enemy-locate ${sizeClass} ${targetedClass} ${clickableClass}`}
+      className={`enemy-locate ${targetedClass} ${clickableClass}`}
+      style={{ width: `${widthVw}vw` }}
       onClick={isClickable ? onClick : undefined}
     >
       {/* Enemy name with action icon */}

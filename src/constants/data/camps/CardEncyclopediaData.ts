@@ -5,9 +5,9 @@
  * Includes Swordsman, Mage, and Summoner cards.
  */
 
-import { SWORDSMAN_CARDS } from "../../../domain/cards/data/SwordmanCards";
-import { MAGE_CARDS } from "../../../domain/cards/data/mageCards";
-import { SUMMONER_CARDS } from "../../../domain/cards/data/summonerCards";
+import { SWORDSMAN_CARDS } from "@/constants/data/cards/SwordmanCards";
+import { MAGE_CARDS } from "@/constants/data/cards/mageCards";
+import { SUMMONER_CARDS } from "@/constants/data/cards/summonerCards";
 import type { Card } from '@/types/cardTypes';
 import type { CardEncyclopediaEntry } from '@/types/campTypes';
 

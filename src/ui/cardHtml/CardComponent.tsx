@@ -1,6 +1,7 @@
 // src/ui/cardUI/CardComponent.tsx
 import React from "react";
 import type { Card, Depth } from "@/types/cardTypes";
+import type { ElementType } from "@/types/characterTypes";
 import { calculateEffectivePower } from "../../domain/cards/state/card";
 import { getElementIcon } from "../../constants/uiConstants";
 import { MASTERY_THRESHOLDS } from "../../constants/cardConstants";
@@ -30,18 +31,29 @@ export const CardComponent: React.FC<CardComponentProps> = ({
     `mastery-${card.masteryLevel}`,
   ].join(" ");
 
-  const elementIconPath = getElementIcon(card.element);
+  const elementIcons = card.element
+    .map((e) => ({ element: e, path: getElementIcon(e) }))
+    .filter(
+      (entry): entry is { element: ElementType; path: string } =>
+        entry.path !== undefined,
+    );
+  const multiElement = elementIcons.length > 1;
 
   return (
     <div className={cardClasses}>
       <div className={`card-cost ${primaryTag}-badge`}>{card.cost}</div>
       <div className="card-header">
-        {elementIconPath && (
-          <img
-            className="card-element-icon"
-            src={elementIconPath}
-            alt={card.element}
-          />
+        {elementIcons.length > 0 && (
+          <div className={`card-element-icons${multiElement ? "multi" : ""}`}>
+            {elementIcons.map(({ element, path }) => (
+              <img
+                key={element}
+                className="card-element-icon"
+                src={path}
+                alt={element}
+              />
+            ))}
+          </div>
         )}
         <div className={`card-badge ${primaryTag}-badge`}>{primaryTag}</div>
       </div>

@@ -2,20 +2,19 @@
  * Turn Order Indicator
  * Battle System Ver 5.0 - Horizontal Phase Display
  *
- * Shows 2-4 phases in horizontal layout with icons
+ * Shows 2-4 phases in horizontal layout with icons.
+ * Supports multi-enemy display (E1, E2, etc.)
  */
 
 import React from "react";
-import type {
-  PhaseQueue,
-  PhaseActor,
-} from '@/types/battleTypes';
+import type { PhaseEntry } from '@/types/battleTypes';
 import "../css/battle/TurnOrderIndicator.css";
 import { MAX_TURN_ORDER_DISPLAY } from "../../constants";
 
 interface TurnOrderIndicatorProps {
-  phaseQueue: PhaseQueue | null;
+  expandedEntries: PhaseEntry[];
   currentPhaseIndex: number;
+  enemyCount: number;
 }
 
 // Diamond-shaped icons matching .pen design
@@ -25,46 +24,55 @@ const PlayerIcon: React.FC<{ isActive: boolean }> = ({ isActive }) => (
   </div>
 );
 
-const EnemyIcon: React.FC<{ isActive: boolean }> = ({ isActive }) => (
+const EnemyIcon: React.FC<{ isActive: boolean; label?: string }> = ({ isActive, label }) => (
   <div className={`phase-icon-diamond enemy ${isActive ? "active" : ""}`}>
-    <span className="icon-letter">E</span>
+    <span className="icon-letter">{label ?? "E"}</span>
   </div>
 );
 
 export const TurnOrderIndicator: React.FC<TurnOrderIndicatorProps> = ({
-  phaseQueue,
+  expandedEntries,
   currentPhaseIndex,
+  enemyCount,
 }) => {
-  if (!phaseQueue || phaseQueue.phases.length === 0) {
+  if (expandedEntries.length === 0) {
     return null;
   }
 
-  // Display 2-4 phases from current position
-  const displayCount = Math.min(MAX_TURN_ORDER_DISPLAY, phaseQueue.phases.length);
-  const phasesToShow: { actor: PhaseActor; index: number }[] = [];
+  // Display 2-4 phases from current position, wrapping around
+  const displayCount = Math.min(MAX_TURN_ORDER_DISPLAY, expandedEntries.length);
+  const phasesToShow: { entry: PhaseEntry; index: number }[] = [];
 
   for (let i = 0; i < displayCount; i++) {
-    const phaseIndex = (currentPhaseIndex + i) % phaseQueue.phases.length;
+    const phaseIndex = (currentPhaseIndex + i) % expandedEntries.length;
     phasesToShow.push({
-      actor: phaseQueue.phases[phaseIndex],
+      entry: expandedEntries[phaseIndex],
       index: phaseIndex,
     });
   }
 
   return (
     <div className="turn-order-indicator">
-      {phasesToShow.map((phase, displayIndex) => (
-        <React.Fragment key={`${phase.index}-${displayIndex}`}>
-          {phase.actor === "player" ? (
-            <PlayerIcon isActive={displayIndex === 0} />
-          ) : (
-            <EnemyIcon isActive={displayIndex === 0} />
-          )}
-          {displayIndex < phasesToShow.length - 1 && (
-            <span className="phase-arrow">→</span>
-          )}
-        </React.Fragment>
-      ))}
+      {phasesToShow.map((phase, displayIndex) => {
+        const entry = phase.entry;
+        let enemyLabel: string | undefined;
+        if (entry.actor === "enemy" && enemyCount > 1 && entry.enemyIndex != null) {
+          enemyLabel = `E${entry.enemyIndex + 1}`;
+        }
+
+        return (
+          <React.Fragment key={`${phase.index}-${displayIndex}`}>
+            {entry.actor === "player" ? (
+              <PlayerIcon isActive={displayIndex === 0} />
+            ) : (
+              <EnemyIcon isActive={displayIndex === 0} label={enemyLabel} />
+            )}
+            {displayIndex < phasesToShow.length - 1 && (
+              <span className="phase-arrow">→</span>
+            )}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 };

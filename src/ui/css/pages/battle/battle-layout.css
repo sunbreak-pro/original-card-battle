@@ -53,11 +53,11 @@
    ========================================= */
 .battle-field {
   position: absolute;
-  top: 10vh;
+  top: 18vh;
   left: 5vw;
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: flex-end;
   width: 90vw;
   height: 51vh;
@@ -69,29 +69,26 @@
    ========================================= */
 .player-section {
   display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 3vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
   width: 22vw;
   height: 100%;
 }
 
 .player-field {
-  flex: 0.75;
   gap: 1.5vh;
   align-items: center;
   display: flex;
   flex-direction: column;
 }
 
-.energy-and-ability {
-  flex: 0.25;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2vh;
+/* Class ability display positioned at header right */
+.class-ability-header {
+  position: absolute;
+  top: 6vh;
+  right: 2vw;
+  z-index: 10;
 }
 
 /* =========================================
@@ -155,4 +152,33 @@
   text-shadow: 0 0 2vh var(--theme-glow);
   text-align: center;
   letter-spacing: 0.5vw;
+}
+
+/* Escape animation phases */
+.escape-attempting {
+  animation: escapeAttempt 1.2s ease-in-out forwards;
+}
+
+.escape-success {
+  animation: turnMessageAppear 1.5s ease-in-out forwards;
+}
+
+.escape-success .turn-message-text {
+  color: #66ff66;
+  text-shadow: 0 0 2vh rgba(102, 255, 102, 0.5);
+}
+
+.escape-failure {
+  animation: turnMessageAppear 1.5s ease-in-out forwards;
+}
+
+.escape-failure .turn-message-text {
+  color: #ff6666;
+  text-shadow: 0 0 2vh rgba(255, 102, 102, 0.5);
+}
+
+@keyframes escapeAttempt {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }

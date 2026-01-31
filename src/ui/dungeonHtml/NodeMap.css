@@ -81,6 +81,34 @@
   color: var(--map-accent, #c9a0dc);
 }
 
+/* Player Status Bar */
+.node-map-player-status {
+  display: flex;
+  justify-content: center;
+  gap: 1.5vw;
+  padding: 0.8vh 0;
+}
+
+.player-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4vw;
+  padding: 0.4vh 1vw;
+  background: rgba(30, 30, 50, 0.8);
+  border: 1px solid rgba(100, 100, 130, 0.3);
+  border-radius: 6px;
+  font-size: 1.4vh;
+}
+
+.player-status-badge .status-icon {
+  font-size: 1.6vh;
+}
+
+.player-status-badge .status-value {
+  color: #d0d0e0;
+  font-weight: bold;
+}
+
 /* Map Container */
 .node-map-container {
   flex: 1;

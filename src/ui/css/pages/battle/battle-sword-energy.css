@@ -8,24 +8,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
   gap: 0.8vh;
   padding: 1.2vh 0.8vw;
   border: 0.25vh solid #dcdcdc;
   border-radius: 0.8vh;
-  background: rgba(253, 190, 190, 0.6);
+  background: rgba(255, 175, 175, 0.194);
   z-index: 50;
-  min-width: 6vw;
-  width: 7vw;
-  height: auto;
+  width: 20vw;
+  height: fit-content;
 }
 
 .sword-energy-label {
-  font-size: 1.5vh;
+  font-size: 1.9vh;
   font-weight: bold;
-  color: #ff9f66;
-  text-shadow: 0 0 0.4vh #ff6b35;
-  margin: 0.15vh;
+  color: #ff8742;
+  text-shadow: 0 0 0.4vh #0c0502;
 }
 
 .sword-energy-bar-container {
@@ -96,13 +93,15 @@
    ========================================= */
 .sword-energy-effects {
   display: flex;
+  flex-direction: column;
   gap: 0.5vw;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
 }
 
 .effect-badge {
-  font-size: 1vh;
+  font-size: 1.5vh;
   padding: 0.25vh 0.5vw;
   border-radius: 0.25vh;
   font-weight: bold;
@@ -111,9 +110,10 @@
 
 /* Inactive state */
 .effect-badge.inactive {
-  background: rgba(100, 100, 100, 0.2);
-  border: 1px solid rgba(150, 150, 150, 0.4);
-  color: rgba(150, 150, 150, 0.6);
+  background: rgba(75, 75, 75, 0.5);
+  border: 1.8px solid rgba(54, 54, 54, 0.7);
+  border-radius: 0.25vh;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* Active state - Crit */

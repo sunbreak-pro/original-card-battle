@@ -27,9 +27,13 @@ export const ELEMENT_MAGIC_ICONS: Partial<Record<ElementType, string>> = {
   dark: "/assets/images/elements/element-dark.png",
   light: "/assets/images/elements/element-light.png",
 };
-export const ELEMENT_PHYSICAL_ICONS: Partial<Record<ElementType, string>> = {
-  slash: "/assets/images/elements/element-slash.png",
-  impact: "/assets/images/elements/element-impact.png",
+
+
+export const ELEMENT_UTILITY_ICONS: Partial<Record<ElementType, string>> = {
+  physics: "/assets/images/elements/element-physics.png",
+  buff: "/assets/images/elements/element-buff.png",
+  guard: "/assets/images/elements/element-guard.png",
+  heal: "/assets/images/elements/element-heal.png",
 };
 
 // ============================================================
@@ -48,9 +52,9 @@ export const DEPTH_BACKGROUND_IMAGES: Record<number, string> = {
 // Element Icon Helper
 // ============================================================
 
-/** Get element icon path by ElementType. Returns undefined for elements without icons (guard, summon, etc.) */
+/** Get element icon path by ElementType. Returns undefined for elements without icons (summon, etc.) */
 export function getElementIcon(element: ElementType): string | undefined {
-  return ELEMENT_MAGIC_ICONS[element] ?? ELEMENT_PHYSICAL_ICONS[element];
+  return ELEMENT_MAGIC_ICONS[element] ?? ELEMENT_UTILITY_ICONS[element];
 }
 
 // ============================================================
@@ -102,6 +106,9 @@ export const DAMAGE_ANIMATION = {
   CRIT_PARTICLE_SPREAD: 200,
   NORMAL_PARTICLE_SPREAD: 100,
   SHAKE_DURATION: 300,
+  TEXT_DURATION: 3000,
+  CRIT_COLOR: "#ffd700",
+  NORMAL_COLOR: "#ff4444",
 } as const;
 
 export const HEAL_ANIMATION = {

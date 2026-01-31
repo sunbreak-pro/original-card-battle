@@ -10,6 +10,7 @@ export const STORM_ELEMENTAL: EnemyDefinition = {
   baseSpeed: 70,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 22,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "雷撃", type: "attack", baseDamage: 30, displayIcon: "⚡", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "稲妻の連鎖", type: "attack", baseDamage: 15, hitCount: 3, displayIcon: "🌩️", priority: 0, energyCost: 1 } },
@@ -29,6 +30,7 @@ export const MAGMA_TITAN: EnemyDefinition = {
   baseSpeed: 25,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 24,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "溶岩拳", type: "debuff", baseDamage: 30, applyDebuffs: [{ name: "burn", stacks: 2, duration: 3, value: 8, isPermanent: false }], displayIcon: "🌋", priority: 1, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "地殻粉砕", type: "attack", baseDamage: 35, displayIcon: "💥", priority: 0, energyCost: 1 } },
@@ -48,6 +50,7 @@ export const FROST_WRAITH: EnemyDefinition = {
   baseSpeed: 60,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 20,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "凍結の手", type: "debuff", baseDamage: 25, applyDebuffs: [{ name: "slow", stacks: 2, duration: 3, value: 25, isPermanent: false }], displayIcon: "❄️", priority: 1, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "氷柱の嵐", type: "attack", baseDamage: 18, hitCount: 2, displayIcon: "🌨️", priority: 0, energyCost: 1 } },
@@ -67,6 +70,7 @@ export const DIVINE_SENTINEL: EnemyDefinition = {
   baseSpeed: 45,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 22,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "聖剣", type: "attack", baseDamage: 32, displayIcon: "✨", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "聖なる障壁", type: "buff", baseDamage: 0, guardGain: 35, displayIcon: "🛡️", priority: 1, energyCost: 1 } },
@@ -86,6 +90,7 @@ export const CRYSTAL_SPRITE: EnemyDefinition = {
   baseSpeed: 80,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 14,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "結晶弾", type: "attack", baseDamage: 25, displayIcon: "💎", priority: 0, energyCost: 1 }, probability: 0.5 },
     { phaseNumber: 0, action: { name: "光の屈折", type: "debuff", baseDamage: 18, applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 3, value: 25, isPermanent: false }], displayIcon: "🔮", priority: 1, energyCost: 1 }, probability: 0.3 },
@@ -103,6 +108,7 @@ export const ANCIENT_GOLEM: EnemyDefinition = {
   baseSpeed: 30,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 22,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "巨腕撃", type: "attack", baseDamage: 35, displayIcon: "🗿", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "古代の防壁", type: "buff", baseDamage: 0, guardGain: 40, displayIcon: "🛡️", priority: 1, energyCost: 1 } },
@@ -122,6 +128,7 @@ export const PHOENIX_HATCHLING: EnemyDefinition = {
   baseSpeed: 85,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 14,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "焔の翼", type: "debuff", baseDamage: 25, applyDebuffs: [{ name: "burn", stacks: 1, duration: 3, value: 8, isPermanent: false }], displayIcon: "🔥", priority: 1, energyCost: 1 }, probability: 0.6 },
     { phaseNumber: 0, action: { name: "炎の突進", type: "attack", baseDamage: 30, displayIcon: "🐦", priority: 0, energyCost: 1 }, probability: 0.4 },
@@ -138,6 +145,7 @@ export const CHRONOS_GUARDIAN: EnemyDefinition = {
   baseSpeed: 55,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 32,
   aiPatterns: [
     // Phase 1: HP > 66% - Time manipulation offense
     { phaseNumber: 1, condition: (hp, maxHp) => hp > maxHp * 0.66, action: { name: "時の剣", type: "attack", baseDamage: 30, displayIcon: "⏳", priority: 0, energyCost: 1 } },

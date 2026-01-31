@@ -35,7 +35,10 @@ import {
   Summon_Status,
 } from "../constants/data/characters/PlayerData";
 import type { BasePlayerStats } from "../constants/data/characters/PlayerData";
-import { getCharacterClassInfo } from "@/constants/data/characters/CharacterClassData";
+import {
+  getCharacterClassInfo,
+  getCardDataByClass,
+} from "@/constants/data/characters/CharacterClassData";
 import {
   STORAGE_TEST_ITEMS,
   INVENTORY_TEST_ITEMS,
@@ -152,6 +155,15 @@ interface PlayerContextValue {
   setDifficulty: (difficulty: Difficulty) => void;
 
   // ============================================================
+  // Deck
+  // ============================================================
+
+  /** Current deck cards */
+  deckCards: Card[];
+
+  /** Update deck by replacing card IDs and internal deck */
+  updateDeck: (cardIds: string[]) => void;
+
   // Common operations
   // ============================================================
 
@@ -412,6 +424,31 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         explorationLimitBonus: 0,
       },
     });
+  };
+
+  /**
+   * Update deck with new card IDs (cardTypeIds)
+   * Rebuilds the internal deck from the class card data
+   */
+  const updateDeck = (cardTypeIds: string[]) => {
+    const cardData = getCardDataByClass(playerState.playerClass);
+    let instanceCounter = 1;
+    const newDeck: Card[] = [];
+
+    for (const cardTypeId of cardTypeIds) {
+      const cardTemplate = cardData[cardTypeId];
+      if (cardTemplate) {
+        newDeck.push({
+          ...cardTemplate,
+          id: `deck_${cardTypeId}_${instanceCounter++}`,
+        });
+      }
+    }
+
+    setPlayerState((prev) => ({
+      ...prev,
+      deck: newDeck,
+    }));
   };
 
   // ============================================================
@@ -766,6 +803,10 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         updateRuntimeState,
         updateCardMastery,
         resetRuntimeState,
+
+        // Deck
+        deckCards: playerState.deck,
+        updateDeck,
 
         // Lives system
         decreaseLives,

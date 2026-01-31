@@ -80,18 +80,11 @@
   padding: 1vh;
 }
 
-/* Card grid within modal */
+/* Card grid within modal - override shared card-grid for tighter layout */
 .battle-modal-body .card-grid {
-  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(calc(var(--card-base-width, 13vh)), 1fr));
   gap: 2vh;
   justify-items: center;
-}
-
-/* Card wrapper size for modal */
-.modal-card-wrapper {
-  width: calc(var(--card-base-width, 13vh) * 0.9);
-  aspect-ratio: 2 / 3;
 }
 
 /* =========================================

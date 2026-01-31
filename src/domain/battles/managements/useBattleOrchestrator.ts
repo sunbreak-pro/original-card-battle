@@ -21,9 +21,9 @@ import { createInitialSwordEnergy } from '../../characters/logic/classAbilityUti
 // Deck management (IMMUTABLE ZONE - DO NOT MODIFY)
 import { deckReducer } from "../../cards/decks/deckReducter";
 import { createInitialDeck, shuffleArray } from "../../cards/decks/deck";
-import { SWORDSMAN_CARDS_ARRAY } from "../../cards/data/SwordmanCards";
-import { MAGE_CARDS_ARRAY } from "../../cards/data/mageCards";
-import { SUMMONER_CARDS_ARRAY } from "../../cards/data/summonerCards";
+import { SWORDSMAN_CARDS_ARRAY } from "@/constants/data/cards/SwordmanCards";
+import { MAGE_CARDS_ARRAY } from "@/constants/data/cards/mageCards";
+import { SUMMONER_CARDS_ARRAY } from "@/constants/data/cards/summonerCards";
 import { getInitialDeckCounts } from "@/constants/data/battles/initialDeckConfig";
 
 // Card mastery management
@@ -753,6 +753,11 @@ export const useBattleOrchestrator = (
   // Next Enemy Actions Preview
   // ========================================================================
 
+  const expandedPhaseEntries = useMemo(() => {
+    if (!phaseState.phaseQueue) return [];
+    return expandPhaseEntriesForMultipleEnemies(phaseState.phaseQueue, enemies);
+  }, [phaseState.phaseQueue, enemies]);
+
   const nextEnemyActions = useMemo(() => {
     if (!currentEnemy || enemyHp <= 0) {
       return [];
@@ -810,6 +815,7 @@ export const useBattleOrchestrator = (
     enemyNowSpeed: phaseState.enemySpeed,
     phaseQueue: phaseState.phaseQueue,
     currentPhaseIndex: phaseState.currentPhaseIndex,
+    expandedPhaseEntries,
     enemyEnergy,
     nextEnemyActions,
 

@@ -10,6 +10,7 @@ export const BLIGHTED_TREANT: EnemyDefinition = {
   baseSpeed: 20,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 22,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "枝叩き", type: "attack", baseDamage: 15, displayIcon: "🌳", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "胞子散布", type: "debuff", baseDamage: 10, applyDebuffs: [{ name: "poison", stacks: 2, duration: 3, value: 5, isPermanent: false }], displayIcon: "🍄", priority: 1, energyCost: 1 } },
@@ -29,6 +30,7 @@ export const DIRE_WOLF: EnemyDefinition = {
   baseSpeed: 60,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 20,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "牙撃", type: "attack", baseDamage: 14, displayIcon: "🐺", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "引き裂き", type: "debuff", baseDamage: 12, applyDebuffs: [{ name: "bleed", stacks: 1, duration: 3, value: 5, isPermanent: false }], displayIcon: "🦷", priority: 1, energyCost: 1 } },
@@ -47,6 +49,7 @@ export const VENOMOUS_VINE: EnemyDefinition = {
   baseSpeed: 35,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 18,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "毒蔦の鞭", type: "debuff", baseDamage: 12, applyDebuffs: [{ name: "poison", stacks: 1, duration: 3, value: 6, isPermanent: false }], displayIcon: "🌱", priority: 1, energyCost: 1 }, probability: 0.6 },
     { phaseNumber: 0, action: { name: "絞殺", type: "debuff", baseDamage: 15, applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "🌿", priority: 2, energyCost: 1 }, probability: 0.4 },
@@ -63,6 +66,7 @@ export const CORRUPTED_STAG: EnemyDefinition = {
   baseSpeed: 50,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 20,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "突進", type: "attack", baseDamage: 16, displayIcon: "🦌", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "角薙ぎ", type: "attack", baseDamage: 13, hitCount: 2, displayIcon: "⚡", priority: 0, energyCost: 1 } },
@@ -82,6 +86,7 @@ export const FUNGAL_SPORE: EnemyDefinition = {
   baseSpeed: 45,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 14,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "胞子爆発", type: "debuff", baseDamage: 8, applyDebuffs: [{ name: "poison", stacks: 1, duration: 2, value: 5, isPermanent: false }], displayIcon: "🍄", priority: 1, energyCost: 1 }, probability: 0.7 },
     { phaseNumber: 0, action: { name: "麻痺粉", type: "debuff", baseDamage: 5, applyDebuffs: [{ name: "slow", stacks: 1, duration: 2, value: 15, isPermanent: false }], displayIcon: "💫", priority: 1, energyCost: 1 }, probability: 0.3 },
@@ -98,6 +103,7 @@ export const THORN_LIZARD: EnemyDefinition = {
   baseSpeed: 40,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 18,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "棘尾撃", type: "attack", baseDamage: 14, displayIcon: "🦎", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "棘飛ばし", type: "debuff", baseDamage: 10, applyDebuffs: [{ name: "bleed", stacks: 1, duration: 2, value: 4, isPermanent: false }], displayIcon: "🌵", priority: 1, energyCost: 1 } },
@@ -116,6 +122,7 @@ export const SWARM_HORNET: EnemyDefinition = {
   baseSpeed: 75,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 14,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "毒針", type: "debuff", baseDamage: 10, applyDebuffs: [{ name: "poison", stacks: 1, duration: 2, value: 4, isPermanent: false }], displayIcon: "🐝", priority: 1, energyCost: 1 }, probability: 0.6 },
     { phaseNumber: 0, action: { name: "連続刺し", type: "attack", baseDamage: 6, hitCount: 3, displayIcon: "⚡", priority: 0, energyCost: 1 }, probability: 0.4 },
@@ -132,6 +139,7 @@ export const ELDER_BASILISK: EnemyDefinition = {
   baseSpeed: 40,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 32,
   aiPatterns: [
     // Phase 1: HP > 66% - Physical dominance
     { phaseNumber: 1, condition: (hp, maxHp) => hp > maxHp * 0.66, action: { name: "牙撃", type: "attack", baseDamage: 18, displayIcon: "🐍", priority: 0, energyCost: 1 } },

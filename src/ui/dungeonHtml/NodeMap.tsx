@@ -24,8 +24,8 @@ import "./NodeMap.css";
  */
 export function NodeMap() {
   const { returnToCamp, navigateTo, startBattle, gameState } = useGameState();
-  const { playerData, updateHp } = usePlayer();
-  const { addGold, addMagicStones } = useResources();
+  const { playerData, runtimeState, deckCards, updateHp } = usePlayer();
+  const { resources, addGold, addMagicStones } = useResources();
   const { addItemToInventory } = useInventory();
   const [eventResult, setEventResult] = useState<NodeEventResult | null>(null);
   const {
@@ -236,6 +236,34 @@ export function NodeMap() {
           </div>
         </div>
       </header>
+
+      {/* Player Status Bar */}
+      <div className="node-map-player-status">
+        <div className="player-status-badge">
+          <span className="status-icon">❤️</span>
+          <span className="status-value">{runtimeState.currentHp}/{playerData.persistent.baseMaxHp}</span>
+        </div>
+        <div className="player-status-badge">
+          <span className="status-icon">⚡</span>
+          <span className="status-value">{runtimeState.currentAp}/{playerData.persistent.baseMaxAp}</span>
+        </div>
+        <div className="player-status-badge">
+          <span className="status-icon">💖</span>
+          <span className="status-value">{runtimeState.lives.remaining}</span>
+        </div>
+        <div className="player-status-badge">
+          <span className="status-icon">💰</span>
+          <span className="status-value">{resources.gold.baseCamp + resources.gold.exploration}</span>
+        </div>
+        <div className="player-status-badge">
+          <span className="status-icon">🃏</span>
+          <span className="status-value">{deckCards.length}</span>
+        </div>
+        <div className="player-status-badge">
+          <span className="status-icon">🎒</span>
+          <span className="status-value">{playerData.inventory.inventory.currentCapacity}/{playerData.inventory.inventory.maxCapacity}</span>
+        </div>
+      </div>
 
       {/* Map Container */}
       <div className="node-map-container">

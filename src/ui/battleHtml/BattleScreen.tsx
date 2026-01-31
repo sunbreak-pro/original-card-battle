@@ -85,12 +85,17 @@ const BattleScreen = ({
   const { navigateTo, gameState } = useGameState();
 
   // Get encounter size from battle config (default to "single")
-  const encounterSize: EncounterSize = gameState.battleConfig?.enemyType || "single";
+  const encounterSize: EncounterSize =
+    gameState.battleConfig?.enemyType || "single";
   // Map encounter size to EnemyType for soul/reward system
-  const enemyType: EnemyType = encounterSize === "double" ? "double"
-                              : encounterSize === "three" ? "three"
-                              : encounterSize === "boss" ? "boss"
-                              : "single";
+  const enemyType: EnemyType =
+    encounterSize === "double"
+      ? "double"
+      : encounterSize === "three"
+        ? "three"
+        : encounterSize === "boss"
+          ? "boss"
+          : "single";
 
   // 遭遇カウント管理
   const [encounterCount, setEncounterCount] = useState(0);
@@ -102,7 +107,9 @@ const BattleScreen = ({
   const [itemUsedThisPhase, setItemUsedThisPhase] = useState(false);
 
   // Escape state
-  const [escapeMessage, setEscapeMessage] = useState<string | null>(null);
+  const [escapePhase, setEscapePhase] = useState<
+    "attempting" | "success" | "failure" | null
+  >(null);
 
   // Create initial player state from runtime state
   const initialPlayerState = useMemo<InitialPlayerState>(
@@ -158,8 +165,8 @@ const BattleScreen = ({
     closePileModal,
     battleResult,
     battleStats,
-    phaseQueue,
     currentPhaseIndex,
+    expandedPhaseEntries,
     selectedTargetIndex,
     setSelectedTargetIndex,
     isPlayerPhase,
@@ -198,7 +205,10 @@ const BattleScreen = ({
     } else if (nextEncounter % 2 === 0) {
       nextEncounterSize = "double";
     }
-    const { enemies: nextEnemies } = selectRandomEnemy(depth, nextEncounterSize);
+    const { enemies: nextEnemies } = selectRandomEnemy(
+      depth,
+      nextEncounterSize,
+    );
     resetForNextEnemy(nextEnemies);
   };
 
@@ -312,28 +322,37 @@ const BattleScreen = ({
   );
 
   const handleEscape = useCallback(() => {
-    if (isBossBattle) return;
+    if (isBossBattle || escapePhase !== null) return;
+
+    setEscapePhase("attempting");
 
     const success = attemptEscape(
       playerData.persistent.baseSpeed,
       avgEnemySpeed,
     );
-    if (success) {
-      // Escape succeeded - return to dungeon map or camp
-      if (onWin) {
-        // In dungeon mode, go back to dungeon map
-        navigateTo("dungeon_map");
-      } else if (onReturnToCamp) {
-        onReturnToCamp();
+
+    setTimeout(() => {
+      if (success) {
+        setEscapePhase("success");
+        setTimeout(() => {
+          setEscapePhase(null);
+          if (onWin) {
+            navigateTo("dungeon_map");
+          } else if (onReturnToCamp) {
+            onReturnToCamp();
+          }
+        }, 1500);
+      } else {
+        setEscapePhase("failure");
+        setTimeout(() => {
+          setEscapePhase(null);
+          handleEndPhase();
+        }, 1500);
       }
-    } else {
-      // Escape failed - show message and end phase (enemy gets to act)
-      setEscapeMessage("逃走失敗！");
-      setTimeout(() => setEscapeMessage(null), 1800);
-      handleEndPhase();
-    }
+    }, 1200);
   }, [
     isBossBattle,
+    escapePhase,
     playerData.persistent.baseSpeed,
     avgEnemySpeed,
     onWin,
@@ -345,114 +364,79 @@ const BattleScreen = ({
   // Get inventory items for the modal
   const inventoryItems = playerData.inventory.inventory.items;
 
-  if (battleResult === "victory") {
-    // Calculate rewards based on enemy type
-    const soulRemnants = getSoulValue(enemyType);
-    const magicStones = calculateMagicStoneDrops(enemyType);
+  // Victory reward calculations (computed regardless, only used when victory)
+  const soulRemnants = getSoulValue(enemyType);
+  const magicStones = calculateMagicStoneDrops(enemyType);
 
-    // If onWin callback is provided (dungeon mode), wrap it to save HP/AP and mastery first
-    const handleVictoryContinue = () => {
-      // Collect mastery from all cards in deck
-      const allCards = [...hand, ...drawPile, ...discardPile];
-      const updatedMastery = collectMasteryFromDeck(
-        allCards,
-        runtimeState.cardMasteryStore,
-      );
-
-      // Gain souls from enemy defeat (updates sanctuary progress)
-      const soulResult = gainSoulFromEnemy(
-        playerData.progression.sanctuaryProgress,
-        enemyType,
-        false, // isReturnBattle
-      );
-
-      // Update player data with new sanctuary progress
-      updatePlayerData({
-        progression: {
-          ...playerData.progression,
-          sanctuaryProgress: soulResult.newProgress,
-        },
-      });
-
-      // Add magic stones to exploration resources
-      addMagicStones(magicStones, false); // false = add to exploration
-
-      // Save current HP/AP and card mastery to runtime state
-      updateRuntimeState({
-        currentHp: playerHp,
-        currentAp: playerAp,
-        cardMasteryStore: updatedMastery,
-      });
-
-      if (onWin) {
-        onWin();
-      } else {
-        handleContinueToNextBattle();
-      }
-    };
-
-    return (
-      <VictoryScreen
-        onContinue={handleVictoryContinue}
-        rewards={{
-          soulRemnants,
-          magicStones,
-          cards: [],
-        }}
-        battleStats={{
-          phaseCount: phaseCount,
-          damageDealt: battleStats.damageDealt,
-          damageTaken: battleStats.damageTaken,
-        }}
-        enemyType={enemyType}
-      />
+  const handleVictoryContinue = () => {
+    const allCards = [...hand, ...drawPile, ...discardPile];
+    const updatedMastery = collectMasteryFromDeck(
+      allCards,
+      runtimeState.cardMasteryStore,
     );
-  }
 
-  if (battleResult === "defeat") {
-    const gameOver = isGameOver();
-
-    // Handle "Return to Camp" or "New Game" depending on game over state
-    const handleDefeatAction = () => {
-      if (gameOver) {
-        // Game Over: Delete save data, reset difficulty, and go to character select
-        saveManager.deleteSave();
-        setDifficulty("normal"); // Reset to default difficulty
-        navigateTo("character_select");
-      } else if (onLose) {
-        onLose();
-      } else if (onReturnToCamp) {
-        onReturnToCamp();
-      }
-    };
-
-    return (
-      <DefeatScreen
-        onRetry={() => window.location.reload()}
-        onReturnToCamp={handleDefeatAction}
-        battleStats={{
-          turnCount: phaseCount,
-          damageDealt: battleStats.damageDealt,
-          damageTaken: battleStats.damageTaken,
-        }}
-        remainingLives={runtimeState.lives.currentLives}
-        maxLives={runtimeState.lives.maxLives}
-        soulsTransferred={soulsTransferred}
-        isGameOver={gameOver}
-      />
+    const soulResult = gainSoulFromEnemy(
+      playerData.progression.sanctuaryProgress,
+      enemyType,
+      false,
     );
-  }
+
+    updatePlayerData({
+      progression: {
+        ...playerData.progression,
+        sanctuaryProgress: soulResult.newProgress,
+      },
+    });
+
+    addMagicStones(magicStones, false);
+
+    updateRuntimeState({
+      currentHp: playerHp,
+      currentAp: playerAp,
+      cardMasteryStore: updatedMastery,
+    });
+
+    if (onWin) {
+      onWin();
+    } else {
+      handleContinueToNextBattle();
+    }
+  };
+
+  // Defeat handler
+  const gameOver = battleResult === "defeat" ? isGameOver() : false;
+
+  const handleDefeatAction = () => {
+    if (gameOver) {
+      saveManager.deleteSave();
+      setDifficulty("normal");
+      navigateTo("character_select");
+    } else if (onLose) {
+      onLose();
+    } else if (onReturnToCamp) {
+      onReturnToCamp();
+    }
+  };
 
   return (
-    <div className="battle-screen" style={{ backgroundImage: `url('${DEPTH_BACKGROUND_IMAGES[depth] ?? DEPTH_BACKGROUND_IMAGES[4]}')` }}>
+    <div
+      className="battle-screen"
+      style={{
+        backgroundImage: `url('${DEPTH_BACKGROUND_IMAGES[depth] ?? DEPTH_BACKGROUND_IMAGES[4]}')`,
+      }}
+    >
       {showTurnMessage && (
         <div className="turn-message-slide">
           <div className="turn-message-text">{turnMessage}</div>
         </div>
       )}
-      {escapeMessage && (
-        <div className="turn-message-slide">
-          <div className="turn-message-text">{escapeMessage}</div>
+      {escapePhase && (
+        <div className={`turn-message-slide escape-${escapePhase}`}>
+          <div className="turn-message-text">
+            {escapePhase === "attempting" && "逃走を試みる..."}
+            {escapePhase === "success" && "うまく逃げ出した！"}
+            {escapePhase === "failure" && "逃走失敗！"}
+          </div>
         </div>
       )}
       <div className="battle-header">
@@ -461,10 +445,58 @@ const BattleScreen = ({
           {phaseCount}
         </div>
         <TurnOrderIndicator
-          phaseQueue={phaseQueue}
+          expandedEntries={expandedPhaseEntries}
           currentPhaseIndex={currentPhaseIndex}
+          enemyCount={aliveEnemies.length}
         />
       </div>
+
+      {/* Class Ability Display */}
+      {playerClass === "swordsman" && (
+        <div className="class-ability-header">
+          <div className="sword-energy-display">
+            <div className="sword-energy-label">剣気:</div>
+            <div className="sword-energy-bar-container">
+              <div className="sword-energy-bar">
+                <div
+                  className={`sword-energy-fill ${
+                    swordEnergy.current >= 10
+                      ? "level-max"
+                      : swordEnergy.current >= 8
+                        ? "level-high"
+                        : swordEnergy.current >= 5
+                          ? "level-mid"
+                          : ""
+                  }`}
+                  style={{
+                    width: `${(swordEnergy.current / swordEnergy.max) * 100}%`,
+                  }}
+                />
+                <span className="sword-energy-text">
+                  {swordEnergy.current}/{swordEnergy.max}
+                </span>
+              </div>
+            </div>
+            <div className="sword-energy-effects">
+              <span
+                className={`effect-badge crit ${swordEnergy.current > 0 ? "active" : "inactive"}`}
+              >
+                physical damage: + {swordEnergy.current}
+              </span>
+              <span
+                className={`effect-badge pierce ${swordEnergy.current >= 8 ? "active" : "inactive"}`}
+              >
+                {swordEnergy.current >= 8 ? "✓" : "○"} 貫通+30%
+              </span>
+              <span
+                className={`effect-badge max ${swordEnergy.current >= 10 ? "active" : "inactive"}`}
+              >
+                {swordEnergy.current >= 10 ? "✓" : "○"} MAX
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="battle-field">
         <EnemyFrame
@@ -497,7 +529,6 @@ const BattleScreen = ({
           playerBuffs={playerBuffs}
           cardEnergy={cardEnergy}
           maxEnergy={maxEnergy}
-          swordEnergy={swordEnergy}
           theme={theme}
         />
       </div>
@@ -603,6 +634,35 @@ const BattleScreen = ({
         onUseItem={handleUseItem}
         itemUsedThisPhase={itemUsedThisPhase}
       />
+
+      {/* Victory/Defeat overlays */}
+      {battleResult === "victory" && (
+        <VictoryScreen
+          onContinue={handleVictoryContinue}
+          rewards={{ soulRemnants, magicStones, cards: [] }}
+          battleStats={{
+            phaseCount: phaseCount,
+            damageDealt: battleStats.damageDealt,
+            damageTaken: battleStats.damageTaken,
+          }}
+          enemyType={enemyType}
+        />
+      )}
+      {battleResult === "defeat" && (
+        <DefeatScreen
+          onRetry={() => window.location.reload()}
+          onReturnToCamp={handleDefeatAction}
+          battleStats={{
+            turnCount: phaseCount,
+            damageDealt: battleStats.damageDealt,
+            damageTaken: battleStats.damageTaken,
+          }}
+          remainingLives={runtimeState.lives.currentLives}
+          maxLives={runtimeState.lives.maxLives}
+          soulsTransferred={soulsTransferred}
+          isGameOver={gameOver}
+        />
+      )}
     </div>
   );
 };

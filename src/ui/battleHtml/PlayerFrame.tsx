@@ -1,6 +1,5 @@
 import React from "react";
 import type { BuffDebuffMap } from '@/types/battleTypes';
-import type { SwordEnergyState } from '@/types/characterTypes';
 import StatusEffectDisplay from "../componentsHtml/BuffEffect";
 import { GUARD_BAR_DISPLAY_MAX } from "../../constants";
 
@@ -16,7 +15,6 @@ interface PlayerFrameProps {
   playerBuffs: BuffDebuffMap;
   cardEnergy: number;
   maxEnergy: number;
-  swordEnergy: SwordEnergyState;
   theme: {
     primary: string;
     secondary: string;
@@ -39,7 +37,6 @@ const PlayerFrame: React.FC<PlayerFrameProps> = ({
   playerBuffs,
   cardEnergy,
   maxEnergy,
-  swordEnergy,
   theme,
 }) => {
   return (
@@ -114,56 +111,6 @@ const PlayerFrame: React.FC<PlayerFrameProps> = ({
             </div>
           </div>
           <StatusEffectDisplay buffsDebuffs={playerBuffs} theme={theme} />
-        </div>
-      </div>
-      <div className="energy-and-ability">
-        <div className="sword-energy-display">
-          <div className="sword-energy-label">剣気:</div>
-
-          <div className="sword-energy-bar-container">
-            <div className="sword-energy-bar">
-              <div
-                className={`sword-energy-fill ${
-                  swordEnergy.current >= 10
-                    ? "level-max"
-                    : swordEnergy.current >= 8
-                      ? "level-high"
-                      : swordEnergy.current >= 5
-                        ? "level-mid"
-                        : ""
-                }`}
-                style={{
-                  width: `${(swordEnergy.current / swordEnergy.max) * 100}%`,
-                }}
-              />
-              <span className="sword-energy-text">
-                {swordEnergy.current}/{swordEnergy.max}
-              </span>
-            </div>
-          </div>
-          <div className="sword-energy-effects">
-            <span
-              className={`effect-badge crit ${
-                swordEnergy.current >= 5 ? "active" : "inactive"
-              }`}
-            >
-              {swordEnergy.current >= 5 ? "✓" : "○"} Crit+20%
-            </span>
-            <span
-              className={`effect-badge pierce ${
-                swordEnergy.current >= 8 ? "active" : "inactive"
-              }`}
-            >
-              {swordEnergy.current >= 8 ? "✓" : "○"} 貫通+30%
-            </span>
-            <span
-              className={`effect-badge max ${
-                swordEnergy.current >= 10 ? "active" : "inactive"
-              }`}
-            >
-              {swordEnergy.current >= 10 ? "✓" : "○"} MAX
-            </span>
-          </div>
         </div>
       </div>
     </div>

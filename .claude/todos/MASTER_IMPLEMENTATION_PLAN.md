@@ -21,6 +21,18 @@ All three development phases (A, B, C) are nearly complete.
 
 ## Remaining Tasks
 
+### Priority: MEDIUM (UI Polish)
+
+| ID | Task | Location | Details |
+|----|------|----------|---------|
+| U1 | Per-Enemy Width | `src/types/characterTypes.ts`, `enemyDepth1-5.ts`, `EnemyFrame.tsx`, `battle-enemy.css` | Add `displayWidth` to EnemyDefinition, set per-enemy widths (Minion: 14-16vw, Standard: 18-20vw, Elite: 22-24vw, Boss: 28-32vw), apply in EnemyFrame |
+| U2 | Battle Field Layout | `BattleScreen.tsx`, `PlayerFrame.tsx`, `battle-layout.css`, `battle-enemy.css` | U2a: Move class ability to header area. U2b: Enemy section fit-content width |
+| U3 | Victory/Defeat Modal Overlay | `BattleScreen.tsx`, `VictoryScreen.css`, `DefeatScreen.css` | Replace full-page replacement with overlay on battle screen + scale animation |
+| U4 | Escape Animation | `BattleScreen.tsx`, `battle-layout.css` | Phased escape animation: attempting → success/failure with dot animation |
+| U5 | Card Play Animation | `useCardAnimation.tsx`, `BattleScreen.tsx`, `uiConstants.ts` | U5a: Card position capture. U5b: Damage display duration (1500→3000ms) and critical color (#ff6600→#ffd700) |
+| U6 | Sanctuary UI Fixes | `Sanctuary.css`, `NodeDetailPanel.tsx` | U6a: Position fix. U6b: Gentle pulse animation. U6c: CSS transition for long-press |
+| U7 | Map Node Player Status | `NodeMap.tsx`, `NodeMap.css` | Add player status bar (HP, AP, Lives, Gold, Magic Stones, Card count, Inventory count) |
+
 ### Priority: LOW (Code Quality)
 
 | ID | Task | Location | Details |
@@ -115,3 +127,4 @@ Dungeon (Danger Zone)
 | 2026-01-28 | Type refactoring, shop refactoring completed |
 | 2026-01-29 | Phase B completed, Phase C nearly completed (C1-C5 + B4 done) |
 | 2026-01-30 | **Full cleanup:** Removed all completed tasks. C3 (Multi-Enemy) confirmed complete. B1 (Context Separation) confirmed complete. FIX-1/2/3 confirmed resolved. Only remaining: AoE cards, EnemyFrame SVG, FacilityHeader prop, teleport stone |
+| 2026-01-31 | Added UI Polish tasks (U1-U7): per-enemy width, battle layout, victory/defeat modal, escape animation, card animation, sanctuary fixes, map player status |

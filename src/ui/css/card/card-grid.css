@@ -1,0 +1,43 @@
+/* =========================================
+   Card Grid Styles
+
+   Shared grid/collection card wrappers used in:
+   - Library (encyclopedia)
+   - Dungeon Gate (deck preparation)
+   - Battle modals (card selection)
+   ========================================= */
+
+/* =========================================
+   Card Grid Layout
+   ========================================= */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--card-base-width, 15vh) * 0.75 + 1vw), 1fr));
+  gap: 2.5vw;
+  overflow-y: auto;
+  padding: 2vh;
+  flex: 1;
+  justify-content: space-around;
+}
+
+/* =========================================
+   Encyclopedia Card Wrapper (Library)
+   ========================================= */
+.encyclopedia-card-wrapper {
+  width: calc(var(--card-base-width, 13vh) * 0.75);
+  aspect-ratio: var(--card-aspect-ratio, 2 / 3);
+  transition: transform 0.3s ease;
+}
+
+.encyclopedia-card-wrapper:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+/* =========================================
+   Modal Card Wrapper (Battle modals)
+   ========================================= */
+.modal-card-wrapper {
+  width: calc(var(--card-base-width, 13vh) * 0.9);
+  aspect-ratio: var(--card-aspect-ratio, 2 / 3);
+}

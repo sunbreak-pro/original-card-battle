@@ -8,9 +8,10 @@
 import React, { useMemo } from "react";
 import type { Card } from "@/types/cardTypes";
 import { getDerivationChain } from "../../../domain/cards/logic/cardDerivation";
-import { SWORDSMAN_CARDS } from "../../../domain/cards/data/SwordmanCards";
-import { MAGE_CARDS } from "../../../domain/cards/data/mageCards";
-import { SUMMONER_CARDS } from "../../../domain/cards/data/summonerCards";
+import { SWORDSMAN_CARDS } from "../../../constants/data/cards/SwordmanCards";
+import { MAGE_CARDS } from "../../../constants/data/cards/mageCards";
+import { SUMMONER_CARDS } from "../../../constants/data/cards/summonerCards";
+import { ELEMENT_LABEL_MAP } from "../../../constants/cardConstants";
 
 interface CardDerivationTreeProps {
   card: Card;
@@ -41,12 +42,12 @@ export const CardDerivationTree: React.FC<CardDerivationTreeProps> = ({
 
   const chain = useMemo(
     () => getDerivationChain(card.cardTypeId, allCards),
-    [card.cardTypeId, allCards]
+    [card.cardTypeId, allCards],
   );
 
   const chainCards = useMemo(
     () => chain.map((id) => allCards[id]).filter(Boolean),
-    [chain, allCards]
+    [chain, allCards],
   );
 
   const hasDerivation = chainCards.length > 1;
@@ -68,7 +69,9 @@ export const CardDerivationTree: React.FC<CardDerivationTreeProps> = ({
         >
           {card.rarity.toUpperCase()}
         </span>
-        <span className="derivation-element">{card.element}</span>
+        <span className="derivation-element">
+          {card.element.map((e) => ELEMENT_LABEL_MAP[e]).join(" / ")}
+        </span>
       </div>
 
       <p className="derivation-description">{card.description}</p>

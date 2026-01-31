@@ -81,8 +81,8 @@ export interface Card {
   tags: CardTag[];
 
   // ---- Element ----
-  /** Element type (every card has one) */
-  element: ElementType;
+  /** Element types (every card has at least one) */
+  element: ElementType[];
 
   // ---- Common Effects ----
   /** Base damage dealt */

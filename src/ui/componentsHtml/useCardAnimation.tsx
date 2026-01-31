@@ -143,6 +143,7 @@ export const useCardAnimation = () => {
     element: HTMLElement,
     targetElement: HTMLElement,
     onComplete: () => void,
+    preComputedStart?: { x: number; y: number },
   ): Promise<void> => {
     const container = element.closest(".battle-screen") as HTMLElement;
     if (!container) {
@@ -153,8 +154,9 @@ export const useCardAnimation = () => {
     const containerRect = container.getBoundingClientRect();
     const elementRect = element.getBoundingClientRect();
     const targetRect = targetElement.getBoundingClientRect();
-    const startX = elementRect.left - containerRect.left;
-    const startY = elementRect.top - containerRect.top;
+    // Use pre-computed coordinates if available (captured before state update removes card)
+    const startX = preComputedStart ? preComputedStart.x : elementRect.left - containerRect.left;
+    const startY = preComputedStart ? preComputedStart.y : elementRect.top - containerRect.top;
     const endX = targetRect.left - containerRect.left + targetRect.width / 2;
     const endY = targetRect.top - containerRect.top + targetRect.height / 2;
     const clone = element.cloneNode(true) as HTMLElement;
@@ -234,7 +236,8 @@ export const useCardAnimation = () => {
       x,
       y,
       value: damage,
-      color: isCritical ? "#ff6600" : "#ff4444",
+      color: isCritical ? DAMAGE_ANIMATION.CRIT_COLOR : DAMAGE_ANIMATION.NORMAL_COLOR,
+      duration: DAMAGE_ANIMATION.TEXT_DURATION,
       isCritical,
     });
 
@@ -249,7 +252,7 @@ export const useCardAnimation = () => {
       x,
       y,
       count: isCritical ? DAMAGE_ANIMATION.CRIT_PARTICLE_COUNT : DAMAGE_ANIMATION.NORMAL_PARTICLE_COUNT,
-      color: isCritical ? "#ff6600" : "#ff4444",
+      color: isCritical ? DAMAGE_ANIMATION.CRIT_COLOR : DAMAGE_ANIMATION.NORMAL_COLOR,
       size: isCritical ? DAMAGE_ANIMATION.CRIT_PARTICLE_SIZE : DAMAGE_ANIMATION.NORMAL_PARTICLE_SIZE,
       spread: isCritical ? DAMAGE_ANIMATION.CRIT_PARTICLE_SPREAD : DAMAGE_ANIMATION.NORMAL_PARTICLE_SPREAD,
     });

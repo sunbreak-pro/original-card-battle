@@ -68,8 +68,7 @@ export const RARITY_COLORS: Record<Rarity, string> = {
 
 /** Element Unicode icons for UI display */
 export const ELEMENT_ICON_MAP: Record<ElementType, string> = {
-  slash: "⚔️",
-  impact: "💥",
+  physics: "⚔️",
   guard: "🛡️",
   fire: "🔥",
   ice: "❄️",
@@ -79,12 +78,14 @@ export const ELEMENT_ICON_MAP: Record<ElementType, string> = {
   summon: "🔮",
   enhance: "💎",
   sacrifice: "💀",
+  buff: "💪",
+  debuff: "💔",
+  heal: "💚",
 };
 
 /** Element Japanese display names */
 export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
-  slash: "斬撃",
-  impact: "衝撃",
+  physics: "物理",
   guard: "防御",
   fire: "火",
   ice: "氷",
@@ -94,12 +95,14 @@ export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
   summon: "召喚",
   enhance: "強化",
   sacrifice: "生贄",
+  buff: "強化",
+  debuff: "弱体",
+  heal: "回復",
 };
 
 /** Element CSS colors */
 export const ELEMENT_COLOR_MAP: Record<ElementType, string> = {
-  slash: "#c0c0c0",
-  impact: "#ff8c00",
+  physics: "#c0c0c0",
   guard: "#4682b4",
   fire: "#ff4500",
   ice: "#00bfff",
@@ -109,6 +112,9 @@ export const ELEMENT_COLOR_MAP: Record<ElementType, string> = {
   summon: "#9370db",
   enhance: "#00ced1",
   sacrifice: "#8b0000",
+  buff: "#32cd32",
+  debuff: "#dc143c",
+  heal: "#00fa9a",
 };
 
 /** Magic elements that can trigger Mage resonance chain */
@@ -118,10 +124,15 @@ export const MAGIC_ELEMENTS: ReadonlySet<ElementType> = new Set([
 
 /** Physical elements used by Swordsman class */
 export const PHYSICAL_ELEMENTS: ReadonlySet<ElementType> = new Set([
-  "slash", "impact", "guard",
+  "physics", "guard",
 ]);
 
 /** Summoner-specific elements */
 export const SUMMONER_ELEMENTS: ReadonlySet<ElementType> = new Set([
   "summon", "enhance", "sacrifice",
+]);
+
+/** Utility elements (non-combat element types) */
+export const UTILITY_ELEMENTS: ReadonlySet<ElementType> = new Set([
+  "buff", "debuff", "heal",
 ]);

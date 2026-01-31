@@ -1,34 +1,45 @@
 /* =========================================
-   Card Unified Styling System
+   Card Base Styles
 
-   This CSS module provides unified card styling across all UIs:
-   - Battle screen, Library, Shop, Character Selection
+   Shared visual styles for the .card element itself.
+   Used across battle, library, dungeon, modals.
 
    Classes to apply to .card element:
-   - Size: card-size-sm, card-size-md, card-size-lg
-   - Tag: tag-attack, tag-guard, tag-skill, tag-stance (UI display)
+   - Tag: tag-attack, tag-guard, tag-skill, tag-stance
    - Mastery: mastery-0, mastery-1, mastery-2, mastery-3
+   - State: playable, unplayable
    ========================================= */
 
 /* =========================================
-   Card Size System
+   Card Size Variables
    ========================================= */
 :root {
-  --card-base-width: 18vh;
-  --card-aspect-ratio: 2 / 3;
+  --card-base-width: 22vh;
+  --card-aspect-ratio: 3.35 / 5;
 }
 
-/* Size variants applied to .card-wrapper */
-.card-size-sm {
-  width: calc(var(--card-base-width) * 0.75) !important;
+/* =========================================
+   Card Element
+   ========================================= */
+.card {
+  width: 100%;
+  height: 100%;
+  border: 0.25vh solid #000;
+  border-radius: 1vh;
+  padding: 1vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.8), inset 0 0.5vh 1vh rgba(0, 0, 0, 0.3);
 }
 
-.card-size-md {
-  width: var(--card-base-width) !important;
+.card.playable {
+  border: 0.1vh solid #cfcfcf;
 }
 
-.card-size-lg {
-  width: calc(var(--card-base-width) * 1.1) !important;
+.card.unplayable {
+  opacity: 0.6;
+  filter: grayscale(0.5);
 }
 
 /* =========================================
@@ -59,6 +70,19 @@
 .card.tag-stance {
   --tag-color: #9a4ad9;
   --tag-accent: #b87aed;
+}
+
+/* Apply tag color to full card background */
+.card.tag-attack,
+.card.tag-guard,
+.card.tag-skill,
+.card.tag-stance {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--tag-color) 40%, var(--theme-primary, #2a1f3d)) 0%,
+    color-mix(in srgb, var(--tag-color) 25%, var(--theme-secondary, #1a1428)) 50%,
+    color-mix(in srgb, var(--tag-color) 40%, var(--theme-primary, #2a1f3d)) 100%
+  );
 }
 
 /* =========================================
@@ -111,94 +135,7 @@
 }
 
 /* =========================================
-   Card Container (Center)
-   ========================================= */
-.card-container {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  flex: 1;
-  height: 100%;
-  padding: 0;
-  gap: -2vh;
-  margin-right: 10vh;
-}
-
-/* =========================================
-   Card Background with Tag Color
-   ========================================= */
-
-/* Apply tag color to full card background */
-.card.tag-attack,
-.card.tag-guard,
-.card.tag-skill,
-.card.tag-stance {
-  background: linear-gradient(
-    145deg,
-    color-mix(in srgb, var(--tag-color) 40%, var(--theme-primary, #2a1f3d)) 0%,
-    color-mix(in srgb, var(--tag-color) 25%, var(--theme-secondary, #1a1428)) 50%,
-    color-mix(in srgb, var(--tag-color) 40%, var(--theme-primary, #2a1f3d)) 100%
-  );
-}
-
-/* =========================================
-   Card Wrapper (Fan Layout)
-   ========================================= */
-.card-wrapper {
-  position: relative;
-  width: 11vh;
-  aspect-ratio: 2 / 3;
-  margin-left: -1.5vh;
-  transform-origin: center bottom;
-  transform: translateY(var(--y)) rotate(var(--rot));
-  transition: transform 0.15s ease-out;
-  cursor: pointer;
-  animation-fill-mode: both;
-  will-change: transform;
-}
-
-.card-wrapper:first-child {
-  margin-left: 0;
-}
-
-/* Hover: lift and straighten card */
-.card-wrapper:hover {
-  z-index: 1000 !important;
-  transform: translateX(1vh) translateY(-1vh) rotate(0deg) scale(1.15) !important;
-}
-
-/* Adjacent card shifts right (GPU-accelerated, no reflow) */
-.card-wrapper:hover + .card-wrapper {
-  transform: translateX(2vh) translateY(var(--y)) rotate(var(--rot));
-}
-
-/* =========================================
-   Card Base
-   ========================================= */
-.card {
-  width: 125%;
-  height: 125%;
-  border: 0.25vh solid #000;
-  border-radius: 1vh;
-  padding: 1vh;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.8), inset 0 0.5vh 1vh rgba(0, 0, 0, 0.3);
-}
-
-
-.card.playable {
-  border: 0.1vh solid #cfcfcf;
-}
-
-.card.unplayable {
-  opacity: 0.6;
-  filter: grayscale(0.5);
-}
-
-/* =========================================
-   Card Elements
+   Card Inner Elements
    ========================================= */
 .card-cost {
   position: absolute;
@@ -229,6 +166,7 @@
   z-index: 2;
   margin-left: 1.3vw;
 }
+
 .card .card-element-icon {
   width: 100%;
   height: 2.2vh;
@@ -249,7 +187,8 @@
   text-shadow: 0 0 0.5vh #000;
   box-shadow: 0 .2vw rgba(0, 0, 0, 0.5);
 }
-.card-body{
+
+.card-body {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -257,6 +196,7 @@
   border: 1.8px solid #767676;
   border-radius: 0.6vh;
 }
+
 .card-name {
   font-size: 1.8vh;
   font-weight: bold;
@@ -269,6 +209,7 @@
   border: 0.2vh 0 0 0 solid rgba(255, 255, 255, 0.3);
   border-radius: .5vh .5vh 0 0;
 }
+
 .card-name.mastery-0 {
   background-color: var(--color-mastery-0);
 }
@@ -285,7 +226,7 @@
 .card-desc-box {
   flex: 1;
   background: rgba(0, 0, 0, 0.4);
-  border-radius:  0 0 0.5vh 0.5vh;
+  border-radius: 0 0 0.5vh 0.5vh;
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
@@ -324,17 +265,18 @@
 }
 
 /* Mastery bar styles are defined in components/bars.css */
+
 /* =========================================
-   Draw/Discard Animations
+   Size Variants (applied to wrapper elements)
    ========================================= */
-.card-wrapper.drawing {
-  pointer-events: none;
-  z-index: 1000;
-  animation: cardDrawIn 0.8s cubic-bezier(0, 0, 0.9, 1) both;
+.card-size-sm {
+  width: calc(var(--card-base-width) * 0.75) !important;
 }
 
-.card-wrapper.discarding {
-  pointer-events: none;
-  z-index: 1000;
-  animation: discardToPile 0.6s cubic-bezier(0.8, -0.38, 0.035, 0.025) forwards;
+.card-size-md {
+  width: var(--card-base-width) !important;
+}
+
+.card-size-lg {
+  width: calc(var(--card-base-width) * 1.1) !important;
 }

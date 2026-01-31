@@ -25,7 +25,8 @@
       "Bash(grep:*)",
       "Bash(done)",
       "Bash(node:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(npx vite build:*)"
     ],
     "deny": [],
     "ask": []

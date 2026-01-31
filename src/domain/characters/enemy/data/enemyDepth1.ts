@@ -10,6 +10,7 @@ export const CORRUPTED_HOUND: EnemyDefinition = {
   baseSpeed: 40,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 18,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "噛みつき", type: "attack", baseDamage: 7, displayIcon: "⚔️", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "腐肉の牙", type: "debuff", baseDamage: 7, applyDebuffs: [{ name: "poison", stacks: 1, duration: 2, value: 3, isPermanent: false }], displayIcon: "🦷", priority: 1, energyCost: 1 } },
@@ -28,6 +29,7 @@ export const MUTATED_CROW: EnemyDefinition = {
   baseSpeed: 55,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 16,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "連続啄み", type: "attack", baseDamage: 5, hitCount: 2, displayIcon: "🦅", priority: 0, energyCost: 1 }, probability: 0.8 },
     { phaseNumber: 0, action: { name: "酸の唾液", type: "debuff", baseDamage: 3, applyDebuffs: [{ name: "defDownMajor", stacks: 1, duration: 3, value: 30, isPermanent: false }], displayIcon: "💧", priority: 1, energyCost: 1 }, probability: 0.2 },
@@ -44,6 +46,7 @@ export const BONE_WANDERER: EnemyDefinition = {
   baseSpeed: 35,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 18,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "骨の剣", type: "attack", baseDamage: 6, displayIcon: "🗡️", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "骨の剣", type: "attack", baseDamage: 6, displayIcon: "🗡️", priority: 0, energyCost: 1 } },
@@ -62,6 +65,7 @@ export const SHADOW_CRAWLER: EnemyDefinition = {
   baseSpeed: 60,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 15,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "影の触手", type: "attack", baseDamage: 8, displayIcon: "🌑", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "闇の侵食", type: "debuff", baseDamage: 6, applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 3, value: 15, isPermanent: false }], displayIcon: "🌫️", priority: 1, energyCost: 1 } },
@@ -80,6 +84,7 @@ export const FLESH_EATER: EnemyDefinition = {
   baseSpeed: 45,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 14,
   aiPatterns: [
     { phaseNumber: 0, condition: (hp, maxHp) => hp > maxHp * 0.5, action: { name: "触手攻撃", type: "attack", baseDamage: 5, displayIcon: "🦑", priority: 0, energyCost: 1 } },
     { phaseNumber: 0, condition: (hp, maxHp) => hp <= maxHp * 0.5, action: { name: "狂乱", type: "attack", baseDamage: 7, displayIcon: "💢", priority: 1, energyCost: 1 } },
@@ -96,6 +101,7 @@ export const RUSTY_SWORDSMAN: EnemyDefinition = {
   baseSpeed: 50,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 18,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "斬撃", type: "attack", baseDamage: 8, displayIcon: "⚔️", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "斬撃", type: "attack", baseDamage: 8, displayIcon: "⚔️", priority: 0, energyCost: 1 } },
@@ -114,6 +120,7 @@ export const POISON_SPIDER: EnemyDefinition = {
   baseSpeed: 48,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 15,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "毒牙", type: "debuff", baseDamage: 4, applyDebuffs: [{ name: "poison", stacks: 1, duration: 1, value: 3, isPermanent: false }], displayIcon: "🕷️", priority: 1, energyCost: 1 }, probability: 0.8 },
     { phaseNumber: 0, action: { name: "糸縛り", type: "debuff", baseDamage: 2, applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "🕸️", priority: 2, energyCost: 1 }, probability: 0.2 },
@@ -130,6 +137,7 @@ export const FALLEN_GUARDIAN: EnemyDefinition = {
   baseSpeed: 55,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 28,
   aiPatterns: [
     { phaseNumber: 1, condition: (hp, maxHp) => hp > maxHp * 0.66, action: { name: "重斬撃", type: "attack", baseDamage: 12, displayIcon: "🔨", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, condition: (hp, maxHp) => hp > maxHp * 0.66, action: { name: "防御固め", type: "buff", baseDamage: 0, guardGain: 20, displayIcon: "🛡️", priority: 1, energyCost: 1 } },

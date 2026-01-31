@@ -10,6 +10,7 @@ export const HELL_HOUND: EnemyDefinition = {
   baseSpeed: 55,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 22,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "炎の咆哮", type: "debuff", baseDamage: 20, applyDebuffs: [{ name: "burn", stacks: 1, duration: 3, value: 7, isPermanent: false }], displayIcon: "🔥", priority: 1, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "三連噛みつき", type: "attack", baseDamage: 10, hitCount: 3, displayIcon: "🐕", priority: 0, energyCost: 1 } },
@@ -29,6 +30,7 @@ export const SHADOW_DEMON: EnemyDefinition = {
   baseSpeed: 65,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 20,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "影の爪", type: "attack", baseDamage: 22, displayIcon: "🌑", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "暗黒の呪い", type: "debuff", baseDamage: 15, applyDebuffs: [{ name: "atkDownMinor", stacks: 2, duration: 3, value: 20, isPermanent: false }], displayIcon: "🌫️", priority: 1, energyCost: 1 } },
@@ -47,6 +49,7 @@ export const BLOOD_KNIGHT: EnemyDefinition = {
   baseSpeed: 40,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 22,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "血刃斬", type: "debuff", baseDamage: 22, applyDebuffs: [{ name: "bleed", stacks: 1, duration: 3, value: 7, isPermanent: false }], displayIcon: "🗡️", priority: 1, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "血の障壁", type: "buff", baseDamage: 0, guardGain: 30, displayIcon: "🛡️", priority: 1, energyCost: 1 } },
@@ -66,6 +69,7 @@ export const DARK_SORCERER: EnemyDefinition = {
   baseSpeed: 50,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 20,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "闇の弾丸", type: "attack", baseDamage: 20, displayIcon: "🔮", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "呪縛の鎖", type: "debuff", baseDamage: 15, applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "⛓️", priority: 2, energyCost: 1 } },
@@ -86,6 +90,7 @@ export const IMP_TRICKSTER: EnemyDefinition = {
   baseSpeed: 75,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 14,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "悪魔の爪", type: "attack", baseDamage: 18, displayIcon: "😈", priority: 0, energyCost: 1 }, probability: 0.5 },
     { phaseNumber: 0, action: { name: "混乱の呪い", type: "debuff", baseDamage: 12, applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 2, value: 20, isPermanent: false }], displayIcon: "🎭", priority: 1, energyCost: 1 }, probability: 0.3 },
@@ -103,6 +108,7 @@ export const CURSED_GARGOYLE: EnemyDefinition = {
   baseSpeed: 35,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 20,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "石拳", type: "attack", baseDamage: 24, displayIcon: "🗿", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "呪いの咆哮", type: "debuff", baseDamage: 18, applyDebuffs: [{ name: "defDownMajor", stacks: 1, duration: 2, value: 25, isPermanent: false }], displayIcon: "💀", priority: 1, energyCost: 1 } },
@@ -121,6 +127,7 @@ export const HELLFIRE_WISP: EnemyDefinition = {
   baseSpeed: 80,
   startingGuard: false,
   actEnergy: 1,
+  displayWidth: 14,
   aiPatterns: [
     { phaseNumber: 0, action: { name: "業火", type: "debuff", baseDamage: 18, applyDebuffs: [{ name: "burn", stacks: 1, duration: 3, value: 6, isPermanent: false }], displayIcon: "🔥", priority: 1, energyCost: 1 }, probability: 0.7 },
     { phaseNumber: 0, action: { name: "爆発", type: "attack", baseDamage: 25, displayIcon: "💥", priority: 0, energyCost: 1 }, probability: 0.3 },
@@ -137,6 +144,7 @@ export const DEMON_LORD_VARGATH: EnemyDefinition = {
   baseSpeed: 50,
   startingGuard: true,
   actEnergy: 1,
+  displayWidth: 32,
   aiPatterns: [
     // Phase 1: HP > 66% - Dominant offense
     { phaseNumber: 1, condition: (hp, maxHp) => hp > maxHp * 0.66, action: { name: "魔王の剣", type: "attack", baseDamage: 25, displayIcon: "⚔️", priority: 0, energyCost: 1 } },

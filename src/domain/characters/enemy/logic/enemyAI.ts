@@ -68,7 +68,7 @@ export function enemyAction(action: EnemyAction): Card {
     category: "atk",
     baseDamage: action.baseDamage,
     tags,
-    element: "slash",
+    element: ["physics"],
     rarity: "common",
     useCount: 0,
     masteryLevel: 0,
