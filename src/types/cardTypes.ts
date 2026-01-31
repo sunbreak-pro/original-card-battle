@@ -115,8 +115,6 @@ export interface Card {
   swordEnergyGain?: number;
   /** Sword energy consumed when played */
   swordEnergyConsume?: number;
-  /** Damage multiplier per sword energy consumed */
-  swordEnergyMultiplier?: number;
 
   // ---- Mage-Specific (Future) ----
   /** Bonus damage/effect for elemental chains */

@@ -95,7 +95,7 @@
    Character Display
    ========================================= */
 .character-name {
-  font-size: 3vh;
+  font-size: 2vh;
   font-weight: bold;
   text-shadow: 0 0 1vh var(--theme-glow);
 }

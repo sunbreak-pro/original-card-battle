@@ -42,8 +42,10 @@ import {
   addSwordEnergy,
   consumeSwordEnergy,
   consumeAllSwordEnergy,
-  calculateSwordEnergyConsumeDamage,
+  getSwordEnergyBleedChance,
 } from "../../characters/player/logic/swordEnergySystem";
+
+import { SWORD_ENERGY_BLEED_DURATION, SWORD_ENERGY_BLEED_STACKS } from "@/constants";
 
 // Deck management
 import { drawCards } from "../../cards/decks/deck";
@@ -198,27 +200,14 @@ export function useCardExecution(
         cannotPlayReason = "Not enough energy";
       }
 
-      // Calculate potential sword energy damage bonus
-      let swordEnergyDamageBonus = 0;
-      if (card.swordEnergyConsume !== undefined && card.swordEnergyMultiplier) {
-        const consumeAmount =
-          card.swordEnergyConsume === 0
-            ? swordEnergy.current
-            : Math.min(swordEnergy.current, card.swordEnergyConsume);
-        swordEnergyDamageBonus = calculateSwordEnergyConsumeDamage(
-          0,
-          consumeAmount,
-          card.swordEnergyMultiplier
-        );
-      }
-
       // Estimate damage
       let estimatedDamage = 0;
       if (effect.damageToEnemy) {
-        const cardWithBonus = {
-          ...card,
-          baseDamage: (card.baseDamage || 0) + swordEnergyDamageBonus,
-        };
+        // Apply sword energy flat bonus to base damage
+        const swordEnergyFlatBonus = swordEnergy.current;
+        const cardWithBonus = swordEnergyFlatBonus > 0 && card.baseDamage !== undefined
+          ? { ...card, baseDamage: card.baseDamage + swordEnergyFlatBonus }
+          : card;
         const damageResult = calculateDamage(playerStats, enemyStats, cardWithBonus);
         estimatedDamage = damageResult.finalDamage;
       }
@@ -282,37 +271,23 @@ export function useCardExecution(
       // Sword Energy Processing
       // ====================================================================
 
-      let swordEnergyDamageBonus = 0;
-      let consumedSwordEnergy = 0;
-
       if (card.swordEnergyConsume !== undefined) {
         if (card.swordEnergyConsume === 0) {
           // Consume all sword energy
           setters.setSwordEnergy((prev) => {
             const swordResult = consumeAllSwordEnergy(prev);
-            consumedSwordEnergy = swordResult.consumed;
-            result.swordEnergyConsumed = consumedSwordEnergy;
-            result.swordEnergyChange = -consumedSwordEnergy;
+            result.swordEnergyConsumed = swordResult.consumed;
+            result.swordEnergyChange = -swordResult.consumed;
             return swordResult.newState;
           });
         } else {
           // Consume specific amount
           setters.setSwordEnergy((prev) => {
             const swordResult = consumeSwordEnergy(prev, card.swordEnergyConsume!);
-            consumedSwordEnergy = swordResult.consumed;
-            result.swordEnergyConsumed = consumedSwordEnergy;
-            result.swordEnergyChange = -consumedSwordEnergy;
+            result.swordEnergyConsumed = swordResult.consumed;
+            result.swordEnergyChange = -swordResult.consumed;
             return swordResult.newState;
           });
-        }
-
-        // Calculate bonus damage from consumed sword energy
-        if (card.swordEnergyMultiplier) {
-          swordEnergyDamageBonus = calculateSwordEnergyConsumeDamage(
-            0,
-            consumedSwordEnergy,
-            card.swordEnergyMultiplier
-          );
         }
       } else if (card.swordEnergyGain) {
         // Gain sword energy
@@ -328,15 +303,15 @@ export function useCardExecution(
       // ====================================================================
 
       if (effect.damageToEnemy) {
-        const cardWithSwordEnergy = {
-          ...card,
-          baseDamage: (card.baseDamage || 0) + swordEnergyDamageBonus,
-        };
-
+        // Apply sword energy flat bonus to base damage
+        const swordEnergyFlatBonus = swordEnergy.current;
+        const cardWithBonus = swordEnergyFlatBonus > 0 && card.baseDamage !== undefined
+          ? { ...card, baseDamage: card.baseDamage + swordEnergyFlatBonus }
+          : card;
         const damageResult = calculateDamage(
           playerStats,
           enemyStats,
-          cardWithSwordEnergy
+          cardWithBonus
         );
         const allocation = applyDamageAllocation(
           enemyStats,
@@ -394,6 +369,24 @@ export function useCardExecution(
           ...stats,
           damageDealt: stats.damageDealt + damageResult.finalDamage,
         }));
+
+        // Auto-bleed from sword energy (swordsman attack cards only)
+        if (card.characterClass === "swordsman" && card.tags.includes("attack")) {
+          const bleedChance = getSwordEnergyBleedChance(swordEnergy);
+          if (bleedChance > 0 && Math.random() < bleedChance) {
+            const newEnemyBuffs = addOrUpdateBuffDebuff(
+              enemyBuffs,
+              "bleed",
+              SWORD_ENERGY_BLEED_DURATION,
+              3,
+              SWORD_ENERGY_BLEED_STACKS,
+              false,
+              undefined,
+              'player'
+            );
+            setters.setEnemyBuffs(newEnemyBuffs);
+          }
+        }
       }
 
       // ====================================================================

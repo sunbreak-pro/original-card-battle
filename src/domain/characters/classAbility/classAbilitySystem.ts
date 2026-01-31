@@ -38,11 +38,6 @@ export const DEFAULT_DAMAGE_MODIFIER: DamageModifier = {
   critBonus: 0,
   penetration: 0,
 };
-
-// ============================================================
-// Class Ability System Interface
-// ============================================================
-
 /**
  * Generic interface for class ability systems
  *

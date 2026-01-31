@@ -9,7 +9,7 @@ import type { Card } from '@/types/cardTypes';
 import { deckReducer, type DeckState } from "../../cards/decks/deckReducter";
 import { createInitialDeck, drawCards, shuffleArray } from "../../cards/decks/deck";
 import { useCardAnimation } from "../../../ui/componentsHtml/useCardAnimation";
-import { SWORDSMAN_CARDS_ARRAY } from "../../../constants/data/card/SwordmanCards";
+import { SWORDSMAN_CARDS_ARRAY } from "../../../constants/data/cards/SwordmanCards";
 import { INITIAL_DECK_COUNTS } from "@/constants/data/battles/initialDeckConfig";
 
 // Get the return type of useCardAnimation

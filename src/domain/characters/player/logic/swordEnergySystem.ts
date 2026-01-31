@@ -13,11 +13,11 @@
  * - 3+ cost: +3 sword energy
  * - Dedicated sword energy cards: +4 sword energy
  *
- * [Sword Energy Effects] (Nerfed)
- * - Physical damage = base power + (sword energy × 2)
- * - 5+: Critical rate +20%
- * - 8+: Physical attacks gain +30% penetration
- * - 10 (max): Next physical attack is guaranteed critical + 50% penetration
+ * [Sword Energy Effects]
+ * - Physical damage = base power + (sword energy × 1)
+ * - 5+: 20% chance to apply bleed on attack
+ * - 8+: 40% chance to apply bleed on attack
+ * - 10 (max): 60% chance to apply bleed on attack
  */
 
 import type { Card } from '@/types/cardTypes';
@@ -27,6 +27,11 @@ import {
   createInitialSwordEnergy,
 } from '../../logic/classAbilityUtils';
 import type { ClassAbilitySystem, DamageModifier } from "../../classAbility/classAbilitySystem";
+import {
+  SWORD_ENERGY_BLEED_CHANCE_5,
+  SWORD_ENERGY_BLEED_CHANCE_8,
+  SWORD_ENERGY_BLEED_CHANCE_10,
+} from '@/constants';
 
 // Re-export for backward compatibility
 export type { SwordEnergyState };
@@ -65,8 +70,8 @@ export const SwordEnergySystem: ClassAbilitySystem<SwordEnergyState> = {
       };
     }
 
-    // Handle energy consumption for "consume all" cards (swordEnergyConsume = 0 with multiplier)
-    if (card.swordEnergyConsume === 0 && card.swordEnergyMultiplier !== undefined) {
+    // Handle energy consumption for "consume all" cards (swordEnergyConsume = 0)
+    if (card.swordEnergyConsume === 0) {
       return {
         ...state,
         current: 0, // Consume all
@@ -104,13 +109,11 @@ export const SwordEnergySystem: ClassAbilitySystem<SwordEnergyState> = {
    * Get damage modifier based on sword energy level
    */
   getDamageModifier(state: SwordEnergyState, _card?: Card): DamageModifier {
-    const effects = getSwordEnergyEffects(state.current);
-
     return {
-      flatBonus: state.current * 2, // +2 damage per sword energy
+      flatBonus: state.current, // +1 damage per sword energy
       percentMultiplier: 1.0,
-      critBonus: effects.critBonus,
-      penetration: effects.penetration,
+      critBonus: 0,
+      penetration: 0,
     };
   },
 
@@ -137,13 +140,13 @@ export const SwordEnergySystem: ClassAbilitySystem<SwordEnergyState> = {
    */
   getStateDescription(state: SwordEnergyState): string {
     if (state.current >= SWORD_ENERGY_MAX) {
-      return `剣気 MAX (${state.current}/${state.max}) - 確定クリティカル!`;
+      return `剣気 MAX (${state.current}/${state.max}) - 出血付与60%!`;
     }
     if (state.current >= 8) {
-      return `剣気 ${state.current}/${state.max} - 貫通+30%`;
+      return `剣気 ${state.current}/${state.max} - 出血付与40%`;
     }
     if (state.current >= 5) {
-      return `剣気 ${state.current}/${state.max} - クリティカル+20%`;
+      return `剣気 ${state.current}/${state.max} - 出血付与20%`;
     }
     return `剣気 ${state.current}/${state.max}`;
   },
@@ -222,20 +225,12 @@ export function consumeAllSwordEnergy(
 }
 
 /**
- * Calculate critical bonus based on sword energy level
+ * Calculate bleed chance based on sword energy level
  */
-export function calculateSwordEnergyCritBonus(swordEnergy: number): number {
-  if (swordEnergy >= 10) return 1.0;
-  if (swordEnergy >= 5) return 0.2;
-  return 0;
-}
-
-/**
- * Calculate penetration bonus based on sword energy level
- */
-export function calculateSwordEnergyPenetration(swordEnergy: number): number {
-  if (swordEnergy >= 10) return 0.5;
-  if (swordEnergy >= 8) return 0.3;
+export function calculateSwordEnergyBleedChance(swordEnergy: number): number {
+  if (swordEnergy >= 10) return SWORD_ENERGY_BLEED_CHANCE_10;
+  if (swordEnergy >= 8) return SWORD_ENERGY_BLEED_CHANCE_8;
+  if (swordEnergy >= 5) return SWORD_ENERGY_BLEED_CHANCE_5;
   return 0;
 }
 
@@ -243,8 +238,7 @@ export function calculateSwordEnergyPenetration(swordEnergy: number): number {
  * Sword energy effect summary
  */
 export interface SwordEnergyEffects {
-  critBonus: number;
-  penetration: number;
+  bleedChance: number;
   isMaxEnergy: boolean;
 }
 
@@ -253,19 +247,14 @@ export interface SwordEnergyEffects {
  */
 export function getSwordEnergyEffects(swordEnergy: number): SwordEnergyEffects {
   return {
-    critBonus: calculateSwordEnergyCritBonus(swordEnergy),
-    penetration: calculateSwordEnergyPenetration(swordEnergy),
+    bleedChance: calculateSwordEnergyBleedChance(swordEnergy),
     isMaxEnergy: swordEnergy >= SWORD_ENERGY_MAX,
   };
 }
 
 /**
- * Calculate damage when consuming sword energy
+ * Get bleed chance from sword energy state
  */
-export function calculateSwordEnergyConsumeDamage(
-  baseDamage: number,
-  consumedEnergy: number,
-  multiplier: number = 10
-): number {
-  return baseDamage + (consumedEnergy * multiplier);
+export function getSwordEnergyBleedChance(state: SwordEnergyState): number {
+  return calculateSwordEnergyBleedChance(state.current);
 }

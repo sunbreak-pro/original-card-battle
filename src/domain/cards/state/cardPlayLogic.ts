@@ -4,7 +4,6 @@ import {
     consumeSwordEnergy,
     consumeAllSwordEnergy,
     addSwordEnergy,
-    calculateSwordEnergyConsumeDamage,
 } from "../../characters/player/logic/swordEnergySystem";
 
 /**
@@ -46,18 +45,8 @@ export function processSwordEnergyConsumption(
         newState = result.newState;
     }
 
-    // Calculate damage bonus
-    let damageBonus = 0;
-    if (card.swordEnergyMultiplier) {
-        damageBonus = calculateSwordEnergyConsumeDamage(
-            0,
-            consumedAmount,
-            card.swordEnergyMultiplier
-        );
-    }
-
     return {
-        damageBonus,
+        damageBonus: 0,
         consumedAmount,
         newState,
     };

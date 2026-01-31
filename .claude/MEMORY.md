@@ -56,6 +56,7 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 - Element Refactor: slash/impact → physics unified — COMPLETE
 - Card data migration: `src/domain/cards/data/` → `src/constants/data/cards/` — COMPLETE
 - Teleport stone item — COMPLETE
+- FIX: Sword energy flat damage bonus now applied in `useCardExecution.ts` (preview + execute) — COMPLETE
 
 ---
 

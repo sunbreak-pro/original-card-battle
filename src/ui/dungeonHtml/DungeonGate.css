@@ -215,7 +215,6 @@
 .dungeon-gate-screen .start-invasion-button:hover:not(:disabled) {
   background: linear-gradient(135deg, #4c2980 0%, #6b40b0 100%);
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
-  transform: scale(1.02);
 }
 
 .dungeon-gate-screen .start-invasion-button:disabled {
@@ -244,7 +243,6 @@
 .dungeon-gate-screen .dungeon-gate-back-button:hover {
   background: rgba(50, 50, 70, 0.8);
   border-color: rgba(180, 180, 200, 0.5);
-  transform: scale(1.05);
 }
 
 /* ==========================================================
@@ -309,8 +307,9 @@
 }
 
 .dungeon-gate-screen .prep-card-wrapper.selected {
-  transform: scale(1.1);
-  z-index: 5;
+  z-index: 10;
+  transform: scale(1.05) !important;
+  box-shadow: #c7c7c7 0 0 0.2vh;
 }
 
 /* Card slot (wrapper + button) */
@@ -333,17 +332,17 @@
 }
 
 /* Count badge on deck cards */
-.dungeon-gate-screen .deck-card-badge {
-  position: absolute;
-  top: -0.8vh;
-  right: -0.6vw;
+.dungeon-gate-screen .card-count {
+  position: relative;
+  top: .75vh;
+  right: -10vw;
   background: rgba(201, 160, 220, 0.95);
   color: #fff;
   font-size: 1.3vh;
   font-weight: bold;
   padding: 0.3vh 0.6vw;
   border-radius: 4px;
-  min-width: 2.5vh;
+  width: 3.2vh;
   text-align: center;
   z-index: 5;
   box-shadow: 0 0.2vh 0.5vh rgba(0, 0, 0, 0.4);
@@ -388,7 +387,6 @@
 }
 
 .dungeon-gate-screen .deck-remove-btn:hover {
-  scale: 1.05;
   color: rgb(255, 254, 254);
   text-shadow: #171717 0 0 0.2vh;
   background: rgba(186, 12, 12, 0.8);
@@ -403,7 +401,7 @@
 }
 
 .dungeon-gate-screen .deck-add-btn:hover {
-  scale: 1.05;
+  transform: scale(1.05);
   color: #ffffff;
   text-shadow: #000000 0 0 0.2vh;
   background: rgba(74, 222, 128, 1);

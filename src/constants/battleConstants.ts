@@ -31,27 +31,12 @@ export const MIN_PHASES_FOR_PREDICTION = 8;
 // Damage Calculation Constants
 // ============================================================
 
-/** Base critical damage multiplier */
-export const CRIT_DAMAGE_MULTIPLIER = 1.5;
-
 /** Guard bleed-through damage multiplier (when guard absorbs all but AP=0) */
 export const GUARD_BLEED_THROUGH_MULTIPLIER = 0.75;
 
 // ============================================================
 // Buff/Debuff Calculation Constants
 // ============================================================
-
-/** Base critical hit rate */
-export const BASE_CRIT_RATE = 0.1;
-
-/** Maximum critical hit rate cap */
-export const MAX_CRIT_RATE = 0.8;
-
-/** Base hit rate */
-export const BASE_HIT_RATE = 0.1;
-
-/** Maximum hit rate cap */
-export const MAX_HIT_RATE = 0.99;
 
 /** Curse healing reduction multiplier */
 export const CURSE_HEALING_MULTIPLIER = 0.2;
@@ -90,3 +75,22 @@ export const GROUP_ENCOUNTER_INTERVAL = 3;
 
 /** Maximum turn order display count */
 export const MAX_TURN_ORDER_DISPLAY = 4;
+
+// ============================================================
+// Sword Energy Bleed Constants
+// ============================================================
+
+/** Bleed chance at sword energy 5+ */
+export const SWORD_ENERGY_BLEED_CHANCE_5 = 0.2;
+
+/** Bleed chance at sword energy 8+ */
+export const SWORD_ENERGY_BLEED_CHANCE_8 = 0.4;
+
+/** Bleed chance at sword energy 10 (max) */
+export const SWORD_ENERGY_BLEED_CHANCE_10 = 0.6;
+
+/** Duration of bleed applied by sword energy */
+export const SWORD_ENERGY_BLEED_DURATION = 3;
+
+/** Stacks of bleed applied by sword energy */
+export const SWORD_ENERGY_BLEED_STACKS = 1;

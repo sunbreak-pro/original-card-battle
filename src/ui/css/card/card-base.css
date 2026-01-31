@@ -32,6 +32,13 @@
   flex-direction: column;
   box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.8), inset 0 0.5vh 1vh rgba(0, 0, 0, 0.3);
 }
+.card:hover {
+  box-shadow:
+    0 0.5vh 2vh rgba(157, 157, 157, 0.9),
+    inset 0 0.5vh 1vh rgba(0, 0, 0, 0.4),
+    0 0 1vh rgba(255, 255, 255, 0.1);
+  transition: box-shadow 0.2s ease;
+}
 
 .card.playable {
   border: 0.1vh solid #cfcfcf;

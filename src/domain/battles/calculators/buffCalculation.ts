@@ -1,10 +1,6 @@
 import type { BuffDebuffMap, BuffDebuffType } from '@/types/battleTypes';
 import { BUFF_EFFECTS } from "@/constants/data/battles/buffData";
 import {
-    BASE_CRIT_RATE,
-    MAX_CRIT_RATE,
-    BASE_HIT_RATE,
-    MAX_HIT_RATE,
     CURSE_HEALING_MULTIPLIER,
     OVER_CURSE_HEALING_MULTIPLIER,
     FIRE_FIELD_BONUS_MULTIPLIER,
@@ -65,23 +61,6 @@ export function defenseBuffDebuff(buffDebuffs: BuffDebuffMap): {
     }
     return { vulnerabilityMod, damageReductionMod };
 }
-export function criticalRateBuff(buffDebuffs: BuffDebuffMap): number {
-    let rate = BASE_CRIT_RATE;
-    if (buffDebuffs.has("criticalUp")) {
-        const buff = buffDebuffs.get("criticalUp")!;
-        rate += buff.value / 100;
-    }
-    return Math.min(MAX_CRIT_RATE, rate);
-}
-export function hitRateBuff(buffDebuffs: BuffDebuffMap): number {
-    let rate = BASE_HIT_RATE;
-    if (buffDebuffs.has("hitRateUp")) {
-        const buff = buffDebuffs.get("hitRateUp")!;
-        rate += buff.value / 100;
-    }
-    return Math.min(MAX_HIT_RATE, rate);
-}
-
 export function reflectBuff(
     buffDebuffs: BuffDebuffMap,
     damage: number

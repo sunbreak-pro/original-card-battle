@@ -109,12 +109,12 @@ export function DeckTab({
                     className={`prep-card-wrapper${isSelected ? " selected" : ""}`}
                     onClick={() => toggleSelect(cardId)}
                   >
+                    <div className="card-count">x{stack.count}</div>
                     <CardComponent
                       card={stack.card}
                       depth={depth}
                       isPlayable={true}
                     />
-                    <div className="deck-card-badge">x{stack.count}</div>
                   </div>
                   {isSelected && (
                     <div className="deck-edit-btn-container">

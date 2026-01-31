@@ -72,7 +72,6 @@ export interface EnemyPhaseStartResult {
 export function calculateEnemyPhaseStart(
     enemy: EnemyDefinition,
     enemyBuffs: BuffDebuffMap,
-    _enemyMaxHp: number
 ): EnemyPhaseStartResult {
     // Process buff/debuff durations
     const newBuffs = decreaseBuffDebuffDuration(enemyBuffs);

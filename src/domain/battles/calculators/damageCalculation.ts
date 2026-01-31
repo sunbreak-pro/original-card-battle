@@ -3,13 +3,12 @@ import type { DamageAllocation, DamageResult } from '@/types/battleTypes';
 import type { BuffDebuffMap } from '@/types/battleTypes';
 import {
   attackBuffDebuff,
-  criticalRateBuff,
   defenseBuffDebuff,
   reflectBuff,
   calculateLifesteal
 } from "./buffCalculation";
 import type { BattleStats } from '@/types/characterTypes';
-import { CRIT_DAMAGE_MULTIPLIER, GUARD_BLEED_THROUGH_MULTIPLIER } from "../../../constants";
+import { GUARD_BLEED_THROUGH_MULTIPLIER } from "../../../constants";
 
 // Empty BuffDebuffMap for fallback
 const EMPTY_BUFF_MAP: BuffDebuffMap = new Map();
@@ -25,27 +24,14 @@ export function calculateDamage(
 
   const atkMultiplier = attackBuffDebuff(attackerBuffs);
 
-  let critMod = 1.0;
-  let isCritical = false;
-
-  if (attackerBuffs.has("criticalUp")) {
-    const critRate = criticalRateBuff(attackerBuffs);
-    isCritical = Math.random() < critRate;
-
-    if (isCritical) {
-      critMod = CRIT_DAMAGE_MULTIPLIER;
-      const critBuff = attackerBuffs.get("criticalUp")!;
-      critMod += critBuff.value / 100;
-    }
-  }
-  const finalAtk = Math.floor(baseDmg * atkMultiplier * critMod);
+  const finalAtk = Math.floor(baseDmg * atkMultiplier);
   const { vulnerabilityMod, damageReductionMod } = defenseBuffDebuff(defenderBuffs);
   const incomingDmg = Math.floor(finalAtk * vulnerabilityMod * damageReductionMod);
   const reflectDamage = reflectBuff(defenderBuffs, incomingDmg);
   const lifestealAmount = calculateLifesteal(attackerBuffs, incomingDmg);
   return {
     finalDamage: incomingDmg,
-    isCritical,
+    isCritical: false,
     reflectDamage,
     lifestealAmount,
   };
@@ -54,7 +40,7 @@ export function calculateDamage(
 export function applyDamageAllocation(
   defender: BattleStats,
   damage: number,
-  _isBuffDebuffApplied: boolean = false,
+  // _isBuffDebuffApplied: boolean = false,
 ): DamageAllocation {
   let remainingDmg = damage;
   let guardDmg = 0;
