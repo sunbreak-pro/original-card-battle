@@ -30,7 +30,7 @@ import { getInitialDeckCounts } from "@/constants/data/battles/initialDeckConfig
 import { applyMasteryToCards } from "../../cards/state/masteryManager";
 
 // Animation hooks
-import { useCardAnimation } from "../../../ui/componentsHtml/useCardAnimation";
+import { useCardAnimation } from "../../../ui/html/componentsHtml/useCardAnimation";
 import { useTurnTransition } from "../../../ui/animations/usePhaseTransition";
 
 // Battle hooks

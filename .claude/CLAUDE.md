@@ -162,4 +162,5 @@ useEffect(() => {
 - **`.claude/LESSONS_LEARNED.md`** — critical pitfalls: CSS collisions, React 19 ref rules, context scope
 - **`.claude/todos/`** — ongoing refactoring plans; `MASTER_IMPLEMENTATION_PLAN.md` for roadmap
 - **`.claude/docs/`** — game design specs by area (battle, card, camp, dungeon, enemy, item)
+- **`.claude/code_overview/`** — static analysis docs + AI reference (77 vulnerabilities catalogued)
 - **`.claude/skill/`** — 10 development skills (battle-system, camp-facility, card-creator, debugging-active, etc.)

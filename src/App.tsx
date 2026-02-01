@@ -1,16 +1,16 @@
-import BattleScreen from "./ui/battleHtml/BattleScreen.tsx";
-import GuildBattleScreen from "./ui/campsHtml/Guild/GuildBattleScreen.tsx";
-import BaseCamp from "./ui/campsHtml/BaseCamp.tsx";
-import { Guild } from "./ui/campsHtml/Guild/Guild.tsx";
-import { Shop } from "./ui/campsHtml/Shop/Shop.tsx";
-import Storage from "./ui/campsHtml/Storage/Storage.tsx";
-import { Blacksmith } from "./ui/campsHtml/Blacksmith/Blacksmith.tsx";
-import { Sanctuary } from "./ui/campsHtml/Sanctuary/Sanctuary.tsx";
-import { Library } from "./ui/campsHtml/Library/Library.tsx";
-import { DungeonGate } from "./ui/dungeonHtml/DungeonGate.tsx";
-import { NodeMap } from "./ui/dungeonHtml/NodeMap.tsx";
-import { DungeonRunProvider } from "./ui/dungeonHtml/DungeonRunContext.tsx";
-import { CharacterSelect } from "./ui/characterSelectHtml/CharacterSelect.tsx";
+import BattleScreen from "./ui/html/battleHtml/BattleScreen.tsx";
+import GuildBattleScreen from "./ui/html/campsHtml/Guild/GuildBattleScreen.tsx";
+import BaseCamp from "./ui/html/campsHtml/BaseCamp.tsx";
+import { Guild } from "./ui/html/campsHtml/Guild/Guild.tsx";
+import { Shop } from "./ui/html/campsHtml/Shop/Shop.tsx";
+import Storage from "./ui/html/campsHtml/Storage/Storage.tsx";
+import { Blacksmith } from "./ui/html/campsHtml/Blacksmith/Blacksmith.tsx";
+import { Sanctuary } from "./ui/html/campsHtml/Sanctuary/Sanctuary.tsx";
+import { Library } from "./ui/html/campsHtml/Library/Library.tsx";
+import { DungeonGate } from "./ui/html/dungeonHtml/DungeonGate.tsx";
+import { NodeMap } from "./ui/html/dungeonHtml/NodeMap.tsx";
+import { DungeonRunProvider } from "./ui/html/dungeonHtml/DungeonRunContext.tsx";
+import { CharacterSelect } from "./ui/html/characterSelectHtml/CharacterSelect.tsx";
 import {
   GameStateProvider,
   useGameState,
