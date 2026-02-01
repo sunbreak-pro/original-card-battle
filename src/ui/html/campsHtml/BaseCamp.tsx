@@ -1,35 +1,31 @@
 import { useState } from "react";
 import { useGameState } from "@/contexts/GameStateContext";
-import type { FacilityType, GameScreen } from "@/types/campTypes";
+import type { FacilityType } from "@/types/campTypes";
+import { FACILITY_NAV_ITEMS } from "@/constants/campConstants";
 import FacilityHeader from "../componentsHtml/FacilityHeader";
 import "../../css/camps/BaseCamp.css";
-interface FacilityCardProps {
-  type: FacilityType;
-  name: string;
-  description: string;
-  icon: string;
-  isUnlocked: boolean;
-  onEnter: () => GameScreen | void;
-}
 
 const FacilityCard = ({
   type,
   name,
   description,
   icon,
-  isUnlocked,
   onEnter,
-}: FacilityCardProps) => {
+}: {
+  type: FacilityType;
+  name: string;
+  description: string;
+  icon: string;
+  onEnter: () => void;
+}) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div
-      className={`facility-card ${type} ${isUnlocked ? "unlocked" : "locked"} ${
-        isHovered ? "hovered" : ""
-      }`}
+      className={`facility-card ${type} unlocked ${isHovered ? "hovered" : ""}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={isUnlocked ? onEnter : undefined}
+      onClick={onEnter}
     >
       {/* 背景装飾 */}
       <div className="facility-bg-pattern" />
@@ -44,16 +40,8 @@ const FacilityCard = ({
       {/* 説明文 */}
       <div className="facility-description">{description}</div>
 
-      {/* ロック表示 */}
-      {!isUnlocked && (
-        <div className="facility-lock">
-          <div className="lock-icon">🔒</div>
-          <div className="lock-text">Locked</div>
-        </div>
-      )}
-
       {/* ホバーエフェクト */}
-      {isHovered && isUnlocked && (
+      {isHovered && (
         <div className="facility-hover-effect">
           <div className="hover-text enter">Enter →</div>
         </div>
@@ -64,65 +52,6 @@ const FacilityCard = ({
 
 const BaseCamp = () => {
   const { navigateTo } = useGameState();
-
-  const facilities: FacilityCardProps[] = [
-    {
-      type: "dungeon",
-      name: "ダンジョンゲート",
-      description: "Descend into the depths and face your destiny",
-      icon: "🌀",
-      isUnlocked: true,
-      onEnter: () => navigateTo("dungeon"),
-    },
-    {
-      type: "shop",
-      name: "取引所",
-      description: "Buy and sell cards, items, and relics",
-      icon: "🏪",
-      isUnlocked: true,
-      onEnter: () => navigateTo("shop"),
-    },
-    {
-      type: "blacksmith",
-      name: "鍛冶屋",
-      description: "Forge and upgrade your equipment",
-      icon: "⚒️",
-      isUnlocked: true,
-      onEnter: () => navigateTo("blacksmith"),
-    },
-    {
-      type: "sanctuary",
-      name: "聖域",
-      description: "Strengthen your soul with permanent upgrades",
-      icon: "⛪",
-      isUnlocked: true,
-      onEnter: () => navigateTo("sanctuary"),
-    },
-    {
-      type: "library",
-      name: "図書館",
-      description: "Build your deck and browse the encyclopedia",
-      icon: "📚",
-      isUnlocked: true,
-      onEnter: () => navigateTo("library"),
-    },
-    {
-      type: "guild",
-      name: "酒場",
-      description: "Rest, recruit companions, and hear rumors",
-      icon: "🍺",
-      isUnlocked: true,
-      onEnter: () => navigateTo("guild"),
-    },
-    {
-      type: "storage",
-      name: "倉庫",
-      description: "Store and manage your items safely",
-      icon: "📦",
-      isUnlocked: true,
-      onEnter: () => navigateTo("storage"),
-    },
-  ];
 
   return (
     <div className="base-camp">
@@ -138,8 +67,15 @@ const BaseCamp = () => {
 
       {/* 施設グリッド */}
       <div className="facilities-grid">
-        {facilities.map((facility) => (
-          <FacilityCard key={facility.type} {...facility} />
+        {FACILITY_NAV_ITEMS.map((item) => (
+          <FacilityCard
+            key={item.facilityType}
+            type={item.facilityType}
+            name={item.label}
+            description={item.description}
+            icon={item.icon}
+            onEnter={() => navigateTo(item.screen)}
+          />
         ))}
       </div>
     </div>

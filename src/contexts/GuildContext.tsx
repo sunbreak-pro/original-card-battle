@@ -230,6 +230,7 @@ export const GuildProvider: React.FC<{ children: ReactNode }> = ({
 /**
  * Hook to use Guild context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useGuild = () => {
   const context = useContext(GuildContext);
   if (!context) {

@@ -1,10 +1,10 @@
 // Shop transaction logic
 
-import type { Item, ItemRarity, MagicStones } from '@/types/itemTypes';
-import { generateConsumableFromData, generateEquipmentItem } from "../../item_equipment/logic/generateItem";
-import { EQUIPMENT_SLOTS, MAGIC_STONE_VALUES } from "../../../constants/itemConstants";
-import type { EquipmentPackConfig, ShopListing } from '@/types/campTypes';
-import { getEquipmentPackById, resolveShopListing } from "@/constants/data/camps/ShopData";
+import type { Item, MagicStones } from '@/types/itemTypes';
+import { generateConsumableFromData } from "../../item_equipment/logic/generateItem";
+import { MAGIC_STONE_VALUES } from "../../../constants/itemConstants";
+import type { ShopListing } from '@/types/campTypes';
+import { resolveShopListing } from "@/constants/data/camps/ShopData";
 
 /**
  * Check if player can afford an item
@@ -24,39 +24,6 @@ export function hasInventorySpace(
   return currentCapacity + itemCount <= maxCapacity;
 }
 
-
-/**
- * Roll rarity based on pack probabilities
- */
-function rollRarity(pack: EquipmentPackConfig): ItemRarity {
-  const roll = Math.random();
-  const probs = pack.rarityProbabilities;
-
-  let cumulative = 0;
-  if ((cumulative += probs.common) > roll) return "common";
-  if ((cumulative += probs.uncommon) > roll) return "uncommon";
-  if ((cumulative += probs.rare) > roll) return "rare";
-  if ((cumulative += probs.epic) > roll) return "epic";
-  return "legendary";
-}
-
-/**
- * Open equipment pack and generate items
- */
-export function openEquipmentPack(packId: string): Item[] {
-  const pack = getEquipmentPackById(packId);
-  if (!pack) return [];
-
-  const items: Item[] = [];
-
-  for (const slot of EQUIPMENT_SLOTS) {
-    const rarity = rollRarity(pack);
-    const item = generateEquipmentItem(slot, rarity);
-    items.push(item);
-  }
-
-  return items;
-}
 
 /**
  * Calculate sell price for an item

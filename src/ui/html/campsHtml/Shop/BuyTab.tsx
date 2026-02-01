@@ -5,31 +5,27 @@ import { useInventory } from "@/contexts/InventoryContext";
 import {
   getResolvedConsumableListings,
   getResolvedTeleportListings,
-  EQUIPMENT_PACKS,
   generateDailyEquipmentInventory,
   type ResolvedShopListing,
   type EquipmentListing,
 } from "@/constants/data/camps/ShopData";
-import type { EquipmentPackConfig } from "@/types/campTypes";
 import {
   canAfford,
   hasInventorySpace,
   purchaseItem,
-  openEquipmentPack,
 } from "@/domain/camps/logic/shopLogic";
 import { generateEquipmentItem } from "@/domain/item_equipment/logic/generateItem";
 
 const BuyTab = () => {
   const { playerData } = usePlayer();
-  const { useGold } = useResources();
+  const { spendGold } = useResources();
   const { addItemToStorage } = useInventory();
   const storage = playerData.inventory.storage;
   const [notification, setNotification] = useState<string | null>(null);
-  const [purchasedPack, setPurchasedPack] = useState<string[] | null>(null);
 
   const consumableListings = getResolvedConsumableListings();
   const teleportListings = getResolvedTeleportListings();
-  const dayNumber = Math.floor(Date.now() / 86400000);
+  const [dayNumber] = useState(() => Math.floor(Date.now() / 86400000));
   const dailyEquipment = generateDailyEquipmentInventory(dayNumber);
 
   const showNotification = (message: string) => {
@@ -56,7 +52,7 @@ const BuyTab = () => {
       return;
     }
 
-    if (useGold(resolved.price)) {
+    if (spendGold(resolved.price)) {
       addItemToStorage(item);
       showNotification(`Purchased ${resolved.data.name}!`);
     }
@@ -75,31 +71,10 @@ const BuyTab = () => {
       return;
     }
 
-    if (useGold(listing.price)) {
+    if (spendGold(listing.price)) {
       const item = generateEquipmentItem(listing.slot, listing.rarity);
       addItemToStorage(item);
       showNotification(`${listing.name} を購入しました！`);
-    }
-  };
-
-  const handleBuyPack = (pack: EquipmentPackConfig) => {
-    const totalGold =
-      playerData.resources.baseCampGold + playerData.resources.explorationGold;
-    if (!canAfford(totalGold, pack.price)) {
-      showNotification("Not enough gold!");
-      return;
-    }
-
-    if (!hasInventorySpace(storage.currentCapacity, storage.maxCapacity, 6)) {
-      showNotification("倉庫に6枠の空きが必要です！");
-      return;
-    }
-
-    if (useGold(pack.price)) {
-      const items = openEquipmentPack(pack.id);
-      items.forEach((item) => addItemToStorage(item));
-      setPurchasedPack(items.map((i) => `${i.type} ${i.name} (${i.rarity})`));
-      setTimeout(() => setPurchasedPack(null), 4000);
     }
   };
 
@@ -129,39 +104,6 @@ const BuyTab = () => {
           disabled={!affordable || !hasSpace}
         >
           Buy
-        </button>
-      </div>
-    );
-  };
-
-  const renderPackItem = (pack: EquipmentPackConfig) => {
-    const totalGold =
-      playerData.resources.baseCampGold + playerData.resources.explorationGold;
-    const affordable = canAfford(totalGold, pack.price);
-    const hasSpace = hasInventorySpace(
-      storage.currentCapacity,
-      storage.maxCapacity,
-      6,
-    );
-
-    return (
-      <div
-        key={pack.id}
-        className={`shop-item pack ${!affordable ? "unaffordable" : ""}`}
-      >
-        <div className="item-icon">{pack.icon}</div>
-        <div className="item-info">
-          <div className="item-name">{pack.name}</div>
-          <div className="item-description">{pack.description}</div>
-          <div className="pack-badge">6 Items</div>
-        </div>
-        <div className="item-price">{pack.price} G</div>
-        <button
-          className="buy-button pack-buy"
-          onClick={() => handleBuyPack(pack)}
-          disabled={!affordable || !hasSpace}
-        >
-          Open
         </button>
       </div>
     );
@@ -204,19 +146,6 @@ const BuyTab = () => {
     <div className="buy-tab">
       {notification && <div className="shop-notification">{notification}</div>}
 
-      {purchasedPack && (
-        <div className="pack-result">
-          <h3>Pack Opened!</h3>
-          <div className="pack-items">
-            {purchasedPack.map((item, idx) => (
-              <div key={idx} className="pack-item-result">
-                {item}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <section className="shop-section">
         <h2 className="section-title">Consumables</h2>
         <div className="shop-items-grid">
@@ -232,16 +161,9 @@ const BuyTab = () => {
       </section>
 
       <section className="shop-section">
-        <h2 className="section-title">本日の装備 (Daily)</h2>
+        <h2 className="section-title">装備品 (日替わり)</h2>
         <div className="shop-items-grid">
           {dailyEquipment.map(renderEquipmentListing)}
-        </div>
-      </section>
-
-      <section className="shop-section">
-        <h2 className="section-title">Equipment Packs</h2>
-        <div className="shop-items-grid">
-          {EQUIPMENT_PACKS.map(renderPackItem)}
         </div>
       </section>
     </div>

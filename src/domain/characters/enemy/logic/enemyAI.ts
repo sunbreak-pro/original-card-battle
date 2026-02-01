@@ -19,7 +19,6 @@ export function determineEnemyAction(
   currentHp: number,
   maxHp: number,
   turnNumber: number,
-  _remainingEnergy?: number
 ): EnemyAction {
   const validPatterns = enemy.aiPatterns?.filter((pattern) => {
     const turnMatch = pattern.phaseNumber === 0 || pattern.phaseNumber === turnNumber;

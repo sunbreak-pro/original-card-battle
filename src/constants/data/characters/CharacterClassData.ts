@@ -7,10 +7,12 @@
 
 import type { CharacterClass } from "@/types/characterTypes";
 import type { Card } from "@/types/cardTypes";
-import { SWORDSMAN_CARDS } from "../cards/SwordmanCards";
+import { SWORDSMAN_CARDS } from "../cards/swordmanCards";
 import { MAGE_CARDS } from "../cards/mageCards";
 import { SUMMONER_CARDS } from "../cards/summonerCards";
 import { INITIAL_DECK_BY_CLASS } from "../battles/initialDeckConfig";
+import { hydrateDerivationData } from "@/domain/cards/logic/cardDerivationHydrator";
+import { getDerivationsForClass } from "../cards/cardDerivationRegistry";
 
 /**
  * Character class information for selection screen
@@ -90,20 +92,34 @@ function createSummonerStarterDeck(): Card[] {
   );
 }
 
+// Hydrate derivation data into card records (once at module load)
+const hydrationApplied = new Set<CharacterClass>();
+
+function ensureHydrated(
+  classType: CharacterClass,
+  cards: Record<string, Card>,
+): Record<string, Card> {
+  if (!hydrationApplied.has(classType)) {
+    hydrateDerivationData(cards, getDerivationsForClass(classType));
+    hydrationApplied.add(classType);
+  }
+  return cards;
+}
+
 /**
  * Get card data by character class
- * Returns the card definitions for a specific class
+ * Returns the card definitions for a specific class (with derivation data hydrated)
  */
 export function getCardDataByClass(classType: CharacterClass): Record<string, Card> {
   switch (classType) {
     case "swordsman":
-      return SWORDSMAN_CARDS;
+      return ensureHydrated("swordsman", SWORDSMAN_CARDS);
     case "mage":
-      return MAGE_CARDS;
+      return ensureHydrated("mage", MAGE_CARDS);
     case "summoner":
-      return SUMMONER_CARDS;
+      return ensureHydrated("summoner", SUMMONER_CARDS);
     default:
-      return SWORDSMAN_CARDS;
+      return ensureHydrated("swordsman", SWORDSMAN_CARDS);
   }
 }
 

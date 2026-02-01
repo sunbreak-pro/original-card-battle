@@ -17,7 +17,7 @@ const RARITY_COLORS: Record<string, string> = {
 };
 
 const RumorsTab = () => {
-  const { useGold } = useResources();
+  const { spendGold } = useResources();
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [activeRumors, setActiveRumors] = useState<
     { rumor: Rumor; runsRemaining: number }[]
@@ -26,7 +26,7 @@ const RumorsTab = () => {
   const purchaseRumor = (rumor: Rumor) => {
     if (purchasedIds.has(rumor.id)) return;
 
-    const success = useGold(rumor.cost);
+    const success = spendGold(rumor.cost);
     if (!success) return;
 
     setPurchasedIds((prev) => new Set([...prev, rumor.id]));

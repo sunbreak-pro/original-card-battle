@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useGameState } from "@/contexts/GameStateContext";
 import { usePlayer } from "@/contexts/PlayerContext";
+import BackToCampButton from "../../componentsHtml/BackToCampButton";
 import { useInventory } from "@/contexts/InventoryContext";
 import { type Item } from "@/types/itemTypes";
 import ItemCard from "./ItemCard";
@@ -17,7 +17,6 @@ type ItemSource = "storage" | "inventory" | "equipment" | "equipmentInventory";
  * Manages item storage, inventory, and equipment
  */
 export const Storage: React.FC = () => {
-  const { returnToCamp } = useGameState();
   const { playerData } = usePlayer();
   const {
     moveItem,
@@ -292,9 +291,7 @@ export const Storage: React.FC = () => {
           </button>
         </div>
         <div className="back-content">
-          <button className="storage-back-button" onClick={returnToCamp}>
-            🏠 baseCamp Back
-          </button>
+          <BackToCampButton />
         </div>
       </nav>
 

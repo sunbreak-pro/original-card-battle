@@ -85,7 +85,7 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
             </button>
             {navOpen && (
               <div className="facility-nav-dropdown">
-                {FACILITY_NAV_ITEMS.map((item) => (
+                {FACILITY_NAV_ITEMS.filter(item => item.showInNav).map((item) => (
                   <button
                     key={item.screen}
                     className={`facility-nav-item${gameState.currentScreen === item.screen ? " active" : ""}`}

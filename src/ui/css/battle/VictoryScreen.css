@@ -452,3 +452,77 @@
     font-size: 1.2rem;
   }
 }
+
+/* ==========================================
+   Derivation Unlock Notification
+   ========================================== */
+.victory-screen .derivation-unlocks {
+  margin-top: 1.5vh;
+  padding: 1.5vh 2vw;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1));
+  border: 0.1vh solid rgba(255, 215, 0, 0.4);
+  border-radius: 1vh;
+  animation: unlockGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes unlockGlow {
+  from {
+    box-shadow: 0 0 0.5vh rgba(255, 215, 0, 0.2);
+  }
+  to {
+    box-shadow: 0 0 1.5vh rgba(255, 215, 0, 0.5);
+  }
+}
+
+.victory-screen .derivation-unlocks-title {
+  color: #ffd700;
+  font-size: 1.8vh;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 1vh;
+  text-shadow: 0 0 1vh rgba(255, 215, 0, 0.5);
+}
+
+.victory-screen .derivation-unlocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+  align-items: center;
+}
+
+.victory-screen .derivation-unlock-item {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 0.6vh 1.5vw;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.5vh;
+  animation: unlockSlideIn 0.5s ease-out both;
+}
+
+@keyframes unlockSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-2vw);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.victory-screen .derivation-unlock-parent {
+  color: #9ca3af;
+  font-size: 1.4vh;
+}
+
+.victory-screen .derivation-unlock-arrow {
+  color: #ffd700;
+  font-size: 1.6vh;
+}
+
+.victory-screen .derivation-unlock-derived {
+  color: #fbbf24;
+  font-size: 1.6vh;
+  font-weight: bold;
+}

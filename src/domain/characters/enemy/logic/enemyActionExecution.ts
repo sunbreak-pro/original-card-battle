@@ -33,7 +33,6 @@ export async function executeEnemyActions(
       enemyHp,
       enemyMaxHp,
       turn,
-      remainingEnergy
     );
 
     const actionCost = action.energyCost ?? 1;
@@ -94,7 +93,6 @@ export function previewEnemyActions(
       currentHp,
       maxHp,
       nextTurn,
-      remainingEnergy
     );
 
     const actionCost = action.energyCost ?? 1;

@@ -49,13 +49,14 @@
 
 /* ========== Tab Navigation ========== */
 
-.dungeon-gate-screen .preparations-tab-nav {
+.dungeon-gate-screen .preparations-tabs {
   display: flex;
   gap: 0.5vw;
   flex-shrink: 0;
+  margin-bottom: 0;
 }
 
-.dungeon-gate-screen .preparations-tab-btn {
+.dungeon-gate-screen .preparations-tab {
   padding: 1vh 2vw;
   font-size: 1.6vh;
   font-weight: bold;
@@ -68,12 +69,13 @@
   transition: all 0.2s ease;
 }
 
-.dungeon-gate-screen .preparations-tab-btn:hover {
+.dungeon-gate-screen .preparations-tab:hover {
   color: #c0c0d0;
   background: rgba(50, 50, 70, 0.6);
+  transform: none;
 }
 
-.dungeon-gate-screen .preparations-tab-btn.active {
+.dungeon-gate-screen .preparations-tab.active {
   color: #c9a0dc;
   background: rgba(40, 30, 55, 0.8);
   border-color: rgba(201, 160, 220, 0.4);

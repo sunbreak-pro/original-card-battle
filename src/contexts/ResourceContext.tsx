@@ -36,7 +36,7 @@ interface ResourceContextValue {
 
   // Gold operations
   addGold: (amount: number, toBaseCamp?: boolean) => void;
-  useGold: (amount: number) => boolean;
+  spendGold: (amount: number) => boolean;
   getTotalGold: () => number;
 
   // Magic stones operations
@@ -114,7 +114,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
    * Deducts from baseCamp first, then exploration
    * @returns true if successful, false if insufficient gold
    */
-  const useGold = useCallback((amount: number): boolean => {
+  const spendGold = useCallback((amount: number): boolean => {
     const result = { success: false };
     setResources((prev) => {
       const totalGold = prev.gold.baseCamp + prev.gold.exploration;
@@ -330,7 +330,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
       value={{
         resources,
         addGold,
-        useGold,
+        spendGold,
         getTotalGold,
         addMagicStones,
         setBaseCampMagicStones,
@@ -352,6 +352,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
 /**
  * Hook to use Resource context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useResources = () => {
   const context = useContext(ResourceContext);
   if (!context) {

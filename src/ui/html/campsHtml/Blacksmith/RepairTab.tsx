@@ -15,7 +15,7 @@ import BlacksmithItemCard from "./BlacksmithItemCard";
 
 const RepairTab = () => {
   const { playerData, updatePlayerData } = usePlayer();
-  const { useGold: deductGold } = useResources();
+  const { spendGold: deductGold } = useResources();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [notification, setNotification] = useState<{
     message: string;

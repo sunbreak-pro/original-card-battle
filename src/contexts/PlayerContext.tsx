@@ -6,6 +6,7 @@ import React, {
   useContext,
   useState,
   useMemo,
+  useCallback,
   type ReactNode,
 } from "react";
 import type {
@@ -128,6 +129,16 @@ interface PlayerContextValue {
 
   /** Reset runtime state for new exploration */
   resetRuntimeState: () => void;
+
+  // ============================================================
+  // Card Derivation / Unlock System
+  // ============================================================
+
+  /** Set of cardTypeIds that have been unlocked through derivation */
+  unlockedCardTypeIds: Set<string>;
+
+  /** Add newly unlocked card type IDs (from derivation checks) */
+  addUnlockedCards: (cardTypeIds: string[]) => void;
 
   // ============================================================
   // Lives System
@@ -286,6 +297,32 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   // ============================================================
+  // Card Derivation / Unlock System
+  // ============================================================
+
+  const [unlockedCardTypeIds, setUnlockedCardTypeIds] = useState<Set<string>>(
+    () => {
+      // Initialize with starter deck card type IDs
+      const initialIds = new Set<string>();
+      for (const card of Swordman_Status.deck) {
+        initialIds.add(card.cardTypeId);
+      }
+      return initialIds;
+    },
+  );
+
+  const addUnlockedCards = useCallback((cardTypeIds: string[]) => {
+    if (cardTypeIds.length === 0) return;
+    setUnlockedCardTypeIds((prev) => {
+      const next = new Set(prev);
+      for (const id of cardTypeIds) {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  // ============================================================
   // Cross-state operations (stay in PlayerContext)
   // ============================================================
 
@@ -324,6 +361,13 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         prev.difficulty,
       ),
     }));
+
+    // Reset unlocked cards to starter deck card types
+    const starterIds = new Set<string>();
+    for (const card of classInfo.starterDeck) {
+      starterIds.add(card.cardTypeId);
+    }
+    setUnlockedCardTypeIds(starterIds);
   };
 
   /**
@@ -508,6 +552,10 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         runtimeState,
         resetRuntimeState,
 
+        // Card Derivation / Unlock
+        unlockedCardTypeIds,
+        addUnlockedCards,
+
         // Deck
         deckCards: playerState.deck,
 
@@ -529,6 +577,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 /**
  * Hook to use Player context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const usePlayer = () => {
   const context = useContext(PlayerContext);
   if (!context) {

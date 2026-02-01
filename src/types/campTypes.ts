@@ -7,7 +7,7 @@
  * - NodeStatus (unified)
  */
 
-import type { Item, ItemRarity } from './itemTypes';
+import type { Item } from './itemTypes';
 import type { EquipmentSlot, EquipmentQuality } from './itemTypes';
 import type { Card } from './cardTypes';
 import type { Depth } from './cardTypes';
@@ -118,7 +118,7 @@ export type NodeStatus =
 // ============================================================
 
 export type ShopTab = "buy" | "sell" | "exchange";
-export type ShopCategory = "consumable" | "teleport" | "equipmentPack" | "battleItem" | "mapItem";
+export type ShopCategory = "consumable" | "teleport" | "battleItem" | "mapItem";
 
 export interface ShopListing {
   itemTypeId: string;
@@ -126,50 +126,6 @@ export interface ShopListing {
   stock?: number;
 }
 
-export type EquipmentPackType = "common" | "rare" | "epic";
-
-export interface EquipmentPackConfig {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  price: number;
-  packType: EquipmentPackType;
-  guaranteedRarity: ItemRarity;
-  itemCount: number;
-  rarityProbabilities: RarityProbability;
-}
-
-export interface RarityProbability {
-  common: number;
-  uncommon: number;
-  rare: number;
-  epic: number;
-  legendary: number;
-  mitheic?: number;
-}
-
-export interface GeneratedEquipment {
-  slot: EquipmentSlot;
-  rarity: ItemRarity;
-  name: string;
-  typeId: string;
-}
-
-export interface DailySale {
-  itemId: string;
-  discountPercent: number;
-  originalPrice: number;
-  salePrice: number;
-  expiresAt: number;
-}
-
-export interface TransactionResult {
-  success: boolean;
-  message: string;
-  goldChange?: number;
-  itemsReceived?: string[];
-}
 
 // ============================================================
 // Guild Types
@@ -393,6 +349,8 @@ export interface SurvivalMultipliers {
 // Library Types
 // ============================================================
 
+export type GuildTab = "promotion" | "rumors" | "quests";
+export type PreparationTab = "deck" | "inventory" | "equipment";
 export type LibraryTab = "cards" | "enemies" | "tips";
 
 export interface CardEncyclopediaEntry {

@@ -1,12 +1,15 @@
 // DungeonGate - Invasion preparations screen
 
 import { useState, useCallback } from "react";
-import type { Depth } from "@/types/campTypes";
+import type { Depth, PreparationTab } from "@/types/campTypes";
+import { PREPARATION_TABS } from "@/constants/campConstants";
 import { useGameState } from "@/contexts/GameStateContext";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { DEPTH_DISPLAY_INFO } from "@/constants/dungeonConstants";
 import { MIN_DECK_SIZE } from "@/constants/uiConstants";
 import FacilityHeader from "../componentsHtml/FacilityHeader";
+import BackToCampButton from "../componentsHtml/BackToCampButton";
+import FacilityTabNav from "../componentsHtml/FacilityTabNav";
 import { DepthSelector } from "./preparations/DepthSelector";
 import { PlayerStatusPanel } from "./preparations/PlayerStatusPanel";
 import { DeckTab } from "./preparations/DeckTab";
@@ -14,14 +17,12 @@ import { InventoryTab } from "./preparations/InventoryTab";
 import { EquipmentTab } from "./preparations/EquipmentTab";
 import "./DungeonGate.css";
 
-type PreparationTab = "deck" | "inventory" | "equipment";
-
 /**
  * DungeonGate Component
  * Tabbed invasion preparation screen where players review loadout before dungeon entry
  */
 export function DungeonGate() {
-  const { returnToCamp, navigateTo, setDepth, gameState } = useGameState();
+  const { navigateTo, setDepth, gameState } = useGameState();
   const { playerData, runtimeState, deckCards, updateDeck, resetRuntimeState } =
     usePlayer();
   const [selectedDepth, setSelectedDepth] = useState<Depth | null>(null);
@@ -50,12 +51,6 @@ export function DungeonGate() {
     [updateDeck],
   );
 
-  const tabs: { key: PreparationTab; label: string }[] = [
-    { key: "deck", label: "デッキ" },
-    { key: "inventory", label: "持ち物" },
-    { key: "equipment", label: "装備" },
-  ];
-
   return (
     <div className="dungeon-gate-screen">
       <FacilityHeader title="侵攻準備" />
@@ -63,17 +58,12 @@ export function DungeonGate() {
       <div className="invasion-preparations-container">
         {/* Left Panel: Tabs + Content */}
         <div className="preparations-left-panel">
-          <div className="preparations-tab-nav">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                className={`preparations-tab-btn ${activeTab === tab.key ? "active" : ""}`}
-                onClick={() => setActiveTab(tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <FacilityTabNav
+            tabs={PREPARATION_TABS}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            facility="preparations"
+          />
 
           <div className="preparations-tab-content">
             {activeTab === "deck" && (
@@ -130,9 +120,7 @@ export function DungeonGate() {
         </div>
       </div>
 
-      <button className="dungeon-gate-back-button" onClick={returnToCamp}>
-        ← キャンプに戻る
-      </button>
+      <BackToCampButton />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 // Sanctuary main component
 
 import { useState, useCallback } from "react";
-import { useGameState } from "@/contexts/GameStateContext";
 import { usePlayer } from "@/contexts/PlayerContext";
+import BackToCampButton from "../../componentsHtml/BackToCampButton";
 import type {
   SkillNode,
   NodeStatus,
@@ -20,7 +20,6 @@ import FacilityHeader from "../../componentsHtml/FacilityHeader";
 import "../../../css/camps/Sanctuary.css";
 
 export const Sanctuary = () => {
-  const { returnToCamp } = useGameState();
   const { playerData, updatePlayerData } = usePlayer();
 
   const [selectedNode, setSelectedNode] = useState<SkillNode | null>(null);
@@ -191,9 +190,7 @@ export const Sanctuary = () => {
         </div>
 
         {/* Back Button */}
-        <button className="sanctuary-back-button" onClick={returnToCamp}>
-          ← キャンプに戻る
-        </button>
+        <BackToCampButton />
       </div>
     </>
   );

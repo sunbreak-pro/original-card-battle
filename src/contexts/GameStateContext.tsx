@@ -130,6 +130,7 @@ export const GameStateProvider: React.FC<{ children: ReactNode }> = ({
 /**
  * Hook to use GameState context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useGameState = () => {
   const context = useContext(GameStateContext);
   if (!context) {

@@ -66,23 +66,6 @@ export const RARITY_COLORS: Record<Rarity, string> = {
 // Element Constants
 // ============================================================
 
-/** Element Unicode icons for UI display */
-export const ELEMENT_ICON_MAP: Record<ElementType, string> = {
-  physics: "⚔️",
-  guard: "🛡️",
-  fire: "🔥",
-  ice: "❄️",
-  lightning: "⚡",
-  dark: "🌑",
-  light: "✨",
-  summon: "🔮",
-  enhance: "💎",
-  sacrifice: "💀",
-  buff: "💪",
-  debuff: "💔",
-  heal: "💚",
-};
-
 /** Element Japanese display names */
 export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
   physics: "物理",
@@ -93,10 +76,10 @@ export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
   dark: "闇",
   light: "光",
   summon: "召喚",
-  enhance: "強化",
+  enhance: "エンハンス",
   sacrifice: "生贄",
-  buff: "強化",
-  debuff: "弱体",
+  buff: "バフ",
+  debuff: "デバフ",
   heal: "回復",
 };
 

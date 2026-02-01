@@ -106,7 +106,6 @@ const EnemyLocate: React.FC<{
     state.hp,
     state.maxHp,
     state.turnCount + 1,
-    state.definition.actEnergy, // enemy energy
   );
 
   const actionType = getActionType(nextAction);

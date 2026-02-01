@@ -40,6 +40,8 @@ import {
   attemptEscape,
   calculateEscapeChance,
 } from "@/domain/battles/logic/escapeLogic";
+import { checkAllDerivationUnlocks } from "@/domain/cards/logic/cardDerivation";
+import { getCardDataByClass } from "@/constants/data/characters/CharacterClassData";
 /**
  * Collect mastery from all cards in deck and merge with existing store
  */
@@ -82,6 +84,8 @@ const BattleScreen = ({
     setDifficulty,
     deckCards,
     applyEquipmentDurabilityDamage,
+    unlockedCardTypeIds,
+    addUnlockedCards,
   } = usePlayer();
   const { addMagicStones, resetExplorationResources } = useResources();
   const { navigateTo, gameState } = useGameState();
@@ -388,12 +392,37 @@ const BattleScreen = ({
   const soulRemnants = getSoulValue(enemyType);
   const magicStones = calculateMagicStoneDrops(enemyType);
 
+  // Derivation unlock state for victory screen notification
+  const [derivationUnlocks, setDerivationUnlocks] = useState<
+    { parentName: string; derivedName: string }[]
+  >([]);
+
   const handleVictoryContinue = () => {
-    const allCards = [...hand, ...drawPile, ...discardPile];
+    const allBattleCards = [...hand, ...drawPile, ...discardPile];
     const updatedMastery = collectMasteryFromDeck(
-      allCards,
+      allBattleCards,
       runtimeState.cardMasteryStore,
     );
+
+    // Check for card derivation unlocks
+    const classCardData = getCardDataByClass(
+      playerData.persistent.playerClass,
+    );
+    const unlocks = checkAllDerivationUnlocks(
+      allBattleCards,
+      classCardData,
+      unlockedCardTypeIds,
+    );
+    if (unlocks.length > 0) {
+      const newCardTypeIds = unlocks.map((u) => u.derivedCard.cardTypeId);
+      addUnlockedCards(newCardTypeIds);
+      setDerivationUnlocks(
+        unlocks.map((u) => ({
+          parentName: u.parentCard.name,
+          derivedName: u.derivedCard.name,
+        })),
+      );
+    }
 
     const soulResult = gainSoulFromEnemy(
       playerData.progression.sanctuaryProgress,
@@ -671,6 +700,7 @@ const BattleScreen = ({
             damageTaken: battleStats.damageTaken,
           }}
           enemyType={enemyType}
+          derivationUnlocks={derivationUnlocks}
         />
       )}
       {battleResult === "defeat" && (

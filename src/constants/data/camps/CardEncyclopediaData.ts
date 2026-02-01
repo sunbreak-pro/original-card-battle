@@ -5,7 +5,7 @@
  * Includes Swordsman, Mage, and Summoner cards.
  */
 
-import { SWORDSMAN_CARDS } from "@/constants/data/cards/SwordmanCards";
+import { SWORDSMAN_CARDS } from "@/constants/data/cards/swordmanCards";
 import { MAGE_CARDS } from "@/constants/data/cards/mageCards";
 import { SUMMONER_CARDS } from "@/constants/data/cards/summonerCards";
 import type { Card } from '@/types/cardTypes';

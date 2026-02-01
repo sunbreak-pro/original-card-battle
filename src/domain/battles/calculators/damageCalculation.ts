@@ -48,19 +48,24 @@ export function applyDamageAllocation(
   let hpDmg = 0;
   const hadGuard = defender.guard > 0;
 
-  // Step 2: Damage to Guard (damage as is)
+  // Guard absorption with bleed-through mechanic:
+  // When guard fully absorbs damage AND there is no AP backup,
+  // a portion of damage bleeds through directly to HP.
+  // When AP exists as a secondary layer, guard provides full protection.
   if (hadGuard) {
     if (defender.guard >= remainingDmg && defender.ap <= 0) {
+      // Guard absorbs all, but no AP backup → bleed-through to HP
       guardDmg = remainingDmg;
       hpDmg = Math.floor(remainingDmg * GUARD_BLEED_THROUGH_MULTIPLIER);
       remainingDmg = 0;
       return { guardDamage: guardDmg, apDamage: apDmg, hpDamage: hpDmg };
     } else if (defender.guard >= remainingDmg) {
+      // Guard absorbs all, AP exists as backup → no bleed-through
       guardDmg = remainingDmg;
       remainingDmg = 0;
       return { guardDamage: guardDmg, apDamage: 0, hpDamage: 0 };
-    }
-    else {
+    } else {
+      // Guard partially absorbs → overflow continues to AP/HP
       guardDmg = defender.guard;
       remainingDmg -= defender.guard;
     }

@@ -26,7 +26,7 @@ import BlacksmithItemCard from "./BlacksmithItemCard";
 
 const UpgradeTab = () => {
   const { playerData, updatePlayerData } = usePlayer();
-  const { useGold: deductGold } = useResources();
+  const { spendGold: deductGold } = useResources();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [selectedQualityOption, setSelectedQualityOption] =
     useState<QualityUpOption>("normal");

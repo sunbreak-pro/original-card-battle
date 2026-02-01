@@ -19,13 +19,13 @@
 
 | Category | Status | Notes |
 |----------|--------|-------|
-| Battle System | 98% | Core, elemental chain + resonance display, escape, element system, multi-enemy, multi-hit loop all complete. AoE cards pending |
+| Battle System | 98% | Core, elemental chain + resonance display + resonance effects, escape, element system, multi-enemy, multi-hit loop, canAct covers freeze/stagger all complete. AoE cards pending |
 | Camp Facilities | 95% | Shop, Guild (Exam/Quests/Rumors), Library (Card+Enemy encyclopedias), Blacksmith, Storage all complete |
 | Dungeon System | 90% | Map generation, battle/event/rest/treasure nodes, 5-floor progression, depth 1-5 enemies |
 | Progression System | 98% | Lives + Souls + Sanctuary + equipment stat bonuses + equipment durability + card derivation + mastery + custom deck all complete |
-| State Management | Fixed | V-CS01/02/03/04/11 — resource single-source-of-truth, race conditions, stale closures (Session 1) |
+| State Management | Fixed | V-CS01/02/03/04/11 + Session 2-4 fixes — resource single-source-of-truth, race conditions, stale closures, save integrity, battle logic |
 | Save System | Implemented | `src/domain/save/logic/saveManager.ts` |
-| Character Images | 90% | Player images (Swordsman/Mage) displayed in battle. Summoner uses placeholder. All 40 enemies have imagePath set (images not yet created) |
+| Character Images | 90% | Player images (Swordsman/Mage) displayed in battle. Summoner.png exists (provisional). All 50 enemies (10×5 depths) have imagePath set (images not yet created) |
 
 ---
 
@@ -68,8 +68,14 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 - Equipment durability system (`equipmentStats.ts`, `applyEquipmentDurabilityDamage`) — COMPLETE
 - Custom deck support from PlayerContext (`deckCards`) — COMPLETE
 - Player character images in battle (PlayerFrame `<img>` tag) — COMPLETE
-- Enemy `imagePath` field added to all 40 enemies + 5 bosses — COMPLETE
+- Enemy `imagePath` field added to all 50 enemies (10×5 depths) — COMPLETE
 - Dead code removal from `soulSystem.ts` — COMPLETE
+
+### Vulnerability Remediation Sessions — COMPLETED (Sessions 1-4)
+- Session 1: State Foundation — V-CS01/02/03/04, V-CS11/V-INV-01 (5 fixes)
+- Session 2: Save & Inventory — V-INV-02, V-CS06, V-EC-06, V-CS07 (4 fixes)
+- Session 3: Battle Stale Closures — V-CARD-04/07, V-ORCH-01/02/03/04 (6 fixes)
+- Session 4: Battle Logic — V-DMG-04, V-CARD-02, V-CARD-09, V-CLASS-03 (4 fixes)
 
 ---
 
@@ -81,9 +87,8 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 |---------|----------|-------|
 | AoE card support | LOW | Cards that damage all enemies — no logic exists yet |
 | EnemyFrame SVG icons | LOW | Currently uses emoji placeholders (TODO in code) |
-| Enemy image assets | MEDIUM | All 40 enemies have `imagePath` set but no actual PNG files exist yet (fallback image shown) |
-| Summoner character image | LOW | Currently uses Mage.png as placeholder |
-| FacilityHeader unused `variant` prop | LOW | Prop accepted but not used |
+| Enemy image assets | MEDIUM | All 50 enemies (10×5 depths) have `imagePath` set but no actual PNG files exist yet (fallback image shown) |
+| Summoner character image | LOW | Summoner.png exists but content is provisional |
 | Build error (pre-existing) | RESOLVED | `NodeMap.tsx:252` error fixed during Session 1 state refactoring. No remaining build errors. |
 
 ### Class Ability Hooks
@@ -91,7 +96,7 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 All class hooks implemented and wired via `useBattleOrchestrator`:
 - Swordsman: `useSwordEnergy()` (inside `useClassAbility.ts`)
 - Mage: `useElementalChain()` (in `useElementalChain.ts`, integrated into orchestrator + `ElementalResonanceDisplay` UI)
-- Summoner: `useSummonSystem()` (in `useSummonSystem.ts`)
+- Summoner: `useSummonSystem()` (in `useSummonSystem.ts`, called from `useClassAbility.ts`)
 
 ---
 
@@ -109,7 +114,19 @@ The separate battle contexts (`BattleProviderStack`, `PlayerBattleContext`, `Ene
 `useCardExecution.ts` now executes a per-hit loop for cards with `hitCount > 1`. Each hit independently calculates damage, allocation, lifesteal, and reflect, with 500ms delays between hits.
 
 ### Elemental Resonance Integration
-`useElementalChain` hook is called unconditionally in `useBattleOrchestrator`. `getElementalDamageModifier` is passed into `CardExecutionSetters` and applied as a `percentMultiplier` to base damage during both preview and execution.
+`useElementalChain` hook is called unconditionally in `useBattleOrchestrator`. `getElementalDamageModifier` is passed into `CardExecutionSetters` and applied as a `percentMultiplier` to base damage during both preview and execution. Resonance effects (burn/freeze/stun from `getResonanceEffects()`) now trigger in battle after damage calculation (Session 4).
+
+### Session 4: Battle Logic Improvements
+- `canAct()` in `buffCalculation.ts` now checks freeze and stagger in addition to stun via `DISABLING_DEBUFFS` array
+- `removeNDebuffs` helper added to `buffLogic.ts` for cleanse/purge operations
+- `useDeckManage.ts` deleted (dead code — was hardcoded to SWORDSMAN_CARDS_ARRAY, never used)
+- Guard double application fixed — single source of truth for shield gain
+
+### UI/Navigation Improvements
+- `BackToCampButton` component created (`src/ui/html/componentsHtml/BackToCampButton.tsx`)
+- `FacilityTabNav` component created (`src/ui/html/componentsHtml/FacilityTabNav.tsx`)
+- FacilityHeader integrated with facility navigation
+- `CONSOLIDATION_PROPOSAL.md` written for UI consolidation plan
 
 ### Resource Single Source of Truth (Session 1)
 ResourceContext is now the sole owner of gold/magicStones. PlayerContext no longer duplicates resource state — all camp facilities use `useResources()` directly. Race conditions in `useGold`/`useExplorationPoint` fixed via functional updaters with mutable result objects.
@@ -150,7 +167,7 @@ All inventory mutation operations converted to `setPlayerData(prev => ...)` patt
 
 Session 7で全コンテキストシステムおよび主要ドメインロジックの静的分析を実施。
 
-- **分析ドキュメント:** 14ファイル（`.claude/code/`）
+- **分析ドキュメント:** 14ファイル（`.claude/code_overview/`）
   - `overall-summary.md` — 全体サマリー + 77件の脆弱性一覧
   - `ai-reference/ai-reference.md` — AI向けクイックリファレンス
   - `battle/` — orchestration, card-execution, damage-and-buff, class-abilities
@@ -160,8 +177,8 @@ Session 7で全コンテキストシステムおよび主要ドメインロジ�
   - `dungeon/` — dungeon-system
   - `inventory/` — equipment-and-items
   - `resource/` — economy
-- **特定された脆弱性:** 77件（Critical 5, High 22, Medium 30, Low 20）— うち5件修正済み（Session 1: V-CS01, V-CS02, V-CS03, V-CS04, V-CS11）
-- **詳細:** `.claude/code/README.md` を参照
+- **特定された脆弱性:** 77件（Critical 5, High 22, Medium 30, Low 20）— うち19件修正済み（S1:5 + S2:4 + S3:6 + S4:4）
+- **詳細:** `.claude/code_overview/README.md` を参照
 
 ---
 
@@ -170,4 +187,4 @@ Session 7で全コンテキストシステムおよび主要ドメインロジ�
 - **Game Design:** `.claude/docs/`
 - **Battle Logic:** `.claude/docs/battle_document/battle_logic.md`
 - **Implementation Plan:** `.claude/todos/MASTER_IMPLEMENTATION_PLAN.md`
-- **Code Analysis:** `.claude/code/` (静的分析ドキュメント + AI参照)
+- **Code Analysis:** `.claude/code_overview/` (静的分析ドキュメント + AI参照)

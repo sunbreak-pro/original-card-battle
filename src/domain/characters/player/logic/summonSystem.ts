@@ -107,7 +107,7 @@ export const SummonSystem: ClassAbilitySystem<SummonState> = {
   /**
    * Get damage modifier based on active summons
    */
-  getDamageModifier(state: SummonState, _card?: Card): DamageModifier {
+  getDamageModifier(state: SummonState): DamageModifier {
     // Bonus from bond level
     const bondBonus = state.bondLevel * BOND_DAMAGE_BONUS_PER_LEVEL;
 

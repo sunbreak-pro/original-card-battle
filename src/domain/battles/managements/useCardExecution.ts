@@ -12,7 +12,7 @@
  * This hook is designed to be composed with useBattleState and useSwordEnergy.
  */
 
-import { useCallback, useRef, type RefObject } from "react";
+import { useCallback, useEffect, useRef, type RefObject } from "react";
 import type { Card } from '@/types/cardTypes';
 import type { BuffDebuffMap, BuffDebuffState } from '@/types/battleTypes';
 import type { BattleStats } from '@/types/characterTypes';
@@ -24,6 +24,7 @@ import type {
 import { createDefaultExecutionResult } from '../logic/cardExecutionLogic';
 import type { SwordEnergyState } from '@/types/characterTypes';
 import type { DamageModifier } from "../../characters/player/classAbility/classAbilitySystem";
+import type { ResonanceEffectConfig } from '@/types/characterTypes';
 
 // Card logic
 import { calculateCardEffect, canPlayCard as canPlayCardCheck, incrementUseCount } from "../../cards/state/card";
@@ -32,7 +33,7 @@ import { calculateCardEffect, canPlayCard as canPlayCardCheck, incrementUseCount
 import { calculateDamage, applyDamageAllocation } from "../calculators/damageCalculation";
 
 // Buff/Debuff logic
-import { addOrUpdateBuffDebuff } from "../logic/buffLogic";
+import { addOrUpdateBuffDebuff, removeNDebuffs } from "../logic/buffLogic";
 
 // Bleed damage
 import { calculateBleedDamage } from "../logic/bleedDamage";
@@ -93,6 +94,7 @@ export interface CardExecutionSetters {
     }
   ) => void;
   getElementalDamageModifier?: (card?: Card) => DamageModifier;
+  getResonanceEffects?: (card?: Card) => ResonanceEffectConfig | null;
 }
 
 /**
@@ -169,7 +171,9 @@ export function useCardExecution(
 ): UseCardExecutionReturn {
   // Ref to track latest playerBuffs for use in async callbacks
   const playerBuffsRef = useRef(playerBuffs);
-  playerBuffsRef.current = playerBuffs;
+  useEffect(() => {
+    playerBuffsRef.current = playerBuffs;
+  }, [playerBuffs]);
 
   // ========================================================================
   // Check if card can be played
@@ -226,7 +230,7 @@ export function useCardExecution(
 
       return {
         estimatedDamage,
-        guardGain: effect.shieldGain || card.guardAmount || 0,
+        guardGain: (effect.shieldGain ?? 0) + (card.guardAmount ?? 0),
         healAmount: effect.hpGain || card.healAmount || 0,
         energyCost: card.cost,
         canPlay,
@@ -315,7 +319,8 @@ export function useCardExecution(
       // ====================================================================
 
       if (effect.damageToEnemy) {
-        // Apply sword energy flat bonus to base damage (calculated once before loop)
+        // Sword energy flat bonus uses the pre-consumption snapshot (swordEnergy from hook params).
+        // This is intentional: the bonus reflects energy at time of card play, not after consumption.
         const swordEnergyFlatBonus = swordEnergy.current;
         let adjustedBaseDamage = card.baseDamage !== undefined
           ? card.baseDamage + swordEnergyFlatBonus
@@ -418,22 +423,74 @@ export function useCardExecution(
       }
 
       // ====================================================================
-      // Guard Application
+      // Resonance Effects (Mage class ability)
       // ====================================================================
 
-      if (effect.shieldGain) {
-        setters.setPlayerGuard((g) => g + effect.shieldGain!);
-        result.guardGained += effect.shieldGain;
-        if (playerRef.current) {
-          animations.showShieldEffect(playerRef.current, effect.shieldGain);
+      const resonanceEffects = setters.getResonanceEffects?.(card);
+      if (resonanceEffects) {
+        // Burn → apply to enemy
+        if (resonanceEffects.burn) {
+          setters.setEnemyBuffs(prev =>
+            addOrUpdateBuffDebuff(prev, "burn", resonanceEffects.burn!.duration, 3, resonanceEffects.burn!.stacks, false, undefined, 'player')
+          );
+        }
+        // Freeze → apply to enemy
+        if (resonanceEffects.freeze) {
+          setters.setEnemyBuffs(prev =>
+            addOrUpdateBuffDebuff(prev, "freeze", resonanceEffects.freeze!.duration, 100, 1, false, undefined, 'player')
+          );
+        }
+        // Stun → apply to enemy
+        if (resonanceEffects.stun) {
+          setters.setEnemyBuffs(prev =>
+            addOrUpdateBuffDebuff(prev, "stun", resonanceEffects.stun!.duration, 100, 1, false, undefined, 'player')
+          );
+        }
+        // Weakness → apply to enemy
+        if (resonanceEffects.weakness) {
+          setters.setEnemyBuffs(prev =>
+            addOrUpdateBuffDebuff(prev, "weakness", resonanceEffects.weakness!.duration, 20, 1, false, undefined, 'player')
+          );
+        }
+        // Lifesteal → heal player based on % of damage dealt
+        if (resonanceEffects.lifesteal && result.damageDealt > 0) {
+          const healAmount = Math.floor(result.damageDealt * (resonanceEffects.lifesteal / 100));
+          if (healAmount > 0) {
+            setters.setPlayerHp(prev => Math.min(prev + healAmount, playerMaxHp));
+            if (playerRef.current) {
+              animations.showHealEffect(playerRef.current, healAmount);
+            }
+          }
+        }
+        // Cleanse → remove N debuffs from player
+        if (resonanceEffects.cleanse && resonanceEffects.cleanse > 0) {
+          setters.setPlayerBuffs(prev => removeNDebuffs(prev, resonanceEffects.cleanse!));
+        }
+        // Heal → heal player flat amount
+        if (resonanceEffects.heal && resonanceEffects.heal > 0) {
+          setters.setPlayerHp(prev => Math.min(prev + resonanceEffects.heal!, playerMaxHp));
+          if (playerRef.current) {
+            animations.showHealEffect(playerRef.current, resonanceEffects.heal);
+          }
+        }
+        // Field buff → apply to player
+        if (resonanceEffects.fieldBuff) {
+          setters.setPlayerBuffs(prev =>
+            addOrUpdateBuffDebuff(prev, resonanceEffects.fieldBuff!, 3, 50, 1, false, undefined, 'player')
+          );
         }
       }
 
-      if (card.guardAmount && card.guardAmount > 0) {
-        setters.setPlayerGuard((g) => g + card.guardAmount!);
-        result.guardGained += card.guardAmount;
+      // ====================================================================
+      // Guard Application
+      // ====================================================================
+
+      const totalGuard = (effect.shieldGain ?? 0) + (card.guardAmount ?? 0);
+      if (totalGuard > 0) {
+        setters.setPlayerGuard((g) => g + totalGuard);
+        result.guardGained += totalGuard;
         if (playerRef.current) {
-          animations.showShieldEffect(playerRef.current, card.guardAmount);
+          animations.showShieldEffect(playerRef.current, totalGuard);
         }
       }
 

@@ -89,7 +89,6 @@ export interface UseEnemyAIReturn {
     hp: number,
     maxHp: number,
     turn: number,
-    energy: number
   ) => EnemyAction;
 
   /**
@@ -141,9 +140,8 @@ export function useEnemyAI(): UseEnemyAIReturn {
       hp: number,
       maxHp: number,
       turn: number,
-      energy: number
     ): EnemyAction => {
-      return determineEnemyAction(enemy, hp, maxHp, turn, energy);
+      return determineEnemyAction(enemy, hp, maxHp, turn);
     },
     []
   );

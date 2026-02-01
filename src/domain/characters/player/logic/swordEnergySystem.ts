@@ -108,7 +108,7 @@ export const SwordEnergySystem: ClassAbilitySystem<SwordEnergyState> = {
   /**
    * Get damage modifier based on sword energy level
    */
-  getDamageModifier(state: SwordEnergyState, _card?: Card): DamageModifier {
+  getDamageModifier(state: SwordEnergyState): DamageModifier {
     return {
       flatBonus: state.current, // +1 damage per sword energy
       percentMultiplier: 1.0,

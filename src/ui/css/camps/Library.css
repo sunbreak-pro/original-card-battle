@@ -528,6 +528,16 @@
   margin-top: 0.3vh;
 }
 
+.derivation-chain-node.locked {
+  background: rgba(30, 30, 40, 0.5);
+  border-style: dashed;
+}
+
+.chain-node-lock {
+  font-size: 1.2vh;
+  margin-bottom: 0.2vh;
+}
+
 .derivation-arrow {
   font-size: 2vh;
   color: #a855f7;

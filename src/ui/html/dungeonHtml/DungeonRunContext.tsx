@@ -188,6 +188,7 @@ export function DungeonRunProvider({
 /**
  * Hook to use dungeon run context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useDungeonRun(): DungeonRunContextValue {
   const context = useContext(DungeonRunContext);
   if (!context) {

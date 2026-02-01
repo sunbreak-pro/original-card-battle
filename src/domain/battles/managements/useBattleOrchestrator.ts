@@ -21,7 +21,7 @@ import { createInitialSwordEnergy } from '../../characters/player/classAbility/c
 // Deck management (IMMUTABLE ZONE - DO NOT MODIFY)
 import { deckReducer } from "../../cards/decks/deckReducter";
 import { createInitialDeck, shuffleArray } from "../../cards/decks/deck";
-import { SWORDSMAN_CARDS_ARRAY } from "@/constants/data/cards/SwordmanCards";
+import { SWORDSMAN_CARDS_ARRAY } from "@/constants/data/cards/swordmanCards";
 import { MAGE_CARDS_ARRAY } from "@/constants/data/cards/mageCards";
 import { SUMMONER_CARDS_ARRAY } from "@/constants/data/cards/summonerCards";
 import { getInitialDeckCounts } from "@/constants/data/battles/initialDeckConfig";
@@ -51,6 +51,9 @@ import { previewEnemyActions } from "../../characters/enemy/logic/enemyActionExe
 
 // Enemy state helper
 import { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
+
+// Resonance effects (Mage)
+import { getResonanceEffects } from "../../characters/player/logic/elementalSystem";
 
 // ============================================================================
 // Helper Functions
@@ -362,6 +365,14 @@ export const useBattleOrchestrator = (
       setSwordEnergy,
       setBattleStats,
       getElementalDamageModifier: elementalChainHook.getDamageModifier,
+      getResonanceEffects: initialPlayerState?.playerClass === "mage"
+        ? (card?: Card) => {
+          const state = elementalChainHook.abilityState;
+          if (!state.lastElement || state.resonanceLevel === 0) return null;
+          if (card && !card.element.includes(state.lastElement)) return null;
+          return getResonanceEffects(state.lastElement, state.resonanceLevel);
+        }
+        : undefined,
     }),
     [
       setPlayerEnergy,
@@ -374,6 +385,8 @@ export const useBattleOrchestrator = (
       setEnemyBuffs,
       setSwordEnergy,
       elementalChainHook.getDamageModifier,
+      elementalChainHook.abilityState,
+      initialPlayerState?.playerClass,
     ]
   );
 
@@ -551,11 +564,15 @@ export const useBattleOrchestrator = (
 
   // Ref to track latest enemies for use in async phase execution
   const enemiesRef = useRef(enemies);
-  enemiesRef.current = enemies;
+  useEffect(() => {
+    enemiesRef.current = enemies;
+  }, [enemies]);
 
   // Ref to track latest phase index for use in animation callbacks
   const phaseIndexRef = useRef(phaseState.currentPhaseIndex);
-  phaseIndexRef.current = phaseState.currentPhaseIndex;
+  useEffect(() => {
+    phaseIndexRef.current = phaseState.currentPhaseIndex;
+  }, [phaseState.currentPhaseIndex]);
 
   const executeNextPhaseImpl = useCallback(
     async (queue: PhaseQueue, index: number) => {
@@ -608,7 +625,9 @@ export const useBattleOrchestrator = (
     ]
   );
 
-  executeNextPhaseRef.current = executeNextPhaseImpl;
+  useEffect(() => {
+    executeNextPhaseRef.current = executeNextPhaseImpl;
+  }, [executeNextPhaseImpl]);
 
   const executeNextPhase = useCallback(async (queue: PhaseQueue, index: number) => {
     await executeNextPhaseRef.current(queue, index);

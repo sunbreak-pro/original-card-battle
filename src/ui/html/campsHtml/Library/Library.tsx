@@ -9,22 +9,17 @@
 
 import React, { useState } from "react";
 import type { LibraryTab } from "@/types/campTypes";
-import { useGameState } from "@/contexts/GameStateContext";
+import { LIBRARY_TABS } from "@/constants/campConstants";
 import { CardEncyclopediaTab } from "./CardEncyclopediaTab";
 import { EnemyEncyclopediaTab } from "./EnemyEncyclopediaTab";
 import { GameTipsTab } from "./GameTipsTab";
 import FacilityHeader from "../../componentsHtml/FacilityHeader";
+import BackToCampButton from "../../componentsHtml/BackToCampButton";
+import FacilityTabNav from "../../componentsHtml/FacilityTabNav";
 import "../../../css/camps/Library.css";
 
 export const Library: React.FC = () => {
   const [activeTab, setActiveTab] = useState<LibraryTab>("cards");
-  const { returnToCamp } = useGameState();
-
-  const tabs: { id: LibraryTab; label: string }[] = [
-    { id: "cards", label: "Card Encyclopedia" },
-    { id: "enemies", label: "Enemy Bestiary" },
-    { id: "tips", label: "Game Tips" },
-  ];
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -45,25 +40,18 @@ export const Library: React.FC = () => {
       <FacilityHeader title="図書館" />
 
       {/* Tab Navigation */}
-      <nav className="library-tabs">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={`library-tab ${activeTab === tab.id ? "active" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
+      <FacilityTabNav
+        tabs={LIBRARY_TABS}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        facility="library"
+      />
 
       {/* Tab Content */}
       {renderTabContent()}
 
       {/* Back Button */}
-      <button className="library-back-button" onClick={returnToCamp}>
-        Return to Camp
-      </button>
+      <BackToCampButton />
     </div>
   );
 };

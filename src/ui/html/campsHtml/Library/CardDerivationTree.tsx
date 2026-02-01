@@ -8,7 +8,7 @@
 import React, { useMemo } from "react";
 import type { Card } from "@/types/cardTypes";
 import { getDerivationChain } from "@/domain/cards/logic/cardDerivation";
-import { SWORDSMAN_CARDS } from "@/constants/data/cards/SwordmanCards";
+import { SWORDSMAN_CARDS } from "@/constants/data/cards/swordmanCards";
 import { MAGE_CARDS } from "@/constants/data/cards/mageCards";
 import { SUMMONER_CARDS } from "@/constants/data/cards/summonerCards";
 import { ELEMENT_LABEL_MAP } from "@/constants/cardConstants";
@@ -16,6 +16,7 @@ import { ELEMENT_LABEL_MAP } from "@/constants/cardConstants";
 interface CardDerivationTreeProps {
   card: Card;
   onClose: () => void;
+  unlockedCardTypeIds?: Set<string>;
 }
 
 /** Get all cards from all classes combined */
@@ -37,6 +38,7 @@ const RARITY_COLORS: Record<string, string> = {
 export const CardDerivationTree: React.FC<CardDerivationTreeProps> = ({
   card,
   onClose,
+  unlockedCardTypeIds,
 }) => {
   const allCards = useMemo(() => getAllCardRecords(), []);
 
@@ -91,34 +93,63 @@ export const CardDerivationTree: React.FC<CardDerivationTreeProps> = ({
         <div className="derivation-chain">
           <h4 className="derivation-chain-title">Derivation Chain</h4>
           <div className="derivation-chain-list">
-            {chainCards.map((chainCard, index) => (
-              <React.Fragment key={chainCard.cardTypeId}>
-                <div
-                  className={`derivation-chain-node ${
-                    chainCard.cardTypeId === card.cardTypeId ? "active" : ""
-                  }`}
-                  style={{
-                    borderColor: RARITY_COLORS[chainCard.rarity],
-                  }}
-                >
-                  <span className="chain-node-name">{chainCard.name}</span>
-                  <span
-                    className="chain-node-rarity"
-                    style={{ color: RARITY_COLORS[chainCard.rarity] }}
+            {chainCards.map((chainCard, index) => {
+              const isUnlocked =
+                !unlockedCardTypeIds ||
+                unlockedCardTypeIds.has(chainCard.cardTypeId);
+              const isActive = chainCard.cardTypeId === card.cardTypeId;
+
+              return (
+                <React.Fragment key={chainCard.cardTypeId}>
+                  <div
+                    className={`derivation-chain-node${isActive ? " active" : ""}${!isUnlocked ? " locked" : ""}`}
+                    style={{
+                      borderColor: isUnlocked
+                        ? RARITY_COLORS[chainCard.rarity]
+                        : "#4b5563",
+                      opacity: isUnlocked ? 1 : 0.6,
+                    }}
                   >
-                    {chainCard.rarity}
-                  </span>
-                  {chainCard.unlockMasteryLevel !== undefined && (
-                    <span className="chain-node-mastery">
-                      Mastery Lv.{chainCard.unlockMasteryLevel}
+                    {!isUnlocked && (
+                      <span className="chain-node-lock">&#x1f512;</span>
+                    )}
+                    <span
+                      className="chain-node-name"
+                      style={{
+                        color: isUnlocked ? undefined : "#6b7280",
+                      }}
+                    >
+                      {isUnlocked ? chainCard.name : "???"}
                     </span>
+                    <span
+                      className="chain-node-rarity"
+                      style={{
+                        color: isUnlocked
+                          ? RARITY_COLORS[chainCard.rarity]
+                          : "#6b7280",
+                      }}
+                    >
+                      {chainCard.rarity}
+                    </span>
+                    {chainCard.unlockMasteryLevel !== undefined && (
+                      <span
+                        className="chain-node-mastery"
+                        style={{
+                          color: isUnlocked ? "#fbbf24" : "#9ca3af",
+                        }}
+                      >
+                        {isUnlocked
+                          ? "Unlocked"
+                          : `Mastery Lv.${chainCard.unlockMasteryLevel} required`}
+                      </span>
+                    )}
+                  </div>
+                  {index < chainCards.length - 1 && (
+                    <span className="derivation-arrow">&rarr;</span>
                   )}
-                </div>
-                {index < chainCards.length - 1 && (
-                  <span className="derivation-arrow">&rarr;</span>
-                )}
-              </React.Fragment>
-            ))}
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
       ) : (

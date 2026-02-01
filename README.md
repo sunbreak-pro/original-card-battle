@@ -42,7 +42,7 @@ npm run lint      # ESLint
 
 | クラス | 固有メカニクス | カード枚数 |
 |--------|--------------|-----------|
-| 剣士 (Swordsman) | 剣気ゲージ（エネルギー蓄積で強力な技を発動） | 全42枚 |
+| 剣士 (Swordsman) | 剣気ゲージ（エネルギー蓄積で強力な技を発動） | 全33枚 |
 | 魔術師 (Mage) | 属性共鳴（属性連鎖でダメージ倍率上昇+フィールドバフ） | 全40枚 |
 | 召喚士 (Summoner) | 召喚システム（最大3体の召喚獣、絆レベルで強化） | 全40枚 |
 
@@ -75,7 +75,7 @@ npm run lint      # ESLint
 | 4 | 虚無 (Void) | 高難度 |
 | 5 | 深淵 (Abyss) | 最高難度 |
 
-ノードタイプ: バトル / イベント / 休憩 / 宝箱
+ノードタイプ: バトル / エリート / ボス / イベント / 休憩 / 宝箱
 
 ### キャンプ施設（6種）
 
@@ -106,7 +106,7 @@ src/
 │   ├── ResourceContext.tsx     # ゴールド、魔石
 │   ├── PlayerContext.tsx       # キャラデータ + ランタイムバトルステート
 │   ├── InventoryContext.tsx    # アイテム、装備、カード
-│   └── GuildContext.tsx        # ギルド状態
+│   └── GuildContext.tsx        # ギルド状態（Guild内で局所利用、App.tsx階層には含まず）
 ├── domain/         # ビジネスロジック（純粋関数中心）
 │   ├── battles/    # バトルシステム（フック、ロジック、計算）
 │   ├── camps/      # キャンプ施設ロジック（データは constants/data/camps/）
@@ -116,12 +116,13 @@ src/
 │   ├── item_equipment/ # アイテム・装備ロジック
 │   └── save/       # セーブシステム
 ├── ui/             # React コンポーネント（画面別）
-│   ├── battleHtml/     # バトル画面
-│   ├── campsHtml/      # キャンプ施設UI
-│   ├── dungeonHtml/    # ダンジョンマップ + DungeonRunContext + preparations/
-│   ├── cardHtml/       # カード表示
-│   ├── characterSelectHtml/ # キャラ選択
-│   ├── componentsHtml/ # 共通コンポーネント
+│   ├── html/           # 画面別コンポーネント
+│   │   ├── battleHtml/     # バトル画面
+│   │   ├── campsHtml/      # キャンプ施設UI
+│   │   ├── dungeonHtml/    # ダンジョンマップ + DungeonRunContext + preparations/
+│   │   ├── cardHtml/       # カード表示
+│   │   ├── characterSelectHtml/ # キャラ選択
+│   │   └── componentsHtml/ # 共通コンポーネント（FacilityHeader, BackToCampButton, FacilityTabNav等）
 │   └── css/            # スタイルシート（battle/, card/, camps/, core/, components/, pages/, animations/）
 └── utils/          # ユーティリティ
 ```
@@ -172,8 +173,8 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 
 - AoEカード（全敵同時ダメージ）
 - EnemyFrame の SVG アイコン化（現在は絵文字）
-- 敵画像アセット（全45体の imagePath は設定済、PNGファイル未作成）
-- 召喚士キャラクター画像（現在は Mage.png をプレースホルダー使用）
+- 敵画像アセット（全50体の imagePath は設定済、PNGファイル未作成）
+- 召喚士キャラクター画像（Summoner.png 存在するが内容は仮）
 
 ## Coding Conventions
 
@@ -248,8 +249,12 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 - 装備耐久度システム（equipmentStats.ts）追加
 - カスタムデッキ対応（PlayerContext の deckCards）
 - プレイヤーキャラクター画像をバトルフィールドに表示
-- 全45体の敵に imagePath フィールド追加
+- 全50体の敵に imagePath フィールド追加
 - soulSystem.ts デッドコード削除
+- nav機能追加（BackToCampButton, FacilityTabNav コンポーネント）
+- UI改善（FacilityHeader統合、キャンプ施設の統一ナビゲーション）
+- 脆弱性修正セッション1-4（バトルステールクロージャ修正、バトルロジック改善）
+- UI統合提案（CONSOLIDATION_PROPOSAL.md）作成
 
 </details>
 
@@ -259,4 +264,4 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 - `.claude/LESSONS_LEARNED.md` — 開発で学んだ重要な教訓
 - `.claude/todos/MASTER_IMPLEMENTATION_PLAN.md` — 実装ロードマップ
 - `.claude/docs/` — ゲーム設計仕様書（バトル、カード、キャンプ、ダンジョン、敵、アイテム）
-- `.claude/code/` — コード静的分析ドキュメント（14ファイル、77件の脆弱性特定済）
+- `.claude/code_overview/` — コード静的分析ドキュメント（14ファイル、77件の脆弱性特定済）

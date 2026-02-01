@@ -77,6 +77,19 @@ export const removeBuffDebuff = (
   return newMap;
 };
 
+export const removeNDebuffs = (map: BuffDebuffMap, count: number): BuffDebuffMap => {
+  const newMap = new Map(map);
+  let removed = 0;
+  for (const [type] of newMap) {
+    if (removed >= count) break;
+    if (BUFF_EFFECTS[type].isDebuff) {
+      newMap.delete(type);
+      removed++;
+    }
+  }
+  return newMap;
+};
+
 export const removeAllDebuffs = (map: BuffDebuffMap): BuffDebuffMap => {
   const newMap = new Map<BuffDebuffState["name"], BuffDebuffState>();
   map.forEach((buff, type) => {

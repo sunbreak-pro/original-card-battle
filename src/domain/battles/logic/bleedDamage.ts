@@ -8,7 +8,8 @@ export function calculateBleedDamage(
   if (!buffDebuffs.has("bleed")) {
     return 0;
   }
-  const bleedDamage = Math.floor(maxHp * BLEED_DAMAGE_RATE);
+  const stacks = buffDebuffs.get("bleed")!.stacks;
+  const bleedDamage = Math.floor(maxHp * BLEED_DAMAGE_RATE) * stacks;
   return bleedDamage;
 }
 

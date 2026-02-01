@@ -8,20 +8,59 @@
 import type { EquipmentQuality } from '@/types/itemTypes';
 import type { SanctuaryEffects } from '@/types/campTypes';
 import type { ElementType } from '@/types/characterTypes';
-import type { GameScreen } from '@/types';
+import type { FacilityType, GameScreen } from '@/types';
 
 export const FACILITY_NAV_ITEMS: ReadonlyArray<{
   screen: GameScreen;
+  facilityType: FacilityType;
   label: string;
   icon: string;
+  description: string;
+  showInNav: boolean;
 }> = [
-  { screen: "shop", label: "取引所", icon: "🏪" },
-  { screen: "guild", label: "酒場", icon: "🍺" },
-  { screen: "blacksmith", label: "鍛冶屋", icon: "⚒️" },
-  { screen: "sanctuary", label: "聖域", icon: "⛪" },
-  { screen: "library", label: "図書館", icon: "📚" },
-  { screen: "storage", label: "倉庫", icon: "📦" },
+  { screen: "dungeon", facilityType: "dungeon", label: "ダンジョンゲート", icon: "🌀", description: "Descend into the depths and face your destiny", showInNav: false },
+  { screen: "shop", facilityType: "shop", label: "取引所", icon: "🏪", description: "Buy and sell cards, items, and relics", showInNav: true },
+  { screen: "guild", facilityType: "guild", label: "酒場", icon: "🍺", description: "Rest, recruit companions, and hear rumors", showInNav: true },
+  { screen: "blacksmith", facilityType: "blacksmith", label: "鍛冶屋", icon: "⚒️", description: "Forge and upgrade your equipment", showInNav: true },
+  { screen: "sanctuary", facilityType: "sanctuary", label: "聖域", icon: "⛪", description: "Strengthen your soul with permanent upgrades", showInNav: true },
+  { screen: "library", facilityType: "library", label: "図書館", icon: "📚", description: "Build your deck and browse the encyclopedia", showInNav: true },
+  { screen: "storage", facilityType: "storage", label: "倉庫", icon: "📦", description: "Store and manage your items safely", showInNav: true },
 ] as const;
+
+// ============================================================
+// Facility Tab Constants
+// ============================================================
+
+export const SHOP_TABS = [
+  { id: "buy", label: "購入", icon: "🛒" },
+  { id: "sell", label: "売却", icon: "💵" },
+  { id: "exchange", label: "交換", icon: "🔄" },
+] as const;
+
+export const BLACKSMITH_TABS = [
+  { id: "upgrade", label: "強化", icon: "⚒️" },
+  { id: "repair", label: "修理", icon: "🔧" },
+  { id: "dismantle", label: "分解", icon: "💎" },
+] as const;
+
+export const GUILD_TABS = [
+  { id: "promotion", label: "昇格試験", icon: "⚔️" },
+  { id: "rumors", label: "噂", icon: "👂" },
+  { id: "quests", label: "依頼", icon: "📜" },
+] as const;
+
+export const LIBRARY_TABS = [
+  { id: "cards", label: "カード図鑑" },
+  { id: "enemies", label: "魔物図鑑" },
+  { id: "tips", label: "冒険の手引き" },
+] as const;
+
+export const PREPARATION_TABS = [
+  { id: "deck", label: "デッキ" },
+  { id: "inventory", label: "持ち物" },
+  { id: "equipment", label: "装備" },
+] as const;
+
 // ============================================================
 // Blacksmith Constants
 // ============================================================

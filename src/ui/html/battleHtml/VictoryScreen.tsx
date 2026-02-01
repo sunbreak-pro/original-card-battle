@@ -5,6 +5,11 @@ import type { EnemyType } from "@/domain/camps/logic/soulSystem";
 import { formatMagicStoneDrops } from "@/domain/camps/logic/soulSystem";
 import "../../css/battle/VictoryScreen.css";
 
+interface DerivationUnlockDisplay {
+  parentName: string;
+  derivedName: string;
+}
+
 interface VictoryScreenProps {
   onContinue: () => void;
   rewards: {
@@ -18,6 +23,7 @@ interface VictoryScreenProps {
     damageTaken: number;
   };
   enemyType: EnemyType;
+  derivationUnlocks?: DerivationUnlockDisplay[];
 }
 
 const VictoryScreen = ({
@@ -25,6 +31,7 @@ const VictoryScreen = ({
   rewards,
   battleStats,
   enemyType,
+  derivationUnlocks = [],
 }: VictoryScreenProps) => {
   const [showRewards, setShowRewards] = useState(false);
 
@@ -108,6 +115,31 @@ const VictoryScreen = ({
                   >
                     <div className="reward-card-name">{card.name}</div>
                     <div className="reward-card-rarity">{card.rarity}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {derivationUnlocks.length > 0 && (
+            <div className="derivation-unlocks">
+              <h3 className="derivation-unlocks-title">
+                New Card Unlocked!
+              </h3>
+              <div className="derivation-unlocks-list">
+                {derivationUnlocks.map((unlock, index) => (
+                  <div
+                    key={index}
+                    className="derivation-unlock-item"
+                    style={{ animationDelay: `${index * 0.15}s` }}
+                  >
+                    <span className="derivation-unlock-parent">
+                      {unlock.parentName}
+                    </span>
+                    <span className="derivation-unlock-arrow">&rarr;</span>
+                    <span className="derivation-unlock-derived">
+                      {unlock.derivedName}
+                    </span>
                   </div>
                 ))}
               </div>

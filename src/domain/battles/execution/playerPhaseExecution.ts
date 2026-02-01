@@ -70,17 +70,17 @@ export function calculatePlayerPhaseStart(
     // Process buff/debuff durations - only decrease player-applied buffs
     let newBuffs = decreaseBuffDebuffDurationForPhase(playerBuffs, 'player');
 
-    // Start-of-phase healing/shield
-    const { hp: healAmount, shield: shieldAmount } = calculateStartPhaseHealing(playerBuffs);
+    // Start-of-phase healing/shield (use post-duration-decrease buffs to prevent expired buff healing)
+    const { hp: healAmount, shield: shieldAmount } = calculateStartPhaseHealing(newBuffs);
 
     // Check for cleanse
-    const shouldCleanse = playerBuffs.has("cleanse");
+    const shouldCleanse = newBuffs.has("cleanse");
     if (shouldCleanse) {
         newBuffs = removeAllDebuffs(newBuffs);
     }
 
-    // Calculate draw count
-    const drawModifier = calculateDrawModifier(playerBuffs);
+    // Calculate draw count (use post-duration-decrease buffs)
+    const drawModifier = calculateDrawModifier(newBuffs);
     const drawCount = baseDrawCount + drawModifier;
 
     // Draw cards

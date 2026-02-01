@@ -829,6 +829,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
 /**
  * Hook to use Inventory context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useInventory = () => {
   const context = useContext(InventoryContext);
   if (!context) {

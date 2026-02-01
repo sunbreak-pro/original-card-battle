@@ -29,7 +29,10 @@
       "Bash(npx vite build:*)",
       "Bash(while read f)",
       "Bash(do wc -l \"$f\")",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(for file in src/constants/data/cards/*.ts)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

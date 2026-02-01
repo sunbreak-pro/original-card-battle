@@ -117,14 +117,16 @@ export const calculateEndPhaseDamage = (map: BuffDebuffMap): number => {
 
     map.forEach((buff) => {
         switch (buff.name) {
-            case "burn":
-                buffDamage += buff.value;
+            case "burn": {
+                const burnDamage = buff.value * buff.stacks;
+                buffDamage += burnDamage;
                 if (map.has("fireField")) {
-                    buffDamage += buff.value * FIRE_FIELD_BONUS_MULTIPLIER;
+                    buffDamage += burnDamage * FIRE_FIELD_BONUS_MULTIPLIER;
                 }
                 break;
+            }
             case "poison":
-                buffDamage += buff.value;
+                buffDamage += buff.value * buff.stacks;
                 break;
         }
     });
@@ -132,8 +134,10 @@ export const calculateEndPhaseDamage = (map: BuffDebuffMap): number => {
     return buffDamage;
 };
 
+const DISABLING_DEBUFFS = ["stun", "freeze", "stagger"] as const;
+
 export const canAct = (map: BuffDebuffMap): boolean => {
-    return !map.has("stun");
+    return !DISABLING_DEBUFFS.some(d => map.has(d));
 };
 
 export const energyRegenBuff = (map: BuffDebuffMap): number => {
@@ -159,7 +163,8 @@ export const calculateDrawModifier = (map: BuffDebuffMap): number => {
     return modifier;
 };
 
-export const immunityBuff = (map: BuffDebuffMap, debuffType: BuffDebuffType): boolean => {
+/** Returns true if the debuff can be applied (not blocked by immunity). */
+export const canApplyDebuff = (map: BuffDebuffMap, debuffType: BuffDebuffType): boolean => {
     if (map.has("immunity")) {
         return !BUFF_EFFECTS[debuffType].isDebuff;
     }
