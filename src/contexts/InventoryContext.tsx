@@ -234,11 +234,12 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
       message: "Item not found in Equipment's Inventory or storage",
     };
     updatePlayerData((prev) => {
-      const equipmentItem =
-        prev.inventory.storage.items.find((i) => i.id === itemId) ||
-        prev.inventory.equipmentInventory.items.find(
-          (i) => i.id === itemId,
-        );
+      // Determine the source of the item
+      const fromStorage = prev.inventory.storage.items.find((i) => i.id === itemId);
+      const fromEquipmentInventory = !fromStorage
+        ? prev.inventory.equipmentInventory.items.find((i) => i.id === itemId)
+        : undefined;
+      const equipmentItem = fromStorage || fromEquipmentInventory;
       if (!equipmentItem) return {};
 
       if (equipmentItem.equipmentSlot !== slot) {
@@ -248,10 +249,14 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
 
       const currentlyEquipped = prev.inventory.equipmentSlots[slot];
 
-      // Remove the new equipment from storage
-      const newStorageItems = prev.inventory.storage.items.filter(
-        (i) => i.id !== itemId,
-      );
+      // Remove the item from its source
+      const newStorageItems = fromStorage
+        ? prev.inventory.storage.items.filter((i) => i.id !== itemId)
+        : prev.inventory.storage.items;
+
+      const newEquipmentInventoryItems = fromEquipmentInventory
+        ? prev.inventory.equipmentInventory.items.filter((i) => i.id !== itemId)
+        : prev.inventory.equipmentInventory.items;
 
       // If swapping, add old equipped item back to storage
       const finalStorageItems = currentlyEquipped
@@ -276,6 +281,11 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
             ...prev.inventory.storage,
             items: finalStorageItems,
             currentCapacity: finalStorageItems.length,
+          },
+          equipmentInventory: {
+            ...prev.inventory.equipmentInventory,
+            items: newEquipmentInventoryItems,
+            currentCapacity: newEquipmentInventoryItems.length,
           },
         },
       };

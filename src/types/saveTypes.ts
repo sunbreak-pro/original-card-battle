@@ -6,7 +6,7 @@
 
 import type { CharacterClass } from './characterTypes';
 import type { MagicStones, Item } from './itemTypes';
-import type { EquipmentSlots } from './campTypes';
+import type { EquipmentSlots, ExplorationLimit } from './campTypes';
 import type { SanctuaryProgress, Depth } from './campTypes';
 
 // ============================================================
@@ -29,11 +29,16 @@ export interface PlayerSaveData {
 export interface ResourceSaveData {
   baseCampGold: number;
   baseCampMagicStones: MagicStones;
+  explorationGold: number;
+  explorationMagicStones: MagicStones;
+  explorationLimit: ExplorationLimit;
 }
 
 export interface InventorySaveData {
   storageItems: Item[];
   equipmentSlots: EquipmentSlots;
+  inventoryItems: Item[];
+  equipmentInventoryItems: Item[];
 }
 
 export interface ProgressionSaveData {

@@ -60,6 +60,9 @@ export const CharacterSelect: React.FC = () => {
       resources: {
         baseCampGold: 0,
         baseCampMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
+        explorationGold: 0,
+        explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
+        explorationLimit: { current: 0, max: 10 },
       },
       inventory: {
         storageItems: [],
@@ -71,6 +74,8 @@ export const CharacterSelect: React.FC = () => {
           accessory1: null,
           accessory2: null,
         },
+        inventoryItems: [],
+        equipmentInventoryItems: [],
       },
       progression: {
         sanctuaryProgress: {

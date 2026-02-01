@@ -176,7 +176,6 @@ interface PlayerContextValue {
     currentAp: number;
     maxAp: number;
   };
-
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
@@ -597,7 +596,8 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         baseCampGold: resourceContext.resources.gold.baseCamp,
         explorationGold: resourceContext.resources.gold.exploration,
         baseCampMagicStones: resourceContext.resources.magicStones.baseCamp,
-        explorationMagicStones: resourceContext.resources.magicStones.exploration,
+        explorationMagicStones:
+          resourceContext.resources.magicStones.exploration,
         explorationLimit: resourceContext.resources.explorationLimit,
       },
       inventory: {
@@ -612,7 +612,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         completedAchievements: [],
       },
     }),
-    [playerState, equipmentAP, resourceContext.resources],
+    [playerState, playerId, equipmentAP, resourceContext.resources],
   );
 
   /**
@@ -638,7 +638,8 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         baseCampGold: resourceContext.resources.gold.baseCamp,
         explorationGold: resourceContext.resources.gold.exploration,
         baseCampMagicStones: resourceContext.resources.magicStones.baseCamp,
-        explorationMagicStones: resourceContext.resources.magicStones.exploration,
+        explorationMagicStones:
+          resourceContext.resources.magicStones.exploration,
         explorationLimit: resourceContext.resources.explorationLimit,
       },
       inventory: {
@@ -711,7 +712,9 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    * Accepts either a partial update object or a function that receives current PlayerData
    */
   const updatePlayerData = (
-    updatesOrFn: Partial<PlayerData> | ((prev: PlayerData) => Partial<PlayerData>),
+    updatesOrFn:
+      | Partial<PlayerData>
+      | ((prev: PlayerData) => Partial<PlayerData>),
   ) => {
     setPlayerState((prev) => {
       const updates =

@@ -151,3 +151,60 @@ export const decreaseBuffDebuffDurationForPhase = (
 
   return newMap;
 };
+
+
+/**
+ * Create a new buff map with the specified buffs applied
+ */
+export function applyBuffsToMap(
+  currentBuffs: BuffDebuffMap,
+  buffsToApply: Array<{ type: BuffDebuffType; duration: number }>
+): BuffDebuffMap {
+  const newBuffs = new Map(currentBuffs);
+
+  for (const buff of buffsToApply) {
+    const existingBuff = newBuffs.get(buff.type);
+
+    if (existingBuff) {
+      // Extend duration or stack
+      const buffDef = BUFF_EFFECTS[buff.type];
+      if (buffDef.stackable) {
+        newBuffs.set(buff.type, {
+          ...existingBuff,
+          stacks: existingBuff.stacks + 1,
+          duration: Math.max(existingBuff.duration, buff.duration),
+        });
+      } else {
+        newBuffs.set(buff.type, {
+          ...existingBuff,
+          duration: Math.max(existingBuff.duration, buff.duration),
+        });
+      }
+    } else {
+      // Add new buff
+      newBuffs.set(buff.type, createBuffState({
+        name: buff.type,
+        duration: buff.duration,
+        stacks: 1,
+      }, 'item', 'player'));
+    }
+  }
+
+  return newBuffs;
+}
+
+/**
+ * Remove all debuffs from a buff map
+ */
+export function clearDebuffsFromMap(buffs: BuffDebuffMap): BuffDebuffMap {
+  const newBuffs = new Map(buffs);
+
+  for (const [type] of newBuffs) {
+    const buffDef = BUFF_EFFECTS[type];
+    if (buffDef?.isDebuff) {
+      newBuffs.delete(type);
+    }
+  }
+
+  return newBuffs;
+}

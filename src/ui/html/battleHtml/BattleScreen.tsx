@@ -31,11 +31,11 @@ import {
   calculateMagicStoneDrops,
   type EnemyType,
 } from "@/domain/camps/logic/soulSystem";
+import { executeItemEffect } from "@/domain/battles/logic/itemEffectExecutor";
 import {
-  executeItemEffect,
   applyBuffsToMap,
   clearDebuffsFromMap,
-} from "@/domain/battles/logic/itemEffectExecutor";
+} from "@/domain/battles/logic/buffLogic";
 import {
   attemptEscape,
   calculateEscapeChance,
@@ -198,7 +198,13 @@ const BattleScreen = ({
       decreaseLives();
       deathHandledRef.current = true;
     }
-  }, [battleResult, playerData, updatePlayerData, decreaseLives, resetExplorationResources]);
+  }, [
+    battleResult,
+    playerData,
+    updatePlayerData,
+    decreaseLives,
+    resetExplorationResources,
+  ]);
 
   // Reset itemUsedThisPhase when phase changes (render-time setState pattern)
   const [prevPhaseIndex, setPrevPhaseIndex] = useState(currentPhaseIndex);

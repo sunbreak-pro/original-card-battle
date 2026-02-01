@@ -64,13 +64,16 @@ export const saveManager = {
 
       const data = JSON.parse(jsonString) as SaveData;
 
-      // Version check
+      // Version check — auto-migrate if needed
       if (data.version !== SAVE_VERSION) {
+        const migrated = this.migrate(data);
+        // Persist the migrated data so future loads don't re-migrate
+        localStorage.setItem(SAVE_KEY, JSON.stringify(migrated));
         return {
           success: true,
-          message: `Save data version mismatch (${data.version} vs ${SAVE_VERSION}). Migration may be needed.`,
-          data,
-          needsMigration: true,
+          message: `Save data migrated from ${data.version} to ${SAVE_VERSION}.`,
+          data: migrated,
+          needsMigration: false,
         };
       }
 
@@ -170,17 +173,32 @@ export const saveManager = {
    * @returns Migrated save data
    */
   migrate(data: SaveData): SaveData {
-    // Version 1.0.0 is the initial version, no migration needed yet
-    // Future migrations will be handled here
+    let migrated = { ...data };
 
-    // Example migration structure:
-    // if (data.version === "0.9.0") {
-    //   // Migrate from 0.9.0 to 1.0.0
-    //   data = migrateFrom090To100(data);
-    // }
+    // Migrate from 1.0.0 to 1.1.0: add missing inventory and exploration resource fields
+    if (migrated.version === "1.0.0") {
+      const oldResources = migrated.resources as unknown as Record<string, unknown>;
+      const oldInventory = migrated.inventory as unknown as Record<string, unknown>;
+
+      migrated = {
+        ...migrated,
+        resources: {
+          ...migrated.resources,
+          explorationGold: (oldResources.explorationGold as number) ?? 0,
+          explorationMagicStones: (oldResources.explorationMagicStones as typeof migrated.resources.explorationMagicStones) ?? { small: 0, medium: 0, large: 0, huge: 0 },
+          explorationLimit: (oldResources.explorationLimit as typeof migrated.resources.explorationLimit) ?? { current: 0, max: 10 },
+        },
+        inventory: {
+          ...migrated.inventory,
+          inventoryItems: (oldInventory.inventoryItems as typeof migrated.inventory.inventoryItems) ?? [],
+          equipmentInventoryItems: (oldInventory.equipmentInventoryItems as typeof migrated.inventory.equipmentInventoryItems) ?? [],
+        },
+        version: "1.1.0",
+      };
+    }
 
     return {
-      ...data,
+      ...migrated,
       version: SAVE_VERSION,
     };
   },
@@ -207,6 +225,9 @@ export function createDefaultSaveData(): Omit<SaveData, "version" | "timestamp">
     resources: {
       baseCampGold: 0,
       baseCampMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
+      explorationGold: 0,
+      explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
+      explorationLimit: { current: 0, max: 10 },
     },
     inventory: {
       storageItems: [],
@@ -218,6 +239,8 @@ export function createDefaultSaveData(): Omit<SaveData, "version" | "timestamp">
         accessory1: null,
         accessory2: null,
       },
+      inventoryItems: [],
+      equipmentInventoryItems: [],
     },
     progression: {
       sanctuaryProgress: {
