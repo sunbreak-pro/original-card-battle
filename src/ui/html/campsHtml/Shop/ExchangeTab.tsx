@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { useResources } from "@/contexts/ResourceContext";
 import type { MagicStones } from "@/types/itemTypes";
 import {
   calculateMagicStoneTotal,
@@ -7,7 +8,8 @@ import {
 } from "@/domain/camps/logic/shopLogic";
 
 const ExchangeTab = () => {
-  const { playerData, addGold, updateBaseCampMagicStones } = usePlayer();
+  const { playerData } = usePlayer();
+  const { addGold, setBaseCampMagicStones } = useResources();
   const [exchangeAmount, setExchangeAmount] = useState<number>(0);
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -37,7 +39,7 @@ const ExchangeTab = () => {
     }
 
     // Update player's magic stones (via ResourceContext for header sync)
-    updateBaseCampMagicStones(result.newStones);
+    setBaseCampMagicStones(result.newStones);
 
     // Add gold (actual value consumed, may be slightly more than requested)
     addGold(result.actualValue, true);
@@ -58,7 +60,7 @@ const ExchangeTab = () => {
       return;
     }
 
-    updateBaseCampMagicStones(result.newStones);
+    setBaseCampMagicStones(result.newStones);
     addGold(result.actualValue, true);
 
     showNotification(`Exchanged for ${result.actualValue} G!`);
@@ -80,7 +82,7 @@ const ExchangeTab = () => {
       [type]: stones[type] - 1,
     };
 
-    updateBaseCampMagicStones(newStones);
+    setBaseCampMagicStones(newStones);
     addGold(value, true);
 
     showNotification(`Exchanged for ${value} G!`);

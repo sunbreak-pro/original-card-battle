@@ -15,14 +15,12 @@ import type {
   LivesSystem,
   CharacterClass,
 } from "@/types/characterTypes";
-import type { MagicStones } from "@/types/itemTypes";
 import type { Card } from "@/types/cardTypes";
 import type {
   StorageState,
   InventoryState,
   EquipmentInventoryState,
   EquipmentSlots,
-  ExplorationLimit,
   SanctuaryProgress,
 } from "@/types/campTypes";
 import {
@@ -50,7 +48,6 @@ import {
   STORAGE_MAX_CAPACITY,
   INVENTORY_MAX_CAPACITY,
   EQUIPMENT_INVENTORY_MAX,
-  DEFAULT_EXPLORATION_LIMIT,
 } from "../constants";
 import {
   calculateEquipmentAP,
@@ -75,7 +72,6 @@ interface InternalPlayerState {
   guard: number;
   speed: number;
   cardActEnergy: number;
-  gold: number;
   deck: Card[];
   tittle?: string[];
 
@@ -85,14 +81,7 @@ interface InternalPlayerState {
   equipmentInventory: EquipmentInventoryState;
   equipmentSlots: EquipmentSlots;
 
-  // Resources
-  explorationGold: number;
-  baseCampGold: number;
-  explorationMagicStones: MagicStones;
-  baseCampMagicStones: MagicStones;
-
   // Progression
-  explorationLimit: ExplorationLimit;
   sanctuaryProgress: SanctuaryProgress;
 }
 
@@ -124,8 +113,10 @@ interface PlayerContextValue {
   /** Player data */
   playerData: PlayerData;
 
-  /** Update player data with partial updates */
-  updatePlayerData: (updates: Partial<PlayerData>) => void;
+  /** Update player data with partial updates (object or function form) */
+  updatePlayerData: (
+    updates: Partial<PlayerData> | ((prev: PlayerData) => Partial<PlayerData>),
+  ) => void;
 
   // ============================================================
   // Runtime battle state (persists between battles)
@@ -186,13 +177,6 @@ interface PlayerContextValue {
     maxAp: number;
   };
 
-  // Resource operations (delegated to ResourceContext)
-  addGold: (amount: number, toBaseCamp?: boolean) => void;
-  useGold: (amount: number) => boolean;
-  addMagicStones: (stones: Partial<MagicStones>, toBaseCamp?: boolean) => void;
-  updateBaseCampMagicStones: (newStones: MagicStones) => void;
-  transferExplorationResources: (survivalMultiplier: number) => void;
-  resetExplorationResources: () => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
@@ -222,8 +206,6 @@ function createInitialPlayerState(
 ): InternalPlayerState {
   return {
     ...basePlayer,
-    // Gold will be synced from ResourceContext
-    gold: 0,
 
     // Storage & Inventory (with test items)
     storage: {
@@ -243,17 +225,7 @@ function createInitialPlayerState(
     },
     equipmentSlots: EQUIPPED_TEST_ITEMS,
 
-    // Resources (managed by ResourceContext, kept here for compatibility)
-    explorationGold: 0,
-    baseCampGold: 0,
-    explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
-    baseCampMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
-
     // Progression
-    explorationLimit: {
-      current: 0,
-      max: DEFAULT_EXPLORATION_LIMIT,
-    },
     sanctuaryProgress: {
       currentRunSouls: 25,
       totalSouls: 150,
@@ -288,20 +260,13 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   // Get resource context for delegation
   const resourceContext = useResources();
 
+  // Stable player ID — generated once on mount
+  const [playerId] = useState(() => `player_${Date.now()}`);
+
   // Internal state
-  const [playerState, setPlayerState] = useState<InternalPlayerState>(() => {
-    const initialPlayer = createInitialPlayerState(Swordman_Status);
-    // Sync initial values from ResourceContext
-    return {
-      ...initialPlayer,
-      gold: resourceContext.getTotalGold(),
-      baseCampGold: resourceContext.resources.gold.baseCamp,
-      explorationGold: resourceContext.resources.gold.exploration,
-      baseCampMagicStones: resourceContext.resources.magicStones.baseCamp,
-      explorationMagicStones: resourceContext.resources.magicStones.exploration,
-      explorationLimit: resourceContext.resources.explorationLimit,
-    };
-  });
+  const [playerState, setPlayerState] = useState<InternalPlayerState>(() =>
+    createInitialPlayerState(Swordman_Status),
+  );
 
   // Runtime battle state - persists between battles within exploration
   const [runtimeState, setRuntimeState] = useState<RuntimeBattleState>(() => {
@@ -423,15 +388,8 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 
     const newPlayer = createInitialPlayerState(playerWithStarterDeck);
 
-    // Sync with ResourceContext
     setPlayerState({
       ...newPlayer,
-      gold: resourceContext.getTotalGold(),
-      baseCampGold: resourceContext.resources.gold.baseCamp,
-      explorationGold: resourceContext.resources.gold.exploration,
-      baseCampMagicStones: resourceContext.resources.magicStones.baseCamp,
-      explorationMagicStones: resourceContext.resources.magicStones.exploration,
-      explorationLimit: resourceContext.resources.explorationLimit,
       // Reset souls for new game
       sanctuaryProgress: {
         currentRunSouls: 0,
@@ -518,152 +476,6 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     }));
 
     return { currentAp: newAP.totalAP, maxAp: newAP.maxAP };
-  };
-
-  // ============================================================
-  // Resource operations (delegated to ResourceContext)
-  // These are kept for backward compatibility with existing code
-  // ============================================================
-
-  /**
-   * Add gold (delegated to ResourceContext)
-   */
-  const addGold = (amount: number, toBaseCamp = false) => {
-    resourceContext.addGold(amount, toBaseCamp);
-    // Sync player state
-    setPlayerState((prev) => ({
-      ...prev,
-      gold: resourceContext.getTotalGold() + amount,
-      baseCampGold: toBaseCamp ? prev.baseCampGold + amount : prev.baseCampGold,
-      explorationGold: toBaseCamp
-        ? prev.explorationGold
-        : prev.explorationGold + amount,
-    }));
-  };
-
-  /**
-   * Use gold (delegated to ResourceContext)
-   */
-  const useGold = (amount: number): boolean => {
-    const success = resourceContext.useGold(amount);
-    if (success) {
-      // Sync player state - recalculate from ResourceContext
-      setPlayerState((prev) => {
-        let newBaseCampGold = prev.baseCampGold;
-        let newExplorationGold = prev.explorationGold;
-
-        if (newBaseCampGold >= amount) {
-          newBaseCampGold -= amount;
-        } else {
-          const remaining = amount - newBaseCampGold;
-          newBaseCampGold = 0;
-          newExplorationGold -= remaining;
-        }
-
-        return {
-          ...prev,
-          gold: prev.gold - amount,
-          baseCampGold: Math.max(0, newBaseCampGold),
-          explorationGold: Math.max(0, newExplorationGold),
-        };
-      });
-    }
-    return success;
-  };
-
-  /**
-   * Add magic stones (delegated to ResourceContext)
-   */
-  const addMagicStones = (stones: Partial<MagicStones>, toBaseCamp = false) => {
-    resourceContext.addMagicStones(stones, toBaseCamp);
-    // Sync player state
-    setPlayerState((prev) => {
-      if (toBaseCamp) {
-        return {
-          ...prev,
-          baseCampMagicStones: {
-            small: prev.baseCampMagicStones.small + (stones.small || 0),
-            medium: prev.baseCampMagicStones.medium + (stones.medium || 0),
-            large: prev.baseCampMagicStones.large + (stones.large || 0),
-            huge: prev.baseCampMagicStones.huge + (stones.huge || 0),
-          },
-        };
-      } else {
-        return {
-          ...prev,
-          explorationMagicStones: {
-            small: prev.explorationMagicStones.small + (stones.small || 0),
-            medium: prev.explorationMagicStones.medium + (stones.medium || 0),
-            large: prev.explorationMagicStones.large + (stones.large || 0),
-            huge: prev.explorationMagicStones.huge + (stones.huge || 0),
-          },
-        };
-      }
-    });
-  };
-
-  /**
-   * Set baseCamp magic stones directly (delegated to ResourceContext)
-   * Used by ExchangeTab when converting stones to gold
-   */
-  const updateBaseCampMagicStones = (newStones: MagicStones) => {
-    resourceContext.setBaseCampMagicStones(newStones);
-    // Sync player state
-    setPlayerState((prev) => ({
-      ...prev,
-      baseCampMagicStones: newStones,
-    }));
-  };
-
-  /**
-   * Transfer exploration resources to BaseCamp (delegated to ResourceContext)
-   */
-  const transferExplorationResources = (survivalMultiplier: number) => {
-    resourceContext.transferExplorationToBaseCamp(survivalMultiplier);
-    // Also transfer souls
-    transferSouls(survivalMultiplier);
-    // Sync player state
-    setPlayerState((prev) => ({
-      ...prev,
-      baseCampGold:
-        prev.baseCampGold +
-        Math.floor(prev.explorationGold * survivalMultiplier),
-      explorationGold: 0,
-      baseCampMagicStones: {
-        small:
-          prev.baseCampMagicStones.small +
-          Math.floor(prev.explorationMagicStones.small * survivalMultiplier),
-        medium:
-          prev.baseCampMagicStones.medium +
-          Math.floor(prev.explorationMagicStones.medium * survivalMultiplier),
-        large:
-          prev.baseCampMagicStones.large +
-          Math.floor(prev.explorationMagicStones.large * survivalMultiplier),
-        huge:
-          prev.baseCampMagicStones.huge +
-          Math.floor(prev.explorationMagicStones.huge * survivalMultiplier),
-      },
-      explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
-      gold:
-        prev.baseCampGold +
-        Math.floor(prev.explorationGold * survivalMultiplier),
-    }));
-  };
-
-  /**
-   * Reset exploration resources (delegated to ResourceContext)
-   */
-  const resetExplorationResources = () => {
-    resourceContext.resetExplorationResources();
-    // Also reset current run souls
-    resetCurrentRunSouls();
-    // Sync player state
-    setPlayerState((prev) => ({
-      ...prev,
-      explorationGold: 0,
-      gold: prev.baseCampGold,
-      explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
-    }));
   };
 
   // ============================================================
@@ -769,7 +581,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   const playerData = useMemo<PlayerData>(
     () => ({
       persistent: {
-        id: `player_${Date.now()}`,
+        id: playerId,
         name: playerState.name ?? "Adventurer",
         playerClass: playerState.playerClass,
         classGrade: playerState.classGrade,
@@ -782,11 +594,11 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         titles: playerState.tittle ?? [],
       },
       resources: {
-        baseCampGold: playerState.baseCampGold,
-        explorationGold: playerState.explorationGold,
-        baseCampMagicStones: playerState.baseCampMagicStones,
-        explorationMagicStones: playerState.explorationMagicStones,
-        explorationLimit: playerState.explorationLimit,
+        baseCampGold: resourceContext.resources.gold.baseCamp,
+        explorationGold: resourceContext.resources.gold.exploration,
+        baseCampMagicStones: resourceContext.resources.magicStones.baseCamp,
+        explorationMagicStones: resourceContext.resources.magicStones.exploration,
+        explorationLimit: resourceContext.resources.explorationLimit,
       },
       inventory: {
         storage: playerState.storage,
@@ -800,82 +612,114 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         completedAchievements: [],
       },
     }),
-    [playerState, equipmentAP],
+    [playerState, equipmentAP, resourceContext.resources],
   );
 
   /**
-   * Update player data using PlayerData interface
+   * Build PlayerData from InternalPlayerState (for functional updater form)
    */
-  const updatePlayerData = (updates: Partial<PlayerData>) => {
+  const buildPlayerData = (state: InternalPlayerState): PlayerData => {
+    const eqAP = calculateEquipmentAP(state.equipmentSlots);
+    return {
+      persistent: {
+        id: playerId,
+        name: state.name ?? "Adventurer",
+        playerClass: state.playerClass,
+        classGrade: state.classGrade,
+        level: state.level,
+        baseMaxHp: state.maxHp,
+        baseMaxAp: eqAP.maxAP,
+        baseSpeed: state.speed,
+        cardActEnergy: state.cardActEnergy,
+        deckCardIds: state.deck.map((card) => card.id),
+        titles: state.tittle ?? [],
+      },
+      resources: {
+        baseCampGold: resourceContext.resources.gold.baseCamp,
+        explorationGold: resourceContext.resources.gold.exploration,
+        baseCampMagicStones: resourceContext.resources.magicStones.baseCamp,
+        explorationMagicStones: resourceContext.resources.magicStones.exploration,
+        explorationLimit: resourceContext.resources.explorationLimit,
+      },
+      inventory: {
+        storage: state.storage,
+        inventory: state.inventory,
+        equipmentInventory: state.equipmentInventory,
+        equipmentSlots: state.equipmentSlots,
+      },
+      progression: {
+        sanctuaryProgress: state.sanctuaryProgress,
+        unlockedDepths: [1],
+        completedAchievements: [],
+      },
+    };
+  };
+
+  /**
+   * Apply Partial<PlayerData> updates to InternalPlayerState
+   */
+  const applyUpdates = (
+    prev: InternalPlayerState,
+    updates: Partial<PlayerData>,
+  ): InternalPlayerState => {
+    const updated = { ...prev };
+
+    // Update persistent data
+    if (updates.persistent) {
+      if (updates.persistent.classGrade !== undefined) {
+        updated.classGrade = updates.persistent.classGrade;
+      }
+      if (updates.persistent.level !== undefined) {
+        updated.level = updates.persistent.level;
+      }
+      if (updates.persistent.name !== undefined) {
+        updated.name = updates.persistent.name;
+      }
+      if (updates.persistent.titles !== undefined) {
+        updated.tittle = updates.persistent.titles;
+      }
+    }
+
+    // Update inventory
+    if (updates.inventory) {
+      if (updates.inventory.storage !== undefined) {
+        updated.storage = updates.inventory.storage;
+      }
+      if (updates.inventory.inventory !== undefined) {
+        updated.inventory = updates.inventory.inventory;
+      }
+      if (updates.inventory.equipmentInventory !== undefined) {
+        updated.equipmentInventory = updates.inventory.equipmentInventory;
+      }
+      if (updates.inventory.equipmentSlots !== undefined) {
+        updated.equipmentSlots = updates.inventory.equipmentSlots;
+      }
+    }
+
+    // Update progression
+    if (updates.progression) {
+      if (updates.progression.sanctuaryProgress !== undefined) {
+        updated.sanctuaryProgress = updates.progression.sanctuaryProgress;
+      }
+    }
+
+    return updated;
+  };
+
+  /**
+   * Update player data using PlayerData interface
+   * Accepts either a partial update object or a function that receives current PlayerData
+   */
+  const updatePlayerData = (
+    updatesOrFn: Partial<PlayerData> | ((prev: PlayerData) => Partial<PlayerData>),
+  ) => {
     setPlayerState((prev) => {
-      const updated = { ...prev };
+      const updates =
+        typeof updatesOrFn === "function"
+          ? updatesOrFn(buildPlayerData(prev))
+          : updatesOrFn;
 
-      // Update persistent data
-      if (updates.persistent) {
-        if (updates.persistent.classGrade !== undefined) {
-          updated.classGrade = updates.persistent.classGrade;
-        }
-        if (updates.persistent.level !== undefined) {
-          updated.level = updates.persistent.level;
-        }
-        if (updates.persistent.name !== undefined) {
-          updated.name = updates.persistent.name;
-        }
-        if (updates.persistent.titles !== undefined) {
-          updated.tittle = updates.persistent.titles;
-        }
-      }
-
-      // Update resources
-      if (updates.resources) {
-        if (updates.resources.baseCampGold !== undefined) {
-          updated.baseCampGold = updates.resources.baseCampGold;
-          updated.gold =
-            updates.resources.baseCampGold +
-            (updates.resources.explorationGold ?? prev.explorationGold);
-        }
-        if (updates.resources.explorationGold !== undefined) {
-          updated.explorationGold = updates.resources.explorationGold;
-          updated.gold =
-            (updates.resources.baseCampGold ?? prev.baseCampGold) +
-            updates.resources.explorationGold;
-        }
-        if (updates.resources.baseCampMagicStones !== undefined) {
-          updated.baseCampMagicStones = updates.resources.baseCampMagicStones;
-        }
-        if (updates.resources.explorationMagicStones !== undefined) {
-          updated.explorationMagicStones =
-            updates.resources.explorationMagicStones;
-        }
-        if (updates.resources.explorationLimit !== undefined) {
-          updated.explorationLimit = updates.resources.explorationLimit;
-        }
-      }
-
-      // Update inventory
-      if (updates.inventory) {
-        if (updates.inventory.storage !== undefined) {
-          updated.storage = updates.inventory.storage;
-        }
-        if (updates.inventory.inventory !== undefined) {
-          updated.inventory = updates.inventory.inventory;
-        }
-        if (updates.inventory.equipmentInventory !== undefined) {
-          updated.equipmentInventory = updates.inventory.equipmentInventory;
-        }
-        if (updates.inventory.equipmentSlots !== undefined) {
-          updated.equipmentSlots = updates.inventory.equipmentSlots;
-        }
-      }
-
-      // Update progression
-      if (updates.progression) {
-        if (updates.progression.sanctuaryProgress !== undefined) {
-          updated.sanctuaryProgress = updates.progression.sanctuaryProgress;
-        }
-      }
-
-      return updated;
+      return applyUpdates(prev, updates);
     });
   };
 
@@ -912,13 +756,6 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         resetCurrentRunSouls,
         initializeWithClass,
         applyEquipmentDurabilityDamage,
-        // Resource operations (delegated)
-        addGold,
-        useGold,
-        addMagicStones,
-        updateBaseCampMagicStones,
-        transferExplorationResources,
-        resetExplorationResources,
       }}
     >
       {children}

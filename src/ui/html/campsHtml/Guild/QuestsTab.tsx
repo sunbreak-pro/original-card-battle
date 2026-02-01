@@ -12,12 +12,12 @@ import {
   generateWeeklyQuests,
   isQuestComplete,
 } from "@/constants/data/camps/QuestData";
-import { usePlayer } from "@/contexts/PlayerContext";
+import { useResources } from "@/contexts/ResourceContext";
 
 type QuestFilter = "all" | "daily" | "weekly" | "active";
 
 const QuestsTab = () => {
-  const { addGold, addMagicStones } = usePlayer();
+  const { addGold, addMagicStones } = useResources();
 
   // Generate quests (in real implementation, these would persist in context)
   const [dailyQuests, setDailyQuests] = useState<Quest[]>(() =>

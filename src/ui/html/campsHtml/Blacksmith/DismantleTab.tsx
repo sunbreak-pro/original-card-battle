@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { useResources } from "@/contexts/ResourceContext";
 import { useInventory } from "@/contexts/InventoryContext";
 import type { Item } from "@/types/itemTypes";
 import type { EquipmentQuality } from "@/types/itemTypes";
@@ -13,7 +14,8 @@ import {
 import BlacksmithItemCard from "./BlacksmithItemCard";
 
 const DismantleTab = () => {
-  const { playerData, addGold, addMagicStones } = usePlayer();
+  const { playerData } = usePlayer();
+  const { addGold, addMagicStones } = useResources();
   const { removeItemFromStorage } = useInventory();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);

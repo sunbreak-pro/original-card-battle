@@ -23,6 +23,7 @@
 | Camp Facilities | 95% | Shop, Guild (Exam/Quests/Rumors), Library (Card+Enemy encyclopedias), Blacksmith, Storage all complete |
 | Dungeon System | 90% | Map generation, battle/event/rest/treasure nodes, 5-floor progression, depth 1-5 enemies |
 | Progression System | 98% | Lives + Souls + Sanctuary + equipment stat bonuses + equipment durability + card derivation + mastery + custom deck all complete |
+| State Management | Fixed | V-CS01/02/03/04/11 — resource single-source-of-truth, race conditions, stale closures (Session 1) |
 | Save System | Implemented | `src/domain/save/logic/saveManager.ts` |
 | Character Images | 90% | Player images (Swordsman/Mage) displayed in battle. Summoner uses placeholder. All 40 enemies have imagePath set (images not yet created) |
 
@@ -83,7 +84,7 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 | Enemy image assets | MEDIUM | All 40 enemies have `imagePath` set but no actual PNG files exist yet (fallback image shown) |
 | Summoner character image | LOW | Currently uses Mage.png as placeholder |
 | FacilityHeader unused `variant` prop | LOW | Prop accepted but not used |
-| Build error (pre-existing) | MEDIUM | `NodeMap.tsx:252` — `Property 'remaining' does not exist on type 'LivesSystem'` |
+| Build error (pre-existing) | RESOLVED | `NodeMap.tsx:252` error fixed during Session 1 state refactoring. No remaining build errors. |
 
 ### Class Ability Hooks
 
@@ -109,6 +110,12 @@ The separate battle contexts (`BattleProviderStack`, `PlayerBattleContext`, `Ene
 
 ### Elemental Resonance Integration
 `useElementalChain` hook is called unconditionally in `useBattleOrchestrator`. `getElementalDamageModifier` is passed into `CardExecutionSetters` and applied as a `percentMultiplier` to base damage during both preview and execution.
+
+### Resource Single Source of Truth (Session 1)
+ResourceContext is now the sole owner of gold/magicStones. PlayerContext no longer duplicates resource state — all camp facilities use `useResources()` directly. Race conditions in `useGold`/`useExplorationPoint` fixed via functional updaters with mutable result objects.
+
+### InventoryContext Functional Updater Migration (Session 1)
+All inventory mutation operations converted to `setPlayerData(prev => ...)` pattern to prevent stale closure bugs during rapid operations (e.g., opening multi-item equipment packs).
 
 ---
 
@@ -153,7 +160,7 @@ Session 7で全コンテキストシステムおよび主要ドメインロジ�
   - `dungeon/` — dungeon-system
   - `inventory/` — equipment-and-items
   - `resource/` — economy
-- **特定された脆弱性:** 77件（Critical 5, High 22, Medium 30, Low 20）
+- **特定された脆弱性:** 77件（Critical 5, High 22, Medium 30, Low 20）— うち5件修正済み（Session 1: V-CS01, V-CS02, V-CS03, V-CS04, V-CS11）
 - **詳細:** `.claude/code/README.md` を参照
 
 ---

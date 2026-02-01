@@ -167,6 +167,50 @@ useEffect(() => {
 
 ---
 
+## 7. Mutable Object Pattern for setState Return Values
+
+**Problem:** Functional updaters (`setState(prev => ...)`) cannot return a secondary value (e.g., success/failure). This makes it impossible to know if a balance check passed inside the updater.
+
+**Solution:** Create a mutable result object before the updater call, write to it inside the updater:
+
+```typescript
+// Pattern: mutable result object for functional updater return values
+const result = { success: false };
+setResources(prev => {
+  if (prev.gold < cost) return prev; // insufficient — result.success stays false
+  result.success = true;
+  return { ...prev, gold: prev.gold - cost };
+});
+return result.success;
+```
+
+**Key Rule:** The mutable object must be declared in the same synchronous scope. React processes functional updaters synchronously during the same call, so `result.success` is available immediately after `setResources()`.
+
+**Fixed Instance:**
+- `ResourceContext.tsx`: `useGold().spend()` and `useExplorationPoint().spend()` both use this pattern to return success/failure while keeping balance checks inside the updater (preventing race conditions).
+
+---
+
+## 8. Single Source of Truth — Resource State
+
+**Problem:** PlayerContext duplicated gold/magicStones from ResourceContext. Operations like `addGold` in PlayerContext read stale pre-update values, causing drift between the two contexts.
+
+**Solution:** One owner per piece of state. Consumers read via the owning context's hook:
+
+```
+RULE: One owner per piece of state. Readers observe; they never copy.
+
+BAD:  ResourceContext owns gold → PlayerContext copies gold → drift
+GOOD: ResourceContext owns gold → all consumers use useResources().gold
+```
+
+**Fixed Instance:**
+- Removed `addGold`, `spendGold`, `addMagicStones`, `spendMagicStones` from PlayerContext
+- All camp facilities (Shop, Blacksmith, Guild, etc.) now use `useResources()` directly
+- PlayerContext's `playerData` no longer includes resource fields
+
+---
+
 ## Quick Reference
 
 | Issue | One-Line Rule |
@@ -177,3 +221,5 @@ useEffect(() => {
 | React 19 Refs | No `ref.current` during render → use `useState` |
 | React 19 Rules Conflict | Side effects → useEffect + eslint-disable; Derived state → render-time useState |
 | Language | UI: Japanese / Code: English |
+| Mutable Result for Updaters | Use mutable object to capture success/failure from inside `setState(prev => ...)` |
+| Single Source of Truth | One owner per state field; never copy state between contexts |

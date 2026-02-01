@@ -114,35 +114,34 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
    * Deducts from baseCamp first, then exploration
    * @returns true if successful, false if insufficient gold
    */
-  const useGold = useCallback(
-    (amount: number): boolean => {
-      const totalGold = resources.gold.baseCamp + resources.gold.exploration;
-      if (totalGold < amount) return false;
+  const useGold = useCallback((amount: number): boolean => {
+    const result = { success: false };
+    setResources((prev) => {
+      const totalGold = prev.gold.baseCamp + prev.gold.exploration;
+      if (totalGold < amount) return prev;
 
-      setResources((prev) => {
-        let newBaseCampGold = prev.gold.baseCamp;
-        let newExplorationGold = prev.gold.exploration;
+      result.success = true;
+      let newBaseCampGold = prev.gold.baseCamp;
+      let newExplorationGold = prev.gold.exploration;
 
-        if (newBaseCampGold >= amount) {
-          newBaseCampGold -= amount;
-        } else {
-          const remaining = amount - newBaseCampGold;
-          newBaseCampGold = 0;
-          newExplorationGold -= remaining;
-        }
+      if (newBaseCampGold >= amount) {
+        newBaseCampGold -= amount;
+      } else {
+        const remaining = amount - newBaseCampGold;
+        newBaseCampGold = 0;
+        newExplorationGold -= remaining;
+      }
 
-        return {
-          ...prev,
-          gold: {
-            baseCamp: Math.max(0, newBaseCampGold),
-            exploration: Math.max(0, newExplorationGold),
-          },
-        };
-      });
-      return true;
-    },
-    [resources.gold.baseCamp, resources.gold.exploration],
-  );
+      return {
+        ...prev,
+        gold: {
+          baseCamp: Math.max(0, newBaseCampGold),
+          exploration: Math.max(0, newExplorationGold),
+        },
+      };
+    });
+    return result.success;
+  }, []);
 
   /**
    * Get total gold (baseCamp + exploration)
@@ -222,13 +221,13 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
    * @returns true if successful, false if limit exceeded
    */
   const useExplorationPoint = useCallback((): boolean => {
-    let success = false;
+    const result = { success: false };
     setResources((prev) => {
       if (prev.explorationLimit.current >= prev.explorationLimit.max) {
-        return prev; // 変更なし
+        return prev;
       }
 
-      success = true;
+      result.success = true;
       return {
         ...prev,
         explorationLimit: {
@@ -237,7 +236,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
         },
       };
     });
-    return success;
+    return result.success;
   }, []);
 
   /**

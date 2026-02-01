@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { useResources } from "@/contexts/ResourceContext";
 import { useInventory } from "@/contexts/InventoryContext";
 import type { Item } from "@/types/itemTypes";
 import { calculateSellPrice } from "@/domain/camps/logic/shopLogic";
 
 const SellTab = () => {
-  const { playerData, addGold } = usePlayer();
+  const { playerData } = usePlayer();
+  const { addGold } = useResources();
   const { removeItemFromInventory, getEquippedItem } = useInventory();
   const inventory = playerData.inventory.inventory;
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);

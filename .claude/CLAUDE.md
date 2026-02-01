@@ -19,7 +19,7 @@ No test framework configured — verify manually in browser.
 
 **TypeScript strictness:** `noUnusedLocals` and `noUnusedParameters` are enabled — remove unused variables rather than prefixing with `_`. `verbatimModuleSyntax` is enabled — use `import type` for type-only imports. `erasableSyntaxOnly` is enabled — use `as const` objects instead of `enum`, no `namespace` or `module` declarations.
 
-**Known build error:** `NodeMap.tsx:252` has a pre-existing error (`Property 'remaining' does not exist on type 'LivesSystem'`). This is not caused by recent changes.
+**Known build error:** None. Previous `NodeMap.tsx:252` error was resolved during Session 1 state refactoring.
 
 ## Architecture
 
@@ -33,7 +33,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 | -------------------- | ---------------------------------------------------------------------- |
 | `GameStateContext`   | Screen routing via `currentScreen`, depth, battleMode                  |
 | `ResourceContext`    | Gold, magic stones                                                     |
-| `PlayerContext`      | `PlayerData` (persistent) + `RuntimeBattleState` (HP/AP/lives/mastery) + `deckCards` (custom deck) |
+| `PlayerContext`      | `PlayerData` (persistent) + `RuntimeBattleState` (HP/AP/lives/mastery) + `deckCards` (custom deck). Resource ops (gold/stones) delegated to `ResourceContext`. |
 | `InventoryContext`   | Items, equipment, cards in storage                                     |
 | `DungeonRunProvider` | Persists dungeon state across battle transitions (lives in `src/ui/dungeonHtml/`, not `src/contexts/`) |
 

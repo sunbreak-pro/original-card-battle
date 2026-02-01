@@ -1,4 +1,5 @@
 // InventoryContext: Manages item operations (add, remove, equip, move)
+// All mutations use functional updater to avoid stale closure issues
 
 import React, { createContext, useContext, type ReactNode } from "react";
 import { usePlayer } from "./PlayerContext";
@@ -52,24 +53,27 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
    * @returns true if successful, false if inventory full
    */
   const addItemToInventory = (item: Item): boolean => {
-    if (
-      playerData.inventory.inventory.currentCapacity >=
-      playerData.inventory.inventory.maxCapacity
-    ) {
-      return false;
-    }
-
-    updatePlayerData({
-      inventory: {
-        ...playerData.inventory,
+    const result = { success: false };
+    updatePlayerData((prev) => {
+      if (
+        prev.inventory.inventory.currentCapacity >=
+        prev.inventory.inventory.maxCapacity
+      ) {
+        return {};
+      }
+      result.success = true;
+      return {
         inventory: {
-          ...playerData.inventory.inventory,
-          items: [...playerData.inventory.inventory.items, item],
-          currentCapacity: playerData.inventory.inventory.currentCapacity + 1,
+          ...prev.inventory,
+          inventory: {
+            ...prev.inventory.inventory,
+            items: [...prev.inventory.inventory.items, item],
+            currentCapacity: prev.inventory.inventory.currentCapacity + 1,
+          },
         },
-      },
+      };
     });
-    return true;
+    return result.success;
   };
 
   /**
@@ -77,74 +81,85 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
    * @returns true if successful, false if storage full
    */
   const addItemToStorage = (item: Item): boolean => {
-    if (
-      playerData.inventory.storage.currentCapacity >=
-      playerData.inventory.storage.maxCapacity
-    ) {
-      return false;
-    }
-
-    updatePlayerData({
-      inventory: {
-        ...playerData.inventory,
-        storage: {
-          ...playerData.inventory.storage,
-          items: [...playerData.inventory.storage.items, item],
-          currentCapacity: playerData.inventory.storage.currentCapacity + 1,
+    const result = { success: false };
+    updatePlayerData((prev) => {
+      if (
+        prev.inventory.storage.currentCapacity >=
+        prev.inventory.storage.maxCapacity
+      ) {
+        return {};
+      }
+      result.success = true;
+      return {
+        inventory: {
+          ...prev.inventory,
+          storage: {
+            ...prev.inventory.storage,
+            items: [...prev.inventory.storage.items, item],
+            currentCapacity: prev.inventory.storage.currentCapacity + 1,
+          },
         },
-      },
+      };
     });
-    return true;
+    return result.success;
   };
 
   /**
    * Remove item from inventory
    */
   const removeItemFromInventory = (itemId: string): boolean => {
-    const itemIndex = playerData.inventory.inventory.items.findIndex(
-      (i) => i.id === itemId,
-    );
-    if (itemIndex === -1) return false;
+    const result = { success: false };
+    updatePlayerData((prev) => {
+      const itemIndex = prev.inventory.inventory.items.findIndex(
+        (i) => i.id === itemId,
+      );
+      if (itemIndex === -1) return {};
 
-    const newItems = [...playerData.inventory.inventory.items];
-    newItems.splice(itemIndex, 1);
+      const newItems = [...prev.inventory.inventory.items];
+      newItems.splice(itemIndex, 1);
 
-    updatePlayerData({
-      inventory: {
-        ...playerData.inventory,
+      result.success = true;
+      return {
         inventory: {
-          ...playerData.inventory.inventory,
-          items: newItems,
-          currentCapacity: playerData.inventory.inventory.currentCapacity - 1,
+          ...prev.inventory,
+          inventory: {
+            ...prev.inventory.inventory,
+            items: newItems,
+            currentCapacity: prev.inventory.inventory.currentCapacity - 1,
+          },
         },
-      },
+      };
     });
-    return true;
+    return result.success;
   };
 
   /**
    * Remove item from storage
    */
   const removeItemFromStorage = (itemId: string): boolean => {
-    const itemIndex = playerData.inventory.storage.items.findIndex(
-      (i) => i.id === itemId,
-    );
-    if (itemIndex === -1) return false;
+    const result = { success: false };
+    updatePlayerData((prev) => {
+      const itemIndex = prev.inventory.storage.items.findIndex(
+        (i) => i.id === itemId,
+      );
+      if (itemIndex === -1) return {};
 
-    const newItems = [...playerData.inventory.storage.items];
-    newItems.splice(itemIndex, 1);
+      const newItems = [...prev.inventory.storage.items];
+      newItems.splice(itemIndex, 1);
 
-    updatePlayerData({
-      inventory: {
-        ...playerData.inventory,
-        storage: {
-          ...playerData.inventory.storage,
-          items: newItems,
-          currentCapacity: playerData.inventory.storage.currentCapacity - 1,
+      result.success = true;
+      return {
+        inventory: {
+          ...prev.inventory,
+          storage: {
+            ...prev.inventory.storage,
+            items: newItems,
+            currentCapacity: prev.inventory.storage.currentCapacity - 1,
+          },
         },
-      },
+      };
     });
-    return true;
+    return result.success;
   };
 
   /**
@@ -155,51 +170,58 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
     if (item.itemType !== "equipment") {
       return false;
     }
-    if (
-      playerData.inventory.equipmentInventory.currentCapacity >=
-      playerData.inventory.equipmentInventory.maxCapacity
-    ) {
-      return false;
-    }
-
-    updatePlayerData({
-      inventory: {
-        ...playerData.inventory,
-        equipmentInventory: {
-          ...playerData.inventory.equipmentInventory,
-          items: [...playerData.inventory.equipmentInventory.items, item],
-          currentCapacity:
-            playerData.inventory.equipmentInventory.currentCapacity + 1,
+    const result = { success: false };
+    updatePlayerData((prev) => {
+      if (
+        prev.inventory.equipmentInventory.currentCapacity >=
+        prev.inventory.equipmentInventory.maxCapacity
+      ) {
+        return {};
+      }
+      result.success = true;
+      return {
+        inventory: {
+          ...prev.inventory,
+          equipmentInventory: {
+            ...prev.inventory.equipmentInventory,
+            items: [...prev.inventory.equipmentInventory.items, item],
+            currentCapacity:
+              prev.inventory.equipmentInventory.currentCapacity + 1,
+          },
         },
-      },
+      };
     });
-    return true;
+    return result.success;
   };
 
   /**
    * Remove item from equipment inventory
    */
   const removeItemFromEquipmentInventory = (itemId: string): boolean => {
-    const itemIndex = playerData.inventory.equipmentInventory.items.findIndex(
-      (i) => i.id === itemId,
-    );
-    if (itemIndex === -1) return false;
+    const result = { success: false };
+    updatePlayerData((prev) => {
+      const itemIndex = prev.inventory.equipmentInventory.items.findIndex(
+        (i) => i.id === itemId,
+      );
+      if (itemIndex === -1) return {};
 
-    const newItems = [...playerData.inventory.equipmentInventory.items];
-    newItems.splice(itemIndex, 1);
+      const newItems = [...prev.inventory.equipmentInventory.items];
+      newItems.splice(itemIndex, 1);
 
-    updatePlayerData({
-      inventory: {
-        ...playerData.inventory,
-        equipmentInventory: {
-          ...playerData.inventory.equipmentInventory,
-          items: newItems,
-          currentCapacity:
-            playerData.inventory.equipmentInventory.currentCapacity - 1,
+      result.success = true;
+      return {
+        inventory: {
+          ...prev.inventory,
+          equipmentInventory: {
+            ...prev.inventory.equipmentInventory,
+            items: newItems,
+            currentCapacity:
+              prev.inventory.equipmentInventory.currentCapacity - 1,
+          },
         },
-      },
+      };
     });
-    return true;
+    return result.success;
   };
 
   /**
@@ -207,500 +229,533 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
    * Uses a single updatePlayerData call to avoid state race conditions
    */
   const equipItem = (itemId: string, slot: EquipmentSlot): MoveResult => {
-    // Try to find item in storage first
-    const equipmentItem =
-      playerData.inventory.storage.items.find((i) => i.id === itemId) ||
-      playerData.inventory.equipmentInventory.items.find(
-        (i) => i.id === itemId,
-      );
-    if (!equipmentItem) {
-      return {
-        success: false,
-        message: "Item not found in Equipment's Inventory or storage",
-      };
-    }
-    // Check if item can be equipped in this slot
-    if (equipmentItem.equipmentSlot !== slot) {
-      return {
-        success: false,
-        message: `Cannot equip ${equipmentItem.name} in ${slot} slot`,
-      };
-    }
-
-    // Get currently equipped item (if any)
-    const currentlyEquipped = playerData.inventory.equipmentSlots[slot];
-
-    // Remove the new equipment from storage
-    const newStorageItems = playerData.inventory.storage.items.filter(
-      (i) => i.id !== itemId,
-    );
-
-    // If swapping, add old equipped item back to storage
-    const finalStorageItems = currentlyEquipped
-      ? [...newStorageItems, currentlyEquipped]
-      : newStorageItems;
-
-    // Single updatePlayerData call with all changes to avoid race conditions
-    updatePlayerData({
-      inventory: {
-        ...playerData.inventory,
-        equipmentSlots: {
-          ...playerData.inventory.equipmentSlots,
-          [slot]: equipmentItem,
-        },
-        storage: {
-          ...playerData.inventory.storage,
-          items: finalStorageItems,
-          currentCapacity: finalStorageItems.length,
-        },
-      },
-    });
-
-    return {
-      success: true,
-      message: `Equipped ${equipmentItem.name}, replaced ${
-        currentlyEquipped?.name || "nothing"
-      }`,
-      movedItem: equipmentItem,
-      replacedItem: currentlyEquipped || undefined,
+    const result: MoveResult = {
+      success: false,
+      message: "Item not found in Equipment's Inventory or storage",
     };
+    updatePlayerData((prev) => {
+      const equipmentItem =
+        prev.inventory.storage.items.find((i) => i.id === itemId) ||
+        prev.inventory.equipmentInventory.items.find(
+          (i) => i.id === itemId,
+        );
+      if (!equipmentItem) return {};
+
+      if (equipmentItem.equipmentSlot !== slot) {
+        result.message = `Cannot equip ${equipmentItem.name} in ${slot} slot`;
+        return {};
+      }
+
+      const currentlyEquipped = prev.inventory.equipmentSlots[slot];
+
+      // Remove the new equipment from storage
+      const newStorageItems = prev.inventory.storage.items.filter(
+        (i) => i.id !== itemId,
+      );
+
+      // If swapping, add old equipped item back to storage
+      const finalStorageItems = currentlyEquipped
+        ? [...newStorageItems, currentlyEquipped]
+        : newStorageItems;
+
+      result.success = true;
+      result.message = `Equipped ${equipmentItem.name}, replaced ${
+        currentlyEquipped?.name || "nothing"
+      }`;
+      result.movedItem = equipmentItem;
+      result.replacedItem = currentlyEquipped || undefined;
+
+      return {
+        inventory: {
+          ...prev.inventory,
+          equipmentSlots: {
+            ...prev.inventory.equipmentSlots,
+            [slot]: equipmentItem,
+          },
+          storage: {
+            ...prev.inventory.storage,
+            items: finalStorageItems,
+            currentCapacity: finalStorageItems.length,
+          },
+        },
+      };
+    });
+    return result;
   };
 
   /**
    * Unequip item and move to inventory
    */
   const unequipItem = (slot: EquipmentSlot): MoveResult => {
-    const item = playerData.inventory.equipmentSlots[slot];
-
-    if (!item) {
-      return {
-        success: false,
-        message: `No item equipped in ${slot} slot`,
-      };
-    }
-
-    // Check if storage has space
-    if (
-      playerData.inventory.storage.currentCapacity >=
-      playerData.inventory.storage.maxCapacity
-    ) {
-      return {
-        success: false,
-        message: "Storage is full",
-      };
-    }
-
-    // Atomically unequip and add to storage
-    updatePlayerData({
-      inventory: {
-        ...playerData.inventory,
-        equipmentSlots: {
-          ...playerData.inventory.equipmentSlots,
-          [slot]: null,
-        },
-        storage: {
-          ...playerData.inventory.storage,
-          items: [...playerData.inventory.storage.items, item],
-          currentCapacity: playerData.inventory.storage.currentCapacity + 1,
-        },
-      },
-    });
-
-    return {
-      success: true,
-      message: `Unequipped ${item.name}`,
-      movedItem: item,
+    const result: MoveResult = {
+      success: false,
+      message: `No item equipped in ${slot} slot`,
     };
+    updatePlayerData((prev) => {
+      const item = prev.inventory.equipmentSlots[slot];
+      if (!item) return {};
+
+      if (
+        prev.inventory.storage.currentCapacity >=
+        prev.inventory.storage.maxCapacity
+      ) {
+        result.message = "Storage is full";
+        return {};
+      }
+
+      result.success = true;
+      result.message = `Unequipped ${item.name}`;
+      result.movedItem = item;
+
+      return {
+        inventory: {
+          ...prev.inventory,
+          equipmentSlots: {
+            ...prev.inventory.equipmentSlots,
+            [slot]: null,
+          },
+          storage: {
+            ...prev.inventory.storage,
+            items: [...prev.inventory.storage.items, item],
+            currentCapacity: prev.inventory.storage.currentCapacity + 1,
+          },
+        },
+      };
+    });
+    return result;
   };
 
   /**
    * Move item between storage/inventory/equipment
    */
   const moveItem = (itemId: string, direction: MoveDirection): MoveResult => {
+    const result: MoveResult = {
+      success: false,
+      message: "Unknown error",
+    };
+
     switch (direction) {
       case "storage_to_inventory": {
-        const item = playerData.inventory.storage.items.find(
-          (i) => i.id === itemId,
-        );
-        if (!item) {
-          return { success: false, message: "Item not found in storage" };
-        }
-
-        const newStorageItems = playerData.inventory.storage.items.filter(
-          (i) => i.id !== itemId,
-        );
-        const newStorage = {
-          ...playerData.inventory.storage,
-          items: newStorageItems,
-          currentCapacity: playerData.inventory.storage.currentCapacity - 1,
-        };
-
-        // Equipment items go to equipmentInventory
-        if (item.itemType === "equipment") {
-          const eqInv = playerData.inventory.equipmentInventory;
-          if (eqInv.currentCapacity >= eqInv.maxCapacity) {
-            return { success: false, message: "Equipment inventory is full" };
+        updatePlayerData((prev) => {
+          const item = prev.inventory.storage.items.find(
+            (i) => i.id === itemId,
+          );
+          if (!item) {
+            result.message = "Item not found in storage";
+            return {};
           }
-          updatePlayerData({
+
+          const newStorageItems = prev.inventory.storage.items.filter(
+            (i) => i.id !== itemId,
+          );
+          const newStorage = {
+            ...prev.inventory.storage,
+            items: newStorageItems,
+            currentCapacity: prev.inventory.storage.currentCapacity - 1,
+          };
+
+          // Equipment items go to equipmentInventory
+          if (item.itemType === "equipment") {
+            const eqInv = prev.inventory.equipmentInventory;
+            if (eqInv.currentCapacity >= eqInv.maxCapacity) {
+              result.message = "Equipment inventory is full";
+              return {};
+            }
+            result.success = true;
+            result.message = `Moved ${item.name} to equipment inventory`;
+            result.movedItem = item;
+            return {
+              inventory: {
+                ...prev.inventory,
+                storage: newStorage,
+                equipmentInventory: {
+                  ...eqInv,
+                  items: [...eqInv.items, item],
+                  currentCapacity: eqInv.currentCapacity + 1,
+                },
+              },
+            };
+          }
+
+          // Normal items go to inventory
+          const inv = prev.inventory.inventory;
+          if (inv.currentCapacity >= inv.maxCapacity) {
+            result.message = "Inventory is full";
+            return {};
+          }
+          result.success = true;
+          result.message = `Moved ${item.name} to inventory`;
+          result.movedItem = item;
+          return {
             inventory: {
-              ...playerData.inventory,
+              ...prev.inventory,
               storage: newStorage,
-              equipmentInventory: {
-                ...eqInv,
-                items: [...eqInv.items, item],
-                currentCapacity: eqInv.currentCapacity + 1,
+              inventory: {
+                ...inv,
+                items: [...inv.items, item],
+                currentCapacity: inv.currentCapacity + 1,
               },
             },
-          });
-          return {
-            success: true,
-            message: `Moved ${item.name} to equipment inventory`,
-            movedItem: item,
           };
-        }
-
-        // Normal items go to inventory
-        const inv = playerData.inventory.inventory;
-        if (inv.currentCapacity >= inv.maxCapacity) {
-          return { success: false, message: "Inventory is full" };
-        }
-        updatePlayerData({
-          inventory: {
-            ...playerData.inventory,
-            storage: newStorage,
-            inventory: {
-              ...inv,
-              items: [...inv.items, item],
-              currentCapacity: inv.currentCapacity + 1,
-            },
-          },
         });
-        return {
-          success: true,
-          message: `Moved ${item.name} to inventory`,
-          movedItem: item,
-        };
+        return result;
       }
 
       case "inventory_to_storage": {
-        const inventoryItem = playerData.inventory.inventory.items.find(
-          (i) => i.id === itemId,
-        );
-        if (!inventoryItem) {
-          return { success: false, message: "Item not found in inventory" };
-        }
-        if (
-          playerData.inventory.storage.currentCapacity >=
-          playerData.inventory.storage.maxCapacity
-        ) {
-          return { success: false, message: "Storage is full" };
-        }
-        updatePlayerData({
-          inventory: {
-            ...playerData.inventory,
+        updatePlayerData((prev) => {
+          const inventoryItem = prev.inventory.inventory.items.find(
+            (i) => i.id === itemId,
+          );
+          if (!inventoryItem) {
+            result.message = "Item not found in inventory";
+            return {};
+          }
+          if (
+            prev.inventory.storage.currentCapacity >=
+            prev.inventory.storage.maxCapacity
+          ) {
+            result.message = "Storage is full";
+            return {};
+          }
+          result.success = true;
+          result.message = `Moved ${inventoryItem.name} to storage`;
+          result.movedItem = inventoryItem;
+          return {
             inventory: {
-              ...playerData.inventory.inventory,
-              items: playerData.inventory.inventory.items.filter(
-                (i) => i.id !== itemId,
-              ),
-              currentCapacity:
-                playerData.inventory.inventory.currentCapacity - 1,
+              ...prev.inventory,
+              inventory: {
+                ...prev.inventory.inventory,
+                items: prev.inventory.inventory.items.filter(
+                  (i) => i.id !== itemId,
+                ),
+                currentCapacity:
+                  prev.inventory.inventory.currentCapacity - 1,
+              },
+              storage: {
+                ...prev.inventory.storage,
+                items: [...prev.inventory.storage.items, inventoryItem],
+                currentCapacity:
+                  prev.inventory.storage.currentCapacity + 1,
+              },
             },
-            storage: {
-              ...playerData.inventory.storage,
-              items: [...playerData.inventory.storage.items, inventoryItem],
-              currentCapacity:
-                playerData.inventory.storage.currentCapacity + 1,
-            },
-          },
+          };
         });
-        return {
-          success: true,
-          message: `Moved ${inventoryItem.name} to storage`,
-          movedItem: inventoryItem,
-        };
+        return result;
       }
 
       case "storage_to_equipment": {
-        // Get item
-        const item =
-          direction === "storage_to_equipment"
-            ? playerData.inventory.storage.items.find((i) => i.id === itemId)
-            : playerData.inventory.inventory.items.find((i) => i.id === itemId);
+        // Delegate to equipItem which already uses functional updater
+        // But we need to find the item first from fresh state
+        updatePlayerData((prev) => {
+          const item = prev.inventory.storage.items.find(
+            (i) => i.id === itemId,
+          );
+          if (!item || !item.equipmentSlot) {
+            result.message = "Item not found or is not equipment";
+            return {};
+          }
 
-        if (!item || !item.equipmentSlot) {
+          const slot = item.equipmentSlot;
+          const currentlyEquipped = prev.inventory.equipmentSlots[slot];
+          const newStorageItems = prev.inventory.storage.items.filter(
+            (i) => i.id !== itemId,
+          );
+          const finalStorageItems = currentlyEquipped
+            ? [...newStorageItems, currentlyEquipped]
+            : newStorageItems;
+
+          result.success = true;
+          result.message = `Equipped ${item.name}`;
+          result.movedItem = item;
+          result.replacedItem = currentlyEquipped || undefined;
+
           return {
-            success: false,
-            message: "Item not found or is not equipment",
+            inventory: {
+              ...prev.inventory,
+              equipmentSlots: {
+                ...prev.inventory.equipmentSlots,
+                [slot]: item,
+              },
+              storage: {
+                ...prev.inventory.storage,
+                items: finalStorageItems,
+                currentCapacity: finalStorageItems.length,
+              },
+            },
           };
-        }
-
-        return equipItem(itemId, item.equipmentSlot);
+        });
+        return result;
       }
 
       case "equipment_to_storage": {
-        // Find which slot the item is in
-        const slot = Object.entries(playerData.inventory.equipmentSlots).find(
-          ([, item]) => item?.id === itemId,
-        )?.[0] as EquipmentSlot | undefined;
-
-        if (!slot) {
-          return { success: false, message: "Item not found in equipment" };
-        }
-
-        const item = playerData.inventory.equipmentSlots[slot];
-        if (!item) {
-          return { success: false, message: "Item not found" };
-        }
-
-        if (
-          playerData.inventory.storage.currentCapacity >=
-          playerData.inventory.storage.maxCapacity
-        ) {
-          return { success: false, message: "Storage is full" };
-        }
-
-        updatePlayerData({
-          inventory: {
-            ...playerData.inventory,
-            equipmentSlots: {
-              ...playerData.inventory.equipmentSlots,
-              [slot]: null,
+        updatePlayerData((prev) => {
+          const slot = Object.entries(prev.inventory.equipmentSlots).find(
+            ([, eqItem]) => eqItem?.id === itemId,
+          )?.[0] as EquipmentSlot | undefined;
+          if (!slot) {
+            result.message = "Item not found in equipment";
+            return {};
+          }
+          const item = prev.inventory.equipmentSlots[slot];
+          if (!item) {
+            result.message = "Item not found";
+            return {};
+          }
+          if (
+            prev.inventory.storage.currentCapacity >=
+            prev.inventory.storage.maxCapacity
+          ) {
+            result.message = "Storage is full";
+            return {};
+          }
+          result.success = true;
+          result.message = `Moved ${item.name} to storage`;
+          result.movedItem = item;
+          return {
+            inventory: {
+              ...prev.inventory,
+              equipmentSlots: {
+                ...prev.inventory.equipmentSlots,
+                [slot]: null,
+              },
+              storage: {
+                ...prev.inventory.storage,
+                items: [...prev.inventory.storage.items, item],
+                currentCapacity:
+                  prev.inventory.storage.currentCapacity + 1,
+              },
             },
-            storage: {
-              ...playerData.inventory.storage,
-              items: [...playerData.inventory.storage.items, item],
-              currentCapacity:
-                playerData.inventory.storage.currentCapacity + 1,
-            },
-          },
+          };
         });
-        return {
-          success: true,
-          message: `Moved ${item.name} to storage`,
-          movedItem: item,
-        };
+        return result;
       }
+
       case "equipSlotItem_to_storage": {
-        const slot = Object.entries(playerData.inventory.equipmentSlots).find(
-          ([, item]) => item?.id === itemId,
-        )?.[0] as EquipmentSlot | undefined;
-        const equippedItem =
-          playerData.inventory.equipmentSlots[slot as EquipmentSlot];
-        if (!equippedItem) {
-          return { success: false, message: "Unequip error" };
-        }
-        if (
-          playerData.inventory.storage.currentCapacity >=
-          playerData.inventory.storage.maxCapacity
-        ) {
-          return { success: false, message: "Storage is full" };
-        }
-        updatePlayerData({
-          inventory: {
-            ...playerData.inventory,
-            equipmentSlots: {
-              ...playerData.inventory.equipmentSlots,
-              [slot as EquipmentSlot]: null,
+        updatePlayerData((prev) => {
+          const slot = Object.entries(prev.inventory.equipmentSlots).find(
+            ([, eqItem]) => eqItem?.id === itemId,
+          )?.[0] as EquipmentSlot | undefined;
+          const equippedItem =
+            prev.inventory.equipmentSlots[slot as EquipmentSlot];
+          if (!equippedItem) {
+            result.message = "Unequip error";
+            return {};
+          }
+          if (
+            prev.inventory.storage.currentCapacity >=
+            prev.inventory.storage.maxCapacity
+          ) {
+            result.message = "Storage is full";
+            return {};
+          }
+          result.success = true;
+          result.message = `Moved ${equippedItem.name} to storage`;
+          result.movedItem = equippedItem;
+          return {
+            inventory: {
+              ...prev.inventory,
+              equipmentSlots: {
+                ...prev.inventory.equipmentSlots,
+                [slot as EquipmentSlot]: null,
+              },
+              storage: {
+                ...prev.inventory.storage,
+                items: [...prev.inventory.storage.items, equippedItem],
+                currentCapacity:
+                  prev.inventory.storage.currentCapacity + 1,
+              },
             },
-            storage: {
-              ...playerData.inventory.storage,
-              items: [...playerData.inventory.storage.items, equippedItem],
-              currentCapacity:
-                playerData.inventory.storage.currentCapacity + 1,
-            },
-          },
+          };
         });
-        return {
-          success: true,
-          message: `Moved ${equippedItem.name} to storage`,
-          movedItem: equippedItem,
-        };
+        return result;
       }
 
       case "storage_to_equipment_inventory": {
-        const item = playerData.inventory.storage.items.find(
-          (i) => i.id === itemId,
-        );
-        if (!item) {
-          return { success: false, message: "Item not found in storage" };
-        }
-        if (item.itemType !== "equipment") {
+        updatePlayerData((prev) => {
+          const item = prev.inventory.storage.items.find(
+            (i) => i.id === itemId,
+          );
+          if (!item) {
+            result.message = "Item not found in storage";
+            return {};
+          }
+          if (item.itemType !== "equipment") {
+            result.message =
+              "Only equipment items can be added to equipment inventory";
+            return {};
+          }
+          if (
+            prev.inventory.equipmentInventory.currentCapacity >=
+            prev.inventory.equipmentInventory.maxCapacity
+          ) {
+            result.message = "Equipment inventory is full";
+            return {};
+          }
+          result.success = true;
+          result.message = `Moved ${item.name} to equipment inventory`;
+          result.movedItem = item;
           return {
-            success: false,
-            message: "Only equipment items can be added to equipment inventory",
+            inventory: {
+              ...prev.inventory,
+              storage: {
+                ...prev.inventory.storage,
+                items: prev.inventory.storage.items.filter(
+                  (i) => i.id !== itemId,
+                ),
+                currentCapacity:
+                  prev.inventory.storage.currentCapacity - 1,
+              },
+              equipmentInventory: {
+                ...prev.inventory.equipmentInventory,
+                items: [
+                  ...prev.inventory.equipmentInventory.items,
+                  item,
+                ],
+                currentCapacity:
+                  prev.inventory.equipmentInventory.currentCapacity + 1,
+              },
+            },
           };
-        }
-        if (
-          playerData.inventory.equipmentInventory.currentCapacity >=
-          playerData.inventory.equipmentInventory.maxCapacity
-        ) {
-          return { success: false, message: "Equipment inventory is full" };
-        }
-        updatePlayerData({
-          inventory: {
-            ...playerData.inventory,
-            storage: {
-              ...playerData.inventory.storage,
-              items: playerData.inventory.storage.items.filter(
-                (i) => i.id !== itemId,
-              ),
-              currentCapacity:
-                playerData.inventory.storage.currentCapacity - 1,
-            },
-            equipmentInventory: {
-              ...playerData.inventory.equipmentInventory,
-              items: [
-                ...playerData.inventory.equipmentInventory.items,
-                item,
-              ],
-              currentCapacity:
-                playerData.inventory.equipmentInventory.currentCapacity + 1,
-            },
-          },
         });
-        return {
-          success: true,
-          message: `Moved ${item.name} to equipment inventory`,
-          movedItem: item,
-        };
+        return result;
       }
 
       case "equipment_inventory_to_storage": {
-        const item = playerData.inventory.equipmentInventory.items.find(
-          (i) => i.id === itemId,
-        );
-        if (!item) {
+        updatePlayerData((prev) => {
+          const item = prev.inventory.equipmentInventory.items.find(
+            (i) => i.id === itemId,
+          );
+          if (!item) {
+            result.message = "Item not found in equipment inventory";
+            return {};
+          }
+          if (
+            prev.inventory.storage.currentCapacity >=
+            prev.inventory.storage.maxCapacity
+          ) {
+            result.message = "Storage is full";
+            return {};
+          }
+          result.success = true;
+          result.message = `Moved ${item.name} to storage`;
+          result.movedItem = item;
           return {
-            success: false,
-            message: "Item not found in equipment inventory",
+            inventory: {
+              ...prev.inventory,
+              equipmentInventory: {
+                ...prev.inventory.equipmentInventory,
+                items: prev.inventory.equipmentInventory.items.filter(
+                  (i) => i.id !== itemId,
+                ),
+                currentCapacity:
+                  prev.inventory.equipmentInventory.currentCapacity - 1,
+              },
+              storage: {
+                ...prev.inventory.storage,
+                items: [...prev.inventory.storage.items, item],
+                currentCapacity:
+                  prev.inventory.storage.currentCapacity + 1,
+              },
+            },
           };
-        }
-        if (
-          playerData.inventory.storage.currentCapacity >=
-          playerData.inventory.storage.maxCapacity
-        ) {
-          return { success: false, message: "Storage is full" };
-        }
-        updatePlayerData({
-          inventory: {
-            ...playerData.inventory,
-            equipmentInventory: {
-              ...playerData.inventory.equipmentInventory,
-              items: playerData.inventory.equipmentInventory.items.filter(
-                (i) => i.id !== itemId,
-              ),
-              currentCapacity:
-                playerData.inventory.equipmentInventory.currentCapacity - 1,
-            },
-            storage: {
-              ...playerData.inventory.storage,
-              items: [...playerData.inventory.storage.items, item],
-              currentCapacity:
-                playerData.inventory.storage.currentCapacity + 1,
-            },
-          },
         });
-        return {
-          success: true,
-          message: `Moved ${item.name} to storage`,
-          movedItem: item,
-        };
+        return result;
       }
 
       case "equipment_inventory_to_equipment": {
-        const item = playerData.inventory.equipmentInventory.items.find(
-          (i) => i.id === itemId,
-        );
-        if (!item || !item.equipmentSlot) {
-          return {
-            success: false,
-            message: "Item not found or is not equipment",
-          };
-        }
-
-        const slot = item.equipmentSlot;
-        const currentlyEquipped = playerData.inventory.equipmentSlots[slot];
-
-        // Remove from equipment inventory
-        const newEquipmentInventoryItems =
-          playerData.inventory.equipmentInventory.items.filter(
-            (i) => i.id !== itemId,
+        updatePlayerData((prev) => {
+          const item = prev.inventory.equipmentInventory.items.find(
+            (i) => i.id === itemId,
           );
+          if (!item || !item.equipmentSlot) {
+            result.message = "Item not found or is not equipment";
+            return {};
+          }
 
-        updatePlayerData({
-          inventory: {
-            ...playerData.inventory,
-            equipmentSlots: {
-              ...playerData.inventory.equipmentSlots,
-              [slot]: item,
+          const slot = item.equipmentSlot;
+          const currentlyEquipped = prev.inventory.equipmentSlots[slot];
+
+          const newEquipmentInventoryItems =
+            prev.inventory.equipmentInventory.items.filter(
+              (i) => i.id !== itemId,
+            );
+
+          result.success = true;
+          result.message = `Equipped ${item.name}`;
+          result.movedItem = item;
+          result.replacedItem = currentlyEquipped || undefined;
+
+          return {
+            inventory: {
+              ...prev.inventory,
+              equipmentSlots: {
+                ...prev.inventory.equipmentSlots,
+                [slot]: item,
+              },
+              equipmentInventory: {
+                ...prev.inventory.equipmentInventory,
+                items: currentlyEquipped
+                  ? [...newEquipmentInventoryItems, currentlyEquipped]
+                  : newEquipmentInventoryItems,
+                currentCapacity: currentlyEquipped
+                  ? prev.inventory.equipmentInventory.currentCapacity
+                  : prev.inventory.equipmentInventory.currentCapacity - 1,
+              },
             },
-            equipmentInventory: {
-              ...playerData.inventory.equipmentInventory,
-              items: currentlyEquipped
-                ? [...newEquipmentInventoryItems, currentlyEquipped]
-                : newEquipmentInventoryItems,
-              currentCapacity: currentlyEquipped
-                ? playerData.inventory.equipmentInventory.currentCapacity
-                : playerData.inventory.equipmentInventory.currentCapacity - 1,
-            },
-          },
+          };
         });
-
-        return {
-          success: true,
-          message: `Equipped ${item.name}`,
-          movedItem: item,
-          replacedItem: currentlyEquipped || undefined,
-        };
+        return result;
       }
 
       case "equipment_to_equipment_inventory": {
-        // Find which slot the item is in
-        const slot = Object.entries(playerData.inventory.equipmentSlots).find(
-          ([, item]) => item?.id === itemId,
-        )?.[0] as EquipmentSlot | undefined;
+        updatePlayerData((prev) => {
+          const slot = Object.entries(prev.inventory.equipmentSlots).find(
+            ([, eqItem]) => eqItem?.id === itemId,
+          )?.[0] as EquipmentSlot | undefined;
 
-        if (!slot) {
-          return { success: false, message: "Item not found in equipment" };
-        }
+          if (!slot) {
+            result.message = "Item not found in equipment";
+            return {};
+          }
 
-        const item = playerData.inventory.equipmentSlots[slot];
-        if (!item) {
-          return { success: false, message: "Item not found" };
-        }
+          const item = prev.inventory.equipmentSlots[slot];
+          if (!item) {
+            result.message = "Item not found";
+            return {};
+          }
 
-        if (
-          playerData.inventory.equipmentInventory.currentCapacity >=
-          playerData.inventory.equipmentInventory.maxCapacity
-        ) {
-          return { success: false, message: "Equipment inventory is full" };
-        }
+          if (
+            prev.inventory.equipmentInventory.currentCapacity >=
+            prev.inventory.equipmentInventory.maxCapacity
+          ) {
+            result.message = "Equipment inventory is full";
+            return {};
+          }
 
-        updatePlayerData({
-          inventory: {
-            ...playerData.inventory,
-            equipmentSlots: {
-              ...playerData.inventory.equipmentSlots,
-              [slot]: null,
+          result.success = true;
+          result.message = `Moved ${item.name} to equipment inventory`;
+          result.movedItem = item;
+
+          return {
+            inventory: {
+              ...prev.inventory,
+              equipmentSlots: {
+                ...prev.inventory.equipmentSlots,
+                [slot]: null,
+              },
+              equipmentInventory: {
+                ...prev.inventory.equipmentInventory,
+                items: [
+                  ...prev.inventory.equipmentInventory.items,
+                  item,
+                ],
+                currentCapacity:
+                  prev.inventory.equipmentInventory.currentCapacity + 1,
+              },
             },
-            equipmentInventory: {
-              ...playerData.inventory.equipmentInventory,
-              items: [
-                ...playerData.inventory.equipmentInventory.items,
-                item,
-              ],
-              currentCapacity:
-                playerData.inventory.equipmentInventory.currentCapacity + 1,
-            },
-          },
+          };
         });
-
-        return {
-          success: true,
-          message: `Moved ${item.name} to equipment inventory`,
-          movedItem: item,
-        };
+        return result;
       }
 
       default:

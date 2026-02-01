@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { useResources } from "@/contexts/ResourceContext";
 import type { Item } from "@/types/itemTypes";
 import type { EquipmentQuality } from "@/types/itemTypes";
 import { QUALITY_NAMES, QUALITY_COLORS } from "@/constants/campConstants";
@@ -13,7 +14,8 @@ import {
 import BlacksmithItemCard from "./BlacksmithItemCard";
 
 const RepairTab = () => {
-  const { playerData, updatePlayerData, useGold: deductGold } = usePlayer();
+  const { playerData, updatePlayerData } = usePlayer();
+  const { useGold: deductGold } = useResources();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [notification, setNotification] = useState<{
     message: string;

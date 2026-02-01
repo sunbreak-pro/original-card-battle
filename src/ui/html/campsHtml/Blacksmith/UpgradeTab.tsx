@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { useResources } from "@/contexts/ResourceContext";
 import type { Item } from "@/types/itemTypes";
 import { calculateMagicStoneValue } from "@/domain/item_equipment/logic/itemUtils";
 import type { EquipmentQuality } from "@/types/itemTypes";
@@ -24,7 +25,8 @@ import {
 import BlacksmithItemCard from "./BlacksmithItemCard";
 
 const UpgradeTab = () => {
-  const { playerData, updatePlayerData, useGold: deductGold } = usePlayer();
+  const { playerData, updatePlayerData } = usePlayer();
+  const { useGold: deductGold } = useResources();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [selectedQualityOption, setSelectedQualityOption] =
     useState<QualityUpOption>("normal");

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { useResources } from "@/contexts/ResourceContext";
 import { useInventory } from "@/contexts/InventoryContext";
 import {
   getResolvedConsumableListings,
@@ -19,7 +20,8 @@ import {
 import { generateEquipmentItem } from "@/domain/item_equipment/logic/generateItem";
 
 const BuyTab = () => {
-  const { playerData, useGold } = usePlayer();
+  const { playerData } = usePlayer();
+  const { useGold } = useResources();
   const { addItemToStorage } = useInventory();
   const storage = playerData.inventory.storage;
   const [notification, setNotification] = useState<string | null>(null);

@@ -8,7 +8,7 @@
 import { useState } from "react";
 import type { Rumor } from "@/types/campTypes";
 import { RUMORS } from "@/constants/data/camps/RumorData";
-import { usePlayer } from "@/contexts/PlayerContext";
+import { useResources } from "@/contexts/ResourceContext";
 
 const RARITY_COLORS: Record<string, string> = {
   common: "#9ca3af",
@@ -17,7 +17,7 @@ const RARITY_COLORS: Record<string, string> = {
 };
 
 const RumorsTab = () => {
-  const { useGold } = usePlayer();
+  const { useGold } = useResources();
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [activeRumors, setActiveRumors] = useState<
     { rumor: Rumor; runsRemaining: number }[]

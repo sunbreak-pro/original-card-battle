@@ -83,7 +83,7 @@ const BattleScreen = ({
     deckCards,
     applyEquipmentDurabilityDamage,
   } = usePlayer();
-  const { addMagicStones } = useResources();
+  const { addMagicStones, resetExplorationResources } = useResources();
   const { navigateTo, gameState } = useGameState();
 
   // Get encounter size from battle config (default to "single")
@@ -191,12 +191,14 @@ const BattleScreen = ({
     if (battleResult === "defeat" && !deathHandledRef.current) {
       const result = handlePlayerDeathWithDetails(playerData);
       updatePlayerData(result.updates);
+      // Reset exploration resources via ResourceContext (no longer handled by updatePlayerData)
+      resetExplorationResources();
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init guarded by ref
       setSoulsTransferred(result.soulsTransferred);
       decreaseLives();
       deathHandledRef.current = true;
     }
-  }, [battleResult, playerData, updatePlayerData, decreaseLives]);
+  }, [battleResult, playerData, updatePlayerData, decreaseLives, resetExplorationResources]);
 
   // Reset itemUsedThisPhase when phase changes (render-time setState pattern)
   const [prevPhaseIndex, setPrevPhaseIndex] = useState(currentPhaseIndex);
