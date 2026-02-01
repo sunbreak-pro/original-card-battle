@@ -19,8 +19,8 @@
 
 import type { Card } from '@/types/cardTypes';
 import type { SummonState, Summon, SummonType } from '@/types/characterTypes';
-import { createInitialSummon } from '../../logic/classAbilityUtils';
-import type { ClassAbilitySystem, DamageModifier } from "../../classAbility/classAbilitySystem";
+import { createInitialSummon } from '../classAbility/classAbilityUtils';
+import type { ClassAbilitySystem, DamageModifier } from "../classAbility/classAbilitySystem";
 import { MAX_BOND_LEVEL, BOND_DAMAGE_BONUS_PER_LEVEL } from "../../../../constants";
 
 // ============================================================

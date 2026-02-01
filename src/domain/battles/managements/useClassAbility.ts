@@ -19,8 +19,8 @@ import type {
 import type {
   ClassAbilitySystem,
   DamageModifier,
-} from "../../characters/classAbility/classAbilitySystem";
-import { DEFAULT_DAMAGE_MODIFIER } from "../../characters/classAbility/classAbilitySystem";
+} from "../../characters/player/classAbility/classAbilitySystem";
+import { DEFAULT_DAMAGE_MODIFIER } from "../../characters/player/classAbility/classAbilitySystem";
 
 // Sword Energy System
 import {

@@ -20,9 +20,9 @@
 
 import type { Card } from '@/types/cardTypes';
 import type { ElementalState, ElementType, ResonanceLevel, ResonanceEffectConfig } from '@/types/characterTypes';
-import { createInitialElemental } from '../../logic/classAbilityUtils';
-import type { ClassAbilitySystem, DamageModifier } from "../../classAbility/classAbilitySystem";
-import { DEFAULT_DAMAGE_MODIFIER } from "../../classAbility/classAbilitySystem";
+import { createInitialElemental } from '../classAbility/classAbilityUtils';
+import type { ClassAbilitySystem, DamageModifier } from "../classAbility/classAbilitySystem";
+import { DEFAULT_DAMAGE_MODIFIER } from "../classAbility/classAbilitySystem";
 import { MAX_RESONANCE_LEVEL, RESONANCE_MULTIPLIER, RESONANCE_EFFECTS } from "../../../../constants";
 import { MAGIC_ELEMENTS } from '@/constants/cardConstants';
 

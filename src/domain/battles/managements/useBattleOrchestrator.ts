@@ -16,7 +16,7 @@ import { useState, useRef, useReducer, useEffect, useCallback, useMemo } from "r
 import type { Card, Depth } from '@/types/cardTypes';
 import type { EnemyDefinition, BattleStats, EnemyBattleState, CharacterClass, EncounterSize } from '@/types/characterTypes';
 import type { PhaseQueue, PhaseEntry, BuffDebuffMap } from '@/types/battleTypes';
-import { createInitialSwordEnergy } from '../../characters/logic/classAbilityUtils';
+import { createInitialSwordEnergy } from '../../characters/player/classAbility/classAbilityUtils';
 
 // Deck management (IMMUTABLE ZONE - DO NOT MODIFY)
 import { deckReducer } from "../../cards/decks/deckReducter";
@@ -382,10 +382,8 @@ export const useBattleOrchestrator = (
     enemyBattleStats,
     playerState.energy,
     playerState.maxEnergy,
-    playerState.hp,
     playerState.maxHp,
     playerState.buffs,
-    enemyBuffs,
     swordEnergy,
     phaseState.isPlayerPhase,
     playerRef,
@@ -551,6 +549,14 @@ export const useBattleOrchestrator = (
     async () => { }
   );
 
+  // Ref to track latest enemies for use in async phase execution
+  const enemiesRef = useRef(enemies);
+  enemiesRef.current = enemies;
+
+  // Ref to track latest phase index for use in animation callbacks
+  const phaseIndexRef = useRef(phaseState.currentPhaseIndex);
+  phaseIndexRef.current = phaseState.currentPhaseIndex;
+
   const executeNextPhaseImpl = useCallback(
     async (queue: PhaseQueue, index: number) => {
       // Check battle end
@@ -558,8 +564,8 @@ export const useBattleOrchestrator = (
         return;
       }
 
-      // Use expanded entries for multi-enemy support
-      const expandedEntries = expandPhaseEntriesForMultipleEnemies(queue, enemies);
+      // Use expanded entries for multi-enemy support (use ref to avoid stale closure)
+      const expandedEntries = expandPhaseEntriesForMultipleEnemies(queue, enemiesRef.current);
 
       if (index >= expandedEntries.length) {
         // All phases complete - generate new queue and start new round
@@ -582,8 +588,8 @@ export const useBattleOrchestrator = (
         // Player phase waits for handleEndPhase to advance
       } else {
         const enemyIdx = currentEntry.enemyIndex ?? 0;
-        // Skip dead enemies
-        if (enemies[enemyIdx] && enemies[enemyIdx].hp > 0) {
+        // Skip dead enemies (use ref to avoid stale closure)
+        if (enemiesRef.current[enemyIdx] && enemiesRef.current[enemyIdx].hp > 0) {
           await executeEnemyPhaseForIndex(enemyIdx);
         }
         // Enemy phase auto-advances
@@ -593,7 +599,6 @@ export const useBattleOrchestrator = (
     [
       areAllEnemiesDead,
       isPlayerAlive,
-      enemies,
       executePlayerPhase,
       executeEnemyPhaseForIndex,
       phaseState,
@@ -603,15 +608,18 @@ export const useBattleOrchestrator = (
     ]
   );
 
-  useEffect(() => {
-    executeNextPhaseRef.current = executeNextPhaseImpl;
-  }, [executeNextPhaseImpl]);
+  executeNextPhaseRef.current = executeNextPhaseImpl;
 
   const executeNextPhase = useCallback(async (queue: PhaseQueue, index: number) => {
     await executeNextPhaseRef.current(queue, index);
   }, []);
 
+  const battleInitializedRef = useRef(false);
+
   const initializeBattle = useCallback(async () => {
+    if (battleInitializedRef.current) return;
+    battleInitializedRef.current = true;
+
     const queue = phaseState.generatePhaseQueueFromSpeeds(
       playerState.buffs,
       currentEnemy ?? null,
@@ -645,7 +653,7 @@ export const useBattleOrchestrator = (
 
     // Discard hand and advance to next phase
     const cardsToDiscard = [...deckState.hand];
-    const nextPhaseIndex = phaseState.currentPhaseIndex + 1;
+    const nextPhaseIndex = phaseIndexRef.current + 1;
     discardCardsWithAnimation(cardsToDiscard, 250, () => {
       dispatch({ type: "END_TURN", cardsToDiscard });
 
@@ -670,11 +678,8 @@ export const useBattleOrchestrator = (
   // Auto-start Battle
   // ========================================================================
 
-  const battleInitializedRef = useRef(false);
-
   useEffect(() => {
-    if (!battleInitializedRef.current && currentEnemy) {
-      battleInitializedRef.current = true;
+    if (currentEnemy) {
       initializeBattle();
     }
   }, [currentEnemy, initializeBattle]);

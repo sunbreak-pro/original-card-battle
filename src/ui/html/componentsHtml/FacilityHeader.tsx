@@ -12,21 +12,8 @@ import { usePlayer } from "@/contexts/PlayerContext";
 import { useResources } from "@/contexts/ResourceContext";
 import { useGameState } from "@/contexts/GameStateContext";
 import { HEADER_ICONS } from "@/constants/uiConstants";
-import type { GameScreen } from "@/types";
+import { FACILITY_NAV_ITEMS } from "@/constants/campConstants";
 import "../../css/components/FacilityHeader.css";
-
-const FACILITY_NAV_ITEMS: ReadonlyArray<{
-  screen: GameScreen;
-  label: string;
-  icon: string;
-}> = [
-  { screen: "shop", label: "取引所", icon: "🏪" },
-  { screen: "guild", label: "酒場", icon: "🍺" },
-  { screen: "blacksmith", label: "鍛冶屋", icon: "⚒️" },
-  { screen: "sanctuary", label: "聖域", icon: "⛪" },
-  { screen: "library", label: "図書館", icon: "📚" },
-  { screen: "storage", label: "倉庫", icon: "📦" },
-] as const;
 
 interface FacilityHeaderProps {
   title: string;

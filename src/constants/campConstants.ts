@@ -8,7 +8,20 @@
 import type { EquipmentQuality } from '@/types/itemTypes';
 import type { SanctuaryEffects } from '@/types/campTypes';
 import type { ElementType } from '@/types/characterTypes';
+import type { GameScreen } from '@/types';
 
+export const FACILITY_NAV_ITEMS: ReadonlyArray<{
+  screen: GameScreen;
+  label: string;
+  icon: string;
+}> = [
+  { screen: "shop", label: "取引所", icon: "🏪" },
+  { screen: "guild", label: "酒場", icon: "🍺" },
+  { screen: "blacksmith", label: "鍛冶屋", icon: "⚒️" },
+  { screen: "sanctuary", label: "聖域", icon: "⛪" },
+  { screen: "library", label: "図書館", icon: "📚" },
+  { screen: "storage", label: "倉庫", icon: "📦" },
+] as const;
 // ============================================================
 // Blacksmith Constants
 // ============================================================

@@ -7,7 +7,7 @@
 
 import type { Difficulty } from '@/types/characterTypes';
 import type { ResonanceLevel, ElementType } from '@/types/characterTypes';
-import type { DamageModifier } from "../domain/characters/classAbility/classAbilitySystem";
+import type { DamageModifier } from "../domain/characters/player/classAbility/classAbilitySystem";
 import type { ResonanceEffectConfig } from '@/types/characterTypes';
 export type { ResonanceEffectConfig } from '@/types/characterTypes';
 

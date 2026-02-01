@@ -25,8 +25,8 @@ import type { SwordEnergyState } from '@/types/characterTypes';
 import {
   SWORD_ENERGY_MAX,
   createInitialSwordEnergy,
-} from '../../logic/classAbilityUtils';
-import type { ClassAbilitySystem, DamageModifier } from "../../classAbility/classAbilitySystem";
+} from '../classAbility/classAbilityUtils';
+import type { ClassAbilitySystem, DamageModifier } from "../classAbility/classAbilitySystem";
 import {
   SWORD_ENERGY_BLEED_CHANCE_5,
   SWORD_ENERGY_BLEED_CHANCE_8,

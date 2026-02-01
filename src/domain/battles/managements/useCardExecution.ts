@@ -12,7 +12,7 @@
  * This hook is designed to be composed with useBattleState and useSwordEnergy.
  */
 
-import { useCallback, type RefObject } from "react";
+import { useCallback, useRef, type RefObject } from "react";
 import type { Card } from '@/types/cardTypes';
 import type { BuffDebuffMap, BuffDebuffState } from '@/types/battleTypes';
 import type { BattleStats } from '@/types/characterTypes';
@@ -23,7 +23,7 @@ import type {
 } from '@/types/battleTypes';
 import { createDefaultExecutionResult } from '../logic/cardExecutionLogic';
 import type { SwordEnergyState } from '@/types/characterTypes';
-import type { DamageModifier } from "../../characters/classAbility/classAbilitySystem";
+import type { DamageModifier } from "../../characters/player/classAbility/classAbilitySystem";
 
 // Card logic
 import { calculateCardEffect, canPlayCard as canPlayCardCheck, incrementUseCount } from "../../cards/state/card";
@@ -33,7 +33,6 @@ import { calculateDamage, applyDamageAllocation } from "../calculators/damageCal
 
 // Buff/Debuff logic
 import { addOrUpdateBuffDebuff } from "../logic/buffLogic";
-import { applyHeal } from "../logic/battleLogic";
 
 // Bleed damage
 import { calculateBleedDamage } from "../logic/bleedDamage";
@@ -141,10 +140,8 @@ export interface UseCardExecutionReturn {
  * @param enemyStats - Current enemy battle stats
  * @param playerEnergy - Current player energy
  * @param maxEnergy - Maximum player energy
- * @param playerHp - Current player HP
  * @param playerMaxHp - Maximum player HP
- * @param playerBuffs - Current player buffs
- * @param enemyBuffs - Current enemy buffs
+ * @param playerBuffs - Current player buffs (synced via ref for async safety)
  * @param swordEnergy - Current sword energy state
  * @param isPlayerPhase - Whether it's currently player's phase
  * @param playerRef - Ref to player element for animations
@@ -159,10 +156,8 @@ export function useCardExecution(
   enemyStats: BattleStats,
   playerEnergy: number,
   maxEnergy: number,
-  playerHp: number,
   playerMaxHp: number,
   playerBuffs: BuffDebuffMap,
-  enemyBuffs: BuffDebuffMap,
   swordEnergy: SwordEnergyState,
   isPlayerPhase: boolean,
   playerRef: RefObject<HTMLDivElement | null>,
@@ -172,6 +167,10 @@ export function useCardExecution(
   animations: CardAnimationHandlers,
   dispatch: DeckDispatch
 ): UseCardExecutionReturn {
+  // Ref to track latest playerBuffs for use in async callbacks
+  const playerBuffsRef = useRef(playerBuffs);
+  playerBuffsRef.current = playerBuffs;
+
   // ========================================================================
   // Check if card can be played
   // ========================================================================
@@ -276,7 +275,7 @@ export function useCardExecution(
           ? playerRef.current
           : getTargetEnemyRef();
         if (target) {
-          await animations.playCardWithAnimation(cardElement, target, () => {});
+          await animations.playCardWithAnimation(cardElement, target, () => { });
         }
       }
 
@@ -363,12 +362,7 @@ export function useCardExecution(
 
           // Lifesteal
           if (damageResult.lifestealAmount > 0) {
-            const newHp = applyHeal(
-              damageResult.lifestealAmount,
-              playerHp,
-              playerMaxHp
-            );
-            setters.setPlayerHp(newHp);
+            setters.setPlayerHp(prev => Math.min(prev + damageResult.lifestealAmount, playerMaxHp));
             result.lifestealAmount += damageResult.lifestealAmount;
             if (playerRef.current) {
               animations.showHealEffect(
@@ -407,17 +401,18 @@ export function useCardExecution(
         if (card.characterClass === "swordsman" && card.tags.includes("attack")) {
           const bleedChance = getSwordEnergyBleedChance(swordEnergy);
           if (bleedChance > 0 && Math.random() < bleedChance) {
-            const newEnemyBuffs = addOrUpdateBuffDebuff(
-              enemyBuffs,
-              "bleed",
-              SWORD_ENERGY_BLEED_DURATION,
-              3,
-              SWORD_ENERGY_BLEED_STACKS,
-              false,
-              undefined,
-              'player'
+            setters.setEnemyBuffs(prevBuffs =>
+              addOrUpdateBuffDebuff(
+                prevBuffs,
+                "bleed",
+                SWORD_ENERGY_BLEED_DURATION,
+                3,
+                SWORD_ENERGY_BLEED_STACKS,
+                false,
+                undefined,
+                'player'
+              )
             );
-            setters.setEnemyBuffs(newEnemyBuffs);
           }
         }
       }
@@ -465,8 +460,7 @@ export function useCardExecution(
       // ====================================================================
 
       if (card.healAmount && card.healAmount > 0) {
-        const newHp = applyHeal(card.healAmount, playerHp, playerMaxHp);
-        setters.setPlayerHp(newHp);
+        setters.setPlayerHp(prev => Math.min(prev + card.healAmount!, playerMaxHp));
         result.healingDone += card.healAmount;
         if (playerRef.current) {
           animations.showHealEffect(playerRef.current, card.healAmount);
@@ -474,8 +468,7 @@ export function useCardExecution(
       }
 
       if (effect.hpGain) {
-        const newHp = applyHeal(effect.hpGain, playerHp, playerMaxHp);
-        setters.setPlayerHp(newHp);
+        setters.setPlayerHp(prev => Math.min(prev + effect.hpGain!, playerMaxHp));
         result.healingDone += effect.hpGain;
         if (playerRef.current) {
           animations.showHealEffect(playerRef.current, effect.hpGain);
@@ -519,22 +512,24 @@ export function useCardExecution(
       // ====================================================================
 
       if (effect.enemyDebuffs?.length) {
-        let newBuffs = enemyBuffs;
-        effect.enemyDebuffs.forEach((b) => {
-          // Player is applying debuffs to enemy
-          newBuffs = addOrUpdateBuffDebuff(
-            newBuffs,
-            b.name,
-            b.duration,
-            b.value,
-            b.stacks,
-            false,
-            undefined,
-            'player'
-          );
-          result.debuffsApplied.push(b as BuffDebuffState);
+        setters.setEnemyBuffs(prevBuffs => {
+          let newBuffs = prevBuffs;
+          effect.enemyDebuffs!.forEach((b) => {
+            // Player is applying debuffs to enemy
+            newBuffs = addOrUpdateBuffDebuff(
+              newBuffs,
+              b.name,
+              b.duration,
+              b.value,
+              b.stacks,
+              false,
+              undefined,
+              'player'
+            );
+            result.debuffsApplied.push(b as BuffDebuffState);
+          });
+          return newBuffs;
         });
-        setters.setEnemyBuffs(newBuffs);
       }
 
       // ====================================================================
@@ -542,22 +537,24 @@ export function useCardExecution(
       // ====================================================================
 
       if (effect.playerBuffs?.length) {
-        let newBuffs = playerBuffs;
-        effect.playerBuffs.forEach((b) => {
-          // Player is applying buffs to self
-          newBuffs = addOrUpdateBuffDebuff(
-            newBuffs,
-            b.name,
-            b.duration,
-            b.value,
-            b.stacks,
-            false,
-            undefined,
-            'player'
-          );
-          result.buffsApplied.push(b as BuffDebuffState);
+        setters.setPlayerBuffs(prevBuffs => {
+          let newBuffs = prevBuffs;
+          effect.playerBuffs!.forEach((b) => {
+            // Player is applying buffs to self
+            newBuffs = addOrUpdateBuffDebuff(
+              newBuffs,
+              b.name,
+              b.duration,
+              b.value,
+              b.stacks,
+              false,
+              undefined,
+              'player'
+            );
+            result.buffsApplied.push(b as BuffDebuffState);
+          });
+          return newBuffs;
         });
-        setters.setPlayerBuffs(newBuffs);
       }
 
       // ====================================================================
@@ -571,7 +568,7 @@ export function useCardExecution(
       // Bleed Damage
       // ====================================================================
 
-      const bleedDamage = calculateBleedDamage(playerMaxHp, playerBuffs);
+      const bleedDamage = calculateBleedDamage(playerMaxHp, playerBuffsRef.current);
       if (bleedDamage > 0) {
         setters.setPlayerHp((prev) => Math.max(0, prev - bleedDamage));
         result.bleedDamage = bleedDamage;
@@ -587,10 +584,7 @@ export function useCardExecution(
       canPlayCard,
       playerStats,
       enemyStats,
-      playerHp,
       playerMaxHp,
-      playerBuffs,
-      enemyBuffs,
       swordEnergy,
       maxEnergy,
       playerRef,

@@ -8,7 +8,7 @@
 import { useState, useCallback } from "react";
 import type { Card } from '@/types/cardTypes';
 import type { ElementalState } from '@/types/characterTypes';
-import type { DamageModifier } from "../../characters/classAbility/classAbilitySystem";
+import type { DamageModifier } from "../../characters/player/classAbility/classAbilitySystem";
 import { ElementalSystem } from "../../characters/player/logic/elementalSystem";
 import type { ClassAbilityUI, UseClassAbilityReturn } from "./useClassAbility";
 

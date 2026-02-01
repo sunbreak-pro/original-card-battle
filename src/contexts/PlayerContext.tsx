@@ -4,7 +4,6 @@
 import React, {
   createContext,
   useContext,
-  useEffect,
   useState,
   useMemo,
   type ReactNode,
@@ -23,21 +22,14 @@ import type {
   EquipmentSlots,
   SanctuaryProgress,
 } from "@/types/campTypes";
-import {
-  createLivesSystem,
-  decreaseLives as decreaseLivesHelper,
-  isGameOver as isGameOverHelper,
-} from "../domain/characters/logic/playerUtils";
+import { createLivesSystem } from "../domain/characters/player/logic/playerUtils";
 import {
   Swordman_Status,
   Mage_Status,
   Summon_Status,
 } from "../constants/data/characters/PlayerData";
 import type { BasePlayerStats } from "../constants/data/characters/PlayerData";
-import {
-  getCharacterClassInfo,
-  getCardDataByClass,
-} from "@/constants/data/characters/CharacterClassData";
+import { getCharacterClassInfo } from "@/constants/data/characters/CharacterClassData";
 import {
   STORAGE_TEST_ITEMS,
   INVENTORY_TEST_ITEMS,
@@ -49,17 +41,20 @@ import {
   INVENTORY_MAX_CAPACITY,
   EQUIPMENT_INVENTORY_MAX,
 } from "../constants";
-import {
-  calculateEquipmentAP,
-  applyDurabilityDamage,
-  distributeApDamageToEquipment,
-} from "../domain/item_equipment/logic/equipmentStats";
+import { calculateEquipmentAP } from "../domain/item_equipment/logic/equipmentStats";
+
+// Extracted hooks
+import { usePlayerBattle } from "@/domain/characters/player/hooks/usePlayerBattle";
+import { usePlayerProgression } from "@/domain/characters/player/hooks/usePlayerProgression";
+import { usePlayerDeck } from "@/domain/characters/player/hooks/usePlayerDeck";
+import { useEquipmentAP } from "@/domain/characters/player/hooks/useEquipmentAP";
 
 /**
  * Internal player state used by PlayerContext.
  * Combines base stats with storage, inventory, and resource tracking.
+ * Exported for use by extracted hooks.
  */
-interface InternalPlayerState {
+export interface InternalPlayerState {
   // Base stats
   name?: string;
   playerClass: CharacterClass;
@@ -277,99 +272,22 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     });
   });
 
-  /**
-   * Update class grade (for promotion system)
-   */
-  const updateClassGrade = (newGrade: string) => {
-    setPlayerState((prev) => ({ ...prev, classGrade: newGrade }));
-  };
+  // ============================================================
+  // Extracted hooks
+  // ============================================================
 
-  /**
-   * Permanently increase base max HP
-   */
-  const updateBaseMaxHp = (delta: number) => {
-    setPlayerState((prev) => ({
-      ...prev,
-      maxHp: prev.maxHp + delta,
-      hp: prev.hp + delta,
-    }));
-  };
+  const battle = usePlayerBattle(runtimeState, setRuntimeState);
+  const progression = usePlayerProgression(setPlayerState);
+  const deck = usePlayerDeck(playerState.playerClass, setPlayerState);
+  const { equipmentAP, applyEquipmentDurabilityDamage } = useEquipmentAP(
+    playerState.equipmentSlots,
+    setPlayerState,
+    setRuntimeState,
+  );
 
-  /**
-   * Permanently increase base max AP
-   */
-  const updateBaseMaxAp = (delta: number) => {
-    setPlayerState((prev) => ({
-      ...prev,
-      maxAp: prev.maxAp + delta,
-      ap: prev.ap + delta,
-    }));
-  };
-
-  /**
-   * Update HP (with bounds checking)
-   */
-  const updateHp = (newHp: number) => {
-    setPlayerState((prev) => ({
-      ...prev,
-      hp: Math.max(0, Math.min(newHp, prev.maxHp)),
-    }));
-  };
-
-  /**
-   * Update AP (with bounds checking)
-   */
-  const updateAp = (newAp: number) => {
-    setPlayerState((prev) => ({
-      ...prev,
-      ap: Math.max(0, Math.min(newAp, prev.maxAp)),
-    }));
-  };
-
-  /**
-   * Add souls (current run)
-   */
-  const addSouls = (amount: number) => {
-    setPlayerState((prev) => ({
-      ...prev,
-      sanctuaryProgress: {
-        ...prev.sanctuaryProgress,
-        currentRunSouls: prev.sanctuaryProgress.currentRunSouls + amount,
-      },
-    }));
-  };
-
-  /**
-   * Transfer souls from current run to total (on survival)
-   */
-  const transferSouls = (survivalMultiplier: number) => {
-    setPlayerState((prev) => {
-      const transferredSouls = Math.floor(
-        prev.sanctuaryProgress.currentRunSouls * survivalMultiplier,
-      );
-      return {
-        ...prev,
-        sanctuaryProgress: {
-          ...prev.sanctuaryProgress,
-          totalSouls: prev.sanctuaryProgress.totalSouls + transferredSouls,
-          currentRunSouls: 0,
-        },
-      };
-    });
-  };
-
-  /**
-   * Reset current run souls (on death)
-   */
-  const resetCurrentRunSouls = () => {
-    setPlayerState((prev) => ({
-      ...prev,
-      sanctuaryProgress: {
-        ...prev.sanctuaryProgress,
-        currentRunSouls: 0,
-      },
-    }));
-  };
+  // ============================================================
+  // Cross-state operations (stay in PlayerContext)
+  // ============================================================
 
   /**
    * Initialize player with a specific character class
@@ -399,111 +317,13 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     });
 
     // Reset runtime state with equipment-derived AP
-    const equipAP = calculateEquipmentAP(newPlayer.equipmentSlots);
+    const equipAP2 = calculateEquipmentAP(newPlayer.equipmentSlots);
     setRuntimeState((prev) => ({
       ...createInitialRuntimeState(
-        { hp: newPlayer.maxHp, ap: equipAP.totalAP },
+        { hp: newPlayer.maxHp, ap: equipAP2.totalAP },
         prev.difficulty,
       ),
     }));
-  };
-
-  /**
-   * Update deck with new card IDs (cardTypeIds)
-   * Rebuilds the internal deck from the class card data
-   */
-  const updateDeck = (cardTypeIds: string[]) => {
-    const cardData = getCardDataByClass(playerState.playerClass);
-    let instanceCounter = 1;
-    const newDeck: Card[] = [];
-
-    for (const cardTypeId of cardTypeIds) {
-      const cardTemplate = cardData[cardTypeId];
-      if (cardTemplate) {
-        newDeck.push({
-          ...cardTemplate,
-          id: `deck_${cardTypeId}_${instanceCounter++}`,
-        });
-      }
-    }
-
-    setPlayerState((prev) => ({
-      ...prev,
-      deck: newDeck,
-    }));
-  };
-
-  // ============================================================
-  // Equipment AP System
-  // ============================================================
-
-  /**
-   * Apply durability damage to defense equipment when AP absorbs damage.
-   * Distributes damage proportionally across defense slots.
-   * Returns the new AP values after the durability reduction.
-   */
-  const applyEquipmentDurabilityDamage = (
-    apDamage: number,
-  ): { currentAp: number; maxAp: number } => {
-    if (apDamage <= 0) {
-      const ap = calculateEquipmentAP(playerState.equipmentSlots);
-      return { currentAp: ap.totalAP, maxAp: ap.maxAP };
-    }
-
-    const durabilityDamage = distributeApDamageToEquipment(
-      apDamage,
-      playerState.equipmentSlots,
-    );
-    const updatedSlots = applyDurabilityDamage(
-      playerState.equipmentSlots,
-      durabilityDamage,
-    );
-
-    // Update equipment slots in player state
-    setPlayerState((prev) => ({
-      ...prev,
-      equipmentSlots: updatedSlots,
-    }));
-
-    // Calculate new AP from updated equipment
-    const newAP = calculateEquipmentAP(updatedSlots);
-
-    // Also update runtime state AP
-    setRuntimeState((prev) => ({
-      ...prev,
-      currentAp: newAP.totalAP,
-    }));
-
-    return { currentAp: newAP.totalAP, maxAp: newAP.maxAP };
-  };
-
-  // ============================================================
-  // Runtime Battle State Management
-  // ============================================================
-
-  /**
-   * Update runtime state (HP/AP/mastery between battles)
-   */
-  const updateRuntimeState = (updates: Partial<RuntimeBattleState>) => {
-    setRuntimeState((prev) => ({
-      ...prev,
-      ...updates,
-    }));
-  };
-
-  /**
-   * Update card mastery for a specific card type
-   */
-  const updateCardMastery = (cardTypeId: string, useCount: number) => {
-    setRuntimeState((prev) => {
-      const newStore = new Map(prev.cardMasteryStore);
-      const currentCount = newStore.get(cardTypeId) || 0;
-      newStore.set(cardTypeId, currentCount + useCount);
-      return {
-        ...prev,
-        cardMasteryStore: newStore,
-      };
-    });
   };
 
   /**
@@ -512,10 +332,10 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
    */
   const resetRuntimeState = () => {
     // AP is derived from equipment durability — not reset to a base value
-    const equipAP = calculateEquipmentAP(playerState.equipmentSlots);
+    const equipAP2 = calculateEquipmentAP(playerState.equipmentSlots);
     setRuntimeState((prev) => ({
       ...createInitialRuntimeState(
-        { hp: playerState.maxHp, ap: equipAP.totalAP },
+        { hp: playerState.maxHp, ap: equipAP2.totalAP },
         prev.difficulty,
       ),
       // Preserve lives when returning to camp (not resetting completely)
@@ -525,57 +345,8 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   // ============================================================
-  // Lives System Management
-  // ============================================================
-
-  /**
-   * Decrease lives by 1 (on death)
-   */
-  const decreaseLives = () => {
-    setRuntimeState((prev) => ({
-      ...prev,
-      lives: decreaseLivesHelper(prev.lives),
-    }));
-  };
-
-  /**
-   * Check if game is over (no lives remaining)
-   */
-  const isGameOver = () => {
-    return isGameOverHelper(runtimeState.lives);
-  };
-
-  /**
-   * Set game difficulty (resets lives to match new difficulty)
-   */
-  const setDifficulty = (difficulty: Difficulty) => {
-    setRuntimeState((prev) => ({
-      ...prev,
-      difficulty,
-      lives: createLivesSystem(difficulty),
-    }));
-  };
-
-  // ============================================================
   // PlayerData interface
   // ============================================================
-
-  /**
-   * Computed PlayerData from internal state
-   */
-  // Derive AP from equipment
-  const equipmentAP = useMemo(
-    () => calculateEquipmentAP(playerState.equipmentSlots),
-    [playerState.equipmentSlots],
-  );
-
-  // Sync currentAp when equipment changes
-  useEffect(() => {
-    setRuntimeState((prev) => ({
-      ...prev,
-      currentAp: equipmentAP.totalAP,
-    }));
-  }, [equipmentAP.totalAP]);
 
   const playerData = useMemo<PlayerData>(
     () => ({
@@ -735,30 +506,19 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 
         // Runtime battle state
         runtimeState,
-        updateRuntimeState,
-        updateCardMastery,
         resetRuntimeState,
 
         // Deck
         deckCards: playerState.deck,
-        updateDeck,
 
-        // Lives system
-        decreaseLives,
-        isGameOver,
-        setDifficulty,
-
-        // Common operations
-        updateClassGrade,
-        updateBaseMaxHp,
-        updateBaseMaxAp,
-        updateHp,
-        updateAp,
-        addSouls,
-        transferSouls,
-        resetCurrentRunSouls,
+        // Cross-state operations
         initializeWithClass,
         applyEquipmentDurabilityDamage,
+
+        // Spread extracted hooks
+        ...battle,
+        ...progression,
+        ...deck,
       }}
     >
       {children}
