@@ -28,6 +28,7 @@ export const HEADER_ICONS = {
   stoneMedium: "/assets/images/icons/magic-stone-medium.png",
   stoneLarge: "/assets/images/icons/magic-stone-large.png",
   stoneHuge: "/assets/images/icons/magic-stone-huge.png",
+  dropdown: "/assets/images/icons/dropdown-icon.png",
 };
 
 export const ELEMENT_MAGIC_ICONS: Partial<Record<ElementType, string>> = {

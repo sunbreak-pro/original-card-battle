@@ -3,15 +3,30 @@
  * Displays resources (Gold, Magic Stones by type)
  *
  * Variants:
- * - "default": Standard header with gold and magic stones
- * - "basecamp": Adds lives display (hearts)
+ * - "default": Standard header with gold and magic stones + facility nav dropdown
+ * - "basecamp": Adds lives display (hearts), no nav dropdown
  */
 
-import React from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useResources } from "@/contexts/ResourceContext";
+import { useGameState } from "@/contexts/GameStateContext";
 import { HEADER_ICONS } from "@/constants/uiConstants";
+import type { GameScreen } from "@/types";
 import "../../css/components/FacilityHeader.css";
+
+const FACILITY_NAV_ITEMS: ReadonlyArray<{
+  screen: GameScreen;
+  label: string;
+  icon: string;
+}> = [
+  { screen: "shop", label: "取引所", icon: "🏪" },
+  { screen: "guild", label: "酒場", icon: "🍺" },
+  { screen: "blacksmith", label: "鍛冶屋", icon: "⚒️" },
+  { screen: "sanctuary", label: "聖域", icon: "⛪" },
+  { screen: "library", label: "図書館", icon: "📚" },
+  { screen: "storage", label: "倉庫", icon: "📦" },
+] as const;
 
 interface FacilityHeaderProps {
   title: string;
@@ -24,6 +39,25 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
 }) => {
   const { runtimeState } = usePlayer();
   const { getTotalGold, resources } = useResources();
+  const { gameState, navigateTo } = useGameState();
+  const [navOpen, setNavOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleCloseNav = useCallback((e: MouseEvent) => {
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(e.target as Node)
+    ) {
+      setNavOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (navOpen) {
+      document.addEventListener("click", handleCloseNav);
+      return () => document.removeEventListener("click", handleCloseNav);
+    }
+  }, [navOpen, handleCloseNav]);
 
   // Get magic stones (both baseCamp and exploration combined for display)
   const magicStones = {
@@ -46,9 +80,53 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
 
   return (
     <header className="facility-header basecamp-variant">
-      {/* Left section: Title + Lives */}
+      {/* Left section: Title + Lives + Nav */}
       <div className="page-title">
         <span className="basecamp-title-text">{title}</span>
+        {variant !== "basecamp" && (
+          <div className="facility-nav-wrapper" ref={dropdownRef}>
+            <button
+              className={`facility-nav-toggle${navOpen ? " open" : ""}`}
+              onClick={() => setNavOpen((prev) => !prev)}
+              aria-label="施設メニュー"
+            >
+              <img
+                src={HEADER_ICONS.dropdown}
+                className="dropdown-icon"
+                alt="▼"
+              />
+            </button>
+            {navOpen && (
+              <div className="facility-nav-dropdown">
+                {FACILITY_NAV_ITEMS.map((item) => (
+                  <button
+                    key={item.screen}
+                    className={`facility-nav-item${gameState.currentScreen === item.screen ? " active" : ""}`}
+                    onClick={() => {
+                      navigateTo(item.screen);
+                      setNavOpen(false);
+                    }}
+                    disabled={gameState.currentScreen === item.screen}
+                  >
+                    <span className="facility-nav-icon">{item.icon}</span>
+                    <span className="facility-nav-label">{item.label}</span>
+                  </button>
+                ))}
+                <div className="facility-nav-divider" />
+                <button
+                  className="facility-nav-item camp-link"
+                  onClick={() => {
+                    navigateTo("camp");
+                    setNavOpen(false);
+                  }}
+                >
+                  <span className="facility-nav-icon">🏕️</span>
+                  <span className="facility-nav-label">拠点に戻る</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right section: Resources */}
