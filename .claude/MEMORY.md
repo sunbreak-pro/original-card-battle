@@ -3,7 +3,6 @@
 ## Operational Rules
 
 - Write all design documents and code in English
-- Please output only user chat in Japanese.
 
 ---
 
@@ -140,8 +139,28 @@ The separate battle contexts (`BattleProviderStack`, `PlayerBattleContext`, `Ene
 
 ---
 
+## Code Analysis
+
+Session 7で全コンテキストシステムおよび主要ドメインロジックの静的分析を実施。
+
+- **分析ドキュメント:** 14ファイル（`.claude/code/`）
+  - `overall-summary.md` — 全体サマリー + 77件の脆弱性一覧
+  - `ai-reference/ai-reference.md` — AI向けクイックリファレンス
+  - `battle/` — orchestration, card-execution, damage-and-buff, class-abilities
+  - `state/` — context-system (5 Context Providers)
+  - `character/` — player, enemy
+  - `cards/` — deck-and-mastery
+  - `dungeon/` — dungeon-system
+  - `inventory/` — equipment-and-items
+  - `resource/` — economy
+- **特定された脆弱性:** 77件（Critical 5, High 22, Medium 30, Low 20）
+- **詳細:** `.claude/code/README.md` を参照
+
+---
+
 ## See Also
 
 - **Game Design:** `.claude/docs/`
 - **Battle Logic:** `.claude/docs/battle_document/battle_logic.md`
 - **Implementation Plan:** `.claude/todos/MASTER_IMPLEMENTATION_PLAN.md`
+- **Code Analysis:** `.claude/code/` (静的分析ドキュメント + AI参照)

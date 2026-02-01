@@ -4,6 +4,7 @@
 import React, {
   createContext,
   useContext,
+  useEffect,
   useState,
   useMemo,
   type ReactNode,
@@ -120,10 +121,6 @@ export interface RuntimeBattleState {
  * Resource-related functions delegate to ResourceContext for actual implementation.
  */
 interface PlayerContextValue {
-  // ============================================================
-  // PlayerData-based interface
-  // ============================================================
-
   /** Player data */
   playerData: PlayerData;
 
@@ -307,9 +304,14 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   });
 
   // Runtime battle state - persists between battles within exploration
-  const [runtimeState, setRuntimeState] = useState<RuntimeBattleState>(() =>
-    createInitialRuntimeState(Swordman_Status),
-  );
+  const [runtimeState, setRuntimeState] = useState<RuntimeBattleState>(() => {
+    const initialPlayer = createInitialPlayerState(Swordman_Status);
+    const equipAP = calculateEquipmentAP(initialPlayer.equipmentSlots);
+    return createInitialRuntimeState({
+      hp: Swordman_Status.hp,
+      ap: equipAP.totalAP,
+    });
+  });
 
   /**
    * Update class grade (for promotion system)
@@ -438,6 +440,15 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         explorationLimitBonus: 0,
       },
     });
+
+    // Reset runtime state with equipment-derived AP
+    const equipAP = calculateEquipmentAP(newPlayer.equipmentSlots);
+    setRuntimeState((prev) => ({
+      ...createInitialRuntimeState(
+        { hp: newPlayer.maxHp, ap: equipAP.totalAP },
+        prev.difficulty,
+      ),
+    }));
   };
 
   /**
@@ -746,6 +757,14 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     () => calculateEquipmentAP(playerState.equipmentSlots),
     [playerState.equipmentSlots],
   );
+
+  // Sync currentAp when equipment changes
+  useEffect(() => {
+    setRuntimeState((prev) => ({
+      ...prev,
+      currentAp: equipmentAP.totalAP,
+    }));
+  }, [equipmentAP.totalAP]);
 
   const playerData = useMemo<PlayerData>(
     () => ({

@@ -259,3 +259,4 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 - `.claude/LESSONS_LEARNED.md` — 開発で学んだ重要な教訓
 - `.claude/todos/MASTER_IMPLEMENTATION_PLAN.md` — 実装ロードマップ
 - `.claude/docs/` — ゲーム設計仕様書（バトル、カード、キャンプ、ダンジョン、敵、アイテム）
+- `.claude/code/` — コード静的分析ドキュメント（14ファイル、77件の脆弱性特定済）

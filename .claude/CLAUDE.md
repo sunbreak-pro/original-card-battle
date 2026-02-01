@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 ## Development Commands
 
 ```bash
@@ -9,13 +11,15 @@ npm run lint -- --fix
 npm run preview      # Preview production build
 ```
 
-No test framework configured - verify manually in browser.
+No test framework configured — verify manually in browser.
 
 **Stack:** React 19.2, TypeScript 5.9, Vite 7
 
 **Path alias:** `@/*` → `src/*` (configured in both `vite.config.ts` and `tsconfig.app.json`). Use `@/domain/...`, `@/ui/...`, etc.
 
 **TypeScript strictness:** `noUnusedLocals` and `noUnusedParameters` are enabled — remove unused variables rather than prefixing with `_`. `verbatimModuleSyntax` is enabled — use `import type` for type-only imports. `erasableSyntaxOnly` is enabled — use `as const` objects instead of `enum`, no `namespace` or `module` declarations.
+
+**Known build error:** `NodeMap.tsx:252` has a pre-existing error (`Property 'remaining' does not exist on type 'LivesSystem'`). This is not caused by recent changes.
 
 ## Architecture
 
@@ -29,9 +33,11 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 | -------------------- | ---------------------------------------------------------------------- |
 | `GameStateContext`   | Screen routing via `currentScreen`, depth, battleMode                  |
 | `ResourceContext`    | Gold, magic stones                                                     |
-| `PlayerContext`      | `PlayerData` (persistent) + `RuntimeBattleState` (HP/AP/lives/mastery) |
+| `PlayerContext`      | `PlayerData` (persistent) + `RuntimeBattleState` (HP/AP/lives/mastery) + `deckCards` (custom deck) |
 | `InventoryContext`   | Items, equipment, cards in storage                                     |
 | `DungeonRunProvider` | Persists dungeon state across battle transitions (lives in `src/ui/dungeonHtml/`, not `src/contexts/`) |
+
+Battle state is managed entirely by `useBattleOrchestrator` hook — no separate battle contexts.
 
 ### Type System
 
@@ -40,6 +46,20 @@ All types in `src/types/` with barrel export. Use `@/types/*` or `@/types`:
 ```typescript
 import type { Card, Player, BuffDebuffState } from '@/types';
 ```
+
+### Data Location
+
+All static data lives in `src/constants/data/`, NOT in `src/domain/`:
+
+| Data | Location |
+|------|----------|
+| Card definitions | `src/constants/data/cards/` (SwordmanCards, mageCards, summonerCards) |
+| Enemy definitions | `src/constants/data/characters/enemy/` (enemyDepth1-5.ts) |
+| Camp facility data | `src/constants/data/camps/` (ShopData, SanctuaryData, etc.) |
+| Item/equipment data | `src/constants/data/items/` |
+| Battle constants | `src/constants/data/battles/` |
+
+`src/domain/` contains only logic (functions, hooks), not data definitions.
 
 ### Battle System Flow
 
@@ -51,12 +71,14 @@ BattleScreen → useBattleOrchestrator → useBattleState
     playerPhaseExecution / enemyPhaseExecution → damageCalculation
 ```
 
-**Buff ownership:** `appliedBy: 'player' | 'enemy' | 'environment'` - duration decreases only during applier's phase.
+**Buff ownership:** `appliedBy: 'player' | 'enemy' | 'environment'` — duration decreases only during applier's phase.
 
-**Class ability hooks:** Each character class has a dedicated battle hook composed into `useBattleOrchestrator`:
-- Swordsman: `useSwordEnergy()` — energy gauge for special attacks
-- Mage: `useElementalChain()` — elemental resonance combos across card plays
-- Summoner: `useSummonSystem()` — summon spawning, decay, and expiry
+**Multi-hit cards:** `useCardExecution.ts` loops per-hit for `hitCount > 1`, with independent damage calculation and 500ms delay per hit.
+
+**Class ability hooks** (all called unconditionally in `useBattleOrchestrator` per React rules):
+- Swordsman: `useSwordEnergy()` in `useClassAbility.ts` — flat damage bonus + bleed chance
+- Mage: `useElementalChain()` in `useElementalChain.ts` — resonance `percentMultiplier` applied to base damage via `getElementalDamageModifier`
+- Summoner: `useSummonSystem()` in `useSummonSystem.ts` — summon spawning, decay, and expiry
 
 ### Shop/Item Data Flow
 
@@ -74,9 +96,16 @@ ShopListing (typeId) → ConsumableItemData (name/price/effect) → generateCons
 ### Source Structure
 
 - `src/domain/` — pure business logic (battles, camps, cards, characters, dungeon, item_equipment, save)
+- `src/constants/` — constants and all static data (`constants/data/`)
 - `src/ui/` — React components organized by screen area (battleHtml, campsHtml, dungeonHtml, etc.)
-- `src/types/` — all type definitions; `src/constants/` — constants only (no types)
+- `src/types/` — all type definitions
 - `src/contexts/` — React context providers
+
+### Asset Paths
+
+Player images: `PLAYER_CHARACTER_IMAGES` in `src/constants/uiConstants.ts` maps `CharacterClass` → image path.
+Enemy images: each `EnemyDefinition` has an `imagePath` field (images mostly not yet created; fallback shown).
+All asset path constants are centralized in `src/constants/uiConstants.ts`.
 
 ## Key Rules
 
@@ -96,8 +125,36 @@ ShopListing (typeId) → ConsumableItemData (name/price/effect) → generateCons
 | Code/comments | English |
 | CSS sizing | `vh/vw` (use `px` only for borders) |
 | CSS selectors | Scope with parent: `.battle-screen .card { }` |
-| React 19 hooks | See `.claude/LESSONS_LEARNED.md` sections 4 & 6 for ref vs setState rules and render-time pattern |
 | Adding classes | Use `character-class-creator` skill |
+| Chat language | Japanese (ユーザーへの応答は日本語で行う) |
+
+### React 19 Patterns
+
+**Ref vs State:** Never access `ref.current` during render — use `useState` for values displayed in UI or passed to child props.
+
+**Render-time derived state (no side effects):**
+```typescript
+const [prevValue, setPrevValue] = useState(currentValue);
+if (currentValue !== prevValue) {
+  setPrevValue(currentValue);
+  setDerivedState(newValue);
+}
+```
+
+**Side effects that need setState:**
+```typescript
+const guardRef = useRef(false);
+useEffect(() => {
+  if (!guardRef.current) {
+    doSideEffect();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init guarded by ref
+    setSomeState(value);
+    guardRef.current = true;
+  }
+}, [deps]);
+```
+
+**Details:** See `.claude/LESSONS_LEARNED.md`
 
 ## References
 
