@@ -26,7 +26,7 @@
 | Camp Facilities | 98% | Shop (stock mgmt + restock + merchant ticket), Guild, Library (filters + unknown toggle), Blacksmith, Storage |
 | Dungeon System | 90% | Map generation, 5-floor progression, depth 1-5 enemies |
 | Progression System | 98% | Lives + Souls + Sanctuary + equipment + card derivation + mastery + custom deck |
-| State Management | Fixed | 35 vulnerability fixes across Sessions 1-7 |
+| State Management | Fixed | 52 vulnerability fixes across Sessions 1-9 |
 | Save System | Implemented | `src/domain/save/logic/saveManager.ts` |
 | Character Images | 90% | Player images displayed. 50 enemies have `imagePath` set (PNGs not yet created) |
 
@@ -38,7 +38,9 @@
 - **Phase B:** Game Experience — Summoner class, Shop, Guild, Card Derivation, Elemental Chain, Escape, Equipment stats
 - **Phase C:** Extended Features — DungeonGate prep screen, Multi-enemy battle, Library, Dungeon events, Element refactor, Data migrations, Multi-hit cards, Equipment durability, Custom deck, Player images
 - **Phase D:** Shop & Encyclopedia Overhaul — Shop inventory/stock system (`ShopStockState`, lazy init, battle-count restock, merchant ticket), Card encyclopedia filters (tag/cost/unknown toggle, unlock stats)
-- **Vulnerability Remediation (Sessions 1-7):** 35 fixes total (Critical 5, High 22 area). Details in `.claude/code_overview/`
+- **Vulnerability Remediation (Sessions 1-9):** 52 fixes total (Critical 5, High 22, cleanup 17). Details in `.claude/code_overview/`
+- **Session 8:** Dead code & duplicate sweep (11 fixes — duplicate functions, legacy aliases, identical constants consolidated)
+- **Session 9:** Naming & file organization (6 fixes — DungeonRunContext moved to `src/contexts/`, file renames: deptManager→depthManager, tittle→title, swordmanCards→swordsmanCards, test data removed, default values zeroed)
 
 ---
 
@@ -87,7 +89,7 @@
 
 Static analysis of all contexts and domain logic completed in Session 7.
 - **Docs:** 14 files in `.claude/code_overview/` (overall summary, AI reference, per-domain analysis)
-- **Vulnerabilities:** 77 identified (Critical 5, High 22, Medium 30, Low 20) — 35 fixed in Sessions 1-7
+- **Vulnerabilities:** 77 identified (Critical 5, High 22, Medium 30, Low 20) — 52 fixed in Sessions 1-9
 - **Details:** `.claude/code_overview/README.md`
 
 ---

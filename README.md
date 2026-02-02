@@ -106,6 +106,7 @@ src/
 │   ├── ResourceContext.tsx     # ゴールド、魔石
 │   ├── PlayerContext.tsx       # キャラデータ + ランタイムバトルステート
 │   ├── InventoryContext.tsx    # アイテム、装備、カード
+│   ├── DungeonRunContext.tsx   # ダンジョン探索状態（バトル間で保持）
 │   └── GuildContext.tsx        # ギルド状態（Guild内で局所利用、App.tsx階層には含まず）
 ├── domain/         # ビジネスロジック（純粋関数中心）
 │   ├── battles/    # バトルシステム（フック、ロジック、計算）
@@ -119,7 +120,7 @@ src/
 │   ├── html/           # 画面別コンポーネント
 │   │   ├── battleHtml/     # バトル画面
 │   │   ├── campsHtml/      # キャンプ施設UI
-│   │   ├── dungeonHtml/    # ダンジョンマップ + DungeonRunContext + preparations/
+│   │   ├── dungeonHtml/    # ダンジョンマップ + preparations/
 │   │   ├── cardHtml/       # カード表示
 │   │   ├── characterSelectHtml/ # キャラ選択
 │   │   └── componentsHtml/ # 共通コンポーネント（FacilityHeader, BackToCampButton, FacilityTabNav等）
@@ -298,6 +299,16 @@ ShopStockState (PlayerContext.progression) → shopStockLogic.ts → BuyTab.tsx
   - 統計バー: 解放率 + タグ別カウント（色付き）
   - 未解放カード「?」プレースホルダー表示
   - `CardDerivationTree` に `unlockedCardTypeIds` 連携
+- **脆弱性修正セッション8完了**（デッドコード＆重複削除、11件）
+  - 重複関数削除（`calculateCardEffect`、`decreaseBuffDebuffDuration`）
+  - レガシーエイリアス削除（useBattleOrchestrator return object）
+  - 重複定数統合（`SWORD_ENERGY_MAX`、`DEFAULT_DAMAGE_MODIFIER`）
+  - バトル状態デュアルAPI統合、インベントリ重複方向マージ
+  - クラスアビリティフック共通ラッパー抽出、敵ガードチェック共有述語
+- **脆弱性修正セッション9完了**（命名＆ファイル整理、6件）
+  - `DungeonRunContext.tsx` を `src/contexts/` に移動
+  - ファイルリネーム: `deptManager` → `depthManager`、`tittle` → `title`、`swordmanCards` → `swordsmanCards`
+  - テストデータ削除（`TestItemsData.ts`）、初期値をゼロデフォルトに変更
 
 </details>
 
@@ -307,4 +318,4 @@ ShopStockState (PlayerContext.progression) → shopStockLogic.ts → BuyTab.tsx
 - `.claude/LESSONS_LEARNED.md` — 開発で学んだ重要な教訓
 - `.claude/todos/MASTER_IMPLEMENTATION_PLAN.md` — 実装ロードマップ
 - `.claude/docs/` — ゲーム設計仕様書（バトル、カード、キャンプ、ダンジョン、敵、アイテム）
-- `.claude/code_overview/` — コード静的分析ドキュメント（14ファイル、77件の脆弱性特定済、35件修正済）
+- `.claude/code_overview/` — コード静的分析ドキュメント（14ファイル、77件の脆弱性特定済、52件修正済）
