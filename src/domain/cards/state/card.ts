@@ -51,6 +51,7 @@ export interface CardEffectResult {
   enemyDebuffs?: BuffDebuffState[];
   playerBuffs?: BuffDebuffState[];
 }
+
 export function calculateCardEffect(
   card: Card,
 ): CardEffectResult {

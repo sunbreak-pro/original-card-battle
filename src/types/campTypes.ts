@@ -9,7 +9,7 @@
 
 import type { Item } from './itemTypes';
 import type { EquipmentSlot, EquipmentQuality } from './itemTypes';
-import type { Card } from './cardTypes';
+import type { Card, CardTag } from './cardTypes';
 import type { Depth } from './cardTypes';
 import type { ElementType } from './characterTypes';
 
@@ -126,6 +126,32 @@ export interface ShopListing {
   stock?: number;
 }
 
+// ============================================================
+// Shop Stock Types
+// ============================================================
+
+/**
+ * Runtime shop stock state.
+ * Tracks inventory counts, daily rotation, and restock timing.
+ */
+export interface ShopStockState {
+  /** Permanent consumable stock: itemKey → remaining count */
+  permanentStock: Record<string, number>;
+  /** Daily special stock: itemKey → remaining count */
+  dailySpecialStock: Record<string, number>;
+  /** Set of equipment indices that have been purchased (sold out) */
+  equipmentSoldOutIndices: number[];
+  /** Current rotation's daily special item keys */
+  dailySpecialKeys: string[];
+  /** Battle count since last restock */
+  battlesSinceRestock: number;
+  /** Random threshold for next restock (7-10) */
+  restockThreshold: number;
+  /** Seed used for current daily rotation */
+  rotationSeed: number;
+  /** Whether new stock is available (for notification badge) */
+  hasNewStock: boolean;
+}
 
 // ============================================================
 // Guild Types
@@ -381,6 +407,10 @@ export interface CardFilterOptions {
   element: ElementType | null;
   characterClass: string | null;
   searchText: string;
+  tag: CardTag | null;
+  costMin: number | null;
+  costMax: number | null;
+  showUnknown: boolean;
 }
 
 export interface EnemyFilterOptions {

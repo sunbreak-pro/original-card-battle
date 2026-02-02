@@ -5,8 +5,8 @@ import {
   getSwordsmanTitle,
   getMageTitle,
   getSummonerTitle,
-} from "../../../domain/characters/player/logic/tittle";
-import { SWORDSMAN_CARDS } from "../cards/swordmanCards";
+} from "../../../domain/characters/player/logic/title";
+import { SWORDSMAN_CARDS } from "../cards/swordsmanCards";
 
 /**
  * Base player stats used to initialize a new character.

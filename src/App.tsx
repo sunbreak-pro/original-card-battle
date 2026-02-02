@@ -9,7 +9,7 @@ import { Sanctuary } from "./ui/html/campsHtml/Sanctuary/Sanctuary.tsx";
 import { Library } from "./ui/html/campsHtml/Library/Library.tsx";
 import { DungeonGate } from "./ui/html/dungeonHtml/DungeonGate.tsx";
 import { NodeMap } from "./ui/html/dungeonHtml/NodeMap.tsx";
-import { DungeonRunProvider } from "./ui/html/dungeonHtml/DungeonRunContext.tsx";
+import { DungeonRunProvider } from "./contexts/DungeonRunContext.tsx";
 import { CharacterSelect } from "./ui/html/characterSelectHtml/CharacterSelect.tsx";
 import {
   GameStateProvider,

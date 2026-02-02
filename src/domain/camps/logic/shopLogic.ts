@@ -1,10 +1,13 @@
 // Shop transaction logic
 
 import type { Item, MagicStones } from '@/types/itemTypes';
+import type { ShopStockState } from '@/types/campTypes';
+import type { Depth } from '@/types/cardTypes';
 import { generateConsumableFromData } from "../../item_equipment/logic/generateItem";
 import { MAGIC_STONE_VALUES } from "../../../constants/itemConstants";
 import type { ShopListing } from '@/types/campTypes';
 import { resolveShopListing } from "@/constants/data/camps/ShopData";
+import { forceRestock } from './shopStockLogic';
 
 /**
  * Check if player can afford an item
@@ -105,4 +108,13 @@ export function purchaseItem(listing: ShopListing): Item | null {
 export function getListingPrice(listing: ShopListing): number | undefined {
   const resolved = resolveShopListing(listing);
   return resolved?.price;
+}
+
+/**
+ * Use a merchant ticket to force-refresh shop inventory.
+ * Returns the updated stock state with all items restocked.
+ * The caller is responsible for consuming the ticket item from inventory.
+ */
+export function useMerchantTicket(depth: Depth): ShopStockState {
+  return forceRestock(depth);
 }

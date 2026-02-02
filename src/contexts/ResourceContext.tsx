@@ -68,11 +68,11 @@ const ResourceContext = createContext<ResourceContextValue | undefined>(
 function createInitialResourceState(): ResourceState {
   return {
     gold: {
-      baseCamp: 1250, // Test value for UI display
+      baseCamp: 0,
       exploration: 0,
     },
     magicStones: {
-      baseCamp: { small: 5, medium: 3, large: 1, huge: 0 }, // Test values (450 total)
+      baseCamp: { small: 0, medium: 0, large: 0, huge: 0 },
       exploration: { small: 0, medium: 0, large: 0, huge: 0 },
     },
     explorationLimit: {

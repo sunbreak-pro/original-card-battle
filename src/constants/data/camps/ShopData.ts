@@ -8,9 +8,11 @@ import { getConsumableData } from "@/constants/data/items/ConsumableItemData";
 import type { ConsumableItemData } from '@/types/itemTypes';
 import { EQUIPMENT_TEMPLATES } from "@/constants/data/items/EquipmentData";
 import { EQUIPMENT_SLOTS, EQUIPMENT_BUY_PRICES } from "@/constants/itemConstants";
+import { PERMANENT_SHOP_ITEMS } from './ShopStockConstants';
 
 /**
  * Consumable listings - references ConsumableItemData by typeId
+ * @deprecated Use PERMANENT_SHOP_ITEMS from ShopStockConstants instead for stock-aware listings
  */
 export const CONSUMABLE_LISTINGS: ShopListing[] = [
   { itemTypeId: "healing_potion", category: "consumable" },
@@ -20,6 +22,7 @@ export const CONSUMABLE_LISTINGS: ShopListing[] = [
 
 /**
  * Teleport listings - references ConsumableItemData by typeId
+ * @deprecated Teleport stones are now part of PERMANENT_SHOP_ITEMS
  */
 export const TELEPORT_LISTINGS: ShopListing[] = [
   { itemTypeId: "teleport_stone", category: "teleport" },
@@ -45,7 +48,40 @@ export function resolveShopListing(listing: ShopListing): ResolvedShopListing | 
 }
 
 /**
+ * Resolve a consumable item key to its display data.
+ * Used by the new stock-based shop system.
+ */
+export function resolveConsumableByKey(itemKey: string): ResolvedShopListing | null {
+  const data = getConsumableData(itemKey);
+  if (!data || data.shopPrice === undefined) return null;
+  return {
+    listing: { itemTypeId: itemKey, category: "consumable" },
+    data,
+    price: data.shopPrice,
+  };
+}
+
+/**
+ * Get all resolved permanent consumable listings (stock-aware system)
+ */
+export function getResolvedPermanentListings(): ResolvedShopListing[] {
+  return PERMANENT_SHOP_ITEMS
+    .map(item => resolveConsumableByKey(item.key))
+    .filter((r): r is ResolvedShopListing => r !== null);
+}
+
+/**
+ * Get resolved daily special listings for the given item keys
+ */
+export function getResolvedDailySpecialListings(keys: string[]): ResolvedShopListing[] {
+  return keys
+    .map(key => resolveConsumableByKey(key))
+    .filter((r): r is ResolvedShopListing => r !== null);
+}
+
+/**
  * Get all resolved consumable listings
+ * @deprecated Use getResolvedPermanentListings for the new system
  */
 export function getResolvedConsumableListings(): ResolvedShopListing[] {
   return CONSUMABLE_LISTINGS
@@ -55,6 +91,7 @@ export function getResolvedConsumableListings(): ResolvedShopListing[] {
 
 /**
  * Get all resolved teleport listings
+ * @deprecated Teleport stones are now part of permanent shop items
  */
 export function getResolvedTeleportListings(): ResolvedShopListing[] {
   return TELEPORT_LISTINGS
@@ -142,4 +179,3 @@ export function generateDailyEquipmentInventory(dayCount: number): EquipmentList
 
   return listings;
 }
-

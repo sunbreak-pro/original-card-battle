@@ -129,7 +129,7 @@ const ExchangeTab = () => {
           {renderStoneRow("large", "Large Magic Stone", 350, "🔷")}
           {renderStoneRow("huge", "Huge Magic Stone", 1000, "🔶")}
           <div className="quick-exchange">
-            <span className="quick-exchange-tittle">Quick Exchange </span>
+            <span className="quick-exchange-title">Quick Exchange </span>
             <span className="quick-exchange-value">({totalValue}G)</span>
             <button
               className="stone-exchange-btn"

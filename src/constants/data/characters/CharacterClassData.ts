@@ -7,7 +7,7 @@
 
 import type { CharacterClass } from "@/types/characterTypes";
 import type { Card } from "@/types/cardTypes";
-import { SWORDSMAN_CARDS } from "../cards/swordmanCards";
+import { SWORDSMAN_CARDS } from "../cards/swordsmanCards";
 import { MAGE_CARDS } from "../cards/mageCards";
 import { SUMMONER_CARDS } from "../cards/summonerCards";
 import { INITIAL_DECK_BY_CLASS } from "../battles/initialDeckConfig";

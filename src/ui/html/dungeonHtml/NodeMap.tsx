@@ -5,8 +5,9 @@ import { useGameState } from "@/contexts/GameStateContext";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useResources } from "@/contexts/ResourceContext";
 import { useInventory } from "@/contexts/InventoryContext";
-import { useDungeonRun } from "./DungeonRunContext";
-import { neutralTheme } from "@/domain/dungeon/depth/deptManager";
+import { useDungeonRun } from "@/contexts/DungeonRunContext";
+import { incrementBattleCount } from "@/domain/camps/logic/shopStockLogic";
+import { neutralTheme } from "@/domain/dungeon/depth/depthManager";
 import { DEPTH_DISPLAY_INFO } from "@/constants/dungeonConstants";
 import {
   getNodesByRow,
@@ -24,7 +25,7 @@ import "./NodeMap.css";
  */
 export function NodeMap() {
   const { returnToCamp, navigateTo, startBattle, gameState } = useGameState();
-  const { playerData, runtimeState, deckCards, updateHp } = usePlayer();
+  const { playerData, runtimeState, deckCards, updateHp, updatePlayerData } = usePlayer();
   const { resources, addGold, addMagicStones } = useResources();
   const { addItemToInventory } = useInventory();
   const [eventResult, setEventResult] = useState<NodeEventResult | null>(null);
@@ -110,6 +111,17 @@ export function NodeMap() {
             enemyType: enemyType as "single" | "double" | "three" | "boss",
             onWin: () => {
               completeCurrentNode("victory");
+              // Increment shop stock battle counter using functional updater
+              updatePlayerData((prev) => {
+                const currentStock = prev.progression.shopStockState;
+                if (!currentStock) return {};
+                return {
+                  progression: {
+                    ...prev.progression,
+                    shopStockState: incrementBattleCount(currentStock),
+                  },
+                };
+              });
               navigateTo("dungeon_map");
             },
             onLose: () => {

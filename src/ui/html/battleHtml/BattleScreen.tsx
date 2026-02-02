@@ -17,7 +17,7 @@ import { ElementalResonanceDisplay } from "./ElementalResonanceDisplay";
 import "../../css/battle/BattleScreen.css";
 import { DEPTH_BACKGROUND_IMAGES } from "@/constants/uiConstants";
 import type { Item } from "@/types/itemTypes";
-import { neutralTheme } from "@/domain/dungeon/depth/deptManager";
+import { neutralTheme } from "@/domain/dungeon/depth/depthManager";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useResources } from "@/contexts/ResourceContext";
 import { useGameState } from "@/contexts/GameStateContext";

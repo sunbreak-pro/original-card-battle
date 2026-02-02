@@ -21,7 +21,7 @@ import { createInitialSwordEnergy } from '../../characters/player/classAbility/c
 // Deck management (IMMUTABLE ZONE - DO NOT MODIFY)
 import { deckReducer } from "../../cards/decks/deckReducter";
 import { createInitialDeck, shuffleArray } from "../../cards/decks/deck";
-import { SWORDSMAN_CARDS_ARRAY } from "@/constants/data/cards/swordmanCards";
+import { SWORDSMAN_CARDS_ARRAY } from "@/constants/data/cards/swordsmanCards";
 import { MAGE_CARDS_ARRAY } from "@/constants/data/cards/mageCards";
 import { SUMMONER_CARDS_ARRAY } from "@/constants/data/cards/summonerCards";
 import { getInitialDeckCounts } from "@/constants/data/battles/initialDeckConfig";

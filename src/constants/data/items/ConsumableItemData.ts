@@ -36,6 +36,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'common',
     sellPrice: 20,
     maxStack: 10,
+    shopPrice: 80,
   },
 
   greater_healing_potion: {
@@ -50,6 +51,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'uncommon',
     sellPrice: 50,
     maxStack: 5,
+    shopPrice: 150,
   },
 
   full_elixir: {
@@ -64,6 +66,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'rare',
     sellPrice: 200,
     maxStack: 3,
+    shopPrice: 500,
   },
 
   energy_potion: {
@@ -78,6 +81,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'common',
     sellPrice: 25,
     maxStack: 10,
+    shopPrice: 60,
   },
 
   shield_potion: {
@@ -92,6 +96,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'common',
     sellPrice: 30,
     maxStack: 10,
+    shopPrice: 70,
   },
 
   antidote: {
@@ -106,6 +111,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'uncommon',
     sellPrice: 40,
     maxStack: 5,
+    shopPrice: 100,
   },
 
   strength_elixir: {
@@ -120,6 +126,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'rare',
     sellPrice: 100,
     maxStack: 3,
+    shopPrice: 250,
   },
 
   iron_skin_elixir: {
@@ -134,6 +141,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'rare',
     sellPrice: 100,
     maxStack: 3,
+    shopPrice: 250,
   },
 
   haste_potion: {
@@ -148,6 +156,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'uncommon',
     sellPrice: 60,
     maxStack: 5,
+    shopPrice: 150,
   },
 
   magic_burst_crystal: {
@@ -162,6 +171,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'rare',
     sellPrice: 150,
     maxStack: 3,
+    shopPrice: 350,
   },
 
   time_stop_hourglass: {
@@ -176,6 +186,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'epic',
     sellPrice: 300,
     maxStack: 1,
+    shopPrice: 800,
   },
 
   draw_scroll: {
@@ -190,6 +201,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'uncommon',
     sellPrice: 45,
     maxStack: 5,
+    shopPrice: 120,
   },
 
   combo_elixir: {
@@ -208,6 +220,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'epic',
     sellPrice: 250,
     maxStack: 2,
+    shopPrice: 700,
   },
 
   // ============================================================================
@@ -226,6 +239,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'rare',
     sellPrice: 150,
     maxStack: 3,
+    shopPrice: 300,
   },
 
   treasure_map: {
@@ -254,6 +268,7 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
     rarity: 'common',
     sellPrice: 30,
     maxStack: 5,
+    shopPrice: 80,
   },
 
   lucky_charm: {

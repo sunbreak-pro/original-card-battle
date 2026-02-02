@@ -22,6 +22,7 @@ import type {
   EquipmentInventoryState,
   EquipmentSlots,
   SanctuaryProgress,
+  ShopStockState,
 } from "@/types/campTypes";
 import { createLivesSystem } from "../domain/characters/player/logic/playerUtils";
 import {
@@ -31,11 +32,6 @@ import {
 } from "../constants/data/characters/PlayerData";
 import type { BasePlayerStats } from "../constants/data/characters/PlayerData";
 import { getCharacterClassInfo } from "@/constants/data/characters/CharacterClassData";
-import {
-  STORAGE_TEST_ITEMS,
-  INVENTORY_TEST_ITEMS,
-  EQUIPPED_TEST_ITEMS,
-} from "../constants/data/items/TestItemsData";
 import { useResources } from "./ResourceContext";
 import {
   STORAGE_MAX_CAPACITY,
@@ -69,7 +65,7 @@ export interface InternalPlayerState {
   speed: number;
   cardActEnergy: number;
   deck: Card[];
-  tittle?: string[];
+  title?: string[];
 
   // Storage & Inventory
   storage: StorageState;
@@ -80,6 +76,7 @@ export interface InternalPlayerState {
   // Progression
   sanctuaryProgress: SanctuaryProgress;
   shopRotationDay?: number;
+  shopStockState?: ShopStockState;
 }
 
 /**
@@ -215,26 +212,33 @@ function createInitialPlayerState(
 
     // Storage & Inventory (with test items)
     storage: {
-      items: STORAGE_TEST_ITEMS,
+      items: [],
       maxCapacity: STORAGE_MAX_CAPACITY,
-      currentCapacity: STORAGE_TEST_ITEMS.length,
+      currentCapacity: 0,
     },
     inventory: {
-      items: INVENTORY_TEST_ITEMS,
+      items: [],
       maxCapacity: INVENTORY_MAX_CAPACITY,
-      currentCapacity: INVENTORY_TEST_ITEMS.length,
+      currentCapacity: 0,
     },
     equipmentInventory: {
       items: [],
       maxCapacity: EQUIPMENT_INVENTORY_MAX,
       currentCapacity: 0,
     },
-    equipmentSlots: EQUIPPED_TEST_ITEMS,
+    equipmentSlots: {
+      weapon: null,
+      armor: null,
+      helmet: null,
+      boots: null,
+      accessory1: null,
+      accessory2: null,
+    },
 
     // Progression
     sanctuaryProgress: {
-      currentRunSouls: 25,
-      totalSouls: 150,
+      currentRunSouls: 0,
+      totalSouls: 0,
       unlockedNodes: [],
       explorationLimitBonus: 0,
     },
@@ -406,7 +410,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         baseSpeed: playerState.speed,
         cardActEnergy: playerState.cardActEnergy,
         deckCardIds: playerState.deck.map((card) => card.id),
-        titles: playerState.tittle ?? [],
+        titles: playerState.title ?? [],
       },
       resources: {
         baseCampGold: resourceContext.resources.gold.baseCamp,
@@ -427,6 +431,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         unlockedDepths: [1], // Default: only depth 1 unlocked
         completedAchievements: [],
         shopRotationDay: playerState.shopRotationDay,
+        shopStockState: playerState.shopStockState,
       },
     }),
     [playerState, playerId, equipmentAP, resourceContext.resources],
@@ -449,7 +454,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         baseSpeed: state.speed,
         cardActEnergy: state.cardActEnergy,
         deckCardIds: state.deck.map((card) => card.id),
-        titles: state.tittle ?? [],
+        titles: state.title ?? [],
       },
       resources: {
         baseCampGold: resourceContext.resources.gold.baseCamp,
@@ -470,6 +475,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         unlockedDepths: [1],
         completedAchievements: [],
         shopRotationDay: state.shopRotationDay,
+        shopStockState: state.shopStockState,
       },
     };
   };
@@ -495,7 +501,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         updated.name = updates.persistent.name;
       }
       if (updates.persistent.titles !== undefined) {
-        updated.tittle = updates.persistent.titles;
+        updated.title = updates.persistent.titles;
       }
     }
 
@@ -522,6 +528,9 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
       }
       if (updates.progression.shopRotationDay !== undefined) {
         updated.shopRotationDay = updates.progression.shopRotationDay;
+      }
+      if (updates.progression.shopStockState !== undefined) {
+        updated.shopStockState = updates.progression.shopStockState;
       }
     }
 

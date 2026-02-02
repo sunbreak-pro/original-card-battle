@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useGameState } from "@/contexts/GameStateContext";
+import { usePlayer } from "@/contexts/PlayerContext";
 import type { FacilityType } from "@/types/campTypes";
 import { FACILITY_NAV_ITEMS } from "@/constants/campConstants";
 import FacilityHeader from "../componentsHtml/FacilityHeader";
@@ -11,12 +12,14 @@ const FacilityCard = ({
   description,
   icon,
   onEnter,
+  showBadge,
 }: {
   type: FacilityType;
   name: string;
   description: string;
   icon: string;
   onEnter: () => void;
+  showBadge?: boolean;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -27,20 +30,23 @@ const FacilityCard = ({
       onMouseLeave={() => setIsHovered(false)}
       onClick={onEnter}
     >
-      {/* 背景装飾 */}
+      {/* Background decorations */}
       <div className="facility-bg-pattern" />
       <div className="facility-glow" />
 
-      {/* アイコン */}
+      {/* Notification badge */}
+      {showBadge && <div className="facility-notification-badge" />}
+
+      {/* Icon */}
       <div className="facility-icon">{icon}</div>
 
-      {/* 施設名 */}
+      {/* Name */}
       <div className="facility-name">{name}</div>
 
-      {/* 説明文 */}
+      {/* Description */}
       <div className="facility-description">{description}</div>
 
-      {/* ホバーエフェクト */}
+      {/* Hover effect */}
       {isHovered && (
         <div className="facility-hover-effect">
           <div className="hover-text enter">Enter →</div>
@@ -52,20 +58,21 @@ const FacilityCard = ({
 
 const BaseCamp = () => {
   const { navigateTo } = useGameState();
+  const { playerData } = usePlayer();
+  const hasNewStock = playerData.progression.shopStockState?.hasNewStock ?? false;
 
   return (
     <div className="base-camp">
-      {/* ヘッダー */}
+      {/* Header */}
       <FacilityHeader title="basecamp" variant="basecamp" />
 
-      {/* 背景装飾 */}
+      {/* Background decorations */}
       <div className="camp-background">
         <div className="bg-stars" />
-        {/* <div className="bg-fog" /> */}
         <div className="bg-ground" />
       </div>
 
-      {/* 施設グリッド */}
+      {/* Facility grid */}
       <div className="facilities-grid">
         {FACILITY_NAV_ITEMS.map((item) => (
           <FacilityCard
@@ -75,6 +82,7 @@ const BaseCamp = () => {
             description={item.description}
             icon={item.icon}
             onEnter={() => navigateTo(item.screen)}
+            showBadge={item.facilityType === "shop" && hasNewStock}
           />
         ))}
       </div>

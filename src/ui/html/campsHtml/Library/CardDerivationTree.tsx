@@ -8,7 +8,7 @@
 import React, { useMemo } from "react";
 import type { Card } from "@/types/cardTypes";
 import { getDerivationChain } from "@/domain/cards/logic/cardDerivation";
-import { SWORDSMAN_CARDS } from "@/constants/data/cards/swordmanCards";
+import { SWORDSMAN_CARDS } from "@/constants/data/cards/swordsmanCards";
 import { MAGE_CARDS } from "@/constants/data/cards/mageCards";
 import { SUMMONER_CARDS } from "@/constants/data/cards/summonerCards";
 import { ELEMENT_LABEL_MAP, ELEMENT_COLOR_MAP } from "@/constants/cardConstants";

@@ -7,7 +7,7 @@
 import type { CharacterClass } from './characterTypes';
 import type { MagicStones, Item } from './itemTypes';
 import type { EquipmentSlots, ExplorationLimit } from './campTypes';
-import type { SanctuaryProgress, Depth } from './campTypes';
+import type { SanctuaryProgress, Depth, ShopStockState } from './campTypes';
 
 // ============================================================
 // Save Data Types
@@ -45,6 +45,7 @@ export interface ProgressionSaveData {
   sanctuaryProgress: SanctuaryProgress;
   unlockedDepths: Depth[];
   shopRotationDay?: number;
+  shopStockState?: ShopStockState;
 }
 
 export interface SaveData {

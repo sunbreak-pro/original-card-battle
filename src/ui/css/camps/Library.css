@@ -574,6 +574,91 @@
   color: #e9d5ff;
 }
 
+/* =========================================
+   Card Encyclopedia - Unknown Card
+   ========================================= */
+
+.card-unknown {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.unknown-card-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 2.5 / 3.5;
+  background: rgba(20, 15, 30, 0.9);
+  border: 2px dashed rgba(100, 100, 100, 0.4);
+  border-radius: 8px;
+}
+
+.unknown-card-icon {
+  font-size: 4vh;
+  color: rgba(100, 100, 100, 0.5);
+  font-weight: bold;
+}
+
+.unknown-card-text {
+  font-size: 1.2vh;
+  color: rgba(100, 100, 100, 0.5);
+  margin-top: 0.5vh;
+}
+
+/* =========================================
+   Card Encyclopedia - Cost Range Input
+   ========================================= */
+
+.cost-range-input {
+  width: 4vw;
+  padding: 0.5vh 0.5vw;
+  background: rgba(30, 20, 50, 0.8);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 4px;
+  color: #e9d5ff;
+  font-size: 1.2vh;
+  text-align: center;
+}
+
+.cost-range-input::placeholder {
+  color: #6b5b8b;
+}
+
+.cost-range-input:focus {
+  outline: none;
+  border-color: #a855f7;
+}
+
+.cost-range-group {
+  gap: 0.3vw;
+}
+
+/* =========================================
+   Card Encyclopedia - Unknown Toggle
+   ========================================= */
+
+.unknown-toggle {
+  margin-left: auto;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4vw;
+  cursor: pointer;
+  font-size: 1.2vh;
+  color: #9f7aea;
+}
+
+.toggle-label input[type="checkbox"] {
+  accent-color: #a855f7;
+  width: 1.4vh;
+  height: 1.4vh;
+  cursor: pointer;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .card-grid {

@@ -5,7 +5,7 @@
  * magic multipliers, rarity colors, and category names.
  */
 
-import type { MasteryLevel } from '@/types/cardTypes';
+import type { MasteryLevel, CardTag } from '@/types/cardTypes';
 import type { Depth } from '@/types/campTypes';
 import type { ElementType } from '@/types/characterTypes';
 
@@ -113,3 +113,23 @@ export const FUNCTIONAL_ELEMENTS: ReadonlySet<ElementType> = new Set([
 export const CLASS_ABILITY_ELEMENTS: ReadonlySet<ElementType> = new Set([
   "classAbility", "chain",
 ]);
+
+// ============================================================
+// Card Tag Constants
+// ============================================================
+
+/** Card tag Japanese display names */
+export const CARD_TAG_LABEL_MAP: Record<CardTag, string> = {
+  attack: "攻撃",
+  guard: "防御",
+  skill: "スキル",
+  stance: "構え",
+};
+
+/** Card tag CSS colors */
+export const CARD_TAG_COLOR_MAP: Record<CardTag, string> = {
+  attack: "#ef4444",
+  guard: "#3b82f6",
+  skill: "#8b5cf6",
+  stance: "#f59e0b",
+};

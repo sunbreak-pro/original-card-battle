@@ -10,7 +10,7 @@
  */
 
 import type { BuffDebuffMap, BuffDebuffState, BuffDebuffType } from './battleTypes';
-import type { ExplorationLimit, SanctuaryProgress, Depth } from './campTypes';
+import type { ExplorationLimit, SanctuaryProgress, Depth, ShopStockState } from './campTypes';
 import type { MagicStones } from './itemTypes';
 import type { EquipmentSlots, InventoryState, StorageState, EquipmentInventoryState } from './campTypes';
 import type { DeckState } from '../domain/cards/decks/deckReducter';
@@ -304,6 +304,7 @@ export interface PlayerProgression {
   unlockedDepths: Depth[];
   completedAchievements: string[];
   shopRotationDay?: number;
+  shopStockState?: ShopStockState;
 }
 
 /**

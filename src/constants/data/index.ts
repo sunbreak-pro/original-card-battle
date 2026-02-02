@@ -30,4 +30,4 @@ export * from "./characters/enemy/enemyDepth1";
 // ConsumableItemData uses named re-export to avoid conflict with ShopData.CONSUMABLE_ITEMS
 export { CONSUMABLE_ITEMS as CONSUMABLE_ITEM_REGISTRY, getConsumableData, getConsumablesByContext, isUsableInBattle } from "./items/ConsumableItemData";
 export * from "./items/EquipmentData";
-export * from "./items/TestItemsData";
+

@@ -174,8 +174,21 @@
   margin-left: 1.3vw;
 }
 
-.card .card-element-icon {
+.card-element-icons {
+  display: flex;
+  justify-content: center;
   width: 100%;
+  gap: 0.3vh;
+  padding: 0.1vh 0.25vh;
+}
+.card-element-icons.multi {
+  display: flex;
+  width: 100%;
+  gap: 0.3vh;
+  padding: 0.1vh 0.25vh;
+}
+
+.card .card-element-icon {
   height: 2.2vh;
   display: flex;
   justify-content: center;
@@ -183,7 +196,6 @@
   pointer-events: none;
   z-index: 2;
 }
-
 .card-badge {
   display: flex;
   padding: 0.3vh 0.5vh;

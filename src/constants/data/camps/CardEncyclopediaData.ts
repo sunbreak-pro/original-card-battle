@@ -3,14 +3,14 @@
  *
  * Provides all cards for the encyclopedia display.
  * Includes Swordsman, Mage, and Summoner cards.
+ * Supports unlocked/unknown card awareness.
  */
 
-import { SWORDSMAN_CARDS } from "@/constants/data/cards/swordmanCards";
+import { SWORDSMAN_CARDS } from "@/constants/data/cards/swordsmanCards";
 import { MAGE_CARDS } from "@/constants/data/cards/mageCards";
 import { SUMMONER_CARDS } from "@/constants/data/cards/summonerCards";
-import type { Card } from '@/types/cardTypes';
+import type { Card, CardTag } from '@/types/cardTypes';
 import type { CardEncyclopediaEntry } from '@/types/campTypes';
-import type { ElementType } from '@/types/characterTypes';
 
 /**
  * Get all available cards for encyclopedia
@@ -32,95 +32,71 @@ export function getAllCards(): Card[] {
 }
 
 /**
- * Create encyclopedia entries from cards
- * All cards are unlocked by default for now
+ * Create encyclopedia entries from cards with unlock awareness
+ * @param unlockedCardTypeIds - set of unlocked card type IDs. If undefined, all cards are treated as unlocked.
  */
-export function createCardEncyclopediaEntries(): CardEncyclopediaEntry[] {
+export function createCardEncyclopediaEntries(
+  unlockedCardTypeIds?: Set<string>,
+): CardEncyclopediaEntry[] {
   const cards = getAllCards();
 
   return cards.map((card) => ({
     card,
-    isUnlocked: true, // All cards are visible in encyclopedia
+    isUnlocked: !unlockedCardTypeIds || unlockedCardTypeIds.has(card.cardTypeId),
     timesUsed: 0,
     firstObtainedDate: undefined,
   }));
 }
 
 /**
- * Get cards filtered by character class
+ * Get card statistics including unlock ratio and tag breakdown
  */
-export function getCardsByClass(
-  characterClass: string | null
-): CardEncyclopediaEntry[] {
-  const entries = createCardEncyclopediaEntries();
-
-  if (!characterClass) {
-    return entries;
-  }
-
-  return entries.filter(
-    (entry) =>
-      entry.card.characterClass === characterClass ||
-      entry.card.characterClass === "common"
-  );
-}
-
-/**
- * Get cards filtered by element
- */
-export function getCardsByElement(
-  element: ElementType | null
-): CardEncyclopediaEntry[] {
-  const entries = createCardEncyclopediaEntries();
-
-  if (!element) {
-    return entries;
-  }
-
-  return entries.filter((entry) => entry.card.element.includes(element));
-}
-
-/**
- * Search cards by name or description
- */
-export function searchCards(searchText: string): CardEncyclopediaEntry[] {
-  const entries = createCardEncyclopediaEntries();
-  const lowerSearch = searchText.toLowerCase();
-
-  if (!searchText) {
-    return entries;
-  }
-
-  return entries.filter(
-    (entry) =>
-      entry.card.name.toLowerCase().includes(lowerSearch) ||
-      entry.card.description.toLowerCase().includes(lowerSearch)
-  );
-}
-
-/**
- * Get card statistics
- */
-export function getCardStats(): {
+export function getCardStats(unlockedCardTypeIds?: Set<string>): {
   total: number;
+  unlocked: number;
   byElement: Record<string, number>;
   byClass: Record<string, number>;
+  byTag: Record<string, number>;
 } {
   const cards = getAllCards();
 
   const byElement: Record<string, number> = {};
   const byClass: Record<string, number> = {};
+  const byTag: Record<string, number> = {};
+  let unlocked = 0;
 
   cards.forEach((card) => {
+    if (!unlockedCardTypeIds || unlockedCardTypeIds.has(card.cardTypeId)) {
+      unlocked++;
+    }
     for (const elem of card.element) {
       byElement[elem] = (byElement[elem] || 0) + 1;
     }
     byClass[card.characterClass] = (byClass[card.characterClass] || 0) + 1;
+    for (const tag of card.tags) {
+      byTag[tag] = (byTag[tag] || 0) + 1;
+    }
   });
 
   return {
     total: cards.length,
+    unlocked,
     byElement,
     byClass,
+    byTag,
   };
+}
+
+/**
+ * Get all unique tags present across all cards
+ */
+export function getAllTags(): CardTag[] {
+  const tags = new Set<CardTag>();
+  const cards = getAllCards();
+  for (const card of cards) {
+    for (const tag of card.tags) {
+      tags.add(tag);
+    }
+  }
+  return Array.from(tags);
 }

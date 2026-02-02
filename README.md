@@ -81,10 +81,10 @@ npm run lint      # ESLint
 
 | 施設 | 機能 |
 |------|------|
-| ショップ (Shop) | アイテム購入・売却・魔石交換 |
+| ショップ (Shop) | アイテム購入・売却・魔石交換（在庫管理・日替わり入荷・商人の手形） |
 | 鍛冶屋 (Blacksmith) | 装備強化・分解 |
 | 聖域 (Sanctuary) | ソウルによるスキルツリー解放（HP/ゴールド/ユーティリティ/クラス/探索） |
-| 図書館 (Library) | カード図鑑・敵図鑑・カード派生ツリー・ゲームTips |
+| 図書館 (Library) | カード図鑑（タグ/コスト/未解放フィルタ）・敵図鑑・カード派生ツリー・ゲームTips |
 | 倉庫 (Storage) | アイテム・装備管理 |
 | ギルド (Guild) | 試験バトル・デイリー/ウィークリークエスト・噂バフ購入 |
 
@@ -158,12 +158,26 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 
 `ConsumableItemData.ts` が消耗品の単一データソース。
 
+### ショップ在庫管理
+
+```
+ShopStockState (PlayerContext.progression) → shopStockLogic.ts → BuyTab.tsx
+  ├── 常設品（7種、固定在庫）
+  ├── 日替わり特売（3枠、重み付きランダム抽選）
+  ├── エピック枠（Depth依存 5-20%で出現）
+  └── 装備品（日替わりローテーション）
+```
+
+- 7-10戦闘ごとに自動入荷（`incrementBattleCount` → `hasNewStock` フラグ）
+- 商人の手形で強制入荷（`forceRestock`）
+- ベースキャンプのショップカードに入荷通知バッジ表示
+
 ## Implementation Status
 
 | カテゴリ | 進捗 | 備考 |
 |---------|------|------|
 | バトルシステム | 98% | コア、複数敵、逃走、属性共鳴、マルチヒット完了。AoEカード未実装 |
-| キャンプ施設 | 95% | 全6施設稼働 |
+| キャンプ施設 | 98% | 全6施設稼働。ショップ在庫管理＋図鑑フィルタ強化済 |
 | ダンジョン | 90% | マップ、ノード、イベント、5フロア進行、Depth 1-5 |
 | 進行システム | 98% | ライフ、ソウル、聖域、装備耐久度、熟練度、カード派生、カスタムデッキ |
 | セーブ | 実装済 | `src/domain/save/logic/saveManager.ts` |
@@ -265,6 +279,25 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
   - **ショップローテーション保存**: `shopRotationDay` を PlayerProgression/セーブデータに追加、save/load でラインナップが維持されるように
   - **フォールバック攻撃スケーリング**: 敵のフォールバック攻撃が固定5ダメージ→AIパターン平均の50%にスケーリング
   - **装備耐久度バトル中減算**: 既に実装済みであることを確認（onApDamage コールバック経由）
+
+### 2026年2月3日
+- **Phase D: ショップ在庫管理 + カード図鑑UIオーバーホール（全3セッション）**
+- ショップ在庫コアシステム実装
+  - `ShopStockState` 型 + `PlayerContext.progression` 経由で永続化
+  - `ShopStockConstants.ts`（常設品7種、日替わりプール7種、エピックプール2種）
+  - `shopStockLogic.ts`（初期化・在庫減少・入荷・戦闘カウント・商人の手形）
+  - `ConsumableItemData` に `shopPrice` 追加（13アイテム）
+- ショップUI + 入荷通知
+  - BuyTab を3セクション構成にリライト（常設品・日替わり特売・装備品）
+  - 在庫バッジ（残り数表示）+ 売切表示
+  - 入荷バナー（「新商品入荷！」）+ ベースキャンプ通知バッジ
+  - `NodeMap.tsx` の戦闘勝利時に戦闘カウンターをインクリメント
+- カード図鑑UIオーバーホール
+  - `CARD_TAG_LABEL_MAP` / `CARD_TAG_COLOR_MAP` 追加
+  - フィルタ拡張: タグ・コスト範囲・未解放カード表示トグル
+  - 統計バー: 解放率 + タグ別カウント（色付き）
+  - 未解放カード「?」プレースホルダー表示
+  - `CardDerivationTree` に `unlockedCardTypeIds` 連携
 
 </details>
 

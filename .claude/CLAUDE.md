@@ -35,7 +35,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 | `ResourceContext`    | Gold, magic stones                                                     |
 | `PlayerContext`      | `PlayerData` (persistent) + `RuntimeBattleState` (HP/AP/lives/mastery) + `deckCards` (custom deck). Resource ops (gold/stones) delegated to `ResourceContext`. |
 | `InventoryContext`   | Items, equipment, cards in storage                                     |
-| `DungeonRunProvider` | Persists dungeon state across battle transitions (lives in `src/ui/dungeonHtml/`, not `src/contexts/`) |
+| `DungeonRunProvider` | Persists dungeon state across battle transitions (lives in `src/contexts/`) |
 
 Battle state is managed entirely by `useBattleOrchestrator` hook — no separate battle contexts.
 
@@ -53,7 +53,7 @@ All static data lives in `src/constants/data/`, NOT in `src/domain/`:
 
 | Data | Location |
 |------|----------|
-| Card definitions | `src/constants/data/cards/` (SwordmanCards, mageCards, summonerCards) |
+| Card definitions | `src/constants/data/cards/` (swordsmanCards, mageCards, summonerCards) |
 | Enemy definitions | `src/constants/data/characters/enemy/` (enemyDepth1-5.ts) |
 | Camp facility data | `src/constants/data/camps/` (ShopData, SanctuaryData, etc.) |
 | Item/equipment data | `src/constants/data/items/` |

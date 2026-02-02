@@ -44,7 +44,7 @@ export const CardComponent: React.FC<CardComponentProps> = ({
       <div className={`card-cost ${primaryTag}-badge`}>{card.cost}</div>
       <div className="card-header">
         {elementIcons.length > 0 && (
-          <div className={`card-element-icons${multiElement ? "multi" : ""}`}>
+          <div className={`card-element-icons${multiElement ? " multi" : ""}`}>
             {elementIcons.map(({ element, path }) => (
               <img
                 key={element}

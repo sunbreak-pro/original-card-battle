@@ -1,9 +1,11 @@
-# memory-keeper
+---
+name: memory-keeper
+description: ユーザーが「覚えておいて」「記録して」「メモして」「remember this」「note this」などと発言した際に、情報を自動的にファイルに記録する。設計判断、バグ情報、開発Tips、TODOなどを永続化したい場合に使用。
+---
 
-## Description
+# Memory Keeper Skill
 
-ユーザーが覚えておいてほしい情報を自動的にファイルに記録するスキル。
-「覚えておいて」「記録して」「メモして」「remember this」「note this」などのトリガーワードで起動する。
+> **発動確認**: このskillを使用する際は、最初に「📝 memory-keeper skill を使用します」と明示してください。
 
 ## Trigger
 
@@ -16,11 +18,12 @@
 
 ## Workflow
 
-1. ユーザーの発言から記録すべき内容を抽出する
-2. 内容を以下のカテゴリに分類する
-3. `.claude/memories/` ディレクトリが存在しなければ作成する
-4. 該当カテゴリのファイルが存在しなければヘッダー付きで新規作成、存在すれば末尾に追記する
-5. 記録完了を日本語でユーザーに報告する（カテゴリとファイルパスを含める）
+1. **「📝 memory-keeper skill を使用します」と宣言する**
+2. ユーザーの発言から記録すべき内容を抽出する
+3. 内容を以下のカテゴリに分類する
+4. `.claude/memories/` ディレクトリが存在しなければ作成する
+5. 該当カテゴリのファイルが存在しなければヘッダー付きで新規作成、存在すれば末尾に追記する
+6. 記録完了を日本語でユーザーに報告する（カテゴリとファイルパスを含める）
 
 ## Categories
 
@@ -39,7 +42,6 @@
 各ファイルはMarkdown形式。新規作成時はヘッダーを付与し、追記時は末尾に箇条書きで追加する。
 
 ### New file template
-
 ```markdown
 # {Category Title}
 
@@ -47,7 +49,6 @@
 ```
 
 ### Append format
-
 ```markdown
 - [{date}] {content}
 ```
@@ -65,6 +66,7 @@
 - [2026-02-01] CardEffectの型にはhitCountを必ず含めること
 ```
 
+→ 応答: 「memory-keeper skill を使用します」
 → 応答: 「tips.md に記録しました: CardEffectの型にはhitCountを必ず含めること」
 
 ## Notes

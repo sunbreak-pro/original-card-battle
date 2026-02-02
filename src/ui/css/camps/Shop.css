@@ -213,7 +213,7 @@
 
 .shop-item {
   display: grid;
-  grid-template-columns: 4vh 1fr auto auto;
+  grid-template-columns: 4vh 1fr auto auto auto;
   align-items: center;
   gap: 1vw;
   padding: 1.2vh 1.5vw;
@@ -303,6 +303,103 @@
 
 .buy-button.pack-buy {
   background: linear-gradient(135deg, #6b4423 0%, #a67c52 100%);
+}
+
+/* ========== Stock Badge & Sold Out ========== */
+
+.shop-item .stock-badge-area {
+  min-width: 5vw;
+  text-align: center;
+}
+
+.shop-item .stock-badge {
+  display: inline-block;
+  padding: 0.3vh 0.6vw;
+  background: rgba(100, 149, 237, 0.2);
+  border: 1px solid rgba(100, 149, 237, 0.4);
+  border-radius: 4px;
+  font-size: 1.2vh;
+  color: #87ceeb;
+  white-space: nowrap;
+}
+
+.shop-item .stock-badge.low-stock {
+  background: rgba(255, 152, 0, 0.2);
+  border-color: rgba(255, 152, 0, 0.5);
+  color: #ffb74d;
+}
+
+.shop-item .stock-badge.out-of-stock {
+  background: rgba(120, 80, 60, 0.4);
+  border-color: rgba(120, 80, 60, 0.6);
+  color: #8b7355;
+}
+
+.shop-item.sold-out {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.shop-item.sold-out .buy-button {
+  background: rgba(45, 31, 26, 0.95);
+  border-color: rgba(232, 213, 183, 0.3);
+  color: #6d5d4b;
+  cursor: not-allowed;
+}
+
+.empty-section {
+  padding: 2vh 0;
+  text-align: center;
+  color: #6d5d4b;
+  font-size: 1.5vh;
+  font-style: italic;
+}
+
+/* ========== Merchant Ticket Button ========== */
+
+.merchant-ticket-button {
+  display: block;
+  width: 100%;
+  padding: 1.2vh 2vw;
+  margin-bottom: 1.5vh;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.25) 100%);
+  border: 2px solid rgba(212, 175, 55, 0.5);
+  border-radius: 8px;
+  color: #d4af37;
+  font-size: 1.6vh;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.merchant-ticket-button:hover {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.35) 100%);
+  border-color: #d4af37;
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+/* ========== Restock Banner ========== */
+
+.restock-banner {
+  position: absolute;
+  top: 1vh;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1vh 3vw;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.9) 0%, rgba(255, 193, 7, 0.9) 100%);
+  color: #1a1612;
+  border-radius: 8px;
+  font-size: 2vh;
+  font-weight: bold;
+  z-index: 100;
+  animation: restockSlideIn 0.5s ease-out;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes restockSlideIn {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-3vh); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* Pack Result Overlay */
@@ -682,7 +779,7 @@
   justify-content: space-between;
 }
 
-.quick-exchange-tittle {
+.quick-exchange-title {
   font-size: 1.4vh;
   color: #b89968;
   font-weight: bold;
