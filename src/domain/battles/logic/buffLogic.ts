@@ -106,28 +106,6 @@ export const removeAllDebuffs = (map: BuffDebuffMap): BuffDebuffMap => {
 };
 
 /**
- * @deprecated Use decreaseBuffDebuffDurationForPhase instead.
- * This function decreases all buff durations regardless of who applied them.
- */
-export const decreaseBuffDebuffDuration = (
-  map: BuffDebuffMap
-): BuffDebuffMap => {
-  const newMap = new Map<BuffDebuffType, BuffDebuffState>();
-
-  map.forEach((buff, type) => {
-    if (buff.isPermanent) {
-      newMap.set(type, buff);
-    } else if (buff.duration > 1) {
-      newMap.set(type, {
-        ...buff,
-        duration: buff.duration - 1,
-      });
-    }
-  });
-  return newMap;
-};
-
-/**
  * Decrease buff/debuff durations only for buffs applied by the current actor.
  * This fixes the timing issue where enemy-applied debuffs were decreasing
  * at the wrong phase.

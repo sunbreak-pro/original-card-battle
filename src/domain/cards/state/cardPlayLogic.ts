@@ -10,7 +10,6 @@ import {
  * Result of processing sword energy for a card
  */
 export interface SwordEnergyProcessResult {
-    damageBonus: number;
     consumedAmount: number;
     newState: SwordEnergyState;
 }
@@ -24,7 +23,6 @@ export function processSwordEnergyConsumption(
 ): SwordEnergyProcessResult {
     if (card.swordEnergyConsume === undefined) {
         return {
-            damageBonus: 0,
             consumedAmount: 0,
             newState: currentSwordEnergy,
         };
@@ -46,7 +44,6 @@ export function processSwordEnergyConsumption(
     }
 
     return {
-        damageBonus: 0,
         consumedAmount,
         newState,
     };

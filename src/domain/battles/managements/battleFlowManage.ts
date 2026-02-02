@@ -7,7 +7,7 @@
  * The battle logic has been split into modular hooks:
  * - useBattleState: Player/Enemy state management
  * - useCardExecution: Card effect execution
- * - useEnemyAI: Enemy AI and action execution
+ * - executeCharacterManage: Enemy/player phase execution
  * - useClassAbility: Class-specific abilities (Sword Energy, etc.)
  * - useBattlePhase: Phase queue and turn management
  *
@@ -24,7 +24,7 @@ export { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
 export { useBattleState, type UseBattleStateReturn, type PlayerState, type InitialPlayerState } from "./useBattleState";
 export { useBattlePhase, type UseBattlePhaseReturn, type PhaseState } from "./useBattlePhase";
 export { useCardExecution, type UseCardExecutionReturn } from "./useCardExecution";
-export { useEnemyAI, type UseEnemyAIReturn } from "./useEnemyAI";
+
 export {
   useClassAbility,
   useSwordEnergy,

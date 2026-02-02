@@ -5,7 +5,7 @@
  * - useBattleState: HP/AP/Guard/Buff state management
  * - useBattlePhase: Phase queue and turn management
  * - useCardExecution: Card effect execution
- * - useEnemyAI: Enemy action determination and execution
+ * - executeCharacterManage: Enemy/player phase execution
  * - useClassAbility: Class-specific ability management
  *
  * This hook provides the same interface as the original useBattle hook
@@ -38,7 +38,7 @@ import { useBattlePhase } from "./useBattlePhase";
 import { useCharacterPhaseExecution } from "./executeCharacterManage";
 import { useBattleState, type InitialPlayerState } from "./useBattleState";
 import { useCardExecution, type CardAnimationHandlers, type CardExecutionSetters, type DeckDispatch } from "./useCardExecution";
-import { useEnemyAI } from "./useEnemyAI";
+
 import { useSwordEnergy } from "./useClassAbility";
 import { useElementalChain } from "./useElementalChain";
 
@@ -407,13 +407,7 @@ export const useBattleOrchestrator = (
     dispatch as DeckDispatch
   );
 
-  // ========================================================================
-  // Enemy AI Hook (Available for future use)
-  // ========================================================================
-
-  // Note: enemyAI hook is initialized but currently the enemy phase execution
-  // is handled by executeCharacterManage. This will be refactored in a future update.
-  useEnemyAI();
+  // Note: Enemy phase execution is handled by executeCharacterManage.
 
   // ========================================================================
   // Card Play Handler
@@ -851,7 +845,6 @@ export const useBattleOrchestrator = (
 
     // Phase state
     playerEnergy: playerState.energy,
-    cardEnergy: playerState.energy, // Alias for backward compatibility
     maxEnergy: playerState.maxEnergy,
     phaseCount: phaseState.phaseCount,
     isPlayerPhase: phaseState.isPlayerPhase,
@@ -885,10 +878,6 @@ export const useBattleOrchestrator = (
     handleEndPhase,
     resetForNextEnemy,
     initializeBattle,
-
-    // Deprecated: kept for backward compatibility
-    startBattleRound: initializeBattle,
-    onDepthChange: () => { },
 
     // Modal controls
     openedPileType,

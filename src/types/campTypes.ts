@@ -425,7 +425,6 @@ export type MoveDirection =
   | "inventory_to_storage"
   | "storage_to_equipment"
   | "equipment_to_storage"
-  | "equipSlotItem_to_storage"
   | "storage_to_equipment_inventory"
   | "equipment_inventory_to_storage"
   | "equipment_inventory_to_equipment"

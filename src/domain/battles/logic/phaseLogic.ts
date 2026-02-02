@@ -7,7 +7,7 @@ import {
     calculateDrawModifier,
 } from "../calculators/buffCalculation";
 import {
-    decreaseBuffDebuffDuration,
+    decreaseBuffDebuffDurationForPhase,
     removeAllDebuffs,
 } from "./buffLogic";
 import { PLAYER_BASE_DRAW_COUNT, GUARD_INIT_MULTIPLIER } from "../../../constants";
@@ -30,8 +30,8 @@ export function calculatePlayerPhaseStart(
     playerBuffs: BuffDebuffMap,
     baseDrawCount: number = PLAYER_BASE_DRAW_COUNT
 ): PlayerPhaseStartResult {
-    // Process buff/debuff durations
-    let newBuffs = decreaseBuffDebuffDuration(playerBuffs);
+    // Process buff/debuff durations - only decrease player-applied buffs
+    let newBuffs = decreaseBuffDebuffDurationForPhase(playerBuffs, 'player');
 
     // Start-of-phase healing/shield
     const { hp, shield } = calculateStartPhaseHealing(playerBuffs);
@@ -73,8 +73,8 @@ export function calculateEnemyPhaseStart(
     enemy: EnemyDefinition,
     enemyBuffs: BuffDebuffMap,
 ): EnemyPhaseStartResult {
-    // Process buff/debuff durations
-    const newBuffs = decreaseBuffDebuffDuration(enemyBuffs);
+    // Process buff/debuff durations - only decrease enemy-applied buffs
+    const newBuffs = decreaseBuffDebuffDurationForPhase(enemyBuffs, 'enemy');
 
     // Start-of-phase healing/shield
     const { hp, shield } = calculateStartPhaseHealing(enemyBuffs);

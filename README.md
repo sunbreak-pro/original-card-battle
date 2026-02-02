@@ -256,6 +256,16 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 - 脆弱性修正セッション1-4（バトルステールクロージャ修正、バトルロジック改善）
 - UI統合提案（CONSOLIDATION_PROPOSAL.md）作成
 
+### 2026年2月2日
+- 脆弱性修正セッション5完了（DoT/スタック倍率修正、出血・毒・火傷がスタック数で倍化）
+- 脆弱性修正セッション6完了（クラス＆カードメカニクス修正）
+- カードシステムリファクタ完了（category/rarity廃止、ElementType拡張）
+- 脆弱性修正セッション7完了（経済＆ダンジョン修正、4件）
+  - **鍛冶屋の魔石未消費バグ修正**: `spendBaseCampMagicStones()` を ResourceContext に追加、UpgradeTab でゴールドと魔石の両方を消費するよう修正
+  - **ショップローテーション保存**: `shopRotationDay` を PlayerProgression/セーブデータに追加、save/load でラインナップが維持されるように
+  - **フォールバック攻撃スケーリング**: 敵のフォールバック攻撃が固定5ダメージ→AIパターン平均の50%にスケーリング
+  - **装備耐久度バトル中減算**: 既に実装済みであることを確認（onApDamage コールバック経由）
+
 </details>
 
 ## References
@@ -264,4 +274,4 @@ ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) →
 - `.claude/LESSONS_LEARNED.md` — 開発で学んだ重要な教訓
 - `.claude/todos/MASTER_IMPLEMENTATION_PLAN.md` — 実装ロードマップ
 - `.claude/docs/` — ゲーム設計仕様書（バトル、カード、キャンプ、ダンジョン、敵、アイテム）
-- `.claude/code_overview/` — コード静的分析ドキュメント（14ファイル、77件の脆弱性特定済）
+- `.claude/code_overview/` — コード静的分析ドキュメント（14ファイル、77件の脆弱性特定済、35件修正済）

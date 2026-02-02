@@ -7,7 +7,6 @@
 
 import type { Difficulty } from '@/types/characterTypes';
 import type { ResonanceLevel, ElementType } from '@/types/characterTypes';
-import type { DamageModifier } from "../domain/characters/player/classAbility/classAbilitySystem";
 import type { ResonanceEffectConfig } from '@/types/characterTypes';
 export type { ResonanceEffectConfig } from '@/types/characterTypes';
 
@@ -20,25 +19,6 @@ export const LIVES_BY_DIFFICULTY: Record<Difficulty, number> = {
   easy: 3,
   normal: 3,
   hard: 2,
-};
-
-// ============================================================
-// Swordsman Constants
-// ============================================================
-
-/** Maximum sword energy */
-export const SWORD_ENERGY_MAX = 10;
-
-// ============================================================
-// Class Ability Constants
-// ============================================================
-
-/** Default damage modifier with no bonuses */
-export const DEFAULT_DAMAGE_MODIFIER: DamageModifier = {
-  flatBonus: 0,
-  percentMultiplier: 1.0,
-  critBonus: 0,
-  penetration: 0,
 };
 
 // ============================================================

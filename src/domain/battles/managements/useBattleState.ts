@@ -7,7 +7,7 @@
  * - Derived values (aliveEnemies, isPlayerAlive, areAllEnemiesDead)
  *
  * This hook is designed to be composed with other battle hooks
- * (useCardExecution, useEnemyAI, etc.) via useBattleOrchestrator.
+ * (useCardExecution, etc.) via useBattleOrchestrator.
  */
 
 import { useState, useCallback, useMemo } from "react";
@@ -75,14 +75,7 @@ export interface UseBattleStateReturn {
   setSelectedTargetIndex: (index: number) => void;
   selectedEnemy: EnemyBattleState | undefined;
 
-  // Targeted enemy setters (use selectedTargetIndex)
-  setTargetedEnemyHp: (updater: number | ((prev: number) => number)) => void;
-  setTargetedEnemyAp: (updater: number | ((prev: number) => number)) => void;
-  setTargetedEnemyGuard: (updater: number | ((prev: number) => number)) => void;
-  setTargetedEnemyEnergy: (updater: number | ((prev: number) => number)) => void;
-  setTargetedEnemyBuffs: (updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap)) => void;
-
-  // Legacy setters for backward compatibility (index 0 / selected target)
+  // Enemy setters (routed through selected target)
   setEnemyHp: (updater: number | ((prev: number) => number)) => void;
   setEnemyAp: (updater: number | ((prev: number) => number)) => void;
   setEnemyGuard: (updater: number | ((prev: number) => number)) => void;
@@ -405,56 +398,7 @@ export function useBattleState(
   }, []);
 
   // ========================================================================
-  // Targeted Enemy Setters (use selectedTargetIndex)
-  // ========================================================================
-
-  const setTargetedEnemyHp = useCallback(
-    (updater: number | ((prev: number) => number)) => {
-      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
-        hp: typeof updater === "function" ? updater(e.hp) : updater,
-      }));
-    },
-    [updateEnemyByUpdater, selectedEnemyArrayIndex]
-  );
-
-  const setTargetedEnemyAp = useCallback(
-    (updater: number | ((prev: number) => number)) => {
-      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
-        ap: typeof updater === "function" ? updater(e.ap) : updater,
-      }));
-    },
-    [updateEnemyByUpdater, selectedEnemyArrayIndex]
-  );
-
-  const setTargetedEnemyGuard = useCallback(
-    (updater: number | ((prev: number) => number)) => {
-      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
-        guard: typeof updater === "function" ? updater(e.guard) : updater,
-      }));
-    },
-    [updateEnemyByUpdater, selectedEnemyArrayIndex]
-  );
-
-  const setTargetedEnemyEnergy = useCallback(
-    (updater: number | ((prev: number) => number)) => {
-      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
-        energy: typeof updater === "function" ? updater(e.energy) : updater,
-      }));
-    },
-    [updateEnemyByUpdater, selectedEnemyArrayIndex]
-  );
-
-  const setTargetedEnemyBuffs = useCallback(
-    (updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap)) => {
-      updateEnemyByUpdater(selectedEnemyArrayIndex, (e) => ({
-        buffDebuffs: typeof updater === "function" ? updater(e.buffDebuffs) : updater,
-      }));
-    },
-    [updateEnemyByUpdater, selectedEnemyArrayIndex]
-  );
-
-  // ========================================================================
-  // Legacy Enemy Setters (route through selected target for card damage)
+  // Enemy Setters (route through selected target for card damage)
   // ========================================================================
 
   const setEnemyHp = useCallback(
@@ -581,14 +525,7 @@ export function useBattleState(
     setSelectedTargetIndex,
     selectedEnemy,
 
-    // Targeted enemy setters
-    setTargetedEnemyHp,
-    setTargetedEnemyAp,
-    setTargetedEnemyGuard,
-    setTargetedEnemyEnergy,
-    setTargetedEnemyBuffs,
-
-    // Legacy setters (routed through selected target)
+    // Enemy setters (routed through selected target)
     setEnemyHp,
     setEnemyAp,
     setEnemyGuard,

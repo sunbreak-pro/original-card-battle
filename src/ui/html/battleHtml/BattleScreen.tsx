@@ -68,7 +68,6 @@ const BattleScreen = ({
   onLose,
 }: {
   depth: Depth;
-  onDepthChange: (d: Depth) => void;
   onReturnToCamp?: () => void;
   onWin?: () => void;
   onLose?: () => void;
@@ -158,7 +157,7 @@ const BattleScreen = ({
     playerMaxAp,
     playerGuard,
     playerBuffs,
-    cardEnergy,
+    playerEnergy,
     maxEnergy,
     swordEnergy,
     phaseCount,
@@ -251,7 +250,7 @@ const BattleScreen = ({
         playerHp,
         playerMaxHp,
         playerBuffs,
-        cardEnergy,
+        playerEnergy,
         maxEnergy,
       );
 
@@ -324,7 +323,7 @@ const BattleScreen = ({
       playerHp,
       playerMaxHp,
       playerBuffs,
-      cardEnergy,
+      playerEnergy,
       maxEnergy,
       playerData.inventory,
       updateRuntimeState,
@@ -581,7 +580,7 @@ const BattleScreen = ({
           playerMaxAp={playerMaxAp}
           playerGuard={playerGuard}
           playerBuffs={playerBuffs}
-          cardEnergy={cardEnergy}
+          playerEnergy={playerEnergy}
           maxEnergy={maxEnergy}
           theme={theme}
         />
@@ -642,7 +641,7 @@ const BattleScreen = ({
                 <CardComponent
                   card={card}
                   depth={depth}
-                  isPlayable={card.cost <= cardEnergy && !isDiscarding}
+                  isPlayable={card.cost <= playerEnergy && !isDiscarding}
                 />
               </div>
             );

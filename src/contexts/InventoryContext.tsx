@@ -540,46 +540,6 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({
         return result;
       }
 
-      case "equipSlotItem_to_storage": {
-        updatePlayerData((prev) => {
-          const slot = Object.entries(prev.inventory.equipmentSlots).find(
-            ([, eqItem]) => eqItem?.id === itemId,
-          )?.[0] as EquipmentSlot | undefined;
-          const equippedItem =
-            prev.inventory.equipmentSlots[slot as EquipmentSlot];
-          if (!equippedItem) {
-            result.message = "Unequip error";
-            return {};
-          }
-          if (
-            prev.inventory.storage.currentCapacity >=
-            prev.inventory.storage.maxCapacity
-          ) {
-            result.message = "Storage is full";
-            return {};
-          }
-          result.success = true;
-          result.message = `Moved ${equippedItem.name} to storage`;
-          result.movedItem = equippedItem;
-          return {
-            inventory: {
-              ...prev.inventory,
-              equipmentSlots: {
-                ...prev.inventory.equipmentSlots,
-                [slot as EquipmentSlot]: null,
-              },
-              storage: {
-                ...prev.inventory.storage,
-                items: [...prev.inventory.storage.items, equippedItem],
-                currentCapacity:
-                  prev.inventory.storage.currentCapacity + 1,
-              },
-            },
-          };
-        });
-        return result;
-      }
-
       case "storage_to_equipment_inventory": {
         updatePlayerData((prev) => {
           const item = prev.inventory.storage.items.find(

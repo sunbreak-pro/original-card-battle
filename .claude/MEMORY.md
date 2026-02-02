@@ -10,7 +10,7 @@
 
 - **Current Phase:** Phase C (Extended Features) — COMPLETE
 - **Dev Server:** http://localhost:5173/
-- **Last Updated:** 2026-02-01
+- **Last Updated:** 2026-02-02
 - **Type System:** `src/types/` with barrel export (`@/types/*`)
 
 ---
@@ -23,7 +23,7 @@
 | Camp Facilities | 95% | Shop, Guild (Exam/Quests/Rumors), Library (Card+Enemy encyclopedias), Blacksmith, Storage all complete |
 | Dungeon System | 90% | Map generation, battle/event/rest/treasure nodes, 5-floor progression, depth 1-5 enemies |
 | Progression System | 98% | Lives + Souls + Sanctuary + equipment stat bonuses + equipment durability + card derivation + mastery + custom deck all complete |
-| State Management | Fixed | V-CS01/02/03/04/11 + Session 2-4 fixes — resource single-source-of-truth, race conditions, stale closures, save integrity, battle logic |
+| State Management | Fixed | V-CS01/02/03/04/11 + Session 2-7 fixes — resource single-source-of-truth, race conditions, stale closures, save integrity, battle logic, economy, card system |
 | Save System | Implemented | `src/domain/save/logic/saveManager.ts` |
 | Character Images | 90% | Player images (Swordsman/Mage) displayed in battle. Summoner.png exists (provisional). All 50 enemies (10×5 depths) have imagePath set (images not yet created) |
 
@@ -71,11 +71,14 @@ Lives system, Soul remnants, Sanctuary skill tree, Return system, Dungeon map UI
 - Enemy `imagePath` field added to all 50 enemies (10×5 depths) — COMPLETE
 - Dead code removal from `soulSystem.ts` — COMPLETE
 
-### Vulnerability Remediation Sessions — COMPLETED (Sessions 1-4)
+### Vulnerability Remediation Sessions — COMPLETED (Sessions 1-7)
 - Session 1: State Foundation — V-CS01/02/03/04, V-CS11/V-INV-01 (5 fixes)
 - Session 2: Save & Inventory — V-INV-02, V-CS06, V-EC-06, V-CS07 (4 fixes)
 - Session 3: Battle Stale Closures — V-CARD-04/07, V-ORCH-01/02/03/04 (6 fixes)
 - Session 4: Battle Logic — V-DMG-04, V-CARD-02, V-CARD-09, V-CLASS-03 (4 fixes)
+- Session 5: DoT & Stacks — V-DMG-06/10, V-DMG-01, V-CARD-01/V-CLASS-01, V-DMG-03/05 (6 fixes)
+- Session 6: Class & Card — V-CLASS-13/02/04, V-CARD-03/17/18 (6 fixes)
+- Session 7: Economy & Dungeon — V-EC-08, V-ENM-07, V-INV-07(already done) + blacksmith stone bug fix (4 fixes, 3 skipped as acceptable)
 
 ---
 
@@ -115,6 +118,13 @@ The separate battle contexts (`BattleProviderStack`, `PlayerBattleContext`, `Ene
 
 ### Elemental Resonance Integration
 `useElementalChain` hook is called unconditionally in `useBattleOrchestrator`. `getElementalDamageModifier` is passed into `CardExecutionSetters` and applied as a `percentMultiplier` to base damage during both preview and execution. Resonance effects (burn/freeze/stun from `getResonanceEffects()`) now trigger in battle after damage calculation (Session 4).
+
+### Session 5-7: Card System Refactor + Economy & Dungeon Fixes
+- **Card System Refactor** (separate Claude): category/rarity fields removed from cards, ElementType expanded
+- **Blacksmith magic stone bug fix**: `spendBaseCampMagicStones()` added to ResourceContext; UpgradeTab now deducts both gold and magic stones
+- **Shop rotation persistence**: `shopRotationDay` added to PlayerProgression/ProgressionSaveData; BuyTab reads from saved state
+- **Fallback attack scaling**: `getFallbackAction` uses 50% of average baseDamage from enemy aiPatterns (min 3) instead of hardcoded 5
+- **Equipment durability in battle**: Already wired via `onApDamage` callback (PlayerContext → BattleScreen → orchestrator → executeCharacterManage)
 
 ### Session 4: Battle Logic Improvements
 - `canAct()` in `buffCalculation.ts` now checks freeze and stagger in addition to stun via `DISABLING_DEBUFFS` array
@@ -177,7 +187,7 @@ Session 7で全コンテキストシステムおよび主要ドメインロジ�
   - `dungeon/` — dungeon-system
   - `inventory/` — equipment-and-items
   - `resource/` — economy
-- **特定された脆弱性:** 77件（Critical 5, High 22, Medium 30, Low 20）— うち19件修正済み（S1:5 + S2:4 + S3:6 + S4:4）
+- **特定された脆弱性:** 77件（Critical 5, High 22, Medium 30, Low 20）— うち35件修正済み（S1:5 + S2:4 + S3:6 + S4:4 + S5:6 + S6:6 + S7:4）
 - **詳細:** `.claude/code_overview/README.md` を参照
 
 ---

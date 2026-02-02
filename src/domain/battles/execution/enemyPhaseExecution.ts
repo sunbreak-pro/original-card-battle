@@ -22,6 +22,17 @@ import { enemyAction } from "../../characters/enemy/logic/enemyAI";
 import { GUARD_INIT_MULTIPLIER } from "../../../constants";
 
 // ============================================================================
+// Shared Predicates
+// ============================================================================
+
+/**
+ * Check if an enemy action is guard-only (no attack)
+ */
+export function isGuardOnlyAction(action: EnemyAction): boolean {
+    return !!(action.guardGain && action.guardGain > 0 && !action.baseDamage);
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -137,8 +148,7 @@ export function calculateEnemyAttackDamage(
     defender: BattleStats,
     action: EnemyAction
 ): EnemyAttackResult {
-    // Guard-only action
-    if (action.guardGain && action.guardGain > 0 && !action.baseDamage) {
+    if (isGuardOnlyAction(action)) {
         return {
             totalDamage: 0,
             guardDamage: 0,
@@ -182,11 +192,10 @@ export function processEnemyAction(
     enemyMaxHp: number,
     enemyBuffs: BuffDebuffMap
 ): EnemyActionResult {
-    // Guard-only action
-    if (action.guardGain && action.guardGain > 0 && !action.baseDamage) {
+    if (isGuardOnlyAction(action)) {
         return {
             attackResult: null,
-            guardGain: action.guardGain,
+            guardGain: action.guardGain ?? 0,
             debuffsToApply: [],
             bleedDamage: 0,
         };

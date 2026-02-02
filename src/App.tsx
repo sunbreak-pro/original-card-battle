@@ -26,7 +26,7 @@ import "./App.css";
  * Handles screen routing based on GameState
  */
 function AppContent() {
-  const { gameState, setDepth, returnToCamp } = useGameState();
+  const { gameState, returnToCamp } = useGameState();
   const { currentScreen, depth, battleMode, battleConfig } = gameState;
 
   return (
@@ -64,7 +64,6 @@ function AppContent() {
             // Pass battleConfig callbacks for dungeon integration
             <BattleScreen
               depth={depth}
-              onDepthChange={setDepth}
               onReturnToCamp={returnToCamp}
               onWin={battleConfig?.onWin}
               onLose={battleConfig?.onLose}

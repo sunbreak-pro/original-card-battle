@@ -43,7 +43,7 @@ const GuildBattleScreen = ({
     playerMaxAp,
     playerGuard,
     playerBuffs,
-    cardEnergy,
+    playerEnergy,
     maxEnergy,
     swordEnergy,
     phaseCount,
@@ -189,12 +189,12 @@ const GuildBattleScreen = ({
               {/* Energy bar */}
               <div className="status-bar-row energy-row">
                 <div className="value-badge energy-badge">
-                  {cardEnergy}/{maxEnergy}
+                  {playerEnergy}/{maxEnergy}
                 </div>
                 <div className="unified-bar-container energy-bar">
                   <div
                     className="bar-fill energy-fill"
-                    style={{ width: `${(cardEnergy / maxEnergy) * 100}%` }}
+                    style={{ width: `${(playerEnergy / maxEnergy) * 100}%` }}
                   />
                 </div>
               </div>
@@ -311,7 +311,7 @@ const GuildBattleScreen = ({
               <CardComponent
                 card={card}
                 depth={1}
-                isPlayable={card.cost <= cardEnergy && !isDiscarding}
+                isPlayable={card.cost <= playerEnergy && !isDiscarding}
               />
             </div>
           );

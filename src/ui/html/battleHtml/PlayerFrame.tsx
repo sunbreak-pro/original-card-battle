@@ -15,7 +15,7 @@ interface PlayerFrameProps {
   playerMaxAp: number;
   playerGuard: number;
   playerBuffs: BuffDebuffMap;
-  cardEnergy: number;
+  playerEnergy: number;
   maxEnergy: number;
   theme: {
     primary: string;
@@ -37,7 +37,7 @@ const PlayerFrame: React.FC<PlayerFrameProps> = ({
   playerMaxAp,
   playerGuard,
   playerBuffs,
-  cardEnergy,
+  playerEnergy,
   maxEnergy,
   theme,
 }) => {
@@ -104,12 +104,12 @@ const PlayerFrame: React.FC<PlayerFrameProps> = ({
           {/* Energy bar - value badge on left */}
           <div className="status-bar-row energy-row">
             <div className="value-badge energy-badge">
-              {cardEnergy}/{maxEnergy}
+              {playerEnergy}/{maxEnergy}
             </div>
             <div className="unified-bar-container energy-bar">
               <div
                 className="bar-fill energy-fill"
-                style={{ width: `${(cardEnergy / maxEnergy) * 100}%` }}
+                style={{ width: `${(playerEnergy / maxEnergy) * 100}%` }}
               />
             </div>
           </div>
