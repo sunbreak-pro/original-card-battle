@@ -8,7 +8,6 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
     description: "素早い一撃。剣気+1",
     cost: 0,
     category: "atk",
-
     baseDamage: 5,
     swordEnergyGain: 1,
     tags: ["attack"],
