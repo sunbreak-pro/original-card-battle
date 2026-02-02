@@ -3,7 +3,6 @@
  *
  * Centralized card-related types including:
  * - Card interface with class-specific properties
- * - Card categories and rarities
  * - Mastery and gem level systems
  * - Depth type
  */
@@ -16,20 +15,18 @@ import type { ElementType, CardCharacterClass } from './characterTypes';
 // ============================================================
 
 export type Depth = 1 | 2 | 3 | 4 | 5;
-export type CardCategory = "atk" | "def" | "buff" | "debuff" | "heal" | "swordEnergy";
 export type DepthCurveType = "shallow" | "neutral" | "deep" | "madness" | "adversity";
 
 /**
  * Card Tag System
  * - attack: Cards that deal damage (baseDamage > 0)
- * - guard: Cards that provide defense (guardAmount > 0 or category === "def", no damage)
+ * - guard: Cards that provide defense (guardAmount > 0, no damage)
  * - skill: Temporary buffs/debuffs, utility cards (draw, energy, heal)
  * - stance: Semi-permanent battle effects (duration >= 99 or isPermanent: true)
  */
 export type CardTag = "attack" | "guard" | "skill" | "stance";
 export type MasteryLevel = 0 | 1 | 2 | 3 | 4;
 export type GemLevel = 0 | 1 | 2;
-export type Rarity = "common" | "rare" | "epic" | "legend";
 
 // ============================================================
 // Card Interface
@@ -56,13 +53,9 @@ export interface Card {
   /** Which class can use this card */
   characterClass: CardCharacterClass;
 
-  // ---- Cost and Category ----
+  // ---- Cost ----
   /** Energy cost to play */
   cost: number;
-  /** Card category (atk, def, buff, etc.) */
-  category: CardCategory;
-  /** Card rarity */
-  rarity: Rarity;
 
   // ---- Mastery System ----
   /** Times this card has been used */
@@ -81,7 +74,7 @@ export interface Card {
   tags: CardTag[];
 
   // ---- Element ----
-  /** Element types (every card has at least one) */
+  /** Element types (every card has at least one, includes functional classification) */
   element: ElementType[];
 
   // ---- Common Effects ----
@@ -115,6 +108,8 @@ export interface Card {
   swordEnergyGain?: number;
   /** Sword energy consumed when played */
   swordEnergyConsume?: number;
+  /** Convert sword energy to guard (multiplier applied to current energy) */
+  convertEnergyToGuard?: { multiplier: number };
 
   // ---- Mage-Specific (Future) ----
   /** Bonus damage/effect for elemental chains */
@@ -129,8 +124,8 @@ export interface Card {
   requiresSummon?: boolean;
 
   // ---- Card Derivation ----
-  /** Card type ID this card was derived from */
-  derivedFrom?: string;
+  /** Card type ID this card was derived from (null = base card) */
+  derivedFrom?: string | null;
   /** Mastery level required on parent card to unlock this card */
   unlockMasteryLevel?: MasteryLevel;
   /** Card type IDs this card can derive into */

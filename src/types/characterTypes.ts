@@ -86,7 +86,8 @@ export type ElementType =
   | "fire" | "ice" | "lightning" | "dark" | "light"
   | "physics" | "guard"
   | "summon" | "enhance" | "sacrifice"
-  | "buff" | "debuff" | "heal";
+  | "buff" | "debuff" | "heal"
+  | "attack" | "classAbility" | "chain";
 
 /**
  * Resonance level for elemental chain effects
@@ -302,6 +303,7 @@ export interface PlayerProgression {
   sanctuaryProgress: SanctuaryProgress;
   unlockedDepths: Depth[];
   completedAchievements: string[];
+  shopRotationDay?: number;
 }
 
 /**

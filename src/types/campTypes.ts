@@ -378,8 +378,7 @@ export interface GameTip {
 }
 
 export interface CardFilterOptions {
-  rarity: string | null;
-  category: string | null;
+  element: ElementType | null;
   characterClass: string | null;
   searchText: string;
 }

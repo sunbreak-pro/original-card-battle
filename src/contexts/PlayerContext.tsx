@@ -79,6 +79,7 @@ export interface InternalPlayerState {
 
   // Progression
   sanctuaryProgress: SanctuaryProgress;
+  shopRotationDay?: number;
 }
 
 /**
@@ -425,6 +426,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         sanctuaryProgress: playerState.sanctuaryProgress,
         unlockedDepths: [1], // Default: only depth 1 unlocked
         completedAchievements: [],
+        shopRotationDay: playerState.shopRotationDay,
       },
     }),
     [playerState, playerId, equipmentAP, resourceContext.resources],
@@ -467,6 +469,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         sanctuaryProgress: state.sanctuaryProgress,
         unlockedDepths: [1],
         completedAchievements: [],
+        shopRotationDay: state.shopRotationDay,
       },
     };
   };
@@ -516,6 +519,9 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     if (updates.progression) {
       if (updates.progression.sanctuaryProgress !== undefined) {
         updated.sanctuaryProgress = updates.progression.sanctuaryProgress;
+      }
+      if (updates.progression.shopRotationDay !== undefined) {
+        updated.shopRotationDay = updates.progression.shopRotationDay;
       }
     }
 

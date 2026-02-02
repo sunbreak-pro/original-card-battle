@@ -17,6 +17,8 @@ export function calculateDamage(
   attacker: BattleStats,
   defender: BattleStats,
   card: Card,
+  critBonus: number = 0,
+  penetration: number = 0,
 ): DamageResult {
   const baseDmg = card.baseDamage || 0;
   const attackerBuffs = attacker.buffDebuffs ?? EMPTY_BUFF_MAP;
@@ -26,12 +28,25 @@ export function calculateDamage(
 
   const finalAtk = Math.floor(baseDmg * atkMultiplier);
   const { vulnerabilityMod, damageReductionMod } = defenseBuffDebuff(defenderBuffs);
-  const incomingDmg = Math.floor(finalAtk * vulnerabilityMod * damageReductionMod);
+
+  // Apply penetration: reduce defense effectiveness
+  const effectiveReduction = penetration > 0
+    ? 1 - (1 - damageReductionMod) * (1 - penetration)
+    : damageReductionMod;
+
+  let incomingDmg = Math.floor(finalAtk * vulnerabilityMod * effectiveReduction);
+
+  // Critical hit check
+  const isCritical = critBonus > 0 && Math.random() < critBonus;
+  if (isCritical) {
+    incomingDmg = Math.floor(incomingDmg * 1.5);
+  }
+
   const reflectDamage = reflectBuff(defenderBuffs, incomingDmg);
   const lifestealAmount = calculateLifesteal(attackerBuffs, incomingDmg);
   return {
     finalDamage: incomingDmg,
-    isCritical: false,
+    isCritical,
     reflectDamage,
     lifestealAmount,
   };

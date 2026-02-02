@@ -17,7 +17,7 @@ import {
 import { generateEquipmentItem } from "@/domain/item_equipment/logic/generateItem";
 
 const BuyTab = () => {
-  const { playerData } = usePlayer();
+  const { playerData, updatePlayerData } = usePlayer();
   const { spendGold } = useResources();
   const { addItemToStorage } = useInventory();
   const storage = playerData.inventory.storage;
@@ -25,7 +25,16 @@ const BuyTab = () => {
 
   const consumableListings = getResolvedConsumableListings();
   const teleportListings = getResolvedTeleportListings();
-  const [dayNumber] = useState(() => Math.floor(Date.now() / 86400000));
+  const [dayNumber] = useState(() => {
+    const saved = playerData.progression.shopRotationDay;
+    if (saved != null) return saved;
+    const computed = Math.floor(Date.now() / 86400000);
+    // Persist to progression so save/load preserves the same lineup
+    updatePlayerData({
+      progression: { ...playerData.progression, shopRotationDay: computed },
+    });
+    return computed;
+  });
   const dailyEquipment = generateDailyEquipmentInventory(dayNumber);
 
   const showNotification = (message: string) => {

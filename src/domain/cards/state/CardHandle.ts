@@ -15,16 +15,12 @@ export const calculateCardEffect = (card: Card): CardEffectResult => {
   const effectivePower = calculateEffectivePower(card);
   const result: CardEffectResult = {};
 
-  switch (card.category) {
-    case "atk":
-      result.damageToEnemy = effectivePower;
-      break;
-    case "def":
-      result.shieldGain = effectivePower;
-      break;
-    case "heal":
-      result.hpGain = effectivePower;
-      break;
+  if (card.element.includes("attack")) {
+    result.damageToEnemy = effectivePower;
+  } else if (card.element.includes("guard")) {
+    result.shieldGain = effectivePower;
+  } else if (card.element.includes("heal")) {
+    result.hpGain = effectivePower;
   }
 
   if (card.applyEnemyDebuff && card.applyEnemyDebuff.length > 0) {

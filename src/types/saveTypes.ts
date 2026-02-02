@@ -44,6 +44,7 @@ export interface InventorySaveData {
 export interface ProgressionSaveData {
   sanctuaryProgress: SanctuaryProgress;
   unlockedDepths: Depth[];
+  shopRotationDay?: number;
 }
 
 export interface SaveData {

@@ -114,7 +114,6 @@ const VictoryScreen = ({
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
                     <div className="reward-card-name">{card.name}</div>
-                    <div className="reward-card-rarity">{card.rarity}</div>
                   </div>
                 ))}
               </div>

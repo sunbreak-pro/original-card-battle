@@ -11,7 +11,7 @@ import { getDerivationChain } from "@/domain/cards/logic/cardDerivation";
 import { SWORDSMAN_CARDS } from "@/constants/data/cards/swordmanCards";
 import { MAGE_CARDS } from "@/constants/data/cards/mageCards";
 import { SUMMONER_CARDS } from "@/constants/data/cards/summonerCards";
-import { ELEMENT_LABEL_MAP } from "@/constants/cardConstants";
+import { ELEMENT_LABEL_MAP, ELEMENT_COLOR_MAP } from "@/constants/cardConstants";
 
 interface CardDerivationTreeProps {
   card: Card;
@@ -27,13 +27,6 @@ function getAllCardRecords(): Record<string, Card> {
     ...SUMMONER_CARDS,
   };
 }
-
-const RARITY_COLORS: Record<string, string> = {
-  common: "#9ca3af",
-  rare: "#3b82f6",
-  epic: "#a855f7",
-  legend: "#f59e0b",
-};
 
 export const CardDerivationTree: React.FC<CardDerivationTreeProps> = ({
   card,
@@ -65,14 +58,15 @@ export const CardDerivationTree: React.FC<CardDerivationTreeProps> = ({
 
       <div className="derivation-info">
         <span className="derivation-class">{card.characterClass}</span>
-        <span
-          className="derivation-rarity"
-          style={{ color: RARITY_COLORS[card.rarity] }}
-        >
-          {card.rarity.toUpperCase()}
-        </span>
         <span className="derivation-element">
-          {card.element.map((e) => ELEMENT_LABEL_MAP[e]).join(" / ")}
+          {card.element.map((e) => (
+            <span
+              key={e}
+              style={{ color: ELEMENT_COLOR_MAP[e], marginRight: "0.5vw" }}
+            >
+              {ELEMENT_LABEL_MAP[e]}
+            </span>
+          ))}
         </span>
       </div>
 
@@ -105,7 +99,7 @@ export const CardDerivationTree: React.FC<CardDerivationTreeProps> = ({
                     className={`derivation-chain-node${isActive ? " active" : ""}${!isUnlocked ? " locked" : ""}`}
                     style={{
                       borderColor: isUnlocked
-                        ? RARITY_COLORS[chainCard.rarity]
+                        ? ELEMENT_COLOR_MAP[chainCard.element[0]] ?? "#6b7280"
                         : "#4b5563",
                       opacity: isUnlocked ? 1 : 0.6,
                     }}
@@ -121,15 +115,10 @@ export const CardDerivationTree: React.FC<CardDerivationTreeProps> = ({
                     >
                       {isUnlocked ? chainCard.name : "???"}
                     </span>
-                    <span
-                      className="chain-node-rarity"
-                      style={{
-                        color: isUnlocked
-                          ? RARITY_COLORS[chainCard.rarity]
-                          : "#6b7280",
-                      }}
-                    >
-                      {chainCard.rarity}
+                    <span className="chain-node-element">
+                      {chainCard.element
+                        .map((e) => ELEMENT_LABEL_MAP[e])
+                        .join(" / ")}
                     </span>
                     {chainCard.unlockMasteryLevel !== undefined && (
                       <span

@@ -28,6 +28,7 @@ import type { ResonanceEffectConfig } from '@/types/characterTypes';
 
 // Card logic
 import { calculateCardEffect, canPlayCard as canPlayCardCheck, incrementUseCount } from "../../cards/state/card";
+import { calculateSwordEnergyGuard } from "../../cards/state/cardPlayLogic";
 
 // Damage calculation
 import { calculateDamage, applyDamageAllocation } from "../calculators/damageCalculation";
@@ -342,7 +343,9 @@ export function useCardExecution(
           const damageResult = calculateDamage(
             playerStats,
             enemyStats,
-            cardWithBonus
+            cardWithBonus,
+            elementalMod?.critBonus ?? 0,
+            elementalMod?.penetration ?? 0,
           );
           const allocation = applyDamageAllocation(
             enemyStats,
@@ -494,17 +497,9 @@ export function useCardExecution(
         }
       }
 
-      // Special card handling for sword energy guard
-      if (card.cardTypeId === "sw_037") {
-        const guardFromEnergy = swordEnergy.current * 8;
-        setters.setPlayerGuard((g) => g + guardFromEnergy);
-        result.guardGained += guardFromEnergy;
-        if (playerRef.current) {
-          animations.showShieldEffect(playerRef.current, guardFromEnergy);
-        }
-      }
-      if (card.cardTypeId === "sw_039" || card.cardTypeId === "sw_040") {
-        const guardFromEnergy = swordEnergy.current * 2;
+      // Sword energy to guard conversion (data-driven via card.convertEnergyToGuard)
+      const guardFromEnergy = calculateSwordEnergyGuard(card, swordEnergy.current);
+      if (guardFromEnergy > 0) {
         setters.setPlayerGuard((g) => g + guardFromEnergy);
         result.guardGained += guardFromEnergy;
         if (playerRef.current) {

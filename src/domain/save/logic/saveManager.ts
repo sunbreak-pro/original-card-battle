@@ -197,6 +197,17 @@ export const saveManager = {
       };
     }
 
+    // Ensure shopRotationDay exists (added in 1.2.0)
+    if (migrated.progression && migrated.progression.shopRotationDay == null) {
+      migrated = {
+        ...migrated,
+        progression: {
+          ...migrated.progression,
+          shopRotationDay: Math.floor(Date.now() / 86400000),
+        },
+      };
+    }
+
     return {
       ...migrated,
       version: SAVE_VERSION,

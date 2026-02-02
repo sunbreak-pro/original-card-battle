@@ -27,6 +27,9 @@ const ELEMENT_COLOR_MAP: Record<ElementType, string> = {
   buff: "#66cccc",
   debuff: "#996633",
   heal: "#66ff66",
+  attack: "#cc0000",
+  classAbility: "#cc8800",
+  chain: "#8888cc",
 };
 
 const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
@@ -43,6 +46,9 @@ const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
   buff: "強化",
   debuff: "弱体",
   heal: "回復",
+  attack: "攻撃",
+  classAbility: "技能",
+  chain: "連鎖",
 };
 
 const MAGIC_ELEMENT_SET = new Set<ElementType>(["fire", "ice", "lightning", "dark", "light"]);

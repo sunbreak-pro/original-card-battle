@@ -26,7 +26,7 @@ import BlacksmithItemCard from "./BlacksmithItemCard";
 
 const UpgradeTab = () => {
   const { playerData, updatePlayerData } = usePlayer();
-  const { spendGold: deductGold } = useResources();
+  const { spendGold: deductGold, spendBaseCampMagicStones } = useResources();
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [selectedQualityOption, setSelectedQualityOption] =
     useState<QualityUpOption>("normal");
@@ -88,6 +88,9 @@ const UpgradeTab = () => {
       showNotification("Failed to deduct gold", "error");
       return;
     }
+    if (cost.magicStones > 0) {
+      spendBaseCampMagicStones(cost.magicStones);
+    }
 
     // Perform upgrade
     const upgradedItem = performLevelUpgrade(selectedItem);
@@ -116,6 +119,9 @@ const UpgradeTab = () => {
     if (!deductGold(cost.gold)) {
       showNotification("Failed to deduct gold", "error");
       return;
+    }
+    if (cost.magicStones > 0) {
+      spendBaseCampMagicStones(cost.magicStones);
     }
 
     // Attempt quality upgrade (includes RNG)

@@ -80,7 +80,7 @@ export const SwordEnergySystem: ClassAbilitySystem<SwordEnergyState> = {
 
     // Handle energy gain
     const energyGain = card.swordEnergyGain ??
-      calculateSwordEnergyGain(card.cost, card.category === "swordEnergy");
+      calculateSwordEnergyGain(card.cost, card.element.includes("classAbility"));
 
     if (energyGain > 0) {
       return addSwordEnergy(state, energyGain);

@@ -10,10 +10,11 @@ import { MAGE_CARDS } from "@/constants/data/cards/mageCards";
 import { SUMMONER_CARDS } from "@/constants/data/cards/summonerCards";
 import type { Card } from '@/types/cardTypes';
 import type { CardEncyclopediaEntry } from '@/types/campTypes';
+import type { ElementType } from '@/types/characterTypes';
 
 /**
  * Get all available cards for encyclopedia
- * Sorted by cost, then by rarity
+ * Sorted by cost, then by name
  */
 export function getAllCards(): Card[] {
   const cards = [
@@ -22,14 +23,11 @@ export function getAllCards(): Card[] {
     ...Object.values(SUMMONER_CARDS),
   ];
 
-  // Sort by cost (ascending), then by rarity
-  const rarityOrder = { common: 0, rare: 1, epic: 2, legend: 3 };
-
   return cards.sort((a, b) => {
     if (a.cost !== b.cost) {
       return a.cost - b.cost;
     }
-    return rarityOrder[a.rarity] - rarityOrder[b.rarity];
+    return a.name.localeCompare(b.name);
   });
 }
 
@@ -68,31 +66,18 @@ export function getCardsByClass(
 }
 
 /**
- * Get cards filtered by rarity
+ * Get cards filtered by element
  */
-export function getCardsByRarity(rarity: string | null): CardEncyclopediaEntry[] {
-  const entries = createCardEncyclopediaEntries();
-
-  if (!rarity) {
-    return entries;
-  }
-
-  return entries.filter((entry) => entry.card.rarity === rarity);
-}
-
-/**
- * Get cards filtered by category
- */
-export function getCardsByCategory(
-  category: string | null
+export function getCardsByElement(
+  element: ElementType | null
 ): CardEncyclopediaEntry[] {
   const entries = createCardEncyclopediaEntries();
 
-  if (!category) {
+  if (!element) {
     return entries;
   }
 
-  return entries.filter((entry) => entry.card.category === category);
+  return entries.filter((entry) => entry.card.element.includes(element));
 }
 
 /**
@@ -118,26 +103,24 @@ export function searchCards(searchText: string): CardEncyclopediaEntry[] {
  */
 export function getCardStats(): {
   total: number;
-  byRarity: Record<string, number>;
-  byCategory: Record<string, number>;
+  byElement: Record<string, number>;
   byClass: Record<string, number>;
 } {
   const cards = getAllCards();
 
-  const byRarity: Record<string, number> = {};
-  const byCategory: Record<string, number> = {};
+  const byElement: Record<string, number> = {};
   const byClass: Record<string, number> = {};
 
   cards.forEach((card) => {
-    byRarity[card.rarity] = (byRarity[card.rarity] || 0) + 1;
-    byCategory[card.category] = (byCategory[card.category] || 0) + 1;
+    for (const elem of card.element) {
+      byElement[elem] = (byElement[elem] || 0) + 1;
+    }
     byClass[card.characterClass] = (byClass[card.characterClass] || 0) + 1;
   });
 
   return {
     total: cards.length,
-    byRarity,
-    byCategory,
+    byElement,
     byClass,
   };
 }

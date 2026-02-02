@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import type { MagicStones } from "@/types/itemTypes";
 import { calculateMagicStoneValue } from "../domain/item_equipment/logic/itemUtils";
+import { calculateStonesToConsume } from "../domain/camps/logic/shopLogic";
 import type { ExplorationLimit } from "@/types/campTypes";
 
 /**
@@ -42,6 +43,7 @@ interface ResourceContextValue {
   // Magic stones operations
   addMagicStones: (stones: Partial<MagicStones>, toBaseCamp?: boolean) => void;
   setBaseCampMagicStones: (newStones: MagicStones) => void;
+  spendBaseCampMagicStones: (goldValueCost: number) => boolean;
   getTotalMagicStonesValue: () => number;
   getBaseCampMagicStones: () => MagicStones;
   getExplorationMagicStones: () => MagicStones;
@@ -190,6 +192,38 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   /**
+   * Spend baseCamp magic stones worth a given gold value.
+   * Uses calculateStonesToConsume to consume smallest stones first.
+   * @param goldValueCost - The gold-equivalent value of stones to consume
+   * @returns true if successful, false if insufficient stones
+   */
+  const spendBaseCampMagicStones = useCallback(
+    (goldValueCost: number): boolean => {
+      if (goldValueCost <= 0) return true;
+
+      const result = { success: false };
+      setResources((prev) => {
+        const consumeResult = calculateStonesToConsume(
+          prev.magicStones.baseCamp,
+          goldValueCost,
+        );
+        if (!consumeResult) return prev;
+
+        result.success = true;
+        return {
+          ...prev,
+          magicStones: {
+            ...prev.magicStones,
+            baseCamp: consumeResult.newStones,
+          },
+        };
+      });
+      return result.success;
+    },
+    [],
+  );
+
+  /**
    * Get total magic stones value
    */
   const getTotalMagicStonesValue = useCallback((): number => {
@@ -334,6 +368,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
         getTotalGold,
         addMagicStones,
         setBaseCampMagicStones,
+        spendBaseCampMagicStones,
         getTotalMagicStonesValue,
         getBaseCampMagicStones,
         getExplorationMagicStones,

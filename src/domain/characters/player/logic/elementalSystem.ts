@@ -49,16 +49,16 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
     const magicElement = card.element.find(e => MAGIC_ELEMENTS.has(e));
 
     if (!magicElement) {
-      // No magic element - breaks the resonance
+      // No magic element - partial resonance decay instead of full reset
       return {
         ...state,
-        lastElement: null,
-        resonanceLevel: 0,
+        resonanceLevel: Math.max(0, state.resonanceLevel - 1) as ResonanceLevel,
+        // lastElement is preserved so chain can resume
       };
     }
 
-    // Check if any element in the array matches the current chain
-    const continuesChain = state.lastElement !== null && card.element.includes(state.lastElement);
+    // Use the found magic element consistently for chain comparison
+    const continuesChain = state.lastElement === magicElement;
 
     if (continuesChain) {
       // Continue resonance - increase level up to max
@@ -150,6 +150,9 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
       buff: "強",
       debuff: "弱",
       heal: "癒",
+      attack: "攻",
+      classAbility: "技",
+      chain: "連",
     };
 
     const elementName = state.lastElement ? elementNames[state.lastElement] : "";

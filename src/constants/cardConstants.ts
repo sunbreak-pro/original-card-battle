@@ -5,7 +5,7 @@
  * magic multipliers, rarity colors, and category names.
  */
 
-import type { CardCategory, MasteryLevel, Rarity } from '@/types/cardTypes';
+import type { MasteryLevel } from '@/types/cardTypes';
 import type { Depth } from '@/types/campTypes';
 import type { ElementType } from '@/types/characterTypes';
 
@@ -41,28 +41,6 @@ export const MASTERY_BONUSES: Record<MasteryLevel, number> = {
 };
 
 // ============================================================
-// Display Constants
-// ============================================================
-
-/** Card category display names */
-export const CARD_CATEGORY_NAMES: Record<CardCategory, string> = {
-  atk: "atk",
-  def: "def",
-  buff: "buff",
-  debuff: "Debuff",
-  heal: "Heal",
-  swordEnergy: "Sword Energy",
-};
-
-/** Rarity display colors */
-export const RARITY_COLORS: Record<Rarity, string> = {
-  common: "#9ca3af",
-  rare: "#3b82f6",
-  epic: "#a855f7",
-  legend: "#f59e0b",
-};
-
-// ============================================================
 // Element Constants
 // ============================================================
 
@@ -81,6 +59,9 @@ export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
   buff: "バフ",
   debuff: "デバフ",
   heal: "回復",
+  attack: "攻撃",
+  classAbility: "固有技",
+  chain: "連鎖",
 };
 
 /** Element CSS colors */
@@ -98,6 +79,9 @@ export const ELEMENT_COLOR_MAP: Record<ElementType, string> = {
   buff: "#32cd32",
   debuff: "#dc143c",
   heal: "#00fa9a",
+  attack: "#ff6b6b",
+  classAbility: "#ffd93d",
+  chain: "#6bcb77",
 };
 
 /** Magic elements that can trigger Mage resonance chain */
@@ -118,4 +102,14 @@ export const SUMMONER_ELEMENTS: ReadonlySet<ElementType> = new Set([
 /** Utility elements (non-combat element types) */
 export const UTILITY_ELEMENTS: ReadonlySet<ElementType> = new Set([
   "buff", "debuff", "heal",
+]);
+
+/** Functional elements used for card effect classification */
+export const FUNCTIONAL_ELEMENTS: ReadonlySet<ElementType> = new Set([
+  "attack", "guard", "buff", "debuff", "heal",
+]);
+
+/** Class ability elements */
+export const CLASS_ABILITY_ELEMENTS: ReadonlySet<ElementType> = new Set([
+  "classAbility", "chain",
 ]);

@@ -38,7 +38,7 @@ export async function executeEnemyActions(
     const actionCost = action.energyCost ?? 1;
 
     if (actionCost > remainingEnergy) {
-      const fallbackAction = getFallbackAction(remainingEnergy);
+      const fallbackAction = getFallbackAction(remainingEnergy, enemy);
       if (fallbackAction) {
         actionsToExecute.push(fallbackAction);
       }
@@ -61,12 +61,20 @@ export async function executeEnemyActions(
     }
   }
 }
-function getFallbackAction(remainingEnergy: number): EnemyAction | null {
+function getFallbackAction(remainingEnergy: number, enemy: EnemyActionSource): EnemyAction | null {
   if (remainingEnergy >= 1) {
+    // Scale fallback damage from the enemy's attack patterns
+    const attackDamages = enemy.aiPatterns
+      .filter(p => p.action.type === 'attack' && p.action.baseDamage > 0)
+      .map(p => p.action.baseDamage);
+    const avgDamage = attackDamages.length > 0
+      ? attackDamages.reduce((a, b) => a + b, 0) / attackDamages.length
+      : 5;
+
     return {
       name: "基本攻撃",
       type: "attack",
-      baseDamage: 5,
+      baseDamage: Math.max(3, Math.floor(avgDamage * 0.5)),
       displayIcon: "⚔️",
       priority: 0,
       energyCost: 1,
@@ -98,7 +106,7 @@ export function previewEnemyActions(
     const actionCost = action.energyCost ?? 1;
 
     if (actionCost > remainingEnergy) {
-      const fallbackAction = getFallbackAction(remainingEnergy);
+      const fallbackAction = getFallbackAction(remainingEnergy, enemy);
       if (fallbackAction) {
         actions.push(fallbackAction);
       }

@@ -66,21 +66,14 @@ export function processSwordEnergyGain(
 }
 
 /**
- * Calculate guard amount from sword energy for specific cards
+ * Calculate guard amount from sword energy using card's convertEnergyToGuard property
  */
 export function calculateSwordEnergyGuard(
-    cardTypeId: string,
+    card: Card,
     currentSwordEnergy: number
 ): number {
-    switch (cardTypeId) {
-        case "sw_037":
-            return currentSwordEnergy * 8;
-        case "sw_039":
-        case "sw_040":
-            return currentSwordEnergy * 2;
-        default:
-            return 0;
-    }
+    if (!card.convertEnergyToGuard) return 0;
+    return currentSwordEnergy * card.convertEnergyToGuard.multiplier;
 }
 
 /**

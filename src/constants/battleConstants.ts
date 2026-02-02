@@ -31,8 +31,9 @@ export const MIN_PHASES_FOR_PREDICTION = 8;
 // Damage Calculation Constants
 // ============================================================
 
-/** Guard bleed-through damage multiplier (when guard absorbs all but AP=0) */
-export const GUARD_BLEED_THROUGH_MULTIPLIER = 0.75;
+/** Guard bleed-through damage multiplier (when guard absorbs all but AP=0).
+ *  0.50 = guard is moderately effective but cannot fully protect without AP backup. */
+export const GUARD_BLEED_THROUGH_MULTIPLIER = 0.50;
 
 // ============================================================
 // Buff/Debuff Calculation Constants

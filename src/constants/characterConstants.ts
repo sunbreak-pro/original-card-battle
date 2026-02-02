@@ -122,4 +122,16 @@ export const RESONANCE_EFFECTS: Record<ElementType, Record<1 | 2, ResonanceEffec
     1: {},
     2: {},
   },
+  attack: {
+    1: {},
+    2: {},
+  },
+  classAbility: {
+    1: {},
+    2: {},
+  },
+  chain: {
+    1: {},
+    2: {},
+  },
 };

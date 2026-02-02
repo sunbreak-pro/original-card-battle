@@ -11,14 +11,15 @@ import {
   getCardStats,
 } from "@/constants/data/camps/CardEncyclopediaData";
 import type { CardFilterOptions } from "@/types/campTypes";
+import type { ElementType } from "@/types/characterTypes";
+import { ELEMENT_LABEL_MAP } from "@/constants/cardConstants";
 import { CardComponent } from "../../cardHtml/CardComponent";
 import { CardDerivationTree } from "./CardDerivationTree";
 import type { Card } from "@/types/cardTypes";
 
 export const CardEncyclopediaTab: React.FC = () => {
   const [filters, setFilters] = useState<CardFilterOptions>({
-    rarity: null,
-    category: null,
+    element: null,
     characterClass: null,
     searchText: "",
   });
@@ -31,13 +32,8 @@ export const CardEncyclopediaTab: React.FC = () => {
     return allEntries.filter((entry) => {
       const { card } = entry;
 
-      // Rarity filter
-      if (filters.rarity && card.rarity !== filters.rarity) {
-        return false;
-      }
-
-      // Category filter
-      if (filters.category && card.category !== filters.category) {
+      // Element filter
+      if (filters.element && !card.element.includes(filters.element)) {
         return false;
       }
 
@@ -106,38 +102,33 @@ export const CardEncyclopediaTab: React.FC = () => {
         </div>
 
         <div className="filter-group">
-          <span className="filter-label">Rarity:</span>
+          <span className="filter-label">Element:</span>
           <select
             className="filter-select"
-            value={filters.rarity || ""}
+            value={filters.element || ""}
             onChange={(e) =>
-              setFilters({ ...filters, rarity: e.target.value || null })
+              setFilters({
+                ...filters,
+                element: (e.target.value || null) as ElementType | null,
+              })
             }
           >
             <option value="">All</option>
-            <option value="common">Common</option>
-            <option value="rare">Rare</option>
-            <option value="epic">Epic</option>
-            <option value="legend">Legend</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <span className="filter-label">Category:</span>
-          <select
-            className="filter-select"
-            value={filters.category || ""}
-            onChange={(e) =>
-              setFilters({ ...filters, category: e.target.value || null })
-            }
-          >
-            <option value="">All</option>
-            <option value="atk">Attack</option>
-            <option value="def">Defense</option>
-            <option value="buff">Buff</option>
-            <option value="debuff">Debuff</option>
-            <option value="heal">Heal</option>
-            <option value="swordEnergy">Sword Energy</option>
+            <option value="attack">{ELEMENT_LABEL_MAP.attack}</option>
+            <option value="guard">{ELEMENT_LABEL_MAP.guard}</option>
+            <option value="buff">{ELEMENT_LABEL_MAP.buff}</option>
+            <option value="debuff">{ELEMENT_LABEL_MAP.debuff}</option>
+            <option value="heal">{ELEMENT_LABEL_MAP.heal}</option>
+            <option value="classAbility">{ELEMENT_LABEL_MAP.classAbility}</option>
+            <option value="physics">{ELEMENT_LABEL_MAP.physics}</option>
+            <option value="fire">{ELEMENT_LABEL_MAP.fire}</option>
+            <option value="ice">{ELEMENT_LABEL_MAP.ice}</option>
+            <option value="lightning">{ELEMENT_LABEL_MAP.lightning}</option>
+            <option value="dark">{ELEMENT_LABEL_MAP.dark}</option>
+            <option value="light">{ELEMENT_LABEL_MAP.light}</option>
+            <option value="summon">{ELEMENT_LABEL_MAP.summon}</option>
+            <option value="enhance">{ELEMENT_LABEL_MAP.enhance}</option>
+            <option value="sacrifice">{ELEMENT_LABEL_MAP.sacrifice}</option>
           </select>
         </div>
 

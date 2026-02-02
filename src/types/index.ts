@@ -6,7 +6,7 @@
  * to avoid duplicate export conflicts.
  */
 
-// Card types (canonical source for Depth, Rarity, CardCategory, Card, etc.)
+// Card types (canonical source for Depth, Card, etc.)
 export * from './cardTypes';
 
 // Battle types (BuffDebuffType, DamageResult, PhaseActor, CardExecutionResult, etc.)

@@ -1,5 +1,4 @@
-import type { BuffDebuffMap, BuffDebuffType } from '@/types/battleTypes';
-import { BUFF_EFFECTS } from "@/constants/data/battles/buffData";
+import type { BuffDebuffMap } from '@/types/battleTypes';
 import {
     CURSE_HEALING_MULTIPLIER,
     OVER_CURSE_HEALING_MULTIPLIER,
@@ -163,10 +162,3 @@ export const calculateDrawModifier = (map: BuffDebuffMap): number => {
     return modifier;
 };
 
-/** Returns true if the debuff can be applied (not blocked by immunity). */
-export const canApplyDebuff = (map: BuffDebuffMap, debuffType: BuffDebuffType): boolean => {
-    if (map.has("immunity")) {
-        return !BUFF_EFFECTS[debuffType].isDebuff;
-    }
-    return true;
-};

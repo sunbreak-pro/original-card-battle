@@ -1,10 +1,10 @@
 import type { Card, MasteryLevel } from '@/types/cardTypes';
-import { MASTERY_THRESHOLDS } from '@/constants/cardConstants';
+import { MASTERY_THRESHOLDS, MASTERY_BONUSES } from '@/constants/cardConstants';
 
 export function calculateEffectivePower(card: Card): number {
   if (!card.baseDamage) return 0;
   let damage = card.baseDamage;
-  const masteryBonus = 1 + card.masteryLevel * 0.1;
+  const masteryBonus = MASTERY_BONUSES[card.masteryLevel] ?? 1.0;
   damage *= (masteryBonus + card.gemLevel * 0.5);
   return Math.round(damage);
 }
@@ -34,8 +34,10 @@ export function incrementUseCount(card: Card): Card {
 export function canPlayCard(
   card: Card,
   currentEnergy: number,
-  isPlayerTurn: boolean
+  isPlayerTurn: boolean,
+  hasActiveSummon?: boolean
 ): boolean {
+  if (card.requiresSummon && !hasActiveSummon) return false;
   return isPlayerTurn && card.cost <= currentEnergy;
 }
 
@@ -55,16 +57,12 @@ export function calculateCardEffect(
   const effectivePower = calculateEffectivePower(card);
   const result: CardEffectResult = {};
 
-  switch (card.category) {
-    case "atk":
-      result.damageToEnemy = effectivePower;
-      break;
-    case "def":
-      result.shieldGain = effectivePower;
-      break;
-    case "heal":
-      result.hpGain = effectivePower;
-      break;
+  if (card.element.includes("attack")) {
+    result.damageToEnemy = effectivePower;
+  } else if (card.element.includes("guard")) {
+    result.shieldGain = effectivePower;
+  } else if (card.element.includes("heal")) {
+    result.hpGain = effectivePower;
   }
   if (card.applyEnemyDebuff && card.applyEnemyDebuff.length > 0) {
     result.enemyDebuffs = card.applyEnemyDebuff.map((spec) =>

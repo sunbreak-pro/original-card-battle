@@ -43,6 +43,11 @@ export const addOrUpdateBuffDebuff = (
   source?: BuffDebuffState["source"],
   appliedBy: BuffOwner = 'environment',
 ): BuffDebuffMap => {
+  // Block debuff application when target has immunity
+  if (BUFF_EFFECTS[name].isDebuff && map.has("immunity")) {
+    return map;
+  }
+
   const newMap = new Map(map);
   const existing = newMap.get(name);
 
