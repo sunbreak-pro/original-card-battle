@@ -25,7 +25,7 @@
 | Battle System | 98% | Core complete. AoE cards pending |
 | Camp Facilities | 100% | Shop, Guild, Library, Blacksmith, Sanctuary, Storage, **Inn** (rest/dining/rumors) |
 | Dungeon System | 90% | Map generation, 5-floor progression, depth 1-5 enemies |
-| Progression System | 98% | Lives + Souls + Sanctuary + equipment + card derivation + mastery + custom deck |
+| Progression System | 98% | Lives + Souls + Sanctuary + equipment + card derivation + mastery + custom deck + **equipment data 73 types complete, upgrade UI pending** |
 | State Management | Fixed | 57 vulnerability fixes across Sessions 1-11 |
 | Save System | Implemented | `src/domain/save/logic/saveManager.ts` |
 | Character Images | 90% | Player images displayed. 50 enemies have `imagePath` set (PNGs not yet created) |
@@ -44,6 +44,15 @@
 - **Session 9:** Naming & file organization (6 fixes — DungeonRunContext moved to `src/contexts/`, file renames: deptManager→depthManager, tittle→title, swordmanCards→swordsmanCards, test data removed, default values zeroed)
 - **Session 10:** Hardcoded → Data-Driven Conversion (4 fixes — V-DMG-07: buff calculation uses category maps, V-DMG-08: true damage bypasses defense, V-CARD-08: explicit stance tag handling, V-ENM-03: Depth 1 enemies element types) — COMPLETE
 - **Session 11:** Large File Refactoring (3 items — V-CS05: PlayerContext already refactored with 4 hooks, V-ORCH-05: helper functions extracted to phaseQueueHelpers.ts, Q2: variant prop in use) — COMPLETE
+- **Session 12:** Common Cards Physical 5 + Magic 5 — `src/constants/data/cards/commonCards.ts` created with 10 attack cards (cm_001-cm_010), cards/index.ts created
+- **Session 13:** Common Cards Defense 5 + Support 5 — Defense cards (cm_011-cm_015) and support/heal cards (cm_016-cm_020) added. **Common cards 20/20 complete**
+- **Session 14:** Swordsman Cards 7 added — Sword energy consumption skills (sw_027-sw_032) + ultimate (sw_034). **Swordsman cards 40/40 complete**
+- **Session 15:** Consumables 5 added — resurrection_stone, blessed_teleport_stone, emergency_teleport_stone, critical_elixir, exp_boost. New effect types added to itemTypes.ts
+- **Session 16:** Equipment Type System Extension — EquipmentSkill, EquipmentUpgradeLevel (0-3), EnhancedEquipmentData types. equipmentSkillEffects.ts logic for skill aggregation
+- **Session 17-18:** Swordsman Equipment 15 added — Head (3), Body (3), Weapon (3), Offhand (2), Boots (2), Accessory (2). Sword energy scaling skills
+- **Session 19-20:** Mage Equipment 15 added — Resonance-based skills for all 6 slots
+- **Session 21-22:** Summoner Equipment 15 added — Summon count scaling skills for all 6 slots
+- **Session 23-24:** Common Equipment 28 added — Head (2), Body (4), Weapon (6), Offhand (4), Boots (4), Accessory (8). No class restriction. **Equipment data 73/73 complete**
 
 ---
 
@@ -51,7 +60,10 @@
 
 | Feature | Priority | Notes |
 |---------|----------|-------|
-| AoE card support | LOW | Cards that damage all enemies — no logic exists yet |
+| Equipment Upgrade UI (Session 25) | HIGH | Blacksmith upgrade tab, cost calculation, effects |
+| Equipment Skill Effects in Battle (Session 26) | HIGH | Apply skill effects during combat |
+| AoE card support (Session 27) | MEDIUM | targetType field, damage loop for all enemies |
+| Talent Card System (Session 28) | LOW | Design only, Lv5 derivation tree |
 | EnemyFrame SVG icons | LOW | Currently uses emoji placeholders |
 | Enemy image assets | MEDIUM | 50 enemies have `imagePath` but no actual PNGs |
 | Summoner character image | LOW | Summoner.png is provisional |

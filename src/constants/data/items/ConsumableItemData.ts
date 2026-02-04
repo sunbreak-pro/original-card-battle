@@ -304,6 +304,85 @@ export const CONSUMABLE_ITEMS: Record<string, ConsumableItemData> = {
   },
 
   // ============================================================================
+  // SPECIAL ITEMS
+  // ============================================================================
+
+  resurrection_stone: {
+    typeId: "resurrection_stone",
+    name: "Resurrection Stone",
+    nameJa: "蘇生の石",
+    description: "Automatically revive with 50% HP upon death.",
+    descriptionJa: "死亡時にHP50%で自動復活する。",
+    effects: [{ type: 'resurrection', hpRecoveryPercent: 0.5 }],
+    usableContext: 'battle',
+    icon: "💎",
+    rarity: 'epic',
+    sellPrice: 400,
+    maxStack: 1,
+    shopPrice: 800,
+  },
+
+  blessed_teleport_stone: {
+    typeId: "blessed_teleport_stone",
+    name: "Blessed Teleport Stone",
+    nameJa: "転移石(祝福)",
+    description: "Return to base camp with 80% of exploration rewards.",
+    descriptionJa: "報酬80%を維持してベースキャンプに帰還する。",
+    effects: [{ type: 'return', returnMode: 'blessed' }],
+    usableContext: 'map',
+    icon: "✨",
+    rarity: 'rare',
+    sellPrice: 250,
+    maxStack: 3,
+    shopPrice: 500,
+  },
+
+  emergency_teleport_stone: {
+    typeId: "emergency_teleport_stone",
+    name: "Emergency Teleport Stone",
+    nameJa: "転移石(緊急)",
+    description: "Return to base camp even during battle, with 60% of rewards.",
+    descriptionJa: "戦闘中でも帰還可能。報酬60%を維持。",
+    effects: [{ type: 'return', returnMode: 'emergency' }],
+    usableContext: 'battle',
+    icon: "🌀",
+    rarity: 'rare',
+    sellPrice: 200,
+    maxStack: 3,
+    shopPrice: 400,
+  },
+
+  critical_elixir: {
+    typeId: "critical_elixir",
+    name: "Critical Elixir",
+    nameJa: "クリティカルの秘薬",
+    description: "Greatly increases critical rate and damage for 3 turns.",
+    descriptionJa: "3ターンの間、クリティカル率+50%、クリダメ+100%。",
+    effects: [{ type: 'criticalBoost', duration: 3 }],
+    usableContext: 'battle',
+    icon: "⚔️",
+    rarity: 'rare',
+    sellPrice: 90,
+    maxStack: 5,
+    shopPrice: 180,
+  },
+
+  exp_boost: {
+    typeId: "exp_boost",
+    name: "Experience Boost",
+    nameJa: "経験値ブースト",
+    description: "Increases mastery gain by 50% for the next battle.",
+    descriptionJa: "次の戦闘で熟練度獲得量+50%。",
+    effects: [{ type: 'expBoost', boostPercent: 0.5 }],
+    usableContext: 'map',
+    icon: "📚",
+    rarity: 'uncommon',
+    sellPrice: 75,
+    maxStack: 5,
+    shopPrice: 150,
+  },
+
+  // ============================================================================
   // ANYWHERE ITEMS
   // ============================================================================
 

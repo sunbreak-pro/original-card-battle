@@ -29,6 +29,8 @@ export const PERMANENT_SHOP_ITEMS: { key: string; maxStock: number }[] = [
   { key: "repair_kit", maxStock: 5 },
   { key: "teleport_stone", maxStock: 2 },
   { key: "antidote", maxStock: 3 },
+  { key: "blessed_teleport_stone", maxStock: 2 },
+  { key: "exp_boost", maxStock: 3 },
 ];
 
 /** Weight tiers for daily special selection */
@@ -52,6 +54,8 @@ export const DAILY_SPECIAL_POOL: { key: string; stock: number; weight: SpecialWe
   { key: "strength_elixir", stock: 1, weight: "low" },
   { key: "iron_skin_elixir", stock: 1, weight: "low" },
   { key: "magic_burst_crystal", stock: 1, weight: "low" },
+  { key: "critical_elixir", stock: 2, weight: "medium" },
+  { key: "emergency_teleport_stone", stock: 1, weight: "low" },
 ];
 
 /**
@@ -60,6 +64,7 @@ export const DAILY_SPECIAL_POOL: { key: string; stock: number; weight: SpecialWe
 export const EPIC_CONSUMABLE_POOL: { key: string; stock: number }[] = [
   { key: "time_stop_hourglass", stock: 1 },
   { key: "combo_elixir", stock: 1 },
+  { key: "resurrection_stone", stock: 1 },
 ];
 
 /**

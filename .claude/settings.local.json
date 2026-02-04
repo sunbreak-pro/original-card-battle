@@ -33,7 +33,8 @@
       "Bash(for file in src/constants/data/cards/*.ts)",
       "Bash(do echo \"=== $file ===\")",
       "Bash(python3:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(tr:*)"
     ],
     "deny": [],
     "ask": []
