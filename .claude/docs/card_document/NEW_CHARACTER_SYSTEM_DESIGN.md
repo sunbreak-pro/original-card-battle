@@ -1,204 +1,211 @@
-# 新キャラクターシステム完全設計
+# Complete Design: New Character System
 
-## 全体コンセプト
+## Overall Concept
 
-### 自由度の高いビルドシステム
+### Highly Flexible Build System
 
-- カードの組み合わせでプレイスタイルが変化
-- 高速型、カウンター型、重厚型など多様なビルドが可能
-- 各キャラクターに固有の仕様・アビリティで差別化
+* Playstyles change based on card combinations.
+* Allows for diverse builds such as High-Speed, Counter-based, or Heavy-Tank types.
+* Differentiation through unique specifications and abilities for each character.
 
-### 熟練度と進化システム
+### Proficiency and Evolution System
 
 ```
-カード使用回数に応じて熟練度上昇
-Lv0 → Lv4まで育成
-Lv4で才能カード解放（新カード獲得）
+Proficiency increases based on the number of times a card is used.
+Develop from Lv0 → Lv4.
+Unlock Talent Cards at Lv4 (Acquire new cards).
 
-【熟練度レベルと閾値】
-Lv0: 0回（初期状態）
-Lv1: 8回使用
-Lv2: 16回使用
-Lv3: 24回使用
-Lv4: 30回使用 → 才能カード解放
+【Proficiency Levels and Thresholds】
+Lv0: 0 uses (Initial state)
+Lv1: 8 uses
+Lv2: 16 uses
+Lv3: 24 uses
+Lv4: 30 uses → Talent Card Unlocked
 
-【熟練度ボーナス（ダメージ倍率）】
+【Proficiency Bonus (Damage Multiplier)】
 Lv0: 1.0x
 Lv1: 1.2x
 Lv2: 1.4x
 Lv3: 2.0x
 Lv4: 2.5x
-```
-
-### 称号システム
 
 ```
-カード獲得枚数に応じて称号が変化
 
-【剣士系】
-0枚: 見習い剣士
-5枚: 剣士
-15枚: 剣豪
-30枚: 剣聖
-50枚: 剣神
+### Title System
 
-【魔術士系】
-0枚: 見習い魔術士
-5枚: 魔術士
-15枚: 魔導師
-30枚: 大魔導師
-50枚: 魔神
+```
+Titles change based on the number of cards acquired.
 
-【近日作成】
+【Swordsman Class】
+0 cards: Apprentice Swordsman
+5 cards: Swordsman
+15 cards: Swordmaster
+30 cards: Blade Saint
+50 cards: Sword God
+
+【Sorcerer Class】
+0 cards: Apprentice Sorcerer
+5 cards: Sorcerer
+15 cards: Mage
+30 cards: Archmage
+50 cards: Demon God
+
+【Coming Soon】
 ...
+
+```
+
 ---
 
-## キャラクター 1: 剣士（Blade Master）
+## Character 1: Blade Master
 
-### 基本コンセプト
+### Basic Concept
 
-**「連撃と勢いで圧倒する前衛戦士」**
+**"A frontline warrior who overwhelms with multi-hits and momentum."**
 
-- シンプルビルド
-- 剣気消費で大ダメージ
+* Simple build.
+* Deals massive damage by consuming Sword Energy.
 
-### 基礎ステータス
+### Base Stats
 
 ```
 HP: 100
-攻撃力(ATK): +30%
-防御力(DEF): +10%
-魔法補正: +0%
-初期エナジー: 3
-```
-
-### 固有アビリティ: 【剣気(Sword Energy)】
-
-#### 基本仕様
+Attack (ATK): +30%
+Defense (DEF): +10%
+Magic Correction: +0%
+Initial Energy: 3
 
 ```
-【剣気ゲージ】
-最大値: 10
-初期値: 0
 
-【剣気の蓄積】
-物理攻撃カード使用時、剣気が蓄積
-- 0コスト: +1剣気
-- 1コスト: +1剣気
-- 2コスト: +2 or +3剣気
-- 3コスト以上: +3剣気
-- 剣気蓄積専用カード(1コスト): +4剣気
+### Unique Ability: 【Sword Energy】
 
-特殊効果:
-- 剣気5以上: クリティカル率+20%
-- 剣気8以上: 物理攻撃に貫通+30%
-- 剣気10(最大): 次の物理攻撃が確定クリティカル+貫通50%
+#### Basic Specifications
 
-消費効果:
-【基本消費】
-- 剣気3消費: 中火力技
-- 剣気5消費: 高火力技
+```
+【Sword Energy Gauge】
+Max Value: 10
+Initial Value: 0
 
-【全消費】(例)
-- 剣気全消費(10): 超高火力 + 自身のbuff、相手へのdebuff
+【Accumulating Sword Energy】
+Sword Energy accumulates when using Physical Attack cards:
+- 0 Cost: +1 Sword Energy
+- 1 Cost: +1 Sword Energy
+- 2 Cost: +2 or +3 Sword Energy
+- 3+ Cost: +3 Sword Energy
+- Dedicated Accumulation Card (1 Cost): +4 Sword Energy
+
+Special Effects:
+- 5+ Energy: Critical Rate +20%
+- 8+ Energy: Physical attacks gain Piercing +30%
+- 10 Energy (Max): Next physical attack is a Guaranteed Critical + Piercing 50%
+
+Consumption Effects:
+【Standard Consumption】
+- Consumes 3 Energy: Mid-power technique
+- Consumes 5 Energy: High-power technique
+
+【Full Consumption】 (Example)
+- Consumes all Energy (10): Ultra-high damage + Self Buffs + Enemy Debuffs
+
 ```
 
-## キャラクター 2: 魔術士（Spell Caster）
+## Character 2: Spell Caster
 
-### 基本コンセプト
+### Basic Concept
 
-**「多彩な魔法で敵を翻弄する後衛魔導師」**
+**"A backline mage who toy with enemies using diverse magic."**
 
-- 属性の組み合わせでシナジー
-- 状態異常を駆使して戦う
-- 戦略的で計算されたプレイスタイル
+* Synergy through elemental combinations.
+* Fights using status ailments.
+* Strategic and calculated playstyle.
 
-### 基礎ステータス
+### Base Stats
 
 ```
 HP: 80
-攻撃力(ATK): +0%
-防御力(DEF): +5%
-魔法補正: +40%
-初期エナジー: 4
-```
-
-### 固有アビリティ: 【魔力共鳴(Mana Resonance)】
-
-#### 基本仕様
+Attack (ATK): +0%
+Defense (DEF): +5%
+Magic Correction: +40%
+Initial Energy: 4
 
 ```
-【魔力共鳴システム】
-同じ属性の魔法を連続使用すると共鳴が蓄積
-共鳴レベル: 0 → 1 → 2(最大) ※レベル２以降の共鳴はレベル2の効果が適用される.
-異なる属性を使用すると共鳴リセット
 
-【共鳴の蓄積】
-- 同属性1回目: 共鳴レベル0
-- 同属性2回目: 共鳴レベル1
-- 同属性3回目以降: 共鳴レベル2(最大)
-- 同属性4回目以降: 共鳴レベル2の効果が発動
+### Unique Ability: 【Mana Resonance】
 
-【共鳴レベルの効果】
-各属性ごとに独立した状態異常と強化ボーナス
+#### Basic Specifications
 
-火属性:
-- レベル0: 通常効果のみ
-- レベル1: 火傷スタック+1 / 火魔法威力+15%
-- レベル2: 火傷スタック+2 / 火魔法威力+30%
+```
+【Mana Resonance System】
+Resonance accumulates when using magic of the same element consecutively.
+Resonance Level: 0 → 1 → 2 (Max) *Level 2 effects apply for any resonance beyond level 2.
+Resonance resets upon using a different element.
 
-氷属性:
-- レベル0: 通常効果のみ
-- レベル1: freeze（凍結）2ターン / 氷魔法威力+15%
-- レベル2: freeze（凍結）3ターン + iceField / 氷魔法威力+30%
+【Resonance Accumulation】
+- 1st use of same element: Resonance Level 0
+- 2nd use of same element: Resonance Level 1
+- 3rd use and beyond: Resonance Level 2 (Max)
+- 4th use and beyond: Level 2 effects are triggered
 
-雷属性:
-- レベル0: 通常効果のみ
-- レベル1: （なし） / 雷魔法威力+15%
-- レベル2: stun（気絶）1ターン + electroField / 雷魔法威力+30%
+【Resonance Level Effects】
+Independent status ailments and power bonuses for each element.
 
-闇属性:
-- レベル0: 通常効果のみ
-- レベル1: lifesteal 30% / 闇魔法威力+15%
-- レベル2: lifesteal 40% + weakness（衰弱）3ターン + darkField / 闇魔法威力+30%
+Fire:
+- Level 0: Base effects only
+- Level 1: Burn Stack +1 / Fire Magic Power +15%
+- Level 2: Burn Stack +2 / Fire Magic Power +30%
 
-光属性:
-- レベル0: 通常効果のみ
-- レベル1: デバフ1解除 / 光魔法威力+15%
-- レベル2: デバフ2解除 + HP10回復 + lightField / 光魔法威力+30%
+Ice:
+- Level 0: Base effects only
+- Level 1: Freeze (2 turns) / Ice Magic Power +15%
+- Level 2: Freeze (3 turns) + Ice Field / Ice Magic Power +30%
+
+Lightning:
+- Level 0: Base effects only
+- Level 1: (None) / Lightning Magic Power +15%
+- Level 2: Stun (1 turn) + Electro Field / Lightning Magic Power +30%
+
+Dark:
+- Level 0: Base effects only
+- Level 1: Lifesteal 30% / Dark Magic Power +15%
+- Level 2: Lifesteal 40% + Weakness (3 turns) + Dark Field / Dark Magic Power +30%
+
+Light:
+- Level 0: Base effects only
+- Level 1: Removes 1 Debuff / Light Magic Power +15%
+- Level 2: Removes 2 Debuffs + HP 10 Recovery + Light Field / Light Magic Power +30%
+
 ```
 
-## 固有アビリティの比較表
+## Unique Ability Comparison Table
 
-| 項目         | 剣士               | 魔術士              |
-| ------------ | ------------------ | ------------------- |
-| 固有システム | 剣気(数値)         | 魔力共鳴(2 段階)    |
-| 最大値       | 10 剣気            | レベル 2×5 属性     |
-| 蓄積方法     | 物理カード使用     | 同属性連続使用      |
-| 効果         | 直接ダメージ加算   | 状態異常+威力上昇   |
-| 消費         | 一部カードで全消費 | 属性変更でリセット  |
-| 戦略性       | 中                 | 高い                |
-| ダメージ計算 | 明確(加算)         | 複雑(倍率+状態異常) |
+| Item | Blade Master | Spell Caster |
+| --- | --- | --- |
+| Unique System | Sword Energy (Value) | Mana Resonance (2 Stages) |
+| Max Value | 10 Sword Energy | Level 2 x 5 Elements |
+| Accumulation Method | Use Physical Cards | Consecutive Same Element Use |
+| Effect | Direct Damage Addition | Status Ailments + Power Up |
+| Consumption | Full consumption on select cards | Reset upon changing elements |
+| Strategy Level | Medium | High |
+| Damage Calculation | Clear (Additive) | Complex (Multiplier + Status) |
 
 ---
 
-## 次のステップ
+## Next Steps
 
-固有アビリティが確定したら、次は各キャラクターの専用カード設計に移ります:
+Once the unique abilities are finalized, we move to the exclusive card design for each character:
 
-1. **剣士の専用カード 40 枚**
+1. **Blade Master Exclusive Cards (40)**
+* Accumulation types
+* Consumption types
+* Physical attack types
+* Defense types
 
-   - 剣気蓄積型
-   - 剣気消費型
-   - 物理攻撃型
-   - 防御型
 
-2. **魔術士の専用カード 40 枚**
+2. **Spell Caster Exclusive Cards (40)**
+* Elemental Magic (8 per element)
+* Resonance enhancement types
+* Elemental combo types
 
-   - 各属性魔法 ×8
-   - 共鳴強化型
-   - 属性コンボ型
+Approximately 40 exclusive cards per class, plus 20 common cards, resulting in a total card pool of approximately 60 cards per class.
 
-各クラス約40枚が専用、共通カード20枚で合計約60枚のカードプールとなります。
-
-※ 現在実装済み: 剣士43枚、魔術師40枚、共通20枚 = 合計103枚
+*Current Implementation Status: Blade Master 43 cards, Spell Caster 40 cards, Common 20 cards = 103 cards total.*

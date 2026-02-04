@@ -1,1180 +1,149 @@
-# 生還システム 完全設計書 V3.0
+# Survival System Comprehensive Design Document V3.0
 
-## 更新履歴
+## Revision History
 
-- V3.0: **残機システム導入** - 転移石統一（100%報酬）、深淵脱出ルート追加、死亡時魂100%獲得、探索回数制限削除
-- V2.0: 魂の残滓を経験値システムに変更、探索回数制限追加
+* **V3.0: Introduction of the Lives System**
+* Unified Teleport Stones (100% rewards).
+* Added Abyss Escape Route.
+* 100% Soul Remnant retention on death.
+* Removed exploration count limits.
 
-## 目次
 
-```
-1. 生還システム概要
-2. 生還方法の種類
-3. 転移石システム（統一版）
-4. 帰還ルートシステム
-5. 深淵（Depth 5）特別ルール
-6. 生還時の報酬計算
-7. 死亡時の処理（V3.0変更）
-8. 残機システムとの連携
-9. 戦略的意義とバランス
-10. 実装仕様
-11. まとめ
-```
+* **V2.0:** Changed Soul Remnants to an EXP-based system; added exploration limits.
 
 ---
 
-# 1. 生還システム概要
+# 1. System Overview
 
-## 1.1 基本コンセプト
+## 1.1 Core Concept
 
-```
-生還システムは「リスク管理」と「リソース保全」のトレードオフを提供する。
+The Survival System presents a trade-off between **Risk Management** and **Resource Preservation**.
 
-【設計思想】
-- 深層ほど報酬が大きいが、リスクも増大
-- 適切な撤退判断能力を試す
-- 「全滅」ではなく「戦略的撤退」の選択肢
-- 装備耐久度管理との密接な連携
-- 残機システムによる死亡の重み付け
-```
+* **Design Philosophy:**
+* Rewards increase with depth, but so does the risk.
+* Tests the player's ability to make tactical retreats.
+* Provides "Strategic Withdrawal" as an alternative to "Total Annihilation."
+* Closely integrates with Equipment Durability management.
+* Adds weight to death via the Lives System.
 
-## 1.2 生還と死亡の違い
 
-| 項目 | 生還 | 死亡 |
-|------|------|------|
-| 装備 | **全て保持** | **全ロスト**（持ち込み含む） |
-| アイテム | **全て保持** | **全ロスト**（持ち込み含む） |
-| 耐久度 | **そのまま** | - |
-| 熟練度 | **使用回数記録** | 使用回数記録 |
-| Gold | **全額持ち帰り** | ゼロ |
-| 魔石 | **全て持ち帰り** | ゼロ |
-| 魂の残滓 | **累計に100%加算** | **累計に100%加算** ★V3.0 |
-| 探索記録 | 記録 | 記録 |
-| 残機 | **変化なし** | **-1** ★V3.0 |
 
-**生還の価値:**
+## 1.2 Survival vs. Death (Penalty Comparison)
 
-- 装備を確実に保持
-- 熟練度の使用回数を保存
-- Gold・魔石・魂を持ち帰り
-- 残機を温存
+| Item | Survival (Return) | Death |
+| --- | --- | --- |
+| **Equipment** | **Keep All** | **Lose All** (including items brought from base) |
+| **Items** | **Keep All** | **Lose All** |
+| **Durability** | Persists | - |
+| **Mastery** | Recorded | Recorded |
+| **Gold** | **100% Carry-back** | Zero |
+| **Magic Stones** | **100% Carry-back** | Zero |
+| **Soul Remnants** | **100% Added to Total** | **100% Added to Total** (V3.0 Change) |
+| **Lives** | **No Change** | **-1 Life** (V3.0 Change) |
 
-**死亡のペナルティ:**
-
-- 所有アイテム・装備の完全喪失
-- 獲得したGold・魔石の喪失
-- **残機が1減少**
-- ただし**魂の残滓は100%獲得**
-
-**重要な変更（V3.0）:**
-
-```
-旧設計:
-死亡時 → 魂の残滓はその探索分ゼロ
-
-新設計:
-死亡時 → 魂の残滓は100%累計に加算
-       → 残機が1減少
-       → 所有アイテム・装備は全ロスト
-```
+> **Nuance Note:** In English gaming terms, "Survival" often sounds like a genre. Here, we use **"Return"** or **"Extraction"** to emphasize the act of safely leaving the dungeon. **"Lose All"** is used to clearly signal the "Permadeath-lite" nature of the penalty.
 
 ---
 
-# 2. 生還方法の種類
+# 2. Methods of Return
 
-## 2.1 生還方法一覧
+## 2.1 Return Methods Overview
 
-```
-【2つの生還方法】
+1. **Teleport Stone (Instant Return):** Consumes an item. Zero risk. 100% rewards. (Cannot be used in Depth 5).
+2. **Return Route (Phased Withdrawal):** Requires time and combat. High risk due to enemies. 100% rewards. (Cannot be used in Depth 5).
 
-1. 転移石（即時帰還）
-   - コスト: アイテム消費
-   - リスク: なし
-   - 報酬: 100%
-   - 制限: 深淵（Depth 5）では使用不可
+## 2.2 Comparison
 
-2. 帰還ルート（段階的撤退）
-   - コスト: 時間と戦闘
-   - リスク: 道中の敵
-   - 報酬: 100%
-   - 制限: 深淵（Depth 5）では使用不可
-```
+| Method | Requirement | Immediacy | Reward Multiplier | Risk | Best Used When... |
+| --- | --- | --- | --- | --- | --- |
+| **Teleport Stone** | Item in hand | **Instant** | 100% | None | Prioritizing safety |
+| **Return Route** | Combat-ready | Slow | 100% | Enemy encounters | Seeking extra rewards |
 
-## 2.2 方法の比較
-
-| 方法 | 条件 | 即時性 | 報酬倍率 | リスク | 推奨場面 |
-|------|------|--------|----------|--------|----------|
-| 転移石 | アイテム所持 | **即時** | 100% | なし | 安全優先時 |
-| 帰還ルート | 戦闘可能状態 | 遅い | 100% | 戦闘あり | 追加報酬狙い |
-
-**重要:** 深淵（Depth 5）では全ての生還手段が無効化される。
-深淵に入った時点で「ボスを倒すか、死ぬか」の二択のみ。
-ただし、ボス撃破後は**脱出ルート**が出現する。
+**Critical Rule:** All return methods are disabled in **The Abyss (Depth 5)**. Once you enter, it is "Slay the boss or die." However, an **Escape Route** appears only after the boss is defeated.
 
 ---
 
-# 3. 転移石システム（統一版）
+# 3. Teleport Stone System (Unified)
 
-## 3.1 転移石の仕様
+## 3.1 Specifications
 
-### 3.1.1 統一された転移石
+* **V3.0 Change:** Simplified 3 types into **1 Unified Teleport Stone** with 100% reward retention.
+* **Usage Conditions:** Cannot be used during battle. Only usable on the Map screen. Disabled in Depth 5.
+* **Rarity:** Uncommon. Recommended carrying 1-2 per run.
 
-```
-【V3.0での変更】
-旧: 3種類（通常70%/祝福80%/緊急60%）
-新: 1種類に統一（100%報酬）
+## 3.2 Strategy: When to Use
 
-【基本仕様】
-名称: 転移石
-効果: 即座に拠点へ帰還 / 報酬倍率100%
-入手: Shop / イベント / 宝箱
-
-【使用条件】
-- 戦闘中使用不可
-- マップ画面でのみ使用可能
-- 深淵（Depth 5）では使用不可
-
-【特徴】
-レアリティ: Uncommon
-推奨所持数: 1-2個/探索
-```
-
-### 3.1.2 帰還ルートとの差別化
-
-| 項目 | 転移石 | 帰還ルート |
-|------|--------|------------|
-| 報酬倍率 | 100% | 100% |
-| リスク | **なし** | 戦闘あり |
-| 追加報酬 | なし | **追加魂・熟練度** |
-| 時間 | **即時** | 数戦闘 |
-| コスト | アイテム消費 | なし |
-
-**差別化ポイント:**
-- 転移石: 完全安全だがアイテム消費
-- 帰還ルート: 戦闘リスクあるが追加報酬あり
+* **Critical Durability:** Equipment < 20% (High risk of breaking in the next fight).
+* **Low HP/Shield:** HP < 40% with no healing items.
+* **High-Value Loot:** After finding Rare/Epic gear you cannot afford to lose.
 
 ---
 
-## 3.2 転移石使用のプロセスフロー
+# 4. Return Route System
+
+## 4.1 Concept
+
+Backtracking through the path you cleared. No reward penalty, but random encounters occur.
+
+* **V3.0 Change:** Even if you die *during* the return route, Soul Remnants earned up to that point are kept 100%. However, you still lose 1 Life and all items/equipment.
+
+## 4.2 Encounter Rates
+
+The encounter rate drops as you get closer to the Base (Base = Safety).
+
+* **Formula:** `Current Rate = Initial Rate - (Progress% × Reduction Coefficient)`
+* **Enemy Status (Return Route):** HP/ATK are reduced to **70%**; Rewards are reduced to **50%**.
+
+---
+
+# 5. The Abyss (Depth 5) Special Rules
+
+## 5.1 Design Philosophy: "No Way Back"
+
+The Abyss is the ultimate trial. It is designed to maximize tension and force the player to commit.
+
+* **V3.0 Addition:** The **Escape Route** appears only after the boss's death, allowing a safe, 100% reward return.
+
+---
+
+# 6. Reward Calculations
+
+### 6.2.3 Death Processing (V3.0 Change)
 
 ```typescript
-/**
- * 転移石使用処理（V3.0）
- */
-interface TeleportStone {
-  type: 'standard';  // 統一
-  rewardMultiplier: 1.0;  // 100%固定
-  canUseInBattle: false;  // 戦闘中使用不可
-}
-
-function useTeleportStone(
-  player: Character,
-  currentDepth: number,
-  soulsEarnedThisRun: number
-): ReturnResult {
-  // 深淵チェック
-  if (currentDepth === 5) {
-    return {
-      success: false,
-      message: '深淵では転移石の力が無効化されている...',
-    };
-  }
-
-  // 戦闘中チェック
-  if (isInBattle()) {
-    return {
-      success: false,
-      message: '戦闘中は使用できない。',
-    };
-  }
-
-  // 報酬計算（100%）
-  const rewards = {
-    gold: player.dungeonGold,  // 100%
-    stones: player.dungeonStones,  // 100%
-    souls: soulsEarnedThisRun,  // 100%
-  };
-
-  // 装備・熟練度は全て保持
-  savePlayerState(player);
-
-  // 魂の残滓を累計に加算
-  addToTotalSouls(rewards.souls);
-
-  // 転移石消費
-  consumeItem('teleport_stone');
-
-  // 拠点へ帰還
-  return {
-    success: true,
-    type: 'teleport',
-    rewards: rewards,
-    message: '拠点へ帰還した。',
-  };
-}
-```
-
----
-
-## 3.3 転移石の戦略的タイミング
-
-```
-【推奨使用タイミング】
-
-1. 装備耐久度が危機的
-   - 全装備の耐久度 < 20%
-   → 次の戦闘で全壊のリスク
-
-2. HP/シールドが低下
-   - HP < 40% かつ回復手段なし
-   → 次の戦闘で死亡リスク大
-
-3. 強力な装備を獲得した
-   - レア/エピック装備を入手
-   → 死亡による喪失を回避
-
-4. Gold/魔石/魂が十分
-   - リソース目標達成
-   → これ以上のリスクは不要
-
-5. ボス戦の準備不足
-   - 消耗品が不足
-   → 拠点で補給してリトライ
-```
-
----
-
-# 4. 帰還ルートシステム
-
-## 4.1 基本仕様
-
-```
-【コンセプト】
-来た道を戻って拠点へ帰還する。
-報酬減少なし、ただし道中でエンカウントが発生する。
-
-【メリット】
-- 報酬100%獲得
-- 追加の戦闘経験
-- 熟練度を更に稼げる
-- 追加の魂の残滓を獲得可能
-
-【デメリット】
-- 時間がかかる
-- 道中で戦闘のリスク
-- 装備耐久度を更に消耗
-- 死亡すると全ての魂がゼロになる...わけではない！（V3.0）
-
-【V3.0での変更】
-帰還ルート中に死亡しても、その時点までの魂は100%獲得
-ただし残機-1となり、アイテム・装備は全ロスト
-```
-
-## 4.2 帰還ルート中のエンカウント
-
-### 4.2.1 エンカウント率ルール
-
-```
-【可変エンカウント率システム】
-帰還が進むにつれてエンカウント率が低下
-→ 拠点に近づくほど安全になる
-
-【深度別の初期エンカウント率】
-上層（Depth 1）: 開始70% → 終了20%
-中層（Depth 2）: 開始75% → 終了25%
-下層（Depth 3）: 開始80% → 終了30%
-深層（Depth 4）: 開始85% → 終了35%
-深淵（Depth 5）: 帰還不可
-
-【エンカウント率計算式】
-現在レート = 初期レート - (進行度% × 低下係数)
-
-低下係数:
-- Depth 1: 0.5（70% → 20%は50%の低下）
-- Depth 2: 0.5
-- Depth 3: 0.5
-- Depth 4: 0.5
-
-例: Depth 3で50%進行時
-現在レート = 80% - (50% × 0.5) = 55%
-```
-
-### 4.2.2 帰還戦闘の特徴
-
-```
-- エリートは再出現しない
-- ボスは再出現しない
-- 撃破済みと同種の敵が出現
-- 部屋ごとにエンカウント判定
-
-敵のステータス（V3.0）:
-- HP: 通常の70%
-- 攻撃力: 通常の70%
-- 報酬Gold: 通常の50%
-- 報酬魔石: 通常の50%
-- 報酬魂: 通常の50%
-```
-
----
-
-## 4.3 帰還ルート選択時のプロセス
-
-```typescript
-/**
- * 帰還ルート開始処理
- */
-interface ReturnRoute {
-  totalRooms: number;
-  currentProgress: number;  // 進行度 0-100%
-  currentEncounterRate: number;  // 現在のエンカウント率 %
-  passedRooms: number;  // 通過した部屋数
-  encountersCount: number;  // エンカウント数
-  additionalSoulsEarned: number;  // 帰還中に獲得した追加魂
-}
-
-/**
- * 帰還ルート開始
- */
-function startReturnRoute(
-  currentDepth: number,
-  roomsPassed: number
-): ReturnRoute | null {
-  // 深淵チェック
-  if (currentDepth === 5) {
-    return null;  // 帰還不可
-  }
-
-  const config = ENCOUNTER_RATES[currentDepth];
-
-  return {
-    totalRooms: roomsPassed,
-    currentProgress: 0,
-    currentEncounterRate: config.initialRate,
-    passedRooms: 0,
-    encountersCount: 0,
-    additionalSoulsEarned: 0,
-  };
-}
-
-/**
- * 帰還完了時の報酬計算
- */
-function completeReturnRoute(
-  player: Character,
-  soulsEarnedThisRun: number,
-  additionalSoulsFromReturn: number
-): ReturnResult {
-  // 100%報酬
-  const fullReward = {
-    gold: player.dungeonGold,
-    stones: player.dungeonStones,
-    souls: soulsEarnedThisRun + additionalSoulsFromReturn,
-  };
-
-  // 装備・熟練度を保持
-  savePlayerState(player);
-
-  // 魂を累計に加算
-  addToTotalSouls(fullReward.souls);
-
-  return {
-    success: true,
-    type: 'return_route',
-    rewards: fullReward,
-    message: '無事に拠点へ帰還した。',
-  };
-}
-```
-
----
-
-## 4.4 帰還ルートのUI表示
-
-```
-【マップ画面での表示】
-
-┌─────────────────────────┐
-│  帰還ルート選択          │
-├─────────────────────────┤
-│                         │
-│ 現在地: 下層 第8部屋     │
-│ 拠点まで: 15部屋         │
-│                         │
-│ 現在エンカウント率: 80%  │
-│ 終了エンカウント率: 30%  │
-│                         │
-│ ▼ レート推移             │
-│ 開始 ████████ 80%       │
-│ 中間 █████░░░ 55%       │
-│ 終了 ███░░░░░ 30%       │
-│                         │
-│ 報酬倍率: 100%           │
-│ 装備保持: あり           │
-│ 追加魂: 獲得可能         │
-│                         │
-│ ※ 深淵（Depth 5）では    │
-│   帰還ルートは使用不可   │
-│                         │
-│ [帰還開始] [キャンセル]  │
-│                         │
-└─────────────────────────┘
-```
-
----
-
-# 5. 深淵（Depth 5）特別ルール
-
-## 5.1 生還不可の設計思想
-
-```
-【コンセプト】
-深淵は最後の試練。
-→ 「ボスを倒すか、死ぬか」の二択のみ。
-
-【意図】
-- 最大限の緊張感を提供
-- 真の覚悟を試す
-- 報酬リスクの最大化
-- 残機システムとの相乗効果
-
-【V3.0での変更】
-ボス撃破後 → 脱出ルートが出現 → 安全に帰還
-```
-
-## 5.2 深淵での制限事項
-
-```
-【禁止事項】
-✗ 帰還ルートは使用不可
-✗ 転移石は全て無効
-✗ 途中撤退は不可能
-
-【深淵進入前の警告】
-「深淵に足を踏み入れると、全ての生還手段が封じられる。
- 残る選択は「ボスを倒すか、死ぬか」のみ。
-
- 残機: X
-
- 本当に進みますか？」
-
-[覚悟はできている] [まだ早い]
-```
-
-## 5.3 脱出ルートシステム（V3.0新規）
-
-```
-【脱出ルートの仕様】
-出現条件: 深淵ボス撃破後
-ルート内容: 戦闘なし（安全な帰還）
-報酬倍率: 100%
-
-【プロセス】
-1. 深淵ボスを撃破
-2. 「深淵からの脱出口が開いた...」
-3. 脱出ルート選択画面
-4. 安全に拠点へ帰還
-5. ゲームクリア（エンディング）
-```
-
-```typescript
-/**
- * 深淵脱出ルート処理（V3.0新規）
- */
-interface EscapeRoute {
-  trigger: 'boss_defeated';
-  encounters: 'none';
-  rewardMultiplier: 1.0;
-}
-
-function activateEscapeRoute(
-  player: Character,
-  soulsEarnedThisRun: number
-): ReturnResult {
-  // 報酬計算（100%）
-  const rewards = {
-    gold: player.dungeonGold,
-    stones: player.dungeonStones,
-    souls: soulsEarnedThisRun,
-  };
-
-  // 装備・熟練度を保持
-  savePlayerState(player);
-
-  // 魂を累計に加算
-  addToTotalSouls(rewards.souls);
-
-  return {
-    success: true,
-    type: 'escape_route',
-    rewards: rewards,
-    message: '深淵からの脱出に成功した...',
-    isGameClear: true,
-  };
-}
-```
-
-## 5.4 深淵でのゲームデザイン上の意義
-
-```
-【戦略的意義】
-1. 究極のリスク・リターン
-   - 最高の報酬だが逃げ場なし
-   - 完璧な準備が必要
-
-2. プレイヤースキルの試練
-   - 完璧な装備管理
-   - 戦闘テクニックの習熟
-   - 的確なリソース配分
-
-3. 段階的挑戦
-   - 初心者: Depth 3で帰還
-   - 中級者: Depth 4で転移石使用
-   - 上級者: 深淵に挑む
-
-4. 達成感の最大化
-   - 深淵クリアは真の栄誉
-   - 称号 / 特別報酬
-
-5. 残機との連動（V3.0）
-   - 残機が少ない状態での深淵挑戦は賭け
-   - 失敗すれば次の機会がない可能性
-   - 慎重な判断が求められる
-```
-
----
-
-# 6. 生還時の報酬計算
-
-## 6.1 基本報酬計算式
-
-```typescript
-/**
- * 基本報酬計算（V3.0統一）
- */
-interface BaseReward {
-  gold: number;
-  stones: MagicStones;
-}
-
-// V3.0: 全ての生還方法で100%
-const REWARD_MULTIPLIER = 1.0;
-```
-
----
-
-## 6.2 魂の残滓計算（V3.0 - 重要変更）
-
-**重要な変更:**
-
-```
-旧設計:
-- 死亡時 → 魂獲得ゼロ
-- 生還時 → 方法に応じた倍率で加算
-
-新設計:
-- 死亡時 → 100%獲得（確実に累計に加算）
-- 生還時 → 100%獲得（全て累計に加算）
-```
-
-### 6.2.1 魂獲得タイミング
-
-```typescript
-/**
- * 敵撃破時に魂を獲得
- */
-interface SoulGainSystem {
-  // 戦闘中に加算される「今回の探索での獲得魂」
-  currentRunSouls: number;
-
-  // 過去の探索で蓄積した「累計魂」
-  totalSouls: number;
-}
-
-/**
- * 敵撃破時の魂獲得
- */
-function defeatEnemy(enemy: Character): number {
-  // 敵タイプ別の魂量
-  const soulsByType: Record<EnemyType, number> = {
-    minion: 5,
-    elite: 15,
-    boss: 50,
-  };
-
-  const soulsGained = soulsByType[enemy.type] || 5;
-
-  // 「今回の探索での獲得魂」に加算
-  currentRunSouls += soulsGained;
-
-  return soulsGained;
-}
-```
-
-### 6.2.2 生還時の魂処理
-
-```typescript
-/**
- * 生還完了処理（V3.0）
- */
-function completeSurvival(
-  player: Character,
-  soulsEarnedThisRun: number,
-  returnMethod: 'teleport' | 'return_route' | 'escape_route'
-): void {
-  // V3.0: 全ての方法で100%
-  const finalSouls = soulsEarnedThisRun;
-
-  // 累計魂に加算
-  player.totalSouls += finalSouls;
-
-  // 今回の探索魂をリセット
-  currentRunSouls = 0;
-
-  // Sanctuaryの利用可能スキルポイントを更新
-  updateAvailableSkillPoints(player.totalSouls);
-}
-```
-
-### 6.2.3 死亡時の魂処理（V3.0変更）
-
-```typescript
-/**
- * 死亡処理（V3.0）
- */
 function handleDeath(player: Character, soulsEarnedThisRun: number): void {
-  // V3.0: 死亡時も魂は100%獲得
+  // V3.0: 100% Souls retained even on death
   player.totalSouls += soulsEarnedThisRun;
 
-  // 今回の探索魂をリセット
-  currentRunSouls = 0;
-
-  // 残機を減少
+  // Penalty: Lose 1 Life
   player.lives.current--;
 
-  // 所有アイテム・装備は全ロスト
+  // Penalty: Full Inventory/Equipment Wipe
   player.inventory = getEmptyInventory();
   player.equippedItems = {};
   player.dungeonGold = 0;
-  player.dungeonStones = getEmptyStones();
-
-  // BaseCampの装備・カード・Goldは保持
-  // player.baseCampEquipment, player.baseCampGold は変更なし
-
-  // 残機0チェック
+  
   if (player.lives.current <= 0) {
     triggerGameOver(player);
   }
 }
+
 ```
 
 ---
 
-## 6.3 報酬まとめ（V3.0）
+# 7. Lives System & Game Over
 
-```
-【最終報酬計算式】
-
-全生還方法で統一:
-- Gold: 100%
-- 魔石: 100%
-- 魂の残滓: 100%
-
-【魂の残滓計算（V3.0）】
-生還時:
-- 転移石: 今回の魂 × 100% → 累計に加算
-- 帰還ルート: 今回の魂 × 100% + 追加魂 → 累計に加算
-- 脱出ルート: 今回の魂 × 100% → 累計に加算
-
-死亡時:
-- 今回の魂 × 100% → 累計に加算
-- 残機 -1
-- アイテム・装備は全ロスト
-
-計算例:
-今回の探索魂: 100
-過去の累計魂: 500
-
-【生還した場合】
-累計: 500 + 100 = 600
-
-【死亡した場合】
-累計: 500 + 100 = 600
-残機: -1
-アイテム: 全ロスト
-```
+* **Life Cap:** Hard (2), Normal/Easy (3).
+* **Recovery:** None.
+* **Game Over:** Death at 0 Lives results in a **Hard Reset** (losing all gold, equipment, soul progress, and sanctuary unlocks). Only Achievements persist.
 
 ---
 
-# 7. 死亡時の処理（V3.0変更）
-
-## 7.1 死亡時のペナルティ詳細
-
-```
-【ロストするもの】
-- 所有装備（持ち込み含む全て）
-- 所有アイテム（持ち込み含む全て）
-- 獲得したGold
-- 獲得した魔石
-- 残機 1つ
-
-【獲得できるもの】
-- 魂の残滓 100%（累計に加算）
-
-【保持されるもの】
-- BaseCampに保管している装備
-- BaseCampのGold残高
-- 過去の累計魂
-- Sanctuary解放状況
-- カードデッキ
-```
-
-## 7.2 ゲームオーバー条件
-
-```
-残機0の状態で死亡 → ゲームオーバー
-
-【ゲームオーバー時の処理】
-完全リセット:
-- Gold: 初期値に戻る
-- 装備: 初期装備のみ
-- 魂の残滓（累計）: 0に戻る
-- Sanctuary解放状況: リセット
-- カードデッキ: 初期デッキに戻る
-- 図鑑記録: リセット
-- 既知イベント情報: リセット
-
-継続されるもの:
-- 実績解除状況のみ
-```
-
----
-
-# 8. 残機システムとの連携
-
-## 8.1 残機システム基本ルール
-
-```
-【残機の仕組み】
-- 難易度別上限: Hard:2, Normal/Easy:3
-- 減少タイミング: 死亡時のみ
-- 回復手段: なし
-- 残機0で死亡: ゲームオーバー
-
-【生還との関係】
-生還時 → 残機変化なし
-死亡時 → 残機-1
-```
-
-## 8.2 生還方法選択と残機
-
-```
-【残機が多い場合（2-3）】
-- 帰還ルート推奨（追加報酬狙い）
-- 多少のリスクは許容できる
-- 死んでも次の機会がある
-
-【残機が少ない場合（1）】
-- 転移石推奨（安全優先）
-- リスクを最小化
-- 死亡は許されない
-
-【深淵への挑戦判断】
-残機2以上: 挑戦可能（失敗しても再挑戦可）
-残機1: 最後の挑戦（失敗＝ゲームオーバーの可能性大）
-```
-
----
-
-# 9. 戦略的意義とバランス
-
-## 9.1 各方法の使い分け
-
-```
-【転移石】
-推奨:
-- 装備耐久度 < 40%
-- HP < 50%
-- 貴重な装備を獲得
-- 残機が少ない
-→ 確実なリソース確保
-
-【帰還ルート】
-推奨:
-- 装備耐久度 > 40%
-- HP > 60%
-- 消耗品あり
-- 残機に余裕がある
-→ 追加報酬を狙う
-
-【深淵脱出ルート】
-条件:
-- 深淵ボス撃破後のみ
-→ ゲームクリア、最大報酬
-```
-
----
-
-## 9.2 リスク・リターンバランス
-
-```
-【トレードオフ】
-
-転移石:
-- 報酬: 100%
-- リスク: なし
-- コスト: アイテム消費
-→ 安全確実だが追加報酬なし
-
-帰還ルート:
-- 報酬: 100% + 追加魂
-- リスク: 3-7戦闘
-- コスト: なし
-→ リスクを取って追加報酬
-
-【深度別の推奨】
-
-Depth 1-2:
-- 帰還ルート推奨
-- エンカウント率70-75%だが敵が弱い
-- 熟練度・魂稼ぎのチャンス
-
-Depth 3:
-- 状況判断
-- 良装備 + 残機余裕 → 帰還ルート
-- 消耗激しい or 残機少ない → 転移石
-
-Depth 4:
-- 転移石推奨
-- エンカウント率85%は高リスク
-- エリートが出現する可能性
-
-Depth 5（深淵）:
-- 生還手段なし
-- ボス撃破で脱出ルート出現
-- 残機を確認してから進入を決断
-```
-
----
-
-# 10. 実装仕様
-
-## 10.1 データ構造
-
-```typescript
-/**
- * 生還システムのデータ型（V3.0）
- */
-enum ReturnMethod {
-  TELEPORT = 'teleport',
-  RETURN_ROUTE = 'return_route',
-  ESCAPE_ROUTE = 'escape_route',  // V3.0新規
-}
-
-interface ReturnResult {
-  success: boolean;
-  type: ReturnMethod;
-  rewards: {
-    gold: number;
-    stones: MagicStones;
-    souls: number;
-  };
-  message: string;
-  isGameClear?: boolean;  // V3.0: 脱出ルート用
-}
-
-interface ReturnOption {
-  method: ReturnMethod;
-  available: boolean;
-  rewardMultiplier: 1.0;  // V3.0: 常に100%
-  risk: 'none' | 'combat';
-  currentEncounterRate?: number;
-  finalEncounterRate?: number;
-  reason?: string;
-}
-
-/**
- * 残機システム（V3.0）
- */
-interface LivesSystem {
-  maxLives: number;  // 難易度による（2 or 3）
-  currentLives: number;
-}
-
-/**
- * 魂の残滓システム（V3.0）
- */
-interface SoulSystem {
-  currentRunSouls: number;  // 今回の探索での獲得魂
-  totalSouls: number;  // 累計魂
-}
-```
-
----
-
-## 10.2 UI設計要件
-
-```
-【生還メニュー画面（V3.0）】
-
-┌─────────────────────────────┐
-│  生還方法を選択              │
-├─────────────────────────────┤
-│                             │
-│ 現在地: 下層（Depth 3）      │
-│ 残機: ❤️❤️❤️                 │
-│                             │
-│ 今回の獲得魂: 85             │
-│                             │
-│ 1. 転移石                    │
-│    報酬: 100%                │
-│    魂: 85 → 累計に加算       │
-│    リスク: なし              │
-│    所持: 2個                 │
-│    [使用]                    │
-│                             │
-│ 2. 帰還ルート                │
-│    報酬: 100% + 追加魂       │
-│    現在エンカウント率: 80%   │
-│    リスク: 戦闘あり          │
-│    [選択]                    │
-│                             │
-│ ⚠️ 深淵（Depth 5）では       │
-│   全ての方法が使用不可       │
-│                             │
-│ [キャンセル]                 │
-│                             │
-└─────────────────────────────┘
-
-【深淵進入警告画面】
-
-┌─────────────────────────────┐
-│  ⚠️ 深淵への進入 ⚠️          │
-├─────────────────────────────┤
-│                             │
-│ この先は深淵。               │
-│                             │
-│ 深淵では:                    │
-│                             │
-│ ✗ 帰還ルート使用不可         │
-│ ✗ 転移石は全て無効           │
-│ ✗ 途中撤退は不可能           │
-│                             │
-│ ボスを倒すか、死ぬか。       │
-│ 二つに一つ。                 │
-│                             │
-│ 残機: ❤️❤️ (2)               │
-│                             │
-│ 今回の獲得魂: 120            │
-│ ※ 死亡しても魂は獲得        │
-│                             │
-│ 本当に進みますか？           │
-│                             │
-│ [覚悟はできている]           │
-│ [まだ早い]                   │
-│                             │
-└─────────────────────────────┘
-
-【死亡時画面（V3.0）】
-
-┌─────────────────────────────┐
-│        探索失敗...           │
-├─────────────────────────────┤
-│                             │
-│ 全てを失った...              │
-│                             │
-│ しかし、魂の残滓は           │
-│ 手に入れた。                 │
-│                             │
-│ 魂の残滓: +85                │
-│ 累計: 565 → 650              │
-│                             │
-│ 残機: ❤️❤️❤️ → ❤️❤️          │
-│                             │
-│ ロストしたもの:              │
-│ - 鋼の剣 Lv2                 │
-│ - 皮の鎧 Lv1                 │
-│ - 回復薬 x3                  │
-│ - Gold 230                   │
-│                             │
-│ [拠点に戻る]                 │
-│                             │
-└─────────────────────────────┘
-
-【ゲームオーバー画面】
-
-┌─────────────────────────────┐
-│         GAME OVER            │
-├─────────────────────────────┤
-│                             │
-│ 残機が尽きた...              │
-│                             │
-│ 最終到達深度: Depth 4        │
-│ 累計獲得魂: 1,250            │
-│ 撃破した敵: 87体             │
-│                             │
-│ [解除された実績は            │
-│  保持されます]               │
-│                             │
-│ [最初からやり直す]           │
-│                             │
-└─────────────────────────────┘
-```
-
----
-
-## 10.3 実装チェックリスト
-
-```
-□ 転移石アイテム実装（統一版）
-  □ 100%報酬
-  □ 戦闘中使用不可
-
-□ 深度チェックシステム
-  □ Depth 5での転移石無効
-  □ Depth 5での帰還ルート無効
-  □ 深淵進入前の警告
-
-□ 帰還ルートシステム
-  □ 動的エンカウント率計算
-  □ 進行度によるレート低下
-  □ 部屋ごとのエンカウント判定
-  □ 弱体化敵ロジック
-
-□ 脱出ルートシステム（V3.0新規）
-  □ ボス撃破後に出現
-  □ 戦闘なし帰還
-  □ ゲームクリアフラグ
-
-□ 報酬計算システム
-  □ 基本報酬計算（Gold/魔石）
-  □ 100%統一倍率
-  □ 魂の残滓計算（生還/死亡共に100%）
-
-□ 残機システム（V3.0新規）
-  □ 難易度別上限
-  □ 死亡時減少
-  □ ゲームオーバー判定
-
-□ 死亡処理（V3.0変更）
-  □ 魂100%獲得
-  □ 残機減少
-  □ アイテム・装備全ロスト
-  □ ゲームオーバー処理
-
-□ UI実装
-  □ 生還メニュー
-  □ 深淵警告
-  □ 転移石確認ダイアログ
-  □ 帰還ルート確認ダイアログ
-  □ 帰還ルート進行画面
-  □ 残機表示
-  □ 死亡時画面（魂獲得表示）
-  □ ゲームオーバー画面
-
-□ 統合テスト
-  □ 各生還方法の検証
-  □ Depth 5制限の検証
-  □ 報酬計算の正確性
-  □ 装備・熟練度保持の検証
-  □ 残機システム動作
-  □ 死亡時魂獲得の検証
-  □ ゲームオーバー処理
-  □ 脱出ルート動作
-```
-
----
-
-# 11. まとめ
-
-## 11.1 主要設計ポイント（V3.0）
-
-```
-1. 2層構造の生還方法
-   - 転移石（安全/アイテム消費）
-   - 帰還ルート（リスク/追加報酬）
-
-2. 深淵の絶対的制約
-   - Depth 5では全生還手段が無効
-   - 「ボスを倒すか、死ぬか」の緊張感
-   - ボス撃破で脱出ルート出現
-
-3. 転移石の統一（V3.0変更）
-   - 3種類 → 1種類に統一
-   - 報酬倍率: 100%固定
-   - 帰還ルートとの差別化は安全性のみ
-
-4. 死亡時の魂100%獲得（V3.0変更）
-   - 死亡しても魂は確実に獲得
-   - ペナルティは「残機減少」と「アイテムロスト」
-   - 成長は止まらない設計
-
-5. 残機システムとの連携（V3.0新規）
-   - 死亡時のみ残機減少
-   - 生還成功時は残機温存
-   - 残機0でゲームオーバー
-
-6. 動的エンカウント率システム
-   - 帰還が進むほど安全に
-   - 深度が深いほど初期レートが高い
-   - 進行度に応じた可視化
-```
-
-## 11.2 プレイヤー体験設計
-
-```
-【初心者（1-10プレイ）】
-- Depth 1-2で帰還ルート練習
-- 転移石をセーフティネットに
-- エンカウント率システムを理解
-- 残機の重みを学ぶ
-
-【中級者（11-30プレイ）】
-- Depth 3-4まで探索
-- 状況に応じた生還方法選択
-- 装備耐久度とのバランス
-- 残機管理を意識
-
-【上級者（31+プレイ）】
-- 深淵に挑戦
-- 転移石を持たずギリギリまで探索
-- 完璧なリソース管理
-- 残機1での深淵挑戦
-
-【深淵の位置づけ】
-- 最後の試練
-- 真の覚悟が試される場所
-- 最高報酬とリスク
-- プレイヤースキルの証明
-- 残機システムとの相乗効果
-```
-
-## 11.3 他システムとの連携
-
-```
-【装備システム】
-- 耐久度が生還判断に直結
-- 修理アイテムの戦略的使用
-- 死亡時の全ロストリスク
-
-【熟練度システム】
-- 帰還ルートで追加経験
-- 転移石使用の機会コスト
-
-【報酬システム】
-- 深度ボーナス
-- 全て100%統一
-
-【戦闘システム】
-- シールド持ち越しが帰還に影響
-- 装備破損リスク管理
-- HP管理の重要性
-
-【Sanctuaryシステム】
-- 魂の残滓で恒久強化
-- 死亡時も魂獲得で成長継続
-
-【残機システム（V3.0新規）】
-- 生還・死亡の戦略的重要性
-- 各探索の重み
-- ゲーム全体の緊張感
-```
+# 8. Summary of Tactical Balance
+
+| Method | Rewards | Risk | Cost | Nuance |
+| --- | --- | --- | --- | --- |
+| **Teleport** | 100% | Zero | Item | The "Safe Bet" for preserving rare loot. |
+| **Return Route** | 100% + Bonus | Combat | Time | The "Greedy Play" for extra Mastery and Souls. |
+| **Abyss** | 100% | Absolute | Lives | The "Ultimate Gamble." |

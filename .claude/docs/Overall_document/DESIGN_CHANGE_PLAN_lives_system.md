@@ -1,8 +1,9 @@
-# 設計変更計画書: 残機（復帰可能回数）システム導入
+# Design Change Proposal: Introduction of Life System (Retries)
 
-## 更新履歴
-- 2026-01-23: 初版作成
-- 2026-01-23: **Phase 1-3 実装完了**
+## Revision History
+
+* 2026-01-23: Initial version created
+* 2026-01-23: **Phase 1-3 Implementation Completed**
 
 ---
 
@@ -10,318 +11,350 @@
 
 ### Completed (Phase 1-3)
 
-- [x] **LivesSystem型定義** (`playerTypes.ts`)
-  - `Difficulty` type, `LivesSystem` interface, `LIVES_BY_DIFFICULTY` constant
-  - Helper functions: `createLivesSystem()`, `decreaseLives()`, `isGameOver()`
+* [x] **LivesSystem Type Definitions** (`playerTypes.ts`)
+* `Difficulty` type, `LivesSystem` interface, `LIVES_BY_DIFFICULTY` constant
+* Helper functions: `createLivesSystem()`, `decreaseLives()`, `isGameOver()`
 
-- [x] **PlayerContext更新** (`PlayerContext.tsx`)
-  - `RuntimeBattleState` に `lives` と `difficulty` を追加
-  - `decreaseLives()`, `isGameOver()`, `setDifficulty()` メソッド追加
 
-- [x] **死亡時処理** (`deathHandler.ts`)
-  - 魂の残滓100%獲得（死亡時も全て転送）
-  - `handlePlayerDeathWithDetails()` で転送された魂の量を返却
+* [x] **PlayerContext Update** (`PlayerContext.tsx`)
+* Added `lives` and `difficulty` to `RuntimeBattleState`
+* Added `decreaseLives()`, `isGameOver()`, and `setDifficulty()` methods
 
-- [x] **DefeatScreen UI** (`DefeatScreen.tsx`)
-  - 残機表示（ハートアイコン）
-  - 魂獲得表示
-  - ゲームオーバー状態の表示
 
-- [x] **HP/AP永続化バグ修正**
-  - `useBattleState.ts` に `InitialPlayerState` インターフェース追加
-  - `useBattleOrchestrator.ts` でPlayerContextからの初期値を渡す
-  - `BattleScreen.tsx` で勝利時にHP/APを保存
+* [x] **Death Handling Logic** (`deathHandler.ts`)
+* 100% Soul Remnant acquisition (all transferred even on death)
+* `handlePlayerDeathWithDetails()` now returns the amount of transferred souls
 
-- [x] **熟練度永続化バグ修正**
-  - `RuntimeBattleState` に `cardMasteryStore` 追加
-  - 勝利時にデッキからcardTypeIdベースで熟練度を集計・保存
-  - 次のバトル開始時にmasteryStoreからデッキに熟練度を適用
+
+* [x] **DefeatScreen UI** (`DefeatScreen.tsx`)
+* Lives display (Heart icons)
+* Soul acquisition display
+* Game Over state display
+
+
+* [x] **HP/AP Persistence Bug Fix**
+* Added `InitialPlayerState` interface to `useBattleState.ts`
+* Pass initial values from PlayerContext in `useBattleOrchestrator.ts`
+* Save HP/AP upon victory in `BattleScreen.tsx`
+
+
+* [x] **Mastery Persistence Bug Fix**
+* Added `cardMasteryStore` to `RuntimeBattleState`
+* Aggregates and saves mastery based on `cardTypeId` from the deck upon victory
+* Applies mastery from `masteryStore` to the deck at the start of the next battle
+
+
 
 ### Pending (Phase 4-5)
 
-- [ ] 転移石システムの統一（現在は実装されていない機能）
-- [ ] 深淵脱出ルートの実装
-- [ ] ゲームオーバー画面（完全リセット処理）
-- [ ] 設計書の詳細更新（残りのドキュメント）
-- [ ] テスト・検証
+* [ ] Unification of Teleport Stone system (currently unimplemented feature)
+* [ ] Implementation of the Abyss escape route
+* [ ] Game Over screen (Full Reset process)
+* [ ] Detailed update of design documents (remaining documentation)
+* [ ] Testing and verification
 
 ---
 
-## 1. 変更概要
+## 1. Plan Overview
 
-### 1.1 目的
-「探索可能回数」システムを「残機（復帰可能回数）」システムに変更し、よりシビアかつ明確なリスク管理を実現する。
+### 1.1 Objective
 
-### 1.2 主要変更点サマリー
+Change the "Exploration Limit" system to a "Life System (Retries)" to achieve more rigorous and clear risk management.
 
-| 項目 | 旧設計 | 新設計 |
-|------|--------|--------|
-| ゲーム進行管理 | 探索回数制限（10回） | **残機（復帰可能回数）システム** |
-| 残機上限 | - | **Hard: 2 / Normal・Easy: 3** |
-| 残機減少タイミング | - | **死亡時のみ** |
-| 残機回復 | - | **なし** |
-| 帰還成功時 | 探索回数+1 | **残機変化なし** |
-| 残機0での死亡 | - | **ゲームオーバー（完全リセット）** |
-| 転移石種類 | 3種類（通常70%/祝福80%/緊急60%） | **1種類に統一（100%持ち帰り）** |
-| 死亡時ペナルティ | 装備・アイテム・Gold・探索分の魂ロスト | **全所有アイテム・装備ロスト + 魂の残滓100%獲得** |
-| 深淵クリア | ボス撃破で自動帰還 | **ボス撃破後に脱出ルート出現** |
-| ゲームオーバー後 | 部分リセット | **完全リセット（実績のみ継続）** |
+### 1.2 Summary of Major Changes
+
+| Item | Old Design | New Design |
+| --- | --- | --- |
+| Progression Management | Exploration Count Limit (10) | **Life System (Retries)** |
+| Max Lives | - | **Hard: 2 / Normal & Easy: 3** |
+| Life Decrease Timing | - | **Only upon death** |
+| Life Recovery | - | **None** |
+| Successful Return | Exploration count +1 | **No change to Lives** |
+| Death at 0 Lives | - | **Game Over (Hard Reset)** |
+| Teleport Stone Types | 3 types (70%/80%/60% returns) | **Unified into 1 type (100% return)** |
+| Death Penalty | Loss of gear, items, gold, & souls | **Loss of all items/gear + 100% Soul Gain** |
+| Abyss Clear | Auto-return after boss defeat | **Escape Route appears after boss defeat** |
+| After Game Over | Partial Reset | **Full Reset (Achievements only persist)** |
 
 ---
 
-## 2. 詳細設計
+## 2. Detailed Design
 
-### 2.1 残機システム
+### 2.1 Life System
 
-#### 2.1.1 基本仕様
+#### 2.1.1 Basic Specifications
 
 ```typescript
 interface LivesSystem {
-  // 難易度別の残機上限
+  // Max lives by difficulty
   maxLives: {
     easy: 3,
     normal: 3,
     hard: 2
   };
 
-  // 現在の残機
+  // Current lives
   currentLives: number;
 
-  // 残機減少タイミング
-  decreaseOn: 'death_only';  // 死亡時のみ
+  // Decrease trigger
+  decreaseOn: 'death_only';  // Only upon death
 
-  // 残機回復
-  recovery: 'none';  // 回復手段なし
+  // Recovery
+  recovery: 'none';  // No means of recovery
 }
-```
-
-#### 2.1.2 残機減少条件
-
-| 状況 | 残機変化 | 備考 |
-|------|----------|------|
-| 通常探索で死亡 | **-1** | Depth 1-4での死亡 |
-| 深淵（Depth5）で死亡 | **-1** | ボス戦含む |
-| 帰還ルートで帰還 | **変化なし** | 安全に生還 |
-| 転移石で帰還 | **変化なし** | 安全に生還 |
-| 深淵ボス撃破後の脱出 | **変化なし** | クリア扱い |
-
-#### 2.1.3 ゲームオーバー条件
 
 ```
-残機0の状態で死亡 → ゲームオーバー → 完全リセット
+
+#### 2.1.2 Life Decrease Conditions
+
+| Situation | Life Change | Remarks |
+| --- | --- | --- |
+| Death during normal exploration | **-1** | Death in Depths 1-4 |
+| Death in The Abyss (Depth 5) | **-1** | Includes boss battles |
+| Return via Return Route | **No Change** | Successful survival |
+| Return via Teleport Stone | **No Change** | Successful survival |
+| Escape after Abyss Boss defeat | **No Change** | Treated as Game Clear |
+
+#### 2.1.3 Game Over Condition
+
+```
+Death while currentLives = 0 → Game Over → Full Reset
+
 ```
 
 ---
 
-### 2.2 死亡時ペナルティ（変更）
+### 2.2 Death Penalty (Revised)
 
-#### 2.2.1 旧設計
-```
-死亡時:
-- Dungeon内の装備: 全ロスト
-- Dungeon内のアイテム: 全ロスト
-- 獲得したGold: 全ロスト
-- 獲得した魂の残滓: 全ロスト（その探索分のみ）
-- 探索回数: +1
-- BaseCampの保管物: 保持
-```
+#### 2.2.1 Old Design
 
-#### 2.2.2 新設計
 ```
-死亡時:
-- 所有アイテム: **全ロスト（装備含む）**
-- 所有Gold（探索中獲得分）: **全ロスト**
-- 魂の残滓: **100%獲得**（死亡時でも確実に入手）
-- 残機: **-1**
-- BaseCampの保管物: 保持（装備・カード・Gold・魂累計）
+Upon Death:
+- Gear in Dungeon: All lost
+- Items in Dungeon: All lost
+- Acquired Gold: All lost
+- Acquired Soul Remnants: All lost (for that run only)
+- Exploration Count: +1
+- BaseCamp Storage: Retained
+
 ```
 
-#### 2.2.3 設計意図
+#### 2.2.2 New Design
 
-| 項目 | 理由 |
-|------|------|
-| 全アイテムロスト | 死亡のリスクを明確化。持ち込み装備も失うため慎重なプレイを促す |
-| 魂の残滓100%獲得 | 死亡しても成長要素が残る。残機減少との引き換えで魂は確実に得られる |
-| BaseCamp保持 | 完全なリセットは残機0時のみ。死亡でも拠点リソースは安全 |
+```
+Upon Death:
+- Carried Items: **Total Loss (including equipment)**
+- Owned Gold (earned in-run): **Total Loss**
+- Soul Remnants: **100% Acquisition** (guaranteed even on death)
+- Lives: **-1**
+- BaseCamp Storage: Retained (Gear, Cards, Gold, Cumulative Souls)
+
+```
+
+#### 2.2.3 Design Intent
+
+| Item | Reason |
+| --- | --- |
+| Total Item Loss | Clarifies the risk of death. Encourages cautious play as "bring-in" gear is also lost. |
+| 100% Soul Gain | Ensures growth persists even after death. Souls are guaranteed in exchange for losing a Life. |
+| BaseCamp Retention | A full reset only occurs at 0 Lives. Base resources are safe during normal deaths. |
 
 ---
 
-### 2.3 転移石システム（統一）
+### 2.3 Teleport Stone System (Unified)
 
-#### 2.3.1 旧設計
-```
-3種類の転移石:
-- 通常転移石: 報酬70%、戦闘中使用不可
-- 祝福の転移石: 報酬80%、戦闘中使用不可
-- 緊急転移石: 報酬60%、戦闘中使用可
-```
+#### 2.3.1 Old Design
 
-#### 2.3.2 新設計
 ```
-1種類の転移石:
-- 転移石（統一版）
-  - 報酬: 100%（リソース全て持ち帰り）
-  - 使用条件: 戦闘中使用不可、マップ画面のみ
-  - 深淵（Depth5）: 使用不可（変更なし）
+3 Types of Teleport Stones:
+- Standard: 70% reward, cannot use in battle
+- Blessed: 80% reward, cannot use in battle
+- Emergency: 60% reward, can use in battle
+
 ```
 
-#### 2.3.3 帰還手段の差別化
+#### 2.3.2 New Design
 
-| 帰還方法 | 報酬 | リスク | 特徴 |
-|----------|------|--------|------|
-| 帰還ルート | 100% | 戦闘あり | 追加魂獲得可能、時間かかる |
-| 転移石 | 100% | なし | 即座に安全帰還、アイテム消費 |
+```
+1 Type of Teleport Stone:
+- Teleport Stone (Unified Version)
+  - Reward: 100% (All resources brought back)
+  - Usage: Cannot use in battle; Map screen only
+  - Abyss (Depth 5): Cannot be used (No change)
 
-**差別化ポイント:**
-- 帰還ルート: 戦闘リスクあり、追加報酬（魂・熟練度）あり
-- 転移石: 完全安全だがアイテム消費
+```
+
+#### 2.3.3 Differentiation of Return Methods
+
+| Return Method | Reward | Risk | Characteristics |
+| --- | --- | --- | --- |
+| Return Route | 100% | Battles present | Can earn additional souls; takes time |
+| Teleport Stone | 100% | None | Immediate safe return; consumes item |
+
+**Points of Differentiation:**
+
+* Return Route: Risk of battle, but additional rewards (Souls/Mastery).
+* Teleport Stone: Completely safe, but costs an item.
 
 ---
 
-### 2.4 深淵（Depth5）特別ルール（変更）
+### 2.4 Abyss (Depth 5) Special Rules (Revised)
 
-#### 2.4.1 旧設計
-```
-- 転移石・帰還ルート: 使用不可
-- ボス撃破: 自動帰還（クリア）
-- 死亡: 探索回数+1 + 全アイテムロスト
-```
+#### 2.4.1 Old Design
 
-#### 2.4.2 新設計
 ```
-- 転移石・帰還ルート: 使用不可（変更なし）
-- ボス撃破後: **脱出ルート出現** → 安全に帰還
-- 死亡: **残機-1** + 全アイテムロスト + **魂100%獲得**
+- Teleport Stone / Return Route: Unavailable
+- Boss Defeat: Automatic Return (Clear)
+- Death: Exploration Count +1 + Total Item Loss
+
 ```
 
-#### 2.4.3 脱出ルート仕様
+#### 2.4.2 New Design
+
+```
+- Teleport Stone / Return Route: Unavailable (No change)
+- Boss Defeat: **Escape Route appears** → Return safely
+- Death: **Life -1** + Total Item Loss + **100% Soul Gain**
+
+```
+
+#### 2.4.3 Escape Route Specifications
 
 ```typescript
 interface EscapeRoute {
-  // 出現条件
-  trigger: 'boss_defeated';  // ボス撃破後に出現
+  // Trigger condition
+  trigger: 'boss_defeated';  // Appears after defeating the boss
 
-  // ルート内容
-  encounters: 'none';  // 戦闘なし
+  // Route content
+  encounters: 'none';  // No battles
 
-  // 報酬
-  rewardMultiplier: 1.0;  // 100%持ち帰り
+  // Rewards
+  rewardMultiplier: 1.0;  // 100% extraction
 
-  // UI表現
-  display: '深淵からの脱出口が開いた...'
+  // UI message
+  display: 'An escape route from the Abyss has opened...'
 }
+
 ```
 
 ---
 
-### 2.5 ゲームオーバー時の処理（変更）
+### 2.5 Game Over Handling (Revised)
 
-#### 2.5.1 旧設計
-```
-探索回数超過時:
-- 部分リセット
-- 一部の進行状況は保持
-```
+#### 2.5.1 Old Design
 
-#### 2.5.2 新設計
 ```
-残機0で死亡時:
-- 完全リセット
-  - Gold: 初期値（500G）に戻る
-  - 装備: 初期装備のみ
-  - 魂の残滓（累計）: 0に戻る
-  - Sanctuary解放状況: リセット
-  - カードデッキ: 初期デッキに戻る
-  - 難易度設定: 維持
-  - 図鑑記録: リセット
-  - 既知イベント情報: リセット
+When exploration limit is exceeded:
+- Partial Reset
+- Some progression is retained
 
-- 継続されるもの
-  - **実績解除状況のみ**
 ```
 
----
+#### 2.5.2 New Design
 
-### 2.6 生還時の処理（変更）
+```
+Upon death at 0 Lives:
+- Full Reset
+  - Gold: Returns to initial value (500G)
+  - Equipment: Initial equipment only
+  - Soul Remnants (Cumulative): Resets to 0
+  - Sanctuary Unlocks: Reset
+  - Card Deck: Returns to initial deck
+  - Difficulty Settings: Maintained
+  - Encyclopedia: Reset
+  - Known Event Info: Reset
 
-#### 2.6.1 旧設計
-```
-生還時（帰還ルート/転移石）:
-- 全アイテム持ち帰り（転移石は報酬倍率適用）
-- 魂の残滓: 帰還方法に応じた倍率で累計に加算
-- 探索回数: +1
-```
+- Persistence
+  - **Achievement Unlocks Only**
 
-#### 2.6.2 新設計
-```
-生還時（帰還ルート/転移石）:
-- 全アイテム100%持ち帰り（統一）
-- 魂の残滓: 100%累計に加算
-- 残機: **変化なし**
 ```
 
 ---
 
-## 3. 影響を受ける設計書と変更箇所
+### 2.6 Survival Handling (Revised)
+
+#### 2.6.1 Old Design
+
+```
+Upon Survival (Return Route / Teleport Stone):
+- All items brought back (Teleport stone applies multiplier)
+- Soul Remnants: Added to total based on return method multiplier
+- Exploration Count: +1
+
+```
+
+#### 2.6.2 New Design
+
+```
+Upon Survival (Return Route / Teleport Stone):
+- 100% of all items brought back (Unified)
+- Soul Remnants: 100% added to total
+- Lives: **No Change**
+
+```
+
+---
+
+## 3. Impacted Documents and Change Locations
 
 ### 3.1 game_design_master.md
 
-| セクション | 変更内容 |
-|------------|----------|
-| 2.1 コアループ | 探索回数制限 → 残機システム |
-| 2.2 リスク・リターン | 死亡ペナルティ更新 |
-| 2.3 探索回数制限システム | 残機システムに全面書き換え |
-| 3.2 ゲーム全体の流れ | フェーズ説明を残機ベースに |
-| 3.3 エンディング条件 | 失敗条件を残機ベースに |
-| 5.3 探索回数制限のバランス | 削除または残機バランスに |
+| Section | Content Change |
+| --- | --- |
+| 2.1 Core Loop | Exploration Limit → Life System |
+| 2.2 Risk/Reward | Update Death Penalty |
+| 2.3 Exploration Limit System | Complete rewrite into Life System |
+| 3.2 Overall Game Flow | Rewrite phase descriptions based on Lives |
+| 3.3 Ending Conditions | Rewrite failure conditions based on Lives |
+| 5.3 Limit Balancing | Delete or change to Life balancing |
 
 ### 3.2 return_system_design.md
 
-| セクション | 変更内容 |
-|------------|----------|
-| 1.2 生還と死亡の違い | 残機・魂獲得ルール更新 |
-| 3. 転移石システム | 1種類に統一、報酬100% |
-| 5. 深淵特別ルール | 脱出ルート追加 |
-| 6. 報酬計算 | 転移石報酬倍率削除 |
-| 7. 探索回数制限との関係 | 残機システムとの関係に |
+| Section | Content Change |
+| --- | --- |
+| 1.2 Survival vs Death | Update Lives and Soul gain rules |
+| 3. Teleport Stone System | Unify to 1 type, 100% reward |
+| 5. Abyss Special Rules | Add Escape Route |
+| 6. Reward Calculation | Delete Teleport Stone multipliers |
+| 7. Relation to Limit | Update to relation with Life system |
 
 ### 3.3 dungeon_exploration_ui_design_v2.1.md
 
-| セクション | 変更内容 |
-|------------|----------|
-| 1.3 探索回数システム | 残機システムに変更 |
-| 4.1 画面構成 | 残機表示に変更 |
-| 5. 帰還システムUI | 転移石統一、報酬表示更新 |
-| 6.2 動的変化エフェクト | 残機警告に変更 |
+| Section | Content Change |
+| --- | --- |
+| 1.3 Exploration System | Change to Life System |
+| 4.1 Screen Layout | Change to Lives display |
+| 5. Return System UI | Unify Teleport Stones, update reward display |
+| 6.2 Dynamic Effects | Change to Life warning effects |
 
 ### 3.4 sanctuary_design.md
 
-| セクション | 変更内容 |
-|------------|----------|
-| 2.1 魂の残滓 | 死亡時100%獲得ルール |
-| 2.2 スキルツリー | 探索回数拡張スキル削除 |
-| 5.3 魂の残滓システム | 死亡時処理変更 |
-| 6. PlayerContext統合 | 残機システム連携 |
-| 8.1 バランス調整 | 死亡時魂獲得を考慮 |
+| Section | Content Change |
+| --- | --- |
+| 2.1 Soul Remnants | 100% gain on death rule |
+| 2.2 Skill Tree | Delete exploration limit expansion skill |
+| 5.3 Soul Remnant System | Change handling upon death |
+| 6. PlayerContext Integration | Connect with Life System |
+| 8.1 Balancing | Account for Soul gain upon death |
 
 ### 3.5 inventory_design.md
 
-| セクション | 変更内容 |
-|------------|----------|
-| 6.3 死亡時のロストルール | 全所有アイテムロストに更新 |
-| 6.4 生還時のルール | 100%統一に更新 |
+| Section | Content Change |
+| --- | --- |
+| 6.3 Loss Rule on Death | Update to "Loss of all owned items" |
+| 6.4 Survival Rule | Update to unified 100% return |
 
-### 3.6 guild_design.md（軽微）
+### 3.6 guild_design.md (Minor)
 
-| セクション | 変更内容 |
-|------------|----------|
-| 探索回数参照箇所 | 残機参照に変更（あれば） |
+| Section | Content Change |
+| --- | --- |
+| Exploration Count Refs | Change to Life references (where applicable) |
 
 ---
 
-## 4. データ構造の変更
+## 4. Data Structure Changes
 
-### 4.1 新規: LivesSystem
+### 4.1 New: LivesSystem
 
 ```typescript
 // src/types/GameTypes.ts
@@ -329,7 +362,7 @@ interface EscapeRoute {
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
 export interface LivesSystem {
-  maxLives: number;  // 難易度により2または3
+  maxLives: number;  // 2 or 3 depending on difficulty
   currentLives: number;
 }
 
@@ -338,12 +371,13 @@ export const LIVES_BY_DIFFICULTY: Record<Difficulty, number> = {
   normal: 3,
   hard: 2,
 };
+
 ```
 
-### 4.2 変更: PlayerContext
+### 4.2 Changed: PlayerContext
 
 ```typescript
-// 旧
+// Old
 interface Player {
   explorationLimit: {
     max: number;
@@ -351,240 +385,182 @@ interface Player {
   };
 }
 
-// 新
+// New
 interface Player {
   lives: {
-    max: number;      // 難易度による上限 (2 or 3)
-    current: number;  // 現在の残機
+    max: number;      // Max based on difficulty (2 or 3)
+    current: number;  // Current lives
   };
   difficulty: Difficulty;
 }
+
 ```
 
-### 4.3 変更: TeleportStone
+### 4.3 Changed: TeleportStone
 
 ```typescript
-// 旧
+// Old
 interface TeleportStone {
   type: 'normal' | 'blessed' | 'emergency';
   rewardMultiplier: number;  // 0.7 / 0.8 / 0.6
   canUseInBattle: boolean;
 }
 
-// 新
+// New
 interface TeleportStone {
-  type: 'standard';  // 統一
-  rewardMultiplier: 1.0;  // 100%固定
-  canUseInBattle: false;  // 戦闘中使用不可
+  type: 'standard';  // Unified
+  rewardMultiplier: 1.0;  // Fixed 100%
+  canUseInBattle: false;  // Cannot be used in battle
 }
+
 ```
 
-### 4.4 変更: SanctuaryProgress
+### 4.4 Changed: SanctuaryProgress
 
 ```typescript
-// 旧
+// Old
 interface SanctuaryProgress {
   currentRunSouls: number;
   totalSouls: number;
-  explorationLimitBonus: number;  // 削除
+  explorationLimitBonus: number;  // To be removed
 }
 
-// 新
+// New
 interface SanctuaryProgress {
   currentRunSouls: number;
   totalSouls: number;
-  // explorationLimitBonus は削除（残機拡張スキルなし）
+  // explorationLimitBonus removed (no life expansion skill)
 }
+
 ```
 
-### 4.5 変更: 死亡時処理
+### 4.5 Changed: Death Handling
 
 ```typescript
-// 旧
+// Old
 function handleDeath(player: Player): void {
-  // 探索分の魂リセット
+  // Reset run souls
   currentRunSouls = 0;
-  // 探索回数+1
+  // Exploration count +1
   explorationLimit.current++;
 }
 
-// 新
+// New
 function handleDeath(player: Player): void {
-  // 魂を100%獲得
+  // 100% Soul acquisition
   player.totalSouls += currentRunSouls;
   currentRunSouls = 0;
 
-  // 残機-1
+  // Life -1
   player.lives.current--;
 
-  // 全所有アイテムロスト
+  // Loss of all carried items
   player.inventory = getEmptyInventory();
   player.equipment = {};
-  player.gold = 0;  // 探索中のGoldのみ
+  player.gold = 0;  // Only in-run Gold
 
-  // 残機0チェック
+  // Check Game Over
   if (player.lives.current <= 0) {
     triggerGameOver(player);
   }
 }
+
 ```
 
 ---
 
-## 5. UI変更
+## 5. UI Changes
 
-### 5.1 ヘッダー表示
-
-```
-旧: Exploration: 7/10
-新: Lives: ❤️❤️❤️ (残り3) または ❤️❤️ (残り2)
-```
-
-### 5.2 帰還メニュー
+### 5.1 Header Display
 
 ```
-旧:
+Old: Exploration: 7/10
+New: Lives: ❤️❤️❤️ (3 left) or ❤️❤️ (2 left)
+
+```
+
+### 5.2 Return Menu
+
+```
+Old:
 ┌─────────────────────────────────────┐
-│  1. 転移石（通常）  報酬: 70%        │
-│  2. 転移石（祝福）  報酬: 80%        │
-│  3. 転移石（緊急）  報酬: 60%        │
-│  4. 帰還ルート      報酬: 100%       │
+│  1. Teleport (Normal)  Reward: 70%   │
+│  2. Teleport (Blessed) Reward: 80%   │
+│  3. Teleport (Emergency) Reward: 60% │
+│  4. Return Route      Reward: 100%  │
 └─────────────────────────────────────┘
 
-新:
+New:
 ┌─────────────────────────────────────┐
-│  1. 転移石          報酬: 100%       │
-│     所持: 2個       即座に帰還       │
+│  1. Teleport Stone    Reward: 100%  │
+│     Owned: 2          Return Instantly│
 │                                     │
-│  2. 帰還ルート      報酬: 100%       │
-│     戦闘あり        追加魂獲得可能   │
+│  2. Return Route      Reward: 100%  │
+│     Includes Battles  Extra Souls    │
 └─────────────────────────────────────┘
-```
-
-### 5.3 死亡時表示
 
 ```
-旧:
-「探索失敗... 全てを失った」
-探索回数: 7 → 8
 
-新:
-「探索失敗... 全てを失った」
-「しかし、魂の残滓は手に入れた...」
-魂の残滓: +85 → 累計 650
-残機: ❤️❤️❤️ → ❤️❤️
+### 5.3 Death Display
+
+```
+Old:
+"Exploration Failed... You lost everything."
+Exploration: 7 → 8
+
+New:
+"Exploration Failed... You lost everything."
+"However, you secured the Soul Remnants..."
+Souls: +85 → Total 650
+Lives: ❤️❤️❤️ → ❤️❤️
+
 ```
 
-### 5.4 ゲームオーバー表示
+### 5.4 Game Over Display
 
 ```
 ┌─────────────────────────────────────┐
-│         GAME OVER                   │
+│            GAME OVER                │
 │                                     │
-│  残機が尽きた...                     │
+│  Your lives have run out...         │
 │                                     │
-│  最終到達深度: Depth 4              │
-│  累計獲得魂: 1,250                  │
-│  撃破した敵: 87体                   │
+│  Final Depth: Depth 4               │
+│  Total Souls: 1,250                 │
+│  Enemies Defeated: 87               │
 │                                     │
-│  [解除された実績は保持されます]       │
+│  [Unlocked achievements are kept]    │
 │                                     │
-│  [最初からやり直す]                  │
+│  [Start Over From Beginning]        │
 └─────────────────────────────────────┘
+
 ```
 
 ---
 
-## 6. 実装順序
+## 6. Implementation Order
 
-### Phase 1: データ構造変更（Day 1）
-1. LivesSystem型定義
-2. PlayerContext更新（explorationLimit → lives）
-3. TeleportStone型統一
-4. SanctuaryProgress更新
+### Phase 1: Data Structure Changes (Day 1)
 
-### Phase 2: ロジック変更（Day 2）
-1. 死亡時処理（魂100%獲得 + 残機減少）
-2. 帰還時処理（残機変化なし）
-3. ゲームオーバー処理（完全リセット）
-4. 深淵脱出ルート処理
+1. Define `LivesSystem` type
+2. Update `PlayerContext` (`explorationLimit` → `lives`)
+3. Unify `TeleportStone` type
+4. Update `SanctuaryProgress`
 
-### Phase 3: UI変更（Day 3）
-1. ヘッダー残機表示
-2. 帰還メニュー更新
-3. 死亡時演出
-4. ゲームオーバー画面
+### Phase 2: Logic Changes (Day 2)
 
-### Phase 4: 設計書更新（Day 4）
-1. game_design_master.md
-2. return_system_design.md
-3. dungeon_exploration_ui_design_v2.1.md
-4. sanctuary_design.md
-5. inventory_design.md
+1. Death handling (100% Soul gain + Life decrease)
+2. Survival handling (No life change)
+3. Game Over handling (Full Reset)
+4. Abyss Escape Route logic
 
-### Phase 5: テスト・検証（Day 5）
-1. 死亡→残機減少フロー
-2. 帰還→残機維持フロー
-3. ゲームオーバー→完全リセット
-4. 深淵脱出ルート
-5. 難易度別残機上限
+### Phase 3: UI Changes (Day 3)
 
----
+1. Header lives display
+2. Update Return Menu
+3. Death sequence/presentation
+4. Game Over screen
 
-## 7. 整合性チェックリスト
-
-### 7.1 システム間整合性
-
-- [ ] 残機システムと死亡ペナルティの整合性
-- [ ] 転移石統一と帰還ルートの差別化
-- [ ] 深淵特別ルールと脱出ルートの整合性
-- [ ] Sanctuary魂獲得と死亡時処理の整合性
-- [ ] ゲームオーバーリセットと継続データの整合性
-
-### 7.2 UI整合性
-
-- [ ] ヘッダー表示と残機システムの整合性
-- [ ] 帰還メニューと転移石統一の整合性
-- [ ] 死亡時演出と魂100%獲得の表現
-- [ ] ゲームオーバー画面と完全リセットの説明
-
-### 7.3 バランス整合性
-
-- [ ] 難易度別残機上限の妥当性
-- [ ] 死亡時全ロスト＋魂獲得のバランス
-- [ ] 転移石100%持ち帰りと帰還ルートの価値バランス
-
----
-
-## 8. 変更による影響分析
-
-### 8.1 ゲーム体験への影響
-
-| 側面 | 旧 | 新 | 影響 |
-|------|----|----|------|
-| 緊張感 | 探索回数消費で中程度 | 残機減少で高い | **UP** |
-| 救済要素 | 探索回数拡張スキル | 魂100%獲得 | 形態変化 |
-| 戦略性 | 探索回数管理 | 残機温存 + 装備リスク | **UP** |
-| リプレイ性 | 部分リセット | 完全リセット | **DOWN**（意図的） |
-
-### 8.2 削除される要素
-
-1. **探索回数システム** → 残機に置換
-2. **探索回数拡張スキル** → 削除
-3. **転移石バリエーション** → 統一
-
-### 8.3 追加される要素
-
-1. **残機システム**
-2. **難易度別残機上限**
-3. **深淵脱出ルート**
-4. **死亡時魂100%獲得**
-
----
-
-## 9. 承認事項
-
-本計画に基づき、以下の設計書を更新します:
+### Phase 4: Document Updates (Day 4)
 
 1. game_design_master.md
 2. return_system_design.md
@@ -592,4 +568,73 @@ function handleDeath(player: Player): void {
 4. sanctuary_design.md
 5. inventory_design.md
 
-**承認後、各設計書の更新を開始します。**
+### Phase 5: Testing & Verification (Day 5)
+
+1. Death → Life decrease flow
+2. Survival → Life maintenance flow
+3. Game Over → Full Reset flow
+4. Abyss Escape Route
+5. Max lives by difficulty check
+
+---
+
+## 7. Consistency Checklist
+
+### 7.1 System Consistency
+
+* [ ] Consistency between Life system and death penalties
+* [ ] Differentiation between unified Teleport Stones and Return Route
+* [ ] Consistency between Abyss special rules and Escape Route
+* [ ] Consistency between Sanctuary Soul gain and death handling
+* [ ] Consistency between Game Over reset and persistent data
+
+### 7.2 UI Consistency
+
+* [ ] Header display matches Life system
+* [ ] Return Menu matches unified Teleport Stones
+* [ ] Death sequence properly conveys 100% Soul gain
+* [ ] Game Over screen properly explains Full Reset
+
+### 7.3 Balance Consistency
+
+* [ ] Validity of Max Lives by difficulty
+* [ ] Balance between "Total Loss" and "Soul Gain" upon death
+* [ ] Value balance between 100% Teleport Stone and Return Route
+
+---
+
+## 8. Impact Analysis
+
+### 8.1 Impact on Game Experience
+
+| Aspect | Old | New | Impact |
+| --- | --- | --- | --- |
+| Tension | Moderate (Limit consumption) | High (Life loss) | **UP** |
+| Safety Net | Limit expansion skills | 100% Soul gain | Changed Form |
+| Strategy | Limit management | Life preservation + Gear risk | **UP** |
+| Replayability | Partial Reset | Full Reset | **DOWN** (Intentional) |
+
+### 8.2 Removed Elements
+
+1. **Exploration Limit System** → Replaced by Lives
+2. **Limit Expansion Skills** → Deleted
+3. **Teleport Stone Variations** → Unified
+
+### 8.3 Added Elements
+
+1. **Life System**
+2. **Max Lives by Difficulty**
+3. **Abyss Escape Route**
+4. **100% Soul Gain on Death**
+
+---
+
+## 9. Approvals
+
+Based on this plan, the following design documents will be updated:
+
+1. game_design_master.md
+2. return_system_design.md
+3. dungeon_exploration_ui_design_v2.1.md
+4. sanctuary_design.md
+5. inventory_design.md

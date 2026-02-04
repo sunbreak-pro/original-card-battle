@@ -1,803 +1,222 @@
-# 剣士専用カード 40 枚 完全設計
+# 40 Swordsman-Exclusive Cards: Complete Design
 
-## 前提条件
+## Prerequisites
 
-### 剣気システム
+### Sword Intent System
 
 ```
-剣気最大値: 10
-剣気5以上: クリティカル率+20%
-剣気8以上: 貫通+30%
-剣気10: 確定クリティカル(会心)+貫通50%
+Max Sword Intent: 10
+Sword Intent 5+: Critical Rate +20%
+Sword Intent 8+: Penetration +30%
+Sword Intent 10: Guaranteed Critical + 50% Penetration
 
-【蓄積量】
-0コスト: +1
-1コスト: +1
-2コスト: +2 or +3
-3コスト以上: +3
-剣気専用: +4
+【Accumulation Rates】
+0 Cost: +1
+1 Cost: +1
+2 Cost: +2 or +3
+3+ Cost: +3
+Sword Intent Specialized: +4
 
-【消費】
-3消費: 中火力技
-5消費: 高火力技+バフデバフ
-全消費(10): 超火力+特殊バフデバフ
+【Consumption】
+3 Spent: Mid-firepower skills
+5 Spent: High-firepower skills + Buffs/Debuffs
+Full (10) Spent: Extreme firepower + Special Buffs/Debuffs
+
 ```
 
 ---
 
-## カテゴリ 1: 剣気蓄積型(0-1 コスト高速攻撃) 12 枚
+## Category 1: Sword Intent Accumulation (0-1 Cost Fast Attacks) - 12 Cards
 
-### 01. 迅雷斬(コスト 0)
+### 01. Thunderclap Slash (Cost 0)
 
-```
-威力: 5
-追加効果: なし
+* **Power:** 5
+* **Effect:** None
+* **Talent Card (Flash-Thunder Slash):** Power 15.
 
+### 02. Wind Wrap (Cost 0)
 
-才能カード: 閃雷斬(コスト 0)
-威力: 15
+* **Power:** None
+* **Effect:** Cost -1 for the first card used next turn.
+* **Talent Card:** Cost -1 for ALL cards used next turn.
 
+### 03. Multi-Strike (Cost 2)
 
-親カード: なし
-派生カード: 風纏い
+* **Power:** 3 x 3 hits | **Sword Intent:** +1
+* **Talent Card (Godspeed Multi-Slash):** Cost 1 | Power 8 x 5 hits | Intent +2 | Adds Sword Intent dmg bonus to each hit.
+* **Usage:** Scales incredibly well with Sword Intent damage bonuses. Explodes at 5+ Intent.
 
-```
+### 04. Triple Thrust (Cost 1)
 
-### 02. 風纏い(コスト 0)
+* **Power:** 8 x 3 hits | **Sword Intent:** +1 | **Effect:** 20% Penetration.
+* **Talent Card (Seven-Fold Thrust):** Power 10 x 7 hits | Intent +2 | 30% Penetration.
 
-```
-威力: なし
-追加効果: 次のターン最初に使用するカードのコスト-1
+### 05. Iai Slash (Cost 1)
 
-派生カード: 
+* **Power:** 12 | **Sword Intent:** +1 | **Effect:** First Strike (Can auto-trigger at turn start).
+* **Talent Card (Godspeed Iai):** Cost 0 | Power 18 | Intent +2 | First Strike / Guaranteed Critical.
 
-才能カード: 
-追加効果: 次のターン使用するカード全てのコスト -1
+### 06. Dual Blade Dance (Cost 1)
 
-```
+* **Power:** 4 x 6 hits | **Sword Intent:** +1 | **Effect:** Random Target.
+* **Talent Card (Magic Blade Dance):** Power 6 x 10 hits | Intent +2 | Last hit deals x2 damage.
 
-### 03. 連撃(コスト 2)
+### 07. Slash (Cost 1)
 
-```
-【基本効果】
-威力: 3×3回
-剣気: +1
-追加効果: なし
+* **Power:** 10 | **Sword Intent:** +1
+* **Talent Card (True Slash):** Power 18 | Intent +1 | 40% Penetration if Intent is 5+.
 
-派生カード: 
+### 08. Diagonal Slash (Cost 1)
 
-才能カード: 神速連斬
-コスト: 1
-威力: 8×5回
-剣気: +2
-追加効果: 各攻撃ごとに剣気ダメージ加算
+* **Power:** 11 | **Sword Intent:** +1 | **Effect:** Bleed (1 stack).
+* **Talent Card (Blood-Wind Slash):** Power 16 | Intent +1 | Bleed (2 stacks) / +50% dmg to bleeding enemies.
 
-【使い所】
-多段攻撃で剣気ダメージを複数回乗せる
-剣気5以上で使うと爆発的ダメージ
-```
+### 09. Cyclone Slash (Cost 1)
 
-### 04. 三段突き(コスト 1)
+* **Power:** 9 | **Sword Intent:** +1 | **Effect:** AoE (All enemies).
+* **Talent Card (Great Cyclone Slash):** Power 15 | Intent +2 | AoE / Enemy Shield -10.
 
-```
-【基本効果】
-威力: 8×3回
-剣気: +1
-追加効果: 貫通20%
+### 10. Fang Thrust (Cost 1)
 
-【Lv5才能カード】七段突き
-コスト: 1
-威力: 10×7回
-剣気: +2
-追加効果: 貫通30%
+* **Power:** 13 | **Sword Intent:** +1 | **Effect:** 30% Penetration.
+* **Talent Card (Secret Art: Fang Thrust):** Power 20 | Intent +1 | 50% Penetration / Stun on Shield Break.
 
-【使い所】
-貫通付きの多段攻撃
-シールド持ちの敵に有効
-```
+### 11. Dragon Fang (Cost 1)
 
-### 05. 居合斬り(コスト 1)
+* **Power:** 8 | **Sword Intent:** +1 | **Effect:** Next attack power +50%.
+* **Talent Card (True Dragon Fang):** Power 12 | Intent +2 | Next attack power +100% / Intent +3.
 
-```
-【基本効果】
-威力: 12
-剣気: +1
-追加効果: 先制攻撃(ターン開始時に自動発動可能)
+### 12. Flowing Water Blade (Cost 1)
 
-【Lv5才能カード】神速居合
-コスト: 0
-威力: 18
-剣気: +2
-追加効果: 先制攻撃 / 確定クリティカル
-
-【使い所】
-先制で敵を削る
-剣気蓄積しながら確実にダメージ
-```
-
-### 06. 双剣乱舞(コスト 1)
-
-```
-【基本効果】
-威力: 4×6回
-剣気: +1
-追加効果: ランダムターゲット
-
-【Lv5才能カード】魔剣乱舞
-コスト: 1
-威力: 6×10回
-剣気: +2
-追加効果: ランダムターゲット / 最後の一撃×2
-
-【使い所】
-複数敵に有効
-手数で圧倒
-最後の一撃が強力
-```
-
-### 07. 斬撃(コスト 1)
-
-```
-【基本効果】
-威力: 10
-剣気: +1
-追加効果: なし
-
-【Lv5才能カード】真・斬撃
-コスト: 1
-威力: 18
-剣気: +1
-追加効果: 剣気5以上なら貫通40%
-
-【使い所】
-最もシンプルな攻撃
-デッキの基盤
-安定したダメージ源
-```
-
-### 08. 袈裟斬り(コスト 1)
-
-```
-【基本効果】
-威力: 11
-剣気: +1
-追加効果: 出血1スタック
-
-【Lv5才能カード】血風袈裟斬り
-コスト: 1
-威力: 16
-剣気: +1
-追加効果: 出血2スタック / 出血中の敵に+50%
-
-【使い所】
-出血を早期に付与
-継続ダメージで削る
-```
-
-### 09. 回転斬り(コスト 1)
-
-```
-【基本効果】
-威力: 9
-剣気: +1
-追加効果: 範囲攻撃(全体)
-
-【Lv5才能カード】大回転斬り
-コスト: 1
-威力: 15
-剣気: +2
-追加効果: 範囲攻撃 / シールド-10
-
-【使い所】
-複数敵に対応
-剣気を溜めながら全体攻撃
-```
-
-### 10. 牙突(コスト 1)
-
-```
-【基本効果】
-威力: 13
-剣気: +1
-追加効果: 貫通30%
-
-【Lv5才能カード】奥義・牙突
-コスト: 1
-威力: 20
-剣気: +1
-追加効果: 貫通50% / 敵シールド破壊で気絶
-
-【使い所】
-貫通特化
-シールド破壊からの気絶コンボ
-```
-
-### 11. 龍牙(コスト 1)
-
-```
-【基本効果】
-威力: 8
-剣気: +1
-追加効果: 次の攻撃の威力+50%
-
-【Lv5才能カード】真龍牙
-コスト: 1
-威力: 12
-剣気: +2
-追加効果: 次の攻撃の威力+100% / 剣気+3
-
-【使い所】
-バフとして機能
-次の大技の前に使用
-剣気蓄積も兼ねる
-```
-
-### 12. 流水剣(コスト 1)
-
-```
-【基本効果】
-威力: 10
-剣気: +1
-追加効果: 回避+30%(このターン)
-
-【Lv5才能カード】神流水剣
-コスト: 1
-威力: 15
-剣気: +2
-追加効果: 回避+50% / 回避成功時カウンター15ダメージ
-
-【使い所】
-攻守一体
-回避しながら剣気蓄積
-カウンターで追加ダメージ
-```
+* **Power:** 10 | **Sword Intent:** +1 | **Effect:** +30% Evasion (this turn).
+* **Talent Card (Divine Flowing Blade):** Power 15 | Intent +2 | +50% Evasion / Counter for 15 dmg on successful evade.
 
 ---
 
-## カテゴリ 2: 剣気蓄積専用カード 4 枚
+## Category 2: Sword Intent Generation Only - 4 Cards
 
-### 13. 剣気集中(コスト 1)
+### 13. Focused Intent (Cost 1)
 
-```
-【基本効果】
-威力: 0
-剣気: +4
-追加効果: 手札+1
+* **Sword Intent:** +4 | **Effect:** Draw 1.
+* **Talent Card (Perfect Concentration):** Cost 0 | Intent +6 | Draw 2 / +2 Intent at start of next turn.
 
-【Lv5才能カード】完全集中
-コスト: 0
-威力: 0
-剣気: +6
-追加効果: 手札+2 / 次ターン開始時剣気+2
+### 14. Meditation (Cost 1)
 
-【使い所】
-一気に剣気を溜める
-手札補充も兼ねる
-大技の準備
-```
+* **Sword Intent:** +3 | **Effect:** HP +10.
+* **Talent Card (Abyssal Meditation):** Intent +5 | HP +20 / Cleanse 1 debuff / Shield +15.
 
-### 14. 瞑想(コスト 1)
+### 15. Spirit Unleashed (Cost 2)
 
-```
-【基本効果】
-威力: 0
-剣気: +3
-追加効果: HP+10
+* **Sword Intent:** +7 | **Effect:** Next turn Physical attacks +30%.
+* **Talent Card (True Spirit Unleashed):** Cost 1 | Intent +10 (Max) | Next turn Physical attacks +50% / Guaranteed Critical.
 
-【Lv5才能カード】深淵瞑想
-コスト: 1
-威力: 0
-剣気: +5
-追加効果: HP+20 / デバフ1解除 / シールド+15
+### 16. Kiai Shout (Cost 0)
 
-【使い所】
-回復しながら剣気蓄積
-デバフ対策
-立て直しに最適
-```
-
-### 15. 闘気解放(コスト 2)
-
-```
-【基本効果】
-威力: 0
-剣気: +7
-追加効果: 次ターン物理攻撃+30%
-
-【Lv5才能カード】真・闘気解放
-コスト: 1
-威力: 0
-剣気: +10(最大)
-追加効果: 次ターン物理攻撃+50% / 確定クリティカル
-
-【使い所】
-一気に剣気最大
-次ターンで大技確定
-バフも強力
-```
-
-### 16. 気合(コスト 0)
-
-```
-【基本効果】
-威力: 0
-剣気: +2
-追加効果: エナジー+1
-
-【Lv5才能カード】絶対気合
-コスト: 0
-威力: 0
-剣気: +3
-追加効果: エナジー+2 / 次の物理カードのコスト-1
-
-【使い所】
-リソース回復
-剣気も溜まる
-コスト0で優秀
-```
+* **Sword Intent:** +2 | **Effect:** Energy +1.
+* **Talent Card (Absolute Kiai):** Intent +3 | Energy +2 / Next Physical card cost -1.
 
 ---
 
-## カテゴリ 3: 中火力(2 コスト) 10 枚
+## Category 3: Mid-Firepower (2 Cost) - 10 Cards
 
-### 17. 断空斬(コスト 2)
+### 17. Air-Render Slash (Cost 2) - Power 25, Intent +2, 30% Pen. (Talent: Power 40, 60% Pen).
 
-```
-【基本効果】
-威力: 25
-剣気: +2
-追加効果: 貫通30%
+### 18. Steel Slash (Cost 2) - Power 22, Intent +2, Shield +15. (Talent: Power 35, Shield +25).
 
-【Lv5才能カード】真空裂斬
-コスト: 2
-威力: 40
-剣気: +3
-追加効果: 貫通60% / 敵シールド-20
+### 19. Whirlwind Blade (Cost 2) - Power 20, Intent +2, AoE. (Talent: Power 35, AoE Shield shred).
 
-【使い所】
-中火力の安定カード
-貫通で確実にダメージ
-```
+### 20. Flash Blade (Cost 2) - Power 24, Intent +3, First Strike. (Talent: Power 38, Guaranteed Crit).
 
-### 18. 鋼鉄斬(コスト 2)
+### 21. Exploding Blade (Cost 2) - Power 28, Intent +2, Shield -20. (Talent: Power 45, Stun 2 turns).
 
-```
-【基本効果】
-威力: 22
-剣気: +2
-追加効果: シールド+15
+### 22. Shadow Slash (Cost 2) - Power 23, Intent +2, +40% Evasion. (Talent: +70% Evasion).
 
-【Lv5才能カード】金剛斬
-コスト: 2
-威力: 35
-剣気: +3
-追加効果: シールド+25 / 次ターン物理攻撃+20%
+### 23. Sky-Splitter (Cost 2) - Power 26, Intent +3, 2 Bleed. (Talent: Power 40, +100% dmg vs Bleed).
 
-【使い所】
-攻守一体
-シールドを張りながら攻撃
-剣気も溜まる
-```
+### 24. Raging Fire Blade (Cost 2) - Power 27, Intent +2, 1 Burn. (Talent: Power 42, 2 Burn).
 
-### 19. 旋風剣(コスト 2)
+### 25. Earth Slash (Cost 2) - Power 30, Intent +2, Stagger 2 turns. (Talent: 50% Stun chance vs Staggered).
 
-```
-【基本効果】
-威力: 20
-剣気: +2
-追加効果: 範囲攻撃
-
-【Lv5才能カード】大旋風剣
-コスト: 2
-威力: 35
-剣気: +3
-追加効果: 範囲攻撃 / シールド-15(全体)
-
-【使い所】
-複数敵対応
-全体のシールド削り
-```
-
-### 20. 閃光剣(コスト 2)
-
-```
-【基本効果】
-威力: 24
-剣気: +3
-追加効果: 先制攻撃
-
-【Lv5才能カード】神速閃光剣
-コスト: 2
-威力: 38
-剣気: +3
-追加効果: 先制攻撃 / 確定クリティカル / 次の攻撃も先制
-
-【使い所】
-先手を取る
-確実にダメージ
-次のターンも有利
-```
-
-### 21. 爆砕剣(コスト 2)
-
-```
-【基本効果】
-威力: 28
-剣気: +2
-追加効果: 敵シールド-20 / 破壊で気絶
-
-【Lv5才能カード】究極爆砕剣
-コスト: 2
-威力: 45
-剣気: +3
-追加効果: 敵シールド-40 / 破壊で気絶2ターン
-
-【使い所】
-シールド破壊特化
-気絶からのコンボ
-```
-
-### 22. 影斬り(コスト 2)
-
-```
-【基本効果】
-威力: 23
-剣気: +2
-追加効果: 回避+40%(このターン)
-
-【Lv5才能カード】幻影斬り
-コスト: 2
-威力: 36
-剣気: +3
-追加効果: 回避+70% / 回避成功時、次の攻撃確定クリティカル
-
-【使い所】
-回避しながら攻撃
-回避成功で次ターン確定クリティカル
-```
-
-### 23. 裂空斬(コスト 2)
-
-```
-【基本効果】
-威力: 26
-剣気: +3
-追加効果: 出血2スタック
-
-【Lv5才能カード】血裂空斬
-コスト: 2
-威力: 40
-剣気: +3
-追加効果: 出血3スタック / 出血中の敵に+100%
-
-【使い所】
-出血を大量付与
-出血コンボの始動
-```
-
-### 24. 烈火剣(コスト 2)
-
-```
-【基本効果】
-威力: 27
-剣気: +2
-追加効果: 火傷1スタック
-
-【Lv5才能カード】業火烈火剣
-コスト: 2
-威力: 42
-剣気: +3
-追加効果: 火傷2スタック / 火傷中の敵に+80%
-
-【使い所】
-火傷付与
-継続ダメージ
-```
-
-### 25. 大地斬(コスト 2)
-
-```
-【基本効果】
-威力: 30
-剣気: +2
-追加効果: よろめき2ターン
-
-【Lv5才能カード】大地崩壊斬
-コスト: 2
-威力: 48
-剣気: +3
-追加効果: よろめき3ターン / よろめき中の敵に気絶確率50%
-
-【使い所】
-よろめき付与
-物理攻撃で気絶狙い
-```
-
-### 26. 獅子奮迅(コスト 2)
-
-```
-【基本効果】
-威力: 15×2回
-剣気: +3
-追加効果: 各攻撃で剣気ダメージ加算
-
-【Lv5才能カード】獅子王奮迅
-コスト: 2
-威力: 22×3回
-剣気: +3
-追加効果: 各攻撃で剣気ダメージ加算 / 最後の一撃確定クリティカル
-
-【使い所】
-剣気ダメージを複数回乗せる
-剣気5以上で使用推奨
-```
+### 26. Lion’s Valor (Cost 2) - Power 15 x 2 hits, Intent +3. (Talent: Power 22 x 3 hits, Final hit Crit).
 
 ---
 
-## カテゴリ 4: 剣気消費技(中火力) 6 枚
+## Category 4: Sword Intent Spenders (Mid-Tier) - 6 Cards
 
-### 27. 剣気解放(コスト 1)
+### 27. Intent Release (Cost 1)
 
-```
-【基本効果】
-威力: 15
-剣気: 3消費
-追加効果: ダメージ+(消費剣気×10) = 15+30 = 45ダメージ
+* **Sword Intent:** Consume 3 | **Power:** 15 + (Spent x 10) = **45 Total**.
+* **Talent Card:** Cost 0 | Power 20 + (Spent x 15) = **65 Total**.
 
-【Lv5才能カード】真・剣気解放
-コスト: 0
-威力: 20
-剣気: 3消費
-追加効果: ダメージ+(消費剣気×15) = 20+45 = 65ダメージ
+### 28. Intent Edge (Cost 1)
 
-【使い所】
-剣気3で中火力
-コスト1で使いやすい
-```
+* **Sword Intent:** Consume 3 | **Power:** 12 + (Spent x 8) = **36 Total** | 40% Penetration.
+* **Talent Card:** Power 18 + (Spent x 12) = **54 Total** | 60% Penetration.
 
-### 28. 剣気刃(コスト 1)
+### 29. Intent Multi-Slash (Cost 2)
 
-```
-【基本効果】
-威力: 12
-剣気: 3消費
-追加効果: ダメージ+(消費剣気×8) = 12+24 = 36ダメージ / 貫通40%
+* **Sword Intent:** Consume 5 | **Power:** (10 + [Spent x 6]) x 3 hits = **120 Total**.
+* **Talent Card (Intent Dance):** (12 + [Spent x 7]) x 5 hits = **235 Total**.
 
-【Lv5才能カード】剣気大刃
-コスト: 1
-威力: 18
-剣気: 3消費
-追加効果: ダメージ+(消費剣気×12) = 18+36 = 54ダメージ / 貫通60%
+### 30. Intent Burst (Cost 2)
 
-【使い所】
-貫通付き
-シールド持ちに有効
-```
+* **Sword Intent:** Consume 5 | **Power:** 20 + (Spent x 12) = **80 Total** | AoE.
+* **Talent Card:** Power 30 + (Spent x 18) = **120 Total** | AoE.
 
-### 29. 剣気連斬(コスト 2)
+### 31. Intent Pierce (Cost 1)
 
-```
-【基本効果】
-威力: 10×3回
-剣気: 5消費
-追加効果: ダメージ+(消費剣気×6)×3 = (10+30)×3 = 120ダメージ
+* **Sword Intent:** Consume 3 | **Power:** 18 + (Spent x 9) = **45 Total** | 50% Pen / Shield -20.
+* **Talent Card:** Power 25 + (Spent x 14) = **67 Total** | 80% Pen / Shield -30.
 
-【Lv5才能カード】剣気乱舞
-コスト: 2
-威力: 12×5回
-剣気: 5消費
-追加効果: ダメージ+(消費剣気×7)×5 = (12+35)×5 = 235ダメージ
+### 32. Intent Shockwave (Cost 2)
 
-【使い所】
-剣気5で高火力
-多段攻撃
-```
-
-### 30. 剣気爆発(コスト 2)
-
-```
-【基本効果】
-威力: 20
-剣気: 5消費
-追加効果: ダメージ+(消費剣気×12) = 20+60 = 80ダメージ / 範囲攻撃
-
-【Lv5才能カード】剣気大爆発
-コスト: 2
-威力: 30
-剣気: 5消費
-追加効果: ダメージ+(消費剣気×18) = 30+90 = 120ダメージ / 範囲攻撃
-
-【使い所】
-範囲高火力
-複数敵に有効
-```
-
-### 31. 剣気貫通(コスト 1)
-
-```
-【基本効果】
-威力: 18
-剣気: 3消費
-追加効果: ダメージ+(消費剣気×9) = 18+27 = 45ダメージ / 貫通50% / 敵シールド-20
-
-【Lv5才能カード】剣気完全貫通
-コスト: 1
-威力: 25
-剣気: 3消費
-追加効果: ダメージ+(消費剣気×14) = 25+42 = 67ダメージ / 貫通80% / 敵シールド-30
-
-【使い所】
-シールド無視
-確実にダメージ
-```
-
-### 32. 剣気衝撃波(コスト 2)
-
-```
-【基本効果】
-威力: 16
-剣気: 3消費
-追加効果: ダメージ+(消費剣気×10) = 16+30 = 46ダメージ / よろめき2ターン
-
-【Lv5才能カード】剣気大衝撃波
-コスト: 2
-威力: 24
-剣気: 3消費
-追加効果: ダメージ+(消費剣気×15) = 24+45 = 69ダメージ / よろめき3ターン / 範囲
-
-【使い所】
-よろめき付与
-範囲攻撃
-```
+* **Sword Intent:** Consume 3 | **Power:** 16 + (Spent x 10) = **46 Total** | Stagger 2 turns.
+* **Talent Card:** Power 24 + (Spent x 15) = **69 Total** | AoE.
 
 ---
 
-## カテゴリ 5: 剣気全消費技(超火力) 4 枚
+## Category 5: Full Intent Spenders (Extreme Firepower) - 4 Cards
 
-### 33. 剣神降臨(コスト 3)
+### 33. Sword God Descent (Cost 3)
 
-```
-【基本効果】
-威力: 30
-剣気: 全消費(10)
-追加効果: ダメージ+(消費剣気×20) = 30+200 = 230ダメージ / 出血3スタック / 全体攻撃
+* **Sword Intent:** Full Consume (10) | **Power:** 30 + (Spent x 20) = **230 Total** | AoE / 3 Bleed.
+* **Talent Card:** Cost 2 | Power 50 + (Spent x 30) = **350 Total** | AoE / 5 Bleed / 50% Pen.
 
-【Lv5才能カード】真・剣神降臨
-コスト: 2
-威力: 50
-剣気: 全消費(10)
-追加効果: ダメージ+(消費剣気×30) = 50+300 = 350ダメージ / 出血5スタック / 全体攻撃 / 貫通50%
+### 34. Ultimate Secret Art (Cost 4)
 
-【使い所】
-最強の全体攻撃
-剣気10で使用
-出血で継続ダメージ
-```
+* **Sword Intent:** Full Consume (10) | **Power:** 40 + (Spent x 25) = **290 Total** | 3 Bleed / 60% Pen.
+* **Talent Card (Ultimate Overlord Slash):** Cost 3 | Power 60 + (Spent x 35) = **410 Total** | Boss killer.
 
-### 34. 究極奥義(コスト 4)
+### 35. Intent Heaven-Ascension (Cost 3)
 
-```
-【基本効果】
-威力: 40
-剣気: 全消費(10)
-追加効果: ダメージ+(消費剣気×25) = 40+250 = 290ダメージ / 出血3スタック / 貫通60%
+* **Sword Intent:** Full Consume (10) | **Power:** 35 + (Spent x 22) = **255 Total** | Next turn Intent +5.
+* **Talent Card:** Power 55 + (Spent x 32) = **375 Total** | Next turn Intent +8.
 
-【Lv5才能カード】究極覇王斬
-コスト: 3
-威力: 60
-剣気: 全消費(10)
-追加効果: ダメージ+(消費剣気×35) = 60+350 = 410ダメージ / 出血5スタック / 貫通80%
+### 36. Intent Annihilation (Cost 3)
 
-【使い所】
-単体最高火力
-ボス戦用
-```
-
-### 35. 剣気天昇(コスト 3)
-
-```
-【基本効果】
-威力: 35
-剣気: 全消費(10)
-追加効果: ダメージ+(消費剣気×22) = 35+220 = 255ダメージ / 出血3スタック / 次ターン剣気+5
-
-【Lv5才能カード】天昇覇王剣
-コスト: 3
-威力: 55
-剣気: 全消費(10)
-追加効果: ダメージ+(消費剣気×32) = 55+320 = 375ダメージ / 出血5スタック / 次ターン剣気+8
-
-【使い所】
-超火力+即座に剣気回復
-連続大技が可能
-```
-
-### 36. 剣気殲滅(コスト 3)
-
-```
-【基本効果】
-威力: 25×3回
-剣気: 全消費(10)
-追加効果: ダメージ+(消費剣気×18)×3 = (25+180)×3 = 615ダメージ / 出血3スタック
-
-【Lv5才能カード】剣気完全殲滅
-コスト: 3
-威力: 35×5回
-剣気: 全消費(10)
-追加効果: ダメージ+(消費剣気×25)×5 = (35+250)×5 = 1425ダメージ / 出血5スタック
-
-【使い所】
-超多段攻撃
-最高DPS
-```
+* **Sword Intent:** Full Consume (10) | **Power:** (25 + [Spent x 18]) x 3 hits = **615 Total**.
+* **Talent Card (Complete Annihilation):** (35 + [Spent x 25]) x 5 hits = **1,425 Total**.
 
 ---
 
-## カテゴリ 6: 防御・補助系 4 枚
+## Category 6: Defense & Utility - 4 Cards
 
-### 37. 剣気結界(コスト 1)
+### 37. Intent Barrier (Cost 1)
 
-```
-【基本効果】
-威力: 0
-剣気: 維持
-追加効果: シールド = 剣気×8(剣気は消費しない)
+* **Sword Intent:** Maintain (No consumption) | **Effect:** Shield = Intent x 8.
+* **Talent Card:** Shield = Intent x 12 / Cleanse 1 debuff.
 
-【Lv5才能カード】完全剣気結界
-コスト: 1
-威力: 0
-剣気: 維持
-追加効果: シールド = 剣気×12 / デバフ1解除
+### 38. Counter Stance (Cost 1)
 
-【使い所】
-剣気を消費せずシールド
-剣気10で80-120シールド
-```
+* **Sword Intent:** +2 | **Effect:** Shield +15 / Gain +3 Intent when hit.
+* **Talent Card:** Intent +3 | Shield +25 / Gain +5 Intent when hit / Counter for 20 dmg.
 
-### 38. 反撃の構え(コスト 1)
+### 39. Indomitable Spirit (Cost 2)
 
-```
-【基本効果】
-威力: 0
-剣気: +2
-追加効果: シールド+15 / 被ダメージ時、剣気+3
+* **Sword Intent:** Maintain | **Effect:** HP +20 / Cleanse All / Shield = Intent x 2.
+* **Talent Card:** Cost 1 | HP +30 / Shield = Intent x 3 / Next turn Physical attacks +50%.
 
-【Lv5才能カード】完全反撃態勢
-コスト: 1
-威力: 0
-剣気: +3
-追加効果: シールド+25 / 被ダメージ時、剣気+5 / カウンター20ダメージ
+### 40. Intent Siphon (Cost 2)
 
-【使い所】
-防御しながら剣気蓄積
-被ダメージで剣気増加
-```
-
-### 39. 不屈の闘志(コスト 2)
-
-```
-【基本効果】
-威力: 0
-剣気: 維持
-追加効果: HP+20 / デバフ全解除 / 剣気×2のシールド付与
-
-【Lv5才能カード】絶対不屈
-コスト: 1
-威力: 0
-剣気: 維持
-追加効果: HP+30 / デバフ全解除 / 剣気×3のシールド / 次ターン物理攻撃+50%
-
-
-### 40. 剣気吸収(コスト2)
-```
-
-【基本効果】
-威力: 18
-剣気: +3
-追加効果: HP 吸収 50% / シールド+剣気 ×3
-
-【Lv5 才能カード】完全剣気吸収
-コスト: 2
-威力: 28
-剣気: +3
-追加効果: HP 吸収 80% / シールド+剣気 ×5 / デバフ 1 解除
+* **Power:** 18 | **Sword Intent:** +3 | **Effect:** 50% Life Steal / Shield = Intent x 3.
+* **Talent Card:** Power 28 | 80% Life Steal / Shield = Intent x 5 / Cleanse 1 debuff.

@@ -76,17 +76,18 @@ return result.success;
 
 ## Task Completion Rule
 
-タスク完了時、必ず `README.md` の Development History を更新する：
-1. 日付・作業内容・進捗を表に追記
-2. 実装計画は `.claude/plans/` に保管
+When completing a task, be sure to update the Development History in `README.md`:
+1. Add the date, work, and progress to the table.
+2. Store the implementation plan in `.claude/current_plans/`.
 
-README.md が作業履歴の単一ソースとして機能する。
+README.md serves as the single source of truth for work history.
 
 ## References
 
-- **`README.md`** — 作業履歴、プロジェクト概要、実装状況
-- **`.claude/docs/`** — ゲーム設計仕様書
-- **`.claude/code_overview/`** — コード分析・脆弱性・デバッグ要件
-- **`.claude/plans/`** — 実装計画・セッション追跡
-- **`.claude/memories/`** — 教訓・過去プラン保管
-- **`.claude/skills/`** — 開発スキル（11種）
+- **`README.md`** — Work history, project overview, implementation status
+- **`.claude/docs/`** — Game design specifications
+- **`.claude/code_overview/`** — Code analysis, vulnerabilities, and debugging requirements
+- **`.claude/feature_plans/`** — Future features and planning stages
+- **`.claude/current_plans/`** — Current implementation plans and session tracking
+- **`.claude/memories/`** — Lessons learned and past plans
+- **`.claude/skills/`** — Development skills (11 types)

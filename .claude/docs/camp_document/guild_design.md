@@ -1,23 +1,47 @@
-Here is the English translation of the Guild Facility Detailed Design Document.
-
-# Guild Facility Detailed Design Document (GUILD_DESIGN_V2.1)
+# Guild Facility Detailed Design Document (GUILD_DESIGN_V3.0)
 
 ## Update History
 
-- V2.1: Integrated Item Type System, String Grade support, Context API integration.
+| Date | Content |
+|------|---------|
+| 2026-02-04 | V3.0: Restructured with 2 main tabs (Headquarters + Storage). Storage functionality integrated from storage_design.md. |
+| - | V2.1: Integrated Item Type System, String Grade support, Context API integration. |
 
 ---
 
 ## 1. Facility Overview
 
-The Guild is a place where adventurers raise their social status, gather information, and earn their daily keep (Quest rewards).
-We are abolishing the traditional "Automatic Promotion based on Card Collection Count" and introducing a **"Promotion Exam"** system.
+The Guild is a place where adventurers raise their social status, gather information, manage their belongings, and earn their daily keep.
+
+**V3.0 Changes:**
+- Restructured into 2 main tabs: **Headquarters** and **Storage**
+- Storage facility (formerly standalone) is now integrated as a tab
+- Quest system moved to future features (see `.claude/feature_plans/quest_system.md`)
+
+### Tab Structure
+
+```
+Guild (酒場)
+├── Tab 1: Headquarters (本部)
+│   ├── Promotion Exams - Class grade advancement
+│   └── Rumors - Pay magic stones for next-run buffs
+│
+└── Tab 2: Storage (倉庫)
+    ├── Item Storage - Long-term item storage
+    ├── Inventory Management - Current carry items
+    └── Equipment Management - Equipment slots and inventory
+```
 
 ### Main Functions
 
-1. **Rumors**: Pay Magic Stones to grant advantageous effects for the next exploration.
-2. **Quests**: Daily/Weekly subjugation and collection quests.
-3. **Promotion Exams**: [NEW] Special battle events to raise Class Grade.
+**Headquarters Tab:**
+1. **Promotion Exams**: Special battle events to raise Class Grade.
+2. **Rumors**: Pay Magic Stones to grant advantageous effects for the next exploration.
+
+**Storage Tab:**
+1. **Item Storage**: Long-term safe storage (retained on death).
+2. **Inventory Management**: Items carried during exploration (lost on death).
+3. **Equipment Management**: Equipment slots and equipment inventory.
 
 ---
 
@@ -1027,11 +1051,100 @@ export const MAGIC_STONE_ITEMS: Item[] = [
 
 ---
 
-## 10. Reference Documents
+## 10. Storage Tab (Integrated from Storage System)
+
+### 10.1 Storage vs Inventory Distinction
+
+The Storage tab manages the critical distinction between safe storage and risky carry items.
+
+| Feature | Storage (Warehouse) | Inventory (On Hand) | Equipment Inventory | Equipment Slots |
+|---------|---------------------|---------------------|---------------------|-----------------|
+| **Access** | BaseCamp only | Anywhere | Anywhere (Equip Only) | Equipped |
+| **Capacity** | 100 slots | 20 slots | 3 slots | 6 slots |
+| **Upon Death** | **RETAINED** | **LOST** | **LOST** | **LOST** |
+| **Item Types** | All items | All items | Equipment only | Equipment only |
+
+### 10.2 Death Processing
+
+**Items Lost on Death:**
+- All Inventory items
+- All Equipment Slots items
+- All Equipment Inventory items
+- Exploration Gold, Magic Stones, Soul Remnants (current run)
+
+**Items Retained on Death:**
+- All Storage items
+- BaseCamp resources (Gold, Magic Stones stored at camp)
+- Accumulated Soul Remnants (totalSouls)
+- Sanctuary unlocks, Card Mastery, Encyclopedia data
+
+### 10.3 Item Movement Operations
+
+| From | To | Operation |
+|------|----|-----------|
+| Storage | Inventory | Retrieve from warehouse |
+| Inventory | Storage | Deposit into warehouse |
+| Storage | Equipment Slots | Equip directly |
+| Equipment Slots | Storage | Unequip and store |
+| Equipment Inventory | Equipment Slots | Equip spare |
+| Equipment Slots | Equipment Inventory | Swap to spare |
+
+### 10.4 Equipment Tab Layout
+
+The Equipment tab within Storage has a specialized three-section layout:
 
 ```
-BASE_CAMP_DESIGN_V1
-└── GUILD_DESIGN_V2.1 [This Document]
+┌─────────────────────────────────────────────────────────────┐
+│  [Items]  [Equipment]  ← Sub-tabs                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─── Equipment List ───┐  ┌───── Right Panel ─────────┐  │
+│  │ (Storage Equipment)  │  │                            │  │
+│  │                      │  │ ┌── Equipment Slots ────┐  │  │
+│  │  ⚔️ 🛡️ 👑 👢 💍      │  │ │ weapon armor helmet   │  │  │
+│  │                      │  │ │ boots  acc1  acc2     │  │  │
+│  │  Filtered view:      │  │ └───────────────────────┘  │  │
+│  │  Equipment items     │  │                            │  │
+│  │  from Storage only   │  │ ┌── Equipment Inventory ─┐  │  │
+│  │                      │  │ │    (Max 3 slots)       │  │  │
+│  │                      │  │ │  ⚔️  🛡️  [empty]       │  │  │
+│  │                      │  │ └───────────────────────┘  │  │
+│  └──────────────────────┘  └────────────────────────────┘  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 10.5 Strategic Significance
+
+**Risk Management Core:**
+- Store valuable equipment in Storage before dangerous exploration
+- Carry only essential gear in Inventory/Equipment
+- Use Equipment Inventory (3 slots) for mid-dungeon swaps
+
+**Recovery After Death:**
+- Access Storage for spare equipment
+- Retry with stored gear
+- Purchase new equipment with BaseCamp Gold
+
+---
+
+## 11. Future Features (Moved to feature_plans/)
+
+The following features are planned for future implementation:
+
+- **Quest System**: See `.claude/feature_plans/quest_system.md`
+- **NPC Conversation**: See `.claude/feature_plans/npc_conversation.md`
+- **Title System**: See `.claude/feature_plans/title_system.md`
+
+---
+
+## 12. Reference Documents
+
+```
+CAMP_FACILITIES_DESIGN_V4
+└── GUILD_DESIGN_V3.0 [This Document]
+    ├── Section 2-9: Headquarters functionality
+    ├── Section 10: Storage functionality (integrated)
     ├── GuildEnemyData.ts [Exam Enemy Data]
     ├── PromotionData.ts [Promotion Exam Data]
     └── battle_logic.md [Battle System]

@@ -1,738 +1,795 @@
-# オリジナル カードバトル RPG 全体設計書 V3.0
+# Original Card Battle RPG Overall Design Document V3.1
 
-## 更新履歴
+## Revision History
 
-- V3.0: **残機システム導入** - 探索回数制限を残機（復帰可能回数）に変更、転移石統一、死亡時魂100%獲得
-- V2.0: 設計の根本的変更 - ローグライト要素削除、持ち帰り型ダンジョン RPG へ転換
-
----
-
-## 1. ゲームコンセプト
-
-### 1.1 ジャンルの再定義
-
-> **持ち帰り型ダンジョン RPG × カードバトル**
-> 生還を目指す、計画的な探索と成長
-
-**参考作品:**
-
-- 風来のシレン（持ち帰り型）
-- Slay the Spire（カードバトル）
-- ダークソウル（死亡ペナルティの重さ）
+| Date | Content |
+| --- | --- |
+| 2026-02-04 | V3.1: Facility consolidation (7 → 5). Library → Journal (header UI). Storage → Guild (tab). |
+| - | V3.0: Introduction of Life System - Exploration limits changed to Lives, Unified Teleportation Stones, 100% Soul retention on death. |
+| - | V2.0: Fundamental design change - Removed roguelite elements, pivoted to an Extraction-style Dungeon RPG. |
 
 ---
 
-### 1.2 設計思想の転換
+## 1. Game Concept
+
+### 1.1 Genre Redefinition
+
+> **Extraction Dungeon RPG × Card Battle**
+> Planned exploration and growth with the ultimate goal of survival.
+
+**Reference Titles:**
+
+* Shiren the Wanderer (Extraction-style)
+* Slay the Spire (Card Battle)
+* Dark Souls (Severity of death penalty)
+
+---
+
+### 1.2 Design Philosophy Shift
 
 ```
-【持ち帰り型の利点】
-探索 → 生還 → 装備・アイテム・Gold・魂を保持 → 成長
+【Advantages of the Extraction-style】
+Exploration → Survival → Retain Equipment, Items, Gold, & Souls → Growth
        ↓
-     死亡 → 全ロスト（装備・アイテム・Gold）+ 魂100%獲得 + 残機-1
+     Death → Total Loss (Equip/Items/Gold) + 100% Soul Gain + Life -1
        ↓
-   BaseCampの装備・カード・Goldは保持
+   Equipment, Cards, and Gold at BaseCamp are retained
 
-利点:
-- リスク・リターンが明確
-- 生還の達成感
-- 持ち帰るタイミングの戦略性
-- 残機システムによる緊張感
+Pros:
+- Clear Risk/Reward
+- Sense of achievement upon survival
+- Strategic depth regarding the timing of return
+- Tension maintained by the Life System
+
 ```
 
 ---
 
-## 2. ゲームの核心メカニクス
+## 2. Core Game Mechanics
 
-### 2.1 コアループ
+### 2.1 Core Loop
 
 ```
 ┌─────────────────────────────────────────────┐
 │                                             │
-│  BaseCamp（安全地帯）                         │
-│  ├─ 装備強化（Blacksmith）                    │
-│  ├─ 装備購入（Shop）                          │
-│  ├─ デッキ編成（Library）                     │
-│  └─ 魂の残滓でレベルアップ（Sanctuary）         │
+│  BaseCamp (Safe Zone)                       │
+│  ├─ Equipment Enhancement (Blacksmith)      │
+│  ├─ Equipment Purchase (Shop)               │
+│  ├─ Deck Building (Library)                 │
+│  └─ Level up via Soul Remnants (Sanctuary)  │
 │                                             │
 └──────────────┬──────────────────────────────┘
-               │ 装備・デッキを選んで出発
+               │ Select equipment/deck and depart
                ↓
 ┌─────────────────────────────────────────────┐
-│  Dungeon（危険地帯）                          │
-│  ├─ 戦闘 → 魔石・装備・カード熟練度上昇・魂を獲得  │
-│  ├─ 深層へ進むか、帰還するか判断                 │
-│  └─ 2つの選択肢:                              │
-│     [A] 生還 → 全て持ち帰り                    │
-│     [B] 死亡 → 全ロスト + 魂獲得 + 残機-1       │
+│  Dungeon (Danger Zone)                      │
+│  ├─ Battle → Gain Magic Stones, Gear, Card Mastery, & Souls │
+│  ├─ Decide to push deeper or return         │
+│  └─ Two Options:                            │
+│     [A] Survival → Extract everything       │
+│     [B] Death → Total Loss + Soul Gain + Life -1│
 └──────────────┬──────────────────────────────┘
                │
                ↓
-      [A] 生還の場合:
-      - BaseCampに装備・イベント入手でのGold・魂を持ち帰り
-      - 次の探索に向けた強化
-      - 残機変化なし
+      [A] In case of Survival:
+      - Bring back Gear, Gold (from events), and Souls to BaseCamp
+      - Strengthen for the next expedition
+      - No change to Lives
 
-      [B] 死亡の場合:
-      - 所有アイテム・装備全ロスト
-      - 獲得したGoldもゼロ
-      - 魂の残滓は100%獲得（累計に加算）
-      - 残機-1
-      - BaseCampの装備・カード・Goldは保持
+      [B] In case of Death:
+      - Total loss of all carried items and equipment
+      - Acquired Gold is reset to zero
+      - 100% of Soul Remnants gained (added to cumulative total)
+      - Life -1
+      - Equipment, Cards, and Gold stored at BaseCamp are safe
                ↓
-      残機 > 0 → BaseCampに戻る
-      残機 = 0 → ゲームオーバー（完全リセット）
+      Lives > 0 → Return to BaseCamp
+      Lives = 0 → Game Over (Hard Reset)
+
 ```
 
 ---
 
-### 2.2 リスク・リターンの設計
+### 2.2 Risk/Reward Design
 
-#### 生還のメリット（リターン）
+#### Benefits of Survival (Return)
 
-| 持ち帰れるもの | 説明                           |
-| -------------- | ------------------------------ |
-| Gold           | Dungeon 内で獲得した Gold 全額 |
-| 装備           | Dungeon 内で獲得した装備       |
-| アイテム       | Dungeon 内で拾った消耗品       |
-| 魂の残滓       | 魔物を倒して獲得した経験値     |
+| Retainable Assets | Description |
+| --- | --- |
+| Gold | Total Gold acquired during the Dungeon run |
+| Equipment | Equipment acquired within the Dungeon |
+| Items | Consumables picked up in the Dungeon |
+| Soul Remnants | Experience points earned by defeating monsters |
 
-※ ダンジョン内での gold の入手は特定のイベントのみ。戦闘報酬で gold は入手できない。
+*Note: Gold in dungeons is only obtained through specific events. Gold is not obtained as a battle reward.*
 
-**生還の判断ポイント:**
+**Decision points for survival:**
 
-- HP 残量
-- 装備の耐久度（AP）
-- 手持ちの回復アイテム
-- 高レベルの武器や魔石の入手
-- 次の深度の危険性
+* Remaining HP
+* Equipment Durability (AP)
+* Quantity of healing items on hand
+* Acquisition of high-level weapons or Magic Stones
+* Danger level of the next Depth
 
-#### 死亡のデメリット（リスク）
+#### Penalties of Death (Risk)
 
-| ロストするもの       | 説明                                       |
-| -------------------- | ------------------------------------------ |
-| **所有装備全て**     | 持ち込んだ装備・獲得した装備、全てロスト   |
-| **所有アイテム全て** | 持ち込んだ消耗品・拾った消耗品、全てロスト |
-| 獲得した Gold        | Dungeon 内で獲得した Gold ゼロに           |
-| **残機 1つ**         | 残機が1減少                                |
+| Assets Lost | Description |
+| --- | --- |
+| **All Carried Gear** | All equipment brought in and acquired during the run are lost |
+| **All Carried Items** | All consumables brought in and picked up are lost |
+| Acquired Gold | Gold acquired within the Dungeon is reset to zero |
+| **One Life** | Total Lives decrease by 1 |
 
-**死亡時に獲得できるもの（重要）:**
+**Items gained upon death (Important):**
 
-| 獲得できるもの   | 説明                                       |
-| ---------------- | ------------------------------------------ |
-| **魂の残滓100%** | その探索で獲得した魂は全て累計に加算される |
+| Assets Gained | Description |
+| --- | --- |
+| **100% Souls** | All Souls earned during that run are added to the cumulative total |
 
-**保持されるもの（重要）:**
+**Items retained (Important):**
 
-- BaseCamp に保管している装備
-- BaseCamp の Gold 残高
-- 過去の探索で持ち帰った魂の残滓（累計レベル）
-- Sanctuary で解放した恒久強化
+* Equipment stored at BaseCamp
+* Gold balance at BaseCamp
+* Soul Remnants (cumulative level) from past explorations
+* Permanent upgrades unlocked at the Sanctuary
 
-**設計意図:**
+**Design Intent:**
 
-- 死亡は非常に痛いが、魂は確実に獲得できる
-- 持ち込み装備のリスク管理が重要
-- 「この装備を持ち込むべきか」のジレンマ
-- 残機システムによる最終的な緊張感
+* Death is very painful, but Souls are guaranteed.
+* Risk management of "bring-in" equipment is vital.
+* The dilemma of "should I bring this equipment or not?"
+* Final tension provided by the Life System.
 
 ---
 
-### 2.3 残機（復帰可能回数）システム
+### 2.3 Life System (Retries)
 
-#### 制限の目的
+#### Purpose of Limitation
 
-**なぜ残機が必要か:**
+**Why Lives are necessary:**
 
-- 無限の試行錯誤を防ぐ
-- 各死亡に重みを持たせる
-- プレイヤーに慎重なプレイを促す
-- ゲーム全体の緊張感を維持
+* To prevent infinite trial-and-error.
+* To give weight to each death.
+* To encourage cautious play.
+* To maintain tension throughout the entire game.
 
-#### 残機の仕組み
+#### Life Mechanics
 
-**基本ルール:**
+**Basic Rules:**
 
 ```
-難易度別残機上限:
+Max Lives by Difficulty:
 - Hard: 2
 - Normal: 3
 - Easy: 3
 
-残機減少タイミング: 死亡時のみ
-残機回復: なし
+Life Decrease Timing: Only upon death.
+Life Recovery: None.
 
-残機0で死亡 → ゲームオーバー（完全リセット）
+Death with 0 Lives → Game Over (Hard Reset)
+
 ```
 
-**残機の変動:**
+**Life Fluctuations:**
 
-| 状況                 | 残機変化 | 備考   |
-| -------------------- | -------- | ------ |
-| 探索開始             | 変化なし |        |
-| 帰還ルートで生還     | 変化なし |        |
-| 転移石で生還         | 変化なし |        |
-| Depth1-4で死亡       | **-1**   |        |
-| 深淵（Depth5）で死亡 | **-1**   |        |
-| 深淵ボス撃破後脱出   | 変化なし | クリア |
+| Situation | Life Change | Remarks |
+| --- | --- | --- |
+| Start Exploration | No change |  |
+| Survive via Return Route | No change |  |
+| Survive via Teleport Stone | No change |  |
+| Death in Depth 1-4 | **-1** |  |
+| Death in The Abyss (Depth 5) | **-1** |  |
+| Escape after Abyss Boss | No change | Game Clear |
 
-#### 難易度による変動
+#### Variations by Difficulty
 
-| 難易度 | 残機上限 | 想定プレイスタイル       |
-| ------ | -------- | ------------------------ |
-| Easy   | 3        | ある程度の試行錯誤が可能 |
-| Normal | 3        | 計画的な探索が必要       |
-| Hard   | 2        | 失敗が許されない         |
+| Difficulty | Max Lives | Expected Playstyle |
+| --- | --- | --- |
+| Easy | 3 | Some trial-and-error is possible |
+| Normal | 3 | Planned exploration is required |
+| Hard | 2 | Failure is not permitted |
 
 ---
 
-## 3. 進行システムの全体像
+## 3. Overall Progression System
 
-### 3.1 成長の軸
+### 3.1 Pillars of Growth
 
-ゲーム内の成長は**3 つの軸**で構成されます：
+Growth within the game consists of **three pillars**:
 
-#### (1) 装備の成長（ラン内 + 恒久）
+#### (1) Equipment Growth (In-run + Permanent)
 
-**特徴:**
+**Characteristics:**
 
-- BaseCamp で強化・購入
-- Dungeon に持ち込む
-- 生還すれば持ち帰り、**死亡すればロスト**
+* Strengthen/Purchase at BaseCamp.
+* Carry into the Dungeon.
+* Bring back if you survive; **lose if you die.**
 
-**成長要素:**
+**Growth Elements:**
 
-- 装備レベル（Lv0-3）
-- 装備品質（poor/normal/good/master）
-- 装備の種類（Common → Legendary）
+* Equipment Level (Lv0-3)
+* Equipment Quality (poor/normal/good/master)
+* Equipment Rarity (Common → Legendary)
 
-**リスク:**
+**Risk:**
 
-- 高レベル装備を持ち込む → **死亡時のロスト大**
-- 低レベル装備で挑む → クリアが困難
+* Bringing high-level gear → **Massive loss upon death.**
+* Attempting with low-level gear → Difficult to clear.
 
-#### (2) カードの成長（恒久）
+#### (2) Card Growth (Permanent)
 
-**特徴:**
+**Characteristics:**
 
-- カード自体はロストしない（図鑑に記録）
-- 使用回数で熟練度が上がる
-- 熟練度でカードが進化
+* Cards themselves are not lost (recorded in the encyclopedia).
+* Mastery increases with usage.
+* Cards evolve based on mastery levels.
 
-**成長要素:**
+**Growth Elements:**
 
-- カード熟練度（Lv1-5）
-- カード進化（新たな効果・分岐）
+* Card Mastery (Lv1-5)
+* Card Evolution (New effects/branching paths)
 
-**保持:**
+**Retention:**
 
-- カードの習得状態はロストしない
-- デッキ構成は Library で保存
+* Card acquisition status is never lost.
+* Deck configurations are saved in the Library.
 
-#### (3) 魂の残滓（経験値システム・恒久）
+#### (3) Soul Remnants (Experience System - Permanent)
 
-**特徴:**
+**Characteristics:**
 
-- 魔物を倒すと魂を獲得
-- **生還すれば100%累計に加算**
-- **死亡しても100%累計に加算**（V3.0変更）
+* Earn Souls by defeating monsters.
+* **100% added to total if you survive.**
+* **100% added to total even if you die.** (V3.0 Change)
 
-**成長要素:**
+**Growth Elements:**
 
-- Sanctuary でスキルツリー解放
-- 基礎ステータス強化（HP/インベントリ容量）
-- 特殊能力解放（実装検討中）
+* Unlock skill trees at the Sanctuary.
+* Basic stat enhancement (HP/Inventory capacity).
+* Unlock special abilities (Under consideration).
 
-**経験値の計算:**
+**Experience Calculation:**
 
 ```typescript
-獲得魂のレアリティ = 敵の強さ
-経験値量（累計魂）= 獲得魂を換算
-魔物の魂:（拡張可能）
-- 雑魚（下位）: 小魂（=累計魂*10）
-- 雑魚（中位）: 中魂（=累計魂*50）
-- 雑魚（上位）: 大魂（=累計魂*100）
-- 強敵（フロアボス）: 荘厳なる鬼魂（=累計魂*500）
-- ボス（深層にいる邪神）: 荒ぶる神魂（=累計魂*1000）
-```
-
-**レベルアップ:**
+Rarity of Gained Souls = Strength of the enemy
+Experience Amount (Cumulative Souls) = Conversion of gained souls
+Monster Souls: (Expandable)
+- Minion (Low): Small Soul (=Cumulative Souls * 10)
+- Minion (Mid): Medium Soul (=Cumulative Souls * 50)
+- Minion (High): Large Soul (=Cumulative Souls * 100)
+- Elite (Floor Boss): Majestic Onisoul (=Cumulative Souls * 500)
+- Boss (Evil God in the Abyss): Raging Godsoul (=Cumulative Souls * 1000)
 
 ```
-累計魂  スキルポイント
-0-99    0
-100-299  1
-300-599  2
-600-999  3
-1000+    4
+
+**Leveling Up:**
+
+```
+Cumulative Souls  Skill Points
+0-99              0
+100-299           1
+300-599           2
+600-999           3
+1000+             4
 ...
+
 ```
 
 ---
 
-### 3.2 ゲーム全体の流れ
+### 3.2 Overall Game Flow
 
-#### フェーズ 1: 序盤（残機3→2程度まで）
+#### Phase 1: Early Game (Until Lives go from 3 to 2)
 
-**目標:** 基礎を固める
-
-```
-- Shopで初期装備を購入
-- Blacksmithで装備を強化（Lv1程度）
-- Libraryでデッキを構築
-- 深度1-2を探索し、魂と熟練度を蓄積
-- 死亡しても魂は獲得できるので成長は続く
-```
-
-#### フェーズ 2: 中盤（残機2程度）
-
-**目標:** 戦力を強化
+**Goal:** Establish foundations.
 
 ```
-- 持ち帰ったGoldで装備をアップグレード
-- Blacksmithで品質上昇（ガチャ）に挑戦
-- Sanctuaryでスキルツリー解放
-- 深度3-4に挑戦
-- 装備を持ち込むリスクを天秤にかける
-```
-
-#### フェーズ 3: 終盤（残機1）
-
-**目標:** 深層到達
+- Purchase initial equipment at the Shop.
+- Strengthen equipment at the Blacksmith (around Lv1).
+- Build a deck in the Library.
+- Explore Depth 1-2 to accumulate Souls and Mastery.
+- Growth continues even if you die, as Souls are retained.
 
 ```
-- 最高の装備とデッキで挑む
-- 深度5（深淵）に到達
-- 残機1での挑戦は生死を分ける
-- ボス撃破で脱出ルートが開く
-```
 
----
+#### Phase 2: Mid Game (Remaining Lives: 2)
 
-### 3.3 エンディング条件
-
-**成功条件:**
+**Goal:** Increase combat power.
 
 ```
-深度5のボスを撃破し、脱出ルートで生還
-```
-
-**失敗条件:**
-
-```
-残機0の状態で死亡 → ゲームオーバー
-```
-
-**ゲームオーバー時:**
+- Upgrade equipment with Gold brought back.
+- Attempt Quality Upgrades (Gacha) at the Blacksmith.
+- Unlock skill trees at the Sanctuary.
+- Challenge Depth 3-4.
+- Balance the risk of bringing valuable equipment.
 
 ```
-完全リセット:
-- Gold: 初期値に戻る
-- 装備: 初期装備のみ
-- 魂の残滓（累計）: 0に戻る
-- Sanctuary解放状況: リセット
-- カードデッキ: 初期デッキに戻る
-- 図鑑記録: リセット
-- 既知イベント情報: リセット
 
-継続されるもの:
-- 実績解除状況のみ
+#### Phase 3: Late Game (Remaining Life: 1)
+
+**Goal:** Reach the deepest level.
+
+```
+- Challenge with the best equipment and deck.
+- Reach Depth 5 (The Abyss).
+- The challenge at Life 1 is a matter of life and death.
+- Escape route opens after defeating the boss.
+
 ```
 
 ---
 
-## 4. 各システムの役割（再定義）
+### 3.3 Ending Conditions
 
-### 4.1 BaseCamp 施設の再定義
-
-#### Guild（酒場）
-
-**役割:** ゲームの起点
-
-- キャラクター選択
-- 残機の確認
-- 現在の状況サマリー
-
-#### Shop（取引所）
-
-**役割:** 装備調達の中心
-
-- 装備購入（Gold 消費）
-- 装備売却（不要装備の換金）
-- 魔石 →Gold 換金
-
-#### Blacksmith（鍛冶屋）
-
-**役割:** 装備の極限強化
-
-- レベルアップ（Lv0-3）
-- 品質上昇（ガチャ要素）
-- 修理（AP 回復）
-- 解体（魔石還元）
-
-**戦略:**
-
-- 高レベル装備はリスクが高いが強力
-- 品質ガチャで最高品質を狙うか
-
-#### Sanctuary（神殿）
-
-**役割:** 魂の残滓による恒久強化
-
-**V3.0での変更:**
+**Success Condition:**
 
 ```
-旧: 生還時に魂加算、死亡時は探索分ゼロ
-新: 生還・死亡問わず魂100%加算
+Defeat the Depth 5 boss and survive by returning via the escape route.
+
 ```
 
-**スキルツリー:**
+**Failure Condition:**
 
-- 基礎ステータス強化（HP/Gold）
-- 特殊能力（鑑定/拡張）
-- ※探索回数拡張スキルは削除
+```
+Death while having 0 Lives → Game Over.
 
-#### Library（図書館）
+```
 
-**役割:** ビルド研究・記録管理
+**Upon Game Over:**
 
-- デッキ編成
-- 装備セット保存
-- 図鑑（カード/装備/魔物）
-- セーブ/ロード
+```
+Hard Reset:
+- Gold: Resets to initial value.
+- Equipment: Initial equipment only.
+- Soul Remnants (Cumulative): Resets to 0.
+- Sanctuary Unlock Status: Reset.
+- Card Deck: Resets to initial deck.
+- Encyclopedia: Reset.
+- Known Event Information: Reset.
 
-#### Dungeon Gate（深淵の入口）
+What persists:
+- Achievement unlock status only.
 
-**役割:** 探索開始
-
-- 深度選択
-- 残機確認
-- **転移石の所持確認**
+```
 
 ---
 
-### 4.2 リソースエコノミーの再設計
+## 4. Role of Each System (Redefined)
 
-#### Gold の流れ
+### 4.1 BaseCamp Facility Redefinition (V3.1 Updated)
+
+> **V3.1 Changes:** Consolidated facilities from 7 to 5. Library → Journal (Header UI). Storage → Guild (Tab).
+
+#### Guild (The Pub)
+
+**Role:** Starting point of the game + Item management.
+
+**Tab Structure:**
 
 ```
-【獲得】
-1. 魔石・装備をbaseCamp内での売却
+Guild
+├── Headquarters
+│   ├── Character Selection
+│   ├── Life Check
+│   ├── Promotion Exams
+│   └── Rumors
+│
+└── Storage
+    ├── Item Storage (Retained upon death)
+    ├── Inventory Management (Lost upon death)
+    └── Equipment Management
 
-2. Dungeon探索 → イベント発生(未実装)
+```
+
+#### Shop (Exchange)
+
+**Role:** Hub for equipment procurement.
+
+* Purchase equipment (Costs Gold).
+* Sell equipment (Convert unwanted gear to Gold).
+* Exchange Magic Stones for Gold.
+
+#### Blacksmith
+
+**Role:** Ultimate enhancement of equipment.
+
+* Level up (Lv0-3).
+* Quality Improvement (Gacha element).
+* Repair (Restore AP).
+* Dismantle (Convert back to Magic Stones).
+
+**Strategy:**
+
+* High-level gear is risky but powerful.
+* Decide whether to gamble for the best quality in the Gacha.
+
+#### Sanctuary (Temple)
+
+**Role:** Permanent enhancement using Soul Remnants.
+
+**Changes in V3.0:**
+
+```
+Old: Souls added only on survival; zero for the run on death.
+New: 100% Souls added regardless of survival or death.
+
+```
+
+**Skill Tree:**
+
+* Basic stat enhancement (HP/Gold).
+* Special abilities (Appraisal/Expansion).
+* *Note: Exploration count expansion skill has been removed.*
+
+#### Dungeon Gate (Entrance to the Abyss)
+
+**Role:** Starting the exploration.
+
+* Depth selection.
+* Life confirmation.
+* **Check possession of Teleport Stones.**
+
+#### Journal (Handwritten Notes) — Header UI
+
+> **Note:** The Journal is not a facility but a UI accessible at all times from the header.
+
+**Role:** Build research and record management.
+
+**Page Structure:**
+
+```
+Journal
+├── Chapter 1: Tactics — Deck Composition
+├── Chapter 2: Memories — Encyclopedia (Cards/Equipment/Monsters)
+├── Chapter 3: Thoughts — Strategy Notes
+└── Colophon: Settings — Save/Load
+
+```
+
+**Details:** See `journal_document/journal_system_implementation_plan.md`
+
+---
+
+### 4.2 Resource Economy Redesign
+
+#### Flow of Gold
+
+```
+【Acquisition】
+1. Selling Magic Stones and Equipment at BaseCamp.
+
+2. Dungeon Exploration → Event triggers (Unimplemented)
               ↓
-         生還 → BaseCampに持ち帰り
+         Survival → Bring back to BaseCamp
               ↓
-         死亡 → ゼロ（ロスト）
+         Death → Zero (Lost)
 
-【消費】
+【Consumption】
 BaseCamp:
-- Shop: 装備購入
-- Blacksmith: 強化・修理
-```
-
-#### 魔石の流れ
+- Shop: Purchase equipment
+- Blacksmith: Enhancement and Repair
 
 ```
-【獲得】
-1. Dungeon探索 → 魔物ドロップ
-              ↓
-   イベント発生 → 魔石入手
-              ↓
-         生還 → BaseCampに持ち帰り
-              ↓
-         死亡 → ゼロに（ロスト）
 
-【消費】
-- Blacksmith: 装備強化
-- Shop: Gold換金（緊急時）
-```
-
-#### 魂の残滓の流れ
+#### Flow of Magic Stones
 
 ```
-【獲得】
-Dungeon探索 → 魔物撃破 → 魂獲得（経験値的）
+【Acquisition】
+1. Dungeon Exploration → Monster drops
               ↓
-         生還 → 累計に100%加算（恒久）
+   Event triggers → Obtain Magic Stones
               ↓
-         死亡 → 累計に100%加算（恒久）★V3.0変更
+         Survival → Bring back to BaseCamp
+              ↓
+         Death → Zero (Lost)
 
-【消費】
-- Sanctuary: スキルツリー解放
+【Consumption】
+- Blacksmith: Equipment enhancement
+- Shop: Gold exchange (Emergency)
+
 ```
 
-**重要な設計（V3.0）:**
+#### Flow of Soul Remnants
 
-- 魂の残滓は**生還・死亡問わず100%獲得**
-- 死亡のペナルティは「残機減少」と「アイテムロスト」
-- 成長要素（魂）は確保されるため、完全な無駄死にはない
+```
+【Acquisition】
+Dungeon Exploration → Defeat Monsters → Gain Souls (Experience points)
+              ↓
+         Survival → 100% added to cumulative total (Permanent)
+              ↓
+         Death → 100% added to cumulative total (Permanent) ★V3.0 Change
+
+【Consumption】
+- Sanctuary: Skill tree unlock
+
+```
+
+**Crucial Design (V3.0):**
+
+* Soul Remnants are **obtained 100% regardless of survival or death.**
+* The penalty for death is "Loss of Life" and "Item Loss."
+* Growth elements (Souls) are secured, so there is no such thing as a "completely wasted death."
 
 ---
 
-## 5. 難易度設計の方針
+## 5. Difficulty Design Policy
 
-### 5.1 難易度曲線
-
-```
-深度1: チュートリアル的な難易度
-      雑魚敵のみ、装備なしでもクリア可能
-
-深度2: 基礎装備が必要
-      装備Lv0-1でクリア可能
-
-深度3: 戦略が必要
-      装備Lv1-2 + デッキ構成の最適化
-
-深度4: 高難度
-      装備Lv2-3 + 品質good以上推奨
-
-深度5: 最高難度
-      最高装備 + 最適デッキ + Sanctuary強化必須
-```
-
-### 5.2 死亡ペナルティのバランス
-
-**設計目標:**
-
-- 死亡は非常に痛いが、成長は止まらない
-- 慎重なプレイを促す
-- 装備持ち込みのリスク管理を重視
-
-**調整ポイント:**
+### 5.1 Difficulty Curve
 
 ```
-死亡ペナルティの重さ = 持ち込んだ装備の価値 + 獲得したリソース + 残機1
+Depth 1: Tutorial-level difficulty.
+         Minions only; clearable even without equipment.
 
-序盤: 装備の価値が低い → ペナルティ小
-中盤: 装備の価値が上がる → ペナルティ中
-終盤: 最高装備を持ち込む → ペナルティ大
+Depth 2: Basic equipment required.
+         Clearable with Gear Lv0-1.
+
+Depth 3: Strategy required.
+         Gear Lv1-2 + Optimized deck composition.
+
+Depth 4: High difficulty.
+         Gear Lv2-3 + Recommended quality "Good" or higher.
+
+Depth 5: Maximum difficulty.
+         Best gear + Optimized deck + Sanctuary upgrades mandatory.
+
 ```
 
-### 5.3 残機システムのバランス
+### 5.2 Death Penalty Balance
 
-**目標:**
+**Design Goal:**
 
-- 慎重なプレイヤー: 残機を温存して深度5到達
-- 平均的なプレイヤー: 残機1-2で深度5挑戦
-- 無謀なプレイヤー: 残機0でゲームオーバー
+* Death is very painful, but growth does not stop.
+* Encourage cautious play.
+* Emphasize risk management of "bring-in" equipment.
+
+**Adjustment Points:**
+
+```
+Weight of Death Penalty = Value of brought equipment + Acquired resources + 1 Life
+
+Early game: Equipment value is low → Small penalty.
+Mid game: Equipment value rises → Medium penalty.
+Late game: Bringing the best equipment → Large penalty.
+
+```
+
+### 5.3 Life System Balance
+
+**Goal:**
+
+* Cautious Player: Reach Depth 5 while conserving Lives.
+* Average Player: Challenge Depth 5 with 1-2 Lives remaining.
+* Reckless Player: Game Over at 0 Lives.
 
 ---
 
-## 6. プレイヤー体験の設計
+## 6. Player Experience Design
 
-### 6.1 目指すプレイ体験
+### 6.1 Intended Play Experience
 
-**緊張感:**
+**Tension:**
 
-- 「この装備を持ち込むべきか」
-- 「もう一歩進むか、ここで帰るか」
-- 「残機があと1つしかない」
+* "Should I bring this piece of equipment?"
+* "Should I go one step further, or go home now?"
+* "I only have one Life left."
 
-**達成感:**
+**Sense of Achievement:**
 
-- 「無事に生還できた！」
-- 「高レベル装備を持ち帰れた！」
-- 「深度5に到達した！」
+* "I survived safely!"
+* "I brought back high-level equipment!"
+* "I reached Depth 5!"
 
-**戦略性:**
+**Strategic Depth:**
 
-- 装備の選択と持ち込みリスク
-- 帰還のタイミング
-- デッキ構成
-- スキルツリーの選択
+* Equipment selection and bring-in risk.
+* Timing of return.
+* Deck composition.
+* Skill tree choices.
 
-### 6.2 プレイヤーの選択肢
+### 6.2 Player Choices
 
-**探索前:**
-
-```
-[1] どの装備を持ち込むか
-    - 高レベル装備（リスク大、リターン大）
-    - 低レベル装備（リスク小、リターン小）
-    - 装備なし（死亡時ロストなし、クリア困難）
-
-[2] どのデッキで挑むか
-    - 攻撃特化
-    - 防御重視
-    - バランス型
-
-[3] どの深度に挑むか
-    - 深度1-2（安全、報酬少）
-    - 深度3-4（危険、報酬中）
-    - 深度5（最危険、報酬大）
-```
-
-**探索中:**
+**Before Exploration:**
 
 ```
-[1] 戦闘後の選択
-    - 次の部屋へ進む
-    - 転移石で帰還
-    - 帰還ルートで帰還
+[1] Which equipment to bring?
+    - High-level gear (High risk, High reward)
+    - Low-level gear (Low risk, Low reward)
+    - No gear (No loss on death, extremely difficult to clear)
 
-[2] 装備が手に入った
-    - 装備して続行（死亡時ロスト増）
-    - 持ち帰り優先で帰還
+[2] Which deck to use?
+    - Attack-focused
+    - Defense-oriented
+    - Balanced type
 
-[3] HP残量の判断
-    - まだ戦える → 深層へ
-    - 危険水域 → 帰還
+[3] Which Depth to challenge?
+    - Depth 1-2 (Safe, low rewards)
+    - Depth 3-4 (Dangerous, medium rewards)
+    - Depth 5 (Deadly, high rewards)
+
+```
+
+**During Exploration:**
+
+```
+[1] Choice after battle:
+    - Proceed to the next room
+    - Return via Teleport Stone
+    - Return via Return Route
+
+[2] Obtaining new gear:
+    - Equip and continue (Increases loss on death)
+    - Return immediately to prioritize keeping it
+
+[3] Judging remaining HP:
+    - Still can fight → Go deeper
+    - Danger zone → Return
+
 ```
 
 ---
 
-## 7. ゲームフロー全体図
+## 7. Overall Game Flow Chart
 
 ```
 ┌─────────────────────────────────────────────┐
-│  ゲーム開始                                  │
-│  - 残機: 3（Normal/Easy）or 2（Hard）        │
-│  - 魂の残滓: 0                               │
+│  Game Start                                  │
+│  - Lives: 3 (Normal/Easy) or 2 (Hard)        │
+│  - Soul Remnants: 0                          │
 │  - Gold: 500                                 │
 └──────────────┬──────────────────────────────┘
                ↓
 ┌─────────────────────────────────────────────┐
-│  BaseCamp（準備）                            │
-│  - Shop: 初期装備購入                        │
-│  - Library: デッキ構築                       │
-│  - Blacksmith: 装備強化                      │
-│  - Sanctuary: スキルツリー（魂があれば）     │
+│  BaseCamp (Preparation)                       │
+│  - Shop: Buy initial gear                    │
+│  - Library: Build deck                       │
+│  - Blacksmith: Enhance gear                  │
+│  - Sanctuary: Skill Tree (if Souls available)│
 └──────────────┬──────────────────────────────┘
                ↓
-         Dungeon探索
+         Dungeon Exploration
                ↓
     ┌──────────┴──────────┐
     │                     │
-  生還                  死亡
+ Survival               Death
     │                     │
     ↓                     ↓
-全て持ち帰り          全ロスト
-残機変化なし          魂100%獲得
-    │                 残機-1
+Extract Everything     Total Loss
+Lives Unchanged        100% Soul Gain
+    │                  Life -1
     │                     │
     └──────────┬──────────┘
                ↓
-         残機 > 0?
+         Lives > 0?
          │        │
         Yes       No
          │        ↓
-         │    ゲームオーバー
-         │    （完全リセット）
+         │    Game Over
+         │    (Hard Reset)
          ↓
-    BaseCampに戻る
+    Return to BaseCamp
          ↓
-    深度5クリア?
+    Depth 5 Cleared?
          │        │
         No        Yes
          │        ↓
-         └──→  エンディング
-               （成功）
+         └──→  Ending
+               (Success)
+
 ```
 
 ---
 
-## 8. 設計の優先順位
+## 8. Design Priorities
 
-### 8.1 Phase 1（MVP）
+### 8.1 Phase 1 (MVP)
 
-**目標:** 基本ループの実装
-
-```
-□ BaseCamp基本機能（Guild/Shop/Blacksmith/sanctuary）
-□ Dungeon探索（深度1-3）
-□ 生還・死亡システム
-□ 残機システム
-□ 魂の残滓（経験値）システム
-□ 基本的なSanctuaryスキルツリー
-```
-
-### 8.2 Phase 2（拡張）
-
-**目標:** 戦略性の追加
+**Goal:** Implementation of the basic loop.
 
 ```
-□ Blacksmith品質ガチャ
-□ Library図鑑・デッキ編成
-□ カード熟練度システム
-□ Sanctuaryスキルツリー拡張
-□ 深度4-5の実装
-□ 深淵脱出ルート
-```
-
-### 8.3 Phase 3（完成）
-
-**目標:** バランス調整と演出
+□ BaseCamp basic functions (Guild/Shop/Blacksmith/Sanctuary)
+□ Dungeon Exploration (Depth 1-3)
+□ Survival/Death systems
+□ Life system
+□ Soul Remnant (XP) system
+□ Basic Sanctuary skill tree
 
 ```
-□ 難易度調整
-□ 残機バランス調整
-□ 演出・アニメーション
-□ UI/UX最適化
-□ エンディング実装
+
+### 8.2 Phase 2 (Expansion)
+
+**Goal:** Adding strategic depth.
+
+```
+□ Blacksmith quality Gacha
+□ Library Encyclopedia and Deck Building
+□ Card Mastery system
+□ Sanctuary skill tree expansion
+□ Implementation of Depth 4-5
+□ Abyss Escape Route
+
+```
+
+### 8.3 Phase 3 (Completion)
+
+**Goal:** Balance adjustment and presentation.
+
+```
+□ Difficulty balancing
+□ Life system balance adjustment
+□ Presentation and animations
+□ UI/UX optimization
+□ Ending implementation
+
 ```
 
 ---
 
-## 9. 参照ドキュメント
+## 9. Reference Documents
 
 ```
-GAME_DESIGN_MASTER_V3 [本文書]
-├── BASE_CAMP_DESIGN_V2（要修正）
-│   ├── GUILD_DESIGN_V2.1
-│   ├── SHOP_DESIGN_V1（要修正）
-│   ├── BLACKSMITH_DESIGN_V1
-│   ├── SANCTUARY_DESIGN_V3（V3.0対応版）
-│   └── LIBRARY_DESIGN_V1
+GAME_DESIGN_MASTER_V3.1 [This Document]
+├── CAMP_FACILITIES_DESIGN_V4
+│   ├── guild_design.md (V3.0 - includes Storage tab)
+│   ├── shop_design.md
+│   ├── blacksmith_design.md
+│   └── sanctuary_design.md
+├── journal_document/journal_system_implementation_plan.md
 ├── battle_logic.md
 ├── card_system.md
-├── return_system_v3.md（V3.0対応版）
+├── return_system_v3.md
 └── dungeon_system.md
+
 ```
 
-**次のステップ:**
+**Future Features:**
 
-1. return_system_design.md の更新（転移石統一、脱出ルート）
-2. sanctuary_design.md の更新（魂100%獲得）
-3. dungeon_exploration_ui_design.md の更新（残機表示）
+```
+.claude/feature_plans/
+├── quest_system.md
+├── npc_conversation.md
+├── title_system.md
+└── dark_market.md
+
+```
 
 ---
 
-## まとめ
+## Summary
 
-### 新しいゲーム設計の核心（V3.0）
+### The Heart of the New Game Design (V3.0)
 
-**ジャンル:**
+**Genre:**
 
-> 持ち帰り型ダンジョン RPG × カードバトル
+> Extraction-style Dungeon RPG × Card Battle
 
-**コアメカニクス:**
+**Core Mechanics:**
 
-> 生還 or 死亡の選択 + 残機システム
+> Survival or Death Choice + Life System
 
-**残機システムの特徴:**
+**Features of the Life System:**
 
-1. 死亡時のみ残機減少
-2. 帰還成功時は残機温存
-3. 難易度別上限（Hard:2, Normal/Easy:3）
-4. 残機回復手段なし
-5. 残機0でゲームオーバー（完全リセット）
+1. Lives decrease only upon death.
+2. Lives are conserved upon successful return.
+3. Max Life varies by difficulty (Hard: 2, Normal/Easy: 3).
+4. No means of recovering Lives.
+5. Death with 0 Lives leads to Game Over (Hard Reset).
 
-**死亡ペナルティの特徴:**
+**Features of the Death Penalty:**
 
-1. 所有アイテム・装備全ロスト
-2. 獲得Gold全ロスト
-3. **魂の残滓は100%獲得**
-4. 残機-1
+1. Total loss of all owned items and equipment.
+2. Total loss of all acquired Gold.
+3. **100% of Soul Remnants are gained.**
+4. Life -1.
 
-**3 つの成長軸:**
+**Three Pillars of Growth:**
 
-1. 装備の成長（リスク・リターン）
-2. カードの成長（恒久）
-3. 魂の残滓（経験値・恒久）
+1. Equipment Growth (Risk/Reward)
+2. Card Growth (Permanent)
+3. Soul Remnants (Experience/Permanent)
 
-**プレイヤー体験:**
+**Player Experience:**
 
-> 「装備を持ち込むべきか」のリスク判断
-> 「もう一歩進むか、帰るか」のジレンマ
-> 残機システムによる緊張感
-> 生還の達成感
+> Risk assessment of "Should I bring this equipment?"
+> Dilemma of "Should I go further or return?"
+> Tension provided by the Life System.
+> Sense of achievement upon survival.

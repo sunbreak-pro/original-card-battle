@@ -1,2322 +1,705 @@
-## 目次
+## Table of Contents
 
 ```
-1. 装備システムの基本仕様
-2. 装備スロット6種類
-3. 剣士専用装備(15種類)
-4. 魔術士専用装備(15種類)
-5. 召喚士専用装備(15種類)
-6. 共通装備(28種類)
-7. 消費アイテム(20種類)
-8. 装備の取得方法
-9. 装備の強化システム
-```
+1. Basic Equipment System Specifications
+2. 6 Equipment Slot Types
+3. Swordsman-Exclusive Equipment (15 Types)
+4. Mage-Exclusive Equipment (15 Types)
+5. Summoner-Exclusive Equipment (15 Types)
+6. Common Equipment (28 Types)
+7. Consumable Items (20 Types)
+8. Equipment Acquisition Methods
+9. Equipment Enhancement System
 
----
-
-# 1. 装備システムの基本仕様
-
-## 1.1 装備スロット
-
-```
-【6つの装備スロット】
-1. 頭(Head) - 8種類
-2. 胴(Body) - 10種類
-3. 右手(Right Hand) - 15種類
-4. 左手(Left Hand) - 12種類
-5. 靴(Boots) - 8種類
-6. アクセサリ(Accessory) - 20種類
-
-合計: 73種類
-```
-
-## 1.2 装備の基本パラメータ
-
-```
-【全装備共通】
-- AP(Armor Points): 装備の耐久値
-- レアリティ: コモン / レア / エピック / レジェンド
-- 特性(Trait): パッシブ効果
-
-【ステータス補正】
-- HP補正: +10 ~ +50
-- ATK補正: +5% ~ +30%
-- DEF補正: +5% ~ +30%
-- 魔法補正: +5% ~ +40%
-- エナジー補正: +1 ~ +2
-```
-
-## 1.3 装備の特性(スキル)タイプ
-
-```
-【スキルシステム】
-- 全装備: 基本スキル1つ所持
-- エピック以上: Lv3で解放スキル追加(合計2つ)
-- レジェンド: 一部の装備は解放スキル2つ(合計3つ)
-
-【A. キャラクター固有強化】
-- 剣士: 剣気関連
-- 魔術士: 共鳴関連
-- 召喚士: 召喚関連
-
-【B. カードシナジー】
-- 特定カテゴリ強化
-- コスト軽減
-- 威力増加
-
-【C. リソース強化】
-- エナジー増加
-- 手札増加
-- ドロー強化
-
-【D. 防御・生存】
-- HP増加
-- シールド付与
-- ダメージ軽減
-
-【E. 火力強化】
-- ダメージ増加
-- クリティカル
-- 貫通
-
-【F. ユーティリティ】
-- ドロップ率
-- 経済効果
-- 探索補助
 ```
 
 ---
 
-# 2. 装備スロット別の設計方針
+# 1. Basic Equipment System Specifications
 
-## 2.1 頭装備(8 種類)
-
-```
-【設計方針】
-- 防御寄りのステータス
-- HP・DEF補正が主
-- デバフ耐性・シールド系の特性
-```
-
-## 2.2 胴装備(10 種類)
+## 1.1 Equipment Slots
 
 ```
-【設計方針】
-- バランス型のステータス
-- HP・DEF・ATK全て補正
-- メインの防御装備
-- 高APを持つ
-```
+【6 Equipment Slots】
+1. Head - 8 Types
+2. Body - 10 Types
+3. Right Hand - 15 Types
+4. Left Hand - 12 Types
+5. Boots - 8 Types
+6. Accessory - 20 Types
 
-## 2.3 右手装備(15 種類)
-
-```
-【設計方針】
-- 攻撃特化
-- ATK・魔法補正が主
-- ダメージ増加系の特性
-- 武器カテゴリ
-```
-
-## 2.4 左手装備(12 種類)
+Total: 73 Types
 
 ```
-【設計方針】
-- 攻守のサブ
-- 盾・副武器・魔導書
-- 防御 or 攻撃補助
-```
 
-## 2.5 靴装備(8 種類)
+## 1.2 Base Parameters
 
 ```
-【設計方針】
-- 機動性・ユーティリティ
-- エナジー・手札補正
-- 回避・速度系の特性
-```
+【Universal Stats】
+- AP (Armor Points): Durability of the equipment
+- Rarity: Common / Rare / Epic / Legend
+- Trait: Passive effects
 
-## 2.6 アクセサリ(20 種類)
-
-```
-【設計方針】
-- 特殊効果のみ
-- HP/ATK/DEF補正なし
-- ビルド特化の効果
-- 複数装備で相乗効果
-```
-
----
-
-# 3. 剣士専用装備(15 種類)
-
-## 3.1 頭装備(剣士用) - 3 種類
-
-### 01. 剣士の兜(コモン)
+【Stat Modifiers】
+- HP Modifier: +10 ~ +50
+- ATK Modifier: +5% ~ +30%
+- DEF Modifier: +5% ~ +30%
+- Magic Modifier: +5% ~ +40%
+- Energy Modifier: +1 ~ +2
 
 ```
-【基本性能】
-スロット: 頭
-AP: 100
-HP補正: +15
-DEF補正: +10%
 
-【スキル】
-剣気の守護:
-- 剣気5以上で被ダメージ-15%
-- 剣気10で被ダメージ-30%
-
-【使い所】
-基本防御装備
-剣気を溜めるほど硬くなる
-```
-
-### 02. 戦神の兜(レア)
+## 1.3 Skill (Trait) Types
 
 ```
-【基本性能】
-スロット: 頭
-AP: 180
-HP補正: +25
-DEF補正: +15%
+【Skill System】
+- All Equipment: 1 Base Skill
+- Epic & Above: Unlocks an additional skill at Lv.3 (Total: 2)
+- Legend: Select equipment may unlock 2 skills (Total: 3)
 
-【スキル】
-剣気加速:
-- 物理カード使用時、剣気+2(通常+1)
-- ターン開始時、剣気+1
+【A. Character-Specific Enhancement】
+- Swordsman: Sword Intent related
+- Mage: Resonance related
+- Summoner: Summon related
 
-【使い所】
-剣気蓄積加速
-高速連撃ビルド向け
-```
+【B. Card Synergy】
+- Specific category enhancement
+- Cost reduction
+- Potency increase
 
-### 03. 剣神の冠(レジェンド)
+【C. Resource Enhancement】
+- Energy increase
+- Hand size increase
+- Draw enhancement
 
-```
-【基本性能】
-スロット: 頭
-AP: 300
-HP補正: +40
-DEF補正: +25%
-ATK補正: +15%
+【D. Defense & Survival】
+- HP increase
+- Shield application
+- Damage reduction
 
-【スキル1】剣気爆発:
-- 剣気10到達時、次の物理攻撃威力×2
-- 剣気10維持中、全ダメージ+30%
+【E. Firepower Enhancement】
+- Damage increase
+- Critical hits
+- Penetration
 
-【解放スキル(Lv3)】不屈の意志:
-- HP50%以下で自動シールド30(1回/戦闘)
-- 死亡時HP1で復活(1回/ラン)
+【F. Utility】
+- Drop rates
+- Economic effects
+- Exploration support
 
-【使い所】
-最強剣士装備
-剣気10維持で圧倒的火力
-Lv3で生存保証付き
 ```
 
 ---
 
-## 3.2 胴装備(剣士用) - 3 種類
+# 2. Design Principles by Slot
 
-### 04. 剣士の鎧(コモン)
+## 2.1 Head (8 Types)
 
-```
-【基本性能】
-スロット: 胴
-AP: 150
-HP補正: +20
-DEF補正: +15%
-ATK補正: +5%
+* **Focus:** Defensive stats.
+* Primarily HP and DEF modifiers.
+* Traits centered on Debuff Resistance and Shields.
 
-【スキル】
-剣気の鎧:
-- 剣気1につきAP+5(最大+50)
-- 被ダメージ時、剣気+1
+## 2.2 Body (10 Types)
 
-【使い所】
-基本防御装備
-被ダメージで剣気蓄積
-```
+* **Focus:** Balanced stats.
+* Modifies HP, DEF, and ATK.
+* Main defensive gear with high AP.
 
-### 05. 戦神の鎧(エピック)
+## 2.3 Right Hand (15 Types)
 
-```
-【基本性能】
-スロット: 胴
-AP: 280
-HP補正: +35
-DEF補正: +20%
-ATK補正: +15%
+* **Focus:** Offensive specialization.
+* Primarily ATK and Magic modifiers.
+* Damage-increasing traits; weapon category.
 
-【スキル1】剣気反撃:
-- 被ダメージ時、剣気×5の反撃ダメージ
-- 剣気10で反撃ダメージ×2
+## 2.4 Left Hand (12 Types)
 
-【解放スキル(Lv3)】剣気シールド:
-- ターン開始時、剣気×3のシールド付与
-- 剣気5以上でデバフ耐性+50%
+* **Focus:** Offensive/Defensive sub-gear.
+* Shields, sub-weapons, and grimoires.
+* Provides defense or offensive support.
 
-【使い所】
-カウンター型
-被ダメージで反撃
-剣気が高いほど硬い
-```
+## 2.5 Boots (8 Types)
 
-### 06. 剣神の鎧(レジェンド)
+* **Focus:** Mobility and Utility.
+* Modifies Energy and Hand Size.
+* Traits centered on Evasion and Speed.
 
-```
-【基本性能】
-スロット: 胴
-AP: 450
-HP補正: +50
-DEF補正: +30%
-ATK補正: +25%
+## 2.6 Accessory (20 Types)
 
-【スキル1】剣気無双:
-- 剣気5以上で全物理攻撃が範囲化
-- 剣気10で全物理攻撃の威力+50%
-
-【解放スキル(Lv3)】剣気回復:
-- 剣気消費時、消費量×5のHP回復
-- 剣気全消費時、次ターン剣気+5スタート
-
-【使い所】
-最強防御装備
-剣気システムを完全強化
-範囲化で殲滅力向上
-Lv3で回復能力追加
-```
+* **Focus:** Special effects only.
+* No base HP/ATK/DEF modifiers.
+* Build-specific effects with synergies for multiple equipped items.
 
 ---
 
-## 3.3 右手装備(剣士用) - 3 種類
+# 3. Swordsman-Exclusive Equipment (15 Types)
 
-### 07. 剣士の剣(コモン)
+## 3.1 Head (Swordsman) - 3 Types
 
-```
-【基本性能】
-スロット: 右手
-AP: 80
-ATK補正: +15%
+### 01. Swordsman’s Helm (Common)
 
-【スキル】
-剣気刃:
-- 物理攻撃威力+剣気×3
-- クリティカル時、剣気+2
+* **Slot:** Head | **AP:** 100 | **HP:** +15 | **DEF:** +10%
+* **Skill (Sword Intent Protection):**
+* Damage taken -15% if Sword Intent is 5+
+* Damage taken -30% if Sword Intent is 10
 
-【使い所】
-基本武器
-剣気でダメージ増加
-```
 
-### 08. 戦神の大剣(エピック)
+* **Usage:** Basic defensive gear; becomes sturdier as Sword Intent accumulates.
 
-```
-【基本性能】
-スロット: 右手
-AP: 150
-ATK補正: +25%
+### 02. War God’s Helm (Rare)
 
-【スキル1】剣気斬:
-- 物理攻撃威力+剣気×7(基本+5)
-- 剣気10で確定クリティカル+貫通80%
+* **Slot:** Head | **AP:** 180 | **HP:** +25 | **DEF:** +15%
+* **Skill (Sword Intent Acceleration):**
+* Gain +2 Sword Intent when using Physical cards (Default +1)
+* Gain +1 Sword Intent at start of turn.
 
-【解放スキル(Lv3)】剣気蓄積:
-- 0-1コストカード使用時、剣気+2(通常+1)
-- 2コスト以上カード使用時、剣気+4(通常+2-3)
 
-【使い所】
-火力特化
-剣気依存ダメージ大幅上昇
-剣気爆発ビルド最適
-```
+* **Usage:** Accelerates Sword Intent buildup; ideal for high-speed combo builds.
 
-### 09. 剣神の聖剣(レジェンド)
+### 03. Sword God’s Crown (Legend)
 
-```
-【基本性能】
-スロット: 右手
-AP: 300
-ATK補正: +40%
+* **Slot:** Head | **AP:** 300 | **HP:** +40 | **DEF:** +25% | **ATK:** +15%
+* **Skill 1 (Sword Intent Burst):**
+* Next Physical attack damage x2 upon reaching 10 Sword Intent.
+* +30% to all damage while maintaining 10 Sword Intent.
 
-【スキル1】剣気解放:
-- 剣気消費カードのコスト-1
-- 剣気全消費時、ダメージ×3(通常×2)
-- 剣気全消費後、即座に剣気+5
 
-【解放スキル(Lv3)】剣気共鳴:
-- 剣気5以上で全物理攻撃に貫通+50%
-- 剣気10で全物理攻撃がクリティカル確定
-- 戦闘開始時、剣気+5スタート
-- 剣気上限+5(最大15)
+* **Unlock Skill (Lv.3) (Indomitable Will):**
+* Automatic Shield (30) when HP falls below 50% (1/battle).
+* Revive with 1 HP upon death (1/run).
 
-【使い所】
-最強武器
-剣気システムを極限強化
-剣気消費型ビルド最適
-Lv3で初期剣気+上限拡張
-```
+
+* **Usage:** Ultimate gear; overwhelming firepower at max Sword Intent with survival insurance at Lv.3.
 
 ---
 
-## 3.4 左手装備(剣士用) - 2 種類
+## 3.2 Body (Swordsman) - 3 Types
 
-### 10. 剣士の盾(レア)
+### 04. Swordsman’s Armor (Common)
 
-```
-【基本性能】
-スロット: 左手
-AP: 120
-HP補正: +20
-DEF補正: +15%
+* **Slot:** Body | **AP:** 150 | **HP:** +20 | **DEF:** +15% | **ATK:** +5%
+* **Skill (Sword Intent Mail):**
+* Gain +5 AP per Sword Intent (Max +50).
+* Gain +1 Sword Intent when taking damage.
 
-【スキル】
-剣気の盾:
-- ターン開始時、剣気×4のシールド付与
-- 被ダメージ時、攻撃者に剣気×3の反撃
 
-【使い所】
-防御サブ装備
-剣気で防御強化
-```
 
-### 11. 戦神の小剣(エピック)
+### 05. War God’s Armor (Epic)
 
-```
-【基本性能】
-スロット: 左手
-AP: 100
-ATK補正: +15%
+* **Slot:** Body | **AP:** 280 | **HP:** +35 | **DEF:** +20% | **ATK:** +15%
+* **Skill 1 (Sword Intent Counter):**
+* Counterattack damage = Sword Intent x 5 when hit.
+* Counter damage x2 at 10 Sword Intent.
 
-【スキル1】二刀流:
-- 物理カード使用時、25%で追加攻撃(威力×0.5)
-- 追加攻撃でも剣気+1
 
-【解放スキル(Lv3)】剣気連撃:
-- 剣気5以上で追加攻撃確率50%
-- 剣気10で追加攻撃確率100%
+* **Unlock Skill (Lv.3) (Sword Intent Shield):**
+* Grant Shield = Sword Intent x 3 at turn start.
+* +50% Debuff Resistance at 5+ Sword Intent.
 
-【使い所】
-攻撃サブ装備
-追加攻撃で手数増加
-高速連撃ビルド向け
-```
+
+
+### 06. Sword God’s Armor (Legend)
+
+* **Slot:** Body | **AP:** 450 | **HP:** +50 | **DEF:** +30% | **ATK:** +25%
+* **Skill 1 (Sword Intent Unrivaled):**
+* All Physical attacks become AoE at 5+ Sword Intent.
+* +50% Physical attack power at 10 Sword Intent.
+
+
+* **Unlock Skill (Lv.3) (Sword Intent Recovery):**
+* Heal HP = Amount spent x 5 when consuming Sword Intent.
+* Start next turn with +5 Sword Intent after full consumption.
+
+
 
 ---
 
-## 3.5 靴装備(剣士用) - 2 種類
+## 3.3 Right Hand (Swordsman) - 3 Types
 
-### 12. 剣士のブーツ(レア)
+### 07. Swordsman’s Sword (Common)
 
-```
-【基本性能】
-スロット: 靴
-AP: 70
-エナジー補正: +1
+* **Slot:** Right Hand | **AP:** 80 | **ATK:** +15%
+* **Skill (Sword Intent Blade):**
+* Physical attack power + (Sword Intent x 3).
+* Gain +2 Sword Intent on Critical hits.
 
-【スキル】
-剣気加速:
-- 剣気5以上でエナジー+1追加
-- 剣気10でエナジー+2追加
 
-【使い所】
-リソース確保
-剣気でエナジー増加
-高コストカード連打
-```
 
-### 13. 戦神の疾風靴(エピック)
+### 08. War God’s Greatsword (Epic)
 
-```
-【基本性能】
-スロット: 靴
-AP: 110
-エナジー補正: +1
+* **Slot:** Right Hand | **AP:** 150 | **ATK:** +25%
+* **Skill 1 (Sword Intent Slash):**
+* Physical power + (Sword Intent x 7).
+* Guaranteed Critical + 80% Penetration at 10 Sword Intent.
 
-【スキル1】剣気突進:
-- 物理カード使用時、10%で即座にもう1枚カード使用可能
-- 剣気10で確率30%
 
-【解放スキル(Lv3)】剣気回避:
-- 剣気5以上で回避率+20%
-- 回避成功時、剣気+2
+* **Unlock Skill (Lv.3) (Sword Intent Accumulation):**
+* Gain +2 Sword Intent from 0-1 cost cards; +4 from 2+ cost cards.
 
-【使い所】
-機動力向上
-追加行動チャンス
-回避で剣気蓄積
-```
+
+
+### 09. Sword God’s Holy Sword (Legend)
+
+* **Slot:** Right Hand | **AP:** 300 | **ATK:** +40%
+* **Skill 1 (Sword Intent Unleashed):**
+* Sword Intent consumption cards cost -1.
+* Damage x3 upon full consumption (Default x2).
+* Immediately gain +5 Sword Intent after full consumption.
+
+
+* **Unlock Skill (Lv.3) (Sword Intent Resonance):**
+* +50% Penetration at 5+ Sword Intent; guaranteed Critical at 10.
+* Start battle with +5 Sword Intent.
+* Sword Intent cap +5 (Max 15).
+
+
 
 ---
 
-## 3.6 アクセサリ(剣士用) - 2 種類
+## 3.4 Left Hand (Swordsman) - 2 Types
 
-### 14. 剣気の指輪(レア)
+### 10. Swordsman’s Shield (Rare)
 
-```
-【基本性能】
-スロット: アクセサリ
-AP: 50
+* **Slot:** Left Hand | **AP:** 120 | **HP:** +20 | **DEF:** +15%
+* **Skill:** Grant Shield (Sword Intent x 4) at turn start; counterattack for (Sword Intent x 3).
 
-【スキル】
-剣気強化:
-- 剣気上限+3(最大13)
-- 戦闘開始時、剣気+3スタート
-- 剣気1につき全ダメージ+1%
+### 11. War God’s Shortsword (Epic)
 
-【使い所】
-剣気システム強化
-初期剣気付与
-全ビルド対応
-```
-
-### 15. 戦神の腕輪(エピック)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 80
-
-【スキル1】剣気爆発:
-- 剣気10到達時、自動で全体攻撃(威力100+剣気×10)
-- 剣気維持(消費しない)
-
-【解放スキル(Lv3)】剣気循環:
-- 剣気消費後、次ターン開始時に消費量の50%回復
-- 剣気全消費後、即座に剣気+3
-
-【使い所】
-剣気10維持で自動攻撃
-剣気消費後の回復
-剣気爆発ビルド最適
-```
+* **Slot:** Left Hand | **AP:** 100 | **ATK:** +15%
+* **Skill 1 (Dual Wield):** 25% chance for an extra attack (50% power) on Physical cards; extra attacks grant +1 Sword Intent.
+* **Unlock Skill (Lv.3):** Extra attack chance increases to 50% (at 5+ Intent) and 100% (at 10 Intent).
 
 ---
 
-# 4. 魔術士専用装備(15 種類)
+## 3.5 Boots (Swordsman) - 2 Types
 
-## 4.1 頭装備(魔術士用) - 3 種類
+### 12. Swordsman’s Boots (Rare)
 
-### 16. 魔術士の帽子(コモン)
+* **Slot:** Boots | **AP:** 70 | **Energy:** +1
+* **Skill:** Gain +1 extra Energy at 5+ Intent; +2 extra at 10 Intent.
 
-```
-【基本性能】
-スロット: 頭
-AP: 80
-HP補正: +10
-魔法補正: +15%
+### 13. War God’s Gale Boots (Epic)
 
-【スキル】
-共鳴の守護:
-- 共鳴Lv1以上で被ダメージ-10%
-- 共鳴Lv2で被ダメージ-25%
-
-【使い所】
-基本防御装備
-共鳴で防御力上昇
-```
-
-### 17. 大魔導師の帽子(レア)
-
-```
-【基本性能】
-スロット: 頭
-AP: 140
-HP補正: +20
-魔法補正: +25%
-
-【スキル】
-共鳴加速:
-- 魔法カード使用時、共鳴+1段階(通常+1)
-- 初手魔法が自動的に共鳴Lv1
-
-【使い所】
-共鳴蓄積加速
-単属性特化ビルド向け
-```
-
-### 18. 魔神の冠(レジェンド)
-
-```
-【基本性能】
-スロット: 頭
-AP: 250
-HP補正: +35
-魔法補正: +40%
-DEF補正: +15%
-
-【スキル1】共鳴爆発:
-- 共鳴Lv2到達時、次の魔法威力×2.5
-- 共鳴Lv2維持中、全魔法威力+50%
-
-【解放スキル(Lv3)】属性の支配:
-- 全属性の共鳴効果+1段階
-- 異なる属性使用時、50%で共鳴リセットしない
-
-【使い所】
-最強魔術士装備
-共鳴効果極限強化
-全ビルド対応
-```
+* **Slot:** Boots | **AP:** 110 | **Energy:** +1
+* **Skill 1:** 10% chance to play another card immediately after a Physical card (30% at 10 Intent).
+* **Unlock Skill (Lv.3):** +20% Evasion at 5+ Intent; successful evades grant +2 Intent.
 
 ---
 
-## 4.2 胴装備(魔術士用) - 3 種類
+## 3.6 Accessory (Swordsman) - 2 Types
 
-### 19. 魔術士のローブ(コモン)
+### 14. Ring of Sword Intent (Rare)
 
-```
-【基本性能】
-スロット: 胴
-AP: 120
-HP補正: +15
-DEF補正: +10%
-魔法補正: +20%
+* **Slot:** Accessory | **AP:** 50
+* **Skill:** Sword Intent cap +3; start battle with +3 Intent; +1% all damage per Intent.
 
-【スキル】
-共鳴の鎧:
-- 共鳴Lv×30のシールド付与(ターン開始時)
-- 被ダメージ時、共鳴維持
+### 15. War God’s Bracelet (Epic)
 
-【使い所】
-基本防御装備
-共鳴でシールド付与
-```
-
-### 20. 大魔導師のローブ(エピック)
-
-```
-【基本性能】
-スロット: 胴
-AP: 230
-HP補正: +30
-DEF補正: +20%
-魔法補正: +30%
-
-【スキル1】共鳴反撃:
-- 被ダメージ時、共鳴属性の魔法で反撃(威力30)
-- 共鳴Lv2で反撃威力×2
-
-【解放スキル(Lv3)】共鳴シールド:
-- ターン開始時、共鳴Lv×50のシールド
-- 共鳴Lv2でデバフ耐性+80%
-
-【使い所】
-カウンター型
-被ダメージで属性反撃
-共鳴が高いほど硬い
-```
-
-### 21. 魔神のローブ(レジェンド)
-
-```
-【基本性能】
-スロット: 胴
-AP: 400
-HP補正: +45
-DEF補正: +25%
-魔法補正: +45%
-
-【スキル1】共鳴無双:
-- 共鳴Lv1以上で全魔法が範囲化
-- 共鳴Lv2で全魔法の威力+60%(基本+30%)
-
-【解放スキル(Lv3)】共鳴回復:
-- 魔法使用時、共鳴Lv×15のHP回復
-- 共鳴Lv2到達時、デバフ全解除
-
-【使い所】
-最強防御装備
-共鳴システム完全強化
-範囲化で殲滅力向上
-Lv3で回復能力追加
-```
+* **Slot:** Accessory | **AP:** 80
+* **Skill 1:** Automatic AoE attack (100 + Intent x 10) upon reaching 10 Intent (Does not consume Intent).
+* **Unlock Skill (Lv.3):** Recover 50% of consumed Intent next turn; gain +3 Intent immediately after full consumption.
 
 ---
 
-## 4.3 右手装備(魔術士用) - 3 種類
+# 4. Mage-Exclusive Equipment (15 Types)
 
-### 22. 魔術士の杖(コモン)
+## 4.1 Head (Mage) - 3 Types
 
-```
-【基本性能】
-スロット: 右手
-AP: 60
-魔法補正: +20%
+### 16. Mage’s Hat (Common)
 
-【スキル】
-共鳴の杖:
-- 魔法威力+共鳴Lv×10%
-- 共鳴Lv2で全魔法に貫通+30%
+* **Slot:** Head | **AP:** 80 | **HP:** +10 | **Magic:** +15%
+* **Skill:** Damage taken -10% at Resonance Lv.1; -25% at Lv.2.
 
-【使い所】
-基本武器
-共鳴で威力増加
-```
+### 17. Archmage’s Hat (Rare)
 
-### 23. 大魔導師の杖(エピック)
+* **Slot:** Head | **AP:** 140 | **HP:** +20 | **Magic:** +25%
+* **Skill:** Gain +1 Resonance level per Magic card; first Magic card played automatically triggers Resonance Lv.1.
 
-```
-【基本性能】
-スロット: 右手
-AP: 120
-魔法補正: +35%
+### 18. Demon God’s Crown (Legend)
 
-【スキル1】共鳴増幅:
-- 共鳴Lv1で魔法威力+25%(基本+15%)
-- 共鳴Lv2で魔法威力+50%(基本+30%)
-- 共鳴Lv2で状態異常効果×2
-
-【解放スキル(Lv3)】共鳴維持:
-- 異なる属性使用時、75%で共鳴リセットしない
-- 共鳴Lv2到達時、次2枚の魔法コスト-1
-
-【使い所】
-火力特化
-共鳴効果大幅上昇
-属性コンボビルド向け
-```
-
-### 24. 魔神の魔杖(レジェンド)
-
-```
-【基本性能】
-スロット: 右手
-AP: 250
-魔法補正: +50%
-
-【スキル1】共鳴解放:
-- 共鳴Lv2の魔法威力+100%(基本+30%)
-- 共鳴Lv2の状態異常効果×3
-- 共鳴Lv2で魔法が全体攻撃化
-
-【解放スキル(Lv3)】属性の極致:
-- 火属性共鳴Lv2: 火傷+5(基本+2)
-- 氷属性共鳴Lv2: 凍結5ターン(基本3)
-- 雷属性共鳴Lv2: 3体連鎖(基本2)
-- 闇属性共鳴Lv2: HP吸収80%(基本40%)
-- 光属性共鳴Lv2: シールド+40(基本+20)
-- 戦闘開始時、任意の属性を共鳴Lv1で開始
-- 共鳴Lv上限なし(Lv3以降も継続強化)
-
-【使い所】
-最強武器
-共鳴システム極限強化
-単属性特化ビルド最適
-Lv3で属性効果大幅強化
-```
+* **Slot:** Head | **AP:** 250 | **HP:** +35 | **Magic:** +40% | **DEF:** +15%
+* **Skill 1:** Next Magic power x2.5 upon reaching Resonance Lv.2; +50% Magic power while maintaining Lv.2.
+* **Unlock Skill (Lv.3):** +1 Resonance stage for all elements; 50% chance not to reset Resonance when using a different element.
 
 ---
 
-## 4.4 左手装備(魔術士用) - 2 種類
+## 4.2 Body (Mage) - 3 Types
 
-### 25. 魔術士の魔導書(レア)
+### 19. Mage’s Robe (Common)
 
-```
-【基本性能】
-スロット: 左手
-AP: 80
-魔法補正: +15%
+* **Slot:** Body | **AP:** 120 | **HP:** +15 | **DEF:** +10% | **Magic:** +20%
+* **Skill:** Grant Shield (Resonance Lv x 30) at turn start; maintain Resonance when taking damage.
 
-【スキル】
-共鳴の書:
-- 手札+共鳴Lv(Lv2なら+2)
-- 共鳴Lv2で次の魔法コスト-1
+### 20. Archmage’s Robe (Epic)
 
-【使い所】
-リソース確保
-共鳴で手札増加
-```
+* **Slot:** Body | **AP:** 230 | **HP:** +30 | **DEF:** +20% | **Magic:** +30%
+* **Skill 1:** Counter with a Magic attack of the current Resonance element when hit (Power 30); x2 power at Resonance Lv.2.
+* **Unlock Skill (Lv.3):** Shield (Lv x 50) at turn start; +80% Debuff Resistance at Lv.2.
 
-### 26. 大魔導師の魔導書(エピック)
+### 21. Demon God’s Robe (Legend)
 
-```
-【基本性能】
-スロット: 左手
-AP: 130
-魔法補正: +25%
-
-【スキル1】多属性の書:
-- 3属性以上使用時、全魔法威力+30%
-- 属性切り替え時、次の魔法威力+60%
-
-【解放スキル(Lv3)】共鳴記録:
-- 共鳴がリセットされても、次の同属性魔法が自動的に共鳴Lv1
-- 1戦闘で5属性全て使用時、全魔法威力+50%
-
-【使い所】
-属性コンボビルド最適
-多属性切替を支援
-```
+* **Slot:** Body | **AP:** 400 | **HP:** +45 | **DEF:** +25% | **Magic:** +45%
+* **Skill 1:** All Magic becomes AoE at Resonance Lv.1+; +60% power at Lv.2.
+* **Unlock Skill (Lv.3):** Heal 15 HP per Magic used (scaled by Lv); cleanse all debuffs upon reaching Lv.2.
 
 ---
 
-## 4.5 靴装備(魔術士用) - 2 種類
+## 4.3 Right Hand (Mage) - 3 Types
 
-### 27. 魔術士のブーツ(レア)
+### 22. Mage’s Staff (Common)
 
-```
-【基本性能】
-スロット: 靴
-AP: 60
-エナジー補正: +1
+* **Slot:** Right Hand | **AP:** 60 | **Magic:** +20%
+* **Skill:** Magic power + (Lv x 10%); +30% Penetration at Lv.2.
 
-【スキル】
-共鳴加速:
-- 共鳴Lv1以上でエナジー+1追加
-- 共鳴Lv2でエナジー+2追加
+### 23. Archmage’s Staff (Epic)
 
-【使い所】
-リソース確保
-共鳴でエナジー増加
-```
+* **Slot:** Right Hand | **AP:** 120 | **Magic:** +35%
+* **Skill 1:** Magic power +25% (Lv.1) / +50% (Lv.2); status effect potency x2 at Lv.2.
+* **Unlock Skill (Lv.3):** 75% chance not to reset Resonance on different elements; next 2 Magic cards cost -1 at Lv.2.
 
-### 28. 大魔導師の疾風靴(エピック)
+### 24. Demon God’s Magic Staff (Legend)
 
-```
-【基本性能】
-スロット: 靴
-AP: 95
-エナジー補正: +1
+* **Slot:** Right Hand | **AP:** 250 | **Magic:** +50%
+* **Skill 1:** +100% Magic power and x3 status potency at Resonance Lv.2; Magic becomes AoE at Lv.2.
+* **Unlock Skill (Lv.3) (Elemental Perfection):**
+* **Fire:** Burn +5 (Default +2)
+* **Ice:** Freeze 5 turns (Default 3)
+* **Lightning:** 3-target chain (Default 2)
+* **Dark:** 80% HP Leech (Default 40%)
+* **Light:** Shield +40 (Default +20)
+* Start battle at Lv.1 with a random element; Resonance has no level cap (continues scaling).
 
-【スキル1】共鳴詠唱:
-- 魔法使用時、10%で即座にもう1枚魔法使用可能
-- 共鳴Lv2で確率30%
 
-【解放スキル(Lv3)】共鳴回避:
-- 共鳴Lv1以上で回避率+15%
-- 共鳴Lv2で回避率+35%
-
-【使い所】
-機動力向上
-追加詠唱チャンス
-回避で生存率向上
-```
 
 ---
 
-## 4.6 アクセサリ(魔術士用) - 2 種類
+## 4.4 Left Hand (Mage) - 2 Types
 
-### 29. 共鳴の指輪(レア)
+### 25. Mage’s Grimoire (Rare)
 
-```
-【基本性能】
-スロット: アクセサリ
-AP: 40
+* **Slot:** Left Hand | **AP:** 80 | **Magic:** +15%
+* **Skill:** Hand size + Resonance Lv; next Magic cost -1 at Resonance Lv.2.
 
-【スキル】
-共鳴強化:
-- 初手魔法が自動的に共鳴Lv1
-- 同属性1回でLv2到達(通常2回)
-- 共鳴Lv1以上で全魔法威力+15%
+### 26. Archmage’s Grimoire (Epic)
 
-【使い所】
-共鳴蓄積加速
-単属性特化ビルド最適
-```
-
-### 30. 魔神の腕輪(エピック)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 70
-
-【スキル1】共鳴爆発:
-- 共鳴Lv2到達時、全体攻撃(威力80+属性効果)
-- 共鳴維持(Lvは下がらない)
-
-【解放スキル(Lv3)】共鳴循環:
-- 共鳴リセット時、次の魔法威力+100%
-- 5属性全て共鳴Lv2到達時、永続バフ(全魔法威力+50%)
-
-【使い所】
-共鳴Lv2維持で自動攻撃
-属性コンボ支援
-多属性ビルド向け
-```
+* **Slot:** Left Hand | **AP:** 130 | **Magic:** +25%
+* **Skill 1:** +30% Magic power when using 3+ elements; +60% power for the next spell after switching elements.
+* **Unlock Skill (Lv.3):** Even if reset, the next same-element spell auto-starts at Lv.1; +50% power if all 5 elements are used in one battle.
 
 ---
 
-# 5. 召喚士専用装備(15 種類)
+## 4.5 Boots (Mage) - 2 Types
 
-## 5.1 頭装備(召喚士用) - 3 種類
+### 27. Mage’s Boots (Rare)
 
-### 31. 召喚士の帽子(コモン)
+* **Slot:** Boots | **AP:** 60 | **Energy:** +1
+* **Skill:** +1 extra Energy at Resonance Lv.1+; +2 at Lv.2.
 
-```
-【基本性能】
-スロット: 頭
-AP: 90
-HP補正: +15
-魔法補正: +10%
+### 28. Archmage’s Gale Boots (Epic)
 
-【スキル】
-召喚の守護:
-- 召喚獣1体につき被ダメージ-10%
-- 召喚獣3体で被ダメージ-30%
-
-【使い所】
-基本防御装備
-召喚数で防御力上昇
-```
-
-### 32. 上級召喚士の帽子(レア)
-
-```
-【基本性能】
-スロット: 頭
-AP: 160
-HP補正: +25
-魔法補正: +20%
-
-【スキル】
-召喚加速:
-- 召喚カードのコスト-1
-- 維持コスト-1(全召喚獣)
-
-【使い所】
-リソース軽減
-多数召喚しやすい
-```
-
-### 33. 召喚神の冠(レジェンド)
-
-```
-【基本性能】
-スロット: 頭
-AP: 280
-HP補正: +40
-魔法補正: +35%
-DEF補正: +20%
-
-【スキル1】召喚爆発:
-- 召喚獣3体時、全召喚獣の能力+80%
-- 召喚獣死亡時、周囲に大ダメージ(死亡召喚獣HP×3)
-
-【解放スキル(Lv3)】召喚維持:
-- 維持コスト0(全召喚獣)
-- 召喚上限+1(最大4体)
-
-【使い所】
-最強召喚士装備
-維持コスト無料
-4体召喚可能
-```
+* **Slot:** Boots | **AP:** 95 | **Energy:** +1
+* **Skill 1:** 10% chance to cast another spell immediately (30% at Lv.2).
+* **Unlock Skill (Lv.3):** +15% Evasion (Lv.1) / +35% Evasion (Lv.2).
 
 ---
 
-## 5.2 胴装備(召喚士用) - 3 種類
+## 4.6 Accessory (Mage) - 2 Types
 
-### 34. 召喚士のローブ(コモン)
+### 29. Ring of Resonance (Rare)
 
-```
-【基本性能】
-スロット: 胴
-AP: 130
-HP補正: +20
-DEF補正: +12%
-魔法補正: +15%
+* **Slot:** Accessory | **AP:** 40
+* **Skill:** First spell auto-starts at Resonance Lv.1; reach Lv.2 in one cast (Default 2); +15% Magic power at Lv.1+.
 
-【スキル】
-召喚の鎧:
-- 召喚獣1体につきAP+30
-- 召喚獣がダメージ肩代わり+10%
+### 30. Demon God’s Bracelet (Epic)
 
-【使い所】
-基本防御装備
-召喚獣で防御強化
-```
-
-### 35. 上級召喚士のローブ(エピック)
-
-```
-【基本性能】
-スロット: 胴
-AP: 250
-HP補正: +35
-DEF補正: +20%
-魔法補正: +25%
-
-【スキル1】召喚反撃:
-- 被ダメージ時、ランダムな召喚獣が反撃(威力40)
-- 召喚獣3体で確定反撃×3
-
-【解放スキル(Lv3)】召喚シールド:
-- ターン開始時、召喚獣数×25のシールド
-- 召喚獣3体でデバフ耐性+80%
-
-【使い所】
-カウンター型
-被ダメージで召喚獣反撃
-召喚数が多いほど硬い
-```
-
-### 36. 召喚神のローブ(レジェンド)
-
-```
-【基本性能】
-スロット: 胴
-AP: 420
-HP補正: +50
-DEF補正: +30%
-魔法補正: +40%
-
-【スキル1】召喚無双:
-- 召喚獣の攻撃が全て範囲化
-- 召喚獣3体で全召喚獣の威力+100%
-
-【解放スキル(Lv3)】召喚回復:
-- 召喚獣攻撃時、召喚士HP回復+15
-- 召喚獣3体で毎ターンHP+50回復
-
-【使い所】
-最強防御装備
-召喚獣の範囲化
-召喚数依存HP回復
-Lv3で大幅回復能力
-```
+* **Slot:** Accessory | **AP:** 70
+* **Skill 1:** AoE attack (80 + elemental effect) upon reaching Lv.2; Resonance Level does not drop.
+* **Unlock Skill (Lv.3):** +100% power for next spell after Resonance reset; permanent +50% Magic power buff after reaching Lv.2 with all 5 elements.
 
 ---
 
-## 5.3 右手装備(召喚士用) - 3 種類
+# 5. Summoner-Exclusive Equipment (15 Types)
 
-### 37. 召喚士の杖(コモン)
+## 5.1 Head (Summoner) - 3 Types
 
-```
-【基本性能】
-スロット: 右手
-AP: 65
-魔法補正: +15%
-ATK補正: +10%
+### 31. Summoner’s Hat (Common)
 
-【スキル】
-召喚の杖:
-- 召喚獣1体につき召喚士の攻撃力+15%
-- 召喚獣3体で+45%
+* **Slot:** Head | **AP:** 90 | **HP:** +15 | **Magic:** +10%
+* **Skill:** Damage taken -10% per summon (-30% at 3 summons).
 
-【使い所】
-基本武器
-召喚数で火力増加
-```
+### 32. High Summoner’s Hat (Rare)
 
-### 38. 上級召喚士の杖(エピック)
+* **Slot:** Head | **AP:** 160 | **HP:** +25 | **Magic:** +20%
+* **Skill:** Summon card cost -1; Maintenance cost -1 for all summons.
 
-```
-【基本性能】
-スロット: 右手
-AP: 130
-魔法補正: +30%
-ATK補正: +20%
+### 33. Summoning God’s Crown (Legend)
 
-【スキル1】召喚増幅:
-- 召喚獣のHP+50%
-- 召喚獣の攻撃力+50%
-- 召喚獣の行動速度+1(2回行動化)
-
-【解放スキル(Lv3)】召喚連携:
-- 召喚士が攻撃時、全召喚獣も追撃(威力20)
-- 召喚獣3体で追撃×3
-
-【使い所】
-火力特化
-召喚獣強化
-連携攻撃
-```
-
-### 39. 召喚神の契約杖(レジェンド)
-
-```
-【基本性能】
-スロット: 右手
-AP: 270
-魔法補正: +45%
-ATK補正: +35%
-
-【スキル1】召喚解放:
-- 召喚カードのコスト-2
-- 維持コスト0(全召喚獣)
-- 召喚上限+2(最大5体)
-
-【解放スキル(Lv3)】召喚の極致:
-- 全召喚獣のHP+100%
-- 全召喚獣の攻撃力+100%
-- 全召喚獣が3回行動
-- 戦闘開始時、ランダムな召喚獣1体を自動召喚
-- 召喚獣死亡時、50%のHPで自動復活
-
-【使い所】
-最強武器
-召喚システム極限強化
-5体召喚+3回行動
-Lv3で召喚獣の能力倍増
-```
+* **Slot:** Head | **AP:** 280 | **HP:** +40 | **Magic:** +35% | **DEF:** +20%
+* **Skill 1:** +80% stats for all summons at 3 summons; summons deal AoE damage upon death (Dead Summon HP x 3).
+* **Unlock Skill (Lv.3):** Maintenance cost 0; Summon limit +1 (Max 4).
 
 ---
 
-## 5.4 左手装備(召喚士用) - 2 種類
+## 5.2 Body (Summoner) - 3 Types
 
-### 40. 召喚士の魔導書(レア)
+### 34. Summoner’s Robe (Common)
 
-```
-【基本性能】
-スロット: 左手
-AP: 85
-魔法補正: +15%
+* **Slot:** Body | **AP:** 130 | **HP:** +20 | **DEF:** +12% | **Magic:** +15%
+* **Skill:** +30 AP per summon; summons absorb 10% of damage taken by the player.
 
-【スキル】
-召喚の書:
-- 手札+召喚獣数
-- 召喚獣3体で手札+3
+### 35. High Summoner’s Robe (Epic)
 
-【使い所】
-リソース確保
-召喚数で手札増加
-```
+* **Slot:** Body | **AP:** 250 | **HP:** +35 | **DEF:** +20% | **Magic:** +25%
+* **Skill 1:** Random summon counterattacks (Power 40) when hit; guaranteed triple counter at 3 summons.
+* **Unlock Skill (Lv.3):** Shield (Summons x 25) at turn start; +80% Debuff Resistance at 3 summons.
 
-### 41. 上級召喚士の契約書(エピック)
+### 36. Summoning God’s Robe (Legend)
 
-```
-【基本性能】
-スロット: 左手
-AP: 140
-魔法補正: +25%
-
-【スキル1】犠牲の書:
-- 犠牲カードのコスト-1
-- 犠牲効果×1.5倍
-- 犠牲後、同召喚獣を半額で再召喚可能
-
-【解放スキル(Lv3)】召喚記録:
-- 召喚獣死亡時、そのHPの50%を召喚士が回復
-- 1戦闘で召喚獣5体以上召喚時、全召喚獣能力+50%
-
-【使い所】
-犠牲特化ビルド最適
-召喚獣循環システム
-```
+* **Slot:** Body | **AP:** 420 | **HP:** +50 | **DEF:** +30% | **Magic:** +40%
+* **Skill 1:** All summon attacks become AoE; +100% summon power at 3 summons.
+* **Unlock Skill (Lv.3):** Recover 15 HP when a summon attacks; heal 50 HP every turn at 3 summons.
 
 ---
 
-## 5.5 靴装備(召喚士用) - 2 種類
+## 5.3 Right Hand (Summoner) - 3 Types
 
-### 42. 召喚士のブーツ(レア)
+### 37. Summoner’s Staff (Common)
 
-```
-【基本性能】
-スロット: 靴
-AP: 65
-エナジー補正: +1
+* **Slot:** Right Hand | **AP:** 65 | **Magic:** +15% | **ATK:** +10%
+* **Skill:** Summoner ATK +15% per summon (+45% at 3 summons).
 
-【スキル】
-召喚加速:
-- 召喚獣1体につきエナジー+1(最大+3)
-- 召喚獣3体で初期エナジー+2追加
+### 38. High Summoner’s Staff (Epic)
 
-【使い所】
-リソース確保
-召喚数でエナジー増加
-```
+* **Slot:** Right Hand | **AP:** 130 | **Magic:** +30% | **ATK:** +20%
+* **Skill 1:** Summons gain +50% HP, +50% ATK, and +1 Action Speed (2 actions per turn).
+* **Unlock Skill (Lv.3):** All summons follow up (Power 20) when the player attacks; triple follow-up at 3 summons.
 
-### 43. 上級召喚士の疾風靴(エピック)
+### 39. Summoning God’s Pact Staff (Legend)
 
-```
-【基本性能】
-スロット: 靴
-AP: 100
-エナジー補正: +1
-
-【スキル1】召喚詠唱:
-- 召喚カード使用時、15%で即座にもう1枚召喚
-- 召喚獣3体で確率40%
-
-【解放スキル(Lv3)】召喚回避:
-- 召喚獣1体につき回避率+10%
-- 召喚獣3体で回避率+30%
-
-【使い所】
-機動力向上
-連続召喚チャンス
-回避で生存率向上
-```
+* **Slot:** Right Hand | **AP:** 270 | **Magic:** +45% | **ATK:** +35%
+* **Skill 1:** Summon card cost -2; Maintenance cost 0; Summon limit +2 (Max 5).
+* **Unlock Skill (Lv.3):** Summons gain +100% HP/ATK and 3 actions per turn; auto-summon 1 random beast at battle start; summons auto-revive at 50% HP once.
 
 ---
 
-## 5.6 アクセサリ(召喚士用) - 2 種類
+## 5.4 Left Hand (Summoner) - 2 Types
 
-### 44. 召喚の指輪(レア)
+### 40. Summoner’s Grimoire (Rare)
 
-```
-【基本性能】
-スロット: アクセサリ
-AP: 45
+* **Slot:** Left Hand | **AP:** 85 | **Magic:** +15%
+* **Skill:** Hand size + Number of summons.
 
-【スキル】
-召喚強化:
-- 召喚上限+1(最大3体)
-- 戦闘開始時、ランダムな召喚獣1体を自動召喚
-- 召喚獣のHP+30%
+### 41. High Summoner’s Pact (Epic)
 
-【使い所】
-召喚数増加
-初期召喚獣付与
-```
-
-### 45. 召喚神の腕輪(エピック)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 75
-
-【スキル1】召喚爆発:
-- 召喚獣3体時、毎ターン自動全体攻撃(威力100)
-- 召喚獣維持
-
-【解放スキル(Lv3)】召喚循環:
-- 召喚獣死亡時、次の召喚カードコスト-2
-- 全召喚獣死亡時、3体まで無料で再召喚(1回/戦闘)
-
-【使い所】
-召喚3体維持で自動攻撃
-召喚獣循環システム
-物理召喚ラッシュ最適
-```
+* **Slot:** Left Hand | **AP:** 140 | **Magic:** +25%
+* **Skill 1:** Sacrifice card cost -1; Sacrifice effect x1.5; can re-summon the same beast at half cost after sacrifice.
+* **Unlock Skill (Lv.3):** Recover 50% of a summon's HP upon its death; +50% summon stats after summoning 5+ beasts in one battle.
 
 ---
 
-# 6. 共通装備(28 種類)
+## 5.5 Boots (Summoner) - 2 Types
 
-## 6.1 頭装備(共通) - 2 種類
+### 42. Summoner’s Boots (Rare)
 
-### 46. 戦士の兜(コモン)
+* **Slot:** Boots | **AP:** 65 | **Energy:** +1
+* **Skill:** +1 Energy per summon (Max +3); +2 starting Energy at 3 summons.
 
-```
-【基本性能】
-スロット: 頭
-AP: 110
-HP補正: +20
-DEF補正: +12%
+### 43. High Summoner’s Gale Boots (Epic)
 
-【スキル】
-堅守:
-- 被ダメージ-12%
-- HP50%以下で被ダメージ-25%
-
-【使い所】
-汎用防御装備
-全キャラ対応
-```
-
-### 47. 英雄の兜(エピック)
-
-```
-【基本性能】
-スロット: 頭
-AP: 220
-HP補正: +35
-DEF補正: +20%
-
-【スキル1】不屈の意志:
-- HP50%以下で自動シールド40(1回/戦闘)
-- 死亡時HP1で復活(1回/ラン)
-
-【解放スキル(Lv3)】英雄の加護:
-- 全ステータス+15%
-- クリティカル率+15%
-
-【使い所】
-生存保証装備
-全キャラ対応
-高難易度向け
-```
+* **Slot:** Boots | **AP:** 100 | **Energy:** +1
+* **Skill 1:** 15% chance to play another summon card immediately (40% at 3 summons).
+* **Unlock Skill (Lv.3):** +10% Evasion per summon.
 
 ---
 
-## 6.2 胴装備(共通) - 4 種類
+## 5.6 Accessory (Summoner) - 2 Types
 
-### 48. 戦士の鎧(コモン)
+### 44. Ring of Summoning (Rare)
 
-```
-【基本性能】
-スロット: 胴
-AP: 160
-HP補正: +25
-DEF補正: +15%
-ATK補正: +8%
+* **Slot:** Accessory | **AP:** 45
+* **Skill:** Summon limit +1 (Max 3); auto-summon 1 random beast at start; summons gain +30% HP.
 
-【スキル】
-堅牢:
-- AP+50
-- 被ダメージ-10%
+### 45. Summoning God’s Bracelet (Epic)
 
-【使い所】
-基本防御装備
-全キャラ対応
-```
-
-### 49. 重装鎧(レア)
-
-```
-【基本性能】
-スロット: 胴
-AP: 250
-HP補正: +40
-DEF補正: +25%
-
-【スキル1】鉄壁:
-- ターン開始時シールド+30
-- 被ダメージ-20%
-
-【解放スキル(Lv3)】反撃:
-- 被ダメージ時、攻撃者に20ダメージ反撃
-
-【使い所】
-耐久特化
-長期戦向け
-```
-
-### 50. 軽装鎧(レア)
-
-```
-【基本性能】
-スロット: 胴
-AP: 180
-HP補正: +25
-DEF補正: +15%
-ATK補正: +15%
-
-【スキル1】軽快:
-- エナジー+1
-- 回避率+15%
-
-【解放スキル(Lv3)】反撃:
-- 回避成功時、攻撃者に30ダメージ反撃
-
-【使い所】
-攻守バランス
-回避型ビルド向け
-```
-
-### 51. 英雄の鎧(エピック)
-
-```
-【基本性能】
-スロット: 胴
-AP: 320
-HP補正: +45
-DEF補正: +25%
-ATK補正: +20%
-
-【スキル1】英雄の守護:
-- ターン開始時シールド+40
-- 被ダメージ-25%
-- デバフ耐性+80%
-
-【解放スキル(Lv3)】英雄の力:
-- 全ダメージ+25%
-- クリティカル率+20%
-
-【使い所】
-最強汎用鎧
-全キャラ対応
-攻守完備
-```
+* **Slot:** Accessory | **AP:** 75
+* **Skill 1:** Automatic AoE attack (Power 100) every turn at 3 summons; maintains summons.
+* **Unlock Skill (Lv.3):** Next summon card cost -2 when a summon dies; re-summon up to 3 beasts for free if all summons are wiped (1/battle).
 
 ---
 
-## 6.3 右手装備(共通) - 6 種類
+# 6. Common Equipment (28 Types)
 
-### 52. 戦士の剣(コモン)
+## 6.1 Head (Common) - 2 Types
 
-```
-【基本性能】
-スロット: 右手
-AP: 75
-ATK補正: +18%
+### 46. Warrior’s Helm (Common)
 
-【スキル】
-鋭刃:
-- 物理攻撃威力+15%
-- クリティカル率+10%
+* **AP:** 110 | **HP:** +20 | **DEF:** +12%
+* **Skill (Solid Guard):** Damage taken -12%; -25% if HP is below 50%.
 
-【使い所】
-基本物理武器
-全キャラ対応
-```
+### 47. Hero’s Helm (Epic)
 
-### 53. 魔法使いの杖(コモン)
-
-```
-【基本性能】
-スロット: 右手
-AP: 65
-魔法補正: +22%
-
-【スキル】
-魔力増幅:
-- 魔法威力+18%
-- 貫通+20%
-
-【使い所】
-基本魔法武器
-全キャラ対応
-```
-
-### 54. 英雄の剣(レア)
-
-```
-【基本性能】
-スロット: 右手
-AP: 140
-ATK補正: +28%
-
-【スキル1】英雄の刃:
-- 物理攻撃威力+30%
-- クリティカル率+20%
-- クリティカルダメージ+50%
-
-【解放スキル(Lv3)】貫通:
-- 全物理攻撃に貫通+40%
-
-【使い所】
-物理火力特化
-全キャラ対応
-```
-
-### 55. 英雄の杖(レア)
-
-```
-【基本性能】
-スロット: 右手
-AP: 125
-魔法補正: +35%
-
-【スキル1】英雄の魔力:
-- 魔法威力+40%
-- 貫通+40%
-
-【解放スキル(Lv3)】魔力爆発:
-- 魔法使用時、15%で威力×2
-- クリティカル率+15%
-
-【使い所】
-魔法火力特化
-全キャラ対応
-```
-
-### 56. 万能の剣(エピック)
-
-```
-【基本性能】
-スロット: 右手
-AP: 200
-ATK補正: +35%
-魔法補正: +25%
-
-【スキル1】万能の刃:
-- 全ダメージ+35%
-- 貫通+50%
-
-【解放スキル(Lv3)】属性付与:
-- 物理攻撃に火・氷・雷のランダム属性付与
-- 状態異常確率+50%
-
-【使い所】
-物理・魔法両対応
-全キャラ対応
-ハイブリッドビルド
-```
-
-### 57. 伝説の聖剣(レジェンド)
-
-```
-【基本性能】
-スロット: 右手
-AP: 350
-ATK補正: +50%
-魔法補正: +40%
-
-【スキル1】聖剣の力:
-- 全ダメージ+50%
-- 貫通+80%
-- クリティカル率+30%
-- クリティカルダメージ+100%
-
-【解放スキル(Lv3)】聖なる加護:
-- 攻撃時HP回復+20
-- デバフ無効
-- 死亡時HP1で復活(1回/戦闘)
-
-【使い所】
-最強武器
-全キャラ対応
-全ビルド対応
-Lv3で回復+復活能力
-```
+* **AP:** 220 | **HP:** +35 | **DEF:** +20%
+* **Skill 1 (Indomitable):** Auto-Shield (40) at <50% HP; Revive at 1 HP once.
+* **Unlock Skill (Lv.3):** +15% All Stats; +15% Crit Rate.
 
 ---
 
-## 6.4 左手装備(共通) - 4 種類
+## 6.2 Body (Common) - 4 Types
 
-### 58. 戦士の盾(コモン)
+### 48. Warrior’s Armor (Common)
 
-```
-【基本性能】
-スロット: 左手
-AP: 110
-HP補正: +20
-DEF補正: +15%
+* **AP:** 160 | **HP:** +25 | **DEF:** +15% | **ATK:** +8%
+* **Skill:** +50 AP; Damage taken -10%.
 
-【スキル】
-守護:
-- ターン開始時シールド+20
-- 被ダメージ-10%
+### 49. Heavy Plate Armor (Rare)
 
-【使い所】
-基本防御
-全キャラ対応
-```
+* **AP:** 250 | **HP:** +40 | **DEF:** +25%
+* **Skill 1:** Shield +30 at turn start; Damage taken -20%.
+* **Unlock Skill (Lv.3):** Counter for 20 damage when hit.
 
-### 59. 魔法使いの魔導書(コモン)
+### 50. Light Leather Armor (Rare)
 
-```
-【基本性能】
-スロット: 左手
-AP: 75
-魔法補正: +18%
+* **AP:** 180 | **HP:** +25 | **DEF:** +15% | **ATK:** +15%
+* **Skill 1:** Energy +1; +15% Evasion.
+* **Unlock Skill (Lv.3):** Counter for 30 damage upon successful evade.
 
-【スキル】
-魔力の書:
-- 手札+1
-- 魔法威力+15%
+### 51. Hero’s Armor (Epic)
 
-【使い所】
-手札確保
-全キャラ対応
-```
-
-### 60. 英雄の盾(レア)
-
-```
-【基本性能】
-スロット: 左手
-AP: 200
-HP補正: +35
-DEF補正: +25%
-
-【スキル1】英雄の守護:
-- ターン開始時シールド+40
-- 被ダメージ-25%
-
-【解放スキル(Lv3)】反撃:
-- 被ダメージ時、攻撃者に30ダメージ反撃
-- シールド破壊時、攻撃者に気絶2ターン
-
-【使い所】
-防御特化
-カウンター型
-```
-
-### 61. 英雄の魔導書(レア)
-
-```
-【基本性能】
-スロット: 左手
-AP: 130
-魔法補正: +28%
-
-【スキル1】英雄の叡智:
-- 手札+2
-- 全威力+20%
-
-【解放スキル(Lv3)】魔力循環:
-- カード使用時、10%でエナジー+1
-- ドロー時2枚から選択
-
-【使い所】
-リソース確保
-全キャラ対応
-```
+* **AP:** 320 | **HP:** +45 | **DEF:** +25% | **ATK:** +20%
+* **Skill 1:** Shield +40 at start; Damage taken -25%; +80% Debuff Resistance.
+* **Unlock Skill (Lv.3):** +25% All Damage; +20% Crit Rate.
 
 ---
 
-## 6.5 靴装備(共通) - 4 種類
+## 6.3 Right Hand (Common) - 6 Types
 
-### 62. 戦士のブーツ(コモン)
+### 52. Warrior’s Sword (Common) - ATK +18% | Physical power +15%, Crit +10%.
 
-```
-【基本性能】
-スロット: 靴
-AP: 70
-エナジー補正: +1
+### 53. Wizard’s Staff (Common) - Magic +22% | Magic power +18%, Penetration +20%.
 
-【スキル】
-疾走:
-- 回避率+10%
+### 54. Hero’s Sword (Rare) - ATK +28% | Physical power +30%, Crit +20%, Crit Dmg +50%. (Lv.3: +40% Penetration).
 
-【使い所】
-基本靴
-全キャラ対応
-```
+### 55. Hero’s Staff (Rare) - Magic +35% | Magic power +40%, Penetration +40%. (Lv.3: 15% chance for x2 Magic power).
 
-### 63. 魔法使いのブーツ(コモン)
+### 56. Versatile Sword (Epic) - ATK +35%, Magic +25% | +35% All Damage, +50% Penetration. (Lv.3: Add random Fire/Ice/Lightning element to Physical attacks).
 
-```
-【基本性能】
-スロット: 靴
-AP: 60
-エナジー補正: +1
-
-【スキル】
-魔力の靴:
-- 手札+1
-
-【使い所】
-手札確保
-全キャラ対応
-```
-
-### 64. 疾風のブーツ(レア)
-
-```
-【基本性能】
-スロット: 靴
-AP: 105
-エナジー補正: +2
-
-【スキル1】疾風:
-- 回避率+25%
-- カード使用時、10%で即座にもう1枚使用可能
-
-【解放スキル(Lv3)】俊足:
-- 先制攻撃確率+30%
-
-【使い所】
-機動力特化
-全キャラ対応
-```
-
-### 65. 英雄のブーツ(エピック)
-
-```
-【基本性能】
-スロット: 靴
-AP: 150
-エナジー補正: +2
-
-【スキル1】英雄の疾走:
-- 回避率+35%
-- 回避成功時エナジー+1
-
-【解放スキル(Lv3)】英雄の俊足:
-- 先制攻撃確率+50%
-- 初手カードコスト-1
-
-【使い所】
-最強靴
-全キャラ対応
-機動力最大
-```
+### 57. Legendary Holy Sword (Legend) - ATK +50%, Magic +40% | +50% Damage, +80% Penetration, +30% Crit, +100% Crit Dmg. (Lv.3: Heal 20 HP on attack, Debuff Immunity, Revive once).
 
 ---
 
-## 6.6 アクセサリ(共通) - 8 種類
+## 6.4 Left Hand (Common) - 4 Types
 
-### 66. クリティカルリング(レア)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 50
-
-【スキル】
-クリティカル強化:
-- クリティカル率+25%
-- クリティカルダメージ+60%
-
-【使い所】
-クリティカル特化
-全キャラ対応
-```
-
-### 67. 貫通の指輪(レア)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 50
-
-【スキル】
-貫通強化:
-- 全攻撃に貫通+40%
-- シールド破壊時、追加ダメージ+50%
-
-【使い所】
-貫通特化
-シールド持ち敵対策
-```
-
-### 68. 回避のブーツリング(レア)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 45
-
-【スキル】
-回避強化:
-- 回避率+30%
-- 回避成功時HP+15回復
-
-【使い所】
-回避特化
-生存率向上
-```
-
-### 69. エナジーの指輪(レア)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 40
-
-【スキル】
-エナジー強化:
-- 初期エナジー+2
-- 毎ターンエナジー+1追加
-
-【使い所】
-リソース確保
-高コストカード連打
-```
-
-### 70. ドローの指輪(レア)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 40
-
-【スキル】
-ドロー強化:
-- 初期手札+2
-- 毎ターン手札+1追加
-
-【使い所】
-手札確保
-コンボビルド向け
-```
-
-### 71. 魔石収集者のお守り(エピック)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 60
-
-【スキル】
-収集強化:
-- 魔石ドロップ率+40%
-- ゴールド獲得量+30%
-- 宝箱発見率+25%
-
-【使い所】
-経済特化
-ファーム向け
-```
-
-### 72. 幸運のコイン(エピック)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 55
-
-【スキル】
-幸運:
-- 全ドロップ率+30%
-- クリティカル率+20%
-- 隠し部屋発見率+40%
-
-【使い所】
-運特化
-レア装備狙い
-```
-
-### 73. 不屈の意志(レジェンド)
-
-```
-【基本性能】
-スロット: アクセサリ
-AP: 100
-
-【スキル1】不屈:
-- HP50%以下で全能力+50%
-- HP30%以下で全能力+100%
-
-【解放スキル(Lv3)】復活:
-- 死亡時HP50%で復活(1回/戦闘)
-- 復活時デバフ全解除+シールド100
-
-【使い所】
-最強生存装備
-全キャラ対応
-高難易度必須
-Lv3で復活能力追加
-```
+* **58. Warrior’s Shield (Common):** Shield +20 at start; -10% damage.
+* **59. Wizard’s Grimoire (Common):** Hand size +1; Magic power +15%.
+* **60. Hero’s Shield (Rare):** Shield +40 at start; -25% damage. (Lv.3: Counter 30 damage; Stun enemy 2 turns when shield breaks).
+* **61. Hero’s Grimoire (Rare):** Hand size +2; All power +20%. (Lv.3: 10% chance for +1 Energy on card play; Choose from 2 cards on draw).
 
 ---
 
-# 7. 消費アイテム(20 種類)
+## 6.5 Boots (Common) - 4 Types
 
-## 7.1 回復系アイテム(5 種類)
-
-### 01. 小回復薬
-
-```
-効果: HP+30
-コスト: 0(戦闘中使用可能)
-入手: ショップ / ドロップ / イベント
-価格: 50ゴールド
-
-使い所: 緊急回復
-```
-
-### 02. 中回復薬
-
-```
-効果: HP+60
-コスト: 0(戦闘中使用可能)
-入手: ショップ / ドロップ / イベント
-価格: 100ゴールド
-
-使い所: 中程度回復
-```
-
-### 03. 大回復薬
-
-```
-効果: HP+100 / デバフ1解除
-コスト: 0(戦闘中使用可能)
-入手: ショップ / ドロップ / イベント
-価格: 200ゴールド
-
-使い所: 大回復+デバフ解除
-```
-
-### 04. 完全回復薬
-
-```
-効果: HP全回復 / デバフ全解除
-コスト: 0(戦闘中使用可能)
-入手: ボスドロップ / 隠し部屋 / 特別イベント
-価格: 500ゴールド
-
-使い所: 完全回復
-非常時用
-```
-
-### 05. 蘇生の石
-
-```
-効果: 死亡時HP50%で自動復活
-コスト: 0(自動発動)
-入手: ボスドロップ / 隠し部屋
-価格: 800ゴールド
-
-使い所: 保険
-高難易度向け
-```
+* **62. Warrior’s Boots (Common):** Energy +1; +10% Evasion.
+* **63. Wizard’s Boots (Common):** Energy +1; Hand size +1.
+* **64. Gale Boots (Rare):** Energy +2; +25% Evasion; 10% chance for extra card play. (Lv.3: +30% First Strike chance).
+* **65. Hero’s Boots (Epic):** Energy +2; +35% Evasion; +1 Energy on successful evade. (Lv.3: +50% First Strike; First card cost -1).
 
 ---
 
-## 7.2 バフ系アイテム(5 種類)
+## 6.6 Accessory (Common) - 8 Types
 
-### 06. 攻撃の秘薬
-
-```
-効果: 攻撃力+50% / 3ターン
-コスト: 0(戦闘中使用可能)
-入手: ショップ / イベント
-価格: 150ゴールド
-
-使い所: 火力強化
-ボス戦用
-```
-
-### 07. 防御の秘薬
-
-```
-効果: 被ダメージ-40% / 3ターン
-コスト: 0(戦闘中使用可能)
-入手: ショップ / イベント
-価格: 150ゴールド
-
-使い所: 防御強化
-高火力敵対策
-```
-
-### 08. 速度の秘薬
-
-```
-効果: エナジー+2 / 手札+2
-コスト: 0(戦闘中使用可能)
-入手: ショップ / イベント
-価格: 120ゴールド
-
-使い所: リソース確保
-コンボ準備
-```
-
-### 09. 全能の秘薬
-
-```
-効果: 全ステータス+30% / 5ターン
-コスト: 0(戦闘中使用可能)
-入手: ボスドロップ / 隠し部屋
-価格: 400ゴールド
-
-使い所: 全強化
-ボス戦用
-```
-
-### 10. クリティカルの秘薬
-
-```
-効果: クリティカル率+50% / クリティカルダメージ+100% / 3ターン
-コスト: 0(戦闘中使用可能)
-入手: ショップ / イベント
-価格: 180ゴールド
-
-使い所: クリティカル特化
-一撃必殺狙い
-```
+* **66. Critical Ring (Rare):** +25% Crit Rate; +60% Crit Damage.
+* **67. Penetration Ring (Rare):** +40% Penetration; +50% extra damage vs Shields.
+* **68. Evasion Boot-Ring (Rare):** +30% Evasion; Heal 15 HP on evade.
+* **69. Energy Ring (Rare):** +2 Starting Energy; +1 Energy per turn.
+* **70. Draw Ring (Rare):** +2 Starting Hand; +1 Draw per turn.
+* **71. Mana Stone Collector’s Amulet (Epic):** +40% Mana Stone drop; +30% Gold; +25% Chest discovery.
+* **72. Lucky Coin (Epic):** +30% All Drop Rates; +20% Crit Rate; +40% Secret Room discovery.
+* **73. Indomitable Will (Legend):** +50% All Stats at <50% HP; +100% at <30% HP. (Lv.3: Revive at 50% HP with cleanse and 100 Shield).
 
 ---
 
-## 7.3 特殊アイテム(5 種類)
+# 7. Consumable Items (20 Types)
 
-### 11. 転移石(通常)
+## 7.1 Recovery (5 Types)
 
-```
-効果: 即座に拠点へ帰還 / 報酬70%
-コスト: 0(マップで使用)
-入手: ショップ / イベント
-価格: 300ゴールド
+1. **Small Potion:** HP +30 (50G)
+2. **Medium Potion:** HP +60 (100G)
+3. **Large Potion:** HP +100, Cleanse 1 debuff (200G)
+4. **Full Potion:** HP Full, Cleanse all (500G)
+5. **Stone of Resurrection:** Auto-revive at 50% HP (800G)
 
-使い所: 緊急撤退
-装備保護
-```
+## 7.2 Buffs (5 Types)
 
-### 12. 転移石(祝福)
+6. **Elixir of Offense:** +50% ATK for 3 turns (150G)
+7. **Elixir of Defense:** -40% Damage taken for 3 turns (150G)
+8. **Elixir of Haste:** +2 Energy, +2 Hand Size for 1 turn (120G)
+9. **Elixir of Omnipotence:** +30% All Stats for 5 turns (400G)
+10. **Elixir of Criticals:** +50% Crit Rate, +100% Crit Dmg for 3 turns (180G)
 
-```
-効果: 即座に拠点へ帰還 / 報酬80%
-コスト: 0(マップで使用)
-入手: ボスドロップ / 隠し部屋
-価格: 500ゴールド
+## 7.3 Special (5 Types)
 
-使い所: 高報酬撤退
-```
+11. **Teleport Stone (Normal):** Return to base; 70% rewards (300G)
+12. **Teleport Stone (Blessed):** Return to base; 80% rewards (500G)
+13. **Teleport Stone (Emergency):** Return to base during battle; 60% rewards (400G)
+14. **Timestop Hourglass:** Skip enemy turn (600G)
+15. **Mana Burst Crystal:** 100 AoE Damage; 100% Penetration (350G)
 
-### 13. 転移石(緊急)
+## 7.4 Utility (5 Types)
 
-```
-効果: 戦闘中でも即座に帰還 / 報酬60%
-コスト: 0(戦闘中も使用可能)
-入手: 特別イベント / ボスドロップ
-価格: 400ゴールド
-
-使い所: 最終手段
-命優先
-```
-
-### 14. 時間停止の砂時計
-
-```
-効果: 敵の行動を1ターンスキップ
-コスト: 0(戦闘中使用可能)
-入手: 隠し部屋 / 特別イベント
-価格: 600ゴールド
-
-使い所: ボス戦
-強力な敵行動回避
-```
-
-### 15. 魔力爆発の結晶
-
-```
-効果: 即座に全体100ダメージ / 貫通100%
-コスト: 0(戦闘中使用可能)
-入手: ボスドロップ / 隠し部屋
-価格: 350ゴールド
-
-使い所: 緊急火力
-複数敵殲滅
-```
+16. **Treasure Map:** Guaranteed Secret Room in next floor (250G)
+17. **Merchant’s Discount:** 30% off next shop (200G)
+18. **Equipment Repair Kit:** Restore 50% AP for all gear (180G)
+19. **EXP Boost:** +50% Proficiency for next battle (150G)
+20. **Lucky Charm:** +100% Drop Rate for next battle (300G)
 
 ---
 
-## 7.4 ユーティリティアイテム(5 種類)
+# 8. Equipment Acquisition
 
-### 16. 宝の地図
+## 8.1 Sources
 
-```
-効果: 次の階層で隠し部屋確定出現
-コスト: 0(マップで使用)
-入手: イベント / ショップ
-価格: 250ゴールド
-
-使い所: レア報酬狙い
-```
-
-### 17. 商人の割引券
-
-```
-効果: 次のショップで全商品30%引き
-コスト: 0(マップで使用)
-入手: イベント / ショップ
-価格: 200ゴールド
-
-使い所: 経済効率
-高額商品購入時
-```
-
-### 18. 装備修理キット
-
-```
-効果: 全装備のAP+50%回復
-コスト: 0(マップで使用)
-入手: ショップ / イベント
-価格: 180ゴールド
-
-使い所: AP回復
-長期探索向け
-```
-
-### 19. 経験値ブースト
-
-```
-効果: 次の戦闘で熟練度+50%
-コスト: 0(マップで使用)
-入手: イベント / ショップ
-価格: 150ゴールド
-
-使い所: 熟練度稼ぎ
-才能解放加速
-```
-
-### 20. 幸運のお守り
-
-```
-効果: 次の戦闘でドロップ率+100%
-コスト: 0(マップで使用)
-入手: イベント / ショップ
-価格: 300ゴールド
-
-使い所: レア装備狙い
-ボス戦前使用
-```
+* **Battle Drops:** Normal (30% Common), Elite (50% Common-Rare), Boss (80% Rare-Epic, 5% Legend).
+* **Shop Packs:** Common (100G), Rare (300G), Epic (800G).
+* **Chests:** Normal (60% Common-Rare), Gold (80% Rare-Epic), Legendary (100% Epic-Legend).
+* **Secret Rooms:** Guaranteed Rare+; +10% Legend rate.
+* **First Clear Rewards:** Abyss Guardian (Epic), 3 True Evil Gods (Legend).
 
 ---
 
-# 8. 装備の取得方法
+# 9. Enhancement System (Mana Stone Based)
 
-## 8.1 入手経路
+## 9.1 Mana Stone Usage
 
-```
-【戦闘ドロップ】
-- 通常敵: コモン装備(30%)
-- エリート敵: コモン~レア装備(50%)
-- ボス: レア~エピック装備(80%) / レジェンド(5%)
+1. **Sell:** 1 Stone = 50 Gold.
+2. **Enhance:** Consumed at the Blacksmith along with Gold to level up gear.
 
-【ショップ購入】
-- 装備パック: ランダム装備1個
-  - コモンパック: 100G
-  - レアパック: 300G
-  - エピックパック: 800G
+## 9.2 Enhancement Specs
 
-【イベント報酬】
-- 選択肢によってランダム装備
-- リスク高い選択肢ほど高レアリティ
+* **Max Level:** Lv.3.
+* **Costs:** Scale by rarity (e.g., Common Lv.1 = 200G + 5 Stones; Legend Lv.1 = 1600G + 40 Stones).
+* **Effects:**
+* Lv.1: +20% AP, +10% Stats
+* Lv.2: +40% AP, +20% Stats
+* Lv.3: +60% AP, +30% Stats
 
-【宝箱】
-- 通常宝箱: コモン~レア(60%)
-- 金の宝箱: レア~エピック(80%)
-- 伝説の宝箱: エピック~レジェンド(100%)
 
-【隠し部屋】
-- 必ずレア以上確定
-- レジェンド出現率+10%
+* **AP Repair:** Costs Gold only (Rarity x 100G) to restore 50% AP.
 
-【ボス初回撃破】
-- 深淵の守護者: エピック確定
-- 真の邪神3体: レジェンド確定
-```
+## 9.3 Unlock Skill System
 
-## 8.2 レアリティ別出現率
-
-```
-【全体平均】
-コモン: 60%
-レア: 25%
-エピック: 12%
-レジェンド: 3%
-
-【ボス戦】
-コモン: 20%
-レア: 40%
-エピック: 35%
-レジェンド: 5%
-
-【隠し部屋】
-コモン: 0%
-レア: 50%
-エピック: 40%
-レジェンド: 10%
-```
+* **Epic/Legendary** items unlock their 2nd (and 3rd) skills only upon reaching **Lv.3**.
+* **Common/Rare** items do not have unlockable skills.
 
 ---
 
-# 9. 装備の強化システム(魔石消費型)
+# Summary
 
-## 9.1 魔石の使用方法
+* **Total Equipment:** 73 Types
+* **Total Items:** 20 Types
+* **Total Assets:** 93 Types
 
-```
-【魔石の使い道】
+**Design Features:**
 
-1. ショップに売却
-   - 魔石1個 = 50ゴールド
-   - 主な収入源の一つ
-
-2. 装備の強化素材として使用
-   - 鍛冶屋でゴールド+魔石を消費
-   - 装備のレベルアップに必須
-```
-
-## 9.2 装備強化システム
-
-```
-【強化の基本仕様】
-
-1. 強化レベル
-   - 初期状態: Lv0
-   - 最大レベル: Lv3
-   - Lv1→Lv2→Lv3と段階的に強化
-
-2. 強化コスト(高コスト設定)
-   【コモン装備】
-   - Lv0→Lv1: ゴールド200 + 魔石5
-   - Lv1→Lv2: ゴールド400 + 魔石10
-   - Lv2→Lv3: ゴールド800 + 魔石20
-
-   【レア装備】
-   - Lv0→Lv1: ゴールド400 + 魔石10
-   - Lv1→Lv2: ゴールド800 + 魔石20
-   - Lv2→Lv3: ゴールド1600 + 魔石40
-
-   【エピック装備】
-   - Lv0→Lv1: ゴールド800 + 魔石20
-   - Lv1→Lv2: ゴールド1600 + 魔石40
-   - Lv2→Lv3: ゴールド3200 + 魔石80
-
-   【レジェンド装備】
-   - Lv0→Lv1: ゴールド1600 + 魔石40
-   - Lv1→Lv2: ゴールド3200 + 魔石80
-   - Lv2→Lv3: ゴールド6400 + 魔石160
-
-3. 強化効果(全装備共通)
-   - Lv1: AP+20% / ステータス補正+10%
-   - Lv2: AP+40% / ステータス補正+20%
-   - Lv3: AP+60% / ステータス補正+30%
-
-4. AP回復
-   - ゴールド消費でAP回復(魔石不要)
-   - 回復量: 最大APの50%
-   - コスト: レアリティ×100G
-```
-
-## 9.3 解放スキルシステム
-
-```
-【解放スキルの仕様】
-
-1. 基本ルール
-   - 全装備は基本的にスキル1つのみ所持
-   - エピック・レジェンド装備のみ解放スキル所持
-   - 解放条件: Lv3到達時に自動アンロック
-
-2. スキル構成
-   【コモン・レア装備】
-   - スキル1: 基本スキル(常時有効)
-   - 解放スキル: なし
-
-   【エピック装備】
-   - スキル1: 基本スキル(常時有効)
-   - スキル2: 解放スキル(Lv3でアンロック)
-
-   【レジェンド装備】
-   - スキル1: 基本スキル(常時有効)
-   - スキル2: 解放スキル(Lv3でアンロック)
-
-3. 解放スキルの傾向
-   - 基本スキルの強化版
-   - または全く新しい特殊効果
-   - レジェンドはゲームチェンジャー級の効果
-```
-
-## 9.4 装備強化の例
-
-```
-【例: 剣神の聖剣(レジェンド)】
-
-Lv0(初期状態)
-├─ AP: 300
-├─ ATK補正: +40%
-└─ スキル1: 剣気解放(常時有効)
-    - 剣気消費カードのコスト-1
-    - 剣気全消費時、ダメージ×3
-    - 剣気全消費後、即座に剣気+5
-
-Lv1(強化後)
-├─ AP: 360(+20%)
-├─ ATK補正: +44%(+10%)
-└─ スキル1: 剣気解放(効果そのまま)
-
-Lv2(強化後)
-├─ AP: 420(+40%)
-├─ ATK補正: +48%(+20%)
-└─ スキル1: 剣気解放(効果そのまま)
-
-Lv3(最大強化)
-├─ AP: 480(+60%)
-├─ ATK補正: +52%(+30%)
-├─ スキル1: 剣気解放(効果そのまま)
-└─ スキル2: 戦神の祝福(解放!) ← NEW!
-    - 戦闘開始時、剣気+5スタート
-    - 剣気上限+5(最大15)
-    - 剣気10到達時、次の物理攻撃威力×3
-```
-
-## 9.5 解放スキルの戦略性
-
-```
-【強化の優先順位】
-
-1. レジェンド装備優先
-   - 解放スキルが最も強力
-   - 投資価値が最も高い
-
-2. エピック装備は状況次第
-   - ビルドに合う装備を優先
-   - コスト対効果を考慮
-
-3. コモン・レア装備
-   - 序盤は強化推奨
-   - 後半は装備入れ替え前提
-
-【魔石の使い分け】
-- 売却 vs 強化のジレンマ
-- 即金が必要ならショップへ売却
-- 長期投資なら装備強化
-- レジェンド装備入手後は強化優先
-```
-
-## 9.6 才能カードとの連携
-
-```
-【才能カード例】
-
-装備強化I:
-- 装備強化コスト-20%(ゴールド・魔石)
-
-装備強化II:
-- 装備Lv3の効果+20%追加
-
-装備マスター:
-- 解放スキルの効果+50%
-
-伝説の鍛冶:
-- レジェンド装備をLv2で解放スキルアンロック(通常Lv3)
-
-魔石収集家:
-- 魔石ドロップ率+50%
-```
-
----
-
-# まとめ
-
-## 装備・アイテム総数
-
-```
-【装備73種類】
-- 剣士専用: 15種類
-- 魔術士専用: 15種類
-- 召喚士専用: 15種類
-- 共通装備: 28種類
-
-【消費アイテム20種類】
-- 回復系: 5種類
-- バフ系: 5種類
-- 特殊系: 5種類
-- ユーティリティ: 5種類
-
-合計: 93種類
-```
-
-## 設計の特徴
-
-```
-1. キャラクター固有アビリティ強化
-   - 剣気 / 共鳴 / 召喚を最大限活用
-
-2. ビルド多様性
-   - 攻撃特化 / 防御特化 / リソース特化
-
-3. シナジー重視
-   - カード × 装備 × 才能の組み合わせ
-
-4. 装備強化システム
-   - Lv0→Lv1→Lv2→Lv3の段階強化
-   - ゴールド+魔石を消費(高コスト)
-   - エピック以上はLv3で解放スキル追加
-
-5. スキルシステム
-   - 全装備: 基本スキル1つ
-   - エピック以上: Lv3で解放スキル(合計2つ)
-   - コモン・レア: 解放スキルなし
-
-6. 経済システム
-   - 魔石 → ゴールド変換 or 装備強化
-   - 高レアリティ装備ほど強化コスト大
-
-7. 長期成長
-   - 装備の持ち越し
-   - レジェンド装備のLv3が最終目標
-   - 解放スキルで戦略が大幅拡張
-```
-
-## 魔石の戦略的使い分け
-
-```
-【魔石の価値判断】
-- ショップ売却: 魔石1個=50G
-- 装備強化: 投資型(長期リターン)
-
-【序盤(深淵1-2)】
-- 魔石→ゴールド変換推奨
-- ショップでカード購入優先
-- コモン装備の軽強化(Lv1程度)
-
-【中盤(深淵3-4)】
-- レア装備入手後、選択的に強化
-- エピック装備狙い
-- 魔石を温存し始める
-
-【終盤(深淵5+)】
-- レジェンド装備をLv3まで強化
-- 解放スキル開放が最優先
-- 魔石を惜しみなく投資
-```
+1. Enhances character-specific mechanics (Sword Intent / Resonance / Summoning).
+2. High build diversity (Attack / Defense / Resource specializations).
+3. Strategic "Mana Stone" economy: Choose between immediate Gold (selling) or long-term power (enhancing).
+4. Legendary Lv.3 gear serves as the ultimate "End-Game" goal with game-changing skills.
