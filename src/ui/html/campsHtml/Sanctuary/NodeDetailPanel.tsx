@@ -135,12 +135,10 @@ export const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
             <span>
               {node.classRestriction === "swordsman" && "⚔️"}
               {node.classRestriction === "mage" && "✨"}
-              {node.classRestriction === "summoner" && "👻"}
             </span>
             <span>
               {node.classRestriction === "swordsman" && "剣士"}
               {node.classRestriction === "mage" && "魔法使い"}
-              {node.classRestriction === "summoner" && "召喚師"}
               専用
             </span>
           </div>

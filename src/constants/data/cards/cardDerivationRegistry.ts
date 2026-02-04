@@ -43,23 +43,12 @@ export const MAGE_DERIVATIONS: DerivationEntry[] = [
 ];
 
 // ============================================================
-// Summoner Derivations
-// ============================================================
-
-/** Summoner card derivation entries. Add entries here as cards are created. */
-export const SUMMONER_DERIVATIONS: DerivationEntry[] = [
-  // Example (uncomment when derived cards exist):
-  // { parentCardTypeId: "sm_summon_wolf", derivedCardTypeId: "sm_summon_dire_wolf", requiredMastery: 2 },
-];
-
-// ============================================================
 // Registry Access
 // ============================================================
 
 const DERIVATION_REGISTRY: Record<CharacterClass, DerivationEntry[]> = {
   swordsman: SWORDSMAN_DERIVATIONS,
   mage: MAGE_DERIVATIONS,
-  summoner: SUMMONER_DERIVATIONS,
 };
 
 /**
@@ -78,6 +67,5 @@ export function getAllDerivations(): DerivationEntry[] {
   return [
     ...SWORDSMAN_DERIVATIONS,
     ...MAGE_DERIVATIONS,
-    ...SUMMONER_DERIVATIONS,
   ];
 }

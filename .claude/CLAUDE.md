@@ -1,115 +1,20 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Development Commands
 
 ```bash
 npm run dev          # Vite dev server at localhost:5173
 npm run build        # TypeScript check + production build
 npm run lint -- --fix
-npm run preview      # Preview production build
 npm run test         # Vitest watch mode
 npm run test:run     # Single run
-npm run test:coverage # With coverage
 ```
 
 **Stack:** React 19.2, TypeScript 5.9, Vite 7
 
-**Path alias:** `@/*` → `src/*` (configured in both `vite.config.ts` and `tsconfig.app.json`). Use `@/domain/...`, `@/ui/...`, etc.
+**Path alias:** `@/*` → `src/*` (configured in both `vite.config.ts` and `tsconfig.app.json`)
 
-**TypeScript strictness:** `noUnusedLocals` and `noUnusedParameters` are enabled — remove unused variables rather than prefixing with `_`. `verbatimModuleSyntax` is enabled — use `import type` for type-only imports. `erasableSyntaxOnly` is enabled — use `as const` objects instead of `enum`, no `namespace` or `module` declarations.
-
-## Architecture
-
-### Context Provider Hierarchy (App.tsx)
-
-```
-GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider
-```
-
-| Context              | Responsibility                                                         |
-| -------------------- | ---------------------------------------------------------------------- |
-| `GameStateContext`   | Screen routing via `currentScreen`, depth, battleMode                  |
-| `ResourceContext`    | Gold, magic stones                                                     |
-| `PlayerContext`      | `PlayerData` (persistent) + `RuntimeBattleState` (HP/AP/lives/mastery) + `deckCards` (custom deck). Resource ops (gold/stones) delegated to `ResourceContext`. |
-| `InventoryContext`   | Items, equipment, cards in storage                                     |
-| `DungeonRunProvider` | Persists dungeon state across battle transitions (lives in `src/contexts/`) |
-
-**Additional contexts (not in main hierarchy):**
-- `SettingsContext` — User settings (volume, display preferences)
-- `ToastContext` — Toast notification system
-- `GuildContext` — Locally scoped within Guild component
-
-Battle state is managed entirely by `useBattleOrchestrator` hook — no separate battle contexts.
-
-### Type System
-
-All types in `src/types/` with barrel export. Use `@/types/*` or `@/types`:
-
-```typescript
-import type { Card, Player, BuffDebuffState } from '@/types';
-```
-
-### Data Location
-
-All static data lives in `src/constants/data/`, NOT in `src/domain/`:
-
-| Data | Location |
-|------|----------|
-| Card definitions | `src/constants/data/cards/` (swordsmanCards, mageCards, summonerCards) |
-| Enemy definitions | `src/constants/data/characters/enemy/` (enemyDepth1-5.ts) |
-| Camp facility data | `src/constants/data/camps/` (ShopData, SanctuaryData, etc.) |
-| Item/equipment data | `src/constants/data/items/` |
-| Battle constants | `src/constants/data/battles/` |
-
-`src/domain/` contains only logic (functions, hooks), not data definitions.
-
-### Battle System Flow
-
-```
-BattleScreen → useBattleOrchestrator → useBattleState
-                    ↓
-    getInitialDeckCounts() → getCardDataByClass() → createInitialDeck()
-                    ↓
-    playerPhaseExecution / enemyPhaseExecution → damageCalculation
-```
-
-**Buff ownership:** `appliedBy: 'player' | 'enemy' | 'environment'` — duration decreases only during applier's phase.
-
-**Multi-hit cards:** `useCardExecution.ts` loops per-hit for `hitCount > 1`, with independent damage calculation and 500ms delay per hit.
-
-**Class ability hooks** (all called unconditionally in `useBattleOrchestrator` per React rules):
-- Swordsman: `useSwordEnergy()` in `useClassAbility.ts` — flat damage bonus + bleed chance
-- Mage: `useElementalChain()` in `useElementalChain.ts` — resonance `percentMultiplier` applied to base damage via `getElementalDamageModifier`
-- Summoner: `useSummonSystem()` in `useSummonSystem.ts` — summon spawning, decay, and expiry
-
-### Shop/Item Data Flow
-
-```
-ShopListing (typeId) → ConsumableItemData (name/price/effect) → generateConsumableFromData() → Item
-```
-
-- `ConsumableItemData.ts` is the single source of truth for consumable items
-- `ShopListing` references items by `typeId`, not by duplicating data
-
-### Screen Routing
-
-`character_select` → `camp` → facilities or `dungeon` → `dungeon_map` → `battle`
-
-### Source Structure
-
-- `src/domain/` — pure business logic (battles, camps, cards, characters, dungeon, item_equipment, save)
-- `src/constants/` — constants and all static data (`constants/data/`)
-- `src/ui/` — React components organized by screen area (battleHtml, campsHtml, dungeonHtml, etc.)
-- `src/types/` — all type definitions
-- `src/contexts/` — React context providers
-
-### Asset Paths
-
-Player images: `PLAYER_CHARACTER_IMAGES` in `src/constants/uiConstants.ts` maps `CharacterClass` → image path.
-Enemy images: each `EnemyDefinition` has an `imagePath` field (images mostly not yet created; fallback shown).
-All asset path constants are centralized in `src/constants/uiConstants.ts`.
+**TypeScript strictness:** `noUnusedLocals`, `noUnusedParameters` — remove unused variables. `verbatimModuleSyntax` — use `import type`. `erasableSyntaxOnly` — use `as const` objects instead of `enum`.
 
 ## Key Rules
 
@@ -131,13 +36,13 @@ All asset path constants are centralized in `src/constants/uiConstants.ts`.
 | CSS selectors | Scope with parent: `.battle-screen .card { }` |
 | Adding classes | Use `character-class-creator` skill |
 | Chat language | Japanese (ユーザーへの応答は日本語で行う) |
-| State ownership | One context owns each piece of state; others read via hooks, never copy |
+| State ownership | One context owns each piece of state; others read via hooks |
 
 ### React 19 Patterns
 
-**Ref vs State:** Never access `ref.current` during render — use `useState` for values displayed in UI or passed to child props.
+**Ref vs State:** Never access `ref.current` during render — use `useState` for values displayed in UI.
 
-**Render-time derived state (no side effects):**
+**Render-time derived state:**
 ```typescript
 const [prevValue, setPrevValue] = useState(currentValue);
 if (currentValue !== prevValue) {
@@ -146,20 +51,19 @@ if (currentValue !== prevValue) {
 }
 ```
 
-**Side effects that need setState:**
+**Side effects with setState:**
 ```typescript
 const guardRef = useRef(false);
 useEffect(() => {
   if (!guardRef.current) {
     doSideEffect();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init guarded by ref
     setSomeState(value);
     guardRef.current = true;
   }
 }, [deps]);
 ```
 
-**Mutable result pattern for functional updaters:**
+**Mutable result pattern:**
 ```typescript
 const result = { success: false };
 setResources(prev => {
@@ -167,16 +71,22 @@ setResources(prev => {
   result.success = true;
   return { ...prev, gold: prev.gold - cost };
 });
-return result.success; // Available immediately (synchronous)
+return result.success;
 ```
 
-**Details:** See `.claude/memories/LESSONS_LEARNED.md`
+## Task Completion Rule
+
+タスク完了時、必ず `README.md` の Development History を更新する：
+1. 日付・作業内容・進捗を表に追記
+2. 実装計画は `.claude/plans/` に保管
+
+README.md が作業履歴の単一ソースとして機能する。
 
 ## References
 
-- **`.claude/MEMORY.md`** — current status, active tasks, known bugs (read at session start)
-- **`.claude/memories/LESSONS_LEARNED.md`** — critical pitfalls: CSS collisions, React 19 ref rules, context scope
-- **`.claude/todos/`** — ongoing refactoring plans; `MASTER_IMPLEMENTATION_PLAN.md` for roadmap
-- **`.claude/docs/`** — game design specs by area (battle, card, camp, dungeon, enemy, item)
-- **`.claude/code_overview/`** — static analysis docs + AI reference + vulnerability remediation guide
-- **`.claude/skills/`** — 11 development skills (card-creator, enemy-creator, character-class-creator, battle-system, camp-facility, dungeon-system, ui-ux-creator, design-research, debugging-error-prevention, debugging-active, memory-keeper)
+- **`README.md`** — 作業履歴、プロジェクト概要、実装状況
+- **`.claude/docs/`** — ゲーム設計仕様書
+- **`.claude/code_overview/`** — コード分析・脆弱性・デバッグ要件
+- **`.claude/plans/`** — 実装計画・セッション追跡
+- **`.claude/memories/`** — 教訓・過去プラン保管
+- **`.claude/skills/`** — 開発スキル（11種）

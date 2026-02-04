@@ -4,7 +4,6 @@ import type { Card } from "@/types/cardTypes";
 import {
   getSwordsmanTitle,
   getMageTitle,
-  getSummonerTitle,
 } from "../../../domain/characters/player/logic/title";
 import { SWORDSMAN_CARDS } from "../cards/swordsmanCards";
 
@@ -58,20 +57,6 @@ export const Mage_Status: BasePlayerStats = {
   level: 1,
   hp: 60,
   maxHp: 60,
-  ap: 0,
-  maxAp: 0,
-  guard: 0,
-  speed: 50,
-  cardActEnergy: 3,
-  deck: [],
-};
-
-export const Summon_Status: BasePlayerStats = {
-  playerClass: "summoner",
-  classGrade: getSummonerTitle(0),
-  level: 1,
-  hp: 100,
-  maxHp: 100,
   ap: 0,
   maxAp: 0,
   guard: 0,

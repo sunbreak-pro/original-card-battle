@@ -53,9 +53,6 @@ export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
   lightning: "雷",
   dark: "闇",
   light: "光",
-  summon: "召喚",
-  enhance: "エンハンス",
-  sacrifice: "生贄",
   buff: "バフ",
   debuff: "デバフ",
   heal: "回復",
@@ -73,9 +70,6 @@ export const ELEMENT_COLOR_MAP: Record<ElementType, string> = {
   lightning: "#ffd700",
   dark: "#6a0dad",
   light: "#fffacd",
-  summon: "#9370db",
-  enhance: "#00ced1",
-  sacrifice: "#8b0000",
   buff: "#32cd32",
   debuff: "#dc143c",
   heal: "#00fa9a",
@@ -92,11 +86,6 @@ export const MAGIC_ELEMENTS: ReadonlySet<ElementType> = new Set([
 /** Physical elements used by Swordsman class */
 export const PHYSICAL_ELEMENTS: ReadonlySet<ElementType> = new Set([
   "physics", "guard",
-]);
-
-/** Summoner-specific elements */
-export const SUMMONER_ELEMENTS: ReadonlySet<ElementType> = new Set([
-  "summon", "enhance", "sacrifice",
 ]);
 
 /** Utility elements (non-combat element types) */

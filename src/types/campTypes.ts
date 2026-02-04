@@ -335,7 +335,7 @@ export interface SkillNode {
 }
 
 /** Character class type used in sanctuary (same as CharacterClass) */
-export type CharacterClassForSanctuary = "swordsman" | "mage" | "summoner";
+export type CharacterClassForSanctuary = "swordsman" | "mage";
 
 export interface UnlockResult {
   success: boolean;
@@ -356,7 +356,6 @@ export interface SanctuaryEffects {
   classEnergy: {
     swordsman: number;
     mage: number;
-    summoner: number;
   };
   enhancedElements: Set<ElementType>;
 }

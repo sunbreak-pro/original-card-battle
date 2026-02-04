@@ -9,7 +9,6 @@ import type { CharacterClass } from "@/types/characterTypes";
 import type { Card } from "@/types/cardTypes";
 import { SWORDSMAN_CARDS } from "../cards/swordsmanCards";
 import { MAGE_CARDS } from "../cards/mageCards";
-import { SUMMONER_CARDS } from "../cards/summonerCards";
 import { INITIAL_DECK_BY_CLASS } from "../battles/initialDeckConfig";
 import { hydrateDerivationData } from "@/domain/cards/logic/cardDerivationHydrator";
 import { getDerivationsForClass } from "../cards/cardDerivationRegistry";
@@ -82,16 +81,6 @@ function createMageStarterDeck(): Card[] {
   );
 }
 
-/**
- * Create Summoner's starter deck from initial deck config (15 cards)
- */
-function createSummonerStarterDeck(): Card[] {
-  return createStarterDeckFromCounts(
-    INITIAL_DECK_BY_CLASS.summoner,
-    SUMMONER_CARDS
-  );
-}
-
 // Hydrate derivation data into card records (once at module load)
 const hydrationApplied = new Set<CharacterClass>();
 
@@ -116,8 +105,6 @@ export function getCardDataByClass(classType: CharacterClass): Record<string, Ca
       return ensureHydrated("swordsman", SWORDSMAN_CARDS);
     case "mage":
       return ensureHydrated("mage", MAGE_CARDS);
-    case "summoner":
-      return ensureHydrated("summoner", SUMMONER_CARDS);
     default:
       return ensureHydrated("swordsman", SWORDSMAN_CARDS);
   }
@@ -192,26 +179,6 @@ export const CHARACTER_CLASS_DATA: Record<CharacterClass, CharacterClassInfo> =
     isAvailable: true,
     themeColor: "#3b82f6", // Blue
     icon: "staff",
-  },
-  summoner: {
-    class: "summoner",
-    name: "Summoner",
-    japaneseName: "召喚士",
-    description:
-      "異界の生物を召喚し戦わせるテクニカルなクラス。召喚獣が戦闘を代行し、本人は後方から支援を行う。召喚獣の組み合わせにより多彩な戦略が可能。",
-    uniqueMechanic: "Summon System",
-    mechanicDescription:
-      "召喚獣を場に出して戦わせる。召喚獣は独自のHPを持ち、自動で攻撃を行う。",
-    stats: {
-      hp: 80,
-      ap: 25,
-      speed: 40,
-      cardActEnergy: 3,
-    },
-    starterDeck: createSummonerStarterDeck(),
-    isAvailable: true,
-    themeColor: "#22c55e", // Green
-    icon: "summon",
   },
 };
 

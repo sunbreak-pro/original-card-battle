@@ -102,28 +102,6 @@ export const SKILL_TREE_NODES: SkillNode[] = [
     classRestriction: "mage",
     position: { angle: 270, radius: 1 },
   },
-  {
-    id: "summoner_insight",
-    name: "Summoner's Insight",
-    description:
-      "Spirits heed your call more readily. Start each battle with +1 Summon Slot.",
-    icon: "👻",
-    cost: 30,
-    category: "class",
-    tier: 1,
-    prerequisites: [],
-    effects: [
-      {
-        type: "stat_boost",
-        target: "summon_slot",
-        value: 1,
-        description: "+1 Summon Slot",
-      },
-    ],
-    classRestriction: "summoner",
-    position: { angle: 300, radius: 1 },
-  },
-
   // Utility - Bottom
   {
     id: "keen_eye",
@@ -541,7 +519,7 @@ export function getNodesByCategory(
  * Get class-specific nodes
  */
 export function getClassNodes(
-  characterClass: "swordsman" | "mage" | "summoner"
+  characterClass: "swordsman" | "mage"
 ): SkillNode[] {
   return SKILL_TREE_NODES.filter(
     (node) =>

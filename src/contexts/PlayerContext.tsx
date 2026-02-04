@@ -29,7 +29,6 @@ import { createLivesSystem } from "../domain/characters/player/logic/playerUtils
 import {
   Swordman_Status,
   Mage_Status,
-  Summon_Status,
 } from "../constants/data/characters/PlayerData";
 import type { BasePlayerStats } from "../constants/data/characters/PlayerData";
 import { getCharacterClassInfo } from "@/constants/data/characters/CharacterClassData";
@@ -196,8 +195,6 @@ function getBasePlayerByClass(classType: CharacterClass): BasePlayerStats {
       return Swordman_Status;
     case "mage":
       return Mage_Status;
-    case "summoner":
-      return Summon_Status;
     default:
       return Swordman_Status;
   }

@@ -115,14 +115,6 @@ export interface Card {
   /** Bonus damage/effect for elemental chains */
   elementalChainBonus?: number;
 
-  // ---- Summoner-Specific (Future) ----
-  /** ID of summon to create/enhance */
-  summonId?: string;
-  /** Enhancement value for active summon */
-  summonEnhancement?: number;
-  /** Requires active summon to play */
-  requiresSummon?: boolean;
-
   // ---- Card Derivation ----
   /** Card type ID this card was derived from (null = base card) */
   derivedFrom?: string | null;

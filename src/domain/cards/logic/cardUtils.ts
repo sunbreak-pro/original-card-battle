@@ -9,7 +9,7 @@ import type { Card, MasteryLevel } from '@/types/cardTypes';
 /**
  * Check if card belongs to a specific class
  */
-export function isCardForClass(card: Card, characterClass: "swordsman" | "mage" | "summoner"): boolean {
+export function isCardForClass(card: Card, characterClass: "swordsman" | "mage"): boolean {
   return card.characterClass === characterClass || card.characterClass === "common";
 }
 
@@ -25,7 +25,7 @@ export function isClassSpecificCard(card: Card): boolean {
  */
 export function filterCardsByClass(
   cards: Card[],
-  characterClass: "swordsman" | "mage" | "summoner"
+  characterClass: "swordsman" | "mage"
 ): Card[] {
   return cards.filter(card => isCardForClass(card, characterClass));
 }

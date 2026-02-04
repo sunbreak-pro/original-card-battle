@@ -86,8 +86,7 @@ export type EquipmentSkillEffectType =
   | 'bonusPerBuff'          // Scale effect with active buffs
   | 'bonusPerDebuff'        // Scale effect with enemy debuffs
   | 'bonusPerSwordEnergy'   // Swordsman: scale with sword energy
-  | 'bonusPerResonance'     // Mage: scale with resonance level
-  | 'bonusPerSummon';       // Summoner: scale with active summons
+  | 'bonusPerResonance';    // Mage: scale with resonance level
 
 /**
  * Equipment skill effect definition
@@ -99,7 +98,7 @@ export interface EquipmentSkillEffect {
   /** Optional condition for activation */
   condition?: string;
   /** Class ability target (for classAbilityBonus type) */
-  classAbilityTarget?: 'swordEnergy' | 'resonance' | 'summon';
+  classAbilityTarget?: 'swordEnergy' | 'resonance';
 }
 
 /**

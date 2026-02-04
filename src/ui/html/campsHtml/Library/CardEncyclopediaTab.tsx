@@ -122,10 +122,6 @@ export const CardEncyclopediaTab: React.FC = () => {
           <span className="stat-value">{stats.byClass?.mage || 0}</span>
           <span className="stat-label">魔術師</span>
         </div>
-        <div className="stat-item">
-          <span className="stat-value">{stats.byClass?.summoner || 0}</span>
-          <span className="stat-label">召喚師</span>
-        </div>
         {tagOptions.map((tag) => (
           <div key={tag} className="stat-item">
             <span
@@ -176,7 +172,6 @@ export const CardEncyclopediaTab: React.FC = () => {
             <option value="">全て</option>
             <option value="swordsman">剣士</option>
             <option value="mage">魔術師</option>
-            <option value="summoner">召喚師</option>
           </select>
         </div>
 
@@ -201,9 +196,6 @@ export const CardEncyclopediaTab: React.FC = () => {
             <option value="dark">{ELEMENT_LABEL_MAP.dark}</option>
             <option value="light">{ELEMENT_LABEL_MAP.light}</option>
             <option value="guard">{ELEMENT_LABEL_MAP.guard}</option>
-            <option value="summon">{ELEMENT_LABEL_MAP.summon}</option>
-            <option value="enhance">{ELEMENT_LABEL_MAP.enhance}</option>
-            <option value="sacrifice">{ELEMENT_LABEL_MAP.sacrifice}</option>
             <option value="buff">{ELEMENT_LABEL_MAP.buff}</option>
             <option value="debuff">{ELEMENT_LABEL_MAP.debuff}</option>
             <option value="heal">{ELEMENT_LABEL_MAP.heal}</option>

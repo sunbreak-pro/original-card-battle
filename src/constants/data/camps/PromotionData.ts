@@ -154,82 +154,6 @@ export const MAGE_EXAMS: PromotionExam[] = [
 ];
 
 /**
- * Summoner Promotion Exams
- */
-export const SUMMONER_EXAMS: PromotionExam[] = [
-  {
-    currentGrade: "Apprentice Summoner",
-    nextGrade: "Summoner",
-    requiredCardCount: 5,
-    enemyId: "exam_wild_spirit",
-    description:
-      "Tame the Wild Spirit to prove your ability to command creatures.",
-    recommendations: {
-      hp: 55,
-      ap: 38,
-    },
-    rewards: {
-      statBonus: "maxHP+9, Summon Slot+1",
-      maxHpBonus: 9,
-    },
-  },
-  {
-    currentGrade: "Summoner",
-    nextGrade: "Beast Master",
-    requiredCardCount: 15,
-    requiredGold: 100,
-    enemyId: "exam_guild_instructor",
-    description:
-      "Show the Guild Instructor your mastery over summoned creatures.",
-    recommendations: {
-      hp: 75,
-      ap: 58,
-    },
-    rewards: {
-      statBonus: "Summon Power+8%, Beast Bond+1",
-      maxHpBonus: 13,
-      maxApBonus: 6,
-    },
-  },
-  {
-    currentGrade: "Beast Master",
-    nextGrade: "Spirit Caller",
-    requiredCardCount: 30,
-    requiredGold: 500,
-    enemyId: "exam_veteran_warrior",
-    description:
-      "Defeat the Veteran Warrior with your loyal summons by your side.",
-    recommendations: {
-      hp: 110,
-      ap: 78,
-    },
-    rewards: {
-      statBonus: "All Stats+5%, Summon Duration+2",
-      maxHpBonus: 20,
-      maxApBonus: 10,
-    },
-  },
-  {
-    currentGrade: "Spirit Caller",
-    nextGrade: "Mythic Summoner",
-    requiredCardCount: 50,
-    requiredGold: 1000,
-    enemyId: "exam_sword_saint_phantom",
-    description:
-      "Prove you can command even the mightiest of legendary creatures.",
-    recommendations: {
-      hp: 140,
-      ap: 98,
-    },
-    rewards: {
-      statBonus: "Unlock Unique Legend Summon, All Stats+10%",
-      maxHpBonus: 28,
-      maxApBonus: 14,
-    },
-  },
-];
-
-/**
  * Get exam data based on character class
  */
 export function getExamsForClass(
@@ -240,8 +164,6 @@ export function getExamsForClass(
       return SWORDSMAN_EXAMS;
     case "mage":
       return MAGE_EXAMS;
-    case "summoner":
-      return SUMMONER_EXAMS;
     default:
       return [];
   }

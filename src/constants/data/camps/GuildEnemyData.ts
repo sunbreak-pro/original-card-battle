@@ -313,35 +313,6 @@ export const MAGIC_GOLEM: EnemyDefinition = {
 };
 
 /**
- * Summoner Promotion Exam Enemies
- */
-
-export const WILD_SPIRIT: EnemyDefinition = {
-  id: "exam_wild_spirit",
-  name: "Wild Spirit",
-  nameJa: "野生の精霊",
-  description: "Untamed spirit for summoner training",
-  baseMaxHp: 40,
-  baseMaxAp: 0,
-  baseSpeed: 50,
-  startingGuard: false,
-  actEnergy: 2,
-  aiPatterns: [
-    {
-      phaseNumber: 0,
-      action: {
-        name: "Spirit Blast",
-        type: "attack",
-        baseDamage: 9,
-        displayIcon: "🔮",
-        priority: 0,
-        energyCost: 1,
-      },
-    },
-  ],
-};
-
-/**
  * Export all guild enemies
  */
 export const GUILD_ENEMIES: EnemyDefinition[] = [
@@ -350,7 +321,6 @@ export const GUILD_ENEMIES: EnemyDefinition[] = [
   VETERAN_WARRIOR,
   SWORD_SAINT_PHANTOM,
   MAGIC_GOLEM,
-  WILD_SPIRIT,
 ];
 
 /**

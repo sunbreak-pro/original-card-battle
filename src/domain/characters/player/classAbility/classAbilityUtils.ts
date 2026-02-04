@@ -8,7 +8,6 @@ import type {
   CharacterClass,
   SwordEnergyState,
   ElementalState,
-  SummonState,
   ClassAbilityState,
 } from '@/types/characterTypes';
 
@@ -37,18 +36,6 @@ export function createInitialElemental(): ElementalState {
 }
 
 /**
- * Creates initial Summon state for Summoner
- */
-export function createInitialSummon(): SummonState {
-  return {
-    type: "summon",
-    activeSummons: [],
-    summonSlots: 1,
-    bondLevel: 1,
-  };
-}
-
-/**
  * Creates initial class ability state based on character class
  */
 export function createInitialClassAbility(characterClass: CharacterClass): ClassAbilityState {
@@ -57,8 +44,6 @@ export function createInitialClassAbility(characterClass: CharacterClass): Class
       return createInitialSwordEnergy();
     case "mage":
       return createInitialElemental();
-    case "summoner":
-      return createInitialSummon();
     default: {
       const _exhaustive: never = characterClass;
       throw new Error(`Unknown character class: ${_exhaustive}`);
@@ -78,11 +63,4 @@ export function isSwordEnergyState(state: ClassAbilityState): state is SwordEner
  */
 export function isElementalState(state: ClassAbilityState): state is ElementalState {
   return state.type === "elemental";
-}
-
-/**
- * Type guard for SummonState
- */
-export function isSummonState(state: ClassAbilityState): state is SummonState {
-  return state.type === "summon";
 }

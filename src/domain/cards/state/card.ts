@@ -35,9 +35,7 @@ export function canPlayCard(
   card: Card,
   currentEnergy: number,
   isPlayerTurn: boolean,
-  hasActiveSummon?: boolean
 ): boolean {
-  if (card.requiresSummon && !hasActiveSummon) return false;
   return isPlayerTurn && card.cost <= currentEnergy;
 }
 

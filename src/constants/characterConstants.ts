@@ -2,7 +2,7 @@
  * Character Constants
  *
  * Centralized character-related constants including lives system,
- * class abilities, summon system, and elemental system.
+ * class abilities, and elemental system.
  */
 
 import type { Difficulty } from '@/types/characterTypes';
@@ -20,19 +20,6 @@ export const LIVES_BY_DIFFICULTY: Record<Difficulty, number> = {
   normal: 3,
   hard: 2,
 };
-
-// ============================================================
-// Summoner Constants
-// ============================================================
-
-/** Maximum active summons */
-export const MAX_ACTIVE_SUMMONS = 3;
-
-/** Maximum bond level */
-export const MAX_BOND_LEVEL = 10;
-
-/** Bond level damage bonus per level (5% per level) */
-export const BOND_DAMAGE_BONUS_PER_LEVEL = 0.05;
 
 // ============================================================
 // Mage / Elemental Constants
@@ -75,18 +62,6 @@ export const RESONANCE_EFFECTS: Record<ElementType, Record<1 | 2, ResonanceEffec
     2: {},
   },
   guard: {
-    1: {},
-    2: {},
-  },
-  summon: {
-    1: {},
-    2: {},
-  },
-  enhance: {
-    1: {},
-    2: {},
-  },
-  sacrifice: {
     1: {},
     2: {},
   },

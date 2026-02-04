@@ -10,7 +10,6 @@ import type { Card } from "@/types/cardTypes";
 import { getDerivationChain } from "@/domain/cards/logic/cardDerivation";
 import { SWORDSMAN_CARDS } from "@/constants/data/cards/swordsmanCards";
 import { MAGE_CARDS } from "@/constants/data/cards/mageCards";
-import { SUMMONER_CARDS } from "@/constants/data/cards/summonerCards";
 import { ELEMENT_LABEL_MAP, ELEMENT_COLOR_MAP } from "@/constants/cardConstants";
 
 interface CardDerivationTreeProps {
@@ -24,7 +23,6 @@ function getAllCardRecords(): Record<string, Card> {
   return {
     ...SWORDSMAN_CARDS,
     ...MAGE_CARDS,
-    ...SUMMONER_CARDS,
   };
 }
 

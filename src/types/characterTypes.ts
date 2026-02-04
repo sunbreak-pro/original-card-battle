@@ -23,10 +23,9 @@ import type React from "react";
 /**
  * Character class types
  * - swordsman: Physical combat specialist with Sword Energy system
- * - mage: Magic specialist with Elemental Chain system (future)
- * - summoner: Summoning specialist with Summon system (future)
+ * - mage: Magic specialist with Elemental Chain system
  */
-export type CharacterClass = "swordsman" | "mage" | "summoner";
+export type CharacterClass = "swordsman" | "mage";
 
 /**
  * Extended character class including common cards
@@ -79,13 +78,12 @@ export interface SwordEnergyState {
 /**
  * Element types for all classes
  * - Magic: fire, ice, lightning, dark, light (Mage primary)
- * - Physical: slash, impact, guard (Swordsman primary)
- * - Summoner: summon, enhance, sacrifice (Summoner primary)
+ * - Physical: physics, guard (Swordsman primary)
+ * - Utility: buff, debuff, heal
  */
 export type ElementType =
   | "fire" | "ice" | "lightning" | "dark" | "light"
   | "physics" | "guard"
-  | "summon" | "enhance" | "sacrifice"
   | "buff" | "debuff" | "heal"
   | "attack" | "classAbility" | "chain";
 
@@ -109,48 +107,8 @@ export interface ElementalState {
   resonanceLevel: ResonanceLevel;
 }
 
-// ============================================================
-// Summoner: Summon System
-// ============================================================
-
-/** Summon types */
-export type SummonType = "offensive" | "defensive" | "support";
-
-/** Summon ability definition */
-export interface SummonAbility {
-  id: string;
-  name: string;
-  description: string;
-  cooldown: number;
-  currentCooldown: number;
-}
-
-/** Individual summon entity */
-export interface Summon {
-  id: string;
-  name: string;
-  type: SummonType;
-  hp: number;
-  maxHp: number;
-  /** Remaining turns before despawn */
-  duration: number;
-  abilities: SummonAbility[];
-}
-
-/** Summon State for Summoner class */
-export interface SummonState {
-  /** Discriminant for union type */
-  type: "summon";
-  /** Active summons (max 3) */
-  activeSummons: Summon[];
-  /** Number of unlocked summon slots */
-  summonSlots: number;
-  /** Bond level with summons (multiplier for effects) */
-  bondLevel: number;
-}
-
 /** Union type for all class ability states */
-export type ClassAbilityState = SwordEnergyState | ElementalState | SummonState;
+export type ClassAbilityState = SwordEnergyState | ElementalState;
 
 // ============================================================
 // Encounter Pattern Types

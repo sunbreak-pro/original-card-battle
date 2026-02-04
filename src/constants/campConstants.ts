@@ -135,7 +135,6 @@ export const DEFAULT_SANCTUARY_EFFECTS: SanctuaryEffects = {
   classEnergy: {
     swordsman: 0,
     mage: 0,
-    summoner: 0,
   },
   enhancedElements: new Set<ElementType>(),
 };

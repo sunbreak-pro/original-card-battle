@@ -150,9 +150,6 @@ export function calculateTotalEffects(
             case "resonance":
               effects.classEnergy.mage += effect.value;
               break;
-            case "summon_slot":
-              effects.classEnergy.summoner += effect.value;
-              break;
           }
           break;
 

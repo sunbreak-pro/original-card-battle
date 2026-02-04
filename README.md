@@ -38,13 +38,12 @@ npm run lint      # ESLint
 - **死亡時:** アイテムロスト + ライフ -1（ソウルは100%保存）
 - **ライフ 0:** ゲームオーバー（フルリセット）
 
-### キャラクタークラス（3種）
+### キャラクタークラス（2種）
 
 | クラス | 固有メカニクス | カード枚数 |
 |--------|--------------|-----------|
 | 剣士 (Swordsman) | 剣気ゲージ（エネルギー蓄積で強力な技を発動） | 全33枚 |
 | 魔術師 (Mage) | 属性共鳴（属性連鎖でダメージ倍率上昇+フィールドバフ） | 全40枚 |
-| 召喚士 (Summoner) | 召喚システム（最大3体の召喚獣、絆レベルで強化） | 全40枚 |
 
 スターターデッキは各クラス15枚。
 
@@ -54,7 +53,6 @@ npm run lint      # ESLint
 |---------|------|
 | 魔法系 | fire, ice, lightning, dark, light |
 | 物理系 | physics, guard |
-| 召喚系 | summon, enhance, sacrifice |
 | ユーティリティ系 | buff, debuff, heal |
 
 ### バトルシステム
@@ -137,43 +135,6 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 バトル状態は `useBattleOrchestrator` フックが直接管理（別途Contextなし）。
 
-### バトルシステムフロー
-
-```
-BattleScreen → useBattleOrchestrator → useBattleState
-                    ↓
-    getInitialDeckCounts() → getCardDataByClass() → createInitialDeck()
-                    ↓
-    playerPhaseExecution / enemyPhaseExecution → damageCalculation
-```
-
-クラス別バトルフック（`useBattleOrchestrator` 内で統合）:
-- Swordsman: `useSwordEnergy()` — エネルギーゲージ（`useClassAbility.ts`）
-- Mage: `useElementalChain()` — 属性共鳴コンボ + ダメージ倍率（`useElementalChain.ts`）
-- Summoner: `useSummonSystem()` — 召喚獣の生成・減衰・消滅（`useSummonSystem.ts`）
-
-### ショップデータフロー
-
-```
-ShopListing (typeIdのみ) → ConsumableItemData (名前・価格・効果) → generateConsumableFromData() → Item
-```
-
-`ConsumableItemData.ts` が消耗品の単一データソース。
-
-### ショップ在庫管理
-
-```
-ShopStockState (PlayerContext.progression) → shopStockLogic.ts → BuyTab.tsx
-  ├── 常設品（7種、固定在庫）
-  ├── 日替わり特売（3枠、重み付きランダム抽選）
-  ├── エピック枠（Depth依存 5-20%で出現）
-  └── 装備品（日替わりローテーション）
-```
-
-- 7-10戦闘ごとに自動入荷（`incrementBattleCount` → `hasNewStock` フラグ）
-- 商人の手形で強制入荷（`forceRestock`）
-- ベースキャンプのショップカードに入荷通知バッジ表示
-
 ## Implementation Status
 
 | カテゴリ | 進捗 | 備考 |
@@ -190,7 +151,6 @@ ShopStockState (PlayerContext.progression) → shopStockLogic.ts → BuyTab.tsx
 - AoEカード（全敵同時ダメージ）
 - EnemyFrame の SVG アイコン化（現在は絵文字）
 - 敵画像アセット（全50体の imagePath は設定済、PNGファイル未作成）
-- 召喚士キャラクター画像（Summoner.png 存在するが内容は仮）
 
 ## Coding Conventions
 
@@ -213,121 +173,27 @@ ShopStockState (PlayerContext.progression) → shopStockLogic.ts → BuyTab.tsx
 
 ## Development History
 
-<details>
-<summary>開発ログ（クリックで展開）</summary>
-
-### 2024年11月27日
-- GitHub連携
-
-### 2025年1月20日〜23日
-- Claude Max プラン加入
-
-### 2025年1月25日
-- README.md の記録開始
-
-### 2025年1月26日
-- デッキシステム統合（PlayerContext → バトルへのデータフロー確立）
-- 魔術師クラス選択可能化
-- Phase 1: Buff/Debuff Ownership System 実装
-- MEMORY.md 整理、LESSONS_LEARNED.md 分離
-- Claude 開発スキル作成（9個）
-
-### 2025年1月28日
-- MEMORY.md とコードの差分調査・修正
-- 未使用コード調査（デッドファイル10個特定）
-- ShopItem 削除 → ShopListing 置換
-- 型定義リファクタリング（`src/types/` に集約、パスエイリアス導入）
-
-### 2025年1月29日
-- Phase B 完了（召喚士クラス、ショップ、カード派生、逃走システム等）
-- Phase C 開始（探索準備画面、複数敵バトル、図書館、ダンジョンイベント等）
-- 画像アセット再構成
-
-### 2025年1月30日
-- Phase C ほぼ完了（C1-C5 + B4 全完了）
-- 属性システム拡張（6新属性追加）
-- 全カードにelement追加
-
-### 2025年1月31日
-- slash/impact 属性を physics に統合
-- カードデータを `src/constants/data/cards/` に移行
-- 探索準備画面（preparations/）追加
-- テレポートストーンアイテム実装
-
-### 2026年2月1日
-- バトルコンテキスト簡素化（BattleProviderStack/Player/Enemy/SessionContext 削除）
-- キャンプデータ移行（`domain/camps/data/` → `constants/data/camps/`）
-- 敵データ移行（`domain/characters/enemy/data/` → `constants/data/characters/enemy/`）
-- typeConverters.ts 削除（未使用）
-- 属性共鳴ダメージ倍率をカード実行に統合
-- ElementalResonanceDisplay UI（Mage クラス）追加
-- マルチヒットカード実行ループ実装（hit毎のダメージ計算）
-- 装備耐久度システム（equipmentStats.ts）追加
-- カスタムデッキ対応（PlayerContext の deckCards）
-- プレイヤーキャラクター画像をバトルフィールドに表示
-- 全50体の敵に imagePath フィールド追加
-- soulSystem.ts デッドコード削除
-- nav機能追加（BackToCampButton, FacilityTabNav コンポーネント）
-- UI改善（FacilityHeader統合、キャンプ施設の統一ナビゲーション）
-- 脆弱性修正セッション1-4（バトルステールクロージャ修正、バトルロジック改善）
-- UI統合提案（CONSOLIDATION_PROPOSAL.md）作成
-
-### 2026年2月2日
-- 脆弱性修正セッション5完了（DoT/スタック倍率修正、出血・毒・火傷がスタック数で倍化）
-- 脆弱性修正セッション6完了（クラス＆カードメカニクス修正）
-- カードシステムリファクタ完了（category/rarity廃止、ElementType拡張）
-- 脆弱性修正セッション7完了（経済＆ダンジョン修正、4件）
-  - **鍛冶屋の魔石未消費バグ修正**: `spendBaseCampMagicStones()` を ResourceContext に追加、UpgradeTab でゴールドと魔石の両方を消費するよう修正
-  - **ショップローテーション保存**: `shopRotationDay` を PlayerProgression/セーブデータに追加、save/load でラインナップが維持されるように
-  - **フォールバック攻撃スケーリング**: 敵のフォールバック攻撃が固定5ダメージ→AIパターン平均の50%にスケーリング
-  - **装備耐久度バトル中減算**: 既に実装済みであることを確認（onApDamage コールバック経由）
-
-### 2026年2月3日
-- **Phase D: ショップ在庫管理 + カード図鑑UIオーバーホール（全3セッション）**
-- ショップ在庫コアシステム実装
-  - `ShopStockState` 型 + `PlayerContext.progression` 経由で永続化
-  - `ShopStockConstants.ts`（常設品7種、日替わりプール7種、エピックプール2種）
-  - `shopStockLogic.ts`（初期化・在庫減少・入荷・戦闘カウント・商人の手形）
-  - `ConsumableItemData` に `shopPrice` 追加（13アイテム）
-- ショップUI + 入荷通知
-  - BuyTab を3セクション構成にリライト（常設品・日替わり特売・装備品）
-  - 在庫バッジ（残り数表示）+ 売切表示
-  - 入荷バナー（「新商品入荷！」）+ ベースキャンプ通知バッジ
-  - `NodeMap.tsx` の戦闘勝利時に戦闘カウンターをインクリメント
-- カード図鑑UIオーバーホール
-  - `CARD_TAG_LABEL_MAP` / `CARD_TAG_COLOR_MAP` 追加
-  - フィルタ拡張: タグ・コスト範囲・未解放カード表示トグル
-  - 統計バー: 解放率 + タグ別カウント（色付き）
-  - 未解放カード「?」プレースホルダー表示
-  - `CardDerivationTree` に `unlockedCardTypeIds` 連携
-- **脆弱性修正セッション8完了**（デッドコード＆重複削除、11件）
-  - 重複関数削除（`calculateCardEffect`、`decreaseBuffDebuffDuration`）
-  - レガシーエイリアス削除（useBattleOrchestrator return object）
-  - 重複定数統合（`SWORD_ENERGY_MAX`、`DEFAULT_DAMAGE_MODIFIER`）
-  - バトル状態デュアルAPI統合、インベントリ重複方向マージ
-  - クラスアビリティフック共通ラッパー抽出、敵ガードチェック共有述語
-- **脆弱性修正セッション9完了**（命名＆ファイル整理、6件）
-  - `DungeonRunContext.tsx` を `src/contexts/` に移動
-  - ファイルリネーム: `deptManager` → `depthManager`、`tittle` → `title`、`swordmanCards` → `swordsmanCards`
-  - テストデータ削除（`TestItemsData.ts`）、初期値をゼロデフォルトに変更
-- **脆弱性修正セッション10完了**（ハードコード→データ駆動変換、4件）
-  - V-DMG-07: バフ計算のデータ駆動化（`buffData.ts`にカテゴリマップ追加、switch文→配列ループ化）
-  - V-DMG-08: true damageの防御バイパス実装（sacrifice属性は防御計算をスキップ）
-  - V-CARD-08: stanceタグの明示的処理ブランチ追加
-  - V-ENM-03: Depth 1敵にelement追加（Shadow Crawler、Fallen Guardianにdark属性）
-- **Phase E: 宿屋（Inn）施設実装**
-  - `InnBuffsState` 型をPlayerProgressionに追加
-  - 休息オプション3種（無料休憩、スタンダード、デラックス）→ 次回探索でボーナスHP/エネルギー
-  - 食事オプション5種（シチュー、肉、ドリンク、フルコース、金運茶）→ 次回探索でN戦闘分のバフ
-  - 噂バブル（RumorBubble）コンポーネント → ゲームTips/雰囲気演出
-  - `innLogic.ts` でバフ状態管理・購入処理
-
-</details>
+| 日付 | 作業内容 | 進捗 |
+|------|----------|------|
+| 2026-02-04 | Phase 0: 召喚者クラス完全削除（2クラス版に移行） | 完了 |
+| 2026-02-04 | .claude ディレクトリ整理、MEMORY.md削除、README表形式化 | 完了 |
+| 2026-02-03 | Phase D: ショップ在庫、カード図鑑UI、Session 8-11 | 完了 |
+| 2026-02-03 | Phase E: 宿屋（Inn）施設実装 | 完了 |
+| 2026-02-03 | Session 12-24: カード・装備データ追加（73装備完了） | 完了 |
+| 2026-02-02 | Session 5-7: 脆弱性修正（DoT/経済/ダンジョン） | 完了 |
+| 2026-02-01 | Phase C完了、バトルコンテキスト簡素化、UI改善 | 完了 |
+| 2026-02-01 | Session 1-4: 脆弱性修正（バトルロジック） | 完了 |
+| 2025-01-31 | 属性統合（slash/impact→physics）、探索準備画面 | 完了 |
+| 2025-01-30 | Phase C ほぼ完了、属性システム拡張 | 完了 |
+| 2025-01-29 | Phase B完了、Phase C開始 | 完了 |
+| 2025-01-28 | 型定義リファクタリング、パスエイリアス導入 | 完了 |
+| 2025-01-26 | Phase 1: Buff/Debuff Ownership、開発スキル作成 | 完了 |
+| 2025-01-25 | README.md 記録開始 | — |
+| 2024-11-27 | GitHub連携 | — |
 
 ## References
 
-- `.claude/MEMORY.md` — 現在のステータスと既知のバグ
-- `.claude/LESSONS_LEARNED.md` — 開発で学んだ重要な教訓
-- `.claude/todos/MASTER_IMPLEMENTATION_PLAN.md` — 実装ロードマップ
 - `.claude/docs/` — ゲーム設計仕様書（バトル、カード、キャンプ、ダンジョン、敵、アイテム）
-- `.claude/code_overview/` — コード静的分析ドキュメント（14ファイル、77件の脆弱性特定済、57件修正済）
+- `.claude/code_overview/` — コード静的分析（77件の脆弱性特定済、57件修正済）
+- `.claude/plans/` — 実装計画・セッション追跡
+- `.claude/memories/LESSONS_LEARNED.md` — 開発で学んだ重要な教訓

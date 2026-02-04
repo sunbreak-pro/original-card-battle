@@ -32,7 +32,6 @@ export interface AggregatedSkillEffects {
   lifesteal: number;
   swordEnergyBonus: number;
   resonanceBonus: number;
-  summonBonus: number;
 }
 
 /**
@@ -54,7 +53,6 @@ export function createEmptyAggregatedEffects(): AggregatedSkillEffects {
     lifesteal: 0,
     swordEnergyBonus: 0,
     resonanceBonus: 0,
-    summonBonus: 0,
   };
 }
 
@@ -125,8 +123,6 @@ function applySkillEffect(
         aggregated.swordEnergyBonus += effect.value;
       } else if (effect.classAbilityTarget === 'resonance') {
         aggregated.resonanceBonus += effect.value;
-      } else if (effect.classAbilityTarget === 'summon') {
-        aggregated.summonBonus += effect.value;
       }
       break;
     case 'bonusPerSwordEnergy':
@@ -134,9 +130,6 @@ function applySkillEffect(
       break;
     case 'bonusPerResonance':
       aggregated.resonanceBonus += effect.value;
-      break;
-    case 'bonusPerSummon':
-      aggregated.summonBonus += effect.value;
       break;
     default:
       // Conditional effects (bonusOnLowHp, etc.) handled separately
@@ -187,7 +180,6 @@ export function checkEffectCondition(
     enemyDebuffCount: number;
     swordEnergy?: number;
     resonanceLevel?: number;
-    activeSummonCount?: number;
   },
 ): boolean {
   if (!condition) return true;
@@ -205,8 +197,6 @@ export function checkEffectCondition(
       return (context.swordEnergy ?? 0) >= 5;
     case 'maxResonance':
       return (context.resonanceLevel ?? 0) >= 2;
-    case 'hasSummon':
-      return (context.activeSummonCount ?? 0) > 0;
     default:
       return true;
   }
@@ -223,7 +213,6 @@ export function calculateScaledEffectValue(
     enemyDebuffCount?: number;
     swordEnergy?: number;
     resonanceLevel?: number;
-    activeSummonCount?: number;
   },
 ): number {
   switch (effectType) {
@@ -235,8 +224,6 @@ export function calculateScaledEffectValue(
       return baseValue * (context.swordEnergy ?? 0);
     case 'bonusPerResonance':
       return baseValue * (context.resonanceLevel ?? 0);
-    case 'bonusPerSummon':
-      return baseValue * (context.activeSummonCount ?? 0);
     default:
       return baseValue;
   }

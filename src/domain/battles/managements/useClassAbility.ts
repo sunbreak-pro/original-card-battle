@@ -3,8 +3,7 @@
  *
  * Generic hook for managing character class abilities:
  * - Swordsman: Sword Energy (剣気)
- * - Mage: Elemental Chain (属性連鎖) - Future
- * - Summoner: Summon System (召喚) - Future
+ * - Mage: Elemental Chain (属性連鎖)
  *
  * This hook wraps the ClassAbilitySystem interface and provides
  * React-friendly state management and event handling.
@@ -30,9 +29,6 @@ import {
 
 // Elemental Chain System
 import { useElementalChain } from "./useElementalChain";
-
-// Summon System
-import { useSummonSystem } from "./useSummonSystem";
 
 // ============================================================================
 // Types
@@ -252,20 +248,15 @@ export function useClassAbility<T extends ClassAbilityState>(
 
 /**
  * Create appropriate class ability hook based on character class
- *
- * Note: Currently only Swordsman is fully implemented.
- * Mage and Summoner hooks will be added when those systems are implemented.
  */
 export function createClassAbilityHook(
-  characterClass: "swordsman" | "mage" | "summoner"
+  characterClass: "swordsman" | "mage"
 ): () => UseClassAbilityReturn<ClassAbilityState> {
   switch (characterClass) {
     case "swordsman":
       return useSwordEnergy as () => UseClassAbilityReturn<ClassAbilityState>;
     case "mage":
       return useElementalChain as () => UseClassAbilityReturn<ClassAbilityState>;
-    case "summoner":
-      return useSummonSystem as () => UseClassAbilityReturn<ClassAbilityState>;
     default:
       return useSwordEnergy as () => UseClassAbilityReturn<ClassAbilityState>;
   }

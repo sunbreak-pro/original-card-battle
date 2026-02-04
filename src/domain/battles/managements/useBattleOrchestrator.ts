@@ -23,7 +23,6 @@ import { deckReducer } from "../../cards/decks/deckReducter";
 import { createInitialDeck, shuffleArray } from "../../cards/decks/deck";
 import { SWORDSMAN_CARDS_ARRAY } from "@/constants/data/cards/swordsmanCards";
 import { MAGE_CARDS_ARRAY } from "@/constants/data/cards/mageCards";
-import { SUMMONER_CARDS_ARRAY } from "@/constants/data/cards/summonerCards";
 import { getInitialDeckCounts } from "@/constants/data/battles/initialDeckConfig";
 
 // Card mastery management
@@ -73,8 +72,6 @@ function getCardDataByClass(classType: CharacterClass): Card[] {
       return SWORDSMAN_CARDS_ARRAY;
     case "mage":
       return MAGE_CARDS_ARRAY;
-    case "summoner":
-      return SUMMONER_CARDS_ARRAY;
     default:
       return SWORDSMAN_CARDS_ARRAY;
   }

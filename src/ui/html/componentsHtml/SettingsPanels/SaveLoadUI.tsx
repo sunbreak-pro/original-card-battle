@@ -123,7 +123,6 @@ export const SaveLoadUI: React.FC = () => {
     switch (playerClass) {
       case 'swordsman': return '剣士';
       case 'mage': return '魔術師';
-      case 'summoner': return '召喚士';
       default: return playerClass;
     }
   };

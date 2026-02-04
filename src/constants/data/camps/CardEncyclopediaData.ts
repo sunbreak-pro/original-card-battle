@@ -2,13 +2,12 @@
  * Card Encyclopedia Data
  *
  * Provides all cards for the encyclopedia display.
- * Includes Swordsman, Mage, and Summoner cards.
+ * Includes Swordsman and Mage cards.
  * Supports unlocked/unknown card awareness.
  */
 
 import { SWORDSMAN_CARDS } from "@/constants/data/cards/swordsmanCards";
 import { MAGE_CARDS } from "@/constants/data/cards/mageCards";
-import { SUMMONER_CARDS } from "@/constants/data/cards/summonerCards";
 import type { Card, CardTag } from '@/types/cardTypes';
 import type { CardEncyclopediaEntry } from '@/types/campTypes';
 
@@ -20,7 +19,6 @@ export function getAllCards(): Card[] {
   const cards = [
     ...Object.values(SWORDSMAN_CARDS),
     ...Object.values(MAGE_CARDS),
-    ...Object.values(SUMMONER_CARDS),
   ];
 
   return cards.sort((a, b) => {

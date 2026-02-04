@@ -78,15 +78,6 @@ describe('resolveDamageType', () => {
       expect(resolveDamageType(['light'])).toBe('magical');
     });
 
-    it('returns "true" for sacrifice element', () => {
-      expect(resolveDamageType(['sacrifice'])).toBe('true');
-    });
-
-    it('prioritizes "true" over "magical" when both present', () => {
-      expect(resolveDamageType(['fire', 'sacrifice'])).toBe('true');
-      expect(resolveDamageType(['sacrifice', 'fire'])).toBe('true');
-    });
-
     it('prioritizes "magical" over "physical" when both present', () => {
       expect(resolveDamageType(['physics', 'fire'])).toBe('magical');
       expect(resolveDamageType(['fire', 'physics'])).toBe('magical');
@@ -196,16 +187,6 @@ describe('calculateDamage', () => {
       const result = calculateDamage(attacker, defender, card);
 
       expect(result.damageType).toBe('magical');
-    });
-
-    it('resolves true damage type correctly', () => {
-      const attacker = createBattleStats();
-      const defender = createBattleStats();
-      const card = createTestCard(10, ['sacrifice']);
-
-      const result = calculateDamage(attacker, defender, card);
-
-      expect(result.damageType).toBe('true');
     });
   });
 

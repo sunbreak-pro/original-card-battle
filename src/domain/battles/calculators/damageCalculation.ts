@@ -19,9 +19,8 @@ const MAGICAL_ELEMENTS: ReadonlySet<ElementType> = new Set([
 ]);
 
 /** Elements that resolve to "true" damage (bypasses defense in future) */
-const TRUE_DAMAGE_ELEMENTS: ReadonlySet<ElementType> = new Set([
-  "sacrifice",
-]);
+// Note: Currently no elements trigger true damage. Was "sacrifice" for summoner class.
+const TRUE_DAMAGE_ELEMENTS: ReadonlySet<ElementType> = new Set([]);
 
 /**
  * Resolve damage type from card elements.

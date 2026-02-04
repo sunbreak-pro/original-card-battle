@@ -60,8 +60,6 @@ export type BuffDebuffType =
   | "iceField"
   | "darkField"
   | "lightField"
-  | "summonPower"
-  | "sacrificeBonus"
   | "focus"
   | "momentum"
   | "cleanse"

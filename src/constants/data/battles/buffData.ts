@@ -114,8 +114,6 @@ export const BUFF_EFFECTS: Record<BuffDebuffType, BuffEffectDefinition> = {
     darkField: { name: "Dark Field", nameJa: "闇界", value: 50, isDebuff: false, isPercentage: true, stackable: false, description: () => `Dark damage +${BUFF_EFFECTS.darkField.value}%` },
     lightField: { name: "Light Field", nameJa: "光界", value: 50, isDebuff: false, isPercentage: true, stackable: false, description: () => `Light damage +${BUFF_EFFECTS.lightField.value}%` },
 
-    summonPower: { name: "Summon Power", nameJa: "召喚力", value: 30, isDebuff: false, isPercentage: true, stackable: true, description: () => `Summon power +${BUFF_EFFECTS.summonPower.value}%` },
-    sacrificeBonus: { name: "Sacrifice Bonus", nameJa: "犠牲の恩恵", value: 30, isDebuff: false, isPercentage: true, stackable: true, description: () => `Sacrifice effect +${BUFF_EFFECTS.sacrificeBonus.value}%` },
     focus: { name: "Focus", nameJa: "集中", value: 50, isDebuff: false, isPercentage: true, stackable: true, description: () => `Next card effect +${BUFF_EFFECTS.focus.value}%` },
     momentum: { name: "Momentum", nameJa: "勢い", value: 5, isDebuff: false, isPercentage: true, stackable: true, description: () => `Attack +${BUFF_EFFECTS.momentum.value}% per card used` },
     cleanse: { name: "Cleanse", nameJa: "浄化", value: 1, isDebuff: false, isPercentage: false, stackable: true, description: () => "Remove 1 debuff at turn end" },
@@ -165,8 +163,6 @@ export const BUFF_DEBUFF_ICONS: Record<BuffDebuffType, string> = {
     iceField: "❄️🌐",
     darkField: "🌑🌐",
     lightField: "✨🌐",
-    summonPower: "👻✨",
-    sacrificeBonus: "💀",
     focus: "🎯",
     momentum: "🔥↑",
     cleanse: "✨💧",

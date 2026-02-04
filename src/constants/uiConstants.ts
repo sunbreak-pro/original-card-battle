@@ -13,7 +13,6 @@ import type { ElementType, CharacterClass } from '@/types/characterTypes';
 export const PLAYER_CHARACTER_IMAGES: Record<CharacterClass, string> = {
   swordsman: "/assets/images/player-character/Swordman.png",
   mage: "/assets/images/player-character/Mage.png",
-  summoner: "/assets/images/player-character/Summoner.png",
 };
 
 // ============================================================
