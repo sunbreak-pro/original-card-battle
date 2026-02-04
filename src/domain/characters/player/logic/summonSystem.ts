@@ -22,6 +22,7 @@ import type { SummonState, Summon, SummonType } from '@/types/characterTypes';
 import { createInitialSummon } from '../classAbility/classAbilityUtils';
 import type { ClassAbilitySystem, DamageModifier } from "../classAbility/classAbilitySystem";
 import { MAX_BOND_LEVEL, BOND_DAMAGE_BONUS_PER_LEVEL } from "../../../../constants";
+import { generateId } from '@/utils/idGenerator';
 
 // ============================================================
 // Summon System Implementation (STUB)
@@ -196,7 +197,7 @@ function createSummonFromId(summonId: string, bondLevel: number): Summon | null 
   if (!data) return null;
 
   return {
-    id: `${summonId}_${Date.now()}`,
+    id: generateId(summonId),
     ...data,
   };
 }

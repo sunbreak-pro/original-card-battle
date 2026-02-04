@@ -77,7 +77,7 @@ npm run lint      # ESLint
 
 ノードタイプ: バトル / エリート / ボス / イベント / 休憩 / 宝箱
 
-### キャンプ施設（6種）
+### キャンプ施設（7種）
 
 | 施設 | 機能 |
 |------|------|
@@ -87,6 +87,7 @@ npm run lint      # ESLint
 | 図書館 (Library) | カード図鑑（タグ/コスト/未解放フィルタ）・敵図鑑・カード派生ツリー・ゲームTips |
 | 倉庫 (Storage) | アイテム・装備管理 |
 | ギルド (Guild) | 試験バトル・デイリー/ウィークリークエスト・噂バフ購入 |
+| 宿屋 (Inn) | 休息・食事で次回探索ボーナス獲得・噂/Tipsの表示 |
 
 ### 進行システム
 
@@ -178,7 +179,7 @@ ShopStockState (PlayerContext.progression) → shopStockLogic.ts → BuyTab.tsx
 | カテゴリ | 進捗 | 備考 |
 |---------|------|------|
 | バトルシステム | 98% | コア、複数敵、逃走、属性共鳴、マルチヒット完了。AoEカード未実装 |
-| キャンプ施設 | 98% | 全6施設稼働。ショップ在庫管理＋図鑑フィルタ強化済 |
+| キャンプ施設 | 100% | 全7施設稼働（ショップ、ギルド、鍛冶屋、聖域、図書館、倉庫、宿屋） |
 | ダンジョン | 90% | マップ、ノード、イベント、5フロア進行、Depth 1-5 |
 | 進行システム | 98% | ライフ、ソウル、聖域、装備耐久度、熟練度、カード派生、カスタムデッキ |
 | セーブ | 実装済 | `src/domain/save/logic/saveManager.ts` |
@@ -309,6 +310,17 @@ ShopStockState (PlayerContext.progression) → shopStockLogic.ts → BuyTab.tsx
   - `DungeonRunContext.tsx` を `src/contexts/` に移動
   - ファイルリネーム: `deptManager` → `depthManager`、`tittle` → `title`、`swordmanCards` → `swordsmanCards`
   - テストデータ削除（`TestItemsData.ts`）、初期値をゼロデフォルトに変更
+- **脆弱性修正セッション10完了**（ハードコード→データ駆動変換、4件）
+  - V-DMG-07: バフ計算のデータ駆動化（`buffData.ts`にカテゴリマップ追加、switch文→配列ループ化）
+  - V-DMG-08: true damageの防御バイパス実装（sacrifice属性は防御計算をスキップ）
+  - V-CARD-08: stanceタグの明示的処理ブランチ追加
+  - V-ENM-03: Depth 1敵にelement追加（Shadow Crawler、Fallen Guardianにdark属性）
+- **Phase E: 宿屋（Inn）施設実装**
+  - `InnBuffsState` 型をPlayerProgressionに追加
+  - 休息オプション3種（無料休憩、スタンダード、デラックス）→ 次回探索でボーナスHP/エネルギー
+  - 食事オプション5種（シチュー、肉、ドリンク、フルコース、金運茶）→ 次回探索でN戦闘分のバフ
+  - 噂バブル（RumorBubble）コンポーネント → ゲームTips/雰囲気演出
+  - `innLogic.ts` でバフ状態管理・購入処理
 
 </details>
 
@@ -318,4 +330,4 @@ ShopStockState (PlayerContext.progression) → shopStockLogic.ts → BuyTab.tsx
 - `.claude/LESSONS_LEARNED.md` — 開発で学んだ重要な教訓
 - `.claude/todos/MASTER_IMPLEMENTATION_PLAN.md` — 実装ロードマップ
 - `.claude/docs/` — ゲーム設計仕様書（バトル、カード、キャンプ、ダンジョン、敵、アイテム）
-- `.claude/code_overview/` — コード静的分析ドキュメント（14ファイル、77件の脆弱性特定済、52件修正済）
+- `.claude/code_overview/` — コード静的分析ドキュメント（14ファイル、77件の脆弱性特定済、57件修正済）

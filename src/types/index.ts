@@ -75,6 +75,12 @@ export {
   type EquipmentSet,
   type ItemFilter,
   type ItemSortCriteria,
+  type InnTab,
+  type InnEffectType,
+  type InnEffect,
+  type RestOption,
+  type MealOption,
+  type InnBuffsState,
 } from './campTypes';
 
 // Dungeon types - exclude Depth, NodeStatus (already exported)

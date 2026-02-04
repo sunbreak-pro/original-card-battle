@@ -14,8 +14,8 @@
 
 import { useState, useRef, useReducer, useEffect, useCallback, useMemo } from "react";
 import type { Card, Depth } from '@/types/cardTypes';
-import type { EnemyDefinition, BattleStats, EnemyBattleState, CharacterClass, EncounterSize } from '@/types/characterTypes';
-import type { PhaseQueue, PhaseEntry, BuffDebuffMap } from '@/types/battleTypes';
+import type { EnemyDefinition, CharacterClass, EncounterSize } from '@/types/characterTypes';
+import type { PhaseQueue, BuffDebuffMap } from '@/types/battleTypes';
 import { createInitialSwordEnergy } from '../../characters/player/classAbility/classAbilityUtils';
 
 // Deck management (IMMUTABLE ZONE - DO NOT MODIFY)
@@ -55,6 +55,9 @@ import { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
 // Resonance effects (Mage)
 import { getResonanceEffects } from "../../characters/player/logic/elementalSystem";
 
+// Phase queue helpers (extracted for modularity)
+import { expandPhaseEntriesForMultipleEnemies, buildEnemyBattleStats } from "../helpers/phaseQueueHelpers";
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -75,63 +78,6 @@ function getCardDataByClass(classType: CharacterClass): Card[] {
     default:
       return SWORDSMAN_CARDS_ARRAY;
   }
-}
-
-/**
- * Expand phase queue entries so each alive enemy gets its own turn
- * within each "enemy" phase slot.
- *
- * For a single enemy, this is a no-op (same as before).
- * For multiple enemies, each "enemy" entry is expanded to one entry per alive enemy.
- *
- * @param queue - The base phase queue (player vs single enemy)
- * @param allEnemies - All enemies array (to find alive ones by index)
- */
-function expandPhaseEntriesForMultipleEnemies(
-  queue: PhaseQueue,
-  allEnemies: EnemyBattleState[]
-): PhaseEntry[] {
-  // Find indices of alive enemies
-  const aliveIndices = allEnemies
-    .map((e, i) => ({ alive: e.hp > 0, index: i }))
-    .filter(item => item.alive)
-    .map(item => item.index);
-
-  if (aliveIndices.length <= 1) {
-    // Single enemy: just use the standard entries
-    return queue.entries;
-  }
-
-  const expanded: PhaseEntry[] = [];
-  for (const entry of queue.entries) {
-    if (entry.actor === "player") {
-      expanded.push(entry);
-    } else {
-      // Each alive enemy gets a turn in this enemy phase slot
-      for (const idx of aliveIndices) {
-        expanded.push({
-          actor: "enemy",
-          enemyIndex: idx,
-        });
-      }
-    }
-  }
-  return expanded;
-}
-
-/**
- * Build BattleStats for a specific enemy
- */
-function buildEnemyBattleStats(enemy: EnemyBattleState): BattleStats {
-  return {
-    hp: enemy.hp,
-    maxHp: enemy.maxHp,
-    ap: enemy.ap,
-    maxAp: enemy.maxAp,
-    guard: enemy.guard,
-    speed: enemy.definition.baseSpeed,
-    buffDebuffs: enemy.buffDebuffs,
-  };
 }
 
 // ============================================================================

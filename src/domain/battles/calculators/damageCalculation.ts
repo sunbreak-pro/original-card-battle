@@ -1,5 +1,5 @@
 import type { Card } from '@/types/cardTypes';
-import type { DamageAllocation, DamageResult } from '@/types/battleTypes';
+import type { DamageAllocation, DamageResult, DamageType } from '@/types/battleTypes';
 import type { BuffDebuffMap } from '@/types/battleTypes';
 import {
   attackBuffDebuff,
@@ -7,11 +7,35 @@ import {
   reflectBuff,
   calculateLifesteal
 } from "./buffCalculation";
-import type { BattleStats } from '@/types/characterTypes';
+import type { BattleStats, ElementType } from '@/types/characterTypes';
 import { GUARD_BLEED_THROUGH_MULTIPLIER } from "../../../constants";
 
 // Empty BuffDebuffMap for fallback
 const EMPTY_BUFF_MAP: BuffDebuffMap = new Map();
+
+/** Magical element types that resolve to "magical" damage */
+const MAGICAL_ELEMENTS: ReadonlySet<ElementType> = new Set([
+  "fire", "ice", "lightning", "dark", "light",
+]);
+
+/** Elements that resolve to "true" damage (bypasses defense in future) */
+const TRUE_DAMAGE_ELEMENTS: ReadonlySet<ElementType> = new Set([
+  "sacrifice",
+]);
+
+/**
+ * Resolve damage type from card elements.
+ * Priority: true > magical > physical (default)
+ */
+export function resolveDamageType(elements: ElementType[]): DamageType {
+  for (const el of elements) {
+    if (TRUE_DAMAGE_ELEMENTS.has(el)) return "true";
+  }
+  for (const el of elements) {
+    if (MAGICAL_ELEMENTS.has(el)) return "magical";
+  }
+  return "physical";
+}
 
 export function calculateDamage(
   attacker: BattleStats,
@@ -24,17 +48,29 @@ export function calculateDamage(
   const attackerBuffs = attacker.buffDebuffs ?? EMPTY_BUFF_MAP;
   const defenderBuffs = defender.buffDebuffs ?? EMPTY_BUFF_MAP;
 
+  // Resolve damage type from card elements
+  const damageType = resolveDamageType(card.element);
+
   const atkMultiplier = attackBuffDebuff(attackerBuffs);
 
   const finalAtk = Math.floor(baseDmg * atkMultiplier);
-  const { vulnerabilityMod, damageReductionMod } = defenseBuffDebuff(defenderBuffs);
 
-  // Apply penetration: reduce defense effectiveness
-  const effectiveReduction = penetration > 0
-    ? 1 - (1 - damageReductionMod) * (1 - penetration)
-    : damageReductionMod;
+  let incomingDmg: number;
 
-  let incomingDmg = Math.floor(finalAtk * vulnerabilityMod * effectiveReduction);
+  if (damageType === "true") {
+    // True damage bypasses all defense calculations
+    incomingDmg = finalAtk;
+  } else {
+    // Physical and magical damage use standard defense pipeline
+    const { vulnerabilityMod, damageReductionMod } = defenseBuffDebuff(defenderBuffs);
+
+    // Apply penetration: reduce defense effectiveness
+    const effectiveReduction = penetration > 0
+      ? 1 - (1 - damageReductionMod) * (1 - penetration)
+      : damageReductionMod;
+
+    incomingDmg = Math.floor(finalAtk * vulnerabilityMod * effectiveReduction);
+  }
 
   // Critical hit check
   const isCritical = critBonus > 0 && Math.random() < critBonus;
@@ -46,6 +82,7 @@ export function calculateDamage(
   const lifestealAmount = calculateLifesteal(attackerBuffs, incomingDmg);
   return {
     finalDamage: incomingDmg,
+    damageType,
     isCritical,
     reflectDamage,
     lifestealAmount,

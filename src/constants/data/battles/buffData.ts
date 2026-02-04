@@ -1,5 +1,70 @@
 import type { BuffDebuffType, BuffEffectDefinition } from "@/types/battleTypes";
 
+// ============================================================
+// Buff Category Maps for Data-Driven Calculation
+// ============================================================
+
+/** Calculation mode for buff effects */
+type BuffCalcMode = "additive" | "multiplicative" | "stackScaled";
+
+interface AttackBuffEntry {
+  type: BuffDebuffType;
+  mode: BuffCalcMode;
+}
+
+/** Buffs that increase attack multiplier (additive to base 1.0) */
+export const ATTACK_BUFF_TYPES: AttackBuffEntry[] = [
+  { type: "atkUpMinor", mode: "additive" },
+  { type: "atkUpMajor", mode: "additive" },
+  { type: "momentum", mode: "stackScaled" },
+];
+
+/** Debuffs that reduce attack multiplier (multiplicative) */
+export const ATTACK_DEBUFF_TYPES: BuffDebuffType[] = [
+  "atkDownMinor",
+  "atkDownMajor",
+];
+
+/** Buffs that reduce incoming damage (multiplicative on damageReductionMod) */
+export const DAMAGE_REDUCTION_BUFF_TYPES: BuffDebuffType[] = [
+  "defUpMinor",
+  "defUpMajor",
+];
+
+/** Debuffs that increase incoming damage (multiplicative on vulnerabilityMod) */
+export const VULNERABILITY_DEBUFF_TYPES: BuffDebuffType[] = [
+  "defDownMinor",
+  "defDownMajor",
+];
+
+// ============================================================
+// Phase-based Effect Category Maps
+// ============================================================
+
+/** Buffs that heal HP at start of phase */
+export const START_PHASE_HEALING_BUFFS: BuffDebuffType[] = ["regeneration"];
+
+/** Buffs that grant shield at start of phase */
+export const START_PHASE_SHIELD_BUFFS: BuffDebuffType[] = ["shieldRegen"];
+
+/** Debuffs that deal damage at end of phase */
+export const END_PHASE_DAMAGE_BUFFS: BuffDebuffType[] = ["burn", "poison"];
+
+/** Buffs that reflect damage back to attacker */
+export const REFLECT_BUFFS: BuffDebuffType[] = ["reflect"];
+
+/** Buffs that heal based on damage dealt */
+export const LIFESTEAL_BUFFS: BuffDebuffType[] = ["lifesteal"];
+
+/** Buffs that increase energy regeneration */
+export const ENERGY_REGEN_BUFFS: BuffDebuffType[] = ["energyRegen"];
+
+/** Buffs that modify card draw count */
+export const DRAW_MODIFIER_BUFFS: BuffDebuffType[] = ["drawPower"];
+
+/** Buffs that mitigate vulnerability effects (tenacity reduces excess vulnerability) */
+export const VULNERABILITY_MITIGATION_BUFFS: BuffDebuffType[] = ["tenacity"];
+
 export const BUFF_EFFECTS: Record<BuffDebuffType, BuffEffectDefinition> = {
     bleed: { name: "Bleed", nameJa: "出血", value: 3, isDebuff: true, isPercentage: true, stackable: true, description: () => `${BUFF_EFFECTS.bleed.value}% maxHP damage per card use` },
     poison: { name: "Poison", nameJa: "毒", value: 5, isDebuff: true, isPercentage: false, stackable: true, description: () => `${BUFF_EFFECTS.poison.value} damage at turn end` },

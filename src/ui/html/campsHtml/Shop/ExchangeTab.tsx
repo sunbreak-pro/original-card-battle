@@ -153,7 +153,7 @@ const ExchangeTab = () => {
               className="exchange-input"
               value={exchangeAmount}
               onChange={(e) =>
-                setExchangeAmount(Math.max(0, parseInt(e.target.value) || 0))
+                setExchangeAmount(Math.max(0, parseInt(e.target.value, 10) || 0))
               }
               min={0}
               max={totalValue}

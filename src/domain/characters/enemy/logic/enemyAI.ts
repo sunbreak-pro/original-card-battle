@@ -1,10 +1,18 @@
-import type { EnemyDefinition, EnemyAction, EnemyAIPattern, EncounterSize, DepthEnemyData } from '@/types/characterTypes';
+import type { EnemyDefinition, EnemyAction, EnemyAIPattern, EncounterSize, DepthEnemyData, ElementType, EnemyActionType } from '@/types/characterTypes';
 import { DEPTH1_ENEMIES } from "@/constants/data/characters/enemy/enemyDepth1";
 import { DEPTH2_ENEMIES } from "@/constants/data/characters/enemy/enemyDepth2";
 import { DEPTH3_ENEMIES } from "@/constants/data/characters/enemy/enemyDepth3";
 import { DEPTH4_ENEMIES } from "@/constants/data/characters/enemy/enemyDepth4";
 import { DEPTH5_ENEMIES } from "@/constants/data/characters/enemy/enemyDepth5";
 import type { Card, CardTag } from '@/types/cardTypes';
+
+/** Default element mapping based on action type */
+const ACTION_TYPE_DEFAULT_ELEMENTS: Record<EnemyActionType, ElementType[]> = {
+  attack: ["physics", "attack"],
+  buff: ["buff"],
+  debuff: ["debuff"],
+  special: ["physics", "attack"],
+};
 
 /**
  * Minimal interface for determining enemy actions
@@ -56,6 +64,8 @@ export function determineEnemyAction(
 export function enemyAction(action: EnemyAction): Card {
   // Determine tag based on action type
   const tags: CardTag[] = action.baseDamage && action.baseDamage > 0 ? ["attack"] : ["skill"];
+  // Use action-specific element if defined, otherwise fall back to action type defaults
+  const element = action.element ?? ACTION_TYPE_DEFAULT_ELEMENTS[action.type];
 
   return {
     id: `enemy_action_${action.name}`,
@@ -66,7 +76,7 @@ export function enemyAction(action: EnemyAction): Card {
     cost: 0,
     baseDamage: action.baseDamage,
     tags,
-    element: ["physics", "attack"],
+    element,
     useCount: 0,
     masteryLevel: 0,
     gemLevel: 0,

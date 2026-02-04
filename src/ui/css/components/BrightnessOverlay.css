@@ -1,0 +1,17 @@
+/**
+ * BrightnessOverlay Styles
+ *
+ * Full-screen dark overlay for brightness control.
+ */
+
+.brightness-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000000;
+  pointer-events: none;
+  z-index: var(--z-brightness-overlay, 900);
+  transition: opacity 0.3s ease;
+}

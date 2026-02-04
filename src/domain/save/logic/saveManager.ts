@@ -12,6 +12,7 @@ import type {
   SaveMetadata,
 } from '@/types/saveTypes';
 import { SAVE_KEY, SAVE_VERSION } from '@/constants/saveConstants';
+import { logger } from '@/utils/logger';
 
 /**
  * Save Manager object with all save/load operations
@@ -39,7 +40,7 @@ export const saveManager = {
         timestamp: saveData.timestamp,
       };
     } catch (error) {
-      console.error("Save failed:", error);
+      logger.error("Save failed:", error);
       return {
         success: false,
         message: `Save failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -83,7 +84,7 @@ export const saveManager = {
         data,
       };
     } catch (error) {
-      console.error("Load failed:", error);
+      logger.error("Load failed:", error);
       return {
         success: false,
         message: `Load failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -154,7 +155,7 @@ export const saveManager = {
 
       // Basic validation
       if (!data.version || !data.player || !data.resources) {
-        console.error("Invalid save data structure");
+        logger.error("Invalid save data structure");
         return false;
       }
 
@@ -162,7 +163,7 @@ export const saveManager = {
       localStorage.setItem(SAVE_KEY, jsonString);
       return true;
     } catch (error) {
-      console.error("Import failed:", error);
+      logger.error("Import failed:", error);
       return false;
     }
   },

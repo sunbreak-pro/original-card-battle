@@ -10,7 +10,7 @@
  */
 
 import type { BuffDebuffMap, BuffDebuffState, BuffDebuffType } from './battleTypes';
-import type { ExplorationLimit, SanctuaryProgress, Depth, ShopStockState } from './campTypes';
+import type { ExplorationLimit, SanctuaryProgress, Depth, ShopStockState, InnBuffsState } from './campTypes';
 import type { MagicStones } from './itemTypes';
 import type { EquipmentSlots, InventoryState, StorageState, EquipmentInventoryState } from './campTypes';
 import type { DeckState } from '../domain/cards/decks/deckReducter';
@@ -186,6 +186,8 @@ export interface EnemyAction {
   name: string;
   type: EnemyActionType;
   baseDamage: number;
+  /** Element types for this action. Defaults based on action type if not specified. */
+  element?: ElementType[];
   applyDebuffs?: BuffDebuffState[];
   applyBuffs?: BuffDebuffState[];
   guardGain?: number;
@@ -305,6 +307,7 @@ export interface PlayerProgression {
   completedAchievements: string[];
   shopRotationDay?: number;
   shopStockState?: ShopStockState;
+  innBuffsState?: InnBuffsState;
 }
 
 /**

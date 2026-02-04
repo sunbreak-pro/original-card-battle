@@ -3,6 +3,7 @@ import { EQUIPMENT_TEMPLATES } from "../../../constants/data/items/EquipmentData
 import { getConsumableData } from "@/constants/data/items/ConsumableItemData";
 import type { EquipmentSlot } from '@/types/itemTypes';
 import { RARITY_SELL_PRICES } from "../../../constants/itemConstants";
+import { generateId } from '@/utils/idGenerator';
 
 /**
  * Helper function to create a new item instance
@@ -13,7 +14,7 @@ export function createItemInstance(
 ): Item {
     return {
         ...baseItem,
-        id: `${typeId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: generateId(typeId),
     };
 }
 

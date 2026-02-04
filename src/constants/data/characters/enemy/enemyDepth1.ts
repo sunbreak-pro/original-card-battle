@@ -71,10 +71,10 @@ export const SHADOW_CRAWLER: EnemyDefinition = {
   actEnergy: 1,
   displayWidth: 15,
   aiPatterns: [
-    { phaseNumber: 1, action: { name: "影の触手", type: "attack", baseDamage: 8, displayIcon: "🌑", priority: 0, energyCost: 1 } },
-    { phaseNumber: 2, action: { name: "闇の侵食", type: "debuff", baseDamage: 6, applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 3, value: 15, isPermanent: false }], displayIcon: "🌫️", priority: 1, energyCost: 1 } },
-    { phaseNumber: 0, action: { name: "影の触手", type: "attack", baseDamage: 8, displayIcon: "🌑", priority: 0, energyCost: 1 }, probability: 0.5 },
-    { phaseNumber: 0, action: { name: "闇の侵食", type: "debuff", baseDamage: 6, applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 3, value: 15, isPermanent: false }], displayIcon: "🌫️", priority: 1, energyCost: 1 }, probability: 0.5 },
+    { phaseNumber: 1, action: { name: "影の触手", type: "attack", baseDamage: 8, element: ["dark", "attack"], displayIcon: "🌑", priority: 0, energyCost: 1 } },
+    { phaseNumber: 2, action: { name: "闇の侵食", type: "debuff", baseDamage: 6, element: ["dark", "debuff"], applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 3, value: 15, isPermanent: false }], displayIcon: "🌫️", priority: 1, energyCost: 1 } },
+    { phaseNumber: 0, action: { name: "影の触手", type: "attack", baseDamage: 8, element: ["dark", "attack"], displayIcon: "🌑", priority: 0, energyCost: 1 }, probability: 0.5 },
+    { phaseNumber: 0, action: { name: "闇の侵食", type: "debuff", baseDamage: 6, element: ["dark", "debuff"], applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 3, value: 15, isPermanent: false }], displayIcon: "🌫️", priority: 1, energyCost: 1 }, probability: 0.5 },
   ],
 };
 
@@ -151,7 +151,7 @@ export const FALLEN_GUARDIAN: EnemyDefinition = {
     { phaseNumber: 2, condition: (hp, maxHp) => hp > maxHp * 0.66, action: { name: "防御固め", type: "buff", baseDamage: 0, guardGain: 20, displayIcon: "🛡️", priority: 1, energyCost: 1 } },
     { phaseNumber: 3, condition: (hp, maxHp) => hp > maxHp * 0.66, action: { name: "戦斧の一振り", type: "attack", baseDamage: 15, displayIcon: "🪓", priority: 2, energyCost: 1 } },
     { phaseNumber: 0, condition: (hp, maxHp) => hp > maxHp * 0.66, action: { name: "重斬撃", type: "attack", baseDamage: 12, displayIcon: "🔨", priority: 0, energyCost: 1 } },
-    { phaseNumber: 0, condition: (hp, maxHp) => hp > maxHp * 0.34 && hp <= maxHp * 0.65, action: { name: "腐敗の斬撃", type: "debuff", baseDamage: 12, applyDebuffs: [{ name: "bleed", stacks: 1, duration: 2, value: 5, isPermanent: false }], displayIcon: "⚔️", priority: 1, energyCost: 1 } },
+    { phaseNumber: 0, condition: (hp, maxHp) => hp > maxHp * 0.34 && hp <= maxHp * 0.65, action: { name: "腐敗の斬撃", type: "debuff", baseDamage: 12, element: ["dark", "attack"], applyDebuffs: [{ name: "bleed", stacks: 1, duration: 2, value: 5, isPermanent: false }], displayIcon: "⚔️", priority: 1, energyCost: 1 } },
     { phaseNumber: 0, condition: (hp, maxHp) => hp <= maxHp * 0.33, action: { name: "狂乱の斬撃", type: "attack", baseDamage: 18, displayIcon: "💥", priority: 2, energyCost: 1 }, probability: 0.5 },
   ],
 };

@@ -9,17 +9,16 @@ npm run dev          # Vite dev server at localhost:5173
 npm run build        # TypeScript check + production build
 npm run lint -- --fix
 npm run preview      # Preview production build
+npm run test         # Vitest watch mode
+npm run test:run     # Single run
+npm run test:coverage # With coverage
 ```
-
-No test framework configured — verify manually in browser.
 
 **Stack:** React 19.2, TypeScript 5.9, Vite 7
 
 **Path alias:** `@/*` → `src/*` (configured in both `vite.config.ts` and `tsconfig.app.json`). Use `@/domain/...`, `@/ui/...`, etc.
 
 **TypeScript strictness:** `noUnusedLocals` and `noUnusedParameters` are enabled — remove unused variables rather than prefixing with `_`. `verbatimModuleSyntax` is enabled — use `import type` for type-only imports. `erasableSyntaxOnly` is enabled — use `as const` objects instead of `enum`, no `namespace` or `module` declarations.
-
-**Known build error:** None. Previous `NodeMap.tsx:252` error was resolved during Session 1 state refactoring.
 
 ## Architecture
 
@@ -36,6 +35,11 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 | `PlayerContext`      | `PlayerData` (persistent) + `RuntimeBattleState` (HP/AP/lives/mastery) + `deckCards` (custom deck). Resource ops (gold/stones) delegated to `ResourceContext`. |
 | `InventoryContext`   | Items, equipment, cards in storage                                     |
 | `DungeonRunProvider` | Persists dungeon state across battle transitions (lives in `src/contexts/`) |
+
+**Additional contexts (not in main hierarchy):**
+- `SettingsContext` — User settings (volume, display preferences)
+- `ToastContext` — Toast notification system
+- `GuildContext` — Locally scoped within Guild component
 
 Battle state is managed entirely by `useBattleOrchestrator` hook — no separate battle contexts.
 
@@ -127,6 +131,7 @@ All asset path constants are centralized in `src/constants/uiConstants.ts`.
 | CSS selectors | Scope with parent: `.battle-screen .card { }` |
 | Adding classes | Use `character-class-creator` skill |
 | Chat language | Japanese (ユーザーへの応答は日本語で行う) |
+| State ownership | One context owns each piece of state; others read via hooks, never copy |
 
 ### React 19 Patterns
 
@@ -154,13 +159,24 @@ useEffect(() => {
 }, [deps]);
 ```
 
-**Details:** See `.claude/LESSONS_LEARNED.md`
+**Mutable result pattern for functional updaters:**
+```typescript
+const result = { success: false };
+setResources(prev => {
+  if (prev.gold < cost) return prev;
+  result.success = true;
+  return { ...prev, gold: prev.gold - cost };
+});
+return result.success; // Available immediately (synchronous)
+```
+
+**Details:** See `.claude/memories/LESSONS_LEARNED.md`
 
 ## References
 
 - **`.claude/MEMORY.md`** — current status, active tasks, known bugs (read at session start)
-- **`.claude/LESSONS_LEARNED.md`** — critical pitfalls: CSS collisions, React 19 ref rules, context scope
+- **`.claude/memories/LESSONS_LEARNED.md`** — critical pitfalls: CSS collisions, React 19 ref rules, context scope
 - **`.claude/todos/`** — ongoing refactoring plans; `MASTER_IMPLEMENTATION_PLAN.md` for roadmap
 - **`.claude/docs/`** — game design specs by area (battle, card, camp, dungeon, enemy, item)
 - **`.claude/code_overview/`** — static analysis docs + AI reference + vulnerability remediation guide
-- **`.claude/skill/`** — 10 development skills (battle-system, camp-facility, card-creator, debugging-active, etc.)
+- **`.claude/skills/`** — 11 development skills (card-creator, enemy-creator, character-class-creator, battle-system, camp-facility, dungeon-system, ui-ux-creator, design-research, debugging-error-prevention, debugging-active, memory-keeper)

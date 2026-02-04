@@ -11,6 +11,7 @@ import type {
   MapGenerationConfig,
 } from '@/types/dungeonTypes';
 import { DEFAULT_MAP_CONFIG } from '@/constants/dungeonConstants';
+import { generateId } from '@/utils/idGenerator';
 
 /**
  * Generate a unique ID for nodes
@@ -23,7 +24,7 @@ function generateNodeId(row: number, column: number): string {
  * Generate a unique ID for dungeon runs
  */
 export function generateRunId(): string {
-  return `run-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  return generateId('run');
 }
 
 /**

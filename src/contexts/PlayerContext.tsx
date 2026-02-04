@@ -23,6 +23,7 @@ import type {
   EquipmentSlots,
   SanctuaryProgress,
   ShopStockState,
+  InnBuffsState,
 } from "@/types/campTypes";
 import { createLivesSystem } from "../domain/characters/player/logic/playerUtils";
 import {
@@ -39,6 +40,7 @@ import {
   EQUIPMENT_INVENTORY_MAX,
 } from "../constants";
 import { calculateEquipmentAP } from "../domain/item_equipment/logic/equipmentStats";
+import { generateId } from "@/utils/idGenerator";
 
 // Extracted hooks
 import { usePlayerBattle } from "@/domain/characters/player/hooks/usePlayerBattle";
@@ -77,6 +79,7 @@ export interface InternalPlayerState {
   sanctuaryProgress: SanctuaryProgress;
   shopRotationDay?: number;
   shopStockState?: ShopStockState;
+  innBuffsState?: InnBuffsState;
 }
 
 /**
@@ -271,7 +274,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   const resourceContext = useResources();
 
   // Stable player ID — generated once on mount
-  const [playerId] = useState(() => `player_${Date.now()}`);
+  const [playerId] = useState(() => generateId('player'));
 
   // Internal state
   const [playerState, setPlayerState] = useState<InternalPlayerState>(() =>
@@ -432,6 +435,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         completedAchievements: [],
         shopRotationDay: playerState.shopRotationDay,
         shopStockState: playerState.shopStockState,
+        innBuffsState: playerState.innBuffsState,
       },
     }),
     [playerState, playerId, equipmentAP, resourceContext.resources],
@@ -476,6 +480,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         completedAchievements: [],
         shopRotationDay: state.shopRotationDay,
         shopStockState: state.shopStockState,
+        innBuffsState: state.innBuffsState,
       },
     };
   };
@@ -531,6 +536,9 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
       }
       if (updates.progression.shopStockState !== undefined) {
         updated.shopStockState = updates.progression.shopStockState;
+      }
+      if (updates.progression.innBuffsState !== undefined) {
+        updated.innBuffsState = updates.progression.innBuffsState;
       }
     }
 

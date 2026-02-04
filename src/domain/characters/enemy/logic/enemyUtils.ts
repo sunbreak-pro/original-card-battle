@@ -5,12 +5,13 @@
  */
 
 import type { EnemyBattleState } from '@/types/characterTypes';
+import { generateId } from '@/utils/idGenerator';
 
 /**
  * Generate unique enemy instance ID
  */
 export function generateEnemyInstanceId(definitionId: string): string {
-  return `${definitionId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return generateId(definitionId);
 }
 
 /**

@@ -156,6 +156,37 @@
 }
 
 /* ==========================================
+   Settings Button
+   ========================================== */
+
+.facility-header .settings-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.6vh;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.3vh 0.6vw;
+  margin-left: 0.8vw;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.facility-header .settings-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  transform: rotate(30deg);
+}
+
+.facility-header .settings-toggle:active {
+  transform: rotate(90deg) scale(0.95);
+}
+
+/* ==========================================
    Facility Navigation Dropdown
    ========================================== */
 

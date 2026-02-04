@@ -3,8 +3,8 @@
  * Displays resources (Gold, Magic Stones by type)
  *
  * Variants:
- * - "default": Standard header with gold and magic stones + facility nav dropdown
- * - "basecamp": Adds lives display (hearts), no nav dropdown
+ * - "default": Standard header with gold and magic stones + facility nav dropdown + settings
+ * - "basecamp": Adds lives display (hearts), no nav dropdown, with settings
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -13,6 +13,7 @@ import { useResources } from "@/contexts/ResourceContext";
 import { useGameState } from "@/contexts/GameStateContext";
 import { HEADER_ICONS } from "@/constants/uiConstants";
 import { FACILITY_NAV_ITEMS } from "@/constants/campConstants";
+import { SettingsModal } from "./SettingsModal";
 import "../../css/components/FacilityHeader.css";
 
 interface FacilityHeaderProps {
@@ -28,6 +29,7 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
   const { getTotalGold, resources } = useResources();
   const { gameState, navigateTo } = useGameState();
   const [navOpen, setNavOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleCloseNav = useCallback((e: MouseEvent) => {
@@ -67,9 +69,20 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
 
   return (
     <header className="facility-header basecamp-variant">
-      {/* Left section: Title + Lives + Nav */}
+      {/* Left section: Title + Settings + Nav */}
       <div className="page-title">
         <span className="basecamp-title-text">{title}</span>
+
+        {/* Settings Button */}
+        <button
+          className="settings-toggle"
+          onClick={() => setSettingsOpen(true)}
+          aria-label="設定"
+          title="設定"
+        >
+          ⚙️
+        </button>
+
         {variant !== "basecamp" && (
           <div className="facility-nav-wrapper" ref={dropdownRef}>
             <button
@@ -171,6 +184,12 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </header>
   );
 };

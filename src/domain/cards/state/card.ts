@@ -58,13 +58,22 @@ export function calculateCardEffect(
   const effectivePower = calculateEffectivePower(card);
   const result: CardEffectResult = {};
 
-  if (card.element.includes("attack")) {
+  // Use tags for primary effect categorization
+  if (card.tags.includes("attack")) {
     result.damageToEnemy = effectivePower;
-  } else if (card.element.includes("guard")) {
+  } else if (card.tags.includes("guard")) {
     result.shieldGain = effectivePower;
-  } else if (card.element.includes("heal")) {
-    result.hpGain = effectivePower;
+  } else if (card.tags.includes("skill")) {
+    // Skill cards: check for heal element or buff/debuff effects
+    if (card.element.includes("heal")) {
+      result.hpGain = effectivePower;
+    }
+    // Buff/debuff effects handled below via applyPlayerBuff/applyEnemyDebuff
+  } else if (card.tags.includes("stance")) {
+    // Stance cards apply buffs/debuffs without direct damage/heal effects
+    // Primary effects are handled via applyPlayerBuff/applyEnemyDebuff below
   }
+
   if (card.applyEnemyDebuff && card.applyEnemyDebuff.length > 0) {
     result.enemyDebuffs = card.applyEnemyDebuff.map((spec) =>
       createBuffState(spec, card.id)

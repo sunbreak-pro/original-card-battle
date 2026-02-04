@@ -42,6 +42,7 @@ import {
 } from "@/domain/battles/logic/escapeLogic";
 import { checkAllDerivationUnlocks } from "@/domain/cards/logic/cardDerivation";
 import { getCardDataByClass } from "@/constants/data/characters/CharacterClassData";
+import { logger } from "@/utils/logger";
 /**
  * Collect mastery from all cards in deck and merge with existing store
  */
@@ -240,7 +241,7 @@ const BattleScreen = ({
     (item: Item) => {
       // Prevent using multiple items per phase
       if (itemUsedThisPhase) {
-        console.log("Item already used this phase");
+        logger.debug("Item already used this phase");
         return;
       }
 
@@ -255,7 +256,7 @@ const BattleScreen = ({
       );
 
       if (!result.success) {
-        console.log(`Item use failed: ${result.message}`);
+        logger.debug(`Item use failed: ${result.message}`);
         return;
       }
 
@@ -316,7 +317,7 @@ const BattleScreen = ({
       // Mark item as used this phase
       setItemUsedThisPhase(true);
 
-      console.log(`Used item: ${item.name} - ${result.message}`);
+      logger.debug(`Used item: ${item.name} - ${result.message}`);
     },
     [
       itemUsedThisPhase,

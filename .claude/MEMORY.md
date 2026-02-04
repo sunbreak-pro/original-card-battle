@@ -23,10 +23,10 @@
 | Category | Status | Notes |
 |----------|--------|-------|
 | Battle System | 98% | Core complete. AoE cards pending |
-| Camp Facilities | 98% | Shop (stock mgmt + restock + merchant ticket), Guild, Library (filters + unknown toggle), Blacksmith, Storage |
+| Camp Facilities | 100% | Shop, Guild, Library, Blacksmith, Sanctuary, Storage, **Inn** (rest/dining/rumors) |
 | Dungeon System | 90% | Map generation, 5-floor progression, depth 1-5 enemies |
 | Progression System | 98% | Lives + Souls + Sanctuary + equipment + card derivation + mastery + custom deck |
-| State Management | Fixed | 52 vulnerability fixes across Sessions 1-9 |
+| State Management | Fixed | 57 vulnerability fixes across Sessions 1-11 |
 | Save System | Implemented | `src/domain/save/logic/saveManager.ts` |
 | Character Images | 90% | Player images displayed. 50 enemies have `imagePath` set (PNGs not yet created) |
 
@@ -38,9 +38,12 @@
 - **Phase B:** Game Experience — Summoner class, Shop, Guild, Card Derivation, Elemental Chain, Escape, Equipment stats
 - **Phase C:** Extended Features — DungeonGate prep screen, Multi-enemy battle, Library, Dungeon events, Element refactor, Data migrations, Multi-hit cards, Equipment durability, Custom deck, Player images
 - **Phase D:** Shop & Encyclopedia Overhaul — Shop inventory/stock system (`ShopStockState`, lazy init, battle-count restock, merchant ticket), Card encyclopedia filters (tag/cost/unknown toggle, unlock stats)
+- **Phase E:** Inn Facility — Rest/dining options with exploration bonuses, rumor bubble system, `InnBuffsState` in `PlayerProgression`
 - **Vulnerability Remediation (Sessions 1-9):** 52 fixes total (Critical 5, High 22, cleanup 17). Details in `.claude/code_overview/`
 - **Session 8:** Dead code & duplicate sweep (11 fixes — duplicate functions, legacy aliases, identical constants consolidated)
 - **Session 9:** Naming & file organization (6 fixes — DungeonRunContext moved to `src/contexts/`, file renames: deptManager→depthManager, tittle→title, swordmanCards→swordsmanCards, test data removed, default values zeroed)
+- **Session 10:** Hardcoded → Data-Driven Conversion (4 fixes — V-DMG-07: buff calculation uses category maps, V-DMG-08: true damage bypasses defense, V-CARD-08: explicit stance tag handling, V-ENM-03: Depth 1 enemies element types) — COMPLETE
+- **Session 11:** Large File Refactoring (3 items — V-CS05: PlayerContext already refactored with 4 hooks, V-ORCH-05: helper functions extracted to phaseQueueHelpers.ts, Q2: variant prop in use) — COMPLETE
 
 ---
 
@@ -62,12 +65,14 @@
 - **Inventory functional updaters:** All mutations use `setPlayerData(prev => ...)` to prevent stale closures.
 - **Battle context simplified:** Removed `BattleProviderStack`, `PlayerBattleContext`, `EnemyBattleContext`, `BattleSessionContext`. `useBattleOrchestrator` returns all battle state directly.
 
-### Battle Logic (Sessions 3-6)
+### Battle Logic (Sessions 3-6, 10)
 - `canAct()` checks freeze/stagger via `DISABLING_DEBUFFS` array
 - `removeNDebuffs` helper for cleanse/purge operations
 - Guard: single source of truth for shield gain
 - Elemental resonance effects (burn/freeze/stun) trigger after damage calculation
 - Fallback attack: 50% of avg `baseDamage` from enemy `aiPatterns` (min 3)
+- **Buff calculation data-driven:** Category maps in `buffData.ts` (START_PHASE_HEALING_BUFFS, END_PHASE_DAMAGE_BUFFS, etc.)
+- **True damage bypasses defense:** `sacrifice` element cards skip vulnerability/reduction calculations
 
 ### Shop & Economy (Sessions 7 + Phase D)
 - `ShopStockState` in `PlayerContext.progression` (lazy init, undefined until first visit)
@@ -83,13 +88,20 @@
 - `BackToCampButton`, `FacilityTabNav`, `FacilityHeader` — shared camp navigation
 - Card encyclopedia: tag/cost/unknown filters, colored tag badges, unlock ratio stats
 
+### Inn Facility (Phase E)
+- `InnBuffsState` in `PlayerProgression` tracks rest/meal bonuses
+- Rest options: Simple (free), Standard (+20 HP), Deluxe (+40 HP, +1 energy)
+- Meal options: 5 types providing buffs (attack/defense/haste/regen/gold) for N battles
+- `RumorBubble` component shows random tips/rumors for atmosphere
+- Integration point: bonuses applied at dungeon start (not yet implemented)
+
 ---
 
 ## Code Analysis
 
 Static analysis of all contexts and domain logic completed in Session 7.
 - **Docs:** 14 files in `.claude/code_overview/` (overall summary, AI reference, per-domain analysis)
-- **Vulnerabilities:** 77 identified (Critical 5, High 22, Medium 30, Low 20) — 52 fixed in Sessions 1-9
+- **Vulnerabilities:** 77 identified (Critical 5, High 22, Medium 30, Low 20) — 57 fixed in Sessions 1-11
 - **Details:** `.claude/code_overview/README.md`
 
 ---

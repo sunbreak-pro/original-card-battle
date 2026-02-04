@@ -14,10 +14,10 @@ export const IRON_AUTOMATON: EnemyDefinition = {
   displayWidth: 20,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "鉄拳", type: "attack", baseDamage: 10, displayIcon: "🤖", priority: 0, energyCost: 1 } },
-    { phaseNumber: 2, action: { name: "蒸気噴射", type: "debuff", baseDamage: 8, applyDebuffs: [{ name: "burn", stacks: 1, duration: 2, value: 4, isPermanent: false }], displayIcon: "💨", priority: 1, energyCost: 1 } },
+    { phaseNumber: 2, action: { name: "蒸気噴射", type: "debuff", baseDamage: 8, element: ["fire", "attack"], applyDebuffs: [{ name: "burn", stacks: 1, duration: 2, value: 4, isPermanent: false }], displayIcon: "💨", priority: 1, energyCost: 1 } },
     { phaseNumber: 3, action: { name: "重鉄拳", type: "attack", baseDamage: 14, displayIcon: "🔨", priority: 0, energyCost: 1 } },
     { phaseNumber: 0, action: { name: "鉄拳", type: "attack", baseDamage: 10, displayIcon: "🤖", priority: 0, energyCost: 1 }, probability: 0.6 },
-    { phaseNumber: 0, action: { name: "蒸気噴射", type: "debuff", baseDamage: 8, applyDebuffs: [{ name: "burn", stacks: 1, duration: 2, value: 4, isPermanent: false }], displayIcon: "💨", priority: 1, energyCost: 1 }, probability: 0.4 },
+    { phaseNumber: 0, action: { name: "蒸気噴射", type: "debuff", baseDamage: 8, element: ["fire", "attack"], applyDebuffs: [{ name: "burn", stacks: 1, duration: 2, value: 4, isPermanent: false }], displayIcon: "💨", priority: 1, energyCost: 1 }, probability: 0.4 },
   ],
 };
 
@@ -112,9 +112,9 @@ export const CLOCKWORK_SPIDER: EnemyDefinition = {
   displayWidth: 16,
   aiPatterns: [
     { phaseNumber: 1, action: { name: "鋼糸", type: "debuff", baseDamage: 8, applyDebuffs: [{ name: "slow", stacks: 1, duration: 2, value: 10, isPermanent: false }], displayIcon: "🕸️", priority: 1, energyCost: 1 } },
-    { phaseNumber: 2, action: { name: "電撃噛みつき", type: "debuff", baseDamage: 10, applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "⚡", priority: 1, energyCost: 1 } },
+    { phaseNumber: 2, action: { name: "電撃噛みつき", type: "debuff", baseDamage: 10, element: ["lightning", "attack"], applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "⚡", priority: 1, energyCost: 1 } },
     { phaseNumber: 0, action: { name: "鋼糸", type: "debuff", baseDamage: 8, applyDebuffs: [{ name: "slow", stacks: 1, duration: 2, value: 10, isPermanent: false }], displayIcon: "🕸️", priority: 1, energyCost: 1 }, probability: 0.5 },
-    { phaseNumber: 0, action: { name: "電撃噛みつき", type: "debuff", baseDamage: 10, applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "⚡", priority: 1, energyCost: 1 }, probability: 0.5 },
+    { phaseNumber: 0, action: { name: "電撃噛みつき", type: "debuff", baseDamage: 10, element: ["lightning", "attack"], applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "⚡", priority: 1, energyCost: 1 }, probability: 0.5 },
   ],
 };
 
@@ -131,8 +131,8 @@ export const GHOST_WISP: EnemyDefinition = {
   actEnergy: 1,
   displayWidth: 14,
   aiPatterns: [
-    { phaseNumber: 0, action: { name: "霊火", type: "attack", baseDamage: 9, displayIcon: "👻", priority: 0, energyCost: 1 }, probability: 0.6 },
-    { phaseNumber: 0, action: { name: "呪縛の光", type: "debuff", baseDamage: 5, applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 2, value: 15, isPermanent: false }], displayIcon: "🔮", priority: 1, energyCost: 1 }, probability: 0.4 },
+    { phaseNumber: 0, action: { name: "霊火", type: "attack", baseDamage: 9, element: ["fire", "attack"], displayIcon: "👻", priority: 0, energyCost: 1 }, probability: 0.6 },
+    { phaseNumber: 0, action: { name: "呪縛の光", type: "debuff", baseDamage: 5, element: ["dark", "attack"], applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 2, value: 15, isPermanent: false }], displayIcon: "🔮", priority: 1, energyCost: 1 }, probability: 0.4 },
   ],
 };
 

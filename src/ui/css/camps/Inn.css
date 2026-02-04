@@ -1,0 +1,354 @@
+/* =========================================
+   Inn (Rest & Dining) Styles
+   =========================================
+   Warm, cozy tavern theme with wood tones.
+   Imports shared components for consistency.
+   ========================================= */
+
+/* Shared components */
+@import "../../css/core/variables.css";
+@import "../../css/animations/keyframes.css";
+@import "../../css/components/notifications.css";
+@import "../../css/components/tabs.css";
+@import "../../css/components/buttons.css";
+@import "../../css/components/badges.css";
+@import "../../css/components/panels.css";
+
+.inn-screen {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto auto auto 1fr auto;
+  background-image:
+    linear-gradient(135deg, rgba(45, 32, 25, 0.92) 0%, rgba(35, 25, 20, 0.92) 100%),
+    url('/assets/images/Inn-background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #e8d5b7;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ========== Active Buffs Banner ========== */
+
+.inn-buffs-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1vw;
+  padding: 0.8vh 2vw;
+  background: linear-gradient(90deg, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.3) 50%, rgba(76, 175, 80, 0.2) 100%);
+  border-top: 1px solid rgba(76, 175, 80, 0.4);
+  border-bottom: 1px solid rgba(76, 175, 80, 0.4);
+}
+
+.buffs-label {
+  font-size: 1.4vh;
+  color: #81c784;
+  font-weight: bold;
+}
+
+.buffs-list {
+  font-size: 1.3vh;
+  color: #a5d6a7;
+}
+
+/* ========== Tab Content ========== */
+
+.inn-content {
+  max-width: 90vw;
+  margin: 0 auto;
+  background: rgba(26, 20, 16, 0.95);
+  border: 2px solid rgba(139, 90, 43, 0.3);
+  border-radius: 12px;
+  padding: 2vh 2vw;
+  height: 90%;
+  overflow-y: auto;
+}
+
+/* ========== Section Styles ========== */
+
+.inn-section-title {
+  font-size: 2.2vh;
+  color: #d4a574;
+  margin: 0 0 0.8vh 0;
+  padding-bottom: 0.8vh;
+  border-bottom: 1px solid rgba(139, 90, 43, 0.4);
+}
+
+.inn-section-description {
+  font-size: 1.4vh;
+  color: #b89968;
+  margin: 0 0 2vh 0;
+}
+
+/* ========== Option Cards (shared between Rest and Dining) ========== */
+
+.rest-options-grid,
+.meal-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+}
+
+.rest-option-card,
+.meal-option-card {
+  display: grid;
+  grid-template-columns: 6vh 1fr auto;
+  align-items: center;
+  gap: 1.5vw;
+  padding: 1.5vh 2vw;
+  background: rgba(60, 42, 30, 0.95);
+  border: 2px solid rgba(139, 90, 43, 0.3);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.rest-option-card:hover,
+.meal-option-card:hover {
+  background: rgba(70, 50, 35, 0.95);
+  border-color: rgba(139, 90, 43, 0.5);
+  transform: translateX(0.5vw);
+}
+
+.rest-option-card.unaffordable,
+.meal-option-card.unaffordable {
+  opacity: 0.5;
+}
+
+.option-icon {
+  font-size: 4vh;
+  text-align: center;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+}
+
+.option-name {
+  font-size: 1.8vh;
+  font-weight: bold;
+  color: #f4e4c1;
+  margin: 0;
+}
+
+.option-description {
+  font-size: 1.3vh;
+  color: #b89968;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.option-effects {
+  display: flex;
+  gap: 0.5vw;
+  flex-wrap: wrap;
+  margin-top: 0.3vh;
+}
+
+.effect-badge {
+  display: inline-block;
+  padding: 0.3vh 0.8vw;
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.4);
+  border-radius: 4px;
+  font-size: 1.2vh;
+  color: #81c784;
+}
+
+.duration-badge {
+  display: inline-block;
+  padding: 0.3vh 0.8vw;
+  background: rgba(100, 149, 237, 0.2);
+  border: 1px solid rgba(100, 149, 237, 0.4);
+  border-radius: 4px;
+  font-size: 1.2vh;
+  color: #87ceeb;
+}
+
+.option-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8vh;
+  min-width: 8vw;
+}
+
+.option-cost {
+  font-size: 1.6vh;
+  font-weight: bold;
+  color: #d4af37;
+}
+
+.rest-button,
+.meal-button {
+  padding: 0.8vh 1.5vw;
+  background: linear-gradient(135deg, #8b5a2b 0%, #a67c52 100%);
+  border: 1px solid #d4a574;
+  border-radius: 6px;
+  color: #f4e4c1;
+  font-size: 1.4vh;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rest-button:hover:not(:disabled),
+.meal-button:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+  background: linear-gradient(135deg, #a67c52 0%, #c49a6c 100%);
+}
+
+.rest-button:disabled,
+.meal-button:disabled {
+  background: rgba(60, 42, 30, 0.6);
+  border-color: rgba(139, 90, 43, 0.3);
+  color: #6d5d4b;
+  cursor: not-allowed;
+}
+
+/* ========== Notification ========== */
+
+.inn-notification {
+  position: fixed;
+  top: 10vh;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1.5vh 3vw;
+  background: rgba(139, 90, 43, 0.95);
+  color: #f4e4c1;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.8vh;
+  z-index: 1000;
+  animation: fadeInOut 2s ease;
+  border: 1px solid #d4a574;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
+
+/* ========== Rumor Bubble ========== */
+
+.rumor-bubble-container {
+  position: fixed;
+  bottom: 12vh;
+  right: 3vw;
+  z-index: 100;
+}
+
+.rumor-bubble-trigger {
+  width: 6vh;
+  height: 6vh;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(60, 42, 30, 0.95) 0%, rgba(80, 55, 40, 0.95) 100%);
+  border: 2px solid rgba(139, 90, 43, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.rumor-bubble-trigger:hover {
+  transform: scale(1.1);
+  border-color: #d4a574;
+  box-shadow: 0 6px 20px rgba(139, 90, 43, 0.4);
+}
+
+.bubble-icon {
+  font-size: 2.5vh;
+  color: #d4a574;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bubble-icon-chat::before {
+  content: "\1F4AC";
+  font-size: 2.5vh;
+}
+
+.rumor-popup {
+  position: absolute;
+  bottom: 8vh;
+  right: 0;
+  width: 25vw;
+  min-width: 250px;
+  max-width: 350px;
+  padding: 2vh 2vw;
+  background: rgba(45, 32, 25, 0.98);
+  border: 2px solid rgba(139, 90, 43, 0.6);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  animation: rumorFadeIn 0.3s ease;
+}
+
+@keyframes rumorFadeIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.rumor-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5vw;
+}
+
+.rumor-quote {
+  font-size: 3vh;
+  color: #d4a574;
+  line-height: 1;
+  font-family: Georgia, serif;
+}
+
+.rumor-text {
+  font-size: 1.5vh;
+  color: #e8d5b7;
+  line-height: 1.6;
+  margin: 0;
+  font-style: italic;
+}
+
+.rumor-source {
+  display: block;
+  text-align: right;
+  font-size: 1.2vh;
+  color: #8b7355;
+  margin-top: 1vh;
+}
+
+/* ========== Tab Navigation Overrides ========== */
+
+.inn-tabs {
+  justify-content: center;
+}
+
+.inn-tab {
+  background: rgba(60, 42, 30, 0.95);
+  border-color: rgba(139, 90, 43, 0.3);
+  color: #b89968;
+}
+
+.inn-tab:hover {
+  background: rgba(70, 50, 35, 0.95);
+  border-color: rgba(139, 90, 43, 0.5);
+}
+
+.inn-tab.active {
+  background: rgba(139, 90, 43, 0.2);
+  border-color: #d4a574;
+  color: #f4e4c1;
+}

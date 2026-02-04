@@ -13,11 +13,11 @@ export const STORM_ELEMENTAL: EnemyDefinition = {
   actEnergy: 1,
   displayWidth: 22,
   aiPatterns: [
-    { phaseNumber: 1, action: { name: "雷撃", type: "attack", baseDamage: 30, displayIcon: "⚡", priority: 0, energyCost: 1 } },
-    { phaseNumber: 2, action: { name: "稲妻の連鎖", type: "attack", baseDamage: 15, hitCount: 3, displayIcon: "🌩️", priority: 0, energyCost: 1 } },
-    { phaseNumber: 3, action: { name: "麻痺の稲光", type: "debuff", baseDamage: 25, applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "💫", priority: 2, energyCost: 1 } },
-    { phaseNumber: 0, action: { name: "雷撃", type: "attack", baseDamage: 30, displayIcon: "⚡", priority: 0, energyCost: 1 }, probability: 0.5 },
-    { phaseNumber: 0, action: { name: "麻痺の稲光", type: "debuff", baseDamage: 25, applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "💫", priority: 2, energyCost: 1 }, probability: 0.5 },
+    { phaseNumber: 1, action: { name: "雷撃", type: "attack", baseDamage: 30, element: ["lightning", "attack"], displayIcon: "⚡", priority: 0, energyCost: 1 } },
+    { phaseNumber: 2, action: { name: "稲妻の連鎖", type: "attack", baseDamage: 15, element: ["lightning", "attack"], hitCount: 3, displayIcon: "🌩️", priority: 0, energyCost: 1 } },
+    { phaseNumber: 3, action: { name: "麻痺の稲光", type: "debuff", baseDamage: 25, element: ["lightning", "attack"], applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "💫", priority: 2, energyCost: 1 } },
+    { phaseNumber: 0, action: { name: "雷撃", type: "attack", baseDamage: 30, element: ["lightning", "attack"], displayIcon: "⚡", priority: 0, energyCost: 1 }, probability: 0.5 },
+    { phaseNumber: 0, action: { name: "麻痺の稲光", type: "debuff", baseDamage: 25, element: ["lightning", "attack"], applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "💫", priority: 2, energyCost: 1 }, probability: 0.5 },
   ],
 };
 
@@ -34,11 +34,11 @@ export const MAGMA_TITAN: EnemyDefinition = {
   actEnergy: 1,
   displayWidth: 24,
   aiPatterns: [
-    { phaseNumber: 1, action: { name: "溶岩拳", type: "debuff", baseDamage: 30, applyDebuffs: [{ name: "burn", stacks: 2, duration: 3, value: 8, isPermanent: false }], displayIcon: "🌋", priority: 1, energyCost: 1 } },
-    { phaseNumber: 2, action: { name: "地殻粉砕", type: "attack", baseDamage: 35, displayIcon: "💥", priority: 0, energyCost: 1 } },
+    { phaseNumber: 1, action: { name: "溶岩拳", type: "debuff", baseDamage: 30, element: ["fire", "attack"], applyDebuffs: [{ name: "burn", stacks: 2, duration: 3, value: 8, isPermanent: false }], displayIcon: "🌋", priority: 1, energyCost: 1 } },
+    { phaseNumber: 2, action: { name: "地殻粉砕", type: "attack", baseDamage: 35, element: ["fire", "attack"], displayIcon: "💥", priority: 0, energyCost: 1 } },
     { phaseNumber: 3, action: { name: "溶岩の鎧", type: "buff", baseDamage: 0, guardGain: 40, displayIcon: "🛡️", priority: 1, energyCost: 1 } },
-    { phaseNumber: 0, action: { name: "溶岩拳", type: "debuff", baseDamage: 30, applyDebuffs: [{ name: "burn", stacks: 2, duration: 3, value: 8, isPermanent: false }], displayIcon: "🌋", priority: 1, energyCost: 1 }, probability: 0.5 },
-    { phaseNumber: 0, action: { name: "地殻粉砕", type: "attack", baseDamage: 35, displayIcon: "💥", priority: 0, energyCost: 1 }, probability: 0.5 },
+    { phaseNumber: 0, action: { name: "溶岩拳", type: "debuff", baseDamage: 30, element: ["fire", "attack"], applyDebuffs: [{ name: "burn", stacks: 2, duration: 3, value: 8, isPermanent: false }], displayIcon: "🌋", priority: 1, energyCost: 1 }, probability: 0.5 },
+    { phaseNumber: 0, action: { name: "地殻粉砕", type: "attack", baseDamage: 35, element: ["fire", "attack"], displayIcon: "💥", priority: 0, energyCost: 1 }, probability: 0.5 },
   ],
 };
 
@@ -55,11 +55,11 @@ export const FROST_WRAITH: EnemyDefinition = {
   actEnergy: 1,
   displayWidth: 20,
   aiPatterns: [
-    { phaseNumber: 1, action: { name: "凍結の手", type: "debuff", baseDamage: 25, applyDebuffs: [{ name: "slow", stacks: 2, duration: 3, value: 25, isPermanent: false }], displayIcon: "❄️", priority: 1, energyCost: 1 } },
-    { phaseNumber: 2, action: { name: "氷柱の嵐", type: "attack", baseDamage: 18, hitCount: 2, displayIcon: "🌨️", priority: 0, energyCost: 1 } },
-    { phaseNumber: 0, action: { name: "凍結の手", type: "debuff", baseDamage: 25, applyDebuffs: [{ name: "slow", stacks: 2, duration: 3, value: 25, isPermanent: false }], displayIcon: "❄️", priority: 1, energyCost: 1 }, probability: 0.4 },
-    { phaseNumber: 0, action: { name: "氷柱の嵐", type: "attack", baseDamage: 18, hitCount: 2, displayIcon: "🌨️", priority: 0, energyCost: 1 }, probability: 0.3 },
-    { phaseNumber: 0, action: { name: "絶対零度", type: "debuff", baseDamage: 28, applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "🧊", priority: 2, energyCost: 1 }, probability: 0.3 },
+    { phaseNumber: 1, action: { name: "凍結の手", type: "debuff", baseDamage: 25, element: ["ice", "attack"], applyDebuffs: [{ name: "slow", stacks: 2, duration: 3, value: 25, isPermanent: false }], displayIcon: "❄️", priority: 1, energyCost: 1 } },
+    { phaseNumber: 2, action: { name: "氷柱の嵐", type: "attack", baseDamage: 18, element: ["ice", "attack"], hitCount: 2, displayIcon: "🌨️", priority: 0, energyCost: 1 } },
+    { phaseNumber: 0, action: { name: "凍結の手", type: "debuff", baseDamage: 25, element: ["ice", "attack"], applyDebuffs: [{ name: "slow", stacks: 2, duration: 3, value: 25, isPermanent: false }], displayIcon: "❄️", priority: 1, energyCost: 1 }, probability: 0.4 },
+    { phaseNumber: 0, action: { name: "氷柱の嵐", type: "attack", baseDamage: 18, element: ["ice", "attack"], hitCount: 2, displayIcon: "🌨️", priority: 0, energyCost: 1 }, probability: 0.3 },
+    { phaseNumber: 0, action: { name: "絶対零度", type: "debuff", baseDamage: 28, element: ["ice", "attack"], applyDebuffs: [{ name: "stun", stacks: 1, duration: 1, value: 0, isPermanent: false }], displayIcon: "🧊", priority: 2, energyCost: 1 }, probability: 0.3 },
   ],
 };
 
@@ -76,11 +76,11 @@ export const DIVINE_SENTINEL: EnemyDefinition = {
   actEnergy: 1,
   displayWidth: 22,
   aiPatterns: [
-    { phaseNumber: 1, action: { name: "聖剣", type: "attack", baseDamage: 32, displayIcon: "✨", priority: 0, energyCost: 1 } },
+    { phaseNumber: 1, action: { name: "聖剣", type: "attack", baseDamage: 32, element: ["light", "attack"], displayIcon: "✨", priority: 0, energyCost: 1 } },
     { phaseNumber: 2, action: { name: "聖なる障壁", type: "buff", baseDamage: 0, guardGain: 35, displayIcon: "🛡️", priority: 1, energyCost: 1 } },
-    { phaseNumber: 3, action: { name: "審判の光", type: "debuff", baseDamage: 28, applyDebuffs: [{ name: "defDownMajor", stacks: 1, duration: 3, value: 35, isPermanent: false }], displayIcon: "🌟", priority: 1, energyCost: 1 } },
-    { phaseNumber: 0, action: { name: "聖剣", type: "attack", baseDamage: 32, displayIcon: "✨", priority: 0, energyCost: 1 }, probability: 0.5 },
-    { phaseNumber: 0, action: { name: "審判の光", type: "debuff", baseDamage: 28, applyDebuffs: [{ name: "defDownMajor", stacks: 1, duration: 3, value: 35, isPermanent: false }], displayIcon: "🌟", priority: 1, energyCost: 1 }, probability: 0.5 },
+    { phaseNumber: 3, action: { name: "審判の光", type: "debuff", baseDamage: 28, element: ["light", "attack"], applyDebuffs: [{ name: "defDownMajor", stacks: 1, duration: 3, value: 35, isPermanent: false }], displayIcon: "🌟", priority: 1, energyCost: 1 } },
+    { phaseNumber: 0, action: { name: "聖剣", type: "attack", baseDamage: 32, element: ["light", "attack"], displayIcon: "✨", priority: 0, energyCost: 1 }, probability: 0.5 },
+    { phaseNumber: 0, action: { name: "審判の光", type: "debuff", baseDamage: 28, element: ["light", "attack"], applyDebuffs: [{ name: "defDownMajor", stacks: 1, duration: 3, value: 35, isPermanent: false }], displayIcon: "🌟", priority: 1, energyCost: 1 }, probability: 0.5 },
   ],
 };
 
@@ -97,9 +97,9 @@ export const CRYSTAL_SPRITE: EnemyDefinition = {
   actEnergy: 1,
   displayWidth: 14,
   aiPatterns: [
-    { phaseNumber: 0, action: { name: "結晶弾", type: "attack", baseDamage: 25, displayIcon: "💎", priority: 0, energyCost: 1 }, probability: 0.5 },
-    { phaseNumber: 0, action: { name: "光の屈折", type: "debuff", baseDamage: 18, applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 3, value: 25, isPermanent: false }], displayIcon: "🔮", priority: 1, energyCost: 1 }, probability: 0.3 },
-    { phaseNumber: 0, action: { name: "結晶化", type: "debuff", baseDamage: 20, applyDebuffs: [{ name: "slow", stacks: 1, duration: 2, value: 20, isPermanent: false }], displayIcon: "✨", priority: 1, energyCost: 1 }, probability: 0.2 },
+    { phaseNumber: 0, action: { name: "結晶弾", type: "attack", baseDamage: 25, element: ["light", "attack"], displayIcon: "💎", priority: 0, energyCost: 1 }, probability: 0.5 },
+    { phaseNumber: 0, action: { name: "光の屈折", type: "debuff", baseDamage: 18, element: ["light", "attack"], applyDebuffs: [{ name: "atkDownMinor", stacks: 1, duration: 3, value: 25, isPermanent: false }], displayIcon: "🔮", priority: 1, energyCost: 1 }, probability: 0.3 },
+    { phaseNumber: 0, action: { name: "結晶化", type: "debuff", baseDamage: 20, element: ["ice", "attack"], applyDebuffs: [{ name: "slow", stacks: 1, duration: 2, value: 20, isPermanent: false }], displayIcon: "✨", priority: 1, energyCost: 1 }, probability: 0.2 },
   ],
 };
 
@@ -137,8 +137,8 @@ export const PHOENIX_HATCHLING: EnemyDefinition = {
   actEnergy: 1,
   displayWidth: 14,
   aiPatterns: [
-    { phaseNumber: 0, action: { name: "焔の翼", type: "debuff", baseDamage: 25, applyDebuffs: [{ name: "burn", stacks: 1, duration: 3, value: 8, isPermanent: false }], displayIcon: "🔥", priority: 1, energyCost: 1 }, probability: 0.6 },
-    { phaseNumber: 0, action: { name: "炎の突進", type: "attack", baseDamage: 30, displayIcon: "🐦", priority: 0, energyCost: 1 }, probability: 0.4 },
+    { phaseNumber: 0, action: { name: "焔の翼", type: "debuff", baseDamage: 25, element: ["fire", "attack"], applyDebuffs: [{ name: "burn", stacks: 1, duration: 3, value: 8, isPermanent: false }], displayIcon: "🔥", priority: 1, energyCost: 1 }, probability: 0.6 },
+    { phaseNumber: 0, action: { name: "炎の突進", type: "attack", baseDamage: 30, element: ["fire", "attack"], displayIcon: "🐦", priority: 0, energyCost: 1 }, probability: 0.4 },
   ],
 };
 

@@ -7,6 +7,7 @@ import Storage from "./ui/html/campsHtml/Storage/Storage.tsx";
 import { Blacksmith } from "./ui/html/campsHtml/Blacksmith/Blacksmith.tsx";
 import { Sanctuary } from "./ui/html/campsHtml/Sanctuary/Sanctuary.tsx";
 import { Library } from "./ui/html/campsHtml/Library/Library.tsx";
+import { Inn } from "./ui/html/campsHtml/Inn/Inn.tsx";
 import { DungeonGate } from "./ui/html/dungeonHtml/DungeonGate.tsx";
 import { NodeMap } from "./ui/html/dungeonHtml/NodeMap.tsx";
 import { DungeonRunProvider } from "./contexts/DungeonRunContext.tsx";
@@ -18,7 +19,13 @@ import {
 import { ResourceProvider } from "./contexts/ResourceContext.tsx";
 import { PlayerProvider } from "./contexts/PlayerContext.tsx";
 import { InventoryProvider } from "./contexts/InventoryContext.tsx";
+import { SettingsProvider } from "./contexts/SettingsContext.tsx";
+import { ToastProvider } from "./contexts/ToastContext.tsx";
 import { getGuildEnemy } from "@/constants/data/camps/GuildEnemyData";
+import { ErrorBoundary } from "./ui/components/ErrorBoundary.tsx";
+import { BrightnessOverlay } from "./ui/html/componentsHtml/BrightnessOverlay.tsx";
+import { ToastContainer } from "./ui/html/componentsHtml/ToastContainer.tsx";
+import { logger } from "./utils/logger.ts";
 import "./App.css";
 
 /**
@@ -31,6 +38,10 @@ function AppContent() {
 
   return (
     <div className="app-container">
+      {/* Global Overlays */}
+      <BrightnessOverlay />
+      <ToastContainer />
+
       {/* Character Selection Screen */}
       {currentScreen === "character_select" && <CharacterSelect />}
 
@@ -45,7 +56,7 @@ function AppContent() {
             (() => {
               const examEnemy = getGuildEnemy(battleConfig.enemyIds[0]);
               if (!examEnemy) {
-                console.error(
+                logger.error(
                   "Exam enemy not found:",
                   battleConfig.enemyIds[0],
                 );
@@ -82,6 +93,8 @@ function AppContent() {
       {currentScreen === "sanctuary" && <Sanctuary />}
       {/* Library Screen */}
       {currentScreen === "library" && <Library />}
+      {/* Inn Screen */}
+      {currentScreen === "inn" && <Inn />}
       {/* Storage Screen */}
       {currentScreen === "storage" && <Storage />}
       {/* Dungeon Gate Screen */}
@@ -100,17 +113,23 @@ function AppContent() {
  */
 function App() {
   return (
-    <GameStateProvider>
-      <ResourceProvider>
-        <PlayerProvider>
-          <InventoryProvider>
-            <DungeonRunProvider>
-              <AppContent />
-            </DungeonRunProvider>
-          </InventoryProvider>
-        </PlayerProvider>
-      </ResourceProvider>
-    </GameStateProvider>
+    <ErrorBoundary>
+      <GameStateProvider>
+        <SettingsProvider>
+          <ToastProvider>
+            <ResourceProvider>
+              <PlayerProvider>
+                <InventoryProvider>
+                  <DungeonRunProvider>
+                    <AppContent />
+                  </DungeonRunProvider>
+                </InventoryProvider>
+              </PlayerProvider>
+            </ResourceProvider>
+          </ToastProvider>
+        </SettingsProvider>
+      </GameStateProvider>
+    </ErrorBoundary>
   );
 }
 

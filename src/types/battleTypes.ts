@@ -105,8 +105,12 @@ export type BuffDebuffMap = Map<BuffDebuffType, BuffDebuffState>;
 // Damage Types
 // ============================================================
 
+/** Classification of damage for defense calculation routing */
+export type DamageType = "physical" | "magical" | "true";
+
 export interface DamageResult {
   finalDamage: number;
+  damageType: DamageType;
   isCritical: boolean;
   reflectDamage: number;
   lifestealAmount: number;
