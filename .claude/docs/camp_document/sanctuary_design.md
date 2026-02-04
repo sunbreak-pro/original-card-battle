@@ -6,6 +6,7 @@ Here is the English translation of the design document.
 
 - V2.0: **Fundamental Design Overhaul** - Changed Soul Remnants to an experience point system, added +1 Exploration Count skill, removed roguelite elements (permanent death resets).
 - V3.0: **Lives System Integration** - Removed exploration count extension skills, updated soul acquisition (100% on both survival AND death), integrated with lives system, game over resets sanctuary progress.
+- V3.1: **Implementation Alignment** - Updated to reflect actual implementation: survival multipliers (0.6x/0.8x/1.0x), death causes soul loss (not 100% retention).
 
 ---
 
@@ -42,13 +43,19 @@ Game Over (Lives = 0) → Complete Sanctuary Reset (only achievements persist)
 
 #### 2.1.1 Acquisition Method (Experience System)
 
-**Change in V3.0:**
+**Change in V3.0 (Design) vs V3.1 (Implementation):**
 
 ```
-V2.0: Gained on Enemy Kill, Added to Total only on Survival
-V3.0: Gained on Enemy Kill, Added to Total on BOTH Survival AND Death (100%)
+V2.0 Design: Gained on Enemy Kill, Added to Total only on Survival
+V3.0 Design: Gained on Enemy Kill, Added to Total on BOTH Survival AND Death (100%)
+V3.1 Implementation: Gained on Enemy Kill, Survival multiplier applied, Death = 0% retention
 
 ```
+
+> **IMPLEMENTATION NOTE (V3.1):** The actual implementation differs from V3.0 design.
+> - **Survival:** Current run souls transferred with multiplier (0.6x / 0.8x / 1.0x based on return method)
+> - **Death:** Current run souls are LOST (not saved as V3.0 stated)
+> - **Total Accumulated Souls:** Always preserved regardless of survival/death
 
 **Acquisition Timing:**
 
@@ -86,40 +93,49 @@ unlockedNodes = [];  // All sanctuary progress lost
 
 #### 2.1.2 Survival vs. Death Processing (V3.0 - Major Change)
 
-**Case: Survival**
+**Case: Survival (V3.1 Implementation)**
 
 ```
 Defeat Enemy → Gain Souls (currentRunSouls)
   ↓
-Survive (Teleport Stone or Return Route)
+Survive (via Return Method)
   ↓
-Acquired Souls → 100% Added to Total (V3.0: No multiplier)
+Acquired Souls × Survival Multiplier → Added to Total
 
-V3.0 Changes:
-- Teleport Stone: Unified to 1 type with 100% reward
-- Return Route: 100% reward (unchanged)
-- No reduction penalties
+V3.1 Implementation (Actual):
+Survival multipliers based on return method:
+- Early Return (before mid-depth): 0.6x (60%)
+- Normal Return (after mid-depth): 0.8x (80%)
+- Full Clear (completed depth boss): 1.0x (100%)
 
-Example: Gained 100 Souls this run, used Teleport Stone
-→ 100 Souls added to Total (100%)
+Example: Gained 100 Souls this run, Early Return
+→ 100 × 0.6 = 60 Souls added to Total
+
+Example: Gained 100 Souls this run, Full Clear
+→ 100 × 1.0 = 100 Souls added to Total
 
 ```
 
-**Case: Death (V3.0 - Major Change)**
+**Case: Death (V3.1 Implementation - Different from V3.0 Design)**
 
 ```
 Defeat Enemy → Gain Souls (currentRunSouls)
   ↓
 Death
   ↓
-V3.0 NEW: Souls gained this run → 100% Added to Total!
+V3.1 IMPLEMENTATION: Souls gained this run → LOST (0%)
 Lives → Decrease by 1
 All Items/Equipment → Lost
+Total Accumulated Souls → PRESERVED
 
 Example: Gained 100 Souls this run, Died
-→ 100 Souls ARE added to Total (major change from V2.0!)
+→ 100 Souls are LOST (currentRunSouls reset to 0)
+→ Previously accumulated totalSouls are KEPT
 → Lives: 3 → 2
 → All items and equipment lost
+
+NOTE: This differs from V3.0 design which stated 100% soul retention on death.
+      The implementation uses the V2.0 approach where death causes soul loss.
 
 ```
 
@@ -136,12 +152,14 @@ COMPLETE RESET:
 
 ```
 
-**Properties:**
+**Properties (V3.1 Implementation):**
 
-- Souls are **always saved at 100%** (both survival and death).
-- Death penalty is item/equipment loss + life decrease, NOT soul loss.
-- Sanctuary progress is lost on game over.
-- Can only be used in the Sanctuary.
+- Souls gained during a run are **temporary** until survival
+- Survival transfers souls with a **multiplier** (0.6x/0.8x/1.0x based on return method)
+- Death causes **loss of current run souls** (totalSouls preserved)
+- Death penalty includes: item/equipment loss + life decrease + current run soul loss
+- Sanctuary progress (unlockedNodes, totalSouls) is lost on game over
+- Can only be used in the Sanctuary
 
 **Initial Possession:**
 

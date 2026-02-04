@@ -9,6 +9,7 @@ I have included a few visual aids to help visualize the atmosphere and logic.
 ## Update History
 
 - V1.0: Initial Draft (Magic Stone rate adjustment, Sale system, Equipment Pack specifications finalized)
+- V1.1: Updated to match implementation (Restock timing, Seeded RNG, Depth-dependent drops)
 
 ---
 
@@ -303,7 +304,35 @@ const handleExchangeMagicStones = (targetValue: number) => {
 
 ---
 
-### 2.4 Daily Sales
+### 2.4 Stock Restock System (V1.1 - Updated)
+
+> **Implementation Note (V1.1):** The actual implementation uses a battle-count based restock system rather than the "3 battles" system originally described. See details below.
+
+**Restock Trigger Conditions:**
+
+- Restock occurs after **7-10 battles** (randomized threshold per restock cycle)
+- Implemented via `RESTOCK_BATTLE_RANGE = { min: 7, max: 10 }`
+- Shop tracks `battlesSinceLastRestock` to determine when to refresh stock
+
+**Seeded RNG System:**
+
+- Shop uses seeded random number generation for deterministic stock selection
+- Seed is based on run ID and restock count, ensuring consistent results if game is reloaded
+- Prevents save-scumming for better shop inventory
+
+**Depth-Dependent Epic Drops:**
+
+Epic consumables appear at increasing rates based on current dungeon depth:
+
+| Depth | Epic Appearance Rate |
+|-------|---------------------|
+| 1     | 5%                  |
+| 2     | 7%                  |
+| 3     | 10%                 |
+| 4     | 15%                 |
+| 5     | 20%                 |
+
+### 2.5 Daily Sales (Original Design)
 
 **Trigger Conditions:**
 
@@ -1416,7 +1445,31 @@ setGameState((prev) => ({
 
 ## 9. Notes
 
-### 9.1 Data Incompleteness
+### 9.1 Implementation vs Design Differences (V1.1)
+
+The following differences exist between the original design and actual implementation:
+
+| Aspect | Original Design | Implementation |
+|--------|-----------------|----------------|
+| Restock Timing | 3 battles after return | 7-10 battles (randomized) |
+| RNG | Standard random | Seeded RNG (deterministic per run) |
+| Epic Items | Not specified | Depth-dependent probability |
+| Stock Structure | Single inventory | Permanent + Daily Special separation |
+
+**Stock System Structure:**
+
+```typescript
+interface ShopStockState {
+  permanentStock: Map<string, number>;     // Always available items
+  dailySpecialStock: Map<string, number>;  // Rotating special items
+  epicSlot: { key: string; stock: number } | null;  // Depth-scaled epic item
+  seed: number;                             // For deterministic RNG
+  restockThreshold: number;                 // 7-10 battles until next restock
+  battlesSinceLastRestock: number;          // Current battle count
+}
+```
+
+### 9.2 Data Incompleteness
 
 - Refer to `EQUIPMENT_AND_ITEMS_DESIGN.md` for equipment data.
 - Buff/Debuff details postponed.

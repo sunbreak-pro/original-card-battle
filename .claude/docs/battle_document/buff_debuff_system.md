@@ -8,7 +8,7 @@
 ```
 1. バフ/デバフシステム概要
 2. スタックシステム
-3. バフ/デバフデータベース（全44種類）
+3. バフ/デバフデータベース（全42種類）
 4. 持続時間管理
 5. 計算優先度
 6. 実装関数一覧
@@ -40,7 +40,7 @@ type BuffDebuffMap = Map<BuffDebuffType, BuffDebuff>;
 
 ```
 【Ver 4.0からの変更】
-- 種類数: 30 → 44（デバフ19 + バフ25）
+- 種類数: 30 → 42（デバフ19 + バフ23）
 - weak/atkDown/speedDown/healingDown → atkDownMinor/atkDownMajor/defDownMinor/defDownMajor/weakness/prostoration
 - speedUp/speedDown → haste/superFast/slow/stall
 - guardUp/thorns/barrier/damageReduction/splash → 削除
@@ -113,7 +113,7 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-# 3. バフ/デバフデータベース（全 44 種類）
+# 3. バフ/デバフデータベース（全 42 種類）
 
 > **Source of truth:** `src/constants/data/battles/buffData.ts`
 
@@ -435,7 +435,7 @@ export const addOrUpdateBuffDebuff = (
 
 ---
 
-## 3.9 バフ - キャラクター固有系（8 種類）
+## 3.9 バフ - キャラクター固有系（7 種類）
 
 ### 剣士用（1 種類）
 
@@ -453,13 +453,6 @@ export const addOrUpdateBuffDebuff = (
 | `electroField` | 雷鳴界 | 雷カード使用時+10ダメージ |
 | `darkField` | 闇界 | 闇属性ダメージ+50% |
 | `lightField` | 光界 | 光属性ダメージ+50% |
-
-### 召喚士用（2 種類）
-
-| ID | 名称 | 効果 |
-|----|------|------|
-| `summonPower` | 召喚力 | 召喚獣の能力+30% |
-| `sacrificeBonus` | 犠牲の恩恵 | 犠牲効果+30% |
 
 ---
 

@@ -216,14 +216,17 @@ describe('calculateDamage', () => {
 describe('applyDamageAllocation', () => {
   describe('guard only (no AP)', () => {
     it('guard fully absorbs damage with bleed-through when no AP', () => {
+      // Armor Break: 50% bypasses guard and goes to HP, remaining 50% absorbed by guard
       const defender = createBattleStats({ guard: 20, ap: 0 });
       const damage = 10;
 
       const result = applyDamageAllocation(defender, damage);
 
-      expect(result.guardDamage).toBe(10);
+      const bypassDamage = Math.floor(damage * GUARD_BLEED_THROUGH_MULTIPLIER); // 5
+      const guardedDamage = damage - bypassDamage; // 5
+      expect(result.guardDamage).toBe(guardedDamage);
       expect(result.apDamage).toBe(0);
-      expect(result.hpDamage).toBe(Math.floor(10 * GUARD_BLEED_THROUGH_MULTIPLIER)); // 5
+      expect(result.hpDamage).toBe(bypassDamage);
     });
 
     it('guard partially absorbs, remainder goes to HP when no AP', () => {

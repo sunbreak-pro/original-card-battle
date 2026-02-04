@@ -12,7 +12,6 @@ import type { EquipmentSlot, EquipmentQuality } from './itemTypes';
 import type { Card, CardTag } from './cardTypes';
 import type { Depth } from './cardTypes';
 import type { ElementType } from './characterTypes';
-import type { BuffDebuffType } from './battleTypes';
 
 // Re-export Depth from cardTypes for convenience
 export type { Depth } from './cardTypes';
@@ -28,8 +27,7 @@ export type FacilityType =
   | "sanctuary"
   | "library"
   | "storage"
-  | "dungeon"
-  | "inn";
+  | "dungeon";
 
 export type GameScreen =
   | "character_select"
@@ -42,8 +40,7 @@ export type GameScreen =
   | "library"
   | "storage"
   | "dungeon"
-  | "dungeon_map"
-  | "inn";
+  | "dungeon_map";
 
 export type BattleMode =
   | "normal"
@@ -496,56 +493,3 @@ export type ItemSortCriteria =
   | "type"
   | "recent";
 
-// ============================================================
-// Inn Types
-// ============================================================
-
-export type InnTab = "rest" | "dining";
-
-export type InnEffectType =
-  | "bonusHp"        // Extra max HP for next exploration
-  | "bonusAp"        // Extra AP for next exploration
-  | "buff"           // Apply buff at exploration start
-  | "energyBonus"    // Extra starting energy
-  | "hpRegenPercent" // HP recovery % after each battle
-  | "goldBonus";     // Gold acquisition bonus %
-
-export interface InnEffect {
-  type: InnEffectType;
-  value: number;
-  buffType?: BuffDebuffType;
-  duration?: number;
-}
-
-export interface RestOption {
-  id: string;
-  name: string;
-  nameJa: string;
-  description: string;
-  descriptionJa: string;
-  cost: number;
-  effects: InnEffect[];
-  icon: string;
-}
-
-export interface MealOption {
-  id: string;
-  name: string;
-  nameJa: string;
-  description: string;
-  descriptionJa: string;
-  cost: number;
-  effects: InnEffect[];
-  icon: string;
-  duration: number; // Number of battles the buff lasts
-}
-
-export interface InnBuffsState {
-  bonusHp: number;
-  bonusAp: number;
-  bonusEnergy: number;
-  startingBuffs: Array<{ buffType: BuffDebuffType; duration: number; stacks: number }>;
-  hpRegenPercent: number;
-  goldBonusPercent: number;
-  consumed: boolean;
-}

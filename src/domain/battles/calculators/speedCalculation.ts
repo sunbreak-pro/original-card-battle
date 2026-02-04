@@ -54,16 +54,21 @@ export function calculateEnemySpeed(
   buffs: BuffDebuffMap
 ): number {
   let speed = enemy.baseSpeed;
+
+  // Speed buffs/debuffs are cumulative (not mutually exclusive)
   if (buffs.has("haste")) {
     const hasteBuff = buffs.get("haste")!;
     speed += hasteBuff.value;
-  } else if (buffs.has("superFast")) {
+  }
+  if (buffs.has("superFast")) {
     const superFastBuff = buffs.get("superFast")!;
     speed += superFastBuff.value;
-  } else if (buffs.has("slow")) {
+  }
+  if (buffs.has("slow")) {
     const slowDebuff = buffs.get("slow")!;
     speed -= slowDebuff.value;
-  } else if (buffs.has("stall")) {
+  }
+  if (buffs.has("stall")) {
     const stallDebuff = buffs.get("stall")!;
     speed -= stallDebuff.value;
   }

@@ -61,6 +61,14 @@ export const RESONANCE_EFFECTS: Record<ElementType, Record<1 | 2, ResonanceEffec
     1: {},
     2: {},
   },
+  slash: {
+    1: {},
+    2: {},
+  },
+  impact: {
+    1: {},
+    2: {},
+  },
   guard: {
     1: {},
     2: {},

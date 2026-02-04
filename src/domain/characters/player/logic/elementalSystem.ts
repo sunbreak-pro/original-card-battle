@@ -49,11 +49,11 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
     const magicElement = card.element.find(e => MAGIC_ELEMENTS.has(e));
 
     if (!magicElement) {
-      // No magic element - partial resonance decay instead of full reset
+      // No magic element - complete resonance reset (per design spec)
       return {
         ...state,
-        resonanceLevel: Math.max(0, state.resonanceLevel - 1) as ResonanceLevel,
-        // lastElement is preserved so chain can resume
+        lastElement: null,
+        resonanceLevel: 0,
       };
     }
 
@@ -143,6 +143,8 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
       dark: "闇",
       light: "光",
       physics: "物",
+      slash: "斬",
+      impact: "打",
       guard: "盾",
       buff: "強",
       debuff: "弱",

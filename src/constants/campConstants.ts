@@ -21,7 +21,6 @@ export const FACILITY_NAV_ITEMS: ReadonlyArray<{
   { screen: "dungeon", facilityType: "dungeon", label: "ダンジョンゲート", icon: "🌀", description: "Descend into the depths and face your destiny", showInNav: false },
   { screen: "shop", facilityType: "shop", label: "取引所", icon: "🏪", description: "Buy and sell cards, items, and relics", showInNav: true },
   { screen: "guild", facilityType: "guild", label: "酒場", icon: "🍺", description: "Rest, recruit companions, and hear rumors", showInNav: true },
-  { screen: "inn", facilityType: "inn", label: "宿屋", icon: "🏨", description: "Rest and dine to prepare for your next adventure", showInNav: true },
   { screen: "blacksmith", facilityType: "blacksmith", label: "鍛冶屋", icon: "⚒️", description: "Forge and upgrade your equipment", showInNav: true },
   { screen: "sanctuary", facilityType: "sanctuary", label: "聖域", icon: "⛪", description: "Strengthen your soul with permanent upgrades", showInNav: true },
   { screen: "library", facilityType: "library", label: "図書館", icon: "📚", description: "Build your deck and browse the encyclopedia", showInNav: true },
@@ -60,11 +59,6 @@ export const PREPARATION_TABS = [
   { id: "deck", label: "デッキ" },
   { id: "inventory", label: "持ち物" },
   { id: "equipment", label: "装備" },
-] as const;
-
-export const INN_TABS = [
-  { id: "rest", label: "休息", icon: "🛏️" },
-  { id: "dining", label: "食事", icon: "🍽️" },
 ] as const;
 
 // ============================================================
@@ -192,7 +186,6 @@ export const FACILITY_ISOMETRIC_POSITIONS: Record<FacilityType, IsometricPositio
   dungeon: 'north',
   shop: 'northeast',
   guild: 'east',
-  inn: 'southeast',
   blacksmith: 'south',
   sanctuary: 'southwest',
   library: 'west',

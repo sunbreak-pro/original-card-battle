@@ -47,6 +47,8 @@ export const MASTERY_BONUSES: Record<MasteryLevel, number> = {
 /** Element Japanese display names */
 export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
   physics: "物理",
+  slash: "斬撃",
+  impact: "打撃",
   guard: "防御",
   fire: "火",
   ice: "氷",
@@ -64,6 +66,8 @@ export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
 /** Element CSS colors */
 export const ELEMENT_COLOR_MAP: Record<ElementType, string> = {
   physics: "#c0c0c0",
+  slash: "#e0e0e0",
+  impact: "#a0a0a0",
   guard: "#4682b4",
   fire: "#ff4500",
   ice: "#00bfff",

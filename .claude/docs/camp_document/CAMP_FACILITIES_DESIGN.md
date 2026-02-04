@@ -4,6 +4,7 @@
 
 - **V3.0: Complete Transition to New Design** - Shift to "Extraction Dungeon RPG" (Extraction-based), Soul Remnants converted to XP system, Exploration Limit added.
 - **V2.0:** Revamped to focus on design philosophy. Added Sanctuary/Library. Removed Church/Training.
+- **V3.2: Inn Removed** - Inn facility removed to simplify implementation scope. May be re-added in future.
 
 ---
 
@@ -58,17 +59,21 @@ New: Extraction Type (Survive to grow)
 
 ### 2.1 Facility List
 
-BaseCamp consists of the following 7 facilities:
+BaseCamp consists of the following **7 facilities**:
 
-| Facility   | English Name     | Main Role                                                     | Progression Type  |
-| ---------- | ---------------- | ------------------------------------------------------------- | ----------------- |
-| 酒場       | **Guild**        | Character selection, Check exploration count, Promotion exams | Start Run         |
-| 取引所     | **Shop**         | Buying/Selling equipment & items                              | In-Run            |
-| 鍛冶屋     | **Blacksmith**   | Enhance, Repair, Dismantle equipment                          | In-Run            |
-| 神殿       | **Sanctuary**    | Permanent upgrades via Soul Remnants                          | Inter-Run         |
-| 図書館     | **Library**      | Deck building, Encyclopedia, Records                          | Management        |
-| 倉庫       | **Storage**      | Item storage & organization                                   | Management        |
-| ダンジョン | **Dungeon Gate** | Entrance to the Abyss                                         | Start Exploration |
+| Facility   | English Name     | Main Role                                                     | Progression Type  | Status |
+| ---------- | ---------------- | ------------------------------------------------------------- | ----------------- | ------ |
+| 酒場       | **Guild**        | Character selection, Check exploration count, Promotion exams | Start Run         | ✅ |
+| 取引所     | **Shop**         | Buying/Selling equipment & items                              | In-Run            | ✅ |
+| 鍛冶屋     | **Blacksmith**   | Enhance, Repair, Dismantle equipment                          | In-Run            | ✅ |
+| 神殿       | **Sanctuary**    | Permanent upgrades via Soul Remnants                          | Inter-Run         | ✅ |
+| 図書館     | **Library**      | ~~Deck building, Encyclopedia, Records~~                      | ~~Management~~    | ⚠️ DEPRECATED |
+| 倉庫       | **Storage**      | Item storage & organization                                   | Management        | ✅ |
+| ダンジョン | **Dungeon Gate** | Entrance to the Abyss                                         | Start Exploration | ✅ |
+
+> **V3.2 Changes:**
+> - **Inn (宿屋)**: REMOVED - Facility removed to simplify implementation. May be re-added in future.
+> - **Library (図書館)**: DEPRECATED - Migrating to Journal system. See `journal_system_implementation_plan.md`.
 
 ### 2.2 Relationships Between Facilities
 
@@ -275,63 +280,31 @@ Tier 3: Ultimate Upgrades (Massive bonuses, Exploration Count +2)
 
 ---
 
-### 3.5 Library
+### 3.5 Library (DEPRECATED → Journal)
 
-**Concept:** Hall of Knowledge and Records
+> ⚠️ **DEPRECATED**: The Library facility is being replaced by the **Journal (手記) System**.
+>
+> See: `.claude/docs/journal_document/journal_system_implementation_plan.md`
 
-**Main Functions:**
+**Migration Plan:**
 
-1. **Deck Builder**: Combine Cards, Equipment, Items.
-2. **Encyclopedia**: Records of Cards, Equipment, Items, Monsters.
-3. **Records**: Titles, Achievements.
-4. **Memory Room**: Save/Load.
+| Library Function | Journal Destination |
+|------------------|-------------------|
+| Deck Builder | Chapter 1「戦術」(Tactics) |
+| Card/Equipment/Monster Encyclopedia | Chapter 2「記憶」(Memory) |
+| Save/Load | Appendix「設定」(Settings) |
+| Equipment Set Selection | Inventory (not Journal) |
 
-**The 4 Bookshelves:**
+**Current Status:**
 
-**📖 Book of Composition:**
+The current implementation has partial Library features:
+- Card Encyclopedia (implemented)
+- Enemy Encyclopedia (implemented)
+- Game Tips (implemented)
+- Deck Builder (not yet implemented - planned for Journal)
+- Save/Load (implemented in separate Settings panel)
 
-- Deck Construction (Card Selection)
-- Equipment Set Selection
-- Starting Item Selection
-- Loadout Save/Load (Set 1, 2, 3)
-
-**📕 Book of Knowledge (Encyclopedia):**
-
-- Card Compendium (Mastery, Evolution info)
-- Equipment Compendium (Rarity, Effects)
-- Item Compendium (Consumables, Stones)
-- Monster Compendium (Spawn Depth, Drops)
-
-**📘 Book of Records:**
-
-- Title System
-- Achievements (Clear count, Deepest reach, etc.)
-- Statistics (**Exploration Count recorded - V3.0**)
-
-**📗 Room of Memory:**
-
-- Save Data Management (Multiple slots)
-- Cloud Sync (Future expansion)
-- Data Export
-
-**Changes in V3.0:**
-
-```
-Added to Statistics:
-- Total Exploration Count
-- Survival Count
-- Death Count
-- Average Souls Gained
-
-```
-
-**Design Intent:**
-
-- Place for build research.
-- Visualize player progress.
-- Encourage trial and error.
-
-**Details:** See `LIBRARY_DESIGN_V1.md` (Needs Minor Revision)
+**Details:** See `LIBRARY_DESIGN_V1.md` (DEPRECATED)
 
 ---
 
@@ -739,11 +712,18 @@ Death: Run progress LOST, Accumulation KEPT (Risk Management).
 ```
 BASE_CAMP_DESIGN_V3 [This Document]
 ├── GUILD_DESIGN_V2.1.md (Needs Revision)
-├── SHOP_DESIGN_V1.md (Needs Minor Revision)
-├── BLACKSMITH_DESIGN_V1.md (No Changes)
-├── SANCTUARY_DESIGN_V2.md (V3.0 Updated)
-└── LIBRARY_DESIGN_V1.md (Needs Minor Revision)
+├── SHOP_DESIGN_V1.md (V1.1 Updated - Restock system documented)
+├── BLACKSMITH_DESIGN_V1.md (V1.1 Updated - Implementation verified)
+├── SANCTUARY_DESIGN_V3.md (V3.1 Updated - Implementation differences noted)
+└── LIBRARY_DESIGN_V1.md (DEPRECATED → Journal)
 
+```
+
+**Journal System (Library Replacement):**
+
+```
+journal_document/
+└── journal_system_implementation_plan.md
 ```
 
 **High-Level Design:**

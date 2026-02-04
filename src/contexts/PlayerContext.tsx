@@ -23,7 +23,6 @@ import type {
   EquipmentSlots,
   SanctuaryProgress,
   ShopStockState,
-  InnBuffsState,
 } from "@/types/campTypes";
 import { createLivesSystem } from "../domain/characters/player/logic/playerUtils";
 import {
@@ -78,7 +77,6 @@ export interface InternalPlayerState {
   sanctuaryProgress: SanctuaryProgress;
   shopRotationDay?: number;
   shopStockState?: ShopStockState;
-  innBuffsState?: InnBuffsState;
 }
 
 /**
@@ -432,7 +430,6 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         completedAchievements: [],
         shopRotationDay: playerState.shopRotationDay,
         shopStockState: playerState.shopStockState,
-        innBuffsState: playerState.innBuffsState,
       },
     }),
     [playerState, playerId, equipmentAP, resourceContext.resources],
@@ -477,7 +474,6 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         completedAchievements: [],
         shopRotationDay: state.shopRotationDay,
         shopStockState: state.shopStockState,
-        innBuffsState: state.innBuffsState,
       },
     };
   };
@@ -533,9 +529,6 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
       }
       if (updates.progression.shopStockState !== undefined) {
         updated.shopStockState = updates.progression.shopStockState;
-      }
-      if (updates.progression.innBuffsState !== undefined) {
-        updated.innBuffsState = updates.progression.innBuffsState;
       }
     }
 

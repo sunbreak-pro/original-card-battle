@@ -52,7 +52,13 @@ export function calculateDamage(
 
   const atkMultiplier = attackBuffDebuff(attackerBuffs);
 
-  const finalAtk = Math.floor(baseDmg * atkMultiplier);
+  let finalAtk = Math.floor(baseDmg * atkMultiplier);
+
+  // Critical hit check - applied before defense calculation (per design spec)
+  const isCritical = critBonus > 0 && Math.random() < critBonus;
+  if (isCritical) {
+    finalAtk = Math.floor(finalAtk * 1.5);
+  }
 
   let incomingDmg: number;
 
@@ -69,12 +75,6 @@ export function calculateDamage(
       : damageReductionMod;
 
     incomingDmg = Math.floor(finalAtk * vulnerabilityMod * effectiveReduction);
-  }
-
-  // Critical hit check
-  const isCritical = critBonus > 0 && Math.random() < critBonus;
-  if (isCritical) {
-    incomingDmg = Math.floor(incomingDmg * 1.5);
   }
 
   const reflectDamage = reflectBuff(defenderBuffs, incomingDmg);
@@ -99,15 +99,18 @@ export function applyDamageAllocation(
   let hpDmg = 0;
   const hadGuard = defender.guard > 0;
 
-  // Guard absorption with bleed-through mechanic:
+  // Guard absorption with bleed-through mechanic (Armor Break):
   // When guard fully absorbs damage AND there is no AP backup,
-  // a portion of damage bleeds through directly to HP.
+  // 50% of damage bypasses guard and goes directly to HP,
+  // while the remaining 50% is absorbed by guard.
   // When AP exists as a secondary layer, guard provides full protection.
   if (hadGuard) {
     if (defender.guard >= remainingDmg && defender.ap <= 0) {
-      // Guard absorbs all, but no AP backup → bleed-through to HP
-      guardDmg = remainingDmg;
-      hpDmg = Math.floor(remainingDmg * GUARD_BLEED_THROUGH_MULTIPLIER);
+      // Guard absorbs partial, no AP backup → Armor Break (50/50 split)
+      const bypassDamage = Math.floor(remainingDmg * GUARD_BLEED_THROUGH_MULTIPLIER);
+      const guardedDamage = remainingDmg - bypassDamage;
+      guardDmg = guardedDamage;
+      hpDmg = bypassDamage;
       remainingDmg = 0;
       return { guardDamage: guardDmg, apDamage: apDmg, hpDamage: hpDmg };
     } else if (defender.guard >= remainingDmg) {

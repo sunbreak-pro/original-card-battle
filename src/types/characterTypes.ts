@@ -10,7 +10,7 @@
  */
 
 import type { BuffDebuffMap, BuffDebuffState, BuffDebuffType } from './battleTypes';
-import type { ExplorationLimit, SanctuaryProgress, Depth, ShopStockState, InnBuffsState } from './campTypes';
+import type { ExplorationLimit, SanctuaryProgress, Depth, ShopStockState } from './campTypes';
 import type { MagicStones } from './itemTypes';
 import type { EquipmentSlots, InventoryState, StorageState, EquipmentInventoryState } from './campTypes';
 import type { DeckState } from '../domain/cards/decks/deckReducter';
@@ -83,7 +83,7 @@ export interface SwordEnergyState {
  */
 export type ElementType =
   | "fire" | "ice" | "lightning" | "dark" | "light"
-  | "physics" | "guard"
+  | "physics" | "slash" | "impact" | "guard"
   | "buff" | "debuff" | "heal"
   | "attack" | "classAbility" | "chain";
 
@@ -265,7 +265,6 @@ export interface PlayerProgression {
   completedAchievements: string[];
   shopRotationDay?: number;
   shopStockState?: ShopStockState;
-  innBuffsState?: InnBuffsState;
 }
 
 /**

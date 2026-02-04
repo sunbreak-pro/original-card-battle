@@ -20,7 +20,7 @@ The Element System assigns an element tag to every card in the game. Elements ar
 
 ## 2. Element Types
 
-There are 11 element types organized into 3 groups.
+There are 8 element types organized into 2 groups.
 
 ### 2.1 Complete Element Table
 
@@ -34,9 +34,6 @@ There are 11 element types organized into 3 groups.
 | `slash`     | Physical  | ⚔️   | 斬撃       | `#c0c0c0` | Cutting melee attacks         |
 | `impact`    | Physical  | 💥   | 衝撃       | `#ff8c00` | Blunt/impact attacks          |
 | `guard`     | Physical  | 🛡️   | 防御       | `#4682b4` | Defensive stance              |
-| `summon`    | Summoner  | 🔮   | 召喚       | `#9370db` | Summoning creatures           |
-| `enhance`   | Summoner  | 💎   | 強化       | `#00ced1` | Buffing active summons        |
-| `sacrifice` | Summoner  | 💀   | 生贄       | `#8b0000` | Consuming summons for effects |
 
 > **Note:** `impact` replaces the former `shock` naming. Code migration is tracked separately.
 
@@ -46,7 +43,6 @@ There are 11 element types organized into 3 groups.
 |-----------|---------------------------------------------|--------------------------|
 | Magic     | fire, ice, lightning, dark, light           | Mage Resonance           |
 | Physical  | slash, impact, guard                        | Swordsman Sword Energy (slash only) |
-| Summoner  | summon, enhance, sacrifice                  | Summoner (TBD)           |
 
 ---
 
@@ -60,9 +56,8 @@ Any class can play any element's card. The card's base effects (damage, buffs, d
 
 | Class     | Ability        | Activating Element(s) | Non-Activating Elements                     |
 |-----------|----------------|----------------------|---------------------------------------------|
-| Mage      | Resonance      | fire, ice, lightning, dark, light | slash, impact, guard, summon, enhance, sacrifice |
-| Swordsman | Sword Energy gain | slash only          | impact, guard, fire, ice, lightning, dark, light, summon, enhance, sacrifice |
-| Summoner  | (TBD)          | (TBD)                | (TBD)                                       |
+| Mage      | Resonance      | fire, ice, lightning, dark, light | slash, impact, guard |
+| Swordsman | Sword Energy gain | slash only          | impact, guard, fire, ice, lightning, dark, light |
 
 ### 3.3 Examples
 
@@ -89,7 +84,7 @@ State Transitions:
   any state       → Play slash card → lastElement=null, resonanceLevel=0 (chain broken)
 ```
 
-Non-magic elements (slash, impact, guard, summon, enhance, sacrifice) break the resonance chain entirely.
+Non-magic elements (slash, impact, guard) break the resonance chain entirely.
 
 ### 4.2 Resonance Levels
 
@@ -343,7 +338,7 @@ This positions element specialization as a mid-game investment.
 2. **No Enemy Elemental Typing.** Enemies do not have element attributes that interact with card elements.
 3. **No Elemental Resistance Stats.** Neither players nor enemies have per-element damage reduction.
 4. **No Cross-Element Reactions.** Playing fire then ice does not trigger special combination effects.
-5. **No Resonance for Non-Mage Classes.** Swordsman and Summoner class abilities are independent of the resonance system. Even if they play consecutive same-magic-element cards, no resonance effects occur.
+5. **No Resonance for Non-Mage Classes.** Swordsman class abilities are independent of the resonance system. Even if they play consecutive same-magic-element cards, no resonance effects occur.
 
 ---
 

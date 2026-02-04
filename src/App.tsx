@@ -7,7 +7,6 @@ import Storage from "./ui/html/campsHtml/Storage/Storage.tsx";
 import { Blacksmith } from "./ui/html/campsHtml/Blacksmith/Blacksmith.tsx";
 import { Sanctuary } from "./ui/html/campsHtml/Sanctuary/Sanctuary.tsx";
 import { Library } from "./ui/html/campsHtml/Library/Library.tsx";
-import { Inn } from "./ui/html/campsHtml/Inn/Inn.tsx";
 import { DungeonGate } from "./ui/html/dungeonHtml/DungeonGate.tsx";
 import { NodeMap } from "./ui/html/dungeonHtml/NodeMap.tsx";
 import { DungeonRunProvider } from "./contexts/DungeonRunContext.tsx";
@@ -93,8 +92,6 @@ function AppContent() {
       {currentScreen === "sanctuary" && <Sanctuary />}
       {/* Library Screen */}
       {currentScreen === "library" && <Library />}
-      {/* Inn Screen */}
-      {currentScreen === "inn" && <Inn />}
       {/* Storage Screen */}
       {currentScreen === "storage" && <Storage />}
       {/* Dungeon Gate Screen */}

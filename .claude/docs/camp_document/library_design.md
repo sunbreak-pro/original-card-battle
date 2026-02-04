@@ -1,3 +1,19 @@
+> ⚠️ **DEPRECATED**: This design document has been superseded by the Journal system.
+>
+> The Library facility is being integrated into the **Journal (手記)** system, which provides a unified UI accessible from the header.
+>
+> **Please refer to:** `.claude/docs/journal_document/journal_system_implementation_plan.md`
+>
+> **Migration mapping:**
+> - Book of Builds (デッキ編成) → Journal Chapter 1「戦術」
+> - Book of Encyclopedia (図鑑) → Journal Chapter 2「記憶」
+> - Book of Records (アチーブメント) → Not yet migrated
+> - Chamber of Memories (セーブ/ロード) → Journal「設定」
+>
+> The content below is preserved for historical reference.
+
+---
+
 Here is the English translation of the Library Detailed Design Document.
 
 # Library Detailed Design Document (LIBRARY_DESIGN_V1)

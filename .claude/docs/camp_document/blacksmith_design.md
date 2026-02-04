@@ -3,6 +3,7 @@
 ## Update History
 
 - V1.0: Initial Draft (Includes Quality Upgrade System, Magic Stone Quality Gacha Elements)
+- V1.1: Implementation Status Verified - 3-pattern quality upgrade system fully implemented
 
 ---
 
@@ -941,6 +942,60 @@ BASE_CAMP_DESIGN_V1
     └── EQUIPMENT_AND_ITEMS_DESIGN.md [Equipment Data]
 
 ```
+
+---
+
+---
+
+## 9. Implementation Status (V1.1)
+
+> **Status: FULLY IMPLEMENTED**
+
+The Blacksmith facility has been implemented with all designed features:
+
+### 9.1 Implemented Features
+
+| Feature | Status | Implementation File |
+|---------|--------|-------------------|
+| Level Upgrade (Lv0-3) | ✅ Complete | `blacksmithLogic.ts` |
+| Quality Upgrade (3 options) | ✅ Complete | `blacksmithLogic.ts`, `BlacksmithData.ts` |
+| Repair System | ✅ Complete | `blacksmithLogic.ts` |
+| Dismantle System | ✅ Complete | `blacksmithLogic.ts` |
+| Batch Operations | ✅ Complete | `blacksmithLogic.ts` |
+
+### 9.2 Quality Upgrade Options (Implemented)
+
+All 3 upgrade patterns from the design are implemented:
+
+```typescript
+QUALITY_UP_OPTIONS = {
+  normal: {
+    label: "通常強化",
+    costMultiplier: 1.0,
+    successRates: { poorToNormal: 0.40, normalToGood: 0.20, goodToMaster: 0.10 }
+  },
+  qualityFocused: {
+    label: "品質重視",
+    costMultiplier: 1.5,
+    successRates: { poorToNormal: 0.80, normalToGood: 0.40, goodToMaster: 0.15 }
+  },
+  maxQuality: {
+    label: "最高品質狙い",
+    costMultiplier: 2.0,
+    successRates: { poorToNormal: 1.00, normalToGood: 0.60, goodToMaster: 0.25 }
+  }
+}
+```
+
+### 9.3 Dismantle Returns
+
+Implementation returns **Gold** (not magic stones as primary return):
+
+```typescript
+calculateDismantleGold(sellPrice, rarity) // Returns gold based on sell price × rarity rate
+```
+
+Bonus magic stones are awarded probabilistically based on rarity and level.
 
 ---
 
