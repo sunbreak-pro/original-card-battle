@@ -34,12 +34,6 @@ This directory contains specialized skill guides for developing different aspect
 | **debugging-error-prevention** | Prevent bugs | Error boundaries, type safety, async handling |
 | **debugging-active** | Debug issues | State inspection, diagnostic trees, root cause analysis |
 
-### Utilities
-
-| Skill | Command | Description |
-|-------|---------|-------------|
-| **memory-keeper** | Record info | Store design decisions, bug info, development tips |
-
 ## Usage
 
 Skills are automatically triggered by Claude Code when relevant requests are made. Examples:
