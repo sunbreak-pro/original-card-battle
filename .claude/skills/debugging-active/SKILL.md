@@ -1,6 +1,6 @@
 ---
 name: debugging-active
-description: Hands-on debugging workflows for investigating live bugs in the card battle game. Covers debug instrumentation, state inspection, diagnostic trees, and step-by-step domain-specific debugging procedures. Use for "debug why X happens", "investigate bug", "trace issue", "find root cause" requests.
+description: Hands-on debugging workflows for investigating live bugs in the card battle game. Covers debug instrumentation, state inspection, diagnostic trees, and step-by-step domain-specific debugging procedures. Use for "debug why X happens", "investigate bug", "trace issue", "find root cause" requests. 使用時: 「debugging-activeを使用します」
 ---
 
 # Active Debugging Skill

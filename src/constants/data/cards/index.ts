@@ -6,7 +6,6 @@
 
 export { SWORDSMAN_CARDS } from './swordsmanCards';
 export { MAGE_CARDS } from './mageCards';
-export { COMMON_CARDS } from './commonCards';
 export {
   SWORDSMAN_DERIVATIONS,
   MAGE_DERIVATIONS,

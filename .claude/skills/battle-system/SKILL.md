@@ -1,6 +1,6 @@
 ---
 name: battle-system
-description: Add or modify battle system features in the card battle game. Covers buff/debuff systems, damage calculation, phase execution, and card effect implementation. Use for "add buff", "modify damage calculation", "new battle feature" requests.
+description: Add or modify battle system features in the card battle game. Covers buff/debuff systems, damage calculation, phase execution, and card effect implementation. Use for "add buff", "modify damage calculation", "new battle feature" requests. 使用時: 「battle-systemを使用します」
 ---
 
 # Battle System Skill

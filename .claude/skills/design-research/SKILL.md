@@ -1,6 +1,6 @@
 ---
 name: design-research
-description: Quickly search and reference game design documents. Use when checking specifications before implementation or researching design details. Triggers on "check X specs", "search design docs", "how is X designed?" requests.
+description: Quickly search and reference game design documents. Use when checking specifications before implementation or researching design details. Triggers on "check X specs", "search design docs", "how is X designed?" requests. 使用時: 「design-researchを使用します」
 ---
 
 # Design Research Skill

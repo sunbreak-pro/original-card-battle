@@ -1,6 +1,6 @@
 ---
 name: character-class-creator
-description: Add new character classes to the card battle game. Covers class data definition, initial deck configuration, and class-specific mechanic implementation. Use for "add new class", "implement character" requests.
+description: Add new character classes to the card battle game. Covers class data definition, initial deck configuration, and class-specific mechanic implementation. Use for "add new class", "implement character" requests. 使用時: 「character-class-creatorを使用します」
 ---
 
 # Character Class Creator Skill

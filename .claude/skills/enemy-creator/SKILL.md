@@ -1,6 +1,6 @@
 ---
 name: enemy-creator
-description: Add new enemies to the card battle game. Covers enemy definition data, AI pattern design, and depth-specific data file updates. Use for "add enemy", "create new monster", "implement boss" requests.
+description: Add new enemies to the card battle game. Covers enemy definition data, AI pattern design, and depth-specific data file updates. Use for "add enemy", "create new monster", "implement boss" requests. 使用時: 「enemy-creatorを使用します」
 ---
 
 # Enemy Creator Skill

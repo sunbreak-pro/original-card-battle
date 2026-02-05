@@ -1,6 +1,6 @@
 ---
 name: ui-ux-creator
-description: UI/UX design skill for dark fantasy card battle games. Covers color palettes, typography, animations, card layouts, and psychological pressure design. Use for "create UI component", "design battle screen", "add animation", or visual design tasks.
+description: UI/UX design skill for dark fantasy card battle games. Covers color palettes, typography, animations, card layouts, and psychological pressure design. Use for "create UI component", "design battle screen", "add animation", or visual design tasks. 使用時: 「ui-ux-creatorを使用します」
 ---
 
 # UI/UX Creator Skill

@@ -11,6 +11,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useResources } from "@/contexts/ResourceContext";
 import { useGameState } from "@/contexts/GameStateContext";
+import { useJournal } from "@/contexts/JournalContext";
 import { HEADER_ICONS } from "@/constants/uiConstants";
 import { FACILITY_NAV_ITEMS } from "@/constants/campConstants";
 import { SettingsModal } from "./SettingsModal";
@@ -28,6 +29,7 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
   const { runtimeState } = usePlayer();
   const { getTotalGold, resources } = useResources();
   const { gameState, navigateTo } = useGameState();
+  const { openJournal } = useJournal();
   const [navOpen, setNavOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -72,6 +74,16 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
       {/* Left section: Title + Settings + Nav */}
       <div className="page-title">
         <span className="basecamp-title-text">{title}</span>
+
+        {/* Journal Button */}
+        <button
+          className="settings-toggle"
+          onClick={() => openJournal()}
+          aria-label="手記"
+          title="手記"
+        >
+          📖
+        </button>
 
         {/* Settings Button */}
         <button

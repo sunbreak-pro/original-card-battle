@@ -174,7 +174,9 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | 日付 | 作業内容 | 進捗 |
 |------|----------|------|
-| 2026-02-05 | Dark Market（闇市場）実装: Shopの4番目タブとして追加。高価格（×1.8）でレア以上の装備・エピック消耗品を販売、ボス討伐後に在庫更新。DarkMarketTab.tsx、DarkMarketConstants.ts新規、campTypes.ts/campConstants.ts/shopStockLogic.ts拡張、BattleScreen.tsx連携 | 完了 |
+| 2026-02-06 | Journal Phase 2 (Memories Page): 図鑑ページ実装。EquipmentEncyclopediaData.ts/EventEncyclopediaData.ts新規作成、MemoriesPage.tsx (カテゴリタブ: カード/敵/装備/イベント、検索・フィルタ・進捗表示)、Memories.css。JournalOverlay.tsx更新 | 完了 |
+| 2026-02-06 | 共通カード・剣気システム修正: 共通カード20枚完全削除(commonCards.ts削除、CardCharacterClass型から"common"除去)、剣気消費カード使用制限(canPlayCard関数にswordEnergy判定追加、BattleScreen UI反映)、ターン開始時剣気+1(SwordEnergySystem.onTurnStart修正) | 完了 |
+| 2026-02-05 | Dark Market（闘市場）実装: Shopの4番目タブとして追加。高価格（×1.8）でレア以上の装備・エピック消耗品を販売、ボス討伐後に在庫更新。DarkMarketTab.tsx、DarkMarketConstants.ts新規、campTypes.ts/campConstants.ts/shopStockLogic.ts拡張、BattleScreen.tsx連携 | 完了 |
 | 2026-02-05 | カード図鑑UI改修（3分類システム）: CardEncyclopediaTab.tsx大幅改修、CardCategoryRow.tsx新規、cardClassification.ts/talentCardUnlock.ts新規、talentCardRegistry.ts新規。才能カード8枚(sw_027-034)にisTalentCard追加、派生解放Lv2→Lv1変更、3行レイアウトCSS追加 | 完了 |
 | 2026-02-05 | Storage機能のGuild統合: 倉庫を独立施設からギルドのタブ（4つ目）に統合。StorageTab.tsx新規作成、Guild.css統合、App.tsx/campConstants.tsからStorage関連削除 | 完了 |
 | 2026-02-05 | Swordsmanカードバランス調整: 剣気サイクル根本変更(攻撃=獲得→消費、スキル/ガード=獲得強化)、新規カード4枚(sw_044-047)、派生カード15枚追加、初期デッキ構成変更(攻撃6/スキル6/ガード3の15枚)。全60枚 | 完了 |

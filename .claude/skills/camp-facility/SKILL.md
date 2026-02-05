@@ -1,6 +1,6 @@
 ---
 name: camp-facility
-description: Add or modify camp facilities in the card battle game. Covers shop, guild, blacksmith, sanctuary, and library functionality. Use for "add shop item", "create new facility", "modify guild feature" requests.
+description: Add or modify camp facilities in the card battle game. Covers shop, guild, blacksmith, sanctuary, and library functionality. Use for "add shop item", "create new facility", "modify guild feature" requests. 使用時: 「camp-facilityを使用します」
 ---
 
 # Camp Facility Skill

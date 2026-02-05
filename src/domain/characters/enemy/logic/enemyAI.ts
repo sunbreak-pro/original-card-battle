@@ -72,7 +72,7 @@ export function enemyAction(action: EnemyAction): Card {
     cardTypeId: `enemy_action_${action.name}`,
     name: action.name,
     description: "",
-    characterClass: "common",
+    characterClass: "swordsman", // Enemy actions use swordsman as default (no gameplay impact)
     cost: 0,
     baseDamage: action.baseDamage,
     tags,

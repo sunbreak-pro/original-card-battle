@@ -1,6 +1,6 @@
 ---
 name: debugging-error-prevention
-description: Debug issues and prevent errors in the card battle game. Covers error boundaries, type safety, async error handling, state debugging, and common pitfall prevention. Use for "debug X", "fix error", "why is X failing", "prevent bugs" requests.
+description: Debug issues and prevent errors in the card battle game. Covers error boundaries, type safety, async error handling, state debugging, and common pitfall prevention. Use for "debug X", "fix error", "why is X failing", "prevent bugs" requests. 使用時: 「debugging-error-preventionを使用します」
 ---
 
 # Debugging & Error Prevention Skill

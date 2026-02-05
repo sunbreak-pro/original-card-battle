@@ -15,7 +15,7 @@
    ========================================= */
 :root {
   --card-base-width: 18vh;
-  --card-aspect-ratio: 3.35 / 5;
+  --card-aspect-ratio: 3.25 / 5;
 }
 
 /* =========================================
@@ -263,7 +263,7 @@
 
 .card-power {
   margin-top: 0.5vh;
-  font-size: 1.6vh;
+  font-size: 1.1vh;
   font-weight: bold;
   color: #f9ed7f;
 }

@@ -658,7 +658,13 @@ const BattleScreen = ({
                 <CardComponent
                   card={card}
                   depth={depth}
-                  isPlayable={card.cost <= playerEnergy && !isDiscarding}
+                  isPlayable={
+                    card.cost <= playerEnergy &&
+                    !isDiscarding &&
+                    (card.swordEnergyConsume === undefined ||
+                     card.swordEnergyConsume === 0 ||
+                     swordEnergy.current >= card.swordEnergyConsume)
+                  }
                 />
               </div>
             );

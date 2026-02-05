@@ -35,8 +35,21 @@ export function canPlayCard(
   card: Card,
   currentEnergy: number,
   isPlayerTurn: boolean,
+  currentSwordEnergy?: number,
 ): boolean {
-  return isPlayerTurn && card.cost <= currentEnergy;
+  // Basic checks
+  if (!isPlayerTurn || card.cost > currentEnergy) {
+    return false;
+  }
+
+  // Sword energy check (only for cards with swordEnergyConsume defined and > 0)
+  if (card.swordEnergyConsume !== undefined && card.swordEnergyConsume > 0) {
+    if (currentSwordEnergy === undefined || currentSwordEnergy < card.swordEnergyConsume) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 import type { BuffDebuffState } from '@/types/battleTypes';

@@ -34,7 +34,8 @@
       "Bash(do echo \"=== $file ===\")",
       "Bash(python3:*)",
       "Bash(npm install:*)",
-      "Bash(tr:*)"
+      "Bash(tr:*)",
+      "Bash(head:*)"
     ],
     "deny": [],
     "ask": []

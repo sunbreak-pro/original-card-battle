@@ -56,8 +56,8 @@ export const SwordEnergySystem: ClassAbilitySystem<SwordEnergyState> = {
    * Handle card play - add sword energy for attack cards
    */
   onCardPlay(state: SwordEnergyState, card: Card): SwordEnergyState {
-    // Only swordsman cards or physical attacks gain energy
-    if (card.characterClass !== "swordsman" && card.characterClass !== "common") {
+    // Only swordsman cards gain energy
+    if (card.characterClass !== "swordsman") {
       return state;
     }
 
@@ -90,11 +90,11 @@ export const SwordEnergySystem: ClassAbilitySystem<SwordEnergyState> = {
   },
 
   /**
-   * Handle turn start
+   * Handle turn start - gain +1 sword energy
    */
   onTurnStart(state: SwordEnergyState): SwordEnergyState {
-    // Sword energy persists between turns
-    return state;
+    // Gain +1 sword energy at turn start
+    return addSwordEnergy(state, 1);
   },
 
   /**

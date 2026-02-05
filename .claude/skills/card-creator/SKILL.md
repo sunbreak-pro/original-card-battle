@@ -1,6 +1,6 @@
 ---
 name: card-creator
-description: Add new cards to the card battle game. Covers card data creation, type definition compliance, class-specific card file updates, and initial deck registration. Use for "add card", "create new card", "implement X card" requests.
+description: Add new cards to the card battle game. Covers card data creation, type definition compliance, class-specific card file updates, and initial deck registration. Use for "add card", "create new card", "implement X card" requests. 使用時: 「card-creatorを使用します」
 ---
 
 # Card Creator Skill

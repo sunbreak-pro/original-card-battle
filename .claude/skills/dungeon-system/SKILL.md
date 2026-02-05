@@ -1,6 +1,6 @@
 ---
 name: dungeon-system
-description: Add or modify dungeon exploration systems in the card battle game. Covers map generation, node types, return system, and depth progression. Use for "add dungeon node", "modify map generation", "implement return system" requests.
+description: Add or modify dungeon exploration systems in the card battle game. Covers map generation, node types, return system, and depth progression. Use for "add dungeon node", "modify map generation", "implement return system" requests. 使用時: 「dungeon-systemを使用します」
 ---
 
 # Dungeon System Skill

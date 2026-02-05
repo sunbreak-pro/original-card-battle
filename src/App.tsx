@@ -19,6 +19,8 @@ import { PlayerProvider } from "./contexts/PlayerContext.tsx";
 import { InventoryProvider } from "./contexts/InventoryContext.tsx";
 import { SettingsProvider } from "./contexts/SettingsContext.tsx";
 import { ToastProvider } from "./contexts/ToastContext.tsx";
+import { JournalProvider } from "./contexts/JournalContext.tsx";
+import { JournalOverlay } from "./ui/html/journalHtml/JournalOverlay.tsx";
 import { getGuildEnemy } from "@/constants/data/camps/GuildEnemyData";
 import { ErrorBoundary } from "./ui/components/ErrorBoundary.tsx";
 import { BrightnessOverlay } from "./ui/html/componentsHtml/BrightnessOverlay.tsx";
@@ -39,6 +41,7 @@ function AppContent() {
       {/* Global Overlays */}
       <BrightnessOverlay />
       <ToastContainer />
+      <JournalOverlay />
 
       {/* Character Selection Screen */}
       {currentScreen === "character_select" && <CharacterSelect />}
@@ -110,17 +113,19 @@ function App() {
     <ErrorBoundary>
       <GameStateProvider>
         <SettingsProvider>
-          <ToastProvider>
-            <ResourceProvider>
-              <PlayerProvider>
-                <InventoryProvider>
-                  <DungeonRunProvider>
-                    <AppContent />
-                  </DungeonRunProvider>
-                </InventoryProvider>
-              </PlayerProvider>
-            </ResourceProvider>
-          </ToastProvider>
+          <JournalProvider>
+            <ToastProvider>
+              <ResourceProvider>
+                <PlayerProvider>
+                  <InventoryProvider>
+                    <DungeonRunProvider>
+                      <AppContent />
+                    </DungeonRunProvider>
+                  </InventoryProvider>
+                </PlayerProvider>
+              </ResourceProvider>
+            </ToastProvider>
+          </JournalProvider>
         </SettingsProvider>
       </GameStateProvider>
     </ErrorBoundary>

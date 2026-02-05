@@ -86,6 +86,10 @@ Initial Energy: 3
 Max Value: 10
 Initial Value: 0
 
+【Turn Start Effect】
+- +1 Sword Energy at the start of each turn (applies from turn 1)
+- Does not exceed maximum (10)
+
 【Accumulating Sword Energy】
 Sword Energy accumulates when using Physical Attack cards:
 - 0 Cost: +1 Sword Energy
@@ -206,6 +210,6 @@ Once the unique abilities are finalized, we move to the exclusive card design fo
 * Resonance enhancement types
 * Elemental combo types
 
-Approximately 40 exclusive cards per class, plus 20 common cards, resulting in a total card pool of approximately 60 cards per class.
+Each class has approximately 40-60 exclusive cards.
 
-*Current Implementation Status: Blade Master 43 cards, Spell Caster 40 cards, Common 20 cards = 103 cards total.*
+*Current Implementation Status: Blade Master 60 cards, Spell Caster 40 cards = 100 cards total.*

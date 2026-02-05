@@ -1,0 +1,406 @@
+/**
+ * Journal (手記) Styles
+ *
+ * Parchment-style overlay for the journal system.
+ * Uses sepia tones and ink-sketch aesthetics.
+ */
+
+/* ============================================================================
+   CSS Variables - Parchment Theme
+   ============================================================================ */
+
+.journal-overlay {
+  --journal-bg-light: #f4e4bc;
+  --journal-bg-dark: #d4c4a0;
+  --journal-bg-gradient: linear-gradient(
+    135deg,
+    #f4e4bc 0%,
+    #e8d8ac 25%,
+    #dcc89c 50%,
+    #d4c4a0 75%,
+    #c8b890 100%
+  );
+  --journal-text-primary: #3c2a14;
+  --journal-text-secondary: #5a4530;
+  --journal-text-muted: #7a6550;
+  --journal-border-main: #8b7355;
+  --journal-border-light: #a89070;
+  --journal-accent: #6b4423;
+  --journal-accent-hover: #8b5a33;
+  --journal-tab-active: #f8f0d8;
+  --journal-tab-inactive: #e8d8b8;
+  --journal-shadow: rgba(60, 42, 20, 0.3);
+  --journal-ink: #2a1a08;
+}
+
+/* ============================================================================
+   Backdrop
+   ============================================================================ */
+
+.journal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal, 1000);
+  animation: journalFadeIn 0.3s ease-out;
+}
+
+/* ============================================================================
+   Main Container - Book Style
+   ============================================================================ */
+
+.journal-book {
+  position: relative;
+  width: 80vw;
+  max-width: 1000px;
+  height: 85vh;
+  max-height: 800px;
+  background: var(--journal-bg-gradient);
+  border: 0.4vh solid var(--journal-border-main);
+  border-radius: 0.5vh 2vh 2vh 0.5vh;
+  box-shadow:
+    0 0 3vh var(--journal-shadow),
+    inset 0 0 2vh rgba(255, 255, 255, 0.2),
+    0 0.5vh 2vh rgba(0, 0, 0, 0.3);
+  display: flex;
+  overflow: hidden;
+  animation: journalBookOpen 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Parchment texture overlay */
+.journal-book::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+/* Book spine effect */
+.journal-book::after {
+  content: "";
+  position: absolute;
+  left: 4.5vw;
+  top: 0;
+  bottom: 0;
+  width: 0.3vh;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--journal-border-main) 10%,
+    var(--journal-border-main) 90%,
+    transparent 100%
+  );
+  opacity: 0.4;
+}
+
+/* ============================================================================
+   Page Tabs (Left Edge)
+   ============================================================================ */
+
+.journal-tabs {
+  position: relative;
+  left: 0;
+  top: 0vh;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+  z-index: 10;
+  background-color: #2a1a08;
+}
+
+.journal-tab {
+  position: relative;
+  width: 4vw;
+  padding: 1.8vh 0.25vw 1.5vh 1.5vw;
+  background: var(--journal-tab-inactive);
+  border: 0.2vh solid var(--journal-border-light);
+  border-radius: 0.8vh 0 0 0.8vh;
+  color: var(--journal-text-secondary);
+  font-size: 1.2vh;
+  font-weight: bold;
+  text-align: center;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: -0.2vh 0.2vh 0.5vh var(--journal-shadow);
+}
+
+.journal-tab:hover {
+  background: var(--journal-tab-active);
+  color: var(--journal-text-primary);
+  transform: translateX(0.3vw);
+}
+
+.journal-tab.active {
+  background: var(--journal-tab-active);
+  color: var(--journal-accent);
+  width: 4.3vw;
+  transform: translateX(0vw);
+  border-radius: 0%;
+  border-color: var(--journal-border-main);
+  box-shadow: -0.3vh 0.3vh 0.8vh var(--journal-shadow);
+}
+
+.journal-tab-icon {
+  display: block;
+  margin-bottom: 0.5vh;
+  font-size: 1.6vh;
+}
+
+/* ============================================================================
+   Content Area
+   ============================================================================ */
+
+.journal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2vh 3vw 2vh 3vw;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   Header
+   ============================================================================ */
+
+.journal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1.5vh;
+  margin-bottom: 1.5vh;
+  border-bottom: 0.2vh solid var(--journal-border-light);
+}
+
+.journal-title {
+  margin: 0;
+  font-size: 2.5vh;
+  color: var(--journal-ink);
+  font-weight: bold;
+  font-family: serif;
+  text-shadow: 0.1vh 0.1vh 0 rgba(255, 255, 255, 0.5);
+}
+
+.journal-close {
+  background: transparent;
+  border: 0.2vh solid var(--journal-border-light);
+  border-radius: 50%;
+  width: 3.5vh;
+  height: 3.5vh;
+  color: var(--journal-text-secondary);
+  font-size: 1.8vh;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.journal-close:hover {
+  background: var(--journal-accent);
+  border-color: var(--journal-accent);
+  color: white;
+  transform: rotate(90deg);
+}
+
+/* ============================================================================
+   Page Content
+   ============================================================================ */
+
+.journal-page {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 1vw;
+}
+
+/* Scrollbar styling */
+.journal-page::-webkit-scrollbar {
+  width: 0.8vw;
+}
+
+.journal-page::-webkit-scrollbar-track {
+  background: rgba(139, 115, 85, 0.2);
+  border-radius: 0.4vw;
+}
+
+.journal-page::-webkit-scrollbar-thumb {
+  background: var(--journal-border-main);
+  border-radius: 0.4vw;
+}
+
+.journal-page::-webkit-scrollbar-thumb:hover {
+  background: var(--journal-accent);
+}
+
+/* ============================================================================
+   Section Styling
+   ============================================================================ */
+
+.journal-section {
+  background: rgba(255, 255, 255, 0.3);
+  border: 0.15vh solid var(--journal-border-light);
+  border-radius: 1vh;
+  padding: 1.5vh 1.5vw;
+  margin-bottom: 1.5vh;
+}
+
+.journal-section-title {
+  margin: 0 0 1vh 0;
+  font-size: 1.8vh;
+  color: var(--journal-ink);
+  font-weight: bold;
+  font-family: serif;
+  border-bottom: 0.1vh solid var(--journal-border-light);
+  padding-bottom: 0.5vh;
+}
+
+/* ============================================================================
+   Read-Only Badge
+   ============================================================================ */
+
+.journal-readonly-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5vw;
+  padding: 0.5vh 1vw;
+  background: rgba(107, 68, 35, 0.15);
+  border: 0.15vh solid var(--journal-accent);
+  border-radius: 0.5vh;
+  color: var(--journal-accent);
+  font-size: 1.2vh;
+  font-style: italic;
+}
+
+.journal-readonly-icon {
+  font-size: 1.4vh;
+}
+
+/* ============================================================================
+   Button Styles
+   ============================================================================ */
+
+.journal-btn {
+  padding: 0.8vh 1.5vw;
+  background: var(--journal-accent);
+  border: 0.2vh solid var(--journal-border-main);
+  border-radius: 0.5vh;
+  color: white;
+  font-size: 1.3vh;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.journal-btn:hover:not(:disabled) {
+  background: var(--journal-accent-hover);
+  transform: translateY(-0.1vh);
+}
+
+.journal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.journal-btn-secondary {
+  background: transparent;
+  color: var(--journal-text-primary);
+}
+
+.journal-btn-secondary:hover:not(:disabled) {
+  background: rgba(107, 68, 35, 0.1);
+}
+
+.journal-btn-danger {
+  background: #8b3030;
+  border-color: #6b2020;
+}
+
+.journal-btn-danger:hover:not(:disabled) {
+  background: #a04040;
+}
+
+/* ============================================================================
+   Animations
+   ============================================================================ */
+
+@keyframes journalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes journalBookOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.9) rotateY(-10deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg);
+  }
+}
+
+/* ============================================================================
+   Responsive
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .journal-book {
+    width: 95vw;
+    height: 90vh;
+    border-radius: 1vh;
+  }
+
+  .journal-tabs {
+    left: 0;
+    top: auto;
+    bottom: 0;
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+    gap: 1vw;
+    padding: 1vh;
+    background: var(--journal-bg-dark);
+    border-top: 0.2vh solid var(--journal-border-main);
+  }
+
+  .journal-tab {
+    width: auto;
+    padding: 1vh 2vw;
+    writing-mode: horizontal-tb;
+    border-radius: 0.5vh;
+    border: 0.2vh solid var(--journal-border-light);
+  }
+
+  .journal-tab.active {
+    width: auto;
+    transform: none;
+  }
+
+  .journal-content {
+    padding: 2vh 3vw;
+    padding-bottom: 8vh;
+  }
+
+  .journal-book::after {
+    display: none;
+  }
+}

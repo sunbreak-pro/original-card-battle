@@ -28,10 +28,10 @@ import type React from "react";
 export type CharacterClass = "swordsman" | "mage";
 
 /**
- * Extended character class including common cards
+ * Character class for cards
  * Used for Card type to indicate which class can use the card
  */
-export type CardCharacterClass = CharacterClass | "common";
+export type CardCharacterClass = CharacterClass;
 
 /**
  * Battle Statistics Interface

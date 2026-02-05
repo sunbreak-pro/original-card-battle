@@ -202,9 +202,9 @@ export function useCardExecution(
 
   const canPlayCard = useCallback(
     (card: Card): boolean => {
-      return canPlayCardCheck(card, playerEnergy, isPlayerPhase);
+      return canPlayCardCheck(card, playerEnergy, isPlayerPhase, swordEnergy.current);
     },
-    [playerEnergy, isPlayerPhase]
+    [playerEnergy, isPlayerPhase, swordEnergy]
   );
 
   // ========================================================================
@@ -224,6 +224,13 @@ export function useCardExecution(
       } else if (playerEnergy < card.cost) {
         canPlay = false;
         cannotPlayReason = "Not enough energy";
+      } else if (
+        card.swordEnergyConsume !== undefined &&
+        card.swordEnergyConsume > 0 &&
+        swordEnergy.current < card.swordEnergyConsume
+      ) {
+        canPlay = false;
+        cannotPlayReason = "剣気不足";
       }
 
       // Estimate damage
