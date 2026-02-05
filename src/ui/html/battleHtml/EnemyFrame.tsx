@@ -15,18 +15,22 @@ const getActionType = (action: EnemyAction): ActionType => {
   return "special";
 };
 
-// Placeholder icons - replace with SVG imports when ready
+// SVG icon paths
+const ACTION_ICON_PATHS: Record<ActionType, string> = {
+  attack: "/assets/icons/attack.svg",
+  guard: "/assets/icons/guard.svg",
+  debuff: "/assets/icons/debuff.svg",
+  special: "/assets/icons/special.svg",
+};
+
 const ActionIcon: React.FC<{ type: ActionType }> = ({ type }) => {
-  const iconMap: Record<ActionType, string> = {
-    attack: "⚔",
-    guard: "🛡",
-    debuff: "💀",
-    special: "✨",
-  };
   return (
     <span className={`action-icon action-icon-${type}`}>
-      {/* TODO: Replace with <img src={actionIconSvg} /> */}
-      {iconMap[type]}
+      <img
+        src={ACTION_ICON_PATHS[type]}
+        alt={type}
+        className="action-icon-svg"
+      />
     </span>
   );
 };

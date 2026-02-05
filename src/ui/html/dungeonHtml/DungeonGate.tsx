@@ -1,12 +1,13 @@
 // DungeonGate - Invasion preparations screen
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { Depth, PreparationTab } from "@/types/campTypes";
 import { PREPARATION_TABS } from "@/constants/campConstants";
 import { useGameState } from "@/contexts/GameStateContext";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { DEPTH_DISPLAY_INFO } from "@/constants/dungeonConstants";
 import { MIN_DECK_SIZE } from "@/constants/uiConstants";
+import { calculateEquipmentAP } from "@/domain/item_equipment/logic/equipmentStats";
 import FacilityHeader from "../componentsHtml/FacilityHeader";
 import BackToCampButton from "../componentsHtml/BackToCampButton";
 import FacilityTabNav from "../componentsHtml/FacilityTabNav";
@@ -16,6 +17,9 @@ import { DeckTab } from "./preparations/DeckTab";
 import { InventoryTab } from "./preparations/InventoryTab";
 import { EquipmentTab } from "./preparations/EquipmentTab";
 import "./DungeonGate.css";
+
+/** AP warning threshold (20%) */
+const AP_WARNING_THRESHOLD = 0.2;
 
 /**
  * DungeonGate Component
@@ -50,6 +54,21 @@ export function DungeonGate() {
     },
     [updateDeck],
   );
+
+  // Calculate equipment AP and check for low AP warning
+  const apWarning = useMemo(() => {
+    const apResult = calculateEquipmentAP(playerData.inventory.equipmentSlots);
+    if (apResult.maxAP === 0) return null; // No defense equipment
+    const ratio = apResult.totalAP / apResult.maxAP;
+    if (ratio <= AP_WARNING_THRESHOLD) {
+      return {
+        currentAP: apResult.totalAP,
+        maxAP: apResult.maxAP,
+        percentage: Math.round(ratio * 100),
+      };
+    }
+    return null;
+  }, [playerData.inventory.equipmentSlots]);
 
   return (
     <div className="dungeon-gate-screen">
@@ -104,6 +123,13 @@ export function DungeonGate() {
           {deckCards.length < MIN_DECK_SIZE && (
             <div className="deck-size-warning">
               デッキが{MIN_DECK_SIZE}枚未満です（現在{deckCards.length}枚）
+            </div>
+          )}
+          {apWarning && (
+            <div className="ap-warning">
+              ⚠️ 装備APが低下しています（{apWarning.currentAP}/{apWarning.maxAP} - {apWarning.percentage}%）
+              <br />
+              <span className="ap-warning-hint">鍛冶屋で装備を修理してください</span>
             </div>
           )}
           <button

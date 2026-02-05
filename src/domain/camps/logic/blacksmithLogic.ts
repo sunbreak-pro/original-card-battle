@@ -9,6 +9,7 @@ import type {
   UpgradePreview,
   QualityUpgradePreview,
   QualityUpOption,
+  EquipmentSlots,
 } from '@/types/campTypes';
 import {
   LEVEL_STAT_MODIFIERS,
@@ -462,4 +463,32 @@ export function getQualityUpgradeableItems(items: Item[]): Item[] {
  */
 export function getDismantleableItems(items: Item[]): Item[] {
   return items.filter((item) => canDismantle(item));
+}
+
+// ==================== EQUIPMENT SLOTS HELPERS ====================
+
+/**
+ * Get all equipment items from equipment slots
+ */
+export function getEquippedItems(slots: EquipmentSlots): Item[] {
+  const items: Item[] = [];
+  if (slots.weapon) items.push(slots.weapon);
+  if (slots.armor) items.push(slots.armor);
+  if (slots.helmet) items.push(slots.helmet);
+  if (slots.boots) items.push(slots.boots);
+  if (slots.accessory1) items.push(slots.accessory1);
+  if (slots.accessory2) items.push(slots.accessory2);
+  return items;
+}
+
+/**
+ * Combine storage items and equipped items for blacksmith operations
+ */
+export function getAllEquipmentItems(
+  storageItems: Item[],
+  equipmentSlots: EquipmentSlots
+): Item[] {
+  const storageEquipment = storageItems.filter((item) => item.itemType === "equipment");
+  const equippedItems = getEquippedItems(equipmentSlots);
+  return [...storageEquipment, ...equippedItems];
 }

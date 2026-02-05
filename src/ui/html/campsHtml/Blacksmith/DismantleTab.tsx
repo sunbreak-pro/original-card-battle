@@ -10,6 +10,7 @@ import {
   performDismantle,
   shouldWarnOnDismantle,
   getDismantleableItems,
+  getEquippedItems,
 } from "@/domain/camps/logic/blacksmithLogic";
 import BlacksmithItemCard from "./BlacksmithItemCard";
 
@@ -24,10 +25,15 @@ const DismantleTab = () => {
     type: "success" | "error";
   } | null>(null);
 
-  // Get dismantleable equipment items from storage
+  // Get equipped item IDs (cannot be dismantled)
+  const equippedItemIds = new Set(
+    getEquippedItems(playerData.inventory.equipmentSlots).map((item) => item.id)
+  );
+
+  // Get dismantleable equipment items from storage (exclude equipped items)
   const dismantleableItems = getDismantleableItems(
     playerData.inventory.storage.items,
-  );
+  ).filter((item) => !equippedItemIds.has(item.id));
 
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ message, type });

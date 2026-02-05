@@ -450,7 +450,7 @@ Inventory Limit Check
 
 - Slot (Head/Body/Right/Left/Boots/Acc)
 - Rarity (Common/Rare/Epic/Legendary)
-- Equippable Class (Swordsman/Mage/Summoner/Common)
+- Equippable Class (Swordsman/Mage/Common)
 
 **Consumables**:
 

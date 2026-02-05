@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a React 19 + TypeScript card battle roguelike game with dungeon exploration. Players select from three classes (Swordsman, Mage, Summoner), navigate procedural dungeon maps, engage in turn-based card battles against depth-tiered enemies, and manage resources/equipment between runs at a base camp.
+This is a React 19 + TypeScript card battle roguelike game with dungeon exploration. Players select from two classes (Swordsman, Mage), navigate procedural dungeon maps, engage in turn-based card battles against depth-tiered enemies, and manage resources/equipment between runs at a base camp.
 
 ## Analysis File Index
 
@@ -10,43 +10,43 @@ This is a React 19 + TypeScript card battle roguelike game with dungeon explorat
 
 | File                                     | Scope                                         |
 | ---------------------------------------- | --------------------------------------------- |
-| `.claude/code/battle/orchestration.md`   | useBattleOrchestrator, phase queue, turn flow |
-| `.claude/code/battle/damage-and-buff.md` | Damage calculation, buff/debuff system, DoT   |
+| `.claude/code_overview/battle/orchestration.md`   | useBattleOrchestrator, phase queue, turn flow |
+| `.claude/code_overview/battle/damage-and-buff.md` | Damage calculation, buff/debuff system, DoT   |
 
 ### Session 2: Battle Execution
 
 | File                                     | Scope                                                    |
 | ---------------------------------------- | -------------------------------------------------------- |
-| `.claude/code/battle/card-execution.md`  | Card play resolution, multi-hit, energy                  |
-| `.claude/code/battle/class-abilities.md` | useSwordEnergy, useElementalChain, useSummonSystem hooks |
+| `.claude/code_overview/battle/card-execution.md`  | Card play resolution, multi-hit, energy                  |
+| `.claude/code_overview/battle/class-abilities.md` | useSwordEnergy, useElementalChain hooks (2 classes) |
 
 ### Session 3: State & Economy
 
 | File                                   | Scope                                                     |
 | -------------------------------------- | --------------------------------------------------------- |
-| `.claude/code/state/context-system.md` | Context hierarchy, save system, GameState routing         |
-| `.claude/code/resource/economy.md`     | Gold dual-pool, magic stones, shop, blacksmith, sanctuary |
+| `.claude/code_overview/state/context-system.md` | Context hierarchy, save system, GameState routing         |
+| `.claude/code_overview/resource/economy.md`     | Gold dual-pool, magic stones, shop, blacksmith, sanctuary |
 
 ### Session 4: Characters
 
 | File                               | Scope                                                |
 | ---------------------------------- | ---------------------------------------------------- |
-| `.claude/code/character/player.md` | PlayerContext, class abilities, title system         |
-| `.claude/code/character/enemy.md`  | Enemy definitions, AI patterns, energy-based actions |
+| `.claude/code_overview/character/player.md` | PlayerContext, class abilities, title system         |
+| `.claude/code_overview/character/enemy.md`  | Enemy definitions, AI patterns, energy-based actions |
 
 ### Session 5: Cards & Inventory
 
 | File                                            | Scope                                                   |
 | ----------------------------------------------- | ------------------------------------------------------- |
-| `.claude/code/cards/deck-and-mastery.md`        | 120 cards, deck reducer, mastery levels                 |
-| `.claude/code/inventory/equipment-and-items.md` | Equipment AP, durability, consumables, InventoryContext |
+| `.claude/code_overview/cards/deck-and-mastery.md`        | 81 cards (2 classes), deck reducer, mastery levels                 |
+| `.claude/code_overview/inventory/equipment-and-items.md` | Equipment AP, durability, consumables, InventoryContext |
 
 ### Session 6: Dungeon & Summary
 
 | File                                     | Scope                                                      |
 | ---------------------------------------- | ---------------------------------------------------------- |
-| `.claude/code/dungeon/dungeon-system.md` | Map generation, node navigation, events, DungeonRunContext |
-| `.claude/code/overall-summary.md`        | This file — cross-system overview                          |
+| `.claude/code_overview/dungeon/dungeon-system.md` | Map generation, node navigation, events, DungeonRunContext |
+| `.claude/code_overview/overall-summary.md`        | This file — cross-system overview                          |
 
 ## Architecture Overview
 
@@ -54,10 +54,11 @@ This is a React 19 + TypeScript card battle roguelike game with dungeon explorat
 
 ```
 GameStateProvider (screen routing, depth, battleMode)
-  → ResourceProvider (gold dual-pool, magic stones, exploration limit)
-    → PlayerProvider (persistent data, runtime battle state, deck, lives)
-      → InventoryProvider (items, equipment, storage, movement)
-        → DungeonRunProvider (dungeon state, floor maps, node progression)
+  → SettingsProvider → ToastProvider
+    → ResourceProvider (gold dual-pool, magic stones, exploration limit)
+      → PlayerProvider (persistent data, runtime battle state, deck, lives)
+        → InventoryProvider (items, equipment, storage, movement)
+          → DungeonRunProvider (dungeon state, floor maps, node progression)
 ```
 
 ### System Interaction Map
@@ -111,8 +112,8 @@ GameStateProvider (screen routing, depth, battleMode)
 
 ```
 Character Types:
-  CharacterClass: "swordsman" | "mage" | "summoner"
-  ClassAbilityState: SwordEnergyState | ElementalState | SummonState
+  CharacterClass: "swordsman" | "mage"
+  ClassAbilityState: SwordEnergyState | ElementalState
   BattleStats: { hp, maxHp, ap, maxAp, guard, speed, buffDebuffs }
 
 Card Types:
@@ -151,10 +152,9 @@ Dungeon Types:
 
 | Area                       | Issue                                                            |
 | -------------------------- | ---------------------------------------------------------------- |
-| PlayerContext (938 lines)  | Single-responsibility violation — handles 6+ concerns            |
-| Orchestrator (882 lines)   | Largest file; all battle features require modifying it           |
+| PlayerContext (~675 lines)  | Single-responsibility violation — handles 6+ concerns            |
+| Orchestrator (~870 lines)   | Largest file; all battle features require modifying it           |
 | DungeonRunContext location | Lives in `src/ui/` instead of `src/contexts/`                    |
-| Summoner system            | Entirely STUB — class is playable but ability has minimal effect |
 | Test data in production    | TestItemsData and hardcoded resources loaded as initial state    |
 | Save migration             | `migrate()` is a stub — format changes corrupt saves             |
 
@@ -162,7 +162,6 @@ Dungeon Types:
 
 | System               | Status         | Details                                               |
 | -------------------- | -------------- | ----------------------------------------------------- |
-| Summoner abilities   | STUB           | Only 3 hardcoded summons; no real summon actions      |
 | Equipment durability | Partial        | Types and stat calc exist; no degradation in battle   |
 | Title system         | Disconnected   | Functions exist but `cardTypeCount` not tracked       |
 | Save migration       | Stub           | Version stamped but no actual migration logic         |

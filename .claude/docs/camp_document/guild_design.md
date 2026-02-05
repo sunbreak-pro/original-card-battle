@@ -92,16 +92,6 @@ Exams to raise the player's "Class Grade".
 | Grade 3 | Archmage    | 30 Cards    | Ancient Sage (Lv30)        | All Stats +5%       |
 | Grade 4 | Magic Deity | 50 Cards    | Shadow of the Magus (Boss) | Unique Legend Equip |
 
-#### 2.2.3 Summoner Class
-
-| Grade   | Title          | Requirement | Exam Opponent               | Pass Benefit        |
-| ------- | -------------- | ----------- | --------------------------- | ------------------- |
-| Grade 0 | Apprentice     | Initial     | -                           | -                   |
-| Grade 1 | Summoner       | 5 Cards     | Spirit Keeper (Lv5)         | Summon Cost -1      |
-| Grade 2 | High Summoner  | 15 Cards    | Guardian of the Pact (Lv15) | Summon HP +10%      |
-| Grade 3 | Grand Summoner | 30 Cards    | Gatekeeper (Lv30)           | All Stats +5%       |
-| Grade 4 | Summon God     | 50 Cards    | Primal Beast (Boss)         | Unique Legend Equip |
-
 ---
 
 ### 2.3 Reward Bonus Unlocks
@@ -437,7 +427,6 @@ export interface GuildState {
 □ Create src/camps/facilities/Guild/data/PromotionData.ts
   □ Swordsman line exams (4 stages)
   □ Mage line exams (4 stages)
-  □ Summoner line exams (4 stages)
 
 ```
 

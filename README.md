@@ -42,7 +42,7 @@ npm run lint      # ESLint
 
 | クラス | 固有メカニクス | カード枚数 |
 |--------|--------------|-----------|
-| 剣士 (Swordsman) | 剣気ゲージ（エネルギー蓄積で強力な技を発動） | 全43枚 |
+| 剣士 (Swordsman) | 剣気ゲージ（エネルギー蓄積で強力な技を発動） | 全41枚 |
 | 魔術師 (Mage) | 属性共鳴（属性連鎖でダメージ倍率上昇+フィールドバフ） | 全40枚 |
 
 スターターデッキは各クラス15枚。
@@ -174,6 +174,8 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | 日付 | 作業内容 | 進捗 |
 |------|----------|------|
+| 2026-02-05 | code_overview整合性修正: Summoner参照削除、CharacterClass 2クラス化、ファイルパス修正、行数更新(PlayerContext 675行等)、カード数修正(41枚→README修正)、useDeckManage.ts削除反映、title.ts/swordsmanCards.tsリネーム反映、Context階層にSettings/Toast追加 | 完了 |
+| 2026-02-05 | 統合実装計画 V1.0: Phase 1A (バグ修正: セーブロード、鍛冶屋装備表示、敗北画面リトライ削除、NodeMap HP修正)、Phase 1C (AoEカードサポート)、Phase 1D (EnemyFrame SVGアイコン化)、Phase 2 (Summoner設計書6ファイル削除)、Phase 3 (装備AP警告)、Phase 5 (buffLogicテスト追加: 13テスト) | 完了 |
 | 2026-02-05 | テスト分析ドキュメント作成: `.claude/code_overview/testing_analysis.md` - テスト基礎、既存インフラ分析、カバレッジギャップ、推奨アプローチ | 完了 |
 | 2026-02-05 | 設計書・実装整合性修正: Soul System 100%転送修正、sanctuary_design.md V3.1ノート削除、shop_design.md Teleport Stone統一(V3.0)、journal_system_implementation_plan.md完全書き直し、exploration_limit→Lives System用語更新 | 完了 |
 | 2026-02-04 | 設計書統合: BaseCamp施設7→5に統合、Library→Journal(ヘッダーUI)、Storage→Guild(タブ)、将来機能をfeature_plans/に分離 | 完了 |

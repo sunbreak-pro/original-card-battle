@@ -10,6 +10,7 @@ import {
   canAffordRepair,
   getRepairableItems,
   getTotalRepairCost,
+  getEquippedItems,
 } from "@/domain/camps/logic/blacksmithLogic";
 import BlacksmithItemCard from "./BlacksmithItemCard";
 
@@ -22,10 +23,12 @@ const RepairTab = () => {
     type: "success" | "error";
   } | null>(null);
 
-  // Get equipment items that need repair from storage
-  const repairableItems = getRepairableItems(
-    playerData.inventory.storage.items,
-  );
+  // Get equipment items that need repair from storage and equipped slots
+  const allEquipmentItems = [
+    ...playerData.inventory.storage.items.filter((item) => item.itemType === "equipment"),
+    ...getEquippedItems(playerData.inventory.equipmentSlots),
+  ];
+  const repairableItems = getRepairableItems(allEquipmentItems);
   const totalRepairCost = getTotalRepairCost(repairableItems);
 
   const showNotification = (message: string, type: "success" | "error") => {
@@ -33,39 +36,84 @@ const RepairTab = () => {
     setTimeout(() => setNotification(null), 2000);
   };
 
-  // Update item in storage
-  const updateStorageItem = (updatedItem: Item) => {
-    const newItems = playerData.inventory.storage.items.map((item) =>
-      item.id === updatedItem.id ? updatedItem : item,
+  // Check if an item is equipped (in equipment slots)
+  const isEquippedItem = (itemId: string) => {
+    const slots = playerData.inventory.equipmentSlots;
+    return (
+      slots.weapon?.id === itemId ||
+      slots.armor?.id === itemId ||
+      slots.helmet?.id === itemId ||
+      slots.boots?.id === itemId ||
+      slots.accessory1?.id === itemId ||
+      slots.accessory2?.id === itemId
     );
-    updatePlayerData({
-      inventory: {
-        ...playerData.inventory,
-        storage: {
-          ...playerData.inventory.storage,
-          items: newItems,
+  };
+
+  // Update item in storage or equipment slots
+  const updateStorageItem = (updatedItem: Item) => {
+    if (isEquippedItem(updatedItem.id)) {
+      // Update in equipment slots
+      const slots = playerData.inventory.equipmentSlots;
+      const newSlots = {
+        weapon: slots.weapon?.id === updatedItem.id ? updatedItem : slots.weapon,
+        armor: slots.armor?.id === updatedItem.id ? updatedItem : slots.armor,
+        helmet: slots.helmet?.id === updatedItem.id ? updatedItem : slots.helmet,
+        boots: slots.boots?.id === updatedItem.id ? updatedItem : slots.boots,
+        accessory1: slots.accessory1?.id === updatedItem.id ? updatedItem : slots.accessory1,
+        accessory2: slots.accessory2?.id === updatedItem.id ? updatedItem : slots.accessory2,
+      };
+      updatePlayerData({
+        inventory: {
+          ...playerData.inventory,
+          equipmentSlots: newSlots,
         },
-      },
-    });
+      });
+    } else {
+      // Update in storage
+      const newItems = playerData.inventory.storage.items.map((item) =>
+        item.id === updatedItem.id ? updatedItem : item,
+      );
+      updatePlayerData({
+        inventory: {
+          ...playerData.inventory,
+          storage: {
+            ...playerData.inventory.storage,
+            items: newItems,
+          },
+        },
+      });
+    }
     setSelectedItem(updatedItem);
   };
 
-  // Update multiple items in storage
+  // Update multiple items in storage and equipment slots
   const updateMultipleStorageItems = (updatedItems: Item[]) => {
-    const updatedIds = new Set(updatedItems.map((item) => item.id));
-    const newItems = playerData.inventory.storage.items.map((item) => {
-      if (updatedIds.has(item.id)) {
-        return updatedItems.find((u) => u.id === item.id) ?? item;
-      }
-      return item;
-    });
+    const updatedMap = new Map(updatedItems.map((item) => [item.id, item]));
+
+    // Update storage items
+    const newStorageItems = playerData.inventory.storage.items.map((item) =>
+      updatedMap.get(item.id) ?? item,
+    );
+
+    // Update equipment slots
+    const slots = playerData.inventory.equipmentSlots;
+    const newSlots = {
+      weapon: slots.weapon ? (updatedMap.get(slots.weapon.id) ?? slots.weapon) : null,
+      armor: slots.armor ? (updatedMap.get(slots.armor.id) ?? slots.armor) : null,
+      helmet: slots.helmet ? (updatedMap.get(slots.helmet.id) ?? slots.helmet) : null,
+      boots: slots.boots ? (updatedMap.get(slots.boots.id) ?? slots.boots) : null,
+      accessory1: slots.accessory1 ? (updatedMap.get(slots.accessory1.id) ?? slots.accessory1) : null,
+      accessory2: slots.accessory2 ? (updatedMap.get(slots.accessory2.id) ?? slots.accessory2) : null,
+    };
+
     updatePlayerData({
       inventory: {
         ...playerData.inventory,
         storage: {
           ...playerData.inventory.storage,
-          items: newItems,
+          items: newStorageItems,
         },
+        equipmentSlots: newSlots,
       },
     });
   };

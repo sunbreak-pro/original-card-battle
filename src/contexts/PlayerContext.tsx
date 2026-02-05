@@ -24,6 +24,7 @@ import type {
   SanctuaryProgress,
   ShopStockState,
 } from "@/types/campTypes";
+import type { SaveData } from "@/types/saveTypes";
 import { createLivesSystem } from "../domain/characters/player/logic/playerUtils";
 import {
   Swordman_Status,
@@ -180,6 +181,10 @@ interface PlayerContextValue {
     currentAp: number;
     maxAp: number;
   };
+
+  // Save/Load
+  /** Load player state from save data */
+  loadFromSaveData: (saveData: SaveData) => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
@@ -391,6 +396,75 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     }));
   };
 
+  /**
+   * Load player state from save data
+   */
+  const loadFromSaveData = (saveData: SaveData) => {
+    const classType = saveData.player.playerClass;
+    const basePlayer = getBasePlayerByClass(classType);
+    const classInfo = getCharacterClassInfo(classType);
+
+    // Reconstruct deck from saved card IDs using starter deck as base
+    // In a full implementation, we'd need to store cardTypeIds and reconstruct properly
+    const deck = classInfo.starterDeck;
+
+    const loadedPlayer: InternalPlayerState = {
+      name: saveData.player.name,
+      playerClass: classType,
+      classGrade: saveData.player.classGrade,
+      level: saveData.player.level,
+      hp: saveData.player.hp,
+      maxHp: saveData.player.maxHp,
+      ap: saveData.player.ap,
+      maxAp: saveData.player.maxAp,
+      guard: basePlayer.guard,
+      speed: saveData.player.speed,
+      cardActEnergy: basePlayer.cardActEnergy,
+      deck,
+
+      // Storage & Inventory
+      storage: {
+        items: saveData.inventory.storageItems,
+        maxCapacity: STORAGE_MAX_CAPACITY,
+        currentCapacity: saveData.inventory.storageItems.length,
+      },
+      inventory: {
+        items: saveData.inventory.inventoryItems ?? [],
+        maxCapacity: INVENTORY_MAX_CAPACITY,
+        currentCapacity: saveData.inventory.inventoryItems?.length ?? 0,
+      },
+      equipmentInventory: {
+        items: saveData.inventory.equipmentInventoryItems ?? [],
+        maxCapacity: EQUIPMENT_INVENTORY_MAX,
+        currentCapacity: saveData.inventory.equipmentInventoryItems?.length ?? 0,
+      },
+      equipmentSlots: saveData.inventory.equipmentSlots,
+
+      // Progression
+      sanctuaryProgress: saveData.progression.sanctuaryProgress,
+      shopRotationDay: saveData.progression.shopRotationDay,
+      shopStockState: saveData.progression.shopStockState,
+    };
+
+    setPlayerState(loadedPlayer);
+
+    // Reset runtime state with loaded values
+    const equipAP2 = calculateEquipmentAP(loadedPlayer.equipmentSlots);
+    setRuntimeState((prev) => ({
+      ...createInitialRuntimeState(
+        { hp: loadedPlayer.maxHp, ap: equipAP2.totalAP },
+        prev.difficulty,
+      ),
+    }));
+
+    // Set unlocked cards from starter deck
+    const loadedIds = new Set<string>();
+    for (const card of deck) {
+      loadedIds.add(card.cardTypeId);
+    }
+    setUnlockedCardTypeIds(loadedIds);
+  };
+
   // ============================================================
   // PlayerData interface
   // ============================================================
@@ -575,6 +649,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
         // Cross-state operations
         initializeWithClass,
         applyEquipmentDurabilityDamage,
+        loadFromSaveData,
 
         // Spread extracted hooks
         ...battle,

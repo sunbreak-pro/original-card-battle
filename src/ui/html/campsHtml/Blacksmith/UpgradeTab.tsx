@@ -21,6 +21,7 @@ import {
   getQualitySuccessChance,
   attemptQualityUpgrade,
   canAfford,
+  getEquippedItems,
 } from "@/domain/camps/logic/blacksmithLogic";
 import BlacksmithItemCard from "./BlacksmithItemCard";
 
@@ -35,10 +36,11 @@ const UpgradeTab = () => {
     type: "success" | "error";
   } | null>(null);
 
-  // Get equipment items from storage
-  const equipmentItems = playerData.inventory.storage.items.filter(
-    (item) => item.itemType === "equipment",
-  );
+  // Get equipment items from storage and equipped slots
+  const equipmentItems = [
+    ...playerData.inventory.storage.items.filter((item) => item.itemType === "equipment"),
+    ...getEquippedItems(playerData.inventory.equipmentSlots),
+  ];
 
   const totalMagicStoneValue = calculateMagicStoneValue(
     playerData.resources.baseCampMagicStones,
@@ -49,20 +51,53 @@ const UpgradeTab = () => {
     setTimeout(() => setNotification(null), 2000);
   };
 
-  // Update item in storage
-  const updateStorageItem = (updatedItem: Item) => {
-    const newItems = playerData.inventory.storage.items.map((item) =>
-      item.id === updatedItem.id ? updatedItem : item,
+  // Check if an item is equipped (in equipment slots)
+  const isEquippedItem = (itemId: string) => {
+    const slots = playerData.inventory.equipmentSlots;
+    return (
+      slots.weapon?.id === itemId ||
+      slots.armor?.id === itemId ||
+      slots.helmet?.id === itemId ||
+      slots.boots?.id === itemId ||
+      slots.accessory1?.id === itemId ||
+      slots.accessory2?.id === itemId
     );
-    updatePlayerData({
-      inventory: {
-        ...playerData.inventory,
-        storage: {
-          ...playerData.inventory.storage,
-          items: newItems,
+  };
+
+  // Update item in storage or equipment slots
+  const updateStorageItem = (updatedItem: Item) => {
+    if (isEquippedItem(updatedItem.id)) {
+      // Update in equipment slots
+      const slots = playerData.inventory.equipmentSlots;
+      const newSlots = {
+        weapon: slots.weapon?.id === updatedItem.id ? updatedItem : slots.weapon,
+        armor: slots.armor?.id === updatedItem.id ? updatedItem : slots.armor,
+        helmet: slots.helmet?.id === updatedItem.id ? updatedItem : slots.helmet,
+        boots: slots.boots?.id === updatedItem.id ? updatedItem : slots.boots,
+        accessory1: slots.accessory1?.id === updatedItem.id ? updatedItem : slots.accessory1,
+        accessory2: slots.accessory2?.id === updatedItem.id ? updatedItem : slots.accessory2,
+      };
+      updatePlayerData({
+        inventory: {
+          ...playerData.inventory,
+          equipmentSlots: newSlots,
         },
-      },
-    });
+      });
+    } else {
+      // Update in storage
+      const newItems = playerData.inventory.storage.items.map((item) =>
+        item.id === updatedItem.id ? updatedItem : item,
+      );
+      updatePlayerData({
+        inventory: {
+          ...playerData.inventory,
+          storage: {
+            ...playerData.inventory.storage,
+            items: newItems,
+          },
+        },
+      });
+    }
     setSelectedItem(updatedItem);
   };
 

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import "../../css/battle/DefeatScreen.css";
 
 interface DefeatScreenProps {
-  onRetry: () => void;
   onReturnToCamp: () => void;
   battleStats: {
     turnCount: number;
@@ -20,7 +19,6 @@ interface DefeatScreenProps {
 }
 
 const DefeatScreen = ({
-  onRetry,
   onReturnToCamp,
   battleStats,
   remainingLives = 3,
@@ -108,12 +106,6 @@ const DefeatScreen = ({
         </div>
 
         <div className={`defeat-options ${showOptions ? "show" : ""}`}>
-          {!isGameOver && (
-            <button className="defeat-button retry" onClick={onRetry}>
-              <span className="button-icon">🔄</span>
-              <span className="button-text">Retry Battle</span>
-            </button>
-          )}
           <button className="defeat-button camp" onClick={onReturnToCamp}>
             <span className="button-icon">🏕️</span>
             <span className="button-text">

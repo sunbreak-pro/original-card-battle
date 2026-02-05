@@ -705,7 +705,6 @@ const BattleScreen = ({
       )}
       {battleResult === "defeat" && (
         <DefeatScreen
-          onRetry={() => window.location.reload()}
           onReturnToCamp={handleDefeatAction}
           battleStats={{
             turnCount: phaseCount,

@@ -316,6 +316,35 @@ export const useBattleOrchestrator = (
           return getResonanceEffects(state.lastElement, state.resonanceLevel);
         }
         : undefined,
+      // AoE card support: provide access to all alive enemies
+      getAliveEnemies: () => aliveEnemies.map(e => ({
+        hp: e.hp,
+        maxHp: e.maxHp,
+        ap: e.ap,
+        maxAp: e.maxAp,
+        guard: e.guard,
+        buffDebuffs: e.buffDebuffs,
+        ref: e.ref,
+      })),
+      updateEnemyByIndex: (index: number, updater: (state: { hp: number; maxHp: number; ap: number; maxAp: number; guard: number; buffDebuffs: BuffDebuffMap; ref: React.RefObject<HTMLDivElement | null> }) => Partial<{ hp: number; maxHp: number; ap: number; maxAp: number; guard: number; buffDebuffs: BuffDebuffMap }>) => {
+        // Find the actual index in the enemies array for the alive enemy at aliveEnemies[index]
+        const aliveEnemy = aliveEnemies[index];
+        if (!aliveEnemy) return;
+        const actualIndex = enemies.findIndex(e => e === aliveEnemy);
+        if (actualIndex === -1) return;
+        updateEnemyByUpdater(actualIndex, (e) => {
+          const updates = updater({
+            hp: e.hp,
+            maxHp: e.maxHp,
+            ap: e.ap,
+            maxAp: e.maxAp,
+            guard: e.guard,
+            buffDebuffs: e.buffDebuffs,
+            ref: e.ref,
+          });
+          return updates;
+        });
+      },
     }),
     [
       setPlayerEnergy,
@@ -330,6 +359,9 @@ export const useBattleOrchestrator = (
       elementalChainHook.getDamageModifier,
       elementalChainHook.abilityState,
       initialPlayerState?.playerClass,
+      aliveEnemies,
+      enemies,
+      updateEnemyByUpdater,
     ]
   );
 

@@ -76,6 +76,19 @@ export interface CardAnimationHandlers {
 }
 
 /**
+ * Enemy state for AoE card execution
+ */
+export interface EnemyStateForAoE {
+  hp: number;
+  maxHp: number;
+  ap: number;
+  maxAp: number;
+  guard: number;
+  buffDebuffs: BuffDebuffMap;
+  ref: React.RefObject<HTMLDivElement | null>;
+}
+
+/**
  * State setters for card execution
  */
 export interface CardExecutionSetters {
@@ -96,6 +109,13 @@ export interface CardExecutionSetters {
   ) => void;
   getElementalDamageModifier?: (card?: Card) => DamageModifier;
   getResonanceEffects?: (card?: Card) => ResonanceEffectConfig | null;
+  /** Get all alive enemies for AoE cards */
+  getAliveEnemies?: () => EnemyStateForAoE[];
+  /** Update enemy by index for AoE cards */
+  updateEnemyByIndex?: (
+    index: number,
+    updater: (state: EnemyStateForAoE) => Partial<EnemyStateForAoE>
+  ) => void;
 }
 
 /**
@@ -339,69 +359,137 @@ export function useCardExecution(
 
         const hitCount = card.hitCount || 1;
 
-        for (let hit = 0; hit < hitCount; hit++) {
-          const damageResult = calculateDamage(
-            playerStats,
-            enemyStats,
-            cardWithBonus,
-            elementalMod?.critBonus ?? 0,
-            elementalMod?.penetration ?? 0,
-          );
-          const allocation = applyDamageAllocation(
-            enemyStats,
-            damageResult.finalDamage
-          );
+        // AoE (targetAll) card: apply damage to all alive enemies
+        if (card.targetAll && setters.getAliveEnemies && setters.updateEnemyByIndex) {
+          const aliveEnemies = setters.getAliveEnemies();
+          for (let enemyIdx = 0; enemyIdx < aliveEnemies.length; enemyIdx++) {
+            const enemy = aliveEnemies[enemyIdx];
+            if (enemy.hp <= 0) continue; // Skip dead enemies
 
-          result.damageDealt += damageResult.finalDamage;
-          if (damageResult.isCritical) result.isCritical = true;
+            const enemyStatsForCalc: BattleStats = {
+              hp: enemy.hp,
+              maxHp: enemy.maxHp,
+              ap: enemy.ap,
+              maxAp: enemy.maxAp,
+              guard: enemy.guard,
+              speed: 0,
+              buffDebuffs: enemy.buffDebuffs,
+            };
 
-          setters.setEnemyGuard((g) => Math.max(0, g - allocation.guardDamage));
-          setters.setEnemyAp((a) => Math.max(0, a - allocation.apDamage));
-          setters.setEnemyHp((h) => Math.max(0, h - allocation.hpDamage));
+            for (let hit = 0; hit < hitCount; hit++) {
+              const damageResult = calculateDamage(
+                playerStats,
+                enemyStatsForCalc,
+                cardWithBonus,
+                elementalMod?.critBonus ?? 0,
+                elementalMod?.penetration ?? 0,
+              );
+              const allocation = applyDamageAllocation(
+                enemyStatsForCalc,
+                damageResult.finalDamage
+              );
 
-          const enemyTarget = getTargetEnemyRef();
-          if (enemyTarget) {
-            animations.showDamageEffect(
-              enemyTarget,
-              damageResult.finalDamage,
-              damageResult.isCritical
+              result.damageDealt += damageResult.finalDamage;
+              if (damageResult.isCritical) result.isCritical = true;
+
+              // Update enemy state by index
+              setters.updateEnemyByIndex(enemyIdx, (e) => ({
+                guard: Math.max(0, e.guard - allocation.guardDamage),
+                ap: Math.max(0, e.ap - allocation.apDamage),
+                hp: Math.max(0, e.hp - allocation.hpDamage),
+              }));
+
+              // Show damage effect on this enemy
+              if (enemy.ref.current) {
+                animations.showDamageEffect(
+                  enemy.ref.current,
+                  damageResult.finalDamage,
+                  damageResult.isCritical
+                );
+              }
+
+              // Update battle stats
+              setters.setBattleStats((stats) => ({
+                ...stats,
+                damageDealt: stats.damageDealt + damageResult.finalDamage,
+              }));
+
+              // Delay between hits (not after last hit)
+              if (hit < hitCount - 1) {
+                await new Promise((r) => setTimeout(r, 300));
+              }
+            }
+            // Small delay between enemies for visual clarity
+            if (enemyIdx < aliveEnemies.length - 1) {
+              await new Promise((r) => setTimeout(r, 150));
+            }
+          }
+        } else {
+          // Single target: original behavior
+          for (let hit = 0; hit < hitCount; hit++) {
+            const damageResult = calculateDamage(
+              playerStats,
+              enemyStats,
+              cardWithBonus,
+              elementalMod?.critBonus ?? 0,
+              elementalMod?.penetration ?? 0,
             );
-          }
+            const allocation = applyDamageAllocation(
+              enemyStats,
+              damageResult.finalDamage
+            );
 
-          // Lifesteal
-          if (damageResult.lifestealAmount > 0) {
-            setters.setPlayerHp(prev => Math.min(prev + damageResult.lifestealAmount, playerMaxHp));
-            result.lifestealAmount += damageResult.lifestealAmount;
-            if (playerRef.current) {
-              animations.showHealEffect(
-                playerRef.current,
-                damageResult.lifestealAmount
-              );
-            }
-          }
+            result.damageDealt += damageResult.finalDamage;
+            if (damageResult.isCritical) result.isCritical = true;
 
-          // Reflect damage
-          if (damageResult.reflectDamage > 0) {
-            setters.setPlayerHp((h) => Math.max(0, h - damageResult.reflectDamage));
-            result.reflectDamage += damageResult.reflectDamage;
-            if (playerRef.current) {
+            setters.setEnemyGuard((g) => Math.max(0, g - allocation.guardDamage));
+            setters.setEnemyAp((a) => Math.max(0, a - allocation.apDamage));
+            setters.setEnemyHp((h) => Math.max(0, h - allocation.hpDamage));
+
+            const enemyTarget = getTargetEnemyRef();
+            if (enemyTarget) {
               animations.showDamageEffect(
-                playerRef.current,
-                damageResult.reflectDamage,
-                false
+                enemyTarget,
+                damageResult.finalDamage,
+                damageResult.isCritical
               );
             }
-          }
 
-          // Update battle stats
-          setters.setBattleStats((stats) => ({
-            ...stats,
-            damageDealt: stats.damageDealt + damageResult.finalDamage,
-          }));
+            // Lifesteal
+            if (damageResult.lifestealAmount > 0) {
+              setters.setPlayerHp(prev => Math.min(prev + damageResult.lifestealAmount, playerMaxHp));
+              result.lifestealAmount += damageResult.lifestealAmount;
+              if (playerRef.current) {
+                animations.showHealEffect(
+                  playerRef.current,
+                  damageResult.lifestealAmount
+                );
+              }
+            }
 
-          // Delay between hits (not after last hit)
-          if (hit < hitCount - 1) {
-            await new Promise((r) => setTimeout(r, 500));
+            // Reflect damage
+            if (damageResult.reflectDamage > 0) {
+              setters.setPlayerHp((h) => Math.max(0, h - damageResult.reflectDamage));
+              result.reflectDamage += damageResult.reflectDamage;
+              if (playerRef.current) {
+                animations.showDamageEffect(
+                  playerRef.current,
+                  damageResult.reflectDamage,
+                  false
+                );
+              }
+            }
+
+            // Update battle stats
+            setters.setBattleStats((stats) => ({
+              ...stats,
+              damageDealt: stats.damageDealt + damageResult.finalDamage,
+            }));
+
+            // Delay between hits (not after last hit)
+            if (hit < hitCount - 1) {
+              await new Promise((r) => setTimeout(r, 500));
+            }
           }
         }
 

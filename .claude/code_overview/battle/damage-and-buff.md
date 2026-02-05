@@ -321,7 +321,6 @@ enemyPhaseExecution.ts
 | fireField | +50% burn damage | Mage |
 | electroField | +10 per lightning card | Mage |
 | iceField | +50% ice damage | Mage |
-| summonPower | +30% summon damage | Summoner |
 
 ## Vulnerability Analysis
 

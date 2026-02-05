@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The game uses a **nested React Context hierarchy** for persistent state management, complemented by standalone hooks for transient battle state. Five providers are nested in `App.tsx` in dependency order: `GameState -> Resource -> Player -> Inventory -> DungeonRun`. A separate `GuildContext` sits outside the main hierarchy. Battle state lives entirely in `useBattleState` / `useBattleOrchestrator` hooks (no Context). Save/load serializes a subset of state to `localStorage` via `saveManager`.
+The game uses a **nested React Context hierarchy** for persistent state management, complemented by standalone hooks for transient battle state. Seven providers are nested in `App.tsx` in dependency order: `GameState -> Settings -> Toast -> Resource -> Player -> Inventory -> DungeonRun`. A separate `GuildContext` sits outside the main hierarchy. Battle state lives entirely in `useBattleState` / `useBattleOrchestrator` hooks (no Context). Save/load serializes a subset of state to `localStorage` via `saveManager`.
 
 ## 2. File Map
 
@@ -11,7 +11,7 @@ The game uses a **nested React Context hierarchy** for persistent state manageme
 | `src/App.tsx` | 119 | Provider nesting, screen routing |
 | `src/contexts/GameStateContext.tsx` | 140 | Screen navigation, battle config, depth |
 | `src/contexts/ResourceContext.tsx` | 363 | Gold dual-pool, magic stones, exploration limit |
-| `src/contexts/PlayerContext.tsx` | 939 | Player stats, runtime battle state, deck, equipment AP, resource delegation |
+| `src/contexts/PlayerContext.tsx` | ~675 | Player stats, runtime battle state, deck, equipment AP, resource delegation |
 | `src/contexts/InventoryContext.tsx` | 774 | Item add/remove/move/equip operations |
 | `src/contexts/GuildContext.tsx` | 240 | Rumors, quests (standalone, not in main hierarchy) |
 | `src/ui/dungeonHtml/DungeonRunContext.tsx` | 198 | Dungeon run state, floor progression |
@@ -27,19 +27,23 @@ The game uses a **nested React Context hierarchy** for persistent state manageme
 
 ## 3. Data Structures
 
-### 3.1 Provider Hierarchy (App.tsx:102-115)
+### 3.1 Provider Hierarchy (App.tsx)
 
 ```
 <GameStateProvider>          ← No dependencies on other contexts
-  <ResourceProvider>         ← Independent state
-    <PlayerProvider>         ← Reads ResourceContext via useResources()
-      <InventoryProvider>    ← Reads PlayerContext via usePlayer()
-        <DungeonRunProvider> ← Independent state
-          <AppContent />
-        </DungeonRunProvider>
-      </InventoryProvider>
-    </PlayerProvider>
-  </ResourceProvider>
+  <SettingsProvider>         ← Settings (volume, etc.)
+    <ToastProvider>          ← Toast notifications
+      <ResourceProvider>         ← Independent state
+        <PlayerProvider>         ← Reads ResourceContext via useResources()
+          <InventoryProvider>    ← Reads PlayerContext via usePlayer()
+            <DungeonRunProvider> ← Independent state
+              <AppContent />
+            </DungeonRunProvider>
+          </InventoryProvider>
+        </PlayerProvider>
+      </ResourceProvider>
+    </ToastProvider>
+  </SettingsProvider>
 </GameStateProvider>
 ```
 
@@ -218,11 +222,11 @@ AppContent renders based on gameState.currentScreen
 CharacterSelect screen
   |
   v
-User picks class (swordsman | mage | summoner)
+User picks class (swordsman | mage)
   |
   v
 PlayerContext.initializeWithClass(classType)
-  |- getBasePlayerByClass(classType)    → Swordman/Mage/Summon_Status
+  |- getBasePlayerByClass(classType)    → Swordsman/Mage_Status
   |- getCharacterClassInfo(classType)   → starterDeck
   |- createInitialPlayerState()
   |- Sync with ResourceContext values
@@ -395,10 +399,10 @@ PlayerContext maintains **duplicate copies** of gold/magicStones/explorationLimi
 **Location:** `PlayerContext.tsx:772`
 `id: \`player_${Date.now()}\`` regenerates the player ID on every `useMemo` recomputation. This means the player's identity changes every time playerState or equipmentAP changes, which could break any system that caches or compares player IDs.
 
-### [QUALITY] V-CS05: Massive PlayerContext (939 lines)
+### [QUALITY] V-CS05: Large PlayerContext (~675 lines)
 
 **Location:** `PlayerContext.tsx`
-PlayerContext contains resource delegation wrappers, runtime battle state, equipment AP system, deck management, lives system, souls, and the entire `updatePlayerData` mapper. This violates single-responsibility and makes modifications risky. The resource delegation layer alone (lines 527-667) duplicates logic from ResourceContext.
+PlayerContext contains runtime battle state, equipment AP system, deck management, lives system, souls, and the entire `updatePlayerData` mapper. This violates single-responsibility and makes modifications risky.
 
 ### [BUG-RISK] V-CS06: Save System Missing Coverage
 

@@ -2,23 +2,21 @@
 
 ## Overview
 
-Polymorphic class ability framework using `ClassAbilitySystem<T>` interface, with three implementations: Swordsman (sword energy gauge + bleed), Mage (elemental resonance chain + field buffs), and Summoner (summon lifecycle — stub). Each integrates via React hooks into the battle orchestrator's damage pipeline through `DamageModifier`.
+Polymorphic class ability framework using `ClassAbilitySystem<T>` interface, with two implementations: Swordsman (sword energy gauge + bleed) and Mage (elemental resonance chain + field buffs). Each integrates via React hooks into the battle orchestrator's damage pipeline through `DamageModifier`.
 
 ## File Map
 
 | File | Lines | Role |
 |------|-------|------|
-| `src/domain/characters/classAbility/classAbilitySystem.ts` | 137 | Interface definition, DamageModifier type, combine/apply helpers |
-| `src/domain/characters/player/logic/swordEnergySystem.ts` | 261 | Swordsman: energy gauge, bleed chance, consume/add functions |
-| `src/domain/characters/player/logic/elementalSystem.ts` | 250 | Mage: resonance chain, element-specific effects, field buffs |
-| `src/domain/characters/player/logic/summonSystem.ts` | 227 | Summoner: summon lifecycle (STUB), bond level bonuses |
-| `src/domain/characters/logic/classAbilityUtils.ts` | 89 | Factory functions, type guards, initial state creators |
-| `src/domain/battles/managements/useClassAbility.ts` | 280 | React hooks: useSwordEnergy, useClassAbility<T>, factory |
-| `src/domain/battles/managements/useElementalChain.ts` | 86 | React hook wrapper for ElementalSystem |
-| `src/domain/battles/managements/useSummonSystem.ts` | 87 | React hook wrapper for SummonSystem |
-| `src/constants/characterConstants.ts` | 126 | SWORD_ENERGY_MAX, RESONANCE_MULTIPLIER, RESONANCE_EFFECTS, etc. |
-| `src/constants/battleConstants.ts` | 97 | SWORD_ENERGY_BLEED_CHANCE_*, bleed duration/stacks |
-| `src/types/characterTypes.ts` | 344 | SwordEnergyState, ElementalState, SummonState, ClassAbilityState union |
+| `src/domain/characters/player/classAbility/classAbilitySystem.ts` | ~137 | Interface definition, DamageModifier type, combine/apply helpers |
+| `src/domain/characters/player/logic/swordEnergySystem.ts` | ~261 | Swordsman: energy gauge, bleed chance, consume/add functions |
+| `src/domain/characters/player/logic/elementalSystem.ts` | ~250 | Mage: resonance chain, element-specific effects, field buffs |
+| `src/domain/characters/player/classAbility/classAbilityUtils.ts` | ~89 | Factory functions, type guards, initial state creators |
+| `src/domain/battles/managements/useClassAbility.ts` | ~280 | React hooks: useSwordEnergy, useClassAbility<T>, factory |
+| `src/domain/battles/managements/useElementalChain.ts` | ~86 | React hook wrapper for ElementalSystem |
+| `src/constants/characterConstants.ts` | ~126 | SWORD_ENERGY_MAX, RESONANCE_MULTIPLIER, RESONANCE_EFFECTS, etc. |
+| `src/constants/battleConstants.ts` | ~97 | SWORD_ENERGY_BLEED_CHANCE_*, bleed duration/stacks |
+| `src/types/characterTypes.ts` | ~344 | SwordEnergyState, ElementalState, ClassAbilityState union |
 
 ## Data Structures
 
@@ -69,26 +67,6 @@ interface ElementalState {
 }
 ```
 
-### SummonState
-
-```typescript
-interface SummonState {
-  type: "summon";
-  activeSummons: Summon[];   // Max 3
-  summonSlots: number;       // Unlocked slots (starts at 1)
-  bondLevel: number;         // 1-10, multiplier for effects
-}
-
-interface Summon {
-  id: string;
-  name: string;
-  type: SummonType;          // "offensive" | "defensive" | "support"
-  hp: number;
-  maxHp: number;
-  duration: number;          // Turns before despawn
-  abilities: SummonAbility[];
-}
-```
 
 ### ResonanceEffectConfig
 
@@ -119,9 +97,6 @@ MAX_RESONANCE_LEVEL = 2
 RESONANCE_MULTIPLIER = { 0: 1.0, 1: 1.15, 2: 1.30 }
 MAGIC_ELEMENTS = { fire, ice, lightning, dark, light }
 
-MAX_ACTIVE_SUMMONS = 3
-MAX_BOND_LEVEL = 10
-BOND_DAMAGE_BONUS_PER_LEVEL = 0.05
 ```
 
 ## Logic Flow
@@ -209,45 +184,17 @@ SANCTUARY ENHANCEMENT (via enhancedElements parameter):
   Light: cleanse +1, heal +5
 ```
 
-### Summoner: Summon System (STUB)
-
-```
-INITIALIZATION:
-  { type: "summon", activeSummons: [], summonSlots: 1, bondLevel: 1 }
-
-ON CARD PLAY:
-  IF card.summonId AND slots available:
-    Create summon from stub data:
-      "wolf"  → offensive, hp=20+bond×2, dur=3
-      "golem" → defensive, hp=40+bond×4, dur=4
-      "fairy" → support,   hp=15+bond,   dur=3
-  IF card.summonEnhancement AND summons exist:
-    Each summon: hp += enhancement, duration += 1
-
-ON TURN START:
-  Each summon: duration -= 1
-  Remove summons with duration ≤ 0
-
-ON TURN END: no change
-
-GET DAMAGE MODIFIER:
-  bondBonus = bondLevel × 0.05
-  summonBonus = offensiveSummons.count × 0.10
-  { percentMultiplier: 1.0 + bondBonus + summonBonus }
-```
 
 ### Integration with Battle Orchestrator
 
 ```
 useBattleOrchestrator
   ├─ useSwordEnergy()     — always called (React hooks rules)
-  ├─ useElementalChain()  — always called
-  └─ useSummonSystem()    — always called
+  └─ useElementalChain()  — always called
 
   Based on player.playerClass:
     "swordsman" → use swordEnergy.getDamageModifier
     "mage"      → use elementalChain.getDamageModifier
-    "summoner"  → use summonSystem.getDamageModifier
 
   getDamageModifier → passed to useCardExecution via setters.getElementalDamageModifier
     → Applied in executeCard: adjustedBase = round(base × modifier.percentMultiplier)
@@ -256,7 +203,7 @@ useBattleOrchestrator
 ### React Hook Pattern
 
 ```
-useSwordEnergy / useElementalChain / useSummonSystem
+useSwordEnergy / useElementalChain
   ├─ useState(System.initialize())
   ├─ onCardPlayed(card) → setState(prev => System.onCardPlay(prev, card))
   ├─ onTurnStart()      → setState(prev => System.onTurnStart(prev))
@@ -290,29 +237,20 @@ elementalSystem.ts
   ├─ characterConstants.ts (MAX_RESONANCE_LEVEL, RESONANCE_MULTIPLIER, RESONANCE_EFFECTS)
   └─ cardConstants.ts (MAGIC_ELEMENTS)
 
-summonSystem.ts
-  ├─ classAbilitySystem.ts (ClassAbilitySystem, DamageModifier)
-  ├─ classAbilityUtils.ts (createInitialSummon)
-  └─ characterConstants.ts (MAX_BOND_LEVEL, BOND_DAMAGE_BONUS_PER_LEVEL)
-
 useClassAbility.ts
   ├─ swordEnergySystem.ts (SwordEnergySystem, createInitialSwordEnergy)
   ├─ useElementalChain.ts
-  ├─ useSummonSystem.ts
   └─ classAbilitySystem.ts (DEFAULT_DAMAGE_MODIFIER)
 
 useElementalChain.ts
   └─ elementalSystem.ts (ElementalSystem)
-
-useSummonSystem.ts
-  └─ summonSystem.ts (SummonSystem)
 
 classAbilityUtils.ts
   └─ characterTypes.ts (all state types)
 
 Integration:
   useCardExecution ← setters.getElementalDamageModifier (from active class hook)
-  useBattleOrchestrator ← all three hooks called unconditionally
+  useBattleOrchestrator ← both class hooks called unconditionally
 ```
 
 ## Vulnerability Analysis
@@ -367,17 +305,6 @@ percentMultiplier: combined.percentMultiplier * modifier.percentMultiplier,
 
 `combineDamageModifiers` multiplies percent multipliers together. If a Swordsman with `percentMultiplier: 1.0` and equipment buff of `1.2` are combined: `1.0 × 1.2 = 1.2` (correct). But if two +30% bonuses combine: `1.3 × 1.3 = 1.69` (+69% total, not +60%). This is standard multiplicative stacking, but may surprise designers expecting additive stacking. Currently only one modifier source is used per execution.
 
-### `[BUG-RISK]` Summoner Bond Level Starts at 1, Not 0
-
-**Location:** `classAbilityUtils.ts:42-49`
-
-```typescript
-export function createInitialSummon(): SummonState {
-  return { type: "summon", activeSummons: [], summonSlots: 1, bondLevel: 1 };
-}
-```
-
-Bond level starts at 1, giving immediate 5% damage bonus (`bondLevel × 0.05`). The `BOND_DAMAGE_BONUS_PER_LEVEL` constant (0.05) means a fresh Summoner already has a +5% multiplier. At `MAX_BOND_LEVEL` (10), the bonus is 50%. Combined with 3 offensive summons (10% each), maximum damage multiplier is `1.0 + 0.50 + 0.30 = 1.80`. This seems balanced but the initial bonus is undocumented.
 
 ### `[EXTENSIBILITY]` Resonance Effects Table Has Empty Entries
 
@@ -392,23 +319,11 @@ summon: { 1: {}, 2: {} },
 
 The `RESONANCE_EFFECTS` table defines entries for all 13 `ElementType` values, but only 5 (fire, ice, lightning, dark, light) have actual effects. The remaining 8 have empty objects. These placeholders exist for type safety but create maintenance noise. A smaller `Partial<Record<ElementType, ...>>` would be cleaner.
 
-### `[EXTENSIBILITY]` Three Identical Hook Wrappers
+### `[EXTENSIBILITY]` Two Identical Hook Wrappers
 
-**Location:** `useClassAbility.ts`, `useElementalChain.ts`, `useSummonSystem.ts`
+**Location:** `useClassAbility.ts`, `useElementalChain.ts`
 
-All three class-specific hooks (`useSwordEnergy`, `useElementalChain`, `useSummonSystem`) follow an identical pattern: `useState` + 7 `useCallback` wrappers around the system interface. The generic `useClassAbility<T>` function exists but isn't used by any of them. Each hook is ~80 lines of boilerplate. A single generic hook used consistently would eliminate ~160 lines of duplication.
-
-### `[EXTENSIBILITY]` Summon System Is Fully Stub
-
-**Location:** `summonSystem.ts` (entire file)
-
-The entire `SummonSystem` is marked as STUB. Key missing functionality:
-- Summon actions on turn start (offensive damage, defensive guard, support buffs) are commented as TODO
-- Only 3 hardcoded summons exist (wolf, golem, fairy) with inline data
-- No summon database or data-driven definition
-- Summon abilities array is always empty
-- No integration with enemy targeting or damage allocation
-- Bond level never increases during battle
+Both class-specific hooks (`useSwordEnergy`, `useElementalChain`) follow an identical pattern: `useState` + 7 `useCallback` wrappers around the system interface. The generic `useClassAbility<T>` function exists but isn't used by any of them. Each hook is ~80 lines of boilerplate. A single generic hook used consistently would reduce duplication.
 
 ### `[QUALITY]` SWORD_ENERGY_MAX Defined in Two Places
 

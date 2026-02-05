@@ -198,6 +198,34 @@
   box-shadow: 0 0 8px rgba(201, 160, 220, 0.3);
 }
 
+/* ========== Warning Messages ========== */
+
+.dungeon-gate-screen .deck-size-warning,
+.dungeon-gate-screen .ap-warning {
+  padding: 1.2vh 1.5vw;
+  border-radius: 6px;
+  font-size: 1.4vh;
+  text-align: center;
+}
+
+.dungeon-gate-screen .deck-size-warning {
+  background: rgba(200, 100, 50, 0.2);
+  border: 1px solid rgba(200, 100, 50, 0.5);
+  color: #e8a060;
+}
+
+.dungeon-gate-screen .ap-warning {
+  background: rgba(200, 50, 50, 0.2);
+  border: 1px solid rgba(200, 50, 50, 0.5);
+  color: #e86060;
+  line-height: 1.6;
+}
+
+.dungeon-gate-screen .ap-warning-hint {
+  font-size: 1.2vh;
+  color: #c0a0a0;
+}
+
 /* ========== Start Invasion Button ========== */
 
 .dungeon-gate-screen .start-invasion-button {

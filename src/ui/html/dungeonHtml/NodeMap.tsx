@@ -134,7 +134,7 @@ export function NodeMap() {
       } else {
         // Non-battle node: process event and show modal
         const nodeType = node.type as "rest" | "treasure" | "event";
-        const currentHp = playerData.persistent.baseMaxHp; // Use runtime HP when available
+        const currentHp = runtimeState.currentHp;
         const maxHp = playerData.persistent.baseMaxHp;
         const result = processNodeEvent(nodeType, currentHp, maxHp);
         setEventResult(result);
@@ -147,7 +147,9 @@ export function NodeMap() {
       completeCurrentNode,
       navigateTo,
       returnToCamp,
+      runtimeState.currentHp,
       playerData.persistent.baseMaxHp,
+      updatePlayerData,
     ],
   );
 
@@ -159,7 +161,7 @@ export function NodeMap() {
 
     // Apply HP restore (can be negative for traps)
     if (rewards.hpRestore) {
-      const currentHp = playerData.persistent.baseMaxHp; // Simplified for now
+      const currentHp = runtimeState.currentHp;
       const maxHp = playerData.persistent.baseMaxHp;
       const newHp = Math.max(0, Math.min(currentHp + rewards.hpRestore, maxHp));
       updateHp(newHp);
@@ -167,7 +169,7 @@ export function NodeMap() {
     if (rewards.hpRestorePercent && !rewards.hpRestore) {
       const maxHp = playerData.persistent.baseMaxHp;
       const restoreAmount = Math.floor(maxHp * rewards.hpRestorePercent);
-      const currentHp = maxHp; // Simplified
+      const currentHp = runtimeState.currentHp;
       const newHp = Math.min(currentHp + restoreAmount, maxHp);
       updateHp(newHp);
     }
@@ -193,6 +195,7 @@ export function NodeMap() {
     setEventResult(null);
   }, [
     eventResult,
+    runtimeState.currentHp,
     playerData.persistent.baseMaxHp,
     updateHp,
     addGold,

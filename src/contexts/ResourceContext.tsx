@@ -56,6 +56,13 @@ interface ResourceContextValue {
   // Transfer operations (on survival/death)
   transferExplorationToBaseCamp: (survivalMultiplier: number) => void;
   resetExplorationResources: () => void;
+
+  // Load resources from save data
+  loadResourcesFromSave: (
+    baseCampGold: number,
+    baseCampMagicStones: MagicStones,
+    explorationLimit: ExplorationLimit
+  ) => void;
 }
 
 const ResourceContext = createContext<ResourceContextValue | undefined>(
@@ -359,6 +366,31 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
     }));
   }, []);
 
+  /**
+   * Load resources from save data
+   * Used when loading a saved game
+   */
+  const loadResourcesFromSave = useCallback(
+    (
+      baseCampGold: number,
+      baseCampMagicStones: MagicStones,
+      explorationLimit: ExplorationLimit
+    ) => {
+      setResources({
+        gold: {
+          baseCamp: baseCampGold,
+          exploration: 0, // Always start with 0 exploration resources
+        },
+        magicStones: {
+          baseCamp: baseCampMagicStones,
+          exploration: { small: 0, medium: 0, large: 0, huge: 0 },
+        },
+        explorationLimit,
+      });
+    },
+    []
+  );
+
   return (
     <ResourceContext.Provider
       value={{
@@ -377,6 +409,7 @@ export const ResourceProvider: React.FC<{ children: ReactNode }> = ({
         getExplorationLimit,
         transferExplorationToBaseCamp,
         resetExplorationResources,
+        loadResourcesFromSave,
       }}
     >
       {children}

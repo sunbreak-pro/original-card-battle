@@ -2,7 +2,7 @@
 
 ## Overview
 
-The player/character system defines three playable classes (Swordsman, Mage, Summoner) with shared base stats and class-specific ability systems. `PlayerContext` is the central 938-line provider that manages persistent player data, runtime battle state, deck cards, lives, mastery, equipment AP, and resource delegation. Each class has a dedicated ability system implementing the `ClassAbilitySystem<T>` generic interface, producing `DamageModifier` objects that feed into damage calculation.
+The player/character system defines two playable classes (Swordsman, Mage) with shared base stats and class-specific ability systems. `PlayerContext` is the central ~675-line provider that manages persistent player data, runtime battle state, deck cards, lives, mastery, equipment AP, and resource delegation. Each class has a dedicated ability system implementing the `ClassAbilitySystem<T>` generic interface, producing `DamageModifier` objects that feed into damage calculation.
 
 ## File Map
 
@@ -11,15 +11,14 @@ The player/character system defines three playable classes (Swordsman, Mage, Sum
 | `src/types/characterTypes.ts` | 344 | All character types: BattleStats, class abilities, enemy, player |
 | `src/constants/data/characters/PlayerData.tsx` | 82 | Base stats per class (HP, AP, speed, energy, deck config) |
 | `src/constants/data/characters/CharacterClassData.ts` | 226 | Class display info, descriptions, ability descriptions |
-| `src/contexts/PlayerContext.tsx` | 938 | Player state provider — persistent + runtime + deck + lives |
+| `src/contexts/PlayerContext.tsx` | ~675 | Player state provider — persistent + runtime + deck + lives |
 | `src/domain/characters/logic/playerUtils.ts` | 96 | Player stat helpers (getInitialPlayerState, buildBattleStats) |
 | `src/domain/characters/logic/characterUtils.ts` | 34 | createEmptyBuffDebuffMap, shared utils |
 | `src/domain/characters/logic/classAbilityUtils.ts` | 88 | Factory functions for initial class ability states |
 | `src/domain/characters/classAbility/classAbilitySystem.ts` | 137 | Generic ClassAbilitySystem interface + DamageModifier |
 | `src/domain/characters/player/logic/swordEnergySystem.ts` | 261 | Swordsman ability: sword energy accumulation + bleed |
 | `src/domain/characters/player/logic/elementalSystem.ts` | 249 | Mage ability: elemental resonance chain |
-| `src/domain/characters/player/logic/summonSystem.ts` | 227 | Summoner ability: summon management (STUB) |
-| `src/domain/characters/player/logic/tittle.ts` | 23 | Title/grade strings by card type count |
+| `src/domain/characters/player/logic/title.ts` | ~23 | Title/grade strings by card type count |
 
 ## Data Structures
 
@@ -80,16 +79,6 @@ interface ElementalState {
 }
 ```
 
-### SummonState
-
-```typescript
-interface SummonState {
-  type: "summon";
-  activeSummons: Summon[];
-  summonSlots: number;      // Max 3
-  bondLevel: number;        // 0 - MAX_BOND_LEVEL
-}
-```
 
 ### PlayerData (persistent)
 
@@ -175,32 +164,16 @@ Turn end → onTurnEnd(state)
   └─ resonanceLevel = 0  ← resets every turn
 ```
 
-### Summon System (Summoner) — STUB
-
-```
-Card played → SummonSystem.onCardPlay(state, card)
-  ├─ card.summonId → createSummonFromId(id, bondLevel)
-  │   ├─ wolf (offensive), golem (defensive), fairy (support)
-  │   └─ Stats scale with bondLevel
-  ├─ card.summonEnhancement → heal all summons + extend duration
-  ↓
-getDamageModifier(state)
-  ├─ bondBonus: bondLevel * BOND_DAMAGE_BONUS_PER_LEVEL
-  └─ summonBonus: +10% per active offensive summon
-
-Turn start → onTurnStart(state)
-  └─ Decrement all summon durations, remove expired
-```
 
 ### Title System
 
 ```
-getSwordsmanTitle(cardTypeCount)   getMageTitle(count)   getSummonerTitle(count)
-  ├─ >= 50 → "剣神"                ├─ >= 50 → "魔神"     ├─ >= 50 → "召喚神"
-  ├─ >= 30 → "剣聖"                ├─ >= 30 → "大魔導師"  ├─ >= 30 → "召喚師"
-  ├─ >= 15 → "剣豪"                ├─ >= 15 → "魔導師"    ├─ >= 15 → "上級召喚士"
-  ├─ >= 5  → "剣士"                ├─ >= 5  → "魔術士"    ├─ >= 5  → "召喚士"
-  └─ else  → "見習い剣士"           └─ else  → "見習い魔術士" └─ else  → "見習い召喚士"
+getSwordsmanTitle(cardTypeCount)   getMageTitle(count)
+  ├─ >= 50 → "剣神"                ├─ >= 50 → "魔神"
+  ├─ >= 30 → "剣聖"                ├─ >= 30 → "大魔導師"
+  ├─ >= 15 → "剣豪"                ├─ >= 15 → "魔導師"
+  ├─ >= 5  → "剣士"                ├─ >= 5  → "魔術士"
+  └─ else  → "見習い剣士"           └─ else  → "見習い魔術士"
 ```
 
 ### PlayerContext API Surface
@@ -226,9 +199,7 @@ PlayerContext provides:
 - `applyDamageModifier()`: `floor((baseDamage + flatBonus) * percentMultiplier)`
 - Sword energy decays by 3 per turn end, not fully reset
 - Mage resonance fully resets at turn end — must chain within a single turn
-- Summoner system is marked STUB — `createSummonFromId()` has hardcoded data for wolf/golem/fairy only
 - PlayerContext generates player ID as `player_${Date.now()}` which changes on every `useMemo` recomputation
-- The `_card` parameter in `SummonSystem.getDamageModifier` is prefixed with underscore (unused parameter)
 
 ## Dependencies
 
@@ -242,14 +213,12 @@ PlayerContext
 
 ClassAbilitySystem implementations
   ├─ SwordEnergySystem ← constants (SWORD_ENERGY_MAX, bleed chances)
-  ├─ ElementalSystem ← constants (RESONANCE_MULTIPLIER, RESONANCE_EFFECTS, MAGIC_ELEMENTS)
-  └─ SummonSystem ← constants (MAX_BOND_LEVEL, BOND_DAMAGE_BONUS_PER_LEVEL)
+  └─ ElementalSystem ← constants (RESONANCE_MULTIPLIER, RESONANCE_EFFECTS, MAGIC_ELEMENTS)
 
 Battle integration
   └─ useBattleOrchestrator
       ├─ useSwordEnergy() hook
-      ├─ useElementalChain() hook
-      └─ useSummonSystem() hook (all called unconditionally per React rules)
+      └─ useElementalChain() hook (both called unconditionally per React rules)
 ```
 
 ## Vulnerability Analysis
@@ -266,11 +235,6 @@ Battle integration
 
 `getDamageModifier(state: SwordEnergyState, _card?: Card)` ignores the card parameter entirely. The flat damage bonus applies to all cards equally regardless of card type. This means defensive cards also get the sword energy damage bonus if they happen to deal damage.
 
-### `[QUALITY]` SummonSystem Is Entirely Stub
-
-**Location:** `summonSystem.ts:35`
-
-The entire `SummonSystem` is marked as STUB with hardcoded summon data for only 3 creatures. The `onTurnStart` only decrements duration (no actual summon actions). The summoner class is playable in battle but the unique mechanic has no real effect beyond a small percent damage bonus.
 
 ### `[BUG-RISK]` Elemental Resonance Uses card.element Array Inconsistently
 
@@ -278,20 +242,14 @@ The entire `SummonSystem` is marked as STUB with hardcoded summon data for only 
 
 `onCardPlay` finds the first magic element via `card.element.find()` but checks chain continuation with `card.element.includes(state.lastElement)`. A card with `["fire", "ice"]` could continue a fire chain (includes fire) but set lastElement to fire (first magic element found). If the player then plays a pure ice card, the chain breaks despite the previous card containing ice.
 
-### `[EXTENSIBILITY]` PlayerContext at 938 Lines
+### `[EXTENSIBILITY]` PlayerContext at ~675 Lines
 
 **Location:** `PlayerContext.tsx`
 
-PlayerContext handles persistent data, runtime battle state, deck management, lives system, equipment AP, resource delegation, and sanctuary progress. This violates single-responsibility. The resource delegation layer (lines 527-667) duplicates logic from ResourceContext.
+PlayerContext handles persistent data, runtime battle state, deck management, lives system, equipment AP, resource delegation, and sanctuary progress. This violates single-responsibility.
 
 ### `[BUG-RISK]` Title Functions Disconnected from Gameplay
 
-**Location:** `tittle.ts:1-23`
+**Location:** `title.ts`
 
-Title functions (`getSwordsmanTitle`, `getMageTitle`, `getSummonerTitle`) take a `cardTypeCount` parameter but there's no visible mechanism tracking unique card types used. The functions are exported but may not be called anywhere, making the title system non-functional.
-
-### `[QUALITY]` File Named "tittle.ts" (Typo)
-
-**Location:** `src/domain/characters/player/logic/tittle.ts`
-
-The filename contains a typo — "tittle" instead of "title". This creates discoverability issues when searching for title-related code.
+Title functions (`getSwordsmanTitle`, `getMageTitle`) take a `cardTypeCount` parameter but there's no visible mechanism tracking unique card types used. The functions are exported but may not be called anywhere, making the title system non-functional.

@@ -194,7 +194,6 @@ COMPLETE RESET:
 | Blessing of Wealth I | 💰   | Initial Gold +10%                     | 25   |
 | Swordsman's Insight  | ⚔️   | Swordsman: Start with +1 Sword Energy | 30   |
 | Mage's Insight       | 🔮   | Mage: Start with +1 Resonance Level   | 30   |
-| Summoner's Insight   | 👻   | Summoner: Start with +1 Summon Slot   | 30   |
 
 **Tier 2 (Specialization): Cost 40-80 Souls**
 
@@ -266,14 +265,6 @@ Effect: Start with +1 / +2 / +3 Sword Energy
 ```
 Mage's Insight I (30 Souls) → II (60 Souls) → Mastery (100 Souls)
 Effect: Start with +1 / +2 / +3 Resonance Level
-
-```
-
-**Summoner Exclusive:**
-
-```
-Summoner's Insight I (30 Souls) → II (60 Souls) → Mastery (100 Souls)
-Effect: Start with +1 / +2 / +3 Summon Slots
 
 ```
 
@@ -489,7 +480,7 @@ export interface SkillNode {
   tier: 1 | 2 | 3;
   prerequisites: string[]; // IDs of prerequisite nodes
   effects: NodeEffect[];
-  classRestriction?: "swordsman" | "mage" | "summoner";
+  classRestriction?: "swordsman" | "mage";
 }
 
 /**

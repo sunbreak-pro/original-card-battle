@@ -138,7 +138,7 @@ Guild
 **Main Functions:**
 
 *Headquarters Tab:*
-- Character Selection (Swordsman / Mage / Summoner)
+- Character Selection (Swordsman / Mage)
 - Status Check
 - **Check Exploration Count**
 - **Promotion Exams** (Does not consume Exploration Count)

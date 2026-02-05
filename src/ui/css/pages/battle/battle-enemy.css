@@ -139,6 +139,33 @@
   background: rgba(255, 170, 0, 0.3);
 }
 
+/* SVG icon styling */
+.action-icon-svg {
+  width: 2vh;
+  height: 2vh;
+  filter: drop-shadow(0 0 0.2vh rgba(0, 0, 0, 0.5));
+}
+
+.action-icon-attack .action-icon-svg {
+  stroke: #ff6b6b;
+  filter: drop-shadow(0 0 0.3vh rgba(255, 107, 107, 0.5));
+}
+
+.action-icon-guard .action-icon-svg {
+  stroke: #6bafff;
+  filter: drop-shadow(0 0 0.3vh rgba(107, 175, 255, 0.5));
+}
+
+.action-icon-debuff .action-icon-svg {
+  stroke: #c77dff;
+  filter: drop-shadow(0 0 0.3vh rgba(199, 125, 255, 0.5));
+}
+
+.action-icon-special .action-icon-svg {
+  stroke: #ffcc00;
+  filter: drop-shadow(0 0 0.3vh rgba(255, 204, 0, 0.5));
+}
+
 .tooltip-energy {
   font-size: 1.2vh;
   color: #aaa;

@@ -84,6 +84,8 @@ export interface Card {
   effectivePower?: number;
   /** Number of hits (multi-hit attacks) */
   hitCount?: number;
+  /** Target all enemies (AoE attack) */
+  targetAll?: boolean;
   /** Penetration percentage (ignores AP) */
   penetration?: number;
   /** Acts before enemy turn */

@@ -32,7 +32,7 @@ Card execution pipeline from click to effect application, covering energy cost, 
 interface Card {
   id: string;                    // Unique instance ID
   cardTypeId: string;            // Card type (shared across copies)
-  characterClass: CardCharacterClass;  // "swordsman" | "mage" | "summoner" | "common"
+  characterClass: CardCharacterClass;  // "swordsman" | "mage" | "common"
   cost: number;                  // Energy cost to play
   category: CardCategory;        // "atk" | "def" | "buff" | "debuff" | "heal" | "swordEnergy"
   tags: CardTag[];               // "attack" | "guard" | "skill" | "stance"
@@ -430,7 +430,7 @@ The `buff`, `debuff`, and `swordEnergy` categories are not handled in the switch
 const initialDeck = createInitialDeck(INITIAL_DECK_COUNTS, SWORDSMAN_CARDS_ARRAY);
 ```
 
-The deck management hook hardcodes `SWORDSMAN_CARDS_ARRAY` for initial deck creation. Mage and Summoner classes cannot use this hook without modification. The `resetDeck` function (line 136) also hardcodes the same array.
+**Note:** This issue has been fixed. Deck creation now uses `getCardDataByClass()` to select the appropriate card array based on class.
 
 ### `[QUALITY]` cardPlayLogic.ts is a Complete Duplicate
 

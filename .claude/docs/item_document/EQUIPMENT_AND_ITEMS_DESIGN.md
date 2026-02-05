@@ -5,11 +5,10 @@
 2. 6 Equipment Slot Types
 3. Swordsman-Exclusive Equipment (15 Types)
 4. Mage-Exclusive Equipment (15 Types)
-5. Summoner-Exclusive Equipment (15 Types)
-6. Common Equipment (28 Types)
-7. Consumable Items (20 Types)
-8. Equipment Acquisition Methods
-9. Equipment Enhancement System
+5. Common Equipment (28 Types)
+6. Consumable Items (20 Types)
+7. Equipment Acquisition Methods
+8. Equipment Enhancement System
 
 ```
 
@@ -60,7 +59,6 @@ Total: 73 Types
 【A. Character-Specific Enhancement】
 - Swordsman: Sword Intent related
 - Mage: Resonance related
-- Summoner: Summon related
 
 【B. Card Synergy】
 - Specific category enhancement
@@ -417,116 +415,7 @@ Total: 73 Types
 
 ---
 
-# 5. Summoner-Exclusive Equipment (15 Types)
-
-## 5.1 Head (Summoner) - 3 Types
-
-### 31. Summoner’s Hat (Common)
-
-* **Slot:** Head | **AP:** 90 | **HP:** +15 | **Magic:** +10%
-* **Skill:** Damage taken -10% per summon (-30% at 3 summons).
-
-### 32. High Summoner’s Hat (Rare)
-
-* **Slot:** Head | **AP:** 160 | **HP:** +25 | **Magic:** +20%
-* **Skill:** Summon card cost -1; Maintenance cost -1 for all summons.
-
-### 33. Summoning God’s Crown (Legend)
-
-* **Slot:** Head | **AP:** 280 | **HP:** +40 | **Magic:** +35% | **DEF:** +20%
-* **Skill 1:** +80% stats for all summons at 3 summons; summons deal AoE damage upon death (Dead Summon HP x 3).
-* **Unlock Skill (Lv.3):** Maintenance cost 0; Summon limit +1 (Max 4).
-
----
-
-## 5.2 Body (Summoner) - 3 Types
-
-### 34. Summoner’s Robe (Common)
-
-* **Slot:** Body | **AP:** 130 | **HP:** +20 | **DEF:** +12% | **Magic:** +15%
-* **Skill:** +30 AP per summon; summons absorb 10% of damage taken by the player.
-
-### 35. High Summoner’s Robe (Epic)
-
-* **Slot:** Body | **AP:** 250 | **HP:** +35 | **DEF:** +20% | **Magic:** +25%
-* **Skill 1:** Random summon counterattacks (Power 40) when hit; guaranteed triple counter at 3 summons.
-* **Unlock Skill (Lv.3):** Shield (Summons x 25) at turn start; +80% Debuff Resistance at 3 summons.
-
-### 36. Summoning God’s Robe (Legend)
-
-* **Slot:** Body | **AP:** 420 | **HP:** +50 | **DEF:** +30% | **Magic:** +40%
-* **Skill 1:** All summon attacks become AoE; +100% summon power at 3 summons.
-* **Unlock Skill (Lv.3):** Recover 15 HP when a summon attacks; heal 50 HP every turn at 3 summons.
-
----
-
-## 5.3 Right Hand (Summoner) - 3 Types
-
-### 37. Summoner’s Staff (Common)
-
-* **Slot:** Right Hand | **AP:** 65 | **Magic:** +15% | **ATK:** +10%
-* **Skill:** Summoner ATK +15% per summon (+45% at 3 summons).
-
-### 38. High Summoner’s Staff (Epic)
-
-* **Slot:** Right Hand | **AP:** 130 | **Magic:** +30% | **ATK:** +20%
-* **Skill 1:** Summons gain +50% HP, +50% ATK, and +1 Action Speed (2 actions per turn).
-* **Unlock Skill (Lv.3):** All summons follow up (Power 20) when the player attacks; triple follow-up at 3 summons.
-
-### 39. Summoning God’s Pact Staff (Legend)
-
-* **Slot:** Right Hand | **AP:** 270 | **Magic:** +45% | **ATK:** +35%
-* **Skill 1:** Summon card cost -2; Maintenance cost 0; Summon limit +2 (Max 5).
-* **Unlock Skill (Lv.3):** Summons gain +100% HP/ATK and 3 actions per turn; auto-summon 1 random beast at battle start; summons auto-revive at 50% HP once.
-
----
-
-## 5.4 Left Hand (Summoner) - 2 Types
-
-### 40. Summoner’s Grimoire (Rare)
-
-* **Slot:** Left Hand | **AP:** 85 | **Magic:** +15%
-* **Skill:** Hand size + Number of summons.
-
-### 41. High Summoner’s Pact (Epic)
-
-* **Slot:** Left Hand | **AP:** 140 | **Magic:** +25%
-* **Skill 1:** Sacrifice card cost -1; Sacrifice effect x1.5; can re-summon the same beast at half cost after sacrifice.
-* **Unlock Skill (Lv.3):** Recover 50% of a summon's HP upon its death; +50% summon stats after summoning 5+ beasts in one battle.
-
----
-
-## 5.5 Boots (Summoner) - 2 Types
-
-### 42. Summoner’s Boots (Rare)
-
-* **Slot:** Boots | **AP:** 65 | **Energy:** +1
-* **Skill:** +1 Energy per summon (Max +3); +2 starting Energy at 3 summons.
-
-### 43. High Summoner’s Gale Boots (Epic)
-
-* **Slot:** Boots | **AP:** 100 | **Energy:** +1
-* **Skill 1:** 15% chance to play another summon card immediately (40% at 3 summons).
-* **Unlock Skill (Lv.3):** +10% Evasion per summon.
-
----
-
-## 5.6 Accessory (Summoner) - 2 Types
-
-### 44. Ring of Summoning (Rare)
-
-* **Slot:** Accessory | **AP:** 45
-* **Skill:** Summon limit +1 (Max 3); auto-summon 1 random beast at start; summons gain +30% HP.
-
-### 45. Summoning God’s Bracelet (Epic)
-
-* **Slot:** Accessory | **AP:** 75
-* **Skill 1:** Automatic AoE attack (Power 100) every turn at 3 summons; maintains summons.
-* **Unlock Skill (Lv.3):** Next summon card cost -2 when a summon dies; re-summon up to 3 beasts for free if all summons are wiped (1/battle).
-
----
-
-# 6. Common Equipment (28 Types)
+# 5. Common Equipment (28 Types)
 
 ## 6.1 Head (Common) - 2 Types
 
@@ -617,7 +506,7 @@ Total: 73 Types
 
 ---
 
-# 7. Consumable Items (20 Types)
+# 6. Consumable Items (20 Types)
 
 ## 7.1 Recovery (5 Types)
 
@@ -653,7 +542,7 @@ Total: 73 Types
 
 ---
 
-# 8. Equipment Acquisition
+# 7. Equipment Acquisition
 
 ## 8.1 Sources
 
@@ -665,7 +554,7 @@ Total: 73 Types
 
 ---
 
-# 9. Enhancement System (Mana Stone Based)
+# 8. Enhancement System (Mana Stone Based)
 
 ## 9.1 Mana Stone Usage
 

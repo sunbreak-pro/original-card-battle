@@ -7,20 +7,18 @@
 | `src/App.tsx` | 119 | state | Provider nesting, screen routing |
 | `src/contexts/GameStateContext.tsx` | 140 | state | Screen navigation, battle config, depth |
 | `src/contexts/ResourceContext.tsx` | 363 | economy | Gold dual-pool, magic stones, exploration limit |
-| `src/contexts/PlayerContext.tsx` | 939 | state | Player stats, runtime battle state, deck, equipment AP, resource delegation |
+| `src/contexts/PlayerContext.tsx` | ~675 | state | Player stats, runtime battle state, deck, equipment AP |
 | `src/contexts/InventoryContext.tsx` | 774 | inventory | Item add/remove/move/equip operations |
 | `src/contexts/GuildContext.tsx` | 240 | state | Rumors, quests (standalone, not in main hierarchy) |
 | `src/ui/dungeonHtml/DungeonRunContext.tsx` | 198 | dungeon | Dungeon run state, floor progression |
-| `src/domain/battles/managements/useBattleOrchestrator.ts` | 882 | battle | Main orchestrator — composes all hooks |
+| `src/domain/battles/managements/useBattleOrchestrator.ts` | ~870 | battle | Main orchestrator — composes all hooks |
 | `src/domain/battles/managements/useBattleState.ts` | 620 | battle | Player/enemy/target state management |
 | `src/domain/battles/managements/useBattlePhase.ts` | 212 | battle | Phase queue, speed, turn order |
 | `src/domain/battles/managements/executeCharacterManage.ts` | 200 | battle | Player/enemy phase execution bridge |
 | `src/domain/battles/managements/battleFlowManage.ts` | — | battle | Battle flow utilities |
-| `src/domain/battles/managements/useCardExecution.ts` | 615 | card | Core card execution hook |
-| `src/domain/battles/managements/useDeckManage.ts` | 221 | card | Battle deck state with animations |
+| `src/domain/battles/managements/useCardExecution.ts` | ~748 | card | Core card execution hook |
 | `src/domain/battles/managements/useClassAbility.ts` | 280 | character | React hooks: useSwordEnergy, useClassAbility, factory |
-| `src/domain/battles/managements/useElementalChain.ts` | 86 | character | React hook wrapper for ElementalSystem |
-| `src/domain/battles/managements/useSummonSystem.ts` | 87 | character | React hook wrapper for SummonSystem |
+| `src/domain/battles/managements/useElementalChain.ts` | ~86 | character | React hook wrapper for ElementalSystem |
 | `src/domain/battles/managements/useEnemyAI.ts` | 300 | battle | React hook wrapping AI + execution + preview |
 | `src/domain/battles/managements/damageManage.ts` | 107 | battle | Damage calculation wrappers for card/enemy |
 | `src/domain/battles/execution/playerPhaseExecution.ts` | 150 | battle | Pure functions: player phase start/end |
@@ -36,18 +34,17 @@
 | `src/domain/battles/logic/itemEffectExecutor.ts` | 293 | inventory | Consumable item effect execution in battle |
 | `src/domain/battles/logic/enemyStateLogic.ts` | 41 | battle | createEnemyStateFromDefinition factory |
 | `src/domain/cards/decks/deck.ts` | 107 | card | **IMMUTABLE** — createInitialDeck, getCardDataByClass |
-| `src/domain/cards/decks/deckReducter.ts` | 67 | card | **IMMUTABLE** — deckReducer (draw/discard/shuffle) |
+| `src/domain/cards/decks/deckReducer.ts` | ~67 | card | **IMMUTABLE** — deckReducer (draw/discard/shuffle) |
 | `src/domain/cards/state/card.ts` | 83 | card | Effective power, mastery calc, canPlay, calculateCardEffect |
 | `src/domain/cards/state/cardPlayLogic.ts` | 58 | card | Duplicate of calculateCardEffect + canPlayCard |
 | `src/domain/cards/state/CardHandle.ts` | 101 | card | Sword energy processing helpers for card play |
 | `src/domain/cards/state/masteryManager.ts` | 60 | card | MasteryStore (Map), increment/sync mastery |
 | `src/domain/cards/logic/cardDerivation.ts` | 134 | card | Card evolution unlock checks based on mastery |
 | `src/domain/cards/logic/cardUtils.ts` | 32 | card | Class-based card filtering utilities |
-| `src/domain/characters/classAbility/classAbilitySystem.ts` | 137 | character | Interface definition, DamageModifier type, helpers |
-| `src/domain/characters/player/logic/swordEnergySystem.ts` | 261 | character | Swordsman: energy gauge, bleed chance |
-| `src/domain/characters/player/logic/elementalSystem.ts` | 250 | character | Mage: resonance chain, element effects, field buffs |
-| `src/domain/characters/player/logic/summonSystem.ts` | 227 | character | Summoner: summon lifecycle (STUB) |
-| `src/domain/characters/player/logic/tittle.ts` | 23 | character | Title/grade strings by card type count |
+| `src/domain/characters/player/classAbility/classAbilitySystem.ts` | ~137 | character | Interface definition, DamageModifier type, helpers |
+| `src/domain/characters/player/logic/swordEnergySystem.ts` | ~261 | character | Swordsman: energy gauge, bleed chance |
+| `src/domain/characters/player/logic/elementalSystem.ts` | ~250 | character | Mage: resonance chain, element effects, field buffs |
+| `src/domain/characters/player/logic/title.ts` | ~23 | character | Title/grade strings by card type count |
 | `src/domain/characters/logic/playerUtils.ts` | 96 | character | Player stat helpers (getInitialPlayerState) |
 | `src/domain/characters/logic/characterUtils.ts` | 34 | character | createEmptyBuffDebuffMap, shared utils |
 | `src/domain/characters/logic/classAbilityUtils.ts` | 89 | character | Factory functions, initial state creators |
@@ -81,9 +78,8 @@
 | `src/constants/saveConstants.ts` | 12 | constants | SAVE_VERSION, SAVE_KEY |
 | `src/constants/uiConstants.ts` | — | constants | Asset paths, player images |
 | `src/constants/data/battles/buffData.ts` | 111 | data | BUFF_EFFECTS definitions |
-| `src/constants/data/cards/SwordmanCards.ts` | 594 | data | 40 Swordsman cards (sw_001-sw_040) |
-| `src/constants/data/cards/mageCards.ts` | 706 | data | 40 Mage cards (mg_001-mg_040) |
-| `src/constants/data/cards/summonerCards.ts` | 786 | data | 40 Summoner cards (sm_001-sm_040) |
+| `src/constants/data/cards/swordsmanCards.ts` | ~594 | data | 41 Swordsman cards (sw_001-sw_041) |
+| `src/constants/data/cards/mageCards.ts` | ~706 | data | 40 Mage cards (mg_001-mg_040) |
 | `src/constants/data/characters/PlayerData.tsx` | 82 | data | Base stats per class |
 | `src/constants/data/characters/CharacterClassData.ts` | 226 | data | Class display info, descriptions |
 | `src/constants/data/characters/enemy/enemyDepth1.ts` | ~200 | data | Depth 1 enemies |
@@ -110,14 +106,12 @@ PlayerContext → [ResourceContext, PlayerData, CharacterClassData, classAbility
 InventoryContext → [PlayerContext]
 GuildContext → [campTypes]
 DungeonRunContext → [dungeonLogic, dungeonTypes]
-useBattleOrchestrator → [useBattleState, useBattlePhase, executeCharacterManage, useCardExecution, useClassAbility, useElementalChain, useSummonSystem, useEnemyAI, deck.ts, cardConstants]
+useBattleOrchestrator → [useBattleState, useBattlePhase, executeCharacterManage, useCardExecution, useClassAbility, useElementalChain, useEnemyAI, deck.ts, cardConstants]
 useBattleState → [PlayerData, characterUtils, enemyStateLogic, battleConstants]
 useBattlePhase → [speedCalculation, phaseCalculation]
 useCardExecution → [card.ts, damageCalculation, buffLogic, bleedDamage, swordEnergySystem, cardExecutionLogic, deck.ts, classAbilitySystem]
-useDeckManage → [deckReducter, deck.ts, useCardAnimation, SwordmanCards]
-useClassAbility → [swordEnergySystem, useElementalChain, useSummonSystem, classAbilitySystem]
+useClassAbility → [swordEnergySystem, useElementalChain, classAbilitySystem]
 useElementalChain → [elementalSystem]
-useSummonSystem → [summonSystem]
 useEnemyAI → [enemyAI, enemyActionExecution, enemyPhaseExecution, bleedDamage]
 damageCalculation → [buffCalculation, battleConstants]
 buffCalculation → [buffData, battleConstants]
@@ -129,7 +123,6 @@ enemyActionExecution → [enemyAI]
 enemyStateLogic → [enemyUtils, characterUtils, battleConstants]
 swordEnergySystem → [classAbilitySystem, classAbilityUtils, battleConstants]
 elementalSystem → [classAbilitySystem, classAbilityUtils, characterConstants, cardConstants]
-summonSystem → [classAbilitySystem, classAbilityUtils, characterConstants]
 classAbilityUtils → [characterTypes]
 card.ts → [cardTypes]
 cardPlayLogic → [cardTypes]
@@ -160,28 +153,26 @@ useBattlePhase → [useBattleOrchestrator]
 useCardExecution → [useBattleOrchestrator]
 useClassAbility → [useBattleOrchestrator]
 useElementalChain → [useBattleOrchestrator, useClassAbility]
-useSummonSystem → [useBattleOrchestrator, useClassAbility]
 useEnemyAI → [useBattleOrchestrator]
 damageCalculation → [useCardExecution, enemyPhaseExecution]
 buffCalculation → [damageCalculation, playerPhaseExecution, enemyPhaseExecution]
 buffLogic → [useCardExecution, playerPhaseExecution, enemyPhaseExecution, itemEffectExecutor]
 buffData → [buffCalculation, buffLogic, itemEffectExecutor]
 bleedDamage → [useCardExecution, enemyPhaseExecution, useEnemyAI]
-deck.ts → [useBattleOrchestrator, useCardExecution, useDeckManage, playerPhaseExecution] (IMMUTABLE)
-deckReducter → [useDeckManage] (IMMUTABLE)
+deck.ts → [useBattleOrchestrator, useCardExecution, playerPhaseExecution] (IMMUTABLE)
+deckReducer → [useBattleOrchestrator] (IMMUTABLE)
 card.ts → [useCardExecution]
-classAbilitySystem → [swordEnergySystem, elementalSystem, summonSystem, useClassAbility, useCardExecution]
-classAbilityUtils → [swordEnergySystem, elementalSystem, summonSystem, PlayerContext]
+classAbilitySystem → [swordEnergySystem, elementalSystem, useClassAbility, useCardExecution]
+classAbilityUtils → [swordEnergySystem, elementalSystem, PlayerContext]
 swordEnergySystem → [useClassAbility]
 elementalSystem → [useElementalChain]
-summonSystem → [useSummonSystem]
 enemyAI → [enemyActionExecution, enemyPhaseExecution, useEnemyAI]
 enemyActionExecution → [useEnemyAI]
 enemyPhaseExecution → [useEnemyAI, executeCharacterManage]
 enemyStateLogic → [useBattleState]
 characterUtils → [enemyStateLogic, useBattleState]
 battleConstants → [damageCalculation, buffCalculation, swordEnergySystem, enemyStateLogic, useBattleState]
-characterConstants → [elementalSystem, summonSystem]
+characterConstants → [elementalSystem]
 cardConstants → [elementalSystem, masteryManager, useBattleOrchestrator]
 campConstants → [blacksmithLogic, sanctuaryLogic, equipmentStats]
 saveManager → [GameStateContext]
@@ -191,7 +182,7 @@ EquipmentData → [generateItem]
 ShopData → [shopLogic]
 BlacksmithData → [blacksmithLogic]
 SanctuaryData → [sanctuaryLogic]
-SwordmanCards → [useDeckManage]
+swordsmanCards → [deck.ts]
 enemyDepth1-5 → [enemyAI]
 generateItem → [nodeEventLogic, shopLogic]
 equipmentStats → [PlayerContext]
@@ -208,24 +199,24 @@ nodeEventLogic → [DungeonMap UI]
 GameStateProvider                     ← No context deps; reads saveManager at init
 │ PROVIDES: currentScreen, battleMode, depth, navigateTo, startBattle, returnToCamp
 │
-└─ ResourceProvider                   ← No context deps; standalone
-   │ PROVIDES: gold (baseCamp/exploration), magicStones, explorationLimit
-   │           addGold, useGold, transferExplorationToBaseCamp, resetExploration
-   │
-   └─ PlayerProvider                  ← READS ResourceContext (useResources)
-      │ PROVIDES: playerData, runtimeBattleState, deckCards, equipmentAP
-      │           updatePlayerData, lives, souls
-      │ DELEGATES TO ResourceContext: addGold, useGold, addMagicStones, transfer, reset
-      │ SYNCS FROM ResourceContext: gold, stones, limit into internal state (DUAL STATE)
-      │
-      └─ InventoryProvider            ← READS PlayerContext (usePlayer)
-         │ PROVIDES: add/remove/move items, equip/unequip
-         │ DELEGATES TO PlayerContext: all ops via updatePlayerData()
+└─ SettingsProvider                   ← Settings (volume, etc.)
+   └─ ToastProvider                   ← Toast notifications
+      └─ ResourceProvider             ← No context deps; standalone
+         │ PROVIDES: gold (baseCamp/exploration), magicStones, explorationLimit
+         │           addGold, useGold, transferExplorationToBaseCamp, resetExploration
          │
-         └─ DungeonRunProvider        ← No context deps; standalone
-            │ PROVIDES: dungeonRun, initializeRun, selectNode, completeNode, advanceFloor
+         └─ PlayerProvider            ← READS ResourceContext (useResources)
+            │ PROVIDES: playerData, runtimeBattleState, deckCards, equipmentAP
+            │           updatePlayerData, lives, souls
             │
-            └─ AppContent
+            └─ InventoryProvider      ← READS PlayerContext (usePlayer)
+               │ PROVIDES: add/remove/move items, equip/unequip
+               │ DELEGATES TO PlayerContext: all ops via updatePlayerData()
+               │
+               └─ DungeonRunProvider  ← No context deps; standalone
+                  │ PROVIDES: dungeonRun, initializeRun, selectNode, completeNode, advanceFloor
+                  │
+                  └─ AppContent
 
 GuildContext (STANDALONE — not in hierarchy, local to Guild facility component)
   PROVIDES: rumors, quests, activateRumor, acceptQuest, claimReward
@@ -263,25 +254,22 @@ GuildContext (STANDALONE — not in hierarchy, local to Guild facility component
 | V-CARD-06 | LOW | `itemEffectExecutor.ts:172-178` | card | logic-error | Item damage ignores defense/allocation |
 | V-CARD-07 | MEDIUM | `useCardExecution.ts:410-421` | card | stale-closure | Auto-bleed uses stale enemy buffs (last setEnemyBuffs wins) |
 | V-CARD-08 | LOW | `card.ts:58-68` | card | quality | calculateCardEffect only handles 3 of 6 categories |
-| V-CARD-09 | MEDIUM | `useDeckManage.ts:70` | card | logic-error | Hardcodes SWORDSMAN_CARDS_ARRAY (mage/summoner broken) |
+| V-CARD-09 | FIXED | — | card | — | Deck management now class-aware (useDeckManage.ts removed) |
 | V-CARD-10 | LOW | `cardPlayLogic.ts` | card | quality | Complete dead-code duplicate file |
 | V-CARD-11 | LOW | `CardHandle.ts:49` | card | quality | processSwordEnergyConsumption returns unused damageBonus |
 | V-CARD-12 | LOW | `deck.ts:3-7` | card | quality | Module-level mutable counter never resets |
 | V-CARD-13 | LOW | `deckReducter.ts` | card | logic-error | Empty draw+discard pile edge case (IMMUTABLE) |
-| V-CARD-14 | LOW | `SwordmanCards.ts:10-11` | card | logic-error | Card id equals cardTypeId — duplicates share same id |
-| V-CARD-15 | LOW | `SwordmanCards.ts` | card | quality | Filename typo: "SwordmanCards" (missing "d") |
+| V-CARD-14 | LOW | `swordsmanCards.ts:10-11` | card | logic-error | Card id equals cardTypeId — duplicates share same id |
+| V-CARD-15 | FIXED | — | card | — | Filename renamed to swordsmanCards.ts |
 | V-CARD-16 | LOW | card data files | card | quality | No runtime validation on card definitions |
-| V-CARD-17 | MEDIUM | `cardPlayLogic.ts` | card | logic-error | requiresSummon not enforced in canPlayCard |
 | V-CARD-18 | LOW | `masteryManager.ts` | card | logic-error | getMasteryBonus returns decimal; callers must add 1.0 |
 | V-CLASS-01 | MEDIUM | `useCardExecution.ts:320, swordEnergySystem.ts:111` | character | stale-closure | Sword energy flat bonus applied before consumption |
 | V-CLASS-02 | MEDIUM | `elementalSystem.ts:47-57` | character | logic-error | Non-magic cards reset resonance chain |
 | V-CLASS-03 | HIGH | `elementalSystem.ts:170-218, useCardExecution.ts:326-329` | character | stub | Resonance effects (burn/freeze/stun) never applied |
 | V-CLASS-04 | MEDIUM | `classAbilitySystem.ts:22-30` | character | stub | DamageModifier.critBonus and penetration never used |
 | V-CLASS-05 | LOW | `classAbilitySystem.ts:119-129` | character | logic-error | combineDamageModifiers multiplies percent (not additive) |
-| V-CLASS-06 | LOW | `classAbilityUtils.ts:42-49` | character | logic-error | Summoner bondLevel starts at 1 (immediate 5% bonus) |
 | V-CLASS-07 | LOW | `characterConstants.ts:93-124` | character | quality | 8 empty resonance effect entries |
-| V-CLASS-08 | LOW | `useClassAbility/useElementalChain/useSummonSystem` | character | quality | Three identical hook wrappers (~160 lines duplication) |
-| V-CLASS-09 | HIGH | `summonSystem.ts` | character | stub | Entire SummonSystem is stub (no real summon actions) |
+| V-CLASS-08 | LOW | `useClassAbility/useElementalChain` | character | quality | Two identical hook wrappers (~120 lines duplication) |
 | V-CLASS-10 | LOW | `classAbilityUtils.ts:15, characterConstants.ts:30` | character | quality | SWORD_ENERGY_MAX defined in two places |
 | V-CLASS-11 | LOW | `classAbilitySystem.ts:35, characterConstants.ts:37` | character | quality | DEFAULT_DAMAGE_MODIFIER defined in two places |
 | V-CLASS-12 | LOW | `swordEnergySystem.ts:110` | character | logic-error | _card param unused — bonus applies to all cards |
@@ -290,7 +278,7 @@ GuildContext (STANDALONE — not in hierarchy, local to Guild facility component
 | V-CS-02 | MEDIUM | `ResourceContext.tsx:117-145` | state | race-condition | useGold balance check outside setResources updater |
 | V-CS-03 | MEDIUM | `ResourceContext.tsx:224-241` | state | race-condition | useExplorationPoint returns stale success value |
 | V-CS-04 | HIGH | `PlayerContext.tsx:772` | state | logic-error | Player ID regenerates on every useMemo recomputation |
-| V-CS-05 | LOW | `PlayerContext.tsx` | state | quality | 939-line file handles 6+ concerns |
+| V-CS-05 | LOW | `PlayerContext.tsx` | state | quality | ~675-line file handles 6+ concerns |
 | V-CS-06 | HIGH | `saveManager.ts:193-232` | state | data-loss | Save misses inventory items and equipmentInventory |
 | V-CS-07 | MEDIUM | `saveManager.ts:172-186` | state | stub | migrate() is a stub — format changes corrupt saves |
 | V-CS-08 | LOW | `ResourceContext.tsx:67-81, PlayerContext.tsx:228-244` | state | quality | Hardcoded test values in production init |
@@ -312,11 +300,10 @@ GuildContext (STANDALONE — not in hierarchy, local to Guild facility component
 | V-EC-12 | MEDIUM | `ResourceContext.tsx:267-309` | economy | logic-error | Transfer multiplier floors per-tier (small quantities lost) |
 | V-PLR-01 | HIGH | `PlayerContext.tsx:772` | character | logic-error | Player ID = Date.now() changes on every recomputation |
 | V-PLR-02 | LOW | `swordEnergySystem.ts:110` | character | logic-error | _card unused — sword energy bonus applies to all cards |
-| V-PLR-03 | HIGH | `summonSystem.ts:35` | character | stub | SummonSystem entirely stub |
 | V-PLR-04 | MEDIUM | `elementalSystem.ts:48-77` | character | logic-error | Elemental resonance uses card.element inconsistently |
-| V-PLR-05 | LOW | `PlayerContext.tsx` | character | quality | 938-line PlayerContext handles 6+ concerns |
-| V-PLR-06 | LOW | `tittle.ts:1-23` | character | stub | Title functions disconnected from gameplay |
-| V-PLR-07 | LOW | `tittle.ts` | character | quality | Filename typo: "tittle" instead of "title" |
+| V-PLR-05 | LOW | `PlayerContext.tsx` | character | quality | ~675-line PlayerContext handles 6+ concerns |
+| V-PLR-06 | LOW | `title.ts:1-23` | character | stub | Title functions disconnected from gameplay |
+| V-PLR-07 | FIXED | — | character | — | Filename renamed to title.ts |
 | V-ENM-01 | MEDIUM | `enemyAI.ts:23` | battle | logic-error | _remainingEnergy ignored in AI selection |
 | V-ENM-02 | MEDIUM | `enemyActionExecution.ts:81-114` | battle | logic-error | Preview uses different random results than execution |
 | V-ENM-03 | LOW | `enemyAI.ts:71` | battle | logic-error | enemyAction always sets element to ["physics"] |
@@ -343,9 +330,8 @@ GuildContext (STANDALONE — not in hierarchy, local to Guild facility component
 
 | System | Status | Type Location | Implementation Location | Missing |
 |--------|--------|---------------|------------------------|---------|
-| Summoner abilities | STUB | `characterTypes.ts` (Summon, SummonAbility) | `summonSystem.ts` | Real summon actions, summon database, targeting, bond progression |
 | Equipment durability | PARTIAL | `itemTypes.ts` (durability, maxDurability) | `equipmentStats.ts` (stat calc exists) | No degradation during battle; repair exists but nothing to repair |
-| Title system | DISCONNECTED | `tittle.ts` (functions exist) | None | cardTypeCount not tracked; functions possibly never called |
+| Title system | DISCONNECTED | `title.ts` (functions exist) | None | cardTypeCount not tracked; functions possibly never called |
 | Save migration | STUB | `saveTypes.ts` (version field) | `saveManager.ts:172-186` | migrate() stamps version only; no actual migration logic |
 | Critical hit | STUB | `classAbilitySystem.ts` (critBonus) | None | critBonus set by mage at Lv2 but never read in damage pipeline |
 | Penetration | STUB | `classAbilitySystem.ts` (penetration) | None | Field exists in DamageModifier, never set > 0 |
@@ -360,7 +346,7 @@ GuildContext (STANDALONE — not in hierarchy, local to Guild facility component
 | File | Reason |
 |------|--------|
 | `src/domain/cards/decks/deck.ts` | Marked IMMUTABLE in CLAUDE.md — createInitialDeck, drawCards, shuffleArray |
-| `src/domain/cards/decks/deckReducter.ts` | Marked IMMUTABLE in CLAUDE.md — deckReducer state machine |
+| `src/domain/cards/decks/deckReducer.ts` | Marked IMMUTABLE in CLAUDE.md — deckReducer state machine |
 
 ## Section 7: Known Duplications
 
