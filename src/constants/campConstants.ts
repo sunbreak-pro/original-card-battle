@@ -10,9 +10,12 @@ import type { SanctuaryEffects } from '@/types/campTypes';
 import type { ElementType } from '@/types/characterTypes';
 import type { FacilityType, GameScreen } from '@/types';
 
+/** Facility types that appear in navigation (excludes storage which is now in Guild) */
+export type NavFacilityType = Exclude<FacilityType, 'storage'>;
+
 export const FACILITY_NAV_ITEMS: ReadonlyArray<{
-  screen: GameScreen;
-  facilityType: FacilityType;
+  screen: Exclude<GameScreen, 'storage'>;
+  facilityType: NavFacilityType;
   label: string;
   icon: string;
   description: string;
@@ -24,7 +27,6 @@ export const FACILITY_NAV_ITEMS: ReadonlyArray<{
   { screen: "blacksmith", facilityType: "blacksmith", label: "鍛冶屋", icon: "⚒️", description: "Forge and upgrade your equipment", showInNav: true },
   { screen: "sanctuary", facilityType: "sanctuary", label: "聖域", icon: "⛪", description: "Strengthen your soul with permanent upgrades", showInNav: true },
   { screen: "library", facilityType: "library", label: "図書館", icon: "📚", description: "Build your deck and browse the encyclopedia", showInNav: true },
-  { screen: "storage", facilityType: "storage", label: "倉庫", icon: "📦", description: "Store and manage your items safely", showInNav: true },
 ] as const;
 
 // ============================================================
@@ -35,6 +37,7 @@ export const SHOP_TABS = [
   { id: "buy", label: "購入", icon: "🛒" },
   { id: "sell", label: "売却", icon: "💵" },
   { id: "exchange", label: "交換", icon: "🔄" },
+  { id: "dark_market", label: "闇市場", icon: "🌙" },
 ] as const;
 
 export const BLACKSMITH_TABS = [
@@ -47,6 +50,7 @@ export const GUILD_TABS = [
   { id: "promotion", label: "昇格試験", icon: "⚔️" },
   { id: "rumors", label: "噂", icon: "👂" },
   { id: "quests", label: "依頼", icon: "📜" },
+  { id: "storage", label: "倉庫", icon: "📦" },
 ] as const;
 
 export const LIBRARY_TABS = [
@@ -182,12 +186,11 @@ export const DEFAULT_EXPLORATION_LIMIT = 10;
 /** Facility positions for isometric layout (clockwise from top) */
 export type IsometricPosition = 'north' | 'northeast' | 'east' | 'southeast' | 'south' | 'southwest' | 'west' | 'northwest';
 
-export const FACILITY_ISOMETRIC_POSITIONS: Record<FacilityType, IsometricPosition> = {
+export const FACILITY_ISOMETRIC_POSITIONS: Record<NavFacilityType, IsometricPosition> = {
   dungeon: 'north',
   shop: 'northeast',
   guild: 'east',
   blacksmith: 'south',
   sanctuary: 'southwest',
   library: 'west',
-  storage: 'northwest',
 };

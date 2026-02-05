@@ -5,6 +5,7 @@ import { usePlayer } from "@/contexts/PlayerContext";
 import BuyTab from "./BuyTab";
 import SellTab from "./SellTab";
 import ExchangeTab from "./ExchangeTab";
+import DarkMarketTab from "./DarkMarketTab";
 import FacilityHeader from "../../componentsHtml/FacilityHeader";
 import BackToCampButton from "../../componentsHtml/BackToCampButton";
 import FacilityTabNav from "../../componentsHtml/FacilityTabNav";
@@ -14,12 +15,17 @@ export const Shop = () => {
   const [selectedTab, setSelectedTab] = useState<ShopTab>("buy");
   const { playerData } = usePlayer();
   const hasNewStock = playerData.progression.shopStockState?.hasNewStock ?? false;
+  const hasDarkMarketNewStock = playerData.progression.shopStockState?.darkMarketHasNewStock ?? false;
 
   return (
     <div className="shop-screen">
-      {/* Restock Banner */}
-      {hasNewStock && (
-        <div className="restock-banner">新商品入荷！</div>
+      {/* Restock Banners */}
+      {(hasNewStock || hasDarkMarketNewStock) && (
+        <div className="restock-banner">
+          {hasNewStock && "新商品入荷！"}
+          {hasNewStock && hasDarkMarketNewStock && " "}
+          {hasDarkMarketNewStock && <span className="dark-market-banner-text">&#x1F319; 闇市場更新！</span>}
+        </div>
       )}
 
       {/* Header */}
@@ -38,6 +44,7 @@ export const Shop = () => {
         {selectedTab === "buy" && <BuyTab />}
         {selectedTab === "sell" && <SellTab />}
         {selectedTab === "exchange" && <ExchangeTab />}
+        {selectedTab === "dark_market" && <DarkMarketTab />}
       </div>
 
       {/* Back Button */}

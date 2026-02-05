@@ -4,6 +4,7 @@ import { GUILD_TABS } from "@/constants/campConstants";
 import PromotionTab from "./Exam";
 import RumorsTab from "./RumorsTab";
 import QuestsTab from "./QuestsTab";
+import StorageTab from "./StorageTab";
 import FacilityHeader from "../../componentsHtml/FacilityHeader";
 import BackToCampButton from "../../componentsHtml/BackToCampButton";
 import FacilityTabNav from "../../componentsHtml/FacilityTabNav";
@@ -36,6 +37,7 @@ export const Guild = () => {
           {selectedTab === "promotion" && <PromotionTab />}
           {selectedTab === "rumors" && <RumorsTab />}
           {selectedTab === "quests" && <QuestsTab />}
+          {selectedTab === "storage" && <StorageTab />}
         </div>
         {/* Back Button */}
         <BackToCampButton />

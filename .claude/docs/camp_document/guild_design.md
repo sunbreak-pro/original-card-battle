@@ -1,9 +1,10 @@
-# Guild Facility Detailed Design Document (GUILD_DESIGN_V3.0)
+# Guild Facility Detailed Design Document (GUILD_DESIGN_V3.1)
 
 ## Update History
 
 | Date | Content |
 |------|---------|
+| 2026-02-05 | V3.1: Implemented 4-tab structure (Promotion, Rumors, Quests, Storage). Storage tab integrated. |
 | 2026-02-04 | V3.0: Restructured with 2 main tabs (Headquarters + Storage). Storage functionality integrated from storage_design.md. |
 | - | V2.1: Integrated Item Type System, String Grade support, Context API integration. |
 
@@ -13,20 +14,22 @@
 
 The Guild is a place where adventurers raise their social status, gather information, manage their belongings, and earn their daily keep.
 
-**V3.0 Changes:**
-- Restructured into 2 main tabs: **Headquarters** and **Storage**
-- Storage facility (formerly standalone) is now integrated as a tab
-- Quest system moved to future features (see `.claude/feature_plans/quest_system.md`)
+**V3.1 Changes (Implemented):**
+- 4-tab structure: Promotion Exams, Rumors, Quests, Storage
+- Storage facility (formerly standalone) is now integrated as the 4th tab
+- Quest tab implemented with basic UI
 
 ### Tab Structure
 
 ```
 Guild (酒場)
-├── Tab 1: Headquarters (本部)
-│   ├── Promotion Exams - Class grade advancement
-│   └── Rumors - Pay magic stones for next-run buffs
-│
-└── Tab 2: Storage (倉庫)
+├── Tab 1: Promotion Exams (昇格試験) - Exam.tsx
+│   └── Class grade advancement battles
+├── Tab 2: Rumors (噂) - RumorsTab.tsx
+│   └── Pay magic stones for next-run buffs
+├── Tab 3: Quests (依頼) - QuestsTab.tsx
+│   └── Daily/Weekly quest acceptance
+└── Tab 4: Storage (倉庫) - StorageTab.tsx
     ├── Item Storage - Long-term item storage
     ├── Inventory Management - Current carry items
     └── Equipment Management - Equipment slots and inventory
@@ -34,11 +37,16 @@ Guild (酒場)
 
 ### Main Functions
 
-**Headquarters Tab:**
-1. **Promotion Exams**: Special battle events to raise Class Grade.
-2. **Rumors**: Pay Magic Stones to grant advantageous effects for the next exploration.
+**Tab 1 - Promotion Exams:**
+- Special battle events to raise Class Grade
 
-**Storage Tab:**
+**Tab 2 - Rumors:**
+- Pay Magic Stones for exploration buffs (one-time use)
+
+**Tab 3 - Quests:**
+- Accept daily/weekly quests for rewards
+
+**Tab 4 - Storage:**
 1. **Item Storage**: Long-term safe storage (retained on death).
 2. **Inventory Management**: Items carried during exploration (lost on death).
 3. **Equipment Management**: Equipment slots and equipment inventory.

@@ -28,8 +28,25 @@ export interface DerivationEntry {
 
 /** Swordsman card derivation entries. Add entries here as cards are created. */
 export const SWORDSMAN_DERIVATIONS: DerivationEntry[] = [
-  // Example (uncomment when derived cards exist):
-  // { parentCardTypeId: "sw_slash", derivedCardTypeId: "sw_heavy_slash", requiredMastery: 2 },
+  // Attack card derivations (Lv1 unlocks for basic cards)
+  { parentCardTypeId: "sw_001", derivedCardTypeId: "sw_001d", requiredMastery: 1 },
+  { parentCardTypeId: "sw_007", derivedCardTypeId: "sw_007d", requiredMastery: 1 },
+  { parentCardTypeId: "sw_009", derivedCardTypeId: "sw_009d", requiredMastery: 1 },
+  { parentCardTypeId: "sw_005", derivedCardTypeId: "sw_005d", requiredMastery: 1 },
+  { parentCardTypeId: "sw_004", derivedCardTypeId: "sw_004d", requiredMastery: 1 },
+  // Attack card derivations (higher mastery requirements)
+  { parentCardTypeId: "sw_017", derivedCardTypeId: "sw_017d", requiredMastery: 2 },
+  { parentCardTypeId: "sw_019", derivedCardTypeId: "sw_019d", requiredMastery: 2 },
+  { parentCardTypeId: "sw_023", derivedCardTypeId: "sw_023d", requiredMastery: 2 },
+  { parentCardTypeId: "sw_025", derivedCardTypeId: "sw_025d", requiredMastery: 2 },
+  { parentCardTypeId: "sw_034", derivedCardTypeId: "sw_034d", requiredMastery: 3 },
+  // Skill card derivations
+  { parentCardTypeId: "sw_013", derivedCardTypeId: "sw_013d", requiredMastery: 1 },
+  { parentCardTypeId: "sw_016", derivedCardTypeId: "sw_016d", requiredMastery: 1 },
+  { parentCardTypeId: "sw_033", derivedCardTypeId: "sw_033d", requiredMastery: 2 },
+  // Guard card derivations
+  { parentCardTypeId: "sw_037", derivedCardTypeId: "sw_037d", requiredMastery: 1 },
+  { parentCardTypeId: "sw_042", derivedCardTypeId: "sw_042d", requiredMastery: 1 },
 ];
 
 // ============================================================

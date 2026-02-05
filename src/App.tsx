@@ -3,7 +3,6 @@ import GuildBattleScreen from "./ui/html/campsHtml/Guild/GuildBattleScreen.tsx";
 import BaseCamp from "./ui/html/campsHtml/BaseCamp.tsx";
 import { Guild } from "./ui/html/campsHtml/Guild/Guild.tsx";
 import { Shop } from "./ui/html/campsHtml/Shop/Shop.tsx";
-import Storage from "./ui/html/campsHtml/Storage/Storage.tsx";
 import { Blacksmith } from "./ui/html/campsHtml/Blacksmith/Blacksmith.tsx";
 import { Sanctuary } from "./ui/html/campsHtml/Sanctuary/Sanctuary.tsx";
 import { Library } from "./ui/html/campsHtml/Library/Library.tsx";
@@ -92,8 +91,6 @@ function AppContent() {
       {currentScreen === "sanctuary" && <Sanctuary />}
       {/* Library Screen */}
       {currentScreen === "library" && <Library />}
-      {/* Storage Screen */}
-      {currentScreen === "storage" && <Storage />}
       {/* Dungeon Gate Screen */}
       {currentScreen === "dungeon" && <DungeonGate />}
 

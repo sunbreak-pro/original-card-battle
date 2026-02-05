@@ -402,6 +402,11 @@
   100% { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+.dark-market-banner-text {
+  color: #c080c0;
+  text-shadow: 0 0 0.5vh rgba(192, 128, 192, 0.5);
+}
+
 /* Pack Result Overlay */
 .pack-result {
   position: fixed;
@@ -818,4 +823,130 @@
   color: #6d5d4b;
   font-style: italic;
   margin: 0;
+}
+
+/* ============================================
+   Dark Market Tab Styles
+   ============================================ */
+
+.dark-market-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+}
+
+.dark-market-warning {
+  background: linear-gradient(135deg, #4a1a4a, #2d0a2d);
+  border: 1px solid #8b4a8b;
+  color: #e0b0e0;
+  padding: 1vh 2vw;
+  border-radius: 0.5vh;
+  margin-bottom: 1vh;
+  text-align: center;
+  font-size: 1.8vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1vw;
+}
+
+.dark-market-warning .warning-icon {
+  font-size: 2.2vh;
+  color: #ff9800;
+}
+
+.dark-market-section {
+  background: rgba(75, 0, 75, 0.2);
+  border: 1px solid #6b2a6b;
+}
+
+.dark-market-section:hover {
+  border-color: #8b4a8b;
+}
+
+.dark-market-title {
+  color: #c080c0 !important;
+  border-bottom-color: rgba(139, 74, 139, 0.3) !important;
+}
+
+/* Dark Market item cards with purple theme */
+.dark-market-tab .shop-item.dark-market-item {
+  background: linear-gradient(135deg, #2d1a2d, #1a0a1a);
+  border: 1px solid #5a3a5a;
+}
+
+.dark-market-tab .shop-item.dark-market-item:hover {
+  border-color: #8b4a8b;
+  box-shadow: 0 0 1vh rgba(139, 74, 139, 0.5);
+  background: linear-gradient(135deg, #3d2a3d, #2a1a2a);
+}
+
+/* High price indicator */
+.dark-market-price {
+  color: #ff6b6b !important;
+  font-weight: bold;
+  text-shadow: 0 0 0.5vh rgba(255, 107, 107, 0.3);
+}
+
+/* Dark market buy button */
+.dark-market-buy {
+  background: linear-gradient(135deg, #6b2a6b 0%, #9b4a9b 100%) !important;
+  border-color: #c080c0 !important;
+}
+
+.dark-market-buy:hover:not(:disabled) {
+  background: linear-gradient(135deg, #8b4a8b 0%, #bb6abb 100%) !important;
+  box-shadow: 0 0 1vh rgba(155, 74, 155, 0.6) !important;
+}
+
+/* Rarity labels in dark market */
+.dark-market-tab .rarity-label {
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.dark-market-tab .rarity-label.rarity-rare {
+  color: #2196f3;
+}
+
+.dark-market-tab .rarity-label.rarity-epic {
+  color: #9c27b0;
+}
+
+.dark-market-tab .rarity-label.rarity-legendary {
+  color: #ff9800;
+  text-shadow: 0 0 0.5vh rgba(255, 152, 0, 0.5);
+}
+
+/* Equipment rarity borders in dark market */
+.dark-market-tab .equipment-item.rarity-rare {
+  border-color: rgba(33, 150, 243, 0.5);
+}
+
+.dark-market-tab .equipment-item.rarity-epic {
+  border-color: rgba(156, 39, 176, 0.5);
+}
+
+.dark-market-tab .equipment-item.rarity-legendary {
+  border-color: rgba(255, 152, 0, 0.6);
+  box-shadow: 0 0 0.5vh rgba(255, 152, 0, 0.2);
+}
+
+/* Dark market info note */
+.dark-market-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8vw;
+  padding: 1vh 2vw;
+  background: rgba(45, 31, 45, 0.6);
+  border: 1px solid rgba(139, 74, 139, 0.3);
+  border-radius: 0.5vh;
+  color: #9b7a9b;
+  font-size: 1.4vh;
+  font-style: italic;
+}
+
+.dark-market-info .info-icon {
+  font-size: 1.8vh;
 }

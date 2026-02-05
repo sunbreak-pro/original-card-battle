@@ -1,22 +1,20 @@
 import React, { useState } from "react";
 import { usePlayer } from "@/contexts/PlayerContext";
-import BackToCampButton from "../../componentsHtml/BackToCampButton";
 import { useInventory } from "@/contexts/InventoryContext";
 import { type Item } from "@/types/itemTypes";
-import ItemCard from "./ItemCard";
-import { ItemDetailPanel, EquipmentDetailPanel } from "./ItemDetailPanel";
+import ItemCard from "../Storage/ItemCard";
+import { ItemDetailPanel, EquipmentDetailPanel } from "../Storage/ItemDetailPanel";
 import DeleteModal from "../modal/DeleteModal";
-import FacilityHeader from "../../componentsHtml/FacilityHeader";
-import "../../../css/camps/Storage.css";
 
 type TabType = "items" | "equipment";
 type ItemSource = "storage" | "inventory" | "equipment" | "equipmentInventory";
 
 /**
- * Storage Component
+ * StorageTab Component
+ * Storage functionality integrated into Guild as a tab
  * Manages item storage, inventory, and equipment
  */
-export const Storage: React.FC = () => {
+export const StorageTab: React.FC = () => {
   const { playerData } = usePlayer();
   const {
     moveItem,
@@ -260,43 +258,35 @@ export const Storage: React.FC = () => {
     );
 
   return (
-    <div className="storage-container">
-      {/* Header */}
-      <FacilityHeader title="倉庫" />
-
-      {/* Tab Navigation */}
-      <nav className="nav">
-        <div className="storage-tabs">
-          <button
-            className={`storage-tab ${
-              activeTab === "items" ? "storage-tab-active" : ""
-            }`}
-            onClick={() => {
-              setActiveTab("items");
-              setSelectedItem(null);
-            }}
-          >
-            Items
-          </button>
-          <button
-            className={`storage-tab ${
-              activeTab === "equipment" ? "storage-tab-active" : ""
-            }`}
-            onClick={() => {
-              setActiveTab("equipment");
-              setSelectedItem(null);
-            }}
-          >
-            Equipment
-          </button>
-        </div>
-        <div className="back-content">
-          <BackToCampButton />
-        </div>
-      </nav>
+    <div className="guild-storage-tab">
+      {/* Sub-Tab Navigation */}
+      <div className="storage-sub-tabs">
+        <button
+          className={`storage-sub-tab ${
+            activeTab === "items" ? "storage-sub-tab-active" : ""
+          }`}
+          onClick={() => {
+            setActiveTab("items");
+            setSelectedItem(null);
+          }}
+        >
+          Items
+        </button>
+        <button
+          className={`storage-sub-tab ${
+            activeTab === "equipment" ? "storage-sub-tab-active" : ""
+          }`}
+          onClick={() => {
+            setActiveTab("equipment");
+            setSelectedItem(null);
+          }}
+        >
+          Equipment
+        </button>
+      </div>
 
       {/* Main Content */}
-      <div className="storage-content">
+      <div className="storage-tab-content">
         {activeTab === "items" ? (
           /* Items Tab: Storage + Inventory side by side */
           <div className="items-tab-content">
@@ -508,11 +498,8 @@ export const Storage: React.FC = () => {
 
       {/* Message Display */}
       {message && <div className="storage-message">{message}</div>}
-
-      {/* Footer */}
-      <div className="storage-footer"> </div>
     </div>
   );
 };
 
-export default Storage;
+export default StorageTab;

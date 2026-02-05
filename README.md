@@ -42,7 +42,7 @@ npm run lint      # ESLint
 
 | クラス | 固有メカニクス | カード枚数 |
 |--------|--------------|-----------|
-| 剣士 (Swordsman) | 剣気ゲージ（エネルギー蓄積で強力な技を発動） | 全41枚 |
+| 剣士 (Swordsman) | 剣気ゲージ（スキル/ガードで蓄積→攻撃で消費） | 全60枚 |
 | 魔術師 (Mage) | 属性共鳴（属性連鎖でダメージ倍率上昇+フィールドバフ） | 全40枚 |
 
 スターターデッキは各クラス15枚。
@@ -79,8 +79,8 @@ npm run lint      # ESLint
 
 | 施設 | 機能 |
 |------|------|
-| ギルド (Guild) | キャラ選択・昇格試験・噂バフ + **倉庫タブ**（アイテム・装備管理） |
-| ショップ (Shop) | アイテム購入・売却・魔石交換（在庫管理・日替わり入荷） |
+| ギルド (Guild) | 昇格試験・噂バフ・依頼・**倉庫**（アイテム・装備管理）の4タブ |
+| ショップ (Shop) | アイテム購入・売却・魔石交換・**闇市場**（在庫管理・日替わり入荷・ボス討伐で闇市場更新） |
 | 鍛冶屋 (Blacksmith) | 装備強化・修理・分解 |
 | 聖域 (Sanctuary) | ソウルによるスキルツリー解放（HP/ゴールド/ユーティリティ/クラス） |
 | ダンジョンゲート | 深度選択・出発 |
@@ -139,7 +139,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 | カテゴリ | 進捗 | 備考 |
 |---------|------|------|
 | バトルシステム | 98% | コア、複数敵、逃走、属性共鳴、マルチヒット完了。AoEカード未実装 |
-| キャンプ施設 | 100% | 全6施設稼働（ショップ、ギルド、鍛冶屋、聖域、図書館、倉庫） |
+| キャンプ施設 | 100% | 全5施設稼働（ショップ、ギルド[含倉庫]、鍛冶屋、聖域、ダンジョンゲート） |
 | ダンジョン | 90% | マップ、ノード、イベント、5フロア進行、Depth 1-5 |
 | 進行システム | 98% | ライフ、ソウル、聖域、装備耐久度、熟練度、カード派生、カスタムデッキ |
 | セーブ | 実装済 | `src/domain/save/logic/saveManager.ts` |
@@ -174,6 +174,11 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | 日付 | 作業内容 | 進捗 |
 |------|----------|------|
+| 2026-02-05 | Dark Market（闇市場）実装: Shopの4番目タブとして追加。高価格（×1.8）でレア以上の装備・エピック消耗品を販売、ボス討伐後に在庫更新。DarkMarketTab.tsx、DarkMarketConstants.ts新規、campTypes.ts/campConstants.ts/shopStockLogic.ts拡張、BattleScreen.tsx連携 | 完了 |
+| 2026-02-05 | カード図鑑UI改修（3分類システム）: CardEncyclopediaTab.tsx大幅改修、CardCategoryRow.tsx新規、cardClassification.ts/talentCardUnlock.ts新規、talentCardRegistry.ts新規。才能カード8枚(sw_027-034)にisTalentCard追加、派生解放Lv2→Lv1変更、3行レイアウトCSS追加 | 完了 |
+| 2026-02-05 | Storage機能のGuild統合: 倉庫を独立施設からギルドのタブ（4つ目）に統合。StorageTab.tsx新規作成、Guild.css統合、App.tsx/campConstants.tsからStorage関連削除 | 完了 |
+| 2026-02-05 | Swordsmanカードバランス調整: 剣気サイクル根本変更(攻撃=獲得→消費、スキル/ガード=獲得強化)、新規カード4枚(sw_044-047)、派生カード15枚追加、初期デッキ構成変更(攻撃6/スキル6/ガード3の15枚)。全60枚 | 完了 |
+| 2026-02-05 | UI/UXデザインガイド作成: `.claude/docs/ui_ux_design_guide.md` - 設計哲学、カラーシステム（施設/ステータス/熟練度）、タイポグラフィ、スペーシング、コンポーネントパターン、アニメーション、アクセシビリティ | 完了 |
 | 2026-02-05 | CLAUDE.md更新（タスク完了時アーカイブルール追記）、残存Summoner参照削除（code_overview/character/player.md、battle/class-abilities.md、src/types/characterTypes.ts、classAbilitySystem.ts）、完了タスク3件をarchive/へ移動 | 完了 |
 | 2026-02-05 | 脆弱性修正 Phase 1 (Session 1-6): V-EXEC-01/02 (敵マルチアクション死亡後実行・デバフ上書き), V-EXEC-03 (マルチヒットガード/AP割り当て), V-EXEC-04 (敵turnCountインクリメント), V-PHASE-01/02 (敵フェーズバフタイミング), V-DMG-MANAGE-01 (デッドコード削除) | 完了 |
 | 2026-02-05 | code_overview整合性修正: Summoner参照削除、CharacterClass 2クラス化、ファイルパス修正、行数更新(PlayerContext 675行等)、カード数修正(41枚→README修正)、useDeckManage.ts削除反映、title.ts/swordsmanCards.tsリネーム反映、Context階層にSettings/Toast追加 | 完了 |
@@ -203,7 +208,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 ## References
 
-- `.claude/docs/` — ゲーム設計仕様書（バトル、カード、キャンプ、ダンジョン、敵、アイテム、手記）
+- `.claude/docs/` — ゲーム設計仕様書（バトル、カード、キャンプ、ダンジョン、敵、アイテム、手記、UI/UXデザインガイド）
 - `.claude/feature_plans/` — 将来機能の計画（クエスト、称号、NPC会話、闇市）
 - `.claude/current_plans/` — 現在の実装計画・セッション追跡
 - `.claude/memories/` — 開発で学んだ教訓、完了したリファクタリングガイド

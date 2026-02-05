@@ -117,7 +117,7 @@ export type NodeStatus =
 // Shop Types
 // ============================================================
 
-export type ShopTab = "buy" | "sell" | "exchange";
+export type ShopTab = "buy" | "sell" | "exchange" | "dark_market";
 export type ShopCategory = "consumable" | "teleport" | "battleItem" | "mapItem";
 
 export interface ShopListing {
@@ -151,6 +151,16 @@ export interface ShopStockState {
   rotationSeed: number;
   /** Whether new stock is available (for notification badge) */
   hasNewStock: boolean;
+
+  // ===== Dark Market Fields =====
+  /** Dark Market consumable stock: itemKey → remaining count */
+  darkMarketConsumableStock: Record<string, number>;
+  /** Dark Market equipment sold-out indices */
+  darkMarketEquipmentSoldOutIndices: number[];
+  /** Dark Market rotation seed (updated on boss defeat) */
+  darkMarketSeed: number;
+  /** Whether dark market has new items (boss defeated) */
+  darkMarketHasNewStock: boolean;
 }
 
 // ============================================================
@@ -374,7 +384,7 @@ export interface SurvivalMultipliers {
 // Library Types
 // ============================================================
 
-export type GuildTab = "promotion" | "rumors" | "quests";
+export type GuildTab = "promotion" | "rumors" | "quests" | "storage";
 export type PreparationTab = "deck" | "inventory" | "equipment";
 export type LibraryTab = "cards" | "enemies" | "tips";
 

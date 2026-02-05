@@ -124,4 +124,8 @@ export interface Card {
   unlockMasteryLevel?: MasteryLevel;
   /** Card type IDs this card can derive into */
   derivesInto?: string[];
+
+  // ---- Talent Card System ----
+  /** Whether this card is a talent card (unlocked via mastery of specific cards) */
+  isTalentCard?: boolean;
 }

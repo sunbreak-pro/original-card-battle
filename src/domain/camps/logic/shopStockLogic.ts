@@ -11,6 +11,10 @@ import {
   EPIC_CONSUMABLE_POOL,
   getWeightValue,
 } from '@/constants/data/camps/ShopStockConstants';
+import {
+  DARK_MARKET_CONSUMABLE_POOL,
+  DARK_MARKET_CONSUMABLE_SLOTS_BY_DEPTH,
+} from '@/constants/data/camps/DarkMarketConstants';
 
 // ============================================================
 // Seeded RNG (same algorithm as ShopData.ts)
@@ -91,6 +95,54 @@ function selectDailySpecials(
 }
 
 // ============================================================
+// Dark Market Stock Selection
+// ============================================================
+
+/**
+ * Select dark market consumables from the pool based on depth.
+ */
+function selectDarkMarketConsumables(
+  rng: () => number,
+  depth: Depth,
+): Record<string, number> {
+  const stock: Record<string, number> = {};
+  const available = [...DARK_MARKET_CONSUMABLE_POOL];
+  const slotCount = DARK_MARKET_CONSUMABLE_SLOTS_BY_DEPTH[depth];
+
+  for (let i = 0; i < slotCount && available.length > 0; i++) {
+    const idx = Math.floor(rng() * available.length);
+    const picked = available[idx];
+    stock[picked.key] = picked.stock;
+    available.splice(idx, 1);
+  }
+
+  return stock;
+}
+
+/**
+ * Initialize dark market stock (called on first visit or boss defeat)
+ */
+export function initializeDarkMarketStock(
+  seed: number,
+  depth: Depth,
+): Pick<ShopStockState,
+  'darkMarketConsumableStock' |
+  'darkMarketEquipmentSoldOutIndices' |
+  'darkMarketSeed' |
+  'darkMarketHasNewStock'
+> {
+  const rng = seededRandom(seed * 8831 + 17);
+  const consumableStock = selectDarkMarketConsumables(rng, depth);
+
+  return {
+    darkMarketConsumableStock: consumableStock,
+    darkMarketEquipmentSoldOutIndices: [],
+    darkMarketSeed: seed,
+    darkMarketHasNewStock: false,
+  };
+}
+
+// ============================================================
 // Initialization
 // ============================================================
 
@@ -110,6 +162,9 @@ export function initializeShopStock(seed: number, depth: Depth): ShopStockState 
   // Build daily specials
   const { keys: dailySpecialKeys, stock: dailySpecialStock } = selectDailySpecials(rng, depth);
 
+  // Initialize dark market
+  const darkMarketUpdate = initializeDarkMarketStock(seed, depth);
+
   return {
     permanentStock,
     dailySpecialStock,
@@ -119,6 +174,8 @@ export function initializeShopStock(seed: number, depth: Depth): ShopStockState 
     restockThreshold: generateRestockThreshold(rng),
     rotationSeed: seed,
     hasNewStock: false,
+    // Dark Market fields
+    ...darkMarketUpdate,
   };
 }
 
@@ -239,8 +296,9 @@ export function incrementBattleCount(state: ShopStockState): ShopStockState {
 /**
  * Perform a restock: regenerate daily specials, reset permanent stock,
  * clear equipment sold-out, reset battle counter, generate new threshold.
+ * Dark market stock is preserved (only updated on boss defeat).
  */
-export function performRestock(newSeed: number, depth: Depth): ShopStockState {
+export function performRestock(newSeed: number, depth: Depth, existingState?: ShopStockState): ShopStockState {
   const rng = seededRandom(newSeed * 7919 + 31);
 
   // Reset permanent stock to max
@@ -252,6 +310,16 @@ export function performRestock(newSeed: number, depth: Depth): ShopStockState {
   // Generate new daily specials
   const { keys: dailySpecialKeys, stock: dailySpecialStock } = selectDailySpecials(rng, depth);
 
+  // Preserve existing dark market state or initialize fresh
+  const darkMarketFields = existingState
+    ? {
+        darkMarketConsumableStock: existingState.darkMarketConsumableStock,
+        darkMarketEquipmentSoldOutIndices: existingState.darkMarketEquipmentSoldOutIndices,
+        darkMarketSeed: existingState.darkMarketSeed,
+        darkMarketHasNewStock: existingState.darkMarketHasNewStock,
+      }
+    : initializeDarkMarketStock(newSeed, depth);
+
   return {
     permanentStock,
     dailySpecialStock,
@@ -261,6 +329,7 @@ export function performRestock(newSeed: number, depth: Depth): ShopStockState {
     restockThreshold: generateRestockThreshold(rng),
     rotationSeed: newSeed,
     hasNewStock: true,
+    ...darkMarketFields,
   };
 }
 
@@ -282,4 +351,104 @@ export function clearNewStockFlag(state: ShopStockState): ShopStockState {
     ...state,
     hasNewStock: false,
   };
+}
+
+// ============================================================
+// Dark Market Stock Operations
+// ============================================================
+
+/**
+ * Refresh dark market on boss defeat.
+ * Generates new stock and sets the newStock flag.
+ */
+export function refreshDarkMarketOnBossDefeat(
+  state: ShopStockState,
+  depth: Depth,
+): ShopStockState {
+  const newSeed = Math.floor(Date.now() / 1000);
+  const darkMarketUpdate = initializeDarkMarketStock(newSeed, depth);
+  return {
+    ...state,
+    ...darkMarketUpdate,
+    darkMarketHasNewStock: true,
+  };
+}
+
+/**
+ * Decrement dark market consumable stock.
+ * Returns updated state, or null if item is out of stock.
+ */
+export function decrementDarkMarketConsumableStock(
+  state: ShopStockState,
+  itemKey: string,
+): ShopStockState | null {
+  if (!(itemKey in state.darkMarketConsumableStock)) return null;
+  const current = state.darkMarketConsumableStock[itemKey];
+  if (current <= 0) return null;
+  return {
+    ...state,
+    darkMarketConsumableStock: {
+      ...state.darkMarketConsumableStock,
+      [itemKey]: current - 1,
+    },
+  };
+}
+
+/**
+ * Mark dark market equipment as sold out.
+ * Returns updated state, or null if already sold out.
+ */
+export function markDarkMarketEquipmentSoldOut(
+  state: ShopStockState,
+  index: number,
+): ShopStockState | null {
+  if (state.darkMarketEquipmentSoldOutIndices.includes(index)) return null;
+  return {
+    ...state,
+    darkMarketEquipmentSoldOutIndices: [...state.darkMarketEquipmentSoldOutIndices, index],
+  };
+}
+
+/**
+ * Clear dark market new stock flag.
+ */
+export function clearDarkMarketNewStockFlag(
+  state: ShopStockState,
+): ShopStockState {
+  if (!state.darkMarketHasNewStock) return state;
+  return {
+    ...state,
+    darkMarketHasNewStock: false,
+  };
+}
+
+/**
+ * Check if a dark market consumable is in stock.
+ */
+export function isDarkMarketConsumableInStock(
+  state: ShopStockState,
+  itemKey: string,
+): boolean {
+  if (!(itemKey in state.darkMarketConsumableStock)) return false;
+  return state.darkMarketConsumableStock[itemKey] > 0;
+}
+
+/**
+ * Get dark market consumable stock count.
+ */
+export function getDarkMarketConsumableStock(
+  state: ShopStockState,
+  itemKey: string,
+): number {
+  return state.darkMarketConsumableStock[itemKey] ?? 0;
+}
+
+/**
+ * Check if dark market equipment is available.
+ */
+export function isDarkMarketEquipmentAvailable(
+  state: ShopStockState,
+  index: number,
+): boolean {
+  return !state.darkMarketEquipmentSoldOutIndices.includes(index);
 }

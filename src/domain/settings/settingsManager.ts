@@ -171,7 +171,7 @@ export const settingsManager = {
    * @returns Migrated settings data
    */
   migrate(data: SettingsData): SettingsData {
-    let migrated = { ...data };
+    const migrated = { ...data };
 
     // Future migrations go here
     // Example: if (migrated.version === '1.0.0') { ... migrated.version = '1.1.0'; }

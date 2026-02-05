@@ -31,6 +31,7 @@ import {
   calculateMagicStoneDrops,
   type EnemyType,
 } from "@/domain/camps/logic/soulSystem";
+import { refreshDarkMarketOnBossDefeat } from "@/domain/camps/logic/shopStockLogic";
 import { executeItemEffect } from "@/domain/battles/logic/itemEffectExecutor";
 import {
   applyBuffsToMap,
@@ -430,11 +431,26 @@ const BattleScreen = ({
       false,
     );
 
+    // Update progression with soul result
+    let updatedProgression = {
+      ...playerData.progression,
+      sanctuaryProgress: soulResult.newProgress,
+    };
+
+    // Refresh Dark Market stock on boss defeat
+    if (enemyType === "boss" && playerData.progression.shopStockState) {
+      const updatedShopStock = refreshDarkMarketOnBossDefeat(
+        playerData.progression.shopStockState,
+        depth,
+      );
+      updatedProgression = {
+        ...updatedProgression,
+        shopStockState: updatedShopStock,
+      };
+    }
+
     updatePlayerData({
-      progression: {
-        ...playerData.progression,
-        sanctuaryProgress: soulResult.newProgress,
-      },
+      progression: updatedProgression,
     });
 
     addMagicStones(magicStones, false);
