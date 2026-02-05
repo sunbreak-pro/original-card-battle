@@ -4,12 +4,13 @@ I have included a few visual aids to help visualize the atmosphere and logic.
 
 ---
 
-# Merchant's Exchange Detailed Design Document (SHOP_DESIGN_V1)
+# Merchant's Exchange Detailed Design Document (SHOP_DESIGN_V3)
 
 ## Update History
 
 - V1.0: Initial Draft (Magic Stone rate adjustment, Sale system, Equipment Pack specifications finalized)
 - V1.1: Updated to match implementation (Restock timing, Seeded RNG, Depth-dependent drops)
+- V3.0: Unified Teleport Stone (1 type, 100% return rate) to align with Lives System and return_system V3.0
 
 ---
 
@@ -67,42 +68,28 @@ Items are displayed in the following 3 categories.
 
 ```
 
-#### 2.1.2 Teleport Stones
+#### 2.1.2 Teleport Stones (V3.0 Update)
 
 **Basic Specs:**
 
 - Stock is always secured based on `return_system.md`.
-- 3 types always on sale.
+- **V3.0 Change:** Unified to 1 type (100% return rate).
 - Eligible for Daily Sales.
 
-**Product Definitions:**
+**Product Definition:**
 
 ```typescript
 {
-  id: "shop_teleport_normal",
-  name: "Teleport Stone (Normal)",
+  id: "teleport_stone",
+  name: "Teleport Stone",
   type: "teleport",
   basePrice: 150,
-  effect: "70% Chance to Return"
-}
-
-{
-  id: "shop_teleport_blessed",
-  name: "Teleport Stone (Blessed)",
-  type: "teleport",
-  basePrice: 300,
-  effect: "80% Chance to Return"
-}
-
-{
-  id: "shop_teleport_emergency",
-  name: "Teleport Stone (Emergency)",
-  type: "teleport",
-  basePrice: 100,
-  effect: "60% Chance to Return"
+  effect: "100% Chance to Return"
 }
 
 ```
+
+> **V3.0 Note:** Previously there were 3 types (Normal 70%, Blessed 80%, Emergency 60%). These have been unified into a single Teleport Stone with 100% return rate to simplify the return system and reduce player frustration from RNG.
 
 #### 2.1.3 Equipment Packs
 

@@ -142,20 +142,22 @@ export function completeSurvival(
 }
 
 /**
- * Handle player death - lose all current run souls
- * Returns a new SanctuaryProgress with reset currentRunSouls
+ * Handle player death - transfer 100% of current run souls to total
+ * V3.0 Design: Souls are preserved on death (100% retention)
+ * Returns a new SanctuaryProgress with transferred souls
  */
 export function handleDeath(progress: SanctuaryProgress): DeathResult {
-  const lostSouls = progress.currentRunSouls;
+  const transferredSouls = progress.currentRunSouls;
 
   const newProgress: SanctuaryProgress = {
     ...progress,
     currentRunSouls: 0,
-    // totalSouls and unlockedNodes are preserved
+    // V3.0: Transfer all current run souls to total (100% retention)
+    totalSouls: progress.totalSouls + transferredSouls,
   };
 
   return {
-    lostSouls,
+    lostSouls: 0, // V3.0: No souls are lost on death
     newProgress,
   };
 }

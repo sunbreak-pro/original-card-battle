@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 ## Development Commands
 
 ```bash
@@ -21,7 +23,7 @@ npm run test:run     # Single run
 ### Immutable Code (DO NOT MODIFY)
 
 - `src/domain/cards/decks/deck.ts`
-- `src/domain/cards/decks/deckReducter.ts`
+- `src/domain/cards/decks/deckReducer.ts`
 
 ### Conventions
 
@@ -74,9 +76,48 @@ setResources(prev => {
 return result.success;
 ```
 
+## Architecture Overview
+
+### Context Provider Hierarchy
+
+```
+GameStateProvider (screen routing, battle config, depth)
+  → SettingsProvider → ToastProvider
+    → ResourceProvider (gold dual-pool, magic stones)
+      → PlayerProvider (player stats, deck, equipment)
+        → InventoryProvider (items, storage)
+          → DungeonRunProvider (dungeon exploration state)
+```
+
+Battle state is managed by `useBattleOrchestrator` hook (transient, not Context).
+
+### Core Systems
+
+| System | Key Files | Purpose |
+|--------|-----------|---------|
+| **Battle** | `domain/battles/managements/useBattleOrchestrator.ts` | Turn-based card combat with phase queue |
+| **Cards** | `domain/cards/decks/deck.ts`, `deckReducer.ts` | Deck shuffle/draw/discard (IMMUTABLE) |
+| **Mastery** | `domain/cards/state/masteryManager.ts` | Card use tracking, derived card unlocks |
+| **Class Abilities** | `domain/characters/player/` | Sword Energy (swordsman), Elemental Resonance (mage) |
+| **Enemy AI** | `domain/characters/enemy/enemyAI.ts` | Energy-based action selection |
+| **Dungeon** | `domain/dungeon/logic/dungeonLogic.ts` | Procedural map generation (5 depths × 5 floors) |
+| **Camps** | `domain/camps/logic/` | Shop, Blacksmith, Sanctuary, Guild |
+
+### Game Loop Flow
+
+```
+Character Select → Base Camp → Dungeon Entry → Node Navigation → Battle
+       ↑                                                          ↓
+       ←─────────── Resources & Progression ←── Rewards ──────────┘
+```
+
+- **Survive:** Keep all souls + items
+- **Death:** Lose exploration resources, -1 life (souls saved)
+- **Life = 0:** Game over (full reset)
+
 ## Task Completion Rule
 
-When completing a task, be sure to update the Development History in `README.md`:
+When completing a task, update the Development History in `README.md`:
 1. Add the date, work, and progress to the table.
 2. Store the implementation plan in `.claude/current_plans/`.
 
@@ -84,10 +125,12 @@ README.md serves as the single source of truth for work history.
 
 ## References
 
-- **`README.md`** — Work history, project overview, implementation status
-- **`.claude/docs/`** — Game design specifications
-- **`.claude/code_overview/`** — Code analysis, vulnerabilities, and debugging requirements
-- **`.claude/feature_plans/`** — Future features and planning stages
-- **`.claude/current_plans/`** — Current implementation plans and session tracking
-- **`.claude/memories/`** — Lessons learned and past plans
-- **`.claude/skills/`** — Development skills (11 types)
+| Resource | Contents |
+|----------|----------|
+| `README.md` | Work history, project overview, implementation status |
+| `.claude/docs/` | Game design specifications (battle, cards, camps, dungeon, enemies, items) |
+| `.claude/code_overview/` | Code analysis, cross-system vulnerabilities, debugging requirements |
+| `.claude/feature_plans/` | Future features (quests, titles, NPC, dark market) |
+| `.claude/current_plans/` | Current implementation plans and session tracking |
+| `.claude/memories/` | Lessons learned and completed refactoring guides |
+| `.claude/skills/` | 11 development skills (card-creator, enemy-creator, battle-system, etc.) |

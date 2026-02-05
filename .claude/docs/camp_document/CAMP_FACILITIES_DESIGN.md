@@ -53,7 +53,7 @@ Removed as standalone facilities:
 - **In-Run Progression:** Gold, Equipment Levels, Card Acquisition.
 - **Inter-Run Progression:** Permanent strengthening via Soul Remnants (XP).
 - **Information Accumulation:** Knowledge building via Encyclopedia (Journal).
-- **Exploration Limit:** Adding weight and consequence to each exploration.
+- **Lives System:** Adding weight and consequence to death (limited retries).
 
 ---
 
@@ -87,7 +87,7 @@ Removed as standalone facilities:
 Guild -> Dungeon Gate -> Combat/Rewards -> Survival or Death
   │                                              │
   ├─ Select Character                            │
-  ├─ Check Exploration Count                     │
+  ├─ Check Lives                                 │
   ├─ Manage Storage (Storage tab)                │
   └─ Promotion Exam                              │
                                                  │
@@ -103,14 +103,13 @@ Guild -> Dungeon Gate -> Combat/Rewards -> Survival or Death
 
 [Difference Between Survival & Death]
 Survival: Bring back Gold, Magic Stones, Gear, Souls -> Enhance
-Death:    LOSE Inventory & Equipped Slots
-          KEEP items inside Storage (Guild tab) & Accumulated Souls
+Death:    LOSE Inventory & Equipped Slots, -1 Life
+          KEEP items inside Storage (Guild tab) & Transfer Souls (100%)
 
-[Exploration Limit]
-Must reach the deep layers within 10 runs.
-Normal Exploration: +1 Count (regardless of Survival/Death)
-Promotion Exam:     Does NOT consume Exploration Count
-Limit Exceeded ->   GAME OVER
+[Lives System (V3.0)]
+Max Lives: Hard=2, Normal/Easy=3
+Death: -1 Life, 100% Soul transfer, All items lost
+Lives = 0: GAME OVER (Full Reset except achievements)
 ```
 
 ---
@@ -205,7 +204,7 @@ Equipment Stats = BaseStats × Quality Mod × Level Mod
 
 **Concept:** Permanent Growth via Souls
 
-**Soul Remnants System:**
+**Soul Remnants System (V3.0):**
 ```
 [Acquisition]
 On Monster Kill:
@@ -215,14 +214,17 @@ On Monster Kill:
 
 [Upon Survival]
 Souls gained this run × Survival Method Multiplier -> Added to Total
-- Return Route: 100%
-- Normal Teleport Stone: 70%
-- Blessed Teleport Stone: 80%
-- Emergency Teleport Stone: 60%
+- Return Route: 0.6x/0.8x/1.0x (early/normal/full clear)
+- Teleport Stone: 100% (unified type)
 
 [Upon Death]
-Souls gained this run -> ZERO
-Total Accumulated Souls -> KEPT (No change)
+Souls gained this run -> 100% TRANSFERRED to Total
+Lives -> -1
+All items/equipment -> Lost
+
+[Upon Game Over (Lives = 0)]
+Total Accumulated Souls -> RESET to 0
+All Sanctuary Progress -> LOST
 ```
 
 **Skill Tree Structure:**
@@ -231,9 +233,9 @@ Center Node (Unlocked for free)
 ↓
 Tier 1: Basic Upgrades (HP+10, Gold+10%, etc.)
 ↓
-Tier 2: Specialization (Class specs, Special effects, Exploration Count +1)
+Tier 2: Specialization (Class specs, Special effects, Soul Resonance I)
 ↓
-Tier 3: Ultimate Upgrades (Massive bonuses, Exploration Count +2)
+Tier 3: Ultimate Upgrades (Massive bonuses, Soul Resonance II)
 ```
 
 **Details:** See `sanctuary_design.md`
@@ -248,17 +250,17 @@ Tier 3: Ultimate Upgrades (Massive bonuses, Exploration Count +2)
 
 - Select Depth (1-5)
 - Check Difficulty
-- **Check Exploration Count**
+- **Check Lives remaining**
 - Start Exploration
 
 **Confirmation Screen:**
 ```
 "Start Exploration?"
-Exploration Count: 7 / 13 (6 remaining)
+Lives: ❤️❤️❤️ (3 remaining)
 
 Warning for Depth 5 (Abyss):
 "Survival methods are disabled in the Abyss."
-"Exploration Count: 6 remaining."
+"Lives: 3 remaining."
 "Are you sure you want to proceed?"
 ```
 
@@ -266,7 +268,7 @@ Warning for Depth 5 (Abyss):
 
 - Eerie and alluring visuals.
 - Color changes by depth (1: Grey-Green → 5: Deep Purple).
-- Exploration count warning display.
+- Lives warning display.
 
 ---
 

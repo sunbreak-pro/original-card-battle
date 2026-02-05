@@ -6,7 +6,6 @@ Here is the English translation of the design document.
 
 - V2.0: **Fundamental Design Overhaul** - Changed Soul Remnants to an experience point system, added +1 Exploration Count skill, removed roguelite elements (permanent death resets).
 - V3.0: **Lives System Integration** - Removed exploration count extension skills, updated soul acquisition (100% on both survival AND death), integrated with lives system, game over resets sanctuary progress.
-- V3.1: **Implementation Alignment** - Updated to reflect actual implementation: survival multipliers (0.6x/0.8x/1.0x), death causes soul loss (not 100% retention).
 
 ---
 
@@ -43,19 +42,13 @@ Game Over (Lives = 0) → Complete Sanctuary Reset (only achievements persist)
 
 #### 2.1.1 Acquisition Method (Experience System)
 
-**Change in V3.0 (Design) vs V3.1 (Implementation):**
+**Change in V3.0:**
 
 ```
 V2.0 Design: Gained on Enemy Kill, Added to Total only on Survival
 V3.0 Design: Gained on Enemy Kill, Added to Total on BOTH Survival AND Death (100%)
-V3.1 Implementation: Gained on Enemy Kill, Survival multiplier applied, Death = 0% retention
 
 ```
-
-> **IMPLEMENTATION NOTE (V3.1):** The actual implementation differs from V3.0 design.
-> - **Survival:** Current run souls transferred with multiplier (0.6x / 0.8x / 1.0x based on return method)
-> - **Death:** Current run souls are LOST (not saved as V3.0 stated)
-> - **Total Accumulated Souls:** Always preserved regardless of survival/death
 
 **Acquisition Timing:**
 
@@ -93,7 +86,7 @@ unlockedNodes = [];  // All sanctuary progress lost
 
 #### 2.1.2 Survival vs. Death Processing (V3.0 - Major Change)
 
-**Case: Survival (V3.1 Implementation)**
+**Case: Survival**
 
 ```
 Defeat Enemy → Gain Souls (currentRunSouls)
@@ -102,7 +95,6 @@ Survive (via Return Method)
   ↓
 Acquired Souls × Survival Multiplier → Added to Total
 
-V3.1 Implementation (Actual):
 Survival multipliers based on return method:
 - Early Return (before mid-depth): 0.6x (60%)
 - Normal Return (after mid-depth): 0.8x (80%)
@@ -116,26 +108,22 @@ Example: Gained 100 Souls this run, Full Clear
 
 ```
 
-**Case: Death (V3.1 Implementation - Different from V3.0 Design)**
+**Case: Death (V3.0 Major Change)**
 
 ```
 Defeat Enemy → Gain Souls (currentRunSouls)
   ↓
 Death
   ↓
-V3.1 IMPLEMENTATION: Souls gained this run → LOST (0%)
+V3.0: Souls gained this run → 100% TRANSFERRED to totalSouls
 Lives → Decrease by 1
 All Items/Equipment → Lost
-Total Accumulated Souls → PRESERVED
+Total Accumulated Souls → PRESERVED + currentRunSouls added
 
 Example: Gained 100 Souls this run, Died
-→ 100 Souls are LOST (currentRunSouls reset to 0)
-→ Previously accumulated totalSouls are KEPT
+→ 100 Souls are TRANSFERRED to totalSouls (100% retention)
 → Lives: 3 → 2
 → All items and equipment lost
-
-NOTE: This differs from V3.0 design which stated 100% soul retention on death.
-      The implementation uses the V2.0 approach where death causes soul loss.
 
 ```
 
@@ -152,13 +140,13 @@ COMPLETE RESET:
 
 ```
 
-**Properties (V3.1 Implementation):**
+**Properties (V3.0):**
 
-- Souls gained during a run are **temporary** until survival
+- Souls gained during a run are **temporary** until survival or death
 - Survival transfers souls with a **multiplier** (0.6x/0.8x/1.0x based on return method)
-- Death causes **loss of current run souls** (totalSouls preserved)
-- Death penalty includes: item/equipment loss + life decrease + current run soul loss
-- Sanctuary progress (unlockedNodes, totalSouls) is lost on game over
+- Death transfers **100% of current run souls** to totalSouls (no loss)
+- Death penalty includes: item/equipment loss + life decrease (souls are preserved)
+- Sanctuary progress (unlockedNodes, totalSouls) is lost on game over (lives = 0)
 - Can only be used in the Sanctuary
 
 **Initial Possession:**
@@ -194,7 +182,7 @@ COMPLETE RESET:
 - Extends in 4 directions from the center.
 - Each direction has a theme (HP / Gold / Combat / Utility).
 - Higher tier nodes are more powerful but cost more.
-- **V3.0 Note:** The design intended to remove Exploration Extension skills, but `SanctuaryData.ts` still contains `extended_exploration_1` and `extended_exploration_2` nodes. These remain in code alongside the Lives system.
+- **V3.0 Note:** Exploration Extension skills have been replaced by Soul Resonance skills. Check `SanctuaryData.ts` if any legacy `extended_exploration` nodes remain and remove them.
 
 #### 2.2.2 Node Types
 
@@ -259,7 +247,7 @@ After unlocking Soul Resonance II: 6.5 Souls (rounded)
 - Helps rebuild faster after game over.
 - Moderate cost, steady value accumulation.
 
-> **V3.0 Note:** The design intended to remove Exploration Extension skills in favor of the Lives System. However, `SanctuaryData.ts` still contains `extended_exploration_1` (Tier 2, 80 Souls) and `extended_exploration_2` (Tier 3, 150 Souls) nodes. These coexist with the Lives system in the current codebase.
+> **V3.0 Note:** Exploration Extension skills have been removed and replaced by Soul Resonance skills. If legacy nodes remain in `SanctuaryData.ts`, they should be removed or converted to Soul Resonance.
 
 > **Implementation Note:** `SanctuaryData.ts` contains **25 skill nodes total** (7 Tier 1 + 12 Tier 2 + 6 Tier 3), including 5 Mage element enhancement nodes (`fire_enhancement`, `ice_enhancement`, `lightning_enhancement`, `dark_enhancement`, `light_enhancement`) at Tier 2, 60 Souls each, requiring `mage_insight`.
 

@@ -22,7 +22,7 @@ npm run preview   # ビルド結果をプレビュー
 npm run lint      # ESLint
 ```
 
-テストフレームワークは未導入。ブラウザで手動確認。
+テスト: `npm run test` / `npm run test:run` / `npm run test:coverage`（Vitest 4.0.18）
 
 ## Game Overview
 
@@ -174,6 +174,8 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | 日付 | 作業内容 | 進捗 |
 |------|----------|------|
+| 2026-02-05 | テスト分析ドキュメント作成: `.claude/code_overview/testing_analysis.md` - テスト基礎、既存インフラ分析、カバレッジギャップ、推奨アプローチ | 完了 |
+| 2026-02-05 | 設計書・実装整合性修正: Soul System 100%転送修正、sanctuary_design.md V3.1ノート削除、shop_design.md Teleport Stone統一(V3.0)、journal_system_implementation_plan.md完全書き直し、exploration_limit→Lives System用語更新 | 完了 |
 | 2026-02-04 | 設計書統合: BaseCamp施設7→5に統合、Library→Journal(ヘッダーUI)、Storage→Guild(タブ)、将来機能をfeature_plans/に分離 | 完了 |
 | 2026-02-04 | カード設計書・実装整合性修正: 剣士7件値修正+風纏い追加(42→43枚)、魔術師5件値修正、設計書から召喚士記述削除 | 完了 |
 | 2026-02-04 | Inn（宿屋）施設削除: 実装スコープ簡素化のため一時削除（将来再実装可能） | 完了 |
