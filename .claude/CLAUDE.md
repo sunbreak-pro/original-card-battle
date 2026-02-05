@@ -119,7 +119,7 @@ Character Select → Base Camp → Dungeon Entry → Node Navigation → Battle
 
 When completing a task, update the Development History in `README.md`:
 1. Add the date, work, and progress to the table.
-2. Store the implementation plan in `.claude/current_plans/`.
+2. Move the plan file from `.claude/current_plans/` to `.claude/archive/`.
 
 README.md serves as the single source of truth for work history.
 

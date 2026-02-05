@@ -208,7 +208,7 @@ PlayerContext
   ├─ ResourceContext (gold, magicStones delegation)
   ├─ PlayerData (base stats)
   ├─ CharacterClassData (display info)
-  ├─ classAbilityUtils → createInitialSwordEnergy / createInitialElemental / createInitialSummon
+  ├─ classAbilityUtils → createInitialSwordEnergy / createInitialElemental
   └─ equipmentStats (AP calculation)
 
 ClassAbilitySystem implementations

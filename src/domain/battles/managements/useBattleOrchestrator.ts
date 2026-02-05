@@ -498,6 +498,10 @@ export const useBattleOrchestrator = (
       showDamageEffect,
       getTargetEnemyRef: getEnemyRef,
       onApDamage: options?.onApDamage,
+      // Increment enemy turn count at end of phase (V-EXEC-04)
+      incrementEnemyTurnCount: (idx: number) => {
+        updateEnemyByUpdater(idx, (e) => ({ turnCount: e.turnCount + 1 }));
+      },
       phaseState: {
         setPlayerPhaseActive: phaseState.setPlayerPhaseActive,
         setEnemyPhaseActive: phaseState.setEnemyPhaseActive,

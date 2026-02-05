@@ -17,7 +17,7 @@ export const Blacksmith = () => {
       <img
         className="blacksmith-background"
         alt="Blacksmith Background"
-        src="/assets/images/Blacksmith-background.png"
+        src="/assets/images/facility-backgrounds/Blacksmith-background.png"
       ></img>
       <div className="blacksmith-screen">
         {/* Header */}

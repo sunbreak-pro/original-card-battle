@@ -366,17 +366,23 @@ export function useCardExecution(
             const enemy = aliveEnemies[enemyIdx];
             if (enemy.hp <= 0) continue; // Skip dead enemies
 
-            const enemyStatsForCalc: BattleStats = {
-              hp: enemy.hp,
-              maxHp: enemy.maxHp,
-              ap: enemy.ap,
-              maxAp: enemy.maxAp,
-              guard: enemy.guard,
-              speed: 0,
-              buffDebuffs: enemy.buffDebuffs,
-            };
+            // Track running totals for multi-hit damage allocation (V-EXEC-03)
+            let runningGuard = enemy.guard;
+            let runningAp = enemy.ap;
+            let runningHp = enemy.hp;
 
             for (let hit = 0; hit < hitCount; hit++) {
+              // Create local stats snapshot for this hit using running totals
+              const enemyStatsForCalc: BattleStats = {
+                hp: runningHp,
+                maxHp: enemy.maxHp,
+                ap: runningAp,
+                maxAp: enemy.maxAp,
+                guard: runningGuard,
+                speed: 0,
+                buffDebuffs: enemy.buffDebuffs,
+              };
+
               const damageResult = calculateDamage(
                 playerStats,
                 enemyStatsForCalc,
@@ -391,6 +397,11 @@ export function useCardExecution(
 
               result.damageDealt += damageResult.finalDamage;
               if (damageResult.isCritical) result.isCritical = true;
+
+              // Update running totals for next hit calculation
+              runningGuard = Math.max(0, runningGuard - allocation.guardDamage);
+              runningAp = Math.max(0, runningAp - allocation.apDamage);
+              runningHp = Math.max(0, runningHp - allocation.hpDamage);
 
               // Update enemy state by index
               setters.updateEnemyByIndex(enemyIdx, (e) => ({
@@ -414,6 +425,11 @@ export function useCardExecution(
                 damageDealt: stats.damageDealt + damageResult.finalDamage,
               }));
 
+              // Stop attacking if enemy is dead (V-EXEC-01 pattern)
+              if (runningHp <= 0) {
+                break;
+              }
+
               // Delay between hits (not after last hit)
               if (hit < hitCount - 1) {
                 await new Promise((r) => setTimeout(r, 300));
@@ -425,23 +441,42 @@ export function useCardExecution(
             }
           }
         } else {
-          // Single target: original behavior
+          // Single target: track running totals for multi-hit damage allocation (V-EXEC-03)
+          // This ensures hit 2 correctly targets remaining guard/AP after hit 1
+          let runningGuard = enemyStats.guard;
+          let runningAp = enemyStats.ap;
+          let runningHp = enemyStats.hp;
+
           for (let hit = 0; hit < hitCount; hit++) {
+            // Create local stats snapshot for this hit using running totals
+            const localEnemyStats: BattleStats = {
+              ...enemyStats,
+              guard: runningGuard,
+              ap: runningAp,
+              hp: runningHp,
+            };
+
             const damageResult = calculateDamage(
               playerStats,
-              enemyStats,
+              localEnemyStats,
               cardWithBonus,
               elementalMod?.critBonus ?? 0,
               elementalMod?.penetration ?? 0,
             );
             const allocation = applyDamageAllocation(
-              enemyStats,
+              localEnemyStats,
               damageResult.finalDamage
             );
 
             result.damageDealt += damageResult.finalDamage;
             if (damageResult.isCritical) result.isCritical = true;
 
+            // Update running totals for next hit calculation
+            runningGuard = Math.max(0, runningGuard - allocation.guardDamage);
+            runningAp = Math.max(0, runningAp - allocation.apDamage);
+            runningHp = Math.max(0, runningHp - allocation.hpDamage);
+
+            // Apply to React state
             setters.setEnemyGuard((g) => Math.max(0, g - allocation.guardDamage));
             setters.setEnemyAp((a) => Math.max(0, a - allocation.apDamage));
             setters.setEnemyHp((h) => Math.max(0, h - allocation.hpDamage));
@@ -485,6 +520,11 @@ export function useCardExecution(
               ...stats,
               damageDealt: stats.damageDealt + damageResult.finalDamage,
             }));
+
+            // Stop attacking if enemy is dead (V-EXEC-01 pattern)
+            if (runningHp <= 0) {
+              break;
+            }
 
             // Delay between hits (not after last hit)
             if (hit < hitCount - 1) {

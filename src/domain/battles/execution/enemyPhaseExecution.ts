@@ -95,11 +95,12 @@ export function calculateEnemyPhaseStart(
 ): EnemyPhaseStartResult {
     const { enemy, enemyBuffs } = input;
 
-    // Process buff/debuff durations - only decrease enemy-applied buffs
+    // Process buff/debuff durations first - only decrease enemy-applied buffs
+    // This must happen before other calculations so healing and canAct use post-decrease values (V-PHASE-01, V-PHASE-02)
     const newBuffs = decreaseBuffDebuffDurationForPhase(enemyBuffs, 'enemy');
 
-    // Start-of-phase healing/shield
-    const { hp: healAmount, shield: shieldAmount } = calculateStartPhaseHealing(enemyBuffs);
+    // Start-of-phase healing/shield - use newBuffs (post-decrease) for consistency with player phase
+    const { hp: healAmount, shield: shieldAmount } = calculateStartPhaseHealing(newBuffs);
 
     // Guard reset (restore to initial guard value if startingGuard is true)
     const guardReset = enemy.startingGuard ? Math.floor(enemy.baseMaxAp * GUARD_INIT_MULTIPLIER) : 0;
@@ -107,8 +108,8 @@ export function calculateEnemyPhaseStart(
     // Energy recovery to MAX
     const energyReset = enemy.actEnergy;
 
-    // Check if enemy can act (not stunned)
-    const canPerformAction = canAct(enemyBuffs);
+    // Check if enemy can act (not stunned) - use newBuffs so expired stun allows action
+    const canPerformAction = canAct(newBuffs);
 
     return {
         newBuffs,

@@ -174,6 +174,8 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | 日付 | 作業内容 | 進捗 |
 |------|----------|------|
+| 2026-02-05 | CLAUDE.md更新（タスク完了時アーカイブルール追記）、残存Summoner参照削除（code_overview/character/player.md、battle/class-abilities.md、src/types/characterTypes.ts、classAbilitySystem.ts）、完了タスク3件をarchive/へ移動 | 完了 |
+| 2026-02-05 | 脆弱性修正 Phase 1 (Session 1-6): V-EXEC-01/02 (敵マルチアクション死亡後実行・デバフ上書き), V-EXEC-03 (マルチヒットガード/AP割り当て), V-EXEC-04 (敵turnCountインクリメント), V-PHASE-01/02 (敵フェーズバフタイミング), V-DMG-MANAGE-01 (デッドコード削除) | 完了 |
 | 2026-02-05 | code_overview整合性修正: Summoner参照削除、CharacterClass 2クラス化、ファイルパス修正、行数更新(PlayerContext 675行等)、カード数修正(41枚→README修正)、useDeckManage.ts削除反映、title.ts/swordsmanCards.tsリネーム反映、Context階層にSettings/Toast追加 | 完了 |
 | 2026-02-05 | 統合実装計画 V1.0: Phase 1A (バグ修正: セーブロード、鍛冶屋装備表示、敗北画面リトライ削除、NodeMap HP修正)、Phase 1C (AoEカードサポート)、Phase 1D (EnemyFrame SVGアイコン化)、Phase 2 (Summoner設計書6ファイル削除)、Phase 3 (装備AP警告)、Phase 5 (buffLogicテスト追加: 13テスト) | 完了 |
 | 2026-02-05 | テスト分析ドキュメント作成: `.claude/code_overview/testing_analysis.md` - テスト基礎、既存インフラ分析、カバレッジギャップ、推奨アプローチ | 完了 |

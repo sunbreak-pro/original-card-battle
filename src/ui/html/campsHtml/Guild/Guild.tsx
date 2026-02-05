@@ -17,7 +17,7 @@ export const Guild = () => {
       <img
         className="guild-background"
         alt="Guild Background"
-        src="../../../../public/assets/images/Guild-background.png"
+        src="/assets/images/facility-backgrounds/Guild-background.png"
       ></img>
       <div className="guild-screen">
         {/* Header */}

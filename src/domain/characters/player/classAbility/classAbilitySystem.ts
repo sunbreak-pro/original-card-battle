@@ -2,8 +2,8 @@
  * Class Ability System Interface
  *
  * Defines the common interface for all character class ability systems.
- * Each class (Swordsman, Mage, Summoner) implements this interface with
- * their specific ability state type.
+ * Each class (Swordsman, Mage) implements this interface with their
+ * specific ability state type.
  */
 
 import type { Card } from '@/types/cardTypes';
@@ -41,7 +41,7 @@ export const DEFAULT_DAMAGE_MODIFIER: DamageModifier = {
 /**
  * Generic interface for class ability systems
  *
- * @template T - The specific ability state type (SwordEnergyState, ElementalState, SummonState)
+ * @template T - The specific ability state type (SwordEnergyState, ElementalState)
  */
 export interface ClassAbilitySystem<T extends ClassAbilityState> {
   /**

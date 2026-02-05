@@ -172,7 +172,7 @@ RESONANCE EFFECTS (from RESONANCE_EFFECTS table):
   Light:
     Lv1: cleanse 1
     Lv2: cleanse 2, heal 10 + lightField
-  Physics/Guard/Summon/Enhance/Sacrifice/Buff/Debuff/Heal:
+  Physics/Guard/Buff/Debuff/Heal:
     Lv1: (none)
     Lv2: (none)
 

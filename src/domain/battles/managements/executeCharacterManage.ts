@@ -96,6 +96,8 @@ export interface EnemyPhaseContext {
     setBattleStats: (updater: (prev: { damageDealt: number; damageTaken: number }) => { damageDealt: number; damageTaken: number }) => void;
     /** Callback to apply AP damage to equipment durability. Returns new AP values. */
     onApDamage?: (apDamage: number) => { currentAp: number; maxAp: number };
+    /** Callback to increment enemy turn count at end of phase (V-EXEC-04) */
+    incrementEnemyTurnCount?: (enemyIndex: number) => void;
 
     // Animation
     showMessage: (message: string, duration: number, callback?: () => void) => void;
@@ -207,7 +209,14 @@ export function useCharacterPhaseExecution() {
         await new Promise(r => setTimeout(r, 800));
 
         // Execute enemy actions
-        const checkCharacterHp = () => ctx.playerHp <= 0 || ctx.enemyHp <= 0;
+        // Track accumulated damage locally to avoid closure issues with React state
+        // This ensures dead entities don't continue executing actions (V-EXEC-01)
+        let accumulatedPlayerHpDamage = 0;
+        let accumulatedEnemyHpDamage = 0;
+
+        const checkCharacterHp = () =>
+            (ctx.playerHp - accumulatedPlayerHpDamage <= 0) ||
+            (ctx.enemyHp - accumulatedEnemyHpDamage <= 0);
 
         const onExecuteAction = async (action: EnemyAction) => {
             // Guard-only action
@@ -219,11 +228,19 @@ export function useCharacterPhaseExecution() {
             // Attack action
             const hitCount = action.hitCount || 1;
             for (let i = 0; i < hitCount; i++) {
+                // Check if player is already dead before each hit (V-EXEC-01)
+                if (ctx.playerHp - accumulatedPlayerHpDamage <= 0) {
+                    break;
+                }
+
                 const attackResult = calculateEnemyAttackDamage(ctx.enemyStats, ctx.playerStats, action);
 
                 ctx.setPlayerGuard(g => Math.max(0, g - attackResult.guardDamage));
                 ctx.setPlayerAp(a => Math.max(0, a - attackResult.apDamage));
                 ctx.setPlayerHp(h => Math.max(0, h - attackResult.hpDamage));
+
+                // Track accumulated HP damage for death check
+                accumulatedPlayerHpDamage += attackResult.hpDamage;
 
                 // Distribute AP damage to equipment durability
                 if (attackResult.apDamage > 0 && ctx.onApDamage) {
@@ -236,6 +253,8 @@ export function useCharacterPhaseExecution() {
 
                 if (attackResult.reflectDamage > 0) {
                     ctx.setEnemyHp(h => Math.max(0, h - attackResult.reflectDamage));
+                    // Track reflect damage to enemy HP
+                    accumulatedEnemyHpDamage += attackResult.reflectDamage;
                     const reflectTarget = ctx.getTargetEnemyRef();
                     if (reflectTarget) ctx.showDamageEffect(reflectTarget, attackResult.reflectDamage, false);
                 }
@@ -250,16 +269,17 @@ export function useCharacterPhaseExecution() {
                 }
             }
 
-            // Apply debuffs
+            // Apply debuffs using functional updater to accumulate across actions (V-EXEC-02)
             if (action.applyDebuffs && action.applyDebuffs.length > 0) {
-                const newBuffs = applyEnemyDebuffsToPlayer(ctx.playerBuffs, action.applyDebuffs);
-                ctx.setPlayerBuffs(newBuffs);
+                ctx.setPlayerBuffs(prev => applyEnemyDebuffsToPlayer(prev, action.applyDebuffs!));
             }
 
             // Bleed damage
             const bleedDamage = calculateBleedDamage(ctx.enemyMaxHp, ctx.enemyBuffs);
             if (bleedDamage > 0) {
                 ctx.setEnemyHp(h => Math.max(0, h - bleedDamage));
+                // Track bleed damage to enemy HP for death check
+                accumulatedEnemyHpDamage += bleedDamage;
                 const bleedTarget = ctx.getTargetEnemyRef();
                 if (bleedTarget) ctx.showDamageEffect(bleedTarget, bleedDamage, false);
                 await new Promise(r => setTimeout(r, 300));
@@ -286,6 +306,9 @@ export function useCharacterPhaseExecution() {
             if (dotTarget) ctx.showDamageEffect(dotTarget, phaseEndResult.dotDamage, false);
             await new Promise(r => setTimeout(r, 500));
         }
+
+        // Increment enemy turn count at end of phase (V-EXEC-04)
+        ctx.incrementEnemyTurnCount?.(ctx.enemyIndex);
 
         ctx.phaseState.clearActivePhase();
     }, []);

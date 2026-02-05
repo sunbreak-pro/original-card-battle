@@ -99,7 +99,7 @@ export const Sanctuary = () => {
       <img
         className="sanctuary-background"
         alt="Sanctuary Background"
-        src="/assets/images/Sanctuary-background.png"
+        src="/assets/images/facility-backgrounds/Sanctuary-background.png"
       ></img>
       <div className="sanctuary-screen">
         {/* Notification Toast */}

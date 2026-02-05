@@ -4,7 +4,7 @@
  * Centralized character-related types including:
  * - CharacterClass and CardCharacterClass
  * - BattleStats
- * - Class ability types (Swordsman, Mage, Summoner)
+ * - Class ability types (Swordsman, Mage)
  * - Enemy types
  * - Player types
  */

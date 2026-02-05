@@ -21,13 +21,13 @@ export const PLAYER_CHARACTER_IMAGES: Record<CharacterClass, string> = {
 
 /** Header image asset paths */
 export const HEADER_ICONS = {
-  heart: "/assets/images/icons/heart-icon.png",
-  gold: "/assets/images/icons/gold-icon.png",
-  stoneSmall: "/assets/images/icons/magic-stone-small.png",
-  stoneMedium: "/assets/images/icons/magic-stone-medium.png",
-  stoneLarge: "/assets/images/icons/magic-stone-large.png",
-  stoneHuge: "/assets/images/icons/magic-stone-huge.png",
-  dropdown: "/assets/images/icons/dropdown-icon.png",
+  heart: "/assets/icons/header/heart-icon.png",
+  gold: "/assets/icons/header/gold-icon.png",
+  stoneSmall: "/assets/icons/header/magic-stone-small.png",
+  stoneMedium: "/assets/icons/header/magic-stone-medium.png",
+  stoneLarge: "/assets/icons/header/magic-stone-large.png",
+  stoneHuge: "/assets/icons/header/magic-stone-huge.png",
+  dropdown: "/assets/icons/header/dropdown-icon.png",
 };
 
 export const ELEMENT_MAGIC_ICONS: Partial<Record<ElementType, string>> = {
