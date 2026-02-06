@@ -1,0 +1,235 @@
+/**
+ * Journal Settings Page Styles
+ *
+ * Sub-tab navigation and layout for the settings page within the journal.
+ * Scoped under .journal-settings-page to avoid conflicts.
+ */
+
+/* ============================================================================
+   Sub-tab Navigation
+   ============================================================================ */
+
+.journal-settings-tabs {
+  display: flex;
+  gap: 0.5vw;
+  margin-bottom: 2vh;
+  border-bottom: 0.2vh solid var(--journal-border-light);
+  padding-bottom: 0.5vh;
+}
+
+.journal-settings-tab {
+  padding: 0.8vh 2vw;
+  background: transparent;
+  border: 0.15vh solid transparent;
+  border-bottom: none;
+  border-radius: 0.5vh 0.5vh 0 0;
+  color: var(--journal-text-secondary);
+  font-size: 1.4vh;
+  font-weight: bold;
+  font-family: serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.journal-settings-tab:hover {
+  color: var(--journal-text-primary);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.journal-settings-tab.active {
+  color: var(--journal-accent);
+  background: rgba(255, 255, 255, 0.3);
+  border-color: var(--journal-border-light);
+  border-bottom: 0.2vh solid var(--journal-bg-light);
+  margin-bottom: -0.2vh;
+}
+
+/* ============================================================================
+   Settings Content - Override dark theme panels for parchment style
+   ============================================================================ */
+
+.journal-settings-content,
+.journal-achievements-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+}
+
+/* Restyle settings panels within journal */
+.journal-settings-page .settings-panel {
+  background: rgba(255, 255, 255, 0.25);
+  border: 0.15vh solid var(--journal-border-light);
+  border-radius: 1vh;
+  padding: 1.5vh 1.5vw;
+}
+
+.journal-settings-page .settings-panel-title {
+  color: var(--journal-ink);
+  font-family: serif;
+  font-size: 1.6vh;
+  margin: 0 0 1vh 0;
+  border-bottom: 0.1vh solid var(--journal-border-light);
+  padding-bottom: 0.5vh;
+}
+
+.journal-settings-page .settings-label-text,
+.journal-settings-page .settings-value {
+  color: var(--journal-text-primary);
+  font-size: 1.3vh;
+}
+
+.journal-settings-page .settings-note {
+  color: var(--journal-text-muted);
+  font-size: 1.1vh;
+  font-style: italic;
+}
+
+/* Slider styling within journal */
+.journal-settings-page .settings-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 0.6vh;
+  background: var(--journal-border-light);
+  border-radius: 0.3vh;
+  outline: none;
+}
+
+.journal-settings-page .settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.8vh;
+  height: 1.8vh;
+  border-radius: 50%;
+  background: var(--journal-accent);
+  cursor: pointer;
+  border: 0.2vh solid var(--journal-border-main);
+}
+
+.journal-settings-page .settings-slider::-moz-range-thumb {
+  width: 1.8vh;
+  height: 1.8vh;
+  border-radius: 50%;
+  background: var(--journal-accent);
+  cursor: pointer;
+  border: 0.2vh solid var(--journal-border-main);
+}
+
+.journal-settings-page .settings-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--journal-text-muted);
+  font-size: 1.1vh;
+  margin-top: 0.3vh;
+}
+
+/* SaveLoadUI within journal */
+.journal-settings-page .save-info {
+  background: rgba(255, 255, 255, 0.2);
+  border: 0.1vh solid var(--journal-border-light);
+  border-radius: 0.5vh;
+  padding: 1vh 1vw;
+  margin-bottom: 1vh;
+}
+
+.journal-settings-page .save-info-label {
+  color: var(--journal-text-secondary);
+  font-size: 1.2vh;
+}
+
+.journal-settings-page .save-info-value {
+  color: var(--journal-text-primary);
+  font-size: 1.2vh;
+}
+
+.journal-settings-page .saveload-buttons {
+  display: flex;
+  gap: 1vw;
+  flex-wrap: wrap;
+}
+
+.journal-settings-page .saveload-btn {
+  padding: 0.8vh 1.5vw;
+  border: 0.15vh solid var(--journal-border-main);
+  border-radius: 0.5vh;
+  font-size: 1.2vh;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.journal-settings-page .save-btn {
+  background: var(--journal-accent);
+  color: white;
+}
+
+.journal-settings-page .save-btn:hover:not(:disabled) {
+  background: var(--journal-accent-hover);
+}
+
+.journal-settings-page .newgame-btn {
+  background: linear-gradient(135deg, #581c87, #7c3aed);
+  border-color: #a855f7;
+  color: #fff;
+}
+
+.journal-settings-page .newgame-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6b21a8, #8b5cf6);
+  box-shadow: 0 0 1.5vh rgba(168, 85, 247, 0.5);
+}
+
+.journal-settings-page .delete-btn {
+  background: #8b3030;
+  color: white;
+}
+
+.journal-settings-page .delete-btn:hover:not(:disabled) {
+  background: #a04040;
+}
+
+.journal-settings-page .saveload-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+
+/* ============================================================================
+   Reset Button
+   ============================================================================ */
+
+.journal-settings-reset {
+  display: flex;
+  justify-content: center;
+  padding-top: 1vh;
+  border-top: 0.1vh solid var(--journal-border-light);
+  margin-top: 1vh;
+}
+
+/* ============================================================================
+   Achievement List within journal
+   ============================================================================ */
+
+.journal-achievements-content .achievement-list {
+  color: var(--journal-text-primary);
+}
+
+/* ============================================================================
+   Responsive
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .journal-settings-tabs {
+    gap: 1vw;
+  }
+
+  .journal-settings-tab {
+    flex: 1;
+    text-align: center;
+    padding: 1vh 1vw;
+    font-size: 1.3vh;
+  }
+
+  .journal-settings-page .saveload-buttons {
+    flex-direction: column;
+  }
+}

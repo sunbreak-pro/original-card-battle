@@ -13,7 +13,7 @@ import BackToCampButton from "../componentsHtml/BackToCampButton";
 import FacilityTabNav from "../componentsHtml/FacilityTabNav";
 import { DepthSelector } from "./preparations/DepthSelector";
 import { PlayerStatusPanel } from "./preparations/PlayerStatusPanel";
-import { DeckTab } from "./preparations/DeckTab";
+import { DeckReadOnlyView } from "./preparations/DeckReadOnlyView";
 import { InventoryTab } from "./preparations/InventoryTab";
 import { EquipmentTab } from "./preparations/EquipmentTab";
 import "./DungeonGate.css";
@@ -27,7 +27,7 @@ const AP_WARNING_THRESHOLD = 0.2;
  */
 export function DungeonGate() {
   const { navigateTo, setDepth, gameState } = useGameState();
-  const { playerData, runtimeState, deckCards, updateDeck, resetRuntimeState } =
+  const { playerData, runtimeState, deckCards, resetRuntimeState } =
     usePlayer();
   const [selectedDepth, setSelectedDepth] = useState<Depth | null>(null);
   const [activeTab, setActiveTab] = useState<PreparationTab>("deck");
@@ -47,13 +47,6 @@ export function DungeonGate() {
   const handleNavigateToStorage = useCallback(() => {
     navigateTo("storage");
   }, [navigateTo]);
-
-  const handleUpdateDeck = useCallback(
-    (cardTypeIds: string[]) => {
-      updateDeck(cardTypeIds);
-    },
-    [updateDeck],
-  );
 
   // Calculate equipment AP and check for low AP warning
   const apWarning = useMemo(() => {
@@ -86,11 +79,9 @@ export function DungeonGate() {
 
           <div className="preparations-tab-content">
             {activeTab === "deck" && (
-              <DeckTab
+              <DeckReadOnlyView
                 deckCards={deckCards}
-                playerClass={playerData.persistent.playerClass}
                 depth={gameState.depth}
-                onUpdateDeck={handleUpdateDeck}
               />
             )}
             {activeTab === "inventory" && (

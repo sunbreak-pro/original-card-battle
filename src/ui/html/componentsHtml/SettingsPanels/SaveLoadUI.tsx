@@ -10,7 +10,13 @@ import { saveManager, formatSaveTimestamp } from '@/domain/save/logic/saveManage
 import { useResources } from '@/contexts/ResourceContext';
 import { useToast } from '@/contexts/ToastContext';
 
-export const SaveLoadUI: React.FC = () => {
+interface SaveLoadUIProps {
+  onNewGame?: () => void;
+}
+
+export const SaveLoadUI: React.FC<SaveLoadUIProps> = ({
+  onNewGame,
+}) => {
   const { playerData } = usePlayer();
   const { resources } = useResources();
   const { addToast } = useToast();
@@ -79,26 +85,6 @@ export const SaveLoadUI: React.FC = () => {
   }, [playerData, resources, addToast]);
 
   /**
-   * Load game data (reload page to apply)
-   */
-  const handleLoad = useCallback(() => {
-    if (!metadata.exists) {
-      addToast({
-        type: 'alert',
-        message: 'セーブデータがありません',
-        icon: '⚠️',
-        duration: 2000,
-      });
-      return;
-    }
-
-    if (window.confirm('セーブデータをロードしますか？\n現在の進行状況は失われます。')) {
-      // Reload the page to load save data
-      window.location.reload();
-    }
-  }, [metadata.exists, addToast]);
-
-  /**
    * Delete save data
    */
   const handleDelete = useCallback(() => {
@@ -129,7 +115,7 @@ export const SaveLoadUI: React.FC = () => {
 
   return (
     <div className="settings-panel saveload-settings">
-      <h3 className="settings-panel-title">💾 セーブ / ロード</h3>
+      <h3 className="settings-panel-title">💾 セーブ / データ管理</h3>
 
       {/* Save Info */}
       {metadata.exists && (
@@ -168,13 +154,14 @@ export const SaveLoadUI: React.FC = () => {
         >
           {isLoading ? '保存中...' : '💾 セーブ'}
         </button>
-        <button
-          className="saveload-btn load-btn"
-          onClick={handleLoad}
-          disabled={!metadata.exists || isLoading}
-        >
-          📂 ロード
-        </button>
+        {onNewGame && (
+          <button
+            className="saveload-btn newgame-btn"
+            onClick={onNewGame}
+          >
+            🎮 ニューゲーム
+          </button>
+        )}
         <button
           className="saveload-btn delete-btn"
           onClick={handleDelete}

@@ -9,7 +9,10 @@ import { useJournal } from "@/contexts/JournalContext";
 import { PageTabs } from "./components/PageTabs";
 import { TacticsPage } from "./pages/TacticsPage";
 import { MemoriesPage } from "./pages/MemoriesPage";
+import { ThoughtsPage } from "./pages/ThoughtsPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import "@/ui/css/journal/Journal.css";
+import "@/ui/css/journal/JournalAnimations.css";
 
 // Page title mapping
 const PAGE_TITLES: Record<string, string> = {
@@ -42,29 +45,9 @@ export function JournalOverlay() {
       case "memories":
         return <MemoriesPage />;
       case "thoughts":
-        // Phase 4: ThoughtsPage
-        return (
-          <div className="journal-page">
-            <section className="journal-section">
-              <h3 className="journal-section-title">思考のページ</h3>
-              <p style={{ color: "var(--journal-text-secondary)" }}>
-                Phase 4で実装予定: メモ・ノート機能
-              </p>
-            </section>
-          </div>
-        );
+        return <ThoughtsPage />;
       case "settings":
-        // Phase 3: SettingsPage
-        return (
-          <div className="journal-page">
-            <section className="journal-section">
-              <h3 className="journal-section-title">設定のページ</h3>
-              <p style={{ color: "var(--journal-text-secondary)" }}>
-                Phase 3で実装予定: 音量、明るさ、セーブ/ロード、実績
-              </p>
-            </section>
-          </div>
-        );
+        return <SettingsPage />;
       default:
         return null;
     }

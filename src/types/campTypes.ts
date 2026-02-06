@@ -25,7 +25,6 @@ export type FacilityType =
   | "shop"
   | "blacksmith"
   | "sanctuary"
-  | "library"
   | "storage"
   | "dungeon";
 
@@ -37,7 +36,6 @@ export type GameScreen =
   | "shop"
   | "blacksmith"
   | "sanctuary"
-  | "library"
   | "storage"
   | "dungeon"
   | "dungeon_map";
@@ -93,7 +91,6 @@ export interface FacilityUnlockState {
   shop: boolean;
   blacksmith: boolean;
   sanctuary: boolean;
-  library: boolean;
   storage: boolean;
   dungeon: boolean;
 }
@@ -381,13 +378,11 @@ export interface SurvivalMultipliers {
 }
 
 // ============================================================
-// Library Types
+// Encyclopedia & Tab Types
 // ============================================================
 
 export type GuildTab = "promotion" | "rumors" | "quests" | "storage";
 export type PreparationTab = "deck" | "inventory" | "equipment";
-export type LibraryTab = "cards" | "enemies" | "tips";
-
 export interface CardEncyclopediaEntry {
   card: Card;
   isUnlocked: boolean;

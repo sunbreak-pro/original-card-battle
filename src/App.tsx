@@ -5,7 +5,6 @@ import { Guild } from "./ui/html/campsHtml/Guild/Guild.tsx";
 import { Shop } from "./ui/html/campsHtml/Shop/Shop.tsx";
 import { Blacksmith } from "./ui/html/campsHtml/Blacksmith/Blacksmith.tsx";
 import { Sanctuary } from "./ui/html/campsHtml/Sanctuary/Sanctuary.tsx";
-import { Library } from "./ui/html/campsHtml/Library/Library.tsx";
 import { DungeonGate } from "./ui/html/dungeonHtml/DungeonGate.tsx";
 import { NodeMap } from "./ui/html/dungeonHtml/NodeMap.tsx";
 import { DungeonRunProvider } from "./contexts/DungeonRunContext.tsx";
@@ -92,8 +91,6 @@ function AppContent() {
       {currentScreen === "blacksmith" && <Blacksmith />}
       {/* Sanctuary Screen */}
       {currentScreen === "sanctuary" && <Sanctuary />}
-      {/* Library Screen */}
-      {currentScreen === "library" && <Library />}
       {/* Dungeon Gate Screen */}
       {currentScreen === "dungeon" && <DungeonGate />}
 

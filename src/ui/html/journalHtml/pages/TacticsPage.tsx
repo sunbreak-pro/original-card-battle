@@ -11,6 +11,7 @@ import { useGameState } from "@/contexts/GameStateContext";
 import { useDungeonRun } from "@/contexts/DungeonRunContext";
 import { DeckTab } from "@/ui/html/dungeonHtml/preparations/DeckTab";
 import type { Depth } from "@/types/cardTypes";
+import "@/ui/css/journal/TacticsPage.css";
 
 /**
  * Determines if deck editing should be disabled

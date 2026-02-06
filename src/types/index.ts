@@ -59,7 +59,6 @@ export {
   type SanctuaryEffects,
   type EnemySoulValues,
   type SurvivalMultipliers,
-  type LibraryTab,
   type CardEncyclopediaEntry,
   type EnemyEncyclopediaEntry,
   type TipCategory,

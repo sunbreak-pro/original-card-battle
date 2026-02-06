@@ -1,0 +1,201 @@
+/**
+ * TacticsPage Styles
+ *
+ * Card grid and deck editor styles for Journal tactics tab.
+ * Scoped under .journal-overlay to avoid conflict with DungeonGate styles.
+ */
+
+/* ============================================================================
+   Card imports (shared card base + grid foundations)
+   ============================================================================ */
+@import "../card/index.css";
+
+/* ============================================================================
+   Deck Tab Layout
+   ============================================================================ */
+
+.journal-overlay .deck-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+}
+
+.journal-overlay .deck-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+}
+
+.journal-overlay .deck-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.journal-overlay .deck-section-title {
+  font-size: 1.6vh;
+  color: var(--journal-ink, #2a1a08);
+  margin: 0;
+  font-weight: bold;
+  font-family: serif;
+}
+
+/* ============================================================================
+   Card Grid
+   ============================================================================ */
+
+.journal-overlay .deck-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--card-base-width, 15vh) * 0.75 + 1vw), 1fr));
+  gap: 2vh 1.5vw;
+  justify-items: center;
+  padding: 1vh 0;
+}
+
+/* Card wrapper - sized for journal book */
+.journal-overlay .prep-card-wrapper {
+  position: relative;
+  width: calc(var(--card-base-width, 13vh) * 0.75);
+  aspect-ratio: var(--card-aspect-ratio, 3.25 / 5);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.journal-overlay .prep-card-wrapper:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+.journal-overlay .prep-card-wrapper.selected {
+  z-index: 10;
+  transform: scale(1.05) !important;
+}
+
+/* ============================================================================
+   Card Slot (wrapper + button)
+   ============================================================================ */
+
+.journal-overlay .deck-card-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8vh;
+}
+
+.journal-overlay .deck-edit-btn-container {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0.5vh;
+  z-index: 10;
+}
+
+/* ============================================================================
+   Count Badge & In-Deck Badge
+   ============================================================================ */
+
+.journal-overlay .card-count {
+  position: absolute;
+  top: -0.75vh;
+  right: -1.5vw;
+  background: var(--journal-accent, #6b4423);
+  color: #fff;
+  font-size: 1.3vh;
+  font-weight: bold;
+  padding: 0.3vh 0.6vw;
+  border-radius: 4px;
+  width: 3.2vh;
+  text-align: center;
+  z-index: 5;
+  box-shadow: 0 0.2vh 0.5vh rgba(0, 0, 0, 0.4);
+}
+
+.journal-overlay .deck-in-deck-badge {
+  position: absolute;
+  top: -5%;
+  right: -11%;
+  background: rgba(107, 68, 35, 0.9);
+  color: #f4e4bc;
+  font-size: 1.1vh;
+  font-weight: bold;
+  padding: 0.5vh 0.7vw;
+  border-radius: 3px;
+  white-space: nowrap;
+  z-index: 5;
+  border: 1px solid var(--journal-border-light, #a89070);
+}
+
+/* ============================================================================
+   Edit Buttons (parchment theme)
+   ============================================================================ */
+
+.journal-overlay .deck-edit-btn {
+  position: static;
+  z-index: 50;
+  padding: 0.5vh 1.2vw;
+  margin-top: 2vh;
+  font-size: 1.5vh;
+  font-weight: bold;
+  border: 1px solid;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.journal-overlay .deck-remove-btn {
+  color: #8b3030;
+  background: rgba(139, 48, 48, 0.15);
+  border-color: rgba(139, 48, 48, 0.4);
+}
+
+.journal-overlay .deck-remove-btn:hover {
+  color: #fff;
+  background: rgba(139, 48, 48, 0.8);
+  border-color: rgba(139, 48, 48, 1);
+}
+
+.journal-overlay .deck-add-btn {
+  color: #3a6b23;
+  background: rgba(58, 107, 35, 0.15);
+  border-color: rgba(58, 107, 35, 0.4);
+}
+
+.journal-overlay .deck-add-btn:hover {
+  color: #fff;
+  background: rgba(58, 107, 35, 0.8);
+  border-color: rgba(58, 107, 35, 1);
+  transform: scale(1.05);
+}
+
+/* ============================================================================
+   Warning & Status
+   ============================================================================ */
+
+.journal-overlay .deck-warning {
+  color: #8b3030;
+  font-size: 1.3vh;
+  font-weight: normal;
+}
+
+.journal-overlay .deck-limit-reached {
+  color: var(--journal-text-muted, #7a6550);
+  font-size: 1.3vh;
+}
+
+.journal-overlay .deck-divider {
+  height: 1px;
+  background: var(--journal-border-light, #a89070);
+  margin: 0.5vh 0;
+  opacity: 0.5;
+}
+
+.journal-overlay .deck-empty {
+  font-size: 1.4vh;
+  color: var(--journal-text-muted, #7a6550);
+  font-style: italic;
+  padding: 2vh 0;
+  text-align: center;
+}

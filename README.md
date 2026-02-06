@@ -174,6 +174,8 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | 日付 | 作業内容 | 進捗 |
 |------|----------|------|
+| 2026-02-06 | ニューゲームボタン+Continueボタンバグ修正: SettingsPage(Journal内)にニューゲームボタン追加(確認ダイアログ→Journal閉じる→character_select遷移)、SaveLoadUIからロードボタン削除、VictoryScreen.cssの.continue-buttonを.victory-screenでスコープ修正(CharacterSelectのContinueボタンがopacity:0で非表示だったバグ修正)、Settings.cssにnewgame-btnスタイル追加 | 完了 |
+| 2026-02-06 | Journal Phase 3-5: Settings統合(SettingsPage.tsx、Settings.css作成、SaveLoadUIにloadDisabled prop追加)、Notes実装(NoteEditor.tsx、ThoughtsPage.tsx、Notes.css、JournalAnimations.css作成、20件上限ガード)、Library完全削除(Library/6ファイル+CSS削除、App.tsx・campConstants.ts・campTypes.ts・types/index.tsからlibrary参照除去)、FacilityHeaderから⚙️ボタン+SettingsModal削除 | 完了 |
 | 2026-02-06 | Journal Phase 2 (Memories Page): 図鑑ページ実装。EquipmentEncyclopediaData.ts/EventEncyclopediaData.ts新規作成、MemoriesPage.tsx (カテゴリタブ: カード/敵/装備/イベント、検索・フィルタ・進捗表示)、Memories.css。JournalOverlay.tsx更新 | 完了 |
 | 2026-02-06 | 共通カード・剣気システム修正: 共通カード20枚完全削除(commonCards.ts削除、CardCharacterClass型から"common"除去)、剣気消費カード使用制限(canPlayCard関数にswordEnergy判定追加、BattleScreen UI反映)、ターン開始時剣気+1(SwordEnergySystem.onTurnStart修正) | 完了 |
 | 2026-02-05 | Dark Market（闘市場）実装: Shopの4番目タブとして追加。高価格（×1.8）でレア以上の装備・エピック消耗品を販売、ボス討伐後に在庫更新。DarkMarketTab.tsx、DarkMarketConstants.ts新規、campTypes.ts/campConstants.ts/shopStockLogic.ts拡張、BattleScreen.tsx連携 | 完了 |

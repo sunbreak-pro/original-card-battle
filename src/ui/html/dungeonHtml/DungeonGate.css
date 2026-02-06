@@ -591,6 +591,122 @@
   border-color: rgba(201, 160, 220, 0.4);
 }
 
+/* ==========================================================
+   Deck Read-Only View (tag-grouped summary)
+   ========================================================== */
+
+.dungeon-gate-screen .deck-readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+}
+
+.dungeon-gate-screen .deck-readonly-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dungeon-gate-screen .deck-readonly-title {
+  font-size: 1.6vh;
+  color: #a090b0;
+  margin: 0;
+  font-weight: bold;
+}
+
+.dungeon-gate-screen .deck-readonly-edit-btn {
+  padding: 0.8vh 1.5vw;
+  font-size: 1.3vh;
+  font-weight: bold;
+  color: #c9a0dc;
+  background: rgba(60, 40, 80, 0.5);
+  border: 1px solid rgba(201, 160, 220, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dungeon-gate-screen .deck-readonly-edit-btn:hover {
+  background: rgba(80, 50, 110, 0.7);
+  border-color: rgba(201, 160, 220, 0.7);
+  box-shadow: 0 0 8px rgba(201, 160, 220, 0.3);
+}
+
+.dungeon-gate-screen .deck-readonly-tag-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+}
+
+.dungeon-gate-screen .deck-readonly-tag-label {
+  font-size: 1.4vh;
+  font-weight: bold;
+  padding-bottom: 0.5vh;
+  border-bottom: 1px solid rgba(100, 100, 120, 0.3);
+}
+
+.dungeon-gate-screen .tag-color-attack {
+  color: #ef4444;
+  border-bottom-color: rgba(239, 68, 68, 0.3);
+}
+
+.dungeon-gate-screen .tag-color-guard {
+  color: #3b82f6;
+  border-bottom-color: rgba(59, 130, 246, 0.3);
+}
+
+.dungeon-gate-screen .tag-color-skill {
+  color: #8b5cf6;
+  border-bottom-color: rgba(139, 92, 246, 0.3);
+}
+
+.dungeon-gate-screen .tag-color-stance {
+  color: #f59e0b;
+  border-bottom-color: rgba(245, 158, 11, 0.3);
+}
+
+.dungeon-gate-screen .deck-readonly-card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5vh 1.5vw;
+}
+
+.dungeon-gate-screen .deck-readonly-card-wrapper {
+  position: relative;
+  width: calc(var(--card-base-width, 13vh) * 0.75);
+  aspect-ratio: var(--card-aspect-ratio, 3.25 / 5);
+  transition: transform 0.3s ease;
+}
+
+.dungeon-gate-screen .deck-readonly-card-wrapper:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+.dungeon-gate-screen .deck-readonly-count-badge {
+  position: absolute;
+  top: -0.75vh;
+  right: -1.5vw;
+  background: rgba(201, 160, 220, 0.95);
+  color: #fff;
+  font-size: 1.3vh;
+  font-weight: bold;
+  padding: 0.3vh 0.6vw;
+  border-radius: 4px;
+  width: 3.2vh;
+  text-align: center;
+  z-index: 5;
+  box-shadow: 0 0.2vh 0.5vh rgba(0, 0, 0, 0.4);
+}
+
+.dungeon-gate-screen .deck-readonly-empty {
+  font-size: 1.4vh;
+  color: #666;
+  font-style: italic;
+  padding: 2vh 0;
+  text-align: center;
+}
+
 /* ========== Responsive ========== */
 
 @media (max-width: 800px) {

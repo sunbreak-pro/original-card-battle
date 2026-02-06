@@ -176,16 +176,19 @@ export function JournalProvider({ children }: JournalProviderProps) {
     setMemoriesCategoryState(category);
   }, []);
 
-  // Notes management
+  // Notes management (20 note limit)
   const addNote = useCallback((content: string) => {
-    const now = new Date().toISOString();
-    const newNote: JournalNote = {
-      id: generateNoteId(),
-      content,
-      createdAt: now,
-      updatedAt: now,
-    };
-    setNotes((prev) => [newNote, ...prev]);
+    setNotes((prev) => {
+      if (prev.length >= 20) return prev;
+      const now = new Date().toISOString();
+      const newNote: JournalNote = {
+        id: generateNoteId(),
+        content,
+        createdAt: now,
+        updatedAt: now,
+      };
+      return [newNote, ...prev];
+    });
   }, []);
 
   const updateNote = useCallback((id: string, content: string) => {

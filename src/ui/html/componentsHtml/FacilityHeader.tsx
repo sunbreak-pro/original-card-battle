@@ -14,7 +14,6 @@ import { useGameState } from "@/contexts/GameStateContext";
 import { useJournal } from "@/contexts/JournalContext";
 import { HEADER_ICONS } from "@/constants/uiConstants";
 import { FACILITY_NAV_ITEMS } from "@/constants/campConstants";
-import { SettingsModal } from "./SettingsModal";
 import "../../css/components/FacilityHeader.css";
 
 interface FacilityHeaderProps {
@@ -31,7 +30,6 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
   const { gameState, navigateTo } = useGameState();
   const { openJournal } = useJournal();
   const [navOpen, setNavOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleCloseNav = useCallback((e: MouseEvent) => {
@@ -83,16 +81,6 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
           title="手記"
         >
           📖
-        </button>
-
-        {/* Settings Button */}
-        <button
-          className="settings-toggle"
-          onClick={() => setSettingsOpen(true)}
-          aria-label="設定"
-          title="設定"
-        >
-          ⚙️
         </button>
 
         {variant !== "basecamp" && (
@@ -197,11 +185,6 @@ export const FacilityHeader: React.FC<FacilityHeaderProps> = ({
         </div>
       </div>
 
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-      />
     </header>
   );
 };

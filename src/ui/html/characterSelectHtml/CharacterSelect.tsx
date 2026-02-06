@@ -16,7 +16,10 @@ import { StarterDeckPreview } from "./StarterDeckPreview";
 import { useGameState } from "@/contexts/GameStateContext";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useResources } from "@/contexts/ResourceContext";
-import { saveManager, formatSaveTimestamp } from "@/domain/save/logic/saveManager";
+import {
+  saveManager,
+  formatSaveTimestamp,
+} from "@/domain/save/logic/saveManager";
 import type { SaveMetadata } from "@/types/saveTypes";
 import "./CharacterSelect.css";
 
@@ -64,7 +67,7 @@ export const CharacterSelect: React.FC = () => {
     loadResourcesFromSave(
       saveData.resources.baseCampGold,
       saveData.resources.baseCampMagicStones,
-      saveData.resources.explorationLimit
+      saveData.resources.explorationLimit,
     );
 
     // Navigate to camp

@@ -26,7 +26,6 @@ export const FACILITY_NAV_ITEMS: ReadonlyArray<{
   { screen: "guild", facilityType: "guild", label: "酒場", icon: "🍺", description: "Rest, recruit companions, and hear rumors", showInNav: true },
   { screen: "blacksmith", facilityType: "blacksmith", label: "鍛冶屋", icon: "⚒️", description: "Forge and upgrade your equipment", showInNav: true },
   { screen: "sanctuary", facilityType: "sanctuary", label: "聖域", icon: "⛪", description: "Strengthen your soul with permanent upgrades", showInNav: true },
-  { screen: "library", facilityType: "library", label: "図書館", icon: "📚", description: "Build your deck and browse the encyclopedia", showInNav: true },
 ] as const;
 
 // ============================================================
@@ -51,12 +50,6 @@ export const GUILD_TABS = [
   { id: "rumors", label: "噂", icon: "👂" },
   { id: "quests", label: "依頼", icon: "📜" },
   { id: "storage", label: "倉庫", icon: "📦" },
-] as const;
-
-export const LIBRARY_TABS = [
-  { id: "cards", label: "カード図鑑" },
-  { id: "enemies", label: "魔物図鑑" },
-  { id: "tips", label: "冒険の手引き" },
 ] as const;
 
 export const PREPARATION_TABS = [
@@ -192,5 +185,4 @@ export const FACILITY_ISOMETRIC_POSITIONS: Record<NavFacilityType, IsometricPosi
   guild: 'east',
   blacksmith: 'south',
   sanctuary: 'southwest',
-  library: 'west',
 };
