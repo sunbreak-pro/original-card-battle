@@ -47,8 +47,8 @@ function groupDeckStacksByTag(stacks: CardStack[]): TagGroup[] {
     tagMap.get(tag)!.push(stack);
   }
 
-  return TAG_ORDER.filter((tag) => tagMap.has(tag)).map((tag) => {
-    const groupStacks = tagMap.get(tag)!;
+  return TAG_ORDER.map((tag) => {
+    const groupStacks = tagMap.get(tag) ?? [];
     const totalCount = groupStacks.reduce((sum, s) => sum + s.count, 0);
     return {
       tag,
@@ -103,19 +103,41 @@ export function DeckTab({
     onUpdateDeck([...currentCardTypeIds, ...newIds]);
   };
 
-  const handleRemoveCard = (cardTypeId: string) => {
-    const idx = currentCardTypeIds.indexOf(cardTypeId);
-    if (idx !== -1) {
-      const updated = [...currentCardTypeIds];
-      updated.splice(idx, 1);
-      onUpdateDeck(updated);
-    }
+  const [selectedCardIds, setSelectedCardIds] = useState<Map<string, number>>(
+    new Map(),
+  );
+
+  const totalSelectedForRemove = Array.from(selectedCardIds.values()).reduce(
+    (sum, n) => sum + n,
+    0,
+  );
+
+  const toggleSelect = (cardTypeId: string, maxCount: number) => {
+    setSelectedCardIds((prev) => {
+      const next = new Map(prev);
+      const current = next.get(cardTypeId) ?? 0;
+      if (current >= maxCount) {
+        next.delete(cardTypeId);
+      } else {
+        next.set(cardTypeId, current + 1);
+      }
+      return next;
+    });
   };
 
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-
-  const toggleSelect = (id: string) => {
-    setSelectedCardId((prev) => (prev === id ? null : id));
+  const handleRemoveCards = () => {
+    if (selectedCardIds.size === 0) return;
+    const updated = [...currentCardTypeIds];
+    for (const [cardTypeId, count] of selectedCardIds) {
+      for (let i = 0; i < count; i++) {
+        const idx = updated.indexOf(cardTypeId);
+        if (idx !== -1) {
+          updated.splice(idx, 1);
+        }
+      }
+    }
+    onUpdateDeck(updated);
+    setSelectedCardIds(new Map());
   };
 
   return (
@@ -130,11 +152,15 @@ export function DeckTab({
             )}
             {isAtMaxSize && <span className="deck-limit-reached"> (上限)</span>}
           </h3>
+          <button
+            className="deck-edit-btn deck-remove-btn deck-bulk-remove-btn"
+            onClick={handleRemoveCards}
+            disabled={totalSelectedForRemove === 0}
+          >
+            取り除く{totalSelectedForRemove > 0 ? ` (${totalSelectedForRemove}枚)` : ""}
+          </button>
         </div>
-        {deckStacks.length === 0 ? (
-          <div className="deck-empty">デッキにカードがありません</div>
-        ) : (
-          tagGroups.map((group) => (
+        {tagGroups.map((group) => (
             <div key={group.tag} className={`deck-type-section deck-${group.tag}-section`}>
               <div className="deck-type-header" style={{ borderLeftColor: CARD_TAG_COLOR_MAP[group.tag] }}>
                 <span className="deck-type-label" style={{ color: CARD_TAG_COLOR_MAP[group.tag] }}>
@@ -144,13 +170,13 @@ export function DeckTab({
               </div>
               <div className={`deck-card-grid deck-${group.tag}-card-grid`}>
                 {group.stacks.map((stack) => {
-                  const cardId = `deck-${stack.cardTypeId}`;
-                  const isSelected = selectedCardId === cardId;
+                  const selectedCount = selectedCardIds.get(stack.cardTypeId) ?? 0;
+                  const isSelected = selectedCount > 0;
                   return (
                     <div key={stack.cardTypeId} className="deck-card-slot">
                       <div
                         className={`prep-card-wrapper${isSelected ? " selected" : ""}`}
-                        onClick={() => toggleSelect(cardId)}
+                        onClick={() => toggleSelect(stack.cardTypeId, stack.count)}
                       >
                         <div className="card-count">x{stack.count}</div>
                         <CardComponent
@@ -158,17 +184,10 @@ export function DeckTab({
                           depth={depth}
                           isPlayable={true}
                         />
+                        {isSelected && (
+                          <div className="deck-select-count-tag">{selectedCount}</div>
+                        )}
                       </div>
-                      {isSelected && (
-                        <div className="deck-edit-btn-container">
-                          <button
-                            className="deck-edit-btn deck-remove-btn"
-                            onClick={() => handleRemoveCard(stack.cardTypeId)}
-                          >
-                            − 外す
-                          </button>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -185,8 +204,7 @@ export function DeckTab({
                 </div>
               </div>
             </div>
-          ))
-        )}
+          ))}
       </div>
 
       {/* Card Add Modal */}

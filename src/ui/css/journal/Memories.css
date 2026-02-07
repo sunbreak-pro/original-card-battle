@@ -441,6 +441,56 @@
 }
 
 /* ============================================================================
+   Card Classification Sections
+   ============================================================================ */
+
+.memories-cards-classified {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.5vh;
+}
+
+.memories-card-classification {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+
+.memories-classification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6vh 1vw;
+  border-left: 3px solid var(--journal-accent, #6b4423);
+  background: rgba(107, 68, 35, 0.08);
+  border-radius: 0 0.4vh 0.4vh 0;
+}
+
+.memories-classification-title {
+  font-size: 1.4vh;
+  font-weight: bold;
+  font-family: serif;
+  color: var(--journal-ink, #2a1a08);
+}
+
+.memories-classification-count {
+  font-size: 1.2vh;
+  color: var(--journal-text-muted, #7a6550);
+  font-weight: bold;
+}
+
+.memories-classification-empty {
+  font-size: 1.2vh;
+  color: var(--journal-text-muted, #7a6550);
+  font-style: italic;
+  text-align: center;
+  padding: 1vh;
+}
+
+/* ============================================================================
    Empty State
    ============================================================================ */
 

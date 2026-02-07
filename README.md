@@ -174,6 +174,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | 日付 | 作業内容 | 進捗 |
 |------|----------|------|
+| 2026-02-07 | Journal戦術・記憶タブ改善: DeckTab全4タグ常時表示(0枚placeholder)、CardAddModalのcount+1サイクル方式+count-tagバッジ、DeckTab複数選択一括削除ボタン、MemoriesPage記憶タブをクラスフィルタ(プレイヤークラスのカードのみ表示)、カード3分類セクション(基礎/派生/才能)追加、デッキ更新時discoverCard自動呼出し統合 | 完了 |
 | 2026-02-06 | バグ修正+UI一新: swordEnergyバグ修正(executePlayerPhase内onTurnStart追加)、Sanctuary currentRunSouls表示削除、デッキエディタ4タイプ別グリッド化(DeckTab.tsx)、カード追加モーダル(CardAddModal.tsx新規)、ダンジョン探索2パネルUI(ExplorationScreen+左パネル:ステータス/アイテム/ジャーナルタブ+右マップ)、探索中アイテム使用(useExplorationItemUsage.ts)、探索中Journal表示(DeckReadOnlyView showEditButton prop追加) | 完了 |
 | 2026-02-06 | ニューゲームボタン+Continueボタンバグ修正: SettingsPage(Journal内)にニューゲームボタン追加(確認ダイアログ→Journal閉じる→character_select遷移)、SaveLoadUIからロードボタン削除、VictoryScreen.cssの.continue-buttonを.victory-screenでスコープ修正(CharacterSelectのContinueボタンがopacity:0で非表示だったバグ修正)、Settings.cssにnewgame-btnスタイル追加 | 完了 |
 | 2026-02-06 | Journal Phase 3-5: Settings統合(SettingsPage.tsx、Settings.css作成、SaveLoadUIにloadDisabled prop追加)、Notes実装(NoteEditor.tsx、ThoughtsPage.tsx、Notes.css、JournalAnimations.css作成、20件上限ガード)、Library完全削除(Library/6ファイル+CSS削除、App.tsx・campConstants.ts・campTypes.ts・types/index.tsからlibrary参照除去)、FacilityHeaderから⚙️ボタン+SettingsModal削除 | 完了 |

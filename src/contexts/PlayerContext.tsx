@@ -33,6 +33,7 @@ import {
 import type { BasePlayerStats } from "../constants/data/characters/PlayerData";
 import { getCharacterClassInfo } from "@/constants/data/characters/CharacterClassData";
 import { useResources } from "./ResourceContext";
+import { useJournal } from "./JournalContext";
 import {
   STORAGE_MAX_CAPACITY,
   INVENTORY_MAX_CAPACITY,
@@ -273,6 +274,9 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
   // Get resource context for delegation
   const resourceContext = useResources();
 
+  // Get journal context for card discovery
+  const { discoverCard } = useJournal();
+
   // Stable player ID — generated once on mount
   const [playerId] = useState(() => generateId('player'));
 
@@ -297,7 +301,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
 
   const battle = usePlayerBattle(runtimeState, setRuntimeState);
   const progression = usePlayerProgression(setPlayerState);
-  const deck = usePlayerDeck(playerState.playerClass, setPlayerState);
+  const deck = usePlayerDeck(playerState.playerClass, setPlayerState, discoverCard);
   const { equipmentAP, applyEquipmentDurabilityDamage } = useEquipmentAP(
     playerState.equipmentSlots,
     setPlayerState,
@@ -374,6 +378,7 @@ export const PlayerProvider: React.FC<{ children: ReactNode }> = ({
     const starterIds = new Set<string>();
     for (const card of classInfo.starterDeck) {
       starterIds.add(card.cardTypeId);
+      discoverCard(card.cardTypeId);
     }
     setUnlockedCardTypeIds(starterIds);
   };

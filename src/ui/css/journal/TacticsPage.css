@@ -33,7 +33,7 @@
 }
 
 .journal-overlay .deck-section-title {
-  font-size: 1.6vh;
+  font-size: 2.3vh;
   color: var(--journal-ink, #2a1a08);
   margin: 0;
   font-weight: bold;
@@ -427,4 +427,64 @@
   padding: 0.5vh 1vw;
   border-radius: 4px;
   z-index: 15;
+}
+
+/* ============================================================================
+   Card Add Count Tag (modal selection badge)
+   ============================================================================ */
+
+.card-add-count-tag {
+  position: absolute;
+  top: -0.8vh;
+  right: -0.8vw;
+  background: var(--journal-accent, #6b4423);
+  color: #fff;
+  font-size: 1.8vh;
+  font-weight: bold;
+  width: 3.5vh;
+  height: 3.5vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  z-index: 20;
+  box-shadow: 0 0.2vh 0.6vh rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================================
+   Deck Select Count Tag (deck multi-select badge)
+   ============================================================================ */
+
+.journal-overlay .deck-select-count-tag {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(139, 48, 48, 0.85);
+  color: #fff;
+  font-size: 2.5vh;
+  font-weight: bold;
+  width: 4vh;
+  height: 4vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  z-index: 20;
+  box-shadow: 0 0.2vh 0.6vh rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================================
+   Bulk Remove Button
+   ============================================================================ */
+
+.journal-overlay .deck-bulk-remove-btn {
+  margin-top: 0;
+  padding: 0.5vh 1.5vw;
+  font-size: 1.4vh;
+}
+
+.journal-overlay .deck-bulk-remove-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

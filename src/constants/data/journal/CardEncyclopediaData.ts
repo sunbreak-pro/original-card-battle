@@ -7,6 +7,7 @@
 
 export {
   getAllCards,
+  getCardsByClass,
   createCardEncyclopediaEntries,
   getCardStats,
   getAllTags,

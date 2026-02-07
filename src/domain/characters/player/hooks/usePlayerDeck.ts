@@ -11,6 +11,7 @@ type SetPlayerState = React.Dispatch<
 export function usePlayerDeck(
   playerClass: CharacterClass,
   setPlayerState: SetPlayerState,
+  onDiscoverCard?: (cardTypeId: string) => void,
 ) {
   const updateDeck = (cardTypeIds: string[]) => {
     const cardData = getCardDataByClass(playerClass);
@@ -27,10 +28,23 @@ export function usePlayerDeck(
       }
     }
 
-    setPlayerState((prev) => ({
-      ...prev,
-      deck: newDeck,
-    }));
+    // Discover new cards added to the deck
+    if (onDiscoverCard) {
+      setPlayerState((prev) => {
+        const prevIds = new Set(prev.deck.map((c) => c.cardTypeId));
+        for (const id of cardTypeIds) {
+          if (!prevIds.has(id)) {
+            onDiscoverCard(id);
+          }
+        }
+        return { ...prev, deck: newDeck };
+      });
+    } else {
+      setPlayerState((prev) => ({
+        ...prev,
+        deck: newDeck,
+      }));
+    }
   };
 
   return { updateDeck };

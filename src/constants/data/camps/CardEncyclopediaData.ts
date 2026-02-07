@@ -9,6 +9,7 @@
 import { SWORDSMAN_CARDS } from "@/constants/data/cards/swordsmanCards";
 import { MAGE_CARDS } from "@/constants/data/cards/mageCards";
 import type { Card, CardTag } from '@/types/cardTypes';
+import type { CharacterClass } from '@/types/characterTypes';
 import type { CardEncyclopediaEntry } from '@/types/campTypes';
 
 /**
@@ -20,6 +21,23 @@ export function getAllCards(): Card[] {
     ...Object.values(SWORDSMAN_CARDS),
     ...Object.values(MAGE_CARDS),
   ];
+
+  return cards.sort((a, b) => {
+    if (a.cost !== b.cost) {
+      return a.cost - b.cost;
+    }
+    return a.name.localeCompare(b.name);
+  });
+}
+
+/**
+ * Get all cards for a specific character class
+ * Sorted by cost, then by name
+ */
+export function getCardsByClass(characterClass: CharacterClass): Card[] {
+  const cards = characterClass === "swordsman"
+    ? Object.values(SWORDSMAN_CARDS)
+    : Object.values(MAGE_CARDS);
 
   return cards.sort((a, b) => {
     if (a.cost !== b.cost) {

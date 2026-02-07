@@ -7,11 +7,13 @@
 
 import { useState, useMemo } from "react";
 import { useJournal } from "@/contexts/JournalContext";
+import { usePlayer } from "@/contexts/PlayerContext";
 import type { MemoriesCategory } from "@/types/journalTypes";
 import "@/ui/css/journal/Memories.css";
 
 // Encyclopedia data imports
-import { getAllCards, getCardStats } from "@/constants/data/journal/CardEncyclopediaData";
+import { getCardsByClass } from "@/constants/data/journal/CardEncyclopediaData";
+import { classifyCards } from "@/domain/cards/logic/cardClassification";
 import {
   getAllEnemies,
   getEnemyStats,
@@ -116,12 +118,18 @@ interface SectionProps {
   searchText: string;
 }
 
+const CLASSIFICATION_LABELS = {
+  baseCards: "基礎カード",
+  derivedCards: "派生カード",
+  talentCards: "才能カード",
+} as const;
+
 function CardsSection({ discovery, searchText }: SectionProps) {
-  const allCards = useMemo(() => getAllCards(), []);
-  const stats = useMemo(
-    () => getCardStats(new Set(discovery.cards)),
-    [discovery.cards]
-  );
+  const { playerData } = usePlayer();
+  const playerClass = playerData.persistent.playerClass;
+
+  const allCards = useMemo(() => getCardsByClass(playerClass), [playerClass]);
+  const discoveredSet = useMemo(() => new Set(discovery.cards), [discovery.cards]);
 
   const filteredCards = useMemo(() => {
     if (!searchText) return allCards;
@@ -133,7 +141,14 @@ function CardsSection({ discovery, searchText }: SectionProps) {
     );
   }, [allCards, searchText]);
 
-  const discoveredSet = useMemo(() => new Set(discovery.cards), [discovery.cards]);
+  const classified = useMemo(() => classifyCards(filteredCards), [filteredCards]);
+
+  const totalDiscovered = allCards.filter((c) => discoveredSet.has(c.cardTypeId)).length;
+  const totalCards = allCards.length;
+
+  const sections = (["baseCards", "derivedCards", "talentCards"] as const).filter(
+    (key) => classified[key].length > 0 || !searchText
+  );
 
   return (
     <div className="memories-section">
@@ -141,47 +156,70 @@ function CardsSection({ discovery, searchText }: SectionProps) {
       <div className="memories-stats-bar">
         <div className="memories-stat">
           <span className="memories-stat-value">
-            {stats.unlocked}/{stats.total}
+            {totalDiscovered}/{totalCards}
           </span>
           <span className="memories-stat-label">発見済み</span>
         </div>
         <div className="memories-stat">
           <span className="memories-stat-value">
-            {Math.round((stats.unlocked / stats.total) * 100)}%
+            {totalCards > 0 ? Math.round((totalDiscovered / totalCards) * 100) : 0}%
           </span>
           <span className="memories-stat-label">達成率</span>
         </div>
       </div>
 
-      {/* Card list */}
-      <div className="memories-grid cards-grid">
-        {filteredCards.map((card) => {
-          const isDiscovered = discoveredSet.has(card.cardTypeId);
+      {/* Classified card sections */}
+      <div className="memories-cards-classified">
+        {sections.map((key) => {
+          const cards = classified[key];
+          const sectionDiscovered = cards.filter((c) => discoveredSet.has(c.cardTypeId)).length;
           return (
-            <div
-              key={card.cardTypeId}
-              className={`memories-card-entry ${isDiscovered ? "discovered" : "undiscovered"}`}
-            >
-              {isDiscovered ? (
-                <>
-                  <div className="entry-header">
-                    <span className="entry-name">{card.name}</span>
-                    <span className="entry-rarity">
-                      Cost: {card.cost}
-                    </span>
-                  </div>
-                  <div className="entry-details">
-                    <span className="entry-class">{card.characterClass}</span>
-                    <span className="entry-element">
-                      {card.element.join(", ")}
-                    </span>
-                  </div>
-                  <p className="entry-description">{card.description}</p>
-                </>
+            <div key={key} className="memories-card-classification">
+              <div className="memories-classification-header">
+                <span className="memories-classification-title">
+                  {CLASSIFICATION_LABELS[key]}
+                </span>
+                <span className="memories-classification-count">
+                  {sectionDiscovered}/{cards.length}
+                </span>
+              </div>
+              {cards.length === 0 ? (
+                <div className="memories-classification-empty">
+                  該当カードなし
+                </div>
               ) : (
-                <div className="entry-locked">
-                  <span className="locked-icon">❓</span>
-                  <span className="locked-text">未発見</span>
+                <div className="memories-grid cards-grid">
+                  {cards.map((card) => {
+                    const isDiscovered = discoveredSet.has(card.cardTypeId);
+                    return (
+                      <div
+                        key={card.cardTypeId}
+                        className={`memories-card-entry ${isDiscovered ? "discovered" : "undiscovered"}`}
+                      >
+                        {isDiscovered ? (
+                          <>
+                            <div className="entry-header">
+                              <span className="entry-name">{card.name}</span>
+                              <span className="entry-rarity">
+                                Cost: {card.cost}
+                              </span>
+                            </div>
+                            <div className="entry-details">
+                              <span className="entry-element">
+                                {card.element.join(", ")}
+                              </span>
+                            </div>
+                            <p className="entry-description">{card.description}</p>
+                          </>
+                        ) : (
+                          <div className="entry-locked">
+                            <span className="locked-icon">❓</span>
+                            <span className="locked-text">未発見</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

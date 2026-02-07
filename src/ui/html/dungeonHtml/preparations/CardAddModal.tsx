@@ -66,15 +66,12 @@ export function CardAddModal({
       const next = new Map(prev);
       const currentSelected = next.get(cardTypeId) || 0;
       const inDeck = deckCounts.get(cardTypeId) || 0;
+      const maxAddable = MAX_CARD_COPIES - inDeck;
 
-      if (currentSelected > 0) {
-        // Deselect
+      if (currentSelected >= maxAddable) {
         next.delete(cardTypeId);
       } else {
-        // Select: check MAX_CARD_COPIES
-        if (inDeck < MAX_CARD_COPIES) {
-          next.set(cardTypeId, 1);
-        }
+        next.set(cardTypeId, currentSelected + 1);
       }
       return next;
     });
@@ -140,7 +137,8 @@ export function CardAddModal({
         <div className="card-add-modal-grid">
           {tagCards.map(({ cardTypeId, card }) => {
             const inDeck = deckCounts.get(cardTypeId) || 0;
-            const isSelected = (selectedCards.get(cardTypeId) || 0) > 0;
+            const selectedCount = selectedCards.get(cardTypeId) || 0;
+            const isSelected = selectedCount > 0;
             const atCopyLimit = inDeck >= MAX_CARD_COPIES;
 
             return (
@@ -150,6 +148,9 @@ export function CardAddModal({
                 onClick={() => !atCopyLimit && toggleCard(cardTypeId)}
               >
                 <CardComponent card={card} depth={depth} isPlayable={true} />
+                {isSelected && (
+                  <div className="card-add-count-tag">+{selectedCount}</div>
+                )}
                 {inDeck > 0 && (
                   <div className="card-add-in-deck">
                     デッキ内: {inDeck}/{MAX_CARD_COPIES}
