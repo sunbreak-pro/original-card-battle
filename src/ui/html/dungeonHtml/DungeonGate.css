@@ -685,8 +685,8 @@
 
 .dungeon-gate-screen .deck-readonly-count-badge {
   position: absolute;
-  top: -0.75vh;
-  right: -1.5vw;
+  top: -0.1vh;
+  right: -.5vw;
   background: rgba(201, 160, 220, 0.95);
   color: #fff;
   font-size: 1.3vh;

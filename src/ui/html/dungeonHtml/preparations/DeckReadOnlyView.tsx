@@ -9,6 +9,7 @@ import { useJournal } from "@/contexts/JournalContext";
 interface DeckReadOnlyViewProps {
   deckCards: Card[];
   depth: Depth;
+  showEditButton?: boolean;
 }
 
 interface CardStack {
@@ -58,7 +59,7 @@ function groupByTag(cards: Card[]): TagGroup[] {
   });
 }
 
-export function DeckReadOnlyView({ deckCards, depth }: DeckReadOnlyViewProps) {
+export function DeckReadOnlyView({ deckCards, depth, showEditButton = true }: DeckReadOnlyViewProps) {
   const { openJournal } = useJournal();
 
   const tagGroups = useMemo(() => groupByTag(deckCards), [deckCards]);
@@ -72,12 +73,14 @@ export function DeckReadOnlyView({ deckCards, depth }: DeckReadOnlyViewProps) {
       <div className="deck-readonly">
         <div className="deck-readonly-header">
           <h3 className="deck-readonly-title">デッキ概要 (0枚)</h3>
-          <button
-            className="deck-readonly-edit-btn"
-            onClick={handleOpenJournal}
-          >
-            Journalでデッキを編集
-          </button>
+          {showEditButton && (
+            <button
+              className="deck-readonly-edit-btn"
+              onClick={handleOpenJournal}
+            >
+              Journalでデッキを編集
+            </button>
+          )}
         </div>
         <div className="deck-readonly-empty">
           デッキにカードがありません
@@ -92,12 +95,14 @@ export function DeckReadOnlyView({ deckCards, depth }: DeckReadOnlyViewProps) {
         <h3 className="deck-readonly-title">
           デッキ概要 ({deckCards.length}枚)
         </h3>
-        <button
-          className="deck-readonly-edit-btn"
-          onClick={handleOpenJournal}
-        >
-          Journalでデッキを編集
-        </button>
+        {showEditButton && (
+          <button
+            className="deck-readonly-edit-btn"
+            onClick={handleOpenJournal}
+          >
+            Journalでデッキを編集
+          </button>
+        )}
       </div>
 
       {tagGroups.map((group) => (

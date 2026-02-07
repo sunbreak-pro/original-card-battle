@@ -6,7 +6,7 @@ import { Shop } from "./ui/html/campsHtml/Shop/Shop.tsx";
 import { Blacksmith } from "./ui/html/campsHtml/Blacksmith/Blacksmith.tsx";
 import { Sanctuary } from "./ui/html/campsHtml/Sanctuary/Sanctuary.tsx";
 import { DungeonGate } from "./ui/html/dungeonHtml/DungeonGate.tsx";
-import { NodeMap } from "./ui/html/dungeonHtml/NodeMap.tsx";
+import { ExplorationScreen } from "./ui/html/dungeonHtml/ExplorationScreen.tsx";
 import { DungeonRunProvider } from "./contexts/DungeonRunContext.tsx";
 import { CharacterSelect } from "./ui/html/characterSelectHtml/CharacterSelect.tsx";
 import {
@@ -95,7 +95,7 @@ function AppContent() {
       {currentScreen === "dungeon" && <DungeonGate />}
 
       {/* Dungeon Map Screen */}
-      {currentScreen === "dungeon_map" && <NodeMap />}
+      {currentScreen === "dungeon_map" && <ExplorationScreen />}
     </div>
   );
 }

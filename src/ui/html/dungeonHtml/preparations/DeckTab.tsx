@@ -1,15 +1,18 @@
 // DeckTab - Deck editor with add/remove card functionality
 
 import { useMemo, useState } from "react";
-import type { Card, Depth } from "@/types/cardTypes";
+import type { Card, CardTag, Depth } from "@/types/cardTypes";
 import type { CharacterClass } from "@/types/characterTypes";
 import { CardComponent } from "@/ui/html/cardHtml/CardComponent";
-import { getCardDataByClass } from "@/constants/data/characters/CharacterClassData";
+import { CardAddModal } from "./CardAddModal";
 import {
-  MAX_CARD_COPIES,
   MIN_DECK_SIZE,
   MAX_DECK_SIZE,
 } from "@/constants/uiConstants";
+import {
+  CARD_TAG_LABEL_MAP,
+  CARD_TAG_COLOR_MAP,
+} from "@/constants/cardConstants";
 
 interface DeckTabProps {
   deckCards: Card[];
@@ -22,6 +25,38 @@ interface CardStack {
   card: Card;
   cardTypeId: string;
   count: number;
+}
+
+interface TagGroup {
+  tag: CardTag;
+  label: string;
+  stacks: CardStack[];
+  totalCount: number;
+}
+
+const TAG_ORDER: CardTag[] = ["attack", "skill", "guard", "stance"];
+
+function groupDeckStacksByTag(stacks: CardStack[]): TagGroup[] {
+  const tagMap = new Map<CardTag, CardStack[]>();
+
+  for (const stack of stacks) {
+    const tag = stack.card.tags[0] ?? "skill";
+    if (!tagMap.has(tag)) {
+      tagMap.set(tag, []);
+    }
+    tagMap.get(tag)!.push(stack);
+  }
+
+  return TAG_ORDER.filter((tag) => tagMap.has(tag)).map((tag) => {
+    const groupStacks = tagMap.get(tag)!;
+    const totalCount = groupStacks.reduce((sum, s) => sum + s.count, 0);
+    return {
+      tag,
+      label: CARD_TAG_LABEL_MAP[tag],
+      stacks: groupStacks,
+      totalCount,
+    };
+  });
 }
 
 export function DeckTab({
@@ -50,23 +85,8 @@ export function DeckTab({
     );
   }, [deckCards]);
 
-  // Get all available cards for this class
-  const availableCards = useMemo<CardStack[]>(() => {
-    const classCards = getCardDataByClass(playerClass);
-    const deckCounts = new Map<string, number>();
-    for (const card of deckCards) {
-      deckCounts.set(
-        card.cardTypeId,
-        (deckCounts.get(card.cardTypeId) || 0) + 1,
-      );
-    }
-
-    return Object.entries(classCards).map(([cardTypeId, card]) => ({
-      card,
-      cardTypeId,
-      count: deckCounts.get(cardTypeId) || 0,
-    }));
-  }, [playerClass, deckCards]);
+  // Group deck stacks by card tag
+  const tagGroups = useMemo(() => groupDeckStacksByTag(deckStacks), [deckStacks]);
 
   // Build current cardTypeIds list from deck
   const currentCardTypeIds = useMemo(() => {
@@ -76,14 +96,11 @@ export function DeckTab({
   const deckSize = deckCards.length;
   const isAtMaxSize = deckSize >= MAX_DECK_SIZE;
 
-  const getCardCount = (cardTypeId: string): number => {
-    return currentCardTypeIds.filter((id) => id === cardTypeId).length;
-  };
+  // Card add modal state
+  const [addModalTag, setAddModalTag] = useState<CardTag | null>(null);
 
-  const handleAddCard = (cardTypeId: string) => {
-    if (isAtMaxSize) return;
-    if (getCardCount(cardTypeId) >= MAX_CARD_COPIES) return;
-    onUpdateDeck([...currentCardTypeIds, cardTypeId]);
+  const handleAddCards = (newIds: string[]) => {
+    onUpdateDeck([...currentCardTypeIds, ...newIds]);
   };
 
   const handleRemoveCard = (cardTypeId: string) => {
@@ -117,93 +134,73 @@ export function DeckTab({
         {deckStacks.length === 0 ? (
           <div className="deck-empty">デッキにカードがありません</div>
         ) : (
-          <div className="deck-card-grid">
-            {deckStacks.map((stack) => {
-              const cardId = `deck-${stack.cardTypeId}`;
-              const isSelected = selectedCardId === cardId;
-              return (
-                <div key={stack.cardTypeId} className="deck-card-slot">
-                  <div
-                    className={`prep-card-wrapper${isSelected ? " selected" : ""}`}
-                    onClick={() => toggleSelect(cardId)}
-                  >
-                    <div className="card-count">x{stack.count}</div>
-                    <CardComponent
-                      card={stack.card}
-                      depth={depth}
-                      isPlayable={true}
-                    />
-                  </div>
-                  {isSelected && (
-                    <div className="deck-edit-btn-container">
-                      <button
-                        className="deck-edit-btn deck-remove-btn"
-                        onClick={() => handleRemoveCard(stack.cardTypeId)}
+          tagGroups.map((group) => (
+            <div key={group.tag} className={`deck-type-section deck-${group.tag}-section`}>
+              <div className="deck-type-header" style={{ borderLeftColor: CARD_TAG_COLOR_MAP[group.tag] }}>
+                <span className="deck-type-label" style={{ color: CARD_TAG_COLOR_MAP[group.tag] }}>
+                  {group.label}
+                </span>
+                <span className="deck-type-count">{group.totalCount}枚</span>
+              </div>
+              <div className={`deck-card-grid deck-${group.tag}-card-grid`}>
+                {group.stacks.map((stack) => {
+                  const cardId = `deck-${stack.cardTypeId}`;
+                  const isSelected = selectedCardId === cardId;
+                  return (
+                    <div key={stack.cardTypeId} className="deck-card-slot">
+                      <div
+                        className={`prep-card-wrapper${isSelected ? " selected" : ""}`}
+                        onClick={() => toggleSelect(cardId)}
                       >
-                        − 外す
-                      </button>
+                        <div className="card-count">x{stack.count}</div>
+                        <CardComponent
+                          card={stack.card}
+                          depth={depth}
+                          isPlayable={true}
+                        />
+                      </div>
+                      {isSelected && (
+                        <div className="deck-edit-btn-container">
+                          <button
+                            className="deck-edit-btn deck-remove-btn"
+                            onClick={() => handleRemoveCard(stack.cardTypeId)}
+                          >
+                            − 外す
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  );
+                })}
+                <div
+                  className="deck-card-slot"
+                  key={`add-${group.tag}`}
+                >
+                  <div
+                    className="deck-add-card-placeholder"
+                    onClick={() => setAddModalTag(group.tag)}
+                  >
+                    <span className="deck-add-icon">+</span>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            </div>
+          ))
         )}
       </div>
 
-      {/* Divider */}
-      <div className="deck-divider" />
-
-      {/* Available Cards Section */}
-      <div className="deck-section">
-        <div className="deck-section-header">
-          <h3 className="deck-section-title">追加可能なカード</h3>
-        </div>
-        <div className="deck-card-grid">
-          {availableCards.map((stack) => {
-            const cardId = `available-${stack.cardTypeId}`;
-            const isSelected = selectedCardId === cardId;
-            return (
-              <div key={stack.cardTypeId} className="deck-card-slot">
-                <div
-                  className={`prep-card-wrapper${isSelected ? " selected" : ""}`}
-                  onClick={() => toggleSelect(cardId)}
-                >
-                  <CardComponent
-                    card={stack.card}
-                    depth={depth}
-                    isPlayable={true}
-                  />
-                  {stack.count > 0 && (
-                    <div className="deck-in-deck-badge">
-                      デッキ内: {stack.count}
-                    </div>
-                  )}
-                </div>
-                {isSelected &&
-                  (() => {
-                    const atCopyLimit =
-                      getCardCount(stack.cardTypeId) >= MAX_CARD_COPIES;
-                    const disabled = isAtMaxSize || atCopyLimit;
-                    return (
-                      <div className="deck-edit-btn-container">
-                        <button
-                          className="deck-edit-btn deck-add-btn"
-                          onClick={() => handleAddCard(stack.cardTypeId)}
-                          disabled={disabled}
-                        >
-                          {atCopyLimit
-                            ? `上限 (${MAX_CARD_COPIES}枚)`
-                            : "+ 追加"}
-                        </button>
-                      </div>
-                    );
-                  })()}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Card Add Modal */}
+      {addModalTag && (
+        <CardAddModal
+          isOpen={addModalTag !== null}
+          cardTag={addModalTag}
+          playerClass={playerClass}
+          depth={depth}
+          currentDeckCardTypeIds={currentCardTypeIds}
+          onAddCards={handleAddCards}
+          onClose={() => setAddModalTag(null)}
+        />
+      )}
     </div>
   );
 }

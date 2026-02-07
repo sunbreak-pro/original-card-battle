@@ -174,6 +174,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | 日付 | 作業内容 | 進捗 |
 |------|----------|------|
+| 2026-02-06 | バグ修正+UI一新: swordEnergyバグ修正(executePlayerPhase内onTurnStart追加)、Sanctuary currentRunSouls表示削除、デッキエディタ4タイプ別グリッド化(DeckTab.tsx)、カード追加モーダル(CardAddModal.tsx新規)、ダンジョン探索2パネルUI(ExplorationScreen+左パネル:ステータス/アイテム/ジャーナルタブ+右マップ)、探索中アイテム使用(useExplorationItemUsage.ts)、探索中Journal表示(DeckReadOnlyView showEditButton prop追加) | 完了 |
 | 2026-02-06 | ニューゲームボタン+Continueボタンバグ修正: SettingsPage(Journal内)にニューゲームボタン追加(確認ダイアログ→Journal閉じる→character_select遷移)、SaveLoadUIからロードボタン削除、VictoryScreen.cssの.continue-buttonを.victory-screenでスコープ修正(CharacterSelectのContinueボタンがopacity:0で非表示だったバグ修正)、Settings.cssにnewgame-btnスタイル追加 | 完了 |
 | 2026-02-06 | Journal Phase 3-5: Settings統合(SettingsPage.tsx、Settings.css作成、SaveLoadUIにloadDisabled prop追加)、Notes実装(NoteEditor.tsx、ThoughtsPage.tsx、Notes.css、JournalAnimations.css作成、20件上限ガード)、Library完全削除(Library/6ファイル+CSS削除、App.tsx・campConstants.ts・campTypes.ts・types/index.tsからlibrary参照除去)、FacilityHeaderから⚙️ボタン+SettingsModal削除 | 完了 |
 | 2026-02-06 | Journal Phase 2 (Memories Page): 図鑑ページ実装。EquipmentEncyclopediaData.ts/EventEncyclopediaData.ts新規作成、MemoriesPage.tsx (カテゴリタブ: カード/敵/装備/イベント、検索・フィルタ・進捗表示)、Memories.css。JournalOverlay.tsx更新 | 完了 |
@@ -182,6 +183,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 | 2026-02-05 | カード図鑑UI改修（3分類システム）: CardEncyclopediaTab.tsx大幅改修、CardCategoryRow.tsx新規、cardClassification.ts/talentCardUnlock.ts新規、talentCardRegistry.ts新規。才能カード8枚(sw_027-034)にisTalentCard追加、派生解放Lv2→Lv1変更、3行レイアウトCSS追加 | 完了 |
 | 2026-02-05 | Storage機能のGuild統合: 倉庫を独立施設からギルドのタブ（4つ目）に統合。StorageTab.tsx新規作成、Guild.css統合、App.tsx/campConstants.tsからStorage関連削除 | 完了 |
 | 2026-02-05 | Swordsmanカードバランス調整: 剣気サイクル根本変更(攻撃=獲得→消費、スキル/ガード=獲得強化)、新規カード4枚(sw_044-047)、派生カード15枚追加、初期デッキ構成変更(攻撃6/スキル6/ガード3の15枚)。全60枚 | 完了 |
+| 2026-02-06 | タスク管理ハイブリッド化: TODO.md新規作成（バックログ一覧+仕様リンク）、CLAUDE.md/README.mdのTask Completion Rule・References更新、current_plans/削除 | 完了 |
 | 2026-02-05 | UI/UXデザインガイド作成: `.claude/docs/ui_ux_design_guide.md` - 設計哲学、カラーシステム（施設/ステータス/熟練度）、タイポグラフィ、スペーシング、コンポーネントパターン、アニメーション、アクセシビリティ | 完了 |
 | 2026-02-05 | CLAUDE.md更新（タスク完了時アーカイブルール追記）、残存Summoner参照削除（code_overview/character/player.md、battle/class-abilities.md、src/types/characterTypes.ts、classAbilitySystem.ts）、完了タスク3件をarchive/へ移動 | 完了 |
 | 2026-02-05 | 脆弱性修正 Phase 1 (Session 1-6): V-EXEC-01/02 (敵マルチアクション死亡後実行・デバフ上書き), V-EXEC-03 (マルチヒットガード/AP割り当て), V-EXEC-04 (敵turnCountインクリメント), V-PHASE-01/02 (敵フェーズバフタイミング), V-DMG-MANAGE-01 (デッドコード削除) | 完了 |
@@ -212,7 +214,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 ## References
 
+- `TODO.md` — タスク一覧（優先度、ステータス、仕様リンク）
 - `.claude/docs/` — ゲーム設計仕様書（バトル、カード、キャンプ、ダンジョン、敵、アイテム、手記、UI/UXデザインガイド）
-- `.claude/feature_plans/` — 将来機能の計画（クエスト、称号、NPC会話、闇市）
-- `.claude/current_plans/` — 現在の実装計画・セッション追跡
+- `.claude/feature_plans/` — 機能の詳細仕様（クエスト、称号、NPC会話、闇市）
 - `.claude/memories/` — 開発で学んだ教訓、完了したリファクタリングガイド

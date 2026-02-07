@@ -425,6 +425,7 @@ export const useBattleOrchestrator = (
       },
       dispatch,
     });
+    swordEnergyHook.onTurnStart();
   }, [
     executePlayerPhaseImpl,
     playerState.buffs,
@@ -438,6 +439,7 @@ export const useBattleOrchestrator = (
     showHealEffect,
     showShieldEffect,
     phaseState,
+    swordEnergyHook,
   ]);
 
   /**

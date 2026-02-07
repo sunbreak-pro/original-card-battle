@@ -126,16 +126,6 @@ export const Sanctuary = () => {
               </div>
             </div>
 
-            <div className="soul-display current-run">
-              <span className="soul-icon">✨</span>
-              <div className="soul-info">
-                <span className="soul-label">今回のラン</span>
-                <span className="soul-value">
-                  {sanctuaryProgress.currentRunSouls}
-                </span>
-              </div>
-            </div>
-
             <div className="exploration-display">
               <span className="exploration-icon">🗺️</span>
               <span className="exploration-value">
