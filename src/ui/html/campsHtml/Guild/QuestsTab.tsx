@@ -2,64 +2,86 @@
  * QuestsTab: Quest acceptance and tracking system
  *
  * Shows daily and weekly quests with objectives and rewards.
- * Players can accept quests and track progress.
+ * Players can accept quests, track progress, and claim rewards.
+ * Uses GuildContext for persistent quest state across screens.
  */
 
-import { useState, useMemo } from "react";
-import type { Quest } from "@/types/campTypes";
-import {
-  generateDailyQuests,
-  generateWeeklyQuests,
-  isQuestComplete,
-} from "@/constants/data/camps/QuestData";
+import { useState, useEffect, useRef } from "react";
+import { useGuild } from "@/contexts/GuildContext";
 import { useResources } from "@/contexts/ResourceContext";
+import { useToast } from "@/contexts/ToastContext";
+import { isQuestComplete, isQuestExpired } from "@/constants/data/camps/QuestData";
 
 type QuestFilter = "all" | "daily" | "weekly" | "active";
 
+const FILTER_LABELS: Record<QuestFilter, string> = {
+  all: "すべて",
+  daily: "デイリー",
+  weekly: "ウィークリー",
+  active: "受注中",
+};
+
 const QuestsTab = () => {
+  const {
+    availableQuests,
+    acceptedQuests,
+    completedQuests,
+    acceptQuest,
+    claimQuestReward,
+    refreshQuests,
+  } = useGuild();
   const { addGold, addMagicStones } = useResources();
+  const { addToast } = useToast();
 
-  // Generate quests (in real implementation, these would persist in context)
-  const [dailyQuests, setDailyQuests] = useState<Quest[]>(() =>
-    generateDailyQuests(),
-  );
-  const [weeklyQuests, setWeeklyQuests] = useState<Quest[]>(() =>
-    generateWeeklyQuests(),
-  );
   const [filter, setFilter] = useState<QuestFilter>("all");
-  const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
 
-  const allQuests = useMemo(
-    () => [...dailyQuests, ...weeklyQuests],
-    [dailyQuests, weeklyQuests],
-  );
+  // Refresh expired quests on tab mount
+  const refreshedRef = useRef(false);
+  useEffect(() => {
+    if (!refreshedRef.current) {
+      refreshQuests();
+      refreshedRef.current = true;
+    }
+  }, [refreshQuests]);
 
-  const filteredQuests = useMemo(() => {
+  // Combine available and accepted quests for display
+  const displayQuests = [...availableQuests, ...acceptedQuests];
+
+  const filteredQuests = (() => {
     switch (filter) {
       case "daily":
-        return dailyQuests;
+        return displayQuests.filter((q) => q.type === "daily");
       case "weekly":
-        return weeklyQuests;
+        return displayQuests.filter((q) => q.type === "weekly");
       case "active":
-        return allQuests.filter((q) => q.isActive && !q.isCompleted);
+        return acceptedQuests.filter((q) => !q.isCompleted);
       default:
-        return allQuests;
+        return displayQuests;
     }
-  }, [filter, dailyQuests, weeklyQuests, allQuests]);
+  })();
 
-  const acceptQuest = (questId: string) => {
-    setDailyQuests((prev) =>
-      prev.map((q) => (q.id === questId ? { ...q, isActive: true } : q)),
-    );
-    setWeeklyQuests((prev) =>
-      prev.map((q) => (q.id === questId ? { ...q, isActive: true } : q)),
-    );
+  const handleAcceptQuest = (questId: string) => {
+    const success = acceptQuest(questId);
+    if (!success) {
+      addToast({
+        message: "依頼を受注できません（最大5件まで）",
+        type: "alert",
+        duration: 3000,
+      });
+    } else {
+      addToast({
+        message: "依頼を受注しました",
+        type: "success",
+        duration: 2000,
+      });
+    }
   };
 
-  const claimReward = (quest: Quest) => {
-    if (!isQuestComplete(quest) || claimedIds.has(quest.id)) return;
+  const handleClaimReward = (questId: string) => {
+    const quest = claimQuestReward(questId);
+    if (!quest) return;
 
-    // Grant rewards
+    // Grant rewards via ResourceContext
     if (quest.rewards.gold) {
       addGold(quest.rewards.gold, true);
     }
@@ -67,37 +89,41 @@ const QuestsTab = () => {
       addMagicStones({ small: quest.rewards.magicStones }, true);
     }
 
-    setClaimedIds((prev) => new Set([...prev, quest.id]));
-
-    // Mark as completed
-    setDailyQuests((prev) =>
-      prev.map((q) => (q.id === quest.id ? { ...q, isCompleted: true } : q)),
-    );
-    setWeeklyQuests((prev) =>
-      prev.map((q) => (q.id === quest.id ? { ...q, isCompleted: true } : q)),
-    );
+    addToast({
+      message: `報酬を受け取りました${quest.rewards.gold ? ` ${quest.rewards.gold}G` : ""}${quest.rewards.magicStones ? ` 魔石×${quest.rewards.magicStones}` : ""}`,
+      type: "success",
+      duration: 3000,
+    });
   };
 
-  const activeCount = allQuests.filter(
-    (q) => q.isActive && !q.isCompleted,
+  const activeCount = acceptedQuests.filter((q) => !q.isCompleted).length;
+  const completableCount = acceptedQuests.filter(
+    (q) => isQuestComplete(q) && !isQuestExpired(q),
   ).length;
-  const completedCount = allQuests.filter((q) => q.isCompleted).length;
 
   return (
     <div className="quests-tab">
       {/* Stats */}
       <div className="guild-quest-stats">
         <div className="guild-quest-stat">
-          <span className="guild-quest-stat-value">{allQuests.length}</span>
-          <span className="guild-quest-stat-label">Available</span>
+          <span className="guild-quest-stat-value">
+            {availableQuests.length}
+          </span>
+          <span className="guild-quest-stat-label">受注可能</span>
         </div>
         <div className="guild-quest-stat">
           <span className="guild-quest-stat-value">{activeCount}</span>
-          <span className="guild-quest-stat-label">Active</span>
+          <span className="guild-quest-stat-label">進行中</span>
         </div>
         <div className="guild-quest-stat">
-          <span className="guild-quest-stat-value">{completedCount}</span>
-          <span className="guild-quest-stat-label">Completed</span>
+          <span className="guild-quest-stat-value">{completableCount}</span>
+          <span className="guild-quest-stat-label">完了</span>
+        </div>
+        <div className="guild-quest-stat">
+          <span className="guild-quest-stat-value">
+            {completedQuests.length}
+          </span>
+          <span className="guild-quest-stat-label">達成済</span>
         </div>
       </div>
 
@@ -109,13 +135,7 @@ const QuestsTab = () => {
             className={`guild-quest-filter-btn ${filter === f ? "active" : ""}`}
             onClick={() => setFilter(f)}
           >
-            {f === "all"
-              ? "All"
-              : f === "daily"
-                ? "Daily"
-                : f === "weekly"
-                  ? "Weekly"
-                  : "Active"}
+            {FILTER_LABELS[f]}
           </button>
         ))}
       </div>
@@ -123,22 +143,27 @@ const QuestsTab = () => {
       {/* Quest List */}
       <div className="guild-quest-list">
         {filteredQuests.length === 0 ? (
-          <div className="guild-quest-empty">No quests available</div>
+          <div className="guild-quest-empty">
+            {filter === "active"
+              ? "受注中の依頼はありません"
+              : "依頼がありません"}
+          </div>
         ) : (
           filteredQuests.map((quest) => {
+            const isAccepted = quest.isActive;
             const complete = isQuestComplete(quest);
-            const claimed = claimedIds.has(quest.id);
+            const expired = isQuestExpired(quest);
 
             return (
               <div
                 key={quest.id}
-                className={`guild-quest-card ${quest.isCompleted ? "completed" : ""} ${quest.isActive ? "active" : ""}`}
+                className={`guild-quest-card ${quest.isCompleted ? "completed" : ""} ${isAccepted ? "active" : ""} ${expired ? "expired" : ""}`}
               >
                 <div className="guild-quest-card-header">
                   <div>
                     <h3 className="guild-quest-title">{quest.title}</h3>
                     <span className={`guild-quest-type-badge ${quest.type}`}>
-                      {quest.type === "daily" ? "Daily" : "Weekly"}
+                      {quest.type === "daily" ? "デイリー" : "ウィークリー"}
                     </span>
                   </div>
                 </div>
@@ -169,7 +194,7 @@ const QuestsTab = () => {
 
                 {/* Rewards */}
                 <div className="guild-quest-rewards">
-                  <span className="guild-quest-rewards-label">Rewards:</span>
+                  <span className="guild-quest-rewards-label">報酬:</span>
                   {quest.rewards.gold && (
                     <span className="guild-quest-reward-item gold">
                       {quest.rewards.gold}G
@@ -177,34 +202,34 @@ const QuestsTab = () => {
                   )}
                   {quest.rewards.magicStones && (
                     <span className="guild-quest-reward-item stones">
-                      {quest.rewards.magicStones} Stones
+                      魔石×{quest.rewards.magicStones}
                     </span>
                   )}
                 </div>
 
                 {/* Action Button */}
                 <div className="guild-quest-actions">
-                  {!quest.isActive && !quest.isCompleted && (
+                  {expired && (
+                    <span className="guild-quest-expired">期限切れ</span>
+                  )}
+                  {!expired && !isAccepted && !quest.isCompleted && (
                     <button
                       className="guild-quest-accept-btn"
-                      onClick={() => acceptQuest(quest.id)}
+                      onClick={() => handleAcceptQuest(quest.id)}
                     >
-                      Accept Quest
+                      受注する
                     </button>
                   )}
-                  {quest.isActive && complete && !claimed && (
+                  {!expired && isAccepted && complete && (
                     <button
                       className="guild-quest-claim-btn"
-                      onClick={() => claimReward(quest)}
+                      onClick={() => handleClaimReward(quest.id)}
                     >
-                      Claim Reward
+                      報酬を受け取る
                     </button>
                   )}
-                  {quest.isActive && !complete && !quest.isCompleted && (
-                    <span className="guild-quest-in-progress">In Progress</span>
-                  )}
-                  {claimed && (
-                    <span className="guild-quest-claimed">Claimed</span>
+                  {!expired && isAccepted && !complete && !quest.isCompleted && (
+                    <span className="guild-quest-in-progress">進行中</span>
                   )}
                 </div>
               </div>

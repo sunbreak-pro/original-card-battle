@@ -9,7 +9,6 @@
 
 | タスク | 優先度 | 仕様 | メモ |
 |--------|--------|------|------|
-| Quest System | Medium | [spec](.claude/feature_plans/quest_system.md) | デイリー/ウィークリークエスト |
 | Title System | Low | [spec](.claude/feature_plans/title_system.md) | 実績ベースの称号 |
 | NPC Conversation | Low | [spec](.claude/feature_plans/npc_conversation.md) | ギルド酒場の対話 |
 | Dark Market Expansion | Low | [spec](.claude/feature_plans/dark_market.md) | 信頼度・隠れたデメリット |
