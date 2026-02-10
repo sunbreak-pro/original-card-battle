@@ -8,6 +8,7 @@ import { Sanctuary } from "./ui/html/campsHtml/Sanctuary/Sanctuary.tsx";
 import { DungeonGate } from "./ui/html/dungeonHtml/DungeonGate.tsx";
 import { ExplorationScreen } from "./ui/html/dungeonHtml/ExplorationScreen.tsx";
 import { DungeonRunProvider } from "./contexts/DungeonRunContext.tsx";
+import { GuildProvider } from "./contexts/GuildContext.tsx";
 import { CharacterSelect } from "./ui/html/characterSelectHtml/CharacterSelect.tsx";
 import {
   GameStateProvider,
@@ -116,7 +117,9 @@ function App() {
                 <PlayerProvider>
                   <InventoryProvider>
                     <DungeonRunProvider>
-                      <AppContent />
+                      <GuildProvider>
+                        <AppContent />
+                      </GuildProvider>
                     </DungeonRunProvider>
                   </InventoryProvider>
                 </PlayerProvider>

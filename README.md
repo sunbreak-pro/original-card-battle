@@ -129,7 +129,7 @@ src/
 ### Context Provider 階層
 
 ```
-GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider
+GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider → GuildProvider
 ```
 
 バトル状態は `useBattleOrchestrator` フックが直接管理（別途Contextなし）。
@@ -139,7 +139,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 | カテゴリ | 進捗 | 備考 |
 |---------|------|------|
 | バトルシステム | 98% | コア、複数敵、逃走、属性共鳴、マルチヒット完了。AoEカード未実装 |
-| キャンプ施設 | 100% | 全5施設稼働（ショップ、ギルド[含倉庫]、鍛冶屋、聖域、ダンジョンゲート） |
+| キャンプ施設 | 100% | 全5施設稼働（ショップ、ギルド[含倉庫+依頼]、鍛冶屋、聖域、ダンジョンゲート） |
 | ダンジョン | 90% | マップ、ノード、イベント、5フロア進行、Depth 1-5 |
 | 進行システム | 98% | ライフ、ソウル、聖域、装備耐久度、熟練度、カード派生、カスタムデッキ |
 | セーブ | 実装済 | `src/domain/save/logic/saveManager.ts` |
@@ -174,6 +174,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | 日付 | 作業内容 | 進捗 |
 |------|----------|------|
+| 2026-02-10 | Quest System実装: GuildProviderをApp.tsxプロバイダー階層に追加、QuestsTabをGuildContext連携に書き換え（ローカルstate→Context）、BattleScreenに敵討伐クエスト進捗追跡統合（defeat/elite/boss）、NodeMapに探索・宝箱・生存クエスト進捗追跡統合、クエストデータ全テンプレート日本語化（デイリー8種+ウィークリー5種）、報酬受取トースト通知、期限切れクエストCSS追加 | 完了 |
 | 2026-02-07 | Journal戦術・記憶タブ改善: DeckTab全4タグ常時表示(0枚placeholder)、CardAddModalのcount+1サイクル方式+count-tagバッジ、DeckTab複数選択一括削除ボタン、MemoriesPage記憶タブをクラスフィルタ(プレイヤークラスのカードのみ表示)、カード3分類セクション(基礎/派生/才能)追加、デッキ更新時discoverCard自動呼出し統合 | 完了 |
 | 2026-02-06 | バグ修正+UI一新: swordEnergyバグ修正(executePlayerPhase内onTurnStart追加)、Sanctuary currentRunSouls表示削除、デッキエディタ4タイプ別グリッド化(DeckTab.tsx)、カード追加モーダル(CardAddModal.tsx新規)、ダンジョン探索2パネルUI(ExplorationScreen+左パネル:ステータス/アイテム/ジャーナルタブ+右マップ)、探索中アイテム使用(useExplorationItemUsage.ts)、探索中Journal表示(DeckReadOnlyView showEditButton prop追加) | 完了 |
 | 2026-02-06 | ニューゲームボタン+Continueボタンバグ修正: SettingsPage(Journal内)にニューゲームボタン追加(確認ダイアログ→Journal閉じる→character_select遷移)、SaveLoadUIからロードボタン削除、VictoryScreen.cssの.continue-buttonを.victory-screenでスコープ修正(CharacterSelectのContinueボタンがopacity:0で非表示だったバグ修正)、Settings.cssにnewgame-btnスタイル追加 | 完了 |
