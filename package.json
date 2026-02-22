@@ -13,7 +13,9 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@pixi/react": "^8.0.5",
     "@rollup/rollup-linux-arm64-gnu": "^4.57.1",
+    "pixi.js": "^8.16.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

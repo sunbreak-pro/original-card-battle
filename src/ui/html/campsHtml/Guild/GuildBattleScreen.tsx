@@ -1,9 +1,14 @@
 // GuildBattleScreen: Dedicated battle screen for promotion exams
 // Simplified version of BattleScreen.tsx without depth/encounter progression
 
-import { useEffect } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import type { EnemyDefinition } from "@/types/characterTypes";
 import { useBattle } from "@/domain/battles/managements/battleFlowManage";
+import { BattleCanvas } from "@/ui/pixi/battle/BattleCanvas";
+import type {
+  BattlePixiState,
+  PixiEffectCommand,
+} from "@/ui/pixi/types/pixiTypes";
 import { CardComponent } from "../../cardHtml/CardComponent";
 import { BattlingCardPileModal } from "../../cardHtml/CardModalDisplay";
 import { TurnOrderIndicator } from "../../battleHtml/TurnOrderIndicator";
@@ -63,7 +68,40 @@ const GuildBattleScreen = ({
     battleResult,
     currentPhaseIndex,
     expandedPhaseEntries,
+    isPlayerPhase,
   } = useBattle(1, [examEnemy]); // Fixed depth=1, specific enemy
+
+  // PixiJS integration: build state subset for canvas rendering
+  const [effectQueue, setEffectQueue] = useState<PixiEffectCommand[]>([]);
+  const handleEffectComplete = useCallback((index: number) => {
+    setEffectQueue((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const battlePixiState = useMemo<BattlePixiState>(
+    () => ({
+      playerHp,
+      playerMaxHp,
+      playerGuard,
+      enemies: aliveEnemies.map((e) => ({
+        hp: e.hp,
+        maxHp: e.maxHp,
+        guard: e.guard,
+        buffDebuffs: e.buffDebuffs,
+      })),
+      currentPhaseIndex,
+      isPlayerPhase,
+      playerClass,
+    }),
+    [
+      playerHp,
+      playerMaxHp,
+      playerGuard,
+      aliveEnemies,
+      currentPhaseIndex,
+      isPlayerPhase,
+      playerClass,
+    ],
+  );
 
   // Handle battle result callbacks
   useEffect(() => {
@@ -256,6 +294,11 @@ const GuildBattleScreen = ({
           </div>
         </div>
       </div>
+      <BattleCanvas
+        battleState={battlePixiState}
+        effectQueue={effectQueue}
+        onEffectComplete={handleEffectComplete}
+      />
 
       {/* Draw and Discard piles */}
       <div className="pile-icon draw" title="Draw Pile" onClick={openDrawPile}>
