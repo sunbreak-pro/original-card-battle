@@ -18,13 +18,25 @@
  * - Light: Cleanse, heal
  */
 
-import type { Card } from '@/types/cardTypes';
-import type { ElementalState, ElementType, ResonanceLevel, ResonanceEffectConfig } from '@/types/characterTypes';
-import { createInitialElemental } from '../classAbility/classAbilityUtils';
-import type { ClassAbilitySystem, DamageModifier } from "../classAbility/classAbilitySystem";
+import type { Card } from "@/types/cardTypes";
+import type {
+  ElementalState,
+  ElementType,
+  ResonanceLevel,
+  ResonanceEffectConfig,
+} from "@/types/characterTypes";
+import { createInitialElemental } from "../classAbility/classAbilityUtils";
+import type {
+  ClassAbilitySystem,
+  DamageModifier,
+} from "../classAbility/classAbilitySystem";
 import { DEFAULT_DAMAGE_MODIFIER } from "../classAbility/classAbilitySystem";
-import { MAX_RESONANCE_LEVEL, RESONANCE_MULTIPLIER, RESONANCE_EFFECTS } from "../../../../constants";
-import { MAGIC_ELEMENTS } from '@/constants/cardConstants';
+import {
+  MAX_RESONANCE_LEVEL,
+  RESONANCE_MULTIPLIER,
+  RESONANCE_EFFECTS,
+} from "../../../../constants";
+import { MAGIC_ELEMENTS } from "@/constants/cardConstants";
 
 // ============================================================
 // Elemental System Implementation
@@ -46,7 +58,7 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
    */
   onCardPlay(state: ElementalState, card: Card): ElementalState {
     // Find a magic element in the card's element array
-    const magicElement = card.element.find(e => MAGIC_ELEMENTS.has(e));
+    const magicElement = card.element.find((e) => MAGIC_ELEMENTS.has(e));
 
     if (!magicElement) {
       // No magic element - complete resonance reset (per design spec)
@@ -62,7 +74,10 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
 
     if (continuesChain) {
       // Continue resonance - increase level up to max
-      const newLevel = Math.min(MAX_RESONANCE_LEVEL, state.resonanceLevel + 1) as ResonanceLevel;
+      const newLevel = Math.min(
+        MAX_RESONANCE_LEVEL,
+        state.resonanceLevel + 1,
+      ) as ResonanceLevel;
       return {
         ...state,
         resonanceLevel: newLevel,
@@ -101,7 +116,11 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
    */
   getDamageModifier(state: ElementalState, card?: Card): DamageModifier {
     // Only apply bonus if playing an elemental card matching current element
-    if (!card?.element || !state.lastElement || !card.element.includes(state.lastElement)) {
+    if (
+      !card?.element ||
+      !state.lastElement ||
+      !card.element.includes(state.lastElement)
+    ) {
       return DEFAULT_DAMAGE_MODIFIER;
     }
 
@@ -110,7 +129,7 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
     return {
       flatBonus: 0,
       percentMultiplier: multiplier,
-      critBonus: state.resonanceLevel === 2 ? 0.10 : 0,
+      critBonus: state.resonanceLevel === 2 ? 0.1 : 0,
       penetration: 0,
     };
   },
@@ -154,7 +173,9 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
       chain: "連",
     };
 
-    const elementName = state.lastElement ? elementNames[state.lastElement] : "";
+    const elementName = state.lastElement
+      ? elementNames[state.lastElement]
+      : "";
     const resonanceNames = ["", "共鳴", "大共鳴"];
     return `${elementName}属性 ${resonanceNames[state.resonanceLevel]}`;
   },
@@ -165,6 +186,26 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
 // ============================================================
 
 /**
+ * Get the damage modifier for the card currently being played, accounting
+ * for the resonance update that this card itself triggers.
+ *
+ * Background (V-CHAIN-01): React state updates are asynchronous, so calling
+ * `onCardPlayed` before reading `getDamageModifier` still reads the stale
+ * pre-play state. This pure function computes a virtual post-play resonance
+ * state and derives the modifier from it, so the element of the card being
+ * played contributes to its own resonance damage (no 1-card lag).
+ *
+ * Non-card-play paths are unaffected: they keep using `getDamageModifier`.
+ */
+export function getDamageModifierIncludingCard(
+  state: ElementalState,
+  card: Card,
+): DamageModifier {
+  const virtualState = ElementalSystem.onCardPlay(state, card);
+  return ElementalSystem.getDamageModifier(virtualState, card);
+}
+
+/**
  * Get resonance effects for a given element and level.
  * When enhancedElements is provided and contains the element,
  * the base resonance effects are strengthened.
@@ -172,9 +213,10 @@ export const ElementalSystem: ClassAbilitySystem<ElementalState> = {
 export function getResonanceEffects(
   element: ElementType,
   level: ResonanceLevel,
-  enhancedElements?: ReadonlySet<ElementType>
+  enhancedElements?: ReadonlySet<ElementType>,
 ): ResonanceEffectConfig & { damageMultiplier: number } {
-  const baseEffects = level > 0 ? RESONANCE_EFFECTS[element][level as 1 | 2] : {};
+  const baseEffects =
+    level > 0 ? RESONANCE_EFFECTS[element][level as 1 | 2] : {};
   const result: ResonanceEffectConfig & { damageMultiplier: number } = {
     ...baseEffects,
     damageMultiplier: RESONANCE_MULTIPLIER[level],
@@ -190,7 +232,10 @@ export function getResonanceEffects(
         break;
       case "ice":
         if (result.freeze) {
-          result.freeze = { ...result.freeze, duration: result.freeze.duration + 1 };
+          result.freeze = {
+            ...result.freeze,
+            duration: result.freeze.duration + 1,
+          };
         }
         break;
       case "lightning":
@@ -224,9 +269,11 @@ export function getResonanceEffects(
  */
 export function updateResonance(
   state: ElementalState,
-  cardElement: ElementType | undefined
+  cardElement: ElementType | undefined,
 ): ElementalState {
-  return ElementalSystem.onCardPlay(state, { element: cardElement ? [cardElement] : [] } as Card);
+  return ElementalSystem.onCardPlay(state, {
+    element: cardElement ? [cardElement] : [],
+  } as Card);
 }
 
 /**
@@ -245,7 +292,11 @@ export function resetResonance(state: ElementalState): ElementalState {
  */
 export function isMatchingElement(
   state: ElementalState,
-  elements: ElementType[] | undefined
+  elements: ElementType[] | undefined,
 ): boolean {
-  return elements !== undefined && state.lastElement !== null && elements.includes(state.lastElement);
+  return (
+    elements !== undefined &&
+    state.lastElement !== null &&
+    elements.includes(state.lastElement)
+  );
 }

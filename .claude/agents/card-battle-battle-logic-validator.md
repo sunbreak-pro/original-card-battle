@@ -1,0 +1,1 @@
+/Users/newlife/dev/Claude/agents-lib/projects/original-card-battle/card-battle-battle-logic-validator.md

@@ -10,43 +10,43 @@ This is a React 19 + TypeScript card battle roguelike game with dungeon explorat
 
 | File                                     | Scope                                         |
 | ---------------------------------------- | --------------------------------------------- |
-| `.claude/code_overview/battle/orchestration.md`   | useBattleOrchestrator, phase queue, turn flow |
-| `.claude/code_overview/battle/damage-and-buff.md` | Damage calculation, buff/debuff system, DoT   |
+| `.claude/docs/code-explanation/battle/orchestration.md`   | useBattleOrchestrator, phase queue, turn flow |
+| `.claude/docs/code-explanation/battle/damage-and-buff.md` | Damage calculation, buff/debuff system, DoT   |
 
 ### Session 2: Battle Execution
 
 | File                                     | Scope                                                    |
 | ---------------------------------------- | -------------------------------------------------------- |
-| `.claude/code_overview/battle/card-execution.md`  | Card play resolution, multi-hit, energy                  |
-| `.claude/code_overview/battle/class-abilities.md` | useSwordEnergy, useElementalChain hooks (2 classes) |
+| `.claude/docs/code-explanation/battle/card-execution.md`  | Card play resolution, multi-hit, energy                  |
+| `.claude/docs/code-explanation/battle/class-abilities.md` | useSwordEnergy, useElementalChain hooks (2 classes) |
 
 ### Session 3: State & Economy
 
 | File                                   | Scope                                                     |
 | -------------------------------------- | --------------------------------------------------------- |
-| `.claude/code_overview/state/context-system.md` | Context hierarchy, save system, GameState routing         |
-| `.claude/code_overview/resource/economy.md`     | Gold dual-pool, magic stones, shop, blacksmith, sanctuary |
+| `.claude/docs/code-explanation/state/context-system.md` | Context hierarchy, save system, GameState routing         |
+| `.claude/docs/code-explanation/resource/economy.md`     | Gold dual-pool, magic stones, shop, blacksmith, sanctuary |
 
 ### Session 4: Characters
 
 | File                               | Scope                                                |
 | ---------------------------------- | ---------------------------------------------------- |
-| `.claude/code_overview/character/player.md` | PlayerContext, class abilities, title system         |
-| `.claude/code_overview/character/enemy.md`  | Enemy definitions, AI patterns, energy-based actions |
+| `.claude/docs/code-explanation/character/player.md` | PlayerContext, class abilities, title system         |
+| `.claude/docs/code-explanation/character/enemy.md`  | Enemy definitions, AI patterns, energy-based actions |
 
 ### Session 5: Cards & Inventory
 
 | File                                            | Scope                                                   |
 | ----------------------------------------------- | ------------------------------------------------------- |
-| `.claude/code_overview/cards/deck-and-mastery.md`        | 81 cards (2 classes), deck reducer, mastery levels                 |
-| `.claude/code_overview/inventory/equipment-and-items.md` | Equipment AP, durability, consumables, InventoryContext |
+| `.claude/docs/code-explanation/cards/deck-and-mastery.md`        | 81 cards (2 classes), deck reducer, mastery levels                 |
+| `.claude/docs/code-explanation/inventory/equipment-and-items.md` | Equipment AP, durability, consumables, InventoryContext |
 
 ### Session 6: Dungeon & Summary
 
 | File                                     | Scope                                                      |
 | ---------------------------------------- | ---------------------------------------------------------- |
-| `.claude/code_overview/dungeon/dungeon-system.md` | Map generation, node navigation, events, DungeonRunContext |
-| `.claude/code_overview/overall-summary.md`        | This file — cross-system overview                          |
+| `.claude/docs/code-explanation/dungeon/dungeon-system.md` | Map generation, node navigation, events, DungeonRunContext |
+| `.claude/docs/code-explanation/overall-summary.md`        | This file — cross-system overview                          |
 
 ## Architecture Overview
 

@@ -744,7 +744,7 @@ GAME_DESIGN_MASTER_V3.1 [This Document]
 **Future Features:**
 
 ```
-.claude/feature_plans/
+.claude/docs/vision/plans/
 ├── quest_system.md
 ├── npc_conversation.md
 ├── title_system.md
