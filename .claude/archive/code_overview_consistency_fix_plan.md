@@ -3,7 +3,7 @@
 ## Status: Completed (2026-02-05)
 
 ## Objective
-Updated `.claude/code_overview/` files to match the current codebase state, removing outdated references and correcting inaccuracies.
+Updated `.claude/docs/code-explanation/` files to match the current codebase state, removing outdated references and correcting inaccuracies.
 
 ---
 
@@ -31,7 +31,7 @@ Removed all summoner references from 7+ documentation files:
 | File | Old Path | New Path |
 |------|----------|----------|
 | `battle/class-abilities.md` | `src/domain/characters/classAbility/` | `src/domain/characters/player/classAbility/` |
-| `overall-summary.md` | `.claude/code/` | `.claude/code_overview/` |
+| `overall-summary.md` | `.claude/code/` | `.claude/docs/code-explanation/` |
 
 ---
 
@@ -83,15 +83,15 @@ GameStateProvider (screen routing, battle config, depth)
 
 ## Files Modified
 
-1. `.claude/code_overview/overall-summary.md`
-2. `.claude/code_overview/battle/class-abilities.md`
-3. `.claude/code_overview/character/player.md`
-4. `.claude/code_overview/cards/deck-and-mastery.md`
-5. `.claude/code_overview/state/context-system.md`
-6. `.claude/code_overview/vulnerability-remediation-guide.md`
-7. `.claude/code_overview/ai-reference/ai-reference.md`
-8. `.claude/code_overview/battle/card-execution.md`
-9. `.claude/code_overview/battle/damage-and-buff.md`
+1. `.claude/docs/code-explanation/overall-summary.md`
+2. `.claude/docs/code-explanation/battle/class-abilities.md`
+3. `.claude/docs/code-explanation/character/player.md`
+4. `.claude/docs/code-explanation/cards/deck-and-mastery.md`
+5. `.claude/docs/code-explanation/state/context-system.md`
+6. `.claude/docs/code-explanation/vulnerability-remediation-guide.md`
+7. `.claude/docs/code-explanation/ai-reference/ai-reference.md`
+8. `.claude/docs/code-explanation/battle/card-execution.md`
+9. `.claude/docs/code-explanation/battle/damage-and-buff.md`
 10. `README.md`
 
 ---

@@ -432,7 +432,7 @@ Header (Always Visible)
 
 ### 7.2 Future Features
 
-Planned features are tracked in `.claude/feature_plans/`:
+Planned features are tracked in `.claude/docs/vision/plans/`:
 
 - `quest_system.md` - Daily/Weekly quests for Guild
 - `npc_conversation.md` - NPC dialogue in Guild
@@ -571,7 +571,7 @@ Overall_document/game_design_master.md (Overall Design)
 **Future Features:**
 
 ```
-.claude/feature_plans/
+.claude/docs/vision/plans/
 ├── quest_system.md
 ├── npc_conversation.md
 ├── title_system.md

@@ -4,7 +4,7 @@
 **Status:** Completed
 
 ## Objective
-Create a comprehensive testing analysis document at `.claude/code_overview/testing_analysis.md` that documents the current testing infrastructure, identifies gaps, and provides foundational testing knowledge for future reference.
+Create a comprehensive testing analysis document at `.claude/docs/code-explanation/testing_analysis.md` that documents the current testing infrastructure, identifies gaps, and provides foundational testing knowledge for future reference.
 
 ## Document Scope
 - **Language:** English
@@ -81,7 +81,7 @@ Which approach is effective for this codebase:
 
 | File | Purpose |
 |------|---------|
-| `.claude/code_overview/testing_analysis.md` | Comprehensive testing analysis document |
+| `.claude/docs/code-explanation/testing_analysis.md` | Comprehensive testing analysis document |
 
 ---
 
