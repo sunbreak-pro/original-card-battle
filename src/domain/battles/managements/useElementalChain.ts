@@ -6,10 +6,13 @@
  */
 
 import { useState, useCallback } from "react";
-import type { Card } from '@/types/cardTypes';
-import type { ElementalState } from '@/types/characterTypes';
+import type { Card } from "@/types/cardTypes";
+import type { ElementalState } from "@/types/characterTypes";
 import type { DamageModifier } from "../../characters/player/classAbility/classAbilitySystem";
-import { ElementalSystem } from "../../characters/player/logic/elementalSystem";
+import {
+  ElementalSystem,
+  getDamageModifierIncludingCard,
+} from "../../characters/player/logic/elementalSystem";
 import type { ClassAbilityUI, UseClassAbilityReturn } from "./useClassAbility";
 
 // ============================================================================
@@ -28,7 +31,7 @@ function getElementalLevel(state: ElementalState): string {
 
 export function useElementalChain(): UseClassAbilityReturn<ElementalState> {
   const [abilityState, setAbilityState] = useState<ElementalState>(
-    ElementalSystem.initialize()
+    ElementalSystem.initialize(),
   );
 
   const onCardPlayed = useCallback((card: Card) => {
@@ -47,14 +50,21 @@ export function useElementalChain(): UseClassAbilityReturn<ElementalState> {
     (card?: Card): DamageModifier => {
       return ElementalSystem.getDamageModifier(abilityState, card);
     },
-    [abilityState]
+    [abilityState],
+  );
+
+  const getDamageModifierForPlay = useCallback(
+    (card: Card): DamageModifier => {
+      return getDamageModifierIncludingCard(abilityState, card);
+    },
+    [abilityState],
   );
 
   const canPerformAction = useCallback(
     (actionId: string): boolean => {
       return ElementalSystem.canPerformAction(abilityState, actionId);
     },
-    [abilityState]
+    [abilityState],
   );
 
   const getAbilityUI = useCallback((): ClassAbilityUI => {
@@ -78,6 +88,7 @@ export function useElementalChain(): UseClassAbilityReturn<ElementalState> {
     onTurnStart,
     onTurnEnd,
     getDamageModifier,
+    getDamageModifierForPlay,
     canPerformAction,
     getAbilityUI,
     resetAbility,

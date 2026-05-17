@@ -10,11 +10,11 @@
  */
 
 import { useState, useCallback } from "react";
-import type { Card } from '@/types/cardTypes';
+import type { Card } from "@/types/cardTypes";
 import type {
   ClassAbilityState,
   SwordEnergyState,
-} from '@/types/characterTypes';
+} from "@/types/characterTypes";
 import type {
   ClassAbilitySystem,
   DamageModifier,
@@ -72,6 +72,14 @@ export interface UseClassAbilityReturn<T extends ClassAbilityState> {
   /** Get damage modifier for current state */
   getDamageModifier: (card?: Card) => DamageModifier;
 
+  /**
+   * Get damage modifier for the card being played, including the resonance
+   * update this very card triggers (fixes V-CHAIN-01 1-card lag).
+   * Only implemented by abilities where the played card affects its own
+   * modifier (Mage elemental resonance). Optional for other classes.
+   */
+  getDamageModifierForPlay?: (card: Card) => DamageModifier;
+
   /** Check if an action can be performed */
   canPerformAction: (actionId: string) => boolean;
 
@@ -107,7 +115,7 @@ function getSwordEnergyLabel(): string {
  */
 export function useSwordEnergy(): UseClassAbilityReturn<SwordEnergyState> {
   const [abilityState, setAbilityState] = useState<SwordEnergyState>(
-    createInitialSwordEnergy()
+    createInitialSwordEnergy(),
   );
 
   const onCardPlayed = useCallback((card: Card) => {
@@ -126,14 +134,14 @@ export function useSwordEnergy(): UseClassAbilityReturn<SwordEnergyState> {
     (card?: Card): DamageModifier => {
       return SwordEnergySystem.getDamageModifier(abilityState, card);
     },
-    [abilityState]
+    [abilityState],
   );
 
   const canPerformAction = useCallback(
     (actionId: string): boolean => {
       return SwordEnergySystem.canPerformAction(abilityState, actionId);
     },
-    [abilityState]
+    [abilityState],
   );
 
   const getAbilityUI = useCallback((): ClassAbilityUI => {
@@ -180,7 +188,7 @@ export function useSwordEnergy(): UseClassAbilityReturn<SwordEnergyState> {
 export function useClassAbility<T extends ClassAbilityState>(
   system: ClassAbilitySystem<T>,
   getLabel: () => string,
-  getLevel: (state: T) => string
+  getLevel: (state: T) => string,
 ): UseClassAbilityReturn<T> {
   const [abilityState, setAbilityState] = useState<T>(system.initialize());
 
@@ -188,7 +196,7 @@ export function useClassAbility<T extends ClassAbilityState>(
     (card: Card) => {
       setAbilityState((prev) => system.onCardPlay(prev, card));
     },
-    [system]
+    [system],
   );
 
   const onTurnStart = useCallback(() => {
@@ -203,14 +211,14 @@ export function useClassAbility<T extends ClassAbilityState>(
     (card?: Card): DamageModifier => {
       return system.getDamageModifier(abilityState, card);
     },
-    [system, abilityState]
+    [system, abilityState],
   );
 
   const canPerformAction = useCallback(
     (actionId: string): boolean => {
       return system.canPerformAction(abilityState, actionId);
     },
-    [system, abilityState]
+    [system, abilityState],
   );
 
   const getAbilityUI = useCallback((): ClassAbilityUI => {
@@ -250,7 +258,7 @@ export function useClassAbility<T extends ClassAbilityState>(
  * Create appropriate class ability hook based on character class
  */
 export function createClassAbilityHook(
-  characterClass: "swordsman" | "mage"
+  characterClass: "swordsman" | "mage",
 ): () => UseClassAbilityReturn<ClassAbilityState> {
   switch (characterClass) {
     case "swordsman":

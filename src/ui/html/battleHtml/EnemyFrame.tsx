@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import type { EnemyDefinition, EnemyAction } from "@/types/characterTypes";
 import type { BuffDebuffMap } from "@/types/battleTypes";
 import StatusEffectDisplay from "../componentsHtml/BuffEffect";
-import { determineEnemyAction } from "@/domain/characters/enemy/logic/enemyAI";
+import { resolveEnemyAction } from "@/domain/characters/enemy/logic/enemyAI";
 import { GUARD_BAR_DISPLAY_MAX, ENERGY_ANIMATION } from "@/constants";
 
 // Action type determination for icon display
@@ -104,12 +104,16 @@ const EnemyLocate: React.FC<{
     }
   }, [isConsuming]);
 
-  // Preview next action (Ver 4.0)
-  const nextAction: EnemyAction = determineEnemyAction(
+  // Preview next action (Ver 4.0).
+  // V-ENM-02: use the shared resolution cache (callIndex 0 = first action)
+  // so this render-time preview always matches what execute will perform,
+  // and re-renders no longer roll a fresh random action each time.
+  const nextAction: EnemyAction = resolveEnemyAction(
     state.definition,
     state.hp,
     state.maxHp,
     state.turnCount + 1,
+    0,
   );
 
   const actionType = getActionType(nextAction);
