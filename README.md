@@ -129,7 +129,7 @@ src/
 ### Context Provider 階層
 
 ```
-GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider
+GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider → GuildProvider
 ```
 
 バトル状態は `useBattleOrchestrator` フックが直接管理（別途Contextなし）。

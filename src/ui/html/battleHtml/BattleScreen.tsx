@@ -43,6 +43,7 @@ import {
 } from "@/domain/battles/logic/escapeLogic";
 import { checkAllDerivationUnlocks } from "@/domain/cards/logic/cardDerivation";
 import { getCardDataByClass } from "@/constants/data/characters/CharacterClassData";
+import { useGuild } from "@/contexts/GuildContext";
 import { logger } from "@/utils/logger";
 /**
  * Collect mastery from all cards in deck and merge with existing store
@@ -90,6 +91,7 @@ const BattleScreen = ({
   } = usePlayer();
   const { addMagicStones, resetExplorationResources } = useResources();
   const { navigateTo, gameState } = useGameState();
+  const { updateQuestProgress } = useGuild();
 
   // Get encounter size from battle config (default to "single")
   const encounterSize: EncounterSize =
@@ -460,6 +462,15 @@ const BattleScreen = ({
       currentAp: playerAp,
       cardMasteryStore: updatedMastery,
     });
+
+    // Track quest progress for enemy defeat
+    updateQuestProgress("defeat", "any", 1);
+    if (enemyType === "three") {
+      updateQuestProgress("defeat", "elite", 1);
+    }
+    if (enemyType === "boss") {
+      updateQuestProgress("defeat", "boss", 1);
+    }
 
     if (onWin) {
       onWin();

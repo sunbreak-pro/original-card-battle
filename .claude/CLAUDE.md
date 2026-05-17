@@ -105,9 +105,10 @@ ErrorBoundary
             → PlayerProvider (player stats, deck, equipment)
               → InventoryProvider (items, storage)
                 → DungeonRunProvider (dungeon exploration state)
+                  → GuildProvider (quests, rumors)
 ```
 
-Battle state is managed by `useBattleOrchestrator` hook (transient, not Context). `GuildContext` is local to Guild screen only.
+Battle state is managed by `useBattleOrchestrator` hook (transient, not Context).
 
 ### Screen Routing (GameStateContext)
 
