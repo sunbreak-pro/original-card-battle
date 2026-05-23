@@ -10,6 +10,7 @@ import { BattlingCardPileModal } from "../cardHtml/CardModalDisplay";
 import { TurnOrderIndicator } from "./TurnOrderIndicator";
 import EnemyFrame from "./EnemyFrame";
 import PlayerFrame from "./PlayerFrame";
+import { BattleCanvas } from "../../pixi/battle/BattleCanvas";
 import VictoryScreen from "./VictoryScreen";
 import DefeatScreen from "./DefeatScreen";
 import UseItemModal from "./UseItemModal";
@@ -408,9 +409,7 @@ const BattleScreen = ({
     );
 
     // Check for card derivation unlocks
-    const classCardData = getCardDataByClass(
-      playerData.persistent.playerClass,
-    );
+    const classCardData = getCardDataByClass(playerData.persistent.playerClass);
     const unlocks = checkAllDerivationUnlocks(
       allBattleCards,
       classCardData,
@@ -613,6 +612,14 @@ const BattleScreen = ({
           theme={theme}
         />
       </div>
+      <BattleCanvas
+        playerHp={playerHp}
+        playerMaxHp={playerMaxHp}
+        enemyHp={aliveEnemies[0]?.hp ?? 0}
+        enemyMaxHp={aliveEnemies[0]?.maxHp ?? 0}
+        isPlayerPhase={isPlayerPhase}
+        phaseCount={phaseCount}
+      />
       <div className="hand-container">
         {/* Left Section: Draw/Discard Piles */}
         <div className="pile-section">
@@ -673,8 +680,8 @@ const BattleScreen = ({
                     card.cost <= playerEnergy &&
                     !isDiscarding &&
                     (card.swordEnergyConsume === undefined ||
-                     card.swordEnergyConsume === 0 ||
-                     swordEnergy.current >= card.swordEnergyConsume)
+                      card.swordEnergyConsume === 0 ||
+                      swordEnergy.current >= card.swordEnergyConsume)
                   }
                 />
               </div>

@@ -20,7 +20,7 @@
   gap: 1.5vh;
   overflow: hidden;
   color: white;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   box-sizing: border-box;
 }
 
@@ -45,8 +45,6 @@
   text-transform: uppercase;
   letter-spacing: 0.15vw;
 }
-
-
 
 /* =========================================
    Battle Field
@@ -132,7 +130,9 @@
   background: rgba(0, 0, 0, 0.9);
   border: 0.4vh solid var(--theme-accent);
   border-radius: 2vh;
-  box-shadow: 0 0 6vh var(--theme-glow), inset 0 0 3vh rgba(0, 0, 0, 0.8);
+  box-shadow:
+    0 0 6vh var(--theme-glow),
+    inset 0 0 3vh rgba(0, 0, 0, 0.8);
   animation: turnMessageAppear 2.5s ease-in-out forwards;
   pointer-events: none;
 }
@@ -170,7 +170,36 @@
 }
 
 @keyframes escapeAttempt {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-  20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* =========================================
+   PixiJS Overlay (Phase 1)
+   Sits above .battle-field, below .hand-container(z-index:100).
+   z-index:15 (NOT 5 — battle-field content occupies the lower stack).
+   Shared CSS, so both BattleScreen and GuildBattleScreen reuse this.
+   Same box geometry as .battle-field so the canvas aligns 1:1.
+   ========================================= */
+.battle-screen .battle-pixi-host {
+  position: absolute;
+  top: 18vh;
+  left: 5vw;
+  width: 90vw;
+  height: 51vh;
+  z-index: 15;
+  pointer-events: none; /* clicks fall through to the DOM battle UI */
+}
+.battle-screen .battle-pixi-host canvas {
+  pointer-events: none;
 }
