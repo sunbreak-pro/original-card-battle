@@ -2,6 +2,25 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-05-23 - PixiJS Phase 1 基盤実装（ハイブリッド描画レイヤー導入）
+
+#### 概要
+
+既存 DOM/CSS バトル演出を温存したまま、`.battle-field` 上に透過 PixiJS キャンバスを重ねる「ハイブリッド描画」基盤を導入。lead-pipeline 重ティアのフルチェーン（session-manager START → role-pm → role-engineer → session-verifier → role-qa + security-reviewer 並列）で実施。Step 0 では @pixi/react v8 の未解決 issue #602（StrictMode 二重マウント時の WebGL context stale）を A 案（React.lazy + mountedRef post-commit ゲート）で構造的回避。QA 判定 PASS-with-fixes（Blocker0 / 実害ある Major0）。実機検証で起動・オーバーレイ表示・クリック貫通・StrictMode 往復・リサイズ追従を全て OK 確認。
+
+#### 変更点
+
+- **計画書（コードレベル版）作成**: `docs/vision/plans/2026-05-17-pixijs-phase1-code-level.md` を新規作成し旧抽象版 `pixijs_phase1_foundation.md` を超越。§0B で旧計画を 6 観点監査し致命的誤り 3（particle-emitter 死亡・z-index:5 誤り・StrictMode #602 未考慮）+ 要修正 4 を是正。実装完了でファイルを `.claude/archive/` へ移動・Status=COMPLETED
+- **依存追加**: `pixi.js@^8.18.1` + `@pixi/react@^8.0.5` の 2 本のみ。`@pixi/particle-emitter` は v8 メンテ停止のため**意図的に未導入**。`vite.config.ts` も無変更（pixi v8 は native ESM で optimizeDeps 不要）
+- **新規 `src/ui/pixi/` ツリー**: `core/PixiStage.tsx`（`extend({Container,Graphics,Sprite,Text})` + `<Application>` 透過設定 + `preference:'webgl'` 固定）、`core/usePixiApp.ts`（`useApplication` 再エクスポート + `usePixiEventGuard` で `renderer.events.features.move=false` を 1 箇所に確定）、`battle/BattleCanvas.tsx`（Step 0-A の React.lazy + mountedRef マウントガード）、`battle/layers/`（Background/Character は空コンテナ、Effect はテスト粒子）、`battle/PixiEffectBridge.ts`（命令型 API シグネチャ骨格）、`types/pixiTypes.ts`（`BattlePixiProps`）
+- **画面統合**: `BattleScreen.tsx` と `GuildBattleScreen.tsx` の両 `.battle-field` 直後に `<BattleCanvas>` を挿入（後者は前者を再利用せず構造複製のため両ファイル個別修正）
+- **CSS レイヤリング**: `battle-layout.css` に `.battle-screen .battle-pixi-host { z-index: 15; pointer-events: none; ... }` 追加（field=10 と hand=100 の間）。CSS 共通のため両画面でスコープ機能
+- **Step 0 採用**: A 案（React.lazy + useRef マウントガード）。`main.tsx` の `<StrictMode>` は無変更で維持。B 案（dev のみ StrictMode 外し）は不要だったため不採用
+- **テスト**: 新規 4 件（`pixiFoundation.test.ts`）+ 既存全 pass（123/123、回帰ゼロ）。WebGL/reconciler 依存テストは jsdom 制約により意図的に契約・layer に限定（コメントで理由明示）
+- **意図的 lint disable 3 箇所**: `BattleCanvas.tsx`(set-state-in-effect=Step 0-A post-commit ゲート)、`usePixiApp.ts`(immutability=PixiJS 命令型 API 設定)、`EffectLayer.tsx`(exhaustive-deps=rAF ループ再起動防止)。いずれも該当行限定 + 理由コメント付き
+- **独立監査**: role-qa（PASS-with-fixes）+ security-reviewer 並列。security は 9 脆弱性が**全て dev/build 専用ツールチェーン由来・非 PixiJS 由来**と確定、リリースブロックなし。ただし既存の `package.json` の rollup ネイティブバイナリ・ハードコード（time bomb）を発見 → MEMORY 予定 #5 として独立タスク起票（Phase 1 コミットには混ぜない）
+- **方針合意**: rollup ハードコード除去は別タスク・別コミット。Phase 1 は実機検証後に commit/PR（ユーザー方針）
+
 ### 2026-05-17 - バトルロジック脆弱性修正（V-CHAIN-01 / V-ENM-02 + 回帰テスト + 脆弱性ガイド正本化）
 
 #### 概要

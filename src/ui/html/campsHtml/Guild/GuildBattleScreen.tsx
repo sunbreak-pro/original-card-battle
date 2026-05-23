@@ -9,6 +9,7 @@ import { BattlingCardPileModal } from "../../cardHtml/CardModalDisplay";
 import { TurnOrderIndicator } from "../../battleHtml/TurnOrderIndicator";
 import StatusEffectDisplay from "../../componentsHtml/BuffEffect";
 import EnemyDisplay from "../../battleHtml/EnemyFrame";
+import { BattleCanvas } from "../../../pixi/battle/BattleCanvas";
 import "../../../css/battle/BattleScreen.css";
 
 interface GuildBattleScreenProps {
@@ -63,6 +64,7 @@ const GuildBattleScreen = ({
     battleResult,
     currentPhaseIndex,
     expandedPhaseEntries,
+    isPlayerPhase,
   } = useBattle(1, [examEnemy]); // Fixed depth=1, specific enemy
 
   // Handle battle result callbacks
@@ -256,6 +258,15 @@ const GuildBattleScreen = ({
           </div>
         </div>
       </div>
+
+      <BattleCanvas
+        playerHp={playerHp}
+        playerMaxHp={playerMaxHp}
+        enemyHp={aliveEnemies[0]?.hp ?? 0}
+        enemyMaxHp={aliveEnemies[0]?.maxHp ?? 0}
+        isPlayerPhase={isPlayerPhase}
+        phaseCount={phaseCount}
+      />
 
       {/* Draw and Discard piles */}
       <div className="pile-icon draw" title="Draw Pile" onClick={openDrawPile}>
