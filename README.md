@@ -5,12 +5,14 @@ TypeScript + React を学びながら Claude Code と共に開発中。
 
 ## Tech Stack
 
-| 技術       | バージョン |
-| ---------- | ---------- |
-| React      | 19.2       |
-| TypeScript | 5.9        |
-| Vite       | 7          |
-| Node.js    | LTS        |
+| 技術        | バージョン |
+| ----------- | ---------- |
+| React       | 19.2       |
+| TypeScript  | 5.9        |
+| Vite        | 7          |
+| PixiJS      | 8.6        |
+| @pixi/react | 8.0.5      |
+| Node.js     | LTS        |
 
 ## Getting Started
 
@@ -122,6 +124,11 @@ src/
 │   │   ├── cardHtml/       # カード表示
 │   │   ├── characterSelectHtml/ # キャラ選択
 │   │   └── componentsHtml/ # 共通コンポーネント（FacilityHeader, BackToCampButton, FacilityTabNav等）
+│   ├── pixi/          # PixiJS レンダリング（Phase 1 基盤）
+│   │   ├── core/          # PixiStage, usePixiApp
+│   │   ├── battle/        # BattleCanvas, layers/, PixiEffectBridge
+│   │   ├── shared/        # particles/, textures/
+│   │   └── types/         # pixiTypes.ts
 │   └── css/            # スタイルシート（battle/, card/, camps/, core/, components/, pages/, animations/）
 └── utils/          # ユーティリティ
 ```
@@ -136,17 +143,19 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 ## Implementation Status
 
-| カテゴリ       | 進捗   | 備考                                                                    |
-| -------------- | ------ | ----------------------------------------------------------------------- |
-| バトルシステム | 98%    | コア、複数敵、逃走、属性共鳴、マルチヒット完了。AoEカード未実装         |
-| キャンプ施設   | 100%   | 全5施設稼働（ショップ、ギルド[含倉庫]、鍛冶屋、聖域、ダンジョンゲート） |
-| ダンジョン     | 90%    | マップ、ノード、イベント、5フロア進行、Depth 1-5                        |
-| 進行システム   | 98%    | ライフ、ソウル、聖域、装備耐久度、熟練度、カード派生、カスタムデッキ    |
-| セーブ         | 実装済 | `src/domain/save/logic/saveManager.ts`                                  |
-| キャラ画像     | 90%    | プレイヤー画像バトル表示。敵imagePath全設定済（画像ファイル未作成）     |
+| カテゴリ       | 進捗        | 備考                                                                    |
+| -------------- | ----------- | ----------------------------------------------------------------------- |
+| バトルシステム | 98%         | コア、複数敵、逃走、属性共鳴、マルチヒット完了。AoEカード未実装         |
+| キャンプ施設   | 100%        | 全5施設稼働（ショップ、ギルド[含倉庫]、鍛冶屋、聖域、ダンジョンゲート） |
+| ダンジョン     | 90%         | マップ、ノード、イベント、5フロア進行、Depth 1-5                        |
+| 進行システム   | 98%         | ライフ、ソウル、聖域、装備耐久度、熟練度、カード派生、カスタムデッキ    |
+| セーブ         | 実装済      | `src/domain/save/logic/saveManager.ts`                                  |
+| キャラ画像     | 90%         | プレイヤー画像バトル表示。敵imagePath全設定済（画像ファイル未作成）     |
+| PixiJS統合     | Phase 1完了 | 透明キャンバスオーバーレイ基盤、テストパーティクル、WebGL2描画確認済    |
 
 ### 未実装
 
+- PixiJS Phase 2-4（バトルエフェクト、アセット管理、パフォーマンス最適化）
 - AoEカード（全敵同時ダメージ）
 - EnemyFrame の SVG アイコン化（現在は絵文字）
 - 敵画像アセット（全50体の imagePath は設定済、PNGファイル未作成）
@@ -174,8 +183,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 | 日付       | 作業内容                                                                                                                                                                                                                                                                                                                                                                                                             | 進捗 |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 2026-05-17 | バトルロジック脆弱性修正: V-CHAIN-01(魔術師共鳴1枚遅れ→play-aware化)、V-ENM-02(敵AI preview/execute乖離→行動メモ化共有)修正、回帰テスト4ファイル44件追加、脆弱性ガイド正本化(README整合確認・ガイド陳腐化解消)。残課題はknown-issue 001(resonance debuff非対称)起票                                                                                                                                                  | 完了 |
-| 2026-05-17 | .claudeハーネス構造をlife-editor準拠へリファクタ: ディレクトリ標準化(code_overview→docs/code-explanation等のgit mv)、MEMORY.md/HISTORY.md新設、CLAUDE.md再構成、プロジェクト固有エージェント3体作成                                                                                                                                                                                                                  | 完了 |
+| 2026-02-22 | PixiJS Phase 1 基盤構築: pixi.js v8.6 + @pixi/react v8.0.5 導入、ハイブリッドレンダリング基盤（透明キャンバスオーバーレイ）、BattleCanvas/PixiStage/EffectLayer/BackgroundLayer/CharacterLayer作成、ネイティブGraphicsパーティクルシステム（@pixi/particle-emitter v5はv8非互換のため不使用）、BattleScreen+GuildBattleScreen統合、PixiEffectBridge+TextureManager骨格、WebGL2描画・z-index階層・既存UI動作確認済    | 完了 |
 | 2026-02-07 | Journal戦術・記憶タブ改善: DeckTab全4タグ常時表示(0枚placeholder)、CardAddModalのcount+1サイクル方式+count-tagバッジ、DeckTab複数選択一括削除ボタン、MemoriesPage記憶タブをクラスフィルタ(プレイヤークラスのカードのみ表示)、カード3分類セクション(基礎/派生/才能)追加、デッキ更新時discoverCard自動呼出し統合                                                                                                       | 完了 |
 | 2026-02-06 | バグ修正+UI一新: swordEnergyバグ修正(executePlayerPhase内onTurnStart追加)、Sanctuary currentRunSouls表示削除、デッキエディタ4タイプ別グリッド化(DeckTab.tsx)、カード追加モーダル(CardAddModal.tsx新規)、ダンジョン探索2パネルUI(ExplorationScreen+左パネル:ステータス/アイテム/ジャーナルタブ+右マップ)、探索中アイテム使用(useExplorationItemUsage.ts)、探索中Journal表示(DeckReadOnlyView showEditButton prop追加) | 完了 |
 | 2026-02-06 | ニューゲームボタン+Continueボタンバグ修正: SettingsPage(Journal内)にニューゲームボタン追加(確認ダイアログ→Journal閉じる→character_select遷移)、SaveLoadUIからロードボタン削除、VictoryScreen.cssの.continue-buttonを.victory-screenでスコープ修正(CharacterSelectのContinueボタンがopacity:0で非表示だったバグ修正)、Settings.cssにnewgame-btnスタイル追加                                                           | 完了 |
@@ -192,7 +200,7 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 | 2026-02-05 | 脆弱性修正 Phase 1 (Session 1-6): V-EXEC-01/02 (敵マルチアクション死亡後実行・デバフ上書き), V-EXEC-03 (マルチヒットガード/AP割り当て), V-EXEC-04 (敵turnCountインクリメント), V-PHASE-01/02 (敵フェーズバフタイミング), V-DMG-MANAGE-01 (デッドコード削除)                                                                                                                                                          | 完了 |
 | 2026-02-05 | code_overview整合性修正: Summoner参照削除、CharacterClass 2クラス化、ファイルパス修正、行数更新(PlayerContext 675行等)、カード数修正(41枚→README修正)、useDeckManage.ts削除反映、title.ts/swordsmanCards.tsリネーム反映、Context階層にSettings/Toast追加                                                                                                                                                             | 完了 |
 | 2026-02-05 | 統合実装計画 V1.0: Phase 1A (バグ修正: セーブロード、鍛冶屋装備表示、敗北画面リトライ削除、NodeMap HP修正)、Phase 1C (AoEカードサポート)、Phase 1D (EnemyFrame SVGアイコン化)、Phase 2 (Summoner設計書6ファイル削除)、Phase 3 (装備AP警告)、Phase 5 (buffLogicテスト追加: 13テスト)                                                                                                                                  | 完了 |
-| 2026-02-05 | テスト分析ドキュメント作成: `.claude/docs/code-explanation/testing_analysis.md` - テスト基礎、既存インフラ分析、カバレッジギャップ、推奨アプローチ                                                                                                                                                                                                                                                                   | 完了 |
+| 2026-02-05 | テスト分析ドキュメント作成: `.claude/code_overview/testing_analysis.md` - テスト基礎、既存インフラ分析、カバレッジギャップ、推奨アプローチ                                                                                                                                                                                                                                                                           | 完了 |
 | 2026-02-05 | 設計書・実装整合性修正: Soul System 100%転送修正、sanctuary_design.md V3.1ノート削除、shop_design.md Teleport Stone統一(V3.0)、journal_system_implementation_plan.md完全書き直し、exploration_limit→Lives System用語更新                                                                                                                                                                                             | 完了 |
 | 2026-02-04 | 設計書統合: BaseCamp施設7→5に統合、Library→Journal(ヘッダーUI)、Storage→Guild(タブ)、将来機能をfeature_plans/に分離                                                                                                                                                                                                                                                                                                  | 完了 |
 | 2026-02-04 | カード設計書・実装整合性修正: 剣士7件値修正+風纏い追加(42→43枚)、魔術師5件値修正、設計書から召喚士記述削除                                                                                                                                                                                                                                                                                                           | 完了 |

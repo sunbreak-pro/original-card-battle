@@ -1,5 +1,10 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import type { Depth, Card } from "@/types/cardTypes";
+import { BattleCanvas } from "@/ui/pixi/battle/BattleCanvas";
+import type {
+  BattlePixiState,
+  PixiEffectCommand,
+} from "@/ui/pixi/types/pixiTypes";
 import {
   useBattle,
   type InitialPlayerState,
@@ -192,6 +197,38 @@ const BattleScreen = ({
   } = useBattle(depth, undefined, initialPlayerState, encounterSize, {
     onApDamage: applyEquipmentDurabilityDamage,
   });
+
+  // PixiJS integration: build state subset for canvas rendering
+  const [effectQueue, setEffectQueue] = useState<PixiEffectCommand[]>([]);
+  const handleEffectComplete = useCallback((index: number) => {
+    setEffectQueue((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const battlePixiState = useMemo<BattlePixiState>(
+    () => ({
+      playerHp,
+      playerMaxHp,
+      playerGuard,
+      enemies: aliveEnemies.map((e) => ({
+        hp: e.hp,
+        maxHp: e.maxHp,
+        guard: e.guard,
+        buffDebuffs: e.buffDebuffs,
+      })),
+      currentPhaseIndex,
+      isPlayerPhase,
+      playerClass,
+    }),
+    [
+      playerHp,
+      playerMaxHp,
+      playerGuard,
+      aliveEnemies,
+      currentPhaseIndex,
+      isPlayerPhase,
+      playerClass,
+    ],
+  );
 
   // Handle player death penalty when defeated
   // Side effect (updatePlayerData, decreaseLives) must run in useEffect, not during render
@@ -613,12 +650,9 @@ const BattleScreen = ({
         />
       </div>
       <BattleCanvas
-        playerHp={playerHp}
-        playerMaxHp={playerMaxHp}
-        enemyHp={aliveEnemies[0]?.hp ?? 0}
-        enemyMaxHp={aliveEnemies[0]?.maxHp ?? 0}
-        isPlayerPhase={isPlayerPhase}
-        phaseCount={phaseCount}
+        battleState={battlePixiState}
+        effectQueue={effectQueue}
+        onEffectComplete={handleEffectComplete}
       />
       <div className="hand-container">
         {/* Left Section: Draw/Discard Piles */}

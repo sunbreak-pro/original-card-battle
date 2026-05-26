@@ -1,18 +1,13 @@
+import type { PixiEffectCommand } from "../types/pixiTypes";
+import { PIXI_EFFECT_TYPE } from "../types/pixiTypes";
+
 /**
- * Imperative effect API surface for the Pixi battle overlay.
- *
- * Phase 1 only fixes the *signatures* (so callers / the Phase 2 wiring have a
- * stable contract) and implements a single concrete effect: `playTestParticle`
- * (rendered inside `EffectLayer`). The damage/heal/shield methods are declared
- * but intentionally unimplemented until Phase 2, when this bridge is wired to
- * `useCardAnimation`.
- *
- * Keeping this as a plain command-style interface (no React coupling) is the
- * intended escape hatch: if @pixi/react proves unstable we can back this with
- * vanilla pixi.js without changing call sites.
+ * Bridge API between DOM-based battle hooks and PixiJS effects.
+ * Phase 1: Only playTestParticle is implemented.
+ * Phase 2: Will implement damage, heal, shield, card effects.
  */
-export interface PixiEffectBridge {
-  // --- Phase 2 (signatures locked, no implementation yet) ---
+export interface PixiEffectBridgeAPI {
+  playTestParticle(x: number, y: number, color: string): void;
   playDamageEffect(
     target: "player" | "enemy",
     damage: number,

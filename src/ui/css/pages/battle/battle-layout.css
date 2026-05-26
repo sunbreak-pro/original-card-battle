@@ -60,6 +60,7 @@
   width: 90vw;
   height: 51vh;
   margin: 0;
+  z-index: 1;
 }
 
 /* =========================================
@@ -182,24 +183,4 @@
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
-}
-
-/* =========================================
-   PixiJS Overlay (Phase 1)
-   Sits above .battle-field, below .hand-container(z-index:100).
-   z-index:15 (NOT 5 — battle-field content occupies the lower stack).
-   Shared CSS, so both BattleScreen and GuildBattleScreen reuse this.
-   Same box geometry as .battle-field so the canvas aligns 1:1.
-   ========================================= */
-.battle-screen .battle-pixi-host {
-  position: absolute;
-  top: 18vh;
-  left: 5vw;
-  width: 90vw;
-  height: 51vh;
-  z-index: 15;
-  pointer-events: none; /* clicks fall through to the DOM battle UI */
-}
-.battle-screen .battle-pixi-host canvas {
-  pointer-events: none;
 }
