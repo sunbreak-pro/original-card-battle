@@ -1,0 +1,1543 @@
+/* =========================================
+   Guild Tavern Styles
+   =========================================
+   Dark Fantasy Theme
+   Imports shared components for consistency.
+   ========================================= */
+
+/* Shared components */
+@import "../../css/core/variables.css";
+@import "../../css/animations/keyframes.css";
+@import "../../css/components/notifications.css";
+@import "../../css/components/tabs.css";
+@import "../../css/components/buttons.css";
+@import "../../css/components/badges.css";
+@import "../../css/components/bars.css";
+@import "../../css/components/panels.css";
+@import "../../css/components/modals.css";
+
+.guild-background {
+  position: absolute;
+  top: 0vh;
+  right: 0vh;
+  width: 100vw;
+  height: 100vh;
+  opacity: 0.8;
+  z-index: 0;
+  pointer-events: none;
+}
+.guild-screen {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  color: #e8d5b7;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+/* Header */
+.guild-header {
+  text-align: center;
+  margin-bottom: 1.5vh;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(232, 213, 183, 0.2);
+}
+
+.guild-title {
+  font-size: 5vh;
+  margin: 0 0 0.5rem 0;
+  color: #f4e4c1;
+  text-shadow: 0 0 10px rgba(244, 228, 193, 0.5);
+}
+
+.guild-subtitle {
+  font-size: 1.8vh;
+  color: #b89968;
+  margin: 0;
+  font-style: italic;
+}
+
+.guild-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5vh;
+}
+
+.guild-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8vh;
+  padding: 1.5vh 2vw;
+  background: rgba(45, 31, 26, 0.6);
+  border: 2px solid rgba(232, 213, 183, 0.3);
+  border-radius: 8px;
+  color: #b89968;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guild-tab:hover {
+  background: rgba(45, 31, 26, 0.8);
+  border-color: rgba(232, 213, 183, 0.5);
+  transform: translateY(-2px);
+}
+
+.guild-tab.active {
+  background: rgba(232, 213, 183, 0.15);
+  border-color: #f4e4c1;
+  color: #f4e4c1;
+}
+
+.tab-icon {
+  font-size: 2.5vh;
+}
+
+.tab-label {
+  font-size: 1.6vh;
+  font-weight: 600;
+}
+
+/* Tab Content */
+.guild-content {
+  max-width: 90vw;
+  margin: 0 auto;
+  background: rgba(26, 20, 16, .95);
+  border: 2px solid rgba(232, 213, 183, 0.2);
+  border-radius: 12px;
+  padding: 2vh 2vw;
+  height: 90%;
+  overflow-y: auto;
+}
+
+/* Back Button */
+.guild-back-button {
+  display: block;
+  margin: 0 auto 0 auto;
+  padding: 1.5vh 2vw;
+  background: rgba(45, 31, 26, 0.8);
+  border: 2px solid rgba(232, 213, 183, 0.3);
+  border-radius: 8px;
+  color: #e8d5b7;
+  font-size: 1.8vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guild-back-button:hover {
+  background: rgba(45, 31, 26, 1);
+  border-color: #f4e4c1;
+  transform: scale(1.05);
+}
+
+/* ========== Promotion Tab Styles ========== */
+
+.promotion-tab {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2vw;
+  height: fit-content;
+}
+
+.promotion-tab-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+}
+
+.promotion-tab-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+}
+
+/* Grade Progression */
+.grade-progression {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2vw;
+  padding: 1.5vh 1vw;
+  background: rgba(232, 213, 183, 0.05);
+  border-radius: 8px;
+}
+
+.grade-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8vh;
+  padding: 1.5vh 2vw;
+  background: rgba(45, 31, 26, 0.6);
+  border-radius: 8px;
+  border: 2px solid rgba(232, 213, 183, 0.2);
+}
+
+.grade-box.current {
+  border-color: #b89968;
+}
+
+.grade-box.next {
+  border-color: #f4e4c1;
+  background: rgba(244, 228, 193, 0.1);
+}
+
+.grade-label {
+  font-size: 1.4vh;
+  color: #b89968;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.grade-name {
+  font-size: 2vh;
+  font-weight: bold;
+  color: #f4e4c1;
+}
+
+.arrow {
+  font-size: 3vh;
+  color: #b89968;
+}
+
+/* Exam Sections */
+.exam-section {
+  padding: 1vh 1vw;
+  background: rgba(232, 213, 183, 0.03);
+  border-radius: 8px;
+}
+
+.guild-section-title {
+  font-size: 1.9vh;
+  color: #f4e4c1;
+  margin: 0 0 1vh 0;
+  padding-bottom: 0.6vh;
+  border-bottom: 1px solid rgba(232, 213, 183, 0.2);
+}
+
+/* Requirements */
+.requirements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+}
+
+.requirement {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 1vh 1vw;
+  background: rgba(45, 31, 26, 0.4);
+  border-radius: 6px;
+  border: 2px solid transparent;
+}
+
+.requirement.met {
+  border-color: rgba(76, 175, 80, 0.5);
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.requirement.unmet {
+  border-color: rgba(244, 67, 54, 0.5);
+  background: rgba(244, 67, 54, 0.1);
+}
+
+.requirement-icon {
+  font-size: 2vh;
+  font-weight: bold;
+}
+
+.requirement.met .requirement-icon {
+  color: #4caf50;
+}
+
+.requirement.unmet .requirement-icon {
+  color: #f44336;
+}
+
+.requirement-text {
+  color: #e8d5b7;
+  font-size: 1.6vh;
+}
+
+/* Description */
+.exam-description {
+  color: #c9b69a;
+  line-height: 1.6;
+  margin: 0;
+  font-size: 1.6vh;
+}
+
+/* Recommendations */
+.recommendations {
+  display: flex;
+  gap: 2vw;
+  margin-bottom: 1vh;
+}
+
+.recommendation-item {
+  display: flex;
+  gap: 0.5vw;
+  align-items: baseline;
+}
+
+.stat-label {
+  color: #b89968;
+  font-weight: 600;
+  font-size: 1.6vh;
+}
+
+.stat-value {
+  color: #f4e4c1;
+  font-size: 1.9vh;
+  font-weight: bold;
+}
+
+.recommendation-note {
+  color: #9d8766;
+  font-size: 1.4vh;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Rewards */
+.rewards-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+
+.rewards-list li {
+  padding: 0.8vh 1vw;
+  background: rgba(244, 228, 193, 0.05);
+  border-left: 3px solid #f4e4c1;
+  border-radius: 4px;
+  color: #e8d5b7;
+  font-size: 1.6vh;
+}
+
+/* Warnings */
+.exam-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+  padding: 1.5vh 1vw;
+  background: rgba(255, 193, 7, 0.05);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+}
+
+.warning-item {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+}
+
+.warning-icon {
+  font-size: 2vh;
+}
+
+.warning-text {
+  color: #c9b69a;
+  font-size: 1.5vh;
+}
+
+/* Start Button */
+.start-exam-button {
+  margin-top: auto;
+  padding: 1.5vh 2vw;
+  font-size: 1.7vh;
+  font-weight: bold;
+  background: linear-gradient(135deg, #8b6914 0%, #d4af37 100%);
+  border: 2px solid #f4e4c1;
+  border-radius: 8px;
+  color: #1a1410;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.start-exam-button.enabled:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+.start-exam-button.disabled {
+  background: rgba(45, 31, 26, 0.6);
+  border-color: rgba(232, 213, 183, 0.3);
+  color: #6d5d4b;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Promotion Unavailable */
+.promotion-unavailable {
+  text-align: center;
+  padding: 4vh 2vw;
+}
+
+.promotion-unavailable h2 {
+  font-size: 3.5vh;
+  color: #f4e4c1;
+  margin-bottom: 2vh;
+}
+
+.current-grade-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vh;
+  margin: 3vh 0;
+  padding: 2vh 2vw;
+  background: rgba(244, 228, 193, 0.1);
+  border: 2px solid #f4e4c1;
+  border-radius: 8px;
+}
+
+.grade-value {
+  font-size: 3vh;
+  font-weight: bold;
+  color: #d4af37;
+}
+
+.flavor-text {
+  color: #b89968;
+  font-style: italic;
+  line-height: 1.6;
+  font-size: 1.6vh;
+}
+
+/* ========== Placeholder Tab Styles ========== */
+
+.placeholder-tab {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: fit-content;
+}
+
+.placeholder-content {
+  text-align: center;
+  max-width: 40vw;
+}
+
+.placeholder-title {
+  font-size: 3.5vh;
+  color: #f4e4c1;
+  margin-bottom: 2vh;
+}
+
+.placeholder-description {
+  color: #c9b69a;
+  line-height: 1.6;
+  margin-bottom: 3vh;
+  font-size: 1.6vh;
+}
+
+.coming-soon-badge {
+  display: inline-block;
+  padding: 1vh 2vw;
+  background: rgba(255, 193, 7, 0.2);
+  border: 2px solid rgba(255, 193, 7, 0.5);
+  border-radius: 20px;
+  color: #ffc107;
+  font-weight: bold;
+  margin-bottom: 3vh;
+  font-size: 1.6vh;
+}
+
+.feature-preview {
+  text-align: left;
+  background: rgba(232, 213, 183, 0.05);
+  padding: 2vh 2vw;
+  border-radius: 8px;
+  border: 1px solid rgba(232, 213, 183, 0.2);
+}
+
+.feature-preview h3 {
+  color: #f4e4c1;
+  margin-top: 0;
+  font-size: 2vh;
+}
+
+.feature-preview ul {
+  color: #b89968;
+  line-height: 1.8;
+  font-size: 1.5vh;
+}
+
+.feature-preview li {
+  margin-bottom: 1vh;
+}
+
+/* =========================================
+   Quests Tab
+   ========================================= */
+
+.quests-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+  padding: 1vh 1vw;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Quest Stats Bar */
+.guild-quest-stats {
+  display: flex;
+  justify-content: center;
+  gap: 3vw;
+  padding: 1.2vh 2vw;
+  background: rgba(30, 20, 10, 0.6);
+  border: 1px solid rgba(232, 213, 183, 0.15);
+  border-radius: 8px;
+}
+
+.guild-quest-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3vh;
+}
+
+.guild-quest-stat-value {
+  font-size: 2.2vh;
+  font-weight: bold;
+  color: #f4e4c1;
+}
+
+.guild-quest-stat-label {
+  font-size: 1.2vh;
+  color: #b89968;
+}
+
+/* Quest Filters */
+.guild-quest-filters {
+  display: flex;
+  gap: 0.8vw;
+  justify-content: center;
+}
+
+.guild-quest-filter-btn {
+  padding: 0.8vh 1.5vw;
+  background: rgba(30, 20, 10, 0.7);
+  border: 1px solid rgba(232, 213, 183, 0.2);
+  border-radius: 6px;
+  color: #b89968;
+  font-size: 1.4vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guild-quest-filter-btn:hover {
+  border-color: rgba(232, 213, 183, 0.5);
+  background: rgba(60, 40, 20, 0.6);
+}
+
+.guild-quest-filter-btn.active {
+  background: rgba(184, 153, 104, 0.3);
+  border-color: #f4e4c1;
+  color: #f4e4c1;
+}
+
+/* Quest List */
+.guild-quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.guild-quest-empty {
+  text-align: center;
+  padding: 3vh;
+  color: #6b5b48;
+  font-size: 1.6vh;
+}
+
+/* Quest Card */
+.guild-quest-card {
+  background: rgba(30, 20, 10, 0.85);
+  border: 2px solid rgba(232, 213, 183, 0.15);
+  border-radius: 10px;
+  padding: 1.5vh 1.5vw;
+  transition: all 0.3s ease;
+}
+
+.guild-quest-card:hover {
+  border-color: rgba(232, 213, 183, 0.4);
+}
+
+.guild-quest-card.active {
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.guild-quest-card.completed {
+  opacity: 0.6;
+  border-color: rgba(100, 100, 100, 0.3);
+}
+
+.guild-quest-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8vh;
+}
+
+.guild-quest-title {
+  font-size: 1.6vh;
+  color: #f4e4c1;
+  margin: 0;
+}
+
+.guild-quest-type-badge {
+  padding: 0.3vh 0.8vw;
+  border-radius: 4px;
+  font-size: 1.1vh;
+  font-weight: bold;
+}
+
+.guild-quest-type-badge.daily {
+  background: rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+}
+
+.guild-quest-type-badge.weekly {
+  background: rgba(168, 85, 247, 0.3);
+  color: #d8b4fe;
+}
+
+.guild-quest-description {
+  font-size: 1.3vh;
+  color: #b89968;
+  margin: 0.5vh 0 1vh 0;
+  line-height: 1.5;
+}
+
+/* Quest Objectives */
+.guild-quest-objectives {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  margin-bottom: 1vh;
+}
+
+.guild-quest-objective {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  font-size: 1.2vh;
+}
+
+.guild-quest-obj-desc {
+  color: #d4b896;
+  flex: 1;
+}
+
+.guild-quest-obj-progress {
+  color: #f4e4c1;
+  font-weight: bold;
+  min-width: 5vw;
+  text-align: right;
+}
+
+.guild-quest-progress-bar {
+  width: 8vw;
+  height: 0.6vh;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.guild-quest-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Quest Rewards */
+.guild-quest-rewards {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  margin-bottom: 1vh;
+  font-size: 1.2vh;
+}
+
+.guild-quest-rewards-label {
+  color: #b89968;
+}
+
+.guild-quest-reward-item {
+  padding: 0.2vh 0.6vw;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.guild-quest-reward-item.gold {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.guild-quest-reward-item.stones {
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+}
+
+/* Quest Actions */
+.guild-quest-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.guild-quest-accept-btn {
+  padding: 0.8vh 1.5vw;
+  background: rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  border-radius: 6px;
+  color: #93c5fd;
+  font-size: 1.3vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guild-quest-accept-btn:hover {
+  background: rgba(59, 130, 246, 0.5);
+  border-color: #3b82f6;
+}
+
+.guild-quest-claim-btn {
+  padding: 0.8vh 1.5vw;
+  background: rgba(34, 197, 94, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  border-radius: 6px;
+  color: #86efac;
+  font-size: 1.3vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.guild-quest-claim-btn:hover {
+  background: rgba(34, 197, 94, 0.5);
+  border-color: #22c55e;
+}
+
+.guild-quest-in-progress {
+  color: #fbbf24;
+  font-size: 1.3vh;
+  font-style: italic;
+}
+
+.guild-quest-claimed {
+  color: #6b7280;
+  font-size: 1.3vh;
+}
+
+.guild-quest-expired {
+  color: #ef4444;
+  font-size: 1.3vh;
+  font-style: italic;
+}
+
+.guild-quest-card.expired {
+  opacity: 0.5;
+  border-color: #4b5563;
+}
+
+/* =========================================
+   Rumors Tab
+   ========================================= */
+
+.rumors-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+  padding: 1vh 1vw;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Active Rumors Section */
+.guild-active-rumors {
+  background: rgba(30, 20, 10, 0.6);
+  border: 1px solid rgba(232, 213, 183, 0.2);
+  border-radius: 8px;
+  padding: 1.2vh 1.5vw;
+}
+
+.guild-active-rumors-title {
+  font-size: 1.6vh;
+  color: #f4e4c1;
+  margin: 0 0 1vh 0;
+}
+
+.guild-active-rumor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+}
+
+.guild-active-rumor-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  padding: 0.5vh 1vw;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  font-size: 1.3vh;
+}
+
+.guild-active-rumor-icon {
+  font-size: 1.6vh;
+}
+
+.guild-active-rumor-name {
+  color: #d4b896;
+  flex: 1;
+}
+
+.guild-active-rumor-runs {
+  color: #fbbf24;
+  font-weight: bold;
+}
+
+/* Rumor Grid */
+.guild-rumor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(22vw, 1fr));
+  gap: 1.5vw;
+}
+
+/* Rumor Card */
+.guild-rumor-card {
+  background: rgba(30, 20, 10, 0.85);
+  border: 2px solid rgba(100, 100, 100, 0.3);
+  border-radius: 10px;
+  padding: 1.5vh 1.2vw;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+
+.guild-rumor-card:hover {
+  transform: translateY(-0.3vh);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.guild-rumor-card.purchased {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.guild-rumor-card.common {
+  border-color: rgba(156, 163, 175, 0.4);
+}
+
+.guild-rumor-card.rare {
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.guild-rumor-card.epic {
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.guild-rumor-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+}
+
+.guild-rumor-icon {
+  font-size: 2.5vh;
+}
+
+.guild-rumor-name {
+  font-size: 1.5vh;
+  color: #f4e4c1;
+  margin: 0;
+}
+
+.guild-rumor-rarity {
+  font-size: 1vh;
+  font-weight: bold;
+  letter-spacing: 0.1vw;
+}
+
+.guild-rumor-description {
+  font-size: 1.2vh;
+  color: #b89968;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.guild-rumor-effect {
+  display: flex;
+  gap: 0.5vw;
+  font-size: 1.2vh;
+  padding: 0.5vh 0.8vw;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.guild-rumor-effect-label {
+  color: #b89968;
+}
+
+.guild-rumor-effect-value {
+  color: #4ade80;
+  font-weight: bold;
+}
+
+.guild-rumor-duration {
+  font-size: 1.1vh;
+  color: #9ca3af;
+}
+
+.guild-rumor-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.8vh;
+  border-top: 1px solid rgba(232, 213, 183, 0.1);
+}
+
+.guild-rumor-cost {
+  font-size: 1.4vh;
+  font-weight: bold;
+  color: #fbbf24;
+}
+
+.guild-rumor-buy-btn {
+  padding: 0.6vh 1.2vw;
+  background: rgba(184, 153, 104, 0.3);
+  border: 1px solid rgba(232, 213, 183, 0.4);
+  border-radius: 6px;
+  color: #f4e4c1;
+  font-size: 1.2vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.guild-rumor-buy-btn:hover {
+  background: rgba(184, 153, 104, 0.5);
+  border-color: #f4e4c1;
+}
+
+.guild-rumor-purchased-badge {
+  font-size: 1.2vh;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* =========================================
+   Storage Tab (Integrated from Storage)
+   ========================================= */
+
+.guild-storage-tab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 1vh;
+}
+
+/* Sub-Tab Navigation */
+.storage-sub-tabs {
+  display: flex;
+  gap: 1vw;
+  padding: 0.5vh 0;
+  border-bottom: 1px solid rgba(232, 213, 183, 0.2);
+}
+
+.storage-sub-tab {
+  padding: 1vh 2vw;
+  background: rgba(45, 31, 26, 0.6);
+  border: 2px solid rgba(232, 213, 183, 0.3);
+  border-radius: 8px;
+  color: #b89968;
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.storage-sub-tab:hover {
+  background: rgba(45, 31, 26, 0.8);
+  border-color: rgba(232, 213, 183, 0.5);
+}
+
+.storage-sub-tab-active {
+  background: rgba(232, 213, 183, 0.15);
+  border-color: #f4e4c1;
+  color: #f4e4c1;
+  font-weight: bold;
+}
+
+/* Storage Tab Content */
+.storage-tab-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Items Tab Content */
+.guild-storage-tab .items-tab-content {
+  display: flex;
+  gap: 1vw;
+  height: 100%;
+  background: rgba(26, 20, 16, 0.8);
+  border: 2px solid rgba(232, 213, 183, 0.2);
+  border-radius: 12px;
+  padding: 1.5vh 1.5vw;
+}
+
+/* Dual Grid Panel (Storage + Inventory) */
+.guild-storage-tab .dual-grid-panel {
+  display: flex;
+  gap: 0.5vw;
+  flex: 1;
+}
+
+/* Grid Section (Storage or Inventory) */
+.guild-storage-tab .storage-grid-section {
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(232, 213, 183, 0.2);
+  border-radius: 8px;
+  padding: 1vh;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 33.5vw;
+  max-height: fit-content;
+  overflow: hidden;
+}
+
+.guild-storage-tab .storage-grid-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.8vh;
+  margin-bottom: 0.8vh;
+  border-bottom: 1px solid rgba(232, 213, 183, 0.3);
+}
+
+.guild-storage-tab .storage-grid-title {
+  font-size: 2vh;
+  color: #f4e4c1;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(232, 213, 183, 0.3);
+}
+
+.guild-storage-tab .storage-grid-count {
+  font-size: 1.3vh;
+  color: #b89968;
+}
+
+/* Compact Grid - scrollable container */
+.guild-storage-tab .compact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 1vh;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+/* Storage grid - 4 columns for larger capacity */
+.guild-storage-tab .compact-grid.storage-grid {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1vh;
+}
+
+/* Inventory grid - 4 columns for smaller capacity */
+.guild-storage-tab .compact-grid.inventory-grid {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.2vh;
+}
+
+/* Compact Item Card */
+.guild-storage-tab .item-card-compact {
+  width: 11.5vw;
+  height: 9vh;
+  aspect-ratio: 1;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(232, 213, 183, 0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  padding: 0.8vh;
+}
+
+.guild-storage-tab .item-card-compact:hover {
+  transform: scale(1.1);
+  z-index: 1;
+  border-color: rgba(232, 213, 183, 0.5);
+  background: rgba(45, 31, 26, 0.7);
+}
+
+.guild-storage-tab .item-card-compact.item-card-selected {
+  border-color: #f4e4c1;
+  background: rgba(232, 213, 183, 0.1);
+  box-shadow: 0 0 10px rgba(232, 213, 183, 0.5);
+  transform: scale(1.08);
+}
+
+.guild-storage-tab .item-card-compact.item-card-empty {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.guild-storage-tab .item-card-compact.item-card-empty:hover {
+  transform: none;
+  border-color: rgba(232, 213, 183, 0.2);
+  background: rgba(45, 31, 26, 0.5);
+}
+
+.guild-storage-tab .empty-placeholder {
+  color: #6d5d4b;
+  font-size: 1.7vh;
+}
+
+.guild-storage-tab .item-level-compact {
+  position: absolute;
+  top: 0.2vh;
+  right: 0.2vw;
+  background: rgba(184, 153, 104, 0.8);
+  color: #fff;
+  font-size: 1.2vh;
+  padding: 0.2vh 0.5vw;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.guild-storage-tab .item-stack-compact {
+  position: absolute;
+  bottom: 0.2vh;
+  right: 0.2vw;
+  background: rgba(76, 175, 80, 0.8);
+  color: #fff;
+  font-size: 1.2vh;
+  padding: 0.2vh 0.5vw;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* Rarity Colors (Border) */
+.guild-storage-tab .item-card-compact.rarity-common { border-color: rgba(193, 193, 193, 0.5); }
+.guild-storage-tab .item-card-compact.rarity-uncommon { border-color: rgba(76, 175, 80, 0.5); }
+.guild-storage-tab .item-card-compact.rarity-rare { border-color: rgba(33, 150, 243, 0.6); }
+.guild-storage-tab .item-card-compact.rarity-epic { border-color: rgba(156, 39, 176, 0.6); }
+.guild-storage-tab .item-card-compact.rarity-legendary { border-color: rgba(255, 193, 7, 0.7); }
+
+/* Transfer Buttons */
+.guild-storage-tab .transfer-buttons {
+  display: flex;
+  flex-direction: column;
+  margin-block: 1vh;
+  gap: 1vh;
+  padding: 0 0.3vw;
+  align-self: center;
+}
+
+.guild-storage-tab .transfer-btn {
+  width: 2.5vw;
+  height: 4vh;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(232, 213, 183, 0.3);
+  border-radius: 6px;
+  color: #e8d5b7;
+  font-size: 1.5vh;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guild-storage-tab .transfer-btn:hover:not(:disabled) {
+  background: rgba(232, 213, 183, 0.2);
+  border-color: #f4e4c1;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.guild-storage-tab .transfer-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.guild-storage-tab .transfer-buttons-equip {
+  display: flex;
+  flex-direction: row;
+  margin-block: 1vh;
+  gap: 1vh;
+  padding: 0 0.3vw;
+  align-self: center;
+}
+
+/* Detail Panel */
+.guild-storage-tab .storage-detail-panel {
+  min-width: 24vw;
+  flex-shrink: 0;
+  margin-right: 2vw;
+}
+
+.guild-storage-tab .equip-detail-panel {
+  min-width: 20vw;
+  height: 100%;
+  flex-shrink: 0;
+  margin-right: 0.5vw;
+}
+
+/* Item Detail Panel */
+.guild-storage-tab .item-detail-panel {
+  width: 23vw;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(232, 213, 183, 0.3);
+  border-radius: 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  overflow-y: auto;
+  justify-content: center;
+}
+
+.guild-storage-tab .item-detail-placeholder {
+  color: #6d5d4b;
+  font-size: 2.5vh;
+  text-align: center;
+}
+
+.guild-storage-tab .item-detail-icon {
+  font-size: 2vh;
+  text-align: center;
+}
+
+.guild-storage-tab .item-detail-name {
+  background: rgba(26, 20, 16, 0.6);
+  border-radius: 8px;
+  padding: 1vh;
+  font-size: 3.1vh;
+  margin: 0;
+  text-align: center;
+  color: #f4e4c1;
+}
+
+.guild-storage-tab .item-detail-rarity {
+  font-size: 1.9vh;
+  text-align: center;
+}
+
+.guild-storage-tab .item-detail-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vh;
+  padding: 1vh 1vw;
+  background: rgba(26, 20, 16, 0.5);
+  border: 1px solid rgba(232, 213, 183, 0.2);
+  border-radius: 6px;
+  font-size: 1.9vh;
+}
+
+.guild-storage-tab .item-detail-stat {
+  color: #e8d5b7;
+}
+
+.guild-storage-tab .item-detail-effects {
+  padding: 1vh 1vw;
+  background: rgba(26, 20, 16, 0.5);
+  border: 1px solid rgba(232, 213, 183, 0.2);
+  border-radius: 6px;
+}
+
+.guild-storage-tab .item-detail-effects h4 {
+  margin: 0 0 0.5vh 0;
+  font-size: 1.9vh;
+  color: #f4e4c1;
+}
+
+.guild-storage-tab .item-detail-effect {
+  font-size: 1.9vh;
+  color: #90caf9;
+  margin-bottom: 0.3vh;
+}
+
+.guild-storage-tab .item-detail-description {
+  font-size: 1.8vh;
+  line-height: 1.4;
+  color: #b89968;
+  padding: 1vh 1vw;
+  background: rgba(26, 20, 16, 0.5);
+  border: 1px solid rgba(232, 213, 183, 0.2);
+  border-radius: 6px;
+  font-style: italic;
+}
+
+.guild-storage-tab .item-detail-type {
+  font-size: 1.9vh;
+  color: #b89968;
+}
+
+.guild-storage-tab .item-detail-sell-price {
+  font-size: 1.9vh;
+  color: #ffd54f;
+}
+
+/* Action Buttons */
+.guild-storage-tab .item-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+  margin-top: auto;
+}
+
+.guild-storage-tab .item-action-button {
+  padding: 1vh 1vw;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(232, 213, 183, 0.3);
+  border-radius: 6px;
+  color: #e8d5b7;
+  font-size: 1.4vh;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.guild-storage-tab .item-action-button:hover {
+  background: rgba(232, 213, 183, 0.2);
+  border-color: #f4e4c1;
+  color: #fff;
+}
+
+.guild-storage-tab .item-action-button.equip {
+  background: linear-gradient(135deg, #5a4a14 0%, #b89968 100%);
+  color: #fff;
+  border-color: #f4e4c1;
+  font-weight: bold;
+}
+
+.guild-storage-tab .item-action-button.equip:hover {
+  box-shadow: 0 0 10px rgba(232, 213, 183, 0.5);
+}
+
+.guild-storage-tab .item-action-button.delete {
+  background: linear-gradient(135deg, #8b1414 0%, #c62828 100%);
+  color: #fff;
+  border-color: #ef5350;
+}
+
+.guild-storage-tab .item-action-button.delete:hover {
+  box-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
+}
+
+/* Equipment Tab Content */
+.guild-storage-tab .equipment-tab-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5vw;
+  height: 100%;
+  background: rgba(26, 20, 16, 0.8);
+  border: 2px solid rgba(232, 213, 183, 0.2);
+  border-radius: 12px;
+  padding: 1.5vh 1.5vw;
+}
+
+/* Left Panel: Equipment List */
+.guild-storage-tab .equipment-list-panel {
+  flex: 1;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(232, 213, 183, 0.2);
+  border-radius: 8px;
+  padding: 1vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 45vw;
+  overflow: hidden;
+}
+
+.guild-storage-tab .equipment-list-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1vh;
+  overflow-y: auto;
+}
+
+.guild-storage-tab .empty-list-message {
+  color: #6d5d4b;
+  font-size: 1.8vh;
+  text-align: center;
+  padding: 2vh;
+  grid-column: span 4;
+}
+
+/* Right Panel: Equipment Slots + Equipment Inventory */
+.guild-storage-tab .equipment-right-panel {
+  width: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+}
+
+/* Equipment Slots Section */
+.guild-storage-tab .equipment-slots-section {
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(232, 213, 183, 0.3);
+  border-radius: 8px;
+  padding: 1vh;
+}
+
+.guild-storage-tab .storage-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.8vh;
+  margin-bottom: 0.8vh;
+  border-bottom: 1px solid rgba(232, 213, 183, 0.3);
+}
+
+.guild-storage-tab .storage-section-title {
+  font-size: 2vh;
+  color: #f4e4c1;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(232, 213, 183, 0.3);
+}
+
+.guild-storage-tab .storage-section-count {
+  font-size: 1.3vh;
+  color: #b89968;
+}
+
+/* Compact Equipment Slots Grid */
+.guild-storage-tab .equip-slots-grid-compact {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1vh 1vw;
+}
+
+.guild-storage-tab .equip-slot-compact {
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(232, 213, 183, 0.2);
+  border-radius: 8px;
+  padding: 0.8vh 0.5vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3vh;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.guild-storage-tab .equip-slot-compact:hover {
+  border-color: rgba(232, 213, 183, 0.5);
+  transform: translateY(-2px);
+  background: rgba(45, 31, 26, 0.7);
+}
+
+.guild-storage-tab .equip-slot-compact.equip-slot-selected {
+  border-color: #f4e4c1;
+  background: rgba(232, 213, 183, 0.1);
+  box-shadow: 0 0 10px rgba(232, 213, 183, 0.5);
+}
+
+.guild-storage-tab .equip-slot-compact.equip-slot-filled {
+  background: linear-gradient(135deg, rgba(45, 31, 26, 0.6) 0%, rgba(60, 40, 30, 0.6) 100%);
+}
+
+.guild-storage-tab .equip-slot-label-compact {
+  font-size: 1vh;
+  color: #b89968;
+  text-transform: uppercase;
+  letter-spacing: 0.03vw;
+}
+
+.guild-storage-tab .equip-slot-icon-compact {
+  font-size: 2.2vh;
+}
+
+.guild-storage-tab .equip-slot-name-compact {
+  font-size: 1.1vh;
+  color: #e8d5b7;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.guild-storage-tab .equip-slot-empty-compact {
+  font-size: 1.5vh;
+  color: #6d5d4b;
+}
+
+/* Equipment Inventory Section */
+.guild-storage-tab .equipment-inventory-section {
+  width: 100%;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(232, 213, 183, 0.2);
+  border-radius: 8px;
+  padding: 1vh;
+}
+
+.guild-storage-tab .equipment-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1vh;
+}
+
+/* Message Display */
+.guild-storage-tab .storage-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2vh 3vw;
+  background: rgba(26, 20, 16, 0.95);
+  border: 2px solid #f4e4c1;
+  border-radius: 8px;
+  font-size: 1.8vh;
+  color: #f4e4c1;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: 0 0 20px rgba(232, 213, 183, 0.3);
+}
+
+/* Scrollbar Styling */
+.guild-storage-tab .item-detail-panel::-webkit-scrollbar,
+.guild-storage-tab .compact-grid::-webkit-scrollbar {
+  width: 0.5vw;
+}
+
+.guild-storage-tab .item-detail-panel::-webkit-scrollbar-track,
+.guild-storage-tab .compact-grid::-webkit-scrollbar-track {
+  background: rgba(26, 20, 16, 0.5);
+  border-radius: 4px;
+}
+
+.guild-storage-tab .item-detail-panel::-webkit-scrollbar-thumb,
+.guild-storage-tab .compact-grid::-webkit-scrollbar-thumb {
+  background: rgba(232, 213, 183, 0.3);
+  border-radius: 4px;
+}
+
+.guild-storage-tab .item-detail-panel::-webkit-scrollbar-thumb:hover,
+.guild-storage-tab .compact-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(232, 213, 183, 0.5);
+}
+
+/* Quality Colors */
+.guild-storage-tab .quality-poor { background: linear-gradient(135deg, rgba(45, 31, 26, 0.6) 0%, rgba(60, 40, 30, 0.6) 100%); }
+.guild-storage-tab .quality-normal { background: linear-gradient(135deg, rgba(60, 40, 30, 0.6) 0%, rgba(75, 50, 40, 0.6) 100%); }
+.guild-storage-tab .quality-good { background: linear-gradient(135deg, rgba(30, 58, 95, 0.6) 0%, rgba(44, 82, 130, 0.6) 100%); }
+.guild-storage-tab .quality-master { background: linear-gradient(135deg, rgba(74, 20, 140, 0.6) 0%, rgba(106, 27, 154, 0.6) 100%); }

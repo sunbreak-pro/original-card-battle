@@ -1,0 +1,203 @@
+/**
+ * Toast Styles
+ *
+ * Styling for toast notifications including achievements, alerts, etc.
+ */
+
+/* ============================================================================
+   Container
+   ============================================================================ */
+
+.toast-container {
+  position: fixed;
+  top: 2vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast, 1100);
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  max-width: 90vw;
+  pointer-events: none;
+}
+
+/* ============================================================================
+   Toast Base
+   ============================================================================ */
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  padding: 1.2vh 1.5vw;
+  border-radius: 0.8vh;
+  background: linear-gradient(135deg, #2d2d44 0%, #1a1a2e 100%);
+  border: 0.2vh solid #4a4a6a;
+  box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.4);
+  min-width: 20vw;
+  max-width: 40vw;
+  pointer-events: auto;
+  animation: toastSlideIn 0.3s ease-out forwards;
+}
+
+.toast.exiting {
+  animation: toastSlideOut 0.3s ease-in forwards;
+}
+
+/* ============================================================================
+   Toast Types
+   ============================================================================ */
+
+/* Achievement - Gold theme */
+.toast-achievement {
+  background: linear-gradient(135deg, #3d3520 0%, #2a2515 100%);
+  border-color: #ffd700;
+  box-shadow: 0 0 1.5vh rgba(255, 215, 0, 0.3), 0 0.5vh 2vh rgba(0, 0, 0, 0.4);
+}
+
+.toast-achievement .toast-icon {
+  font-size: 2.5vh;
+  filter: drop-shadow(0 0 0.5vh rgba(255, 215, 0, 0.5));
+}
+
+.toast-achievement .toast-title {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 1.6vh;
+  text-shadow: 0 0 0.5vh rgba(255, 215, 0, 0.5);
+}
+
+/* Success - Green theme */
+.toast-success {
+  background: linear-gradient(135deg, #1a3320 0%, #0f1f15 100%);
+  border-color: #4ade80;
+  box-shadow: 0 0 1vh rgba(74, 222, 128, 0.2), 0 0.5vh 2vh rgba(0, 0, 0, 0.4);
+}
+
+/* Alert - Orange theme */
+.toast-alert {
+  background: linear-gradient(135deg, #3d2a15 0%, #2a1d0f 100%);
+  border-color: #fb923c;
+  box-shadow: 0 0 1vh rgba(251, 146, 60, 0.2), 0 0.5vh 2vh rgba(0, 0, 0, 0.4);
+}
+
+/* Error - Red theme */
+.toast-error {
+  background: linear-gradient(135deg, #3d1515 0%, #2a0f0f 100%);
+  border-color: #f87171;
+  box-shadow: 0 0 1vh rgba(248, 113, 113, 0.2), 0 0.5vh 2vh rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================================
+   Toast Elements
+   ============================================================================ */
+
+.toast-icon {
+  font-size: 2vh;
+  flex-shrink: 0;
+}
+
+.toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-title {
+  font-size: 1.4vh;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 0.3vh;
+}
+
+.toast-message {
+  font-size: 1.3vh;
+  color: #d1d5db;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 1.4vh;
+  cursor: pointer;
+  padding: 0.5vh;
+  line-height: 1;
+  transition: color 0.2s ease, transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  color: #ffffff;
+  transform: scale(1.2);
+}
+
+/* ============================================================================
+   Animations
+   ============================================================================ */
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* Achievement special animation */
+.toast-achievement {
+  animation: toastSlideIn 0.3s ease-out forwards, achievementGlow 2s ease-in-out infinite;
+}
+
+@keyframes achievementGlow {
+  0%, 100% {
+    box-shadow: 0 0 1.5vh rgba(255, 215, 0, 0.3), 0 0.5vh 2vh rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 2.5vh rgba(255, 215, 0, 0.5), 0 0.5vh 2vh rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ============================================================================
+   Responsive
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .toast-container {
+    top: 1vh;
+    max-width: 95vw;
+  }
+
+  .toast {
+    min-width: 60vw;
+    max-width: 90vw;
+    padding: 1vh 3vw;
+  }
+
+  .toast-icon {
+    font-size: 1.8vh;
+  }
+
+  .toast-title {
+    font-size: 1.3vh;
+  }
+
+  .toast-message {
+    font-size: 1.2vh;
+  }
+}

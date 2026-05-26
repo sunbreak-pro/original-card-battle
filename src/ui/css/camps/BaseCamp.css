@@ -1,0 +1,646 @@
+/* ==========================================
+   Base Camp Container - Isometric 2.5D Layout
+   ========================================== */
+.base-camp {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #0a0a1a 0%, #1a0a1a 50%, #0a0a1a 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   Background Effects
+   ========================================== */
+.camp-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+      2px 2px at 20% 30%,
+      rgba(255, 255, 255, 0.8),
+      transparent
+    ),
+    radial-gradient(2px 2px at 60% 70%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 50% 50%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 80% 10%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(2px 2px at 90% 60%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 15% 80%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(2px 2px at 45% 15%, rgba(255, 255, 255, 0.6), transparent);
+  background-size: 200% 200%;
+  animation: twinkle 8s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.bg-fog {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 35%;
+  background: linear-gradient(
+    to top,
+    rgba(100, 80, 120, 0.4) 0%,
+    transparent 100%
+  );
+  animation: fogDrift 15s ease-in-out infinite;
+}
+
+@keyframes fogDrift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(20px); }
+}
+
+.bg-ground {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 20%;
+  background: linear-gradient(to top, #1a0f1a 0%, transparent 100%);
+}
+
+/* ==========================================
+   Isometric Container
+   ========================================== */
+.isometric-container {
+  position: relative;
+  z-index: 10;
+  width: 90vw;
+  height: 85vh;
+  margin-top: 1vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  perspective-origin: 50% 40%;
+}
+
+/* ==========================================
+   Campfire Center
+   ========================================== */
+.campfire-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12vw;
+  height: 12vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.campfire-glow {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 150, 50, 0.3) 0%,
+    rgba(255, 100, 30, 0.15) 30%,
+    transparent 60%
+  );
+  animation: fireGlow 2s ease-in-out infinite;
+}
+
+@keyframes fireGlow {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.campfire-icon {
+  font-size: 6vw;
+  filter: drop-shadow(0 0 20px rgba(255, 150, 50, 0.8));
+  animation: fireFlicker 0.5s ease-in-out infinite alternate;
+  z-index: 10;
+}
+
+@keyframes fireFlicker {
+  0% { transform: scale(1) rotate(-2deg); }
+  100% { transform: scale(1.05) rotate(2deg); }
+}
+
+.campfire-sparks {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.campfire-sparks .spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #ffcc00;
+  border-radius: 50%;
+  animation: sparkRise 2s ease-out infinite;
+}
+
+.campfire-sparks .spark:nth-child(1) {
+  left: 40%;
+  animation-delay: 0s;
+}
+
+.campfire-sparks .spark:nth-child(2) {
+  left: 50%;
+  animation-delay: 0.5s;
+}
+
+.campfire-sparks .spark:nth-child(3) {
+  left: 60%;
+  animation-delay: 1s;
+}
+
+@keyframes sparkRise {
+  0% {
+    bottom: 50%;
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    bottom: 100%;
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* ==========================================
+   Facilities Isometric Layout
+   ========================================== */
+.facilities-isometric {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* ==========================================
+   Facility Card - Isometric Style
+   ========================================== */
+.facility-card {
+  position: absolute;
+  width: 13vw;
+  height: 16vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a2a3e 100%);
+  border: 3px solid rgba(138, 98, 158, 0.5);
+  border-radius: 16px;
+  padding: 1.5vh 1vw;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.05);
+  transform-style: preserve-3d;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Isometric positions (circular around center) */
+.facility-card.north {
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%) rotateX(10deg);
+}
+
+.facility-card.northeast {
+  top: 15%;
+  right: 12%;
+  transform: rotateX(5deg) rotateY(-5deg);
+}
+
+.facility-card.east {
+  top: 45%;
+  right: 5%;
+  transform: translateY(-50%) rotateY(-8deg);
+}
+
+.facility-card.southeast {
+  bottom: 15%;
+  right: 12%;
+  transform: rotateX(-5deg) rotateY(-5deg);
+}
+
+.facility-card.south {
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%) rotateX(-10deg);
+}
+
+.facility-card.southwest {
+  bottom: 15%;
+  left: 12%;
+  transform: rotateX(-5deg) rotateY(5deg);
+}
+
+.facility-card.west {
+  top: 45%;
+  left: 5%;
+  transform: translateY(-50%) rotateY(8deg);
+}
+
+.facility-card.northwest {
+  top: 15%;
+  left: 12%;
+  transform: rotateX(5deg) rotateY(5deg);
+}
+
+/* Hover effects with 3D lift */
+.facility-card.unlocked:hover {
+  z-index: 20;
+}
+
+.facility-card.north:hover {
+  transform: translateX(-50%) rotateX(10deg) translateZ(20px) scale(1.08);
+}
+
+.facility-card.northeast:hover {
+  transform: rotateX(5deg) rotateY(-5deg) translateZ(20px) scale(1.08);
+}
+
+.facility-card.east:hover {
+  transform: translateY(-50%) rotateY(-8deg) translateZ(20px) scale(1.08);
+}
+
+.facility-card.southeast:hover {
+  transform: rotateX(-5deg) rotateY(-5deg) translateZ(20px) scale(1.08);
+}
+
+.facility-card.south:hover {
+  transform: translateX(-50%) rotateX(-10deg) translateZ(20px) scale(1.08);
+}
+
+.facility-card.southwest:hover {
+  transform: rotateX(-5deg) rotateY(5deg) translateZ(20px) scale(1.08);
+}
+
+.facility-card.west:hover {
+  transform: translateY(-50%) rotateY(8deg) translateZ(20px) scale(1.08);
+}
+
+.facility-card.northwest:hover {
+  transform: rotateX(5deg) rotateY(5deg) translateZ(20px) scale(1.08);
+}
+
+/* Lighting effect on hover */
+.facility-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(138, 98, 158, 0.1) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.facility-card.hovered::before {
+  opacity: 1;
+}
+
+/* ==========================================
+   Facility-specific colors
+   ========================================== */
+.facility-card.dungeon {
+  border-color: rgba(154, 74, 217, 0.6);
+}
+
+.facility-card.dungeon.hovered {
+  border-color: rgba(154, 74, 217, 1);
+  box-shadow: 0 12px 32px rgba(154, 74, 217, 0.5),
+    inset 0 2px 8px rgba(154, 74, 217, 0.2);
+}
+
+.facility-card.shop {
+  border-color: rgba(217, 174, 74, 0.6);
+}
+
+.facility-card.shop.hovered {
+  border-color: rgba(217, 174, 74, 1);
+  box-shadow: 0 12px 32px rgba(217, 174, 74, 0.5),
+    inset 0 2px 8px rgba(217, 174, 74, 0.2);
+}
+
+.facility-card.guild {
+  border-color: rgba(157, 217, 74, 0.6);
+}
+
+.facility-card.guild.hovered {
+  border-color: rgba(157, 217, 74, 1);
+  box-shadow: 0 12px 32px rgba(157, 217, 74, 0.5),
+    inset 0 2px 8px rgba(157, 217, 74, 0.2);
+}
+
+.facility-card.inn {
+  border-color: rgba(74, 180, 217, 0.6);
+}
+
+.facility-card.inn.hovered {
+  border-color: rgba(74, 180, 217, 1);
+  box-shadow: 0 12px 32px rgba(74, 180, 217, 0.5),
+    inset 0 2px 8px rgba(74, 180, 217, 0.2);
+}
+
+.facility-card.blacksmith {
+  border-color: rgba(217, 94, 74, 0.6);
+}
+
+.facility-card.blacksmith.hovered {
+  border-color: rgba(217, 94, 74, 1);
+  box-shadow: 0 12px 32px rgba(217, 94, 74, 0.5),
+    inset 0 2px 8px rgba(217, 94, 74, 0.2);
+}
+
+.facility-card.sanctuary {
+  border-color: rgba(224, 208, 240, 0.6);
+}
+
+.facility-card.sanctuary.hovered {
+  border-color: rgba(224, 208, 240, 1);
+  box-shadow: 0 12px 32px rgba(224, 208, 240, 0.5),
+    inset 0 2px 8px rgba(224, 208, 240, 0.2);
+}
+
+.facility-card.library {
+  border-color: rgba(74, 142, 217, 0.6);
+}
+
+.facility-card.library.hovered {
+  border-color: rgba(74, 142, 217, 1);
+  box-shadow: 0 12px 32px rgba(74, 142, 217, 0.5),
+    inset 0 2px 8px rgba(74, 142, 217, 0.2);
+}
+
+.facility-card.storage {
+  border-color: rgba(160, 140, 120, 0.6);
+}
+
+.facility-card.storage.hovered {
+  border-color: rgba(160, 140, 120, 1);
+  box-shadow: 0 12px 32px rgba(160, 140, 120, 0.5),
+    inset 0 2px 8px rgba(160, 140, 120, 0.2);
+}
+
+/* Locked state */
+.facility-card.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.7);
+}
+
+.facility-card.locked:hover {
+  transform: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* ==========================================
+   Facility Card Elements
+   ========================================== */
+.facility-bg-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.02) 10px,
+      rgba(255, 255, 255, 0.02) 20px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.02) 10px,
+      rgba(255, 255, 255, 0.02) 20px
+    );
+  opacity: 0.5;
+  z-index: 1;
+}
+
+.facility-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  height: 80%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(138, 98, 158, 0.15) 0%, transparent 70%);
+  z-index: 2;
+  transition: opacity 0.4s ease;
+}
+
+.facility-card.hovered .facility-glow {
+  opacity: 1.5;
+}
+
+.facility-icon {
+  position: relative;
+  z-index: 10;
+  font-size: 3.5vw;
+  margin-bottom: 0.5vh;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.facility-card.hovered .facility-icon {
+  transform: scale(1.15) rotate(5deg);
+}
+
+.facility-name {
+  position: relative;
+  z-index: 10;
+  font-size: 1.1vw;
+  font-weight: bold;
+  color: #e0d0f0;
+  margin-bottom: 0.3vh;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(138, 98, 158, 0.5);
+  letter-spacing: 1px;
+}
+
+.facility-description {
+  position: relative;
+  z-index: 10;
+  font-size: 0.7vw;
+  color: rgba(224, 208, 240, 0.7);
+  line-height: 1.3;
+  max-width: 95%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ==========================================
+   Hover Effect
+   ========================================== */
+.facility-hover-effect {
+  position: absolute;
+  bottom: 0.8vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  animation: hoverBounce 1s ease-in-out infinite;
+}
+
+@keyframes hoverBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-5px); }
+}
+
+.hover-text {
+  font-size: 0.9vw;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(138, 98, 158, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8);
+  letter-spacing: 2px;
+}
+
+.hover-text.enter {
+  color: rgba(124, 220, 77, 1);
+}
+
+/* ==========================================
+   Notification Badge (Shop new stock)
+   ========================================== */
+.facility-notification-badge {
+  position: absolute;
+  top: 0.5vh;
+  right: 0.5vw;
+  width: 1.2vh;
+  height: 1.2vh;
+  background: #ff4444;
+  border-radius: 50%;
+  border: 2px solid #1a1a2e;
+  z-index: 20;
+  animation: badgePulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(255, 68, 68, 0.6);
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 8px rgba(255, 68, 68, 0.6); }
+  50% { transform: scale(1.2); box-shadow: 0 0 16px rgba(255, 68, 68, 0.8); }
+}
+
+/* ==========================================
+   Responsive - Tablet
+   ========================================== */
+@media (max-width: 1024px) {
+  .isometric-container {
+    perspective: 800px;
+  }
+
+  .facility-card {
+    width: 16vw;
+    height: 14vh;
+  }
+
+  .facility-icon {
+    font-size: 4.5vw;
+  }
+
+  .facility-name {
+    font-size: 1.4vw;
+  }
+
+  .facility-description {
+    display: none;
+  }
+
+  .campfire-icon {
+    font-size: 8vw;
+  }
+}
+
+/* ==========================================
+   Responsive - Mobile (fallback to grid)
+   ========================================== */
+@media (max-width: 640px) {
+  .isometric-container {
+    perspective: none;
+    width: 95vw;
+    height: auto;
+    min-height: 80vh;
+    display: block;
+    padding-top: 10vh;
+  }
+
+  .campfire-center {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    height: 10vh;
+    margin-bottom: 2vh;
+  }
+
+  .campfire-icon {
+    font-size: 10vw;
+  }
+
+  .facilities-isometric {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2vh 2vw;
+    padding: 0 2vw;
+  }
+
+  .facility-card {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 100%;
+    height: auto;
+    min-height: 15vh;
+    aspect-ratio: auto;
+  }
+
+  .facility-card:hover {
+    transform: scale(1.02) !important;
+  }
+
+  .facility-icon {
+    font-size: 8vw;
+  }
+
+  .facility-name {
+    font-size: 3.5vw;
+  }
+
+  .facility-description {
+    display: block;
+    font-size: 2.5vw;
+  }
+
+  .hover-text {
+    font-size: 3vw;
+  }
+}

@@ -1,0 +1,186 @@
+/* =========================================
+   Battle Layout
+   =========================================
+   Main container, header, and field layout.
+   ========================================= */
+
+/* Main Container */
+.battle-screen {
+  width: 100vw;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 1vh;
+  box-shadow: inset 0 0 6vh rgba(0, 0, 0, 0.5);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0 1.5vh 1.5vh 1.5vw;
+  gap: 1.5vh;
+  overflow: hidden;
+  color: white;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   Header (Depth Info)
+   ========================================= */
+.battle-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8vh;
+  z-index: 10;
+  background: rgba(153, 153, 153, 0.5);
+  padding: 0 0 0 1.5vh;
+  border-radius: 0.8vh;
+}
+
+.depth-info {
+  font-size: 1.8vh;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.15vw;
+}
+
+/* =========================================
+   Battle Field
+   ========================================= */
+.battle-field {
+  position: absolute;
+  top: 18vh;
+  left: 5vw;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 90vw;
+  height: 51vh;
+  margin: 0;
+  z-index: 1;
+}
+
+/* =========================================
+   Player Section
+   ========================================= */
+.player-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.player-field {
+  gap: 1.5vh;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Class ability display positioned at header right */
+.class-ability-header {
+  position: absolute;
+  top: 6vh;
+  right: 2vw;
+  z-index: 10;
+}
+
+/* =========================================
+   Character Display
+   ========================================= */
+.character-visual {
+  width: 30vw;
+  height: 30vh;
+  border-radius: 1.5vh;
+  position: relative;
+  display: flex;
+  align-items: start;
+  justify-content: center;
+  font-size: 8vh;
+}
+
+.character-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 1.5vh;
+}
+
+.enemy-image {
+  filter: drop-shadow(0 0 1vh rgb(193, 55, 55));
+}
+
+.player-image {
+  filter: drop-shadow(0 0 1vh rgb(48, 115, 191));
+}
+
+/* =========================================
+   Turn Message
+   ========================================= */
+.turn-message-slide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 4vh 6vw;
+  width: 40vw;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.9);
+  border: 0.4vh solid var(--theme-accent);
+  border-radius: 2vh;
+  box-shadow:
+    0 0 6vh var(--theme-glow),
+    inset 0 0 3vh rgba(0, 0, 0, 0.8);
+  animation: turnMessageAppear 2.5s ease-in-out forwards;
+  pointer-events: none;
+}
+
+.turn-message-text {
+  font-size: 5vh;
+  font-weight: bold;
+  color: var(--theme-accent);
+  text-shadow: 0 0 2vh var(--theme-glow);
+  text-align: center;
+  letter-spacing: 0.5vw;
+}
+
+/* Escape animation phases */
+.escape-attempting {
+  animation: escapeAttempt 1.2s ease-in-out forwards;
+}
+
+.escape-success {
+  animation: turnMessageAppear 1.5s ease-in-out forwards;
+}
+
+.escape-success .turn-message-text {
+  color: #66ff66;
+  text-shadow: 0 0 2vh rgba(102, 255, 102, 0.5);
+}
+
+.escape-failure {
+  animation: turnMessageAppear 1.5s ease-in-out forwards;
+}
+
+.escape-failure .turn-message-text {
+  color: #ff6666;
+  text-shadow: 0 0 2vh rgba(255, 102, 102, 0.5);
+}
+
+@keyframes escapeAttempt {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}

@@ -1,0 +1,135 @@
+import BattleScreen from "./ui/html/battleHtml/BattleScreen.tsx";
+import GuildBattleScreen from "./ui/html/campsHtml/Guild/GuildBattleScreen.tsx";
+import BaseCamp from "./ui/html/campsHtml/BaseCamp.tsx";
+import { Guild } from "./ui/html/campsHtml/Guild/Guild.tsx";
+import { Shop } from "./ui/html/campsHtml/Shop/Shop.tsx";
+import { Blacksmith } from "./ui/html/campsHtml/Blacksmith/Blacksmith.tsx";
+import { Sanctuary } from "./ui/html/campsHtml/Sanctuary/Sanctuary.tsx";
+import { DungeonGate } from "./ui/html/dungeonHtml/DungeonGate.tsx";
+import { ExplorationScreen } from "./ui/html/dungeonHtml/ExplorationScreen.tsx";
+import { DungeonRunProvider } from "./contexts/DungeonRunContext.tsx";
+import { GuildProvider } from "./contexts/GuildContext.tsx";
+import { CharacterSelect } from "./ui/html/characterSelectHtml/CharacterSelect.tsx";
+import {
+  GameStateProvider,
+  useGameState,
+} from "./contexts/GameStateContext.tsx";
+import { ResourceProvider } from "./contexts/ResourceContext.tsx";
+import { PlayerProvider } from "./contexts/PlayerContext.tsx";
+import { InventoryProvider } from "./contexts/InventoryContext.tsx";
+import { SettingsProvider } from "./contexts/SettingsContext.tsx";
+import { ToastProvider } from "./contexts/ToastContext.tsx";
+import { JournalProvider } from "./contexts/JournalContext.tsx";
+import { JournalOverlay } from "./ui/html/journalHtml/JournalOverlay.tsx";
+import { getGuildEnemy } from "@/constants/data/camps/GuildEnemyData";
+import { ErrorBoundary } from "./ui/components/ErrorBoundary.tsx";
+import { BrightnessOverlay } from "./ui/html/componentsHtml/BrightnessOverlay.tsx";
+import { ToastContainer } from "./ui/html/componentsHtml/ToastContainer.tsx";
+import { logger } from "./utils/logger.ts";
+import "./App.css";
+
+/**
+ * AppContent Component
+ * Handles screen routing based on GameState
+ */
+function AppContent() {
+  const { gameState, returnToCamp } = useGameState();
+  const { currentScreen, depth, battleMode, battleConfig } = gameState;
+
+  return (
+    <div className="app-container">
+      {/* Global Overlays */}
+      <BrightnessOverlay />
+      <ToastContainer />
+      <JournalOverlay />
+
+      {/* Character Selection Screen */}
+      {currentScreen === "character_select" && <CharacterSelect />}
+
+      {/* BaseCamp Screen */}
+      {currentScreen === "camp" && <BaseCamp />}
+
+      {/* Battle Screen */}
+      {currentScreen === "battle" && (
+        <>
+          {battleMode === "exam" && battleConfig ? (
+            // Exam battle - use GuildBattleScreen
+            (() => {
+              const examEnemy = getGuildEnemy(battleConfig.enemyIds[0]);
+              if (!examEnemy) {
+                logger.error(
+                  "Exam enemy not found:",
+                  battleConfig.enemyIds[0],
+                );
+                return <div>Error: Exam enemy not found</div>;
+              }
+              return (
+                <GuildBattleScreen
+                  examEnemy={examEnemy}
+                  onWin={battleConfig.onWin || (() => {})}
+                  onLose={battleConfig.onLose || (() => {})}
+                />
+              );
+            })()
+          ) : (
+            // Normal dungeon battle - use regular BattleScreen
+            // Pass battleConfig callbacks for dungeon integration
+            <BattleScreen
+              depth={depth}
+              onReturnToCamp={returnToCamp}
+              onWin={battleConfig?.onWin}
+              onLose={battleConfig?.onLose}
+            />
+          )}
+        </>
+      )}
+
+      {/* Guild Screen */}
+      {currentScreen === "guild" && <Guild />}
+      {/* Shop Screen */}
+      {currentScreen === "shop" && <Shop />}
+      {/* Blacksmith Screen */}
+      {currentScreen === "blacksmith" && <Blacksmith />}
+      {/* Sanctuary Screen */}
+      {currentScreen === "sanctuary" && <Sanctuary />}
+      {/* Dungeon Gate Screen */}
+      {currentScreen === "dungeon" && <DungeonGate />}
+
+      {/* Dungeon Map Screen */}
+      {currentScreen === "dungeon_map" && <ExplorationScreen />}
+    </div>
+  );
+}
+
+/**
+ * Main App Component
+ * Wraps AppContent with all necessary Context Providers
+ * DungeonRunProvider is at app level to persist state across battle transitions
+ */
+function App() {
+  return (
+    <ErrorBoundary>
+      <GameStateProvider>
+        <SettingsProvider>
+          <JournalProvider>
+            <ToastProvider>
+              <ResourceProvider>
+                <PlayerProvider>
+                  <InventoryProvider>
+                    <DungeonRunProvider>
+                      <GuildProvider>
+                        <AppContent />
+                      </GuildProvider>
+                    </DungeonRunProvider>
+                  </InventoryProvider>
+                </PlayerProvider>
+              </ResourceProvider>
+            </ToastProvider>
+          </JournalProvider>
+        </SettingsProvider>
+      </GameStateProvider>
+    </ErrorBoundary>
+  );
+}
+
+export default App;

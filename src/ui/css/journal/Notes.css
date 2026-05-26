@@ -1,0 +1,187 @@
+/**
+ * Journal Notes (Thoughts) Page Styles
+ *
+ * Card-style note list, editor, and empty state.
+ */
+
+/* ============================================================================
+   Header
+   ============================================================================ */
+
+.journal-thoughts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5vh;
+}
+
+.journal-thoughts-count {
+  color: var(--journal-text-muted);
+  font-size: 1.2vh;
+  font-style: italic;
+}
+
+/* ============================================================================
+   Limit Message
+   ============================================================================ */
+
+.journal-thoughts-limit-msg {
+  color: #8b3030;
+  font-size: 1.2vh;
+  font-style: italic;
+  background: rgba(139, 48, 48, 0.1);
+  border: 0.1vh solid rgba(139, 48, 48, 0.3);
+  border-radius: 0.5vh;
+  padding: 0.8vh 1vw;
+  margin-bottom: 1.5vh;
+}
+
+/* ============================================================================
+   Empty State
+   ============================================================================ */
+
+.journal-thoughts-empty {
+  text-align: center;
+  padding: 4vh 2vw;
+  color: var(--journal-text-muted);
+  font-size: 1.3vh;
+  font-style: italic;
+}
+
+.journal-thoughts-empty p {
+  margin: 0.5vh 0;
+}
+
+/* ============================================================================
+   Note List
+   ============================================================================ */
+
+.journal-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+}
+
+/* ============================================================================
+   Note Item
+   ============================================================================ */
+
+.journal-note-item {
+  background: rgba(255, 255, 255, 0.25);
+  border: 0.15vh solid var(--journal-border-light);
+  border-radius: 0.8vh;
+  padding: 1.2vh 1.2vw;
+  transition: background 0.2s ease;
+}
+
+.journal-note-item:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.journal-note-item-new {
+  border-color: var(--journal-accent);
+  background: rgba(107, 68, 35, 0.08);
+}
+
+.journal-note-content {
+  color: var(--journal-text-primary);
+  font-size: 1.3vh;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.journal-note-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.8vh;
+  padding-top: 0.6vh;
+  border-top: 0.1vh solid var(--journal-border-light);
+}
+
+.journal-note-timestamp {
+  color: var(--journal-text-muted);
+  font-size: 1.1vh;
+  font-style: italic;
+}
+
+.journal-note-actions {
+  display: flex;
+  gap: 0.5vw;
+}
+
+/* Small button variant */
+.journal-btn-sm {
+  padding: 0.4vh 1vw;
+  font-size: 1.1vh;
+}
+
+/* ============================================================================
+   Note Editor
+   ============================================================================ */
+
+.journal-note-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+
+.journal-note-textarea {
+  width: 100%;
+  min-height: 8vh;
+  padding: 1vh 1vw;
+  background: rgba(255, 255, 255, 0.4);
+  border: 0.15vh solid var(--journal-border-main);
+  border-radius: 0.5vh;
+  color: var(--journal-text-primary);
+  font-size: 1.3vh;
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.journal-note-textarea:focus {
+  border-color: var(--journal-accent);
+}
+
+.journal-note-textarea::placeholder {
+  color: var(--journal-text-muted);
+  font-style: italic;
+}
+
+.journal-note-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.journal-note-char-count {
+  color: var(--journal-text-muted);
+  font-size: 1.1vh;
+}
+
+.journal-note-editor-actions {
+  display: flex;
+  gap: 0.5vw;
+}
+
+/* ============================================================================
+   Responsive
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .journal-note-footer {
+    flex-direction: column;
+    gap: 0.5vh;
+    align-items: flex-start;
+  }
+
+  .journal-note-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

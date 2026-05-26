@@ -1,0 +1,141 @@
+/* =========================================
+   Sword Energy Display
+   =========================================
+   Sword energy gauge and effect badges.
+   ========================================= */
+
+.sword-energy-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8vh;
+  padding: 1.2vh 0.8vw;
+  border: 0.25vh solid #dcdcdc;
+  border-radius: 0.8vh;
+  background: rgba(255, 175, 175, 0.194);
+  z-index: 50;
+  width: 20vw;
+  height: fit-content;
+}
+
+.sword-energy-label {
+  font-size: 1.9vh;
+  font-weight: bold;
+  color: #ff8742;
+  text-shadow: 0 0 0.4vh #0c0502;
+}
+
+.sword-energy-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  width: 100%;
+}
+
+.sword-energy-bar {
+  flex: 1;
+  height: 2vh;
+  background: rgba(0, 0, 0, 0.6);
+  border: 0.15vh solid #ff6b35;
+  border-radius: 0.4vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.sword-energy-bonus {
+  font-size: 1.4vh;
+  font-weight: bold;
+  color: #ffcc80;
+  text-shadow: 0 0 0.5vh #ff6b35;
+  white-space: nowrap;
+}
+
+.sword-energy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b35 0%, #ff9f66 50%, #ffcc80 100%);
+  transition: width 0.3s ease, background 0.5s ease, box-shadow 0.5s ease;
+  box-shadow: 0 0 1vh #ff6b35;
+  position: relative;
+}
+
+/* Level 5-7: Golden glow */
+.sword-energy-fill.level-mid {
+  background: linear-gradient(90deg, #ff9f66 0%, #ffd700 50%, #ffcc80 100%);
+  box-shadow: 0 0 1.5vh rgba(255, 215, 0, 0.6);
+}
+
+/* Level 8-9: Red-gold glow */
+.sword-energy-fill.level-high {
+  background: linear-gradient(90deg, #ffd700 0%, #ff8c00 50%, #ff4500 100%);
+  box-shadow: 0 0 2vh rgba(255, 69, 0, 0.7);
+}
+
+/* Level 10: Max - pulse animation */
+.sword-energy-fill.level-max {
+  background: linear-gradient(90deg, #ff4500 0%, #ff0000 50%, #ff6600 100%);
+  box-shadow: 0 0 2.5vh rgba(255, 0, 0, 0.8);
+  animation: swordEnergyMaxPulse 1s ease-in-out infinite;
+}
+
+.sword-energy-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5vh;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 0.5vh black;
+}
+
+/* =========================================
+   Effect Badges
+   ========================================= */
+.sword-energy-effects {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vw;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.effect-badge {
+  font-size: 1.5vh;
+  padding: 0.25vh 0.5vw;
+  border-radius: 0.25vh;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+/* Inactive state */
+.effect-badge.inactive {
+  background: rgba(75, 75, 75, 0.5);
+  border: 1.8px solid rgba(54, 54, 54, 0.7);
+  border-radius: 0.25vh;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Active state - Crit */
+.effect-badge.crit.active {
+  background: rgba(255, 215, 0, 0.3);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+  box-shadow: 0 0 0.8vh rgba(255, 215, 0, 0.4);
+}
+
+/* Active state - Pierce */
+.effect-badge.pierce.active {
+  background: rgba(100, 200, 255, 0.3);
+  border: 1px solid #64c8ff;
+  color: #64c8ff;
+  box-shadow: 0 0 0.8vh rgba(100, 200, 255, 0.4);
+}
+
+/* Active state - Max */
+.effect-badge.max.active {
+  background: rgba(255, 50, 50, 0.4);
+  border: 1px solid #ff3232;
+  color: #ff3232;
+  animation: maxEnergyPulse 0.5s ease-in-out infinite alternate;
+}

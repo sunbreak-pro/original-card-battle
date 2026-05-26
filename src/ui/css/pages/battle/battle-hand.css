@@ -1,0 +1,178 @@
+/* =========================================
+   Battle Hand Area
+   =========================================
+   Hand container, pile icons, controls.
+   ========================================= */
+
+/* =========================================
+   Hand Container
+   ========================================= */
+@import "../../core/variables.css";
+.hand-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  height: 21.9vh;
+  z-index: 100;
+  padding: 1.5vh 0;
+  /* Mesh gradient-like background */
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(73, 196, 73, 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 80%, rgba(73, 196, 73, 0.15) 0%, transparent 40%),
+    radial-gradient(ellipse at 25% 80%, rgba(98, 106, 98, 0.2) 0%, transparent 40%),
+    linear-gradient(to bottom, rgba(72, 72, 72, 0.3) 0%, rgba(72, 72, 72, 0.5) 100%);
+  border-radius: 8vh 8vh 0 0;
+  border: 0.09vh solid rgba(173, 173, 173, 0.5);
+  border-bottom: none;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   Pile Section (Left - Draw/Discard)
+   ========================================= */
+.pile-section {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  height: 100%;
+  width: 16vw;
+  padding: 0.8vh 0.8vw;
+}
+
+
+
+/* =========================================
+   Button Frame (Right)
+   ========================================= */
+.button-frame {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 13vw;
+  padding: 1.5vh 0.8vw;
+  gap: 1.5vh;
+}
+
+.action-btn {
+  width: 100%;
+  max-width: 12vw;
+  height: 4vh;
+  border-radius: 1vh;
+  border: 0.25vh solid;
+  color: white;
+  font-size: 1.5vh;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0.3vh 0.6vh rgba(0, 0, 0, 0.4);
+  margin-right: 10vh;
+}
+
+.action-btn:hover {
+  transform: translateY(-0.3vh);
+  box-shadow: 0 0.6vh 1.2vh rgba(0, 0, 0, 0.5);
+}
+
+/* End Phase Button - Gray gradient */
+.end-phase-btn {
+  background: linear-gradient(180deg, #424242 19%, #9e9d9d 88%);
+  border-color: #666;
+}
+
+.end-phase-btn:hover {
+  background: linear-gradient(180deg, #525252 19%, #aeadad 88%);
+}
+
+/* Use Item Button - Green gradient */
+.use-item-btn {
+  background: linear-gradient(180deg, #2c8f30 0%, #73ff5c 100%);
+  border-color: #2c8f30;
+}
+
+.use-item-btn:hover {
+  background: linear-gradient(180deg, #3ca040 0%, #83ff6c 100%);
+}
+
+/* Flee Button - Red gradient */
+.flee-btn {
+  background: linear-gradient(180deg, #7b1a1a 0%, #ff665c 100%);
+  border-color: #7b1a1a;
+}
+
+.flee-btn:hover {
+  background: linear-gradient(180deg, #8b2a2a 0%, #ff766c 100%);
+}
+
+
+
+
+/* =========================================
+   Pile Icons (Draw/Discard)
+   ========================================= */
+.pile-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6vh;
+  cursor: pointer;
+  transition: transform 0.2s;
+  font-size: 1.6vh;
+  font-weight: bold;
+}
+
+.pile-icon:hover {
+  transform: scale(1.1);
+}
+
+.pile-visual {
+  width: 5vh;
+  height: 6.5vh;
+  background: linear-gradient(135deg, #4a3a6a 0%, #2a1a4a 100%);
+  border: 0.25vh solid #9B7ED9;
+  border-radius: 0.8vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.8vh;
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.6);
+}
+
+.pile-visual:hover {
+  border-color: #b89ee9;
+  background: linear-gradient(135deg, #5a4a7a 0%, #3a2a5a 100%);
+}
+
+.pile-count {
+  font-size: 1.4vh;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* =========================================
+   Energy Display
+   ========================================= */
+.energy-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1vh 1vw;
+  border-radius: 1vh;
+  font-size: 2vh;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 50;
+}
+
+.energy-label {
+  font-size: 1.5vh;
+  margin-bottom: 0.5vh;
+}
+
+/* Old end-turn-btn styles removed - now using .action-btn in button-frame */

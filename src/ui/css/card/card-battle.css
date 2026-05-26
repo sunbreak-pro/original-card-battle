@@ -1,0 +1,68 @@
+/* =========================================
+   Card Battle Styles
+
+   Battle-specific card layout:
+   - .card-container (center hand area)
+   - .card-wrapper (fan layout with rotation)
+   - Hover interactions
+   - Draw/Discard animations
+   ========================================= */
+
+/* =========================================
+   Card Container (Center of hand-container)
+   ========================================= */
+.card-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex: 1;
+  height: 100%;
+  padding: 0;
+  margin-right: 10vh;
+}
+
+/* =========================================
+   Card Wrapper (Fan Layout)
+   ========================================= */
+.card-wrapper {
+  position: relative;
+  width: calc(3.3 * var(--card-base-width) / 5);
+  aspect-ratio: var(--card-aspect-ratio);
+  margin-left: -1.5vh;
+  transform-origin: center bottom;
+  transform: translateY(var(--y)) rotate(var(--rot));
+  transition: transform 0.15s ease-out;
+  cursor: pointer;
+  animation-fill-mode: both;
+  will-change: transform;
+}
+
+.card-wrapper:first-child {
+  margin-left: 0;
+}
+
+/* Hover: lift and straighten card */
+.card-wrapper:hover {
+  z-index: 1000 !important;
+  transform: translateX(1vh) translateY(-1vh) rotate(0deg) scale(1.15) !important;
+}
+
+/* Adjacent card shifts right (GPU-accelerated, no reflow) */
+.card-wrapper:hover + .card-wrapper {
+  transform: translateX(2vh) translateY(var(--y)) rotate(var(--rot));
+}
+
+/* =========================================
+   Draw/Discard Animations
+   ========================================= */
+.card-wrapper.drawing {
+  pointer-events: none;
+  z-index: 1000;
+  animation: cardDrawIn 0.8s cubic-bezier(0, 0, 0.9, 1) both;
+}
+
+.card-wrapper.discarding {
+  pointer-events: none;
+  z-index: 1000;
+  animation: discardToPile 0.6s cubic-bezier(0.8, -0.38, 0.035, 0.025) forwards;
+}

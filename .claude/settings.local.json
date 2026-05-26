@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(npx tsc:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(wc:*)",
+      "Bash(npm run:*)",
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(timeout 5 npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npx eslint:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(ls:*)",
+      "Bash(git checkout:*)",
+      "Bash(git:*)",
+      "Bash(find:*)",
+      "WebSearch",
+      "Bash(xargs:*)",
+      "Bash(comm:*)",
+      "Bash(grep:*)",
+      "Bash(done)",
+      "Bash(node:*)",
+      "Bash(tree:*)",
+      "Bash(npx vite build:*)",
+      "Bash(while read f)",
+      "Bash(do wc -l \"$f\")",
+      "Bash(test:*)",
+      "Bash(for file in src/constants/data/cards/*.ts)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(python3:*)",
+      "Bash(npm install:*)",
+      "Bash(tr:*)",
+      "Bash(head:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,18 @@
+.back-to-camp-button {
+  display: block;
+  margin: 1vh auto 0 auto;
+  padding: 1.2vh 2vw;
+  background: rgba(45, 31, 26, 0.95);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  color: #e8d5b7;
+  font-size: 1.6vh;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-to-camp-button:hover {
+  background: rgba(45, 31, 26, 1);
+  border-color: #d4af37;
+  transform: scale(1.05);
+}

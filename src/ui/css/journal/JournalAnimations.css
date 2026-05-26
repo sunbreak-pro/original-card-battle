@@ -1,0 +1,36 @@
+/**
+ * Journal Animations
+ *
+ * CSS transitions for tab switching and page transitions.
+ * Minimal animations using CSS only (no JS animation libraries).
+ */
+
+/* Page fade-in on tab switch */
+.journal-page {
+  animation: journalPageFadeIn 0.2s ease;
+}
+
+@keyframes journalPageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.5vh);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Note item entrance animation */
+.journal-note-item {
+  animation: journalNoteIn 0.15s ease;
+}
+
+@keyframes journalNoteIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

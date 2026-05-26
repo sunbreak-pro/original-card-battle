@@ -1,0 +1,304 @@
+{
+  "version": "2.6",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": -1,
+      "y": 213,
+      "name": "card",
+      "clip": true,
+      "width": 292,
+      "height": 429,
+      "fill": "#4f2828ff",
+      "cornerRadius": 12,
+      "stroke": {
+        "align": "inside",
+        "thickness": 3,
+        "fill": "#843d5cff"
+      },
+      "layout": "vertical",
+      "gap": 5,
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "CUBdB",
+          "name": "header",
+          "clip": true,
+          "width": "fill_container",
+          "height": 45,
+          "layout": "vertical",
+          "padding": [
+            0,
+            8
+          ],
+          "justifyContent": "center",
+          "alignItems": "end",
+          "children": [
+            {
+              "type": "frame",
+              "id": "PkMvE",
+              "name": "Frame 2",
+              "clip": true,
+              "width": 139,
+              "height": 31,
+              "fill": "#393939ff",
+              "cornerRadius": 5,
+              "gap": 10,
+              "padding": [
+                0,
+                0,
+                0,
+                10
+              ],
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "z82Jl",
+                  "name": "slashIcon",
+                  "rotation": -0.18658555311957187,
+                  "width": 28,
+                  "height": 28,
+                  "iconFontName": "swords",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "frame",
+                  "id": "ZDCLp",
+                  "name": "attackBadge",
+                  "width": 90,
+                  "height": 31,
+                  "fill": "#CC2222",
+                  "layout": "vertical",
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qCDWq",
+                      "name": "attackText",
+                      "fill": "#FFFFFF",
+                      "content": "ATTACK",
+                      "fontFamily": "Arial",
+                      "fontSize": 14,
+                      "fontWeight": "900"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Ys6zp",
+          "name": "innerFrame",
+          "rotation": -0.035918948865948215,
+          "clip": true,
+          "width": 259,
+          "height": 313,
+          "fill": "#3A3A4D",
+          "cornerRadius": 8,
+          "stroke": {
+            "align": "inside",
+            "thickness": 2,
+            "fill": "#666680"
+          },
+          "layout": "vertical",
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "WCz5C",
+              "name": "nameBar",
+              "width": "fill_container",
+              "height": 34,
+              "fill": "#7b7b80ff",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#555568"
+              },
+              "padding": [
+                0,
+                8,
+                0,
+                0
+              ],
+              "justifyContent": "space_around",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "hq24C",
+                  "name": "nameText",
+                  "fill": "#FFFFFF",
+                  "content": "連撃",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 22,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "FXj59",
+              "name": "Frame 1",
+              "clip": true,
+              "width": "fill_container",
+              "height": 160,
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "",
+                "mode": "fill"
+              },
+              "layout": "none"
+            },
+            {
+              "type": "frame",
+              "id": "ZeKUm",
+              "name": "bodyArea",
+              "width": "fill_container",
+              "height": "fill_container",
+              "fill": "#252534ff",
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 16,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "XptBQ",
+                  "name": "descText",
+                  "fill": "#CCCCCC",
+                  "content": "3連続攻撃。剣気+1",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "NC2pJ",
+                  "name": "dmgLabel",
+                  "fill": "#DD3333",
+                  "content": "Damage: 6",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 24,
+                  "fontWeight": "700"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "uk9VU",
+          "name": "footer",
+          "rotation": -0.03744783036889654,
+          "clip": true,
+          "width": "fill_container",
+          "height": 52,
+          "layout": "vertical",
+          "padding": [
+            10,
+            10,
+            0,
+            10
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "end",
+          "children": [
+            {
+              "type": "frame",
+              "id": "IGlCT",
+              "name": "footerBar",
+              "width": 268,
+              "height": 18,
+              "stroke": {
+                "align": "inside",
+                "thickness": 1
+              },
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "LnrEH",
+                  "name": "footerLeft",
+                  "fill": "#CCCCCC",
+                  "content": "熟練度: Lv.0",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "bkqTV",
+                  "name": "footerRight",
+                  "fill": "#CCCCCC",
+                  "content": "0",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "8x4ne",
+              "name": "master bar",
+              "clip": true,
+              "width": 271,
+              "height": 12,
+              "fill": "#000000ff",
+              "cornerRadius": 50,
+              "layout": "none"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "qSKxv",
+      "x": -25,
+      "y": 190,
+      "name": "cost frame",
+      "clip": true,
+      "width": 47,
+      "height": 45,
+      "fill": "#14ba08ff",
+      "cornerRadius": 50,
+      "stroke": {
+        "align": "inside",
+        "thickness": 3,
+        "fill": "#d9d9d9ff"
+      },
+      "layout": "vertical",
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "text",
+          "id": "Ud70i",
+          "fill": "#ffffffff",
+          "content": "1",
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": "700"
+        }
+      ]
+    }
+  ]
+}
