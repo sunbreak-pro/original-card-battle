@@ -1,9 +1,6 @@
-import type { ReactNode } from "react";
-
 /**
- * Background layer placeholder.
- * Phase 3: Parallax backgrounds, environmental effects.
+ * Background layer placeholder. Stays an empty container until Phase 3
+ * (scene art / parallax). Kept as its own component so layer ordering is
+ * explicit in `BattleCanvas`.
  */
-export function BackgroundLayer(): ReactNode {
-  return <pixiContainer label="background-layer" />;
-}
+export const BackgroundLayer = () => <pixiContainer />;

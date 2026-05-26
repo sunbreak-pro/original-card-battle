@@ -744,6 +744,17 @@
   font-size: 1.3vh;
 }
 
+.guild-quest-expired {
+  color: #ef4444;
+  font-size: 1.3vh;
+  font-style: italic;
+}
+
+.guild-quest-card.expired {
+  opacity: 0.5;
+  border-color: #4b5563;
+}
+
 /* =========================================
    Rumors Tab
    ========================================= */

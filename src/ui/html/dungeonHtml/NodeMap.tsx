@@ -6,6 +6,7 @@ import { usePlayer } from "@/contexts/PlayerContext";
 import { useResources } from "@/contexts/ResourceContext";
 import { useInventory } from "@/contexts/InventoryContext";
 import { useDungeonRun } from "@/contexts/DungeonRunContext";
+import { useGuild } from "@/contexts/GuildContext";
 import { incrementBattleCount } from "@/domain/camps/logic/shopStockLogic";
 import { neutralTheme } from "@/domain/dungeon/depth/depthManager";
 import { DEPTH_DISPLAY_INFO } from "@/constants/dungeonConstants";
@@ -38,6 +39,7 @@ export function NodeMap() {
     retreatFromDungeon,
     getCurrentNode,
   } = useDungeonRun();
+  const { updateQuestProgress } = useGuild();
   const [floorClearModal, setFloorClearModal] = useState<
     "floor" | "depth" | null
   >(null);
@@ -111,6 +113,8 @@ export function NodeMap() {
             enemyType: enemyType as "single" | "double" | "three" | "boss",
             onWin: () => {
               completeCurrentNode("victory");
+              // Track quest progress: node exploration
+              updateQuestProgress("explore", "any", 1);
               // Increment shop stock battle counter using functional updater
               updatePlayerData((prev) => {
                 const currentStock = prev.progression.shopStockState;
@@ -150,6 +154,7 @@ export function NodeMap() {
       runtimeState.currentHp,
       playerData.persistent.baseMaxHp,
       updatePlayerData,
+      updateQuestProgress,
     ],
   );
 
@@ -192,6 +197,13 @@ export function NodeMap() {
     }
 
     completeCurrentNode("victory");
+
+    // Track quest progress: node exploration
+    updateQuestProgress("explore", "any", 1);
+    if (eventResult.type === "treasure") {
+      updateQuestProgress("explore", "treasure", 1);
+    }
+
     setEventResult(null);
   }, [
     eventResult,
@@ -202,6 +214,7 @@ export function NodeMap() {
     addMagicStones,
     addItemToInventory,
     completeCurrentNode,
+    updateQuestProgress,
   ]);
 
   // Handle floor completion
@@ -379,6 +392,8 @@ export function NodeMap() {
                   className="node-event-confirm"
                   onClick={() => {
                     setFloorClearModal(null);
+                    // Track quest progress: survived a full dungeon run
+                    updateQuestProgress("survive", "run", 1);
                     retreatFromDungeon();
                     returnToCamp();
                   }}

@@ -12,11 +12,22 @@
  * for backward compatibility while using the new modular structure internally.
  */
 
-import { useState, useRef, useReducer, useEffect, useCallback, useMemo } from "react";
-import type { Card, Depth } from '@/types/cardTypes';
-import type { EnemyDefinition, CharacterClass, EncounterSize } from '@/types/characterTypes';
-import type { PhaseQueue, BuffDebuffMap } from '@/types/battleTypes';
-import { createInitialSwordEnergy } from '../../characters/player/classAbility/classAbilityUtils';
+import {
+  useState,
+  useRef,
+  useReducer,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
+import type { Card, Depth } from "@/types/cardTypes";
+import type {
+  EnemyDefinition,
+  CharacterClass,
+  EncounterSize,
+} from "@/types/characterTypes";
+import type { PhaseQueue, BuffDebuffMap } from "@/types/battleTypes";
+import { createInitialSwordEnergy } from "../../characters/player/classAbility/classAbilityUtils";
 
 // Deck management (IMMUTABLE ZONE - DO NOT MODIFY)
 import { deckReducer } from "../../cards/decks/deckReducter";
@@ -36,17 +47,22 @@ import { useTurnTransition } from "../../../ui/animations/usePhaseTransition";
 import { useBattlePhase } from "./useBattlePhase";
 import { useCharacterPhaseExecution } from "./executeCharacterManage";
 import { useBattleState, type InitialPlayerState } from "./useBattleState";
-import { useCardExecution, type CardAnimationHandlers, type CardExecutionSetters, type DeckDispatch } from "./useCardExecution";
+import {
+  useCardExecution,
+  type CardAnimationHandlers,
+  type CardExecutionSetters,
+  type DeckDispatch,
+} from "./useCardExecution";
 
 import { useSwordEnergy } from "./useClassAbility";
 import { useElementalChain } from "./useElementalChain";
-
 
 // Phase execution
 import { calculatePlayerPhaseEnd } from "../execution/playerPhaseExecution";
 
 // Enemy action preview
 import { previewEnemyActions } from "../../characters/enemy/logic/enemyActionExecution";
+import { clearResolvedActionCache } from "../../characters/enemy/logic/enemyAI";
 
 // Enemy state helper
 import { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
@@ -55,7 +71,10 @@ import { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
 import { getResonanceEffects } from "../../characters/player/logic/elementalSystem";
 
 // Phase queue helpers (extracted for modularity)
-import { expandPhaseEntriesForMultipleEnemies, buildEnemyBattleStats } from "../helpers/phaseQueueHelpers";
+import {
+  expandPhaseEntriesForMultipleEnemies,
+  buildEnemyBattleStats,
+} from "../helpers/phaseQueueHelpers";
 
 // ============================================================================
 // Helper Functions
@@ -148,7 +167,13 @@ export const useBattleOrchestrator = (
   // Battle State Hook
   // ========================================================================
 
-  const battleState = useBattleState(depth, initialEnemies, phaseState.playerSpeed, initialPlayerState, encounterType);
+  const battleState = useBattleState(
+    depth,
+    initialEnemies,
+    phaseState.playerSpeed,
+    initialPlayerState,
+    encounterType,
+  );
 
   const {
     // Player state
@@ -198,7 +223,8 @@ export const useBattleOrchestrator = (
   // ========================================================================
 
   const swordEnergyHook = useSwordEnergy();
-  const { abilityState: swordEnergy, setAbilityState: setSwordEnergy } = swordEnergyHook;
+  const { abilityState: swordEnergy, setAbilityState: setSwordEnergy } =
+    swordEnergyHook;
 
   // Elemental Chain (Mage) - called unconditionally per React hooks rules
   const elementalChainHook = useElementalChain();
@@ -210,17 +236,26 @@ export const useBattleOrchestrator = (
 
   const initialDeckState = useMemo(() => {
     // Use deck config from player state, falling back to default swordsman deck
-    const deckCounts = initialPlayerState?.deckConfig
-      ?? getInitialDeckCounts(initialPlayerState?.playerClass ?? "swordsman");
+    const deckCounts =
+      initialPlayerState?.deckConfig ??
+      getInitialDeckCounts(initialPlayerState?.playerClass ?? "swordsman");
 
     // Get card data for the player's class
-    const cardData = getCardDataByClass(initialPlayerState?.playerClass ?? "swordsman");
+    const cardData = getCardDataByClass(
+      initialPlayerState?.playerClass ?? "swordsman",
+    );
 
     let initialDeck = createInitialDeck(deckCounts, cardData);
 
     // Apply mastery from saved store if available
-    if (initialPlayerState?.cardMasteryStore && initialPlayerState.cardMasteryStore.size > 0) {
-      initialDeck = applyMasteryToCards(initialDeck, initialPlayerState.cardMasteryStore);
+    if (
+      initialPlayerState?.cardMasteryStore &&
+      initialPlayerState.cardMasteryStore.size > 0
+    ) {
+      initialDeck = applyMasteryToCards(
+        initialDeck,
+        initialPlayerState.cardMasteryStore,
+      );
     }
 
     return { hand: [], drawPile: initialDeck, discardPile: [] };
@@ -240,13 +275,17 @@ export const useBattleOrchestrator = (
   // Modal State
   // ========================================================================
 
-  const [openedPileType, setOpenedPileType] = useState<"draw" | "discard" | null>(null);
+  const [openedPileType, setOpenedPileType] = useState<
+    "draw" | "discard" | null
+  >(null);
 
   // ========================================================================
   // Battle Result State
   // ========================================================================
 
-  const [battleResult, setBattleResult] = useState<"ongoing" | "victory" | "defeat">("ongoing");
+  const [battleResult, setBattleResult] = useState<
+    "ongoing" | "victory" | "defeat"
+  >("ongoing");
 
   // ========================================================================
   // Battle Statistics
@@ -274,10 +313,13 @@ export const useBattleOrchestrator = (
 
   // Legacy updateEnemy for backward compatibility
   const updateEnemy = useCallback(
-    (index: number, updater: (state: typeof enemies[0]) => Partial<typeof enemies[0]>) => {
+    (
+      index: number,
+      updater: (state: (typeof enemies)[0]) => Partial<(typeof enemies)[0]>,
+    ) => {
       updateEnemyByUpdater(index, updater);
     },
-    [updateEnemyByUpdater]
+    [updateEnemyByUpdater],
   );
 
   // ========================================================================
@@ -292,7 +334,31 @@ export const useBattleOrchestrator = (
       showShieldEffect,
       drawCardsWithAnimation,
     }),
-    [playCardWithAnimation, showDamageEffect, showHealEffect, showShieldEffect, drawCardsWithAnimation]
+    [
+      playCardWithAnimation,
+      showDamageEffect,
+      showHealEffect,
+      showShieldEffect,
+      drawCardsWithAnimation,
+    ],
+  );
+
+  // V-CHAIN-01 fix: for the card being played, use the modifier that
+  // accounts for the resonance update this card itself triggers (no
+  // 1-card lag). Falls back to the stale-state modifier when no card is
+  // supplied or the ability has no play-aware variant (swordsman).
+  // Extracted into its own useCallback so the React Compiler can infer the
+  // same fine-grained deps the cardSetters memo declares.
+  const elementalGetDamageModifier = elementalChainHook.getDamageModifier;
+  const elementalGetDamageModifierForPlay =
+    elementalChainHook.getDamageModifierForPlay;
+  const elementalAbilityState = elementalChainHook.abilityState;
+  const getElementalDamageModifier = useCallback(
+    (card?: Card) =>
+      card && elementalGetDamageModifierForPlay
+        ? elementalGetDamageModifierForPlay(card)
+        : elementalGetDamageModifier(card),
+    [elementalGetDamageModifier, elementalGetDamageModifierForPlay],
   );
 
   const cardSetters: CardExecutionSetters = useMemo(
@@ -307,30 +373,54 @@ export const useBattleOrchestrator = (
       setEnemyBuffs,
       setSwordEnergy,
       setBattleStats,
-      getElementalDamageModifier: elementalChainHook.getDamageModifier,
-      getResonanceEffects: initialPlayerState?.playerClass === "mage"
-        ? (card?: Card) => {
-          const state = elementalChainHook.abilityState;
-          if (!state.lastElement || state.resonanceLevel === 0) return null;
-          if (card && !card.element.includes(state.lastElement)) return null;
-          return getResonanceEffects(state.lastElement, state.resonanceLevel);
-        }
-        : undefined,
+      getElementalDamageModifier,
+      getResonanceEffects:
+        initialPlayerState?.playerClass === "mage"
+          ? (card?: Card) => {
+              const state = elementalAbilityState;
+              if (!state.lastElement || state.resonanceLevel === 0) return null;
+              if (card && !card.element.includes(state.lastElement))
+                return null;
+              return getResonanceEffects(
+                state.lastElement,
+                state.resonanceLevel,
+              );
+            }
+          : undefined,
       // AoE card support: provide access to all alive enemies
-      getAliveEnemies: () => aliveEnemies.map(e => ({
-        hp: e.hp,
-        maxHp: e.maxHp,
-        ap: e.ap,
-        maxAp: e.maxAp,
-        guard: e.guard,
-        buffDebuffs: e.buffDebuffs,
-        ref: e.ref,
-      })),
-      updateEnemyByIndex: (index: number, updater: (state: { hp: number; maxHp: number; ap: number; maxAp: number; guard: number; buffDebuffs: BuffDebuffMap; ref: React.RefObject<HTMLDivElement | null> }) => Partial<{ hp: number; maxHp: number; ap: number; maxAp: number; guard: number; buffDebuffs: BuffDebuffMap }>) => {
+      getAliveEnemies: () =>
+        aliveEnemies.map((e) => ({
+          hp: e.hp,
+          maxHp: e.maxHp,
+          ap: e.ap,
+          maxAp: e.maxAp,
+          guard: e.guard,
+          buffDebuffs: e.buffDebuffs,
+          ref: e.ref,
+        })),
+      updateEnemyByIndex: (
+        index: number,
+        updater: (state: {
+          hp: number;
+          maxHp: number;
+          ap: number;
+          maxAp: number;
+          guard: number;
+          buffDebuffs: BuffDebuffMap;
+          ref: React.RefObject<HTMLDivElement | null>;
+        }) => Partial<{
+          hp: number;
+          maxHp: number;
+          ap: number;
+          maxAp: number;
+          guard: number;
+          buffDebuffs: BuffDebuffMap;
+        }>,
+      ) => {
         // Find the actual index in the enemies array for the alive enemy at aliveEnemies[index]
         const aliveEnemy = aliveEnemies[index];
         if (!aliveEnemy) return;
-        const actualIndex = enemies.findIndex(e => e === aliveEnemy);
+        const actualIndex = enemies.findIndex((e) => e === aliveEnemy);
         if (actualIndex === -1) return;
         updateEnemyByUpdater(actualIndex, (e) => {
           const updates = updater({
@@ -356,13 +446,13 @@ export const useBattleOrchestrator = (
       setEnemyGuard,
       setEnemyBuffs,
       setSwordEnergy,
-      elementalChainHook.getDamageModifier,
-      elementalChainHook.abilityState,
+      getElementalDamageModifier,
+      elementalAbilityState,
       initialPlayerState?.playerClass,
       aliveEnemies,
       enemies,
       updateEnemyByUpdater,
-    ]
+    ],
   );
 
   const cardExecution = useCardExecution(
@@ -379,7 +469,7 @@ export const useBattleOrchestrator = (
     deckStateRef,
     cardSetters,
     animationHandlers,
-    dispatch as DeckDispatch
+    dispatch as DeckDispatch,
   );
 
   // Note: Enemy phase execution is handled by executeCharacterManage.
@@ -393,7 +483,7 @@ export const useBattleOrchestrator = (
       await cardExecution.executeCard(card, cardElement);
       elementalChainHook.onCardPlayed(card);
     },
-    [cardExecution, elementalChainHook]
+    [cardExecution, elementalChainHook],
   );
 
   // ========================================================================
@@ -446,96 +536,105 @@ export const useBattleOrchestrator = (
    * Execute enemy phase for a specific enemy index.
    * Each alive enemy gets its own turn in multi-enemy battles.
    */
-  const executeEnemyPhaseForIndex = useCallback(async (enemyIndex: number) => {
-    const enemy = enemies[enemyIndex];
-    if (!enemy || enemy.hp <= 0) return; // Skip dead enemies
+  const executeEnemyPhaseForIndex = useCallback(
+    async (enemyIndex: number) => {
+      const enemy = enemies[enemyIndex];
+      if (!enemy || enemy.hp <= 0) return; // Skip dead enemies
 
-    const enemyDef = enemy.definition;
-    const eStats = buildEnemyBattleStats(enemy);
+      const enemyDef = enemy.definition;
+      const eStats = buildEnemyBattleStats(enemy);
 
-    // Build index-scoped setters
-    const scopedSetEnemyGuard = (updater: number | ((prev: number) => number)) => {
-      updateEnemyByUpdater(enemyIndex, (e) => ({
-        guard: typeof updater === "function" ? updater(e.guard) : updater,
-      }));
-    };
-    const scopedSetEnemyHp = (updater: number | ((prev: number) => number)) => {
-      updateEnemyByUpdater(enemyIndex, (e) => ({
-        hp: typeof updater === "function" ? updater(e.hp) : updater,
-      }));
-    };
-    const scopedSetEnemyBuffs = (updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap)) => {
-      updateEnemyByUpdater(enemyIndex, (e) => ({
-        buffDebuffs: typeof updater === "function" ? updater(e.buffDebuffs) : updater,
-      }));
-    };
-    const scopedSetEnemyEnergy = (value: number) => {
-      updateEnemyByUpdater(enemyIndex, () => ({ energy: value }));
-    };
-    const getEnemyRef = () => enemy.ref.current;
+      // Build index-scoped setters
+      const scopedSetEnemyGuard = (
+        updater: number | ((prev: number) => number),
+      ) => {
+        updateEnemyByUpdater(enemyIndex, (e) => ({
+          guard: typeof updater === "function" ? updater(e.guard) : updater,
+        }));
+      };
+      const scopedSetEnemyHp = (
+        updater: number | ((prev: number) => number),
+      ) => {
+        updateEnemyByUpdater(enemyIndex, (e) => ({
+          hp: typeof updater === "function" ? updater(e.hp) : updater,
+        }));
+      };
+      const scopedSetEnemyBuffs = (
+        updater: BuffDebuffMap | ((prev: BuffDebuffMap) => BuffDebuffMap),
+      ) => {
+        updateEnemyByUpdater(enemyIndex, (e) => ({
+          buffDebuffs:
+            typeof updater === "function" ? updater(e.buffDebuffs) : updater,
+        }));
+      };
+      const scopedSetEnemyEnergy = (value: number) => {
+        updateEnemyByUpdater(enemyIndex, () => ({ energy: value }));
+      };
+      const getEnemyRef = () => enemy.ref.current;
 
-    await executeEnemyPhaseImpl({
-      currentEnemy: enemyDef,
-      enemyBuffs: enemy.buffDebuffs,
-      enemyHp: enemy.hp,
-      enemyMaxHp: enemy.maxHp,
-      enemyEnergy: enemy.energy,
-      playerHp: playerState.hp,
-      playerBuffs: playerState.buffs,
+      await executeEnemyPhaseImpl({
+        currentEnemy: enemyDef,
+        enemyBuffs: enemy.buffDebuffs,
+        enemyHp: enemy.hp,
+        enemyMaxHp: enemy.maxHp,
+        enemyEnergy: enemy.energy,
+        playerHp: playerState.hp,
+        playerBuffs: playerState.buffs,
+        enemies,
+        enemyIndex,
+        enemyStats: eStats,
+        playerStats: playerBattleStats,
+        playerRef,
+        setEnemyGuard: scopedSetEnemyGuard,
+        setEnemyEnergy: scopedSetEnemyEnergy,
+        setEnemyBuffs: scopedSetEnemyBuffs,
+        setEnemyHp: scopedSetEnemyHp,
+        setPlayerGuard,
+        setPlayerAp,
+        setPlayerHp,
+        setPlayerBuffs,
+        setBattleStats,
+        showMessage,
+        showDamageEffect,
+        getTargetEnemyRef: getEnemyRef,
+        onApDamage: options?.onApDamage,
+        // Increment enemy turn count at end of phase (V-EXEC-04)
+        incrementEnemyTurnCount: (idx: number) => {
+          updateEnemyByUpdater(idx, (e) => ({ turnCount: e.turnCount + 1 }));
+        },
+        phaseState: {
+          setPlayerPhaseActive: phaseState.setPlayerPhaseActive,
+          setEnemyPhaseActive: phaseState.setEnemyPhaseActive,
+          incrementPhaseCount: phaseState.incrementPhaseCount,
+          clearActivePhase: phaseState.clearActivePhase,
+        },
+      });
+    },
+    [
+      executeEnemyPhaseImpl,
       enemies,
-      enemyIndex,
-      enemyStats: eStats,
-      playerStats: playerBattleStats,
-      playerRef,
-      setEnemyGuard: scopedSetEnemyGuard,
-      setEnemyEnergy: scopedSetEnemyEnergy,
-      setEnemyBuffs: scopedSetEnemyBuffs,
-      setEnemyHp: scopedSetEnemyHp,
+      updateEnemyByUpdater,
+      playerState.hp,
+      playerState.buffs,
+      playerBattleStats,
       setPlayerGuard,
       setPlayerAp,
       setPlayerHp,
       setPlayerBuffs,
-      setBattleStats,
       showMessage,
       showDamageEffect,
-      getTargetEnemyRef: getEnemyRef,
-      onApDamage: options?.onApDamage,
-      // Increment enemy turn count at end of phase (V-EXEC-04)
-      incrementEnemyTurnCount: (idx: number) => {
-        updateEnemyByUpdater(idx, (e) => ({ turnCount: e.turnCount + 1 }));
-      },
-      phaseState: {
-        setPlayerPhaseActive: phaseState.setPlayerPhaseActive,
-        setEnemyPhaseActive: phaseState.setEnemyPhaseActive,
-        incrementPhaseCount: phaseState.incrementPhaseCount,
-        clearActivePhase: phaseState.clearActivePhase,
-      },
-    });
-  }, [
-    executeEnemyPhaseImpl,
-    enemies,
-    updateEnemyByUpdater,
-    playerState.hp,
-    playerState.buffs,
-    playerBattleStats,
-    setPlayerGuard,
-    setPlayerAp,
-    setPlayerHp,
-    setPlayerBuffs,
-    showMessage,
-    showDamageEffect,
-    phaseState,
-    options?.onApDamage,
-  ]);
-
+      phaseState,
+      options?.onApDamage,
+    ],
+  );
 
   // ========================================================================
   // Battle Flow Control
   // ========================================================================
 
-  const executeNextPhaseRef = useRef<(queue: PhaseQueue, index: number) => Promise<void>>(
-    async () => { }
-  );
+  const executeNextPhaseRef = useRef<
+    (queue: PhaseQueue, index: number) => Promise<void>
+  >(async () => {});
 
   // Ref to track latest enemies for use in async phase execution
   const enemiesRef = useRef(enemies);
@@ -557,14 +656,17 @@ export const useBattleOrchestrator = (
       }
 
       // Use expanded entries for multi-enemy support (use ref to avoid stale closure)
-      const expandedEntries = expandPhaseEntriesForMultipleEnemies(queue, enemiesRef.current);
+      const expandedEntries = expandPhaseEntriesForMultipleEnemies(
+        queue,
+        enemiesRef.current,
+      );
 
       if (index >= expandedEntries.length) {
         // All phases complete - generate new queue and start new round
         const newQueue = phaseState.generatePhaseQueueFromSpeeds(
           playerState.buffs,
           currentEnemy ?? null,
-          enemyBuffs
+          enemyBuffs,
         );
         await executeNextPhaseRef.current(newQueue, 0);
         return;
@@ -581,7 +683,10 @@ export const useBattleOrchestrator = (
       } else {
         const enemyIdx = currentEntry.enemyIndex ?? 0;
         // Skip dead enemies (use ref to avoid stale closure)
-        if (enemiesRef.current[enemyIdx] && enemiesRef.current[enemyIdx].hp > 0) {
+        if (
+          enemiesRef.current[enemyIdx] &&
+          enemiesRef.current[enemyIdx].hp > 0
+        ) {
           await executeEnemyPhaseForIndex(enemyIdx);
         }
         // Enemy phase auto-advances
@@ -597,16 +702,19 @@ export const useBattleOrchestrator = (
       playerState.buffs,
       currentEnemy,
       enemyBuffs,
-    ]
+    ],
   );
 
   useEffect(() => {
     executeNextPhaseRef.current = executeNextPhaseImpl;
   }, [executeNextPhaseImpl]);
 
-  const executeNextPhase = useCallback(async (queue: PhaseQueue, index: number) => {
-    await executeNextPhaseRef.current(queue, index);
-  }, []);
+  const executeNextPhase = useCallback(
+    async (queue: PhaseQueue, index: number) => {
+      await executeNextPhaseRef.current(queue, index);
+    },
+    [],
+  );
 
   const battleInitializedRef = useRef(false);
 
@@ -614,13 +722,23 @@ export const useBattleOrchestrator = (
     if (battleInitializedRef.current) return;
     battleInitializedRef.current = true;
 
+    // V-ENM-02: drop any resolved enemy actions from a previous battle so
+    // stale cached slots cannot leak into this one.
+    clearResolvedActionCache();
+
     const queue = phaseState.generatePhaseQueueFromSpeeds(
       playerState.buffs,
       currentEnemy ?? null,
-      enemyBuffs
+      enemyBuffs,
     );
     await executeNextPhase(queue, 0);
-  }, [playerState.buffs, currentEnemy, enemyBuffs, phaseState, executeNextPhase]);
+  }, [
+    playerState.buffs,
+    currentEnemy,
+    enemyBuffs,
+    phaseState,
+    executeNextPhase,
+  ]);
 
   const handleEndPhase = useCallback(() => {
     if (!phaseState.isPlayerPhase) return;
@@ -632,7 +750,9 @@ export const useBattleOrchestrator = (
     elementalChainHook.onTurnEnd();
 
     // Calculate phase end effects
-    const phaseEndResult = calculatePlayerPhaseEnd({ playerBuffs: playerState.buffs });
+    const phaseEndResult = calculatePlayerPhaseEnd({
+      playerBuffs: playerState.buffs,
+    });
 
     // Apply DoT damage
     if (phaseEndResult.dotDamage > 0) {
@@ -702,7 +822,7 @@ export const useBattleOrchestrator = (
           drawnCardsRef.current = [];
           setIsDrawingAnimation(false);
         },
-        250
+        250,
       );
     }
   }, [isDrawingAnimation, drawCardsWithAnimation]);
@@ -737,7 +857,12 @@ export const useBattleOrchestrator = (
         ...deckStateRef.current.discardPile,
       ];
       const shuffledDeck = shuffleArray(allCards);
-      dispatch({ type: "RESET_DECK", hand: [], drawPile: shuffledDeck, discardPile: [] });
+      dispatch({
+        type: "RESET_DECK",
+        hand: [],
+        drawPile: shuffledDeck,
+        discardPile: [],
+      });
 
       // Reset phase state
       phaseState.resetPhaseState();
@@ -756,7 +881,7 @@ export const useBattleOrchestrator = (
       elementalChainHook,
       playerState.maxEnergy,
       phaseState,
-    ]
+    ],
   );
 
   // ========================================================================
@@ -783,7 +908,12 @@ export const useBattleOrchestrator = (
     if (!currentEnemy || enemyHp <= 0) {
       return [];
     }
-    return previewEnemyActions(currentEnemy, enemyHp, enemyMaxHp, phaseState.phaseCount + 1);
+    return previewEnemyActions(
+      currentEnemy,
+      enemyHp,
+      enemyMaxHp,
+      phaseState.phaseCount + 1,
+    );
   }, [currentEnemy, enemyHp, enemyMaxHp, phaseState.phaseCount]);
 
   // ========================================================================

@@ -1,9 +1,5 @@
-import type { ReactNode } from "react";
-
 /**
- * Character layer placeholder.
- * Phase 3: Enemy sprites, player character sprites, idle animations.
+ * Character layer placeholder. Stays an empty container until Phase 3
+ * (enemy/player sprites). DOM frames render the characters in Phase 1.
  */
-export function CharacterLayer(): ReactNode {
-  return <pixiContainer label="character-layer" />;
-}
+export const CharacterLayer = () => <pixiContainer />;

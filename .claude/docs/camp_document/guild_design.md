@@ -1129,9 +1129,9 @@ The Equipment tab within Storage has a specialized three-section layout:
 
 The following features are planned for future implementation:
 
-- **Quest System**: See `.claude/feature_plans/quest_system.md`
-- **NPC Conversation**: See `.claude/feature_plans/npc_conversation.md`
-- **Title System**: See `.claude/feature_plans/title_system.md`
+- **Quest System**: See `.claude/docs/vision/plans/quest_system.md`
+- **NPC Conversation**: See `.claude/docs/vision/plans/npc_conversation.md`
+- **Title System**: See `.claude/docs/vision/plans/title_system.md`
 
 ---
 

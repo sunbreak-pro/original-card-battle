@@ -1,47 +1,48 @@
 import { Application, extend } from "@pixi/react";
-import { Container, Graphics } from "pixi.js";
-import { useRef, type ReactNode } from "react";
+import { Container, Graphics, Sprite, Text } from "pixi.js";
+import type { ReactNode, RefObject } from "react";
+import { usePixiEventGuard } from "./usePixiApp";
 
-// Register PixiJS components for @pixi/react JSX usage.
-// Phase 1: Container + Graphics only. Phase 3 adds Sprite, Text.
-extend({ Container, Graphics });
+// v8 requirement: register the pixi classes we use as JSX intrinsics
+// (<pixiContainer>, <pixiGraphics>, ...). `<Stage>` was removed in v8.
+extend({ Container, Graphics, Sprite, Text });
 
 interface PixiStageProps {
-  readonly children: ReactNode;
-  readonly className?: string;
+  /** The `.battle-field` host element the canvas should resize to. */
+  resizeTo: RefObject<HTMLElement | null>;
+  children: ReactNode;
 }
 
 /**
- * Shared PixiJS stage wrapper.
- * Renders a transparent canvas overlay that auto-resizes to fill its parent.
- * pointer-events: none ensures DOM elements remain interactive.
+ * Internal child rendered *inside* `<Application>` so it can read the app via
+ * the reconciler context and apply the pointer-event guard exactly once.
  */
-export function PixiStage({ children, className }: PixiStageProps): ReactNode {
-  const containerRef = useRef<HTMLDivElement>(null);
+function StageEventGuard(): null {
+  usePixiEventGuard();
+  return null;
+}
 
+/**
+ * Shared `<Application>` wrapper for every Pixi overlay.
+ *
+ * - `backgroundAlpha={0}` keeps the canvas transparent so the DOM battle
+ *   field shows through (hybrid DOM + GPU rendering).
+ * - `resolution` + `autoDensity` must be paired to avoid hi-DPI coord drift.
+ * - `preference="webgl"`: WebGPU is flagged production-not-recommended by
+ *   PixiJS v8 (plan §0B-2).
+ */
+export function PixiStage({ resizeTo, children }: PixiStageProps) {
   return (
-    <div
-      ref={containerRef}
-      className={className}
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        pointerEvents: "none",
-        zIndex: 5,
-      }}
+    <Application
+      resizeTo={resizeTo}
+      backgroundAlpha={0}
+      antialias
+      resolution={window.devicePixelRatio}
+      autoDensity
+      preference="webgl"
     >
-      <Application
-        resizeTo={containerRef}
-        backgroundAlpha={0}
-        antialias
-        resolution={window.devicePixelRatio || 1}
-        autoDensity
-      >
-        {children}
-      </Application>
-    </div>
+      <StageEventGuard />
+      {children}
+    </Application>
   );
 }

@@ -14,6 +14,7 @@ import { BattlingCardPileModal } from "../../cardHtml/CardModalDisplay";
 import { TurnOrderIndicator } from "../../battleHtml/TurnOrderIndicator";
 import StatusEffectDisplay from "../../componentsHtml/BuffEffect";
 import EnemyDisplay from "../../battleHtml/EnemyFrame";
+import { BattleCanvas } from "../../../pixi/battle/BattleCanvas";
 import "../../../css/battle/BattleScreen.css";
 
 interface GuildBattleScreenProps {
@@ -298,6 +299,15 @@ const GuildBattleScreen = ({
         battleState={battlePixiState}
         effectQueue={effectQueue}
         onEffectComplete={handleEffectComplete}
+      />
+
+      <BattleCanvas
+        playerHp={playerHp}
+        playerMaxHp={playerMaxHp}
+        enemyHp={aliveEnemies[0]?.hp ?? 0}
+        enemyMaxHp={aliveEnemies[0]?.maxHp ?? 0}
+        isPlayerPhase={isPlayerPhase}
+        phaseCount={phaseCount}
       />
 
       {/* Draw and Discard piles */}

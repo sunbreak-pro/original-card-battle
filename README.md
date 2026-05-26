@@ -136,7 +136,7 @@ src/
 ### Context Provider 階層
 
 ```
-GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider
+GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider → DungeonRunProvider → GuildProvider
 ```
 
 バトル状態は `useBattleOrchestrator` フックが直接管理（別途Contextなし）。
@@ -227,5 +227,5 @@ GameStateProvider → ResourceProvider → PlayerProvider → InventoryProvider 
 
 - `TODO.md` — タスク一覧（優先度、ステータス、仕様リンク）
 - `.claude/docs/` — ゲーム設計仕様書（バトル、カード、キャンプ、ダンジョン、敵、アイテム、手記、UI/UXデザインガイド）
-- `.claude/feature_plans/` — 機能の詳細仕様（クエスト、称号、NPC会話、闇市）
-- `.claude/memories/` — 開発で学んだ教訓、完了したリファクタリングガイド
+- `.claude/docs/vision/plans/` — 機能の詳細仕様（クエスト、称号、NPC会話、闇市）
+- `.claude/docs/known-issues/` — 開発で学んだ教訓、完了したリファクタリングガイド
