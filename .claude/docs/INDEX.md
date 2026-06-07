@@ -34,6 +34,10 @@
 
 ## Key Documents
 
+### Project Overview (Snapshot)
+
+- `Overall_document/PROJECT_OVERVIEW.md` - 最上流（構想/差別化/成長設計）+ 現状ステータス + 設計書vs実装の差分・未完了・ドキュメント不整合の横断スナップショット（2026-06-07）
+
 ### Battle System
 
 - `battle_document/` - Combat flow, phase execution, buff/debuff mechanics
