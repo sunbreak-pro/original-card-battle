@@ -19,9 +19,15 @@
 
 **Reference Titles:**
 
-* Shiren the Wanderer (Extraction-style)
-* Slay the Spire (Card Battle)
+* Slay the Spire (Card Battle / deck building)
 * Dark Souls (Severity of death penalty)
+* Speed chess / real-time decision games (per-turn time pressure)
+
+> **Theme revision (2026-06-07):** The "Shiren the Wanderer"-style framing has been
+> dropped. The extraction / lives structure is **retained** (minimal change), but the
+> game's identity shifts toward a **strategic + real-time-tension card battle** via a
+> per-turn time limit (≈10s, varies per battle, runs continuously). See
+> [`requirements/realtime-turn-timer.md`](../requirements/realtime-turn-timer.md).
 
 ---
 

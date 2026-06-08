@@ -14,7 +14,7 @@
 | Directory           | Description                                                                                                              |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `vision/`           | 抽象構想・設計原則（`core.md`）。`vision/plans/` はアクティブ実装プラン + 将来機能（quest/title/NPC/dark market/PixiJS） |
-| `requirements/`     | 機能要件定義（Tier 別。現状空、新機能追加時に使用）                                                                      |
+| `requirements/`     | 機能要件定義（Tier 別）。`realtime-turn-timer.md`（リアルタイム・ターンタイマー: 要件 + 初期詳細設計 + アジャイル計画）  |
 | `known-issues/`     | Root Cause + 再発防止知見（`INDEX.md` で索引、`LESSONS_LEARNED.md` に 8 知見）                                           |
 | `code-explanation/` | コード解析・脆弱性トラッカー（`vulnerability-remediation-guide.md`）・テスト分析                                         |
 
