@@ -14,7 +14,7 @@
 | Directory           | Description                                                                                                              |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `vision/`           | 抽象構想・設計原則（`core.md`）。`vision/plans/` はアクティブ実装プラン + 将来機能（quest/title/NPC/dark market/PixiJS） |
-| `requirements/`     | 機能要件定義（Tier 別）。`realtime-turn-timer.md`（リアルタイム・ターンタイマー: 要件 + 初期詳細設計 + アジャイル計画）  |
+| `requirements/`     | 機能要件定義（Tier 別）。`combat-core-redesign.md`（戦闘コア一括改定: スタミナ/ドロー/速度 アンブレラ）+ `realtime-turn-timer.md`（実時間タイマー軸）  |
 | `known-issues/`     | Root Cause + 再発防止知見（`INDEX.md` で索引、`LESSONS_LEARNED.md` に 8 知見）                                           |
 | `code-explanation/` | コード解析・脆弱性トラッカー（`vulnerability-remediation-guide.md`）・テスト分析                                         |
 

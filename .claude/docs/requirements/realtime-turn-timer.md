@@ -2,6 +2,7 @@
 
 > **Tier**: Core（ゲーム根幹）/ **種別**: 機能要件 + 初期詳細設計 + アジャイル・スライス計画（リビングドキュメント）
 > **Status**: Draft — Iteration 0（要件確定） / 2026-06-07
+> **アンブレラ**: 本書は[戦闘コア一括改定](./combat-core-redesign.md)の 1 柱（実時間タイマー軸）。スタミナ/ドロー/速度の改定と統合して進める。
 > **方式**: 要件定義・詳細設計とアジャイル開発のハイブリッド。本書は上流要件を固定し、各スライス着手時に詳細設計を JIT（Just-In-Time）で `vision/plans/` に展開する。
 > **関連**: `vision/core.md` / `Overall_document/game_design_master.md` / `battle_document/battle_logic.md` / `CLAUDE.md`（Battle Orchestrator Hook Composition）
 
