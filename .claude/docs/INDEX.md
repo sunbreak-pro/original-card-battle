@@ -14,7 +14,7 @@
 | Directory           | Description                                                                                                              |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `vision/`           | 抽象構想・設計原則（`core.md`）。`vision/plans/` はアクティブ実装プラン + 将来機能（quest/title/NPC/dark market/PixiJS） |
-| `requirements/`     | 機能要件定義（Tier 別。現状空、新機能追加時に使用）                                                                      |
+| `requirements/`     | 機能要件定義（Tier 別）。`combat-core-redesign.md`（戦闘コア一括改定: スタミナ/ドロー/速度 アンブレラ）+ `realtime-turn-timer.md`（実時間タイマー軸）  |
 | `known-issues/`     | Root Cause + 再発防止知見（`INDEX.md` で索引、`LESSONS_LEARNED.md` に 8 知見）                                           |
 | `code-explanation/` | コード解析・脆弱性トラッカー（`vulnerability-remediation-guide.md`）・テスト分析                                         |
 
@@ -33,6 +33,10 @@
 | `util_doument/`     | Utility systems and helpers                                        |
 
 ## Key Documents
+
+### Project Overview (Snapshot)
+
+- `Overall_document/PROJECT_OVERVIEW.md` - 最上流（構想/差別化/成長設計）+ 現状ステータス + 設計書vs実装の差分・未完了・ドキュメント不整合の横断スナップショット（2026-06-07）
 
 ### Battle System
 
