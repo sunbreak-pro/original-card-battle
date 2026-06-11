@@ -114,20 +114,24 @@ Phase 5  演出・仕上げ
 
 ## 6. ユーザー判断が必要な論点（要件定義の入力）
 
-| #   | 論点                                    | 選択肢                                                                        | 関連          |
-| --- | --------------------------------------- | ----------------------------------------------------------------------------- | ------------- |
-| 1   | 既存カードエネルギーとスタミナの関係    | 置換（スタミナに一本化）/ 二重コスト併存 / エネルギー廃止+スタミナ&剣気再設計 | BAT-6, CRD-2  |
-| 2   | 魔術師の移行期間中の扱い                | キャラ選択から外す / 旧コアを class-gate で並走 / 壊れたまま許容              | X-1, BAT-11   |
-| 3   | 手記はフルリセット（ライフ0）でも残すか | 残す（A1 を最大解釈）/ 消す（完全な死）/ 一部残す（観察Lvのみ等）             | JNL-5, IRR-5  |
-| 4   | 既存 Difficulty（ライフ数）の処遇       | 独立軸として残す / ステージ等級に一本化                                       | X-6, IRR-2    |
-| 5   | 昇格試験敵5体                           | 新コア適合（推奨: B3 等級が依存）/ 旧コア凍結                                 | X-2           |
-| 6   | Depth 型の最終形                        | 段階移行→最終排除（推奨）/ 互換維持で残置                                     | CRD-11, DUN-3 |
+> **2026-06-11 全論点ユーザー確定済み**（決定列参照）。要件定義はこの決定を前提に書く。
+
+| #   | 論点                                    | 決定（2026-06-11）                                                                                        | 関連          |
+| --- | --------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------- |
+| 1   | 既存カードエネルギーとスタミナの関係    | **スタミナに一本化**。エネルギー廃止、カードコストは全てスタミナへ。リソースは「スタミナ + 剣気」の2軸    | BAT-6, CRD-2  |
+| 2   | 魔術師の移行期間中の扱い                | **選択不可にする**。`isAvailable=false` + 「調整中」表示。既存魔術師セーブはロード不可の注記を出す        | X-1, BAT-11   |
+| 3   | 手記はフルリセット（ライフ0）でも残すか | **全て残す**。観察レベル・図鑑・書き込みがゲームオーバーを越えて永続（A1 最大解釈）                       | JNL-5, IRR-5  |
+| 4   | 既存 Difficulty（ライフ数）の処遇       | **ステージ等級に一本化**。Difficulty 型は廃止、ライフ数は固定値へ                                         | X-6, IRR-2    |
+| 5   | 昇格試験敵5体                           | **新コア適合**。試験敵にも間合い・体勢・スタミナ属性を付与                                                | X-2           |
+| 6   | Depth 型の最終形                        | **段階移行→最終排除**。マッピング層で移行し、union 完全削除は DUN-3 の完了条件                            | CRD-11, DUN-3 |
+| 7   | PR #1 残骸（Python 教材 + .gitignore）  | **削除 + 復元**。`game/` `main.py` を削除し Node 用 .gitignore（8aef0de 版）を復元。Phase 0 PR にまとめる | TD-0 併発     |
 
 ---
 
 ## 7. 領域別ギャップ詳細（全130件）
 
 > 以下は調査エージェントの構造化出力を機械整形したもの。`current` の file:line は調査時点の実測。§4 のオーナー統合適用前の生データであることに注意（統合先は §4 参照）。
+
 ### 7.1 戦闘コア（battle-core / 15件）
 
 **現状サマリ**: 戦闘コアは useBattleOrchestrator（src/domain/battles/managements/useBattleOrchestrator.ts、実測1006行）が useBattleState / useBattlePhase / useCardExecution / executeCharacterManage / useSwordEnergy / useElementalChain を合成する構造。管理状態は HP/AP/Guard/エネルギー/バフのみ（useBattleState.ts:29-41）で、コンセプト主柱の「間合い・体勢・スタミナ」に当たる状態は src 全体に存在しない（grep 実測。"stance" は CardTag の分類名、"stagger" は行動不能デバフのみ）。行動順は速度差による連続フェーズ制（calculators/phaseCalculation.ts:69-158）、ダメージはバフ補正→クリ→防御→Guard→AP→HP 配分（calculators/damageCalculation.ts:39-145）で距離概念なし。カードエネルギーは毎フェーズ全回復（executeCharacterManage.ts:135）であり「重い行動ほど消費・戦闘終了でリセット」のスタミナとは別物、AP は装備耐久で戦闘間持ち越し（battle_logic.md §5.1）なのでこれも別物。魔術師の共鳴は orchestrator と cardExecution に直接埋め込まれ（useBattleOrchestrator.ts:230, 352-389 / useCardExecution.ts:564-620）、known-issue 001（resonance debuff lag）が未解決。設計書は battle_logic.md Ver4.0 / buff_debuff_system.md Ver5.0 で三要素を一切含まず、フック統合テストも 0 件（テストは純関数4ファイルのみ）。
@@ -221,7 +225,7 @@ Phase 5  演出・仕上げ
 
 #### BAT-13: 戦闘フック統合テストの整備（着手前の負債返済） — `new` / L
 
-- **現状**: src/domain/battles のテストは純関数4ファイルのみ（logic/__tests__/buffLogic.test.ts、phaseLogic.test.ts、bleedDamage.test.ts、calculators/__tests__/damageCalculation.test.ts）。useBattleOrchestrator / useBattleState / useCardExecution を対象にしたテストは 0 件（grep 実測）
+- **現状**: src/domain/battles のテストは純関数4ファイルのみ（logic/**tests**/buffLogic.test.ts、phaseLogic.test.ts、bleedDamage.test.ts、calculators/**tests**/damageCalculation.test.ts）。useBattleOrchestrator / useBattleState / useCardExecution を対象にしたテストは 0 件（grep 実測）
 - **要求**: concept §5「技術的負債: フック統合テスト不足を再設計着手前に解消」。renderHook ベースで現行戦闘フロー（初期化→プレイヤーフェーズ→カード実行→敵フェーズ→決着）の回帰テストを先に張り、コア再設計の安全網にする
 - **影響ファイル**: `src/domain/battles/managements/__tests__/（新規ディレクトリ）`, `src/domain/battles/execution/__tests__/（新規）`
 - **リスク**: アニメーション待ち（setTimeout 多用、useCardExecution.ts:442 等）が統合テストを不安定にする。fake timers 前提の設計が必要
@@ -262,7 +266,7 @@ Phase 5  演出・仕上げ
 
 #### CRD-3: 剣士カード全60枚の再定義（スタミナ・間合い・体勢値の付与と再バランス） — `replace` / L
 
-- **現状**: src/constants/data/cards/swordsmanCards.ts:3-1050 に60枚（基本カード37枚 sw_001〜026/035/037/039〜047、タレント8枚 sw_027〜034、派生15枚 *_d）。全カードがエナジーコスト+剣気経済（攻撃=剣気消費、スキル/ガード=剣気獲得）前提で設計されており、間合い・体勢・スタミナの概念がゼロ。sw_034d は baseDamage 400 など倍率インフレ型の数値設計
+- **現状**: src/constants/data/cards/swordsmanCards.ts:3-1050 に60枚（基本カード37枚 sw_001〜026/035/037/039〜047、タレント8枚 sw_027〜034、派生15枚 \*\_d）。全カードがエナジーコスト+剣気経済（攻撃=剣気消費、スキル/ガード=剣気獲得）前提で設計されており、間合い・体勢・スタミナの概念がゼロ。sw_034d は baseDamage 400 など倍率インフレ型の数値設計
 - **要求**: concept-v2 §1「カード＝実際に取れる行動」+ §4「まず剣士のみで新戦闘コアを完成」に由来。全60枚にスタミナコスト・使用可能間合い・体勢影響を設定し、新戦闘コアの「実際に取れる行動」として意味づけと数値を再設計する
 - **影響ファイル**: `src/constants/data/cards/swordsmanCards.ts`
 - **設計書**: .claude/docs/card_document/SWORDSMAN_CARDS_40.md（置き換え: 新剣士カード一覧設計書）
@@ -461,7 +465,7 @@ Phase 5  演出・仕上げ
 
 #### DUN-5: マップ生成純関数群（dungeonLogic.ts）の流用 — `keep` / S
 
-- **現状**: generateFloorMap / selectNode / completeNode / getNodesByRow / getConnectionLines は MapGenerationConfig 駆動の純関数で、ステージ固有値を持たない（src/domain/dungeon/logic/dungeonLogic.ts:126-167 ほか）。テストも __tests__ 同居パターンで存在
+- **現状**: generateFloorMap / selectNode / completeNode / getNodesByRow / getConnectionLines は MapGenerationConfig 駆動の純関数で、ステージ固有値を持たない（src/domain/dungeon/logic/dungeonLogic.ts:126-167 ほか）。テストも **tests** 同居パターンで存在
 - **要求**: concept-v2 §4 方針 B「資産流用」。ノードマップ生成ロジックはステージ制でもそのまま流用可。呼び出し側（DUN-4）がステージの階層別 config を渡すだけでよい
 - **影響ファイル**: `src/domain/dungeon/logic/dungeonLogic.ts`, `src/domain/dungeon/logic/nodeEventLogic.ts`
 - **リスク**: DungeonFloor.depth フィールド（dungeonTypes.ts:39）の型変更（DUN-3）に伴うシグネチャ微修正のみ発生
@@ -826,7 +830,7 @@ Phase 5  演出・仕上げ
 
 #### PIX-1: Phase 1 基盤（PixiStage / BattleCanvas / StrictMode 回避 / CSS レイヤリング）の維持 — `keep` / S
 
-- **現状**: src/ui/pixi/core/PixiStage.tsx（透過 WebGL、resolution+autoDensity、preference:webgl）、src/ui/pixi/battle/BattleCanvas.tsx:33-66（React.lazy + マウントゲートで StrictMode issue #602 回避）、src/ui/css/pages/battle/battle-layout.css:194-205（z-index:15 オーバーレイ）、src/ui/pixi/core/usePixiApp.ts:25-41（pointermove 漏れ対策）。ビルド・テスト（src/ui/pixi/__tests__/pixiFoundation.test.ts）も整備済み
+- **現状**: src/ui/pixi/core/PixiStage.tsx（透過 WebGL、resolution+autoDensity、preference:webgl）、src/ui/pixi/battle/BattleCanvas.tsx:33-66（React.lazy + マウントゲートで StrictMode issue #602 回避）、src/ui/css/pages/battle/battle-layout.css:194-205（z-index:15 オーバーレイ）、src/ui/pixi/core/usePixiApp.ts:25-41（pointermove 漏れ対策）。ビルド・テスト（src/ui/pixi/**tests**/pixiFoundation.test.ts）も整備済み
 - **要求**: concept-v2 §4「PixiJS 基盤は流用」に該当。新戦闘コアの演出も同じ Application/レイヤー構成の上に載せるため、Phase 1 の成果物はそのまま土台として維持する
 - **影響ファイル**: `src/ui/pixi/core/PixiStage.tsx`, `src/ui/pixi/core/usePixiApp.ts`, `src/ui/pixi/battle/BattleCanvas.tsx`, `src/ui/css/pages/battle/battle-layout.css`
 - **リスク**: GuildBattleScreen.tsx が BattleScreen の構造を複製しているため（Phase 1 監査で確認済み）、BattleCanvas への変更は常に2箇所同期が必要
@@ -912,7 +916,7 @@ Phase 5  演出・仕上げ
 
 #### PIX-12: 戦闘演出設計書の新設（設計書駆動の充足） — `new` / M
 
-- **現状**: docs/*_document/ に演出・Pixi レイヤーの設計書が存在しない（.claude/docs/battle_document/ は battle_logic.md / buff_debuff_system.md / element_system_spec.md のみ）。演出仕様は plans/pixijs_phase2-4 という「プラン文書」にしかなく、合格基準の監査対象になる設計書がない
+- **現状**: docs/\*\_document/ に演出・Pixi レイヤーの設計書が存在しない（.claude/docs/battle_document/ は battle_logic.md / buff_debuff_system.md / element_system_spec.md のみ）。演出仕様は plans/pixijs_phase2-4 という「プラン文書」にしかなく、合格基準の監査対象になる設計書がない
 - **要求**: concept-v2 §5 合格基準「設計書と実装の差分ゼロ（新設計書を先に更新し監査）」。間合いレーン・体勢・スタミナ・観察開示の演出仕様、レイヤー構成（Background/Character/Effect）、座標系、DOM/Pixi の役割分担を設計書として battle_document/ に新設する
 - **影響ファイル**: `.claude/docs/battle_document/battle_presentation.md（新規）`, `.claude/docs/INDEX.md`
 - **設計書**: .claude/docs/battle_document/battle_presentation.md（新規） / .claude/docs/battle_document/battle_logic.md
@@ -947,7 +951,7 @@ Phase 5  演出・仕上げ
 
 #### TD-3: テスト共通基盤の新設（src/test/factories/ + 重複 factory の集約） — `new` / M
 
-- **現状**: factory 関数が各テストファイルに重複定義されている（src/domain/cards/decks/__tests__/deck.test.ts の createTestCard、src/domain/battles/calculators/__tests__/damageCalculation.test.ts の createBattleStats 等。testing_analysis.md:134-152, 191-205 が記録）。src/test/ には setup.ts のみで factories/ と fixtures/ が不在（testing_analysis.md:277-282 が欠落を指摘）
+- **現状**: factory 関数が各テストファイルに重複定義されている（src/domain/cards/decks/**tests**/deck.test.ts の createTestCard、src/domain/battles/calculators/**tests**/damageCalculation.test.ts の createBattleStats 等。testing_analysis.md:134-152, 191-205 が記録）。src/test/ には setup.ts のみで factories/ と fixtures/ が不在（testing_analysis.md:277-282 が欠落を指摘）
 - **要求**: concept-v2 §5「フック統合テスト不足の返済」の土台 + 新戦闘コア（間合い・体勢・スタミナ）を設計書駆動で組む際のテスト受け皿。src/test/factories/ に card / enemy / battleStats の共通 factory（Partial オーバーライド型）を新設し、既存8テストファイルの重複定義を移行。追加依存なし（@testing-library/react 16.3.2 導入済み）。検証: npm run test:run 全通過 + 重複 factory 定義が0になること
 - **影響ファイル**: `src/test/factories/card.ts`, `src/test/factories/enemy.ts`, `src/test/factories/battleStats.ts`, `src/domain/cards/decks/__tests__/deck.test.ts`, `src/domain/battles/calculators/__tests__/damageCalculation.test.ts`, `src/domain/battles/logic/__tests__/buffLogic.test.ts`, `src/domain/battles/logic/__tests__/bleedDamage.test.ts`, `src/domain/characters/enemy/logic/__tests__/enemyAI.test.ts`
 - **リスク**: 既存テストの一斉書き換えで一時的に green が崩れる可能性 → factory 新設→1ファイルずつ移行の順で進め、各移行ごとに test:run を回す。新戦闘コアの型（スタミナ等）が入ると factory 形が変わるが、Partial オーバーライド方式なら追従コストは小さい
@@ -961,7 +965,7 @@ Phase 5  演出・仕上げ
 
 #### TD-5: 流用確定資産の純粋関数テスト追加（masteryManager / equipmentStats / buffCalculation） — `new` / M
 
-- **現状**: 3モジュールとも未テスト（src 内 __tests__ の grep で参照ゼロ）: src/domain/cards/state/masteryManager.ts、src/domain/item_equipment/logic/equipmentStats.ts、src/domain/battles/calculators/buffCalculation.ts。testing_analysis.md:232-237 で Critical priority（battle-affecting）指定のまま放置
+- **現状**: 3モジュールとも未テスト（src 内 **tests** の grep で参照ゼロ）: src/domain/cards/state/masteryManager.ts、src/domain/item_equipment/logic/equipmentStats.ts、src/domain/battles/calculators/buffCalculation.ts。testing_analysis.md:232-237 で Critical priority（battle-affecting）指定のまま放置
 - **要求**: concept-v2 §4「データ定義・キャンプ・熟練度システム・Journal は流用」+ §2 体験の柱3「成長の手応え＝熟練度→派生システム活用」。流用が確定している資産は再設計後も生き残るため、着手前にテストで挙動を固定する価値が最も高い: masteryManager（熟練度レベル閾値・派生解放条件）/ equipmentStats（複数スロット集計・耐久劣化）/ buffCalculation（buff スタック・DoT 計算 — burn/freeze 等は新コアでも効果として残る前提）。検証: 各モジュールに境界値含む unit test、npm run test:run 通過
 - **影響ファイル**: `src/domain/cards/state/__tests__/masteryManager.test.ts`, `src/domain/item_equipment/logic/__tests__/equipmentStats.test.ts`, `src/domain/battles/calculators/__tests__/buffCalculation.test.ts`
 - **リスク**: buffCalculation は新戦闘コアで数値バランスが変わる可能性があるが、「計算ロジックの構造（スタック合成・上限処理）」を固定するテストにすれば数値変更時も流用できる。speedCalculation.ts は速度ソート型ターン制が間合い・体勢制に置換される可能性が高いため、意図的に対象外とする（過剰投資回避、TD-6 の negative list に記載）

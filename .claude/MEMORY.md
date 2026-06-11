@@ -9,9 +9,9 @@
 **対象**: `.claude/docs/vision/concept-v2.md`（承認済コンセプト）/ `src/domain/battles/` / `src/domain/dungeon/` / `.claude/docs/*_document/`
 **計画書**: `.claude/docs/vision/2026-06-11-realism-concept-kickoff.md`（入力資料）/ `.claude/docs/vision/concept-v2.md`（APPROVED 2026-06-11）
 
-- 前回: concept-v2.md 承認 → UI モックアップ作成 → ギャップ分析完了（130件 + 横断8件 + 修正15件、`docs/vision/2026-06-11-gap-analysis.md`）。**TD-0 発見: main が tsc 17エラーでコンパイル不能（検証済み）**、.gitignore も Python 版に regression
-- 現在: ギャップ分析のユーザーレビュー待ち（PR #12）。§6 の6論点（エネルギー vs スタミナ / 魔術師移行期 / 手記のフルリセット扱い / Difficulty 処遇 / 試験敵 / Depth 型）が要件定義の入力
-- 次: §6 論点の確定 → 要件定義（Tier 1-3）→ 設計書更新（DOC-2 新戦闘コア仕様が最優先）→ Phase 0 負債返済（TD-0 から）
+- 前回: ギャップ分析完了（130件 + 横断8件 + 修正15件）→ **§6 全7論点ユーザー確定**（スタミナ一本化 / 魔術師選択不可 / 手記フル永続 / Difficulty 廃止・等級一本化 / 試験敵適合 / Depth 段階移行→排除 / PR#1 残骸削除+.gitignore 復元）。.gitignore regression の原因特定: PR #1（Copilot 製 Python 教材、2026-05-26 マージ）の競合解決で Python 版が採用されたもの
+- 現在: PR #12（concept-v2 + モックアップ + ギャップ分析 + 決定記録）レビュー待ち
+- 次: 要件定義（Tier 1-3、`docs/requirements/`）→ 設計書更新（DOC-2 新戦闘コア仕様が最優先）→ Phase 0 クリーンアップ PR（TD-0 tsc 修復 + .gitignore 復元 + game/ 削除）
 
 ## 直近の完了
 
