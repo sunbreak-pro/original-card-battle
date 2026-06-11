@@ -9,9 +9,9 @@
 **対象**: `.claude/docs/vision/concept-v2.md`（承認済コンセプト）/ `src/domain/battles/` / `src/domain/dungeon/` / `.claude/docs/*_document/`
 **計画書**: `.claude/docs/vision/2026-06-11-realism-concept-kickoff.md`（入力資料）/ `.claude/docs/vision/concept-v2.md`（APPROVED 2026-06-11）
 
-- 前回: §4.1〜4.4 インタビュー完了、concept-v2.md 承認（B 再設計・剣士先行・2ステージ制・凍結+PixiJS統合・負債は着手前全返済）
-- 現在: ギャップ分析（コンセプト vs 現実装・設計書群の差分洗い出し）+ 新戦闘 UI/UX の HTML モックアップ作成
-- 次: ギャップ分析レビュー → 要件定義（Tier 1-3）→ 設計書更新 → 実装プラン分割
+- 前回: concept-v2.md 承認 → UI モックアップ作成 → ギャップ分析完了（130件 + 横断8件 + 修正15件、`docs/vision/2026-06-11-gap-analysis.md`）。**TD-0 発見: main が tsc 17エラーでコンパイル不能（検証済み）**、.gitignore も Python 版に regression
+- 現在: ギャップ分析のユーザーレビュー待ち（PR #12）。§6 の6論点（エネルギー vs スタミナ / 魔術師移行期 / 手記のフルリセット扱い / Difficulty 処遇 / 試験敵 / Depth 型）が要件定義の入力
+- 次: §6 論点の確定 → 要件定義（Tier 1-3）→ 設計書更新（DOC-2 新戦闘コア仕様が最優先）→ Phase 0 負債返済（TD-0 から）
 
 ## 直近の完了
 
