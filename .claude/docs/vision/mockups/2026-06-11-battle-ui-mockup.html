@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Concept v2 — 新戦闘 UI/UX モックアップ（間合い・体勢・スタミナ・観察）</title>
+<style>
+  :root {
+    --bg: #101513;
+    --panel: #1a221d;
+    --panel-2: #222d26;
+    --line: #3a4a3f;
+    --ink: #e8e6d8;
+    --ink-dim: #a8a795;
+    --moss: #7fb069;
+    --moss-deep: #4a7a3d;
+    --gold: #d9b45b;
+    --blood: #c14b4b;
+    --sky: #6fa8c9;
+    --stamina: #e3c45a;
+    --stance: #8fd0a0;
+    --unknown: #6b7c8f;
+    --card-w: 150px;
+    --card-h: 210px;
+    font-size: 15px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 600px at 50% -10%, #1c2a20 0%, var(--bg) 60%);
+    color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Segoe UI", sans-serif;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  /* ===== Header ===== */
+  .doc-header { text-align: center; margin-bottom: 18px; }
+  .doc-header h1 {
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    font-size: 1.7rem; letter-spacing: 0.12em; margin: 0 0 6px;
+    color: var(--gold);
+    text-shadow: 0 0 18px rgba(217, 180, 91, 0.25);
+  }
+  .doc-header p { margin: 0; color: var(--ink-dim); font-size: 0.9rem; }
+  .axis-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+  .chip {
+    border: 1px solid var(--line); border-radius: 999px; padding: 3px 14px;
+    font-size: 0.8rem; background: rgba(127, 176, 105, 0.08); color: var(--moss);
+  }
+  .chip.sub { color: var(--sky); background: rgba(111, 168, 201, 0.08); }
+
+  /* ===== Tabs ===== */
+  .tabs { display: flex; gap: 6px; margin: 26px 0 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .tab {
+    padding: 10px 18px; cursor: pointer; border: 1px solid transparent; border-bottom: none;
+    border-radius: 10px 10px 0 0; color: var(--ink-dim); font-size: 0.92rem; user-select: none;
+  }
+  .tab.active { background: var(--panel); border-color: var(--line); color: var(--gold); }
+  .pane { display: none; background: var(--panel); border: 1px solid var(--line); border-top: none; border-radius: 0 0 14px 14px; padding: 26px; }
+  .pane.active { display: block; }
+  .pane h2 { font-size: 1.15rem; color: var(--moss); margin: 0 0 4px; letter-spacing: 0.06em; }
+  .pane .lead { color: var(--ink-dim); font-size: 0.88rem; margin: 0 0 18px; }
+
+  /* ===== Battle stage mock ===== */
+  .stage {
+    position: relative; width: 100%; aspect-ratio: 16 / 9;
+    border-radius: 12px; overflow: hidden;
+    background:
+      radial-gradient(700px 300px at 70% 20%, rgba(127, 176, 105, 0.10), transparent 70%),
+      radial-gradient(500px 260px at 20% 80%, rgba(111, 168, 201, 0.07), transparent 70%),
+      linear-gradient(180deg, #18231c 0%, #131a16 55%, #0e1411 100%);
+    border: 1px solid var(--line);
+    box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.55);
+  }
+  /* stage header */
+  .stage-top {
+    position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center;
+    justify-content: space-between; padding: 8px 14px;
+    background: linear-gradient(180deg, rgba(10, 14, 11, 0.85), rgba(10, 14, 11, 0));
+    z-index: 5; font-size: 0.8rem;
+  }
+  .stage-name { color: var(--gold); letter-spacing: 0.15em; font-weight: 700; }
+  .stage-name small { color: var(--ink-dim); font-weight: 400; margin-left: 8px; letter-spacing: 0.05em; }
+  .env-chips { display: flex; gap: 6px; }
+  .env {
+    border: 1px solid rgba(127, 176, 105, 0.4); color: var(--moss); border-radius: 6px;
+    padding: 1px 8px; font-size: 0.72rem; background: rgba(16, 21, 19, 0.6);
+  }
+  .turn-order { color: var(--ink-dim); font-size: 0.72rem; }
+
+  /* combatants */
+  .combatant { position: absolute; bottom: 33%; text-align: center; z-index: 2; }
+  .combatant .figure {
+    width: 110px; height: 130px; display: flex; align-items: flex-end; justify-content: center;
+    font-size: 64px; margin: 0 auto;
+  }
+  .player-side { left: 9%; }
+  .player-side .figure { filter: drop-shadow(0 0 14px rgba(111, 168, 201, 0.55)); }
+  .enemy-side { right: 9%; }
+  .enemy-side .figure { filter: drop-shadow(0 0 14px rgba(193, 75, 75, 0.45)); transform: scaleX(-1); }
+
+  /* ===== Player frame ===== */
+  .player-frame {
+    position: absolute; left: 2%; bottom: 2.5%; width: 30%;
+    background: rgba(13, 18, 15, 0.92); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; z-index: 6; font-size: 0.78rem; text-align: left;
+  }
+  .pf-name { font-weight: 700; color: var(--sky); margin-bottom: 6px; font-size: 0.85rem; }
+  .bar { height: 10px; border-radius: 5px; background: #11150f; border: 1px solid #2c352c; overflow: hidden; margin: 3px 0 7px; }
+  .bar > i { display: block; height: 100%; }
+  .hp-fill { width: 72%; background: linear-gradient(90deg, #5f9c52, #8fd06f); }
+  .row-label { display: flex; justify-content: space-between; color: var(--ink-dim); font-size: 0.72rem; }
+  .row-label b { color: var(--ink); }
+  /* stamina segments */
+  .stamina-track { display: flex; gap: 4px; margin: 3px 0 7px; }
+  .seg { flex: 1; height: 12px; border-radius: 3px; border: 1px solid #4a4326; background: #171507; }
+  .seg.on { background: linear-gradient(180deg, #f0d57a, var(--stamina)); box-shadow: 0 0 6px rgba(227, 196, 90, 0.45); }
+  .seg.spent { background: #2b2614; }
+  /* stance */
+  .stance-line { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .stance-state {
+    border: 1px solid var(--stance); color: var(--stance); border-radius: 6px; padding: 1px 10px;
+    font-size: 0.75rem; background: rgba(143, 208, 160, 0.08); letter-spacing: 0.1em;
+  }
+  .stance-meter { flex: 1; height: 7px; border-radius: 4px; background: #11150f; border: 1px solid #2c352c; overflow: hidden; }
+  .stance-meter > i { display: block; height: 100%; width: 82%; background: linear-gradient(90deg, #5e8f6c, var(--stance)); }
+  .mini-stats { display: flex; gap: 10px; margin-top: 7px; color: var(--ink-dim); font-size: 0.72rem; }
+  .mini-stats b { color: var(--ink); }
+
+  /* ===== Enemy frame (observation) ===== */
+  .enemy-frame {
+    position: absolute; right: 2%; top: 9%; width: 30%;
+    background: rgba(18, 13, 13, 0.92); border: 1px solid #4a3a3a; border-radius: 10px;
+    padding: 10px 12px; z-index: 6; font-size: 0.78rem; text-align: left;
+  }
+  .ef-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .ef-name { font-weight: 700; color: #d98c8c; font-size: 0.85rem; }
+  .obs-level { color: var(--gold); font-size: 0.78rem; letter-spacing: 0.15em; }
+  .obs-level small { color: var(--ink-dim); letter-spacing: 0; margin-right: 4px; }
+  .hp-unknown {
+    margin: 6px 0 7px; height: 10px; border-radius: 5px; border: 1px dashed #5a6a7a;
+    background: repeating-linear-gradient(45deg, #1a212a 0 8px, #141a21 8px 16px);
+    position: relative;
+  }
+  .hp-unknown::after {
+    content: "??? ─ 手応えで推し量れ"; position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; font-size: 0.62rem; color: var(--unknown); letter-spacing: 0.1em;
+  }
+  .intent-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .intent-badge {
+    width: 30px; height: 30px; border-radius: 50%; border: 1px solid #5a6a7a; display: flex;
+    align-items: center; justify-content: center; font-size: 1rem; color: var(--unknown);
+    background: rgba(90, 106, 122, 0.12);
+  }
+  .intent-text { color: var(--ink-dim); font-size: 0.72rem; }
+  .known-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+  .ktag { border: 1px solid #4a3a3a; border-radius: 5px; padding: 0 7px; font-size: 0.68rem; color: var(--ink-dim); }
+  .ktag.revealed { border-color: var(--gold); color: var(--gold); }
+
+  /* ===== Distance track (Variant A) ===== */
+  .distance-track {
+    position: absolute; left: 50%; bottom: 36%; transform: translateX(-50%);
+    width: 46%; z-index: 3;
+  }
+  .dt-zones { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .zone {
+    flex: 1; text-align: center; padding: 5px 0 4px; font-size: 0.72rem; letter-spacing: 0.25em;
+    color: var(--ink-dim); background: rgba(16, 21, 19, 0.75); border-right: 1px solid var(--line);
+    position: relative;
+  }
+  .zone:last-child { border-right: none; }
+  .zone.current { background: rgba(127, 176, 105, 0.18); color: var(--moss); font-weight: 700; }
+  .dt-tokens { position: relative; height: 26px; margin-top: 6px; }
+  .token {
+    position: absolute; top: 0; width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .token.player { left: 36%; background: rgba(111, 168, 201, 0.25); border: 1.5px solid var(--sky); }
+  .token.enemy { left: 58%; background: rgba(193, 75, 75, 0.25); border: 1.5px solid var(--blood); }
+  .dt-caption { text-align: center; font-size: 0.7rem; color: var(--ink-dim); margin-top: 2px; letter-spacing: 0.1em; }
+
+  /* ===== Journal quick panel ===== */
+  .journal-quick {
+    position: absolute; left: 2%; top: 9%; width: 24%;
+    background: rgba(26, 23, 15, 0.92); border: 1px solid #5a4f33; border-radius: 10px;
+    padding: 9px 12px; z-index: 6; font-size: 0.72rem;
+  }
+  .jq-title { color: var(--gold); font-size: 0.75rem; letter-spacing: 0.2em; margin-bottom: 5px; }
+  .jq-body { color: var(--ink-dim); font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; }
+  .jq-body .hint { color: #c9b06a; }
+
+  /* ===== Hand ===== */
+  .hand { position: absolute; left: 50%; bottom: -16px; transform: translateX(-50%); display: flex; z-index: 8; }
+  .mock-card {
+    width: var(--card-w); height: var(--card-h); border-radius: 10px; margin: 0 -14px;
+    background: linear-gradient(180deg, #2a2f26 0%, #1c211a 100%);
+    border: 1.5px solid #55604f; position: relative; padding: 30px 9px 8px;
+    font-size: 0.68rem; transform-origin: center bottom; transition: transform 0.15s;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  }
+  .mock-card:hover { transform: translateY(-26px) scale(1.08); z-index: 20; }
+  .mock-card.disabled { filter: grayscale(0.75) brightness(0.62); }
+  .mock-card.disabled::after {
+    content: attr(data-reason); position: absolute; left: 4px; right: 4px; bottom: 38%;
+    text-align: center; color: #d9908c; font-size: 0.62rem; background: rgba(20, 10, 10, 0.85);
+    border-radius: 4px; padding: 2px;
+  }
+  .mc-cost {
+    position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #f4e09a, #b08f33); color: #1f1a08;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem;
+    border: 1px solid #6e5a1e;
+  }
+  .mc-range { position: absolute; top: 9px; right: 8px; display: flex; gap: 3px; }
+  .rdot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--ink-dim); }
+  .rdot.on { background: var(--moss); border-color: var(--moss); box-shadow: 0 0 4px rgba(127, 176, 105, 0.7); }
+  .mc-name { font-weight: 700; font-size: 0.78rem; color: var(--ink); text-align: center; margin-bottom: 4px; }
+  .mc-art { height: 52px; border-radius: 6px; background: linear-gradient(135deg, #36412f, #222a20); display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 5px; }
+  .mc-text { color: var(--ink-dim); font-size: 0.64rem; line-height: 1.45; }
+  .mc-stance { position: absolute; bottom: 6px; left: 8px; right: 8px; font-size: 0.6rem; color: var(--stance); border-top: 1px dashed #3d4a3d; padding-top: 3px; }
+
+  /* annotation markers */
+  .mark {
+    position: absolute; width: 22px; height: 22px; border-radius: 50%; background: var(--gold);
+    color: #20180a; font-weight: 800; font-size: 0.78rem; display: flex; align-items: center;
+    justify-content: center; z-index: 9; box-shadow: 0 0 10px rgba(217, 180, 91, 0.6);
+  }
+
+  /* legend */
+  .legend { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 22px; }
+  .legend li { list-style: none; font-size: 0.85rem; color: var(--ink-dim); }
+  .legend b { color: var(--gold); margin-right: 6px; }
+  .legend .axis { color: var(--moss); font-size: 0.74rem; margin-left: 6px; }
+
+  /* ===== Card anatomy ===== */
+  .anatomy { display: flex; gap: 36px; align-items: flex-start; flex-wrap: wrap; }
+  .anatomy .mock-card { margin: 0; transform: scale(1.5); transform-origin: top left; cursor: default; }
+  .anatomy .mock-card:hover { transform: scale(1.5); }
+  .anatomy-notes { flex: 1; min-width: 320px; margin-left: 90px; }
+  .anatomy-notes dt { color: var(--gold); font-weight: 700; margin-top: 14px; }
+  .anatomy-notes dd { margin: 2px 0 0; color: var(--ink-dim); font-size: 0.88rem; }
+
+  /* ===== Observation progression ===== */
+  .obs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .obs-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; font-size: 0.78rem; }
+  .obs-card h4 { margin: 0 0 8px; color: var(--gold); font-size: 0.82rem; }
+  .obs-card ul { margin: 0; padding-left: 18px; color: var(--ink-dim); }
+  .obs-card li.got { color: var(--ink); }
+  .journal-page {
+    margin-top: 20px; background: #211d12; border: 1px solid #5a4f33; border-radius: 10px; padding: 18px 22px;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; color: #cfc5a5; font-size: 0.9rem;
+  }
+  .journal-page h4 { color: var(--gold); margin: 0 0 8px; letter-spacing: 0.2em; }
+  .journal-page .rumor { color: var(--sky); }
+  .journal-page .dead { color: #9a8f74; font-size: 0.78rem; border-top: 1px dashed #5a4f33; margin-top: 12px; padding-top: 8px; }
+
+  /* ===== Variants ===== */
+  .variants { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .variant-box { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .variant-box h4 { margin: 0 0 10px; color: var(--gold); }
+  .mini-stage { position: relative; aspect-ratio: 16/7; border-radius: 8px; background: linear-gradient(180deg, #18231c, #0e1411); border: 1px solid var(--line); overflow: hidden; }
+  .ms-fig { position: absolute; bottom: 14%; font-size: 34px; }
+  .ms-track { position: absolute; left: 50%; transform: translateX(-50%); bottom: 18%; width: 52%; }
+  .pros { font-size: 0.82rem; color: var(--ink-dim); margin-top: 10px; }
+  .pros b { color: var(--moss); }
+  .pros .con b { color: var(--blood); }
+  table.cmp { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 0.85rem; }
+  table.cmp th, table.cmp td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; }
+  table.cmp th { background: var(--panel-2); color: var(--gold); font-weight: 600; }
+  .note { margin-top: 16px; font-size: 0.85rem; color: var(--ink-dim); border-left: 3px solid var(--moss); padding-left: 12px; }
+  .badge-distance {
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--moss); color: var(--moss);
+    border-radius: 8px; padding: 3px 12px; background: rgba(127, 176, 105, 0.1); font-size: 0.85rem; letter-spacing: 0.2em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="doc-header">
+    <h1>新戦闘 UI/UX モックアップ</h1>
+    <p>Concept v2（2026-06-11 承認）— 生身の探索者 / ライト幻想 / 翠苔の森殿・想定</p>
+    <div class="axis-chips">
+      <span class="chip">主柱: 間合い・体勢・スタミナ</span>
+      <span class="chip sub">副柱: 結果の不可逆性</span>
+      <span class="chip sub">副柱: 情報は観察でのみ</span>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-pane="p1">① 戦闘画面 全体像</div>
+    <div class="tab" data-pane="p2">② カードの読み方</div>
+    <div class="tab" data-pane="p3">③ 観察と手記</div>
+    <div class="tab" data-pane="p4">④ 間合い表現 A/B 比較</div>
+  </div>
+
+  <!-- ============ PANE 1: full battle screen ============ -->
+  <section class="pane active" id="p1">
+    <h2>戦闘画面 全体像（間合いトラック方式 / 案A）</h2>
+    <p class="lead">現行レイアウト（上ヘッダー・中央フィールド・下手札ファン）を維持しつつ、4つの新要素を重ねる。カードにホバーすると持ち上がります。</p>
+
+    <div class="stage">
+      <div class="stage-top">
+        <span class="stage-name">翠苔の森殿 <small>第 2 層 ─ 推奨等級 Ⅰ</small></span>
+        <span class="env-chips">
+          <span class="env">視界: 良好</span>
+          <span class="env">足場: 苔むした石畳</span>
+          <span class="env">広さ: 開けている</span>
+        </span>
+        <span class="turn-order">行動順: 自分 → 大蜥蜴</span>
+      </div>
+
+      <div class="mark" style="top:6%; left:36%;">1</div>
+      <div class="mark" style="top:6.5%; right:33%;">2</div>
+
+      <!-- journal quick panel -->
+      <div class="journal-quick">
+        <div class="jq-title">─ 手記 ─</div>
+        <div class="jq-body">
+          『苔喰らいの大蜥蜴』<br />
+          <span class="hint">噂: 尾の一撃は受けるな（ギルド）</span><br />
+          観察 2 回目。威嚇のあと、必ず…？
+        </div>
+      </div>
+      <div class="mark" style="top:7%; left:27.5%;">7</div>
+
+      <!-- enemy frame -->
+      <div class="enemy-frame">
+        <div class="ef-head">
+          <span class="ef-name">苔喰らいの大蜥蜴</span>
+          <span class="obs-level"><small>観察</small>★☆☆</span>
+        </div>
+        <div class="hp-unknown"></div>
+        <div class="intent-row">
+          <span class="intent-badge">？</span>
+          <span class="intent-text">次の行動: 未判明（観察★★で意図が読めるようになる）</span>
+        </div>
+        <div class="known-tags">
+          <span class="ktag revealed">威嚇後に動く</span>
+          <span class="ktag">攻撃力 ???</span>
+          <span class="ktag">弱点 ???</span>
+        </div>
+      </div>
+      <div class="mark" style="top:7%; right:0.5%;">3</div>
+
+      <!-- combatants -->
+      <div class="combatant player-side"><div class="figure">🗡️</div></div>
+      <div class="combatant enemy-side"><div class="figure">🦎</div></div>
+
+      <!-- distance track -->
+      <div class="distance-track">
+        <div class="dt-zones">
+          <div class="zone">遠間</div>
+          <div class="zone current">中間</div>
+          <div class="zone">近間</div>
+        </div>
+        <div class="dt-tokens">
+          <span class="token player">🗡</span>
+          <span class="token enemy">🦎</span>
+        </div>
+        <div class="dt-caption">いまの間合い: 中間 ─ 突きは届く / 斬撃は届かない</div>
+      </div>
+      <div class="mark" style="bottom:47%; left:49%;">4</div>
+
+      <!-- player frame -->
+      <div class="player-frame">
+        <div class="pf-name">剣士（あなた）</div>
+        <div class="row-label"><span>HP</span><b>43 / 60</b></div>
+        <div class="bar"><i class="hp-fill"></i></div>
+        <div class="row-label"><span>スタミナ</span><b>4 / 6</b></div>
+        <div class="stamina-track">
+          <span class="seg on"></span><span class="seg on"></span><span class="seg on"></span>
+          <span class="seg on"></span><span class="seg spent"></span><span class="seg spent"></span>
+        </div>
+        <div class="stance-line">
+          <span class="stance-state">体勢: 安定</span>
+          <div class="stance-meter"><i></i></div>
+        </div>
+        <div class="mini-stats"><span>ガード <b>3</b></span><span>剣気 <b>2</b></span></div>
+      </div>
+      <div class="mark" style="bottom:24%; left:32.5%;">5</div>
+
+      <!-- hand -->
+      <div class="hand">
+        <div class="mock-card disabled" data-reason="間合いが遠い（近間が必要）">
+          <span class="mc-cost">3</span>
+          <span class="mc-range"><i class="rdot"></i><i class="rdot"></i><i class="rdot on"></i></span>
+          <div class="mc-name">大上段斬り</div>
+          <div class="mc-art">⚔️</div>
+          <div class="mc-text">ダメージ 18。重い一振り。</div>
+          <div class="mc-stance">体勢 −大（外すと崩れる）</div>
+        </div>
+        <div class="mock-card">
+          <span class="mc-cost">1</span>
+          <span class="mc-range"><i class="rdot"></i><i class="rdot on"></i><i class="rdot on"></i></span>
+          <div class="mc-name">牽制突き</div>
+          <div class="mc-art">🔱</div>
+          <div class="mc-text">ダメージ 6。中間から届く。</div>
+          <div class="mc-stance">体勢 維持</div>
+        </div>
+        <div class="mock-card">
+          <span class="mc-cost">1</span>
+          <span class="mc-range"><i class="rdot on"></i><i class="rdot on"></i><i class="rdot on"></i></span>
+          <div class="mc-name">間合いを詰める</div>
+          <div class="mc-art">👣</div>
+          <div class="mc-text">一段近づく（中間→近間）。</div>
+          <div class="mc-stance">体勢 −小</div>
+        </div>
+        <div class="mock-card">
+          <span class="mc-cost">1</span>
+          <span class="mc-range"><i class="rdot on"></i><i class="rdot on"></i><i class="rdot on"></i></span>
+          <div class="mc-name">見切り</div>
+          <div class="mc-art">👁️</div>
+          <div class="mc-text">観察 +1。敵の意図が読みやすくなる。ガード 2。</div>
+          <div class="mc-stance">体勢 維持</div>
+        </div>
+        <div class="mock-card">
+          <span class="mc-cost">0</span>
+          <span class="mc-range"><i class="rdot on"></i><i class="rdot on"></i><i class="rdot on"></i></span>
+          <div class="mc-name">呼吸を整える</div>
+          <div class="mc-art">🌬️</div>
+          <div class="mc-text">スタミナ +2。体勢を立て直す。</div>
+          <div class="mc-stance">体勢 回復</div>
+        </div>
+      </div>
+      <div class="mark" style="bottom:5%; left:24%;">6</div>
+    </div>
+
+    <ul class="legend">
+      <li><b>1</b> 環境ルールチップ — ステージ（土地）が戦闘条件を変える<span class="axis">▶ B1 環境ルール</span></li>
+      <li><b>2</b> 推奨等級 — 歪みの濃さ＝難易度をギルド表記で<span class="axis">▶ B3</span></li>
+      <li><b>3</b> 敵フレーム — HP は「???」、観察★で段階開示。意図も最初は読めない<span class="axis">▶ 情報のリアリティ</span></li>
+      <li><b>4</b> 間合いトラック — 遠間/中間/近間。カードが「届くか」が一目で分かる<span class="axis">▶ 戦闘のリアリティ（主柱）</span></li>
+      <li><b>5</b> スタミナ＋体勢 — 重い行動はスタミナを食い、無理をすると体勢が崩れる<span class="axis">▶ 戦闘のリアリティ（主柱）</span></li>
+      <li><b>6</b> 手札 — 間合い外のカードは灰色＋理由表示。コスト＝スタミナ<span class="axis">▶ カード＝実際に取れる行動</span></li>
+      <li><b>7</b> 手記クイックパネル — ギルドの噂＋これまでの観察メモ<span class="axis">▶ A1 手記は死を越える / B2</span></li>
+    </ul>
+  </section>
+
+  <!-- ============ PANE 2: card anatomy ============ -->
+  <section class="pane" id="p2">
+    <h2>カードの読み方（新カードフレーム）</h2>
+    <p class="lead">カード＝「実際に取れる行動」。1枚に「体力で払うコスト」「届く距離」「体への影響」を載せる。</p>
+
+    <div class="anatomy">
+      <div class="mock-card">
+        <span class="mc-cost">3</span>
+        <span class="mc-range"><i class="rdot"></i><i class="rdot"></i><i class="rdot on"></i></span>
+        <div class="mc-name">大上段斬り</div>
+        <div class="mc-art">⚔️</div>
+        <div class="mc-text">ダメージ 18。重い一振り。当たれば敵の体勢を大きく削る。</div>
+        <div class="mc-stance">体勢 −大（外すと崩れる）</div>
+      </div>
+      <dl class="anatomy-notes">
+        <dt>左上の円 = スタミナコスト</dt>
+        <dd>従来の AP に代わる戦闘内リソース。重い武器・大技ほど高い。毎ターン少量回復し、戦闘終了でリセット。</dd>
+        <dt>右上の 3 ドット = 間合い適性（遠・中・近）</dt>
+        <dd>点灯している間合いでのみプレイ可能。今の間合いで使えないカードは手札で灰色になり、理由が表示される。</dd>
+        <dt>下段の帯 = 体勢への影響</dt>
+        <dd>大技は自分の体勢を崩すリスクを持つ。体勢が崩れる（メーターが尽きる）と一定時間、被ダメージ増・回避不能。敵にも同じルールが適用され、「崩してから叩く」が成立する。</dd>
+        <dt>数値非表示の思想</dt>
+        <dd>敵側の数値が見えないぶん、自分側のコスト・距離・リスクは完全開示する。「読めないのは敵、ブレないのは自分の腕」。</dd>
+      </dl>
+    </div>
+    <p class="note">既存カード型（cardTypes）に「スタミナコスト / 間合い条件 / 体勢影響」の3属性を足すイメージ。熟練度→派生システムはそのまま「成長の手応え」として継続。</p>
+  </section>
+
+  <!-- ============ PANE 3: observation & journal ============ -->
+  <section class="pane" id="p3">
+    <h2>観察と手記 — 敵情報の段階開示</h2>
+    <p class="lead">敵のステータスは隠す代わりに、「観察するほど読める」進行を 4 段階で設計する。観察は戦闘中の行動（見切り等）と遭遇回数で進む。</p>
+
+    <div class="obs-grid">
+      <div class="obs-card">
+        <h4>観察 ☆☆☆（初遭遇）</h4>
+        <ul>
+          <li class="got">名前・見た目</li>
+          <li class="got">ギルドの噂（あれば）</li>
+          <li>HP ???</li>
+          <li>意図 ???</li>
+          <li>弱点 ???</li>
+        </ul>
+      </div>
+      <div class="obs-card">
+        <h4>観察 ★☆☆</h4>
+        <ul>
+          <li class="got">HP の手応え（多い/少ない）</li>
+          <li class="got">行動の癖 1 つ</li>
+          <li>意図 ???</li>
+          <li>弱点 ???</li>
+        </ul>
+      </div>
+      <div class="obs-card">
+        <h4>観察 ★★☆</h4>
+        <ul>
+          <li class="got">次の行動の意図が見える</li>
+          <li class="got">おおよその攻撃力</li>
+          <li>弱点 ???</li>
+        </ul>
+      </div>
+      <div class="obs-card">
+        <h4>観察 ★★★（完全）</h4>
+        <ul>
+          <li class="got">HP 数値開示</li>
+          <li class="got">全行動パターン</li>
+          <li class="got">弱点・耐性</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="journal-page">
+      <h4>─ 手記: 苔喰らいの大蜥蜴 ─</h4>
+      <p>
+        <span class="rumor">ギルドの噂: 「尾の一撃は盾ごと持っていかれる。受けるな、躱せ」</span><br />
+        一度目の遭遇。岩と見分けがつかぬほど静かに待ち伏せる。<br />
+        威嚇のあとに大きく踏み込んでくる——次は距離を取って確かめる。
+      </p>
+      <p class="dead">† 三代前の探索者の書き込み: 「近間に入った瞬間が最も危うい」<br />
+      （あなたが死んでも、この頁は次の探索者に引き継がれる）</p>
+    </div>
+
+    <p class="note">手記は死後も残る唯一の資産（A1「手記は死を越える」）。観察レベルは敵種ごとに永続し、ラン死亡でもリセットされない。フルリセット（ライフ0）時に残すかどうかは要件定義で決める論点。</p>
+  </section>
+
+  <!-- ============ PANE 4: variants ============ -->
+  <section class="pane" id="p4">
+    <h2>間合い表現の A/B 比較</h2>
+    <p class="lead">間合いは本命軸の中心 UI。画面の見せ方として 2 案を用意した。</p>
+
+    <div class="variants">
+      <div class="variant-box">
+        <h4>案A: 間合いトラック型（①の画面で採用）</h4>
+        <div class="mini-stage">
+          <span class="ms-fig" style="left:12%;">🗡️</span>
+          <span class="ms-fig" style="right:12%; transform:scaleX(-1);">🦎</span>
+          <div class="ms-track">
+            <div class="dt-zones">
+              <div class="zone">遠間</div>
+              <div class="zone current">中間</div>
+              <div class="zone">近間</div>
+            </div>
+            <div class="dt-tokens">
+              <span class="token player" style="left:30%;">🗡</span>
+              <span class="token enemy" style="left:62%;">🦎</span>
+            </div>
+          </div>
+        </div>
+        <p class="pros">
+          <b>長所:</b> 位置関係が常時見える。移動カードの効果が直感的。複数敵でも敵ごとのトークンで拡張できる。PixiJS でキャラ位置を実際に動かす演出（Phase 2-4 統合先）と相性がよい。<br />
+          <span class="con"><b>短所:</b></span> 画面中央に常設 UI が増える。複数敵で間合いが敵ごとに違うと情報量が上がる。
+        </p>
+      </div>
+
+      <div class="variant-box">
+        <h4>案B: 間合いバッジ型（ミニマル）</h4>
+        <div class="mini-stage">
+          <span class="ms-fig" style="left:18%;">🗡️</span>
+          <span class="ms-fig" style="right:18%; transform:scaleX(-1);">🦎</span>
+          <div style="position:absolute; top:14%; left:50%; transform:translateX(-50%);">
+            <span class="badge-distance">⇔ 中間</span>
+          </div>
+        </div>
+        <p class="pros">
+          <b>長所:</b> 実装が軽く、現行画面をほぼ崩さない。状態は1つのバッジ＋手札のグレーアウトで伝える。複数敵はバッジを敵フレーム側に付ければよい。<br />
+          <span class="con"><b>短所:</b></span> 「詰める/離す」の操作感が薄く、本命軸の体感が弱まる。キャラが動かないので位置の納得感が出にくい。
+        </p>
+      </div>
+    </div>
+
+    <table class="cmp">
+      <tr><th></th><th>案A トラック型</th><th>案B バッジ型</th></tr>
+      <tr><td>本命軸（間合いの読み合い）の体感</td><td>◎ 位置が動く・読み合いが見える</td><td>△ 状態表示に留まる</td></tr>
+      <tr><td>実装コスト</td><td>中〜大（位置状態 + UI + 演出）</td><td>小</td></tr>
+      <tr><td>PixiJS Phase 2-4 との接続</td><td>◎ キャラ移動演出の受け皿になる</td><td>○ 演出は別途設計</td></tr>
+      <tr><td>複数敵対応</td><td>○ トークン拡張（設計必要）</td><td>○ 敵フレームにバッジ</td></tr>
+      <tr><td>段階導入</td><td>B から A へ育てられる</td><td>A の先行ステップにできる</td></tr>
+    </table>
+
+    <p class="note">推奨: <b>最終形は案A</b>（本命軸の体感を最大化、PixiJS 統合先としても自然）。ただし実装は「案B → 案A」の2段階で進めると、グレーアウト・間合い状態などのロジック層を先に固めてから視覚層に投資できる。</p>
+  </section>
+</div>
+
+<script>
+  document.querySelectorAll(".tab").forEach((t) => {
+    t.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+      document.querySelectorAll(".pane").forEach((x) => x.classList.remove("active"));
+      t.classList.add("active");
+      document.getElementById(t.dataset.pane).classList.add("active");
+    });
+  });
+</script>
+</body>
+</html>

@@ -4,7 +4,14 @@
 
 ## 進行中
 
-（なし）
+### 🔧 リアル性コンセプト v2 — ギャップ分析 + 戦闘 UI/UX モックアップ（着手日: 2026-06-11）
+
+**対象**: `.claude/docs/vision/concept-v2.md`（承認済コンセプト）/ `src/domain/battles/` / `src/domain/dungeon/` / `.claude/docs/*_document/`
+**計画書**: `.claude/docs/vision/2026-06-11-realism-concept-kickoff.md`（入力資料）/ `.claude/docs/vision/concept-v2.md`（APPROVED 2026-06-11）
+
+- 前回: §4.1〜4.4 インタビュー完了、concept-v2.md 承認（B 再設計・剣士先行・2ステージ制・凍結+PixiJS統合・負債は着手前全返済）
+- 現在: ギャップ分析（コンセプト vs 現実装・設計書群の差分洗い出し）+ 新戦闘 UI/UX の HTML モックアップ作成
+- 次: ギャップ分析レビュー → 要件定義（Tier 1-3）→ 設計書更新 → 実装プラン分割
 
 ## 直近の完了
 
