@@ -9,9 +9,9 @@
 **対象**: `.claude/docs/vision/concept-v2.md`（承認済コンセプト）/ `src/domain/battles/` / `src/domain/dungeon/` / `.claude/docs/*_document/`
 **計画書**: `.claude/docs/vision/2026-06-11-realism-concept-kickoff.md`（入力資料）/ `.claude/docs/vision/concept-v2.md`（APPROVED 2026-06-11）
 
-- 前回: ギャップ分析完了（130件 + 横断8件 + 修正15件）→ **§6 全7論点ユーザー確定**（スタミナ一本化 / 魔術師選択不可 / 手記フル永続 / Difficulty 廃止・等級一本化 / 試験敵適合 / Depth 段階移行→排除 / PR#1 残骸削除+.gitignore 復元）。.gitignore regression の原因特定: PR #1（Copilot 製 Python 教材、2026-05-26 マージ）の競合解決で Python 版が採用されたもの
-- 現在: PR #12（concept-v2 + モックアップ + ギャップ分析 + 決定記録）レビュー待ち
-- 次: 要件定義（Tier 1-3、`docs/requirements/`）→ 設計書更新（DOC-2 新戦闘コア仕様が最優先）→ Phase 0 クリーンアップ PR（TD-0 tsc 修復 + .gitignore 復元 + game/ 削除）
+- 前回: §6 全7論点確定 → **Phase 0 第1弾 PR #13 作成**（TD-0 tsc 17→0 / .gitignore 復元 / Python 教材削除、テスト 123 green）→ 要件定義 Tier 1-3 ドラフト → クリティーク3観点 **FAIL** → 全 blocker/major 反映し **要件 v2 へ改訂**（TD-1 を Phase 0 復帰=正本準拠 / カード60枚訂正 / 学習手段 Tier1 化 / 不可逆性 R1-16 新設 / BAT-12・CRD-4/5/8・DUN-10・DOC 群編入）
+- 現在: 要件 v2（`docs/requirements/tier1-3`）の再検証クリティーク実行中。PR #12 にコミット済み
+- 次: 再検証 PASS → 実装プラン分割（**ultraplan 起動ポイント**: 130 ギャップを Phase 制セッション単位プランへ）→ DOC-2 新戦闘コア設計書着手
 
 ## 直近の完了
 
