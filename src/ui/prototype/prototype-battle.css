@@ -1,0 +1,359 @@
+/* Prototype battle styles. Every selector is scoped under .prototype-battle.
+   Sizes use vh/vw; px is reserved for borders only. */
+
+.prototype-battle {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 100vh;
+  width: 100vw;
+  padding: 2vh 3vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6vh;
+  background: #14110f;
+  color: #e8e0d4;
+  font-family: system-ui, sans-serif;
+  font-size: 1.8vh;
+}
+
+.prototype-battle * {
+  box-sizing: border-box;
+}
+
+.prototype-battle .pb-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid #3a322a;
+  padding-bottom: 1vh;
+}
+
+.prototype-battle .pb-title {
+  margin: 0;
+  font-size: 2.6vh;
+  letter-spacing: 0.2vw;
+  color: #d8c49a;
+}
+
+.prototype-battle .pb-turn {
+  font-size: 2vh;
+  color: #9a8c74;
+}
+
+/* Distance track ---------------------------------------------------------- */
+.prototype-battle .pb-distance-track {
+  display: flex;
+  gap: 1vw;
+  justify-content: center;
+}
+
+.prototype-battle .pb-distance-node {
+  flex: 1 1 0;
+  max-width: 22vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6vh;
+  padding: 1.4vh 1vw;
+  border: 1px solid #3a322a;
+  border-radius: 0.8vh;
+  background: #1d1916;
+}
+
+.prototype-battle .pb-distance-node.is-current {
+  border-color: #b88a3e;
+  background: #2a2118;
+  box-shadow: 0 0 1.4vh rgba(184, 138, 62, 0.35);
+}
+
+.prototype-battle .pb-distance-label {
+  font-size: 2.4vh;
+  color: #c9b890;
+}
+
+.prototype-battle .pb-distance-marker {
+  font-size: 2.6vh;
+  color: #e6b84e;
+}
+
+/* Combatant panels -------------------------------------------------------- */
+.prototype-battle .pb-combatants {
+  display: flex;
+  gap: 2vw;
+}
+
+.prototype-battle .pb-combatant {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9vh;
+  padding: 1.4vh 1.2vw;
+  border: 1px solid #3a322a;
+  border-radius: 0.8vh;
+  background: #1b1714;
+}
+
+.prototype-battle .pb-combatant--enemy {
+  border-color: #4a2f2a;
+  background: #1f1513;
+}
+
+.prototype-battle .pb-combatant-name {
+  font-size: 2.1vh;
+  color: #d8c49a;
+}
+
+.prototype-battle .pb-bar {
+  position: relative;
+  height: 2.6vh;
+  border: 1px solid #3a322a;
+  border-radius: 0.5vh;
+  background: #0e0c0a;
+  overflow: hidden;
+}
+
+.prototype-battle .pb-bar-fill {
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.prototype-battle .pb-bar--hp .pb-bar-fill {
+  background: linear-gradient(90deg, #7a2b25, #c4443a);
+}
+
+.prototype-battle .pb-bar--stamina .pb-bar-fill {
+  background: linear-gradient(90deg, #2f5a4a, #4fae8c);
+}
+
+.prototype-battle .pb-bar--stamina.is-fatigued .pb-bar-fill {
+  background: linear-gradient(90deg, #6a5a2a, #b8923e);
+}
+
+.prototype-battle .pb-bar-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5vh;
+  color: #f0e8da;
+  text-shadow: 0 0 0.4vh #000;
+}
+
+.prototype-battle .pb-guard {
+  align-self: flex-start;
+  padding: 0.4vh 0.8vw;
+  border: 1px solid #4a6a8a;
+  border-radius: 0.5vh;
+  font-size: 1.5vh;
+  color: #9ec4e6;
+}
+
+.prototype-battle .pb-hint {
+  font-size: 1.5vh;
+  color: #9a8c74;
+  line-height: 1.4;
+}
+
+/* Hand -------------------------------------------------------------------- */
+.prototype-battle .pb-hand {
+  display: flex;
+  gap: 1.2vw;
+  flex-wrap: wrap;
+}
+
+.prototype-battle .pb-card {
+  flex: 1 1 22vw;
+  max-width: 28vw;
+  min-height: 16vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  padding: 1.2vh 1vw;
+  border: 1px solid #4a4030;
+  border-radius: 0.8vh;
+  background: #221d18;
+  color: #e8e0d4;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.prototype-battle .pb-card:hover:not(.is-disabled) {
+  border-color: #b88a3e;
+  background: #2a231b;
+}
+
+.prototype-battle .pb-card.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.prototype-battle .pb-card--attack {
+  border-left: 0.6vw solid #c4443a;
+}
+
+.prototype-battle .pb-card--move {
+  border-left: 0.6vw solid #4fae8c;
+}
+
+.prototype-battle .pb-card--guard {
+  border-left: 0.6vw solid #4a6a8a;
+}
+
+.prototype-battle .pb-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.prototype-battle .pb-card-name {
+  font-size: 2vh;
+  color: #e6d6b0;
+}
+
+.prototype-battle .pb-card-cost {
+  font-size: 1.5vh;
+  color: #b8923e;
+}
+
+.prototype-battle .pb-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3vh;
+}
+
+.prototype-battle .pb-card-range,
+.prototype-battle .pb-card-damage,
+.prototype-battle .pb-card-effect,
+.prototype-battle .pb-card-shift {
+  font-size: 1.5vh;
+  color: #c9b890;
+}
+
+.prototype-battle .pb-card-damage {
+  color: #e6b84e;
+}
+
+.prototype-battle .pb-card-desc {
+  margin-top: auto;
+  font-size: 1.4vh;
+  color: #8c8068;
+  line-height: 1.4;
+}
+
+.prototype-battle .pb-card-reason {
+  font-size: 1.4vh;
+  color: #d06a5a;
+}
+
+/* Controls ---------------------------------------------------------------- */
+.prototype-battle .pb-controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.prototype-battle .pb-end-turn {
+  padding: 1.2vh 2.4vw;
+  border: 1px solid #b88a3e;
+  border-radius: 0.8vh;
+  background: #2a2118;
+  color: #e6d6b0;
+  font: inherit;
+  font-size: 1.9vh;
+  cursor: pointer;
+}
+
+.prototype-battle .pb-end-turn:hover:not(:disabled) {
+  background: #3a2e1e;
+}
+
+.prototype-battle .pb-end-turn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Log --------------------------------------------------------------------- */
+.prototype-battle .pb-log {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  min-height: 16vh;
+  max-height: 26vh;
+  padding: 1vh 1.2vw;
+  border: 1px solid #3a322a;
+  border-radius: 0.8vh;
+  background: #15120f;
+  overflow: hidden;
+}
+
+.prototype-battle .pb-log-title {
+  font-size: 1.6vh;
+  color: #9a8c74;
+}
+
+.prototype-battle .pb-log-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vh;
+}
+
+.prototype-battle .pb-log-entry {
+  font-size: 1.5vh;
+  color: #c4bba8;
+  line-height: 1.4;
+}
+
+/* Result overlay ---------------------------------------------------------- */
+.prototype-battle .pb-result-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.prototype-battle .pb-result-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.4vh;
+  padding: 4vh 6vw;
+  border: 1px solid #b88a3e;
+  border-radius: 1.2vh;
+  background: #1d1916;
+}
+
+.prototype-battle .pb-result-title {
+  font-size: 4.4vh;
+  letter-spacing: 0.4vw;
+}
+
+.prototype-battle .pb-result-title.is-won {
+  color: #e6b84e;
+}
+
+.prototype-battle .pb-result-title.is-lost {
+  color: #c4443a;
+}
+
+.prototype-battle .pb-restart {
+  padding: 1.2vh 3vw;
+  border: 1px solid #b88a3e;
+  border-radius: 0.8vh;
+  background: #2a2118;
+  color: #e6d6b0;
+  font: inherit;
+  font-size: 2vh;
+  cursor: pointer;
+}
+
+.prototype-battle .pb-restart:hover {
+  background: #3a2e1e;
+}
