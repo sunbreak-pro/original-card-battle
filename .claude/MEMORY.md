@@ -6,12 +6,12 @@
 
 ### 🔧 リアル性コンセプト v2 — 戦闘システム上流確定 + プロトタイプ計画（着手日: 2026-06-11）
 
-**対象**: `.claude/docs/vision/concept-v2.md`（RE-APPROVED 2026-06-27）/ `src/ui/prototype/`（実装済・main マージ）/ `.claude/docs/requirements/`
-**計画書**: `.claude/docs/vision/plans/2026-06-27-battle-prototype-range-stamina.md`（戦闘プロトタイプ — 実装・マージ済 PR #14 / origin/main）/ `.claude/docs/vision/concept-v2.md`（戦闘システム設計方針）
+**対象**: `.claude/docs/requirements/`（Tier1/2/3 正本確定）/ `.claude/docs/vision/concept-v2.md`（RE-APPROVED 2026-06-27）/ `src/ui/prototype/`（実装済・main マージ）
+**計画書**: `.claude/docs/vision/plans/2026-06-28-battle-engine-bakeoff.md`（次ステップ・PLANNED・別セッション実装）/ `2026-06-27-battle-prototype-range-stamina.md`（プロト — 実装・マージ済 PR #14）
 
-- 前回: 戦闘パラダイム最上流で RTS 取り下げ→ターン制維持＋間合い（近/中/遠・相性ベース・矯正技）＋スタミナ（確定減衰 / 回復 近1中2遠3 / MAX20 / ドロー制）を確定。concept-v2 改訂・tier1 から Phase 6-B（RTS R1-25〜28）を廃案削除（v5）
-- 現在: **戦闘プロトタイプ（間合い×スタミナ最小検証台）を実装・マージ完了**。隔離 `src/ui/prototype/`（17ファイル）+ 計画書を再構成（当初参照の計画書が不在だったため concept §1 / tier1 R1-5・R1-6 から復元）、PR #14 を origin/main へマージ（merge `9b88536` / feat `c77907c`）。build / test:run(156) / prototype lint 緑、role-qa PASS-with-fixes。ヘッドレス sim でメカニクス健全と確認し reach_thrust 6→3・ENEMY_MAX_HP 42→38 に調整。**ユーザー実機プレイで「ゲーム性はかなり面白い」と評価**。詳細は HISTORY 2026-06-27
-- 次: 検証所感を踏まえ **剣気・崩しの設計を詰める** → R1-2 新戦闘コア設計書 → Tier 1 本実装（Phase 0 負債返済から）
+- 前回: 戦闘プロト（間合い×スタミナ検証台）を `src/ui/prototype/` に隔離実装→実機プレイで「ゲーム性はかなり面白い」と評価→PR #14 を origin/main へマージ（merge `9b88536`）。詳細は HISTORY 2026-06-27
+- 現在: **要件正本を一本化確定** — `docs/realism-concept-v2` の Tier1/2/3 を正本（R1-0〜R1-20 Phase 順）、包括版 `combat-core-redesign.md`/`realtime-turn-timer.md` は矛盾設計のため supersede→削除対象、RTS/speed-chess 方向は廃棄（bd325cf コミット済）。次の検証として **ゲームエンジン Bake-off 計画書（2026-06-28）を策定**（同コアを PixiJS版×Phaser3版に載せ肌感比較→Tier1 描画基盤を選定）
+- 次: **Phase 0 prep**（docs→main マージ＋umbrella削除＋rollup時限爆弾除去#5＋phaser導入）→ **Bake-off を別セッション・専用worktree（`feat/battle-engine-bakeoff`）で実装** → エンジン選定 → 剣気・崩し設計 → R1-2 新戦闘コア設計書 → Tier1 本実装
 
 ## 直近の完了
 
@@ -22,6 +22,10 @@
 > 完了履歴の全量は `README.md` の Development History を参照。
 
 ## 予定
+
+### 次のアクティブタスク（別セッションで実装）
+
+- 🔜 **戦闘コア — ゲームエンジン Bake-off（PixiJS版 × Phaser 3版）** — 計画書 `.claude/docs/vision/plans/2026-06-28-battle-engine-bakeoff.md`（PLANNED）。検証済みコアを両エンジンに載せ肌感で触り比べ→1エンジン選定（Tier 1 本実装の描画基盤へ昇格）。Phase 0 prep（docs→main マージ + umbrella削除 + rollup除去#5 + phaser導入）は本チャットで前準備、実装は別セッション・専用 worktree `feat/battle-engine-bakeoff`
 
 ### バックログ機能（旧 TODO.md より移管）
 
@@ -44,4 +48,4 @@
 2. **[新規・要対応] V-CHAIN-02 相当（resonance debuff の 1-card-lag 非対称）**: V-CHAIN-01 で damage modifier 経路は play-aware 化したが、`getResonanceEffects`（burn/freeze/stun 等の敵付与）は依然プレイ前 state を読む。「ダメージは現在カードの共鳴を勘定するが、付与デバフは1枚遅れる」非対称が顕在化。修正案: `getResonanceEffectsForPlay(card)` を `useElementalChain` に追加し `onCardPlay` 後の仮想 state から導出（純粋関数追加のみ、副作用面積小）。詳細: `docs/known-issues/001-resonance-debuff-card-lag.md`
 3. **[テスト負債]** バトルオーケストレーター / Context 系のフック統合テストが依然手薄（純粋関数は今回 elementalSystem/bleedDamage/phaseLogic/enemyAI で前進）。`docs/code-explanation/testing_analysis.md` 参照
 4. **[再発防止・常時]** 頻出バグパターン: CSS クラス名衝突 / リソース state 二重化 / React 19 ref 参照（`docs/known-issues/LESSONS_LEARNED.md` 8 知見）。新規 Context/hook/battle 変更時は固有エージェント（`card-battle-state-invariant-checker` / `card-battle-battle-logic-validator`）を commit 前ゲートに使う。**注: 固有エージェントは Claude Code 再起動後に有効化される（本セッションでは general/role-\* で代替実施）**
-5. **[新規・High] package.json の rollup ネイティブバイナリ・ハードコード除去** — `package.json` の `dependencies` に `@rollup/rollup-linux-arm64-gnu@^4.57.1` がハードコードされており既存の依存破壊（time bomb）。症状: (1) darwin で `npm install`（非 force）と `npm audit fix` が EBADPLATFORM 失敗、(2) `--force` 常用を強いられ peer/platform 不整合を握り潰す、(3) lockfile 不整合（rollup 本体 4.53.3 と衝突）。対処方針: 該当行削除 → `rm -rf node_modules package-lock.json && npm install`（--force なし）→ `npm audit fix`。これで dev/build 専用の脆弱性9件も大半が semver-major なしで解消見込み。**重要: PixiJS Phase 1 とは無関係な既存問題。Phase 1 のコミットには混ぜず、独立タスク・独立コミットで対応すること。** 出典: security-reviewer 監査（2026-05-19）。脆弱性9件は全て dev/build 専用・非 PixiJS 由来でリリースブロックはしないと判明済み
+5. **[新規・High] package.json の rollup ネイティブバイナリ・ハードコード除去** — `package.json` の `dependencies` に `@rollup/rollup-linux-arm64-gnu@^4.57.1` がハードコードされており既存の依存破壊（time bomb）。症状: (1) darwin で `npm install`（非 force）と `npm audit fix` が EBADPLATFORM 失敗、(2) `--force` 常用を強いられ peer/platform 不整合を握り潰す、(3) lockfile 不整合（rollup 本体 4.53.3 と衝突）。対処方針: 該当行削除 → `rm -rf node_modules package-lock.json && npm install`（--force なし）→ `npm audit fix`。これで dev/build 専用の脆弱性9件も大半が semver-major なしで解消見込み。**重要: PixiJS Phase 1 とは無関係な既存問題。Phase 1 のコミットには混ぜず、独立タスク・独立コミットで対応すること。** 出典: security-reviewer 監査（2026-05-19）。脆弱性9件は全て dev/build 専用・非 PixiJS 由来でリリースブロックはしないと判明済み。**bake-off Phase 0（2026-06-28 計画）で対処予定 — phaser 導入の前提**

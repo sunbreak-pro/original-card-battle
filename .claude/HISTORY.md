@@ -2,6 +2,19 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-06-28 - 要件正本の一本化確定 + 戦闘エンジン Bake-off 計画策定
+
+#### 概要
+
+並行2セッションで分岐していた v2 要件ドキュメントを照合し、`docs/realism-concept-v2`（Tier1/2/3）を正本として確定。リアルタイムタイマー/speed-chess 方向（包括版 `combat-core-redesign.md` / `realtime-turn-timer.md`）は矛盾設計のため supersede→削除に決定。次ステップとして、検証済みの「間合い×スタミナ」コアを PixiJS版と Phaser 3版の両方に載せ肌感比較する「ゲームエンジン Bake-off」計画書を策定（別セッションで実装）。本セッションは Phase 0 prep（docs→main マージ + umbrella削除 + rollup除去 + phaser導入の前提整備）を担当。
+
+#### 変更点
+
+- **要件正本化**: docs/realism-concept-v2 を正本確定（Tier1/2/3 = R1-0〜R1-20 の Phase 順包括要件）。包括版 `combat-core-redesign.md` / `realtime-turn-timer.md` は設計矛盾（tier%/ドロー曲線/タイマー vs 間合い連動/疲労確定減衰・スタミナ+剣気2軸）のため supersede→削除対象。RTS/speed-chess 方向は concept-v2 で廃棄済みを再確認
+- **並行セッション調整**: 同一作業ツリーを共有する2チャットのブランチ取り合い + 同一「doc照合」タスクの二重化を検出。git 実行を単一セッションに一本化。docs 確定分は別チャットが bd325cf でコミット済
+- **Bake-off 計画策定**: `.claude/docs/vision/plans/2026-06-28-battle-engine-bakeoff.md`（Status PLANNED）。共有コア（検証台 engine/ を本番品質で `core/` へ昇格 + `viewModel.ts` 抽出）+ Pixi/Phaser 2アダプタ。公平性ルール（数値・reducer 同一、描画だけ2通り）。勝者を Tier 1 本実装の描画基盤に昇格、検証台 DOM版は対照群として保全
+- **Phase 0 prep**: ①docs→main マージ（衝突なし検証済）+ umbrella削除 ②rollup 時限爆弾除去（tech-debt #5・独立コミット）③次セッションは専用 worktree `feat/battle-engine-bakeoff`（main 分岐）で phaser 導入から実装
+
 ### 2026-06-27 - 戦闘プロトタイプ（間合い×スタミナ最小検証台）実装・マージ
 
 #### 概要
