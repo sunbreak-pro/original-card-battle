@@ -2,6 +2,21 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-06-27 - 戦闘プロトタイプ（間合い×スタミナ最小検証台）実装・マージ
+
+#### 概要
+
+「リアル性コンセプト v2」戦闘主柱（間合いの読み合い × スタミナの消耗）が遊びとして成立するかを本実装前に検証する throwaway プロトタイプを `src/ui/prototype/` に隔離実装し、PR #14 を origin/main へマージ。当初タスクが参照した計画書が実在しなかったため concept §1 / tier1 R1-5・R1-6 / タスク本文から計画書を再構成して実装。役割分担（role-engineer 実装 → session-verifier → role-qa 独立監査）で進め、role-qa PASS-with-fixes。ユーザー実機プレイで「ゲーム性はかなり面白い」と評価。
+
+#### 変更点
+
+- **隔離実装（既存無改変）**: `src/ui/prototype/` に engine（types/constants/combat/cards/enemy/battleReducer）+ UI（PrototypeBattle/DistanceTrack/CombatantPanel/HandView/BattleLog/ResultOverlay）+ `prototype-battle.css`（`.prototype-battle` スコープ）+ ルート `prototype.html` 起動口。既存トラッキングファイルの差分ゼロ、`useBattleOrchestrator`/`BattleScreen`/不可侵 deck は無改変・非 import。デッキ操作は自前 Fisher-Yates
+- **メカニクス**: 間合い 近/中/遠（相性ベース・固定強弱なし、diff 0/1/2→×1.0/0.5/0.15）、スタミナ MAX20・回復 近+1/中+2/遠+3・閾値8未満で確定威力減衰（floor 0.4、確率ミスではない）、剣士6カード、リーチ型の敵1体（中=キルゾーン、矯正技 shove）。敵フェーズは純 reducer の END_TURN 内で同期解決（StrictMode 安全）
+- **計画書再構成**: `.claude/docs/vision/plans/2026-06-27-battle-prototype-range-stamina.md` を新規作成（Steps/Files/Verification + チューニング所見）。当初参照のファイルが不在だったためユーザー承認のうえ復元
+- **検証ゲート**: `npm run build` 緑 / `test:run` 156件緑（プロトタイプ純関数 33件）/ `npx eslint src/ui/prototype` 0 エラー（全体 lint の16エラーは origin/main 既存・本変更外）
+- **balance 調整（sim 由来）**: ヘッドレスで4戦略を検証し初期値（敵HP42・穂先6）は勝ち筋ほぼ無しと判明 → 設計意図を保ち `reach_thrust` 6→3（遠を回復の逃げ場に）・`ENEMY_MAX_HP` 42→38。ゴリ押し/カイトは負け・賢い立ち回りで勝てる帯を維持。最終バランスは実機プレイで詰める前提
+- **Git**: PR #14 を origin/main へマージ（merge `9b88536` / feat `c77907c`）、マージ済 feat ブランチをローカル・リモート削除。プロトタイプは throwaway（本番非流用）
+
 ### 2026-05-23 - PixiJS Phase 1 基盤実装（ハイブリッド描画レイヤー導入）
 
 #### 概要

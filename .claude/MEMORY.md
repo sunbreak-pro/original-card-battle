@@ -4,14 +4,14 @@
 
 ## 進行中
 
-### 🔧 リアル性コンセプト v2 — ギャップ分析 + 戦闘 UI/UX モックアップ（着手日: 2026-06-11）
+### 🔧 リアル性コンセプト v2 — 戦闘システム上流確定 + プロトタイプ計画（着手日: 2026-06-11）
 
-**対象**: `.claude/docs/vision/concept-v2.md`（承認済コンセプト）/ `src/domain/battles/` / `src/domain/dungeon/` / `.claude/docs/*_document/`
-**計画書**: `.claude/docs/vision/2026-06-11-realism-concept-kickoff.md`（入力資料）/ `.claude/docs/vision/concept-v2.md`（APPROVED 2026-06-11）
+**対象**: `.claude/docs/vision/concept-v2.md`（RE-APPROVED 2026-06-27）/ `src/ui/prototype/`（実装済・main マージ）/ `.claude/docs/requirements/`
+**計画書**: `.claude/docs/vision/plans/2026-06-27-battle-prototype-range-stamina.md`（戦闘プロトタイプ — 実装・マージ済 PR #14 / origin/main）/ `.claude/docs/vision/concept-v2.md`（戦闘システム設計方針）
 
-- 前回: concept-v2.md 承認 → UI モックアップ作成 → ギャップ分析完了（130件 + 横断8件 + 修正15件、`docs/vision/2026-06-11-gap-analysis.md`）。**TD-0 発見: main が tsc 17エラーでコンパイル不能（検証済み）**、.gitignore も Python 版に regression
-- 現在: ギャップ分析のユーザーレビュー待ち（PR #12）。§6 の6論点（エネルギー vs スタミナ / 魔術師移行期 / 手記のフルリセット扱い / Difficulty 処遇 / 試験敵 / Depth 型）が要件定義の入力
-- 次: §6 論点の確定 → 要件定義（Tier 1-3）→ 設計書更新（DOC-2 新戦闘コア仕様が最優先）→ Phase 0 負債返済（TD-0 から）
+- 前回: 戦闘パラダイム最上流で RTS 取り下げ→ターン制維持＋間合い（近/中/遠・相性ベース・矯正技）＋スタミナ（確定減衰 / 回復 近1中2遠3 / MAX20 / ドロー制）を確定。concept-v2 改訂・tier1 から Phase 6-B（RTS R1-25〜28）を廃案削除（v5）
+- 現在: **戦闘プロトタイプ（間合い×スタミナ最小検証台）を実装・マージ完了**。隔離 `src/ui/prototype/`（17ファイル）+ 計画書を再構成（当初参照の計画書が不在だったため concept §1 / tier1 R1-5・R1-6 から復元）、PR #14 を origin/main へマージ（merge `9b88536` / feat `c77907c`）。build / test:run(156) / prototype lint 緑、role-qa PASS-with-fixes。ヘッドレス sim でメカニクス健全と確認し reach_thrust 6→3・ENEMY_MAX_HP 42→38 に調整。**ユーザー実機プレイで「ゲーム性はかなり面白い」と評価**。詳細は HISTORY 2026-06-27
+- 次: 検証所感を踏まえ **剣気・崩しの設計を詰める** → R1-2 新戦闘コア設計書 → Tier 1 本実装（Phase 0 負債返済から）
 
 ## 直近の完了
 
