@@ -4,14 +4,14 @@
 
 ## 進行中
 
-### 🔧 リアル性コンセプト v2 — ギャップ分析 + 戦闘 UI/UX モックアップ（着手日: 2026-06-11）
+### 🔧 リアル性コンセプト v2 — 戦闘システム上流確定 + プロトタイプ計画（着手日: 2026-06-11）
 
-**対象**: `.claude/docs/vision/concept-v2.md`（承認済コンセプト）/ `src/domain/battles/` / `src/domain/dungeon/` / `.claude/docs/*_document/`
-**計画書**: `.claude/docs/vision/2026-06-11-realism-concept-kickoff.md`（入力資料）/ `.claude/docs/vision/concept-v2.md`（APPROVED 2026-06-11）
+**対象**: `.claude/docs/vision/concept-v2.md`（RE-APPROVED 2026-06-27）/ `src/ui/prototype/`（実装済・main マージ）/ `.claude/docs/requirements/`
+**計画書**: `.claude/docs/vision/plans/2026-06-27-battle-prototype-range-stamina.md`（戦闘プロトタイプ — 実装・マージ済 PR #14 / origin/main）/ `.claude/docs/vision/concept-v2.md`（戦闘システム設計方針）
 
-- 前回: §6 全7論点確定 → **Phase 0 第1弾 PR #13 作成**（TD-0 tsc 17→0 / .gitignore 復元 / Python 教材削除、テスト 123 green）→ 要件定義 Tier 1-3 ドラフト → クリティーク3観点 **FAIL** → 全 blocker/major 反映し **要件 v2 へ改訂**（TD-1 を Phase 0 復帰=正本準拠 / カード60枚訂正 / 学習手段 Tier1 化 / 不可逆性 R1-16 新設 / BAT-12・CRD-4/5/8・DUN-10・DOC 群編入）
-- 現在: 要件 **v3 確定**（再検証2観点の指摘反映: スタミナ R1-5 新設 / 不可逆性 R1-14 を回復経済・帰還の前へ / 番号を Phase 順連番に振り直し / tier2-3 参照更新）。Tier 1 = R1-0〜R1-20、PR #12 にコミット済み
-- 次: **ultraplan 起動ポイント** — 要件 v3 を入力に実装プラン分割（`docs/vision/plans/YYYY-MM-DD-<slug>.md`、Phase 0〜5・Gate 列付き）。最初の実装タスクは R1-0 残り（TD-1/TD-2/スモーク）と R1-2 新戦闘コア設計書
+- 前回: 戦闘パラダイム最上流で RTS 取り下げ→ターン制維持＋間合い（近/中/遠・相性ベース・矯正技）＋スタミナ（確定減衰 / 回復 近1中2遠3 / MAX20 / ドロー制）を確定。concept-v2 改訂・tier1 から Phase 6-B（RTS R1-25〜28）を廃案削除（v5）
+- 現在: **戦闘プロトタイプ（間合い×スタミナ最小検証台）を実装・マージ完了**。隔離 `src/ui/prototype/`（17ファイル）+ 計画書を再構成（当初参照の計画書が不在だったため concept §1 / tier1 R1-5・R1-6 から復元）、PR #14 を origin/main へマージ（merge `9b88536` / feat `c77907c`）。build / test:run(156) / prototype lint 緑、role-qa PASS-with-fixes。ヘッドレス sim でメカニクス健全と確認し reach_thrust 6→3・ENEMY_MAX_HP 42→38 に調整。**ユーザー実機プレイで「ゲーム性はかなり面白い」と評価**。詳細は HISTORY 2026-06-27
+- 次: 検証所感を踏まえ **剣気・崩しの設計を詰める** → R1-2 新戦闘コア設計書 → Tier 1 本実装（Phase 0 負債返済から）
 
 ## 直近の完了
 

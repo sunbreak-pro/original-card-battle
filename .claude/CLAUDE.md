@@ -30,6 +30,17 @@ npx vitest run src/domain/cards/decks/__tests__/deck.test.ts  # Single file
 
 **TypeScript strictness:** `noUnusedLocals`, `noUnusedParameters` — remove unused variables. `verbatimModuleSyntax` — use `import type`. `erasableSyntaxOnly` — use `as const` objects instead of `enum`.
 
+## Git / Branch Workflow
+
+ブランチ運用は GitHub Flow。詳細手順はグローバル `git-branch-flow` スキルに委譲し、本節は本リポの規約のみを持つ。
+
+- **main + 短命 feature ブランチ**。長期作業ブランチを作らない（溜めると統合が重くなる。`docs/realism-concept-v2` が40コミット化した反省）
+- **命名**: `feat/` `fix/` `docs/` `chore/` + kebab-case（例: `feat/stamina-system`）。snake_case 禁止（旧 `battle_logic` 等）
+- **1 機能 = 1 ブランチ = 1 PR**。マージは PR 経由で履歴を残す
+- **PR マージ後はブランチ削除**（ローカル・リモート両方）
+- **main は常に origin/main 追従**（作業開始前に pull）
+- **不要な未マージ作業は `archive/<name>` タグで保全してから削除**（`git tag archive/<name> <branch>` → push → ブランチ削除。一覧を汚さず復元可能に）
+
 ## Key Rules
 
 ### Immutable Code (DO NOT MODIFY)
