@@ -1,0 +1,35 @@
+/*
+ * Phaser bakeoff — canvas container styles.
+ * Scoped to .phaser-bakeoff and #root.
+ * All game UI lives inside the Phaser canvas; DOM styling is minimal.
+ */
+
+/* Strip body margin so the canvas fills the viewport cleanly */
+body {
+  margin: 0;
+  background: #0d1117;
+}
+
+/* Container that Phaser appends its canvas into */
+.phaser-bakeoff,
+#root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+  background: #0d1117;
+  /*
+   * Hint the OS text renderer toward CJK fonts so that the canvas 2D context
+   * used by Phaser.Text inherits a font stack with Japanese glyphs.
+   * (Canvas 2D respects the element's computed font-family for fallback.)
+   */
+  font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+}
+
+/* Canvas element injected by Phaser */
+.phaser-bakeoff canvas,
+#root canvas {
+  display: block;
+  cursor: default;
+}
