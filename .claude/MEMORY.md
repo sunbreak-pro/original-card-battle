@@ -4,6 +4,26 @@
 
 ## 進行中
 
+### 🔧 Unity 移行 + 2.5D アニメキャラ art — 調査・計画書（着手日: 2026-06-28）
+
+**対象**: `.claude/docs/vision/plans/`（新規計画書）。**実装は別セッション**
+**前提（ユーザー方針確定 2026-06-28）**: ゲーム本体ごと Unity 移行 / 絵柄はアニメ・2.5D / 個人開発・まず低コスト中心
+
+- 前回: bake-off Phase 4 実機評価で「Phaser は好印象だが低解像度・ボタン重なり、全体にリアル感不足」。キャラ画像を本格化したい意向 → 方針スコープ確定
+- 前回: web-researcher 3体並列で Unity 費用/2.5D 表現・アニメ AI art/商用注意・Web→C# 移植を裏取り
+- 現在: **計画書2本完成** — ①全体戦略 `2026-06-28-unity-migration-character-art.md`（出典付き）②first step 実装計画 `2026-06-28-unity-first-step-core-port.md`（戦闘コア C# 移植 + 最小1戦・Web パリティ。Unity×Claude 開発しやすさ調査も反映＝ロジック先行/MonoBehaviour 薄く/IRng 注入でパリティ証明）。**bake-off の Pixi/Phaser 選定は Unity フル移行で実質 moot 化**
+- 次: 別セッションで first step 実装（Unity プロジェクト作成 → コア移植 → EditMode/headless テスト → 最小 UGUI 戦闘）。**未コミット変更（bake-off 実装一式 + 計画書3本 + トラッカー）のコミット方針は要ユーザー確認**
+
+### 🔧 戦闘エンジン Bake-off — Phase 1-3 実装（着手日: 2026-06-28）
+
+**対象**: `src/ui/battle-lab/`（新規 — core/ + adapters/pixi/ + adapters/phaser/）/ `pixi-bakeoff.html` / `phaser-bakeoff.html` / `vite.config.ts`
+**計画書**: `.claude/docs/vision/plans/2026-06-28-battle-engine-bakeoff.md`（実装契約）
+**ブランチ**: `feat/battle-engine-bakeoff`（worktree `battle-bakeoff`、origin push 済）
+
+- 前回: Phase 1（`battle-lab/core/` へ engine 6+テスト2 昇格・非コメント差分0で公平性担保 + `viewModel.ts` 抽出 + viewModel テスト14件）完了
+- 現在: **Phase 2/3 完了・検証通過** — Pixi/Phaser アダプタを role-engineer 2体並列実装、vite `rollupOptions.input` に4エントリ追加。Phaser は v4.2（計画 Phaser 3 表記是正）。tsc / test203件 / build 4エントリ green、session-verifier PASS + 独立 QA PASS-with-fixes（Blocker 0・公平性 Yes・viewModel 検証台一致 Yes）
+- 次: **Phase 4** — ユーザー実機プレイで肌感比較（pixi/phaser-bakeoff.html）→ エンジン選定 → 計画書 決定記録 追記 → task-tracker END（コミット・PR）
+
 ### 🔧 リアル性コンセプト v2 — 戦闘システム上流確定 + プロトタイプ計画（着手日: 2026-06-11）
 
 **対象**: `.claude/docs/requirements/`（Tier1/2/3 正本確定）/ `.claude/docs/vision/concept-v2.md`（RE-APPROVED 2026-06-27）/ `src/ui/prototype/`（実装済・main マージ）
@@ -22,10 +42,6 @@
 > 完了履歴の全量は `README.md` の Development History を参照。
 
 ## 予定
-
-### 次のアクティブタスク（別セッションで実装）
-
-- 🔜 **戦闘コア — ゲームエンジン Bake-off（PixiJS版 × Phaser 3版）** — 計画書 `.claude/docs/vision/plans/2026-06-28-battle-engine-bakeoff.md`（PLANNED）。検証済みコアを両エンジンに載せ肌感で触り比べ→1エンジン選定（Tier 1 本実装の描画基盤へ昇格）。Phase 0 prep（docs→main マージ + umbrella削除 + rollup除去#5 + phaser導入）は本チャットで前準備、実装は別セッション・専用 worktree `feat/battle-engine-bakeoff`
 
 ### バックログ機能（旧 TODO.md より移管）
 
