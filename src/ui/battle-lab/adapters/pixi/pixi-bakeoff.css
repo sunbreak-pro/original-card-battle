@@ -1,0 +1,263 @@
+/* PixiJS bakeoff styles.
+   Every selector is scoped under .pixi-bakeoff.
+   Sizes use vh/vw; px is reserved for borders only. */
+
+.pixi-bakeoff {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 100vh;
+  width: 100vw;
+  padding: 2vh 3vw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6vh;
+  background: #14110f;
+  color: #e8e0d4;
+  font-family: system-ui, sans-serif;
+  font-size: 1.8vh;
+}
+
+.pixi-bakeoff * {
+  box-sizing: border-box;
+}
+
+/* Header ------------------------------------------------------------------ */
+.pixi-bakeoff .pb-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid #3a322a;
+  padding-bottom: 1vh;
+}
+
+.pixi-bakeoff .pb-title {
+  margin: 0;
+  font-size: 2.6vh;
+  letter-spacing: 0.2vw;
+  color: #d8c49a;
+}
+
+.pixi-bakeoff .pb-turn {
+  font-size: 2vh;
+  color: #9a8c74;
+}
+
+/* Pixi canvas host --------------------------------------------------------- */
+/* Holds the <canvas> rendered by PixiStage. Height drives the Pixi layout. */
+.pixi-bakeoff .pb-field-host {
+  width: 100%;
+  height: 44vh;
+  position: relative;
+  border: 1px solid #3a322a;
+  border-radius: 0.8vh;
+  overflow: hidden;
+  background: #14110f;
+}
+
+.pixi-bakeoff .pb-field-host canvas {
+  display: block;
+}
+
+/* Hand (DOM overlay) ------------------------------------------------------- */
+.pixi-bakeoff .pb-hand {
+  display: flex;
+  gap: 1.2vw;
+  flex-wrap: wrap;
+}
+
+.pixi-bakeoff .pb-card {
+  flex: 1 1 22vw;
+  max-width: 28vw;
+  min-height: 16vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  padding: 1.2vh 1vw;
+  border: 1px solid #4a4030;
+  border-radius: 0.8vh;
+  background: #221d18;
+  color: #e8e0d4;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.pixi-bakeoff .pb-card:hover:not(.is-disabled) {
+  border-color: #b88a3e;
+  background: #2a231b;
+}
+
+.pixi-bakeoff .pb-card.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pixi-bakeoff .pb-card--attack {
+  border-left: 0.6vw solid #c4443a;
+}
+
+.pixi-bakeoff .pb-card--move {
+  border-left: 0.6vw solid #4fae8c;
+}
+
+.pixi-bakeoff .pb-card--guard {
+  border-left: 0.6vw solid #4a6a8a;
+}
+
+.pixi-bakeoff .pb-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.pixi-bakeoff .pb-card-name {
+  font-size: 2vh;
+  color: #e6d6b0;
+}
+
+.pixi-bakeoff .pb-card-cost {
+  font-size: 1.5vh;
+  color: #b8923e;
+}
+
+.pixi-bakeoff .pb-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3vh;
+}
+
+.pixi-bakeoff .pb-card-range,
+.pixi-bakeoff .pb-card-effect,
+.pixi-bakeoff .pb-card-shift {
+  font-size: 1.5vh;
+  color: #c9b890;
+}
+
+.pixi-bakeoff .pb-card-damage {
+  font-size: 1.5vh;
+  color: #e6b84e;
+}
+
+.pixi-bakeoff .pb-card-desc {
+  margin-top: auto;
+  font-size: 1.4vh;
+  color: #8c8068;
+  line-height: 1.4;
+}
+
+.pixi-bakeoff .pb-card-reason {
+  font-size: 1.4vh;
+  color: #d06a5a;
+}
+
+/* Controls ----------------------------------------------------------------- */
+.pixi-bakeoff .pb-controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pixi-bakeoff .pb-end-turn {
+  padding: 1.2vh 2.4vw;
+  border: 1px solid #b88a3e;
+  border-radius: 0.8vh;
+  background: #2a2118;
+  color: #e6d6b0;
+  font: inherit;
+  font-size: 1.9vh;
+  cursor: pointer;
+}
+
+.pixi-bakeoff .pb-end-turn:hover:not(:disabled) {
+  background: #3a2e1e;
+}
+
+.pixi-bakeoff .pb-end-turn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Log (DOM overlay) -------------------------------------------------------- */
+.pixi-bakeoff .pb-log {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  min-height: 16vh;
+  max-height: 26vh;
+  padding: 1vh 1.2vw;
+  border: 1px solid #3a322a;
+  border-radius: 0.8vh;
+  background: #15120f;
+  overflow: hidden;
+}
+
+.pixi-bakeoff .pb-log-title {
+  font-size: 1.6vh;
+  color: #9a8c74;
+}
+
+.pixi-bakeoff .pb-log-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vh;
+}
+
+.pixi-bakeoff .pb-log-entry {
+  font-size: 1.5vh;
+  color: #c4bba8;
+  line-height: 1.4;
+}
+
+/* Result overlay ----------------------------------------------------------- */
+.pixi-bakeoff .pb-result-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 100;
+}
+
+.pixi-bakeoff .pb-result-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.4vh;
+  padding: 4vh 6vw;
+  border: 1px solid #b88a3e;
+  border-radius: 1.2vh;
+  background: #1d1916;
+}
+
+.pixi-bakeoff .pb-result-title {
+  font-size: 4.4vh;
+  letter-spacing: 0.4vw;
+}
+
+.pixi-bakeoff .pb-result-title.is-won {
+  color: #e6b84e;
+}
+
+.pixi-bakeoff .pb-result-title.is-lost {
+  color: #c4443a;
+}
+
+.pixi-bakeoff .pb-restart {
+  padding: 1.2vh 3vw;
+  border: 1px solid #b88a3e;
+  border-radius: 0.8vh;
+  background: #2a2118;
+  color: #e6d6b0;
+  font: inherit;
+  font-size: 2vh;
+  cursor: pointer;
+}
+
+.pixi-bakeoff .pb-restart:hover {
+  background: #3a2e1e;
+}
