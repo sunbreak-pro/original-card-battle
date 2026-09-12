@@ -1,3 +1,5 @@
+> **FROZEN（2026-09-12）**: ショップと Gold / 魔石経済は 2026-09-12 に凍結（企画書に経済の記述なし）。解凍条件は `requirements/tier3-experimental.md`。
+
 Here is the English translation of the Shop (Merchant's Exchange) Detailed Design Document.
 
 I have included a few visual aids to help visualize the atmosphere and logic.

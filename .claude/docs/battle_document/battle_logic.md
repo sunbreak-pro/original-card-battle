@@ -1,3 +1,5 @@
+> **PARTIALLY SUPERSEDED（2026-09-12）**: §2 エネルギー制 / §5 AP・Armor Break / §6 の AP 配分は凍結・廃止。スタミナ投入量（0〜3）・間合い補正・Guard のみの防御が現行ルール。改訂は `requirements/tier1-core.md` R1-2。速度フェーズ・バフ・DoT の節は当面そのまま。
+
 # Battle System Logic Specification (Ver 4.0)
 
 ## 1. Overview

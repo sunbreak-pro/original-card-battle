@@ -16,9 +16,9 @@
 
 ## 直近の完了
 
+- 企画書 v3（生と継承ループ）を設計ルールへ上書き + アーマー凍結 ✅（2026-09-12）— life-editor Note「ゲーム設計(chat GPT)」を正本 `docs/vision/concept-v3.md` に再編（§10 旧ルール対応表・§12 未確定 19 項目）。`vision/core.md` / `requirements/tier1〜3`（v6 / v3 / v2）/ `game_design_master.md` V4.0 / `CAMP_FACILITIES_DESIGN.md` V5.0 を全面改稿。旧ルール 14 ファイルに SUPERSEDED / FROZEN バナー。CLAUDE.md Game Loop 更新。**凍結**: アーマー（AP / 耐久 / 鍛冶屋）・経済（ショップ / サンクチュアリ）。**廃止**: ライフ制・帰還・手記の死越え。コード未変更（C# コアにアーマーは元々無い）。レポート `docs/reports/2026-09-12-concept-v3-overwrite.html`
 - Unity 移行 Phase 3 — UGUI 最小戦闘画面 + Web トレース一致 ✅（2026-09-06）— `BattleScreenView.Render` をコード生成 UGUI で実装（両者パネル・実距離 + 体勢の間合い・手札・ターン終了/リスタート・ログ・結果オーバーレイ・乱数切替）。固定 RNG(0) で fixture 操作列を再生しトレース 18/18 一致、SystemRng 3 戦完走、EditMode 57/57・parity 58/58。冒頭で NUnit 暗黙 using 起因の CS0246 ×57 を修正（known-issue 002）。計画書 `2026-06-28-unity-first-step-core-port.md` は archive へ。branch `feat/unity-foundation`
 - Unity 以降のための作業土台（環境地固め・Logic/View 層・パリティ同期・Unity キット・Phase3 手順）✅（2026-07-06）— Phase 3 に先立ち Editor 抜きで用意できる土台を `unity-port/` に整備（branch `feat/unity-foundation`, commit `1769631`）。純 C# の `BattleStore`/`IBattleView` + ヘッドレステスト、TS↔C# ドリフト検出のワンコマンド化（`npm run parity:gen`/`parity:check`、`.gitattributes` で fixture を LF 固定）、Unity drop-in キット（asmdef/Unity gitignore/`BattleScreenView` 雛形）、`PHASE3-KICKOFF.md`（Windows 手順 + MCP 選定 IvanMurzak 第一候補/CoplayDev 代替）。**把握**: リモート/ローカル差異ゼロ・開発マシン=この Windows 11 に確定。**検証**: TS 204/204・build green、Workflow 敵対的レビューで C# 整合 CLEAN（dotnet 未導入で未コンパイル、導入後 `dotnet test` 58/58 想定）、minor 2 件修正済（parity-check の drift 基準を `git diff HEAD` に／docs の 50/50→58 統一）
-- Unity 移行 First Step — 戦闘コア C# 移植 + パリティ証明 ✅（2026-07-05）— 計画書のPhase0（0a AI art生成/Live2D・0b Unity Editorスパイク）は画像生成・Live2D・Unity Editor操作の手段を持たないため自動実行不可と判断、ユーザー確認の上コア移植（子プランP0-P2相当）へ直行。`unity-port/`（netstandard2.1 単体ライブラリ）に `src/ui/battle-lab/core/` を無改変移植元として C# 移植（Types/Constants/Combat/Cards/Enemy/BattleReducer/ViewModel + IRng注入）。TS実装を固定RNGで実走させたゴールドデータでパリティテスト作成。dotnet test 50/50 green、role-qa 独立監査 PASS（Blocker0・数値/ログ文言完全一致確認済み）。**残課題**: Phase3（実際のUnityプロジェクト作成 + UGUI最小戦闘画面）はUnity Editor操作が必須のため別途人間作業が必要（予定へ記載）
 
 > 完了履歴の全量は `README.md` の Development History を参照。
 
@@ -26,7 +26,8 @@
 
 ### 次のアクティブタスク
 
-- 🔜 **Unity 上で Tier1 本実装 — 次プラン策定** — Phase 3（最小戦闘画面）完了済（2026-09-06）。次はカード・敵ロースター拡張、剣気・崩し、アート/Live2D（`2026-06-28-unity-migration-character-art.md`）の順序と Unity リポ（sunbreak-pro/RPG-by-card、初回コミット未）の運用を決める。実プレイの手触り確認は人手（Editor 前面・乱数「実戦」）
+- 🔜 **concept-v3 §12 の未確定 19 項目のうち Phase 1 に要る 4 つを決める（3 スタミナ基礎値・回復 / 7 間合い変更ルール / 16 戦闘をまたぐ持ち越し / 18 体勢の存否）** → tier1 v6 R1-2（戦闘コア設計書改訂）へ。ステージ構造（§12-14）も併せて判断
+- 🔜 **Unity 上で Tier1 v6 本実装 — 次プラン策定** — Phase 3（最小戦闘画面）完了済（2026-09-06）。tier1-core.md v6 の Phase 1（R1-3 スタミナ投入量 / R1-4 間合い補正）から。アート/Live2D（`2026-06-28-unity-migration-character-art.md`）と Unity リポ（sunbreak-pro/RPG-by-card、初回コミット未）の運用も決める。実プレイの手触り確認は人手（Editor 前面・乱数「実戦」）
 
 ### バックログ機能（旧 TODO.md より移管）
 

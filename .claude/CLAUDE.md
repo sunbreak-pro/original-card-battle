@@ -171,15 +171,17 @@ Battle flow: Init phase queue (speed-sorted) → Player phase (draw, buffs, wait
 
 ### Game Loop Flow
 
+> 設計上の正本は `docs/vision/concept-v3.md`（2026-09-12「生と継承」）。下のループは設計の目標形。Web 版コード（`src/`）は旧ループ（キャンプ 5 施設 / ライフ制 / AP）のまま残っており、Unity 側で新ループを実装する。
+
 ```
-Character Select → Base Camp → Dungeon Entry → Node Navigation → Battle
-       ↑                                                          ↓
-       ←─────────── Resources & Progression ←── Rewards ──────────┘
+継承の間（遺産選択 / 生存者ボーナス）→ 出立（ツール / 戦闘デッキ）→ ダンジョン（刻限 × 衰弱）→ 戦闘（間合い × スタミナ）
+       ↑                                                                                    ↓
+       ←──── 生存ルート（生存者ボーナス） / 死亡（死亡地点に遺産・図鑑は消える） ←────────────┘
 ```
 
-- **Survive:** Keep all souls + items
-- **Death:** Lose exploration resources, -1 life (souls saved)
-- **Life = 0:** Game over (full reset)
+- **生存ルート:** 生きたまま次のキャラクターへ。生存者は一人まで
+- **死亡:** 図鑑と成長は消える。死亡地点の遺産から数個だけ次へ。浅層の意図的な死では高習熟カードは残らない
+- **凍結（2026-09-12）:** アーマー（AP / 装備耐久 / 修理）、装備・Gold・ソウル経済、ショップ / 鍛冶屋 / サンクチュアリ。防御は Guard のみ
 
 ## Testing
 

@@ -1,3 +1,5 @@
+> **PARTIALLY SUPERSEDED（2026-09-12）**: Journal は「図鑑」（敵 + ダンジョン + 所持カード）へ置換。死で消える（手記の死越えは廃止）。画面構成は `camp_document/CAMP_FACILITIES_DESIGN.md` V5.0 §3.3。
+
 # Journal System Design Document V3.0
 
 ## Revision History

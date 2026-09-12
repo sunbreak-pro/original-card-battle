@@ -1,3 +1,5 @@
+> **FROZEN（2026-09-12）**: アーマー（AP / 装備耐久 / 装備破損 / 修理）は 2026-09-12 に凍結。防御は Guard のみで難易度と調整を測る。解除はユーザー判断（判断材料は `requirements/tier2-support.md` R2-8）。本書は凍結解除時の参照用に残す。
+
 # AP Equipment System Design
 
 ## Overview

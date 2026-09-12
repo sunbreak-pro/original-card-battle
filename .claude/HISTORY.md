@@ -2,6 +2,23 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-12 - 企画書 v3「生と継承」で設計ルールを上書き + アーマー凍結
+
+#### 概要
+
+life-editor Note「ゲーム設計(chat GPT)」（27 節の企画書）を読み取り、既存の設計ルールをその内容で上書きした。正本は新設の `docs/vision/concept-v3.md`。ライフ制・エクストラクション・手記の死越えを廃止し、刻限・衰弱・生存ルート・遺産・図鑑の消失を核にした「生と継承」ループへ。アーマー（AP / 装備耐久）は「戦闘が複雑化するので、まずアーマー無しで難易度と調整を測る」ため凍結。コードは触っていない（`unity-port/` と `battle-lab/core/` にアーマーは元々無く Guard のみ）。
+
+#### 変更点
+
+- **正本新設**: `docs/vision/concept-v3.md`。企画書を 12 節に再編。§10 に既存ルールとの対応表（置換 / 凍結 / 再解釈 / 廃止 / 継続）、§12 に未確定 19 項目（企画書 §27 の 15 + 上書きで生じた 4）
+- **構想**: `vision/core.md` を全面改稿（Core Value を 5 要素 + 生と継承の 6 本、凍結欄）。`concept-v2.md` / `2026-06-11-gap-analysis.md` に SUPERSEDED バナー
+- **要件**: `requirements/tier1-core.md` v6（R1-1〜R1-17、旧 v5 との ID 対応表つき）/ `tier2-support.md` v3 / `tier3-experimental.md` v2（凍結表に解凍条件、廃棄一覧）
+- **総合・拠点設計**: `game_design_master.md` V4.0（英語 801 行 → 日本語で全体像だけ）/ `CAMP_FACILITIES_DESIGN.md` V5.0（5 施設 + Journal → 継承の間 / 出立 / 図鑑）
+- **旧ルールのバナー（本文は残す）**: FROZEN = `ap-equipment-system.md` / shop / blacksmith / sanctuary / `EQUIPMENT_AND_ITEMS_DESIGN.md`。SUPERSEDED = `return_system_design.md` / `DESIGN_CHANGE_PLAN_lives_system.md` / guild。PARTIALLY SUPERSEDED = `battle_logic.md`（エネルギー・AP 節）/ `dungeon_exploration_ui_design_v3.0.md` / journal plan。STALE SNAPSHOT = `PROJECT_OVERVIEW.md`
+- **索引・規約**: `.claude/CLAUDE.md` Game Loop Flow を新ループへ。`docs/INDEX.md` の壊れたリンク 2 件（`combat-core-redesign.md` / `realtime-turn-timer.md`）を修正
+- **レポート**: `docs/reports/2026-09-12-concept-v3-overwrite.html`（Artifact 発行、life-editor Note `note-d144ed88` に控え）
+- **未対応（判断待ち）**: §12 の未確定項目、ステージ構造、凍結した個別施設設計書 4 本（約 4,800 行）の archive 移動可否。README に Development History 節が無いため README は未更新
+
 ### 2026-09-06 - Unity 移行 Phase 3 — UGUI 最小戦闘画面 + Web トレース一致
 
 #### 概要
@@ -64,17 +81,3 @@ Unity 移行計画書の Phase0（AI art 生成 + Live2D 仕上げ、Unity Edito
 - **方針転換（Unity 移行）**: 実機評価で Phaser 低解像度（Scale.FIT 引き伸ばし + hi-DPI 無）・ボタン/カード重なり・リアル感不足 → キャラ絵本格化のため Unity フル移行を決定。Pixi/Phaser アダプタは使い捨て、`battle-lab/core/` は C# 移植元・パリティ基準として保全
 - **Unity 計画策定**: `2026-06-28-unity-migration-character-art.md`（全体戦略・費用/Live2D 等 2.5D/アニメ AI art + 商用注意/Web→C# 移植、web-researcher 4体で裏取り・出典付き）+ `2026-06-28-unity-first-step-core-port.md`（View/Logic/Data 3層・MonoBehaviour 薄く・IRng 注入で言語間決定的パリティ・Unity→Claude Code→MCP 環境セットアップ4段階・Windows 11 デスクトップ想定）
 - **Git**: PR #16 を origin/main へマージ（merge `853226a`）。feat `feat/battle-engine-bakeoff` をローカル（`git branch -d`）・リモート（`git push origin --delete`）削除。worktree `../battle-bakeoff` は detached HEAD で保持（不要時に `git worktree remove`）
-
-### 2026-06-28 - 要件正本の一本化確定 + 戦闘エンジン Bake-off 計画策定
-
-#### 概要
-
-並行2セッションで分岐していた v2 要件ドキュメントを照合し、`docs/realism-concept-v2`（Tier1/2/3）を正本として確定。リアルタイムタイマー/speed-chess 方向（包括版 `combat-core-redesign.md` / `realtime-turn-timer.md`）は矛盾設計のため supersede→削除に決定。次ステップとして、検証済みの「間合い×スタミナ」コアを PixiJS版と Phaser 3版の両方に載せ肌感比較する「ゲームエンジン Bake-off」計画書を策定（別セッションで実装）。本セッションは Phase 0 prep（docs→main マージ + umbrella削除 + rollup除去 + phaser導入の前提整備）を担当。
-
-#### 変更点
-
-- **要件正本化**: docs/realism-concept-v2 を正本確定（Tier1/2/3 = R1-0〜R1-20 の Phase 順包括要件）。包括版 `combat-core-redesign.md` / `realtime-turn-timer.md` は設計矛盾（tier%/ドロー曲線/タイマー vs 間合い連動/疲労確定減衰・スタミナ+剣気2軸）のため supersede→削除対象。RTS/speed-chess 方向は concept-v2 で廃棄済みを再確認
-- **並行セッション調整**: 同一作業ツリーを共有する2チャットのブランチ取り合い + 同一「doc照合」タスクの二重化を検出。git 実行を単一セッションに一本化。docs 確定分は別チャットが bd325cf でコミット済
-- **Bake-off 計画策定**: `.claude/docs/vision/plans/2026-06-28-battle-engine-bakeoff.md`（Status PLANNED）。共有コア（検証台 engine/ を本番品質で `core/` へ昇格 + `viewModel.ts` 抽出）+ Pixi/Phaser 2アダプタ。公平性ルール（数値・reducer 同一、描画だけ2通り）。勝者を Tier 1 本実装の描画基盤に昇格、検証台 DOM版は対照群として保全
-- **Phase 0 prep**: ①docs→main マージ（衝突なし検証済）+ umbrella削除 ②rollup 時限爆弾除去（tech-debt #5・独立コミット）③次セッションは専用 worktree `feat/battle-engine-bakeoff`（main 分岐）で phaser 導入から実装
-

@@ -1,3 +1,5 @@
+> **SUPERSEDED（2026-09-12）**: 帰還（テレポートストーン / 帰還ルート / アビス脱出）とライフ制は廃止。生の終了は「生存ルート」または死亡。詳細は `vision/concept-v3.md` §8。
+
 # Survival System Comprehensive Design Document V3.0
 
 ## Revision History

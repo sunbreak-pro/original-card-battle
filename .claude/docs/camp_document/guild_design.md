@@ -1,3 +1,5 @@
+> **SUPERSEDED（2026-09-12）**: ギルドは「継承の間」へ再解釈（`CAMP_FACILITIES_DESIGN.md` V5.0）。昇格試験・噂・倉庫は凍結。
+
 # Guild Facility Detailed Design Document (GUILD_DESIGN_V3.1)
 
 ## Update History

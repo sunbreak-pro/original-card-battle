@@ -1,3 +1,5 @@
+> **PARTIALLY SUPERSEDED（2026-09-12）**: §1.3 ライフ制と帰還 UI は廃止。探索は刻限（階層あたり約 10 回）と衰弱ゲージで制御する（`vision/concept-v3.md` §6）。ノードマップ・砂時計型の構造は §12-14 の決定まで仮置きで継続。
+
 Here is the English translation of the **Dungeon Exploration UI Design Document v2.1**.
 
 To help you visualize the structural concepts and UI layouts described in this design, I have inserted specific image tags where diagrams would be most instructive.
