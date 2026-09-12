@@ -1,3 +1,8 @@
+// v2 parity proof (TS core ↔ C# port), frozen 2026-09-12 when C# became the source of
+// truth and the core moved to battle_core_v3 rules (invest tiers, omen, enemy guard).
+// The fixture and the tools/*.mjs scripts stay as the historical record; this file
+// only compiles when V2_PARITY is defined because the v3 action/state shapes differ.
+#if V2_PARITY
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -106,3 +111,5 @@ namespace BattleCore.Tests
         }
     }
 }
+
+#endif

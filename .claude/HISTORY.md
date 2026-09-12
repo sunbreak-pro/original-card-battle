@@ -2,6 +2,21 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-12 - 戦闘 UI v1.1: 見た目 A 採用 + 鮮やかさと描き込み + 戦闘コア v3 と UGUI View を Unity に実装
+
+#### 概要
+
+こうだいさんの決定（A 採用、実画面はもう少し鮮やかで描き込みを、敗北画面と手記は凝ってよい）を設計書 v1.1 とモックアップに反映し、そのまま Unity に実装した。`unity-port/BattleCore/` を battle_core_v3（投入量 0〜3、予兆、敵 Guard、構え、崩し、冷静 / 死力、瘴気、探索からの入力、演出用イベント列）へ全面改修し、`unity-project-kit/Assets/View/` に L1 レイアウトと A+ トークンの View を 11 ファイルで書いた。`dotnet test` 54 / 54、Unity EditMode 54 / 54、Windows プレイヤーをビルドしてスクリーンショットで配置を確認し、重なり 4 か所を直した。
+
+#### 変更点
+
+- **設計書 / モックアップ**: `battle_ui_ux_v1.md` v1.1（§4.4 A 採用、§4.5 A+ トークンと描き込み 11 要素、§4.6 敗北画面、§4.7 手記ドロワー、§6.4 実装状況）。モックアップの skin A を A+ に更新し、敗北の例と手記ドロワーを作り替え（Artifact v2）
+- **戦闘コア v3（C#）**: `Types.cs`（Tier / CardDef / EnemyDef / Omen / BattleInit / BattleEvent 群）、`Constants.cs`（§10 の定数）、`Combat.cs`（間合い補正・丸めは AwayFromZero・Guard 適用・構え・瘴気ペナルティ・投入量の選択）、`Cards.cs`（剣士 6 種 + 応急処置の 4 段表）、`Enemy.cs`（長柄の歪み兵 5 行動・決定木・予兆・空振り回避）、`BattleReducer.cs`（§9 のターン進行）、`ViewModel.cs`（TierView / OmenView / JournalView / 既定投入）、`IBattleView.cs`（HUD 全項目）、`BattleStore.cs`（`BattleInit` 受け取り）
+- **テスト**: 4 ファイルを v3 向けに書き直し（54 件）。`ParityTests.cs` は `V2_PARITY` 定義時だけコンパイル。`tools/gen-trace-actions.mjs` は `TRACE_V2=1` が無いと停止。`Resources/trace-actions.txt` を v3 形式（勝利まで 77 手）で再生成
+- **View（UGUI）**: `BattleTheme` / `UiTween` / `ProceduralArt` / `UiKit` / `ArenaView` / `BattleHud` / `HandView` / `JournalDrawer` / `ResultOverlay` / `BattleDirector` / `BattleScreenView`。イベント列を §5 の ms で再生してから確定値を描く。`Application.runInBackground`、`-captureDir` の定期スクリーンショット、`-replayTrace` を追加
+- **同期 / 文書**: `sync-unity-project.mjs` が View の全 .cs を写す。`unity-port/README.md` に v3 の使い方。レポート `docs/reports/2026-09-12-battle-uiux-80.html` に実装節とスクリーンショット
+- **人手が要る残り**: Editor 前面での手触り確認（乱数「実戦」）、本物の立ち絵 / 書体 / 効果音
+
 ### 2026-09-12 - 戦闘 UI / UX の 80% 設計（情報設計・操作・見た目 3 案・演出仕様・Unity 写像）
 
 #### 概要

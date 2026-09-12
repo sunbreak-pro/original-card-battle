@@ -1,175 +1,129 @@
 using System.Collections.Generic;
-using NUnit.Framework;
 using System.Linq;
+using NUnit.Framework;
 using BattleCore;
 
 namespace BattleCore.Tests
 {
     public class ViewModelTests
     {
-        private static PrototypeCard Card(
-            CardDefId defId, string name, CardType type, int cost,
-            RangeBand? effRange, int basePower, int shift, int guard,
-            string instanceId)
+        private static BattleState State(int distance = 1, int stamina = 7, int enemyGuard = 0, int disclosure = 1, CardDefId[]? hand = null)
         {
-            return new PrototypeCard(instanceId, defId, name, type, cost, effRange, basePower, shift, guard, "");
-        }
-
-        private static PrototypeCard Thrust(string instanceId = "thrust-x") =>
-            Card(CardDefId.Thrust, "突き", CardType.Attack, 4, RangeBand.Close, 9, 0, 0, instanceId);
-
-        // ---- describeCard damage ----
-
-        [Test]
-        public void DescribeCard_OptimalDamage()
-        {
-            var v = ViewModel.DescribeCard(Thrust(), 20, 0, false);
-            Assert.That(v.Damage, Is.Not.Null);
-            Assert.That(v.Damage!.Predicted, Is.EqualTo(9));
-            Assert.That(v.Damage.OffRange, Is.False);
-            Assert.That(v.Damage.Fatigued, Is.False);
-            Assert.That(v.Damage.Note, Is.EqualTo("最適"));
-            Assert.That(v.Damage.Text, Is.EqualTo("威力 9 → 9（最適）"));
-            Assert.That(v.EffectiveRangeLabel, Is.EqualTo("近"));
+            var s = BattleReducer.InitState(new FixedRng(0), new BattleInit(PlayerMaxStamina: 9, MiasmaPercent: 32, MiasmaDensity: 2, Floor: 2, Disclosure: disclosure));
+            return s with
+            {
+                DistanceIndex = distance,
+                PlayerStamina = stamina,
+                EnemyGuard = enemyGuard,
+                Omen = Enemy.ChooseOmen(distance, 10),
+                Hand = (hand ?? new CardDefId[0]).Select((id, i) => new CardInstance($"{id.ToToken()}-{i}", Cards.Def(id))).ToList(),
+            };
         }
 
         [Test]
-        public void DescribeCard_OffRangeDamage()
+        public void DescribeCard_TiersStartAtMinInvestAndDefaultKeepsReserve()
         {
-            var v = ViewModel.DescribeCard(Thrust(), 20, 1, false);
-            Assert.That(v.Damage!.Predicted, Is.EqualTo(5));
-            Assert.That(v.Damage.OffRange, Is.True);
-            Assert.That(v.Damage.Note, Is.EqualTo("間合い不適"));
+            var s = State(distance: 1, stamina: 7, hand: new[] { CardDefId.Thrust });
+            var card = ViewModel.DescribeCard(s.Hand[0], s);
+            Assert.That(card.Tiers.Select(t => t.Invest), Is.EqualTo(new[] { 1, 2, 3 }));
+            Assert.That(card.DefaultInvest, Is.EqualTo(3), "7 − 3 = 4 ≥ 3");
+            Assert.That(card.Tiers.Single(t => t.IsDefault).Invest, Is.EqualTo(3));
+            Assert.That(card.Tiers[2].PredictedDamage, Is.EqualTo(6), "11 × 0.5 = 5.5 → 6 at mid");
+            Assert.That(card.Tiers[2].Summary, Does.Contain("×0.5"));
+            Assert.That(card.Playable, Is.True);
         }
 
         [Test]
-        public void DescribeCard_FatigueDamage()
+        public void DescribeCard_UnaffordableTiersAndUnplayable()
         {
-            var feint = Card(CardDefId.Feint, "牽制", CardType.Attack, 3, RangeBand.Mid, 8, 0, 0, "feint-x");
-            var v = ViewModel.DescribeCard(feint, 4, 1, false);
-            Assert.That(v.Damage!.Predicted, Is.EqualTo(4));
-            Assert.That(v.Damage.Fatigued, Is.True);
-            Assert.That(v.Damage.Note, Is.EqualTo("疲労"));
+            var s = State(stamina: 0, hand: new[] { CardDefId.Thrust, CardDefId.Feint });
+            var thrust = ViewModel.DescribeCard(s.Hand[0], s);
+            Assert.That(thrust.Playable, Is.False);
+            Assert.That(thrust.DisabledReason, Does.Contain("スタミナ不足"));
+            Assert.That(thrust.Tiers.All(t => !t.Affordable), Is.True);
+
+            var feint = ViewModel.DescribeCard(s.Hand[1], s);
+            Assert.That(feint.Playable, Is.True);
+            Assert.That(feint.DefaultInvest, Is.EqualTo(0));
+            Assert.That(feint.Tiers[0].Affordable, Is.True);
+            Assert.That(feint.Tiers[1].Affordable, Is.False);
         }
 
         [Test]
-        public void DescribeCard_OffRangeAndFatigueDamage()
+        public void DescribeTier_PredictsGuardMoveAndBreak()
         {
-            var v = ViewModel.DescribeCard(Thrust(), 4, 1, false);
-            Assert.That(v.Damage!.Predicted, Is.EqualTo(2));
-            Assert.That(v.Damage.Note, Is.EqualTo("間合い不適・疲労"));
-        }
+            var s = State(distance: 0, stamina: 9, enemyGuard: 2, hand: new[] { CardDefId.Lunge, CardDefId.StepOut });
+            var lunge = ViewModel.DescribeCard(s.Hand[0], s).Tiers.Single(t => t.Invest == 3);
+            Assert.That(lunge.PredictedDamage, Is.EqualTo(5), "7 raw − enemy guard 2");
+            Assert.That(lunge.BreakStamina, Is.EqualTo(1));
+            Assert.That(lunge.Clamped, Is.True);
+            Assert.That(lunge.Summary, Does.Contain("崩し 1"));
 
-        // ---- playability ----
-
-        [Test]
-        public void DescribeCard_AffordableAndOngoingIsPlayable()
-        {
-            var v = ViewModel.DescribeCard(Thrust(), 20, 0, false);
-            Assert.That(v.Playable, Is.True);
-            Assert.That(v.DisabledReason, Is.EqualTo(""));
-        }
-
-        [Test]
-        public void DescribeCard_InsufficientStaminaNotPlayable()
-        {
-            var card = Card(CardDefId.Lunge, "踏み込み斬り", CardType.Attack, 5, RangeBand.Close, 7, -1, 0, "lunge-x");
-            var v = ViewModel.DescribeCard(card, 4, 0, false);
-            Assert.That(v.Playable, Is.False);
-            Assert.That(v.DisabledReason, Is.EqualTo("気力不足（必要 5）"));
+            var stepOut = ViewModel.DescribeCard(s.Hand[1], s).Tiers.Single(t => t.Invest == 2);
+            Assert.That(stepOut.GuardApplies, Is.True);
+            Assert.That(stepOut.DistanceAfterLabel, Is.EqualTo("中"));
+            Assert.That(stepOut.StaminaAfter, Is.EqualTo(7));
+            Assert.That(stepOut.KeepsReserve, Is.True);
         }
 
         [Test]
-        public void DescribeCard_BattleOverNotPlayableWithNoReason()
+        public void DescribeOmen_DisclosureChangesText()
         {
-            var v = ViewModel.DescribeCard(Thrust(), 20, 0, true);
-            Assert.That(v.Playable, Is.False);
-            Assert.That(v.DisabledReason, Is.EqualTo(""));
-        }
+            var omen = new Omen(EnemyActionId.Sweep, RangeBand.Mid);
+            var low = ViewModel.DescribeOmen(omen, 1, 0);
+            Assert.That(low.BannerText, Is.EqualTo("予兆: 攻撃"));
+            Assert.That(low.Mult, Is.Null);
 
-        // ---- move / guard ----
+            var mid = ViewModel.DescribeOmen(omen, 1, 1);
+            Assert.That(mid.BannerText, Is.EqualTo("予兆: 攻撃 ／ 狙い 中"));
+            Assert.That(mid.Diff, Is.EqualTo(0));
+            Assert.That(mid.BandLabel, Is.EqualTo("的中"));
 
-        [Test]
-        public void DescribeCard_MoveStepIn()
-        {
-            var stepIn = Card(CardDefId.StepIn, "足捌き・前", CardType.Move, 2, null, 0, -1, 0, "step_in-x");
-            var v = ViewModel.DescribeCard(stepIn, 20, 1, false);
-            Assert.That(v.Damage, Is.Null);
-            Assert.That(v.EffectiveRangeLabel, Is.Null);
-            Assert.That(v.ShiftLabel, Is.EqualTo("間合い −1（詰める）"));
-        }
-
-        [Test]
-        public void DescribeCard_MoveStepOut()
-        {
-            var stepOut = Card(CardDefId.StepOut, "足捌き・後", CardType.Move, 1, null, 0, 1, 0, "step_out-x");
-            var v = ViewModel.DescribeCard(stepOut, 20, 1, false);
-            Assert.That(v.ShiftLabel, Is.EqualTo("間合い +1（退く）"));
+            var high = ViewModel.DescribeOmen(omen, 2, 2);
+            Assert.That(high.BannerText, Is.EqualTo("予兆: 薙ぎ払い ／ 狙い 中 ／ 威力 4〜8"));
+            Assert.That(high.Mult, Is.EqualTo(0.5));
+            Assert.That(high.FloorText, Is.EqualTo("このままだと 薙ぎ払い ×0.5"));
         }
 
         [Test]
-        public void DescribeCard_Guard()
+        public void OmenMultiplierAt_SupportsGhostPreview()
         {
-            var brace = Card(CardDefId.Brace, "呼吸を整える", CardType.Guard, 2, null, 0, 0, 6, "brace-x");
-            var v = ViewModel.DescribeCard(brace, 20, 1, false);
-            Assert.That(v.Damage, Is.Null);
-            Assert.That(v.Guard, Is.EqualTo(6));
-            Assert.That(v.ShiftLabel, Is.Null);
-        }
-
-        // ---- describeHand ----
-
-        [Test]
-        public void DescribeHand_OngoingAllPlayable()
-        {
-            var state = new BattleState(
-                1, 0, 30, 20, 0, 38, 20,
-                new List<PrototypeCard> { Thrust("thrust-0"), Thrust("thrust-1") },
-                new List<PrototypeCard>(), new List<PrototypeCard>(),
-                new List<LogEntry>(), 0, GameResult.Ongoing);
-            var views = ViewModel.DescribeHand(state);
-            Assert.That(views.Count, Is.EqualTo(2));
-            Assert.That(views.All(v => v.Playable), Is.True);
+            var omen = new Omen(EnemyActionId.Sweep, RangeBand.Mid);
+            Assert.That(ViewModel.OmenMultiplierAt(omen, 1), Is.EqualTo(1.0));
+            Assert.That(ViewModel.OmenMultiplierAt(omen, 2), Is.EqualTo(0.5));
+            Assert.That(ViewModel.OmenMultiplierAt(new Omen(EnemyActionId.GuardUp, null), 1), Is.Null);
         }
 
         [Test]
-        public void DescribeHand_WonNonePlayable()
+        public void ReservePreview_Text()
         {
-            var state = new BattleState(
-                1, 0, 30, 20, 0, 0, 20,
-                new List<PrototypeCard> { Thrust("thrust-0"), Thrust("thrust-1") },
-                new List<PrototypeCard>(), new List<PrototypeCard>(),
-                new List<LogEntry>(), 0, GameResult.Won);
-            var views = ViewModel.DescribeHand(state);
-            Assert.That(views.All(v => !v.Playable), Is.True);
-        }
-
-        // ---- distanceLabel / isBattleOver / enemyRangeHint ----
-
-        [Test]
-        public void DistanceLabel_MapsIndexToLabel()
-        {
-            Assert.That(ViewModel.DistanceLabel(0), Is.EqualTo("近"));
-            Assert.That(ViewModel.DistanceLabel(1), Is.EqualTo("中"));
-            Assert.That(ViewModel.DistanceLabel(2), Is.EqualTo("遠"));
+            Assert.That(ViewModel.ReservePreview(7), Is.EqualTo("今終えると 残 7 → 構え Guard +2"));
+            Assert.That(ViewModel.ReservePreview(2), Does.StartWith("今終えると 残 2 → 構えなし"));
         }
 
         [Test]
-        public void IsBattleOver_TrueOnlyWhenNotOngoing()
+        public void BattleViewModel_FlattensHudValues()
         {
-            Assert.That(ViewModel.IsBattleOver(GameResult.Ongoing), Is.False);
-            Assert.That(ViewModel.IsBattleOver(GameResult.Won), Is.True);
-            Assert.That(ViewModel.IsBattleOver(GameResult.Lost), Is.True);
+            var s = State(distance: 1, stamina: 7, disclosure: 2, hand: new[] { CardDefId.Thrust });
+            var vm = BattleViewModel.From(s);
+            Assert.That(vm.Floor, Is.EqualTo(2));
+            Assert.That(vm.MiasmaPercent, Is.EqualTo(32));
+            Assert.That(vm.MiasmaPenalty, Is.EqualTo(1));
+            Assert.That(vm.PlayerMaxStamina, Is.EqualTo(9));
+            Assert.That(vm.EnemyName, Is.EqualTo("長柄の歪み兵"));
+            Assert.That(vm.Omen, Is.Not.Null);
+            Assert.That(vm.ReserveWillTrigger, Is.True);
+            Assert.That(vm.Journal.TendencyLines.Count, Is.EqualTo(3));
+            Assert.That(vm.Journal.TendencyLines[1], Does.StartWith("中 → 薙ぎ払い"));
+            Assert.That(vm.DrawPileCount + vm.Hand.Count + vm.DiscardPileCount, Is.EqualTo(10), "hand replaced by 1 card; 9 in draw pile");
         }
 
         [Test]
-        public void EnemyRangeHint_ListsMidAndFarThreats()
+        public void Journal_LowDisclosureHidesTendencies()
         {
-            var hint = ViewModel.EnemyRangeHint();
-            Assert.That(hint, Does.Contain("中（薙ぎ払い）"));
-            Assert.That(hint, Does.Contain("遠（穂先の突き）"));
-            Assert.That(hint, Does.Not.Contain("石突き"));
-            Assert.That(hint, Does.Contain("近に詰めると弱い押し戻ししかできない"));
+            var j = ViewModel.DescribeJournal(0);
+            Assert.That(j.TendencyLines.Single(), Does.Contain("？"));
+            Assert.That(j.WeaknessLine, Does.Contain("？"));
         }
     }
 }

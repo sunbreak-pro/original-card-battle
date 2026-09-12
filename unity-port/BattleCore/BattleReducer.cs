@@ -4,191 +4,318 @@ using System.Linq;
 
 namespace BattleCore
 {
+    /// <summary>Turn flow of battle_core_v3.md §9. Pure: (state, action, rng) → state.</summary>
     public static class BattleReducer
     {
-        private readonly struct LogAppend
+        private static BattleState WithLogs(BattleState state, IReadOnlyList<string> texts, IReadOnlyList<BattleEvent> events)
         {
-            public LogAppend(IReadOnlyList<LogEntry> log, int logSeq)
-            {
-                Log = log;
-                LogSeq = logSeq;
-            }
-
-            public IReadOnlyList<LogEntry> Log { get; }
-            public int LogSeq { get; }
-        }
-
-        private static LogAppend AppendLogs(
-            IReadOnlyList<LogEntry> log, int logSeq, IReadOnlyList<string> texts)
-        {
-            var newLog = new List<LogEntry>(log);
+            var newLog = new List<LogEntry>(state.Log);
             for (int i = 0; i < texts.Count; i++)
             {
-                newLog.Add(new LogEntry(logSeq + i, texts[i]));
+                newLog.Add(new LogEntry(state.LogSeq + i, texts[i]));
             }
-            return new LogAppend(newLog, logSeq + texts.Count);
+            return state with { Log = newLog, LogSeq = state.LogSeq + texts.Count, Events = events };
         }
 
-        public static BattleState InitState(IRng rng)
+        public static BattleState InitState(IRng rng) => InitState(rng, new BattleInit());
+
+        public static BattleState InitState(IRng rng, BattleInit init)
         {
+            int maxStamina = Math.Max(Constants.MaxStaminaFloor, Math.Min(Constants.MaxStaminaCeil, init.PlayerMaxStamina));
+            int stamina = Math.Max(0, Math.Min(maxStamina, init.PlayerStamina ?? maxStamina));
+            int distance = Combat.ClampDistance(init.InitialDistanceIndex);
+
             var shuffled = Cards.Shuffle(Cards.CreateInitialDeck(), rng);
             var drawn = Cards.DrawToHandSize(
-                shuffled, new List<PrototypeCard>(), new List<PrototypeCard>(), Constants.HandSize, rng);
+                shuffled, new List<CardInstance>(), new List<CardInstance>(), Constants.HandSize, rng);
+            var omen = Enemy.ChooseOmen(distance, Enemy.Def.MaxStamina);
 
-            var baseState = new BattleState(
+            var state = new BattleState(
                 Turn: 1,
-                DistanceIndex: Constants.InitialDistanceIndex,
-                PlayerHp: Constants.PlayerMaxHp,
-                PlayerStamina: Constants.MaxStamina,
+                DistanceIndex: distance,
+                PlayerHp: Math.Max(1, Math.Min(init.PlayerMaxHp, init.PlayerHp)),
+                PlayerMaxHp: init.PlayerMaxHp,
+                PlayerStamina: stamina,
+                PlayerMaxStamina: maxStamina,
                 PlayerGuard: 0,
-                EnemyHp: Enemy.EnemyDef.MaxHp,
-                EnemyStamina: Constants.MaxStamina,
+                PendingBonusRecovery: 0,
+                EnemyHp: Enemy.Def.MaxHp,
+                EnemyMaxHp: Enemy.Def.MaxHp,
+                EnemyStamina: Enemy.Def.MaxStamina,
+                EnemyMaxStamina: Enemy.Def.MaxStamina,
+                EnemyGuard: 0,
+                Omen: omen,
                 Hand: drawn.Hand,
                 DrawPile: drawn.DrawPile,
                 DiscardPile: drawn.DiscardPile,
                 Log: new List<LogEntry>(),
                 LogSeq: 0,
-                Result: GameResult.Ongoing);
+                Events: new List<BattleEvent>(),
+                Result: GameResult.Ongoing,
+                Init: init);
 
-            var appended = AppendLogs(baseState.Log, baseState.LogSeq, new[]
+            var events = new List<BattleEvent>
             {
-                $"戦闘開始。間合いは「{Constants.RangeLabel[Combat.IndexToRange(baseState.DistanceIndex)]}」。",
-            });
-            return baseState with { Log = appended.Log, LogSeq = appended.LogSeq };
+                new TurnStartedEvent(1, Combat.IndexToRange(distance), 0, 0),
+                new CardsDrawnEvent(drawn.Hand.Count),
+                new OmenDeclaredEvent(omen),
+            };
+            return WithLogs(state, new[]
+            {
+                $"戦闘開始。間合いは「{Constants.RangeLabel[Combat.IndexToRange(distance)]}」。",
+                OmenLog(omen),
+            }, events);
         }
 
-        private static BattleState PlayCard(BattleState state, string instanceId)
+        private static string OmenLog(Omen omen)
+        {
+            var action = Enemy.Actions[omen.ActionId];
+            string range = omen.TargetRange.HasValue ? $"・狙い {Constants.RangeLabel[omen.TargetRange.Value]}" : "";
+            return $"予兆: {action.Name}{range}。";
+        }
+
+        // ---- §9 step 5: play a card with an invest ----
+
+        private static BattleState PlayCard(BattleState state, string instanceId, int invest)
         {
             if (state.Result != GameResult.Ongoing) return state;
             var card = state.Hand.FirstOrDefault(c => c.InstanceId == instanceId);
             if (card == null) return state;
-            if (state.PlayerStamina < card.Cost) return state;
+            var def = card.Def;
+            if (invest < def.MinInvest || invest > Constants.MaxInvest) return state;
+            if (state.PlayerStamina < invest) return state;
 
+            var tier = def.Tiers[invest];
+            var events = new List<BattleEvent> { new CardPlayedEvent(instanceId, def.Id, def.Name, invest) };
             var logs = new List<string>();
-            int enemyHp = state.EnemyHp;
-            int distanceIndex = state.DistanceIndex;
-            int playerGuard = state.PlayerGuard;
 
-            if (card.Type == CardType.Attack && card.EffectiveRange.HasValue)
+            int enemyHp = state.EnemyHp;
+            int enemyGuard = state.EnemyGuard;
+            int enemyStamina = state.EnemyStamina;
+            int playerHp = state.PlayerHp;
+            int playerGuard = state.PlayerGuard;
+            int distance = state.DistanceIndex;
+            int diff = -1;
+            string investText = $"（投入 {invest}）";
+
+            // 1. damage
+            if (def.Type == CardType.Attack && def.EffectiveRange.HasValue)
             {
-                int dmg = Combat.ComputeAttackDamage(
-                    card.BasePower, card.EffectiveRange.Value, state.PlayerStamina, state.DistanceIndex);
-                enemyHp = Math.Max(0, enemyHp - dmg);
-                logs.Add($"「{card.Name}」で {dmg} ダメージ。");
+                var eff = def.EffectiveRange.Value;
+                diff = Combat.RangeDiff(distance, eff);
+                double mult = Combat.RangeMultiplier(distance, eff);
+                bool desperate = Combat.IsDesperate(def, state.PlayerStamina);
+                int raw = Combat.ComputeAttackDamage(tier.Power, eff, distance, desperate);
+                var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw, enemyGuard);
+                enemyHp = Math.Max(0, enemyHp - damage);
+                enemyGuard = guardAfter;
+                events.Add(new AttackResolvedEvent(Actor.Player, def.Name, tier.Power, mult, diff, desperate, raw, absorbed, damage, enemyHp));
+                string log = $"「{def.Name}」{investText}で {damage} ダメージ";
+                if (absorbed > 0) log += $"（敵の Guard で {absorbed} 軽減）";
+                if (diff == 1) log += "（間合い不適 ×0.5）";
+                else if (diff >= Constants.WhiffDiff) log += "（空振り ×0.15）";
+                log += "。";
+                logs.Add(log);
             }
-            else if (card.Type == CardType.Guard)
+            else if (def.Type == CardType.Guard)
             {
-                playerGuard += card.Guard;
-                logs.Add($"「{card.Name}」で受けを固めた（ガード +{card.Guard}）。");
+                playerGuard += tier.Guard;
+                events.Add(new GuardGainedEvent(Actor.Player, tier.Guard, playerGuard, def.Name));
+                logs.Add($"「{def.Name}」{investText}で受けを固めた（Guard +{tier.Guard}）。");
+            }
+            else if (def.Type == CardType.Heal)
+            {
+                int heal = Math.Min(tier.Heal, state.PlayerMaxHp - playerHp);
+                playerHp += heal;
+                events.Add(new HealedEvent(Actor.Player, heal, playerHp));
+                logs.Add($"「{def.Name}」{investText}で HP {heal} 回復。");
             }
             else
             {
-                logs.Add($"「{card.Name}」を使った。");
+                logs.Add($"「{def.Name}」{investText}。");
             }
 
-            if (card.Shift != 0)
+            // 2. move
+            if (tier.Shift != 0)
             {
-                distanceIndex = Combat.ShiftDistance(distanceIndex, card.Shift);
-                logs.Add($"間合いが「{Constants.RangeLabel[Combat.IndexToRange(distanceIndex)]}」に。");
+                int after = Combat.ShiftDistance(distance, tier.Shift);
+                bool clamped = after == distance;
+                events.Add(new MovedEvent(Actor.Player, distance, after, clamped));
+                if (clamped) logs.Add(tier.Shift < 0 ? "これ以上詰められない。" : "これ以上退けない。");
+                else logs.Add($"間合いが「{Constants.RangeLabel[Combat.IndexToRange(after)]}」に。");
+                distance = after;
             }
 
-            int playerStamina = state.PlayerStamina - card.Cost;
+            // 3. additional effects: always for move / heal, diff 0 only for attacks (§2.3)
+            bool extrasApply = def.Type != CardType.Attack || diff == 0;
+            if (extrasApply && def.Type != CardType.Guard && tier.Guard > 0)
+            {
+                playerGuard += tier.Guard;
+                events.Add(new GuardGainedEvent(Actor.Player, tier.Guard, playerGuard, def.Name));
+                logs.Add($"Guard +{tier.Guard}。");
+            }
+            if (extrasApply && tier.BreakStamina > 0)
+            {
+                enemyStamina = Math.Max(0, enemyStamina - tier.BreakStamina);
+                events.Add(new StaminaBrokenEvent(Actor.Enemy, tier.BreakStamina, enemyStamina));
+                logs.Add($"敵を崩した（スタミナ −{tier.BreakStamina}）。");
+            }
+
+            // stamina, calm
+            int playerStamina = state.PlayerStamina - invest;
+            int pendingBonus = state.PendingBonusRecovery;
+            if (Combat.CalmTriggers(def, playerStamina))
+            {
+                pendingBonus += def.Reserve!.Bonus;
+                events.Add(new CalmTriggeredEvent(def.Name, def.Reserve.Bonus));
+                logs.Add($"冷静: 次ターンの回復 +{def.Reserve.Bonus}。");
+            }
+
             var hand = state.Hand.Where(c => c.InstanceId != instanceId).ToList();
-            var discardPile = new List<PrototypeCard>(state.DiscardPile) { card };
+            var discard = new List<CardInstance>(state.DiscardPile) { card };
 
             var result = state.Result;
             if (enemyHp <= 0)
             {
                 result = GameResult.Won;
-                logs.Add($"敵「{Enemy.EnemyDef.Name}」を打ち倒した。勝利。");
+                events.Add(new BattleEndedEvent(GameResult.Won));
+                logs.Add($"敵「{Enemy.Def.Name}」を打ち倒した。");
             }
 
-            var appended = AppendLogs(state.Log, state.LogSeq, logs);
-            return state with
+            var next = state with
             {
                 EnemyHp = enemyHp,
-                DistanceIndex = distanceIndex,
+                EnemyGuard = enemyGuard,
+                EnemyStamina = enemyStamina,
+                PlayerHp = playerHp,
                 PlayerGuard = playerGuard,
                 PlayerStamina = playerStamina,
+                PendingBonusRecovery = pendingBonus,
+                DistanceIndex = distance,
                 Hand = hand,
-                DiscardPile = discardPile,
+                DiscardPile = discard,
                 Result = result,
-                Log = appended.Log,
-                LogSeq = appended.LogSeq,
             };
+            return WithLogs(next, logs, events);
         }
+
+        // ---- §9 steps 6–11 + next turn start ----
 
         private static BattleState EndTurn(BattleState state, IRng rng)
         {
             if (state.Result != GameResult.Ongoing) return state;
+            var events = new List<BattleEvent>();
             var logs = new List<string>();
-            var discardAfterHand = new List<PrototypeCard>(state.DiscardPile);
-            discardAfterHand.AddRange(state.Hand);
 
-            var enemyBand = Combat.IndexToRange(state.DistanceIndex);
-            int enemyRecovery = Combat.StaminaRecovery(enemyBand);
-            int enemyStaminaAfterRecovery = Math.Min(Constants.MaxStamina, state.EnemyStamina + enemyRecovery);
-            logs.Add(
-                $"敵が間合い「{Constants.RangeLabel[enemyBand]}」でスタミナ回復（+{enemyRecovery} → {enemyStaminaAfterRecovery}）。");
-
-            var outcome = Enemy.ResolveEnemyTurn(state.DistanceIndex, enemyStaminaAfterRecovery, state.PlayerGuard);
-            int enemyStamina = enemyStaminaAfterRecovery - outcome.StaminaSpent;
-            int playerHp = Math.Max(0, state.PlayerHp - outcome.Damage);
-            int distanceIndex = outcome.NewDistanceIndex;
-            logs.Add(outcome.LogText);
-
-            if (playerHp <= 0)
+            // 6. reserve (構え)
+            int playerGuard = state.PlayerGuard;
+            int reserve = Combat.ReserveGuard(state.PlayerStamina);
+            if (reserve > 0)
             {
-                logs.Add("力尽きた。敗北。");
-                var appendedLost = AppendLogs(state.Log, state.LogSeq, logs);
-                return state with
-                {
-                    Hand = new List<PrototypeCard>(),
-                    DiscardPile = discardAfterHand,
-                    EnemyStamina = enemyStamina,
-                    PlayerHp = playerHp,
-                    PlayerGuard = outcome.NewGuard,
-                    DistanceIndex = distanceIndex,
-                    Result = GameResult.Lost,
-                    Log = appendedLost.Log,
-                    LogSeq = appendedLost.LogSeq,
-                };
+                playerGuard += reserve;
+                events.Add(new ReserveGuardEvent(Actor.Player, state.PlayerStamina, reserve));
+                logs.Add($"構え: 残 {state.PlayerStamina} で Guard +{reserve}。");
             }
 
-            int turn = state.Turn + 1;
-            var playerBand = Combat.IndexToRange(distanceIndex);
-            int playerRecovery = Combat.StaminaRecovery(playerBand);
-            int playerStamina = Math.Min(Constants.MaxStamina, state.PlayerStamina + playerRecovery);
-            var drawn = Cards.DrawToHandSize(
-                state.DrawPile, discardAfterHand, new List<PrototypeCard>(), Constants.HandSize, rng);
-            logs.Add(
-                $"ターン{turn}開始。間合い「{Constants.RangeLabel[playerBand]}」でスタミナ回復（+{playerRecovery} → {playerStamina}）。");
+            // 7. discard hand
+            var discard = new List<CardInstance>(state.DiscardPile);
+            discard.AddRange(state.Hand);
+            if (state.Hand.Count > 0) events.Add(new HandDiscardedEvent(state.Hand.Count));
 
-            var appended = AppendLogs(state.Log, state.LogSeq, logs);
-            return state with
+            // 8. enemy phase: guard to 0, recovery
+            var band = Combat.IndexToRange(state.DistanceIndex);
+            int enemyRecovery = Combat.StaminaRecovery(band);
+            int enemyStamina = Math.Min(state.EnemyMaxStamina, state.EnemyStamina + enemyRecovery);
+            events.Add(new EnemyPhaseStartedEvent(band, enemyRecovery));
+            logs.Add($"敵の番。間合い「{Constants.RangeLabel[band]}」でスタミナ回復（+{enemyRecovery} → {enemyStamina}）。");
+
+            // 9. execute the omen
+            var omen = state.Omen ?? Enemy.ChooseOmen(state.DistanceIndex, enemyStamina);
+            var outcome = Enemy.ResolveOmen(omen, state.DistanceIndex, enemyStamina, 0, playerGuard, state.PlayerStamina);
+            int playerHp = Math.Max(0, state.PlayerHp - outcome.Damage);
+            foreach (var ev in outcome.Events)
+            {
+                events.Add(ev is AttackResolvedEvent hit ? hit with { TargetHpAfter = playerHp } : ev);
+            }
+            logs.AddRange(outcome.Logs);
+            enemyStamina -= outcome.Invest;
+            int enemyGuard = outcome.EnemyGuardAfter;
+            int playerStamina = outcome.PlayerStaminaAfter;
+            int distance = outcome.DistanceAfter;
+
+            // 10. defeat
+            if (playerHp <= 0)
+            {
+                events.Add(new BattleEndedEvent(GameResult.Lost));
+                logs.Add("力尽きた。");
+                var lost = state with
+                {
+                    Hand = new List<CardInstance>(),
+                    DiscardPile = discard,
+                    EnemyStamina = enemyStamina,
+                    EnemyGuard = enemyGuard,
+                    PlayerHp = 0,
+                    PlayerGuard = outcome.PlayerGuardAfter,
+                    PlayerStamina = playerStamina,
+                    DistanceIndex = distance,
+                    Result = GameResult.Lost,
+                };
+                return WithLogs(lost, logs, events);
+            }
+
+            // enemy reserve (symmetric 構え)
+            int enemyReserve = Combat.ReserveGuard(enemyStamina);
+            if (enemyReserve > 0)
+            {
+                enemyGuard += enemyReserve;
+                events.Add(new ReserveGuardEvent(Actor.Enemy, enemyStamina, enemyReserve));
+                logs.Add($"敵の構え: Guard +{enemyReserve}。");
+            }
+
+            // 11. next omen
+            var nextOmen = Enemy.ChooseOmen(distance, enemyStamina);
+            events.Add(new OmenDeclaredEvent(nextOmen));
+            logs.Add(OmenLog(nextOmen));
+
+            // player turn start (§9 steps 1–4)
+            int turn = state.Turn + 1;
+            var playerBand = Combat.IndexToRange(distance);
+            int recovery = Combat.StaminaRecovery(playerBand);
+            int bonus = state.PendingBonusRecovery;
+            int playerStaminaNext = Math.Min(state.PlayerMaxStamina, playerStamina + recovery + bonus);
+            var drawn = Cards.DrawToHandSize(
+                state.DrawPile, discard, new List<CardInstance>(), Constants.HandSize, rng);
+            events.Add(new TurnStartedEvent(turn, playerBand, recovery, bonus));
+            events.Add(new CardsDrawnEvent(drawn.Hand.Count));
+            string bonusText = bonus > 0 ? $" +{bonus}（冷静）" : "";
+            logs.Add($"ターン {turn}。間合い「{Constants.RangeLabel[playerBand]}」で回復（+{recovery}{bonusText} → {playerStaminaNext}）。");
+
+            var next = state with
             {
                 Turn = turn,
-                DistanceIndex = distanceIndex,
+                DistanceIndex = distance,
                 PlayerHp = playerHp,
-                PlayerStamina = playerStamina,
+                PlayerStamina = playerStaminaNext,
                 PlayerGuard = 0,
+                PendingBonusRecovery = 0,
                 EnemyStamina = enemyStamina,
+                EnemyGuard = enemyGuard,
+                Omen = nextOmen,
                 Hand = drawn.Hand,
                 DrawPile = drawn.DrawPile,
                 DiscardPile = drawn.DiscardPile,
-                Log = appended.Log,
-                LogSeq = appended.LogSeq,
                 Result = GameResult.Ongoing,
             };
+            return WithLogs(next, logs, events);
         }
 
         public static BattleState Reduce(BattleState state, BattleAction action, IRng rng)
         {
             return action switch
             {
-                PlayCardAction play => PlayCard(state, play.InstanceId),
+                PlayCardAction play => PlayCard(state, play.InstanceId, play.Invest),
                 EndTurnAction => EndTurn(state, rng),
-                RestartAction => InitState(rng),
+                RestartAction => InitState(rng, state.Init),
                 _ => state,
             };
         }

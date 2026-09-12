@@ -78,8 +78,8 @@ const plan = [
       ]]
     : []),
 
-  // MonoBehaviour skeleton -> Assets/View
-  [`${kit}/Assets/View/BattleScreenView.cs`, `${projectPath}/Assets/View/BattleScreenView.cs`],
+  // View MonoBehaviours (BattleScreenView + helpers) -> Assets/View
+  ...csFiles(`${kit}/Assets/View`).map((src) => [src, `${projectPath}/Assets/View/${basename(src)}`]),
   // parity-fixture replay script (npm run unity:trace) -> Resources so the View can load it
   [`${kit}/Assets/View/Resources/trace-actions.txt`, `${projectPath}/Assets/View/Resources/trace-actions.txt`],
 ];

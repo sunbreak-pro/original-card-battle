@@ -1,4 +1,6 @@
-> **2026-09-12 決定: C# が正。** 以降の戦闘コア変更は `BattleCore/` に直接入れ、TS の `src/ui/battle-lab/core/` は凍結する。`parity:*` スクリプトと fixture は v2 コア移植の証跡として残すが、v3（`.claude/docs/battle_document/battle_core_v3.md`）以降は更新しない。
+> **2026-09-12 決定: C# が正。** 戦闘コアは `BattleCore/` が **battle_core_v3**（`.claude/docs/battle_document/battle_core_v3.md`: 投入量 0〜3、予兆、敵 Guard、構え、崩し）を実装している。TS の `src/ui/battle-lab/core/` は v2 のまま凍結。`parity:*` スクリプトと fixture は v2 移植の証跡として残し、`ParityTests.cs` は `V2_PARITY` を定義したときだけコンパイルされる（v3 では状態の形が違うため常時は外している）。
+>
+> **v3 での使い方**: `dotnet test unity-port/UnityCorePort.slnx`（ユニット 54）→ `npm run unity:sync`（コア + View を Unity プロジェクトへ）→ `unity test C:/Users/user/Unity/RPG-by-card --mode EditMode`（Editor 抜きでコンパイルと EditMode テスト）。View は `unity-project-kit/Assets/View/`（`BattleScreenView.cs` + 補助クラス。設計は `.claude/docs/battle_document/battle_ui_ux_v1.md`）。`Resources/trace-actions.txt` は v3 形式（`play <instanceId> <invest>` / `end`、`#` 行が期待状態）。
 
 # Unity Core Port — Battle Core (C#)
 

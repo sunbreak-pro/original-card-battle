@@ -61,29 +61,36 @@
   .stage .disp { font-family: var(--f-disp); }
 
   /* ---------- skins ---------- */
+  /* A+ (2026-09-12 採用): 基調は A のまま、彩度と明度だけ上げる。描き込みは .stage[data-skin="A"] 限定の節で足す */
   .stage[data-skin="A"] {
-    --ground: #0f1a22; --panel: rgba(18,30,38,.82); --ink: #e7ece9; --ink-2: #98aaa9; --line: rgba(190,215,210,.14);
-    --accent: #8fd3c7; --warm: #e8b86d; --omen: #e0614f; --guard: #a9c4e6; --whiff: #7d8a8c;
-    --fig-p: #2b4a53; --fig-e: #4d2624; --fig-stroke: transparent; --glow: rgba(232,184,109,.45);
+    --ground: #0e1c26; --panel: rgba(16,32,42,.84); --ink: #eef3f0; --ink-2: #a3b5b3; --line: rgba(190,215,210,.16);
+    --accent: #63e0c9; --warm: #ffc46b; --omen: #ff5d47; --guard: #9cc7ff; --whiff: #7d8a8c; --amber: #f0a848;
+    --fig-p: #2b4a53; --fig-e: #4d2624; --fig-stroke: transparent; --glow: rgba(255,196,107,.5);
     --f-disp: "Shippori Mincho", "Hiragino Mincho ProN", serif; --f-body: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --f-hand: "Yuji Syuku", "Hiragino Mincho ProN", serif;
     --radius: .35cqw; --panel-blur: blur(.4cqw); --panel-fill: var(--panel); --shadow: 0 .4cqh 1.2cqh rgba(0,0,0,.45);
-    --floor: rgba(160,190,185,.28); --floor-h: .35cqh;
+    --floor: rgba(160,190,185,.34); --floor-h: .35cqh;
+    --paper: #f0e6d0; --paper-ink: #2b2620; --paper-line: rgba(43,38,32,.35); --ink-flood: #06090c;
   }
   .stage[data-skin="B"] {
     --ground: #141210; --panel: #1e1a16; --ink: #e3dccf; --ink-2: #9a8f7f; --line: #3a322a;
-    --accent: #b89b5e; --warm: #c9a45c; --omen: #b43a2a; --guard: #7f8f9c; --whiff: #6b665e;
+    --accent: #b89b5e; --warm: #c9a45c; --omen: #b43a2a; --guard: #7f8f9c; --whiff: #6b665e; --amber: #c9a45c;
     --fig-p: #4a4136; --fig-e: #3a2420; --fig-stroke: transparent; --glow: transparent;
     --f-disp: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-body: "Noto Sans JP", "Hiragino Sans", sans-serif;
+    --f-hand: "Yuji Syuku", "Hiragino Mincho ProN", serif;
     --radius: 0; --panel-blur: none; --panel-fill: var(--panel); --shadow: .3cqw .5cqh 0 rgba(0,0,0,.6);
     --floor: #3a322a; --floor-h: .6cqh;
+    --paper: #e8dcc2; --paper-ink: #2b2620; --paper-line: rgba(43,38,32,.35); --ink-flood: #060404;
   }
   .stage[data-skin="C"] {
     --ground: #111214; --panel: #1b1c1f; --ink: #f2efe8; --ink-2: #a7a49c; --line: #3c3d40;
-    --accent: #f2efe8; --warm: #d9c9a3; --omen: #d63a2f; --guard: #9aa5ad; --whiff: #6f7074;
+    --accent: #f2efe8; --warm: #d9c9a3; --omen: #d63a2f; --guard: #9aa5ad; --whiff: #6f7074; --amber: #d9c9a3;
     --fig-p: #0a0a0b; --fig-e: #0a0a0b; --fig-stroke: var(--ink); --glow: transparent;
     --f-disp: "Yuji Syuku", "Hiragino Mincho ProN", serif; --f-body: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --f-hand: "Yuji Syuku", "Hiragino Mincho ProN", serif;
     --radius: 0; --panel-blur: none; --panel-fill: transparent; --shadow: none;
     --floor: var(--ink); --floor-h: .8cqh;
+    --paper: #f2efe8; --paper-ink: #111214; --paper-line: rgba(17,18,20,.4); --ink-flood: #050303;
   }
   .stage[data-skin="B"] .panel { border: 1px solid var(--accent); }
   .stage[data-skin="C"] .panel { border: 1px solid var(--line); }
@@ -98,6 +105,90 @@
   .stage[data-skin="C"][data-floor="1"] { --arena-top: #1c1d20; --arena-bot: #111214; --fog: transparent; }
   .stage[data-skin="C"][data-floor="3"] { --arena-top: #151417; --arena-bot: #0b0a0c; --fog: transparent; }
   .stage[data-skin="C"][data-floor="5"] { --arena-top: #120a0a; --arena-bot: #050303; --fog: rgba(214,58,47,.06); }
+
+  /* ---------- A+ 描き込み（A のときだけ） ---------- */
+  /* (a) 足元の灯りのゆらぎ */
+  .stage[data-skin="A"] .fig-wrap:not(.ghost)::after { animation: lantern 1.8s ease-in-out infinite; }
+  @keyframes lantern { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; } 50% { transform: translateX(-50%) scale(1.06); opacity: .88; } }
+  /* (b) 靄 2 層（視差） */
+  .mist { position: absolute; inset: 0; pointer-events: none; display: none; }
+  .stage[data-skin="A"] .mist { display: block; }
+  .mist.back {
+    background: radial-gradient(ellipse 30% 40% at 20% 70%, var(--fog), transparent 70%), radial-gradient(ellipse 40% 35% at 70% 80%, var(--fog), transparent 70%);
+    background-size: 100cqw 100%; animation: mist-drift 60s linear infinite; opacity: .9;
+  }
+  .mist.front {
+    background: radial-gradient(ellipse 25% 30% at 45% 88%, var(--fog), transparent 70%), radial-gradient(ellipse 35% 25% at 90% 92%, var(--fog), transparent 70%);
+    background-size: 100cqw 100%; animation: mist-drift 28s linear infinite reverse;
+  }
+  @keyframes mist-drift { from { background-position: 0 0; } to { background-position: 100cqw 0; } }
+  /* (c) 床: 濡れた石畳のノイズ + 灯りの反射線 */
+  .stage[data-skin="A"] .arena::before {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 14%; pointer-events: none;
+    background:
+      linear-gradient(to top, rgba(0,0,0,.35), transparent 80%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 .9cqw, transparent .9cqw 2.1cqw),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 .4cqh, transparent .4cqh 1.7cqh),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .6 0 0 0 0 .7 0 0 0 0 .7 0 0 0 .18 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .stage[data-skin="A"] .arena .floor { box-shadow: 0 -1px 0 color-mix(in srgb, var(--warm) 40%, transparent), 0 .3cqh 1.2cqh rgba(0,0,0,.4); }
+  .stage[data-skin="A"] .fig-wrap:not(.ghost)::before {
+    content: ""; position: absolute; left: 50%; top: 100%; width: 7cqw; height: 6cqh; transform: translateX(-50%);
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--warm) 28%, transparent), transparent 70%); pointer-events: none;
+    mask-image: repeating-linear-gradient(0deg, #000 0 .25cqh, transparent .25cqh .7cqh); -webkit-mask-image: repeating-linear-gradient(0deg, #000 0 .25cqh, transparent .25cqh .7cqh);
+  }
+  /* (d) 階層 5 の火の粉 */
+  .embers { position: absolute; inset: 0; pointer-events: none; display: none; overflow: hidden; }
+  .stage[data-skin="A"][data-floor="5"] .embers { display: block; }
+  .embers i {
+    position: absolute; bottom: -2%; width: .35cqw; height: .35cqw; border-radius: 50%;
+    background: color-mix(in srgb, var(--omen) 75%, var(--warm)); box-shadow: 0 0 .5cqw color-mix(in srgb, var(--omen) 60%, transparent);
+    opacity: 0; animation: ember linear infinite;
+  }
+  @keyframes ember { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: .9; } 50% { transform: translate(1.5cqw, -45%); } 100% { transform: translate(-1cqw, -95%); opacity: 0; } }
+  .embers i:nth-child(1) { left: 8%; animation-duration: 5.2s; animation-delay: 0s; }
+  .embers i:nth-child(2) { left: 16%; animation-duration: 6.4s; animation-delay: 1.1s; }
+  .embers i:nth-child(3) { left: 24%; animation-duration: 4.3s; animation-delay: 2.3s; }
+  .embers i:nth-child(4) { left: 33%; animation-duration: 6.9s; animation-delay: .6s; }
+  .embers i:nth-child(5) { left: 41%; animation-duration: 4.8s; animation-delay: 3.1s; }
+  .embers i:nth-child(6) { left: 49%; animation-duration: 5.7s; animation-delay: 1.8s; }
+  .embers i:nth-child(7) { left: 57%; animation-duration: 6.1s; animation-delay: 4s; }
+  .embers i:nth-child(8) { left: 65%; animation-duration: 4.5s; animation-delay: .3s; }
+  .embers i:nth-child(9) { left: 73%; animation-duration: 6.6s; animation-delay: 2.7s; }
+  .embers i:nth-child(10) { left: 81%; animation-duration: 5s; animation-delay: 1.4s; }
+  .embers i:nth-child(11) { left: 89%; animation-duration: 4.1s; animation-delay: 3.6s; }
+  .embers i:nth-child(12) { left: 95%; animation-duration: 6.8s; animation-delay: .9s; }
+  /* (e) 立ち絵のリムライト */
+  .stage[data-skin="A"] .fig-wrap:not(.ghost) .fig { filter: drop-shadow(0 0 1px var(--warm)) drop-shadow(0 .4cqh .8cqh rgba(0,0,0,.5)); }
+  /* (f) HP バーの 5 刻み目盛 */
+  .stage[data-skin="A"] .hpbar::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(90deg, transparent 0 calc(100% * 5 / var(--hp-max) - 1px), var(--ground) calc(100% * 5 / var(--hp-max) - 1px) calc(100% * 5 / var(--hp-max)));
+    opacity: .9;
+  }
+  .stage[data-skin="A"] .hpbar { box-shadow: inset 0 1px 0 rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.06); }
+  /* (g) スタミナのピップ = ランタンの硝子（warm の芯 + accent の縁） */
+  .stage[data-skin="A"] .pips:not(.enemy) i { border-radius: .35cqw .35cqw .5cqw .5cqw; background: rgba(0,0,0,.25); box-shadow: inset 0 0 .25cqw rgba(255,255,255,.08); }
+  .stage[data-skin="A"] .pips:not(.enemy) i.on {
+    background: radial-gradient(circle at 50% 58%, var(--warm) 0 28%, color-mix(in srgb, var(--warm) 40%, var(--accent)) 46%, color-mix(in srgb, var(--accent) 55%, transparent) 78%, transparent 100%);
+    border-color: var(--accent); box-shadow: inset 0 0 .3cqw rgba(255,255,255,.35), 0 0 .6cqw color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  /* (h) カード枠: 内側エンボス、選択中は accent の内グロー、種別アイコン */
+  .stage[data-skin="A"] .card { box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.09), inset 0 -1px 0 rgba(0,0,0,.4), inset 0 0 0 1px rgba(0,0,0,.25); }
+  .stage[data-skin="A"] .card.sel { box-shadow: var(--shadow), inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), inset 0 0 1.4cqw color-mix(in srgb, var(--accent) 22%, transparent); }
+  .stage[data-skin="A"] .card .c-name svg { stroke: var(--accent); }
+  /* (i) 予兆バナー: 筆のかすれ縁 + 墨の縁 */
+  .stage[data-skin="A"] .omen {
+    border-left: 0; padding-bottom: calc(.6cqh + .9cqh); padding-inline: 1.2cqw;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--omen) 30%, var(--panel)), var(--panel) 40%);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.65), var(--shadow);
+    clip-path: polygon(1.5% 0, 97% 0, 100% 14%, 98.5% 36%, 100% 58%, 97.5% 74%, 56% 74%, 50% 100%, 44% 74%, 2.5% 74%, 0 60%, 2% 38%, 0 18%);
+  }
+  .stage[data-skin="A"] .omen::after { display: none; }
+  /* (j) 四隅のビネット（常時 8%） */
+  .stage[data-skin="A"]::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 14; background: radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,.32) 100%); }
+  /* (k) 大きな数字は Shippori Mincho の太字、縁取り 1px */
+  .stage[data-skin="A"] .float.dmg { font-family: var(--f-disp); font-weight: 700; font-size: 2cqw; -webkit-text-stroke: 1px rgba(0,0,0,.65); paint-order: stroke fill; }
 
   /* ---------- regions (L1) ---------- */
   .panel { background: var(--panel-fill); backdrop-filter: var(--panel-blur); border-radius: var(--radius); }
@@ -201,7 +292,7 @@
   }
   .band.show { opacity: 1; }
   .band.hit { background: var(--omen); box-shadow: 0 0 1.2cqw color-mix(in srgb, var(--omen) 60%, transparent); }
-  .band.half { background: color-mix(in srgb, var(--warm) 55%, transparent); }
+  .band.half { background: color-mix(in srgb, var(--amber) 70%, transparent); }
   .band.whiff { background: transparent; border: .12cqw dashed var(--whiff); }
   .stage[data-skin="C"] .band.hit { box-shadow: none; }
   .band .note {
@@ -209,7 +300,7 @@
     font-size: .85cqw; color: var(--ink-2); letter-spacing: .04em;
   }
   .band.hit .note b { color: var(--omen); }
-  .band.half .note b { color: var(--warm); }
+  .band.half .note b { color: var(--amber); }
   .band.whiff .note b { color: var(--whiff); }
   .band .note b { font-family: "IBM Plex Mono", monospace; }
 
@@ -332,34 +423,90 @@
   .log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .log div:first-child { color: var(--ink); }
 
-  /* journal drawer */
+  /* ---------- 手記の頁（共通の和紙） ---------- */
+  .paper {
+    position: relative; color: var(--paper-ink); background-color: var(--paper);
+    background-image:
+      repeating-linear-gradient(97deg, rgba(120,90,50,.06) 0 1px, transparent 1px 7px),
+      repeating-linear-gradient(-12deg, rgba(120,90,50,.045) 0 1px, transparent 1px 11px),
+      radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.35), transparent 60%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .25 0 0 0 .14 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)'/%3E%3C/svg%3E");
+    box-shadow: inset 0 0 3cqw rgba(90,60,20,.18);
+  }
+  .paper .num { color: var(--paper-ink); }
+  .paper .unk { position: relative; color: var(--paper-ink); opacity: .65; filter: blur(.5px); letter-spacing: .3em; }
+  .paper .unk::before { content: ""; position: absolute; left: -.6cqw; top: -.2cqh; width: 2.4cqw; height: 1.6cqh; border-radius: 60% 40% 55% 45%; background: var(--paper-ink); opacity: .16; filter: blur(.35cqw); }
+  .paper .brush { border: 0; height: .35cqh; margin: .6cqh 0; background: linear-gradient(90deg, transparent, var(--paper-line) 6%, var(--paper-line) 70%, transparent); border-radius: 50%; opacity: .8; }
+
+  /* journal drawer (§4.7) */
   .drawer {
     position: absolute; top: 0; right: 0; width: 30cqw; height: 100%; z-index: 20;
-    background: var(--panel); backdrop-filter: var(--panel-blur); border-left: 1px solid var(--line);
-    transform: translateX(100%); transition: transform 260ms ease-out; padding: 3cqh 2cqw; display: flex; flex-direction: column; gap: 1.6cqh;
+    transform: translateX(100%); transition: transform 220ms ease-out;
+    display: flex; flex-direction: column; box-shadow: -.6cqw 0 2cqw rgba(0,0,0,.5);
+    clip-path: polygon(0 0, 86% 0, 89% 2.5%, 87% 5%, 93% 7%, 91% 9.5%, 100% 11%, 100% 100%, 0 100%);
   }
-  .stage[data-skin="C"] .drawer { background: var(--ground); }
   .drawer.open { transform: translateX(0); }
-  .drawer h2 { font-family: var(--f-disp); font-size: 1.5cqw; margin: 0; font-weight: 700; }
-  .drawer .reveal { color: var(--ink-2); font-size: .9cqw; }
-  .drawer dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: .6cqh 1cqw; font-size: .95cqw; }
-  .drawer dt { color: var(--ink-2); }
-  .drawer dd { margin: 0; }
-  .drawer dd.unk { color: var(--whiff); }
-  .drawer .ro { margin-top: auto; font-size: .8cqw; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 1cqh; }
-  .drawer .close { align-self: flex-end; }
+  .drawer .tabs { display: flex; gap: .2cqw; padding: 1.2cqh 1.6cqw 0; background: rgba(0,0,0,.08); }
+  .drawer .tabs button {
+    font: inherit; font-family: var(--f-hand); font-size: 1.05cqw; color: var(--paper-ink); background: rgba(255,255,255,.35);
+    border: 1px solid var(--paper-line); border-bottom: 0; padding: .5cqh 1cqw; border-radius: .4cqw .4cqw 0 0; cursor: default;
+  }
+  .drawer .tabs button[aria-selected="true"] { background: var(--paper); box-shadow: 0 -2px 0 var(--paper-ink) inset; }
+  .drawer .tabs button:disabled { opacity: .45; }
+  .drawer .body { flex: 1; overflow: auto; padding: 1.6cqh 1.8cqw 1.2cqh; display: flex; flex-direction: column; gap: 1cqh; }
+  .drawer h2 { font-family: var(--f-hand); font-size: 1.9cqw; margin: 0; font-weight: 400; letter-spacing: .06em; }
+  .drawer .head { display: flex; gap: 1cqw; align-items: flex-start; }
+  .drawer .sketch { flex: 0 0 5.5cqw; height: 11cqw; opacity: .8; }
+  .drawer .sketch svg { width: 100%; height: 100%; overflow: visible; color: var(--paper-ink); fill: currentColor; stroke: currentColor; }
+  .drawer .sketch .weapon { fill: none; stroke-linecap: round; }
+  .drawer .reveal { font-size: .85cqw; opacity: .75; }
+  .drawer .reveal b { font-family: "IBM Plex Mono", monospace; font-weight: 500; }
+  .drawer h3 { font-family: var(--f-hand); font-size: 1.15cqw; margin: .4cqh 0 0; font-weight: 400; letter-spacing: .08em; }
+  .drawer .tree { margin: 0; padding: 0; list-style: none; font-size: .95cqw; }
+  .drawer .tree li { display: grid; grid-template-columns: 2.4cqw 1fr; gap: .6cqw; padding: .35cqh 0; }
+  .drawer .tree li + li { background: linear-gradient(90deg, var(--paper-line), transparent 85%) no-repeat 0 0 / 100% 1px; }
+  .drawer .tree li b { font-family: var(--f-hand); font-weight: 400; }
+  .drawer p { margin: 0; font-size: .95cqw; }
+  .drawer .memo { font-family: var(--f-hand); font-size: 1cqw; line-height: 1.7; padding-left: .8cqw; border-left: 2px solid var(--paper-line); }
+  .drawer .ro { font-size: .8cqw; opacity: .7; padding: .8cqh 1.8cqw 1.4cqh; border-top: 1px dashed var(--paper-line); }
+  .drawer .close { position: absolute; left: 1.4cqw; bottom: 1.2cqh; color: var(--paper-ink); border-color: var(--paper-line); }
+  .drawer .close:hover { border-color: var(--paper-ink); }
 
-  /* result overlay */
+  /* result overlay: win = 従来、lose = §4.6 の順序 */
   .overlay { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2cqh; opacity: 0; pointer-events: none; background: rgba(0,0,0,.55); }
   .overlay.show { opacity: 1; }
-  .overlay.lose { background: var(--ground); }
   .overlay h1 { font-family: var(--f-disp); font-size: 4.5cqw; letter-spacing: .3em; margin: 0; font-weight: 700; }
   .overlay.win h1 { color: var(--warm); }
-  .overlay.lose h1 { color: var(--ink-2); }
   .overlay .carry { font-size: 1.1cqw; padding: 1.2cqh 2cqw; border: 1px solid var(--line); background: var(--panel-fill); border-radius: var(--radius); }
   .overlay .carry .num { color: var(--ink); }
-  .overlay .sub { font-family: var(--f-disp); font-size: 1.6cqw; letter-spacing: .2em; color: var(--ink); opacity: 0; transition: opacity 600ms; }
-  .overlay .sub.show { opacity: 1; }
+  .stage.lantern-out .fig-wrap::after { transform: translateX(-50%) scale(0); opacity: 0; transition: transform 600ms ease-in, opacity 600ms ease-in; animation: none; }
+  .lose { position: absolute; inset: 0; z-index: 30; pointer-events: none; opacity: 0; }
+  .lose.on { opacity: 1; pointer-events: auto; }
+  .lose .ink { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: var(--ink-flood); }
+  .lose .ink::before { content: ""; position: absolute; left: -5%; right: -5%; top: -4cqh; height: 6cqh; background: radial-gradient(ellipse 12% 100% at 10% 100%, var(--ink-flood) 60%, transparent 62%), radial-gradient(ellipse 18% 100% at 38% 100%, var(--ink-flood) 60%, transparent 62%), radial-gradient(ellipse 14% 100% at 66% 100%, var(--ink-flood) 60%, transparent 62%), radial-gradient(ellipse 20% 100% at 90% 100%, var(--ink-flood) 60%, transparent 62%); }
+  .lose h1 {
+    position: absolute; left: 50%; top: 24%; transform: translateX(-50%); margin: 0; white-space: nowrap;
+    font-family: var(--f-disp); font-size: 3.35cqw; font-weight: 700; color: var(--ink-2); letter-spacing: .1em; opacity: 0;
+  }
+  .lose .jpage {
+    position: absolute; left: 50%; bottom: 0; width: 44cqw; height: 52cqh; transform: translate(-50%, 110%);
+    padding: 3cqh 3cqw 2.4cqh; display: flex; flex-direction: column; gap: .9cqh; border-radius: .3cqw .3cqw 0 0;
+    clip-path: polygon(0 0, 92% 0, 94% 2%, 93% 4%, 100% 6%, 100% 100%, 0 100%);
+  }
+  .lose .jpage h2 { font-family: var(--f-hand); font-size: 2cqw; font-weight: 400; margin: 0; letter-spacing: .12em; }
+  .lose .jpage .where { font-size: .95cqw; opacity: .8; }
+  .lose .jpage .counts { font-size: .9cqw; display: flex; gap: 1.2cqw; }
+  .lose .jpage h3 { font-family: var(--f-hand); font-size: 1.15cqw; font-weight: 400; margin: .6cqh 0 0; }
+  .lose .jpage ol { margin: 0; padding-left: 1.6cqw; font-size: .95cqw; }
+  .lose .jpage ol li { padding: .3cqh 0; }
+  .lose .jpage ol li small { opacity: .7; margin-left: .5cqw; }
+  .lose .jpage .seal {
+    position: absolute; right: 2.4cqw; bottom: 2.2cqh; width: 4.2cqw; height: 4.2cqw; border-radius: 47% 53% 50% 50% / 52% 48% 52% 48%;
+    background: radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--omen) 80%, #fff), var(--omen) 60%, color-mix(in srgb, var(--omen) 70%, #000));
+    box-shadow: inset 0 0 0 .25cqw rgba(0,0,0,.12), inset 0 0 .6cqw rgba(0,0,0,.25), 0 .3cqh .6cqh rgba(0,0,0,.35);
+    display: flex; align-items: center; justify-content: center; font-family: var(--f-hand); font-size: 1.4cqw; color: rgba(255,255,255,.85); transform: rotate(-8deg);
+  }
+  .lose .jpage .go { margin-top: auto; align-self: flex-start; color: var(--paper-ink); border-color: var(--paper-ink); font-family: var(--f-disp); letter-spacing: .15em; font-size: 1.05cqw; padding: .9cqh 1.8cqw; }
   .vignette { position: absolute; inset: 0; pointer-events: none; z-index: 15; box-shadow: inset 0 0 8cqw color-mix(in srgb, var(--omen) 55%, transparent); opacity: 0; transition: opacity 200ms; }
   .vignette.show { opacity: 1; }
   .stage.locked .card, .stage.locked .btn, .stage.locked .chip { pointer-events: none; }
@@ -455,7 +602,9 @@
 
     <!-- arena -->
     <div class="arena" id="arena">
+      <div class="mist back"></div>
       <div class="floor"></div>
+      <div class="embers" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <div class="band" id="band"><span class="note" id="bandNote"></span></div>
 
       <div class="fig-wrap ghost" id="ghost" data-posture="1">
@@ -481,6 +630,7 @@
         <div class="omen" id="omen"><span class="k">予兆</span><span class="body" id="omenBody"></span><span class="after" id="omenAfter"></span></div>
       </div>
 
+      <div class="mist front"></div>
       <div class="dist-label">間合い<b id="distLabel">中</b></div>
       <div class="tbanner" id="tbanner">あなたの番</div>
       <div class="flash" id="flash"></div>
@@ -490,11 +640,11 @@
     <div class="status">
       <div class="side player">
         <div class="row"><span class="who">あなた</span><span class="shield" id="pGuard"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg><span>Guard <span id="pGuardN">0</span></span></span></div>
-        <div class="row"><div class="hpbar"><div class="hp-ghost" id="pHpGhost"></div><div class="hp-fill" id="pHpFill"></div></div><span class="hp-text">HP <span id="pHp">22</span> <small>/ <span id="pHpMax">30</span></small></span></div>
+        <div class="row"><div class="hpbar" style="--hp-max:30"><div class="hp-ghost" id="pHpGhost"></div><div class="hp-fill" id="pHpFill"></div></div><span class="hp-text">HP <span id="pHp">22</span> <small>/ <span id="pHpMax">30</span></small></span></div>
       </div>
       <div class="side enemy">
         <div class="row"><span class="who">長柄の歪み兵</span><span class="shield zero" id="eGuard"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg><span>Guard <span id="eGuardN">0</span></span></span></div>
-        <div class="row"><div class="hpbar"><div class="hp-ghost" id="eHpGhost"></div><div class="hp-fill" id="eHpFill"></div></div><span class="hp-text">HP <span id="eHp">33</span> <small>/ 38</small></span></div>
+        <div class="row"><div class="hpbar" style="--hp-max:38"><div class="hp-ghost" id="eHpGhost"></div><div class="hp-fill" id="eHpFill"></div></div><span class="hp-text">HP <span id="eHp">33</span> <small>/ 38</small></span></div>
         <div class="row"><span class="pips enemy" id="ePips"></span><span class="hint" style="font-size:.8cqw;color:var(--ink-2)">スタミナ <span class="num" id="eSta">7</span></span></div>
       </div>
     </div>
@@ -516,24 +666,60 @@
     </div>
 
     <!-- journal drawer -->
-    <aside class="drawer" id="drawer" aria-hidden="true">
+    <aside class="drawer paper" id="drawer" aria-hidden="true">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true">敵の頁</button>
+        <button role="tab" aria-selected="false" disabled>ダンジョンの頁</button>
+        <button role="tab" aria-selected="false" disabled>メモ</button>
+      </div>
+      <div class="body">
+        <div class="head">
+          <div class="sketch" aria-hidden="true">
+            <svg viewBox="0 0 80 160"><use href="#sym-figure" opacity=".9"/><path class="weapon" d="M72 66 L112 -30" stroke-width="3"/><path class="weapon" d="M108 -20 L118 -44 L100 -36 Z" stroke-width="2"/></svg>
+          </div>
+          <div>
+            <h2>長柄の歪み兵</h2>
+            <div class="reveal">開示度 <b>2 / 3</b>　遭遇 <b>4</b> 回　右上の欠けが未開示の分</div>
+          </div>
+        </div>
+        <h3>間合いごとの傾向</h3>
+        <ul class="tree">
+          <li><b>近</b><span>石突きの押し込み。当てると相手を中へ押す</span></li>
+          <li><b>中</b><span>薙ぎ払いが主力。余裕があると柄で受ける</span></li>
+          <li><b>遠</b><span>穂先の突き。届かなければ間合いを取り直す</span></li>
+        </ul>
+        <h3>特殊行動</h3>
+        <p>空振りすると攻撃を捨てて、中へ 1 段階戻る。主力間合いは中、最大スタミナ <span class="num">10</span>。</p>
+        <h3>弱点・耐性</h3>
+        <p><span class="unk">？</span></p>
+        <h3>適応条件</h3>
+        <p><span class="unk">？</span></p>
+        <h3>自分のメモ</h3>
+        <p class="memo">近に張り付くと押し戻される。押し戻しの直後は薙ぎ払いが来る。<br>遠へ逃げても長くは続かない。</p>
+      </div>
+      <div class="ro">戦闘中は読むだけ。書けない。開くことで予兆の精度は変わらない。</div>
       <button class="btn close" id="btnJournalClose">閉じる</button>
-      <h2>長柄の歪み兵 の頁</h2>
-      <div class="reveal">開示度 2 / 3　　遭遇 4 回</div>
-      <dl>
-        <dt>間合いごとの傾向</dt>
-        <dd>近 → 石突きの押し込み（中へ押す）<br>中 → 薙ぎ払い・柄で受ける<br>遠 → 穂先の突き・間合い取り直し</dd>
-        <dt>主力間合い</dt><dd>中</dd>
-        <dt>最大スタミナ</dt><dd class="num">10</dd>
-        <dt>弱点</dt><dd class="unk">？（未開示）</dd>
-        <dt>適応条件</dt><dd class="unk">？（未開示）</dd>
-        <dt>メモ</dt><dd>近に張り付くと押し戻される。押し戻しの直後は薙ぎ払いが来る。</dd>
-      </dl>
-      <div class="ro">戦闘中は読むだけ。開くことで予兆の精度は変わらない。</div>
     </aside>
 
     <div class="vignette" id="vignette"></div>
-    <div class="overlay" id="overlay"><h1 id="ovTitle"></h1><div class="carry" id="ovCarry"></div><div class="sub" id="ovSub"></div></div>
+    <div class="overlay" id="overlay"><h1 id="ovTitle"></h1><div class="carry" id="ovCarry"></div></div>
+    <div class="lose" id="lose" aria-hidden="true">
+      <div class="ink" id="loseInk"></div>
+      <h1 id="loseTitle">力尽きた</h1>
+      <div class="jpage paper" id="losePage">
+        <h2>手記は ここに 残る</h2>
+        <div class="where">第 2 階層 / 灯りの絶えた回廊</div>
+        <div class="counts"><span>手記 <span class="num">12</span> 頁</span><span>敵の頁 <span class="num">3</span></span><span>ダンジョンの頁 <span class="num">5</span></span><span>メモ <span class="num">4</span></span></div>
+        <h3>遺産候補（次の生で 3 つまで選べる）</h3>
+        <ol>
+          <li>突き<small>習熟 3</small></li>
+          <li>長柄の歪み兵の頁<small>開示度 2</small></li>
+          <li>第 2 階層の近道<small>ダンジョンの頁</small></li>
+        </ol>
+        <div class="seal" aria-hidden="true">遺</div>
+        <button class="btn go" id="btnInherit">継承の間へ</button>
+      </div>
+    </div>
   </div>
 
   <div class="stepbar" id="stepbar">待機中。カードを選ぶ → 投入量チップを押す → ターン終了、の 3 操作で 1 ターンが回ります。</div>
@@ -925,16 +1111,24 @@
     const ov = $('overlay'); ov.className = 'overlay win show';
     $('ovTitle').textContent = '撃破';
     $('ovCarry').innerHTML = `持ち越し: HP <span class="num">${S.pHp} / ${S.pHpMax}</span> ・ スタミナ <span class="num">${S.pSta} / ${S.pMax}</span>`;
-    $('ovSub').textContent = ''; $('ovSub').classList.remove('show');
   }
+  // §4.6: 灯りが消える 600ms → 墨が満ちる 800ms ease-in → 「力尽きた」300ms（字間を広げる）→ 1 秒 → 手記の頁がせり上がる 400ms ease-out
   async function showLose() {
-    const ov = $('overlay'); ov.className = 'overlay lose';
-    $('ovTitle').textContent = '力尽きた'; $('ovCarry').innerHTML = ''; $('ovSub').textContent = '手記は ここに 残る'; $('ovSub').classList.remove('show');
-    await anim(ov, [{ opacity: 0 }, { opacity: 1 }], { duration: 800, easing: 'ease-in', fill: 'forwards' });
-    ov.classList.add('show');
-    setTimeout(() => $('ovSub').classList.add('show'), D(1000));
+    const lose = $('lose'); lose.classList.add('on'); lose.setAttribute('aria-hidden', 'false');
+    stage.classList.add('lantern-out');
+    await sleep(D(600));
+    await anim($('loseInk'), [{ height: '0%' }, { height: '100%' }], { duration: 800, easing: 'ease-in', fill: 'forwards' });
+    await anim($('loseTitle'), [{ opacity: 0, letterSpacing: '.1em' }, { opacity: 1, letterSpacing: '.5em' }], { duration: 300, easing: 'ease-out', fill: 'forwards' });
+    await sleep(D(1000));
+    await anim($('losePage'), [{ transform: 'translate(-50%, 110%)' }, { transform: 'translate(-50%, 0)' }], { duration: 400, easing: 'ease-out', fill: 'forwards' });
   }
-  function hideOverlay() { const ov = $('overlay'); ov.getAnimations().forEach(a => a.cancel()); ov.className = 'overlay'; $('ew').querySelector('.fig').getAnimations().forEach(a => a.cancel()); }
+  function hideOverlay() {
+    const ov = $('overlay'); ov.getAnimations().forEach(a => a.cancel()); ov.className = 'overlay';
+    $('ew').querySelector('.fig').getAnimations().forEach(a => a.cancel());
+    const lose = $('lose'); lose.classList.remove('on'); lose.setAttribute('aria-hidden', 'true');
+    [$('loseInk'), $('loseTitle'), $('losePage')].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+    stage.classList.remove('lantern-out');
+  }
 
   // ---------- scripted playback ----------
   let playing = false;
@@ -1035,9 +1229,9 @@
   }
   async function exLose() {
     if (playing) return; lock(true); reset(false);
-    setStep('<b>敗北の例</b>　画面が 800ms で墨色に沈み「力尽きた」→ 1 秒後「手記は ここに 残る」');
+    setStep('<b>敗北の例</b>　足元の灯りが 600ms で消える → 画面下から墨が 800ms ease-in で満ちる → 「力尽きた」が字間を広げながら 300ms → 1 秒後、手記の頁が 400ms ease-out でせり上がる（遺産候補 3 行・封蝋・「継承の間へ」）');
     await sleep(400); await showLose();
-    await sleep(3200); hideOverlay(); reset(true); lock(false); setStep('待機中。');
+    await sleep(4200); hideOverlay(); reset(true); lock(false); setStep('待機中。');
   }
 
   // ---------- wiring ----------
@@ -1069,6 +1263,7 @@
   $('exWin').addEventListener('click', exWin);
   $('exLose').addEventListener('click', exLose);
   $('btnReset').addEventListener('click', () => { if (!playing) { lock(false); reset(true); } });
+  $('btnInherit').addEventListener('click', () => { if (!playing) { hideOverlay(); lock(false); reset(true); setStep('継承の間へ（モックアップでは初期状態に戻る）。'); } });
   document.querySelectorAll('#toolbar button[data-set]').forEach(b => b.addEventListener('click', () => {
     const k = b.dataset.set; stage.dataset[k] = b.dataset.val;
     document.querySelectorAll(`#toolbar button[data-set="${k}"]`).forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));

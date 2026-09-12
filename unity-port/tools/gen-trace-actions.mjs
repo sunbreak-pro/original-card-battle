@@ -5,6 +5,15 @@
 // against expected-trace.txt to prove the UGUI screen mirrors the Web run.
 //
 // Usage: node unity-port/tools/gen-trace-actions.mjs   (npm run unity:trace)
+//
+// FROZEN 2026-09-12: this script derives its actions from the v2 parity fixture,
+// but Resources/trace-actions.txt is now a v3 trace (`play <instanceId> <invest>`)
+// generated from the C# core. Running it would overwrite the v3 file, so it exits
+// unless TRACE_V2=1 is set.
+if (process.env.TRACE_V2 !== "1") {
+  console.error("gen-trace-actions.mjs is frozen (v2). Set TRACE_V2=1 to run it anyway.");
+  process.exit(1);
+}
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 

@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 namespace BattleCore
 {
-    // ---- Enums (mirror the TS string-literal unions) ----
+    // Battle core v3 (battle_core_v3.md, 2026-09-12). C# is the source of truth.
+    // The TS battle-lab core is frozen; nothing here mirrors it any more.
 
     public enum RangeBand
     {
@@ -17,6 +18,7 @@ namespace BattleCore
         Attack,
         Move,
         Guard,
+        Heal,
     }
 
     public enum CardDefId
@@ -27,6 +29,7 @@ namespace BattleCore
         StepIn,
         StepOut,
         Brace,
+        FirstAid,
     }
 
     public enum EnemyActionId
@@ -35,6 +38,7 @@ namespace BattleCore
         ReachThrust,
         Shove,
         Reposition,
+        GuardUp,
     }
 
     public enum GameResult
@@ -44,11 +48,19 @@ namespace BattleCore
         Lost,
     }
 
-    /// <summary>
-    /// Bidirectional conversions between enums and the exact TS string tokens.
-    /// Needed for instanceId generation, log text, and parity-fixture comparison,
-    /// which all rely on the original lowercase / snake_case string forms.
-    /// </summary>
+    public enum Actor
+    {
+        Player,
+        Enemy,
+    }
+
+    /// <summary>Reserve rules (§3.5): Calm = bonus recovery next turn when enough stamina is left after use; Desperate = ×1.5 when current stamina is ≤ 2.</summary>
+    public enum ReserveKind
+    {
+        Calm,
+        Desperate,
+    }
+
     public static class EnumTokens
     {
         public static string ToToken(this RangeBand band) => band switch
@@ -59,28 +71,13 @@ namespace BattleCore
             _ => throw new ArgumentOutOfRangeException(nameof(band), band, null),
         };
 
-        public static RangeBand ToRangeBand(string token) => token switch
-        {
-            "close" => RangeBand.Close,
-            "mid" => RangeBand.Mid,
-            "far" => RangeBand.Far,
-            _ => throw new ArgumentException($"Unknown RangeBand token '{token}'", nameof(token)),
-        };
-
         public static string ToToken(this CardType type) => type switch
         {
             CardType.Attack => "attack",
             CardType.Move => "move",
             CardType.Guard => "guard",
+            CardType.Heal => "heal",
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null),
-        };
-
-        public static CardType ToCardType(string token) => token switch
-        {
-            "attack" => CardType.Attack,
-            "move" => CardType.Move,
-            "guard" => CardType.Guard,
-            _ => throw new ArgumentException($"Unknown CardType token '{token}'", nameof(token)),
         };
 
         public static string ToToken(this CardDefId defId) => defId switch
@@ -91,6 +88,7 @@ namespace BattleCore
             CardDefId.StepIn => "step_in",
             CardDefId.StepOut => "step_out",
             CardDefId.Brace => "brace",
+            CardDefId.FirstAid => "first_aid",
             _ => throw new ArgumentOutOfRangeException(nameof(defId), defId, null),
         };
 
@@ -100,6 +98,7 @@ namespace BattleCore
             EnemyActionId.ReachThrust => "reach_thrust",
             EnemyActionId.Shove => "shove",
             EnemyActionId.Reposition => "reposition",
+            EnemyActionId.GuardUp => "guard_up",
             _ => throw new ArgumentOutOfRangeException(nameof(id), id, null),
         };
 
@@ -110,76 +109,160 @@ namespace BattleCore
             GameResult.Lost => "lost",
             _ => throw new ArgumentOutOfRangeException(nameof(result), result, null),
         };
-
-        public static GameResult ToGameResult(string token) => token switch
-        {
-            "ongoing" => GameResult.Ongoing,
-            "won" => GameResult.Won,
-            "lost" => GameResult.Lost,
-            _ => throw new ArgumentException($"Unknown GameResult token '{token}'", nameof(token)),
-        };
     }
 
-    // ---- Immutable data records (mirror the TS interfaces) ----
+    // ---- Card / enemy definitions (§7 / §8) ----
 
-    public sealed record PrototypeCard(
-        string InstanceId,
-        CardDefId DefId,
+    /// <summary>Performance at one invest level (T0..T3). Shift: negative closes in, positive backs off.</summary>
+    public sealed record Tier(
+        int Power = 0,
+        int Guard = 0,
+        int Heal = 0,
+        int Shift = 0,
+        int BreakStamina = 0);
+
+    /// <summary>Card-level reserve rule. Calm: remaining stamina after use ≥ Threshold → +Bonus recovery next turn. Desperate: current stamina ≤ DesperateThreshold → power × DesperateMult.</summary>
+    public sealed record ReserveRule(ReserveKind Kind, int Threshold, int Bonus = 1);
+
+    public sealed record CardDef(
+        CardDefId Id,
         string Name,
         CardType Type,
-        int Cost,
         RangeBand? EffectiveRange,
-        int BasePower,
-        int Shift,
-        int Guard,
+        int MinInvest,
+        IReadOnlyList<Tier> Tiers,
+        ReserveRule? Reserve,
         string Description);
+
+    /// <summary>A card in a deck: definition + unique instance id ("thrust-0").</summary>
+    public sealed record CardInstance(string InstanceId, CardDef Def);
 
     public sealed record EnemyAction(
         EnemyActionId Id,
         string Name,
         CardType Type,
-        int Cost,
         RangeBand? EffectiveRange,
-        int BasePower,
+        int MinInvest,
+        IReadOnlyList<Tier> Tiers,
         int Shift,
-        bool TowardMid,
+        bool TowardHome,
         string Description);
 
-    public sealed record EnemyDef(string Name, int MaxHp);
+    public sealed record EnemyDef(
+        string Name,
+        int MaxHp,
+        int MaxStamina,
+        RangeBand HomeRange,
+        IReadOnlyDictionary<RangeBand, IReadOnlyList<EnemyActionId>> DecisionTree,
+        IReadOnlyDictionary<EnemyActionId, EnemyAction> Actions);
 
-    public sealed record EnemyOutcome(
-        EnemyAction? Action,
-        int RawDamage,
-        int Damage,
-        int NewGuard,
-        int NewDistanceIndex,
-        int StaminaSpent,
-        string LogText);
+    /// <summary>The enemy's declared next action (§6.1). TargetRange is the attack's effective range; null for guard / move.</summary>
+    public sealed record Omen(EnemyActionId ActionId, RangeBand? TargetRange);
+
+    // ---- Battle state ----
 
     public sealed record LogEntry(int Id, string Text);
+
+    /// <summary>
+    /// Inputs the exploration layer hands to a battle (§1.1: max stamina is external; HP and stamina carry over).
+    /// Floor / miasma / time-limit / disclosure are HUD-only inside a battle and never change here.
+    /// </summary>
+    public sealed record BattleInit(
+        int PlayerMaxStamina = Constants.BaseMaxStamina,
+        int? PlayerStamina = null,
+        int PlayerHp = Constants.PlayerMaxHp,
+        int PlayerMaxHp = Constants.PlayerMaxHp,
+        int InitialDistanceIndex = Constants.InitialDistanceIndex,
+        int Floor = 1,
+        int MiasmaPercent = 0,
+        int MiasmaDensity = 1,
+        int TimeLimitLeft = 10,
+        int TimeLimitMax = 10,
+        int Disclosure = 1);
 
     public sealed record BattleState(
         int Turn,
         int DistanceIndex,
         int PlayerHp,
+        int PlayerMaxHp,
         int PlayerStamina,
+        int PlayerMaxStamina,
         int PlayerGuard,
+        int PendingBonusRecovery,
         int EnemyHp,
+        int EnemyMaxHp,
         int EnemyStamina,
-        IReadOnlyList<PrototypeCard> Hand,
-        IReadOnlyList<PrototypeCard> DrawPile,
-        IReadOnlyList<PrototypeCard> DiscardPile,
+        int EnemyMaxStamina,
+        int EnemyGuard,
+        Omen? Omen,
+        IReadOnlyList<CardInstance> Hand,
+        IReadOnlyList<CardInstance> DrawPile,
+        IReadOnlyList<CardInstance> DiscardPile,
         IReadOnlyList<LogEntry> Log,
         int LogSeq,
-        GameResult Result);
+        IReadOnlyList<BattleEvent> Events,
+        GameResult Result,
+        BattleInit Init);
 
-    // ---- Battle actions (discriminated union) ----
+    // ---- Actions ----
 
     public abstract record BattleAction;
 
-    public sealed record PlayCardAction(string InstanceId) : BattleAction;
+    /// <summary>Play a card from hand with an invest of MinInvest..MaxInvest (§3.4).</summary>
+    public sealed record PlayCardAction(string InstanceId, int Invest) : BattleAction;
 
     public sealed record EndTurnAction : BattleAction;
 
     public sealed record RestartAction : BattleAction;
+
+    // ---- Events (what happened during the last dispatch; the View animates from these) ----
+
+    public abstract record BattleEvent;
+
+    public sealed record TurnStartedEvent(int Turn, RangeBand Band, int Recovery, int BonusRecovery) : BattleEvent;
+
+    public sealed record CardsDrawnEvent(int Count) : BattleEvent;
+
+    public sealed record HandDiscardedEvent(int Count) : BattleEvent;
+
+    public sealed record CardPlayedEvent(string InstanceId, CardDefId DefId, string Name, int Invest) : BattleEvent;
+
+    /// <summary>Diff ≥ WhiffDiff means "ほぼ空振り" (no hit flash). GuardAbsorbed + Damage == Raw.</summary>
+    public sealed record AttackResolvedEvent(
+        Actor Attacker,
+        string Name,
+        int Power,
+        double Mult,
+        int Diff,
+        bool Desperate,
+        int Raw,
+        int GuardAbsorbed,
+        int Damage,
+        int TargetHpAfter) : BattleEvent;
+
+    public sealed record MovedEvent(Actor Mover, int From, int To, bool Clamped) : BattleEvent;
+
+    public sealed record GuardGainedEvent(Actor Who, int Amount, int Total, string Source) : BattleEvent;
+
+    public sealed record HealedEvent(Actor Who, int Amount, int HpAfter) : BattleEvent;
+
+    public sealed record StaminaBrokenEvent(Actor Target, int Amount, int StaminaAfter) : BattleEvent;
+
+    /// <summary>構え (§3.5): stamina ≥ ReserveThreshold at turn end → Guard +ReserveGuard.</summary>
+    public sealed record ReserveGuardEvent(Actor Who, int Remaining, int Amount) : BattleEvent;
+
+    public sealed record CalmTriggeredEvent(string CardName, int Bonus) : BattleEvent;
+
+    public sealed record EnemyPhaseStartedEvent(RangeBand Band, int Recovery) : BattleEvent;
+
+    public sealed record OmenExecutedEvent(EnemyActionId ActionId, string Name, int Invest) : BattleEvent;
+
+    /// <summary>§6.2: the declared attack would land at diff ≥ 2, so the enemy drops it and repositions instead.</summary>
+    public sealed record OmenWhiffedEvent(EnemyActionId ActionId, string Name) : BattleEvent;
+
+    public sealed record EnemyRestedEvent : BattleEvent;
+
+    public sealed record OmenDeclaredEvent(Omen Omen) : BattleEvent;
+
+    public sealed record BattleEndedEvent(GameResult Result) : BattleEvent;
 }
