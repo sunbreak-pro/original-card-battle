@@ -2,6 +2,21 @@
 
 > `HISTORY.md` が 5 件を超えた際に退避した古いエントリ（降順）。最新は `HISTORY.md`。
 
+### 2026-07-02 - 戦闘エンジン Bake-off 実装 + Unity 移行方針転換・計画策定
+
+#### 概要
+
+検証済み「間合い×スタミナ」戦闘コアを共有 `core/` として本番品質へ昇格し、@pixi/react 版と Phaser 4 版の2アダプタに同一コアを載せて肌感比較する bake-off を実装。実機プレイの結果、Phaser は好印象だが低解像度・ボタン重なり・全体的なリアル感不足が判明し、ユーザー方針として「ゲーム本体ごと Unity へ移行（アニメ・2.5D 絵柄、個人開発・低コスト先行）」へ転換。エンジン選定は Unity 移行で moot 化。Unity 移行の全体戦略と first step 実装計画（環境セットアップ含む）を策定し、bake-off 実装 + 計画書を PR #16 で main マージ。feat ブランチはローカル・リモート削除。
+
+#### 変更点
+
+- **共有コア昇格**: `src/ui/prototype/engine/` を `src/ui/battle-lab/core/`（types/constants/combat/cards/enemy/battleReducer）へ非コメント差分0で昇格（公平性担保）+ 表示導出を `viewModel.ts` に抽出。core 単体テスト 47件（combat/battleReducer/viewModel）
+- **2アダプタ**: `adapters/pixi/`（@pixi/react、既存 `@/ui/pixi` の PixiStage 再利用、StrictMode #602 ガード）+ `adapters/phaser/`（Phaser 4 Scene、薄いストア→reducer→再描画）。vite `rollupOptions.input` に pixi/phaser 2エントリ + ルート HTML 追加
+- **検証**: tsc / test203件 / build 4エントリ green、session-verifier PASS、独立 role-qa PASS-with-fixes（Blocker0・公平性 core 同一 Yes・viewModel 検証台一致 Yes）
+- **方針転換（Unity 移行）**: 実機評価で Phaser 低解像度（Scale.FIT 引き伸ばし + hi-DPI 無）・ボタン/カード重なり・リアル感不足 → キャラ絵本格化のため Unity フル移行を決定。Pixi/Phaser アダプタは使い捨て、`battle-lab/core/` は C# 移植元・パリティ基準として保全
+- **Unity 計画策定**: `2026-06-28-unity-migration-character-art.md`（全体戦略・費用/Live2D 等 2.5D/アニメ AI art + 商用注意/Web→C# 移植、web-researcher 4体で裏取り・出典付き）+ `2026-06-28-unity-first-step-core-port.md`（View/Logic/Data 3層・MonoBehaviour 薄く・IRng 注入で言語間決定的パリティ・Unity→Claude Code→MCP 環境セットアップ4段階・Windows 11 デスクトップ想定）
+- **Git**: PR #16 を origin/main へマージ（merge `853226a`）。feat `feat/battle-engine-bakeoff` をローカル（`git branch -d`）・リモート（`git push origin --delete`）削除。worktree `../battle-bakeoff` は detached HEAD で保持（不要時に `git worktree remove`）
+
 ### 2026-06-28 - 要件正本の一本化確定 + 戦闘エンジン Bake-off 計画策定
 
 #### 概要

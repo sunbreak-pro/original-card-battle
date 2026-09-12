@@ -1,3 +1,5 @@
+> **WEB VERSION RECORD（2026-09-12）**: Web 版（React / CSS）の UI 指針。Unity 側の HUD は Tier 2 R2-5 で定義する。
+
 # UI/UX Design Guide
 
 UI/UX設計の原則と仕様書。**なぜ**そう設計されているか（Why）と**何を**実装すべきか（What）を定義する。

@@ -41,7 +41,7 @@
 
 ### Battle System
 
-- `battle_document/` - Combat flow, phase execution, buff/debuff mechanics
+- `battle_document/battle_core_v3.md` - **数値の正本（2026-09-12）**: 間合い × スタミナ投入、予兆、崩し、構え。旧 `battle_logic.md` / `buff_debuff_system.md` / `element_system_spec.md` は Web 版の記録
 
 ### Card System
 
@@ -50,10 +50,7 @@
 ### Camp Facilities (5 Facilities)
 
 - `camp_document/camp_facilities_design.md` - Master design (V4.0)
-- `camp_document/guild_design.md` - Guild with integrated Storage tab (V3.0)
-- `camp_document/shop_design.md` - Shop economy
-- `camp_document/blacksmith_design.md` - Equipment enhancement
-- `camp_document/sanctuary_design.md` - Soul remnant skill tree
+- 旧個別施設設計（guild / shop / blacksmith / sanctuary）は `.claude/archive/camp_document/` へ移動（2026-09-12、凍結）
 
 ### Journal System (Header UI)
 

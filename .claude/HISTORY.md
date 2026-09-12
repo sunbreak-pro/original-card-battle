@@ -2,6 +2,22 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-12 - 戦闘コア v3 設計 + 単一ダンジョン化 + 三者評価
+
+#### 概要
+
+前セッションの上書き（concept-v3）を受け、(1) 戦闘の基礎要素を整理して `battle_document/battle_core_v3.md` v1 に設計として落とし、(2) ダンジョンを「一つを深く潜る」構造に変更（ノード式マップは継続、後で変更の余地あり）、(3) 旧個別施設設計 4 本を archive へ移動、(4) 独立エージェント 3 体（ゲームデザイン / 実装 / 反対弁護人）で新設計を旧設計と比較評価した。3 体とも「方向は改善、現状の完成度は旧を下回る（6 → 5）」で一致。評価で見つかった転記ミスは修正し、設計判断は判断待ちとして残した。
+
+#### 変更点
+
+- **戦闘コア v3 設計書（R1-2 成果物）**: 持つ値を HP / Guard / スタミナ（現在・最大） / 間合い / 予兆 の 5 つに限定。間合い相性 1.0 / 0.5 / 0.15 と間合い依存回復（近 1 / 中 2 / 遠 3）は v2 実機検証済みを継承。スタミナ基礎 10（3〜14）、投入 0〜3 がコスト、minInvest、疲労減衰は投入制に吸収。構え（残 3 以上で Guard +2）、崩し = スタミナ削り（体勢ゲージ不採用）、予兆コミット式 + 空振り回避、EnemyDef 決定木 + homeRange、剣士 6 種と長柄兵の投入表、C# 写像表、プレイテスト 6 観点
+- **concept-v3 §12**: 3 / 7 / 16 / 18 を決定、8 は基礎部分を決定、14 は単一ダンジョンに決定。評価で指摘の 20〜23（HP 回復 / 遺産の連鎖消失 / 生存ルートの図鑑 / クラス選択）を追加
+- **単一ダンジョン化**: concept-v3 / core.md / tier1 / tier2 R2-1 / master / CAMP から「ステージ選択」を除去。R2-1 を「単一ダンジョン・ノード式の設計書化（マップ方式を差し替えられる境界）」に改稿
+- **archive**: `shop / blacksmith / sanctuary / guild_design.md` を `.claude/archive/camp_document/` へ git mv。INDEX と CAMP の参照を更新
+- **評価で修正した転記ミス**: 遺産の受け取り場所を「死亡地点で選ぶ」に統一（concept-v3 / master / CAMP / CLAUDE.md / tier1 R1-12）。「企画書に経済の記述なし」を「通貨と店の記述なし」に訂正。バナー未付与 11 本（enemy_document 6 / element_system_spec / buff_debuff / ui_ux_design_guide / inventory_design / kickoff）に付与。tier1 R1-1 の受け入れ基準を事実に合わせ「v3 版ギャップ分析」を追加
+- **レポート**: `docs/reports/2026-09-12-concept-v3-evaluation.html`（Artifact 発行）
+- **判断待ち**: HP 回復モデル / 遺産の連鎖消失 / 図鑑消失の方針 / セーブ前倒し / TS-C# パリティ継続 / 戦闘 v1 でのプロト。README は Development History 節が無いため未更新
+
 ### 2026-09-12 - 企画書 v3「生と継承」で設計ルールを上書き + アーマー凍結
 
 #### 概要
@@ -66,18 +82,3 @@ Unity 移行計画書の Phase0（AI art 生成 + Live2D 仕上げ、Unity Edito
 #### 次
 
 残課題（Phase3: 実Unityプロジェクト作成 + UGUI最小戦闘画面）はUnity Editor操作が必須のため人間主体の作業。MEMORY.md 予定に記載。
-
-### 2026-07-02 - 戦闘エンジン Bake-off 実装 + Unity 移行方針転換・計画策定
-
-#### 概要
-
-検証済み「間合い×スタミナ」戦闘コアを共有 `core/` として本番品質へ昇格し、@pixi/react 版と Phaser 4 版の2アダプタに同一コアを載せて肌感比較する bake-off を実装。実機プレイの結果、Phaser は好印象だが低解像度・ボタン重なり・全体的なリアル感不足が判明し、ユーザー方針として「ゲーム本体ごと Unity へ移行（アニメ・2.5D 絵柄、個人開発・低コスト先行）」へ転換。エンジン選定は Unity 移行で moot 化。Unity 移行の全体戦略と first step 実装計画（環境セットアップ含む）を策定し、bake-off 実装 + 計画書を PR #16 で main マージ。feat ブランチはローカル・リモート削除。
-
-#### 変更点
-
-- **共有コア昇格**: `src/ui/prototype/engine/` を `src/ui/battle-lab/core/`（types/constants/combat/cards/enemy/battleReducer）へ非コメント差分0で昇格（公平性担保）+ 表示導出を `viewModel.ts` に抽出。core 単体テスト 47件（combat/battleReducer/viewModel）
-- **2アダプタ**: `adapters/pixi/`（@pixi/react、既存 `@/ui/pixi` の PixiStage 再利用、StrictMode #602 ガード）+ `adapters/phaser/`（Phaser 4 Scene、薄いストア→reducer→再描画）。vite `rollupOptions.input` に pixi/phaser 2エントリ + ルート HTML 追加
-- **検証**: tsc / test203件 / build 4エントリ green、session-verifier PASS、独立 role-qa PASS-with-fixes（Blocker0・公平性 core 同一 Yes・viewModel 検証台一致 Yes）
-- **方針転換（Unity 移行）**: 実機評価で Phaser 低解像度（Scale.FIT 引き伸ばし + hi-DPI 無）・ボタン/カード重なり・リアル感不足 → キャラ絵本格化のため Unity フル移行を決定。Pixi/Phaser アダプタは使い捨て、`battle-lab/core/` は C# 移植元・パリティ基準として保全
-- **Unity 計画策定**: `2026-06-28-unity-migration-character-art.md`（全体戦略・費用/Live2D 等 2.5D/アニメ AI art + 商用注意/Web→C# 移植、web-researcher 4体で裏取り・出典付き）+ `2026-06-28-unity-first-step-core-port.md`（View/Logic/Data 3層・MonoBehaviour 薄く・IRng 注入で言語間決定的パリティ・Unity→Claude Code→MCP 環境セットアップ4段階・Windows 11 デスクトップ想定）
-- **Git**: PR #16 を origin/main へマージ（merge `853226a`）。feat `feat/battle-engine-bakeoff` をローカル（`git branch -d`）・リモート（`git push origin --delete`）削除。worktree `../battle-bakeoff` は detached HEAD で保持（不要時に `git worktree remove`）

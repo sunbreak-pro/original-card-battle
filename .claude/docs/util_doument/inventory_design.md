@@ -1,3 +1,5 @@
+> **FROZEN（2026-09-12）**: インベントリ / 倉庫は装備経済と共に凍結（2026-09-12）。探索中の資源・アイテムの扱いは `vision/concept-v3.md` §12-17。
+
 Here is the English translation of the design document.
 
 # Inventory System Design Document V3.0

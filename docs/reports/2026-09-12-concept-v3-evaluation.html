@@ -1,0 +1,154 @@
+<title>生と継承 三者評価</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6; --panel: #ffffff; --ink: #1c2327; --ink-2: #56636b; --line: #d5dcdf;
+    --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #dcefef;
+    --ok: #2c7a4b; --warn: #a86a12; --stop: #a23c3c; --code-bg: #eaf0f0; color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --ink-2: #99a6ad; --line: #2c363b;
+      --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --ink-2: #99a6ad; --line: #2c363b;
+    --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+    --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 16px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--ink-2); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul, ol { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--ink-2); font-size: 15px; }
+  .verdict .score { font-family: "IBM Plex Mono", monospace; font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--ink-2); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  td.state.stop { color: var(--stop); }
+  td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--ink-2); }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-12 / 判断 / original-card-battle</p>
+    <h1>新設計「生と継承」は方向は正しいが、まだ穴がある</h1>
+    <p class="lede">独立した 3 体のエージェント（ゲームデザイン / 実装 / 反対弁護人）が旧設計と比較した。3 体とも「方向は改善、現状の完成度は旧設計を下回る」で一致。指摘のうち転記ミスは直し、戦闘の基礎は設計書に落とした。残りは判断待ち。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">評価 A: ゲームデザイン</span><h3>方向は良い。2 周目が薄い</h3><p class="score">旧 6 / 新 5</p><p>循環の一貫性と 1 枚ごとの判断密度は上がった。図鑑消失と遺産の回収位置で 2 周目が 1 周目の再演になる。</p></li>
+    <li class="verdict later"><span class="tag">評価 B: 実装</span><h3>着手しやすく、完了判定しにくい</h3><p class="score">旧 6 / 新 5</p><p>要件 28 → 17、Unity 一本化は前進。セーブ・探索構造・敵データ駆動がループの前提なのに末尾か Tier 2 に落ちている。</p></li>
+    <li class="verdict skip"><span class="tag">評価 C: 反対弁護人</span><h3>差し戻し（条件 5 つ）</h3><p class="score">承認 / 条件付き / 差し戻し → 差し戻し</p><p>HP 回復モデルの空白、遺産の連鎖消失、「経済の記述なし」の言い過ぎ、バナー未付与 11 本。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>今回この場で直したもの</strong>: 遺産の受け取り場所を「死亡地点で選ぶ」に統一（3 文書で食い違っていた）。「経済の記述なし」を「通貨と店の記述なし。資源・アイテムは §12-17 で設計」に訂正。バナー未付与の設計書 11 本にバナーを追加。§12 に未確定 4 項目（HP 回復 / 遺産の連鎖消失 / 生存ルートの図鑑 / クラス選択）を追加。戦闘の基礎 4 項目は <code>battle_core_v3.md</code> で決定。</div>
+
+  <h2>三者が一致した指摘</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>指摘</th><th>A</th><th>B</th><th>C</th><th>状態</th><th>扱い</th></tr></thead>
+      <tbody>
+        <tr><td>戦闘の数値（スタミナ基礎値・回復）が未確定に戻った</td><td>●</td><td>●</td><td>●</td><td class="state yes">解消</td><td><code>battle_core_v3.md</code> で基礎 10 / 回復 近 1 中 2 遠 3 / 投入 0〜3 に決定。検証済みの間合い依存回復を残した</td></tr>
+        <tr><td>遺産の回収位置が「前回死んだ場所」で、必要な区間を素で再走する</td><td>●</td><td></td><td>●</td><td class="state maybe">判断待ち</td><td>§12-21 に追加。案: 未回収の遺産は次の死亡で上書きされない</td></tr>
+        <tr><td>図鑑消失と適応 AI「図鑑で予測可能」が衝突する</td><td>●</td><td></td><td>●</td><td class="state maybe">判断待ち</td><td>予兆をコミット式にして戦闘中の観察だけで読めるようにした（§6）。図鑑を死で消す方針自体は判断待ち</td></tr>
+        <tr><td>セーブ / 世代のデータモデルが末尾（R1-16）で、遺産（R1-12）より後</td><td></td><td>●</td><td>●</td><td class="state maybe">判断待ち</td><td>R1-16 を Phase 4 の頭に前倒しする案。セーブスカム対策（旧 R1-14）も同時に</td></tr>
+        <tr><td>HP の回復モデルが無い（旧回復経済を凍結、休息は最大スタミナのみ）</td><td>●</td><td>●</td><td>●</td><td class="state stop">空白</td><td>§12-20 に追加。衰弱と HP が「二つの死因」として競合する。設計が要る</td></tr>
+        <tr><td>0 投入スパム / 休息積み / 閾値自殺ループの退行戦略</td><td>●</td><td></td><td>●</td><td class="state maybe">一部対処</td><td>0 投入は T0 威力 1〜2 + 構え固定 +2 で対処（§3.6）。休息の上限と自殺ループは探索側の未確定</td></tr>
+        <tr><td>敵をデータ駆動にしないと R1-4 / R1-15 が 1 体分のハードコードになる</td><td></td><td>●</td><td>●</td><td class="state yes">解消</td><td><code>battle_core_v3.md</code> §8 に EnemyDef スキーマ（決定木 + homeRange）を定義</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>評価 A: ゲームデザイン観点</h2>
+  <div class="prose">
+    <p><strong>良くなった</strong>: 経済 6 系統（Gold / 魔石 / ソウル / 装備 Lv / 品質 / 修理）を捨てて単一の循環にした。投入 0〜3 で 1 枚の判断に幅が出た。探索カードと戦闘カードのデッキ内ジレンマは旧設計に無い。全リセットの廃止で「死は学習」の意図と矛盾しなくなった。</p>
+    <p><strong>悪くなった</strong>: 手記の継承を捨てたので同じ敵を毎回観察し直す。永続成長が無く、詰まったときの逃げ道がプレイヤー技量だけ。「持ち帰るか進むか」の緊張が消え、生存ルートの見返りが未定義で代替になっていない。防御が Guard 1 層なのに適応 AI が「防御多用」を罰する。</p>
+    <p><strong>矛盾</strong>: 永続能力（§4.1）は §9 表で死亡時に失われる。所持 80 枚の入手源が無い。</p>
+  </div>
+
+  <h2>評価 B: 実装観点</h2>
+  <div class="prose">
+    <p><strong>順序</strong>: R1-3 の「パリティ fixture を更新」は TS と C# の二重実装を強いる。C# を正に切り替えるかパリティを打ち切るかを決める必要がある。R1-10 図鑑が観察手段（R1-6）より先。R1-7 の受け入れ基準が R1-14 の画面に依存。</p>
+    <p><strong>抜け</strong>: 探索（階層・ノード）の Unity 実装、生と世代のデータモデル、戦闘 → 探索の結果の戻り経路（HP / スタミナ / 衰弱）、シーン遷移、HUD の帰属（R1-9 と R2-5）。</p>
+    <p><strong>C# コアとの整合</strong>: 乱数注入・BattleStore・ViewModel 射影・シャッフルはそのまま使える。固定コスト / MaxStamina 20 / 疲労 / if 分岐の敵 AI は作り直し。<code>battle_core_v3.md</code> §13 の写像表がこれに対応する。</p>
+  </div>
+
+  <h2>評価 C: 反対弁護人</h2>
+  <div class="prose">
+    <p><strong>重大 3 件</strong>: 遺産の連鎖消失（深層で死んだ A の遺産は B が届く前に死ぬと消える）。HP 回復の空白。「経済の記述なし」は事実と違う（企画書 §10.2・§22 に資源・アイテムがある）。</p>
+    <p><strong>分類の疑い</strong>: 帰還は「廃止」ではなく生存ルートへの再解釈。ソウルは「凍結」と書きつつ実質廃止。Journal は「置換」ではなく再解釈。</p>
+    <p><strong>アーマー凍結の副作用</strong>: 装備の存在意義が消える。凍結が 3 施設 + 倉庫に連鎖し廃止と差が無い。「一度だけ防御」ツールと「応急処置」カードは小型のアーマー / 回復で、凍結理由と両立しない。C# コアに AP は元々無いので、凍結は既定状態の追認。</p>
+    <p><strong>差し戻しの条件</strong>: HP 回復モデル / スタミナ基礎値 / 持ち越し / 遺産の場所を決める。連鎖消失の規則を入れる。生存ルートの悪用対策。v3 版ギャップ分析。アイテム / 資源を凍結から外す。</p>
+    <p class="note">評価 C は life-editor の元 Note を読めなかった（認証情報の参照拒否）。忠実性の判定は concept-v3 の自己言及からの間接推定。</p>
+  </div>
+
+  <h2>戦闘の基礎: 整理した結果（battle_core_v3.md）</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>要素</th><th>決定</th><th>根拠</th></tr></thead>
+      <tbody>
+        <tr><td>持つ値</td><td>HP / Guard / スタミナ（現在・最大） / 間合い / 予兆 の 5 つ</td><td>体勢・AP・エネルギー・速度は持たない。1 ターンの判断を「どのカード / いくら投入 / どこへ」の 3 つに絞る</td></tr>
+        <tr><td>間合い</td><td>近 0 / 中 1 / 遠 2、共有距離、初期は中。相性 × 1.0 / 0.5 / 0.15</td><td>v2 実機検証で「面白い」と評価された勾配をそのまま</td></tr>
+        <tr><td>スタミナ</td><td>基礎 10（3〜14）。回復 近 1 / 中 2 / 遠 3。投入 0〜3 がそのままコスト。minInvest 0 か 1</td><td>企画書 §4 の投入制 + v2 の間合い依存回復。疲労減衰は投入制に吸収</td></tr>
+        <tr><td>持ち越し</td><td>ターンも戦闘もまたぐ。戦闘外は刻限 1 行動ごとに +3</td><td>「消耗したまま入るか回復に刻限を使うか」が探索側の判断になる</td></tr>
+        <tr><td>温存</td><td>構え: 残 3 以上で Guard +2（共通）。冷静 / 死力（カード別）</td><td>企画書 §4.2「使い切る = 正解にしない」</td></tr>
+        <tr><td>崩し</td><td>体勢ゲージの代わりに「敵スタミナを削る」追加効果（diff 0 のみ）</td><td>値を増やさず「崩してから叩く」を成立させる</td></tr>
+        <tr><td>予兆</td><td>敵は前フェーズ末に次の行動を宣言し、それを実行する。diff 2 なら空振り回避で間合い取り直し</td><td>企画書 §19〜§20。読み合いを具体化し、遠でのカイト膠着を防ぐ</td></tr>
+        <tr><td>敵</td><td>EnemyDef = 決定木（距離ごと）+ homeRange + 投入表。投入量は「残 3 以上残る最大」</td><td>対称ルール。データ駆動で R1-4 / R1-15 に耐える</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">プレイテストで見る 6 点（0 投入回し / 遠のカイト膠着 / 崩し 1 の手応え / 構え +2 の亀化 / 最大スタミナ 6 での勝ち筋 / 予兆で単純化しすぎないか）は設計書 §12 に置いた。</p>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>単一ダンジョンを深く潜る構造に変更（こうだいさん指示）。マップはノード式を継続し、後で差し替えられるよう「ノード = 刻限を消費する行動の置き場」として抽象化する（R2-1）。</li>
+    <li>個別施設の設計書 4 本は <code>.claude/archive/camp_document/</code> へ git mv した。</li>
+    <li>戦闘設計書の数値は v2 コアの半分のスケール（20 → 10、コスト 3〜5 → 投入 0〜3）に合わせた。テンポは同程度になる計算。</li>
+    <li>評価で挙がった設計判断（HP 回復、遺産の連鎖、図鑑の消失、セーブ前倒し、帰還の分類）は直さず判断待ちにした。転記ミスと事実誤りだけ直した。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ol class="prose">
+    <li><strong>HP の回復モデル</strong>（§12-20）。3 体とも指摘。案: 休息で HP も回復（刻限 -1）、階層到達で小回復、応急処置カード。衰弱を「生の長さ」に保つなら HP は戦闘間で持ち越しつつ回復手段を厚くする。</li>
+    <li><strong>遺産の連鎖消失</strong>（§12-21）。案: 未回収の遺産は次の死亡で上書きされず、直近 1 件として残る。</li>
+    <li><strong>図鑑を死で消す方針を保つか</strong>。企画書どおり消すなら、遺産の知識枠と予兆で補う（今回の設計）。一部を残すなら A1「手記は死を越える」の部分復活。</li>
+    <li><strong>セーブ（R1-16）を Phase 4 の頭へ前倒しするか</strong>。遺産とセーブスカムの関係から、私は前倒しを推します。</li>
+    <li><strong>TS / C# のパリティを続けるか</strong>。R1-3 で C# を正に切り替え、TS の battle-lab は凍結する案を推します。</li>
+    <li><strong>戦闘設計書 v1 の数値でプロトタイプを回すか</strong>。Unity 側で R1-3 / R1-4 を実装して 6 観点を見るのが次の一手です。</li>
+  </ol>
+</div>
