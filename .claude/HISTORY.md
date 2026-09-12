@@ -18,6 +18,8 @@
 - **C# が正**（tier1 冒頭・R1-3、core.md、battle_core_v3 §13、CLAUDE.md、`unity-port/README.md` バナー）: TS の `src/ui/battle-lab/core/` は凍結。`parity:*` は履歴として残し更新しない。R1-3 の受け入れ基準を `dotnet test` に変更
 - **名称の一括置換**: 衰弱 → 瘴気、図鑑 → 手記を concept-v3 / core / tier1〜3 / master / CAMP / battle_core_v3 / CLAUDE.md で置換。concept-v3 §13 に決定表を追加、§12 の 2 / 20 / 21 を決定済みに
 - **未変更**: コード（`src/` / `unity-port/*.cs`）。評価レポート 2 本は当時の記録として据え置き
+- **追加決定（同日）**: 生存ルートでは手記を丸ごと受け継ぐ（死亡より見返りを大きくする）。釣り合いとして探索にランダムな報酬・イベントを持たせる（concept-v3 §7.3 / §8.2 / §12-22、tier1 R1-13、tier2 R2-4、CAMP、master）
+- **次セッションのプロンプト**: `docs/prompts/2026-09-12-next-session-battle-uiux.md`（戦闘 UI / UX を 80% に。設計のみ）
 
 ### 2026-09-12 - 戦闘コア v3 設計 + 単一ダンジョン化 + 三者評価
 

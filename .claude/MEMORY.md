@@ -26,6 +26,7 @@
 
 ### 次のアクティブタスク
 
+- 🔜 **戦闘 UI / UX の完成度を 80% に上げる（設計・ビジュアル・アニメーション仕様。実装は先）** — 次セッションのプロンプトは `docs/prompts/2026-09-12-next-session-battle-uiux.md`。成果物: `battle_document/battle_ui_ux_v1.md` + モックアップ HTML + HTML レポート。R2-5 の内容を更新
 - 🔜 **Unity 上で Tier1 v6 本実装 — 次プラン策定（C# が正）** — Phase 3（最小戦闘画面）完了済（2026-09-06）。`battle_core_v3.md` v1.1 §13 の写像表に従い Phase 1（R1-3 スタミナ投入量・HP 持ち越し / R1-4 間合い補正・予兆）から。TS battle-lab は凍結、`dotnet test` を正にする。残る未確定は concept-v3 §12 の 1 / 4 / 5 / 6 / 9 / 10 / 11 / 12 / 13 / 15 / 17 / 19 / 22 / 23。アート/Live2D（`2026-06-28-unity-migration-character-art.md`）と Unity リポ（sunbreak-pro/RPG-by-card、初回コミット未）の運用も決める。実プレイの手触り確認は人手（Editor 前面・乱数「実戦」）
 
 ### バックログ機能（旧 TODO.md より移管）
