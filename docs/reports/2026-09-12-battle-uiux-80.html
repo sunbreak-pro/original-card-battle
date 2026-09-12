@@ -1,0 +1,226 @@
+<title>戦闘 UI 80% 設計</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --ink-2: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --ink-2: #99a6ad; --line: #2c363b;
+      --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --ink-2: #99a6ad; --line: #2c363b;
+    --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+    --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 16px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding-block: 48px 80px; padding-inline: 24px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--ink-2); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--ink-2); font-size: 15px; }
+  .swatches { display: flex; gap: 6px; margin-top: 4px; }
+  .swatches span { width: 22px; height: 22px; border-radius: 3px; border: 1px solid var(--line); display: inline-block; }
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--ink-2); }
+  @media (max-width: 720px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 0 0 16px; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--ink-2); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--ink-2); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  .shot { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 12px 0 8px; }
+  .shot img { display: block; width: 100%; height: auto; }
+  figcaption { font-size: 14px; color: var(--ink-2); margin: 0 0 20px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-12 / 判断 / original-card-battle</p>
+    <h1>戦闘 UI / UX は 80% に届いた。見た目は A「霧と灯り」を推す</h1>
+    <p class="lede">情報の置き場、2 操作のプレイ、10 節の演出仕様、Unity の実装単位まで設計書に落ちました。残るのは見た目 3 案の最終選択と、実機で触って直す 20% です。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">採用（推奨）</span><h3>A 霧と灯り（幻想寄り）</h3><p>アニメ 2.5D の立ち絵（Live2D）の塗りと光を生かせる唯一の案。concept-v2 から続く「幻想ベース、階層で濃淡」に一致し、灯りが深層で小さくなる演出に伸ばせる。</p><div class="swatches"><span style="background:#0f1a22"></span><span style="background:#8fd3c7"></span><span style="background:#e8b86d"></span><span style="background:#e0614f"></span><span style="background:#a9c4e6"></span></div></li>
+    <li class="verdict later"><span class="tag">保留</span><h3>C 墨と朱（版画的）</h3><p>手記の頁と敗北画面（「力尽きた」「手記はここに残る」）の表現として残す。「朱は予兆と被弾だけ」の規律は A に取り込む。</p><div class="swatches"><span style="background:#111214"></span><span style="background:#f2efe8"></span><span style="background:#d9c9a3"></span><span style="background:#d63a2f"></span><span style="background:#9aa5ad"></span></div></li>
+    <li class="verdict skip"><span class="tag">見送り</span><h3>B 鉄と革（写実寄り）</h3><p>アニメ調の立ち絵と喧嘩する。硬い質感は世界観より「軍事シム」に寄る。</p><div class="swatches"><span style="background:#141210"></span><span style="background:#b89b5e"></span><span style="background:#c9a45c"></span><span style="background:#b43a2a"></span><span style="background:#7f8f9c"></span></div></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: ルールと数値は <code>battle_core_v3.md</code> のまま。本設計はその値の見せ方と操作だけを決め、乱数の無い戦闘なので演出で結果を曖昧にしない。</div>
+
+  <h2>成果物</h2>
+  <dl>
+    <dt>設計書</dt><dd><code>.claude/docs/battle_document/battle_ui_ux_v1.md</code>（情報設計 / レイアウト / 操作 / 見た目 / 演出 / Unity 写像 / 開示度 / 残り 20% / ルールへの要望）</dd>
+    <dt>モックアップ</dt><dd><code>docs/mockups/2026-09-12-battle-uiux-mockup.html</code>。見た目 A / B / C、階層 1 / 3 / 5、レイアウト L1 / L2、開示度、1 ターン再生。Artifact: <a id="mock-link" href="https://claude.ai/code/artifact/750029ad-d93f-4cdc-b923-9dce0b1bd041">claude.ai/code/artifact/750029ad-…</a></dd>
+    <dt>要件</dt><dd><code>requirements/tier2-support.md</code> R2-5 の内容と受け入れ基準 9 項目を本設計に合わせた</dd>
+    <dt>ブランチ</dt><dd><code>docs/battle-uiux-80</code>（未マージの <code>docs/concept-v3-inheritance-loop</code> から分岐）</dd>
+  </dl>
+
+  <h2>80% の定義に対する達成状況</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>条件</th><th>状態</th><th>根拠（設計書の節）</th></tr></thead>
+      <tbody>
+        <tr><td>見えるべき情報が優先順位どおりに置かれている</td><td class="state yes">○</td><td>§1.1 に 20 項目を A / B / C の 3 段で表にし、§2.1 の L1 に配置。予兆 → 床の狙い帯 → スタミナが縦一列</td></tr>
+        <tr><td>1 ターンの判断が 3 操作以内</td><td class="state yes">○</td><td>§3.1: 1 枚 = カード選択 → 投入量チップの 2 操作。移動先はカードに内蔵し、残像で見せる。ターン終了 1 操作</td></tr>
+        <tr><td>主要な状態変化の演出仕様</td><td class="state yes">○</td><td>§5.1〜5.9 の 10 節。予兆の的中 / 半減 / 空振り回避、構え、崩し、Guard と被弾、勝敗を ms と補間と音の有無で表にした</td></tr>
+        <tr><td>見た目の方向が 1 枚に決まる</td><td class="state maybe">△</td><td>§4 に 3 案のトークンと書体、階層 5 段の背景、推奨 A。最終選択はこうだいさんの判断</td></tr>
+        <tr><td>Unity の実装単位</td><td class="state yes">○</td><td>§6.1 Canvas 6 層、§6.2 DOTween（補間）と Animator（立ち絵）の分担、§6.3 立ち絵 11〜12 差分 / エフェクト 7 / UI 部品 / 書体</td></tr>
+        <tr><td>残り 20% の明記</td><td class="state yes">○</td><td>§8: 実機調整 10% / 本物の立ち絵と効果音 8% / 開示度の実データ 2%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>1 ターンの操作</h2>
+  <div class="flow">
+    <div class="step"><span class="n">操作 1</span><h3>カードを選ぶ</h3><p>クリックかキー 1〜3。カードが持ち上がり、投入量チップ T0〜T3 が現在の間合いでの予測値付きで出る。移動を含むカードなら移動先に残像が立ち、床の狙い帯の色が移動後の補正に変わる。</p></div>
+    <div class="step"><span class="n">操作 2</span><h3>投入量を押す</h3><p>チップのクリックがそのままプレイ。既定は「使った後も残 3 以上になる最大の段」で、構え維持の注記付き。払えない段は薄く、押せない。</p></div>
+    <div class="step"><span class="n">操作 3</span><h3>ターンを終える</h3><p>ボタンの上に「今終えると 残 7 → Guard +2」が常に出る。敵フェーズは自動で進み、Space で早送りしても数値と位置は変わらない。</p></div>
+  </div>
+
+  <h2>情報の置き場（優先度 A のみ抜粋）</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>優先</th><th>値</th><th>見せ方</th><th>置き場</th></tr></thead>
+      <tbody>
+        <tr><td>A1</td><td>予兆</td><td>敵の頭上のバナー「種別 / 狙い間合い」。開示度で技名・威力幅</td><td>アリーナ、敵の頭上</td></tr>
+        <tr><td>A2</td><td>予兆の狙い帯</td><td>床の帯。今の位置での補正を色で（的中 / 半減 / 空振り）</td><td>アリーナの床</td></tr>
+        <tr><td>A3</td><td>間合い</td><td>2 体の中心距離 近 260 / 中 520 / 遠 820 px と体勢差分</td><td>アリーナ</td></tr>
+        <tr><td>A4</td><td>スタミナ</td><td>ピップ列。瘴気で失った枠は破線、3 個目に構え線</td><td>手札の直上</td></tr>
+        <tr><td>A5</td><td>投入量</td><td>選択中カードの上に T0〜T3 のチップ</td><td>手札</td></tr>
+        <tr><td>A6</td><td>手札</td><td>3 枚。現在間合いでの予測値を常時</td><td>画面下部中央</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note prose">HP / Guard / 敵スタミナ / 構えの予告 / ターン / 瘴気 / 刻限 / 敵名は優先度 B で常時表示、手記 / ログ / 山札枚数は C で求めたときだけ。全 20 項目は設計書 §1.1。</p>
+
+  <h2>演出の主要な値</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>状態変化</th><th>順序</th><th>ms</th><th>補間</th><th>音</th></tr></thead>
+      <tbody>
+        <tr><td>カード選択 → 投入</td><td>持ち上げ → チップ → 残像 → ピップ消費 → カードが飛ぶ</td><td>120 / 150 / 200 / 60 × 投入量 / 220</td><td>out / out / out / in / in</td><td>紙、息</td></tr>
+        <tr><td>攻撃の的中</td><td>踏み込み → 止め → 白フラッシュ → 揺れ → 数字 → HP バー → 戻り</td><td>180 / 80 / 60 / 180 / 600 / 300 + 500 / 220</td><td>out / — / linear / inout / out / out / inout</td><td>踏み込み、斬撃、命中</td></tr>
+        <tr><td>空振り（×0.15）</td><td>踏み込み → 灰の「空振り 1」だけ → 戻り</td><td>180 / 600 / 220</td><td>out / out / inout</td><td>空を切る</td></tr>
+        <tr><td>移動</td><td>スライド → 体勢クロスフェード → ラベル → 狙い帯の更新</td><td>320 / 200 / 150 / 150</td><td>inout / linear / out / linear</td><td>足音</td></tr>
+        <tr><td>予兆の提示</td><td>バナーが降りる → 狙い帯 fade-in</td><td>260 / 300</td><td>out / out</td><td>低い弦</td></tr>
+        <tr><td>空振り回避</td><td>バナーに取り消し線「空振り → 間合い取り直し」→ 敵が移動</td><td>200 / 320</td><td>out / inout</td><td>空を切る</td></tr>
+        <tr><td>構え</td><td>ピップ 1〜3 が光る → 盾 +2 → 手札を捨てる</td><td>250 / 300 / 200</td><td>out / out / in</td><td>息、金属（小）</td></tr>
+        <tr><td>崩し</td><td>ピップが砕けて落ちる → よろけ → 「崩し −1」</td><td>300 / 400 / 600</td><td>in / out / out</td><td>砕ける</td></tr>
+        <tr><td>Guard と被弾</td><td>盾が割れる → 「Guard −3」灰 + 「−3」朱 → HP バー → ビネット（30% 未満）</td><td>200 / 600 / 300 / 200</td><td>out / out / out / out</td><td>金属、命中、鼓動</td></tr>
+        <tr><td>勝利 / 敗北</td><td>崩れ落ち → 「撃破」→ 持ち越しパネル ／ 墨に沈む → 「力尽きた」→ 「手記は ここに 残る」</td><td>800 / 300 / 300</td><td>in / out / out</td><td>解放 ／ 灯りが消える</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Unity の実装単位</h2>
+  <pre><code>BattleCanvas
+├── L0 Background   階層の背景 ×2 + 靄の Particle
+├── L1 Arena        床 / 狙い帯（9-slice、色 3 種）/ 人型 ×2 / 残像 / 予兆バナー / 間合いラベル
+├── L2 Hud          上帯（刻限・瘴気・ターン・敵名・手記）/ ステータス帯（HP バー・盾・敵ピップ）
+├── L3 Hand         スタミナ帯 / 手札 3 枚 / チップ / ログ / 構え予告 / ターン終了
+├── L4 Drawer       手記ドロワー（右 30%）
+└── L5 Overlay      手番バナー / 勝敗 / ビネット</code></pre>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>種類</th><th>実装</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>位置・数値・色・alpha の補間</td><td>DOTween（無料版）</td><td>距離 260 / 520 / 820 のパラメータ補間は tween が自然。§5 の ms と ease をそのまま書ける</td></tr>
+        <tr><td>立ち絵の体勢・攻撃・被弾・崩れ・倒れ</td><td>Animator（Live2D は Cubism Motion）</td><td>絵に紐づくクリップ。GUI で反復調整する</td></tr>
+        <tr><td>演出の順序と早送り</td><td>DOTween の Sequence + timeScale</td><td>1 行動 = 1 Sequence。早送りしても結果は同じ</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note prose">アセット: 立ち絵は Live2D ならモデル 1 + モーション 8 + パラメータ 3、差分スプライトなら 11 枚（敵は 12 枚）。エフェクト 7 種、UI 部品 12 種、書体 3（Shippori Mincho / Zen Kaku Gothic New / IBM Plex Mono、全て OFL）。</p>
+
+  <h2>残り 20% の内訳</h2>
+  <ul class="prose">
+    <li><strong>実機で触って直す調整（約 10%）</strong>: ms と ease の微調整、早送りの手触り、チップの当たり判定、ゲームパッドの割当、ウルトラワイドでの L1 / L2 切替。</li>
+    <li><strong>本物の立ち絵と効果音（約 8%）</strong>: Live2D モデル 2 体、モーション 8 + 5、効果音 12 種。灯りと靄の質感はプレースホルダのまま。</li>
+    <li><strong>開示度の実データ（約 2%）</strong>: R2-3 で開示度の段階が決まったら §7 の仮置き 3 段を合わせる。ボスの 2 段階予兆は範囲外。</li>
+  </ul>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>ブランチは未マージの <code>docs/concept-v3-inheritance-loop</code> から切った。main に戻すと concept-v3 の前提が無くなるため。</li>
+    <li>チップのクリックをそのままプレイにした（確認ボタン無し）。誤操作より操作数を優先し、選べない段は押せなくして防ぐ。</li>
+    <li>既定の投入量は敵 AI と同じ「残 3 以上を保つ最大の段」。プレイヤーの初手が温存の意味を自然に守るようにした。</li>
+    <li>開示度は表示側から 0 / 1 / 2 の 3 段を仮置きした。ルール側（R2-3）が決めたら合わせる。</li>
+    <li>人型は当面 Canvas 内（RawImage に Live2D の RenderTexture）。世界座標に出すのは UI との前後関係が問題になってから。</li>
+    <li>敵の Guard と構えは対称に表示する。</li>
+    <li>間合いの床の帯は「トラック UI」ではなく、予兆の狙い範囲を示す補助。段階を選ぶ操作はできない。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>Google Fonts の Shippori Mincho / Yuji Syuku が Unity の TextMeshPro で JIS 第 1 水準を欠けなく持つか（OFL なので同梱は可）。</li>
+    <li>DOTween 無料版で Sequence の timeScale 早送りが Animator と同期して破綻しないか。実機で確認する。</li>
+    <li>端数処理。<code>battle_core_v3.md</code> §7.3 の round が 2.5 を 3 にするか 2 にするか（C# の Math.Round は既定で銀行家丸め）。モックアップは暫定で切り捨て。ルール側への要望に加えた。</li>
+  </ul>
+
+  <h2>ルール側に返したい要望</h2>
+  <ul class="prose">
+    <li>開示度の段階を定義してほしい（§7 の 3 段を叩き台に）。予兆バナーと狙い帯の出し分けに要る。</li>
+    <li>崩しを受けた敵の「次は低投入になる」見込みを予兆に添えてよいか。開示度 2 限定なら矛盾しない。</li>
+    <li>端で止まる移動（clamp）をイベントとして通知してほしい。UI が「これ以上下がれない」を出す。</li>
+    <li>敵の Guard と構えを対称に見せる前提でよいか。</li>
+    <li>端数処理（MidpointRounding）を C# 側で確定してほしい。UI は予測値を確定値で出すため。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li><strong>見た目の最終選択</strong>: A を推す。モックアップで A / B / C を階層 1 / 3 / 5 で見比べてから決めてほしい。</li>
+    <li><strong>C の使い所</strong>: 手記の頁と敗北画面に版画的な表現を使うか。使うなら手記 UI の設計時に決める。</li>
+  </ul>
+</div>

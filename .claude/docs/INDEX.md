@@ -42,6 +42,7 @@
 ### Battle System
 
 - `battle_document/battle_core_v3.md` - **数値の正本（2026-09-12）**: 間合い × スタミナ投入、予兆、崩し、構え。旧 `battle_logic.md` / `buff_debuff_system.md` / `element_system_spec.md` は Web 版の記録
+- `battle_document/battle_ui_ux_v1.md` - **戦闘 UI / UX の正本（2026-09-12、80% 設計）**: 情報設計・L1 レイアウト・2 操作のプレイ・見た目 3 案（推奨 A 霧と灯り）・演出の ms と補間・Unity 写像。モックアップは `docs/mockups/2026-09-12-battle-uiux-mockup.html`
 
 ### Card System
 

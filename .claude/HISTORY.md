@@ -2,6 +2,21 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-12 - 戦闘 UI / UX の 80% 設計（情報設計・操作・見た目 3 案・演出仕様・Unity 写像）
+
+#### 概要
+
+戦闘画面の UI / UX を「完成度 80%」まで設計した（実装は先、コードは書かない）。`battle_core_v3.md` の値 5 つと予兆を「敵の頭上 → 床の狙い帯 → 手札の上のスタミナ」の縦一列に置き、1 枚のプレイをカード選択 → 投入量チップの 2 操作に収めた。見た目は A 霧と灯り / B 鉄と革 / C 墨と朱 の 3 案をモックアップで比べ、A を推奨（最終選択はこうだいさん）。演出 10 節を ms / 補間 / 音の有無で表にし、Unity の Canvas 6 層と DOTween / Animator の分担、アセット一覧に落とした。
+
+#### 変更点
+
+- **設計書**: `.claude/docs/battle_document/battle_ui_ux_v1.md` を新設（§1 情報設計 20 項目、§2 L1 / L2、§3 操作、§4 見た目 3 案と階層 5 段、§5 演出、§6 Unity 写像、§7 開示度の仮置き、§8 残り 20%、§9 ルールへの要望 5 件）
+- **モックアップ**: `docs/mockups/2026-09-12-battle-uiux-mockup.html`（1 ファイル完結。見た目 3 案 × 階層 3 段 × レイアウト 2 種 × 開示度、手札が実際に操作でき、1 ターン再生と 被弾 / 崩し / 勝敗 の例）。Artifact `https://claude.ai/code/artifact/750029ad-d93f-4cdc-b923-9dce0b1bd041`
+- **レポート**: `docs/reports/2026-09-12-battle-uiux-80.html`（採用 / 保留 / 見送り、達成状況、演出の主要値、残り 20%、仮定と要望）。Artifact `https://claude.ai/code/artifact/4712190b-73c3-48b1-a07e-b725cfb6fcd1`
+- **要件**: `requirements/tier2-support.md` R2-5 の内容と受け入れ基準を 9 項目に更新。`docs/INDEX.md` に設計書を追記
+- **ルール側への要望**: 開示度の段階定義 / 崩し後の低投入見込みの表示可否 / clamp のイベント通知 / 敵 Guard の対称表示 / 端数処理（MidpointRounding）の確定
+- **ブランチ**: `docs/battle-uiux-80`（未マージの `docs/concept-v3-inheritance-loop` から分岐）
+
 ### 2026-09-12 - 三者評価を受けた 5 決定の反映（瘴気 / 手記 / HP 回復 / 遺産の残存 / セーブ前倒し / C# 正本化）
 
 #### 概要
