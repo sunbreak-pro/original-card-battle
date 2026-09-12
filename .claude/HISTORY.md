@@ -2,6 +2,23 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-12 - 三者評価を受けた 5 決定の反映（瘴気 / 手記 / HP 回復 / 遺産の残存 / セーブ前倒し / C# 正本化）
+
+#### 概要
+
+三者評価の判断待ち 6 点にこうだいさんが回答し、設計書へ反映した。衰弱を「瘴気」に改名して階層ごとの濃度で蓄積する仕組みにし、図鑑を「手記」（持ち歩く帳面、メモあり、戦闘中は読むだけ、死亡地点に残り選んだ頁だけ継ぐ）に改めた。HP の回復モデル（戦闘中カード / 階層間休憩 / 探索イベント）と遺産の残存規則（痕跡は回収まで残る、1 つの生で 1 件）を決め、セーブ要件を Phase 4 の頭へ前倒しし、戦闘コアの正を C# に切り替えた。
+
+#### 変更点
+
+- **瘴気**（concept-v3 §6、battle_core_v3 §3.1）: 階層 n の濃度 = min(n, 5)。刻限 1 行動ごとに濃度 × 1% 蓄積。20% ごとに最大スタミナ -1、100% で瘴気死。和らげる手段: 防瘴の面（濃度 -1）/ 浄化の香（蓄積 -10%）/ 階層間休憩（蓄積しない）。定数 MIASMA_* を追加
+- **HP と回復**（concept-v3 §7.1、battle_core_v3 §4 / §7.2）: HP は戦闘をまたいで持ち越す。戦闘中は `heal` 型カード（応急処置 T1 3 / T2 5 / T3 7）、階層間休憩 30%、階層内休息 15%（刻限 -1）、泉・薬草イベント。無償の全回復は無い
+- **手記**（concept-v3 §5、tier1 R1-10、CAMP §3.3）: 敵の頁 / ダンジョンの頁 / メモ。拠点・探索・戦闘のどこでも読めるが、戦闘中は現在の敵の頁を表示するだけで戦闘に効果を与えない。死亡時は痕跡に含めて死亡地点に残し、遺産の枠で選んだ頁だけ継ぐ。concept-v2 A1 は「一部復活」に分類変更
+- **遺産の残存**（concept-v3 §8.3、tier1 R1-12、CAMP §3.1）: 痕跡は回収されるまで残る（次の死亡で上書きしない）。1 つの生で受け取れるのは 1 件。企画書 §16「前回死亡者だけ」からの変更として明記
+- **セーブ前倒し**（tier1 R1-16）: Phase 6 → Phase 4 の頭。依存を R1-8〜10 に変更し、R1-11 が R1-16 に依存。死亡と生の終了は確定と同時に保存（セーブスカム防止）
+- **C# が正**（tier1 冒頭・R1-3、core.md、battle_core_v3 §13、CLAUDE.md、`unity-port/README.md` バナー）: TS の `src/ui/battle-lab/core/` は凍結。`parity:*` は履歴として残し更新しない。R1-3 の受け入れ基準を `dotnet test` に変更
+- **名称の一括置換**: 衰弱 → 瘴気、図鑑 → 手記を concept-v3 / core / tier1〜3 / master / CAMP / battle_core_v3 / CLAUDE.md で置換。concept-v3 §13 に決定表を追加、§12 の 2 / 20 / 21 を決定済みに
+- **未変更**: コード（`src/` / `unity-port/*.cs`）。評価レポート 2 本は当時の記録として据え置き
+
 ### 2026-09-12 - 戦闘コア v3 設計 + 単一ダンジョン化 + 三者評価
 
 #### 概要
@@ -62,23 +79,3 @@ Unity 移行 First Step の Phase 3（実 Unity + UGUI、Editor 必須の人間�
 - **③ パリティ同期（TS↔C# ドリフト検出のワンコマンド化）**: `parityFixture.test.ts`（常時ドリフトガード + `PARITY_WRITE=1` で fixture 再生成）、`unity-port/tools/gen-parity.mjs`・`parity-check.mjs`（`npm run parity:gen`/`parity:check`、クロスプラットフォーム node 製）、`.gitattributes` で fixture を LF 固定（autocrlf 由来の無用差分を排除）。
 - **④ 実行キット + 計画更新**: `unity-port/unity-project-kit/`（`BattleCore.asmdef`=engine-free / `BattleCore.Tests.asmdef` / Unity `.gitignore` / `BattleScreenView.cs` 雛形 / README）、`unity-port/PHASE3-KICKOFF.md`（Windows 手順 + Unity MCP 選定: IvanMurzak/Unity-MCP 第一候補・CoplayDev 代替、公式版はサブスク必須で除外。deep-web-research 調査・確度 medium）。計画書 `2026-06-28-unity-first-step-core-port.md` の決定記録更新（開発マシン=Windows 確定、ストア=手書き reducer 確定、MCP 暫定選定、作業土台節追加）。
 - **検証（敵対的マルチエージェント）**: Workflow で C# コンパイル整合性・同期スクリプト・キット/ドキュメントを 3 次元並列レビュー→各指摘を敵対的検証。C# 整合性は CLEAN（指摘ゼロ。dotnet 未導入のため未コンパイル、導入後 `dotnet test` 58/58 想定＝49 unit + 8 BattleStore/View + 1 parity）。confirmed minor 2 件を修正: `parity-check.mjs` のドリフト基準を `git diff` → `git diff HEAD`（stage 時の偽陰性解消）、docs の `50/50` → 実数 `58` に統一。
-
-### 2026-07-05 - Unity 移行 First Step — 戦闘コア C# 移植 + パリティ証明
-
-#### 概要
-
-Unity 移行計画書の Phase0（AI art 生成 + Live2D 仕上げ、Unity Editor スパイク）はユーザー指示で着手を試みたが、画像生成・Live2D・Unity Editor 操作の手段を持たないため自動実行不可と判断。ユーザー確認の上、子プラン（first-step）の戦闘コア C# 移植 + Web パリティ証明へスコープを絞って直行した。会話ではまず「間合いはタブ/トラックでなく実距離・体勢で表現する」方針を固め、両計画書（親戦略・子プラン）に反映（role-qa 監査で自己矛盾2件を修正済み）。その後 `unity-port/` に検証済み戦闘コア（`src/ui/battle-lab/core/`、TS）を netstandard2.1 の純 C# クラスライブラリへ移植し、実際の TS 実装を固定 RNG で走らせて生成したゴールドデータでクロス言語パリティを証明した。
-
-#### 変更点
-
-- **計画書更新**: 親プラン Phase0b のスパイク内容を「カード1枚めくり」から「間合い連動の位置移動+体勢差し替え」へ差し替え、Unity選定理由に⑤項追加、決定記録に傾き追記。子プラン Phase3 の間合いUIをトラック型→実距離・体勢表現に変更。role-qa 監査で子プラン決定記録の「決定」を「方針確定（実現性は0bで検証中）」へトーン修正、Non-goalsに体勢差分スプライトを仮アセット限定と明記
-- **環境整備**: dotnet SDK 10.0.301 を Homebrew `dotnet`（非cask、sudo不要）で導入。旧 `dotnet-sdk` cask は sudo 必須のため断念
-- **ブランチ整理**: このワークツリーが detached HEAD（旧 bake-off ブランチの残骸）だったため、origin/main（bake-off + Unity計画書2本が既に PR #16 でマージ済み）から `feat/unity-core-port` を新規作成し直し、計画書編集のみ stash 経由で引き継ぎ
-- **`unity-port/` 新設**: `BattleCore/`（netstandard2.1, LangVersion 9.0, IsExternalInit ポリフィル）に Types/Constants/Combat/Cards/Enemy/BattleReducer/ViewModel/IRng を1:1移植。乱数は `IRng` 注入（`InitState(rng)`/`Reduce(state,action,rng)` の3引数、TS のグローバル `Math.random()` 依存を置換）。`Math.round` は `Math.Round(raw, MidpointRounding.AwayFromZero)` で JS 挙動と一致
-- **パリティ証明**: TS実装を固定RNG（`Math.random`→0固定）で実走させ、21アクション+INITの状態遷移トレースをJSON化（手計算ではなく実行結果、`BattleCore.Tests/Fixtures/parity-fixture.json`）。`ParityTests.cs` が全ステップ・全フィールド（HP/スタミナ/間合い/ログ文言/カード順序含む）を突き合わせ
-- **テスト**: TS 47テスト相当を NUnit へ移植（Combat13/Reducer21/ViewModel15）+ パリティ1件 = 50件、`dotnet test` 全 green（role-engineer実装後・Constants.cs の配列不変化修正後の両方で再確認済み）
-- **検証**: role-qa 独立監査（別コンテキスト）PASS（Blocker0・Important0）。Nit2件のうち配列の `IReadOnlyList` 化は即修正、テスト件数の内訳説明は本エントリで補足
-
-#### 次
-
-残課題（Phase3: 実Unityプロジェクト作成 + UGUI最小戦闘画面）はUnity Editor操作が必須のため人間主体の作業。MEMORY.md 予定に記載。

@@ -1,3 +1,5 @@
+> **2026-09-12 決定: C# が正。** 以降の戦闘コア変更は `BattleCore/` に直接入れ、TS の `src/ui/battle-lab/core/` は凍結する。`parity:*` スクリプトと fixture は v2 コア移植の証跡として残すが、v3（`.claude/docs/battle_document/battle_core_v3.md`）以降は更新しない。
+
 # Unity Core Port — Battle Core (C#)
 
 検証済みの戦闘コア（TypeScript, `src/ui/battle-lab/core/`）を **Unity Editor 抜きの純 C# クラスライブラリ**として移植し、`dotnet test` で TS 版とのパリティ（同一入力 → 同一出力）を証明するプロジェクトです。Unity 移行の「第一歩」に相当し、その上に Unity 実装へ渡す**作業土台**（Logic/View 層・パリティ同期・Unity キット・Phase 3 手順）を載せています。

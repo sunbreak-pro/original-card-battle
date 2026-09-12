@@ -16,9 +16,9 @@
 
 ## 直近の完了
 
+- 三者評価を受けた 5 決定の反映（瘴気 / 手記 / HP 回復 / 遺産の残存 / セーブ前倒し / C# 正本化）✅（2026-09-12）— 衰弱 → **瘴気**（階層ごとの濃度で蓄積、防瘴の面・浄化の香・階層間休憩で和らげる）。図鑑 → **手記**（敵の頁 / ダンジョンの頁 / メモ。どこでも読めるが戦闘中は読むだけ。死亡地点に残り、遺産で選んだ頁だけ継ぐ）。HP は持ち越し、回復は戦闘中カード（応急処置 heal 型）/ 階層間休憩 30% / 探索イベント。痕跡は回収まで残り 1 つの生で 1 件。tier1 R1-16 セーブを Phase 4 の頭へ前倒し（死亡確定は即時保存）。**C# が正**、TS battle-lab は凍結、パリティ打ち切り（`unity-port/README.md` にバナー）。concept-v3 §13 に決定表、§12 の 2 / 20 / 21 を決定
 - 戦闘コア v3 設計 + 単一ダンジョン化 + 施設設計書 archive + 三者評価 ✅（2026-09-12）— `battle_document/battle_core_v3.md` v1 を新設（R1-2 成果物: 持つ値 5 つ、間合い相性 1.0/0.5/0.15、スタミナ基礎 10・回復 近1/中2/遠3・投入 0〜3、構え、崩し = スタミナ削り、予兆コミット式 + 空振り回避、EnemyDef 決定木、C# 写像表）。concept-v3 §12 の 3/7/8(基礎)/16/18 を決定、§12-14 は「一つのダンジョンを深く潜る・ノード式継続」に決定、§12-20〜23 を追加。旧個別施設設計 4 本を `.claude/archive/camp_document/` へ。独立エージェント 3 体（デザイン / 実装 / 反対弁護人）で旧設計と比較評価: 3 体とも「方向は改善、完成度は旧を下回る（6 → 5）」。転記ミス（遺産の受け取り場所の不一致、「経済の記述なし」の言い過ぎ、バナー未付与 11 本）を修正。レポート `docs/reports/2026-09-12-concept-v3-evaluation.html`
 - 企画書 v3（生と継承ループ）を設計ルールへ上書き + アーマー凍結 ✅（2026-09-12）— life-editor Note「ゲーム設計(chat GPT)」を正本 `docs/vision/concept-v3.md` に再編（§10 旧ルール対応表・§12 未確定 19 項目）。`vision/core.md` / `requirements/tier1〜3`（v6 / v3 / v2）/ `game_design_master.md` V4.0 / `CAMP_FACILITIES_DESIGN.md` V5.0 を全面改稿。旧ルール 14 ファイルに SUPERSEDED / FROZEN バナー。CLAUDE.md Game Loop 更新。**凍結**: アーマー（AP / 耐久 / 鍛冶屋）・経済（ショップ / サンクチュアリ）。**廃止**: ライフ制・帰還・手記の死越え。コード未変更（C# コアにアーマーは元々無い）。レポート `docs/reports/2026-09-12-concept-v3-overwrite.html`
-- Unity 移行 Phase 3 — UGUI 最小戦闘画面 + Web トレース一致 ✅（2026-09-06）— `BattleScreenView.Render` をコード生成 UGUI で実装（両者パネル・実距離 + 体勢の間合い・手札・ターン終了/リスタート・ログ・結果オーバーレイ・乱数切替）。固定 RNG(0) で fixture 操作列を再生しトレース 18/18 一致、SystemRng 3 戦完走、EditMode 57/57・parity 58/58。冒頭で NUnit 暗黙 using 起因の CS0246 ×57 を修正（known-issue 002）。計画書 `2026-06-28-unity-first-step-core-port.md` は archive へ。branch `feat/unity-foundation`
 
 > 完了履歴の全量は `README.md` の Development History を参照。
 
@@ -26,8 +26,7 @@
 
 ### 次のアクティブタスク
 
-- 🔜 **三者評価の判断待ち 6 点を決める**（`docs/reports/2026-09-12-concept-v3-evaluation.html`）: HP 回復モデル（§12-20）/ 遺産の連鎖消失（§12-21）/ 図鑑を死で消す方針 / セーブ R1-16 の前倒し / TS-C# パリティ継続の可否 / 戦闘設計 v1 でプロトを回すか
-- 🔜 **Unity 上で Tier1 v6 本実装 — 次プラン策定** — Phase 3（最小戦闘画面）完了済（2026-09-06）。`battle_core_v3.md` §13 の写像表に従い Phase 1（R1-3 スタミナ投入量 / R1-4 間合い補正・予兆）から。アート/Live2D（`2026-06-28-unity-migration-character-art.md`）と Unity リポ（sunbreak-pro/RPG-by-card、初回コミット未）の運用も決める。実プレイの手触り確認は人手（Editor 前面・乱数「実戦」）
+- 🔜 **Unity 上で Tier1 v6 本実装 — 次プラン策定（C# が正）** — Phase 3（最小戦闘画面）完了済（2026-09-06）。`battle_core_v3.md` v1.1 §13 の写像表に従い Phase 1（R1-3 スタミナ投入量・HP 持ち越し / R1-4 間合い補正・予兆）から。TS battle-lab は凍結、`dotnet test` を正にする。残る未確定は concept-v3 §12 の 1 / 4 / 5 / 6 / 9 / 10 / 11 / 12 / 13 / 15 / 17 / 19 / 22 / 23。アート/Live2D（`2026-06-28-unity-migration-character-art.md`）と Unity リポ（sunbreak-pro/RPG-by-card、初回コミット未）の運用も決める。実プレイの手触り確認は人手（Editor 前面・乱数「実戦」）
 
 ### バックログ機能（旧 TODO.md より移管）
 

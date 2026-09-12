@@ -2,6 +2,26 @@
 
 > `HISTORY.md` が 5 件を超えた際に退避した古いエントリ（降順）。最新は `HISTORY.md`。
 
+### 2026-07-05 - Unity 移行 First Step — 戦闘コア C# 移植 + パリティ証明
+
+#### 概要
+
+Unity 移行計画書の Phase0（AI art 生成 + Live2D 仕上げ、Unity Editor スパイク）はユーザー指示で着手を試みたが、画像生成・Live2D・Unity Editor 操作の手段を持たないため自動実行不可と判断。ユーザー確認の上、子プラン（first-step）の戦闘コア C# 移植 + Web パリティ証明へスコープを絞って直行した。会話ではまず「間合いはタブ/トラックでなく実距離・体勢で表現する」方針を固め、両計画書（親戦略・子プラン）に反映（role-qa 監査で自己矛盾2件を修正済み）。その後 `unity-port/` に検証済み戦闘コア（`src/ui/battle-lab/core/`、TS）を netstandard2.1 の純 C# クラスライブラリへ移植し、実際の TS 実装を固定 RNG で走らせて生成したゴールドデータでクロス言語パリティを証明した。
+
+#### 変更点
+
+- **計画書更新**: 親プラン Phase0b のスパイク内容を「カード1枚めくり」から「間合い連動の位置移動+体勢差し替え」へ差し替え、Unity選定理由に⑤項追加、決定記録に傾き追記。子プラン Phase3 の間合いUIをトラック型→実距離・体勢表現に変更。role-qa 監査で子プラン決定記録の「決定」を「方針確定（実現性は0bで検証中）」へトーン修正、Non-goalsに体勢差分スプライトを仮アセット限定と明記
+- **環境整備**: dotnet SDK 10.0.301 を Homebrew `dotnet`（非cask、sudo不要）で導入。旧 `dotnet-sdk` cask は sudo 必須のため断念
+- **ブランチ整理**: このワークツリーが detached HEAD（旧 bake-off ブランチの残骸）だったため、origin/main（bake-off + Unity計画書2本が既に PR #16 でマージ済み）から `feat/unity-core-port` を新規作成し直し、計画書編集のみ stash 経由で引き継ぎ
+- **`unity-port/` 新設**: `BattleCore/`（netstandard2.1, LangVersion 9.0, IsExternalInit ポリフィル）に Types/Constants/Combat/Cards/Enemy/BattleReducer/ViewModel/IRng を1:1移植。乱数は `IRng` 注入（`InitState(rng)`/`Reduce(state,action,rng)` の3引数、TS のグローバル `Math.random()` 依存を置換）。`Math.round` は `Math.Round(raw, MidpointRounding.AwayFromZero)` で JS 挙動と一致
+- **パリティ証明**: TS実装を固定RNG（`Math.random`→0固定）で実走させ、21アクション+INITの状態遷移トレースをJSON化（手計算ではなく実行結果、`BattleCore.Tests/Fixtures/parity-fixture.json`）。`ParityTests.cs` が全ステップ・全フィールド（HP/スタミナ/間合い/ログ文言/カード順序含む）を突き合わせ
+- **テスト**: TS 47テスト相当を NUnit へ移植（Combat13/Reducer21/ViewModel15）+ パリティ1件 = 50件、`dotnet test` 全 green（role-engineer実装後・Constants.cs の配列不変化修正後の両方で再確認済み）
+- **検証**: role-qa 独立監査（別コンテキスト）PASS（Blocker0・Important0）。Nit2件のうち配列の `IReadOnlyList` 化は即修正、テスト件数の内訳説明は本エントリで補足
+
+#### 次
+
+残課題（Phase3: 実Unityプロジェクト作成 + UGUI最小戦闘画面）はUnity Editor操作が必須のため人間主体の作業。MEMORY.md 予定に記載。
+
 ### 2026-07-02 - 戦闘エンジン Bake-off 実装 + Unity 移行方針転換・計画策定
 
 #### 概要
