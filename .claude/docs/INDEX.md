@@ -41,7 +41,8 @@
 
 ### Battle System
 
-- `battle_document/battle_core_v3.md` - **数値の正本（2026-09-12）**: 間合い × スタミナ投入、予兆、崩し、構え。旧 `battle_logic.md` / `buff_debuff_system.md` / `element_system_spec.md` は Web 版の記録
+- `battle_document/battle_core_v4.md` - **数値の正本（2026-09-13、v3 を置き換え）**: 属性 5 つ × 投入量、特性（属性コンボ）、状態 10 語 + ボス専用 2、スタンス枠 1、手札 5 枚 / 全捨て、デッキ 15〜80 / 同種 3、敵ごとの間合い（1〜2 体）、連戦モード、試験台の基準 9 項目。カードは `card_document/swordsman_cards_v4.md`、敵は `enemy_document/enemy_roster_v4.md`。実装は `vision/plans/2026-09-13-battle-v4-implementation.md`
+- `battle_document/battle_core_v3.md` - 数値の旧正本（2026-09-12、v4 の前提）: 間合い × スタミナ投入、予兆、崩し、構え。旧 `battle_logic.md` / `buff_debuff_system.md` / `element_system_spec.md` は Web 版の記録
 - `battle_document/battle_ui_ux_v1.md` - **戦闘 UI / UX の正本（2026-09-12、80% 設計）**: 情報設計・L1 レイアウト・2 操作のプレイ・見た目 3 案（推奨 A 霧と灯り）・演出の ms と補間・Unity 写像。モックアップは `docs/mockups/2026-09-12-battle-uiux-mockup.html`
 
 ### Card System
