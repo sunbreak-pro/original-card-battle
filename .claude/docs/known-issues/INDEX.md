@@ -13,6 +13,7 @@
 | ID                                        | タイトル                                          | カテゴリ               | Status |
 | ----------------------------------------- | ------------------------------------------------- | ---------------------- | ------ |
 | [001](./001-resonance-debuff-card-lag.md) | Resonance debuff の 1-card-lag 非対称             | Battle / Class Ability | Open   |
+| [002](./002-nunit-implicit-using-unity.md) | NUnit 暗黙 using 依存で Unity asmdef ビルド失敗 | Unity Port / Build | Fixed |
 | LESSONS_LEARNED #1                        | CSS クラス名衝突（親スコープ必須）                | CSS                    | 知見   |
 | LESSONS_LEARNED #2                        | Context Provider スコープ                         | React                  | 知見   |
 | LESSONS_LEARNED #3                        | React Hooks ルール違反                            | React                  | 知見   |

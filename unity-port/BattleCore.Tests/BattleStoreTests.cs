@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using NUnit.Framework;
 using BattleCore;
 
 namespace BattleCore.Tests

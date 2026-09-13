@@ -1,0 +1,22 @@
+# generated from parity-fixture.json by gen-trace-actions.mjs — do not edit
+play thrust-1
+end
+play step_in-0
+end
+play step_in-1
+end
+play thrust-0
+play brace-0
+end
+end
+play feint-0
+end
+end
+end
+end
+end
+end
+end
+restart
+play thrust-1
+end

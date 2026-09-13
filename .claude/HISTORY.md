@@ -2,6 +2,20 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-06 - Unity 移行 Phase 3 — UGUI 最小戦闘画面 + Web トレース一致
+
+#### 概要
+
+Unity 6000.5.5f1 の実プロジェクト（`C:\Users\user\Unity\RPG-by-card`）で `BattleScreenView.Render` を実装し、コード生成の UGUI だけで 1 戦（勝敗・リスタート）が回る最小戦闘画面を作った。冒頭で Unity 側の CS0246（`[Test]` 未解決 ×57）を NUnit 暗黙 using の明示化で解消（known-issue 002）。固定 RNG(0) でパリティ fixture の操作列を再生し、Unity Console のトレース 18 状態が Web 版と完全一致。SystemRng でも 3 戦 97 手を例外なく完走。EditMode 57/57・`parity:check` 58/58 緑。
+
+#### 変更点
+
+- **修正（known-issue 002）**: `unity-port/BattleCore.Tests/*.cs` 4 本に `using NUnit.Framework;` を明示。csproj の `<Using Include>` は Unity asmdef で効かない。`docs/known-issues/002-nunit-implicit-using-unity.md` + INDEX、kit README の Caveats に追記
+- **View 実装**: `unity-port/unity-project-kit/Assets/View/BattleScreenView.cs`（`npm run unity:sync` で Unity へ）。Canvas 階層をコードで構築（YAML 手書きなし、`RuntimeInitializeOnLoadMethod` で自動配置）。両者パネル / 間合い = 2 体の実距離 + 体勢（近: 前傾・遠: 後傾）/ 手札ボタン → `OnCardClicked` / ターン終了・リスタート / ログ新着順 / 結果オーバーレイ / 乱数「固定 ⇄ 実戦」切替ボタン / トレース再生ボタン
+- **検証基盤**: `npm run unity:trace`（`tools/gen-trace-actions.mjs`）が fixture から `Resources/trace-actions.txt`（再生用）と `expected-trace.txt`（期待値・連番付き）を生成。View は状態ごとに `[Trace] #n ...` を Console へ出すので diff で突合できる
+- **Unity 操作**: 公式 Unity CLI（`unity test` / `unity open` / `unity command eval_file|editor_play|capture_game_view`）で検証。非フォーカス Editor は Play Mode でもフレームが進まないため、eval で同期 dispatch + `EditorApplication.Step()` で描画を進めた
+- **検証結果**: EditMode 57/57、parity 58/58、トレース 18/18 一致、ランタイムエラー 0。スクリーンショット 4 枚は `docs/reports/2026-09-06-unity-phase3-ugui.html`
+
 ### 2026-07-06 - Unity 以降のための作業土台（環境地固め・Logic/View・パリティ同期・キット）
 
 #### 概要
@@ -64,56 +78,3 @@ Unity 移行計画書の Phase0（AI art 生成 + Live2D 仕上げ、Unity Edito
 - **Bake-off 計画策定**: `.claude/docs/vision/plans/2026-06-28-battle-engine-bakeoff.md`（Status PLANNED）。共有コア（検証台 engine/ を本番品質で `core/` へ昇格 + `viewModel.ts` 抽出）+ Pixi/Phaser 2アダプタ。公平性ルール（数値・reducer 同一、描画だけ2通り）。勝者を Tier 1 本実装の描画基盤に昇格、検証台 DOM版は対照群として保全
 - **Phase 0 prep**: ①docs→main マージ（衝突なし検証済）+ umbrella削除 ②rollup 時限爆弾除去（tech-debt #5・独立コミット）③次セッションは専用 worktree `feat/battle-engine-bakeoff`（main 分岐）で phaser 導入から実装
 
-### 2026-06-27 - 戦闘プロトタイプ（間合い×スタミナ最小検証台）実装・マージ
-
-#### 概要
-
-「リアル性コンセプト v2」戦闘主柱（間合いの読み合い × スタミナの消耗）が遊びとして成立するかを本実装前に検証する throwaway プロトタイプを `src/ui/prototype/` に隔離実装し、PR #14 を origin/main へマージ。当初タスクが参照した計画書が実在しなかったため concept §1 / tier1 R1-5・R1-6 / タスク本文から計画書を再構成して実装。役割分担（role-engineer 実装 → session-verifier → role-qa 独立監査）で進め、role-qa PASS-with-fixes。ユーザー実機プレイで「ゲーム性はかなり面白い」と評価。
-
-#### 変更点
-
-- **隔離実装（既存無改変）**: `src/ui/prototype/` に engine（types/constants/combat/cards/enemy/battleReducer）+ UI（PrototypeBattle/DistanceTrack/CombatantPanel/HandView/BattleLog/ResultOverlay）+ `prototype-battle.css`（`.prototype-battle` スコープ）+ ルート `prototype.html` 起動口。既存トラッキングファイルの差分ゼロ、`useBattleOrchestrator`/`BattleScreen`/不可侵 deck は無改変・非 import。デッキ操作は自前 Fisher-Yates
-- **メカニクス**: 間合い 近/中/遠（相性ベース・固定強弱なし、diff 0/1/2→×1.0/0.5/0.15）、スタミナ MAX20・回復 近+1/中+2/遠+3・閾値8未満で確定威力減衰（floor 0.4、確率ミスではない）、剣士6カード、リーチ型の敵1体（中=キルゾーン、矯正技 shove）。敵フェーズは純 reducer の END_TURN 内で同期解決（StrictMode 安全）
-- **計画書再構成**: `.claude/docs/vision/plans/2026-06-27-battle-prototype-range-stamina.md` を新規作成（Steps/Files/Verification + チューニング所見）。当初参照のファイルが不在だったためユーザー承認のうえ復元
-- **検証ゲート**: `npm run build` 緑 / `test:run` 156件緑（プロトタイプ純関数 33件）/ `npx eslint src/ui/prototype` 0 エラー（全体 lint の16エラーは origin/main 既存・本変更外）
-- **balance 調整（sim 由来）**: ヘッドレスで4戦略を検証し初期値（敵HP42・穂先6）は勝ち筋ほぼ無しと判明 → 設計意図を保ち `reach_thrust` 6→3（遠を回復の逃げ場に）・`ENEMY_MAX_HP` 42→38。ゴリ押し/カイトは負け・賢い立ち回りで勝てる帯を維持。最終バランスは実機プレイで詰める前提
-- **Git**: PR #14 を origin/main へマージ（merge `9b88536` / feat `c77907c`）、マージ済 feat ブランチをローカル・リモート削除。プロトタイプは throwaway（本番非流用）
-
-### 2026-05-23 - PixiJS Phase 1 基盤実装（ハイブリッド描画レイヤー導入）
-
-#### 概要
-
-既存 DOM/CSS バトル演出を温存したまま、`.battle-field` 上に透過 PixiJS キャンバスを重ねる「ハイブリッド描画」基盤を導入。lead-pipeline 重ティアのフルチェーン（session-manager START → role-pm → role-engineer → session-verifier → role-qa + security-reviewer 並列）で実施。Step 0 では @pixi/react v8 の未解決 issue #602（StrictMode 二重マウント時の WebGL context stale）を A 案（React.lazy + mountedRef post-commit ゲート）で構造的回避。QA 判定 PASS-with-fixes（Blocker0 / 実害ある Major0）。実機検証で起動・オーバーレイ表示・クリック貫通・StrictMode 往復・リサイズ追従を全て OK 確認。
-
-#### 変更点
-
-- **計画書（コードレベル版）作成**: `docs/vision/plans/2026-05-17-pixijs-phase1-code-level.md` を新規作成し旧抽象版 `pixijs_phase1_foundation.md` を超越。§0B で旧計画を 6 観点監査し致命的誤り 3（particle-emitter 死亡・z-index:5 誤り・StrictMode #602 未考慮）+ 要修正 4 を是正。実装完了でファイルを `.claude/archive/` へ移動・Status=COMPLETED
-- **依存追加**: `pixi.js@^8.18.1` + `@pixi/react@^8.0.5` の 2 本のみ。`@pixi/particle-emitter` は v8 メンテ停止のため**意図的に未導入**。`vite.config.ts` も無変更（pixi v8 は native ESM で optimizeDeps 不要）
-- **新規 `src/ui/pixi/` ツリー**: `core/PixiStage.tsx`（`extend({Container,Graphics,Sprite,Text})` + `<Application>` 透過設定 + `preference:'webgl'` 固定）、`core/usePixiApp.ts`（`useApplication` 再エクスポート + `usePixiEventGuard` で `renderer.events.features.move=false` を 1 箇所に確定）、`battle/BattleCanvas.tsx`（Step 0-A の React.lazy + mountedRef マウントガード）、`battle/layers/`（Background/Character は空コンテナ、Effect はテスト粒子）、`battle/PixiEffectBridge.ts`（命令型 API シグネチャ骨格）、`types/pixiTypes.ts`（`BattlePixiProps`）
-- **画面統合**: `BattleScreen.tsx` と `GuildBattleScreen.tsx` の両 `.battle-field` 直後に `<BattleCanvas>` を挿入（後者は前者を再利用せず構造複製のため両ファイル個別修正）
-- **CSS レイヤリング**: `battle-layout.css` に `.battle-screen .battle-pixi-host { z-index: 15; pointer-events: none; ... }` 追加（field=10 と hand=100 の間）。CSS 共通のため両画面でスコープ機能
-- **Step 0 採用**: A 案（React.lazy + useRef マウントガード）。`main.tsx` の `<StrictMode>` は無変更で維持。B 案（dev のみ StrictMode 外し）は不要だったため不採用
-- **テスト**: 新規 4 件（`pixiFoundation.test.ts`）+ 既存全 pass（123/123、回帰ゼロ）。WebGL/reconciler 依存テストは jsdom 制約により意図的に契約・layer に限定（コメントで理由明示）
-- **意図的 lint disable 3 箇所**: `BattleCanvas.tsx`(set-state-in-effect=Step 0-A post-commit ゲート)、`usePixiApp.ts`(immutability=PixiJS 命令型 API 設定)、`EffectLayer.tsx`(exhaustive-deps=rAF ループ再起動防止)。いずれも該当行限定 + 理由コメント付き
-- **独立監査**: role-qa（PASS-with-fixes）+ security-reviewer 並列。security は 9 脆弱性が**全て dev/build 専用ツールチェーン由来・非 PixiJS 由来**と確定、リリースブロックなし。ただし既存の `package.json` の rollup ネイティブバイナリ・ハードコード（time bomb）を発見 → MEMORY 予定 #5 として独立タスク起票（Phase 1 コミットには混ぜない）
-- **方針合意**: rollup ハードコード除去は別タスク・別コミット。Phase 1 は実機検証後に commit/PR（ユーザー方針）
-
-### 2026-05-17 - バトルロジック脆弱性修正（V-CHAIN-01 / V-ENM-02 + 回帰テスト + 脆弱性ガイド正本化）
-
-#### 概要
-
-README と脆弱性ガイドの不整合（V-EXEC/V-PHASE 系の完了表記）を実コードで決着。lead-pipeline 重ティアのフルチェーン（session-manager START → general-purpose 事実調査 → role-engineer 実装 → role-qa 別コンテキスト独立監査）で実施。**ground truth: README が正・ガイドが陳腐化**。当初13件と見えた修正は実体2件（V-CHAIN-01 / V-ENM-02）に縮小。QA 判定 PASS-with-fixes（コードブロッカー0、フォローアップ1件起票）。
-
-#### 変更点
-
-- **事実確定（調査）**: V-EXEC-01/02/03/04・V-PHASE-01/02・V-DMG-MANAGE-01 は全て修正済み（README 通り、ガイドが古い）。Phase 4 もガイドの「1/7」は陳腐化で実態 6/7。真に未修正は V-CHAIN-01・V-ENM-02 の2件のみと file:line 証拠付きで確定
-- **V-CHAIN-01 修正（魔術師共鳴1枚遅れ）**: `elementalSystem.ts` に純粋関数 `getDamageModifierIncludingCard`（`onCardPlay` 後の仮想 state で modifier 算出）追加。`useElementalChain` に `getDamageModifierForPlay(card)`、`useClassAbility` にオプショナル戻り値追加（swordsman 非影響）。`useBattleOrchestrator` の damage modifier 経路を play-aware に差し替え + `useCallback` 切り出し
-- **V-ENM-02 修正（敵AI preview/execute 乖離）**: `enemyAI.ts` に `resolveEnemyAction`/`clearResolvedActionCache` 新設。`(id,hp,maxHp,turn,callIndex)` でメモ化し execute/preview/EnemyFrame レンダーの3経路が同一結果を共有。確率分布維持。`initializeBattle` 冒頭で cache クリア（バトル間リーク防止）
-- **回帰テスト追加（4ファイル44件）**: `elementalSystem.test.ts`(13)・`bleedDamage.test.ts`(8)・`phaseLogic.test.ts`(15)・`enemyAI.test.ts`(8)。既修正項目（V-DMG-06/10・V-CLASS-13/04・V-PHASE-01/02・V-DMG-01）の固定化 + 新規修正検証
-- **脆弱性ガイド正本化**: `vulnerability-remediation-guide.md` を実態へ更新（Phase 4=7/7、Phase 5 全 ✅FIXED、証拠 file:line 併記、冒頭カウント 35 fixed / 71 remaining）。README は元から正のため変更なし
-- **QA 独立監査**: 別コンテキスト role-qa が型/lint/test 再実行（全 PASS、119テスト）、engineer 委譲懸念4点を裁定。Major1件 = `getResonanceEffects` の resonance-debuff 1-card-lag 非対称が残存（damage 側のみ修正で非対称化）→ known-issue 001 として起票
-- **フォローアップ起票**: `docs/known-issues/001-resonance-debuff-card-lag.md` 新規 + INDEX 更新 + MEMORY 予定 #2
-
-#### 次
-
-known-issue 001（resonance debuff 1-card-lag）の修正は別タスク。本変更は未コミット（main ブランチ + .claude リファクタ塊と分離コミット必要、ユーザー承認待ち）。

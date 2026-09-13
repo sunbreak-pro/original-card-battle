@@ -1,6 +1,6 @@
 # Plan: Unity 移行 First Step — 戦闘コア C# 移植 + 最小プレイアブル
 
-> **Status**: PARTIALLY IMPLEMENTED — Phase 0〜2（コア移植 + パリティ証明。標準の Unity プロジェクトではなく `unity-port/` 配下の netstandard2.1 単体ライブラリとして実施、branch `feat/unity-core-port`）2026-07-05 完了。**2026-07-05 追加: Unity 以降のための作業土台（Logic/View 層・パリティ同期ワンコマンド・Unity キット・Windows 手順）を整備**（末尾「作業土台」節）。Phase 3（実 Unity プロジェクト + UGUI）は Unity Editor 操作が必須のため引き続き人間主体で未着手
+> **Status**: COMPLETED（2026-09-06）— Phase 3（実 Unity プロジェクト + UGUI 最小戦闘画面）完了。固定 RNG で Web トレース 18/18 一致、EditMode 57/57。詳細は末尾 Worklog
 > **Created**: 2026-06-28
 > **Task**: MEMORY.md 進行中「Unity 移行 + 2.5D アニメキャラ art」の最初の実装一歩
 > **親プラン**: `2026-06-28-unity-migration-character-art.md`（全体戦略・ロードマップ）。本書はその **Phase 1 を具体化した実行計画**
@@ -155,9 +155,9 @@ Unity プロジェクト
 
 ### Phase 3 — 最小戦闘画面（UGUI・Web パリティ）
 
-- [ ] 11. `BattleStore` でコアを駆動（dispatch → 再描画）。
-- [ ] 12. UGUI で戦闘画面: **間合い表現はタブ/トラック型ではなく、キャラクターと敵の画面上の実距離・体勢（差分スプライト）で表現**（2026-07-04 方針転換 — 検証は親プラン Phase 0b のミニ実装で先行実施。`DistanceLabel`/`EnemyRangeHint` 等 ViewModel の出力自体は変更なし、見せ方のみ差し替え）／両者パネル（HP・スタミナ・疲労・ガード）／手札（`DescribeHand` を描画・クリックで PlayCard）／ターン終了／ログ（新着順）／結果オーバーレイ（勝敗 + もう一度）。
-- [ ] 13. **受け入れ**: Unity Editor で **1 戦を最後までプレイ**（カードプレイ・ターン終了・勝敗・リスタート）できる。テスト green。固定シードで Web 版と挙動一致。
+- [x] 11. `BattleStore` でコアを駆動（dispatch → 再描画）。
+- [x] 12. UGUI で戦闘画面: **間合い表現はタブ/トラック型ではなく、キャラクターと敵の画面上の実距離・体勢（差分スプライト）で表現**（2026-07-04 方針転換 — 検証は親プラン Phase 0b のミニ実装で先行実施。`DistanceLabel`/`EnemyRangeHint` 等 ViewModel の出力自体は変更なし、見せ方のみ差し替え）／両者パネル（HP・スタミナ・疲労・ガード）／手札（`DescribeHand` を描画・クリックで PlayCard）／ターン終了／ログ（新着順）／結果オーバーレイ（勝敗 + もう一度）。
+- [x] 13. **受け入れ**: Unity Editor で **1 戦を最後までプレイ**（カードプレイ・ターン終了・勝敗・リスタート）できる。テスト green。固定シードで Web 版と挙動一致。
 
 > Phase 1〜2 は Claude 主担当（純ロジック + テスト）。Phase 3 の UGUI 配置・参照つなぎ・手触り確認は人間（または Unity MCP で一部自動化）。
 
@@ -180,7 +180,7 @@ Unity プロジェクト
 - [x] EditMode テスト（47 相当）green。（49件、`dotnet test` で確認・role-qa 監査済み）
 - [x] パリティ harness が固定シードで Web 版と一致（state 系列・ダメージ・ログ）。
 - [x] 純 C# 層が `dotnet test`（headless）でも green。（58/58: 49 unit + 8 BattleStore/View + 1 parity。Phase 2 時点は 50）
-- [ ] Unity Editor で 1 戦プレイ可能（勝敗・リスタート動作）。**未着手**（Phase 3、Unity Editor 必須）
+- [x] Unity Editor で 1 戦プレイ可能（勝敗・リスタート動作）。2026-09-06: fixture 操作列の再生で敗北 → リスタート → 続行を Unity 上で確認（トレース 18/18 一致）。人手の実プレイ手触り確認は残
 - [x] スコープ逸脱なし（art・全敵全カード・新要素を入れていない）。role-qa 独立監査で確認済み
 
 ## リスクと対策
@@ -249,3 +249,11 @@ Phase 3 の人間作業に先立ち、Editor 抜きで用意できる土台を `
 - **④ 実行キット + リポ整理**: `unity-port/unity-project-kit/`（asmdef・Unity gitignore・`BattleScreenView` 雛形）+ `unity-port/PHASE3-KICKOFF.md`（Windows 手順 + MCP 選定）。stale な `origin/feat/unity-core-port`（PR #17 マージ済）は削除。
 
 > これで Phase 3 は「Unity Hub でプロジェクト作成 → キットを流し込み → シーン配線」に集約される。純ロジック・テスト・データは Claude、Editor 配置・手触りは人間（一部 MCP）。
+
+---
+
+## Worklog — 完了時の乖離レビュー（2026-09-06）
+
+1. **スコープ逸脱**: なし。コア + 1 戦闘の範囲内。Phase 0（AI アート / Live2D）は 2026-07-05 のユーザー確認で本プランから切り離し済（`2026-06-28-unity-migration-character-art.md`）。追加したのはトレース再生と乱数切替のデバッグ UI のみ
+2. **AC 免除**: 「人間が Editor で 1 戦プレイ」は自動再生（fixture 操作列 + `EditorApplication.Step`）で代替した。人手の手触り確認は未実施のまま完了扱い（次プランの冒頭で実施）
+3. **途中で出た判断の行き先**: NUnit 暗黙 using の落とし穴 → `docs/known-issues/002`。非フォーカス Editor でフレームが進まない件 → `unity-port/PHASE3-KICKOFF.md` 4 節に注記。Unity リポの初回コミット / シーンへの View 配置（現状は Bootstrap で自動生成）→ MEMORY 予定へ

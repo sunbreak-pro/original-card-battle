@@ -1,4 +1,5 @@
 using BattleCore;
+using NUnit.Framework;
 
 namespace BattleCore.Tests
 {

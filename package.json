@@ -12,7 +12,9 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "parity:gen": "node unity-port/tools/gen-parity.mjs",
-    "parity:check": "node unity-port/tools/parity-check.mjs"
+    "parity:check": "node unity-port/tools/parity-check.mjs",
+    "unity:sync": "node unity-port/tools/sync-unity-project.mjs",
+    "unity:trace": "node unity-port/tools/gen-trace-actions.mjs"
   },
   "dependencies": {
     "@pixi/react": "^8.0.5",
