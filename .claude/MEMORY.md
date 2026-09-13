@@ -27,7 +27,7 @@
 
 ### 次のアクティブタスク
 
-- 🔜 **戦闘 v4 の C# 実装 + 試験台 + 連戦モード（次セッション）** — 設計は 2026-09-13 に確定（`battle_core_v4.md` / `swordsman_cards_v4.md` / `enemy_roster_v4.md` / `battle_ui_ux_v1.md` §3.6）。プランと冒頭プロンプトは `vision/plans/2026-09-13-battle-v4-implementation.md`。完了条件: dotnet test 緑 / `BattleCore.Sim` が基準 9 項目を出す / 初期 40 種と敵 9 体がデータに入る / 連戦 3 戦が Windows ビルドで通る / View v1.1 が壊れない。ブランチ `feat/battle-core-v4`。その後は順 3 ドラッグ操作と HUD → 順 4 演出の文法 → 順 5 習得 20 種 + ボス適応 → 順 6 プレイテスト 3 巡で 80%。**未確定**: T0 アタックの目盛り（v3 の 3 か、こうだいさんの例の 5 か）
+- 🔜 **戦闘 v4 の C# 実装 + 試験台 + 連戦モード（次セッション）** — 設計は 2026-09-13 に確定（`battle_core_v4.md` / `swordsman_cards_v4.md` / `enemy_roster_v4.md` / `battle_ui_ux_v1.md` §3.6）。プランと冒頭プロンプトは `vision/plans/2026-09-13-battle-v4-implementation.md`。完了条件: dotnet test 緑 / `BattleCore.Sim` が基準 9 項目を出す / 初期 40 種と敵 9 体がデータに入る / 連戦 3 戦が Windows ビルドで通る / View v1.1 が壊れない。ブランチ `feat/battle-core-v4`。その後は順 3 ドラッグ操作と HUD → 順 4 演出の文法 → 順 5 習得 20 種 + ボス適応 → 順 6 プレイテスト 3 巡で 80%。目盛りは T0 = 5（2026-09-13 決定、全体 1.6 倍、HP 50）。特性は条件 12 × 効果 10、初期 32 + 習得 40 に付与
 - 🔜 **Unity 上で Tier1 v6 本実装 — 次プラン策定（C# が正）** — Phase 3（最小戦闘画面）完了済（2026-09-06）。**戦闘コア v3（R1-3 / R1-4 相当）と戦闘画面 v1.1 は 2026-09-12 に実装済**（`unity-port/`、`dotnet test` 54）。次は探索側（刻限 / 瘴気 / ノード）と `BattleInit` の接続、手記の実データ、開示度（R2-3）、ボスの 2 段階予兆。TS battle-lab は凍結、`dotnet test` を正にする。残る未確定は concept-v3 §12 の 1 / 4 / 5 / 6 / 9 / 10 / 11 / 12 / 13 / 15 / 17 / 19 / 22 / 23。アート/Live2D（`2026-06-28-unity-migration-character-art.md`）と Unity リポ（sunbreak-pro/RPG-by-card、初回コミット未）の運用も決める。実プレイの手触り確認は人手（Editor 前面・乱数「実戦」）
 
 ### バックログ機能（旧 TODO.md より移管）
