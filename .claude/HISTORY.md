@@ -2,6 +2,22 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-14 - 戦闘 UI / UX v2（core v4.1 対応の設計書、動くモックアップ、実画面の目視検証）
+
+#### 概要
+
+戦闘コア v4.1（属性 5 つ / 特性 / 状態 10 語 + ボス専用 2 / スタンス枠 / 手札 5 枚 / 2 体戦 / 精鋭とボス / 連戦）に合わせて、戦闘 UI / UX の設計書を v2 として新設した。レイアウトは 3 案を採点して「背骨とレーン」を採用し、操作・演出・Unity 写像の草稿を批評にかけてから書き、3 観点で 2 ラウンド検証した。モックアップを実画面で撮って見つけた 5 件（予測札が矢印の先を隠す、追撃バッジの食い込み、CSS のクラス名衝突、スタミナ表記、手記の閉じるボタン）は、設計書とモックアップの両方で直した。
+
+#### 変更点
+
+- **設計書**: `battle_document/battle_ui_ux_v2.md` を新設。§0 差分と 80% の条件 7 つ、§1 情報設計 26 項目、§2 L1 v2 と 2 体戦・最悪ケース 2 つ・対案 2 つ・休憩と結果画面、§3 ドラッグ主操作とクリック / キー / ゲームパッド、§4 A+ 継承と v4.1 のトークン、§5 演出 21 節と時間予算、§6 Unity 写像（UiTween 継続、入力の規則、View v1.1 からの差分、アセット）、§7 開示度、§8 達成状況（○ 6 / △ 1）、§9 ルールへの要望 25 件。`battle_ui_ux_v1.md` の冒頭に正本移動の注記を置き、View v1.1 の実装記録として残した
+- **モックアップ**: `docs/mockups/2026-09-13-battle-uiux-v4-mockup.html`（1 ファイル、6 画面: 配置と対案 / 2 体戦 / 精鋭とボス / 操作（動く）/ 1 ターン再生 / 連戦）。Artifact `https://claude.ai/code/artifact/575f0640-7eba-4486-9c79-edd94d805de7`
+- **レポート**: `docs/reports/2026-09-13-battle-uiux-v4-80.html`（採用 / 保留 / 見送り、達成状況、採点、時間予算、検証の経過、実画面 10 枚と所見、残り 20%、要望、判断点）。Artifact `https://claude.ai/code/artifact/43c67b94-a62e-428e-b19b-836c510a05ce`
+- **要件 / 索引**: `requirements/tier2-support.md` R2-5 の内容と受け入れ基準を 16 項目に更新。`docs/INDEX.md` に v2 の行
+- **検証**: 設計書はルール一致 / 充足と整合 / Unity 実現性の 3 観点で 2 ラウンド（blocking 4 から 2、修正 42 + 35 件）。モックアップは静的検査（should 8 / nit 12、修正 20 件）と、ヘッドレス Chrome で 22 枚撮って切り抜く目視。ラウンド 2 の修正後の 3 観点の再検証は未実施
+- **判断待ち**: 対案 A の実測、要望 5 件（2 段予兆の確定性 / 重撃 / 威圧 / 呪縛 / ダメージ式の項の位置）、正本の誤記 2 件（core §9 手順 7 の +2、手順 4 と 8 の捨ての二重）、演出上限の緩和 3 か所（二属性 1.4 から 1.5 倍、置き換え 2,400 ms、ターン開始の最悪 2,100 ms）、属性 5 色の値
+- **触っていないもの**: `src/`、`unity-port/`、`battle_core_v4.md` / `swordsman_cards_v4.md` / `enemy_roster_v4.md`、既存のモックアップとレポート。README に Development History の節が無いので README は更新していない
+
 ### 2026-09-13 - 戦闘コア v4 の設計確定（7 決定の反映、カード 80 種、敵 9 体、次セッション用プラン）
 
 #### 概要
@@ -126,17 +142,3 @@ Unity 6000.5.5f1 の実プロジェクト（`C:\Users\user\Unity\RPG-by-card`）
 - **検証基盤**: `npm run unity:trace`（`tools/gen-trace-actions.mjs`）が fixture から `Resources/trace-actions.txt`（再生用）と `expected-trace.txt`（期待値・連番付き）を生成。View は状態ごとに `[Trace] #n ...` を Console へ出すので diff で突合できる
 - **Unity 操作**: 公式 Unity CLI（`unity test` / `unity open` / `unity command eval_file|editor_play|capture_game_view`）で検証。非フォーカス Editor は Play Mode でもフレームが進まないため、eval で同期 dispatch + `EditorApplication.Step()` で描画を進めた
 - **検証結果**: EditMode 57/57、parity 58/58、トレース 18/18 一致、ランタイムエラー 0。スクリーンショット 4 枚は `docs/reports/2026-09-06-unity-phase3-ugui.html`
-
-### 2026-07-06 - Unity 以降のための作業土台（環境地固め・Logic/View・パリティ同期・キット）
-
-#### 概要
-
-Unity 移行 First Step の Phase 3（実 Unity + UGUI、Editor 必須の人間作業）に先立ち、Unity Editor 抜きで用意できる作業土台を `unity-port/` に整備した。まず現状把握として、リモート/ローカル差異は実質ゼロ（`main`=`origin/main`・作業ツリークリーン、`origin/feat/unity-core-port` が stale 残存のみ）と確認。計画が「新規 Windows デスクトップ想定」としていた開発マシンに既に到達済み（本セッションが Windows 11・GPU 有）である一方、dotnet 未導入・node_modules 未導入でコアを本機で回す足場が無い、というギャップを特定。ユーザー選択（フル土台を段階実施・このマシンを本番に確定）に基づき 4 段階で土台を構築し、Workflow による敵対的マルチエージェント検証で固めた。branch `feat/unity-foundation`（commit `1769631` = 土台）。
-
-#### 変更点
-
-- **① 環境地固め**: `npm install` で TS 依存復旧（test 204/204・build green を本機実走で確認）。`unity-port/README.md` を Mac パス（/Users/newlife・/opt/homebrew）除去し Windows 前提へ全面刷新、dotnet 導入手順（`winget install Microsoft.DotNet.SDK.10`）を明記。
-- **② コード土台（純 C#・ヘッドレス検証可）**: `BattleCore/BattleStore.cs`（React useReducer 相当の Logic 層。購読型・no-op 抑制・`ToViewModel()`）、`BattleCore/IBattleView.cs`（View 契約 + `BattleViewModel` フラット射影）、`BattleCore.Tests/BattleStoreTests.cs`（パリティトレース準拠 8 件）。ストア方式は手書き reducer に確定（AppUI Redux 不採用）。
-- **③ パリティ同期（TS↔C# ドリフト検出のワンコマンド化）**: `parityFixture.test.ts`（常時ドリフトガード + `PARITY_WRITE=1` で fixture 再生成）、`unity-port/tools/gen-parity.mjs`・`parity-check.mjs`（`npm run parity:gen`/`parity:check`、クロスプラットフォーム node 製）、`.gitattributes` で fixture を LF 固定（autocrlf 由来の無用差分を排除）。
-- **④ 実行キット + 計画更新**: `unity-port/unity-project-kit/`（`BattleCore.asmdef`=engine-free / `BattleCore.Tests.asmdef` / Unity `.gitignore` / `BattleScreenView.cs` 雛形 / README）、`unity-port/PHASE3-KICKOFF.md`（Windows 手順 + Unity MCP 選定: IvanMurzak/Unity-MCP 第一候補・CoplayDev 代替、公式版はサブスク必須で除外。deep-web-research 調査・確度 medium）。計画書 `2026-06-28-unity-first-step-core-port.md` の決定記録更新（開発マシン=Windows 確定、ストア=手書き reducer 確定、MCP 暫定選定、作業土台節追加）。
-- **検証（敵対的マルチエージェント）**: Workflow で C# コンパイル整合性・同期スクリプト・キット/ドキュメントを 3 次元並列レビュー→各指摘を敵対的検証。C# 整合性は CLEAN（指摘ゼロ。dotnet 未導入のため未コンパイル、導入後 `dotnet test` 58/58 想定＝49 unit + 8 BattleStore/View + 1 parity）。confirmed minor 2 件を修正: `parity-check.mjs` のドリフト基準を `git diff` → `git diff HEAD`（stage 時の偽陰性解消）、docs の `50/50` → 実数 `58` に統一。

@@ -43,7 +43,8 @@
 
 - `battle_document/battle_core_v4.md` - **数値の正本（2026-09-13、v3 を置き換え）**: 属性 5 つ × 投入量、特性（属性コンボ）、状態 10 語 + ボス専用 2、スタンス枠 1、手札 5 枚 / 全捨て、デッキ 15〜80 / 同種 3、敵ごとの間合い（1〜2 体）、連戦モード、試験台の基準 9 項目。カードは `card_document/swordsman_cards_v4.md`、敵は `enemy_document/enemy_roster_v4.md`。実装は `vision/plans/2026-09-13-battle-v4-implementation.md`
 - `battle_document/battle_core_v3.md` - 数値の旧正本（2026-09-12、v4 の前提）: 間合い × スタミナ投入、予兆、崩し、構え。旧 `battle_logic.md` / `buff_debuff_system.md` / `element_system_spec.md` は Web 版の記録
-- `battle_document/battle_ui_ux_v1.md` - **戦闘 UI / UX の正本（2026-09-12、80% 設計）**: 情報設計・L1 レイアウト・2 操作のプレイ・見た目 3 案（推奨 A 霧と灯り）・演出の ms と補間・Unity 写像。モックアップは `docs/mockups/2026-09-12-battle-uiux-mockup.html`
+- `battle_document/battle_ui_ux_v2.md` - **戦闘 UI / UX の正本（2026-09-13、core v4.1 対応）**: 情報設計の全面改訂（属性 5 の枠色 / 特性の合図 / 状態チップ / スタンス枠 / 2 体戦 / 精鋭の予兆 2 段 / 連戦の進捗）、L1 v2 と対案 2 つ、ドラッグ主操作（帯 = 投入量、矢印 = 相手、場 = 自分と全体）、演出の文法（系統 8 × 段 4 × 固有の飾り）、Unity 写像 v2 とアセット一覧。モックアップは `docs/mockups/2026-09-13-battle-uiux-v4-mockup.html`、判断材料は `docs/reports/2026-09-13-battle-uiux-v4-80.html`
+- `battle_document/battle_ui_ux_v1.md` - 戦闘 UI / UX の旧正本（2026-09-12、v1.2、core v3 前提。View v1.1 の実装記録）: 情報設計 20 項目・L1 / L2・2 操作のプレイ・見た目 3 案と A 採用・演出 10 節・Unity 写像。モックアップは `docs/mockups/2026-09-12-battle-uiux-mockup.html`
 
 ### Card System
 
