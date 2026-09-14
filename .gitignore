@@ -28,3 +28,8 @@ yarn-error.log*
 
 # Binary documents (not tracked in repo)
 *.docx
+
+# Environment files (API keys)
+.env
+.env.*
+!.env.example
