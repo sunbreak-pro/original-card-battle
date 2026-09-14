@@ -1,0 +1,1340 @@
+<title>ドラッグ選択 試遊台</title>
+<meta name="description" content="戦闘画面でカードを出す相手の選び方 4 案（受け皿 / ボタン列 / タップ確認 / 投げ上げ線）を試して比べる台">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+  /* Single committed dark game-screen world: every color is painted explicitly. */
+  :root {
+    color-scheme: dark;
+    --ground: #0e1c26;
+    --page: #09141b;
+    --panel: rgba(16, 32, 42, .84);
+    --ink: #eef3f0;
+    --muted: #a3b5b3;
+    --line: rgba(190, 215, 210, .16);
+    --accent: #63e0c9;
+    --warm: #ffc46b;
+    --omen: #ff5d47;
+    --guard: #9cc7ff;
+    --whiff: #7d8a8c;
+    --amber: #f0a848;
+    --f-min: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", serif;
+    --f-ui: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    --f-num: "IBM Plex Mono", "Consolas", "Menlo", ui-monospace, monospace;
+  }
+  html, body { background: var(--page); color: var(--ink); }
+  body {
+    margin: 0;
+    font-family: var(--f-ui);
+    font-size: 14px;
+    line-height: 1.6;
+    padding-inline: 16px;
+    padding-block: 18px 40px;
+  }
+  .wrap { max-width: 1600px; margin-inline: auto; display: grid; gap: 14px; justify-items: center; }
+  .wrap > * { width: 100%; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* ---------- page header + control bar (outside the game screen) ---------- */
+  .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+  .head h1 { margin: 0; font-family: var(--f-min); font-weight: 700; font-size: 22px; letter-spacing: .04em; text-wrap: balance; }
+  .head .sub { color: var(--muted); font-family: var(--f-num); font-size: 12px; letter-spacing: .02em; }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+  .seg { display: flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; background: rgba(16, 32, 42, .6); }
+  .seg button {
+    border: 1px solid transparent; background: transparent; border-radius: 7px;
+    padding: 6px 12px; cursor: pointer; color: var(--muted); display: inline-flex; align-items: baseline; gap: 7px;
+    min-height: 36px;
+  }
+  .seg button:hover { color: var(--ink); background: rgba(190, 215, 210, .06); }
+  .seg button[aria-pressed="true"] { color: var(--ink); background: rgba(99, 224, 201, .14); border-color: rgba(99, 224, 201, .55); }
+  .seg b { font-family: var(--f-num); font-weight: 600; font-size: 13px; color: var(--accent); }
+  .seg button[aria-pressed="false"] b { color: var(--muted); }
+  .btn-plain {
+    border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 6px 14px;
+    cursor: pointer; color: var(--ink); min-height: 36px;
+  }
+  .btn-plain:hover { border-color: rgba(190, 215, 210, .4); }
+  .hint { margin: 0; display: flex; align-items: center; gap: 10px; color: var(--ink); font-size: 15px; min-height: 24px; }
+  .hint::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; box-shadow: 0 0 10px rgba(99, 224, 201, .7); }
+  .hint.flash { animation: hintFlash .6s ease-out; }
+  @keyframes hintFlash { 0% { color: var(--accent); } 100% { color: var(--ink); } }
+
+  /* ---------- stage: 1600x900 reference, scaled by JS to the wrapper width ---------- */
+  .stage-wrap {
+    position: relative; overflow: hidden; aspect-ratio: 16 / 9; max-width: 100%;
+    width: min(100%, 1600px, max(520px, calc((100vh - 150px) * 16 / 9)));
+    width: min(100%, 1600px, max(520px, calc((100svh - 150px) * 16 / 9)));
+    border-radius: 6px; border: 1px solid var(--line); background: var(--ground);
+    justify-self: center;
+  }
+  .stage {
+    position: absolute; left: 0; top: 0; width: 1600px; height: 900px; transform-origin: 0 0;
+    overflow: hidden; user-select: none; -webkit-user-select: none;
+    background:
+      radial-gradient(ellipse 60% 38% at 50% 62%, rgba(99, 140, 150, .10), transparent 70%),
+      linear-gradient(180deg, #0b1720 0%, #0e1c26 30%, #1d3340 52%, #152833 72%, #0f1a22 100%);
+    font-family: var(--f-ui);
+  }
+  .stage .lamp { position: absolute; left: 150px; top: 120px; width: 520px; height: 420px; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(255, 196, 107, .10), rgba(255, 196, 107, .03) 55%, transparent); }
+  .stage .mist { position: absolute; inset: 0; pointer-events: none; }
+  .stage .mist i { position: absolute; border-radius: 50%; filter: blur(40px); background: rgba(163, 200, 205, .07); animation: drift 22s ease-in-out infinite alternate; }
+  @keyframes drift { from { transform: translateX(-40px); } to { transform: translateX(60px); } }
+  .stage .horizon { position: absolute; left: 0; right: 0; top: 452px; height: 1px; background: linear-gradient(90deg, transparent, rgba(190, 215, 210, .10) 20%, rgba(190, 215, 210, .10) 80%, transparent); }
+
+  /* corner row */
+  .stage .corner { position: absolute; left: 26px; top: 20px; display: flex; align-items: center; gap: 22px; color: var(--muted); font-size: 18px; }
+  .stage .corner span { display: inline-flex; align-items: center; gap: 7px; }
+  .stage .corner svg { width: 22px; height: 22px; stroke: var(--muted); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .stage .corner .n { font-family: var(--f-num); color: var(--ink); font-variant-numeric: tabular-nums; font-size: 18px; }
+  .stage .dots { gap: 6px !important; }
+  .stage .dots i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--muted); box-sizing: border-box; }
+  .stage .dots i.on { background: var(--ink); border-color: var(--ink); }
+  .stage .journal { position: absolute; right: 22px; top: 14px; width: 48px; height: 48px; border-radius: 10px; border: 1px solid transparent; background: transparent; cursor: pointer; display: grid; place-items: center; }
+  .stage .journal:hover { border-color: var(--line); background: rgba(16, 32, 42, .6); }
+  .stage .journal svg { width: 26px; height: 26px; stroke: var(--muted); fill: none; stroke-width: 1.8; stroke-linejoin: round; }
+
+  /* units (a character with its HP bar, chips, badge) */
+  .stage .unit { position: absolute; left: 0; top: 0; width: 0; height: 0; transform: translateX(var(--ux, 0px)); transition: transform 380ms cubic-bezier(.3, .7, .2, 1); }
+  .stage .unit .shadow { position: absolute; top: 532px; height: 24px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 0, 0, .55), transparent); }
+  .stage .unit .ring { position: absolute; top: 528px; height: 32px; border-radius: 50%; border: 2px solid transparent; transition: border-color 120ms, box-shadow 120ms; }
+  .stage .unit.aimed .ring { border-color: var(--accent); box-shadow: 0 0 24px rgba(99, 224, 201, .55); }
+  .stage .unit .fig { position: absolute; overflow: visible; }
+  .stage .unit .fig use { fill: #07121a; stroke-width: 2.2; stroke-linejoin: round; }
+  .stage .unit.side-self .fig use { stroke: rgba(99, 224, 201, .55); }
+  .stage .unit.side-foe .fig use { stroke: rgba(255, 93, 71, .5); }
+  .stage .unit.down .fig { opacity: .25; transform: translateY(14px); transition: opacity 400ms, transform 400ms; }
+  .stage .unit.down .hp, .stage .unit.down .badge, .stage .unit.down .chips { opacity: .25; }
+  .stage .hp { position: absolute; width: 150px; left: -75px; display: flex; align-items: center; gap: 8px; }
+  .stage .hp .bar { position: relative; flex: 1; height: 9px; border-radius: 5px; background: rgba(0, 0, 0, .45); border: 1px solid var(--line); overflow: hidden; }
+  .stage .hp .lag, .stage .hp .fill { position: absolute; left: 0; top: 0; bottom: 0; }
+  .stage .hp .lag { background: var(--omen); transition: width 500ms ease-in 240ms; }
+  .stage .hp .fill { background: var(--warm); transition: width 160ms ease-out; }
+  .stage .hp .v { font-family: var(--f-num); font-size: 17px; color: var(--warm); font-variant-numeric: tabular-nums; min-width: 28px; }
+  .stage .chips { position: absolute; left: -75px; width: 150px; display: flex; gap: 6px; justify-content: center; }
+  .stage .chip { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 9px; border-radius: 14px; background: var(--panel); font-size: 15px; animation: chipIn 220ms ease-out; }
+  .stage .chip svg { width: 16px; height: 16px; fill: none; stroke-width: 2; stroke-linejoin: round; }
+  .stage .chip.guard { border: 1.5px solid var(--guard); color: var(--guard); font-family: var(--f-num); }
+  .stage .chip.guard svg { stroke: var(--guard); }
+  .stage .chip.mark { border: 1.5px solid var(--omen); color: var(--ink); }
+  @keyframes chipIn { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .stage .badge {
+    position: absolute; top: 556px; left: -17px; width: 34px; height: 34px; box-sizing: border-box; border-radius: 7px;
+    display: grid; place-items: center; font-family: var(--f-min); font-weight: 700; font-size: 20px; line-height: 1;
+  }
+  .stage .side-self .badge { border: 2px solid var(--accent); color: var(--accent); }
+  .stage .side-foe .badge { border: 2px solid var(--omen); color: var(--omen); }
+  .stage .side-self .badge.near { background: var(--accent); color: #07121a; }
+  .stage .side-foe .badge.near { background: var(--omen); color: #07121a; }
+  .stage .badge.flip { animation: flip 150ms linear; }
+  @keyframes flip { 0% { transform: scaleX(1); } 50% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
+
+  /* floating numbers */
+  .stage .float { position: absolute; transform: translateX(-50%); font-family: var(--f-num); font-weight: 600; font-size: 44px; pointer-events: none; z-index: 70;
+    text-shadow: 0 2px 0 #050b10, 0 0 18px rgba(0, 0, 0, .8); animation: floatUp 900ms ease-out forwards; white-space: nowrap; }
+  .stage .float.dmg { color: var(--omen); }
+  .stage .float.grd { color: var(--guard); font-size: 36px; }
+  .stage .float.etc { color: var(--ink); font-family: var(--f-min); font-size: 34px; }
+  @keyframes floatUp { 0% { opacity: 0; transform: translate(-50%, 10px) scale(.8); } 15% { opacity: 1; transform: translate(-50%, 0) scale(1.08); } 100% { opacity: 0; transform: translate(-50%, -70px) scale(1); } }
+  .stage .unit.hit .fig { animation: hit 260ms ease-out; }
+  @keyframes hit { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(10px); } 60% { transform: translateX(-6px); } }
+
+  /* ---------- pattern overlays ---------- */
+  .stage .overlay { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  /* A: plates */
+  .stage .plate {
+    position: absolute; top: 96px; height: 516px; box-sizing: border-box; border-radius: 18px;
+    border: 2px dashed rgba(99, 224, 201, .45);
+    background: linear-gradient(180deg, rgba(99, 224, 201, .10), rgba(99, 224, 201, .03) 70%, rgba(99, 224, 201, .08));
+    animation: plateIn 140ms ease-out; transition: border-color 90ms, background 90ms, box-shadow 90ms;
+  }
+  .stage .plate .pv { position: absolute; left: 0; right: 0; top: 18px; text-align: center; opacity: 0; transform: translateY(6px); transition: opacity 90ms, transform 90ms; }
+  .stage .plate.hot { border: 3px solid var(--accent); background: linear-gradient(180deg, rgba(99, 224, 201, .22), rgba(99, 224, 201, .07) 70%, rgba(99, 224, 201, .14)); box-shadow: 0 0 44px rgba(99, 224, 201, .28), inset 0 0 30px rgba(99, 224, 201, .12); }
+  .stage .plate.hot .pv { opacity: 1; transform: none; }
+  @keyframes plateIn { from { opacity: 0; transform: scaleY(.94); } to { opacity: 1; transform: none; } }
+  .stage .val { font-family: var(--f-num); font-weight: 600; font-size: 58px; line-height: 1.1; text-shadow: 0 2px 0 #050b10, 0 0 16px rgba(0, 0, 0, .7); white-space: nowrap; }
+  .stage .val.dmg { color: var(--omen); }
+  .stage .val.grd { color: var(--guard); }
+  .stage .val.etc { color: var(--ink); font-family: var(--f-min); font-weight: 700; }
+  .stage .val small { font-family: var(--f-min); font-size: .62em; margin-right: .12em; }
+
+  /* B: button row above the hand */
+  .stage .brow { position: absolute; left: 0; right: 0; top: 598px; height: 56px; display: flex; justify-content: center; gap: 18px; z-index: 40; pointer-events: none; }
+  .stage .tbtn {
+    pointer-events: auto; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 16px;
+    min-width: 210px; height: 56px; padding: 0 22px; box-sizing: border-box; border-radius: 12px;
+    background: rgba(9, 22, 30, .92); border: 2px solid rgba(99, 224, 201, .45); color: var(--ink);
+    animation: plateIn 120ms ease-out; transition: transform 90ms, border-color 90ms, background 90ms, box-shadow 90ms;
+  }
+  .stage .tbtn .nm { font-size: 22px; font-weight: 500; }
+  .stage .tbtn .val { font-size: 32px; }
+  .stage .tbtn:hover, .stage .tbtn.hot { border-color: var(--accent); background: rgba(22, 60, 62, .95); box-shadow: 0 0 26px rgba(99, 224, 201, .35); transform: translateY(-4px); }
+  /* C: confirm buttons at the feet */
+  .stage .cbtn {
+    position: absolute; top: 602px; transform: translateX(-50%); pointer-events: auto; cursor: pointer; z-index: 45;
+    display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 18px 0 12px; box-sizing: border-box; border-radius: 26px;
+    background: rgba(9, 22, 30, .94); border: 2px solid var(--accent); color: var(--ink); animation: cIn 160ms ease-out;
+    box-shadow: 0 0 20px rgba(99, 224, 201, .25);
+  }
+  .stage .cbtn svg { width: 26px; height: 26px; stroke: var(--accent); fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .stage .cbtn .val { font-size: 30px; }
+  .stage .cbtn:hover { background: rgba(22, 60, 62, .96); }
+  @keyframes cIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  /* D: throw line + zones */
+  .stage .tline { position: absolute; left: 50px; right: 50px; top: 655px; height: 0; border-top: 3px dotted rgba(99, 224, 201, .55); z-index: 12; pointer-events: none; }
+  .stage .tline::before, .stage .tline::after { content: ""; position: absolute; top: -16px; width: 12px; height: 12px; border-left: 2.5px solid rgba(99, 224, 201, .7); border-top: 2.5px solid rgba(99, 224, 201, .7); transform: rotate(45deg); }
+  .stage .tline::before { left: -30px; }
+  .stage .tline::after { right: -30px; }
+  .stage .zone { position: absolute; top: 0; height: 655px; box-sizing: border-box; background: rgba(99, 224, 201, .035); border: 2px solid transparent; transition: background 90ms, border-color 90ms; }
+  .stage .zone.hot { background: rgba(99, 224, 201, .13); border-color: rgba(99, 224, 201, .6); }
+  .stage .zone .zl { position: absolute; left: var(--lx, 50%); transform: translateX(-50%); white-space: nowrap; top: 110px; display: flex; justify-content: center; align-items: baseline; gap: 16px; opacity: .45; transition: opacity 90ms; }
+  .stage .zone.hot .zl { opacity: 1; }
+  .stage .zone .nm { font-size: 30px; color: var(--ink); font-weight: 500; text-shadow: 0 2px 0 #050b10; }
+  .stage .zdiv { position: absolute; left: 799px; top: 0; height: 655px; width: 0; border-left: 2px dashed rgba(99, 224, 201, .3); }
+
+  /* ---------- hand ---------- */
+  .stage .hand { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
+  .stage .card {
+    --x: 0px; --y: 694px; --r: 0deg; --s: 1; --lift: 0px;
+    position: absolute; left: 0; top: 0; width: 150px; height: 200px; box-sizing: border-box; padding: 0; margin: 0;
+    pointer-events: auto; cursor: grab; touch-action: none; border-radius: 12px; text-align: left;
+    transform-origin: 50% 60%;
+    transform: translate(var(--x), calc(var(--y) + var(--lift))) rotate(var(--r)) scale(var(--s));
+    transition: transform 200ms cubic-bezier(.3, .7, .2, 1), opacity 200ms, box-shadow 160ms;
+    background: linear-gradient(180deg, #1b3441 0%, #11242f 60%, #0c1b24 100%);
+    border: 2px solid var(--frame, var(--line)); color: var(--ink);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .45), inset 0 0 0 4px rgba(7, 18, 26, .7), inset 0 0 0 5px rgba(190, 215, 210, .10);
+  }
+  .stage .card[data-attr="attack"] { --frame: rgba(255, 93, 71, .85); }
+  .stage .card[data-attr="guard"] { --frame: rgba(156, 199, 255, .85); }
+  .stage .card[data-attr="move"] { --frame: rgba(238, 243, 240, .8); }
+  .stage .card[data-attr="skill"] { --frame: rgba(99, 224, 201, .85); }
+  @media (hover: hover) { .stage .card:not(.dragging):not(.sel):hover { --lift: -16px; z-index: 5; } }
+  .stage .card.sel { --lift: -14px; --r: 0deg !important; --s: 1.05; z-index: 6; box-shadow: 0 0 0 3px var(--accent), 0 0 34px rgba(99, 224, 201, .45), 0 14px 28px rgba(0, 0, 0, .5); }
+  .stage .card.dragging { cursor: grabbing; z-index: 60; transition: transform 70ms linear, opacity 120ms; box-shadow: 0 0 0 3px var(--accent), 0 18px 36px rgba(0, 0, 0, .6); }
+  .stage .card.dragging.over { opacity: .82; }
+  .stage .card.nudge { animation: nudge 260ms ease-out; }
+  @keyframes nudge { 0%, 100% { margin-top: 0; } 40% { margin-top: -18px; } }
+  .stage .card.flying { pointer-events: none; transition: transform 240ms ease-in, opacity 240ms ease-in; opacity: 0; z-index: 65; }
+  .stage .card .cost { position: absolute; left: 9px; top: 9px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: rgba(4, 12, 17, .8); border: 1px solid rgba(190, 215, 210, .35); font-family: var(--f-num); font-weight: 600; font-size: 19px; color: var(--ink); }
+  .stage .card .tgt { position: absolute; right: 10px; top: 12px; width: 26px; height: 26px; }
+  .stage .card .tgt svg { width: 26px; height: 26px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .stage .card .tgt.foe svg { stroke: var(--omen); }
+  .stage .card .tgt.self svg { stroke: var(--accent); }
+  .stage .card .nm { position: absolute; left: 0; right: 0; top: 44px; height: 120px; display: flex; justify-content: center; align-items: center; }
+  .stage .card .nm span { writing-mode: vertical-rl; font-family: var(--f-min); font-weight: 700; font-size: 38px; letter-spacing: .06em; line-height: 1; white-space: nowrap; color: var(--ink); text-shadow: 0 2px 0 rgba(0, 0, 0, .5); }
+  .stage .card .nm.long span { font-size: 31px; letter-spacing: .02em; }
+  .stage .card .base { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; justify-content: center; align-items: baseline; gap: 8px; font-family: var(--f-num); font-size: 17px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 6px; white-space: nowrap; }
+  .stage .card .base em { font-style: normal; font-family: var(--f-min); font-size: 15px; color: var(--muted); }
+  .stage .card .base b { font-weight: 600; color: var(--ink); }
+  .stage .card .key { position: absolute; left: 50%; bottom: -26px; transform: translateX(-50%); font-family: var(--f-num); font-size: 13px; color: rgba(163, 181, 179, .5); }
+
+  /* ---------- comparison panel ---------- */
+  .compare { display: grid; gap: 8px; }
+  .compare .row { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; }
+  .compare h2 { margin: 0; font-family: var(--f-min); font-weight: 700; font-size: 17px; letter-spacing: .04em; }
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: rgba(16, 32, 42, .45); }
+  table { border-collapse: collapse; width: 100%; min-width: 360px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 14px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  tr:last-child td { border-bottom: 0; }
+  th { font-weight: 500; font-size: 12px; color: var(--muted); letter-spacing: .06em; }
+  td { font-family: var(--f-num); font-size: 15px; color: var(--ink); }
+  td:first-child { font-family: var(--f-ui); }
+  td:first-child b { font-family: var(--f-num); color: var(--accent); margin-right: 8px; }
+  td .u { color: var(--muted); font-size: 12px; margin-left: 3px; }
+  td.best { color: var(--accent); }
+  td.none { color: var(--whiff); }
+  tr.cur td { background: rgba(99, 224, 201, .06); }
+  .note { color: var(--muted); font-size: 12.5px; margin: 0; max-width: 72ch; }
+  #selftest-result { margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: #060d12; color: var(--ink); font-family: var(--f-num); font-size: 12.5px; white-space: pre-wrap; overflow-x: auto; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    .stage .mist i, .stage .float, .stage .unit.hit .fig, .stage .badge.flip, .stage .card.nudge, .hint.flash { animation: none !important; }
+    .stage .card, .stage .unit, .stage .card.flying { transition-duration: 0ms !important; }
+    .stage .float { opacity: 1; }
+  }
+  /* Self-test: zero every duration so assertions read final state immediately. */
+  html.no-anim *, html.no-anim *::before, html.no-anim *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition-duration: 0s !important; transition-delay: 0s !important; }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h1>ドラッグ選択の試遊台</h1>
+    <span class="sub">戦闘 UI v2.1 §10.5 の 4 案 ・ 2026-09-14</span>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="選び方の案" id="patternSeg">
+      <button type="button" id="pat-A" data-pattern="A" aria-pressed="true"><b>A</b>受け皿</button>
+      <button type="button" id="pat-B" data-pattern="B" aria-pressed="false"><b>B</b>ボタン列</button>
+      <button type="button" id="pat-C" data-pattern="C" aria-pressed="false"><b>C</b>タップ確認</button>
+      <button type="button" id="pat-D" data-pattern="D" aria-pressed="false"><b>D</b>投げ上げ線</button>
+    </div>
+    <div class="seg" role="group" aria-label="敵の数" id="enemySeg">
+      <button type="button" id="en-1" data-enemies="1" aria-pressed="true">1 体</button>
+      <button type="button" id="en-2" data-enemies="2" aria-pressed="false">2 体</button>
+    </div>
+    <button type="button" id="resetBtn" class="btn-plain">やり直す</button>
+  </div>
+  <p class="hint" id="hint" aria-live="polite"></p>
+
+  <div class="stage-wrap" id="stageWrap">
+    <div class="stage" id="stage">
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+          <symbol id="sym-swordsman" viewBox="0 0 200 300">
+            <path d="M58 140 L120 138 L142 288 L100 288 L90 200 L80 288 L36 288 Z"/>
+            <path d="M66 58 Q88 50 108 60 L118 146 L60 150 Q58 100 66 58 Z"/>
+            <circle cx="86" cy="38" r="18"/>
+            <ellipse cx="71" cy="20" rx="9" ry="6"/>
+            <path d="M68 66 L108 62 L138 108 L128 124 L92 98 Z"/>
+            <path d="M122 122 L134 106 L141 111 L129 127 Z"/>
+            <path d="M138 108 Q168 62 196 22 L199 26 Q175 66 143 112 Z"/>
+          </symbol>
+          <symbol id="sym-polearm" viewBox="-20 -90 240 470">
+            <path d="M8 -30 L14 -32 L143 371 L137 373 Z"/>
+            <path d="M10 -28 Q-14 -46 -4 -80 Q26 -60 20 -34 Z"/>
+            <path d="M104 236 L130 238 L112 300 L126 372 L100 372 L90 302 Z"/>
+            <path d="M140 236 L166 236 L178 300 L160 372 L138 372 L154 304 Z"/>
+            <path d="M98 90 Q118 44 156 70 Q184 92 172 150 L158 240 L100 244 Q86 176 98 90 Z"/>
+            <circle cx="152" cy="66" r="24"/>
+            <path d="M104 236 L92 274 L106 264 L112 294 L122 244 Z"/>
+            <circle cx="86" cy="104" r="17"/>
+            <path d="M100 112 L116 126 L82 178 L68 170 Z"/>
+            <path d="M146 96 L164 108 L104 238 L88 228 Z"/>
+            <circle cx="75" cy="174" r="8"/>
+            <circle cx="96" cy="232" r="8"/>
+            <circle cx="77" cy="102" r="3" fill="#ff5d47" stroke="none"/>
+          </symbol>
+          <symbol id="sym-alpha" viewBox="0 0 340 280">
+            <path d="M292 130 Q336 118 334 70 Q344 110 300 150 Z"/>
+            <path d="M232 186 L258 182 L252 272 L228 272 Z"/>
+            <path d="M270 170 L296 160 L306 272 L282 272 Z"/>
+            <ellipse cx="200" cy="150" rx="105" ry="56"/>
+            <path d="M100 180 L124 184 L114 272 L92 272 Z"/>
+            <path d="M136 190 L160 190 L162 272 L140 272 Z"/>
+            <path d="M70 170 L64 96 L92 110 L96 58 L122 92 L140 46 L154 92 L178 56 L180 100 L206 96 Q190 170 110 196 Z"/>
+            <path d="M86 118 L28 142 L8 164 L24 176 L64 178 L100 168 Z"/>
+            <path d="M66 124 L72 94 L88 122 Z"/>
+            <circle cx="40" cy="152" r="3.5" fill="#ff5d47" stroke="none"/>
+          </symbol>
+          <symbol id="sym-pup" viewBox="0 0 180 140">
+            <path d="M150 66 Q176 54 172 26 Q184 58 154 78 Z"/>
+            <path d="M124 92 L136 90 L136 136 L124 136 Z"/>
+            <path d="M140 84 L152 80 L160 136 L148 136 Z"/>
+            <ellipse cx="104" cy="76" rx="50" ry="22"/>
+            <path d="M72 88 L84 90 L76 136 L64 136 Z"/>
+            <path d="M92 94 L104 94 L102 136 L90 136 Z"/>
+            <path d="M60 60 L20 70 L8 84 L20 90 L50 92 L70 82 Z"/>
+            <path d="M44 62 L50 42 L60 62 Z"/>
+            <circle cx="22" cy="78" r="2.5" fill="#ff5d47" stroke="none"/>
+          </symbol>
+        </defs>
+      </svg>
+
+      <div class="lamp" aria-hidden="true"></div>
+      <div class="mist" aria-hidden="true">
+        <i style="left:-80px;top:360px;width:720px;height:170px"></i>
+        <i style="left:620px;top:420px;width:640px;height:140px;animation-delay:-8s"></i>
+        <i style="left:1100px;top:330px;width:620px;height:180px;animation-delay:-15s"></i>
+      </div>
+      <div class="horizon" aria-hidden="true"></div>
+
+      <div class="corner" aria-label="ターン 3、階 2、連戦 1 戦目、霧 32%">
+        <span title="ターン"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12M6 21h12M7 3c0 6 5 6 5 9s-5 3-5 9M17 3c0 6-5 6-5 9s5 3 5 9"/></svg><span class="n">3</span></span>
+        <span title="階"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h5v-5h5v-5h5V5h3"/></svg><span class="n">2</span></span>
+        <span class="dots" title="連戦"><i class="on"></i><i></i><i></i></span>
+        <span title="霧"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8q3-3 6 0t6 0 6 0M3 13q3-3 6 0t6 0 6 0M5 18q3-2.5 6 0t6 0"/></svg><span class="n">32%</span></span>
+      </div>
+      <button type="button" class="journal" id="journalBtn" aria-label="手記" title="手記">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5zM5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3M9 7h6"/></svg>
+      </button>
+
+      <div id="units"></div>
+      <div class="overlay" id="overlay"></div>
+      <div class="tline" id="tline" hidden></div>
+      <div class="brow" id="brow"></div>
+      <div class="hand" id="hand"></div>
+      <div class="overlay" id="floats" style="z-index:70"></div>
+    </div>
+  </div>
+
+  <section class="compare" aria-labelledby="cmpTitle">
+    <div class="row">
+      <h2 id="cmpTitle">手触りの比較</h2>
+      <button type="button" id="clearStats" class="btn-plain">記録を消す</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th scope="col">案</th><th scope="col">出した回数</th><th scope="col">平均操作</th><th scope="col">平均時間</th><th scope="col">直近</th></tr></thead>
+        <tbody id="statsBody"></tbody>
+      </table>
+    </div>
+    <p class="note">操作は押した回数です（ドラッグ 1 回 = 1、キー 1 打 = 1）。出し損ねた分は、次に出した 1 枚に足します。時間は、カードに最初に触れてから出るまでです。やり直しても記録は残ります。キーボードでは 1〜5 でカードを選び、Enter で最初の相手に出します。</p>
+  </section>
+  <pre id="selftest-result" hidden></pre>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- config ----------
+  const params = new URLSearchParams(location.search);
+  const SELFTEST = params.get('selftest') === '1';
+  const REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (SELFTEST) document.documentElement.classList.add('no-anim');
+  const INSTANT = SELFTEST || REDUCED;
+
+  const STAGE_W = 1600;
+  const FEET_Y = 544;
+  const DRAG_THRESHOLD = 8; // client px
+  const LINE_Y = 655; // pattern D throw line (stage px)
+  const HAND_TOP = 676;
+  const CARD_W = 150;
+  const CARD_H = 200;
+  const MINUS = '−';
+  const STORE_KEY = 'drag-select-demo-stats-v1';
+
+  const ICON = {
+    foe: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg>',
+    self: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3.6"/><path d="M5 21c0-5 3-8.5 7-8.5s7 3.5 7 8.5"/></svg>',
+    check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg>'
+  };
+
+  const CARDS = {
+    tsuki: { id: 'tsuki', name: '突き', cost: 1, target: 'enemy', attr: 'attack', baseHtml: '<b>8</b><em>遠</em>+4' },
+    nagi: { id: 'nagi', name: '薙ぎ', cost: 1, target: 'enemy', attr: 'attack', baseHtml: '<b>6</b>' },
+    kamae: { id: 'kamae', name: '構え', cost: 1, target: 'self', attr: 'guard', baseHtml: '<em>盾</em><b>6</b>' },
+    ashi: { id: 'ashi', name: '足運び', cost: 0, target: 'self', attr: 'move', baseHtml: '<em>近⇄遠</em>' },
+    miru: { id: 'miru', name: '観察', cost: 1, target: 'enemy', attr: 'skill', baseHtml: '<em>印</em>' }
+  };
+  const HAND_ORDER = ['tsuki', 'nagi', 'kamae', 'ashi', 'miru'];
+
+  // Figure geometry: render box = viewBox size; footX/footY = feet center inside that box.
+  const FIGS = {
+    self: { name: '自分', short: '自分', sym: 'sym-swordsman', w: 200, h: 300, footX: 80, footY: 290, headTop: 14, hp: 50, maai: 'far', plateW: 250, ringW: 150 },
+    polearm: { name: '長柄の歪み兵', short: '長柄', sym: 'sym-polearm', w: 240, h: 470, footX: 148, footY: 462, headTop: 132, hp: 60, maai: 'far', plateW: 280, ringW: 160 },
+    alpha: { name: '群れの長', short: '長', sym: 'sym-alpha', w: 340, h: 280, footX: 175, footY: 272, headTop: 46, hp: 95, maai: 'near', plateW: 340, ringW: 280 },
+    pup: { name: '取り巻きの犬', short: '犬', sym: 'sym-pup', w: 180, h: 140, footX: 100, footY: 136, headTop: 26, hp: 32, maai: 'far', plateW: 220, ringW: 150 }
+  };
+  // Standing positions: near steps toward the center, far steps back.
+  const SELF_X = { near: 540, far: 400 };
+  const SLOTS = {
+    1: [{ near: 1060, far: 1200 }],
+    2: [{ near: 960, far: 1090 }, { near: 1280, far: 1410 }]
+  };
+
+  const PATTERN_NAMES = { A: '受け皿', B: 'ボタン列', C: 'タップ確認', D: '投げ上げ線' };
+  const HINTS = {
+    A: 'カードを掴んで、光った皿の上で離す',
+    B: 'カードを掴んで、上に出たボタンの上で離す（押して離してからボタンを押しても出せる）',
+    C: 'カードを押して持ち上げ、足元の確認ボタンを押す（カードか空きをもう一度押すと戻す）',
+    D: 'カードを点線より上へ持ち上げて離す',
+    D2: 'カードを点線より上へ持ち上げて離す（敵に出すカードは、左半分と右半分で相手が変わる）'
+  };
+
+  // ---------- state ----------
+  const emptyStats = () => ({ A: blank(), B: blank(), C: blank(), D: blank() });
+  function blank() { return { plays: 0, actions: 0, ms: 0, last: null }; }
+
+  const S = {
+    pattern: /^[ABCD]$/.test(params.get('pattern') || '') ? params.get('pattern') : 'A',
+    enemies: params.get('enemies') === '2' ? 2 : 1,
+    units: [],
+    hand: [],
+    sel: null, // card id lifted by tap or keyboard
+    press: null, // active pointer press on a card
+    hover: null, // target key under the pointer
+    session: null, // { t0, actions } from first touch to play
+    stats: emptyStats()
+  };
+  if (!SELFTEST) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+      if (saved && saved.A && saved.D) S.stats = saved;
+    } catch (err) { /* storage unavailable: keep in memory */ }
+  }
+
+  // ---------- dom ----------
+  const $ = (id) => document.getElementById(id);
+  const stageWrap = $('stageWrap');
+  const stage = $('stage');
+  const unitsEl = $('units');
+  const overlay = $('overlay');
+  const tline = $('tline');
+  const brow = $('brow');
+  const handEl = $('hand');
+  const floats = $('floats');
+  const hintEl = $('hint');
+  const statsBody = $('statsBody');
+
+  let scale = 1;
+  function fit() {
+    const parentW = stageWrap.parentElement.clientWidth;
+    const availH = window.innerHeight - Math.max(0, stageWrap.getBoundingClientRect().top) - 16;
+    const w = Math.floor(Math.min(parentW, STAGE_W, Math.max(520, availH * 16 / 9)));
+    if (Math.abs(stageWrap.clientWidth - w) > 1) stageWrap.style.width = w + 'px';
+    scale = stageWrap.clientWidth / STAGE_W || 1;
+    stage.style.transform = 'scale(' + scale + ')';
+  }
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(stageWrap);
+  window.addEventListener('resize', fit);
+  fit();
+
+  function toStage(cx, cy) {
+    const r = stage.getBoundingClientRect();
+    return { x: (cx - r.left) / scale, y: (cy - r.top) / scale };
+  }
+  function inRect(el, cx, cy) {
+    const r = el.getBoundingClientRect();
+    return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+  }
+  const now = () => performance.now();
+  const pid = (e) => (e.pointerId == null ? 1 : e.pointerId);
+
+  // ---------- model helpers ----------
+  const unit = (key) => S.units.find((u) => u.key === key);
+  const player = () => unit('self');
+  function unitX(u) {
+    return u.side === 'self' ? SELF_X[u.maai] : SLOTS[S.enemies][u.slot][u.maai];
+  }
+  function hpY(u) { return FEET_Y - u.fig.footY + u.fig.headTop - 40; }
+
+  function targetsFor(cardId) {
+    const c = CARDS[cardId];
+    if (!c) return [];
+    if (c.target === 'self') return ['self'];
+    return S.units.filter((u) => u.side === 'foe' && u.hp > 0).map((u) => u.key);
+  }
+
+  function predict(cardId, key) {
+    const u = unit(key);
+    switch (cardId) {
+      case 'tsuki': {
+        const n = 8 + (u.maai === 'far' ? 4 : 0);
+        return { cls: 'dmg', text: MINUS + n, html: MINUS + n, amount: n };
+      }
+      case 'nagi':
+        return { cls: 'dmg', text: MINUS + 6, html: MINUS + 6, amount: 6 };
+      case 'kamae':
+        return { cls: 'grd', text: '盾 +6', html: '<small>盾</small>+6', amount: 6 };
+      case 'ashi': {
+        const t = player().maai === 'far' ? '近へ' : '遠へ';
+        return { cls: 'etc', text: t, html: t, amount: 0 };
+      }
+      default:
+        return { cls: 'etc', text: '印', html: '印', amount: 0 };
+    }
+  }
+
+  // ---------- build ----------
+  function buildBattle() {
+    const foes = S.enemies === 1 ? ['polearm'] : ['alpha', 'pup'];
+    S.units = [{ key: 'self', side: 'self', fig: FIGS.self, hp: 50, maxHp: 50, guard: 0, maai: FIGS.self.maai, mark: false }]
+      .concat(foes.map((f, i) => ({ key: 'e' + i, side: 'foe', slot: i, fig: FIGS[f], hp: FIGS[f].hp, maxHp: FIGS[f].hp, guard: 0, maai: FIGS[f].maai, mark: false })));
+    S.hand = HAND_ORDER.slice();
+    S.sel = null;
+    S.press = null;
+    S.session = null;
+    renderUnits();
+    renderHand();
+    clearTargets();
+  }
+
+  function renderUnits() {
+    unitsEl.innerHTML = S.units.map(unitHtml).join('');
+    S.units.forEach((u) => updateUnit(u));
+  }
+
+  function unitHtml(u) {
+    const f = u.fig;
+    const top = FEET_Y - f.footY;
+    const y = hpY(u);
+    const label = f.name + '、間合い ' + (u.maai === 'near' ? '近間' : '遠間');
+    return '<div class="unit side-' + u.side + '" data-unit="' + u.key + '" role="img" aria-label="' + label + '" style="--ux:' + unitX(u) + 'px">' +
+      '<div class="shadow" style="left:' + (-f.ringW / 2) + 'px;width:' + f.ringW + 'px"></div>' +
+      '<div class="ring" style="left:' + (-f.ringW / 2) + 'px;width:' + f.ringW + 'px"></div>' +
+      '<svg class="fig" width="' + f.w + '" height="' + f.h + '" style="left:' + (-f.footX) + 'px;top:' + top + 'px" aria-hidden="true"><use href="#' + f.sym + '" width="' + f.w + '" height="' + f.h + '"/></svg>' +
+      '<div class="chips" style="top:' + (y - 36) + 'px"></div>' +
+      '<div class="hp" style="top:' + (y - 8) + 'px"><div class="bar"><div class="lag"></div><div class="fill"></div></div><span class="v"></span></div>' +
+      '<div class="badge"></div>' +
+      '</div>';
+  }
+
+  function unitEl(key) { return unitsEl.querySelector('.unit[data-unit="' + key + '"]'); }
+
+  function updateUnit(u, opts) {
+    const el = unitEl(u.key);
+    if (!el) return;
+    const pct = Math.max(0, (u.hp / u.maxHp) * 100) + '%';
+    el.style.setProperty('--ux', unitX(u) + 'px');
+    el.querySelector('.fill').style.width = pct;
+    el.querySelector('.lag').style.width = pct;
+    el.querySelector('.v').textContent = String(u.hp);
+    el.classList.toggle('down', u.hp <= 0);
+    let chips = '';
+    if (u.guard > 0) chips += '<span class="chip guard" data-chip="guard">' + ICON.shield + u.guard + '</span>';
+    if (u.mark) chips += '<span class="chip mark" data-chip="mark">印</span>';
+    const chipsEl = el.querySelector('.chips');
+    if (chipsEl.innerHTML !== chips) chipsEl.innerHTML = chips;
+    el.setAttribute('aria-label', u.fig.name + '、HP ' + u.hp + '、間合い ' + (u.maai === 'near' ? '近間' : '遠間'));
+    const badge = el.querySelector('.badge');
+    const setBadge = () => {
+      badge.textContent = u.maai === 'near' ? '近' : '遠';
+      badge.classList.toggle('near', u.maai === 'near');
+    };
+    if (opts && opts.flip && !INSTANT) {
+      badge.classList.remove('flip');
+      void badge.offsetWidth;
+      badge.classList.add('flip');
+      setTimeout(setBadge, 75);
+    } else {
+      setBadge();
+    }
+  }
+
+  function makeCard(c) {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'card';
+    el.dataset.card = c.id;
+    el.dataset.attr = c.attr;
+    el.setAttribute('aria-label', c.name + '、コスト ' + c.cost + '、' + (c.target === 'enemy' ? '敵 1 体に出す' : '自分に出す'));
+    el.innerHTML = '<span class="cost">' + c.cost + '</span>' +
+      '<span class="tgt ' + (c.target === 'enemy' ? 'foe' : 'self') + '">' + (c.target === 'enemy' ? ICON.foe : ICON.self) + '</span>' +
+      '<span class="nm' + (c.name.length >= 3 ? ' long' : '') + '"><span>' + c.name + '</span></span>' +
+      '<span class="base">' + c.baseHtml + '</span>';
+    el.addEventListener('pointerdown', onCardDown);
+    return el;
+  }
+
+  function renderHand() {
+    handEl.textContent = '';
+    S.hand.forEach((id) => handEl.appendChild(makeCard(CARDS[id])));
+    layoutHand();
+  }
+
+  function cardEl(id) { return handEl.querySelector('.card[data-card="' + id + '"]:not(.flying)'); }
+
+  function layoutHand() {
+    const n = S.hand.length;
+    const mid = (n - 1) / 2;
+    const gap = 128;
+    S.hand.forEach((id, i) => {
+      const el = cardEl(id);
+      if (!el || (S.press && S.press.dragging && S.press.el === el)) return;
+      const d = i - mid;
+      el.style.setProperty('--x', (800 - CARD_W / 2 + d * gap) + 'px');
+      el.style.setProperty('--y', (HAND_TOP + d * d * 3) + 'px');
+      el.style.setProperty('--r', (d * 4.5) + 'deg');
+      el.style.removeProperty('--s');
+    });
+  }
+
+  // ---------- target overlays ----------
+  function clearTargets() {
+    overlay.textContent = '';
+    brow.textContent = '';
+    S.hover = null;
+    unitsEl.querySelectorAll('.unit.aimed').forEach((el) => el.classList.remove('aimed'));
+  }
+
+  function setHover(key) {
+    if (S.hover === key) return;
+    S.hover = key;
+    overlay.querySelectorAll('[data-t]').forEach((el) => el.classList.toggle('hot', el.dataset.t === key));
+    brow.querySelectorAll('[data-t]').forEach((el) => el.classList.toggle('hot', el.dataset.t === key));
+    unitsEl.querySelectorAll('.unit').forEach((el) => el.classList.toggle('aimed', el.dataset.unit === key));
+  }
+
+  function showTargets(cardId) {
+    clearTargets();
+    const ts = targetsFor(cardId);
+    if (S.pattern === 'A') buildPlates(cardId, ts);
+    else if (S.pattern === 'B') buildRow(cardId, ts);
+    else if (S.pattern === 'C') buildConfirms(cardId, ts);
+    else buildZones(cardId, ts);
+  }
+
+  function valHtml(pv) { return '<span class="val ' + pv.cls + '">' + pv.html + '</span>'; }
+
+  function buildPlates(cardId, ts) {
+    const xs = ts.map((k) => unitX(unit(k)));
+    ts.forEach((k, i) => {
+      const u = unit(k);
+      let l = xs[i] - u.fig.plateW / 2;
+      let r = xs[i] + u.fig.plateW / 2;
+      // Adjacent plates never overlap: split at the midpoint between the two targets.
+      if (i > 0) l = Math.max(l, (xs[i - 1] + xs[i]) / 2 + 6);
+      if (i < ts.length - 1) r = Math.min(r, (xs[i] + xs[i + 1]) / 2 - 6);
+      const el = document.createElement('div');
+      el.className = 'plate';
+      el.dataset.t = k;
+      el.style.left = l + 'px';
+      el.style.width = (r - l) + 'px';
+      el.style.top = '60px';
+      el.style.height = '540px';
+      el.innerHTML = '<div class="pv">' + valHtml(predict(cardId, k)) + '</div>';
+      overlay.appendChild(el);
+    });
+  }
+
+  function buildRow(cardId, ts) {
+    ts.forEach((k) => {
+      const u = unit(k);
+      const pv = predict(cardId, k);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tbtn';
+      b.dataset.t = k;
+      b.setAttribute('aria-label', u.fig.name + 'に' + CARDS[cardId].name + '（' + pv.text + '）');
+      b.innerHTML = '<span class="nm">' + u.fig.short + '</span>' + valHtml(pv);
+      b.addEventListener('click', () => { if (S.sel === cardId) play(cardId, k); });
+      brow.appendChild(b);
+    });
+  }
+
+  function buildConfirms(cardId, ts) {
+    ts.forEach((k) => {
+      const u = unit(k);
+      const pv = predict(cardId, k);
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cbtn';
+      b.dataset.t = k;
+      b.style.left = unitX(u) + 'px';
+      b.setAttribute('aria-label', u.fig.name + 'に' + CARDS[cardId].name + '（' + pv.text + '）');
+      b.innerHTML = ICON.check + valHtml(pv);
+      b.addEventListener('click', () => { if (S.sel === cardId) play(cardId, k); });
+      b.addEventListener('pointerenter', () => setHover(k));
+      b.addEventListener('pointerleave', () => { if (S.hover === k) setHover(null); });
+      overlay.appendChild(b);
+    });
+  }
+
+  // Zones split at the midpoint between the two targets so a release over an enemy's body hits that enemy.
+  function zoneBounds(ts) {
+    const xs = ts.map((k) => ({ k: k, x: unitX(unit(k)) })).sort((a, b) => a.x - b.x);
+    if (xs.length <= 1) return xs.map((t) => ({ k: t.k, l: 0, r: STAGE_W, x: t.x }));
+    const mid = Math.round((xs[0].x + xs[1].x) / 2);
+    return [{ k: xs[0].k, l: 0, r: mid, x: xs[0].x }, { k: xs[1].k, l: mid, r: STAGE_W, x: xs[1].x }];
+  }
+
+  function buildZones(cardId, ts) {
+    const zs = zoneBounds(ts);
+    zs.forEach((z) => {
+      const u = unit(z.k);
+      const el = document.createElement('div');
+      el.className = 'zone';
+      el.dataset.t = z.k;
+      el.style.left = z.l + 'px';
+      el.style.width = (z.r - z.l) + 'px';
+      el.style.setProperty('--lx', Math.min(Math.max(z.x - z.l, 90), z.r - z.l - 90) + 'px');
+      el.innerHTML = '<div class="zl"><span class="nm">' + u.fig.short + '</span>' + valHtml(predict(cardId, z.k)) + '</div>';
+      overlay.appendChild(el);
+    });
+    if (ts.length > 1) {
+      const d = document.createElement('div');
+      d.className = 'zdiv';
+      d.style.left = (zs[1].l - 1) + 'px';
+      overlay.appendChild(d);
+    }
+  }
+
+  // Which target is under the pointer for the active drag (client coordinates).
+  function hitTest(cx, cy, cardId) {
+    if (S.pattern === 'A') {
+      const p = Array.from(overlay.querySelectorAll('.plate')).find((el) => inRect(el, cx, cy));
+      return p ? p.dataset.t : null;
+    }
+    if (S.pattern === 'B') {
+      const b = Array.from(brow.querySelectorAll('.tbtn')).find((el) => inRect(el, cx, cy));
+      return b ? b.dataset.t : null;
+    }
+    if (S.pattern === 'D') {
+      const s = toStage(cx, cy);
+      if (s.y >= LINE_Y || s.y < 0 || s.x < 0 || s.x > STAGE_W) return null;
+      const z = zoneBounds(targetsFor(cardId)).find((b) => s.x >= b.l && s.x < b.r);
+      return z ? z.k : null;
+    }
+    return null;
+  }
+
+  // ---------- selection ----------
+  function select(id) {
+    S.sel = id;
+    const el = cardEl(id);
+    if (el) el.classList.add('sel');
+    showTargets(id);
+  }
+
+  function deselect() {
+    if (S.sel) {
+      const el = cardEl(S.sel);
+      if (el) el.classList.remove('sel');
+    }
+    S.sel = null;
+    clearTargets();
+  }
+
+  function hoverFirst(id) {
+    const ts = targetsFor(id);
+    if (ts.length) setHover(ts[0]);
+  }
+
+  function nudge(el) {
+    el.classList.remove('nudge');
+    void el.offsetWidth;
+    el.classList.add('nudge');
+    hintEl.classList.remove('flash');
+    void hintEl.offsetWidth;
+    hintEl.classList.add('flash');
+  }
+
+  // ---------- pointer input ----------
+  function onCardDown(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (S.press) return;
+    const el = e.currentTarget;
+    const id = el.dataset.card;
+    e.preventDefault();
+    if (S.sel && S.sel !== id) deselect();
+    S.press = { id: id, el: el, pid: pid(e), x0: e.clientX, y0: e.clientY, dragging: false };
+    try { el.setPointerCapture(e.pointerId); } catch (_) { /* synthetic self-test events have no active pointer */ }
+    el.addEventListener('lostpointercapture', onCancelPointer, { once: true });
+    if (S.pattern === 'B') showTargets(id); // row appears on press
+  }
+
+  function beginDrag(p) {
+    p.dragging = true;
+    if (S.sel === p.id) S.sel = null;
+    p.el.classList.remove('sel');
+    p.el.classList.add('dragging');
+    showTargets(p.id);
+  }
+
+  function dragTo(p, cx, cy) {
+    const s = toStage(cx, cy);
+    const hot = hitTest(cx, cy, p.id);
+    setHover(hot);
+    const sc = hot ? 0.56 : 0.66;
+    // The shrunken card hangs just below the pointer so the target under it stays visible.
+    p.el.style.setProperty('--x', (s.x - CARD_W / 2) + 'px');
+    p.el.style.setProperty('--y', (s.y - 10 - CARD_H * 0.6 * (1 - sc)) + 'px');
+    p.el.style.setProperty('--r', '0deg');
+    p.el.style.setProperty('--s', String(sc));
+    p.el.classList.toggle('over', !!hot);
+  }
+
+  function onMove(e) {
+    const p = S.press;
+    if (!p || pid(e) !== p.pid) return;
+    if (!p.dragging) {
+      if (S.pattern === 'C') return; // dragging disabled
+      if (Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < DRAG_THRESHOLD) return;
+      beginDrag(p);
+    }
+    dragTo(p, e.clientX, e.clientY);
+  }
+
+  function onUp(e) {
+    const p = S.press;
+    if (!p || pid(e) !== p.pid) return;
+    S.press = null;
+    if (p.dragging) {
+      const hot = hitTest(e.clientX, e.clientY, p.id);
+      p.el.classList.remove('dragging', 'over');
+      if (hot) {
+        play(p.id, hot);
+      } else {
+        clearTargets();
+        layoutHand();
+      }
+      return;
+    }
+    onTap(p, e);
+  }
+
+  function onCancelPointer(e) {
+    const p = S.press;
+    if (!p || pid(e) !== p.pid) return;
+    S.press = null;
+    p.el.classList.remove('dragging', 'over');
+    if (S.sel !== p.id) clearTargets();
+    layoutHand();
+  }
+
+  function onTap(p, e) {
+    const id = p.id;
+    if (S.pattern === 'A' || S.pattern === 'D') {
+      if (S.sel) deselect();
+      nudge(p.el);
+      return;
+    }
+    if (S.pattern === 'C' && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) >= DRAG_THRESHOLD && !inRect(p.el, e.clientX, e.clientY)) return;
+    if (S.sel === id) deselect();
+    else select(id);
+  }
+
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
+  window.addEventListener('pointercancel', onCancelPointer);
+  window.addEventListener('blur', () => { if (S.press) onCancelPointer({ pointerId: S.press.pid }); });
+
+  // Count every press inside the game screen while a play is in progress.
+  stage.addEventListener('pointerdown', (e) => {
+    const onCard = e.target.closest && e.target.closest('.card');
+    if (onCard && !S.session) S.session = { t0: now(), actions: 0 };
+    if (S.session) S.session.actions++;
+  }, true);
+  // Pressing empty space cancels a lifted card.
+  stage.addEventListener('pointerdown', (e) => {
+    if (e.target.closest && e.target.closest('.card, .tbtn, .cbtn, .journal')) return;
+    if (S.sel) deselect();
+  });
+
+  // ---------- keyboard ----------
+  function countKey() {
+    if (!S.session) S.session = { t0: now(), actions: 0 };
+    S.session.actions++;
+  }
+
+  function keySelect(id) {
+    if (S.sel) deselect();
+    select(id);
+    hoverFirst(id);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || S.press) return;
+    const t = e.target && e.target.closest ? e.target : null;
+    if (/^[1-5]$/.test(e.key)) {
+      const id = S.hand[Number(e.key) - 1];
+      if (!id) return;
+      e.preventDefault();
+      countKey();
+      if (S.sel === id) { deselect(); return; }
+      keySelect(id);
+      const el = cardEl(id);
+      if (el && el.focus) el.focus({ preventScroll: true });
+      return;
+    }
+    if (e.key === 'Escape') {
+      if (S.sel) deselect();
+      return;
+    }
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (t && t.closest('.tbtn, .cbtn, .controls, .compare, .journal')) return; // native click handles these
+    const cardBtn = t ? t.closest('.card') : null;
+    if (cardBtn) {
+      e.preventDefault();
+      const id = cardBtn.dataset.card;
+      if (S.sel !== id) { countKey(); keySelect(id); return; }
+    }
+    if (e.key === 'Enter' && S.sel) {
+      e.preventDefault();
+      countKey();
+      const ts = targetsFor(S.sel);
+      if (ts.length) play(S.sel, ts[0]);
+    }
+  });
+
+  // ---------- play ----------
+  function floatText(u, text, cls) {
+    const el = document.createElement('div');
+    el.className = 'float ' + cls;
+    el.style.left = unitX(u) + 'px';
+    el.style.top = (hpY(u) - 70) + 'px';
+    el.textContent = text;
+    floats.appendChild(el);
+    setTimeout(() => el.remove(), SELFTEST ? 0 : 950);
+  }
+
+  function flyAway(el, u) {
+    el.classList.remove('sel', 'dragging', 'over', 'nudge');
+    if (INSTANT) { el.remove(); return; }
+    el.classList.add('flying');
+    el.style.setProperty('--x', (unitX(u) - CARD_W / 2) + 'px');
+    el.style.setProperty('--y', (hpY(u) + 40) + 'px');
+    el.style.setProperty('--r', '0deg');
+    el.style.setProperty('--s', '0.3');
+    setTimeout(() => el.remove(), 260);
+  }
+
+  function play(cardId, key) {
+    if (!targetsFor(cardId).includes(key) || !S.hand.includes(cardId)) return false;
+    const u = unit(key);
+    const pv = predict(cardId, key);
+    let flip = false;
+    if (cardId === 'tsuki' || cardId === 'nagi') {
+      u.hp = Math.max(0, u.hp - pv.amount);
+      floatText(u, pv.text, 'dmg');
+      const ue = unitEl(key);
+      if (ue && !INSTANT) { ue.classList.remove('hit'); void ue.offsetWidth; ue.classList.add('hit'); }
+    } else if (cardId === 'kamae') {
+      u.guard += pv.amount;
+      floatText(u, pv.text, 'grd');
+    } else if (cardId === 'ashi') {
+      u.maai = u.maai === 'far' ? 'near' : 'far';
+      flip = true;
+    } else if (cardId === 'miru') {
+      u.mark = true;
+      floatText(u, '印', 'etc');
+    }
+    S.hand.splice(S.hand.indexOf(cardId), 1);
+    const el = cardEl(cardId);
+    if (el) flyAway(el, u);
+    S.sel = null;
+    clearTargets();
+    updateUnit(u, { flip: flip });
+    layoutHand();
+    recordPlay();
+    if (!SELFTEST) scheduleRefill();
+    return true;
+  }
+
+  // Keep the demo playable: deal a fresh hand when it runs out, revive foes when all are down.
+  function scheduleRefill() {
+    if (S.hand.length === 0) {
+      setTimeout(() => {
+        if (S.hand.length) return;
+        S.hand = HAND_ORDER.slice();
+        renderHand();
+      }, 650);
+    }
+    if (S.units.filter((u) => u.side === 'foe').every((u) => u.hp <= 0)) {
+      setTimeout(() => {
+        S.units.forEach((u) => { if (u.side === 'foe') { u.hp = u.maxHp; u.mark = false; } });
+        S.units.forEach((u) => updateUnit(u));
+      }, 900);
+    }
+  }
+
+  // ---------- stats ----------
+  function recordPlay() {
+    const ses = S.session;
+    S.session = null;
+    if (!ses) return;
+    const st = S.stats[S.pattern];
+    const ms = now() - ses.t0;
+    st.plays++;
+    st.actions += ses.actions;
+    st.ms += ms;
+    st.last = { actions: ses.actions, ms: ms };
+    renderStats();
+    if (!SELFTEST) {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(S.stats)); } catch (err) { /* ignore */ }
+    }
+  }
+
+  function renderStats() {
+    const rows = ['A', 'B', 'C', 'D'].map((p) => {
+      const st = S.stats[p];
+      return { p: p, st: st, avgA: st.plays ? st.actions / st.plays : null, avgMs: st.plays ? st.ms / st.plays : null };
+    });
+    const played = rows.filter((r) => r.st.plays > 0);
+    const bestA = played.length > 1 ? Math.min.apply(null, played.map((r) => r.avgA)) : null;
+    const bestMs = played.length > 1 ? Math.min.apply(null, played.map((r) => r.avgMs)) : null;
+    const dash = '<td class="none">—</td>';
+    statsBody.innerHTML = rows.map((r) => {
+      const cells = r.st.plays === 0
+        ? dash + dash + dash
+        : '<td class="' + (r.avgA === bestA ? 'best' : '') + '">' + r.avgA.toFixed(1) + '<span class="u">回</span></td>' +
+          '<td class="' + (r.avgMs === bestMs ? 'best' : '') + '">' + Math.round(r.avgMs) + '<span class="u">ms</span></td>' +
+          '<td>' + r.st.last.actions + '<span class="u">回</span> ' + Math.round(r.st.last.ms) + '<span class="u">ms</span></td>';
+      return '<tr class="' + (r.p === S.pattern ? 'cur' : '') + '"><td><b>' + r.p + '</b>' + PATTERN_NAMES[r.p] + '</td><td>' + r.st.plays + '</td>' + cells + '</tr>';
+    }).join('');
+  }
+
+  // ---------- controls ----------
+  function cancelInteraction() {
+    if (S.press) {
+      S.press.el.classList.remove('dragging', 'over');
+      S.press = null;
+    }
+    deselect();
+    S.session = null;
+    layoutHand();
+  }
+
+  function setPattern(p) {
+    cancelInteraction();
+    S.pattern = p;
+    document.querySelectorAll('#patternSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pattern === p)));
+    tline.hidden = p !== 'D';
+    updateHint();
+    renderStats();
+  }
+
+  function setEnemies(n) {
+    cancelInteraction();
+    S.enemies = n;
+    document.querySelectorAll('#enemySeg button').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.enemies) === n)));
+    buildBattle();
+    updateHint();
+  }
+
+  function updateHint() {
+    hintEl.textContent = S.pattern === 'D' && S.enemies === 2 ? HINTS.D2 : HINTS[S.pattern];
+  }
+
+  document.querySelectorAll('#patternSeg button').forEach((b) => b.addEventListener('click', () => setPattern(b.dataset.pattern)));
+  document.querySelectorAll('#enemySeg button').forEach((b) => b.addEventListener('click', () => setEnemies(Number(b.dataset.enemies))));
+  $('resetBtn').addEventListener('click', () => { cancelInteraction(); buildBattle(); });
+  $('clearStats').addEventListener('click', () => {
+    S.stats = emptyStats();
+    try { localStorage.removeItem(STORE_KEY); } catch (err) { /* ignore */ }
+    renderStats();
+  });
+
+  // ---------- self-test (?selftest=1) ----------
+  function runSelfTest() {
+    const out = [];
+    let pass = 0;
+    let total = 0;
+    const startPattern = S.pattern;
+    const startEnemies = S.enemies;
+
+    function test(name, fn) {
+      total++;
+      try {
+        fn();
+        pass++;
+        out.push('PASS ' + name);
+      } catch (err) {
+        out.push('FAIL ' + name + ': ' + ((err && err.message) || err));
+        if (S.press) onCancelPointer({ pointerId: S.press.pid });
+        deselect();
+      }
+    }
+    function assert(cond, msg) { if (!cond) throw new Error(msg); }
+    function center(el) {
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+    function stageToClient(x, y) {
+      const r = stage.getBoundingClientRect();
+      return { x: r.left + x * scale, y: r.top + y * scale };
+    }
+    function fire(type, target, x, y) {
+      const init = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, pointerId: 7, pointerType: 'mouse', isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1 };
+      const ev = typeof PointerEvent === 'function' ? new PointerEvent(type, init) : new MouseEvent(type, init);
+      target.dispatchEvent(ev);
+    }
+    function key(k) {
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    }
+    function card(id) {
+      const el = cardEl(id);
+      assert(el, id + ' is not in the hand');
+      return el;
+    }
+    function press(id) {
+      const el = card(id);
+      const c = center(el);
+      fire('pointerdown', el, c.x, c.y);
+      return c;
+    }
+    const move = (pt) => fire('pointermove', document, pt.x, pt.y);
+    const release = (pt) => fire('pointerup', document, pt.x, pt.y);
+    function tap(id) { release(press(id)); }
+    function startDrag(id) {
+      const c = press(id);
+      const p = { x: c.x, y: c.y - 30 };
+      move(p);
+      assert(S.press && S.press.dragging, 'drag did not start');
+      return p;
+    }
+    function targetEl(k) {
+      if (S.pattern === 'A') return overlay.querySelector('.plate[data-t="' + k + '"]');
+      if (S.pattern === 'B') return brow.querySelector('.tbtn[data-t="' + k + '"]');
+      if (S.pattern === 'C') return overlay.querySelector('.cbtn[data-t="' + k + '"]');
+      return overlay.querySelector('.zone[data-t="' + k + '"]');
+    }
+    const squash = (s) => String(s).replace(/\s+/g, '');
+    function checkShown(id, k) {
+      const el = targetEl(k);
+      assert(el, 'no target element for ' + k);
+      const shown = squash(el.querySelector('.val').textContent);
+      const want = squash(predict(id, k).text);
+      assert(shown === want, 'predicted value shows ' + shown + ', expected ' + want);
+      return el;
+    }
+    // Plays a card onto a target the way the current pattern expects.
+    function playVia(id, k) {
+      if (S.pattern === 'C') {
+        tap(id);
+        assert(S.sel === id, 'tap did not lift the card');
+        const b = checkShown(id, k);
+        const c = center(b);
+        fire('pointerdown', b, c.x, c.y);
+        fire('pointerup', b, c.x, c.y);
+        b.click();
+        return;
+      }
+      startDrag(id);
+      const el = checkShown(id, k);
+      const c = center(el);
+      move(c);
+      assert(S.hover === k, 'hover is ' + S.hover + ', expected ' + k);
+      assert(el.classList.contains('hot'), 'target is not highlighted');
+      release(c);
+    }
+    function playViaTap(id, k) {
+      tap(id);
+      assert(S.sel === id, 'tap did not lift the card');
+      const b = checkShown(id, k);
+      const c = center(b);
+      fire('pointerdown', b, c.x, c.y);
+      b.click();
+    }
+    function assertCleared() {
+      assert(!S.press && !S.sel, 'selection not cleared');
+      assert(!overlay.querySelector('.plate, .cbtn, .zone') && brow.children.length === 0, 'target overlays not cleared');
+    }
+
+    ['A', 'B', 'C', 'D'].forEach((pat) => {
+      [1, 2].forEach((n) => {
+        setEnemies(n);
+        setPattern(pat);
+        buildBattle();
+        const tag = pat + '/' + n + '体';
+        const foeKey = n === 1 ? 'e0' : (pat === 'A' || pat === 'C' ? 'e1' : 'e0');
+
+        test(tag + ' 突き → ' + unit(foeKey).fig.short, () => {
+          const u = unit(foeKey);
+          const hp0 = u.hp;
+          const h0 = S.hand.length;
+          const expected = 8 + (u.maai === 'far' ? 4 : 0);
+          playVia('tsuki', foeKey);
+          assert(S.hand.length === h0 - 1, 'hand size ' + S.hand.length + ', expected ' + (h0 - 1));
+          assert(!cardEl('tsuki'), '突き is still in the hand');
+          assert(u.hp === hp0 - expected, 'HP ' + u.hp + ', expected ' + (hp0 - expected));
+          assert(unitEl(foeKey).querySelector('.v').textContent === String(hp0 - expected), 'HP label not updated');
+          assertCleared();
+        });
+
+        test(tag + ' 構え → 自分' + (pat === 'B' ? '（タップ → ボタン）' : ''), () => {
+          const pl = player();
+          const h0 = S.hand.length;
+          const g0 = pl.guard;
+          if (pat === 'B') playViaTap('kamae', 'self');
+          else playVia('kamae', 'self');
+          assert(S.hand.length === h0 - 1, 'hand size ' + S.hand.length + ', expected ' + (h0 - 1));
+          assert(pl.guard === g0 + 6, 'guard ' + pl.guard + ', expected ' + (g0 + 6));
+          const chip = unitEl('self').querySelector('.chip.guard');
+          assert(chip && /6/.test(chip.textContent), 'guard chip missing');
+          assertCleared();
+        });
+
+        if (pat === 'A' || pat === 'D') {
+          test(tag + ' 空きで離すと手札へ戻る', () => {
+            const h0 = S.hand.length;
+            const hps = S.units.map((u) => u.hp);
+            startDrag('nagi');
+            const empty = pat === 'A' ? stageToClient(730, 300) : stageToClient(200, 800);
+            move(empty);
+            assert(S.hover === null, 'expected no target under the pointer, got ' + S.hover);
+            release(empty);
+            const el = cardEl('nagi');
+            assert(S.hand.length === h0 && S.hand.includes('nagi'), 'card left the hand');
+            assert(el && !el.classList.contains('dragging'), 'card is still dragging');
+            assert(el.style.getPropertyValue('--s') === '', 'card did not return to the fan');
+            assert(S.units.every((u, i) => u.hp === hps[i]), 'HP changed');
+            assertCleared();
+          });
+        }
+
+        if (pat === 'A' && n === 2) {
+          test(tag + ' 皿が重ならない', () => {
+            startDrag('nagi');
+            const a = targetEl('e0').getBoundingClientRect();
+            const b = targetEl('e1').getBoundingClientRect();
+            const pt = stageToClient(730, 300);
+            move(pt);
+            release(pt);
+            assert(a.right <= b.left, 'plates overlap');
+          });
+        }
+
+        if (pat === 'D' && n === 2) {
+          test(tag + ' 右半分 → 犬', () => {
+            const u = unit('e1');
+            const hp0 = u.hp;
+            playVia('nagi', 'e1');
+            assert(u.hp === hp0 - 6, 'HP ' + u.hp + ', expected ' + (hp0 - 6));
+            assertCleared();
+          });
+        }
+
+        if (pat === 'C' && n === 1) {
+          test(tag + ' 動かしてもドラッグしない', () => {
+            const el = card('nagi');
+            const c = press('nagi');
+            const far = { x: c.x, y: c.y - 200 };
+            move(far);
+            assert(S.press && !S.press.dragging && !el.classList.contains('dragging'), 'card started dragging');
+            release(far);
+            assert(S.hand.includes('nagi') && !S.sel, 'release away from the card changed the hand');
+          });
+        }
+      });
+    });
+
+    setEnemies(1);
+    setPattern('A');
+    buildBattle();
+    test('KEY 4 + Enter → 足運び', () => {
+      const pl = player();
+      const m0 = pl.maai;
+      key('4');
+      assert(S.sel === 'ashi', 'key 4 did not select 足運び');
+      key('Enter');
+      assert(pl.maai !== m0, '間合い did not change');
+      const ue = unitEl('self');
+      const badge = ue.querySelector('.badge');
+      assert(badge.textContent === (pl.maai === 'near' ? '近' : '遠'), 'badge shows ' + badge.textContent);
+      assert(ue.style.getPropertyValue('--ux') === SELF_X[pl.maai] + 'px', 'standing position did not move');
+    });
+    test('KEY 4 + Enter → 観察', () => {
+      key('4');
+      assert(S.sel === 'miru', 'key 4 did not select 観察');
+      key('Enter');
+      assert(unit('e0').mark && unitEl('e0').querySelector('.chip.mark'), 'mark missing');
+    });
+    test('STATS 4 案とも記録される', () => {
+      ['A', 'B', 'C', 'D'].forEach((p) => {
+        const st = S.stats[p];
+        assert(st.plays >= 2, p + ' plays ' + st.plays);
+        assert(st.actions >= st.plays, p + ' actions ' + st.actions);
+      });
+    });
+
+    setEnemies(startEnemies);
+    setPattern(startPattern);
+    buildBattle();
+    const res = $('selftest-result');
+    res.hidden = false;
+    res.textContent = out.join('\n');
+    document.title = 'SELFTEST DONE ' + pass + '/' + total;
+  }
+
+  // ---------- init ----------
+  setEnemies(S.enemies);
+  setPattern(S.pattern);
+  renderStats();
+  if (SELFTEST) {
+    const go = () => setTimeout(runSelfTest, 0);
+    if (document.readyState === 'complete') go();
+    else window.addEventListener('load', go);
+  }
+})();
+</script>

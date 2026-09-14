@@ -2,6 +2,23 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-14 - 戦闘への所感 3 点の反映と判断待ちへの回答（近間 / 遠間、投入量の廃止、画面の簡素化）
+
+#### 概要
+
+こうだいさんの所感 3 点（画面の情報量を減らす / 間合いをキャラクターごとの 2 値にする / カードごとのスタミナ振り分けをやめる）を、影響範囲の洗い出しと 3 案の採点を経て設計書に決定として記録した。視覚制作の判断 16 件と所感から出た判断を 8 回の質問で確認し、回答を反映した。相手の選び方は、4 方式を触って決めるためのデモを作った。
+
+#### 変更点
+
+- **規則**: `battle_core_v4.md` §16（所感と回答時の補足の原文、決定 3 つ、置き換わる記述、間合いは近間 / 遠間でキャラクターごとの常設の値・素の効果なし・ムーブ面で切り替え、投入量の廃止とコストの決め方は保留、習熟は旧段表を上る、背水の陣は #80 を置き換え、回答表）。§0 / §1 / §3 / §14 に見直し中の印
+- **UI**: `battle_ui_ux_v2.md` §10（上帯をやめて左上にターン・階層・連戦・瘴気、語の予算 10 字、投入帯の廃止、相手の選び方はデモで決める、近間 / 遠間は立ち位置と一字札、Particle 許可、Yuji Syuku 不使用）。旧 §10 変更履歴を §11 に振り直し、§8 の条件 1 / 2 / 4 を △ に戻した
+- **注記**: カード表・敵ロースター・tier1 / tier2・concept-v3 に見直し中の注記。実装プランは ON HOLD
+- **視覚制作**: `tools-and-prerequisites.md` §9 を回答済みの 17 件に（体勢差分なし・差分 66 枚・候補 80 枚で約 $5.4、Particle 許可、Yuji Syuku 不使用、作業ファイルは OneDrive、月の上限 $30 など）。SKILL.md の `pose` 区分・`-pose`・Particle 禁止を直した
+- **デモ**: `docs/mockups/2026-09-14-drag-select-demo.html`（受け皿 / ボタン列 / タップして確認 / 投げ上げ線 × 1 体 / 2 体、操作回数と時間の比較、自己テスト 26 項目）。Artifact `https://claude.ai/code/artifact/467a57de-b088-46d8-a834-5cd756440f6d`。確認役の指摘 3 件（D の 2 体戦の境目を 2 体の中点へ、ポインタのキャプチャ、舞台の高さを実測で合わせる）を直し、自己テストを再実行した
+- **.env**: `chore/ignore-env`（PR #21、main 向け）。RPG-by-card はステージ済みの `.gitignore` に `.env`、`.gitattributes` に `*.psb` / `*.moc3` の LFS を追加（コミットは Unity リポの運用を決めるとき）
+- **残る判断**: 固定コストの決め方、相手の選び方（デモの後）、背水の陣の効果
+- **触っていないもの**: モックアップ v4（作り直しと座標修正は別項目）、`unity-port/`、`src/`、RPG-by-card のコミット
+
 ### 2026-09-14 - キャラクターの外見と UI/UX を作るツールと前提の調査、一連実行スキル visual-production-pipeline
 
 #### 概要
@@ -127,20 +144,3 @@
 - **評価で修正した転記ミス**: 遺産の受け取り場所を「死亡地点で選ぶ」に統一（concept-v3 / master / CAMP / CLAUDE.md / tier1 R1-12）。「企画書に経済の記述なし」を「通貨と店の記述なし」に訂正。バナー未付与 11 本（enemy_document 6 / element_system_spec / buff_debuff / ui_ux_design_guide / inventory_design / kickoff）に付与。tier1 R1-1 の受け入れ基準を事実に合わせ「v3 版ギャップ分析」を追加
 - **レポート**: `docs/reports/2026-09-12-concept-v3-evaluation.html`（Artifact 発行）
 - **判断待ち**: HP 回復モデル / 遺産の連鎖消失 / 図鑑消失の方針 / セーブ前倒し / TS-C# パリティ継続 / 戦闘 v1 でのプロト。README は Development History 節が無いため未更新
-
-### 2026-09-12 - 企画書 v3「生と継承」で設計ルールを上書き + アーマー凍結
-
-#### 概要
-
-life-editor Note「ゲーム設計(chat GPT)」（27 節の企画書）を読み取り、既存の設計ルールをその内容で上書きした。正本は新設の `docs/vision/concept-v3.md`。ライフ制・エクストラクション・手記の死越えを廃止し、刻限・衰弱・生存ルート・遺産・図鑑の消失を核にした「生と継承」ループへ。アーマー（AP / 装備耐久）は「戦闘が複雑化するので、まずアーマー無しで難易度と調整を測る」ため凍結。コードは触っていない（`unity-port/` と `battle-lab/core/` にアーマーは元々無く Guard のみ）。
-
-#### 変更点
-
-- **正本新設**: `docs/vision/concept-v3.md`。企画書を 12 節に再編。§10 に既存ルールとの対応表（置換 / 凍結 / 再解釈 / 廃止 / 継続）、§12 に未確定 19 項目（企画書 §27 の 15 + 上書きで生じた 4）
-- **構想**: `vision/core.md` を全面改稿（Core Value を 5 要素 + 生と継承の 6 本、凍結欄）。`concept-v2.md` / `2026-06-11-gap-analysis.md` に SUPERSEDED バナー
-- **要件**: `requirements/tier1-core.md` v6（R1-1〜R1-17、旧 v5 との ID 対応表つき）/ `tier2-support.md` v3 / `tier3-experimental.md` v2（凍結表に解凍条件、廃棄一覧）
-- **総合・拠点設計**: `game_design_master.md` V4.0（英語 801 行 → 日本語で全体像だけ）/ `CAMP_FACILITIES_DESIGN.md` V5.0（5 施設 + Journal → 継承の間 / 出立 / 図鑑）
-- **旧ルールのバナー（本文は残す）**: FROZEN = `ap-equipment-system.md` / shop / blacksmith / sanctuary / `EQUIPMENT_AND_ITEMS_DESIGN.md`。SUPERSEDED = `return_system_design.md` / `DESIGN_CHANGE_PLAN_lives_system.md` / guild。PARTIALLY SUPERSEDED = `battle_logic.md`（エネルギー・AP 節）/ `dungeon_exploration_ui_design_v3.0.md` / journal plan。STALE SNAPSHOT = `PROJECT_OVERVIEW.md`
-- **索引・規約**: `.claude/CLAUDE.md` Game Loop Flow を新ループへ。`docs/INDEX.md` の壊れたリンク 2 件（`combat-core-redesign.md` / `realtime-turn-timer.md`）を修正
-- **レポート**: `docs/reports/2026-09-12-concept-v3-overwrite.html`（Artifact 発行、life-editor Note `note-d144ed88` に控え）
-- **未対応（判断待ち）**: §12 の未確定項目、ステージ構造、凍結した個別施設設計書 4 本（約 4,800 行）の archive 移動可否。README に Development History 節が無いため README は未更新

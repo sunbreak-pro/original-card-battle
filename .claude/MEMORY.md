@@ -16,9 +16,9 @@
 
 ## 直近の完了
 
-- キャラクターの外見と UI/UX を作るツールと前提 + 一連実行スキル ✅（2026-09-14）— 6 観点の並列調査・反証・批評で、ツール・前提・費用・権利・判断待ちをレポート `docs/reports/2026-09-14-visual-production-survey.html`（Artifact あり）と life-editor の Note（タグ card-battle）にまとめた。スキル `visual-production-pipeline`（survey / setup / character / background / ui / vfx）を新設。既定の道筋は画像 API の候補 → CSP で加筆 → 差分スプライト + 白シルエットで、Live2D は主人公とボスだけ。PR は `docs/battle-uiux-v4` に積む。**判断待ち**: 16 件（Live2D の範囲 / 最初の 1 体 / Unity の版 / 生成の主経路と月上限 / `.env` と LFS の修正 ほか。正本は `references/tools-and-prerequisites.md` §9）
+- 戦闘への所感 3 点の反映と判断待ちへの回答 ✅（2026-09-14）— `battle_core_v4.md` §16 と `battle_ui_ux_v2.md` §10 に決定と回答を記録。間合いはキャラクターごとの近間 / 遠間（常設の値、素の効果なし、ムーブ面で切り替え、立ち位置と一字札で表示）、投入量は廃止、習熟は旧段表を上る、背水の陣は #80 を置き換え、上帯は左上の小さな札へ。視覚制作の判断 17 件も回答済み（`tools-and-prerequisites.md` §9）。相手の選び方のデモ `docs/mockups/2026-09-14-drag-select-demo.html`。PR は `docs/visual-production-pipeline` に積む。`.env` は PR #21。**判断待ち**: 固定コストの決め方 / 相手の選び方（デモ）/ 背水の陣の効果
+- キャラクターの外見と UI/UX を作るツールと前提 + 一連実行スキル ✅（2026-09-14）— 6 観点の並列調査・反証・批評で、ツール・前提・費用・権利をレポート `docs/reports/2026-09-14-visual-production-survey.html`（Artifact あり）と life-editor の Note（タグ card-battle）にまとめた。スキル `visual-production-pipeline`（survey / setup / character / background / ui / vfx）を新設。PR #20（`docs/battle-uiux-v4` に積む）。判断 17 件は同日に回答済み（`references/tools-and-prerequisites.md` §9）
 - 戦闘 UI / UX v2（core v4.1 対応）✅（2026-09-14）— `battle_document/battle_ui_ux_v2.md` を新設（情報設計 26 項目、L1 v2「背骨とレーン」を 3 案の採点で採用、ドラッグ主操作、演出 21 節と時間予算、Unity 写像は UiTween 継続、ルールへの要望 25 件）。モックアップ `docs/mockups/2026-09-13-battle-uiux-v4-mockup.html`（6 画面、Artifact あり）、レポート `docs/reports/2026-09-13-battle-uiux-v4-80.html`。R2-5 を受け入れ基準 16 項目に。実画面の目視で予測札が矢印の先を隠す問題などを見つけて直した。**判断待ち**: 対案 A の実測、要望 5 件（2 段予兆 / 重撃 / 威圧 / 呪縛 / ダメージ式）、正本の誤記 2 件、演出上限の緩和 3 か所
-- 戦闘 100% の棚卸 ✅（2026-09-13）— こうだいさんの 7 条件（5 枚ドロー / タイプ 4 種と二面 / 同種 3 枚 / 80 種のうち 40 種は習得 / カード感の操作 / カードごとのエフェクト）を core v3 に突き合わせ、8 領域 58 項目の棚卸表と現在地（約 20%）、80% までの 6 段階を `docs/reports/2026-09-13-battle-100-inventory.html` にまとめた。叩き台: 状態 10 語、スタンス枠 1、T0 は威力 0、移動は属性、初期 40 / 習得 40 の配分、敵 19 体（80% は 9 体）、試験台の基準 9 項目、ドラッグの高さで投入量。**判断待ち**: 7 点（移動を属性 / 投入はドラッグ高さ / T0 威力 0 / スタンス枠 1 / 状態 10 語固定 / 敵 9 体 / v4 着手）
 
 > 完了履歴の全量は `README.md` の Development History を参照。
 
@@ -26,7 +26,9 @@
 
 ### 次のアクティブタスク
 
-- 🔜 **戦闘 v4 の C# 実装 + 試験台 + 連戦モード（次セッション）** — 設計は 2026-09-13 に確定（`battle_core_v4.md` / `swordsman_cards_v4.md` / `enemy_roster_v4.md`）。順 3〜4（ドラッグと HUD、演出の文法）の UI 正本は `battle_ui_ux_v2.md`（2026-09-14）。プランと冒頭プロンプトは `vision/plans/2026-09-13-battle-v4-implementation.md`。完了条件: dotnet test 緑 / `BattleCore.Sim` が基準 9 項目を出す / 初期 40 種と敵 9 体がデータに入る / 連戦 3 戦が Windows ビルドで通る / View v1.1 が壊れない。ブランチ `feat/battle-core-v4`。その後は順 3 ドラッグ操作と HUD → 順 4 演出の文法 → 順 5 習得 20 種 + ボス適応 → 順 6 プレイテスト 3 巡で 80%。目盛りは T0 = 5（2026-09-13 決定、全体 1.6 倍、HP 50）。特性は条件 12 × 効果 10、初期 32 + 習得 40 に付与
+- 🔜 **相手の選び方をデモで決める** — `docs/mockups/2026-09-14-drag-select-demo.html`（Artifact: https://claude.ai/code/artifact/467a57de-b088-46d8-a834-5cd756440f6d）で 4 方式（受け皿 / ボタン列 / タップして確認 / 投げ上げ線）を 1 体戦と 2 体戦で触り、比較パネルの操作回数と時間も見て 1 つに決める。決まったら `battle_ui_ux_v2.md` §10.5 と §3 を書き直す
+- 🔜 **戦闘 v4.2 の本文改訂** — `battle_core_v4.md` §16 の決定で §0〜§14、`swordsman_cards_v4.md` の 80 種、`enemy_roster_v4.md` の 9 体、`battle_ui_ux_v2.md` §1〜§7（v2.1）を書き直す。先に固定コストの決め方と背水の陣の効果を決める。モックアップの作り直しと座標修正は別の項目
+- 🔜 **戦闘 v4 の C# 実装 + 試験台 + 連戦モード（保留: v4.2 改訂の後）** — 2026-09-14 の所感で前提（投入量 / 距離）が変わったため、プランは ON HOLD。設計は 2026-09-13 に確定（`battle_core_v4.md` / `swordsman_cards_v4.md` / `enemy_roster_v4.md`）。順 3〜4（ドラッグと HUD、演出の文法）の UI 正本は `battle_ui_ux_v2.md`（2026-09-14）。プランと冒頭プロンプトは `vision/plans/2026-09-13-battle-v4-implementation.md`。完了条件: dotnet test 緑 / `BattleCore.Sim` が基準 9 項目を出す / 初期 40 種と敵 9 体がデータに入る / 連戦 3 戦が Windows ビルドで通る / View v1.1 が壊れない。ブランチ `feat/battle-core-v4`。その後は順 3 ドラッグ操作と HUD → 順 4 演出の文法 → 順 5 習得 20 種 + ボス適応 → 順 6 プレイテスト 3 巡で 80%。目盛りは T0 = 5（2026-09-13 決定、全体 1.6 倍、HP 50）。特性は条件 12 × 効果 10、初期 32 + 習得 40 に付与
 - 🔜 **Unity 上で Tier1 v6 本実装 — 次プラン策定（C# が正）** — Phase 3（最小戦闘画面）完了済（2026-09-06）。**戦闘コア v3（R1-3 / R1-4 相当）と戦闘画面 v1.1 は 2026-09-12 に実装済**（`unity-port/`、`dotnet test` 54）。次は探索側（刻限 / 瘴気 / ノード）と `BattleInit` の接続、手記の実データ、開示度（R2-3）、ボスの 2 段階予兆。TS battle-lab は凍結、`dotnet test` を正にする。残る未確定は concept-v3 §12 の 1 / 4 / 5 / 6 / 9 / 10 / 11 / 12 / 13 / 15 / 17 / 19 / 22 / 23。アート/Live2D（`2026-06-28-unity-migration-character-art.md`）と Unity リポ（sunbreak-pro/RPG-by-card、初回コミット未）の運用も決める。実プレイの手触り確認は人手（Editor 前面・乱数「実戦」）
 
 ### バックログ機能（旧 TODO.md より移管）
