@@ -16,9 +16,9 @@
 
 ## 直近の完了
 
+- キャラクターの外見と UI/UX を作るツールと前提 + 一連実行スキル ✅（2026-09-14）— 6 観点の並列調査・反証・批評で、ツール・前提・費用・権利・判断待ちをレポート `docs/reports/2026-09-14-visual-production-survey.html`（Artifact あり）と life-editor の Note（タグ card-battle）にまとめた。スキル `visual-production-pipeline`（survey / setup / character / background / ui / vfx）を新設。既定の道筋は画像 API の候補 → CSP で加筆 → 差分スプライト + 白シルエットで、Live2D は主人公とボスだけ。PR は `docs/battle-uiux-v4` に積む。**判断待ち**: 16 件（Live2D の範囲 / 最初の 1 体 / Unity の版 / 生成の主経路と月上限 / `.env` と LFS の修正 ほか。正本は `references/tools-and-prerequisites.md` §9）
 - 戦闘 UI / UX v2（core v4.1 対応）✅（2026-09-14）— `battle_document/battle_ui_ux_v2.md` を新設（情報設計 26 項目、L1 v2「背骨とレーン」を 3 案の採点で採用、ドラッグ主操作、演出 21 節と時間予算、Unity 写像は UiTween 継続、ルールへの要望 25 件）。モックアップ `docs/mockups/2026-09-13-battle-uiux-v4-mockup.html`（6 画面、Artifact あり）、レポート `docs/reports/2026-09-13-battle-uiux-v4-80.html`。R2-5 を受け入れ基準 16 項目に。実画面の目視で予測札が矢印の先を隠す問題などを見つけて直した。**判断待ち**: 対案 A の実測、要望 5 件（2 段予兆 / 重撃 / 威圧 / 呪縛 / ダメージ式）、正本の誤記 2 件、演出上限の緩和 3 か所
 - 戦闘 100% の棚卸 ✅（2026-09-13）— こうだいさんの 7 条件（5 枚ドロー / タイプ 4 種と二面 / 同種 3 枚 / 80 種のうち 40 種は習得 / カード感の操作 / カードごとのエフェクト）を core v3 に突き合わせ、8 領域 58 項目の棚卸表と現在地（約 20%）、80% までの 6 段階を `docs/reports/2026-09-13-battle-100-inventory.html` にまとめた。叩き台: 状態 10 語、スタンス枠 1、T0 は威力 0、移動は属性、初期 40 / 習得 40 の配分、敵 19 体（80% は 9 体）、試験台の基準 9 項目、ドラッグの高さで投入量。**判断待ち**: 7 点（移動を属性 / 投入はドラッグ高さ / T0 威力 0 / スタンス枠 1 / 状態 10 語固定 / 敵 9 体 / v4 着手）
-- 戦闘 UI v1.1 + 戦闘コア v3 + UGUI View の Unity 実装 ✅（2026-09-12）— 見た目 **A 採用**（A+ トークンと描き込み、敗北画面、手記ドロワーを設計書 v1.1 とモックアップへ）。`unity-port/BattleCore/` を battle_core_v3 に全面改修（投入量 / 予兆 / 敵 Guard / 構え / 崩し / 瘴気 / `BattleInit` / `BattleEvent`）、`unity-project-kit/Assets/View/` 11 ファイル。`dotnet test` 54 / 54、Unity EditMode 54 / 54、Windows ビルドの実画面で配置を確認。残り: Editor 前面での手触り確認、本物の立ち絵 / 書体 / 効果音
 
 > 完了履歴の全量は `README.md` の Development History を参照。
 

@@ -2,6 +2,22 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-14 - キャラクターの外見と UI/UX を作るツールと前提の調査、一連実行スキル visual-production-pipeline
+
+#### 概要
+
+敵 9 体とプレイヤーの外見、戦闘の UI / UX と演出を作るためのツールと前提を、6 観点の並列調査・反証・批評のワークフローでまとめ、HTML レポートと Artifact と life-editor の Note（タグ card-battle）に残した。同じ流れと、その先の制作（setup / character / background / ui / vfx）を回すプロジェクトスキル `visual-production-pipeline` を作った。
+
+#### 変更点
+
+- **レポート**: `docs/reports/2026-09-14-visual-production-survey.html`（結論の 3 分類、組む順、決定済みの前提、手元の環境、工程別ツール 14 行、作るもの、読みやすさの計算、法務、リスク、スキル、事実確認の経過、仮定、未確認、判断 10 件）。Artifact `https://claude.ai/code/artifact/3fcc2afa-df5e-40af-b4c4-d1998d18f8cf`
+- **Note**: life-editor `note-423a0061-7e79-471c-8166-757153d91c75`（タグ card-battle を新規作成、url-in-body=yes）
+- **スキル**: `.claude/skills/visual-production-pipeline/`（SKILL.md のモード 6 つと工程 S0–S1 / C0–C11 / B1 / U0–U8 / V0–V3、正本 `references/tools-and-prerequisites.md`、`workflows/survey.js`、`scripts/silhouette.py`、`scripts/color_check.py`、`templates/asset-ledger.csv` 30 列）。`.claude/skills/README.md` と `CLAUDE.md` の Skills Quick Reference に登録
+- **調査の経過**: 14 エージェント。外部の主張 265 件（確認 231 / 訂正 30 / 未確認 4）。批評の漏れ 14 件と誤り 6 件を補完して書き直した。内部 5 件と外部 5 件を直接確認し、OpenAI の 1 枚あたり価格だけ公式ページに無いので未確認へ落とした。`color_check.py` が統合結果の計算値を再現し、`silhouette.py` と `survey.js` の構文も確認した
+- **見つけたが直していないもの**: 両リポジトリで `.env` が無視されていない。RPG-by-card の URP が manifest 17.6.0 と lock 17.5.0 で食い違う。v2 の中で Yuji Syuku の扱いが食い違う。`concept-v3.md:14` と `:16` で主人公の扱いが食い違う。omen / boss / whiff が階層 1 の背景で 4.5:1 未満
+- **判断待ち**: Live2D の範囲、最初に通す 1 体、Unity の版、生成の主経路と月上限、主人公の世代差、CSP の購入、`.env` と LFS の修正、色の規則、Yuji Syuku、art の範囲（全 16 件は正本の §9）
+- **触っていないもの**: `src/`、`unity-port/`、設計書（`battle_document/` / `enemy_document/` / `vision/`）、RPG-by-card、未追跡の `docs/reports/2026-09-07-unity-scope-inventory.html`。README に Development History の節が無いので README は更新していない
+
 ### 2026-09-14 - 戦闘 UI / UX v2（core v4.1 対応の設計書、動くモックアップ、実画面の目視検証）
 
 #### 概要
@@ -128,17 +144,3 @@ life-editor Note「ゲーム設計(chat GPT)」（27 節の企画書）を読み
 - **索引・規約**: `.claude/CLAUDE.md` Game Loop Flow を新ループへ。`docs/INDEX.md` の壊れたリンク 2 件（`combat-core-redesign.md` / `realtime-turn-timer.md`）を修正
 - **レポート**: `docs/reports/2026-09-12-concept-v3-overwrite.html`（Artifact 発行、life-editor Note `note-d144ed88` に控え）
 - **未対応（判断待ち）**: §12 の未確定項目、ステージ構造、凍結した個別施設設計書 4 本（約 4,800 行）の archive 移動可否。README に Development History 節が無いため README は未更新
-
-### 2026-09-06 - Unity 移行 Phase 3 — UGUI 最小戦闘画面 + Web トレース一致
-
-#### 概要
-
-Unity 6000.5.5f1 の実プロジェクト（`C:\Users\user\Unity\RPG-by-card`）で `BattleScreenView.Render` を実装し、コード生成の UGUI だけで 1 戦（勝敗・リスタート）が回る最小戦闘画面を作った。冒頭で Unity 側の CS0246（`[Test]` 未解決 ×57）を NUnit 暗黙 using の明示化で解消（known-issue 002）。固定 RNG(0) でパリティ fixture の操作列を再生し、Unity Console のトレース 18 状態が Web 版と完全一致。SystemRng でも 3 戦 97 手を例外なく完走。EditMode 57/57・`parity:check` 58/58 緑。
-
-#### 変更点
-
-- **修正（known-issue 002）**: `unity-port/BattleCore.Tests/*.cs` 4 本に `using NUnit.Framework;` を明示。csproj の `<Using Include>` は Unity asmdef で効かない。`docs/known-issues/002-nunit-implicit-using-unity.md` + INDEX、kit README の Caveats に追記
-- **View 実装**: `unity-port/unity-project-kit/Assets/View/BattleScreenView.cs`（`npm run unity:sync` で Unity へ）。Canvas 階層をコードで構築（YAML 手書きなし、`RuntimeInitializeOnLoadMethod` で自動配置）。両者パネル / 間合い = 2 体の実距離 + 体勢（近: 前傾・遠: 後傾）/ 手札ボタン → `OnCardClicked` / ターン終了・リスタート / ログ新着順 / 結果オーバーレイ / 乱数「固定 ⇄ 実戦」切替ボタン / トレース再生ボタン
-- **検証基盤**: `npm run unity:trace`（`tools/gen-trace-actions.mjs`）が fixture から `Resources/trace-actions.txt`（再生用）と `expected-trace.txt`（期待値・連番付き）を生成。View は状態ごとに `[Trace] #n ...` を Console へ出すので diff で突合できる
-- **Unity 操作**: 公式 Unity CLI（`unity test` / `unity open` / `unity command eval_file|editor_play|capture_game_view`）で検証。非フォーカス Editor は Play Mode でもフレームが進まないため、eval で同期 dispatch + `EditorApplication.Step()` で描画を進めた
-- **検証結果**: EditMode 57/57、parity 58/58、トレース 18/18 一致、ランタイムエラー 0。スクリーンショット 4 枚は `docs/reports/2026-09-06-unity-phase3-ugui.html`

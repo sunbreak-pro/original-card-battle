@@ -192,18 +192,19 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 
 ## Skills Quick Reference
 
-| Task                  | Skill                        |
-| --------------------- | ---------------------------- |
-| Add new card          | `card-creator`               |
-| Add new enemy         | `enemy-creator`              |
-| Add character class   | `character-class-creator`    |
-| Battle system changes | `battle-system`              |
-| Camp facility work    | `camp-facility`              |
-| Dungeon system        | `dungeon-system`             |
-| UI/UX work            | `ui-ux-creator`              |
-| Find design docs      | `design-research`            |
-| Bug investigation     | `debugging-active`           |
-| Error prevention      | `debugging-error-prevention` |
+| Task                                   | Skill                        |
+| -------------------------------------- | ---------------------------- |
+| Add new card                           | `card-creator`               |
+| Add new enemy                          | `enemy-creator`              |
+| Add character class                    | `character-class-creator`    |
+| Battle system changes                  | `battle-system`              |
+| Camp facility work                     | `camp-facility`              |
+| Dungeon system                         | `dungeon-system`             |
+| UI/UX work                             | `ui-ux-creator`              |
+| Character art / UI production pipeline | `visual-production-pipeline` |
+| Find design docs                       | `design-research`            |
+| Bug investigation                      | `debugging-active`           |
+| Error prevention                       | `debugging-error-prevention` |
 
 ## Task Completion Rule
 
