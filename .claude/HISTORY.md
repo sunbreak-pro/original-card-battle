@@ -2,6 +2,24 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-19 - Unity 戦闘描写（固定台本の 1 ターン）
+
+#### 概要
+
+Unity Editor の `BattleDepiction` シーンで、v4.2 の形の 1 ターン（7 つの出来事）を固定台本から再生できるようにした。順 2〜4 はドラッグ待ち、ほかは自動。ルールの計算は作っていない（計画書: archive/2026-09-19-unity-battle-depiction.md）。
+
+#### 変更点
+
+- **台本**: `unity-port/unity-project-kit/Assets/View/Depiction/Script/` に純 C# の `DepictionFrame` / `DepictionEvent` / `Cue` / `DepictionRunner` と、プラン §4 を手書きした `TurnSliceScript`。asmdef は `noEngineReferences`。BattleCore に依存しない
+- **View**: `CardView` / `FigureView`（`SetSprite` が立ち絵の差し替え口）/ `StatusBarView` / `OmenBadgeView` / `ReceiverView` / `ThrowLineView` / `CornerInfoView` / `DepictionPlayer` / `DepictionFx`。既存 `ArenaView.cs` の `FigureView` と名前がぶつかるため、名前空間 `Depiction.View` に入れた
+- **プレハブとシーン**: `Tools > Depiction > Build Prefabs And Scene` が無いものだけを作る。プレハブ 7 つは Unity リポ `Assets/Prefabs/Depiction/`、シーンは `Assets/Scenes/BattleDepiction.unity`
+- **操作**: 単体向きは受け皿の上で離したときだけ確定、自分向きは投げ上げ線より上、台本と違う札は手札に戻る。デバッグの `autoPlayDrags` / `debugStepMode` / `debugCaptureDir` は既定で切
+- **同期**: `sync-unity-project.mjs` が `Assets/View/Depiction/` を再帰で写す（`.cs` と `.asmdef`）
+- **準備**: Unity リポに初回コミット（`7b203b8`）、URP を 17.5.0 に揃えた、両リポに `feat/unity-battle-depiction`
+- **確認**: 再コンパイル後のエラー 0 / EditMode 60 / 60 / dotnet test 54 / 54 / Play で 15 枚撮って拡大確認。1 行動は最長 1.97 秒（順 6）
+- **気づき（未対応）**: `BattleScreenView` がどのシーンでも自動起動する（描写シーンでは `DepictionPlayer.Start` が自動生成分だけ消す）。Unity リポの既存 C# に改行コードだけの差分が出る
+- **レポート**: `docs/reports/2026-09-19-unity-battle-depiction.html`（Artifact `https://claude.ai/artifact/MLZm2svaAm6L24HnnNZSMR`）
+
 ### 2026-09-19 - カードバランスの前提 8 件の決定と Unity 戦闘描写セッションの前準備
 
 #### 概要
