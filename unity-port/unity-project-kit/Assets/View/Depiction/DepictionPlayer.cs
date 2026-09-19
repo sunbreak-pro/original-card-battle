@@ -66,13 +66,6 @@ namespace Depiction.View
 
         private void Start()
         {
-            // BattleScreenView (View v1.1) bootstraps itself into every scene after load. This scene
-            // plays the fixed script instead, so its self-spawned instance is removed here; the
-            // v1.1 files and test1.unity stay untouched.
-            foreach (BattleScreenView legacy in FindObjectsByType<BattleScreenView>(FindObjectsSortMode.None))
-            {
-                Destroy(legacy.gameObject);
-            }
             // Keep playing while the Editor is unfocused (captures and remote-driven checks rely on it).
             Application.runInBackground = true;
             EnsureEventSystem();
@@ -187,7 +180,7 @@ namespace Depiction.View
                     break;
 
                 case CueKind.RangeSwitch:
-                    yield return SwitchRange(target, cue.RangeAfter);
+                    yield return SwitchRange(target, cue.RangeAfter, cue.RangeGlyphAfter);
                     break;
 
                 case CueKind.StanceCue:
@@ -235,7 +228,11 @@ namespace Depiction.View
 
         private IEnumerator Attack(DepictionEvent ev, Cue cue, FigureView target, StatusBarView status, Vector2 chest)
         {
-            bool byPlayer = cue.Target == UnitSide.Enemy;
+            // The script must name the attacker. A missing one is a script bug: say so, then fall back
+            // to the opposite of the target so the beat still plays.
+            if (!cue.Source.HasValue) Debug.LogError("[Depiction] event " + ev.Order + ": Slash cue has no Source");
+            UnitSide source = cue.Source ?? (cue.Target == UnitSide.Enemy ? UnitSide.Player : UnitSide.Enemy);
+            bool byPlayer = source == UnitSide.Player;
             FigureView attacker = byPlayer ? playerFigure : enemyFigure;
             if (byPlayer) yield return Lunge(attacker, 46f, 100f);
             Color streak = byPlayer ? BattleTheme.Ink : BattleTheme.Omen;
@@ -263,14 +260,14 @@ namespace Depiction.View
             yield return UiTween.Move(figure.Rect, from, to, ms, Ease.Out);
         }
 
-        private IEnumerator SwitchRange(FigureView figure, RangeSide range)
+        private IEnumerator SwitchRange(FigureView figure, RangeSide range, string glyph)
         {
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             Vector3 from = figure.transform.position;
             Vector3 to = slot ? slot.position : from;
             // 320 ms to move, then the tag flips in 150 ms (battle_ui_ux_v2 §10.6).
             yield return UiTween.Run(320f, Ease.InOut, t => { if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t); });
-            yield return figure.FlipRangeTag(range, 150f);
+            yield return figure.FlipRangeTag(glyph, 150f);
         }
 
         private IEnumerator DrawHand(List<CardFace> faces)
@@ -321,8 +318,8 @@ namespace Depiction.View
             if (cornerInfo) cornerInfo.Bind(frame.Corner);
             playerStatus.Bind(frame.Player);
             enemyStatus.Bind(frame.Enemy);
-            playerFigure.SetRange(frame.Player.HasRange, frame.Player.Range);
-            enemyFigure.SetRange(frame.Enemy.HasRange, frame.Enemy.Range);
+            playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);
+            enemyFigure.SetRange(frame.Enemy.HasRange, frame.Enemy.RangeGlyph);
             RectTransform slot = frame.Player.Range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) playerFigure.transform.position = slot.position;
             omenBadge.Bind(frame.Omen);

@@ -109,6 +109,55 @@ namespace Depiction.Tests
             }
         }
 
+        [Test]
+        public void EverySlashNamesItsAttacker()
+        {
+            int slashes = 0;
+            foreach (DepictionEvent ev in TurnSliceScript.Build().Events)
+            {
+                foreach (Cue cue in ev.Cues)
+                {
+                    if (cue.Kind != CueKind.Slash) continue;
+                    slashes += 1;
+                    Assert.That(cue.Source.HasValue, Is.True, "event " + ev.Order + " slash has no Source");
+                    Assert.That(cue.Source.Value, Is.Not.EqualTo(cue.Target), "event " + ev.Order);
+                }
+            }
+            Assert.That(slashes, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void EveryUnitWithARangeSideCarriesItsGlyph()
+        {
+            DepictionScript script = TurnSliceScript.Build();
+            AssertRangeGlyphs(script.Opening, "opening");
+            foreach (DepictionEvent ev in script.Events)
+            {
+                AssertRangeGlyphs(ev.After, "event " + ev.Order);
+                foreach (Cue cue in ev.Cues)
+                {
+                    if (cue.Kind == CueKind.RangeSwitch) Assert.That(cue.RangeGlyphAfter, Is.Not.Empty, "event " + ev.Order);
+                }
+            }
+
+            Assert.That(script.Opening.Player.RangeGlyph, Is.EqualTo("近"));
+            Cue rangeSwitch = script.Events[3].Cues.Find(c => c.Kind == CueKind.RangeSwitch);
+            Assert.That(rangeSwitch, Is.Not.Null, "event 4 has no RangeSwitch cue");
+            Assert.That(rangeSwitch.RangeAfter, Is.EqualTo(RangeSide.Far));
+            Assert.That(rangeSwitch.RangeGlyphAfter, Is.EqualTo("遠"));
+            Assert.That(script.Events[3].After.Player.RangeGlyph, Is.EqualTo("遠"));
+        }
+
+        private static void AssertRangeGlyphs(DepictionFrame frame, string where)
+        {
+            foreach (UnitFrame unit in new[] { frame.Player, frame.Enemy })
+            {
+                if (!unit.HasRange) continue;
+                // The glyph and the side are written separately; they must never disagree.
+                Assert.That(unit.RangeGlyph, Is.EqualTo(unit.Range == RangeSide.Near ? "近" : "遠"), where);
+            }
+        }
+
         private static void Play(DepictionRunner runner, string cardId, DropZone zone, int expectedOrder)
         {
             PlayVerdict verdict = runner.TryPlay(cardId, zone, out DepictionEvent played);

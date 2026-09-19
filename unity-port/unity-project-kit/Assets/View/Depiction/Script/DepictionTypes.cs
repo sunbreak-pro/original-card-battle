@@ -75,6 +75,8 @@ namespace Depiction
         /// <summary>Only bosses, elites and the player hold a range side (battle_core_v4 §17.3).</summary>
         public bool HasRange;
         public RangeSide Range;
+        /// <summary>The one glyph on the tag at the unit's feet ("近" / "遠"). Required when <see cref="HasRange"/>.</summary>
+        public string RangeGlyph = "";
         public List<StatusChip> Statuses = new List<StatusChip>();
     }
 
@@ -146,6 +148,8 @@ namespace Depiction
 
         public CueKind Kind;
         public UnitSide Target;
+        /// <summary>Slash only: who attacks. Required there, so the View never guesses it from the target.</summary>
+        public UnitSide? Source;
         public int Amount;
         public string Text = "";
         /// <summary>Strength of the effect, 1..4, decided from the settled value by whoever writes the script.</summary>
@@ -156,6 +160,8 @@ namespace Depiction
         /// <summary>StaminaChange only: how many pips the unit has, so the View never looks outside the cue.</summary>
         public int StaminaMax = Unchanged;
         public RangeSide RangeAfter;
+        /// <summary>RangeSwitch only: the glyph the tag flips to ("遠").</summary>
+        public string RangeGlyphAfter = "";
     }
 
     public sealed class DepictionEvent

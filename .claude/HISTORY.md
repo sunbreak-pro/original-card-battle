@@ -2,6 +2,22 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-19 - 戦闘描写の後片付け（Issue #26 / #27 / #28 / #29 前半）
+
+#### 概要
+
+描写セッションで範囲の外に出した 4 件を片付けた。同期が改行だけの差分を作らなくなり、`BattleScreenView` は描写シーンで自動起動しなくなり、攻撃者と一字札の文字を台本が持ち、1 行動 2.0 秒の上限が PlayMode テストになった（計画書: archive/2026-09-19-depiction-followups.md）。
+
+#### 変更点
+
+- **同期（#27）**: `sync-unity-project.mjs` は改行を LF にそろえて比べ、書くときは宛先の改行の流儀を保つ。`package.json` に `engines.node >=20.12`
+- **自動起動（#26）**: `BattleScreenView.Bootstrap` は `DepictionPlayer` のあるシーンで生成しない。`DepictionPlayer.Start` の `Destroy` の回避を削除。`test1` 限定にしなかったのは、ビルド設定のシーンが `SampleScene` で、`-replayTrace` の無人ビルドが自動起動に頼るため
+- **台本の型（#29 前半）**: `Cue.Source`（`UnitSide?`、Slash で必須）、`UnitFrame.RangeGlyph`、`Cue.RangeGlyphAfter` を追加。`DepictionPlayer.Attack` と `FigureView` は台本から取る。`FigureView.Glyph` は削除。EditMode テスト 2 本を追加
+- **2.0 秒の上限（#28）**: `Assets/View/Depiction/Tests/PlayMode/` に asmdef と `DepictionPlaybackTests`。View は既定アセンブリにあって asmdef から参照できないので、名前で引く。全 7 イベントが 2.0 秒未満、`Finished`、最後の画面（HP 47 / Guard 0 / 予兆「防御」）を確かめる
+- **確認**: 同期 2 回目 0 件 / 再コンパイル後のエラー 0 / EditMode 62 / PlayMode 1 / dotnet test 54 / 描写シーンで `BattleScreenView` 0 個 / `test1` で View v1.1 とトレース再生が動作 / 撮り直し 10 枚は前回との差 0.001% 以下。1 行動は撮影ありで最長 1.81 秒（順 6）
+- **気づき（未対応）**: `ProceduralArt` は絵を `??=` で静的に抱える。再生開始時のドメイン再読み込みを切ったこのプロジェクトでは、2 回目の再生から破棄済みの絵を返し、人影や盾が四角になる。スクリプトの再読み込みで直る
+- **持ち越し**: #25（手触り、人手）、#30（強弱のしきい値）、#29 後半（v4.2 コアの変換器）
+
 ### 2026-09-19 - Unity 戦闘描写（固定台本の 1 ターン）
 
 #### 概要
