@@ -68,15 +68,32 @@ namespace Depiction.View
                 return;
             }
             GameObject root = PrefabUtility.LoadPrefabContents(path);
-            var view = root.GetComponent<FigureView>();
-            bool added = view != null && view.targetMark == null;
-            if (added)
+            try
             {
-                AddTargetMark(view, (RectTransform)root.transform);
+                var view = root.GetComponent<FigureView>();
+                if (view == null)
+                {
+                    Debug.LogWarning("[Depiction] " + path + " has no FigureView on its root; nothing upgraded.");
+                    return;
+                }
+                if (view.targetMark != null)
+                {
+                    Debug.Log("[Depiction] Figure.targetMark already present.");
+                    return;
+                }
+                // A lost reference with the child still there is relinked, not built a second time.
+                TargetMarkView[] marks = root.GetComponentsInChildren<TargetMarkView>(true);
+                TargetMarkView existing = marks.Length > 0 ? marks[0] : null;
+                if (marks.Length > 1) Debug.LogWarning("[Depiction] " + path + " has " + marks.Length + " TargetMarkView children; relinking the first, remove the rest by hand.");
+                if (existing != null) view.targetMark = existing;
+                else AddTargetMark(view, (RectTransform)root.transform);
                 PrefabUtility.SaveAsPrefabAsset(root, path);
+                Debug.Log("[Depiction] Figure.targetMark " + (existing != null ? "relinked to the existing " + existing.name : "added") + ".");
             }
-            PrefabUtility.UnloadPrefabContents(root);
-            Debug.Log("[Depiction] Figure.targetMark " + (added ? "added" : "already present") + ".");
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         // ---- prefabs --------------------------------------------------------------------------

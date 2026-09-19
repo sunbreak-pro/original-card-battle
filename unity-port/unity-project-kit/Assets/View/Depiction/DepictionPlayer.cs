@@ -42,6 +42,7 @@ namespace Depiction.View
         [Header("Hand layout")]
         public float cardSpacing = 204f;
         [Tooltip("The hand is a shallow fan: each step away from the middle tilts a card by this many degrees...")]
+        [Range(0f, 15f)] // HandFan assumes the outermost tilt stays within 90 degrees
         public float fanDegreesPerCard = 2.5f;
         [Tooltip("...and the middle rises above the outermost cards by this many pixels times the step squared.")]
         public float fanDropPixels = 4f;
@@ -403,18 +404,12 @@ namespace Depiction.View
             }
         }
 
-        /// <summary>
-        /// Resting place of the i-th card in a shallow fan. The outermost cards stay on the hand's
-        /// base line (the screen edge is just below it) and the middle rises.
-        /// </summary>
+        /// <summary>Resting place of the i-th card in a shallow fan (see <see cref="HandFan.Place"/>).</summary>
         private void HomeOf(int index, out Vector2 position, out float degrees)
         {
-            float edge = (_hand.Count - 1) * 0.5f;
-            float step = index - edge;
-            degrees = -step * fanDegreesPerCard;
-            // A tilted card's lower corner dips by half its width times sin(tilt); raise it by that much.
-            float cornerDip = Mathf.Abs(Mathf.Sin(degrees * Mathf.Deg2Rad)) * cardPrefab.Rect.rect.width * 0.5f;
-            position = new Vector2(step * cardSpacing, (edge * edge - step * step) * fanDropPixels + cornerDip);
+            FanPlace place = HandFan.Place(_hand.Count, index, cardSpacing, fanDegreesPerCard, fanDropPixels, cardPrefab.Rect.rect.width);
+            position = new Vector2(place.X, place.Y);
+            degrees = place.Degrees;
         }
 
         private void PlaceAtHome(CardView card, int index)
@@ -472,21 +467,31 @@ namespace Depiction.View
         {
             if (!TryPointer(out Vector2 pointer)) return null;
             // The hovered card is drawn in front, so it wins where two cards overlap.
-            if (_hovered && _hovered.Interactable && RestingRectContains(_hovered, pointer)) return _hovered;
+            if (_hovered && _hovered.Interactable && RestingRectContains(_hovered, _hand.IndexOf(_hovered), pointer)) return _hovered;
             for (int i = _hand.Count - 1; i >= 0; i--)
             {
                 CardView card = _hand[i];
-                if (card && card.Interactable && RestingRectContains(card, pointer)) return card;
+                if (card && card.Interactable && RestingRectContains(card, i, pointer)) return card;
             }
             return null;
         }
 
-        private bool RestingRectContains(CardView card, Vector2 pointer)
+        /// <summary>
+        /// True when the pointer is over the card as it would lie at rest: at its fan place, tilted,
+        /// unlifted and unscaled. Undoing only the lift would leave the hover scale in the test, and
+        /// the rim that scale adds would flicker the hover on and off.
+        /// </summary>
+        private bool RestingRectContains(CardView card, int index, Vector2 pointer)
         {
-            _hoverWeight.TryGetValue(card, out float weight);
-            float eased = weight * weight * (3f - 2f * weight);
-            float liftOnScreen = hoverLiftPixels * eased * handArea.lossyScale.y;
-            return RectTransformUtility.RectangleContainsScreenPoint(card.Rect, pointer + new Vector2(0f, liftOnScreen), null);
+            if (index < 0) return false;
+            if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(handArea, pointer, null, out Vector3 world)) return false;
+            HomeOf(index, out Vector2 home, out float degrees);
+            // anchoredPosition and localPosition differ by a constant, so the resting localPosition is
+            // the current one moved by how far the card sits from home.
+            Vector3 restLocal = card.Rect.localPosition + (Vector3)(home - card.Rect.anchoredPosition);
+            Vector3 inHand = handArea.InverseTransformPoint(world);
+            Vector3 inCard = Quaternion.Inverse(Quaternion.Euler(0f, 0f, degrees)) * (inHand - restLocal);
+            return card.Rect.rect.Contains(inCard);
         }
 
         private static bool TryPointer(out Vector2 position)
@@ -662,24 +667,28 @@ namespace Depiction.View
             yield return RunAutomaticEvents();
         }
 
+        /// <summary>
+        /// Slides the remaining cards to their new fan places. Each start value is kept with its card,
+        /// not by position in the list, so a hand that changes mid-tween cannot pair a card with
+        /// another card's start; a card that left the hand is skipped.
+        /// </summary>
         private IEnumerator SettleHand(float ms)
         {
-            var from = new List<Vector2>();
-            var fromDegrees = new List<float>();
+            var starts = new List<(CardView card, Vector2 position, float degrees)>();
             foreach (CardView card in _hand)
             {
-                from.Add(card.Rect.anchoredPosition);
-                fromDegrees.Add(card.Rect.localEulerAngles.z);
+                if (card) starts.Add((card, card.Rect.anchoredPosition, card.Rect.localEulerAngles.z));
             }
             yield return UiTween.Run(ms, Ease.Out, t =>
             {
-                for (int i = 0; i < _hand.Count && i < from.Count; i++)
+                foreach ((CardView card, Vector2 position, float degrees) start in starts)
                 {
-                    if (!_hand[i]) continue;
-                    HomeOf(i, out Vector2 home, out float degrees);
-                    _hand[i].Rect.anchoredPosition = Vector2.Lerp(from[i], home, t);
-                    _hand[i].Rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.LerpAngle(fromDegrees[i], degrees, t));
-                    _hand[i].Rect.localScale = Vector3.one;
+                    int index = start.card ? _hand.IndexOf(start.card) : -1;
+                    if (index < 0) continue;
+                    HomeOf(index, out Vector2 home, out float homeDegrees);
+                    start.card.Rect.anchoredPosition = Vector2.Lerp(start.position, home, t);
+                    start.card.Rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.LerpAngle(start.degrees, homeDegrees, t));
+                    start.card.Rect.localScale = Vector3.one;
                 }
             });
         }
