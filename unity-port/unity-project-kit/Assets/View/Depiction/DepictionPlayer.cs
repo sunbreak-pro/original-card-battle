@@ -41,6 +41,16 @@ namespace Depiction.View
 
         [Header("Hand layout")]
         public float cardSpacing = 204f;
+        [Tooltip("The hand is a shallow fan: each step away from the middle tilts a card by this many degrees...")]
+        public float fanDegreesPerCard = 2.5f;
+        [Tooltip("...and the middle rises above the outermost cards by this many pixels times the step squared.")]
+        public float fanDropPixels = 4f;
+
+        [Header("Hover")]
+        [Tooltip("A card under the pointer rises by this much and comes to the front. Its fan angle is kept.")]
+        public float hoverLiftPixels = 28f;
+        public float hoverScale = 1.05f;
+        public float hoverSeconds = 0.09f;
 
         [Header("Debug")]
         [Tooltip("Plays the drags of events 2-4 by itself. Off by default: the player drags.")]
@@ -63,6 +73,8 @@ namespace Depiction.View
         private CardView _dragging;
         private Vector3 _dragHome;
         private Vector3 _grabOffset;
+        private CardView _hovered;
+        private readonly Dictionary<CardView, float> _hoverWeight = new Dictionary<CardView, float>();
 
         private void Start()
         {
@@ -88,6 +100,11 @@ namespace Depiction.View
             // A debug gate freezes every tween through the shared UiTween.Speed. Never leave it frozen
             // for the next scene (View v1.1 uses the same static when domain reload is off).
             UiTween.Speed = 1f;
+        }
+
+        private void Update()
+        {
+            UpdateHover();
         }
 
         public void DebugStep()
@@ -367,13 +384,123 @@ namespace Depiction.View
 
         private void LayoutHand()
         {
+            _hovered = null;
+            _hoverWeight.Clear();
             for (int i = 0; i < _hand.Count; i++)
             {
-                float x = (i - (_hand.Count - 1) * 0.5f) * cardSpacing;
-                _hand[i].Rect.anchoredPosition = new Vector2(x, 0f);
-                _hand[i].Rect.localScale = Vector3.one;
-                _hand[i].Rect.localRotation = Quaternion.identity;
+                PlaceAtHome(_hand[i], i);
             }
+            RestoreCardOrder();
+        }
+
+        /// <summary>Cards draw left to right, after anything else placed under the hand area by hand.</summary>
+        private void RestoreCardOrder()
+        {
+            int first = Mathf.Max(0, handArea.childCount - _hand.Count);
+            for (int i = 0; i < _hand.Count; i++)
+            {
+                if (_hand[i]) _hand[i].transform.SetSiblingIndex(first + i);
+            }
+        }
+
+        /// <summary>
+        /// Resting place of the i-th card in a shallow fan. The outermost cards stay on the hand's
+        /// base line (the screen edge is just below it) and the middle rises.
+        /// </summary>
+        private void HomeOf(int index, out Vector2 position, out float degrees)
+        {
+            float edge = (_hand.Count - 1) * 0.5f;
+            float step = index - edge;
+            degrees = -step * fanDegreesPerCard;
+            // A tilted card's lower corner dips by half its width times sin(tilt); raise it by that much.
+            float cornerDip = Mathf.Abs(Mathf.Sin(degrees * Mathf.Deg2Rad)) * cardPrefab.Rect.rect.width * 0.5f;
+            position = new Vector2(step * cardSpacing, (edge * edge - step * step) * fanDropPixels + cornerDip);
+        }
+
+        private void PlaceAtHome(CardView card, int index)
+        {
+            HomeOf(index, out Vector2 position, out float degrees);
+            card.Rect.anchoredPosition = position;
+            card.Rect.localScale = Vector3.one;
+            card.Rect.localRotation = Quaternion.Euler(0f, 0f, degrees);
+        }
+
+        // ---- hover ----------------------------------------------------------------------------
+
+        /// <summary>
+        /// Lifts the card under the pointer and brings it to the front. The test runs against the
+        /// card's resting place, not the lifted one, so the card does not flicker when the pointer
+        /// sits on its bottom edge.
+        /// </summary>
+        private void UpdateHover()
+        {
+            if (_runner == null) return;
+            if (_busy || _dragging != null)
+            {
+                // Tweens own the cards now; they end in LayoutHand, which also drops the hover.
+                _hovered = null;
+                _hoverWeight.Clear();
+                return;
+            }
+
+            CardView over = CardUnderPointer();
+            if (over != _hovered)
+            {
+                RestoreCardOrder();
+                if (over) over.transform.SetAsLastSibling();
+                _hovered = over;
+            }
+
+            float step = hoverSeconds > 0f ? Time.unscaledDeltaTime / hoverSeconds : 1f;
+            for (int i = 0; i < _hand.Count; i++)
+            {
+                CardView card = _hand[i];
+                if (!card) continue;
+                _hoverWeight.TryGetValue(card, out float weight);
+                float next = Mathf.MoveTowards(weight, card == over ? 1f : 0f, step);
+                if (next == weight && weight == 0f) continue;
+                _hoverWeight[card] = next;
+                float eased = next * next * (3f - 2f * next);
+                HomeOf(i, out Vector2 home, out _);
+                card.Rect.anchoredPosition = home + new Vector2(0f, hoverLiftPixels * eased);
+                float scale = Mathf.Lerp(1f, hoverScale, eased);
+                card.Rect.localScale = new Vector3(scale, scale, 1f);
+            }
+        }
+
+        private CardView CardUnderPointer()
+        {
+            if (!TryPointer(out Vector2 pointer)) return null;
+            // The hovered card is drawn in front, so it wins where two cards overlap.
+            if (_hovered && _hovered.Interactable && RestingRectContains(_hovered, pointer)) return _hovered;
+            for (int i = _hand.Count - 1; i >= 0; i--)
+            {
+                CardView card = _hand[i];
+                if (card && card.Interactable && RestingRectContains(card, pointer)) return card;
+            }
+            return null;
+        }
+
+        private bool RestingRectContains(CardView card, Vector2 pointer)
+        {
+            _hoverWeight.TryGetValue(card, out float weight);
+            float eased = weight * weight * (3f - 2f * weight);
+            float liftOnScreen = hoverLiftPixels * eased * handArea.lossyScale.y;
+            return RectTransformUtility.RectangleContainsScreenPoint(card.Rect, pointer + new Vector2(0f, liftOnScreen), null);
+        }
+
+        private static bool TryPointer(out Vector2 position)
+        {
+#if ENABLE_INPUT_SYSTEM
+            UnityEngine.InputSystem.Pointer pointer = UnityEngine.InputSystem.Pointer.current;
+            position = pointer != null ? pointer.position.ReadValue() : Vector2.zero;
+            bool present = pointer != null;
+#else
+            position = Input.mousePosition;
+            bool present = Input.mousePresent;
+#endif
+            // A pointer that left the game view keeps reporting its last position; that is not a hover.
+            return present && new Rect(0f, 0f, Screen.width, Screen.height).Contains(position);
         }
 
         private void SetHandInteractable(bool on)
@@ -410,12 +537,66 @@ namespace Depiction.View
         private void BeginHold(CardView card)
         {
             _dragging = card;
+            // The card may be lifted by the hover; it must come back to its resting place, not to there.
+            Vector3 held = card.transform.position;
+            PlaceAtHome(card, _hand.IndexOf(card));
             _dragHome = card.transform.position;
+            card.transform.position = held;
+            // The hover stops updating while a card is held, so settle any card it left half lifted.
+            foreach (CardView other in _hand)
+            {
+                if (other && other != card) PlaceAtHome(other, _hand.IndexOf(other));
+            }
+            _hovered = null;
+            _hoverWeight.Clear();
             card.transform.SetAsLastSibling();
+            card.Rect.localRotation = Quaternion.identity; // a held card is upright
             card.Rect.localScale = new Vector3(1.08f, 1.08f, 1f);
             card.group.alpha = 0.92f;
-            if (card.Face.Aim == CardAim.Single) receiver.Show(PreviewFor(card));
-            else throwLine.Show(PreviewFor(card));
+            if (card.Face.Aim == CardAim.Single)
+            {
+                receiver.Show(PreviewFor(card));
+            }
+            else
+            {
+                throwLine.Show(PreviewFor(card));
+                ShowTargetMark(card);
+            }
+        }
+
+        /// <summary>The throw line says where to release; the mark says who the card lands on.</summary>
+        private void ShowTargetMark(CardView card)
+        {
+            if (!card.Face.Affects.HasValue)
+            {
+                Debug.LogError("[Depiction] card " + card.CardId + " is a throw-line card but the script gave no Affects");
+                return;
+            }
+            FigureView figure = card.Face.Affects.Value == UnitSide.Player ? playerFigure : enemyFigure;
+            if (!figure.targetMark)
+            {
+                Debug.LogError("[Depiction] " + figure.name + " has no targetMark; run Tools > Depiction > Upgrade Prefabs");
+                return;
+            }
+            figure.targetMark.Show(CardView.KindColor(card.Face.Kind));
+        }
+
+        private void HideTargetMarks()
+        {
+            if (playerFigure.targetMark) playerFigure.targetMark.Hide();
+            if (enemyFigure.targetMark) enemyFigure.targetMark.Hide();
+        }
+
+        private void SetZoneHot(CardView card, bool hot)
+        {
+            if (card.Face.Aim == CardAim.Single)
+            {
+                receiver.SetHot(hot);
+                return;
+            }
+            throwLine.SetHot(hot);
+            if (playerFigure.targetMark) playerFigure.targetMark.SetHot(hot);
+            if (enemyFigure.targetMark) enemyFigure.targetMark.SetHot(hot);
         }
 
         /// <summary>The one predicted value comes from the script; a card the script does not expect shows none.</summary>
@@ -433,9 +614,7 @@ namespace Depiction.View
 
         private void UpdateHot(CardView card, Vector2 screenPoint)
         {
-            bool hot = ZoneAt(card, screenPoint) != DropZone.None;
-            if (card.Face.Aim == CardAim.Single) receiver.SetHot(hot);
-            else throwLine.SetHot(hot);
+            SetZoneHot(card, ZoneAt(card, screenPoint) != DropZone.None);
         }
 
         private void Release(CardView card, DropZone zone)
@@ -443,6 +622,7 @@ namespace Depiction.View
             _dragging = null;
             receiver.Hide();
             throwLine.Hide();
+            HideTargetMarks();
             PlayVerdict verdict = _runner.TryPlay(card.CardId, zone, out DepictionEvent played);
             if (verdict == PlayVerdict.Accepted) StartCoroutine(PlayAccepted(card, played));
             else StartCoroutine(ReturnToHand(card, shake: verdict == PlayVerdict.WrongCard && zone != DropZone.None));
@@ -485,14 +665,21 @@ namespace Depiction.View
         private IEnumerator SettleHand(float ms)
         {
             var from = new List<Vector2>();
-            foreach (CardView card in _hand) from.Add(card.Rect.anchoredPosition);
+            var fromDegrees = new List<float>();
+            foreach (CardView card in _hand)
+            {
+                from.Add(card.Rect.anchoredPosition);
+                fromDegrees.Add(card.Rect.localEulerAngles.z);
+            }
             yield return UiTween.Run(ms, Ease.Out, t =>
             {
                 for (int i = 0; i < _hand.Count && i < from.Count; i++)
                 {
                     if (!_hand[i]) continue;
-                    float x = (i - (_hand.Count - 1) * 0.5f) * cardSpacing;
-                    _hand[i].Rect.anchoredPosition = Vector2.Lerp(from[i], new Vector2(x, 0f), t);
+                    HomeOf(i, out Vector2 home, out float degrees);
+                    _hand[i].Rect.anchoredPosition = Vector2.Lerp(from[i], home, t);
+                    _hand[i].Rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.LerpAngle(fromDegrees[i], degrees, t));
+                    _hand[i].Rect.localScale = Vector3.one;
                 }
             });
         }
@@ -501,12 +688,14 @@ namespace Depiction.View
         {
             _busy = true;
             Vector3 from = card.transform.position;
+            HomeOf(_hand.IndexOf(card), out _, out float homeDegrees);
             yield return UiTween.Run(180f, Ease.Out, t =>
             {
                 if (!card) return;
                 card.transform.position = Vector3.LerpUnclamped(from, _dragHome, t);
                 float s = Mathf.Lerp(1.08f, 1f, t);
                 card.Rect.localScale = new Vector3(s, s, 1f);
+                card.Rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.LerpAngle(0f, homeDegrees, t));
             });
             if (card) card.group.alpha = 1f;
             if (shake && card) yield return UiTween.Shake(card.Rect, 8f, 2, 160f);
@@ -527,8 +716,7 @@ namespace Depiction.View
                 ? receiver.transform.position
                 : new Vector3(from.x, throwLine.transform.position.y + (throwLine.transform.position.y - from.y) * 0.35f, from.z);
             yield return UiTween.Run(450f, Ease.InOut, t => { if (card) card.transform.position = Vector3.LerpUnclamped(from, to, t); });
-            if (next.Aim == CardAim.Single) receiver.SetHot(true);
-            else throwLine.SetHot(true);
+            SetZoneHot(card, true);
             yield return Gate(next.Order + "-hover");
             Release(card, DepictionRunner.RequiredZone(next.Aim));
         }
