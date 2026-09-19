@@ -138,11 +138,17 @@ namespace Depiction
         {
             return new List<CardFace>
             {
-                new CardFace { Id = Kesagiri, Name = "袈裟斬り", Cost = 1, Kind = CardKind.Attack, Aim = CardAim.Single, ValueText = "6", TraitText = "初手 +3", TraitLit = true },
-                new CardFace { Id = Daijodan, Name = "大上段", Cost = 2, Kind = CardKind.Attack, Aim = CardAim.Single, ValueText = "13" },
-                new CardFace { Id = Ushirotobi, Name = "後ろ跳び", Cost = 1, Kind = CardKind.Move, Aim = CardAim.Self, Affects = UnitSide.Player, ValueText = "4", TraitText = "予兆 +3", TraitLit = true },
-                new CardFace { Id = TetsuNoUke, Name = "鉄の受け", Cost = 2, Kind = CardKind.Guard, Aim = CardAim.Self, Affects = UnitSide.Player, ValueText = "9" },
-                new CardFace { Id = Kansatsu, Name = "観察", Cost = 1, Kind = CardKind.Skill, Aim = CardAim.Single },
+                new CardFace { Id = Kesagiri, Name = "袈裟斬り", Cost = 1, Kind = CardKind.Attack, Aim = CardAim.Single, ValueText = "6", TraitText = "初手 +3", TraitLit = true,
+                    TypeLabel = "攻撃・敵単体", Description = "敵に 6 ダメージ。ターン最初なら +3。" },
+                new CardFace { Id = Daijodan, Name = "大上段", Cost = 2, Kind = CardKind.Attack, Aim = CardAim.Single, ValueText = "13",
+                    TypeLabel = "攻撃・敵単体", Description = "敵に 13 ダメージ。振りかぶる一撃。" },
+                new CardFace { Id = Ushirotobi, Name = "後ろ跳び", Cost = 1, Kind = CardKind.Move, Aim = CardAim.Self, Affects = UnitSide.Player, ValueText = "4", TraitText = "予兆 +3", TraitLit = true,
+                    TypeLabel = "ムーブ・自分", Description = "遠間へ下がる。Guard 4 を得る。予兆が攻撃なら +3。" },
+                new CardFace { Id = TetsuNoUke, Name = "鉄の受け", Cost = 2, Kind = CardKind.Guard, Aim = CardAim.Self, Affects = UnitSide.Player, ValueText = "9",
+                    TypeLabel = "防御・自分", Description = "Guard 9 を得る。重い一撃に備える。" },
+                // The slice never plays 観察; its text follows swordsman_cards_v4 (draw 1 at the first tier).
+                new CardFace { Id = Kansatsu, Name = "観察", Cost = 1, Kind = CardKind.Skill, Aim = CardAim.Single,
+                    TypeLabel = "技・敵単体", Description = "カードを 1 枚引く。相手をよく見る。" },
             };
         }
 

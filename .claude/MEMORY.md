@@ -16,9 +16,9 @@
 
 ## 直近の完了
 
+- 戦闘描写の札の読みやすさ（出せない理由、種別と説明文、重なり）✅（2026-09-20）— 固定台本で順番外の札が黙って戻っていたので、手札の上に「台本の次の一手」を出し、順番外の札に暗い幕をかぶせ、違う札・違う場所で離すと理由を赤字で 3.5 秒出す。札に種別と対象（`CardFace.TypeLabel`）と 3 行までの説明文（`CardFace.Description`）を台本から出す。札の間隔 204 → 160 で重なる。浮いた札の下端で隣の札をつかむ取り違えも直した。確認: エラー 0 / EditMode 95 / PlayMode 1 / dotnet test 54 / 撮影。**人手待ち**: 実際に触って重なり具合と文字の大きさの好み
 - Krita AI 制作ガイド ✅（2026-09-19）— Krita AI Diffusion 1.53.0 を Local Managed Server で入れ、SDXL（Animagine XL 4.0）と Flux 2 Klein 4B だけを使う手順と、立ち絵・差分を作る段階 0〜7 をまとめた。Illustrious 系の部品、Remove Content（MAT、非商用）、Live の結果は製品素材に使わない。**人手待ち**: 導入と 8 GB での実測、主人公の見た目。0 円化の判断待ち 4 件（CSP / #14 / #23 / ボス）は HISTORY の同日「アート制作の調べ直し」。ガイド `docs/reports/2026-09-19-krita-ai-setup-guide.html`（Artifact `https://claude.ai/artifact/9GUvs2LY7jJGK7hdeFQ7ym`）
 - 戦闘描写の仕上げ（Issue #31 と手触りの QA 残り）✅（2026-09-19）— `ProceduralArt` の静的キャッシュが Unity の null 判定を通るようになり、ドメイン再読み込みなしの 2 回目の再生でも絵が出る（BattleDepiction と test1 で確認）。扇の座標は純関数 `HandFan.Place` に移し、EditMode テスト 31 件を足した。テストで見つかった「中央の隣が中央より高くなる」式を、全体を端の札の沈み分だけ持ち上げる形に直した。ホバーの当たりは札の定位置（拡大なし）で取る。`SettleHand` は札と開始値を組で持つ。確認: エラー 0 / EditMode 94 / PlayMode 1 / dotnet test 54 / 同期 2 回目 0 件 / 撮り直し 10 枚は手札より上が前回と同じ。**持ち越し**: #25 の手触りの再確認（人手）
-- 戦闘描写の手触りの手直し（ホバー、扇形の手札、標的マーク）✅（2026-09-19）— Issue #25 の所感 3 点。札はホバーで 28 px 浮いて前面に出る（角度は保つ）。手札は 1 段 2.5 度の浅い扇形。投げ上げ線の札を持つと、効果が乗る人影を四角い標的マーク（`TargetMarkView`）が囲む。どの人影かは台本の `CardFace.Affects` が決める。確認: エラー 0 / EditMode 描写分 9 / PlayMode 1 / dotnet test 54 / 撮影。**人手待ち**: 浮く量と扇の強さの好み（`DepictionPlayer` のインスペクタで変えられる）
 
 > 完了履歴の全量は `README.md` の Development History を参照。
 

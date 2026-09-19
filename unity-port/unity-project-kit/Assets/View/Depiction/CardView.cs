@@ -14,10 +14,14 @@ namespace Depiction.View
         public Image kindStripe;
         public Text costText;
         public Text nameText;
+        public Text typeText;
         public Text valueText;
+        public Text descriptionText;
         public GameObject traitBox;
         public Text traitText;
         public Image traitLamp;
+        [Tooltip("Dark sheet drawn over the card when it is dimmed. Without it the card fades through its alpha.")]
+        public Image shade;
         public CanvasGroup group;
 
         public event Action<CardView, PointerEventData> DragBegan;
@@ -36,7 +40,16 @@ namespace Depiction.View
             gameObject.name = "Card_" + face.Id;
             if (costText) costText.text = face.Cost.ToString();
             if (nameText) nameText.text = face.Name;
+            if (typeText)
+            {
+                typeText.text = face.TypeLabel;
+                typeText.color = KindColor(face.Kind);
+            }
             if (valueText) valueText.text = face.ValueText;
+            // UI Text breaks lines only at spaces and knows no Japanese line-breaking rules, so a line
+            // could start with "。" or split "Guard". Each sentence gets its own line instead, and the
+            // spaces inside a sentence are made non-breaking.
+            if (descriptionText) descriptionText.text = face.Description.Replace(' ', '\u00A0').Replace("。", "。\n").TrimEnd('\n');
             if (kindStripe) kindStripe.color = KindColor(face.Kind);
             if (valueText) valueText.color = KindColor(face.Kind);
             bool hasTrait = !string.IsNullOrEmpty(face.TraitText);
@@ -53,9 +66,14 @@ namespace Depiction.View
             }
         }
 
+        /// <summary>
+        /// Darkened but opaque and still readable: a dimmed card can be picked up to learn why it cannot
+        /// be played. Fading through the alpha would let the overlapped neighbour show through.
+        /// </summary>
         public void SetDimmed(bool dimmed)
         {
-            if (group) group.alpha = dimmed ? 0.45f : 1f;
+            if (shade) shade.enabled = dimmed;
+            else if (group) group.alpha = dimmed ? 0.55f : 1f;
         }
 
         public static Color KindColor(CardKind kind)
