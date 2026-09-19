@@ -1,3 +1,5 @@
+> **FROZEN（2026-09-12）**: サンクチュアリ（ソウル経験値 / 永続スキルツリー）は「キャラクターの永続成長は無い」（`vision/concept-v3.md` §9）と矛盾するため凍結（2026-09-12）。継承ボーナスで代替。
+
 Here is the English translation of the design document.
 
 # Sanctuary Detailed Design Document V3.0 (SANCTUARY_DESIGN_V3)

@@ -2,79 +2,183 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
-### 2026-09-06 - Unity 移行 Phase 3 — UGUI 最小戦闘画面 + Web トレース一致
+### 2026-09-19 - カードバランスの前提 8 件の決定と Unity 戦闘描写セッションの前準備
 
 #### 概要
 
-Unity 6000.5.5f1 の実プロジェクト（`C:\Users\user\Unity\RPG-by-card`）で `BattleScreenView.Render` を実装し、コード生成の UGUI だけで 1 戦（勝敗・リスタート）が回る最小戦闘画面を作った。冒頭で Unity 側の CS0246（`[Test]` 未解決 ×57）を NUnit 暗黙 using の明示化で解消（known-issue 002）。固定 RNG(0) でパリティ fixture の操作列を再生し、Unity Console のトレース 18 状態が Web 版と完全一致。SystemRng でも 3 戦 97 手を例外なく完走。EditMode 57/57・`parity:check` 58/58 緑。
+カード 80 種に 2026-09-14 / 09-16 の決定を当てはめて分析し、こうだいさんの回答 12 件で前提を決めた。Unity Editor で戦闘の描写を作るセッションのプランと冒頭プロンプトを書いた。
 
 #### 変更点
 
-- **修正（known-issue 002）**: `unity-port/BattleCore.Tests/*.cs` 4 本に `using NUnit.Framework;` を明示。csproj の `<Using Include>` は Unity asmdef で効かない。`docs/known-issues/002-nunit-implicit-using-unity.md` + INDEX、kit README の Caveats に追記
-- **View 実装**: `unity-port/unity-project-kit/Assets/View/BattleScreenView.cs`（`npm run unity:sync` で Unity へ）。Canvas 階層をコードで構築（YAML 手書きなし、`RuntimeInitializeOnLoadMethod` で自動配置）。両者パネル / 間合い = 2 体の実距離 + 体勢（近: 前傾・遠: 後傾）/ 手札ボタン → `OnCardClicked` / ターン終了・リスタート / ログ新着順 / 結果オーバーレイ / 乱数「固定 ⇄ 実戦」切替ボタン / トレース再生ボタン
-- **検証基盤**: `npm run unity:trace`（`tools/gen-trace-actions.mjs`）が fixture から `Resources/trace-actions.txt`（再生用）と `expected-trace.txt`（期待値・連番付き）を生成。View は状態ごとに `[Trace] #n ...` を Console へ出すので diff で突合できる
-- **Unity 操作**: 公式 Unity CLI（`unity test` / `unity open` / `unity command eval_file|editor_play|capture_game_view`）で検証。非フォーカス Editor は Play Mode でもフレームが進まないため、eval で同期 dispatch + `EditorApplication.Step()` で描画を進めた
-- **検証結果**: EditMode 57/57、parity 58/58、トレース 18/18 一致、ランタイムエラー 0。スクリーンショット 4 枚は `docs/reports/2026-09-06-unity-phase3-ugui.html`
+- **分析**: 列 = コストにすると、アタック 8 / 12 / 16 は 1 スタミナあたり 8 / 6 / 5.3 で安い札ほど得になる。回復の値が未定で、2 だと複数枚前提の特性 25 個が発火しない。距離の廃止で、単属性ムーブの 4 段・最適間合いの列・遠用の目盛り・位置(中)・`shift` 2・T0 の列が意味を失っていた。
+- **決定（`battle_core_v4.md` §18）**: 回復 3 / 目盛り 6 / 13 / 21（ガード 4 / 9 / 15）と 4 列目 30 / 22 / 状態は使うと減る型とターンで減る型 / 強化 ×1.5 / 単属性ムーブは コスト 1 + 付随効果 / 位置の特性 16 枚 / 最適間合いの列を廃止。数値は叩き台で、試験台で測る。
+- **Unity 描写の方針**: 固定台本で描写だけ先に作る / 配置はプレハブ、動きはコード（`battle_ui_ux_v2.md` §6 方針 1 を置き換え）/ 1 ターンの縦切り / 影絵のまま。C# は `unity-port/` が正本、プレハブ / シーン / .meta は Unity リポが正本。
+- **プラン**: `vision/plans/2026-09-19-unity-battle-depiction.md`（前準備 / 台本 7 出来事 / 完了条件 / 冒頭プロンプト）。
+- **レポート**: `docs/reports/2026-09-19-card-balance-and-unity-prep.html`（Artifact `https://claude.ai/artifact/4KxwAn9VwA2JsNRnRqV5i9`）。
+- **見つけたが直していないもの**: Unity リポの初回コミットと URP 17.5.0 への修正が未実施。`unity-editor-mcp` は登録済みだがセッションに出ず、古い `unity.exe`（CLI）が 10 個残っている。`battle_ui_ux_v2.md` §6 と `swordsman_cards_v4.md` は未改訂。
 
-### 2026-07-06 - Unity 以降のための作業土台（環境地固め・Logic/View・パリティ同期・キット）
+### 2026-09-16 - 保留中の判断 95 件への回答と設計書への反映（状態のスタック制、位置はボスと精鋭だけ、コストは旧段表の列）
 
 #### 概要
 
-Unity 移行 First Step の Phase 3（実 Unity + UGUI、Editor 必須の人間作業）に先立ち、Unity Editor 抜きで用意できる作業土台を `unity-port/` に整備した。まず現状把握として、リモート/ローカル差異は実質ゼロ（`main`=`origin/main`・作業ツリークリーン、`origin/feat/unity-core-port` が stale 残存のみ）と確認。計画が「新規 Windows デスクトップ想定」としていた開発マシンに既に到達済み（本セッションが Windows 11・GPU 有）である一方、dotnet 未導入・node_modules 未導入でコアを本機で回す足場が無い、というギャップを特定。ユーザー選択（フル土台を段階実施・このマシンを本番に確定）に基づき 4 段階で土台を構築し、Workflow による敵対的マルチエージェント検証で固めた。branch `feat/unity-foundation`（commit `1769631` = 土台）。
+保留中の判断 95 件に回答し、設計書へ反映した。前提は 2026-09-14 の決定（`battle_core_v4.md` §16 / `battle_ui_ux_v2.md` §10）で、既存の節は消さずに新しい節として足し、置き換わる旧記述には一行の注記だけを入れた。本文の全面改訂（v4.2 / v2.1）は別タスクに回した。
 
 #### 変更点
 
-- **① 環境地固め**: `npm install` で TS 依存復旧（test 204/204・build green を本機実走で確認）。`unity-port/README.md` を Mac パス（/Users/newlife・/opt/homebrew）除去し Windows 前提へ全面刷新、dotnet 導入手順（`winget install Microsoft.DotNet.SDK.10`）を明記。
-- **② コード土台（純 C#・ヘッドレス検証可）**: `BattleCore/BattleStore.cs`（React useReducer 相当の Logic 層。購読型・no-op 抑制・`ToViewModel()`）、`BattleCore/IBattleView.cs`（View 契約 + `BattleViewModel` フラット射影）、`BattleCore.Tests/BattleStoreTests.cs`（パリティトレース準拠 8 件）。ストア方式は手書き reducer に確定（AppUI Redux 不採用）。
-- **③ パリティ同期（TS↔C# ドリフト検出のワンコマンド化）**: `parityFixture.test.ts`（常時ドリフトガード + `PARITY_WRITE=1` で fixture 再生成）、`unity-port/tools/gen-parity.mjs`・`parity-check.mjs`（`npm run parity:gen`/`parity:check`、クロスプラットフォーム node 製）、`.gitattributes` で fixture を LF 固定（autocrlf 由来の無用差分を排除）。
-- **④ 実行キット + 計画更新**: `unity-port/unity-project-kit/`（`BattleCore.asmdef`=engine-free / `BattleCore.Tests.asmdef` / Unity `.gitignore` / `BattleScreenView.cs` 雛形 / README）、`unity-port/PHASE3-KICKOFF.md`（Windows 手順 + Unity MCP 選定: IvanMurzak/Unity-MCP 第一候補・CoplayDev 代替、公式版はサブスク必須で除外。deep-web-research 調査・確度 medium）。計画書 `2026-06-28-unity-first-step-core-port.md` の決定記録更新（開発マシン=Windows 確定、ストア=手書き reducer 確定、MCP 暫定選定、作業土台節追加）。
-- **検証（敵対的マルチエージェント）**: Workflow で C# コンパイル整合性・同期スクリプト・キット/ドキュメントを 3 次元並列レビュー→各指摘を敵対的検証。C# 整合性は CLEAN（指摘ゼロ。dotnet 未導入のため未コンパイル、導入後 `dotnet test` 58/58 想定＝49 unit + 8 BattleStore/View + 1 parity）。confirmed minor 2 件を修正: `parity-check.mjs` のドリフト基準を `git diff` → `git diff HEAD`（stage 時の偽陰性解消）、docs の `50/50` → 実数 `58` に統一。
+- **回答の内訳（一覧 A〜K の行数）**: 操作 4 / 固定コスト 8 / 近間・遠間 13 / 背水 3 / 状態 8 / 規則 11 / 開示度 7 / 習熟と継承 9 / 探索とゲーム全体 10 / UI と演出 7 / 色とアート運用 12。行の合計は 92 で、見出しの 95 件は一覧の題と報告 HTML の数字に合わせた
+- **反映先**: `battle_core_v4.md` §17（17.1〜17.9）、`battle_ui_ux_v2.md` §11（11.1〜11.7）、`concept-v3.md` §14、`tools-and-prerequisites.md` §9 #18〜#29、`visual-production-pipeline/SKILL.md` の S0 と U3。置き換わる旧記述には「2026-09-16 の決定で置き換え（→ §xx）」の一行注記だけを入れた
+- **状態をスタック制へ**: カードは「<状態名> を n 付与する」と書く。既定は付いた側のターン開始に 1 減る。1 回きりだった 威圧 / 脆化 / 疲労 / 強化 / 集中 / 見切り も全てスタックに揃えた。出血と再生はスタックが強さと回数を兼ねる。上限はプレイヤーの種類 6 つだけで、敵には置かない。軽足は「俊敏」へ改名した
+- **位置はボスと精鋭だけ**: 近間 / 遠間を持つ敵を 瘴気の司祭 / 甲冑の番人 / 群れの長 の 3 体に絞り、通常 6 体は位置を持たない。カードの位置条件は自分の位置だけを読み、判定は常に動く前に行う。決定木は位置を持たない敵で 2 通り、ボスと精鋭で 4 通りになる
+- **コストは旧段表の列**: カードごとに T0〜T3 から 1 列を選び、列番号がコスト、列の値が効果になる。満たしにくい条件を持つ札ほど安い列に置く。コスト 0 は習熟の「軽さ」でだけ生まれ、初期のカードと敵の技は 1 以上にする
+- **3 段目は 1 枚と才能**: 習熟の 3 段目を持てるのは 1 つの生で 1 枚だけ。開始時に選んだ才能の 1 枚は刻みが 2 倍で溜まる。刻みは満たした文脈の数だけ加算し（1 回のプレイで 0〜4）、継ぐときは段をそのまま継ぐ。遺産の候補は習熟 1 段以上のカードと埋まった頁を全部並べる。2 段目以上のカードは階層 3 以上で死んだときだけ遺産になる。生存者は次の 1 生だけツール枠 +1 とデッキ上限 +5 を得る。刻限の訓練は 1 回で指定した 1 枚に刻み 1 を入れる
+- **相手の選び方**: 受け皿と投げ上げ線の併用に決めた。単体の攻撃とデバフは受け皿、全体攻撃と自分向きの札は投げ上げ線を使う。皿の外で離した単体向きの札は手札に戻る
+- **背水の陣（#80 の置き換え）**: 自分が遠間で威力が伸び、スタミナ 2 以下でさらに上乗せする単属性のアタックにした。叩き台は威力 8、遠間で +5、スタミナ 2 以下でさらに +3
+- **規則の訂正**: §9 手順 7 の Guard +2 を +3 に直した。手札を捨てるのはターン終了だけにした。ダメージは足してから掛ける。敵側の「相手の Guard が 0」は「無防備」へ改名した。全体攻撃は規則だけ残し、カードは 100% の段階で足す
+- **探索とゲーム全体**: デッキは下限 20 / 上限 40、刻限は 1 ノード 1 回、ツールは共通 3 枠、消耗品 3 枠、クリアは最終ボス「歪みの根」の撃破、クラスは剣士固定、連戦は既定 3 戦と選べる 9 戦。休憩は毎回選べる。アーマーの解除は、試験台の基準 9 項目が全て目標値に入った時点を「一巡」とする
+- **開示度と演出**: 段数は 3 段のまま、1 段目は種別と咎める側の一字を出す。上げ方は遭遇で 1、観察で 2 とした。観察カードの習熟 3 段目は情報だけでなく状態も付与できる技になる。演出の強弱は面の確定値で 4 段に分け、特性の発火には短い合図を重ねる
+- **色とアート運用**: 属性 5 色は役割色を借りる。24 px 以上の文字は 3:1 でよく、近い色の 4 組は形の差で見分ける。描画は CLIP STUDIO PAINT PRO（買い切り 6,900 円）を買う。C# は `unity-port/` を正本にしたまま Unity 側へ写し、写しもコミットする。RPG-by-card の初回コミットを入れ、URP は 17.5.0 に直す
+- **資料**: 判断の一覧と根拠を `docs/reports/2026-09-16-v4-2-decisions.html` に、外部 AI に渡すゲームの説明を `docs/briefs/2026-09-16-game-brief.md` にまとめた（Artifact `https://claude.ai/code/artifact/4e4f93e8-bf8e-4715-b78d-4ea0686ea319`）
+- **触っていないもの**: `src/`、`unity-port/`、`swordsman_cards_v4.md` と `enemy_roster_v4.md`、モックアップ、README（Development History の節が無い）。設計書の本文に入れたのは誤記の訂正だけで（`battle_core_v4.md:254` の手順 4、`:260` の手順 7、`:91` の手薄）、v4.2 / v2.1 の全面改訂は別タスクに残した
 
-### 2026-07-05 - Unity 移行 First Step — 戦闘コア C# 移植 + パリティ証明
+### 2026-09-14 - 戦闘への所感 3 点の反映と判断待ちへの回答（近間 / 遠間、投入量の廃止、画面の簡素化）
 
 #### 概要
 
-Unity 移行計画書の Phase0（AI art 生成 + Live2D 仕上げ、Unity Editor スパイク）はユーザー指示で着手を試みたが、画像生成・Live2D・Unity Editor 操作の手段を持たないため自動実行不可と判断。ユーザー確認の上、子プラン（first-step）の戦闘コア C# 移植 + Web パリティ証明へスコープを絞って直行した。会話ではまず「間合いはタブ/トラックでなく実距離・体勢で表現する」方針を固め、両計画書（親戦略・子プラン）に反映（role-qa 監査で自己矛盾2件を修正済み）。その後 `unity-port/` に検証済み戦闘コア（`src/ui/battle-lab/core/`、TS）を netstandard2.1 の純 C# クラスライブラリへ移植し、実際の TS 実装を固定 RNG で走らせて生成したゴールドデータでクロス言語パリティを証明した。
+こうだいさんの所感 3 点（画面の情報量を減らす / 間合いをキャラクターごとの 2 値にする / カードごとのスタミナ振り分けをやめる）を、影響範囲の洗い出しと 3 案の採点を経て設計書に決定として記録した。視覚制作の判断 16 件と所感から出た判断を 8 回の質問で確認し、回答を反映した。相手の選び方は、4 方式を触って決めるためのデモを作った。
 
 #### 変更点
 
-- **計画書更新**: 親プラン Phase0b のスパイク内容を「カード1枚めくり」から「間合い連動の位置移動+体勢差し替え」へ差し替え、Unity選定理由に⑤項追加、決定記録に傾き追記。子プラン Phase3 の間合いUIをトラック型→実距離・体勢表現に変更。role-qa 監査で子プラン決定記録の「決定」を「方針確定（実現性は0bで検証中）」へトーン修正、Non-goalsに体勢差分スプライトを仮アセット限定と明記
-- **環境整備**: dotnet SDK 10.0.301 を Homebrew `dotnet`（非cask、sudo不要）で導入。旧 `dotnet-sdk` cask は sudo 必須のため断念
-- **ブランチ整理**: このワークツリーが detached HEAD（旧 bake-off ブランチの残骸）だったため、origin/main（bake-off + Unity計画書2本が既に PR #16 でマージ済み）から `feat/unity-core-port` を新規作成し直し、計画書編集のみ stash 経由で引き継ぎ
-- **`unity-port/` 新設**: `BattleCore/`（netstandard2.1, LangVersion 9.0, IsExternalInit ポリフィル）に Types/Constants/Combat/Cards/Enemy/BattleReducer/ViewModel/IRng を1:1移植。乱数は `IRng` 注入（`InitState(rng)`/`Reduce(state,action,rng)` の3引数、TS のグローバル `Math.random()` 依存を置換）。`Math.round` は `Math.Round(raw, MidpointRounding.AwayFromZero)` で JS 挙動と一致
-- **パリティ証明**: TS実装を固定RNG（`Math.random`→0固定）で実走させ、21アクション+INITの状態遷移トレースをJSON化（手計算ではなく実行結果、`BattleCore.Tests/Fixtures/parity-fixture.json`）。`ParityTests.cs` が全ステップ・全フィールド（HP/スタミナ/間合い/ログ文言/カード順序含む）を突き合わせ
-- **テスト**: TS 47テスト相当を NUnit へ移植（Combat13/Reducer21/ViewModel15）+ パリティ1件 = 50件、`dotnet test` 全 green（role-engineer実装後・Constants.cs の配列不変化修正後の両方で再確認済み）
-- **検証**: role-qa 独立監査（別コンテキスト）PASS（Blocker0・Important0）。Nit2件のうち配列の `IReadOnlyList` 化は即修正、テスト件数の内訳説明は本エントリで補足
+- **規則**: `battle_core_v4.md` §16（所感と回答時の補足の原文、決定 3 つ、置き換わる記述、間合いは近間 / 遠間でキャラクターごとの常設の値・素の効果なし・ムーブ面で切り替え、投入量の廃止とコストの決め方は保留、習熟は旧段表を上る、背水の陣は #80 を置き換え、回答表）。§0 / §1 / §3 / §14 に見直し中の印
+- **UI**: `battle_ui_ux_v2.md` §10（上帯をやめて左上にターン・階層・連戦・瘴気、語の予算 10 字、投入帯の廃止、相手の選び方はデモで決める、近間 / 遠間は立ち位置と一字札、Particle 許可、Yuji Syuku 不使用）。旧 §10 変更履歴を §11 に振り直し、§8 の条件 1 / 2 / 4 を △ に戻した
+- **注記**: カード表・敵ロースター・tier1 / tier2・concept-v3 に見直し中の注記。実装プランは ON HOLD
+- **視覚制作**: `tools-and-prerequisites.md` §9 を回答済みの 17 件に（体勢差分なし・差分 66 枚・候補 80 枚で約 $5.4、Particle 許可、Yuji Syuku 不使用、作業ファイルは OneDrive、月の上限 $30 など）。SKILL.md の `pose` 区分・`-pose`・Particle 禁止を直した
+- **デモ**: `docs/mockups/2026-09-14-drag-select-demo.html`（受け皿 / ボタン列 / タップして確認 / 投げ上げ線 × 1 体 / 2 体、操作回数と時間の比較、自己テスト 26 項目）。Artifact `https://claude.ai/code/artifact/467a57de-b088-46d8-a834-5cd756440f6d`。確認役の指摘 3 件（D の 2 体戦の境目を 2 体の中点へ、ポインタのキャプチャ、舞台の高さを実測で合わせる）を直し、自己テストを再実行した
+- **.env**: `chore/ignore-env`（PR #21、main 向け）。RPG-by-card はステージ済みの `.gitignore` に `.env`、`.gitattributes` に `*.psb` / `*.moc3` の LFS を追加（コミットは Unity リポの運用を決めるとき）
+- **残る判断**: 固定コストの決め方、相手の選び方（デモの後）、背水の陣の効果
+- **触っていないもの**: モックアップ v4（作り直しと座標修正は別項目）、`unity-port/`、`src/`、RPG-by-card のコミット
 
-#### 次
-
-残課題（Phase3: 実Unityプロジェクト作成 + UGUI最小戦闘画面）はUnity Editor操作が必須のため人間主体の作業。MEMORY.md 予定に記載。
-
-### 2026-07-02 - 戦闘エンジン Bake-off 実装 + Unity 移行方針転換・計画策定
+### 2026-09-14 - キャラクターの外見と UI/UX を作るツールと前提の調査、一連実行スキル visual-production-pipeline
 
 #### 概要
 
-検証済み「間合い×スタミナ」戦闘コアを共有 `core/` として本番品質へ昇格し、@pixi/react 版と Phaser 4 版の2アダプタに同一コアを載せて肌感比較する bake-off を実装。実機プレイの結果、Phaser は好印象だが低解像度・ボタン重なり・全体的なリアル感不足が判明し、ユーザー方針として「ゲーム本体ごと Unity へ移行（アニメ・2.5D 絵柄、個人開発・低コスト先行）」へ転換。エンジン選定は Unity 移行で moot 化。Unity 移行の全体戦略と first step 実装計画（環境セットアップ含む）を策定し、bake-off 実装 + 計画書を PR #16 で main マージ。feat ブランチはローカル・リモート削除。
+敵 9 体とプレイヤーの外見、戦闘の UI / UX と演出を作るためのツールと前提を、6 観点の並列調査・反証・批評のワークフローでまとめ、HTML レポートと Artifact と life-editor の Note（タグ card-battle）に残した。同じ流れと、その先の制作（setup / character / background / ui / vfx）を回すプロジェクトスキル `visual-production-pipeline` を作った。
 
 #### 変更点
 
-- **共有コア昇格**: `src/ui/prototype/engine/` を `src/ui/battle-lab/core/`（types/constants/combat/cards/enemy/battleReducer）へ非コメント差分0で昇格（公平性担保）+ 表示導出を `viewModel.ts` に抽出。core 単体テスト 47件（combat/battleReducer/viewModel）
-- **2アダプタ**: `adapters/pixi/`（@pixi/react、既存 `@/ui/pixi` の PixiStage 再利用、StrictMode #602 ガード）+ `adapters/phaser/`（Phaser 4 Scene、薄いストア→reducer→再描画）。vite `rollupOptions.input` に pixi/phaser 2エントリ + ルート HTML 追加
-- **検証**: tsc / test203件 / build 4エントリ green、session-verifier PASS、独立 role-qa PASS-with-fixes（Blocker0・公平性 core 同一 Yes・viewModel 検証台一致 Yes）
-- **方針転換（Unity 移行）**: 実機評価で Phaser 低解像度（Scale.FIT 引き伸ばし + hi-DPI 無）・ボタン/カード重なり・リアル感不足 → キャラ絵本格化のため Unity フル移行を決定。Pixi/Phaser アダプタは使い捨て、`battle-lab/core/` は C# 移植元・パリティ基準として保全
-- **Unity 計画策定**: `2026-06-28-unity-migration-character-art.md`（全体戦略・費用/Live2D 等 2.5D/アニメ AI art + 商用注意/Web→C# 移植、web-researcher 4体で裏取り・出典付き）+ `2026-06-28-unity-first-step-core-port.md`（View/Logic/Data 3層・MonoBehaviour 薄く・IRng 注入で言語間決定的パリティ・Unity→Claude Code→MCP 環境セットアップ4段階・Windows 11 デスクトップ想定）
-- **Git**: PR #16 を origin/main へマージ（merge `853226a`）。feat `feat/battle-engine-bakeoff` をローカル（`git branch -d`）・リモート（`git push origin --delete`）削除。worktree `../battle-bakeoff` は detached HEAD で保持（不要時に `git worktree remove`）
+- **レポート**: `docs/reports/2026-09-14-visual-production-survey.html`（結論の 3 分類、組む順、決定済みの前提、手元の環境、工程別ツール 14 行、作るもの、読みやすさの計算、法務、リスク、スキル、事実確認の経過、仮定、未確認、判断 10 件）。Artifact `https://claude.ai/code/artifact/3fcc2afa-df5e-40af-b4c4-d1998d18f8cf`
+- **Note**: life-editor `note-423a0061-7e79-471c-8166-757153d91c75`（タグ card-battle を新規作成、url-in-body=yes）
+- **スキル**: `.claude/skills/visual-production-pipeline/`（SKILL.md のモード 6 つと工程 S0–S1 / C0–C11 / B1 / U0–U8 / V0–V3、正本 `references/tools-and-prerequisites.md`、`workflows/survey.js`、`scripts/silhouette.py`、`scripts/color_check.py`、`templates/asset-ledger.csv` 30 列）。`.claude/skills/README.md` と `CLAUDE.md` の Skills Quick Reference に登録
+- **調査の経過**: 14 エージェント。外部の主張 265 件（確認 231 / 訂正 30 / 未確認 4）。批評の漏れ 14 件と誤り 6 件を補完して書き直した。内部 5 件と外部 5 件を直接確認し、OpenAI の 1 枚あたり価格だけ公式ページに無いので未確認へ落とした。`color_check.py` が統合結果の計算値を再現し、`silhouette.py` と `survey.js` の構文も確認した
+- **見つけたが直していないもの**: 両リポジトリで `.env` が無視されていない。RPG-by-card の URP が manifest 17.6.0 と lock 17.5.0 で食い違う。v2 の中で Yuji Syuku の扱いが食い違う。`concept-v3.md:14` と `:16` で主人公の扱いが食い違う。omen / boss / whiff が階層 1 の背景で 4.5:1 未満
+- **判断待ち**: Live2D の範囲、最初に通す 1 体、Unity の版、生成の主経路と月上限、主人公の世代差、CSP の購入、`.env` と LFS の修正、色の規則、Yuji Syuku、art の範囲（全 16 件は正本の §9）
+- **触っていないもの**: `src/`、`unity-port/`、設計書（`battle_document/` / `enemy_document/` / `vision/`）、RPG-by-card、未追跡の `docs/reports/2026-09-07-unity-scope-inventory.html`。README に Development History の節が無いので README は更新していない
 
-### 2026-06-28 - 要件正本の一本化確定 + 戦闘エンジン Bake-off 計画策定
+### 2026-09-14 - 戦闘 UI / UX v2（core v4.1 対応の設計書、動くモックアップ、実画面の目視検証）
 
 #### 概要
 
-並行2セッションで分岐していた v2 要件ドキュメントを照合し、`docs/realism-concept-v2`（Tier1/2/3）を正本として確定。リアルタイムタイマー/speed-chess 方向（包括版 `combat-core-redesign.md` / `realtime-turn-timer.md`）は矛盾設計のため supersede→削除に決定。次ステップとして、検証済みの「間合い×スタミナ」コアを PixiJS版と Phaser 3版の両方に載せ肌感比較する「ゲームエンジン Bake-off」計画書を策定（別セッションで実装）。本セッションは Phase 0 prep（docs→main マージ + umbrella削除 + rollup除去 + phaser導入の前提整備）を担当。
+戦闘コア v4.1（属性 5 つ / 特性 / 状態 10 語 + ボス専用 2 / スタンス枠 / 手札 5 枚 / 2 体戦 / 精鋭とボス / 連戦）に合わせて、戦闘 UI / UX の設計書を v2 として新設した。レイアウトは 3 案を採点して「背骨とレーン」を採用し、操作・演出・Unity 写像の草稿を批評にかけてから書き、3 観点で 2 ラウンド検証した。モックアップを実画面で撮って見つけた 5 件（予測札が矢印の先を隠す、追撃バッジの食い込み、CSS のクラス名衝突、スタミナ表記、手記の閉じるボタン）は、設計書とモックアップの両方で直した。
 
 #### 変更点
 
-- **要件正本化**: docs/realism-concept-v2 を正本確定（Tier1/2/3 = R1-0〜R1-20 の Phase 順包括要件）。包括版 `combat-core-redesign.md` / `realtime-turn-timer.md` は設計矛盾（tier%/ドロー曲線/タイマー vs 間合い連動/疲労確定減衰・スタミナ+剣気2軸）のため supersede→削除対象。RTS/speed-chess 方向は concept-v2 で廃棄済みを再確認
-- **並行セッション調整**: 同一作業ツリーを共有する2チャットのブランチ取り合い + 同一「doc照合」タスクの二重化を検出。git 実行を単一セッションに一本化。docs 確定分は別チャットが bd325cf でコミット済
-- **Bake-off 計画策定**: `.claude/docs/vision/plans/2026-06-28-battle-engine-bakeoff.md`（Status PLANNED）。共有コア（検証台 engine/ を本番品質で `core/` へ昇格 + `viewModel.ts` 抽出）+ Pixi/Phaser 2アダプタ。公平性ルール（数値・reducer 同一、描画だけ2通り）。勝者を Tier 1 本実装の描画基盤に昇格、検証台 DOM版は対照群として保全
-- **Phase 0 prep**: ①docs→main マージ（衝突なし検証済）+ umbrella削除 ②rollup 時限爆弾除去（tech-debt #5・独立コミット）③次セッションは専用 worktree `feat/battle-engine-bakeoff`（main 分岐）で phaser 導入から実装
+- **設計書**: `battle_document/battle_ui_ux_v2.md` を新設。§0 差分と 80% の条件 7 つ、§1 情報設計 26 項目、§2 L1 v2 と 2 体戦・最悪ケース 2 つ・対案 2 つ・休憩と結果画面、§3 ドラッグ主操作とクリック / キー / ゲームパッド、§4 A+ 継承と v4.1 のトークン、§5 演出 21 節と時間予算、§6 Unity 写像（UiTween 継続、入力の規則、View v1.1 からの差分、アセット）、§7 開示度、§8 達成状況（○ 6 / △ 1）、§9 ルールへの要望 25 件。`battle_ui_ux_v1.md` の冒頭に正本移動の注記を置き、View v1.1 の実装記録として残した
+- **モックアップ**: `docs/mockups/2026-09-13-battle-uiux-v4-mockup.html`（1 ファイル、6 画面: 配置と対案 / 2 体戦 / 精鋭とボス / 操作（動く）/ 1 ターン再生 / 連戦）。Artifact `https://claude.ai/code/artifact/575f0640-7eba-4486-9c79-edd94d805de7`
+- **レポート**: `docs/reports/2026-09-13-battle-uiux-v4-80.html`（採用 / 保留 / 見送り、達成状況、採点、時間予算、検証の経過、実画面 10 枚と所見、残り 20%、要望、判断点）。Artifact `https://claude.ai/code/artifact/43c67b94-a62e-428e-b19b-836c510a05ce`
+- **要件 / 索引**: `requirements/tier2-support.md` R2-5 の内容と受け入れ基準を 16 項目に更新。`docs/INDEX.md` に v2 の行
+- **検証**: 設計書はルール一致 / 充足と整合 / Unity 実現性の 3 観点で 2 ラウンド（blocking 4 から 2、修正 42 + 35 件）。モックアップは静的検査（should 8 / nit 12、修正 20 件）と、ヘッドレス Chrome で 22 枚撮って切り抜く目視。ラウンド 2 の修正後の 3 観点の再検証は未実施
+- **判断待ち**: 対案 A の実測、要望 5 件（2 段予兆の確定性 / 重撃 / 威圧 / 呪縛 / ダメージ式の項の位置）、正本の誤記 2 件（core §9 手順 7 の +2、手順 4 と 8 の捨ての二重）、演出上限の緩和 3 か所（二属性 1.4 から 1.5 倍、置き換え 2,400 ms、ターン開始の最悪 2,100 ms）、属性 5 色の値
+- **触っていないもの**: `src/`、`unity-port/`、`battle_core_v4.md` / `swordsman_cards_v4.md` / `enemy_roster_v4.md`、既存のモックアップとレポート。README に Development History の節が無いので README は更新していない
 
+### 2026-09-13 - 戦闘コア v4 の設計確定（7 決定の反映、カード 80 種、敵 9 体、次セッション用プラン）
+
+#### 概要
+
+棚卸への 7 決定（移動も属性にして特性の基準にする / ドラッグ + 矢印 + 場 / T0 に弱い効果を残す / スタンス枠 1 / 状態 10 語 + ボス専用 / 敵 9 体と連戦モード / 設計に集中して実装は次セッション）を設計書に落とした。`battle_core_v4.md` を新設して数値の正本を v3 から移し、剣士カード 80 種（初期 40 / 習得 40）と 80% 用の敵 9 体を具体化した。実装は次セッションで、冒頭プロンプトを実装プランに置いた。
+
+#### 変更点
+
+- **規則**: `battle_document/battle_core_v4.md`（§0 差分表、§2 属性 5 つと面・解決順・特性 8 条件 × 7 効果・スキーマ追加項目 push / hits / ally、§3 T0 の扱いと minInvest 0 は 20 種まで、§4 スタンス枠 1、§5 状態 10 語 + ボス専用 2、§7 敵ごとの間合いと 2 体戦、§8 手札 5 枚 / 全捨て / デッキ 15〜80 / 同種 3、§9 ターン進行、§10 定数、§11 実装への写像、§12 連戦モード、§13 試験台の基準 9 項目、§14 未確定 6 点）
+- **カード**: `card_document/swordsman_cards_v4.md`（80 種。単属性 40 / 二属性 40、minInvest 0 は 20、アタック面 38 種で 近 15 / 中 14 / 遠 9、特性 20 枚、探索の面候補 12。ボス 瘴気の司祭の固有 3 種を含む）
+- **敵**: `enemy_document/enemy_roster_v4.md`（通常 6: 長柄の歪み兵 / 影走りの犬 / 錆びた鎧の亡者 / 弩の狩人 / 靄の射手 / 双刃の歪み兵、精鋭 2: 甲冑の番人 / 群れの長 + 取り巻きの犬、ボス 1: 瘴気の司祭（適応 3 条件、専用の状態 瘴気纏い / 呪縛）。100% 用の残り 10 体は名前と役割。連戦の順 §6）
+- **UI**: `battle_ui_ux_v1.md` v1.2 §3.6（帯 = 投入量、矢印 = 相手、場 = 自分と全体、手札 5 枚の扇、HUD 追加部品、演出の文法）
+- **要件 / 索引 / プラン**: tier2 R2-2 / R2-3 に v4 の起票と受け入れ基準を追記。`INDEX.md` に v4 の行。`vision/plans/2026-09-13-battle-v4-implementation.md`（完了条件 5 つ + 次セッション冒頭のプロンプト）
+- **レポート**: `docs/reports/2026-09-13-battle-v4-cards-enemies.html`（決定の反映、規則の差分、カード 80 種の表、敵 9 体の表、次セッションのプロンプト）。前編 `2026-09-13-battle-100-inventory.html` に決定済みの注記
+- **2 回目の決定（同日）**: 目盛りを T0 アタック = 5 に合わせて全体を約 1.6 倍（単属性 5 / 8 / 12 / 16、HP 50、敵 HP 通常 50〜70 / 精鋭 90〜110 / ボス 160、構え +3、出血 / 再生 2）。特性を条件 12 × 効果 10 に広げ（重撃 / 転換 / 追撃、連打 / 手薄 / 相手の状態 / 自分の状態）、初期 32 + 習得 40 = 72 枚に付与。特性の無い 8 枚は威力 / Guard +2 で補う。敵は常時 Guard のスタンスだけ 1.6 倍せず（ターン数を守るため）、特性 15 個。core v4.1 / cards v4.1 / roster v4.1
+- **未確定**: 「0 投入 5 × 5 枚」（試験台の最初の基準。超えたら T0 を 3 に戻すか minInvest 0 を減らす）
+
+### 2026-09-13 - 戦闘 100% の棚卸（7 条件 × core v3、8 領域 58 項目、80% までの順番）
+
+#### 概要
+
+こうだいさんの方針「バトルを 80% まで仕上げてから探索へ」を受け、7 条件（1 ターン 5 枚ドロー、タイプ 4 種と 2 つまでの重複、同種 3 枚まで、80 種のうち 40 種は習得、ホバーとドラッグのカード感、カードごとの攻撃エフェクト）を `battle_core_v3.md` に突き合わせ、100% に要る要素を棚卸した。衝突 4 点は全て v3 を改訂する側で解き、実装済みの投入 / 間合い / 予兆 / 構え / 崩しは残す。現在地は重み付きで約 20%。
+
+#### 変更点
+
+- **レポート**: `docs/reports/2026-09-13-battle-100-inventory.html`（Artifact `https://claude.ai/code/artifact/3f7541f9-f0fe-4e74-aef4-d07737d40e85`）。§1 条件の突き合わせ、§2 タイプ 4 種と 10 パターン（移動は属性）、§3 状態 10 語とスタンス枠 1、§4 ターンの流れ v4 案と「0 投入 × 5 枚」対策（T0 は威力 0）、§5 カード 80 種の配分（初期 40 / 習得 40、単独 40 / 二面 40）、§6 敵 19 体（80% は 9 体）、§7 試験台の基準 9 項目、§8 ドラッグの高さで投入量を決める操作と HUD の追加部品、§9 演出の文法（系統 8 × 投入段 × 固有の飾り）、§10 棚卸表 58 項目、§11 80% までの 6 段階
+- **タスク**: MEMORY の予定に「戦闘を 80% へ（順 1〜6）」を追加。判断待ち 7 点
+- **触っていないもの**: 設計書本体（v4 は判断後に書く）、`unity-port/`、`src/`
+
+### 2026-09-12 - 戦闘 UI v1.1: 見た目 A 採用 + 鮮やかさと描き込み + 戦闘コア v3 と UGUI View を Unity に実装
+
+#### 概要
+
+こうだいさんの決定（A 採用、実画面はもう少し鮮やかで描き込みを、敗北画面と手記は凝ってよい）を設計書 v1.1 とモックアップに反映し、そのまま Unity に実装した。`unity-port/BattleCore/` を battle_core_v3（投入量 0〜3、予兆、敵 Guard、構え、崩し、冷静 / 死力、瘴気、探索からの入力、演出用イベント列）へ全面改修し、`unity-project-kit/Assets/View/` に L1 レイアウトと A+ トークンの View を 11 ファイルで書いた。`dotnet test` 54 / 54、Unity EditMode 54 / 54、Windows プレイヤーをビルドしてスクリーンショットで配置を確認し、重なり 4 か所を直した。
+
+#### 変更点
+
+- **設計書 / モックアップ**: `battle_ui_ux_v1.md` v1.1（§4.4 A 採用、§4.5 A+ トークンと描き込み 11 要素、§4.6 敗北画面、§4.7 手記ドロワー、§6.4 実装状況）。モックアップの skin A を A+ に更新し、敗北の例と手記ドロワーを作り替え（Artifact v2）
+- **戦闘コア v3（C#）**: `Types.cs`（Tier / CardDef / EnemyDef / Omen / BattleInit / BattleEvent 群）、`Constants.cs`（§10 の定数）、`Combat.cs`（間合い補正・丸めは AwayFromZero・Guard 適用・構え・瘴気ペナルティ・投入量の選択）、`Cards.cs`（剣士 6 種 + 応急処置の 4 段表）、`Enemy.cs`（長柄の歪み兵 5 行動・決定木・予兆・空振り回避）、`BattleReducer.cs`（§9 のターン進行）、`ViewModel.cs`（TierView / OmenView / JournalView / 既定投入）、`IBattleView.cs`（HUD 全項目）、`BattleStore.cs`（`BattleInit` 受け取り）
+- **テスト**: 4 ファイルを v3 向けに書き直し（54 件）。`ParityTests.cs` は `V2_PARITY` 定義時だけコンパイル。`tools/gen-trace-actions.mjs` は `TRACE_V2=1` が無いと停止。`Resources/trace-actions.txt` を v3 形式（勝利まで 77 手）で再生成
+- **View（UGUI）**: `BattleTheme` / `UiTween` / `ProceduralArt` / `UiKit` / `ArenaView` / `BattleHud` / `HandView` / `JournalDrawer` / `ResultOverlay` / `BattleDirector` / `BattleScreenView`。イベント列を §5 の ms で再生してから確定値を描く。`Application.runInBackground`、`-captureDir` の定期スクリーンショット、`-replayTrace` を追加
+- **同期 / 文書**: `sync-unity-project.mjs` が View の全 .cs を写す。`unity-port/README.md` に v3 の使い方。レポート `docs/reports/2026-09-12-battle-uiux-80.html` に実装節とスクリーンショット
+- **人手が要る残り**: Editor 前面での手触り確認（乱数「実戦」）、本物の立ち絵 / 書体 / 効果音
+
+### 2026-09-12 - 戦闘 UI / UX の 80% 設計（情報設計・操作・見た目 3 案・演出仕様・Unity 写像）
+
+#### 概要
+
+戦闘画面の UI / UX を「完成度 80%」まで設計した（実装は先、コードは書かない）。`battle_core_v3.md` の値 5 つと予兆を「敵の頭上 → 床の狙い帯 → 手札の上のスタミナ」の縦一列に置き、1 枚のプレイをカード選択 → 投入量チップの 2 操作に収めた。見た目は A 霧と灯り / B 鉄と革 / C 墨と朱 の 3 案をモックアップで比べ、A を推奨（最終選択はこうだいさん）。演出 10 節を ms / 補間 / 音の有無で表にし、Unity の Canvas 6 層と DOTween / Animator の分担、アセット一覧に落とした。
+
+#### 変更点
+
+- **設計書**: `.claude/docs/battle_document/battle_ui_ux_v1.md` を新設（§1 情報設計 20 項目、§2 L1 / L2、§3 操作、§4 見た目 3 案と階層 5 段、§5 演出、§6 Unity 写像、§7 開示度の仮置き、§8 残り 20%、§9 ルールへの要望 5 件）
+- **モックアップ**: `docs/mockups/2026-09-12-battle-uiux-mockup.html`（1 ファイル完結。見た目 3 案 × 階層 3 段 × レイアウト 2 種 × 開示度、手札が実際に操作でき、1 ターン再生と 被弾 / 崩し / 勝敗 の例）。Artifact `https://claude.ai/code/artifact/750029ad-d93f-4cdc-b923-9dce0b1bd041`
+- **レポート**: `docs/reports/2026-09-12-battle-uiux-80.html`（採用 / 保留 / 見送り、達成状況、演出の主要値、残り 20%、仮定と要望）。Artifact `https://claude.ai/code/artifact/4712190b-73c3-48b1-a07e-b725cfb6fcd1`
+- **要件**: `requirements/tier2-support.md` R2-5 の内容と受け入れ基準を 9 項目に更新。`docs/INDEX.md` に設計書を追記
+- **ルール側への要望**: 開示度の段階定義 / 崩し後の低投入見込みの表示可否 / clamp のイベント通知 / 敵 Guard の対称表示 / 端数処理（MidpointRounding）の確定
+- **ブランチ**: `docs/battle-uiux-80`（未マージの `docs/concept-v3-inheritance-loop` から分岐）
+
+### 2026-09-12 - 三者評価を受けた 5 決定の反映（瘴気 / 手記 / HP 回復 / 遺産の残存 / セーブ前倒し / C# 正本化）
+
+#### 概要
+
+三者評価の判断待ち 6 点にこうだいさんが回答し、設計書へ反映した。衰弱を「瘴気」に改名して階層ごとの濃度で蓄積する仕組みにし、図鑑を「手記」（持ち歩く帳面、メモあり、戦闘中は読むだけ、死亡地点に残り選んだ頁だけ継ぐ）に改めた。HP の回復モデル（戦闘中カード / 階層間休憩 / 探索イベント）と遺産の残存規則（痕跡は回収まで残る、1 つの生で 1 件）を決め、セーブ要件を Phase 4 の頭へ前倒しし、戦闘コアの正を C# に切り替えた。
+
+#### 変更点
+
+- **瘴気**（concept-v3 §6、battle_core_v3 §3.1）: 階層 n の濃度 = min(n, 5)。刻限 1 行動ごとに濃度 × 1% 蓄積。20% ごとに最大スタミナ -1、100% で瘴気死。和らげる手段: 防瘴の面（濃度 -1）/ 浄化の香（蓄積 -10%）/ 階層間休憩（蓄積しない）。定数 MIASMA_* を追加
+- **HP と回復**（concept-v3 §7.1、battle_core_v3 §4 / §7.2）: HP は戦闘をまたいで持ち越す。戦闘中は `heal` 型カード（応急処置 T1 3 / T2 5 / T3 7）、階層間休憩 30%、階層内休息 15%（刻限 -1）、泉・薬草イベント。無償の全回復は無い
+- **手記**（concept-v3 §5、tier1 R1-10、CAMP §3.3）: 敵の頁 / ダンジョンの頁 / メモ。拠点・探索・戦闘のどこでも読めるが、戦闘中は現在の敵の頁を表示するだけで戦闘に効果を与えない。死亡時は痕跡に含めて死亡地点に残し、遺産の枠で選んだ頁だけ継ぐ。concept-v2 A1 は「一部復活」に分類変更
+- **遺産の残存**（concept-v3 §8.3、tier1 R1-12、CAMP §3.1）: 痕跡は回収されるまで残る（次の死亡で上書きしない）。1 つの生で受け取れるのは 1 件。企画書 §16「前回死亡者だけ」からの変更として明記
+- **セーブ前倒し**（tier1 R1-16）: Phase 6 → Phase 4 の頭。依存を R1-8〜10 に変更し、R1-11 が R1-16 に依存。死亡と生の終了は確定と同時に保存（セーブスカム防止）
+- **C# が正**（tier1 冒頭・R1-3、core.md、battle_core_v3 §13、CLAUDE.md、`unity-port/README.md` バナー）: TS の `src/ui/battle-lab/core/` は凍結。`parity:*` は履歴として残し更新しない。R1-3 の受け入れ基準を `dotnet test` に変更
+- **名称の一括置換**: 衰弱 → 瘴気、図鑑 → 手記を concept-v3 / core / tier1〜3 / master / CAMP / battle_core_v3 / CLAUDE.md で置換。concept-v3 §13 に決定表を追加、§12 の 2 / 20 / 21 を決定済みに
+- **未変更**: コード（`src/` / `unity-port/*.cs`）。評価レポート 2 本は当時の記録として据え置き
+- **追加決定（同日）**: 生存ルートでは手記を丸ごと受け継ぐ（死亡より見返りを大きくする）。釣り合いとして探索にランダムな報酬・イベントを持たせる（concept-v3 §7.3 / §8.2 / §12-22、tier1 R1-13、tier2 R2-4、CAMP、master）
+- **次セッションのプロンプト**: `docs/prompts/2026-09-12-next-session-battle-uiux.md`（戦闘 UI / UX を 80% に。設計のみ）
+
+### 2026-09-12 - 戦闘コア v3 設計 + 単一ダンジョン化 + 三者評価
+
+#### 概要
+
+前セッションの上書き（concept-v3）を受け、(1) 戦闘の基礎要素を整理して `battle_document/battle_core_v3.md` v1 に設計として落とし、(2) ダンジョンを「一つを深く潜る」構造に変更（ノード式マップは継続、後で変更の余地あり）、(3) 旧個別施設設計 4 本を archive へ移動、(4) 独立エージェント 3 体（ゲームデザイン / 実装 / 反対弁護人）で新設計を旧設計と比較評価した。3 体とも「方向は改善、現状の完成度は旧を下回る（6 → 5）」で一致。評価で見つかった転記ミスは修正し、設計判断は判断待ちとして残した。
+
+#### 変更点
+
+- **戦闘コア v3 設計書（R1-2 成果物）**: 持つ値を HP / Guard / スタミナ（現在・最大） / 間合い / 予兆 の 5 つに限定。間合い相性 1.0 / 0.5 / 0.15 と間合い依存回復（近 1 / 中 2 / 遠 3）は v2 実機検証済みを継承。スタミナ基礎 10（3〜14）、投入 0〜3 がコスト、minInvest、疲労減衰は投入制に吸収。構え（残 3 以上で Guard +2）、崩し = スタミナ削り（体勢ゲージ不採用）、予兆コミット式 + 空振り回避、EnemyDef 決定木 + homeRange、剣士 6 種と長柄兵の投入表、C# 写像表、プレイテスト 6 観点
+- **concept-v3 §12**: 3 / 7 / 16 / 18 を決定、8 は基礎部分を決定、14 は単一ダンジョンに決定。評価で指摘の 20〜23（HP 回復 / 遺産の連鎖消失 / 生存ルートの図鑑 / クラス選択）を追加
+- **単一ダンジョン化**: concept-v3 / core.md / tier1 / tier2 R2-1 / master / CAMP から「ステージ選択」を除去。R2-1 を「単一ダンジョン・ノード式の設計書化（マップ方式を差し替えられる境界）」に改稿
+- **archive**: `shop / blacksmith / sanctuary / guild_design.md` を `.claude/archive/camp_document/` へ git mv。INDEX と CAMP の参照を更新
+- **評価で修正した転記ミス**: 遺産の受け取り場所を「死亡地点で選ぶ」に統一（concept-v3 / master / CAMP / CLAUDE.md / tier1 R1-12）。「企画書に経済の記述なし」を「通貨と店の記述なし」に訂正。バナー未付与 11 本（enemy_document 6 / element_system_spec / buff_debuff / ui_ux_design_guide / inventory_design / kickoff）に付与。tier1 R1-1 の受け入れ基準を事実に合わせ「v3 版ギャップ分析」を追加
+- **レポート**: `docs/reports/2026-09-12-concept-v3-evaluation.html`（Artifact 発行）
+- **判断待ち**: HP 回復モデル / 遺産の連鎖消失 / 図鑑消失の方針 / セーブ前倒し / TS-C# パリティ継続 / 戦闘 v1 でのプロト。README は Development History 節が無いため未更新

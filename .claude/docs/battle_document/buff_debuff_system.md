@@ -1,3 +1,5 @@
+> **WEB VERSION RECORD（2026-09-12）**: バフ / デバフの扱いは `battle_core_v3.md` に未定義（企画書が語らない）。Web 版の記録として残す。
+
 # Buff/Debuff System Integrated Design Document (Ver 5.0)
 
 **Date:** 2026-01-30

@@ -1,0 +1,199 @@
+<title>生と継承への上書き</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --ink-2: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --ink-2: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --ink-2: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--ink-2); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul, ol { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--ink-2); font-size: 15px; }
+
+  .loop { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 16px 18px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 16px; }
+  .step p { margin: 0; font-size: 14px; color: var(--ink-2); }
+  @media (max-width: 720px) { .loop { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--ink-2); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  td.state.stop { color: var(--stop); }
+  td.num { font-variant-numeric: tabular-nums; text-align: right; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--ink-2); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-12 / 判断 / original-card-battle</p>
+    <h1>企画書「ゲーム設計(chat GPT)」で設計ルールを上書きした</h1>
+    <p class="lede">正本を <code>vision/concept-v3.md</code> に置き、要件 Tier 1〜3 と総合設計・拠点設計を「生と継承」ループへ書き直した。アーマーは凍結。コードは触っていない。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">上書きした</span><h3>生と継承ループ</h3><p>ライフ制とエクストラクションを廃止。刻限・衰弱・生存ルート・遺産・図鑑の消失を正本にした。</p></li>
+    <li class="verdict later"><span class="tag">凍結した</span><h3>アーマーと経済</h3><p>AP・装備耐久・鍛冶屋・ショップ・サンクチュアリ。防御は Guard のみで難易度を測り、解除はこうだいさんの判断。</p></li>
+    <li class="verdict skip"><span class="tag">廃止した</span><h3>帰還と手記の死越え</h3><p>テレポートストーン・帰還ルート・アビス脱出・「手記は死を越える」。図鑑は死で消える。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: 企画書が語る点は企画書が正。黙っている点（間合いの段階数、ステージ構造、体勢）は既存ルールを仮置きで残した。</div>
+
+  <h2>新しいループ</h2>
+  <div class="loop">
+    <div class="step"><span class="n">1</span><h3>継承の間</h3><p>前回死亡者の遺産から数個を選ぶ。生存者ボーナスを確認。旧ギルド。</p></div>
+    <div class="step"><span class="n">2</span><h3>出立</h3><p>ツール選択と、所持 80 枚から戦闘デッキ 20 枚以上を組む。旧ダンジョンゲート。</p></div>
+    <div class="step"><span class="n">3</span><h3>ダンジョン</h3><p>階層ごとに刻限 約 10 回。衰弱が進み最大スタミナが減る。図鑑が埋まる。</p></div>
+    <div class="step"><span class="n">4</span><h3>生の終了</h3><p>生存ルート（生存者は一人まで）か死亡（死亡地点に遺産）。図鑑は消える。</p></div>
+  </div>
+
+  <h2>既存ルールとの対応</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>既存ルール</th><th>扱い</th><th>本改定</th></tr></thead>
+      <tbody>
+        <tr><td>ライフ制（Hard 2 / Normal 3、0 で全リセット）</td><td class="state stop">置換</td><td>生の繰り返し + 衰弱 + 生存ルート。全リセットは無い</td></tr>
+        <tr><td>手記は死を越える（concept-v2 A1）</td><td class="state stop">置換</td><td>図鑑は死で消える。遺産の知識枠だけ継承</td></tr>
+        <tr><td>エクストラクション（装備・アイテム持ち帰り）</td><td class="state stop">置換</td><td>継承の単位は技術と知識</td></tr>
+        <tr><td>熟練度 = 使用回数 → 派生カード</td><td class="state stop">置換</td><td>文脈ベース習熟 → 名称変化 → 永続能力</td></tr>
+        <tr><td>スタミナ（間合い依存回復、上限 20、戦闘終了でリセット）</td><td class="state stop">置換</td><td>ターン持ち越し、開始時少量回復、1 枚に最大 3。細部は未確定 3 / 16</td></tr>
+        <tr><td>Journal（デッキ / 図鑑 / 設定）</td><td class="state stop">置換</td><td>図鑑（敵 + ダンジョン + 所持カード）。死で消える</td></tr>
+        <tr><td>AP（装備耐久アーマー）/ 装備破損 / 鍛冶屋</td><td class="state maybe">凍結</td><td>Guard のみで調整。R2-8 で解除の判断材料を用意</td></tr>
+        <tr><td>ショップ（Gold / 魔石経済）</td><td class="state maybe">凍結</td><td>企画書に経済の記述なし</td></tr>
+        <tr><td>サンクチュアリ（ソウル永続スキルツリー）</td><td class="state maybe">凍結</td><td>「永続成長なし」と矛盾。継承ボーナスで代替</td></tr>
+        <tr><td>ギルド / ダンジョンゲート</td><td class="state maybe">再解釈</td><td>継承の間 / 出立</td></tr>
+        <tr><td>テレポートストーン / 帰還ルート / アビス脱出</td><td class="state stop">廃止</td><td>帰還の概念が無い</td></tr>
+        <tr><td>間合い（近 / 中 / 遠）・体勢・観察・ステージ制・幻想トーン</td><td class="state yes">継続</td><td>そのまま。体勢とステージ構造は仮置き</td></tr>
+        <tr><td>Unity 移行（C# コアが実装元）</td><td class="state yes">継続</td><td>新要件は Unity 上で実装</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>触ったファイル</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>ファイル</th><th>状態</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td><code>.claude/docs/vision/concept-v3.md</code></td><td class="state yes">新設</td><td>正本。企画書 27 節を 12 節に再編。§10 対応表、§12 未確定 19 項目</td></tr>
+        <tr><td><code>.claude/docs/vision/core.md</code></td><td class="state yes">全面改稿</td><td>Core Value を 5 要素 + 生と継承の 6 本へ。凍結欄を追加</td></tr>
+        <tr><td><code>.claude/docs/requirements/tier1-core.md</code></td><td class="state yes">全面改稿</td><td>v6。R1-1〜R1-17（設計書確定 → 戦闘コア v3 → 習熟 → 刻限 / 衰弱 / 図鑑 → 生の終了 / 遺産 / 生存者 → 画面 / AI → セーブ / 監査）。旧 ID 対応表つき</td></tr>
+        <tr><td><code>.claude/docs/requirements/tier2-support.md</code></td><td class="state yes">全面改稿</td><td>v3。ステージ構造、カード・敵の再定義、イベント・ツール、HUD、学習、魔術師、難易度（アーマー解除の判断材料）</td></tr>
+        <tr><td><code>.claude/docs/requirements/tier3-experimental.md</code></td><td class="state yes">全面改稿</td><td>v2。凍結表（解凍条件つき）と廃棄一覧</td></tr>
+        <tr><td><code>.claude/docs/Overall_document/game_design_master.md</code></td><td class="state yes">V4.0</td><td>801 行の英語 V3.1 を日本語 V4.0 へ。全体像と役割だけ</td></tr>
+        <tr><td><code>.claude/docs/camp_document/CAMP_FACILITIES_DESIGN.md</code></td><td class="state yes">V5.0</td><td>5 施設 + Journal を継承の間 / 出立 / 図鑑の 3 画面へ</td></tr>
+        <tr><td>旧ルール 14 ファイル</td><td class="state maybe">バナー</td><td>SUPERSEDED / FROZEN / PARTIALLY SUPERSEDED / STALE SNAPSHOT を先頭に付与。本文は残す</td></tr>
+        <tr><td><code>.claude/CLAUDE.md</code> / <code>.claude/docs/INDEX.md</code></td><td class="state yes">更新</td><td>Game Loop Flow を新ループへ。索引の壊れたリンク 2 件も修正</td></tr>
+        <tr><td><code>src/</code> / <code>unity-port/</code></td><td class="state no">未変更</td><td>C# コアと battle-lab コアにアーマーは元々無い（Guard のみ）。凍結でコード変更は不要</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>「既存のルール」= <code>.claude/docs/</code> の設計書群と CLAUDE.md のゲームループ節。コードは対象外とした。</li>
+    <li>企画書に記述の無い経済（Gold / 魔石 / 装備 / ソウル）は「廃止」ではなく「凍結」にした。復活の余地を残すため。</li>
+    <li>遺産の枠は企画書の例に合わせて仮 3。生存者ボーナスの中身、ツール枠数、衰弱の増加量は未確定のまま。</li>
+    <li>旧 game_design_master.md（V3.1 英語 801 行）と CAMP_FACILITIES_DESIGN.md（V4.0）は本文を置き換えた。旧本文は git 履歴で読める。</li>
+    <li>個別施設の設計書（shop / blacksmith / sanctuary / guild、計 4,800 行）は削除せずバナーだけ付けた。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>企画書 §27 の 15 項目は未回答のまま concept-v3 §12 に転記した。加えて 4 項目（戦闘をまたぐスタミナ持ち越し / 探索中の資源とアイテム / 体勢の存否 / アーマー解除の判断材料）を追加した。</li>
+    <li>battle_document の速度フェーズ・バフ・DoT の節は企画書が語らないので残した。tier1 R1-2 の改訂時に要否を決める。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ol class="prose">
+    <li>concept-v3 §12 の 19 項目のうち、Phase 1（戦闘コア v3）に必要な 3 / 7 / 16 / 18 を先に決める。</li>
+    <li>ステージ構造（§12-14）。concept-v2 の「複数ステージ × テーマ別階層」を続けるか、企画書の「一つのダンジョンを深く潜る」にするか。遺産の死亡地点が指せる構造が条件。</li>
+    <li>凍結した個別施設の設計書 4 本（約 4,800 行）を archive へ移すか、そのまま置くか。</li>
+  </ol>
+</div>

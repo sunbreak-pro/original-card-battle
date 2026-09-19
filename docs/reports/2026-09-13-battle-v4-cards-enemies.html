@@ -1,0 +1,535 @@
+<title>戦闘 v4 のカードと敵</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6; --panel: #ffffff; --ink: #1c2327; --muted: #56636b; --line: #d5dcdf;
+    --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #dcefef;
+    --ok: #2c7a4b; --warn: #a86a12; --stop: #a23c3c; --code-bg: #eaf0f0; color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad; --line: #2c363b;
+      --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad; --line: #2c363b;
+    --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+    --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 16px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding-block: 48px 80px; padding-inline: 24px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul, ol { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; white-space: pre-wrap; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.warn strong { color: var(--warn); }
+  .note { font-size: 14px; color: var(--muted); }
+  .toc { font-size: 14px; color: var(--muted); margin: 0 0 8px; }
+  .toc a { margin-right: 14px; white-space: nowrap; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-13 / 計画（設計確定） / original-card-battle</p>
+    <h1>戦闘 v4 を確定。カード 80 種と敵 9 体の案。</h1>
+    <p class="lede">こうだいさんの 7 決定を戦闘コア v4 の設計書に落とし、剣士のカード 80 種（初期 40 / 習得 40）と 80% 用の敵 9 体を具体化しました。実装は次のセッションで、冒頭に貼るプロンプトを末尾に置いています。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">確定</span><h3>ルール v4（属性 5 つ × 特性 × 状態 10 語）</h3><p><code>battle_core_v4.md</code> が数値の正本。v3 の検証済み部分は変えず、属性・特性・状態・スタンス・5 枚・デッキ規則・2 体戦・連戦モードを足した。</p></li>
+    <li class="verdict now"><span class="tag">確定</span><h3>カード 80 種と敵 9 体</h3><p><code>swordsman_cards_v4.md</code> と <code>enemy_roster_v4.md</code>。数値は試験台で直す前提の叩き台で、配分と役割は確定。</p></li>
+    <li class="verdict later"><span class="tag">次セッション</span><h3>C# 実装と試験台、連戦モード</h3><p><code>vision/plans/2026-09-13-battle-v4-implementation.md</code>。最初の目標は 3 戦を通す連戦モード。</p></li>
+  </ul>
+
+  <p class="toc">
+    <a href="#decisions">1 決定の反映</a><a href="#rules">2 規則の差分</a><a href="#cards">3 カード 80 種</a><a href="#enemies">4 敵 9 体</a><a href="#next">5 次セッション</a>
+  </p>
+
+  <h2 id="decisions">1. 7 決定の反映</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>こうだいさんの決定</th><th>反映</th><th>場所</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>移動も属性にする。コンボは属性を基準に（例: このターンにムーブをプレイ済みならスタミナ +1）。猪突猛進は アタック + ムーブ で、遠から使うと威力ボーナス</td><td>属性 5 つ（アタック / ガード / スタンス / スキル / ムーブ）を 1〜2 つ、15 パターン。特性 = 条件 8 種（連動 / 位置 / 予兆 / 温存 / 死力 / 初手 / 締め / 崩し後）× 効果 7 種。A+M は <code>moveFirst</code> で「移動してから斬る」</td><td>core v4 §2</td></tr>
+        <tr><td class="num">2</td><td>ドラッグ式。敵へ向けると矢印で相手を選ぶ。全体と自分への効果は画面中央で離す</td><td>縦の帯 = 投入量、横 = 相手（矢印か「場」）。敵 2 体のときは矢印の先で選ぶ。カードは <code>targets</code>（one / all / self）を持つ</td><td>UI v1.2 §3.6、core v4 §7</td></tr>
+        <tr><td class="num">3</td><td>T0 は威力を持たせるが効果はかなり低く（アタック 5、ムーブは 1 段階）。手札が固定 5 枚なので 0 コストにも意味を残す</td><td>T0: アタック面 威力 5（二属性 3）、ムーブ 1 段階、ガード 3。<strong>2 回目の決定で目盛りを 5 に合わせ、全体を約 1.6 倍</strong>（HP 50、単属性アタック 5 / 8 / 12 / 16、構え +3）。minInvest 0 は 80 種中 20 種まで</td><td>core v4 §3</td></tr>
+        <tr><td class="num">4</td><td>スタンス枠は 1 つで試す</td><td>枠 1、置き換え式、出したカードは戦闘中は山札に戻らない。効果の型 6 つ</td><td>core v4 §4</td></tr>
+        <tr><td class="num">5</td><td>状態は 10 語でよい。ボスはより特殊で強力なものを</td><td>10 語固定 + ボス専用 2 つ（瘴気纏い = 最大スタミナ −1〜−2、呪縛 = 次ターンはムーブ不可）。予兆で見えて対処できる形</td><td>core v4 §5、敵 §4</td></tr>
+        <tr><td class="num">6</td><td>敵 9 体でよい。試験運用はまず連戦で作ることを実装フェーズが参照できるように明示</td><td>§12 連戦モード（既定 3 戦、休憩の選択、HP / スタミナ / 瘴気の持ち越し、結果画面とログ）。実装プランの完了条件 4 に「連戦が最初の目標」</td><td>core v4 §12、プラン</td></tr>
+        <tr><td class="num">7</td><td>設計書に集中し、実装は次セッション。最後に次セッション用プロンプト</td><td>設計書 4 本を確定。プロンプトは §5 と実装プランに同文</td><td>プラン</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="rules">2. 規則の差分（v3 → v4）</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>項目</th><th>v3</th><th>v4</th></tr></thead>
+      <tbody>
+        <tr><td>分類</td><td>type 1 つ</td><td>属性 5 つを 1〜2 つ。面ごとに T0〜T3。二属性の面は 65%</td></tr>
+        <tr><td>解決順（1 枚）</td><td>ダメージ → 移動 → 追加効果</td><td>アタック → ムーブ → ガード → スキル → スタンス（<code>moveFirst</code> なら ムーブ → アタック …）</td></tr>
+        <tr><td>コンボ</td><td>無し</td><td>特性 1 つまで。条件 8 × 効果 7。「このターンにプレイした属性」を state に持つ</td></tr>
+        <tr><td>状態</td><td>無し</td><td>10 語 + ボス専用 2。片側 4 つ、段数 3 まで。相手向けは diff 0 だけ</td></tr>
+        <tr><td>スタンス</td><td>無し</td><td>枠 1、置き換え、除外</td></tr>
+        <tr><td>手札</td><td>3 枚まで補充</td><td>全捨て → 5 + 補正（3〜8）</td></tr>
+        <tr><td>デッキ</td><td>規則なし</td><td>15〜80、同種 3、所持 80 種</td></tr>
+        <tr><td>T0</td><td>威力 1〜2</td><td>威力 5 / 1 段階 / Guard 3。minInvest 0 は 20 種まで</td></tr>
+        <tr><td>目盛り</td><td>HP 30、T1〜T3 = 5 / 8 / 11</td><td>HP 50、T0〜T3 = 5 / 8 / 12 / 16（約 1.6 倍）。敵 HP 通常 50〜70 / 精鋭 90〜110 / ボス 160</td></tr>
+        <tr><td>特性</td><td>無し</td><td>条件 12 × 効果 10（重撃 / 転換 / 追撃を追加）。初期 32 枚 + 習得 40 枚に付け、無い札は威力 +2 / Guard +2 で補う</td></tr>
+        <tr><td>敵の数</td><td>1</td><td>1〜2。間合いは敵ごと、プレイヤーの移動は全敵に同じ向き</td></tr>
+        <tr><td>予兆</td><td>1 段</td><td>通常 1 段、精鋭・ボス 2 段 + 1 フェーズ 2 行動</td></tr>
+        <tr><td>試験運用</td><td>単発</td><td>連戦モード（3 戦既定）</td></tr>
+        <tr><td>基準</td><td>プレイテストで見る点 7</td><td>試験台の基準 9 項目（自動出力）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warn prose"><strong>試験台で最初に見る 3 点</strong>: 0 投入だけの方針の勝率（T0 = 5 は敵出力の半分近いので v3 より確実に上がる）、二属性 65% が単属性を食わないか、2 体戦で全体アタックが強すぎないか。</div>
+
+<h2 id="cards">3. カード 80 種の案</h2>
+  <p class="prose">属性 5 種（A アタック / G ガード / St スタンス / Sk スキル / M ムーブ）を 1 枚に 1〜2 つ。二属性は T の欄に「威力 5 ／ 詰め 1」のように 2 面を並べる。min は最低投入量で、0 のカードだけ T0 がある。目盛りは T0 のアタックが威力 5（単属性 5 / 8 / 12 / 16、ガード 3 / 6 / 9 / 12）。特性は「条件: 効果」で 72 枚が持ち、残り 8 枚は素直な札として各段 +2。正本は <code>.claude/docs/card_document/swordsman_cards_v4.md</code>。</p>
+  <h3>初期 40 種</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>名前</th><th>属性</th><th>間合い</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>特性</th><th>入手先</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>突き<br><span class="note">thrust</span></td><td>A</td><td>近</td><td class="num">1</td><td>—</td><td>威力 10</td><td>威力 14</td><td>威力 18</td><td>なし（素直: +2）</td><td>初期</td></tr>
+        <tr><td class="num">2</td><td>袈裟斬り<br><span class="note">kesa_cut</span></td><td>A</td><td>近</td><td class="num">1</td><td>—</td><td>威力 8</td><td>威力 12</td><td>威力 16 + 崩し 1</td><td>初手: 威力 +3</td><td>初期</td></tr>
+        <tr><td class="num">3</td><td>大上段<br><span class="note">overhead</span></td><td>A</td><td>中</td><td class="num">1</td><td>—</td><td>威力 6</td><td>威力 12</td><td>威力 20</td><td>予兆(防御): 重撃（投入 +1 で威力 +6）</td><td>初期</td></tr>
+        <tr><td class="num">4</td><td>小手打ち<br><span class="note">wrist_cut</span></td><td>A</td><td>近</td><td class="num">0</td><td>威力 5</td><td>威力 6</td><td>威力 9</td><td>威力 12</td><td>連動(M): スタミナ +1</td><td>初期</td></tr>
+        <tr><td class="num">5</td><td>横薙ぎ<br><span class="note">side_sweep</span></td><td>A</td><td>中</td><td class="num">1</td><td>—</td><td>威力 10</td><td>威力 14</td><td>威力 18</td><td>なし（素直: +2）</td><td>初期</td></tr>
+        <tr><td class="num">6</td><td>峰打ち<br><span class="note">flat_strike</span></td><td>A</td><td>中</td><td class="num">1</td><td>—</td><td>威力 6 + 崩し 1</td><td>威力 10 + 崩し 1</td><td>威力 14 + 崩し 2</td><td>相手の状態(鈍足): 威力 +5</td><td>初期</td></tr>
+        <tr><td class="num">7</td><td>探り突き<br><span class="note">probe_thrust</span></td><td>A</td><td>遠</td><td class="num">0</td><td>威力 4</td><td>威力 6</td><td>威力 9</td><td>威力 12</td><td>予兆(攻撃): 威力 +3</td><td>初期</td></tr>
+        <tr><td class="num">8</td><td>貫き<br><span class="note">pierce</span></td><td>A</td><td>中</td><td class="num">1</td><td>—</td><td>威力 8</td><td>威力 12</td><td>威力 16</td><td>崩し後: 重撃（投入 +1 で威力 +6）</td><td>初期</td></tr>
+        <tr><td class="num">9</td><td>投げ刃<br><span class="note">throw_blade</span></td><td>A</td><td>遠</td><td class="num">0</td><td>威力 4</td><td>威力 6</td><td>威力 9</td><td>威力 12</td><td>温存(残 ≥ 4): ドロー +1</td><td>初期</td></tr>
+        <tr><td class="num">10</td><td>伸び突き<br><span class="note">reach_thrust</span></td><td>A</td><td>遠</td><td class="num">1</td><td>—</td><td>威力 6</td><td>威力 9</td><td>威力 12 + 崩し 1</td><td>死力: 威力 +6</td><td>初期</td></tr>
+        <tr><td class="num">11</td><td>呼吸を整える<br><span class="note">brace</span></td><td>G</td><td>—</td><td class="num">0</td><td>Guard 3</td><td>Guard 6</td><td>Guard 9</td><td>Guard 12</td><td>温存(残 ≥ 6): 次ターン回復 +1</td><td>初期</td></tr>
+        <tr><td class="num">12</td><td>鉄の受け<br><span class="note">iron_block</span></td><td>G</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 8</td><td>Guard 11</td><td>Guard 14</td><td>なし（素直: +2）</td><td>初期</td></tr>
+        <tr><td class="num">13</td><td>低い構え<br><span class="note">low_guard</span></td><td>G</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 6</td><td>Guard 9</td><td>Guard 12</td><td>位置(近): Guard +3</td><td>初期</td></tr>
+        <tr><td class="num">14</td><td>受け太刀<br><span class="note">riposte_guard</span></td><td>G</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 6</td><td>Guard 9</td><td>Guard 12</td><td>連動(A): Guard +3</td><td>初期</td></tr>
+        <tr><td class="num">15</td><td>深い呼吸<br><span class="note">deep_breath</span></td><td>G</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 8</td><td>Guard 11</td><td>Guard 14</td><td>なし（素直: +2）</td><td>初期</td></tr>
+        <tr><td class="num">16</td><td>水の構え<br><span class="note">water_stance</span></td><td>St</td><td>—</td><td class="num">1</td><td>—</td><td>遠にいるターン開始の回復 +1</td><td>中と遠で回復 +1</td><td>どの間合いでも回復 +1</td><td>連動(M): この 1 枚の投入 −1</td><td>初期</td></tr>
+        <tr><td class="num">17</td><td>岩の構え<br><span class="note">rock_stance</span></td><td>St</td><td>—</td><td class="num">1</td><td>—</td><td>ターン開始 Guard +2</td><td>ターン開始 Guard +3</td><td>ターン開始 Guard +5</td><td>予兆(攻撃): Guard +3</td><td>初期</td></tr>
+        <tr><td class="num">18</td><td>流れの構え<br><span class="note">flow_stance</span></td><td>St</td><td>—</td><td class="num">1</td><td>—</td><td>ムーブをプレイしたターン、アタック威力 +2</td><td>同 +3</td><td>同 +5</td><td>連動(M): ドロー +1</td><td>初期</td></tr>
+        <tr><td class="num">19</td><td>応急処置<br><span class="note">first_aid</span></td><td>Sk</td><td>—</td><td class="num">1</td><td>—</td><td>HP 7</td><td>HP 10</td><td>HP 13</td><td>なし（素直: +2）</td><td>初期</td></tr>
+        <tr><td class="num">20</td><td>気迫<br><span class="note">spirit_roar</span></td><td>Sk</td><td>中</td><td class="num">1</td><td>—</td><td>威圧</td><td>威圧 + 疲労</td><td>威圧 + 疲労 + 鈍足</td><td>相手の状態(出血): 脆化を 1 つ追加</td><td>初期</td></tr>
+        <tr><td class="num">21</td><td>集中<br><span class="note">focus</span></td><td>Sk</td><td>—</td><td class="num">1</td><td>—</td><td>集中</td><td>集中 + ドロー 1</td><td>集中 + 強化</td><td>初手: ドロー +1</td><td>初期</td></tr>
+        <tr><td class="num">22</td><td>観察<br><span class="note">observe</span></td><td>Sk</td><td>中</td><td class="num">0</td><td>ドロー 1</td><td>ドロー 2</td><td>ドロー 2 + 脆化</td><td>ドロー 2 + 脆化 + 疲労</td><td>手薄: ドロー +1</td><td>初期</td></tr>
+        <tr><td class="num">23</td><td>鬨の声<br><span class="note">war_cry</span></td><td>Sk</td><td>中</td><td class="num">1</td><td>—</td><td>強化</td><td>強化 + 威圧</td><td>強化 + 威圧 + 脆化</td><td>連打: 脆化を 1 つ追加</td><td>初期</td></tr>
+        <tr><td class="num">24</td><td>息継ぎ<br><span class="note">second_wind</span></td><td>Sk</td><td>—</td><td class="num">0</td><td>再生 1</td><td>再生 2</td><td>再生 3</td><td>再生 3 + スタミナ +1</td><td>自分の状態(再生): スタミナ +1</td><td>初期</td></tr>
+        <tr><td class="num">25</td><td>足運び<br><span class="note">footwork</span></td><td>M</td><td>—</td><td class="num">0</td><td>詰め 1</td><td>1 段（向きを選ぶ）</td><td>詰め 2</td><td>2 段（向きを選ぶ）</td><td>初手: スタミナ +1</td><td>初期</td></tr>
+        <tr><td class="num">26</td><td>後ろ跳び<br><span class="note">back_leap</span></td><td>M</td><td>—</td><td class="num">0</td><td>退き 1</td><td>1 段（向きを選ぶ）</td><td>退き 2</td><td>2 段（向きを選ぶ）</td><td>予兆(攻撃): Guard +3</td><td>初期</td></tr>
+        <tr><td class="num">27</td><td>摺り足<br><span class="note">slide_step</span></td><td>M</td><td>—</td><td class="num">0</td><td>詰め 1</td><td>1 段（向きを選ぶ）</td><td>詰め 2</td><td>2 段（向きを選ぶ）</td><td>連動(G): ドロー +1</td><td>初期</td></tr>
+        <tr><td class="num">28</td><td>間合い切り<br><span class="note">break_off</span></td><td>M</td><td>—</td><td class="num">0</td><td>退き 1</td><td>1 段（向きを選ぶ）</td><td>退き 2</td><td>2 段（向きを選ぶ）</td><td>締め: スタミナ +1</td><td>初期</td></tr>
+        <tr><td class="num">29</td><td>踏み込み斬り<br><span class="note">lunge</span></td><td>A+M</td><td>近</td><td class="num">1</td><td>—</td><td>威力 5 ／ 詰め 1</td><td>威力 8 ／ 詰め 1</td><td>威力 10 + 崩し 1 ／ 詰め 1</td><td>連動(St): 威力 +3。moveFirst</td><td>初期</td></tr>
+        <tr><td class="num">30</td><td>牽制<br><span class="note">feint</span></td><td>A+M</td><td>中</td><td class="num">1</td><td>—</td><td>威力 5 ／ 退き 1</td><td>威力 8 ／ 退き 1</td><td>威力 10 ／ 退き 1</td><td>温存(残 ≥ 4): Guard +3</td><td>初期</td></tr>
+        <tr><td class="num">31</td><td>猪突猛進<br><span class="note">boar_rush</span></td><td>A+M</td><td>近</td><td class="num">1</td><td>—</td><td>威力 5 ／ 詰め 1</td><td>威力 8 ／ 詰め 2</td><td>威力 10 ／ 詰め 2</td><td>位置(遠): 威力 +6。moveFirst</td><td>初期</td></tr>
+        <tr><td class="num">32</td><td>裂き斬り<br><span class="note">rend</span></td><td>A+Sk</td><td>中</td><td class="num">1</td><td>—</td><td>威力 5 ／ 出血 1</td><td>威力 8 ／ 出血 2</td><td>威力 10 ／ 出血 3</td><td>相手の状態(出血): 出血 +1 段</td><td>初期</td></tr>
+        <tr><td class="num">33</td><td>体当たり<br><span class="note">body_check</span></td><td>A+Sk</td><td>近</td><td class="num">1</td><td>—</td><td>威力 5 ／ 鈍足</td><td>威力 8 ／ 鈍足</td><td>威力 10 ／ 鈍足 + 疲労</td><td>連打: 威力 +3</td><td>初期</td></tr>
+        <tr><td class="num">34</td><td>石礫<br><span class="note">stone_throw</span></td><td>A+Sk</td><td>遠</td><td class="num">1</td><td>—</td><td>威力 4 ／ 脆化</td><td>威力 6 ／ 脆化</td><td>威力 8 ／ 脆化 + 威圧</td><td>手薄: この 1 枚の投入 −1</td><td>初期</td></tr>
+        <tr><td class="num">35</td><td>受け流し斬り<br><span class="note">parry_cut</span></td><td>A+G</td><td>近</td><td class="num">1</td><td>—</td><td>威力 7 ／ Guard 6</td><td>威力 10 ／ Guard 8</td><td>威力 12 ／ Guard 10</td><td>なし（素直: +2）</td><td>初期</td></tr>
+        <tr><td class="num">36</td><td>柄当て<br><span class="note">guard_thrust</span></td><td>A+G</td><td>中</td><td class="num">1</td><td>—</td><td>威力 5 ／ Guard 4</td><td>威力 8 ／ Guard 6</td><td>威力 10 ／ Guard 8</td><td>連動(G): 威力 +3</td><td>初期</td></tr>
+        <tr><td class="num">37</td><td>足捌き・前<br><span class="note">step_in_guard</span></td><td>G+M</td><td>—</td><td class="num">0</td><td>Guard 3 ／ 詰め 1</td><td>Guard 6 ／ 詰め 1</td><td>Guard 8 ／ 詰め 1</td><td>Guard 10 ／ 詰め 1</td><td>なし（素直: +2）</td><td>初期</td></tr>
+        <tr><td class="num">38</td><td>足捌き・後<br><span class="note">step_out_guard</span></td><td>G+M</td><td>—</td><td class="num">0</td><td>Guard 3 ／ 退き 1</td><td>Guard 6 ／ 退き 1</td><td>Guard 8 ／ 退き 1</td><td>Guard 10 ／ 退き 1</td><td>なし（素直: +2）</td><td>初期</td></tr>
+        <tr><td class="num">39</td><td>鉄壁の構え<br><span class="note">iron_wall</span></td><td>G+St</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 4 ／ 毎ターン開始 Guard +2</td><td>Guard 6 ／ 同 +2</td><td>Guard 8 ／ 同 +3</td><td>自分の状態(見切り): Guard +3</td><td>初期</td></tr>
+        <tr><td class="num">40</td><td>翻し足<br><span class="note">twist_away</span></td><td>Sk+M</td><td>中</td><td class="num">1</td><td>—</td><td>鈍足 ／ 退き 1</td><td>鈍足 + 疲労 ／ 退き 1</td><td>鈍足 + 疲労 ／ 退き 2</td><td>連動(A): スタミナ +1</td><td>初期</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>習得 40 種</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>名前</th><th>属性</th><th>間合い</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>特性</th><th>入手先</th></tr></thead>
+      <tbody>
+        <tr><td class="num">41</td><td>瘴気の刃<br><span class="note">miasma_blade</span></td><td>A+Sk</td><td>中</td><td class="num">1</td><td>—</td><td>威力 5 ／ 疲労</td><td>威力 8 ／ 疲労 + 威圧</td><td>威力 10 ／ 疲労 + 威圧 + 脆化</td><td>相手の状態(疲労): 威力 +5</td><td>ボス: 瘴気の司祭</td></tr>
+        <tr><td class="num">42</td><td>司祭の祈り<br><span class="note">priest_prayer</span></td><td>St</td><td>—</td><td class="num">1</td><td>—</td><td>被弾のたびスタミナ +1（ターン 1 回）</td><td>同 + Guard +2</td><td>同 + 再生 1</td><td>自分の状態(再生): この 1 枚の投入 −1</td><td>ボス: 瘴気の司祭</td></tr>
+        <tr><td class="num">43</td><td>浄化の一閃<br><span class="note">purge_flash</span></td><td>A+St</td><td>遠</td><td class="num">1</td><td>—</td><td>威力 4 ／ 予兆の狙い間合いにいるとき Guard +2</td><td>威力 6 ／ 同 +3</td><td>威力 8 ／ 同 +5</td><td>予兆(攻撃): 追撃（次のアタック面 威力 +5）</td><td>ボス: 瘴気の司祭</td></tr>
+        <tr><td class="num">44</td><td>覇者の一振り<br><span class="note">tyrant_swing</span></td><td>A</td><td>中</td><td class="num">1</td><td>—</td><td>威力 10 + 崩し 1</td><td>威力 14 + 崩し 2</td><td>威力 20 + 崩し 2</td><td>連打: 重撃（投入 +1 で威力 +6）</td><td>ボス 2</td></tr>
+        <tr><td class="num">45</td><td>覇者の構え<br><span class="note">tyrant_stance</span></td><td>A+St</td><td>近</td><td class="num">1</td><td>—</td><td>威力 5 ／ 近でのアタック +2</td><td>威力 8 ／ 同 +3</td><td>威力 10 ／ 同 +5</td><td>位置(近): 威力 +3</td><td>ボス 2</td></tr>
+        <tr><td class="num">46</td><td>圧殺の歩み<br><span class="note">crush_advance</span></td><td>A+M</td><td>近</td><td class="num">1</td><td>—</td><td>威力 5 ／ 詰め 1</td><td>威力 8 ／ 詰め 1</td><td>威力 10 ／ 詰め 2</td><td>崩し後: 威力 +5。moveFirst</td><td>ボス 2</td></tr>
+        <tr><td class="num">47</td><td>幻影歩法<br><span class="note">phantom_step</span></td><td>St+M</td><td>—</td><td class="num">1</td><td>—</td><td>退き 1 ／ 移動したターン Guard +2</td><td>退き 1 ／ 同 +3</td><td>退き 2 ／ 同 +5</td><td>連動(Sk): Guard +3</td><td>ボス 3</td></tr>
+        <tr><td class="num">48</td><td>虚空の突き<br><span class="note">void_thrust</span></td><td>A</td><td>遠</td><td class="num">1</td><td>—</td><td>威力 8</td><td>威力 11</td><td>威力 14</td><td>予兆(攻撃): 重撃（投入 +1 で威力 +6）</td><td>ボス 3</td></tr>
+        <tr><td class="num">49</td><td>影縛り<br><span class="note">shadow_bind</span></td><td>Sk+St</td><td>中</td><td class="num">1</td><td>—</td><td>鈍足 ／ 敵が移動するたび崩し 1</td><td>鈍足 + 疲労 ／ 同 崩し 1</td><td>鈍足 + 疲労 + 威圧 ／ 同 崩し 2</td><td>相手の状態(鈍足): 疲労を 1 つ追加</td><td>ボス 3</td></tr>
+        <tr><td class="num">50</td><td>城壁の受け<br><span class="note">bulwark</span></td><td>G</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 9</td><td>Guard 12</td><td>Guard 15</td><td>予兆(攻撃): Guard +3</td><td>精鋭: 甲冑の番人</td></tr>
+        <tr><td class="num">51</td><td>盾打ち<br><span class="note">shield_bash</span></td><td>A+G</td><td>近</td><td class="num">1</td><td>—</td><td>威力 5 ／ Guard 4</td><td>威力 8 ／ Guard 6</td><td>威力 10 + 崩し 1 ／ Guard 8</td><td>連動(G): 転換（Guard の半分を威力に足す）</td><td>精鋭: 甲冑の番人</td></tr>
+        <tr><td class="num">52</td><td>群れの咆哮<br><span class="note">pack_howl</span></td><td>Sk</td><td>中</td><td class="num">1</td><td>—</td><td>強化</td><td>強化 + 疲労</td><td>強化 + 疲労 + 脆化</td><td>自分の状態(強化): 追撃（次のアタック面 威力 +5）</td><td>精鋭: 群れの長</td></tr>
+        <tr><td class="num">53</td><td>牙の突進<br><span class="note">fang_rush</span></td><td>A+M</td><td>近</td><td class="num">1</td><td>—</td><td>威力 5 ／ 詰め 1</td><td>威力 8 ／ 詰め 2</td><td>威力 10 ／ 詰め 2</td><td>位置(中): 威力 +3。moveFirst</td><td>精鋭: 群れの長</td></tr>
+        <tr><td class="num">54</td><td>旋風斬り<br><span class="note">whirlwind</span></td><td>A</td><td>中</td><td class="num">1</td><td>—</td><td>威力 8</td><td>威力 12</td><td>威力 16</td><td>連動(M): 重撃（投入 +1 で威力 +6）</td><td>精鋭 3</td></tr>
+        <tr><td class="num">55</td><td>返しの構え<br><span class="note">riposte_stance</span></td><td>G+Sk</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 4 ／ 見切り</td><td>Guard 6 ／ 見切り + ドロー 1</td><td>Guard 8 ／ 見切り + 強化</td><td>手薄: Guard +3</td><td>精鋭 3</td></tr>
+        <tr><td class="num">56</td><td>狩人の印<br><span class="note">hunter_mark</span></td><td>Sk+M</td><td>遠</td><td class="num">1</td><td>—</td><td>脆化 ／ 退き 1</td><td>脆化 + 威圧 ／ 退き 1</td><td>脆化 + 威圧 ／ 退き 2</td><td>相手の状態(脆化): ドロー +1</td><td>精鋭 4</td></tr>
+        <tr><td class="num">57</td><td>槍衾<br><span class="note">spear_wall</span></td><td>G+St</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 4 ／ 被弾のたび敵に出血 1</td><td>Guard 6 ／ 同 出血 1 + スタミナ +1</td><td>Guard 8 ／ 同 出血 2</td><td>相手の状態(出血): Guard +3</td><td>精鋭 4</td></tr>
+        <tr><td class="num">58</td><td>盾押し<br><span class="note">shield_push</span></td><td>G+M</td><td>—</td><td class="num">0</td><td>Guard 2 ／ 詰め 1</td><td>Guard 4 ／ 詰め 1</td><td>Guard 6 ／ 詰め 1</td><td>Guard 8 ／ 詰め 2</td><td>締め: スタミナ +1</td><td>探索 1 階</td></tr>
+        <tr><td class="num">59</td><td>咄嗟の受け<br><span class="note">snap_guard</span></td><td>G</td><td>—</td><td class="num">0</td><td>Guard 3</td><td>Guard 6</td><td>Guard 9</td><td>Guard 12</td><td>初手: Guard +3</td><td>探索 1 階</td></tr>
+        <tr><td class="num">60</td><td>跳び退り<br><span class="note">leap_back</span></td><td>M</td><td>—</td><td class="num">0</td><td>退き 1</td><td>1 段（向きを選ぶ）</td><td>退き 2</td><td>2 段（向きを選ぶ）</td><td>連動(A): スタミナ +1</td><td>探索 1 階</td></tr>
+        <tr><td class="num">61</td><td>斬り上げ<br><span class="note">rising_cut</span></td><td>A+M</td><td>近</td><td class="num">1</td><td>—</td><td>威力 5 ／ 詰め 1</td><td>威力 8 ／ 詰め 1</td><td>威力 10 ／ 詰め 1</td><td>初手: 威力 +3。moveFirst</td><td>探索 1 階</td></tr>
+        <tr><td class="num">62</td><td>足払い<br><span class="note">leg_sweep</span></td><td>A+Sk</td><td>中</td><td class="num">1</td><td>—</td><td>威力 5 ／ 鈍足</td><td>威力 8 ／ 鈍足 + 疲労</td><td>威力 10 ／ 鈍足 + 疲労 + 威圧</td><td>相手の状態(鈍足): 重撃（投入 +1 で威力 +6）</td><td>探索 1 階</td></tr>
+        <tr><td class="num">63</td><td>駆け込み<br><span class="note">dash_in</span></td><td>M</td><td>—</td><td class="num">0</td><td>詰め 1</td><td>1 段（向きを選ぶ）</td><td>詰め 2</td><td>2 段（向きを選ぶ）</td><td>位置(遠): ドロー +1</td><td>探索 2 階</td></tr>
+        <tr><td class="num">64</td><td>受け歩き<br><span class="note">guard_walk</span></td><td>G+M</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 4 ／ 詰め 1</td><td>Guard 6 ／ 詰め 1</td><td>Guard 8 ／ 詰め 2</td><td>連打: Guard +3</td><td>探索 2 階</td></tr>
+        <tr><td class="num">65</td><td>棘斬り<br><span class="note">thorn_cut</span></td><td>A+Sk</td><td>中</td><td class="num">1</td><td>—</td><td>威力 5 ／ 出血 1</td><td>威力 8 ／ 出血 2</td><td>威力 10 ／ 出血 3</td><td>崩し後: 出血 +1 段</td><td>探索 2 階</td></tr>
+        <tr><td class="num">66</td><td>静の受け<br><span class="note">calm_guard</span></td><td>G+Sk</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 4 ／ 集中</td><td>Guard 6 ／ 集中 + ドロー 1</td><td>Guard 8 ／ 集中 + 再生 2</td><td>自分の状態(集中): 次ターン回復 +1</td><td>探索 2 階</td></tr>
+        <tr><td class="num">67</td><td>弾き<br><span class="note">deflect</span></td><td>G+Sk</td><td>近</td><td class="num">0</td><td>Guard 2 ／ 威圧</td><td>Guard 4 ／ 威圧</td><td>Guard 6 ／ 威圧 + 疲労</td><td>Guard 8 ／ 威圧 + 疲労 + 脆化</td><td>連動(A): Guard +3</td><td>探索 2 階</td></tr>
+        <tr><td class="num">68</td><td>三日月斬り<br><span class="note">crescent_cut</span></td><td>A+G</td><td>中</td><td class="num">1</td><td>—</td><td>威力 5 ／ Guard 4</td><td>威力 8 ／ Guard 6</td><td>威力 10 ／ Guard 8</td><td>締め: 転換（Guard の半分を威力に足す）</td><td>探索 3 階</td></tr>
+        <tr><td class="num">69</td><td>柄頭打ち<br><span class="note">pommel_strike</span></td><td>A+Sk</td><td>近</td><td class="num">0</td><td>威力 3 ／ 威圧</td><td>威力 5 ／ 威圧</td><td>威力 8 ／ 威圧 + 疲労</td><td>威力 10 ／ 威圧 + 疲労 + 鈍足</td><td>連打: 威力 +3</td><td>探索 3 階</td></tr>
+        <tr><td class="num">70</td><td>霞み足<br><span class="note">mist_step</span></td><td>St+M</td><td>—</td><td class="num">1</td><td>—</td><td>退き 1 ／ 退いたターンの回復 +1</td><td>退き 1 ／ 同 + Guard +2</td><td>退き 2 ／ 同 + Guard +3</td><td>連動(Sk): 次ターン回復 +1</td><td>探索 3 階</td></tr>
+        <tr><td class="num">71</td><td>見切りの目<br><span class="note">keen_eye</span></td><td>Sk+St</td><td>—</td><td class="num">1</td><td>—</td><td>見切り ／ 予兆が攻撃のとき Guard +2</td><td>見切り ／ 同 +3</td><td>見切り + ドロー 1 ／ 同 +5</td><td>予兆(攻撃): ドロー +1</td><td>探索 3 階</td></tr>
+        <tr><td class="num">72</td><td>覚悟<br><span class="note">resolve</span></td><td>Sk</td><td>—</td><td class="num">1</td><td>—</td><td>強化</td><td>強化 + 集中</td><td>強化 + 集中 + 再生 2</td><td>死力: 再生 +1 段</td><td>探索 3 階</td></tr>
+        <tr><td class="num">73</td><td>疾風突き<br><span class="note">gale_thrust</span></td><td>A+M</td><td>遠</td><td class="num">1</td><td>—</td><td>威力 4 ／ 詰め 1</td><td>威力 6 ／ 詰め 1</td><td>威力 8 ／ 詰め 2</td><td>位置(遠): スタミナ +1</td><td>探索 4 階</td></tr>
+        <tr><td class="num">74</td><td>錨の構え<br><span class="note">anchor_stance</span></td><td>G+St</td><td>—</td><td class="num">1</td><td>—</td><td>Guard 4 ／ 相手による移動を無効</td><td>Guard 6 ／ 同 + ターン開始 Guard +2</td><td>Guard 8 ／ 同 + ターン開始 Guard +3</td><td>相手の状態(威圧): Guard +3</td><td>探索 4 階</td></tr>
+        <tr><td class="num">75</td><td>急所突き<br><span class="note">vital_thrust</span></td><td>A</td><td>近</td><td class="num">1</td><td>—</td><td>威力 6 + 崩し 1</td><td>威力 11 + 崩し 2</td><td>威力 16 + 崩し 3</td><td>崩し後: 重撃（投入 +1 で威力 +6）</td><td>探索 4 階</td></tr>
+        <tr><td class="num">76</td><td>躱し斬り<br><span class="note">evade_cut</span></td><td>A+G</td><td>遠</td><td class="num">1</td><td>—</td><td>威力 4 ／ Guard 4</td><td>威力 6 ／ Guard 6</td><td>威力 8 ／ Guard 8</td><td>予兆(攻撃): 転換（Guard の半分を威力に足す）</td><td>探索 4 階</td></tr>
+        <tr><td class="num">77</td><td>血の舞<br><span class="note">blood_dance</span></td><td>A+Sk</td><td>遠</td><td class="num">1</td><td>—</td><td>威力 4 ／ 出血 1</td><td>威力 6 ／ 出血 2</td><td>威力 8 ／ 出血 3</td><td>相手の状態(出血): 威力 +5</td><td>探索 5 階</td></tr>
+        <tr><td class="num">78</td><td>狼の構え<br><span class="note">wolf_stance</span></td><td>A+St</td><td>近</td><td class="num">1</td><td>—</td><td>威力 5 ／ 出血中の敵へのアタック +2</td><td>威力 8 ／ 同 +3</td><td>威力 10 ／ 同 +5</td><td>自分の状態(強化): 重撃（投入 +1 で威力 +6）</td><td>探索 5 階</td></tr>
+        <tr><td class="num">79</td><td>影踏み<br><span class="note">shadow_lunge</span></td><td>A+M</td><td>中</td><td class="num">0</td><td>威力 3 ／ 詰め 1</td><td>威力 5 ／ 詰め 1</td><td>威力 8 ／ 詰め 1</td><td>威力 10 ／ 詰め 2</td><td>予兆(移動): 威力 +5。moveFirst</td><td>探索 5 階</td></tr>
+        <tr><td class="num">80</td><td>背水の型<br><span class="note">last_stand</span></td><td>St</td><td>—</td><td class="num">0</td><td>スタミナ 2 以下のターン開始に Guard +2</td><td>同 +3</td><td>同 +5</td><td>同 +6</td><td>死力: この 1 枚の投入 −1</td><td>探索 5 階</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>集計</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>パターン</th><th class="num">初期</th><th class="num">習得</th><th class="num">計</th></tr></thead>
+      <tbody>
+        <tr><td>A</td><td class="num">10</td><td class="num">4</td><td class="num">14</td></tr>
+        <tr><td>G</td><td class="num">5</td><td class="num">2</td><td class="num">7</td></tr>
+        <tr><td>St</td><td class="num">3</td><td class="num">2</td><td class="num">5</td></tr>
+        <tr><td>Sk</td><td class="num">6</td><td class="num">2</td><td class="num">8</td></tr>
+        <tr><td>M</td><td class="num">4</td><td class="num">2</td><td class="num">6</td></tr>
+        <tr><td>A+M</td><td class="num">3</td><td class="num">5</td><td class="num">8</td></tr>
+        <tr><td>A+Sk</td><td class="num">3</td><td class="num">5</td><td class="num">8</td></tr>
+        <tr><td>A+G</td><td class="num">2</td><td class="num">3</td><td class="num">5</td></tr>
+        <tr><td>A+St</td><td class="num">0</td><td class="num">3</td><td class="num">3</td></tr>
+        <tr><td>G+M</td><td class="num">2</td><td class="num">2</td><td class="num">4</td></tr>
+        <tr><td>G+Sk</td><td class="num">0</td><td class="num">3</td><td class="num">3</td></tr>
+        <tr><td>G+St</td><td class="num">1</td><td class="num">2</td><td class="num">3</td></tr>
+        <tr><td>Sk+M</td><td class="num">1</td><td class="num">1</td><td class="num">2</td></tr>
+        <tr><td>Sk+St</td><td class="num">0</td><td class="num">2</td><td class="num">2</td></tr>
+        <tr><td>St+M</td><td class="num">0</td><td class="num">2</td><td class="num">2</td></tr>
+        <tr><td><strong>計</strong></td><td class="num"><strong>40</strong></td><td class="num"><strong>40</strong></td><td class="num"><strong>80</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>特性 条件別</th><th class="num">初期</th><th class="num">習得</th><th class="num">計</th></tr></thead>
+      <tbody>
+        <tr><td>連動</td><td class="num">8</td><td class="num">6</td><td class="num">14</td></tr>
+        <tr><td>位置</td><td class="num">2</td><td class="num">4</td><td class="num">6</td></tr>
+        <tr><td>予兆</td><td class="num">4</td><td class="num">6</td><td class="num">10</td></tr>
+        <tr><td>温存</td><td class="num">3</td><td class="num">0</td><td class="num">3</td></tr>
+        <tr><td>死力</td><td class="num">1</td><td class="num">2</td><td class="num">3</td></tr>
+        <tr><td>初手</td><td class="num">3</td><td class="num">2</td><td class="num">5</td></tr>
+        <tr><td>締め</td><td class="num">1</td><td class="num">2</td><td class="num">3</td></tr>
+        <tr><td>崩し後</td><td class="num">1</td><td class="num">3</td><td class="num">4</td></tr>
+        <tr><td>連打</td><td class="num">2</td><td class="num">3</td><td class="num">5</td></tr>
+        <tr><td>手薄</td><td class="num">2</td><td class="num">1</td><td class="num">3</td></tr>
+        <tr><td>相手の状態</td><td class="num">3</td><td class="num">7</td><td class="num">10</td></tr>
+        <tr><td>自分の状態</td><td class="num">2</td><td class="num">4</td><td class="num">6</td></tr>
+        <tr><td><strong>計</strong></td><td class="num"><strong>32</strong></td><td class="num"><strong>40</strong></td><td class="num"><strong>72</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>特性 効果別</th><th class="num">初期</th><th class="num">習得</th><th class="num">計</th></tr></thead>
+      <tbody>
+        <tr><td>スタミナ +1</td><td class="num">5</td><td class="num">3</td><td class="num">8</td></tr>
+        <tr><td>威力 +n</td><td class="num">8</td><td class="num">8</td><td class="num">16</td></tr>
+        <tr><td>Guard +n</td><td class="num">6</td><td class="num">8</td><td class="num">14</td></tr>
+        <tr><td>ドロー +1</td><td class="num">5</td><td class="num">3</td><td class="num">8</td></tr>
+        <tr><td>状態</td><td class="num">3</td><td class="num">3</td><td class="num">6</td></tr>
+        <tr><td>投入 −1</td><td class="num">2</td><td class="num">2</td><td class="num">4</td></tr>
+        <tr><td>次ターン回復 +1</td><td class="num">1</td><td class="num">2</td><td class="num">3</td></tr>
+        <tr><td>重撃</td><td class="num">2</td><td class="num">6</td><td class="num">8</td></tr>
+        <tr><td>転換</td><td class="num">0</td><td class="num">3</td><td class="num">3</td></tr>
+        <tr><td>追撃</td><td class="num">0</td><td class="num">2</td><td class="num">2</td></tr>
+        <tr><td><strong>計</strong></td><td class="num"><strong>32</strong></td><td class="num"><strong>40</strong></td><td class="num"><strong>72</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>切り口</th><th class="num">数</th><th>備考</th></tr></thead>
+      <tbody>
+        <tr><td>特性を持つカード</td><td class="num">72</td><td>初期 32 / 習得 40。素直な札 8。同じ「条件 + 効果」の重複は最大 3（上限 3）</td></tr>
+        <tr><td>連動の属性 / 状態の語</td><td class="num">5 / 9</td><td>M 4 / A 4 / G 3 / St 1 / Sk 2。状態: 鈍足 / 出血 / 再生 / 見切り / 疲労 / 強化 / 脆化 / 集中 / 威圧</td></tr>
+        <tr><td>アタック面を持つカード</td><td class="num">38</td><td>近 15 / 中 14 / 遠 9（初期 7 / 7 / 4、習得 8 / 7 / 5）</td></tr>
+        <tr><td>最低投入 0</td><td class="num">20</td><td>初期 12 / 習得 8。うちアタック面あり 5（0 投入 × 5 枚の危険は §5）</td></tr>
+        <tr><td>習熟で名称が変わる（習得 40）</td><td class="num">20</td><td>探索 1〜4 階の 19 種 + 牙の突進</td></tr>
+        <tr><td>探索の面の候補</td><td class="num">12</td><td>初期 6 / 習得 6</td></tr>
+        <tr><td>習得 40 の入手先</td><td class="num">40</td><td>ボス: 瘴気の司祭 3 / ボス 2 3 / ボス 3 3 / 精鋭: 甲冑の番人 2 / 精鋭: 群れの長 2 / 精鋭 3 2 / 精鋭 4 2 / 探索 1 階 5 / 探索 2 階 5 / 探索 3 階 5 / 探索 4 階 4 / 探索 5 階 4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+<h2 id="enemies">4. 敵 9 体の案</h2>
+<p class="prose">80% 用に通常 6 / 精鋭 2 / ボス 1 の 9 体を置きました。目盛りは v4.1（T0 アタック 5 基準、プレイヤー HP 50）です。主力間合いは近 2 / 中 2 / 遠 2 で、通常敵の半数が状態を 1 つ使います。精鋭は 1 フェーズ 2 行動と予兆 2 段、ボスは行動履歴で決定木を切り替えます。正本は <code>.claude/docs/enemy_document/enemy_roster_v4.md</code> です。</p>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th class="num">#</th><th>名前</th><th>階級</th><th>主力間合い</th><th class="num">HP</th><th class="num">スタミナ</th><th class="num">出力の上限</th><th>使う状態</th><th>特徴</th><th>階層</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>長柄の歪み兵</td><td>通常</td><td>中</td><td class="num">60</td><td class="num">10</td><td class="num">13</td><td>—</td><td>v3 の基準敵。近に張り付くと中へ押し戻される</td><td>1〜2</td></tr>
+      <tr><td class="num">2</td><td>影走りの犬</td><td>通常</td><td>近</td><td class="num">50</td><td class="num">10</td><td class="num">10 + 出血</td><td>出血</td><td>速くて脆い。退かれると 1 ターンで詰め直す</td><td>1〜2</td></tr>
+      <tr><td class="num">3</td><td>錆びた鎧の亡者</td><td>通常</td><td>近</td><td class="num">58</td><td class="num">10</td><td class="num">13（崩し後 16）</td><td>—</td><td>スタンス「鉄の身」で毎ターン Guard。押し込みで中へ矯正</td><td>2〜3</td></tr>
+      <tr><td class="num">4</td><td>弩の狩人</td><td>通常</td><td>遠</td><td class="num">54</td><td class="num">10</td><td class="num">12</td><td>威圧</td><td>遠の一射が重い。遠の端では退けない</td><td>2〜3</td></tr>
+      <tr><td class="num">5</td><td>靄の射手</td><td>通常</td><td>遠</td><td class="num">56</td><td class="num">10</td><td class="num">11</td><td>疲労</td><td>2 段詰めると矢を捨てて退く（空振り回避が見える敵）</td><td>3〜4</td></tr>
+      <tr><td class="num">6</td><td>双刃の歪み兵</td><td>通常</td><td>中</td><td class="num">64</td><td class="num">10</td><td class="num">13</td><td>脆化、見切り</td><td>二段斬りの 1 撃目で脆化。中でしか本領が出ない</td><td>3〜4</td></tr>
+      <tr><td class="num">7</td><td>甲冑の番人</td><td>精鋭</td><td>近</td><td class="num">90</td><td class="num">12</td><td class="num">16</td><td>鈍足</td><td>2 行動。鉄壁を置いてから兜割り（崩し）と盾打ち（鈍足）</td><td>3〜4</td></tr>
+      <tr><td class="num">8</td><td>群れの長 + 取り巻きの犬</td><td>精鋭</td><td>中 + 近</td><td class="num">95 + 32</td><td class="num">12 + 8</td><td class="num">13 + 8</td><td>出血、強化、再生</td><td>2 体戦の検証用。犬が死ぬと遠吠えが自分向きになる</td><td>4</td></tr>
+      <tr><td class="num">9</td><td>瘴気の司祭</td><td>ボス</td><td>中〜遠</td><td class="num">160</td><td class="num">14</td><td class="num">15〜20</td><td>疲労、威圧 + 専用 2（瘴気纏い、呪縛）</td><td>適応 3 つ + 第 2 段階。固有カード 3 種を落とす</td><td>5</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>行動表（T0〜T3、A = アタック / G = ガード / St = スタンス / Sk = スキル / M = ムーブ）</h3>
+<p class="note">表記: 威力は最適間合いでの値。「相手を +1」はプレイヤーを 1 段階遠くへ押す矯正。状態と崩しは diff 0 のときだけ付く。出血は HP −2 × 段、再生は +2、構えは残 3 以上で Guard +3。</p>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>1 長柄の歪み兵（HP 60）</th><th>属性</th><th>最適</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>移動 / 特性</th></tr></thead>
+    <tbody>
+      <tr><td>薙ぎ払い</td><td>A</td><td>中</td><td class="num">1</td><td>—</td><td>6</td><td>10</td><td>13</td><td>—</td></tr>
+      <tr><td>穂先の突き</td><td>A</td><td>遠</td><td class="num">0</td><td>2</td><td>3</td><td>5</td><td>6</td><td>—</td></tr>
+      <tr><td>石突きの押し込み</td><td>A + M</td><td>近</td><td class="num">0</td><td>2</td><td>3</td><td>3</td><td>5</td><td>相手を +1。手薄: 相手の Guard が 0 なら威力 +3</td></tr>
+      <tr><td>間合い取り直し</td><td>M</td><td>—</td><td class="num">0</td><td colspan="4">中へ 1 段階</td><td>—</td></tr>
+      <tr><td>柄で受ける</td><td>G</td><td>—</td><td class="num">0</td><td>Guard 3</td><td>Guard 5</td><td>Guard 6</td><td>Guard 8</td><td>—</td></tr>
+      <tr><td colspan="9" class="note">決定木: 近 → 押し込み / 取り直し。中 → 薙ぎ払い / 穂先 / 受け。遠 → 穂先 / 取り直し</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>2 影走りの犬（HP 50）</th><th>属性</th><th>最適</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>移動 / 特性</th></tr></thead>
+    <tbody>
+      <tr><td>噛みつき</td><td>A</td><td>近</td><td class="num">1</td><td>—</td><td>5</td><td>8, 出血 1</td><td>10, 出血 2</td><td>—</td></tr>
+      <tr><td>跳びかかり</td><td>A + M</td><td>近</td><td class="num">0</td><td>2</td><td>3</td><td>5</td><td>6</td><td>詰め 1（動いてから噛む）。位置: 中から威力 +3</td></tr>
+      <tr><td>回り込み</td><td>M</td><td>—</td><td class="num">0</td><td colspan="4">詰め 1</td><td>—</td></tr>
+      <tr><td>身を低くする</td><td>G</td><td>—</td><td class="num">0</td><td>Guard 2</td><td>Guard 3</td><td>Guard 5</td><td>Guard 6</td><td>温存: 残 4 以上で次の回復 +1</td></tr>
+      <tr><td colspan="9" class="note">決定木: 近 → 噛みつき / 身を低く。中 → 跳びかかり / 回り込み。遠 → 回り込み / 跳びかかり</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>3 錆びた鎧の亡者（HP 58）</th><th>属性</th><th>最適</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>移動 / 特性</th></tr></thead>
+    <tbody>
+      <tr><td>鉄の身</td><td>St</td><td>—</td><td class="num">1</td><td>—</td><td>毎ターン Guard +1</td><td>+2</td><td>+3</td><td>1 戦闘 1 回。戦闘の長さに効くので 1.6 倍しない</td></tr>
+      <tr><td>大振り</td><td>A</td><td>近</td><td class="num">1</td><td>—</td><td>8</td><td>11</td><td>13</td><td>崩し後: 相手のスタミナ 3 未満で威力 +3</td></tr>
+      <tr><td>押し込み</td><td>A + M</td><td>近</td><td class="num">0</td><td>2</td><td>3</td><td>5</td><td>5</td><td>相手を +1</td></tr>
+      <tr><td>踏み出し</td><td>M</td><td>—</td><td class="num">0</td><td colspan="4">詰め 1</td><td>—</td></tr>
+      <tr><td colspan="9" class="note">決定木: 近 → 大振り / 押し込み。中 → 鉄の身 / 踏み出し。遠 → 踏み出し</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>4 弩の狩人（HP 54）</th><th>属性</th><th>最適</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>移動 / 特性</th></tr></thead>
+    <tbody>
+      <tr><td>弩の一射</td><td>A</td><td>遠</td><td class="num">1</td><td>—</td><td>6</td><td>10</td><td>12, 威圧</td><td>—</td></tr>
+      <tr><td>退き撃ち</td><td>A + M</td><td>中</td><td class="num">0</td><td>2</td><td>3</td><td>5</td><td>6</td><td>撃ってから退き 1。位置: 中から使うと Guard +3</td></tr>
+      <tr><td>距離を取る</td><td>M</td><td>—</td><td class="num">0</td><td colspan="4">退き 1</td><td>—</td></tr>
+      <tr><td>盾を構える</td><td>G</td><td>—</td><td class="num">0</td><td>Guard 3</td><td>Guard 5</td><td>Guard 6</td><td>Guard 8</td><td>—</td></tr>
+      <tr><td colspan="9" class="note">決定木: 近 → 距離を取る / 盾。中 → 退き撃ち / 距離を取る。遠 → 一射 / 盾</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>5 靄の射手（HP 56）</th><th>属性</th><th>最適</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>移動 / 特性</th></tr></thead>
+    <tbody>
+      <tr><td>靄の矢</td><td>A</td><td>遠</td><td class="num">1</td><td>—</td><td>6</td><td>8, 疲労</td><td>11, 疲労</td><td>—</td></tr>
+      <tr><td>散り矢</td><td>A</td><td>中</td><td class="num">0</td><td>2</td><td>3</td><td>5</td><td>6</td><td>—</td></tr>
+      <tr><td>靄に溶ける</td><td>G + M</td><td>—</td><td class="num">0</td><td>Guard 2</td><td>Guard 4</td><td>Guard 6</td><td>Guard 8</td><td>退き 1。位置: 近で使うと Guard +3</td></tr>
+      <tr><td colspan="9" class="note">決定木: 近 → 靄に溶ける。中 → 散り矢 / 靄に溶ける。遠 → 靄の矢</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>6 双刃の歪み兵（HP 64）</th><th>属性</th><th>最適</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>移動 / 特性</th></tr></thead>
+    <tbody>
+      <tr><td>二段斬り</td><td>A</td><td>中</td><td class="num">1</td><td>—</td><td>3 × 2（計 6）</td><td>3 × 2、1 撃目で脆化（計 8）</td><td>5 × 2、1 撃目で脆化（計 13）</td><td>1 撃ずつ Guard に当てる</td></tr>
+      <tr><td>踏み込み斬り</td><td>A + M</td><td>中</td><td class="num">1</td><td>—</td><td>5</td><td>6</td><td>8</td><td>詰め 1（動いてから斬る）。位置: 遠から使うと威力 +3</td></tr>
+      <tr><td>退き斬り</td><td>A + M</td><td>近</td><td class="num">0</td><td>2</td><td>3</td><td>5</td><td>5</td><td>斬ってから退き 1</td></tr>
+      <tr><td>十字受け</td><td>G</td><td>—</td><td class="num">0</td><td>Guard 3</td><td>Guard 5</td><td>Guard 6</td><td>Guard 8</td><td>温存: 残 4 以上で見切り</td></tr>
+      <tr><td colspan="9" class="note">決定木: 近 → 退き斬り。中 → 二段斬り / 十字受け。遠 → 踏み込み斬り</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>7 甲冑の番人（精鋭、2 行動、HP 90）</th><th>属性</th><th>最適</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>移動 / 特性</th></tr></thead>
+    <tbody>
+      <tr><td>鉄壁</td><td>St</td><td>—</td><td class="num">1</td><td>—</td><td>毎ターン Guard +2</td><td>+3</td><td>+4</td><td>1 戦闘 1 回。14 ターンを超えるなら T2 上限</td></tr>
+      <tr><td>兜割り</td><td>A</td><td>近</td><td class="num">1</td><td>—</td><td>7</td><td>10, 崩し 1</td><td>12, 崩し 2</td><td>—</td></tr>
+      <tr><td>盾打ち</td><td>A</td><td>近</td><td class="num">0</td><td>1</td><td>3, 鈍足</td><td>5, 鈍足</td><td>6, 鈍足</td><td>連動: 同フェーズにアタック実行済みで威力 +3</td></tr>
+      <tr><td>盾を掲げて前進</td><td>G + M</td><td>—</td><td class="num">0</td><td>Guard 2</td><td>Guard 4</td><td>Guard 6</td><td>Guard 8</td><td>詰め 1</td></tr>
+      <tr><td>盾を構える</td><td>G</td><td>—</td><td class="num">0</td><td>Guard 3</td><td>Guard 5</td><td>Guard 6</td><td>Guard 8</td><td>手薄: 相手の Guard が 0 なら追撃（次のアタック面 +5）</td></tr>
+      <tr><td colspan="9" class="note">決定木: 近 → 兜割り / 盾打ち / 盾。中 → 鉄壁 / 前進 / 盾。遠 → 前進 / 盾。1 手目の後の距離で引き直す。典型 = 兜割り 12 + 盾打ち 1 + 連動 3 = 16</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>8 群れの長（精鋭、2 行動、HP 95）+ 取り巻きの犬（HP 32）</th><th>属性</th><th>最適</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>移動 / 特性</th></tr></thead>
+    <tbody>
+      <tr><td>群れの絆</td><td>St</td><td>—</td><td class="num">1</td><td>—</td><td>毎ターン 犬と自分に Guard +2</td><td>+3</td><td>+3、犬の攻撃 +2</td><td>犬が死ぬと効果を失う</td></tr>
+      <tr><td>引き裂き</td><td>A</td><td>中</td><td class="num">1</td><td>—</td><td>6</td><td>10, 出血 1</td><td>13, 出血 2</td><td>相手の状態: 相手に出血があれば威力 +3</td></tr>
+      <tr><td>飛びかかり</td><td>A + M</td><td>近</td><td class="num">1</td><td>—</td><td>5</td><td>8</td><td>10</td><td>詰め 1（動いてから）</td></tr>
+      <tr><td>遠吠え</td><td>Sk</td><td>—</td><td class="num">0</td><td>犬に強化</td><td>犬に強化、自分に再生</td><td>同左</td><td>同左 + Guard 3</td><td>犬が死んでいれば自分に強化</td></tr>
+      <tr><td>群れに隠れる</td><td>G</td><td>—</td><td class="num">0</td><td>Guard 3</td><td>Guard 5</td><td>Guard 6</td><td>Guard 8</td><td>温存: 残 5 以上で Guard +3</td></tr>
+      <tr><td>犬・噛みつき</td><td>A</td><td>近</td><td class="num">1</td><td>—</td><td>5</td><td>6</td><td>8</td><td>犬は 1 行動、HP 32、スタミナ 8</td></tr>
+      <tr><td>犬・回り込み</td><td>M</td><td>—</td><td class="num">0</td><td colspan="4">詰め 1</td><td>—</td></tr>
+      <tr><td colspan="9" class="note">決定木（長）: 近 → 飛びかかり / 隠れる。中 → 群れの絆 / 引き裂き / 遠吠え。遠 → 飛びかかり / 遠吠え。犬: 近 → 噛みつき、中・遠 → 回り込み。開始は 長 = 中、犬 = 近。2 体合計の上限 = 13 + 8（強化で 16）</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>9 瘴気の司祭（ボス、2 行動、HP 160）</th><th>属性</th><th>最適</th><th class="num">min</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>移動 / 特性</th></tr></thead>
+    <tbody>
+      <tr><td>瘴気の帳</td><td>St</td><td>—</td><td class="num">1</td><td>—</td><td>遠にいるターン開始に Guard +3</td><td>+5</td><td>+5、遠での回復 +1</td><td>1 戦闘 1 回。遠でしか効かない（常時だと 30 ターン超）</td></tr>
+      <tr><td>錫杖の打ち込み</td><td>A</td><td>中</td><td class="num">1</td><td>—</td><td>8</td><td>12</td><td>15</td><td>崩し後: 相手のスタミナ 3 未満で崩し 2</td></tr>
+      <tr><td>瘴気の矢</td><td>A</td><td>遠</td><td class="num">1</td><td>—</td><td>6</td><td>10, 疲労</td><td>13, 疲労</td><td>相手の状態: 相手に疲労があれば威力 +3</td></tr>
+      <tr><td>瘴気の儀</td><td>Sk</td><td>中</td><td class="num">1</td><td>—</td><td>瘴気纏い 1</td><td>+ 自分に再生</td><td>+ 再生と強化</td><td>狙い間合いを外すと付かない</td></tr>
+      <tr><td>縛りの言葉</td><td>Sk</td><td>遠</td><td class="num">0</td><td>呪縛</td><td>呪縛、威圧</td><td>同左</td><td>同左 + 自分に集中</td><td>—</td></tr>
+      <tr><td>払いのけ</td><td>A + M</td><td>近</td><td class="num">0</td><td>2</td><td>5</td><td>6</td><td>8</td><td>相手を +1。手薄: 相手の Guard が 0 なら威力 +5</td></tr>
+      <tr><td>漂い退く</td><td>G + M</td><td>—</td><td class="num">0</td><td>Guard 2</td><td>Guard 4</td><td>Guard 6</td><td>Guard 8</td><td>退き 1</td></tr>
+      <tr><td>迫る</td><td>M</td><td>—</td><td class="num">0</td><td>詰め 1</td><td>詰め 1, Guard 3</td><td>同左</td><td>詰め 1, Guard 5</td><td>適応 closer で使う</td></tr>
+      <tr><td colspan="9" class="note">基本の決定木: 近 → 払いのけ / 漂い退く。中 → 帳 / 錫杖 / 儀。遠 → 矢 / 言葉。典型 = 錫杖 15 + 儀（中）、矢 13 + 言葉（遠、疲労で 16）。専用の状態: 瘴気纏い = 戦闘中、最大スタミナ −1（−2 まで重なる）。呪縛 = 次のターン、ムーブ属性が使えない</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>ボスの適応（手記に書ける文で判定する）</h3>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>id</th><th>条件（手記の文）</th><th>数えるもの</th><th>効果</th><th>戻る条件</th></tr></thead>
+    <tbody>
+      <tr><td>turtle</td><td>アタックを 3 回続けて受けると、退いて帳を張り直す</td><td>直近 3 枚がアタック属性</td><td>次のフェーズを「漂い退く → 帳（未使用なら）か矢」に差し替え</td><td>1 フェーズ</td></tr>
+      <tr><td>breaker</td><td>Guard 9 以上で 2 ターン受け続けると、崩しを狙う</td><td>ターン終了時の Guard が 2 ターン続けて 9 以上</td><td>中を「錫杖（崩し 2 が常に付く）→ 縛りの言葉」に差し替え</td><td>Guard が 5 以下</td></tr>
+      <tr><td>closer</td><td>遠に 2 ターン居続けると、迫ってくる</td><td>間合いが 2 ターン続けて遠</td><td>遠を「迫る → 縛りの言葉」に差し替え</td><td>中か近に戻る</td></tr>
+      <tr><td>second_stage</td><td>HP が半分を切ると、儀式を毎フェーズ行う</td><td>HP ≤ 80</td><td>中の先頭を儀にし、瘴気纏いが 2 段まで重なる。バナーが赤に</td><td>戻らない</td></tr>
+    </tbody>
+  </table>
+</div>
+<p class="prose note">撃破で固有カード 3 種を習得する: 瘴気の刃（A + Sk）、司祭の祈り（St）、浄化の一閃（A + St）。カード表の #41〜43。</p>
+
+<h3>100% 用の残り 10 体（名前と役割だけ）</h3>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th class="num">#</th><th>名前</th><th>主力間合い</th><th>階級</th><th>役割</th><th class="num">階層</th></tr></thead>
+    <tbody>
+      <tr><td class="num">10</td><td>骨の歩哨</td><td>近</td><td>通常</td><td>盾持ち。Guard の高い敵で崩しを教える</td><td class="num">1</td></tr>
+      <tr><td class="num">11</td><td>泥濘の這うもの</td><td>近</td><td>通常</td><td>鈍足を使う。退けない怖さを浅層で教える</td><td class="num">2</td></tr>
+      <tr><td class="num">12</td><td>鉤縄の追剥</td><td>中</td><td>通常</td><td>相手を近へ引く矯正。遠に逃げる癖を咎める</td><td class="num">2</td></tr>
+      <tr><td class="num">13</td><td>吊るし首の亡霊</td><td>遠</td><td>通常</td><td>予兆の狙い間合いが 1 ターン遅れて見える。開示度の検証</td><td class="num">3</td></tr>
+      <tr><td class="num">14</td><td>瘴気の狼</td><td>近</td><td>通常</td><td>犬の上位。出血 2 段と軽足</td><td class="num">3</td></tr>
+      <tr><td class="num">15</td><td>錆槍の隊列</td><td>中</td><td>通常</td><td>同じ敵 2 体。全体攻撃の価値を作る</td><td class="num">3</td></tr>
+      <tr><td class="num">16</td><td>燭台の番人</td><td>中</td><td>精鋭</td><td>灯りを消して予兆を隠す（開示度 −1）</td><td class="num">4</td></tr>
+      <tr><td class="num">17</td><td>石像の守り手</td><td>近</td><td>精鋭</td><td>崩しを受けない。状態でしか投入を落とせない</td><td class="num">4</td></tr>
+      <tr><td class="num">18</td><td>深淵の釣り人</td><td>遠</td><td>ボス</td><td>呪縛と引き寄せの矯正。第 2 ボス</td><td class="num">5</td></tr>
+      <tr><td class="num">19</td><td>歪みの根</td><td>中</td><td>ボス</td><td>全属性への適応を持つ最終ボス。3 段階</td><td class="num">5</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>階層ごとの出現と連戦の順</h3>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th class="num">階層</th><th>通常</th><th>精鋭</th><th>ボス</th><th class="num">濃度</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>長柄の歪み兵、影走りの犬</td><td>—</td><td>—</td><td class="num">1</td></tr>
+      <tr><td class="num">2</td><td>長柄の歪み兵、影走りの犬、錆びた鎧の亡者、弩の狩人</td><td>—</td><td>—</td><td class="num">2</td></tr>
+      <tr><td class="num">3</td><td>錆びた鎧の亡者、弩の狩人、靄の射手、双刃の歪み兵</td><td>甲冑の番人</td><td>—</td><td class="num">3</td></tr>
+      <tr><td class="num">4</td><td>靄の射手、双刃の歪み兵</td><td>甲冑の番人、群れの長</td><td>—</td><td class="num">4</td></tr>
+      <tr><td class="num">5</td><td>双刃の歪み兵</td><td>群れの長</td><td>瘴気の司祭</td><td class="num">5</td></tr>
+    </tbody>
+  </table>
+</div>
+<p class="prose">連戦の試験運用（実装フェーズで参照）: 探索を経由せず 9 戦を続ける。順は 犬 → 長柄 → 弩 → 休憩 → 亡者 → 靄 → 番人 → 休憩 → 双刃 → 群れ → 司祭。HP（最大 50）とスタミナは持ち越し、休憩で HP 最大の 30%（15）とスタミナ全回復、瘴気は階層の濃度 × 3 行動ぶんを各戦闘の前に足す。</p>
+
+
+  <h2 id="next">5. 次セッション（実装）</h2>
+  <p class="prose">実装プラン <code>.claude/docs/vision/plans/2026-09-13-battle-v4-implementation.md</code> に完了条件 5 つと同じプロンプトを置いています。冒頭にそのまま貼ってください。</p>
+<pre><code>戦闘コア v4 を Unity 用 C# に実装してください。設計は確定済みで、正本は次の 4 つです。順に読んでから着手してください。
+1. .claude/docs/battle_document/battle_core_v4.md（規則。§0 の差分表、§9 のターン進行、§10 の定数、§11 の写像、§12 の連戦モード、§13 の基準）
+2. .claude/docs/card_document/swordsman_cards_v4.md（カード 80 種。初期 40 を先に入れる）
+3. .claude/docs/enemy_document/enemy_roster_v4.md（敵 9 体。通常 6 / 精鋭 2 / ボス 1）
+4. .claude/docs/vision/plans/2026-09-13-battle-v4-implementation.md（このプラン。完了条件 5 つ）
+
+前提:
+- 現状のコードは unity-port/BattleCore/（v3、C# 9 / netstandard2.1）と unity-project-kit/Assets/View/（UGUI、v1.1）。dotnet test は 54 / 54。同期は npm run unity:sync、Unity CLI は unity test --mode EditMode と unity build --target StandaloneWindows64。手順は unity-port/README.md と HISTORY.md 2026-09-12 の項。
+- v3 で検証済みの部分（投入量 / 間合い補正 / 予兆 / 構え / 崩し / 瘴気 / 端数 AwayFromZero）は変えない。
+- 最初の目標は連戦モード（battle_core_v4.md §12）。単発の戦闘を作ってから繋ぐのではなく、最初から 3 戦を続けて通す形で作る。
+- 試験台 BattleCore.Sim は dotnet のコンソールプロジェクトとして unity-port/ に足す。デッキの型 5 種 × 敵 9 体 × 貪欲な打ち手で、基準 9 項目を表にする。
+- View はドラッグ操作（battle_ui_ux_v1.md §3.6）をまだ作らない。v4 の state で壊れないこと（5 枚の手札、状態とスタンスの文字表示）までにする。
+- 触らないもの: src/（Web 版）、battle_core_v3.md、設計書の数値（差分があれば実装に合わせず、報告に回す）。
+- ブランチは feat/battle-core-v4（docs/battle-100-inventory から。親は未マージ）。
+
+進め方: 範囲（触るファイル / 完了条件 / 触らないもの）を宣言してから、Types → Combat → Reducer → Cards / Enemies → Sim → 連戦 → View 最小対応 → テスト → ビルド → スクリーンショットの順。人手の確認が要る点（Editor 前面での連戦プレイ）は報告に書く。
+報告は html-report スキルで、基準 9 項目の表と連戦のスクリーンショットを載せる。</code></pre>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>「移動も属性にする」を「ムーブを他の 4 つと同格の属性にする」と読んだ。1 枚は 1〜2 属性のままなので、パターンは 15 になる。</li>
+    <li>T0 = 5 に合わせるため全体を約 1.6 倍した（HP 50、構え +3、出血 / 再生は 1 段 2）。スタミナ・投入量・崩し・持続ターンは変えていない。</li>
+    <li>特性の語彙は条件 12 × 効果 10 に固定した。同じ「条件 + 効果」の組は 3 枚まで。特性の無い札は初期の 8 枚だけで、威力 +2 / Guard +2 を上乗せしている。</li>
+    <li>2 体戦は精鋭「群れの長」だけ。3 体以上は入れない。間合いは敵ごとに持ち、プレイヤーの移動は全敵に同じ向きで効く。</li>
+    <li>ボス専用の状態は「予兆で見えて対処できる」を条件にした。予兆なしの即時効果は作らない。</li>
+    <li>カードと敵の数値は全て叩き台。配分と役割だけを確定とし、数値は試験台と連戦モードで直す。</li>
+    <li>習熟（R1-5）と探索の面（R1-6）は「あり / なし」「候補」の列だけで、中身は決めていない。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ol class="prose">
+    <li>「0 投入 5 ダメージ × 5 枚」が試験台で 10% を超えたら、T0 を 3 に戻すか minInvest 0 の枚数を減らす。どちらにするかは結果を見てから。</li>
+    <li>カード 80 種の名前と役割に違和感があれば、実装前に差し替える。数値の違和感は試験台の結果を見てからでよい。</li>
+    <li>敵 9 体の階層配置（1〜5）を探索側の設計（R2-1 / R2-8）と後で合わせる。</li>
+  </ol>
+
+  <p class="note">関連: <code>battle_core_v4.md</code>、<code>swordsman_cards_v4.md</code>、<code>enemy_roster_v4.md</code>、<code>battle_ui_ux_v1.md</code> §3.6、前編レポート <a href="2026-09-13-battle-100-inventory.html">戦闘 100% の棚卸</a>。</p>
+</div>

@@ -1,0 +1,370 @@
+<title>キャラ外見と UI の制作ツール</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); overflow-wrap: anywhere; }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p, .verdict ul { margin: 0; color: var(--muted); font-size: 15px; }
+  .verdict ul { padding-left: 1.1em; }
+
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .step code { font-size: 13px; background: var(--code-bg); padding: 2px 6px; border-radius: 3px; }
+  @media (max-width: 820px) { .flow { grid-template-columns: 1fr 1fr; } .step:nth-child(2) { border-right: 0; } .step:nth-child(-n+2) { border-bottom: 1px solid var(--line); } }
+  @media (max-width: 520px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code, dd code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: .9em; overflow-wrap: anywhere; }
+  td:first-child { min-width: 7em; }
+  table.wide td:first-child { min-width: 8.5em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-variant-numeric: tabular-nums; font-family: "IBM Plex Mono", monospace; font-size: 13.5px; white-space: nowrap; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  td.state.stop { color: var(--stop); }
+  table.wide { min-width: 860px; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.warn strong { color: var(--warn); }
+  .note { font-size: 14px; color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  @media (max-width: 520px) { dl { grid-template-columns: 1fr; } dt { margin-top: 8px; } }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--sw); border: 1px solid var(--line); vertical-align: -1px; margin-right: 6px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-14 / 判断 / original-card-battle</p>
+    <h1>キャラクターの外見と UI は、画像 API の候補を人が仕上げ、差分スプライトで動かすところから始める</h1>
+    <p class="lede">敵 9 体とプレイヤーの外見、戦闘の UI / UX と演出を作るためのツールと前提をまとめました。手元には描画アプリも生成環境もまだありません。一方で Unity 6 と 2D Animation、Unity を Claude から操作する MCP は揃っています。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">今日から</span><h3>API で候補 → CSP で加筆 → 差分スプライト</h3>
+      <ul>
+        <li>画像生成は Gemini を主、OpenAI を副にします。</li>
+        <li>加筆とパーツ分けは CLIP STUDIO PAINT PRO（買い切り 6,900 円）です。</li>
+        <li>いまの人型に、差分と白シルエットを差し替えます。</li>
+        <li>UI は HTML モックから UGUI の C# に写します。</li>
+        <li>権利台帳と Steam の開示を最初から付けます。</li>
+      </ul>
+    </li>
+    <li class="verdict later"><span class="tag">必要になったら</span><h3>Live2D・2D Animation・ローカル生成</h3>
+      <ul>
+        <li>Live2D は主人公とボスの 2 体だけです。</li>
+        <li>残り 8 体は、差分で足りなければ 2D Animation に上げます。</li>
+        <li>ComfyUI は 8 GB の VRAM で実測してから入れます。</li>
+        <li>背景の塗り絵と TextMeshPro は後回しです。</li>
+      </ul>
+    </li>
+    <li class="verdict skip"><span class="tag">入れない</span><h3>規約か正本とぶつかるもの</h3>
+      <ul>
+        <li>Midjourney は、規約が自動ツールでの生成を禁じています。</li>
+        <li>NoobAI 系は、生成物の商用化を禁じています。</li>
+        <li>rembg の既定モデルは、重みが非商用です。</li>
+        <li>VFX Graph と Particle は、v2 が使わないと決めています。</li>
+        <li>Figma MCP は、無料枠が月 20 回です。</li>
+      </ul>
+    </li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: 戦闘 UI v2 は「霧と灯り」の A+ で、立ち絵は 2.5D アニメ（<code>battle_ui_ux_v2.md:511,535</code>）です。いまの人型は、1 枚の白い型紙を Rim・Fill・Flash・残像の 4 か所で色の乗算に使っています（<code>ArenaView.cs:207-212</code>）。塗った絵を差すなら、差分ごとに白シルエットが要ります。</div>
+
+  <h2>組む順</h2>
+  <p class="prose">1 体を最後まで通して、手間とお金を実測してから横に広げます。料理でいえば、10 人分を作る前に 1 皿だけ試作して、味と時間を確かめる順番です。</p>
+  <div class="flow">
+    <div class="step"><span class="n">S0</span><h3>判断と土台</h3><p>Unity の版、描画方式、置き場、閾値を決めます。</p><p>API キーと月上限を設定し、<code>.env</code> を無視させます。</p></div>
+    <div class="step"><span class="n">S1</span><h3>スタイルガイド</h3><p>主人公の見た目、光の向き、利き手と盾の持ち手、命名を決めます。</p></div>
+    <div class="step"><span class="n">C0–C11</span><h3>1 体を通す</h3><p>長柄の歪み兵で、仕様カードから実画面の確認と台帳まで通します。いまのコアに入っている敵はこの 1 体だけです。</p></div>
+    <div class="step"><span class="n">横展開</span><h3>残り 8 体と UI</h3><p>主人公、残りの敵、UI 画面（U0–U8）、演出（V0–V3）へ広げます。</p></div>
+  </div>
+
+  <h2>決まっている前提</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>項目</th><th>内容</th><th>出典</th></tr></thead>
+      <tbody>
+        <tr><td>テーマ</td><td>「死ぬたびに人は変わる。だが、技と記憶は次の生へ。」操作するのは一人の固定キャラクターです。</td><td><code>concept-v3.md:14-16</code></td></tr>
+        <tr><td>絵柄</td><td>アニメ 2.5D（Live2D 本命）です。モチーフは瘴気と手記（和紙・墨・筆線）です。</td><td><code>v2:511</code></td></tr>
+        <tr><td>色</td><td>色は役割にだけ使います。omen は予兆・敵・被弾・敵の作用に限ります。</td><td><code>v2:508,539</code></td></tr>
+        <tr><td>間合い</td><td>近 260 / 中 520 / 遠 820 px の実距離で見せます。体勢は近が前傾 12°、中が直立、遠が後傾 8° です。</td><td><code>v2:157,170</code></td></tr>
+        <tr><td>人型の枠</td><td>140×300 で、足元が pivot です。敵は <code>scaleX=-1</code> で反転します。</td><td><code>ArenaView.cs:13,29</code></td></tr>
+        <tr><td>演出</td><td>Particle は使いません。<code>Image</code> の手動アニメと <code>UiTween</code> で作ります。</td><td><code>v2:1072</code></td></tr>
+        <tr><td>書体</td><td>Shippori Mincho / Zen Kaku Gothic New / IBM Plex Mono の .ttf を legacy <code>Text</code> で使います。</td><td><code>v2:1219-1221</code></td></tr>
+        <tr><td>時間予算</td><td>1 行動 2.0 秒以内です。攻撃は 1030 ms、移動は 320 ms です。</td><td><code>v2:603,614</code></td></tr>
+        <tr><td>Unity</td><td>6000.5.5f1、URP 2D です。2D Animation 15.1.0 と PSD Importer 14.0.3 が入っています。RPG-by-card はコミット 0 件です。</td><td><code>ProjectVersion.txt</code></td></tr>
+        <tr><td>凍結</td><td>アーマー、装備、ショップ、鍛冶屋、サンクチュアリ、旧属性アイコン、ボス第 2 段階の姿の絵は作りません。</td><td><code>concept-v3.md:208-225</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>手元の環境</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>分類</th><th>状態</th><th>中身</th></tr></thead>
+      <tbody>
+        <tr><td>GPU / CPU / RAM</td><td class="state yes">あり</td><td>RTX 5060 Ti（VRAM 8 GB、うち画面表示が約 1.8 GB）、Ryzen 7 5700X、32 GB。ローカルの SDXL は動きますが、余裕はありません。</td></tr>
+        <tr><td>Unity と操作系</td><td class="state yes">あり</td><td>Unity 6000.5.5f1、Unity CLI 1.0.0-beta.6。<code>unity mcp</code> は <code>unity-editor-mcp</code> として登録済みです。調査時点で Editor はつながっていませんでした。</td></tr>
+        <tr><td>スクリプト基盤</td><td class="state yes">あり</td><td>Python 3.12（Pillow、numpy）、Node 24、git-lfs 3.7.1、Playwright の chromium。</td></tr>
+        <tr><td>描画・リグのアプリ</td><td class="state no">なし</td><td>Krita、CLIP STUDIO、Photoshop、Aseprite、Blender、Live2D、Spine、Inkscape、Figma。</td></tr>
+        <tr><td>ローカル生成</td><td class="state no">なし</td><td>ComfyUI、torch、rembg。RTX 50 系では CUDA 12.8 以降のビルドの PyTorch が要ります。</td></tr>
+        <tr><td>秘密情報の扱い</td><td class="state stop">要修正</td><td>両リポジトリで <code>.env</code> が無視されていません（<code>git check-ignore -v .env</code> が終了コード 1）。API キーを置く前に直します。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>工程別のツール</h2>
+  <p class="note">価格は 2026-09-14 に一次情報で確かめた値です。「Claude」列は、Claude Code が自分で動かせるかを表します。</p>
+  <div class="tablewrap">
+    <table class="wide">
+      <thead><tr><th>役割</th><th>採用</th><th>代替・保留</th><th>費用・条件</th><th>Claude</th></tr></thead>
+      <tbody>
+        <tr><td>コンセプト・影絵</td><td>仕様カード（md）と SVG の影絵を、Playwright で撮ります。</td><td><code>design</code> スキルのキャンバス</td><td>0 円</td><td class="state yes">可</td></tr>
+        <tr><td>加筆・パーツ分け</td><td>CLIP STUDIO PAINT PRO</td><td>Krita（無料）、Photoshop 3,280 円/月</td><td>買い切り 6,900 円。Live2D が PSD の動作を保証するのは Photoshop と CSP だけです。</td><td class="state no">人</td></tr>
+        <tr><td>画像生成（主）</td><td>Gemini <code>gemini-3.1-flash-image</code></td><td><code>-flash-lite-image</code>（1K 約 $0.034/枚）、<code>gemini-3-pro-image</code>（1K 約 $0.134/枚、スタイル参照あり）</td><td>1K 約 $0.067/枚、Batch は半額、無料枠なし。全画像に SynthID が入ります。</td><td class="state yes">可</td></tr>
+        <tr><td>画像生成（副）</td><td>OpenAI <code>gpt-image-2</code> / <code>gpt-image-2.5</code> 系</td><td>—</td><td>画像出力は 100 万トークンあたり $30 です。1 枚あたりの価格は未確認です。組織の本人確認が要る場合があります。</td><td class="state yes">可</td></tr>
+        <tr><td>一貫性の維持</td><td>承認済みの絵を参照画像に渡します（物体 10・キャラクター 4 枚まで）。</td><td>LoRA（kohya_ss）、IP-Adapter、ControlNet、DWPose</td><td>CMU OpenPose は非商用なので使いません。</td><td class="state yes">可</td></tr>
+        <tr><td>背景除去・白シルエット</td><td>rembg <code>isnet-anime</code> と <code>scripts/silhouette.py</code></td><td>Real-ESRGAN ncnn-vulkan（BSD-3）で拡大</td><td>rembg 既定の <code>bria-rmbg</code> は CC BY-NC なので使いません。isnet-anime の重みのライセンスは未確認です。</td><td class="state yes">可</td></tr>
+        <tr><td>動かす（段階 0 / 1）</td><td>差分の差し替えと <code>UiTween</code>。次の段階は Unity 2D Animation を RenderTexture 経由で出します。</td><td>—</td><td>0 円（導入済み）</td><td class="state maybe">配線のみ</td></tr>
+        <tr><td>動かす（主人公とボス）</td><td>Live2D Cubism</td><td>Spine Professional $379</td><td>FREE は年間売上 1,000 万円未満なら商用可です。上限はテクスチャ 1 枚 2048 px、パーツ 30、ArtMesh 100、パラメータ 30 です。PRO indie は ¥2,288/月です。SDK の開発環境は 6000.3 / 6000.0 LTS です。</td><td class="state maybe">配線のみ</td></tr>
+        <tr><td>VFX</td><td><code>Image</code> の手動アニメと <code>UiTween</code></td><td>PrimeTween（無料）</td><td>VFX Graph は Canvas に載りません。</td><td class="state yes">可</td></tr>
+        <tr><td>UI デザイン / 実装</td><td>HTML モックと Artifact から、UGUI の C#（<code>BattleTheme</code> / <code>UiKit</code>）へ写します。</td><td>Penpot（MPL-2.0、公式 MCP）</td><td>0 円</td><td class="state yes">可</td></tr>
+        <tr><td>書体・アイコン</td><td>OFL の 3 書体と game-icons.net の SVG</td><td>Kenney（CC0）</td><td>OFL はライセンス文の同梱が要ります。game-icons.net はアイコンごとの作者表記が要ります。</td><td class="state yes">可</td></tr>
+        <tr><td>Unity の操作</td><td>Unity CLI の MCP（導入済み）と、Unity 公式の Claude Code プラグイン（2026-09-09 公開）</td><td>CoplayDev/unity-mcp（MIT）</td><td>公式プラグインに Unity AI の契約が要るかは未確認です。</td><td class="state yes">可</td></tr>
+        <tr><td>検証</td><td>visual-inspect、<code>scripts/color_check.py</code>、ビルド撮影 <code>-captureDir</code></td><td>Playwright CDP の色覚模擬</td><td>0 円</td><td class="state yes">可</td></tr>
+        <tr><td>記録・版管理</td><td>台帳 30 列。LFS に <code>*.psb</code> と <code>*.moc3</code> を足します。</td><td>—</td><td>GitHub Free の LFS 枠は、保存 10 GiB・帯域 10 GiB です。</td><td class="state yes">可</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose"><strong>費用の目安</strong>: 10 体 × 体勢 3 × 候補 8 で 240 枚です。Gemini の 1K なら約 $16、Batch なら約 $8 です。OpenAI の分は 1 体目で実測します。お金より重いのは人の時間で、初めての Live2D は 1 体約 30 時間という個人の記録があります。</p>
+
+  <h2>作るもの</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>id</th><th>階級 / 間合い / 階層</th><th>見た目の手がかり</th><th>数</th></tr></thead>
+      <tbody>
+        <tr><td><code>swordsman</code></td><td>主人公</td><td>設定はまだありません。技は斬・突・払・打です。</td><td>Live2D モーション 12</td></tr>
+        <tr><td><code>polearm_warped</code></td><td>通常 / 中 / 1〜2</td><td>長柄。薙ぎ・突き・石突き・柄受け</td><td class="num">差分 12</td></tr>
+        <tr><td><code>shadow_hound</code></td><td>通常 / 近 / 1〜2</td><td>四足で、速く脆い</td><td class="num">差分 11</td></tr>
+        <tr><td><code>rusted_revenant</code></td><td>通常 / 近 / 2〜3</td><td>錆びた鎧で、重く遅い</td><td class="num">差分 11</td></tr>
+        <tr><td><code>crossbow_hunter</code></td><td>通常 / 遠 / 2〜3</td><td>弩と盾</td><td class="num">差分 11</td></tr>
+        <tr><td><code>mist_archer</code></td><td>通常 / 遠 / 3〜4</td><td>弓。靄に溶ける</td><td class="num">差分 10</td></tr>
+        <tr><td><code>twin_blade_warped</code></td><td>通常 / 中 / 3〜4</td><td>二刀</td><td class="num">差分 11</td></tr>
+        <tr><td><code>armored_warden</code></td><td>精鋭 / 近〜中 / 3〜4</td><td>全身の甲冑と盾</td><td class="num">差分 12</td></tr>
+        <tr><td><code>pack_alpha</code> + <code>pack_hound</code></td><td>精鋭 / 中 / 4</td><td>大型の獣（表示 1.25 倍）。取り巻きの犬は影走りの犬の色替えです。</td><td class="num">差分 12 + 1</td></tr>
+        <tr><td><code>miasma_priest</code></td><td>ボス / 中〜遠 / 5</td><td>ローブと錫杖</td><td>Live2D モーション 12</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <dl class="prose">
+    <dt>共通の要件</dt><dd>透過 PNG、右向き、足元 pivot、140×300 の比率です。差分ごとに白シルエットを作ります。</dd>
+    <dt>テクスチャ</dt><dd>生成は 1024×1536 で行い、原本を残します。取り込みは長辺 1024・BC7 で、差分 90 枚なら約 60 MiB です。4K での最大表示 810 px も上回ります。</dd>
+    <dt>演出</dt><dd>系統素材 7 と状態アイコン 12 です（<code>v2:661-683,816-829</code>）。</dd>
+    <dt>UI 部品</dt><dd>カード 230×250、投入帯 4 本、予兆バナー 440×64、休憩 768×432、結果 922×626、手記ドロワーです。</dd>
+    <dt>クレジット</dt><dd>正本にまだ画面がありません。game-icons.net の作者一覧と OFL の本文を載せる画面が要ります。</dd>
+  </dl>
+
+  <h2>読みやすさの計算</h2>
+  <p class="prose">A+ のトークンを <code>scripts/color_check.py</code> で計算しました。WCAG のコントラスト比と、Machado 2009 の色覚模擬での色差（ΔE）です。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>組</th><th>値</th><th>基準</th><th>判定</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sw" style="--sw:#ff5d47"></span>omen の文字、階層 1 の背景上端の上</td><td class="num">4.32:1</td><td>本文 4.5:1</td><td class="state stop">不足</td></tr>
+        <tr><td><span class="sw" style="--sw:#a97cf2"></span>boss の文字、同じ背景の上</td><td class="num">4.28:1</td><td>本文 4.5:1</td><td class="state stop">不足</td></tr>
+        <tr><td><span class="sw" style="--sw:#7d8a8c"></span>whiff の文字、同じ背景の上</td><td class="num">3.68:1</td><td>本文 4.5:1</td><td class="state stop">不足</td></tr>
+        <tr><td><span class="sw" style="--sw:#ffc46b"></span>warm と <span class="sw" style="--sw:#f0a848"></span>amber</td><td class="num">ΔE 12.3（正常色覚）</td><td>ΔE 20（仮）</td><td class="state maybe">近い</td></tr>
+        <tr><td><span class="sw" style="--sw:#ff5d47"></span>omen と <span class="sw" style="--sw:#f0a848"></span>amber</td><td class="num">ΔE 13.3（2 型）</td><td>ΔE 20（仮）</td><td class="state maybe">近い</td></tr>
+        <tr><td><span class="sw" style="--sw:#ffc46b"></span>warm と <span class="sw" style="--sw:#ff5d47"></span>omen</td><td class="num">ΔE 18.7（2 型）</td><td>ΔE 20（仮）</td><td class="state maybe">近い</td></tr>
+        <tr><td><span class="sw" style="--sw:#7d8a8c"></span>whiff と <span class="sw" style="--sw:#a97cf2"></span>boss</td><td class="num">ΔE 19.0（3 型）</td><td>ΔE 20（仮）</td><td class="state maybe">近い</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">不足する 3 色を背景に直接置く文字には使わず、下に panel の帯を敷く規則を v2 に提案します。狙い帯の「的中」と「半減」は塗りの色だけで分かれている（<code>ArenaView.cs:361-363</code>）ので、形か模様の差を足す案も上げます。ΔE 20 は規格ではなく、プロジェクトで決める仮の値です。</p>
+
+  <h2>法務とプラットフォーム</h2>
+  <ul class="prose">
+    <li><strong>Steam</strong>: ゲームに同梱してプレイヤーが目にする AI 生成物は、Pre-Generated として開示します。人が加筆した絵も対象と読めます。</li>
+    <li><strong>日本の著作権</strong>: 文化庁の考え方（2024-03-15）は、人が創作的に加筆した部分に著作物性を認めます。生成の試行回数や候補の選択だけでは寄与になりません。</li>
+    <li><strong>使う前の確認</strong>: 文化庁のチェックリスト（2024-07-31）は、類似の確認と生成過程の保存を求めます。作品名や作家名はプロンプトに入れません。</li>
+    <li><strong>購入素材</strong>: Unity Asset Store の素材は、同意なく AI の学習に使えません。参照画像にも入れません。</li>
+    <li><strong>外注</strong>: 著作権法 61 条 2 項があるので、契約に 27 条・28 条の特掲、人格権の不行使特約、AI 利用の申告を入れます。</li>
+    <li><strong>台帳</strong>: <code>human_edit</code> と <code>human_minutes</code> と選定の理由が、人の寄与の記録になります。台帳は 30 列です。</li>
+  </ul>
+
+  <h2>リスクと回避</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>リスク</th><th>回避</th></tr></thead>
+      <tbody>
+        <tr><td>塗った絵をそのまま差すと、Flash が白く光らず、Rim は暗い複製になります。</td><td>差分ごとに白シルエットを作り、Rim・Flash・残像に使います。Fill は白で差します。</td></tr>
+        <tr><td>Unity 6000.5 は LTS ではありません。Cubism SDK の開発環境に 6000.5 は載っていません。</td><td>敵は 2D Animation で進めます。Live2D を入れるときに 6000.5 で半日試し、動かなければ 6000.3 LTS に移します。</td></tr>
+        <tr><td>Overlay の Canvas には、SpriteRenderer も Live2D も直接は挟めません。</td><td>段階 0 は <code>Image</code> の差し替えにします。段階 1 からは RenderTexture を RawImage に出します。</td></tr>
+        <tr><td>生成まわりのライセンスに落とし穴があります（NoobAI、rembg の既定モデル、Illustrious の版差）。</td><td>台帳にモデルと版ごとのライセンスを書きます。未確認のものは <code>pending</code> にして、製品ビルドに入れません。</td></tr>
+        <tr><td>異形や流血の表現は、API に拒否されるおそれがあります。</td><td>生成は「歪んだ体」までにとどめ、出血と斬撃は VFX で足します。</td></tr>
+        <tr><td>10 体の線と塗りがそろわないおそれがあります。</td><td>スタイルガイドを先に作り、承認済みの絵を参照に固定します。それでもぶれるなら LoRA に進みます。</td></tr>
+        <tr><td>四足の敵と盾持ちでは、枠と反転の前提が崩れます。</td><td>四足の横幅の上限と、反転後の持ち手の規則をスタイルガイドに入れます。<code>silhouette.py</code> が横幅を出します。</td></tr>
+        <tr><td>演出の時間と配置のずれを測る手段がありません。</td><td><code>UiTween</code> に開始と終了のログを足し、ビルドに <code>-floor</code> と <code>-pose</code> の引数を足す実装を依頼します。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>一連の流れを実行するスキル</h2>
+  <p class="prose">今回の調査から Note までと、その先の制作を同じ型で回せるように、プロジェクトスキル <code>visual-production-pipeline</code> を作りました。どのモードも、最後はレポート、Artifact、life-editor の Note（タグ card-battle）で閉じます。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>呼び方</th><th>工程</th><th>すること</th></tr></thead>
+      <tbody>
+        <tr><td><code>survey [観点]</code></td><td>調べ直し</td><td>今回と同じ 6 観点のワークフロー（<code>workflows/survey.js</code>）を回し、正本を差分で更新します。</td></tr>
+        <tr><td><code>setup</code></td><td>S0 → S1</td><td>判断の記録、LFS と <code>.env</code> の差分案、台帳、スタイルガイドを揃えます。</td></tr>
+        <tr><td><code>character &lt;id&gt;</code></td><td>C0 → C11</td><td>仕様カード、影絵、生成、選定、白シルエット、加筆、動き、取り込み、実画面、台帳の順に進みます。</td></tr>
+        <tr><td><code>background &lt;階層&gt;</code></td><td>B1</td><td>背景と靄のタイルを作り、立ち絵の縁のコントラストを確かめます。</td></tr>
+        <tr><td><code>ui &lt;画面&gt;</code></td><td>U0 → U8</td><td>モック、撮影、読みやすさ、アイコンと書体、実装の依頼、実画面との矩形の比較です。</td></tr>
+        <tr><td><code>vfx &lt;系統&gt;</code></td><td>V0 → V3</td><td>系統と段の表、素材、実装の依頼、時間の集計です。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">人の手の工程（選ぶ、描く、リグを組む）では待ちません。材料を揃えて仕様カードの進捗欄に書き、同じ id で再開します。</p>
+
+  <h2>事実確認の経過</h2>
+  <dl class="prose">
+    <dt>調査</dt><dd>6 観点を並列に調べました。内部の前提、手元の環境、立ち絵と AI、2.5D と VFX、UI ツール、Claude が動かせる範囲です。</dd>
+    <dt>反証</dt><dd>外部の主張 265 件を一次情報で確かめました。確認 231 件、訂正 30 件、未確認 4 件です。</dd>
+    <dt>批評</dt><dd>漏れ 14 件と誤り 6 件を指摘され、補完調査のあとで書き直しました。白シルエット、スタイルガイド、演出の工程、クレジット、API の準備が加わりました。</dd>
+    <dt>直接確認</dt><dd>内部の事実 5 件と外部の 5 件を、Claude が自分で開きました。1 件だけ食い違いました。OpenAI の 1 枚あたりの価格は、いまの公式ページには載っておらず、トークン単価だけです。そのため未確認に落としました。</dd>
+    <dt>計算の再現</dt><dd><code>color_check.py</code> が、統合結果のコントラスト比と ΔE を小数第 1 位まで再現しました。</dd>
+  </dl>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>「これらを一連的に実行できるスキル」は、今回の「調査 → レポート → Note」と、その先の「制作の流れ」の両方と読みました。両方をモードとして持たせています。</li>
+    <li>PR は <code>docs/battle-uiux-v4</code> の上に積みました。スキルが参照する設計書が、まだ main にないためです。</li>
+    <li>仕様カードとスタイルガイドの置き場を <code>.claude/docs/art_document/</code> にしました。台帳の置き場は、Unity プロジェクトの <code>Docs/art/</code> です。どちらも S0 で見直せます。</li>
+    <li>数は「Live2D は主人公とボスだけ」の道筋で数えました。</li>
+    <li>色差の閾値 ΔE 20 と、配置の許容値 ±8 px は仮の値です。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>OpenAI <code>gpt-image-2</code> 系の、1 枚あたりの価格と透過出力の扱い。</li>
+    <li>rembg の isnet-anime / BiRefNet の重みのライセンスと、Illustrious XL の版ごとのライセンス。</li>
+    <li>Unity 公式の Claude Code プラグインと公式 MCP に、Unity AI の契約が要るか。</li>
+    <li>Canvas Shader Graph が Overlay で動くか。Live2D を uGUI に直接出せるか。</li>
+    <li>Steam の開示がマーケティング素材に及ぶか。Live2D SDK に表記の義務があるか。</li>
+    <li>1 体あたりの人の工数。</li>
+    <li>RPG-by-card の URP が 17.6.0 と 17.5.0 のどちらで解決されるか。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>判断</th><th>推奨</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>Live2D の範囲</td><td>主人公とボスの 2 体だけにする</td><td>全 10 体を Live2D にすると、一人では工数が読めないため</td></tr>
+        <tr><td>最初に通す 1 体</td><td>スタイルは主人公で決め、全工程の試走は長柄の歪み兵で行う</td><td>コアに入っていて、実画面まで確かめられる敵はこの 1 体だけのため</td></tr>
+        <tr><td>Unity の版</td><td>いまは 6000.5 のまま。Live2D を入れるときに試し、だめなら 6000.3 LTS へ移す</td><td>Cubism SDK の開発環境に 6000.5 が載っていないため</td></tr>
+        <tr><td>生成の主経路と予算</td><td>クラウド API を主にし、月上限 $30 から始める</td><td>試走が数ドルで済み、ローカルは導入から要るため</td></tr>
+        <tr><td>主人公の見た目を世代で変えるか</td><td>固定 1 体にし、世代差は小物と色にとどめる</td><td><code>concept-v3.md:14</code> と <code>:16</code> が食い違い、全身を変えると本数が増えるため</td></tr>
+        <tr><td>道具の購入</td><td>CLIP STUDIO PAINT PRO を買う</td><td>Live2D が PSD の動作を保証するのは Photoshop と CSP だけのため</td></tr>
+        <tr><td><code>.env</code> と LFS の修正</td><td>Claude が差分を作り、コミットはこうだいさんの指示で行う</td><td>API キーを置く前に必要で、RPG-by-card はコミット 0 件のいまなら履歴を書き換えずに済むため</td></tr>
+        <tr><td>色の規則</td><td>omen・boss・whiff を背景に直接置く文字に使わない規則と、ΔE 20 を v2 に足す</td><td>階層 1 の背景で 4.5:1 を下回るため</td></tr>
+        <tr><td>Yuji Syuku</td><td>手記の画面まで保留する</td><td>v2 の中で使う / 置かないが食い違うため</td></tr>
+        <tr><td>art の範囲</td><td><code>PHASE3-KICKOFF.md:171</code> の「art を含めない」とは別フェーズとして開く</td><td>範囲の衝突を残すと計画がずれるため</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">正本: <code>.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md</code>（判断 16 件の全量と出典 URL）</p>
+</div>

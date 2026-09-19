@@ -1,3 +1,5 @@
+> **SUPERSEDED（2026-09-12）**: concept-v2 の入力資料。v3（2026-09-12）で前提が変わったため参照のみ。
+
 # Requirements Kickoff Brief — 「リアル性」コンセプト再定義セッション
 
 > **Status**: ACTIVE（要件決定セッションの入力資料）

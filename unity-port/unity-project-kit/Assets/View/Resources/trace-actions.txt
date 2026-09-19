@@ -1,22 +1,155 @@
-# generated from parity-fixture.json by gen-trace-actions.mjs — do not edit
-play thrust-1
+# v3 trace (FixedRng(0)): play <instanceId> <invest> | end | restart. Lines starting with # are expected states.
+play thrust-1 3
+# T1 d1 P30/7/0 E32/10/0 ongoing omen=sweep
+play lunge-0 3
+# T1 d0 P30/4/0 E28/10/0 ongoing omen=sweep
+play lunge-1 1
+# T1 d0 P30/3/0 E25/10/0 ongoing omen=sweep
 end
-play step_in-0
+# T2 d0 P28/4/0 E25/7/2 ongoing omen=shove
+play feint-0 1
+# T2 d1 P28/3/0 E25/7/0 ongoing omen=shove
+play feint-1 0
+# T2 d2 P28/3/0 E24/7/0 ongoing omen=shove
+play step_in-0 0
+# T2 d1 P28/3/0 E24/7/0 ongoing omen=shove
 end
-play step_in-1
+# T3 d2 P28/6/0 E24/6/2 ongoing omen=reach_thrust
+play step_in-1 3
+# T3 d1 P28/3/3 E24/6/2 ongoing omen=reach_thrust
+play step_out-0 0
+# T3 d2 P28/3/3 E24/6/2 ongoing omen=reach_thrust
+play step_out-1 0
+# T3 d2 P28/3/3 E24/6/2 ongoing omen=reach_thrust
 end
-play thrust-0
-play brace-0
+# T4 d2 P28/6/0 E24/6/2 ongoing omen=reach_thrust
+play thrust-0 3
+# T4 d2 P28/3/0 E24/6/0 ongoing omen=reach_thrust
+play brace-0 0
+# T4 d2 P28/3/2 E24/6/0 ongoing omen=reach_thrust
+play brace-1 0
+# T4 d2 P28/3/4 E24/6/0 ongoing omen=reach_thrust
 end
+# T5 d2 P28/6/0 E24/6/2 ongoing omen=reach_thrust
+play lunge-0 3
+# T5 d1 P28/3/0 E24/6/1 ongoing omen=reach_thrust
+play lunge-1 1
+# T5 d0 P28/2/0 E23/6/0 ongoing omen=reach_thrust
+play feint-0 0
+# T5 d1 P28/2/0 E22/6/0 ongoing omen=reach_thrust
 end
-play feint-0
+# T6 d1 P26/4/0 E22/5/2 ongoing omen=sweep
+play feint-1 1
+# T6 d2 P26/3/0 E21/5/0 ongoing omen=sweep
+play step_in-0 0
+# T6 d1 P26/3/0 E21/5/0 ongoing omen=sweep
+play step_in-1 0
+# T6 d0 P26/3/0 E21/5/0 ongoing omen=sweep
 end
+# T7 d0 P24/4/0 E21/3/2 ongoing omen=shove
+play thrust-0 1
+# T7 d0 P24/3/0 E18/3/0 ongoing omen=shove
+play step_out-0 0
+# T7 d1 P24/3/0 E18/3/0 ongoing omen=shove
+play step_out-1 0
+# T7 d2 P24/3/0 E18/3/0 ongoing omen=shove
 end
+# T8 d1 P24/5/0 E18/6/2 ongoing omen=sweep
+play thrust-1 2
+# T8 d1 P24/3/0 E16/6/0 ongoing omen=sweep
+play brace-0 0
+# T8 d1 P24/3/2 E16/6/0 ongoing omen=sweep
+play brace-1 0
+# T8 d1 P24/3/4 E16/6/0 ongoing omen=sweep
 end
+# T9 d1 P22/5/0 E16/5/2 ongoing omen=sweep
+play lunge-1 2
+# T9 d0 P22/3/0 E15/5/0 ongoing omen=sweep
+play feint-0 0
+# T9 d1 P22/3/0 E14/5/0 ongoing omen=sweep
+play feint-1 0
+# T9 d2 P22/3/0 E13/5/0 ongoing omen=sweep
 end
+# T10 d2 P20/6/0 E13/5/2 ongoing omen=reach_thrust
+play thrust-0 3
+# T10 d2 P20/3/0 E13/5/0 ongoing omen=reach_thrust
+play step_in-0 0
+# T10 d1 P20/3/0 E13/5/0 ongoing omen=reach_thrust
+play step_in-1 0
+# T10 d0 P20/3/0 E13/5/0 ongoing omen=reach_thrust
 end
+# T11 d1 P20/5/0 E13/6/2 ongoing omen=sweep
+play thrust-1 2
+# T11 d1 P20/3/0 E11/6/0 ongoing omen=sweep
+play step_out-0 0
+# T11 d2 P20/3/0 E11/6/0 ongoing omen=sweep
+play step_out-1 0
+# T11 d2 P20/3/0 E11/6/0 ongoing omen=sweep
 end
+# T12 d2 P18/6/0 E11/6/2 ongoing omen=reach_thrust
+play lunge-0 3
+# T12 d1 P18/3/0 E11/6/1 ongoing omen=reach_thrust
+play brace-0 0
+# T12 d1 P18/3/2 E11/6/1 ongoing omen=reach_thrust
+play brace-1 0
+# T12 d1 P18/3/4 E11/6/1 ongoing omen=reach_thrust
 end
-restart
-play thrust-1
+# T13 d1 P18/5/0 E11/5/2 ongoing omen=sweep
+play feint-0 2
+# T13 d2 P18/3/0 E9/5/0 ongoing omen=sweep
+play feint-1 0
+# T13 d2 P18/3/0 E8/5/0 ongoing omen=sweep
+play thrust-0 1
+# T13 d2 P18/2/0 E7/5/0 ongoing omen=sweep
 end
+# T14 d2 P14/5/0 E7/5/2 ongoing omen=reach_thrust
+play thrust-1 2
+# T14 d2 P14/3/0 E7/5/1 ongoing omen=reach_thrust
+play step_in-0 0
+# T14 d1 P14/3/0 E7/5/1 ongoing omen=reach_thrust
+play step_in-1 0
+# T14 d0 P14/3/0 E7/5/1 ongoing omen=reach_thrust
+end
+# T15 d1 P14/5/0 E7/6/2 ongoing omen=sweep
+play lunge-0 2
+# T15 d0 P14/3/0 E6/6/0 ongoing omen=sweep
+play step_out-0 0
+# T15 d1 P14/3/0 E6/6/0 ongoing omen=sweep
+play step_out-1 0
+# T15 d2 P14/3/0 E6/6/0 ongoing omen=sweep
+end
+# T16 d2 P12/6/0 E6/6/2 ongoing omen=reach_thrust
+play lunge-1 3
+# T16 d1 P12/3/0 E6/6/1 ongoing omen=reach_thrust
+play brace-0 0
+# T16 d1 P12/3/2 E6/6/1 ongoing omen=reach_thrust
+play brace-1 0
+# T16 d1 P12/3/4 E6/6/1 ongoing omen=reach_thrust
+end
+# T17 d1 P12/5/0 E6/5/2 ongoing omen=sweep
+play feint-1 2
+# T17 d2 P12/3/0 E4/5/0 ongoing omen=sweep
+play thrust-0 1
+# T17 d2 P12/2/0 E3/5/0 ongoing omen=sweep
+play thrust-1 1
+# T17 d2 P12/1/0 E2/5/0 ongoing omen=sweep
+end
+# T18 d2 P8/4/0 E2/5/2 ongoing omen=reach_thrust
+play lunge-0 1
+# T18 d1 P8/3/0 E2/5/2 ongoing omen=reach_thrust
+play step_in-0 0
+# T18 d0 P8/3/0 E2/5/2 ongoing omen=reach_thrust
+play step_in-1 0
+# T18 d0 P8/3/0 E2/5/2 ongoing omen=reach_thrust
+end
+# T19 d1 P8/5/0 E2/6/2 ongoing omen=sweep
+play lunge-1 2
+# T19 d0 P8/3/0 E1/6/0 ongoing omen=sweep
+play step_out-0 0
+# T19 d1 P8/3/0 E1/6/0 ongoing omen=sweep
+play step_out-1 0
+# T19 d2 P8/3/0 E1/6/0 ongoing omen=sweep
+end
+# T20 d2 P6/6/0 E1/6/2 ongoing omen=reach_thrust
+play feint-0 3
+# T20 d2 P6/3/0 E0/6/0 won omen=reach_thrust

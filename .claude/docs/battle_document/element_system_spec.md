@@ -1,3 +1,5 @@
+> **WEB VERSION RECORD（2026-09-12）**: 魔術師の属性共鳴は Tier 2 R2-7 で投入量スタミナへ再設計するまで無効。本書は Web 版の記録。
+
 # Element System Specification
 
 ## 1. Design Philosophy

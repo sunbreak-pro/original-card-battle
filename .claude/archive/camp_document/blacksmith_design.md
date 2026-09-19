@@ -1,3 +1,5 @@
+> **FROZEN（2026-09-12）**: 鍛冶屋（強化 / 品質 / 修理）はアーマー凍結と同時に凍結（2026-09-12）。解凍条件は `requirements/tier3-experimental.md`。
+
 # Blacksmith Detailed Design Document (BLACKSMITH_DESIGN_V1)
 
 ## Update History

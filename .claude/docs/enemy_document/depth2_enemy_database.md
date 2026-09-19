@@ -1,3 +1,5 @@
+> **WEB VERSION RECORD（2026-09-12）**: 同上。再定義は Tier 2 R2-3。
+
 # 深度2（狂乱 - Madness）敵データベース Ver 4.0
 
 > **Ver 4.0 変更履歴**

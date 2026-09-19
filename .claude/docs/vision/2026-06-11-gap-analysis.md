@@ -1,3 +1,5 @@
+> **SUPERSEDED（2026-09-12）**: concept-v2 前提のギャップ分析。v3 では前提が変わったため参照のみ。
+
 # Gap Analysis — Concept v2 vs 現実装・設計書群
 
 > **Status**: DRAFT（ユーザーレビュー待ち）

@@ -1,3 +1,5 @@
+> **SUPERSEDED（2026-09-12）**: ライフ制は 2026-09-12 に廃止。「生の繰り返し + 衰弱 + 生存ルート + 遺産」に置換（`vision/concept-v3.md` §8）。本書は Web 版の実装履歴として残す。
+
 # Design Change Proposal: Introduction of Life System (Retries)
 
 ## Revision History

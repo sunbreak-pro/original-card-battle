@@ -1,801 +1,189 @@
-# Original Card Battle RPG Overall Design Document V3.1
+# Original Card Battle — 総合設計書 V4.0（生と継承）
 
-## Revision History
+## 改訂履歴
 
-| Date | Content |
-| --- | --- |
-| 2026-02-04 | V3.1: Facility consolidation (7 → 5). Library → Journal (header UI). Storage → Guild (tab). |
-| - | V3.0: Introduction of Life System - Exploration limits changed to Lives, Unified Teleportation Stones, 100% Soul retention on death. |
-| - | V2.0: Fundamental design change - Removed roguelite elements, pivoted to an Extraction-style Dungeon RPG. |
+| 日付       | 内容                                                                                                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-09-12 | V4.0: 企画書「ゲーム設計(chat GPT)」で全面上書き。ライフ制・エクストラクション・ソウル経済を廃止または凍結し、「生と継承」ループへ。アーマー（AP）凍結。V3.1 の本文は git 履歴を参照 |
+| 2026-02-04 | V3.1: 施設統合（7 → 5）。Library → Journal、Storage → Guild タブ                                                                                                                     |
+| -          | V3.0: ライフ制導入。テレポートストーン統一。死亡時ソウル 100% 獲得                                                                                                                   |
+| -          | V2.0: ローグライト要素を撤廃しエクストラクション型へ                                                                                                                                 |
 
----
-
-## 1. Game Concept
-
-### 1.1 Genre Redefinition
-
-> **Extraction Dungeon RPG × Card Battle**
-> Planned exploration and growth with the ultimate goal of survival.
-
-**Reference Titles:**
-
-* Slay the Spire (Card Battle / deck building)
-* Dark Souls (Severity of death penalty)
-* Speed chess / real-time decision games (per-turn time pressure)
-
-> **Theme revision (2026-06-07):** The "Shiren the Wanderer"-style framing has been
-> dropped. The extraction / lives structure is **retained** (minimal change), but the
-> game's identity shifts toward a **strategic + real-time-tension card battle** via a
-> per-turn time limit (≈10s, varies per battle, runs continuously). See
-> [`requirements/realtime-turn-timer.md`](../requirements/realtime-turn-timer.md).
+> 正本の階層: `vision/concept-v3.md`（構想）→ 本書（全体像）→ `requirements/tier1〜3`（何をどの順で）→ `*_document/`（数値）。本書は全体像と各システムの役割だけを持ち、数値は各設計書に委ねる。
 
 ---
 
-### 1.2 Design Philosophy Shift
+## 1. ゲームコンセプト
+
+### 1.1 ジャンル
+
+> **高難度ダンジョン探索 × カード戦略ゲーム**
+> 死者の技を継ぎ、失われた知識を自らの記憶で補いながら、限られた生の中でダンジョンの深奥を目指す。
+
+参照タイトルの位置づけ:
+
+- Slay the Spire: カードバトルとデッキ構築
+- Dark Souls / ローグライク: 死の重さ。ただし本作の死は「次の生への移行」であり、全リセットは無い
+
+### 1.2 設計思想
 
 ```
-【Advantages of the Extraction-style】
-Exploration → Survival → Retain Equipment, Items, Gold, & Souls → Growth
-       ↓
-     Death → Total Loss (Equip/Items/Gold) + 100% Soul Gain + Life -1
-       ↓
-   Equipment, Cards, and Gold at BaseCamp are retained
+【生と継承】
+探索 → 知識と習熟を得る → 瘴気が進む → 「さらに進む」or「この生を終える」
+   ├─ 生存ルート → 次のキャラクターに生存者ボーナス
+   └─ 死亡     → 死亡地点に遺産 → 次のキャラクターが数個だけ継承
 
-Pros:
-- Clear Risk/Reward
-- Sense of achievement upon survival
-- Strategic depth regarding the timing of return
-- Tension maintained by the Life System
-
+キャラクターは永続成長しない。プレイヤーの知識だけが積み上がる。
 ```
 
 ---
 
-## 2. Core Game Mechanics
+## 2. 中核メカニクス
 
-### 2.1 Core Loop
+### 2.1 5 要素
+
+| 要素        | 役割                                                         | 詳細                 |
+| ----------- | ------------------------------------------------------------ | -------------------- |
+| 習熟度      | 「どう使ったか」でカードが育ち、名称が変わり、永続能力になる | concept-v3 §4        |
+| 間合い      | 近 / 中 / 遠。双方が有利な距離を奪い合う                     | concept-v3 §3.1      |
+| スタミナ    | ターン持ち越し。1 枚に最大 3。温存にも意味                   | concept-v3 §3.2〜3.3 |
+| 手記 / 知識 | 敵とダンジョンの攻略情報と自分のメモ。死亡地点に残り、選んだ頁だけ継ぐ | concept-v3 §5 |
+| 瘴気        | 階層ごとの濃度で蓄積し、一つの生で探索できる回数を制御する   | concept-v3 §6        |
+
+### 2.2 コアループ
 
 ```
-┌─────────────────────────────────────────────┐
-│                                             │
-│  BaseCamp (Safe Zone)                       │
-│  ├─ Equipment Enhancement (Blacksmith)      │
-│  ├─ Equipment Purchase (Shop)               │
-│  ├─ Deck Building (Library)                 │
-│  └─ Level up via Soul Remnants (Sanctuary)  │
-│                                             │
-└──────────────┬──────────────────────────────┘
-               │ Select equipment/deck and depart
+┌──────────────────────────────────────────┐
+│ 継承の間（安全地帯）                       │
+│  ├─ 前回死亡者の死亡地点と遺産候補を見る   │
+│  ├─ 前回生存者のボーナスを確認する         │
+│  └─ 新しいキャラクターを開始する           │
+└──────────────┬───────────────────────────┘
                ↓
-┌─────────────────────────────────────────────┐
-│  Dungeon (Danger Zone)                      │
-│  ├─ Battle → Gain Magic Stones, Gear, Card Mastery, & Souls │
-│  ├─ Decide to push deeper or return         │
-│  └─ Two Options:                            │
-│     [A] Survival → Extract everything       │
-│     [B] Death → Total Loss + Soul Gain + Life -1│
-└──────────────┬──────────────────────────────┘
-               │
+┌──────────────────────────────────────────┐
+│ 出立                                      │
+│  ├─ ツールを選ぶ（探索用 / 戦闘用）        │
+│  ├─ 所持カード（最大 80）から戦闘デッキ（20+）を組む │
+│  └─ 出発（単一ダンジョン。入口は 1 つ）      │
+└──────────────┬───────────────────────────┘
                ↓
-      [A] In case of Survival:
-      - Bring back Gear, Gold (from events), and Souls to BaseCamp
-      - Strengthen for the next expedition
-      - No change to Lives
-
-      [B] In case of Death:
-      - Total loss of all carried items and equipment
-      - Acquired Gold is reset to zero
-      - 100% of Soul Remnants gained (added to cumulative total)
-      - Life -1
-      - Equipment, Cards, and Gold stored at BaseCamp are safe
+┌──────────────────────────────────────────┐
+│ ダンジョン（危険地帯）                     │
+│  ├─ 階層ごとに刻限 約 10 回を配分          │
+│  │   情報収集 / 戦闘 / 習熟訓練 / イベント / 近道発見 / 休息 │
+│  ├─ 手記が埋まる・カードが習熟する         │
+│  ├─ 瘴気が蓄積し、最大スタミナが下がる     │
+│  └─ 「さらに進む」or「この生を終える」     │
+└──────────────┬───────────────────────────┘
                ↓
-      Lives > 0 → Return to BaseCamp
-      Lives = 0 → Game Over (Hard Reset)
-
+      [A] 生存ルート: 生きたまま次のキャラクターへ（生存者ボーナス）
+      [B] 死亡: 死亡地点に遺産 → 次のキャラクターが訪れて一部継承
 ```
+
+### 2.3 リスクと判断
+
+| 判断                     | 天秤にかけるもの                                                 |
+| ------------------------ | ---------------------------------------------------------------- |
+| この階層をもっと調べるか | 刻限の残り vs 手記・習熟の伸び                                   |
+| 休息するか               | HP 15% + 最大スタミナ +2 vs 刻限 -1 と瘴気の蓄積                 |
+| 重い宝箱を運ぶか         | 貴重なアイテム vs 最大スタミナ -2                                |
+| さらに深く潜るか         | 遺産として残せる資格（深い地点） vs 濃い瘴気と瘴気死のリスク     |
+| この生を終えるか         | 生存者ボーナス vs 死亡地点の遺産（死んだ方が多く残ることもある） |
+| どのカードを遺産に選ぶか | 技術 vs 知識。枠は数個                                           |
 
 ---
 
-### 2.2 Risk/Reward Design
+## 3. 成長の構造
 
-#### Benefits of Survival (Return)
+| 成長                 | 持続する範囲                | 死亡時                         |
+| -------------------- | --------------------------- | ------------------------------ |
+| キャラクターの成長   | この生の中だけ              | 失われる                       |
+| カードの習熟         | この生の中で成長            | 遺産として一部だけ継承         |
+| 手記                 | そのキャラクターの知識とメモ | 死亡地点に残る。選んだ頁だけ継承 |
+| 遺産                 | 死亡地点 → 次のキャラクター | 一部継承                       |
+| プレイヤー自身の知識 | ゲーム外                    | 失われない                     |
 
-| Retainable Assets | Description |
-| --- | --- |
-| Gold | Total Gold acquired during the Dungeon run |
-| Equipment | Equipment acquired within the Dungeon |
-| Items | Consumables picked up in the Dungeon |
-| Soul Remnants | Experience points earned by defeating monsters |
+### 3.1 習熟
 
-*Note: Gold in dungeons is only obtained through specific events. Gold is not obtained as a battle reward.*
+- 使用回数ではなく、どの間合い / どのスタミナ量 / 敵のどの行動 / どの条件で使ったかで進む。
+- 段階で名称が変わる（観察 → 精査 → 洞察 → 看破）。
+- 高習熟の一部は永続能力になる（デッキ外でも発動。情報・選択肢・利便性・小さな補助に限定）。
 
-**Decision points for survival:**
+### 3.2 継承
 
-* Remaining HP
-* Equipment Durability (AP)
-* Quantity of healing items on hand
-* Acquisition of high-level weapons or Magic Stones
-* Danger level of the next Depth
-
-#### Penalties of Death (Risk)
-
-| Assets Lost | Description |
-| --- | --- |
-| **All Carried Gear** | All equipment brought in and acquired during the run are lost |
-| **All Carried Items** | All consumables brought in and picked up are lost |
-| Acquired Gold | Gold acquired within the Dungeon is reset to zero |
-| **One Life** | Total Lives decrease by 1 |
-
-**Items gained upon death (Important):**
-
-| Assets Gained | Description |
-| --- | --- |
-| **100% Souls** | All Souls earned during that run are added to the cumulative total |
-
-**Items retained (Important):**
-
-* Equipment stored at BaseCamp
-* Gold balance at BaseCamp
-* Soul Remnants (cumulative level) from past explorations
-* Permanent upgrades unlocked at the Sanctuary
-
-**Design Intent:**
-
-* Death is very painful, but Souls are guaranteed.
-* Risk management of "bring-in" equipment is vital.
-* The dilemma of "should I bring this equipment or not?"
-* Final tension provided by the Life System.
+- **遺産**: 技術 / 習熟カードの成果 / 手記の頁 / 走り書き / 特殊能力から数個（仮 3）を **死亡地点を訪れたときに** 選ぶ。痕跡は回収まで残り、1 つの生で受け取れるのは 1 件。浅層・弱い敵での死亡では高習熟カードは残らない。
+- **生存者**: 一人まで。次の生に手記を丸ごとと生存者ボーナスを渡す。遺産と併用できる。探索のランダムな報酬で死亡との釣り合いを取る。
 
 ---
 
-### 2.3 Life System (Retries)
+## 4. 各システムの役割
 
-#### Purpose of Limitation
+### 4.1 画面（旧キャンプ施設の再解釈）
 
-**Why Lives are necessary:**
+| V3.1 の施設      | V4.0                                                    | 状態   |
+| ---------------- | ------------------------------------------------------- | ------ |
+| ギルド           | **継承の間**（遺産候補の確認 / 生存者 / 新キャラ開始）  | 再解釈 |
+| ダンジョンゲート | **出立**（ツール / 戦闘デッキ / 出発）                   | 再解釈 |
+| Journal          | **手記**（敵 + ダンジョン + メモ）と所持カード一覧。死亡地点に残る | 再解釈 |
+| ショップ         | 凍結                                                    | 凍結   |
+| 鍛冶屋           | 凍結（アーマー凍結と同時）                              | 凍結   |
+| サンクチュアリ   | 凍結（永続成長は無い）                                  | 凍結   |
 
-* To prevent infinite trial-and-error.
-* To give weight to each death.
-* To encourage cautious play.
-* To maintain tension throughout the entire game.
+詳細は `camp_document/CAMP_FACILITIES_DESIGN.md` V5.0。
 
-#### Life Mechanics
+### 4.2 戦闘
 
-**Basic Rules:**
+- 間合い（近 / 中 / 遠）とスタミナ投入量（0〜3）の二軸でカードの性能が決まる。
+- 防御は Guard（ターン内）のみ。AP（装備耐久アーマー）は凍結。
+- ボス・強敵は適応型 AI。予兆 + 手記 + 観察で予測できるようにする。
+- 数値は `battle_document/battle_core_v3.md`。予兆はコミット式、崩しはスタミナ削り、体勢ゲージは無い。
 
-```
-Max Lives by Difficulty:
-- Hard: 2
-- Normal: 3
-- Easy: 3
+### 4.3 探索
 
-Life Decrease Timing: Only upon death.
-Life Recovery: None.
+- 刻限（階層あたり約 10 回）と瘴気（階層ごとの濃度で蓄積するゲージ）を別リソースとして扱う。ツール・資源・階層間の休憩で瘴気を和らげる。
+- HP とスタミナは戦闘をまたいで持ち越す。回復は戦闘中カード / 階層間休憩 / 探索イベント。
+- 探索イベントが最大スタミナを動かし、戦闘難易度に直結する。
+- ツールは出立時のロードアウト。カードとは役割を分ける。
+- 探索用カード（観察 / 探知 / 聴覚 / 地図作成 / 解体 / 応急処置 / 交渉 / 採取）で探索を有利にする。
 
-Death with 0 Lives → Game Over (Hard Reset)
+### 4.4 手記
 
-```
-
-**Life Fluctuations:**
-
-| Situation | Life Change | Remarks |
-| --- | --- | --- |
-| Start Exploration | No change |  |
-| Survive via Return Route | No change |  |
-| Survive via Teleport Stone | No change |  |
-| Death in Depth 1-4 | **-1** |  |
-| Death in The Abyss (Depth 5) | **-1** |  |
-| Escape after Abyss Boss | No change | Game Clear |
-
-#### Variations by Difficulty
-
-| Difficulty | Max Lives | Expected Playstyle |
-| --- | --- | --- |
-| Easy | 3 | Some trial-and-error is possible |
-| Normal | 3 | Planned exploration is required |
-| Hard | 2 | Failure is not permitted |
+- 敵の頁: 弱点 / 耐性 / 行動 / 間合い傾向 / 特殊行動 / 条件 / 関係 / 適応条件。
+- ダンジョンの頁: 近道 / 隠し部屋 / 条件出現 / イベント / 罠 / 資源 / ショートカット。
+- メモ: プレイヤーの自由記述。
+- どこでも読めるが、戦闘中は敵の頁を読むだけで効果は無い。死亡地点に残り、遺産で選んだ頁だけ次へ。
 
 ---
 
-## 3. Overall Progression System
+## 5. 難易度の思想
 
-### 3.1 Pillars of Growth
+> 敵を知らなければ難しい。しかし、知れば必ず勝てるとは限らない。
 
-Growth within the game consists of **three pillars**:
-
-#### (1) Equipment Growth (In-run + Permanent)
-
-**Characteristics:**
-
-* Strengthen/Purchase at BaseCamp.
-* Carry into the Dungeon.
-* Bring back if you survive; **lose if you die.**
-
-**Growth Elements:**
-
-* Equipment Level (Lv0-3)
-* Equipment Quality (poor/normal/good/master)
-* Equipment Rarity (Common → Legendary)
-
-**Risk:**
-
-* Bringing high-level gear → **Massive loss upon death.**
-* Attempting with low-level gear → Difficult to clear.
-
-#### (2) Card Growth (Permanent)
-
-**Characteristics:**
-
-* Cards themselves are not lost (recorded in the encyclopedia).
-* Mastery increases with usage.
-* Cards evolve based on mastery levels.
-
-**Growth Elements:**
-
-* Card Mastery (Lv1-5)
-* Card Evolution (New effects/branching paths)
-
-**Retention:**
-
-* Card acquisition status is never lost.
-* Deck configurations are saved in the Library.
-
-#### (3) Soul Remnants (Experience System - Permanent)
-
-**Characteristics:**
-
-* Earn Souls by defeating monsters.
-* **100% added to total if you survive.**
-* **100% added to total even if you die.** (V3.0 Change)
-
-**Growth Elements:**
-
-* Unlock skill trees at the Sanctuary.
-* Basic stat enhancement (HP/Inventory capacity).
-* Unlock special abilities (Under consideration).
-
-**Experience Calculation:**
-
-```typescript
-Rarity of Gained Souls = Strength of the enemy
-Experience Amount (Cumulative Souls) = Conversion of gained souls
-Monster Souls: (Expandable)
-- Minion (Low): Small Soul (=Cumulative Souls * 10)
-- Minion (Mid): Medium Soul (=Cumulative Souls * 50)
-- Minion (High): Large Soul (=Cumulative Souls * 100)
-- Elite (Floor Boss): Majestic Onisoul (=Cumulative Souls * 500)
-- Boss (Evil God in the Abyss): Raging Godsoul (=Cumulative Souls * 1000)
-
-```
-
-**Leveling Up:**
-
-```
-Cumulative Souls  Skill Points
-0-99              0
-100-299           1
-300-599           2
-600-999           3
-1000+             4
-...
-
-```
+- 敵の行動には予兆・条件・傾向・間合い・適応条件がある。
+- 死亡は失敗ではなく、次回の攻略に必要な情報を得る機会。
+- 難易度選択は無い。一つのダンジョンを深く潜り、階層が深いほど難しい（2026-09-12 決定。マップはノード式を継続、後で変更の可能性あり）。
+- アーマー無しで難易度と調整を一巡させてから、アーマー解除を判断する（tier2 R2-8）。
 
 ---
 
-### 3.2 Overall Game Flow
+## 6. 開発フェーズ
 
-#### Phase 1: Early Game (Until Lives go from 3 to 2)
-
-**Goal:** Establish foundations.
-
-```
-- Purchase initial equipment at the Shop.
-- Strengthen equipment at the Blacksmith (around Lv1).
-- Build a deck in the Library.
-- Explore Depth 1-2 to accumulate Souls and Mastery.
-- Growth continues even if you die, as Souls are retained.
-
-```
-
-#### Phase 2: Mid Game (Remaining Lives: 2)
-
-**Goal:** Increase combat power.
-
-```
-- Upgrade equipment with Gold brought back.
-- Attempt Quality Upgrades (Gacha) at the Blacksmith.
-- Unlock skill trees at the Sanctuary.
-- Challenge Depth 3-4.
-- Balance the risk of bringing valuable equipment.
-
-```
-
-#### Phase 3: Late Game (Remaining Life: 1)
-
-**Goal:** Reach the deepest level.
-
-```
-- Challenge with the best equipment and deck.
-- Reach Depth 5 (The Abyss).
-- The challenge at Life 1 is a matter of life and death.
-- Escape route opens after defeating the boss.
-
-```
+| Phase | 内容                                                      | 要件              |
+| ----- | --------------------------------------------------------- | ----------------- |
+| 0     | 設計書の上書き確定（本書 V4.0 を含む）                    | R1-1              |
+| 1     | 戦闘コア v3（スタミナ投入量・間合い補正・敵の間合い戦術） | R1-2〜R1-4        |
+| 2     | 文脈習熟・所持とデッキの分離                              | R1-5, R1-7        |
+| 3     | 刻限・瘴気と HP・手記・探索カード                         | R1-8〜R1-10, R1-6 |
+| 4     | セーブ（前倒し）・生の終了・遺産・生存者                  | R1-16, R1-11〜R1-13 |
+| 5     | 継承の間 / 出立・予兆と適応 AI                            | R1-14, R1-15      |
+| 6     | 監査・「2 つの生」通しプレイ                              | R1-17             |
 
 ---
 
-### 3.3 Ending Conditions
-
-**Success Condition:**
-
-```
-Defeat the Depth 5 boss and survive by returning via the escape route.
-
-```
-
-**Failure Condition:**
-
-```
-Death while having 0 Lives → Game Over.
-
-```
-
-**Upon Game Over:**
-
-```
-Hard Reset:
-- Gold: Resets to initial value.
-- Equipment: Initial equipment only.
-- Soul Remnants (Cumulative): Resets to 0.
-- Sanctuary Unlock Status: Reset.
-- Card Deck: Resets to initial deck.
-- Encyclopedia: Reset.
-- Known Event Information: Reset.
-
-What persists:
-- Achievement unlock status only.
-
-```
-
----
-
-## 4. Role of Each System (Redefined)
-
-### 4.1 BaseCamp Facility Redefinition (V3.1 Updated)
-
-> **V3.1 Changes:** Consolidated facilities from 7 to 5. Library → Journal (Header UI). Storage → Guild (Tab).
-
-#### Guild (The Pub)
-
-**Role:** Starting point of the game + Item management.
-
-**Tab Structure:**
-
-```
-Guild
-├── Headquarters
-│   ├── Character Selection
-│   ├── Life Check
-│   ├── Promotion Exams
-│   └── Rumors
-│
-└── Storage
-    ├── Item Storage (Retained upon death)
-    ├── Inventory Management (Lost upon death)
-    └── Equipment Management
-
-```
-
-#### Shop (Exchange)
-
-**Role:** Hub for equipment procurement.
-
-* Purchase equipment (Costs Gold).
-* Sell equipment (Convert unwanted gear to Gold).
-* Exchange Magic Stones for Gold.
-
-#### Blacksmith
-
-**Role:** Ultimate enhancement of equipment.
-
-* Level up (Lv0-3).
-* Quality Improvement (Gacha element).
-* Repair (Restore AP).
-* Dismantle (Convert back to Magic Stones).
-
-**Strategy:**
-
-* High-level gear is risky but powerful.
-* Decide whether to gamble for the best quality in the Gacha.
-
-#### Sanctuary (Temple)
-
-**Role:** Permanent enhancement using Soul Remnants.
-
-**Changes in V3.0:**
-
-```
-Old: Souls added only on survival; zero for the run on death.
-New: 100% Souls added regardless of survival or death.
-
-```
-
-**Skill Tree:**
-
-* Basic stat enhancement (HP/Gold).
-* Special abilities (Appraisal/Expansion).
-* *Note: Exploration count expansion skill has been removed.*
-
-#### Dungeon Gate (Entrance to the Abyss)
-
-**Role:** Starting the exploration.
-
-* Depth selection.
-* Life confirmation.
-* **Check possession of Teleport Stones.**
-
-#### Journal (Handwritten Notes) — Header UI
-
-> **Note:** The Journal is not a facility but a UI accessible at all times from the header.
-
-**Role:** Build research and record management.
-
-**Page Structure:**
-
-```
-Journal
-├── Chapter 1: Tactics — Deck Composition
-├── Chapter 2: Memories — Encyclopedia (Cards/Equipment/Monsters)
-├── Chapter 3: Thoughts — Strategy Notes
-└── Colophon: Settings — Save/Load
-
-```
-
-**Details:** See `journal_document/journal_system_implementation_plan.md`
-
----
-
-### 4.2 Resource Economy Redesign
-
-#### Flow of Gold
-
-```
-【Acquisition】
-1. Selling Magic Stones and Equipment at BaseCamp.
-
-2. Dungeon Exploration → Event triggers (Unimplemented)
-              ↓
-         Survival → Bring back to BaseCamp
-              ↓
-         Death → Zero (Lost)
-
-【Consumption】
-BaseCamp:
-- Shop: Purchase equipment
-- Blacksmith: Enhancement and Repair
-
-```
-
-#### Flow of Magic Stones
-
-```
-【Acquisition】
-1. Dungeon Exploration → Monster drops
-              ↓
-   Event triggers → Obtain Magic Stones
-              ↓
-         Survival → Bring back to BaseCamp
-              ↓
-         Death → Zero (Lost)
-
-【Consumption】
-- Blacksmith: Equipment enhancement
-- Shop: Gold exchange (Emergency)
-
-```
-
-#### Flow of Soul Remnants
-
-```
-【Acquisition】
-Dungeon Exploration → Defeat Monsters → Gain Souls (Experience points)
-              ↓
-         Survival → 100% added to cumulative total (Permanent)
-              ↓
-         Death → 100% added to cumulative total (Permanent) ★V3.0 Change
-
-【Consumption】
-- Sanctuary: Skill tree unlock
-
-```
-
-**Crucial Design (V3.0):**
-
-* Soul Remnants are **obtained 100% regardless of survival or death.**
-* The penalty for death is "Loss of Life" and "Item Loss."
-* Growth elements (Souls) are secured, so there is no such thing as a "completely wasted death."
-
----
-
-## 5. Difficulty Design Policy
-
-### 5.1 Difficulty Curve
-
-```
-Depth 1: Tutorial-level difficulty.
-         Minions only; clearable even without equipment.
-
-Depth 2: Basic equipment required.
-         Clearable with Gear Lv0-1.
-
-Depth 3: Strategy required.
-         Gear Lv1-2 + Optimized deck composition.
-
-Depth 4: High difficulty.
-         Gear Lv2-3 + Recommended quality "Good" or higher.
-
-Depth 5: Maximum difficulty.
-         Best gear + Optimized deck + Sanctuary upgrades mandatory.
-
-```
-
-### 5.2 Death Penalty Balance
-
-**Design Goal:**
-
-* Death is very painful, but growth does not stop.
-* Encourage cautious play.
-* Emphasize risk management of "bring-in" equipment.
-
-**Adjustment Points:**
-
-```
-Weight of Death Penalty = Value of brought equipment + Acquired resources + 1 Life
-
-Early game: Equipment value is low → Small penalty.
-Mid game: Equipment value rises → Medium penalty.
-Late game: Bringing the best equipment → Large penalty.
-
-```
-
-### 5.3 Life System Balance
-
-**Goal:**
-
-* Cautious Player: Reach Depth 5 while conserving Lives.
-* Average Player: Challenge Depth 5 with 1-2 Lives remaining.
-* Reckless Player: Game Over at 0 Lives.
-
----
-
-## 6. Player Experience Design
-
-### 6.1 Intended Play Experience
-
-**Tension:**
-
-* "Should I bring this piece of equipment?"
-* "Should I go one step further, or go home now?"
-* "I only have one Life left."
-
-**Sense of Achievement:**
-
-* "I survived safely!"
-* "I brought back high-level equipment!"
-* "I reached Depth 5!"
-
-**Strategic Depth:**
-
-* Equipment selection and bring-in risk.
-* Timing of return.
-* Deck composition.
-* Skill tree choices.
-
-### 6.2 Player Choices
-
-**Before Exploration:**
-
-```
-[1] Which equipment to bring?
-    - High-level gear (High risk, High reward)
-    - Low-level gear (Low risk, Low reward)
-    - No gear (No loss on death, extremely difficult to clear)
-
-[2] Which deck to use?
-    - Attack-focused
-    - Defense-oriented
-    - Balanced type
-
-[3] Which Depth to challenge?
-    - Depth 1-2 (Safe, low rewards)
-    - Depth 3-4 (Dangerous, medium rewards)
-    - Depth 5 (Deadly, high rewards)
-
-```
-
-**During Exploration:**
-
-```
-[1] Choice after battle:
-    - Proceed to the next room
-    - Return via Teleport Stone
-    - Return via Return Route
-
-[2] Obtaining new gear:
-    - Equip and continue (Increases loss on death)
-    - Return immediately to prioritize keeping it
-
-[3] Judging remaining HP:
-    - Still can fight → Go deeper
-    - Danger zone → Return
-
-```
-
----
-
-## 7. Overall Game Flow Chart
-
-```
-┌─────────────────────────────────────────────┐
-│  Game Start                                  │
-│  - Lives: 3 (Normal/Easy) or 2 (Hard)        │
-│  - Soul Remnants: 0                          │
-│  - Gold: 500                                 │
-└──────────────┬──────────────────────────────┘
-               ↓
-┌─────────────────────────────────────────────┐
-│  BaseCamp (Preparation)                       │
-│  - Shop: Buy initial gear                    │
-│  - Library: Build deck                       │
-│  - Blacksmith: Enhance gear                  │
-│  - Sanctuary: Skill Tree (if Souls available)│
-└──────────────┬──────────────────────────────┘
-               ↓
-         Dungeon Exploration
-               ↓
-    ┌──────────┴──────────┐
-    │                     │
- Survival               Death
-    │                     │
-    ↓                     ↓
-Extract Everything     Total Loss
-Lives Unchanged        100% Soul Gain
-    │                  Life -1
-    │                     │
-    └──────────┬──────────┘
-               ↓
-         Lives > 0?
-         │        │
-        Yes       No
-         │        ↓
-         │    Game Over
-         │    (Hard Reset)
-         ↓
-    Return to BaseCamp
-         ↓
-    Depth 5 Cleared?
-         │        │
-        No        Yes
-         │        ↓
-         └──→  Ending
-               (Success)
-
-```
-
----
-
-## 8. Design Priorities
-
-### 8.1 Phase 1 (MVP)
-
-**Goal:** Implementation of the basic loop.
-
-```
-□ BaseCamp basic functions (Guild/Shop/Blacksmith/Sanctuary)
-□ Dungeon Exploration (Depth 1-3)
-□ Survival/Death systems
-□ Life system
-□ Soul Remnant (XP) system
-□ Basic Sanctuary skill tree
-
-```
-
-### 8.2 Phase 2 (Expansion)
-
-**Goal:** Adding strategic depth.
-
-```
-□ Blacksmith quality Gacha
-□ Library Encyclopedia and Deck Building
-□ Card Mastery system
-□ Sanctuary skill tree expansion
-□ Implementation of Depth 4-5
-□ Abyss Escape Route
-
-```
-
-### 8.3 Phase 3 (Completion)
-
-**Goal:** Balance adjustment and presentation.
-
-```
-□ Difficulty balancing
-□ Life system balance adjustment
-□ Presentation and animations
-□ UI/UX optimization
-□ Ending implementation
-
-```
-
----
-
-## 9. Reference Documents
-
-```
-GAME_DESIGN_MASTER_V3.1 [This Document]
-├── CAMP_FACILITIES_DESIGN_V4
-│   ├── guild_design.md (V3.0 - includes Storage tab)
-│   ├── shop_design.md
-│   ├── blacksmith_design.md
-│   └── sanctuary_design.md
-├── journal_document/journal_system_implementation_plan.md
-├── battle_logic.md
-├── card_system.md
-├── return_system_v3.md
-└── dungeon_system.md
-
-```
-
-**Future Features:**
-
-```
-.claude/docs/vision/plans/
-├── quest_system.md
-├── npc_conversation.md
-├── title_system.md
-└── dark_market.md
-
-```
-
----
-
-## Summary
-
-### The Heart of the New Game Design (V3.0)
-
-**Genre:**
-
-> Extraction-style Dungeon RPG × Card Battle
-
-**Core Mechanics:**
-
-> Survival or Death Choice + Life System
-
-**Features of the Life System:**
-
-1. Lives decrease only upon death.
-2. Lives are conserved upon successful return.
-3. Max Life varies by difficulty (Hard: 2, Normal/Easy: 3).
-4. No means of recovering Lives.
-5. Death with 0 Lives leads to Game Over (Hard Reset).
-
-**Features of the Death Penalty:**
-
-1. Total loss of all owned items and equipment.
-2. Total loss of all acquired Gold.
-3. **100% of Soul Remnants are gained.**
-4. Life -1.
-
-**Three Pillars of Growth:**
-
-1. Equipment Growth (Risk/Reward)
-2. Card Growth (Permanent)
-3. Soul Remnants (Experience/Permanent)
-
-**Player Experience:**
-
-> Risk assessment of "Should I bring this equipment?"
-> Dilemma of "Should I go further or return?"
-> Tension provided by the Life System.
-> Sense of achievement upon survival.
+## 7. 参照
+
+- `vision/concept-v3.md`: 構想の正本と既存ルールの上書き表（§10）、未確定 19 項目（§12）
+- `requirements/tier1-core.md` v6 / `tier2-support.md` v3 / `tier3-experimental.md` v2
+- `camp_document/CAMP_FACILITIES_DESIGN.md` V5.0
+- `battle_document/battle_core_v3.md`（数値の正本。旧 `battle_logic.md` は PARTIALLY SUPERSEDED）
+- `ap-equipment-system.md`（FROZEN）

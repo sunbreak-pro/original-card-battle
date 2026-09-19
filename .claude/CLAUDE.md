@@ -171,15 +171,18 @@ Battle flow: Init phase queue (speed-sorted) → Player phase (draw, buffs, wait
 
 ### Game Loop Flow
 
+> 設計上の正本は `docs/vision/concept-v3.md`（2026-09-12「生と継承」）。下のループは設計の目標形。Web 版コード（`src/`）は旧ループ（キャンプ 5 施設 / ライフ制 / AP）のまま残っており、Unity 側で新ループを実装する。
+
 ```
-Character Select → Base Camp → Dungeon Entry → Node Navigation → Battle
-       ↑                                                          ↓
-       ←─────────── Resources & Progression ←── Rewards ──────────┘
+継承の間（遺産候補の確認 / 生存者ボーナス）→ 出立（ツール / 戦闘デッキ）→ ダンジョン（刻限 × 瘴気）→ 戦闘（間合い × スタミナ）
+       ↑                                                                                    ↓
+       ←──── 生存ルート（生存者ボーナス） / 死亡（死亡地点に遺産と手記を残す） ←────────────┘
 ```
 
-- **Survive:** Keep all souls + items
-- **Death:** Lose exploration resources, -1 life (souls saved)
-- **Life = 0:** Game over (full reset)
+- **生存ルート:** 生きたまま次のキャラクターへ。生存者は一人まで
+- **死亡:** 成長は消え、手記は死亡地点に残る。次のキャラクターが死亡地点を訪れ、遺産（技術 / 手記の頁）から数個だけ選ぶ。痕跡は回収まで残り、1 つの生で 1 件。浅層の意図的な死では高習熟カードは残らない
+- **実装の正:** 戦闘コアは `unity-port/BattleCore/`（C#）が正（2026-09-12）。TS の `src/ui/battle-lab/core/` は凍結
+- **凍結（2026-09-12）:** アーマー（AP / 装備耐久 / 修理）、装備・Gold・ソウル経済、ショップ / 鍛冶屋 / サンクチュアリ。防御は Guard のみ
 
 ## Testing
 
@@ -189,18 +192,19 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 
 ## Skills Quick Reference
 
-| Task                  | Skill                        |
-| --------------------- | ---------------------------- |
-| Add new card          | `card-creator`               |
-| Add new enemy         | `enemy-creator`              |
-| Add character class   | `character-class-creator`    |
-| Battle system changes | `battle-system`              |
-| Camp facility work    | `camp-facility`              |
-| Dungeon system        | `dungeon-system`             |
-| UI/UX work            | `ui-ux-creator`              |
-| Find design docs      | `design-research`            |
-| Bug investigation     | `debugging-active`           |
-| Error prevention      | `debugging-error-prevention` |
+| Task                                   | Skill                        |
+| -------------------------------------- | ---------------------------- |
+| Add new card                           | `card-creator`               |
+| Add new enemy                          | `enemy-creator`              |
+| Add character class                    | `character-class-creator`    |
+| Battle system changes                  | `battle-system`              |
+| Camp facility work                     | `camp-facility`              |
+| Dungeon system                         | `dungeon-system`             |
+| UI/UX work                             | `ui-ux-creator`              |
+| Character art / UI production pipeline | `visual-production-pipeline` |
+| Find design docs                       | `design-research`            |
+| Bug investigation                      | `debugging-active`           |
+| Error prevention                       | `debugging-error-prevention` |
 
 ## Task Completion Rule
 

@@ -1,0 +1,462 @@
+<title>戦闘 100% の棚卸</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6; --panel: #ffffff; --ink: #1c2327; --muted: #56636b; --line: #d5dcdf;
+    --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #dcefef;
+    --ok: #2c7a4b; --warn: #a86a12; --stop: #a23c3c; --code-bg: #eaf0f0; color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad; --line: #2c363b;
+      --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad; --line: #2c363b;
+    --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+    --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 16px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding-block: 48px 80px; padding-inline: 24px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul, ol { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  @media (max-width: 720px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.warn strong { color: var(--warn); }
+  .note { font-size: 14px; color: var(--muted); }
+  .toc { font-size: 14px; color: var(--muted); margin: 0 0 8px; }
+  .toc a { margin-right: 14px; white-space: nowrap; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-13 / 計画（棚卸） / original-card-battle</p>
+    <h1>戦闘 100% は 8 領域 58 項目。今は約 20%。</h1>
+    <p class="lede">こうだいさんの 7 条件を戦闘コア v3 の上に載せ、100% に達したときの要素を全て並べました。戦闘の面白さを担うのはルール改訂、カード 80 種、敵 19 体、数値の試験台の 4 つで、操作と演出はその上に乗ります。まずルール v4 と試験台から着手する順番を勧めます。</p>
+  </header>
+
+  <div class="callout prose"><strong>2026-09-13 決定済み</strong>: こうだいさんが 7 点を決めた（移動も属性にして特性のコンボの基準にする / ドラッグ + 矢印 + 場 / T0 は弱い効果を残す / スタンス枠 1 / 状態 10 語 + ボス専用 / 敵 9 体と連戦モード / 設計書に集中して実装は次セッション）。反映先は <code>battle_core_v4.md</code> と、続編レポート <a href="2026-09-13-battle-v4-cards-enemies.html">戦闘 v4 のカードと敵</a>。本ページの「次に判断が要る点」は決定前の記録として残す。</div>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">今日から</span><h3>ルール v4 と数値の試験台</h3><p>タイプ 4 種と二面、状態 10 語、スタンス枠、5 枚ドロー、同種 3 枚をコア v3 に載せて C# に実装する。乱数がシャッフルだけなので、勝率を機械で測る試験台が安く作れる。</p></li>
+    <li class="verdict later"><span class="tag">必要になったら</span><h3>習得カード 40 種とボスの適応</h3><p>初期 40 種と敵 9 体で数値が一巡してから。先に増やすと調整対象が倍になる。</p></li>
+    <li class="verdict skip"><span class="tag">入れない</span><h3>確率命中、体勢ゲージ、5 番目のタイプ</h3><p>乱数なし、値を増やさない、4 タイプで 10 パターン、の 3 原則を守る。移動はタイプにせず属性にする。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: <code>battle_core_v3.md</code> の実装済み部分（投入量 0〜3、間合い補正、予兆、Guard、構え、崩し、瘴気）は残し、その上に 7 条件を足す。数値は全て叩き台で、設計書 v4 を書くときに確定する。</div>
+
+  <p class="toc">
+    <a href="#s1">1 条件の突き合わせ</a><a href="#s2">2 タイプと 10 パターン</a><a href="#s3">3 状態とスタンス</a><a href="#s4">4 ターンの流れ</a><a href="#s5">5 カード 80 種</a><a href="#s6">6 敵</a><a href="#s7">7 数値の基準</a><a href="#s8">8 カード感の操作</a><a href="#s9">9 演出</a><a href="#s10">10 棚卸表</a><a href="#s11">11 80% までの順番</a>
+  </p>
+
+  <h2 id="s1">1. 7 条件と戦闘コア v3 の突き合わせ</h2>
+  <p class="prose">7 条件のうち 4 つは v3 と衝突します。衝突は全て「v3 を改訂する」側で解きました。v3 の実装を捨てる箇所はありません。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>条件</th><th>v3 の現状</th><th>扱い</th><th>影響</th></tr></thead>
+      <tbody>
+        <tr><td>1 ターンのドローは 5 枚</td><td>手札 3 枚まで補充（§9）</td><td class="state maybe">改訂</td><td>ターン終了で全捨て、開始で 5 枚。ドロー数は「5 + 補正」で持ち、習熟の永続効果とカード効果が補正を足す（3〜8 に clamp）</td></tr>
+        <tr><td>タイプ 4 種、2 つまで重複</td><td>attack / move / guard / heal の 1 種</td><td class="state maybe">改訂</td><td>アタック / ガード / スタンス / スキルの 4 種。移動はタイプでなく属性（§2）。回復はスキルに吸収</td></tr>
+        <tr><td>スキル = バフ・デバフ、スタンス = 戦闘中ずっと</td><td>状態を持たない（§1.1「値はこれだけ」）</td><td class="state maybe">改訂</td><td>値の一覧に「状態（両者、4 つまで）」と「スタンス枠（1）」を足す。語彙は 10 語に固定（§3）</td></tr>
+        <tr><td>同じカードは 3 枚まで、習得した瞬間に 3 枚</td><td>デッキ規則なし（検証台 6 種 × 2）</td><td class="state maybe">追加</td><td>デッキ構築は「種類 × 0〜3 枚」の操作。デッキ 15〜80 枚、同種 3 枚までを検証する</td></tr>
+        <tr><td>80 種のうち 40 種は探索・ボスで習得</td><td>剣士 7 種</td><td class="state no">未着手</td><td>初期 40 / 習得 40 の配分表（§5）。入手先は探索側の要件（R1-6 / R2-4）へ渡す</td></tr>
+        <tr><td>ホバーで持ち上がり、掴むとマウスに追従</td><td>クリック → チップの 2 操作</td><td class="state maybe">拡張</td><td>ドラッグを主操作にし、投入量はドラッグの高さで決める（§8）。クリック + チップとキー操作は残す</td></tr>
+        <tr><td>攻撃時にカードごとのエフェクト</td><td>技共通の踏み込み + 揺れ</td><td class="state no">未着手</td><td>8 系統 × 投入段 × カード固有の飾りの「文法」で 80 種を作る（§9）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="s2">2. タイプ 4 種と 10 パターン</h2>
+  <p class="prose">タイプは「カードが盤面に何をするか」の分類です。単独 4 つと組み合わせ 6 つで 10 パターンになります。二面カードは 1 回の投入量で両方の面が同時に段階を上げます。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>タイプ</th><th>盤面への作用</th><th>投入量で伸びるもの</th><th>間合い補正</th><th>v3 の対応物</th></tr></thead>
+      <tbody>
+        <tr><td>アタック</td><td>敵の HP を減らす</td><td>威力、崩し</td><td>受ける（×1.0 / 0.5 / 0.15）</td><td>attack</td></tr>
+        <tr><td>ガード</td><td>自分に Guard を付ける</td><td>Guard 量</td><td>受けない</td><td>guard</td></tr>
+        <tr><td>スタンス</td><td>戦闘が終わるまで続く効果を枠に置く</td><td>効果の強さ</td><td>受けない</td><td>無し（新規）</td></tr>
+        <tr><td>スキル</td><td>状態（バフ・デバフ）を付ける、回復する、ドローする</td><td>段数、持続、回復量</td><td>敵に付ける状態だけ diff 0 で発動</td><td>heal、追加効果</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout prose"><strong>移動は属性</strong>: 詰め / 退きはどのタイプにも付けられる「移動値」にする。足捌きのような移動だけのカードはスキルに分類する。理由は 2 つ。v2 検証で「移動をカードに内蔵すると手札が詰まらない」ことが分かっている。タイプを 5 つにすると組み合わせが 15 に増えて、カード 80 種では埋まらない。</div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>パターン</th><th>例（剣士、T3 の目安）</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>アタック</td><td>突き: 近、威力 11</td><td>主火力</td></tr>
+        <tr><td class="num">2</td><td>ガード</td><td>呼吸を整える: Guard 8、冷静</td><td>受け</td></tr>
+        <tr><td class="num">3</td><td>スタンス</td><td>水の構え: 遠にいるターン開始の回復 +1</td><td>戦い方の宣言</td></tr>
+        <tr><td class="num">4</td><td>スキル</td><td>足捌き・前: 詰め、Guard 3 ／ 応急処置: HP 7</td><td>位置取り、回復、ドロー</td></tr>
+        <tr><td class="num">5</td><td>アタック + スキル</td><td>斬り込み: 威力 6、出血 2 段（diff 0 のみ）</td><td>こうだいさんの例「攻撃しながら状態異常」</td></tr>
+        <tr><td class="num">6</td><td>アタック + ガード</td><td>受け流し斬り: 威力 5、Guard 4</td><td>攻守両立</td></tr>
+        <tr><td class="num">7</td><td>アタック + スタンス</td><td>連撃の型: 威力 4、以後この戦闘中は近の攻撃 +1</td><td>初手で戦い方を決める</td></tr>
+        <tr><td class="num">8</td><td>ガード + スタンス</td><td>鉄壁の構え: Guard 5、以後毎ターン Guard +1</td><td>こうだいさんの例「ガードしながら毎ターンシールド」</td></tr>
+        <tr><td class="num">9</td><td>ガード + スキル</td><td>見切り: Guard 4、次の被弾で吸収分の半分を返す</td><td>受けからの反撃</td></tr>
+        <tr><td class="num">10</td><td>スタンス + スキル</td><td>集中の型: 次のカードの投入 +1 無料、以後ターン開始にドロー +1</td><td>手数を増やす</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose note">二面カードの各面は、単独タイプの同じ面の 65% を目安にする（合計 130%）。1 枚で 2 役できる代わりに、それぞれは弱い。この比率は試験台で測って直す。</p>
+
+  <h2 id="s3">3. 状態 10 語とスタンス枠</h2>
+  <p class="prose">スキルが付ける状態は自由記述にせず、10 語に固定します。暗算できる大きさを守るため、片側に同時に持てる状態は 4 つまで、段数は 3 までです。敵も同じ語彙を使います（対称の原則）。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>語</th><th>向き</th><th>効き方</th><th>持続</th><th>消え方</th></tr></thead>
+      <tbody>
+        <tr><td>出血</td><td>相手に</td><td>相手のターン開始に HP −段数</td><td>3 ターン</td><td>毎ターン 1 段減る</td></tr>
+        <tr><td>脆化</td><td>相手に</td><td>次に受ける攻撃の raw ×1.5</td><td>1 回</td><td>被弾で消える</td></tr>
+        <tr><td>鈍足</td><td>相手に</td><td>次の行動の移動値を 0 にする（空振り回避の間合い取り直しも封じる）</td><td>1 ターン</td><td>行動後に消える</td></tr>
+        <tr><td>威圧</td><td>相手に</td><td>次の行動の投入量 −1</td><td>1 ターン</td><td>行動後に消える</td></tr>
+        <tr><td>疲労</td><td>相手に</td><td>次のターン開始の回復 −1</td><td>1 ターン</td><td>回復後に消える</td></tr>
+        <tr><td>強化</td><td>自分に</td><td>次のアタックの威力 ×2（こうだいさんの例）</td><td>1 回</td><td>アタックで消える</td></tr>
+        <tr><td>集中</td><td>自分に</td><td>次のカードの投入量 +1 を無料で足す（T3 は超えない）</td><td>1 回</td><td>プレイで消える</td></tr>
+        <tr><td>見切り</td><td>自分に</td><td>次の被弾で Guard が吸収した分の半分を相手に返す</td><td>1 ターン</td><td>敵フェーズ後に消える</td></tr>
+        <tr><td>軽足</td><td>自分に</td><td>次の移動が 2 段階まで動ける</td><td>1 回</td><td>移動で消える</td></tr>
+        <tr><td>再生</td><td>自分に</td><td>ターン開始に HP +1</td><td>3 ターン</td><td>ターンごとに減る</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>スタンス枠</h3>
+  <ul class="prose">
+    <li><strong>枠は 1 つ</strong>。別のスタンスを出すと前のものは終わる（置き換えの予告を画面に出す）。習熟の永続効果で 2 つ目の枠を開ける余地を残す。</li>
+    <li><strong>強さは投入量で決まり、戦闘が終わるまで変わらない</strong>。序盤に T3 で置くか、温存して T1 で置くかが判断になる。スタミナは戦闘をまたぐので、置き方が次の戦闘にも響く。</li>
+    <li><strong>出したスタンスのカードは戦闘中は山札に戻らない</strong>。同種を 3 枚入れると死に札になるので、デッキ構築で 1〜2 枚に抑える理由が生まれる。</li>
+    <li><strong>効果の型は 6 つ</strong>: ターン開始に付与（Guard / HP / ドロー / 回復 +1）、条件付き加算（特定の間合いで威力 +1）、被弾時の反応（吸収の一部を返す）、移動の補正、投入の割引（特定タイプの投入 −1 を毎ターン 1 回）、敵の行動への干渉（予兆の狙い間合いに居ると Guard +1）。</li>
+  </ul>
+
+  <h2 id="s4">4. 1 ターンの流れ（v4 案）と 5 枚の経済</h2>
+  <div class="flow">
+    <div class="step"><span class="n">01</span><h3>ターン開始</h3><p>Guard を 0 に、間合いで回復（近 1 / 中 2 / 遠 3）、スタンスと状態のターン開始効果、手札を全捨てして 5 + 補正を引く、予兆を表示。</p></div>
+    <div class="step"><span class="n">02</span><h3>プレイ（何枚でも）</h3><p>カードと投入量を決める。解決順は「アタック → 移動 → ガード → スキル → スタンス」。敵に付ける状態と崩しは diff 0 のときだけ。</p></div>
+    <div class="step"><span class="n">03</span><h3>終了と敵フェーズ</h3><p>構え判定（残 3 以上で Guard +2）、敵の回復と状態処理、予兆どおりに実行（敵も同じタイプと状態を使う）、次の予兆。</p></div>
+  </div>
+  <p class="prose">5 枚引いても、スタミナ 10 で T3 を撃てるのは 3 枚です。翌ターンは回復 1〜3 なので、5 枚のうち使えるのは 1〜2 枚になります。「5 枚から何を使い何を捨てるか」が判断になり、v3 の「判断は 3 つ」を壊しません。問題は 0 投入です。</p>
+  <div class="callout warn prose"><strong>0 投入 × 5 枚が最大の危険</strong>: v3 の T0（威力 1〜2）を 5 枚回すと、無料で毎ターン 5〜8 点と Guard が出て、敵の出力 4〜8 と並ぶ。対策として <strong>T0 は威力 0</strong> にし、移動、Guard 1、状態の弱い版だけを残す。アタック単独のカードは全て最低投入 1。0 投入は「型だけ」の位置取りに徹する。この規則で足りるかは試験台の「0 投入だけの方針の勝率」で測る（§7）。</div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>項目</th><th class="num">v3</th><th class="num">v4 案</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>ドロー / ターン</td><td class="num">3（補充）</td><td class="num">5（全捨て）</td><td>こうだいさんの条件。補正で 3〜8</td></tr>
+        <tr><td>手札上限</td><td class="num">3</td><td class="num">8</td><td>ドロー補正の天井</td></tr>
+        <tr><td>デッキ枚数</td><td class="num">12（検証台）</td><td class="num">15〜80</td><td>15 は「3 ターン引いて一巡」の下限。80 は所持上限と同じ</td></tr>
+        <tr><td>同種の上限</td><td class="num">—</td><td class="num">3</td><td>習得した瞬間に 3 枚使える</td></tr>
+        <tr><td>T0 の威力</td><td class="num">1〜2</td><td class="num">0</td><td>0 投入回しの封じ</td></tr>
+        <tr><td>状態の同時数</td><td class="num">0</td><td class="num">片側 4</td><td>暗算できる範囲</td></tr>
+        <tr><td>スタンス枠</td><td class="num">0</td><td class="num">1</td><td>置き換えの判断を作る</td></tr>
+        <tr><td>1 戦闘のターン数（狙い）</td><td class="num">6〜10</td><td class="num">6〜10</td><td>変えない。デッキが 2〜3 回巡る長さ</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="s5">5. カード 80 種の配分（叩き台）</h2>
+  <p class="prose">初期 40 種は単独タイプ寄りにして覚えやすくし、習得 40 種は二面寄りにして「拾うと戦い方が増える」を作ります。全 80 種で単独 40 / 二面 40 です。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>パターン</th><th class="num">初期 40</th><th class="num">習得 40</th><th class="num">計</th><th>備考</th></tr></thead>
+      <tbody>
+        <tr><td>アタック</td><td class="num">12</td><td class="num">4</td><td class="num">16</td><td>近 / 中 / 遠を 6 / 6 / 4</td></tr>
+        <tr><td>ガード</td><td class="num">6</td><td class="num">2</td><td class="num">8</td><td>冷静 / 死力の付いたものを含む</td></tr>
+        <tr><td>スタンス</td><td class="num">4</td><td class="num">2</td><td class="num">6</td><td>効果の型 6 つに 1 枚ずつ</td></tr>
+        <tr><td>スキル</td><td class="num">8</td><td class="num">2</td><td class="num">10</td><td>移動 2、回復 2、ドロー 1、バフ 3、デバフ 2</td></tr>
+        <tr><td>アタック + スキル</td><td class="num">4</td><td class="num">8</td><td class="num">12</td><td>出血 / 脆化 / 鈍足 / 威圧 / 疲労を 2〜3 枚ずつ</td></tr>
+        <tr><td>アタック + ガード</td><td class="num">3</td><td class="num">5</td><td class="num">8</td><td></td></tr>
+        <tr><td>アタック + スタンス</td><td class="num">0</td><td class="num">5</td><td class="num">5</td><td>ボスの固有カードに向く</td></tr>
+        <tr><td>ガード + スタンス</td><td class="num">2</td><td class="num">4</td><td class="num">6</td><td></td></tr>
+        <tr><td>ガード + スキル</td><td class="num">0</td><td class="num">4</td><td class="num">4</td><td></td></tr>
+        <tr><td>スタンス + スキル</td><td class="num">1</td><td class="num">4</td><td class="num">5</td><td></td></tr>
+        <tr><td><strong>計</strong></td><td class="num"><strong>40</strong></td><td class="num"><strong>40</strong></td><td class="num"><strong>80</strong></td><td>アタック面を持つのは 41 種</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>別の切り口</th><th>配分</th><th>狙い</th></tr></thead>
+      <tbody>
+        <tr><td>最適間合い（アタック面 41 種）</td><td>近 16 / 中 15 / 遠 10</td><td>遠を少なめにして、遠での膠着を作らない</td></tr>
+        <tr><td>最低投入 0 のカード</td><td>20 種（全て非アタック単独か、T0 が移動だけの二面）</td><td>0 投入回しの母数を絞る</td></tr>
+        <tr><td>探索の面を持つカード（R1-6）</td><td>12 種</td><td>「戦闘力か探索力か」のジレンマの材料</td></tr>
+        <tr><td>習得 40 の入手先</td><td>ボス固有 9（3 体 × 3）/ 精鋭 8 / 探索の発見 23</td><td>探索側（R2-4）に渡す数字</td></tr>
+        <tr><td>習熟で名前が変わるカード（R1-5）</td><td>初期 40 は全て、習得 40 は半分</td><td>成長の実感は初期カードで出す</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose note">既存の <code>SWORDSMAN_CARDS_40.md</code>（剣気、貫通、会心）は旧ルールなので流用しない。名前と技のイメージだけ拾う。</p>
+
+  <h2 id="s6">6. 敵</h2>
+  <p class="prose">カードが 80 種あっても、敵が 1 体では「どの敵にどのデッキか」の判断が生まれません。100% では通常 12 / 精鋭 4 / ボス 3 の 19 体、80% では 6 / 2 / 1 の 9 体を最低ラインにします。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>階級</th><th class="num">100%</th><th class="num">80%</th><th>AI</th><th>条件</th></tr></thead>
+      <tbody>
+        <tr><td>通常</td><td class="num">12</td><td class="num">6</td><td>距離だけの決定木（v3 §6.3）</td><td>主力間合いが近 / 中 / 遠に 4 体ずつ。行動 4〜5 種。状態を 1 つ使う敵を半数</td></tr>
+        <tr><td>精鋭</td><td class="num">4</td><td class="num">2</td><td>1 フェーズ 2 行動、予兆 2 段</td><td>スタンスを持つ。崩しを使う</td></tr>
+        <tr><td>ボス</td><td class="num">3</td><td class="num">1</td><td>行動履歴で決定木を切り替える適応（R1-15）</td><td>固有カード 3 種を落とす。適応条件は手記に書ける形</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">敵の行動にもタイプと状態を付けます。敵側の記述が同じスキーマになるので、C# の <code>CardDef</code> と <code>EnemyAction</code> を一本化できます。</p>
+
+  <h2 id="s7">7. 数値の基準と試験台</h2>
+  <p class="prose">「ほぼ完璧なバランス」は人手のプレイだけでは測れません。解決に乱数が無いので、C# のコアをそのまま回す試験台（デッキの型 × 敵 × 機械の打ち手）を dotnet のコンソールで作り、下の基準を毎回出します。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>基準</th><th class="num">目標</th><th>見るもの</th></tr></thead>
+      <tbody>
+        <tr><td>通常戦のターン数（中央値）</td><td class="num">6〜10</td><td>短すぎれば手札の判断が無い。長すぎれば作業になる</td></tr>
+        <tr><td>ボス戦のターン数</td><td class="num">12〜18</td><td>デッキが 3 回以上巡る</td></tr>
+        <tr><td>0 投入だけの方針の勝率</td><td class="num">&lt; 10%</td><td>v3 §3.6 の退行対策が効いているか</td></tr>
+        <tr><td>デッキの型 5 種の勝率差（最強 − 最弱）</td><td class="num">≤ 25 pt</td><td>近距離速攻 / 遠距離削り / 受け反撃 / スタンス構築 / 状態異常</td></tr>
+        <tr><td>スタンス無しデッキの勝率</td><td class="num">最強 − 15 pt 以上</td><td>スタンスが必須にならない</td></tr>
+        <tr><td>最大スタミナ 6（瘴気 80%）での通常戦勝率</td><td class="num">≥ 50%</td><td>v3 §12-5</td></tr>
+        <tr><td>HP 持ち越しの 2 連戦の勝率</td><td class="num">≥ 40%</td><td>v3 §12-6</td></tr>
+        <tr><td>敵ごとの「正解の間合い」</td><td class="num">全敵で異なる</td><td>間合いを変えると勝率が 15 pt 以上動く</td></tr>
+        <tr><td>1 ターンの判断時間（人手、中央値）</td><td class="num">≤ 20 秒</td><td>5 枚で迷い過ぎないか</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">機械の打ち手は「予兆に対して最も期待値の高い 1〜2 枚を選ぶ」貪欲法で十分です。人間より弱いので、勝率は絶対値でなく型どうしの差で読みます。</p>
+
+  <h2 id="s8">8. カード感の操作（UI v1.2 への追加）</h2>
+  <p class="prose">現行の「クリック → チップ」を残したまま、主操作をドラッグに替えます。投入量はドラッグの高さで決め、1 枚 = 1 動作にします。料理で言えば、火加減のつまみを回す代わりに鍋を持ち上げる高さで火力が決まる、という手触りです。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>場面</th><th>動き</th><th class="num">ms</th><th>補間</th></tr></thead>
+      <tbody>
+        <tr><td>手札 5 枚の並び</td><td>扇形（−8°〜+8°）、35% 重ね。ホバーしたカードだけ重なりを解く</td><td class="num">120</td><td>out</td></tr>
+        <tr><td>ホバー</td><td>24px 持ち上げ、1.06 倍、カーソル側へ 4° 傾き、隣が 14px 開く、影 8 → 24px</td><td class="num">120</td><td>out</td></tr>
+        <tr><td>掴む</td><td>押下 80ms で手札から外れる。ばね追従（90ms で追いつく）、速度で ±8° 回転、影 32px</td><td class="num">80</td><td>—</td></tr>
+        <tr><td>投入帯の出現</td><td>カードの中心が手札の上端を越えると、アリーナ下 40% に横帯 4 本（下から T0 → T3）が出る</td><td class="num">150</td><td>out</td></tr>
+        <tr><td>帯の上</td><td>帯が明るくなり、カード脇に予測値（威力 / Guard / 移動先 / 残スタミナ / 構えの可否）。残像と狙い帯も更新。払えない帯は斜線</td><td class="num">0</td><td>—</td></tr>
+        <tr><td>離す（帯の上）</td><td>その段でプレイ。カードが的へ飛んで消える、投入ぶんのピップが消える</td><td class="num">220</td><td>in</td></tr>
+        <tr><td>離す（帯の外）</td><td>手札の元の位置へ戻る</td><td class="num">200</td><td>out</td></tr>
+        <tr><td>詳細を見る</td><td>右クリックか長押し 400ms で全文（4 段の表、習熟、タイプの説明）</td><td class="num">150</td><td>out</td></tr>
+        <tr><td>ドロー 5 枚</td><td>山札から扇へ 1 枚ずつ</td><td class="num">220、70 ずらし</td><td>out</td></tr>
+        <tr><td>全捨て</td><td>捨札へ 1 枚ずつ飛ぶ</td><td class="num">180、40 ずらし</td><td>in</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>HUD に足す部品</h3>
+  <ul class="prose">
+    <li><strong>スタンス枠</strong>: スタミナ帯の左に 1 枠。置き換えのときは新旧を並べて 1 秒見せる。</li>
+    <li><strong>状態チップ</strong>: 両者の HP バーの下に最大 4 つ（アイコン + 段数 + 残りターン）。ホバーで効き方の 1 行。敵に付けた状態は常に見える。敵が自分に付けた状態は開示度 1 以上で名前が出る。</li>
+    <li><strong>山札 / 捨札</strong>: 枚数を常時、クリックで一覧。手札 5 枚に合わせて手札帯（76〜100%）の横幅を広げ、L1 の縦の配置は変えない。</li>
+    <li><strong>タイプの見た目</strong>: 枠の色と角の印でタイプを示す。二面は枠を斜めに 2 色分ける。アタック = 朱、ガード = 青灰、スタンス = 金、スキル = 翠（A+ の色から取る）。</li>
+    <li><strong>デッキ構築</strong>: 出立の画面で「種類 × 0〜3」のステッパー。15 枚未満と同種 4 枚以上を弾く。</li>
+  </ul>
+
+  <h2 id="s9">9. 演出（カードごとのエフェクト）</h2>
+  <p class="prose">80 種それぞれに手描きのエフェクトを作ると 80 本になります。代わりに「系統 × 投入段 × カード固有の飾り」の文法で組み立てます。系統が 8 つあれば、飾り（色、粒子の形、軌跡）の差で 1 枚ごとに違って見えます。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>系統</th><th>動き</th><th>向くカード</th><th>固有の飾りで変える所</th></tr></thead>
+      <tbody>
+        <tr><td>斬</td><td>弧を描く刃の光</td><td>斬り込み、薙ぎ</td><td>弧の角度、色、残る筋の数</td></tr>
+        <tr><td>突</td><td>一直線の閃きと点の衝撃</td><td>突き、穂先</td><td>線の太さ、衝撃の形</td></tr>
+        <tr><td>払</td><td>横に広い帯</td><td>薙ぎ払い、牽制</td><td>帯の幅、粒子</td></tr>
+        <tr><td>打</td><td>面で押す衝撃波</td><td>石突き、押し込み</td><td>波紋の数</td></tr>
+        <tr><td>盾</td><td>人型の前に輪</td><td>ガード面</td><td>輪の材質（鉄 / 光 / 布）</td></tr>
+        <tr><td>型</td><td>足元に紋、身体に薄い光</td><td>スタンス面（戦闘中ずっと残る）</td><td>紋の形、光の色</td></tr>
+        <tr><td>気</td><td>自分か相手の上に印が落ちる</td><td>スキル面（状態の付与）</td><td>状態ごとの印 10 種</td></tr>
+        <tr><td>息</td><td>ピップの点灯と胸の上下</td><td>回復、ドロー、構え</td><td>灯の色</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>投入段</th><th class="num">大きさ</th><th class="num">ヒットストップ</th><th class="num">揺れ</th><th>音</th></tr></thead>
+      <tbody>
+        <tr><td>T0</td><td class="num">0.6</td><td class="num">0 ms</td><td class="num">0 px</td><td>紙だけ（威力 0 の合図）</td></tr>
+        <tr><td>T1</td><td class="num">1.0</td><td class="num">60 ms</td><td class="num">2 px</td><td>系統の音</td></tr>
+        <tr><td>T2</td><td class="num">1.3</td><td class="num">80 ms</td><td class="num">4 px</td><td>系統の音 + 低音</td></tr>
+        <tr><td>T3</td><td class="num">1.7</td><td class="num">110 ms</td><td class="num">6 px</td><td>系統の音 + 低音 + 画面端の暗転 120ms</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="prose">
+    <li><strong>二面カード</strong>は 2 つの系統を続けて出す（アタック → 相手の面、の順）。合計時間は単独の 1.4 倍までに抑える。</li>
+    <li><strong>状態の付与 / 消滅</strong>: チップが 200ms で膨らんで収まる、消えるときは 150ms で薄くなる。出血の tick は小さな赤い数字。</li>
+    <li><strong>スタンスの発動</strong>: 枠に置く 300ms + 人型に残る光。置き換えは古い光が 200ms で消えてから。</li>
+    <li><strong>減速設定</strong>で全て 1ms に短縮できる。確定値は演出の前に決める（v1.1 §5 と同じ約束）。</li>
+  </ul>
+
+  <h2 id="s10">10. 棚卸表（100% の 58 項目と現在地）</h2>
+  <p class="prose">8 領域に重みを付け、現在の到達を掛け合わせると約 20% になります。こうだいさんの体感 10〜20% と合います。重みは「面白さへの寄与」の目安で、実装量ではありません。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>領域</th><th class="num">重み</th><th class="num">現在</th><th class="num">寄与</th><th>今あるもの</th></tr></thead>
+      <tbody>
+        <tr><td>A ルール</td><td class="num">20</td><td class="num">45%</td><td class="num">9.0</td><td>v3 の投入 / 間合い / 予兆 / Guard / 構え / 崩し / 瘴気を C# で実装済み</td></tr>
+        <tr><td>B カード 80 種</td><td class="num">20</td><td class="num">9%</td><td class="num">1.8</td><td>7 種</td></tr>
+        <tr><td>C 敵 19 体</td><td class="num">15</td><td class="num">5%</td><td class="num">0.8</td><td>1 体</td></tr>
+        <tr><td>D 数値の基準と試験台</td><td class="num">10</td><td class="num">0%</td><td class="num">0.0</td><td>無し</td></tr>
+        <tr><td>E 操作と HUD</td><td class="num">15</td><td class="num">35%</td><td class="num">5.3</td><td>L1、チップ、狙い帯、手記、勝敗画面</td></tr>
+        <tr><td>F 演出</td><td class="num">10</td><td class="num">20%</td><td class="num">2.0</td><td>共通の踏み込み / 揺れ / 数字 / 予兆の明滅</td></tr>
+        <tr><td>G 学習との接点</td><td class="num">5</td><td class="num">0%</td><td class="num">0.0</td><td>無し（ドロー補正、永続効果の受け口）</td></tr>
+        <tr><td>H 検証手段</td><td class="num">5</td><td class="num">20%</td><td class="num">1.0</td><td>単体テスト 54、実画面の撮影</td></tr>
+        <tr><td><strong>計</strong></td><td class="num"><strong>100</strong></td><td class="num"></td><td class="num"><strong>19.9</strong></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>領域</th><th>項目</th><th>状態</th><th>80% に要る</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="12">A ルール</td><td>投入量 0〜3、間合い補正、予兆、Guard、構え、崩し、瘴気</td><td class="state yes">あり</td><td>○</td></tr>
+        <tr><td>タイプ 4 種と二面のスキーマ（面ごとの 4 段表）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>移動を属性にする</td><td class="state maybe">一部</td><td>○</td></tr>
+        <tr><td>状態 10 語（付与 / 持続 / 消滅 / 上限 4）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>スタンス枠 1 と置き換え、出したカードの除外</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>ドロー 5 + 補正、全捨て、手札上限 8</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>デッキ規則（15〜80、同種 3）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>T0 は威力 0、アタック単独は最低投入 1</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>解決順（アタック → 移動 → ガード → スキル → スタンス）</td><td class="state maybe">一部</td><td>○</td></tr>
+        <tr><td>敵の行動にタイプと状態を持たせる（対称）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>ボスの適応（履歴で決定木を切り替え）と 2 段予兆</td><td class="state no">なし</td><td>△</td></tr>
+        <tr><td>1 フェーズ 2 行動</td><td class="state no">なし</td><td>△</td></tr>
+        <tr><td rowspan="7">B カード</td><td>初期 40 種の定義（4 段表、間合い、最低投入）</td><td class="state maybe">7 種</td><td>○</td></tr>
+        <tr><td>習得 40 種の定義</td><td class="state no">なし</td><td>△（20 種まで）</td></tr>
+        <tr><td>カードの本文（名前、説明、タイプ表記）</td><td class="state maybe">7 種</td><td>○</td></tr>
+        <tr><td>習熟の段階と名称変化の定義（R1-5）</td><td class="state no">なし</td><td>△</td></tr>
+        <tr><td>探索の面（R1-6）</td><td class="state no">なし</td><td>×</td></tr>
+        <tr><td>入手先の配分（探索側へ渡す）</td><td class="state no">なし</td><td>△</td></tr>
+        <tr><td>カード絵 80 枚（当面は系統別の生成画）</td><td class="state no">なし</td><td>△</td></tr>
+        <tr><td rowspan="6">C 敵</td><td>通常 12 体（近 / 中 / 遠 4 体ずつ）</td><td class="state maybe">1 体</td><td>○（6 体）</td></tr>
+        <tr><td>精鋭 4 体（2 行動、スタンス）</td><td class="state no">なし</td><td>○（2 体）</td></tr>
+        <tr><td>ボス 3 体（適応、固有カード）</td><td class="state no">なし</td><td>○（1 体）</td></tr>
+        <tr><td>敵の頁の開示度データ（R2-3）</td><td class="state maybe">仮置き</td><td>○</td></tr>
+        <tr><td>階層ごとの出現表（R2-8）</td><td class="state no">なし</td><td>△</td></tr>
+        <tr><td>立ち絵（当面は生成画）</td><td class="state maybe">生成画 1</td><td>△</td></tr>
+        <tr><td rowspan="6">D 数値</td><td>試験台（デッキの型 × 敵 × 機械の打ち手）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>基準 9 項目の自動出力</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>デッキの型 5 種の定義</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>0 投入回しの検出</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>プレイテストの記録票（判断時間、迷った場面）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>調整の履歴（数値を変えた理由）</td><td class="state no">なし</td><td>△</td></tr>
+        <tr><td rowspan="10">E 操作と HUD</td><td>L1 レイアウト、予兆バナー、狙い帯、残像</td><td class="state yes">あり</td><td>○</td></tr>
+        <tr><td>クリック → チップの 2 操作、キー操作</td><td class="state yes">あり</td><td>○</td></tr>
+        <tr><td>ホバーの持ち上げと傾き、隣が開く</td><td class="state maybe">持ち上げのみ</td><td>○</td></tr>
+        <tr><td>ドラッグ追従（ばね、回転、影）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>投入帯 4 本（高さで投入量、払えない帯は斜線）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>手札 5 枚の扇、山札 / 捨札の一覧</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>スタンス枠、状態チップ、置き換えの予告</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>タイプの枠色、二面の 2 色枠、詳細の長押し</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>デッキ構築画面（種類 × 0〜3）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>ゲームパッド、ウルトラワイド</td><td class="state maybe">仮置き</td><td>×</td></tr>
+        <tr><td rowspan="7">F 演出</td><td>共通の踏み込み / 揺れ / 数字 / HP バー</td><td class="state yes">あり</td><td>○</td></tr>
+        <tr><td>系統 8 つのエフェクト</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>投入段のスケール、ヒットストップ、揺れ</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>カード固有の飾り（初期 40）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>状態の付与 / tick / 消滅、スタンスの光</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>効果音（系統 8 + 状態 10 + 紙 / 息）</td><td class="state no">なし</td><td>△</td></tr>
+        <tr><td>Live2D の立ち絵とモーション</td><td class="state no">なし</td><td>×</td></tr>
+        <tr><td rowspan="4">G 学習</td><td>ドロー補正の受け口（永続効果 → <code>DrawCount</code>）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>習熟の記録（どの間合い / 投入 / 予兆で使ったか）を戦闘イベントから出す</td><td class="state maybe">イベント列あり</td><td>○</td></tr>
+        <tr><td>戦闘開始時の永続効果（例: 洞察眼）の受け口</td><td class="state no">なし</td><td>△</td></tr>
+        <tr><td>習得の通知（戦闘後の画面）</td><td class="state no">なし</td><td>△</td></tr>
+        <tr><td rowspan="6">H 検証</td><td>単体テスト（C#）</td><td class="state yes">54</td><td>○</td></tr>
+        <tr><td>試験台の CI 実行と基準の閾値チェック</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>再生トレースによる画面撮影</td><td class="state yes">あり</td><td>○</td></tr>
+        <tr><td>Editor 前面での人手プレイ（乱数「実戦」）</td><td class="state maybe">未実施</td><td>○</td></tr>
+        <tr><td>プレイテスト 3 巡（1 巡 = 10 戦）</td><td class="state no">なし</td><td>○</td></tr>
+        <tr><td>視覚の回帰（スクショの差分）</td><td class="state no">なし</td><td>×</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="s11">11. 80% までの順番</h2>
+  <p class="prose">「ルールとカードと敵と数値」が先、「操作と演出」が後です。操作と演出はカードの定義が固まらないと作れません。数値の調整は演出が無くても試験台でできます。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>順</th><th>やること</th><th>出口の条件</th><th>大きさ</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>設計書 v4（タイプ / 状態 / スタンス / 5 枚 / デッキ規則）と C# 実装、試験台の骨組み</td><td>dotnet test が緑、試験台が勝率とターン数を出す</td><td>中</td></tr>
+        <tr><td class="num">2</td><td>初期 40 種と敵 6 体を定義、試験台で 1 巡</td><td>基準 9 項目のうち 7 つが目標内</td><td>大</td></tr>
+        <tr><td class="num">3</td><td>操作（ドラッグ / 投入帯 / 扇 / 詳細）と HUD（スタンス枠 / 状態チップ / 山札捨札 / 枠色）</td><td>実画面で 1 戦通し、判断時間 20 秒以内</td><td>中</td></tr>
+        <tr><td class="num">4</td><td>演出の文法（系統 8 / 段のスケール / 状態 / スタンス）と初期 40 の飾り</td><td>全 40 種が実画面で区別できる</td><td>中</td></tr>
+        <tr><td class="num">5</td><td>習得 20 種、精鋭 2 体、ボス 1 体（適応 AI）、デッキ構築画面</td><td>ボス戦 12〜18 ターン、固有カードが落ちる</td><td>大</td></tr>
+        <tr><td class="num">6</td><td>プレイテスト 3 巡と調整、記録票と調整履歴</td><td>基準 9 項目が全て目標内、こうだいさんが「80%」と言える</td><td>中</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">80% の定義は「順 1〜6 の出口を全て通ること」です。残り 20% は習得カードの残り 20 種、敵の残り 10 体、Live2D と効果音、探索の面、ゲームパッドで、探索フェーズと並行できます。</p>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>「80 枚」はカードの種類数と読んだ。所持上限 80 種、同種 3 枚まで、デッキは 15〜80 枚。</li>
+    <li>投入量 0〜3 の仕組みは残す。タイプは投入量の上に載る分類で、コストの仕組みを変えない。</li>
+    <li>手札はターン終了で全て捨てる（v3 と同じ）。残す方式は「5 枚引く」と噛み合わないので採らない。</li>
+    <li>移動はタイプにしない。足捌きはスキルに分類する。</li>
+    <li>回復（応急処置）とドローはスキルの一種にする。</li>
+    <li>敵もタイプと状態を使う。対称の原則（v3 §1.2）を保つ。</li>
+    <li>試験台の打ち手は貪欲法。勝率は型どうしの差で読む。</li>
+    <li>敵の数、カードの配分、状態の語彙、ms は全て叩き台。設計書 v4 で確定する。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>T0 を威力 0 にしても 0 投入回しが残るか。試験台を回すまで分からない。</li>
+    <li>5 枚の手札で判断時間が 20 秒に収まるか。人手のプレイで測る。</li>
+    <li>二面カードの 65% が適切か。強すぎると単独タイプが要らなくなる。</li>
+    <li>ドラッグの高さで投入量を決める操作が、4 帯で誤操作なく扱えるか。実機で試す。</li>
+    <li>状態 10 語のうち「軽足」と「見切り」は間合い規則（1 行動 1 段階）と被弾規則に例外を作る。ルール側で許容するか。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ol class="prose">
+    <li><strong>移動を属性にする</strong>（推奨）か、5 番目のタイプにするか。</li>
+    <li><strong>投入量はドラッグの高さで決める</strong>（推奨）か、ドラッグで置いてからチップを押すか。</li>
+    <li><strong>T0 は威力 0</strong>（推奨）か、v3 のまま威力 1〜2 を残して試験台の結果で決めるか。</li>
+    <li><strong>スタンス枠は 1 で置き換え</strong>（推奨）か、複数を許すか。</li>
+    <li><strong>状態は 10 語で固定</strong>（推奨）か、カードごとに自由な効果を許すか。</li>
+    <li><strong>80% の敵は 6 / 2 / 1 の 9 体</strong>（推奨）でよいか。</li>
+    <li>順 1 の設計書 v4 と C# 実装に、このまま着手してよいか。</li>
+  </ol>
+
+  <p class="note">関連: <code>battle_core_v3.md</code>（数値の正本）、<code>battle_ui_ux_v1.md</code>（画面の正本、v1.2 で §8 を追加予定）、<code>concept-v3.md</code> §4（習熟 / 探索カード / 所持とデッキ）、tier2 R2-2（剣士カード再定義）/ R2-3（敵）/ R2-8（難易度）。</p>
+</div>

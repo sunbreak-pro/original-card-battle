@@ -4,19 +4,20 @@
 
 ## Update History
 
-| Date       | Content                                                                                                                                                    |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-05-17 | life-editor 準拠リファクタ: `code_overview`→`code-explanation`、`feature_plans`→`vision/plans`、`memories`→`known-issues` へ移行。標準サブディレクトリ追加 |
-| 2026-02-04 | Updated for facility consolidation (7 → 5). Removed deprecated files.                                                                                      |
+| Date       | Content                                                                                                                                                                                                                                                                                            |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-12 | 企画書「ゲーム設計(chat GPT)」で設計ルールを上書き。`vision/concept-v3.md` 新設（正本）、`requirements/tier1〜3` 全面改稿、`game_design_master.md` V4.0、`CAMP_FACILITIES_DESIGN.md` V5.0。旧ルール（ライフ制 / エクストラクション / 手記の死越え / AP）に SUPERSEDED・FROZEN バナー。アーマー凍結 |
+| 2026-05-17 | life-editor 準拠リファクタ: `code_overview`→`code-explanation`、`feature_plans`→`vision/plans`、`memories`→`known-issues` へ移行。標準サブディレクトリ追加                                                                                                                                         |
+| 2026-02-04 | Updated for facility consolidation (7 → 5). Removed deprecated files.                                                                                                                                                                                                                              |
 
 ## 標準ハーネス構造
 
-| Directory           | Description                                                                                                              |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `vision/`           | 抽象構想・設計原則（`core.md`）。`vision/plans/` はアクティブ実装プラン + 将来機能（quest/title/NPC/dark market/PixiJS） |
-| `requirements/`     | 機能要件定義（Tier 別）。`combat-core-redesign.md`（戦闘コア一括改定: スタミナ/ドロー/速度 アンブレラ）+ `realtime-turn-timer.md`（実時間タイマー軸）  |
-| `known-issues/`     | Root Cause + 再発防止知見（`INDEX.md` で索引、`LESSONS_LEARNED.md` に 8 知見）                                           |
-| `code-explanation/` | コード解析・脆弱性トラッカー（`vulnerability-remediation-guide.md`）・テスト分析                                         |
+| Directory           | Description                                                                                                                                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vision/`           | 抽象構想・設計原則（`core.md` + 正本 `concept-v3.md`「生と継承」。`concept-v2.md` は SUPERSEDED）。`vision/plans/` はアクティブ実装プラン + 将来機能（quest/title/NPC/dark market/PixiJS） |
+| `requirements/`     | 機能要件定義（Tier 別）。`tier1-core.md` v6（生と継承ループの必須要件 R1-1〜R1-17）/ `tier2-support.md` v3 / `tier3-experimental.md` v2（実験・凍結・廃棄）                                |
+| `known-issues/`     | Root Cause + 再発防止知見（`INDEX.md` で索引、`LESSONS_LEARNED.md` に 8 知見）                                                                                                             |
+| `code-explanation/` | コード解析・脆弱性トラッカー（`vulnerability-remediation-guide.md`）・テスト分析                                                                                                           |
 
 ## ゲーム設計書（`*_document/`）
 
@@ -40,7 +41,10 @@
 
 ### Battle System
 
-- `battle_document/` - Combat flow, phase execution, buff/debuff mechanics
+- `battle_document/battle_core_v4.md` - **数値の正本（2026-09-13、v3 を置き換え）**: 属性 5 つ × 投入量、特性（属性コンボ）、状態 10 語 + ボス専用 2、スタンス枠 1、手札 5 枚 / 全捨て、デッキ 15〜80 / 同種 3、敵ごとの間合い（1〜2 体）、連戦モード、試験台の基準 9 項目。カードは `card_document/swordsman_cards_v4.md`、敵は `enemy_document/enemy_roster_v4.md`。実装は `vision/plans/2026-09-13-battle-v4-implementation.md`
+- `battle_document/battle_core_v3.md` - 数値の旧正本（2026-09-12、v4 の前提）: 間合い × スタミナ投入、予兆、崩し、構え。旧 `battle_logic.md` / `buff_debuff_system.md` / `element_system_spec.md` は Web 版の記録
+- `battle_document/battle_ui_ux_v2.md` - **戦闘 UI / UX の正本（2026-09-13、core v4.1 対応）**: 情報設計の全面改訂（属性 5 の枠色 / 特性の合図 / 状態チップ / スタンス枠 / 2 体戦 / 精鋭の予兆 2 段 / 連戦の進捗）、L1 v2 と対案 2 つ、ドラッグ主操作（帯 = 投入量、矢印 = 相手、場 = 自分と全体）、演出の文法（系統 8 × 段 4 × 固有の飾り）、Unity 写像 v2 とアセット一覧。モックアップは `docs/mockups/2026-09-13-battle-uiux-v4-mockup.html`、判断材料は `docs/reports/2026-09-13-battle-uiux-v4-80.html`
+- `battle_document/battle_ui_ux_v1.md` - 戦闘 UI / UX の旧正本（2026-09-12、v1.2、core v3 前提。View v1.1 の実装記録）: 情報設計 20 項目・L1 / L2・2 操作のプレイ・見た目 3 案と A 採用・演出 10 節・Unity 写像。モックアップは `docs/mockups/2026-09-12-battle-uiux-mockup.html`
 
 ### Card System
 
@@ -49,10 +53,7 @@
 ### Camp Facilities (5 Facilities)
 
 - `camp_document/camp_facilities_design.md` - Master design (V4.0)
-- `camp_document/guild_design.md` - Guild with integrated Storage tab (V3.0)
-- `camp_document/shop_design.md` - Shop economy
-- `camp_document/blacksmith_design.md` - Equipment enhancement
-- `camp_document/sanctuary_design.md` - Soul remnant skill tree
+- 旧個別施設設計（guild / shop / blacksmith / sanctuary）は `.claude/archive/camp_document/` へ移動（2026-09-12、凍結）
 
 ### Journal System (Header UI)
 
@@ -60,7 +61,7 @@
 
 ### Equipment
 
-- `ap-equipment-system.md` - AP (Armor Point) system, equipment durability
+- `ap-equipment-system.md` - AP (Armor Point) system, equipment durability — **FROZEN（2026-09-12）**。防御は Guard のみ
 
 ## Related References
 

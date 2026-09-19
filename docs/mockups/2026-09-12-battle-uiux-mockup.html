@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>戦闘画面モックアップ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=Yuji+Syuku&display=swap">
+<style>
+  /* ---------- page (outside the stage) ---------- */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: #17181a;
+    color: #cfd2d6;
+    font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding-block: 12px 40px;
+    padding-inline: 16px;
+  }
+  .page { max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center;
+    background: #202226; border: 1px solid #2c2f34; border-radius: 4px; padding: 8px 12px;
+  }
+  .toolbar .grp { display: flex; align-items: center; gap: 6px; }
+  .toolbar .grp > span { font-size: 12px; letter-spacing: .08em; color: #8f949b; margin-right: 2px; }
+  .toolbar button {
+    font: inherit; font-size: 13px; color: #cfd2d6; background: #2a2d32; border: 1px solid #383c42;
+    padding: 4px 10px; border-radius: 3px; cursor: pointer;
+  }
+  .toolbar button[aria-pressed="true"] { background: #3d4a55; border-color: #6a8898; color: #fff; }
+  .toolbar button.run { background: #2e4a3f; border-color: #4a7a66; }
+  .toolbar button:disabled { opacity: .45; cursor: default; }
+  .toolbar button:focus-visible, .stage button:focus-visible { outline: 2px solid #8fd3c7; outline-offset: 2px; }
+  .stepbar {
+    font-family: "IBM Plex Mono", monospace; font-size: 13px; color: #9aa0a8;
+    background: #202226; border: 1px solid #2c2f34; border-radius: 4px; padding: 6px 12px; min-height: 32px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stepbar b { color: #e6e9ec; font-weight: 500; }
+  .caption { font-size: 12.5px; color: #8f949b; max-width: 960px; }
+
+  /* ---------- stage ---------- */
+  .stage {
+    position: relative;
+    width: min(100vw - 32px, 1600px);
+    aspect-ratio: 16 / 9;
+    margin: 0 auto;
+    container-type: size;
+    overflow: hidden;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 1.05cqw;
+    line-height: 1.4;
+    border: 1px solid var(--line);
+    user-select: none;
+  }
+  .stage .num, .stage .pips, .stage .chip .v, .stage .hp-text { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+  .stage .disp { font-family: var(--f-disp); }
+
+  /* ---------- skins ---------- */
+  /* A+ (2026-09-12 採用): 基調は A のまま、彩度と明度だけ上げる。描き込みは .stage[data-skin="A"] 限定の節で足す */
+  .stage[data-skin="A"] {
+    --ground: #0e1c26; --panel: rgba(16,32,42,.84); --ink: #eef3f0; --ink-2: #a3b5b3; --line: rgba(190,215,210,.16);
+    --accent: #63e0c9; --warm: #ffc46b; --omen: #ff5d47; --guard: #9cc7ff; --whiff: #7d8a8c; --amber: #f0a848;
+    --fig-p: #2b4a53; --fig-e: #4d2624; --fig-stroke: transparent; --glow: rgba(255,196,107,.5);
+    --f-disp: "Shippori Mincho", "Hiragino Mincho ProN", serif; --f-body: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --f-hand: "Yuji Syuku", "Hiragino Mincho ProN", serif;
+    --radius: .35cqw; --panel-blur: blur(.4cqw); --panel-fill: var(--panel); --shadow: 0 .4cqh 1.2cqh rgba(0,0,0,.45);
+    --floor: rgba(160,190,185,.34); --floor-h: .35cqh;
+    --paper: #f0e6d0; --paper-ink: #2b2620; --paper-line: rgba(43,38,32,.35); --ink-flood: #06090c;
+  }
+  .stage[data-skin="B"] {
+    --ground: #141210; --panel: #1e1a16; --ink: #e3dccf; --ink-2: #9a8f7f; --line: #3a322a;
+    --accent: #b89b5e; --warm: #c9a45c; --omen: #b43a2a; --guard: #7f8f9c; --whiff: #6b665e; --amber: #c9a45c;
+    --fig-p: #4a4136; --fig-e: #3a2420; --fig-stroke: transparent; --glow: transparent;
+    --f-disp: "Zen Old Mincho", "Hiragino Mincho ProN", serif; --f-body: "Noto Sans JP", "Hiragino Sans", sans-serif;
+    --f-hand: "Yuji Syuku", "Hiragino Mincho ProN", serif;
+    --radius: 0; --panel-blur: none; --panel-fill: var(--panel); --shadow: .3cqw .5cqh 0 rgba(0,0,0,.6);
+    --floor: #3a322a; --floor-h: .6cqh;
+    --paper: #e8dcc2; --paper-ink: #2b2620; --paper-line: rgba(43,38,32,.35); --ink-flood: #060404;
+  }
+  .stage[data-skin="C"] {
+    --ground: #111214; --panel: #1b1c1f; --ink: #f2efe8; --ink-2: #a7a49c; --line: #3c3d40;
+    --accent: #f2efe8; --warm: #d9c9a3; --omen: #d63a2f; --guard: #9aa5ad; --whiff: #6f7074; --amber: #d9c9a3;
+    --fig-p: #0a0a0b; --fig-e: #0a0a0b; --fig-stroke: var(--ink); --glow: transparent;
+    --f-disp: "Yuji Syuku", "Hiragino Mincho ProN", serif; --f-body: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --f-hand: "Yuji Syuku", "Hiragino Mincho ProN", serif;
+    --radius: 0; --panel-blur: none; --panel-fill: transparent; --shadow: none;
+    --floor: var(--ink); --floor-h: .8cqh;
+    --paper: #f2efe8; --paper-ink: #111214; --paper-line: rgba(17,18,20,.4); --ink-flood: #050303;
+  }
+  .stage[data-skin="B"] .panel { border: 1px solid var(--accent); }
+  .stage[data-skin="C"] .panel { border: 1px solid var(--line); }
+
+  /* arena backgrounds: skin x floor */
+  .stage[data-skin="A"][data-floor="1"] { --arena-top: #1d3340; --arena-bot: #0f1a22; --fog: rgba(255,255,255,.05); }
+  .stage[data-skin="A"][data-floor="3"] { --arena-top: #1a1f3a; --arena-bot: #0b0d1a; --fog: rgba(150,120,220,.10); }
+  .stage[data-skin="A"][data-floor="5"] { --arena-top: #1a0e12; --arena-bot: #070507; --fog: rgba(190,40,40,.14); }
+  .stage[data-skin="B"][data-floor="1"] { --arena-top: #2a2622; --arena-bot: #141210; --fog: transparent; }
+  .stage[data-skin="B"][data-floor="3"] { --arena-top: #1f1b1b; --arena-bot: #0d0b0b; --fog: transparent; }
+  .stage[data-skin="B"][data-floor="5"] { --arena-top: #1a0c0c; --arena-bot: #060404; --fog: rgba(120,20,20,.10); }
+  .stage[data-skin="C"][data-floor="1"] { --arena-top: #1c1d20; --arena-bot: #111214; --fog: transparent; }
+  .stage[data-skin="C"][data-floor="3"] { --arena-top: #151417; --arena-bot: #0b0a0c; --fog: transparent; }
+  .stage[data-skin="C"][data-floor="5"] { --arena-top: #120a0a; --arena-bot: #050303; --fog: rgba(214,58,47,.06); }
+
+  /* ---------- A+ 描き込み（A のときだけ） ---------- */
+  /* (a) 足元の灯りのゆらぎ */
+  .stage[data-skin="A"] .fig-wrap:not(.ghost)::after { animation: lantern 1.8s ease-in-out infinite; }
+  @keyframes lantern { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; } 50% { transform: translateX(-50%) scale(1.06); opacity: .88; } }
+  /* (b) 靄 2 層（視差） */
+  .mist { position: absolute; inset: 0; pointer-events: none; display: none; }
+  .stage[data-skin="A"] .mist { display: block; }
+  .mist.back {
+    background: radial-gradient(ellipse 30% 40% at 20% 70%, var(--fog), transparent 70%), radial-gradient(ellipse 40% 35% at 70% 80%, var(--fog), transparent 70%);
+    background-size: 100cqw 100%; animation: mist-drift 60s linear infinite; opacity: .9;
+  }
+  .mist.front {
+    background: radial-gradient(ellipse 25% 30% at 45% 88%, var(--fog), transparent 70%), radial-gradient(ellipse 35% 25% at 90% 92%, var(--fog), transparent 70%);
+    background-size: 100cqw 100%; animation: mist-drift 28s linear infinite reverse;
+  }
+  @keyframes mist-drift { from { background-position: 0 0; } to { background-position: 100cqw 0; } }
+  /* (c) 床: 濡れた石畳のノイズ + 灯りの反射線 */
+  .stage[data-skin="A"] .arena::before {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 14%; pointer-events: none;
+    background:
+      linear-gradient(to top, rgba(0,0,0,.35), transparent 80%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 .9cqw, transparent .9cqw 2.1cqw),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 .4cqh, transparent .4cqh 1.7cqh),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .6 0 0 0 0 .7 0 0 0 0 .7 0 0 0 .18 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .stage[data-skin="A"] .arena .floor { box-shadow: 0 -1px 0 color-mix(in srgb, var(--warm) 40%, transparent), 0 .3cqh 1.2cqh rgba(0,0,0,.4); }
+  .stage[data-skin="A"] .fig-wrap:not(.ghost)::before {
+    content: ""; position: absolute; left: 50%; top: 100%; width: 7cqw; height: 6cqh; transform: translateX(-50%);
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--warm) 28%, transparent), transparent 70%); pointer-events: none;
+    mask-image: repeating-linear-gradient(0deg, #000 0 .25cqh, transparent .25cqh .7cqh); -webkit-mask-image: repeating-linear-gradient(0deg, #000 0 .25cqh, transparent .25cqh .7cqh);
+  }
+  /* (d) 階層 5 の火の粉 */
+  .embers { position: absolute; inset: 0; pointer-events: none; display: none; overflow: hidden; }
+  .stage[data-skin="A"][data-floor="5"] .embers { display: block; }
+  .embers i {
+    position: absolute; bottom: -2%; width: .35cqw; height: .35cqw; border-radius: 50%;
+    background: color-mix(in srgb, var(--omen) 75%, var(--warm)); box-shadow: 0 0 .5cqw color-mix(in srgb, var(--omen) 60%, transparent);
+    opacity: 0; animation: ember linear infinite;
+  }
+  @keyframes ember { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: .9; } 50% { transform: translate(1.5cqw, -45%); } 100% { transform: translate(-1cqw, -95%); opacity: 0; } }
+  .embers i:nth-child(1) { left: 8%; animation-duration: 5.2s; animation-delay: 0s; }
+  .embers i:nth-child(2) { left: 16%; animation-duration: 6.4s; animation-delay: 1.1s; }
+  .embers i:nth-child(3) { left: 24%; animation-duration: 4.3s; animation-delay: 2.3s; }
+  .embers i:nth-child(4) { left: 33%; animation-duration: 6.9s; animation-delay: .6s; }
+  .embers i:nth-child(5) { left: 41%; animation-duration: 4.8s; animation-delay: 3.1s; }
+  .embers i:nth-child(6) { left: 49%; animation-duration: 5.7s; animation-delay: 1.8s; }
+  .embers i:nth-child(7) { left: 57%; animation-duration: 6.1s; animation-delay: 4s; }
+  .embers i:nth-child(8) { left: 65%; animation-duration: 4.5s; animation-delay: .3s; }
+  .embers i:nth-child(9) { left: 73%; animation-duration: 6.6s; animation-delay: 2.7s; }
+  .embers i:nth-child(10) { left: 81%; animation-duration: 5s; animation-delay: 1.4s; }
+  .embers i:nth-child(11) { left: 89%; animation-duration: 4.1s; animation-delay: 3.6s; }
+  .embers i:nth-child(12) { left: 95%; animation-duration: 6.8s; animation-delay: .9s; }
+  /* (e) 立ち絵のリムライト */
+  .stage[data-skin="A"] .fig-wrap:not(.ghost) .fig { filter: drop-shadow(0 0 1px var(--warm)) drop-shadow(0 .4cqh .8cqh rgba(0,0,0,.5)); }
+  /* (f) HP バーの 5 刻み目盛 */
+  .stage[data-skin="A"] .hpbar::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(90deg, transparent 0 calc(100% * 5 / var(--hp-max) - 1px), var(--ground) calc(100% * 5 / var(--hp-max) - 1px) calc(100% * 5 / var(--hp-max)));
+    opacity: .9;
+  }
+  .stage[data-skin="A"] .hpbar { box-shadow: inset 0 1px 0 rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.06); }
+  /* (g) スタミナのピップ = ランタンの硝子（warm の芯 + accent の縁） */
+  .stage[data-skin="A"] .pips:not(.enemy) i { border-radius: .35cqw .35cqw .5cqw .5cqw; background: rgba(0,0,0,.25); box-shadow: inset 0 0 .25cqw rgba(255,255,255,.08); }
+  .stage[data-skin="A"] .pips:not(.enemy) i.on {
+    background: radial-gradient(circle at 50% 58%, var(--warm) 0 28%, color-mix(in srgb, var(--warm) 40%, var(--accent)) 46%, color-mix(in srgb, var(--accent) 55%, transparent) 78%, transparent 100%);
+    border-color: var(--accent); box-shadow: inset 0 0 .3cqw rgba(255,255,255,.35), 0 0 .6cqw color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  /* (h) カード枠: 内側エンボス、選択中は accent の内グロー、種別アイコン */
+  .stage[data-skin="A"] .card { box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.09), inset 0 -1px 0 rgba(0,0,0,.4), inset 0 0 0 1px rgba(0,0,0,.25); }
+  .stage[data-skin="A"] .card.sel { box-shadow: var(--shadow), inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), inset 0 0 1.4cqw color-mix(in srgb, var(--accent) 22%, transparent); }
+  .stage[data-skin="A"] .card .c-name svg { stroke: var(--accent); }
+  /* (i) 予兆バナー: 筆のかすれ縁 + 墨の縁 */
+  .stage[data-skin="A"] .omen {
+    border-left: 0; padding-bottom: calc(.6cqh + .9cqh); padding-inline: 1.2cqw;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--omen) 30%, var(--panel)), var(--panel) 40%);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.65), var(--shadow);
+    clip-path: polygon(1.5% 0, 97% 0, 100% 14%, 98.5% 36%, 100% 58%, 97.5% 74%, 56% 74%, 50% 100%, 44% 74%, 2.5% 74%, 0 60%, 2% 38%, 0 18%);
+  }
+  .stage[data-skin="A"] .omen::after { display: none; }
+  /* (j) 四隅のビネット（常時 8%） */
+  .stage[data-skin="A"]::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 14; background: radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,.32) 100%); }
+  /* (k) 大きな数字は Shippori Mincho の太字、縁取り 1px */
+  .stage[data-skin="A"] .float.dmg { font-family: var(--f-disp); font-weight: 700; font-size: 2cqw; -webkit-text-stroke: 1px rgba(0,0,0,.65); paint-order: stroke fill; }
+
+  /* ---------- regions (L1) ---------- */
+  .panel { background: var(--panel-fill); backdrop-filter: var(--panel-blur); border-radius: var(--radius); }
+  .topbar {
+    position: absolute; inset: 0 0 auto 0; height: 7cqh;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    padding-inline: 1.4cqw; border-bottom: 1px solid var(--line); background: var(--panel-fill); backdrop-filter: var(--panel-blur);
+    font-size: .95cqw; z-index: 5;
+  }
+  .topbar .left { display: flex; gap: 1.6cqw; align-items: center; }
+  .topbar .mid { text-align: center; letter-spacing: .06em; }
+  .topbar .mid .turn { color: var(--ink-2); margin-inline: .6cqw; }
+  .topbar .mid .whose { color: var(--accent); }
+  .topbar .right { display: flex; justify-content: flex-end; align-items: center; gap: 1cqw; }
+  .topbar .right .ename { font-family: var(--f-disp); font-size: 1.15cqw; }
+  .meter { display: inline-flex; align-items: center; gap: .5cqw; color: var(--ink-2); }
+  .meter .blocks { display: inline-flex; gap: .12cqw; }
+  .meter .blocks i { display: block; width: .55cqw; height: 1.2cqh; background: var(--line); }
+  .meter .blocks i.on { background: var(--ink-2); }
+  .meter.miasma .blocks i.on { background: var(--omen); opacity: .85; }
+  .meter .num { color: var(--ink); }
+  .meter .sub { font-size: .8cqw; }
+  .btn {
+    font: inherit; font-size: .9cqw; color: var(--ink); background: transparent; border: 1px solid var(--line);
+    padding: .5cqh .9cqw; border-radius: var(--radius); cursor: pointer; letter-spacing: .04em;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+  .btn:disabled { opacity: .4; cursor: default; }
+
+  .arena {
+    position: absolute; left: 0; top: 7cqh; width: 100cqw; height: 51cqh; overflow: hidden;
+    background: radial-gradient(ellipse 70% 55% at 50% 85%, var(--fog), transparent 70%), linear-gradient(var(--arena-top), var(--arena-bot));
+  }
+  .arena .floor { position: absolute; left: 0; right: 0; bottom: 14%; height: var(--floor-h); background: var(--floor); }
+  .stage[data-skin="C"] .arena .floor { border-radius: 50% / 100%; transform: scaleX(1.02); }
+  .arena .dist-label {
+    position: absolute; left: 50%; bottom: 5%; transform: translateX(-50%);
+    color: var(--ink-2); font-size: .95cqw; letter-spacing: .12em;
+  }
+  .arena .dist-label b { color: var(--ink); font-family: var(--f-disp); font-size: 1.3cqw; font-weight: 700; margin-left: .3cqw; }
+
+  /* figures */
+  .fig-wrap {
+    position: absolute; bottom: 14%; left: 50%; width: 6cqw; height: 13.5cqw;
+    transform: translateX(-50%);
+    transition: left 320ms ease-in-out;
+    --dir: 1; --rot: 0deg; --sy: 1;
+  }
+  .fig-wrap.enemy { --dir: -1; }
+  .fig-wrap[data-posture="0"] { --rot: -12deg; --sy: 1.08; }
+  .fig-wrap[data-posture="1"] { --rot: 0deg; --sy: 1; }
+  .fig-wrap[data-posture="2"] { --rot: 8deg; --sy: .94; }
+  .fig-wrap::after {
+    content: ""; position: absolute; left: 50%; bottom: -1.6cqh; width: 11cqw; height: 3.2cqh; transform: translateX(-50%);
+    background: radial-gradient(ellipse at center, var(--glow), transparent 70%); pointer-events: none;
+  }
+  .fig {
+    position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;
+    transform-origin: 50% 100%;
+    transform: scaleX(var(--dir)) rotate(var(--rot)) scaleY(var(--sy));
+    transition: transform 200ms ease-in-out;
+    color: var(--fig-p); fill: currentColor; stroke: currentColor;
+  }
+  .fig-wrap.enemy .fig { color: var(--fig-e); }
+  .fig .outline { fill: none; stroke: var(--fig-stroke); stroke-width: 2; }
+  .fig .weapon { stroke: var(--ink-2); fill: none; stroke-linecap: round; }
+  .stage[data-skin="C"] .fig .weapon { stroke: var(--ink); }
+  .fig-wrap.ghost { opacity: 0; pointer-events: none; transition: opacity 200ms, left 200ms; }
+  .fig-wrap.ghost.show { opacity: .35; }
+  .fig-wrap.ghost::after { display: none; }
+  .fig-wrap .marker {
+    position: absolute; left: 50%; bottom: -.9cqh; width: .8cqw; height: .8cqw; border-radius: 50%; transform: translateX(-50%);
+    background: var(--accent); box-shadow: 0 0 .6cqw var(--accent);
+  }
+  .stage[data-skin="C"] .fig-wrap .marker { box-shadow: none; }
+
+  /* omen banner */
+  .omen {
+    position: absolute; left: 50%; bottom: 108%; transform: translateX(-50%);
+    white-space: nowrap; padding: .6cqh 1cqw; font-size: .95cqw;
+    background: var(--panel-fill); backdrop-filter: var(--panel-blur); border-left: .3cqw solid var(--omen); border-radius: var(--radius);
+    box-shadow: var(--shadow); letter-spacing: .04em;
+  }
+  .stage[data-skin="C"] .omen { border: 1px solid var(--omen); border-left-width: .3cqw; }
+  .omen .k { color: var(--omen); font-family: var(--f-disp); font-weight: 700; margin-right: .5cqw; }
+  .omen .sep { color: var(--ink-2); margin-inline: .4cqw; }
+  .omen.struck .body { text-decoration: line-through; color: var(--ink-2); }
+  .omen .after { display: none; color: var(--whiff); margin-left: .5cqw; }
+  .omen.struck .after { display: inline; }
+  .omen::after {
+    content: ""; position: absolute; left: 50%; top: 100%; width: 0; height: 0; transform: translateX(-50%);
+    border-left: .5cqw solid transparent; border-right: .5cqw solid transparent; border-top: .6cqh solid var(--omen);
+  }
+
+  /* target band on floor */
+  .band {
+    position: absolute; bottom: calc(14% + var(--floor-h) - .2cqh); height: 1.2cqh; width: 9%;
+    transform: translateX(-50%); transition: left 320ms ease-in-out, opacity 300ms;
+    opacity: 0;
+  }
+  .band.show { opacity: 1; }
+  .band.hit { background: var(--omen); box-shadow: 0 0 1.2cqw color-mix(in srgb, var(--omen) 60%, transparent); }
+  .band.half { background: color-mix(in srgb, var(--amber) 70%, transparent); }
+  .band.whiff { background: transparent; border: .12cqw dashed var(--whiff); }
+  .stage[data-skin="C"] .band.hit { box-shadow: none; }
+  .band .note {
+    position: absolute; left: 50%; bottom: 150%; transform: translateX(-50%); white-space: nowrap;
+    font-size: .85cqw; color: var(--ink-2); letter-spacing: .04em;
+  }
+  .band.hit .note b { color: var(--omen); }
+  .band.half .note b { color: var(--amber); }
+  .band.whiff .note b { color: var(--whiff); }
+  .band .note b { font-family: "IBM Plex Mono", monospace; }
+
+  /* turn banner + floats */
+  .tbanner {
+    position: absolute; left: 50%; top: 32%; transform: translateX(-50%);
+    font-family: var(--f-disp); font-size: 3cqw; letter-spacing: .3em; color: var(--ink); opacity: 0; pointer-events: none;
+    text-shadow: 0 .3cqh 1cqh rgba(0,0,0,.6);
+  }
+  .tbanner.enemy { color: var(--omen); }
+  .float {
+    position: absolute; transform: translateX(-50%); font-family: "IBM Plex Mono", monospace; font-weight: 600;
+    font-size: 1.6cqw; pointer-events: none; white-space: nowrap; text-shadow: 0 .2cqh .6cqh rgba(0,0,0,.6);
+  }
+  .float.dmg { color: var(--omen); }
+  .float.gray { color: var(--whiff); font-size: 1.1cqw; font-weight: 500; }
+  .float.good { color: var(--guard); font-size: 1.2cqw; }
+  .flash { position: absolute; inset: 0; background: var(--omen); opacity: 0; pointer-events: none; mix-blend-mode: screen; }
+
+  /* status band */
+  .status {
+    position: absolute; left: 0; top: 58cqh; width: 100cqw; height: 8cqh;
+    display: flex; justify-content: space-between; align-items: center; padding-inline: 4cqw;
+  }
+  .side { display: flex; flex-direction: column; gap: .6cqh; width: 26cqw; }
+  .side.enemy { align-items: flex-end; }
+  .side .row { display: flex; align-items: center; gap: .8cqw; }
+  .side.enemy .row { flex-direction: row-reverse; }
+  .who { font-family: var(--f-disp); font-size: 1.1cqw; color: var(--ink-2); letter-spacing: .1em; }
+  .hpbar { position: relative; width: 18cqw; height: 1.6cqh; background: var(--line); border-radius: var(--radius); overflow: hidden; }
+  .hpbar .hp-ghost { position: absolute; inset: 0 auto 0 0; background: var(--whiff); transition: width 300ms ease-out 500ms; }
+  .hpbar .hp-fill { position: absolute; inset: 0 auto 0 0; background: var(--warm); transition: width 300ms ease-out; }
+  .side.enemy .hpbar .hp-fill { background: var(--omen); }
+  .hp-text { font-size: 1.05cqw; min-width: 6.5cqw; }
+  .hp-text small { color: var(--ink-2); font-size: .85cqw; }
+  .shield {
+    display: inline-flex; align-items: center; gap: .35cqw; font-size: .95cqw; color: var(--guard);
+    border: 1px solid var(--guard); padding: .2cqh .6cqw; border-radius: var(--radius); font-family: "IBM Plex Mono", monospace;
+  }
+  .shield svg { width: 1cqw; height: 1cqw; fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .shield.zero { color: var(--ink-2); border-color: var(--line); }
+  .pips { display: inline-flex; gap: .3cqw; align-items: center; }
+  .pips i { display: block; width: 1.1cqw; height: 1.4cqh; border: 1px solid var(--line); border-radius: calc(var(--radius) / 2); background: transparent; transition: background 120ms, border-color 120ms; }
+  .pips i.on { background: var(--accent); border-color: var(--accent); }
+  .pips.enemy i { width: .8cqw; height: 1.1cqh; }
+  .pips.enemy i.on { background: var(--omen); border-color: var(--omen); opacity: .85; }
+  .pips i.lost { border-style: dashed; border-color: var(--omen); opacity: .55; }
+  .pips i.preview { animation: blink 600ms steps(2, end) infinite; }
+  .pips i.glow { box-shadow: 0 0 .8cqw var(--guard); border-color: var(--guard); }
+  @keyframes blink { 50% { opacity: .25; } }
+  .pips .brace-line { position: relative; width: 1px; height: 2.6cqh; background: var(--ink-2); margin-inline: .25cqw; }
+  .pips .brace-line::after {
+    content: "構え線"; position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
+    font-size: .7cqw; color: var(--ink-2); white-space: nowrap; font-family: var(--f-body); letter-spacing: .05em;
+  }
+
+  /* stamina band */
+  .stamina {
+    position: absolute; left: 0; top: 66cqh; width: 100cqw; height: 8cqh;
+    display: flex; justify-content: center; align-items: center; gap: 1.6cqw;
+  }
+  .stamina .lbl { font-size: 1cqw; letter-spacing: .08em; color: var(--ink-2); }
+  .stamina .lbl .num { color: var(--ink); font-size: 1.35cqw; }
+  .stamina .lbl small { font-size: .8cqw; }
+  .stamina .hint { font-size: .8cqw; color: var(--ink-2); }
+
+  /* hand */
+  .hand {
+    position: absolute; left: 0; top: 74cqh; width: 100cqw; height: 26cqh;
+    display: flex; justify-content: center; align-items: flex-end; gap: 1.2cqw; padding-bottom: 2cqh;
+  }
+  .card {
+    position: relative; width: 13cqw; height: 17cqh; padding: 1cqh 1cqw;
+    background: var(--panel-fill); backdrop-filter: var(--panel-blur); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); cursor: pointer; display: flex; flex-direction: column; gap: .5cqh;
+    transition: transform 120ms ease-out, border-color 120ms, opacity 200ms;
+  }
+  .stage[data-skin="C"] .card { background: var(--ground); }
+  .card:hover { border-color: var(--ink-2); }
+  .card.sel { transform: translateY(-12px); border-color: var(--accent); }
+  .card.dead { opacity: .4; cursor: default; }
+  .card .c-name { font-family: var(--f-disp); font-size: 1.3cqw; font-weight: 700; display: flex; align-items: center; gap: .5cqw; padding-right: 4.5cqw; }
+  .card .c-name svg { width: 1.1cqw; height: 1.1cqw; fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-linecap: round; }
+  .card .c-kind { font-size: .85cqw; color: var(--ink-2); letter-spacing: .08em; }
+  .card .c-pred { font-size: 1cqw; }
+  .card .c-pred .num { font-size: 1.15cqw; }
+  .card .c-pred .m { color: var(--ink-2); font-size: .8cqw; margin-left: .3cqw; }
+  .card .c-pred.opt .m { color: var(--accent); }
+  .card .c-pred.whiff .m { color: var(--whiff); }
+  .card .c-eff { font-size: .85cqw; color: var(--ink-2); margin-top: auto; }
+  .card .c-min { position: absolute; right: .8cqw; top: .8cqh; font-size: .75cqw; color: var(--ink-2); }
+
+  .chips {
+    position: absolute; left: 50%; bottom: calc(100% + .8cqh); transform: translateX(-50%);
+    display: flex; gap: .4cqw; opacity: 0; pointer-events: none; transition: opacity 150ms;
+  }
+  .card.sel .chips { opacity: 1; pointer-events: auto; }
+  .chip {
+    font: inherit; width: 7cqw; padding: .5cqh .5cqw; text-align: left; cursor: pointer;
+    background: var(--panel-fill); backdrop-filter: var(--panel-blur); color: var(--ink);
+    border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: .1cqh; line-height: 1.25;
+  }
+  .stage[data-skin="C"] .chip { background: var(--ground); }
+  .chip .t { font-size: .8cqw; color: var(--ink-2); letter-spacing: .06em; }
+  .chip .v { font-size: 1.05cqw; }
+  .chip .v .arrow { color: var(--ink-2); }
+  .chip .k { font-size: .7cqw; color: var(--accent); }
+  .chip.def { border-color: var(--accent); }
+  .chip:hover:not(:disabled) { border-color: var(--ink); transform: translateY(-2px); }
+  .chip:disabled { opacity: .35; cursor: default; }
+  .chip.pressed { transform: scale(.96); border-color: var(--accent); }
+
+  /* end turn, log */
+  .endturn { position: absolute; right: 2cqw; bottom: 3cqh; display: flex; flex-direction: column; align-items: flex-end; gap: .6cqh; }
+  .endturn .note { font-size: .8cqw; color: var(--ink-2); }
+  .endturn .note b { color: var(--guard); font-weight: 500; }
+  .endturn .btn { font-size: 1.1cqw; padding: 1cqh 2cqw; font-family: var(--f-disp); letter-spacing: .15em; }
+  .log { position: absolute; left: 2cqw; bottom: 3cqh; width: 22cqw; font-size: .8cqw; color: var(--ink-2); opacity: .8; line-height: 1.5; }
+  .log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log div:first-child { color: var(--ink); }
+
+  /* ---------- 手記の頁（共通の和紙） ---------- */
+  .paper {
+    position: relative; color: var(--paper-ink); background-color: var(--paper);
+    background-image:
+      repeating-linear-gradient(97deg, rgba(120,90,50,.06) 0 1px, transparent 1px 7px),
+      repeating-linear-gradient(-12deg, rgba(120,90,50,.045) 0 1px, transparent 1px 11px),
+      radial-gradient(ellipse at 30% 20%, rgba(255,255,255,.35), transparent 60%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .25 0 0 0 .14 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23p)'/%3E%3C/svg%3E");
+    box-shadow: inset 0 0 3cqw rgba(90,60,20,.18);
+  }
+  .paper .num { color: var(--paper-ink); }
+  .paper .unk { position: relative; color: var(--paper-ink); opacity: .65; filter: blur(.5px); letter-spacing: .3em; }
+  .paper .unk::before { content: ""; position: absolute; left: -.6cqw; top: -.2cqh; width: 2.4cqw; height: 1.6cqh; border-radius: 60% 40% 55% 45%; background: var(--paper-ink); opacity: .16; filter: blur(.35cqw); }
+  .paper .brush { border: 0; height: .35cqh; margin: .6cqh 0; background: linear-gradient(90deg, transparent, var(--paper-line) 6%, var(--paper-line) 70%, transparent); border-radius: 50%; opacity: .8; }
+
+  /* journal drawer (§4.7) */
+  .drawer {
+    position: absolute; top: 0; right: 0; width: 30cqw; height: 100%; z-index: 20;
+    transform: translateX(100%); transition: transform 220ms ease-out;
+    display: flex; flex-direction: column; box-shadow: -.6cqw 0 2cqw rgba(0,0,0,.5);
+    clip-path: polygon(0 0, 86% 0, 89% 2.5%, 87% 5%, 93% 7%, 91% 9.5%, 100% 11%, 100% 100%, 0 100%);
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer .tabs { display: flex; gap: .2cqw; padding: 1.2cqh 1.6cqw 0; background: rgba(0,0,0,.08); }
+  .drawer .tabs button {
+    font: inherit; font-family: var(--f-hand); font-size: 1.05cqw; color: var(--paper-ink); background: rgba(255,255,255,.35);
+    border: 1px solid var(--paper-line); border-bottom: 0; padding: .5cqh 1cqw; border-radius: .4cqw .4cqw 0 0; cursor: default;
+  }
+  .drawer .tabs button[aria-selected="true"] { background: var(--paper); box-shadow: 0 -2px 0 var(--paper-ink) inset; }
+  .drawer .tabs button:disabled { opacity: .45; }
+  .drawer .body { flex: 1; overflow: auto; padding: 1.6cqh 1.8cqw 1.2cqh; display: flex; flex-direction: column; gap: 1cqh; }
+  .drawer h2 { font-family: var(--f-hand); font-size: 1.9cqw; margin: 0; font-weight: 400; letter-spacing: .06em; }
+  .drawer .head { display: flex; gap: 1cqw; align-items: flex-start; }
+  .drawer .sketch { flex: 0 0 5.5cqw; height: 11cqw; opacity: .8; }
+  .drawer .sketch svg { width: 100%; height: 100%; overflow: visible; color: var(--paper-ink); fill: currentColor; stroke: currentColor; }
+  .drawer .sketch .weapon { fill: none; stroke-linecap: round; }
+  .drawer .reveal { font-size: .85cqw; opacity: .75; }
+  .drawer .reveal b { font-family: "IBM Plex Mono", monospace; font-weight: 500; }
+  .drawer h3 { font-family: var(--f-hand); font-size: 1.15cqw; margin: .4cqh 0 0; font-weight: 400; letter-spacing: .08em; }
+  .drawer .tree { margin: 0; padding: 0; list-style: none; font-size: .95cqw; }
+  .drawer .tree li { display: grid; grid-template-columns: 2.4cqw 1fr; gap: .6cqw; padding: .35cqh 0; }
+  .drawer .tree li + li { background: linear-gradient(90deg, var(--paper-line), transparent 85%) no-repeat 0 0 / 100% 1px; }
+  .drawer .tree li b { font-family: var(--f-hand); font-weight: 400; }
+  .drawer p { margin: 0; font-size: .95cqw; }
+  .drawer .memo { font-family: var(--f-hand); font-size: 1cqw; line-height: 1.7; padding-left: .8cqw; border-left: 2px solid var(--paper-line); }
+  .drawer .ro { font-size: .8cqw; opacity: .7; padding: .8cqh 1.8cqw 1.4cqh; border-top: 1px dashed var(--paper-line); }
+  .drawer .close { position: absolute; left: 1.4cqw; bottom: 1.2cqh; color: var(--paper-ink); border-color: var(--paper-line); }
+  .drawer .close:hover { border-color: var(--paper-ink); }
+
+  /* result overlay: win = 従来、lose = §4.6 の順序 */
+  .overlay { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2cqh; opacity: 0; pointer-events: none; background: rgba(0,0,0,.55); }
+  .overlay.show { opacity: 1; }
+  .overlay h1 { font-family: var(--f-disp); font-size: 4.5cqw; letter-spacing: .3em; margin: 0; font-weight: 700; }
+  .overlay.win h1 { color: var(--warm); }
+  .overlay .carry { font-size: 1.1cqw; padding: 1.2cqh 2cqw; border: 1px solid var(--line); background: var(--panel-fill); border-radius: var(--radius); }
+  .overlay .carry .num { color: var(--ink); }
+  .stage.lantern-out .fig-wrap::after { transform: translateX(-50%) scale(0); opacity: 0; transition: transform 600ms ease-in, opacity 600ms ease-in; animation: none; }
+  .lose { position: absolute; inset: 0; z-index: 30; pointer-events: none; opacity: 0; }
+  .lose.on { opacity: 1; pointer-events: auto; }
+  .lose .ink { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: var(--ink-flood); }
+  .lose .ink::before { content: ""; position: absolute; left: -5%; right: -5%; top: -4cqh; height: 6cqh; background: radial-gradient(ellipse 12% 100% at 10% 100%, var(--ink-flood) 60%, transparent 62%), radial-gradient(ellipse 18% 100% at 38% 100%, var(--ink-flood) 60%, transparent 62%), radial-gradient(ellipse 14% 100% at 66% 100%, var(--ink-flood) 60%, transparent 62%), radial-gradient(ellipse 20% 100% at 90% 100%, var(--ink-flood) 60%, transparent 62%); }
+  .lose h1 {
+    position: absolute; left: 50%; top: 24%; transform: translateX(-50%); margin: 0; white-space: nowrap;
+    font-family: var(--f-disp); font-size: 3.35cqw; font-weight: 700; color: var(--ink-2); letter-spacing: .1em; opacity: 0;
+  }
+  .lose .jpage {
+    position: absolute; left: 50%; bottom: 0; width: 44cqw; height: 52cqh; transform: translate(-50%, 110%);
+    padding: 3cqh 3cqw 2.4cqh; display: flex; flex-direction: column; gap: .9cqh; border-radius: .3cqw .3cqw 0 0;
+    clip-path: polygon(0 0, 92% 0, 94% 2%, 93% 4%, 100% 6%, 100% 100%, 0 100%);
+  }
+  .lose .jpage h2 { font-family: var(--f-hand); font-size: 2cqw; font-weight: 400; margin: 0; letter-spacing: .12em; }
+  .lose .jpage .where { font-size: .95cqw; opacity: .8; }
+  .lose .jpage .counts { font-size: .9cqw; display: flex; gap: 1.2cqw; }
+  .lose .jpage h3 { font-family: var(--f-hand); font-size: 1.15cqw; font-weight: 400; margin: .6cqh 0 0; }
+  .lose .jpage ol { margin: 0; padding-left: 1.6cqw; font-size: .95cqw; }
+  .lose .jpage ol li { padding: .3cqh 0; }
+  .lose .jpage ol li small { opacity: .7; margin-left: .5cqw; }
+  .lose .jpage .seal {
+    position: absolute; right: 2.4cqw; bottom: 2.2cqh; width: 4.2cqw; height: 4.2cqw; border-radius: 47% 53% 50% 50% / 52% 48% 52% 48%;
+    background: radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--omen) 80%, #fff), var(--omen) 60%, color-mix(in srgb, var(--omen) 70%, #000));
+    box-shadow: inset 0 0 0 .25cqw rgba(0,0,0,.12), inset 0 0 .6cqw rgba(0,0,0,.25), 0 .3cqh .6cqh rgba(0,0,0,.35);
+    display: flex; align-items: center; justify-content: center; font-family: var(--f-hand); font-size: 1.4cqw; color: rgba(255,255,255,.85); transform: rotate(-8deg);
+  }
+  .lose .jpage .go { margin-top: auto; align-self: flex-start; color: var(--paper-ink); border-color: var(--paper-ink); font-family: var(--f-disp); letter-spacing: .15em; font-size: 1.05cqw; padding: .9cqh 1.8cqw; }
+  .vignette { position: absolute; inset: 0; pointer-events: none; z-index: 15; box-shadow: inset 0 0 8cqw color-mix(in srgb, var(--omen) 55%, transparent); opacity: 0; transition: opacity 200ms; }
+  .vignette.show { opacity: 1; }
+  .stage.locked .card, .stage.locked .btn, .stage.locked .chip { pointer-events: none; }
+
+  /* ---------- layout L2 ---------- */
+  .stage[data-layout="L2"] .arena { width: 78cqw; height: 61cqh; }
+  .stage[data-layout="L2"] .status { top: 68cqh; width: 78cqw; padding-inline: 3cqw; }
+  .stage[data-layout="L2"] .stamina { left: 78cqw; top: 7cqh; width: 22cqw; height: 9cqh; flex-direction: column; gap: .6cqh; border-left: 1px solid var(--line); background: var(--panel-fill); }
+  .stage[data-layout="L2"] .hand {
+    left: 78cqw; top: 16cqh; width: 22cqw; height: 70cqh; flex-direction: column; justify-content: flex-start; align-items: stretch;
+    padding: 1cqh 1cqw 0; gap: 1cqh; border-left: 1px solid var(--line); background: var(--panel-fill);
+  }
+  .stage[data-layout="L2"] .card { width: auto; height: auto; min-height: 16cqh; }
+  .stage[data-layout="L2"] .card.sel { transform: translateX(-12px); }
+  .stage[data-layout="L2"] .chips { position: static; transform: none; flex-wrap: wrap; order: 10; margin-top: .4cqh; }
+  .stage[data-layout="L2"] .card:not(.sel) .chips { display: none; }
+  .stage[data-layout="L2"] .chip { width: calc(50% - .2cqw); }
+  .stage[data-layout="L2"] .endturn { right: 1cqw; bottom: 2cqh; width: 20cqw; align-items: stretch; }
+  .stage[data-layout="L2"] .endturn .note { text-align: right; }
+  .stage[data-layout="L2"] .log { left: 3cqw; bottom: 2cqh; width: 40cqw; }
+  .stage[data-layout="L2"] .drawer { width: 34cqw; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="toolbar" id="toolbar">
+    <div class="grp"><span>見た目</span>
+      <button data-set="skin" data-val="A" aria-pressed="true">A 霧と灯り</button>
+      <button data-set="skin" data-val="B" aria-pressed="false">B 鉄と革</button>
+      <button data-set="skin" data-val="C" aria-pressed="false">C 墨と朱</button>
+    </div>
+    <div class="grp"><span>階層</span>
+      <button data-set="floor" data-val="1" aria-pressed="true">1</button>
+      <button data-set="floor" data-val="3" aria-pressed="false">3</button>
+      <button data-set="floor" data-val="5" aria-pressed="false">5</button>
+    </div>
+    <div class="grp"><span>レイアウト</span>
+      <button data-set="layout" data-val="L1" aria-pressed="true">L1 手札下</button>
+      <button data-set="layout" data-val="L2" aria-pressed="false">L2 手札右</button>
+    </div>
+    <div class="grp"><span>開示度</span>
+      <button data-set="reveal" data-val="low" aria-pressed="false">低</button>
+      <button data-set="reveal" data-val="high" aria-pressed="true">高</button>
+    </div>
+    <div class="grp"><span>再生</span>
+      <button class="run" id="btnPlay">1 ターン再生</button>
+      <button id="exHit">被弾の例</button>
+      <button id="exBreak">崩しの例</button>
+      <button id="exWin">勝利の例</button>
+      <button id="exLose">敗北の例</button>
+      <button id="btnReset">初期状態に戻す</button>
+    </div>
+  </div>
+
+  <div class="stage" id="stage" data-skin="A" data-floor="1" data-layout="L1" data-reveal="high">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <symbol id="sym-figure" viewBox="0 0 80 160">
+          <circle cx="40" cy="18" r="12"/>
+          <path d="M28 34 Q40 29 52 34 L57 94 L23 94 Z"/>
+          <path d="M27 42 L10 80" stroke-width="9" stroke-linecap="round" fill="none"/>
+          <path d="M53 42 L72 66" stroke-width="9" stroke-linecap="round" fill="none"/>
+          <path d="M29 92 L22 156" stroke-width="12" stroke-linecap="round" fill="none"/>
+          <path d="M51 92 L58 156" stroke-width="12" stroke-linecap="round" fill="none"/>
+        </symbol>
+        <symbol id="sym-outline" viewBox="0 0 80 160">
+          <circle cx="40" cy="18" r="12"/>
+          <path d="M28 34 Q40 29 52 34 L57 94 L23 94 Z"/>
+          <path d="M27 42 L10 80" stroke-width="11" stroke-linecap="round"/>
+          <path d="M53 42 L72 66" stroke-width="11" stroke-linecap="round"/>
+          <path d="M29 92 L22 156" stroke-width="14" stroke-linecap="round"/>
+          <path d="M51 92 L58 156" stroke-width="14" stroke-linecap="round"/>
+        </symbol>
+      </defs>
+    </svg>
+
+    <!-- top bar -->
+    <div class="topbar">
+      <div class="left">
+        <span class="meter"><span>刻限</span><span class="blocks" id="mTime"></span><span class="num">6/10</span></span>
+        <span class="meter miasma"><span>瘴気</span><span class="blocks" id="mMiasma"></span><span class="num">32%</span><span class="sub">濃度 2 → 最大スタミナ −1</span></span>
+      </div>
+      <div class="mid disp"><span>第 2 階層</span><span class="turn">ターン <span class="num" id="turnNo">3</span></span><span class="whose" id="whose">あなたの番</span></div>
+      <div class="right">
+        <span class="ename">長柄の歪み兵</span>
+        <button class="btn" id="btnJournal">手記を開く（読むだけ）</button>
+      </div>
+    </div>
+
+    <!-- arena -->
+    <div class="arena" id="arena">
+      <div class="mist back"></div>
+      <div class="floor"></div>
+      <div class="embers" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="band" id="band"><span class="note" id="bandNote"></span></div>
+
+      <div class="fig-wrap ghost" id="ghost" data-posture="1">
+        <svg class="fig" viewBox="0 0 80 160" overflow="visible"><use href="#sym-figure"/></svg>
+      </div>
+
+      <div class="fig-wrap player" id="pw" data-posture="1">
+        <svg class="fig" id="pfig" viewBox="0 0 80 160" overflow="visible">
+          <use href="#sym-outline" class="outline"/>
+          <use href="#sym-figure"/>
+          <path class="weapon" d="M72 66 L100 34" stroke-width="4"/>
+        </svg>
+        <span class="marker"></span>
+      </div>
+
+      <div class="fig-wrap enemy" id="ew" data-posture="1">
+        <svg class="fig" id="efig" viewBox="0 0 80 160" overflow="visible">
+          <use href="#sym-outline" class="outline"/>
+          <use href="#sym-figure"/>
+          <path class="weapon" d="M72 66 L112 -30" stroke-width="3"/>
+          <path class="weapon" d="M108 -20 L118 -44 L100 -36 Z" stroke-width="2"/>
+        </svg>
+        <div class="omen" id="omen"><span class="k">予兆</span><span class="body" id="omenBody"></span><span class="after" id="omenAfter"></span></div>
+      </div>
+
+      <div class="mist front"></div>
+      <div class="dist-label">間合い<b id="distLabel">中</b></div>
+      <div class="tbanner" id="tbanner">あなたの番</div>
+      <div class="flash" id="flash"></div>
+    </div>
+
+    <!-- status -->
+    <div class="status">
+      <div class="side player">
+        <div class="row"><span class="who">あなた</span><span class="shield" id="pGuard"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg><span>Guard <span id="pGuardN">0</span></span></span></div>
+        <div class="row"><div class="hpbar" style="--hp-max:30"><div class="hp-ghost" id="pHpGhost"></div><div class="hp-fill" id="pHpFill"></div></div><span class="hp-text">HP <span id="pHp">22</span> <small>/ <span id="pHpMax">30</span></small></span></div>
+      </div>
+      <div class="side enemy">
+        <div class="row"><span class="who">長柄の歪み兵</span><span class="shield zero" id="eGuard"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg><span>Guard <span id="eGuardN">0</span></span></span></div>
+        <div class="row"><div class="hpbar" style="--hp-max:38"><div class="hp-ghost" id="eHpGhost"></div><div class="hp-fill" id="eHpFill"></div></div><span class="hp-text">HP <span id="eHp">33</span> <small>/ 38</small></span></div>
+        <div class="row"><span class="pips enemy" id="ePips"></span><span class="hint" style="font-size:.8cqw;color:var(--ink-2)">スタミナ <span class="num" id="eSta">7</span></span></div>
+      </div>
+    </div>
+
+    <!-- stamina -->
+    <div class="stamina">
+      <span class="lbl">スタミナ <span class="num" id="pSta">7</span> / <span class="num" id="pStaMax">9</span> <small>（最大 10 − 瘴気 1）</small></span>
+      <span class="pips" id="pPips"></span>
+      <span class="hint">残 3 以上で構え（Guard +2）</span>
+    </div>
+
+    <!-- hand -->
+    <div class="hand" id="hand"></div>
+
+    <div class="log" id="log"></div>
+    <div class="endturn">
+      <span class="note" id="endNote"></span>
+      <button class="btn primary" id="btnEnd">ターン終了</button>
+    </div>
+
+    <!-- journal drawer -->
+    <aside class="drawer paper" id="drawer" aria-hidden="true">
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true">敵の頁</button>
+        <button role="tab" aria-selected="false" disabled>ダンジョンの頁</button>
+        <button role="tab" aria-selected="false" disabled>メモ</button>
+      </div>
+      <div class="body">
+        <div class="head">
+          <div class="sketch" aria-hidden="true">
+            <svg viewBox="0 0 80 160"><use href="#sym-figure" opacity=".9"/><path class="weapon" d="M72 66 L112 -30" stroke-width="3"/><path class="weapon" d="M108 -20 L118 -44 L100 -36 Z" stroke-width="2"/></svg>
+          </div>
+          <div>
+            <h2>長柄の歪み兵</h2>
+            <div class="reveal">開示度 <b>2 / 3</b>　遭遇 <b>4</b> 回　右上の欠けが未開示の分</div>
+          </div>
+        </div>
+        <h3>間合いごとの傾向</h3>
+        <ul class="tree">
+          <li><b>近</b><span>石突きの押し込み。当てると相手を中へ押す</span></li>
+          <li><b>中</b><span>薙ぎ払いが主力。余裕があると柄で受ける</span></li>
+          <li><b>遠</b><span>穂先の突き。届かなければ間合いを取り直す</span></li>
+        </ul>
+        <h3>特殊行動</h3>
+        <p>空振りすると攻撃を捨てて、中へ 1 段階戻る。主力間合いは中、最大スタミナ <span class="num">10</span>。</p>
+        <h3>弱点・耐性</h3>
+        <p><span class="unk">？</span></p>
+        <h3>適応条件</h3>
+        <p><span class="unk">？</span></p>
+        <h3>自分のメモ</h3>
+        <p class="memo">近に張り付くと押し戻される。押し戻しの直後は薙ぎ払いが来る。<br>遠へ逃げても長くは続かない。</p>
+      </div>
+      <div class="ro">戦闘中は読むだけ。書けない。開くことで予兆の精度は変わらない。</div>
+      <button class="btn close" id="btnJournalClose">閉じる</button>
+    </aside>
+
+    <div class="vignette" id="vignette"></div>
+    <div class="overlay" id="overlay"><h1 id="ovTitle"></h1><div class="carry" id="ovCarry"></div></div>
+    <div class="lose" id="lose" aria-hidden="true">
+      <div class="ink" id="loseInk"></div>
+      <h1 id="loseTitle">力尽きた</h1>
+      <div class="jpage paper" id="losePage">
+        <h2>手記は ここに 残る</h2>
+        <div class="where">第 2 階層 / 灯りの絶えた回廊</div>
+        <div class="counts"><span>手記 <span class="num">12</span> 頁</span><span>敵の頁 <span class="num">3</span></span><span>ダンジョンの頁 <span class="num">5</span></span><span>メモ <span class="num">4</span></span></div>
+        <h3>遺産候補（次の生で 3 つまで選べる）</h3>
+        <ol>
+          <li>突き<small>習熟 3</small></li>
+          <li>長柄の歪み兵の頁<small>開示度 2</small></li>
+          <li>第 2 階層の近道<small>ダンジョンの頁</small></li>
+        </ol>
+        <div class="seal" aria-hidden="true">遺</div>
+        <button class="btn go" id="btnInherit">継承の間へ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stepbar" id="stepbar">待機中。カードを選ぶ → 投入量チップを押す → ターン終了、の 3 操作で 1 ターンが回ります。</div>
+  <p class="caption">1920×1080 基準の 16:9 モックアップ。数値は battle_core_v3 の定数（間合い補正 1.0 / 0.5 / 0.15、回復 近 1 / 中 2 / 遠 3、構え 残 3 以上で Guard +2）で確定計算しています。端数は切り捨て。手札はクリックで実際に操作できます。</p>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const D = ms => RM ? 1 : ms;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  const GAP = { 0: 13.54, 1: 27.08, 2: 42.71 };
+  const MULT = [1, 0.5, 0.15];
+  const MULT_LABEL = ['×1.0', '×0.5', '×0.15'];
+  const MULT_NOTE = ['最適', '間合い不適', 'ほぼ空振り'];
+  const R = ['近', '中', '遠'];
+  const RECOVER = [1, 2, 3];
+  const ICON = {
+    sword: '<svg viewBox="0 0 24 24"><path d="M4 20l10-10M14 10l4-4 2 2-4 4M3 21l2-2M14 4l2 2"/></svg>',
+    foot: '<svg viewBox="0 0 24 24"><path d="M7 4c2 0 3 2 3 5s-1 5-3 5-3-2-3-5 1-5 3-5zM6 16h3l.5 4h-4zM17 6c2 0 3 2 3 5s-1 5-3 5-3-2-3-5 1-5 3-5zM16 18h3l.5 4h-4z"/></svg>',
+    shield: '<svg viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg>',
+  };
+  const CARDS = {
+    thrust:   { name: '突き', type: 'attack', range: 0, min: 1, eff: '近接の最大火力。', tiers: [null, { p: 5 }, { p: 8 }, { p: 11 }] },
+    lunge:    { name: '踏み込み斬り', type: 'attack', range: 0, min: 1, eff: '斬りつつ詰める。最適間合いで T3 なら崩す。', tiers: [null, { p: 3, shift: -1 }, { p: 5, shift: -1 }, { p: 7, shift: -1, brk: 1 }] },
+    feint:    { name: '牽制', type: 'attack', range: 1, min: 0, eff: '削りつつ退く。', tiers: [{ p: 1, shift: 1 }, { p: 3, shift: 1 }, { p: 4, shift: 1 }, { p: 5, shift: 1, g: 1 }] },
+    step_in:  { name: '足捌き・前', type: 'move', range: null, min: 0, eff: '詰める。投入した分だけ Guard が付く。', tiers: [{ shift: -1 }, { shift: -1, g: 1 }, { shift: -1, g: 2 }, { shift: -1, g: 3 }] },
+    step_out: { name: '足捌き・後', type: 'move', range: null, min: 0, eff: '退く。投入した分だけ Guard が付く。', tiers: [{ shift: 1 }, { shift: 1, g: 1 }, { shift: 1, g: 2 }, { shift: 1, g: 3 }] },
+    brace:    { name: '呼吸を整える', type: 'guard', range: null, min: 0, eff: '守る。残 6 以上なら次ターン回復 +1。', tiers: [{ g: 2 }, { g: 4 }, { g: 6 }, { g: 8 }] },
+  };
+  const DECK = ['thrust', 'lunge', 'step_out', 'feint', 'step_in', 'brace', 'thrust', 'lunge', 'step_out', 'feint', 'step_in', 'brace'];
+  const EACT = {
+    sweep: { name: '薙ぎ払い', range: 1, min: 1, tiers: [null, { p: 4 }, { p: 6 }, { p: 8 }], pr: '4〜8' },
+    reach: { name: '穂先の突き', range: 2, min: 0, tiers: [{ p: 1 }, { p: 2 }, { p: 3 }, { p: 4 }], pr: '1〜4' },
+    shove: { name: '石突きの押し込み', range: 0, min: 0, tiers: [{ p: 1 }, { p: 2 }, { p: 2 }, { p: 3 }], pr: '1〜3', push: 1 },
+  };
+  const TREE = { 0: 'shove', 1: 'sweep', 2: 'reach' };
+  const HOME = 1;
+
+  const stage = $('stage');
+  let S, deckPos = 0, selected = -1, locked = false;
+
+  function initState() {
+    deckPos = 3;
+    S = {
+      turn: 3, dist: 1, px: 50 - GAP[1] / 2, ex: 50 + GAP[1] / 2,
+      pHp: 22, pHpMax: 30, pGuard: 0, pSta: 7, pMax: 9,
+      eHp: 33, eHpMax: 38, eGuard: 0, eSta: 7, eMax: 10,
+      omen: 'sweep', hand: ['thrust', 'lunge', 'step_out'],
+      log: ['ターン 3 開始。間合い「中」で回復 +2（5 → 7）。', '敵の予兆: 薙ぎ払い・狙い 中。', '敵「長柄の歪み兵」の薙ぎ払い。8 ダメージ。'],
+    };
+    selected = -1;
+  }
+
+  // ---------- pure helpers ----------
+  const diffOf = (dist, range) => range == null ? 0 : Math.abs(dist - range);
+  const pred = (p, range, dist) => Math.floor(p * MULT[diffOf(dist, range)]);
+  function defaultTier(card) {
+    let best = -1;
+    for (let n = card.min; n <= 3; n++) if (n <= S.pSta && S.pSta - n >= 3) best = n;
+    if (best < 0 && card.min <= S.pSta) best = card.min;
+    return best;
+  }
+  function chooseEnemyInvest(act) {
+    let best = -1;
+    for (let n = act.min; n <= 3; n++) if (n <= S.eSta && S.eSta - n >= 3) best = n;
+    if (best < 0) best = act.min <= S.eSta ? act.min : -1;
+    return best;
+  }
+  const kindLabel = c => c.type === 'attack' ? `攻撃・${R[c.range]}` : c.type === 'move' ? '移動' : '防御';
+  function tierText(c, t, dist) {
+    if (!t) return '—';
+    const parts = [];
+    if (t.p != null) parts.push(`<span class="v"><span>威力 ${t.p}</span> <span class="arrow">→</span> <span>${pred(t.p, c.range, dist)}</span></span>`);
+    const eff = [];
+    if (t.shift) eff.push(t.shift < 0 ? '詰め' : '退き');
+    if (t.g) eff.push(`Guard +${t.g}`);
+    if (t.brk) eff.push(`崩し ${t.brk}`);
+    if (eff.length) parts.push(`<span class="v" style="font-size:.85cqw">${eff.join(' / ')}</span>`);
+    return parts.join('');
+  }
+
+  // ---------- render ----------
+  function pipsHTML(cur, max, opts = {}) {
+    let h = '';
+    for (let i = 1; i <= max; i++) {
+      h += `<i class="${i <= cur ? 'on' : ''}" data-i="${i}"></i>`;
+      if (opts.brace && i === 3) h += '<span class="brace-line"></span>';
+    }
+    if (opts.lost) for (let i = 0; i < opts.lost; i++) h += '<i class="lost"></i>';
+    return h;
+  }
+  function render() {
+    $('turnNo').textContent = S.turn;
+    $('pHp').textContent = S.pHp; $('pHpMax').textContent = S.pHpMax;
+    $('pHpFill').style.width = (S.pHp / S.pHpMax * 100) + '%';
+    $('pHpGhost').style.width = (S.pHp / S.pHpMax * 100) + '%';
+    $('eHp').textContent = S.eHp;
+    $('eHpFill').style.width = (S.eHp / S.eHpMax * 100) + '%';
+    $('eHpGhost').style.width = (S.eHp / S.eHpMax * 100) + '%';
+    $('pGuardN').textContent = S.pGuard; $('pGuard').classList.toggle('zero', S.pGuard === 0);
+    $('eGuardN').textContent = S.eGuard; $('eGuard').classList.toggle('zero', S.eGuard === 0);
+    $('pSta').textContent = S.pSta; $('pStaMax').textContent = S.pMax;
+    $('pPips').innerHTML = pipsHTML(S.pSta, S.pMax, { brace: true, lost: 1 });
+    $('eSta').textContent = S.eSta;
+    $('ePips').innerHTML = pipsHTML(S.eSta, S.eMax);
+    $('distLabel').textContent = R[S.dist];
+    const pw = $('pw'), ew = $('ew');
+    pw.style.left = S.px + '%'; ew.style.left = S.ex + '%';
+    pw.dataset.posture = S.dist; ew.dataset.posture = S.dist;
+    renderOmen(); renderBand(null); renderHand(); renderEndNote(); renderLog();
+    $('vignette').classList.toggle('show', S.pHp / S.pHpMax < 0.3);
+  }
+  function renderOmen() {
+    const a = EACT[S.omen], high = stage.dataset.reveal === 'high';
+    $('omenBody').innerHTML = high
+      ? `${a.name}<span class="sep">／</span>狙い ${R[a.range]}<span class="sep">／</span>威力 ${a.pr}${a.push ? '<span class="sep">／</span>中へ押す' : ''}`
+      : `攻撃<span class="sep">／</span>狙い ${R[a.range]}`;
+  }
+  // ghostDist: null = current position, number = position after the selected move
+  function renderBand(ghostDist, verb) {
+    const a = EACT[S.omen], b = $('band');
+    const bandX = S.ex - GAP[a.range];
+    b.style.left = clamp(bandX, 4, 96) + '%';
+    const d = ghostDist == null ? S.dist : ghostDist;
+    const diff = diffOf(d, a.range);
+    b.classList.remove('hit', 'half', 'whiff');
+    b.classList.add(['hit', 'half', 'whiff'][diff]);
+    const name = stage.dataset.reveal === 'high' ? a.name : '攻撃';
+    const lead = ghostDist == null ? 'このままだと' : (verb || '動けば');
+    let txt = `${lead} ${name} <b>${MULT_LABEL[diff]}</b>`;
+    if (diff === 2) txt += ' → 敵は間合い取り直しに切替';
+    $('bandNote').innerHTML = txt;
+    b.classList.add('show');
+  }
+  function renderHand() {
+    const hand = $('hand'); hand.innerHTML = '';
+    S.hand.forEach((id, i) => {
+      const c = CARDS[id], def = defaultTier(c);
+      const el = document.createElement('div');
+      el.className = 'card' + (i === selected ? ' sel' : '') + (def < 0 ? ' dead' : '');
+      el.dataset.i = i; el.tabIndex = def < 0 ? -1 : 0; el.setAttribute('role', 'button');
+      const showT = def >= 0 ? c.tiers[def] : c.tiers[c.min];
+      const diff = c.type === 'attack' ? diffOf(S.dist, c.range) : 0;
+      let predLine = '';
+      if (c.type === 'attack') predLine = `<div class="c-pred ${diff === 0 ? 'opt' : diff === 2 ? 'whiff' : ''}">威力 <span class="num">${showT.p}</span> → <span class="num">${pred(showT.p, c.range, S.dist)}</span><span class="m">${MULT_NOTE[diff]} ${MULT_LABEL[diff]}</span></div>`;
+      else if (c.type === 'move') predLine = `<div class="c-pred">${showT.shift < 0 ? '詰め' : '退き'}${showT.g ? ` <span class="num">Guard +${showT.g}</span>` : ''}<span class="m">${S.dist + showT.shift < 0 || S.dist + showT.shift > 2 ? '端で止まる' : `${R[S.dist]} → ${R[S.dist + showT.shift]}`}</span></div>`;
+      else predLine = `<div class="c-pred">Guard <span class="num">+${showT.g}</span></div>`;
+      const icon = c.type === 'attack' ? ICON.sword : c.type === 'move' ? ICON.foot : ICON.shield;
+      let chips = '<div class="chips">';
+      for (let n = 0; n <= 3; n++) {
+        const t = c.tiers[n];
+        const dis = !t || n < c.min || n > S.pSta;
+        const keep = t && S.pSta - n >= 3;
+        chips += `<button class="chip ${n === def ? 'def' : ''}" data-n="${n}" ${dis ? 'disabled' : ''}><span class="t">投入 ${n}${n === c.min && c.min > 0 ? '（最低）' : ''}</span>${tierText(c, t, S.dist)}<span class="k">${keep && n === def ? '構え維持' : (t && !keep ? '構えなし' : '&nbsp;')}</span></button>`;
+      }
+      chips += '</div>';
+      el.innerHTML = `${chips}<div class="c-name">${icon}${c.name}</div><div class="c-kind">${kindLabel(c)}</div>${predLine}<div class="c-eff">${c.eff}</div>${c.min ? '<div class="c-min">最低投入 1</div>' : ''}`;
+      hand.appendChild(el);
+    });
+  }
+  function renderEndNote() {
+    $('endNote').innerHTML = S.pSta >= 3 ? `今終えると 残 ${S.pSta} → <b>構え Guard +2</b>` : `今終えると 残 ${S.pSta} → 構えなし`;
+  }
+  function renderLog() { $('log').innerHTML = S.log.slice(0, 3).map(l => `<div>${l}</div>`).join(''); }
+  function addLog(t) { S.log.unshift(t); renderLog(); }
+  function setStep(t) { $('stepbar').innerHTML = t; }
+
+  // ---------- animation helpers ----------
+  function anim(el, kf, o) { return el.animate(kf, { fill: 'none', ...o, duration: D(o.duration) }).finished; }
+  function floatText(wrap, text, cls, dur = 600, dy = -6) {
+    const f = document.createElement('div');
+    f.className = 'float ' + cls; f.textContent = text;
+    const r = wrap.getBoundingClientRect(), a = $('arena').getBoundingClientRect();
+    f.style.left = ((r.left + r.width / 2 - a.left) / a.width * 100) + '%';
+    f.style.top = ((r.top - a.top) / a.height * 100 - 4) + '%';
+    $('arena').appendChild(f);
+    anim(f, [{ transform: 'translate(-50%,0)', opacity: 1 }, { transform: `translate(-50%,${dy}cqh)`, opacity: 0 }], { duration: dur, easing: 'ease-out' }).then(() => f.remove());
+  }
+  function banner(text, enemy, dur = 300) {
+    const b = $('tbanner'); b.textContent = text; b.classList.toggle('enemy', !!enemy);
+    return anim(b, [{ opacity: 0, transform: 'translate(-50%,.5cqh)' }, { opacity: 1, transform: 'translate(-50%,0)', offset: .3 }, { opacity: 1, offset: .7 }, { opacity: 0 }], { duration: dur + 700, easing: 'ease-out' });
+  }
+  function popBadge(el) { return anim(el, [{ transform: 'scale(1)' }, { transform: 'scale(1.35)', offset: .4 }, { transform: 'scale(1)' }], { duration: 300, easing: 'ease-out' }); }
+  function shatterBadge(el) { return anim(el, [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.5) rotate(-8deg)', opacity: 0, offset: .6 }, { transform: 'scale(1)', opacity: 1 }], { duration: 200 * 3, easing: 'ease-out' }); }
+  function pipLight(container, from, to, gapMs = 80) {
+    const pips = [...container.querySelectorAll('i[data-i]')];
+    pips.forEach(p => { const i = +p.dataset.i; if (i > from && i <= to) setTimeout(() => p.classList.add('on'), D(gapMs) * (i - from - 1)); });
+  }
+  function pipDrop(container, from, count, gapMs = 60) {
+    const pips = [...container.querySelectorAll('i[data-i]')];
+    for (let k = 0; k < count; k++) {
+      const p = pips.find(x => +x.dataset.i === from - k);
+      if (p) setTimeout(() => { anim(p, [{ opacity: 1 }, { opacity: 0 }], { duration: 60 }).then(() => p.classList.remove('on')); }, D(gapMs) * k);
+    }
+  }
+  function pipShatter(container, idx) {
+    const p = container.querySelector(`i[data-i="${idx}"]`);
+    if (!p) return Promise.resolve();
+    return anim(p, [{ transform: 'translateY(0) rotate(0)', opacity: 1 }, { transform: 'translateY(2.4cqh) rotate(40deg)', opacity: 0 }], { duration: 300, easing: 'ease-in' }).then(() => p.classList.remove('on'));
+  }
+  function pipGlow(container, upto) {
+    container.querySelectorAll('i[data-i]').forEach(p => { if (+p.dataset.i <= upto) { p.classList.add('glow'); setTimeout(() => p.classList.remove('glow'), D(250) + 400); } });
+  }
+  // Concrete base transform for a figure (same formula as the CSS), so WAAPI keyframes never depend on var() resolution.
+  const POSTURE = { 0: [-12, 1.08], 1: [0, 1], 2: [8, .94] };
+  function baseT(wrap, rotDelta = 0) {
+    const dir = wrap.classList.contains('enemy') ? -1 : 1;
+    const [rot, sy] = POSTURE[wrap.dataset.posture || 1];
+    return `scaleX(${dir}) rotate(${rot + rotDelta}deg) scaleY(${sy})`;
+  }
+  function lunge(figWrap, dir, dist = 3) {
+    const fig = figWrap.querySelector('.fig'), b = baseT(figWrap);
+    return anim(fig, [
+      { transform: `translateX(0) ${b}`, easing: 'ease-out' },
+      { transform: `translateX(${dir * dist}cqw) ${b}`, offset: .375, easing: 'linear' },
+      { transform: `translateX(${dir * dist}cqw) ${b}`, offset: .54, easing: 'ease-in-out' },
+      { transform: `translateX(0) ${b}` },
+    ], { duration: 480 });
+  }
+  function hitFlash() { return anim($('flash'), [{ opacity: 0 }, { opacity: .25, offset: .3 }, { opacity: 0 }], { duration: 160 }); }
+  function stagger(figWrap) {
+    const fig = figWrap.querySelector('.fig');
+    return anim(fig, [{ transform: baseT(figWrap, -6) }, { transform: baseT(figWrap) }], { duration: 400, easing: 'ease-out' });
+  }
+  function setHpBars() { $('pHpFill').style.width = (S.pHp / S.pHpMax * 100) + '%'; $('pHpGhost').style.width = (S.pHp / S.pHpMax * 100) + '%'; $('eHpFill').style.width = (S.eHp / S.eHpMax * 100) + '%'; $('eHpGhost').style.width = (S.eHp / S.eHpMax * 100) + '%'; }
+  function recenterIfNeeded() {
+    if (S.px < 5 || S.ex > 95) { const g = S.ex - S.px; S.px = 50 - g / 2; S.ex = 50 + g / 2; $('pw').style.left = S.px + '%'; $('ew').style.left = S.ex + '%'; renderBand(null); }
+  }
+
+  // ---------- actions (interactive + playback share these) ----------
+  function selectCard(i) {
+    selected = (selected === i) ? -1 : i;
+    renderHand();
+    const ghost = $('ghost');
+    if (selected < 0) { ghost.classList.remove('show'); renderBand(null); clearPreview(); return; }
+    const c = CARDS[S.hand[selected]], def = defaultTier(c);
+    if (def < 0) { selected = -1; renderHand(); return; }
+    previewPips(def);
+    const t = c.tiers[def];
+    if (t.shift) {
+      const nd = clamp(S.dist + t.shift, 0, 2);
+      if (nd !== S.dist) {
+        ghost.style.left = (S.ex - GAP[nd]) + '%'; ghost.dataset.posture = nd; ghost.classList.add('show');
+        renderBand(nd, t.shift > 0 ? '退けば' : '詰めれば');
+        return;
+      }
+    }
+    ghost.classList.remove('show'); renderBand(null);
+  }
+  function previewPips(n) { clearPreview(); $('pPips').querySelectorAll('i[data-i]').forEach(p => { const i = +p.dataset.i; if (i > S.pSta - n && i <= S.pSta) p.classList.add('preview'); }); }
+  function clearPreview() { $('pPips').querySelectorAll('.preview').forEach(p => p.classList.remove('preview')); }
+
+  async function playCard(i, n) {
+    const id = S.hand[i], c = CARDS[id], t = c.tiers[n];
+    if (!t || n < c.min || n > S.pSta) return;
+    $('ghost').classList.remove('show'); clearPreview();
+    const cardEl = $('hand').querySelector(`.card[data-i="${i}"]`);
+    // 4. pay + card flies
+    pipDrop($('pPips'), S.pSta, n, 60);
+    S.pSta -= n;
+    if (cardEl) await anim(cardEl, [{ transform: 'translateY(-12px)', opacity: 1 }, { transform: 'translate(0,-16cqh) scale(.8)', opacity: 0 }], { duration: 220, easing: 'ease-in' });
+    S.hand.splice(i, 1); selected = -1; renderHand(); $('pSta').textContent = S.pSta;
+    // resolution order: damage -> move -> extra (diff 0 only)
+    const diff = c.type === 'attack' ? diffOf(S.dist, c.range) : 0;
+    if (t.p != null) {
+      const raw = pred(t.p, c.range, S.dist);
+      const dmg = Math.max(0, raw - S.eGuard);
+      const guardUsed = Math.min(S.eGuard, raw);
+      lunge($('pw'), 1);
+      await sleep(D(180));
+      if (diff === 2) { floatText($('ew'), `空振り ${raw}`, 'gray'); }
+      else { hitFlash(); floatText($('ew'), `−${dmg}`, 'dmg'); if (guardUsed) floatText($('ew'), `Guard −${guardUsed}`, 'gray', 600, -10); }
+      S.eGuard -= guardUsed; S.eHp = Math.max(0, S.eHp - dmg); $('eHp').textContent = S.eHp; $('eGuardN').textContent = S.eGuard; $('eGuard').classList.toggle('zero', S.eGuard === 0); setHpBars();
+      addLog(`「${c.name}」T${n}。${diff === 2 ? `空振り（${raw}）` : `${dmg} ダメージ`}。`);
+      await sleep(D(300));
+    }
+    if (t.shift) {
+      const nd = clamp(S.dist + t.shift, 0, 2);
+      if (nd !== S.dist) {
+        S.dist = nd; S.px = S.ex - GAP[nd];
+        $('pw').style.left = S.px + '%'; $('pw').dataset.posture = nd;
+        setTimeout(() => { $('distLabel').textContent = R[nd]; }, D(150));
+        await sleep(D(320));
+        renderBand(null); addLog(`間合いが「${R[nd]}」に。`); recenterIfNeeded();
+      }
+    }
+    if (t.g) { S.pGuard += t.g; $('pGuardN').textContent = S.pGuard; $('pGuard').classList.remove('zero'); floatText($('pw'), `Guard +${t.g}`, 'good'); await popBadge($('pGuard')); }
+    if (t.brk && diff === 0) {
+      addLog(`崩し。敵のスタミナ −${t.brk}。`);
+      floatText($('ew'), `崩し −${t.brk}`, 'gray', 700, -8);
+      pipShatter($('ePips'), S.eSta); S.eSta = Math.max(0, S.eSta - t.brk); $('eSta').textContent = S.eSta;
+      await stagger($('ew'));
+    }
+    if (S.eHp <= 0) { await showWin(); return; }
+    renderHand(); renderEndNote();
+  }
+
+  async function endTurn() {
+    selected = -1; $('ghost').classList.remove('show'); clearPreview();
+    // 6. brace
+    if (S.pSta >= 3) {
+      pipGlow($('pPips'), 3);
+      S.pGuard += 2; $('pGuardN').textContent = S.pGuard; $('pGuard').classList.remove('zero');
+      floatText($('pw'), '構え Guard +2', 'good', 700, -8);
+      await popBadge($('pGuard'));
+      addLog(`構え。残 ${S.pSta} → Guard +2。`);
+    }
+    // 7. discard
+    const cards = [...$('hand').querySelectorAll('.card')];
+    await Promise.all(cards.map(el => anim(el, [{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(6cqh)', opacity: 0 }], { duration: 200, easing: 'ease-in' })));
+    S.hand = []; renderHand();
+    await enemyPhase();
+    if (S.pHp <= 0) return;
+    await newTurn();
+  }
+
+  async function enemyPhase() {
+    $('whose').textContent = '敵の番';
+    await banner('敵の番', true, 400);
+    // 8. guard reset, recover
+    S.eGuard = 0; $('eGuardN').textContent = 0; $('eGuard').classList.add('zero');
+    const rec = RECOVER[S.dist], before = S.eSta;
+    S.eSta = Math.min(S.eMax, S.eSta + rec); pipLight($('ePips'), before, S.eSta, 80); $('eSta').textContent = S.eSta;
+    await sleep(D(80 * rec + 200));
+    // 9. resolve omen
+    const a = EACT[S.omen], diff = diffOf(S.dist, a.range);
+    if (diff === 2) {
+      $('omenAfter').textContent = '空振り → 間合い取り直し'; $('omen').classList.add('struck');
+      await sleep(D(200));
+      const nd = S.dist + (HOME < S.dist ? -1 : HOME > S.dist ? 1 : 0);
+      if (nd !== S.dist) { S.dist = nd; S.ex = S.px + GAP[nd]; $('ew').style.left = S.ex + '%'; $('ew').dataset.posture = nd; $('pw').dataset.posture = nd; setTimeout(() => { $('distLabel').textContent = R[nd]; }, D(150)); await sleep(D(320)); }
+      addLog(`敵「${a.name}」は空振り。間合い取り直しで「${R[S.dist]}」へ。`);
+      recenterIfNeeded();
+    } else {
+      const n = chooseEnemyInvest(a);
+      const t = n >= 0 ? a.tiers[n] : null;
+      if (t) {
+        S.eSta -= n; $('eSta').textContent = S.eSta; pipDrop($('ePips'), S.eSta + n, n, 60);
+        const raw = pred(t.p, a.range, S.dist), dmg = Math.max(0, raw - S.pGuard), gUsed = Math.min(S.pGuard, raw);
+        const swing = lunge($('ew'), -1);
+        await sleep(D(180));
+        if (gUsed) { floatText($('pw'), `Guard −${gUsed}`, 'gray', 600, -10); shatterBadge($('pGuard')); }
+        if (dmg > 0) { hitFlash(); floatText($('pw'), `−${dmg}`, 'dmg'); }
+        else floatText($('pw'), '受けきった', 'good');
+        S.pGuard -= gUsed; S.pHp = Math.max(0, S.pHp - dmg);
+        $('pGuardN').textContent = S.pGuard; $('pGuard').classList.toggle('zero', S.pGuard === 0); $('pHp').textContent = S.pHp; setHpBars();
+        $('vignette').classList.toggle('show', S.pHp / S.pHpMax < 0.3);
+        addLog(`敵「${a.name}」T${n}。${dmg} ダメージ${gUsed ? `（Guard で ${gUsed} 軽減）` : ''}。`);
+        await swing;
+        if (a.push && S.dist === 0) { S.dist = 1; S.px = S.ex - GAP[1]; $('pw').style.left = S.px + '%'; $('pw').dataset.posture = 1; $('ew').dataset.posture = 1; setTimeout(() => { $('distLabel').textContent = '中'; }, D(150)); await sleep(D(320)); addLog('押し込まれて間合いが「中」に。'); recenterIfNeeded(); }
+        await sleep(D(400));
+        if (S.pHp <= 0) { await showLose(); return; }
+      } else addLog('敵は動けない（スタミナ不足）。');
+    }
+    // 11. next omen
+    S.omen = TREE[S.dist];
+    $('omen').classList.remove('struck'); renderOmen();
+    await anim($('omen'), [{ transform: 'translate(-50%,-2cqh)', opacity: 0 }, { transform: 'translate(-50%,0)', opacity: 1 }], { duration: 260, easing: 'ease-out' });
+    renderBand(null);
+    addLog(`敵の予兆: ${EACT[S.omen].name}・狙い ${R[EACT[S.omen].range]}。`);
+  }
+
+  async function newTurn() {
+    S.turn++; $('turnNo').textContent = S.turn; $('whose').textContent = 'あなたの番';
+    S.pGuard = 0; $('pGuardN').textContent = 0; $('pGuard').classList.add('zero');
+    banner('あなたの番', false, 300);
+    const rec = RECOVER[S.dist], before = S.pSta;
+    S.pSta = Math.min(S.pMax, S.pSta + rec);
+    $('pPips').innerHTML = pipsHTML(before, S.pMax, { brace: true, lost: 1 });
+    pipLight($('pPips'), before, S.pSta, 80); $('pSta').textContent = S.pSta;
+    floatText($('pw'), `+${S.pSta - before}（${R[S.dist]}）`, 'good', 700, -8);
+    addLog(`ターン ${S.turn} 開始。間合い「${R[S.dist]}」で回復 +${S.pSta - before}（${before} → ${S.pSta}）。`);
+    S.hand = [];
+    for (let k = 0; k < 3; k++) { S.hand.push(DECK[deckPos % DECK.length]); deckPos++; }
+    renderHand(); renderEndNote();
+    const cards = [...$('hand').querySelectorAll('.card')];
+    cards.forEach((el, k) => anim(el, [{ transform: 'translateY(8cqh)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }], { duration: 220, easing: 'ease-out', delay: D(90) * k }));
+    await sleep(D(220 + 180));
+  }
+
+  async function showWin() {
+    addLog('撃破。');
+    await anim($('ew').querySelector('.fig'), [{ transform: baseT($('ew')), opacity: 1 }, { transform: 'scaleX(-1) rotate(70deg) scaleY(.9)', opacity: .35 }], { duration: 800, easing: 'ease-in', fill: 'forwards' });
+    const ov = $('overlay'); ov.className = 'overlay win show';
+    $('ovTitle').textContent = '撃破';
+    $('ovCarry').innerHTML = `持ち越し: HP <span class="num">${S.pHp} / ${S.pHpMax}</span> ・ スタミナ <span class="num">${S.pSta} / ${S.pMax}</span>`;
+  }
+  // §4.6: 灯りが消える 600ms → 墨が満ちる 800ms ease-in → 「力尽きた」300ms（字間を広げる）→ 1 秒 → 手記の頁がせり上がる 400ms ease-out
+  async function showLose() {
+    const lose = $('lose'); lose.classList.add('on'); lose.setAttribute('aria-hidden', 'false');
+    stage.classList.add('lantern-out');
+    await sleep(D(600));
+    await anim($('loseInk'), [{ height: '0%' }, { height: '100%' }], { duration: 800, easing: 'ease-in', fill: 'forwards' });
+    await anim($('loseTitle'), [{ opacity: 0, letterSpacing: '.1em' }, { opacity: 1, letterSpacing: '.5em' }], { duration: 300, easing: 'ease-out', fill: 'forwards' });
+    await sleep(D(1000));
+    await anim($('losePage'), [{ transform: 'translate(-50%, 110%)' }, { transform: 'translate(-50%, 0)' }], { duration: 400, easing: 'ease-out', fill: 'forwards' });
+  }
+  function hideOverlay() {
+    const ov = $('overlay'); ov.getAnimations().forEach(a => a.cancel()); ov.className = 'overlay';
+    $('ew').querySelector('.fig').getAnimations().forEach(a => a.cancel());
+    const lose = $('lose'); lose.classList.remove('on'); lose.setAttribute('aria-hidden', 'true');
+    [$('loseInk'), $('loseTitle'), $('losePage')].forEach(el => el.getAnimations().forEach(a => a.cancel()));
+    stage.classList.remove('lantern-out');
+  }
+
+  // ---------- scripted playback ----------
+  let playing = false;
+  async function playback() {
+    if (playing) return;
+    playing = true; lock(true);
+    reset(false);
+    const t0 = performance.now();
+    const until = ms => sleep(Math.max(0, ms - (performance.now() - t0)));
+    const step = (n, label, spec) => setStep(`<b>${n}/11 ${label}</b>　${spec}`);
+    // Scenario that stays inside the rules: start at 近 with the omen 石突きの押し込み（狙い 近）.
+    // 退く → 牽制で削りつつもう 1 段退く → 遠 で敵の攻撃が空振り → 敵は間合い取り直し → 次の予兆。
+    S.dist = 0; S.px = 50 - GAP[0] / 2; S.ex = 50 + GAP[0] / 2; S.omen = 'shove';
+    S.pSta = 6; S.hand = ['thrust', 'feint', 'step_out']; S.log = ['ターン 2。近に張り付いて突きを当てた。', '敵の予兆: 石突きの押し込み・狙い 近。'];
+    render();
+    S.pSta = 6; $('pPips').innerHTML = pipsHTML(6, S.pMax, { brace: true, lost: 1 }); $('pSta').textContent = 6;
+    $('hand').innerHTML = ''; $('band').classList.remove('show');
+
+    step(1, 'ターン開始', '番バナー 300ms fade ／ 回復ピップ +1（近）80ms 間隔 ／ 手札 220ms ease-out 90ms ずらし');
+    banner('あなたの番', false, 300);
+    pipLight($('pPips'), 6, 7, 80); S.pSta = 7; $('pSta').textContent = 7;
+    addLog('ターン 3 開始。間合い「近」で回復 +1（6 → 7）。');
+    renderHand(); renderEndNote();
+    [...$('hand').querySelectorAll('.card')].forEach((el, k) => anim(el, [{ transform: 'translateY(8cqh)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }], { duration: 220, easing: 'ease-out', delay: D(90) * k }));
+
+    await until(1200);
+    step(2, '予兆確認', '予兆バナー 250ms 明滅 1 回 ／ 床の狙い帯 300ms fade-in（的中色 ×1.0）');
+    anim($('omen'), [{ opacity: 1 }, { opacity: .3, offset: .5 }, { opacity: 1 }], { duration: 250 });
+    renderBand(null);
+
+    await until(2000);
+    step(3, 'カード選択', '「足捌き・後」12px 持ち上げ 120ms ease-out ／ チップ 150ms fade-in ／ 残像 200ms ／ 狙い帯を半減色（×0.5）へ');
+    selectCard(2);
+
+    await until(3200);
+    step(4, '投入 T1', 'チップ押下 ／ ピップ 1 個 60ms 消灯 ／ カードが中央へ 220ms ease-in');
+    const chip = $('hand').querySelector('.card.sel .chip[data-n="1"]'); if (chip) chip.classList.add('pressed');
+    const p4 = playCard(2, 1);
+    await until(3600);
+    step(5, '移動の解決', '人型を中へ 320ms ease-in-out ／ 体勢 200ms ／ ラベル入替 150ms ／ 盾バッジ Guard +1 を 300ms ポップ ／ 狙い帯を半減色へ更新');
+    await p4;
+
+    await until(4600);
+    step(6, 'カード選択 2 → 投入 T1', '「牽制」中で最適 ×1.0、威力 3 → 3 ／ 踏み込み 180ms・止め 80ms・戻り 220ms ／ ヒットフラッシュ 160ms「−3」600ms 上昇 ／ 退きで遠へ 320ms ／ 狙い帯を空振り（灰の破線）へ「敵は間合い取り直しに切替」');
+    selectCard(1);
+    await until(4900);
+    const chip2 = $('hand').querySelector('.card.sel .chip[data-n="1"]'); if (chip2) chip2.classList.add('pressed');
+    await playCard(1, 1);
+
+    await until(6200);
+    step(7, 'カード選択 3 → 投入 T2', '「突き」遠なので威力 8 → 1（×0.15）／ ピップ 2 個 60ms ずつ ／ ヒットフラッシュ無し、灰文字「空振り 1」600ms 上昇 ／ 敵 HP 300ms で −1');
+    selectCard(0);
+    await until(6500);
+    const chip3 = $('hand').querySelector('.card.sel .chip[data-n="2"]'); if (chip3) chip3.classList.add('pressed');
+    await playCard(0, 2);
+
+    await until(7600);
+    step(8, 'ターン終了', '残 3 ≥ 3 → ピップ 1〜3 が 250ms 光る ／ 盾バッジ Guard 1 → 3 を 300ms ポップ（構え +2）／ 手札は空');
+    const p8 = endTurn();
+    await until(8600);
+    step(9, '敵フェーズ', '「敵の番」400ms ／ 敵 Guard 0 ／ 敵ピップ +3（遠）80ms 間隔 ／ 予兆に取り消し線 200ms「空振り → 間合い取り直し」／ 敵が中へ 320ms スライド');
+    await until(10200);
+    step(10, '次の予兆', '新バナーが頭上から 260ms で降下「薙ぎ払い ／ 狙い 中」／ 狙い帯 300ms fade-in（的中色）「このままだと 薙ぎ払い ×1.0」');
+    await p8;
+    await until(11400);
+    step(11, '終了', '「あなたの番」に戻る。1 秒後に初期状態へ');
+    await until(12400);
+    reset(true);
+    lock(false); playing = false;
+    setStep('再生完了。手札を直接操作して試せます。');
+  }
+  // ---------- example states ----------
+  async function exHit() {
+    if (playing) return; lock(true); reset(false);
+    S.pHp = 11; S.pGuard = 3; render(); $('pGuard').classList.remove('zero');
+    setStep('<b>被弾の例</b>　薙ぎ払い 6 が Guard 3 に当たる: 盾バッジ割れ 200ms → 「Guard −3」灰 / 「−3」朱 600ms 上昇 → HP バー 300ms、灰の残像 500ms 遅れ → HP 30% 未満で朱のビネット 200ms');
+    const swing = lunge($('ew'), -1); await sleep(D(180));
+    shatterBadge($('pGuard')); floatText($('pw'), 'Guard −3', 'gray', 600, -10); hitFlash(); floatText($('pw'), '−3', 'dmg');
+    S.pGuard = 0; S.pHp = 8; $('pGuardN').textContent = 0; $('pGuard').classList.add('zero'); $('pHp').textContent = 8; setHpBars();
+    await sleep(D(200)); $('vignette').classList.add('show'); await swing;
+    addLog('敵「長柄の歪み兵」の薙ぎ払い T2。3 ダメージ（Guard で 3 軽減）。');
+    await sleep(2200); reset(true); lock(false); setStep('待機中。');
+  }
+  async function exBreak() {
+    if (playing) return; lock(true); reset(false);
+    S.dist = 0; S.px = 50 - GAP[0] / 2; S.ex = 50 + GAP[0] / 2; S.omen = 'shove'; S.pSta = 9; S.hand = ['lunge', 'thrust', 'brace']; render();
+    setStep('<b>崩しの例</b>　近で踏み込み斬り T3 が的中: ヒットフラッシュ 160ms → 「−7」朱 → 敵スタミナのピップ 1 個が 300ms で砕けて落ちる → 敵が 400ms よろける（回転 −6° → 0）→「崩し −1」');
+    await sleep(600); selectCard(0); await sleep(700);
+    await playCard(0, 3);
+    await sleep(2200); reset(true); lock(false); setStep('待機中。');
+  }
+  async function exWin() {
+    if (playing) return; lock(true); reset(false);
+    S.eHp = 4; S.dist = 0; S.px = 50 - GAP[0] / 2; S.ex = 50 + GAP[0] / 2; S.omen = 'shove'; S.hand = ['thrust', 'lunge', 'brace']; render();
+    setStep('<b>勝利の例</b>　撃破: 敵人型が 800ms ease-in で崩れ落ちる → 「撃破」＋ 持ち越しパネル（HP・スタミナは次の戦闘へそのまま）');
+    await sleep(600); selectCard(0); await sleep(600); await playCard(0, 2);
+    await sleep(2600); hideOverlay(); reset(true); lock(false); setStep('待機中。');
+  }
+  async function exLose() {
+    if (playing) return; lock(true); reset(false);
+    setStep('<b>敗北の例</b>　足元の灯りが 600ms で消える → 画面下から墨が 800ms ease-in で満ちる → 「力尽きた」が字間を広げながら 300ms → 1 秒後、手記の頁が 400ms ease-out でせり上がる（遺産候補 3 行・封蝋・「継承の間へ」）');
+    await sleep(400); await showLose();
+    await sleep(4200); hideOverlay(); reset(true); lock(false); setStep('待機中。');
+  }
+
+  // ---------- wiring ----------
+  function lock(v) { locked = v; stage.classList.toggle('locked', v); document.querySelectorAll('#toolbar .grp:last-child button').forEach(b => { if (b.id !== 'btnReset') b.disabled = v; }); }
+  function reset(clearStep) {
+    hideOverlay(); $('vignette').classList.remove('show'); $('ghost').classList.remove('show'); $('omen').classList.remove('struck');
+    $('whose').textContent = 'あなたの番';
+    initState(); render();
+    if (clearStep) setStep('待機中。カードを選ぶ → 投入量チップを押す → ターン終了、の 3 操作で 1 ターンが回ります。');
+  }
+  $('hand').addEventListener('click', e => {
+    if (locked) return;
+    const chip = e.target.closest('.chip');
+    if (chip) { const card = chip.closest('.card'); if (!chip.disabled) { lock(true); playCard(+card.dataset.i, +chip.dataset.n).then(() => lock(false)); } return; }
+    const card = e.target.closest('.card');
+    if (card && !card.classList.contains('dead')) selectCard(+card.dataset.i);
+  });
+  $('hand').addEventListener('keydown', e => {
+    if (locked || (e.key !== 'Enter' && e.key !== ' ')) return;
+    const card = e.target.closest('.card');
+    if (card && e.target === card && !card.classList.contains('dead')) { e.preventDefault(); selectCard(+card.dataset.i); }
+  });
+  $('btnEnd').addEventListener('click', () => { if (locked) return; lock(true); endTurn().then(() => lock(false)); });
+  $('btnJournal').addEventListener('click', () => { $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false'); });
+  $('btnJournalClose').addEventListener('click', () => { $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden', 'true'); });
+  $('btnPlay').addEventListener('click', playback);
+  $('exHit').addEventListener('click', exHit);
+  $('exBreak').addEventListener('click', exBreak);
+  $('exWin').addEventListener('click', exWin);
+  $('exLose').addEventListener('click', exLose);
+  $('btnReset').addEventListener('click', () => { if (!playing) { lock(false); reset(true); } });
+  $('btnInherit').addEventListener('click', () => { if (!playing) { hideOverlay(); lock(false); reset(true); setStep('継承の間へ（モックアップでは初期状態に戻る）。'); } });
+  document.querySelectorAll('#toolbar button[data-set]').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.set; stage.dataset[k] = b.dataset.val;
+    document.querySelectorAll(`#toolbar button[data-set="${k}"]`).forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    if (k === 'reveal') { renderOmen(); renderBand(null); }
+  }));
+
+  // top-bar meters
+  $('mTime').innerHTML = Array.from({ length: 10 }, (_, i) => `<i class="${i < 6 ? 'on' : ''}"></i>`).join('');
+  $('mMiasma').innerHTML = Array.from({ length: 10 }, (_, i) => `<i class="${i < 3 ? 'on' : ''}"></i>`).join('');
+
+  reset(true);
+})();
+</script>
+</body>
+</html>
