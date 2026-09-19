@@ -1,0 +1,543 @@
+<title>Krita AI 制作ガイド</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Shippori+Mincho:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f4f6f5; --panel: #ffffff; --ink: #1c2327; --muted: #56636b; --line: #d5dcdf;
+    --accent: #0e6b74; --accent-soft: #dcefef; --ok: #2c7a4b; --ok-soft: #e1f1e7;
+    --warn: #a86a12; --warn-soft: #f7ecd9; --stop: #a23c3c; --stop-soft: #f6e1e1; --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad; --line: #2c363b;
+      --accent: #5fc4cc; --accent-soft: #163338; --ok: #6fc48f; --ok-soft: #173024;
+      --warn: #e0a94a; --warn-soft: #33280f; --stop: #e07a7a; --stop-soft: #3a1c1c; --code-bg: #0f1417; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad; --line: #2c363b;
+    --accent: #5fc4cc; --accent-soft: #163338; --ok: #6fc48f; --ok-soft: #173024;
+    --warn: #e0a94a; --warn-soft: #33280f; --stop: #e07a7a; --stop-soft: #3a1c1c; --code-bg: #0f1417; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 16px; line-height: 1.8; padding-inline: 16px; }
+  main { max-width: 900px; margin: 0 auto; padding-block: 40px 80px; display: grid; gap: 48px; }
+  h1, h2 { font-family: "Shippori Mincho", "Yu Mincho", serif; text-wrap: balance; margin: 0; }
+  h1 { font-size: 2rem; line-height: 1.35; }
+  h2 { font-size: 1.45rem; padding-bottom: 6px; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+  h3 { font-size: 1.1rem; margin: 8px 0 0; scroll-margin-top: 16px; }
+  h4 { font-size: .98rem; margin: 4px 0 0; }
+  p { margin: 0; }
+  section { display: grid; gap: 14px; }
+  .meta { color: var(--muted); font-size: .88rem; }
+  code, kbd { font-family: "IBM Plex Mono", Consolas, monospace; font-size: .85em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+  pre { background: var(--code-bg); padding: 12px 14px; border-radius: 6px; overflow-x: auto; margin: 0; font-family: "IBM Plex Mono", Consolas, monospace; font-size: .84rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+  a { color: var(--accent); overflow-wrap: anywhere; }
+  .menu { font-weight: 700; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; padding: 20px 22px; display: grid; gap: 10px; }
+  nav.toc { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px 20px; }
+  nav.toc ol { margin: 6px 0 0; padding-left: 1.4em; display: grid; gap: 2px; }
+  .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { font-size: .8rem; color: var(--muted); letter-spacing: .04em; background: var(--code-bg); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  ol.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: s; }
+  ol.steps > li { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px 14px 54px; position: relative; counter-increment: s; display: grid; gap: 8px; }
+  ol.steps > li::before { content: counter(s); position: absolute; left: 16px; top: 11px; font-family: "Shippori Mincho", serif; font-size: 1.45rem; color: var(--accent); }
+  ul { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
+  .note { border-radius: 6px; padding: 12px 14px; font-size: .93rem; display: grid; gap: 6px; }
+  .note.tip { background: var(--ok-soft); }
+  .note.warn { background: var(--warn-soft); }
+  .note.stop { background: var(--stop-soft); }
+  .note b:first-child { color: var(--ink); }
+  .tag { display: inline-block; font-size: .74rem; letter-spacing: .05em; padding: 1px 8px; border-radius: 99px; font-weight: 700; white-space: nowrap; }
+  .tag.you { background: var(--warn-soft); color: var(--warn); }
+  .tag.cl { background: var(--accent-soft); color: var(--accent); }
+  .tag.ok { background: var(--ok-soft); color: var(--ok); }
+  .tag.ng { background: var(--stop-soft); color: var(--stop); }
+  .stage { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; display: grid; gap: 10px; }
+  .stage > h3 { margin: 0; }
+  .who { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: baseline; font-size: .94rem; }
+  .diagram { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
+  .box .role { font-size: .78rem; color: var(--muted); letter-spacing: .05em; }
+  .box h4 { margin: 0; font-size: 1.05rem; }
+  .check { list-style: none; padding-left: 0; }
+  .check li::before { content: "□ "; color: var(--accent); font-weight: 700; }
+</style>
+
+<main>
+  <header style="display:grid;gap:8px">
+    <p class="meta">visual-production-pipeline ・ 2026-09-19 ・ Krita 5.3.4 / Krita AI Diffusion 1.53.0 / RTX 5060 Ti 8 GB 向け</p>
+    <h1>Krita で AI に描かせて、自分で仕上げる</h1>
+    <p class="meta">導入の続きから、機能の全体、このゲームの立ち絵と差分を作る手順までをまとめたガイドです。</p>
+  </header>
+
+  <section class="verdict">
+    <p><strong>結論:</strong> Krita に追加機能「Krita AI Diffusion」を入れ、裏方の生成サーバーは追加機能に自動で入れさせます（Local Managed Server）。</p>
+    <p>絵を作るモデルは Animagine XL 4.0 にします。ポーズ違いの差分は Flux 2 Klein 4B の編集機能で作ります。どちらも商用に使えるライセンスです。</p>
+    <p>インストール済みの Comfy Desktop は、今回の手順では使いません。追加機能が求める部品と版を自分でそろえる手間が大きいためです。</p>
+  </section>
+
+  <nav class="toc">
+    <strong>目次</strong>
+    <ol>
+      <li><a href="#s1">3 つのアプリの関係と、いまの状態</a></li>
+      <li><a href="#s2">セットアップ手順（インストールの続き）</a></li>
+      <li><a href="#s3">Krita AI Diffusion でできること（機能の詳細）</a></li>
+      <li><a href="#s4">ゲームの立ち絵と差分を作る手順</a></li>
+      <li><a href="#s5">使ってはいけない機能とモデル</a></li>
+      <li><a href="#s6">困ったとき</a></li>
+      <li><a href="#s7">置いた仮定と未確認、次に決めること</a></li>
+    </ol>
+  </nav>
+
+  <!-- ============ 1 ============ -->
+  <section id="s1">
+    <h2>1. 3 つのアプリの関係と、いまの状態</h2>
+    <p>料理にたとえると、Krita は台所です。AI の生成サーバー（ComfyUI）はオーブンで、追加機能（Krita AI Diffusion）は台所の壁についたオーブンの操作パネルです。こうだいさんは台所に立ったまま、パネルでオーブンに焼かせ、焼けたものを包丁で整えます。</p>
+    <div class="diagram">
+      <div class="box"><span class="role">台所（絵を描くアプリ）</span><h4>Krita 5.3.4</h4><p>無料の描画アプリです。レイヤー、ブラシ、選択範囲、変形など、手で描いて直す道具がそろっています。</p></div>
+      <div class="box"><span class="role">操作パネル（追加機能）</span><h4>Krita AI Diffusion</h4><p>Krita の中に「AI Image Generation」パネルを足します。指示の入力、選択範囲への描き直し、下絵からの清書を Krita の画面で行います。GPL-3.0 の無料ソフトです。</p></div>
+      <div class="box"><span class="role">オーブン（生成サーバー）</span><h4>ComfyUI</h4><p>実際に AI で絵を作るプログラムです。画面の裏で動き、追加機能から注文を受けて絵を返します。</p></div>
+    </div>
+    <p>正確には、追加機能は ComfyUI に「処理の手順書（ワークフロー）」を送り、ComfyUI が GPU で計算して画像を返します。ComfyUI の入れ方は 2 通りあります。1 つは追加機能に自動で入れさせる方法（Local Managed Server）です。もう 1 つは、自分で入れた ComfyUI につなぐ方法（Custom Server）です。</p>
+
+    <h3>手元の状態（2026-09-19 に確認）</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>項目</th><th>状態</th><th>このガイドでの扱い</th></tr></thead>
+      <tbody>
+        <tr><td>Krita</td><td>5.3.4。場所は <code>C:\Users\user\OneDrive\Desktop\dev\Krita (x64)</code></td><td>そのまま使います。追加機能は 5.2 以上が条件で、Krita 5 系には追加機能の 1.x 系を使います</td></tr>
+        <tr><td>Krita AI Diffusion</td><td>未導入（<code>%APPDATA%\krita\pykrita</code> がまだない）</td><td>2 章で入れます。最新は 1.53.0（2026-08-22）です</td></tr>
+        <tr><td>Comfy Desktop</td><td>1.0.47 を導入済み。初回設定（保存先の選択）はまだのように見えます</td><td>今回は使いません。理由は下の注意を読んでください</td></tr>
+        <tr><td>GPU</td><td>RTX 5060 Ti、VRAM 8 GB（使用中 3.4 GB）、ドライバー 591.86</td><td>生成中は Unity と Chrome を閉じます</td></tr>
+        <tr><td>C: の空き</td><td>約 298 GB</td><td>必要な量は 30〜40 GB の見込みで、足ります</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note warn">
+      <b>Comfy Desktop を使わない理由</b>
+      <p>自分で入れた ComfyUI につなぐと、追加の部品 4 つ（ControlNet 前処理、IP-Adapter、Inpaint、Tooling）と必須モデル十数個を、正しい名前と場所でそろえる必要があります。ComfyUI が更新されると、部品との版の食い違いで止まることもあります。Local Managed Server なら、追加機能の作者が動作を確かめた組み合わせを一括で入れます。</p>
+      <p>Comfy Desktop は消さなくてかまいません。ただし、生成サーバーと Comfy Desktop を同時に起動すると VRAM を取り合います。使うときは片方だけにします。不要ならアンインストールしてもかまいません。</p>
+    </div>
+  </section>
+
+  <!-- ============ 2 ============ -->
+  <section id="s2">
+    <h2>2. セットアップ手順（インストールの続き）</h2>
+    <p>所要時間は、手作業が 20〜30 分と、ダウンロード待ちが回線しだいで 30〜90 分の見込みです（推定）。メニュー名は公式ドキュメントの英語表記です。Krita を日本語で使っている場合は、カッコ内の訳を目安にしてください。</p>
+
+    <ol class="steps">
+      <li>
+        <h3>追加機能の zip をダウンロードする</h3>
+        <p><a href="https://github.com/Acly/krita-ai-diffusion/releases/latest">GitHub のリリースページ</a>から <code>krita_ai_diffusion-1.53.0.zip</code> を保存します。展開はしません。</p>
+        <p class="meta">Krita 6 が出たら、追加機能は 2.x 系を使います。いまの Krita 5.3.4 には 1.x 系が正解です。</p>
+      </li>
+      <li>
+        <h3>Krita に取り込む</h3>
+        <p>Krita を起動し、<span class="menu">Tools ▸ Scripts ▸ Import Python Plugin from File...</span>（ツール ▸ スクリプト ▸ ファイルから Python プラグインをインポート）を選びます。保存した zip を選びます。</p>
+        <p>「プラグインを有効にするか」と聞かれたら <b>Yes</b> を押します。そのあと <b>Krita を再起動</b>します。再起動しないとパネルが出ません。</p>
+      </li>
+      <li>
+        <h3>パネルを表示する</h3>
+        <p>新しい文書を作ります。最初は小さめ（例: 1024×1024）で十分です。</p>
+        <p><span class="menu">Settings ▸ Dockers ▸ AI Image Generation</span>（設定 ▸ ドッキングパネル ▸ AI Image Generation）にチェックを入れます。画面の端に「AI Image Generation」パネルが出ます。</p>
+      </li>
+      <li>
+        <h3>生成サーバーの種類を選ぶ</h3>
+        <p>パネルの <b>Configure</b> を押します。3 つの選択肢が出ます。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>選択肢</th><th>中身</th><th>選ぶか</th></tr></thead>
+          <tbody>
+            <tr><td>Online Service</td><td>作者が運営するクラウドの GPU で生成します。アカウントが要り、有料です</td><td><span class="tag ng">選ばない</span> 0 円の方針に合いません</td></tr>
+            <tr><td>Local Managed Server</td><td>追加機能が ComfyUI と部品とモデルを自分の PC に入れ、起動と停止も受け持ちます</td><td><span class="tag ok">これを選ぶ</span></td></tr>
+            <tr><td>Custom Server</td><td>自分で入れた ComfyUI（Comfy Desktop など）につなぎます</td><td><span class="tag ng">選ばない</span> 1 章の理由のとおりです</td></tr>
+          </tbody>
+        </table></div>
+      </li>
+      <li>
+        <h3>サーバーの入れ場所と種類を決める</h3>
+        <p><b>Local Managed Server</b> を選ぶと、インストール画面が出ます。次のように設定します。</p>
+        <ul>
+          <li><b>Server Path（入れ場所）:</b> <code>C:\ai\krita-server</code> にします。既定は <code>%APPDATA%\krita\ai_diffusion\server</code> ですが、OneDrive の同期対象や、空白を含む場所は避けます。</li>
+          <li><b>Backend:</b> <b>CUDA</b> を選びます。NVIDIA の GPU 用です。インストールの前に選ぶ必要があり、あとからは変えにくい項目です。</li>
+          <li><b>Workloads（モデルのまとまり）:</b> 下の表のとおり、SDXL と Flux 2 の 2 つだけにチェックを入れます。</li>
+        </ul>
+        <div class="tbl"><table>
+          <thead><tr><th>Workload</th><th>入れるか</th><th>理由</th></tr></thead>
+          <tbody>
+            <tr><td>SD 1.5</td><td>入れない</td><td>古い世代で、画質が一段落ちます</td></tr>
+            <tr><td>SDXL</td><td><span class="tag ok">入れる</span></td><td>Animagine XL 4.0 はこの世代のモデルです。下絵・参照画像・選択範囲の描き直しに使う部品は、商用可の Apache-2.0 か OpenRAIL です</td></tr>
+            <tr><td>Illustrious / NoobAI</td><td><span class="tag ng">入れない</span></td><td>この系統向けの部品の多くは NoobAI の派生で、ライセンス（fair-ai-public-license）が商用利用を制限します。5 章を読んでください</td></tr>
+            <tr><td>Flux 2（Klein 4B）</td><td><span class="tag ok">入れる</span></td><td>「槍を振り上げさせて」のような文章の指示で、同じ人物のポーズを変えられます。Apache-2.0 で商用可です</td></tr>
+            <tr><td>Flux 1 / Z-Image</td><td>入れない</td><td>写真寄りのモデルで、8 GB では重く、今回の用途に要りません</td></tr>
+          </tbody>
+        </table></div>
+        <p><b>Individual Packages</b> タブでは、次の 3 つを追加で選びます。そのほかは既定のままにします。</p>
+        <ul>
+          <li><b>ControlNet Universal (XL):</b> 落書き・線画・ポーズの棒人間などを下絵として読ませる部品です（xinsir、Apache-2.0）。差分づくりの中心になります。</li>
+          <li><b>Flux 2 Klein 4B [Q6_K]:</b> 8 GB 向けに軽くした版です。fp8 版と Q6_K 版が選べる場合は Q6_K にします。</li>
+          <li><b>HAT Super-Resolution:</b> 画像を大きくする部品です（Apache-2.0）。任意です。</li>
+        </ul>
+        <p>最後に <b>Install</b> を押します。ここで数十 GB のダウンロードが始まります。終わるまで Krita を閉じないでください。</p>
+      </li>
+      <li>
+        <h3>Animagine XL 4.0 を置く</h3>
+        <p><a href="https://huggingface.co/cagliostrolab/animagine-xl-4.0/tree/main">Hugging Face のページ</a>から <code>animagine-xl-4.0-opt.safetensors</code>（約 6.9 GB）をダウンロードします。opt は、手足の形と色を改良した版です。</p>
+        <p>ファイルを <code>C:\ai\krita-server\ComfyUI\models\checkpoints\</code> に置きます。フォルダーがなければ、インストールが終わっているかを確かめます。</p>
+        <p class="meta">ライセンスは CreativeML Open RAIL++-M で、商用利用を認めています。違法・有害な用途は禁じられています。</p>
+      </li>
+      <li>
+        <h3>サーバーを起動して接続する</h3>
+        <p>設定画面の Connection で <b>Launch</b>（起動）を押します。数十秒で「Connected」になります。以後は Krita を起動すると自動でサーバーも起動します。</p>
+        <p>接続できないときは、必須モデルが欠けています。<b>Manage ▸ Verify</b> を押すと、全モデルを検査して足りない物を取り直します。</p>
+      </li>
+      <li>
+        <h3>このゲーム用の「スタイル」を作る</h3>
+        <p>スタイルは、モデルと生成の設定をまとめた「レシピカード」です。パネル上部のスタイル一覧の横にある設定ボタンから Style 設定を開き、新しいスタイルを作って、次の値を入れます。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>項目</th><th>値</th><th>根拠</th></tr></thead>
+          <tbody>
+            <tr><td>名前</td><td><code>card-battle Animagine</code></td><td>—</td></tr>
+            <tr><td>Model Checkpoint</td><td><code>animagine-xl-4.0-opt</code></td><td>一覧に出ないときは再読み込みボタンを押します</td></tr>
+            <tr><td>Base model（Checkpoint configuration (advanced)）</td><td>Automatic のまま（SDXL と判定される）</td><td>Illustrious に手動で切り替えないでください。切り替えると NoobAI 系の部品が使われます</td></tr>
+            <tr><td>Sampler preset</td><td><b>Alternative</b>（Euler Ancestral）</td><td>Animagine の推奨サンプラーが Euler a です</td></tr>
+            <tr><td>Steps / CFG</td><td>28 / 5</td><td>Animagine の推奨は Steps 25〜28、CFG 4〜7（推奨 5）です</td></tr>
+            <tr><td>Style Prompt（後ろに付ける言葉）</td><td><code>{prompt}, masterpiece, high score, great score, absurdres</code></td><td>Animagine の画質タグです。<code>{prompt}</code> の位置に毎回の指示が入ります</td></tr>
+            <tr><td>Negative Prompt（避けたい物）</td><td><code>lowres, bad anatomy, bad hands, text, error, missing finger, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry, blood</code></td><td>Animagine の推奨に、流血の禁止（<code>blood</code>）を足しました</td></tr>
+          </tbody>
+        </table></div>
+        <p>同じ要領で、Flux 2 Klein 4B を使うスタイル（名前 <code>card-battle Edit</code>）も作ります。こちらは Style Prompt を空にし、そのほかは既定のままにします。</p>
+      </li>
+      <li>
+        <h3>画面と性能の設定</h3>
+        <p>設定画面の各タブで、次を変えます。</p>
+        <ul>
+          <li><b>Interface ▸ ネガティブプロンプトを表示:</b> オンにします。パネルに「避けたい物」の欄が出ます。</li>
+          <li><b>Interface ▸ 翻訳（Translation）:</b> 日本語（ja）を選びます。指示を日本語で書くと、生成前に英語へ訳されます。ローカルサーバーで動きます。</li>
+          <li><b>Interface ▸ タグの自動補完:</b> オンにします。Animagine はタグ形式の指示を好むので、候補が出ると書きやすくなります。</li>
+          <li><b>Interface ▸ ワークフローの書き出し:</b> オンにします。最後の生成の <code>workflow.json</code> がログと同じフォルダーに残ります。モデル名と seed（乱数の種）の記録に使います。</li>
+          <li><b>Performance ▸ Maximum batch size:</b> まず既定のままにします。VRAM 不足で遅くなったら 1 に下げます。</li>
+          <li><b>Performance ▸ Resolution multiplier:</b> 1.0 のままにします。候補を早く見たいときだけ、パネルの一時切り替えで 0.5〜0.75 にします。</li>
+        </ul>
+      </li>
+      <li>
+        <h3>動作を確かめる</h3>
+        <p>1024×1024 の新しい文書で、指示欄に <code>1boy, solo, samurai, standing, full body, simple background</code> と入れ、<b>Generate</b>（<kbd>Shift</kbd>+<kbd>Enter</kbd>）を押します。</p>
+        <ul class="check">
+          <li>30 秒〜1 分ほどで、キャンバスに下書きとして絵が出る</li>
+          <li>下の履歴に小さな画像が並ぶ</li>
+          <li><b>Apply</b> を押すと、新しいレイヤーとして載る</li>
+          <li>タスクマネージャーの GPU の「専用 GPU メモリ」が 8 GB に張りついていない</li>
+        </ul>
+        <p>ここまで通ったら、生成の秒数とピークの VRAM をメモしてください。0 円案が 8 GB で成り立つかの判断材料になります。</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ============ 3 ============ -->
+  <section id="s3">
+    <h2>3. Krita AI Diffusion でできること</h2>
+    <p>機能は多いですが、軸は 3 つです。<b>一から作る</b>、<b>一部を描き直す</b>、<b>下絵や見本に従わせる</b>です。3 つを組み合わせて、少しずつ絵を目標に寄せていきます。</p>
+
+    <h3>3.1 生成の基本: Generate、Apply、履歴</h3>
+    <ul>
+      <li><b>Generate:</b> キャンバスの中身を無視して、同じ大きさの新しい絵を作ります。</li>
+      <li><b>下書きの表示:</b> 結果はまずキャンバス上の「仮の表示」です。同じ指示で何枚も作り、履歴から選ぶ使い方が前提です。</li>
+      <li><b>Apply:</b> 履歴の画像の Apply ボタンを押すか、画像をダブルクリックすると、新しいレイヤーとして確定します。不要な結果は確定しないだけで消えます。</li>
+      <li><b>複数を混ぜる:</b> 気に入った部分が複数の結果に散らばっているときは、全部 Apply します。そのうえで、要らない部分を柔らかい消しゴムで消して混ぜます（Generate &amp; Erase）。</li>
+    </ul>
+
+    <h3>3.2 強さ（Strength）と Refine</h3>
+    <p>強さのスライダーは「いまの絵をどれだけ残すか」の逆です。100% は一から作り直し、100% 未満にするとボタンが <b>Refine</b> に変わります。Refine はいまの絵を出発点にして描き直します（image-to-image）。</p>
+    <ul>
+      <li><b>30〜70% がよく使う範囲です。</b> 仕上げに近づくほど下げます。</li>
+      <li><b>用途:</b> 質感・陰影・細部の追加、崩れの除去（色と形は残す）、絵柄の寄せ（写真調→アニメ調など）です。</li>
+      <li><b>注意:</b> 生成結果を Refine するときは、先に Apply してください。Apply しないと、白いキャンバスを描き直すことになります。</li>
+    </ul>
+
+    <h3>3.3 選択範囲への描き直し（Selection Fill）</h3>
+    <p>Krita の選択ツールで範囲を囲むと、生成はその範囲だけになります。ボタンの横の下向き矢印で、描き直し方を選べます。</p>
+    <div class="tbl"><table>
+      <thead><tr><th>モード</th><th>すること</th><th>このゲームでの使い道</th></tr></thead>
+      <tbody>
+        <tr><td>Fill</td><td>周りになじむように描き直す。周辺の色に寄る</td><td>崩れた手・顔・武器の先の描き直し</td></tr>
+        <tr><td>Expand</td><td>キャンバスを広げた余白を描き足す</td><td>足元や武器の先が切れた絵を広げる</td></tr>
+        <tr><td>Add Content</td><td>新しい物を足す。指示か下絵が要る</td><td>小物（世代差分の護符・布など）を足す</td></tr>
+        <tr><td>Remove Content</td><td>物を消して周りで埋める</td><td><span class="tag ng">使わない</span> 非商用ライセンスのモデル（MAT）を使います</td></tr>
+        <tr><td>Replace Background</td><td>選んだ人物を残し、背景を入れ替える（実験的）</td><td>背景を単色にそろえる</td></tr>
+        <tr><td>Custom</td><td>なじませ方（Seamless）、指示の対象（Focus）、塗りの前処理（Fill）、周辺の範囲（Context）を手で決める</td><td>Fill の「Inpaint」は MAT を使うので選ばない</td></tr>
+      </tbody>
+    </table></div>
+    <p>生成は選択範囲より少しはみ出します。はみ出しは消しゴムで消せますが、足りない分はあとから足しにくいからです。はみ出しの量は Diffusion 設定の <b>Selection Feather</b> と <b>Selection Blend</b> で変えられます。</p>
+
+    <h3>3.4 コントロールレイヤー（下絵や見本に従わせる）</h3>
+    <p>文章だけで狙いどおりの構図を出すのは難しいので、画像で指示します。レイヤーを選び、<b>Add control layer</b> ボタンで種類を選ぶと、そのレイヤーが指示になります。レイヤーを非表示にしても効きます。</p>
+    <h4>見本型（参照画像）: 雰囲気や人物を写す</h4>
+    <ul>
+      <li><b>Reference:</b> 人物・構図・色・絵柄を見本から取ります。文章の指示と同じくらいの自由度で効きます。承認した主人公の絵を入れておくと、差分でも同じ人物に寄ります。</li>
+      <li><b>Style / Composition:</b> 絵柄だけ、構図だけを取ります。SDXL でよく効きます。</li>
+      <li><b>Face:</b> 顔の特徴を写します。SDXL で使えるかは未確認です。</li>
+      <li>見本は正方形が向いています。透明な部分は無視されます。</li>
+    </ul>
+    <h4>構造型: 位置を画素単位で合わせる</h4>
+    <ul>
+      <li><b>Scribble / Line Art / Soft Edge / Canny Edge:</b> 落書きや線画の位置に形を合わせます。手描きのラフを清書させるときに使います。</li>
+      <li><b>Pose:</b> OpenPose の棒人間でポーズを指示します。棒人間は Krita のベクターツールで関節を動かして編集できます。差分づくりの主役です。</li>
+      <li><b>Depth / Normal:</b> 奥行きや面の向きで形を指示します。3D ソフトから出した図が使えます。</li>
+      <li><b>Unblur:</b> ぼかした絵を元に、そっくりな絵を細部だけ変えて作ります。</li>
+      <li><b>Segmentation / Stencil:</b> 色分けの図や白黒の型で配置を決めます。今回は使いません。</li>
+      <li><b>From image:</b> いま見えている絵から、下絵（線画・棒人間など）を自動で作ります。ただし Pose の自動抽出は、ライセンスが未確認の検出モデル（YOLO-NAS）を使います。製品に使う差分では、棒人間を手で置くほうが安全です。</li>
+      <li><b>強さと範囲:</b> スライダーで効きの強さを、詳細設定の Range で「生成のどの段階に効かせるか」を決めます。構図は前半で、細部は後半で決まります。</li>
+    </ul>
+
+    <h3>3.5 リージョン（場所ごとの指示）</h3>
+    <p>画面の場所ごとに、別の指示と見本を割り当てます。「左は槍の兵、右は犬」のように複数の物を描き分けるときに使います。構図を決める道具ではないので、形は下絵のコントロールレイヤーで決めます。立ち絵は 1 体ずつ作るので、出番は背景の絵を作るときぐらいです。</p>
+
+    <h3>3.6 編集モデル（文章で直させる）</h3>
+    <p>Flux 2 Klein 4B は、今ある絵を「命令」で直すモデルです。「槍を頭上に振り上げさせて。顔と服は変えない」のように書きます。</p>
+    <ul>
+      <li><b>得意:</b> ポーズの変更、照明の変更、物の追加と削除、人物を切り出して白背景に置くことです。</li>
+      <li><b>書き方:</b> 対象を特徴で名指しし、変えたい点を 1 つずつ書きます。「変えない物」も明記します。</li>
+      <li><b>強さ:</b> 100% で使います。下げると何も変わらないことが多いです。</li>
+      <li><b>弱み:</b> 体のつじつまが崩れることがあり、アニメ調の絵柄も Animagine ほどそろいません。編集のあとに Animagine のスタイルで低い強さの Refine をかけて、絵柄を戻します。</li>
+      <li><b>複数の画像:</b> 見本の画像を別レイヤーに置き、Add control layer で足すと、「この服を着せて」のような指示ができます。画像を足すほど VRAM と時間が増えます。</li>
+    </ul>
+
+    <h3>3.7 ワークスペース（パネル左上の切り替え）</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>ワークスペース</th><th>すること</th><th>使い道</th></tr></thead>
+      <tbody>
+        <tr><td>Generate</td><td>ここまでの生成・描き直し・編集</td><td>普段の作業</td></tr>
+        <tr><td>Upscale</td><td>専用モデルで拡大する。「Refine upscaled image」で、拡大後にタイルごとに描き直せる</td><td>832×1216 で作った絵を大きくする</td></tr>
+        <tr><td>Live</td><td>描いている途中の絵を、ほぼ即時に AI が仕上げて横に見せ続ける</td><td>ラフの段階の発想出し。高速化の部品（Hyper-SD）はライセンスが未確認なので、製品用の最終画像には使いません</td></tr>
+        <tr><td>Custom Graph</td><td>ComfyUI で組んだ独自の手順を Krita から動かす</td><td>Claude が作った手順（背景抜きなど）を Krita のボタンにする</td></tr>
+        <tr><td>Animation</td><td>手描きのコマをまとめて一括処理する（中割りの生成はない）</td><td>今回は使いません</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>3.8 指示文の書き方</h3>
+    <ul>
+      <li><b>言語:</b> 基本は英語です。2 章で翻訳をオンにすれば、日本語で書けます。</li>
+      <li><b>強調:</b> <code>(polearm:1.3)</code> で強め、<code>(red:0.8)</code> で弱めます。単語にカーソルを置いて <kbd>Ctrl</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> でも変えられます。</li>
+      <li><b>コメント:</b> <code>#</code> から行末までは無視されます。一時的に外したい言葉に使います。</li>
+      <li><b>ワイルドカード:</b> <code>{tattered robe|rusted armor|straw cape}</code> と書くと、生成ごとに 1 つが選ばれます。外見の案出しに向いています。</li>
+      <li><b>LoRA:</b> <code>&lt;lora:ファイル名:0.7&gt;</code> で、同じ人物を保つための追加学習データを効かせます。</li>
+      <li><b>レイヤー参照:</b> <code>&lt;layer:レイヤー名&gt;</code> で、そのレイヤーを見本（Reference）として使います。</li>
+      <li><b>Animagine の語順:</b> 「<code>1boy</code> などの人数 → キャラ名（今回はなし）→ 作品名（なし）→ そのほかのタグ → 画質タグ」の順が推奨です。画質タグはスタイルが自動で足します。</li>
+    </ul>
+
+    <h3>3.9 解像度</h3>
+    <ul>
+      <li><b>生成の大きさ:</b> キャンバスの大きさがそのまま生成の大きさになります。細部が甘いときは、キャンバスが小さすぎる可能性があります。</li>
+      <li><b>モデルの得意な大きさ:</b> SDXL は約 100 万画素で学習しています。Animagine の推奨は縦長 832×1216 です。これより大きいキャンバスでは、追加機能が自動で「小さく作って拡大しながら描き直す」2 段の生成に切り替えます。</li>
+      <li><b>割り切れる数:</b> 縦横は 8 の倍数、できれば 64 の倍数にします。1024×1536 は両方とも 64 の倍数です。</li>
+    </ul>
+  </section>
+
+  <!-- ============ 4 ============ -->
+  <section id="s4">
+    <h2>4. ゲームの立ち絵と差分を作る手順</h2>
+    <p>最初の 1 体は、試走に決めてある<b>長柄の歪み兵</b>（<code>polearm_warped</code>）で通すのを推します。主人公の見た目は、その前か並行してスタイルガイドで決めます。<span class="tag you">人</span> はこうだいさんの作業、<span class="tag cl">Claude</span> は Claude の作業です。</p>
+
+    <div class="stage">
+      <h3>段階 0: 型をそろえる（最初の 1 回）</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>決まりごと</th><th>値</th><th>出典</th></tr></thead>
+        <tbody>
+          <tr><td>ゲーム内の枠</td><td>140×300（縦長、比 約 1:2.1）。足元の中央が基準点</td><td><code>ArenaView.cs:13,29</code></td></tr>
+          <tr><td>向き</td><td>すべて右向きで描く。敵はゲーム側で左右反転する</td><td>同上（<code>scaleX=-1</code>）</td></tr>
+          <tr><td>原本の大きさ</td><td>1024×1536 の文書で作る。取り込みは長辺 1024</td><td>tools §5</td></tr>
+          <tr><td>背景</td><td>生成中は単色の灰色。あとで抜いて透過 PNG にする</td><td>tools §5</td></tr>
+          <tr><td>差分</td><td>待機・行動・被弾 / 崩れ / 倒れ。体勢（構え）の差分は作らない</td><td>tools §9 #17</td></tr>
+          <tr><td>禁止</td><td>既存の作品名・作者名を指示に入れない。流血を描かない。購入素材や他作品の画像を見本に入れない</td><td>SKILL.md「やらないこと」</td></tr>
+        </tbody>
+      </table></div>
+      <div class="who">
+        <span class="tag you">人</span><span>Krita の <span class="menu">File ▸ New</span> で 1024×1536 のテンプレートを作り、背景色を中間の灰色（例 <code>#808080</code>）にしておきます。</span>
+        <span class="tag cl">Claude</span><span>仕様カード（<code>.claude/docs/art_document/briefs/polearm_warped.md</code>）と、英語の指示文の案を用意します。</span>
+      </div>
+      <div class="note warn"><b>利き手の注意</b><p>敵はゲーム側で反転するので、右手に持った槍は画面では左手になります。武器を持つ手は、反転後の見え方で決めます。</p></div>
+    </div>
+
+    <div class="stage">
+      <h3>段階 1: 外見を探す（候補を出して選ぶ）</h3>
+      <ol>
+        <li>スタイルを <code>card-battle Animagine</code> にします。</li>
+        <li>ワイルドカードを使った指示を入れます。例:
+          <pre>1other, solo, full body, standing, from side, facing right, holding polearm, long polearm, {tattered hooded robe|rusted lamellar armor|straw raincoat}, {bandaged face|cracked mask|hollow eyes}, corrupted soldier, dark miasma, japanese dark fantasy, muted colors, simple background, grey background</pre>
+        </li>
+        <li>生成の回数を増やし（Generate ボタン横の回数の設定）、8〜16 枚出します。</li>
+        <li>履歴の画像にカーソルを乗せると、ワイルドカードで選ばれた語が出ます。気に入った組み合わせの指示をコピーして固定します。</li>
+        <li>主人公と並べたときに絵柄がそろうかを見て、1〜2 枚に絞ります。</li>
+      </ol>
+      <div class="who">
+        <span class="tag you">人</span><span>候補から 1〜2 枚を選び、選んだ理由を 1 行メモします。この選定メモは、台帳の <code>notes</code> 欄に入れる人の判断の記録になります。</span>
+        <span class="tag cl">Claude</span><span>候補を並べた比較ページを作り、形がゲーム画面の 300 px の高さで見分けられるかを確かめます。</span>
+      </div>
+      <div class="note tip"><b>形から決めたいとき</b><p>先に黒一色で影絵を塗り、Scribble のコントロールレイヤーにします。強さを 50〜70% にして生成すると、影絵の形のまま中身を描かせられます。Claude が SVG で描いた影絵を読み込んでも使えます。</p></div>
+    </div>
+
+    <div class="stage">
+      <h3>段階 2: 清書（崩れを直し、自分の手を入れる）</h3>
+      <ol>
+        <li>選んだ絵を Apply して、レイヤー名を <code>base</code> にします。</li>
+        <li>全体を強さ 35〜45% で Refine し、細部と陰影を整えます。結果が良ければ Apply します。</li>
+        <li>手・指・顔・槍の穂先など、崩れた箇所を選択ツールで囲み、Fill で描き直します。1 か所ずつ、何枚か出して選びます。</li>
+        <li>AI で直らない所は、ブラシで描き直します。線の太さ、光の向き（スタイルガイドの値）、配色の統一は手で行います。</li>
+        <li>仕上げに強さ 20〜30% の Refine を 1 回かけると、手描きの部分がなじみます。手描きを残したい所は、先に選択範囲から外します。</li>
+        <li>作業ファイルを <code>.kra</code> で OneDrive に保存します（例 <code>OneDrive\art\polearm_warped\polearm_warped_base.kra</code>）。</li>
+      </ol>
+      <div class="who">
+        <span class="tag you">人</span><span>描き直しと手描きを行い、かかった時間を測ります。1 体目の時間が、残り 9 体の計画の基準になります。</span>
+        <span class="tag cl">Claude</span><span>書き出した PNG を切り抜き・拡大して、崩れの残りを指摘します。清書の前後で差分の画像も作ります。</span>
+      </div>
+      <div class="note warn"><b>権利の注意</b><p>文化庁の考え方では、生成と選択だけでは、人の創作の寄与として認められにくいです。この段階で人が加えた部分が、著作物として主張できる根拠になります。何をどれだけ直したかを記録に残してください。</p></div>
+    </div>
+
+    <div class="stage">
+      <h3>段階 3: 背景を抜いて透過 PNG にする</h3>
+      <ol>
+        <li>灰色の背景レイヤーを非表示にし、人物だけのレイヤーを PNG で書き出します（背景が灰色のまま残っていてかまいません）。</li>
+        <li>Claude が背景を抜きます（rembg の isnet-anime、Apache-2.0）。</li>
+        <li>抜けた PNG を Krita で開き、黒と白の背景の両方で縁を確かめます。残った灰色の縁は消しゴムで消します。</li>
+      </ol>
+      <div class="who">
+        <span class="tag you">人</span><span>縁の残りを手で消します。</span>
+        <span class="tag cl">Claude</span><span>背景抜き、白シルエットの作成、横幅の測定（<code>scripts/silhouette.py</code>）を行います。</span>
+      </div>
+      <p class="meta">Krita 内で済ませたい場合は、Replace Background で背景を単色に置き換えてから、色域選択で消す方法もあります。</p>
+    </div>
+
+    <div class="stage">
+      <h3>段階 4: 差分を作る（行動・被弾・崩れ・倒れ）</h3>
+      <p>方法は 2 つあります。まず A を試し、ポーズが大きく変わる差分（倒れ）だけ B にするのを推します。</p>
+      <h4>方法 A: 見本 + 棒人間で描き直す（Animagine）</h4>
+      <ol>
+        <li>清書した絵を別の文書に貼り、<b>Reference</b> のコントロールレイヤーにします（強さ 0.6〜0.8 から）。</li>
+        <li>新しいレイヤーに <b>Pose</b> のコントロールレイヤーを作り、棒人間の関節をベクターツールで動かして、目的のポーズにします（例: 槍を横に薙ぐ）。</li>
+        <li>段階 1 で固定した指示に、動作の言葉だけ足します。例: <code>swinging polearm, sweeping attack, dynamic pose</code>。</li>
+        <li>8 枚ほど出し、清書版と同じ人物に見える物を選びます。そのあと段階 2・3 と同じ直しをします。</li>
+      </ol>
+      <h4>方法 B: 文章で直させる（Flux 2 Klein 4B）</h4>
+      <ol>
+        <li>清書した絵を開き、スタイルを <code>card-battle Edit</code> にします。ボタンが <b>Edit</b> になります。</li>
+        <li>命令を英語で書きます（翻訳を使えば日本語でも可）。例:
+          <pre>make the soldier fall backwards onto the ground, lying on his back, polearm dropped beside him. keep the same clothes, colors and face. grey background.</pre>
+        </li>
+        <li>結果を Apply し、スタイルを <code>card-battle Animagine</code> に戻して、強さ 30〜40% で Refine します。これで絵柄が清書版にそろいます。</li>
+      </ol>
+      <div class="who">
+        <span class="tag you">人</span><span>棒人間でポーズを置き、候補を選び、崩れを直します。</span>
+        <span class="tag cl">Claude</span><span>差分ごとの指示文と命令文を用意し、全差分を並べて同じ人物に見えるかと、ゲーム画面の大きさでの見分けやすさを確かめます。</span>
+      </div>
+      <div class="note tip"><b>同じ顔がどうしても保てないとき</b><p>清書した絵を 10〜20 枚そろえて LoRA（その人物だけの追加学習）を作ります。8 GB で学習が回るかは未実測です。まず方法 A と B で足りるかを見ます。</p></div>
+    </div>
+
+    <div class="stage">
+      <h3>段階 5: パーツに分ける（動かす対象だけ）</h3>
+      <p>静止画の差し替えで済ませる段階 0 の敵には、この段階は要りません。Unity 2D Animation や Live2D で動かす主人公とボスだけが対象です。</p>
+      <ol>
+        <li>清書の <code>.kra</code> を複製し、頭・前髪・胴・腕（上腕と前腕）・手・脚・武器などをレイヤーに切り分けます。</li>
+        <li>重なって隠れていた部分（腕の下の胴など）は、選択範囲の Fill か手描きで描き足します。</li>
+        <li>レイヤー名は英語にし、命名の規則（スタイルガイドで決める）にそろえます。</li>
+        <li><span class="menu">File ▸ Export</span> で <code>.psd</code> に書き出します。</li>
+      </ol>
+      <div class="note warn"><b>Krita の PSD の注意</b><p>Live2D が読み込みを保証しているのは Photoshop と CLIP STUDIO PAINT の PSD だけです。Krita の PSD が層のまま通るかは、1 体目で確かめます。すべての層を 1 つの最上位グループに入れると統合されるという報告があるので、グループはできるだけ使いません。Unity では、取り込み設定の Importer 欄で PSDImporter を選びます。</p></div>
+    </div>
+
+    <div class="stage">
+      <h3>段階 6: Unity に取り込む</h3>
+      <div class="who">
+        <span class="tag you">人</span><span>透過 PNG を渡すだけです。</span>
+        <span class="tag cl">Claude</span><span><code>Assets/Art/Characters/polearm_warped/chr_polearm_warped_idle_stand.png</code> のような規則の名前で置きます。長辺 1024・BC7・足元中央の基準点を設定し、実画面で撮って確かめます。いまの差し替え口は静止画専用なので、動かす絵を差す口の追加は別の実装タスクです。</span>
+      </div>
+    </div>
+
+    <div class="stage">
+      <h3>段階 7: 記録する（1 枚ごと）</h3>
+      <p>2 章でオンにした <code>workflow.json</code> に、モデル名・seed・指示文が残ります。画像を採用するたびに、このファイルを画像と同じ名前で保存します。</p>
+      <div class="who">
+        <span class="tag you">人</span><span>選定理由と、手を入れた内容・時間をメモします（例: 「右手の指を描き直し、槍の穂先を描き足し。40 分」）。</span>
+        <span class="tag cl">Claude</span><span>メモと <code>workflow.json</code> から、台帳 <code>Docs/art/asset-ledger.csv</code> の 30 列を埋めます。モデルのライセンス（Animagine は OpenRAIL++-M、Klein 4B は Apache-2.0）もここに書きます。</span>
+      </div>
+    </div>
+
+    <div class="stage">
+      <h3>任意: 背景の絵を作る場合</h3>
+      <p>いまの決定は「グラデーション + 靄」で、塗った背景は作りません。作るときは次の流れになります。</p>
+      <ol>
+        <li>文書を 1920×1088（64 の倍数）で作り、奥・中・手前をリージョンで分けて指示します。</li>
+        <li>左右が足りなければ、切り抜きツール（<kbd>C</kbd>）でキャンバスを広げて Expand で描き足します。</li>
+        <li>奥・中・手前をレイヤーに分けて書き出すと、Claude がゲーム側で奥行きの動き（パララックス）と靄を重ねます。</li>
+      </ol>
+      <p class="meta">人の作業は 1 階層 2〜4 時間の見込みです（推定）。文字の読みやすさの計算もやり直しになります。</p>
+    </div>
+  </section>
+
+  <!-- ============ 5 ============ -->
+  <section id="s5">
+    <h2>5. 使ってはいけない機能とモデル</h2>
+    <p>製品に入る絵を作るときの決まりです。試しに遊ぶだけなら使ってもかまいませんが、その結果を製品の素材にしないでください。</p>
+    <div class="tbl"><table>
+      <thead><tr><th>対象</th><th>理由</th><th>代わり</th></tr></thead>
+      <tbody>
+        <tr><td>Remove Content、Custom の Fill「Inpaint」</td><td>MAT Inpaint（CC BY-NC 4.0、非商用）を使う。追加機能のコード（<code>workflow.py</code> の <code>detect_inpaint</code>）で確認</td><td>Fill、または手で描いて消す</td></tr>
+        <tr><td>Illustrious / NoobAI のワークロードと部品</td><td>NoobAI 系の部品は fair-ai-public-license で、商用利用を制限する。noob_openpose と noob-ipa はライセンス表記がない</td><td>SDXL のワークロード（xinsir、h94 の IP-Adapter は Apache-2.0）</td></tr>
+        <tr><td>既定のアニメ用モデル Nova Anime XL / NoobAI XL</td><td>Illustrious 派生で、元のライセンスの条件が確認できない</td><td>Animagine XL 4.0</td></tr>
+        <tr><td>Live モードの結果</td><td>高速化の Hyper-SD LoRA のライセンスが未確認</td><td>下書きにだけ使い、最終画像は Generate / Refine で作る</td></tr>
+        <tr><td>Pose の From image</td><td>棒人間の自動抽出に使う検出モデルのライセンスが未確認</td><td>棒人間を手で置く</td></tr>
+        <tr><td>Online Service</td><td>有料</td><td>Local Managed Server</td></tr>
+        <tr><td>見本に購入素材・他作品・旧 Web 版の画像</td><td>Asset Store の規約、出所不明、類似の危険</td><td>自分で承認した絵だけを見本にする</td></tr>
+      </tbody>
+    </table></div>
+    <p class="meta">必須モデルのうち Fooocus Inpaint は OpenRAIL で、SDXL の強い描き直し（強さ 80% 超）で使われます。OpenRAIL は用途の制限つきで商用を認めるライセンスです。</p>
+  </section>
+
+  <!-- ============ 6 ============ -->
+  <section id="s6">
+    <h2>6. 困ったとき</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>症状</th><th>原因と対処</th></tr></thead>
+      <tbody>
+        <tr><td>パネルが出ない</td><td>取り込み後に Krita を再起動していない。<span class="menu">Settings ▸ Dockers</span> のチェックも確かめる</td></tr>
+        <tr><td>接続できない、モデルが足りないと出る</td><td>Connection の <b>Manage ▸ Verify</b> で検査と取り直しをする。ログは Connection の「View log files」から開ける（<code>client.log</code>）</td></tr>
+        <tr><td>「Could not bind on address」</td><td>ポート 8188 を別の ComfyUI（Comfy Desktop など）が使っている。そちらを閉じるか再起動する。変えるなら <code>%APPDATA%\krita\ai_diffusion\settings.json</code> の <code>"server_arguments": "--port 25608"</code></td></tr>
+        <tr><td>生成が極端に遅い</td><td>VRAM が足りずに溢れている。Unity・Chrome・Comfy Desktop を閉じる。キャンバスを小さくするか Resolution multiplier を下げる。Maximum batch size を 1 にする</td></tr>
+        <tr><td>「HeaderTooLarge」などのエラー</td><td>モデルのダウンロードが壊れている。Manage ▸ Verify</td></tr>
+        <tr><td>「c10.dll」などが見つからない</td><td>Microsoft Visual C++ 再頒布パッケージを入れる（<a href="https://aka.ms/vs/17/release/vc_redist.x64.exe">公式</a>）</td></tr>
+        <tr><td>Refine すると白っぽくなる</td><td>生成結果を Apply せずに Refine した。先に Apply する</td></tr>
+        <tr><td>Edit ボタンが出ない</td><td>スタイルのモデルが編集モデルと判定されていない。Checkpoint configuration (advanced) で種類を確かめる</td></tr>
+        <tr><td>サーバーを最新にしたい</td><td>Connection の <b>Manage ▸ Re-install</b>。モデルと設定は残る</td></tr>
+        <tr><td>C: の容量が減った</td><td>キャッシュ（<code>%USERPROFILE%\.cache\huggingface</code>、<code>%LOCALAPPDATA%\uv\cache</code>、<code>%LOCALAPPDATA%\pip\cache</code>）は中身を消してよい</td></tr>
+      </tbody>
+    </table></div>
+    <p class="meta">Krita の公式窓口は、この追加機能の質問を受け付けていません。追加機能の <a href="https://github.com/Acly/krita-ai-diffusion/discussions">Discussions</a> か Issues を使います。Krita が OneDrive のフォルダーに入っている点は、動いている限りそのままでよいです。起動が不安定になったら、OneDrive の外へ入れ直すのを先に試します。</p>
+  </section>
+
+  <!-- ============ 7 ============ -->
+  <section id="s7">
+    <h2>7. 置いた仮定と未確認、次に決めること</h2>
+    <h3>確かめたこと</h3>
+    <ul>
+      <li>手元の版（Krita 5.3.4、Comfy Desktop 1.0.47、GPU とドライバー、空き容量）は、この PC で直接調べました。</li>
+      <li>導入手順・機能・設定の名前は、追加機能の公式ドキュメントの原文（GitHub の <code>docs/</code>）と、最新版 1.53.0 のリリース情報で確かめました。</li>
+      <li>モデルのライセンスは、Hugging Face の各モデルの表記を 25 件取得して確かめました。MAT を使うのが Remove Content と Fill「Inpaint」だけであることは、追加機能のコードで確かめました。</li>
+    </ul>
+    <h3>未確認・推定</h3>
+    <ul>
+      <li>Krita を日本語で使っている場合のメニュー名は目安です。</li>
+      <li>インストール画面の細かい表記（ワークロード名、Individual Packages の並び）は、版によって違う可能性があります。</li>
+      <li>8 GB で SDXL + コントロールレイヤー 2 枚、および Flux 2 Klein 4B（Q6_K）が快適に動くかは未実測です。2 章の最後の動作確認で測ります。</li>
+      <li>SDXL で Face モードが使えるか、Hyper-SD と YOLO-NAS のライセンス、Krita の PSD が Live2D に層のまま通るかは未確認です。</li>
+      <li>所要時間（セットアップ 20〜30 分とダウンロード 30〜90 分、背景 1 階層 2〜4 時間）は推定です。</li>
+    </ul>
+    <h3>次に決めること</h3>
+    <ul>
+      <li><b>主人公の見た目:</b> 性別・年齢・装束・武器が未決です。段階 1 の案出しを主人公から始めるか、長柄の歪み兵から始めるかを決めてください。推奨は、主人公と長柄の歪み兵を並べて、同時に絵柄を決めることです。</li>
+      <li><b>Comfy Desktop の扱い:</b> 残すかアンインストールするかを決めてください。残す場合でも、生成サーバーとの同時起動はしません。</li>
+    </ul>
+  </section>
+
+  <p class="meta">出典: <a href="https://github.com/Acly/krita-ai-diffusion">Acly/krita-ai-diffusion</a>（docs と <code>ai_diffusion/presets/models.json</code>）、<a href="https://huggingface.co/cagliostrolab/animagine-xl-4.0">Animagine XL 4.0</a>、<a href="https://huggingface.co/black-forest-labs/FLUX.2-klein-4B">FLUX.2 klein 4B</a>。ゲームの決まりごとは <code>.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md</code>。</p>
+</main>
