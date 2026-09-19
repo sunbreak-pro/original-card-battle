@@ -103,16 +103,26 @@ const plan = [
 let written = 0;
 let unchanged = 0;
 
+// Every synced file is text. The two repos check the same content out with different line
+// endings (core.autocrlf here; there `.asmdef` is `eol=lf` and `.cs` is plain `text`), so a
+// byte compare would rewrite unchanged files on every run. Compare with line endings folded to LF.
+const toLf = (text) => text.replace(/\r\n/g, "\n");
+const toCrlf = (text) => toLf(text).replace(/\n/g, "\r\n");
+
 for (const [src, dest] of plan) {
-  const body = readFileSync(src);
-  if (existsSync(dest) && readFileSync(dest).equals(body)) {
+  const body = readFileSync(src, "utf8");
+  const current = existsSync(dest) ? readFileSync(dest, "utf8") : null;
+  if (current !== null && toLf(current) === toLf(body)) {
     unchanged += 1;
     continue;
   }
-  console.log(`  ${existsSync(dest) ? "update" : "add   "}  ${dest.slice(projectPath.length + 1)}`);
+  console.log(`  ${current !== null ? "update" : "add   "}  ${dest.slice(projectPath.length + 1)}`);
   if (!dryRun) {
     mkdirSync(dirname(dest), { recursive: true });
-    writeFileSync(dest, body);
+    // Keep the destination's own line-ending style so a real change stays a content-only diff.
+    // A new file keeps the source's style; git normalises it on the first add.
+    const styled = current === null ? body : current.includes("\r\n") ? toCrlf(body) : toLf(body);
+    writeFileSync(dest, styled);
   }
   written += 1;
 }

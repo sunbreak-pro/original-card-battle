@@ -78,6 +78,8 @@ public sealed class BattleScreenView : MonoBehaviour, IBattleView
     private static void Bootstrap()
     {
         if (FindAnyObjectByType<BattleScreenView>() != null) return;
+        // The depiction scene plays a fixed script on its own screen; View v1.1 stays out of it.
+        if (FindAnyObjectByType<Depiction.View.DepictionPlayer>(FindObjectsInactive.Include) != null) return;
         var go = new GameObject("BattleScreenView");
         var view = go.AddComponent<BattleScreenView>();
         var args = Environment.GetCommandLineArgs();

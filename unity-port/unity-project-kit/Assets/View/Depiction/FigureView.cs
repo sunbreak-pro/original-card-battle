@@ -42,30 +42,27 @@ namespace Depiction.View
             body.preserveAspect = true;
         }
 
-        public void SetRange(bool hasRange, RangeSide range)
+        /// <summary>The glyph is written by the script ("近" / "遠"); this view only prints it.</summary>
+        public void SetRange(bool hasRange, string glyph)
         {
             if (rangeTag) rangeTag.gameObject.SetActive(hasRange);
             if (!hasRange) return;
+            if (string.IsNullOrEmpty(glyph)) Debug.LogError("[Depiction] " + name + ": the script gave no range glyph");
             if (rangeGlyph)
             {
-                rangeGlyph.text = Glyph(range);
+                rangeGlyph.text = glyph;
                 rangeGlyph.color = RoleColor;
             }
             if (rangeTagFrame) rangeTagFrame.color = RoleColor;
         }
 
         /// <summary>Flips the tag over in <paramref name="ms"/> and swaps the glyph at the half-way point.</summary>
-        public IEnumerator FlipRangeTag(RangeSide range, float ms)
+        public IEnumerator FlipRangeTag(string glyph, float ms)
         {
             if (!rangeTag) yield break;
             yield return UiTween.Run(ms * 0.5f, Ease.In, t => { if (rangeTag) rangeTag.localScale = new Vector3(1f - t, 1f, 1f); });
-            if (rangeGlyph) rangeGlyph.text = Glyph(range);
+            if (rangeGlyph) rangeGlyph.text = glyph;
             yield return UiTween.Run(ms * 0.5f, Ease.Out, t => { if (rangeTag) rangeTag.localScale = new Vector3(t, 1f, 1f); });
-        }
-
-        public static string Glyph(RangeSide range)
-        {
-            return range == RangeSide.Near ? "近" : "遠";
         }
     }
 }
