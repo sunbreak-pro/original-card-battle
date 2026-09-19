@@ -50,6 +50,12 @@ namespace Depiction
         public int Cost;
         public CardKind Kind;
         public CardAim Aim;
+        /// <summary>
+        /// Throw-line cards only: whose figures the effect lands on, so the View can mark them
+        /// while the card is held. Required when <see cref="Aim"/> is Self; a receiver card
+        /// already shows its target with the dish.
+        /// </summary>
+        public UnitSide? Affects;
         /// <summary>The face value as printed ("6", "13", "遠 +4"). Empty when the card has none.</summary>
         public string ValueText = "";
         /// <summary>Trait line as printed ("初手 +3"). Empty when the card has no trait.</summary>

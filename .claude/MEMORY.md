@@ -16,9 +16,9 @@
 
 ## 直近の完了
 
+- 戦闘描写の手触りの手直し（ホバー、扇形の手札、標的マーク）✅（2026-09-19）— Issue #25 の所感 3 点。札はホバーで 28 px 浮いて前面に出る（角度は保つ）。手札は 1 段 2.5 度の浅い扇形。投げ上げ線の札を持つと、効果が乗る人影を四角い標的マーク（`TargetMarkView`）が囲む。どの人影かは台本の `CardFace.Affects` が決める。確認: エラー 0 / EditMode 描写分 9 / PlayMode 1 / dotnet test 54 / 撮影。**人手待ち**: 浮く量と扇の強さの好み（`DepictionPlayer` のインスペクタで変えられる）
 - アート制作の調べ直し（0 円化の観点）✅（2026-09-19）— ComfyUI ローカル生成 + Krita + 2D Animation / Live2D FREE で全工程 0 円にできる（代わりに人の手の時間が増える）。Gemini の画像 API は無料枠なし。8 GB で See-through と LoRA 学習が通るかは未実測。**判断待ち 4 件**: CSP 購入済みか / #14 をローカル主へ / #23 を最初に実測へ / ボスを 2D Animation に。見つかった穴: `SetSprite` は静止画専用、塗った絵で白点滅が見えない、ヒットストップ値が v2 とずれる。レポート `docs/reports/2026-09-19-visual-production-survey.html`（Artifact `https://claude.ai/artifact/PJ47QE4BHqboyVFmNDXKfS`）
 - 戦闘描写の後片付け（Issue #26 / #27 / #28 / #29 前半）✅（2026-09-19）— 同期は改行を LF にそろえて比べる（2 回目は 0 件）。`BattleScreenView` は `DepictionPlayer` のあるシーンで自動起動しない。攻撃者（`Cue.Source`）と一字札の文字（`UnitFrame.RangeGlyph`）は台本が持ち、テストで必須。1 行動 2.0 秒の上限は PlayMode テスト 1 本。確認: エラー 0 / EditMode 62 / PlayMode 1 / dotnet test 54 / 撮り直し 10 枚は前回と同じ。**持ち越し**: #25（人手）、#30、#29 後半、`ProceduralArt` の静的キャッシュ（2 回目の再生で絵が四角になる）
-- Unity 戦闘描写（固定台本の 1 ターン）✅（2026-09-19）— `BattleDepiction` シーンでプラン §4 の 7 つの出来事が通しで流れる。順 2〜4 はドラッグ待ち（受け皿 / 投げ上げ線、違う札は戻る）、ほかは自動。台本と型は純 C#（`Assets/View/Depiction/Script/`）、View は `Depiction.View`、プレハブ 7 つとシーンは Unity リポ。確認: エラー 0 / EditMode 60 / dotnet test 54 / 撮影 15 枚を拡大確認 / 1 行動の最長 1.62 秒。QA の Blocking 1 件と Important 3 件は対応済み。**人手待ち**: ドラッグの手触りと演出の長さ、Unity リポの push。レポート `docs/reports/2026-09-19-unity-battle-depiction.html`（Artifact `https://claude.ai/artifact/MLZm2svaAm6L24HnnNZSMR`）
 
 > 完了履歴の全量は `README.md` の Development History を参照。
 
