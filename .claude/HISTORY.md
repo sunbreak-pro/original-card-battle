@@ -2,6 +2,19 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-19 - Krita AI 制作ガイド
+
+#### 概要
+
+Krita と ComfyUI の導入を済ませたこうだいさん向けに、Krita AI Diffusion の導入の続き、機能の全体、ゲームの立ち絵と差分を作る段階的な手順を HTML ガイドにまとめた。
+
+#### 変更点
+
+- **ガイド**: `docs/reports/2026-09-19-krita-ai-setup-guide.html`（Artifact `https://claude.ai/artifact/9GUvs2LY7jJGK7hdeFQ7ym`、Note `note-f1e8ef0b`）。公式 docs の原文、models.json、リリース 1.53.0 を読んで書いた
+- **判断**: Comfy Desktop ではなく Local Managed Server を使う。ワークロードは SDXL と Flux 2 だけ。生成は Animagine XL 4.0、ポーズ差分は Flux 2 Klein 4B の編集
+- **ライセンスの発見**: Illustrious 系の部品は NoobAI 派生（fair-ai-public-license）。MAT Inpaint は CC BY-NC 4.0 で、Remove Content と Fill「Inpaint」だけが使う（`workflow.py` の `detect_inpaint`）。25 件の表記を Hugging Face から取得
+- **正本**: `tools-and-prerequisites.md` に §12 を追加
+
 ### 2026-09-19 - 戦闘描写の仕上げ（Issue #31 と手触りの QA 残り）
 
 #### 概要
