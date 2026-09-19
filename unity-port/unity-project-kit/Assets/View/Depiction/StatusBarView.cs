@@ -41,6 +41,7 @@ namespace Depiction.View
             if (unit.ShowStamina) SetStamina(unit.Stamina, unit.StaminaMax);
             for (int i = 0; i < chips.Length; i++)
             {
+                if (!chips[i]) continue;
                 bool used = i < unit.Statuses.Count;
                 chips[i].gameObject.SetActive(used);
                 if (used) chips[i].text = unit.Statuses[i].Label + unit.Statuses[i].Stacks;

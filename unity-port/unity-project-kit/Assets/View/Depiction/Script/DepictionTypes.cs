@@ -153,6 +153,8 @@ namespace Depiction
         public int HpAfter = Unchanged;
         public int GuardAfter = Unchanged;
         public int StaminaAfter = Unchanged;
+        /// <summary>StaminaChange only: how many pips the unit has, so the View never looks outside the cue.</summary>
+        public int StaminaMax = Unchanged;
         public RangeSide RangeAfter;
     }
 

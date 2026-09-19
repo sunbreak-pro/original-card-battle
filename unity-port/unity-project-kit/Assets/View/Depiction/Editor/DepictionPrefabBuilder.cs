@@ -43,7 +43,9 @@ namespace Depiction.View
             AssetDatabase.SaveAssets();
 
             bool sceneCreated = false;
-            if (!File.Exists(ScenePath))
+            // Building the scene replaces whatever is open, so unsaved edits are offered for saving first;
+            // cancelling that dialog skips the scene and keeps the open one.
+            if (!File.Exists(ScenePath) && EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
             {
                 BuildScene();
                 sceneCreated = true;

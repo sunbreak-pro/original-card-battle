@@ -100,7 +100,11 @@ namespace Depiction.Tests
                     if (cue.Kind == CueKind.Hit) Assert.That(cue.HpAfter, Is.Not.EqualTo(Cue.Unchanged));
                     if (cue.Kind == CueKind.GuardGain || cue.Kind == CueKind.GuardBlock || cue.Kind == CueKind.StanceCue)
                         Assert.That(cue.GuardAfter, Is.Not.EqualTo(Cue.Unchanged));
-                    if (cue.Kind == CueKind.StaminaChange) Assert.That(cue.StaminaAfter, Is.Not.EqualTo(Cue.Unchanged));
+                    if (cue.Kind == CueKind.StaminaChange)
+                    {
+                        Assert.That(cue.StaminaAfter, Is.Not.EqualTo(Cue.Unchanged));
+                        Assert.That(cue.StaminaMax, Is.Not.EqualTo(Cue.Unchanged));
+                    }
                 }
             }
         }

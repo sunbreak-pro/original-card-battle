@@ -73,6 +73,8 @@ namespace Depiction.View
             {
                 Destroy(legacy.gameObject);
             }
+            // Keep playing while the Editor is unfocused (captures and remote-driven checks rely on it).
+            Application.runInBackground = true;
             EnsureEventSystem();
             UiTween.Speed = 1f; // a debug gate may have left it at 0 when domain reload is off
             if (backdrop && backdrop.sprite == null)
@@ -86,6 +88,13 @@ namespace Depiction.View
             _runner = new DepictionRunner(TurnSliceScript.Build());
             ApplyFrame(_runner.Frame);
             StartCoroutine(RunAutomaticEvents());
+        }
+
+        private void OnDisable()
+        {
+            // A debug gate freezes every tween through the shared UiTween.Speed. Never leave it frozen
+            // for the next scene (View v1.1 uses the same static when domain reload is off).
+            UiTween.Speed = 1f;
         }
 
         public void DebugStep()
@@ -147,7 +156,7 @@ namespace Depiction.View
                     break;
 
                 case CueKind.StaminaChange:
-                    status.SetStamina(cue.StaminaAfter, _runner.Frame.Player.StaminaMax);
+                    status.SetStamina(cue.StaminaAfter, cue.StaminaMax);
                     if (status.pipRow) StartCoroutine(UiTween.Pop(status.pipRow, 220f));
                     if (cue.Amount > 0) yield return UiTween.Wait(220f);
                     break;
@@ -168,7 +177,7 @@ namespace Depiction.View
                     break;
 
                 case CueKind.Slash:
-                    yield return Attack(cue, target, status, chest, head);
+                    yield return Attack(ev, cue, target, status, chest);
                     break;
 
                 case CueKind.GuardGain:
@@ -217,14 +226,14 @@ namespace Depiction.View
                     yield return status.AnimateHp(cue.HpAfter, 300f);
                     yield return Gate(ev.Order + "-impact");
                     yield return omenBadge.FadeOut(200f);
-                    yield return Lunge(enemyFigure, -70f, 200f);
+                    yield return Lunge(enemyFigure, -70f, 140f);
                     break;
             }
         }
 
         // ---- beats --------------------------------------------------------------------------
 
-        private IEnumerator Attack(Cue cue, FigureView target, StatusBarView status, Vector2 chest, Vector2 head)
+        private IEnumerator Attack(DepictionEvent ev, Cue cue, FigureView target, StatusBarView status, Vector2 chest)
         {
             bool byPlayer = cue.Target == UnitSide.Enemy;
             FigureView attacker = byPlayer ? playerFigure : enemyFigure;
@@ -241,7 +250,7 @@ namespace Depiction.View
             StartCoroutine(DepictionFx.Flash(target.body, BattleTheme.White, 220f));
             StartCoroutine(UiTween.Shake(target.Rect, DepictionFx.Shake(cue.Intensity), 3, 260f));
             yield return status.AnimateHp(cue.HpAfter, 300f);
-            yield return Gate(_runner.Index + "-impact");
+            yield return Gate(ev.Order + "-impact");
             yield return Lunge(attacker, -46f, 120f);
         }
 

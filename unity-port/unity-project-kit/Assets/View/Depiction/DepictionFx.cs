@@ -104,7 +104,7 @@ namespace Depiction.View
             number.fontStyle = FontStyle.Bold;
             Burst(host, layer, at, BattleTheme.Guard, 320f);
             yield return UiTween.Pop(shield.rectTransform, 240f);
-            yield return UiTween.Wait(120f);
+            yield return UiTween.Wait(80f);
             if (hold != null) yield return hold();
             host.StartCoroutine(FadeAndDestroy(shield, 220f, number));
         }

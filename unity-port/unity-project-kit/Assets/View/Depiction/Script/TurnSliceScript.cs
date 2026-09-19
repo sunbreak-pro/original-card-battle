@@ -31,7 +31,7 @@ namespace Depiction
                 After = Snapshot(50, 0, 9, RangeSide.Near, 60, FullHand(), attackNear),
             };
             turnStart.Cues.Add(new Cue { Kind = CueKind.GuardReset, Target = UnitSide.Player, GuardAfter = 0 });
-            turnStart.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = 3, StaminaAfter = 9 });
+            turnStart.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = 3, StaminaAfter = 9, StaminaMax = 10 });
             turnStart.Cues.Add(new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 5 });
             turnStart.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy });
             script.Events.Add(turnStart);
@@ -43,7 +43,7 @@ namespace Depiction
                 CardId = Kesagiri, Aim = CardAim.Single, PreviewText = "9",
                 After = Snapshot(50, 0, 8, RangeSide.Near, 51, HandWithout(Kesagiri), attackNear),
             };
-            kesagiri.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -1, StaminaAfter = 8 });
+            kesagiri.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -1, StaminaAfter = 8, StaminaMax = 10 });
             kesagiri.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = UnitSide.Player, Text = "初手 +3" });
             kesagiri.Cues.Add(new Cue { Kind = CueKind.Slash, Target = UnitSide.Enemy, Amount = 9, Intensity = 1, HpAfter = 51 });
             script.Events.Add(kesagiri);
@@ -55,7 +55,7 @@ namespace Depiction
                 CardId = Daijodan, Aim = CardAim.Single, PreviewText = "13",
                 After = Snapshot(50, 0, 6, RangeSide.Near, 38, HandWithout(Kesagiri, Daijodan), attackNear),
             };
-            daijodan.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -2, StaminaAfter = 6 });
+            daijodan.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -2, StaminaAfter = 6, StaminaMax = 10 });
             daijodan.Cues.Add(new Cue { Kind = CueKind.Slash, Target = UnitSide.Enemy, Amount = 13, Intensity = 2, HpAfter = 38 });
             script.Events.Add(daijodan);
 
@@ -66,7 +66,7 @@ namespace Depiction
                 CardId = Ushirotobi, Aim = CardAim.Self, PreviewText = "7",
                 After = Snapshot(50, 7, 5, RangeSide.Far, 38, HandWithout(Kesagiri, Daijodan, Ushirotobi), attackNear),
             };
-            ushirotobi.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -1, StaminaAfter = 5 });
+            ushirotobi.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -1, StaminaAfter = 5, StaminaMax = 10 });
             ushirotobi.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, RangeAfter = RangeSide.Far });
             ushirotobi.Cues.Add(new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 4, Intensity = 1, GuardAfter = 4 });
             ushirotobi.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = UnitSide.Player, Text = "予兆 +3" });

@@ -133,7 +133,7 @@
     <li class="verdict skip"><span class="tag">作っていない</span><h3>ルールの計算、2 体戦、結果画面</h3><p>プラン §6 のとおり範囲外。画面は台本の値を映すだけで、威力も Guard も計算しない。</p></li>
   </ul>
 
-  <div class="callout prose"><strong>1 行動の長さ</strong>: 順 1〜7 の実測は 1.63 / 1.21 / 0.95 / 1.64 / 0.92 / 1.97 / 0.24 秒です。上限 2.0 秒に対して、順 6（敵の攻撃）が 1.97 秒でぎりぎりです。撮影の待ち数フレームを含む値です。</div>
+  <div class="callout prose"><strong>1 行動の長さ</strong>: 順 1〜7 の実測は 1.35 / 1.08 / 0.85 / 1.42 / 0.83 / 1.62 / 0.24 秒です（撮影なし、QA 後に順 6 を詰めた版）。上限 2.0 秒に対して、最長は順 6（敵の攻撃）の 1.62 秒です。撮影ありの初回は 1.97 秒でした。</div>
 
   <h2>出来事ごとの画面</h2>
   <p class="prose">2560×1440 の Game ビューを区切りごとに自動保存し、左上の札・手札・予兆を切り抜いて拡大して読みました。縦線が緑は問題なし、黄は要確認です。Blocking はありません。</p>
@@ -148,6 +148,18 @@
       <tr><td>(3) dotnet test</td><td class="state yes">54 / 54</td><td><code>BattleCore/</code> と <code>BattleCore.Tests/</code> は無変更。</td></tr>
       <tr><td>(4) Play + 撮影 + 拡大</td><td class="state yes">15 枚</td><td>値は全て台本どおり。文字の欠けなし。初回の撮影で見つけた 4 点（人型が背景に沈む / 特性なしの札に空枠 / 皿の予測値が札に隠れる / 浮き文字が上端で切れる）は直して撮り直した。</td></tr>
     </tbody></table></div>
+
+  <h2>QA レビュー（別コンテキスト）の結果</h2>
+  <p class="prose">判定は「要修正」で、Blocking 1 件と Important 3 件でした。4 件とも直して、再コンパイル・EditMode 6 件・dotnet test 54 件・通し再生をやり直しています。台本と §4 の一致、ドラッグの規則、計算しない決まり、触らないものの保全は、指摘なしでした。</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>重さ</th><th>指摘</th><th>対応</th></tr></thead>
+    <tbody>
+      <tr><td class="state maybe">Blocking</td><td>生成メニューがシーンを作るとき、開いているシーンの未保存の編集を確認なしで捨てる</td><td>保存の確認を先に出す。取り消すとシーンは作らず、開いているシーンを残す</td></tr>
+      <tr><td>Important</td><td>撮影で止めたまま再生を抜けると、共有の <code>UiTween.Speed</code> が 0 のまま残り、既存 View が止まって見える</td><td><code>OnDisable</code> で 1 に戻す</td></tr>
+      <tr><td>Important</td><td>順 6 が 1.97 秒で、2.0 秒に余裕がない</td><td>盾の待ちと敵の戻りを詰めて 1.62 秒に</td></tr>
+      <tr><td>Important</td><td>スタミナの合図だけが台本の外（走者の状態）から最大値を読む</td><td><code>Cue.StaminaMax</code> を足して台本に持たせ、テストで必須に</td></tr>
+    </tbody></table></div>
+  <p class="prose note">Suggestion のうち、ゲート名に <code>ev.Order</code> を使う件と状態チップの null 検査は直しました。攻撃者を <code>Cue</code> に持たせる件、一字札の文字を台本に持たせる件、Node 20.12 以上の明記は見送りで、コアへつなぐときに合わせて決めます。再生の確認中に、Unity が前面にないと時計が止まることも分かったので、描写シーンは <code>runInBackground</code> を入れています。</p>
 
   <h2>プレハブの一覧</h2>
   <p class="prose">置き場は Unity リポの <code>Assets/Prefabs/Depiction/</code> です。メニュー <code>Tools &gt; Depiction &gt; Build Prefabs And Scene</code> は、無いものだけを作ります。既にあるプレハブとシーンには触りません。作り直したいときは、その 1 つを消してからメニューを押します。</p>
@@ -183,7 +195,7 @@
     <li>Unity で <code>Assets/Scenes/BattleDepiction.unity</code> を開き、Play を押します。順 1 は自動で流れます。</li>
     <li>袈裟斬りを敵の皿の上で離します。皿の外で離すと手札に戻ります。先に大上段を皿へ出すと、揺れて戻ります。</li>
     <li>大上段を皿へ、後ろ跳びを点線より上へ出します。点線より下で離すと戻ります。その後は順 5〜7 が自動で流れます。</li>
-    <li>見てほしい点は 3 つです。掴んだ瞬間の持ち上がり（1.08 倍）、皿と線の気づきやすさ、順 6 の 1.97 秒が長く感じるか。</li>
+    <li>見てほしい点は 3 つです。掴んだ瞬間の持ち上がり（1.08 倍）、皿と線の気づきやすさ、順 6 の 1.62 秒が長く感じるか。</li>
     <li>撮り直すときは、<code>DepictionPlayer</code> の <code>autoPlayDrags</code> を入れ、<code>debugCaptureDir</code> に保存先を書きます。どちらも既定は切です。</li>
   </ul>
 
@@ -209,6 +221,6 @@
   <ul class="prose">
     <li>Unity リポ（<code>sunbreak-pro/RPG-by-card</code>）への push。初回コミットと描写のコミットはローカルだけです。初めての公開操作なので止めています。</li>
     <li>強弱 4 段のしきい値と、投げ上げ線の予測値の形（v2.1 の書き直しで決める項目）。</li>
-    <li>順 6 の長さ。詰めるなら、踏み込み 220 ms か打ち消し線 260 ms を削ります。</li>
+    <li>1 行動 2.0 秒の上限を自動テストにするか。いまは <code>EventSeconds</code> に実測が残り、ログに出るだけです。30 fps の機では 1 本の補間が 1 フレームずつ延びます。</li>
   </ul>
 </div>
