@@ -1,0 +1,214 @@
+<title>戦闘描写 1 ターン検証</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .step code { font-size: 13px; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+  @media (max-width: 720px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 16px 0 24px; }
+  figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  figure img { width: 100%; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 3px; display: block; }
+  figcaption { font-size: 14px; color: var(--muted); border-left: 3px solid var(--ok); padding-left: 10px; }
+  figcaption.check { border-left-color: var(--warn); }
+  figcaption b { color: var(--ink); }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-19 / 検証 / original-card-battle（Unity: RPG-by-card）</p>
+    <h1>固定台本の 1 ターンが、Unity Editor で通しで流れます</h1>
+    <p class="lede">プラン §4 の 7 つの出来事を <code>BattleDepiction</code> シーンで再生できます。順 2〜4 はドラッグ待ち、ほかは自動です。確認 4 つは全て通りました。残るのは人手の手触り確認と、Unity リポの push の判断です。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">確認済み</span><h3>確認 4 つが緑</h3><p>再コンパイル後のエラーと警告 0。EditMode 60 / 60（既存 54 + 描写 6）。dotnet test 54 / 54。Play で 7 つの出来事を 15 枚撮り、拡大して値・欠け・重なりを見た。</p></li>
+    <li class="verdict later"><span class="tag">人手が要る</span><h3>ドラッグの手触りと演出の長さ</h3><p>実際のマウス操作は Claude から試せない。下の手順で 5 分ほど。自動ドラッグ（デバッグ）では 3 枚とも規則どおりに確定した。</p></li>
+    <li class="verdict skip"><span class="tag">作っていない</span><h3>ルールの計算、2 体戦、結果画面</h3><p>プラン §6 のとおり範囲外。画面は台本の値を映すだけで、威力も Guard も計算しない。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>1 行動の長さ</strong>: 順 1〜7 の実測は 1.63 / 1.21 / 0.95 / 1.64 / 0.92 / 1.97 / 0.24 秒です。上限 2.0 秒に対して、順 6（敵の攻撃）が 1.97 秒でぎりぎりです。撮影の待ち数フレームを含む値です。</div>
+
+  <h2>出来事ごとの画面</h2>
+  <p class="prose">2560×1440 の Game ビューを区切りごとに自動保存し、左上の札・手札・予兆を切り抜いて拡大して読みました。縦線が緑は問題なし、黄は要確認です。Blocking はありません。</p>
+  <div class="shots"><figure><img src="2026-09-19-unity-battle-depiction/1-end.jpg" alt="順 1 ターン開始" loading="lazy"><figcaption class=""><b>順 1 ターン開始</b><br>Guard 0、スタミナ 9、手札 5 枚、予兆「攻撃・近 13」。左上の札は 14 px で「砂 2 / 階 1 / ●○○ / 霧 0%」。拡大して欠けなし。</figcaption></figure><figure><img src="2026-09-19-unity-battle-depiction/2-hover.jpg" alt="順 2 袈裟斬りを受け皿へ" loading="lazy"><figcaption class=""><b>順 2 袈裟斬りを受け皿へ</b><br>皿は敵の人型にだけ出る。予測値「9」は皿の左に 1 つ。札が皿の中心を覆うので、値を皿の外へ出した。</figcaption></figure><figure><img src="2026-09-19-unity-battle-depiction/2-impact.jpg" alt="順 2 着弾（強弱 1 段目）" loading="lazy"><figcaption class=""><b>順 2 着弾（強弱 1 段目）</b><br>特性の合図「初手 +3」→ 斬撃 → 数字 9。敵 HP 60 → 51、スタミナ 9 → 8。</figcaption></figure><figure><img src="2026-09-19-unity-battle-depiction/3-impact.jpg" alt="順 3 大上段（強弱 2 段目）" loading="lazy"><figcaption class="check"><b>順 3 大上段（強弱 2 段目）</b><br>数字 13 は 1 段目より大きい。敵 HP 51 → 38、スタミナ 8 → 6。数字が敵の頭に重なる。読めるが位置は好みの範囲。</figcaption></figure><figure><img src="2026-09-19-unity-battle-depiction/4-hover.jpg" alt="順 4 後ろ跳びを投げ上げ線へ" loading="lazy"><figcaption class="check"><b>順 4 後ろ跳びを投げ上げ線へ</b><br>点線は手札の上に出る。線より上で色が変わり、予測値「7」を線の上に 1 つ。持った札が足元の一字札を一時的に隠す。</figcaption></figure><figure><img src="2026-09-19-unity-battle-depiction/4-end.jpg" alt="順 4 確定後" loading="lazy"><figcaption class=""><b>順 4 確定後</b><br>立ち位置が後ろへ移り、一字札が「近」→「遠」。Guard 4 → 特性「予兆 +3」→ Guard 7。スタミナ 5。</figcaption></figure><figure><img src="2026-09-19-unity-battle-depiction/5-impact.jpg" alt="順 5 構え" loading="lazy"><figcaption class=""><b>順 5 構え</b><br>ターン終了ボタンが跳ね、盾の合図と「+3」。Guard 7 → 10。残り 2 枚はこの後に捨て札へ流れる。</figcaption></figure><figure><img src="2026-09-19-unity-battle-depiction/6-block.jpg" alt="順 6 Guard で止める" loading="lazy"><figcaption class=""><b>順 6 Guard で止める</b><br>敵が踏み込み、予兆の「近」に打ち消し線（+5 が外れた合図）。盾に止めた量 10、Guard 10 → 0。</figcaption></figure><figure><img src="2026-09-19-unity-battle-depiction/6-impact.jpg" alt="順 6 被弾" loading="lazy"><figcaption class=""><b>順 6 被弾</b><br>抜けた 3 が赤で浮き、HP 50 → 47。揺れは 1 段目。</figcaption></figure><figure><img src="2026-09-19-unity-battle-depiction/7-end.jpg" alt="順 7 次の予兆" loading="lazy"><figcaption class=""><b>順 7 次の予兆</b><br>予兆「防御」。一字と値は台本が空なので出ない。手札 0 枚、構えの予告も消える。</figcaption></figure></div>
+
+  <h2>確認 4 つの結果</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>確認</th><th>結果</th><th>中身</th></tr></thead>
+    <tbody>
+      <tr><td>(1) sync → recompile → コンソール</td><td class="state yes">エラー 0</td><td>警告も 0。途中で <code>FigureView</code> の名前衝突（既存 <code>ArenaView.cs</code> に同名）が 1 回出て、描写側を <code>Depiction.View</code> 名前空間へ入れて解消。</td></tr>
+      <tr><td>(2) EditMode テスト</td><td class="state yes">60 / 60</td><td>描写の 6 件: 7 つが順に流れ切る / ドラッグ待ちは自動で進まない / 違う札は戻る / 皿の外は戻る / 自分向きは線の上だけ / 全ての合図が確定値を持つ。</td></tr>
+      <tr><td>(3) dotnet test</td><td class="state yes">54 / 54</td><td><code>BattleCore/</code> と <code>BattleCore.Tests/</code> は無変更。</td></tr>
+      <tr><td>(4) Play + 撮影 + 拡大</td><td class="state yes">15 枚</td><td>値は全て台本どおり。文字の欠けなし。初回の撮影で見つけた 4 点（人型が背景に沈む / 特性なしの札に空枠 / 皿の予測値が札に隠れる / 浮き文字が上端で切れる）は直して撮り直した。</td></tr>
+    </tbody></table></div>
+
+  <h2>プレハブの一覧</h2>
+  <p class="prose">置き場は Unity リポの <code>Assets/Prefabs/Depiction/</code> です。メニュー <code>Tools &gt; Depiction &gt; Build Prefabs And Scene</code> は、無いものだけを作ります。既にあるプレハブとシーンには触りません。作り直したいときは、その 1 つを消してからメニューを押します。</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>プレハブ</th><th>View</th><th>中身</th><th>台本から受け取るもの</th></tr></thead>
+    <tbody>
+      <tr><td>Card</td><td><code>CardView</code></td><td>190×260。コスト、技名、値、特性の行とランプ、属性色の帯</td><td><code>CardFace</code></td></tr>
+      <tr><td>Figure</td><td><code>FigureView</code></td><td>影絵、胸と頭の目印、足元の一字札。プレイヤーと敵で共用。<code>SetSprite(Sprite)</code> が立ち絵の差し替え口</td><td><code>UnitFrame.HasRange / Range</code></td></tr>
+      <tr><td>StatusBar</td><td><code>StatusBarView</code></td><td>HP バーと現在値、Guard の盾、スタミナのピップ 10、状態チップ 6（付いた分だけ表示）</td><td><code>UnitFrame</code></td></tr>
+      <tr><td>OmenBadge</td><td><code>OmenBadgeView</code></td><td>種別 + 咎める側の一字 + 値。外れたときの打ち消し線</td><td><code>OmenFrame</code></td></tr>
+      <tr><td>Receiver</td><td><code>ReceiverView</code></td><td>受け皿 340×340 と予測値 1 つ。当たり判定は皿の矩形</td><td><code>DepictionEvent.PreviewText</code></td></tr>
+      <tr><td>ThrowLine</td><td><code>ThrowLineView</code></td><td>点線 25 本と予測値 1 つ。線の Y がそのまましきい値</td><td><code>DepictionEvent.PreviewText</code></td></tr>
+      <tr><td>CornerInfo</td><td><code>CornerInfoView</code></td><td>左上 14 px・1 行。砂（ターン）/ 階 / 連戦の点 / 霧 %</td><td><code>CornerFrame</code></td></tr>
+    </tbody></table></div>
+  <p class="prose note">静止時の固定ラベルは「砂」「階」「霧」の 3 字と、例外の「ターン終了」だけです。上帯・刻限・手番・敵名は出していません。位置は全てシーン上の物体から実行時に読むので、Editor で動かしても再生は壊れません（近間 / 遠間の立ち位置は <code>PlayerNearSlot</code> / <code>PlayerFarSlot</code>）。</p>
+
+  <h2>コアへ差し替えるときの接続点</h2>
+  <p class="prose">差し替えるのは <code>DepictionPlayer.Start</code> の 1 行（<code>TurnSliceScript.Build()</code>）だけです。v4.2 コアの出力から同じ型を作る変換器を 1 つ書けば、View は変えずに済みます。いまの <code>BattleViewModel</code>（v3）との対応は次のとおりです。</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>描写の型</th><th>v3 の出どころ</th><th>v4.2 で足りないもの</th></tr></thead>
+    <tbody>
+      <tr><td><code>CornerFrame</code></td><td>ターン、階層、瘴気 %（HUD の値）</td><td>連戦の何戦目か</td></tr>
+      <tr><td><code>UnitFrame</code></td><td>HP / 最大、Guard、スタミナ / 最大</td><td><code>Range</code>（近 / 遠。v3 は 3 段の距離）、状態のスタック</td></tr>
+      <tr><td><code>OmenFrame</code></td><td><code>OmenView.KindLabel</code>、<code>PowerSpan</code></td><td><code>SideGlyph</code>（咎める側の一字）。v3 の <code>TargetRangeLabel</code> は置き換え</td></tr>
+      <tr><td><code>CardFace</code></td><td><code>CardView.InstanceId / Name / Type</code></td><td><code>Cost</code>（固定コスト。v3 は投入量の <code>Tiers</code>）、<code>Aim</code>、<code>TraitText / TraitLit</code></td></tr>
+      <tr><td><code>DepictionEvent.PreviewText</code></td><td><code>TierView.PredictedDamage</code></td><td>特性込みの予測値 1 つ</td></tr>
+      <tr><td><code>Cue</code> の列</td><td>ストアのイベント列（攻撃、Guard、予兆）</td><td>特性の発火、切り替え、構え、外れた加算、強弱の段（1〜4）</td></tr>
+    </tbody></table></div>
+  <p class="prose note">強弱の段はコア側（か変換器）が確定値から決めて <code>Cue.Intensity</code> に入れます。View は段を大きさ・ヒットストップ・揺れに写すだけです。</p>
+
+  <h2>人手の確認の手順</h2>
+  <ul class="prose">
+    <li>Unity で <code>Assets/Scenes/BattleDepiction.unity</code> を開き、Play を押します。順 1 は自動で流れます。</li>
+    <li>袈裟斬りを敵の皿の上で離します。皿の外で離すと手札に戻ります。先に大上段を皿へ出すと、揺れて戻ります。</li>
+    <li>大上段を皿へ、後ろ跳びを点線より上へ出します。点線より下で離すと戻ります。その後は順 5〜7 が自動で流れます。</li>
+    <li>見てほしい点は 3 つです。掴んだ瞬間の持ち上がり（1.08 倍）、皿と線の気づきやすさ、順 6 の 1.97 秒が長く感じるか。</li>
+    <li>撮り直すときは、<code>DepictionPlayer</code> の <code>autoPlayDrags</code> を入れ、<code>debugCaptureDir</code> に保存先を書きます。どちらも既定は切です。</li>
+  </ul>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>強弱 4 段のしきい値は未決（UI §11.7）なので、段は台本に手で書きました。9 = 1 段目、13 = 2 段目、被弾 3 = 1 段目です。</li>
+    <li>投げ上げ線の予測値の形も未決なので、線の上に数字 1 つ（後ろ跳びは Guard の合計 7）にしました。</li>
+    <li>階層 1、連戦 1 / 3 戦目、瘴気 0% は台本に無い値なので仮に置きました。</li>
+    <li>鉄の受けのコスト 2・値 9、観察のコスト 1 は、§18 の目盛りから置きました。この 2 枚は台本で使いません。</li>
+    <li>ターン終了ボタンは表示だけです。順 5 は自動で進む決まりなので、押せません。</li>
+    <li>Unity リポの初回コミットから <code>Assets/_Recovery/</code>（Editor の復旧用シーン）を外し、<code>.gitignore</code> に足しました。</li>
+    <li>重ティアの role-pm は起動していません。プランが要件分解と範囲を既に持っていたためです。</li>
+  </ul>
+
+  <h2>範囲の外で気づいたこと（直していません）</h2>
+  <ul class="prose">
+    <li><code>BattleScreenView</code>（View v1.1）は、どのシーンでも再生開始時に自分を生成します。描写シーンでは <code>DepictionPlayer.Start</code> がその自動生成分だけを消しています。既存ファイルと <code>test1.unity</code> は無変更です。シーンが増えるなら、v1.1 側の自動起動に条件を付けるほうが素直です。</li>
+    <li>Unity リポの既存 C# は、同期のたびに改行コードだけの差分が出ます（中身の差分は 0）。<code>.gitattributes</code> の設定と同期元の改行が合っていません。</li>
+    <li><code>rm -rf</code> が権限で拒否されたので、プレハブの作り直しはやめ、Editor 上で 2 か所を手直ししました（Card の特性枠の参照、Receiver の予測値の位置）。生成スクリプトにも同じ値を入れてあります。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li>Unity リポ（<code>sunbreak-pro/RPG-by-card</code>）への push。初回コミットと描写のコミットはローカルだけです。初めての公開操作なので止めています。</li>
+    <li>強弱 4 段のしきい値と、投げ上げ線の予測値の形（v2.1 の書き直しで決める項目）。</li>
+    <li>順 6 の長さ。詰めるなら、踏み込み 220 ms か打ち消し線 260 ms を削ります。</li>
+  </ul>
+</div>

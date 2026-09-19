@@ -56,6 +56,14 @@ const csFiles = (dir) =>
     .filter((f) => f.endsWith(".cs"))
     .map((f) => join(dir, f));
 
+// Recursive variant for folders with sub-assemblies; returns forward-slash paths.
+const treeFiles = (dir, exts) =>
+  existsSync(dir)
+    ? readdirSync(dir, { withFileTypes: true, recursive: true })
+        .filter((e) => e.isFile() && exts.some((x) => e.name.endsWith(x)))
+        .map((e) => join(e.parentPath, e.name).split(BS).join("/"))
+    : [];
+
 const plan = [
   // engine-free core -> Assets/Core (asmdef sets noEngineReferences)
   ...csFiles(`${repoRoot}/unity-port/BattleCore`)
@@ -80,6 +88,12 @@ const plan = [
 
   // View MonoBehaviours (BattleScreenView + helpers) -> Assets/View
   ...csFiles(`${kit}/Assets/View`).map((src) => [src, `${projectPath}/Assets/View/${basename(src)}`]),
+  // Battle depiction (fixed-script playback): pure script assembly, views, Editor builder, tests.
+  // Prefabs / scenes / .meta stay in the Unity repo and are never copied from here.
+  ...treeFiles(`${kit}/Assets/View/Depiction`, [".cs", ".asmdef"]).map((src) => [
+    src,
+    `${projectPath}/Assets/View/Depiction/${src.slice(`${kit}/Assets/View/Depiction/`.length)}`,
+  ]),
   // parity-fixture replay script (npm run unity:trace) -> Resources so the View can load it
   [`${kit}/Assets/View/Resources/trace-actions.txt`, `${projectPath}/Assets/View/Resources/trace-actions.txt`],
 ];
