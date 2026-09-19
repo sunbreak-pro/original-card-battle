@@ -140,8 +140,8 @@ namespace Depiction
             {
                 new CardFace { Id = Kesagiri, Name = "袈裟斬り", Cost = 1, Kind = CardKind.Attack, Aim = CardAim.Single, ValueText = "6", TraitText = "初手 +3", TraitLit = true },
                 new CardFace { Id = Daijodan, Name = "大上段", Cost = 2, Kind = CardKind.Attack, Aim = CardAim.Single, ValueText = "13" },
-                new CardFace { Id = Ushirotobi, Name = "後ろ跳び", Cost = 1, Kind = CardKind.Move, Aim = CardAim.Self, ValueText = "4", TraitText = "予兆 +3", TraitLit = true },
-                new CardFace { Id = TetsuNoUke, Name = "鉄の受け", Cost = 2, Kind = CardKind.Guard, Aim = CardAim.Self, ValueText = "9" },
+                new CardFace { Id = Ushirotobi, Name = "後ろ跳び", Cost = 1, Kind = CardKind.Move, Aim = CardAim.Self, Affects = UnitSide.Player, ValueText = "4", TraitText = "予兆 +3", TraitLit = true },
+                new CardFace { Id = TetsuNoUke, Name = "鉄の受け", Cost = 2, Kind = CardKind.Guard, Aim = CardAim.Self, Affects = UnitSide.Player, ValueText = "9" },
                 new CardFace { Id = Kansatsu, Name = "観察", Cost = 1, Kind = CardKind.Skill, Aim = CardAim.Single },
             };
         }
