@@ -2,6 +2,20 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-19 - アート制作の調べ直し（0 円化の観点）
+
+#### 概要
+
+キャラクター・動き・背景を作るためにこうだいさんがすることと、予定の出費（CSP 6,900 円、画像 API 月 $30、Live2D PRO）を 0 円に近づける道を調べ直した。全工程を 0 円で回せるが、人の手の時間が増え、8 GB の GPU で通るかの実測が先に要る。
+
+#### 変更点
+
+- **調査**: visual-production-pipeline の survey ワークフロー（14 エージェント、反証役と批評役つき）。結論を左右する 6 件（Gemini の無料枠なし / Live2D FREE の上限 / CSP の価格と 3 か月無料 / Animagine XL 4.0 と Illustrious XL v2.0 のライセンス / ComfyUI ポータブルの同梱 CUDA 13.0）は一次情報で再確認
+- **正本**: `tools-and-prerequisites.md` の確認日を更新し、§11「0 円化の比較」を追加。背景除去の重み（isnet-anime Apache-2.0 / BiRefNet MIT）を確認済みにした
+- **見つかった実装の穴（未対応）**: `FigureView.SetSprite` は静止画専用で RenderTexture を受けられない。塗った絵では `DepictionFx.Flash`（乗算）の白点滅が見えない。`DepictionFx.cs:15-16` のヒットストップと揺れが v2 §5.3 とずれる
+- **判断待ち**: CSP 購入済みか / #14 をローカル主へ差し戻すか / #23 を最初に実測へ変えるか / ボスを 2D Animation にするか
+- **レポート**: `docs/reports/2026-09-19-visual-production-survey.html`（Artifact `https://claude.ai/artifact/PJ47QE4BHqboyVFmNDXKfS`、life-editor Note `note-d9c7c241`）
+
 ### 2026-09-19 - 戦闘描写の後片付け（Issue #26 / #27 / #28 / #29 前半）
 
 #### 概要

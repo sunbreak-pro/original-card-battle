@@ -1,0 +1,206 @@
+<title>絵づくりを 0 円で回す</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Shippori+Mincho:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f4f6f5;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --ok-soft: #e1f1e7;
+    --warn: #a86a12;
+    --warn-soft: #f7ecd9;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad; --line: #2c363b;
+      --accent: #5fc4cc; --accent-soft: #163338; --ok: #6fc48f; --ok-soft: #173024;
+      --warn: #e0a94a; --warn-soft: #33280f; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad; --line: #2c363b;
+    --accent: #5fc4cc; --accent-soft: #163338; --ok: #6fc48f; --ok-soft: #173024;
+    --warn: #e0a94a; --warn-soft: #33280f; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px; line-height: 1.75; padding-inline: 16px;
+  }
+  main { max-width: 960px; margin: 0 auto; padding-block: 40px 72px; display: grid; gap: 40px; }
+  h1, h2 { font-family: "Shippori Mincho", "Yu Mincho", serif; text-wrap: balance; margin: 0; }
+  h1 { font-size: 2rem; line-height: 1.35; }
+  h2 { font-size: 1.4rem; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 0; }
+  p { margin: 0; }
+  .meta { color: var(--muted); font-size: .88rem; }
+  section { display: grid; gap: 16px; }
+  code { font-family: "IBM Plex Mono", Consolas, monospace; font-size: .85em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+  a { color: var(--accent); overflow-wrap: anywhere; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 6px; padding: 20px 22px; display: grid; gap: 10px; }
+  .verdict p { font-size: 1.05rem; }
+  .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .plan { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; display: grid; gap: 10px; align-content: start; }
+  .plan .total { font-family: "IBM Plex Mono", monospace; font-size: 1.6rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .plan.zero .total { color: var(--ok); }
+  .plan.low .total { color: var(--warn); }
+  .plan.old .total { color: var(--stop); }
+  .plan ul { margin: 0; padding-left: 1.2em; font-size: .93rem; }
+  .tag { display: inline-block; font-size: .75rem; letter-spacing: .06em; padding: 1px 8px; border-radius: 99px; font-weight: 700; }
+  .tag.you { background: var(--warn-soft); color: var(--warn); }
+  .tag.cl { background: var(--accent-soft); color: var(--accent); }
+  .tag.rec { background: var(--ok-soft); color: var(--ok); }
+  .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { font-size: .8rem; color: var(--muted); letter-spacing: .04em; background: var(--code-bg); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  ol.steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: s; }
+  ol.steps li { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px 14px 56px; position: relative; counter-increment: s; display: grid; gap: 6px; }
+  ol.steps li::before { content: counter(s, decimal); position: absolute; left: 16px; top: 12px; font-family: "Shippori Mincho", serif; font-size: 1.5rem; color: var(--accent); }
+  ol.steps .row { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: .92rem; align-items: baseline; }
+  ul.plain { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+  .decide { display: grid; gap: 10px; }
+  .decide div { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: grid; gap: 4px; }
+  .decide .q { font-weight: 700; }
+  .decide .r { color: var(--muted); font-size: .92rem; }
+</style>
+
+<main>
+  <header style="display:grid;gap:8px">
+    <p class="meta">visual-production-pipeline / survey ・ 2026-09-19 ・ 前回 2026-09-14 の調べ直し</p>
+    <h1>キャラ・動き・背景を、できるだけ 0 円で作る</h1>
+    <p class="meta">問い: 絵を作るためにこうだいさんは何をすればよいか。予定している出費を 0 円に近づけられるか。</p>
+  </header>
+
+  <section class="verdict">
+    <p><strong>結論: 0 円で全工程を回せます。</strong>代わりに増えるのは、こうだいさんの手の時間（選ぶ・直す・骨を入れる）です。</p>
+    <p>画像生成は API（Gemini は無料枠なし）をやめてローカルの ComfyUI に、描画は CSP の購入をやめて Krita に、動きは敵を Unity 2D Animation・主人公を Live2D FREE にします。</p>
+    <p>ただし 8 GB の GPU で「自動パーツ分け」と「同じ顔を保つ学習」が通るかは未実測です。最初に 1 晩かけて測り、そこで 0 円案を確定させるのが次の一手です。</p>
+  </section>
+
+  <section>
+    <h2>費用の比較</h2>
+    <div class="plans">
+      <div class="plan zero">
+        <span class="tag rec">推奨</span>
+        <h3>0 円プラン</h3>
+        <div class="total">0 円</div>
+        <ul>
+          <li>生成: ComfyUI ポータブル + Illustrious XL v2.0 / Animagine XL 4.0</li>
+          <li>加筆: Krita</li>
+          <li>動き: 敵は Unity 2D Animation、主人公は Live2D FREE</li>
+          <li>背景・UI・演出: Claude がコードで作る</li>
+        </ul>
+        <p class="meta">電気代は除く。失うのは時間。</p>
+      </div>
+      <div class="plan low">
+        <span class="tag you">保険</span>
+        <h3>低コストプラン</h3>
+        <div class="total">約 400〜1,200 円</div>
+        <ul>
+          <li>0 円プラン + 同じ顔が崩れる分だけ Gemini Batch（80〜240 枚）</li>
+          <li>CSP は「最大 3 か月無料」で使い、終了前に解約</li>
+          <li>自動パーツ分けが 8 GB で載らなければクラウド GPU（10 体で約 260 円）</li>
+        </ul>
+        <p class="meta">CSP を買い切るなら約 7,300〜8,100 円。</p>
+      </div>
+      <div class="plan old">
+        <span class="tag you">現行の予定</span>
+        <h3>前回までの道筋</h3>
+        <div class="total">6,900 円 + 月 $30</div>
+        <ul>
+          <li>CSP PRO 買い切り 6,900 円（9/16 決定 #22）</li>
+          <li>画像 API 月の上限 $30（#14）</li>
+          <li>Live2D PRO なら月 2,288 円が加わる</li>
+        </ul>
+        <p class="meta">上限まで使うと 1 年で数万円規模。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>有料の予定ごとの 0 円の代わり</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>有料の予定</th><th>0 円の代わり</th><th>失うもの・注意</th></tr></thead>
+      <tbody>
+        <tr><td>画像 API（Gemini / OpenAI）月 $30</td><td>ComfyUI ポータブル（GPL-3.0）でローカル生成。モデルは Illustrious XL v2.0（creativeml-openrail-m）か Animagine XL 4.0（RAIL++-M、商用可）</td><td>Gemini の画像モデルは API の無料枠が全種「Not available」（<a href="https://ai.google.dev/gemini-api/docs/pricing">公式</a>）。ローカルは参照画像で同じ顔を保つ力が弱く、LoRA 学習で補う。8 GB での速度は未実測</td></tr>
+        <tr><td>CLIP STUDIO PAINT PRO 6,900 円</td><td>Krita（無料）で描いて PSD に書き出す。だめなら CSP の最大 3 か月無料</td><td>Live2D が PSD を保証するのは Photoshop と CSP だけ（<a href="https://docs.live2d.com/en/cubism-editor-manual/divide-the-material/">公式</a>）。Unity 2D Animation だけで動かす敵には関係しない。CSP の無料期間は 1 人 1 回で、終了後に課金が始まる</td></tr>
+        <tr><td>Live2D PRO 月 2,288 円</td><td>Live2D FREE（年間売上 1,000 万円未満なら商用可）。敵とボスは Unity 2D Animation（導入済み）</td><td>FREE はテクスチャ 1 枚（2048 px）・パーツ 30・ArtMesh 100・パラメータ 30 まで（<a href="https://www.live2d.com/en/cubism/comparison/">公式</a>）。主人公の表情差分は窮屈。超えたら PRO の 42 日体験版</td></tr>
+        <tr><td>塗った背景</td><td>いまの「グラデーション + 靄 2 層」（9/14 決定のまま）</td><td>階層ごとの場所らしさは出ない。塗るなら ComfyUI + Krita で 0 円だが、人の手が 5 階層で 10〜20 時間（推定）</td></tr>
+        <tr><td>購入素材</td><td>Kenney（CC0）、game-icons.net（CC BY 3.0、作者表記が要る）</td><td>和紙・墨・筆線の絵柄に合わないので UI とアイコンの下地だけ。Unity Asset Store の素材は無料でも AI の参照に使えない</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>こうだいさんがすること / Claude がすること</h2>
+    <p>1 体を通す順番です。<span class="tag you">人</span> がこうだいさんの手の作業、<span class="tag cl">Claude</span> が Claude の作業です。</p>
+    <ol class="steps">
+      <li><h3>初回準備と実測（1 回だけ、1〜4 時間）</h3>
+        <div class="row"><span class="tag you">人</span><span>Krita と ComfyUI ポータブルを <code>C:/ai/</code> に入れ、モデル 2 つを置いて起動する。Unity と Chrome を閉じた状態で実測を回す。</span>
+        <span class="tag cl">Claude</span><span>導入手順書と起動 .bat、台帳、スタイルガイド案、実測の手順と記録表を作る。ComfyUI を公式 MCP / API で動かす。</span></div></li>
+      <li><h3>仕様と影絵</h3>
+        <div class="row"><span class="tag you">人</span><span>影絵 3〜5 案から 1 つ選び、直したい点を 1〜2 行返す。主人公の見た目（性別・年齢・装束）を決める。</span>
+        <span class="tag cl">Claude</span><span>仕様カードと SVG の影絵を作って撮る。</span></div></li>
+      <li><h3>候補の生成</h3>
+        <div class="row"><span class="tag you">人</span><span>8 枚から 1〜2 枚を選び、理由を 1 行書く。</span>
+        <span class="tag cl">Claude</span><span>プロンプトとワークフローを書き、一括生成して seed とモデル版を台帳に残す。</span></div></li>
+      <li><h3>背景除去と加筆（1 体数時間）</h3>
+        <div class="row"><span class="tag you">人</span><span>Krita で顔・手・武器の崩れを描き直す。人の創作的な寄与（著作権の根拠）はここに集まる。</span>
+        <span class="tag cl">Claude</span><span>isnet-anime（Apache-2.0）で背景を抜き、直す箇所を切り抜いて指示書にする。</span></div></li>
+      <li><h3>パーツ分けと動かす</h3>
+        <div class="row"><span class="tag you">人</span><span>自動分けの結果（前髪・武器・袖の重なり）を直す。2D Animation で骨とウェイトを付ける。主人公は Live2D FREE。</span>
+        <span class="tag cl">Claude</span><span>See-through で層つき PSD の下書きを作る。Unity の取り込み設定、プレハブ、配線を MCP で組む。</span></div></li>
+      <li><h3>演出・UI・背景・確認</h3>
+        <div class="row"><span class="tag you">人</span><span>実画面で手触りに良い / だめを返す。</span>
+        <span class="tag cl">Claude</span><span>Particle・シェーダー・UGUI をコードで書き、1080p / 720p で撮って読みやすさと時間を測る。</span></div></li>
+    </ol>
+    <p class="meta">いま一番重いのは「人」の欄です。Claude は絵そのものを描けないので、選ぶ・直す・骨を入れるの 3 つは代われません。</p>
+  </section>
+
+  <section>
+    <h2>今回わかった大事な点</h2>
+    <ul class="plain">
+      <li><strong>Gemini の画像生成に無料枠はありません。</strong>Flash Image / Flash Lite Image / Pro Image すべて Free Tier が「Not available」です。API で 0 円にする道はありません。</li>
+      <li><strong>ComfyUI ポータブルが新しい GPU にそのまま対応しました。</strong>Python 3.13 と PyTorch CUDA 13.0 を同梱しており、RTX 50 系向けの torch を自分で入れる手間がなくなりました（<a href="https://github.com/Comfy-Org/ComfyUI">公式</a>）。</li>
+      <li><strong>パーツ分けを自動化する道具が出ました。</strong>See-through は 1 枚絵を最大 23 層の PSD に分けます。ただし公式のピークは約 8 GB で、いまの空き（約 4.3〜6.2 GB）では既定の設定では載らない見込みです。</li>
+      <li><strong>いまの差し替え口は静止画専用です。</strong><code>FigureView.cs:37-43</code> の <code>SetSprite</code> は <code>Image.sprite</code> を替えるだけなので、2D Animation や Live2D の動く絵は受けられません。動かす前に受け口の追加が要ります。</li>
+      <li><strong>塗った絵では被弾の白い点滅が見えません。</strong><code>SetSprite</code> が色を白に戻し（<code>FigureView.cs:41</code>）、<code>DepictionFx.Flash</code> は色の乗算だけで点滅させる（<code>DepictionFx.cs:113-119</code>）ためです。白を足すシェーダーで直せます。</li>
+      <li><strong>ヒットストップと揺れの値が設計書とずれています。</strong>コードは 0/40/70/110 ms と 6〜24 px（<code>DepictionFx.cs:15-16</code>）、v2 §5.3 は 60/80/110 ms と 2/4/6 px です。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>置いた仮定と未確認</h2>
+    <ul class="plain">
+      <li>1 ドル 150 円、導入 1〜4 時間、加筆 1 体数時間は推定です。電気代は 0 円に含めていません。</li>
+      <li>RTX 5060 Ti 8 GB での SDXL の生成秒数、See-through を低解像度にしたときのピーク、LoRA 学習が 8 GB で回るかは未実測です。</li>
+      <li>Krita の PSD を Live2D と Unity の PSD Importer が層のまま読めるかは未確認です（コミュニティの体験談だけ）。</li>
+      <li>CSP の無料期間の解約期限と、ボスが Live2D FREE のパーツ 30 に収まるかは未確認です。</li>
+      <li>AI Studio のブラウザ画面での無料生成は、日次上限と商用利用の可否が未確認なので案から外しました。</li>
+      <li>外部の主張はワークフローの反証役が一次情報で照合し、Gemini の無料枠・Live2D FREE の上限・CSP の価格・両モデルのライセンス・ComfyUI の同梱内容は Claude が公式ページを直接開いて確かめました。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>次に判断が要る点</h2>
+    <div class="decide">
+      <div><p class="q">1. CSP PRO はもう買いましたか。API キーは設定済みですか。</p><p class="r">まだなら買わずに 0 円プランで始めるのを推します。買っていれば低コストプランの買い切り側の合計になります。</p></div>
+      <div><p class="q">2. 生成の主経路を「クラウド主（#14）」から「ローカル主・API は保険」に差し戻しますか。</p><p class="r">推奨は差し戻しです。API に無料枠がなく、ローカルの導入の手間も減ったためです。</p></div>
+      <div><p class="q">3. 「ローカルは条件が来たら測る（#23）」をやめて、最初に実測しますか。</p><p class="r">推奨は最初に測ることです。自動パーツ分けと LoRA 学習が 8 GB で通るかで、0 円プランが成り立つかが決まります。</p></div>
+      <div><p class="q">4. ボスを Live2D から 2D Animation に変えますか。</p><p class="r">推奨は 2D Animation で始め、パーツ 30 以内に収まれば Live2D FREE にすることです。v2 の決定からの変更になります。</p></div>
+    </div>
+  </section>
+
+  <p class="meta">正本: <code>.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md</code>（確認日 2026-09-19 に更新）。前回: <code>docs/reports/2026-09-14-visual-production-survey.html</code></p>
+</main>
