@@ -1,0 +1,222 @@
+<title>Card Balance v4.2 Prep</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .step code { font-size: 13px; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+  @media (max-width: 720px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-19 / 判断 / original-card-battle</p>
+    <h1>カードは「安い札ほど得」になっていたので、目盛りと回復を直してから Unity の描写に入る</h1>
+    <p class="lede">投入量の廃止と距離の廃止で、80 種のカード表に意味を失った項目が 6 つ残っていました。こうだいさんの回答 12 件で前提が決まり、Unity の描写セッションは固定台本で先に始められます。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">決定</span><h3>カードバランスの前提 8 件</h3><p>回復 3、目盛り 6 / 13 / 21 と 4 列目 30、状態の減り方 2 型、強化 ×1.5、単属性ムーブに付随効果、位置の特性 16 枚、最適間合いの列を廃止。<code>battle_core_v4.md</code> §18 に記録しました。</p></li>
+    <li class="verdict now"><span class="tag">決定</span><h3>Unity 描写の方針 4 件</h3><p>固定台本で描写だけ先に作る。配置はプレハブ、動きはコード。範囲は 1 ターンの縦切り。立ち絵は影絵のまま。プランと冒頭プロンプトを書きました。</p></li>
+    <li class="verdict later"><span class="tag">測ってから</span><h3>叩き台の数値</h3><p>目盛り・回復・倍率は仮の値です。v4.2 コアの試験台で「コスト 1 だけのデッキ」「1 ターンのプレイ枚数」「最大の 1 撃」の 3 点を最初に測ります。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: カード表（<code>swordsman_cards_v4.md</code>）は v4.1 の形のままです。2026-09-14 / 09-16 の決定はまだ 80 種に反映されていません。下の分析は、決定を 80 種に当てはめたときに何が起きるかを見たものです。</div>
+
+  <h2>いまのカードの形</h2>
+  <p class="prose">属性は 5 つで、1 枚が 1〜2 属性を持ちます。80 種の内訳は単属性 40 / 二属性 40 です。面の数で見ると、アタック 38、スキル 23、ガード 22、ムーブ 22、スタンス 15 です。特性は 72 枚が持ち、条件は連動 14、予兆 10、相手の状態 10 が多く、位置は 6 枚だけです。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>単属性</th><th>数</th><th>二属性</th><th>数</th><th>二属性</th><th>数</th></tr></thead>
+      <tbody>
+        <tr><td>アタック</td><td>14</td><td>A + ムーブ</td><td>8</td><td>G + スキル</td><td>3</td></tr>
+        <tr><td>スキル</td><td>8</td><td>A + スキル</td><td>8</td><td>G + スタンス</td><td>3</td></tr>
+        <tr><td>ガード</td><td>7</td><td>A + ガード</td><td>5</td><td>スキル + ムーブ</td><td>2</td></tr>
+        <tr><td>ムーブ</td><td>6</td><td>G + ムーブ</td><td>4</td><td>スキル + スタンス</td><td>2</td></tr>
+        <tr><td>スタンス</td><td>5</td><td>A + スタンス</td><td>3</td><td>スタンス + ムーブ</td><td>2</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>見つけた問題と決定</h2>
+  <p class="prose">スタミナを財布、手札を買い物かごに例えます。旧ルールは 1 枚にいくら払うかを選べたので、かごが小さくても財布を使い切れました。新ルールは値札が固定で、財布のほうが先に空になります。すると 1 円あたりの得だけが効き、安い札を並べるのが常に正解になっていました。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>問題</th><th>根拠</th><th>決定（2026-09-19）</th></tr></thead>
+      <tbody>
+        <tr><td>K1</td><td>回復の値が未定</td><td>コスト 0 が消えたので、回復 2 では 1 ターン約 1 枚。連動 14 / 連打 5 / 締め 3 / 手薄 3 の計 25 特性は 2 枚以上出す前提</td><td class="state yes">毎ターン 3</td></tr>
+        <tr><td>K2</td><td>安い札ほど得</td><td>アタック 8 / 12 / 16 は 1 スタミナあたり 8 / 6 / 5.3。コスト 1 を 3 枚で 24、コスト 3 を 1 枚で 16</td><td class="state yes">6 / 13 / 21（ガード 4 / 9 / 15）。1 スタミナあたり 6 / 6.5 / 7</td></tr>
+        <tr><td>K3</td><td>スタックの減り方が 1 種類</td><td>全て「ターン開始に 1 減る」だと、強化 3 は 3 ターンの全攻撃に倍率が乗る</td><td class="state yes">使うと減る型（強化 / 脆化 / 集中 / 見切り / 威圧）とターンで減る型（出血 / 再生 / 俊敏 / 鈍足 / 疲労）</td></tr>
+        <tr><td>K4</td><td>倍率の重ね掛け</td><td>(16 + 6 + 5) × 2 × 1.5 = 81。通常敵の HP は 50〜70</td><td class="state maybe">強化を ×1.5 に。新目盛りでは (21 + 6 + 5) × 1.5 × 1.5 = 72 で、まだ 1 撃圏。試験台で測る</td></tr>
+        <tr><td>K5</td><td>単属性ムーブ 6 種が空になる</td><td>近間 / 遠間の 2 値では「2 段階」「向きを選ぶ」の差が消える。位置に素の効果が無いので、切り替えだけでは何も起きない</td><td class="state yes">全てコスト 1。切り替え + Guard 4 / ドロー 1 / スタミナ +1 のどれか</td></tr>
+        <tr><td>K6</td><td>位置を読む札が少ない</td><td>80 種中 6 枚 + 背水の陣。位置(中) の 1 枚は条件が消えた。ムーブ面は 22 枚あるのに、切り替える理由が薄い</td><td class="state yes">16 枚（攻撃 / 防御 × 近間 / 遠間 × 4）</td></tr>
+        <tr><td>K7</td><td>最適間合いの列が無意味</td><td>近 15 / 中 14 / 遠 9 の列と、遠用の低い目盛り 4 / 6 / 9 / 12 は距離の補正が前提だった</td><td class="state yes">列ごと消し、目盛りを 1 本にする</td></tr>
+        <tr><td>K8</td><td>右の列が無い / T0 の列を誰も使わない</td><td>集中と習熟の「伸び」は 1 列右へ進む。コスト 3 の右が無い。コスト 0 は習熟の「軽さ」だけで、値は元の列のまま</td><td class="state yes">4 列目を新設（アタック 30 / ガード 22、コストは 3 のまま）。T0 の列は消す</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Unity 描写セッションの準備</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>項目</th><th>状態</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td>Unity プロジェクト</td><td class="state yes">あり</td><td><code>C:/Users/user/Unity/RPG-by-card</code>。Unity 6000.5.5f1、URP、UGUI 2.5.0、Input System。コア v3 と View 11 ファイルが入っている</td></tr>
+        <tr><td>初回コミット</td><td class="state no">なし</td><td>全ファイルがステージされただけ。2026-09-16 に決めたが未実施。プレハブの差分を追うために先に入れる</td></tr>
+        <tr><td>URP の版</td><td class="state no">不一致</td><td>manifest 17.6.0 / lock 17.5.0。17.5.0 に揃える（2026-09-16 決定、未実施）</td></tr>
+        <tr><td>Unity MCP</td><td class="state maybe">要確認</td><td><code>~/.claude.json</code> に登録済みだが、今日のセッションでは道具として見えなかった。古い <code>unity.exe</code>（CLI）が 10 個残っている。Editor を先に開いてから Claude Code を起動し、<code>/mcp</code> で確かめる</td></tr>
+        <tr><td>v4.2 コア</td><td class="state no">未実装</td><td>固定台本で回避する。台本の型は BattleCore に依存させず、後でコアの出力から作る</td></tr>
+        <tr><td>View の方針</td><td class="state maybe">変更</td><td>「Canvas はコードで組む、プレハブを作らない」を「配置はプレハブ、動きはコード」に置き換える。DOTween と Animator を入れない方針は続ける</td></tr>
+        <tr><td>正本の置き場</td><td class="state yes">決めた</td><td>C# は <code>unity-port/</code> が正本で <code>npm run unity:sync</code> で写す。プレハブ / シーン / .meta は Unity リポが正本。同期スクリプトは Unity 側のファイルを消さない</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>台本（1 ターン分）</h3>
+  <p class="prose">ターン 2、プレイヤーは近間、敵は長柄の歪み兵（HP 60）、予兆は「攻撃・近 13」です。近間に居続けると +5 を受けるので、後ろ跳びで遠間へ抜ける流れにして、位置の切り替えを 1 回見せます。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>順</th><th>出来事</th><th>表示の変化</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>ターン開始</td><td>スタミナ 6 → 9、5 枚引く、予兆を出す</td></tr>
+        <tr><td>2</td><td>袈裟斬り（コスト 1）</td><td>受け皿へ。初手が発火、6 + 3 = 9。敵 HP 60 → 51</td></tr>
+        <tr><td>3</td><td>大上段（コスト 2）</td><td>受け皿へ。13。敵 HP 51 → 38</td></tr>
+        <tr><td>4</td><td>後ろ跳び（コスト 1）</td><td>投げ上げ線。遠間へ、Guard 4 + 特性 3 = 7</td></tr>
+        <tr><td>5</td><td>ターン終了</td><td>構えで Guard 10。残り 2 枚を捨てる</td></tr>
+        <tr><td>6</td><td>敵の攻撃</td><td>13 − 10 = 3。近間の +5 は外れる。HP 50 → 47</td></tr>
+        <tr><td>7</td><td>次の予兆</td><td>「防御」を出して終わる</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>新しい目盛りの二属性は 65% のまま（アタック 4 / 8 / 14、ガード 3 / 6 / 10）。回復量・特性の加算・素直な札の +2 は据え置き、試験台で合わせ直します。</li>
+    <li>敵の 1 ターン出力（通常 7〜13）と HP は変えていません。プレイヤーのコスト 2 の Guard が 6 → 9 に上がるので、敵の出力は試験台で見直す候補です。</li>
+    <li>台本の札の列（袈裟斬り = 1、大上段 = 2、後ろ跳び = 1）は描写用の仮です。80 種への列の割り当ては v4.2 の本文改訂で決めます。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>Unity MCP が Editor 起動後に実際につながるか。つながらない場合は Unity CLI と Editor スクリプトで代用するよう、プロンプトに書いてあります。</li>
+    <li>回復 3 で 1 ターンのプレイ枚数の中央値が 2 以上になるか。手計算では 8 ターン戦で総予算 31、平均コスト 1.7 で約 18 枚です。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li>描写セッションと v4.2 の本文改訂のどちらを先にするか。2 つは独立しています。</li>
+    <li>セッション前の手作業は 1 つだけです。Unity Editor で RPG-by-card を開いてから Claude Code を起動し、<code>/mcp</code> で <code>unity-editor-mcp</code> を確かめてください。初回コミットと URP の修正はプロンプトの「準備」に入れてあります。</li>
+  </ul>
+
+  <h2>成果物</h2>
+  <ul class="prose">
+    <li><code>.claude/docs/battle_document/battle_core_v4.md</code> §18（決定 K1〜K8）</li>
+    <li><code>.claude/docs/vision/plans/2026-09-19-unity-battle-depiction.md</code>（前準備 / 台本 / 完了条件 / 冒頭プロンプト）</li>
+  </ul>
+</div>

@@ -1,0 +1,385 @@
+<title>戦闘 v4.2 決定録</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --bg: #e9eded;
+    --surface: #ffffff;
+    --surface-2: #f3f6f5;
+    --line: #ccd6d4;
+    --ink: #17242a;
+    --muted: #5f7375;
+    --accent: #a8402c;      /* 朱 — 敵と決定の印 */
+    --guard: #2c6b66;       /* 青緑 — 守りと確定 */
+    --warm: #b3812f;        /* 琥珀 — 注意・保留 */
+    --chip: #e4ebe9;
+    --shadow: 0 1px 2px rgba(23, 36, 42, .06), 0 8px 24px rgba(23, 36, 42, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e171c;
+      --surface: #142127;
+      --surface-2: #19282f;
+      --line: #2a3c44;
+      --ink: #e3ecea;
+      --muted: #97aaab;
+      --accent: #e0765c;
+      --guard: #5aa9a0;
+      --warm: #d9a94f;
+      --chip: #1e2f36;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e171c;
+    --surface: #142127;
+    --surface-2: #19282f;
+    --line: #2a3c44;
+    --ink: #e3ecea;
+    --muted: #97aaab;
+    --accent: #e0765c;
+    --guard: #5aa9a0;
+    --warm: #d9a94f;
+    --chip: #1e2f36;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Noto Sans JP", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 40px 72px;
+  }
+  h1, h2, h3 {
+    font-family: "Shippori Mincho", "Noto Serif JP", serif;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  /* 見出し */
+  header.head {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 22px;
+    margin-bottom: 32px;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    letter-spacing: .14em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  h1 { font-size: clamp(30px, 5.4vw, 44px); line-height: 1.25; margin-top: 8px; }
+  .lede { color: var(--muted); max-width: 62ch; margin-top: 12px; }
+
+  /* 要点 */
+  .keys { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin-bottom: 44px; }
+  .key {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 16px 18px 18px;
+    box-shadow: var(--shadow);
+  }
+  .key h3 { font-size: 17px; margin-bottom: 6px; }
+  .key p { margin: 0; font-size: 14px; color: var(--muted); }
+
+  /* 目次 */
+  nav.toc {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 16px 18px;
+    margin-bottom: 44px;
+  }
+  nav.toc ol { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 8px 0 0; padding: 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); font-size: 14px; }
+  nav.toc a:hover, nav.toc a:focus-visible { border-bottom-color: var(--accent); color: var(--accent); }
+  .toc-title { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: .12em; color: var(--muted); }
+
+  /* 章 */
+  section.chapter { margin-bottom: 46px; scroll-margin-top: 16px; }
+  .chapter-head { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 4px; }
+  .chapter-letter { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--accent); letter-spacing: .1em; }
+  .chapter-head h2 { font-size: 22px; }
+  .chapter-note { color: var(--muted); font-size: 13px; margin: 8px 0 16px; }
+
+  /* 決定の行 */
+  .row {
+    display: grid;
+    grid-template-columns: 56px minmax(150px, 210px) 1fr;
+    gap: 4px 16px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: baseline;
+  }
+  .row:last-child { border-bottom: none; }
+  .id {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--chip);
+    border-radius: 2px;
+    padding: 2px 6px;
+    justify-self: start;
+  }
+  .q { font-weight: 700; }
+  .a { color: var(--ink); }
+  .a em { font-style: normal; color: var(--guard); font-weight: 700; }
+  .a small { display: block; color: var(--muted); font-size: 13px; line-height: 1.7; margin-top: 2px; }
+  @media (max-width: 640px) {
+    .row { grid-template-columns: 1fr; gap: 2px; padding: 14px 0; }
+    .id { margin-bottom: 4px; }
+  }
+
+  /* 次の作業 */
+  .next { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 22px 24px; box-shadow: var(--shadow); }
+  .next h2 { font-size: 20px; margin-bottom: 4px; }
+  .steps { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 12px; }
+  .steps li { display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: baseline; }
+  .steps .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); }
+  .steps b { display: block; }
+  .steps span { color: var(--muted); font-size: 14px; }
+
+  .measure { border-left: 3px solid var(--warm); background: var(--surface-2); padding: 14px 18px; border-radius: 0 3px 3px 0; margin-top: 26px; }
+  .measure h3 { font-size: 16px; margin-bottom: 6px; }
+  .measure ul { margin: 0; padding-left: 1.2em; color: var(--muted); font-size: 14px; }
+
+  footer.foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+  footer.foot code { font-family: "IBM Plex Mono", monospace; font-size: 12px; background: var(--chip); padding: 1px 5px; border-radius: 2px; }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div class="eyebrow">2026-09-16 ・ 決定録 95 件</div>
+    <h1>戦闘 v4.2 決定録</h1>
+    <p class="lede">保留していた判断 95 件に回答がつきました。2026-09-14 の方向（投入量の廃止、キャラクターごとの近間 / 遠間）を土台に、コスト・状態・習熟・継承・探索・アート運用までの空白が埋まっています。設計書の本文改訂（v4.2 / v2.1）は、この表が正本です。</p>
+  </header>
+
+  <div class="keys">
+    <div class="key">
+      <h3>位置はボスと精鋭だけ</h3>
+      <p>近間 / 遠間を持つのは瘴気の司祭・甲冑の番人・群れの長。通常 6 体は持たず、カードも自分の位置だけを読みます。</p>
+    </div>
+    <div class="key">
+      <h3>状態はスタック制</h3>
+      <p>「俊敏を 3 付与」の形に統一。付いた側のターン開始に 1 減り、種類は 6 つまで。敵に上限はありません。</p>
+    </div>
+    <div class="key">
+      <h3>コストは旧段表の列</h3>
+      <p>カードごとに T0〜T3 の 1 列を選び、列番号がコスト、列の値が効果。列は特性の条件の重さで選びます。</p>
+    </div>
+    <div class="key">
+      <h3>3 段目は 1 枚と才能</h3>
+      <p>どの代も 3 段目にできるのは 1 枚だけ。開始時に選んだ 1 枚は刻みが 2 倍で溜まります。</p>
+    </div>
+    <div class="key">
+      <h3>クリアは最終ボス撃破</h3>
+      <p>最深の「歪みの根」を倒した時点。クラスは剣士固定、デッキは 20〜40 枚、ツールは共通 3 枠です。</p>
+    </div>
+  </div>
+
+  <nav class="toc" aria-label="章の一覧">
+    <div class="toc-title">CONTENTS</div>
+    <ol>
+      <li><a href="#a">A 操作</a></li>
+      <li><a href="#b">B 固定コスト</a></li>
+      <li><a href="#c">C 近間 / 遠間</a></li>
+      <li><a href="#d">D 背水の陣</a></li>
+      <li><a href="#e">E 状態</a></li>
+      <li><a href="#f">F 規則の細部</a></li>
+      <li><a href="#g">G 開示度と手記</a></li>
+      <li><a href="#h">H 習熟と継承</a></li>
+      <li><a href="#i">I 探索とゲーム全体</a></li>
+      <li><a href="#j">J UI と演出</a></li>
+      <li><a href="#k">K 色・アート・運用</a></li>
+      <li><a href="#next">次の作業</a></li>
+    </ol>
+  </nav>
+
+  <section class="chapter" id="a">
+    <div class="chapter-head"><span class="chapter-letter">A</span><h2>操作 — 相手の選び方</h2></div>
+    <p class="chapter-note">デモ（4 方式）を触った結果、2 方式を役割で使い分けます。</p>
+    <div class="row"><span class="id">A1</span><span class="q">相手の選び方</span><span class="a"><em>受け皿と投げ上げ線の併用</em><small>単体の攻撃・デバフは人型に出る受け皿で。全体攻撃や範囲（地震など）は手札の上の線より上で離す。</small></span></div>
+    <div class="row"><span class="id">A2</span><span class="q">自分向きだけの札</span><span class="a"><em>投げ上げ線</em><small>Guard・スタンス・自己強化など、相手を選ばない札は線で出す。</small></span></div>
+    <div class="row"><span class="id">A3</span><span class="q">皿の外で離したとき</span><span class="a"><em>手札に戻る</em><small>1 体戦でも必ず皿で離す。誤爆をなくす。</small></span></div>
+    <div class="row"><span class="id">A4</span><span class="q">単体面と全体面の混在札</span><span class="a"><em>受け皿を優先</em><small>相手を選ぶ面が 1 つでもあれば皿。全体の面は皿の相手に関係なく全員に効く。</small></span></div>
+  </section>
+
+  <section class="chapter" id="b">
+    <div class="chapter-head"><span class="chapter-letter">B</span><h2>固定コストと語の読み替え</h2></div>
+    <p class="chapter-note">1 枚ごとの投入量が消えた後の、スタミナの払い方です。</p>
+    <div class="row"><span class="id">B1</span><span class="q">コストの決め方</span><span class="a"><em>旧段表の列 = コスト</em><small>カードごとに T0〜T3 から 1 列を選び、列番号をコスト、列の値を効果にする。習熟の「伸び」は 1 列右へ進む形のまま使える。</small></span></div>
+    <div class="row"><span class="id">B2</span><span class="q">列の選び方</span><span class="a"><em>特性の条件で選ぶ</em><small>死力・崩し後・相手の状態など満たしにくい条件を持つ札ほど低い（安い）列に置く。条件が揃うと割安になる。</small></span></div>
+    <div class="row"><span class="id">B3</span><span class="q">コスト 0 の札</span><span class="a"><em>習熟でだけ 0</em><small>初期は全カードと敵の技がコスト 1 以上。習熟の「軽さ」でのみ 0 に下がる。</small></span></div>
+    <div class="row"><span class="id">B4</span><span class="q">特性「投入 −1」</span><span class="a"><em>コスト −1（0 まで）</em><small>習熟の軽さと同じ働き。水の構え・石礫・司祭の祈りの 3 枚。</small></span></div>
+    <div class="row"><span class="id">B5</span><span class="q">特性「重撃」</span><span class="a"><em>次の回復で払う</em><small>条件を満たすと威力 +6、代わりに次のターン開始の回復 −1。今のターンのコストと構えの計算は変わらない。</small></span></div>
+    <div class="row"><span class="id">B6</span><span class="q">状態「集中」</span><span class="a"><em>次の札を 1 列右で解決</em><small>旧「投入 +1 を無料で足す」に最も近い。習熟の伸びの一時版として説明できる。</small></span></div>
+    <div class="row"><span class="id">B7</span><span class="q">状態「威圧」</span><span class="a"><em>次の値を −3</em><small>相手の次の行動の威力と Guard を 3 下げる。旧表のほぼ 1 列分で、予兆の数字から暗算できる。</small></span></div>
+    <div class="row"><span class="id">B8</span><span class="q">払えない予兆</span><span class="a"><em>休みになる</em><small>崩しで技のコストを払えなくなった敵は、そのフェーズを回復だけで終える。予兆のコミットを崩さない。</small></span></div>
+  </section>
+
+  <section class="chapter" id="c">
+    <div class="chapter-head"><span class="chapter-letter">C</span><h2>近間 / 遠間</h2></div>
+    <p class="chapter-note">最大の方針転換です。位置を持つのはボスと精鋭だけになりました。</p>
+    <div class="row"><span class="id">C1</span><span class="q">位置を持つ敵</span><span class="a"><em>ボスと精鋭だけ</em><small>瘴気の司祭・甲冑の番人・群れの長。通常 6 体は位置を持たず、設定が軽くなり格上の敵に特別感が出る。</small></span></div>
+    <div class="row"><span class="id">C2</span><span class="q">カードの位置条件</span><span class="a"><em>自分の位置だけ</em><small>「相手が近間なら」を条件にする札は作らない。どの敵にも同じように働く。</small></span></div>
+    <div class="row"><span class="id">C3</span><span class="q">決定木の形</span><span class="a"><em>通常敵は 2 通り、ボス・精鋭は 4 通り</em><small>通常敵はプレイヤーの位置だけで枝を分ける。位置を持つ敵は自分と相手の組 4 通り。</small></span></div>
+    <div class="row"><span class="id">C4</span><span class="q">回復の決め方</span><span class="a"><em>固定値 + 札の上乗せ</em><small>基本は毎ターン同じ量。上乗せを特性とスタンスに配り、押し引きをデッキの選択として残す。</small></span></div>
+    <div class="row"><span class="id">C5</span><span class="q">予兆に出す情報</span><span class="a"><em>種別と咎める側の一字</em><small>「攻撃・遠」のように、効果が乗る側を一字で添える。足元の一字札と見分ける形は別途決める。</small></span></div>
+    <div class="row"><span class="id">C6</span><span class="q">2 体戦の咎め方</span><span class="a"><em>取り巻きは位置を見ない</em><small>子分の技に位置の条件を付けず、位置の判断は親分にだけ向ける。</small></span></div>
+    <div class="row"><span class="id">C7</span><span class="q">自分向き札の判定</span><span class="a"><em>自分の位置だけ読む</em><small>基準の敵を画面に出さずに済む。</small></span></div>
+    <div class="row"><span class="id">C8</span><span class="q">敵の開始位置</span><span class="a"><em>位置を持つ敵だけ、敵ごとに定義</em></span></div>
+    <div class="row"><span class="id">C9</span><span class="q">自分の開始位置</span><span class="a"><em>毎戦同じ位置</em><small>出立のツールで変更できる。</small></span></div>
+    <div class="row"><span class="id">C10</span><span class="q">居続け対策</span><span class="a"><em>主な側 + 戻す技</em><small>敵ごとに主に咎める側を持たせ、逆側にいる相手を押し返し / 誘いで戻す技を決定木に置く。長柄の歪み兵の「押し戻して薙ぎ払う」を継ぐ。</small></span></div>
+    <div class="row"><span class="id">C11</span><span class="q">切替札が来ない危険</span><span class="a"><em>試験台で測ってから</em><small>手札 5 枚に移動の面が 1 枚も無い確率は約 24%。規則もカード配分も今は変えない。</small></span></div>
+    <div class="row"><span class="id">C12</span><span class="q">位置条件を読む時点</span><span class="a"><em>常に動く前</em><small>全ての札で、出す前の位置で判定する。手札のランプと結果が必ず一致する。</small></span></div>
+    <div class="row"><span class="id">C13</span><span class="q">遠間の膠着</span><span class="a"><em>試験台で測ってから</em><small>位置を持つ敵が減ったため、起きる場面自体が少ない。</small></span></div>
+  </section>
+
+  <section class="chapter" id="d">
+    <div class="chapter-head"><span class="chapter-letter">D</span><h2>背水の陣</h2></div>
+    <p class="chapter-note">#80「背水の型」を置き換える 1 枚です。80 種の総数は保ちます。</p>
+    <div class="row"><span class="id">D1</span><span class="q">軸</span><span class="a"><em>遠間と死力を重ねる</em><small>自分が遠間で攻撃が伸び、スタミナ 2 以下でさらに上乗せ。「追い詰められても攻める」像に最も近い。</small></span></div>
+    <div class="row"><span class="id">D2</span><span class="q">条件</span><span class="a"><em>自分の条件だけ</em><small>位置を持たない敵にも効くよう、相手の位置は見ない。</small></span></div>
+    <div class="row"><span class="id">D3</span><span class="q">形</span><span class="a"><em>単属性のアタック</em><small>叩き台は威力 8、遠間で +5、スタミナ 2 以下でさらに +3。コストは B1 / B2 の規則で置く。</small></span></div>
+  </section>
+
+  <section class="chapter" id="e">
+    <div class="chapter-head"><span class="chapter-letter">E</span><h2>状態 — スタック制へ</h2></div>
+    <p class="chapter-note">段と 1 回きりの区別をやめ、全てスタック（付与数）に統一します。</p>
+    <div class="row"><span class="id">E1</span><span class="q">表記</span><span class="a"><em>「&lt;状態名&gt; を n 付与する」</em><small>例: 俊敏を 3 付与 = 3 ターン続く。溜まり方と減り方は特性ごとに変えてよい。</small></span></div>
+    <div class="row"><span class="id">E2</span><span class="q">減り方の既定</span><span class="a"><em>付いた側のターン開始に 1</em></span></div>
+    <div class="row"><span class="id">E3</span><span class="q">1 回きりの状態</span><span class="a"><em>全てスタックに揃える</em><small>威圧・脆化・疲労・強化・集中・見切り。威圧 2 なら 2 回分。</small></span></div>
+    <div class="row"><span class="id">E4</span><span class="q">出血・再生</span><span class="a"><em>スタック = 強さと回数の両方</em><small>出血 3 は毎ターン HP −2 × 残りスタック（−6 → −4 → −2）。付けた直後が最も痛い。</small></span></div>
+    <div class="row"><span class="id">E5</span><span class="q">上限</span><span class="a"><em>プレイヤーは種類 6 つまで、敵は上限なし</em><small>スタック数は数えない。ボスの儀式が枠で不発になる問題が消える。</small></span></div>
+    <div class="row"><span class="id">E6</span><span class="q">軽足</span><span class="a"><em>「俊敏」に改名</em><small>効果は「有効なターンの開始時に近間 / 遠間を選べる」。切替札が来ないターンへの保険になる。</small></span></div>
+    <div class="row"><span class="id">E7</span><span class="q">鈍足</span><span class="a"><em>次のターン全体</em><small>2 回行動の敵なら 2 手とも切り替えを止める。</small></span></div>
+    <div class="row"><span class="id">E8</span><span class="q">瘴気纏いの現在値</span><span class="a"><em>新しい最大まで削る</em></span></div>
+  </section>
+
+  <section class="chapter" id="f">
+    <div class="chapter-head"><span class="chapter-letter">F</span><h2>規則の細部と誤記</h2></div>
+    <p class="chapter-note">設計書どうしの食い違いを、正本の形に揃えます。</p>
+    <div class="row"><span class="id">F1</span><span class="q">手薄の定義</span><span class="a"><em>敵側を「無防備」に改名</em><small>カード側の手薄は「プレイ後の残り手札 1 枚以下」のまま。敵側の「相手の Guard が 0」は別の語にする。</small></span></div>
+    <div class="row"><span class="id">F2</span><span class="q">手札を捨てる時点</span><span class="a"><em>ターン終了だけ</em><small>§9 手順 4 は引くだけ、手順 8 で捨てる。UI の演出もこの形で組んである。</small></span></div>
+    <div class="row"><span class="id">F3</span><span class="q">構えの誤記</span><span class="a"><em>§9 手順 7 の Guard +2 は +3</em></span></div>
+    <div class="row"><span class="id">F4</span><span class="q">ダメージ式</span><span class="a"><em>足してから掛ける</em><small>（面 + 特性 + 追撃 + 転換）× 強化 × 脆化 → 丸め（AwayFromZero）→ − Guard。</small></span></div>
+    <div class="row"><span class="id">F5</span><span class="q">特性の判定順</span><span class="a"><em>面（効果）より前</em><small>手札のランプと結果が必ず一致し、状態の条件が「2 枚の組」を作る動機になる。</small></span></div>
+    <div class="row"><span class="id">F6</span><span class="q">多段（hits）</span><span class="a"><em>追撃だけ乗せない</em><small>特性 +n と強化は全ての撃に乗る。追撃 +5 は 1 回だけ。</small></span></div>
+    <div class="row"><span class="id">F7</span><span class="q">追撃の持続</span><span class="a"><em>番の終わりで消える</em></span></div>
+    <div class="row"><span class="id">F8</span><span class="q">手札上限の超過</span><span class="a"><em>捨札へ送る</em><small>上限 8 を超えて引いた札は捨札へ。山札が早く回る。</small></span></div>
+    <div class="row"><span class="id">F9</span><span class="q">倒れる判定</span><span class="a"><em>HP が 0 になった瞬間</em><small>出血の tick・見切りの返し・被弾のどこでも即時。</small></span></div>
+    <div class="row"><span class="id">F10</span><span class="q">全体攻撃（all）</span><span class="a"><em>今は入れない</em><small>規則としては残し、カードは 100% の段階で足す。</small></span></div>
+    <div class="row"><span class="id">F11</span><span class="q">2 手目の予兆</span><span class="a"><em>2 手目は予定</em><small>1 手目の後に引き直し、変われば「予定変更」を出す。</small></span></div>
+  </section>
+
+  <section class="chapter" id="g">
+    <div class="chapter-head"><span class="chapter-letter">G</span><h2>開示度と手記</h2></div>
+    <p class="chapter-note">敵の手がどこまで見えるかは、手記の頁の反映です。</p>
+    <div class="row"><span class="id">G1</span><span class="q">段数</span><span class="a"><em>3 段のまま</em><small>0 = 何も見えない / 1 = 種別 / 2 = 技名と値。</small></span></div>
+    <div class="row"><span class="id">G2</span><span class="q">1 段目の中身</span><span class="a"><em>種別 + 咎める側の一字</em></span></div>
+    <div class="row"><span class="id">G3</span><span class="q">上げ方</span><span class="a"><em>遭遇で 1・観察で 2</em><small>1 度戦えば 1 段目、2 段目は観察カードか探索の情報収集で埋める。</small></span></div>
+    <div class="row"><span class="id">G4</span><span class="q">2 手目の開示</span><span class="a"><em>種別だけ</em><small>開示度 1 のとき。予兆レーンの文字を増やさない。</small></span></div>
+    <div class="row"><span class="id">G5</span><span class="q">観察カードの効き方</span><span class="a"><em>戦闘の終わりに反映</em><small>さらに、観察カードの習熟 3 段目では、情報だけでなく状態を自分か相手に付与できる強力な技になる。</small></span></div>
+    <div class="row"><span class="id">G6</span><span class="q">開示度 −1</span><span class="a"><em>一律に全部隠す</em><small>燭台の番人（100% 用）。灯りを消すと種別も見えない。</small></span></div>
+    <div class="row"><span class="id">G7</span><span class="q">崩しの見込み</span><span class="a"><em>開示度 2 で出す</em><small>払えなくなった予兆に印を添える。</small></span></div>
+  </section>
+
+  <section class="chapter" id="h">
+    <div class="chapter-head"><span class="chapter-letter">H</span><h2>習熟と継承</h2></div>
+    <p class="chapter-note">投入量の代わりに作り込む軸です。1 つの生の成長と、次の代への橋渡しを決めました。</p>
+    <div class="row"><span class="id">H1</span><span class="q">刻みの数え方</span><span class="a"><em>満たした数だけ加算</em><small>1 回のプレイで 0〜4。文脈は 間合い / 予兆に合った型 / 特性の発火 / 構え圏か死力圏。</small></span></div>
+    <div class="row"><span class="id">H2</span><span class="q">1 つの生の段数</span><span class="a"><em>3 段目は 1 枚だけ</em><small>どの代も 1 枚まで。ほかの札は 2 段目まで。</small></span></div>
+    <div class="row"><span class="id">H3</span><span class="q">才能</span><span class="a"><em>開始時に選んだ 1 枚は刻みが 2 倍</em><small>使い込むほど早く伸びる札を、生のはじめに 1 枚決める。</small></span></div>
+    <div class="row"><span class="id">H4</span><span class="q">段の型の配分</span><span class="a"><em>1 枚ずつ決める</em><small>習熟で名称が変わる 60 種に、伸び / 軽さ / 型替え を個別に置く。</small></span></div>
+    <div class="row"><span class="id">H5</span><span class="q">習熟訓練（刻限の行動）</span><span class="a"><em>訓練 1 回で、指定した 1 枚に刻み 1</em></span></div>
+    <div class="row"><span class="id">H6</span><span class="q">浅層死亡の閾値</span><span class="a"><em>段 × 階層</em><small>2 段目以上のカードは、階層 3 以上で死んだときだけ遺産になる。</small></span></div>
+    <div class="row"><span class="id">H7</span><span class="q">遺産の候補</span><span class="a"><em>全部並べる</em><small>手記を選べば全ての頁と情報を受け取れる形にする。手記をどれだけコンパクトで整然とした設計にできるかが鍵。</small></span></div>
+    <div class="row"><span class="id">H8</span><span class="q">継ぐ札の段</span><span class="a"><em>段をそのまま継ぐ</em></span></div>
+    <div class="row"><span class="id">H9</span><span class="q">生存者ボーナス</span><span class="a"><em>出立の枠を増やす</em><small>ツール枠 +1、デッキ上限 +5 を次の 1 生だけ。戦闘の数値は動かさない。</small></span></div>
+  </section>
+
+  <section class="chapter" id="i">
+    <div class="chapter-head"><span class="chapter-letter">I</span><h2>探索とゲーム全体</h2></div>
+    <p class="chapter-note">concept-v3 §12 に残っていた未確定を、ここで閉じます。</p>
+    <div class="row"><span class="id">I1</span><span class="q">デッキ枚数</span><span class="a"><em>下限 20・上限 40</em><small>所持 80 種の半分までしか持ち出せない。毎回の出立で「今回の答え」を作る。</small></span></div>
+    <div class="row"><span class="id">I2</span><span class="q">刻限の消費</span><span class="a"><em>1 ノード 1 回</em><small>戦闘も休息も同じ重さ。残りを暗算しやすくする。</small></span></div>
+    <div class="row"><span class="id">I3</span><span class="q">ツールの枠</span><span class="a"><em>共通 3 枠</em><small>探索用と戦闘用の区別なし。「今回は探索に全振り」ができる。</small></span></div>
+    <div class="row"><span class="id">I4</span><span class="q">資源・アイテム</span><span class="a"><em>消耗品 3 枠</em><small>拾ったらその場で入れ替え、拠点へは持ち帰らない。通貨も倉庫も要らない。</small></span></div>
+    <div class="row"><span class="id">I5</span><span class="q">クリア条件</span><span class="a"><em>最終ボス「歪みの根」撃破</em></span></div>
+    <div class="row"><span class="id">I6</span><span class="q">クラス</span><span class="a"><em>剣士固定</em><small>魔術師は後回しの項目のまま。</small></span></div>
+    <div class="row"><span class="id">I7</span><span class="q">アーマー解除の判断</span><span class="a"><em>試験台の基準 9 項目</em><small>全て目標値に入った時点を「調整が一巡」とする。</small></span></div>
+    <div class="row"><span class="id">I8</span><span class="q">連戦の既定</span><span class="a"><em>3 戦と 9 戦の両方</em><small>既定は 3 戦、9 戦は選べる並びとして持つ。</small></span></div>
+    <div class="row"><span class="id">I9</span><span class="q">連戦の休憩</span><span class="a"><em>毎回選べる</em></span></div>
+    <div class="row"><span class="id">I10</span><span class="q">全勝時</span><span class="a"><em>同じ並びをもう一度</em><small>結果はログに書き、手を止めずに回す。</small></span></div>
+  </section>
+
+  <section class="chapter" id="j">
+    <div class="chapter-head"><span class="chapter-letter">J</span><h2>UI と演出</h2></div>
+    <p class="chapter-note">投入段が消えた後の、演出の軸と画面の値です。</p>
+    <div class="row"><span class="id">J1</span><span class="q">演出の強弱の軸</span><span class="a"><em>面の確定値</em><small>威力・Guard・回復の確定値を閾値で 4 段に分ける。浮かぶ数字と演出の強さが一致する。</small></span></div>
+    <div class="row"><span class="id">J2</span><span class="q">特性発火の演出</span><span class="a"><em>専用の合図を足す</em><small>段は変えず、発火した一撃に短い合図を重ねる。</small></span></div>
+    <div class="row"><span class="id">J3</span><span class="q">演出の系統</span><span class="a"><em>技名から推定</em><small>優先順は 突 → 打 → 払 → 斬。データに列を足さない。</small></span></div>
+    <div class="row"><span class="id">J4</span><span class="q">結果画面の指標</span><span class="a"><em>特性の発動回数</em><small>「0 投入の回数」と差し替える。シナジーを作り込む方向と合う。</small></span></div>
+    <div class="row"><span class="id">J5</span><span class="q">属性 5 色</span><span class="a"><em>役割色を借りる</em><small>アタック = omen、ガード = guard、スタンス = warm、スキル = accent、ムーブ = ink。色を増やさない。</small></span></div>
+    <div class="row"><span class="id">J6</span><span class="q">第 2 段階の印</span><span class="a"><em>見た目は UI に任せる</em><small>規則からは「赤に変わる」の語を外す。</small></span></div>
+    <div class="row"><span class="id">J7</span><span class="q">演出の上限（承認）</span><span class="a"><em>1.5 倍 / 2.4 秒 / 2.1 秒</em><small>二属性は単属性の 1.5 倍（1545 ms）、スタンス置き換えを含む札は 2.4 秒、ターン開始の最悪は 2.1 秒まで。</small></span></div>
+  </section>
+
+  <section class="chapter" id="k">
+    <div class="chapter-head"><span class="chapter-letter">K</span><h2>色・アート・開発運用</h2></div>
+    <p class="chapter-note">画面の読みやすさと、これから絵を作るための前提です。</p>
+    <div class="row"><span class="id">K1</span><span class="q">低コントラストの 3 色</span><span class="a"><em>大きな文字は 3:1 でよい</em><small>24 px 以上は規格どおり 3:1。小さい脇ラベルは ink へ替える。</small></span></div>
+    <div class="row"><span class="id">K2</span><span class="q">近い色の 4 組</span><span class="a"><em>形の差で区別</em><small>色は変えず、アイコンや線種で見分ける。</small></span></div>
+    <div class="row"><span class="id">K3</span><span class="q">主人公の名前</span><span class="a"><em>世代ごとに名前を持つ</em><small>痕跡と手記の署名に名前が出る。</small></span></div>
+    <div class="row"><span class="id">K4</span><span class="q">世代差（小物と色）</span><span class="a"><em>前の生の到達階層で決まる</em><small>見た目が前の生の結果を語る。素材の枚数は代の番号案と同じ。</small></span></div>
+    <div class="row"><span class="id">K5</span><span class="q">描画アプリ</span><span class="a"><em>CLIP STUDIO PAINT PRO を買う</em><small>買い切り 6,900 円。Live2D が PSD の動作を保証する 2 つのうち安いほう。</small></span></div>
+    <div class="row"><span class="id">K6</span><span class="q">ローカル画像生成</span><span class="a"><em>条件が来たら測る</em><small>月 $30 に届くか、参照画像で同じ顔を保てないとき。</small></span></div>
+    <div class="row"><span class="id">K7</span><span class="q">測る範囲</span><span class="a"><em>LoRA 学習まで</em></span></div>
+    <div class="row"><span class="id">K8</span><span class="q">配布先</span><span class="a"><em>Windows 主で進める</em><small>ブラウザ版は後回し。</small></span></div>
+    <div class="row"><span class="id">K9</span><span class="q">C# の正本</span><span class="a"><em>いまのまま同期</em><small><code>unity-port/</code> が正本で、コマンドで Unity 側へ写す。</small></span></div>
+    <div class="row"><span class="id">K10</span><span class="q">写しの扱い</span><span class="a"><em>写しもコミットする</em><small>clone するだけで Unity が開き、画面の参照も保たれる。</small></span></div>
+    <div class="row"><span class="id">K11</span><span class="q">初回コミット</span><span class="a"><em>いま入れる</em><small>RPG-by-card は未コミット。動く状態を保全する。</small></span></div>
+    <div class="row"><span class="id">K12</span><span class="q">URP の版</span><span class="a"><em>17.5.0 に直す</em><small>設定ファイルと手順書の記述を実態へ揃える。</small></span></div>
+  </section>
+
+  <section class="chapter" id="next">
+    <div class="next">
+      <h2>次の作業</h2>
+      <p class="chapter-note" style="margin-bottom:0">決定は設計書へ記録済みです。ここからは本文の改訂と、数値を置く作業になります。</p>
+      <ol class="steps">
+        <li><span class="n">01</span><span><b>戦闘コア v4.2 の本文改訂</b><span>§0〜§14 を今回の決定で書き直す。間合い・コスト・状態のスタック制・ダメージ式・ターン進行。</span></span></li>
+        <li><span class="n">02</span><span><b>カード 80 種に列とコストを置く</b><span>特性の条件の重さで列を選び、習熟の型（伸び / 軽さ / 型替え）を 60 種に配る。背水の陣が #80 を置き換える。</span></span></li>
+        <li><span class="n">03</span><span><b>敵ロースター 9 体の改訂</b><span>通常 6 体から位置を外し、ボス・精鋭に開始位置と 4 通りの決定木を置く。敵の状態は上限なしへ。</span></span></li>
+        <li><span class="n">04</span><span><b>UI / UX v2.1 の本文改訂</b><span>受け皿と投げ上げ線の併用、状態 6 枠とスタックの見せ方、演出の軸を面の確定値へ。</span></span></li>
+        <li><span class="n">05</span><span><b>モックアップの作り直し</b><span>座標の修正を含む。相手の選び方が決まったので、1 ターン再生も組み直せる。</span></span></li>
+        <li><span class="n">06</span><span><b>Unity 側の初回コミットと URP の訂正</b><span>RPG-by-card に初回コミットを入れ、manifest と手順書を 17.5.0 に揃える。</span></span></li>
+      </ol>
+      <div class="measure">
+        <h3>決めずに測ると決めたもの</h3>
+        <ul>
+          <li>手札に切り替えの札が来ないターン（約 24%）が、実際に痛いかどうか。</li>
+          <li>ボス・精鋭との戦いで、両者が遠間のままにらみ合う頻度。</li>
+          <li>コストの釣り合い。固定コストだけの版と、近間 / 遠間を足した版を分けて測る。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    正本は <code>.claude/docs/battle_document/battle_core_v4.md</code> §17、<code>battle_ui_ux_v2.md</code> §11、<code>.claude/docs/vision/concept-v3.md</code> §14、<code>visual-production-pipeline/references/tools-and-prerequisites.md</code> §9。外部の AI に相談するときは <code>docs/briefs/2026-09-16-game-brief.md</code> を渡してください。
+  </footer>
+</div>

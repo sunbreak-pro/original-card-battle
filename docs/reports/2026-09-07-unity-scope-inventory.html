@@ -1,0 +1,259 @@
+<title>Unity 縦切りスコープ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --ink-2: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --idle: #6b7a82;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --ink-2: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --idle: #8b979e;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --ink-2: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --idle: #8b979e;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--ink-2); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul, ol { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--ink-2); font-size: 15px; }
+
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .flow.three { grid-template-columns: repeat(3, 1fr); }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--ink-2); }
+  .step code { font-size: 13px; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+  @media (max-width: 720px) { .flow, .flow.three { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.name { font-weight: 700; white-space: nowrap; }
+  tr.group td { background: var(--ground); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); font-weight: 700; padding: 6px 14px; }
+
+  .chip { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .06em; padding: 1px 8px; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; line-height: 1.6; }
+  .chip.keep { color: var(--ok); }
+  .chip.trim { color: var(--warn); }
+  .chip.freeze { color: var(--idle); }
+  .chip.drop { color: var(--stop); }
+  .chip.done { color: var(--accent); }
+  .chip.todo { color: var(--ink-2); border-style: dashed; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 14px; color: var(--ink-2); margin: 0 0 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--ink-2); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-07 / 判断 / original-card-battle → Unity RPG-by-card</p>
+    <h1>削る範囲を先に決めてから、バトル画面を本実装する</h1>
+    <p class="lede">Unity 側にあるのは「1 戦だけの最小戦闘画面」です。Web 版の 10 画面・十数種のリソースを全部運ぶのではなく、戦闘の柱に直結するものだけを残した「縦切り」を決め、その中心であるバトル画面から作り始めるのが最短です。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">今日から</span><h3>削減リストを確定し、バトル画面の本実装へ</h3><p>本レポートの「残す / 縮小 / 凍結 / 削除」を承認・修正して docs に固定し、その直後にバトル画面（Unity）の本実装に入ります。</p></li>
+    <li class="verdict later"><span class="tag">必要になったら</span><h3>最小のラン構造と拠点</h3><p>バトルが遊べるようになってから、ステージ選択 → 数戦 → 生還 / 死亡 → 拠点（有料回復・カード購入）の 1 周だけを作ります。</p></li>
+    <li class="verdict skip"><span class="tag">入れない</span><h3>魔術師・魔石・実績・闇市・クエスト・噂・倉庫</h3><p>戦闘の柱（間合い・体勢・スタミナ）にも副柱（不可逆・観察）にも直結しないものは Unity へ運びません。データは Web リポに残るので復活は可能です。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: Unity 側の実装は <code>BattleScreenView</code> の最小戦闘画面のみ（カード 6 種・敵 1 体・間合い 3 段・スタミナ）。Web 版は 10 画面・9 Context・約 4 万行で、移植は未着手です。concept-v2（2026-06-27 再承認）の「剣士先行・2 ステージ・ターン制維持・エネルギー廃止・Difficulty 廃止」はそのまま前提にしています。</div>
+
+  <h2>ゲームを形作る 4 つの層</h2>
+  <p class="prose">引っ越しで言えば、家具を全部運ぶ前に「新居に置く部屋」を決める作業です。ゲームは内側から 4 層に分かれ、内側ほど優先度が高くなります。今回の縦切りは第 1 層を本実装し、第 2〜3 層は最小の 1 周だけ、第 4 層は観察レベルだけを残します。</p>
+  <div class="flow">
+    <div class="step"><span class="n">第 1 層</span><h3>戦闘</h3><p>1 戦の中で完結する。間合い・体勢・スタミナ・HP・ガード・手札。</p><p><span class="chip done">Unity 最小あり</span></p></div>
+    <div class="step"><span class="n">第 2 層</span><h3>ラン（探索）</h3><p>ダンジョンに入ってから出るまで。ステージ・ノード・探索中の所持品。</p><p><span class="chip todo">未着手</span></p></div>
+    <div class="step"><span class="n">第 3 層</span><h3>拠点</h3><p>ラン間の準備と消費。回復・購入・出発。</p><p><span class="chip todo">未着手</span></p></div>
+    <div class="step"><span class="n">第 4 層</span><h3>永続</h3><p>死んでも残るもの。手記（観察）・熟練度・ソウル。</p><p><span class="chip todo">未着手</span></p></div>
+  </div>
+
+  <h2>画面の棚卸し</h2>
+  <p class="legend"><span><span class="chip keep">残す</span> そのまま運ぶ</span><span><span class="chip trim">縮小</span> 中身を減らして運ぶ</span><span><span class="chip freeze">凍結</span> 今回運ばない・データは保持</span><span><span class="chip drop">削除</span> 設計から外す</span></p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Web 版の画面</th><th>今の中身</th><th>提案</th><th>Unity での姿と理由</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="4">第 1 層 戦闘</td></tr>
+        <tr><td class="name">battle</td><td>BattleScreen・PlayerFrame・EnemyFrame・行動順表示・勝利 / 敗北・アイテム使用モーダル</td><td><span class="chip keep">残す</span></td><td><strong>本実装の対象。</strong>最小画面に「立ち絵の位置と体勢」「カードの見た目」「体勢崩し」「勝敗の結果画面」を載せます。行動順表示は速度フェーズキューを廃止するので不要です</td></tr>
+        <tr><td class="name">GuildBattleScreen（昇格試験）</td><td>depth=1 固定の試験戦闘</td><td><span class="chip freeze">凍結</span></td><td>通常戦闘と同じ画面で足ります。等級はステージの推奨等級で表現するので試験自体が要らなくなります</td></tr>
+        <tr class="group"><td colspan="4">第 2 層 ラン</td></tr>
+        <tr><td class="name">dungeon（DungeonGate）</td><td>深度選択・デッキ / 装備 / 持ち物の準備タブ・ステータス</td><td><span class="chip trim">縮小</span></td><td>「ステージ選択（推奨等級つき）→ 出発」の 1 画面に畳みます。デッキ編集は拠点側へ寄せ、ここでは確認だけにします</td></tr>
+        <tr><td class="name">dungeon_map（ExplorationScreen）</td><td>NodeMap（6 ノード種）・状態 / 持ち物 / 手記タブ・帰還確認</td><td><span class="chip trim">縮小</span></td><td>ノードは battle / elite / rest / boss の 4 種から。event / treasure は後回し。タブは「手記」だけ残します</td></tr>
+        <tr class="group"><td colspan="4">第 3 層 拠点</td></tr>
+        <tr><td class="name">camp（BaseCamp）</td><td>5 施設への入口</td><td><span class="chip trim">縮小</span></td><td>入口は 3 つ（宿・店・出発）。施設を減らすので画面も軽くなります</td></tr>
+        <tr><td class="name">sanctuary</td><td>スキルツリー・回復の恩恵</td><td><span class="chip trim">縮小</span></td><td>「宿」に改名。concept A2 の有料回復と、ソウルでのスタミナ MAX 成長だけ。ツリー UI は 1 本の直線で足ります</td></tr>
+        <tr><td class="name">shop</td><td>購入 / 売却 / 魔石交換 / 闇市</td><td><span class="chip trim">縮小</span></td><td>購入と売却のみ。魔石交換は魔石ごと削除、闇市は凍結</td></tr>
+        <tr><td class="name">guild</td><td>試験 / クエスト / 噂 / 倉庫</td><td><span class="chip freeze">凍結</span></td><td>推奨等級の掲示は「出発」画面に統合。噂 → 敵ヒントは Tier2 のまま。クエストは concept で凍結済み</td></tr>
+        <tr><td class="name">blacksmith</td><td>強化 / 修理 / 分解</td><td><span class="chip freeze">凍結</span></td><td>装備を「武器 1 + 防具 1、成長なし」に縮小すると施設の仕事が消えます。AP 劣化は Web でも未実装でした</td></tr>
+        <tr><td class="name">storage</td><td>倉庫の一覧と詳細</td><td><span class="chip drop">削除</span></td><td>持ち物が数個になれば倉庫は要りません。所持品は拠点画面の一部にします</td></tr>
+        <tr><td class="name">character_select</td><td>剣士 / 魔術師の選択・初期デッキ確認</td><td><span class="chip drop">削除</span></td><td>剣士のみなので、タイトル画面の「はじめる / つづきから」に置き換えます</td></tr>
+        <tr class="group"><td colspan="4">第 4 層 永続・共通</td></tr>
+        <tr><td class="name">Journal（オーバーレイ）</td><td>思い出 / 戦術 / 考察 / 設定の 4 ページ、図鑑 4 種、実績</td><td><span class="chip trim">縮小</span></td><td>「敵の手記（観察レベル）」1 ページに絞ります。副柱「観察と学習」の本体なので残し、図鑑・実績は外します</td></tr>
+        <tr><td class="name">設定パネル</td><td>明るさ / 音 / セーブ・ロード</td><td><span class="chip trim">縮小</span></td><td>音量とセーブだけ。明るさは Unity の後処理で扱えます</td></tr>
+        <tr><td class="name">Toast・AchievementList</td><td>通知・実績一覧</td><td><span class="chip drop">削除</span></td><td>通知は戦闘ログと手記で代替。実績は称号ごと外します</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note prose">削減後の画面数: タイトル / 拠点（宿・店・出発を内包）/ ステージ選択 / 探索マップ / 戦闘 / 結果 の 6 画面 + 手記オーバーレイ 1 つ。Web 版の 10 画面 + オーバーレイ 3 つから約半分になります。</p>
+
+  <h2>リソースの棚卸し</h2>
+  <p class="prose">「リソース」は数字で持っていて増減するもの全部です。冷蔵庫の中身と同じで、種類が多いほど管理が重くなります。戦闘の柱に使うもの、不可逆性を作るもの、観察を記録するもの以外は外します。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>リソース</th><th>Web 版の状態</th><th>提案</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="4">戦闘内（1 戦で完結）</td></tr>
+        <tr><td class="name">HP</td><td>実装済</td><td><span class="chip keep">残す</span></td><td>Unity 最小画面に既にあります</td></tr>
+        <tr><td class="name">スタミナ</td><td>battle-lab コアで実装済（MAX 20・間合い依存回復・疲労閾値 8）</td><td><span class="chip keep">残す</span></td><td>柱そのもの。数値はそのまま C# に移植済み</td></tr>
+        <tr><td class="name">間合い</td><td>battle-lab コアで実装済（近 / 中 / 遠）</td><td><span class="chip keep">残す</span></td><td>柱そのもの。Unity では実距離で描画済み</td></tr>
+        <tr><td class="name">ガード</td><td>実装済</td><td><span class="chip keep">残す</span></td><td>受けの選択肢として必要</td></tr>
+        <tr><td class="name">体勢（崩し）</td><td>未実装（Tier1 R1-7）</td><td><span class="chip keep">残す</span></td><td>「崩してから叩く」が主柱の三本目。バトル画面本実装の中で C# 側に足します</td></tr>
+        <tr><td class="name">剣気</td><td>旧コアに実装済、新コアでは役割未定義（R1-2）</td><td><span class="chip freeze">凍結</span></td><td>スタミナと役割が重なる懸念が設計書で未解決。体勢が入ってから要否を判断します</td></tr>
+        <tr><td class="name">バフ / デバフ 42 種</td><td>実装済</td><td><span class="chip trim">縮小</span></td><td>崩れ・出血・弱体の 3〜5 種から始めます。42 種の干渉整理は誰も遊ばない段階では負債です</td></tr>
+        <tr><td class="name">カードエネルギー</td><td>旧コアに実装済</td><td><span class="chip drop">削除</span></td><td>concept 決定 #1 でスタミナに一本化済み</td></tr>
+        <tr><td class="name">元素共鳴（魔術師）</td><td>実装済</td><td><span class="chip freeze">凍結</span></td><td>魔術師ごと凍結。既知バグ 001 も一緒に凍結されます</td></tr>
+        <tr><td class="name">速度・フェーズキュー</td><td>実装済</td><td><span class="chip drop">削除</span></td><td>新コアは「プレイヤー → 敵」の固定順。速度差は敵の行動内容で表現します</td></tr>
+        <tr class="group"><td colspan="4">ラン・拠点（周回をまたぐ）</td></tr>
+        <tr><td class="name">ゴールド</td><td>拠点 / 探索の二重プール</td><td><span class="chip trim">縮小</span></td><td>探索中の所持金と拠点の金庫、という考え方は不可逆性に効くので残しますが、実装は「探索中に拾った分」1 つの数字で足ります</td></tr>
+        <tr><td class="name">魔石（3 種）</td><td>二重プール + 交換所</td><td><span class="chip drop">削除</span></td><td>ゴールドと役割が重複。通貨は 1 つで十分です</td></tr>
+        <tr><td class="name">ソウル</td><td>死んでも 100% 獲得・スキルツリー解放</td><td><span class="chip keep">残す</span></td><td>「無駄死にはない」を支える唯一の成長通貨。使い道は宿のスタミナ MAX 成長のみに絞ります</td></tr>
+        <tr><td class="name">ライフ</td><td>難易度別 2〜3</td><td><span class="chip trim">縮小</span></td><td>固定 3（Difficulty 廃止は決定 #4）。0 でフルリセット、手記だけ残す</td></tr>
+        <tr><td class="name">探索制限（explorationLimit）</td><td>実装済</td><td><span class="chip drop">削除</span></td><td>ステージ制ではステージの階層数が上限になるので二重になります</td></tr>
+        <tr><td class="name">テレポート石</td><td>未実装（0 固定のプレースホルダ）</td><td><span class="chip keep">残す</span></td><td>帰還 = 生還確定の唯一の手段。持ち込み 1 個の消耗品として最初から入れます</td></tr>
+        <tr><td class="name">消耗アイテム</td><td>データ多数・戦闘中使用モーダル</td><td><span class="chip trim">縮小</span></td><td>回復薬とテレポート石の 2 種のみ。A2「回復は高価」を値段で表現します</td></tr>
+        <tr><td class="name">装備（Lv0-3・品質・レアリティ・AP）</td><td>約 145 件のデータ・耐久劣化は未実装</td><td><span class="chip trim">縮小</span></td><td>武器 1 + 防具 1 の固定スロット、成長なし。死亡で失う「持ち込みのジレンマ」だけ残します</td></tr>
+        <tr><td class="name">カード熟練度 → 派生</td><td>実装済（Lv1-5・派生 15 枚）</td><td><span class="chip freeze">凍結</span></td><td>柱 3「成長の手応え」の本体ですが、初期デッキ 15 枚が固まってから。数値の再定義（R1-10 CRD-8）も未了です</td></tr>
+        <tr><td class="name">観察レベル（手記）</td><td>未実装（Tier1 R1-13）</td><td><span class="chip keep">残す</span></td><td>副柱「情報」の本体。敵ごとの 4 段階の数字 1 つなので軽く、死を越える唯一の資産にします</td></tr>
+        <tr><td class="name">等級（classGrade）・称号・実績</td><td>実装済</td><td><span class="chip drop">削除</span></td><td>等級はステージの推奨等級に吸収。称号・実績は concept で凍結済み</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note prose">削減後のリソース: 戦闘内 5（HP・スタミナ・間合い・ガード・体勢）+ 周回 5（ゴールド・ソウル・ライフ・アイテム 2 種・装備 2 枠）+ 永続 1（観察レベル）。Web 版の 20 種前後から 11 種になります。</p>
+
+  <h2>データ量の目安</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>データ</th><th>Web 版</th><th>縦切りで用意する数</th><th>備考</th></tr></thead>
+      <tbody>
+        <tr><td class="name">剣士カード</td><td class="num">60（基本 37 + タレント 8 + 派生 15）</td><td class="num">15〜20</td><td>初期デッキ 15 枚（間合いを取る → 隙を作る → 重い一撃）+ 店売り数枚。Unity の今の 6 種から拡張</td></tr>
+        <tr><td class="name">魔術師カード</td><td class="num">40</td><td class="num">0</td><td>凍結</td></tr>
+        <tr><td class="name">敵</td><td class="num">100（5 深度 × 20）</td><td class="num">6〜8</td><td>ステージ 2 本 × 3〜4 体（雑魚 2・エリート 1・ボス 1）。Unity の今の 1 体から拡張</td></tr>
+        <tr><td class="name">ステージ</td><td class="num">5 深度 × 5 フロア</td><td class="num">2</td><td>concept 決定どおり（翠苔の森殿 / 霧の水郷 の候補名あり）</td></tr>
+        <tr><td class="name">装備</td><td class="num">約 145</td><td class="num">4〜6</td><td>武器 2〜3・防具 2〜3</td></tr>
+        <tr><td class="name">バフ / デバフ</td><td class="num">42</td><td class="num">3〜5</td><td>崩れ・出血・弱体 から</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>提案する順序</h2>
+  <div class="flow three">
+    <div class="step"><span class="n">STEP 1 / 数日</span><h3>削減の確定</h3><p>本レポートの提案を承認・修正し、<code>docs/vision/plans/</code> に「Unity 縦切りスコープ」として固定します。tier1 の Web 依存項目（R1-3 魔術師無効化・R1-4 フック整理・R1-18 セーブ移行など）は Unity では不要と明記します。</p></div>
+    <div class="step"><span class="n">STEP 2 / 本命</span><h3>バトル画面の本実装</h3><p>(a) 見た目の骨格: レイアウト確定・立ち絵プレースホルダ・カードの見た目 (b) ルール: 体勢と崩し・初期デッキ 15 枚・敵 3 体・デバフ 3 種を C# コアに追加し dotnet test で担保 (c) 演出: 被弾・移動・崩れの最小アニメ。</p></div>
+    <div class="step"><span class="n">STEP 3 / その後</span><h3>最小のラン 1 周</h3><p>タイトル → ステージ選択 → 4 ノード × 3 階層 → 生還 / 死亡 → 宿と店 → 再出発。ここで初めて手記・ソウル・ライフが意味を持ちます。</p></div>
+  </div>
+  <p class="prose">STEP 2 の (b) は、TS コア（Web リポの <code>src/ui/battle-lab/core/</code>）を鏡写しで更新するかどうかで手間が倍変わります。C# 側だけで設計し、TS コアは「移植済み部分の基準」として凍結するのがおすすめです。パリティテストは既存 18 手順の照合に留め、新ルールは C# のユニットテストだけで守ります。</p>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>concept-v2 と tier1 の決定事項（剣士先行・2 ステージ・ターン制維持・エネルギー廃止・Difficulty 廃止・手記の死越え永続）はそのまま有効とみなしました。</li>
+    <li>「削る」の基準は、主柱（間合い・体勢・スタミナ）と副柱（不可逆性・観察）のどちらかに直結するかどうか、の 1 点にしました。</li>
+    <li>Unity 側は現状「1 戦のみ」なので、Web 版の画面を移植する順番 = 作る順番として整理しました。</li>
+    <li>凍結・削除したデータは Web リポに残るため、いつでも戻せる前提です（Web リポは削除しません）。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>Unity リポ（sunbreak-pro/RPG-by-card）は初回コミットが未了のままです。着手前に一度コミットして土台を固定した方が安全です。</li>
+    <li>装備データ約 145 件・敵 100 体の数は grep による概算です。設計書の値（剣士 60 枚・敵 40 体配属予定）と食い違う箇所は設計書側が正です。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ol class="prose">
+    <li><strong>魔術師を凍結でよいか。</strong>concept は「後追い適合」ですが、Unity では追わないと決めれば元素共鳴・バフの半分・カード 40 枚が一気に消えます。</li>
+    <li><strong>剣気を今回入れるか。</strong>提案は凍結です。「体勢崩し成立で剣気が溜まる」案（R1-2 BAT-7）を採るなら、体勢と同時に設計する必要があります。</li>
+    <li><strong>装備をどこまで残すか。</strong>提案は「武器 1 + 防具 1、成長なし」です。鍛冶屋と品質ガチャを残すなら第 3 層が一気に重くなります。</li>
+    <li><strong>TS コアの追従をやめるか。</strong>提案は「移植済み部分の基準として凍結、新ルールは C# 専用」です。</li>
+  </ol>
+</div>
