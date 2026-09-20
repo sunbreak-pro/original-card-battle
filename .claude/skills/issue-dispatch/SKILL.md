@@ -15,12 +15,15 @@ description: プロダクトの課題を GitHub Issue として起票し、ラ�
 
 ## ラベル（`gh label list` が正本）
 
-| 系統      | 値                                                                     | 必須           |
-| --------- | ---------------------------------------------------------------------- | -------------- |
-| `type:`   | `bug` / `feature` / `task` / `human`                                   | 必須           |
-| `sev:`    | `blocking` / `important` / `minor`                                     | 任意           |
-| `area:`   | `battle` `cards` `enemy` `dungeon` `ui` `art` `unity` `docs` `tooling` | 任意（複数可） |
-| `status:` | `monitoring` / `workaround` / `frozen`                                 | 任意           |
+| 系統      | 値                                                                     | 必須             |
+| --------- | ---------------------------------------------------------------------- | ---------------- |
+| `type:`   | `bug` / `feature` / `task` / `human`                                   | 必須             |
+| `sev:`    | `blocking` / `important` / `minor`                                     | 任意             |
+| `area:`   | `battle` `cards` `enemy` `dungeon` `ui` `art` `unity` `docs` `tooling` | 任意（複数可）   |
+| `lane:`   | `cards` `design` `battle` `dungeon` `audit`                            | 任意（1 つだけ） |
+| `status:` | `monitoring` / `workaround` / `frozen`                                 | 任意             |
+
+**`lane:` は worktree レーンの宛先**です。付けなければ `issue-prompter` が `area:` から既定のレーンに振ります（対応表はそちらが正本）。`area:` が複数レーンに跨るときと、既定と違うレーンに任せたいときだけ明示します。**`lane:audit` は読み取り専用のレーン**なので、コードの修正を含む Issue には付けません。
 
 **`type:human` は Claude が代われない作業**に付けます（実機の手触り、絵の選定、課金・認証）。`issue-prompter` はこれを `/goal` に混ぜず、こうだいさん宛の一覧に分けます。
 
