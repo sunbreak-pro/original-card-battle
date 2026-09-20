@@ -2,6 +2,37 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-19 - 戦闘描写の仕上げ（Issue #31 と手触りの QA 残り）
+
+#### 概要
+
+ドメイン再読み込みなしの 2 回目の再生で絵が四角になる不具合（#31）を直した。扇の座標計算を純関数にしてテストを足し、手触りの PR で見送った QA の Suggestion を片付けた。
+
+#### 変更点
+
+- **#31**: `ProceduralArt` は `??=` をやめ、`Cached(ref slot, make)` で `!slot || !slot.texture` を見てから作り直す。Icons 配列も同じ経路。`VerticalGradient` は元からキャッシュしないので変更なし。BattleDepiction と test1 をそれぞれ 2 回、PlayMode テストの後にも 1 回再生して、人影・盾・丸ピップを撮影で確認
+- **扇**: `Depiction/Script/HandFan.cs`（`FanPlace` と `HandFan.Place`、UnityEngine に依存しない）。置き場所を Script にしたのは、EditMode テストが型で直接呼べるため（名前で引くと型の検査が効かない）。`HandFanTests` を追加（中央が一番高い / 左右対称 / 下の角が基準線より下がらず、端の札は基準線に乗る / 1 枚と 2 枚）
+- **式の修正**: 札ごとに自分の角の沈み分を足していたため、出荷値でも中央の隣が 0.14 px 高く、角度を上げると M 字になった。手札全体を端の札の沈み分だけ持ち上げる形にした。見た目は中央が数 px 上がる。`fanDegreesPerCard` に `[Range(0, 15)]`
+- **QA の残り**: `SettleHand` は札と開始値を組で持つ。ホバーの当たりは札の定位置・傾き・拡大なしの姿で取る（間隔 / 拡大率を 3 通り変えて、浮く前後で判定が同じことを確認）。`UpgradePrefabs` は FigureView が無いと警告し、参照切れで子が残っていればつなぎ直す（2 つ以上なら警告）。`EveryThrowLineCardSaysWhoseFiguresItLandsOn` は `Opening.Hand` も見る
+- **ブランチ**: #33 のマージ先が main ではなく `fix/depiction-followups` だったため、`fix/depiction-polish` に取り込んだ（この PR に #33 の変更も入る）
+- **確認**: エラー 0 / EditMode 94 / PlayMode 1 / dotnet test 54 / 同期 2 回目 0 件 / 撮り直し 10 枚は手札より上が前回と同じ（差は 4-hover の標的マークだけ）
+- **見送り（QA Suggestion）**: ホバー判定のカメラが null 固定（Overlay 前提、旧コードから）/ テクスチャだけ破棄されたとき古いスプライトを破棄しない、`Icon()` のラムダ確保（実害なし）
+
+### 2026-09-19 - 戦闘描写の手触りの手直し（ホバー、扇形の手札、標的マーク）
+
+#### 概要
+
+Issue #25 の所感 3 点を入れた。手札の札はホバーで浮いて前面に出る。手札は浅い扇形に並ぶ。投げ上げ線を使う札を持つと、効果が乗る人影を四角い標的マークが囲む。
+
+#### 変更点
+
+- **ホバー**: `DepictionPlayer.UpdateHover` がポインタ位置を読み、札を 28 px 持ち上げて 1.05 倍にし、前面に出す。扇の角度は保つ。当たりは札の定位置で取るので、浮いた札の下端でも点滅しない。演出中とドラッグ中は切る
+- **扇形**: `HomeOf` が定位置を決める。端の札を基準線に据えて中央を上げ、傾きで下の角が沈む分だけ持ち上げる（画面の下端で切れないため）。1 段あたり 2.5 度。持った札は直立し、戻るときに角度も戻る
+- **標的マーク**: 新規 `TargetMarkView`（四隅の鉤型 8 本、表示中はゆっくり呼吸する）。Figure プレハブの子に足し、`FigureView.targetMark` で持つ。色は札の属性色、投げ上げ線を越えると濃くなる
+- **台本**: `CardFace.Affects`（`UnitSide?`、投げ上げ線の札で必須）。どの人影を囲むかは台本が決める。EditMode テスト 1 本を追加
+- **プレハブ**: `Tools > Depiction > Upgrade Prefabs` が既存の Figure プレハブに標的マークを足す（既にあれば何もしない）。`BuildFigure` も同じ部品を作る
+- **確認**: 再コンパイル後のエラー 0 / EditMode 描写分 9 / PlayMode 1（2.0 秒の上限）/ dotnet test 54 / 撮影で 3 点を確認
+
 ### 2026-09-19 - アート制作の調べ直し（0 円化の観点）
 
 #### 概要

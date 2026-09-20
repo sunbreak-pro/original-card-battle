@@ -54,6 +54,48 @@ namespace Depiction.View
             Debug.Log("[Depiction] prefabs created: " + created + " (existing ones kept). scene " + (sceneCreated ? "created" : "kept") + ".");
         }
 
+        /// <summary>
+        /// Adds parts that arrived after a prefab was first built. BuildAll keeps existing prefabs as
+        /// they are (they may have been moved by hand), so new children are patched in here instead.
+        /// </summary>
+        [MenuItem("Tools/Depiction/Upgrade Prefabs")]
+        public static void UpgradePrefabs()
+        {
+            string path = PrefabFolder + "/Figure.prefab";
+            if (!File.Exists(path))
+            {
+                Debug.LogWarning("[Depiction] " + path + " is missing; run Build Prefabs And Scene first.");
+                return;
+            }
+            GameObject root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var view = root.GetComponent<FigureView>();
+                if (view == null)
+                {
+                    Debug.LogWarning("[Depiction] " + path + " has no FigureView on its root; nothing upgraded.");
+                    return;
+                }
+                if (view.targetMark != null)
+                {
+                    Debug.Log("[Depiction] Figure.targetMark already present.");
+                    return;
+                }
+                // A lost reference with the child still there is relinked, not built a second time.
+                TargetMarkView[] marks = root.GetComponentsInChildren<TargetMarkView>(true);
+                TargetMarkView existing = marks.Length > 0 ? marks[0] : null;
+                if (marks.Length > 1) Debug.LogWarning("[Depiction] " + path + " has " + marks.Length + " TargetMarkView children; relinking the first, remove the rest by hand.");
+                if (existing != null) view.targetMark = existing;
+                else AddTargetMark(view, (RectTransform)root.transform);
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+                Debug.Log("[Depiction] Figure.targetMark " + (existing != null ? "relinked to the existing " + existing.name : "added") + ".");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
         // ---- prefabs --------------------------------------------------------------------------
 
         private static int BuildPrefab(string name, System.Func<GameObject> build)
@@ -125,7 +167,39 @@ namespace Depiction.View
             view.rangeTagFrame.rectTransform.offsetMax = new Vector2(0f, 3f);
             view.rangeGlyph = UiKit.Label(view.rangeTag, "Glyph", 32, TextAnchor.MiddleCenter, BattleTheme.Accent, Half, Half, new Vector2(52f, 52f), Vector2.zero, "近");
             view.rangeGlyph.fontStyle = FontStyle.Bold;
+            AddTargetMark(view, root);
             return root.gameObject;
+        }
+
+        /// <summary>Four square corner brackets around the figure; hidden until a throw-line card is held.</summary>
+        private static void AddTargetMark(FigureView view, RectTransform root)
+        {
+            const float length = 46f;
+            const float thickness = 5f;
+            RectTransform mark = UiKit.Rect(root, "TargetMark", Vector2.zero, Vector2.one);
+            mark.offsetMin = new Vector2(-8f, -4f);
+            mark.offsetMax = new Vector2(8f, 12f);
+            var markView = mark.gameObject.AddComponent<TargetMarkView>();
+            markView.group = mark.gameObject.AddComponent<CanvasGroup>();
+            markView.group.alpha = 0f;
+            markView.group.blocksRaycasts = false;
+            markView.group.interactable = false;
+
+            var bars = new System.Collections.Generic.List<Image>();
+            foreach (Vector2 corner in new[] { new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f) })
+            {
+                string name = (corner.y > 0.5f ? "Top" : "Bottom") + (corner.x > 0.5f ? "Right" : "Left");
+                Image across = Img(mark, name + "Across", BattleTheme.Ink, corner, corner);
+                across.rectTransform.pivot = corner;
+                across.rectTransform.sizeDelta = new Vector2(length, thickness);
+                Image along = Img(mark, name + "Along", BattleTheme.Ink, corner, corner);
+                along.rectTransform.pivot = corner;
+                along.rectTransform.sizeDelta = new Vector2(thickness, length);
+                bars.Add(across);
+                bars.Add(along);
+            }
+            markView.bars = bars.ToArray();
+            view.targetMark = markView;
         }
 
         private static GameObject BuildStatusBar()

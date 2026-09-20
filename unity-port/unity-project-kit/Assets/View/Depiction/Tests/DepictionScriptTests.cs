@@ -148,6 +148,31 @@ namespace Depiction.Tests
             Assert.That(script.Events[3].After.Player.RangeGlyph, Is.EqualTo("遠"));
         }
 
+        [Test]
+        public void EveryThrowLineCardSaysWhoseFiguresItLandsOn()
+        {
+            DepictionScript script = TurnSliceScript.Build();
+            int throwLineCards = AssertAffects(script.Opening, "opening");
+            foreach (DepictionEvent ev in script.Events)
+            {
+                throwLineCards += AssertAffects(ev.After, "event " + ev.Order);
+            }
+            Assert.That(throwLineCards, Is.GreaterThan(0));
+        }
+
+        /// <returns>How many throw-line cards the frame's hand holds.</returns>
+        private static int AssertAffects(DepictionFrame frame, string where)
+        {
+            int throwLineCards = 0;
+            foreach (CardFace face in frame.Hand)
+            {
+                if (face.Aim != CardAim.Self) continue;
+                throwLineCards += 1;
+                Assert.That(face.Affects.HasValue, Is.True, where + " " + face.Id + " has no Affects");
+            }
+            return throwLineCards;
+        }
+
         private static void AssertRangeGlyphs(DepictionFrame frame, string where)
         {
             foreach (UnitFrame unit in new[] { frame.Player, frame.Enemy })

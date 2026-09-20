@@ -20,6 +20,8 @@ namespace Depiction.View
         public RectTransform rangeTag;
         public Image rangeTagFrame;
         public Text rangeGlyph;
+        [Tooltip("Corner brackets shown while a throw-line card that lands on this figure is held.")]
+        public TargetMarkView targetMark;
 
         public RectTransform Rect => (RectTransform)transform;
         public Color RoleColor => side == UnitSide.Player ? BattleTheme.Accent : BattleTheme.Omen;
