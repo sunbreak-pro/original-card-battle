@@ -40,6 +40,8 @@ npx vitest run src/domain/cards/decks/__tests__/deck.test.ts  # Single file
 - **PR マージ後はブランチ削除**（ローカル・リモート両方）
 - **main は常に origin/main 追従**（作業開始前に pull）
 - **不要な未マージ作業は `archive/<name>` タグで保全してから削除**（`git tag archive/<name> <branch>` → push → ブランチ削除。一覧を汚さず復元可能に）
+- **メイン（`C:\Users\user\orca\original-card-battle`）は `main` 専有**。feature 作業は worktree から行う。メインで `git checkout <feature>` をしない
+- **レーンのブランチは `<prefix>/<slug>-<issue>`**（例: `feat/battle-36`, `docs/cards-38`）。待機ブランチは `chore/lane-<slug>`、tracker 専用は `chore/tracker-<self>-YYYYMMDD`
 
 ## Key Rules
 
@@ -205,6 +207,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | Character art / UI production pipeline | `visual-production-pipeline` |
 | 前のセッションの続きを引き継ぐ         | `session-successor`          |
 | セッション開始 / `/clear` の後         | `session-loader`             |
+| worktree / レーン / ブランチ切替       | `worktree-policy`            |
 | 課題を Issue として起票                | `issue-dispatch`             |
 | 次に着手する Issue を決める            | `issue-prompter`             |
 | open Issue を仕分ける                  | `/loop-triage`               |
@@ -265,7 +268,26 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 
 main / master への直接 push、force push、`git reset --hard`、`git branch -D`、`rm -rf .git`。**`gh pr merge` は `ask`** で必ず人に聞く。
 
-> **未導入**: multi-chat worktree 運用（`workspaces/original-card-battle/<slug>/`）と `section:` ラベルによる振り分けは入れていない。導入時に `git checkout main` / `git switch main` の deny を足し、メインのチェックアウトを chat-main 専有にする。
+### 並行作業は worktree のレーン
+
+> 規約の本体は `worktree-policy` スキル。本節は一覧と禁止事項だけを持つ。
+
+worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card-battle\<slug>\` に置く（絶対パスで作る）。**1 レーン = 1 worktree = 1 チャット**で、ブランチは Issue ごとに切り替える。
+
+| slug      | 担当                                                                     | 既定の `area:`     |
+| --------- | ------------------------------------------------------------------------ | ------------------ |
+| `cards`   | カード設計・デッキ・習熟・敵ロースター                                   | `cards` `enemy`    |
+| `design`  | 世界観と見た目。世界設定・物語・用語と、UI / UX 設計・演出・立ち絵・素材 | `world` `ui` `art` |
+| `battle`  | 戦闘プログラム（C# の BattleCore が正）                                  | `battle` `unity`   |
+| `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード                                     | `dungeon`          |
+| `audit`   | 監査。設計書と実装の整合、既知課題の棚卸し                               | `docs` `tooling`   |
+
+- **宛先ラベルは `lane:<slug>`**。付けなければ `issue-prompter` が上の `area:` から既定のレーンへ振る
+- **世界観の正本は `design`**。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` を書く。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
+- **`audit` は読み取り専用**。整合監査の結果を Issue に起票し、修正は担当レーンへ回す
+- **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで
+- **one writer per artifact**。同じファイルを 2 レーンに触らせない
+- **`.claude/comm/.session-name` と `.session-branch` を必ず書く**。ブランチを切り替えるたびに `.session-branch` を更新する（省略すると hook が無音スキップする）
 
 ## Document System
 
@@ -290,7 +312,7 @@ main / master への直接 push、force push、`git reset --hard`、`git branch 
 | -------------------------------- | -------------------------------------------------------------------------- |
 | `memory/chat-<self>.md`          | タスクトラッカー — 進行中 / 直近の完了 / 予定（per-chat）                  |
 | `history/chat-<self>.md`         | 変更履歴（降順、概要+変更点。per-chat）                                    |
-| `.github/ISSUE_TEMPLATE/`        | Issue テンプレート 3 種（Known Issue / Roadmap Item / Human Task）        |
+| `.github/ISSUE_TEMPLATE/`        | Issue テンプレート 3 種（Known Issue / Roadmap Item / Human Task）         |
 | `.claude/hooks/`                 | SessionStart と PreToolUse の hook 5 本                                    |
 | `README.md`                      | プロジェクト概要・Development History（完了履歴の要約）                    |
 | `.claude/docs/INDEX.md`          | ドキュメント索引（標準構造 + ゲーム設計書）                                |
