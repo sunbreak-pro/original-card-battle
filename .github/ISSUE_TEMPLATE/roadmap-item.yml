@@ -1,0 +1,17 @@
+name: Roadmap Item
+description: ロードマップ項目（機能追加 / 設計 / 調査）の追跡
+labels: ["type:task"]
+body:
+  - type: textarea
+    id: summary
+    attributes: { label: Summary, description: 何をどこまでやるかの要約 }
+    validations: { required: true }
+  - type: input
+    id: plan_link
+    attributes: { label: 計画書 .md, description: .claude/docs/vision/plans/ への path または URL }
+  - type: textarea
+    id: dod
+    attributes: { label: Definition of Done, description: 機械検証可能な完了条件 }
+  - type: textarea
+    id: depends
+    attributes: { label: 依存, description: 先に終わっている必要がある Issue 番号 }
