@@ -5,7 +5,7 @@
 
 ## いまどこ
 
-Krita AI Diffusion 1.53.0 の導入と設定が終わり、1024×1024 の試し生成に成功しました（28 ステップで約 16 秒、VRAM 5.3 / 8.1 GB）。モデルは Animagine XL 4.0 opt で、スタイル `card-battle Animagine`（`architecture: sdxl`）を作成済みです。まだ 1 枚も本番の候補を出していません。次は長柄の歪み兵（`polearm_warped`）の外見の案出しです。
+Krita AI Diffusion 1.53.0 の導入と設定が終わり、1024×1024 の試し生成に成功しました（28 ステップで約 16 秒、生成中の VRAM 5.3 / 8.1 GB）。モデルは Animagine XL 4.0 opt で、スタイル `card-battle Animagine`（`architecture: sdxl`）を作成済みです。2026-09-20 時点で出力は 1 件だけ（試し生成）で、本番の候補はまだ 1 枚もありません。次は長柄の歪み兵（`polearm_warped`）の外見の案出しです。
 
 ## 確認コマンド
 
@@ -16,7 +16,8 @@ Krita AI Diffusion 1.53.0 の導入と設定が終わり、1024×1024 の試し�
 | スタイルの設定       | `type "%APPDATA%\krita\ai_diffusion\styles\anime-illustrious.json"`     | `name` = card-battle Animagine、`architecture` = sdxl、`sampler_steps` = 28 |
 | 直近の落ちと生成時間 | `tail -40 "%APPDATA%\krita\ai_diffusion\logs\server.log"`               | `Fatal Python error` が増えていない                                         |
 | VRAM の空き          | `nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader` | 生成前で 4 GB 以上空いている                                                |
-| 生成済みの素材       | `ls "%APPDATA%\krita\ai_diffusion\ComfyUI\ComfyUI\output"`              | 前回からの追加があるか（人が生成を続けていた場合）                          |
+| 生成済みの素材       | `ls "%APPDATA%\krita\ai_diffusion\ComfyUI\ComfyUI\output"`              | 2026-09-20 時点で 1 件。増えていれば人が生成を続けている                    |
+| 作業ファイル         | `ls "%USERPROFILE%\OneDrive\art"`                                       | まだ無い。段階 2 以降で `.kra` が置かれる                                   |
 
 ## 次の一手
 
@@ -44,3 +45,5 @@ Krita AI Diffusion 1.53.0 の導入と設定が終わり、1024×1024 の試し�
 - **Krita 本体の「設定 ▸ スタイル」は別物。** あれは Qt の見た目（Fusion）。プラグインの設定は AI画像生成パネル右端の歯車から開く。
 - **インストール先は `%APPDATA%\krita\ai_diffusion\ComfyUI`。** 手順書の `C:\ai\krita-server` ではない。モデルを足すときはこちらへ置く。
 - **Refine の前に Apply を忘れると白くなる。** 生成結果は確定しないとキャンバスに載らない。
+- **VRAM は生成中だけ埋まる。** 待機時は 1.8 GB 前後まで下がるので、空きの測定は生成中に行う。Chrome と Unity を閉じると 1〜2 GB 増える。
+- **このリポの作業ブランチは別チャットと共用。** 2026-09-20 時点で `feat/depiction-card-readability`。ドキュメントだけをパス指定でコミットし、`git add -A` は使わない。
