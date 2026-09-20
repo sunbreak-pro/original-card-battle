@@ -160,6 +160,42 @@ namespace Depiction.Tests
             Assert.That(throwLineCards, Is.GreaterThan(0));
         }
 
+        [Test]
+        public void EveryHandCardPrintsItsTypeAndWhatItDoes()
+        {
+            DepictionScript script = TurnSliceScript.Build();
+            var frames = new System.Collections.Generic.List<DepictionFrame> { script.Opening };
+            foreach (DepictionEvent ev in script.Events) frames.Add(ev.After);
+            int faces = 0;
+            foreach (DepictionFrame frame in frames)
+            {
+                foreach (CardFace face in frame.Hand)
+                {
+                    faces += 1;
+                    Assert.That(face.TypeLabel, Is.Not.Empty, face.Id + " has no TypeLabel");
+                    Assert.That(face.Description, Is.Not.Empty, face.Id + " has no Description");
+                    // The card prints one sentence per line in a box three lines tall and about nine
+                    // full-width characters wide (half-width characters count as half).
+                    string[] sentences = face.Description.TrimEnd('。').Split('。');
+                    Assert.That(sentences.Length, Is.LessThanOrEqualTo(3), face.Id + " has more than three sentences");
+                    foreach (string sentence in sentences)
+                    {
+                        Assert.That(Width(sentence + "。"), Is.LessThanOrEqualTo(9.5), face.Id + ": " + sentence);
+                    }
+                    if (!string.IsNullOrEmpty(face.ValueText))
+                        Assert.That(face.Description, Does.Contain(face.ValueText), face.Id + " describes a number other than its value");
+                }
+            }
+            Assert.That(faces, Is.GreaterThan(0));
+        }
+
+        private static double Width(string text)
+        {
+            double width = 0;
+            foreach (char c in text) width += c < 0x2000 ? 0.5 : 1.0;
+            return width;
+        }
+
         /// <returns>How many throw-line cards the frame's hand holds.</returns>
         private static int AssertAffects(DepictionFrame frame, string where)
         {

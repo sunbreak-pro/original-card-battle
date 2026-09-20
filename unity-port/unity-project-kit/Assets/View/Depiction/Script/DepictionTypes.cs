@@ -56,6 +56,13 @@ namespace Depiction
         /// already shows its target with the dish.
         /// </summary>
         public UnitSide? Affects;
+        /// <summary>Kind and target as printed under the name ("攻撃・敵単体", "防御・自分").</summary>
+        public string TypeLabel = "";
+        /// <summary>
+        /// What the card does, as printed on its face: up to three sentences of at most nine full-width
+        /// characters each. The card prints one sentence per line.
+        /// </summary>
+        public string Description = "";
         /// <summary>The face value as printed ("6", "13", "遠 +4"). Empty when the card has none.</summary>
         public string ValueText = "";
         /// <summary>Trait line as printed ("初手 +3"). Empty when the card has no trait.</summary>

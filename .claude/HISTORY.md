@@ -2,6 +2,36 @@
 
 > セッション単位の変更履歴（降順）。各エントリは「概要」+「変更点」。要約は `README.md` の Development History、進行状況は `MEMORY.md`。古いエントリは肥大化したら `HISTORY-archive.md` へ退避。
 
+### 2026-09-20 - 戦闘描写の札の読みやすさ（出せない理由、種別と説明文、重なり）
+
+#### 概要
+
+こうだいさんが BattleDepiction を触って、防御とムーブが出せない理由が画面に無い / 札の説明が少なく種別がわかりにくい / 札が重ならない、の 3 点を挙げた。原因は固定台本（袈裟斬り → 大上段 → 後ろ跳び の順だけ受け付け、鉄の受けと観察は出ない）で、違う札が黙って手札に戻っていたこと。
+
+#### 変更点
+
+- **出せない理由**: `DepictionPlayer.handGuide`（場面の `HandGuide`、手札の直下の描画順）に「台本の次の一手：「X」を<場所>へ」を出す。順番外の札は `CardView.shade`（暗い幕）で暗くする（透明にすると重なった隣が透ける）。違う札・違う場所で離すと理由を赤字で `refusalSeconds`（3.5 秒）出す。札名と場所は `DepictionRunner.Next` から取る
+- **札の文字**: `CardFace.TypeLabel`（「攻撃・敵単体」）と `CardFace.Description`（1 文 9 字以内、3 文まで）。UI Text は空白でしか改行せず禁則も無いので、1 文 1 行で出し、文中の空白は改行しない空白にする。名前と説明文は隣の札に隠れない左 150 px に寄せた。観察の文は台本で使わないため `swordsman_cards_v4` の 1 段目（ドロー 1）に従った
+- **重なり**: `cardSpacing` 204 → 160（札の幅 190）。重なった部分で浮いた札と違う札をつかむ取り違えを、ホバー中の札を優先して持つ形で直した
+- **プレハブと場面**: `Upgrade Prefabs` が Card に種別・説明文・幕を足す（一部だけ欠けていれば警告して触らない）。新メニュー `Tools > Depiction > Upgrade Scene` が HandGuide を足す（再生中は拒否）。場面の `cardSpacing` / `refusalSeconds` も保存
+- **テスト**: `EveryHandCardPrintsItsTypeAndWhatItDoes`（空でない / 1 文 9 字以内 / 3 文まで / 説明文に札の値が入る）
+- **確認**: 再コンパイル後のエラー 0 / EditMode 95 / PlayMode 1 / dotnet test 54 / 撮影でガイド行、暗い札、説明文、拒否文 2 種を確認
+- **経緯**: テストを 2 本同時に投げたとき、Unity の「Scene(s) Have Been Modified」ダイアログで止まり、MCP の中継も切れた。ダイアログは Don't Save で閉じ（場面は直前に保存済み）、Unity の再起動の後に 1 本ずつ流し直した
+- **見送り（QA Suggestion）**: `ZoneName` を `DepictionRunner.RequiredZone` から引く形にまとめる
+
+### 2026-09-19 - Krita AI 制作ガイド
+
+#### 概要
+
+Krita と ComfyUI の導入を済ませたこうだいさん向けに、Krita AI Diffusion の導入の続き、機能の全体、ゲームの立ち絵と差分を作る段階的な手順を HTML ガイドにまとめた。
+
+#### 変更点
+
+- **ガイド**: `docs/reports/2026-09-19-krita-ai-setup-guide.html`（Artifact `https://claude.ai/artifact/9GUvs2LY7jJGK7hdeFQ7ym`、Note `note-f1e8ef0b`）。公式 docs の原文、models.json、リリース 1.53.0 を読んで書いた
+- **判断**: Comfy Desktop ではなく Local Managed Server を使う。ワークロードは SDXL と Flux 2 だけ。生成は Animagine XL 4.0、ポーズ差分は Flux 2 Klein 4B の編集
+- **ライセンスの発見**: Illustrious 系の部品は NoobAI 派生（fair-ai-public-license）。MAT Inpaint は CC BY-NC 4.0 で、Remove Content と Fill「Inpaint」だけが使う（`workflow.py` の `detect_inpaint`）。25 件の表記を Hugging Face から取得
+- **正本**: `tools-and-prerequisites.md` に §12 を追加
+
 ### 2026-09-19 - 戦闘描写の仕上げ（Issue #31 と手触りの QA 残り）
 
 #### 概要

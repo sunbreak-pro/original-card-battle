@@ -38,9 +38,12 @@ namespace Depiction.View
         public Image stanceHintIcon;
         public Text stanceHintText;
         public RectTransform fxLayer;
+        [Tooltip("One line above the hand: the card the script plays next, or why a released card came back.")]
+        public Text handGuide;
 
         [Header("Hand layout")]
-        public float cardSpacing = 204f;
+        [Tooltip("Distance between neighbouring cards. Below the card width (190) the cards overlap like a spread bundle.")]
+        public float cardSpacing = 160f;
         [Tooltip("The hand is a shallow fan: each step away from the middle tilts a card by this many degrees...")]
         [Range(0f, 15f)] // HandFan assumes the outermost tilt stays within 90 degrees
         public float fanDegreesPerCard = 2.5f;
@@ -52,6 +55,10 @@ namespace Depiction.View
         public float hoverLiftPixels = 28f;
         public float hoverScale = 1.05f;
         public float hoverSeconds = 0.09f;
+
+        [Header("Guide")]
+        [Tooltip("How long the reason a card came back stays on the guide line.")]
+        public float refusalSeconds = 3.5f;
 
         [Header("Debug")]
         [Tooltip("Plays the drags of events 2-4 by itself. Off by default: the player drags.")]
@@ -76,6 +83,7 @@ namespace Depiction.View
         private Vector3 _grabOffset;
         private CardView _hovered;
         private readonly Dictionary<CardView, float> _hoverWeight = new Dictionary<CardView, float>();
+        private Coroutine _refusal;
 
         private void Start()
         {
@@ -101,6 +109,8 @@ namespace Depiction.View
             // A debug gate freezes every tween through the shared UiTween.Speed. Never leave it frozen
             // for the next scene (View v1.1 uses the same static when domain reload is off).
             UiTween.Speed = 1f;
+            // Stopping the component also stops the refusal coroutine; do not leave the guide line stuck.
+            _refusal = null;
         }
 
         private void Update()
@@ -514,29 +524,110 @@ namespace Depiction.View
             {
                 card.Interactable = on;
             }
+            if (!on && _refusal != null)
+            {
+                StopCoroutine(_refusal);
+                _refusal = null;
+            }
+            RefreshPlayableLook();
+        }
+
+        // ---- guide ----------------------------------------------------------------------------
+
+        /// <summary>
+        /// While the script waits for a drag, the card it expects stays bright, the rest fade, and the
+        /// guide line names the card and where to release it. Otherwise every card is bright and the
+        /// line is empty. The expected card and its zone come from the script (DepictionRunner.Next).
+        /// </summary>
+        private void RefreshPlayableLook()
+        {
+            DepictionEvent next = WaitingEvent();
+            foreach (CardView card in _hand)
+            {
+                if (card && card != _dragging) card.SetDimmed(next != null && card.CardId != next.CardId);
+            }
+            if (_refusal != null || !handGuide) return;
+            handGuide.color = BattleTheme.Ink;
+            handGuide.text = next == null ? "" : "台本の次の一手：「" + NameOf(next.CardId) + "」を" + ZoneName(next.Aim) + "へ";
+        }
+
+        /// <summary>The event waiting for the player's drag, or null while the script plays on its own.</summary>
+        private DepictionEvent WaitingEvent()
+        {
+            if (_runner == null || _busy || !_runner.WaitingForDrag) return null;
+            return _hand.Exists(c => c && c.Interactable) ? _runner.Next : null;
+        }
+
+        /// <summary>Says why a released card went back to the hand, then returns to the next-move line.</summary>
+        private void ShowRefusal(CardView card, PlayVerdict verdict)
+        {
+            DepictionEvent next = _runner.Next;
+            if (!handGuide || next == null) return;
+            string text;
+            if (verdict == PlayVerdict.WrongCard)
+                text = "「" + card.Face.Name + "」はまだ出せません。台本の次は「" + NameOf(next.CardId) + "」です";
+            else if (verdict == PlayVerdict.WrongZone)
+                text = "「" + card.Face.Name + "」は" + ZoneName(card.Face.Aim) + "で離すと出せます";
+            else
+                return;
+            if (_refusal != null) StopCoroutine(_refusal);
+            _refusal = StartCoroutine(Refusal(text));
+        }
+
+        private IEnumerator Refusal(string text)
+        {
+            handGuide.color = BattleTheme.Omen;
+            handGuide.text = text;
+            yield return new WaitForSecondsRealtime(refusalSeconds);
+            _refusal = null;
+            RefreshPlayableLook();
+        }
+
+        private string NameOf(string cardId)
+        {
+            CardView card = _hand.Find(c => c && c.CardId == cardId);
+            if (card) return card.Face.Name;
+            Debug.LogError("[Depiction] the script's next card " + cardId + " is not in the hand");
+            return "";
+        }
+
+        private static string ZoneName(CardAim aim)
+        {
+            return aim == CardAim.Single ? "敵の受け皿の上" : "投げ上げ線より上";
         }
 
         // ---- drag ---------------------------------------------------------------------------
 
+        // The EventSystem hands the drag to whatever it hits, but a lifted card leaves the strip at the
+        // bottom of its resting place where the right neighbour is hit instead. The hover decides which
+        // card is picked up, so the card that looks lifted is the one that moves; the move and end events
+        // then follow the held card, whichever card the EventSystem keeps reporting.
+        private CardView _dragSource;
+
         private void OnDragBegan(CardView card, PointerEventData e)
         {
             if (_busy || _dragging != null) return;
-            BeginHold(card);
-            _grabOffset = card.transform.position - PointerWorld(e);
+            CardView held = card;
+            if (_hovered && _hovered != card && _hovered.Interactable
+                && RestingRectContains(_hovered, _hand.IndexOf(_hovered), e.position)) held = _hovered;
+            _dragSource = card;
+            BeginHold(held);
+            _grabOffset = held.transform.position - PointerWorld(e);
         }
 
         private void OnDragMoved(CardView card, PointerEventData e)
         {
-            if (_dragging != card) return;
-            card.transform.position = PointerWorld(e) + _grabOffset;
-            UpdateHot(card, e.position);
+            if (_dragging == null || card != _dragSource) return;
+            _dragging.transform.position = PointerWorld(e) + _grabOffset;
+            UpdateHot(_dragging, e.position);
         }
 
         private void OnDragEnded(CardView card, PointerEventData e)
         {
-            if (_dragging != card) return;
-            DropZone zone = ZoneAt(card, e.position);
-            Release(card, zone);
+            if (_dragging == null || card != _dragSource) return;
+            _dragSource = null;
+            CardView held = _dragging;
+            Release(held, ZoneAt(held, e.position));
         }
 
         private void BeginHold(CardView card)
@@ -630,7 +721,11 @@ namespace Depiction.View
             HideTargetMarks();
             PlayVerdict verdict = _runner.TryPlay(card.CardId, zone, out DepictionEvent played);
             if (verdict == PlayVerdict.Accepted) StartCoroutine(PlayAccepted(card, played));
-            else StartCoroutine(ReturnToHand(card, shake: verdict == PlayVerdict.WrongCard && zone != DropZone.None));
+            else
+            {
+                ShowRefusal(card, verdict);
+                StartCoroutine(ReturnToHand(card, shake: verdict == PlayVerdict.WrongCard && zone != DropZone.None));
+            }
         }
 
         private IEnumerator PlayAccepted(CardView card, DepictionEvent ev)
@@ -710,6 +805,7 @@ namespace Depiction.View
             if (shake && card) yield return UiTween.Shake(card.Rect, 8f, 2, 160f);
             LayoutHand();
             _busy = false;
+            RefreshPlayableLook();
         }
 
         /// <summary>Debug only: performs the expected drag so the slice can be captured without a mouse.</summary>

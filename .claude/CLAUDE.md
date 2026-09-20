@@ -203,6 +203,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | Dungeon system                         | `dungeon-system`             |
 | UI/UX work                             | `ui-ux-creator`              |
 | Character art / UI production pipeline | `visual-production-pipeline` |
+| 前のセッションの続きを引き継ぐ       | `session-successor`          |
 | Find design docs                       | `design-research`            |
 | Bug investigation                      | `debugging-active`           |
 | Error prevention                       | `debugging-error-prevention` |

@@ -182,3 +182,10 @@
 - 0 円プランの合計は 0 円（電気代を除く）。低コストプランは CSP を無料期間で解約して約 400〜1,200 円、買い切りなら約 7,300〜8,100 円（1 ドル 150 円）。
 - 背景は「グラデーション + 靄」が 0 円の既定のまま。塗るなら 5 階層で人の手 10〜20 時間（推定）。
 - 見つかった実装の穴: `FigureView.SetSprite` は静止画専用で RenderTexture を受けられない。塗った絵では `DepictionFx.Flash`（乗算）の白点滅が見えない。`DepictionFx.cs:15-16` のヒットストップと揺れが v2 §5.3 とずれる。
+
+## 12. Krita AI Diffusion の使い方の前提（2026-09-19）
+
+- 導入: Krita 5.3.4 + Krita AI Diffusion 1.53.0（Krita 5 系は 1.x）。生成サーバーは Local Managed Server（`C:\ai\krita-server`、CUDA）。Comfy Desktop 1.0.47 は使わない。手順書は `docs/reports/2026-09-19-krita-ai-setup-guide.html`。
+- ワークロード: SDXL と Flux 2（Klein 4B Q6_K）だけ。生成は Animagine XL 4.0 opt（OpenRAIL++-M）、ポーズ差分の編集は Flux 2 Klein 4B（Apache-2.0）。SDXL の部品 xinsir union / h94 IP-Adapter / OmniSR / HAT は Apache-2.0。
+- 使わない: Illustrious / NoobAI のワークロード（部品が fair-ai-public-license。noob_openpose と noob-ipa は表記なし）、Remove Content と Custom の Fill「Inpaint」（MAT が CC BY-NC 4.0。`workflow.py` の `detect_inpaint` で確認）、Live の結果（Hyper-SD のライセンス未確認）、Pose の From image（YOLO-NAS のライセンス未確認）。
+- 記録: Interface 設定でワークフローの書き出しをオンにし、採用画像ごとに `workflow.json`（モデル・seed・指示文）を保存して台帳に写す。

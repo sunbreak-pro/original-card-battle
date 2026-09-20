@@ -61,6 +61,68 @@ namespace Depiction.View
         [MenuItem("Tools/Depiction/Upgrade Prefabs")]
         public static void UpgradePrefabs()
         {
+            UpgradeFigure();
+            UpgradeCard();
+        }
+
+        /// <summary>Adds the type line, the description and the dimming shade to a Card prefab built before they existed.</summary>
+        private static void UpgradeCard()
+        {
+            string path = PrefabFolder + "/Card.prefab";
+            if (!File.Exists(path))
+            {
+                Debug.LogWarning("[Depiction] " + path + " is missing; run Build Prefabs And Scene first.");
+                return;
+            }
+            GameObject root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var view = root.GetComponent<CardView>();
+                if (view == null)
+                {
+                    Debug.LogWarning("[Depiction] " + path + " has no CardView on its root; nothing upgraded.");
+                    return;
+                }
+                // Check every part before changing anything, so a half-upgraded prefab is never saved.
+                bool needText = view.typeText == null || view.descriptionText == null;
+                if (needText && (view.typeText != null || view.descriptionText != null
+                    || root.transform.Find("Type") != null || root.transform.Find("Description") != null))
+                {
+                    Debug.LogWarning("[Depiction] " + path + " has only part of the type line and description, or children CardView does not point at; fix it by hand.");
+                    return;
+                }
+                if (view.shade == null && root.transform.Find("Shade") != null)
+                {
+                    Debug.LogWarning("[Depiction] " + path + " has a Shade child but CardView does not point at it; link it by hand.");
+                    return;
+                }
+                var added = new System.Collections.Generic.List<string>();
+                if (needText)
+                {
+                    AddCardText(view, (RectTransform)root.transform);
+                    added.Add("type line and description");
+                }
+                if (view.shade == null)
+                {
+                    AddCardShade(view, (RectTransform)root.transform);
+                    added.Add("shade");
+                }
+                if (added.Count == 0)
+                {
+                    Debug.Log("[Depiction] Card type line, description and shade already present.");
+                    return;
+                }
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+                Debug.Log("[Depiction] Card " + string.Join(" and ", added) + " added.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void UpgradeFigure()
+        {
             string path = PrefabFolder + "/Figure.prefab";
             if (!File.Exists(path))
             {
@@ -134,6 +196,7 @@ namespace Depiction.View
             view.valueText = UiKit.Label(root, "Value", 72, TextAnchor.MiddleCenter, BattleTheme.Omen, Half, Half,
                 new Vector2(180f, 100f), new Vector2(0f, 4f), "6");
             view.valueText.fontStyle = FontStyle.Bold;
+            AddCardText(view, root);
 
             RectTransform trait = UiKit.Point(root, "Trait", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(174f, 40f), new Vector2(0f, 12f));
             view.traitBox = trait.gameObject;
@@ -146,6 +209,7 @@ namespace Depiction.View
             view.traitLamp.raycastTarget = false;
             view.traitText = UiKit.Label(trait, "TraitText", 22, TextAnchor.MiddleLeft, BattleTheme.Warm, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(140f, 36f), new Vector2(32f, 0f), "初手 +3");
+            AddCardShade(view, root); // last, so it covers the trait box too
             return root.gameObject;
         }
 
@@ -169,6 +233,49 @@ namespace Depiction.View
             view.rangeGlyph.fontStyle = FontStyle.Bold;
             AddTargetMark(view, root);
             return root.gameObject;
+        }
+
+        /// <summary>
+        /// The type line under the name and the description above the trait box. The value shrinks
+        /// and moves up to make room: from the top, name / type / value / description / trait.
+        /// The name and the description keep to the left 150 px: in the fanned hand the right
+        /// neighbour covers the rightmost part of every card but the last.
+        /// </summary>
+        private static void AddCardText(CardView view, RectTransform root)
+        {
+            if (view.nameText)
+            {
+                RectTransform name = view.nameText.rectTransform;
+                name.anchorMin = name.anchorMax = new Vector2(0f, 1f);
+                name.pivot = new Vector2(0f, 1f);
+                name.sizeDelta = new Vector2(100f, 40f);
+                name.anchoredPosition = new Vector2(60f, -20f);
+                view.nameText.alignment = TextAnchor.MiddleLeft;
+            }
+            view.typeText = UiKit.Label(root, "Type", 17, TextAnchor.MiddleCenter, BattleTheme.Omen, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(174f, 24f), new Vector2(0f, -62f), "攻撃・敵単体");
+            view.typeText.fontStyle = FontStyle.Bold;
+            if (view.valueText)
+            {
+                RectTransform value = view.valueText.rectTransform;
+                value.anchorMin = value.anchorMax = new Vector2(0.5f, 1f);
+                value.pivot = new Vector2(0.5f, 1f);
+                value.sizeDelta = new Vector2(180f, 52f);
+                value.anchoredPosition = new Vector2(0f, -86f);
+                view.valueText.fontSize = 48;
+            }
+            view.descriptionText = UiKit.Label(root, "Description", 15, TextAnchor.UpperLeft, BattleTheme.Ink, new Vector2(0f, 0f), new Vector2(0f, 1f),
+                new Vector2(144f, 66f), new Vector2(10f, 120f), "敵に 6 ダメージ。");
+            view.descriptionText.verticalOverflow = VerticalWrapMode.Truncate;
+        }
+
+        /// <summary>A dark sheet over the whole card, drawn last. Dimming with it keeps an overlapped card opaque.</summary>
+        private static void AddCardShade(CardView view, RectTransform root)
+        {
+            view.shade = Img(root, "Shade", BattleTheme.WithAlpha(BattleTheme.InkBlack, 0.55f), Vector2.zero, Vector2.one);
+            view.shade.raycastTarget = false;
+            view.shade.enabled = false;
+            view.shade.transform.SetAsLastSibling();
         }
 
         /// <summary>Four square corner brackets around the figure; hidden until a throw-line card is held.</summary>
@@ -427,6 +534,7 @@ namespace Depiction.View
             player.stanceHintText.fontStyle = FontStyle.Bold;
 
             player.handArea = UiKit.Point(canvas, "HandArea", Half, Half, new Vector2(1100f, 280f), new Vector2(0f, -400f));
+            AddHandGuide(player, canvas);
 
             player.fxLayer = UiKit.Rect(canvas, "FxLayer", Vector2.zero, Vector2.one);
             CanvasGroup fxGroup = player.fxLayer.gameObject.AddComponent<CanvasGroup>();
@@ -435,6 +543,60 @@ namespace Depiction.View
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
+        }
+
+        /// <summary>
+        /// Adds parts that arrived after the scene was first built to the open BattleDepiction scene,
+        /// and saves it. Existing objects are left where they were moved to.
+        /// </summary>
+        [MenuItem("Tools/Depiction/Upgrade Scene")]
+        public static void UpgradeScene()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogWarning("[Depiction] stop Play Mode first; a scene cannot be saved while playing.");
+                return;
+            }
+            Scene scene = SceneManager.GetActiveScene();
+            if (scene.path != ScenePath)
+            {
+                Debug.LogWarning("[Depiction] open " + ScenePath + " first; the active scene is " + scene.path + ".");
+                return;
+            }
+            var player = Object.FindAnyObjectByType<DepictionPlayer>();
+            if (player == null || player.handArea == null)
+            {
+                Debug.LogWarning("[Depiction] no DepictionPlayer with a hand area in " + ScenePath + "; nothing upgraded.");
+                return;
+            }
+            if (player.handGuide != null)
+            {
+                Debug.Log("[Depiction] HandGuide already present.");
+                return;
+            }
+            var canvas = (RectTransform)player.handArea.parent;
+            Transform existing = canvas.Find("HandGuide");
+            Text existingText = existing != null ? existing.GetComponent<Text>() : null;
+            if (existing != null && existingText == null)
+            {
+                Debug.LogWarning("[Depiction] a HandGuide child without a Text is in the way; rename or remove it by hand.");
+                return;
+            }
+            if (existingText != null) player.handGuide = existingText;
+            else AddHandGuide(player, canvas);
+            EditorUtility.SetDirty(player);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[Depiction] HandGuide " + (existingText != null ? "relinked" : "added") + "; scene saved.");
+        }
+
+        /// <summary>One line just above the hand: which card the script plays next, or why a card came back.</summary>
+        private static void AddHandGuide(DepictionPlayer player, RectTransform canvas)
+        {
+            player.handGuide = UiKit.Label(canvas, "HandGuide", 24, TextAnchor.MiddleCenter, BattleTheme.Ink, Half, Half,
+                new Vector2(760f, 36f), new Vector2(0f, -218f), "");
+            // Just under the hand, so a held or lifted card is drawn over the line and not behind it.
+            player.handGuide.transform.SetSiblingIndex(player.handArea.GetSiblingIndex());
         }
 
         // ---- helpers ----------------------------------------------------------------------------
