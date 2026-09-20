@@ -2,3 +2,7 @@
 # and the C# ParityTests. Pin it to LF so regenerating it on Windows (where
 # core.autocrlf=true) produces no spurious line-ending-only diff.
 unity-port/BattleCore.Tests/Fixtures/parity-fixture.json text eol=lf
+
+# Shell scripts must stay LF — CRLF breaks the shebang line under bash
+# (Claude Code hooks in .claude/hooks/ run via bash on macOS and Windows Git Bash).
+*.sh text eol=lf
