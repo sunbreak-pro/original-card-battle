@@ -224,6 +224,17 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 - **Known Issue**: `docs/known-issues/` に Root Cause + 再発防止を蓄積。発見時 `NNN-<slug>.md` 作成 + `INDEX.md` 更新、解決時 Status=Fixed。**類似バグはまず `INDEX.md` を grep**
 - **設計書 vs 実装**: ゲーム数値は `docs/*_document/` の設計書を正とし、差分は設計書側か実装側へ寄せて解消（`design-research` スキル）
 
+## 判断の控えは life-editor
+
+開発中の判断と次アクションを life-editor（別リポジトリの個人 OS）に残し、プロジェクトを跨いで読み返せるようにする。**課題追跡の代替にはしない**（2026-09-20 こうだいさん決定）。GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（何を作るか決めて記録する場所）。
+
+- **置くもの**: 判断の控えと調査結果（Note）／次にやること（Todo）。プロジェクトを跨いで見たいものだけを上げる
+- **置かないもの**: 課題の状態・担当・PR との結線。life-editor はステータスが 2 値しかなく、コメントが無く、後勝ち同期で記録が消えるため、正本は GitHub のまま
+- **ローカルの記録は残す**。セッション単位の進捗は従来どおり task-tracker が書く
+- **手順はグローバルの `life-editor-bridge` スキル**。セッション頭に `node ~/.claude/skills/life-editor-bridge/scripts/le.mjs pull`、判断が出たら `note`、次にやることは `todo`
+- **タグ**: `proj/original-card-battle` と `開発` が自動で付く。プロジェクト名の正本は `.claude/life-editor.json`
+- **落ちても止まらない**。life-editor は移行中で、失敗したらスクリプトが止まるだけ。作業は先へ進める
+
 ## References
 
 | Resource                         | Contents                                                                   |
