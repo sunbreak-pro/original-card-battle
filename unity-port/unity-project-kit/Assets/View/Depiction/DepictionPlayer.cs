@@ -1,7 +1,8 @@
-// Plays a DepictionScript in order. Events 2-4 wait for the player's drag; the rest run
-// on their own. This class computes no rule: every number, label and verdict it shows
-// comes from the script (DepictionFrame / DepictionEvent / Cue). Positions come from the
-// scene objects at run time, so prefab instances can be moved in the Editor freely.
+// Plays whatever an IDepictionSource hands it: the live turn the player fights by default, or the
+// fixed script kept for filming. Some events wait for the player; the rest run on their own. This
+// class computes no rule: every number, label, verdict and line of text it shows comes from the
+// source (DepictionFrame / DepictionEvent / Cue / PlayVerdict). Positions come from the scene
+// objects at run time, so prefab instances can be moved in the Editor freely.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using System.Collections.Generic;
@@ -60,8 +61,13 @@ namespace Depiction.View
         [Tooltip("How long the reason a card came back stays on the guide line.")]
         public float refusalSeconds = 3.5f;
 
+        [Header("Mode")]
+        [Tooltip("Filming only: replays TurnSliceScript in its written order, refusing any other card. "
+                 + "Off by default, so the hand is free and the fight is played for real.")]
+        public bool scriptedPlayback;
+
         [Header("Debug")]
-        [Tooltip("Plays the drags of events 2-4 by itself. Off by default: the player drags.")]
+        [Tooltip("Performs the source's suggested drags by itself. Only a fixed script suggests one.")]
         public bool autoPlayDrags;
         [Tooltip("Freezes at named gates (hover / impact / end) until DebugStep() is called. For screenshots.")]
         public bool debugStepMode;
@@ -74,7 +80,7 @@ namespace Depiction.View
         /// <summary>Seconds each event took from its start (or from the confirmed drop) to its settled frame.</summary>
         public readonly List<float> EventSeconds = new List<float>();
 
-        private DepictionRunner _runner;
+        private IDepictionSource _source;
         private readonly List<CardView> _hand = new List<CardView>();
         private bool _busy;
         private bool _stepRequested;
@@ -99,8 +105,10 @@ namespace Depiction.View
             }
             if (stanceHintIcon && stanceHintIcon.sprite == null) stanceHintIcon.sprite = ProceduralArt.Shield;
 
-            _runner = new DepictionRunner(TurnSliceScript.Build());
-            ApplyFrame(_runner.Frame);
+            _source = scriptedPlayback
+                ? (IDepictionSource)new DepictionRunner(TurnSliceScript.Build())
+                : new LiveTurn();
+            ApplyFrame(_source.Frame);
             StartCoroutine(RunAutomaticEvents());
         }
 
@@ -116,6 +124,32 @@ namespace Depiction.View
         private void Update()
         {
             UpdateHover();
+            UpdateEndTurn();
+        }
+
+        /// <summary>
+        /// Reads a click on the end-turn plate. The plate is a plain rect in the prefab and the prefab
+        /// belongs to the Unity project, not to this repo, so the click is read here instead of being
+        /// wired to a Button component that would have to be added there.
+        /// </summary>
+        private void UpdateEndTurn()
+        {
+            if (_source == null || _busy || _dragging != null || !endTurn) return;
+            if (!_source.CanEndTurn) return;
+            if (!TryPointerPress(out Vector2 pointer)) return;
+            if (!RectTransformUtility.RectangleContainsScreenPoint(endTurn, pointer, null)) return;
+            StartCoroutine(PlayThenContinue(_source.EndTurn()));
+        }
+
+        /// <summary>Plays one event the player asked for, then lets the automatic ones follow.</summary>
+        private IEnumerator PlayThenContinue(DepictionEvent ev)
+        {
+            _busy = true;
+            SetHandInteractable(false);
+            yield return PlayEvent(ev);
+            _busy = false;
+            yield return UiTween.Wait(250f);
+            yield return RunAutomaticEvents();
         }
 
         public void DebugStep()
@@ -128,16 +162,17 @@ namespace Depiction.View
         private IEnumerator RunAutomaticEvents()
         {
             _busy = true;
-            while (!_runner.Finished && !_runner.WaitingForDrag)
+            while (!_source.Finished && !_source.WaitingForPlayer)
             {
-                DepictionEvent ev = _runner.AdvanceAuto();
+                DepictionEvent ev = _source.AdvanceAuto();
                 yield return PlayEvent(ev);
                 yield return UiTween.Wait(350f);
             }
             _busy = false;
-            if (_runner.Finished)
+            if (_source.Finished)
             {
                 Finished = true;
+                RefreshPlayableLook(); // the guide line carries the outcome
                 Debug.Log("[Depiction] finished. seconds per event: " + string.Join(" / ", EventSeconds.ConvertAll(s => s.ToString("0.00"))));
                 yield break;
             }
@@ -246,8 +281,13 @@ namespace Depiction.View
                     StartCoroutine(UiTween.Shake(target.Rect, DepictionFx.Shake(cue.Intensity), 3, 260f));
                     yield return status.AnimateHp(cue.HpAfter, 300f);
                     yield return Gate(ev.Order + "-impact");
-                    yield return omenBadge.FadeOut(200f);
-                    yield return Lunge(enemyFigure, -70f, 140f);
+                    if (cue.Target == UnitSide.Player)
+                    {
+                        // The blow that lands on the player is the enemy's own: its omen is spent and
+                        // it draws back. A blow the player lands does neither.
+                        yield return omenBadge.FadeOut(200f);
+                        yield return Lunge(enemyFigure, -70f, 140f);
+                    }
                     break;
             }
         }
@@ -267,8 +307,9 @@ namespace Depiction.View
             yield return DepictionFx.Slash(this, fxLayer, chest, streak, cue.Intensity, towardLeft: !byPlayer);
             yield return UiTween.Wait(DepictionFx.HitStop(cue.Intensity));
 
-            // An enemy slash lands on Guard first; GuardBlock / Hit cues that follow carry the numbers.
-            if (!byPlayer) yield break;
+            // A slash with no settled HP is the swing alone: the GuardBlock / Hit cues that follow
+            // carry the numbers. That is every enemy slash, and any slash Guard takes a bite out of.
+            if (cue.HpAfter == Cue.Unchanged) yield break;
 
             DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Omen, 200f + 60f * cue.Intensity);
             DepictionFx.FloatText(this, fxLayer, chest + new Vector2(0f, 40f), cue.Amount.ToString(), BattleTheme.Ink, DepictionFx.NumberFont(cue.Intensity));
@@ -439,7 +480,7 @@ namespace Depiction.View
         /// </summary>
         private void UpdateHover()
         {
-            if (_runner == null) return;
+            if (_source == null) return;
             if (_busy || _dragging != null)
             {
                 // Tweens own the cards now; they end in LayoutHand, which also drops the hover.
@@ -504,6 +545,22 @@ namespace Depiction.View
             return card.Rect.rect.Contains(inCard);
         }
 
+        /// <summary>True on the frame the pointer was pressed, with where it was pressed.</summary>
+        private static bool TryPointerPress(out Vector2 position)
+        {
+            position = Vector2.zero;
+#if ENABLE_INPUT_SYSTEM
+            UnityEngine.InputSystem.Pointer pointer = UnityEngine.InputSystem.Pointer.current;
+            if (pointer == null || !pointer.press.wasPressedThisFrame) return false;
+            position = pointer.position.ReadValue();
+            return true;
+#else
+            if (!Input.GetMouseButtonDown(0)) return false;
+            position = Input.mousePosition;
+            return true;
+#endif
+        }
+
         private static bool TryPointer(out Vector2 position)
         {
 #if ENABLE_INPUT_SYSTEM
@@ -535,41 +592,29 @@ namespace Depiction.View
         // ---- guide ----------------------------------------------------------------------------
 
         /// <summary>
-        /// While the script waits for a drag, the card it expects stays bright, the rest fade, and the
-        /// guide line names the card and where to release it. Otherwise every card is bright and the
-        /// line is empty. The expected card and its zone come from the script (DepictionRunner.Next).
+        /// Dims every card the source would refuse right now and prints the source's guide line.
+        /// Which cards those are, and what the line says, are the source's answer; the View shows it.
         /// </summary>
         private void RefreshPlayableLook()
         {
-            DepictionEvent next = WaitingEvent();
+            bool waiting = _source != null && !_busy && _source.WaitingForPlayer
+                && _hand.Exists(c => c && c.Interactable);
             foreach (CardView card in _hand)
             {
-                if (card && card != _dragging) card.SetDimmed(next != null && card.CardId != next.CardId);
+                if (!card || card == _dragging) continue;
+                card.SetDimmed(waiting && _source.Inspect(card.CardId) != PlayVerdict.Accepted);
             }
             if (_refusal != null || !handGuide) return;
             handGuide.color = BattleTheme.Ink;
-            handGuide.text = next == null ? "" : "台本の次の一手：「" + NameOf(next.CardId) + "」を" + ZoneName(next.Aim) + "へ";
+            handGuide.text = _source != null && (waiting || _source.Finished) ? _source.GuideText : "";
         }
 
-        /// <summary>The event waiting for the player's drag, or null while the script plays on its own.</summary>
-        private DepictionEvent WaitingEvent()
-        {
-            if (_runner == null || _busy || !_runner.WaitingForDrag) return null;
-            return _hand.Exists(c => c && c.Interactable) ? _runner.Next : null;
-        }
-
-        /// <summary>Says why a released card went back to the hand, then returns to the next-move line.</summary>
+        /// <summary>Says why a released card went back to the hand, then returns to the guide line.</summary>
         private void ShowRefusal(CardView card, PlayVerdict verdict)
         {
-            DepictionEvent next = _runner.Next;
-            if (!handGuide || next == null) return;
-            string text;
-            if (verdict == PlayVerdict.WrongCard)
-                text = "「" + card.Face.Name + "」はまだ出せません。台本の次は「" + NameOf(next.CardId) + "」です";
-            else if (verdict == PlayVerdict.WrongZone)
-                text = "「" + card.Face.Name + "」は" + ZoneName(card.Face.Aim) + "で離すと出せます";
-            else
-                return;
+            if (!handGuide || _source == null) return;
+            string text = _source.RefusalText(card.CardId, verdict);
+            if (string.IsNullOrEmpty(text)) return;
             if (_refusal != null) StopCoroutine(_refusal);
             _refusal = StartCoroutine(Refusal(text));
         }
@@ -581,19 +626,6 @@ namespace Depiction.View
             yield return new WaitForSecondsRealtime(refusalSeconds);
             _refusal = null;
             RefreshPlayableLook();
-        }
-
-        private string NameOf(string cardId)
-        {
-            CardView card = _hand.Find(c => c && c.CardId == cardId);
-            if (card) return card.Face.Name;
-            Debug.LogError("[Depiction] the script's next card " + cardId + " is not in the hand");
-            return "";
-        }
-
-        private static string ZoneName(CardAim aim)
-        {
-            return aim == CardAim.Single ? "敵の受け皿の上" : "投げ上げ線より上";
         }
 
         // ---- drag ---------------------------------------------------------------------------
@@ -695,11 +727,10 @@ namespace Depiction.View
             if (enemyFigure.targetMark) enemyFigure.targetMark.SetHot(hot);
         }
 
-        /// <summary>The one predicted value comes from the script; a card the script does not expect shows none.</summary>
+        /// <summary>The one predicted value comes from the source; a card it would refuse shows none.</summary>
         private string PreviewFor(CardView card)
         {
-            DepictionEvent next = _runner.Next;
-            return next != null && next.CardId == card.CardId ? next.PreviewText : "";
+            return _source == null ? "" : _source.PreviewFor(card.CardId);
         }
 
         private DropZone ZoneAt(CardView card, Vector2 screenPoint)
@@ -719,12 +750,14 @@ namespace Depiction.View
             receiver.Hide();
             throwLine.Hide();
             HideTargetMarks();
-            PlayVerdict verdict = _runner.TryPlay(card.CardId, zone, out DepictionEvent played);
+            PlayVerdict verdict = _source.TryPlay(card.CardId, zone, out DepictionEvent played);
             if (verdict == PlayVerdict.Accepted) StartCoroutine(PlayAccepted(card, played));
             else
             {
                 ShowRefusal(card, verdict);
-                StartCoroutine(ReturnToHand(card, shake: verdict == PlayVerdict.WrongCard && zone != DropZone.None));
+                // A card released on a zone it belongs to was refused by a rule: shake it. One released
+                // on the wrong zone just slides home.
+                StartCoroutine(ReturnToHand(card, shake: verdict != PlayVerdict.WrongZone && zone != DropZone.None));
             }
         }
 
@@ -808,22 +841,27 @@ namespace Depiction.View
             RefreshPlayableLook();
         }
 
-        /// <summary>Debug only: performs the expected drag so the slice can be captured without a mouse.</summary>
+        /// <summary>
+        /// Debug only: performs the drag the source suggests, so a slice can be captured without a
+        /// mouse. Only a fixed script suggests one; a live turn leaves the choice to the player.
+        /// </summary>
         private IEnumerator AutoDrag()
         {
             yield return UiTween.Wait(400f);
-            DepictionEvent next = _runner.Next;
-            CardView card = _hand.Find(c => c.CardId == next.CardId);
+            string suggested = _source.SuggestedCardId;
+            if (string.IsNullOrEmpty(suggested)) yield break;
+            CardView card = _hand.Find(c => c && c.CardId == suggested);
             if (card == null) yield break;
+            CardAim aim = card.Face.Aim;
             BeginHold(card);
             Vector3 from = card.transform.position;
-            Vector3 to = next.Aim == CardAim.Single
+            Vector3 to = aim == CardAim.Single
                 ? receiver.transform.position
                 : new Vector3(from.x, throwLine.transform.position.y + (throwLine.transform.position.y - from.y) * 0.35f, from.z);
             yield return UiTween.Run(450f, Ease.InOut, t => { if (card) card.transform.position = Vector3.LerpUnclamped(from, to, t); });
             SetZoneHot(card, true);
-            yield return Gate(next.Order + "-hover");
-            Release(card, DepictionRunner.RequiredZone(next.Aim));
+            yield return Gate((EventSeconds.Count + 1) + "-hover");
+            Release(card, DepictionText.RequiredZone(aim));
         }
 
         private Vector3 PointerWorld(PointerEventData e)

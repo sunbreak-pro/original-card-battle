@@ -69,6 +69,14 @@ namespace Depiction
         public string TraitText = "";
         /// <summary>True when the trait's condition holds right now (lamp lit).</summary>
         public bool TraitLit;
+        /// <summary>
+        /// The range side the card may be played from, or null when either side works. A live turn
+        /// refuses a card held on the other side (<see cref="PlayVerdict.OutOfRange"/>); the fixed
+        /// script never looks at it.
+        /// </summary>
+        public RangeSide? RequiredRange;
+        /// <summary>The glyph of <see cref="RequiredRange"/> as printed ("近"). Empty when the card has none.</summary>
+        public string RequiredRangeGlyph = "";
     }
 
     public sealed class StatusChip
@@ -203,16 +211,103 @@ namespace Depiction
     public enum PlayVerdict
     {
         Accepted,
+        /// <summary>Nothing waits for the player: an event is still playing.</summary>
         NotWaiting,
-        WrongCard,
+        /// <summary>The card is no longer in the hand.</summary>
+        NotInHand,
+        /// <summary>The card costs more stamina than is left.</summary>
+        NotEnoughStamina,
+        /// <summary>The card only works from the other range side.</summary>
+        OutOfRange,
+        /// <summary>Released somewhere this card cannot be released.</summary>
         WrongZone,
+        /// <summary>
+        /// Fixed-script playback only: the script writes one order and this is not its next card.
+        /// A live turn never answers this — there the hand is free (issue #36).
+        /// </summary>
+        OffScript,
+    }
+
+    /// <summary>Zones and strings the screen shows as given. Shared by every source.</summary>
+    public static class DepictionText
+    {
+        public static DropZone RequiredZone(CardAim aim)
+        {
+            return aim == CardAim.Single ? DropZone.Receiver : DropZone.AboveThrowLine;
+        }
+
+        public static string ZoneName(CardAim aim)
+        {
+            return aim == CardAim.Single ? "敵の受け皿の上" : "投げ上げ線より上";
+        }
+
+        public static CardFace Find(List<CardFace> hand, string cardId)
+        {
+            foreach (CardFace face in hand)
+            {
+                if (face.Id == cardId) return face;
+            }
+            return null;
+        }
+
+        public static string NameOf(List<CardFace> hand, string cardId)
+        {
+            CardFace face = Find(hand, cardId);
+            return face == null ? "" : face.Name;
+        }
     }
 
     /// <summary>
-    /// Walks a script in order. Holds no rules: it only knows which event is next, whether
-    /// that event waits for a drag, and whether a released card matches what the script wrote.
+    /// What the screen plays, and what it may refuse. Two sources answer it: the fixed script kept
+    /// for filming (<see cref="DepictionRunner"/>) and the turn the player actually fights
+    /// (<see cref="LiveTurn"/>). The View holds one of them and never asks which it is.
+    /// Every line of text it shows is written here, so the View still prints rather than computes.
     /// </summary>
-    public sealed class DepictionRunner
+    public interface IDepictionSource
+    {
+        /// <summary>The settled screen right now.</summary>
+        DepictionFrame Frame { get; }
+
+        /// <summary>True when nothing is left to play.</summary>
+        bool Finished { get; }
+
+        /// <summary>True while the screen waits for the player to release a card or end the turn.</summary>
+        bool WaitingForPlayer { get; }
+
+        /// <summary>True when the player may end the turn right now.</summary>
+        bool CanEndTurn { get; }
+
+        /// <summary>Takes the next event that runs on its own. Throws while the source waits for the player.</summary>
+        DepictionEvent AdvanceAuto();
+
+        /// <summary>Ends the turn. Throws when <see cref="CanEndTurn"/> is false.</summary>
+        DepictionEvent EndTurn();
+
+        /// <summary>Why the card cannot be released at all right now; Accepted when it can.</summary>
+        PlayVerdict Inspect(string cardId);
+
+        PlayVerdict TryPlay(string cardId, DropZone zone, out DepictionEvent played);
+
+        /// <summary>The one predicted value shown on the receiver while the card is dragged; "" when none.</summary>
+        string PreviewFor(string cardId);
+
+        /// <summary>The card the source would drag by itself for a capture, or "" when it has no opinion.</summary>
+        string SuggestedCardId { get; }
+
+        /// <summary>The line above the hand while the source waits, or "".</summary>
+        string GuideText { get; }
+
+        /// <summary>Why a released card went back to the hand, or "" when there is nothing to say.</summary>
+        string RefusalText(string cardId, PlayVerdict verdict);
+    }
+
+    /// <summary>
+    /// Walks a fixed script in order, for captures and for filming a known slice. Holds no rules:
+    /// it only knows which event is next, whether that event waits for a drag, and whether a
+    /// released card is the one the script wrote. A player who wants a free hand takes
+    /// <see cref="LiveTurn"/> instead.
+    /// </summary>
+    public sealed class DepictionRunner : IDepictionSource
     {
         private readonly DepictionScript _script;
 
@@ -226,30 +321,78 @@ namespace Depiction
         public DepictionFrame Frame { get; private set; }
         public bool Finished => Index >= _script.Events.Count;
         public DepictionEvent Next => Finished ? null : _script.Events[Index];
-        public bool WaitingForDrag => !Finished && Next.WaitsForDrag;
+        public bool WaitingForPlayer => !Finished && Next.WaitsForDrag;
+
+        /// <summary>A fixed script ends its own turns, so the player never does.</summary>
+        public bool CanEndTurn => false;
+
+        public string SuggestedCardId => WaitingForPlayer ? Next.CardId : "";
+
+        public string GuideText
+        {
+            get
+            {
+                if (!WaitingForPlayer) return "";
+                DepictionEvent next = Next;
+                return "台本の次の一手：「" + DepictionText.NameOf(Frame.Hand, next.CardId) + "」を"
+                    + DepictionText.ZoneName(next.Aim) + "へ";
+            }
+        }
 
         /// <summary>Takes the next automatic event. Throws when the script is waiting for a drag.</summary>
         public DepictionEvent AdvanceAuto()
         {
             if (Finished) throw new InvalidOperationException("The script has already finished.");
-            if (WaitingForDrag) throw new InvalidOperationException("Event " + Next.Order + " waits for a drag.");
+            if (WaitingForPlayer) throw new InvalidOperationException("Event " + Next.Order + " waits for a drag.");
             return Take();
+        }
+
+        public DepictionEvent EndTurn()
+        {
+            throw new InvalidOperationException("A fixed script ends its own turn; the player cannot.");
+        }
+
+        public PlayVerdict Inspect(string cardId)
+        {
+            if (!WaitingForPlayer) return PlayVerdict.NotWaiting;
+            return Next.CardId == cardId ? PlayVerdict.Accepted : PlayVerdict.OffScript;
         }
 
         public PlayVerdict TryPlay(string cardId, DropZone zone, out DepictionEvent played)
         {
             played = null;
-            if (!WaitingForDrag) return PlayVerdict.NotWaiting;
-            DepictionEvent next = Next;
-            if (next.CardId != cardId) return PlayVerdict.WrongCard;
-            if (zone != RequiredZone(next.Aim)) return PlayVerdict.WrongZone;
+            PlayVerdict verdict = Inspect(cardId);
+            if (verdict != PlayVerdict.Accepted) return verdict;
+            if (zone != DepictionText.RequiredZone(Next.Aim)) return PlayVerdict.WrongZone;
             played = Take();
             return PlayVerdict.Accepted;
         }
 
+        public string PreviewFor(string cardId)
+        {
+            DepictionEvent next = Next;
+            return next != null && next.CardId == cardId ? next.PreviewText : "";
+        }
+
+        public string RefusalText(string cardId, PlayVerdict verdict)
+        {
+            CardFace face = DepictionText.Find(Frame.Hand, cardId);
+            if (face == null || Next == null) return "";
+            if (verdict == PlayVerdict.OffScript)
+            {
+                return "「" + face.Name + "」はまだ出せません。台本の次は「"
+                    + DepictionText.NameOf(Frame.Hand, Next.CardId) + "」です";
+            }
+            if (verdict == PlayVerdict.WrongZone)
+            {
+                return "「" + face.Name + "」は" + DepictionText.ZoneName(face.Aim) + "で離すと出せます";
+            }
+            return "";
+        }
+
         public static DropZone RequiredZone(CardAim aim)
         {
-            return aim == CardAim.Single ? DropZone.Receiver : DropZone.AboveThrowLine;
+            return DepictionText.RequiredZone(aim);
         }
 
         private DepictionEvent Take()

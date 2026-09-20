@@ -88,7 +88,8 @@ const plan = [
 
   // View MonoBehaviours (BattleScreenView + helpers) -> Assets/View
   ...csFiles(`${kit}/Assets/View`).map((src) => [src, `${projectPath}/Assets/View/${basename(src)}`]),
-  // Battle depiction (fixed-script playback): pure script assembly, views, Editor builder, tests.
+  // Battle depiction (live turn + the fixed script kept for filming): pure script assembly,
+  // views, Editor builder, tests.
   // Prefabs / scenes / .meta stay in the Unity repo and are never copied from here.
   ...treeFiles(`${kit}/Assets/View/Depiction`, [".cs", ".asmdef"]).map((src) => [
     src,

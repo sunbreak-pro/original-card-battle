@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Compiles the depiction's pure-C# script layer, which lives in the Unity kit under
+         Assets/View/Depiction/Script/ and is mirrored into the Unity project by `npm run unity:sync`.
+         This project adds no source of its own: it exists so `dotnet test` can hold the same files
+         Unity's Depiction.Script assembly holds, without an Editor.
+         netstandard2.1 + C# 9 + nullable off is what Unity 2021.2+ compiles them as. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Depiction</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Depiction\Script\**\*.cs" LinkBase="Script" />
+  </ItemGroup>
+
+</Project>
