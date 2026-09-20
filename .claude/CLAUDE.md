@@ -204,6 +204,13 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | UI/UX work                             | `ui-ux-creator`              |
 | Character art / UI production pipeline | `visual-production-pipeline` |
 | 前のセッションの続きを引き継ぐ         | `session-successor`          |
+| セッション開始 / `/clear` の後         | `session-loader`             |
+| 課題を Issue として起票                | `issue-dispatch`             |
+| 次に着手する Issue を決める            | `issue-prompter`             |
+| open Issue を仕分ける                  | `/loop-triage`               |
+| Issue 1 件を commit まで実装           | `/loop-implement`            |
+| 検証ゲートを通して原因を切り分ける     | `/loop-verify`               |
+| 失敗から再発防止の 1 行を回収          | `/loop-postmortem`           |
 | Find design docs                       | `design-research`            |
 | Bug investigation                      | `debugging-active`           |
 | Error prevention                       | `debugging-error-prevention` |
@@ -219,6 +226,17 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 - **スコープの境界**: Issue は**プロダクトの課題専用**。Claude Code 環境やハーネス起因の問題は `docs/known-issues/` に置き、Issue にしない
 - **着手前に必ず open を見る**: `gh issue list --label type:bug`。重複起票を避ける
 - **1 Issue = 1 ブランチ = 1 PR**。PR 本文に `Closes #<n>` を書く。**merge は常に人**（`gh pr merge` は settings.json の `ask` で止まる）
+
+### 判断の控えは life-editor
+
+GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（何を作るか決めて記録する場所）。**Issue の代替にはしない**（2026-09-20 こうだいさん決定）。
+
+- **置くもの**: 判断の控えと調査結果（Note）／次にやること（Todo）。プロジェクトを跨いで見たいものだけを上げる
+- **置かないもの**: 課題の状態・担当・PR との結線。ステータスが 2 値しかなく、コメントが無く、後勝ち同期で記録が消えるため、正本は GitHub Issue のまま
+- **ローカルの `.claude/memory/` は残す**。per-chat の進捗は従来どおり task-tracker が書く
+- **手順は `life-editor-bridge` スキル**。セッション頭に `node ~/.claude/skills/life-editor-bridge/scripts/le.mjs pull`、判断が出たら `note`、次にやることは `todo`
+- **タグ**: `proj/original-card-battle` と `開発` が自動で付く。プロジェクト名の正本は `.claude/life-editor.json`
+- **落ちても止まらない**。life-editor は移行中で、失敗したらスクリプトが止まるだけ。作業は先へ進める
 
 ### タスクの進捗は per-chat ファイル
 
