@@ -15,13 +15,15 @@ description: プロダクトの課題を GitHub Issue として起票し、ラ�
 
 ## ラベル（`gh label list` が正本）
 
-| 系統      | 値                                                                     | 必須             |
-| --------- | ---------------------------------------------------------------------- | ---------------- |
-| `type:`   | `bug` / `feature` / `task` / `human`                                   | 必須             |
-| `sev:`    | `blocking` / `important` / `minor`                                     | 任意             |
-| `area:`   | `battle` `cards` `enemy` `dungeon` `ui` `art` `unity` `docs` `tooling` | 任意（複数可）   |
-| `lane:`   | `cards` `design` `battle` `dungeon` `audit`                            | 任意（1 つだけ） |
-| `status:` | `monitoring` / `workaround` / `frozen`                                 | 任意             |
+| 系統      | 値                                                                             | 必須             |
+| --------- | ------------------------------------------------------------------------------ | ---------------- |
+| `type:`   | `bug` / `feature` / `task` / `human`                                           | 必須             |
+| `sev:`    | `blocking` / `important` / `minor`                                             | 任意             |
+| `area:`   | `battle` `cards` `enemy` `dungeon` `world` `ui` `art` `unity` `docs` `tooling` | 任意（複数可）   |
+| `lane:`   | `cards` `design` `battle` `dungeon` `audit`                                    | 任意（1 つだけ） |
+| `status:` | `monitoring` / `workaround` / `frozen`                                         | 任意             |
+
+**`area:world` は世界観・設定・物語・用語**です。`design` レーンへ流れます。敵の数値とロースターは `area:enemy`（`cards` レーン）のままにします。
 
 **`lane:` は worktree レーンの宛先**です。付けなければ `issue-prompter` が `area:` から既定のレーンに振ります（対応表はそちらが正本）。`area:` が複数レーンに跨るときと、既定と違うレーンに任せたいときだけ明示します。**`lane:audit` は読み取り専用のレーン**なので、コードの修正を含む Issue には付けません。
 
