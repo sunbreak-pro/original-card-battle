@@ -31,11 +31,15 @@ namespace Depiction.PlayModeTests
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = 60;
 
-            // autoPlayDrags is not saved in the scene; switch it on before the player's Start runs.
+            // Neither flag is saved in the scene; switch both on before the player's Start runs.
+            // scriptedPlayback is what this test measures: the filmed slice, in its written order.
+            // The scene itself now opens on the live turn, where the player picks the cards.
             UnityEngine.Events.UnityAction<Scene, LoadSceneMode> onLoaded = (scene, mode) =>
             {
                 MonoBehaviour loaded = FindPlayer();
-                if (loaded != null) Set(loaded, "autoPlayDrags", true);
+                if (loaded == null) return;
+                Set(loaded, "scriptedPlayback", true);
+                Set(loaded, "autoPlayDrags", true);
             };
             SceneManager.sceneLoaded += onLoaded;
             try
@@ -49,6 +53,7 @@ namespace Depiction.PlayModeTests
 
             MonoBehaviour player = FindPlayer();
             Assert.That(player, Is.Not.Null, PlayerTypeName + " is missing from " + ScenePath);
+            Assert.That(Get(player, "scriptedPlayback"), Is.EqualTo(true));
             Assert.That(Get(player, "autoPlayDrags"), Is.EqualTo(true));
 
             float deadline = Time.realtimeSinceStartup + PlaybackTimeoutSeconds;

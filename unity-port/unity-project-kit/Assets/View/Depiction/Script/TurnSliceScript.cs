@@ -8,11 +8,12 @@ namespace Depiction
 {
     public static class TurnSliceScript
     {
-        public const string Kesagiri = "kesagiri";
-        public const string Daijodan = "daijodan";
-        public const string Ushirotobi = "ushirotobi";
-        public const string TetsuNoUke = "tetsu-no-uke";
-        public const string Kansatsu = "kansatsu";
+        // The slice deals one of each kind, so a card's kind id doubles as its instance id.
+        public const string Kesagiri = DemoDeck.Kesagiri;
+        public const string Daijodan = DemoDeck.Daijodan;
+        public const string Ushirotobi = DemoDeck.Ushirotobi;
+        public const string TetsuNoUke = DemoDeck.TetsuNoUke;
+        public const string Kansatsu = DemoDeck.Kansatsu;
 
         public static DepictionScript Build()
         {
@@ -131,25 +132,22 @@ namespace Depiction
         /// <summary>The script decides how a range side is printed; the View prints the string as given.</summary>
         private static string GlyphOf(RangeSide range)
         {
-            return range == RangeSide.Near ? "近" : "遠";
+            return DemoDeck.Glyph(range);
         }
 
+        /// <summary>
+        /// The five faces the slice opens with, printed from the shared table so the fixed script and
+        /// the live turn can never describe the same card differently. The slice is written at the top
+        /// of a turn with the attack omen showing, so both printed traits are lit.
+        /// </summary>
         private static List<CardFace> FullHand()
         {
-            return new List<CardFace>
+            var hand = new List<CardFace>();
+            foreach (DemoCard def in DemoDeck.All)
             {
-                new CardFace { Id = Kesagiri, Name = "袈裟斬り", Cost = 1, Kind = CardKind.Attack, Aim = CardAim.Single, ValueText = "6", TraitText = "初手 +3", TraitLit = true,
-                    TypeLabel = "攻撃・敵単体", Description = "敵に 6 ダメージ。ターン最初なら +3。" },
-                new CardFace { Id = Daijodan, Name = "大上段", Cost = 2, Kind = CardKind.Attack, Aim = CardAim.Single, ValueText = "13",
-                    TypeLabel = "攻撃・敵単体", Description = "敵に 13 ダメージ。振りかぶる一撃。" },
-                new CardFace { Id = Ushirotobi, Name = "後ろ跳び", Cost = 1, Kind = CardKind.Move, Aim = CardAim.Self, Affects = UnitSide.Player, ValueText = "4", TraitText = "予兆 +3", TraitLit = true,
-                    TypeLabel = "ムーブ・自分", Description = "遠間へ下がる。Guard 4 を得る。予兆が攻撃なら +3。" },
-                new CardFace { Id = TetsuNoUke, Name = "鉄の受け", Cost = 2, Kind = CardKind.Guard, Aim = CardAim.Self, Affects = UnitSide.Player, ValueText = "9",
-                    TypeLabel = "防御・自分", Description = "Guard 9 を得る。重い一撃に備える。" },
-                // The slice never plays 観察; its text follows swordsman_cards_v4 (draw 1 at the first tier).
-                new CardFace { Id = Kansatsu, Name = "観察", Cost = 1, Kind = CardKind.Skill, Aim = CardAim.Single,
-                    TypeLabel = "技・敵単体", Description = "カードを 1 枚引く。相手をよく見る。" },
-            };
+                hand.Add(DemoDeck.Face(def, def.DefId, traitLit: true));
+            }
+            return hand;
         }
 
         private static List<CardFace> HandWithout(params string[] played)

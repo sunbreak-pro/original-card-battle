@@ -184,7 +184,7 @@ Battle flow: Init phase queue (speed-sorted) → Player phase (draw, buffs, wait
 - **生存ルート:** 生きたまま次のキャラクターへ。生存者は一人まで
 - **死亡:** 成長は消え、手記は死亡地点に残る。次のキャラクターが死亡地点を訪れ、遺産（技術 / 手記の頁）から数個だけ選ぶ。痕跡は回収まで残り、1 つの生で 1 件。浅層の意図的な死では高習熟カードは残らない
 - **実装の正:** 戦闘コアは `unity-port/BattleCore/`（C#）が正（2026-09-12）。TS の `src/ui/battle-lab/core/` は凍結
-- **戦闘描写（2026-09-19）:** 固定台本を再生する画面は `unity-port/unity-project-kit/Assets/View/Depiction/`（`Script/` は純 C# の台本と型、View は名前空間 `Depiction.View`）。C# はこのリポが正で `npm run unity:sync` で写す。プレハブ / シーン / `.meta` は Unity リポが正（`Assets/Prefabs/Depiction/`、`Assets/Scenes/BattleDepiction.unity`）。View は計算せず、値は全て台本から取る
+- **戦闘描写（2026-09-20）:** 画面は `unity-port/unity-project-kit/Assets/View/Depiction/`（`Script/` は純 C# の台本と型、View は名前空間 `Depiction.View`）。C# はこのリポが正で `npm run unity:sync` で写す。プレハブ / シーン / `.meta` は Unity リポが正（`Assets/Prefabs/Depiction/`、`Assets/Scenes/BattleDepiction.unity`）。**View は計算せず、値は全て台本から取る**。台本を出すのは `IDepictionSource` の実装 2 つで、既定は実戦の `LiveTurn`（手札から好きな札を出せる）、撮影用は固定台本の `DepictionRunner`（`DepictionPlayer.scriptedPlayback`）。`Script/` と EditMode テストは `unity-port/Depiction.Script*.csproj` 経由で `dotnet test` が回す
 - **凍結（2026-09-12）:** アーマー（AP / 装備耐久 / 修理）、装備・Gold・ソウル経済、ショップ / 鍛冶屋 / サンクチュアリ。防御は Guard のみ
 
 ## Testing

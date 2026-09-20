@@ -47,19 +47,19 @@ namespace Depiction.Tests
             var runner = new DepictionRunner(TurnSliceScript.Build());
             runner.AdvanceAuto();
 
-            Assert.That(runner.WaitingForDrag, Is.True);
+            Assert.That(runner.WaitingForPlayer, Is.True);
             Assert.Throws<InvalidOperationException>(() => runner.AdvanceAuto());
         }
 
         [Test]
-        public void WrongCardReturnsToHand()
+        public void ACardTheFixedScriptDoesNotExpectReturnsToHand()
         {
             var runner = new DepictionRunner(TurnSliceScript.Build());
             runner.AdvanceAuto();
 
             PlayVerdict verdict = runner.TryPlay(TurnSliceScript.Daijodan, DropZone.Receiver, out DepictionEvent played);
 
-            Assert.That(verdict, Is.EqualTo(PlayVerdict.WrongCard));
+            Assert.That(verdict, Is.EqualTo(PlayVerdict.OffScript));
             Assert.That(played, Is.Null);
             Assert.That(runner.Index, Is.EqualTo(1));
         }
