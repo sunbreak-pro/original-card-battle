@@ -1,0 +1,14 @@
+name: Human Task
+description: Claude が代われない人手の作業（実機の手触り / 絵の選定 / 課金・認証）
+labels: ["type:human"]
+body:
+  - type: textarea
+    id: what
+    attributes: { label: やること, description: 画面の名前とボタン名まで書く }
+    validations: { required: true }
+  - type: textarea
+    id: why
+    attributes: { label: なぜ Claude が代われないか }
+  - type: textarea
+    id: handback
+    attributes: { label: 終わったら Claude に何を渡すか, description: 画像 / 所感 / 数値 }

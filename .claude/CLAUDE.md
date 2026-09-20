@@ -8,8 +8,8 @@
 
 - **役割**: 現状の実装規約 / アーキテクチャ / 規約の参照点（400 行以下目標）。抽象構想は `docs/vision/core.md`（ADR は作らない）
 - **更新規則**: 実装変更はコードと同一コミットで本ファイルを更新。新機能の要件は `docs/requirements/`、設計原則は `docs/vision/core.md` へ
-- **タスク運用**: 進行中 / 予定は `MEMORY.md`、変更履歴は `HISTORY.md`（いずれも task-tracker スキル経由で更新、手動編集しない）。`README.md` の Development History は完了履歴の要約
-- **関連**: `MEMORY.md`(タスク) / `HISTORY.md`(履歴) / `docs/vision/core.md`(設計原則) / `docs/requirements/`(要件) / `docs/known-issues/`([INDEX](./docs/known-issues/INDEX.md)) / `docs/code-explanation/`(コード解析・脆弱性) / `archive/`(完了プラン)
+- **タスク運用**: 進行中 / 予定は `memory/chat-<self>.md`、変更履歴は `history/chat-<self>.md`（いずれも task-tracker スキル経由で更新、手動編集しない）。**課題追跡の正は GitHub Issues**。`README.md` の Development History は完了履歴の要約
+- **関連**: `memory/`(タスク) / `history/`(履歴) / `docs/vision/core.md`(設計原則) / `docs/requirements/`(要件) / `docs/known-issues/`([INDEX](./docs/known-issues/INDEX.md)) / `docs/code-explanation/`(コード解析・脆弱性) / `archive/`(完了プラン)
 
 ---
 
@@ -203,24 +203,73 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | Dungeon system                         | `dungeon-system`             |
 | UI/UX work                             | `ui-ux-creator`              |
 | Character art / UI production pipeline | `visual-production-pipeline` |
-| 前のセッションの続きを引き継ぐ       | `session-successor`          |
+| 前のセッションの続きを引き継ぐ         | `session-successor`          |
+| セッション開始 / `/clear` の後         | `session-loader`             |
+| 課題を Issue として起票                | `issue-dispatch`             |
+| 次に着手する Issue を決める            | `issue-prompter`             |
+| open Issue を仕分ける                  | `/loop-triage`               |
+| Issue 1 件を commit まで実装           | `/loop-implement`            |
+| 検証ゲートを通して原因を切り分ける     | `/loop-verify`               |
+| 失敗から再発防止の 1 行を回収          | `/loop-postmortem`           |
 | Find design docs                       | `design-research`            |
 | Bug investigation                      | `debugging-active`           |
 | Error prevention                       | `debugging-error-prevention` |
 
-## Task Completion Rule
+## Development Workflows
 
-タスク管理は `MEMORY.md` / `HISTORY.md`（task-tracker スキル経由、手動編集しない）。
+> 2026-09-20 に life-editor の開発環境を移植。手順はスキルへ委譲し、本節は本リポの規約だけを持つ。
 
-**開始時**: task-tracker で `MEMORY.md` の「進行中」へ起票（プランがあれば `docs/vision/plans/YYYY-MM-DD-<slug>.md` を作成しリンク）。
+### 課題追跡は GitHub Issues が正
 
-**完了時**: task-tracker で (1) `MEMORY.md` 進行中 → 直近の完了へ移動、(2) `HISTORY.md` 先頭に概要+変更点を追記、(3) `README.md` Development History に 1 行要約、(4) 完了プランは `archive/` へ移動。
+- **起票先**: `gh issue create -R sunbreak-pro/original-card-battle`。テンプレートは `.github/ISSUE_TEMPLATE/` の 3 種（Known Issue / Roadmap Item / Human Task）
+- **ラベル**: `type:` (bug / feature / task / human) × `sev:` (blocking / important / minor) × `area:` (battle / cards / enemy / dungeon / ui / art / unity / docs / tooling) × `status:` (monitoring / workaround / frozen)
+- **スコープの境界**: Issue は**プロダクトの課題専用**。Claude Code 環境やハーネス起因の問題は `docs/known-issues/` に置き、Issue にしない
+- **着手前に必ず open を見る**: `gh issue list --label type:bug`。重複起票を避ける
+- **1 Issue = 1 ブランチ = 1 PR**。PR 本文に `Closes #<n>` を書く。**merge は常に人**（`gh pr merge` は settings.json の `ask` で止まる）
 
-> `MEMORY.md` = 未完了タスクの SSOT、`HISTORY.md` = 変更履歴、`README.md` = 完了履歴の要約。`TODO.md` は `MEMORY.md` への薄いポインタ（後方互換）。
+### 判断の控えは life-editor
+
+GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（何を作るか決めて記録する場所）。**Issue の代替にはしない**（2026-09-20 こうだいさん決定）。
+
+- **置くもの**: 判断の控えと調査結果（Note）／次にやること（Todo）。プロジェクトを跨いで見たいものだけを上げる
+- **置かないもの**: 課題の状態・担当・PR との結線。ステータスが 2 値しかなく、コメントが無く、後勝ち同期で記録が消えるため、正本は GitHub Issue のまま
+- **ローカルの `.claude/memory/` は残す**。per-chat の進捗は従来どおり task-tracker が書く
+- **手順は `life-editor-bridge` スキル**。セッション頭に `node ~/.claude/skills/life-editor-bridge/scripts/le.mjs pull`、判断が出たら `note`、次にやることは `todo`
+- **タグ**: `proj/original-card-battle` と `開発` が自動で付く。プロジェクト名の正本は `.claude/life-editor.json`
+- **落ちても止まらない**。life-editor は移行中で、失敗したらスクリプトが止まるだけ。作業は先へ進める
+
+### タスクの進捗は per-chat ファイル
+
+並行チャットが 1 つのファイルの同じ行を書き換えると必ず衝突するため、チャットごとにファイルを分ける。
+
+- **自分の名前**: `.claude/comm/.session-name`（git 非追跡）。`chat-` 接頭辞は付けない（例: `main`）
+- **進捗**: `.claude/memory/chat-<self>.md` / **履歴**: `.claude/history/chat-<self>.md`
+- **横断ビュー**: `.claude/memory/INDEX.md` / `.claude/history/INDEX.md` は **git 非追跡の生成物**。`.claude/hooks/regen-index.sh` が SessionStart と task-tracker から再生成する。手編集も `git add` もしない
+- **更新は task-tracker スキル経由**（手動編集しない）。**開始時**: 「進行中」へ起票（プランがあれば `docs/vision/plans/YYYY-MM-DD-<slug>.md` を作成しリンク）。**完了時**: (1) 進行中 → 直近の完了へ移動、(2) history 先頭に概要+変更点、(3) `README.md` Development History に 1 行要約、(4) 完了プランは `archive/` へ移動
+- **tracker の更新を実装コミットに混ぜない**。`pre-commit-tracker-guard.sh` が止める。意図的に同梱するときだけコマンドに `[tracker-ok]` を含める
+- `.claude/MEMORY.md` / `.claude/HISTORY.md` / `TODO.md` は移転前の後方互換ポインタ。更新しない
+
+### hooks（`.claude/settings.json`）
+
+| タイミング       | スクリプト                    | 役割                                                             |
+| ---------------- | ----------------------------- | ---------------------------------------------------------------- |
+| SessionStart     | `regen-index.sh`              | `memory/INDEX.md` と `history/INDEX.md` を再生成                 |
+| SessionStart     | `session-start-check.sh`      | `.session-name` / `.session-branch` の宣言整合を検査（警告のみ） |
+| PreToolUse(Bash) | `pre-commit-mcp-check.sh`     | `.mcp.json` のトークン平文化を commit 前に検出                   |
+| PreToolUse(Bash) | `pre-commit-index-guard.sh`   | 生成物 `INDEX.md` の commit 混入を自動除外                       |
+| PreToolUse(Bash) | `pre-commit-tracker-guard.sh` | tracker と実装の同梱コミットをブロック                           |
+
+実体は `$HOME/dev/Claude/hooks-lib/` を優先し、無ければ `.claude/scripts/hooks-lib/` の同梱版に落ちる。
+
+### 禁止コマンド（`.claude/settings.json` の `deny`）
+
+main / master への直接 push、force push、`git reset --hard`、`git branch -D`、`rm -rf .git`。**`gh pr merge` は `ask`** で必ず人に聞く。
+
+> **未導入**: multi-chat worktree 運用（`workspaces/original-card-battle/<slug>/`）と `section:` ラベルによる振り分けは入れていない。導入時に `git checkout main` / `git switch main` の deny を足し、メインのチェックアウトを chat-main 専有にする。
 
 ## Document System
 
-- **フロー**: Vision（`docs/vision/core.md`、ADR 不使用）→ 実装プラン（`docs/vision/plans/YYYY-MM-DD-<slug>.md`）→ 完了で `archive/` 移動・規約は本ファイルへ統合。MEMORY/HISTORY はセッション単位（task-tracker 経由）
+- **フロー**: Vision（`docs/vision/core.md`、ADR 不使用）→ 実装プラン（`docs/vision/plans/YYYY-MM-DD-<slug>.md`）→ 完了で `archive/` 移動・規約は本ファイルへ統合。進捗 / 履歴は per-chat（`memory/` `history/`、task-tracker 経由）
 - **Known Issue**: `docs/known-issues/` に Root Cause + 再発防止を蓄積。発見時 `NNN-<slug>.md` 作成 + `INDEX.md` 更新、解決時 Status=Fixed。**類似バグはまず `INDEX.md` を grep**
 - **設計書 vs 実装**: ゲーム数値は `docs/*_document/` の設計書を正とし、差分は設計書側か実装側へ寄せて解消（`design-research` スキル）
 
@@ -228,8 +277,10 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 
 | Resource                         | Contents                                                                   |
 | -------------------------------- | -------------------------------------------------------------------------- |
-| `MEMORY.md`                      | タスクトラッカー — 進行中 / 直近の完了 / 予定                              |
-| `HISTORY.md`                     | セッション単位の変更履歴（降順、概要+変更点）                              |
+| `memory/chat-<self>.md`          | タスクトラッカー — 進行中 / 直近の完了 / 予定（per-chat）                  |
+| `history/chat-<self>.md`         | 変更履歴（降順、概要+変更点。per-chat）                                    |
+| `.github/ISSUE_TEMPLATE/`        | Issue テンプレート 3 種（Known Issue / Roadmap Item / Human Task）        |
+| `.claude/hooks/`                 | SessionStart と PreToolUse の hook 5 本                                    |
 | `README.md`                      | プロジェクト概要・Development History（完了履歴の要約）                    |
 | `.claude/docs/INDEX.md`          | ドキュメント索引（標準構造 + ゲーム設計書）                                |
 | `.claude/docs/vision/core.md`    | Vision・設計原則                                                           |

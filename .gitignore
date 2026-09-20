@@ -33,3 +33,13 @@ yarn-error.log*
 .env
 .env.*
 !.env.example
+
+# --- Claude Code 開発環境（life-editor から移植 2026-09-20）---
+# セッションの宣言。worktree / チャットごとに違うので追跡しない。
+.claude/comm/.session-name
+.claude/comm/.session-branch
+.claude/active-sessions/
+# 生成物。.claude/hooks/regen-index.sh が SessionStart hook / task-tracker から決定論的に再生成する。
+# 追跡すると並行チャットが同じ行を書き換えて必ず衝突する。
+.claude/memory/INDEX.md
+.claude/history/INDEX.md
