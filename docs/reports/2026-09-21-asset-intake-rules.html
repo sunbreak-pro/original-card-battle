@@ -1,0 +1,217 @@
+<title>素材の取り込み規約</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  td.num { font-variant-numeric: tabular-nums; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-21 / 判断 / original-card-battle</p>
+    <h1>絵は Unity リポが正、台帳は 15 列、書き出しは縮小しない</h1>
+    <p class="lede">Issue #93 の決めごとです。Unity 6 のマニュアルと実際の <code>.meta</code>・<code>.preset</code>、OpenRAIL++-M と Apache-2.0 の条文、IPTC の語彙、Steamworks の申告様式、文化庁と米国著作権局の資料を当たり、反証を通しました。立ち絵だけを対象にしています。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">今日から</span><h3>640 × 1536 のまま書き出す</h3><p>既決の「長辺 1024」は成り立ちません。縮めると幅が 4 の倍数を割り、BC7 も DXT5 も効かなくなります。</p></li>
+    <li class="verdict now"><span class="tag">今日から</span><h3>台帳を 30 列から 15 列へ</h3><p>7 列は全行同じ値、5 列はモデルごと、3 列は id から読めます。代わりに <code>sha256</code> を足します。Unity が取り込むと PNG の中身は残りませんし、パスは動きます。</p></li>
+    <li class="verdict skip"><span class="tag">入れない</span><h3>Sprite Atlas と C2PA</h3><p>20 枚では page が埋まらず、得られるのは draw call だけです。C2PA は書き手がおらず、チャンクは保存し直すと落ち、署名に証明書が要ります。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: Unity Editor を開いていません。設定名と既定値は Unity 6 のマニュアルと、GitHub 上の実プロジェクトの <code>.meta</code> 2 件・Unity 6000.0.59f2 の <code>.preset</code> 1 件から取りました。</div>
+
+  <h2>1. どれをどこに置くか</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>もの</th><th>正本</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td><code>.kra</code> の原本</td><td>OneDrive</td><td>Unity リポの <code>.gitattributes</code> は画像 13 種を LFS に載せていますが <code>.kra</code> は入っていません。このリポは LFS 自体を使っていません</td></tr>
+        <tr><td>PNG の立ち絵</td><td class="state yes">Unity リポ</td><td>PNG が LFS に載っていて、<code>.meta</code> の正本も向こうです</td></tr>
+        <tr><td><code>.meta</code> / <code>.preset</code> / <code>PresetManager.asset</code></td><td class="state yes">Unity リポ</td><td><code>unity:sync</code> は <code>.cs</code> と <code>.asmdef</code> しか写しません。<code>.preset</code> と PresetManager は GUID で結ばれていて、写すと結び目が切れます</td></tr>
+        <tr><td>取り込み設定の<strong>値</strong></td><td class="state yes">このリポ（<code>asset-intake.md</code> §3）</td><td>人が読む形の正本はこちらです。Unity 側の <code>.preset</code> はその写しです</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>2. 効きが大きい取り込み設定</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>項目</th><th>値</th><th>効き</th></tr></thead>
+      <tbody>
+        <tr><td>Pixels Per Unit</td><td>100</td><td class="state no">画面の大きさには影響しません。UGUI の <code>Image</code> では RectTransform が決めます。<code>SetNativeSize()</code> を揃えるためだけの値です</td></tr>
+        <tr><td>Mesh Type</td><td class="state yes">Full Rect（既定は Tight）</td><td>Tight はアルファからメッシュを作るので、瘴気のにじみと低アルファの縁が切られます。1 体が同じ sprite を 3 枚の <code>Image</code> で共有するので、完全一致が要ります</td></tr>
+        <tr><td>Pivot</td><td class="state yes">Custom (0.5, 0)（既定は Center）</td><td>Bottom は「テクスチャ矩形の下辺中央」であって「足の中心」ではありません。書き出し規約を守れば一致しますが、破れたとき Custom なら実測値を書けます</td></tr>
+        <tr><td>Generate Mipmap</td><td class="state maybe">on（既定は off。要実測）</td><td>1536 の絵を実画素 450〜900 で出すので 1.7〜3.4 倍の縮小です。容量 +33%（20 枚で 18.8 → 25 MiB）</td></tr>
+        <tr><td>Filter Mode</td><td class="state yes">Trilinear（既定は Bilinear）</td><td>ミップを入れるなら段の切り替わりを混ぜないと、姿勢の <code>scaleY</code> で見えます</td></tr>
+        <tr><td>Standalone の Override</td><td class="state yes">on + BC7</td><td><strong>ここが 0 だと上書きが丸ごと効きません。</strong> 最も静かに失敗する箇所です</td></tr>
+        <tr><td>Max Size</td><td class="state no">2048（既定のまま。1024 にしない）</td><td>1024 を保険に置くと、大きく書き出した絵を 683 × 1024 に落として 4 の倍数を割り、圧縮を壊します。保険が事故を作ります</td></tr>
+        <tr><td>Alpha Is Transparency / sRGB / Wrap / Aniso</td><td class="state no">既定のまま</td><td>Sprite では既に正しい値です。「off の既定を直す」と書くと <code>.meta</code> の diff を読み違えます</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>3. 自動で当てる 3 つの手</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>手</th><th>既存のファイルにも効く</th><th>値をテキストで見られる</th><th>手で直した値を守る</th><th>採否</th></tr></thead>
+      <tbody>
+        <tr><td>A. Preset + Preset Manager</td><td class="state no">いいえ（初回だけ）</td><td class="state yes">はい</td><td class="state yes">はい</td><td class="state yes">採る</td></tr>
+        <tr><td>B. AssetPostprocessor</td><td class="state maybe">版番号を上げれば</td><td class="state no">いいえ</td><td class="state maybe">ガード次第</td><td class="state no">見送り</td></tr>
+        <tr><td>C. フォルダ単位の preset（Unity の見本）</td><td class="state yes">はい</td><td class="state yes">はい</td><td class="state no"><strong>いいえ</strong></td><td class="state no">見送り</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">A を採ります。値が <code>.preset</code> というレビューできるテキストに残り、Inspector で手直しした 1 枚を潰さないからです。C は約 190 行の Editor コードで、手で直した値が次の再取り込みで黙って戻ります。立ち絵は Pivot を 1 枚ずつ詰める可能性があるので、その手は採りません。</p>
+  <p class="prose"><strong>登録は PNG を入れる前に済ませます。</strong> 既定 preset は初回の取り込みにしか当たりません。既存に当て直せるのは Inspector の <strong>Reset</strong> と、C# の <code>preset.ApplyTo()</code> + <code>WriteImportSettingsIfDirty()</code> の 2 つだけです。<strong>Reimport も <code>ForceUpdate</code> も効きません。</strong></p>
+
+  <h2>4. 台帳を 30 列から 15 列へ</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>扱い</th><th>列</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td class="state yes">新設 3</td><td><code>sha256</code> / <code>status</code> / <code>export</code></td><td>Unity が取り込むと PNG の中身は残らず、パスと id は動きます。ハッシュだけが動かない錨です</td></tr>
+        <tr><td class="state no">定数 7</td><td><code>made_by</code> <code>tool</code> <code>cost_usd</code> <code>reviewer</code> <code>disclosure</code> <code>watermark</code> <code>attribution</code></td><td>全行で同じです。CSV の先頭コメントに 1 回書きます</td></tr>
+        <tr><td class="state no">モデル単位 5</td><td><code>model_snapshot</code> <code>model_license</code> <code>terms_url</code> <code>terms_checked_on</code> <code>commercial_ok</code></td><td>2 行のモデル表へ移します</td></tr>
+        <tr><td class="state no">導出 3</td><td><code>kind</code> <code>subject</code> <code>variant</code></td><td><code>asset_id</code> から読めます</td></tr>
+        <tr><td class="state no">統合 2</td><td><code>postprocess</code>+<code>human_edit</code>+<code>human_minutes</code> / <code>prompt_file</code>+<code>workflow_file</code></td><td><code>human_work</code> と <code>recipe</code> にまとめます。指示文は <code>workflow.json</code> の中にあります</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">30 行埋めるとして 900 セルが 450 セルになります。<code>ai_role</code> は 4 値（<code>generated</code> / <code>edited-ai</code> / <code>edited-hand</code> / <code>hand</code>）です。<strong>Krita の筆で直したものを <code>compositeWithTrainedAlgorithmicMedia</code> にしないでください。</strong> IPTC の定義が「using a Generative AI model」なので、非生成の手作業は当たりません。納品する立ち絵はほぼ <code>compositeSynthetic</code> です。</p>
+
+  <h2>5. 権利の整理</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>論点</th><th>結論</th></tr></thead>
+      <tbody>
+        <tr><td>OpenRAIL++-M は生成物に権利を主張するか</td><td class="state no">しません。「Licensor claims no rights in the Output You generate using the Model」。義務は<strong>重みの再配布</strong>に掛かり、PNG の同梱は再配布ではありません</td></tr>
+        <tr><td>使用制限は生成物にも及ぶか</td><td class="state maybe">及びます。同じ節の 3 文目「No use of the output can contravene any provision as stated in the License」。竜と亜竜の絵はどの制限にも触れません</td></tr>
+        <tr><td>Apache-2.0（FLUX.2 klein 4B）の NOTICE</td><td class="state no">要りません。生成物は Work の再配布ではありません。<strong>9B 版は商用不可なので入れません</strong></td></tr>
+        <tr><td>台帳は法の要求か</td><td class="state no">違います。米国は登録申請時の開示、日本は登録も届出も不要です。台帳は自分で説明するための任意の記録です</td></tr>
+        <tr><td>画像検索（<code>similarity_check</code>）の位置づけ</td><td class="state yes">文化庁のチェックリストが「利用に先立って類似していないか確認することが必要」とし、手段として画像検索を名指しします。異常検知ではなく、資料が挙げる確認手段そのものです</td></tr>
+        <tr><td>指示文を残す意味</td><td class="state yes">同資料が、指示文に固有名詞を入れると依拠性が認められやすいと述べます。全文を辿れることが、固有名詞を使っていない証拠になります</td></tr>
+        <tr><td>Steam の開示</td><td class="state maybe">Pre-Generated として申告し、<strong>ストアページに公開されます。</strong> 実装を詳しく述べるよう求められ、審査でマーケティング素材と照合されます。日本語の文面も要ります</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>本書は立ち絵だけを扱います。背景は不透明なので DXT1/BC1（4 bpp）が正解になり、答えが変わります。</li>
+    <li>ミップマップを on にしました。1 体目で on / off を見比べて確かめます。違いが無ければ off に戻し、容量を 25 MiB から 18.8 MiB へ下げます。</li>
+    <li>台帳を Unity リポに置いたままにしました。既存の 4 箇所が同じパスを指しているためです。移すなら 4 箇所を同時に直す必要があり、どれも本 Issue の書き込み範囲の外です。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>Preset Manager の Filter が <code>Assets/</code> から始まるか。PNG を 1 枚落とせば決まります。</li>
+    <li>6000.x が書く Sprite の <code>.meta</code> の <code>serializedVersion</code>。実物を 1 枚貼ってもらう必要があります。</li>
+    <li>BC7 が両辺 4 の倍数を要求するときに Unity 6 が何と表示するか。制約そのものはブロック圧縮の性質から確かですが、Unity 6 の一次情報に辿り着けませんでした。</li>
+    <li>禁止モデル（Illustrious / NoobAI 系、MAT）が混ざっていないことを台帳でどう示すか。checkpoint 名は残りますが、どのボタンを押したかは残りません。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li><strong><code>&lt;subject&gt;</code> の付け替え時期。</strong> #128 がロースター 19 体を竜の系譜へ付け替えます。#85 の 1 体目を仮の id で描き始めるか、#128 を待つかを決める必要があります。</li>
+    <li><strong>自動検査を置くか。</strong> 規約を書いても <code>.meta</code> を人が見なければ崩れます。<code>-batchmode -executeMethod</code> で差分を吐く Editor スクリプトが要りますが、実行は Unity 側なのでこのレーンの静的検証には載りません。</li>
+    <li><strong><code>tools-and-prerequisites.md</code> の 2 箇所。</strong> §8 の 30 列と §9 #8 の「取り込み長辺 1024・BC7」は本書で置き換わります。同ファイルは design が書く正本なので、別 Issue で直します。</li>
+  </ul>
+</div>

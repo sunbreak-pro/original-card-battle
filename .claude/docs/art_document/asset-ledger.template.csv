@@ -1,0 +1,7 @@
+# asset-ledger template. Copy to the Unity repo as Docs/art/asset-ledger.csv and delete these comment lines.
+# Column definitions live in .claude/docs/art_document/asset-intake.md section 7 - that file is authoritative, this one is the shape.
+# Constant for every row, so they are not columns: made_by=human+ai / tool=Krita AI Diffusion 1.53.0 + bundled ComfyUI / cost_usd=0 / reviewer=kodai / disclosure=pre-generated AI
+# ai_role maps to IPTC digitalsourcetype: generated=trainedAlgorithmicMedia, edited-ai=compositeWithTrainedAlgorithmicMedia, edited-hand=compositeSynthetic, hand=digitalCreation
+# A row with an empty sha256 is not shippable. A row with an empty similarity_check is.
+asset_id,file,sha256,date,status,model,ai_role,seed,recipe,source_file,export,ref_source,human_work,similarity_check,notes
+chr.example.idle.stand,Assets/Art/Characters/example/chr_example_idle_stand.png,EXAMPLE-REPLACE-OR-DELETE,2026-09-21,cut,animagine-xl-4.0-opt,edited-hand,12345,Docs/art/recipes/chr.example.idle.stand.workflow.json,C:/Users/user/OneDrive/art/characters/example/example.kra,save-merged,none,"repainted horns and jaw, split 9 layers; 95min",2026-09-21 lens+tineye none,EXAMPLE ROW - replace or delete
