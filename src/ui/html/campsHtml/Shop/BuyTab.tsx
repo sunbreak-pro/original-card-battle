@@ -13,7 +13,7 @@ import {
   canAfford,
   hasInventorySpace,
   purchaseItem,
-  useMerchantTicket,
+  useMerchantTicket as applyMerchantTicket,
 } from "@/domain/camps/logic/shopLogic";
 import {
   initializeShopStock,
@@ -32,15 +32,17 @@ const BuyTab = () => {
   const { addItemToStorage } = useInventory();
   const storage = playerData.inventory.storage;
   const [notification, setNotification] = useState<string | null>(null);
+  // Read the clock once on mount so render stays pure
+  const [mountedAt] = useState(() => Date.now());
 
   // Lazily initialize shop stock if not yet created
   const shopStock = useMemo((): ShopStockState => {
     const existing = playerData.progression.shopStockState;
     if (existing) return existing;
-    const seed = Math.floor(Date.now() / 1000);
+    const seed = Math.floor(mountedAt / 1000);
     const depth = Math.max(...playerData.progression.unlockedDepths) as 1 | 2 | 3 | 4 | 5;
     return initializeShopStock(seed, depth);
-  }, [playerData.progression.shopStockState, playerData.progression.unlockedDepths]);
+  }, [playerData.progression.shopStockState, playerData.progression.unlockedDepths, mountedAt]);
 
   // Persist stock if it was just initialized
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -68,7 +70,7 @@ const BuyTab = () => {
     () => getResolvedDailySpecialListings(shopStock.dailySpecialKeys),
     [shopStock.dailySpecialKeys],
   );
-  const dayNumber = playerData.progression.shopRotationDay ?? Math.floor(Date.now() / 86400000);
+  const dayNumber = playerData.progression.shopRotationDay ?? Math.floor(mountedAt / 86400000);
   const dailyEquipment = useMemo(() => generateDailyEquipmentInventory(dayNumber), [dayNumber]);
 
   // Check if player has merchant ticket in inventory
@@ -148,7 +150,7 @@ const BuyTab = () => {
 
   const handleUseMerchantTicket = useCallback(() => {
     const depth = Math.max(...playerData.progression.unlockedDepths) as 1 | 2 | 3 | 4 | 5;
-    const newStock = useMerchantTicket(depth);
+    const newStock = applyMerchantTicket(depth);
 
     // Find and consume merchant ticket from storage or inventory
     const storageItems = playerData.inventory.storage.items;

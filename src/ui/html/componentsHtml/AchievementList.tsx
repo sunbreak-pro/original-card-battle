@@ -103,6 +103,8 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
 export const AchievementList: React.FC = () => {
   const { playerData } = usePlayer();
   const [filter, setFilter] = useState<FilterType>('all');
+  // Placeholder unlock date; read the clock once so render stays pure
+  const [openedAt] = useState(() => Date.now());
   const [categoryFilter, setCategoryFilter] = useState<AchievementCategory | 'all'>('all');
 
   // Get unlocked achievement IDs from player data
@@ -184,7 +186,7 @@ export const AchievementList: React.FC = () => {
             achievement={achievement}
             isUnlocked={unlockedIds.has(achievement.id)}
             // TODO: Get actual unlock date from player data
-            unlockDate={unlockedIds.has(achievement.id) ? Date.now() : undefined}
+            unlockDate={unlockedIds.has(achievement.id) ? openedAt : undefined}
           />
         ))}
       </div>

@@ -59,6 +59,8 @@ interface DefaultErrorFallbackProps {
 /**
  * Default fallback UI when an error occurs
  */
+// The rule does not recognise the class component above as a component export.
+// eslint-disable-next-line react-refresh/only-export-components
 function DefaultErrorFallback({ error, onReset }: DefaultErrorFallbackProps): ReactNode {
   const isDev = import.meta.env.DEV;
 

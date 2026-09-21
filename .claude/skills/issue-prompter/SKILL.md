@@ -71,7 +71,7 @@ git worktree list
 条件は**英語・観測可能・4,000 文字以内**（判定モデルは Haiku）。レーンの open Issue を 1 本にまとめます。1 本の `/goal` に入れるのは**依存の無い Issue だけ**です。**並べる順は `prio:` の小さい順**（同じなら `sev:`、番号）で、`prio:1` が残っているレーンには `prio:3` 以下を混ぜません。`prio:` が付いていない Issue は配らず、采配欄に「優先順位なし」として出します。
 
 ```
-/goal in the original-card-battle worktree for <slug>: every open issue below has its own branch off origin/main, a local run of npm run build, npm run lint, npm run test:run and dotnet test under unity-port that reports no error the same commands did not already report on origin/main, and an opened PR referencing it — #<n1> <title1>, #<n2> <title2>. Read .claude/skills/worktree-policy/SKILL.md first, update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.
+/goal in the original-card-battle worktree for <slug>: every open issue below has its own branch off origin/main, a local run of npm run build, npm run lint, npm run test:run and dotnet test under unity-port that all exit 0, and an opened PR referencing it — #<n1> <title1>, #<n2> <title2>. Read .claude/skills/worktree-policy/SKILL.md first, update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.
 ```
 
 `audit` レーンの終端は PR ではなく Issue の起票です。
@@ -108,7 +108,7 @@ git worktree list
 
 ## Gotchas
 
-- **origin/main は今も赤です**（2026-09-20 実測: `npm run build` が TS エラー 4 件、`npm run lint` が 7 件。`npm run test:run` は 204 件緑）。だから `/goal` の条件を「全部緑」と書くと最初から届きません。**「main で既に出ている赤を増やさない」**と書きます。赤が消えたら条件を「緑」に戻します
+- **検証 4 本は origin/main で緑です**（2026-09-21、#44）。`npm run lint` の警告 2 件（不要になった `eslint-disable`）は exit 0 のまま残しています。レーンで赤が出たら、そのレーンの変更が原因です
 - **`gh pr list` は origin が古いと取りこぼします。** 収集前に `git fetch origin main`
 - **worktree が `chore/lane-*` の待機ブランチにいるのは正常**です。着手中とは限らないので、手番の判定に使いません
 - **`chore/tracker-*` ブランチにいるのも正常**です（tracker 分離）
