@@ -1,6 +1,6 @@
 # 戦闘 v4 実装プラン（次セッション用）
 
-> **Status**: ON HOLD（2026-09-14、こうだいさんの所感で差し戻し。着手は `battle_core_v4.md` §16 の回答と v4.2 改訂の後）。旧: PLANNED（2026-09-13）。設計は本セッションで確定（`battle_core_v4.md` / `swordsman_cards_v4.md` / `enemy_roster_v4.md` / `battle_ui_ux_v1.md` §3.6）。実装は次のセッションで行う（こうだいさん決定 7）。
+> **Status**: SUPERSEDED（2026-09-20）。`.claude/docs/vision/plans/2026-09-20-battle-scene-production.md` が引き継ぎました。冒頭プロンプトと完了条件は投入量・T0〜T3・近 / 中 / 遠を前提にしているので、そのままでは使えません。旧: ON HOLD（2026-09-14）/ PLANNED（2026-09-13）。設計は本セッションで確定（`battle_core_v4.md` / `swordsman_cards_v4.md` / `enemy_roster_v4.md` / `battle_ui_ux_v1.md` §3.6）。実装は次のセッションで行う（こうだいさん決定 7）。
 > **目標**: 棚卸レポートの順 1〜2（ルール v4 の C# 実装、試験台、初期 40 種、敵 6 体、連戦モード）。順 3〜4（ドラッグ操作 / HUD / 演出）はその次。
 
 ## 完了条件

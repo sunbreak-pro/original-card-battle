@@ -1,0 +1,263 @@
+<title>戦闘シーン本番化の地ならし</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding-block: 48px 80px; padding-inline: 24px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  td.num { text-align: right; white-space: nowrap; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-20 / 進捗 / original-card-battle</p>
+    <h1>戦闘シーンを本番にする準備が終わりました</h1>
+    <p class="lede">正本 14 文書を v4.2 に書き直し、本番の戦闘シーンに要る作業を Issue 17 件（#46〜#62、<code>lane:battle</code>）に分け、実装計画書を置きました。コードはまだ 1 行も変えていません。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">今日から</span><h3>正本は本文が正</h3><p>T0〜T3・投入量・近 / 中 / 遠は設計書から消えました。後ろの §16〜§18 は決定の記録に降格しました。</p></li>
+    <li class="verdict later"><span class="tag">測ってから</span><h3>数値は全て叩き台</h3><p>列の目盛りも回復 3 も机上の値です。試験台（#53）の結果が出るまで、カード 1 枚ずつの調整はしません。</p></li>
+    <li class="verdict skip"><span class="tag">入れない</span><h3>探索側とアート</h3><p>刻限 / 瘴気 / ノード、遺産と継承、本番の立ち絵は、戦闘が 80% に届いてからです。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: 戦闘コアの正は <code>unity-port/BattleCore/</code>（C#、<code>dotnet test</code> 54 件が緑）で、TS の <code>src/</code> は凍結です。画面は計算せず、値は全て台本から取ります。</div>
+
+  <h2>1. 正本をどう直したか</h2>
+
+  <p>いままでの設計書は「本文が古く、後ろの節に新しい決定が積まれている」形でした。読む人が本文を信じると間違える状態です。決定を本文へ入れ込み、後ろは記録として残しました。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>文書</th><th>状態</th><th>主な変更</th></tr></thead>
+      <tbody>
+        <tr><td><code>battle_core_v4.md</code></td><td class="state yes">v4.2</td><td>§0〜§14 を全面改訂。投入量 → 固定コスト、T0〜T3 → 列 1〜4、共有の距離 → 個体ごとの近間 / 遠間、状態 → スタック制。§13 の基準を 9 → 12 項目に</td></tr>
+        <tr><td><code>swordsman_cards_v4.md</code></td><td class="state yes">v4.2</td><td>80 枚にコストを割り当て（1 / 2 / 3 = 25 / 30 / 25 枚）。位置条件を 6 → 16 枚。#80 を背水の陣に置換。<code>min</code> 列と間合い列を廃止</td></tr>
+        <tr><td><code>enemy_roster_v4.md</code></td><td class="state yes">v4.2</td><td>位置を持つ敵をボスと精鋭 5 体に限定。行動表 58 行を列 = コストへ。深淵の釣り人と歪みの根を 2 値で再設計</td></tr>
+        <tr><td><code>battle_ui_ux_v2.md</code></td><td class="state maybe">未改訂</td><td>§1〜§7 が投入帯・3 段の間合いのまま。#46 で書き直す</td></tr>
+        <tr><td>周辺 10 文書</td><td class="state yes">追従済み</td><td><code>game_design_master.md</code> / <code>tier1-core.md</code> / <code>tier2-support.md</code> / <code>INDEX.md</code> ほか。履歴文書 4 件には SUPERSEDED 注記</td></tr>
+        <tr><td><code>vision/core.md</code></td><td class="state no">保留</td><td>V1 / V2 は設計原則なので触っていません。#61 でこうだいさんの判断を仰ぎます</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>消えた語と、置き換えた語</h3>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>消えた</th><th>置き換え</th><th>効く範囲</th></tr></thead>
+      <tbody>
+        <tr><td>投入量 0〜3、<code>minInvest</code></td><td>1 枚ごとの固定コスト（列番号 = コスト）</td><td>カード 80 枚、敵の行動 58 行、UI の投入帯</td></tr>
+        <tr><td>T0〜T3</td><td>列 1〜4。単属性アタック 6 / 13 / 21 / 30</td><td>全ての目盛り表</td></tr>
+        <tr><td>近 / 中 / 遠、補正 ×1.0 / ×0.5 / ×0.15</td><td>近間 / 遠間の 2 値。素の補正なし</td><td>敵 12 体の決定木、位置条件の特性 16 枚</td></tr>
+        <tr><td>空振り回避、<code>moveFirst</code>、<code>shift</code>、最適間合いの列</td><td>廃止。<code>push</code> は敵だけが持つ</td><td>敵 AI、カードのスキーマ</td></tr>
+        <tr><td>状態の「段数 × 残りターン」、片側 4 つまで</td><td>スタック制。プレイヤーは種類 6、敵は上限なし</td><td>状態 10 語、UI の状態チップ</td></tr>
+        <tr><td>間合いで回復 +1 / +2 / +3</td><td>プレイヤーは毎ターン 3 固定。敵は敵ごとの値</td><td>ターン進行</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>2. 本番の戦闘シーンに要るもの（Issue 17 件）</h2>
+
+  <p>依存順に 4 つの束と、人手の 2 件です。全件に <code>lane:battle</code> を付けました。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>束</th><th>#</th><th>やること</th><th>依存</th></tr></thead>
+      <tbody>
+        <tr><td>コアの骨</td><td class="num">47</td><td>BattleCore を v4.2 の骨へ（属性・列とコスト・位置・ダメージ式）</td><td class="state no">なし</td></tr>
+        <tr><td>コアの骨</td><td class="num">48</td><td>特性 12 × 10 の評価器と、状態 10 語のスタック制</td><td>#47</td></tr>
+        <tr><td>コアの骨</td><td class="num">49</td><td>ターン進行 v4.2 とスタンス枠・除外置き場</td><td>#47 #48</td></tr>
+        <tr><td>コアの骨</td><td class="num">50</td><td>敵 AI v4.2（決定木の 2 枝 / 4 枝、予兆 2 段、適応の口）</td><td>#47 #49</td></tr>
+        <tr><td>データと検証</td><td class="num">51</td><td>カード 80 種と敵 12 体を C# のデータに入れる</td><td>#47 #50</td></tr>
+        <tr><td>データと検証</td><td class="num">52</td><td>2 体戦と連戦モード</td><td>#49 #50</td></tr>
+        <tr><td>データと検証</td><td class="num">53</td><td>試験台 <code>BattleCore.Sim</code> と基準 12 項目</td><td>#51 #52</td></tr>
+        <tr><td>画面</td><td class="num">46</td><td>画面と操作の正本を v2.1 へ書き直す</td><td class="state no">なし</td></tr>
+        <tr><td>画面</td><td class="num">54</td><td>v4.2 コアの出力を戦闘描写の台本型へ変換する</td><td>#49</td></tr>
+        <tr><td>画面</td><td class="num">55</td><td>実戦の戦闘シーンを作り、起動経路を通す</td><td>#54</td></tr>
+        <tr><td>画面</td><td class="num">56</td><td>戦闘画面を v2.1 の形に合わせる</td><td>#46 #55</td></tr>
+        <tr><td>画面</td><td class="num">57</td><td>演出の文法（系統 8 × 強弱 4）</td><td>#56 #30</td></tr>
+        <tr><td>繰り返す理由</td><td class="num">58</td><td>出立の画面（デッキ 20〜40 / ツール / 開始位置 / 才能）</td><td>#49 #51</td></tr>
+        <tr><td>繰り返す理由</td><td class="num">59</td><td>習熟と才能を戦闘の結果に繋ぐ</td><td>#47 #51</td></tr>
+        <tr><td>繰り返す理由</td><td class="num">62</td><td>投入量をなくした代わりのシナジーを設計する</td><td class="state no">なし</td></tr>
+        <tr><td>人手</td><td class="num">60</td><td>実機で 3 戦通して手触りを確かめる</td><td>#56</td></tr>
+        <tr><td>人手</td><td class="num">61</td><td>設計原則 V1 / V2 の文面を言い直す</td><td class="state no">なし</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>いま着手できるのは 3 件</h3>
+
+  <p>依存が無いのは #46 / #47 / #62 です。このうちシナジーの考察（#62）を回す <code>/goal</code> を用意しました。貼り付けて使ってください。Claude 自身は実行しません。</p>
+
+  <pre><code>/goal in original-card-battle: issue #62 is done when a branch docs/synergy-62 off
+origin/main contains a written answer to all six questions in the issue body, merged
+into .claude/docs/battle_document/battle_core_v4.md or
+.claude/docs/card_document/swordsman_cards_v4.md; at least five named synergy
+archetypes, each with a stated counter; at least two new criteria in section 13 of
+battle_core_v4.md that measure whether a synergy actually fires; a green run of
+cd unity-port && dotnet test; and an opened PR that references #62. Read
+.claude/CLAUDE.md and .claude/docs/vision/plans/2026-09-20-battle-scene-production.md
+first. Treat battle_core_v4.md sections 0-14 as the source of truth and sections 16-18
+as records of past decisions. Do not change card-by-card numbers, do not add new status
+words or stance types, and do not touch src/. Keep the tracker out of implementation
+commits and merge nothing yourself.</code></pre>
+
+  <p class="note">停止: #62 の PR が open になったら（merge は待たない）。待ち行列: #48〜#61 は依存先が未 close。人手待ち: #60 #61。</p>
+
+  <h2>3. 実装は何があって、何が無いか</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>もの</th><th>状態</th><th>中身</th></tr></thead>
+      <tbody>
+        <tr><td>戦闘ロジック</td><td class="state maybe">v3 のまま</td><td><code>BattleCore</code> は投入量 0〜3・3 段の間合い・手札 3 枚・カード 7 種・敵 1 体。v4.2 の要素は 1 つも無い</td></tr>
+        <tr><td>画面の部品</td><td class="state yes">あり</td><td>受け皿・投げ上げ線・一字札・5 枚の扇・カード表示が描写デモに揃っている</td></tr>
+        <tr><td>台本の差し替え口</td><td class="state yes">あり</td><td>#36 で <code>IDepictionSource</code> と <code>LiveTurn</code> が入り、離した札から 1 手ぶんの台本を作れる。規則は <code>DemoDeck</code> のハードコード</td></tr>
+        <tr><td>コア → 画面の変換器</td><td class="state no">無い</td><td><code>BattleState</code> / <code>BattleEvent</code> から <code>DepictionFrame</code> / <code>Cue</code> を作る器が 1 行も無い（#54）</td></tr>
+        <tr><td>実戦のシーン</td><td class="state no">無い</td><td>Unity にあるのは <code>BattleDepiction.unity</code>（撮影用）と <code>SampleScene</code> だけ。Build Settings に載るのは後者のみ（#55）</td></tr>
+        <tr><td>検証ゲート</td><td class="state maybe">半分赤</td><td><code>dotnet test</code> 54 件は緑。<code>npm run build</code> は <code>@types/node</code> 不足で 4 エラー（#44、戦闘とは無関係）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>4. 置いた仮定</h2>
+
+  <ul class="prose">
+    <li><strong>回復（HP）の列を 3 / 8 / 13 / 19 に置きました。</strong> 攻撃の約 0.6 倍で、v4.1 の比を保っています。設計書は回復の目盛りを決めていませんでした。</li>
+    <li><strong>敵のスタミナ回復を 通常 2 / 精鋭 3 / ボス 4 に置きました。</strong> 設計書に無かった値です。1 フェーズの出力が目安（通常 7〜13 など）に収まる値として選びました。</li>
+    <li><strong>敵の面はプレイヤー目盛りの約 6 割にしました。</strong> HP と出力の目安を据え置くと、これより低いと目安を超えるためです。</li>
+    <li><strong>列 4 を初期値に使ったカードは 0 枚にしました。</strong> 列 4 は集中と習熟の「伸び」の行き先として空けてあります。</li>
+    <li><strong>カードのコスト配分を 25 / 30 / 25 枚に散らしました。</strong> 条件の満たしにくさだけで決めると位置条件 16 枚がコスト 2 に寄るので、副則を 2 つ足しています。</li>
+    <li><strong>通常敵 4 体の位置条件の特性を振り替えました。</strong> 通常敵が位置を持たなくなったためです。2 件はプレイヤーの位置を読む形、2 件は別条件（温存 / 相手の状態）にしました。</li>
+  </ul>
+
+  <h2>5. 未確認のこと</h2>
+
+  <ul class="prose">
+    <li><strong>ターン数が目安を下回る見込みです。</strong> 目盛りを 1.3 倍にして HP を据え置いたので、通常戦が 6〜10 ターンより短く終わります。HP と目盛りのどちらを動かすかは #53 で測ってから決めます。</li>
+    <li>切り替えの札が手札に来ない危険（5 枚に 1 枚も無い確率が約 24%）。</li>
+    <li>両者が遠間のままの膠着。位置を持つ敵が 5 体に減って起きる場面は減りましたが、測っていません。</li>
+    <li>二属性の 65%、特性の「威力 +n」の幅、素直な札の +2。</li>
+    <li>演出の強弱 4 段の閾値（#30）と、投げ上げ線に出す予測値の形。</li>
+    <li>ボスの適応 AI の仕様（<code>concept-v3.md</code> §12-8）。</li>
+  </ul>
+
+  <h2>6. 次に判断が要る点</h2>
+
+  <ol class="prose">
+    <li><strong>設計原則 V1 / V2 をどう言い直すか</strong>（#61）。「近 / 中 / 遠」と「1 枚に最大 3 投入」が原則の文面に残っています。案 A はそのまま言い直す、案 B は軸を「位置の取り合い / 手番の配り方」に組み替える。</li>
+    <li><strong>#44（<code>npm run build</code> が赤）を先に片付けるか。</strong> レーンの検証ゲートが最初から届きません。原因は凍結済みの TS テストで、戦闘とは無関係です。</li>
+    <li><strong>着手の順番。</strong> #47（コアの骨）から積むか、#62（シナジーの設計）を先に通して設計を固めてから実装に入るか。</li>
+    <li><strong>コミットの粒度。</strong> 今回の改訂 14 文書はまだコミットしていません。1 コミットにまとめるか、正本 / 周辺 / 計画書で分けるか。</li>
+  </ol>
+
+  <h2>7. 置き場</h2>
+
+  <dl>
+    <dt>実装計画書</dt><dd><code>.claude/docs/vision/plans/2026-09-20-battle-scene-production.md</code></dd>
+    <dt>戦闘の正本</dt><dd><code>.claude/docs/battle_document/battle_core_v4.md</code>（v4.2、本文が正）</dd>
+    <dt>カードの正本</dt><dd><code>.claude/docs/card_document/swordsman_cards_v4.md</code></dd>
+    <dt>敵の正本</dt><dd><code>.claude/docs/enemy_document/enemy_roster_v4.md</code></dd>
+    <dt>Issue</dt><dd>#46〜#62（<code>lane:battle</code>）</dd>
+    <dt>このレポート</dt><dd><code>.claude/docs/reports/2026-09-20-battle-scene-production-prep.html</code></dd>
+  </dl>
+</div>
