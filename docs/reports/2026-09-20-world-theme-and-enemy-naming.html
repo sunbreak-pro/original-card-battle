@@ -1,0 +1,511 @@
+<title>澱の地下 世界観案</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6; --panel: #ffffff; --ink: #1c2327; --muted: #56636b;
+    --line: #d5dcdf; --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #dcefef;
+    --ok: #2c7a4b; --warn: #a86a12; --stop: #a23c3c; --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad;
+      --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad;
+    --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+    --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px; line-height: 1.75; -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  .sw { display: inline-block; width: 46px; height: 22px; border-radius: 3px; border: 1px solid var(--line); vertical-align: -5px; }
+  .strip { display: flex; height: 64px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin: 12px 0 8px; }
+  .strip i { display: block; height: 100%; flex: 1; }
+  .striplabels { display: flex; margin: 0 0 20px; font-size: 12.5px; color: var(--muted); }
+  .striplabels span { flex: 1; text-align: center; }
+  .nm { font-weight: 700; }
+  .old { color: var(--muted); font-size: 13.5px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-20 / 判断 / original-card-battle — design レーン</p>
+    <h1>澱は深いほど紺に濃く、階層 4 でだけ結晶になる</h1>
+    <p class="lede">地下全体に満ちる「澱（おり）」は、本来は紺から菫の色をしています。浅いほど薄まって色が出ず、深いほど本来の色が出ます。その澱を結晶に変えているのが階層 4 の親玉で、晶化はその 1 地域だけの現象です。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">採用</span><h3>5 地域の作り分け</h3><p>階層ごとに土地の性格を変え、階層 4 を晶洞（水晶の地域）にします。色は深いほど紺と菫へ寄せます。</p></li>
+    <li class="verdict later"><span class="tag">保留</span><h3>第 2 ボス カルス</h3><p>階層 4 に地域ボスを新設するぶん、100% 用の枠を 1 つ振り替える案を出します。両方置くならロースターが 1 体増えます。</p></li>
+    <li class="verdict skip"><span class="tag">取り下げ</span><h3>地下全体を結晶にする前案</h3><p>単調になります。結晶は階層 4 限定にし、他の 4 地域は別の土地の性格で作ります。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>この提案が変えるもの</strong>: 名前・設定・色だけです。敵ロースター v4 の数値・決定木・間合い・予兆はそのまま使います。<code>enemy_document/</code> は cards レーンの担当なので、本レーンでは書き換えず提案に留めます。</div>
+
+  <h2>1. 前回から変わった点</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>項目</th><th>前回</th><th>今回</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">結晶の範囲</td><td>地下全体が晶化する</td><td>階層 4「晶洞」だけ。親玉が源</td></tr>
+        <tr><td class="nm">澱の色</td><td>紫で一定</td><td>本来は紺〜菫。浅いと薄まり、深いほど濃く出る</td></tr>
+        <tr><td class="nm">地の色</td><td>灰青 1 系統を暗くするだけ</td><td>地域ごとに色相を変え、階層 4〜5 で紺と菫へ</td></tr>
+        <tr><td class="nm">敵の名前</td><td>「晶」を全階層に使う</td><td>「晶」「燐」は階層 4 以降だけ。浅層は「錆」「澱」</td></tr>
+        <tr><td class="nm">ボス</td><td>階層 5 に 1 体</td><td>階層 4 に地域ボスを新設。階層 5 は従来どおり</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>2. 澱の縦の因果</h2>
+
+  <p class="prose">最深部に <strong>澱の胎 オルド</strong> があり、そこから澱が湧きます。澱は本来、紺から菫の色をしています。上へ流れるほど薄まるので、浅い階層では色が出ません。<strong>深いほど画面が紺と菫に寄るのは、水が濃いからです</strong>。演出ではなく設定です。</p>
+
+  <p class="prose">階層 4 の <strong>晶洞の主 セルク</strong> は、流れてきた澱を体の中で結晶に変え続けています。だから晶洞の水晶は菫色です。セルクが源なので、結晶があるのはこの地域だけです。</p>
+
+  <p class="prose">階層 5 の <strong>澱の司丁 ヴェルナ</strong> は、セルクを神として祀っています。晶洞から持ち帰った結晶を人に授けるのがヴェルナの儀式です。</p>
+
+  <pre><code>澱の胎 オルド（階層 5・最深部）   澱を生む
+        ↓
+晶洞の主 セルク（階層 4）         澱を結晶に変える
+        ↓
+澱の司丁 ヴェルナ（階層 5）       結晶を人に授ける</code></pre>
+
+  <p class="prose">ヴェルナだけ階層 5 にいるのは、晶洞から下へ降りて胎の傍で儀式をしているからです。3 体が縦に繋がるので、ボスを倒す順に意味が出ます。</p>
+
+  <h3>晶化は「生の終わり方」として残します</h3>
+
+  <p class="prose">澱を浴び続けると体の中に溜まり、最後は固まって動けなくなります。これが晶化で、探索者の死に方そのものです。<strong>地下全体に効くのはこの現象で、壁を覆う水晶は階層 4 だけ</strong>、という整理にしました。侵されたものが腐らないのも澱の性質なので、遺体と手記が死亡地点に残る理由は前回のまま残ります。</p>
+
+  <h2>3. 5 つの地域</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>階層</th><th>地域</th><th>読み</th><th>土地の性格</th><th>そこにいるもの</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1</td><td class="nm">上坑</td><td>じょうこう</td>
+          <td>人が掘った坑道。木の支柱、錆びた道具、縦坑から届く細い外光。まだ人の温度が残る</td>
+          <td>坑道の入口を守っていた衛士と、その犬</td>
+        </tr>
+        <tr>
+          <td>2</td><td class="nm">沈み階</td><td>しずみかい</td>
+          <td>地下水が溜まった水没区画。膝まで水があり、足音が響く。鉄が全部錆びている</td>
+          <td>水に浸かったまま止まれない重装兵、水路を見張る猟兵</td>
+        </tr>
+        <tr>
+          <td>3</td><td class="nm">葬列廊</td><td>そうれつろう</td>
+          <td>澱を知る前の時代に作られた石の回廊。壁龕に死者を納めてある。澱の霞が床を這う</td>
+          <td>葬送の手順だけが残った送り手、回廊を守る門衛長</td>
+        </tr>
+        <tr>
+          <td>4</td><td class="nm">晶洞</td><td>しょうどう</td>
+          <td>菫色の水晶が壁と天井を覆う。燐光が唯一の光源で、松明より明るい。足場が結晶で塞がる</td>
+          <td>結晶を生む親玉と、それを守る隊列・群れ・像</td>
+        </tr>
+        <tr>
+          <td>5</td><td class="nm">澱底</td><td>でんてい</td>
+          <td>澱が湧き出す最深部。紺の闇。光源が無く、体に付いた燐光だけが形を示す</td>
+          <td>胎と、その傍で儀式を続ける司丁</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout prose"><strong>絵の作り方として</strong>: 階層 4 で一度だけ画面が明るくなります。1 から 3 まで暗くなり続けたあと、晶洞で燐光が満ちて明るくなり、澱底でまた光が消える。この山があると、5 階層が単調な暗転になりません。</div>
+
+  <h2>4. テーマカラー</h2>
+
+  <h3>階層のランプ</h3>
+
+  <div class="strip">
+    <i style="background:#2b2521"></i>
+    <i style="background:#1c2729"></i>
+    <i style="background:#262630"></i>
+    <i style="background:#211c31"></i>
+    <i style="background:#121a2e"></i>
+  </div>
+  <div class="striplabels">
+    <span>1 上坑</span><span>2 沈み階</span><span>3 葬列廊</span><span>4 晶洞</span><span>5 澱底</span>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>階層</th><th>地の色</th><th>その土地の色</th><th>光源</th><th>澱の濃度</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1 上坑</td>
+          <td><span class="sw" style="background:#2b2521"></span> <code>#2b2521</code> 褐鼠</td>
+          <td><span class="sw" style="background:#8a6a48"></span> <code>#8a6a48</code> 錆と木</td>
+          <td>琥珀の灯 + 縦坑の外光</td><td>1</td>
+        </tr>
+        <tr>
+          <td>2 沈み階</td>
+          <td><span class="sw" style="background:#1c2729"></span> <code>#1c2729</code> 濁緑鼠</td>
+          <td><span class="sw" style="background:#497a74"></span> <code>#497a74</code> 水の緑青</td>
+          <td>琥珀の灯（水面に映る）</td><td>2</td>
+        </tr>
+        <tr>
+          <td>3 葬列廊</td>
+          <td><span class="sw" style="background:#262630"></span> <code>#262630</code> 灰紫鼠</td>
+          <td><span class="sw" style="background:#bdb4a4"></span> <code>#bdb4a4</code> 骨白</td>
+          <td>蝋の白 <code>#f0e6d2</code></td><td>3</td>
+        </tr>
+        <tr>
+          <td>4 晶洞</td>
+          <td><span class="sw" style="background:#211c31"></span> <code>#211c31</code> 菫鼠</td>
+          <td><span class="sw" style="background:#8b6fd0"></span> <code>#8b6fd0</code> 菫澱</td>
+          <td>燐光 <code>#b9a3ff</code> が主光源</td><td>4</td>
+        </tr>
+        <tr>
+          <td>5 澱底</td>
+          <td><span class="sw" style="background:#121a2e"></span> <code>#121a2e</code> 紺</td>
+          <td><span class="sw" style="background:#6a4fa8"></span> <code>#6a4fa8</code> 深菫</td>
+          <td>光源なし。体に付いた燐光だけ</td><td>5</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>全階層で共通のトークン</h3>
+
+  <p class="prose">背景だけ階層で差し替え、UI の色は変えません。実装が楽で、プレイヤーも読み方を覚え直さずに済みます。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>色</th><th>名</th><th>値</th><th>使う場所</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sw" style="background:#6d7787"></span></td><td class="nm">鈍鋼</td><td><code>#6d7787</code></td><td>UI の枠線・鎧と武器の金属</td></tr>
+        <tr><td><span class="sw" style="background:#8b6fd0"></span></td><td class="nm">菫澱</td><td><code>#8b6fd0</code></td><td>澱ゲージ・危険の予兆。現行アクセント <code>#8b7aa8</code> の後継</td></tr>
+        <tr><td><span class="sw" style="background:#b9a3ff"></span></td><td class="nm">燐光</td><td><code>#b9a3ff</code></td><td>結晶の発光・予兆バナーのハイライト</td></tr>
+        <tr><td><span class="sw" style="background:#e8a84c"></span></td><td class="nm">琥珀</td><td><code>#e8a84c</code></td><td>プレイヤー・灯り・選択中・継承の間</td></tr>
+        <tr><td><span class="sw" style="background:#ffd89a"></span></td><td class="nm">灯芯</td><td><code>#ffd89a</code></td><td>最重要の強調を 1 点だけ（習得・遺産・決着）</td></tr>
+        <tr><td><span class="sw" style="background:#c2483f"></span></td><td class="nm">緋</td><td><code>#c2483f</code></td><td>HP・致命・取り返しのつかない選択</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout prose"><strong>階層 4 と 5 で 1 つ手当てが要ります</strong>: 地の色（菫鼠・紺）と澱ゲージ（菫澱）が同系になり、ゲージが埋もれます。この 2 階層だけ、澱ゲージの縁を燐光 <code>#b9a3ff</code> に上げて浮かせます。</div>
+
+  <h3>プレイヤーは暖色、澱は寒色</h3>
+  <p class="prose">暖色はプレイヤーの側にしか置きません。階層 1 から 3 までは、琥珀の灯りがプレイヤーの居場所を示します。階層 4 では燐光のほうが明るいので、<strong>プレイヤーの灯りが役に立たなくなる</strong>という絵で、深く来たことを示します。階層 5 は光源が無く、敵の体に付いた燐光だけが形を示します。</p>
+
+  <h2>5. 晶洞の主 セルク</h2>
+
+  <p class="prose">階層 4 の地域ボスとして新設します。水晶の発生源で、<strong>自分では動きません</strong>。</p>
+
+  <dl class="prose">
+    <dt>姿</dt><dd>壁に半ば埋まった巨躯。背から菫色の水晶が何本も伸び、天井まで届いている。澱を吸い、結晶を吐き続けている</dd>
+    <dt>性格</dt><dd>襲ってこない。近づいた者の周りに結晶を生やして囲い、動けなくしてから削る</dd>
+    <dt>戦闘の役割</dt><dd>既存 9 体に無い「動かないが場を狭める敵」。間合いの奪い合いではなく、<strong>間合いを奪われないように戦う</strong>相手</dd>
+  </dl>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>要素</th><th>案</th><th>狙い</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">homeRange</td><td>遠。自分は移動しない（ムーブ属性の行動を持たない）</td><td>空振り回避が効かない唯一の敵にする</td></tr>
+        <tr><td class="nm">専用の状態</td><td><strong>晶囲（しょうい）</strong>: 付いている間、遠へ退けない。持続 2 ターン</td><td>背後に結晶が生えて道が塞がる。逃げ癖を咎める</td></tr>
+        <tr><td class="nm">湧晶（St）</td><td>毎ターン開始に自分へ Guard。1 戦闘で 1 回</td><td>結晶を生み続けている、を数字で示す</td></tr>
+        <tr><td class="nm">囲い込み（Sk・中）</td><td>晶囲を付ける</td><td>狙い間合いが中なので、中を外せば避けられる</td></tr>
+        <tr><td class="nm">破砕（A・近〜中）</td><td>生えた結晶を砕いて飛ばす。特性「相手の状態: 晶囲が付いていれば威力 +5」</td><td>囲われたまま殴り合うと重い。先に囲いを解く動機を作る</td></tr>
+        <tr><td class="nm">晶柱（A・遠）</td><td>遠へ届く一撃</td><td>遠に居続けても安全でない</td></tr>
+        <tr><td class="nm">第 2 段階</td><td>HP 半分で背の結晶が砕け、晶囲が 3 ターンになる</td><td>後半ほど動ける範囲が狭まる</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose">HP・スタミナ・各段の威力は入れていません。<strong>数値は cards レーンの領分</strong>で、試験台に載せて決めるものだからです。ここで出しているのは役割と特性の方向だけです。</p>
+
+  <h3>ロースターの枠をどうするか</h3>
+  <p class="prose">v4 の 100% 用 18 番「深淵の釣り人」は、縛言と引き寄せの矯正を担うボスでした。<strong>セルクの晶囲がこの役割をほぼ吸収します</strong>。18 番の枠をセルクに振り替えれば、ロースターの体数を増やさずに済みます。両方置く場合は 1 体増えるので、cards レーンの判断です。</p>
+
+  <h2>6. 敵の命名規則</h2>
+
+  <pre><code>通常敵 = [澱の浸かり具合] + の + [生前の役目]   例: 錆槍の衛士
+精鋭   = [象徴する構え] + の + [役職名]         例: 鉄壁の門衛長
+ボス   = [肩書き] + カタカナの固有名            例: 晶洞の主 セルク</code></pre>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>前に置く語</th><th>意味</th><th>主に出る階層</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">錆</td><td>澱が金属を侵している段階。まだ体は固まっていない</td><td>1〜2</td></tr>
+        <tr><td class="nm">澱</td><td>澱を帯びている。体の中に溜まり始めている</td><td>1〜4</td></tr>
+        <tr><td class="nm">灰</td><td>澱が抜けて脆くなった。崩れかけ</td><td>2〜3</td></tr>
+        <tr><td class="nm">晶</td><td>結晶が育った。晶洞の敵に限る</td><td>4</td></tr>
+        <tr><td class="nm">燐</td><td>結晶が発光している。最も深い</td><td>4〜5</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>規則</th><th>内容</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">固有名はボスだけ</td><td>通常敵と精鋭は一般名詞の組み合わせ。カタカナの固有名はボス 3 体に限る</td><td>固有名を出し惜しむと、ボスの登場が事件になります</td></tr>
+        <tr><td class="nm">漢字 2 + 漢字 2</td><td>「錆槍 / 衛士」のように 2 字 + 2 字で揃え、読みを 6〜8 音に収める</td><td>戦闘画面の敵名枠に収まり、手記の頁でも折り返しません</td></tr>
+        <tr><td class="nm">上位種は後ろの語を変えない</td><td>深い階層の強化版は、役目の語（供犬・衛士）を据え置いて前の語だけ変える。澱走りの供犬 → 燐光の供犬</td><td>オクトパス 2 の Ratkin → Ratking、Wolf → High Wolf と同じ作り。同じ系統だと一目で分かります</td></tr>
+        <tr><td class="nm">地域名を敵名に入れない</td><td>前に置くのは澱の浸かり具合で、地域名ではない</td><td>v4 の敵は階層 1〜2、2〜3 のように跨って出るためです</td></tr>
+        <tr><td class="nm">和の技名を使わない</td><td>錫杖・兜割り・薙ぎ払い・長柄は置き換える</td><td>架空の地下文化に、実在の日本の武術語が混ざるのを避けます</td></tr>
+        <tr><td class="nm">腐敗語を使わない</td><td>腐肉・白骨・亡者・這うもの・吊るし首は全部廃止</td><td>ホラー感はほぼこの 5 語から出ています</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>7. 敵 9 体 + 1 の改名と戦闘特性</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>新しい名前</th><th>階級 / 間合い / 階層</th><th>設定（手記の 1 行）</th><th>戦闘特性</th><th>判定</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="nm">錆槍の衛士<br><span class="old">旧: 長柄の歪み兵</span></td>
+          <td>通常 / 中 / 1〜2</td>
+          <td>坑道の入口を守る決まりだけが残った衛士。決められた間合いの外に出た者を、柄尻で押し戻す</td>
+          <td>手薄: 相手の Guard が 0 なら威力 +3</td>
+          <td class="state yes">そのまま</td>
+        </tr>
+        <tr>
+          <td class="nm">澱走りの供犬<br><span class="old">旧: 影走りの犬</span></td>
+          <td>通常 / 近 / 1〜2</td>
+          <td>坑夫が連れていた犬。澱が溜まった首輪のあたりが鈍く光る</td>
+          <td>位置: 中から使うと威力 +3</td>
+          <td class="state yes">そのまま</td>
+        </tr>
+        <tr>
+          <td class="nm">澱甲の重兵<br><span class="old">旧: 錆びた鎧の亡者</span></td>
+          <td>通常 / 近 / 2〜3</td>
+          <td>水に浸かったまま甲の内側まで澱が染み、自分の重さで止まれなくなった兵</td>
+          <td>崩し後: 相手のスタミナ 3 未満で威力 +3</td>
+          <td class="state yes">そのまま</td>
+        </tr>
+        <tr>
+          <td class="nm">澱矢の猟兵<br><span class="old">旧: 弩の狩人</span></td>
+          <td>通常 / 遠 / 2〜3</td>
+          <td>水路を見張る猟兵。鏃に澱が溜まっていて、当たると息が詰まる</td>
+          <td>位置: 中から使うと退き後 Guard +3</td>
+          <td class="state yes">そのまま</td>
+        </tr>
+        <tr>
+          <td class="nm">澱霞の射手<br><span class="old">旧: 靄の射手</span></td>
+          <td>通常 / 遠 / 3〜4</td>
+          <td>回廊の床を這う澱の霞に身を溶かして退く射手。霞が濃いほど姿が見えない</td>
+          <td>位置: 近で使うと Guard +3</td>
+          <td class="state yes">そのまま</td>
+        </tr>
+        <tr>
+          <td class="nm">双晶の剣士<br><span class="old">旧: 双刃の歪み兵</span></td>
+          <td>通常 / 中 / <strong>4</strong>（提案）</td>
+          <td>両腕に双子の結晶が伸び、二本の刃になった剣士。1 撃目で結晶が割れ、破片が刺さる</td>
+          <td>温存: 残 4 以上で見切りが付く</td>
+          <td class="state maybe">階層 4 専属を提案</td>
+        </tr>
+        <tr>
+          <td class="nm">鉄壁の門衛長<br><span class="old">旧: 甲冑の番人</span></td>
+          <td>精鋭 / 近〜中 / 3〜4</td>
+          <td>回廊の門から動かない決まりを守り続ける衛士長。盾を並べて道を塞ぐ</td>
+          <td>連動: 同フェーズにアタック実行済みで威力 +3 / 手薄: 相手の Guard が 0 なら追撃</td>
+          <td class="state maybe">1 件変更を提案</td>
+        </tr>
+        <tr>
+          <td class="nm">牙群の主<br><span class="old">旧: 群れの長</span></td>
+          <td>精鋭 / 中 / 4</td>
+          <td>晶洞に棲みついた犬の群れの長。吠えると結晶が共鳴し、犬の結晶も鳴る</td>
+          <td>相手の状態: 相手に出血があれば威力 +3</td>
+          <td class="state yes">そのまま</td>
+        </tr>
+        <tr>
+          <td class="nm">晶洞の主 セルク<br><span class="old">新設</span></td>
+          <td>ボス / 遠・不動 / <strong>4</strong></td>
+          <td>壁に半ば埋まった巨躯。澱を吸って結晶を吐き続ける、水晶の発生源</td>
+          <td>相手の状態: 晶囲が付いていれば威力 +5（§5 参照）</td>
+          <td class="state maybe">新設を提案</td>
+        </tr>
+        <tr>
+          <td class="nm">澱の司丁 ヴェルナ<br><span class="old">旧: 瘴気の司祭</span></td>
+          <td>ボス / 中〜遠 / 5</td>
+          <td>晶洞から持ち帰った結晶を人に授ける儀式を続ける者。自分もとうに晶化している</td>
+          <td>崩し後 / 相手の状態 / 手薄 の 3 つ（現行どおり）</td>
+          <td class="state yes">そのまま</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>門衛長の特性の変更を 1 件だけ提案します</h3>
+
+  <p class="prose"><strong>鉄壁の門衛長</strong>の <code>brace</code>（盾を構える）に付いた「手薄 → 追撃」を、<strong>「自分の状態: 鉄壁が置かれていれば Guard +5」</strong> に変えたいです。理由は 2 つあります。</p>
+
+  <ul class="prose">
+    <li>現行だとプレイヤーが Guard を切らしたときだけ罰が来るので、設定（門から動かない）ではなく「殴り合いの罰」の話になっています。</li>
+    <li>「鉄壁を置く前の 1 ターンが最も柔らかい」という弱点が手記に書いてあるのに、置いた後の硬さが数字に出ていません。置く前と置いた後の差を特性で付けると、弱点の文と画面が一致します。</li>
+  </ul>
+
+  <h2>8. 技名・状態名の言い換え</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>分類</th><th>現行</th><th>新</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>状態</td><td>瘴気纏い</td><td class="nm">晶蝕</td><td>体の中で結晶が育ち、動きが鈍る</td></tr>
+        <tr><td>状態</td><td>呪縛</td><td class="nm">縛言（ばくげん）</td><td>「呪」は魔術の語。この世界に魔術は無く、あるのは儀式の言葉</td></tr>
+        <tr><td>状態</td><td>（新設）</td><td class="nm">晶囲（しょうい）</td><td>セルク専用。結晶に囲まれて遠へ退けない</td></tr>
+        <tr><td>技</td><td>錫杖の打ち込み</td><td class="nm">晶杖の打ち込み</td><td>錫杖は実在の仏具。ヴェルナの杖は晶洞の結晶で作られている</td></tr>
+        <tr><td>技</td><td>薙ぎ払い</td><td class="nm">払い斬り</td><td>薙ぎは和の武術語</td></tr>
+        <tr><td>技</td><td>兜割り</td><td class="nm">打ち下ろし</td><td>兜割りは実在の剣術の技名</td></tr>
+        <tr><td>技</td><td>石突きの押し込み</td><td class="nm">柄尻の押し込み</td><td>石突きは長柄武器の日本語の部位名</td></tr>
+        <tr><td>技</td><td>鉄の身</td><td class="nm">澱の甲</td><td>澱が染みて硬くなる。階層 2〜3 の敵なので結晶ではない</td></tr>
+        <tr><td>技</td><td>鉄壁</td><td class="nm">鉄壁</td><td>据え置き。門衛長は階層 3 の回廊の敵で、結晶ではなく盾で塞ぐ</td></tr>
+        <tr><td>技</td><td>群れの絆</td><td class="nm">共鳴</td><td>結晶が鳴って群れに伝わる。晶洞の敵なので成立する</td></tr>
+        <tr><td>技</td><td>瘴気の帳 / 瘴気の矢 / 瘴気の儀</td><td class="nm">澱の帳 / 澱の矢 / 授晶の儀</td><td>ヴェルナが授けるのは結晶なので「授晶」</td></tr>
+        <tr><td>カード</td><td>瘴気の刃 / 浄化の一閃</td><td class="nm">澱の刃 / 晶断の一閃</td><td>「浄化」は宗教語。割って断つ、に寄せる</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>9. 100% 用の残り 10 体</h2>
+
+  <p class="prose">役割（何を教える敵か）は v4 のまま、名前と設定を地域に合わせました。配置が動くものには印を付けています。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>新しい名前</th><th>旧</th><th>役割（変えない）</th><th>階層</th></tr></thead>
+      <tbody>
+        <tr><td>10</td><td class="nm">鉄盾の歩哨</td><td class="old">骨の歩哨</td><td>Guard の高い敵で崩しを教える</td><td>1</td></tr>
+        <tr><td>11</td><td class="nm">沈み足の坑夫</td><td class="old">泥濘の這うもの</td><td>鈍足を使う。退けない怖さを浅層で教える</td><td>2</td></tr>
+        <tr><td>12</td><td class="nm">鉤縄の徴集人</td><td class="old">鉤縄の追剥</td><td>相手を近へ引く矯正。遠へ逃げる癖を咎める</td><td>2</td></tr>
+        <tr><td>13</td><td class="nm">面隠しの送り手</td><td class="old">吊るし首の亡霊</td><td>予兆の狙い間合いが 1 ターン遅れて見える</td><td>3</td></tr>
+        <tr><td>14</td><td class="nm">燐光の供犬</td><td class="old">瘴気の狼</td><td>供犬の上位。出血 2 段と軽足</td><td>3 → <strong>4</strong></td></tr>
+        <tr><td>15</td><td class="nm">晶槍の隊列</td><td class="old">錆槍の隊列</td><td>同じ敵 2 体の戦闘。全体攻撃の価値を作る</td><td>3 → <strong>4</strong></td></tr>
+        <tr><td>16</td><td class="nm">蝋消しの祭儀者</td><td class="old">燭台の番人</td><td>灯りを消して予兆を隠す。手記の価値を作る</td><td>4 → <strong>3</strong></td></tr>
+        <tr><td>17</td><td class="nm">晶像の守り手</td><td class="old">石像の守り手</td><td>崩しを受けない。状態異常でしか投入を落とせない</td><td>4</td></tr>
+        <tr><td>18</td><td class="nm">（セルクへ振り替え）</td><td class="old">深淵の釣り人</td><td>縛言と引き寄せの矯正。第 2 ボス</td><td>5 → <strong>4</strong></td></tr>
+        <tr><td>19</td><td class="nm">澱の胎 オルド</td><td class="old">歪みの根</td><td>全属性への適応を持つ最終ボス。3 段階</td><td>5</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose">配置が動く 4 体は、地域の性格に合わせた結果です。14・15 の「燐」「晶」は階層 4 の語なので晶洞へ、16 の「灯りを消す」は燐光が主光源の晶洞では成立しないので、蝋燭の並ぶ葬列廊へ移しました。11・13 は設定ごと作り直しです。「這うもの」と「吊るし首」はホラーの語彙そのもので、言い換えでは救えません。11 は水に浸かって足が固まった坑夫、13 は面で顔を覆った葬送の送り手にします。</p>
+
+  <h2>10. オクトパストラベラー 2 から取った所見</h2>
+
+  <p class="prose">一次情報を当たって確かめた点だけを書きます。確度の低い項目は「未確認」と明記します。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>所見</th><th>この提案への反映</th><th>確度</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>8 つの地方それぞれに別の気候と文化を与え、地方ごとに絵が変わる構成になっている</td>
+          <td>5 階層を 5 つの地域として作り分けました。晶化を 1 地域に限る今回の指示と、同じ考え方です</td>
+          <td class="state yes">裏付けあり</td>
+        </tr>
+        <tr>
+          <td>ドット絵は情報量が落ちるぶん、<strong>彩度を意図的に上げて</strong>ライティングと釣り合わせている。イラストより明るい色をスプライトに置く</td>
+          <td>敵スプライトの結晶は、背景の岩肌より彩度を高く置きます。晶洞の地 <code>#211c31</code> に対して結晶 <code>#8b6fd0</code> は彩度差が十分あります</td>
+          <td class="state yes">裏付けあり</td>
+        </tr>
+        <tr>
+          <td>通常敵は素の一般名詞（Wolf, Elemental）、上位個体は形容詞かローマ数字を足す、進化系は語幹を残して語尾を変える（Ratkin → Ratking）</td>
+          <td>命名規則に「上位種は後ろの語を変えない」を入れました。澱走りの供犬 → 燐光の供犬 がこの形です</td>
+          <td class="state yes">裏付けあり</td>
+        </tr>
+        <tr>
+          <td>ベスティアリの構成は 獣型 / 爬虫類 / 不定形（精霊・エレメント）/ 鳥 / 人型ケモノ / 構造物 と幅が広い</td>
+          <td>本案の 9 体は「元・人 8 + 犬 1」で幅が足りません。不動の巨躯であるセルクと、17 番・晶像の守り手が構造物系を埋めます</td>
+          <td class="state yes">裏付けあり</td>
+        </tr>
+        <tr>
+          <td>2 作目は昼夜のダイナミックライティングと被写界深度を足し、「世界を描く密度を上げる」をコンセプトに置いた（ディレクター 宮内継介氏）</td>
+          <td>階層ごとに光源の種類を変えました（外光 → 灯 → 蝋 → 燐光 → 無光）。光源の入れ替わりが密度の代わりになります</td>
+          <td class="state yes">裏付けあり</td>
+        </tr>
+        <tr>
+          <td>モンスター専任デザイナーの氏名、8 地方それぞれの配色の数値</td>
+          <td>反映なし。公式アートブックに当たらないと取れません</td>
+          <td class="state no">未確認</td>
+        </tr>
+        <tr>
+          <td>「ホラーを避けた」というトーン設計の直接の発言</td>
+          <td>反映なし。開発者が明言した記録は見つかりませんでした。本案のホラー除去は、こうだいさんの指示と現行の描写文からの判断です</td>
+          <td class="state no">未確認</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="note prose">出典: <a href="https://dengekionline.com/articles/151745/">電撃オンライン インタビュー #01</a> / <a href="https://business.4gamer.net/article/1810/18101801/">Business 4Gamer 初代開発秘話</a> / <a href="https://screenrant.com/octopath-traveler-2-interview-graphics-success/">ScreenRant インタビュー</a> / <a href="https://www.famitsu.com/news/201807/17160714.html">ファミ通 初代インタビュー</a>。敵名の一覧は攻略サイトのゲーム内データ抽出を使っており、開発者の発言ではありません。</p>
+
+  <h2>11. 置いた仮定</h2>
+  <ul class="prose">
+    <li><strong>「晶化を 1 地域に限る」を、見た目の話として読みました。</strong>壁を覆う水晶は階層 4 だけですが、澱を浴びて体が固まる現象（＝探索者の死に方）は全階層に残しています。ここを全部 1 地域に閉じると、瘴気死の説明が無くなるためです。</li>
+    <li>晶洞を階層 4 に置いたのは、深いほど紺と菫に寄せる指示と、セルクが色の源だという因果を両立させるためです。階層 3 に置くと、その下の 2 階層の色を別の理屈で説明することになります。</li>
+    <li>敵ロースター v4（9 体 + 10 体）を正本として名前を当てました。数値と体数には触れていません。</li>
+    <li>プレイヤーの職「剣士」は残します。変えるのは立ち絵の意匠だけです。</li>
+  </ul>
+
+  <h2>12. 未確認のこと</h2>
+  <ul class="prose">
+    <li>階層 4 の地 <code>#211c31</code> の上で、菫の結晶スプライトが背景から分離して見えるか。スプライトを 1 体描いて確かめる必要があります。</li>
+    <li>菫澱 <code>#8b6fd0</code> と現行アクセント <code>#8b7aa8</code> の差し替えが、既存の CSS 変数の何箇所に波及するか。数えていません。</li>
+    <li>Unity 側の <code>Depiction</code>（戦闘描写）の台本に、瘴気・錫杖などの語がどれだけ埋まっているか。未調査です。</li>
+    <li>5 地域それぞれの背景を作る手間。1 階層あたり何枚の背景が要るかは、ノードマップの仕様次第です。</li>
+  </ul>
+
+  <h2>13. 次に判断が要る点</h2>
+  <ul class="prose">
+    <li><strong>地域名の 5 つ</strong>（上坑 / 沈み階 / 葬列廊 / 晶洞 / 澱底）を確定するか。ここが決まると背景・敵・手記の言葉が全部これに揃います。</li>
+    <li><strong>セルクを新設するか、18 番の枠を振り替えるか</strong>。振り替えれば体数は増えません。両方置くなら 1 体増えます。cards レーンへ回す判断です。</li>
+    <li><strong>「瘴気」を「澱」に改名するか</strong>。<code>concept-v3.md</code> の用語が動くので、cards / battle / dungeon の全レーンに波及します。</li>
+    <li><strong>世界設定の正本を書き起こすか</strong>。design レーンが世界観の正本を持つ規約になったので、確定分を <code>docs/vision/</code> に 1 本立てられます。</li>
+    <li><strong>立ち絵の着手順</strong>。最初の 1 体は錆槍の衛士（階層 1、人型、結晶なし）が適しています。色の基準が最短で決まります。晶洞の色を先に見たいなら双晶の剣士です。</li>
+  </ul>
+</div>

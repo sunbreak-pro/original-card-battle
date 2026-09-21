@@ -1,4 +1,4 @@
-<title>坑と踏破者</title>
+<title>竜の住処</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   :root {
@@ -14,11 +14,19 @@
     --warn: #a86a12;
     --stop: #a23c3c;
     --code-bg: #eaf0f0;
-    --d1: #3a2f26;
-    --d2: #1f2f31;
-    --d3: #2a2a33;
-    --d4: #241d33;
-    --d5: #141b2e;
+    --f1: #5b7a33;
+    --f2: #b0a184;
+    --f3: #232a42;
+    --f4: #d8d2ee;
+    --f5: #8c3a34;
+    --f6: #1b1526;
+    --f7: #141b2e;
+    --c-steel: #6d7787;
+    --c-violet: #8b6fd0;
+    --c-glow: #b9a3ff;
+    --c-amber: #e8a84c;
+    --c-wick: #ffd89a;
+    --c-scarlet: #c2483f;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
@@ -106,184 +114,214 @@
   .note { font-size: 14px; color: var(--muted); }
 
   .strip { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin: 16px 0 8px; }
-  .strip i { display: block; flex: 1; height: 72px; }
-  .strip i:nth-child(1) { background: var(--d1); }
-  .strip i:nth-child(2) { background: var(--d2); }
-  .strip i:nth-child(3) { background: var(--d3); }
-  .strip i:nth-child(4) { background: var(--d4); }
-  .strip i:nth-child(5) { background: var(--d5); }
-  .striplabels { display: flex; margin: 0 0 24px; font-size: 12.5px; color: var(--muted); }
-  .striplabels span { flex: 1; text-align: center; padding-inline: 4px; }
+  .strip i { display: block; flex: 1; height: 80px; }
+  .strip i:nth-child(1) { background: var(--f1); }
+  .strip i:nth-child(2) { background: var(--f2); }
+  .strip i:nth-child(3) { background: var(--f3); }
+  .strip i:nth-child(4) { background: var(--f4); }
+  .strip i:nth-child(5) { background: var(--f5); }
+  .strip i:nth-child(6) { background: var(--f6); }
+  .strip i:nth-child(7) { background: var(--f7); }
+  .striplabels { display: flex; margin: 0 0 24px; font-size: 12px; color: var(--muted); }
+  .striplabels span { flex: 1; text-align: center; padding-inline: 2px; line-height: 1.4; }
+
+  .sw { display: inline-block; width: 44px; height: 20px; border-radius: 3px; border: 1px solid var(--line); vertical-align: -4px; }
+  .sw.steel { background: var(--c-steel); }
+  .sw.violet { background: var(--c-violet); }
+  .sw.glow { background: var(--c-glow); }
+  .sw.amber { background: var(--c-amber); }
+  .sw.wick { background: var(--c-wick); }
+  .sw.scarlet { background: var(--c-scarlet); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
 
 <div class="wrap">
   <header>
-    <p class="eyebrow">2026-09-21 / 説明 / original-card-battle — design レーン</p>
-    <h1>坑の底に根がある。踏破者はそれを止めに降りる</h1>
-    <p class="lede">世界観と、プレイヤーが操作するキャラクターの立ち位置をまとめました。正本は <code>.claude/docs/vision/world-v1.md</code>（PR #121）で、本ページはその読む用です。</p>
+    <p class="eyebrow">2026-09-21 / 共通規約 / original-card-battle — design レーン</p>
+    <h1>ダンジョンは竜の住処。明るさの山は四層に置く</h1>
+    <p class="lede">背景 7 枚・敵 19 体・UI が 1 つの世界に見えるための約束です。長い物語は持ちません。正本は <code>.claude/docs/vision/world-v1.md</code>。</p>
   </header>
 
   <ul class="verdicts">
-    <li class="verdict now"><span class="tag">前提 1</span><h3>下に原因がある</h3><p>瘴気は自然現象ではありません。階層 5 の歪みの根が吐く息です。だから止められます。</p></li>
-    <li class="verdict later"><span class="tag">前提 2</span><h3>誰も戻っていない</h3><p>止めに降りた踏破者は、まだ一人も帰っていません。継承の間の壁に名札が掛かったままです。</p></li>
-    <li class="verdict skip"><span class="tag">前提 3</span><h3>あなたは代わりである</h3><p>主人公は選ばれた英雄ではありません。空いた役目に次へ任命された人です。</p></li>
+    <li class="verdict now"><span class="tag">舞台</span><h3>竜の住処</h3><p>竜が世界を侵略しようとしています。ダンジョンはその住処で、降りるほど竜のものが増えます。</p></li>
+    <li class="verdict later"><span class="tag">資源</span><h3>瘴気で確定</h3><p>住処に満ちているもので、奥ほど濃くなります。「澱」への改名は取り下げました。</p></li>
+    <li class="verdict skip"><span class="tag">エンドコンテンツ</span><h3>竜神</h3><p>住処の主。本編には出ません。二層で手掛かりを拾い、クリア後に挑みます。</p></li>
   </ul>
 
-  <div class="callout prose"><strong>この 3 つだけ</strong>を冒頭の 6 行で見せ、残りは手記の頁に置きます。長い導入は作りません。物語は「前の代が残した手記を拾って読む」形で受け取らせます。</div>
+  <div class="callout prose"><strong>設定が持つのは 3 つだけ</strong>です。<strong>竜の住処である</strong>（人工物が降りるほど減り、鱗・骨・爪痕・彫りものが増える）。<strong>竜が侵略している</strong>（人の側の建物は壊れた形で残り、直された跡が無い）。<strong>瘴気が満ちている</strong>（奥ほど画面が紺と菫に寄る）。これ以上の物語は作りません。</div>
 
-  <h2>世界の因果</h2>
-
-  <p class="prose">世界の仕掛けは 1 本の因果でできています。ゲームのルール（死ぬ・遺産を継ぐ・瘴気が溜まる）が、そのまま世界の理屈になっています。設定とルールを別々に作っていません。</p>
-
-  <pre><code>歪みの根（階層 5）
-   │ 息を吐く
-   ▼
-瘴気 ── 上へ流れる。浅い階層ほど薄い（濃度 1〜5）
-   │ 浴び続けると体に溜まる
-   ▼
-体が硬くなる ── 100% で生が終わる
-   │ 固まりきる前に、判断する部分が先に止まる
-   ▼
-歪み ── 生前の役目だけが残る（= 敵）
-   │ 瘴気に侵されたものは腐らない
-   ▼
-痕跡 ── 遺体と手記が死亡地点に残る。次の代が拾う</code></pre>
+  <h2>全層に共通する 5 つの規則</h2>
 
   <div class="tablewrap">
     <table>
-      <thead><tr><th>ゲームのルール</th><th>世界の側の説明</th></tr></thead>
+      <thead><tr><th>#</th><th>規則</th><th>中身</th></tr></thead>
       <tbody>
-        <tr><td>瘴気が 100% で生が終わる</td><td>体に溜まった瘴気が固まり、動けなくなる</td></tr>
-        <tr><td>死亡地点に手記と遺産が残る</td><td>瘴気に侵されたものは腐らないので、そのまま残る</td></tr>
-        <tr><td>敵が乱数で動かず、予兆どおりに実行する</td><td>考えていない。いちばん長く繰り返した動作を繰り返しているだけ</td></tr>
-        <tr><td>深い階層ほど瘴気の濃度が高い</td><td>湧き口からの距離。根に近いほど濃い</td></tr>
-        <tr><td>敵の大半が人型で武器を持つ</td><td>元は人。坑道の衛士、水路の猟兵、回廊の門衛長</td></tr>
+        <tr><td>1</td><td>瘴気は深いほど濃く、紺と菫に寄る</td><td>浅い層では薄まって色が出ません。色は濃度であって演出ではありません</td></tr>
+        <tr><td>2</td><td>光源が層ごとに入れ替わる</td><td>陽光 → 斜光 → 結晶 → 全方向 → 散乱光 → 雷の縁 → 瘴気の発光</td></tr>
+        <tr><td>3</td><td>明るさの山を四層に置く</td><td>三層を暗くしておかないと、四層の輝きが「明るいものの続き」になります</td></tr>
+        <tr><td>4</td><td>暖色はプレイヤーの側にしか置かない</td><td>四層以降は結晶のほうが明るく、自分の灯りが役に立たなくなります</td></tr>
+        <tr><td>5</td><td>結晶は四層を境に増える</td><td>二層で芽を出し、三層で大蛇の背に育ち、四層で壁と天井を覆う。一層には 1 つも置きません</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h2>プレイヤーが操作するキャラクター</h2>
+  <h2>明るさの配列</h2>
 
-  <p class="prose">主人公は <strong>踏破者</strong> です。これは個人の名ではなく、<strong>坑へ潜る役目の名</strong> です。装束・面・剣は役に付く支給品で、人が替わるたびに返却と再支給を繰り返します。</p>
+  <div class="strip" role="img" aria-label="七層の明るさ。1 と 2 が明るく、3 で暗く、4 が最も明るく、5 から 7 へ光が抜ける"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="striplabels">
+    <span>1 燦光の樹海</span><span>2 ■■の秘跡</span><span>3 大黒蛇の住処</span><span>4 輝晶の間</span><span>5 血染めの死海</span><span>6 獄雷峡</span><span>7 果てなき世界</span>
+  </div>
+
+  <p class="prose">一層と二層は明るく鮮やかです。三層でいったん落とすのは、四層を輝かせるための溜めです。五層から下は 赤 → 黒紫 → 紺 の順に光を抜いていきます。</p>
+
+  <h2>七層</h2>
 
   <div class="tablewrap">
     <table>
-      <thead><tr><th>問い</th><th>答え</th><th>これが要る理由</th></tr></thead>
+      <thead><tr><th>層</th><th>名前</th><th>読み</th><th>見えるもの</th><th>光源</th><th>主な色</th></tr></thead>
       <tbody>
-        <tr><td>誰か</td><td>役目に任命された人。世代ごとに別人で、それぞれ自分の名を持つ</td><td>「死ぬたびに人は変わる」を字義どおりにする</td></tr>
-        <tr><td>なぜ姿が同じか</td><td>装束と面が役の証だから。顔は面で隠れる</td><td>立ち絵が 1 体で足りる。制作費が世代の数だけ増えない</td></tr>
-        <tr><td>なぜ次の人が現れるか</td><td>役が空けば次が任命される。潜り続ける理由は街の側にある</td><td>ゲームオーバーが無い理由になる</td></tr>
-        <tr><td>なぜ継承が限られるか</td><td>渡せるのは物と記録だけ。体で覚えた技は死ぬと消える</td><td>遺産を 3 つだけ選ぶ設計の説明になる</td></tr>
-        <tr><td>なぜ全員が剣士か</td><td>役の型が剣だから。別の型を置くときは別の役を新設する</td><td>クラス選択を持たない設計の説明になる</td></tr>
-        <tr><td>なぜ誰も助けてくれないか</td><td>街は役目を出すだけ。坑の中に味方はいない</td><td>NPC を 1 人も描かずに済む</td></tr>
+        <tr><td>1</td><td>燦光の樹海</td><td>さんこうのじゅかい</td><td>沈んだ森。天井の大穴から陽が落ちる。彩度の高い緑と強い光条</td><td>天井の大穴からの陽光</td><td>若草 + 陽</td></tr>
+        <tr><td>2</td><td>■■の秘跡</td><td>—</td><td>竜神を祀った古い聖域。石の柱列と砂。柱に竜を象った彫り。根元に菫色の結晶が芽を出す</td><td>崩れた天井からの斜光</td><td>砂と白石</td></tr>
+        <tr><td>3</td><td>大黒蛇の住処</td><td>だいこくじゃのすみか</td><td>壁からうねり出た黒い大蛇がとぐろを巻く</td><td>大蛇の背の結晶</td><td>藍紫</td></tr>
+        <tr><td>4</td><td>輝晶の間</td><td>きしょうのま</td><td>結晶の柱が林立する大広間。影が横と上から差し、人影は逆光で黒く抜ける</td><td>結晶そのもの。全方向</td><td>白と淡菫</td></tr>
+        <tr><td>5</td><td>血染めの死海</td><td>—</td><td>干上がった赤い海床。巨大な肋骨が門のように立ち、塩が白く析出している</td><td>赤い靄の散乱光</td><td>緋と塩白</td></tr>
+        <tr><td>6</td><td>獄雷峡</td><td>ごくらいきょう</td><td>切り立った谷。黒い雷が崖を走る。谷幅を竜が占める</td><td>獄雷の縁の光だけ</td><td>黒紫</td></tr>
+        <tr><td>7</td><td>果てなき世界</td><td>—</td><td>床も天井も壁も無い。瘴気そのものでできた空洞。中央に湧き口がある</td><td>瘴気そのものの発光</td><td>紺と菫</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h3>誰が役目を出しているか</h3>
-
-  <p class="prose"><strong>坑の街の役所</strong> です。教団でも領主でもありません。教団を地上に置くと階層 5 の瘴気の司祭（根を祀る側）と紛れます。領主を置くと顔と台詞を持つ人物が要り、立ち絵と会話画面の制作費が増えます。街の役所なら制度だけで済み、<strong>人物を 1 人も描かずに</strong> 役目の出どころを説明できます。</p>
-
-  <h3>キャラクターは知らない。プレイヤーは知っている</h3>
-
-  <p class="prose">この作品でいちばん効く非対称です。キャラクターが持つ知識は、遺産で選んだ手記の頁だけです。前の代がどれだけ敵を調べても、選ばなかった頁は失われます。<strong>しかしプレイヤーの記憶は消えません。</strong> 「この敵は近間に入れば薙ぎ払いが軽くなる」と知っているのはプレイヤーで、画面の中の人ではありません。</p>
-
-  <p class="prose">だから死は失敗ではありません。次の代が少し先まで行くための、情報を得る機会です。<strong>ゲームの構造（死亡・遺産・継承）が、そのまま物語の構造になっています。</strong></p>
-
-  <h2>五つの階層</h2>
-
-  <p class="prose">人の手が消えていく順に並べます。1 は人が掘った坑道、5 は根そのものです。階層が進むほど置いてある人工物が減ります。背景を描くときの指針でもあります。</p>
-
-  <div class="strip" role="img" aria-label="階層 1 から 5 へ、褐色から紺へ暗くなる帯"><i></i><i></i><i></i><i></i><i></i></div>
-  <div class="striplabels"><span>1 上坑</span><span>2 沈み階</span><span>3 葬列廊</span><span>4 垂根洞</span><span>5 根底</span></div>
-
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>階層</th><th>名前</th><th>土地の性格</th><th>光源</th><th>濃度</th></tr></thead>
-      <tbody>
-        <tr><td>1</td><td>上坑（じょうこう）</td><td>人が掘った坑道。木の支柱、錆びた道具</td><td>縦坑の外光 + 手持ちの灯</td><td>1</td></tr>
-        <tr><td>2</td><td>沈み階（しずみかい）</td><td>地下水が溜まった水没区画。鉄が全部錆びている</td><td>手持ちの灯。水面に映る</td><td>2</td></tr>
-        <tr><td>3</td><td>葬列廊（そうれつろう）</td><td>坑より古い石の回廊。壁龕に死者。霞が床を這う</td><td>壁の蝋。白く低い</td><td>3</td></tr>
-        <tr><td>4</td><td>垂根洞（すいこんどう）</td><td>天井と壁を根が貫く広い洞。足場が根で塞がる</td><td>根の断面が鈍く光る</td><td>4</td></tr>
-        <tr><td>5</td><td>根底（ねそこ）</td><td>根の本体がある底。壁も床も根</td><td>根の発光だけ</td><td>5</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <p class="prose"><strong>暖色はプレイヤーの側にしか置きません。</strong> 階層 1 から 3 までは手持ちの灯りが居場所を示します。階層 4 以降は根の光のほうが強く、自分の灯りが役に立たなくなります。深く来たことを、明るさではなく「自分の灯りが効かない」で示します。</p>
-
-  <h2>ボス 3 体と竜</h2>
-
-  <p class="prose">3 体とも階層 5 にいます。根に近い順ではなく、<strong>根との関係の深さ</strong> で並びます。戦闘の役割と設定が一致するように置きました。</p>
-
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>名前</th><th>根との関係</th><th>立ち位置</th><th>戦闘で問うこと</th></tr></thead>
-      <tbody>
-        <tr><td>瘴気の司祭</td><td>祀る</td><td>元は人。唯一まだ考えている敵。歪みを受け入れた側</td><td>行動履歴を見て守りと攻めを切り替える。初めて「読まれる」相手</td></tr>
-        <tr><td>深淵の釣り人</td><td>養われている</td><td>元が人でない唯一の大物。根が動けないので、口の役をしている</td><td>自分は動かず、相手の位置だけを動かす</td></tr>
-        <tr><td>歪みの根</td><td>本体</td><td>瘴気を生んでいるもの。撃破がクリア条件</td><td>3 段階。位置 → コスト → 両方</td></tr>
-        <tr><td>竜（エクストラボス）</td><td>無関係</td><td>根が来る前からいたもの。因果の外なので歪んでいない</td><td>クリア後にだけ会える。倒してもクリアにならない</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <p class="prose">竜に会えるのは根を一度倒してからです。階層 5 の最深ノードの隣に「根の裂け目」が開きます。<strong>根が退いて初めて、その下にあったものが見える</strong> という形です。報酬が数値の強化ではなく挑戦の機会と継承の延長だけなのも、この位置づけと揃っています。</p>
-
-  <h2>継承の間</h2>
-
-  <p class="prose">階層 1 の入口の手前、外光が届く最後の場所です。役所が坑の口に置いた小屋で、街ではありません。壁に名札が掛かり、机で支給品を受け渡し、壁の図で痕跡の一覧を見ます。</p>
-
-  <h3>一覧を見せているのは誰か</h3>
-
-  <p class="prose"><strong>誰もいません。前の代が自分で書いた線です。</strong> 出立の前に、踏破者は壁の図へ「どこまで降りるつもりか」を書き付けます。戻れば線を消します。戻らなければ、その線が最後の記録として残ります。</p>
-
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>この作りが説明するもの</th><th>どう説明されるか</th></tr></thead>
-      <tbody>
-        <tr><td>案内人がいない</td><td>立ち絵も台詞も不要。一人で降りる手触りが壊れない</td></tr>
-        <tr><td>痕跡が正確な点でない</td><td>線は本人の申告なので、実際の死亡地点はその付近。現地まで行って探す</td></tr>
-        <tr><td>回収済みの痕跡が消える</td><td>拾った代が線を消すから。未回収だけが残る</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <h2>冒頭に見せる文（初稿）</h2>
-
-  <pre><code>瘴気は、坑の底から湧いている。
-
-そこに根がある。
-止めに降りた踏破者は、まだ誰も戻っていない。
-
-あなたが次の踏破者だ。
-面を付けろ。名札を掛けろ。</code></pre>
-
-  <p class="prose">6 行、53 文字です。読み終わるのに 10 秒かかりません。街の名も年号も人名も出しません。3 行目の「まだ誰も戻っていない」は、次の画面（継承の間の壁、掛かったままの名札）と同じことを言っています。<strong>文で説明したことを、すぐ物として見せます。</strong></p>
-
-  <h2>置いた仮定</h2>
+  <h3>各層で絵にすること</h3>
   <ul class="prose">
-    <li>役目を出す主体を街にしました。<code>concept-v3.md</code> §16.5-1 の 3 択からの選択で、根拠は §16.2 が既に「役所」を前提にしていることです。</li>
-    <li>階層 5 つの名前と読みを新しく置きました。既存の文書に階層の固有名が無かったためです。</li>
-    <li>ボス 3 体の関係を「祀る者 / 運ぶもの / 本体」と置きました。<code>enemy_roster_v4.md</code> の行動と決定木から逆算したもので、数値には触れていません。</li>
-    <li>竜を「根より古い、因果の外のもの」と置きました。クリア後にだけ会え、数値のボーナスを与えない扱いと噛み合う説明を選びました。</li>
+    <li><strong>一層</strong>: 唯一、地上の光で歩ける層です。探索者のランタンはほとんど役に立ちません。</li>
+    <li><strong>二層</strong>: 明るい画面の中で紫が浮くので、<strong>結晶の初出がはっきり読めます</strong>。柱の彫りが竜の形をしていることが、この層だけ画面から読み取れる手掛かりです。</li>
+    <li><strong>三層</strong>: 七層で唯一の「暗い上層」です。ここを暗くしておくことで次の輝晶の間が効きます。</li>
+    <li><strong>四層</strong>: 灯りが完全に無意味になります。探索の難しさが「暗くて見えない」から <strong>「眩しくて先が見えない」</strong> へ反転します。</li>
+    <li><strong>五層</strong>: 輝晶の間の白からここで一気に赤へ振ります。明るさはここから抜けていきます。</li>
+    <li><strong>六層</strong>: 獄雷は「黒い雷」なので背景より暗く抜け、縁だけが菫に光ります。</li>
+    <li><strong>七層</strong>: 上下が分からないこと自体が最終層の異常さです。探索者は浮いています。</li>
+  </ul>
+
+  <h2>二層 ■■の秘跡 と 竜神</h2>
+
+  <p class="prose">この層の正式名称は <strong>竜神の秘跡</strong> です。ゲーム内では最初 <strong>■■の秘跡</strong> と表示し、手掛かりのアイテムを拾うと本名に変わります。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>状態</th><th>層の名前の表示</th></tr></thead>
+      <tbody>
+        <tr><td>手掛かりのアイテム未取得</td><td class="state maybe">■■の秘跡</td></tr>
+        <tr><td>取得後</td><td class="state yes">竜神の秘跡</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose">伏せるのは 2 文字だけです。<strong>何が伏せられているかがプレイヤーに見える</strong>ので、「この層には名前がある」と分かります。名前ごと隠すと、伏せられていること自体に気付けません。層に入った瞬間の 1 行・手記の層の頁・ノードマップの見出しの 3 か所で同じ表示を使い、伏字は塗り潰しの四角 2 つ、フォントは変えません。</p>
+
+  <div class="callout prose"><strong>竜神はクリア後にだけ会えます。</strong> 枠は <code>enemy_roster_v4.md</code> §7 のエクストラボス（Issue #39）がそのまま竜神になります。手掛かりを拾うこと自体には戦闘上の効果を付けません。§7.2 の「解禁が与えるのは挑戦の機会だけ」を守ります。</div>
+
+  <p class="prose"><strong>六層の獄竜 ガルドは別の個体</strong>です。住処の番をしている竜で、本編の途中で戦います。竜神は本編では姿を見せません。2 体を分けることで、「竜と戦う」経験を本編で 1 回与えたうえで、クリア後にその上位を置けます。</p>
+
+  <h2>共通の色</h2>
+
+  <p class="prose"><strong>背景だけ層で差し替え、UI の色は変えません。</strong> 実装が楽で、プレイヤーも読み方を覚え直さずに済みます。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>色名</th><th></th><th>値</th><th>使う場所</th></tr></thead>
+      <tbody>
+        <tr><td>鈍鋼</td><td><span class="sw steel"></span></td><td><code>#6d7787</code></td><td>UI の枠線、鎧と武器の金属</td></tr>
+        <tr><td>菫</td><td><span class="sw violet"></span></td><td><code>#8b6fd0</code></td><td>瘴気ゲージ、危険の予兆</td></tr>
+        <tr><td>燐光</td><td><span class="sw glow"></span></td><td><code>#b9a3ff</code></td><td>結晶の発光、予兆バナーのハイライト</td></tr>
+        <tr><td>琥珀</td><td><span class="sw amber"></span></td><td><code>#e8a84c</code></td><td>プレイヤー、灯り、選択中、継承の間</td></tr>
+        <tr><td>灯芯</td><td><span class="sw wick"></span></td><td><code>#ffd89a</code></td><td>最も重要な強調を 1 点だけ（習得・遺産・決着）</td></tr>
+        <tr><td>緋</td><td><span class="sw scarlet"></span></td><td><code>#c2483f</code></td><td>HP、致命、取り返しのつかない選択</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>手当てが 3 か所要ります</h3>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>層</th><th>問題</th><th>手当て</th></tr></thead>
+      <tbody>
+        <tr><td>4</td><td class="state maybe">UI が読めない</td><td>背景が最も明るいので、UI の地を暗く反転する</td></tr>
+        <tr><td>5</td><td class="state maybe">HP と背景が混ざる</td><td>背景の赤と緋 <code>#c2483f</code> が同系。この層だけ HP の色を変えるか縁を付ける</td></tr>
+        <tr><td>6・7</td><td class="state maybe">瘴気ゲージが埋もれる</td><td>地の色と菫が同系。ゲージの縁を燐光 <code>#b9a3ff</code> に上げて浮かせる</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>敵の命名</h2>
+
+  <pre><code>通常敵 = [瘴気の浸かり具合] + の + [生前の役目]   例: 錆槍の衛士
+精鋭   = [象徴する構え]     + の + [役職名]       例: 鉄壁の門衛長
+大物   = [肩書き]           + カタカナの固有名     例: 大黒蛇 セルク</code></pre>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>前に置く語</th><th>意味</th><th>主に出る層</th></tr></thead>
+      <tbody>
+        <tr><td>錆</td><td>瘴気が金属を侵している。まだ体は固まっていない</td><td>1〜2</td></tr>
+        <tr><td>瘴</td><td>瘴気を帯びている。体の中に溜まり始めている</td><td>1〜4</td></tr>
+        <tr><td>灰</td><td>瘴気が抜けて脆くなった。崩れかけ</td><td>2〜3</td></tr>
+        <tr><td>晶</td><td>結晶が育った</td><td>3〜4</td></tr>
+        <tr><td>燐</td><td>結晶が発光している</td><td>4〜7</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="prose">
+    <li><strong>固有名は大物だけ</strong>。出し惜しむと大物の登場が事件になります。</li>
+    <li><strong>漢字 2 + 漢字 2</strong>、読みは 6〜8 音。敵名枠に収まり、手記でも折り返しません。</li>
+    <li><strong>上位種は後ろの語を変えない</strong>。瘴走りの供犬 → 燐光の供犬。同じ系統だと一目で分かります。</li>
+    <li><strong>和の武術語を使わない</strong>。錫杖・兜割り・薙ぎ払い・長柄は置き換えます。</li>
+    <li><strong>腐敗語を使わない</strong>。腐肉・白骨・亡者・這うもの・吊るし首は使いません。ホラー感はほぼこの 5 語から出ます。</li>
+  </ul>
+
+  <h2>大物</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>名前</th><th>層</th><th>姿</th><th>絵としての狙い</th></tr></thead>
+      <tbody>
+        <tr><td>大黒蛇 セルク</td><td>3</td><td>壁からうねり出た黒い巨躯。とぐろを巻き、鎌首だけを下ろす。背に結晶</td><td>動かない。結晶の発生源で、この層の唯一の光源</td></tr>
+        <tr><td>獄竜 ガルド</td><td>6</td><td>四足・二対の翼の欧州型。黒い雷を纏う。後ろへ反る二本の角、細長い頭、重い顎</td><td>暗い谷で「黒より黒いもの」が動く。灯りを当てても照らし返さない</td></tr>
+        <tr><td>歪みの根</td><td>7</td><td>住処の最奥で瘴気を生んでいるもの。撃破がクリア条件</td><td>上下の無い空間の、唯一の中心</td></tr>
+        <tr><td>竜神</td><td>クリア後</td><td>住処の主。本編では姿を見せない</td><td>本編で見たどの竜よりも大きいこと 1 点だけで作る</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose">崖と谷底の人影が定規の役をします。ガルドは翼の先が両側の崖に食い込む構図で描き、大きさを伝えます。</p>
+
+  <div class="callout prose"><strong>提案</strong>: 歪みの根を「竜神が住処を広げるために伸ばしているもの」と置くと、クリア条件（根の撃破）とエンドコンテンツ（竜神）が 1 本に繋がります。根の姿と 3 段階は変えずに済みます。採るかどうかは cards レーンと詰めてください。</div>
+
+  <h2>プレイヤーの意匠</h2>
+
+  <ul class="prose">
+    <li><strong>顔は面で隠す</strong>。目を光らせません（敵と読み違えるため）。輪郭は 面 + フード + マント で固定し、世代が変わっても変えません。</li>
+    <li><strong>暖色はプレイヤーだけ</strong>。灯り・選択中・継承の間は琥珀 <code>#e8a84c</code> です。</li>
+    <li><strong>装甲を描かない</strong>。アーマーは凍結中なので、板金と肩当ては置きません。</li>
   </ul>
 
   <h2>未確認のこと</h2>
   <ul class="prose">
-    <li>階層の読み（じょうこう / しずみかい / そうれつろう / すいこんどう / ねそこ）。</li>
-    <li>竜の固有名。<code>enemy_roster_v4.md</code> §7 は枠だけで、名前がありません。</li>
-    <li>手記の階層の頁 5 本と、敵 9 体の 1 行。本ページの性格から書き起こせますが、量があるので別 Issue が要ります。</li>
-    <li>worktree に未コミットのレポート 2 本（瘴気を「澱」へ改名する案と 7 層構成の案）が残っています。いまの main（5 階層・ボス 3 体・襲名）と噛み合いません。</li>
+    <li>四層の明るさで戦闘の UI が読めるか。白い背景に白い UI を載せると破綻します。</li>
+    <li>獄雷を「背景より暗い」で描いたとき、Unity の描画で成立するか。加算合成ではなく減算か乗算が要ります。</li>
+    <li>伏字「■」が使うフォントに収録されているか。無ければ矩形を描いて置き換えます。</li>
+    <li>獄竜の固有名「ガルド」の可否。竜神の固有名も未定です。</li>
+    <li>1 層あたり何枚の背景が要るか。ノードマップの仕様次第です。</li>
   </ul>
 
   <h2>次に判断が要る点</h2>
   <ul class="prose">
-    <li>PR #121（世界設定の正本）と PR #122（カードの絵の方針）の merge。どちらも人の手番です。</li>
-    <li>「澱」への改名と 7 層構成を採るかどうか。採るなら全レーンを 1 回で通す Issue が要ります。</li>
-    <li>階層 5 つの名前の可否。ここが決まると背景（#89）・敵の 1 行・手記の言葉が全部これに揃います。</li>
+    <li><strong>五層から七層への波及。</strong> 瘴気の濃度（1〜5 → 1〜7）は dungeon レーン、敵の層の割り当ては cards レーンで、Issue が 2 本要ります。</li>
+    <li><strong>竜神の中身。</strong> <code>enemy_roster_v4.md</code> §7 の枠（HP 240〜260、1 フェーズの出力 16〜24）に竜神を当て、二層の手掛かりアイテムと結ぶ Issue が要ります。</li>
+    <li><strong>歪みの根と竜神を繋ぐか。</strong></li>
+    <li><strong>ComfyUI の導入。</strong> 済めば 7 層ぶんの背景を生成できます。二層は「竜を象った彫り」を足して回します。</li>
   </ul>
 
-  <p class="note">正本: <code>.claude/docs/vision/world-v1.md</code>（PR #121）。仕組みは <code>.claude/docs/vision/concept-v3.md</code>、数値は <code>battle_core_v4.md</code> と <code>enemy_roster_v4.md</code> が正です。3 つが食い違ったときは 数値 → 仕組み → 設定 の順に優先します。</p>
+  <p class="note">正本: <code>.claude/docs/vision/world-v1.md</code>。元になった検討は <code>docs/reports/2026-09-20-dungeon-seven-floors.html</code>（七層とキーアート）と <code>docs/reports/2026-09-20-world-theme-and-enemy-naming.html</code>（色と命名規則）です。仕組みは <code>concept-v3.md</code>、数値は <code>battle_core_v4.md</code> と <code>enemy_roster_v4.md</code> が正です。</p>
 </div>
