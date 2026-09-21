@@ -1,5 +1,33 @@
 # HISTORY (chat-battle)
 
+### 2026-09-21 - 縦切りの鎖 #70〜#74 と、設計書 #116 / #46 を PR まで
+
+#### 概要
+
+縦切り（#67）の実装 5 本を #69 の上に積み、コアだけで 1 ターンが通り、その出力が戦闘描写の台本になるところまで進めた。並行して、正本の食い違い（#116）を `battle_core_v4.md` の側で決着させ、画面の正本（#46）を v2.1 へ書き直した。8 本とも PR は open で、merge は人の手番。
+
+#### 変更点
+
+- **#70 敵データ**（PR #148）: `Enemies.cs`（レコードの一覧。決定木が知らない行動 id を指したら読み込み時に弾く）と `EnemyAi.cs`（上から見て払える最初の行動。予兆はコミット式で、払えなくなったら休み）。予兆の一字は roster の表の値を行動ごとに持たせた
+- **#71 試作デッキ**（PR #150）: `CardCatalog.cs` に 10 種。鈍足を付ける正本の札は全て語彙の外の特性を持つので、体当たりのために効果「重撃」を 1 語足した。`Face.MoveTo` で「近間へ / 遠間へ」を書けるようにした。選定の理由は #71 のコメント
+- **#72 ターン進行**（PR #151）: `TurnLoop`（`BeginPlayerTurn` / `PlayCard` / `EndTurn` の純関数）と `BattleEvents.cs`（確定後の値を持つイベント 24 種）。`SeededRng`（SplitMix64）で `dotnet test` と Unity が同じ戦闘になる。固定の種 20260921 の 3 ターンは手でたどって固定した
+- **#73 変換器**（PR #152）: 新アセンブリ `Depiction.Bridge`（`CoreScriptWriter` / `CoreBattleSource` / `CoreText`）。数字はイベントの値を写すだけ。ランプと予測値はコアの `TurnLoop.Preview`。敵の構えは次の予兆の出来事の頭で再生する（押し込みが 2.0 秒を超えるため）
+- **#74 起動**（PR #153、`Part of`）: `BattleBootstrap`（Awake で source を渡す）と `BattleLaunch`（純 C#）。`DepictionPlayer` に `UseSource` と `autoEndTurn`。PlayMode テストはシーンが無ければ Ignore
+- **#116**（PR #155）: §5 / §6 / §2.3 / §2.4 と記録の §20。roster に要ることは #116 のコメントへ。実装の追従は #154 を起票
+- **#46**（PR #156）: §0〜§7 の書き直し、§8〜§12 の印、台帳と索引の行
+
+#### 実測・知見
+
+- 8 ブランチ全てで `npm run build` / `npm run lint` / `npm run test:run`（204 件）/ `dotnet test` が exit 0。鎖の先端は BattleCore 162 / Depiction 53 / Depiction.Bridge 30
+- **`npm run unity:sync` は足すだけで消さない**。Unity リポに v3 のコア 5 ファイルとテスト 3 ファイルが残り、同期後はコンパイルが通らない。`BattleTheme.cs` の `FigureGap` / `Posture` も `RangeBand` を引数に取ったまま（#134 にコメント）
+- **roster の予兆の一字は、§6 の旧定義より広い規則で一貫して書かれていた**。通常 6 体 20 行動を全部照らして、出どころが 3 つだと分かった。精鋭とボスには合わない行動が 2 つある（盾打ち / 伸びる根）
+- **Bash の heredoc はアポストロフィを含むと壊れる**（引用つきの `<<'EOF'` でも）。C# とテストのファイルは Write ツールで書いた
+- `DepictionPlayer.cs` と `BattleBootstrap.cs` は UnityEngine 依存で、このレーンではコンパイルを確かめられていない
+
+#### 次
+
+#154（鈍足で push を止める）。Unity 側の手作業は PR #153 の本文の 11 手順。
+
 ### 2026-09-21 - BattleCore に v4.2 の最小の骨を入れる（#69）
 
 #### 概要
