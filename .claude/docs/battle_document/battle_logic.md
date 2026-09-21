@@ -1,4 +1,4 @@
-> **PARTIALLY SUPERSEDED（2026-09-12）**: §2 エネルギー制 / §5 AP・Armor Break / §6 の AP 配分は凍結・廃止。スタミナ投入量（0〜3）・間合い補正・Guard のみの防御が現行ルール。現行の正本は `battle_core_v3.md`（2026-09-12）。速度フェーズ・バフ・DoT の節は当面そのまま。
+> **PARTIALLY SUPERSEDED（2026-09-12）**: §2 エネルギー制 / §5 AP・Armor Break / §6 の AP 配分は凍結・廃止。2026-09-20 v4.2 で投入量と共有の距離（近 / 中 / 遠）は廃止されました。現在の正本は `battle_core_v4.md` の §16〜§18 です。防御は Guard のみです。速度フェーズ・バフ・DoT の節は当面そのまま。
 
 # Battle System Logic Specification (Ver 4.0)
 
