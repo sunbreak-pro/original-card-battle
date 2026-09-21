@@ -30,5 +30,7 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src", "src/main.tsx"]
+  "include": ["src", "src/main.tsx"],
+  // The frozen battle-lab parity test reads fixtures with node:fs; vitest runs it, the app build does not need it.
+  "exclude": ["src/ui/battle-lab/core/__tests__/parity"]
 }

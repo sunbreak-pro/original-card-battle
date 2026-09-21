@@ -5,7 +5,7 @@
  * Allows players to choose their character class before starting.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import type { CharacterClass } from "@/types/characterTypes";
 import {
   getAllClasses,
@@ -27,18 +27,14 @@ export const CharacterSelect: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<CharacterClass | null>(
     null,
   );
-  const [saveMetadata, setSaveMetadata] = useState<SaveMetadata | null>(null);
+  // Check for an existing save once, on mount
+  const [saveMetadata, setSaveMetadata] = useState<SaveMetadata | null>(() => {
+    const metadata = saveManager.getMetadata();
+    return metadata.exists ? metadata : null;
+  });
   const { navigateTo } = useGameState();
   const { initializeWithClass, loadFromSaveData } = usePlayer();
   const { loadResourcesFromSave } = useResources();
-
-  // Check for existing save on mount
-  useEffect(() => {
-    const metadata = saveManager.getMetadata();
-    if (metadata.exists) {
-      setSaveMetadata(metadata);
-    }
-  }, []);
 
   const allClasses = getAllClasses();
 
