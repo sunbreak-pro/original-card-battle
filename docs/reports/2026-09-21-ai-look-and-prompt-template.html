@@ -1,0 +1,217 @@
+<title>AI っぽさと指示文</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  td.num { font-variant-numeric: tabular-nums; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-21 / 判断 / original-card-battle</p>
+    <h1>AI っぽさは摘みでは消えない。原本の大きさと加筆で消す</h1>
+    <p class="lede">Issue #37 の調査です。Animagine XL 4.0 opt の設定を 22 体のエージェントで一次資料まで当たり、主張を 1 件ずつ反証にかけました。効いたのは設定ではなく、原本を 640 × 1536 にすること、指示文の語彙を実在タグに絞ること、人が直す 7 工程を決めることの 3 つです。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">今日から</span><h3>原本を 640 × 1536 にする</h3><p>1024 × 1536 は上限に掛かって 816 × 1232 で生成され、学習済みの超解像モデルを通して戻されます。640 × 1536 なら 4 条件すべてを満たし、その経路ごと消えます。</p></li>
+    <li class="verdict now"><span class="tag">今日から</span><h3>負の指示文の <code>nswf</code> を直す</h3><p>綴り誤りで、NSFW の抑制が丸ごと効いていません。ここまでの生成はすべて無防備でした。</p></li>
+    <li class="verdict skip"><span class="tag">入れない</span><h3><code>rescale_cfg</code> を計測の変数にする</h3><p>Krita は v 予測のチェックポイントのときだけ RescaleCFG を挿します。Animagine は &epsilon; 予測なので、この値は graph に現れません。振っても全部同じ絵になります。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: 生成サーバーが止まっていて、この調査で画像を 1 枚も出していません。数値はすべてモデルカード・プラグインのソース・Danbooru の API・リポジトリの実ファイルからで、出力を見た判断ではありません。</div>
+
+  <h2>1. 原本の大きさ — 4 条件で 640 × 1536 に決まる</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>条件</th><th>1024 × 1536</th><th>832 × 1216</th><th>640 × 1536</th></tr></thead>
+      <tbody>
+        <tr><td>Animagine の推奨バケット</td><td class="state no">該当なし</td><td class="state yes">該当</td><td class="state yes">該当</td></tr>
+        <tr><td>1.05 MP の上限を通るか</td><td class="state no">1,572,864。超える</td><td class="state yes">1,011,712</td><td class="state yes">983,040</td></tr>
+        <tr><td>16 の倍数（丸めで寸法が動かない）</td><td class="state no">816 × 1232 になる</td><td class="state yes">動かない</td><td class="state yes">動かない</td></tr>
+        <tr><td>Figure 枠 210 × 450 に高さいっぱいで入るか</td><td class="state no">高さの 70%</td><td class="state no">高さの 68%</td><td class="state yes">いっぱい</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">枠の正本は <code>DepictionPrefabBuilder.cs:218</code> の 210 × 450 です。<code>briefs/</code> が使っている 140 × 300 は旧 <code>ArenaView</code> の値で、しかもどちらも画素ではなく Canvas の参照単位です。<code>BattleScreenView.cs:352-354</code> が <code>ScaleWithScreenSize</code> と参照 1920 × 1080 を設定しているので、実画素は 1080p で 450、4K で 900 になります。</p>
+
+  <h2>2. AI っぽさ 10 項目の内訳</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>見えかた</th><th>生成で消せるか</th><th>手当て</th></tr></thead>
+      <tbody>
+        <tr><td>肌と鱗のつるつるした照り</td><td class="state maybe">たぶん</td><td>負に <code>shiny skin</code>（158,131 件）。黒鱗の反射も消す恐れあり</td></tr>
+        <tr><td>影の境目が決まらない</td><td class="state maybe">たぶん</td><td>正に <code>anime coloring</code>（56,889 件）。定義がまさに「hard-edged highlights and shadows」</td></tr>
+        <tr><td>装飾が左右対称</td><td class="state no">できない</td><td><code>symmetry</code> は 2,339 件。片側を壊すか、複製して反転で揃える</td></tr>
+        <tr><td>線幅が一定</td><td class="state no">できない</td><td><code>thick_outlines</code> 655 件。要所 3〜5 本を筆圧で引き直す</td></tr>
+        <tr><td>背景の描き込み過多</td><td class="state yes">できる</td><td>正に <code>simple background, grey background</code>、負に <code>scenery</code></td></tr>
+        <tr><td>手・指・爪の破綻</td><td class="state no">できない</td><td>モデルカードが限界と明記。選択して Refine 0.35（10 段、&sigma; 0.932）</td></tr>
+        <tr><td>四足・翼・とぐろの構造</td><td class="state no">できない</td><td><code>quadruped</code> は 0 件。線画コントロールが要る</td></tr>
+        <tr><td>彩度が高い・暖色が混じる</td><td class="state maybe">寄せるだけ</td><td><code>limited palette</code> と <code>muted colors</code>。Cross-channel で H 15〜65 と H &ge; 345 を落とす</td></tr>
+        <tr><td>切り抜きの縁の灰色</td><td class="state no">できない</td><td>Split Alpha → Shrink 1 px → <strong>Save Merged…</strong>（通常の Export は透明画素を黒で潰す）</td></tr>
+        <tr><td>超解像モデルの質感</td><td class="state yes">できる</td><td>原本を 640 × 1536 にすれば経路ごと消える</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>3. 摘みは何に効くか</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>摘み</th><th>効くもの</th><th>触るか</th></tr></thead>
+      <tbody>
+        <tr><td><code>cfg_scale</code> 5.0</td><td>追随・コントラスト・彩度</td><td class="state no">触らない（推奨 4〜7）</td></tr>
+        <tr><td><code>sampler_steps</code> 28</td><td>ほぼ何も。段数を変えると同じ種でも別の絵</td><td class="state no">触らない（推奨 25〜28）</td></tr>
+        <tr><td><code>rescale_cfg</code> 0.7</td><td class="state no">何も。ノードが挿さらない</td><td class="state no">計測の変数にもしない</td></tr>
+        <tr><td><code>clip_skip</code> 0</td><td>0 は「ノードを挿さない」</td><td class="state no">触らない。2 は SD1.5 の話</td></tr>
+        <tr><td>Refine 強度</td><td>段の開始位置。0.35 で 10 段（&sigma; 0.932）</td><td class="state yes">手の描き直しに使う</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">摘みで消せる AI 臭はほとんどありません。効くのは指示文と加筆と原本の大きさです。</p>
+
+  <h2>4. 竜の系譜の指示文</h2>
+  <p class="prose">正典 &sect;2 の 4 段に合わせて 1 行ずつ用意しました。全文は <code>style-guide.md</code> &sect;4.2 にあります。<code>1other</code> は竜人だけで、竜・亜竜・小竜は <code>no humans, animal focus</code> から始めます。<code>facing right</code> は Danbooru に 0 件なので使わず、右向きは Krita の水平反転で作ります。</p>
+  <pre><code>1other, solo, safe, full body, standing, from side, profile, monster,
+dragon horns, slit pupils, scales, black scales, claws, dragon tail,
+holding polearm, polearm held upright, shoulder armor, vambraces, torn clothes,
+anime coloring, high contrast, limited palette, muted colors, blue theme,
+simple background, grey background</code></pre>
+  <p class="note">竜人（眷属・二足・長柄）。素の英語は <code>polearm held upright</code> の 1 つだけです。品質タグは style が自動で付けるので書きません。</p>
+
+  <h2>5. 反証の結果</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>観点</th><th>調査</th><th>そのまま</th><th>訂正</th><th>棄却</th></tr></thead>
+      <tbody>
+        <tr><td>AI 臭（骨格）</td><td class="num">16</td><td class="num">0</td><td class="num">11</td><td class="num">5</td></tr>
+        <tr><td>AI 臭（表面と光）</td><td class="num">15</td><td class="num">2</td><td class="num">10</td><td class="num">3</td></tr>
+        <tr><td>AI 臭（構図と装飾）</td><td class="num">16</td><td class="num">2</td><td class="num">12</td><td class="num">2</td></tr>
+        <tr><td>AI 臭（線と色）</td><td class="num">16</td><td class="num">2</td><td class="num">12</td><td class="num">2</td></tr>
+        <tr><td>Animagine の設定</td><td class="num">16</td><td class="num">10</td><td class="num">3</td><td class="num">3</td></tr>
+        <tr><td>摘みと破綻の対応</td><td class="num">16</td><td class="num">5</td><td class="num">11</td><td class="num">0</td></tr>
+        <tr><td>指示文の型</td><td class="num">17</td><td class="num">3</td><td class="num">12</td><td class="num">2</td></tr>
+        <tr><td>Krita の加筆と法</td><td class="num">16</td><td class="num">4</td><td class="num">10</td><td class="num">2</td></tr>
+        <tr><td><strong>合計</strong></td><td class="num"><strong>128</strong></td><td class="num"><strong>28</strong></td><td class="num"><strong>81</strong></td><td class="num"><strong>19</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">そのまま通ったのは 128 件中 28 件です。棄却の中には「<code>quadruped</code> というタグが無いので自然文で書く」（モデルカードが自然文は効かないと明記）と「<code>rescale_cfg</code> を振って比べる」（ノードが挿さらないので全部同じ絵になる）が含まれます。反証を通していなければ、どちらも設計書に入っていました。</p>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>原本を 640 × 1536 に決めました。4 条件を同時に満たす唯一の値だからです。幅 640 は翼を広げた竜には狭く、ガルドだけ別扱いが要る見込みです。</li>
+    <li>敵は中立光で生成し、層の光は Krita で載せます。光の向きを指すタグが 4 つしかなく、左右の別も無いためです。</li>
+    <li>タグの件数は Danbooru の公開 API（2026-09-21 取得）です。Animagine の学習データは公開されていないので、これは語の重みの代理です。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li><strong>指示文を 1 つも実機で試していません。</strong> Issue #37 の完了条件「実測した指示文の型が 1 つ以上ある（seed と workflow.json 付き）」は満たしていません。貼るだけの graph は置きましたが、実行の記録ではありません。</li>
+    <li>加筆の分数（合計 45〜100 分）はすべて見積もりです。#82 で 1 体通して測ります。</li>
+    <li>自動で落ちてくるモデルのライセンス。既定の超解像 <code>4x_NMKD-Superscale-SP_178000_G.pth</code> に表示がなく、depth と canny のコントロールは xinsir（Apache-2.0）と Stability の Control-LoRA（<code>license: other</code>）の候補表になっています。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li><strong>セルクとガルドを立ち絵にするか。</strong> 正典 &sect;8 はセルクを「動かない」、ガルドを「翼の先が両側の崖に食い込む構図」と定めています。どちらも 210 × 450 の切り抜きに収まりません。battle レーンと詰める必要があります。</li>
+    <li><strong>出荷する最大解像度。</strong> 線の太さと縁の許容はここから決まります。1080p 基準の値は 4K で破綻します。</li>
+    <li><strong><code>briefs/</code> の 2 本の数字。</strong> 140 × 300、原本 1024 × 1536、1 枚 30〜35 秒はいずれも古い値です。#85 の着手前に直します。</li>
+  </ul>
+</div>
