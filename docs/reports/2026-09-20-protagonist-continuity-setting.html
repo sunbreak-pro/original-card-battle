@@ -1,0 +1,204 @@
+<title>代を継ぐ姿</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .step code { font-size: 13px; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+  @media (max-width: 720px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-20 / 判断 / original-card-battle</p>
+    <h1>姿をそろえる設定は「襲名」が一番安い</h1>
+    <p class="lede">世代ごとに別人で、名前も違い、姿だけ同じ。この三つを同時に満たす設定は「役目と装束を継ぐ（襲名）」です。時間遡行とクローンは既存の決定と噛み合いません。</p>
+    <p class="note">2026-09-20 決定済み。襲名を採用し、面で顔を隠す。装束は面・フード・マント・服を代を通じて同じ意匠にする。正本は <code>concept-v3.md</code> §16、衣装の具体は <code>art_document/briefs/player_swordsman.md</code>。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">採用</span><h3>襲名 — 役目と装束を継ぐ</h3><p>姿は役の支給品、名前は個人のもの。世代差・クラス固定・手記の扱いまで 1 本で説明できます。</p></li>
+    <li class="verdict skip"><span class="tag">不要になった</span><h3>血族・一門</h3><p>面で顔を隠す決定により、顔立ちが似る理由は要らなくなりました。</p></li>
+    <li class="verdict skip"><span class="tag">見送り</span><h3>時間遡行 / クローン</h3><p>「世代ごとに別人・別の名前」「生存者が引退して次へ渡す」と正面から衝突します。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: <code>concept-v3.md</code> §1 と §14 で「見た目と職（剣士）は代を通じて固定、世代ごとに別人で名前を持つ、世代差は小物と色で前の生の到達階層が決める」まで決定済みです。本レポートはその決定を動かさず、理由づけだけを足します。</div>
+
+  <h2>設定が答えるべき 5 つの問い</h2>
+  <p class="prose">「デザインを統一する設定」は 1 枚の看板ではなく、次の 5 つに答えられる仕組みです。案を比べるときもこの 5 つで測ります。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>問い</th><th>答えないと起きること</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>なぜ別人なのに姿が同じか</td><td>立ち絵の使い回しに見える</td></tr>
+        <tr><td>2</td><td>なぜ次の潜る人が必ず現れるか</td><td>死んでも誰かが来る理由が宙に浮く</td></tr>
+        <tr><td>3</td><td>なぜ技と頁だけ継がれ、成長は消えるか</td><td>継承の制限がルールの都合に見える</td></tr>
+        <tr><td>4</td><td>なぜ世代差が小物と色に出るか</td><td>到達階層で見た目が変わる根拠がない</td></tr>
+        <tr><td>5</td><td>なぜ全員が剣士なのか</td><td>クラス固定が仕様の都合に見える</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>候補 8 案</h2>
+  <p class="prose">こうだいさんが挙げた時間遡行系とクローン系に、6 案を足して並べます。判定は上の 5 つの問いと、<code>concept-v3.md</code> §8.2 の生存ルート（生きたまま引退して次の代へ渡す）に照らしたものです。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>案</th><th>同じ姿の理由</th><th>別人と名前</th><th>生存交代</th><th>継承の限定</th><th>総評</th></tr></thead>
+      <tbody>
+        <tr><td><strong>襲名</strong><br><span class="note">役目と装束を継ぐ</span></td><td>装束・面・剣は役の支給品。中身は毎回別人</td><td class="state yes">噛む</td><td class="state yes">噛む</td><td class="state yes">噛む</td><td>5 問すべてに答える。本命</td></tr>
+        <tr><td><strong>血族・一門</strong></td><td>同じ家系・同じ道場で顔立ちと型が似る</td><td class="state yes">噛む</td><td class="state yes">噛む</td><td class="state maybe">一部</td><td>「似る」止まりで完全一致は説明しきれない。補助向き</td></tr>
+        <tr><td><strong>器・憑依</strong></td><td>継いだ技が宿ると体が先代の型に寄る</td><td class="state yes">噛む</td><td class="state maybe">濁る</td><td class="state yes">噛む</td><td>味付けとして強い。主軸にするとホラーへ振れる</td></tr>
+        <tr><td><strong>写し身</strong><br><span class="note">ダンジョンが姿を写す</span></td><td>歪みの根が侵入者を「最初の剣士」の姿にする</td><td class="state yes">噛む</td><td class="state yes">噛む</td><td class="state maybe">一部</td><td>世界観と直結して面白い。主役の顔が借り物になる賭け</td></tr>
+        <tr><td><strong>クローン</strong><br><span class="note">培養体</span></td><td>同じ鋳型から作るので完全に一致</td><td class="state maybe">個体番号なら</td><td class="state maybe">先代の居場所が要る</td><td class="state no">弱い</td><td>記憶を写せるなら全部継げるはずで、制限に別の理由が要る。中世観とも衝突</td></tr>
+        <tr><td><strong>時間遡行</strong><br><span class="note">ループ</span></td><td>同一人物が巻き戻る</td><td class="state no">矛盾</td><td class="state no">矛盾</td><td class="state maybe">一部</td><td>「別人・別の名前」と「生存者が次代に同席」の両方を壊す。死亡地点の痕跡も巻き戻ると消える</td></tr>
+        <tr><td><strong>自動人形</strong><br><span class="note">同規格の躯体を操る</span></td><td>躯体の規格が同じ</td><td class="state yes">噛む</td><td class="state yes">噛む</td><td class="state maybe">一部</td><td>死ぬのが躯体になり、死の重みが下がる。コンセプトの核と逆行</td></tr>
+        <tr><td><strong>様式で固定</strong><br><span class="note">設定を作らない</span></td><td>手記の挿絵が常に同じ図像、という様式にする</td><td class="state yes">干渉しない</td><td class="state yes">干渉しない</td><td class="state no">答えない</td><td>コスト 0。多くのローグライトはこれで通している。問われたときの答えは無い</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>襲名案の中身</h2>
+  <p class="prose">「踏破者」を、街か教団が出す<strong>役目</strong>にします。装束・面頬・一振りの剣は役に付属する支給品で、人が替わるたびに返却と再支給を繰り返す。名前は個人のもの、姿は役のもの。だから世代ごとに名前が変わっても絵は 1 枚で足ります。制服と社員証のようなもので、着る人が替わっても写真の見た目は変わりません。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>5 つの問い</th><th>襲名案の答え</th><th>噛み合う既存の決定</th></tr></thead>
+      <tbody>
+        <tr><td>姿が同じ</td><td>装束と面頬が役の証。顔は面で隠れる</td><td>§1 見た目固定</td></tr>
+        <tr><td>次の人が現れる</td><td>役が空けば次が任命される。ダンジョンを放置できない理由は街の側にある</td><td>§9 ループ</td></tr>
+        <tr><td>継承が限られる</td><td>渡せるのは物と記録だけ。体で覚えた技は死ぬと消える</td><td>§8.3 遺産、§8.4 浅層死の閾値</td></tr>
+        <tr><td>世代差が小物と色</td><td>到達階層で階級が上がり、支給品の意匠が変わる</td><td>§14 世代差は到達階層で決まる</td></tr>
+        <tr><td>剣士だけ</td><td>役の型が剣。別の型を置くときは別の役を新設する</td><td>§14 クラスは剣士固定、魔術師は後回し</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout prose"><strong>一番の収穫</strong>: 生存ルートと死亡で手記の扱いが違う理由がそのまま出ます。生きて役を返せば手記は役所に納まるので丸ごと次へ渡る（§8.2）。死ねば装束も手記も現場に置き去りで、次の代が死亡地点まで行って選んだ頁だけ持ち帰る（§8.3）。ルールの都合だった非対称が、設定の当たり前になります。</div>
+
+  <h2>足すなら 2 つ</h2>
+  <p class="prose">襲名だけで 5 問は埋まるので、残りは味付けの判断です。<strong>血族・一門</strong>は、面で顔を隠さない絵にするなら要ります。任命が一門から出る決まりなら、面を外した顔が似ていても通ります。<strong>器・憑依</strong>は、遺産を受け取る場面の演出に効きます。死亡地点で技を継ぐと体が先代の型に馴染む、という描き方なら「1 つの生で 1 件」の制限も自然です。</p>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>立ち絵は 1 体で、世代差は装飾の差分で作る（§14 の「小物と色」をそのまま読んだ）。</li>
+    <li>世界観は中世寄りの手記・瘴気・ダンジョンのまま。SF 方向への転換は想定していない。</li>
+    <li>主人公の顔を出すか隠すかは未決定として扱った。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>「踏破者」を出す主体（街・教団・領主）は、どの設計書にも記述が見つからなかった。</li>
+    <li>エクストラボスの解禁がゲーム外のプレイヤー記録である点（§15.2）と、作中の役の記録をどう繋ぐか。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li>面で顔を隠すか、顔を見せるか。隠すなら襲名だけで足り、見せるなら血族設定を足す。</li>
+    <li>役目を出す主体を何にするか。継承の間・刻限・瘴気の説明がここにぶら下がる。</li>
+    <li>採用する案を <code>concept-v3.md</code> §1 の主人公の扱いに追記するか、世界観の節を新設するか。</li>
+  </ul>
+</div>
