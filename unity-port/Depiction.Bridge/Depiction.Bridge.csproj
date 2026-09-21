@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Compiles the converter from the core's event stream to the depiction script. Like
+         Depiction.Script, this project adds no source of its own: the files live in the Unity kit
+         under Assets/View/Depiction/Bridge/ and are mirrored by `npm run unity:sync`.
+         It is the one place that sees both BattleCore and Depiction.Script. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Depiction.Bridge</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Depiction\Bridge\*.cs" LinkBase="Bridge" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BattleCore\BattleCore.csproj" />
+    <ProjectReference Include="..\Depiction.Script\Depiction.Script.csproj" />
+  </ItemGroup>
+
+</Project>

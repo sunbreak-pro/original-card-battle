@@ -49,6 +49,8 @@ unity-port/
 │   ├── TurnLoopTests.cs        縦切りの合格条件（並び 17 件・数値 8 点・終端 3 点）と固定の種で 3 ターン
 │   └── Fixtures/
 │       └── parity-fixture.json v2 移植の証跡（下記「パリティ」参照。テストは読まない）
+├── Depiction.Script/ ・ Depiction.Script.Tests/   戦闘描写の台本の型（kit の `Assets/View/Depiction/Script/` と `Tests/` を `dotnet test` で回すための器）
+├── Depiction.Bridge/ ・ Depiction.Bridge.Tests/   コアのイベント列 → 台本の変換器（kit の `Assets/View/Depiction/Bridge/` を回す器）
 ├── tools/
 │   ├── gen-parity.mjs          fixture を live TS から再生成
 │   └── parity-check.mjs        再生成 → ドリフト検出 → dotnet test（ワンコマンド）
@@ -72,7 +74,17 @@ unity-port/
 
 `CardDef` と `EnemyActionDef` は同じ `Face` / `Trait` / 列の表から書けます。#70（敵データ）と #71（試作デッキ）は型を足さずにデータだけ足せます。特性の語彙を 12 × 10 へ広げる #48 も、enum に行を足して `Traits.Evaluate` の switch を伸ばすだけで済みます。
 
-**外してあるもの**: スタンス枠と除外置き場（#49）、2 行動の敵と 4 枝の決定木（#50）、複数体（#52）、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担い、BattleCore に依存しません。
+**外してあるもの**: スタンス枠と除外置き場（#49）、2 行動の敵と 4 枝の決定木（#50）、複数体（#52）、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担います。台本の型（`Script/`）と View は BattleCore に依存しません。
+
+## コアから戦闘描写へ（#73）
+
+BattleCore と台本の型の両方を見るのは `Assets/View/Depiction/Bridge/`（アセンブリ `Depiction.Bridge`）だけです。
+
+- `CoreScriptWriter.cs`: `TurnLoop` が返したイベントの列を、画面が再生する `DepictionEvent` / `Cue` / `DepictionFrame` へ写します。数字はイベントが持つ確定後の値をそのまま写し、計算しません。`BeginPlayerTurn` と `PlayCard` は 1 つの出来事、`EndTurn` は「ターン終了 / 敵の行動 / 次の予兆」の 3 つになります。
+- `CoreBattleSource.cs`: `IDepictionSource` の 3 つ目の実装です。`TurnLoop` で戦闘を進め、画面が待っているのがプレイヤーか自動の出来事かだけを決めます。`DemoDeck` は読みません。
+- `CoreText.cs`: 札・予兆・状態チップの文言です。ランプ（特性の条件が今成り立つか）と持っている札の予測値は、コアの `TurnLoop.Preview` に聞きます。
+
+敵の構え（Guard +3）は、敵の行動ではなく次の予兆の出来事の頭で再生します。押し込みは「構え → 振り → 盾 → 傷 → 押し出し」で既に長く、同じ出来事に入れると 1 行動 2.0 秒を超えるためです。
 
 ## 乱数と丸め
 
@@ -93,7 +105,7 @@ winget install Microsoft.DotNet.SDK.10
 dotnet test unity-port/UnityCorePort.slnx
 ```
 
-BattleCore 79 件と Depiction 53 件が green になります（2026-09-21 #69 時点）。
+BattleCore 162 件、Depiction 53 件、Depiction.Bridge 22 件が green になります（2026-09-21 #73 時点）。
 
 ## パリティ（v2 移植の証跡。もう回らない）
 

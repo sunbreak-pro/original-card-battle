@@ -1,0 +1,17 @@
+{
+  "name": "Depiction.Bridge",
+  "rootNamespace": "Depiction.Bridge",
+  "references": [
+    "BattleCore",
+    "Depiction.Script"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}
