@@ -1,6 +1,6 @@
 # 戦闘 UI / UX v1 — 画面設計・情報設計・操作・演出・Unity 写像
 
-> **正本は v2 に移った（2026-09-13）**: 戦闘コア v4.1 に合わせた設計は `battle_ui_ux_v2.md` が正本。本書（v1.2）は View v1.1（`unity-port/unity-project-kit/Assets/View/`）の実装記録として残す。§3.6 のドラッグ操作は v2 §3 に統合した。
+> **正本は v2 に移った（2026-09-13）**: 戦闘コア v4.1 に合わせた設計は `battle_ui_ux_v2.md` が正本。本書（v1.2）は View v1.1（`unity-port/unity-project-kit/Assets/View/`）の実装記録として残す。§3.6 のドラッグ操作は v2 §3 に統合した。2026-09-20 v4.2 で投入量と共有の距離（近 / 中 / 遠）は廃止されました。現在の正本は `battle_core_v4.md` の §16〜§18 です。
 > **Status**: DRAFT v1.2（2026-09-12: 見た目 A 採用、鮮やかさと描き込み、敗北画面と手記を追加。2026-09-13: §3.6 ドラッグ操作）。完成度の目標は **80%**（§8 に達成状況）。本書は設計・ビジュアル・アニメーションの仕様を固め、Unity 実装（`unity-port/`）の正本になる。
 > **正本の関係**: ルールと数値は `battle_core_v3.md`（触らない）。抽象構想は `vision/concept-v3.md` §3 / §5 / §6。本書は「その値をどう見せ、どう操作させ、どう動かすか」だけを持つ。
 > **入力**: `battle_core_v3.md` §1.1（持つ値 5 つ）/ §9（ターン進行）、`BattleScreenView.cs`（現状 0% の基準）、`docs/reports/2026-09-06-unity-phase3-ugui.html`（スクリーンショット 4 枚）、`plans/2026-06-28-unity-migration-character-art.md`（立ち絵の方針）、`skills/ui-ux-creator/SKILL.md`（旧パレット。参考にとどめる）。

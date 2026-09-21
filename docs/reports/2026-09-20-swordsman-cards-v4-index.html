@@ -1,0 +1,417 @@
+<title>剣士カード 80 種</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground:#f5f7f6; --panel:#ffffff; --ink:#1c2327; --muted:#56636b; --line:#d5dcdf;
+    --accent:#0e6b74; --accent-ink:#ffffff; --accent-soft:#dcefef;
+    --ok:#2c7a4b; --warn:#a86a12; --stop:#a23c3c; --code-bg:#eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#13181b; --panel:#1b2226; --ink:#e4e9eb; --muted:#99a6ad; --line:#2c363b;
+      --accent:#5fc4cc; --accent-ink:#0f1c1e; --accent-soft:#163338;
+      --ok:#6fc48f; --warn:#e0a94a; --stop:#e07a7a; --code-bg:#0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#13181b; --panel:#1b2226; --ink:#e4e9eb; --muted:#99a6ad; --line:#2c363b;
+    --accent:#5fc4cc; --accent-ink:#0f1c1e; --accent-soft:#163338;
+    --ok:#6fc48f; --warn:#e0a94a; --stop:#e07a7a; --code-bg:#0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--ground); color:var(--ink);
+    font-family:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+    font-size:16px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  }
+  code, pre, .mono { font-family:"IBM Plex Mono","Consolas","Courier New",monospace; }
+  .wrap { max-width:1180px; margin:0 auto; padding-block:48px 80px; padding-left:24px; padding-right:24px; }
+  .prose { max-width:720px; }
+  header { border-bottom:1px solid var(--line); padding-bottom:28px; margin-bottom:36px; }
+  .eyebrow { font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700; margin:0 0 8px; }
+  h1 { font-size:clamp(28px,4vw,38px); line-height:1.25; margin:0 0 12px; text-wrap:balance; font-weight:700; }
+  .lede { font-size:18px; color:var(--muted); margin:0; max-width:720px; }
+  h2 { font-size:22px; margin:48px 0 12px; text-wrap:balance; padding-top:8px; }
+  h3 { font-size:17px; margin:24px 0 8px; }
+  p { margin:0 0 14px; }
+  ul { padding-left:1.3em; margin:0 0 14px; }
+  li { margin-bottom:4px; }
+  a { color:var(--accent); }
+
+  .verdicts { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin:0; padding:0; list-style:none; }
+  .verdict { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:18px 20px 16px; display:flex; flex-direction:column; gap:8px; }
+  .verdict .tag { font-size:12px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; display:inline-flex; align-items:center; gap:8px; }
+  .verdict .tag::before { content:""; width:10px; height:10px; border-radius:50%; background:currentColor; }
+  .verdict.now .tag { color:var(--ok); }
+  .verdict.later .tag { color:var(--warn); }
+  .verdict.skip .tag { color:var(--stop); }
+  .verdict h3 { margin:0; font-size:18px; }
+  .verdict p { margin:0; color:var(--muted); font-size:15px; }
+
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:0; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:var(--panel); margin:20px 0 8px; }
+  .stat { padding:14px 18px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .stat .v { font-family:"IBM Plex Mono",monospace; font-size:24px; font-weight:500; font-variant-numeric:tabular-nums; line-height:1.2; }
+  .stat .k { font-size:12.5px; color:var(--muted); letter-spacing:.04em; }
+
+  pre { background:var(--code-bg); border:1px solid var(--line); border-radius:6px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 16px; }
+  pre code { background:none; padding:0; }
+  p code, li code, td code { background:var(--code-bg); padding:1px 5px; border-radius:4px; font-size:.9em; }
+
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:6px; background:var(--panel); margin:12px 0 20px; }
+  table { border-collapse:collapse; width:100%; font-size:14.5px; }
+  th, td { text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:var(--ground); font-weight:700; white-space:nowrap; }
+  tr:last-child td { border-bottom:0; }
+  td.state { white-space:nowrap; font-weight:700; }
+  td.state.yes { color:var(--ok); }
+  td.state.no { color:var(--muted); font-weight:400; }
+  td.state.maybe { color:var(--warn); }
+  .num { font-variant-numeric:tabular-nums; font-family:"IBM Plex Mono",monospace; }
+
+  .callout { border-left:3px solid var(--accent); background:var(--accent-soft); padding:12px 16px; border-radius:0 6px 6px 0; margin:16px 0 20px; font-size:15px; }
+  .callout strong { color:var(--accent); }
+  .callout.warnbar { border-left-color:var(--warn); background:transparent; border-top:1px solid var(--line); border-right:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .callout.warnbar strong { color:var(--warn); }
+  .note { font-size:14px; color:var(--muted); }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  .filters { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin:12px 0 4px; display:flex; flex-direction:column; gap:12px; }
+  .frow { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .frow > .flabel { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:700; min-width:72px; }
+  .chip { font-family:"IBM Plex Mono",monospace; font-size:13px; padding:3px 10px; border-radius:3px; border:1px solid var(--line); background:var(--ground); color:var(--ink); cursor:pointer; line-height:1.6; }
+  .chip[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:500; }
+  .chip .c { opacity:.65; font-size:11.5px; margin-left:5px; }
+  input[type="search"] { font-family:inherit; font-size:15px; padding:6px 10px; border:1px solid var(--line); border-radius:3px; background:var(--ground); color:var(--ink); flex:1 1 200px; min-width:0; }
+  .countline { font-size:14px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 6px; }
+  .countline b { color:var(--ink); font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; }
+  .reset { font-size:13px; background:none; border:0; color:var(--accent); cursor:pointer; padding:2px 4px; text-decoration:underline; }
+
+  #cardtable td { font-size:14px; }
+  .cname { font-weight:700; white-space:nowrap; }
+  .cid { font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); }
+  .cdesc { font-size:13px; color:var(--muted); line-height:1.5; max-width:22em; }
+  .attr { font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:500; white-space:nowrap; padding:2px 7px; border-radius:3px; background:var(--accent-soft); color:var(--accent); }
+  .attr.plain { background:var(--code-bg); color:var(--muted); }
+  .tcell { white-space:nowrap; font-size:13.5px; }
+  .tcell.none { color:var(--muted); }
+  .trait { max-width:20em; font-size:13.5px; }
+  .trait .cond { color:var(--accent); font-weight:700; }
+  .trait.plainrow { color:var(--warn); }
+  .grp { font-size:12px; letter-spacing:.06em; font-weight:700; white-space:nowrap; }
+  .grp.ini { color:var(--ok); }
+  .grp.acq { color:var(--muted); }
+  .empty { padding:28px 16px; color:var(--muted); font-size:15px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-20 / 一覧 / original-card-battle</p>
+    <h1>剣士カード 80 種</h1>
+    <p class="lede">swordsman_cards_v4.md（DRAFT v4.1、2026-09-13）の全 80 枚を、属性・間合い・投入量・特性で絞り込める形にしたものです。数値の正本は battle_core_v4.md、一覧の正本は .md のままで、このページは読む用です。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">確定している</span><h3>枠組みと特性の設計</h3><p>属性 5 種、初期 40 + 習得 40、条件 12 × 効果 10 の特性を 72 枚に付ける形。集計は正本と全項目一致します。</p></li>
+    <li class="verdict later"><span class="tag">書き直し待ち</span><h3>投入量 T0〜T3 と間合い</h3><p>2026-09-14 に「T0〜T3 は廃止、間合いは近間 / 遠間へ置き換え」と決まっています。下の表の T 列と間合い列はその前の値です。</p></li>
+    <li class="verdict skip"><span class="tag">未確定</span><h3>背水の型（#80）</h3><p>採用カード「背水の陣」と名前が近く、置き換えか別の札かが未回答です（§16.7）。</p></li>
+  </ul>
+
+  <div class="callout warnbar prose"><strong>このページの位置づけ</strong>: 正本は <code>.claude/docs/card_document/swordsman_cards_v4.md</code> です。本ページはその表を機械的に写して絞り込みを付けただけで、数値を足しても引いてもいません。v4.2 の本文改訂（MEMORY の「次のアクティブタスク」）が済んだら作り直します。</div>
+
+  <h2>数字の概観</h2>
+  <div class="stats">
+    <div class="stat"><div class="v">80</div><div class="k">カード総数</div></div>
+    <div class="stat"><div class="v">40 / 40</div><div class="k">初期 / 習得</div></div>
+    <div class="stat"><div class="v">72</div><div class="k">特性を持つ</div></div>
+    <div class="stat"><div class="v">8</div><div class="k">素直な札（+2）</div></div>
+    <div class="stat"><div class="v">38</div><div class="k">アタック面を持つ</div></div>
+    <div class="stat"><div class="v">20</div><div class="k">最低投入 0</div></div>
+    <div class="stat"><div class="v">12</div><div class="k">探索の面の候補</div></div>
+    <div class="stat"><div class="v">15</div><div class="k">属性の組み合わせ</div></div>
+  </div>
+  <p class="note prose">「素直な札」は特性を持たない 8 枚で、代わりに各段の威力と Guard に +2 が乗ります（初期のみ）。特性を持つカードは目盛りどおりで上乗せがありません。</p>
+
+  <h2>全 80 種</h2>
+  <p class="prose">絞り込みは重ねて効きます。同じ行のチップは「どれか 1 つ」、違う行どうしは「かつ」です。</p>
+
+  <div class="filters">
+    <div class="frow"><span class="flabel">群</span><span id="f-group"></span></div>
+    <div class="frow"><span class="flabel">属性</span><span id="f-attr"></span></div>
+    <div class="frow"><span class="flabel">間合い</span><span id="f-range"></span></div>
+    <div class="frow"><span class="flabel">最低投入</span><span id="f-min"></span></div>
+    <div class="frow"><span class="flabel">特性 条件</span><span id="f-cond"></span></div>
+    <div class="frow"><span class="flabel">特性 効果</span><span id="f-eff"></span></div>
+    <div class="frow"><span class="flabel">検索</span><input type="search" id="q" placeholder="名前・id・説明・特性の中を探す（例: 出血、重撃、thrust）"></div>
+  </div>
+  <p class="countline"><span><b id="shown">80</b> / 80 枚を表示</span><button class="reset" id="reset" type="button">絞り込みを外す</button></p>
+
+  <div class="tablewrap">
+    <table id="cardtable">
+      <thead><tr>
+        <th>#</th><th>カード</th><th>群</th><th>属性</th><th>間合い</th><th>min</th>
+        <th>T0</th><th>T1</th><th>T2</th><th>T3</th><th>特性</th><th>習熟</th><th>探索</th><th>入手先</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <h2>集計</h2>
+
+  <h3>属性の組み合わせ別</h3>
+  <div class="tablewrap"><table><thead><tr><th>パターン</th><th>初期 40</th><th>習得 40</th><th>計</th></tr></thead><tbody id="agg-attr"></tbody></table></div>
+
+  <h3>特性の条件別</h3>
+  <div class="tablewrap"><table><thead><tr><th>条件</th><th>意味</th><th>初期</th><th>習得</th><th>計</th></tr></thead><tbody id="agg-cond"></tbody></table></div>
+
+  <h3>特性の効果別</h3>
+  <div class="tablewrap"><table><thead><tr><th>効果</th><th>意味</th><th>初期</th><th>習得</th><th>計</th></tr></thead><tbody id="agg-eff"></tbody></table></div>
+
+  <h3>習得 40 種の入手先</h3>
+  <div class="tablewrap"><table><thead><tr><th>入手先</th><th>枚数</th></tr></thead><tbody id="agg-src"></tbody></table></div>
+
+  <h2>記法</h2>
+
+  <h3>属性 5 種</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>略</th><th>属性</th><th>面が持つもの</th><th>投入量で伸びるもの</th><th>間合い補正</th></tr></thead>
+    <tbody>
+      <tr><td><span class="attr">A</span></td><td>アタック</td><td>威力、最適間合い、崩し</td><td>威力、崩し</td><td>受ける（diff 0 / 1 / 2 = ×1.0 / ×0.5 / ×0.15）。崩しは diff 0 のみ</td></tr>
+      <tr><td><span class="attr">G</span></td><td>ガード</td><td>Guard</td><td>Guard 量</td><td>受けない</td></tr>
+      <tr><td><span class="attr">St</span></td><td>スタンス</td><td>戦闘中ずっと続く効果（枠 1、置き換え式）</td><td>効果の強さ</td><td>受けない</td></tr>
+      <tr><td><span class="attr">Sk</span></td><td>スキル</td><td>状態の付与、回復、ドロー、スタミナ</td><td>段数、付く状態の数、回復量</td><td>相手に付ける状態は diff 0 のときだけ</td></tr>
+      <tr><td><span class="attr">M</span></td><td>ムーブ</td><td>詰め（−1）/ 退き（+1）</td><td>段階数、向きを選べるか</td><td>受けない</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>目盛り（T0 / T1 / T2 / T3）</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>面</th><th>T0</th><th>T1</th><th>T2</th><th>T3</th></tr></thead>
+    <tbody>
+      <tr><td>単属性アタック 近 / 中</td><td class="num">5</td><td class="num">8</td><td class="num">12</td><td class="num">16</td></tr>
+      <tr><td>単属性アタック 遠</td><td class="num">4</td><td class="num">6</td><td class="num">9</td><td class="num">12</td></tr>
+      <tr><td>二属性のアタック面 近 / 中</td><td class="num">3</td><td class="num">5</td><td class="num">8</td><td class="num">10</td></tr>
+      <tr><td>二属性のアタック面 遠</td><td class="num">3</td><td class="num">4</td><td class="num">6</td><td class="num">8</td></tr>
+      <tr><td>単属性ガード</td><td class="num">3</td><td class="num">6</td><td class="num">9</td><td class="num">12</td></tr>
+      <tr><td>二属性のガード面</td><td class="num">2</td><td class="num">4</td><td class="num">6</td><td class="num">8</td></tr>
+      <tr><td>回復</td><td class="num">2</td><td class="num">5</td><td class="num">8</td><td class="num">11</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note prose">二属性の各面は単属性の同じ面の 65% を目安にします。min が 1 のカードは T0 が「—」です。出血は相手のターン開始に HP −2 × 段、再生は自分のターン開始に HP +2。崩し（相手のスタミナ −n）は目盛りを変えません。構え（ターン終了時に残 3 以上で Guard +3）は全カード共通なので表に書いていません。</p>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>表の全項目は <code>swordsman_cards_v4.md:66-172</code> の 2 つの表を機械的に写しました。手で入れ直した値はありません。集計は正本の §4 と全項目一致します。</li>
+    <li>「間合い」列は 80 枚すべての最適間合いです（近 16 / 中 20 / 遠 10 / — 34）。正本 §4.4 の「近 15 / 中 14 / 遠 9」はアタック面を持つ 38 枚だけを数えた値なので、数が違います。</li>
+    <li>特性の「条件」は括弧の中身を落とした見出し語で数えています。位置(近) と 位置(遠) は同じ「位置」に入ります。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>この表が実装（<code>unity-port/BattleCore/</code>）に入っているかは確かめていません。MEMORY では「v4 の C# 実装」は v4.2 改訂の後に回す保留中のタスクです。</li>
+    <li>T0〜T3 の廃止と近間 / 遠間への置き換えが、どの列をどう変えるかは未定です。正本 <code>battle_core_v4.md</code> §16 の回答待ちです。</li>
+    <li>ボス 2 / ボス 3 / 精鋭 3 / 精鋭 4 は名前が未定で、入手先の欄に仮の番号が入っています。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li><strong>背水の型（#80）を残すか</strong>。採用カード「背水の陣」と名前が近いので、置き換えるか別の札にするかを決めると 80 枚が確定します。</li>
+    <li><strong>v4.2 の本文改訂をいつ始めるか</strong>。2026-09-16 に判断 95 件が出そろっていて着手できます。効く範囲が広いのは「状態のスタック制」「コストを旧段表の列にする」「3 段目は 1 枚と才能」の 3 つで、いずれもこの表の T 列を作り直します。</li>
+    <li><strong>試験台の 9 項目をいつ回すか</strong>。正本 §5 に「0 投入回し」「重撃の期待値」「二属性 65%」など、数値を下げる条件付きの基準が書いてあります。C# 実装の後でないと測れません。</li>
+  </ul>
+</div>
+
+<script>
+(function () {
+  var CARDS = [{"n":1,"id":"thrust","name":"突き","attr":"A","range":"近","min":1,"t0":"—","t1":"威力 10","t2":"威力 14","t3":"威力 18","trait":"なし（素直: +2）","mastery":"あり","explore":"—","desc":"まっすぐ突く。近でこそ通る","source":"初期デッキ","group":"初期","cond":"—","eff":"素直（+2）","condKey":"—","effKey":"素直（特性なし）","hasA":true},{"n":2,"id":"kesa_cut","name":"袈裟斬り","attr":"A","range":"近","min":1,"t0":"—","t1":"威力 8","t2":"威力 12","t3":"威力 16 + 崩し 1","trait":"初手: 威力 +3","mastery":"あり","explore":"—","desc":"肩口から斬り下ろす","source":"初期デッキ","group":"初期","cond":"初手","eff":"威力 +3","condKey":"初手","effKey":"威力 +n","hasA":true},{"n":3,"id":"overhead","name":"大上段","attr":"A","range":"中","min":1,"t0":"—","t1":"威力 6","t2":"威力 12","t3":"威力 20","trait":"予兆(防御): 重撃（投入 +1 で威力 +6）","mastery":"あり","explore":"—","desc":"振りかぶって叩き落とす","source":"初期デッキ","group":"初期","cond":"予兆(防御)","eff":"重撃（投入 +1 で威力 +6）","condKey":"予兆","effKey":"重撃","hasA":true},{"n":4,"id":"wrist_cut","name":"小手打ち","attr":"A","range":"近","min":0,"t0":"威力 5","t1":"威力 6","t2":"威力 9","t3":"威力 12","trait":"連動(M): スタミナ +1","mastery":"あり","explore":"—","desc":"手元を狙う軽い一撃","source":"初期デッキ","group":"初期","cond":"連動(M)","eff":"スタミナ +1","condKey":"連動","effKey":"スタミナ +1","hasA":true},{"n":5,"id":"side_sweep","name":"横薙ぎ","attr":"A","range":"中","min":1,"t0":"—","t1":"威力 10","t2":"威力 14","t3":"威力 18","trait":"なし（素直: +2）","mastery":"あり","explore":"—","desc":"水平に薙ぐ","source":"初期デッキ","group":"初期","cond":"—","eff":"素直（+2）","condKey":"—","effKey":"素直（特性なし）","hasA":true},{"n":6,"id":"flat_strike","name":"峰打ち","attr":"A","range":"中","min":1,"t0":"—","t1":"威力 6 + 崩し 1","t2":"威力 10 + 崩し 1","t3":"威力 14 + 崩し 2","trait":"相手の状態(鈍足): 威力 +5","mastery":"あり","explore":"—","desc":"足の止まった相手の体力を削る","source":"初期デッキ","group":"初期","cond":"相手の状態(鈍足)","eff":"威力 +5","condKey":"相手の状態","effKey":"威力 +n","hasA":true},{"n":7,"id":"probe_thrust","name":"探り突き","attr":"A","range":"遠","min":0,"t0":"威力 4","t1":"威力 6","t2":"威力 9","t3":"威力 12","trait":"予兆(攻撃): 威力 +3","mastery":"あり","explore":"—","desc":"遠くから出方を探る突き","source":"初期デッキ","group":"初期","cond":"予兆(攻撃)","eff":"威力 +3","condKey":"予兆","effKey":"威力 +n","hasA":true},{"n":8,"id":"pierce","name":"貫き","attr":"A","range":"中","min":1,"t0":"—","t1":"威力 8","t2":"威力 12","t3":"威力 16","trait":"崩し後: 重撃（投入 +1 で威力 +6）","mastery":"あり","explore":"—","desc":"崩れた相手を刺し貫く","source":"初期デッキ","group":"初期","cond":"崩し後","eff":"重撃（投入 +1 で威力 +6）","condKey":"崩し後","effKey":"重撃","hasA":true},{"n":9,"id":"throw_blade","name":"投げ刃","attr":"A","range":"遠","min":0,"t0":"威力 4","t1":"威力 6","t2":"威力 9","t3":"威力 12","trait":"温存(残 ≥ 4): ドロー +1","mastery":"あり","explore":"候補","desc":"小刀を投げる","source":"初期デッキ","group":"初期","cond":"温存(残 ≥ 4)","eff":"ドロー +1","condKey":"温存","effKey":"ドロー +1","hasA":true},{"n":10,"id":"reach_thrust","name":"伸び突き","attr":"A","range":"遠","min":1,"t0":"—","t1":"威力 6","t2":"威力 9","t3":"威力 12 + 崩し 1","trait":"死力: 威力 +6","mastery":"あり","explore":"—","desc":"腕を伸ばし切って突く","source":"初期デッキ","group":"初期","cond":"死力","eff":"威力 +6","condKey":"死力","effKey":"威力 +n","hasA":true},{"n":11,"id":"brace","name":"呼吸を整える","attr":"G","range":"—","min":0,"t0":"Guard 3","t1":"Guard 6","t2":"Guard 9","t3":"Guard 12","trait":"温存(残 ≥ 6): 次ターン回復 +1","mastery":"あり","explore":"—","desc":"息を整えて受けに備える","source":"初期デッキ","group":"初期","cond":"温存(残 ≥ 6)","eff":"次ターン回復 +1","condKey":"温存","effKey":"次ターン回復 +1","hasA":false},{"n":12,"id":"iron_block","name":"鉄の受け","attr":"G","range":"—","min":1,"t0":"—","t1":"Guard 8","t2":"Guard 11","t3":"Guard 14","trait":"なし（素直: +2）","mastery":"あり","explore":"—","desc":"刃を立てて重い一撃を受ける","source":"初期デッキ","group":"初期","cond":"—","eff":"素直（+2）","condKey":"—","effKey":"素直（特性なし）","hasA":false},{"n":13,"id":"low_guard","name":"低い構え","attr":"G","range":"—","min":1,"t0":"—","t1":"Guard 6","t2":"Guard 9","t3":"Guard 12","trait":"位置(近): Guard +3","mastery":"あり","explore":"—","desc":"腰を落として近くで受ける","source":"初期デッキ","group":"初期","cond":"位置(近)","eff":"Guard +3","condKey":"位置","effKey":"Guard +n","hasA":false},{"n":14,"id":"riposte_guard","name":"受け太刀","attr":"G","range":"—","min":1,"t0":"—","t1":"Guard 6","t2":"Guard 9","t3":"Guard 12","trait":"連動(A): Guard +3","mastery":"あり","explore":"—","desc":"斬った勢いのまま受けに回る","source":"初期デッキ","group":"初期","cond":"連動(A)","eff":"Guard +3","condKey":"連動","effKey":"Guard +n","hasA":false},{"n":15,"id":"deep_breath","name":"深い呼吸","attr":"G","range":"—","min":1,"t0":"—","t1":"Guard 8","t2":"Guard 11","t3":"Guard 14","trait":"なし（素直: +2）","mastery":"あり","explore":"—","desc":"深く息を吸って受ける","source":"初期デッキ","group":"初期","cond":"—","eff":"素直（+2）","condKey":"—","effKey":"素直（特性なし）","hasA":false},{"n":16,"id":"water_stance","name":"水の構え","attr":"St","range":"—","min":1,"t0":"—","t1":"遠にいるターン開始の回復 +1","t2":"中と遠で回復 +1","t3":"どの間合いでも回復 +1","trait":"連動(M): この 1 枚の投入 −1","mastery":"あり","explore":"—","desc":"退いて息を戻す型","source":"初期デッキ","group":"初期","cond":"連動(M)","eff":"この 1 枚の投入 −1","condKey":"連動","effKey":"投入 −1","hasA":false},{"n":17,"id":"rock_stance","name":"岩の構え","attr":"St","range":"—","min":1,"t0":"—","t1":"ターン開始 Guard +2","t2":"ターン開始 Guard +3","t3":"ターン開始 Guard +5","trait":"予兆(攻撃): Guard +3","mastery":"あり","explore":"—","desc":"動かず受ける型","source":"初期デッキ","group":"初期","cond":"予兆(攻撃)","eff":"Guard +3","condKey":"予兆","effKey":"Guard +n","hasA":false},{"n":18,"id":"flow_stance","name":"流れの構え","attr":"St","range":"—","min":1,"t0":"—","t1":"ムーブをプレイしたターン、アタック威力 +2","t2":"同 +3","t3":"同 +5","trait":"連動(M): ドロー +1","mastery":"あり","explore":"—","desc":"動いてから斬る型","source":"初期デッキ","group":"初期","cond":"連動(M)","eff":"ドロー +1","condKey":"連動","effKey":"ドロー +1","hasA":false},{"n":19,"id":"first_aid","name":"応急処置","attr":"Sk","range":"—","min":1,"t0":"—","t1":"HP 7","t2":"HP 10","t3":"HP 13","trait":"なし（素直: +2）","mastery":"あり","explore":"候補","desc":"傷口を縛る","source":"初期デッキ","group":"初期","cond":"—","eff":"素直（+2）","condKey":"—","effKey":"素直（特性なし）","hasA":false},{"n":20,"id":"spirit_roar","name":"気迫","attr":"Sk","range":"中","min":1,"t0":"—","t1":"威圧","t2":"威圧 + 疲労","t3":"威圧 + 疲労 + 鈍足","trait":"相手の状態(出血): 脆化を 1 つ追加","mastery":"あり","explore":"候補","desc":"声で相手の次の一手を鈍らせる","source":"初期デッキ","group":"初期","cond":"相手の状態(出血)","eff":"脆化を 1 つ追加","condKey":"相手の状態","effKey":"状態","hasA":false},{"n":21,"id":"focus","name":"集中","attr":"Sk","range":"—","min":1,"t0":"—","t1":"集中","t2":"集中 + ドロー 1","t3":"集中 + 強化","trait":"初手: ドロー +1","mastery":"あり","explore":"—","desc":"次の一手に力を溜める","source":"初期デッキ","group":"初期","cond":"初手","eff":"ドロー +1","condKey":"初手","effKey":"ドロー +1","hasA":false},{"n":22,"id":"observe","name":"観察","attr":"Sk","range":"中","min":0,"t0":"ドロー 1","t1":"ドロー 2","t2":"ドロー 2 + 脆化","t3":"ドロー 2 + 脆化 + 疲労","trait":"手薄: ドロー +1","mastery":"あり","explore":"候補","desc":"相手をよく見る","source":"初期デッキ","group":"初期","cond":"手薄","eff":"ドロー +1","condKey":"手薄","effKey":"ドロー +1","hasA":false},{"n":23,"id":"war_cry","name":"鬨の声","attr":"Sk","range":"中","min":1,"t0":"—","t1":"強化","t2":"強化 + 威圧","t3":"強化 + 威圧 + 脆化","trait":"連打: 脆化を 1 つ追加","mastery":"あり","explore":"—","desc":"叫んで己を奮わせ相手を怯ませる","source":"初期デッキ","group":"初期","cond":"連打","eff":"脆化を 1 つ追加","condKey":"連打","effKey":"状態","hasA":false},{"n":24,"id":"second_wind","name":"息継ぎ","attr":"Sk","range":"—","min":0,"t0":"再生 1","t1":"再生 2","t2":"再生 3","t3":"再生 3 + スタミナ +1","trait":"自分の状態(再生): スタミナ +1","mastery":"あり","explore":"候補","desc":"少しずつ傷を癒す","source":"初期デッキ","group":"初期","cond":"自分の状態(再生)","eff":"スタミナ +1","condKey":"自分の状態","effKey":"スタミナ +1","hasA":false},{"n":25,"id":"footwork","name":"足運び","attr":"M","range":"—","min":0,"t0":"詰め 1","t1":"1 段（向きを選ぶ）","t2":"詰め 2","t3":"2 段（向きを選ぶ）","trait":"初手: スタミナ +1","mastery":"あり","explore":"候補","desc":"先に足を運ぶ","source":"初期デッキ","group":"初期","cond":"初手","eff":"スタミナ +1","condKey":"初手","effKey":"スタミナ +1","hasA":false},{"n":26,"id":"back_leap","name":"後ろ跳び","attr":"M","range":"—","min":0,"t0":"退き 1","t1":"1 段（向きを選ぶ）","t2":"退き 2","t3":"2 段（向きを選ぶ）","trait":"予兆(攻撃): Guard +3","mastery":"あり","explore":"—","desc":"跳んで間合いを外す","source":"初期デッキ","group":"初期","cond":"予兆(攻撃)","eff":"Guard +3","condKey":"予兆","effKey":"Guard +n","hasA":false},{"n":27,"id":"slide_step","name":"摺り足","attr":"M","range":"—","min":0,"t0":"詰め 1","t1":"1 段（向きを選ぶ）","t2":"詰め 2","t3":"2 段（向きを選ぶ）","trait":"連動(G): ドロー +1","mastery":"あり","explore":"—","desc":"受けの後に静かに詰める","source":"初期デッキ","group":"初期","cond":"連動(G)","eff":"ドロー +1","condKey":"連動","effKey":"ドロー +1","hasA":false},{"n":28,"id":"break_off","name":"間合い切り","attr":"M","range":"—","min":0,"t0":"退き 1","t1":"1 段（向きを選ぶ）","t2":"退き 2","t3":"2 段（向きを選ぶ）","trait":"締め: スタミナ +1","mastery":"あり","explore":"—","desc":"手を尽くして退く","source":"初期デッキ","group":"初期","cond":"締め","eff":"スタミナ +1","condKey":"締め","effKey":"スタミナ +1","hasA":false},{"n":29,"id":"lunge","name":"踏み込み斬り","attr":"A+M","range":"近","min":1,"t0":"—","t1":"威力 5 ／ 詰め 1","t2":"威力 8 ／ 詰め 1","t3":"威力 10 + 崩し 1 ／ 詰め 1","trait":"連動(St): 威力 +3。moveFirst","mastery":"あり","explore":"—","desc":"型を決めてから踏み込んで斬る","source":"初期デッキ","group":"初期","cond":"連動(St)","eff":"威力 +3。moveFirst","condKey":"連動","effKey":"威力 +n","hasA":true},{"n":30,"id":"feint","name":"牽制","attr":"A+M","range":"中","min":1,"t0":"—","t1":"威力 5 ／ 退き 1","t2":"威力 8 ／ 退き 1","t3":"威力 10 ／ 退き 1","trait":"温存(残 ≥ 4): Guard +3","mastery":"あり","explore":"—","desc":"牽制して退く","source":"初期デッキ","group":"初期","cond":"温存(残 ≥ 4)","eff":"Guard +3","condKey":"温存","effKey":"Guard +n","hasA":true},{"n":31,"id":"boar_rush","name":"猪突猛進","attr":"A+M","range":"近","min":1,"t0":"—","t1":"威力 5 ／ 詰め 1","t2":"威力 8 ／ 詰め 2","t3":"威力 10 ／ 詰め 2","trait":"位置(遠): 威力 +6。moveFirst","mastery":"あり","explore":"—","desc":"遠くから一気に駆けて斬る","source":"初期デッキ","group":"初期","cond":"位置(遠)","eff":"威力 +6。moveFirst","condKey":"位置","effKey":"威力 +n","hasA":true},{"n":32,"id":"rend","name":"裂き斬り","attr":"A+Sk","range":"中","min":1,"t0":"—","t1":"威力 5 ／ 出血 1","t2":"威力 8 ／ 出血 2","t3":"威力 10 ／ 出血 3","trait":"相手の状態(出血): 出血 +1 段","mastery":"あり","explore":"—","desc":"傷口をさらに裂く","source":"初期デッキ","group":"初期","cond":"相手の状態(出血)","eff":"出血 +1 段","condKey":"相手の状態","effKey":"状態","hasA":true},{"n":33,"id":"body_check","name":"体当たり","attr":"A+Sk","range":"近","min":1,"t0":"—","t1":"威力 5 ／ 鈍足","t2":"威力 8 ／ 鈍足","t3":"威力 10 ／ 鈍足 + 疲労","trait":"連打: 威力 +3","mastery":"あり","explore":"—","desc":"続けざまに身体ごとぶつかる","source":"初期デッキ","group":"初期","cond":"連打","eff":"威力 +3","condKey":"連打","effKey":"威力 +n","hasA":true},{"n":34,"id":"stone_throw","name":"石礫","attr":"A+Sk","range":"遠","min":1,"t0":"—","t1":"威力 4 ／ 脆化","t2":"威力 6 ／ 脆化","t3":"威力 8 ／ 脆化 + 威圧","trait":"手薄: この 1 枚の投入 −1","mastery":"あり","explore":"—","desc":"手が尽きても石は投げられる","source":"初期デッキ","group":"初期","cond":"手薄","eff":"この 1 枚の投入 −1","condKey":"手薄","effKey":"投入 −1","hasA":true},{"n":35,"id":"parry_cut","name":"受け流し斬り","attr":"A+G","range":"近","min":1,"t0":"—","t1":"威力 7 ／ Guard 6","t2":"威力 10 ／ Guard 8","t3":"威力 12 ／ Guard 10","trait":"なし（素直: +2）","mastery":"あり","explore":"—","desc":"受け流しざまに斬る","source":"初期デッキ","group":"初期","cond":"—","eff":"素直（+2）","condKey":"—","effKey":"素直（特性なし）","hasA":true},{"n":36,"id":"guard_thrust","name":"柄当て","attr":"A+G","range":"中","min":1,"t0":"—","t1":"威力 5 ／ Guard 4","t2":"威力 8 ／ Guard 6","t3":"威力 10 ／ Guard 8","trait":"連動(G): 威力 +3","mastery":"あり","explore":"—","desc":"受けた勢いで柄を突き出す","source":"初期デッキ","group":"初期","cond":"連動(G)","eff":"威力 +3","condKey":"連動","effKey":"威力 +n","hasA":true},{"n":37,"id":"step_in_guard","name":"足捌き・前","attr":"G+M","range":"—","min":0,"t0":"Guard 3 ／ 詰め 1","t1":"Guard 6 ／ 詰め 1","t2":"Guard 8 ／ 詰め 1","t3":"Guard 10 ／ 詰め 1","trait":"なし（素直: +2）","mastery":"あり","explore":"—","desc":"受けながら詰める","source":"初期デッキ","group":"初期","cond":"—","eff":"素直（+2）","condKey":"—","effKey":"素直（特性なし）","hasA":false},{"n":38,"id":"step_out_guard","name":"足捌き・後","attr":"G+M","range":"—","min":0,"t0":"Guard 3 ／ 退き 1","t1":"Guard 6 ／ 退き 1","t2":"Guard 8 ／ 退き 1","t3":"Guard 10 ／ 退き 1","trait":"なし（素直: +2）","mastery":"あり","explore":"—","desc":"受けながら退く","source":"初期デッキ","group":"初期","cond":"—","eff":"素直（+2）","condKey":"—","effKey":"素直（特性なし）","hasA":false},{"n":39,"id":"iron_wall","name":"鉄壁の構え","attr":"G+St","range":"—","min":1,"t0":"—","t1":"Guard 4 ／ 毎ターン開始 Guard +2","t2":"Guard 6 ／ 同 +2","t3":"Guard 8 ／ 同 +3","trait":"自分の状態(見切り): Guard +3","mastery":"あり","explore":"—","desc":"見切った上で壁になる","source":"初期デッキ","group":"初期","cond":"自分の状態(見切り)","eff":"Guard +3","condKey":"自分の状態","effKey":"Guard +n","hasA":false},{"n":40,"id":"twist_away","name":"翻し足","attr":"Sk+M","range":"中","min":1,"t0":"—","t1":"鈍足 ／ 退き 1","t2":"鈍足 + 疲労 ／ 退き 1","t3":"鈍足 + 疲労 ／ 退き 2","trait":"連動(A): スタミナ +1","mastery":"あり","explore":"—","desc":"斬った後に身を翻し足を封じる","source":"初期デッキ","group":"初期","cond":"連動(A)","eff":"スタミナ +1","condKey":"連動","effKey":"スタミナ +1","hasA":false},{"n":41,"id":"miasma_blade","name":"瘴気の刃","attr":"A+Sk","range":"中","min":1,"t0":"—","t1":"威力 5 ／ 疲労","t2":"威力 8 ／ 疲労 + 威圧","t3":"威力 10 ／ 疲労 + 威圧 + 脆化","trait":"相手の状態(疲労): 威力 +5","mastery":"なし","explore":"—","source":"ボス: 瘴気の司祭","desc":"疲れた相手を瘴気の刃で削る","group":"習得","cond":"相手の状態(疲労)","eff":"威力 +5","condKey":"相手の状態","effKey":"威力 +n","hasA":true},{"n":42,"id":"priest_prayer","name":"司祭の祈り","attr":"St","range":"—","min":1,"t0":"—","t1":"被弾のたびスタミナ +1（ターン 1 回）","t2":"同 + Guard +2","t3":"同 + 再生 1","trait":"自分の状態(再生): この 1 枚の投入 −1","mastery":"なし","explore":"—","source":"ボス: 瘴気の司祭","desc":"痛みを力に変える型","group":"習得","cond":"自分の状態(再生)","eff":"この 1 枚の投入 −1","condKey":"自分の状態","effKey":"投入 −1","hasA":false},{"n":43,"id":"purge_flash","name":"浄化の一閃","attr":"A+St","range":"遠","min":1,"t0":"—","t1":"威力 4 ／ 予兆の狙い間合いにいるとき Guard +2","t2":"威力 6 ／ 同 +3","t3":"威力 8 ／ 同 +5","trait":"予兆(攻撃): 追撃（次のアタック面 威力 +5）","mastery":"なし","explore":"—","source":"ボス: 瘴気の司祭","desc":"狙われた場所で光を放つ","group":"習得","cond":"予兆(攻撃)","eff":"追撃（次のアタック面 威力 +5）","condKey":"予兆","effKey":"追撃","hasA":true},{"n":44,"id":"tyrant_swing","name":"覇者の一振り","attr":"A","range":"中","min":1,"t0":"—","t1":"威力 10 + 崩し 1","t2":"威力 14 + 崩し 2","t3":"威力 20 + 崩し 2","trait":"連打: 重撃（投入 +1 で威力 +6）","mastery":"なし","explore":"—","source":"ボス 2","desc":"続けて振れば一振りで崩す","group":"習得","cond":"連打","eff":"重撃（投入 +1 で威力 +6）","condKey":"連打","effKey":"重撃","hasA":true},{"n":45,"id":"tyrant_stance","name":"覇者の構え","attr":"A+St","range":"近","min":1,"t0":"—","t1":"威力 5 ／ 近でのアタック +2","t2":"威力 8 ／ 同 +3","t3":"威力 10 ／ 同 +5","trait":"位置(近): 威力 +3","mastery":"なし","explore":"—","source":"ボス 2","desc":"近で押し切る型","group":"習得","cond":"位置(近)","eff":"威力 +3","condKey":"位置","effKey":"威力 +n","hasA":true},{"n":46,"id":"crush_advance","name":"圧殺の歩み","attr":"A+M","range":"近","min":1,"t0":"—","t1":"威力 5 ／ 詰め 1","t2":"威力 8 ／ 詰め 1","t3":"威力 10 ／ 詰め 2","trait":"崩し後: 威力 +5。moveFirst","mastery":"なし","explore":"—","source":"ボス 2","desc":"崩れた相手へ歩いて潰す","group":"習得","cond":"崩し後","eff":"威力 +5。moveFirst","condKey":"崩し後","effKey":"威力 +n","hasA":true},{"n":47,"id":"phantom_step","name":"幻影歩法","attr":"St+M","range":"—","min":1,"t0":"—","t1":"退き 1 ／ 移動したターン Guard +2","t2":"退き 1 ／ 同 +3","t3":"退き 2 ／ 同 +5","trait":"連動(Sk): Guard +3","mastery":"なし","explore":"—","source":"ボス 3","desc":"残像を残して動く型","group":"習得","cond":"連動(Sk)","eff":"Guard +3","condKey":"連動","effKey":"Guard +n","hasA":false},{"n":48,"id":"void_thrust","name":"虚空の突き","attr":"A","range":"遠","min":1,"t0":"—","t1":"威力 8","t2":"威力 11","t3":"威力 14","trait":"予兆(攻撃): 重撃（投入 +1 で威力 +6）","mastery":"なし","explore":"—","source":"ボス 3","desc":"届かぬはずの距離を突く","group":"習得","cond":"予兆(攻撃)","eff":"重撃（投入 +1 で威力 +6）","condKey":"予兆","effKey":"重撃","hasA":true},{"n":49,"id":"shadow_bind","name":"影縛り","attr":"Sk+St","range":"中","min":1,"t0":"—","t1":"鈍足 ／ 敵が移動するたび崩し 1","t2":"鈍足 + 疲労 ／ 同 崩し 1","t3":"鈍足 + 疲労 + 威圧 ／ 同 崩し 2","trait":"相手の状態(鈍足): 疲労を 1 つ追加","mastery":"なし","explore":"—","source":"ボス 3","desc":"影を縫って動きを縛る","group":"習得","cond":"相手の状態(鈍足)","eff":"疲労を 1 つ追加","condKey":"相手の状態","effKey":"状態","hasA":false},{"n":50,"id":"bulwark","name":"城壁の受け","attr":"G","range":"—","min":1,"t0":"—","t1":"Guard 9","t2":"Guard 12","t3":"Guard 15","trait":"予兆(攻撃): Guard +3","mastery":"なし","explore":"—","source":"精鋭: 甲冑の番人","desc":"城壁のように受ける","group":"習得","cond":"予兆(攻撃)","eff":"Guard +3","condKey":"予兆","effKey":"Guard +n","hasA":false},{"n":51,"id":"shield_bash","name":"盾打ち","attr":"A+G","range":"近","min":1,"t0":"—","t1":"威力 5 ／ Guard 4","t2":"威力 8 ／ Guard 6","t3":"威力 10 + 崩し 1 ／ Guard 8","trait":"連動(G): 転換（Guard の半分を威力に足す）","mastery":"なし","explore":"—","source":"精鋭: 甲冑の番人","desc":"固めた盾で打つ","group":"習得","cond":"連動(G)","eff":"転換（Guard の半分を威力に足す）","condKey":"連動","effKey":"転換","hasA":true},{"n":52,"id":"pack_howl","name":"群れの咆哮","attr":"Sk","range":"中","min":1,"t0":"—","t1":"強化","t2":"強化 + 疲労","t3":"強化 + 疲労 + 脆化","trait":"自分の状態(強化): 追撃（次のアタック面 威力 +5）","mastery":"なし","explore":"—","source":"精鋭: 群れの長","desc":"咆哮で己を奮わせ相手を疲れさせる","group":"習得","cond":"自分の状態(強化)","eff":"追撃（次のアタック面 威力 +5）","condKey":"自分の状態","effKey":"追撃","hasA":false},{"n":53,"id":"fang_rush","name":"牙の突進","attr":"A+M","range":"近","min":1,"t0":"—","t1":"威力 5 ／ 詰め 1","t2":"威力 8 ／ 詰め 2","t3":"威力 10 ／ 詰め 2","trait":"位置(中): 威力 +3。moveFirst","mastery":"あり","explore":"—","source":"精鋭: 群れの長","desc":"牙のように飛びかかる","group":"習得","cond":"位置(中)","eff":"威力 +3。moveFirst","condKey":"位置","effKey":"威力 +n","hasA":true},{"n":54,"id":"whirlwind","name":"旋風斬り","attr":"A","range":"中","min":1,"t0":"—","t1":"威力 8","t2":"威力 12","t3":"威力 16","trait":"連動(M): 重撃（投入 +1 で威力 +6）","mastery":"なし","explore":"—","source":"精鋭 3","desc":"動いた勢いを刃に乗せる","group":"習得","cond":"連動(M)","eff":"重撃（投入 +1 で威力 +6）","condKey":"連動","effKey":"重撃","hasA":true},{"n":55,"id":"riposte_stance","name":"返しの構え","attr":"G+Sk","range":"—","min":1,"t0":"—","t1":"Guard 4 ／ 見切り","t2":"Guard 6 ／ 見切り + ドロー 1","t3":"Guard 8 ／ 見切り + 強化","trait":"手薄: Guard +3","mastery":"なし","explore":"—","source":"精鋭 3","desc":"手が尽きても受けて返す","group":"習得","cond":"手薄","eff":"Guard +3","condKey":"手薄","effKey":"Guard +n","hasA":false},{"n":56,"id":"hunter_mark","name":"狩人の印","attr":"Sk+M","range":"遠","min":1,"t0":"—","t1":"脆化 ／ 退き 1","t2":"脆化 + 威圧 ／ 退き 1","t3":"脆化 + 威圧 ／ 退き 2","trait":"相手の状態(脆化): ドロー +1","mastery":"なし","explore":"—","source":"精鋭 4","desc":"退きながら的を付ける","group":"習得","cond":"相手の状態(脆化)","eff":"ドロー +1","condKey":"相手の状態","effKey":"ドロー +1","hasA":false},{"n":57,"id":"spear_wall","name":"槍衾","attr":"G+St","range":"—","min":1,"t0":"—","t1":"Guard 4 ／ 被弾のたび敵に出血 1","t2":"Guard 6 ／ 同 出血 1 + スタミナ +1","t3":"Guard 8 ／ 同 出血 2","trait":"相手の状態(出血): Guard +3","mastery":"なし","explore":"—","source":"精鋭 4","desc":"触れた者を刺す受け","group":"習得","cond":"相手の状態(出血)","eff":"Guard +3","condKey":"相手の状態","effKey":"Guard +n","hasA":false},{"n":58,"id":"shield_push","name":"盾押し","attr":"G+M","range":"—","min":0,"t0":"Guard 2 ／ 詰め 1","t1":"Guard 4 ／ 詰め 1","t2":"Guard 6 ／ 詰め 1","t3":"Guard 8 ／ 詰め 2","trait":"締め: スタミナ +1","mastery":"あり","explore":"—","source":"探索 1 階","desc":"盾で押しながら進む","group":"習得","cond":"締め","eff":"スタミナ +1","condKey":"締め","effKey":"スタミナ +1","hasA":false},{"n":59,"id":"snap_guard","name":"咄嗟の受け","attr":"G","range":"—","min":0,"t0":"Guard 3","t1":"Guard 6","t2":"Guard 9","t3":"Guard 12","trait":"初手: Guard +3","mastery":"あり","explore":"候補","source":"探索 1 階","desc":"とっさに刃を上げる","group":"習得","cond":"初手","eff":"Guard +3","condKey":"初手","effKey":"Guard +n","hasA":false},{"n":60,"id":"leap_back","name":"跳び退り","attr":"M","range":"—","min":0,"t0":"退き 1","t1":"1 段（向きを選ぶ）","t2":"退き 2","t3":"2 段（向きを選ぶ）","trait":"連動(A): スタミナ +1","mastery":"あり","explore":"候補","source":"探索 1 階","desc":"斬ってから跳んで退く","group":"習得","cond":"連動(A)","eff":"スタミナ +1","condKey":"連動","effKey":"スタミナ +1","hasA":false},{"n":61,"id":"rising_cut","name":"斬り上げ","attr":"A+M","range":"近","min":1,"t0":"—","t1":"威力 5 ／ 詰め 1","t2":"威力 8 ／ 詰め 1","t3":"威力 10 ／ 詰め 1","trait":"初手: 威力 +3。moveFirst","mastery":"あり","explore":"—","source":"探索 1 階","desc":"踏み込んで下から斬り上げる","group":"習得","cond":"初手","eff":"威力 +3。moveFirst","condKey":"初手","effKey":"威力 +n","hasA":true},{"n":62,"id":"leg_sweep","name":"足払い","attr":"A+Sk","range":"中","min":1,"t0":"—","t1":"威力 5 ／ 鈍足","t2":"威力 8 ／ 鈍足 + 疲労","t3":"威力 10 ／ 鈍足 + 疲労 + 威圧","trait":"相手の状態(鈍足): 重撃（投入 +1 で威力 +6）","mastery":"あり","explore":"—","source":"探索 1 階","desc":"足の止まった相手を払う","group":"習得","cond":"相手の状態(鈍足)","eff":"重撃（投入 +1 で威力 +6）","condKey":"相手の状態","effKey":"重撃","hasA":true},{"n":63,"id":"dash_in","name":"駆け込み","attr":"M","range":"—","min":0,"t0":"詰め 1","t1":"1 段（向きを選ぶ）","t2":"詰め 2","t3":"2 段（向きを選ぶ）","trait":"位置(遠): ドロー +1","mastery":"あり","explore":"候補","source":"探索 2 階","desc":"遠くから駆けて視野を広げる","group":"習得","cond":"位置(遠)","eff":"ドロー +1","condKey":"位置","effKey":"ドロー +1","hasA":false},{"n":64,"id":"guard_walk","name":"受け歩き","attr":"G+M","range":"—","min":1,"t0":"—","t1":"Guard 4 ／ 詰め 1","t2":"Guard 6 ／ 詰め 1","t3":"Guard 8 ／ 詰め 2","trait":"連打: Guard +3","mastery":"あり","explore":"—","source":"探索 2 階","desc":"受けを固めて歩み寄る","group":"習得","cond":"連打","eff":"Guard +3","condKey":"連打","effKey":"Guard +n","hasA":false},{"n":65,"id":"thorn_cut","name":"棘斬り","attr":"A+Sk","range":"中","min":1,"t0":"—","t1":"威力 5 ／ 出血 1","t2":"威力 8 ／ 出血 2","t3":"威力 10 ／ 出血 3","trait":"崩し後: 出血 +1 段","mastery":"あり","explore":"—","source":"探索 2 階","desc":"崩れた相手を深く裂く","group":"習得","cond":"崩し後","eff":"出血 +1 段","condKey":"崩し後","effKey":"状態","hasA":true},{"n":66,"id":"calm_guard","name":"静の受け","attr":"G+Sk","range":"—","min":1,"t0":"—","t1":"Guard 4 ／ 集中","t2":"Guard 6 ／ 集中 + ドロー 1","t3":"Guard 8 ／ 集中 + 再生 2","trait":"自分の状態(集中): 次ターン回復 +1","mastery":"あり","explore":"—","source":"探索 2 階","desc":"受けながら次の一手を溜める","group":"習得","cond":"自分の状態(集中)","eff":"次ターン回復 +1","condKey":"自分の状態","effKey":"次ターン回復 +1","hasA":false},{"n":67,"id":"deflect","name":"弾き","attr":"G+Sk","range":"近","min":0,"t0":"Guard 2 ／ 威圧","t1":"Guard 4 ／ 威圧","t2":"Guard 6 ／ 威圧 + 疲労","t3":"Guard 8 ／ 威圧 + 疲労 + 脆化","trait":"連動(A): Guard +3","mastery":"あり","explore":"—","source":"探索 2 階","desc":"斬った後に弾いて手を鈍らせる","group":"習得","cond":"連動(A)","eff":"Guard +3","condKey":"連動","effKey":"Guard +n","hasA":false},{"n":68,"id":"crescent_cut","name":"三日月斬り","attr":"A+G","range":"中","min":1,"t0":"—","t1":"威力 5 ／ Guard 4","t2":"威力 8 ／ Guard 6","t3":"威力 10 ／ Guard 8","trait":"締め: 転換（Guard の半分を威力に足す）","mastery":"あり","explore":"—","source":"探索 3 階","desc":"手を尽くした後、受けを刃に変える","group":"習得","cond":"締め","eff":"転換（Guard の半分を威力に足す）","condKey":"締め","effKey":"転換","hasA":true},{"n":69,"id":"pommel_strike","name":"柄頭打ち","attr":"A+Sk","range":"近","min":0,"t0":"威力 3 ／ 威圧","t1":"威力 5 ／ 威圧","t2":"威力 8 ／ 威圧 + 疲労","t3":"威力 10 ／ 威圧 + 疲労 + 鈍足","trait":"連打: 威力 +3","mastery":"あり","explore":"—","source":"探索 3 階","desc":"続けざまに柄頭で顔を打つ","group":"習得","cond":"連打","eff":"威力 +3","condKey":"連打","effKey":"威力 +n","hasA":true},{"n":70,"id":"mist_step","name":"霞み足","attr":"St+M","range":"—","min":1,"t0":"—","t1":"退き 1 ／ 退いたターンの回復 +1","t2":"退き 1 ／ 同 + Guard +2","t3":"退き 2 ／ 同 + Guard +3","trait":"連動(Sk): 次ターン回復 +1","mastery":"あり","explore":"候補","source":"探索 3 階","desc":"霞のように退く型","group":"習得","cond":"連動(Sk)","eff":"次ターン回復 +1","condKey":"連動","effKey":"次ターン回復 +1","hasA":false},{"n":71,"id":"keen_eye","name":"見切りの目","attr":"Sk+St","range":"—","min":1,"t0":"—","t1":"見切り ／ 予兆が攻撃のとき Guard +2","t2":"見切り ／ 同 +3","t3":"見切り + ドロー 1 ／ 同 +5","trait":"予兆(攻撃): ドロー +1","mastery":"あり","explore":"候補","source":"探索 3 階","desc":"来ると分かっている一撃を見切る","group":"習得","cond":"予兆(攻撃)","eff":"ドロー +1","condKey":"予兆","effKey":"ドロー +1","hasA":false},{"n":72,"id":"resolve","name":"覚悟","attr":"Sk","range":"—","min":1,"t0":"—","t1":"強化","t2":"強化 + 集中","t3":"強化 + 集中 + 再生 2","trait":"死力: 再生 +1 段","mastery":"あり","explore":"候補","source":"探索 3 階","desc":"追い詰められて腹を括る","group":"習得","cond":"死力","eff":"再生 +1 段","condKey":"死力","effKey":"状態","hasA":false},{"n":73,"id":"gale_thrust","name":"疾風突き","attr":"A+M","range":"遠","min":1,"t0":"—","t1":"威力 4 ／ 詰め 1","t2":"威力 6 ／ 詰め 1","t3":"威力 8 ／ 詰め 2","trait":"位置(遠): スタミナ +1","mastery":"あり","explore":"—","source":"探索 4 階","desc":"突いてから風のように詰める","group":"習得","cond":"位置(遠)","eff":"スタミナ +1","condKey":"位置","effKey":"スタミナ +1","hasA":true},{"n":74,"id":"anchor_stance","name":"錨の構え","attr":"G+St","range":"—","min":1,"t0":"—","t1":"Guard 4 ／ 相手による移動を無効","t2":"Guard 6 ／ 同 + ターン開始 Guard +2","t3":"Guard 8 ／ 同 + ターン開始 Guard +3","trait":"相手の状態(威圧): Guard +3","mastery":"あり","explore":"—","source":"探索 4 階","desc":"怯んだ相手に押されない型","group":"習得","cond":"相手の状態(威圧)","eff":"Guard +3","condKey":"相手の状態","effKey":"Guard +n","hasA":false},{"n":75,"id":"vital_thrust","name":"急所突き","attr":"A","range":"近","min":1,"t0":"—","t1":"威力 6 + 崩し 1","t2":"威力 11 + 崩し 2","t3":"威力 16 + 崩し 3","trait":"崩し後: 重撃（投入 +1 で威力 +6）","mastery":"あり","explore":"—","source":"探索 4 階","desc":"崩れた急所を突く","group":"習得","cond":"崩し後","eff":"重撃（投入 +1 で威力 +6）","condKey":"崩し後","effKey":"重撃","hasA":true},{"n":76,"id":"evade_cut","name":"躱し斬り","attr":"A+G","range":"遠","min":1,"t0":"—","t1":"威力 4 ／ Guard 4","t2":"威力 6 ／ Guard 6","t3":"威力 8 ／ Guard 8","trait":"予兆(攻撃): 転換（Guard の半分を威力に足す）","mastery":"あり","explore":"—","source":"探索 4 階","desc":"躱した分を刃に変える","group":"習得","cond":"予兆(攻撃)","eff":"転換（Guard の半分を威力に足す）","condKey":"予兆","effKey":"転換","hasA":true},{"n":77,"id":"blood_dance","name":"血の舞","attr":"A+Sk","range":"遠","min":1,"t0":"—","t1":"威力 4 ／ 出血 1","t2":"威力 6 ／ 出血 2","t3":"威力 8 ／ 出血 3","trait":"相手の状態(出血): 威力 +5","mastery":"なし","explore":"—","source":"探索 5 階","desc":"流れた血の分だけ舞う","group":"習得","cond":"相手の状態(出血)","eff":"威力 +5","condKey":"相手の状態","effKey":"威力 +n","hasA":true},{"n":78,"id":"wolf_stance","name":"狼の構え","attr":"A+St","range":"近","min":1,"t0":"—","t1":"威力 5 ／ 出血中の敵へのアタック +2","t2":"威力 8 ／ 同 +3","t3":"威力 10 ／ 同 +5","trait":"自分の状態(強化): 重撃（投入 +1 で威力 +6）","mastery":"なし","explore":"—","source":"探索 5 階","desc":"傷ついた獲物を追う型","group":"習得","cond":"自分の状態(強化)","eff":"重撃（投入 +1 で威力 +6）","condKey":"自分の状態","effKey":"重撃","hasA":true},{"n":79,"id":"shadow_lunge","name":"影踏み","attr":"A+M","range":"中","min":0,"t0":"威力 3 ／ 詰め 1","t1":"威力 5 ／ 詰め 1","t2":"威力 8 ／ 詰め 1","t3":"威力 10 ／ 詰め 2","trait":"予兆(移動): 威力 +5。moveFirst","mastery":"なし","explore":"—","source":"探索 5 階","desc":"動こうとした影を踏んで斬る","group":"習得","cond":"予兆(移動)","eff":"威力 +5。moveFirst","condKey":"予兆","effKey":"威力 +n","hasA":true},{"n":80,"id":"last_stand","name":"背水の型","attr":"St","range":"—","min":0,"t0":"スタミナ 2 以下のターン開始に Guard +2","t1":"同 +3","t2":"同 +5","t3":"同 +6","trait":"死力: この 1 枚の投入 −1","mastery":"なし","explore":"—","source":"探索 5 階","desc":"追い詰められてこそ固い型（2026-09-14: 採用カード「背水の陣」と名前が近い。置き換えか別の札かは回答待ち。§16.7）","group":"習得","cond":"死力","eff":"この 1 枚の投入 −1","condKey":"死力","effKey":"投入 −1","hasA":false}];
+  var FILTERS = { group:null, attr:null, range:null, min:null, cond:null, eff:null, q:"" };
+
+  var COND_MEAN = {
+    "連動":"このターンに指定の属性をプレイ済み",
+    "位置":"その間合いから使う",
+    "予兆":"敌の予兆がその種別",
+    "温存":"使用後の残スタミナが n 以上",
+    "死力":"現在スタミナが 2 以下",
+    "初手":"このターン最初のプレイ",
+    "締め":"このターン 3 枚目以降のプレイ",
+    "崩し後":"敌のスタミナが 3 未満",
+    "連打":"直前のカードと同じ属性を持つ",
+    "手薄":"プレイ後の残り手札が 1 枚以下",
+    "相手の状態":"相手にその状態が付いている",
+    "自分の状態":"自分にその状態が付いている",
+    "—":"特性なし（素直な札）"
+  };
+  var EFF_MEAN = {
+    "スタミナ +1":"即時",
+    "威力 +n":"この 1 枚のアタック面。目安は +3 / +5 / +6",
+    "Guard +n":"この 1 枚のガード面。目安は +3",
+    "ドロー +1":"即時",
+    "状態":"段を 1 上げるか、1-shot の状態を 1 つ追加",
+    "投入 −1":"段は変えずコストだけ下がる",
+    "次ターン回復 +1":"次のターン開始の回復に +1",
+    "重撃":"投入 +1 を払うと威力 +6。段は変えない",
+    "転換":"この 1 枚の Guard の半分（切り上げ）を威力に足す",
+    "追撃":"このターンの次のアタック面の威力 +5",
+    "素直（特性なし）":"各段の威力と Guard に +2（T0 は +1、回復は HP +2）"
+  };
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (m) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m];
+    });
+  }
+
+  function uniq(key, order) {
+    var seen = {};
+    CARDS.forEach(function (c) { var v = String(c[key]); seen[v] = (seen[v] || 0) + 1; });
+    var keys = Object.keys(seen);
+    if (order) keys.sort(function (a, b) {
+      var ia = order.indexOf(a), ib = order.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    });
+    else keys.sort(function (a, b) { return seen[b] - seen[a]; });
+    return keys.map(function (k) { return { v: k, n: seen[k] }; });
+  }
+
+  function syncChips(hostId, field) {
+    var host = document.getElementById(hostId);
+    Array.prototype.forEach.call(host.querySelectorAll(".chip"), function (b) {
+      b.setAttribute("aria-pressed", String(FILTERS[field] === b.dataset.v));
+    });
+  }
+
+  function buildChips(hostId, field, items) {
+    var host = document.getElementById(hostId);
+    items.forEach(function (it) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip";
+      b.setAttribute("aria-pressed", "false");
+      b.dataset.v = it.v;
+      b.innerHTML = esc(it.v) + '<span class="c">' + it.n + "</span>";
+      b.addEventListener("click", function () {
+        FILTERS[field] = (FILTERS[field] === it.v) ? null : it.v;
+        syncChips(hostId, field);
+        render();
+      });
+      host.appendChild(b);
+    });
+  }
+
+  function match(c) {
+    if (FILTERS.group && c.group !== FILTERS.group) return false;
+    if (FILTERS.attr && c.attr !== FILTERS.attr) return false;
+    if (FILTERS.range && c.range !== FILTERS.range) return false;
+    if (FILTERS.min !== null && String(c.min) !== FILTERS.min) return false;
+    if (FILTERS.cond && c.condKey !== FILTERS.cond) return false;
+    if (FILTERS.eff && c.effKey !== FILTERS.eff) return false;
+    if (FILTERS.q) {
+      var hay = (c.name + " " + c.id + " " + c.desc + " " + c.trait + " " + c.source + " " +
+                 c.t0 + " " + c.t1 + " " + c.t2 + " " + c.t3).toLowerCase();
+      if (hay.indexOf(FILTERS.q.toLowerCase()) < 0) return false;
+    }
+    return true;
+  }
+
+  function traitHtml(c) {
+    if (c.cond === "—") return '<span class="trait plainrow">素直な札（各段 +2）</span>';
+    return '<span class="cond">' + esc(c.cond) + "</span>: " + esc(c.eff);
+  }
+
+  function render() {
+    var tb = document.getElementById("tbody");
+    var rows = CARDS.filter(match);
+    document.getElementById("shown").textContent = rows.length;
+    if (!rows.length) {
+      tb.innerHTML = '<tr><td colspan="14" class="empty">条件に合うカードがありません。絞り込みを外してください。</td></tr>';
+      return;
+    }
+    tb.innerHTML = rows.map(function (c) {
+      return "<tr>" +
+        '<td class="num">' + c.n + "</td>" +
+        '<td><div class="cname">' + esc(c.name) + '</div><div class="cid">' + esc(c.id) +
+          '</div><div class="cdesc">' + esc(c.desc) + "</div></td>" +
+        '<td><span class="grp ' + (c.group === "初期" ? "ini" : "acq") + '">' + esc(c.group) + "</span></td>" +
+        '<td><span class="attr' + (c.hasA ? "" : " plain") + '">' + esc(c.attr) + "</span></td>" +
+        '<td class="tcell' + (c.range === "—" ? " none" : "") + '">' + esc(c.range) + "</td>" +
+        '<td class="num">' + c.min + "</td>" +
+        '<td class="tcell' + (c.t0 === "—" ? " none" : "") + '">' + esc(c.t0) + "</td>" +
+        '<td class="tcell">' + esc(c.t1) + "</td>" +
+        '<td class="tcell">' + esc(c.t2) + "</td>" +
+        '<td class="tcell">' + esc(c.t3) + "</td>" +
+        '<td class="trait">' + traitHtml(c) + "</td>" +
+        '<td class="state ' + (c.mastery === "あり" ? "yes" : "no") + '">' + esc(c.mastery) + "</td>" +
+        '<td class="state ' + (c.explore === "候補" ? "maybe" : "no") + '">' + esc(c.explore) + "</td>" +
+        '<td class="tcell">' + esc(c.source) + "</td>" +
+      "</tr>";
+    }).join("");
+  }
+
+  function crosstab(hostId, field, meanings, order) {
+    var keys = {};
+    CARDS.forEach(function (c) {
+      var k = String(c[field]);
+      if (!keys[k]) keys[k] = { ini: 0, acq: 0 };
+      keys[k][c.group === "初期" ? "ini" : "acq"]++;
+    });
+    var ks = Object.keys(keys);
+    if (order) ks.sort(function (a, b) {
+      var ia = order.indexOf(a), ib = order.indexOf(b);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    });
+    else ks.sort(function (a, b) { return (keys[b].ini + keys[b].acq) - (keys[a].ini + keys[a].acq); });
+    var ti = 0, ta = 0;
+    var body = ks.map(function (k) {
+      var r = keys[k]; ti += r.ini; ta += r.acq;
+      return "<tr><td>" + esc(k) + "</td>" +
+        (meanings ? '<td class="note">' + esc(meanings[k] || "") + "</td>" : "") +
+        '<td class="num">' + r.ini + '</td><td class="num">' + r.acq +
+        '</td><td class="num">' + (r.ini + r.acq) + "</td></tr>";
+    }).join("");
+    body += "<tr><td><b>計</b></td>" + (meanings ? "<td></td>" : "") +
+      '<td class="num"><b>' + ti + '</b></td><td class="num"><b>' + ta +
+      '</b></td><td class="num"><b>' + (ti + ta) + "</b></td></tr>";
+    document.getElementById(hostId).innerHTML = body;
+  }
+
+  var ATTR_ORDER = ["A","G","St","Sk","M","A+M","A+Sk","A+G","A+St","G+M","G+Sk","G+St","Sk+M","Sk+St","St+M"];
+  var COND_ORDER = ["連動","位置","予兆","温存","死力","初手","締め","崩し後","連打","手薄","相手の状態","自分の状態","—"];
+  var EFF_ORDER = ["スタミナ +1","威力 +n","Guard +n","ドロー +1","状態","投入 −1","次ターン回復 +1","重撃","転換","追撃","素直（特性なし）"];
+
+  buildChips("f-group", "group", uniq("group", ["初期", "習得"]));
+  buildChips("f-attr", "attr", uniq("attr", ATTR_ORDER));
+  buildChips("f-range", "range", uniq("range", ["近", "中", "遠", "—"]));
+  buildChips("f-min", "min", uniq("min", ["0", "1"]));
+  buildChips("f-cond", "cond", uniq("condKey", COND_ORDER));
+  buildChips("f-eff", "eff", uniq("effKey", EFF_ORDER));
+
+  document.getElementById("q").addEventListener("input", function (e) {
+    FILTERS.q = e.target.value.trim();
+    render();
+  });
+  document.getElementById("reset").addEventListener("click", function () {
+    FILTERS = { group:null, attr:null, range:null, min:null, cond:null, eff:null, q:"" };
+    document.getElementById("q").value = "";
+    var hosts = ["f-group","f-attr","f-range","f-min","f-cond","f-eff"];
+    var fields = ["group","attr","range","min","cond","eff"];
+    hosts.forEach(function (h, i) { syncChips(h, fields[i]); });
+    render();
+  });
+
+  crosstab("agg-attr", "attr", null, ATTR_ORDER);
+  crosstab("agg-cond", "condKey", COND_MEAN, COND_ORDER);
+  crosstab("agg-eff", "effKey", EFF_MEAN, EFF_ORDER);
+
+  var srcs = {};
+  CARDS.filter(function (c) { return c.group === "習得"; })
+       .forEach(function (c) { srcs[c.source] = (srcs[c.source] || 0) + 1; });
+  document.getElementById("agg-src").innerHTML =
+    Object.keys(srcs).map(function (k) {
+      return "<tr><td>" + esc(k) + '</td><td class="num">' + srcs[k] + "</td></tr>";
+    }).join("") + '<tr><td><b>計</b></td><td class="num"><b>40</b></td></tr>';
+
+  render();
+})();
+</script>

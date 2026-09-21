@@ -1,4 +1,4 @@
-> **WEB VERSION RECORD（2026-09-12）**: バフ / デバフの扱いは `battle_core_v3.md` に未定義（企画書が語らない）。Web 版の記録として残す。
+> **WEB VERSION RECORD（2026-09-12）**: Web 版の記録として残す。2026-09-20 v4.2 で投入量と共有の距離（近 / 中 / 遠）は廃止されました。現在の正本は `battle_core_v4.md` の §16〜§18 で、状態はスタック制です（§17.5）。
 
 # Buff/Debuff System Integrated Design Document (Ver 5.0)
 
