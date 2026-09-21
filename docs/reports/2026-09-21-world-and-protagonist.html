@@ -1,0 +1,289 @@
+<title>坑と踏破者</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    --d1: #3a2f26;
+    --d2: #1f2f31;
+    --d3: #2a2a33;
+    --d4: #241d33;
+    --d5: #141b2e;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding-block: 48px 80px; padding-inline: 24px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+
+  .strip { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin: 16px 0 8px; }
+  .strip i { display: block; flex: 1; height: 72px; }
+  .strip i:nth-child(1) { background: var(--d1); }
+  .strip i:nth-child(2) { background: var(--d2); }
+  .strip i:nth-child(3) { background: var(--d3); }
+  .strip i:nth-child(4) { background: var(--d4); }
+  .strip i:nth-child(5) { background: var(--d5); }
+  .striplabels { display: flex; margin: 0 0 24px; font-size: 12.5px; color: var(--muted); }
+  .striplabels span { flex: 1; text-align: center; padding-inline: 4px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-21 / 説明 / original-card-battle — design レーン</p>
+    <h1>坑の底に根がある。踏破者はそれを止めに降りる</h1>
+    <p class="lede">世界観と、プレイヤーが操作するキャラクターの立ち位置をまとめました。正本は <code>.claude/docs/vision/world-v1.md</code>（PR #121）で、本ページはその読む用です。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">前提 1</span><h3>下に原因がある</h3><p>瘴気は自然現象ではありません。階層 5 の歪みの根が吐く息です。だから止められます。</p></li>
+    <li class="verdict later"><span class="tag">前提 2</span><h3>誰も戻っていない</h3><p>止めに降りた踏破者は、まだ一人も帰っていません。継承の間の壁に名札が掛かったままです。</p></li>
+    <li class="verdict skip"><span class="tag">前提 3</span><h3>あなたは代わりである</h3><p>主人公は選ばれた英雄ではありません。空いた役目に次へ任命された人です。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>この 3 つだけ</strong>を冒頭の 6 行で見せ、残りは手記の頁に置きます。長い導入は作りません。物語は「前の代が残した手記を拾って読む」形で受け取らせます。</div>
+
+  <h2>世界の因果</h2>
+
+  <p class="prose">世界の仕掛けは 1 本の因果でできています。ゲームのルール（死ぬ・遺産を継ぐ・瘴気が溜まる）が、そのまま世界の理屈になっています。設定とルールを別々に作っていません。</p>
+
+  <pre><code>歪みの根（階層 5）
+   │ 息を吐く
+   ▼
+瘴気 ── 上へ流れる。浅い階層ほど薄い（濃度 1〜5）
+   │ 浴び続けると体に溜まる
+   ▼
+体が硬くなる ── 100% で生が終わる
+   │ 固まりきる前に、判断する部分が先に止まる
+   ▼
+歪み ── 生前の役目だけが残る（= 敵）
+   │ 瘴気に侵されたものは腐らない
+   ▼
+痕跡 ── 遺体と手記が死亡地点に残る。次の代が拾う</code></pre>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>ゲームのルール</th><th>世界の側の説明</th></tr></thead>
+      <tbody>
+        <tr><td>瘴気が 100% で生が終わる</td><td>体に溜まった瘴気が固まり、動けなくなる</td></tr>
+        <tr><td>死亡地点に手記と遺産が残る</td><td>瘴気に侵されたものは腐らないので、そのまま残る</td></tr>
+        <tr><td>敵が乱数で動かず、予兆どおりに実行する</td><td>考えていない。いちばん長く繰り返した動作を繰り返しているだけ</td></tr>
+        <tr><td>深い階層ほど瘴気の濃度が高い</td><td>湧き口からの距離。根に近いほど濃い</td></tr>
+        <tr><td>敵の大半が人型で武器を持つ</td><td>元は人。坑道の衛士、水路の猟兵、回廊の門衛長</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>プレイヤーが操作するキャラクター</h2>
+
+  <p class="prose">主人公は <strong>踏破者</strong> です。これは個人の名ではなく、<strong>坑へ潜る役目の名</strong> です。装束・面・剣は役に付く支給品で、人が替わるたびに返却と再支給を繰り返します。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>問い</th><th>答え</th><th>これが要る理由</th></tr></thead>
+      <tbody>
+        <tr><td>誰か</td><td>役目に任命された人。世代ごとに別人で、それぞれ自分の名を持つ</td><td>「死ぬたびに人は変わる」を字義どおりにする</td></tr>
+        <tr><td>なぜ姿が同じか</td><td>装束と面が役の証だから。顔は面で隠れる</td><td>立ち絵が 1 体で足りる。制作費が世代の数だけ増えない</td></tr>
+        <tr><td>なぜ次の人が現れるか</td><td>役が空けば次が任命される。潜り続ける理由は街の側にある</td><td>ゲームオーバーが無い理由になる</td></tr>
+        <tr><td>なぜ継承が限られるか</td><td>渡せるのは物と記録だけ。体で覚えた技は死ぬと消える</td><td>遺産を 3 つだけ選ぶ設計の説明になる</td></tr>
+        <tr><td>なぜ全員が剣士か</td><td>役の型が剣だから。別の型を置くときは別の役を新設する</td><td>クラス選択を持たない設計の説明になる</td></tr>
+        <tr><td>なぜ誰も助けてくれないか</td><td>街は役目を出すだけ。坑の中に味方はいない</td><td>NPC を 1 人も描かずに済む</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>誰が役目を出しているか</h3>
+
+  <p class="prose"><strong>坑の街の役所</strong> です。教団でも領主でもありません。教団を地上に置くと階層 5 の瘴気の司祭（根を祀る側）と紛れます。領主を置くと顔と台詞を持つ人物が要り、立ち絵と会話画面の制作費が増えます。街の役所なら制度だけで済み、<strong>人物を 1 人も描かずに</strong> 役目の出どころを説明できます。</p>
+
+  <h3>キャラクターは知らない。プレイヤーは知っている</h3>
+
+  <p class="prose">この作品でいちばん効く非対称です。キャラクターが持つ知識は、遺産で選んだ手記の頁だけです。前の代がどれだけ敵を調べても、選ばなかった頁は失われます。<strong>しかしプレイヤーの記憶は消えません。</strong> 「この敵は近間に入れば薙ぎ払いが軽くなる」と知っているのはプレイヤーで、画面の中の人ではありません。</p>
+
+  <p class="prose">だから死は失敗ではありません。次の代が少し先まで行くための、情報を得る機会です。<strong>ゲームの構造（死亡・遺産・継承）が、そのまま物語の構造になっています。</strong></p>
+
+  <h2>五つの階層</h2>
+
+  <p class="prose">人の手が消えていく順に並べます。1 は人が掘った坑道、5 は根そのものです。階層が進むほど置いてある人工物が減ります。背景を描くときの指針でもあります。</p>
+
+  <div class="strip" role="img" aria-label="階層 1 から 5 へ、褐色から紺へ暗くなる帯"><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="striplabels"><span>1 上坑</span><span>2 沈み階</span><span>3 葬列廊</span><span>4 垂根洞</span><span>5 根底</span></div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>階層</th><th>名前</th><th>土地の性格</th><th>光源</th><th>濃度</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>上坑（じょうこう）</td><td>人が掘った坑道。木の支柱、錆びた道具</td><td>縦坑の外光 + 手持ちの灯</td><td>1</td></tr>
+        <tr><td>2</td><td>沈み階（しずみかい）</td><td>地下水が溜まった水没区画。鉄が全部錆びている</td><td>手持ちの灯。水面に映る</td><td>2</td></tr>
+        <tr><td>3</td><td>葬列廊（そうれつろう）</td><td>坑より古い石の回廊。壁龕に死者。霞が床を這う</td><td>壁の蝋。白く低い</td><td>3</td></tr>
+        <tr><td>4</td><td>垂根洞（すいこんどう）</td><td>天井と壁を根が貫く広い洞。足場が根で塞がる</td><td>根の断面が鈍く光る</td><td>4</td></tr>
+        <tr><td>5</td><td>根底（ねそこ）</td><td>根の本体がある底。壁も床も根</td><td>根の発光だけ</td><td>5</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose"><strong>暖色はプレイヤーの側にしか置きません。</strong> 階層 1 から 3 までは手持ちの灯りが居場所を示します。階層 4 以降は根の光のほうが強く、自分の灯りが役に立たなくなります。深く来たことを、明るさではなく「自分の灯りが効かない」で示します。</p>
+
+  <h2>ボス 3 体と竜</h2>
+
+  <p class="prose">3 体とも階層 5 にいます。根に近い順ではなく、<strong>根との関係の深さ</strong> で並びます。戦闘の役割と設定が一致するように置きました。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>名前</th><th>根との関係</th><th>立ち位置</th><th>戦闘で問うこと</th></tr></thead>
+      <tbody>
+        <tr><td>瘴気の司祭</td><td>祀る</td><td>元は人。唯一まだ考えている敵。歪みを受け入れた側</td><td>行動履歴を見て守りと攻めを切り替える。初めて「読まれる」相手</td></tr>
+        <tr><td>深淵の釣り人</td><td>養われている</td><td>元が人でない唯一の大物。根が動けないので、口の役をしている</td><td>自分は動かず、相手の位置だけを動かす</td></tr>
+        <tr><td>歪みの根</td><td>本体</td><td>瘴気を生んでいるもの。撃破がクリア条件</td><td>3 段階。位置 → コスト → 両方</td></tr>
+        <tr><td>竜（エクストラボス）</td><td>無関係</td><td>根が来る前からいたもの。因果の外なので歪んでいない</td><td>クリア後にだけ会える。倒してもクリアにならない</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose">竜に会えるのは根を一度倒してからです。階層 5 の最深ノードの隣に「根の裂け目」が開きます。<strong>根が退いて初めて、その下にあったものが見える</strong> という形です。報酬が数値の強化ではなく挑戦の機会と継承の延長だけなのも、この位置づけと揃っています。</p>
+
+  <h2>継承の間</h2>
+
+  <p class="prose">階層 1 の入口の手前、外光が届く最後の場所です。役所が坑の口に置いた小屋で、街ではありません。壁に名札が掛かり、机で支給品を受け渡し、壁の図で痕跡の一覧を見ます。</p>
+
+  <h3>一覧を見せているのは誰か</h3>
+
+  <p class="prose"><strong>誰もいません。前の代が自分で書いた線です。</strong> 出立の前に、踏破者は壁の図へ「どこまで降りるつもりか」を書き付けます。戻れば線を消します。戻らなければ、その線が最後の記録として残ります。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>この作りが説明するもの</th><th>どう説明されるか</th></tr></thead>
+      <tbody>
+        <tr><td>案内人がいない</td><td>立ち絵も台詞も不要。一人で降りる手触りが壊れない</td></tr>
+        <tr><td>痕跡が正確な点でない</td><td>線は本人の申告なので、実際の死亡地点はその付近。現地まで行って探す</td></tr>
+        <tr><td>回収済みの痕跡が消える</td><td>拾った代が線を消すから。未回収だけが残る</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>冒頭に見せる文（初稿）</h2>
+
+  <pre><code>瘴気は、坑の底から湧いている。
+
+そこに根がある。
+止めに降りた踏破者は、まだ誰も戻っていない。
+
+あなたが次の踏破者だ。
+面を付けろ。名札を掛けろ。</code></pre>
+
+  <p class="prose">6 行、53 文字です。読み終わるのに 10 秒かかりません。街の名も年号も人名も出しません。3 行目の「まだ誰も戻っていない」は、次の画面（継承の間の壁、掛かったままの名札）と同じことを言っています。<strong>文で説明したことを、すぐ物として見せます。</strong></p>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>役目を出す主体を街にしました。<code>concept-v3.md</code> §16.5-1 の 3 択からの選択で、根拠は §16.2 が既に「役所」を前提にしていることです。</li>
+    <li>階層 5 つの名前と読みを新しく置きました。既存の文書に階層の固有名が無かったためです。</li>
+    <li>ボス 3 体の関係を「祀る者 / 運ぶもの / 本体」と置きました。<code>enemy_roster_v4.md</code> の行動と決定木から逆算したもので、数値には触れていません。</li>
+    <li>竜を「根より古い、因果の外のもの」と置きました。クリア後にだけ会え、数値のボーナスを与えない扱いと噛み合う説明を選びました。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>階層の読み（じょうこう / しずみかい / そうれつろう / すいこんどう / ねそこ）。</li>
+    <li>竜の固有名。<code>enemy_roster_v4.md</code> §7 は枠だけで、名前がありません。</li>
+    <li>手記の階層の頁 5 本と、敵 9 体の 1 行。本ページの性格から書き起こせますが、量があるので別 Issue が要ります。</li>
+    <li>worktree に未コミットのレポート 2 本（瘴気を「澱」へ改名する案と 7 層構成の案）が残っています。いまの main（5 階層・ボス 3 体・襲名）と噛み合いません。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li>PR #121（世界設定の正本）と PR #122（カードの絵の方針）の merge。どちらも人の手番です。</li>
+    <li>「澱」への改名と 7 層構成を採るかどうか。採るなら全レーンを 1 回で通す Issue が要ります。</li>
+    <li>階層 5 つの名前の可否。ここが決まると背景（#89）・敵の 1 行・手記の言葉が全部これに揃います。</li>
+  </ul>
+
+  <p class="note">正本: <code>.claude/docs/vision/world-v1.md</code>（PR #121）。仕組みは <code>.claude/docs/vision/concept-v3.md</code>、数値は <code>battle_core_v4.md</code> と <code>enemy_roster_v4.md</code> が正です。3 つが食い違ったときは 数値 → 仕組み → 設定 の順に優先します。</p>
+</div>
