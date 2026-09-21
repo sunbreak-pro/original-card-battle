@@ -3,92 +3,146 @@ using BattleCore;
 
 namespace BattleCore.Tests
 {
+    /// <summary>§5.1 のダメージ式 and the Guard rules around it.</summary>
     public class CombatTests
     {
-        [TestCase(0, RangeBand.Close, 1.0)]
-        [TestCase(1, RangeBand.Close, 0.5)]
-        [TestCase(2, RangeBand.Close, 0.15)]
-        [TestCase(1, RangeBand.Mid, 1.0)]
-        [TestCase(0, RangeBand.Far, 0.15)]
-        public void RangeMultiplier_FollowsDiffTable(int distance, RangeBand eff, double expected)
+        [Test]
+        public void RawPower_IsTheFacePlusTheTrait()
         {
-            Assert.That(Combat.RangeMultiplier(distance, eff), Is.EqualTo(expected));
+            // 薙ぎ払い against a player standing 遠間: 8 + 3.
+            Assert.That(Combat.ComputeRawPower(face: 8, traitBonus: 3), Is.EqualTo(11));
         }
 
         [Test]
-        public void ComputeAttackDamage_RoundsHalfAwayFromZero()
+        public void RawPower_IsJustTheFace_WhenNoTraitFired()
         {
-            // 5 × 0.5 = 2.5 → 3 (not banker's 2)
-            Assert.That(Combat.ComputeAttackDamage(5, RangeBand.Close, 1), Is.EqualTo(3));
-            // 11 × 0.15 = 1.65 → 2
-            Assert.That(Combat.ComputeAttackDamage(11, RangeBand.Close, 2), Is.EqualTo(2));
-            // 1 × 0.15 = 0.15 → 0
-            Assert.That(Combat.ComputeAttackDamage(1, RangeBand.Close, 2), Is.EqualTo(0));
+            Assert.That(Combat.ComputeRawPower(face: 8), Is.EqualTo(8));
         }
 
         [Test]
-        public void ComputeAttackDamage_DesperateMultiplies()
+        public void RawPower_AddsBeforeItMultiplies()
         {
-            Assert.That(Combat.ComputeAttackDamage(8, RangeBand.Close, 0, desperate: true), Is.EqualTo(12));
+            // (6 + 4) × 1.5 = 15, not 6 + (4 × 1.5).
+            Assert.That(Combat.ComputeRawPower(face: 6, traitBonus: 4, empowerMult: 1.5), Is.EqualTo(15));
         }
 
         [Test]
-        public void ApplyGuard_SplitsDamageAndGuard()
+        public void RawPower_RoundsHalfAwayFromZero()
         {
-            var (damage, guardAfter, absorbed) = Combat.ApplyGuard(6, 3);
-            Assert.That(damage, Is.EqualTo(3));
-            Assert.That(guardAfter, Is.EqualTo(0));
-            Assert.That(absorbed, Is.EqualTo(3));
-
-            var full = Combat.ApplyGuard(2, 5);
-            Assert.That(full.Damage, Is.EqualTo(0));
-            Assert.That(full.GuardAfter, Is.EqualTo(3));
+            // 5 × 1.5 = 7.5 → 8, not the banker's 7 that the design tables would not read as.
+            Assert.That(Combat.ComputeRawPower(face: 5, empowerMult: 1.5), Is.EqualTo(8));
+            // 3 × 1.5 = 4.5 → 5.
+            Assert.That(Combat.ComputeRawPower(face: 3, empowerMult: 1.5), Is.EqualTo(5));
         }
 
-        [TestCase(2, 0)]
-        [TestCase(3, 2)]
-        [TestCase(10, 2)]
-        public void ReserveGuard_ThresholdThree(int left, int expected)
+        [Test]
+        public void RawPower_NeverGoesBelowZero()
         {
-            Assert.That(Combat.ReserveGuard(left), Is.EqualTo(expected));
+            Assert.That(Combat.ComputeRawPower(face: 2, traitBonus: -5), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ApplyGuard_SubtractsGuardAndSpendsIt()
+        {
+            var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw: 11, guard: 4);
+            Assert.Multiple(() =>
+            {
+                Assert.That(damage, Is.EqualTo(7));
+                Assert.That(guardAfter, Is.EqualTo(0));
+                Assert.That(absorbed, Is.EqualTo(4));
+            });
+        }
+
+        [Test]
+        public void ApplyGuard_StopsAtZeroDamageWhenGuardCovers()
+        {
+            var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw: 5, guard: 9);
+            Assert.Multiple(() =>
+            {
+                Assert.That(damage, Is.EqualTo(0));
+                Assert.That(guardAfter, Is.EqualTo(4));
+                Assert.That(absorbed, Is.EqualTo(5));
+            });
         }
 
         [TestCase(0, 0)]
-        [TestCase(19, 0)]
-        [TestCase(20, 1)]
-        [TestCase(59, 2)]
-        [TestCase(80, 4)]
-        [TestCase(99, 4)]
-        public void MiasmaStaminaPenalty_StepsEveryTwentyPercent(int percent, int expected)
+        [TestCase(2, 0)]
+        [TestCase(3, 3)]
+        [TestCase(9, 3)]
+        public void ReserveGuard_PaysThreeOnlyAtThreeStaminaOrMore(int staminaLeft, int expected)
         {
-            Assert.That(Combat.MiasmaStaminaPenalty(percent), Is.EqualTo(expected));
+            Assert.That(Combat.ReserveGuard(staminaLeft), Is.EqualTo(expected));
         }
 
         [Test]
-        public void ComputeMaxStamina_ClampsTempAndRange()
+        public void RecoverStamina_AddsThreeAndCapsAtTheMaximum()
         {
-            Assert.That(Combat.ComputeMaxStamina(0, 0), Is.EqualTo(10));
-            Assert.That(Combat.ComputeMaxStamina(+7, 0), Is.EqualTo(14));   // temp clamped to +4
-            Assert.That(Combat.ComputeMaxStamina(-9, 90), Is.EqualTo(3));   // floor 3
-            Assert.That(Combat.ComputeMaxStamina(0, 32), Is.EqualTo(9));
+            Assert.That(Combat.RecoverStamina(current: 4, max: 10, recovery: Constants.StaminaRecovery), Is.EqualTo(7));
+            Assert.That(Combat.RecoverStamina(current: 9, max: 10, recovery: Constants.StaminaRecovery), Is.EqualTo(10));
         }
 
         [Test]
-        public void ChooseInvest_KeepsReserveThenFallsBackToMinimum()
+        public void RecoverStamina_TakesTheBonusTheReserveTraitLeftBehind()
         {
-            Assert.That(Combat.ChooseInvest(1, 10), Is.EqualTo(3));   // 10 − 3 = 7 ≥ 3
-            Assert.That(Combat.ChooseInvest(1, 5), Is.EqualTo(2));    // 5 − 2 = 3
-            Assert.That(Combat.ChooseInvest(1, 3), Is.EqualTo(1));    // nothing keeps 3 → minimum
-            Assert.That(Combat.ChooseInvest(0, 2), Is.EqualTo(0));
-            Assert.That(Combat.ChooseInvest(1, 0), Is.Null);
+            Assert.That(Combat.RecoverStamina(current: 2, max: 10, recovery: 2, bonus: 1), Is.EqualTo(5));
+        }
+
+        [TestCase(0, 5)]
+        [TestCase(2, 7)]
+        [TestCase(-3, 3)]
+        [TestCase(-9, 3)]
+        [TestCase(9, 8)]
+        public void DrawCount_IsFivePlusTheModifier_ClampedToThreeAndEight(int modifier, int expected)
+        {
+            Assert.That(Combat.DrawCount(modifier), Is.EqualTo(expected));
         }
 
         [Test]
-        public void ShiftDistance_ClampsAtEnds()
+        public void ClampMaxStamina_StaysWithinThreeAndFourteen()
         {
-            Assert.That(Combat.ShiftDistance(0, -1), Is.EqualTo(0));
-            Assert.That(Combat.ShiftDistance(2, 1), Is.EqualTo(2));
-            Assert.That(Combat.ShiftDistance(1, 1), Is.EqualTo(2));
+            Assert.That(Combat.ClampMaxStamina(1), Is.EqualTo(3));
+            Assert.That(Combat.ClampMaxStamina(10), Is.EqualTo(10));
+            Assert.That(Combat.ClampMaxStamina(20), Is.EqualTo(14));
+        }
+
+        [Test]
+        public void IsDefeated_TripsTheMomentHpReachesZero()
+        {
+            Assert.That(Combat.IsDefeated(1), Is.False);
+            Assert.That(Combat.IsDefeated(0), Is.True);
+            Assert.That(Combat.IsDefeated(-4), Is.True);
+        }
+
+        [Test]
+        public void Constants_MatchTheCanonNumbers()
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(Constants.HandDraw, Is.EqualTo(5));
+                Assert.That(Constants.HandLimit, Is.EqualTo(8));
+                Assert.That(Constants.BaseMaxStamina, Is.EqualTo(10));
+                Assert.That(Constants.StaminaRecovery, Is.EqualTo(3));
+                Assert.That(Constants.PlayerMaxHp, Is.EqualTo(50));
+                Assert.That(Constants.ReserveThreshold, Is.EqualTo(3));
+                Assert.That(Constants.ReserveGuard, Is.EqualTo(3));
+                Assert.That(Constants.DeckMin, Is.EqualTo(20));
+                Assert.That(Constants.DeckMax, Is.EqualTo(40));
+                Assert.That(Constants.CopiesMax, Is.EqualTo(3));
+                Assert.That(Constants.StatusApplyDefault, Is.EqualTo(2));
+            });
+        }
+
+        [Test]
+        public void FaceOrder_PutsAttackBeforeMoveBeforeGuard()
+        {
+            Assert.That(Constants.FaceOrder, Is.EqualTo(new[]
+            {
+                BattleAttribute.Attack,
+                BattleAttribute.Move,
+                BattleAttribute.Guard,
+                BattleAttribute.Skill,
+                BattleAttribute.Stance,
+            }));
         }
     }
 }

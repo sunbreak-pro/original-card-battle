@@ -1,59 +1,41 @@
 using System;
-using System.Collections.Generic;
 
 namespace BattleCore
 {
+    /// <summary>
+    /// The arithmetic of one exchange: §5.1 の damage formula, Guard, 構え, and the two clamps the
+    /// turn loop needs. Nothing here holds state — the turn loop (#72) does.
+    /// </summary>
     public static class Combat
     {
-        public static int RangeToIndex(RangeBand band)
-        {
-            IReadOnlyList<RangeBand> order = Constants.RangeOrder;
-            for (int i = 0; i < order.Count; i++)
-            {
-                if (order[i] == band) return i;
-            }
-            return -1;
-        }
-
-        public static int ClampDistance(int index)
-        {
-            int max = Constants.RangeOrder.Count - 1;
-            if (index < 0) return 0;
-            return index > max ? max : index;
-        }
-
-        public static RangeBand IndexToRange(int index) => Constants.RangeOrder[ClampDistance(index)];
-
-        public static int ShiftDistance(int currentIndex, int shift) => ClampDistance(currentIndex + shift);
-
-        public static int StaminaRecovery(RangeBand band) => Constants.StaminaRecovery[band];
-
-        /// <summary>|distance − effective range| (§2.2).</summary>
-        public static int RangeDiff(int distanceIndex, RangeBand effRange)
-        {
-            return Math.Abs(ClampDistance(distanceIndex) - RangeToIndex(effRange));
-        }
-
-        public static double RangeMultiplier(int distanceIndex, RangeBand effRange)
-        {
-            int idx = Math.Min(RangeDiff(distanceIndex, effRange), Constants.RangeMult.Count - 1);
-            return Constants.RangeMult[idx];
-        }
-
         /// <summary>
-        /// §7.3: raw = round(power × rangeMult × (desperate ? 1.5 : 1)). Rounding is
-        /// away-from-zero (2.5 → 3), the JS Math.round convention the v2 port used;
-        /// banker's rounding would make 5 × 0.5 = 2 and 7 × 0.5 = 4, which is not
-        /// what the design tables read as. Decided 2026-09-12 (UI spec §9-5).
+        /// §5.1 / §17.6 F4: add first, then multiply.
+        ///
+        ///   (face + trait + followUp + conversion) × 強化 × 脆化 → round AwayFromZero → − Guard
+        ///
+        /// Rounding is away from zero (2.5 → 3), not banker's, because the design tables are read
+        /// that way (decided 2026-09-12). This returns the raw power, before Guard; feed it to
+        /// <see cref="ApplyGuard"/>.
+        ///
+        /// The slice always passes 0 for followUp and conversion and 1.0 for both multipliers: 追撃,
+        /// 転換, 強化 and 脆化 are #48. The slots stay so that adding them does not reshape the call.
         /// </summary>
-        public static int ComputeAttackDamage(int power, RangeBand effRange, int distanceIndex, bool desperate = false)
+        public static int ComputeRawPower(
+            int face,
+            int traitBonus = 0,
+            int followUp = 0,
+            int conversion = 0,
+            double empowerMult = 1.0,
+            double fragileMult = 1.0)
         {
-            double raw = power * RangeMultiplier(distanceIndex, effRange);
-            if (desperate) raw *= Constants.DesperateMult;
+            double raw = (face + traitBonus + followUp + conversion) * empowerMult * fragileMult;
             return Math.Max(0, (int)Math.Round(raw, MidpointRounding.AwayFromZero));
         }
 
-        /// <summary>§4: damage = max(0, raw − guard); guard = max(0, guard − raw).</summary>
+        /// <summary>
+        /// Guard soaks the hit before HP does: damage = max(0, raw − guard), and the Guard that
+        /// absorbed it is spent. Overkill past the Guard is not refunded to the Guard.
+        /// </summary>
         public static (int Damage, int GuardAfter, int Absorbed) ApplyGuard(int raw, int guard)
         {
             int damage = Math.Max(0, raw - guard);
@@ -61,53 +43,39 @@ namespace BattleCore
             return (damage, guardAfter, raw - damage);
         }
 
-        /// <summary>構え (§3.5): Guard +2 when stamina left at turn end ≥ 3, for both sides.</summary>
-        public static int ReserveGuard(int staminaLeft)
-        {
-            return staminaLeft >= Constants.ReserveThreshold ? Constants.ReserveGuard : 0;
-        }
+        /// <summary>構え (§9 step 7): Guard +3 when 3 or more stamina is left at turn end, for both sides.</summary>
+        public static int ReserveGuard(int staminaLeft) =>
+            staminaLeft >= Constants.ReserveThreshold ? Constants.ReserveGuard : 0;
 
-        public static bool IsDesperate(CardDef card, int currentStamina)
-        {
-            return card.Reserve != null
-                   && card.Reserve.Kind == ReserveKind.Desperate
-                   && currentStamina <= Constants.DesperateThreshold;
-        }
-
-        public static bool CalmTriggers(CardDef card, int staminaAfterUse)
-        {
-            return card.Reserve != null
-                   && card.Reserve.Kind == ReserveKind.Calm
-                   && staminaAfterUse >= card.Reserve.Threshold;
-        }
-
-        /// <summary>§3.1: −1 max stamina per 20% of miasma, capped at −4. 100% is miasma death and never reaches a battle.</summary>
-        public static int MiasmaStaminaPenalty(int miasmaPercent)
-        {
-            int clamped = Math.Max(0, Math.Min(99, miasmaPercent));
-            return Math.Min(Constants.MiasmaMaxPenalty, clamped / Constants.MiasmaStepPercent);
-        }
-
-        /// <summary>§3.1: max = clamp(10 + clamp(temp, ±4) − miasma penalty, 3..14).</summary>
-        public static int ComputeMaxStamina(int tempModifierSum, int miasmaPercent)
-        {
-            int temp = Math.Max(-Constants.TempModClamp, Math.Min(Constants.TempModClamp, tempModifierSum));
-            int raw = Constants.BaseMaxStamina + temp - MiasmaStaminaPenalty(miasmaPercent);
-            return Math.Max(Constants.MaxStaminaFloor, Math.Min(Constants.MaxStaminaCeil, raw));
-        }
+        /// <summary>§3: a card can only be played if its cost is payable in full.</summary>
+        public static bool CanPay(int cost, int stamina) => stamina >= cost;
 
         /// <summary>
-        /// Invest choice shared by the enemy AI (§6.3) and the hand's default chip (UI §3.2):
-        /// the largest invest in [min..3] that leaves ≥ reserve stamina; otherwise the minimum if
-        /// affordable; otherwise null.
+        /// §9 steps 2 and 9: recover, then cap at the maximum. The bonus is what 温存 left behind on
+        /// the previous turn; 疲労 would subtract here, and is #48.
         /// </summary>
-        public static int? ChooseInvest(int minInvest, int currentStamina, int reserve = Constants.EnemyReserve)
+        public static int RecoverStamina(int current, int max, int recovery, int bonus = 0)
         {
-            for (int invest = Constants.MaxInvest; invest >= minInvest; invest--)
-            {
-                if (currentStamina - invest >= reserve) return invest;
-            }
-            return currentStamina >= minInvest ? minInvest : (int?)null;
+            int raw = current + Math.Max(0, recovery + bonus);
+            return Math.Min(max, Math.Max(0, raw));
         }
+
+        /// <summary>§8: draw 5 plus whatever modifiers apply, clamped to 3..8.</summary>
+        public static int DrawCount(int modifier = 0)
+        {
+            int raw = Constants.HandDraw + modifier;
+            if (raw < Constants.HandDrawMin) return Constants.HandDrawMin;
+            return raw > Constants.HandDrawMax ? Constants.HandDrawMax : raw;
+        }
+
+        /// <summary>§1: max stamina stays within 3..14 for the whole battle.</summary>
+        public static int ClampMaxStamina(int value)
+        {
+            if (value < Constants.MaxStaminaFloor) return Constants.MaxStaminaFloor;
+            return value > Constants.MaxStaminaCeil ? Constants.MaxStaminaCeil : value;
+        }
+
+        /// <summary>§17.6 F9: a combatant falls the moment its HP reaches 0, wherever the damage came from.</summary>
+        public static bool IsDefeated(int hp) => hp <= 0;
     }
 }

@@ -1,5 +1,37 @@
 # HISTORY (chat-battle)
 
+### 2026-09-21 - BattleCore に v4.2 の最小の骨を入れる（#69）
+
+#### 概要
+
+v3 の戦闘コアを v4.2 で置き換えた。縦切り（#67）が要る規則だけを入れ、ターン進行と敵データと View 契約は外した。別名前空間に v3 を残す案は採らなかった。規則が 2 組になると、どちらを読むかを毎回決めることになるため。
+
+#### 変更点
+
+- **固定コスト**（`Columns.cs` 新設）: カードは列 1〜4 を 1 つ持ち、列番号がコスト。列 4 だけコスト 3 のままで、集中と習熟の伸びが掛かる段になる。投入量 0〜3 と `RANGE_MULT` / `T0_ATTACK_POWER` / `MIN_INVEST_ZERO_KINDS` / `STATUS_SLOTS` / `STATUS_STACK_MAX` / `DESPERATE_MULT` を削除。§3.1 の目盛り（単属性アタック 6 / 13 / 21 / 30 ほか）は #71 が札を書く根拠として置いた
+- **位置**（`Types.cs`）: 近 / 中 / 遠の 3 段を近間 / 遠間の 2 値に置き換え、`Opposite()` で必ず反対側へ移る。位置を持たない戦闘者は `null` を持つ。`push`（敵だけが持つ相手の位置の反転）を `Face` に追加
+- **ダメージ式**（`Combat.cs`）: `(面 + 特性 + 追撃 + 転換) × 強化 × 脆化 → AwayFromZero → − Guard`。縦切りでは追撃・転換が 0、倍率が 1.0 で、式の形だけ先に入れた。間合い倍率と空振り回避は消えた
+- **特性の評価器**（`Traits.cs` 新設）: 条件 4 語（位置(自分) / 位置(相手) / 無防備 / 温存）× 効果 3 語（威力 + n / Guard + n / 次ターン回復 + 1）。面より前に 1 回だけ回る（§17.6 F5）。12 × 10 へ広げる #48 は enum に行を足して switch を伸ばすだけで済む
+- **状態**（`Statuses.cs` 新設）: スタック制の `StatusSet`（不変・値等価）。付与の既定 2、減り方は「使うと減る」「ターンで減る」の 2 型。語は鈍足だけ。プレイヤーの種類上限 6 も規則として入れた（1 語しかないので発火しない）
+- **デッキ**（`Cards.cs`）: 手札 5 枚（3〜8 に clamp）、ターン終了で全捨て、山札切れで捨札を再シャッフル、手札上限 8 の超過は捨札へ、デッキ検証（20〜40 枚・同種 3 枚まで）
+- **外したもの**: `BattleReducer.cs` / `Enemy.cs` / `BattleStore.cs` / `ViewModel.cs` / `IBattleView.cs` と対応する v3 テスト 4 本。`ParityTests.cs` も削除（v3 以降 `V2_PARITY` 付きの死んだコードで、v4.2 の型では二度とコンパイルできない）
+- **テスト**: `ColumnTests` / `PositionTests` / `CombatTests`（書き直し）/ `TraitTests` / `StatusTests` / `CardsTests` / `Fixtures`。54 件 → 79 件
+- **`unity-port/README.md`**: 構造の木・3 層構成・パリティの節を現状に合わせた
+
+#### 実測・知見
+
+- `npm run build` / `npm run lint` / `npm run test:run`（204 件）/ `dotnet test`（BattleCore 79・Depiction 53）がすべて exit 0
+- **v3 の型を替えると reducer / store / ViewModel は残せない**。全面的に `RangeBand` と `Tier` と投入量に乗っていたため。#69 の範囲を「型だけ」に留める選択肢は実際には無く、置き換えか併存かの 2 択だった
+- **`Attribute` という名前は使えない**。`System.Attribute` を名前空間内で隠すので `BattleAttribute` にした。§11 の写像表は `Attribute` と書いているが、実装名は変える必要がある
+- **`Depiction.Script` は BattleCore に依存しない**（`Script/` の各ファイルが「no BattleCore」と明記）。だから v3 を外しても戦闘描写の 53 件は 1 件も動かなかった
+- **`unity-project-kit/Assets/View/` の v3 雛形 7 ファイルは壊れたまま残る**。`dotnet test` はこれをコンパイルしないので検証には出ない。`lane:design` の持ち物なので直さず #134 に起票した
+
+#### 次
+
+- PR #133 は open。merge は人の手番
+- #70（敵データ）と #71（デッキ）は互いに独立で、どちらも本 PR の型の上に乗る。イベント列の型は入れなかったので #72 が決める
+- `battle_core_v4.md` §11 の写像表は `CardType` → `Attribute` と書いているが、実装は `BattleAttribute`。本文改訂（§19.9）の回で直すと揃う
+
 ### 2026-09-21 - 投入量の代わりのシナジー設計（#62）
 
 #### 概要
