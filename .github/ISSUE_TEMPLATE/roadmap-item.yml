@@ -2,6 +2,17 @@ name: Roadmap Item
 description: ロードマップ項目（機能追加 / 設計 / 調査）の追跡
 labels: ["type:task"]
 body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 優先順位
+      description: "着手の順番。sev:（影響の大きさ）とは別の軸。選んだ値が prio: ラベルになる"
+      options:
+        - "prio:1 最優先。いま着手する"
+        - "prio:2 次に着手する"
+        - "prio:3 その後（設計や判断は並行可）"
+        - "prio:4 いつか。着手時に見直す"
+    validations: { required: true }
   - type: textarea
     id: summary
     attributes: { label: Summary, description: 何をどこまでやるかの要約 }

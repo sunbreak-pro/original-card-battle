@@ -225,8 +225,9 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 ### 課題追跡は GitHub Issues が正
 
 - **起票先**: `gh issue create -R sunbreak-pro/original-card-battle`。テンプレートは `.github/ISSUE_TEMPLATE/` の 3 種（Known Issue / Roadmap Item / Human Task）
-- **ラベル**: `type:` (bug / feature / task / human) × `sev:` (blocking / important / minor) × `area:` (battle / cards / enemy / dungeon / ui / art / unity / docs / tooling) × `status:` (monitoring / workaround / frozen)
+- **ラベル**: `type:` (bug / feature / task / human) × `prio:` (1 / 2 / 3 / 4) × `sev:` (blocking / important / minor) × `area:` (battle / cards / enemy / dungeon / ui / art / unity / docs / tooling) × `status:` (monitoring / workaround / frozen)
 - **スコープの境界**: Issue は**プロダクトの課題専用**。Claude Code 環境やハーネス起因の問題は `docs/known-issues/` に置き、Issue にしない
+- **優先順位は必須**: Issue には `prio:1`〜`prio:4` を必ず 1 つ付ける（1 = いま着手 / 2 = 次 / 3 = その後 / 4 = いつか）。`sev:` は影響の大きさ、`prio:` は着手の順番で、別の軸。次にやることは `npm run issues:next`（`prio` → `sev` → 番号の順。依存先が open の Issue は待ちに回る）。付け忘れは `npm run issues:next -- --check` が検出する。見直すのは親 Issue を閉じたときと、縦切りや束の振り返りのとき
 - **着手前に必ず open を見る**: `gh issue list --label type:bug`。重複起票を避ける
 - **1 Issue = 1 ブランチ = 1 PR**。PR 本文に `Closes #<n>` を書く。**merge は常に人**（`gh pr merge` は settings.json の `ask` で止まる）
 

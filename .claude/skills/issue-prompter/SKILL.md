@@ -36,6 +36,8 @@ git worktree list
 
 本文が**着地済み PR を明示している** Issue（「実際の着地は PR #<n>（merged）」等）も配りません。「open PR あり」の除外は merged PR を拾えないので、規則どおり配ると**空の PR を作らせます**。残りが実測・判断だけなら采配欄へ回します。
 
+着手順の下書きは `npm run issues:next -- --all` で出せます（`prio` → `sev` → 番号の順に並べ、依存待ち・人手待ち・親 Issue を分けます）。PR の除外と本文の読み込みはこのコマンドではやらないので、下の判定は省きません。
+
 ### 2. 宛先解決（上から順に当てはめる）
 
 | 判定                                                                                        | 宛先                                                                        |
@@ -66,7 +68,7 @@ git worktree list
 
 ### 3. `/goal` 条件の組み立て
 
-条件は**英語・観測可能・4,000 文字以内**（判定モデルは Haiku）。レーンの open Issue を 1 本にまとめます。1 本の `/goal` に入れるのは**依存の無い Issue だけ**です。
+条件は**英語・観測可能・4,000 文字以内**（判定モデルは Haiku）。レーンの open Issue を 1 本にまとめます。1 本の `/goal` に入れるのは**依存の無い Issue だけ**です。**並べる順は `prio:` の小さい順**（同じなら `sev:`、番号）で、`prio:1` が残っているレーンには `prio:3` 以下を混ぜません。`prio:` が付いていない Issue は配らず、采配欄に「優先順位なし」として出します。
 
 ```
 /goal in the original-card-battle worktree for <slug>: every open issue below has its own branch off origin/main, a local run of npm run build, npm run lint, npm run test:run and dotnet test under unity-port that reports no error the same commands did not already report on origin/main, and an opened PR referencing it — #<n1> <title1>, #<n2> <title2>. Read .claude/skills/worktree-policy/SKILL.md first, update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.

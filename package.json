@@ -17,7 +17,9 @@
     "parity:gen": "node unity-port/tools/gen-parity.mjs",
     "parity:check": "node unity-port/tools/parity-check.mjs",
     "unity:sync": "node unity-port/tools/sync-unity-project.mjs",
-    "unity:trace": "node unity-port/tools/gen-trace-actions.mjs"
+    "unity:trace": "node unity-port/tools/gen-trace-actions.mjs",
+    "issues:next": "node scripts/issues-next.mjs",
+    "issues:test": "node --test \"scripts/__tests__/*.test.mjs\""
   },
   "dependencies": {
     "@pixi/react": "^8.0.5",
