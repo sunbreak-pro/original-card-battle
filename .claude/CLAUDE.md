@@ -62,8 +62,23 @@ npx vitest run src/domain/cards/decks/__tests__/deck.test.ts  # Single file
 | CSS sizing      | `vh/vw` (use `px` only for borders)                         |
 | CSS selectors   | Scope with parent: `.battle-screen .card { }`               |
 | Adding classes  | Use `character-class-creator` skill                         |
-| Chat language   | Japanese (ユーザーへの応答は日本語で行う)                   |
+| Chat language   | Japanese。書き方は下の「こうだいさん向けの文章」に従う      |
 | State ownership | One context owns each piece of state; others read via hooks |
+
+### こうだいさん向けの文章
+
+会話・報告・`docs/reports/` の HTML は、グローバルの `rules/japanese.md` と output style `tone-persona` に従う。本ファイルとスキルの文体（体言止め・内輪の語）を読み手向けの文章に持ち込まない。次の語は言い換える。
+
+| 内輪の語              | こうだいさん向けの書き方                 |
+| --------------------- | ---------------------------------------- |
+| 正本 / 台帳           | 元になる文書 / 元になる文書の一覧        |
+| レーン                | 担当ごとの作業場所（cards・design など） |
+| main の采配に落とす   | メインのチャットで扱う                   |
+| こうだいさんの手番    | こうだいさんの作業（何をするかまで書く） |
+| 宛先を付ける          | どの担当に回すかのラベルを付ける         |
+| 起票する / 退役させる | Issue を作る / 使わなくする              |
+
+スキル名・ラベル名・ファイル名は、何をするものかを先に言ってから添える。
 
 ### React 19 Patterns
 
