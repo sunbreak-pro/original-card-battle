@@ -4,7 +4,8 @@ namespace DungeonCore.Tests
 {
     public class ExplorationReducerTests
     {
-        private const int PlayerMaxHp = 30;
+        // battle_core_v4.md §10: PLAYER_MAX_HP 50.
+        private const int PlayerMaxHp = 50;
 
         private static ExplorationState EnterLayer(int layer, ulong seed = 11UL, RunLoadout? loadout = null, int hp = PlayerMaxHp, int stamina = 10)
         {
@@ -143,7 +144,7 @@ namespace DungeonCore.Tests
         {
             var cleared = WalkStraightDown(SevenLayers.Of(1), 9UL, RunLoadout.Empty, hp: 10, maxHp: PlayerMaxHp, stamina: 10);
             var rest = ExplorationReducer.Interlude(cleared);
-            Assert.That(rest.Hp, Is.EqualTo(Math.Min(PlayerMaxHp, cleared.Hp + 9)));
+            Assert.That(rest.Hp, Is.EqualTo(Math.Min(PlayerMaxHp, cleared.Hp + 15)), "30% of 50");
         }
 
         [Test]
@@ -199,7 +200,7 @@ namespace DungeonCore.Tests
             var atRest = WalkTo(start, restNode.Id, RestChoice.Rest);
             var atTrain = WalkTo(start, restNode.Id, RestChoice.Train);
 
-            Assert.That(atRest.Hp, Is.EqualTo(atTrain.Hp + 5), "15% of 30 is 5");
+            Assert.That(atRest.Hp, Is.EqualTo(atTrain.Hp + 8), "15% of 50 is 7.5, rounded away from zero");
             Assert.That(atRest.TempMaxStaminaMod, Is.EqualTo(ExplorationReducer.RestMaxStaminaBonus));
             Assert.That(atRest.Stamina, Is.EqualTo(atRest.MaxStamina));
             Assert.That(atRest.TrainingMarks, Is.Zero);
@@ -305,6 +306,64 @@ namespace DungeonCore.Tests
             Assert.That(state.MiasmaPercent, Is.EqualTo(89));
             Assert.That(state.MaxStamina, Is.EqualTo(6));
             Assert.That(state.MiasmaPercent, Is.EqualTo(SevenLayers.BareMinimumMiasma()));
+        }
+
+        [Test]
+        public void TakingTheRestOnTheLastLayerArrivesWithMoreStamina()
+        {
+            // seven_layers_v4.md §3.4: "max stamina 6 at 歪みの根" is the line where no rest
+            // node was ever taken. 休息's +2 is a 一時変化 and carries into the battle, so a run
+            // that spends its one middle node on rest reaches the root at 8 instead.
+            var profile = SevenLayers.Of(7);
+            var map = profile.Map(5UL);
+            var rest = map.Nodes.Single(n => n.Kind == NodeKind.Rest);
+
+            var trained = WalkThroughLayerSeven(profile, map, rest.Id, RestChoice.Train);
+            var rested = WalkThroughLayerSeven(profile, map, rest.Id, RestChoice.Rest);
+
+            Assert.That(trained.MiasmaPercent, Is.EqualTo(89));
+            Assert.That(rested.MiasmaPercent, Is.EqualTo(89), "either choice costs the same 瘴気");
+
+            Assert.That(trained.MaxStamina, Is.EqualTo(6));
+            Assert.That(rested.MaxStamina, Is.EqualTo(8));
+            Assert.That(rested.TrainingMarks, Is.Zero);
+            Assert.That(trained.TrainingMarks, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ADetourOnTheLastLayerCostsNoStamina()
+        {
+            // seven_layers_v4.md §3.5: the penalty caps at −4, so anything spent past 80% buys
+            // nothing back and costs nothing either — except the distance left to 100%.
+            var profile = SevenLayers.Of(7);
+            var map = profile.Map(5UL);
+            var straight = WalkThroughLayerSeven(profile, map, map.Row(1).First().Id, RestChoice.Train);
+
+            var detoured = ExplorationReducer.Enter(
+                profile, map, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, miasmaPercent: 68);
+            var middle = map.Row(1).Select(n => n.Id).ToList();
+            detoured = ExplorationReducer.Step(detoured, middle[0], RestChoice.Train);
+            detoured = ExplorationReducer.Step(detoured, map.EntryId); // free: already resolved
+            detoured = ExplorationReducer.Step(detoured, middle[1], RestChoice.Train);
+            detoured = ExplorationReducer.Step(detoured, map.BossId, RestChoice.Train);
+
+            Assert.That(detoured.MiasmaPercent, Is.EqualTo(96));
+            Assert.That(detoured.MaxStamina, Is.EqualTo(straight.MaxStamina),
+                "89% and 96% are both a −4 penalty");
+            Assert.That(detoured.Phase, Is.EqualTo(RunPhase.Completed));
+        }
+
+        /// <summary>
+        /// Enters layer seven at the 68% a straight run down the first six layers arrives with,
+        /// spends its one middle node on <paramref name="middleId"/>, then drops onto the root.
+        /// </summary>
+        private static ExplorationState WalkThroughLayerSeven(
+            LayerProfile profile, LayerMap map, int middleId, RestChoice choice)
+        {
+            var state = ExplorationReducer.Enter(
+                profile, map, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10, miasmaPercent: 68);
+            state = ExplorationReducer.Step(state, middleId, choice);
+            return ExplorationReducer.Step(state, map.BossId, choice);
         }
 
         [Test]
