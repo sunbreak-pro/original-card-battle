@@ -1,0 +1,217 @@
+<title>戦闘ルール早見表</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .step code { font-size: 13px; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+  @media (max-width: 720px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+<style>
+  nav.toc { display:flex; flex-wrap:wrap; gap:8px 16px; font-size:14px; margin:0 0 8px; }
+  td:first-child { white-space:nowrap; font-weight:700; }
+  table { font-variant-numeric: tabular-nums; }
+</style>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-21 / 早見表 / original-card-battle</p>
+    <h1>戦闘のルール・状態・スタンスを表で一覧にしました</h1>
+    <p class="lede">戦闘の設計書 v4.2 の本文から、決まっているルールを表だけ抜き出した読む用の 1 枚です。数値を変えるときは設計書のほうを直します。</p>
+  </header>
+  <nav class="toc prose"><a href="#values">持つ値</a><a href="#attr">属性</a><a href="#trait">特性</a><a href="#cost">コストと目盛り</a><a href="#stance">スタンス</a><a href="#status">状態</a><a href="#damage">ダメージ式</a><a href="#pos">位置</a><a href="#omen">予兆と敵</a><a href="#deck">手札とデッキ</a><a href="#turn">ターン進行</a><a href="#const">定数</a><a href="#open">判断待ち</a></nav>
+  <div class="callout prose"><strong>元になる文書</strong>: <code>.claude/docs/battle_document/battle_core_v4.md</code> の §1〜§10 です。2026-09-21 に決めたシナジーの規則（§19）は本文にまだ入っていないので、この表にも入っていません。数値の多くは叩き台で、試験台で測ってから確定します。</div>
+
+  <h2 id="values">戦闘中に持つ値</h2>
+  <p class="prose">将棋でいえば盤の上に並ぶ駒の種類にあたります。手札・山札・捨札・除外はカードの置き場で、ここには数えません。</p>
+  <div class="tablewrap"><table><thead><tr><th>値</th><th>誰が持つか</th><th>範囲</th><th>補足</th></tr></thead><tbody><tr><td>HP</td><td>両者</td><td>0〜最大</td><td>変更なし</td></tr><tr><td>Guard</td><td>両者</td><td>0〜</td><td>変更なし。自分のターン開始で 0</td></tr><tr><td>スタミナ（現在）</td><td>両者</td><td>0〜最大</td><td>変更なし。回復は毎ターン 3 固定</td></tr><tr><td>スタミナ（最大）</td><td>両者</td><td>3〜14</td><td>変更なし。ボス専用の状態で戦闘中に −1〜−2 する例外あり</td></tr><tr><td><strong>位置</strong></td><td>プレイヤーと一部の敵</td><td>近間 か 遠間</td><td><strong>常設の値</strong>。持つ敵はボスと精鋭だけ</td></tr><tr><td>予兆</td><td>敵ごと</td><td>行動 1 つ（精鋭・ボスは 2 つ）</td><td>変更なし</td></tr><tr><td>状態</td><td>両者</td><td>語 × スタック数</td><td><strong>スタック制</strong>。プレイヤーは種類 6 つまで</td></tr><tr><td>スタンス枠</td><td>両者</td><td>0 か 1 枚</td><td>変更なし</td></tr></tbody></table></div>
+
+  <h2 id="attr">属性 5 つ</h2>
+  <p class="prose">1 枚のカードは属性を 1〜2 つ持ちます。二属性の札は、それぞれの効果が単属性の約 65% になります。1 枚の中では「特性の判定 → アタック → ムーブ → ガード → スキル → スタンス」の順に解決します。位置は必ずカードを出す前の値で読みます。</p>
+  <div class="tablewrap"><table><thead><tr><th>属性</th><th>盤面への作用</th><th>列で伸びるもの</th></tr></thead><tbody><tr><td>アタック</td><td>相手の HP を減らす</td><td>威力、崩し</td></tr><tr><td>ガード</td><td>自分に Guard を付ける</td><td>Guard 量</td></tr><tr><td>スタンス</td><td>戦闘が終わるまで続く効果を枠に置く</td><td>効果の強さ</td></tr><tr><td>スキル</td><td>状態を付ける、回復する、引く、スタミナを戻す</td><td>スタック数、量</td></tr><tr><td>ムーブ</td><td>自分の位置を近間 / 遠間へ切り替える</td><td>付随効果（ムーブだけの札はコスト 1 に固定する）</td></tr></tbody></table></div>
+
+  <h2 id="trait">特性（条件 → 追加効果）</h2>
+  <p class="prose">カードは特性を 1 つまで持ちます。条件は 12 種、効果は 10 種です。同じ条件と効果の組は 3 枚までです。</p>
+  <h3>条件 12 種</h3>
+  <div class="tablewrap"><table><thead><tr><th>条件</th><th>意味</th><th>例</th></tr></thead><tbody><tr><td>連動</td><td>このターンに &lt;属性&gt; のカードをプレイ済み</td><td>ムーブ連動: スタミナ +1</td></tr><tr><td>位置</td><td>自分が &lt;近間 / 遠間&gt; にいる（出す前の位置）</td><td>遠間: 威力 +6</td></tr><tr><td>予兆</td><td>相手の予兆が &lt;種別&gt;</td><td>予兆がアタック: Guard +3</td></tr><tr><td>温存</td><td>使用後の残スタミナ ≥ n</td><td>残 6 以上: 次ターン回復 +1</td></tr><tr><td>死力</td><td>現在スタミナ ≤ 2</td><td>威力 +6</td></tr><tr><td>初手</td><td>このターン最初のプレイ</td><td>コスト −1</td></tr><tr><td>締め</td><td>このターン 3 枚目以降のプレイ</td><td>威力 +3</td></tr><tr><td>崩し後</td><td>相手のスタミナ &lt; 3</td><td>崩し +1</td></tr><tr><td>連打</td><td>直前にプレイしたカードも同じ属性</td><td>アタック連打: 威力 +3</td></tr><tr><td>手薄</td><td>プレイ後の残り手札が 1 枚以下</td><td>ドロー +1</td></tr><tr><td>相手の状態</td><td>相手に &lt;語&gt; が付いている</td><td>出血中: 威力 +5</td></tr><tr><td>自分の状態</td><td>自分に &lt;語&gt; が付いている</td><td>見切り中: Guard +3</td></tr></tbody></table></div>
+  <h3>効果 10 種</h3>
+  <div class="tablewrap"><table><thead><tr><th>効果</th><th>内容</th></tr></thead><tbody><tr><td>スタミナ +1</td><td>即時</td></tr><tr><td>威力 +n</td><td>この 1 枚のアタック面。n は 4〜8 を目安にする（叩き台）</td></tr><tr><td>Guard +n</td><td>この 1 枚</td></tr><tr><td>ドロー +1</td><td>即時</td></tr><tr><td>状態 +1</td><td>スタックを 1 足す</td></tr><tr><td><strong>コスト −1</strong></td><td>この 1 枚のコストが 1 下がる（下限 0）。習熟の「軽さ」と同じ働き</td></tr><tr><td>次ターン回復 +1</td><td>次のターン開始のスタミナ回復</td></tr><tr><td><strong>重撃</strong></td><td>条件を満たすと威力 +6、<strong>次のターン開始の回復 −1</strong>。今のターンのコストと構えは変えない</td></tr><tr><td><strong>転換</strong></td><td>この 1 枚の Guard の半分を威力に足す</td></tr><tr><td><strong>追撃</strong></td><td>このターンの次のアタック面に威力 +5</td></tr></tbody></table></div>
+  <h3>カードと敵の技に付けられる追加の項目</h3>
+  <div class="tablewrap"><table><thead><tr><th>項目</th><th>意味</th><th>使う例</th></tr></thead><tbody><tr><td><code>hits</code></td><td>アタック面を n 回に分けて当てる（1 撃ずつ Guard に当たる）</td><td>双刃の斬撃</td></tr><tr><td><code>targets</code></td><td>one / all / self / <strong>ally</strong>（味方に付ける状態。2 体戦の取り巻き用）</td><td>群れの長の遠吠え</td></tr><tr><td><code>push</code></td><td><strong>敵だけが持つ</strong>。相手の位置を反対側へ変える。Guard で減らない</td><td>石突きの押し込み、誘い</td></tr><tr><td><code>when</code></td><td>スタンスの効果に位置の条件を付ける（例: 遠間にいるターン開始だけ）</td><td>水の構え、瘴気の帳</td></tr></tbody></table></div>
+
+  <h2 id="cost">コストと目盛り</h2>
+  <p class="prose">カードは列 1〜4 のどれか 1 つを持ちます。列番号がコストで、その列の値が効果です。列 4 だけはコスト 3 のままです。コスト 0 は習熟でだけ生まれます。敵の技は下の目盛りの約 6 割です。</p>
+  <div class="tablewrap"><table><thead><tr><th>面</th><th>列 1</th><th>列 2</th><th>列 3</th><th>列 4</th></tr></thead><tbody><tr><td>単属性アタック（威力）</td><td>6</td><td>13</td><td>21</td><td>30</td></tr><tr><td>単属性ガード（Guard）</td><td>4</td><td>9</td><td>15</td><td>22</td></tr><tr><td>二属性のアタック面</td><td>4</td><td>8</td><td>14</td><td>20</td></tr><tr><td>二属性のガード面</td><td>3</td><td>6</td><td>10</td><td>14</td></tr><tr><td>単属性の回復（HP）</td><td>3</td><td>8</td><td>13</td><td>19</td></tr><tr><td>二属性の回復面</td><td>2</td><td>5</td><td>8</td><td>12</td></tr><tr><td>出血 / 再生のスタック</td><td>1</td><td>2</td><td>3</td><td>4</td></tr><tr><td>単属性のスキル（状態）</td><td>1 種</td><td>2 種</td><td>3 種</td><td>3 種 + ドロー 1</td></tr><tr><td>二属性のスキル面</td><td>1 種</td><td>2 種</td><td>2 種 + 1 種</td><td>3 種 + 1 種</td></tr><tr><td>スタンスの上乗せ</td><td>+2</td><td>+3</td><td>+5</td><td>+6</td></tr></tbody></table></div>
+  <h3>変えない基本の数値</h3>
+  <div class="tablewrap"><table><thead><tr><th>項目</th><th>値</th></tr></thead><tbody><tr><td>プレイヤー HP</td><td>50</td></tr><tr><td>敵 HP</td><td>通常 50〜70 / 精鋭 90〜110 / ボス 160〜200</td></tr><tr><td>敵の 1 ターン出力</td><td>通常 7〜13 / 精鋭 10〜16 / ボス 13〜20</td></tr><tr><td>構え</td><td>残 3 以上で Guard +3</td></tr><tr><td>出血 / 再生（1 スタック）</td><td>2</td></tr><tr><td>最大スタミナ</td><td>基準 10（3〜14）</td></tr><tr><td>階層間の休憩 / 階層内の休息</td><td>30% / 15%</td></tr></tbody></table></div>
+
+  <h2 id="stance">スタンス（型は 6 つ）</h2>
+  <p class="prose">スタンスの枠は 1 つです。別のスタンスを出すと前のものは終わります。強さは出したカードの列で決まり、戦闘が終わるまで続きます。出したカードはその戦闘中は山札に戻りません。精鋭とボスもスタンスを持てます。</p>
+  <div class="tablewrap"><table><thead><tr><th>型</th><th>例</th></tr></thead><tbody><tr><td>ターン開始付与</td><td>毎ターン Guard +1 / HP +1 / ドロー +1 / 回復 +1</td></tr><tr><td>条件付き加算</td><td>近間での攻撃 +1 / 遠間から使うムーブに Guard +1</td></tr><tr><td>被弾時の反応</td><td>Guard が吸収した分の 1/3 を返す</td></tr><tr><td>移動の補正</td><td>遠間へ移るとき Guard +1 / 近間へ移るとき威力 +1</td></tr><tr><td>コストの割引</td><td>毎ターン 1 回、&lt;属性&gt; のカードのコスト −1</td></tr><tr><td>敵行動への干渉</td><td>予兆が咎める側に居ないとき Guard +1</td></tr></tbody></table></div>
+
+  <h2 id="status">状態 10 語</h2>
+  <p class="prose">状態はスタック（重ねた数）で持ちます。付与の既定は 2 スタックです。プレイヤーは種類を 6 つまで持てて、敵に上限はありません。減り方は 2 通りです。「使うと減る」は効果が出るたびに 1 減り、「ターンで減る」は付いた側のターン開始に 1 減ります。</p>
+  <div class="tablewrap"><table><thead><tr><th>語</th><th>向き</th><th>効き方</th><th>減り方</th></tr></thead><tbody><tr><td>出血</td><td>相手に</td><td>相手のターン開始に HP −2 × 残りスタック</td><td>ターンで減る</td></tr><tr><td>脆化</td><td>相手に</td><td>次に受ける攻撃の raw ×1.5</td><td>使うと減る</td></tr><tr><td>鈍足</td><td>相手に</td><td>次のターン全体、位置の切り替えができない</td><td>ターンで減る</td></tr><tr><td>威圧</td><td>相手に</td><td>次の行動の値を −3（威力と Guard。旧表のほぼ 1 列分）</td><td>使うと減る</td></tr><tr><td>疲労</td><td>相手に</td><td>次のターン開始のスタミナ回復 −1</td><td>ターンで減る</td></tr><tr><td>強化</td><td>自分に</td><td>次のアタック面の威力 <strong>×1.5</strong></td><td>使うと減る</td></tr><tr><td>集中</td><td>自分に</td><td>次の札を <strong>1 列右</strong>で解決する（列 4 は超えない）</td><td>使うと減る</td></tr><tr><td>見切り</td><td>自分に</td><td>次の被弾で Guard が吸収した分の半分を相手に返す</td><td>使うと減る</td></tr><tr><td>俊敏</td><td>自分に</td><td>有効なターンの開始時に近間 / 遠間を選べる</td><td>ターンで減る</td></tr><tr><td>再生</td><td>自分に</td><td>ターン開始に HP +2 × 残りスタック</td><td>ターンで減る</td></tr></tbody></table></div>
+  <p class="prose">ボスは上の 10 語に加えて専用の状態を 2 つ持ちます。例は瘴気纏いで、その戦闘中プレイヤーの最大スタミナを 1 下げます（重ねて 2 まで）。</p>
+
+  <h2 id="damage">ダメージ式</h2>
+  <p class="prose">足してから掛けます。</p>
+  <pre><code>(面の値 + 特性 + 追撃 + 転換) × 強化 1.5 × 脆化 1.5 → 四捨五入 → Guard を引く</code></pre>
+  <ul class="prose"><li>多段の攻撃では、追撃は各撃に乗りません。特性の +n と強化は全ての撃に乗ります。</li><li>追撃は番の終わりに消えます。</li><li>HP が 0 になった瞬間に倒れます。出血・見切りの返し・被弾のどこでも同じです。</li></ul>
+
+  <h2 id="pos">位置（近間 / 遠間）</h2>
+  <div class="tablewrap"><table><thead><tr><th>項目</th><th>ルール</th></tr></thead><tbody>
+  <tr><td>誰が持つか</td><td>プレイヤーと、精鋭・ボスだけが持ちます。通常敵 6 体と取り巻きは持ちません。</td></tr>
+  <tr><td>素の効果</td><td>ありません。カード・特性・敵の技が、位置を条件として読みます。</td></tr>
+  <tr><td>読む位置</td><td>カードは自分の位置だけを読みます。相手の位置を条件にする札は作りません。</td></tr>
+  <tr><td>切り替え</td><td>ムーブを持つカードで切り替えます。2 値なので必ず反対側へ移ります。ムーブだけの札 6 種は全てコスト 1 です。</td></tr>
+  <tr><td>敵の押し返し</td><td><code>push</code> は敵だけが持ちます。相手の位置を反対側へ変え、Guard では減りません。</td></tr>
+  <tr><td>配分</td><td>位置を条件にする札は 16 枚です。「攻撃 / 防御 × 近間 / 遠間」の 4 マスに 4 枚ずつ配ります。</td></tr>
+  <tr><td>開始位置</td><td>プレイヤーは毎戦同じ位置から始めます。出立のツールで変えられます。</td></tr>
+  <tr><td>複数体</td><td>基本は 1 体です。精鋭「群れの長」だけ取り巻き 1 体を連れて 2 体で出ます。3 体以上は作りません。</td></tr>
+  </tbody></table></div>
+
+  <h2 id="omen">予兆と敵の動き</h2>
+  <p class="prose">敵は次の行動を先に見せて、そのとおりに動きます。見せるのは「種別 + 咎める側の一字」（例: 攻撃・遠）です。スタミナが足りず払えない予兆は休みになります。</p>
+  <div class="tablewrap"><table><thead><tr><th>敵</th><th>位置</th><th>行動の決め方</th></tr></thead><tbody><tr><td>通常敵 6 体</td><td>持たない</td><td>プレイヤーの位置で <strong>2 通り</strong></td></tr><tr><td>精鋭・ボス</td><td>持つ</td><td>自分とプレイヤーの組で <strong>4 通り</strong></td></tr></tbody></table></div>
+  <div class="tablewrap"><table><thead><tr><th>敵の格</th><th>1 回の行動数</th><th>予兆</th><th>その他</th></tr></thead><tbody>
+  <tr><td>通常</td><td>1</td><td>1 段</td><td>主に咎める側を持ち、逆側にいる相手を押し返しや誘いで戻します。</td></tr>
+  <tr><td>精鋭</td><td>2</td><td>2 段（2 手目は「予定」）</td><td>スタンスを持ちます。</td></tr>
+  <tr><td>ボス</td><td>2</td><td>2 段（2 手目は「予定」）</td><td>行動の履歴で動きを切り替えます。専用の状態を 2 つ持ちます。</td></tr>
+  </tbody></table></div>
+
+  <h2 id="deck">手札とデッキ</h2>
+  <div class="tablewrap"><table><thead><tr><th>項目</th><th>値</th><th>備考</th></tr></thead><tbody><tr><td>ドロー / ターン</td><td>5 + 補正</td><td>補正は習熟の永続効果・スタンス・状態から。3〜8 に clamp</td></tr><tr><td>手札上限</td><td>8</td><td>超えた札は捨札へ送る</td></tr><tr><td>ターン終了</td><td>全捨て</td><td>残した札はない</td></tr><tr><td>デッキ枚数</td><td><strong>20〜40</strong></td><td>20 未満は出立で弾く</td></tr><tr><td>同種の上限</td><td>3</td><td>習得した瞬間に 3 枚使える。所持は「種類」で持つ</td></tr><tr><td>山札切れ</td><td>捨札を再シャッフル</td><td>除外（出したスタンス）は戻らない</td></tr><tr><td>所持上限</td><td>80 種</td><td>初期 40 種、習得 40 種</td></tr></tbody></table></div>
+
+  <h2 id="turn">ターン進行</h2>
+  <div class="tablewrap"><table><thead><tr><th>場面</th><th>順</th><th>起きること</th></tr></thead><tbody>
+  <tr><td rowspan="5">プレイヤーのターン開始</td><td>1</td><td>Guard を 0 にします。</td></tr>
+  <tr><td>2</td><td>スタミナを 3 回復します。疲労が付いていれば 1 減ります。</td></tr>
+  <tr><td>3</td><td>スタンスと状態のターン開始の効果が出ます（再生・出血・俊敏の位置選択など）。</td></tr>
+  <tr><td>4</td><td>手札を 5 枚 + 補正ぶん引きます。</td></tr>
+  <tr><td>5</td><td>敵ごとの予兆を表示します。</td></tr>
+  <tr><td>プレイヤーの行動</td><td>6</td><td>払える限り何枚でも出せます。特性を判定してから、属性の順に解決します。</td></tr>
+  <tr><td rowspan="2">ターン終了</td><td>7</td><td>残りスタミナが 3 以上なら Guard +3（構え）。</td></tr>
+  <tr><td>8</td><td>手札を全て捨てます。</td></tr>
+  <tr><td rowspan="4">敵の番（敵ごとに順に）</td><td>9</td><td>Guard を 0 にして、敵ごとの値でスタミナを回復し、ターン開始の効果を出します。</td></tr>
+  <tr><td>10</td><td>予兆どおりに実行します。払えなければ休みです。精鋭・ボスは 2 回動きます。</td></tr>
+  <tr><td>11</td><td>プレイヤーの敗北を判定します。</td></tr>
+  <tr><td>12</td><td>次の予兆を決めます。</td></tr>
+  </tbody></table></div>
+
+  <h2 id="const">定数の一覧</h2>
+  <div class="tablewrap"><table><thead><tr><th>定数</th><th>値</th><th>備考</th></tr></thead><tbody><tr><td>HAND_DRAW</td><td>5</td><td></td></tr><tr><td>HAND_DRAW_MIN / MAX</td><td>3 / 8</td><td>補正後の clamp</td></tr><tr><td>HAND_LIMIT</td><td>8</td><td>超過は捨札へ</td></tr><tr><td>DECK_MIN / MAX</td><td>20 / 40</td><td>v4.1 の 15 / 80 を置き換える</td></tr><tr><td>COPIES_MAX</td><td>3</td><td>同種の上限</td></tr><tr><td>OWNED_KINDS_MAX</td><td>80</td><td></td></tr><tr><td>COLUMN_COUNT</td><td>4</td><td>列 1〜4</td></tr><tr><td>COST_MIN / MAX</td><td>1 / 3</td><td>列 4 のコストは 3。0 は習熟でだけ</td></tr><tr><td>STAMINA_RECOVERY</td><td>3</td><td>プレイヤーの毎ターン固定。敵は敵ごとの値（<code>enemy_roster_v4.md</code> ）</td></tr><tr><td>BASE_MAX_STAMINA</td><td>10</td><td>範囲 3〜14</td></tr><tr><td>PLAYER_MAX_HP</td><td>50</td><td></td></tr><tr><td>RESERVE_THRESHOLD</td><td>3</td><td>構えの閾値</td></tr><tr><td>RESERVE_GUARD</td><td>3</td><td>構えで付く Guard</td></tr><tr><td>DESPERATE_THRESHOLD</td><td>2</td><td>死力の条件（倍率は持たない）</td></tr><tr><td>TRAIT_CONDITIONS / EFFECTS</td><td>12 / 10</td><td>特性の語彙</td></tr><tr><td>POSITION_TRAIT_CARDS</td><td>16</td><td>位置を条件にする札（4 マス × 4）</td></tr><tr><td>PLAIN_CARD_BONUS</td><td>+2</td><td>素直な札の上乗せ（全ての列で +2）</td></tr><tr><td>SAME_TRAIT_MAX</td><td>3</td><td>同じ条件 + 効果の組の上限</td></tr><tr><td>DUAL_FACE_RATIO</td><td>0.65</td><td>二属性の面の目安</td></tr><tr><td>STATUS_KINDS_PLAYER</td><td>6</td><td>プレイヤーが同時に持てる状態の種類</td></tr><tr><td>STATUS_KINDS_ENEMY</td><td>上限なし</td><td>敵はスタック数も種類も数えない</td></tr><tr><td>STANCE_SLOTS</td><td>1</td><td></td></tr><tr><td>BOSS_STATUS_KINDS</td><td>2</td><td>ボス専用の状態</td></tr><tr><td>ENEMIES_MAX</td><td>2</td><td>同時に出る敵</td></tr><tr><td>ELITE_ACTIONS</td><td>2</td><td>精鋭・ボスの 1 フェーズの行動数</td></tr><tr><td>OMEN_DEPTH_ELITE</td><td>2</td><td>予兆の段数（通常 1）</td></tr><tr><td>EMPOWER_MULT</td><td>1.5</td><td>強化</td></tr><tr><td>FRAGILE_MULT</td><td>1.5</td><td>脆化</td></tr><tr><td>MASTERY_THRESHOLDS</td><td>3 / 8 / 15</td><td>習熟の刻みの閾値（仮置き）</td></tr><tr><td>CHAIN_BATTLES_DEFAULT</td><td>3</td><td>連戦モードの既定（9 戦の並びも選べる）</td></tr></tbody></table></div>
+
+  <h2 id="open">この表を見て決めてほしいこと</h2>
+  <div class="callout prose"><strong>鈍足と押し込み（Issue #116）</strong>: 鈍足は「付いた側が自分の位置を切り替えられない」状態です。長柄の歪み兵は位置を持たないので、鈍足を付けても「石突きの押し込み」（<code>push</code>）は止まりません。ところが敵の設計書の手記には「押し込みの予兆が出たら鈍足を付ける」と書いてあります。</div>
+  <div class="tablewrap"><table><thead><tr><th>直す側</th><th>直し方</th><th>結果</th></tr></thead><tbody>
+  <tr><td>戦闘のルール</td><td>鈍足に「付いた側は <code>push</code> も撃てない」を足します。</td><td>手記の文がそのまま成立します。位置を持たない通常敵 6 体すべてに鈍足が効くようになります。</td></tr>
+  <tr><td>敵の設計書</td><td>長柄の歪み兵の手記から鈍足を外します。</td><td>鈍足は位置を持つ精鋭とボスにしか効かない札になります。</td></tr>
+  </tbody></table></div>
+  <p class="prose note">決まるまでは、長柄の歪み兵の実装（Issue #70）は敵の設計書の表の字義どおりに進めます。</p>
+</div>
