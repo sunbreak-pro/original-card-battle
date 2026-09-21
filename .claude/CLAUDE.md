@@ -275,16 +275,16 @@ main / master への直接 push、force push、`git reset --hard`、`git branch 
 
 worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card-battle\<slug>\` に置く（絶対パスで作る）。**1 レーン = 1 worktree = 1 チャット**で、ブランチは Issue ごとに切り替える。
 
-| slug      | 担当                                                                     | 既定の `area:`     |
-| --------- | ------------------------------------------------------------------------ | ------------------ |
-| `cards`   | カード設計・デッキ・習熟・敵ロースター                                   | `cards` `enemy`    |
-| `design`  | 世界観と見た目。世界設定・物語・用語と、UI / UX 設計・演出・立ち絵・素材 | `world` `ui` `art` |
-| `battle`  | 戦闘プログラム（C# の BattleCore が正）                                  | `battle` `unity`   |
-| `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード                                     | `dungeon`          |
-| `audit`   | 監査。設計書と実装の整合、既知課題の棚卸し                               | `docs` `tooling`   |
+| slug      | 担当                                       | 既定の `area:`   |
+| --------- | ------------------------------------------ | ---------------- |
+| `cards`   | カード設計・デッキ・習熟・敵ロースター     | `cards` `enemy`  |
+| `design`  | 見た目。UI / UX 設計・演出・立ち絵・素材   | `ui` `art`       |
+| `battle`  | 戦闘プログラム（C# の BattleCore が正）    | `battle` `unity` |
+| `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード       | `dungeon`        |
+| `audit`   | 監査。設計書と実装の整合、既知課題の棚卸し | `docs` `tooling` |
 
 - **宛先ラベルは `lane:<slug>`**。付けなければ `issue-prompter` が上の `area:` から既定のレーンへ振る
-- **世界観の正本は `design`**。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` を書く。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
+- **世界観の正本は main（chat-main）**（2026-09-21 こうだいさん決定）。正典は `docs/vision/world-v1.md` で、**竜が全ての敵の親玉、敵は竜・亜竜・眷属の系譜に絞る**。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main の采配に落とす。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
 - **`audit` は読み取り専用**。整合監査の結果を Issue に起票し、修正は担当レーンへ回す
 - **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで
 - **one writer per artifact**。同じファイルを 2 レーンに触らせない
