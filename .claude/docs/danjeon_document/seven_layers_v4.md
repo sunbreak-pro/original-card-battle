@@ -267,6 +267,7 @@
 | `battle_document/battle_ui_ux_v1.md:267` / `:489`   | 「階層 5 の火の粉」の演出                        | design |
 | `battle_document/battle_ui_ux_v2.md:157`            | 同上                                             | design |
 | `battle_document/battle_core_v3.md:108`                  | 瘴気の蓄積が「濃度 1〜5 / 階層 n」のまま。参照先を本書へ移す | battle |
+| `battle_document/battle_core_v3.md:304` | `MIASMA_DENSITY(n) = min(n, 5)` を七層の表へ差し替える | battle |
 
 ---
 
