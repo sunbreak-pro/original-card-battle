@@ -22,7 +22,7 @@
 unity-port/
 ├── UnityCorePort.slnx          ソリューション
 ├── BattleCore/                 戦闘コア v4.2 の骨（netstandard2.1 / C# 9・engine-free）
-│   ├── IRng.cs                 乱数の注入口（SystemRng / FixedRng）。乱数はここだけ
+│   ├── IRng.cs                 乱数の注入口（SeededRng / SystemRng / FixedRng）。乱数はここだけ
 │   ├── IsExternalInit.cs       record/init を netstandard2.1 で使うためのポリフィル
 │   ├── Types.cs                §1 の持つ値・§2 の属性と面・特性・カードと敵行動・BattleState
 │   ├── Constants.cs            §10 の数値の正本（縦切りが読む行だけ）
@@ -33,7 +33,9 @@ unity-port/
 │   ├── Enemies.cs              敵データ（レコードの一覧）。縦切りは長柄の歪み兵 1 体（roster §2.1）
 │   ├── EnemyAi.cs              §6 の決定木 2 枝・払えなければ次の候補へ・予兆 1 段・コミット
 │   ├── Cards.cs                §8 のデッキ生成・シャッフル・ドロー・全捨て・デッキ検証
-│   └── CardCatalog.cs          カードデータ（レコードの一覧）と試作デッキ。縦切りは 80 種のうち 10 種 × 2 枚
+│   ├── CardCatalog.cs          カードデータ（レコードの一覧）と試作デッキ。縦切りは 80 種のうち 10 種 × 2 枚
+│   ├── BattleEvents.cs         何が起きたかの列（イベント）。値は確定後のものだけを持つ
+│   └── TurnLoop.cs             §9 のターン進行（開始 → ドロー → 行動 → 敵の行動 → 終了処理）
 ├── BattleCore.Tests/           NUnit（net10.0）
 │   ├── Fixtures.cs             テスト用の最小のカード / 敵行動 / 戦闘者
 │   ├── ColumnTests.cs          固定コスト（列 = コスト、列 4 は 3）
@@ -44,6 +46,7 @@ unity-port/
 │   ├── PolearmTests.cs         長柄の歪み兵の数値・決定木 2 枝・スタミナ不足の落ち方・押し引き
 │   ├── CardsTests.cs           手札 5 枚・全捨て・再シャッフル・同じ種で同じ結果
 │   ├── PrototypeDeckTests.cs   試作デッキ 10 種の数値が正本と一致・選定の条件・重撃と向きのあるムーブ
+│   ├── TurnLoopTests.cs        縦切りの合格条件（並び 17 件・数値 8 点・終端 3 点）と固定の種で 3 ターン
 │   └── Fixtures/
 │       └── parity-fixture.json v2 移植の証跡（下記「パリティ」参照。テストは読まない）
 ├── tools/
@@ -55,9 +58,12 @@ unity-port/
 
 `BattleCore` は Unity 2021.2+ がそのままコンパイルできる設定（netstandard2.1 / LangVersion 9.0 / ImplicitUsings disable / Nullable enable）で書いています。将来 `Assets/Core/` へコピーしても無改変で通ることを狙っています。
 
-## 骨の並び（#69 時点）
+## 骨の並び（#72 時点）
 
-いずれも状態を持たない純関数です。状態を進めるのはターン進行（#72）の仕事で、まだありません。
+いずれも状態を持たない純関数です。状態を進めるのは `TurnLoop` で、これも「状態を受け取り、新しい状態とイベントの列を返す」純関数です。
+
+- **ターン進行**: `TurnLoop.cs`。止まる場所は 2 つだけです。`BeginPlayerTurn` が §9 の手順 1〜5 を進めてプレイヤーを待ち、`PlayCard` が手順 6 を 1 枚ぶん進め、`EndTurn` が手順 7〜12（敵フェーズを含む）を止まらずに進めて次の予兆で終わります。カードと敵の行動は同じ `Resolve`（特性 → アタック → ムーブ → ガード → スキル）で解決します。
+- **イベント**: `BattleEvents.cs`。`StaminaRecovered` や `DamageDealt` は確定後の値（`StaminaAfter` / `TargetHpAfter` など）を持ちます。読む側は数字を見せるだけで、計算しません。戦闘描写の台本への変換（#73）がこれを読みます。
 
 - **型と数値**: `Types.cs`（属性・位置・面・特性・カードと敵行動・`BattleState`）/ `Constants.cs` / `Columns.cs`。
 - **計算**: `Combat.cs`（`(面 + 特性) → 丸め → − Guard`、構え、回復とドローの clamp）/ `Traits.cs`（条件 4 語 × 効果 4 語。重撃は #71 で追加）/ `Statuses.cs`（スタックと減り方 2 型）。
@@ -66,11 +72,11 @@ unity-port/
 
 `CardDef` と `EnemyActionDef` は同じ `Face` / `Trait` / 列の表から書けます。#70（敵データ）と #71（試作デッキ）は型を足さずにデータだけ足せます。特性の語彙を 12 × 10 へ広げる #48 も、enum に行を足して `Traits.Evaluate` の switch を伸ばすだけで済みます。
 
-**外してあるもの**: ターン進行（`BattleReducer`）、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担い、BattleCore に依存しません。
+**外してあるもの**: スタンス枠と除外置き場（#49）、2 行動の敵と 4 枝の決定木（#50）、複数体（#52）、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担い、BattleCore に依存しません。
 
 ## 乱数と丸め
 
-- **乱数は `IRng`（`double NextDouble()`）の注入だけ**です。`SystemRng`（実プレイ用。種を渡せる）と `FixedRng`（固定値・既定 0）を用意しています。グローバルな乱数は呼びません。同じ種を渡せば同じシャッフル・同じ手札になります。
+- **乱数は `IRng`（`double NextDouble()`）の注入だけ**です。`SeededRng`（SplitMix64 をこの場に書いた実装。`dotnet test` でも Unity でも同じ種から同じ列が出るので、固定した戦闘はこれを使います）、`SystemRng`（`System.Random` の包み。ランタイムをまたいだ再現は約束されません）、`FixedRng`（固定値・既定 0）を用意しています。グローバルな乱数は呼びません。同じ種を渡せば同じシャッフル・同じ手札になります。
 - **丸めは `MidpointRounding.AwayFromZero`**（2.5 → 3）です。C# の既定は銀行丸め（偶数寄せ）で、設計書の表はその読み方をしていません（2026-09-12 決定）。
 
 ## 実行（Windows）

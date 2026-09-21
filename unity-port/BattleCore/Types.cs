@@ -48,6 +48,17 @@ namespace BattleCore
         Lost,
     }
 
+    /// <summary>
+    /// §9: where the turn loop stands. It only ever waits in two places — before a player turn is
+    /// opened (steps 1-5) and while the player plays cards (step 6). Steps 7-12 run in one go.
+    /// </summary>
+    public enum BattlePhase
+    {
+        AwaitingTurnStart,
+        PlayerAction,
+        Finished,
+    }
+
     /// <summary>§2.4 targets. The slice uses one and self only; all is §17.6 F10 and ally is #52.</summary>
     public enum TargetKind
     {
@@ -223,8 +234,8 @@ namespace BattleCore
         int NextTurnRecoveryBonus = 0);
 
     /// <summary>
-    /// The whole battle. The turn loop that moves it forward is #72; this record only fixes what the
-    /// loop may carry, so the event stream and the log live there rather than here.
+    /// The whole battle. <see cref="TurnLoop"/> moves it forward; this record only fixes what the
+    /// loop may carry. The event stream is handed back beside the state, not kept inside it.
     /// </summary>
     public sealed record BattleState(
         int Turn,
@@ -235,7 +246,8 @@ namespace BattleCore
         IReadOnlyList<CardInstance> Hand,
         IReadOnlyList<CardInstance> DrawPile,
         IReadOnlyList<CardInstance> DiscardPile,
-        GameResult Result = GameResult.Ongoing);
+        GameResult Result = GameResult.Ongoing,
+        BattlePhase Phase = BattlePhase.AwaitingTurnStart);
 
     public static class EnumTokens
     {
