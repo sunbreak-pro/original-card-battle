@@ -29,7 +29,7 @@ namespace BattleCore
     /// §2.3 / §17.6 F5: the trait is judged once, before any face resolves, because the card tables
     /// and the predicted numbers on screen are written for that order.
     ///
-    /// The vocabulary is deliberately small (four conditions, three effects). Widening it to the
+    /// The vocabulary is deliberately small (four conditions, four effects). Widening it to the
     /// full 12 × 10 (#48) means adding enum rows and switch arms here — not a different evaluator.
     /// </summary>
     public static class Traits
@@ -67,6 +67,10 @@ namespace BattleCore
             TraitEffect.PowerBonus => new TraitOutcome(true, PowerBonus: trait.Amount),
             TraitEffect.GuardBonus => new TraitOutcome(true, GuardBonus: trait.Amount),
             TraitEffect.NextTurnRecovery => new TraitOutcome(true, NextTurnRecoveryBonus: trait.Amount),
+            TraitEffect.HeavyBlow => new TraitOutcome(
+                true,
+                PowerBonus: Constants.HeavyBlowPower,
+                NextTurnRecoveryBonus: -Constants.HeavyBlowRecoveryPenalty),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(trait), trait.Effect, "Unknown trait effect."),
         };
