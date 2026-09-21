@@ -84,6 +84,10 @@ BattleCore と台本の型の両方を見るのは `Assets/View/Depiction/Bridge
 - `CoreBattleSource.cs`: `IDepictionSource` の 3 つ目の実装です。`TurnLoop` で戦闘を進め、画面が待っているのがプレイヤーか自動の出来事かだけを決めます。`DemoDeck` は読みません。
 - `CoreText.cs`: 札・予兆・状態チップの文言です。ランプ（特性の条件が今成り立つか）と持っている札の予測値は、コアの `TurnLoop.Preview` に聞きます。
 
+- `BattleLaunch.cs`（#74）: 戦闘シーンを何で始めるか（敵の id / 乱数の種 / 開始位置 / 無人実行の 2 項目）を持ち、`CoreBattleSource` を作ります。知らない敵の id はここで弾きます。
+
+縦切り用の戦闘シーン（Unity リポの `Assets/Scenes/Battle.unity`）は、`Assets/View/Depiction/BattleBootstrap.cs` を 1 つ置くだけで始まります。`Awake` で Inspector の値を `BattleLaunch` へ写し、できた source を `DepictionPlayer.UseSource` へ渡します。`BattleBootstrap` の無いシーン（撮影用の `BattleDepiction.unity`）は今までどおり `LiveTurn` か固定台本で動きます。無人で流すときは、`BattleBootstrap` の Auto Play と、`DepictionPlayer` の Auto Play Drags / Auto End Turn を入れます。
+
 敵の構え（Guard +3）は、敵の行動ではなく次の予兆の出来事の頭で再生します。押し込みは「構え → 振り → 盾 → 傷 → 押し出し」で既に長く、同じ出来事に入れると 1 行動 2.0 秒を超えるためです。
 
 ## 乱数と丸め
@@ -105,7 +109,7 @@ winget install Microsoft.DotNet.SDK.10
 dotnet test unity-port/UnityCorePort.slnx
 ```
 
-BattleCore 162 件、Depiction 53 件、Depiction.Bridge 22 件が green になります（2026-09-21 #73 時点）。
+BattleCore 162 件、Depiction 53 件、Depiction.Bridge 30 件が green になります（2026-09-21 #74 時点）。
 
 ## パリティ（v2 移植の証跡。もう回らない）
 

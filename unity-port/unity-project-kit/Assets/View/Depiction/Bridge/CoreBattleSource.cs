@@ -16,13 +16,23 @@ namespace Depiction.Bridge
         private readonly IRng _rng;
         private readonly CoreScriptWriter _writer;
         private readonly Queue<DepictionEvent> _pending = new Queue<DepictionEvent>();
+        private readonly bool _suggestCards;
+        private readonly int _stopAfterTurns;
         private BattleState _state;
 
         /// <param name="setup">Who fights whom, with which deck.</param>
         /// <param name="seed">Fixes every shuffle, so the same seed replays the same battle here and under `dotnet test`.</param>
-        public CoreBattleSource(BattleSetup setup, int seed)
+        /// <param name="suggestCards">
+        /// Unattended runs only (captures, the PlayMode test): suggest the leftmost card that can be
+        /// paid for, and nothing once none can. A played battle leaves the choice to the player.
+        /// </param>
+        /// <param name="stopAfterTurns">Unattended runs only: report Finished once this many turns have closed on their next omen. 0 = fight to the end.</param>
+        public CoreBattleSource(BattleSetup setup, int seed, bool suggestCards = false, int stopAfterTurns = 0)
         {
             if (setup == null) throw new ArgumentNullException(nameof(setup));
+            if (stopAfterTurns < 0) throw new ArgumentOutOfRangeException(nameof(stopAfterTurns), stopAfterTurns, "0 or more.");
+            _suggestCards = suggestCards;
+            _stopAfterTurns = stopAfterTurns;
             _rng = new SeededRng(seed);
             _writer = new CoreScriptWriter(setup.Enemy);
             _state = TurnLoop.Start(setup, _rng).State;
@@ -40,15 +50,30 @@ namespace Depiction.Bridge
 
         public DepictionFrame Frame { get; private set; }
 
-        public bool Finished => _pending.Count == 0 && _state.Result != GameResult.Ongoing;
+        public bool Finished => _pending.Count == 0 && (_state.Result != GameResult.Ongoing || ReachedTurnLimit);
 
         public bool WaitingForPlayer =>
             _pending.Count == 0 && _state.Result == GameResult.Ongoing && _state.Phase == BattlePhase.PlayerAction;
 
+        /// <summary>The turn limit is only looked at between turns, so a limited run still ends on a next omen.</summary>
+        private bool ReachedTurnLimit =>
+            _stopAfterTurns > 0 && _state.Phase == BattlePhase.AwaitingTurnStart && _state.Turn >= _stopAfterTurns;
+
         public bool CanEndTurn => WaitingForPlayer;
 
-        /// <summary>A real battle has no opinion about which card to drag; the player decides.</summary>
-        public string SuggestedCardId => "";
+        /// <summary>A played battle has no opinion about which card to drag; an unattended run takes the leftmost payable one.</summary>
+        public string SuggestedCardId
+        {
+            get
+            {
+                if (!_suggestCards || !WaitingForPlayer) return "";
+                foreach (CardInstance card in _state.Hand)
+                {
+                    if (TurnLoop.CanPlay(_state, card.InstanceId) == PlayRefusal.None) return card.InstanceId;
+                }
+                return "";
+            }
+        }
 
         public string GuideText
         {
@@ -57,6 +82,7 @@ namespace Depiction.Bridge
                 if (_pending.Count > 0) return "";
                 if (_state.Result == GameResult.Won) return "敵を討ち取りました";
                 if (_state.Result == GameResult.Lost) return "力尽きました";
+                if (ReachedTurnLimit) return "";
                 if (!WaitingForPlayer) return "";
                 return HasPlayableCard()
                     ? "出したい札を離してください。手が済んだら「ターン終了」"
@@ -68,7 +94,7 @@ namespace Depiction.Bridge
         {
             if (_pending.Count == 0)
             {
-                if (_state.Result != GameResult.Ongoing) throw new InvalidOperationException("The battle is over.");
+                if (Finished) throw new InvalidOperationException("The battle is over.");
                 if (_state.Phase != BattlePhase.AwaitingTurnStart) throw new InvalidOperationException("The turn waits for the player.");
                 Take(TurnLoop.BeginPlayerTurn(_state, _rng));
             }
