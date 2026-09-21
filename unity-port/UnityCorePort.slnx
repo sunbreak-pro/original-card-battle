@@ -3,4 +3,6 @@
   <Project Path="BattleCore/BattleCore.csproj" />
   <Project Path="Depiction.Script.Tests/Depiction.Script.Tests.csproj" />
   <Project Path="Depiction.Script/Depiction.Script.csproj" />
+  <Project Path="DungeonCore.Tests/DungeonCore.Tests.csproj" />
+  <Project Path="DungeonCore/DungeonCore.csproj" />
 </Solution>

@@ -37,12 +37,22 @@ unity-port/
 │   ├── ParityTests.cs          TS ゴールドデータとのフルトレース照合
 │   └── Fixtures/
 │       └── parity-fixture.json TS 実装を FixedRng(0) 相当で走らせた正解データ
+├── DungeonCore/                探索コア（netstandard2.1 / C# 9・engine-free・BattleCore を参照しない）
+│   ├── IRng.cs                 SplitMix64。同じ種なら .NET でも Mono でも同じ地図
+│   ├── NodeKind.cs             ノードの種類（dungeon_exploration_v4.md §2.1 の残す 13 件）
+│   ├── LayerMapSpec.cs         1 階層の形（行の幅・種類の数・分岐の出やすさ）
+│   ├── MapGenerator.cs         仕様 + 種 → 地図
+│   ├── MapValidator.cs         到達できないノードが無いことなどの検査
+│   └── LayerMap.cs             生成された地図（ノード・辺・指紋）
+├── DungeonCore.Tests/          NUnit（net10.0）。種の再現・到達性・分岐の回避可能性
 ├── tools/
 │   ├── gen-parity.mjs          fixture を live TS から再生成
 │   └── parity-check.mjs        再生成 → ドリフト検出 → dotnet test（ワンコマンド）
 ├── unity-project-kit/          Unity プロジェクトへの drop-in（asmdef / View 雛形 / gitignore）
 └── PHASE3-KICKOFF.md           Phase 3（実 Unity + UGUI）の Windows 手順 + MCP 選定
 ```
+
+**`DungeonCore` は `BattleCore` を参照しません**（2026-09-21、Issue #97）。戦闘コアは battle レーン、探索コアは dungeon レーンが書くので、片方の作り直しがもう片方のビルドを壊さないように切り離しています。`IRng` と 20% ごとの最大スタミナの規則は両方に同じ形で置いてあり、1 本にまとめるのは探索と戦闘を繋ぐ Issue #99 の仕事です。
 
 `BattleCore` は Unity 2021.2+ がそのままコンパイルできる設定（netstandard2.1 / LangVersion 9.0 / ImplicitUsings disable / Nullable enable）で書いています。将来 `Assets/Core/` へコピーしても無改変で通ることを狙っています。`BattleStore` / `IBattleView` も MonoBehaviour 非依存の純 C# なので、この dotnet ライブラリで型・テストごと検証できます。
 
