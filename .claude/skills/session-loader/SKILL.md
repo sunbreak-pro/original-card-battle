@@ -11,6 +11,10 @@ description: セッション開始時に original-card-battle のコンテキス
 
 **前のセッションの続きを引き継ぐ場合は `session-successor` が先です。** あちらは引き継ぎ書の前提を実測で確かめ直す手順で、こちらは素の起動時の読み込みです。
 
+## Step 0: main を取り込む
+
+設計書は worktree ごとにコピーを持つので、取り込む前に読むと古い正本を読みます。メインは `git pull --ff-only`、レーンは `git fetch origin && git merge origin/main --no-edit`（`worktree-policy`）。
+
 ## Step 1: タスクの状態
 
 - **per-chat モード**: `.claude/memory/INDEX.md`（全チャット集約ビュー）を Read。SSOT は各 `.claude/memory/chat-*.md`
@@ -40,17 +44,15 @@ description: セッション開始時に original-card-battle のコンテキス
 
 ## Step 5: このプロジェクト固有の追加読み込み（タスクの性質に応じて）
 
-| タスクの性質               | 読むもの                                                                               |
-| -------------------------- | -------------------------------------------------------------------------------------- |
-| 設計判断・ゲーム全体の構想 | `.claude/docs/vision/concept-v3.md`（正本、2026-09-12「生と継承」）                    |
-| 戦闘のルール・数値         | `.claude/docs/battle_document/battle_core_v4.md`                                       |
-| カード                     | `.claude/docs/card_document/swordsman_cards_v4.md`                                     |
-| 敵                         | `.claude/docs/enemy_document/enemy_roster_v4.md`                                       |
-| UI / 演出                  | `.claude/docs/battle_document/battle_ui_ux_v2.md`                                      |
-| 絵の制作                   | `visual-production-pipeline` スキルと `.claude/docs/art_document/`                     |
-| Unity 側の実装             | `unity-port/BattleCore/`（戦闘コアの正）と `unity-port/unity-project-kit/Assets/View/` |
+**どの主題はどのファイルが正本かは `.claude/docs/SOURCES.md` が持ちます。** ここに表を写しません。
 
-設計書は `docs/*_document/` が正本で、実装との差分は設計書側か実装側へ寄せて解消します（`design-research` スキル）。
+```bash
+npm run sources -- --lane <自分の slug>   # 書く正本と読む正本。メインは npm run sources で全件
+```
+
+状態の欄に但し書き（「§N 未反映」「§N が本文より優先」）がある行は、その但し書きごと読みます。絵の制作は `visual-production-pipeline` スキルです。
+
+設計書と実装の差分は、設計書側か実装側へ寄せて解消します（`design-research` スキル）。正本どうしの食い違いは直さず Issue にします（台帳 §5）。
 
 ## Step 6: 要約表示
 

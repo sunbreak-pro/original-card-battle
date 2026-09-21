@@ -30,6 +30,7 @@ disable-model-invocation: true
 - 要件が二義的で、どちらに倒すかで成果物が変わる（`.claude/comm/decisions/chat-<self>.md` に A/B で書く）
 - 検証の失敗が環境起因に見える（`/loop-verify` の担当。切り分けをこのループでやらない）
 - **Unity Editor でしか確かめられない**と分かった（実機の手触り・プレハブ・シーン）。`type:human` の Issue を起こす依頼を outbox へ append する
+- **正本どうしが食い違っている**。止まらず、他レーンの正本も直さない。「正本の食い違い: 〜」の Issue にし、どちらに従ったかを PR 本文に 1 行で書いて進む（`.claude/docs/SOURCES.md` §5）
 - **凍結領域に手が伸びた**（CLAUDE.md の凍結範囲）。広げずに止める
 
 ## 使ってよい道具

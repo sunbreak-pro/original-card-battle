@@ -29,6 +29,10 @@ description: 本リポの multi-chat worktree 運用規約の正本。レーン�
 
 **`cards` との境目はファイルの持ち主で切ります。** 敵の数値とロースター（`docs/enemy_document/`）は `cards` が書きます。敵の由来や呼び名の文章も、置き場がそのファイルなら書き手は `cards` です。`design` は用語と設定の正本側（`docs/vision/`）を書き、`cards` がそれを参照します。逆向きに書きに行きません。
 
+**設計書の持ち主は `.claude/docs/SOURCES.md` §2 が正本です。** 上の表の「主に触るパス」は目安で、設計書 1 本ごとの書き手は台帳が決めます。`npm run sources -- --lane <slug>` が、自分の書く正本と読む正本を出します。表と台帳が食い違えば台帳が正です（2026-09-21 時点で `battle_ui_ux_v2.md` と `View/Depiction/` は縦切りの間だけ `battle` が持ちます）。
+
+**正本どうしの食い違いを見つけても、他レーンの正本は直しません。** 題を「正本の食い違い: 〜」で始めた Issue にし、どちらに従って進めたかを Issue と PR 本文に書いて先へ進みます（台帳 §5）。
+
 **one writer per artifact**: 同じファイルを 2 レーンに触らせません。担当が重なる Issue は片方を chat-main の采配へ落とします。
 
 ## 置き場所（リポジトリの外）
@@ -70,6 +74,8 @@ echo <prefix>/<slug>-<issue> > .claude/comm/.session-branch   # 省略禁止
 
 1. `git pull --ff-only`（自ブランチの origin 追従。履歴が割れていたら停止）
 2. `git fetch origin && git merge origin/main --no-edit`（main の差分取り込み）
+
+取り込みを飛ばすと、古い設計書を正本として読みます。worktree は設計書のコピーを 1 組ずつ持つためです（2026-09-21 の実測でレーンは最大 37 コミット遅れ）。取り込んだ後に `npm run sources -- --lane <slug>` を引きます。
 
 feature ブランチでは (2) を `pull --ff-only` で代替できません（fast-forward が成立せず必ず失敗します）。コンフリクトは手動で解消し、判断に迷う衝突は自動解消せず停止して chat-main / こうだいさんに報告します。chat-main（`main` ブランチ）だけは `git pull --ff-only` のみで足ります。
 

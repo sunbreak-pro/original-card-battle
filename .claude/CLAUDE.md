@@ -225,7 +225,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 ### 課題追跡は GitHub Issues が正
 
 - **起票先**: `gh issue create -R sunbreak-pro/original-card-battle`。テンプレートは `.github/ISSUE_TEMPLATE/` の 3 種（Known Issue / Roadmap Item / Human Task）
-- **ラベル**: `type:` (bug / feature / task / human) × `prio:` (1 / 2 / 3 / 4) × `sev:` (blocking / important / minor) × `area:` (battle / cards / enemy / dungeon / ui / art / unity / docs / tooling) × `status:` (monitoring / workaround / frozen)
+- **ラベル**: `type:` (bug / feature / task / human) × `prio:` (1 / 2 / 3 / 4) × `sev:` (blocking / important / minor) × `area:` (battle / cards / enemy / dungeon / world / ui / art / unity / docs / tooling) × `status:` (monitoring / workaround / frozen)
 - **スコープの境界**: Issue は**プロダクトの課題専用**。Claude Code 環境やハーネス起因の問題は `docs/known-issues/` に置き、Issue にしない
 - **優先順位は必須**: Issue には `prio:1`〜`prio:4` を必ず 1 つ付ける（1 = いま着手 / 2 = 次 / 3 = その後 / 4 = いつか）。`sev:` は影響の大きさ、`prio:` は着手の順番で、別の軸。次にやることは `npm run issues:next`（`prio` → `sev` → 番号の順。依存先が open の Issue は待ちに回る）。付け忘れは `npm run issues:next -- --check` が検出する。見直すのは親 Issue を閉じたときと、縦切りや束の振り返りのとき
 - **着手前に必ず open を見る**: `gh issue list --label type:bug`。重複起票を避ける
@@ -284,7 +284,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 | `audit`   | 監査。設計書と実装の整合、既知課題の棚卸し                               | `docs` `tooling`   |
 
 - **宛先ラベルは `lane:<slug>`**。付けなければ `issue-prompter` が上の `area:` から既定のレーンへ振る
-- **世界観の正本は `design`**。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` を書く。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
+- **どの設計書をどのレーンが書くかは `docs/SOURCES.md` §2 が正**。レーンは `npm run sources -- --lane <slug>` で自分の書くものと読むものを引く。世界観は `design`、敵の数値とロースターは `cards`
 - **`audit` は読み取り専用**。整合監査の結果を Issue に起票し、修正は担当レーンへ回す
 - **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで
 - **one writer per artifact**。同じファイルを 2 レーンに触らせない
@@ -294,18 +294,11 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 
 - **フロー**: Vision（`docs/vision/core.md`、ADR 不使用）→ 実装プラン（`docs/vision/plans/YYYY-MM-DD-<slug>.md`）→ 完了で `archive/` 移動・規約は本ファイルへ統合。進捗 / 履歴は per-chat（`memory/` `history/`、task-tracker 経由）
 - **Known Issue**: `docs/known-issues/` に Root Cause + 再発防止を蓄積。発見時 `NNN-<slug>.md` 作成 + `INDEX.md` 更新、解決時 Status=Fixed。**類似バグはまず `INDEX.md` を grep**
+- **正本の台帳は `docs/SOURCES.md`**。主題ごとの正本・持ち主のレーン・旧版の一覧・食い違ったときに勝つ側を持つ。他の文書とスキルは同じ表を持たず、ここを指す。正本を足す / 版を上げる / 退役させるコミットに台帳の行を含め、`npm run sources -- --check` を通す
+- **正本どうしの食い違いは直さず Issue にする**（題は「正本の食い違い: 〜」）。他レーンの正本は書かない。どちらに従って進めたかを Issue と PR 本文に 1 行で残す。手順は `docs/SOURCES.md` §5
+- **決定は設計書の本文へ入れ込む**。末尾の「〜の決定」節は記録で、入れ込むまでは台帳の状態の欄に「未反映」と書く
+- **パスの読み方**: 本ファイルの `docs/…` は `.claude/docs/…` を指す。リポジトリ直下の `docs/`（`reports/` `briefs/` `mockups/` `prompts/`）は HTML レポートと制作物の置き場で、正本は置かない
 - **設計書 vs 実装**: ゲーム数値は `docs/*_document/` の設計書を正とし、差分は設計書側か実装側へ寄せて解消（`design-research` スキル）
-
-## 判断の控えは life-editor
-
-開発中の判断と次アクションを life-editor（別リポジトリの個人 OS）に残し、プロジェクトを跨いで読み返せるようにする。**課題追跡の代替にはしない**（2026-09-20 こうだいさん決定）。GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（何を作るか決めて記録する場所）。
-
-- **置くもの**: 判断の控えと調査結果（Note）／次にやること（Todo）。プロジェクトを跨いで見たいものだけを上げる
-- **置かないもの**: 課題の状態・担当・PR との結線。life-editor はステータスが 2 値しかなく、コメントが無く、後勝ち同期で記録が消えるため、正本は GitHub のまま
-- **ローカルの記録は残す**。セッション単位の進捗は従来どおり task-tracker が書く
-- **手順はグローバルの `life-editor-bridge` スキル**。セッション頭に `node ~/.claude/skills/life-editor-bridge/scripts/le.mjs pull`、判断が出たら `note`、次にやることは `todo`
-- **タグ**: `proj/original-card-battle` と `開発` が自動で付く。プロジェクト名の正本は `.claude/life-editor.json`
-- **落ちても止まらない**。life-editor は移行中で、失敗したらスクリプトが止まるだけ。作業は先へ進める
 
 ## References
 
@@ -316,6 +309,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 | `.github/ISSUE_TEMPLATE/`        | Issue テンプレート 3 種（Known Issue / Roadmap Item / Human Task）         |
 | `.claude/hooks/`                 | SessionStart と PreToolUse の hook 5 本                                    |
 | `README.md`                      | プロジェクト概要・Development History（完了履歴の要約）                    |
+| `.claude/docs/SOURCES.md`        | 正本の台帳（主題 → 正本 → 持ち主のレーン、旧版、食い違いの手順）           |
 | `.claude/docs/INDEX.md`          | ドキュメント索引（標準構造 + ゲーム設計書）                                |
 | `.claude/docs/vision/core.md`    | Vision・設計原則                                                           |
 | `.claude/docs/*_document/`       | Game design specs (battle, cards, camps, dungeon, enemies, items, journal) |
