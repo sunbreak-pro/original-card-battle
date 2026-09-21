@@ -166,8 +166,22 @@
   </div>
   <p class="prose">摘みで消せる AI 臭はほとんどありません。効くのは指示文と加筆と原本の大きさです。</p>
 
-  <h2>4. 竜の系譜の指示文</h2>
-  <p class="prose">正典 &sect;2 の 4 段に合わせて 1 行ずつ用意しました。全文は <code>style-guide.md</code> &sect;4.2 にあります。<code>1other</code> は竜人だけで、竜・亜竜・小竜は <code>no humans, animal focus</code> から始めます。<code>facing right</code> は Danbooru に 0 件なので使わず、右向きは Krita の水平反転で作ります。</p>
+  <h2>4. 向きと立ち位置</h2>
+  <p class="prose"><strong>画面では、敵は右に立って左を向きます。</strong> プレイヤーは左に立って右を向きます。2 体は必ず向き合います。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>画面での立ち位置</th><th>画面での向き</th><th>Unity の反転</th><th>渡す PNG の向き</th></tr></thead>
+      <tbody>
+        <tr><td>プレイヤー</td><td>左（x = −260）</td><td>右を向く</td><td class="state no">なし</td><td class="state yes">右向き</td></tr>
+        <tr><td>敵</td><td class="state yes">右（x = +400）</td><td class="state yes"><strong>左を向く</strong></td><td class="state maybe">あり（<code>localScale.x = −1</code>）</td><td class="state yes">右向き</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose"><strong>渡す PNG はどちらも右向きです。</strong> 敵だけ Unity が左右反転して左向きにします。取り違えて敵を左向きで描くと、<strong>二重に反転して画面では右（背中側）を向きます</strong>。出典は <code>DepictionPrefabBuilder.cs:492</code>・<code>:497</code>・<code>:501</code>（<code>// face the player</code>）です。</p>
+  <p class="prose">候補が左向きで出たら、採用前に Krita で水平反転します。<code>from side, profile</code> は横顔を作りますが左右は決めないので、半分前後が左向きで出ます。武器を持つ手・片側だけの肩当て・折れた角のように左右で意味が変わる意匠は、<strong>反転したあとの絵で「武器がプレイヤー側（画面左）に来ているか」</strong>を確かめてから加筆を始めます。</p>
+
+  <h2>5. 竜の系譜の指示文</h2>
+  <p class="prose">正典 &sect;2 の 4 段に合わせて 1 行ずつ用意しました。全文は <code>style-guide.md</code> &sect;4.3 にあります。<code>1other</code> は竜人だけで、竜・亜竜・小竜は <code>no humans, animal focus</code> から始めます。<code>facing right</code> は Danbooru に 0 件なので使わず、向きは上の表のとおり Krita で決めます。</p>
   <pre><code>1other, solo, safe, full body, standing, from side, profile, monster,
 dragon horns, slit pupils, scales, black scales, claws, dragon tail,
 holding polearm, polearm held upright, shoulder armor, vambraces, torn clothes,
@@ -175,7 +189,7 @@ anime coloring, high contrast, limited palette, muted colors, blue theme,
 simple background, grey background</code></pre>
   <p class="note">竜人（眷属・二足・長柄）。素の英語は <code>polearm held upright</code> の 1 つだけです。品質タグは style が自動で付けるので書きません。</p>
 
-  <h2>5. 反証の結果</h2>
+  <h2>6. 反証の結果</h2>
   <div class="tablewrap">
     <table>
       <thead><tr><th>観点</th><th>調査</th><th>そのまま</th><th>訂正</th><th>棄却</th></tr></thead>

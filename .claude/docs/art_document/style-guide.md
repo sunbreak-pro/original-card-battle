@@ -89,9 +89,28 @@ Animagine XL 4.0 のモデルカードは並びを `1girl/1boy/1other, character
 - **[1] は段で変わります。** 竜人は `1other, solo`（`1other` は 129,699 件で、モデルカードが 1 番目に名指しする語）。竜・亜竜・小竜は `no humans, animal focus`。
 - **[2] は `safe` を必ず書きます。** style の `style_prompt` に rating タグが入っていないので、ここで書かないと空のままです。
 - **品質タグは書きません。** `style_prompt` が `{prompt}, masterpiece, high score, great score, absurdres` で自動的に付けます。二重に書くと他の語が薄まります。
-- **`facing right` は書きません。** Danbooru に 0 件で、条件付けになりません。右向きは **Krita で水平反転** して作ります。画角は `from side, profile` で押さえます。
+- **`facing right` は書きません。** Danbooru に 0 件で、条件付けになりません。画角は `from side, profile` で押さえ、向きは §4.2 のとおり Krita で決めます。
 
-### 4.2 4 つの例（竜の系譜）
+### 4.2 向きと立ち位置
+
+**確定。画面では、敵は右に立って左を向きます。プレイヤーは左に立って右を向きます。** 2 体は必ず向き合います。
+
+|            | 画面での立ち位置 | 画面での向き | Unity の反転                    | **渡す PNG の向き** |
+| ---------- | ---------------- | ------------ | ------------------------------- | ------------------- |
+| プレイヤー | 左（x = −260）   | 右を向く     | なし（`localScale.x = +1`）     | **右向き**          |
+| 敵         | 右（x = +400）   | **左を向く** | **あり**（`localScale.x = −1`） | **右向き**          |
+
+**渡す PNG はどちらも右向きです。** 敵だけ Unity が左右反転して左向きにします。ここを取り違えて敵を左向きで描くと、**二重に反転して画面では右（背中側）を向きます**。
+
+出典は `Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs:492`（プレイヤーを x = −260 に置く）、`:497`（敵を x = +400 に置く）、`:501`（`player.enemyFigure.body.rectTransform.localScale = new Vector3(-1f, 1f, 1f); // face the player`）です。旧 `ArenaView.cs:29` も同じ扱いです。
+
+**候補が左向きで出たら、採用前に Krita で水平反転して右向きに直します。** `from side, profile` は横顔を作りますが左右は決めないので、候補の半分前後が左向きで出ます。
+
+**左右で意味が変わる意匠は、反転したあとの絵で決めます。** 武器を持つ手、片側だけの肩当て、折れた角がこれに当たります。敵の絵を反転して「武器がプレイヤー側（画面左）に来ているか」を確かめてから、加筆を始めます。
+
+**左向きの PNG を渡す運用に変えたいときは、先に `DepictionPrefabBuilder.cs:501` の反転を外す必要があります。** このファイルは battle レーンの持ち物なので、Issue を立てて回してください。
+
+### 4.3 4 つの例（竜の系譜）
 
 いずれも 1 行で貼れます。**タグではない素の英語**は各例の下に挙げます。素の英語はタグより弱く、無視されることがあります。
 
@@ -127,7 +146,7 @@ no humans, animal focus, solo, safe, full body, from side, western dragon, drago
 
 素の英語は `horns swept backwards` / `long narrow head` / `heavy jaw` / `black lightning` の 4 つです。`electricity`（17,804）は `lightning`（6,272）より 2.8 倍強いタグです。**四足に二対の翼は分布の外にあります。** 線画コントロール無しでは、翼竜（前脚が翼）か、二対目がにじんだ絵になります。
 
-### 4.3 負の指示文
+### 4.4 負の指示文
 
 75 トークンが天井です。CLIP は 77 トークンで区切り、先頭と末尾を差し引いた 75 が 1 かたまりです。それを超えた分は SDXL の pooled 埋め込みに入りません。いまの文字列は実測 52 トークン（開始・終了を含めて 54）なので、足せるのは 20 トークンほどです。
 
@@ -143,7 +162,7 @@ lowres, bad anatomy, bad hands, text, error, missing finger, extra digits, fewer
 
 トークン数は、単語 1 つで 1、読点 1 つで 1 と数えます。厳密に数えるなら、同梱の ComfyUI の `comfy/sd1_tokenizer` を使います。
 
-### 4.4 候補出しと、選んだ組み合わせの固定
+### 4.5 候補出しと、選んだ組み合わせの固定
 
 ワイルドカード `{a|b|c}` は **生成回数のたびに 1 回** 選び直されます（バッチの中は同じ文面です）。いまの `batch_size` は 1 なので、1 枚 1 組み合わせです。
 
@@ -219,7 +238,7 @@ UI のどこにあるかも書いておきます。`cfg_scale` と `sampler_step
 
 **このセクションはまだ空です。** 人が機械の前で回して埋めます。GPU の時間は合計 5 分ほど、見比べを入れて 30 分です。1 枚あたり約 21 秒（うち拡散が約 10.3 秒、残りはモデルの読み込みと復号）。
 
-前提の確認は GPU が要りません。Prompt Translation が空であること、Performance の上限が 1 であること、原本を 640 × 1536 で新規作成すること、種を固定すること、竜人の例文（§4.2）を使うことの 5 つです。
+前提の確認は GPU が要りません。Prompt Translation が空であること、Performance の上限が 1 であること、原本を 640 × 1536 で新規作成すること、種を固定すること、竜人の例文（§4.3）を使うことの 5 つです。
 
 | 計測               | 変える値                                                                                                            | 枚数 | 見る点                                                                            | 結果 |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------- | ---- | --------------------------------------------------------------------------------- | ---- |
@@ -232,7 +251,7 @@ UI のどこにあるかも書いておきます。`cfg_scale` と `sampler_step
 
 記録する値は `logs/workflow.json` から写します。`RandomNoise.noise_seed`、`BasicScheduler.scheduler` `.steps` `.denoise`、`KSamplerSelect.sampler_name`、`CFGGuider.cfg`、`EmptyLatentImage.width` `.height`、`CheckpointLoaderSimple.ckpt_name`、`CLIPTextEncode` の正負の文面です。強度を下げたときは `SplitSigmas.step` も要ります。**`KSamplerAdvanced` は本経路に現れません。**
 
-貼るだけの graph を `prompts/dragonkin-polearm.workflow.json` に置きました。640 × 1536、28 段、CFG 5.0、`euler_ancestral`、種 12345 で、§4.2 の竜人の例文が入っています。これは **手順の雛形であって、実行の記録ではありません**。
+貼るだけの graph を `prompts/dragonkin-polearm.workflow.json` に置きました。640 × 1536、28 段、CFG 5.0、`euler_ancestral`、種 12345 で、§4.3 の竜人の例文が入っています。これは **手順の雛形であって、実行の記録ではありません**。
 
 ---
 
