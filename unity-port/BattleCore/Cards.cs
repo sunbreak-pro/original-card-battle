@@ -1,106 +1,179 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BattleCore
 {
+    /// <summary>Where every card sits after a draw. Nothing is lost: the three piles plus the hand always add up.</summary>
     public sealed record DrawResult(
         IReadOnlyList<CardInstance> Hand,
         IReadOnlyList<CardInstance> DrawPile,
-        IReadOnlyList<CardInstance> DiscardPile);
+        IReadOnlyList<CardInstance> DiscardPile,
+        int Drawn,
+        int OverflowToDiscard,
+        bool Reshuffled);
 
+    /// <summary>Why a deck was refused, or nothing if it passes. Checked at 出立 (#58), not mid-battle.</summary>
+    public sealed record DeckValidation(bool Ok, IReadOnlyList<string> Errors);
+
+    /// <summary>
+    /// §8: building a deck, shuffling it, drawing the turn's hand, and throwing the hand away.
+    ///
+    /// Every shuffle goes through <see cref="IRng"/>, so the same seed replays the same battle. There
+    /// is no other source of randomness in the core.
+    /// </summary>
     public static class Cards
     {
-        private static Tier T(int power = 0, int guard = 0, int heal = 0, int shift = 0, int brk = 0)
-            => new Tier(power, guard, heal, shift, brk);
-
-        private static readonly Tier None = new Tier();
-
-        /// <summary>Swordsman starter set (§7.2). Tiers[0..3] = T0..T3; T0 of a MinInvest 1 card is unused.</summary>
-        public static readonly IReadOnlyList<CardDef> CardDefs = new[]
+        /// <summary>
+        /// Lays out copies of each definition in order, with instance ids of the form "thrust-0".
+        /// Order is deterministic; shuffling is a separate step so a test can skip it.
+        /// </summary>
+        public static List<CardInstance> BuildDeck(IReadOnlyList<CardDef> defs, int copies)
         {
-            new CardDef(CardDefId.Thrust, "突き", CardType.Attack, RangeBand.Close, 1,
-                new[] { None, T(5), T(8), T(11) }, null, "近接最大火力。"),
-            new CardDef(CardDefId.Lunge, "踏み込み斬り", CardType.Attack, RangeBand.Close, 1,
-                new[] { None, T(3, shift: -1), T(5, shift: -1), T(7, shift: -1, brk: 1) }, null, "斬りつつ詰める。最適間合いで T3 なら崩す。"),
-            new CardDef(CardDefId.Feint, "牽制", CardType.Attack, RangeBand.Mid, 0,
-                new[] { T(1, shift: 1), T(3, shift: 1), T(4, shift: 1), T(5, guard: 1, shift: 1) }, null, "削りつつ退く。"),
-            new CardDef(CardDefId.StepIn, "足捌き・前", CardType.Move, null, 0,
-                new[] { T(shift: -1), T(guard: 1, shift: -1), T(guard: 2, shift: -1), T(guard: 3, shift: -1) }, null, "詰める。投入した分だけ Guard が付く。"),
-            new CardDef(CardDefId.StepOut, "足捌き・後", CardType.Move, null, 0,
-                new[] { T(shift: 1), T(guard: 1, shift: 1), T(guard: 2, shift: 1), T(guard: 3, shift: 1) }, null, "退く。投入した分だけ Guard が付く。"),
-            new CardDef(CardDefId.Brace, "呼吸を整える", CardType.Guard, null, 0,
-                new[] { T(guard: 2), T(guard: 4), T(guard: 6), T(guard: 8) },
-                new ReserveRule(ReserveKind.Calm, 6, 1), "受けを固める。残 6 以上なら次ターン回復 +1。"),
-            new CardDef(CardDefId.FirstAid, "応急処置", CardType.Heal, null, 1,
-                new[] { None, T(heal: 3), T(heal: 5), T(heal: 7) }, null, "傷を塞ぐ。"),
-        };
+            if (defs == null) throw new ArgumentNullException(nameof(defs));
+            if (copies < 1) throw new ArgumentOutOfRangeException(nameof(copies), copies, "At least one copy.");
 
-        /// <summary>The 12-card test-bench deck (6 kinds × 2). FirstAid is defined but not dealt (§7.2).</summary>
-        private static readonly CardDefId[] DeckKinds =
-        {
-            CardDefId.Thrust, CardDefId.Lunge, CardDefId.Feint,
-            CardDefId.StepIn, CardDefId.StepOut, CardDefId.Brace,
-        };
-
-        private const int DeckCopies = 2;
-
-        public static CardDef Def(CardDefId id)
-        {
-            foreach (var def in CardDefs)
+            var deck = new List<CardInstance>(defs.Count * copies);
+            foreach (var def in defs)
             {
-                if (def.Id == id) return def;
-            }
-            throw new ArgumentOutOfRangeException(nameof(id), id, null);
-        }
-
-        public static List<CardInstance> CreateInitialDeck()
-        {
-            var deck = new List<CardInstance>();
-            foreach (var id in DeckKinds)
-            {
-                var def = Def(id);
-                for (int copy = 0; copy < DeckCopies; copy++)
+                for (int copy = 0; copy < copies; copy++)
                 {
-                    deck.Add(new CardInstance($"{id.ToToken()}-{copy}", def));
+                    deck.Add(new CardInstance($"{def.Id}-{copy}", def));
                 }
             }
             return deck;
         }
 
+        /// <summary>Fisher-Yates, driven only by the injected RNG.</summary>
         public static List<T> Shuffle<T>(IReadOnlyList<T> input, IRng rng)
         {
+            if (input == null) throw new ArgumentNullException(nameof(input));
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
+
             var arr = new List<T>(input);
             for (int i = arr.Count - 1; i > 0; i--)
             {
                 int j = (int)Math.Floor(rng.NextDouble() * (i + 1));
+                if (j > i) j = i;
                 (arr[i], arr[j]) = (arr[j], arr[i]);
             }
             return arr;
         }
 
-        public static DrawResult DrawToHandSize(
+        /// <summary>
+        /// §9 step 4: draw the turn's cards. An empty draw pile is refilled by reshuffling the
+        /// discard pile (§8); with nothing left in either, the draw simply comes up short.
+        ///
+        /// §17.6 F8: anything that would push the hand past 8 goes straight to the discard pile.
+        /// With a flat 5 and an empty hand that never fires, but the rule is in place for when
+        /// draw bonuses arrive.
+        /// </summary>
+        public static DrawResult Draw(
             IReadOnlyList<CardInstance> drawPile,
             IReadOnlyList<CardInstance> discardPile,
             IReadOnlyList<CardInstance> hand,
-            int target,
+            int count,
             IRng rng)
         {
+            if (drawPile == null) throw new ArgumentNullException(nameof(drawPile));
+            if (discardPile == null) throw new ArgumentNullException(nameof(discardPile));
+            if (hand == null) throw new ArgumentNullException(nameof(hand));
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
+
             var draw = new List<CardInstance>(drawPile);
             var discard = new List<CardInstance>(discardPile);
             var newHand = new List<CardInstance>(hand);
-            while (newHand.Count < target)
+            int drawn = 0;
+            int overflow = 0;
+            bool reshuffled = false;
+
+            for (int i = 0; i < count; i++)
             {
                 if (draw.Count == 0)
                 {
                     if (discard.Count == 0) break;
                     draw = Shuffle(discard, rng);
                     discard = new List<CardInstance>();
+                    reshuffled = true;
                 }
+
                 var next = draw[0];
                 draw.RemoveAt(0);
-                newHand.Add(next);
+                drawn++;
+
+                if (newHand.Count >= Constants.HandLimit)
+                {
+                    discard.Add(next);
+                    overflow++;
+                }
+                else
+                {
+                    newHand.Add(next);
+                }
             }
-            return new DrawResult(newHand, draw, discard);
+
+            return new DrawResult(newHand, draw, discard, drawn, overflow, reshuffled);
+        }
+
+        /// <summary>§9 step 8: the whole hand goes to the discard pile. Nothing is kept for next turn.</summary>
+        public static (IReadOnlyList<CardInstance> Hand, IReadOnlyList<CardInstance> DiscardPile) DiscardHand(
+            IReadOnlyList<CardInstance> hand,
+            IReadOnlyList<CardInstance> discardPile)
+        {
+            if (hand == null) throw new ArgumentNullException(nameof(hand));
+            if (discardPile == null) throw new ArgumentNullException(nameof(discardPile));
+
+            var discard = new List<CardInstance>(discardPile);
+            discard.AddRange(hand);
+            return (new List<CardInstance>(), discard);
+        }
+
+        /// <summary>
+        /// §8: a deck holds 20 to 40 cards and at most 3 of any one kind. Columns are checked too,
+        /// because a card outside 1..4 has no cost.
+        /// </summary>
+        public static DeckValidation Validate(IReadOnlyList<CardInstance> deck)
+        {
+            if (deck == null) throw new ArgumentNullException(nameof(deck));
+
+            var errors = new List<string>();
+
+            if (deck.Count < Constants.DeckMin)
+            {
+                errors.Add($"Deck has {deck.Count} cards; the minimum is {Constants.DeckMin}.");
+            }
+            else if (deck.Count > Constants.DeckMax)
+            {
+                errors.Add($"Deck has {deck.Count} cards; the maximum is {Constants.DeckMax}.");
+            }
+
+            foreach (var group in deck.GroupBy(c => c.Def.Id).OrderBy(g => g.Key, StringComparer.Ordinal))
+            {
+                if (group.Count() > Constants.CopiesMax)
+                {
+                    errors.Add($"Deck holds {group.Count()} copies of \"{group.Key}\"; the maximum is {Constants.CopiesMax}.");
+                }
+            }
+
+            foreach (var id in deck.Select(c => c.Def)
+                         .Where(d => !Columns.IsValid(d.Column))
+                         .Select(d => d.Id)
+                         .Distinct(StringComparer.Ordinal)
+                         .OrderBy(id => id, StringComparer.Ordinal))
+            {
+                errors.Add($"Card \"{id}\" sits outside columns {Columns.Min}..{Columns.Max}.");
+            }
+
+            var duplicateIds = deck.GroupBy(c => c.InstanceId, StringComparer.Ordinal)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .OrderBy(id => id, StringComparer.Ordinal);
+            foreach (var instanceId in duplicateIds)
+            {
+                errors.Add($"Instance id \"{instanceId}\" appears more than once.");
+            }
+
+            return new DeckValidation(errors.Count == 0, errors);
         }
     }
 }

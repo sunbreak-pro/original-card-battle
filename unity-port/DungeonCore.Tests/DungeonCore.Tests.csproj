@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -21,10 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BattleCore\BattleCore.csproj" />
+    <ProjectReference Include="..\DungeonCore\DungeonCore.csproj" />
   </ItemGroup>
-
-  <!-- Fixtures/parity-fixture.json is the v2 port's record and is no longer copied to the output:
-       ParityTests.cs, the only reader, went with the v3 core in #69. The file and tools/*.mjs stay. -->
 
 </Project>
