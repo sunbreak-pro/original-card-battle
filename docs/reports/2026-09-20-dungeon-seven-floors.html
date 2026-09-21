@@ -1,0 +1,960 @@
+<title>澱の七層</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Shippori+Mincho:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6; --panel: #ffffff; --ink: #1c2327; --muted: #56636b;
+    --line: #d5dcdf; --accent: #0e6b74; --accent-soft: #dcefef;
+    --ok: #2c7a4b; --warn: #a86a12; --stop: #a23c3c; --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad;
+      --line: #2c363b; --accent: #5fc4cc; --accent-soft: #163338;
+      --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad;
+    --line: #2c363b; --accent: #5fc4cc; --accent-soft: #163338;
+    --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px; line-height: 1.75; -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-family: "Shippori Mincho", "Yu Mincho", serif; font-size: clamp(28px, 4vw, 38px); line-height: 1.3; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-family: "Shippori Mincho", "Yu Mincho", serif; font-size: 23px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 28px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.65; margin: 0 0 16px; white-space: pre-wrap; word-break: break-word; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  .nm { font-weight: 700; }
+  .rb { font-size: 12.5px; color: var(--muted); font-weight: 400; }
+
+  figure { margin: 0 0 30px; }
+  figure svg { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); background: #0b0d12; }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  figcaption b { color: var(--ink); font-weight: 700; }
+  .lum { display: flex; align-items: flex-end; gap: 6px; height: 120px; margin: 16px 0 6px; }
+  .lum div { flex: 1; border-radius: 3px 3px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; font-size: 12px; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
+  .lumlabels { display: flex; gap: 6px; font-size: 12.5px; color: var(--muted); margin-bottom: 24px; }
+  .lumlabels span { flex: 1; text-align: center; }
+  .sw { display: inline-block; width: 40px; height: 20px; border-radius: 3px; border: 1px solid var(--line); vertical-align: -4px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-21 / 計画 + 検証 / original-card-battle — design レーン</p>
+    <h1>輝晶の間でいちばん輝き、そこから暗くなっていく</h1>
+    <p class="lede">上の層は明るく鮮やかにします。3 層の大黒蛇の住処だけを薄暗く落とし、4 層の輝晶の間で一気に輝かせ、5 層から少しずつ光を抜いていきます。明るさの山を真ん中より少し上に置く配列です。</p>
+  </header>
+
+  <div class="callout prose"><strong>絵について</strong>: 写真のような塗った絵はまだ出せません。ローカル生成の ComfyUI が未導入だからです。下の絵はすべて SVG で私が描いたキーアートで、形と色の方向を決めるためのものです。§6 に ComfyUI 用のプロンプトを 7 層ぶん置きました。導入した日にそのまま回せます。</div>
+
+  <h2>1. 明るさの配列</h2>
+
+  <div class="lum">
+    <div style="height:88%; background:linear-gradient(#a8c26a,#5d7a42); color:#1d2a12">1</div>
+    <div style="height:82%; background:linear-gradient(#e0d4b4,#a8956f); color:#3a3020">2</div>
+    <div style="height:38%; background:linear-gradient(#3a3358,#1d1a30); color:#ded6ff">3</div>
+    <div style="height:100%; background:linear-gradient(#e6e4ff,#9aa4e4); color:#2a2a52">4</div>
+    <div style="height:58%; background:linear-gradient(#7a3a36,#3a1e1c); color:#f0dcd8">5</div>
+    <div style="height:26%; background:linear-gradient(#241d33,#0f0b16); color:#ded0ff">6</div>
+    <div style="height:14%; background:linear-gradient(#171340,#06070f); color:#d8d0ff">7</div>
+  </div>
+  <div class="lumlabels">
+    <span>燦光の樹海</span><span>沈んだ都</span><span>大黒蛇の住処</span><span>輝晶の間</span><span>血染めの死海</span><span>獄雷峡</span><span>果てなき世界</span>
+  </div>
+
+  <p class="prose">1 層と 2 層は明るく鮮やかです。<strong>3 層でいったん落とすのは、4 層を輝かせるための溜め</strong>です。暗いところを 1 つ挟まないと、輝晶の間の光が「明るいものの続き」になってしまいます。5 層から下は、赤 → 黒紫 → 紺の順に光を抜いていきます。</p>
+
+  <h2>2. 七層の全体像</h2>
+
+  <figure>
+    <svg viewBox="0 0 900 1400" role="img" aria-label="七層のダンジョン縦断面図。上から燦光の樹海、沈んだ都、大黒蛇の住処、輝晶の間、血染めの死海、獄雷峡、果てなき世界">
+      <defs>
+        <linearGradient id="xs1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#b6cd77"/><stop offset="0.45" stop-color="#6d8a4a"/><stop offset="1" stop-color="#435a31"/>
+        </linearGradient>
+        <linearGradient id="xs2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e6dabb"/><stop offset="0.5" stop-color="#bfaa83"/><stop offset="1" stop-color="#8b7a59"/>
+        </linearGradient>
+        <linearGradient id="xs3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3b3460"/><stop offset="0.5" stop-color="#282242"/><stop offset="1" stop-color="#191528"/>
+        </linearGradient>
+        <linearGradient id="xs4" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e9e7ff"/><stop offset="0.5" stop-color="#b9bef0"/><stop offset="1" stop-color="#8f96d8"/>
+        </linearGradient>
+        <linearGradient id="xs5" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7c3c36"/><stop offset="0.5" stop-color="#4e2523"/><stop offset="1" stop-color="#2c1716"/>
+        </linearGradient>
+        <linearGradient id="xs6" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2b2340"/><stop offset="0.55" stop-color="#16111f"/><stop offset="1" stop-color="#0c0912"/>
+        </linearGradient>
+        <radialGradient id="xs7" cx="0.5" cy="0.62" r="0.72">
+          <stop offset="0" stop-color="#3c2c78"/><stop offset="0.45" stop-color="#191545"/><stop offset="1" stop-color="#05060e"/>
+        </radialGradient>
+        <radialGradient id="xs-vio" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#d9ccff" stop-opacity="0.85"/><stop offset="1" stop-color="#8b6fd0" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="xs-sun" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#fbffe0" stop-opacity="0.9"/><stop offset="1" stop-color="#e8f0b0" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="xs-gold" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#fff2cd" stop-opacity="0.85"/><stop offset="1" stop-color="#e0c184" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="xs-fog" x="-25%" y="-140%" width="150%" height="380%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.012 0.05" numOctaves="3" seed="7" result="n"/>
+          <feColorMatrix in="n" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.34 0" result="f"/>
+          <feComposite in="f" in2="SourceGraphic" operator="in" result="s"/>
+          <feGaussianBlur in="s" stdDeviation="11"/>
+        </filter>
+      </defs>
+
+      <rect x="0" y="0" width="900" height="200" fill="url(#xs1)"/>
+      <rect x="0" y="200" width="900" height="200" fill="url(#xs2)"/>
+      <rect x="0" y="400" width="900" height="200" fill="url(#xs3)"/>
+      <rect x="0" y="600" width="900" height="200" fill="url(#xs4)"/>
+      <rect x="0" y="800" width="900" height="200" fill="url(#xs5)"/>
+      <rect x="0" y="1000" width="900" height="200" fill="url(#xs6)"/>
+      <rect x="0" y="1200" width="900" height="200" fill="url(#xs7)"/>
+
+      <g>
+        <ellipse cx="620" cy="30" rx="140" ry="62" fill="url(#xs-sun)" opacity="0.7"/>
+        <path d="M560 0 L616 0 L676 200 L590 200 Z" fill="#f4fbd4" opacity="0.2"/>
+        <path d="M700 0 L736 0 L772 200 L718 200 Z" fill="#f4fbd4" opacity="0.13"/>
+        <g fill="#7f9a58">
+          <path d="M40 200 L40 82 Q 50 58 62 82 L62 200 Z"/>
+          <path d="M186 200 L188 96 Q 196 76 206 96 L204 200 Z"/>
+          <path d="M470 200 L472 70 Q 482 46 494 70 L492 200 Z"/>
+          <path d="M800 200 L800 88 Q 810 64 822 88 L820 200 Z"/>
+        </g>
+        <g fill="#3d5230">
+          <path d="M112 200 L114 50 Q 126 20 140 50 L138 200 Z"/>
+          <path d="M370 200 L372 62 Q 384 34 398 62 L396 200 Z"/>
+          <path d="M646 200 L648 44 Q 660 14 674 44 L672 200 Z"/>
+          <path d="M866 200 L868 66 Q 878 40 890 66 L888 200 Z"/>
+        </g>
+        <g fill="#5e7a3e" opacity="0.85">
+          <ellipse cx="126" cy="46" rx="62" ry="26"/><ellipse cx="384" cy="58" rx="54" ry="22"/>
+          <ellipse cx="660" cy="40" rx="66" ry="26"/><ellipse cx="878" cy="62" rx="44" ry="20"/>
+        </g>
+        <ellipse cx="450" cy="182" rx="560" ry="26" fill="#ffffff" filter="url(#xs-fog)" opacity="0.5"/>
+        <g fill="#233016">
+          <path d="M0 200 L0 176 Q 120 162 240 176 Q 380 192 520 174 Q 660 156 790 176 Q 850 186 900 178 L900 200 Z"/>
+        </g>
+        <text x="30" y="44" font-family="Shippori Mincho, serif" font-size="25" fill="#1d2a12" opacity="0.92">一層　燦光の樹海</text>
+        <text x="30" y="70" font-size="13" fill="#24341a" opacity="0.72">沈んだ森。陽が届く最後の層</text>
+      </g>
+
+      <g>
+        <ellipse cx="300" cy="238" rx="120" ry="52" fill="url(#xs-gold)" opacity="0.6"/>
+        <path d="M262 200 L318 200 L372 400 L292 400 Z" fill="#fff4d6" opacity="0.2"/>
+        <g fill="#c6b48f">
+          <rect x="452" y="256" width="24" height="144"/><rect x="446" y="248" width="36" height="10"/>
+          <rect x="512" y="270" width="22" height="130"/><rect x="506" y="262" width="34" height="10"/>
+          <rect x="820" y="262" width="24" height="138"/>
+        </g>
+        <g fill="#e2d6b6">
+          <rect x="120" y="238" width="32" height="162"/><rect x="110" y="226" width="52" height="14"/>
+          <rect x="606" y="244" width="34" height="156"/><rect x="596" y="232" width="54" height="14"/>
+          <rect x="736" y="258" width="30" height="142"/><rect x="726" y="246" width="50" height="14"/>
+        </g>
+        <path d="M596 232 Q 666 196 726 246 L726 262 Q 666 216 596 250 Z" fill="#b8a984"/>
+        <g fill="#8a7a5b">
+          <rect x="196" y="374" width="94" height="18" rx="3" transform="rotate(-5 243 383)"/>
+          <rect x="360" y="386" width="72" height="14" rx="3" transform="rotate(3 396 393)"/>
+        </g>
+        <path d="M0 400 L0 372 Q 140 354 280 374 Q 420 394 560 372 Q 700 350 830 372 Q 870 378 900 372 L900 400 Z" fill="#a08c66"/>
+        <g>
+          <ellipse cx="468" cy="392" rx="46" ry="26" fill="url(#xs-vio)" opacity="0.7"/>
+          <g fill="#8b6fd0"><polygon points="452,400 460,368 470,400"/><polygon points="470,400 476,380 484,400"/></g>
+          <polygon points="457,378 460,368 464,380" fill="#f0eaff"/>
+          <ellipse cx="748" cy="394" rx="34" ry="20" fill="url(#xs-vio)" opacity="0.5"/>
+          <g fill="#8b6fd0"><polygon points="738,400 744,376 752,400"/></g>
+        </g>
+        <text x="30" y="242" font-family="Shippori Mincho, serif" font-size="25" fill="#3a3020" opacity="0.92">二層　沈んだ都</text>
+        <text x="30" y="268" font-size="13" fill="#463a26" opacity="0.72">古代文明の遺構。結晶が芽を出す</text>
+      </g>
+
+      <g>
+        <ellipse cx="620" cy="520" rx="230" ry="96" fill="url(#xs-vio)" opacity="0.3"/>
+        <g fill="#141020">
+          <polygon points="80,600 100,600 94,506 84,506"/><polygon points="160,600 176,600 172,540 162,540"/>
+          <polygon points="836,600 860,600 852,494 840,494"/>
+          <polygon points="200,400 216,400 212,468 202,468"/><polygon points="330,400 344,400 340,444 332,444"/>
+        </g>
+        <path d="M900 470 C 856 452, 806 456, 766 476 C 724 496, 700 522, 668 538 C 704 512, 736 480, 780 466 C 828 450, 870 452, 900 462 Z" fill="#0c0a16"/>
+        <path d="M668 538 C 626 558, 576 560, 536 548 C 496 536, 470 514, 446 500 C 420 486, 396 484, 378 494 C 360 504, 356 524, 368 540 C 380 556, 404 562, 424 556 L 428 570 C 398 580, 362 570, 344 546 C 326 520, 332 486, 360 470 C 390 452, 428 458, 458 476 C 490 494, 516 522, 552 534 C 586 546, 630 542, 668 522 Z" fill="#0c0a16"/>
+        <path d="M668 538 C 626 558, 576 560, 536 548 C 496 536, 470 514, 446 500 C 420 486, 396 484, 378 494" fill="none" stroke="#b9a3ff" stroke-width="2" opacity="0.5"/>
+        <path d="M344 546 C 326 520, 332 486, 360 470" fill="none" stroke="#b9a3ff" stroke-width="1.8" opacity="0.45"/>
+        <g fill="#6a4fa8" opacity="0.9">
+          <polygon points="560,540 566,498 574,542"/><polygon points="624,528 632,488 640,532"/>
+          <polygon points="700,504 708,464 716,508"/><polygon points="786,472 794,440 802,478"/>
+        </g>
+        <circle cx="392" cy="512" r="3.6" fill="#e6dcff"/><circle cx="392" cy="512" r="13" fill="url(#xs-vio)"/>
+        <text x="30" y="444" font-family="Shippori Mincho, serif" font-size="25" fill="#ded6ff" opacity="0.94">三層　大黒蛇の住処</text>
+        <text x="30" y="470" font-size="13" fill="#ded6ff" opacity="0.62">薄暗がり。黒い巨躯がとぐろを巻く</text>
+      </g>
+
+      <g>
+        <path d="M0 600 Q 220 632 450 626 Q 680 620 900 646 L900 600 Z" fill="#dcdcfa" opacity="0.6"/>
+        <g fill="#f2f0ff" opacity="0.9">
+          <polygon points="70,800 92,800 84,646 74,646"/><polygon points="108,800 126,800 120,690 110,690"/>
+          <polygon points="420,800 444,800 436,634 424,634"/><polygon points="478,800 496,800 490,700 480,700"/>
+          <polygon points="700,800 724,800 716,640 704,640"/><polygon points="762,800 780,800 774,698 764,698"/>
+          <polygon points="150,600 168,600 162,712 152,712"/><polygon points="370,600 390,600 382,690 374,690"/>
+          <polygon points="650,600 668,600 662,702 652,702"/><polygon points="828,600 846,600 840,684 830,684"/>
+        </g>
+        <g fill="#aeb4e8" opacity="0.8">
+          <polygon points="196,800 220,800 212,662 200,662"/><polygon points="560,800 584,800 576,678 564,678"/>
+          <polygon points="852,800 874,800 866,668 856,668"/>
+        </g>
+        <g fill="#4a4c7c">
+          <polygon points="252,800 278,800 268,700 256,700"/><polygon points="308,800 326,800 320,742 310,742"/>
+          <polygon points="612,800 638,800 628,714 616,714"/>
+        </g>
+        <g fill="#ffffff" opacity="0.55">
+          <circle cx="180" cy="662" r="2.6"/><circle cx="340" cy="700" r="2.2"/><circle cx="520" cy="654" r="2.6"/>
+          <circle cx="680" cy="716" r="2.2"/><circle cx="800" cy="666" r="2.6"/><circle cx="270" cy="744" r="2.2"/>
+        </g>
+        <text x="30" y="644" font-family="Shippori Mincho, serif" font-size="25" fill="#2a2a52" opacity="0.94">四層　輝晶の間</text>
+        <text x="30" y="670" font-size="13" fill="#333561" opacity="0.75">全層で最も明るい。光が足場を塞ぐ</text>
+      </g>
+
+      <g>
+        <path d="M0 1000 L0 952 Q 150 934 300 952 Q 450 970 600 948 Q 740 928 900 950 L900 1000 Z" fill="#8a3a34" opacity="0.55"/>
+        <path d="M140 1000 C 158 906, 218 858, 296 856 C 374 854, 434 902, 452 1000 L 428 1000 C 412 928, 362 886, 296 888 C 230 890, 180 930, 164 1000 Z" fill="#2c1716"/>
+        <g fill="#2c1716">
+          <rect x="316" y="944" width="7" height="56" rx="3"/><rect x="352" y="930" width="7" height="70" rx="3"/>
+          <rect x="244" y="940" width="7" height="60" rx="3"/><rect x="210" y="958" width="7" height="42" rx="3"/>
+          <path d="M600 1000 C 612 940, 646 910, 692 910 C 738 910, 772 940, 784 1000 L 764 1000 C 754 954, 728 930, 692 930 C 656 930, 630 954, 620 1000 Z"/>
+        </g>
+        <g fill="#f0ddd6" opacity="0.8">
+          <polygon points="70,1000 80,968 90,1000"/><polygon points="496,1000 506,962 516,1000"/>
+          <polygon points="836,1000 846,974 856,1000"/><polygon points="536,1000 544,980 552,1000"/>
+        </g>
+        <text x="30" y="844" font-family="Shippori Mincho, serif" font-size="25" fill="#f0dcd8" opacity="0.94">五層　血染めの死海</text>
+        <text x="30" y="870" font-size="13" fill="#f0dcd8" opacity="0.62">涸れた赤い海床。巨きな骨と塩</text>
+      </g>
+
+      <g>
+        <ellipse cx="560" cy="1120" rx="230" ry="80" fill="url(#xs-vio)" opacity="0.16"/>
+        <g fill="#050308">
+          <path d="M430 1176 C 430 1122, 466 1084, 518 1078 C 570 1072, 620 1092, 642 1128 L 656 1176 L 612 1176 C 604 1140, 574 1116, 536 1118 C 496 1120, 470 1146, 468 1176 Z"/>
+          <path d="M642 1128 C 668 1116, 696 1118, 716 1132 L 700 1146 C 682 1138, 662 1138, 648 1146 Z"/>
+          <path d="M518 1078 C 494 1044, 434 1022, 386 1028 C 434 1040, 478 1060, 506 1088 Z"/>
+          <path d="M548 1072 C 542 1036, 584 1004, 636 1004 C 590 1020, 566 1042, 562 1078 Z"/>
+          <path d="M642 1128 C 688 1114, 734 1084, 762 1046 C 754 1096, 712 1134, 662 1150 Z"/>
+          <path d="M656 1176 L 730 1164 L 788 1176 L 656 1184 Z"/>
+        </g>
+        <g stroke="#000000" stroke-width="4.5" fill="none" stroke-linecap="round">
+          <path d="M392 1048 L 426 1086 L 400 1094 L 438 1136"/>
+          <path d="M744 1032 L 712 1070 L 738 1078 L 700 1120"/>
+          <path d="M544 1006 L 526 1034 L 552 1040 L 530 1066"/>
+        </g>
+        <g stroke="#9a7fe0" stroke-width="1.3" fill="none" stroke-linecap="round" opacity="0.7">
+          <path d="M392 1048 L 426 1086 L 400 1094 L 438 1136"/>
+          <path d="M744 1032 L 712 1070 L 738 1078 L 700 1120"/>
+          <path d="M544 1006 L 526 1034 L 552 1040 L 530 1066"/>
+        </g>
+        <circle cx="690" cy="1134" r="3.2" fill="#d9ccff"/><circle cx="690" cy="1134" r="11" fill="url(#xs-vio)"/>
+        <path d="M0 1000 L 148 1000 C 168 1048, 158 1104, 196 1160 L 210 1200 L 0 1200 Z" fill="#090710"/>
+        <path d="M900 1000 L 806 1000 C 792 1054, 812 1106, 786 1162 L 776 1200 L 900 1200 Z" fill="#090710"/>
+        <path d="M148 1000 C 168 1048, 158 1104, 196 1160" fill="none" stroke="#6a4fa8" stroke-width="1.6" opacity="0.4"/>
+        <path d="M806 1000 C 792 1054, 812 1106, 786 1162" fill="none" stroke="#6a4fa8" stroke-width="1.6" opacity="0.4"/>
+        <path d="M0 1200 L0 1184 Q 200 1172 400 1186 Q 600 1200 900 1182 L900 1200 Z" fill="#070510"/>
+        <text x="30" y="1044" font-family="Shippori Mincho, serif" font-size="25" fill="#ded0ff" opacity="0.94">六層　獄雷峡</text>
+        <text x="30" y="1070" font-size="13" fill="#ded0ff" opacity="0.6">切り立った谷。黒い雷を纏う四枚翼の竜</text>
+      </g>
+
+      <g>
+        <g fill="none" stroke="#6a4fa8" stroke-width="2" opacity="0.42">
+          <ellipse cx="470" cy="1310" rx="290" ry="66"/>
+          <ellipse cx="470" cy="1310" rx="200" ry="104" transform="rotate(22 470 1310)"/>
+          <ellipse cx="470" cy="1310" rx="200" ry="104" transform="rotate(-22 470 1310)"/>
+        </g>
+        <g fill="#b9a3ff" opacity="0.45">
+          <polygon points="250,1290 256,1268 264,1292"/><polygon points="700,1286 706,1262 714,1288"/>
+          <polygon points="348,1362 354,1342 362,1364"/><polygon points="600,1358 606,1338 614,1360"/>
+          <polygon points="810,1330 816,1312 824,1332"/><polygon points="150,1336 156,1318 164,1338"/>
+        </g>
+        <circle cx="470" cy="1310" r="34" fill="#100c28"/>
+        <circle cx="470" cy="1310" r="34" fill="none" stroke="#b9a3ff" stroke-width="2.2" opacity="0.7"/>
+        <circle cx="470" cy="1310" r="12" fill="#b9a3ff" opacity="0.85"/>
+        <text x="30" y="1244" font-family="Shippori Mincho, serif" font-size="25" fill="#d8d0ff" opacity="0.94">七層　果てなき世界</text>
+        <text x="30" y="1270" font-size="13" fill="#d8d0ff" opacity="0.6">上も下も端も無い。澱そのものの空洞</text>
+      </g>
+
+      <g>
+        <path d="M332 0 C 332 90, 400 120, 398 200 C 396 288, 328 310, 330 400 C 332 486, 400 512, 402 600 C 404 688, 336 712, 338 800 C 340 886, 406 912, 408 1000 C 410 1076, 348 1108, 350 1200 C 352 1266, 412 1292, 470 1310"
+              fill="none" stroke="#e8a84c" stroke-width="2.6" stroke-dasharray="9 8" stroke-linecap="round" opacity="0.62"/>
+        <g fill="#ffb648" opacity="0.85">
+          <circle cx="398" cy="200" r="3.6"/><circle cx="330" cy="400" r="3.6"/>
+          <circle cx="402" cy="600" r="3.6"/><circle cx="338" cy="800" r="3.6"/>
+          <circle cx="408" cy="1000" r="3.6"/><circle cx="350" cy="1200" r="3.6"/>
+        </g>
+        <text x="344" y="24" font-size="12" fill="#5a4416" opacity="0.8">降下路</text>
+      </g>
+
+      <g font-family="IBM Plex Mono, monospace" font-size="11" opacity="0.4">
+        <text x="862" y="196" fill="#1d2a12">1</text><text x="862" y="396" fill="#3a3020">2</text>
+        <text x="862" y="596" fill="#ffffff">3</text><text x="862" y="796" fill="#2a2a52">4</text>
+        <text x="862" y="996" fill="#ffffff">5</text><text x="862" y="1196" fill="#ffffff">6</text>
+        <text x="862" y="1392" fill="#ffffff">7</text>
+      </g>
+    </svg>
+    <figcaption><b>七層の縦断面</b>。琥珀の破線が降下路です。1 層と 2 層は陽の色、3 層で暗く落ち、4 層で最も明るくなります。5 層の赤、6 層の谷と黒い雷、7 層の紺へと光が抜けていきます。</figcaption>
+  </figure>
+
+  <h2>3. 各層の断片</h2>
+
+  <figure>
+    <svg viewBox="0 0 900 480" role="img" aria-label="一層・燦光の樹海のキーアート。強い陽光の差す沈んだ森">
+      <defs>
+        <linearGradient id="a1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#cfe08c"/><stop offset="0.35" stop-color="#87a355"/><stop offset="1" stop-color="#3b4f2b"/>
+        </linearGradient>
+        <linearGradient id="a1s" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fdffe4" stop-opacity="0.62"/><stop offset="1" stop-color="#fdffe4" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="a1sun" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/><stop offset="1" stop-color="#f2ffc0" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="a1f" x="-25%" y="-140%" width="150%" height="380%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.04" numOctaves="3" seed="3" result="n"/>
+          <feColorMatrix in="n" values="0 0 0 0 0.96  0 0 0 0 1  0 0 0 0 0.86  0 0 0 0.46 0" result="f"/>
+          <feComposite in="f" in2="SourceGraphic" operator="in" result="s"/>
+          <feGaussianBlur in="s" stdDeviation="14"/>
+        </filter>
+      </defs>
+      <rect width="900" height="480" fill="url(#a1)"/>
+      <ellipse cx="470" cy="26" rx="190" ry="76" fill="url(#a1sun)" opacity="0.85"/>
+      <path d="M388 0 L520 0 L604 480 L300 480 Z" fill="url(#a1s)"/>
+      <path d="M640 0 L694 0 L740 480 L664 480 Z" fill="url(#a1s)" opacity="0.5"/>
+      <path d="M172 0 L212 0 L188 480 L114 480 Z" fill="url(#a1s)" opacity="0.4"/>
+      <g fill="#8aa662" opacity="0.9">
+        <path d="M60 480 L64 148 Q 78 110 96 148 L100 480 Z"/>
+        <path d="M596 480 L598 172 Q 610 142 624 172 L626 480 Z"/>
+        <path d="M812 480 L816 130 Q 832 94 850 130 L852 480 Z"/>
+      </g>
+      <g fill="#5a7440">
+        <path d="M242 480 L246 92 Q 266 44 290 92 L294 480 Z"/>
+        <path d="M690 480 L692 108 Q 710 68 730 108 L732 480 Z"/>
+      </g>
+      <g fill="#2e3f22">
+        <path d="M108 480 L112 40 Q 136 -10 164 40 L168 480 Z"/>
+        <path d="M470 480 L474 66 Q 496 22 520 66 L524 480 Z"/>
+        <path d="M856 480 L860 56 Q 882 8 900 48 L900 480 Z"/>
+      </g>
+      <g opacity="0.55">
+        <ellipse cx="138" cy="34" rx="98" ry="34" fill="#4c6a32"/><ellipse cx="496" cy="52" rx="86" ry="30" fill="#4c6a32"/>
+        <ellipse cx="712" cy="86" rx="70" ry="26" fill="#5e7c40"/>
+      </g>
+      <g stroke="#2e3f22" stroke-width="3.4" fill="none" opacity="0.85">
+        <path d="M40 0 Q 54 84 32 158"/><path d="M336 0 Q 324 102 346 182"/>
+        <path d="M566 0 Q 580 76 558 148"/><path d="M786 0 Q 772 108 794 190"/>
+      </g>
+      <g stroke="#3f5a2c" stroke-width="2.2" fill="none" opacity="0.7">
+        <path d="M294 116 Q 372 96 470 128"/><path d="M524 92 Q 566 80 596 176"/>
+        <path d="M732 128 Q 786 116 816 146"/>
+      </g>
+      <ellipse cx="450" cy="412" rx="580" ry="92" fill="#ffffff" filter="url(#a1f)" opacity="0.6"/>
+      <path d="M0 480 L0 420 Q 70 392 148 418 Q 226 444 300 416 Q 372 388 448 418 Q 528 448 604 418 Q 682 388 760 420 Q 834 450 900 420 L900 480 Z" fill="#1f2e16"/>
+      <g fill="#1f2e16">
+        <path d="M26 480 Q 42 424 62 480 Z"/><path d="M62 480 Q 80 432 100 480 Z"/>
+        <path d="M330 480 Q 348 420 370 480 Z"/><path d="M370 480 Q 388 436 408 480 Z"/>
+        <path d="M672 480 Q 690 424 712 480 Z"/><path d="M712 480 Q 730 440 750 480 Z"/>
+      </g>
+      <g fill="#182410">
+        <path d="M498 442 L498 404 Q 505 394 512 404 L512 442 Z"/>
+        <circle cx="505" cy="390" r="8"/>
+        <rect x="516" y="402" width="3.5" height="22"/>
+      </g>
+      <circle cx="523" cy="426" r="4" fill="#ffe6a8"/>
+      <ellipse cx="523" cy="426" rx="30" ry="20" fill="#ffd89a" opacity="0.16"/>
+    </svg>
+    <figcaption><b>一層 燦光の樹海</b> <span class="rb">さんこうのじゅかい</span>。崩れた天井の大穴から陽が落ちます。緑の彩度を上げ、光条を強く入れました。<b>唯一、地上の光で歩ける層</b>です。探索者のランタンはほとんど役に立ちません。</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 900 480" role="img" aria-label="二層・沈んだ都のキーアート。明るい斜光の差す古代の列柱と、柱の根元に芽吹く菫色の結晶">
+      <defs>
+        <linearGradient id="a2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f0e4c4"/><stop offset="0.45" stop-color="#c4ae85"/><stop offset="1" stop-color="#7d6c4e"/>
+        </linearGradient>
+        <linearGradient id="a2s" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff8dc" stop-opacity="0.58"/><stop offset="1" stop-color="#fff8dc" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="a2c" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#8f7f5e"/><stop offset="0.4" stop-color="#eee2c2"/><stop offset="1" stop-color="#a08e69"/>
+        </linearGradient>
+        <linearGradient id="a2cf" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#8b7d5f"/><stop offset="0.45" stop-color="#c9ba97"/><stop offset="1" stop-color="#8b7d5f"/>
+        </linearGradient>
+        <radialGradient id="a2v" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#e2d8ff" stop-opacity="0.95"/><stop offset="1" stop-color="#8b6fd0" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="a2f" x="-25%" y="-140%" width="150%" height="380%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.01 0.03" numOctaves="2" seed="11" result="n"/>
+          <feColorMatrix in="n" values="0 0 0 0 1  0 0 0 0 0.96  0 0 0 0 0.82  0 0 0 0.42 0" result="f"/>
+          <feComposite in="f" in2="SourceGraphic" operator="in" result="s"/>
+          <feGaussianBlur in="s" stdDeviation="14"/>
+        </filter>
+      </defs>
+      <rect width="900" height="480" fill="url(#a2)"/>
+      <path d="M300 0 L430 0 L536 404 L332 404 Z" fill="url(#a2s)"/>
+      <path d="M636 0 L712 0 L760 404 L658 404 Z" fill="url(#a2s)" opacity="0.5"/>
+      <g fill="url(#a2cf)">
+        <rect x="196" y="148" width="26" height="256"/><rect x="190" y="140" width="38" height="11"/>
+        <rect x="258" y="164" width="24" height="240"/><rect x="252" y="156" width="36" height="11"/>
+        <rect x="592" y="156" width="26" height="248"/><rect x="586" y="148" width="38" height="11"/>
+        <rect x="656" y="178" width="24" height="226"/>
+      </g>
+      <path d="M190 140 Q 236 110 288 144 L288 158 Q 236 126 190 154 Z" fill="#b8a984"/>
+      <g fill="url(#a2c)">
+        <rect x="58" y="76" width="48" height="328"/><rect x="44" y="60" width="76" height="18"/>
+        <rect x="406" y="106" width="44" height="298"/><rect x="392" y="90" width="72" height="18"/>
+        <rect x="778" y="70" width="50" height="334"/><rect x="764" y="54" width="78" height="18"/>
+      </g>
+      <g fill="url(#a2c)">
+        <path d="M528 404 L528 232 L574 232 L574 404 Z"/>
+        <path d="M528 232 L550 206 L574 232 Z" fill="#d8c8a2"/>
+      </g>
+      <path d="M44 60 Q 230 8 392 90 L392 110 Q 230 32 44 80 Z" fill="#dccfab"/>
+      <path d="M464 90 Q 620 36 764 54 L764 74 Q 622 56 464 110 Z" fill="#cfc09c" opacity="0.85"/>
+      <path d="M0 404 Q 130 380 260 400 Q 390 420 520 398 Q 650 376 780 398 Q 846 408 900 396 L900 480 L0 480 Z" fill="#9c8863"/>
+      <path d="M0 480 L0 442 Q 150 416 300 438 Q 450 460 600 434 Q 750 408 900 434 L900 480 Z" fill="#b9a67d"/>
+      <g fill="#8a7a58">
+        <rect x="120" y="428" width="96" height="18" rx="4" transform="rotate(-6 168 437)"/>
+        <rect x="640" y="444" width="78" height="15" rx="4" transform="rotate(4 679 451)"/>
+        <rect x="318" y="456" width="60" height="13" rx="4" transform="rotate(-3 348 462)"/>
+      </g>
+      <ellipse cx="450" cy="396" rx="580" ry="80" fill="#ffffff" filter="url(#a2f)" opacity="0.4"/>
+      <g>
+        <ellipse cx="438" cy="400" rx="86" ry="48" fill="url(#a2v)" opacity="0.55"/>
+        <g fill="#8b6fd0">
+          <polygon points="406,408 416,352 428,408"/><polygon points="428,408 438,368 448,408"/>
+          <polygon points="448,408 456,382 464,408"/><polygon points="392,408 400,378 410,408"/>
+        </g>
+        <g fill="#f2ecff">
+          <polygon points="412,368 416,352 421,370"/><polygon points="435,382 438,368 442,384"/>
+        </g>
+        <ellipse cx="808" cy="400" rx="50" ry="28" fill="url(#a2v)" opacity="0.4"/>
+        <g fill="#8b6fd0"><polygon points="794,404 800,372 810,404"/><polygon points="810,404 816,386 824,404"/></g>
+      </g>
+      <g fill="#4a3f2c">
+        <path d="M150 404 L150 368 Q 157 358 164 368 L164 404 Z"/>
+        <circle cx="157" cy="354" r="8"/>
+        <rect x="168" y="366" width="3.5" height="22"/>
+      </g>
+      <circle cx="175" cy="390" r="4" fill="#ffe6a8"/>
+    </svg>
+    <figcaption><b>二層 沈んだ都</b>。1 層より古い時代の地表です。石と砂を明るく起こし、斜めの強い光を入れました。<b>柱の根元に菫色の結晶が芽を出しています</b>。明るい画面の中で紫が浮くので、晶化の初出がはっきり読めます。</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 900 480" role="img" aria-label="三層・大黒蛇の住処のキーアート。薄暗がりにとぐろを巻く黒い大蛇と、生え始めた結晶">
+      <defs>
+        <linearGradient id="a3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3e3766"/><stop offset="0.45" stop-color="#292346"/><stop offset="1" stop-color="#15121f"/>
+        </linearGradient>
+        <radialGradient id="a3g" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#d9ccff" stop-opacity="0.72"/><stop offset="0.5" stop-color="#8b6fd0" stop-opacity="0.24"/><stop offset="1" stop-color="#8b6fd0" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="a3x" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#4b3a86"/><stop offset="0.6" stop-color="#8b6fd0"/><stop offset="1" stop-color="#e2d8ff"/>
+        </linearGradient>
+        <filter id="a3f" x="-25%" y="-140%" width="150%" height="380%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.009 0.035" numOctaves="3" seed="19" result="n"/>
+          <feColorMatrix in="n" values="0 0 0 0 0.75  0 0 0 0 0.67  0 0 0 0 1  0 0 0 0.4 0" result="f"/>
+          <feComposite in="f" in2="SourceGraphic" operator="in" result="s"/>
+          <feGaussianBlur in="s" stdDeviation="14"/>
+        </filter>
+      </defs>
+      <rect width="900" height="480" fill="url(#a3)"/>
+      <ellipse cx="560" cy="250" rx="360" ry="210" fill="url(#a3g)" opacity="0.6"/>
+      <g fill="#171330" opacity="0.9">
+        <polygon points="34,480 58,480 50,296 38,296"/><polygon points="98,480 116,480 110,350 100,350"/>
+        <polygon points="852,480 878,480 868,278 856,278"/>
+        <polygon points="0,0 20,0 14,190 2,190"/><polygon points="176,0 194,0 188,148 178,148"/>
+      </g>
+
+      <g>
+        <path d="M900 236 C 852 214, 792 216, 740 240 C 686 264, 650 304, 604 330 C 556 356, 496 362, 448 344 C 402 326, 374 288, 336 268 C 300 248, 258 252, 234 280 C 208 310, 214 356, 244 378 C 272 398, 310 396, 334 376 L 350 400 C 314 428, 258 428, 220 398 C 178 366, 168 302, 200 260 C 234 214, 298 206, 346 230 C 392 252, 420 294, 464 312 C 506 328, 556 322, 596 300 C 640 276, 674 236, 726 210 C 782 182, 848 180, 900 202 Z" fill="#090616"/>
+        <path d="M900 236 C 852 214, 792 216, 740 240 C 686 264, 650 304, 604 330 C 556 356, 496 362, 448 344 C 402 326, 374 288, 336 268 C 300 248, 258 252, 234 280" fill="none" stroke="#b9a3ff" stroke-width="2.4" opacity="0.55"/>
+        <path d="M220 398 C 178 366, 168 302, 200 260" fill="none" stroke="#b9a3ff" stroke-width="2" opacity="0.4"/>
+        <path d="M334 376 L 350 400 L 296 420 L 250 410 L 262 388 Z" fill="#090616"/>
+        <path d="M262 388 L 250 410 L 296 420" fill="none" stroke="#b9a3ff" stroke-width="1.8" opacity="0.45"/>
+        <polygon points="286,398 268,364 306,386" fill="#090616"/>
+        <circle cx="284" cy="398" r="4.6" fill="#f0eaff"/>
+        <circle cx="284" cy="398" r="16" fill="url(#a3g)"/>
+      </g>
+
+      <g fill="url(#a3x)">
+        <polygon points="446,330 456,236 470,338"/>
+        <polygon points="530,326 542,208 556,332"/>
+        <polygon points="616,306 628,176 642,312"/>
+        <polygon points="704,262 716,142 730,268"/>
+        <polygon points="798,224 808,130 820,230"/>
+        <polygon points="378,296 386,226 398,302"/>
+      </g>
+      <g fill="#f0eaff" opacity="0.6">
+        <polygon points="537,240 542,208 548,246"/><polygon points="623,210 628,176 634,216"/>
+        <polygon points="711,178 716,142 722,184"/>
+      </g>
+
+      <g fill="#100d1f">
+        <path d="M0 480 L0 428 Q 130 404 268 424 Q 406 444 540 420 Q 682 394 812 418 Q 862 428 900 418 L900 480 Z"/>
+      </g>
+      <g fill="url(#a3x)" opacity="0.85">
+        <polygon points="70,428 82,346 96,432"/><polygon points="136,436 146,388 158,438"/>
+        <polygon points="620,424 632,362 644,428"/><polygon points="702,430 712,382 724,434"/>
+      </g>
+      <ellipse cx="450" cy="420" rx="580" ry="76" fill="#ffffff" filter="url(#a3f)" opacity="0.32"/>
+      <g fill="#0a0716">
+        <path d="M178 452 L178 418 Q 185 408 192 418 L192 452 Z"/>
+        <circle cx="185" cy="404" r="8"/>
+        <rect x="196" y="416" width="3.5" height="22"/>
+      </g>
+      <circle cx="203" cy="440" r="4" fill="#ffe6a8"/>
+      <ellipse cx="203" cy="440" rx="40" ry="26" fill="#ffd89a" opacity="0.1"/>
+    </svg>
+    <figcaption><b>三層 大黒蛇の住処</b> <span class="rb">だいこくじゃのすみか</span>。壁からうねり出た黒い大蛇がとぐろを巻き、鎌首をこちらへ下ろしています。背から生えた結晶がこの層の唯一の光源です。<b>7 層で唯一の「暗い上層」</b>で、ここを暗くしておくことで次の輝晶の間が効きます。左下の小さな人影が探索者です。</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 900 480" role="img" aria-label="四層・輝晶の間のキーアート。全面が発光する結晶で満たされた最も明るい大広間">
+      <defs>
+        <linearGradient id="a4" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f4f2ff"/><stop offset="0.42" stop-color="#c3c8f4"/><stop offset="1" stop-color="#7f88ce"/>
+        </linearGradient>
+        <linearGradient id="a4c" x1="0" y1="1" x2="0.3" y2="0">
+          <stop offset="0" stop-color="#9aa2de"/><stop offset="0.55" stop-color="#e4e2ff"/><stop offset="1" stop-color="#ffffff"/>
+        </linearGradient>
+        <linearGradient id="a4cf" x1="0" y1="1" x2="0.3" y2="0">
+          <stop offset="0" stop-color="#6f77b8"/><stop offset="1" stop-color="#c6cbf0"/>
+        </linearGradient>
+        <radialGradient id="a4g" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/><stop offset="1" stop-color="#d8dcff" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="a4f" x="-25%" y="-140%" width="150%" height="380%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.011 0.04" numOctaves="3" seed="29" result="n"/>
+          <feColorMatrix in="n" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0" result="f"/>
+          <feComposite in="f" in2="SourceGraphic" operator="in" result="s"/>
+          <feGaussianBlur in="s" stdDeviation="16"/>
+        </filter>
+      </defs>
+      <rect width="900" height="480" fill="url(#a4)"/>
+      <ellipse cx="520" cy="210" rx="330" ry="220" fill="url(#a4g)" opacity="0.75"/>
+      <path d="M0 0 L0 62 Q 230 132 450 128 Q 670 124 900 74 L900 0 Z" fill="#8f96d8" opacity="0.5"/>
+      <path d="M0 62 Q 230 132 450 128 Q 670 124 900 74" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.5"/>
+      <g fill="url(#a4cf)" opacity="0.72">
+        <polygon points="40,480 74,480 62,150 46,150"/><polygon points="104,480 128,480 120,248 108,248"/>
+        <polygon points="330,480 362,480 350,180 336,180"/><polygon points="420,480 444,480 436,270 424,270"/>
+        <polygon points="640,480 672,480 660,164 646,164"/><polygon points="726,480 750,480 742,258 730,258"/>
+        <polygon points="838,480 870,480 858,196 844,196"/>
+        <polygon points="150,86 176,86 166,232 154,232"/><polygon points="290,116 314,116 306,196 296,196"/>
+        <polygon points="560,120 588,120 578,220 566,220"/><polygon points="790,94 814,94 806,186 794,186"/>
+      </g>
+      <g fill="url(#a4c)">
+        <polygon points="180,480 222,480 206,206 188,206"/>
+        <polygon points="480,480 528,480 510,148 490,148"/>
+        <polygon points="560,480 592,480 580,278 566,278"/>
+        <polygon points="880,480 900,480 896,230 886,230"/>
+        <polygon points="240,100 274,100 262,268 248,268"/><polygon points="660,112 692,112 682,244 668,244"/>
+      </g>
+      <g fill="#3f4478">
+        <polygon points="256,480 296,480 282,300 266,300"/>
+        <polygon points="770,480 812,480 798,286 782,286"/>
+        <polygon points="0,480 30,480 26,330 6,330"/>
+      </g>
+      <ellipse cx="450" cy="432" rx="580" ry="90" fill="#ffffff" filter="url(#a4f)" opacity="0.55"/>
+      <path d="M0 480 L0 446 Q 140 424 290 444 Q 440 464 590 440 Q 740 416 900 440 L900 480 Z" fill="#8f96d8" opacity="0.7"/>
+      <g fill="#ffffff" opacity="0.8">
+        <circle cx="128" cy="180" r="3"/><circle cx="268" cy="152" r="2.4"/><circle cx="404" cy="216" r="3"/>
+        <circle cx="552" cy="138" r="2.4"/><circle cx="700" cy="196" r="3"/><circle cx="836" cy="160" r="2.4"/>
+        <circle cx="200" cy="300" r="2.4"/><circle cx="620" cy="326" r="2.4"/><circle cx="470" cy="360" r="3"/>
+      </g>
+      <g fill="#2a2d54">
+        <path d="M368 448 L368 410 Q 375 400 382 410 L382 448 Z"/>
+        <circle cx="375" cy="396" r="8"/>
+        <rect x="386" y="408" width="3.5" height="22"/>
+      </g>
+    </svg>
+    <figcaption><b>四層 輝晶の間</b> <span class="rb">きしょうのま</span>。全層で最も明るい大広間です。結晶そのものが光っているので、影が下ではなく<b>横と上から差します</b>。探索者は逆光で黒く抜けます。灯りは完全に無意味で、代わりに「眩しくて先が見えない」が探索の難しさになります。</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 900 480" role="img" aria-label="五層・血染めの死海のキーアート。赤く干上がった海床と巨大な骨のアーチ">
+      <defs>
+        <linearGradient id="a5" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8e4640"/><stop offset="0.45" stop-color="#552926"/><stop offset="1" stop-color="#271413"/>
+        </linearGradient>
+        <linearGradient id="a5w" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a8423a"/><stop offset="1" stop-color="#5e2622"/>
+        </linearGradient>
+        <radialGradient id="a5g" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#e88a72" stop-opacity="0.5"/><stop offset="1" stop-color="#8e4640" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="a5f" x="-25%" y="-140%" width="150%" height="380%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.01 0.04" numOctaves="3" seed="41" result="n"/>
+          <feColorMatrix in="n" values="0 0 0 0 1  0 0 0 0 0.72  0 0 0 0 0.64  0 0 0 0.42 0" result="f"/>
+          <feComposite in="f" in2="SourceGraphic" operator="in" result="s"/>
+          <feGaussianBlur in="s" stdDeviation="14"/>
+        </filter>
+      </defs>
+      <rect width="900" height="480" fill="url(#a5)"/>
+      <ellipse cx="440" cy="150" rx="380" ry="170" fill="url(#a5g)" opacity="0.7"/>
+      <g fill="#331a18">
+        <path d="M148 400 C 168 226, 274 142, 410 140 C 546 138, 650 224, 672 400 L 630 400 C 612 262, 528 190, 410 192 C 292 194, 208 264, 190 400 Z"/>
+        <path d="M700 400 C 712 300, 764 252, 830 252 C 862 252, 886 264, 900 284 L 900 320 C 886 292, 860 276, 830 276 C 780 276, 742 314, 732 400 Z"/>
+      </g>
+      <g fill="#331a18">
+        <rect x="270" y="288" width="9" height="112" rx="4"/><rect x="316" y="268" width="9" height="132" rx="4"/>
+        <rect x="362" y="256" width="9" height="144" rx="4"/><rect x="410" y="252" width="9" height="148" rx="4"/>
+        <rect x="458" y="258" width="9" height="142" rx="4"/><rect x="504" y="272" width="9" height="128" rx="4"/>
+        <rect x="548" y="294" width="9" height="106" rx="4"/>
+      </g>
+      <path d="M0 400 Q 120 386 250 398 Q 390 412 520 396 Q 660 378 790 396 Q 850 404 900 396 L900 480 L0 480 Z" fill="#3a1d1a"/>
+      <path d="M0 434 Q 160 420 320 434 Q 480 448 640 430 Q 780 414 900 430 L900 458 Q 760 442 620 456 Q 460 472 300 456 Q 150 442 0 456 Z" fill="url(#a5w)" opacity="0.75"/>
+      <g fill="#f0ddd6" opacity="0.85">
+        <polygon points="64,400 76,360 88,400"/><polygon points="88,400 96,374 106,400"/>
+        <polygon points="706,400 718,364 730,400"/><polygon points="730,400 738,378 748,400"/>
+        <polygon points="226,404 234,382 244,404"/><polygon points="604,402 612,378 622,402"/>
+      </g>
+      <g fill="#f8ece6" opacity="0.5">
+        <circle cx="180" cy="446" r="2.6"/><circle cx="430" cy="452" r="2.2"/><circle cx="690" cy="444" r="2.6"/>
+        <circle cx="820" cy="452" r="2.2"/><circle cx="330" cy="464" r="2.2"/>
+      </g>
+      <ellipse cx="450" cy="396" rx="580" ry="76" fill="#ffffff" filter="url(#a5f)" opacity="0.32"/>
+      <g fill="#1c0d0c">
+        <path d="M806 448 L806 412 Q 813 402 820 412 L820 448 Z"/>
+        <circle cx="813" cy="398" r="8"/>
+        <rect x="824" y="410" width="3.5" height="22"/>
+      </g>
+      <circle cx="831" cy="434" r="4" fill="#ffe6a8"/>
+      <ellipse cx="831" cy="434" rx="44" ry="28" fill="#ffd89a" opacity="0.14"/>
+    </svg>
+    <figcaption><b>五層 血染めの死海</b>。干上がった赤い海床に、浅い水だけが残っています。巨大な生き物の肋骨が門のように立ち、塩が白く析出しています。<b>輝晶の間の白からここで一気に赤へ振る</b>ので、落差が効きます。明るさはここから抜けていきます。</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 900 480" role="img" aria-label="六層・獄雷峡のキーアート。切り立った谷の底で、四足に二対の翼を持ち黒い雷を纏う竜">
+      <defs>
+        <linearGradient id="a6" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#33294a"/><stop offset="0.5" stop-color="#191325"/><stop offset="1" stop-color="#0b0812"/>
+        </linearGradient>
+        <linearGradient id="a6w" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#0a0710"/><stop offset="1" stop-color="#16101f"/>
+        </linearGradient>
+        <linearGradient id="a6w2" x1="1" y1="0" x2="0" y2="0">
+          <stop offset="0" stop-color="#0a0710"/><stop offset="1" stop-color="#16101f"/>
+        </linearGradient>
+        <radialGradient id="a6g" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#9a7fe0" stop-opacity="0.42"/><stop offset="1" stop-color="#6a4fa8" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="a6e" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/><stop offset="1" stop-color="#b9a3ff" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="a6f" x="-25%" y="-140%" width="150%" height="380%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.01 0.04" numOctaves="3" seed="53" result="n"/>
+          <feColorMatrix in="n" values="0 0 0 0 0.6  0 0 0 0 0.5  0 0 0 0 0.9  0 0 0 0.4 0" result="f"/>
+          <feComposite in="f" in2="SourceGraphic" operator="in" result="s"/>
+          <feGaussianBlur in="s" stdDeviation="14"/>
+        </filter>
+      </defs>
+      <rect width="900" height="480" fill="url(#a6)"/>
+      <ellipse cx="470" cy="240" rx="360" ry="220" fill="url(#a6g)" opacity="0.7"/>
+
+      <g fill="#07050c">
+        <path d="M470 120 C 432 96, 356 66, 268 60 C 180 54, 108 76, 60 116 C 132 100, 212 106, 286 128 C 356 148, 418 170, 456 186 Z"/>
+        <path d="M486 122 C 526 96, 604 66, 692 62 C 780 58, 848 82, 892 122 C 822 104, 742 110, 668 132 C 598 152, 538 174, 502 190 Z"/>
+        <path d="M456 200 C 414 194, 340 194, 268 214 C 196 234, 142 272, 114 316 C 178 280, 250 262, 318 258 C 382 254, 432 260, 462 268 Z"/>
+        <path d="M504 202 C 548 196, 620 198, 690 220 C 760 242, 810 280, 836 324 C 774 286, 704 266, 638 262 C 576 258, 528 264, 500 272 Z"/>
+      </g>
+
+      <g fill="#050308">
+        <path d="M478 148 C 508 148, 528 170, 532 200 C 536 236, 528 274, 518 306 C 546 320, 572 348, 580 384 L 552 384 C 540 356, 516 336, 486 332 C 456 336, 432 356, 420 384 L 392 384 C 400 348, 426 320, 454 306 C 444 274, 436 236, 440 200 C 444 170, 464 148, 478 148 Z"/>
+        <path d="M486 150 C 486 126, 500 106, 520 96 C 512 112, 512 128, 518 142 C 536 136, 556 140, 570 152 L 548 166 C 534 158, 516 158, 504 166 Z"/>
+        <path d="M470 150 C 464 124, 448 106, 426 98 C 436 114, 438 130, 432 144 C 414 140, 396 146, 384 158 L 406 170 C 420 162, 438 160, 452 168 Z"/>
+        <path d="M580 384 C 612 374, 664 366, 724 372 C 660 386, 618 404, 596 424 Z"/>
+        <path d="M392 384 C 360 374, 308 368, 248 376 C 312 388, 352 406, 374 426 Z"/>
+        <path d="M518 306 C 560 310, 618 322, 668 348 L 656 364 C 610 342, 560 330, 516 326 Z"/>
+        <path d="M454 306 C 412 310, 356 324, 308 350 L 320 366 C 364 344, 412 332, 456 326 Z"/>
+        <path d="M486 332 C 470 350, 462 376, 462 400 L 510 400 C 510 376, 502 350, 486 332 Z"/>
+      </g>
+
+      <g fill="#050308">
+        <path d="M498 110 C 522 100, 552 98, 576 108 L 568 76 L 592 96 L 600 62 L 612 92 C 640 84, 666 88, 684 104 C 656 106, 632 116, 616 132 C 596 152, 570 162, 542 158 C 520 154, 504 136, 498 110 Z"/>
+        <polygon points="600,62 606,30 616,66"/>
+        <polygon points="568,76 566,44 582,80"/>
+      </g>
+
+      <g stroke="#000000" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M330 70 L 300 118 L 340 128 L 302 178"/>
+        <path d="M636 62 L 668 112 L 626 124 L 664 172"/>
+        <path d="M242 340 L 290 386 L 252 398 L 300 442"/>
+        <path d="M690 336 L 640 382 L 680 394 L 632 438"/>
+        <path d="M452 34 L 428 74 L 466 84 L 436 126"/>
+      </g>
+      <g stroke="#9a7fe0" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.8">
+        <path d="M330 70 L 300 118 L 340 128 L 302 178"/>
+        <path d="M636 62 L 668 112 L 626 124 L 664 172"/>
+        <path d="M242 340 L 290 386 L 252 398 L 300 442"/>
+        <path d="M690 336 L 640 382 L 680 394 L 632 438"/>
+        <path d="M452 34 L 428 74 L 466 84 L 436 126"/>
+      </g>
+
+      <circle cx="560" cy="122" r="4.4" fill="#ffffff"/>
+      <circle cx="560" cy="122" r="17" fill="url(#a6e)"/>
+      <circle cx="596" cy="126" r="3" fill="#e4dcff" opacity="0.8"/>
+
+      <path d="M0 0 L 196 0 C 182 60, 208 108, 176 168 C 148 220, 170 286, 146 350 C 126 404, 142 442, 120 480 L 0 480 Z" fill="url(#a6w)"/>
+      <path d="M900 0 L 704 0 C 720 58, 692 106, 726 166 C 756 218, 732 284, 758 348 C 778 402, 760 442, 784 480 L 900 480 Z" fill="url(#a6w2)"/>
+      <path d="M196 0 C 182 60, 208 108, 176 168 C 148 220, 170 286, 146 350 C 126 404, 142 442, 120 480" fill="none" stroke="#6a4fa8" stroke-width="1.8" opacity="0.45"/>
+      <path d="M704 0 C 720 58, 692 106, 726 166 C 756 218, 732 284, 758 348 C 778 402, 760 442, 784 480" fill="none" stroke="#6a4fa8" stroke-width="1.8" opacity="0.45"/>
+      <g stroke="#000000" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M118 148 L 156 190 L 124 200 L 162 244"/>
+        <path d="M782 136 L 746 178 L 778 188 L 740 232"/>
+      </g>
+      <g stroke="#9a7fe0" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.6">
+        <path d="M118 148 L 156 190 L 124 200 L 162 244"/>
+        <path d="M782 136 L 746 178 L 778 188 L 740 232"/>
+      </g>
+
+      <ellipse cx="450" cy="428" rx="520" ry="72" fill="#ffffff" filter="url(#a6f)" opacity="0.26"/>
+      <path d="M0 480 L0 440 Q 160 420 320 438 Q 480 456 640 434 Q 780 416 900 436 L900 480 Z" fill="#060410"/>
+      <g fill="#050308">
+        <path d="M232 456 L232 422 Q 239 412 246 422 L246 456 Z"/>
+        <circle cx="239" cy="408" r="8"/>
+        <rect x="250" y="420" width="3.5" height="22"/>
+      </g>
+      <circle cx="257" cy="444" r="4" fill="#ffe6a8"/>
+      <ellipse cx="257" cy="444" rx="44" ry="28" fill="#ffd89a" opacity="0.14"/>
+    </svg>
+    <figcaption><b>六層 獄雷峡</b> <span class="rb">ごくらいきょう</span>。両側が切り立った谷です。四足で立ち、二対の翼を広げた欧州型の竜が谷いっぱいを占め、<b>翼の先が崖に食い込んで</b>います。まわりを走る獄雷は「黒い雷」なので背景より暗く抜け、縁だけが菫に光ります。谷底の小さな人影が探索者です。</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 900 480" role="img" aria-label="七層・果てなき世界のキーアート。上下も端も無い澱の空洞">
+      <defs>
+        <radialGradient id="a7" cx="0.5" cy="0.5" r="0.62">
+          <stop offset="0" stop-color="#4a3790"/><stop offset="0.38" stop-color="#1e1854"/><stop offset="1" stop-color="#05060e"/>
+        </radialGradient>
+        <radialGradient id="a7c" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#e2d8ff" stop-opacity="0.95"/><stop offset="1" stop-color="#8b6fd0" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="a7f" x="-25%" y="-40%" width="150%" height="180%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.006 0.012" numOctaves="4" seed="67" result="n"/>
+          <feColorMatrix in="n" values="0 0 0 0 0.52  0 0 0 0 0.4  0 0 0 0 0.95  0 0 0 0.42 0" result="f"/>
+          <feComposite in="f" in2="SourceGraphic" operator="in" result="s"/>
+          <feGaussianBlur in="s" stdDeviation="10"/>
+        </filter>
+      </defs>
+      <rect width="900" height="480" fill="url(#a7)"/>
+      <ellipse cx="450" cy="240" rx="480" ry="240" fill="#ffffff" filter="url(#a7f)" opacity="0.5"/>
+      <g fill="none" stroke="#6a4fa8" stroke-width="2" opacity="0.4">
+        <ellipse cx="450" cy="240" rx="330" ry="86"/>
+        <ellipse cx="450" cy="240" rx="240" ry="150" transform="rotate(26 450 240)"/>
+        <ellipse cx="450" cy="240" rx="240" ry="150" transform="rotate(-26 450 240)"/>
+        <ellipse cx="450" cy="240" rx="150" ry="196"/>
+      </g>
+      <g fill="#b9a3ff" opacity="0.5">
+        <polygon points="140,178 148,144 160,182"/><polygon points="740,190 748,152 760,194"/>
+        <polygon points="240,352 248,322 258,356"/><polygon points="660,340 668,306 678,344"/>
+        <polygon points="336,110 342,84 352,114"/><polygon points="560,392 568,362 578,396"/>
+        <polygon points="820,296 826,272 836,300"/><polygon points="76,308 82,286 92,312"/>
+      </g>
+      <g fill="#e2d8ff" opacity="0.65">
+        <circle cx="210" cy="250" r="2.6"/><circle cx="330" cy="180" r="2.2"/><circle cx="600" cy="266" r="2.6"/>
+        <circle cx="700" cy="120" r="2.2"/><circle cx="180" cy="400" r="2.2"/><circle cx="790" cy="400" r="2.6"/>
+        <circle cx="500" cy="96" r="2.2"/><circle cx="420" cy="410" r="2.6"/>
+      </g>
+      <circle cx="450" cy="240" r="58" fill="#0d0a22"/>
+      <circle cx="450" cy="240" r="58" fill="none" stroke="#b9a3ff" stroke-width="2.6" opacity="0.7"/>
+      <circle cx="450" cy="240" r="30" fill="url(#a7c)" opacity="0.8"/>
+      <circle cx="450" cy="240" r="9" fill="#ffffff" opacity="0.9"/>
+      <g fill="#07060f">
+        <path d="M122 296 L122 262 Q 129 252 136 262 L136 296 Z"/>
+        <circle cx="129" cy="248" r="8"/>
+        <rect x="140" y="260" width="3.5" height="22"/>
+      </g>
+      <circle cx="147" cy="284" r="4" fill="#ffe6a8"/>
+      <ellipse cx="147" cy="284" rx="40" ry="26" fill="#ffd89a" opacity="0.12"/>
+    </svg>
+    <figcaption><b>七層 果てなき世界</b>。床も天井も壁もありません。澱そのものでできた空洞で、探索者は浮いています。<b>上下が分からないこと自体が最終層の異常さ</b>です。中央の穴が澱の湧き口で、最終ボスの居場所です。</figcaption>
+  </figure>
+
+  <h2>4. 層の一覧</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>層</th><th>地域</th><th>明るさ</th><th>主な色</th><th>光源</th><th>ボス</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1</td><td class="nm">燦光の樹海<br><span class="rb">さんこうのじゅかい</span></td><td class="state yes">明るい</td>
+          <td><span class="sw" style="background:#6d8a4a"></span> 若草 + 陽</td>
+          <td>天井の大穴からの陽光</td><td>—</td>
+        </tr>
+        <tr>
+          <td>2</td><td class="nm">沈んだ都</td><td class="state yes">明るい</td>
+          <td><span class="sw" style="background:#c4ae85"></span> 砂と白石</td>
+          <td>崩れた天井からの斜光</td><td>—</td>
+        </tr>
+        <tr>
+          <td>3</td><td class="nm">大黒蛇の住処<br><span class="rb">だいこくじゃのすみか</span></td><td class="state maybe">薄暗い</td>
+          <td><span class="sw" style="background:#282242"></span> 藍紫</td>
+          <td>大蛇の背の結晶</td><td><strong>大黒蛇 セルク</strong></td>
+        </tr>
+        <tr>
+          <td>4</td><td class="nm">輝晶の間<br><span class="rb">きしょうのま</span></td><td class="state yes">最も明るい</td>
+          <td><span class="sw" style="background:#b9bef0"></span> 白と淡菫</td>
+          <td>結晶そのもの。全方向</td><td>—</td>
+        </tr>
+        <tr>
+          <td>5</td><td class="nm">血染めの死海</td><td class="state maybe">中</td>
+          <td><span class="sw" style="background:#4e2523"></span> 緋と塩白</td>
+          <td>赤い靄の散乱光</td><td>—</td>
+        </tr>
+        <tr>
+          <td>6</td><td class="nm">獄雷峡<br><span class="rb">ごくらいきょう</span></td><td class="state no">暗い</td>
+          <td><span class="sw" style="background:#16111f"></span> 黒紫</td>
+          <td>獄雷の縁の光だけ</td><td><strong>獄竜 ガルド</strong></td>
+        </tr>
+        <tr>
+          <td>7</td><td class="nm">果てなき世界</td><td class="state no">最も暗い</td>
+          <td><span class="sw" style="background:#191545"></span> 紺と菫</td>
+          <td>澱そのものの発光</td><td><strong>澱の胎 オルド</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose">名前が「大黒蛇の住処」と「獄雷峡」になったので、<strong>3 層と 6 層はボスの名前が層の名前になっています</strong>。降りる前から何がいるか分かるので、手記にその層の名を書いた時点で身構えられます。</p>
+
+  <h2>5. 二体の大物</h2>
+
+  <h3>三層 大黒蛇 セルク</h3>
+
+  <p class="prose">層名が「大黒蛇の住処」になったので、ボス名も大黒蛇に合わせました。<strong>技と役割は変えていません。</strong>動かない、場を狭める、結晶の発生源、の 3 つです。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>要素</th><th>内容</th><th>前回からの変更</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">姿</td><td>壁からうねり出た黒い巨躯。とぐろを巻き、鎌首だけを下ろす。背に結晶</td><td class="state maybe">名前と鱗の色</td></tr>
+        <tr><td class="nm">移動</td><td>しない。ムーブ属性の行動を持たない</td><td class="state no">変更なし</td></tr>
+        <tr><td class="nm">晶囲</td><td>付いている間、遠へ退けない</td><td class="state no">変更なし</td></tr>
+        <tr><td class="nm">鎌首の一撃（A・近〜中）</td><td>届く範囲が広い一撃</td><td class="state no">変更なし</td></tr>
+        <tr><td class="nm">結晶の吐息（A・遠）</td><td>遠へ届く。晶蝕を付ける</td><td class="state no">変更なし</td></tr>
+        <tr><td class="nm">囲い込み（Sk・中）</td><td>晶囲を付ける</td><td class="state no">変更なし</td></tr>
+        <tr><td class="nm">第 2 段階</td><td>HP 半分で背の結晶が砕け、破片が降る</td><td class="state no">変更なし</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>六層 獄竜 ガルド</h3>
+
+  <p class="prose">欧州型の四足・二対の翼・黒い雷です。層が「間」から「峡」になったので、<strong>切り立った谷の底に置きました</strong>。翼を広げると谷幅をふさぐので、崖が定規の役をして大きさが伝わります。</p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>要素</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">体つき</td><td>四足。胸を張って立つ。前脚は太く、後脚は跳ねる形。長い尾</td></tr>
+        <tr><td class="nm">翼</td><td>二対・四枚。上の対が大きく高く、下の対がやや小さく後ろ向きに広がる</td></tr>
+        <tr><td class="nm">獄雷</td><td>体の周りと崖に走る黒い雷。背景より暗く抜け、縁だけが菫に光る</td></tr>
+        <tr><td class="nm">角</td><td>後ろへ反る二本。頭部は細長く、顎が重い</td></tr>
+        <tr><td class="nm">場所</td><td>谷底。左右の崖が迫り、上は見えない</td></tr>
+        <tr><td class="nm">絵としての狙い</td><td>暗い谷で「黒より黒いもの」が動く。灯りを当てても照らし返さない</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose">戦闘の役割はまだ決めていません。3 層の大黒蛇が「動かない」だったので、<strong>獄竜は逆に「動きすぎる」敵にする</strong>案を出しておきます。翼があるので間合いを毎ターン変え、獄雷で離れた間合いにも触れる。読み合いの軸が大黒蛇と正反対になります。谷という地形も効きます。左右が崖なので、退ける方向が限られます。数値と行動表は cards レーンの領分です。</p>
+
+  <h2>6. ComfyUI 用のプロンプト</h2>
+
+  <p class="prose">7 層ぶん置きます。モデルは survey の推奨（Illustrious XL v2.0 か Animagine XL 4.0）を想定しました。</p>
+
+  <h3>共通</h3>
+  <pre>Negative: photo, 3d render, text, watermark, signature, gore, blood splatter, horror, creepy, extra limbs, lowres
+Size: 1536 x 864 / Steps: 28 / CFG: 5.5 / Sampler: dpmpp_2m karras
+共通の語: dark fantasy game background, painterly, layered depth, volumetric light, cinematic composition, no characters</pre>
+
+  <h3>1 層 燦光の樹海</h3>
+  <pre>sunken ancient forest inside a vast cavern, colossal trees, bright green canopy, strong golden sunbeams pouring through a huge collapsed ceiling opening, vivid saturated foliage, low luminous ground mist, ferns and moss, warm and alive, dark fantasy game background, painterly, layered depth, volumetric light, cinematic composition, no characters</pre>
+
+  <h3>2 層 沈んだ都</h3>
+  <pre>buried ruins of an ancient civilization, pale limestone colonnade half-swallowed by golden sand, broken lintel and toppled capitals, strong warm shaft of daylight through a ceiling breach, bright airy dusty atmosphere, small clusters of violet crystal sprouting at the base of one column, dark fantasy game background, painterly, layered depth, volumetric light, cinematic composition, no characters</pre>
+
+  <h3>3 層 大黒蛇の住処</h3>
+  <pre>dim indigo cavern, a colossal black serpent coiled and half-fused into the rock wall, glossy black scales, its long neck lowered, luminous violet crystal growing along its spine as the only light source, scattered small glowing crystals on the floor, deep shadow with narrow pools of lilac light, restrained and quiet, dark fantasy game background, painterly, layered depth, volumetric light, cinematic composition, no characters</pre>
+
+  <h3>4 層 輝晶の間</h3>
+  <pre>vast cathedral-like hall completely filled with towering luminous crystal columns, arched crystal ceiling, blinding white and pale lilac glow, light coming from the crystals themselves, backlit silhouettes, floating glittering motes, bright high key lighting, overwhelming radiance, dark fantasy game background, painterly, layered depth, volumetric light, cinematic composition, no characters</pre>
+
+  <h3>5 層 血染めの死海</h3>
+  <pre>dried up crimson seabed, colossal rib cage of an ancient sea creature standing like a gate, shallow pools of dark red brine, white salt crystals blooming on the cracked floor, red haze in the air, desolate, muted crimson and rust palette, dark fantasy game background, painterly, layered depth, volumetric light, cinematic composition, no characters</pre>
+
+  <h3>6 層 獄雷峡</h3>
+  <pre>narrow pitch dark ravine with sheer towering cliffs on both sides, a colossal european dragon standing on four legs at the bottom with two pairs of wings spread wide enough to touch both cliff walls, wreathed in black lightning that reads darker than the background with only violet edges glowing, long horns swept back, near total darkness, violet rim light, ominous and immense, dark fantasy game background, painterly, layered depth, volumetric light, cinematic composition, no characters</pre>
+
+  <h3>7 層 果てなき世界</h3>
+  <pre>boundless void with no floor or ceiling, deep navy and violet abyss, drifting shards of crystal suspended in midair, a luminous well of violet light at the center, disorienting weightless space, faint swirling currents, dark fantasy game background, painterly, layered depth, volumetric light, cinematic composition, no characters</pre>
+
+  <div class="callout prose"><strong>生成した絵はそのまま使えません</strong>。survey の工程どおり、台帳（<code>Docs/art/asset-ledger.csv</code>）に行を作り、モデルのライセンスと <code>similarity_check</code> を埋めてから製品用になります。試作の仮置きは <code>pending</code> のままで構いません。</div>
+
+  <h2>7. 置いた仮定</h2>
+  <ul class="prose">
+    <li>読みを <strong>だいこくじゃのすみか</strong> / <strong>きしょうのま</strong> / <strong>ごくらいきょう</strong> / <strong>さんこうのじゅかい</strong> と置きました。別の読みなら直します。</li>
+    <li>3 層のボス名を「大蛇 セルク」から「<strong>大黒蛇 セルク</strong>」に揃えました。層名と同じ語を使うほうが、手記で層名を見たときに何がいるか分かります。</li>
+    <li>6 層が「峡」になったので、地形を部屋から谷に変えました。竜の翼が崖に届く構図にしています。</li>
+    <li>4 層が「間」になったので、天井の弧を薄く入れて大広間にしました。柱の林という印象は残しています。</li>
+    <li>獄竜の戦闘での役割（動きすぎる敵）は私の案です。数値と行動表は cards レーンの領分なので、方向だけ出しています。</li>
+  </ul>
+
+  <h2>8. 未確認のこと</h2>
+  <ul class="prose">
+    <li>4 層の明るさで、戦闘の UI（HP・スタミナ・カード）が読めるか。白い背景に白い UI を載せると破綻します。<strong>4 層だけ UI の地を暗く反転する必要がある</strong>かもしれません。</li>
+    <li>獄雷を「背景より暗い」で描くと、Unity の描画で本当に成立するか。加算合成ではなく減算か乗算が要ります。未検証です。</li>
+    <li>5 層の赤が、HP バーの緋 <code>#c2483f</code> と混ざらないか。背景が赤い層では HP の色を変える必要があるかもしれません。</li>
+    <li>今回の 7 枚は、公開後に画面で確かめられていません。埋め込み表示のスクロールが効かず、断面図の上部しか見られませんでした。形が崩れていたら直します。</li>
+  </ul>
+
+  <h2>9. 次に判断が要る点</h2>
+  <ul class="prose">
+    <li><strong>2 層の名前</strong>。他の 6 つが漢語調（燦光 / 大黒蛇 / 輝晶 / 血染め / 獄雷 / 果てなき）に揃ったので、「沈んだ都」だけ調子が違います。揃えるならここです。</li>
+    <li><strong>獄竜の固有名</strong>。「ガルド」でよいか。</li>
+    <li><strong>4 層と 5 層の UI</strong>。明るい層と赤い層で UI の色をどう守るか。これは design レーンで詰められます。</li>
+    <li><strong>ComfyUI の導入</strong>。1〜4 時間でこうだいさんの手が要ります。済めば 7 層ぶんの背景を実際に生成できます。</li>
+    <li><strong>5 階層から 7 階層への変更</strong>。ノードマップと瘴気の濃度は dungeon レーン、敵の割り当ては cards レーンです。Issue を 2 本切るのが早いです。</li>
+  </ul>
+</div>
