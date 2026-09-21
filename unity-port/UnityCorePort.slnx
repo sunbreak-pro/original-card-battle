@@ -1,6 +1,8 @@
 <Solution>
   <Project Path="BattleCore.Tests/BattleCore.Tests.csproj" />
   <Project Path="BattleCore/BattleCore.csproj" />
+  <Project Path="Depiction.Bridge.Tests/Depiction.Bridge.Tests.csproj" />
+  <Project Path="Depiction.Bridge/Depiction.Bridge.csproj" />
   <Project Path="Depiction.Script.Tests/Depiction.Script.Tests.csproj" />
   <Project Path="Depiction.Script/Depiction.Script.csproj" />
 </Solution>

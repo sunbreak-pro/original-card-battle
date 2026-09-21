@@ -19,6 +19,9 @@ namespace BattleCore
         public static BattleSetup Slice() => new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build());
     }
 
+    /// <summary>The settled numbers a held card would produce. See <see cref="TurnLoop.Preview"/>.</summary>
+    public sealed record PlayPreview(bool TraitHolds, bool Attacks, int RawPower, int Damage, int GuardGain);
+
     /// <summary>Why a card cannot be played right now. None when it can.</summary>
     public enum PlayRefusal
     {
@@ -110,6 +113,28 @@ namespace BattleCore
             var card = FindInHand(state, instanceId);
             if (card == null) return PlayRefusal.NotInHand;
             return Combat.CanPay(card.Def.Cost, state.Player.Stamina) ? PlayRefusal.None : PlayRefusal.NotEnoughStamina;
+        }
+
+        /// <summary>
+        /// What playing this card would do right now, without playing it: whether its trait holds,
+        /// the raw power, what gets past the opponent's Guard, and the Guard it would give. The screen
+        /// shows these while a card is held (the lamp, the predicted number), so it never has to
+        /// work a rule out by itself. Null when the card is not in the hand.
+        /// </summary>
+        public static PlayPreview? Preview(BattleState state, string instanceId)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            var card = FindInHand(state, instanceId);
+            if (card == null) return null;
+
+            var def = card.Def;
+            var outcome = Traits.Evaluate(def.Trait, new TraitContext(
+                state.Player.Position, state.Enemy.Position, state.Enemy.Guard, state.Player.Stamina - def.Cost));
+
+            bool attacks = def.Attributes.HasFlag(BattleAttribute.Attack);
+            int raw = attacks ? Combat.ComputeRawPower(def.Face.Power, outcome.PowerBonus) : 0;
+            int damage = attacks ? Combat.ApplyGuard(raw, state.Enemy.Guard).Damage : 0;
+            return new PlayPreview(outcome.Triggered, attacks, raw, damage, def.Face.Guard + outcome.GuardBonus);
         }
 
         public static StepResult PlayCard(BattleState state, string instanceId, IRng rng)
