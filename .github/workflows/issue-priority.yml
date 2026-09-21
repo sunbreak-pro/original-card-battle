@@ -1,0 +1,30 @@
+name: issue-priority
+
+# Every issue carries exactly one prio: label (see .claude/skills/issue-dispatch).
+# Issues opened from a template get it from the 優先順位 dropdown; anything else gets a reminder.
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            if (issue.labels.some((l) => /^prio:[1-4]$/.test(l.name))) return;
+            const target = { owner: context.repo.owner, repo: context.repo.repo, issue_number: issue.number };
+            const picked = /###\s*優先順位\s+prio:([1-4])/.exec(issue.body ?? '');
+            if (picked) {
+              await github.rest.issues.addLabels({ ...target, labels: ['prio:' + picked[1]] });
+              return;
+            }
+            await github.rest.issues.createComment({
+              ...target,
+              body: '`prio:` ラベルが付いていません。`prio:1`〜`prio:4` のどれか 1 つを付けてください（`npm run issues:next -- --check` で検出されます）。',
+            });

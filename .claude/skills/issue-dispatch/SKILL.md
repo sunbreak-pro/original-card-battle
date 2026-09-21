@@ -11,17 +11,29 @@ description: プロダクトの課題を GitHub Issue として起票し、ラ�
 
 - **正本 = GitHub Issues**（`gh -R sunbreak-pro/original-card-battle`）。`docs/vision/plans/` の計画書は大型仕様の詳細だけに使い、**作業分配・進捗追跡の台帳 .md は新規作成しない**
 - **消化 = `loop-triage` → `loop-implement`**。本スキルは実装しません
-- **並べ直し = `issue-prompter`**。本スキルは着手順を決めません
+- **並べ直し = `issue-prompter`**。本スキルは `prio:` を付けるところまでで、レーンへの配り方は決めません
 
 ## ラベル（`gh label list` が正本）
 
 | 系統      | 値                                                                             | 必須             |
 | --------- | ------------------------------------------------------------------------------ | ---------------- |
 | `type:`   | `bug` / `feature` / `task` / `human`                                           | 必須             |
+| `prio:`   | `1` / `2` / `3` / `4`                                                          | 必須（1 つだけ） |
 | `sev:`    | `blocking` / `important` / `minor`                                             | 任意             |
 | `area:`   | `battle` `cards` `enemy` `dungeon` `world` `ui` `art` `unity` `docs` `tooling` | 任意（複数可）   |
 | `lane:`   | `cards` `design` `battle` `dungeon` `audit`                                    | 任意（1 つだけ） |
 | `status:` | `monitoring` / `workaround` / `frozen`                                         | 任意             |
+
+**`prio:` は着手の順番**です（2026-09-21 こうだいさん決定、#66）。`sev:` は影響の大きさで、別の軸として併用します。
+
+| ラベル   | 意味                 | 目安                                           |
+| -------- | -------------------- | ---------------------------------------------- |
+| `prio:1` | 最優先。いま着手する | ほかの作業を止めている、または次の一手そのもの |
+| `prio:2` | 次に着手する         | `prio:1` が終われば始められる                  |
+| `prio:3` | その後               | 設計や判断だけ並行で進められるものを含む       |
+| `prio:4` | いつか               | 前提が遠い。着手時に見直す                     |
+
+起票するときに必ず 1 つ付けます。迷ったら「依存先の `prio:` より小さい数字を付けない」を基準にします。付け忘れは `npm run issues:next -- --check` と `.github/workflows/issue-priority.yml` が検出します。**見直す時機**は、親 Issue を閉じたときと、縦切りや束の振り返りのときです。
 
 **`area:world` は世界観・設定・物語・用語**です。`design` レーンへ流れます。敵の数値とロースターは `area:enemy`（`cards` レーン）のままにします。
 
@@ -70,7 +82,7 @@ grep -rn "<keyword>" .claude/docs/known-issues/INDEX.md
 ```bash
 gh issue create -R sunbreak-pro/original-card-battle \
   --title "<素のタイトル>" \
-  --label "type:feature,area:battle,sev:important" \
+  --label "type:feature,prio:2,area:battle,sev:important" \
   --body-file <(cat)
 ```
 

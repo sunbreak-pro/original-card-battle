@@ -30,6 +30,7 @@ description: セッション開始時に original-card-battle のコンテキス
   gh issue list -R sunbreak-pro/original-card-battle --state open --limit 30
   ```
 
+- **次にやることは `npm run issues:next`**（`prio:1`〜`4` → `sev:` → 番号の順。`--lane <slug>` でレーンに絞る）
 - 過去の知見は `gh issue list --state closed --search <keyword>` と `.claude/docs/known-issues/INDEX.md` の grep の両輪
 - 判断待ちがあれば `.claude/comm/decisions/` と `ANSWERS.md`
 
