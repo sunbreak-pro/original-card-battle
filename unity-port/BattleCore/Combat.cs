@@ -47,6 +47,20 @@ namespace BattleCore
         public static int ReserveGuard(int staminaLeft) =>
             staminaLeft >= Constants.ReserveThreshold ? Constants.ReserveGuard : 0;
 
+        /// <summary>
+        /// §2.1 / §7.1: where a move face leaves its owner. 近間へ / 遠間へ land on the named side (and
+        /// change nothing when already there); 反転 always lands on the other side. A combatant
+        /// without a position stays without one. Whether the move is allowed at all (鈍足) is the
+        /// caller's question — see <see cref="Statuses.CanSwitchPosition"/>.
+        /// </summary>
+        public static Position? MoveResult(Position? current, Face face)
+        {
+            if (face == null) throw new ArgumentNullException(nameof(face));
+            if (!current.HasValue) return null;
+            if (face.MoveTo.HasValue) return face.MoveTo.Value;
+            return face.FlipsSelfPosition ? current.Value.Opposite() : current;
+        }
+
         /// <summary>§3: a card can only be played if its cost is payable in full.</summary>
         public static bool CanPay(int cost, int stamina) => stamina >= cost;
 
