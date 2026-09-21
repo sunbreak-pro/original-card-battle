@@ -39,10 +39,29 @@ unity-port/
 │   ├── PositionTests.cs        近間 / 遠間の 2 値・push・位置なしの敵
 │   ├── TraitTests.cs           特性 4 条件 × 3 効果
 │   ├── StatusTests.cs          鈍足のスタックと位置の封じ
+│   ├── PolearmTests.cs         長柄の歪み兵の数値・決定木 2 枝・スタミナ不足の落ち方・押し引き
 │   ├── CardsTests.cs           手札 5 枚・全捨て・再シャッフル・同じ種で同じ結果
 │   ├── PrototypeDeckTests.cs   試作デッキ 10 種の数値が正本と一致・選定の条件・重撃と向きのあるムーブ
 │   └── Fixtures/
-│       └── parity-fixture.json v2 移植の証跡（下記「パリティ」参照。テストは読まない）
+│       └── parity-fixture.json TS 実装を FixedRng(0) 相当で走らせた正解データ
+├── DungeonCore/                探索コア（netstandard2.1 / C# 9・engine-free・BattleCore を参照しない）
+│   ├── IRng.cs                 SplitMix64。同じ種なら .NET でも Mono でも同じ地図
+│   ├── NodeKind.cs             ノードの種類（dungeon_exploration_v4.md §2.1 の残す 13 件）
+│   ├── LayerMapSpec.cs         1 階層の形（行の幅・種類の数・分岐の出やすさ）
+│   ├── MapGenerator.cs         仕様 + 種 → 地図
+│   ├── MapValidator.cs         到達できないノードが無いことなどの検査
+│   ├── LayerMap.cs             生成された地図（ノード・辺・指紋）
+│   ├── SevenLayers.cs          七層の濃度・刻限・ノード数（seven_layers_v4.md §2）
+│   ├── Miasma.cs               蓄積・20% ごとの最大スタミナ・和らげる手段の計算
+│   ├── RunLoadout.cs           ツール 3 枠・消耗品 3 枠の口（中身は DungeonContent）
+│   ├── ExplorationState.cs     1 階層ぶんの状態（不変）
+│   └── ExplorationReducer.cs   刻限と瘴気の遷移
+├── DungeonCore.Tests/          NUnit（net10.0）。種の再現・到達性・七層を通した潜行
+├── DungeonContent/             持ち物の目録（netstandard2.1 / C# 9・データだけ・参照ゼロ）
+│   ├── ItemEffect.cs           効果の種類と、どちらのコアが読むか
+│   ├── ItemCatalogue.cs        ツール 8 種 / 消耗品 5 種（tools_and_consumables_v4.md）
+│   └── Loadout.cs              3 枠 + 3 枠の選択と入れ替えの規則
+├── DungeonContent.Tests/       NUnit（net10.0）。枠の規則と目録の不変条件
 ├── tools/
 │   ├── gen-parity.mjs          fixture を live TS から再生成
 │   └── parity-check.mjs        再生成 → ドリフト検出 → dotnet test（ワンコマンド）
@@ -50,19 +69,22 @@ unity-port/
 └── PHASE3-KICKOFF.md           Phase 3（実 Unity + UGUI）の Windows 手順 + MCP 選定
 ```
 
-`BattleCore` は Unity 2021.2+ がそのままコンパイルできる設定（netstandard2.1 / LangVersion 9.0 / ImplicitUsings disable / Nullable enable）で書いています。将来 `Assets/Core/` へコピーしても無改変で通ることを狙っています。
+**`DungeonCore` は `BattleCore` を参照しません**（2026-09-21、Issue #97）。戦闘コアは battle レーン、探索コアは dungeon レーンが書くので、片方の作り直しがもう片方のビルドを壊さないように切り離しています。瘴気から最大スタミナを引く規則は一時期どちらにもありましたが、#69 が `BattleCore` 側を落としたので、いまは `DungeonCore.Miasma` だけが持ちます。`IRng` は同じ形のものが両方にあり、まとめるかどうかは探索と戦闘を繋ぐ Issue #99 で決めます。
 
-## 骨の並び（#69 時点）
+**`DungeonContent` はどのコアも参照しません**（2026-09-21、Issue #100）。持ち物の目録はデータだけなので、探索コアからも戦闘コアからも出立の画面からも、余計なものを引き連れずに読めます。効果を実際に適用するのは読む側です。
+
+`BattleCore` は Unity 2021.2+ がそのままコンパイルできる設定（netstandard2.1 / LangVersion 9.0 / ImplicitUsings disable / Nullable enable）で書いています。将来 `Assets/Core/` へコピーしても無改変で通ることを狙っています。`BattleStore` / `IBattleView` も MonoBehaviour 非依存の純 C# なので、この dotnet ライブラリで型・テストごと検証できます。
 
 いずれも状態を持たない純関数です。状態を進めるのはターン進行（#72）の仕事で、まだありません。
 
 - **型と数値**: `Types.cs`（属性・位置・面・特性・カードと敵行動・`BattleState`）/ `Constants.cs` / `Columns.cs`。
-- **計算**: `Combat.cs`（`(面 + 特性) → 丸め → − Guard`、構え、回復とドローの clamp）/ `Traits.cs`（条件 4 語 × 効果 4 語。重撃は #71 で追加）/ `Statuses.cs`（スタックと減り方 2 型）。
-- **カード**: `Cards.cs`（デッキ生成・シャッフル・ドロー・全捨て・20〜40 と同種 3 枚の検証）。乱数は `IRng` 注入だけで、同じ種なら同じ並びになります。`CardCatalog.cs` は `swordsman_cards_v4.md` の数値をそのまま写したデータで、`PrototypeDeck.Build()` が 10 種 × 2 = 20 枚を返します。#51 は `CardCatalog.All` に行を足して 80 種へ広げます。
+- **計算**: `Combat.cs`（`(面 + 特性) → 丸め → − Guard`、構え、回復とドローの clamp）/ `Traits.cs`（条件 4 語 × 効果 3 語）/ `Statuses.cs`（スタックと減り方 2 型）。
+- **敵**: `Enemies.cs`（敵データ。コードに直書きせずレコードの一覧で持ち、決定木が知らない行動 id を指していたら読み込み時に弾きます）/ `EnemyAi.cs`（決定木を上から見て払える最初の行動を取る。予兆はコミット式で、払えなくなったら安い行動へ替えずに休みます）。#51 は `Enemies.All` に行を足すだけで 12 体へ広げられます。
+- **カード**: `Cards.cs`（デッキ生成・シャッフル・ドロー・全捨て・20〜40 と同種 3 枚の検証）。乱数は `IRng` 注入だけで、同じ種なら同じ並びになります。
 
 `CardDef` と `EnemyActionDef` は同じ `Face` / `Trait` / 列の表から書けます。#70（敵データ）と #71（試作デッキ）は型を足さずにデータだけ足せます。特性の語彙を 12 × 10 へ広げる #48 も、enum に行を足して `Traits.Evaluate` の switch を伸ばすだけで済みます。
 
-**外してあるもの**: ターン進行（`BattleReducer`）、敵データ、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担い、BattleCore に依存しません。
+**外してあるもの**: ターン進行（`BattleReducer`）、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担い、BattleCore に依存しません。
 
 ## 乱数と丸め
 
