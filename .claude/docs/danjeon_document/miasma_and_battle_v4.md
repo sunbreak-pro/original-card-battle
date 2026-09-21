@@ -60,7 +60,7 @@
 
 ## 5.1 蓄積の正本は探索側へ移ります
 
-**瘴気の蓄積の規則は、これまで `battle_core_v3.md` §3.1 にありました。** 同節は「探索側の規則、ここに正を置く」と書いたうえで、濃度 1〜5 と階層 n の初期値、防瘴の面 -1、浄化の香 -10%、階層間の休憩は蓄積しない、を定めています。
+**瘴気の蓄積の規則は、これまで `battle_core_v3.md` §3.1 にありました。** 同節は「探索側の規則、ここに正を置く」と書いたうえで、濃度 1〜5 と階層 n の初期値、防瘴の面 -1、浄化の香 -10%、階層間の休憩は蓄積しない、を定めています。同じ値は数値表にも `MIASMA_DENSITY(n) = min(n, 5)` として載っています（`:304`）。
 
 **七層ぶんの数値は `seven_layers_v4.md` §2 が持ちます**（#130）。蓄積の式と和らげる手段の効き目は同節のままで、変えたのは濃度の決め方と刻限だけです（同書 §2.3）。
 
@@ -78,6 +78,7 @@
 | `battle_core_v4.md` §12            | 連戦モードの 濃度 × 3%。1 戦 = 2 刻限ぶんのほうが実際に近い（§3）         | battle  |
 | `battle_core_v4.md` §14 の未確定 3 | 「瘴気纏いが最大スタミナの例外として許容できるか」。探索側からは支障なし  | battle  |
 | `battle_core_v3.md` §3.1 | 瘴気の蓄積が五階層のまま。参照先を `seven_layers_v4.md` へ移す | battle |
+| `battle_core_v3.md:304` | `MIASMA_DENSITY(n) = min(n, 5)`。数値表のほうも五階層のまま | battle |
 | `BattleCore/Constants.cs` | `MiasmaStepPercent` / `MiasmaMaxPenalty` が両コアにある。**#69 で解消予定** | #69 |
 
 **いま同じ規則が 2 つのコアにあります。** `BattleCore.Combat.MiasmaStaminaPenalty` と `DungeonCore.Miasma.MaxStaminaPenalty` は同じ式です。**#69 が merge されると前者が消え、重複は自然に解けます**（§5.1）。`DungeonCore` は `BattleCore` を参照していないので、どちらが先に merge されてもビルドは壊れません。式は `MiasmaTests` の表で固定してあります。
