@@ -50,13 +50,15 @@ git worktree list
 
 `area:` からの既定（`lane:` が無いときだけ使う）:
 
-| area:                             | レーン    |
-| --------------------------------- | --------- |
-| `area:cards` `area:enemy`         | `cards`   |
-| `area:world` `area:ui` `area:art` | `design`  |
-| `area:battle` `area:unity`        | `battle`  |
-| `area:dungeon`                    | `dungeon` |
-| `area:docs` `area:tooling`        | `audit`   |
+| area:                      | レーン    |
+| -------------------------- | --------- |
+| `area:cards` `area:enemy`  | `cards`   |
+| `area:ui` `area:art`       | `design`  |
+| `area:battle` `area:unity` | `battle`  |
+| `area:dungeon`             | `dungeon` |
+| `area:docs` `area:tooling` | `audit`   |
+
+**`area:world` は既定のレーンを持ちません**（2026-09-21。世界観の持ち主は main）。`lane:` が無ければ「chat-main 采配」欄に出します。
 
 推測で宛先を埋めません。`git worktree list` に無い slug 宛の Issue も采配欄へ回します。
 

@@ -15,19 +15,19 @@ description: 本リポの multi-chat worktree 運用規約の正本。レーン�
 
 ## レーン一覧
 
-| slug      | 担当                                                                     | 宛先ラベル                                              | 主に触るパス                                                                                                                          |
-| --------- | ------------------------------------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `cards`   | カード設計・デッキ・習熟・敵ロースター                                   | `lane:cards`（既定 `area:cards` `area:enemy`）          | `src/constants/data/cards/`, `src/domain/cards/`, `docs/*_document/` のカード章                                                       |
-| `design`  | 世界観と見た目。世界設定・物語・用語と、UI / UX 設計・演出・立ち絵・素材 | `lane:design`（既定 `area:world` `area:ui` `area:art`） | `docs/vision/`, `docs/Overall_document/`, `docs/journal_document/`, `src/ui/`, `unity-port/**/View/`, `docs/art_document/`, `briefs/` |
-| `battle`  | 戦闘プログラム（C# の BattleCore が正）                                  | `lane:battle`（既定 `area:battle` `area:unity`）        | `unity-port/BattleCore/`, `unity-port/BattleCore.Tests/`, `src/domain/battles/`                                                       |
-| `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード                                     | `lane:dungeon`（既定 `area:dungeon`）                   | `src/domain/dungeon/`, 探索側の C# と設計書                                                                                           |
-| `audit`   | 監査。設計書と実装の整合、既知課題の棚卸し                               | `lane:audit`（既定 `area:docs` `area:tooling`）         | **書き込みなし**（下記）                                                                                                              |
+| slug      | 担当                                       | 宛先ラベル                                       | 主に触るパス                                                                    |
+| --------- | ------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `cards`   | カード設計・デッキ・習熟・敵ロースター     | `lane:cards`（既定 `area:cards` `area:enemy`）   | `src/constants/data/cards/`, `src/domain/cards/`, `docs/*_document/` のカード章 |
+| `design`  | 見た目。UI / UX 設計・演出・立ち絵・素材   | `lane:design`（既定 `area:ui` `area:art`）       | `src/ui/`, `unity-port/**/View/`, `docs/art_document/`, `briefs/`               |
+| `battle`  | 戦闘プログラム（C# の BattleCore が正）    | `lane:battle`（既定 `area:battle` `area:unity`） | `unity-port/BattleCore/`, `unity-port/BattleCore.Tests/`, `src/domain/battles/` |
+| `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード       | `lane:dungeon`（既定 `area:dungeon`）            | `src/domain/dungeon/`, 探索側の C# と設計書                                     |
+| `audit`   | 監査。設計書と実装の整合、既知課題の棚卸し | `lane:audit`（既定 `area:docs` `area:tooling`）  | **書き込みなし**（下記）                                                        |
 
 **`audit` は読み取り専用です**（2026-09-20 こうだいさん決定）。整合監査の結果は Issue として起票し、修正は担当レーンへ回します。自分でコードを直しません。例外は自分の tracker（`memory/` `history/`）と `comm/outbox/` だけです。
 
-**`design` は世界観の正本も持ちます**（2026-09-20 こうだいさん決定）。世界の設定・物語・用語・固有名詞・階層の雰囲気を決め、`docs/vision/` と `docs/Overall_document/` と `docs/journal_document/`（手記の文章）に落とします。見た目の設計と同じレーンに置くのは、絵と世界の話が同じ判断から出るためです。
+**世界観の正本は main（chat-main）が持ちます**（2026-09-21 こうだいさん決定。2026-09-20 の「`design` が持つ」を置き換え）。世界の設定・用語・固有名詞・敵の系譜・層の名前を決め、`docs/vision/`（正典は `world-v1.md`）と `docs/Overall_document/` と `docs/journal_document/`（手記の文章）に落とします。`area:world` の Issue には `lane:` を付けず、chat-main の采配に落とします。`design` が見た目の約束を変えたいときは、案を Issue に書いて main が正典へ取り込みます。
 
-**`cards` との境目はファイルの持ち主で切ります。** 敵の数値とロースター（`docs/enemy_document/`）は `cards` が書きます。敵の由来や呼び名の文章も、置き場がそのファイルなら書き手は `cards` です。`design` は用語と設定の正本側（`docs/vision/`）を書き、`cards` がそれを参照します。逆向きに書きに行きません。
+**`cards` との境目はファイルの持ち主で切ります。** 敵の数値とロースター（`docs/enemy_document/`）は `cards` が書きます。敵の由来や呼び名の文章も、置き場がそのファイルなら書き手は `cards` です。main が用語と設定の正本側（`docs/vision/`）を書き、`cards` と `design` がそれを参照します。逆向きに書きに行きません。
 
 **設計書の持ち主は `.claude/docs/SOURCES.md` §2 が正本です。** 上の表の「主に触るパス」は目安で、設計書 1 本ごとの書き手は台帳が決めます。`npm run sources -- --lane <slug>` が、自分の書く正本と読む正本を出します。表と台帳が食い違えば台帳が正です（2026-09-21 時点で `battle_ui_ux_v2.md` と `View/Depiction/` は縦切りの間だけ `battle` が持ちます）。
 
