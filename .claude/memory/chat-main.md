@@ -25,6 +25,7 @@
 
 ## 直近の完了
 
+- 世界の正典 v4（竜の系譜）と、世界観の持ち主の main への移管 ✅（2026-09-21）— 「竜が全ての敵の親玉。敵は竜・亜竜・眷属の系譜に絞る」を `docs/vision/world-v1.md` に正典として書いた（#127、PR #131 open）。design レーンの v3（PR #126: 竜の住処・七層・■■の秘跡と竜神）を土台にし、#131 は #126 の commit を含む。レーン表と `worktree-policy` / `issue-dispatch` / `issue-prompter` で `area:world` を main の采配に変えた。波及は #128（ロースターを系譜へ。姿と名前だけ）/ #129（出現表を七層へ）/ #130（濃度と刻限を七層へ）に切り、#39 を竜神に改題、#83・#85〜#88・#67・#70・#111 にコメントした。**人手待ち**: #131 の merge。**未決**: 瘴気の司祭と深淵の釣り人の扱い（#128）、竜神と獄竜の固有名
 - Issue 46 件の起票と、優先順位 4 段階の仕組み ✅（2026-09-21）— 長柄の歪み兵と 1 ターンを通す縦切り（親 #67、子 #68〜#80）、アート（親 #81）、探索と世界観（親 #94）、生と継承（親 #104）を起票した。Issue に `prio:1`〜`prio:4` を必ず 1 つ付ける規約と、次にやることを出す `npm run issues:next` を入れた（#66、PR #112 merged）。既存の open 23 件にも `prio:` を付けた。メインに残っていた未コミットは PR #113（v4.2 の正本改訂）と #114（アートの仕様カードと引き継ぎ書）に分けて出した。**人手待ち**: #113 / #114 の merge。#113 は #63 / #64 との統合で判断した 5 点を PR 本文に書いた
 - 戦闘シーン本番化の地ならし ✅（2026-09-20）— 正本 14 文書を v4.2 へ改訂し、本番の戦闘シーンに要る作業を Issue #46〜#62（`lane:battle`）に分け、実装計画書 `2026-09-20-battle-scene-production.md` を置いた。投入量・T0〜T3・共有の距離（近 / 中 / 遠）が設計書から消え、列 1〜4 = コスト / 近間・遠間 / 状態のスタック制になった。PR #113。レポート `docs/reports/2026-09-20-battle-scene-production-prep.html`（Artifact `https://claude.ai/artifact/2opwQcHTqfW4mkH7E7C283`）
 - 開発環境を life-editor から移植（hooks / per-chat / Issue 駆動）✅（2026-09-20）— `.claude/settings.json` を新設し hook 5 本と危険コマンドの deny 18 件を入れた。タスク管理を `MEMORY.md` 単体から `memory/chat-<self>.md` + `history/chat-<self>.md` の per-chat へ移し、`INDEX.md` は生成物として git 非追跡にした。`.github/ISSUE_TEMPLATE/` 3 種とラベル 19 件を作り、課題追跡の正を GitHub Issues にした。CLAUDE.md に「Development Workflows」節を追加。**未導入**: worktree 運用、`comm/outbox` と `decisions/` 台帳、`rules/`、CI（`docs-lint` + `verify`）。**持ち越し**: #40（共有 hooks-lib の Windows バグ、暫定対応済み）
@@ -40,6 +41,7 @@
 
 - 🔜 **縦切り: 長柄の歪み兵と 1 ターンを通す（親 #67、`prio:1`）** — 最初の一手は #68（範囲と合格条件。battle レーン、#113 の merge 後）。続きは `npm run issues:next -- --lane battle`。演出と要不要の判別は #75〜#80（`prio:2`）
 - 🔜 **戦闘シーンの実装（Issue #46〜#62、`lane:battle`、`prio:2`〜`3`）** — 計画書 `.claude/docs/vision/plans/2026-09-20-battle-scene-production.md`。縦切りの振り返り（#80）で範囲を見直してから束 1（#47〜#50）へ。人手は #60 と #61
+- 🔜 **敵を竜の系譜へ寄せる（#128 → #129、`lane:cards`。#130 は `lane:dungeon`）** — #131 の merge 後に配る。立ち絵（#85〜#88）は #128 の結果を待つ
 - 🔜 **#44 の赤を片付ける（`prio:2`）** — `npm run build` と `npm run lint` が main で赤。レーンの検証ゲートが最初から届かない
 - 🔜 **アート / 探索と世界観 / 生と継承（親 #81 / #94 / #104、`prio:3`〜`4`）** — 設計と判断だけ先に進められるのは #91（カード絵の方針）/ #93（取り込み規約）/ #95（探索の要素の選別）/ #96（世界観の正本）/ #103（未確定の棚卸し）
 - 🔜 **Unity 上で Tier1 v6 本実装 — 次プラン策定（C# が正）** — Phase 3（最小戦闘画面）完了済（2026-09-06）。**戦闘コア v3（R1-3 / R1-4 相当）と戦闘画面 v1.1 は 2026-09-12 に実装済**（`unity-port/`、`dotnet test` 54）。次は探索側（刻限 / 瘴気 / ノード）と `BattleInit` の接続、手記の実データ、開示度（R2-3）、ボスの 2 段階予兆。TS battle-lab は凍結、`dotnet test` を正にする。残る未確定は concept-v3 §12 の 1 / 4 / 5 / 6 / 9 / 10 / 11 / 12 / 13 / 15 / 17 / 19 / 22 / 23。アート/Live2D は `2026-06-28-unity-migration-character-art.md`。探索とゲーム全体の枠は 2026-09-16 に決定（デッキ 20〜40 / ツール共通 3 枠 / 消耗品 3 枠 / 刻限は 1 ノード 1 回 / クリアは「歪みの根」撃破 / 剣士固定 / 連戦 3 戦と 9 戦）。Unity リポ（sunbreak-pro/RPG-by-card）の運用も 2026-09-16 に決定（初回コミットを入れる / `unity-port/` を正本にして写しもコミット / URP は 17.5.0 に直す / 描画は CLIP STUDIO PAINT PRO を買う）。実プレイの手触り確認は人手（Editor 前面・乱数「実戦」）

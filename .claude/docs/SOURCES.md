@@ -15,21 +15,25 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 | 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
 | --- | --- | --- | --- | --- |
-| 構想（生と継承） | `.claude/docs/vision/concept-v3.md` | design | APPROVED | all |
-| 設計原則 | `.claude/docs/vision/core.md` | design | APPROVED | all |
-| 世界設定・用語・固有名詞 | `.claude/docs/vision/world-v1.md` | design | DRAFT v1 | cards, dungeon |
-| ゲーム全体像 | `.claude/docs/Overall_document/game_design_master.md` | design | V4.0 | audit |
+| 構想（生と継承） | `.claude/docs/vision/concept-v3.md` | main | APPROVED | all |
+| 設計原則 | `.claude/docs/vision/core.md` | main | APPROVED | all |
+| 世界設定・用語・固有名詞 | `.claude/docs/vision/world-v1.md` | main | 正典 v4 | cards, design, dungeon |
+| ゲーム全体像 | `.claude/docs/Overall_document/game_design_master.md` | main | V4.0 | audit |
 | 要件（何をどの順で） | `.claude/docs/requirements/tier1-core.md` | main | v6 | all |
 | 要件（支援） | `.claude/docs/requirements/tier2-support.md` | main | v3 | all |
 | 要件（実験・凍結） | `.claude/docs/requirements/tier3-experimental.md` | main | v2 | audit |
 | 戦闘のルールと数値 | `.claude/docs/battle_document/battle_core_v4.md` | battle | v4.2 + §19 未反映 | cards, design |
-| 戦闘の画面と操作 | `.claude/docs/battle_document/battle_ui_ux_v2.md` | battle | v2.0。§11 が本文より優先（#46） | design |
+| 戦闘の画面と操作 | `.claude/docs/battle_document/battle_ui_ux_v2.md` | battle | v2.1（本文が正。§10 / §11 は記録） | design |
 | カード（剣士 80 種） | `.claude/docs/card_document/swordsman_cards_v4.md` | cards | v4.2 | battle, design |
 | 敵の数値とロースター | `.claude/docs/enemy_document/enemy_roster_v4.md` | cards | v4.2 | battle, design |
 | 探索（刻限・瘴気・ノード） | `.claude/docs/danjeon_document/dungeon_exploration_v4.md` | dungeon | PROPOSED | design |
 | concept-v3 の未確定の棚卸し | `.claude/docs/danjeon_document/concept_v3_open_items.md` | dungeon | PROPOSED（決定ではない） | design |
+| 七層の瘴気と刻限（層ごとの数値） | `.claude/docs/danjeon_document/seven_layers_v4.md` | dungeon | PROPOSED | battle, cards |
+| 探索の瘴気と戦闘の数値の突き合わせ | `.claude/docs/danjeon_document/miasma_and_battle_v4.md` | dungeon | PROPOSED | battle |
 | 継承の間の画面と導線 | `.claude/docs/camp_document/CAMP_FACILITIES_DESIGN.md` | design | V5.0 | dungeon |
 | カードの絵の方針 | `.claude/docs/art_document/card-art-policy.md` | design | DRAFT v1 | cards |
+| 絵柄の規約（原本の大きさ・指示文・加筆） | `.claude/docs/art_document/style-guide.md` | design | DRAFT v1（指示文は未実測） | — |
+| 素材の取り込み規約（置き場・命名・Unity の設定） | `.claude/docs/art_document/asset-intake.md` | design | DRAFT v1 | battle |
 | アートの道具と前提 | `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md` | design | 現行 | — |
 | 戦闘コアの実装 | `unity-port/BattleCore/` | battle | C# が正 | cards |
 | 戦闘描写の台本と View | `unity-port/unity-project-kit/Assets/View/Depiction/` | battle | C# はこのリポが正 | design |
@@ -39,7 +43,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | ラベルの一覧 | GitHub のラベル（`gh label list -R sunbreak-pro/original-card-battle`） | main | — | all |
 | タスクの進捗（チャットごと） | `.claude/memory/` | 各チャット | task-tracker 経由 | — |
 
-**状態の欄に但し書きがある行は、そのまま読むと間違えます。** `battle_core_v4.md` は §19（2026-09-21 の決定）が本文に入っていません。`battle_ui_ux_v2.md` は本文 §1〜§7 が古く、§11 が優先します（#46 で解消）。
+**状態の欄に但し書きがある行は、そのまま読むと間違えます。** `battle_core_v4.md` は §19（2026-09-21 の決定）が本文に入っていません。`battle_ui_ux_v2.md` は 2026-09-21 の v2.1 改訂（#46）で本文が正本に戻りました。
 
 **`battle_ui_ux_v2.md` と `View/Depiction/` の持ち主は仮です。** レーンの定義では UI / UX 設計は design ですが、縦切り（#67）の間は #46 / #56 / #57 が `lane:battle` なので battle に置いています。縦切りの振り返り（#80）で見直します。
 

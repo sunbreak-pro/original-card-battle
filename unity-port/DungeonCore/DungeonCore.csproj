@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Exploration core. Separate from BattleCore on purpose: the battle lane owns
+         unity-port/BattleCore/ (#69) and the two must not share files. Nothing here
+         references BattleCore, so a rewrite on either side cannot break the other.
+         netstandard2.1 + C# 9: what Unity 2021.2+ compiles as-is, same as BattleCore. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
