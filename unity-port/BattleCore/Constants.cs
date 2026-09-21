@@ -2,57 +2,77 @@ using System.Collections.Generic;
 
 namespace BattleCore
 {
-    /// <summary>Numbers from battle_core_v3.md §10 (the single source of truth for values).</summary>
+    /// <summary>
+    /// Numbers from battle_core_v4.md §10, the single source of truth for values. Only the rows the
+    /// vertical slice reads are here; the rows it does not read (owned-kind cap, trait vocabulary
+    /// sizes, stance slots, elite counts, mastery thresholds, chain battles) come back with #47.
+    ///
+    /// Gone from v3 and deliberately not replaced: T0_ATTACK_POWER, MIN_INVEST_ZERO_KINDS,
+    /// RANGE_MULT, STATUS_SLOTS, STATUS_STACK_MAX and DESPERATE_MULT (§10 廃止した定数). The miasma
+    /// max-stamina penalty left with them: it belongs to the exploration layer (#99) and the
+    /// in-battle exception is a boss status (#50).
+    /// </summary>
     public static class Constants
     {
+        // ---- Hand and deck (§8) ----
+
+        public const int HandDraw = 5;
+        public const int HandDrawMin = 3;
+        public const int HandDrawMax = 8;
+        public const int HandLimit = 8;
+        public const int DeckMin = 20;
+        public const int DeckMax = 40;
+        public const int CopiesMax = 3;
+
+        // ---- Cost and columns (§3) ----
+
+        public const int ColumnCount = 4;
+        public const int CostMin = 1;
+        public const int CostMax = 3;
+
+        // ---- Stamina and HP (§3.1 / §9) ----
+
+        /// <summary>§9 step 2: the player recovers a flat 3 every turn. Enemies use their own value.</summary>
+        public const int StaminaRecovery = 3;
+
         public const int BaseMaxStamina = 10;
         public const int MaxStaminaFloor = 3;
         public const int MaxStaminaCeil = 14;
-        public const int TempModClamp = 4;
-        public const int MiasmaStepPercent = 20;
-        public const int MiasmaMaxPenalty = 4;
+        public const int PlayerMaxHp = 50;
 
-        public static readonly IReadOnlyDictionary<RangeBand, int> StaminaRecovery =
-            new Dictionary<RangeBand, int>
-            {
-                [RangeBand.Close] = 1,
-                [RangeBand.Mid] = 2,
-                [RangeBand.Far] = 3,
-            };
-
-        public const int FieldRecovery = 3;
-        public const int MaxInvest = 3;
+        /// <summary>構え (§9 step 7): Guard +3 when at least 3 stamina is left at turn end.</summary>
         public const int ReserveThreshold = 3;
-        public const int ReserveGuard = 2;
-        public const int DesperateThreshold = 2;
-        public const double DesperateMult = 1.5;
 
-        public static readonly IReadOnlyList<double> RangeMult = new[] { 1.0, 0.5, 0.15 };
-        public const int WhiffDiff = 2;
+        public const int ReserveGuard = 3;
 
-        public static readonly IReadOnlyList<RangeBand> RangeOrder = new[]
+        // ---- Status (§5) ----
+
+        /// <summary>§5: the player may hold six kinds at once. Enemies have no cap.</summary>
+        public const int StatusKindsPlayer = 6;
+
+        /// <summary>§3.1: applying a status gives 2 stacks unless the face says otherwise.</summary>
+        public const int StatusApplyDefault = 2;
+
+        // ---- Resolution order (§2.2 / §17.6 F5) ----
+
+        /// <summary>
+        /// The order faces resolve in within one card. The trait is evaluated once before all of
+        /// them, so it is not a member of this list.
+        /// </summary>
+        public static readonly IReadOnlyList<BattleAttribute> FaceOrder = new[]
         {
-            RangeBand.Close,
-            RangeBand.Mid,
-            RangeBand.Far,
+            BattleAttribute.Attack,
+            BattleAttribute.Move,
+            BattleAttribute.Guard,
+            BattleAttribute.Skill,
+            BattleAttribute.Stance,
         };
 
-        public const int MidIndex = 1;
+        // ---- Damage multipliers (§5.1) ----
 
-        public static readonly IReadOnlyDictionary<RangeBand, string> RangeLabel =
-            new Dictionary<RangeBand, string>
-            {
-                [RangeBand.Close] = "近",
-                [RangeBand.Mid] = "中",
-                [RangeBand.Far] = "遠",
-            };
+        /// <summary>強化 and 脆化 both multiply by 1.5. Neither is in the slice; the formula keeps the slot.</summary>
+        public const double EmpowerMult = 1.5;
 
-        public const int PlayerMaxHp = 30;
-        public const int HandSize = 3;
-        public const int InitialDistanceIndex = MidIndex;
-        public const int EnemyReserve = 3;
-
-        /// <summary>Disclosure levels of the enemy's journal page (battle_ui_ux_v1.md §7): 0 = kind only, 1 = kind + range, 2 = name + range + power span.</summary>
-        public const int DisclosureMax = 2;
+        public const double FragileMult = 1.5;
     }
 }

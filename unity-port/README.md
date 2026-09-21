@@ -1,40 +1,44 @@
-> **2026-09-12 決定: C# が正。** 戦闘コアは `BattleCore/` が **battle_core_v3**（`.claude/docs/battle_document/battle_core_v3.md`: 投入量 0〜3、予兆、敵 Guard、構え、崩し）を実装している。TS の `src/ui/battle-lab/core/` は v2 のまま凍結。`parity:*` スクリプトと fixture は v2 移植の証跡として残し、`ParityTests.cs` は `V2_PARITY` を定義したときだけコンパイルされる（v3 では状態の形が違うため常時は外している）。
+> **2026-09-12 決定: C# が正。** 戦闘コアは `BattleCore/` が持つ。TS の `src/ui/battle-lab/core/` は v2 のまま凍結。
 >
-> **v3 での使い方**: `dotnet test unity-port/UnityCorePort.slnx`（ユニット 54）→ `npm run unity:sync`（コア + View を Unity プロジェクトへ）→ `unity test C:/Users/user/Unity/RPG-by-card --mode EditMode`（Editor 抜きでコンパイルと EditMode テスト）。View は `unity-project-kit/Assets/View/`（`BattleScreenView.cs` + 補助クラス。設計は `.claude/docs/battle_document/battle_ui_ux_v1.md`）。`Resources/trace-actions.txt` は v3 形式（`play <instanceId> <invest>` / `end`、`#` 行が期待状態）。
+> **2026-09-21（#69）: v3 を v4.2 で置き換えた。** 投入量 0〜3・近 / 中 / 遠の 3 段・空振り回避は消え、固定コスト（列 1〜4）・近間 / 遠間の 2 値・手札 5 枚・スタック制の状態になった（正本は `.claude/docs/battle_document/battle_core_v4.md`）。v3 は git の履歴に残る。
+>
+> **いま入っているのは骨だけ**。型・定数・列とコスト・ダメージ式・特性の評価器・状態・デッキ操作がある。ターン進行（`BattleReducer`）と敵データと View 契約は外してあり、縦切りの #70（敵）/ #71（デッキ）/ #72（ターン進行）が v4.2 で建て直す。縦切りの範囲は `.claude/docs/vision/plans/2026-09-21-vertical-slice-polearm.md`。
+>
+> **使い方**: `dotnet test unity-port/UnityCorePort.slnx` → `npm run unity:sync`（コア + View を Unity プロジェクトへ）→ `unity test C:/Users/user/Unity/RPG-by-card --mode EditMode`。
 
 # Unity Core Port — Battle Core (C#)
 
-検証済みの戦闘コア（TypeScript, `src/ui/battle-lab/core/`）を **Unity Editor 抜きの純 C# クラスライブラリ**として移植し、`dotnet test` で TS 版とのパリティ（同一入力 → 同一出力）を証明するプロジェクトです。Unity 移行の「第一歩」に相当し、その上に Unity 実装へ渡す**作業土台**（Logic/View 層・パリティ同期・Unity キット・Phase 3 手順）を載せています。
+戦闘コアを **Unity Editor 抜きの純 C# クラスライブラリ**として持ち、`dotnet test` で規則を固定するプロジェクトです。はじまりは TypeScript（`src/ui/battle-lab/core/`）からの移植で、2026-09-12 に C# が正になりました。以後は設計書（`battle_core_v4.md`）が正本で、TS は追いません。Unity プロジェクトへ渡す土台（Unity キット・Phase 3 手順）を同じ場所に載せています。
 
 計画の原本: `.claude/docs/vision/plans/2026-06-28-unity-first-step-core-port.md`
 
 ## なぜ Web リポのサブフォルダに置いているか
 
-移植元の TS 実装（`src/ui/battle-lab/core/`）を **パリティ検証の基準**として同一リポ内で参照し続けたいためです。別リポに切り出すと、TS 側の変更に C# 側が追従できているかを 1 コミットで確認しづらくなります。専用リポへの分離は将来の判断（未決）とし、まずは同居させています。
+はじめは移植元の TS 実装を **パリティ検証の基準**として同一リポ内で参照するためでした。いまは設計書（`.claude/docs/`）とカード / 敵のデータが同じリポにあり、規則の変更とコアの変更を 1 コミットで並べられることが理由です。専用リポへの分離は将来の判断（未決）とし、まずは同居させています。
 
 ## 構造
 
 ```
 unity-port/
 ├── UnityCorePort.slnx          ソリューション
-├── BattleCore/                 移植した戦闘コア（netstandard2.1 / C# 9・engine-free）
-│   ├── IRng.cs                 乱数の注入口（SystemRng / FixedRng）
+├── BattleCore/                 戦闘コア v4.2 の骨（netstandard2.1 / C# 9・engine-free）
+│   ├── IRng.cs                 乱数の注入口（SystemRng / FixedRng）。乱数はここだけ
 │   ├── IsExternalInit.cs       record/init を netstandard2.1 で使うためのポリフィル
-│   ├── Types.cs                enum・record・enum↔TS文字列トークン変換
-│   ├── Constants.cs            数値定数（TS constants.ts と一致）
-│   ├── Combat.cs               間合い・スタミナ・ダメージ計算
-│   ├── Cards.cs                デッキ生成・シャッフル・ドロー
-│   ├── Enemy.cs                敵 AI と行動解決
-│   ├── BattleReducer.cs        状態遷移（Init / PlayCard / EndTurn / Restart）
-│   ├── ViewModel.cs            UI 表示用の派生ビュー
-│   ├── BattleStore.cs          Logic 層: state 保持 + dispatch（React useReducer 相当）
-│   └── IBattleView.cs          View 契約 + BattleViewModel（描画用フラット射影）
+│   ├── Types.cs                §1 の持つ値・§2 の属性と面・特性・カードと敵行動・BattleState
+│   ├── Constants.cs            §10 の数値の正本（縦切りが読む行だけ）
+│   ├── Columns.cs              §3 の列とコスト・§3.1 の目盛り
+│   ├── Combat.cs               §5.1 のダメージ式・Guard・構え・回復とドローの clamp
+│   ├── Traits.cs               §2.3 の特性評価器（面より前に 1 回）
+│   ├── Statuses.cs             §5 のスタック制（StatusSet と減り方 2 型）
+│   └── Cards.cs                §8 のデッキ生成・シャッフル・ドロー・全捨て・デッキ検証
 ├── BattleCore.Tests/           NUnit（net10.0）
-│   ├── CombatTests.cs
-│   ├── BattleReducerTests.cs
-│   ├── ViewModelTests.cs
-│   ├── BattleStoreTests.cs     Logic/View 層のヘッドレステスト
-│   ├── ParityTests.cs          TS ゴールドデータとのフルトレース照合
+│   ├── Fixtures.cs             テスト用の最小のカード / 敵行動 / 戦闘者
+│   ├── ColumnTests.cs          固定コスト（列 = コスト、列 4 は 3）
+│   ├── CombatTests.cs          ダメージ式・Guard・構え・定数
+│   ├── PositionTests.cs        近間 / 遠間の 2 値・push・位置なしの敵
+│   ├── TraitTests.cs           特性 4 条件 × 3 効果
+│   ├── StatusTests.cs          鈍足のスタックと位置の封じ
+│   ├── CardsTests.cs           手札 5 枚・全捨て・再シャッフル・同じ種で同じ結果
 │   └── Fixtures/
 │       └── parity-fixture.json TS 実装を FixedRng(0) 相当で走らせた正解データ
 ├── DungeonCore/                探索コア（netstandard2.1 / C# 9・engine-free・BattleCore を参照しない）
@@ -56,23 +60,20 @@ unity-port/
 
 `BattleCore` は Unity 2021.2+ がそのままコンパイルできる設定（netstandard2.1 / LangVersion 9.0 / ImplicitUsings disable / Nullable enable）で書いています。将来 `Assets/Core/` へコピーしても無改変で通ることを狙っています。`BattleStore` / `IBattleView` も MonoBehaviour 非依存の純 C# なので、この dotnet ライブラリで型・テストごと検証できます。
 
-## 3 層構成（View / Logic / Data）
+いずれも状態を持たない純関数です。状態を進めるのはターン進行（#72）の仕事で、まだありません。
 
-- **Core（純関数）**: `Combat`/`Cards`/`Enemy`/`BattleReducer`/`ViewModel`。乱数は `IRng` 注入。
-- **Logic（薄い駆動層）**: `BattleStore` が state を保持し、`BattleAction` を `BattleReducer.Reduce` に流して購読者へ通知（React の `useReducer` + `Context` 配布に対応）。
-- **View（契約のみ）**: `IBattleView.Render(BattleViewModel)`。実際の UGUI MonoBehaviour は Unity 側（`unity-project-kit/Assets/View/BattleScreenView.cs` が雛形）。
+- **型と数値**: `Types.cs`（属性・位置・面・特性・カードと敵行動・`BattleState`）/ `Constants.cs` / `Columns.cs`。
+- **計算**: `Combat.cs`（`(面 + 特性) → 丸め → − Guard`、構え、回復とドローの clamp）/ `Traits.cs`（条件 4 語 × 効果 3 語）/ `Statuses.cs`（スタックと減り方 2 型）。
+- **カード**: `Cards.cs`（デッキ生成・シャッフル・ドロー・全捨て・20〜40 と同種 3 枚の検証）。乱数は `IRng` 注入だけで、同じ種なら同じ並びになります。
 
-## TS からの意図的な逸脱（数値・ロジックは不変）
+`CardDef` と `EnemyActionDef` は同じ `Face` / `Trait` / 列の表から書けます。#70（敵データ）と #71（試作デッキ）は型を足さずにデータだけ足せます。特性の語彙を 12 × 10 へ広げる #48 も、enum に行を足して `Traits.Evaluate` の switch を伸ばすだけで済みます。
 
-数値とロジックは TS と完全一致させています。逸脱は**乱数の扱い 1 点だけ**です。
+**外してあるもの**: ターン進行（`BattleReducer`）、敵データ、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担い、BattleCore に依存しません。
 
-- **TS**: グローバルな `Math.random()` を `cards.ts` 内で直接呼ぶ（注入なし）。
-- **C#**: `IRng`（`double NextDouble()`）を注入する。`SystemRng`（実プレイ用）と `FixedRng`（固定値・既定 0、パリティ用）を用意。
-  - `BattleReducer.InitState(IRng rng)` と `BattleReducer.Reduce(BattleState state, BattleAction action, IRng rng)`（**3 引数**）が rng を受け取る。RESTART の再初期化・END_TURN 内の山札切れ時の再シャッフルで rng が要るためです。
-  - `PlayCard` は乱数を使わないので内部ヘルパーに rng は渡していません。
-- **丸め**: JS の `Math.round` は 0.5 を切り上げる。C# の `Math.Round` は既定が銀行丸め（偶数寄せ）なので、`Math.Round(raw, MidpointRounding.AwayFromZero)` を使って JS 挙動に合わせています（raw は常に非負）。
+## 乱数と丸め
 
-これ以外の実装補助（`IsExternalInit.cs` のポリフィル、enum ↔ TS 文字列トークンの変換ヘルパー）はロジックに影響しない足回りです。
+- **乱数は `IRng`（`double NextDouble()`）の注入だけ**です。`SystemRng`（実プレイ用。種を渡せる）と `FixedRng`（固定値・既定 0）を用意しています。グローバルな乱数は呼びません。同じ種を渡せば同じシャッフル・同じ手札になります。
+- **丸めは `MidpointRounding.AwayFromZero`**（2.5 → 3）です。C# の既定は銀行丸め（偶数寄せ）で、設計書の表はその読み方をしていません（2026-09-12 決定）。
 
 ## 実行（Windows）
 
@@ -85,30 +86,19 @@ winget install Microsoft.DotNet.SDK.10
 ターミナルを開き直してから:
 
 ```powershell
-# C# コアのユニット + パリティテストだけ回す
 dotnet test unity-port/UnityCorePort.slnx
-
-# TS↔C# を一気通貫で照合（推奨・ワンコマンド）
-npm run parity:check
 ```
 
-`dotnet test` は **ユニット 49 + BattleStore/View + パリティ 1** が green になれば、C# 版が TS 版と同一挙動であることの証明になります。
+BattleCore 79 件と Depiction 53 件が green になります（2026-09-21 #69 時点）。
 
-## パリティ同期（TS が正・C# が追従を証明）
+## パリティ（v2 移植の証跡。もう回らない）
 
-TS コアは「面白さの正本」。C# はそれに追従します。2 つの信号で drift を捕まえます。
+2026-09-12 に C# が正になるまで、TS コアとの同一出力を `ParityTests.cs` が証明していました。v3 で状態の形が変わって `V2_PARITY` 付きの死んだコードになり、v4.2（#69）で削除しました。
 
-```powershell
-npm run parity:gen     # live TS から fixture を再生成（PARITY_WRITE=1 で vitest を実行）
-npm run parity:check   # 上に加え git diff で TS 側 drift を検出 → dotnet test で C# 側を検証
-```
-
-- **`npm test` / `test:run`** … `src/ui/battle-lab/core/__tests__/parity/parityFixture.test.ts` が **TS 側ドリフトガード**として常時走る（fixture と live TS の一致を毎回照合）。
-- **`git diff` の fixture 差分** … 「TS コアが前回コミットから変わったか」の信号。
-- **`dotnet test`** … 「C# 移植が現在の TS を再現できているか」の信号。
-
-TS を意図的に変えたら fixture を再生成してコミット、意図しない変化なら TS 側を戻す。fixture は `.gitattributes` で LF 固定（Windows の autocrlf でも無用な差分を出さない）。
+`tools/gen-parity.mjs` / `parity-check.mjs` と `BattleCore.Tests/Fixtures/parity-fixture.json` は当時の記録として残しています。`npm run parity:check` の `dotnet test` 部分は通りますが、照合するテストはもうありません。fixture は `.gitattributes` で LF 固定です。
 
 ## Phase 3（実 Unity + UGUI）へ
 
-Core 移植・パリティ・Logic/View 層・キットまでが「Editor 抜きで用意できる土台」。実 Unity プロジェクト作成と UGUI 戦闘画面は Unity Editor 作業（人間主体、一部 MCP）。手順は **`PHASE3-KICKOFF.md`**、drop-in は **`unity-project-kit/README.md`** を参照。
+実 Unity プロジェクト作成と戦闘画面は Unity Editor 作業（人間主体、一部 MCP）。手順は **`PHASE3-KICKOFF.md`**、drop-in は **`unity-project-kit/README.md`** を参照。
+
+`PHASE3-KICKOFF.md` は 2026-09-05 時点の記録です。そこに出てくる `BattleStore` / `IBattleView` / `ViewModel` の配線は #69 で外れました。v4.2 の戦闘画面は `unity-project-kit/Assets/View/Depiction/` を土台に #74 が作ります。

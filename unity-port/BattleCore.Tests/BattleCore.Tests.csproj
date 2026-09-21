@@ -24,8 +24,7 @@
     <ProjectReference Include="..\BattleCore\BattleCore.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="Fixtures\parity-fixture.json" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
+  <!-- Fixtures/parity-fixture.json is the v2 port's record and is no longer copied to the output:
+       ParityTests.cs, the only reader, went with the v3 core in #69. The file and tools/*.mjs stay. -->
 
 </Project>
