@@ -5,23 +5,26 @@
 
 ## いまどこ
 
-Krita AI Diffusion 1.53.0 の導入と設定が終わり、1024×1024 の試し生成に成功しました（28 ステップで約 16 秒、生成中の VRAM 5.3 / 8.1 GB）。モデルは Animagine XL 4.0 opt で、スタイル `card-battle Animagine`（`architecture: sdxl`）を作成済みです。2026-09-20 時点で出力は 1 件だけ（試し生成）で、本番の候補はまだ 1 枚もありません。次は長柄の歪み兵（`polearm_warped`）の外見の案出しです。
+Krita AI Diffusion 1.53.0 の導入と設定が終わり、1024×1024 の試し生成に成功しました（28 ステップで 21.09 秒、2026-09-20 13:32）。モデルは Animagine XL 4.0 opt で、スタイル `card-battle Animagine`（`architecture: sdxl`）を作成済みです。本番の候補はまだ 1 枚もありません。仕様カード `.claude/docs/art_document/briefs/polearm_warped.md` を 2026-09-20 に作り、貼るだけの指示文（§4）を用意しました。次は長柄の歪み兵（`polearm_warped`）の外見の案出しです。
 
 ## 確認コマンド
 
 | 目的                 | コマンド                                                                | 期待                                                                        |
 | -------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | サーバーの起動       | `curl -s http://127.0.0.1:8188/system_stats`                            | JSON が返る。返らなければ Krita を起動してもらう                            |
-| モデルの一覧         | `curl -s http://127.0.0.1:8188/object_info/CheckpointLoaderSimple`      | `animagine-xl-4.0-opt.safetensors` がある                                   |
+| モデルの一覧         | `curl -s http://127.0.0.1:8188/object_info/CheckpointLoaderSimple`      | 3 件。`animagine-xl-4.0-opt` を使う。`novaAnimeXL_ilV125` は製品に使わない  |
 | スタイルの設定       | `type "%APPDATA%\krita\ai_diffusion\styles\anime-illustrious.json"`     | `name` = card-battle Animagine、`architecture` = sdxl、`sampler_steps` = 28 |
-| 直近の落ちと生成時間 | `tail -40 "%APPDATA%\krita\ai_diffusion\logs\server.log"`               | `Fatal Python error` が増えていない                                         |
+| 直近の落ちと生成時間 | `grep -c "Fatal Python error" "%APPDATA%\krita\ai_diffusion\logs\server.log"` | 1（2026-09-20 13:24:56、落とし穴の 4 件目）。2 以上なら新たに落ちている |
 | VRAM の空き          | `nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader` | 生成前で 4 GB 以上空いている                                                |
-| 生成済みの素材       | `ls "%APPDATA%\krita\ai_diffusion\ComfyUI\ComfyUI\output"`              | 2026-09-20 時点で 1 件。増えていれば人が生成を続けている                    |
+| 直近の生成の中身     | `cat "%APPDATA%\krita\ai_diffusion\logs\workflow.json"` | 最後の生成のモデル・寸法・指示文。2026-09-20 は 1024×1024 の試し生成 |
+| 指示文の翻訳         | `grep translation "%APPDATA%\krita\ai_diffusion\settings.json"` | `translation_enabled` が `false`。`true` なら英語の指示文が壊れる |
 | 作業ファイル         | `ls "%USERPROFILE%\OneDrive\art"`                                       | まだ無い。段階 2 以降で `.kra` が置かれる                                   |
 
 ## 次の一手
 
-1024×1536 の新しい文書で、スタイル `card-battle Animagine`、生成回数 4 で、長柄の歪み兵の候補を 8〜16 枚出してもらいます。指示文は手順書 4 章の段階 1 のワイルドカード版をそのまま使います。出た候補 2〜3 枚を Claude が受け取り、ゲーム画面の高さ 300 px で形が見分けられるかを確かめて、絞り込みの指示を作ります。
+**先に指示文の翻訳を切ります。** AI画像生成パネル右端の歯車 ▸ Interface ▸ Prompt translation を `Disabled`（言語の選択を外す）にします。いまは `ja` が入っていて、貼った英語の指示文が日本語として機械翻訳にかけられ、ワイルドカード `{a|b|c}` が壊れます。
+
+そのうえで、1024×1536 の新しい文書、スタイル `card-battle Animagine`、生成回数 4 で候補を 8〜16 枚出します。指示文は仕様カード `.claude/docs/art_document/briefs/polearm_warped.md` §4 をそのまま貼ります。出た候補 2〜3 枚を Claude が受け取り、ゲーム画面の高さ 300 px で形が見分けられるかを確かめて、絞り込みの指示を作ります。
 
 ## 決まっていること
 
@@ -40,6 +43,9 @@ Krita AI Diffusion 1.53.0 の導入と設定が終わり、1024×1024 の試し�
 
 ## 落とし穴
 
+- **指示文が機械翻訳にかけられる。** `settings.json` の `prompt_translation` が `ja` で `translation_enabled` が `true` のため、英語で書いた指示文も ja→en の翻訳ノード（`ETN_Translate`）を通ります。試し生成では素通りしましたが、ワイルドカードや長い英語は壊れます。英語で書くなら翻訳を切ります。
+- **生成物は ComfyUI の output に出ない。** Krita AI Diffusion は結果を Krita の文書へ直接返すので、`ComfyUI\ComfyUI\output` は空のままです。進み具合は `logs/workflow.json` と `.kra` の有無で見ます。
+- **Illustrious 系のモデルが入ったまま。** `novaAnimeXL_ilV125.safetensors` が選べる状態です。スタイルで `animagine-xl-4.0-opt` を指定している限り使われませんが、手で選ばないようにします。
 - **大きなキャンバスでサーバーが落ちる。** 2480×3508 の文書で生成すると、拡大処理の VAE encode で `Fatal Python error: Aborted`。1024×1536 までにし、Performance の Maximum pixel count を 1 MP にする。
 - **スタイルを複製すると Base model が複製元のまま。** `Anime ★` から複製すると `architecture: illu` を引き継ぐ。Checkpoint configuration (advanced) で SDXL に直す。
 - **Krita 本体の「設定 ▸ スタイル」は別物。** あれは Qt の見た目（Fusion）。プラグインの設定は AI画像生成パネル右端の歯車から開く。

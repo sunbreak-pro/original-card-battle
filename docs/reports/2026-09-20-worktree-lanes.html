@@ -1,0 +1,242 @@
+<title>レーン 5 本の配り口</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding-block: 48px 80px; padding-inline: 24px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); min-width: 0; }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .step code { font-size: 12.5px; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
+  @media (max-width: 720px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code, dd code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); margin: 0 0 20px; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  @media (max-width: 560px) { dl { grid-template-columns: 1fr; gap: 2px; } dt { margin-top: 8px; } }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-20 / 進捗 / original-card-battle</p>
+    <h1>レーン 5 本を立て、Issue を貼り付け用の指示に変える口を作りました</h1>
+    <p class="lede">worktree は <code>cards</code> / <code>design</code> / <code>battle</code> / <code>dungeon</code> / <code>audit</code> の 5 本です。<code>design</code> は見た目だけでなく世界観の正本も持ちます。依存も入れ終わっているので、あとは各チャットで <code>claude</code> を起動して下の <code>/goal</code> を貼るだけです。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">今日から</span><h3>レーン 5 本と <code>lane:</code> ラベル</h3><p>worktree・依存・宣言ファイルまで用意済みです。Issue 3 件に宛先を付けました。</p></li>
+    <li class="verdict later"><span class="tag">必要になったら</span><h3>メインを <code>main</code> へ戻す</h3><p>未コミットの引き継ぎ書があるので手を付けていません。こうだいさんの手番です。</p></li>
+    <li class="verdict skip"><span class="tag">入れない</span><h3>life-editor 式のブランチ名</h3><p><code>claude/&lt;lane&gt;-&lt;issue&gt;</code> は採らず、本リポの <code>feat/</code> <code>fix/</code> <code>docs/</code> <code>chore/</code> を維持します。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: 規約そのもの（<code>worktree-policy</code> スキルと CLAUDE.md の節）は <a href="https://github.com/sunbreak-pro/original-card-battle/pull/43">PR #43</a> でまだ open です。merge はこうだいさんの手番なので、5 本の worktree は先にその内容を持った状態で作ってあります。</div>
+
+  <h2>レーン一覧</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>slug</th><th>担当</th><th>宛先ラベル</th><th>待機ブランチ</th><th>状態</th></tr></thead>
+      <tbody>
+        <tr><td><code>cards</code></td><td>カード設計・デッキ・習熟・敵ロースター</td><td><code>lane:cards</code><br><span class="note">既定 <code>area:cards</code> <code>area:enemy</code></span></td><td><code>chore/lane-cards</code></td><td class="state yes">稼働可</td></tr>
+        <tr><td><code>design</code></td><td>世界観と見た目。世界設定・物語・用語と、UI / UX 設計・演出・立ち絵・素材</td><td><code>lane:design</code><br><span class="note">既定 <code>area:world</code> <code>area:ui</code> <code>area:art</code></span></td><td><code>chore/lane-design</code></td><td class="state yes">稼働可</td></tr>
+        <tr><td><code>battle</code></td><td>戦闘プログラム（C# の BattleCore が正）</td><td><code>lane:battle</code><br><span class="note">既定 <code>area:battle</code> <code>area:unity</code></span></td><td><code>feat/battle-36</code></td><td class="state yes">着手中</td></tr>
+        <tr><td><code>dungeon</code></td><td>探索プログラム。刻限 / 瘴気 / ノード</td><td><code>lane:dungeon</code><br><span class="note">既定 <code>area:dungeon</code></span></td><td><code>chore/lane-dungeon</code></td><td class="state yes">稼働可</td></tr>
+        <tr><td><code>audit</code></td><td>監査。設計書と実装の整合、既知課題の棚卸し</td><td><code>lane:audit</code><br><span class="note">既定 <code>area:docs</code> <code>area:tooling</code></span></td><td><code>chore/lane-audit</code></td><td class="state maybe">読み取り専用</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">置き場所は <code>C:\Users\user\orca\workspaces\original-card-battle\&lt;slug&gt;\</code> です。life-editor と同じ並びで、リポジトリの外に置きました。各レーンに <code>.claude/comm/.session-name</code> と <code>.session-branch</code> を書き込み済みで、<code>npm ci</code> も 5 本とも通っています（1 本あたり約 355 MB）。<code>battle</code> は既に #36 に着手していて、<code>feat/battle-36</code> にコミットが 1 本入っています。</p>
+
+  <h2>レーンの起動</h2>
+  <div class="flow">
+    <div class="step">
+      <span class="n">01</span>
+      <h3>入る</h3>
+      <p>ターミナルをレーンの場所へ移します。</p>
+      <code>cd C:\Users\user\orca\workspaces\original-card-battle\battle</code>
+    </div>
+    <div class="step">
+      <span class="n">02</span>
+      <h3>起動する</h3>
+      <p>そのままチャットを開きます。宣言ファイルは書き込み済みです。</p>
+      <code>claude</code>
+    </div>
+    <div class="step">
+      <span class="n">03</span>
+      <h3>貼る</h3>
+      <p>下の <code>/goal</code> を 1 本だけ貼ります。1 レーンに 2 本並べると後勝ちで前が消えます。</p>
+      <code>/goal ...</code>
+    </div>
+  </div>
+
+  <h2>今すぐ配れる <code>/goal</code></h2>
+  <p>宛先が決まった 3 件です。完了条件は「PR を open にするまで」で切ってあります。merge と Issue の close はこうだいさんの手番なので、そこを条件に入れると人待ちで止まります。</p>
+
+  <h3><code>battle</code> ← #36（戦闘描写デモの手札の縛りを外す）</h3>
+  <pre><code>/goal in the original-card-battle worktree for battle: issue #36 has its own branch off origin/main, a local run of npm run build, npm run lint, npm run test:run and dotnet test under unity-port that reports no error the same commands did not already report on origin/main, and an opened PR referencing it — #36 free the depiction demo hand so the fight can actually be played. Read .claude/skills/worktree-policy/SKILL.md first, update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.</code></pre>
+  <p class="note">停止: PR が 1 本 open になったら（merge は待たない）</p>
+
+  <h3><code>design</code> ← #37（AI っぽさを出さないための調査と指示文の型）</h3>
+  <pre><code>/goal in the original-card-battle worktree for design: issue #37 has its own branch off origin/main and an opened PR referencing it — #37 research how to keep generated art from reading as AI work, and turn the findings into a reusable prompt template. Read .claude/skills/worktree-policy/SKILL.md first, update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.</code></pre>
+  <p class="note">停止: PR が 1 本 open になったら（merge は待たない）</p>
+
+  <h3><code>cards</code> ← #38（ラスボスとエクストラボスの案を正本に落とす）</h3>
+  <pre><code>/goal in the original-card-battle worktree for cards: issue #38 has its own branch off origin/main and an opened PR referencing it — #38 propose the final boss and the extra boss, and land them in the design documents. Read .claude/skills/worktree-policy/SKILL.md first, update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, and merge nothing yourself. A draft already exists on the branch docs/boss-roster-and-extra-boss in the main checkout; build on it instead of starting over.</code></pre>
+  <p class="note">停止: PR が 1 本 open になったら（merge は待たない）。<strong>#38 は着手済み</strong>です。メインのチェックアウトに未 push のコミット（<code>12d14a3</code>）があります。</p>
+
+  <h3>配らなかったもの</h3>
+  <dl>
+    <dt>chat-main 采配</dt><dd>#40（共有 hooks-lib の Windows バグ。直す先がリポの外）、#44（main の build / lint が赤）、#29 と #30（<code>type:</code> と <code>area:</code> が付いていない）</dd>
+    <dt>待ち行列</dt><dd>#39 ← #36 / #37 / #38。竜は 3 件が終わらないと着手できません</dd>
+    <dt>人手待ち</dt><dd>#25（実機でドラッグの手触りと演出の長さを確かめる）</dd>
+    <dt>除外</dt><dd>なし。open PR は #42 と #43 の 2 本で、どちらも Issue に紐づいていません</dd>
+  </dl>
+
+  <h2>今日の実測</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>コマンド</th><th>結果</th><th>内訳</th></tr></thead>
+      <tbody>
+        <tr><td><code>npm run test:run</code></td><td class="state yes">緑</td><td class="num">14 ファイル / 204 件</td></tr>
+        <tr><td><code>npm run build</code></td><td class="state maybe">赤</td><td>TypeScript エラー 4 件。<code>tsconfig.app.json:8</code> の <code>types</code> に <code>node</code> が無く、parity テストの <code>node:fs</code> が解決できません</td></tr>
+        <tr><td><code>npm run lint</code></td><td class="state maybe">赤</td><td>エラー 7 件・警告 2 件。Shop と CharacterSelect の React 規則違反、<code>survey.js</code> の構文エラーです</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>build と lint は <strong>worktree を作る前から赤</strong>でした。メインのチェックアウトでも同じ結果が出ます。<code>/goal</code> の完了条件を「全部緑」と書くと最初から届かないので、「main で既に出ている赤を増やさない」に直しました（PR #43 の 2 つ目のコミット）。中身は <a href="https://github.com/sunbreak-pro/original-card-battle/issues/44">#44</a> に起票してあります。</p>
+
+  <h2><code>design</code> レーンの担当範囲</h2>
+  <p>世界観の設計を <code>design</code> に足しました。絵と世界の話は同じ判断から出るので、見た目と同じレーンに置きます。<code>cards</code> との境目は<strong>ファイルの持ち主</strong>で切ります。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>書き手</th><th>持つファイル</th><th>中身</th></tr></thead>
+      <tbody>
+        <tr><td><code>design</code></td><td><code>docs/vision/</code>、<code>docs/Overall_document/</code>、<code>docs/journal_document/</code></td><td>世界の設定・物語・用語・固有名詞・階層の雰囲気。手記の文章</td></tr>
+        <tr><td><code>design</code></td><td><code>src/ui/</code>、<code>unity-port/**/View/</code>、<code>docs/art_document/</code>、<code>briefs/</code></td><td>UI / UX 設計・演出・立ち絵・背景・素材</td></tr>
+        <tr><td><code>cards</code></td><td><code>docs/enemy_document/</code></td><td>敵の数値とロースター。由来や呼び名の文章も、置き場がこのファイルなら <code>cards</code> が書く</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><code>design</code> は用語と設定の正本側（<code>docs/vision/</code>）を書き、<code>cards</code> がそれを参照します。逆向きには書きに行きません。宛先ラベルは <code>area:world</code> を新設しました。これが無いと世界観の Issue が <code>area:docs</code> 経由で読み取り専用の <code>audit</code> へ流れてしまいます。</p>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li><strong>敵の数値は <code>cards</code>、敵のいる世界は <code>design</code></strong>。<code>area:enemy</code>（ロースター・AI・ボス）はカード設計と数値の前提を共有するので <code>cards</code>、世界の設定と用語は <code>design</code> です。同じボスを 2 レーンが書くのを避けるため、境目はファイルで切りました。実装側の敵 AI が重くなるなら <code>battle</code> へ移します。</li>
+    <li><strong>待機ブランチは <code>chore/lane-&lt;slug&gt;</code></strong>。ここには commit を積まず、Issue に着手するたびに <code>&lt;prefix&gt;/&lt;slug&gt;-&lt;issue&gt;</code>（例 <code>feat/battle-36</code>）へ切り直します。</li>
+    <li><strong>5 本は PR #43 の内容から切りました</strong>。origin/main から切ると <code>worktree-policy</code> スキルが手元に無く、初回のセッションが規約を読めないためです。#43 が merge されれば差は消えます。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li><code>.claude/hooks/session-start-check.sh</code> は今も <code>File: unbound variable</code> で落ちます（<a href="https://github.com/sunbreak-pro/original-card-battle/issues/40">#40</a> の Windows バグ）。<code>|| true</code> が付いているのでセッションは止まりませんが、宣言の整合検査は効いていません。</li>
+    <li>5 レーンを同時に動かしたときの実挙動は未測定です。one writer per artifact を破る組み合わせが出るかは、最初の数本の PR で見ます。</li>
+    <li><code>dotnet test</code> は今日は走らせていません。TypeScript 側だけの実測です。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li><strong>メインのチェックアウトを <code>main</code> へ戻すか</strong>。今は <code>docs/boss-roster-and-extra-boss</code> にいて、引き継ぎ書に未コミットの変更が 1 件あります。規約では「メインは <code>main</code> 専有」なので、コミットして PR にしてから戻すのが筋です。中身を消したくないので手を付けていません。</li>
+    <li><strong><code>git checkout main</code> の deny を足すか</strong>。以前の注記では導入時に足す予定でしたが、足すとメインを <code>main</code> へ戻す操作まで止まります。git 自体が「別の worktree でチェックアウト中のブランチ」を二重に開けないので、今は足していません。</li>
+    <li><strong>#29 と #30 にラベルを付けるか</strong>。<code>type:</code> と <code>area:</code> が無いため宛先が決まりません。付ければ <code>battle</code> と <code>design</code> へ自動で流れます。</li>
+    <li><strong><code>le-bridge</code> worktree をどうするか</strong>。<code>docs/life-editor-bridge-wiring</code>（PR #42 が open）に居ます。5 レーンとは別枠のままにするか、merge 後に畳むかです。</li>
+  </ul>
+</div>
