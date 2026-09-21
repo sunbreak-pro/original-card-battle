@@ -30,9 +30,8 @@ unity-port/
 │   ├── Combat.cs               §5.1 のダメージ式・Guard・構え・回復とドローの clamp
 │   ├── Traits.cs               §2.3 の特性評価器（面より前に 1 回）
 │   ├── Statuses.cs             §5 のスタック制（StatusSet と減り方 2 型）
-│   ├── Enemies.cs              敵データ（レコードの一覧）。縦切りは長柄の歪み兵 1 体（roster §2.1）
-│   ├── EnemyAi.cs              §6 の決定木 2 枝・払えなければ次の候補へ・予兆 1 段・コミット
-│   └── Cards.cs                §8 のデッキ生成・シャッフル・ドロー・全捨て・デッキ検証
+│   ├── Cards.cs                §8 のデッキ生成・シャッフル・ドロー・全捨て・デッキ検証
+│   └── CardCatalog.cs          カードデータ（レコードの一覧）と試作デッキ。縦切りは 80 種のうち 10 種 × 2 枚
 ├── BattleCore.Tests/           NUnit（net10.0）
 │   ├── Fixtures.cs             テスト用の最小のカード / 敵行動 / 戦闘者
 │   ├── ColumnTests.cs          固定コスト（列 = コスト、列 4 は 3）
@@ -42,6 +41,7 @@ unity-port/
 │   ├── StatusTests.cs          鈍足のスタックと位置の封じ
 │   ├── PolearmTests.cs         長柄の歪み兵の数値・決定木 2 枝・スタミナ不足の落ち方・押し引き
 │   ├── CardsTests.cs           手札 5 枚・全捨て・再シャッフル・同じ種で同じ結果
+│   ├── PrototypeDeckTests.cs   試作デッキ 10 種の数値が正本と一致・選定の条件・重撃と向きのあるムーブ
 │   └── Fixtures/
 │       └── parity-fixture.json TS 実装を FixedRng(0) 相当で走らせた正解データ
 ├── DungeonCore/                探索コア（netstandard2.1 / C# 9・engine-free・BattleCore を参照しない）
