@@ -1,3 +1,4 @@
+> **SUPERSEDED（2026-09-21、Issue #95）**: 旧ループ（ライフ制 / 帰還 / Gold・ソウル経済）の記録として残します。探索側の正本は `dungeon_exploration_v4.md` です。本書のどの要素を残す / 後回しにする / 捨てるかは v4 §2 が持ちます。
 > **PARTIALLY SUPERSEDED（2026-09-12）**: §1.3 ライフ制と帰還 UI は廃止。探索は刻限（階層あたり約 10 回）と衰弱ゲージで制御する（`vision/concept-v3.md` §6）。ノードマップ・砂時計型の構造は §12-14 の決定まで仮置きで継続。
 
 Here is the English translation of the **Dungeon Exploration UI Design Document v2.1**.
@@ -39,14 +40,14 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 ### 1.3 Lives System (残機システム)
 
-| Element               | Specification                                                        |
-| --------------------- | -------------------------------------------------------------------- |
-| Lives Cap (Hard)      | **2 Lives**                                                          |
-| Lives Cap (Normal/Easy)| **3 Lives**                                                         |
-| Decrease Timing       | **Death only** (Does NOT decrease on successful return)              |
-| Recovery Method       | **None** (No means of recovery exists)                               |
-| Reaching 0 Lives      | **Game Over** (Complete reset, only achievements persist)            |
-| UI Position           | Header Top-Right (Heart icons: ❤️❤️❤️ or ❤️❤️)                      |
+| Element                 | Specification                                             |
+| ----------------------- | --------------------------------------------------------- |
+| Lives Cap (Hard)        | **2 Lives**                                               |
+| Lives Cap (Normal/Easy) | **3 Lives**                                               |
+| Decrease Timing         | **Death only** (Does NOT decrease on successful return)   |
+| Recovery Method         | **None** (No means of recovery exists)                    |
+| Reaching 0 Lives        | **Game Over** (Complete reset, only achievements persist) |
+| UI Position             | Header Top-Right (Heart icons: ❤️❤️❤️ or ❤️❤️)            |
 
 **Strategic Significance:**
 
@@ -57,12 +58,12 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 **Death Penalty Details:**
 
-| Lost on Death              | Gained on Death                |
-| -------------------------- | ------------------------------ |
-| All owned items            | 100% of soul remnants earned   |
-| All equipped items         | (Souls are saved to total)     |
-| Items brought from Base    |                                |
-| 1 Life                     |                                |
+| Lost on Death           | Gained on Death              |
+| ----------------------- | ---------------------------- |
+| All owned items         | 100% of soul remnants earned |
+| All equipped items      | (Souls are saved to total)   |
+| Items brought from Base |                              |
+| 1 Life                  |                              |
 
 > **Note:** The game allows unlimited exploration attempts. The tension comes from the permanent loss of items/equipment on death, not from limited exploration counts.
 
@@ -76,23 +77,24 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 **Current Implementation:** All depths share the same fixed map structure.
 
-| Config          | Value                 | Notes                                    |
-| --------------- | --------------------- | ---------------------------------------- |
-| Total Rows      | **7**                 | Fixed for all depths                     |
-| Nodes Per Row   | **[1, 2, 2, 2, 2, 2, 1]** | Start=1, middle=2, boss=1          |
-| Total Nodes     | **12**                | Per floor                                |
+| Config        | Value                     | Notes                     |
+| ------------- | ------------------------- | ------------------------- |
+| Total Rows    | **7**                     | Fixed for all depths      |
+| Nodes Per Row | **[1, 2, 2, 2, 2, 2, 1]** | Start=1, middle=2, boss=1 |
+| Total Nodes   | **12**                    | Per floor                 |
 
 **Node Type Probabilities (fixed, same for all depths):**
 
-| Type     | Chance | Notes                        |
-| -------- | ------ | ---------------------------- |
-| Elite    | 15%    | Stronger enemies             |
-| Event    | 10%    | Random events                |
-| Rest     | 10%    | Recovery nodes               |
-| Treasure | 5%     | Loot nodes                   |
-| Battle   | 60%    | Default (remaining chance)   |
+| Type     | Chance | Notes                      |
+| -------- | ------ | -------------------------- |
+| Elite    | 15%    | Stronger enemies           |
+| Event    | 10%    | Random events              |
+| Rest     | 10%    | Recovery nodes             |
+| Treasure | 5%     | Loot nodes                 |
+| Battle   | 60%    | Default (remaining chance) |
 
 **Special rows:**
+
 - Row 0 (first): Always `battle` (entry point)
 - Row 6 (last): Always `boss`
 
@@ -142,13 +144,13 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 **Implemented Ratios (from `DEFAULT_MAP_CONFIG`):**
 
-| Type     | Probability | Notes                  |
-| -------- | ----------- | ---------------------- |
-| Battle   | 60%         | Default (remainder)    |
-| Elite    | 15%         | Strong enemies         |
-| Event    | 10%         | Random events          |
-| Rest     | 10%         | Recovery               |
-| Treasure | 5%          | Loot                   |
+| Type     | Probability | Notes               |
+| -------- | ----------- | ------------------- |
+| Battle   | 60%         | Default (remainder) |
+| Elite    | 15%         | Strong enemies      |
+| Event    | 10%         | Random events       |
+| Rest     | 10%         | Recovery            |
+| Treasure | 5%          | Loot                |
 
 > **Design vs Implementation:** The original design had depth-dependent ratios (50-70% combat scaling by depth). The current implementation uses flat probabilities. Depth-dependent tuning may be added later.
 
@@ -399,12 +401,12 @@ interface MapGenerationConstraints {
 
 **Escape Route Specifications:**
 
-| Item            | Specification                   |
-| --------------- | ------------------------------- |
-| Appearance      | After boss defeat               |
-| Combat          | **None** (Safe passage)         |
-| Rewards         | **100%** (Full carry-back)      |
-| Route Length    | Direct path to Base             |
+| Item         | Specification              |
+| ------------ | -------------------------- |
+| Appearance   | After boss defeat          |
+| Combat       | **None** (Safe passage)    |
+| Rewards      | **100%** (Full carry-back) |
+| Route Length | Direct path to Base        |
 
 **Process:**
 
@@ -537,11 +539,11 @@ interface ExplorationState {
 }
 
 interface LivesSystem {
-  current: number;           // Current lives remaining
-  max: number;               // Lives cap (2 for Hard, 3 for Normal/Easy)
-  decreaseOnDeath: true;     // Lives decrease only on death
-  decreaseOnReturn: false;   // Lives do NOT decrease on successful return
-  recoveryMechanism: null;   // No recovery mechanism
+  current: number; // Current lives remaining
+  max: number; // Lives cap (2 for Hard, 3 for Normal/Easy)
+  decreaseOnDeath: true; // Lives decrease only on death
+  decreaseOnReturn: false; // Lives do NOT decrease on successful return
+  recoveryMechanism: null; // No recovery mechanism
 }
 ```
 
