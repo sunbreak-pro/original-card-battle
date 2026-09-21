@@ -47,8 +47,13 @@ unity-port/
 │   ├── LayerMapSpec.cs         1 階層の形（行の幅・種類の数・分岐の出やすさ）
 │   ├── MapGenerator.cs         仕様 + 種 → 地図
 │   ├── MapValidator.cs         到達できないノードが無いことなどの検査
-│   └── LayerMap.cs             生成された地図（ノード・辺・指紋）
-├── DungeonCore.Tests/          NUnit（net10.0）。種の再現・到達性・分岐の回避可能性
+│   ├── LayerMap.cs             生成された地図（ノード・辺・指紋）
+│   ├── SevenLayers.cs          七層の濃度・刻限・ノード数（seven_layers_v4.md §2）
+│   ├── Miasma.cs               蓄積・20% ごとの最大スタミナ・和らげる手段の計算
+│   ├── RunLoadout.cs           ツール 3 枠・消耗品 3 枠の口（中身は #100）
+│   ├── ExplorationState.cs     1 階層ぶんの状態（不変）
+│   └── ExplorationReducer.cs   刻限と瘴気の遷移
+├── DungeonCore.Tests/          NUnit（net10.0）。種の再現・到達性・七層を通した潜行
 ├── tools/
 │   ├── gen-parity.mjs          fixture を live TS から再生成
 │   └── parity-check.mjs        再生成 → ドリフト検出 → dotnet test（ワンコマンド）
