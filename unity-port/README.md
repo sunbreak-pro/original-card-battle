@@ -37,12 +37,19 @@ unity-port/
 │   ├── ParityTests.cs          TS ゴールドデータとのフルトレース照合
 │   └── Fixtures/
 │       └── parity-fixture.json TS 実装を FixedRng(0) 相当で走らせた正解データ
+├── DungeonContent/             持ち物の目録（netstandard2.1 / C# 9・データだけ・参照ゼロ）
+│   ├── ItemEffect.cs           効果の種類と、どちらのコアが読むか
+│   ├── ItemCatalogue.cs        ツール 8 種 / 消耗品 5 種（tools_and_consumables_v4.md）
+│   └── Loadout.cs              3 枠 + 3 枠の選択と入れ替えの規則
+├── DungeonContent.Tests/       NUnit（net10.0）。枠の規則と目録の不変条件
 ├── tools/
 │   ├── gen-parity.mjs          fixture を live TS から再生成
 │   └── parity-check.mjs        再生成 → ドリフト検出 → dotnet test（ワンコマンド）
 ├── unity-project-kit/          Unity プロジェクトへの drop-in（asmdef / View 雛形 / gitignore）
 └── PHASE3-KICKOFF.md           Phase 3（実 Unity + UGUI）の Windows 手順 + MCP 選定
 ```
+
+**`DungeonContent` はどのコアも参照しません**（2026-09-21、Issue #100）。持ち物の目録はデータだけなので、探索コアからも戦闘コアからも出立の画面からも、余計なものを引き連れずに読めます。効果を実際に適用するのは読む側です。
 
 `BattleCore` は Unity 2021.2+ がそのままコンパイルできる設定（netstandard2.1 / LangVersion 9.0 / ImplicitUsings disable / Nullable enable）で書いています。将来 `Assets/Core/` へコピーしても無改変で通ることを狙っています。`BattleStore` / `IBattleView` も MonoBehaviour 非依存の純 C# なので、この dotnet ライブラリで型・テストごと検証できます。
 
