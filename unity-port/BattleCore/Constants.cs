@@ -45,6 +45,13 @@ namespace BattleCore
 
         public const int ReserveGuard = 3;
 
+        // ---- Traits (§2.3) ----
+
+        /// <summary>重撃: power +6 on the card, and the next turn start recovers 1 less.</summary>
+        public const int HeavyBlowPower = 6;
+
+        public const int HeavyBlowRecoveryPenalty = 1;
+
         // ---- Status (§5) ----
 
         /// <summary>§5: the player may hold six kinds at once. Enemies have no cap.</summary>

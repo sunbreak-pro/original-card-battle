@@ -99,12 +99,19 @@ namespace BattleCore
         Reserve,
     }
 
-    /// <summary>§2.3 の効果. Three of the ten words; the rest are #48.</summary>
+    /// <summary>
+    /// §2.3 の効果. Four of the ten words; the rest are #48. 重撃 came in with the prototype deck
+    /// (#71): every card in the canon that applies 鈍足 carries a trait outside the first three
+    /// words, and 体当たり needs this one.
+    /// </summary>
     public enum TraitEffect
     {
         PowerBonus,
         GuardBonus,
         NextTurnRecovery,
+
+        /// <summary>重撃: power +6 now, recovery −1 at the next turn start. Cost and 構え are untouched.</summary>
+        HeavyBlow,
     }
 
     /// <summary>
@@ -124,6 +131,9 @@ namespace BattleCore
     /// (a CardDef and an EnemyActionDef are written from the same face rows), which is why #70 and
     /// #71 add data without adding types. Push is the enemy-only 相手の位置を反転する (§2.4) and is
     /// not reduced by Guard.
+    ///
+    /// A move face is one of three (swordsman_cards_v4.md §1.1): 近間へ / 遠間へ set MoveTo, 反転 sets
+    /// FlipsSelfPosition. A directed move played from the side it points at leaves the position alone.
     /// </summary>
     public sealed record Face(
         int Power = 0,
@@ -133,7 +143,8 @@ namespace BattleCore
         bool FlipsSelfPosition = false,
         bool Push = false,
         int Draw = 0,
-        int StaminaGain = 0);
+        int StaminaGain = 0,
+        Position? MoveTo = null);
 
     /// <summary>
     /// §3: a card picks one column of 1-4 up front. The column number is the cost and that column's

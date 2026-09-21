@@ -30,7 +30,8 @@ unity-port/
 │   ├── Combat.cs               §5.1 のダメージ式・Guard・構え・回復とドローの clamp
 │   ├── Traits.cs               §2.3 の特性評価器（面より前に 1 回）
 │   ├── Statuses.cs             §5 のスタック制（StatusSet と減り方 2 型）
-│   └── Cards.cs                §8 のデッキ生成・シャッフル・ドロー・全捨て・デッキ検証
+│   ├── Cards.cs                §8 のデッキ生成・シャッフル・ドロー・全捨て・デッキ検証
+│   └── CardCatalog.cs          カードデータ（レコードの一覧）と試作デッキ。縦切りは 80 種のうち 10 種 × 2 枚
 ├── BattleCore.Tests/           NUnit（net10.0）
 │   ├── Fixtures.cs             テスト用の最小のカード / 敵行動 / 戦闘者
 │   ├── ColumnTests.cs          固定コスト（列 = コスト、列 4 は 3）
@@ -39,6 +40,7 @@ unity-port/
 │   ├── TraitTests.cs           特性 4 条件 × 3 効果
 │   ├── StatusTests.cs          鈍足のスタックと位置の封じ
 │   ├── CardsTests.cs           手札 5 枚・全捨て・再シャッフル・同じ種で同じ結果
+│   ├── PrototypeDeckTests.cs   試作デッキ 10 種の数値が正本と一致・選定の条件・重撃と向きのあるムーブ
 │   └── Fixtures/
 │       └── parity-fixture.json v2 移植の証跡（下記「パリティ」参照。テストは読まない）
 ├── tools/
@@ -55,8 +57,8 @@ unity-port/
 いずれも状態を持たない純関数です。状態を進めるのはターン進行（#72）の仕事で、まだありません。
 
 - **型と数値**: `Types.cs`（属性・位置・面・特性・カードと敵行動・`BattleState`）/ `Constants.cs` / `Columns.cs`。
-- **計算**: `Combat.cs`（`(面 + 特性) → 丸め → − Guard`、構え、回復とドローの clamp）/ `Traits.cs`（条件 4 語 × 効果 3 語）/ `Statuses.cs`（スタックと減り方 2 型）。
-- **カード**: `Cards.cs`（デッキ生成・シャッフル・ドロー・全捨て・20〜40 と同種 3 枚の検証）。乱数は `IRng` 注入だけで、同じ種なら同じ並びになります。
+- **計算**: `Combat.cs`（`(面 + 特性) → 丸め → − Guard`、構え、回復とドローの clamp）/ `Traits.cs`（条件 4 語 × 効果 4 語。重撃は #71 で追加）/ `Statuses.cs`（スタックと減り方 2 型）。
+- **カード**: `Cards.cs`（デッキ生成・シャッフル・ドロー・全捨て・20〜40 と同種 3 枚の検証）。乱数は `IRng` 注入だけで、同じ種なら同じ並びになります。`CardCatalog.cs` は `swordsman_cards_v4.md` の数値をそのまま写したデータで、`PrototypeDeck.Build()` が 10 種 × 2 = 20 枚を返します。#51 は `CardCatalog.All` に行を足して 80 種へ広げます。
 
 `CardDef` と `EnemyActionDef` は同じ `Face` / `Trait` / 列の表から書けます。#70（敵データ）と #71（試作デッキ）は型を足さずにデータだけ足せます。特性の語彙を 12 × 10 へ広げる #48 も、enum に行を足して `Traits.Evaluate` の switch を伸ばすだけで済みます。
 
