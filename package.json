@@ -19,6 +19,7 @@
     "unity:sync": "node unity-port/tools/sync-unity-project.mjs",
     "unity:trace": "node unity-port/tools/gen-trace-actions.mjs",
     "issues:next": "node scripts/issues-next.mjs",
+    "sources": "node scripts/sources.mjs",
     "issues:test": "node --test \"scripts/__tests__/*.test.mjs\""
   },
   "dependencies": {

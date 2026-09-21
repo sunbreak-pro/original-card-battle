@@ -73,14 +73,18 @@ git worktree list
 条件は**英語・観測可能・4,000 文字以内**（判定モデルは Haiku）。レーンの open Issue を 1 本にまとめます。1 本の `/goal` に入れるのは**依存の無い Issue だけ**です。**並べる順は `prio:` の小さい順**（同じなら `sev:`、番号）で、`prio:1` が残っているレーンには `prio:3` 以下を混ぜません。`prio:` が付いていない Issue は配らず、采配欄に「優先順位なし」として出します。
 
 ```
-/goal in the original-card-battle worktree for <slug>: every open issue below has its own branch off origin/main, a local run of npm run build, npm run lint, npm run test:run and dotnet test under unity-port that all exit 0, and an opened PR referencing it — #<n1> <title1>, #<n2> <title2>. Read .claude/skills/worktree-policy/SKILL.md first, update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.
+/goal in the original-card-battle worktree for <slug>: every open issue below has its own branch off origin/main, a local run of npm run build, npm run lint, npm run test:run and dotnet test under unity-port that all exit 0, and an opened PR referencing it — #<n1> <title1>, #<n2> <title2>. Before anything else merge origin/main, read .claude/skills/worktree-policy/SKILL.md and run npm run sources -- --lane <slug>: write only the sources that command lists as yours, and when two canonical sources disagree do not edit the other lane's file — file an issue titled 正本の食い違い, note in the issue and the PR which source you followed, and keep going. Update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.
 ```
 
 `audit` レーンの終端は PR ではなく Issue の起票です。
 
 ```
-/goal in the original-card-battle worktree for audit: every open issue below is answered with a filed GitHub issue or a comment on the original that cites file:line evidence — #<n1> <title1>. Read .claude/skills/worktree-policy/SKILL.md first; this lane is read-only, so change no source file and open no pull request.
+/goal in the original-card-battle worktree for audit: every open issue below is answered with a filed GitHub issue or a comment on the original that cites file:line evidence — #<n1> <title1>. Before anything else merge origin/main, read .claude/skills/worktree-policy/SKILL.md and run npm run sources -- --lane audit to learn which file is canonical for each topic and which lane owns it; this lane is read-only, so change no source file and open no pull request, and address each finding to the owning lane.
 ```
+
+**正本の案内は文面に写しません。** `/goal` には「main を取り込む → `npm run sources -- --lane <slug>` を引く」の 2 手だけを書き、どのファイルが正本かは台帳（`.claude/docs/SOURCES.md`）に任せます。文面にファイル名を写すと、版が上がった日に古い案内を配ることになります。配る前に chat-main 側でも `git pull --ff-only` と `npm run sources -- --check` を通します。
+
+**Issue が名指しする設計書の持ち主と `lane:` が食い違うときは配りません。** 台帳 §2 の持ち主と違うレーンに書かせると one writer per artifact が崩れます。采配欄へ回します。
 
 **実装レーンの終端は「PR を開くまで」で切ります。** merge と Issue の close はこうだいさんの手番（`settings.json` の `ask` で `gh pr merge` が止まる）なので、そこを条件に入れると人待ちで永久に達成されません。
 

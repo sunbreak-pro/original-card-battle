@@ -10,6 +10,8 @@
 | 2026-05-17 | life-editor 準拠リファクタ: `code_overview`→`code-explanation`、`feature_plans`→`vision/plans`、`memories`→`known-issues` へ移行。標準サブディレクトリ追加                                                                                                                                         |
 | 2026-02-04 | Updated for facility consolidation (7 → 5). Removed deprecated files.                                                                                                                                                                                                                              |
 
+> **どれが正本かは [`SOURCES.md`](./SOURCES.md) が持ちます**（主題 → 正本 → 持ち主のレーン、旧版の一覧、食い違ったときの手順）。本書はフォルダの案内です。
+
 ## 標準ハーネス構造
 
 | Directory           | Description                                                                                                                                                                                |
@@ -66,7 +68,7 @@
 ## Related References
 
 - **`.claude/CLAUDE.md`** - 現状の実装規約・アーキテクチャ・規約の SSOT
-- **`.claude/MEMORY.md`** - タスクトラッカー（進行中 / 直近完了 / 予定）
-- **`.claude/HISTORY.md`** - セッション単位の変更履歴（降順）
+- **`.claude/memory/chat-<self>.md`** - タスクトラッカー（進行中 / 直近完了 / 予定。チャットごと）
+- **`.claude/history/chat-<self>.md`** - セッション単位の変更履歴（降順。チャットごと）
 - **`README.md`** - プロジェクト概要・Development History（完了履歴の要約）
 - **`.claude/docs/vision/core.md`** - Vision・設計原則
