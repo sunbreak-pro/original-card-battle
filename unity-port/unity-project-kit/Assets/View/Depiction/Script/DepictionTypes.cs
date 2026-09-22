@@ -157,6 +157,11 @@ namespace Depiction
         SideBonusMiss,
         GuardBlock,
         Hit,
+        /// <summary>
+        /// A status word gained or lost stacks (battle_core_v4 §5). Added for the core-driven turn
+        /// (issue #73); how it plays is issue #77's, and until then the chips simply settle with the frame.
+        /// </summary>
+        StatusChange,
     }
 
     /// <summary>
@@ -183,6 +188,8 @@ namespace Depiction
         public RangeSide RangeAfter;
         /// <summary>RangeSwitch only: the glyph the tag flips to ("遠").</summary>
         public string RangeGlyphAfter = "";
+        /// <summary>StatusChange only: the stacks left of the word named in <see cref="Text"/> (0 = gone).</summary>
+        public int StacksAfter = Unchanged;
     }
 
     public sealed class DepictionEvent

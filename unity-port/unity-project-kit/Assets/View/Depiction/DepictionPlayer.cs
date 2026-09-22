@@ -67,8 +67,11 @@ namespace Depiction.View
         public bool scriptedPlayback;
 
         [Header("Debug")]
-        [Tooltip("Performs the source's suggested drags by itself. Only a fixed script suggests one.")]
+        [Tooltip("Performs the source's suggested drags by itself. A fixed script suggests its next card; "
+                 + "a core battle started with auto play suggests the leftmost card it can pay for.")]
         public bool autoPlayDrags;
+        [Tooltip("With Auto Play Drags: ends the turn by itself once the source suggests no card. For unattended runs.")]
+        public bool autoEndTurn;
         [Tooltip("Freezes at named gates (hover / impact / end) until DebugStep() is called. For screenshots.")]
         public bool debugStepMode;
         [Tooltip("Folder (absolute, or relative to the project) that receives one PNG per gate. Empty = no capture.")]
@@ -81,6 +84,7 @@ namespace Depiction.View
         public readonly List<float> EventSeconds = new List<float>();
 
         private IDepictionSource _source;
+        private IDepictionSource _givenSource;
         private readonly List<CardView> _hand = new List<CardView>();
         private bool _busy;
         private bool _stepRequested;
@@ -90,6 +94,15 @@ namespace Depiction.View
         private CardView _hovered;
         private readonly Dictionary<CardView, float> _hoverWeight = new Dictionary<CardView, float>();
         private Coroutine _refusal;
+
+        /// <summary>
+        /// Hands the player the source to play instead of the two it can build by itself. Call it
+        /// from Awake (BattleBootstrap does): Start reads it once.
+        /// </summary>
+        public void UseSource(IDepictionSource source)
+        {
+            _givenSource = source;
+        }
 
         private void Start()
         {
@@ -105,9 +118,9 @@ namespace Depiction.View
             }
             if (stanceHintIcon && stanceHintIcon.sprite == null) stanceHintIcon.sprite = ProceduralArt.Shield;
 
-            _source = scriptedPlayback
-                ? (IDepictionSource)new DepictionRunner(TurnSliceScript.Build())
-                : new LiveTurn();
+            if (_givenSource != null) _source = _givenSource;
+            else if (scriptedPlayback) _source = new DepictionRunner(TurnSliceScript.Build());
+            else _source = new LiveTurn();
             ApplyFrame(_source.Frame);
             StartCoroutine(RunAutomaticEvents());
         }
@@ -849,7 +862,12 @@ namespace Depiction.View
         {
             yield return UiTween.Wait(400f);
             string suggested = _source.SuggestedCardId;
-            if (string.IsNullOrEmpty(suggested)) yield break;
+            if (string.IsNullOrEmpty(suggested))
+            {
+                // Nothing left to drag. An unattended run ends the turn the way a click on the plate would.
+                if (autoEndTurn && !_busy && _source.CanEndTurn) StartCoroutine(PlayThenContinue(_source.EndTurn()));
+                yield break;
+            }
             CardView card = _hand.Find(c => c && c.CardId == suggested);
             if (card == null) yield break;
             CardAim aim = card.Face.Aim;

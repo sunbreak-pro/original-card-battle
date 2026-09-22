@@ -30,6 +30,35 @@ namespace BattleCore
     }
 
     /// <summary>
+    /// A seeded generator whose sequence is written out here (SplitMix64), so the same seed replays
+    /// the same battle under `dotnet test` and inside Unity. System.Random makes no such promise
+    /// across runtimes, which is why a pinned battle does not use <see cref="SystemRng"/>.
+    /// </summary>
+    public sealed class SeededRng : IRng
+    {
+        private ulong _state;
+
+        public SeededRng(int seed)
+        {
+            _state = unchecked((ulong)seed);
+        }
+
+        public double NextDouble()
+        {
+            unchecked
+            {
+                _state += 0x9E3779B97F4A7C15UL;
+                ulong z = _state;
+                z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
+                z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+                z ^= z >> 31;
+                // 53 high bits → [0, 1), the same range Math.random() and System.Random give.
+                return (z >> 11) * (1.0 / 9007199254740992.0);
+            }
+        }
+    }
+
+    /// <summary>
     /// Deterministic RNG that always returns a fixed value (default 0).
     /// Mirrors the parity fixture generation where Math.random() was pinned to 0.
     /// </summary>
