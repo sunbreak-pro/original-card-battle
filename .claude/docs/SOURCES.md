@@ -22,7 +22,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | 要件（何をどの順で） | `.claude/docs/requirements/tier1-core.md` | main | v6 | all |
 | 要件（支援） | `.claude/docs/requirements/tier2-support.md` | main | v3 | all |
 | 要件（実験・凍結） | `.claude/docs/requirements/tier3-experimental.md` | main | v2 | audit |
-| 戦闘のルールと数値 | `.claude/docs/battle_document/battle_core_v4.md` | battle | v4.2 + §19 未反映 | cards, design |
+| 戦闘のルールと数値 | `.claude/docs/battle_document/battle_core_v4.md` | battle | v4.3（間合い N、#159）+ §19 未反映 | cards, design |
 | 戦闘の画面と操作 | `.claude/docs/battle_document/battle_ui_ux_v2.md` | battle | v2.1（本文が正。§10 / §11 は記録） | design |
 | カード（剣士 80 種） | `.claude/docs/card_document/swordsman_cards_v4.md` | cards | v4.2 | battle, design |
 | 敵の数値とロースター | `.claude/docs/enemy_document/enemy_roster_v4.md` | cards | v4.2 | battle, design |
@@ -43,7 +43,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | ラベルの一覧 | GitHub のラベル（`gh label list -R sunbreak-pro/original-card-battle`） | main | — | all |
 | タスクの進捗（チャットごと） | `.claude/memory/` | 各チャット | task-tracker 経由 | — |
 
-**状態の欄に但し書きがある行は、そのまま読むと間違えます。** `battle_core_v4.md` は §19（2026-09-21 の決定）が本文に入っていません。`battle_ui_ux_v2.md` は 2026-09-21 の v2.1 改訂（#46）で本文が正本に戻りました。
+**状態の欄に但し書きがある行は、そのまま読むと間違えます。** `battle_core_v4.md` は §19（2026-09-21 の決定）が本文に入っていません。同じ文書は 2026-09-22 の v4.3（#159）で近間 / 遠間を間合い N（マスの距離）へ改めました。`swordsman_cards_v4.md`・`enemy_roster_v4.md`・`battle_ui_ux_v2.md` は近間 / 遠間のままで、追従は #160 と #163 です。間合いの規則が食い違ったら `battle_core_v4.md` が勝ちます。`battle_ui_ux_v2.md` は 2026-09-21 の v2.1 改訂（#46）で本文が正本に戻りました。
 
 **`battle_ui_ux_v2.md` と `View/Depiction/` の持ち主は仮です。** レーンの定義では UI / UX 設計は design ですが、縦切り（#67）の間は #46 / #56 / #57 が `lane:battle` なので battle に置いています。縦切りの振り返り（#80）で見直します。
 
