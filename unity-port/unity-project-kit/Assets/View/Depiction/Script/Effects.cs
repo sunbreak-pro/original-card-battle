@@ -134,6 +134,41 @@ namespace Depiction
 
         /// <summary>A bonus the enemy did not get (or a whiffed blow) is struck off the omen.</summary>
         SideBonusMiss,
+
+        // ---- Status and turn (#77, battle_ui_ux_v2 §5.1 / §5.10 / §5.13) ----
+
+        /// <summary>A status word appears: its chip pops in.</summary>
+        StatusApply,
+
+        /// <summary>A chip's stacks grow.</summary>
+        StatusStack,
+
+        /// <summary>A chip loses a stack at its holder's turn start (or when used).</summary>
+        StatusTick,
+
+        /// <summary>A chip's last stack goes and the chip fades away.</summary>
+        StatusVanish,
+
+        /// <summary>At the player's turn start, the standing omen blinks once.</summary>
+        OmenBlink,
+
+        /// <summary>The omen flares the moment the enemy carries it out.</summary>
+        OmenExecute,
+
+        /// <summary>"押し出し" rises on the figure the other side moved.</summary>
+        PushMark,
+
+        /// <summary>"あなたの番": the banner that opens the player's turn.</summary>
+        TurnBanner,
+
+        /// <summary>"敵の番": the banner that hands the turn to the enemy.</summary>
+        EnemyTurnBanner,
+
+        /// <summary>The recovered pips light one by one.</summary>
+        StaminaRecover,
+
+        /// <summary>The one card at the end: 勝ち or 負け.</summary>
+        ResultCard,
     }
 
     /// <summary>
@@ -228,7 +263,20 @@ namespace Depiction
                 new EffectSpec(EffectId.StaminaChange, 220f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
                 new EffectSpec(EffectId.StanceCue, 460f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
                 new EffectSpec(EffectId.RangeSwitch, 470f, 0f, blocking: true, "battle_ui_ux_v2 §5.7 移動 320 + 札の裏返し 150"),
-                new EffectSpec(EffectId.SideBonusMiss, 260f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
+                new EffectSpec(EffectId.SideBonusMiss, 260f, 0f, blocking: true, "縦切りの長さ"),
+
+                // #77
+                new EffectSpec(EffectId.StatusApply, 200f, 0f, blocking: true, "battle_ui_ux_v2 §5.10 順 2 チップが膨らんで収まる"),
+                new EffectSpec(EffectId.StatusStack, 150f, 0f, blocking: true, "battle_ui_ux_v2 §5.10 順 3"),
+                new EffectSpec(EffectId.StatusTick, 120f, 0f, blocking: true, "#77 スタックの減少（§5.10 順 4 は 150。敵の番の予算に合わせて 120）"),
+                new EffectSpec(EffectId.StatusVanish, 150f, 0f, blocking: true, "battle_ui_ux_v2 §5.10 順 6 薄くなって消える"),
+                new EffectSpec(EffectId.OmenBlink, 250f, 0f, blocking: false, "battle_ui_ux_v2 §5.1 順 8 予兆の札が明滅 1 回"),
+                new EffectSpec(EffectId.OmenExecute, 200f, 0f, blocking: false, "battle_ui_ux_v2 §5.8 実行（札が一瞬塗られる）"),
+                new EffectSpec(EffectId.PushMark, 1000f, 0f, blocking: false, "battle_ui_ux_v2 §5.7 順 6 押し出し（上昇して消えるまで）"),
+                new EffectSpec(EffectId.TurnBanner, 300f, 0f, blocking: true, "battle_ui_ux_v2 §5.1 順 1 ターン開始のバナー"),
+                new EffectSpec(EffectId.EnemyTurnBanner, 400f, 0f, blocking: true, "battle_ui_ux_v2 §5.13 順 5 敵の番のバナー"),
+                new EffectSpec(EffectId.StaminaRecover, 80f, 80f, blocking: true, "battle_ui_ux_v2 §5.1 順 3 回復ピップ 1 個ずつ 80 × n"),
+                new EffectSpec(EffectId.ResultCard, 400f, 0f, blocking: false, "battle_ui_ux_v2 §5.19 順 5 せり上がり（勝ち / 負けの 1 枚）"),
             };
             var map = new Dictionary<EffectId, EffectSpec>();
             foreach (EffectSpec spec in list) map.Add(spec.Id, spec);
@@ -304,6 +352,18 @@ namespace Depiction
         public int Count { get; }
     }
 
+    /// <summary>§5.10: which of the four chip beats a StatusChange cue is, read off its change and what is left.</summary>
+    public static class StatusBeat
+    {
+        public static EffectId Of(Cue cue)
+        {
+            if (cue == null) throw new ArgumentNullException(nameof(cue));
+            if (cue.StacksAfter <= 0) return EffectId.StatusVanish;
+            if (cue.Amount > 0) return cue.StacksAfter == cue.Amount ? EffectId.StatusApply : EffectId.StatusStack;
+            return EffectId.StatusTick;
+        }
+    }
+
     /// <summary>§5.3 強弱, held at two steps for now (#76): intensity 3 and 4 are strong.</summary>
     public static class EffectStrength
     {
@@ -323,7 +383,9 @@ namespace Depiction
             if (ev == null) throw new ArgumentNullException(nameof(ev));
             var steps = new List<EffectStep>();
             if (ev.Kind == DepictionEventKind.PlayCard) steps.Add(new EffectStep(EffectId.CardRelease, 1));
+            if (ev.Kind == DepictionEventKind.TurnStart) steps.Add(new EffectStep(EffectId.TurnBanner, 1));
             foreach (Cue cue in ev.Cues) AddSteps(steps, cue);
+            if (ev.Kind == DepictionEventKind.TurnEnd) steps.Add(new EffectStep(EffectId.EnemyTurnBanner, 1));
             return steps;
         }
 
@@ -339,7 +401,8 @@ namespace Depiction
                     steps.Add(new EffectStep(EffectId.HandDiscard, Math.Max(0, cue.Amount)));
                     break;
                 case CueKind.StaminaChange:
-                    if (cue.Amount > 0) steps.Add(new EffectStep(EffectId.StaminaChange, 1));
+                    // A gain lights its pips one by one; a spend pops beside the card's beats.
+                    if (cue.Amount > 0) steps.Add(new EffectStep(EffectId.StaminaRecover, cue.Amount));
                     break;
                 case CueKind.OmenShow:
                     steps.Add(new EffectStep(EffectId.OmenShow, 1));
@@ -388,9 +451,11 @@ namespace Depiction
                         steps.Add(new EffectStep(EffectId.EnemyReturn, 1));
                     }
                     break;
-                case CueKind.GuardReset:
                 case CueKind.StatusChange:
-                    break; // settle with the frame; #77 gives the chips their beat
+                    steps.Add(new EffectStep(StatusBeat.Of(cue), 1));
+                    break;
+                case CueKind.GuardReset:
+                    break; // settles with the frame
                 default:
                     throw new ArgumentOutOfRangeException(nameof(cue), cue.Kind, "No effect is planned for this cue.");
             }

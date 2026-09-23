@@ -108,6 +108,76 @@ namespace Depiction.Tests
             }));
         }
 
+        // ---- Status and turn (#77) ----
+
+        [TestCase(EffectId.StatusApply, 200f, true)]
+        [TestCase(EffectId.StatusStack, 150f, true)]
+        [TestCase(EffectId.StatusTick, 120f, true)]
+        [TestCase(EffectId.StatusVanish, 150f, true)]
+        [TestCase(EffectId.OmenBlink, 250f, false)]
+        [TestCase(EffectId.OmenExecute, 200f, false)]
+        [TestCase(EffectId.PushMark, 1000f, false)]
+        [TestCase(EffectId.TurnBanner, 300f, true)]
+        [TestCase(EffectId.EnemyTurnBanner, 400f, true)]
+        [TestCase(EffectId.StaminaRecover, 80f, true)]
+        [TestCase(EffectId.ResultCard, 400f, false)]
+        public void TheStatusAndTurnBeats_PlayForTheirLengths(EffectId id, float ms, bool blocking)
+        {
+            EffectSpec spec = EffectCatalog.Of(id);
+            Assert.That(spec.Ms, Is.EqualTo(ms));
+            Assert.That(spec.Blocking, Is.EqualTo(blocking));
+        }
+
+        [TestCase(2, 2, EffectId.StatusApply)]   // a new word: 0 → 2
+        [TestCase(1, 3, EffectId.StatusStack)]   // more of a word already there
+        [TestCase(-1, 1, EffectId.StatusTick)]   // one stack less at the turn start
+        [TestCase(-1, 0, EffectId.StatusVanish)] // the last one gone
+        public void AStatusChange_IsOneOfTheFourChipBeats(int change, int stacksAfter, EffectId beat)
+        {
+            var cue = new Cue { Kind = CueKind.StatusChange, Target = UnitSide.Enemy, Text = "鈍足", Amount = change, StacksAfter = stacksAfter };
+            Assert.That(StatusBeat.Of(cue), Is.EqualTo(beat));
+        }
+
+        [Test]
+        public void TheTurn_OpensWithItsBanner_AndHandsOverWithTheEnemysBanner()
+        {
+            var start = new DepictionEvent { Kind = DepictionEventKind.TurnStart, After = new DepictionFrame() };
+            start.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = 3, StaminaAfter = 10, StaminaMax = 10 });
+            start.Cues.Add(new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 5 });
+            Assert.That(Steps(start), Is.EqualTo(new[] { (EffectId.TurnBanner, 1), (EffectId.StaminaRecover, 3), (EffectId.CardDraw, 5) }));
+            Assert.That(EffectPlan.BlockingMs(start, EffectSwitches.AllOn()), Is.EqualTo(300f + 3 * 80f + 500f), "the pips light 80 ms apart");
+
+            var end = new DepictionEvent { Kind = DepictionEventKind.TurnEnd, After = new DepictionFrame() };
+            end.Cues.Add(new Cue { Kind = CueKind.DiscardHand, Target = UnitSide.Player, Amount = 2 });
+            Assert.That(Steps(end).Last(), Is.EqualTo((EffectId.EnemyTurnBanner, 1)));
+        }
+
+        [Test]
+        public void ALiveFight_EndsOnAFrameThatSaysWhoWon()
+        {
+            var live = new LiveTurn();
+            for (int guard = 0; guard < 400 && !live.Finished; guard++)
+            {
+                if (!live.WaitingForPlayer)
+                {
+                    DepictionEvent ev = live.AdvanceAuto();
+                    if (!live.Finished) Assert.That(ev.After.Outcome, Is.EqualTo(BattleOutcome.Ongoing), "event " + ev.Order);
+                    continue;
+                }
+                string card = live.Frame.Hand.Select(c => c.Id).FirstOrDefault(id => live.Inspect(id) == PlayVerdict.Accepted);
+                if (card == null)
+                {
+                    live.EndTurn();
+                    continue;
+                }
+                CardFace face = DepictionText.Find(live.Frame.Hand, card);
+                live.TryPlay(card, DepictionText.RequiredZone(face.Aim), out DepictionEvent _);
+            }
+            Assert.That(live.Finished, Is.True);
+            Assert.That(live.Frame.Outcome, Is.EqualTo(live.PlayerWon ? BattleOutcome.Won : BattleOutcome.Lost));
+            Assert.That(DepictionText.OutcomeText(live.Frame.Outcome), Is.EqualTo(live.PlayerWon ? "勝ち" : "負け"));
+        }
+
         // ---- The system a blow draws (battle_ui_ux_v2 §5.3) ----
 
         [TestCase("薙ぎ払い", true, false, false, false, StrikeSystem.Sweep)]

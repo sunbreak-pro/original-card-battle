@@ -120,9 +120,19 @@ namespace Depiction
         public int MiasmaPercent;
     }
 
+    /// <summary>How the battle stands: still going, or over one way or the other (the one card, #77).</summary>
+    public enum BattleOutcome
+    {
+        Ongoing,
+        Won,
+        Lost,
+    }
+
     /// <summary>One settled screen. The View can rebuild everything it shows from a frame alone.</summary>
     public sealed class DepictionFrame
     {
+        /// <summary>Won or Lost once the battle is over; the View shows the one card for it.</summary>
+        public BattleOutcome Outcome = BattleOutcome.Ongoing;
         public CornerFrame Corner = new CornerFrame();
         public UnitFrame Player = new UnitFrame();
         public UnitFrame Enemy = new UnitFrame();
@@ -247,6 +257,8 @@ namespace Depiction
         public int StacksAfter = Unchanged;
         /// <summary>Slash and EnemyWindup: the shape of the blow and of the enemy's move (§5.3).</summary>
         public StrikeSystem System = StrikeSystem.Slash;
+        /// <summary>RangeSwitch only: the other side moved the player (a push or a pull), not the player itself.</summary>
+        public bool Pushed;
     }
 
     public sealed class DepictionEvent
@@ -298,6 +310,20 @@ namespace Depiction
         public static DropZone RequiredZone(CardAim aim)
         {
             return aim == CardAim.Single ? DropZone.Receiver : DropZone.AboveThrowLine;
+        }
+
+        /// <summary>The turn banners and the one card at the end (battle_ui_ux_v2 §5.1 順 1 / §5.13 順 5, #77).</summary>
+        public const string YourTurn = "あなたの番";
+        public const string EnemyTurn = "敵の番";
+        public const string Won = "勝ち";
+        public const string Lost = "負け";
+
+        /// <summary>The muted label on a figure the other side pushed (battle_ui_ux_v2 §5.7 順 6).</summary>
+        public const string Pushed = "押し出し";
+
+        public static string OutcomeText(BattleOutcome outcome)
+        {
+            return outcome == BattleOutcome.Won ? Won : outcome == BattleOutcome.Lost ? Lost : "";
         }
 
         public static string ZoneName(CardAim aim)

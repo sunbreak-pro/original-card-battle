@@ -30,6 +30,55 @@ namespace Depiction.Bridge.Tests
         private const int BudgetMs = 2000;
 
         [Test]
+        public void Slow_SwellsIn_ShrinksAtTheEnemysTurnStart_AndFadesOutTwoTurnsLater()
+        {
+            // #77: 体当たり puts 鈍足 2 on the enemy; each enemy turn start takes one off (battle_core_v4 §5).
+            // The core's events are written by hand so the test does not hang on where a battle starts.
+            BattleState state = TurnLoop.Start(BattleSetup.Slice(), new FixedRng(0.9999999)).State;
+            var writer = new CoreScriptWriter(state.EnemyDef);
+            writer.Opening(state);
+            var events = new List<BattleEvent>
+            {
+                new CardPlayed(Actor.Player, new CardInstance("body_check-0", CardCatalog.BodyCheck), 0),
+                new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Slow, 2, 2, false),
+                new GuardCleared(Actor.Enemy, 0),
+                new StatusTicked(Actor.Enemy, StatusKind.Slow, 1),
+                new GuardCleared(Actor.Enemy, 0),
+                new StatusTicked(Actor.Enemy, StatusKind.Slow, 0),
+            };
+            List<DepictionEvent> written = writer.Write(events, state);
+            List<Cue> changes = written.SelectMany(ev => ev.Cues).Where(c => c.Kind == CueKind.StatusChange).ToList();
+
+            Assert.That(changes.Select(c => (c.Target, c.Text, c.Amount, c.StacksAfter)), Is.EqualTo(new[]
+            {
+                (UnitSide.Enemy, "鈍足", 2, 2), (UnitSide.Enemy, "鈍足", -1, 1), (UnitSide.Enemy, "鈍足", -1, 0),
+            }));
+            Assert.That(changes.Select(StatusBeat.Of), Is.EqualTo(new[] { EffectId.StatusApply, EffectId.StatusTick, EffectId.StatusVanish }));
+            Assert.That(written[0].After.Enemy.Statuses.Select(s => s.Label + s.Stacks), Is.EqualTo(new[] { "鈍足2" }));
+            Assert.That(written[1].After.Enemy.Statuses.Select(s => s.Label + s.Stacks), Is.EqualTo(new[] { "鈍足1" }));
+            Assert.That(written[2].After.Enemy.Statuses, Is.Empty, "gone two turns later");
+        }
+
+        [Test]
+        public void APush_IsMarkedAsOne_AndTheLastFrameSaysWhoWon()
+        {
+            BattleState state = TurnLoop.Start(BattleSetup.Slice(), new FixedRng(0.9999999)).State;
+            var writer = new CoreScriptWriter(state.EnemyDef);
+            writer.Opening(state);
+            List<DepictionEvent> pushed = writer.Write(new List<BattleEvent>
+            {
+                new GuardCleared(Actor.Enemy, 0),
+                new CellsMoved(Actor.Player, state.Player.Cell, state.Player.Cell - 1, Pushed: true),
+            }, state);
+            Assert.That(pushed.SelectMany(ev => ev.Cues).Single(c => c.Kind == CueKind.RangeSwitch).Pushed, Is.True);
+            Assert.That(pushed.Last().After.Outcome, Is.EqualTo(BattleOutcome.Ongoing));
+
+            BattleState won = state with { Result = GameResult.Won, Phase = BattlePhase.Finished };
+            List<DepictionEvent> last = writer.Write(new List<BattleEvent> { new GuardCleared(Actor.Enemy, 0) }, won);
+            Assert.That(last.Last().After.Outcome, Is.EqualTo(BattleOutcome.Won));
+        }
+
+        [Test]
         public void ThePolearmsActions_EachMoveTheirOwnWay()
         {
             // #76: the four actions read apart with the placeholder art alone — sweep across, thrust in,

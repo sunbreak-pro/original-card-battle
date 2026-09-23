@@ -54,6 +54,29 @@ namespace Depiction.View
             if (group) yield return UiTween.Fade(group, group.alpha, 0f, ms, Ease.In);
         }
 
+        /// <summary>The standing omen blinks once at the player's turn start (EffectId.OmenBlink).</summary>
+        public IEnumerator Blink(float ms)
+        {
+            if (!group) yield break;
+            float from = group.alpha;
+            yield return UiTween.Run(ms, Ease.InOut, t => { if (group) group.alpha = Mathf.Lerp(from, 0.25f, Mathf.Sin(t * Mathf.PI)); });
+            if (group) group.alpha = from;
+        }
+
+        /// <summary>The omen flares as the enemy carries it out (EffectId.OmenExecute).</summary>
+        public IEnumerator Flare(float ms)
+        {
+            Color from = kindText ? kindText.color : Color.white;
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                float s = 1f + 0.18f * Mathf.Sin(t * Mathf.PI);
+                Rect.localScale = new Vector3(s, s, 1f);
+                if (kindText) kindText.color = Color.Lerp(BattleTheme.White, from, t);
+            });
+            Rect.localScale = Vector3.one;
+            if (kindText) kindText.color = from;
+        }
+
         /// <summary>The badge gone at once (EffectId.OmenSpend switched off).</summary>
         public void HideNow()
         {

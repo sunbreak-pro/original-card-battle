@@ -252,7 +252,7 @@ namespace Depiction.Bridge
                     Unit(moved.Actor).Cell = moved.To;
                     ev.Cues.Add(new Cue
                     {
-                        Kind = CueKind.RangeSwitch, Target = UnitSide.Player,
+                        Kind = CueKind.RangeSwitch, Target = UnitSide.Player, Pushed = moved.Pushed,
                         RangeAfter = CoreText.SideOf(Gap), RangeGlyphAfter = CoreText.GapGlyph(Gap),
                     });
                     break;
@@ -468,6 +468,9 @@ namespace Depiction.Bridge
         {
             var frame = new DepictionFrame
             {
+                Outcome = after.Result == GameResult.Won ? BattleOutcome.Won
+                    : after.Result == GameResult.Lost ? BattleOutcome.Lost
+                    : BattleOutcome.Ongoing,
                 // Floor, chain and miasma belong to the exploration layer (#99); one battle, no miasma.
                 Corner = new CornerFrame { Turn = _turn, Floor = 1, ChainIndex = 1, ChainTotal = 1, MiasmaPercent = 0 },
                 Player = UnitOf(_player, showStamina: true, gap: Gap),
