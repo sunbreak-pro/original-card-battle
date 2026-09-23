@@ -690,7 +690,7 @@ namespace BattleCore.Tests
             var s = StartUnshuffled(CardCatalog.BoarRush, CardCatalog.Thrust, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.Feint).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
-            s = s with { Enemy = s.Enemy with { Hp = 10 } };
+            s = s.WithEnemy(s.Enemy with { Hp = 10 });
 
             // boar_rush at gap 2 is 20: the attack face kills, so the move face never runs.
             var play = TurnLoop.PlayCard(s, InHand(s, "boar_rush"), NoRng);
@@ -766,7 +766,7 @@ namespace BattleCore.Tests
             var s = TurnLoop.Start(AtGap(ScenarioGap), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
             // Nothing in the slice drains the enemy; this stands in for 崩し (#48).
-            s = s with { Enemy = s.Enemy with { Stamina = 0, NextTurnRecoveryBonus = -2 } };
+            s = s.WithEnemy(s.Enemy with { Stamina = 0, NextTurnRecoveryBonus = -2 });
 
             var end = TurnLoop.EndTurn(s, NoRng);
 
