@@ -24,8 +24,10 @@ namespace Depiction.View
         public int seed = BattleLaunch.DefaultSeed;
         [Tooltip("Draws a fresh seed on every Play and logs it, so a fight worth replaying can be typed back in.")]
         public bool randomSeed;
-        [Tooltip("The gap N on turn 1 (battle_core_v4 §7.3: 2). The player stands on cell 2.")]
-        public int startGap = 2;
+        [Tooltip("The cells on the line (battle_core_v4 §7.1: 5〜8, handed in per battle). The slice fights on 6.")]
+        public int fieldCells = BattleLaunch.SliceFieldCells;
+        [Tooltip("The gap N on turn 1 (battle_core_v4 §7.3: 3). The player stands on cell 2; a line too short puts the enemy at its end.")]
+        public int startGap = BattleLaunch.DefaultStartGap;
 
         [Header("Unattended runs (captures, PlayMode test)")]
         [Tooltip("The battle suggests the leftmost card it can pay for. Pair it with Auto Play Drags and Auto End Turn on the player.")]
@@ -52,6 +54,7 @@ namespace Depiction.View
             {
                 EnemyId = enemyId,
                 Seed = SeedInUse,
+                FieldCells = fieldCells,
                 StartGap = Mathf.Max(0, startGap),
                 AutoPlay = autoPlay,
                 StopAfterTurns = Mathf.Max(0, stopAfterTurns),
@@ -68,7 +71,7 @@ namespace Depiction.View
                 player.enabled = false;
                 return;
             }
-            Debug.Log("[BattleBootstrap] " + enemyId + " / seed " + SeedInUse + " / start " + startSide);
+            Debug.Log("[BattleBootstrap] " + enemyId + " / seed " + SeedInUse + " / " + fieldCells + " cells / start gap " + startGap);
         }
     }
 }

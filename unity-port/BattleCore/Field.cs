@@ -12,8 +12,8 @@ namespace BattleCore
     /// §7: the line of cells. The player stands on the left and the enemy on the right, so "toward"
     /// is +1 for the player and −1 for the enemy. Nothing here holds state; the turn loop does.
     ///
-    /// One enemy for now: with several (#52) the toward-limit becomes the nearest enemy and a cell's
-    /// capacity (`CELL_CAPACITY`) starts to matter.
+    /// One enemy for now: with several (#47) the toward-limit becomes the nearest enemy, and a cell
+    /// holds one enemy at most (`CELL_CAPACITY` = 1, 2026-09-23).
     /// </summary>
     public static class Field
     {
@@ -54,6 +54,20 @@ namespace BattleCore
                     : Math.Min(from - cells, state.FieldCells - self.Size + 1);
             }
             return new Shift(from, to, Math.Abs(cells) - Math.Abs(to - from));
+        }
+
+        /// <summary>
+        /// §7.3 開始のマス: the enemy's near edge starts <paramref name="startGap"/> empty cells to the
+        /// right of the player. When the line is too short to hold that — a 5-cell line, or a large
+        /// enemy on a narrow one — the enemy stands at the right end instead and the gap shrinks;
+        /// the player keeps its cell and the room behind it (2026-09-23, #169). Whether the result
+        /// still fits at all is <see cref="Validate"/>'s to say.
+        /// </summary>
+        public static int EnemyStartCell(int fieldCells, int playerCell, int playerSize, int enemySize, int startGap)
+        {
+            if (startGap < 0) throw new ArgumentOutOfRangeException(nameof(startGap), startGap, "A gap is never negative.");
+            int wanted = playerCell + playerSize + startGap;
+            return Math.Min(wanted, fieldCells - enemySize + 1);
         }
 
         /// <summary>§7.3: the damage for the cells a pushed side could not take, before Guard.</summary>
