@@ -46,11 +46,17 @@ namespace BattleCore
 
     // ---- One card or one action (§9 steps 6 and 10) ----
 
-    /// <summary>The player released a card. PositionBefore is the side every position condition reads (§2.2).</summary>
-    public sealed record CardPlayed(Actor Actor, CardInstance Card, Position? PositionBefore) : BattleEvent(Actor);
+    /// <summary>The player released a card. GapBefore is the N every gap condition reads (§2.2 / §2.3).</summary>
+    public sealed record CardPlayed(Actor Actor, CardInstance Card, int GapBefore) : BattleEvent(Actor);
 
-    /// <summary>The enemy carried out its omen. OpponentPositionBefore is the player's side before any push.</summary>
-    public sealed record ActionExecuted(Actor Actor, EnemyActionDef Action, Position? OpponentPositionBefore) : BattleEvent(Actor);
+    /// <summary>The enemy carried out its omen. GapBefore is the N at execution, the one the reach is judged on (§6).</summary>
+    public sealed record ActionExecuted(Actor Actor, EnemyActionDef Action, int GapBefore) : BattleEvent(Actor);
+
+    /// <summary>
+    /// §6 空振り: the player stood outside the action's reach when it was carried out, so its
+    /// opponent-directed faces did not resolve. The cost was paid and the self faces followed.
+    /// </summary>
+    public sealed record ActionWhiffed(Actor Actor, string SourceId, int Gap, Reach Reach) : BattleEvent(Actor);
 
     /// <summary>§6: the declared action could not be paid for, so the phase is recovery only.</summary>
     public sealed record Rested(Actor Actor, Omen Declared) : BattleEvent(Actor);
@@ -60,7 +66,7 @@ namespace BattleCore
     /// <summary>§2.2: judged once, before any face. Only emitted for a card or action that carries a trait.</summary>
     public sealed record TraitEvaluated(Actor Actor, string SourceId, Trait Trait, TraitOutcome Outcome) : BattleEvent(Actor);
 
-    /// <summary>One face of the card resolved. They come in §2.2 order: Attack, Move, Guard, Skill.</summary>
+    /// <summary>One face of the card resolved. They come in §2.2 order: Attack, Move, Guard, Skill. Not emitted for a face a whiff skipped.</summary>
     public sealed record FaceResolved(Actor Actor, string SourceId, BattleAttribute Face) : BattleEvent(Actor);
 
     /// <summary>Actor is the attacker. Raw − Absorbed = Damage; Absorbed is what the target's Guard soaked.</summary>
@@ -75,10 +81,29 @@ namespace BattleCore
 
     public sealed record GuardGained(Actor Actor, int Amount, int GuardAfter) : BattleEvent(Actor);
 
-    /// <summary>Actor is whose position changed. Pushed is true when the other side moved them (§2.4).</summary>
-    public sealed record PositionChanged(Actor Actor, Position From, Position To, bool Pushed) : BattleEvent(Actor);
+    /// <summary>
+    /// §7.3: Actor is whose cell changed (From → To, To is the near edge for the enemy). Pushed is true
+    /// when the other side moved them (push / pull). Only emitted when the cell did change.
+    /// </summary>
+    public sealed record CellsMoved(Actor Actor, int From, int To, bool Pushed) : BattleEvent(Actor);
 
-    /// <summary>§5 鈍足: the move face was played but the holder could not switch sides.</summary>
+    /// <summary>
+    /// §7.3 壁のダメージ: Actor is the pushed side that could not take BlockedCells of the push.
+    /// Raw − Absorbed = Damage, as in <see cref="DamageDealt"/>.
+    /// </summary>
+    public sealed record WallHit(
+        Actor Actor,
+        int BlockedCells,
+        int Raw,
+        int Absorbed,
+        int Damage,
+        int GuardAfter,
+        int HpAfter) : BattleEvent(Actor);
+
+    /// <summary>§7.3: Actor is the target of a push / pull that its size (2 or more) refused.</summary>
+    public sealed record PushRefused(Actor Actor, int Size) : BattleEvent(Actor);
+
+    /// <summary>§5 鈍足: the holder's move, push or pull was shortened to 0 cells and so did not happen.</summary>
     public sealed record MoveBlocked(Actor Actor, StatusKind By) : BattleEvent(Actor);
 
     /// <summary>Actor is who applied it. Refused is true when the target was at its kind limit (§5).</summary>

@@ -48,17 +48,13 @@ namespace BattleCore
             staminaLeft >= Constants.ReserveThreshold ? Constants.ReserveGuard : 0;
 
         /// <summary>
-        /// §2.1 / §7.1: where a move face leaves its owner. 近間へ / 遠間へ land on the named side (and
-        /// change nothing when already there); 反転 always lands on the other side. A combatant
-        /// without a position stays without one. Whether the move is allowed at all (鈍足) is the
-        /// caller's question — see <see cref="Statuses.CanSwitchPosition"/>.
+        /// §5 鈍足 / §7.3: the cells a move, push or pull actually covers once the mover's own 鈍足
+        /// has taken one off (floor 0). The other side's 鈍足 never reduces what is done to it.
         /// </summary>
-        public static Position? MoveResult(Position? current, Face face)
+        public static int CellsAfterSlow(int cells, StatusSet moverStatuses)
         {
-            if (face == null) throw new ArgumentNullException(nameof(face));
-            if (!current.HasValue) return null;
-            if (face.MoveTo.HasValue) return face.MoveTo.Value;
-            return face.FlipsSelfPosition ? current.Value.Opposite() : current;
+            if (moverStatuses == null) throw new ArgumentNullException(nameof(moverStatuses));
+            return Math.Max(0, cells - Statuses.MoveReduction(moverStatuses));
         }
 
         /// <summary>§3: a card can only be played if its cost is payable in full.</summary>

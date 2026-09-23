@@ -4,13 +4,13 @@ using BattleCore;
 namespace BattleCore.Tests
 {
     /// <summary>
-    /// §2.3 / §17.6 F5: the trait is judged once, before any face resolves. These are the three
-    /// words the polearm needs plus the self-position word the player cards will use.
+    /// §2.3 / §17.6 F5: the trait is judged once, before any face resolves. These are the words the
+    /// polearm needs plus the gap thresholds the player cards use (v4.3: 間合い n 以下 / n 以上).
     /// </summary>
     public class TraitTests
     {
         private static readonly Trait SweepTrait =
-            new Trait(TraitCondition.OpponentPosition, TraitEffect.PowerBonus, Amount: 3, ConditionPosition: Position.Far);
+            new Trait(TraitCondition.GapAtLeast, TraitEffect.PowerBonus, Amount: 3, Threshold: 2);
 
         private static readonly Trait ShoveTrait =
             new Trait(TraitCondition.Unguarded, TraitEffect.PowerBonus, Amount: 3);
@@ -30,28 +30,27 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void OpponentPosition_FiresWhenThePlayerStandsOnTheNamedSide()
+        public void GapAtLeast_FiresFromTheThresholdUp()
         {
-            var outcome = Traits.Evaluate(SweepTrait, new TraitContext(OpponentPosition: Position.Far));
             Assert.Multiple(() =>
             {
-                Assert.That(outcome.Triggered, Is.True);
-                Assert.That(outcome.PowerBonus, Is.EqualTo(3));
+                Assert.That(Traits.Evaluate(SweepTrait, new TraitContext(Gap: 2)).PowerBonus, Is.EqualTo(3));
+                Assert.That(Traits.Evaluate(SweepTrait, new TraitContext(Gap: 4)).Triggered, Is.True);
+                Assert.That(Traits.Evaluate(SweepTrait, new TraitContext(Gap: 1)).Triggered, Is.False);
+                Assert.That(Traits.Evaluate(SweepTrait, new TraitContext(Gap: 0)).Triggered, Is.False);
             });
         }
 
         [Test]
-        public void OpponentPosition_StaysQuietOnTheOtherSide()
+        public void GapAtMost_FiresFromTheThresholdDown()
         {
-            var outcome = Traits.Evaluate(SweepTrait, new TraitContext(OpponentPosition: Position.Near));
-            Assert.That(outcome.Triggered, Is.False);
-        }
-
-        [Test]
-        public void OpponentPosition_StaysQuietWhenThereIsNoSideToRead()
-        {
-            var outcome = Traits.Evaluate(SweepTrait, new TraitContext(OpponentPosition: null));
-            Assert.That(outcome.Triggered, Is.False);
+            var trait = new Trait(TraitCondition.GapAtMost, TraitEffect.GuardBonus, Amount: 3, Threshold: 0);
+            Assert.Multiple(() =>
+            {
+                Assert.That(Traits.Evaluate(trait, new TraitContext(Gap: 0)).GuardBonus, Is.EqualTo(3));
+                Assert.That(Traits.Evaluate(trait, new TraitContext(Gap: 1)).Triggered, Is.False);
+                Assert.That(Traits.Evaluate(trait with { Threshold = 1 }, new TraitContext(Gap: 1)).Triggered, Is.True);
+            });
         }
 
         [Test]
@@ -69,25 +68,13 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void SelfPosition_ReadsThePlayerOwnSide()
+        public void SweepHitsElevenAtGapTwoAndEightAtGapOne()
         {
-            var trait = new Trait(
-                TraitCondition.SelfPosition, TraitEffect.GuardBonus, Amount: 3, ConditionPosition: Position.Near);
-
-            Assert.That(Traits.Evaluate(trait, new TraitContext(SelfPosition: Position.Near)).GuardBonus, Is.EqualTo(3));
-            Assert.That(Traits.Evaluate(trait, new TraitContext(SelfPosition: Position.Far)).Triggered, Is.False);
-        }
-
-        [Test]
-        public void SweepHitsElevenFromFarAndEightFromNear()
-        {
-            // The vertical slice's headline number (#68 の数値 5).
+            // The vertical slice's headline number (#68 の数値 5), read on the gap now.
             int far = Combat.ComputeRawPower(
-                face: 8,
-                traitBonus: Traits.Evaluate(SweepTrait, new TraitContext(OpponentPosition: Position.Far)).PowerBonus);
+                face: 8, traitBonus: Traits.Evaluate(SweepTrait, new TraitContext(Gap: 2)).PowerBonus);
             int near = Combat.ComputeRawPower(
-                face: 8,
-                traitBonus: Traits.Evaluate(SweepTrait, new TraitContext(OpponentPosition: Position.Near)).PowerBonus);
+                face: 8, traitBonus: Traits.Evaluate(SweepTrait, new TraitContext(Gap: 1)).PowerBonus);
 
             Assert.Multiple(() =>
             {

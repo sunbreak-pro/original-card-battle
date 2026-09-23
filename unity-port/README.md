@@ -2,6 +2,8 @@
 >
 > **2026-09-21（#69）: v3 を v4.2 で置き換えた。** 投入量 0〜3・近 / 中 / 遠の 3 段・空振り回避は消え、固定コスト（列 1〜4）・近間 / 遠間の 2 値・手札 5 枚・スタック制の状態になった（正本は `.claude/docs/battle_document/battle_core_v4.md`）。v3 は git の履歴に残る。
 >
+> **2026-09-23（#162）: v4.3 で近間 / 遠間を間合い N に置き換えた。** 場は横 1 列のマス（既定 6）、N はあいだの空きマスの数。面は届く間合い（`Reach`）を持ち、ムーブと押す / 引くはマス数、敵の決定木は間合いの帯 0 / 1〜2 / 3 以上の 3 枝、届かない敵の行動は空振り、端へ押されると壁のダメージ。カードと敵の届く間合いは #160 が決めるまで仮の値。
+>
 > **いま入っているのは骨だけ**。型・定数・列とコスト・ダメージ式・特性の評価器・状態・デッキ操作がある。ターン進行（`BattleReducer`）と敵データと View 契約は外してあり、縦切りの #70（敵）/ #71（デッキ）/ #72（ターン進行）が v4.2 で建て直す。縦切りの範囲は `.claude/docs/vision/plans/2026-09-21-vertical-slice-polearm.md`。
 >
 > **使い方**: `dotnet test unity-port/UnityCorePort.slnx` → `npm run unity:sync`（コア + View を Unity プロジェクトへ）→ `unity test C:/Users/user/Unity/RPG-by-card --mode EditMode`。
@@ -21,17 +23,18 @@
 ```
 unity-port/
 ├── UnityCorePort.slnx          ソリューション
-├── BattleCore/                 戦闘コア v4.2 の骨（netstandard2.1 / C# 9・engine-free）
+├── BattleCore/                 戦闘コア v4.3 の骨（netstandard2.1 / C# 9・engine-free）
 │   ├── IRng.cs                 乱数の注入口（SeededRng / SystemRng / FixedRng）。乱数はここだけ
 │   ├── IsExternalInit.cs       record/init を netstandard2.1 で使うためのポリフィル
-│   ├── Types.cs                §1 の持つ値・§2 の属性と面・特性・カードと敵行動・BattleState
-│   ├── Constants.cs            §10 の数値の正本（縦切りが読む行だけ）
+│   ├── Types.cs                §1 の持つ値・§2 の属性と面（届く間合い・マス数のムーブと押す / 引く）・特性・カードと敵行動・BattleState
+│   ├── Constants.cs            §10 の数値の正本（縦切りが読む行だけ。§7 のマスと壁の値を含む）
+│   ├── Field.cs                §7 の横 1 列のマス。間合い N・行けるところまで動く・追い越し禁止・壁のダメージ・配置の検証
 │   ├── Columns.cs              §3 の列とコスト・§3.1 の目盛り
 │   ├── Combat.cs               §5.1 のダメージ式・Guard・構え・回復とドローの clamp
 │   ├── Traits.cs               §2.3 の特性評価器（面より前に 1 回）
 │   ├── Statuses.cs             §5 のスタック制（StatusSet と減り方 2 型）
 │   ├── Enemies.cs              敵データ（レコードの一覧）。縦切りは長柄の歪み兵 1 体（roster §2.1）
-│   ├── EnemyAi.cs              §6 の決定木 2 枝・払えなければ次の候補へ・予兆 1 段・コミット
+│   ├── EnemyAi.cs              §6.1 の決定木 3 枝（間合いの帯）・払えなければ次の候補へ・予兆は種別 + 届く間合い・狙うマス・コミット
 │   ├── Cards.cs                §8 のデッキ生成・シャッフル・ドロー・全捨て・デッキ検証
 │   ├── CardCatalog.cs          カードデータ（レコードの一覧）と試作デッキ。縦切りは 80 種のうち 10 種 × 2 枚
 │   ├── BattleEvents.cs         何が起きたかの列（イベント）。値は確定後のものだけを持つ
@@ -40,13 +43,13 @@ unity-port/
 │   ├── Fixtures.cs             テスト用の最小のカード / 敵行動 / 戦闘者
 │   ├── ColumnTests.cs          固定コスト（列 = コスト、列 4 は 3）
 │   ├── CombatTests.cs          ダメージ式・Guard・構え・定数
-│   ├── PositionTests.cs        近間 / 遠間の 2 値・push・位置なしの敵
-│   ├── TraitTests.cs           特性 4 条件 × 3 効果
-│   ├── StatusTests.cs          鈍足のスタックと位置の封じ
-│   ├── PolearmTests.cs         長柄の歪み兵の数値・決定木 2 枝・スタミナ不足の落ち方・押し引き
+│   ├── FieldTests.cs           間合い N・帯・届く間合い・マスの移動と追い越し禁止・押す / 引くと壁・大きな敵は押せない・空振りした押し
+│   ├── TraitTests.cs           特性 4 条件 × 3 効果（間合い n 以下 / n 以上）
+│   ├── StatusTests.cs          鈍足のスタックと「動くマスが 1 減る」
+│   ├── PolearmTests.cs         長柄の歪み兵の数値・決定木 3 枝・スタミナ不足の落ち方・押し引き・狙うマス
 │   ├── CardsTests.cs           手札 5 枚・全捨て・再シャッフル・同じ種で同じ結果
-│   ├── PrototypeDeckTests.cs   試作デッキ 10 種の数値が正本と一致・選定の条件・重撃と向きのあるムーブ
-│   ├── TurnLoopTests.cs        縦切りの合格条件（並び 17 件・数値 8 点・終端 3 点）と固定の種で 3 ターン
+│   ├── PrototypeDeckTests.cs   試作デッキ 10 種の数値が正本と一致・選定の条件・重撃・仮の届く間合いとマス数のムーブ
+│   ├── TurnLoopTests.cs        縦切りの合格条件（並び 17 件・数値 8 点・終端 3 点）を間合い N で読み直し、届かない札の拒否・空振り・敵の踏み込み・壁、固定の種で 3 ターン
 │   └── Fixtures/
 │       └── parity-fixture.json TS 実装を FixedRng(0) 相当で走らせた正解データ
 ├── Depiction.Script/ ・ Depiction.Script.Tests/   戦闘描写の台本の型（kit の `Assets/View/Depiction/Script/` と `Tests/` を `dotnet test` で回すための器）

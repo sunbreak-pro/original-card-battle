@@ -1,4 +1,4 @@
-// The battle the v4.2 core runs, offered to the screen as an IDepictionSource. Pure C#:
+// The battle the v4.3 core runs, offered to the screen as an IDepictionSource. Pure C#:
 // BattleCore + Depiction.Script, no UnityEngine.
 //
 // This is the third source beside LiveTurn (the §18 draft rules written by hand) and
@@ -116,6 +116,7 @@ namespace Depiction.Bridge
                 case PlayRefusal.None: return PlayVerdict.Accepted;
                 case PlayRefusal.NotInHand: return PlayVerdict.NotInHand;
                 case PlayRefusal.NotEnoughStamina: return PlayVerdict.NotEnoughStamina;
+                case PlayRefusal.OutOfReach: return PlayVerdict.OutOfRange;
                 default: return PlayVerdict.NotWaiting;
             }
         }
@@ -156,6 +157,8 @@ namespace Depiction.Bridge
             {
                 case PlayVerdict.NotEnoughStamina:
                     return "「" + face.Name + "」はスタミナ " + face.Cost + " が要ります。残りは " + Frame.Player.Stamina + " です";
+                case PlayVerdict.OutOfRange:
+                    return "「" + face.Name + "」は間合い " + face.RequiredRangeGlyph + " の相手にしか出せません。いまは " + Frame.Player.RangeGlyph + " です";
                 case PlayVerdict.WrongZone:
                     return "「" + face.Name + "」は" + DepictionText.ZoneName(face.Aim) + "で離すと出せます";
                 default:

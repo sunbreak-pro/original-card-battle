@@ -129,16 +129,15 @@ namespace BattleCore
         };
 
         /// <summary>
-        /// §5 鈍足: while it is held, the side cannot switch position for the whole turn.
-        ///
-        /// The polearm carries no position, so pinning it has no mechanical effect on the enemy —
-        /// the canon says so literally and the roster's journal note reads otherwise. That
-        /// contradiction is filed as #116 and is implemented literally here, not reconciled.
+        /// §5 鈍足 (v4.3 reading, §21.3): every cell change the holder causes — its own move face and
+        /// the push / pull it lands — is one cell shorter, floor 0. A one-cell move still stops dead,
+        /// as it did in v4.2; a two-cell one becomes one. What the other side does to the holder is
+        /// not reduced.
         /// </summary>
-        public static bool CanSwitchPosition(StatusSet statuses)
+        public static int MoveReduction(StatusSet statuses)
         {
             if (statuses == null) throw new ArgumentNullException(nameof(statuses));
-            return !statuses.Has(StatusKind.Slow);
+            return statuses.Has(StatusKind.Slow) ? 1 : 0;
         }
     }
 }

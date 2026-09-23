@@ -5,13 +5,11 @@ namespace BattleCore
     /// <summary>
     /// What the board looked like when a card or action was played, as far as a trait can see it.
     ///
-    /// SelfPosition and OpponentPosition are null for a combatant that carries no position — the
-    /// polearm does not (§7.1) — and a position condition never fires against a null side.
+    /// Gap is the distance N to the opponent before the card resolves (§2.3: 出す前の N).
     /// StaminaAfterUse is the stamina left once the cost is paid, which is what 温存 reads.
     /// </summary>
     public sealed record TraitContext(
-        Position? SelfPosition = null,
-        Position? OpponentPosition = null,
+        int Gap = 0,
         int OpponentGuard = 0,
         int StaminaAfterUse = 0);
 
@@ -41,18 +39,12 @@ namespace BattleCore
             return Holds(trait, context) ? Apply(trait) : TraitOutcome.None;
         }
 
-        /// <summary>§2.3: a position condition reads the side from before the card is played.</summary>
+        /// <summary>§2.3: a gap condition reads N from before the card is played (before any move face).</summary>
         private static bool Holds(Trait trait, TraitContext context) => trait.Condition switch
         {
-            TraitCondition.SelfPosition =>
-                context.SelfPosition.HasValue
-                && trait.ConditionPosition.HasValue
-                && context.SelfPosition.Value == trait.ConditionPosition.Value,
+            TraitCondition.GapAtMost => context.Gap <= trait.Threshold,
 
-            TraitCondition.OpponentPosition =>
-                context.OpponentPosition.HasValue
-                && trait.ConditionPosition.HasValue
-                && context.OpponentPosition.Value == trait.ConditionPosition.Value,
+            TraitCondition.GapAtLeast => context.Gap >= trait.Threshold,
 
             TraitCondition.Unguarded => context.OpponentGuard == 0,
 

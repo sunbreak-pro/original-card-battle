@@ -26,23 +26,46 @@ namespace BattleCore.Tests
             Face? face = null,
             BattleAttribute attributes = BattleAttribute.Attack,
             Trait? trait = null,
-            OmenLabel? omen = null)
+            TargetKind targets = TargetKind.One)
         {
-            return new EnemyActionDef(
-                id, id, attributes, column, face ?? new Face(),
-                omen ?? new OmenLabel(OmenKind.Attack), trait, string.Empty);
+            return new EnemyActionDef(id, id, attributes, column, face ?? new Face(), trait, targets, string.Empty);
         }
 
         public static CombatantState Combatant(
             int hp = Constants.PlayerMaxHp,
             int stamina = Constants.BaseMaxStamina,
             int guard = 0,
-            Position? position = null,
+            int cell = Constants.PlayerStartCell,
+            int size = 1,
             StatusSet? statuses = null)
         {
             return new CombatantState(
                 hp, hp, stamina, Constants.BaseMaxStamina, guard,
-                position, statuses ?? StatusSet.Empty);
+                cell, size, statuses ?? StatusSet.Empty);
+        }
+
+        /// <summary>
+        /// A three-branch enemy with one action per branch, the shape #70 fills in. Size 1 unless
+        /// asked otherwise; every action reaches 0〜1 unless its face says so.
+        /// </summary>
+        public static EnemyDef Enemy(
+            string id = "dummy",
+            int size = 1,
+            EnemyActionDef? atZero = null,
+            EnemyActionDef? atOneToTwo = null,
+            EnemyActionDef? atThreePlus = null)
+        {
+            atZero ??= EnemyAction("near_hit", face: new Face(Power: 5));
+            atOneToTwo ??= EnemyAction("mid_hit", face: new Face(Power: 4, Reach: new Reach(1, 2)));
+            atThreePlus ??= EnemyAction("advance", face: new Face(Move: 1), attributes: BattleAttribute.Move, targets: TargetKind.Self);
+            var actions = new Dictionary<string, EnemyActionDef>();
+            foreach (var a in new[] { atZero, atOneToTwo, atThreePlus }) actions[a.Id] = a;
+            return new EnemyDef(
+                id, id, MaxHp: 60, MaxStamina: 10, Recovery: 2, Size: size,
+                BranchAtGapZero: new[] { atZero.Id },
+                BranchAtGapOneToTwo: new[] { atOneToTwo.Id },
+                BranchAtGapThreePlus: new[] { atThreePlus.Id },
+                Actions: actions);
         }
 
         /// <summary>A 20-card deck of ten kinds × 2, the shape the slice's prototype deck takes (§8).</summary>

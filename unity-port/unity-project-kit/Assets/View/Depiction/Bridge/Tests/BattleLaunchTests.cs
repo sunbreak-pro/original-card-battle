@@ -53,7 +53,10 @@ namespace Depiction.Bridge.Tests
             Assert.That(launch.StopAfterTurns, Is.EqualTo(0));
             Assert.That(setup.Enemy, Is.SameAs(Enemies.PolearmWarped));
             Assert.That(setup.Enemy.Name, Is.EqualTo("長柄の歪み兵"));
-            Assert.That(setup.PlayerStartPosition, Is.EqualTo(Position.Near));
+            Assert.That(launch.StartGap, Is.EqualTo(2));
+            Assert.That(setup.PlayerStartCell, Is.EqualTo(2));
+            Assert.That(setup.EnemyStartCell, Is.EqualTo(5));
+            Assert.That(setup.FieldCells, Is.EqualTo(6));
             Assert.That(setup.Deck, Has.Count.EqualTo(20));
             Assert.That(Cards.Validate(setup.Deck).Ok, Is.True);
         }
@@ -76,15 +79,17 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void TheStartSide_PicksTheFirstOmen()
+        public void TheStartGap_PicksTheFirstOmen()
         {
-            CoreBattleSource near = new BattleLaunch { StartSide = RangeSide.Near }.CreateSource();
-            CoreBattleSource far = new BattleLaunch { StartSide = RangeSide.Far }.CreateSource();
+            CoreBattleSource adjacent = new BattleLaunch { StartGap = 0 }.CreateSource();
+            CoreBattleSource apart = new BattleLaunch { StartGap = 3 }.CreateSource();
 
-            Assert.That(near.Frame.Player.RangeGlyph, Is.EqualTo("近"));
-            Assert.That(near.State.Omen.ActionId, Is.EqualTo("shove"));
-            Assert.That(far.Frame.Player.RangeGlyph, Is.EqualTo("遠"));
-            Assert.That(far.State.Omen.ActionId, Is.EqualTo("sweep"));
+            Assert.That(adjacent.Frame.Player.RangeGlyph, Is.EqualTo("0"));
+            Assert.That(adjacent.State.Omen.ActionId, Is.EqualTo("shove"));
+            Assert.That(apart.Frame.Player.RangeGlyph, Is.EqualTo("3"));
+            Assert.That(apart.State.Omen.ActionId, Is.EqualTo("step_forward"));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BattleLaunch { StartGap = -1 }.CreateSource());
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BattleLaunch { StartGap = 4 }.CreateSource(), "cell 7 is off a 6-cell line");
         }
 
         [Test]
@@ -128,23 +133,25 @@ namespace Depiction.Bridge.Tests
 
             Assert.That(source.Finished, Is.True);
             Assert.That(played.First().Kind, Is.EqualTo(DepictionEventKind.TurnStart));
-            Assert.That(played.Count(e => e.Kind == DepictionEventKind.PlayCard), Is.EqualTo(4), "10 stamina pays for 2 + 1 + 3 + 3");
+            Assert.That(played.Count(e => e.Kind == DepictionEventKind.PlayCard), Is.EqualTo(3), "shield_bash and body_check reach 0 only; 10 stamina pays for 3 + 3 + 3");
             Assert.That(played.Skip(played.Count - 3).Select(e => e.Kind), Is.EqualTo(new[]
             {
                 DepictionEventKind.TurnEnd, DepictionEventKind.EnemyAction, DepictionEventKind.NextOmen,
             }));
             Assert.That(played.Select(e => e.Order), Is.EqualTo(Enumerable.Range(1, played.Count)));
 
-            // The end point of the slice: shoved far, so the next omen is the sweep (攻撃・遠).
+            // The end point (TurnLoopTests.PinnedSummaries, turn 1): the player backed off to gap 3,
+            // the sweep whiffed, and the polearm's next omen is its step in (動).
             DepictionFrame last = played.Last().After;
             Assert.That(last.Corner.Turn, Is.EqualTo(1));
-            Assert.That(last.Player.RangeGlyph, Is.EqualTo("遠"));
+            Assert.That(last.Player.RangeGlyph, Is.EqualTo("3"));
             Assert.That(last.Omen.Visible, Is.True);
-            Assert.That(last.Omen.KindLabel, Is.EqualTo("攻撃"));
-            Assert.That(last.Omen.SideGlyph, Is.EqualTo("遠"));
+            Assert.That(last.Omen.KindLabel, Is.EqualTo("動"));
+            Assert.That(last.Omen.SideGlyph, Is.EqualTo(""));
             Assert.That(last.Player.Hp, Is.EqualTo(50));
-            Assert.That(last.Enemy.Hp, Is.EqualTo(42));
-            Assert.That(last.Enemy.Statuses.Single().Label, Is.EqualTo("鈍足"));
+            Assert.That(last.Player.Guard, Is.EqualTo(36));
+            Assert.That(last.Enemy.Hp, Is.EqualTo(60));
+            Assert.That(last.Enemy.Statuses, Is.Empty);
             Assert.That(source.GuideText, Is.EqualTo(""));
             Assert.That(() => source.AdvanceAuto(), Throws.InvalidOperationException);
         }
