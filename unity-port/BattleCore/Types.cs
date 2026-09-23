@@ -54,13 +54,15 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// §2.4 targets. One is the opponent-directed default; Self reads no reach. cell / all are
-    /// §7.4 and arrive with several enemies (#52); ally is the retinue's (#52 too).
+    /// §2.4 / §7.4 targets. One is the opponent-directed default (the player picks one enemy on the
+    /// drop zone); All is every enemy inside the reach; Self reads no reach. v4.3's cell left with
+    /// one enemy per cell (2026-09-23, #169); ally comes with the status words that use it (#48).
     /// </summary>
     public enum TargetKind
     {
         One,
         Self,
+        All,
     }
 
     /// <summary>§6: 予兆の種別. Rest is the enemy outcome when the declared action cannot be paid for.</summary>
@@ -281,25 +283,96 @@ namespace BattleCore
     }
 
     /// <summary>
+    /// §7.4: one enemy on the field — what it is, where and how it stands, and the omen it has
+    /// declared. A fallen enemy stays in <see cref="BattleState.Enemies"/> (so the numbers events
+    /// carry never shift) but leaves its cells and its omen: see <see cref="Alive"/>.
+    /// </summary>
+    public sealed record EnemyUnit(EnemyDef Def, CombatantState Body, Omen? Omen)
+    {
+        public bool Alive => !Combat.IsDefeated(Body.Hp);
+    }
+
+    /// <summary>
     /// The whole battle. <see cref="TurnLoop"/> moves it forward; this record only fixes what the
     /// loop may carry. The event stream is handed back beside the state, not kept inside it.
-    /// FieldCells is the width of the line (§7.1).
+    /// FieldCells is the width of the line (§7.1), handed in per battle.
+    ///
+    /// Enemies (§7.4, #47) holds one to three, in definition order — which is also their phase
+    /// order and the index every event's <see cref="BattleEvent.Unit"/> means. Each stands on its
+    /// own cells (`CELL_CAPACITY` = 1). <see cref="Enemy"/>, <see cref="EnemyDef"/>,
+    /// <see cref="Omen"/> and <see cref="Gap"/> read the first one: the whole of a one-enemy battle,
+    /// such as the vertical slice.
     /// </summary>
     public sealed record BattleState(
         int Turn,
         int FieldCells,
         CombatantState Player,
-        CombatantState Enemy,
-        EnemyDef EnemyDef,
-        Omen? Omen,
+        IReadOnlyList<EnemyUnit> Enemies,
         IReadOnlyList<CardInstance> Hand,
         IReadOnlyList<CardInstance> DrawPile,
         IReadOnlyList<CardInstance> DiscardPile,
         GameResult Result = GameResult.Ongoing,
         BattlePhase Phase = BattlePhase.AwaitingTurnStart)
     {
-        /// <summary>§7.2: the empty cells between the player and the enemy (0 when adjacent).</summary>
-        public int Gap => Field.GapBetween(Player, Enemy);
+        /// <summary>The first enemy's body.</summary>
+        public CombatantState Enemy => Enemies[0].Body;
+
+        /// <summary>The first enemy's definition.</summary>
+        public EnemyDef EnemyDef => Enemies[0].Def;
+
+        /// <summary>The first enemy's standing omen.</summary>
+        public Omen? Omen => Enemies[0].Omen;
+
+        /// <summary>§7.2: the empty cells between the player and the first enemy (0 when adjacent).</summary>
+        public int Gap => GapTo(0);
+
+        /// <summary>§7.2: N to one enemy, counted from its near edge.</summary>
+        public int GapTo(int unit) => Field.GapBetween(Player, Enemies[unit].Body);
+
+        /// <summary>The standing enemies' indices, in definition order.</summary>
+        public IReadOnlyList<int> Living
+        {
+            get
+            {
+                var living = new List<int>();
+                for (int i = 0; i < Enemies.Count; i++)
+                {
+                    if (Enemies[i].Alive) living.Add(i);
+                }
+                return living;
+            }
+        }
+
+        /// <summary>
+        /// §7.4: the standing enemy nearest the player (lowest cell), whose N a self-directed card
+        /// reads. −1 once none is standing.
+        /// </summary>
+        public int Nearest
+        {
+            get
+            {
+                int nearest = -1;
+                foreach (int i in Living)
+                {
+                    if (nearest < 0 || Enemies[i].Body.Cell < Enemies[nearest].Body.Cell) nearest = i;
+                }
+                return nearest;
+            }
+        }
+
+        public BattleState WithEnemy(int unit, CombatantState body) => WithUnit(unit, Enemies[unit] with { Body = body });
+
+        /// <summary>The first enemy's body replaced; the one-enemy shorthand tests and the slice use.</summary>
+        public BattleState WithEnemy(CombatantState body) => WithEnemy(0, body);
+
+        public BattleState WithOmen(int unit, Omen? omen) => WithUnit(unit, Enemies[unit] with { Omen = omen });
+
+        public BattleState WithUnit(int unit, EnemyUnit value)
+        {
+            var enemies = new List<EnemyUnit>(Enemies);
+            enemies[unit] = value;
+            return this with { Enemies = enemies };
+        }
     }
 
     public static class EnumTokens

@@ -12,14 +12,29 @@ namespace Depiction.Bridge
         /// <summary>The slice's seed: the battle pinned in BattleCore.Tests (TurnLoopTests) uses the same one.</summary>
         public const int DefaultSeed = 20260921;
 
+        /// <summary>The slice's line until the dungeon hands one in (#168). The bootstrap's Inspector reads it here.</summary>
+        public const int SliceFieldCells = BattleSetup.SliceFieldCells;
+
+        /// <summary>battle_core_v4 §7.3 `START_GAP` (3 since 2026-09-23, #169).</summary>
+        public const int DefaultStartGap = Constants.StartGap;
+
         /// <summary>The roster id of the enemy to fight. The slice knows one: polearm_warped.</summary>
         public string EnemyId = Enemies.PolearmWarpedId;
 
         /// <summary>Fixes every shuffle. The same seed deals the same hands here and under `dotnet test`.</summary>
         public int Seed = DefaultSeed;
 
-        /// <summary>The gap on turn 1 (battle_core_v4 §7.3 `START_GAP`): the player stands on cell 2 and the enemy 1 + this further right.</summary>
-        public int StartGap = Constants.StartGap;
+        /// <summary>
+        /// The cells on the line (battle_core_v4 §7.1, 5〜8). Handed in per battle since 2026-09-23
+        /// (#169); the dungeon side picks it per layer (#168), the slice fights on 6 until then.
+        /// </summary>
+        public int FieldCells = SliceFieldCells;
+
+        /// <summary>
+        /// The gap on turn 1 (battle_core_v4 §7.3 `START_GAP`, 3): the player stands on cell 2 and the
+        /// enemy this many empty cells further right — or at the right end of a line too short for it.
+        /// </summary>
+        public int StartGap = DefaultStartGap;
 
         /// <summary>Unattended runs only: the source plays the leftmost payable card by itself.</summary>
         public bool AutoPlay;
@@ -49,9 +64,12 @@ namespace Depiction.Bridge
             }
 
             if (StartGap < 0) throw new ArgumentOutOfRangeException(nameof(StartGap), StartGap, "0 or more.");
-            return new BattleSetup(
-                enemy, BuildDeck(),
-                EnemyStartCell: Constants.PlayerStartCell + 1 + StartGap);
+            if (FieldCells < Constants.FieldCellsMin || FieldCells > Constants.FieldCellsMax)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(FieldCells), FieldCells, Constants.FieldCellsMin + ".." + Constants.FieldCellsMax + " cells.");
+            }
+            return new BattleSetup(enemy, BuildDeck(), FieldCells, StartGap);
         }
 
         public CoreBattleSource CreateSource()

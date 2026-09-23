@@ -282,10 +282,10 @@ namespace Depiction.Bridge.Tests
                 deck.AddRange(Cards.BuildDeck(new[] { CardCatalog.Brace }, 1).Select(c => new CardInstance("filler-0", c.Def)));
                 for (int i = 1; i < 4; i++) deck.Add(new CardInstance("filler-" + i, CardCatalog.Brace));
 
-                var setup = new BattleSetup(Enemies.PolearmWarped, deck, EnemyStartCell: Constants.PlayerStartCell + 1 + gap);
+                var setup = new BattleSetup(Enemies.PolearmWarped, deck, BattleSetup.SliceFieldCells, StartGap: gap);
                 BattleState state = TurnLoop.Start(setup, new FixedRng(0.9999999)).State;
                 state = TurnLoop.BeginPlayerTurn(state, new FixedRng(0.9999999)).State;
-                state = state with { Enemy = state.Enemy with { Guard = enemyGuard } };
+                state = state.WithEnemy(state.Enemy with { Guard = enemyGuard });
                 if (TurnLoop.CanPlay(state, def.Id + "-0") == PlayRefusal.OutOfReach) continue;
 
                 var writer = new CoreScriptWriter(setup.Enemy);
@@ -312,11 +312,11 @@ namespace Depiction.Bridge.Tests
             foreach (int playerGuard in new[] { 0, 2, 40 })
             foreach (int enemyStamina in new[] { 10, 1 })
             {
-                var setup = new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build(), EnemyStartCell: Constants.PlayerStartCell + 1 + gap);
+                var setup = new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build(), BattleSetup.SliceFieldCells, StartGap: gap);
                 BattleState state = TurnLoop.Start(setup, new FixedRng(0.9999999)).State;
-                state = state with { Enemy = state.Enemy with { Stamina = enemyStamina, NextTurnRecoveryBonus = enemyStamina == 1 ? -2 : 0 } };
+                state = state.WithEnemy(state.Enemy with { Stamina = enemyStamina, NextTurnRecoveryBonus = enemyStamina == 1 ? -2 : 0 });
                 // Re-decide the omen for the drained enemy, so that every action of the tree is reached.
-                state = state with { Omen = EnemyAi.DecideOmen(setup.Enemy, gap, enemyStamina) };
+                state = state.WithOmen(0, EnemyAi.DecideOmen(setup.Enemy, gap, enemyStamina));
                 state = TurnLoop.BeginPlayerTurn(state, new FixedRng(0.9999999)).State;
                 state = state with { Player = state.Player with { Guard = playerGuard, Stamina = 0 } };
 

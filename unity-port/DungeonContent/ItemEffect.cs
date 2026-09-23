@@ -36,8 +36,11 @@ namespace DungeonContent
         /// <summary>Moves to any unresolved node of the current layer. Still costs one 刻限.</summary>
         Teleport,
 
-        /// <summary>Starts every battle at 遠間 instead of the default 近間.</summary>
-        StartFar,
+        /// <summary>
+        /// Moves the player's starting cell back by Amount, widening the opening gap from the
+        /// default 3 (seven_layers_v4.md §2.4). The field keeps its width.
+        /// </summary>
+        WiderStart,
 
         /// <summary>Adds stamina at the start of a battle.</summary>
         OpeningStamina,
@@ -72,7 +75,7 @@ namespace DungeonContent
             ItemEffect.MaxStamina => EffectSide.Exploration,
             ItemEffect.RefillStamina => EffectSide.Exploration,
             ItemEffect.Teleport => EffectSide.Exploration,
-            ItemEffect.StartFar => EffectSide.Battle,
+            ItemEffect.WiderStart => EffectSide.Battle,
             ItemEffect.OpeningStamina => EffectSide.Battle,
             ItemEffect.OpeningGuard => EffectSide.Battle,
             ItemEffect.BluntBossState => EffectSide.Battle,
@@ -91,7 +94,7 @@ namespace DungeonContent
             ItemEffect.MaxStamina => "max_stamina",
             ItemEffect.RefillStamina => "refill_stamina",
             ItemEffect.Teleport => "teleport",
-            ItemEffect.StartFar => "start_far",
+            ItemEffect.WiderStart => "wider_start",
             ItemEffect.OpeningStamina => "opening_stamina",
             ItemEffect.OpeningGuard => "opening_guard",
             ItemEffect.BluntBossState => "blunt_boss_state",
