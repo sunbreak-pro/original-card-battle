@@ -20,8 +20,19 @@ namespace BattleCore
         int PlayerStartCell = Constants.PlayerStartCell,
         int PlayerMaxHp = Constants.PlayerMaxHp,
         int PlayerMaxStamina = Constants.BaseMaxStamina,
-        IReadOnlyList<EnemyDef>? MoreEnemies = null)
+        IReadOnlyList<EnemyDef>? MoreEnemies = null,
+        int? PlayerStartHp = null,
+        int? PlayerStartStamina = null)
     {
+        /// <summary>
+        /// §12 連戦 (#191): the HP and the current stamina the player carries in from the battle
+        /// before; null is full. HP is kept to 1..max and stamina to 0..max. Nothing else carries:
+        /// the deck is shuffled afresh (2026-09-23), statuses, Guard and the stance slot start empty.
+        /// </summary>
+        public int StartHp => PlayerStartHp.HasValue ? Math.Max(1, Math.Min(PlayerMaxHp, PlayerStartHp.Value)) : PlayerMaxHp;
+
+        public int StartStamina => PlayerStartStamina.HasValue ? Math.Max(0, Math.Min(PlayerMaxStamina, PlayerStartStamina.Value)) : PlayerMaxStamina;
+
         /// <summary>The width the vertical slice is fought on until the dungeon hands one in (#168).</summary>
         public const int SliceFieldCells = 6;
 
@@ -128,8 +139,8 @@ namespace BattleCore
             Field.Validate(setup.FieldCells, setup.PlayerStartCell, 1, placed);
 
             var player = new CombatantState(
-                setup.PlayerMaxHp, setup.PlayerMaxHp,
-                setup.PlayerMaxStamina, setup.PlayerMaxStamina,
+                setup.StartHp, setup.PlayerMaxHp,
+                setup.StartStamina, setup.PlayerMaxStamina,
                 Guard: 0, Cell: setup.PlayerStartCell, Size: 1, StatusSet.Empty);
             var units = new List<EnemyUnit>();
             for (int i = 0; i < defs.Count; i++)

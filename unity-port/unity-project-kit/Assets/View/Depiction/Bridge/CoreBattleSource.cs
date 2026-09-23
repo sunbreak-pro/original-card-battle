@@ -16,6 +16,7 @@ namespace Depiction.Bridge
         private readonly IRng _rng;
         private readonly CoreScriptWriter _writer;
         private readonly Queue<DepictionEvent> _pending = new Queue<DepictionEvent>();
+        private readonly List<BattleEvent> _history = new List<BattleEvent>();
         private readonly bool _suggestCards;
         private readonly int _stopAfterTurns;
         private BattleState _state;
@@ -27,15 +28,19 @@ namespace Depiction.Bridge
         /// paid for, and nothing once none can. A played battle leaves the choice to the player.
         /// </param>
         /// <param name="stopAfterTurns">Unattended runs only: report Finished once this many turns have closed on their next omen. 0 = fight to the end.</param>
-        public CoreBattleSource(BattleSetup setup, int seed, bool suggestCards = false, int stopAfterTurns = 0)
+        /// <param name="chainIndex">§12 連戦 (#191): which battle of the chain this is (1-based), for the corner of the screen.</param>
+        /// <param name="chainTotal">How many battles the chain holds; 1 for a battle on its own.</param>
+        public CoreBattleSource(BattleSetup setup, int seed, bool suggestCards = false, int stopAfterTurns = 0, int chainIndex = 1, int chainTotal = 1)
         {
             if (setup == null) throw new ArgumentNullException(nameof(setup));
             if (stopAfterTurns < 0) throw new ArgumentOutOfRangeException(nameof(stopAfterTurns), stopAfterTurns, "0 or more.");
             _suggestCards = suggestCards;
             _stopAfterTurns = stopAfterTurns;
             _rng = new SeededRng(seed);
-            _writer = new CoreScriptWriter(setup.Enemy);
-            _state = TurnLoop.Start(setup, _rng).State;
+            _writer = new CoreScriptWriter(setup.Enemy) { ChainIndex = chainIndex, ChainTotal = chainTotal };
+            StepResult start = TurnLoop.Start(setup, _rng);
+            _state = start.State;
+            _history.AddRange(start.Events);
             Frame = _writer.Opening(_state);
         }
 
@@ -47,6 +52,9 @@ namespace Depiction.Bridge
 
         /// <summary>The core state behind the screen. For tests and tools; the View never reads it.</summary>
         public BattleState State => _state;
+
+        /// <summary>Every core event of the battle so far, from TurnLoop.Start on. The end screen counts from it (Chain.Tally, #191).</summary>
+        public IReadOnlyList<BattleEvent> History => _history;
 
         public DepictionFrame Frame { get; private set; }
 
@@ -80,8 +88,8 @@ namespace Depiction.Bridge
             get
             {
                 if (_pending.Count > 0) return "";
-                if (_state.Result == GameResult.Won) return "敵を討ち取りました";
-                if (_state.Result == GameResult.Lost) return "力尽きました";
+                // The outcome is the end screen's to show (#191); the guide line says nothing once the battle is over.
+                if (_state.Result != GameResult.Ongoing) return "";
                 if (ReachedTurnLimit) return "";
                 if (!WaitingForPlayer) return "";
                 return HasPlayableCard()
@@ -169,6 +177,7 @@ namespace Depiction.Bridge
         private void Take(StepResult step)
         {
             _state = step.State;
+            _history.AddRange(step.Events);
             foreach (DepictionEvent ev in _writer.Write(step.Events, _state)) _pending.Enqueue(ev);
         }
 

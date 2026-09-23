@@ -243,7 +243,7 @@ namespace Depiction.Bridge.Tests
             }
 
             Assert.That(source.Finished, Is.True, "greedy play ends the fight one way or the other");
-            Assert.That(source.GuideText, Is.EqualTo(source.State.Result == GameResult.Won ? "敵を討ち取りました" : "力尽きました"));
+            Assert.That(source.GuideText, Is.EqualTo(""), "#191: the outcome is the end screen's, not the guide line's");
             Assert.That(() => source.AdvanceAuto(), Throws.InvalidOperationException);
         }
 
