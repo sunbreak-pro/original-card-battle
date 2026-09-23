@@ -31,16 +31,57 @@ namespace Depiction.View
         }
 
         /// <summary>A diagonal streak that sweeps across the target, then fades on its own.</summary>
-        public static IEnumerator Slash(MonoBehaviour host, RectTransform layer, Vector2 at, Color color, int tier, bool towardLeft)
+        public static IEnumerator Slash(MonoBehaviour host, RectTransform layer, Vector2 at, Color color, int tier, bool towardLeft, float ms = 120f)
         {
-            RectTransform rt = UiKit.Point(layer, "Slash", Half, Half, new Vector2(SlashLength[Index(tier)], SlashThickness[Index(tier)]), at);
-            rt.localRotation = Quaternion.Euler(0f, 0f, towardLeft ? 38f : -38f);
+            return Streak(host, layer, at, color, towardLeft ? 38f : -38f, SlashLength[Index(tier)], SlashThickness[Index(tier)], ms);
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.3: the blow's shape by system, all drawn in <paramref name="ms"/> so a
+        /// system changes the form and not the length. 斬 an arc, 突 one straight line, 払 a wide band,
+        /// 打 a ripple where it lands. A blowless system falls back to the arc.
+        /// </summary>
+        public static IEnumerator Strike(MonoBehaviour host, RectTransform layer, Vector2 at, Color color, int tier, bool towardLeft, StrikeSystem system, float ms)
+        {
+            float length = SlashLength[Index(tier)];
+            float thickness = SlashThickness[Index(tier)];
+            switch (system)
+            {
+                case StrikeSystem.Thrust:
+                    return Streak(host, layer, at, color, 0f, length * 1.25f, Mathf.Max(4f, thickness * 0.45f), ms);
+                case StrikeSystem.Sweep:
+                    return Streak(host, layer, at, BattleTheme.WithAlpha(color, 0.75f), towardLeft ? 8f : -8f, length * 1.4f, thickness * 2.4f, ms);
+                case StrikeSystem.Strike:
+                    return Ripple(host, layer, at, color, length * 0.7f, ms);
+                default:
+                    return Slash(host, layer, at, color, tier, towardLeft, ms);
+            }
+        }
+
+        private static IEnumerator Streak(MonoBehaviour host, RectTransform layer, Vector2 at, Color color, float degrees, float length, float thickness, float ms)
+        {
+            RectTransform rt = UiKit.Point(layer, "Strike", Half, Half, new Vector2(length, thickness), at);
+            rt.localRotation = Quaternion.Euler(0f, 0f, degrees);
             var img = rt.gameObject.AddComponent<Image>();
             img.sprite = ProceduralArt.White;
             img.color = color;
             img.raycastTarget = false;
-            yield return UiTween.Run(120f, Ease.Out, t => { if (rt) rt.localScale = new Vector3(t, 1f + (1f - t), 1f); });
+            yield return UiTween.Run(ms, Ease.Out, t => { if (rt) rt.localScale = new Vector3(t, 1f + (1f - t), 1f); });
             host.StartCoroutine(FadeAndDestroy(img, 180f));
+        }
+
+        private static IEnumerator Ripple(MonoBehaviour host, RectTransform layer, Vector2 at, Color color, float size, float ms)
+        {
+            Image ring = UiKit.Sprite(layer, "Ripple", ProceduralArt.Circle, BattleTheme.WithAlpha(color, 0.9f), Half, Half, new Vector2(size, size), at);
+            ring.raycastTarget = false;
+            RectTransform rt = ring.rectTransform;
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                if (!rt) return;
+                float s = Mathf.Lerp(0.3f, 1.2f, t);
+                rt.localScale = new Vector3(s, s, 1f);
+            });
+            host.StartCoroutine(FadeAndDestroy(ring, 180f));
         }
 
         /// <summary>Soft burst behind a number or a cue.</summary>

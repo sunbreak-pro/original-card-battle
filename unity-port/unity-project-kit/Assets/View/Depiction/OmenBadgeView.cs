@@ -53,6 +53,20 @@ namespace Depiction.View
         {
             if (group) yield return UiTween.Fade(group, group.alpha, 0f, ms, Ease.In);
         }
+
+        /// <summary>The badge gone at once (EffectId.OmenSpend switched off).</summary>
+        public void HideNow()
+        {
+            if (group) group.alpha = 0f;
+        }
+
+        /// <summary>The side struck off at once, without the shake (EffectId.SideBonusMiss switched off).</summary>
+        public void StrikeSideNow()
+        {
+            if (sideStrike) sideStrike.enabled = true;
+            if (sideText) sideText.color = BattleTheme.Whiff;
+            if (sideChipFrame) sideChipFrame.color = BattleTheme.Whiff;
+        }
     }
 }
 #endif

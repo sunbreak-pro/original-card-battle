@@ -48,6 +48,82 @@ namespace Depiction.Tests
             Assert.That(spec.Blocking, Is.EqualTo(blocking));
         }
 
+        // #76: the waits keep the slice's lengths (the budget is spent to 1990 ms); the rest runs beside them.
+        [TestCase(EffectId.AttackLunge, 100f, true)]
+        [TestCase(EffectId.StrikeShape, 120f, true)]
+        [TestCase(EffectId.HitStop, 30f, true)]
+        [TestCase(EffectId.HitStopStrong, 90f, true)]
+        [TestCase(EffectId.HitFlash, 260f, false)]
+        [TestCase(EffectId.TargetRecoil, 260f, false)]
+        [TestCase(EffectId.DamageNumber, 1000f, false)]
+        [TestCase(EffectId.HpDrain, 300f, true)]
+        [TestCase(EffectId.HpTrail, 500f, false)]
+        [TestCase(EffectId.ScreenShake, 180f, false)]
+        [TestCase(EffectId.AttackReturn, 120f, true)]
+        [TestCase(EffectId.EnemyMotion, 220f, true)]
+        [TestCase(EffectId.OmenSpend, 200f, true)]
+        [TestCase(EffectId.EnemyReturn, 140f, true)]
+        [TestCase(EffectId.GuardBlock, 320f, true)]
+        [TestCase(EffectId.GuardNumber, 1000f, false)]
+        [TestCase(EffectId.GuardBreak, 200f, false)]
+        [TestCase(EffectId.GuardGain, 260f, true)]
+        public void TheAttackAndDefence_PlayForTheirLengths(EffectId id, float ms, bool blocking)
+        {
+            EffectSpec spec = EffectCatalog.Of(id);
+            Assert.That(spec.Ms, Is.EqualTo(ms));
+            Assert.That(spec.Blocking, Is.EqualTo(blocking));
+        }
+
+        [Test]
+        public void TheStrength_IsTwoStepsForNow()
+        {
+            Assert.That(EffectStrength.IsStrong(1), Is.False);
+            Assert.That(EffectStrength.IsStrong(2), Is.False);
+            Assert.That(EffectStrength.IsStrong(3), Is.True);
+            Assert.That(EffectStrength.IsStrong(4), Is.True);
+        }
+
+        [Test]
+        public void ASlash_WaitsForTheLunge_TheShape_TheStop_TheDrain_AndTheReturn()
+        {
+            var direct = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
+            direct.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Intensity = 3, HpAfter = 40 });
+            Assert.That(Steps(direct), Is.EqualTo(new[]
+            {
+                (EffectId.CardRelease, 1), (EffectId.AttackLunge, 1), (EffectId.StrikeShape, 1),
+                (EffectId.HitStopStrong, 1), (EffectId.HpDrain, 1), (EffectId.AttackReturn, 1),
+            }));
+            Assert.That(EffectPlan.BlockingMs(direct, EffectSwitches.AllOn()), Is.EqualTo(160f + 100f + 120f + 90f + 300f + 120f));
+
+            // An enemy blow: the swing alone, then the shield and the wound, then it draws back.
+            var enemy = new DepictionEvent { Kind = DepictionEventKind.EnemyAction, After = new DepictionFrame() };
+            enemy.Cues.Add(new Cue { Kind = CueKind.EnemyWindup, Target = UnitSide.Enemy, System = StrikeSystem.Strike });
+            enemy.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Enemy, Target = UnitSide.Player, Intensity = 1 });
+            enemy.Cues.Add(new Cue { Kind = CueKind.GuardBlock, Target = UnitSide.Player, Amount = 3, GuardAfter = 0 });
+            enemy.Cues.Add(new Cue { Kind = CueKind.Hit, Target = UnitSide.Player, Amount = 5, Intensity = 1, HpAfter = 45 });
+            Assert.That(Steps(enemy), Is.EqualTo(new[]
+            {
+                (EffectId.EnemyMotion, 1), (EffectId.StrikeShape, 1), (EffectId.HitStop, 1), (EffectId.GuardBlock, 1),
+                (EffectId.HpDrain, 1), (EffectId.OmenSpend, 1), (EffectId.EnemyReturn, 1),
+            }));
+        }
+
+        // ---- The system a blow draws (battle_ui_ux_v2 §5.3) ----
+
+        [TestCase("薙ぎ払い", true, false, false, false, StrikeSystem.Sweep)]
+        [TestCase("穂先の突き", true, false, false, false, StrikeSystem.Thrust)]
+        [TestCase("石突きの押し込み", true, false, true, true, StrikeSystem.Strike)] // the push wins over the 突 in its name
+        [TestCase("柄で受ける", false, true, false, false, StrikeSystem.Shield)]
+        [TestCase("踏み込み", false, true, true, false, StrikeSystem.Step)]
+        [TestCase("袈裟斬り", true, false, false, false, StrikeSystem.Slash)]
+        [TestCase("盾打ち", true, true, false, false, StrikeSystem.Strike)]
+        [TestCase("牽制", true, false, true, false, StrikeSystem.Sweep)]
+        [TestCase("伸び突き", true, false, false, false, StrikeSystem.Thrust)]
+        public void TheSystem_ComesFromTheNameAndTheFaces(string name, bool attacks, bool guards, bool moves, bool pushes, StrikeSystem expected)
+        {
+            Assert.That(StrikeSystems.Of(name, attacks, guards, moves, pushes), Is.EqualTo(expected));
+        }
+
         [Test]
         public void APerCardEffect_StartsEachNextCardOneStaggerLater()
         {
@@ -96,25 +172,40 @@ namespace Depiction.Tests
 
         // ---- What an event waits for ----
 
+        private static readonly EffectId[] CardMotion =
+        {
+            EffectId.CardDraw, EffectId.HandFan, EffectId.CardHover, EffectId.CardGrab, EffectId.ReceiverShow,
+            EffectId.ThrowLineShow, EffectId.ReceiverSnap, EffectId.CardRelease, EffectId.CardToDiscard,
+            EffectId.CardReturn, EffectId.RefusalShake, EffectId.HandDiscard, EffectId.UnpayableDim,
+        };
+
         [Test]
         public void TheFixedSlice_WaitsForTheDrawsTheReleasesAndTheDiscard()
         {
             List<DepictionEvent> events = TurnSliceScript.Build().Events;
-            var all = EffectSwitches.AllOn();
 
             DepictionEvent turnStart = events[0];
-            Assert.That(Steps(turnStart), Is.EqualTo(new[] { (EffectId.CardDraw, 5) }));
-            Assert.That(EffectPlan.BlockingMs(turnStart, all), Is.EqualTo(500f));
+            Assert.That(CardSteps(turnStart), Is.EqualTo(new[] { (EffectId.CardDraw, 5) }));
 
             foreach (DepictionEvent play in events.Where(e => e.Kind == DepictionEventKind.PlayCard))
             {
-                Assert.That(Steps(play), Is.EqualTo(new[] { (EffectId.CardRelease, 1) }), "event " + play.Order);
-                Assert.That(EffectPlan.BlockingMs(play, all), Is.EqualTo(160f));
+                Assert.That(CardSteps(play), Is.EqualTo(new[] { (EffectId.CardRelease, 1) }), "event " + play.Order);
+                Assert.That(Steps(play).First(), Is.EqualTo((EffectId.CardRelease, 1)), "the release comes before the card's beats");
             }
 
             DepictionEvent turnEnd = events.Single(e => e.Kind == DepictionEventKind.TurnEnd);
-            Assert.That(Steps(turnEnd), Is.EqualTo(new[] { (EffectId.HandDiscard, 2) }));
-            Assert.That(EffectPlan.BlockingMs(turnEnd, all), Is.EqualTo(300f));
+            Assert.That(CardSteps(turnEnd), Is.EqualTo(new[] { (EffectId.HandDiscard, 2) }));
+        }
+
+        [Test]
+        public void EveryCueKind_HasAPlan()
+        {
+            foreach (CueKind kind in Enum.GetValues(typeof(CueKind)))
+            {
+                var ev = new DepictionEvent { Kind = DepictionEventKind.EnemyAction, After = new DepictionFrame() };
+                ev.Cues.Add(new Cue { Kind = kind, Source = UnitSide.Enemy, Target = UnitSide.Player, Amount = 1, Intensity = 1 });
+                Assert.DoesNotThrow(() => EffectPlan.StepsOf(ev), kind.ToString());
+            }
         }
 
         [Test]
@@ -146,7 +237,7 @@ namespace Depiction.Tests
         }
 
         [Test]
-        public void TheCardMotion_OfEveryEvent_FitsInsideTheTwoSecondBudget()
+        public void EveryEvent_FitsInsideTheTwoSecondBudget()
         {
             var all = EffectSwitches.AllOn();
             foreach (DepictionEvent ev in TurnSliceScript.Build().Events.Concat(LiveTurnEvents()))
@@ -192,6 +283,9 @@ namespace Depiction.Tests
 
         private static (EffectId, int)[] Steps(DepictionEvent ev) =>
             EffectPlan.StepsOf(ev).Select(s => (s.Id, s.Count)).ToArray();
+
+        private static (EffectId, int)[] CardSteps(DepictionEvent ev) =>
+            Steps(ev).Where(s => CardMotion.Contains(s.Item1)).ToArray();
 
         /// <summary>One live turn with nobody at the mouse: the turn start, the turn end, the enemy.</summary>
         private static List<DepictionEvent> LiveTurnEvents()

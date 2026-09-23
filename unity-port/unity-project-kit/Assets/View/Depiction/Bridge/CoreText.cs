@@ -52,6 +52,20 @@ namespace Depiction.Bridge
         }
 
         /// <summary>How hard a beat looks, 1..4. The same steps LiveTurn uses; the thresholds are #30's to settle.</summary>
+        /// <summary>§5.3: the system a card's blow draws, from its name and faces (StrikeSystems.Of).</summary>
+        public static StrikeSystem SystemOf(CardDef def)
+        {
+            return StrikeSystems.Of(def.Name, def.Attributes.HasFlag(BattleAttribute.Attack),
+                def.Attributes.HasFlag(BattleAttribute.Guard) || def.Face.Guard > 0, def.Face.Move != 0, def.Face.Push != 0);
+        }
+
+        /// <summary>§5.3: the same for an enemy action: the shape of its move and of its blow.</summary>
+        public static StrikeSystem SystemOf(EnemyActionDef action)
+        {
+            return StrikeSystems.Of(action.Name, action.Attributes.HasFlag(BattleAttribute.Attack),
+                action.Attributes.HasFlag(BattleAttribute.Guard) || action.Face.Guard > 0, action.Face.Move != 0, action.Face.Push != 0);
+        }
+
         public static int Intensity(int amount)
         {
             if (amount <= 9) return 1;

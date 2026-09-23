@@ -52,6 +52,9 @@ namespace Depiction.Bridge
         /// <summary>The enemy action being written whiffed (§6): its trait miss has nothing to strike off.</summary>
         private bool _whiffed;
 
+        /// <summary>The system (§5.3) of the card or action whose blows are being written.</summary>
+        private StrikeSystem _strike = StrikeSystem.Slash;
+
         /// <summary>The enemy's 構え, held back so it plays with the next omen and not inside the attack (see <see cref="Write"/>).</summary>
         private ReserveChecked _enemyReserveHeld;
 
@@ -216,11 +219,13 @@ namespace Depiction.Bridge
 
                 case CardPlayed played:
                     _hand.Remove(played.Card);
+                    _strike = CoreText.SystemOf(played.Card.Def);
                     break;
 
                 case ActionExecuted executed:
                     ev.Title = executed.Action.Name;
-                    ev.Cues.Add(new Cue { Kind = CueKind.EnemyWindup, Target = UnitSide.Enemy });
+                    _strike = CoreText.SystemOf(executed.Action);
+                    ev.Cues.Add(new Cue { Kind = CueKind.EnemyWindup, Target = UnitSide.Enemy, System = _strike });
                     break;
 
                 case Rested _:
@@ -328,7 +333,7 @@ namespace Depiction.Bridge
             {
                 ev.Cues.Add(new Cue
                 {
-                    Kind = CueKind.Slash, Source = source, Target = target,
+                    Kind = CueKind.Slash, Source = source, Target = target, System = _strike,
                     Amount = damage.Raw, Intensity = CoreText.Intensity(damage.Raw), HpAfter = damage.TargetHpAfter,
                 });
                 return;
@@ -336,7 +341,7 @@ namespace Depiction.Bridge
 
             ev.Cues.Add(new Cue
             {
-                Kind = CueKind.Slash, Source = source, Target = target,
+                Kind = CueKind.Slash, Source = source, Target = target, System = _strike,
                 Amount = damage.Raw, Intensity = CoreText.Intensity(damage.Raw),
             });
             if (damage.Absorbed > 0)

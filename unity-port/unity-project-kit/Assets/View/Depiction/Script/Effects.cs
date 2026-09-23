@@ -58,6 +58,82 @@ namespace Depiction
 
         /// <summary>A card the stamina cannot pay for darkens (the reason line is the source's text).</summary>
         UnpayableDim,
+
+        // ---- Attack and defence (#76, battle_ui_ux_v2 §5.5 / §5.6) ----
+
+        /// <summary>The player steps toward the enemy before the blow.</summary>
+        AttackLunge,
+
+        /// <summary>The blow's shape (Cue.System: arc, line, band, ripple) across the target.</summary>
+        StrikeShape,
+
+        /// <summary>Both sides freeze for a moment after a normal blow (intensity 1-2).</summary>
+        HitStop,
+
+        /// <summary>The longer freeze after a strong blow (intensity 3-4).</summary>
+        HitStopStrong,
+
+        /// <summary>The struck figure blinks white or red.</summary>
+        HitFlash,
+
+        /// <summary>The struck figure reels back and shakes.</summary>
+        TargetRecoil,
+
+        /// <summary>The damage number rises from the chest.</summary>
+        DamageNumber,
+
+        /// <summary>The HP bar shrinks to its new width.</summary>
+        HpDrain,
+
+        /// <summary>The grey band left behind follows the bar down, late.</summary>
+        HpTrail,
+
+        /// <summary>A strong blow shakes the arena.</summary>
+        ScreenShake,
+
+        /// <summary>The player steps back after a blow that landed.</summary>
+        AttackReturn,
+
+        /// <summary>The enemy's move into its action, shaped by Cue.System (sweep, thrust, shove, guard, step).</summary>
+        EnemyMotion,
+
+        /// <summary>The spent omen fades once its blow has landed on the player.</summary>
+        OmenSpend,
+
+        /// <summary>The enemy steps back to where it stood.</summary>
+        EnemyReturn,
+
+        /// <summary>The shield snaps up and shows how much Guard stopped.</summary>
+        GuardBlock,
+
+        /// <summary>"Guard −n" rises in the Guard colour.</summary>
+        GuardNumber,
+
+        /// <summary>The Guard badge cracks when a blow takes it to 0.</summary>
+        GuardBreak,
+
+        /// <summary>The Guard badge pops with the Guard just gained.</summary>
+        GuardGain,
+
+        // ---- The other beats (lengths as the View plays them; #77 works them out) ----
+
+        /// <summary>The omen badge drops in over the enemy.</summary>
+        OmenShow,
+
+        /// <summary>A trait's condition held: the burst and its label.</summary>
+        TraitFire,
+
+        /// <summary>The stamina pips change.</summary>
+        StaminaChange,
+
+        /// <summary>構え: the shield and "+3" at turn end.</summary>
+        StanceCue,
+
+        /// <summary>The player moves to the stand point N maps to, and the tag flips.</summary>
+        RangeSwitch,
+
+        /// <summary>A bonus the enemy did not get (or a whiffed blow) is struck off the omen.</summary>
+        SideBonusMiss,
     }
 
     /// <summary>
@@ -125,6 +201,34 @@ namespace Depiction
                 new EffectSpec(EffectId.RefusalShake, 160f, 0f, blocking: false, "#75 出せない札の揺れ"),
                 new EffectSpec(EffectId.HandDiscard, 240f, 60f, blocking: true, "battle_ui_ux_v2 §3.2 全捨て"),
                 new EffectSpec(EffectId.UnpayableDim, 120f, 0f, blocking: false, "#75 出せない札の暗い幕"),
+
+                // #76: the waits are the slice's (the 2.0 s budget is already spent to 1990 ms by 牽制),
+                // and what the issue adds runs beside them.
+                new EffectSpec(EffectId.AttackLunge, 100f, 0f, blocking: true, "#76 踏み込み（§5.5 順 1 は 180。2.0 s の予算に合わせて 100）"),
+                new EffectSpec(EffectId.StrikeShape, 120f, 0f, blocking: true, "#76 系統の形（§5.3。長さは系統で変えず 120）"),
+                new EffectSpec(EffectId.HitStop, 30f, 0f, blocking: true, "#76 ヒットストップ・通常（強弱 2 段の仮置き）"),
+                new EffectSpec(EffectId.HitStopStrong, 90f, 0f, blocking: true, "#76 ヒットストップ・強（強弱 2 段の仮置き）"),
+                new EffectSpec(EffectId.HitFlash, 260f, 0f, blocking: false, "#76 被弾の点滅"),
+                new EffectSpec(EffectId.TargetRecoil, 260f, 0f, blocking: false, "#76 のけぞり"),
+                new EffectSpec(EffectId.DamageNumber, 1000f, 0f, blocking: false, "#76 ダメージ数字の湧き（上昇して消えるまで）"),
+                new EffectSpec(EffectId.HpDrain, 300f, 0f, blocking: true, "battle_ui_ux_v2 §5.5 順 7 HP バー"),
+                new EffectSpec(EffectId.HpTrail, 500f, 0f, blocking: false, "battle_ui_ux_v2 §5.5 順 7 灰の残像"),
+                new EffectSpec(EffectId.ScreenShake, 180f, 0f, blocking: false, "#76 画面の揺れ（強だけ）"),
+                new EffectSpec(EffectId.AttackReturn, 120f, 0f, blocking: true, "#76 戻り（§5.5 順 8 は 220。予算に合わせて 120）"),
+                new EffectSpec(EffectId.EnemyMotion, 220f, 0f, blocking: true, "#76 敵の動き（系統ごとに形を変え、長さは同じ）"),
+                new EffectSpec(EffectId.OmenSpend, 200f, 0f, blocking: true, "#76 予兆の消え方"),
+                new EffectSpec(EffectId.EnemyReturn, 140f, 0f, blocking: true, "#76 敵の戻り"),
+                new EffectSpec(EffectId.GuardBlock, 320f, 0f, blocking: true, "battle_ui_ux_v2 §5.6 被弾（盾が受ける 240 + 止め 80）"),
+                new EffectSpec(EffectId.GuardNumber, 1000f, 0f, blocking: false, "#76 Guard の数字（上昇して消えるまで）"),
+                new EffectSpec(EffectId.GuardBreak, 200f, 0f, blocking: false, "battle_ui_ux_v2 §5.6 順 1 盾バッジが割れる"),
+                new EffectSpec(EffectId.GuardGain, 260f, 0f, blocking: true, "#76 盾バッジのポップ"),
+
+                new EffectSpec(EffectId.OmenShow, 240f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
+                new EffectSpec(EffectId.TraitFire, 200f, 0f, blocking: true, "#76 特性の合図（光は 260 で並行。待つのは 200）"),
+                new EffectSpec(EffectId.StaminaChange, 220f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
+                new EffectSpec(EffectId.StanceCue, 460f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
+                new EffectSpec(EffectId.RangeSwitch, 470f, 0f, blocking: true, "battle_ui_ux_v2 §5.7 移動 320 + 札の裏返し 150"),
+                new EffectSpec(EffectId.SideBonusMiss, 260f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
             };
             var map = new Dictionary<EffectId, EffectSpec>();
             foreach (EffectSpec spec in list) map.Add(spec.Id, spec);
@@ -200,10 +304,17 @@ namespace Depiction
         public int Count { get; }
     }
 
+    /// <summary>§5.3 強弱, held at two steps for now (#76): intensity 3 and 4 are strong.</summary>
+    public static class EffectStrength
+    {
+        public static bool IsStrong(int intensity) => intensity >= 3;
+    }
+
     /// <summary>
     /// The blocking effects an event plays, in order, read off its kind and its cues. The View waits
     /// for exactly these, and the tests hold the event lengths against the 2.0 s budget with them.
-    /// Beats that are not effects yet (the numbers, the slash) are not listed here; #76 / #77 add theirs.
+    /// Effects that run beside the flow (numbers, flashes, the HP trail) are not listed: they never
+    /// lengthen an event.
     /// </summary>
     public static class EffectPlan
     {
@@ -212,20 +323,77 @@ namespace Depiction
             if (ev == null) throw new ArgumentNullException(nameof(ev));
             var steps = new List<EffectStep>();
             if (ev.Kind == DepictionEventKind.PlayCard) steps.Add(new EffectStep(EffectId.CardRelease, 1));
-            foreach (Cue cue in ev.Cues)
-            {
-                // Both cues carry how many cards move: the ones drawn, the ones thrown away.
-                switch (cue.Kind)
-                {
-                    case CueKind.DrawHand:
-                        steps.Add(new EffectStep(EffectId.CardDraw, Math.Max(0, cue.Amount)));
-                        break;
-                    case CueKind.DiscardHand:
-                        steps.Add(new EffectStep(EffectId.HandDiscard, Math.Max(0, cue.Amount)));
-                        break;
-                }
-            }
+            foreach (Cue cue in ev.Cues) AddSteps(steps, cue);
             return steps;
+        }
+
+        private static void AddSteps(List<EffectStep> steps, Cue cue)
+        {
+            switch (cue.Kind)
+            {
+                // Both hand cues carry how many cards move: the ones drawn, the ones thrown away.
+                case CueKind.DrawHand:
+                    steps.Add(new EffectStep(EffectId.CardDraw, Math.Max(0, cue.Amount)));
+                    break;
+                case CueKind.DiscardHand:
+                    steps.Add(new EffectStep(EffectId.HandDiscard, Math.Max(0, cue.Amount)));
+                    break;
+                case CueKind.StaminaChange:
+                    if (cue.Amount > 0) steps.Add(new EffectStep(EffectId.StaminaChange, 1));
+                    break;
+                case CueKind.OmenShow:
+                    steps.Add(new EffectStep(EffectId.OmenShow, 1));
+                    break;
+                case CueKind.TraitFire:
+                    steps.Add(new EffectStep(EffectId.TraitFire, 1));
+                    break;
+                case CueKind.Slash:
+                {
+                    // A slash with no settled HP is the swing alone: the GuardBlock / Hit cues carry the rest.
+                    bool byPlayer = cue.Source == UnitSide.Player;
+                    if (byPlayer) steps.Add(new EffectStep(EffectId.AttackLunge, 1));
+                    steps.Add(new EffectStep(EffectId.StrikeShape, 1));
+                    steps.Add(new EffectStep(EffectStrength.IsStrong(cue.Intensity) ? EffectId.HitStopStrong : EffectId.HitStop, 1));
+                    if (cue.HpAfter != Cue.Unchanged)
+                    {
+                        steps.Add(new EffectStep(EffectId.HpDrain, 1));
+                        if (byPlayer) steps.Add(new EffectStep(EffectId.AttackReturn, 1));
+                    }
+                    break;
+                }
+                case CueKind.GuardGain:
+                    steps.Add(new EffectStep(EffectId.GuardGain, 1));
+                    break;
+                case CueKind.RangeSwitch:
+                    steps.Add(new EffectStep(EffectId.RangeSwitch, 1));
+                    break;
+                case CueKind.StanceCue:
+                    steps.Add(new EffectStep(EffectId.StanceCue, 1));
+                    break;
+                case CueKind.EnemyWindup:
+                    steps.Add(new EffectStep(EffectId.EnemyMotion, 1));
+                    break;
+                case CueKind.SideBonusMiss:
+                    steps.Add(new EffectStep(EffectId.SideBonusMiss, 1));
+                    break;
+                case CueKind.GuardBlock:
+                    steps.Add(new EffectStep(EffectId.GuardBlock, 1));
+                    break;
+                case CueKind.Hit:
+                    steps.Add(new EffectStep(EffectId.HpDrain, 1));
+                    if (cue.Target == UnitSide.Player)
+                    {
+                        // The blow on the player is the enemy's own: its omen is spent and it draws back.
+                        steps.Add(new EffectStep(EffectId.OmenSpend, 1));
+                        steps.Add(new EffectStep(EffectId.EnemyReturn, 1));
+                    }
+                    break;
+                case CueKind.GuardReset:
+                case CueKind.StatusChange:
+                    break; // settle with the frame; #77 gives the chips their beat
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(cue), cue.Kind, "No effect is planned for this cue.");
+            }
         }
 
         /// <summary>The time the event waits on its effects with these switches.</summary>
