@@ -213,6 +213,31 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void TheScreenOpensOnThePrototype_OnlyWhenNothingWasSaved()
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(DeckBuilder.LoadOrPrototype(false, "").Save(), Is.EqualTo(DeckBuilder.Prototype().Save()), "the first Play");
+                Assert.That(DeckBuilder.LoadOrPrototype(true, "").Total, Is.EqualTo(0), "the player emptied it");
+                Assert.That(DeckBuilder.LoadOrPrototype(true, "thrust:9").Total, Is.EqualTo(0), "a broken string starts empty");
+                Assert.That(DeckBuilder.LoadOrPrototype(true, "thrust:2").CountOf("thrust"), Is.EqualTo(2));
+            });
+        }
+
+        [Test]
+        public void TheTitleAndTheFilterChoices_AreTheBridges()
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（80 種から 20〜40 枚、1 種 3 枚まで）"));
+                Assert.That(DeckBuilder.AttributeOptions.Select(o => o.Key), Is.EqualTo(new[] { "全て", "攻撃", "ムーブ", "防御", "技", "構え" }));
+                Assert.That(DeckBuilder.AttributeOptions.First().Value, Is.EqualTo(BattleAttribute.None));
+                Assert.That(DeckBuilder.CostOptions.Select(o => o.Key), Is.EqualTo(new[] { "全コスト", "コスト 1", "コスト 2", "コスト 3" }));
+                Assert.That(DeckBuilder.CostOptions.Select(o => o.Value), Is.EqualTo(new[] { 0, 1, 2, 3 }));
+            });
+        }
+
+        [Test]
         public void AStringPastFortyCards_GivesAnEmptyDeck()
         {
             string fortyTwo = string.Join(",", CardCatalog.All.Take(14).Select(c => c.Id + ":3"));

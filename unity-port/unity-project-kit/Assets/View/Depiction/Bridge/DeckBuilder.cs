@@ -168,6 +168,39 @@ namespace Depiction.Bridge
 
         // ---- what the screen prints ----
 
+        /// <summary>The deck screen's title, with §8's rule in it.</summary>
+        public static string Title =>
+            "デッキを組む（" + Constants.OwnedKindsMax + " 種から " + Constants.DeckMin + "〜" + Constants.DeckMax
+            + " 枚、1 種 " + Constants.CopiesMax + " 枚まで）";
+
+        /// <summary>The attribute filters the screen offers, in the §2.2 order after 「全て」.</summary>
+        public static IReadOnlyList<KeyValuePair<string, BattleAttribute>> AttributeOptions
+        {
+            get
+            {
+                var options = new List<KeyValuePair<string, BattleAttribute>> { new KeyValuePair<string, BattleAttribute>("全て", BattleAttribute.None) };
+                foreach (BattleAttribute attribute in new[] { BattleAttribute.Attack, BattleAttribute.Move, BattleAttribute.Guard, BattleAttribute.Skill, BattleAttribute.Stance })
+                {
+                    options.Add(new KeyValuePair<string, BattleAttribute>(AttributeWords(attribute), attribute));
+                }
+                return options;
+            }
+        }
+
+        /// <summary>The cost filters the screen offers: 「全コスト」, then each cost §3 allows.</summary>
+        public static IReadOnlyList<KeyValuePair<string, int>> CostOptions
+        {
+            get
+            {
+                var options = new List<KeyValuePair<string, int>> { new KeyValuePair<string, int>("全コスト", 0) };
+                for (int cost = Constants.CostMin; cost <= Constants.CostMax; cost++)
+                {
+                    options.Add(new KeyValuePair<string, int>("コスト " + cost, cost));
+                }
+                return options;
+            }
+        }
+
         /// <summary>The line a card has in the list: 「突き　コスト 3　攻撃」.</summary>
         public static string LineOf(CardDef def)
         {
@@ -335,6 +368,15 @@ namespace Depiction.Bridge
                 }
             }
             return builder;
+        }
+
+        /// <summary>
+        /// The deck the screen opens with: the prototype deck the first time (nothing saved yet), and
+        /// the saved deck after that — empty when the player emptied it or the string is broken.
+        /// </summary>
+        public static DeckBuilder LoadOrPrototype(bool saved, string text)
+        {
+            return saved ? Load(text) : Prototype();
         }
 
         private static bool Known(string id)

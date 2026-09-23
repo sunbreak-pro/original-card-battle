@@ -172,8 +172,12 @@ namespace Depiction.View
             }
             ClearHand();
             if (enemyFigure) SnapHome(enemyFigure, _enemyHome);
+            _hoverHandle = -1;
+            _snapHandle = -1;
+            Trace = new EffectTrace(() => Time.unscaledTimeAsDouble);
             _source = source;
             ApplyFrame(_source.Frame);
+            RefreshPlayableLook(); // the last battle's outcome line goes with it
             StartCoroutine(RunAutomaticEvents());
         }
 

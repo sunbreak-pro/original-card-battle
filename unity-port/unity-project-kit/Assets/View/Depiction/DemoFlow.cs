@@ -78,8 +78,7 @@ namespace Depiction.View
 
         private static DeckBuilder LoadDeck()
         {
-            DeckBuilder saved = DeckBuilder.Load(PlayerPrefs.GetString(SavedDeckKey, ""));
-            return saved.Total > 0 ? saved : DeckBuilder.Prototype();
+            return DeckBuilder.LoadOrPrototype(PlayerPrefs.HasKey(SavedDeckKey), PlayerPrefs.GetString(SavedDeckKey, ""));
         }
 
         private static void SaveDeck(DeckBuilder deck)
@@ -93,7 +92,8 @@ namespace Depiction.View
         private RectTransform BuildCanvas()
         {
             var go = new GameObject("DemoCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            go.transform.SetParent(transform, false);
+            // Top level, never nested under the battle's canvas: a nested canvas would ignore its own
+            // render mode, sorting and scaler. OnDestroy takes it away with the flow.
             var canvas = go.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 100;
