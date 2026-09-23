@@ -18,21 +18,6 @@ namespace Depiction.View
         private const int Rows = 5;
         private const int PerPage = Columns * Rows;
 
-        private static readonly (string Label, BattleAttribute Attribute)[] AttributeFilters =
-        {
-            ("全て", BattleAttribute.None),
-            ("攻撃", BattleAttribute.Attack),
-            ("防御", BattleAttribute.Guard),
-            ("ムーブ", BattleAttribute.Move),
-            ("技", BattleAttribute.Skill),
-            ("構え", BattleAttribute.Stance),
-        };
-
-        private static readonly (string Label, int Cost)[] CostFilters =
-        {
-            ("全コスト", 0), ("コスト 1", 1), ("コスト 2", 2), ("コスト 3", 3),
-        };
-
         private readonly RectTransform _root;
         private readonly Action<DeckBuilder> _changed;
         private readonly Action<List<CardInstance>> _battle;
@@ -64,8 +49,8 @@ namespace Depiction.View
             Image back = UiKit.Fill(_root, "Back", BattleTheme.WithAlpha(BattleTheme.Ground, 0.97f));
             back.raycastTarget = true; // the battle underneath takes no clicks while the deck is built
 
-            UiKit.Label(_root, "Title", 40, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(900f, 60f), new Vector2(40f, -20f), "デッキを組む（80 種から 20〜40 枚、1 種 3 枚まで）");
+            UiKit.Label(_root, "Title", 34, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(1400f, 60f), new Vector2(40f, -20f), DeckBuilder.Title);
 
             _filterRow = UiKit.Box(_root, "Filters", 0.02f, 0.86f, 0.62f, 0.91f);
             _grid = UiKit.Box(_root, "Cards", 0.02f, 0.13f, 0.62f, 0.85f);
@@ -152,22 +137,24 @@ namespace Depiction.View
         private void DrawFilters()
         {
             UiKit.ClearChildren(_filterRow);
-            float width = 1f / (AttributeFilters.Length + CostFilters.Length);
+            var attributes = DeckBuilder.AttributeOptions;
+            var costs = DeckBuilder.CostOptions;
+            float width = 1f / (attributes.Count + costs.Count);
             int slot = 0;
-            foreach (var (label, attribute) in AttributeFilters)
+            foreach (KeyValuePair<string, BattleAttribute> option in attributes)
             {
-                BattleAttribute chosen = attribute;
+                BattleAttribute chosen = option.Value;
                 bool on = _filter.Attribute == chosen;
-                UiKit.Button(_filterRow, "Attr" + slot, label, () => { _filter.Attribute = chosen; _page = 0; Refresh(); },
+                UiKit.Button(_filterRow, "Attr" + slot, option.Key, () => { _filter.Attribute = chosen; _page = 0; Refresh(); },
                     on ? BattleTheme.Accent : BattleTheme.Panel, on ? BattleTheme.InkBlack : BattleTheme.Ink, 22,
                     new Vector2(slot * width, 0f), new Vector2((slot + 1) * width - 0.004f, 1f));
                 slot++;
             }
-            foreach (var (label, cost) in CostFilters)
+            foreach (KeyValuePair<string, int> option in costs)
             {
-                int chosen = cost;
+                int chosen = option.Value;
                 bool on = _filter.Cost == chosen;
-                UiKit.Button(_filterRow, "Cost" + slot, label, () => { _filter.Cost = chosen; _page = 0; Refresh(); },
+                UiKit.Button(_filterRow, "Cost" + slot, option.Key, () => { _filter.Cost = chosen; _page = 0; Refresh(); },
                     on ? BattleTheme.Warm : BattleTheme.Panel, on ? BattleTheme.InkBlack : BattleTheme.Ink, 22,
                     new Vector2(slot * width, 0f), new Vector2((slot + 1) * width - 0.004f, 1f));
                 slot++;
