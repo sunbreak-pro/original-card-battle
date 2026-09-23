@@ -32,6 +32,13 @@ namespace Depiction.View
             if (group) group.alpha = 0f;
         }
 
+        /// <summary>Fades the line in (EffectId.ThrowLineShow). The threshold works from the first frame.</summary>
+        public System.Collections.IEnumerator FadeIn(float ms)
+        {
+            if (!group) yield break;
+            yield return UiTween.Fade(group, 0f, 1f, ms, Ease.Out);
+        }
+
         public void SetHot(bool hot)
         {
             Color c = BattleTheme.WithAlpha(hot ? BattleTheme.Guard : BattleTheme.Ink, hot ? 0.95f : 0.5f);

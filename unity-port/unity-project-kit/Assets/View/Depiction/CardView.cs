@@ -31,6 +31,7 @@ namespace Depiction.View
         public string CardId { get; private set; }
         public CardFace Face { get; private set; }
         public bool Interactable { get; set; }
+        public bool Dimmed { get; private set; }
         public RectTransform Rect => (RectTransform)transform;
 
         public void Bind(CardFace face)
@@ -72,9 +73,48 @@ namespace Depiction.View
         /// </summary>
         public void SetDimmed(bool dimmed)
         {
-            if (shade) shade.enabled = dimmed;
+            Dimmed = dimmed;
+            _dimTween = 0;
+            if (shade)
+            {
+                shade.enabled = dimmed;
+                shade.color = BattleTheme.WithAlpha(shade.color, _shadeAlpha);
+            }
             else if (group) group.alpha = dimmed ? 0.55f : 1f;
         }
+
+        /// <summary>
+        /// The same change, faded over <paramref name="ms"/> (EffectId.UnpayableDim). A newer call wins
+        /// over one still running, so a card that flips twice in a row ends in the last state asked.
+        /// </summary>
+        public System.Collections.IEnumerator FadeDimmed(bool dimmed, float ms)
+        {
+            Dimmed = dimmed;
+            int tween = ++_dimTween;
+            if (shade)
+            {
+                shade.enabled = true;
+                float from = shade.color.a;
+                float to = dimmed ? _shadeAlpha : 0f;
+                yield return UiTween.Run(ms, Ease.Linear, t =>
+                {
+                    if (shade && tween == _dimTween) shade.color = BattleTheme.WithAlpha(shade.color, Mathf.Lerp(from, to, t));
+                });
+                if (shade && tween == _dimTween)
+                {
+                    shade.enabled = dimmed;
+                    shade.color = BattleTheme.WithAlpha(shade.color, _shadeAlpha);
+                }
+                yield break;
+            }
+            if (!group) yield break;
+            float alphaFrom = group.alpha;
+            float alphaTo = dimmed ? 0.55f : 1f;
+            yield return UiTween.Run(ms, Ease.Linear, t => { if (group && tween == _dimTween) group.alpha = Mathf.Lerp(alphaFrom, alphaTo, t); });
+        }
+
+        private float _shadeAlpha = 0.5f;
+        private int _dimTween;
 
         public static Color KindColor(CardKind kind)
         {
@@ -91,6 +131,7 @@ namespace Depiction.View
         private void Awake()
         {
             if (traitLamp && traitLamp.sprite == null) traitLamp.sprite = ProceduralArt.Circle;
+            if (shade) _shadeAlpha = shade.color.a;
         }
 
         public void OnBeginDrag(PointerEventData eventData)
