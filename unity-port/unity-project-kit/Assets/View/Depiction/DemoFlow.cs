@@ -24,6 +24,8 @@ namespace Depiction.View
         private DepictionPlayer _player;
         private int _seed;
         private int _randomPicks;
+        /// <summary>Runs made from this seed, so choosing the same mode again deals afresh (DemoSession mixes it in).</summary>
+        private int _runs;
         private RectTransform _canvas;
         private DeckSelectScreen _deckScreen;
         private ModeSelectScreen _modeScreen;
@@ -35,6 +37,9 @@ namespace Depiction.View
         /// <summary>Sets the flow up and shows the deck screen. <paramref name="seed"/> fixes the run (each battle takes its own from it).</summary>
         public void Begin(DepictionPlayer player, int seed)
         {
+            StopAllCoroutines();
+            _session = null;
+            _source = null;
             if (_canvas) Destroy(_canvas.gameObject);
             if (_player) _player.BattleFinished -= OnBattleFinished;
             _player = player;
@@ -72,17 +77,17 @@ namespace Depiction.View
 
         private void StartSingle(string enemyId)
         {
-            Run(() => DemoSession.Single(_deck, enemyId, _seed));
+            Run(() => DemoSession.Single(_deck, enemyId, _seed, _runs++));
         }
 
         private void StartRandom()
         {
-            Run(() => DemoSession.Single(_deck, DemoSession.RandomEnemyId(_seed + (_randomPicks++ * 104729)), _seed));
+            Run(() => DemoSession.Single(_deck, DemoSession.RandomEnemyId(_seed, _randomPicks++), _seed, _runs++));
         }
 
         private void StartChain()
         {
-            Run(() => DemoSession.Chain(_deck, _seed));
+            Run(() => DemoSession.Chain(_deck, _seed, null, _runs++));
         }
 
         private void Run(System.Func<DemoSession> make)

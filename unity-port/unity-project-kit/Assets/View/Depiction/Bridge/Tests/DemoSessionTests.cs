@@ -258,6 +258,103 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void AChainsEndScreen_ShowsEachLine_AndTheWholeRunAddedUp()
+        {
+            // A two-battle chain won once and then ended: 何戦目, the battle's own items, the average
+            // turns, and (the run over) the totals over both battles (§12).
+            for (int seed = 1; seed < 60; seed++)
+            {
+                var session = DemoSession.Chain(Deck(), seed, new[] { "polearm_warped", "pack_alpha" });
+                CoreBattleSource first = session.StartBattle(suggestCards: true);
+                FightToTheEnd(first);
+                BattleTally one = session.Finish(first);
+                if (one.Result != GameResult.Won) continue;
+
+                DemoEndScreen between = session.EndScreen();
+                Assert.That(between.Lines, Is.EqualTo(new[]
+                {
+                    "何戦目: 1 / 2（錆槍の竜兵）",
+                    "残り HP: " + one.HpLeft + " / 50",
+                    "ターン数: " + one.Turns,
+                    "使った札 " + one.CardsPlayed + " 枚の属性: " + DemoSession.Breakdown(one),
+                    "特性の発動: " + one.TraitsFired + " 回",
+                    "次: 統牙の長竜",
+                }));
+                Assert.That(between.Title, Is.EqualTo("1 戦目に勝ちました"));
+
+                session.GoOn(rest: false);
+                CoreBattleSource second = session.StartBattle(suggestCards: true);
+                FightToTheEnd(second);
+                BattleTally two = session.Finish(second);
+                BattleTally total = Chain.Total(session.Tallies);
+                DemoEndScreen end = session.EndScreen();
+                string average = DemoSession.AverageOf(session.Tallies);
+
+                Assert.Multiple(() =>
+                {
+                    Assert.That(session.Stage, Is.EqualTo(DemoStage.Over));
+                    Assert.That(end.Lines, Is.EqualTo(new[]
+                    {
+                        "何戦目: 2 / 2（統牙の長竜）",
+                        "残り HP: " + two.HpLeft + " / 50",
+                        "ターン数: " + two.Turns + "（平均 " + average + "）",
+                        "使った札 " + two.CardsPlayed + " 枚の属性: " + DemoSession.Breakdown(two),
+                        "特性の発動: " + two.TraitsFired + " 回",
+                        "連戦の合計（2 戦）: 使った札 " + (one.CardsPlayed + two.CardsPlayed) + " 枚の属性: " + DemoSession.Breakdown(total),
+                        "連戦の合計: 特性の発動 " + (one.TraitsFired + two.TraitsFired) + " 回、平均ターン数 " + average,
+                    }));
+                    Assert.That(total.CardsPlayed, Is.EqualTo(one.CardsPlayed + two.CardsPlayed));
+                    Assert.That(total.CountOf(BattleAttribute.Attack), Is.EqualTo(one.CountOf(BattleAttribute.Attack) + two.CountOf(BattleAttribute.Attack)));
+                    Assert.That(total.Turns, Is.EqualTo(one.Turns + two.Turns));
+                });
+                return;
+            }
+            Assert.Fail("no seed won the first battle");
+        }
+
+        [TestCase(new[] { 8, 9 }, "8.5")]
+        [TestCase(new[] { 8, 8 }, "8")]
+        [TestCase(new[] { 6, 7, 7 }, "6.7")]
+        [TestCase(new[] { 5 }, "5")]
+        public void TheAverageTurns_RoundToOneDecimal(int[] turns, string expected)
+        {
+            var tallies = turns.Select(t => new BattleTally("polearm_warped", GameResult.Won, t, 50, 50, 0, new Dictionary<BattleAttribute, int>(), 0)).ToList();
+            Assert.That(DemoSession.AverageOf(tallies), Is.EqualTo(expected));
+            Assert.That(DemoSession.AverageOf(new List<BattleTally>()), Is.EqualTo("0"));
+        }
+
+        [Test]
+        public void EachRun_DealsAfresh_AndTheRandomPickMovesOn()
+        {
+            // Choosing the same mode again from the same seed: another deal, and another random enemy draw.
+            var first = DemoSession.Single(Deck(), "polearm_warped", 7, 0).StartBattle().State;
+            var again = DemoSession.Single(Deck(), "polearm_warped", 7, 1).StartBattle().State;
+            Assert.That(again.DrawPile.Select(c => c.InstanceId), Is.Not.EqualTo(first.DrawPile.Select(c => c.InstanceId)));
+            Assert.That(Enumerable.Range(0, 30).Select(p => DemoSession.RandomEnemyId(7, p)).Distinct().Count(), Is.GreaterThan(1));
+        }
+
+        [Test]
+        public void TheModeScreensWords_AreTheBridges()
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(DemoSession.ModeTitle, Is.EqualTo("戦い方を選ぶ"));
+                Assert.That(DemoSession.SingleHeading, Is.EqualTo("1 体で区切る（敵を選ぶ）"));
+                Assert.That(DemoSession.ChainHeading, Is.EqualTo("連戦（HP とスタミナを持ち越し、負けたら終わり）"));
+                Assert.That(DemoSession.RandomLabel, Is.EqualTo("ランダム"));
+                Assert.That(DemoSession.BackToDeckLabel, Is.EqualTo("デッキ選択へ戻る"));
+            });
+        }
+
+        [Test]
+        public void AgainDuringABattle_IsRefused()
+        {
+            var session = DemoSession.Single(Deck(), "polearm_warped", 1);
+            session.StartBattle();
+            Assert.Throws<InvalidOperationException>(() => session.Again());
+        }
+
+        [Test]
         public void TheStages_RefuseMovesOutOfTurn()
         {
             var session = DemoSession.Single(Deck(), "polearm_warped", 1);

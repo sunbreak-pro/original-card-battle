@@ -54,6 +54,33 @@ namespace BattleCore
             return (Math.Min(maxHp, hp + gain), maxStamina);
         }
 
+        /// <summary>
+        /// §12's result screen for a whole chain: the cards, their attributes and the traits that
+        /// held, added up over every battle; turns summed; the result and the HP of the last battle.
+        /// </summary>
+        public static BattleTally Total(IReadOnlyList<BattleTally> tallies)
+        {
+            if (tallies == null) throw new ArgumentNullException(nameof(tallies));
+            if (tallies.Count == 0) throw new ArgumentException("A chain total needs at least one battle.", nameof(tallies));
+            var attributes = new Dictionary<BattleAttribute, int>();
+            int turns = 0, played = 0, fired = 0;
+            foreach (var tally in tallies)
+            {
+                turns += tally.Turns;
+                played += tally.CardsPlayed;
+                fired += tally.TraitsFired;
+                foreach (var attribute in BattleTally.Order)
+                {
+                    int n = tally.CountOf(attribute);
+                    if (n == 0) continue;
+                    attributes.TryGetValue(attribute, out int sum);
+                    attributes[attribute] = sum + n;
+                }
+            }
+            var last = tallies[tallies.Count - 1];
+            return new BattleTally("", last.Result, turns, last.HpLeft, last.MaxHp, played, attributes, fired);
+        }
+
         /// <summary>The tally of one battle, from its final state and every event it emitted.</summary>
         public static BattleTally Tally(BattleState finished, IEnumerable<BattleEvent> events)
         {
