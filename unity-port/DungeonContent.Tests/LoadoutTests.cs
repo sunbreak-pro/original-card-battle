@@ -12,7 +12,7 @@ namespace DungeonContent.Tests
             Assert.That(Loadout.ConsumableSlots, Is.EqualTo(3));
 
             Assert.Throws<LoadoutRuleException>(() => Loadout.Of(
-                new[] { "bosho_no_men", "kokugen_no_suna", "toma_no_kutsu", "ikitsugi_no_fue" }));
+                new[] { "bosho_no_men", "kokugen_no_suna", "maai_no_kutsu", "ikitsugi_no_fue" }));
             Assert.Throws<LoadoutRuleException>(() => Loadout.Of(
                 Array.Empty<string>(),
                 new[] { "joka_no_ko", "yakuso", "wasuremizu", "koi_hoshiniku" }));
@@ -23,7 +23,7 @@ namespace DungeonContent.Tests
         {
             // concept-v3.md §8.2 / §14, for one life only.
             var four = Loadout.Of(
-                new[] { "bosho_no_men", "kokugen_no_suna", "toma_no_kutsu", "ikitsugi_no_fue" },
+                new[] { "bosho_no_men", "kokugen_no_suna", "maai_no_kutsu", "ikitsugi_no_fue" },
                 null,
                 Loadout.SurvivorToolSlots);
             Assert.That(four.Tools.Count, Is.EqualTo(4));
@@ -44,7 +44,7 @@ namespace DungeonContent.Tests
         {
             Assert.That(Loadout.Empty.MiasmaDensityRelief, Is.Zero);
             Assert.That(Loadout.Empty.TimeLimitBonus, Is.Zero);
-            Assert.That(Loadout.Empty.Has(ItemEffect.StartFar), Is.False);
+            Assert.That(Loadout.Empty.Has(ItemEffect.WiderStart), Is.False);
         }
 
         [Test]
@@ -106,10 +106,10 @@ namespace DungeonContent.Tests
             // The point of sharing the slots: three tools cannot cover both sides.
             var deep = Loadout.Of(new[] { "bosho_no_men", "kokugen_no_suna", "utsushi_no_tobari" });
             Assert.That(deep.Tools.All(t => t.Side == EffectSide.Exploration), Is.True);
-            Assert.That(deep.Has(ItemEffect.StartFar), Is.False);
+            Assert.That(deep.Has(ItemEffect.WiderStart), Is.False);
             Assert.That(deep.Has(ItemEffect.OpeningGuard), Is.False);
 
-            var fighty = Loadout.Of(new[] { "toma_no_kutsu", "ikitsugi_no_fue", "ryurin_no_kakera" });
+            var fighty = Loadout.Of(new[] { "maai_no_kutsu", "ikitsugi_no_fue", "ryurin_no_kakera" });
             Assert.That(fighty.MiasmaDensityRelief, Is.Zero);
             Assert.That(fighty.TimeLimitBonus, Is.Zero);
         }
