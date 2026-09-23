@@ -81,22 +81,6 @@ public static class BattleTheme
     public static readonly Vector2 RightBottomX = new Vector2(0.78f, 0.98f);
     public const float FloorFraction = 0.08f; // floor line above the arena's bottom edge
 
-    // Real on-screen gap (reference px) between the two figures per range (2026-07-04 decision).
-    public static float FigureGap(BattleCore.RangeBand band) => band switch
-    {
-        BattleCore.RangeBand.Close => 260f,
-        BattleCore.RangeBand.Mid => 520f,
-        _ => 820f,
-    };
-
-    // Posture per range: (z-rotation degrees, y-scale). Close leans in, Far leans back.
-    public static (float rot, float scaleY) Posture(BattleCore.RangeBand band) => band switch
-    {
-        BattleCore.RangeBand.Close => (12f, 1.08f),
-        BattleCore.RangeBand.Mid => (0f, 1f),
-        _ => (-8f, 0.94f),
-    };
-
     // ---- helpers -------------------------------------------------------------
     public static Color Hex(string hex, float alpha = 1f)
     {
