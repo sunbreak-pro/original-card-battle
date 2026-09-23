@@ -507,6 +507,7 @@ namespace Depiction
         {
             return new DepictionFrame
             {
+                Outcome = _phase != Phase.Over ? BattleOutcome.Ongoing : PlayerWon ? BattleOutcome.Won : BattleOutcome.Lost,
                 Corner = new CornerFrame { Turn = _turn, Floor = 1, ChainIndex = 1, ChainTotal = 3, MiasmaPercent = 0 },
                 Player = new UnitFrame
                 {

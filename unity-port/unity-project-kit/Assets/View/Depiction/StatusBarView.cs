@@ -2,6 +2,7 @@
 // is handed; the bar width is the only thing derived here (a drawing scale, not a rule).
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,6 +24,12 @@ namespace Depiction.View
         public Text[] chips = new Text[0];
 
         private int _hpMax = 1;
+        /// <summary>The chips as shown, in order; the chip Texts are filled from it.</summary>
+        private readonly List<StatusChip> _statuses = new List<StatusChip>();
+        private Color[] _chipColors = new Color[0];
+
+        /// <summary>The stamina the pips show now (the start of a recovery that lights them one by one).</summary>
+        public int Stamina { get; private set; }
 
         private void Awake()
         {
@@ -33,6 +40,8 @@ namespace Depiction.View
             }
             if (hpFillImage) hpFillImage.color = side == UnitSide.Player ? BattleTheme.Accent : BattleTheme.Omen;
             EnsureTrail();
+            _chipColors = new Color[chips.Length];
+            for (int i = 0; i < chips.Length; i++) _chipColors[i] = chips[i] ? chips[i].color : Color.white;
         }
 
         /// <summary>The prefab belongs to the Unity project, so a missing band is made here, just behind the bar.</summary>
@@ -62,13 +71,100 @@ namespace Depiction.View
             SetGuard(unit.Guard);
             if (pipRow) pipRow.gameObject.SetActive(unit.ShowStamina);
             if (unit.ShowStamina) SetStamina(unit.Stamina, unit.StaminaMax);
+            _statuses.Clear();
+            foreach (StatusChip chip in unit.Statuses) _statuses.Add(new StatusChip { Label = chip.Label, Stacks = chip.Stacks });
+            RenderChips();
+        }
+
+        private void RenderChips()
+        {
             for (int i = 0; i < chips.Length; i++)
             {
                 if (!chips[i]) continue;
-                bool used = i < unit.Statuses.Count;
+                bool used = i < _statuses.Count;
                 chips[i].gameObject.SetActive(used);
-                if (used) chips[i].text = unit.Statuses[i].Label + unit.Statuses[i].Stacks;
+                if (!used) continue;
+                chips[i].text = _statuses[i].Label + _statuses[i].Stacks;
+                chips[i].rectTransform.localScale = Vector3.one;
+                if (i < _chipColors.Length) chips[i].color = _chipColors[i];
             }
+        }
+
+        /// <summary>One word's chip, settled at once: added, restacked, or gone at 0.</summary>
+        public void SetStatus(string label, int stacks)
+        {
+            int i = _statuses.FindIndex(s => s.Label == label);
+            if (stacks <= 0)
+            {
+                if (i >= 0) _statuses.RemoveAt(i);
+            }
+            else if (i >= 0)
+            {
+                _statuses[i].Stacks = stacks;
+            }
+            else
+            {
+                _statuses.Add(new StatusChip { Label = label, Stacks = stacks });
+            }
+            RenderChips();
+        }
+
+        /// <summary>
+        /// The same change played as one of the four chip beats (battle_ui_ux_v2 §5.10): a new chip
+        /// swells in, more stacks pop it, fewer shrink it for a moment, and the last stack fades it out.
+        /// </summary>
+        public IEnumerator PlayStatus(string label, int stacks, EffectId beat, float ms)
+        {
+            if (beat == EffectId.StatusVanish)
+            {
+                Text going = ChipOf(label);
+                if (going)
+                {
+                    Color from = going.color;
+                    RectTransform rt = going.rectTransform;
+                    yield return UiTween.Run(ms, Ease.Linear, t =>
+                    {
+                        if (!going) return;
+                        going.color = BattleTheme.WithAlpha(from, from.a * (1f - t));
+                        float s = Mathf.Lerp(1f, 0.7f, t);
+                        rt.localScale = new Vector3(s, s, 1f);
+                    });
+                }
+                SetStatus(label, 0);
+                yield break;
+            }
+
+            SetStatus(label, stacks);
+            Text shown = ChipOf(label);
+            if (!shown) yield break;
+            RectTransform chip = shown.rectTransform;
+            switch (beat)
+            {
+                case EffectId.StatusApply:
+                    yield return UiTween.Run(ms, Ease.Out, t =>
+                    {
+                        float s = t < 0.6f ? Mathf.Lerp(0.3f, 1.2f, t / 0.6f) : Mathf.Lerp(1.2f, 1f, (t - 0.6f) / 0.4f);
+                        if (chip) chip.localScale = new Vector3(s, s, 1f);
+                    });
+                    break;
+                case EffectId.StatusStack:
+                    yield return UiTween.Pop(chip, ms);
+                    break;
+                default: // StatusTick
+                    yield return UiTween.Run(ms, Ease.Out, t =>
+                    {
+                        float s = 1f - 0.18f * Mathf.Sin(t * Mathf.PI);
+                        if (chip) chip.localScale = new Vector3(s, s, 1f);
+                    });
+                    break;
+            }
+            if (chip) chip.localScale = Vector3.one;
+        }
+
+        private Text ChipOf(string label)
+        {
+            int i = _statuses.FindIndex(s => s.Label == label);
+            return i >= 0 && i < chips.Length ? chips[i] : null;
         }
 
         public void SetHp(int hp)
@@ -140,8 +236,31 @@ namespace Depiction.View
             yield return UiTween.Shake(guardBadge, 7f, 2, ms);
         }
 
+        /// <summary>
+        /// The recovered pips light one at a time, <paramref name="perPipMs"/> apart
+        /// (EffectId.StaminaRecover, battle_ui_ux_v2 §5.1 順 3).
+        /// </summary>
+        public IEnumerator LightPips(int stamina, int staminaMax, float perPipMs)
+        {
+            int from = Mathf.Clamp(Stamina, 0, staminaMax);
+            if (stamina <= from)
+            {
+                SetStamina(stamina, staminaMax);
+                yield break;
+            }
+            SetStamina(from, staminaMax);
+            for (int next = from + 1; next <= stamina; next++)
+            {
+                yield return UiTween.Wait(perPipMs);
+                SetStamina(next, staminaMax);
+                int pip = next - 1;
+                if (pip < pips.Length && pips[pip]) StartCoroutine(UiTween.Pop(pips[pip].rectTransform, perPipMs));
+            }
+        }
+
         public void SetStamina(int stamina, int staminaMax)
         {
+            Stamina = stamina;
             for (int i = 0; i < pips.Length; i++)
             {
                 if (!pips[i]) continue;

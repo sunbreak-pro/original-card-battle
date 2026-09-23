@@ -118,6 +118,7 @@ namespace Depiction.View
         private static readonly Vector2 Half = new Vector2(0.5f, 0.5f);
         /// <summary>Where the enemy figure stands between its moves; every motion returns it here.</summary>
         private Vector2 _enemyHome;
+        private GameObject _resultCard;
 
         /// <summary>
         /// Hands the player the source to play instead of the two it can build by itself. Call it
@@ -217,6 +218,11 @@ namespace Depiction.View
                 RefreshPlayableLook(); // the guide line carries the outcome
                 Debug.Log("[Depiction] finished. seconds per event: " + string.Join(" / ", EventSeconds.ConvertAll(s => s.ToString("0.00"))));
                 if (logEffectTrace) Debug.Log("[Depiction] effects:\n" + Trace.ToCsv());
+                BattleOutcome outcome = _source.Frame.Outcome;
+                if (outcome != BattleOutcome.Ongoing)
+                {
+                    StartCoroutine(Effect(EffectId.ResultCard, ShowResult(outcome, _effects.Ms(EffectId.ResultCard)), () => ShowResultNow(outcome)));
+                }
                 yield break;
             }
             SetHandInteractable(true);
@@ -226,9 +232,22 @@ namespace Depiction.View
         private IEnumerator PlayEvent(DepictionEvent ev)
         {
             float startedAt = Time.unscaledTime;
+            if (ev.Kind == DepictionEventKind.TurnStart)
+            {
+                yield return Effect(EffectId.TurnBanner, Banner(DepictionText.YourTurn, BattleTheme.Accent, _effects.Ms(EffectId.TurnBanner)), null);
+                // An omen already standing since the enemy's phase blinks once; a new one drops in with its cue.
+                if (ev.After.Omen.Visible && !ev.Cues.Exists(c => c.Kind == CueKind.OmenShow))
+                {
+                    StartCoroutine(Effect(EffectId.OmenBlink, omenBadge.Blink(_effects.Ms(EffectId.OmenBlink)), null));
+                }
+            }
             foreach (Cue cue in ev.Cues)
             {
                 yield return PlayCue(ev, cue);
+            }
+            if (ev.Kind == DepictionEventKind.TurnEnd)
+            {
+                yield return Effect(EffectId.EnemyTurnBanner, Banner(DepictionText.EnemyTurn, BattleTheme.Omen, _effects.Ms(EffectId.EnemyTurnBanner)), null);
             }
             // An enemy whose blow was all taken by Guard (or who only guarded) is still leaning in:
             // it steps back beside the next event instead of holding this one up.
@@ -261,11 +280,27 @@ namespace Depiction.View
                     break;
 
                 case CueKind.StaminaChange:
-                    status.SetStamina(cue.StaminaAfter, cue.StaminaMax);
-                    // A gain is waited for; a spend pops beside the card's own beats.
-                    if (cue.Amount > 0) yield return Effect(EffectId.StaminaChange, PopPips(status), null);
-                    else if (status.pipRow && _effects.IsOn(EffectId.StaminaChange)) StartCoroutine(UiTween.Pop(status.pipRow, _effects.Ms(EffectId.StaminaChange)));
+                    if (cue.Amount > 0)
+                    {
+                        // A gain lights its pips one by one and is waited for.
+                        yield return Effect(EffectId.StaminaRecover,
+                            status.LightPips(cue.StaminaAfter, cue.StaminaMax, _effects.Ms(EffectId.StaminaRecover)),
+                            () => status.SetStamina(cue.StaminaAfter, cue.StaminaMax), cue.Amount);
+                    }
+                    else
+                    {
+                        // A spend pops beside the card's own beats.
+                        status.SetStamina(cue.StaminaAfter, cue.StaminaMax);
+                        if (status.pipRow && _effects.IsOn(EffectId.StaminaChange)) StartCoroutine(UiTween.Pop(status.pipRow, _effects.Ms(EffectId.StaminaChange)));
+                    }
                     break;
+
+                case CueKind.StatusChange:
+                {
+                    EffectId beat = StatusBeat.Of(cue);
+                    yield return Effect(beat, status.PlayStatus(cue.Text, cue.StacksAfter, beat, _effects.Ms(beat)), () => status.SetStatus(cue.Text, cue.StacksAfter));
+                    break;
+                }
 
                 case CueKind.DrawHand:
                     yield return DrawHand(ev.After.Hand, cue.Amount);
@@ -289,7 +324,10 @@ namespace Depiction.View
                     break;
 
                 case CueKind.RangeSwitch:
-                    yield return Effect(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.RangeGlyphAfter), () => SnapRange(target, cue.RangeAfter, cue.RangeGlyphAfter));
+                    // Moved by the other side (the polearm's shove): a knock-back, and the muted label says so.
+                    if (cue.Pushed) FloatEffect(EffectId.PushMark, labelAt, DepictionText.Pushed, BattleTheme.Ink2, 36);
+                    yield return Effect(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.RangeGlyphAfter, cue.Pushed),
+                        () => SnapRange(target, cue.RangeAfter, cue.RangeGlyphAfter));
                     break;
 
                 case CueKind.StanceCue:
@@ -303,6 +341,8 @@ namespace Depiction.View
 
                 case CueKind.EnemyWindup:
                     SetHandInteractable(false);
+                    // The moment the enemy does what it foretold: the omen flares beside its move.
+                    StartCoroutine(Effect(EffectId.OmenExecute, omenBadge.Flare(_effects.Ms(EffectId.OmenExecute)), null));
                     yield return Effect(EffectId.EnemyMotion, EnemyMotion(target, cue.System, _effects.Ms(EffectId.EnemyMotion)), null);
                     break;
 
@@ -497,11 +537,62 @@ namespace Depiction.View
             yield return omenBadge.StrikeSide(_effects.Ms(EffectId.SideBonusMiss));
         }
 
-        private IEnumerator PopPips(StatusBarView status)
+        // ---- status and turn beats (#77) -------------------------------------------------------
+
+        /// <summary>A band across the arena with one line on it, faded in and out over <paramref name="ms"/>.</summary>
+        private IEnumerator Banner(string text, Color color, float ms)
         {
-            float ms = _effects.Ms(EffectId.StaminaChange);
-            if (status.pipRow) StartCoroutine(UiTween.Pop(status.pipRow, ms));
-            yield return UiTween.Wait(ms);
+            if (!fxLayer) yield break;
+            Image plate = UiKit.Sprite(fxLayer, "Banner", ProceduralArt.White, BattleTheme.WithAlpha(BattleTheme.InkBlack, 0.55f),
+                Half, Half, new Vector2(1920f, 120f), new Vector2(0f, 80f));
+            plate.raycastTarget = false;
+            Text label = UiKit.Text(plate.rectTransform, "Text", 56, TextAnchor.MiddleCenter, color, text);
+            label.fontStyle = FontStyle.Bold;
+            label.raycastTarget = false;
+            CanvasGroup group = UiKit.Group(plate.rectTransform);
+            group.alpha = 0f;
+            yield return UiTween.Run(ms, Ease.Linear, t =>
+            {
+                if (group) group.alpha = t < 0.25f ? t / 0.25f : t > 0.75f ? (1f - t) / 0.25f : 1f;
+            });
+            if (plate) Destroy(plate.gameObject);
+        }
+
+        /// <summary>The one card at the end: 勝ち or 負け rises into place and stays (EffectId.ResultCard).</summary>
+        private IEnumerator ShowResult(BattleOutcome outcome, float ms)
+        {
+            CanvasGroup group = BuildResultCard(outcome);
+            if (!group) yield break;
+            var rt = (RectTransform)group.transform;
+            Vector2 at = rt.anchoredPosition;
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                if (!rt) return;
+                group.alpha = t;
+                rt.anchoredPosition = at + new Vector2(0f, -40f * (1f - t));
+            });
+        }
+
+        private void ShowResultNow(BattleOutcome outcome)
+        {
+            CanvasGroup group = BuildResultCard(outcome);
+            if (group) group.alpha = 1f;
+        }
+
+        private CanvasGroup BuildResultCard(BattleOutcome outcome)
+        {
+            if (!fxLayer || _resultCard) return null;
+            Image plate = UiKit.Sprite(fxLayer, "ResultCard", ProceduralArt.White, BattleTheme.WithAlpha(BattleTheme.InkBlack, 0.8f),
+                Half, Half, new Vector2(520f, 220f), new Vector2(0f, 60f));
+            plate.raycastTarget = false;
+            Color color = outcome == BattleOutcome.Won ? BattleTheme.Warm : BattleTheme.Omen;
+            Text label = UiKit.Text(plate.rectTransform, "Outcome", 72, TextAnchor.MiddleCenter, color, DepictionText.OutcomeText(outcome));
+            label.fontStyle = FontStyle.Bold;
+            label.raycastTarget = false;
+            _resultCard = plate.gameObject;
+            CanvasGroup group = UiKit.Group(plate.rectTransform);
+            group.alpha = 0f;
+            return group;
         }
 
         /// <summary>
@@ -542,13 +633,14 @@ namespace Depiction.View
             figure.SetRange(true, glyph);
         }
 
-        private IEnumerator SwitchRange(FigureView figure, RangeSide range, string glyph)
+        private IEnumerator SwitchRange(FigureView figure, RangeSide range, string glyph, bool pushed)
         {
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             Vector3 from = figure.transform.position;
             Vector3 to = slot ? slot.position : from;
-            // 320 ms to move, then the tag flips in 150 ms (battle_ui_ux_v2 §10.6).
-            yield return UiTween.Run(320f, Ease.InOut, t => { if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t); });
+            // 320 ms to move, then the tag flips in 150 ms (battle_ui_ux_v2 §10.6). A push is a knock-back:
+            // it starts fast and settles, where a step of one's own eases in and out.
+            yield return UiTween.Run(320f, pushed ? Ease.Out : Ease.InOut, t => { if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t); });
             yield return figure.FlipRangeTag(glyph, 150f);
         }
 
