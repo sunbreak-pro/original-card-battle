@@ -132,6 +132,61 @@ namespace Depiction
         public string StanceHint = "";
     }
 
+    /// <summary>
+    /// battle_ui_ux_v2 §5.3 の系統, as far as the slice plays them: the shape a blow draws and the way
+    /// an enemy moves into it. The writer of the script picks it (<see cref="StrikeSystems.Of"/>); the
+    /// View only draws what it is told.
+    /// </summary>
+    public enum StrikeSystem
+    {
+        /// <summary>斬: a diagonal arc across the target. The default.</summary>
+        Slash,
+
+        /// <summary>突: one straight line into the target.</summary>
+        Thrust,
+
+        /// <summary>払: a wide horizontal band.</summary>
+        Sweep,
+
+        /// <summary>打: a ripple where it lands. Pushes and pulls play as this.</summary>
+        Strike,
+
+        /// <summary>盾: no blow; the figure raises its guard.</summary>
+        Shield,
+
+        /// <summary>A move without a blow: the figure steps.</summary>
+        Step,
+    }
+
+    /// <summary>§5.3: the system from the technique's name and faces. The canon's priority is 突 → 打 → 払 → 斬.</summary>
+    public static class StrikeSystems
+    {
+        public static StrikeSystem Of(string name, bool attacks, bool guards, bool moves, bool pushes)
+        {
+            name = name ?? "";
+            if (attacks)
+            {
+                // A push or pull is what the action is for (石突きの押し込み, whose name holds 突), so it plays as 打.
+                if (pushes) return StrikeSystem.Strike;
+                if (HasAny(name, "突", "貫", "矢", "弩", "撃", "投")) return StrikeSystem.Thrust;
+                if (HasAny(name, "打", "当", "礫", "圧殺", "押し込み")) return StrikeSystem.Strike;
+                if (HasAny(name, "薙", "払", "牽制")) return StrikeSystem.Sweep;
+                return StrikeSystem.Slash;
+            }
+            if (moves) return StrikeSystem.Step;
+            return guards ? StrikeSystem.Shield : StrikeSystem.Step;
+        }
+
+        private static bool HasAny(string name, params string[] words)
+        {
+            foreach (string word in words)
+            {
+                if (name.Contains(word)) return true;
+            }
+            return false;
+        }
+    }
+
     public enum DepictionEventKind
     {
         TurnStart,
@@ -190,6 +245,8 @@ namespace Depiction
         public string RangeGlyphAfter = "";
         /// <summary>StatusChange only: the stacks left of the word named in <see cref="Text"/> (0 = gone).</summary>
         public int StacksAfter = Unchanged;
+        /// <summary>Slash and EnemyWindup: the shape of the blow and of the enemy's move (§5.3).</summary>
+        public StrikeSystem System = StrikeSystem.Slash;
     }
 
     public sealed class DepictionEvent

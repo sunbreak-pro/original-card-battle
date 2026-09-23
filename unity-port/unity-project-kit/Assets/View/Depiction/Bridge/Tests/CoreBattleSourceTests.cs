@@ -18,41 +18,49 @@ namespace Depiction.Bridge.Tests
         /// may run one frame long, which is what the PlayMode test (issue #28) measures for real.
         /// Keep this table in step with DepictionPlayer when a beat's length changes.
         /// </summary>
-        private static int NominalMs(Cue cue, DepictionEvent ev)
-        {
-            switch (cue.Kind)
-            {
-                case CueKind.GuardReset: return 0;
-                case CueKind.StaminaChange: return cue.Amount > 0 ? 220 : 0;
-                case CueKind.DrawHand: return 60 * ev.After.Hand.Count + 260;
-                case CueKind.OmenShow: return 240;
-                case CueKind.TraitFire: return 260;
-                case CueKind.Slash:
-                {
-                    int[] hitStop = { 0, 40, 70, 110 };
-                    int swing = (cue.Source == UnitSide.Player ? 100 : 0) + 120 + hitStop[cue.Intensity - 1];
-                    return cue.HpAfter == Cue.Unchanged ? swing : swing + 300 + 120;
-                }
-                case CueKind.GuardGain: return 260;
-                case CueKind.RangeSwitch: return 320 + 150;
-                case CueKind.StanceCue: return 200 + 260;
-                case CueKind.DiscardHand: return 60 * cue.Amount + 240;
-                case CueKind.EnemyWindup: return 220;
-                case CueKind.SideBonusMiss: return 260;
-                case CueKind.GuardBlock: return 240 + 80;
-                case CueKind.Hit: return 300 + (cue.Target == UnitSide.Player ? 200 + 140 : 0);
-                case CueKind.StatusChange: return 0; // no beat yet (#77); the chips settle with the frame
-                default: throw new ArgumentOutOfRangeException(nameof(cue), cue.Kind, "no nominal time");
-            }
-        }
-
-        /// <summary>A released card flies for 160 ms before its cues start, inside the measured time.</summary>
+        /// <summary>
+        /// What an event waits for with every effect on: the same plan the View waits by (EffectPlan,
+        /// Script/Effects.cs, #75 / #76), so this budget and the screen cannot drift apart.
+        /// </summary>
         private static int NominalMs(DepictionEvent ev)
         {
-            return (ev.WaitsForDrag ? 160 : 0) + ev.Cues.Sum(c => NominalMs(c, ev));
+            return (int)EffectPlan.BlockingMs(ev, EffectSwitches.AllOn());
         }
 
         private const int BudgetMs = 2000;
+
+        [Test]
+        public void ThePolearmsActions_EachMoveTheirOwnWay()
+        {
+            // #76: the four actions read apart with the placeholder art alone — sweep across, thrust in,
+            // shove with its weight, raise the haft — and the step the 3+ branch needs is a fifth.
+            var systems = new[] { "sweep", "reach_thrust", "shove", "guard_up", "step_forward" }
+                .Select(id => CoreText.SystemOf(Enemies.PolearmWarped.Actions[id])).ToArray();
+            Assert.That(systems, Is.EqualTo(new[]
+            {
+                StrikeSystem.Sweep, StrikeSystem.Thrust, StrikeSystem.Strike, StrikeSystem.Shield, StrikeSystem.Step,
+            }));
+        }
+
+        [Test]
+        public void TheWindupAndTheBlow_CarryTheActionsSystem()
+        {
+            // The shove's windup and its swing both play as 打. The core's events are written by hand so
+            // the test does not hang on where a battle starts.
+            BattleState state = TurnLoop.Start(BattleSetup.Slice(), new FixedRng(0.9999999)).State;
+            var writer = new CoreScriptWriter(state.EnemyDef);
+            writer.Opening(state);
+            var events = new List<BattleEvent>
+            {
+                new GuardCleared(Actor.Enemy, 0),
+                new ActionExecuted(Actor.Enemy, Enemies.PolearmWarped.Actions["shove"], 0),
+                new DamageDealt(Actor.Enemy, Actor.Player, 8, 0, 8, 0, 42),
+            };
+            List<Cue> cues = writer.Write(events, state).SelectMany(ev => ev.Cues).ToList();
+
+            Assert.That(cues.Single(c => c.Kind == CueKind.EnemyWindup).System, Is.EqualTo(StrikeSystem.Strike));
+            Assert.That(cues.Single(c => c.Kind == CueKind.Slash).System, Is.EqualTo(StrikeSystem.Strike));
+        }
 
         private static DropZone ZoneFor(CardFace face)
         {

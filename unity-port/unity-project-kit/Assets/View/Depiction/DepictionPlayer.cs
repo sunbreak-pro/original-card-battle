@@ -116,6 +116,8 @@ namespace Depiction.View
         /// <summary>How far a held card is drawn toward the dish once it is over it (EffectId.ReceiverSnap).</summary>
         private const float SnapPull = 0.35f;
         private static readonly Vector2 Half = new Vector2(0.5f, 0.5f);
+        /// <summary>Where the enemy figure stands between its moves; every motion returns it here.</summary>
+        private Vector2 _enemyHome;
 
         /// <summary>
         /// Hands the player the source to play instead of the two it can build by itself. Call it
@@ -147,6 +149,7 @@ namespace Depiction.View
             else if (scriptedPlayback) _source = new DepictionRunner(TurnSliceScript.Build());
             else _source = new LiveTurn();
             ApplyFrame(_source.Frame);
+            if (enemyFigure) _enemyHome = enemyFigure.Rect.anchoredPosition;
             StartCoroutine(RunAutomaticEvents());
         }
 
@@ -227,6 +230,12 @@ namespace Depiction.View
             {
                 yield return PlayCue(ev, cue);
             }
+            // An enemy whose blow was all taken by Guard (or who only guarded) is still leaning in:
+            // it steps back beside the next event instead of holding this one up.
+            if (enemyFigure && enemyFigure.Rect.anchoredPosition != _enemyHome)
+            {
+                StartCoroutine(Effect(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome)));
+            }
             ApplyFrame(ev.After);
             float seconds = Time.unscaledTime - startedAt;
             EventSeconds.Add(seconds);
@@ -253,8 +262,9 @@ namespace Depiction.View
 
                 case CueKind.StaminaChange:
                     status.SetStamina(cue.StaminaAfter, cue.StaminaMax);
-                    if (status.pipRow) StartCoroutine(UiTween.Pop(status.pipRow, 220f));
-                    if (cue.Amount > 0) yield return UiTween.Wait(220f);
+                    // A gain is waited for; a spend pops beside the card's own beats.
+                    if (cue.Amount > 0) yield return Effect(EffectId.StaminaChange, PopPips(status), null);
+                    else if (status.pipRow && _effects.IsOn(EffectId.StaminaChange)) StartCoroutine(UiTween.Pop(status.pipRow, _effects.Ms(EffectId.StaminaChange)));
                     break;
 
                 case CueKind.DrawHand:
@@ -263,13 +273,11 @@ namespace Depiction.View
 
                 case CueKind.OmenShow:
                     omenBadge.Bind(ev.After.Omen);
-                    yield return omenBadge.PopIn(240f);
+                    yield return Effect(EffectId.OmenShow, omenBadge.PopIn(_effects.Ms(EffectId.OmenShow)), () => omenBadge.Rect.localScale = Vector3.one);
                     break;
 
                 case CueKind.TraitFire:
-                    DepictionFx.Burst(this, fxLayer, labelAt, BattleTheme.Warm, 260f);
-                    DepictionFx.FloatText(this, fxLayer, labelAt, cue.Text, BattleTheme.Warm, 40, rise: 70f);
-                    yield return UiTween.Wait(260f);
+                    yield return Effect(EffectId.TraitFire, FireTrait(labelAt, cue.Text), null);
                     break;
 
                 case CueKind.Slash:
@@ -277,20 +285,15 @@ namespace Depiction.View
                     break;
 
                 case CueKind.GuardGain:
-                    DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Guard, 220f + 40f * cue.Intensity);
-                    DepictionFx.FloatText(this, fxLayer, numberAt, "+" + cue.Amount, BattleTheme.Guard, DepictionFx.NumberFont(cue.Intensity));
-                    yield return status.PopGuard(cue.GuardAfter);
+                    yield return Effect(EffectId.GuardGain, GainGuard(cue, status, chest, numberAt), () => status.SetGuard(cue.GuardAfter));
                     break;
 
                 case CueKind.RangeSwitch:
-                    yield return SwitchRange(target, cue.RangeAfter, cue.RangeGlyphAfter);
+                    yield return Effect(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.RangeGlyphAfter), () => SnapRange(target, cue.RangeAfter, cue.RangeGlyphAfter));
                     break;
 
                 case CueKind.StanceCue:
-                    if (endTurn) yield return UiTween.Pop(endTurn, 200f);
-                    DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Guard, 300f);
-                    DepictionFx.FloatText(this, fxLayer, numberAt, cue.Text, BattleTheme.Guard, 48);
-                    yield return status.PopGuard(cue.GuardAfter);
+                    yield return Effect(EffectId.StanceCue, Reserve(cue, status, chest, numberAt), () => status.SetGuard(cue.GuardAfter));
                     yield return Gate(ev.Order + "-impact");
                     break;
 
@@ -300,35 +303,42 @@ namespace Depiction.View
 
                 case CueKind.EnemyWindup:
                     SetHandInteractable(false);
-                    yield return Lunge(target, 70f, 220f);
+                    yield return Effect(EffectId.EnemyMotion, EnemyMotion(target, cue.System, _effects.Ms(EffectId.EnemyMotion)), null);
                     break;
 
                 case CueKind.SideBonusMiss:
-                    DepictionFx.FloatText(this, fxLayer, DepictionFx.PointOn(fxLayer, omenBadge.transform) + new Vector2(0f, -64f),
-                        cue.Text, BattleTheme.Whiff, 40, struck: true, rise: -50f);
-                    yield return omenBadge.StrikeSide(260f);
+                    yield return Effect(EffectId.SideBonusMiss, StrikeOffBonus(cue), omenBadge.StrikeSideNow);
                     break;
 
                 case CueKind.GuardBlock:
+                {
+                    // The Guard's number is its own colour, and a light stands in for the sound (#76).
                     status.SetGuard(cue.GuardAfter);
-                    if (status.guardBadge) StartCoroutine(UiTween.Pop(status.guardBadge, 260f));
-                    yield return DepictionFx.ShieldBlock(this, fxLayer, chest, cue.Amount.ToString(), () => Gate(ev.Order + "-block"));
+                    if (cue.GuardAfter == 0) StartCoroutine(Effect(EffectId.GuardBreak, status.CrackGuard(_effects.Ms(EffectId.GuardBreak)), null));
+                    else if (status.guardBadge) StartCoroutine(UiTween.Pop(status.guardBadge, 260f));
+                    FloatEffect(EffectId.GuardNumber, numberAt + new Vector2(-60f, 0f), "Guard −" + cue.Amount, BattleTheme.Guard, 44);
+                    yield return Effect(EffectId.GuardBlock, DepictionFx.ShieldBlock(this, fxLayer, chest, cue.Amount.ToString(), () => Gate(ev.Order + "-block")), null);
                     break;
+                }
 
                 case CueKind.Hit:
-                    DepictionFx.FloatText(this, fxLayer, numberAt, cue.Amount.ToString(), BattleTheme.Omen, DepictionFx.NumberFont(cue.Intensity));
-                    StartCoroutine(DepictionFx.Flash(target.body, BattleTheme.Omen, 260f));
-                    StartCoroutine(UiTween.Shake(target.Rect, DepictionFx.Shake(cue.Intensity), 3, 260f));
-                    yield return status.AnimateHp(cue.HpAfter, 300f);
+                {
+                    bool strong = EffectStrength.IsStrong(cue.Intensity);
+                    FloatEffect(EffectId.DamageNumber, numberAt, cue.Amount.ToString(), BattleTheme.Omen, DepictionFx.NumberFont(cue.Intensity));
+                    StartCoroutine(Effect(EffectId.HitFlash, DepictionFx.Flash(target.body, BattleTheme.Omen, _effects.Ms(EffectId.HitFlash)), null));
+                    StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
+                    if (strong) StartCoroutine(Effect(EffectId.ScreenShake, ShakeArena(), null));
+                    yield return DrainHp(status, cue.HpAfter);
                     yield return Gate(ev.Order + "-impact");
                     if (cue.Target == UnitSide.Player)
                     {
                         // The blow that lands on the player is the enemy's own: its omen is spent and
                         // it draws back. A blow the player lands does neither.
-                        yield return omenBadge.FadeOut(200f);
-                        yield return Lunge(enemyFigure, -70f, 140f);
+                        yield return Effect(EffectId.OmenSpend, omenBadge.FadeOut(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideNow);
+                        yield return Effect(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome));
                     }
                     break;
+                }
             }
         }
 
@@ -341,23 +351,179 @@ namespace Depiction.View
             if (!cue.Source.HasValue) Debug.LogError("[Depiction] event " + ev.Order + ": Slash cue has no Source");
             UnitSide source = cue.Source ?? (cue.Target == UnitSide.Enemy ? UnitSide.Player : UnitSide.Enemy);
             bool byPlayer = source == UnitSide.Player;
+            bool strong = EffectStrength.IsStrong(cue.Intensity);
             FigureView attacker = byPlayer ? playerFigure : enemyFigure;
-            if (byPlayer) yield return Lunge(attacker, 46f, 100f);
+            Vector2 attackerHome = attacker.Rect.anchoredPosition;
+            if (byPlayer) yield return Effect(EffectId.AttackLunge, Lunge(attacker, 46f, _effects.Ms(EffectId.AttackLunge)), null);
             Color streak = byPlayer ? BattleTheme.Ink : BattleTheme.Omen;
-            yield return DepictionFx.Slash(this, fxLayer, chest, streak, cue.Intensity, towardLeft: !byPlayer);
-            yield return UiTween.Wait(DepictionFx.HitStop(cue.Intensity));
+            yield return Effect(EffectId.StrikeShape,
+                DepictionFx.Strike(this, fxLayer, chest, streak, cue.Intensity, !byPlayer, cue.System, _effects.Ms(EffectId.StrikeShape)), null);
+            EffectId stop = strong ? EffectId.HitStopStrong : EffectId.HitStop;
+            yield return Effect(stop, UiTween.Wait(_effects.Ms(stop)), null);
+            if (strong) StartCoroutine(Effect(EffectId.ScreenShake, ShakeArena(), null));
 
             // A slash with no settled HP is the swing alone: the GuardBlock / Hit cues that follow
             // carry the numbers. That is every enemy slash, and any slash Guard takes a bite out of.
             if (cue.HpAfter == Cue.Unchanged) yield break;
 
             DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Omen, 200f + 60f * cue.Intensity);
-            DepictionFx.FloatText(this, fxLayer, chest + new Vector2(0f, 40f), cue.Amount.ToString(), BattleTheme.Ink, DepictionFx.NumberFont(cue.Intensity));
-            StartCoroutine(DepictionFx.Flash(target.body, BattleTheme.White, 220f));
-            StartCoroutine(UiTween.Shake(target.Rect, DepictionFx.Shake(cue.Intensity), 3, 260f));
-            yield return status.AnimateHp(cue.HpAfter, 300f);
+            FloatEffect(EffectId.DamageNumber, chest + new Vector2(0f, 40f), cue.Amount.ToString(), BattleTheme.Ink, DepictionFx.NumberFont(cue.Intensity));
+            StartCoroutine(Effect(EffectId.HitFlash, DepictionFx.Flash(target.body, BattleTheme.White, _effects.Ms(EffectId.HitFlash)), null));
+            StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
+            yield return DrainHp(status, cue.HpAfter);
             yield return Gate(ev.Order + "-impact");
-            yield return Lunge(attacker, -46f, 120f);
+            if (byPlayer)
+            {
+                yield return Effect(EffectId.AttackReturn, ReturnHome(attacker, attackerHome, _effects.Ms(EffectId.AttackReturn)), () => SnapHome(attacker, attackerHome));
+            }
+        }
+
+        // ---- attack and defence beats (#76) -----------------------------------------------------
+
+        /// <summary>The bar drops (blocking), then the grey band follows it down beside the flow.</summary>
+        private IEnumerator DrainHp(StatusBarView status, int hp)
+        {
+            yield return Effect(EffectId.HpDrain, status.AnimateHp(hp, _effects.Ms(EffectId.HpDrain)), () => status.SetHpKeepingTrail(hp));
+            StartCoroutine(Effect(EffectId.HpTrail, status.AnimateTrail(_effects.Ms(EffectId.HpTrail)), status.SnapTrail));
+        }
+
+        /// <summary>The struck figure leans away from the blow and shakes; a strong blow does both harder.</summary>
+        private IEnumerator Recoil(FigureView figure, bool strong)
+        {
+            float ms = _effects.Ms(EffectId.TargetRecoil);
+            RectTransform body = figure.body ? figure.body.rectTransform : null;
+            // The player faces right and reels to the left; the enemy the other way round.
+            float lean = (strong ? 12f : 7f) * (figure.side == UnitSide.Player ? 1f : -1f);
+            StartCoroutine(UiTween.Shake(figure.Rect, strong ? 20f : 10f, 3, ms));
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                if (body) body.localRotation = Quaternion.Euler(0f, 0f, lean * Mathf.Sin(t * Mathf.PI));
+            });
+            if (body) body.localRotation = Quaternion.identity;
+        }
+
+        /// <summary>A strong blow shakes the whole arena (the parent of the figures).</summary>
+        private IEnumerator ShakeArena()
+        {
+            RectTransform arena = playerFigure ? playerFigure.Rect.parent as RectTransform : null;
+            if (!arena) yield break;
+            yield return UiTween.Shake(arena, 6f, 3, _effects.Ms(EffectId.ScreenShake));
+        }
+
+        /// <summary>
+        /// The enemy moves into its action, shaped by its system so the slice's four actions read apart
+        /// with the placeholder art alone: 払 swings across, 突 drives straight in, 打 shoves with its
+        /// weight, 盾 raises the haft; a step just steps. The lean stays until the enemy returns.
+        /// </summary>
+        private IEnumerator EnemyMotion(FigureView figure, StrikeSystem system, float ms)
+        {
+            RectTransform body = figure.body ? figure.body.rectTransform : null;
+            float toward = figure.side == UnitSide.Player ? 1f : -1f;
+            Vector2 from = figure.Rect.anchoredPosition;
+            float reach = system == StrikeSystem.Thrust ? 90f
+                : system == StrikeSystem.Sweep ? 40f
+                : system == StrikeSystem.Strike ? 60f
+                : system == StrikeSystem.Shield ? 0f
+                : 70f;
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                if (!figure) return;
+                float bell = Mathf.Sin(t * Mathf.PI); // 0 → 1 → 0
+                float rise = system == StrikeSystem.Shield ? 16f * bell : 0f;
+                figure.Rect.anchoredPosition = from + new Vector2(reach * toward * t, rise);
+                if (!body) return;
+                switch (system)
+                {
+                    case StrikeSystem.Sweep: // wound back, then across
+                        body.localRotation = Quaternion.Euler(0f, 0f, -toward * Mathf.Lerp(-18f, 14f, t) * bell);
+                        body.localScale = new Vector3(1f + 0.08f * bell, 1f, 1f);
+                        break;
+                    case StrikeSystem.Thrust: // the whole body stretched along the line
+                        body.localScale = new Vector3(1f + 0.14f * bell, 1f - 0.05f * bell, 1f);
+                        break;
+                    case StrikeSystem.Strike: // leaning its weight into the push
+                        body.localRotation = Quaternion.Euler(0f, 0f, -toward * 10f * bell);
+                        body.localScale = new Vector3(1f + 0.12f * bell, 1f - 0.08f * bell, 1f);
+                        break;
+                    case StrikeSystem.Shield: // the haft stood up
+                        body.localScale = new Vector3(1f, 1f + 0.14f * bell, 1f);
+                        break;
+                }
+            });
+            if (body)
+            {
+                body.localRotation = Quaternion.identity;
+                body.localScale = Vector3.one;
+            }
+        }
+
+        private static IEnumerator ReturnHome(FigureView figure, Vector2 home, float ms)
+        {
+            if (!figure) yield break;
+            yield return UiTween.Move(figure.Rect, figure.Rect.anchoredPosition, home, ms, Ease.InOut);
+        }
+
+        private static void SnapHome(FigureView figure, Vector2 home)
+        {
+            if (figure) figure.Rect.anchoredPosition = home;
+        }
+
+        private IEnumerator GainGuard(Cue cue, StatusBarView status, Vector2 chest, Vector2 numberAt)
+        {
+            DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Guard, 220f + 40f * cue.Intensity);
+            DepictionFx.FloatText(this, fxLayer, numberAt, "+" + cue.Amount, BattleTheme.Guard, DepictionFx.NumberFont(cue.Intensity));
+            yield return status.PopGuard(cue.GuardAfter, _effects.Ms(EffectId.GuardGain));
+        }
+
+        private IEnumerator Reserve(Cue cue, StatusBarView status, Vector2 chest, Vector2 numberAt)
+        {
+            if (endTurn) yield return UiTween.Pop(endTurn, 200f);
+            DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Guard, 300f);
+            DepictionFx.FloatText(this, fxLayer, numberAt, cue.Text, BattleTheme.Guard, 48);
+            yield return status.PopGuard(cue.GuardAfter);
+        }
+
+        private IEnumerator FireTrait(Vector2 labelAt, string text)
+        {
+            DepictionFx.Burst(this, fxLayer, labelAt, BattleTheme.Warm, 260f);
+            DepictionFx.FloatText(this, fxLayer, labelAt, text, BattleTheme.Warm, 40, rise: 70f);
+            yield return UiTween.Wait(_effects.Ms(EffectId.TraitFire));
+        }
+
+        private IEnumerator StrikeOffBonus(Cue cue)
+        {
+            DepictionFx.FloatText(this, fxLayer, DepictionFx.PointOn(fxLayer, omenBadge.transform) + new Vector2(0f, -64f),
+                cue.Text, BattleTheme.Whiff, 40, struck: true, rise: -50f);
+            yield return omenBadge.StrikeSide(_effects.Ms(EffectId.SideBonusMiss));
+        }
+
+        private IEnumerator PopPips(StatusBarView status)
+        {
+            float ms = _effects.Ms(EffectId.StaminaChange);
+            if (status.pipRow) StartCoroutine(UiTween.Pop(status.pipRow, ms));
+            yield return UiTween.Wait(ms);
+        }
+
+        /// <summary>
+        /// A rising number, as an effect: it runs on its own for its length, and the trace notes it,
+        /// or notes that it was switched off.
+        /// </summary>
+        private void FloatEffect(EffectId id, Vector2 at, string text, Color color, int fontSize)
+        {
+            if (!_effects.IsOn(id))
+            {
+                Trace?.Skip(id, CurrentOrder);
+                return;
+            }
+            if (Trace != null) StartCoroutine(TraceFor(id, _effects.Ms(id)));
+            DepictionFx.FloatText(this, fxLayer, at, text, color, fontSize);
+        }
+
+        private IEnumerator TraceFor(EffectId id, float ms)
+        {
+            int handle = Trace.Begin(id, CurrentOrder);
+            yield return UiTween.Wait(ms);
+            Trace.End(handle);
         }
 
         /// <summary>Steps toward the opponent by <paramref name="pixels"/> (negative steps back).</summary>
@@ -367,6 +533,13 @@ namespace Depiction.View
             Vector2 from = figure.Rect.anchoredPosition;
             Vector2 to = from + new Vector2(pixels * direction, 0f);
             yield return UiTween.Move(figure.Rect, from, to, ms, Ease.Out);
+        }
+
+        private void SnapRange(FigureView figure, RangeSide range, string glyph)
+        {
+            RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
+            if (slot) figure.transform.position = slot.position;
+            figure.SetRange(true, glyph);
         }
 
         private IEnumerator SwitchRange(FigureView figure, RangeSide range, string glyph)
