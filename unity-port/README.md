@@ -99,7 +99,9 @@ unity-port/
 
 `CardDef` と `EnemyActionDef` は同じ `Face` / `Trait` / 列の表から書けます。#70（敵データ）と #71（試作デッキ）は型を足さずにデータだけ足せます。特性の語彙を 12 × 10 へ広げる #48 も、enum に行を足して `Traits.Evaluate` の switch を伸ばすだけで済みます。
 
-**外してあるもの**: スタンス枠と除外置き場（#49）、2 行動の敵と 4 枝の決定木（#50）、複数体（#52）、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担います。台本の型（`Script/`）と View は BattleCore に依存しません。
+**複数体**（#47）: 同時に 3 体まで、1 マスに 1 体。`BattleState.Enemies` に並びの順で持ち、イベントの `Unit` がどの敵のことかを示します。1 体の戦いのイベント列は変わりません。
+
+**外してあるもの**: スタンス枠と除外置き場（#49）、2 行動の敵と予兆 2 段（#50）、連戦モード（#52）、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担います。台本の型（`Script/`）と View は BattleCore に依存しません。
 
 ## コアから戦闘描写へ（#73）
 

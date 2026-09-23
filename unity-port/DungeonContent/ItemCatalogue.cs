@@ -73,9 +73,9 @@ namespace DungeonContent
                 ItemEffect.InterludeHeal, 15,
                 "階層間の休憩の HP 回復が 30% から 45% になる"),
 
-            new ItemDef("toma_no_kutsu", "遠間の履", "とおまのくつ",
-                ItemEffect.StartFar, 1,
-                "戦闘の開始位置が遠間になる（battle_core_v4.md §7.1）"),
+            new ItemDef("maai_no_kutsu", "間合いの履", "まあいのくつ",
+                ItemEffect.WiderStart, 1,
+                "開始のマスが 2 から 1 になり、開始の間合いが 3 から 4 に広がる。後ろに下がる余地は無くなる"),
 
             new ItemDef("ikitsugi_no_fue", "息継ぎの笛", "いきつぎのふえ",
                 ItemEffect.OpeningStamina, 3,

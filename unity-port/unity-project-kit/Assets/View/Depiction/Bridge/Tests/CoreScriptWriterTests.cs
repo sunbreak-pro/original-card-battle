@@ -20,7 +20,7 @@ namespace Depiction.Bridge.Tests
         private static (BattleState State, CoreScriptWriter Writer) Begin(int gap, params CardDef[] kinds)
         {
             var setup = new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(kinds, 1),
-                EnemyStartCell: Constants.PlayerStartCell + 1 + gap);
+                BattleSetup.SliceFieldCells, StartGap: gap);
             BattleState state = TurnLoop.Start(setup, NoShuffle).State;
             var writer = new CoreScriptWriter(setup.Enemy);
             writer.Opening(state);
@@ -49,8 +49,8 @@ namespace Depiction.Bridge.Tests
             Assert.That(frame.Player.ShowStamina, Is.True);
             Assert.That(frame.Player.Stamina, Is.EqualTo(10));
             Assert.That(frame.Player.HasRange, Is.True);
-            Assert.That(frame.Player.RangeGlyph, Is.EqualTo("2"), "the gap N on the player's tag (§7.2)");
-            Assert.That(frame.Player.Range, Is.EqualTo(RangeSide.Far), "gap 2 stands in the far slot until #163");
+            Assert.That(frame.Player.RangeGlyph, Is.EqualTo("3"), "the gap N on the player's tag (§7.2), START_GAP 3");
+            Assert.That(frame.Player.Range, Is.EqualTo(RangeSide.Far), "gap 2 and up stand in the far slot until #163");
             Assert.That(frame.Enemy.Hp, Is.EqualTo(60));
             Assert.That(frame.Enemy.HasRange, Is.False, "one tag says it all");
             Assert.That(frame.Enemy.ShowStamina, Is.False);
@@ -223,7 +223,7 @@ namespace Depiction.Bridge.Tests
         public void ASelfCard_IsThrownAboveTheLine_AndPreviewsItsGuard()
         {
             var source = new CoreBattleSource(
-                new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(FiveCards, 1)), seed: 1);
+                new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(FiveCards, 1), BattleSetup.SliceFieldCells), seed: 1);
             source.AdvanceAuto();
             string brace = source.Frame.Hand.First(c => c.Name == "呼吸を整える").Id;
 
