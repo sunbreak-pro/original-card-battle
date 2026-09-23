@@ -30,6 +30,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | concept-v3 の未確定の棚卸し | `.claude/docs/danjeon_document/concept_v3_open_items.md` | dungeon | PROPOSED（決定ではない） | design |
 | 七層の瘴気と刻限（層ごとの数値） | `.claude/docs/danjeon_document/seven_layers_v4.md` | dungeon | PROPOSED | battle, cards |
 | 探索の瘴気と戦闘の数値の突き合わせ | `.claude/docs/danjeon_document/miasma_and_battle_v4.md` | dungeon | PROPOSED | battle |
+| ツールと消耗品（出立の枠の中身） | `.claude/docs/danjeon_document/tools_and_consumables_v4.md` | dungeon | PROPOSED | battle |
 | 継承の間の画面と導線 | `.claude/docs/camp_document/CAMP_FACILITIES_DESIGN.md` | design | V5.0 | dungeon |
 | カードの絵の方針 | `.claude/docs/art_document/card-art-policy.md` | design | DRAFT v1 | cards |
 | 絵柄の規約（原本の大きさ・指示文・加筆） | `.claude/docs/art_document/style-guide.md` | design | DRAFT v1（指示文は未実測） | — |
