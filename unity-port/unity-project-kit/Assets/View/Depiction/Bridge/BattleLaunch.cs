@@ -42,10 +42,21 @@ namespace Depiction.Bridge
         /// <summary>Unattended runs only: stop once this many turns have closed. 0 = fight to the end.</summary>
         public int StopAfterTurns;
 
-        /// <summary>The ten-kind prototype deck × 2 (#71). The deck builder of 出立 (#58) replaces this.</summary>
+        /// <summary>
+        /// The deck to fight with: the one the deck screen built (#190), or null for the slice's
+        /// ten-kind prototype deck × 2 (#71). A deck that breaks §8 is refused when the battle is built.
+        /// </summary>
+        public List<CardInstance> Deck;
+
         public List<CardInstance> BuildDeck()
         {
-            return PrototypeDeck.Build();
+            if (Deck == null) return PrototypeDeck.Build();
+            DeckValidation validation = Cards.Validate(Deck);
+            if (!validation.Ok)
+            {
+                throw new ArgumentException("BattleLaunch: the deck breaks §8 — " + string.Join(" / ", validation.Errors));
+            }
+            return new List<CardInstance>(Deck);
         }
 
         public BattleSetup BuildSetup()

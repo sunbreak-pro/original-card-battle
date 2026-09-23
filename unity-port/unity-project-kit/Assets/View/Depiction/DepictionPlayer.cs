@@ -96,6 +96,10 @@ namespace Depiction.View
 
         private IDepictionSource _source;
         private IDepictionSource _givenSource;
+        /// <summary>Start has run (the screen is set up); a <see cref="Restart"/> before it only hands the source over.</summary>
+        private bool _started;
+        /// <summary><see cref="Hold"/>: Start waits for a battle instead of building its own.</summary>
+        private bool _hold;
         private readonly List<CardView> _hand = new List<CardView>();
         private bool _busy;
         private bool _stepRequested;
@@ -127,7 +131,54 @@ namespace Depiction.View
         public void UseSource(IDepictionSource source)
         {
             _givenSource = source;
+            _hold = false;
         }
+
+        /// <summary>
+        /// The demo flow (#190): start with no battle at all. Start sets the screen up and waits for
+        /// <see cref="Restart"/> instead of falling back to the hand-written LiveTurn. Call it from
+        /// Awake, like <see cref="UseSource"/>.
+        /// </summary>
+        public void Hold()
+        {
+            _hold = true;
+        }
+
+        /// <summary>
+        /// Plays a new battle from its opening frame (#190: the deck screen's 「戦闘へ」, #191's next
+        /// battle). Whatever the last one left — its coroutines, its hand, its result card — goes first.
+        /// </summary>
+        public void Restart(IDepictionSource source)
+        {
+            if (source == null) throw new System.ArgumentNullException(nameof(source));
+            if (!_started)
+            {
+                _givenSource = source;
+                _hold = false;
+                return;
+            }
+            StopAllCoroutines();
+            UiTween.Speed = 1f;
+            _busy = false;
+            _dragging = null;
+            _hovered = null;
+            _refusal = null;
+            Finished = false;
+            EventSeconds.Clear();
+            if (_resultCard)
+            {
+                Destroy(_resultCard);
+                _resultCard = null;
+            }
+            ClearHand();
+            if (enemyFigure) SnapHome(enemyFigure, _enemyHome);
+            _source = source;
+            ApplyFrame(_source.Frame);
+            StartCoroutine(RunAutomaticEvents());
+        }
+
+        /// <summary>Raised once a battle has played its last event (#190 / #191: the flow shows what comes next).</summary>
+        public event System.Action BattleFinished;
 
         private void Start()
         {
@@ -146,11 +197,14 @@ namespace Depiction.View
             }
             if (stanceHintIcon && stanceHintIcon.sprite == null) stanceHintIcon.sprite = ProceduralArt.Shield;
 
+            if (enemyFigure) _enemyHome = enemyFigure.Rect.anchoredPosition;
+            _started = true;
+            if (_givenSource == null && _hold) return; // the demo flow starts the battle (Restart)
+
             if (_givenSource != null) _source = _givenSource;
             else if (scriptedPlayback) _source = new DepictionRunner(TurnSliceScript.Build());
             else _source = new LiveTurn();
             ApplyFrame(_source.Frame);
-            if (enemyFigure) _enemyHome = enemyFigure.Rect.anchoredPosition;
             StartCoroutine(RunAutomaticEvents());
         }
 
@@ -223,6 +277,7 @@ namespace Depiction.View
                 {
                     StartCoroutine(Effect(EffectId.ResultCard, ShowResult(outcome, _effects.Ms(EffectId.ResultCard)), () => ShowResultNow(outcome)));
                 }
+                BattleFinished?.Invoke();
                 yield break;
             }
             SetHandInteractable(true);
