@@ -19,13 +19,18 @@ namespace BattleCore.Tests
 
         // ---- Helpers ----
 
-        /// <summary>A setup starting at the given gap: the player on cell 2, the polearm 1 + gap further right.</summary>
+        /// <summary>
+        /// The gap the hand-built scenarios below were written at (the v4.3 START_GAP until #169
+        /// moved the default to 3). They test the loop, not the opening, so they keep it.
+        /// </summary>
+        private const int ScenarioGap = 2;
+
+        /// <summary>A setup starting at the given gap on the slice's line: the player on cell 2, the polearm 1 + gap further right.</summary>
         private static BattleSetup AtGap(int gap, IReadOnlyList<CardInstance>? deck = null) =>
-            new BattleSetup(Enemies.PolearmWarped, deck ?? PrototypeDeck.Build(),
-                EnemyStartCell: Constants.PlayerStartCell + 1 + gap);
+            new BattleSetup(Enemies.PolearmWarped, deck ?? PrototypeDeck.Build(), BattleSetup.SliceFieldCells, StartGap: gap);
 
         /// <summary>A battle whose draw order is the deck order: FixedRng(0.999…) makes Fisher-Yates a no-op.</summary>
-        private static StepResult StartUnshuffled(params CardDef[] kinds) => StartUnshuffledAt(Constants.StartGap, kinds);
+        private static StepResult StartUnshuffled(params CardDef[] kinds) => StartUnshuffledAt(ScenarioGap, kinds);
 
         private static StepResult StartUnshuffledAt(int gap, params CardDef[] kinds)
         {
@@ -77,13 +82,13 @@ namespace BattleCore.Tests
                 Assert.That(s.Player.Size, Is.EqualTo(1));
                 Assert.That(s.Enemy.Hp, Is.EqualTo(60));
                 Assert.That(s.Enemy.Stamina, Is.EqualTo(10));
-                Assert.That(s.Enemy.Cell, Is.EqualTo(5));
+                Assert.That(s.Enemy.Cell, Is.EqualTo(6));
                 Assert.That(s.Enemy.Size, Is.EqualTo(1));
-                Assert.That(s.Gap, Is.EqualTo(2));
+                Assert.That(s.Gap, Is.EqualTo(3));
                 Assert.That(s.Hand, Is.Empty);
                 Assert.That(s.DrawPile, Has.Count.EqualTo(20));
-                // Gap 2 → the first omen is the sweep (§7.3 START_GAP, roster branch 1〜2).
-                Assert.That(s.Omen!.ActionId, Is.EqualTo("sweep"));
+                // Gap 3 → the first omen is the step forward (§7.3 START_GAP 3, roster branch 3+).
+                Assert.That(s.Omen!.ActionId, Is.EqualTo("step_forward"));
                 Assert.That(start.Events.Single(), Is.EqualTo(new OmenSet(Actor.Enemy, s.Omen, Decided: true)));
             });
         }
@@ -94,14 +99,51 @@ namespace BattleCore.Tests
             var deck = PrototypeDeck.Build();
             Assert.Multiple(() =>
             {
-                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, FieldCells: 4), NoRng),
+                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, 4), NoRng),
                     Throws.InstanceOf<ArgumentOutOfRangeException>(), "5〜8 cells");
-                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, EnemyStartCell: 7), NoRng),
-                    Throws.InstanceOf<ArgumentOutOfRangeException>(), "off the line");
-                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, PlayerStartCell: 5), NoRng),
+                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, 9), NoRng),
+                    Throws.InstanceOf<ArgumentOutOfRangeException>(), "5〜8 cells");
+                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, 6, StartGap: -1), NoRng),
+                    Throws.InstanceOf<ArgumentOutOfRangeException>(), "a gap is never negative");
+                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, 6, PlayerStartCell: 6), NoRng),
                     Throws.ArgumentException, "the player stands to the left");
-                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, FieldCells: 8, EnemyStartCell: 8), NoRng),
+                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, 8, StartGap: 5), NoRng),
                     Throws.Nothing);
+            });
+        }
+
+        [TestCase(5, 5, 2)] // too short for gap 3: the enemy stands at the right end
+        [TestCase(6, 6, 3)]
+        [TestCase(7, 6, 3)]
+        [TestCase(8, 6, 3)]
+        public void Start_PutsTheEnemyStartGapAway_OrAtTheEndOfAShortLine(int fieldCells, int enemyCell, int gap)
+        {
+            // §7.3 開始のマス (2026-09-23, #169): the width is handed in per battle; the player keeps cell 2.
+            var s = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build(), fieldCells), NoRng).State;
+            Assert.That(s.FieldCells, Is.EqualTo(fieldCells));
+            Assert.That(s.Player.Cell, Is.EqualTo(Constants.PlayerStartCell));
+            Assert.That(s.Enemy.Cell, Is.EqualTo(enemyCell));
+            Assert.That(s.Gap, Is.EqualTo(gap));
+        }
+
+        [TestCase(6, 1, 6)] // one cell: 6, gap 3
+        [TestCase(6, 3, 4)] // a 3-cell enemy on 6 cells: 4〜6, gap 1
+        [TestCase(8, 3, 6)] // on 8 cells it keeps the gap: 6〜8
+        public void TheStartCell_OfALargeEnemy_FitsItOnTheLine(int fieldCells, int size, int expected)
+        {
+            Assert.That(Field.EnemyStartCell(fieldCells, Constants.PlayerStartCell, 1, size, Constants.StartGap),
+                Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void TheConstants_AreThe2026_09_23Decisions()
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(Constants.StartGap, Is.EqualTo(3), "START_GAP");
+                Assert.That(Constants.CellCapacity, Is.EqualTo(1), "CELL_CAPACITY");
+                Assert.That(Constants.EnemiesMax, Is.EqualTo(3), "ENEMIES_MAX");
+                Assert.That(BattleSetup.Slice().FieldCells, Is.EqualTo(6), "the slice's line until #168 hands one in");
             });
         }
 
@@ -480,7 +522,7 @@ namespace BattleCore.Tests
             var deck = Cards.BuildDeck(new[] { CardCatalog.BodyCheck, CardCatalog.Thrust, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.Feint, CardCatalog.ReachThrust, CardCatalog.ShieldBash,
                 CardCatalog.BoarRush, CardCatalog.StepInGuard, CardCatalog.StepOutGuard }, 1);
-            var s = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck), NoRng).State;
+            var s = TurnLoop.Start(AtGap(ScenarioGap, deck), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
             s = TurnLoop.EndTurn(s, NoRng).State;            // enemy now holds Guard 3; the sweep moved nobody
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
@@ -672,7 +714,7 @@ namespace BattleCore.Tests
         [Test]
         public void TheBattleEnds_WhenThePlayerReachesZero_AndNoOmenFollows()
         {
-            var s = TurnLoop.Start(BattleSetup.Slice(), NoRng).State;
+            var s = TurnLoop.Start(AtGap(ScenarioGap), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
             s = s with { Player = s.Player with { Hp = 3, Stamina = 0 } };   // no 構え, so the sweep is 11
 
@@ -721,7 +763,7 @@ namespace BattleCore.Tests
         [Test]
         public void AnOmenThatCanNoLongerBePaidFor_BecomesARest()
         {
-            var s = TurnLoop.Start(BattleSetup.Slice(), NoRng).State;
+            var s = TurnLoop.Start(AtGap(ScenarioGap), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
             // Nothing in the slice drains the enemy; this stands in for 崩し (#48).
             s = s with { Enemy = s.Enemy with { Stamina = 0, NextTurnRecoveryBonus = -2 } };
@@ -828,11 +870,11 @@ namespace BattleCore.Tests
             Assert.That(a.State.Hand.Select(c => c.InstanceId), Is.Not.EqualTo(b.State.Hand.Select(c => c.InstanceId)));
         }
 
-        // Walked by hand once, so these are rules and not just a recording:
-        //  T1 gap 2, 10 stamina. shield_bash and body_check reach 0 only, so: step_out_guard (Guard 12,
-        //     cell 1, gap 3) → step_in_guard (24, cell 2) → step_out_guard (36, cell 1), 1 left, no 構え.
-        //     The sweep was declared at gap 2 and finds gap 3: it whiffs, costs 2 all the same. The
-        //     polearm keeps 8 → 構え 3. Gap 3 → the omen is 踏み込み.
+        // Walked by hand once, so these are rules and not just a recording (re-walked at START_GAP 3, #169):
+        //  T1 gap 3, 10 stamina. shield_bash and body_check reach 0 only, so: step_out_guard (Guard 12,
+        //     cell 1, gap 4) → step_in_guard (24, cell 2) → step_out_guard (36, cell 1), 1 left, no 構え.
+        //     The omen from gap 3 is 踏み込み: the polearm steps to cell 5 with Guard 2 and keeps
+        //     10 − 1 = 9 → 構え 3, Guard 5. Gap 3 again → 踏み込み again.
         //  T2 gap 3, 1 + 3 stamina. Only brace reaches nobody and is payable: Guard 9, 2 left.
         //     踏み込み: the polearm steps to cell 4 with Guard 2, keeps 9 → 5. Gap 2 → the sweep.
         //  T3 gap 2, 2 + 3 stamina. reach_thrust 13 + 5 − 5 = 13, again 18: 60 − 31 = 29. The sweep
@@ -847,11 +889,11 @@ namespace BattleCore.Tests
         // turn, player hp/stamina/Guard/cell, enemy hp/stamina/Guard/cell/statuses, gap, next omen
         private static readonly string[] PinnedSummaries =
         {
-            "T1 P 50/1/36/c1 E 60/8/3/c5/— gap 3 omen 動",
+            "T1 P 50/1/36/c1 E 60/9/5/c5/— gap 3 omen 動",
             "T2 P 50/2/9/c1 E 60/9/5/c4/— gap 2 omen 攻撃・1〜2",
             "T3 P 39/1/0/c1 E 29/8/3/c4/— gap 2 omen 攻撃・1〜2",
         };
 
-        private static readonly int[] PinnedEventCounts = { 42, 29, 34 };
+        private static readonly int[] PinnedEventCounts = { 44, 29, 34 };
     }
 }

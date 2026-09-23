@@ -16,7 +16,8 @@ namespace BattleCore.Tests
         private static BattleState Battle(EnemyDef enemy, int enemyCell, int fieldCells = 6, params CardDef[] hand)
         {
             var deck = Cards.BuildDeck(hand.Length == 0 ? new[] { Fixtures.Card("filler") } : hand, copies: 1);
-            var setup = new BattleSetup(enemy, deck, FieldCells: fieldCells, EnemyStartCell: enemyCell);
+            var setup = new BattleSetup(enemy, deck, fieldCells, StartGap: enemyCell - Constants.PlayerStartCell - 1);
+            Assert.That(setup.EnemyStartCell, Is.EqualTo(enemyCell), "the fixture asks for a cell the line holds");
             var s = TurnLoop.Start(setup, NoRng).State;
             return TurnLoop.BeginPlayerTurn(s, NoRng).State;
         }

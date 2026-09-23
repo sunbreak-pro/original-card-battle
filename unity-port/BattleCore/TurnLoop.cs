@@ -4,20 +4,28 @@ using System.Collections.Generic;
 namespace BattleCore
 {
     /// <summary>
-    /// What a battle starts from. The defaults are §7.3's: a line of 6 cells, the player on cell 2,
-    /// the enemy on cell 5 (gap 2), both with full stamina and Guard 0.
+    /// What a battle starts from. FieldCells has no default (2026-09-23, #169): the layer and the
+    /// battle hand it in (5〜8, the dungeon side picks it in #168). The rest are §7.3's: the player
+    /// on cell 2, the enemy START_GAP (3) cells further (<see cref="Field.EnemyStartCell"/> for a
+    /// line too short), both with full stamina and Guard 0.
     /// </summary>
     public sealed record BattleSetup(
         EnemyDef Enemy,
         IReadOnlyList<CardInstance> Deck,
-        int FieldCells = Constants.FieldCells,
+        int FieldCells,
+        int StartGap = Constants.StartGap,
         int PlayerStartCell = Constants.PlayerStartCell,
-        int EnemyStartCell = Constants.EnemyStartCell,
         int PlayerMaxHp = Constants.PlayerMaxHp,
         int PlayerMaxStamina = Constants.BaseMaxStamina)
     {
+        /// <summary>The width the vertical slice is fought on until the dungeon hands one in (#168).</summary>
+        public const int SliceFieldCells = 6;
+
+        /// <summary>Where the enemy's near edge stands on turn 1.</summary>
+        public int EnemyStartCell => Field.EnemyStartCell(FieldCells, PlayerStartCell, 1, Enemy.Size, StartGap);
+
         /// <summary>The vertical slice: the polearm against the ten-kind prototype deck.</summary>
-        public static BattleSetup Slice() => new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build());
+        public static BattleSetup Slice() => new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build(), SliceFieldCells);
     }
 
     /// <summary>
@@ -67,6 +75,7 @@ namespace BattleCore
             if (rng == null) throw new ArgumentNullException(nameof(rng));
 
             var enemyDef = setup.Enemy;
+            if (enemyDef == null) throw new ArgumentException("A battle needs an enemy.", nameof(setup));
             Field.Validate(setup.FieldCells, setup.PlayerStartCell, 1, setup.EnemyStartCell, enemyDef.Size);
             var player = new CombatantState(
                 setup.PlayerMaxHp, setup.PlayerMaxHp,
