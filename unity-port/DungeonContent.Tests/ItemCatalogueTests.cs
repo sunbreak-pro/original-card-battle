@@ -60,10 +60,15 @@ namespace DungeonContent.Tests
         [Test]
         public void OneToolMovesTheStartingPosition()
         {
-            // battle_core_v4.md §7.1 and the Definition of Done of #58.
-            var movers = ItemCatalogue.Tools.Where(t => t.Effect == ItemEffect.StartFar).ToList();
+            // battle_core_v4.md lets a loadout tool move the player's starting cell, and so does
+            // the Definition of Done of #58.
+            var movers = ItemCatalogue.Tools.Where(t => t.Effect == ItemEffect.WiderStart).ToList();
             Assert.That(movers.Count, Is.EqualTo(1));
-            Assert.That(movers[0].Id, Is.EqualTo("toma_no_kutsu"));
+            Assert.That(movers[0].Id, Is.EqualTo("maai_no_kutsu"));
+
+            // The player starts on cell 2 with one cell behind, so one step back is all there is
+            // (seven_layers_v4.md §2.4).
+            Assert.That(movers[0].Amount, Is.EqualTo(1));
         }
 
         [Test]

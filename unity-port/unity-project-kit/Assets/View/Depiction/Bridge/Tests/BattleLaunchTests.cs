@@ -53,9 +53,10 @@ namespace Depiction.Bridge.Tests
             Assert.That(launch.StopAfterTurns, Is.EqualTo(0));
             Assert.That(setup.Enemy, Is.SameAs(Enemies.PolearmWarped));
             Assert.That(setup.Enemy.Name, Is.EqualTo("長柄の歪み兵"));
-            Assert.That(launch.StartGap, Is.EqualTo(2));
+            Assert.That(launch.StartGap, Is.EqualTo(3));
+            Assert.That(launch.FieldCells, Is.EqualTo(6));
             Assert.That(setup.PlayerStartCell, Is.EqualTo(2));
-            Assert.That(setup.EnemyStartCell, Is.EqualTo(5));
+            Assert.That(setup.EnemyStartCell, Is.EqualTo(6));
             Assert.That(setup.FieldCells, Is.EqualTo(6));
             Assert.That(setup.Deck, Has.Count.EqualTo(20));
             Assert.That(Cards.Validate(setup.Deck).Ok, Is.True);
@@ -89,7 +90,23 @@ namespace Depiction.Bridge.Tests
             Assert.That(apart.Frame.Player.RangeGlyph, Is.EqualTo("3"));
             Assert.That(apart.State.Omen.ActionId, Is.EqualTo("step_forward"));
             Assert.Throws<ArgumentOutOfRangeException>(() => new BattleLaunch { StartGap = -1 }.CreateSource());
-            Assert.Throws<ArgumentOutOfRangeException>(() => new BattleLaunch { StartGap = 4 }.CreateSource(), "cell 7 is off a 6-cell line");
+        }
+
+        [Test]
+        public void TheLine_IsHandedIn_AndAShortOneBringsTheEnemyToItsEnd()
+        {
+            // battle_core_v4 §7.1 / §7.3 (2026-09-23, #169): the width comes with the battle.
+            CoreBattleSource wide = new BattleLaunch { FieldCells = 8 }.CreateSource();
+            CoreBattleSource narrow = new BattleLaunch { FieldCells = 5 }.CreateSource();
+            CoreBattleSource far = new BattleLaunch { StartGap = 4 }.CreateSource();
+
+            Assert.That(wide.State.FieldCells, Is.EqualTo(8));
+            Assert.That(wide.State.Gap, Is.EqualTo(3));
+            Assert.That(narrow.State.Enemy.Cell, Is.EqualTo(5), "cell 6 is off a 5-cell line");
+            Assert.That(narrow.State.Gap, Is.EqualTo(2));
+            Assert.That(far.State.Enemy.Cell, Is.EqualTo(6), "cell 7 is off a 6-cell line");
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BattleLaunch { FieldCells = 4 }.CreateSource());
+            Assert.Throws<ArgumentOutOfRangeException>(() => new BattleLaunch { FieldCells = 9 }.CreateSource());
         }
 
         [Test]

@@ -10,7 +10,15 @@ namespace BattleCore
     /// reads the stream shows numbers and does not compute them. <see cref="BattleEvent.Actor"/> is
     /// the side the event is about.
     /// </summary>
-    public abstract record BattleEvent(Actor Actor);
+    public abstract record BattleEvent(Actor Actor)
+    {
+        /// <summary>
+        /// §7.4 (#47): which enemy (its index in <see cref="BattleState.Enemies"/>) is on the enemy
+        /// end of this event — the enemy acting in its phase, or the enemy a player's card read or
+        /// hit. 0 in a one-enemy battle and for what concerns the player alone.
+        /// </summary>
+        public int Unit { get; init; }
+    }
 
     // ---- Turn frame (§9 steps 1-5, 7-8) ----
 
@@ -116,6 +124,12 @@ namespace BattleCore
         bool Refused) : BattleEvent(Actor);
 
     public sealed record StaminaGained(Actor Actor, int Amount, int StaminaAfter) : BattleEvent(Actor);
+
+    /// <summary>
+    /// §7.4 / §17.6 F9: one of several enemies fell (Unit says which) and the battle goes on. It
+    /// leaves its cells at once. The last enemy to fall ends the battle instead: <see cref="BattleEnded"/>.
+    /// </summary>
+    public sealed record EnemyDefeated(Actor Actor) : BattleEvent(Actor);
 
     /// <summary>§9 steps 6 and 11. Actor is the side that just acted.</summary>
     public sealed record DefeatChecked(Actor Actor, GameResult Result) : BattleEvent(Actor);
