@@ -25,7 +25,10 @@ namespace Depiction.Bridge
             public int Size;
             public readonly SortedDictionary<StatusKind, int> Statuses = new SortedDictionary<StatusKind, int>();
 
-            public void CopyFrom(CombatantState unit)
+            /// <summary>§4: the name of the stance in the slot (#188), or empty.</summary>
+            public string Stance = "";
+
+            public void CopyFrom(CombatantState unit, string stanceName)
             {
                 Hp = unit.Hp;
                 HpMax = unit.MaxHp;
@@ -36,6 +39,7 @@ namespace Depiction.Bridge
                 Size = unit.Size;
                 Statuses.Clear();
                 foreach (StatusKind kind in unit.Statuses.Kinds) Statuses[kind] = unit.Statuses.Stacks(kind);
+                Stance = stanceName ?? "";
             }
         }
 
@@ -74,8 +78,8 @@ namespace Depiction.Bridge
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             _turn = Math.Max(1, state.Turn);
-            _player.CopyFrom(state.Player);
-            _enemy.CopyFrom(state.Enemy);
+            _player.CopyFrom(state.Player, StanceName(state.Player.StanceSource, null));
+            _enemy.CopyFrom(state.Enemy, StanceName(state.Enemy.StanceSource, _enemyDef));
             _hand.Clear();
             _hand.AddRange(state.Hand);
             _omen = state.Omen;
@@ -145,7 +149,14 @@ namespace Depiction.Bridge
                     return ev;
                 }
 
-                case ReserveChecked reserve when reserve.Actor == Actor.Player:
+                // Step 7 opens the turn end: a turn-end stance (根渡り, 霞み足, #188) fires before 構え
+                // and belongs to the same event, so 構え does not open a second one.
+                case StanceFired fired when fired.Actor == Actor.Player && fired.Hook == StanceHook.TurnEnd:
+                    _playerActs = false;
+                    return NewEvent(DepictionEventKind.TurnEnd, "ターン終了");
+
+                case ReserveChecked reserve when reserve.Actor == Actor.Player
+                    && (current == null || current.Kind != DepictionEventKind.TurnEnd):
                     _playerActs = false;
                     return NewEvent(DepictionEventKind.TurnEnd, "ターン終了");
 
@@ -281,6 +292,45 @@ namespace Depiction.Bridge
                     {
                         ev.Cues.Add(new Cue { Kind = CueKind.DiscardHand, Target = UnitSide.Player, Amount = discarded.Count });
                     }
+                    break;
+
+                // ---- the demo vocabulary (#188) ----
+
+                case StatusConsumed consumed:
+                    SetStatus(ev, consumed.Actor, consumed.Kind, -1, consumed.StacksAfter);
+                    break;
+
+                case StatusHpChanged changed:
+                    SetHp(ev, changed.Actor, changed.Amount, changed.HpAfter, changed.Kind.ToLabel());
+                    break;
+
+                case Healed healed:
+                    SetHp(ev, healed.Actor, healed.Amount, healed.HpAfter, "回復");
+                    break;
+
+                case StaminaBroken broken:
+                    SetStamina(ev, broken.Target, -broken.Amount, broken.StaminaAfter);
+                    break;
+
+                case Reflected reflected:
+                {
+                    UnitModel struck = Unit(reflected.Target);
+                    struck.Guard = reflected.TargetGuardAfter;
+                    if (reflected.Absorbed > 0)
+                    {
+                        ev.Cues.Add(new Cue
+                        {
+                            Kind = CueKind.GuardBlock, Target = CoreText.Side(reflected.Target),
+                            Amount = reflected.Absorbed, GuardAfter = reflected.TargetGuardAfter,
+                        });
+                    }
+                    SetHp(ev, reflected.Target, -reflected.Damage, reflected.TargetHpAfter, "見切り");
+                    break;
+                }
+
+                case StanceSet set:
+                    Unit(set.Actor).Stance = set.Name;
+                    ev.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = CoreText.Side(set.Actor), Text = "構え・" + set.Name });
                     break;
             }
 
@@ -440,6 +490,31 @@ namespace Depiction.Bridge
             });
         }
 
+        /// <summary>HP moved without a blow: 出血 / 再生, a heal, a 見切り return. The bar follows the settled value.</summary>
+        private void SetHp(DepictionEvent ev, Actor actor, int amount, int hpAfter, string cause)
+        {
+            Unit(actor).Hp = hpAfter;
+            if (amount == 0) return;
+            ev.Cues.Add(new Cue
+            {
+                Kind = CueKind.HpChange, Target = CoreText.Side(actor),
+                Amount = amount, HpAfter = hpAfter, Text = cause,
+            });
+        }
+
+        /// <summary>The display name of a stance's source: a card for the player, an action of the enemy's.</summary>
+        private static string StanceName(string sourceId, EnemyDef enemy)
+        {
+            if (string.IsNullOrEmpty(sourceId)) return "";
+            EnemyActionDef action;
+            if (enemy != null && enemy.Actions.TryGetValue(sourceId, out action)) return action.Name;
+            foreach (CardDef def in CardCatalog.All)
+            {
+                if (def.Id == sourceId) return def.Name;
+            }
+            return sourceId;
+        }
+
         private static Cue GuardGain(Actor actor, int amount, int guardAfter)
         {
             return new Cue
@@ -500,6 +575,8 @@ namespace Depiction.Bridge
                 frame.Range = CoreText.SideOf(gap.Value);
                 frame.RangeGlyph = CoreText.GapGlyph(gap.Value);
             }
+            // §4: the stance in the slot leads the chips; it has no stacks to count.
+            if (unit.Stance.Length > 0) frame.Statuses.Add(new StatusChip { Label = "構え・" + unit.Stance, Stacks = 0 });
             foreach (KeyValuePair<StatusKind, int> pair in unit.Statuses)
             {
                 frame.Statuses.Add(new StatusChip { Label = pair.Key.ToLabel(), Stacks = pair.Value });

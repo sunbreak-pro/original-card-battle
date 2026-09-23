@@ -114,7 +114,7 @@ namespace Depiction.Bridge.Tests
             CardFace bodyCheck = frame.Hand.First(c => c.Name == "体当たり");
             Assert.That(bodyCheck.Description, Is.EqualTo("敵に 4 ダメージ。鈍足を 2 付与する。"), "§5: 「<語> を n 付与する」");
             Assert.That(bodyCheck.TraitText, Is.EqualTo("間合い0 重撃"));
-            Assert.That(bodyCheck.RequiredRangeGlyph, Is.EqualTo("0"));
+            Assert.That(bodyCheck.RequiredRangeGlyph, Is.EqualTo("0〜1"), "#179: v4.3 reaches 0〜1");
 
             CardFace feint = frame.Hand.First(c => c.Name == "牽制");
             Assert.That(feint.Description, Is.EqualTo("敵に 8 ダメージ。後ろへ 1 動く。"));
@@ -367,7 +367,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void TheSecondTurnStart_DoesNotPopTheOmenTwice_AndClearsTheGuard()
         {
-            var (state, writer) = Begin(1, CardCatalog.All.ToArray());
+            var (state, writer) = Begin(1, PrototypeDeck.Kinds.ToArray());
             StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
             writer.Write(begin.Events, begin.State);
             // Spend 7 so that turn 2 has a real recovery to show.

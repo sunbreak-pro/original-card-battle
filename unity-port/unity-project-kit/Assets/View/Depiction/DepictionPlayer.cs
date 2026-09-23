@@ -361,6 +361,16 @@ namespace Depiction.View
                     break;
                 }
 
+                case CueKind.HpChange:
+                {
+                    // 出血 / 再生 / a heal / a 見切り return (#188): the cause and the number, then the bar.
+                    string sign = cue.Amount > 0 ? "+" : "";
+                    FloatEffect(EffectId.DamageNumber, numberAt, cue.Text + " " + sign + cue.Amount,
+                        cue.Amount > 0 ? BattleTheme.Accent : BattleTheme.Omen, 40);
+                    yield return DrainHp(status, cue.HpAfter);
+                    break;
+                }
+
                 case CueKind.Hit:
                 {
                     bool strong = EffectStrength.IsStrong(cue.Intensity);

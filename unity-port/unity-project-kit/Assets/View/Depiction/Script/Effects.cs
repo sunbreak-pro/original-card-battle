@@ -454,6 +454,10 @@ namespace Depiction
                 case CueKind.StatusChange:
                     steps.Add(new EffectStep(StatusBeat.Of(cue), 1));
                     break;
+                case CueKind.HpChange:
+                    // The number rises beside it; the bar is what is waited for (#188).
+                    steps.Add(new EffectStep(EffectId.HpDrain, 1));
+                    break;
                 case CueKind.GuardReset:
                     break; // settles with the frame
                 default:

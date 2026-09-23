@@ -11,8 +11,8 @@ namespace BattleCore
     /// value is its effect. Column 4 is the exception — it still costs 3, so that 集中 and 習熟 have
     /// a rung above a cost-3 card to climb to.
     ///
-    /// Only the scales the slice authors from are here. Heal, bleed / regen stacks and the stance
-    /// step-up come back with the cards that use them (#48 / #51).
+    /// The heal scales came in with the eighty cards (#188): 集中 reads them to find the column to
+    /// the right. Bleed / regen stacks and the stance step-up stay on the cards themselves.
     /// </summary>
     public static class Columns
     {
@@ -33,6 +33,19 @@ namespace BattleCore
         public static readonly IReadOnlyList<int> SingleGuard = new[] { 4, 9, 15, 22 };
         public static readonly IReadOnlyList<int> DualAttackPower = new[] { 4, 8, 14, 20 };
         public static readonly IReadOnlyList<int> DualGuard = new[] { 3, 6, 10, 14 };
+        public static readonly IReadOnlyList<int> SingleHeal = new[] { 3, 8, 13, 19 };
+        public static readonly IReadOnlyList<int> DualHeal = new[] { 2, 5, 8, 12 };
+
+        /// <summary>
+        /// §5 集中 (demo approximation, #188): what one column to the right adds on a scale — the
+        /// step from <paramref name="column"/> to the next. 0 at column 4, which 集中 never passes.
+        /// </summary>
+        public static int StepRight(IReadOnlyList<int> scale, int column)
+        {
+            if (scale == null) throw new ArgumentNullException(nameof(scale));
+            Validate(column);
+            return column >= Max ? 0 : scale[column] - scale[column - 1];
+        }
 
         /// <summary>§3.1: how many status kinds a single-attribute skill face applies. Column 4 also draws 1.</summary>
         public static readonly IReadOnlyList<int> SingleSkillKinds = new[] { 1, 2, 3, 3 };

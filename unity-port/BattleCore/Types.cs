@@ -76,11 +76,45 @@ namespace BattleCore
         Rest,
     }
 
-    /// <summary>§5 の状態. The slice carries 鈍足 only; the other nine words are #48.</summary>
+    /// <summary>
+    /// §5 の状態. The demo (#188) carries nine of the ten words; 俊敏 is left out because no card
+    /// and no enemy gives it. The order is the order the chips are listed in.
+    /// </summary>
     public enum StatusKind
     {
+        /// <summary>鈍足: the holder's own cell changes (move, push, pull) are one cell shorter. OnTurn.</summary>
         Slow,
+
+        /// <summary>出血: HP −2 × stacks at the holder's turn start. OnTurn.</summary>
+        Bleed,
+
+        /// <summary>脆化: the next attack the holder takes is ×1.5. OnUse.</summary>
+        Fragile,
+
+        /// <summary>威圧: the holder's next action has 3 less power and 3 less Guard. OnUse.</summary>
+        Intimidate,
+
+        /// <summary>疲労: the holder recovers 1 less stamina at its turn start. OnTurn.</summary>
+        Fatigue,
+
+        /// <summary>強化: the holder's next attack face is ×1.5. OnUse.</summary>
+        Empower,
+
+        /// <summary>集中: the holder's next card resolves one column to the right (demo approximation). OnUse.</summary>
+        Focus,
+
+        /// <summary>見切り: the next hit the holder's Guard absorbs returns half of it. OnUse.</summary>
+        Parry,
+
+        /// <summary>再生: HP +2 × stacks at the holder's turn start. OnTurn.</summary>
+        Regen,
     }
+
+    /// <summary>
+    /// One status a face or a trait gives: the word, its stacks, and whether it lands on the one who
+    /// played it (自分に) or on the opponent (相手に, which reads the reach).
+    /// </summary>
+    public sealed record StatusGrant(StatusKind Kind, int Stacks = Constants.StatusApplyDefault, bool OnSelf = false);
 
     /// <summary>§5: 減り方の 2 型.</summary>
     public enum StatusDecay
@@ -103,9 +137,9 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// §2.3 の条件. The slice carries four of the twelve words: 間合い in both directions (the one
-    /// threshold a card may carry), 無防備 (enemy actions) and 温存. #48 adds rows here without
-    /// changing the shape of Traits.Evaluate.
+    /// §2.3 の条件: the twelve words, plus 無防備 for enemy actions (§17.6 F1). 間合い is two rows
+    /// (at most / at least). The demo (#188) carries them at the precision a playable battle needs;
+    /// #48 keeps the tests that pin every pairing.
     /// </summary>
     public enum TraitCondition
     {
@@ -120,13 +154,39 @@ namespace BattleCore
 
         /// <summary>温存: the stamina left after paying the cost is at or above the threshold.</summary>
         Reserve,
+
+        /// <summary>連動(X): something with <see cref="Trait.Attribute"/> was played earlier this turn (an enemy: this phase).</summary>
+        Combo,
+
+        /// <summary>予兆(種別): the opponent's standing omen is <see cref="Trait.Omen"/>. Player cards only.</summary>
+        OmenIs,
+
+        /// <summary>死力: the stamina before paying is at most DESPERATE_THRESHOLD (2).</summary>
+        Desperate,
+
+        /// <summary>初手: the first card played this turn.</summary>
+        FirstPlay,
+
+        /// <summary>締め: the third card played this turn, or later.</summary>
+        Finisher,
+
+        /// <summary>崩し後: the opponent's stamina is below 3.</summary>
+        Broken,
+
+        /// <summary>連打: shares an attribute with the card played just before it this turn.</summary>
+        Chain,
+
+        /// <summary>手薄: the hand left after this card is played holds at most THIN_HAND (2; decided 2026-09-23, #193).</summary>
+        Thin,
+
+        /// <summary>相手の状態(語): the opponent holds <see cref="Trait.Watch"/>.</summary>
+        FoeHas,
+
+        /// <summary>自分の状態(語): the one playing holds <see cref="Trait.Watch"/>.</summary>
+        SelfHas,
     }
 
-    /// <summary>
-    /// §2.3 の効果. Four of the ten words; the rest are #48. 重撃 came in with the prototype deck
-    /// (#71): every card in the canon that applies 鈍足 carries a trait outside the first three
-    /// words, and 体当たり needs this one.
-    /// </summary>
+    /// <summary>§2.3 の効果: the ten words, plus 崩し +1 for enemy actions (roster §1.6).</summary>
     public enum TraitEffect
     {
         PowerBonus,
@@ -135,17 +195,111 @@ namespace BattleCore
 
         /// <summary>重撃: power +6 now, recovery −1 at the next turn start. Cost and 構え are untouched.</summary>
         HeavyBlow,
+
+        /// <summary>スタミナ +n, at once.</summary>
+        StaminaGain,
+
+        /// <summary>ドロー +n, drawn with the face's own draws.</summary>
+        Draw,
+
+        /// <summary>状態: <see cref="Trait.Grant"/> lands with the skill face.</summary>
+        Status,
+
+        /// <summary>コスト −n (floor 0). CanPlay and Preview read it, so a card it makes payable can be played.</summary>
+        CostDown,
+
+        /// <summary>転換: half of this card's Guard face (rounded up) is added to its power.</summary>
+        Convert,
+
+        /// <summary>追撃: the next attack face this turn (not this card's own) gets +5. Gone at turn end (§17.6 F7).</summary>
+        FollowUp,
+
+        /// <summary>崩し +n (enemy actions, roster §1.6): the face's break gets n more.</summary>
+        BreakBonus,
     }
 
     /// <summary>
-    /// §2.3: one card or action carries at most one trait, and a trait is one condition paired with
-    /// one effect. Threshold is the gap for 間合い and the stamina bar for 温存.
+    /// §2.3: one card or action carries at most one trait (背水の陣 is the one card with two, see
+    /// <see cref="CardDef.ExtraTrait"/>), and a trait is one condition paired with one effect.
+    /// Threshold is the gap for 間合い and the stamina bar for 温存. Attribute is 連動's, Omen
+    /// 予兆's, Watch the word 相手の状態 / 自分の状態 look for, and Grant the status the Status
+    /// effect gives.
     /// </summary>
     public sealed record Trait(
         TraitCondition Condition,
         TraitEffect Effect,
         int Amount = 0,
-        int Threshold = 0);
+        int Threshold = 0,
+        BattleAttribute Attribute = BattleAttribute.None,
+        OmenKind? Omen = null,
+        StatusKind? Watch = null,
+        StatusGrant? Grant = null);
+
+    /// <summary>
+    /// §4: when a stance takes effect. The six shapes of §4 cut down to the ones the 14 stance cards
+    /// and the enemy stances use (#188 / #189).
+    /// </summary>
+    public enum StanceHook
+    {
+        /// <summary>ターン開始付与: Guard and / or recovery at the holder's turn start (§9 steps 2-3 / 9).</summary>
+        TurnStart,
+
+        /// <summary>At the holder's turn end, before 構え: Guard and / or next-turn recovery.</summary>
+        TurnEnd,
+
+        /// <summary>条件付き加算: +Power on the holder's attack faces while the condition holds for the foe hit.</summary>
+        AttackBonus,
+
+        /// <summary>被弾時の反応: each time an attack lands on the holder.</summary>
+        OnHit,
+
+        /// <summary>The holder does not take push or pull (錨の構え).</summary>
+        PushImmune,
+
+        /// <summary>Each time an enemy moves itself, it loses Break stamina (根縛り).</summary>
+        BreakOnFoeMove,
+    }
+
+    /// <summary>§4 `when`: the condition a stance effect waits for.</summary>
+    public enum StanceWhen
+    {
+        Always,
+
+        /// <summary>The gap is at least Threshold: the nearest enemy's for the player, the player's for an enemy.</summary>
+        GapAtLeast,
+
+        /// <summary>The gap is at most Threshold (for AttackBonus: the gap to the foe hit).</summary>
+        GapAtMost,
+
+        /// <summary>A standing enemy's omen is an attack (見切りの目). Player only.</summary>
+        OmenAttack,
+
+        /// <summary>Something with the move attribute was played earlier this turn (流れの構え).</summary>
+        MovedThisTurn,
+
+        /// <summary>The foe hit holds <see cref="StanceDef.Status"/> (狼の構え).</summary>
+        TargetHasStatus,
+    }
+
+    /// <summary>
+    /// §4: the stance a stance face sets into the holder's one slot. The numbers are the card's
+    /// own (its column already decided them), and the slot keeps them until the battle ends or
+    /// another stance replaces it. Status is the word 狼の構え watches, or the word 槍衾 gives the
+    /// attacker; OncePerTurn limits an OnHit stance to one reaction per turn (司祭の祈り).
+    /// </summary>
+    public sealed record StanceDef(
+        StanceHook Hook,
+        StanceWhen When = StanceWhen.Always,
+        int Threshold = 0,
+        int Guard = 0,
+        int Recovery = 0,
+        int NextRecovery = 0,
+        int Power = 0,
+        int Stamina = 0,
+        StatusKind? Status = null,
+        int StatusStacks = 0,
+        int Break = 0,
+        bool OncePerTurn = false);
 
     /// <summary>
     /// §2.4 / §7.2: the gaps a face lands at, both ends inclusive. A card cannot be played at an
@@ -172,24 +326,48 @@ namespace BattleCore
     /// (§7.3). Push moves the opponent by cells: positive pushes them away, negative pulls them in;
     /// Guard does not reduce it (§2.4). Reach is null for the default 0〜1; read it through
     /// <see cref="ReachOrDefault"/>. Both are at most `MOVE_STEP_MAX` in size.
+    ///
+    /// #188 adds Heal (HP to the one playing), Break (崩し: the opponent's stamina −n, riding the
+    /// attack face), the status list (each to self or to the opponent) and the stance a stance face
+    /// sets. Statuses is null for none; read it through <see cref="StatusList"/>.
     /// </summary>
     public sealed record Face(
         int Power = 0,
         int Guard = 0,
-        StatusKind? Status = null,
-        int StatusStacks = 0,
         int Move = 0,
         int Push = 0,
         int Draw = 0,
         int StaminaGain = 0,
-        Reach? Reach = null)
+        Reach? Reach = null,
+        IReadOnlyList<StatusGrant>? Statuses = null,
+        int Heal = 0,
+        int Break = 0,
+        StanceDef? Stance = null)
     {
         public Reach ReachOrDefault => Reach ?? Reach.Default;
+
+        public IReadOnlyList<StatusGrant> StatusList => Statuses ?? Array.Empty<StatusGrant>();
+
+        /// <summary>Whether any status of this face lands on the opponent (and so reads the reach).</summary>
+        public bool GivesFoeStatus
+        {
+            get
+            {
+                foreach (var grant in StatusList)
+                {
+                    if (!grant.OnSelf) return true;
+                }
+                return false;
+            }
+        }
     }
 
     /// <summary>
     /// §3: a card picks one column of 1-4 up front. The column number is the cost and that column's
     /// values are the effect, so there is no invest choice at play time any more.
+    ///
+    /// ExtraTrait is the second trait of 背水の陣 (#80), the one card the canon lets carry two
+    /// (swordsman_cards_v4 §3). Both are judged at once and their bonuses add up.
     /// </summary>
     public sealed record CardDef(
         string Id,
@@ -199,9 +377,22 @@ namespace BattleCore
         Face Face,
         Trait? Trait = null,
         TargetKind Targets = TargetKind.One,
-        string Description = "")
+        string Description = "",
+        Trait? ExtraTrait = null)
     {
         public int Cost => Columns.CostOf(Column);
+
+        /// <summary>The traits in the order they are judged: <see cref="Trait"/>, then <see cref="ExtraTrait"/>.</summary>
+        public IReadOnlyList<Trait> AllTraits
+        {
+            get
+            {
+                var traits = new List<Trait>(2);
+                if (Trait != null) traits.Add(Trait);
+                if (ExtraTrait != null) traits.Add(ExtraTrait);
+                return traits;
+            }
+        }
     }
 
     /// <summary>A card in a deck: definition plus a unique instance id (thrust-0).</summary>
@@ -266,6 +457,12 @@ namespace BattleCore
     /// player is on the left, the enemy on the right, so the enemy's Cell is its near edge) and
     /// Size the cells it uses. NextTurnRecoveryBonus is what 温存 leaves behind for the next turn
     /// start (§9 step 2).
+    ///
+    /// #188: Stance is the one stance slot (§4) and StanceSource the card or action that set it.
+    /// FollowUp is the 追撃 waiting for the next attack face (§17.6 F7: gone at the end of the
+    /// holder's turn). Played lists the attributes of what the holder played this turn, in order
+    /// (§2.3 `playedAttributes`; 連動 / 初手 / 締め / 連打 read it), cleared at turn end.
+    /// StanceReactedTurn is the turn an OncePerTurn stance last reacted in.
     /// </summary>
     public sealed record CombatantState(
         int Hp,
@@ -276,10 +473,18 @@ namespace BattleCore
         int Cell,
         int Size,
         StatusSet Statuses,
-        int NextTurnRecoveryBonus = 0)
+        int NextTurnRecoveryBonus = 0,
+        StanceDef? Stance = null,
+        string? StanceSource = null,
+        int FollowUp = 0,
+        IReadOnlyList<BattleAttribute>? Played = null,
+        int StanceReactedTurn = 0)
     {
         /// <summary>The rightmost cell used (equal to Cell for size 1).</summary>
         public int FarCell => Cell + Size - 1;
+
+        /// <summary>The attributes played this turn, in order; empty at the start of a turn.</summary>
+        public IReadOnlyList<BattleAttribute> PlayedThisTurn => Played ?? Array.Empty<BattleAttribute>();
     }
 
     /// <summary>
@@ -312,8 +517,12 @@ namespace BattleCore
         IReadOnlyList<CardInstance> DrawPile,
         IReadOnlyList<CardInstance> DiscardPile,
         GameResult Result = GameResult.Ongoing,
-        BattlePhase Phase = BattlePhase.AwaitingTurnStart)
+        BattlePhase Phase = BattlePhase.AwaitingTurnStart,
+        IReadOnlyList<CardInstance>? ExilePile = null)
     {
+        /// <summary>§4 (#188): the stance cards played this battle. They never go back into the deck.</summary>
+        public IReadOnlyList<CardInstance> Exiled => ExilePile ?? Array.Empty<CardInstance>();
+
         /// <summary>The first enemy's body.</summary>
         public CombatantState Enemy => Enemies[0].Body;
 
@@ -407,12 +616,28 @@ namespace BattleCore
         public static string ToToken(this StatusKind kind) => kind switch
         {
             StatusKind.Slow => "slow",
+            StatusKind.Bleed => "bleed",
+            StatusKind.Fragile => "fragile",
+            StatusKind.Intimidate => "intimidate",
+            StatusKind.Fatigue => "fatigue",
+            StatusKind.Empower => "empower",
+            StatusKind.Focus => "focus",
+            StatusKind.Parry => "parry",
+            StatusKind.Regen => "regen",
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
         public static string ToLabel(this StatusKind kind) => kind switch
         {
             StatusKind.Slow => "鈍足",
+            StatusKind.Bleed => "出血",
+            StatusKind.Fragile => "脆化",
+            StatusKind.Intimidate => "威圧",
+            StatusKind.Fatigue => "疲労",
+            StatusKind.Empower => "強化",
+            StatusKind.Focus => "集中",
+            StatusKind.Parry => "見切り",
+            StatusKind.Regen => "再生",
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 

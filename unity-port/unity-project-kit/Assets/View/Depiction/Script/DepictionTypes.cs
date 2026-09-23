@@ -227,6 +227,12 @@ namespace Depiction
         /// (issue #73); how it plays is issue #77's, and until then the chips simply settle with the frame.
         /// </summary>
         StatusChange,
+        /// <summary>
+        /// HP moved without a blow (#188): 出血 / 再生 at turn start, a heal face, a 見切り return.
+        /// <see cref="Cue.Amount"/> is signed (−4, +6), <see cref="Cue.HpAfter"/> settled and
+        /// <see cref="Cue.Text"/> names the cause ("出血"). Unlike <see cref="Hit"/> it spends no omen.
+        /// </summary>
+        HpChange,
     }
 
     /// <summary>
