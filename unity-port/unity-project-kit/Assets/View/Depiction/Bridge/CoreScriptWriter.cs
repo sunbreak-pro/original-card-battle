@@ -589,7 +589,7 @@ namespace Depiction.Bridge
                 Outcome = after.Result == GameResult.Won ? BattleOutcome.Won
                     : after.Result == GameResult.Lost ? BattleOutcome.Lost
                     : BattleOutcome.Ongoing,
-                // Floor, chain and miasma belong to the exploration layer (#99); one battle, no miasma.
+                // Floor and miasma belong to the exploration layer (#99); the chain position is the demo's (#191).
                 Corner = new CornerFrame { Turn = _turn, Floor = 1, ChainIndex = ChainIndex, ChainTotal = ChainTotal, MiasmaPercent = 0 },
                 Player = UnitOf(_player, showStamina: true, gap: Gap),
                 Enemy = UnitOf(_enemy, showStamina: false, gap: null),

@@ -22,10 +22,10 @@ namespace Depiction.View
             backdrop.raycastTarget = true;
 
             UiKit.Label(_root, "Title", 40, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(1200f, 60f), new Vector2(40f, -20f), "戦い方を選ぶ");
+                new Vector2(1200f, 60f), new Vector2(40f, -20f), DemoSession.ModeTitle);
 
             UiKit.Label(_root, "SingleHead", 30, TextAnchor.MiddleLeft, BattleTheme.Warm, new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(1200f, 50f), new Vector2(40f, -100f), "1 体で区切る（敵を選ぶ）");
+                new Vector2(1200f, 50f), new Vector2(40f, -100f), DemoSession.SingleHeading);
             RectTransform grid = UiKit.Box(_root, "Enemies", 0.02f, 0.36f, 0.98f, 0.84f);
             const int columns = 3;
             int count = Enemies.All.Count + 1;
@@ -43,15 +43,15 @@ namespace Depiction.View
                 }
                 else
                 {
-                    UiKit.Button(grid, "Random", "ランダム", () => random(), BattleTheme.Panel, BattleTheme.Warm, 26, min, max);
+                    UiKit.Button(grid, "Random", DemoSession.RandomLabel, () => random(), BattleTheme.Panel, BattleTheme.Warm, 26, min, max);
                 }
             }
 
             UiKit.Label(_root, "ChainHead", 30, TextAnchor.MiddleLeft, BattleTheme.Warm, new Vector2(0f, 0f), new Vector2(0f, 0f),
-                new Vector2(1200f, 50f), new Vector2(40f, 250f), "連戦（HP とスタミナを持ち越し、負けたら終わり）");
+                new Vector2(1200f, 50f), new Vector2(40f, 250f), DemoSession.ChainHeading);
             UiKit.Button(_root, "Chain", DemoSession.ChainLine(), () => chain(), BattleTheme.Accent, BattleTheme.InkBlack, 28,
                 new Vector2(0.02f, 0.13f), new Vector2(0.98f, 0.22f));
-            UiKit.Button(_root, "Back", "デッキ選択へ戻る", () => back(), BattleTheme.Panel, BattleTheme.Ink, 26,
+            UiKit.Button(_root, "Back", DemoSession.BackToDeckLabel, () => back(), BattleTheme.Panel, BattleTheme.Ink, 26,
                 new Vector2(0.02f, 0.02f), new Vector2(0.3f, 0.09f));
         }
 

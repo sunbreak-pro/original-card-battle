@@ -90,26 +90,34 @@ namespace Depiction.Bridge
             _seed = seed;
         }
 
-        /// <summary>One enemy on its own.</summary>
-        public static DemoSession Single(List<CardInstance> deck, string enemyId, int seed)
+        /// <summary>
+        /// One enemy on its own. <paramref name="run"/> counts the runs started from the same seed (the
+        /// flow passes how many it has made), so choosing the same mode again deals afresh.
+        /// </summary>
+        public static DemoSession Single(List<CardInstance> deck, string enemyId, int seed, int run = 0)
         {
-            return new DemoSession(DemoMode.Single, new[] { Enemies.ById(enemyId ?? "") }, deck, seed);
+            return new DemoSession(DemoMode.Single, new[] { Enemies.ById(enemyId ?? "") }, deck, RunSeed(seed, run));
         }
 
         /// <summary>§12: a chain of battles, by default <see cref="DefaultChain"/>.</summary>
-        public static DemoSession Chain(List<CardInstance> deck, int seed, IReadOnlyList<string> order = null)
+        public static DemoSession Chain(List<CardInstance> deck, int seed, IReadOnlyList<string> order = null, int run = 0)
         {
             order = order ?? DefaultChain;
             if (order.Count == 0) throw new ArgumentException("DemoSession: a chain needs at least one enemy.");
             var enemies = new List<EnemyDef>();
             foreach (string id in order) enemies.Add(Enemies.ById(id));
-            return new DemoSession(DemoMode.Chain, enemies, deck, seed);
+            return new DemoSession(DemoMode.Chain, enemies, deck, RunSeed(seed, run));
         }
 
-        /// <summary>The single-mode 「ランダム」: one of the eleven, fixed by the seed.</summary>
-        public static string RandomEnemyId(int seed)
+        private static int RunSeed(int seed, int run)
         {
-            double roll = new SeededRng(seed).NextDouble();
+            return unchecked(seed + (run * 104729));
+        }
+
+        /// <summary>The single-mode 「ランダム」: one of the eleven, fixed by the seed and how many picks came before.</summary>
+        public static string RandomEnemyId(int seed, int pick = 0)
+        {
+            double roll = new SeededRng(RunSeed(seed, pick)).NextDouble();
             int index = Math.Min(Enemies.All.Count - 1, (int)Math.Floor(roll * Enemies.All.Count));
             return Enemies.All[index].Id;
         }
@@ -137,10 +145,12 @@ namespace Depiction.Bridge
         public CoreBattleSource StartBattle(bool suggestCards = false)
         {
             if (Stage != DemoStage.Ready) throw new InvalidOperationException("DemoSession: no battle is ready (" + Stage + ").");
-            Stage = DemoStage.Fighting;
-            int seed = unchecked(_seed + (_started++ * 7919));
+            int seed = unchecked(_seed + (_started * 7919));
             int total = Mode == DemoMode.Chain ? Order.Count : 1;
-            return new CoreBattleSource(NextSetup(), seed, suggestCards, 0, Index + 1, total);
+            var source = new CoreBattleSource(NextSetup(), seed, suggestCards, 0, Index + 1, total);
+            _started++;
+            Stage = DemoStage.Fighting; // only once the battle is built, so a failed start leaves the run Ready
+            return source;
         }
 
         /// <summary>The battle has ended: tally it and carry what carries. A loss or the last win ends the run.</summary>
@@ -177,6 +187,7 @@ namespace Depiction.Bridge
         /// <summary>The same run from its first battle, at full HP (§12: after a clean sweep, the same order again).</summary>
         public void Again()
         {
+            if (Stage == DemoStage.Fighting) throw new InvalidOperationException("DemoSession: a battle is being fought.");
             Index = 0;
             _hp = null;
             _stamina = null;
@@ -209,6 +220,13 @@ namespace Depiction.Bridge
             screen.Lines.Add("ターン数: " + last.Turns + (Mode == DemoMode.Chain && _tallies.Count > 1 ? "（平均 " + AverageTurns() + "）" : ""));
             screen.Lines.Add("使った札 " + last.CardsPlayed + " 枚の属性: " + Breakdown(last));
             screen.Lines.Add("特性の発動: " + last.TraitsFired + " 回");
+            if (Mode == DemoMode.Chain && Stage == DemoStage.Over && _tallies.Count > 1)
+            {
+                // §12: the chain's result screen adds up the whole run.
+                BattleTally total = BattleCore.Chain.Total(_tallies);
+                screen.Lines.Add("連戦の合計（" + _tallies.Count + " 戦）: 使った札 " + total.CardsPlayed + " 枚の属性: " + Breakdown(total));
+                screen.Lines.Add("連戦の合計: 特性の発動 " + total.TraitsFired + " 回、平均ターン数 " + AverageTurns());
+            }
 
             if (Stage == DemoStage.BetweenBattles)
             {
@@ -238,11 +256,30 @@ namespace Depiction.Bridge
         /// <summary>The mean of the turns of the battles fought so far, one decimal ("8.5").</summary>
         public string AverageTurns()
         {
-            if (_tallies.Count == 0) return "0";
-            double sum = 0;
-            foreach (BattleTally tally in _tallies) sum += tally.Turns;
-            return Math.Round(sum / _tallies.Count, 1, MidpointRounding.AwayFromZero).ToString("0.#", CultureInfo.InvariantCulture);
+            return AverageOf(_tallies);
         }
+
+        /// <summary>The mean turns of some battles, to one decimal rounded away from zero, no trailing ".0" ("8.5", "8", "6.7").</summary>
+        public static string AverageOf(IReadOnlyList<BattleTally> tallies)
+        {
+            if (tallies == null || tallies.Count == 0) return "0";
+            double sum = 0;
+            foreach (BattleTally tally in tallies) sum += tally.Turns;
+            return Math.Round(sum / tallies.Count, 1, MidpointRounding.AwayFromZero).ToString("0.#", CultureInfo.InvariantCulture);
+        }
+
+        // ---- the mode screen's words ----
+
+        public static string ModeTitle => "戦い方を選ぶ";
+
+        public static string SingleHeading => "1 体で区切る（敵を選ぶ）";
+
+        /// <summary>§12 in one line: what carries and what ends the chain.</summary>
+        public static string ChainHeading => "連戦（HP とスタミナを持ち越し、負けたら終わり）";
+
+        public static string RandomLabel => "ランダム";
+
+        public static string BackToDeckLabel => "デッキ選択へ戻る";
 
         /// <summary>The line an enemy has on the mode screen: 「錆槍の竜兵（通常・HP 60）」.</summary>
         public static string EnemyLine(EnemyDef enemy)
