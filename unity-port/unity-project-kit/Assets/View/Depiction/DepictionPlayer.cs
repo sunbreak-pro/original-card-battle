@@ -55,11 +55,18 @@ namespace Depiction.View
         [Tooltip("A card under the pointer rises by this much and comes to the front. Its fan angle is kept.")]
         public float hoverLiftPixels = 28f;
         public float hoverScale = 1.05f;
-        public float hoverSeconds = 0.09f;
 
         [Header("Guide")]
         [Tooltip("How long the reason a card came back stays on the guide line.")]
         public float refusalSeconds = 3.5f;
+
+        [Header("Effects (#75-#77)")]
+        [Tooltip("Effects to switch off, by id (EffectId: CardDraw, HandFan, CardHover, CardGrab, ReceiverShow, "
+                 + "ThrowLineShow, ReceiverSnap, CardRelease, CardToDiscard, CardReturn, RefusalShake, HandDiscard, "
+                 + "UnpayableDim). A switched-off effect settles at once and the battle goes on.")]
+        public string[] effectsOff = new string[0];
+        [Tooltip("Writes every effect that played (id, event, start, measured and nominal ms) to the log once the source finishes. For #78.")]
+        public bool logEffectTrace;
 
         [Header("Mode")]
         [Tooltip("Filming only: replays TurnSliceScript in its written order, refusing any other card. "
@@ -82,6 +89,10 @@ namespace Depiction.View
         public bool Finished { get; private set; }
         /// <summary>Seconds each event took from its start (or from the confirmed drop) to its settled frame.</summary>
         public readonly List<float> EventSeconds = new List<float>();
+        /// <summary>Every effect that played or was switched off, with its measured length (#78 reads it).</summary>
+        public EffectTrace Trace { get; private set; }
+        /// <summary>Which effects play. Built from <see cref="effectsOff"/> in Start.</summary>
+        public EffectSwitches Effects => _effects;
 
         private IDepictionSource _source;
         private IDepictionSource _givenSource;
@@ -94,6 +105,17 @@ namespace Depiction.View
         private CardView _hovered;
         private readonly Dictionary<CardView, float> _hoverWeight = new Dictionary<CardView, float>();
         private Coroutine _refusal;
+        private EffectSwitches _effects = EffectSwitches.AllOn();
+        private Coroutine _zoneFade;
+        private int _hoverHandle = -1;
+        private Vector3 _dragPointerWorld;
+        private bool _zoneHot;
+        private float _snapWeight;
+        private int _snapHandle = -1;
+
+        /// <summary>How far a held card is drawn toward the dish once it is over it (EffectId.ReceiverSnap).</summary>
+        private const float SnapPull = 0.35f;
+        private static readonly Vector2 Half = new Vector2(0.5f, 0.5f);
 
         /// <summary>
         /// Hands the player the source to play instead of the two it can build by itself. Call it
@@ -109,6 +131,9 @@ namespace Depiction.View
             // Keep playing while the Editor is unfocused (captures and remote-driven checks rely on it).
             Application.runInBackground = true;
             EnsureEventSystem();
+            _effects = EffectSwitches.WithOff(effectsOff, out List<string> unknownEffects);
+            foreach (string name in unknownEffects) Debug.LogWarning("[Depiction] effectsOff: no effect is called \"" + name + "\"");
+            Trace = new EffectTrace(() => Time.unscaledTimeAsDouble);
             UiTween.Speed = 1f; // a debug gate may have left it at 0 when domain reload is off
             if (backdrop && backdrop.sprite == null)
             {
@@ -137,6 +162,7 @@ namespace Depiction.View
         private void Update()
         {
             UpdateHover();
+            UpdateSnap();
             UpdateEndTurn();
         }
 
@@ -187,6 +213,7 @@ namespace Depiction.View
                 Finished = true;
                 RefreshPlayableLook(); // the guide line carries the outcome
                 Debug.Log("[Depiction] finished. seconds per event: " + string.Join(" / ", EventSeconds.ConvertAll(s => s.ToString("0.00"))));
+                if (logEffectTrace) Debug.Log("[Depiction] effects:\n" + Trace.ToCsv());
                 yield break;
             }
             SetHandInteractable(true);
@@ -231,7 +258,7 @@ namespace Depiction.View
                     break;
 
                 case CueKind.DrawHand:
-                    yield return DrawHand(ev.After.Hand);
+                    yield return DrawHand(ev.After.Hand, cue.Amount);
                     break;
 
                 case CueKind.OmenShow:
@@ -352,45 +379,114 @@ namespace Depiction.View
             yield return figure.FlipRangeTag(glyph, 150f);
         }
 
-        private IEnumerator DrawHand(List<CardFace> faces)
+        /// <summary>
+        /// Rebuilds the hand from the settled faces, and flies the <paramref name="drawn"/> newest cards
+        /// (the right end of the fan) in from the draw pile one stagger apart (EffectId.CardDraw).
+        /// </summary>
+        private IEnumerator DrawHand(List<CardFace> faces, int drawn)
         {
             BuildHand(faces);
+            int count = Mathf.Clamp(drawn, 0, _hand.Count);
+            if (count == 0) yield break;
+            yield return Effect(EffectId.CardDraw, FlyDrawn(_hand.Count - count), null, count);
+        }
+
+        private IEnumerator FlyDrawn(int first)
+        {
             Vector3 from = deckPoint ? deckPoint.position : handArea.position;
-            var homes = new List<Vector3>();
-            foreach (CardView card in _hand)
+            var flying = new List<(CardView card, Vector3 home)>();
+            for (int i = first; i < _hand.Count; i++)
             {
-                homes.Add(card.transform.position);
+                CardView card = _hand[i];
+                flying.Add((card, card.transform.position));
                 card.transform.position = from;
                 card.group.alpha = 0f;
             }
-            for (int i = 0; i < _hand.Count; i++)
+            float ms = _effects.Ms(EffectId.CardDraw);
+            float stagger = _effects.StaggerMs(EffectId.CardDraw);
+            for (int i = 0; i < flying.Count; i++)
             {
-                StartCoroutine(FlyCard(_hand[i], from, homes[i], 260f, 0f, 1f));
-                yield return UiTween.Wait(60f);
+                StartCoroutine(FlyCard(flying[i].card, from, flying[i].home, ms, 0f, 1f, Ease.Out));
+                if (i < flying.Count - 1) yield return UiTween.Wait(stagger);
             }
-            yield return UiTween.Wait(260f);
+            yield return UiTween.Wait(ms);
         }
 
+        /// <summary>Turn end: the whole hand flies to the discard pile one stagger apart (EffectId.HandDiscard).</summary>
         private IEnumerator DiscardHand()
         {
-            Vector3 to = discardPoint ? discardPoint.position : handArea.position;
-            foreach (CardView card in _hand)
-            {
-                StartCoroutine(FlyCard(card, card.transform.position, to, 240f, 1f, 0f));
-                yield return UiTween.Wait(60f);
-            }
-            yield return UiTween.Wait(240f);
+            int count = _hand.Count;
+            if (count > 0) yield return Effect(EffectId.HandDiscard, FlyDiscarded(), null, count);
             ClearHand();
         }
 
-        private static IEnumerator FlyCard(CardView card, Vector3 from, Vector3 to, float ms, float alphaFrom, float alphaTo)
+        private IEnumerator FlyDiscarded()
         {
-            yield return UiTween.Run(ms, Ease.Out, t =>
+            Vector3 to = discardPoint ? discardPoint.position : handArea.position;
+            float ms = _effects.Ms(EffectId.HandDiscard);
+            float stagger = _effects.StaggerMs(EffectId.HandDiscard);
+            var cards = new List<CardView>(_hand);
+            for (int i = 0; i < cards.Count; i++)
+            {
+                CardView card = cards[i];
+                if (card) StartCoroutine(FlyCard(card, card.transform.position, to, ms, 1f, 0f, Ease.In));
+                if (i < cards.Count - 1) yield return UiTween.Wait(stagger);
+            }
+            yield return UiTween.Wait(ms);
+        }
+
+        private static IEnumerator FlyCard(CardView card, Vector3 from, Vector3 to, float ms, float alphaFrom, float alphaTo, Ease ease)
+        {
+            yield return UiTween.Run(ms, ease, t =>
             {
                 if (!card) return;
                 card.transform.position = Vector3.LerpUnclamped(from, to, t);
                 card.group.alpha = Mathf.Lerp(alphaFrom, alphaTo, t);
             });
+        }
+
+        /// <summary>
+        /// The played card's ghost drifts from where the card vanished onto the discard pile
+        /// (EffectId.CardToDiscard). It runs beside the event's beats and holds nothing up.
+        /// </summary>
+        private IEnumerator FlyGhostToDiscard(Vector2 from)
+        {
+            if (!fxLayer || !discardPoint) yield break;
+            Vector2 to = DepictionFx.PointOn(fxLayer, discardPoint);
+            Color tint = BattleTheme.WithAlpha(BattleTheme.Ink, 0.55f);
+            Image ghost = UiKit.Sprite(fxLayer, "DiscardGhost", ProceduralArt.White, tint, Half, Half, new Vector2(76f, 104f), from);
+            ghost.raycastTarget = false;
+            RectTransform rt = ghost.rectTransform;
+            yield return UiTween.Run(_effects.Ms(EffectId.CardToDiscard), Ease.InOut, t =>
+            {
+                if (!rt) return;
+                rt.anchoredPosition = Vector2.LerpUnclamped(from, to, t);
+                ghost.color = BattleTheme.WithAlpha(tint, tint.a * (1f - t));
+            });
+            if (ghost) Destroy(ghost.gameObject);
+        }
+
+        // ---- effects (#75-#77) -----------------------------------------------------------------
+
+        /// <summary>The event the running effect belongs to: the one playing, or the next one while the player acts.</summary>
+        private int CurrentOrder => EventSeconds.Count + 1;
+
+        /// <summary>
+        /// Plays one effect by id. When it is on, <paramref name="play"/> runs and the trace times it.
+        /// When it is off, <paramref name="settle"/> puts the end state on screen at once, the trace
+        /// records the skip, and the caller goes on without waiting.
+        /// </summary>
+        private IEnumerator Effect(EffectId id, IEnumerator play, System.Action settle, int count = 1)
+        {
+            if (!_effects.IsOn(id))
+            {
+                settle?.Invoke();
+                Trace?.Skip(id, CurrentOrder);
+                yield break;
+            }
+            int handle = Trace != null ? Trace.Begin(id, CurrentOrder, count) : -1;
+            yield return play;
+            if (handle >= 0) Trace.End(handle);
         }
 
         // ---- frame -> screen ------------------------------------------------------------------
@@ -430,6 +526,7 @@ namespace Depiction.View
             {
                 CardView card = Instantiate(cardPrefab, handArea);
                 card.Bind(face);
+                card.SetDimmed(false);
                 card.DragBegan += OnDragBegan;
                 card.DragMoved += OnDragMoved;
                 card.DragEnded += OnDragEnded;
@@ -508,9 +605,17 @@ namespace Depiction.View
                 RestoreCardOrder();
                 if (over) over.transform.SetAsLastSibling();
                 _hovered = over;
+                // EffectId.CardHover: timed from the moment a card starts to rise until it is fully up.
+                _hoverHandle = -1;
+                if (over && Trace != null)
+                {
+                    if (_effects.IsOn(EffectId.CardHover)) _hoverHandle = Trace.Begin(EffectId.CardHover, CurrentOrder);
+                    else Trace.Skip(EffectId.CardHover, CurrentOrder);
+                }
             }
 
-            float step = hoverSeconds > 0f ? Time.unscaledDeltaTime / hoverSeconds : 1f;
+            float hoverMs = _effects.Ms(EffectId.CardHover);
+            float step = hoverMs > 0f ? Time.unscaledDeltaTime * 1000f / hoverMs : 1f;
             for (int i = 0; i < _hand.Count; i++)
             {
                 CardView card = _hand[i];
@@ -519,6 +624,11 @@ namespace Depiction.View
                 float next = Mathf.MoveTowards(weight, card == over ? 1f : 0f, step);
                 if (next == weight && weight == 0f) continue;
                 _hoverWeight[card] = next;
+                if (card == over && next >= 1f && _hoverHandle >= 0)
+                {
+                    Trace.End(_hoverHandle);
+                    _hoverHandle = -1;
+                }
                 float eased = next * next * (3f - 2f * next);
                 HomeOf(i, out Vector2 home, out _);
                 card.Rect.anchoredPosition = home + new Vector2(0f, hoverLiftPixels * eased);
@@ -615,7 +725,10 @@ namespace Depiction.View
             foreach (CardView card in _hand)
             {
                 if (!card || card == _dragging) continue;
-                card.SetDimmed(waiting && _source.Inspect(card.CardId) != PlayVerdict.Accepted);
+                bool dim = waiting && _source.Inspect(card.CardId) != PlayVerdict.Accepted;
+                if (dim == card.Dimmed) continue;
+                CardView dimmed = card;
+                StartCoroutine(Effect(EffectId.UnpayableDim, dimmed.FadeDimmed(dim, _effects.Ms(EffectId.UnpayableDim)), () => dimmed.SetDimmed(dim)));
             }
             if (_refusal != null || !handGuide) return;
             handGuide.color = BattleTheme.Ink;
@@ -657,14 +770,16 @@ namespace Depiction.View
                 && RestingRectContains(_hovered, _hand.IndexOf(_hovered), e.position)) held = _hovered;
             _dragSource = card;
             BeginHold(held);
-            _grabOffset = held.transform.position - PointerWorld(e);
+            _dragPointerWorld = PointerWorld(e);
+            _grabOffset = held.transform.position - _dragPointerWorld;
         }
 
         private void OnDragMoved(CardView card, PointerEventData e)
         {
             if (_dragging == null || card != _dragSource) return;
-            _dragging.transform.position = PointerWorld(e) + _grabOffset;
+            _dragPointerWorld = PointerWorld(e);
             UpdateHot(_dragging, e.position);
+            _dragging.transform.position = DragPosition();
         }
 
         private void OnDragEnded(CardView card, PointerEventData e)
@@ -691,16 +806,34 @@ namespace Depiction.View
             _hovered = null;
             _hoverWeight.Clear();
             card.transform.SetAsLastSibling();
-            card.Rect.localRotation = Quaternion.identity; // a held card is upright
-            card.Rect.localScale = new Vector3(1.08f, 1.08f, 1f);
             card.group.alpha = 0.92f;
+            // EffectId.CardGrab: a held card stands upright and grows to 1.08.
+            Quaternion tilt = card.Rect.localRotation;
+            Vector3 scaleFrom = card.Rect.localScale;
+            Vector3 heldScale = new Vector3(1.08f, 1.08f, 1f);
+            StartCoroutine(Effect(EffectId.CardGrab,
+                UiTween.Run(_effects.Ms(EffectId.CardGrab), Ease.Out, t =>
+                {
+                    if (!card || _dragging != card) return;
+                    card.Rect.localRotation = Quaternion.Slerp(tilt, Quaternion.identity, t);
+                    card.Rect.localScale = Vector3.LerpUnclamped(scaleFrom, heldScale, t);
+                }),
+                () =>
+                {
+                    card.Rect.localRotation = Quaternion.identity;
+                    card.Rect.localScale = heldScale;
+                }));
+            // The zone takes the drop from the first frame; the fade only changes how it looks.
+            if (_zoneFade != null) StopCoroutine(_zoneFade);
             if (card.Face.Aim == CardAim.Single)
             {
                 receiver.Show(PreviewFor(card));
+                _zoneFade = StartCoroutine(Effect(EffectId.ReceiverShow, receiver.FadeIn(_effects.Ms(EffectId.ReceiverShow)), null));
             }
             else
             {
                 throwLine.Show(PreviewFor(card));
+                _zoneFade = StartCoroutine(Effect(EffectId.ThrowLineShow, throwLine.FadeIn(_effects.Ms(EffectId.ThrowLineShow)), null));
                 ShowTargetMark(card);
             }
         }
@@ -754,12 +887,59 @@ namespace Depiction.View
 
         private void UpdateHot(CardView card, Vector2 screenPoint)
         {
-            SetZoneHot(card, ZoneAt(card, screenPoint) != DropZone.None);
+            _zoneHot = ZoneAt(card, screenPoint) != DropZone.None;
+            SetZoneHot(card, _zoneHot);
+        }
+
+        /// <summary>Where the held card sits: under the pointer, drawn toward the dish by the snap weight.</summary>
+        private Vector3 DragPosition()
+        {
+            Vector3 free = _dragPointerWorld + _grabOffset;
+            if (_snapWeight <= 0f || !receiver) return free;
+            float eased = _snapWeight * _snapWeight * (3f - 2f * _snapWeight);
+            return Vector3.Lerp(free, receiver.transform.position, SnapPull * eased);
+        }
+
+        /// <summary>
+        /// EffectId.ReceiverSnap: while a single-target card is over the dish, the pull grows over the
+        /// effect's length, and lets go the same way. Switched off, it takes hold at once.
+        /// </summary>
+        private void UpdateSnap()
+        {
+            if (_dragging == null)
+            {
+                _snapWeight = 0f;
+                return;
+            }
+            float target = _dragging.Face.Aim == CardAim.Single && _zoneHot ? 1f : 0f;
+            float ms = _effects.Ms(EffectId.ReceiverSnap);
+            float next = ms > 0f ? Mathf.MoveTowards(_snapWeight, target, Time.unscaledDeltaTime * 1000f / ms) : target;
+            if (next == _snapWeight) return;
+            if (_snapWeight == 0f && next > 0f && Trace != null)
+            {
+                if (_effects.IsOn(EffectId.ReceiverSnap)) _snapHandle = Trace.Begin(EffectId.ReceiverSnap, CurrentOrder);
+                else Trace.Skip(EffectId.ReceiverSnap, CurrentOrder);
+            }
+            if (next >= 1f && _snapHandle >= 0)
+            {
+                Trace.End(_snapHandle);
+                _snapHandle = -1;
+            }
+            _snapWeight = next;
+            _dragging.transform.position = DragPosition();
         }
 
         private void Release(CardView card, DropZone zone)
         {
             _dragging = null;
+            _zoneHot = false;
+            _snapWeight = 0f;
+            _snapHandle = -1;
+            if (_zoneFade != null)
+            {
+                StopCoroutine(_zoneFade);
+                _zoneFade = null;
+            }
             receiver.Hide();
             throwLine.Hide();
             HideTargetMarks();
@@ -784,16 +964,20 @@ namespace Depiction.View
             Vector3 to = ev.Aim == CardAim.Single
                 ? receiver.transform.position
                 : from + new Vector3(0f, 140f * handArea.lossyScale.y, 0f); // a self card is tossed upward
-            yield return UiTween.Run(160f, Ease.In, t =>
+            yield return Effect(EffectId.CardRelease, UiTween.Run(_effects.Ms(EffectId.CardRelease), Ease.In, t =>
             {
                 if (!card) return;
                 card.transform.position = Vector3.LerpUnclamped(from, to, t);
                 float s = Mathf.Lerp(1.08f, 0.5f, t);
                 card.Rect.localScale = new Vector3(s, s, 1f);
                 card.group.alpha = 1f - t;
-            });
+            }), null);
+            Vector2 vanishedAt = card.Face.Aim == CardAim.Single && receiver
+                ? DepictionFx.PointOn(fxLayer, receiver.transform)
+                : DepictionFx.PointOn(fxLayer, card.transform);
             Destroy(card.gameObject);
-            StartCoroutine(SettleHand(180f));
+            StartCoroutine(Effect(EffectId.CardToDiscard, FlyGhostToDiscard(vanishedAt), null));
+            StartCoroutine(Effect(EffectId.HandFan, SettleHand(_effects.Ms(EffectId.HandFan)), LayoutHand));
 
             foreach (Cue cue in ev.Cues)
             {
@@ -839,16 +1023,17 @@ namespace Depiction.View
             _busy = true;
             Vector3 from = card.transform.position;
             HomeOf(_hand.IndexOf(card), out _, out float homeDegrees);
-            yield return UiTween.Run(180f, Ease.Out, t =>
+            Vector3 home = _dragHome;
+            yield return Effect(EffectId.CardReturn, UiTween.Run(_effects.Ms(EffectId.CardReturn), Ease.Out, t =>
             {
                 if (!card) return;
-                card.transform.position = Vector3.LerpUnclamped(from, _dragHome, t);
+                card.transform.position = Vector3.LerpUnclamped(from, home, t);
                 float s = Mathf.Lerp(1.08f, 1f, t);
                 card.Rect.localScale = new Vector3(s, s, 1f);
                 card.Rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.LerpAngle(0f, homeDegrees, t));
-            });
+            }), null);
             if (card) card.group.alpha = 1f;
-            if (shake && card) yield return UiTween.Shake(card.Rect, 8f, 2, 160f);
+            if (shake && card) yield return Effect(EffectId.RefusalShake, UiTween.Shake(card.Rect, 8f, 2, _effects.Ms(EffectId.RefusalShake)), null);
             LayoutHand();
             _busy = false;
             RefreshPlayableLook();

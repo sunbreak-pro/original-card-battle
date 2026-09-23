@@ -34,6 +34,13 @@ namespace Depiction.View
             if (group) group.alpha = 0f;
         }
 
+        /// <summary>Fades the dish in (EffectId.ReceiverShow). It takes drops from the first frame.</summary>
+        public System.Collections.IEnumerator FadeIn(float ms)
+        {
+            if (!group) yield break;
+            yield return UiTween.Fade(group, 0f, 1f, ms, Ease.Out);
+        }
+
         public void SetHot(bool hot)
         {
             if (dish) dish.color = BattleTheme.WithAlpha(BattleTheme.Omen, hot ? 0.55f : 0.28f);
