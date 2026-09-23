@@ -330,6 +330,10 @@ namespace BattleCore
     /// #188 adds Heal (HP to the one playing), Break (崩し: the opponent's stamina −n, riding the
     /// attack face), the status list (each to self or to the opponent) and the stance a stance face
     /// sets. Statuses is null for none; read it through <see cref="StatusList"/>.
+    ///
+    /// Hits (§2.4 `hits`, #189) splits the attack face into that many blows, each against Guard on
+    /// its own; the opponent statuses of a face with two or more land after the first blow
+    /// (二段斬り's 脆化 is there for the second).
     /// </summary>
     public sealed record Face(
         int Power = 0,
@@ -342,7 +346,8 @@ namespace BattleCore
         IReadOnlyList<StatusGrant>? Statuses = null,
         int Heal = 0,
         int Break = 0,
-        StanceDef? Stance = null)
+        StanceDef? Stance = null,
+        int Hits = 1)
     {
         public Reach ReachOrDefault => Reach ?? Reach.Default;
 
@@ -420,16 +425,25 @@ namespace BattleCore
         Face Face,
         Trait? Trait = null,
         TargetKind Targets = TargetKind.One,
-        string Description = "")
+        string Description = "",
+        OmenKind? Omen = null)
     {
         public int Cost => Columns.CostOf(Column);
+    }
+
+    /// <summary>roster §1.1 `rank`: what kind of fight the enemy is. Elites and bosses act twice a phase.</summary>
+    public enum EnemyRank
+    {
+        Normal,
+        Elite,
+        Boss,
     }
 
     /// <summary>
     /// §6.1: every enemy branches three ways on the gap band. Each branch is an ordered list of
     /// action ids; the first affordable one becomes the omen. Size is the cells the enemy uses
-    /// (§7.1, 1〜3); a size of 2 or more refuses push and pull (§7.3). Elites and bosses (two
-    /// actions, adaptation) are #50.
+    /// (§7.1, 1〜3); a size of 2 or more refuses push and pull (§7.3). ActionsPerPhase is 2 for
+    /// elites and bosses (roster §1.3, #189); their adaptation is #50.
     /// </summary>
     public sealed record EnemyDef(
         string Id,
@@ -441,7 +455,9 @@ namespace BattleCore
         IReadOnlyList<string> BranchAtGapZero,
         IReadOnlyList<string> BranchAtGapOneToTwo,
         IReadOnlyList<string> BranchAtGapThreePlus,
-        IReadOnlyDictionary<string, EnemyActionDef> Actions)
+        IReadOnlyDictionary<string, EnemyActionDef> Actions,
+        EnemyRank Rank = EnemyRank.Normal,
+        int ActionsPerPhase = 1)
     {
         public IReadOnlyList<string> Branch(GapBand band) => band switch
         {
@@ -492,9 +508,15 @@ namespace BattleCore
     /// declared. A fallen enemy stays in <see cref="BattleState.Enemies"/> (so the numbers events
     /// carry never shift) but leaves its cells and its omen: see <see cref="Alive"/>.
     /// </summary>
-    public sealed record EnemyUnit(EnemyDef Def, CombatantState Body, Omen? Omen)
+    public sealed record EnemyUnit(EnemyDef Def, CombatantState Body, Omen? Omen, IReadOnlyList<string>? SpentStances = null)
     {
         public bool Alive => !Combat.IsDefeated(Body.Hp);
+
+        /// <summary>
+        /// roster §1.2 (#189): the stance actions this enemy has used. Each is used once a battle and
+        /// then leaves its tree.
+        /// </summary>
+        public IReadOnlyList<string> Spent => SpentStances ?? Array.Empty<string>();
     }
 
     /// <summary>

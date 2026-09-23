@@ -59,6 +59,9 @@ namespace Depiction.Bridge
         /// <summary>The system (§5.3) of the card or action whose blows are being written.</summary>
         private StrikeSystem _strike = StrikeSystem.Slash;
 
+        /// <summary>The enemy has carried out an action in this phase already (#189: an elite's second one opens a beat of its own).</summary>
+        private bool _enemyActed;
+
         /// <summary>The enemy's 構え, held back so it plays with the next omen and not inside the attack (see <see cref="Write"/>).</summary>
         private ReserveChecked _enemyReserveHeld;
 
@@ -90,9 +93,11 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// One move of the loop → the screen events it plays as. BeginPlayerTurn and PlayCard are one
-        /// event each; EndTurn is three (turn end, the enemy's action, the next omen), the same beats
-        /// the screen already knows — four when the enemy's push drives the player into the wall,
-        /// which gets an event of its own so the shove stays inside the 2.0 s an event may take.
+        /// event each; EndTurn is three for the slice (turn end, the enemy's action, the next omen),
+        /// the same beats the screen already knows. A few moments take a beat of their own so each
+        /// event stays inside the 2.0 s it may take: the enemy's push driving the player into the
+        /// wall, and (#189) an enemy turn start that did something, an elite's second action, the
+        /// second blow of 二段斬り and the step an enemy takes after its blow.
         ///
         /// <paramref name="after"/> is the state the move left. It is only asked what the cards still
         /// in the hand would do (the lamp), never for a number an event already carries.
@@ -161,7 +166,39 @@ namespace Depiction.Bridge
                     return NewEvent(DepictionEventKind.TurnEnd, "ターン終了");
 
                 case GuardCleared cleared when cleared.Actor == Actor.Enemy:
+                    _enemyActed = false;
                     return NewEvent(DepictionEventKind.EnemyAction, "敵の番");
+
+                // roster §1.3 (#189): an elite's or a boss's second action is a beat of its own, so
+                // neither blow is squeezed into the 2.0 s one event may take.
+                case ActionExecuted second when current != null && current.Kind == DepictionEventKind.EnemyAction
+                    && _enemyActed:
+                    return NewEvent(DepictionEventKind.EnemyAction, second.Action.Name);
+
+                // #189: an enemy turn start that did something of its own (a stance's Guard, 再生 or
+                // 出血) is its beat; the action follows as the next one.
+                case ActionExecuted first when current != null && current.Kind == DepictionEventKind.EnemyAction
+                    && current.Cues.Exists(c => c.Kind == CueKind.GuardGain || c.Kind == CueKind.HpChange):
+                    return NewEvent(DepictionEventKind.EnemyAction, first.Action.Name);
+
+                // §2.2 (#189): an enemy that strikes and then steps in (飛びかかり, 当ててから前へ 2) takes
+                // the step as its own beat once the blow has landed.
+                case CellsMoved step when step.Actor == Actor.Enemy && !step.Pushed && current != null
+                    && current.Kind == DepictionEventKind.EnemyAction
+                    && current.Cues.Exists(c => c.Kind == CueKind.Hit || c.Kind == CueKind.GuardBlock):
+                    return NewEvent(DepictionEventKind.EnemyAction, current.Title + (step.To < step.From ? "（詰める）" : "（下がる）"));
+
+                // §2.4 hits (#189): the second blow of an enemy face is a beat of its own (二段斬り),
+                // opened where the 脆化 its first blow left is spent for it.
+                case StatusConsumed used when used.Actor == Actor.Player && used.Kind == StatusKind.Fragile
+                    && current != null && current.Kind == DepictionEventKind.EnemyAction
+                    && current.Cues.Exists(c => c.Kind == CueKind.Slash && c.Source == UnitSide.Enemy):
+                    return NewEvent(DepictionEventKind.EnemyAction, current.Title + "（2 撃目）");
+
+                case DamageDealt blow when blow.Actor == Actor.Enemy && current != null
+                    && current.Kind == DepictionEventKind.EnemyAction
+                    && current.Cues.Exists(c => c.Kind == CueKind.Slash && c.Source == UnitSide.Enemy):
+                    return NewEvent(DepictionEventKind.EnemyAction, current.Title + "（2 撃目）");
 
                 case OmenSet omen when omen.Decided && _order > 0:
                     return NewEvent(DepictionEventKind.NextOmen, "次の予兆");
@@ -234,6 +271,7 @@ namespace Depiction.Bridge
                     break;
 
                 case ActionExecuted executed:
+                    _enemyActed = true;
                     ev.Title = executed.Action.Name;
                     _strike = CoreText.SystemOf(executed.Action);
                     ev.Cues.Add(new Cue { Kind = CueKind.EnemyWindup, Target = UnitSide.Enemy, System = _strike });
@@ -278,7 +316,7 @@ namespace Depiction.Bridge
                     ev.Cues.Add(new Cue
                     {
                         Kind = CueKind.SideBonusMiss, Target = UnitSide.Enemy,
-                        Amount = _enemyDef.Actions[whiff.SourceId].Face.Power, Text = "空振り",
+                        Amount = _enemyDef.Actions[whiff.SourceId].Face.Power * Math.Max(1, _enemyDef.Actions[whiff.SourceId].Face.Hits), Text = "空振り",
                     });
                     break;
 

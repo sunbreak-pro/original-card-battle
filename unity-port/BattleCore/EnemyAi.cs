@@ -30,21 +30,39 @@ namespace BattleCore
         /// The caller decides which stamina to pass. The turn loop passes what the enemy will hold
         /// when the omen is carried out (after its recovery), so an omen only turns into a rest when
         /// something drained the enemy in between.
+        ///
+        /// <paramref name="skip"/> are actions it may not take now (#189): stances it has used —
+        /// a stance action is used once a battle and then leaves the tree (roster §1.2) — and, for
+        /// the second action of an elite or a boss, the first one (roster §1.3).
         /// </summary>
-        public static EnemyActionDef? ChooseAction(EnemyDef def, int gap, int stamina)
+        public static EnemyActionDef? ChooseAction(EnemyDef def, int gap, int stamina, IReadOnlyCollection<string>? skip = null)
         {
             foreach (var actionId in BranchFor(def, gap))
             {
+                if (skip != null && Contains(skip, actionId)) continue;
                 var action = def.Actions[actionId];
                 if (Combat.CanPay(action.Cost, stamina)) return action;
             }
             return null;
         }
 
-        /// <summary>§6: the one-step omen for the next action — 種別 + 狙うマス.</summary>
-        public static Omen DecideOmen(EnemyDef def, int gap, int stamina)
+        private static bool Contains(IReadOnlyCollection<string> ids, string id)
         {
-            var action = ChooseAction(def, gap, stamina);
+            foreach (var each in ids)
+            {
+                if (string.Equals(each, id, StringComparison.Ordinal)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// §6: the one-step omen for the next action — 種別 + 狙うマス. An elite or a boss shows its
+        /// first action only; the second is chosen when it comes (the demo leaves out the two-step
+        /// omen of §17.6 F11).
+        /// </summary>
+        public static Omen DecideOmen(EnemyDef def, int gap, int stamina, IReadOnlyCollection<string>? skip = null)
+        {
+            var action = ChooseAction(def, gap, stamina, skip);
             return action == null
                 ? new Omen(RestActionId, RestLabel)
                 : new Omen(action.Id, LabelOf(action));
@@ -85,8 +103,11 @@ namespace BattleCore
         public static OmenLabel LabelOf(EnemyActionDef action)
         {
             if (action == null) throw new ArgumentNullException(nameof(action));
+            // The roster's 予兆 column wins where the attribute order would read it otherwise (#189:
+            // 盾を掲げて前進 is 守り, 追い立てる is 技 — the same faces as moves that read 動).
             OmenKind kind =
-                action.Attributes.HasFlag(BattleAttribute.Attack) ? OmenKind.Attack
+                action.Omen.HasValue ? action.Omen.Value
+                : action.Attributes.HasFlag(BattleAttribute.Attack) ? OmenKind.Attack
                 : action.Attributes.HasFlag(BattleAttribute.Move) ? OmenKind.Move
                 : action.Attributes.HasFlag(BattleAttribute.Guard) ? OmenKind.Guard
                 : action.Attributes.HasFlag(BattleAttribute.Skill) ? OmenKind.Skill

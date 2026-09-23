@@ -199,7 +199,7 @@ namespace Depiction.Bridge
 
         public static string ValueOf(Face face, BattleAttribute attributes)
         {
-            if (attributes.HasFlag(BattleAttribute.Attack)) return face.Power.ToString();
+            if (attributes.HasFlag(BattleAttribute.Attack)) return face.Hits > 1 ? face.Power + "×" + face.Hits : face.Power.ToString();
             if (face.Guard > 0) return face.Guard.ToString();
             return face.Heal > 0 ? face.Heal.ToString() : "";
         }
