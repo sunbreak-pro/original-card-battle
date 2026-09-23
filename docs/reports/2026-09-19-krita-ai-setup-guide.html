@@ -266,9 +266,10 @@
         <tr><td>Add Content</td><td>新しい物を足す。指示か下絵が要る</td><td>小物（世代差分の護符・布など）を足す</td></tr>
         <tr><td>Remove Content</td><td>物を消して周りで埋める</td><td><span class="tag ng">使わない</span> 非商用ライセンスのモデル（MAT）を使います</td></tr>
         <tr><td>Replace Background</td><td>選んだ人物を残し、背景を入れ替える（実験的）</td><td>背景を単色にそろえる</td></tr>
-        <tr><td>Custom</td><td>なじませ方（Seamless）、指示の対象（Focus）、塗りの前処理（Fill）、周辺の範囲（Context）を手で決める</td><td>Fill の「Inpaint」は MAT を使うので選ばない</td></tr>
+        <tr><td>Custom</td><td>なじませ方（Seamless）、指示の対象（Focus）、塗りの前処理（Fill）、周辺の範囲（Context）を手で決める</td><td><b>Seamless のチェックを外す</b>（既定で入っていて、入っていると条文を確かめられない Fooocus Inpaint を読みます）。Fill の「Inpaint」は MAT を使うので選ばない</td></tr>
       </tbody>
     </table></div>
+    <div class="note warn"><b>強度 80% を超えないこと（2026-09-23 追記）</b><p>SDXL（Animagine）で選択範囲に描くと、強度が 80% を超えたときに Fooocus Inpaint が読み込まれます。Fill・Expand・Add Content・Replace Background は、既定の強度 100% のままだとこれに当たります。Fooocus Inpaint はライセンスの条文を確かめられないので、選択範囲は強度 80% 以下の Refine で描き直すか、Custom で Seamless を外して使います。根拠は <code>tools-and-prerequisites.md</code> §13 です。</p></div>
     <p>生成は選択範囲より少しはみ出します。はみ出しは消しゴムで消せますが、足りない分はあとから足しにくいからです。はみ出しの量は Diffusion 設定の <b>Selection Feather</b> と <b>Selection Blend</b> で変えられます。</p>
 
     <h3>3.4 コントロールレイヤー（下絵や見本に従わせる）</h3>
@@ -287,7 +288,8 @@
       <li><b>Depth / Normal:</b> 奥行きや面の向きで形を指示します。3D ソフトから出した図が使えます。</li>
       <li><b>Unblur:</b> ぼかした絵を元に、そっくりな絵を細部だけ変えて作ります。</li>
       <li><b>Segmentation / Stencil:</b> 色分けの図や白黒の型で配置を決めます。今回は使いません。</li>
-      <li><b>From image:</b> いま見えている絵から、下絵（線画・棒人間など）を自動で作ります。ただし Pose の自動抽出は、ライセンスが未確認の検出モデル（YOLO-NAS）を使います。製品に使う差分では、棒人間を手で置くほうが安全です。</li>
+      <li><b>From image:</b> いま見えている絵から、下絵（線画・棒人間など）を自動で作ります。使ってよいのは <b>Canny</b>（モデルを使わない）と <b>Line Art</b>（MIT）だけです。Depth は非商用のモデル（Depth Anything V2 Base）、Scribble は研究目的の但し書きがあるモデル（PiDiNet）、Pose はライセンスが未確認の検出モデル（YOLO-NAS）を使います。製品に使う差分では、棒人間を手で置くほうが安全です。</li>
+      <li><b>Hands:</b> 手の形を直すコントロールです。<span class="tag ng">使わない</span> 非商用の手のモデル（MANO）を使います。</li>
       <li><b>強さと範囲:</b> スライダーで効きの強さを、詳細設定の Range で「生成のどの段階に効かせるか」を決めます。構図は前半で、細部は後半で決まります。</li>
     </ul>
 
@@ -310,7 +312,7 @@
       <tbody>
         <tr><td>Generate</td><td>ここまでの生成・描き直し・編集</td><td>普段の作業</td></tr>
         <tr><td>Upscale</td><td>専用モデルで拡大する。「Refine upscaled image」で、拡大後にタイルごとに描き直せる</td><td>832×1216 で作った絵を大きくする</td></tr>
-        <tr><td>Live</td><td>描いている途中の絵を、ほぼ即時に AI が仕上げて横に見せ続ける</td><td>ラフの段階の発想出し。高速化の部品（Hyper-SD）はライセンスが未確認なので、製品用の最終画像には使いません</td></tr>
+        <tr><td>Live</td><td>描いている途中の絵を、ほぼ即時に AI が仕上げて横に見せ続ける</td><td>ラフの段階の発想出し。高速化の部品（SDXL 用の Hyper-SD）は CreativeML Open RAIL++-M で、使ってかまいません（2026-09-23 確認）</td></tr>
         <tr><td>Custom Graph</td><td>ComfyUI で組んだ独自の手順を Krita から動かす</td><td>Claude が作った手順（背景抜きなど）を Krita のボタンにする</td></tr>
         <tr><td>Animation</td><td>手描きのコマをまとめて一括処理する（中割りの生成はない）</td><td>今回は使いません</td></tr>
       </tbody>

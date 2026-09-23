@@ -208,9 +208,9 @@ lowres, bad anatomy, bad hands, text, error, missing finger, extra digits, fewer
 
 **合計 45〜100 分（未実測）。** `card-art-policy.md` の「1 枚 20〜40 分」はカードの絵の数字で、立ち絵には当てはまりません。
 
-**使ってよい AI の操作**: Refine（強度 100% 未満）、Fill、Expand、Add Content、Replace Background、Custom Generation の Fill = None / Neutral / Blur / Border。
+**使ってよい AI の操作**: Refine（強度 100% 未満）、Custom Generation の Fill = None / Neutral / Blur / Border（Seamless を外す）。選択範囲に描く Fill・Expand・Add Content・Replace Background は、**強度 80% 以下** で使います。SDXL では強度が 80% を超えると Fooocus Inpaint を読むためです（`workflow.py` の `detect_inpaint`。2026-09-23 に #145 で確認）。
 
-**使わない操作**: Remove Content と Custom Generation の Fill = Inpaint（どちらも MAT を読み、CC BY-NC 4.0 です）。Custom Generation の **Seamless**（既定で入っています。SDXL では Fooocus Inpaint を読み、ライセンス条文が未確認です）。既定の Upscale（`4x_NMKD-Superscale-SP_178000_G.pth` にライセンス表示がありません）。
+**使わない操作**: Remove Content と Custom Generation の Fill = Inpaint（どちらも MAT を読み、CC BY-NC 4.0 です）。Custom Generation の **Seamless**（既定で入っています。SDXL では Fooocus Inpaint を読み、ライセンス条文が未確認です）。強度 80% を超えて選択範囲に描く操作（同じく Fooocus Inpaint を読みます）。既定の Upscale は 2026-09-23 に WTFPL と確かめたので、使ってかまいません（`tools-and-prerequisites.md` §13）。
 
 **人の加筆が要る理由は法にもあります。** 米国著作権局の 2023 年の指針（88 FR 16190）は、指示文だけの出力を登録できないとし、人が改変した部分は保護されるとします。文化庁「AIと著作権に関する考え方について」（令和 6 年 3 月 15 日）は創作意図と創作的寄与で判断するとし、**「人間が、AI 生成物に、創作的表現といえる加筆・修正を加えた部分については、通常、著作物性が認められる」** としたうえで **「もっとも、それ以外の部分についての著作物性には影響しない」** と続けます。守られるのは加筆した部分だけです。これは設計書の背景資料で、法的助言ではありません。
 
@@ -270,7 +270,7 @@ UI のどこにあるかも書いておきます。`cfg_scale` と `sampler_step
 - 負の指示文の実トークン数。`shiny skin` を負に入れると黒鱗の照りまで消えるかどうか。
 - Krita の日本語 UI での項目名。本書は英語のメニュー名で書いています。
 - 同じ体の差分 3 枚（待機 / 行動 / 被弾）をどう揃えるか。種でもプロンプトでも揃いません。Reference コントロールか Flux 2 Klein 4B の編集機能が要りますが、どちらも未調査です。
-- 自動で落ちてくるモデルのライセンス。既定の超解像 `4x_NMKD-Superscale-SP_178000_G.pth` は表示がありません。depth / canny / line art のコントロールは xinsir（Apache-2.0）と Stability の Control-LoRA（`license: other`）の候補表になっていて、実際にどれが入っているかを誰も見ていません。
+- 自動で落ちてくるモデルのライセンスは、#145 で実機を棚卸ししました（`tools-and-prerequisites.md` §13）。残る未確認は Fooocus Inpaint の条文、PiDiNet の但し書き、Nova Anime XL の元の条項、noob_openpose と noob-ipa の表示の 4 つで、どれも使わない側に置いています。
 
 ## 11. 次に判断が要る点
 
