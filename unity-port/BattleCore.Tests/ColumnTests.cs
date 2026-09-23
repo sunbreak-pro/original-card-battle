@@ -54,7 +54,7 @@ namespace BattleCore.Tests
         [Test]
         public void EnemyActionDef_TakesItsCostFromTheSameTable()
         {
-            var action = Fixtures.EnemyAction("shove_test", column: 2, face: new Face(Power: 5, Push: true));
+            var action = Fixtures.EnemyAction("shove_test", column: 2, face: new Face(Power: 5, Push: 2));
             Assert.That(action.Cost, Is.EqualTo(2));
         }
 

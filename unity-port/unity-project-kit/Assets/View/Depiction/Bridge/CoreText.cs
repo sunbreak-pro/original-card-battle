@@ -7,9 +7,21 @@ namespace Depiction.Bridge
 {
     public static class CoreText
     {
-        public static RangeSide Side(Position position)
+        /// <summary>
+        /// v4.3 (#162) on the v4.2 screen: the script still knows two standing slots (near / far),
+        /// so the gap N is shown on the player's tag as a number and the slot is picked by N — 0〜1
+        /// stands in the near slot, 2 and more in the far one. The cells on the floor, the lit reach
+        /// and the aimed cells are #163's, and this mapping goes with them.
+        /// </summary>
+        public static RangeSide SideOf(int gap)
         {
-            return position == Position.Near ? RangeSide.Near : RangeSide.Far;
+            return gap <= 1 ? RangeSide.Near : RangeSide.Far;
+        }
+
+        /// <summary>The one glyph on the player's tag: N itself ("0", "2").</summary>
+        public static string GapGlyph(int gap)
+        {
+            return gap.ToString();
         }
 
         public static UnitSide Side(Actor actor)
@@ -72,10 +84,17 @@ namespace Depiction.Bridge
                 ValueText = ValueOf(def.Face, def.Attributes),
                 TraitText = TraitLine(def.Trait),
                 TraitLit = def.Trait != null && preview != null && preview.TraitHolds,
-                // v4.2 cards can be played from either side; the side only changes what they do.
+                // §2.4: the reach is printed on the card; the two-valued RequiredRange cannot hold it,
+                // so the core's CanPlay (OutOfReach) is what refuses the card, not the script.
                 RequiredRange = null,
-                RequiredRangeGlyph = "",
+                RequiredRangeGlyph = ReachText(def.Attributes, def.Face, def.Targets),
             };
+        }
+
+        /// <summary>The reach as printed ("0〜1"), or empty for a card that aims at nobody.</summary>
+        public static string ReachText(BattleAttribute attributes, Face face, TargetKind targets)
+        {
+            return EnemyAi.IsOpponentDirected(attributes, face, targets) ? face.ReachOrDefault.ToText() : "";
         }
 
         /// <summary>One short sentence per face, in resolution order. §5: a status reads 「<語> を n 付与する」.</summary>
@@ -83,8 +102,10 @@ namespace Depiction.Bridge
         {
             var sentences = new List<string>();
             if (attributes.HasFlag(BattleAttribute.Attack)) sentences.Add("敵に " + face.Power + " ダメージ。");
-            if (face.MoveTo.HasValue) sentences.Add(face.MoveTo.Value.ToLabel() + "間へ動く。");
-            else if (face.FlipsSelfPosition) sentences.Add("間合いを反転する。");
+            if (face.Move > 0) sentences.Add("前へ " + face.Move + " 動く。");
+            else if (face.Move < 0) sentences.Add("後ろへ " + (-face.Move) + " 動く。");
+            if (face.Push > 0) sentences.Add("敵を " + face.Push + " マス押す。");
+            else if (face.Push < 0) sentences.Add("敵を " + (-face.Push) + " マス引く。");
             if (face.Guard > 0) sentences.Add("Guard " + face.Guard + " を得る。");
             if (face.Status.HasValue) sentences.Add(face.Status.Value.ToLabel() + "を " + face.StatusStacks + " 付与する。");
             if (face.Draw > 0) sentences.Add("カードを " + face.Draw + " 枚引く。");
@@ -98,7 +119,7 @@ namespace Depiction.Bridge
             return face.Guard > 0 ? face.Guard.ToString() : "";
         }
 
-        /// <summary>The trait as printed on the lamp line: condition, then effect ("近 +5", "残4 Guard+3").</summary>
+        /// <summary>The trait as printed on the lamp line: condition, then effect ("間合い0 +5", "残4 Guard+3").</summary>
         public static string TraitLine(Trait trait)
         {
             if (trait == null) return "";
@@ -111,9 +132,10 @@ namespace Depiction.Bridge
         {
             switch (trait.Condition)
             {
-                case BattleCore.TraitCondition.SelfPosition:
-                case BattleCore.TraitCondition.OpponentPosition:
-                    return trait.ConditionPosition.HasValue ? trait.ConditionPosition.Value.ToLabel() : "";
+                case BattleCore.TraitCondition.GapAtMost:
+                    return trait.Threshold == 0 ? "間合い0" : "間合い" + trait.Threshold + "以下";
+                case BattleCore.TraitCondition.GapAtLeast:
+                    return "間合い" + trait.Threshold + "以上";
                 case BattleCore.TraitCondition.Unguarded: return "無防備";
                 case BattleCore.TraitCondition.Reserve: return "残" + trait.Threshold;
                 default: return "";
@@ -135,8 +157,10 @@ namespace Depiction.Bridge
         // ---- omen ---------------------------------------------------------------------------
 
         /// <summary>
-        /// §6: 種別 + 咎める側の一字, plus the action's own face value. The trait bonus is not folded into
-        /// the number: whether it lands depends on where the player stands when the blow comes.
+        /// §6: 種別 + 狙うマス, plus the action's own face value. Until the floor shows the aimed cells
+        /// (#163) the reach goes where the one-character side used to be ("1〜2"). The trait bonus is
+        /// not folded into the number: whether it lands depends on where the player stands when the
+        /// blow comes.
         /// </summary>
         public static OmenFrame OmenOf(Omen omen, EnemyDef enemy)
         {
@@ -146,7 +170,7 @@ namespace Depiction.Bridge
             {
                 Visible = true,
                 KindLabel = new OmenLabel(omen.Label.Kind).ToText(),
-                SideGlyph = omen.Label.Side.HasValue ? omen.Label.Side.Value.ToLabel() : "",
+                SideGlyph = omen.Label.Reach != null ? omen.Label.Reach.ToText() : "",
             };
             EnemyActionDef action;
             if (enemy.Actions.TryGetValue(omen.ActionId, out action))
@@ -158,7 +182,11 @@ namespace Depiction.Bridge
 
         // ---- units --------------------------------------------------------------------------
 
-        public static UnitFrame UnitOf(CombatantState unit, bool showStamina)
+        /// <summary>
+        /// One side's gauges. <paramref name="gap"/> is N, shown on the tag of the player only: the
+        /// screen has one tag slot per side and one number says it all (#163 draws the cells).
+        /// </summary>
+        public static UnitFrame UnitOf(CombatantState unit, bool showStamina, int? gap)
         {
             var frame = new UnitFrame
             {
@@ -168,12 +196,12 @@ namespace Depiction.Bridge
                 ShowStamina = showStamina,
                 Stamina = unit.Stamina,
                 StaminaMax = unit.MaxStamina,
-                HasRange = unit.Position.HasValue,
+                HasRange = gap.HasValue,
             };
-            if (unit.Position.HasValue)
+            if (gap.HasValue)
             {
-                frame.Range = Side(unit.Position.Value);
-                frame.RangeGlyph = unit.Position.Value.ToLabel();
+                frame.Range = SideOf(gap.Value);
+                frame.RangeGlyph = GapGlyph(gap.Value);
             }
             frame.Statuses = Chips(unit.Statuses);
             return frame;

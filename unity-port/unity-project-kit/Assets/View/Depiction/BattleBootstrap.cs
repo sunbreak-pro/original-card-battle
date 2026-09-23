@@ -1,5 +1,5 @@
 // Starts the vertical-slice battle scene (Assets/Scenes/Battle.unity): on Play it hands the
-// DepictionPlayer a battle run by the v4.2 core — the polearm warped soldier against the prototype
+// DepictionPlayer a battle run by the v4.3 core — the polearm warped soldier against the prototype
 // deck — instead of the hand-written LiveTurn. It decides nothing itself: the Inspector fields are
 // copied into a BattleLaunch (pure C#, tested under `dotnet test`), which builds the source.
 //
@@ -24,8 +24,8 @@ namespace Depiction.View
         public int seed = BattleLaunch.DefaultSeed;
         [Tooltip("Draws a fresh seed on every Play and logs it, so a fight worth replaying can be typed back in.")]
         public bool randomSeed;
-        [Tooltip("Where the player stands on turn 1.")]
-        public RangeSide startSide = RangeSide.Near;
+        [Tooltip("The gap N on turn 1 (battle_core_v4 §7.3: 2). The player stands on cell 2.")]
+        public int startGap = 2;
 
         [Header("Unattended runs (captures, PlayMode test)")]
         [Tooltip("The battle suggests the leftmost card it can pay for. Pair it with Auto Play Drags and Auto End Turn on the player.")]
@@ -52,7 +52,7 @@ namespace Depiction.View
             {
                 EnemyId = enemyId,
                 Seed = SeedInUse,
-                StartSide = startSide,
+                StartGap = Mathf.Max(0, startGap),
                 AutoPlay = autoPlay,
                 StopAfterTurns = Mathf.Max(0, stopAfterTurns),
             };

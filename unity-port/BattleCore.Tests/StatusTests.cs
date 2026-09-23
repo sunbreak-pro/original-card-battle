@@ -57,16 +57,19 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void SlowStopsThePositionSwitch_ForAsLongAsItIsHeld()
+        public void SlowTakesOneCellOffEveryMove_ForAsLongAsItIsHeld()
         {
             var slowed = StatusSet.Empty.Add(StatusKind.Slow, 2);
-            Assert.That(Statuses.CanSwitchPosition(slowed), Is.False);
+            Assert.That(Statuses.MoveReduction(slowed), Is.EqualTo(1));
+            Assert.That(Combat.CellsAfterSlow(1, slowed), Is.EqualTo(0), "a one-cell move still stops dead");
+            Assert.That(Combat.CellsAfterSlow(2, slowed), Is.EqualTo(1), "a two-cell move becomes one");
 
             var afterOneTurn = slowed.TickTurnStart();
-            Assert.That(Statuses.CanSwitchPosition(afterOneTurn), Is.False, "one stack is still one stack");
+            Assert.That(Statuses.MoveReduction(afterOneTurn), Is.EqualTo(1), "one stack is still one stack");
 
             var afterTwoTurns = afterOneTurn.TickTurnStart();
-            Assert.That(Statuses.CanSwitchPosition(afterTwoTurns), Is.True);
+            Assert.That(Statuses.MoveReduction(afterTwoTurns), Is.EqualTo(0));
+            Assert.That(Combat.CellsAfterSlow(1, afterTwoTurns), Is.EqualTo(1));
         }
 
         [Test]
@@ -120,29 +123,28 @@ namespace BattleCore.Tests
         [Test]
         public void SlowedCombatantsStateCarriesTheWord()
         {
-            var player = Fixtures.Combatant(
-                position: Position.Near, statuses: StatusSet.Empty.Add(StatusKind.Slow));
+            var player = Fixtures.Combatant(cell: 2, statuses: StatusSet.Empty.Add(StatusKind.Slow));
 
             Assert.Multiple(() =>
             {
                 Assert.That(player.Statuses.Has(StatusKind.Slow), Is.True);
-                Assert.That(Statuses.CanSwitchPosition(player.Statuses), Is.False);
-                Assert.That(player.Position, Is.EqualTo(Position.Near), "pinned where it stood");
+                Assert.That(Statuses.MoveReduction(player.Statuses), Is.EqualTo(1));
+                Assert.That(player.Cell, Is.EqualTo(2), "still where it stood");
             });
         }
 
         [Test]
-        public void SlowOnAPositionlessEnemy_HasNoMechanicalEffect()
+        public void SlowOnTheEnemy_ShortensItsPushAndItsStep()
         {
-            // The canon says 鈍足 blocks the position switch, and the polearm has no position to
-            // switch. Implemented literally; the contradiction with the roster note is #116.
-            var polearm = Fixtures.Combatant(
-                hp: 60, position: null, statuses: StatusSet.Empty.Add(StatusKind.Slow));
+            // v4.3 (§5 / §21.3): 鈍足 reduces every cell change the holder causes — its own move and
+            // the push / pull it lands. The old #116 reading (nothing to pin on the polearm) is gone.
+            var polearm = Fixtures.Combatant(hp: 60, cell: 5, statuses: StatusSet.Empty.Add(StatusKind.Slow));
 
             Assert.Multiple(() =>
             {
                 Assert.That(polearm.Statuses.Has(StatusKind.Slow), Is.True, "the chip still shows");
-                Assert.That(polearm.Position, Is.Null, "and there is nothing for it to pin");
+                Assert.That(Combat.CellsAfterSlow(2, polearm.Statuses), Is.EqualTo(1), "the two-cell shove pushes one");
+                Assert.That(Combat.CellsAfterSlow(1, polearm.Statuses), Is.EqualTo(0), "the one-cell step is stopped");
             });
         }
     }

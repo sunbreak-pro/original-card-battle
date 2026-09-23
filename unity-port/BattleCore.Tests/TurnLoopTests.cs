@@ -10,7 +10,8 @@ namespace BattleCore.Tests
     /// §9 end to end. The pass condition is the one written in
     /// vision/plans/2026-09-21-vertical-slice-polearm.md 「縦切りの合格条件」: the seventeen events in
     /// order, the eight numbers, and the three end points — then the same thing three turns running
-    /// under a fixed seed.
+    /// under a fixed seed. Re-read on v4.3 (#162): the sides are cells on a line and the numbers
+    /// hang on the gap N (§7.2), so a scenario says which gap it starts at.
     /// </summary>
     public class TurnLoopTests
     {
@@ -18,11 +19,18 @@ namespace BattleCore.Tests
 
         // ---- Helpers ----
 
+        /// <summary>A setup starting at the given gap: the player on cell 2, the polearm 1 + gap further right.</summary>
+        private static BattleSetup AtGap(int gap, IReadOnlyList<CardInstance>? deck = null) =>
+            new BattleSetup(Enemies.PolearmWarped, deck ?? PrototypeDeck.Build(),
+                EnemyStartCell: Constants.PlayerStartCell + 1 + gap);
+
         /// <summary>A battle whose draw order is the deck order: FixedRng(0.999…) makes Fisher-Yates a no-op.</summary>
-        private static StepResult StartUnshuffled(params CardDef[] kinds)
+        private static StepResult StartUnshuffled(params CardDef[] kinds) => StartUnshuffledAt(Constants.StartGap, kinds);
+
+        private static StepResult StartUnshuffledAt(int gap, params CardDef[] kinds)
         {
             var deck = Cards.BuildDeck(kinds, copies: 1);
-            return TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck), new FixedRng(0.9999999));
+            return TurnLoop.Start(AtGap(gap, deck), new FixedRng(0.9999999));
         }
 
         private static readonly IRng NoRng = new FixedRng(0.9999999);
@@ -52,7 +60,7 @@ namespace BattleCore.Tests
         // ---- Start ----
 
         [Test]
-        public void Start_UsesTheProvisionalValues_AndDecidesTheFirstOmen()
+        public void Start_UsesTheCanonValues_AndDecidesTheFirstOmen()
         {
             var start = TurnLoop.Start(BattleSetup.Slice(), new SeededRng(Seed));
             var s = start.State;
@@ -61,18 +69,39 @@ namespace BattleCore.Tests
             {
                 Assert.That(s.Turn, Is.EqualTo(0));
                 Assert.That(s.Phase, Is.EqualTo(BattlePhase.AwaitingTurnStart));
+                Assert.That(s.FieldCells, Is.EqualTo(6));
                 Assert.That(s.Player.Hp, Is.EqualTo(50));
                 Assert.That(s.Player.Stamina, Is.EqualTo(10));
                 Assert.That(s.Player.Guard, Is.EqualTo(0));
-                Assert.That(s.Player.Position, Is.EqualTo(Position.Near));
+                Assert.That(s.Player.Cell, Is.EqualTo(2));
+                Assert.That(s.Player.Size, Is.EqualTo(1));
                 Assert.That(s.Enemy.Hp, Is.EqualTo(60));
                 Assert.That(s.Enemy.Stamina, Is.EqualTo(10));
-                Assert.That(s.Enemy.Position, Is.Null);
+                Assert.That(s.Enemy.Cell, Is.EqualTo(5));
+                Assert.That(s.Enemy.Size, Is.EqualTo(1));
+                Assert.That(s.Gap, Is.EqualTo(2));
                 Assert.That(s.Hand, Is.Empty);
                 Assert.That(s.DrawPile, Has.Count.EqualTo(20));
-                // Near start → the first omen is the shove (plan: 開始位置 近間).
-                Assert.That(s.Omen!.ActionId, Is.EqualTo("shove"));
+                // Gap 2 → the first omen is the sweep (§7.3 START_GAP, roster branch 1〜2).
+                Assert.That(s.Omen!.ActionId, Is.EqualTo("sweep"));
                 Assert.That(start.Events.Single(), Is.EqualTo(new OmenSet(Actor.Enemy, s.Omen, Decided: true)));
+            });
+        }
+
+        [Test]
+        public void Start_RefusesALineTheSidesDoNotFit()
+        {
+            var deck = PrototypeDeck.Build();
+            Assert.Multiple(() =>
+            {
+                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, FieldCells: 4), NoRng),
+                    Throws.InstanceOf<ArgumentOutOfRangeException>(), "5〜8 cells");
+                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, EnemyStartCell: 7), NoRng),
+                    Throws.InstanceOf<ArgumentOutOfRangeException>(), "off the line");
+                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, PlayerStartCell: 5), NoRng),
+                    Throws.ArgumentException, "the player stands to the left");
+                Assert.That(() => TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, FieldCells: 8, EnemyStartCell: 8), NoRng),
+                    Throws.Nothing);
             });
         }
 
@@ -81,11 +110,14 @@ namespace BattleCore.Tests
         [Test]
         public void OneTurn_EmitsTheSeventeenInOrder()
         {
-            var rng = new SeededRng(Seed);
-            var state = TurnLoop.Start(BattleSetup.Slice(), rng).State;
+            // Deck order: the reach thrust is the first card with a trait that reaches gap 2.
+            var rng = NoRng;
+            var state = StartUnshuffled(CardCatalog.All.ToArray()).State;
 
             var begin = TurnLoop.BeginPlayerTurn(state, rng);
-            var traitCard = begin.State.Hand.First(c => c.Def.Trait != null && Combat.CanPay(c.Def.Cost, 10));
+            var traitCard = begin.State.Hand.First(c =>
+                c.Def.Trait != null && TurnLoop.CanPlay(begin.State, c.InstanceId) == PlayRefusal.None);
+            Assert.That(traitCard.Def.Id, Is.EqualTo("reach_thrust"));
             var play = TurnLoop.PlayCard(begin.State, traitCard.InstanceId, rng);
             var end = TurnLoop.EndTurn(play.State, rng);
 
@@ -137,7 +169,8 @@ namespace BattleCore.Tests
         [Test]
         public void TheTraitIsJudgedBeforeAnyFace_AndFacesComeInOrder()
         {
-            // boar_rush is Attack + Move with a trait: trait → attack → move.
+            // boar_rush is Attack + Move with a trait: trait → attack → move. At gap 2 the trait holds
+            // (14 + 6) and the two-cell move then closes to gap 0.
             var state = StartUnshuffled(CardCatalog.BoarRush, CardCatalog.Thrust, CardCatalog.Brace,
                 CardCatalog.KesaCut, CardCatalog.Feint).State;
             state = TurnLoop.BeginPlayerTurn(state, NoRng).State;
@@ -148,17 +181,21 @@ namespace BattleCore.Tests
             {
                 typeof(CardPlayed), typeof(StaminaSpent), typeof(TraitEvaluated),
                 typeof(FaceResolved), typeof(DamageDealt),
-                typeof(FaceResolved),
+                typeof(FaceResolved), typeof(CellsMoved),
                 typeof(DefeatChecked),
             }));
             var faces = play.Events.OfType<FaceResolved>().Select(f => f.Face).ToList();
             Assert.That(faces, Is.EqualTo(new[] { BattleAttribute.Attack, BattleAttribute.Move }));
+            Assert.That(play.Events.OfType<CardPlayed>().Single().GapBefore, Is.EqualTo(2));
+            Assert.That(play.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(20), "the gap is read before the move");
+            Assert.That(play.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Player, 2, 4, Pushed: false)));
+            Assert.That(play.State.Gap, Is.EqualTo(0));
         }
 
         [Test]
         public void ACardWithoutATrait_EmitsNoTraitEvaluated()
         {
-            var state = StartUnshuffled(CardCatalog.Thrust, CardCatalog.Brace, CardCatalog.KesaCut,
+            var state = StartUnshuffledAt(1, CardCatalog.Thrust, CardCatalog.Brace, CardCatalog.KesaCut,
                 CardCatalog.Feint, CardCatalog.BoarRush).State;
             state = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
@@ -166,18 +203,89 @@ namespace BattleCore.Tests
             Assert.That(play.Events.OfType<TraitEvaluated>(), Is.Empty);
         }
 
+        // ---- Reach (§2.4) and the whiff (§6) ----
+
+        [Test]
+        public void ACardOutOfReach_IsRefused_AndThePreviewSaysSo()
+        {
+            // Gap 2: the thrust (0〜1) cannot be released; the reach thrust (1〜2) can; a Guard card reads no reach.
+            var s = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(TurnLoop.CanPlay(s, InHand(s, "thrust")), Is.EqualTo(PlayRefusal.OutOfReach));
+                Assert.That(TurnLoop.CanPlay(s, InHand(s, "reach_thrust")), Is.EqualTo(PlayRefusal.None));
+                Assert.That(TurnLoop.CanPlay(s, InHand(s, "brace")), Is.EqualTo(PlayRefusal.None));
+                Assert.That(TurnLoop.Preview(s, InHand(s, "thrust"))!.InReach, Is.False);
+                Assert.That(TurnLoop.Preview(s, InHand(s, "reach_thrust"))!.InReach, Is.True);
+                Assert.That(() => TurnLoop.PlayCard(s, InHand(s, "thrust"), NoRng), Throws.InvalidOperationException);
+            });
+
+            // Not enough stamina is reported before the reach.
+            var broke = s with { Player = s.Player with { Stamina = 1 } };
+            Assert.That(TurnLoop.CanPlay(broke, InHand(broke, "thrust")), Is.EqualTo(PlayRefusal.NotEnoughStamina));
+        }
+
+        [Test]
+        public void AnEnemyBlow_WhiffsWhenThePlayerLeftItsReach_AndTheCostIsStillPaid()
+        {
+            // The sweep (1〜2) is declared at gap 2; the boar rush closes to gap 0 before it lands.
+            var s = StartUnshuffled(CardCatalog.BoarRush, CardCatalog.Thrust, CardCatalog.KesaCut,
+                CardCatalog.Brace, CardCatalog.Feint).State;
+            s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
+            s = TurnLoop.PlayCard(s, InHand(s, "boar_rush"), NoRng).State;
+            Assert.That(s.Gap, Is.EqualTo(0));
+
+            var end = TurnLoop.EndTurn(s, NoRng);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(end.Events.OfType<ActionExecuted>().Single().Action.Id, Is.EqualTo("sweep"));
+                Assert.That(end.Events.OfType<ActionExecuted>().Single().GapBefore, Is.EqualTo(0));
+                Assert.That(end.Events.OfType<StaminaSpent>().Single(e => e.Actor == Actor.Enemy).Amount, Is.EqualTo(2));
+                Assert.That(end.Events.OfType<ActionWhiffed>().Single(),
+                    Is.EqualTo(new ActionWhiffed(Actor.Enemy, "sweep", 0, new Reach(1, 2))));
+                Assert.That(end.Events.OfType<DamageDealt>(), Is.Empty);
+                Assert.That(end.Events.OfType<FaceResolved>().Where(f => f.Actor == Actor.Enemy), Is.Empty);
+                Assert.That(end.State.Player.Hp, Is.EqualTo(50));
+                // Gap 0 now: the next omen comes from the adjacent branch.
+                Assert.That(end.State.Omen!.ActionId, Is.EqualTo("shove"));
+            });
+        }
+
+        [Test]
+        public void TheEnemyStepsIn_FromGapThree_AndTheNextOmenIsTheSweep()
+        {
+            var s = TurnLoop.Start(AtGap(3), NoRng).State;
+            Assert.That(s.Omen!.Label.ToText(), Is.EqualTo("動"));
+            s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
+
+            var end = TurnLoop.EndTurn(s, NoRng);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(end.Events.OfType<ActionExecuted>().Single().Action.Id, Is.EqualTo("step_forward"));
+                Assert.That(end.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Enemy, 6, 5, Pushed: false)));
+                Assert.That(end.Events.OfType<GuardGained>().Single(), Is.EqualTo(new GuardGained(Actor.Enemy, 2, 2)));
+                Assert.That(end.Events.OfType<ActionWhiffed>(), Is.Empty, "a self action reads no reach");
+                Assert.That(end.State.Gap, Is.EqualTo(2));
+                Assert.That(end.State.Omen!.ActionId, Is.EqualTo("sweep"));
+            });
+        }
+
         // ---- The eight numbers ----
 
         [Test]
         public void Number1_Recovery_PlayerThreeCappedAtTen_EnemyTwo()
         {
-            var state = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(1, CardCatalog.All.ToArray()).State;
 
             var begin = TurnLoop.BeginPlayerTurn(state, NoRng);
             var capped = begin.Events.OfType<StaminaRecovered>().Single();
             Assert.That(capped, Is.EqualTo(new StaminaRecovered(Actor.Player, 0, 10, 10)), "already full");
 
-            // Spend 3 + 3 + 2, end the turn, and the next turn gives the 3 back.
+            // Spend 3 + 2, end the turn, and the next turn gives the 3 back.
             var s = begin.State;
             s = TurnLoop.PlayCard(s, InHand(s, "thrust"), NoRng).State;
             s = TurnLoop.PlayCard(s, InHand(s, "kesa_cut"), NoRng).State;
@@ -191,7 +299,7 @@ namespace BattleCore.Tests
             Assert.That(next.Events.OfType<StaminaRecovered>().Single(),
                 Is.EqualTo(new StaminaRecovered(Actor.Player, 3, 8, 10)));
 
-            // The enemy paid 2 for the shove on turn 1, so its turn-2 recovery is a real +2.
+            // The enemy paid 2 for the sweep on turn 1, so its turn-2 recovery is a real +2.
             var end2 = TurnLoop.EndTurn(next.State, NoRng);
             Assert.That(end2.Events.OfType<StaminaRecovered>().Single(),
                 Is.EqualTo(new StaminaRecovered(Actor.Enemy, 2, 10, 10)));
@@ -200,7 +308,7 @@ namespace BattleCore.Tests
         [Test]
         public void Number2_StaminaFalls_ByExactlyTheSumOfTheColumns()
         {
-            var state = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(1, CardCatalog.All.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
             // Deck order: thrust(3) kesa_cut(2) reach_thrust(2) brace(2) feint(2).
@@ -215,7 +323,7 @@ namespace BattleCore.Tests
         [Test]
         public void Number2_AnUnpayableCard_IsRefused()
         {
-            var state = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(1, CardCatalog.All.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
             foreach (var id in new[] { "thrust", "kesa_cut", "reach_thrust", "brace" })
             {
@@ -232,7 +340,7 @@ namespace BattleCore.Tests
         [Test]
         public void Number3_Reserve_OnlyWithThreeOrMoreLeft()
         {
-            var state = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(1, CardCatalog.All.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
             // 10 − 3 − 2 − 2 = 3 left → Guard +3.
@@ -262,32 +370,34 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void Number4_TheOmenBranch_FollowsThePlayerSide()
+        public void Number4_TheOmenBranch_FollowsTheGapBand()
         {
-            var near = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build(), Position.Near), NoRng);
-            var far = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build(), Position.Far), NoRng);
-
-            Assert.That(near.State.Omen!.ActionId, Is.EqualTo("shove"));
-            Assert.That(far.State.Omen!.ActionId, Is.EqualTo("sweep"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(TurnLoop.Start(AtGap(0), NoRng).State.Omen!.ActionId, Is.EqualTo("shove"));
+                Assert.That(TurnLoop.Start(AtGap(1), NoRng).State.Omen!.ActionId, Is.EqualTo("sweep"));
+                Assert.That(TurnLoop.Start(AtGap(2), NoRng).State.Omen!.ActionId, Is.EqualTo("sweep"));
+                Assert.That(TurnLoop.Start(AtGap(3), NoRng).State.Omen!.ActionId, Is.EqualTo("step_forward"));
+            });
         }
 
         [Test]
-        public void Number5_TheSweep_IsElevenFromFar_AndEightFromNear()
+        public void Number5_TheSweep_IsElevenAtGapTwo_AndEightAtGapOne()
         {
-            // Start far so the omen is the sweep. Staying far eats 11.
-            var setup = new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build(), Position.Far);
-            var stay = TurnLoop.BeginPlayerTurn(TurnLoop.Start(setup, NoRng).State, NoRng).State;
+            // Gap 2 is where the sweep is declared. Staying there eats 11.
+            var stay = TurnLoop.BeginPlayerTurn(TurnLoop.Start(AtGap(2), NoRng).State, NoRng).State;
             var stayEnd = TurnLoop.EndTurn(stay, NoRng);
             var eleven = stayEnd.Events.OfType<DamageDealt>().Single();
             // The player kept 10 stamina, so the 構え Guard 3 soaks part of it: 11 − 3 = 8.
             Assert.That(eleven, Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 11, 3, 8, 0, 42)));
 
-            // Stepping near with step_in_guard: the committed sweep still comes, without its +3.
+            // Stepping in one with step_in_guard: the committed sweep still comes, still reaches, without its +3.
             var deck = Cards.BuildDeck(new[] { CardCatalog.StepInGuard, CardCatalog.Thrust, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.Feint }, 1);
-            var s = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, Position.Far), NoRng).State;
+            var s = TurnLoop.Start(AtGap(2, deck), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
             s = TurnLoop.PlayCard(s, InHand(s, "step_in_guard"), NoRng).State;
+            Assert.That(s.Gap, Is.EqualTo(1));
             var end = TurnLoop.EndTurn(s, NoRng);
 
             Assert.That(end.Events.OfType<ActionExecuted>().Single().Action.Id, Is.EqualTo("sweep"));
@@ -295,60 +405,73 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void Number6_TheShove_IsEightAgainstNoGuard_FiveAgainstGuard_AndPushesEitherWay()
+        public void Number6_TheShove_IsEightAgainstNoGuard_FiveAgainstGuard_AndPushesTwo_IntoTheWall()
         {
-            // No Guard: 3 stamina, then feint (2) leaves 1 — too little for its 温存 and for 構え.
-            var state = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            // Adjacent, so the omen is the shove. The player has one cell behind (§7.3): a two-cell
+            // push moves one and the other cell is the wall (§7.3 WALL_DAMAGE 3).
+            var state = StartUnshuffledAt(0, CardCatalog.All.ToArray()).State;
+
+            // No Guard: 2 stamina and nothing played, so no 構え either.
             var bare = TurnLoop.BeginPlayerTurn(state, NoRng).State;
-            bare = bare with { Player = bare.Player with { Stamina = 3 } };
-            bare = TurnLoop.PlayCard(bare, InHand(bare, "feint"), NoRng).State;
-            Assert.That(bare.Player.Guard, Is.EqualTo(0));
-            Assert.That(bare.Player.Position, Is.EqualTo(Position.Far));
-            // The shove was committed while the player stood near, so it still comes.
+            bare = bare with { Player = bare.Player with { Stamina = 2 } };
             var bareEnd = TurnLoop.EndTurn(bare, NoRng);
 
-            Assert.That(bareEnd.Events.OfType<ActionExecuted>().Single().Action.Id, Is.EqualTo("shove"));
-            Assert.That(bareEnd.Events.OfType<DamageDealt>().Single(),
-                Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 8, 0, 8, 0, 42)));
-            Assert.That(bareEnd.Events.OfType<PositionChanged>().Single(),
-                Is.EqualTo(new PositionChanged(Actor.Player, Position.Far, Position.Near, Pushed: true)),
-                "the push flips whichever side the player is on");
+            Assert.Multiple(() =>
+            {
+                Assert.That(bareEnd.Events.OfType<ActionExecuted>().Single().Action.Id, Is.EqualTo("shove"));
+                Assert.That(bareEnd.Events.OfType<DamageDealt>().Single(),
+                    Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 8, 0, 8, 0, 42)));
+                Assert.That(bareEnd.Events.OfType<CellsMoved>().Single(),
+                    Is.EqualTo(new CellsMoved(Actor.Player, 2, 1, Pushed: true)));
+                Assert.That(bareEnd.Events.OfType<WallHit>().Single(),
+                    Is.EqualTo(new WallHit(Actor.Player, BlockedCells: 1, Raw: 3, Absorbed: 0, Damage: 3, GuardAfter: 0, HpAfter: 39)));
+                Assert.That(bareEnd.State.Gap, Is.EqualTo(1));
+                Assert.That(bareEnd.State.Omen!.ActionId, Is.EqualTo("sweep"), "pushed to gap 1, the tree changes branch");
+            });
 
-            // With Guard: brace (9). The +3 is gone, the push is not.
+            // With Guard: brace (9) and 構え (3) make 12. The +3 is gone; the push is not; the wall's 3 is soaked too.
             var guarded = TurnLoop.BeginPlayerTurn(state, NoRng).State;
-            foreach (var id in new[] { "thrust", "kesa_cut", "reach_thrust", "brace" }) guarded = TurnLoop.PlayCard(guarded, InHand(guarded, id), NoRng).State;
+            guarded = TurnLoop.PlayCard(guarded, InHand(guarded, "brace"), NoRng).State;
             var guardedEnd = TurnLoop.EndTurn(guarded, NoRng);
 
-            Assert.That(guardedEnd.Events.OfType<DamageDealt>().Single(),
-                Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 5, 5, 0, 4, 50)));
-            Assert.That(guardedEnd.Events.OfType<PositionChanged>().Single(),
-                Is.EqualTo(new PositionChanged(Actor.Player, Position.Near, Position.Far, Pushed: true)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(guardedEnd.Events.OfType<DamageDealt>().Single(),
+                    Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 5, 5, 0, 7, 50)));
+                Assert.That(guardedEnd.Events.OfType<CellsMoved>().Single(),
+                    Is.EqualTo(new CellsMoved(Actor.Player, 2, 1, Pushed: true)));
+                Assert.That(guardedEnd.Events.OfType<WallHit>().Single(),
+                    Is.EqualTo(new WallHit(Actor.Player, 1, 3, 3, 0, 4, 50)));
+            });
         }
 
         [Test]
         public void Number7_Damage_IsFacePlusTraitMinusGuard_AndNeverBelowZero()
         {
-            var state = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(0, CardCatalog.All.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
-            // Near: kesa_cut is 13 + 5 against Guard 0.
+            // Gap 0: kesa_cut is 13 + 5 against Guard 0.
             var kesa = TurnLoop.PlayCard(s, InHand(s, "kesa_cut"), NoRng);
             Assert.That(kesa.Events.OfType<DamageDealt>().Single(),
                 Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 18, 0, 18, 0, 42)));
 
-            // Near: reach_thrust gets nothing for being far.
-            var reach = TurnLoop.PlayCard(s, InHand(s, "reach_thrust"), NoRng);
-            Assert.That(reach.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(13));
+            // Gap 0: the thrust gets its plain 23; the reach thrust cannot be released at all.
+            var thrust = TurnLoop.PlayCard(s, InHand(s, "thrust"), NoRng);
+            Assert.That(thrust.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(23));
+            Assert.That(TurnLoop.CanPlay(s, InHand(s, "reach_thrust")), Is.EqualTo(PlayRefusal.OutOfReach));
 
-            // Turn 2: the polearm holds its 構え Guard 3, so 13 lands as 10.
+            // Turn 2: nothing was played, so 構え 3 soaks 3 of the shove's 5 and the wall takes 3 more.
             var end = TurnLoop.EndTurn(s, NoRng);
             var t2 = TurnLoop.BeginPlayerTurn(end.State, NoRng).State;
-            Assert.That(t2.Enemy.Guard, Is.EqualTo(3));
-            Assert.That(t2.Player.Position, Is.EqualTo(Position.Far), "shoved on turn 1");
-            // Turn 2, from far: body_check is a bare 4 (no 重撃), and the polearm's 構え Guard 3 soaks 3 of it.
-            var intoGuard = TurnLoop.PlayCard(t2, InHand(t2, "body_check"), NoRng);
+            Assert.That(t2.Player.Hp, Is.EqualTo(50 - 2 - 3));
+            Assert.That(t2.Enemy.Guard, Is.EqualTo(3), "the polearm holds its 構え Guard 3");
+            Assert.That(t2.Gap, Is.EqualTo(1), "shoved to cell 1 on turn 1");
+            // Turn 2, gap 1: boar_rush is a bare 14 (its bonus needs gap 2), and the Guard 3 soaks 3 of it.
+            var intoGuard = TurnLoop.PlayCard(t2, InHand(t2, "boar_rush"), NoRng);
             Assert.That(intoGuard.Events.OfType<DamageDealt>().Single(),
-                Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 4, 3, 1, 0, 59)));
+                Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 14, 3, 11, 0, 49)));
+            Assert.That(intoGuard.State.Gap, Is.EqualTo(0), "then it closes in as far as the line allows");
         }
 
         [Test]
@@ -359,11 +482,11 @@ namespace BattleCore.Tests
                 CardCatalog.BoarRush, CardCatalog.StepInGuard, CardCatalog.StepOutGuard }, 1);
             var s = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
-            s = TurnLoop.EndTurn(s, NoRng).State;            // enemy now holds Guard 3; player was pushed far
+            s = TurnLoop.EndTurn(s, NoRng).State;            // enemy now holds Guard 3; the sweep moved nobody
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
-            // From far, reach_thrust is 13 + 5: Guard 3 soaks 3 and 15 goes through.
-            Assert.That(s.Player.Position, Is.EqualTo(Position.Far));
+            // At gap 2, reach_thrust is 13 + 5: Guard 3 soaks 3 and 15 goes through.
+            Assert.That(s.Gap, Is.EqualTo(2));
             var hit = TurnLoop.PlayCard(s, InHand(s, "reach_thrust"), NoRng);
             Assert.That(hit.Events.OfType<DamageDealt>().Single(),
                 Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 18, 3, 15, 0, 45)));
@@ -389,25 +512,27 @@ namespace BattleCore.Tests
         // ---- The three end points ----
 
         [Test]
-        public void EndPoint_PushedFar_SoTheNextOmenIsTheSweep()
+        public void EndPoint_ShovedBack_SoTheNextOmenIsTheSweep()
         {
-            // The core of the slice: position, push, the tree and the omen in one line.
+            // The core of the slice: the cell, the push, the tree and the omen in one line.
             var rng = new SeededRng(Seed);
-            var s = TurnLoop.Start(BattleSetup.Slice(), rng).State;
-            Assert.That(s.Omen!.Label.ToText(), Is.EqualTo("攻撃・近"));
+            var s = TurnLoop.Start(AtGap(0), rng).State;
+            Assert.That(s.Omen!.Label.ToText(), Is.EqualTo("攻撃・0"));
 
             s = TurnLoop.BeginPlayerTurn(s, rng).State;
             var end = TurnLoop.EndTurn(s, rng);
 
             Assert.Multiple(() =>
             {
-                Assert.That(end.Events.OfType<PositionChanged>().Single().To, Is.EqualTo(Position.Far));
-                Assert.That(end.State.Player.Position, Is.EqualTo(Position.Far));
+                Assert.That(end.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Player, 2, 1, Pushed: true)));
+                Assert.That(end.Events.OfType<WallHit>().Single().BlockedCells, Is.EqualTo(1));
+                Assert.That(end.State.Player.Cell, Is.EqualTo(1));
+                Assert.That(end.State.Gap, Is.EqualTo(1));
 
                 var omens = end.Events.OfType<OmenSet>().ToList();
                 Assert.That(omens, Has.Count.EqualTo(1));
                 Assert.That(omens[0].Omen.ActionId, Is.EqualTo("sweep"));
-                Assert.That(omens[0].Omen.Label.ToText(), Is.EqualTo("攻撃・遠"));
+                Assert.That(omens[0].Omen.Label.ToText(), Is.EqualTo("攻撃・1〜2"));
                 Assert.That(end.State.Omen, Is.EqualTo(omens[0].Omen));
 
                 Assert.That(end.State.Result, Is.EqualTo(GameResult.Ongoing));
@@ -420,25 +545,26 @@ namespace BattleCore.Tests
         // ---- Statuses, moves, reshuffle ----
 
         [Test]
-        public void Slow_LandsOnThePolearm_TicksAtItsTurnStart_AndStopsNothing()
+        public void Slow_LandsOnThePolearm_TicksAtItsTurnStart_AndShortensTheShove()
         {
             var deck = Cards.BuildDeck(new[] { CardCatalog.BodyCheck, CardCatalog.Thrust, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.Feint }, 1);
-            var s = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck), NoRng).State;
+            var s = TurnLoop.Start(AtGap(0, deck), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
             var play = TurnLoop.PlayCard(s, InHand(s, "body_check"), NoRng);
             Assert.That(play.Events.OfType<StatusApplied>().Single(),
                 Is.EqualTo(new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Slow, 2, 2, false)));
-            // Near → 重撃: 4 + 6, and the next recovery is one short.
+            // Gap 0 → 重撃: 4 + 6, and the next recovery is one short.
             Assert.That(play.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(10));
             Assert.That(play.State.Player.NextTurnRecoveryBonus, Is.EqualTo(-1));
 
             var end = TurnLoop.EndTurn(play.State, NoRng);
             Assert.That(end.Events.OfType<StatusTicked>().Single(),
                 Is.EqualTo(new StatusTicked(Actor.Enemy, StatusKind.Slow, 1)));
-            // #116: the polearm has no position to pin, so the shove still pushes.
-            Assert.That(end.Events.OfType<PositionChanged>().Single().Pushed, Is.True);
+            // §5 (v4.3): the slowed polearm's two-cell shove pushes one — to cell 1, and no wall.
+            Assert.That(end.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Player, 2, 1, Pushed: true)));
+            Assert.That(end.Events.OfType<WallHit>(), Is.Empty);
 
             var next = TurnLoop.BeginPlayerTurn(end.State, NoRng);
             // 10 − 1 = 9 left; 重撃 makes the recovery 3 − 1 = 2, capped at 10 → +1.
@@ -448,9 +574,9 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void ASlowedPlayer_PlaysTheMoveCard_ButDoesNotSwitchSides()
+        public void ASlowedPlayer_PlaysTheMoveCard_ButDoesNotMove()
         {
-            var s = StartUnshuffled(CardCatalog.Feint, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var s = StartUnshuffledAt(1, CardCatalog.Feint, CardCatalog.Thrust, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.BoarRush).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
             s = s with { Player = s.Player with { Statuses = StatusSet.Of((StatusKind.Slow, 1)) } };
@@ -458,21 +584,22 @@ namespace BattleCore.Tests
             var play = TurnLoop.PlayCard(s, InHand(s, "feint"), NoRng);
 
             Assert.That(play.Events.OfType<MoveBlocked>().Single(), Is.EqualTo(new MoveBlocked(Actor.Player, StatusKind.Slow)));
-            Assert.That(play.Events.OfType<PositionChanged>(), Is.Empty);
-            Assert.That(play.State.Player.Position, Is.EqualTo(Position.Near));
+            Assert.That(play.Events.OfType<CellsMoved>(), Is.Empty);
+            Assert.That(play.State.Player.Cell, Is.EqualTo(2));
             Assert.That(play.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(8), "the attack face still lands");
         }
 
         [Test]
-        public void ADirectedMove_FromItsOwnSide_EmitsNoPositionChange()
+        public void AMoveIntoTheEnemy_StopsShort_AndEmitsNoCellsMoved()
         {
-            var s = StartUnshuffled(CardCatalog.StepInGuard, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var s = StartUnshuffledAt(0, CardCatalog.StepInGuard, CardCatalog.Thrust, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.BoarRush).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
             var play = TurnLoop.PlayCard(s, InHand(s, "step_in_guard"), NoRng);
 
-            Assert.That(play.Events.OfType<PositionChanged>(), Is.Empty);
+            Assert.That(play.Events.OfType<CellsMoved>(), Is.Empty);
+            Assert.That(play.Events.OfType<MoveBlocked>(), Is.Empty, "the line stopped it, not 鈍足");
             Assert.That(play.Events.OfType<GuardGained>().Single(), Is.EqualTo(new GuardGained(Actor.Player, 12, 12)));
         }
 
@@ -480,7 +607,7 @@ namespace BattleCore.Tests
         public void AGuardTrait_LandsAsGuard_OnACardWithoutAGuardFace()
         {
             // feint is Attack + Move; its 温存 (残 ≥ 4) gives Guard +3 all the same.
-            var s = StartUnshuffled(CardCatalog.Feint, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var s = StartUnshuffledAt(1, CardCatalog.Feint, CardCatalog.Thrust, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.BoarRush).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
@@ -489,7 +616,7 @@ namespace BattleCore.Tests
             Assert.That(play.Events.OfType<GuardGained>().Single(), Is.EqualTo(new GuardGained(Actor.Player, 3, 3)));
             Assert.That(play.Events.OfType<FaceResolved>().Select(f => f.Face),
                 Is.EqualTo(new[] { BattleAttribute.Attack, BattleAttribute.Move }));
-            Assert.That(play.State.Player.Position, Is.EqualTo(Position.Far));
+            Assert.That(play.State.Player.Cell, Is.EqualTo(1), "stepped back one");
         }
 
         [Test]
@@ -523,7 +650,7 @@ namespace BattleCore.Tests
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
             s = s with { Enemy = s.Enemy with { Hp = 10 } };
 
-            // boar_rush from near is a bare 14: the attack face kills, so the move face never runs.
+            // boar_rush at gap 2 is 20: the attack face kills, so the move face never runs.
             var play = TurnLoop.PlayCard(s, InHand(s, "boar_rush"), NoRng);
 
             Assert.Multiple(() =>
@@ -532,6 +659,8 @@ namespace BattleCore.Tests
                 Assert.That(play.State.Result, Is.EqualTo(GameResult.Won));
                 Assert.That(play.State.Phase, Is.EqualTo(BattlePhase.Finished));
                 Assert.That(play.Events.OfType<FaceResolved>().Select(f => f.Face), Is.EqualTo(new[] { BattleAttribute.Attack }));
+                Assert.That(play.Events.OfType<CellsMoved>(), Is.Empty);
+                Assert.That(play.State.Player.Cell, Is.EqualTo(2));
                 Assert.That(play.Events.Last(), Is.EqualTo(new BattleEnded(Actor.Player, GameResult.Won)));
             });
 
@@ -545,7 +674,7 @@ namespace BattleCore.Tests
         {
             var s = TurnLoop.Start(BattleSetup.Slice(), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
-            s = s with { Player = s.Player with { Hp = 3, Stamina = 0 } };   // no 構え, so the shove is 8
+            s = s with { Player = s.Player with { Hp = 3, Stamina = 0 } };   // no 構え, so the sweep is 11
 
             var end = TurnLoop.EndTurn(s, NoRng);
 
@@ -555,6 +684,26 @@ namespace BattleCore.Tests
                 Assert.That(end.State.Result, Is.EqualTo(GameResult.Lost));
                 Assert.That(end.Events.OfType<OmenSet>(), Is.Empty);
                 Assert.That(end.Events.Last(), Is.EqualTo(new BattleEnded(Actor.Enemy, GameResult.Lost)));
+            });
+        }
+
+        [Test]
+        public void TheWall_CanEndTheBattleToo()
+        {
+            // Adjacent, HP 4, no Guard: the shove's 8 is fatal on its own here, so give the player
+            // Guard 8 to soak it and let the wall's 3 be what ends it.
+            var s = TurnLoop.Start(AtGap(0), NoRng).State;
+            s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
+            s = s with { Player = s.Player with { Hp = 2, Stamina = 0, Guard = 5 } };
+
+            var end = TurnLoop.EndTurn(s, NoRng);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(end.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 5, 5, 0, 0, 2)));
+                Assert.That(end.Events.OfType<WallHit>().Single().HpAfter, Is.EqualTo(0));
+                Assert.That(end.State.Result, Is.EqualTo(GameResult.Lost));
+                Assert.That(end.Events.OfType<OmenSet>(), Is.Empty);
             });
         }
 
@@ -579,15 +728,15 @@ namespace BattleCore.Tests
 
             var end = TurnLoop.EndTurn(s, NoRng);
 
-            Assert.That(end.Events.OfType<Rested>().Single().Declared.ActionId, Is.EqualTo("shove"));
+            Assert.That(end.Events.OfType<Rested>().Single().Declared.ActionId, Is.EqualTo("sweep"));
             Assert.That(end.Events.OfType<ActionExecuted>(), Is.Empty);
             Assert.That(end.Events.OfType<DamageDealt>(), Is.Empty);
-            Assert.That(end.State.Player.Position, Is.EqualTo(Position.Near), "no shove, no push");
+            Assert.That(end.State.Gap, Is.EqualTo(2), "no action, nobody moved");
         }
 
         // ---- Three turns under a fixed seed (#72 Definition of Done) ----
 
-        /// <summary>The policy the pinned battle plays: left to right, every card that can be paid for.</summary>
+        /// <summary>The policy the pinned battle plays: left to right, every card that can be paid for and reaches.</summary>
         private static (BattleState State, List<BattleEvent> Events) PlayGreedyTurn(BattleState state, IRng rng)
         {
             var events = new List<BattleEvent>();
@@ -620,8 +769,8 @@ namespace BattleCore.Tests
         }
 
         private static string Summary(BattleState s) =>
-            $"T{s.Turn} P {s.Player.Hp}/{s.Player.Stamina}/{s.Player.Guard}/{s.Player.Position!.Value.ToLabel()} " +
-            $"E {s.Enemy.Hp}/{s.Enemy.Stamina}/{s.Enemy.Guard}/{s.Enemy.Statuses} omen {s.Omen!.Label.ToText()}";
+            $"T{s.Turn} P {s.Player.Hp}/{s.Player.Stamina}/{s.Player.Guard}/c{s.Player.Cell} " +
+            $"E {s.Enemy.Hp}/{s.Enemy.Stamina}/{s.Enemy.Guard}/c{s.Enemy.Cell}/{s.Enemy.Statuses} gap {s.Gap} omen {s.Omen!.Label.ToText()}";
 
         [Test]
         public void ThreeTurns_UnderAFixedSeed_ArePinned()
@@ -680,12 +829,14 @@ namespace BattleCore.Tests
         }
 
         // Walked by hand once, so these are rules and not just a recording:
-        //  T1 near, 10 stamina. shield_bash 8 (Guard 6 + 3) → body_check 4 + 6, 鈍足 2 → step_out_guard →
-        //     step_in_guard: 60 − 18 = 42, Guard 33, 1 stamina left, no 構え. The shove is 5 into the
-        //     Guard (28 left) and pushes the player far. The polearm keeps 8 stamina → 構え Guard 3.
-        //  T2 far. 重撃 cost one recovery: 1 + 2 = 3. body_check 4 − 3 = 1, kesa_cut 13 (no near bonus):
-        //     42 − 14 = 28. The sweep is 8 + 3 into no Guard: 50 − 11 = 39.
-        //  T3 far, 0 + 3 stamina. reach_thrust 13 + 5 − 3 = 15: 28 − 15 = 13. The sweep again: 39 − 11 = 28.
+        //  T1 gap 2, 10 stamina. shield_bash and body_check reach 0 only, so: step_out_guard (Guard 12,
+        //     cell 1, gap 3) → step_in_guard (24, cell 2) → step_out_guard (36, cell 1), 1 left, no 構え.
+        //     The sweep was declared at gap 2 and finds gap 3: it whiffs, costs 2 all the same. The
+        //     polearm keeps 8 → 構え 3. Gap 3 → the omen is 踏み込み.
+        //  T2 gap 3, 1 + 3 stamina. Only brace reaches nobody and is payable: Guard 9, 2 left.
+        //     踏み込み: the polearm steps to cell 4 with Guard 2, keeps 9 → 5. Gap 2 → the sweep.
+        //  T3 gap 2, 2 + 3 stamina. reach_thrust 13 + 5 − 5 = 13, again 18: 60 − 31 = 29. The sweep
+        //     is 8 + 3 into no Guard: 50 − 11 = 39.
         private static readonly string[] PinnedHands =
         {
             "shield_bash,body_check,step_out_guard,step_in_guard,step_out_guard",
@@ -693,14 +844,14 @@ namespace BattleCore.Tests
             "reach_thrust,feint,feint,kesa_cut,reach_thrust",
         };
 
-        // turn, player hp/stamina/Guard/side, enemy hp/stamina/Guard/statuses, next omen
+        // turn, player hp/stamina/Guard/cell, enemy hp/stamina/Guard/cell/statuses, gap, next omen
         private static readonly string[] PinnedSummaries =
         {
-            "T1 P 50/1/28/遠 E 42/8/3/鈍足 1 omen 攻撃・遠",
-            "T2 P 39/0/0/遠 E 28/8/3/鈍足 2 omen 攻撃・遠",
-            "T3 P 28/1/0/遠 E 13/8/3/鈍足 1 omen 攻撃・遠",
+            "T1 P 50/1/36/c1 E 60/8/3/c5/— gap 3 omen 動",
+            "T2 P 50/2/9/c1 E 60/9/5/c4/— gap 2 omen 攻撃・1〜2",
+            "T3 P 39/1/0/c1 E 29/8/3/c4/— gap 2 omen 攻撃・1〜2",
         };
 
-        private static readonly int[] PinnedEventCounts = { 55, 37, 29 };
+        private static readonly int[] PinnedEventCounts = { 42, 29, 34 };
     }
 }

@@ -145,7 +145,7 @@ namespace Depiction.Bridge.Tests
             }));
             Assert.That(source.WaitingForPlayer, Is.True);
             Assert.That(source.Frame.Corner.Turn, Is.EqualTo(2));
-            Assert.That(source.Frame.Player.RangeGlyph, Is.EqualTo("遠"), "shoved on turn 1");
+            Assert.That(source.Frame.Player.RangeGlyph, Is.EqualTo(source.State.Gap.ToString()), "the tag is N");
         }
 
         // ---- a whole fight ------------------------------------------------------------------
@@ -176,7 +176,7 @@ namespace Depiction.Bridge.Tests
                 Assert.That(frame.Player.Hp, Is.EqualTo(state.Player.Hp));
                 Assert.That(frame.Player.Guard, Is.EqualTo(state.Player.Guard));
                 Assert.That(frame.Player.Stamina, Is.EqualTo(state.Player.Stamina));
-                Assert.That(frame.Player.RangeGlyph, Is.EqualTo(state.Player.Position.Value.ToLabel()));
+                Assert.That(frame.Player.RangeGlyph, Is.EqualTo(state.Gap.ToString()));
                 Assert.That(frame.Enemy.Hp, Is.EqualTo(state.Enemy.Hp));
                 Assert.That(frame.Enemy.Guard, Is.EqualTo(state.Enemy.Guard));
                 Assert.That(frame.Enemy.Statuses.Select(c => c.Label + c.Stacks),
@@ -260,12 +260,13 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void EveryCard_FromEitherSide_IntoGuardOrNot_StaysInsideTwoSeconds()
+        public void EveryCard_AtEveryGap_IntoGuardOrNot_StaysInsideTwoSeconds()
         {
             int worst = 0;
             string worstLine = "";
+            int played = 0;
             foreach (CardDef def in CardCatalog.All)
-            foreach (Position side in new[] { Position.Near, Position.Far })
+            foreach (int gap in new[] { 0, 1, 2, 3 })
             foreach (int enemyGuard in new[] { 0, 3, 40 })
             {
                 // One copy of the card plus four fillers, dealt in order, so it is in the first hand.
@@ -273,38 +274,41 @@ namespace Depiction.Bridge.Tests
                 deck.AddRange(Cards.BuildDeck(new[] { CardCatalog.Brace }, 1).Select(c => new CardInstance("filler-0", c.Def)));
                 for (int i = 1; i < 4; i++) deck.Add(new CardInstance("filler-" + i, CardCatalog.Brace));
 
-                var setup = new BattleSetup(Enemies.PolearmWarped, deck, side);
+                var setup = new BattleSetup(Enemies.PolearmWarped, deck, EnemyStartCell: Constants.PlayerStartCell + 1 + gap);
                 BattleState state = TurnLoop.Start(setup, new FixedRng(0.9999999)).State;
                 state = TurnLoop.BeginPlayerTurn(state, new FixedRng(0.9999999)).State;
                 state = state with { Enemy = state.Enemy with { Guard = enemyGuard } };
+                if (TurnLoop.CanPlay(state, def.Id + "-0") == PlayRefusal.OutOfReach) continue;
 
                 var writer = new CoreScriptWriter(setup.Enemy);
                 writer.Opening(state);
                 StepResult play = TurnLoop.PlayCard(state, def.Id + "-0", new FixedRng(0.9999999));
                 DepictionEvent ev = writer.Write(play.Events, play.State).Single();
+                played++;
 
                 int ms = NominalMs(ev);
-                string line = def.Id + " from " + side + " into Guard " + enemyGuard;
+                string line = def.Id + " at gap " + gap + " into Guard " + enemyGuard;
                 if (ms > worst) { worst = ms; worstLine = line; }
                 Assert.That(ms, Is.LessThan(BudgetMs), line);
             }
-            TestContext.Out.WriteLine("worst nominal card: " + worst + " ms — " + worstLine);
+            Assert.That(played, Is.GreaterThan(0));
+            TestContext.Out.WriteLine("worst nominal card: " + worst + " ms — " + worstLine + " (" + played + " plays)");
         }
 
         [Test]
-        public void EveryEnemyAction_AgainstEitherSide_IntoGuardOrNot_StaysInsideTwoSeconds()
+        public void EveryEnemyAction_AtEveryGap_IntoGuardOrNot_StaysInsideTwoSeconds()
         {
             int worst = 0;
             string worstLine = "";
-            foreach (Position side in new[] { Position.Near, Position.Far })
+            foreach (int gap in new[] { 0, 1, 2, 3 })
             foreach (int playerGuard in new[] { 0, 2, 40 })
             foreach (int enemyStamina in new[] { 10, 1 })
             {
-                var setup = new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build(), side);
+                var setup = new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build(), EnemyStartCell: Constants.PlayerStartCell + 1 + gap);
                 BattleState state = TurnLoop.Start(setup, new FixedRng(0.9999999)).State;
                 state = state with { Enemy = state.Enemy with { Stamina = enemyStamina, NextTurnRecoveryBonus = enemyStamina == 1 ? -2 : 0 } };
                 // Re-decide the omen for the drained enemy, so that every action of the tree is reached.
-                state = state with { Omen = EnemyAi.DecideOmen(setup.Enemy, side, enemyStamina) };
+                state = state with { Omen = EnemyAi.DecideOmen(setup.Enemy, gap, enemyStamina) };
                 state = TurnLoop.BeginPlayerTurn(state, new FixedRng(0.9999999)).State;
                 state = state with { Player = state.Player with { Guard = playerGuard, Stamina = 0 } };
 
@@ -314,7 +318,7 @@ namespace Depiction.Bridge.Tests
                 foreach (DepictionEvent ev in writer.Write(end.Events, end.State))
                 {
                     int ms = NominalMs(ev);
-                    string line = ev.Title + " vs " + side + " Guard " + playerGuard + " (enemy stamina " + enemyStamina + ")";
+                    string line = ev.Title + " at gap " + gap + " Guard " + playerGuard + " (enemy stamina " + enemyStamina + ")";
                     if (ms > worst) { worst = ms; worstLine = line; }
                     Assert.That(ms, Is.LessThan(BudgetMs), line);
                 }

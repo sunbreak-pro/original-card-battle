@@ -21,7 +21,8 @@ namespace Depiction.Bridge
             public int Guard;
             public int Stamina;
             public int StaminaMax;
-            public Position? Position;
+            public int Cell;
+            public int Size;
             public readonly SortedDictionary<StatusKind, int> Statuses = new SortedDictionary<StatusKind, int>();
 
             public void CopyFrom(CombatantState unit)
@@ -31,7 +32,8 @@ namespace Depiction.Bridge
                 Guard = unit.Guard;
                 Stamina = unit.Stamina;
                 StaminaMax = unit.MaxStamina;
-                Position = unit.Position;
+                Cell = unit.Cell;
+                Size = unit.Size;
                 Statuses.Clear();
                 foreach (StatusKind kind in unit.Statuses.Kinds) Statuses[kind] = unit.Statuses.Stacks(kind);
             }
@@ -47,8 +49,14 @@ namespace Depiction.Bridge
         private bool _playerActs;
         private int _order;
 
+        /// <summary>The enemy action being written whiffed (§6): its trait miss has nothing to strike off.</summary>
+        private bool _whiffed;
+
         /// <summary>The enemy's 構え, held back so it plays with the next omen and not inside the attack (see <see cref="Write"/>).</summary>
         private ReserveChecked _enemyReserveHeld;
+
+        /// <summary>§7.2: N as the two models stand now.</summary>
+        private int Gap => _enemy.Cell - (_player.Cell + _player.Size - 1) - 1;
 
         public CoreScriptWriter(EnemyDef enemyDef)
         {
@@ -76,7 +84,8 @@ namespace Depiction.Bridge
         /// <summary>
         /// One move of the loop → the screen events it plays as. BeginPlayerTurn and PlayCard are one
         /// event each; EndTurn is three (turn end, the enemy's action, the next omen), the same beats
-        /// the screen already knows.
+        /// the screen already knows — four when the enemy's push drives the player into the wall,
+        /// which gets an event of its own so the shove stays inside the 2.0 s an event may take.
         ///
         /// <paramref name="after"/> is the state the move left. It is only asked what the cards still
         /// in the hand would do (the lamp), never for a number an event already carries.
@@ -91,7 +100,7 @@ namespace Depiction.Bridge
 
             foreach (BattleEvent e in events)
             {
-                DepictionEvent opened = OpenIfBoundary(e);
+                DepictionEvent opened = OpenIfBoundary(e, current);
                 if (opened != null)
                 {
                     Close(current, after);
@@ -111,10 +120,15 @@ namespace Depiction.Bridge
 
         // ---- where a screen event begins ----------------------------------------------------
 
-        private DepictionEvent OpenIfBoundary(BattleEvent e)
+        private DepictionEvent OpenIfBoundary(BattleEvent e, DepictionEvent current)
         {
             switch (e)
             {
+                case WallHit wall when current != null && current.Kind == DepictionEventKind.EnemyAction:
+                    // §7.3: the player, shoved into the end of the line. Inside a player's card the wall
+                    // is the enemy's and fits in the card's own event.
+                    return NewEvent(DepictionEventKind.EnemyAction, "壁に当たる");
+
                 case TurnStarted started when started.Actor == Actor.Player:
                     _turn = started.Turn;
                     _playerActs = true;
@@ -226,12 +240,29 @@ namespace Depiction.Bridge
                     ev.Cues.Add(GuardGain(guard.Actor, guard.Amount, guard.GuardAfter));
                     break;
 
-                case PositionChanged moved:
-                    Unit(moved.Actor).Position = moved.To;
+                case CellsMoved moved:
+                    // Whichever side moved, the screen has one thing to show for it: the new N on the
+                    // player's tag, and the player's figure in the slot N maps to (CoreText.SideOf).
+                    // Moving the enemy figure waits for the floor cells (#163).
+                    Unit(moved.Actor).Cell = moved.To;
                     ev.Cues.Add(new Cue
                     {
-                        Kind = CueKind.RangeSwitch, Target = CoreText.Side(moved.Actor),
-                        RangeAfter = CoreText.Side(moved.To), RangeGlyphAfter = moved.To.ToLabel(),
+                        Kind = CueKind.RangeSwitch, Target = UnitSide.Player,
+                        RangeAfter = CoreText.SideOf(Gap), RangeGlyphAfter = CoreText.GapGlyph(Gap),
+                    });
+                    break;
+
+                case WallHit wall:
+                    ApplyWallHit(ev, wall);
+                    break;
+
+                case ActionWhiffed whiff:
+                    // The blow finds nobody: the omen's number is struck off, the way a missed side bonus is.
+                    _whiffed = true;
+                    ev.Cues.Add(new Cue
+                    {
+                        Kind = CueKind.SideBonusMiss, Target = UnitSide.Enemy,
+                        Amount = _enemyDef.Actions[whiff.SourceId].Face.Power, Text = "空振り",
                     });
                     break;
 
@@ -261,10 +292,13 @@ namespace Depiction.Bridge
                 return;
             }
 
-            // An enemy blow that reads the player's side and found them on the other one: the screen
-            // strikes the bonus off the omen badge, so stepping away visibly paid off.
-            if (trait.Actor == Actor.Enemy
-                && trait.Trait.Condition == BattleCore.TraitCondition.OpponentPosition
+            // An enemy blow that reads the gap and found the player outside its threshold: the screen
+            // strikes the bonus off the omen badge, so stepping away (or in) visibly paid off. A blow
+            // that whiffed has already had its whole number struck off.
+            if (!_whiffed
+                && trait.Actor == Actor.Enemy
+                && (trait.Trait.Condition == BattleCore.TraitCondition.GapAtLeast
+                    || trait.Trait.Condition == BattleCore.TraitCondition.GapAtMost)
                 && trait.Trait.Effect == TraitEffect.PowerBonus)
             {
                 ev.Cues.Add(new Cue
@@ -319,6 +353,27 @@ namespace Depiction.Bridge
                 {
                     Kind = CueKind.Hit, Target = target,
                     Amount = damage.Damage, Intensity = CoreText.Intensity(damage.Damage), HpAfter = damage.TargetHpAfter,
+                });
+            }
+        }
+
+        /// <summary>§7.3 壁のダメージ: the shield and the wound, like an enemy blow without its swing.</summary>
+        private void ApplyWallHit(DepictionEvent ev, WallHit wall)
+        {
+            UnitSide target = CoreText.Side(wall.Actor);
+            UnitModel unit = Unit(wall.Actor);
+            unit.Guard = wall.GuardAfter;
+            unit.Hp = wall.HpAfter;
+            if (wall.Absorbed > 0)
+            {
+                ev.Cues.Add(new Cue { Kind = CueKind.GuardBlock, Target = target, Amount = wall.Absorbed, GuardAfter = wall.GuardAfter });
+            }
+            if (wall.Damage > 0)
+            {
+                ev.Cues.Add(new Cue
+                {
+                    Kind = CueKind.Hit, Target = target,
+                    Amount = wall.Damage, Intensity = CoreText.Intensity(wall.Damage), HpAfter = wall.HpAfter,
                 });
             }
         }
@@ -394,6 +449,7 @@ namespace Depiction.Bridge
         private DepictionEvent NewEvent(DepictionEventKind kind, string title)
         {
             _order += 1;
+            _whiffed = false;
             return new DepictionEvent { Order = _order, Kind = kind, Title = title };
         }
 
@@ -409,8 +465,8 @@ namespace Depiction.Bridge
             {
                 // Floor, chain and miasma belong to the exploration layer (#99); one battle, no miasma.
                 Corner = new CornerFrame { Turn = _turn, Floor = 1, ChainIndex = 1, ChainTotal = 1, MiasmaPercent = 0 },
-                Player = UnitOf(_player, showStamina: true),
-                Enemy = UnitOf(_enemy, showStamina: false),
+                Player = UnitOf(_player, showStamina: true, gap: Gap),
+                Enemy = UnitOf(_enemy, showStamina: false, gap: null),
                 Omen = _omenVisible ? CoreText.OmenOf(_omen, _enemyDef) : new OmenFrame { Visible = false },
             };
             foreach (CardInstance card in _hand)
@@ -423,18 +479,18 @@ namespace Depiction.Bridge
             return frame;
         }
 
-        private static UnitFrame UnitOf(UnitModel unit, bool showStamina)
+        private static UnitFrame UnitOf(UnitModel unit, bool showStamina, int? gap)
         {
             var frame = new UnitFrame
             {
                 Hp = unit.Hp, HpMax = unit.HpMax, Guard = unit.Guard,
                 ShowStamina = showStamina, Stamina = unit.Stamina, StaminaMax = unit.StaminaMax,
-                HasRange = unit.Position.HasValue,
+                HasRange = gap.HasValue,
             };
-            if (unit.Position.HasValue)
+            if (gap.HasValue)
             {
-                frame.Range = CoreText.Side(unit.Position.Value);
-                frame.RangeGlyph = unit.Position.Value.ToLabel();
+                frame.Range = CoreText.SideOf(gap.Value);
+                frame.RangeGlyph = CoreText.GapGlyph(gap.Value);
             }
             foreach (KeyValuePair<StatusKind, int> pair in unit.Statuses)
             {

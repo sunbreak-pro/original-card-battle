@@ -18,8 +18,8 @@ namespace Depiction.Bridge
         /// <summary>Fixes every shuffle. The same seed deals the same hands here and under `dotnet test`.</summary>
         public int Seed = DefaultSeed;
 
-        /// <summary>Where the player stands on turn 1. Near is the slice's provisional value (plan 「仮に置く値」 #2).</summary>
-        public RangeSide StartSide = RangeSide.Near;
+        /// <summary>The gap on turn 1 (battle_core_v4 §7.3 `START_GAP`): the player stands on cell 2 and the enemy 1 + this further right.</summary>
+        public int StartGap = Constants.StartGap;
 
         /// <summary>Unattended runs only: the source plays the leftmost payable card by itself.</summary>
         public bool AutoPlay;
@@ -48,8 +48,10 @@ namespace Depiction.Bridge
                     "BattleLaunch: no enemy has the id \"" + EnemyId + "\". Known ids: " + string.Join(", ", known) + ".");
             }
 
-            Position start = StartSide == RangeSide.Near ? Position.Near : Position.Far;
-            return new BattleSetup(enemy, BuildDeck(), start);
+            if (StartGap < 0) throw new ArgumentOutOfRangeException(nameof(StartGap), StartGap, "0 or more.");
+            return new BattleSetup(
+                enemy, BuildDeck(),
+                EnemyStartCell: Constants.PlayerStartCell + 1 + StartGap);
         }
 
         public CoreBattleSource CreateSource()

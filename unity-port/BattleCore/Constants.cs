@@ -5,7 +5,9 @@ namespace BattleCore
     /// <summary>
     /// Numbers from battle_core_v4.md §10, the single source of truth for values. Only the rows the
     /// vertical slice reads are here; the rows it does not read (owned-kind cap, trait vocabulary
-    /// sizes, stance slots, elite counts, mastery thresholds, chain battles) come back with #47.
+    /// sizes, stance slots, elite counts, mastery thresholds, chain battles, and the v4.3 rows for
+    /// several enemies: CELL_CAPACITY, ENEMIES_MAX, GAP_SCALING_CARDS_MAX) come back with #47 / #52.
+    /// REACH_DEFAULT lives on <see cref="Reach.Default"/>.
     ///
     /// Gone from v3 and deliberately not replaced: T0_ATTACK_POWER, MIN_INVEST_ZERO_KINDS,
     /// RANGE_MULT, STATUS_SLOTS, STATUS_STACK_MAX and DESPERATE_MULT (§10 廃止した定数). The miasma
@@ -59,6 +61,31 @@ namespace BattleCore
 
         /// <summary>§3.1: applying a status gives 2 stacks unless the face says otherwise.</summary>
         public const int StatusApplyDefault = 2;
+
+        // ---- Cells and gap (§7, v4.3) ----
+
+        /// <summary>§7.1: the line is 6 cells by default; a battle may use 5〜8.</summary>
+        public const int FieldCells = 6;
+
+        public const int FieldCellsMin = 5;
+        public const int FieldCellsMax = 8;
+
+        /// <summary>§7.1: the cells a large enemy may use.</summary>
+        public const int EnemySizeMax = 3;
+
+        /// <summary>§7.3: the player starts on cell 2, one cell of room behind; a lone enemy on cell 5.</summary>
+        public const int PlayerStartCell = 2;
+
+        public const int EnemyStartCell = 5;
+
+        /// <summary>§7.3 `START_GAP`: the opening gap of a one-enemy battle (2).</summary>
+        public const int StartGap = EnemyStartCell - PlayerStartCell - 1;
+
+        /// <summary>§7.3: a move face, a push or a pull covers at most 2 cells at once.</summary>
+        public const int MoveStepMax = 2;
+
+        /// <summary>§7.3: damage per cell a pushed side could not move (叩き台). Guard reduces it.</summary>
+        public const int WallDamage = 3;
 
         // ---- Resolution order (§2.2 / §17.6 F5) ----
 

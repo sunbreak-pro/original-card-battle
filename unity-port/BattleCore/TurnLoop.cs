@@ -4,14 +4,15 @@ using System.Collections.Generic;
 namespace BattleCore
 {
     /// <summary>
-    /// What a battle starts from. The defaults are the slice's provisional values
-    /// (vision/plans/2026-09-21-vertical-slice-polearm.md 「仮に置く値」): the player starts near with
-    /// full stamina, the enemy starts with full stamina, and both start with Guard 0.
+    /// What a battle starts from. The defaults are §7.3's: a line of 6 cells, the player on cell 2,
+    /// the enemy on cell 5 (gap 2), both with full stamina and Guard 0.
     /// </summary>
     public sealed record BattleSetup(
         EnemyDef Enemy,
         IReadOnlyList<CardInstance> Deck,
-        Position PlayerStartPosition = Position.Near,
+        int FieldCells = Constants.FieldCells,
+        int PlayerStartCell = Constants.PlayerStartCell,
+        int EnemyStartCell = Constants.EnemyStartCell,
         int PlayerMaxHp = Constants.PlayerMaxHp,
         int PlayerMaxStamina = Constants.BaseMaxStamina)
     {
@@ -19,8 +20,12 @@ namespace BattleCore
         public static BattleSetup Slice() => new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build());
     }
 
-    /// <summary>The settled numbers a held card would produce. See <see cref="TurnLoop.Preview"/>.</summary>
-    public sealed record PlayPreview(bool TraitHolds, bool Attacks, int RawPower, int Damage, int GuardGain);
+    /// <summary>
+    /// The settled numbers a held card would produce. See <see cref="TurnLoop.Preview"/>. InReach is
+    /// false when the card aims at the opponent and N is outside its reach — the one reason a card
+    /// with payable cost still cannot be released (§2.4).
+    /// </summary>
+    public sealed record PlayPreview(bool TraitHolds, bool Attacks, int RawPower, int Damage, int GuardGain, bool InReach);
 
     /// <summary>Why a card cannot be played right now. None when it can.</summary>
     public enum PlayRefusal
@@ -30,6 +35,9 @@ namespace BattleCore
         NotPlayerTurn,
         NotInHand,
         NotEnoughStamina,
+
+        /// <summary>§2.4: the opponent stands outside the card's reach.</summary>
+        OutOfReach,
     }
 
     /// <summary>
@@ -41,8 +49,9 @@ namespace BattleCore
     /// <see cref="EndTurn"/> runs steps 7-12 without stopping, enemy phase included, and ends on the
     /// next omen. One turn is BeginPlayerTurn → PlayCard × n → EndTurn.
     ///
-    /// Not here, on purpose: the stance slot and the exile pile (#49), two-action enemies and the
-    /// four-branch tree (#50), several enemies (#52), playedAttributes and the traits that read it (#48).
+    /// Not here, on purpose: the stance slot and the exile pile (#49), two-action enemies and
+    /// adaptation (#50), several enemies and cell capacity (#52), playedAttributes and the traits
+    /// that read it (#48).
     /// </summary>
     public static class TurnLoop
     {
@@ -58,17 +67,18 @@ namespace BattleCore
             if (rng == null) throw new ArgumentNullException(nameof(rng));
 
             var enemyDef = setup.Enemy;
+            Field.Validate(setup.FieldCells, setup.PlayerStartCell, 1, setup.EnemyStartCell, enemyDef.Size);
             var player = new CombatantState(
                 setup.PlayerMaxHp, setup.PlayerMaxHp,
                 setup.PlayerMaxStamina, setup.PlayerMaxStamina,
-                Guard: 0, setup.PlayerStartPosition, StatusSet.Empty);
+                Guard: 0, Cell: setup.PlayerStartCell, Size: 1, StatusSet.Empty);
             var enemy = new CombatantState(
                 enemyDef.MaxHp, enemyDef.MaxHp,
                 enemyDef.MaxStamina, enemyDef.MaxStamina,
-                Guard: 0, enemyDef.HasPosition ? enemyDef.StartPosition : null, StatusSet.Empty);
+                Guard: 0, Cell: setup.EnemyStartCell, Size: enemyDef.Size, StatusSet.Empty);
 
             var state = new BattleState(
-                Turn: 0, player, enemy, enemyDef, Omen: null,
+                Turn: 0, setup.FieldCells, player, enemy, enemyDef, Omen: null,
                 Hand: new List<CardInstance>(),
                 DrawPile: Cards.Shuffle(setup.Deck, rng),
                 DiscardPile: new List<CardInstance>());
@@ -112,8 +122,14 @@ namespace BattleCore
 
             var card = FindInHand(state, instanceId);
             if (card == null) return PlayRefusal.NotInHand;
-            return Combat.CanPay(card.Def.Cost, state.Player.Stamina) ? PlayRefusal.None : PlayRefusal.NotEnoughStamina;
+            if (!Combat.CanPay(card.Def.Cost, state.Player.Stamina)) return PlayRefusal.NotEnoughStamina;
+            // §2.4: a card aimed at the opponent needs them inside its reach. A player's card never whiffs.
+            return InReach(state, card.Def) ? PlayRefusal.None : PlayRefusal.OutOfReach;
         }
+
+        private static bool InReach(BattleState state, CardDef def) =>
+            !EnemyAi.IsOpponentDirected(def.Attributes, def.Face, def.Targets)
+            || def.Face.ReachOrDefault.Contains(state.Gap);
 
         /// <summary>
         /// What playing this card would do right now, without playing it: whether its trait holds,
@@ -129,12 +145,13 @@ namespace BattleCore
 
             var def = card.Def;
             var outcome = Traits.Evaluate(def.Trait, new TraitContext(
-                state.Player.Position, state.Enemy.Position, state.Enemy.Guard, state.Player.Stamina - def.Cost));
+                state.Gap, state.Enemy.Guard, state.Player.Stamina - def.Cost));
 
             bool attacks = def.Attributes.HasFlag(BattleAttribute.Attack);
             int raw = attacks ? Combat.ComputeRawPower(def.Face.Power, outcome.PowerBonus) : 0;
             int damage = attacks ? Combat.ApplyGuard(raw, state.Enemy.Guard).Damage : 0;
-            return new PlayPreview(outcome.Triggered, attacks, raw, damage, def.Face.Guard + outcome.GuardBonus);
+            return new PlayPreview(
+                outcome.Triggered, attacks, raw, damage, def.Face.Guard + outcome.GuardBonus, InReach(state, def));
         }
 
         public static StepResult PlayCard(BattleState state, string instanceId, IRng rng)
@@ -152,11 +169,11 @@ namespace BattleCore
             var hand = new List<CardInstance>(state.Hand);
             hand.Remove(card);
             state = state with { Hand = hand };
-            events.Add(new CardPlayed(Actor.Player, card, state.Player.Position));
+            events.Add(new CardPlayed(Actor.Player, card, state.Gap));
 
             state = Resolve(
                 state, Actor.Player, card.Def.Id, card.Def.Attributes, card.Def.Face, card.Def.Trait,
-                card.Def.Cost, rng, events);
+                card.Def.Targets, card.Def.Cost, rng, events);
 
             // The card goes to the discard pile once it has resolved (there is no exile pile: #49).
             var discard = new List<CardInstance>(state.DiscardPile) { card };
@@ -197,10 +214,10 @@ namespace BattleCore
             }
             else
             {
-                events.Add(new ActionExecuted(Actor.Enemy, action, state.Player.Position));
+                events.Add(new ActionExecuted(Actor.Enemy, action, state.Gap));
                 state = Resolve(
                     state, Actor.Enemy, action.Id, action.Attributes, action.Face, action.Trait,
-                    action.Cost, rng, events);
+                    action.Targets, action.Cost, rng, events);
             }
 
             // 構え works for the enemy too (roster §1.2), at the end of its own turn.
@@ -210,7 +227,7 @@ namespace BattleCore
             state = CheckDefeat(state, Actor.Enemy, events);
             if (state.Result != GameResult.Ongoing) return new StepResult(state, events);
 
-            // Step 12: the next omen, read from where the player stands now — after any push.
+            // Step 12: the next omen, read from the gap as it stands now — after any move or push.
             state = DecideNextOmen(state, events);
             return new StepResult(state with { Phase = BattlePhase.AwaitingTurnStart }, events);
         }
@@ -264,7 +281,11 @@ namespace BattleCore
         /// <summary>
         /// §2.2: pay, judge the trait once, then Attack → Move → Guard → Skill. The same routine
         /// resolves a card and an enemy action, because both are written off the same face table.
-        /// Stops after the attack face when the target falls (§17.6 F9).
+        /// Stops after the attack face (or a wall hit) when the target falls (§17.6 F9).
+        ///
+        /// §6 空振り: an enemy action whose reach does not cover N at this moment skips its
+        /// opponent-directed faces (attack, push / pull, the status on the opponent) and still
+        /// resolves the rest. A player card never gets here out of reach (CanPlay refuses it).
         /// </summary>
         private static BattleState Resolve(
             BattleState state,
@@ -273,6 +294,7 @@ namespace BattleCore
             BattleAttribute attributes,
             Face face,
             Trait? trait,
+            TargetKind targets,
             int cost,
             IRng rng,
             List<BattleEvent> events)
@@ -280,21 +302,34 @@ namespace BattleCore
             Actor foe = Opponent(actor);
             var self = Get(state, actor);
             var other = Get(state, foe);
+            int gap = state.Gap;
 
             self = self with { Stamina = self.Stamina - cost };
             events.Add(new StaminaSpent(actor, cost, self.Stamina));
 
-            // Every condition reads the board from before the card: the position before the move
-            // face, the opponent's Guard before the attack face, the stamina left after the cost.
-            var outcome = Traits.Evaluate(trait, new TraitContext(
-                self.Position, other.Position, other.Guard, self.Stamina));
+            // The whiff is known before anything resolves, and is announced first so that whoever
+            // reads the stream knows the trait below is judged on a blow that will not land.
+            bool directed = EnemyAi.IsOpponentDirected(attributes, face, targets);
+            bool whiff = directed && !face.ReachOrDefault.Contains(gap);
+            if (whiff)
+            {
+                if (actor == Actor.Player)
+                {
+                    throw new InvalidOperationException($"Card \"{sourceId}\" was resolved out of reach; CanPlay should have refused it.");
+                }
+                events.Add(new ActionWhiffed(actor, sourceId, gap, face.ReachOrDefault));
+            }
+
+            // Every condition reads the board from before the card: the gap before the move face,
+            // the opponent's Guard before the attack face, the stamina left after the cost.
+            var outcome = Traits.Evaluate(trait, new TraitContext(gap, other.Guard, self.Stamina));
             if (trait != null) events.Add(new TraitEvaluated(actor, sourceId, trait, outcome));
             if (outcome.NextTurnRecoveryBonus != 0)
             {
                 self = self with { NextTurnRecoveryBonus = self.NextTurnRecoveryBonus + outcome.NextTurnRecoveryBonus };
             }
 
-            if (attributes.HasFlag(BattleAttribute.Attack))
+            if (attributes.HasFlag(BattleAttribute.Attack) && !whiff)
             {
                 int raw = Combat.ComputeRawPower(face.Power, outcome.PowerBonus);
                 var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw, other.Guard);
@@ -308,31 +343,56 @@ namespace BattleCore
             if (attributes.HasFlag(BattleAttribute.Move))
             {
                 events.Add(new FaceResolved(actor, sourceId, BattleAttribute.Move));
-                if (face.Push)
+            }
+            if (face.Move != 0)
+            {
+                // §7.3: 前へ / 後ろへ n, as far as the line allows. The mover's own 鈍足 takes one cell off.
+                int cells = Combat.CellsAfterSlow(Math.Abs(face.Move), self.Statuses);
+                if (cells == 0)
                 {
-                    // §2.4: the push moves the opponent and Guard does not stop it. An opponent
-                    // without a position has nowhere to be pushed to.
-                    if (other.Position.HasValue)
+                    events.Add(new MoveBlocked(actor, StatusKind.Slow));
+                }
+                else
+                {
+                    var shift = Field.Move(Set(Set(state, actor, self), foe, other), actor, Math.Sign(face.Move) * cells);
+                    if (shift.To != shift.From)
                     {
-                        var from = other.Position.Value;
-                        other = other with { Position = from.Opposite() };
-                        events.Add(new PositionChanged(foe, from, from.Opposite(), Pushed: true));
+                        self = self with { Cell = shift.To };
+                        events.Add(new CellsMoved(actor, shift.From, shift.To, Pushed: false));
                     }
                 }
-                else if (self.Position.HasValue)
+            }
+            if (face.Push != 0 && !whiff)
+            {
+                // §7.3: push (away) / pull (in) the opponent; Guard does not stop it. A large opponent
+                // refuses it. The cells a push could not take become wall damage; a pull just stops.
+                if (other.Size >= 2)
                 {
-                    if (!Statuses.CanSwitchPosition(self.Statuses))
+                    events.Add(new PushRefused(foe, other.Size));
+                }
+                else
+                {
+                    int cells = Combat.CellsAfterSlow(Math.Abs(face.Push), self.Statuses);
+                    if (cells == 0)
                     {
                         events.Add(new MoveBlocked(actor, StatusKind.Slow));
                     }
                     else
                     {
-                        var from = self.Position.Value;
-                        var to = Combat.MoveResult(from, face)!.Value;
-                        if (to != from)
+                        // A positive Push sends the opponent away from us, which is "away" from their foe (−).
+                        var shift = Field.Move(Set(Set(state, actor, self), foe, other), foe, -Math.Sign(face.Push) * cells);
+                        if (shift.To != shift.From)
                         {
-                            self = self with { Position = to };
-                            events.Add(new PositionChanged(actor, from, to, Pushed: false));
+                            other = other with { Cell = shift.To };
+                            events.Add(new CellsMoved(foe, shift.From, shift.To, Pushed: true));
+                        }
+                        if (face.Push > 0 && shift.Blocked > 0)
+                        {
+                            int raw = Field.WallDamage(shift.Blocked);
+                            var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw, other.Guard);
+                            other = other with { Guard = guardAfter, Hp = Math.Max(0, other.Hp - damage) };
+                            events.Add(new WallHit(foe, shift.Blocked, raw, absorbed, damage, other.Guard, other.Hp));
+                            if (Combat.IsDefeated(other.Hp)) return Set(Set(state, actor, self), foe, other);
                         }
                     }
                 }
@@ -355,7 +415,7 @@ namespace BattleCore
             {
                 events.Add(new FaceResolved(actor, sourceId, BattleAttribute.Skill));
             }
-            if (face.Status.HasValue && face.StatusStacks > 0)
+            if (face.Status.HasValue && face.StatusStacks > 0 && !whiff)
             {
                 // The slice's one word is applied to the opponent (§5). The player holds at most
                 // six kinds; an enemy has no limit.
@@ -412,7 +472,8 @@ namespace BattleCore
         /// <summary>
         /// §9 step 12. The enemy judges what it can pay for with the stamina it will hold when the
         /// omen is carried out — after its next recovery — so an omen only becomes a rest when
-        /// something drained it in between. The canon does not fix this moment; see #70.
+        /// something drained it in between. The canon does not fix this moment; see #70. The
+        /// branch is the gap band at this moment (§6.1).
         /// </summary>
         private static BattleState DecideNextOmen(BattleState state, List<BattleEvent> events)
         {
@@ -420,8 +481,7 @@ namespace BattleCore
             int staminaThen = Combat.RecoverStamina(
                 enemy.Stamina, enemy.MaxStamina, state.EnemyDef.Recovery, enemy.NextTurnRecoveryBonus);
 
-            // The slice's player always carries a position; only the enemy may go without one.
-            var omen = EnemyAi.DecideOmen(state.EnemyDef, state.Player.Position!.Value, staminaThen);
+            var omen = EnemyAi.DecideOmen(state.EnemyDef, state.Gap, staminaThen);
             events.Add(new OmenSet(Actor.Enemy, omen, Decided: true));
             return state with { Omen = omen };
         }

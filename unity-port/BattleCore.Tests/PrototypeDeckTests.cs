@@ -68,20 +68,21 @@ namespace BattleCore.Tests
                 Assert.That(CardCatalog.StepInGuard.Trait, Is.Null, "素直");
                 Assert.That(CardCatalog.StepOutGuard.Trait, Is.Null, "素直");
 
+                // v4.3 provisional mapping (#162): 近間 → 間合い 0 以下, 遠間 → 間合い 1 以上 (2 for 猪突猛進).
                 Assert.That(CardCatalog.KesaCut.Trait, Is.EqualTo(
-                    new Trait(TraitCondition.SelfPosition, TraitEffect.PowerBonus, 5, Position.Near)));
+                    new Trait(TraitCondition.GapAtMost, TraitEffect.PowerBonus, 5, Threshold: 0)));
                 Assert.That(CardCatalog.ReachThrust.Trait, Is.EqualTo(
-                    new Trait(TraitCondition.SelfPosition, TraitEffect.PowerBonus, 5, Position.Far)));
+                    new Trait(TraitCondition.GapAtLeast, TraitEffect.PowerBonus, 5, Threshold: 1)));
                 Assert.That(CardCatalog.BoarRush.Trait, Is.EqualTo(
-                    new Trait(TraitCondition.SelfPosition, TraitEffect.PowerBonus, 6, Position.Far)));
+                    new Trait(TraitCondition.GapAtLeast, TraitEffect.PowerBonus, 6, Threshold: 2)));
                 Assert.That(CardCatalog.ShieldBash.Trait, Is.EqualTo(
-                    new Trait(TraitCondition.SelfPosition, TraitEffect.GuardBonus, 3, Position.Near)));
+                    new Trait(TraitCondition.GapAtMost, TraitEffect.GuardBonus, 3, Threshold: 0)));
                 Assert.That(CardCatalog.BodyCheck.Trait, Is.EqualTo(
-                    new Trait(TraitCondition.SelfPosition, TraitEffect.HeavyBlow, 0, Position.Near)));
+                    new Trait(TraitCondition.GapAtMost, TraitEffect.HeavyBlow, 0, Threshold: 0)));
                 Assert.That(CardCatalog.Brace.Trait, Is.EqualTo(
-                    new Trait(TraitCondition.Reserve, TraitEffect.NextTurnRecovery, 1, null, 6)));
+                    new Trait(TraitCondition.Reserve, TraitEffect.NextTurnRecovery, 1, Threshold: 6)));
                 Assert.That(CardCatalog.Feint.Trait, Is.EqualTo(
-                    new Trait(TraitCondition.Reserve, TraitEffect.GuardBonus, 3, null, 4)));
+                    new Trait(TraitCondition.Reserve, TraitEffect.GuardBonus, 3, Threshold: 4)));
             });
         }
 
@@ -95,12 +96,30 @@ namespace BattleCore.Tests
         [Test]
         public void MoveFaces_PointWhereTheCanonSays()
         {
+            // 遠間へ → 後ろへ 1, 近間へ → 前へ 1; the boar rush closes two (§21.4's provisional value).
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.Feint.Face.MoveTo, Is.EqualTo(Position.Far));
-                Assert.That(CardCatalog.StepOutGuard.Face.MoveTo, Is.EqualTo(Position.Far));
-                Assert.That(CardCatalog.BoarRush.Face.MoveTo, Is.EqualTo(Position.Near));
-                Assert.That(CardCatalog.StepInGuard.Face.MoveTo, Is.EqualTo(Position.Near));
+                Assert.That(CardCatalog.Feint.Face.Move, Is.EqualTo(-1));
+                Assert.That(CardCatalog.StepOutGuard.Face.Move, Is.EqualTo(-1));
+                Assert.That(CardCatalog.BoarRush.Face.Move, Is.EqualTo(2));
+                Assert.That(CardCatalog.StepInGuard.Face.Move, Is.EqualTo(1));
+            });
+        }
+
+        [Test]
+        public void Reaches_AreTheProvisionalOnes_AndNoneExceedsTheCommonBand()
+        {
+            // §7.2: the common N is 0〜3; §2.4: the default reach is 0〜1.
+            Assert.Multiple(() =>
+            {
+                Assert.That(CardCatalog.Thrust.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
+                Assert.That(CardCatalog.KesaCut.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
+                Assert.That(CardCatalog.Feint.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
+                Assert.That(CardCatalog.ReachThrust.Face.ReachOrDefault, Is.EqualTo(new Reach(1, 2)));
+                Assert.That(CardCatalog.BoarRush.Face.ReachOrDefault, Is.EqualTo(new Reach(1, 2)));
+                Assert.That(CardCatalog.BodyCheck.Face.ReachOrDefault, Is.EqualTo(Reach.Only(0)));
+                Assert.That(CardCatalog.ShieldBash.Face.ReachOrDefault, Is.EqualTo(Reach.Only(0)));
+                foreach (var card in CardCatalog.All) Assert.That(card.Face.ReachOrDefault.Max, Is.LessThanOrEqualTo(3), card.Id);
             });
         }
 
@@ -148,21 +167,21 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(all.Count(c => c.Face.Guard > 0), Is.GreaterThanOrEqualTo(2));
-                Assert.That(all.Count(c => c.Face.MoveTo == Position.Near), Is.GreaterThanOrEqualTo(1));
-                Assert.That(all.Count(c => c.Face.MoveTo == Position.Far), Is.GreaterThanOrEqualTo(1));
+                Assert.That(all.Count(c => c.Face.Move > 0), Is.GreaterThanOrEqualTo(1));
+                Assert.That(all.Count(c => c.Face.Move < 0), Is.GreaterThanOrEqualTo(1));
                 Assert.That(all.Count(c => c.Face.Status == StatusKind.Slow), Is.InRange(1, 2));
             });
         }
 
         [Test]
-        public void NoCardReadsTheOpponentSide_OrUsesAnEnemyOnlyWord()
+        public void NoCardUsesAnEnemyOnlyWord_AndNoneOfTheTenPushes()
         {
-            // §2.3: a player card reads its own position only. 無防備 and push are enemy-only.
+            // 無防備 is enemy-only (§2.3). Push / pull may sit on a card since v4.3 (§7.3); none of the
+            // ten does, and how many will is #160's.
             foreach (var card in CardCatalog.All)
             {
-                Assert.That(card.Face.Push, Is.False, card.Id);
+                Assert.That(card.Face.Push, Is.EqualTo(0), card.Id);
                 if (card.Trait == null) continue;
-                Assert.That(card.Trait.Condition, Is.Not.EqualTo(TraitCondition.OpponentPosition), card.Id);
                 Assert.That(card.Trait.Condition, Is.Not.EqualTo(TraitCondition.Unguarded), card.Id);
             }
         }
@@ -209,8 +228,8 @@ namespace BattleCore.Tests
         [Test]
         public void HeavyBlow_AddsSixNow_AndTakesOneRecoveryNextTurn()
         {
-            var near = Traits.Evaluate(CardCatalog.BodyCheck.Trait, new TraitContext(SelfPosition: Position.Near));
-            var far = Traits.Evaluate(CardCatalog.BodyCheck.Trait, new TraitContext(SelfPosition: Position.Far));
+            var near = Traits.Evaluate(CardCatalog.BodyCheck.Trait, new TraitContext(Gap: 0));
+            var far = Traits.Evaluate(CardCatalog.BodyCheck.Trait, new TraitContext(Gap: 1));
 
             Assert.Multiple(() =>
             {
@@ -222,24 +241,26 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void ADirectedMove_LandsOnItsSide_AndStaysPutWhenAlreadyThere()
+        public void AMove_GoesAsFarAsTheLineAllows_AndStaysPutAtTheEdge()
         {
+            // Player on 2, enemy on 5 (gap 2): the feint steps back to 1; from 1 it cannot step back
+            // at all; the boar rush closes two to 4; a plain thrust moves nobody.
+            var state = TurnLoop.Start(BattleSetup.Slice(), new FixedRng(0.5)).State;
             Assert.Multiple(() =>
             {
-                Assert.That(Combat.MoveResult(Position.Near, CardCatalog.Feint.Face), Is.EqualTo(Position.Far));
-                Assert.That(Combat.MoveResult(Position.Far, CardCatalog.Feint.Face), Is.EqualTo(Position.Far));
-                Assert.That(Combat.MoveResult(Position.Far, CardCatalog.BoarRush.Face), Is.EqualTo(Position.Near));
-                Assert.That(Combat.MoveResult(Position.Near, new Face(FlipsSelfPosition: true)), Is.EqualTo(Position.Far));
-                Assert.That(Combat.MoveResult(Position.Near, CardCatalog.Thrust.Face), Is.EqualTo(Position.Near));
-                Assert.That(Combat.MoveResult(null, CardCatalog.Feint.Face), Is.Null);
+                Assert.That(Field.Move(state, Actor.Player, CardCatalog.Feint.Face.Move), Is.EqualTo(new Shift(2, 1, 0)));
+                var atEdge = state with { Player = state.Player with { Cell = 1 } };
+                Assert.That(Field.Move(atEdge, Actor.Player, CardCatalog.Feint.Face.Move), Is.EqualTo(new Shift(1, 1, 1)));
+                Assert.That(Field.Move(state, Actor.Player, CardCatalog.BoarRush.Face.Move), Is.EqualTo(new Shift(2, 4, 0)));
+                Assert.That(Field.Move(state, Actor.Player, CardCatalog.Thrust.Face.Move), Is.EqualTo(new Shift(2, 2, 0)));
             });
         }
 
         [Test]
-        public void BoarRush_ReadsTheSideFromBeforeTheMove()
+        public void BoarRush_ReadsTheGapFromBeforeTheMove()
         {
-            // §2.2: played from far it is 14 + 6, and only then does the player land near.
-            var outcome = Traits.Evaluate(CardCatalog.BoarRush.Trait, new TraitContext(SelfPosition: Position.Far));
+            // §2.2: played at gap 2 it is 14 + 6, and only then does the player close in.
+            var outcome = Traits.Evaluate(CardCatalog.BoarRush.Trait, new TraitContext(Gap: 2));
             Assert.That(Combat.ComputeRawPower(CardCatalog.BoarRush.Face.Power, outcome.PowerBonus), Is.EqualTo(20));
         }
 
