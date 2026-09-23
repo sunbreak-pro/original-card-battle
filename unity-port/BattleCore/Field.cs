@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace BattleCore
 {
@@ -9,11 +10,13 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// §7: the line of cells. The player stands on the left and the enemy on the right, so "toward"
-    /// is +1 for the player and −1 for the enemy. Nothing here holds state; the turn loop does.
+    /// §7: the line of cells. The player stands on the left and the enemies on the right, so "toward"
+    /// is +1 for the player and −1 for an enemy. Nothing here holds state; the turn loop does.
     ///
-    /// One enemy for now: with several (#47) the toward-limit becomes the nearest enemy, and a cell
-    /// holds one enemy at most (`CELL_CAPACITY` = 1, 2026-09-23).
+    /// Several enemies (§7.1 / §7.4, #47): one enemy per cell (`CELL_CAPACITY` = 1) and a large enemy
+    /// keeps its cells to itself. Nobody overtakes: the player stops short of the nearest standing
+    /// enemy, and an enemy stops short of the player. Enemies pass each other — only the cells an
+    /// enemy lands on must be free, not the ones it crosses. A fallen enemy holds no cells.
     /// </summary>
     public static class Field
     {
@@ -27,33 +30,78 @@ namespace BattleCore
 
         /// <summary>
         /// §7.3: move one side by <paramref name="cells"/> toward the other (positive) or away
-        /// (negative), stopping short at the opponent's near edge or at the line's own end. The
-        /// caller has already taken 鈍足 off the count.
+        /// (negative), as far as the line allows. <paramref name="unit"/> names the enemy when
+        /// <paramref name="who"/> is <see cref="Actor.Enemy"/>. The caller has already taken 鈍足 off
+        /// the count.
+        ///
+        /// The player stops one cell short of the nearest standing enemy and at cell 1. An enemy
+        /// stops one cell past the player and at the line's end, and lands on the furthest cell it
+        /// asked for whose span no other standing enemy uses; it crosses occupied cells freely.
         /// </summary>
-        public static Shift Move(BattleState state, Actor who, int cells)
+        public static Shift Move(BattleState state, Actor who, int cells, int unit = 0)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            var self = who == Actor.Player ? state.Player : state.Enemy;
-            var other = who == Actor.Player ? state.Enemy : state.Player;
-            if (cells == 0) return new Shift(self.Cell, self.Cell, 0);
+            return who == Actor.Player ? MovePlayer(state, cells) : MoveEnemy(state, unit, cells);
+        }
 
+        private static Shift MovePlayer(BattleState state, int cells)
+        {
+            var self = state.Player;
             int from = self.Cell;
+            if (cells == 0) return new Shift(from, from, 0);
+
             int to;
-            if (who == Actor.Player)
+            if (cells > 0)
             {
-                // Toward = right, capped one cell short of the enemy; away = left, floor 1.
-                to = cells > 0
-                    ? Math.Min(from + cells, other.Cell - self.Size)
-                    : Math.Max(from + cells, 1);
+                // Toward = right, capped one cell short of the nearest standing enemy.
+                int nearest = state.Nearest;
+                int cap = nearest < 0 ? state.FieldCells - self.Size + 1 : state.Enemies[nearest].Body.Cell - self.Size;
+                to = Math.Min(from + cells, cap);
             }
             else
             {
-                // Toward = left, floor one cell past the player; away = right, cap at the line's end.
-                to = cells > 0
-                    ? Math.Max(from - cells, other.FarCell + 1)
-                    : Math.Min(from - cells, state.FieldCells - self.Size + 1);
+                to = Math.Max(from + cells, 1);
             }
             return new Shift(from, to, Math.Abs(cells) - Math.Abs(to - from));
+        }
+
+        private static Shift MoveEnemy(BattleState state, int unit, int cells)
+        {
+            var self = state.Enemies[unit].Body;
+            int from = self.Cell;
+            if (cells == 0) return new Shift(from, from, 0);
+
+            // Toward = left, floor one cell past the player; away = right, cap at the line's end.
+            int floor = state.Player.FarCell + 1;
+            int cap = state.FieldCells - self.Size + 1;
+            int step = cells > 0 ? -1 : 1;
+            int wanted = from + step * Math.Abs(cells);
+            int limit = Math.Max(floor, Math.Min(cap, wanted));
+
+            // Walk back from the furthest cell asked for until the whole body fits.
+            int to = from;
+            for (int cell = limit; cell != from; cell -= step)
+            {
+                if (IsFree(state, unit, cell, self.Size))
+                {
+                    to = cell;
+                    break;
+                }
+            }
+            return new Shift(from, to, Math.Abs(cells) - Math.Abs(to - from));
+        }
+
+        /// <summary>Whether cells [cell, cell + size − 1] hold no standing enemy other than <paramref name="unit"/>.</summary>
+        private static bool IsFree(BattleState state, int unit, int cell, int size)
+        {
+            int far = cell + size - 1;
+            for (int i = 0; i < state.Enemies.Count; i++)
+            {
+                if (i == unit || !state.Enemies[i].Alive) continue;
+                var other = state.Enemies[i].Body;
+                if (cell <= other.FarCell && other.Cell <= far) return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -61,7 +109,7 @@ namespace BattleCore
         /// right of the player. When the line is too short to hold that — a 5-cell line, or a large
         /// enemy on a narrow one — the enemy stands at the right end instead and the gap shrinks;
         /// the player keeps its cell and the room behind it (2026-09-23, #169). Whether the result
-        /// still fits at all is <see cref="Validate"/>'s to say.
+        /// still fits at all is Validate's to say.
         /// </summary>
         public static int EnemyStartCell(int fieldCells, int playerCell, int playerSize, int enemySize, int startGap)
         {
@@ -80,27 +128,55 @@ namespace BattleCore
         /// </summary>
         public static void Validate(int fieldCells, int playerCell, int playerSize, int enemyCell, int enemySize)
         {
+            Validate(fieldCells, playerCell, playerSize, new[] { (enemyCell, enemySize) });
+        }
+
+        /// <summary>
+        /// §7.1 / §7.4: the same for one to three enemies (`ENEMIES_MAX`), which must also each keep
+        /// their own cells (`CELL_CAPACITY` = 1).
+        /// </summary>
+        public static void Validate(int fieldCells, int playerCell, int playerSize, IReadOnlyList<(int Cell, int Size)> enemies)
+        {
+            if (enemies == null) throw new ArgumentNullException(nameof(enemies));
             if (fieldCells < Constants.FieldCellsMin || fieldCells > Constants.FieldCellsMax)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(fieldCells), fieldCells, $"The line is {Constants.FieldCellsMin}..{Constants.FieldCellsMax} cells.");
             }
-            if (enemySize < 1 || enemySize > Constants.EnemySizeMax)
+            if (enemies.Count < 1 || enemies.Count > Constants.EnemiesMax)
             {
-                throw new ArgumentOutOfRangeException(nameof(enemySize), enemySize, $"An enemy uses 1..{Constants.EnemySizeMax} cells.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(enemies), enemies.Count, $"A battle has 1..{Constants.EnemiesMax} enemies (§7.4).");
             }
             if (playerSize < 1) throw new ArgumentOutOfRangeException(nameof(playerSize), playerSize, "At least one cell.");
             if (playerCell < 1)
             {
                 throw new ArgumentOutOfRangeException(nameof(playerCell), playerCell, "Cells start at 1.");
             }
-            if (enemyCell + enemySize - 1 > fieldCells)
+
+            for (int i = 0; i < enemies.Count; i++)
             {
-                throw new ArgumentOutOfRangeException(nameof(enemyCell), enemyCell, "The enemy does not fit on the line.");
-            }
-            if (playerCell + playerSize - 1 >= enemyCell)
-            {
-                throw new ArgumentException("The player must stand to the left of the enemy (§7.1).");
+                var (cell, size) = enemies[i];
+                if (size < 1 || size > Constants.EnemySizeMax)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(enemies), size, $"An enemy uses 1..{Constants.EnemySizeMax} cells.");
+                }
+                if (cell + size - 1 > fieldCells)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(enemies), cell, $"Enemy {i} does not fit on the line.");
+                }
+                if (playerCell + playerSize - 1 >= cell)
+                {
+                    throw new ArgumentException("The player must stand to the left of every enemy (§7.1).");
+                }
+                for (int j = 0; j < i; j++)
+                {
+                    var (otherCell, otherSize) = enemies[j];
+                    if (cell <= otherCell + otherSize - 1 && otherCell <= cell + size - 1)
+                    {
+                        throw new ArgumentException($"Enemies {j} and {i} share a cell; a cell holds one enemy (§7.1).");
+                    }
+                }
             }
         }
     }

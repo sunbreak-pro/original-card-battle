@@ -179,7 +179,7 @@ namespace BattleCore.Tests
             var a = TurnLoop.PlayCard(slowedPusher, InHand(slowedPusher, "shove"), NoRng);
             Assert.That(a.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Enemy, 4, 5, Pushed: true)));
 
-            var slowedTarget = s with { Enemy = s.Enemy with { Statuses = StatusSet.Of((StatusKind.Slow, 1)) } };
+            var slowedTarget = s.WithEnemy(s.Enemy with { Statuses = StatusSet.Of((StatusKind.Slow, 1)) });
             var b = TurnLoop.PlayCard(slowedTarget, InHand(slowedTarget, "shove"), NoRng);
             Assert.That(b.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Enemy, 4, 6, Pushed: true)));
 

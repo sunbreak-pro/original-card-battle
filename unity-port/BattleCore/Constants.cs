@@ -3,12 +3,12 @@ using System.Collections.Generic;
 namespace BattleCore
 {
     /// <summary>
-    /// Numbers from battle_core_v4.md §10, the single source of truth for values. Only the rows the
-    /// vertical slice reads are here; the rows it does not read (owned-kind cap, trait vocabulary
-    /// sizes, stance slots, elite counts, mastery thresholds, chain battles, and the v4.3 rows for
-    /// several enemies: GAP_SCALING_CARDS_MAX) come back with #47 / #52. REACH_DEFAULT lives on
-    /// <see cref="Reach.Default"/>. FIELD_CELLS has no default any more (2026-09-23, #169): every
-    /// battle is handed its width (<see cref="BattleSetup.FieldCells"/>).
+    /// Numbers from battle_core_v4.md §10, the single source of truth for values. Every row of the
+    /// table is here (#47), including the ones the core does not read yet — they are the authoring
+    /// limits the card and enemy data are checked against, and the numbers #48〜#53 read.
+    /// REACH_DEFAULT lives on <see cref="Reach.Default"/> and DUAL_FACE_RATIO on
+    /// <see cref="Columns.DualFaceRatio"/>. FIELD_CELLS has no default any more (2026-09-23, #169):
+    /// every battle is handed its width (<see cref="BattleSetup.FieldCells"/>).
     ///
     /// Gone from v3 and deliberately not replaced: T0_ATTACK_POWER, MIN_INVEST_ZERO_KINDS,
     /// RANGE_MULT, STATUS_SLOTS, STATUS_STACK_MAX and DESPERATE_MULT (§10 廃止した定数). The miasma
@@ -26,6 +26,9 @@ namespace BattleCore
         public const int DeckMin = 20;
         public const int DeckMax = 40;
         public const int CopiesMax = 3;
+
+        /// <summary>§8: the kinds one character may own (40 to start, 40 learned).</summary>
+        public const int OwnedKindsMax = 80;
 
         // ---- Cost and columns (§3) ----
 
@@ -48,12 +51,32 @@ namespace BattleCore
 
         public const int ReserveGuard = 3;
 
+        /// <summary>死力: the condition's stamina bar. It carries no multiplier any more (DESPERATE_MULT is gone).</summary>
+        public const int DesperateThreshold = 2;
+
         // ---- Traits (§2.3) ----
 
         /// <summary>重撃: power +6 on the card, and the next turn start recovers 1 less.</summary>
         public const int HeavyBlowPower = 6;
 
         public const int HeavyBlowRecoveryPenalty = 1;
+
+        /// <summary>§2.3: the trait vocabulary — 12 conditions × 10 effects.</summary>
+        public const int TraitConditions = 12;
+
+        public const int TraitEffects = 10;
+
+        /// <summary>§10: cards whose condition is a gap threshold (4 cells of the grid × 4).</summary>
+        public const int PositionTraitCards = 16;
+
+        /// <summary>§7.2: at most 4 of the 80 kinds may scale with N ("N 1 につき +x").</summary>
+        public const int GapScalingCardsMax = 4;
+
+        /// <summary>§3.1: a card with no trait takes +2 on every column (素直な札).</summary>
+        public const int PlainCardBonus = 2;
+
+        /// <summary>§2.3: the same condition + effect pair appears on at most 3 kinds.</summary>
+        public const int SameTraitMax = 3;
 
         // ---- Status (§5) ----
 
@@ -62,6 +85,26 @@ namespace BattleCore
 
         /// <summary>§3.1: applying a status gives 2 stacks unless the face says otherwise.</summary>
         public const int StatusApplyDefault = 2;
+
+        /// <summary>§4: one stance at a time, for both sides.</summary>
+        public const int StanceSlots = 1;
+
+        /// <summary>§5: the boss-only statuses.</summary>
+        public const int BossStatusKinds = 2;
+
+        // ---- Elites, bosses, mastery, chains (§6 / §12 / §17.8) ----
+
+        /// <summary>§6: an elite or a boss takes two actions in its phase.</summary>
+        public const int EliteActions = 2;
+
+        /// <summary>§6: an elite's omen shows two steps; a normal enemy's shows one.</summary>
+        public const int OmenDepthElite = 2;
+
+        /// <summary>§17.8: the mastery steps (placeholder).</summary>
+        public static readonly IReadOnlyList<int> MasteryThresholds = new[] { 3, 8, 15 };
+
+        /// <summary>§12: battles in a chain by default (a nine-battle order may be picked too).</summary>
+        public const int ChainBattlesDefault = 3;
 
         // ---- Cells and gap (§7, v4.3) ----
 
