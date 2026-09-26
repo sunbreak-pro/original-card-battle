@@ -25,7 +25,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | 戦闘のルールと数値 | `.claude/docs/battle_document/battle_core_v4.md` | battle | v4.3（間合い N、#159）+ §19 未反映 | cards, design |
 | 戦闘の画面と操作 | `.claude/docs/battle_document/battle_ui_ux_v2.md` | battle | v2.2（間合い N、#163。本文が正。§10 / §11 / §13 は記録） | design |
 | カード（剣士 80 種） | `.claude/docs/card_document/swordsman_cards_v4.md` | cards | v4.2 | battle, design |
-| 敵の数値とロースター | `.claude/docs/enemy_document/enemy_roster_v4.md` | cards | v4.2 | battle, design |
+| 敵の数値とロースター | `.claude/docs/enemy_document/enemy_roster_v4.md` | cards | v4.4（試験台で測った HP、#204） | battle, design |
 | 探索（刻限・瘴気・ノード） | `.claude/docs/danjeon_document/dungeon_exploration_v4.md` | dungeon | PROPOSED | design |
 | concept-v3 の未確定の棚卸し | `.claude/docs/danjeon_document/concept_v3_open_items.md` | dungeon | PROPOSED（決定ではない） | design |
 | 七層の瘴気と刻限（層ごとの数値） | `.claude/docs/danjeon_document/seven_layers_v4.md` | dungeon | PROPOSED | battle, cards |

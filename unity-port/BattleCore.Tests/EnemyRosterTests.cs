@@ -45,12 +45,12 @@ namespace BattleCore.Tests
             });
         }
 
-        [TestCase(EnemyRank.Normal, 6, 50, 70, 10, 2, 1)]
-        [TestCase(EnemyRank.Elite, 2, 90, 110, 12, 3, 2)]
-        [TestCase(EnemyRank.Boss, 3, 160, 200, 14, 4, 2)]
+        [TestCase(EnemyRank.Normal, 6, 60, 100, 10, 2, 1)]
+        [TestCase(EnemyRank.Elite, 2, 110, 120, 12, 3, 2)]
+        [TestCase(EnemyRank.Boss, 3, 140, 200, 14, 3, 2)]
         public void EachRank_KeepsToTheRosterScale(EnemyRank rank, int count, int hpMin, int hpMax, int stamina, int recovery, int actions)
         {
-            // roster §0: HP, max stamina and recovery by rank; §1.3: elites and bosses act twice.
+            // roster §0 (v4.4, #204): HP, max stamina and recovery by rank; §1.3: elites and bosses act twice.
             var ofRank = Enemies.All.Where(e => e.Rank == rank).ToList();
             Assert.Multiple(() =>
             {
@@ -267,11 +267,11 @@ namespace BattleCore.Tests
             // The demo's stand-ins for the boss-only statuses (roster §4.1 / §5.1 / §6.2).
             Assert.Multiple(() =>
             {
-                Assert.That(Enemies.MiasmaPriest.Actions["miasma_rite"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Fatigue, 2)));
+                Assert.That(Enemies.MiasmaPriest.Actions["miasma_rite"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Fatigue, 1)));
                 Assert.That(Enemies.MiasmaPriest.Actions["binding_word"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Slow, 2)));
                 Assert.That(Enemies.AbyssAngler.Actions["hook_cast"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Slow, 2)));
-                Assert.That(Enemies.AbyssAngler.Actions["fathom_call"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Fatigue, 2)));
-                Assert.That(Enemies.DistortionRoot.Actions["root_grip"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Bleed, 2)));
+                Assert.That(Enemies.AbyssAngler.Actions["fathom_call"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Fatigue, 1)));
+                Assert.That(Enemies.DistortionRoot.Actions["root_grip"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Bleed, 1)));
                 Assert.That(Enemies.DistortionRoot.Actions["wither_breath"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Fatigue, 3)));
                 Assert.That(Enemies.DistortionRoot.Actions["creeping_root"].Face.Push, Is.EqualTo(-1), "伸びる根 always pulls one");
             });
