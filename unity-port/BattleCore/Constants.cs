@@ -110,7 +110,7 @@ namespace BattleCore
         /// <summary>
         /// §5 (#205): a ターンで減る型 word holds at most this many stacks, on either side; whatever an
         /// application would put over it is dropped. Column 4's 出血 / 再生 fits whole. The 使うと減る型
-        /// is not counted (§19.5 S14). The battle lane's proposal, pending the owner's confirmation (§23).
+        /// is not counted (§19.5 S14). Confirmed by the owner on 2026-09-26 (§23).
         /// </summary>
         public const int TurnDecayStackMax = 4;
 
