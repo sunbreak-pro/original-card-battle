@@ -183,7 +183,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(source.Finished, Is.True);
             Assert.That(source.State.Result, Is.Not.EqualTo(GameResult.Ongoing));
             Assert.That(played.Count, Is.LessThan(400));
-            Assert.That(source.GuideText, Is.Not.EqualTo(""));
+            Assert.That(source.GuideText, Is.EqualTo(""), "#191: the outcome is the end screen's, not the guide line's");
         }
     }
 }

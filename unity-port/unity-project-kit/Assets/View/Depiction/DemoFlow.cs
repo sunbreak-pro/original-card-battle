@@ -1,9 +1,10 @@
-// The demo's screens around the battle (#187): the deck screen (#190) first, then the battle, then
-// back. Built in code on a canvas of its own above the battle, so the scene and the prefabs stay as
-// they are; BattleBootstrap adds it when its demo flow is on. It holds no rule: the deck, its check
-// and every word come from Depiction.Bridge, and the battle is the source the bootstrap builds.
+// The demo's screens around the battle (#187): the deck screen (#190), the mode screen and the end
+// screen (#191), and the battles in between. Built in code on a canvas of its own above the battle,
+// so the scene and the prefabs stay as they are; BattleBootstrap adds it when its demo flow is on.
+// It holds no rule: the deck, the run of battles, what carries and every word come from
+// Depiction.Bridge (DeckBuilder, DemoSession), and the battles are the sources DemoSession starts.
 #if UNITY_2021_2_OR_NEWER
-using System;
+using System.Collections;
 using System.Collections.Generic;
 using BattleCore;
 using Depiction.Bridge;
@@ -17,26 +18,37 @@ namespace Depiction.View
         /// <summary>Where the deck is kept between runs (DeckBuilder.Save's string).</summary>
         public const string SavedDeckKey = "Depiction.Demo.Deck";
 
+        /// <summary>How long the result card stands on its own before the end screen comes up.</summary>
+        private const float EndScreenDelaySeconds = 1.2f;
+
         private DepictionPlayer _player;
-        private Func<List<CardInstance>, IDepictionSource> _startBattle;
+        private int _seed;
+        private int _randomPicks;
+        /// <summary>Runs made from this seed, so choosing the same mode again deals afresh (DemoSession mixes it in).</summary>
+        private int _runs;
         private RectTransform _canvas;
         private DeckSelectScreen _deckScreen;
-        private GameObject _backToDeck;
+        private ModeSelectScreen _modeScreen;
+        private EndScreen _endScreen;
+        private List<CardInstance> _deck;
+        private DemoSession _session;
+        private CoreBattleSource _source;
 
-        /// <summary>
-        /// Sets the flow up and shows the deck screen. <paramref name="startBattle"/> turns a built
-        /// deck into the battle source (BattleLaunch with the Inspector's enemy and seed).
-        /// </summary>
-        public void Begin(DepictionPlayer player, Func<List<CardInstance>, IDepictionSource> startBattle)
+        /// <summary>Sets the flow up and shows the deck screen. <paramref name="seed"/> fixes the run (each battle takes its own from it).</summary>
+        public void Begin(DepictionPlayer player, int seed)
         {
+            StopAllCoroutines();
+            _session = null;
+            _source = null;
             if (_canvas) Destroy(_canvas.gameObject);
             if (_player) _player.BattleFinished -= OnBattleFinished;
             _player = player;
-            _startBattle = startBattle;
+            _seed = seed;
             _player.BattleFinished += OnBattleFinished;
             _canvas = BuildCanvas();
-            _deckScreen = new DeckSelectScreen(_canvas, LoadDeck(), SaveDeck, StartBattle);
-            _backToDeck = BuildBackButton();
+            _deckScreen = new DeckSelectScreen(_canvas, LoadDeck(), SaveDeck, OnDeckChosen);
+            _modeScreen = new ModeSelectScreen(_canvas, StartSingle, StartRandom, StartChain, ShowDeckScreen);
+            _endScreen = new EndScreen(_canvas, GoOn, Again, ShowDeckScreen);
             ShowDeckScreen();
         }
 
@@ -46,32 +58,83 @@ namespace Depiction.View
             if (_canvas) Destroy(_canvas.gameObject);
         }
 
+        // ---- the screens ----
+
         private void ShowDeckScreen()
         {
-            _backToDeck.SetActive(false);
+            StopAllCoroutines();
+            _modeScreen.Visible = false;
+            _endScreen.Visible = false;
             _deckScreen.Visible = true;
         }
 
-        private void StartBattle(List<CardInstance> deck)
+        private void OnDeckChosen(List<CardInstance> deck)
         {
-            IDepictionSource source;
+            _deck = deck;
+            _deckScreen.Visible = false;
+            _modeScreen.Visible = true;
+        }
+
+        private void StartSingle(string enemyId)
+        {
+            Run(() => DemoSession.Single(_deck, enemyId, _seed, _runs++));
+        }
+
+        private void StartRandom()
+        {
+            Run(() => DemoSession.Single(_deck, DemoSession.RandomEnemyId(_seed, _randomPicks++), _seed, _runs++));
+        }
+
+        private void StartChain()
+        {
+            Run(() => DemoSession.Chain(_deck, _seed, null, _runs++));
+        }
+
+        private void Run(System.Func<DemoSession> make)
+        {
             try
             {
-                source = _startBattle(deck);
+                _session = make();
             }
-            catch (ArgumentException e)
+            catch (System.ArgumentException e)
             {
                 Debug.LogError("[DemoFlow] " + e.Message);
                 return;
             }
-            _deckScreen.Visible = false;
-            _backToDeck.SetActive(false);
-            _player.Restart(source);
+            NextBattle();
+        }
+
+        private void NextBattle()
+        {
+            _modeScreen.Visible = false;
+            _endScreen.Visible = false;
+            _source = _session.StartBattle();
+            _player.Restart(_source);
         }
 
         private void OnBattleFinished()
         {
-            _backToDeck.SetActive(true);
+            if (_session == null || _source == null || _session.Stage != DemoStage.Fighting) return;
+            _session.Finish(_source);
+            StartCoroutine(ShowEndScreenSoon());
+        }
+
+        private IEnumerator ShowEndScreenSoon()
+        {
+            yield return new WaitForSecondsRealtime(EndScreenDelaySeconds);
+            _endScreen.Show(_session.EndScreen());
+        }
+
+        private void GoOn(bool rest)
+        {
+            _session.GoOn(rest);
+            NextBattle();
+        }
+
+        private void Again()
+        {
+            _session.Again();
+            NextBattle();
         }
 
         // ---- the saved deck ----
@@ -102,14 +165,6 @@ namespace Depiction.View
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
             return (RectTransform)go.transform;
-        }
-
-        private GameObject BuildBackButton()
-        {
-            RectTransform box = UiKit.Point(_canvas, "BackToDeck", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(420f, 72f), new Vector2(0f, 40f));
-            UiKit.Button(box, "Button", "デッキ選択へ戻る", ShowDeckScreen, BattleTheme.Accent, BattleTheme.InkBlack, 28, Vector2.zero, Vector2.one);
-            return box.gameObject;
         }
     }
 }

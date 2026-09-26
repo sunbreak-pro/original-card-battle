@@ -273,7 +273,7 @@ namespace Depiction.View
             if (_source.Finished)
             {
                 Finished = true;
-                RefreshPlayableLook(); // the guide line carries the outcome
+                RefreshPlayableLook(); // the guide line goes quiet; the outcome is the result card's and the end screen's (#191)
                 Debug.Log("[Depiction] finished. seconds per event: " + string.Join(" / ", EventSeconds.ConvertAll(s => s.ToString("0.00"))));
                 if (logEffectTrace) Debug.Log("[Depiction] effects:\n" + Trace.ToCsv());
                 BattleOutcome outcome = _source.Frame.Outcome;

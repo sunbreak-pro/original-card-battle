@@ -132,6 +132,9 @@ namespace BattleCore
         /// <summary>§12: battles in a chain by default (a nine-battle order may be picked too).</summary>
         public const int ChainBattlesDefault = 3;
 
+        /// <summary>§3.1 / §12: the rest between chained battles (階層間の休憩) gives back this share of max HP, and all stamina.</summary>
+        public const int ChainRestHpPercent = 30;
+
         // ---- Cells and gap (§7, v4.3) ----
 
         /// <summary>

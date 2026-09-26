@@ -68,6 +68,11 @@ namespace Depiction.Bridge
         /// <summary>§7.2: N as the two models stand now.</summary>
         private int Gap => _enemy.Cell - (_player.Cell + _player.Size - 1) - 1;
 
+        /// <summary>§12 連戦 (#191): which battle of the chain this is, and how many there are; 1 / 1 alone.</summary>
+        public int ChainIndex { get; set; } = 1;
+
+        public int ChainTotal { get; set; } = 1;
+
         public CoreScriptWriter(EnemyDef enemyDef)
         {
             _enemyDef = enemyDef ?? throw new ArgumentNullException(nameof(enemyDef));
@@ -584,8 +589,8 @@ namespace Depiction.Bridge
                 Outcome = after.Result == GameResult.Won ? BattleOutcome.Won
                     : after.Result == GameResult.Lost ? BattleOutcome.Lost
                     : BattleOutcome.Ongoing,
-                // Floor, chain and miasma belong to the exploration layer (#99); one battle, no miasma.
-                Corner = new CornerFrame { Turn = _turn, Floor = 1, ChainIndex = 1, ChainTotal = 1, MiasmaPercent = 0 },
+                // Floor and miasma belong to the exploration layer (#99); the chain position is the demo's (#191).
+                Corner = new CornerFrame { Turn = _turn, Floor = 1, ChainIndex = ChainIndex, ChainTotal = ChainTotal, MiasmaPercent = 0 },
                 Player = UnitOf(_player, showStamina: true, gap: Gap),
                 Enemy = UnitOf(_enemy, showStamina: false, gap: null),
                 Omen = _omenVisible ? CoreText.OmenOf(_omen, _enemyDef) : new OmenFrame { Visible = false },
