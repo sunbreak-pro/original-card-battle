@@ -1,0 +1,190 @@
+<title>戦闘まわり 5 本の PR</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-26 / 進捗と判断 / original-card-battle</p>
+    <h1>5 件の Issue をすべて PR まで進めました。こうだいさんの確認が要るのは #224 の上限 4 です</h1>
+    <p class="lede">#203・#206・#205・#207・#211 は、それぞれ PR #220・#223・#224・#225・#226 になりました。5 本とも 4 つの検証（build・lint・test:run・dotnet test）が 0 で終わり、GitHub の上でも衝突なく merge できる状態です。merge はまだ 1 本もしていません。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict later"><span class="tag">確認をお願いします</span><h3>#224 ターンで減る状態の上限 4</h3><p>元になる文書で意図して外していた上限を、ターンで減る 5 語（出血・再生・俊敏・鈍足・疲労）にだけ戻す案です。設計書に「確認待ち」と書いてあります。退けるなら PR を閉じれば main には何も残りません。</p></li>
+    <li class="verdict now"><span class="tag">merge の順</span><h3>#220 を #226 より先に</h3><p>#226（#211）は #220（#203）を取り込んで作ったためです。#223・#224・#225 は、後から merge する PR で設計書の変更履歴の先頭 1 行だけが衝突します。両方の行を残せば解消できます。</p></li>
+    <li class="verdict later"><span class="tag">cards の担当へ</span><h3>食い違いの Issue を 2 件作りました</h3><p>#221 は疲労が回復をいくつ削るか、#222 は燐刃の竜兵の見切りがいつ消えるかの食い違いです。どちらも規則の文書（<code>battle_core_v4.md</code>）に従って進め、敵の一覧は書き換えていません。</p></li>
+  </ul>
+
+  <h2>5 本の PR の中身</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Issue</th><th>PR</th><th>何をしたか</th><th>足したテスト</th></tr></thead>
+      <tbody>
+        <tr><td>#203</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/220">#220</a></td><td>デモの戦闘中だけ、右上に「降参する」ボタンを出しました。押すと戦闘がその場で止まり、負けとして終了画面へ進みます。連戦の途中なら連戦も負けで終わります。</td><td class="num">Bridge +6</td></tr>
+        <tr><td>#206</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/223">#223</a></td><td>スタンス面を持つ札を、デッキに 3 枚までにしました。コアの検証とデッキ画面の「＋」の両方が 4 枚目を断ります。1 撃に乗る倍率は 1 つ（脆化が先）という決定も、設計書の本文に入れました。</td><td class="num">Core +4 / Bridge +4</td></tr>
+        <tr><td>#205</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/224">#224</a></td><td>ターンで減る状態を 1 語 4 スタックまでにしました。設計書を先のコミットで書き、コアを後のコミットで従わせています。大黒蛇 セルクと 60 ターン戦っても 4 で止まることを確かめました。</td><td class="num">Core +20 / Bridge +2</td></tr>
+        <tr><td>#207</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/225">#225</a></td><td>威圧と見切りがいつ減るかを、設計書の §5 に書きました。コアはもともとこの形で動いていたので、コアの処理は変えていません。</td><td class="num">Core +7</td></tr>
+        <tr><td>#211</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/226">#226</a></td><td>選択画面の背景を不透明にしました。壊れた保存デッキは理由を 1 行で出し、保存は「戦闘へ」の時だけにしました。1 体戦の後には敵を選び直せます。開始に失敗したらモード画面へ戻り、休憩の数字の元も 1 つにそろえました。</td><td class="num">Bridge +18</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note prose">tracker（進捗と履歴のファイル）は実装の PR に混ぜず、別の PR <a href="https://github.com/sunbreak-pro/original-card-battle/pull/227">#227</a> に分けました。</p>
+
+  <h2>#224 の上限 4 を選んだ理由</h2>
+  <p class="prose">「付けるたびに足す」「ターンの始めに 1 減る」のままだと、毎フェーズ 2 回付けてくる精鋭やボスの相手では、減るより速く溜まります。蛇口から出る量が排水口より多いと、浴槽がいつか溢れるのと同じです。直し方を 3 つの方向で検討し、実際のカードと敵の数値で比べました。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>案</th><th>採否</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>ターンで減る型だけ上限 4</td><td class="state yes">採用</td><td>4 は、カード表の列 4 で付く出血と再生の数と同じです。出血は 1 ターンに 8 までしか削れないので、18 ターン続いても 144 で、いちばん HP の低いボス（160）には届きません。「血路」の型の止め役がそのまま成り立ちます。</td></tr>
+        <tr><td>付け直しを「多いほう」にする</td><td class="state no">退けた</td><td>特性の「出血 +1 スタック」が、出血 2 の相手には何も起こさなくなります。出血を積む遊び方も成り立ちません。</td></tr>
+        <tr><td>減り方を「半分」にする</td><td class="state no">退けた</td><td>暗算が 1 段難しくなります。札を重ねるほど落ち着く値も上がるので、上限の代わりになりません。</td></tr>
+        <tr><td>1 フェーズに同じ語は 1 回まで</td><td class="state no">退けた</td><td>大黒蛇 セルクは 2 つの行動で別の語を付けるので、伸びが止まりません。</td></tr>
+        <tr><td>上限 3 か 5</td><td class="state no">退けた</td><td>3 だと列 4 の 4 スタックが付かず、カード表と食い違います。5 だと出血が 18 ターンで 180 を削り、ボスの HP 160 を超えます。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout prose"><strong>残るもの</strong>: 使うと減る状態（威圧など）は、§19.5 の決定どおり上限を置いていません。スキルだけの行動を続ける敵には威圧が溜まり続けます。止めるかどうかは設計書の §14 の 18 に「未確定」として書きました。</div>
+
+  <h2>検証</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>ブランチ</th><th>build / lint / test:run</th><th>dotnet test</th><th>sources の検査</th><th>Unity 側のコンパイル</th></tr></thead>
+      <tbody>
+        <tr><td><code>feat/battle-203</code></td><td class="state yes">0 / 0 / 0</td><td class="num">Core 385・Bridge 140</td><td class="state yes">通過</td><td class="state yes">通過</td></tr>
+        <tr><td><code>feat/battle-206</code></td><td class="state yes">0 / 0 / 0</td><td class="num">Core 389・Bridge 138</td><td class="state yes">通過</td><td class="state yes">通過</td></tr>
+        <tr><td><code>fix/battle-205</code></td><td class="state yes">0 / 0 / 0</td><td class="num">Core 405・Bridge 136</td><td class="state yes">通過</td><td class="state yes">通過</td></tr>
+        <tr><td><code>docs/battle-207</code></td><td class="state yes">0 / 0 / 0</td><td class="num">Core 392・Bridge 134</td><td class="state yes">通過</td><td class="state yes">通過</td></tr>
+        <tr><td><code>fix/battle-211</code></td><td class="state yes">0 / 0 / 0</td><td class="num">Core 385・Bridge 158</td><td class="state yes">通過</td><td class="state yes">通過</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note prose">始める前の main は Core 385・Bridge 134 でした。Script 121 件と Dungeon 84 + 23 件は、どのブランチでも変わらず通っています。lint の警告 2 件は以前からあるものです。「Unity 側のコンパイル」は、Unity 6 の DLL を参照する作業用のプロジェクトで、Editor を起動せずに画面・Editor・PlayMode テストの C# をコンパイルした結果です。</p>
+  <p class="prose">どの PR も、出す前に別の目で 2〜3 つの観点から読み直し、挙がった点を直しました。5 本を 2 本ずつ重ねて merge を試すと、衝突は <code>battle_core_v4.md</code> §15 の先頭 1 行だけでした。3 人が同じ日記帳の同じ行に、同じ日付で書き込んだ形です。</p>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>#203 の戦闘中のボタンは「降参する」の 1 つにしました。デッキ選択へは、降参の後の終了画面から戻れます。確認の画面は挟んでいません。</li>
+    <li>#203 のボタンは右上に置きました。画面の設計書は右上を手記のアイコンの場所にしています。まだアイコンが無いので、それまでの間だけ借りています。</li>
+    <li>#205 の再現テストは、Issue のランダムなデッキではなく固定の 29 枚で回します。#206 の後はランダムなデッキの中身が変わるためです。</li>
+    <li>#207 は、コアを直さず文書をコアに揃えました。コアの挙動が「効果が出たときに 1 減る」という既存の決定に合っていたためです。壁のダメージは見切りの「撃」に数えない、とも書きました。</li>
+    <li>#211 の終了画面は、画面の設計書に合わせて半透明のまま残しました。開始に失敗したときは、その回の run を捨ててモード画面へ戻します。</li>
+    <li>画面の設計書（<code>battle_ui_ux_v2.md</code>）も battle の担当の文書なので、食い違った行は同じ PR で直しました。行が重ならないように、#206 と #207 で直す行を分けています。</li>
+  </ul>
+
+  <h2>この作業場所で確かめていないこと</h2>
+  <ul class="prose">
+    <li>PlayMode テスト（<code>DemoFlowPlaybackTests</code>）の実行です。コンパイルが通ることだけを確かめました。</li>
+    <li>画面での見え方です。降参ボタンが他の物に重ならないか、選択画面の奥が透けないか、保存デッキの 1 行が題と重ならないかを見る必要があります。</li>
+    <li>メインのチャットで <code>npm run unity:sync</code> の後に <code>Battle.unity</code> を Play して確かめてください。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li><strong>#224 の上限 4</strong>を採るかどうかです。退ける場合は、PR を閉じるだけで済みます。</li>
+    <li><strong>merge の順</strong>です。#220 を #226 より先にしてください。#223・#224・#225 の 2 本目以降は、変更履歴の先頭行の衝突を両方残して解いてください。</li>
+    <li><strong>SOURCES.md の表の下の一文</strong>は、メインのチャットが書く部分です。「§19 のうち習熟（S5〜S8）が本文に入っていません」への書き換えをお願いします（#223 の本文にも書きました）。</li>
+    <li><strong>#221 と #222</strong> は cards の担当が直すかどうかを決めます。どちらの担当に回すかのラベルはまだ付けていません。</li>
+    <li><strong>Issue にしていない小さな残り</strong>があります。ダメージ式の倍率の引数が 2 つのままであること、終了画面を出す途中の例外で押せるものが残らないこと、デモの終了画面が設計書 §2.5 と違う作りであることです。必要なら Issue にします。</li>
+  </ul>
+</div>
