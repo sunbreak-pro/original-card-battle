@@ -120,14 +120,25 @@ namespace BattleCore
     /// <summary>§5 鈍足: the holder's move, push or pull was shortened to 0 cells and so did not happen.</summary>
     public sealed record MoveBlocked(Actor Actor, StatusKind By) : BattleEvent(Actor);
 
-    /// <summary>Actor is who applied it. Refused is true when the target was at its kind limit (§5).</summary>
+    /// <summary>
+    /// Actor is who applied it. Stacks is what the face, trait or stance gave; StacksAfter is what
+    /// the target holds now. Refused is true when the target was at its kind limit (§5) and nothing
+    /// went on.
+    /// </summary>
     public sealed record StatusApplied(
         Actor Actor,
         Actor Target,
         StatusKind Kind,
         int Stacks,
         int StacksAfter,
-        bool Refused) : BattleEvent(Actor);
+        bool Refused) : BattleEvent(Actor)
+    {
+        /// <summary>§5 (#205): what the ターンで減る型 cap threw away. A word already at the cap drops all of it; that is not a refusal.</summary>
+        public int Dropped { get; init; }
+
+        /// <summary>What actually went on — the number the screen shows. 0 when refused or when all of it was dropped.</summary>
+        public int Landed => Refused ? 0 : Stacks - Dropped;
+    }
 
     public sealed record StaminaGained(Actor Actor, int Amount, int StaminaAfter) : BattleEvent(Actor);
 
