@@ -270,6 +270,66 @@ namespace Depiction.Bridge.Tests
             });
         }
 
+        [TestCase("thrust")]
+        [TestCase("thrust:0")]
+        [TestCase("thrust:two")]
+        [TestCase("thrust:2:1")]
+        [TestCase("thrust:2,thrust:1")]
+        [TestCase("thrust:2,,kesa_cut:1")]
+        [TestCase("<garbage>")]
+        [TestCase(":2")]
+        // Stray text shaped like "id:count" is not named as a card: only an entry that reads is.
+        [TestCase("<garbage>:1")]
+        [TestCase("old_thrust:abc")]
+        [TestCase("{\"thrust\":2}")]
+        public void AnUnreadableSavedString_IsSaidInOneLine(string saved)
+        {
+            // #211: the deck still starts empty rather than a guess, and the screen now says why.
+            DeckBuilder deck = DeckBuilder.LoadOrPrototype(true, saved, out string notice);
+            Assert.That(deck.Total, Is.EqualTo(0));
+            Assert.That(notice, Is.EqualTo("保存したデッキを読めなかったため、空のデッキから始めます"));
+        }
+
+        [Test]
+        public void ARenamedCard_IsNamedInTheLine()
+        {
+            DeckBuilder deck = DeckBuilder.LoadOrPrototype(true, "thrust:2,old_thrust:1", out string notice);
+            Assert.That(deck.Total, Is.EqualTo(0));
+            Assert.That(notice, Is.EqualTo("保存したデッキに知らないカード「old_thrust」があったため、空のデッキから始めます"));
+        }
+
+        [TestCase("thrust:4")]
+        [TestCase("thrust:9")]
+        // Forty-two cards, like AStringPastFortyCards_GivesAnEmptyDeck: the first fourteen kinds, three each.
+        [TestCase("thrust:3,kesa_cut:3,overhead:3,wrist_cut:3,side_sweep:3,flat_strike:3,probe_thrust:3,"
+            + "pierce:3,throw_blade:3,reach_thrust:3,brace:3,iron_block:3,low_guard:3,riposte_guard:3")]
+        public void ASavedDeckPastTheRules_IsSaidWithoutNamingTheRule(string saved)
+        {
+            // Every entry reads, but Add refuses a card on the way. The line names no rule, so it stays
+            // true whichever rule refused it.
+            DeckBuilder deck = DeckBuilder.LoadOrPrototype(true, saved, out string notice);
+            Assert.That(deck.Total, Is.EqualTo(0));
+            Assert.That(notice, Is.EqualTo("保存したデッキがデッキの決まりに合わないため、空のデッキから始めます"));
+        }
+
+        [Test]
+        public void NothingIsSaid_WhenNothingWasSaved_TheDeckWasEmptied_OrTheStringReads()
+        {
+            DeckBuilder.LoadOrPrototype(false, "", out string firstPlay);
+            DeckBuilder.LoadOrPrototype(true, "", out string emptied);
+            DeckBuilder clean = DeckBuilder.LoadOrPrototype(true, DeckBuilder.Random(3).Save(), out string read);
+            DeckBuilder building = DeckBuilder.LoadOrPrototype(true, "thrust:2", out string underTwenty);
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstPlay, Is.Empty, "the first Play");
+                Assert.That(emptied, Is.Empty, "the player emptied it");
+                Assert.That(read, Is.Empty, "a clean string");
+                Assert.That(clean.Save(), Is.EqualTo(DeckBuilder.Random(3).Save()));
+                Assert.That(underTwenty, Is.Empty, "a deck short of 20 reads: it is being built, not broken");
+                Assert.That(building.Total, Is.EqualTo(2));
+            });
+        }
+
         [Test]
         public void TheTitleAndTheFilterChoices_AreTheBridges()
         {
