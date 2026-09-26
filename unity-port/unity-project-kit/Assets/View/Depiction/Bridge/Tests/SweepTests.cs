@@ -64,9 +64,9 @@ namespace Depiction.Bridge.Tests
 
         /// <summary>
         /// #205's replay on a fixed deck of 29 with three stance cards, so a change to the random decks
-        /// (#206) leaves it alone. Measured 2026-09-26 against 大黒蛇 セルク, seed 21: uncapped, 鈍足
-        /// peaked at 11 (turn 12: 鈍足 8 / 疲労 5; 疲労 6 and the priest's 再生 5 at their highest);
-        /// capped, 鈍足, 疲労 and the priest's 再生 all peak at 4. The battle is lost at turn 15 either way.
+        /// (#206) leaves it alone. Measured 2026-09-26 against 大黒蛇 セルク, seed 21, on the roster v4.4
+        /// numbers (#204 cut 瘴気の儀 to 疲労 1 / 再生 1, so those two no longer climb): uncapped, the
+        /// 鈍足 of 縛りの言葉 peaked at 11; capped, it stops at 4. The battle is lost at turn 15 either way.
         /// </summary>
         public const string ReplayDeck =
             "overhead:1,flat_strike:1,reach_thrust:1,brace:1,iron_block:2,deep_breath:1,first_aid:1,observe:1," +
@@ -74,7 +74,7 @@ namespace Depiction.Bridge.Tests
             "whirlwind:1,snap_guard:1,deflect:1,pommel_strike:1,keen_eye:1,resolve:1,gale_thrust:2,anchor_stance:1,vital_thrust:1";
 
         [Test]
-        public void TheIssuesReplay_MiasmaPriestSeed21_HoldsFatigueSlowAndRegenAtTheCap()
+        public void TheIssuesReplay_MiasmaPriestSeed21_HoldsSlowAtTheCap()
         {
             CoreBattleSource source = Fight(Enemies.MiasmaPriest, DeckBuilder.Load(ReplayDeck).Build(), 21);
             Assert.That(source, Is.Not.Null, "the replay ends without a stall");
@@ -87,9 +87,9 @@ namespace Depiction.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(turnDecay.Max(a => a.StacksAfter), Is.EqualTo(Constants.TurnDecayStackMax), "the words reach the cap and stop there");
-                Assert.That(Peak(Actor.Player, StatusKind.Slow), Is.EqualTo(Constants.TurnDecayStackMax), "鈍足");
-                Assert.That(Peak(Actor.Player, StatusKind.Fatigue), Is.EqualTo(Constants.TurnDecayStackMax), "疲労");
-                Assert.That(Peak(Actor.Enemy, StatusKind.Regen), Is.EqualTo(Constants.TurnDecayStackMax), "the priest's 再生");
+                Assert.That(Peak(Actor.Player, StatusKind.Slow), Is.EqualTo(Constants.TurnDecayStackMax), "鈍足 climbs to the cap and stops");
+                Assert.That(Peak(Actor.Player, StatusKind.Fatigue), Is.LessThanOrEqualTo(Constants.TurnDecayStackMax), "疲労");
+                Assert.That(Peak(Actor.Enemy, StatusKind.Regen), Is.LessThanOrEqualTo(Constants.TurnDecayStackMax), "the priest's 再生");
             });
         }
 

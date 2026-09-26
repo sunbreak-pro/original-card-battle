@@ -709,12 +709,27 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void ABossThatBindsEveryPhase_NeverPushesATurnDecayWordPastTheCap_InSixtyTurns()
+        public void AnEliteThatBindsTwiceAPhase_NeverPushesATurnDecayWordPastTheCap_InSixtyTurns()
         {
-            // #205: 大黒蛇 セルク at gap 3 casts 瘴気の儀 (疲労 2, 自分に再生 2) and 縛りの言葉 (鈍足 2)
-            // every phase, four stamina against a recovery of 4. A player who only ends turns is never
-            // hit, so the battle runs on. Uncapped, the words grew by one a turn and peaked at 61 on both sides.
-            var enemy = Enemies.MiasmaPriest;
+            // #205: an elite whose two actions a phase each put 疲労 2 and 鈍足 2 on the player and 再生 2
+            // on itself. The words gain four a phase and lose one a turn, so uncapped they would climb by
+            // three a turn. It never attacks, so a player who only ends turns is never hit and the battle
+            // runs on. A test enemy rather than a roster one, so retuning the roster (#204 cut 大黒蛇 セルク's
+            // 瘴気の儀 to 疲労 1 / 再生 1) leaves the rule's test alone.
+            var grants = new[]
+            {
+                new StatusGrant(StatusKind.Fatigue, 2),
+                new StatusGrant(StatusKind.Slow, 2),
+                new StatusGrant(StatusKind.Regen, 2, OnSelf: true),
+            };
+            var bind = Fixtures.EnemyAction("bind", face: new Face(Reach: new Reach(0, 3), Statuses: grants), attributes: BattleAttribute.Skill);
+            var hex = Fixtures.EnemyAction("hex", face: new Face(Reach: new Reach(0, 3), Statuses: grants), attributes: BattleAttribute.Skill);
+            var both = new[] { bind.Id, hex.Id };
+            var enemy = new EnemyDef(
+                "binder", "binder", MaxHp: 60, MaxStamina: 10, Recovery: 2, Size: 1,
+                BranchAtGapZero: both, BranchAtGapOneToTwo: both, BranchAtGapThreePlus: both,
+                Actions: new Dictionary<string, EnemyActionDef> { [bind.Id] = bind, [hex.Id] = hex },
+                Rank: EnemyRank.Elite, ActionsPerPhase: Constants.EliteActions);
             var setup = new BattleSetup(enemy, PrototypeDeck.Build(), Constants.PlayerStartCell + Constants.StartGap + enemy.Size);
             var s = TurnLoop.Start(setup, NoRng).State;
             int peakPlayer = 0, peakEnemy = 0;
