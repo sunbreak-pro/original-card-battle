@@ -52,7 +52,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(launch.AutoPlay, Is.False);
             Assert.That(launch.StopAfterTurns, Is.EqualTo(0));
             Assert.That(setup.Enemy, Is.SameAs(Enemies.PolearmWarped));
-            Assert.That(setup.Enemy.Name, Is.EqualTo("長柄の歪み兵"));
+            Assert.That(setup.Enemy.Name, Is.EqualTo("錆槍の竜兵"));
             Assert.That(launch.StartGap, Is.EqualTo(3));
             Assert.That(launch.FieldCells, Is.EqualTo(6));
             Assert.That(setup.PlayerStartCell, Is.EqualTo(2));

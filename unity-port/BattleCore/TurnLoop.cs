@@ -100,8 +100,9 @@ namespace BattleCore
     ///
     /// The demo vocabulary (#188): the nine status words, the twelve trait conditions and ten
     /// effects, heal and 崩し, and the stance slot with its exile pile. Where the canon leaves a
-    /// moment open the choice is written at the spot. Two-action enemies and adaptation are #189 /
-    /// #50.
+    /// moment open the choice is written at the spot. The enemies of the roster (#189) bring
+    /// multi-blow faces, a second action for elites and bosses and a stance used once a battle;
+    /// the boss adaptations are #50.
     /// </summary>
     public static class TurnLoop
     {
@@ -393,17 +394,22 @@ namespace BattleCore
             }
             else
             {
-                events.Add(new ActionExecuted(Actor.Enemy, action, state.GapTo(unit)) { Unit = unit });
-                var context = EnemyContext(state, unit, action);
-                state = Resolve(
-                    state, Actor.Enemy, unit, Array.Empty<int>(), action.Id, action.Name, action.Attributes,
-                    action.Column, action.Face, TraitsOf(action.Trait), action.Targets, action.Cost, context, rng, events);
-                if (!state.Enemies[unit].Alive)
+                state = Execute(state, unit, action, rng, events, out bool fell);
+                if (fell) return state.Living.Count == 0 ? CheckDefeat(state, Actor.Enemy, unit, events) : state;
+
+                // roster §1.3 (#189): an elite or a boss takes a second action. The tree is read again
+                // from the gap after the first, and the same action is not taken twice in one phase.
+                // The omen showed the first only; the second is chosen here.
+                if (enemy.Def.ActionsPerPhase >= 2 && !Combat.IsDefeated(state.Player.Hp))
                 {
-                    // It fell to its own blow's return (見切り). The battle goes on without it, or ends here.
-                    return state.Living.Count == 0 ? CheckDefeat(state, Actor.Enemy, unit, events) : state;
+                    var skip = new List<string>(state.Enemies[unit].Spent) { action.Id };
+                    var second = EnemyAi.ChooseAction(enemy.Def, state.GapTo(unit), state.Enemies[unit].Body.Stamina, skip);
+                    if (second != null)
+                    {
+                        state = Execute(state, unit, second, rng, events, out fell);
+                        if (fell) return state.Living.Count == 0 ? CheckDefeat(state, Actor.Enemy, unit, events) : state;
+                    }
                 }
-                state = RecordPlayed(state, Actor.Enemy, unit, action.Attributes);
             }
 
             // The stance's turn-end effect, then 構え, which works for the enemy too (roster §1.2).
@@ -417,6 +423,27 @@ namespace BattleCore
 
             // Step 12: the next omen, read from this enemy's gap as it stands now — after any move or push.
             return DecideNextOmen(state, unit, events);
+        }
+
+        /// <summary>
+        /// §9 step 10 for one action of an enemy. Fell is true when the enemy went down to its own
+        /// blow's return (見切り): the phase ends there. A stance action is spent (roster §1.2).
+        /// </summary>
+        private static BattleState Execute(BattleState state, int unit, EnemyActionDef action, IRng rng, List<BattleEvent> events, out bool fell)
+        {
+            events.Add(new ActionExecuted(Actor.Enemy, action, state.GapTo(unit)) { Unit = unit });
+            var context = EnemyContext(state, unit, action);
+            state = Resolve(
+                state, Actor.Enemy, unit, Array.Empty<int>(), action.Id, action.Name, action.Attributes,
+                action.Column, action.Face, TraitsOf(action.Trait), action.Targets, action.Cost, context, rng, events);
+            fell = !state.Enemies[unit].Alive;
+            if (fell) return state;
+            if (action.Face.Stance != null)
+            {
+                var spent = new List<string>(state.Enemies[unit].Spent) { action.Id };
+                state = state.WithUnit(unit, state.Enemies[unit] with { SpentStances = spent });
+            }
+            return RecordPlayed(state, Actor.Enemy, unit, action.Attributes);
         }
 
         // ---- Shared pieces ----
@@ -618,7 +645,6 @@ namespace BattleCore
                 foreach (int foe in hit)
                 {
                     if (foeSide == Actor.Enemy && !state.Enemies[foe].Alive) continue;
-                    var other = Get(state, foeSide, foe);
 
                     int stanceBonus = StanceAttackBonus(state, actor, unit, foeSide, foe);
                     if (stanceBonus > 0)
@@ -626,39 +652,59 @@ namespace BattleCore
                         events.Add(new StanceFired(actor, Get(state, actor, unit).StanceSource ?? "", StanceHook.AttackBonus) { Unit = foeSide == Actor.Enemy ? foe : unit });
                     }
 
-                    // §19.5 S13: one multiplier per blow, 脆化 first.
-                    double mult = 1.0;
-                    if (other.Statuses.Has(StatusKind.Fragile))
+                    // §2.4 hits (#189): each blow meets Guard on its own. §17.6 F6: 追撃 rides the
+                    // first blow only; the trait's +n and 強化 ride every blow.
+                    for (int blow = 0; blow < Math.Max(1, face.Hits); blow++)
                     {
-                        mult = Constants.FragileMult;
-                        state = Consume(state, foeSide, foe, StatusKind.Fragile, events);
-                        other = Get(state, foeSide, foe);
-                    }
-                    else if (empowered)
-                    {
-                        mult = Constants.EmpowerMult;
-                        empowerUsed = true;
-                    }
+                        if (foeSide == Actor.Enemy && !state.Enemies[foe].Alive) break;
+                        var other = Get(state, foeSide, foe);
 
-                    int raw = Combat.ComputeRawPower(
-                        face.Power + focus.Power - intimidate, outcome.PowerBonus + stanceBonus, followUp, conversion, mult);
-                    var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw, other.Guard);
-                    other = other with { Guard = guardAfter, Hp = Math.Max(0, other.Hp - damage) };
-                    state = Set(state, foeSide, foe, other);
-                    events.Add(new DamageDealt(actor, foeSide, raw, absorbed, damage, other.Guard, other.Hp) { Unit = foeSide == Actor.Enemy ? foe : unit });
+                        // §19.5 S13: one multiplier per blow, 脆化 first.
+                        double mult = 1.0;
+                        if (other.Statuses.Has(StatusKind.Fragile))
+                        {
+                            mult = Constants.FragileMult;
+                            state = Consume(state, foeSide, foe, StatusKind.Fragile, events);
+                            other = Get(state, foeSide, foe);
+                        }
+                        else if (empowered)
+                        {
+                            mult = Constants.EmpowerMult;
+                            empowerUsed = true;
+                        }
 
-                    if (!Combat.IsDefeated(other.Hp))
-                    {
-                        state = OnHitReactions(state, actor, unit, foeSide, foe, absorbed, events);
-                    }
-                    state = OnFall(state, foeSide, foe, events, out bool over);
-                    if (over) return state;
+                        int raw = Combat.ComputeRawPower(
+                            face.Power + focus.Power - intimidate, outcome.PowerBonus + stanceBonus,
+                            blow == 0 ? followUp : 0, conversion, mult);
+                        var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw, other.Guard);
+                        other = other with { Guard = guardAfter, Hp = Math.Max(0, other.Hp - damage) };
+                        state = Set(state, foeSide, foe, other);
+                        events.Add(new DamageDealt(actor, foeSide, raw, absorbed, damage, other.Guard, other.Hp) { Unit = foeSide == Actor.Enemy ? foe : unit });
 
-                    // 見切り may have taken the attacker down.
-                    if (Combat.IsDefeated(Get(state, actor, unit).Hp))
-                    {
-                        state = OnFall(state, actor, unit, events, out _);
-                        return state;
+                        if (!Combat.IsDefeated(other.Hp))
+                        {
+                            state = OnHitReactions(state, actor, unit, foeSide, foe, absorbed, events);
+                        }
+                        state = OnFall(state, foeSide, foe, events, out bool over);
+                        if (over) return state;
+
+                        // 見切り may have taken the attacker down.
+                        if (Combat.IsDefeated(Get(state, actor, unit).Hp))
+                        {
+                            state = OnFall(state, actor, unit, events, out _);
+                            return state;
+                        }
+
+                        // A face of several blows puts its opponent statuses on after the first
+                        // (二段斬り: 脆化 on the first blow, for the second).
+                        if (blow == 0 && face.Hits >= 2 && (foeSide == Actor.Player || state.Enemies[foe].Alive))
+                        {
+                            foreach (var grant in face.StatusList)
+                            {
+                                if (grant.OnSelf || grant.Stacks <= 0) continue;
+                                state = ApplyStatus(state, actor, foeSide, foe, foeSide == Actor.Enemy ? foe : unit, grant.Kind, grant.Stacks, events);
+                            }
+                        }
                     }
 
                     int broken = face.Break + outcome.BreakBonus;
@@ -783,7 +829,12 @@ namespace BattleCore
 
             // §5: the face's statuses, then the trait's. The player holds at most six kinds; an enemy
             // has no limit. Statuses on the opponent need the blow to have reached them.
-            var grants = new List<StatusGrant>(face.StatusList);
+            // A face of several blows has put its opponent statuses on already, after the first blow.
+            var grants = new List<StatusGrant>();
+            foreach (var grant in face.StatusList)
+            {
+                if (grant.OnSelf || face.Hits < 2 || !attacks) grants.Add(grant);
+            }
             grants.AddRange(outcome.GrantList);
             foreach (var grant in grants)
             {
@@ -1069,7 +1120,7 @@ namespace BattleCore
             int staminaThen = Combat.RecoverStamina(
                 enemy.Body.Stamina, enemy.Body.MaxStamina, enemy.Def.Recovery - fatigue, enemy.Body.NextTurnRecoveryBonus);
 
-            var omen = EnemyAi.DecideOmen(enemy.Def, state.GapTo(unit), staminaThen);
+            var omen = EnemyAi.DecideOmen(enemy.Def, state.GapTo(unit), staminaThen, enemy.Spent);
             events.Add(new OmenSet(Actor.Enemy, omen, Decided: true) { Unit = unit });
             return state.WithOmen(unit, omen);
         }

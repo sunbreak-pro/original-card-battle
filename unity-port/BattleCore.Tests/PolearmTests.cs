@@ -5,9 +5,9 @@ using BattleCore;
 namespace BattleCore.Tests
 {
     /// <summary>
-    /// 長柄の歪み兵 (enemy_roster_v4.md §2.1) as data: the numbers match the roster table, the tree
-    /// has three branches (§6.1) that fall through when stamina runs short, and the omen is one step.
-    /// The reaches and the gap thresholds are the v4.3 provisional values (#162) until #160 lands.
+    /// 錆槍の竜兵 (enemy_roster_v4.md §2.1, polearm_warped) as data: the numbers match the roster table,
+    /// the tree has three branches (§6.1) that fall through when stamina runs short, and the omen is
+    /// one step. The reaches and the gap thresholds are the roster's v4.3 values.
     /// </summary>
     public class PolearmTests
     {
@@ -21,7 +21,7 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(Polearm.Id, Is.EqualTo("polearm_warped"));
-                Assert.That(Polearm.Name, Is.EqualTo("長柄の歪み兵"));
+                Assert.That(Polearm.Name, Is.EqualTo("錆槍の竜兵"), "#179: the roster name since #128");
                 Assert.That(Polearm.MaxHp, Is.EqualTo(60));
                 Assert.That(Polearm.MaxStamina, Is.EqualTo(10));
                 Assert.That(Polearm.Recovery, Is.EqualTo(2));
@@ -104,7 +104,7 @@ namespace BattleCore.Tests
         public void TheCatalogue_FindsThePolearmById_AndRefusesAnUnknownId()
         {
             Assert.That(Enemies.ById("polearm_warped"), Is.SameAs(Polearm));
-            Assert.That(Enemies.All, Has.Count.EqualTo(1));
+            Assert.That(Enemies.All[0], Is.SameAs(Polearm), "the roster order starts with §2.1");
             Assert.That(() => Enemies.ById("nobody"), Throws.InstanceOf<System.Collections.Generic.KeyNotFoundException>());
         }
 
