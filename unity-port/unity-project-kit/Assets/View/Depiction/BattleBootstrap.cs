@@ -29,6 +29,10 @@ namespace Depiction.View
         [Tooltip("The gap N on turn 1 (battle_core_v4 §7.3: 3). The player stands on cell 2; a line too short puts the enemy at its end.")]
         public int startGap = BattleLaunch.DefaultStartGap;
 
+        [Header("Demo (#187)")]
+        [Tooltip("Opens the deck screen first (#190) and starts the battle with the deck built there. Off: the battle starts at once with the prototype deck, as the slice did.")]
+        public bool demoFlow = true;
+
         [Header("Unattended runs (captures, PlayMode test)")]
         [Tooltip("The battle suggests the leftmost card it can pay for. Pair it with Auto Play Drags and Auto End Turn on the player.")]
         public bool autoPlay;
@@ -50,6 +54,22 @@ namespace Depiction.View
             }
 
             SeedInUse = randomSeed ? Random.Range(1, int.MaxValue) : seed;
+
+            // The demo flow (#190): the player waits, the deck screen comes first, and each 「戦闘へ」
+            // builds a battle from the Inspector's enemy and seed with the deck built there. An
+            // unattended run (autoPlay) keeps starting at once, as the PlayMode test expects.
+            DemoFlow flow = GetComponent<DemoFlow>();
+            if (demoFlow && !autoPlay)
+            {
+                player.Hold();
+                if (!flow) flow = gameObject.AddComponent<DemoFlow>();
+                flow.Begin(player, deck => BuildLaunch(deck).CreateSource());
+                Debug.Log("[BattleBootstrap] demo flow: " + enemyId + " / seed " + SeedInUse + " / " + fieldCells + " cells");
+                return;
+            }
+            // Awake run again with the flow switched off (the PlayMode test does): its screens go.
+            if (flow) Destroy(flow);
+
             var launch = new BattleLaunch
             {
                 EnemyId = enemyId,
@@ -72,6 +92,19 @@ namespace Depiction.View
                 return;
             }
             Debug.Log("[BattleBootstrap] " + enemyId + " / seed " + SeedInUse + " / " + fieldCells + " cells / start gap " + startGap);
+        }
+
+        /// <summary>The Inspector's battle with the deck the demo's deck screen built.</summary>
+        private BattleLaunch BuildLaunch(System.Collections.Generic.List<BattleCore.CardInstance> deck)
+        {
+            return new BattleLaunch
+            {
+                EnemyId = enemyId,
+                Seed = SeedInUse,
+                FieldCells = fieldCells,
+                StartGap = Mathf.Max(0, startGap),
+                Deck = deck,
+            };
         }
     }
 }
