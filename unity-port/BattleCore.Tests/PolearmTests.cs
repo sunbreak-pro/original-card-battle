@@ -57,7 +57,7 @@ namespace BattleCore.Tests
         public void ThereAreExactlyFiveActions_AndNoneCarriesAStatus()
         {
             Assert.That(Polearm.Actions.Keys, Is.EquivalentTo(new[] { "sweep", "shove", "reach_thrust", "guard_up", "step_forward" }));
-            Assert.That(Polearm.Actions.Values.All(a => a.Face.Status == null), Is.True);
+            Assert.That(Polearm.Actions.Values.All(a => a.Face.StatusList.Count == 0), Is.True);
         }
 
         [Test]

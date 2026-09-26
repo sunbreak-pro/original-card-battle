@@ -154,7 +154,7 @@ namespace BattleCore.Tests
         {
             // Deck order: the reach thrust is the first card with a trait that reaches gap 2.
             var rng = NoRng;
-            var state = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffled(PrototypeDeck.Kinds.ToArray()).State;
 
             var begin = TurnLoop.BeginPlayerTurn(state, rng);
             var traitCard = begin.State.Hand.First(c =>
@@ -194,7 +194,7 @@ namespace BattleCore.Tests
         [Test]
         public void BeginPlayerTurn_IsStepsOneToFive_Exactly()
         {
-            var state = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffled(PrototypeDeck.Kinds.ToArray()).State;
             var begin = TurnLoop.BeginPlayerTurn(state, NoRng);
 
             Assert.That(TypesOf(begin.Events), Is.EqualTo(new[]
@@ -251,7 +251,7 @@ namespace BattleCore.Tests
         public void ACardOutOfReach_IsRefused_AndThePreviewSaysSo()
         {
             // Gap 2: the thrust (0〜1) cannot be released; the reach thrust (1〜2) can; a Guard card reads no reach.
-            var s = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            var s = StartUnshuffled(PrototypeDeck.Kinds.ToArray()).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
             Assert.Multiple(() =>
@@ -321,7 +321,7 @@ namespace BattleCore.Tests
         [Test]
         public void Number1_Recovery_PlayerThreeCappedAtTen_EnemyTwo()
         {
-            var state = StartUnshuffledAt(1, CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(1, PrototypeDeck.Kinds.ToArray()).State;
 
             var begin = TurnLoop.BeginPlayerTurn(state, NoRng);
             var capped = begin.Events.OfType<StaminaRecovered>().Single();
@@ -350,7 +350,7 @@ namespace BattleCore.Tests
         [Test]
         public void Number2_StaminaFalls_ByExactlyTheSumOfTheColumns()
         {
-            var state = StartUnshuffledAt(1, CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(1, PrototypeDeck.Kinds.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
             // Deck order: thrust(3) kesa_cut(2) reach_thrust(2) brace(2) feint(2).
@@ -365,7 +365,7 @@ namespace BattleCore.Tests
         [Test]
         public void Number2_AnUnpayableCard_IsRefused()
         {
-            var state = StartUnshuffledAt(1, CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(1, PrototypeDeck.Kinds.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
             foreach (var id in new[] { "thrust", "kesa_cut", "reach_thrust", "brace" })
             {
@@ -382,7 +382,7 @@ namespace BattleCore.Tests
         [Test]
         public void Number3_Reserve_OnlyWithThreeOrMoreLeft()
         {
-            var state = StartUnshuffledAt(1, CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(1, PrototypeDeck.Kinds.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
             // 10 − 3 − 2 − 2 = 3 left → Guard +3.
@@ -402,7 +402,7 @@ namespace BattleCore.Tests
         [Test]
         public void Number3_TheEnemyTakesItsReserveToo()
         {
-            var state = StartUnshuffled(CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffled(PrototypeDeck.Kinds.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
             var end = TurnLoop.EndTurn(s, NoRng);
 
@@ -451,7 +451,7 @@ namespace BattleCore.Tests
         {
             // Adjacent, so the omen is the shove. The player has one cell behind (§7.3): a two-cell
             // push moves one and the other cell is the wall (§7.3 WALL_DAMAGE 3).
-            var state = StartUnshuffledAt(0, CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(0, PrototypeDeck.Kinds.ToArray()).State;
 
             // No Guard: 2 stamina and nothing played, so no 構え either.
             var bare = TurnLoop.BeginPlayerTurn(state, NoRng).State;
@@ -490,7 +490,7 @@ namespace BattleCore.Tests
         [Test]
         public void Number7_Damage_IsFacePlusTraitMinusGuard_AndNeverBelowZero()
         {
-            var state = StartUnshuffledAt(0, CardCatalog.All.ToArray()).State;
+            var state = StartUnshuffledAt(0, PrototypeDeck.Kinds.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
             // Gap 0: kesa_cut is 13 + 5 against Guard 0.

@@ -66,14 +66,14 @@ namespace BattleCore
 
         /// <summary>
         /// §2.4 / §6: whether a face is aimed at the opponent, which is what a reach applies to — an
-        /// attack, a status put on the opponent, or a push / pull. A Self-targeted action reads no
-        /// reach even when it carries those rows. One and All (§7.4) both aim at the opponent.
+        /// attack, a status put on the opponent, a push / pull, or 崩し. A Self-targeted action reads
+        /// no reach even when it carries those rows. One and All (§7.4) both aim at the opponent.
         /// </summary>
         public static bool IsOpponentDirected(BattleAttribute attributes, Face face, TargetKind targets)
         {
             if (face == null) throw new ArgumentNullException(nameof(face));
             if (targets == TargetKind.Self) return false;
-            return attributes.HasFlag(BattleAttribute.Attack) || face.Status.HasValue || face.Push != 0;
+            return attributes.HasFlag(BattleAttribute.Attack) || face.GivesFoeStatus || face.Push != 0 || face.Break > 0;
         }
 
         /// <summary>

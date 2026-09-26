@@ -4,109 +4,50 @@ using System.Collections.Generic;
 namespace BattleCore
 {
     /// <summary>
-    /// Card data, written as records from card_document/swordsman_cards_v4.md. The numbers are the
-    /// canon's and are not derived here (the 素直 +2 is already inside 23 and 12).
+    /// Card data, written as records from card_document/swordsman_cards_v4.md v4.3 (2026-09-23). The
+    /// numbers are the canon's and are not derived here: the 素直 +2 and the reach-width correction
+    /// of §1.4 are already inside them.
     ///
-    /// The slice carries ten of the eighty (#71). #51 widens <see cref="All"/> to the rest without
-    /// changing the record shape.
-    ///
-    /// v4.3 (#162): the reaches, the gap thresholds and the move cells below are provisional —
-    /// the card canon is still written in 近間 / 遠間, and #160 (cards lane) settles them. The
-    /// mapping used: 近間 → 間合い 0 以下, 遠間 → 間合い 1 以上 (2 for 猪突猛進), 近間へ → 前へ 1,
-    /// 遠間へ → 後ろへ 1; reaches from the desk test of battle_core_v4 §21.4.
+    /// The core carries all eighty swordsman cards (#188): the initial forty (§2, #1-#40) live in
+    /// CardCatalog.Initial.cs and the learned forty (§3, #41-#80) in CardCatalog.Learned.cs. This
+    /// file keeps the shorthands those two are written with, the canon-order list and the lookup.
     /// </summary>
-    public static class CardCatalog
+    public static partial class CardCatalog
     {
-        private static Trait AtMost(int gap, TraitEffect effect, int amount = 0) =>
-            new Trait(TraitCondition.GapAtMost, effect, amount, Threshold: gap);
+        /// <summary>
+        /// Every card the core knows, in canon order (#1 first, #80 last).
+        ///
+        /// Assigned in the static constructor, not by a field initializer: the order the field
+        /// initializers of partial files run in is undefined, but all of them have run before the
+        /// constructor body does.
+        /// </summary>
+        public static readonly IReadOnlyList<CardDef> All;
 
-        private static Trait AtLeast(int gap, TraitEffect effect, int amount = 0) =>
-            new Trait(TraitCondition.GapAtLeast, effect, amount, Threshold: gap);
-
-        private static Trait Reserve(int threshold, TraitEffect effect, int amount) =>
-            new Trait(TraitCondition.Reserve, effect, amount, Threshold: threshold);
-
-        // ---- Attack ----
-
-        /// <summary>#1. The plain column-3 attack: 21 on the ruler plus the 素直 +2.</summary>
-        public static readonly CardDef Thrust = new CardDef(
-            "thrust", "突き", BattleAttribute.Attack, 3,
-            new Face(Power: 23),
-            Description: "まっすぐ突く");
-
-        /// <summary>#2. Pays for standing adjacent.</summary>
-        public static readonly CardDef KesaCut = new CardDef(
-            "kesa_cut", "袈裟斬り", BattleAttribute.Attack, 2,
-            new Face(Power: 13),
-            AtMost(0, TraitEffect.PowerBonus, 5),
-            Description: "肩口から斬り下ろす");
-
-        /// <summary>#10. Reaches one cell further than the ruler and pays for the gap — where the polearm punishes.</summary>
-        public static readonly CardDef ReachThrust = new CardDef(
-            "reach_thrust", "伸び突き", BattleAttribute.Attack, 2,
-            new Face(Power: 13, Reach: new Reach(1, 2)),
-            AtLeast(1, TraitEffect.PowerBonus, 5),
-            Description: "腕を伸ばし切って突く");
-
-        /// <summary>#33. The column-1 attack and the one card that applies 鈍足. Adjacent only.</summary>
-        public static readonly CardDef BodyCheck = new CardDef(
-            "body_check", "体当たり", BattleAttribute.Attack | BattleAttribute.Skill, 1,
-            new Face(Power: 4, Status: StatusKind.Slow, StatusStacks: Constants.StatusApplyDefault, Reach: Reach.Only(0)),
-            AtMost(0, TraitEffect.HeavyBlow),
-            Description: "近間で身体ごとぶつかる");
-
-        // ---- Guard ----
-
-        /// <summary>#11. The single-attribute Guard; rewards holding stamina back.</summary>
-        public static readonly CardDef Brace = new CardDef(
-            "brace", "呼吸を整える", BattleAttribute.Guard, 2,
-            new Face(Guard: 9),
-            Reserve(6, TraitEffect.NextTurnRecovery, 1),
-            TargetKind.Self,
-            "息を整えて受けに備える");
-
-        /// <summary>#51. Attack and Guard in one card, adjacent only, better when the trait lands.</summary>
-        public static readonly CardDef ShieldBash = new CardDef(
-            "shield_bash", "盾打ち", BattleAttribute.Attack | BattleAttribute.Guard, 2,
-            new Face(Power: 8, Guard: 6, Reach: Reach.Only(0)),
-            AtMost(0, TraitEffect.GuardBonus, 3),
-            Description: "固めた盾で打つ");
-
-        // ---- Moving ----
-
-        /// <summary>#30. Hit, then step back one.</summary>
-        public static readonly CardDef Feint = new CardDef(
-            "feint", "牽制", BattleAttribute.Attack | BattleAttribute.Move, 2,
-            new Face(Power: 8, Move: -1),
-            Reserve(4, TraitEffect.GuardBonus, 3),
-            Description: "牽制して退く");
-
-        /// <summary>#31. The answer to being shoved away: reaches 1〜2, the gap is read before the move, so from 2 it lands at 20 and closes in.</summary>
-        public static readonly CardDef BoarRush = new CardDef(
-            "boar_rush", "猪突猛進", BattleAttribute.Attack | BattleAttribute.Move, 3,
-            new Face(Power: 14, Move: 2, Reach: new Reach(1, 2)),
-            AtLeast(2, TraitEffect.PowerBonus, 6),
-            Description: "遠くから一気に駆けて斬る");
-
-        /// <summary>#37. Guard while closing in: 10 on the ruler plus the 素直 +2.</summary>
-        public static readonly CardDef StepInGuard = new CardDef(
-            "step_in_guard", "足捌き・前", BattleAttribute.Guard | BattleAttribute.Move, 3,
-            new Face(Guard: 12, Move: 1),
-            Targets: TargetKind.Self,
-            Description: "受けながら詰める");
-
-        /// <summary>#38. Guard while backing off.</summary>
-        public static readonly CardDef StepOutGuard = new CardDef(
-            "step_out_guard", "足捌き・後", BattleAttribute.Guard | BattleAttribute.Move, 3,
-            new Face(Guard: 12, Move: -1),
-            Targets: TargetKind.Self,
-            Description: "受けながら退く");
-
-        /// <summary>Every card the core knows, in canon order (#1 first). Ten for the slice; eighty after #51.</summary>
-        public static readonly IReadOnlyList<CardDef> All = new[]
+        static CardCatalog()
         {
-            Thrust, KesaCut, ReachThrust, Brace, Feint, BoarRush, BodyCheck, StepInGuard, StepOutGuard, ShieldBash,
-        };
+            All = new[]
+            {
+                // §2: the initial forty.
+                Thrust, KesaCut, Overhead, WristCut, SideSweep,
+                FlatStrike, ProbeThrust, Pierce, ThrowBlade, ReachThrust,
+                Brace, IronBlock, LowGuard, RiposteGuard, DeepBreath,
+                WaterStance, RockStance, FlowStance, FirstAid, SpiritRoar,
+                Focus, Observe, WarCry, SecondWind, Footwork,
+                BackLeap, SlideStep, BreakOff, Lunge, Feint,
+                BoarRush, Rend, BodyCheck, StoneThrow, ParryCut,
+                GuardThrust, StepInGuard, StepOutGuard, IronWall, TwistAway,
+
+                // §3: the learned forty.
+                MiasmaBlade, PriestPrayer, PurgeFlash, LineLash, AbyssStance,
+                HaulStep, RootStride, ThornShot, RootBind, Bulwark,
+                ShieldBash, PackHowl, FangRush, Whirlwind, RiposteStance,
+                HunterMark, SpearWall, ShieldPush, SnapGuard, LeapBack,
+                RisingCut, LegSweep, DashIn, GuardWalk, ThornCut,
+                CalmGuard, Deflect, CrescentCut, PommelStrike, MistStep,
+                KeenEye, Resolve, GaleThrust, AnchorStance, VitalThrust,
+                EvadeCut, BloodDance, WolfStance, ShadowLunge, LastStand,
+            };
+        }
 
         public static CardDef ById(string id)
         {
@@ -117,19 +58,75 @@ namespace BattleCore
             }
             throw new KeyNotFoundException($"Unknown card id \"{id}\".");
         }
+
+        // ---- Trait shorthands: the conditions of §1.2, one per helper ----
+        // grant is only for the Status effect (「<語>を n 付与」 / 「<語> +n スタック」).
+
+        /// <summary>間合い n 以下 (「間合い 0」 is 0 以下).</summary>
+        private static Trait AtMost(int gap, TraitEffect effect, int amount = 0, StatusGrant? grant = null) =>
+            new Trait(TraitCondition.GapAtMost, effect, amount, Threshold: gap, Grant: grant);
+
+        /// <summary>間合い n 以上.</summary>
+        private static Trait AtLeast(int gap, TraitEffect effect, int amount = 0, StatusGrant? grant = null) =>
+            new Trait(TraitCondition.GapAtLeast, effect, amount, Threshold: gap, Grant: grant);
+
+        /// <summary>温存(残 ≥ n).</summary>
+        private static Trait Reserve(int threshold, TraitEffect effect, int amount = 0, StatusGrant? grant = null) =>
+            new Trait(TraitCondition.Reserve, effect, amount, Threshold: threshold, Grant: grant);
+
+        /// <summary>The conditions that carry no parameter: 死力 / 初手 / 締め / 崩し後 / 連打 / 手薄.</summary>
+        private static Trait When(TraitCondition condition, TraitEffect effect, int amount = 0, StatusGrant? grant = null) =>
+            new Trait(condition, effect, amount, Grant: grant);
+
+        /// <summary>連動(X).</summary>
+        private static Trait Combo(BattleAttribute attribute, TraitEffect effect, int amount = 0, StatusGrant? grant = null) =>
+            new Trait(TraitCondition.Combo, effect, amount, Attribute: attribute, Grant: grant);
+
+        /// <summary>予兆(攻撃 / 移動 / 防御).</summary>
+        private static Trait OmenIs(OmenKind omen, TraitEffect effect, int amount = 0, StatusGrant? grant = null) =>
+            new Trait(TraitCondition.OmenIs, effect, amount, Omen: omen, Grant: grant);
+
+        /// <summary>相手の状態(語).</summary>
+        private static Trait FoeHas(StatusKind watch, TraitEffect effect, int amount = 0, StatusGrant? grant = null) =>
+            new Trait(TraitCondition.FoeHas, effect, amount, Watch: watch, Grant: grant);
+
+        /// <summary>自分の状態(語).</summary>
+        private static Trait SelfHas(StatusKind watch, TraitEffect effect, int amount = 0, StatusGrant? grant = null) =>
+            new Trait(TraitCondition.SelfHas, effect, amount, Watch: watch, Grant: grant);
+
+        // ---- Status shorthands: who a word lands on (battle_core_v4 §5) ----
+
+        /// <summary>A word that lands on the opponent: 出血 / 脆化 / 鈍足 / 威圧 / 疲労.</summary>
+        private static StatusGrant Foe(StatusKind kind, int stacks) => new StatusGrant(kind, stacks, OnSelf: false);
+
+        /// <summary>A word that lands on the one playing: 強化 / 集中 / 見切り / 再生.</summary>
+        private static StatusGrant Self(StatusKind kind, int stacks) => new StatusGrant(kind, stacks, OnSelf: true);
     }
 
     /// <summary>
     /// The player deck the slice fights the polearm with: ten kinds × 2 = 20 cards, the floor of §8.
-    /// Why these ten is written on #71 and in the PR that added this file.
+    /// Why these ten is written on #71 and in the PR that added this file. They are named one by one
+    /// because <see cref="CardCatalog.All"/> holds all eighty since #188.
     /// </summary>
     public static class PrototypeDeck
     {
         public const int Copies = 2;
 
-        public static IReadOnlyList<CardDef> Kinds => CardCatalog.All;
+        public static IReadOnlyList<CardDef> Kinds { get; } = new[]
+        {
+            CardCatalog.Thrust,
+            CardCatalog.KesaCut,
+            CardCatalog.ReachThrust,
+            CardCatalog.Brace,
+            CardCatalog.Feint,
+            CardCatalog.BoarRush,
+            CardCatalog.BodyCheck,
+            CardCatalog.StepInGuard,
+            CardCatalog.StepOutGuard,
+            CardCatalog.ShieldBash,
+        };
 
-        /// <summary>Laid out in canon order and not shuffled; the turn loop shuffles with its own RNG.</summary>
+        /// <summary>Laid out in the order above and not shuffled; the turn loop shuffles with its own RNG.</summary>
         public static List<CardInstance> Build() => Cards.BuildDeck(Kinds, Copies);
     }
 }

@@ -108,8 +108,14 @@ namespace BattleCore
         int GuardAfter,
         int HpAfter) : BattleEvent(Actor);
 
-    /// <summary>§7.3: Actor is the target of a push / pull that its size (2 or more) refused.</summary>
-    public sealed record PushRefused(Actor Actor, int Size) : BattleEvent(Actor);
+    /// <summary>
+    /// §7.3: Actor is the target of a push / pull that its size (2 or more) refused. ByStance is true
+    /// when a stance refused it instead (錨の構え, #188).
+    /// </summary>
+    public sealed record PushRefused(Actor Actor, int Size) : BattleEvent(Actor)
+    {
+        public bool ByStance { get; init; }
+    }
 
     /// <summary>§5 鈍足: the holder's move, push or pull was shortened to 0 cells and so did not happen.</summary>
     public sealed record MoveBlocked(Actor Actor, StatusKind By) : BattleEvent(Actor);
@@ -124,6 +130,46 @@ namespace BattleCore
         bool Refused) : BattleEvent(Actor);
 
     public sealed record StaminaGained(Actor Actor, int Amount, int StaminaAfter) : BattleEvent(Actor);
+
+    // ---- The demo vocabulary (#188): statuses, heal, break, stance ----
+
+    /// <summary>§5 使うと減る型: the word's effect landed and it lost one stack. Actor is the holder.</summary>
+    public sealed record StatusConsumed(Actor Actor, StatusKind Kind, int StacksAfter) : BattleEvent(Actor);
+
+    /// <summary>
+    /// §5 出血 / 再生: HP moved at the holder's turn start. Actor is the holder; Amount is the signed
+    /// change that happened (−4 for 出血 2; 再生 3 is +6 unless the maximum capped it, 0 at full HP)
+    /// and HpAfter is settled.
+    /// </summary>
+    public sealed record StatusHpChanged(Actor Actor, StatusKind Kind, int Amount, int HpAfter) : BattleEvent(Actor);
+
+    /// <summary>A heal face: Actor gained Amount HP (after the maximum capped it).</summary>
+    public sealed record Healed(Actor Actor, int Amount, int HpAfter) : BattleEvent(Actor);
+
+    /// <summary>崩し: Actor took Amount stamina off Target (floor 0).</summary>
+    public sealed record StaminaBroken(Actor Actor, Actor Target, int Amount, int StaminaAfter) : BattleEvent(Actor);
+
+    /// <summary>
+    /// §5 見切り: Actor (the one hit) returned half of what its Guard absorbed to Target (the
+    /// attacker). Raw − Absorbed = Damage against the attacker's own Guard, as in <see cref="DamageDealt"/>.
+    /// </summary>
+    public sealed record Reflected(
+        Actor Actor,
+        Actor Target,
+        int Raw,
+        int Absorbed,
+        int Damage,
+        int TargetGuardAfter,
+        int TargetHpAfter) : BattleEvent(Actor);
+
+    /// <summary>§4: Actor set a stance into its slot. Replaced is the source id of the stance it pushed out, if any.</summary>
+    public sealed record StanceSet(Actor Actor, string SourceId, string Name, StanceDef Stance, string? Replaced) : BattleEvent(Actor);
+
+    /// <summary>§4: Actor's stance took effect. What it did follows as its own events (GuardGained, …).</summary>
+    public sealed record StanceFired(Actor Actor, string SourceId, StanceHook Hook) : BattleEvent(Actor);
+
+    /// <summary>§4: a stance card left for the exile pile once it resolved. It is not drawn again this battle.</summary>
+    public sealed record CardExiled(Actor Actor, CardInstance Card) : BattleEvent(Actor);
 
     /// <summary>
     /// §7.4 / §17.6 F9: one of several enemies fell (Unit says which) and the battle goes on. It

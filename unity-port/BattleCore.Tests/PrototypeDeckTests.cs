@@ -68,11 +68,11 @@ namespace BattleCore.Tests
                 Assert.That(CardCatalog.StepInGuard.Trait, Is.Null, "素直");
                 Assert.That(CardCatalog.StepOutGuard.Trait, Is.Null, "素直");
 
-                // v4.3 provisional mapping (#162): 近間 → 間合い 0 以下, 遠間 → 間合い 1 以上 (2 for 猪突猛進).
+                // v4.3 (#160, settled on the card canon; #179 brought the three slice cards in line).
                 Assert.That(CardCatalog.KesaCut.Trait, Is.EqualTo(
                     new Trait(TraitCondition.GapAtMost, TraitEffect.PowerBonus, 5, Threshold: 0)));
                 Assert.That(CardCatalog.ReachThrust.Trait, Is.EqualTo(
-                    new Trait(TraitCondition.GapAtLeast, TraitEffect.PowerBonus, 5, Threshold: 1)));
+                    new Trait(TraitCondition.GapAtLeast, TraitEffect.PowerBonus, 5, Threshold: 2)));
                 Assert.That(CardCatalog.BoarRush.Trait, Is.EqualTo(
                     new Trait(TraitCondition.GapAtLeast, TraitEffect.PowerBonus, 6, Threshold: 2)));
                 Assert.That(CardCatalog.ShieldBash.Trait, Is.EqualTo(
@@ -89,8 +89,7 @@ namespace BattleCore.Tests
         [Test]
         public void BodyCheck_AppliesTwoStacksOfSlow()
         {
-            Assert.That(CardCatalog.BodyCheck.Face.Status, Is.EqualTo(StatusKind.Slow));
-            Assert.That(CardCatalog.BodyCheck.Face.StatusStacks, Is.EqualTo(2));
+            Assert.That(CardCatalog.BodyCheck.Face.StatusList, Is.EqualTo(new[] { new StatusGrant(StatusKind.Slow, 2) }));
         }
 
         [Test]
@@ -107,7 +106,7 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void Reaches_AreTheProvisionalOnes_AndNoneExceedsTheCommonBand()
+        public void Reaches_AreTheCanonOnes_AndNoneExceedsTheCommonBand()
         {
             // §7.2: the common N is 0〜3; §2.4: the default reach is 0〜1.
             Assert.Multiple(() =>
@@ -117,9 +116,10 @@ namespace BattleCore.Tests
                 Assert.That(CardCatalog.Feint.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
                 Assert.That(CardCatalog.ReachThrust.Face.ReachOrDefault, Is.EqualTo(new Reach(1, 2)));
                 Assert.That(CardCatalog.BoarRush.Face.ReachOrDefault, Is.EqualTo(new Reach(1, 2)));
-                Assert.That(CardCatalog.BodyCheck.Face.ReachOrDefault, Is.EqualTo(Reach.Only(0)));
-                Assert.That(CardCatalog.ShieldBash.Face.ReachOrDefault, Is.EqualTo(Reach.Only(0)));
-                foreach (var card in CardCatalog.All) Assert.That(card.Face.ReachOrDefault.Max, Is.LessThanOrEqualTo(3), card.Id);
+                // #179: both reach 0〜1 in v4.3, so their 間合い 0 trait holds only when adjacent.
+                Assert.That(CardCatalog.BodyCheck.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
+                Assert.That(CardCatalog.ShieldBash.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
+                foreach (var card in PrototypeDeck.Kinds) Assert.That(card.Face.ReachOrDefault.Max, Is.LessThanOrEqualTo(3), card.Id);
             });
         }
 
@@ -146,8 +146,8 @@ namespace BattleCore.Tests
         [Test]
         public void ThereAreTenKinds_WithUniqueIds()
         {
-            Assert.That(CardCatalog.All, Has.Count.EqualTo(10));
-            Assert.That(CardCatalog.All.Select(c => c.Id).Distinct().Count(), Is.EqualTo(10));
+            Assert.That(PrototypeDeck.Kinds, Has.Count.EqualTo(10));
+            Assert.That(PrototypeDeck.Kinds.Select(c => c.Id).Distinct().Count(), Is.EqualTo(10));
         }
 
         [TestCase(1)]
@@ -156,20 +156,20 @@ namespace BattleCore.Tests
         public void EveryCostHasAnAttack(int column)
         {
             Assert.That(
-                CardCatalog.All.Any(c => c.Column == column && c.Attributes.HasFlag(BattleAttribute.Attack)),
+                PrototypeDeck.Kinds.Any(c => c.Column == column && c.Attributes.HasFlag(BattleAttribute.Attack)),
                 Is.True);
         }
 
         [Test]
         public void TheSelection_CoversGuard_BothDirections_AndSlow()
         {
-            var all = CardCatalog.All;
+            var all = PrototypeDeck.Kinds;
             Assert.Multiple(() =>
             {
                 Assert.That(all.Count(c => c.Face.Guard > 0), Is.GreaterThanOrEqualTo(2));
                 Assert.That(all.Count(c => c.Face.Move > 0), Is.GreaterThanOrEqualTo(1));
                 Assert.That(all.Count(c => c.Face.Move < 0), Is.GreaterThanOrEqualTo(1));
-                Assert.That(all.Count(c => c.Face.Status == StatusKind.Slow), Is.InRange(1, 2));
+                Assert.That(all.Count(c => c.Face.StatusList.Any(g => g.Kind == StatusKind.Slow)), Is.InRange(1, 2));
             });
         }
 
@@ -177,8 +177,8 @@ namespace BattleCore.Tests
         public void NoCardUsesAnEnemyOnlyWord_AndNoneOfTheTenPushes()
         {
             // 無防備 is enemy-only (§2.3). Push / pull may sit on a card since v4.3 (§7.3); none of the
-            // ten does, and how many will is #160's.
-            foreach (var card in CardCatalog.All)
+            // ten does (盾押し and 手繰りの歩み are among the eighty, not the ten).
+            foreach (var card in PrototypeDeck.Kinds)
             {
                 Assert.That(card.Face.Push, Is.EqualTo(0), card.Id);
                 if (card.Trait == null) continue;

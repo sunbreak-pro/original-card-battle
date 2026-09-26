@@ -27,6 +27,13 @@ namespace Depiction.View
         /// <summary>The chips as shown, in order; the chip Texts are filled from it.</summary>
         private readonly List<StatusChip> _statuses = new List<StatusChip>();
         private Color[] _chipColors = new Color[0];
+        /// <summary>
+        /// The stance in the slot (#188), handed in as a chip with no stacks. It gets its own wide line
+        /// under the chips, made here because the prefab belongs to the Unity project, so it neither
+        /// takes one of the six chips the status words need nor wraps inside a chip's width.
+        /// </summary>
+        private Text _stanceLabel;
+        private string _stance = "";
 
         /// <summary>The stamina the pips show now (the start of a recovery that lights them one by one).</summary>
         public int Stamina { get; private set; }
@@ -72,12 +79,18 @@ namespace Depiction.View
             if (pipRow) pipRow.gameObject.SetActive(unit.ShowStamina);
             if (unit.ShowStamina) SetStamina(unit.Stamina, unit.StaminaMax);
             _statuses.Clear();
-            foreach (StatusChip chip in unit.Statuses) _statuses.Add(new StatusChip { Label = chip.Label, Stacks = chip.Stacks });
+            _stance = "";
+            foreach (StatusChip chip in unit.Statuses)
+            {
+                if (chip.Stacks <= 0) _stance = chip.Label;
+                else _statuses.Add(new StatusChip { Label = chip.Label, Stacks = chip.Stacks });
+            }
             RenderChips();
         }
 
         private void RenderChips()
         {
+            RenderStance();
             for (int i = 0; i < chips.Length; i++)
             {
                 if (!chips[i]) continue;
@@ -88,6 +101,22 @@ namespace Depiction.View
                 chips[i].rectTransform.localScale = Vector3.one;
                 if (i < _chipColors.Length) chips[i].color = _chipColors[i];
             }
+        }
+
+        private void RenderStance()
+        {
+            if (!_stanceLabel && _stance.Length > 0 && chips.Length > 0 && chips[0])
+            {
+                var row = chips[0].rectTransform.parent as RectTransform;
+                if (row)
+                {
+                    _stanceLabel = UiKit.Label(row, "Stance", 20, TextAnchor.MiddleLeft, BattleTheme.Warm,
+                        new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(400f, 24f), new Vector2(0f, -30f));
+                }
+            }
+            if (!_stanceLabel) return;
+            _stanceLabel.gameObject.SetActive(_stance.Length > 0);
+            _stanceLabel.text = _stance;
         }
 
         /// <summary>One word's chip, settled at once: added, restacked, or gone at 0.</summary>

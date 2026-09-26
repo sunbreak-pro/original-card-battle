@@ -118,14 +118,35 @@ namespace BattleCore
             _stacks.Count == 0 ? "—" : string.Join(" / ", Kinds.Select(k => $"{k.ToLabel()} {Stacks(k)}"));
     }
 
-    /// <summary>The rules each status word follows. One word for now; the other nine are #48.</summary>
+    /// <summary>
+    /// The rules each status word follows. The turn loop applies them (#188): the turn-start words
+    /// in <see cref="TurnLoop"/>'s OpenTurnFor, the on-use words where their effect lands.
+    /// </summary>
     public static class Statuses
     {
         /// <summary>§5: which of the two decay types a word follows.</summary>
         public static StatusDecay DecayOf(StatusKind kind) => kind switch
         {
             StatusKind.Slow => StatusDecay.OnTurn,
+            StatusKind.Bleed => StatusDecay.OnTurn,
+            StatusKind.Fatigue => StatusDecay.OnTurn,
+            StatusKind.Regen => StatusDecay.OnTurn,
+            StatusKind.Fragile => StatusDecay.OnUse,
+            StatusKind.Intimidate => StatusDecay.OnUse,
+            StatusKind.Empower => StatusDecay.OnUse,
+            StatusKind.Focus => StatusDecay.OnUse,
+            StatusKind.Parry => StatusDecay.OnUse,
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown status."),
+        };
+
+        /// <summary>§5 向き: whether the word is one a side puts on itself (強化 / 集中 / 見切り / 再生).</summary>
+        public static bool IsOwn(StatusKind kind) => kind switch
+        {
+            StatusKind.Empower => true,
+            StatusKind.Focus => true,
+            StatusKind.Parry => true,
+            StatusKind.Regen => true,
+            _ => false,
         };
 
         /// <summary>

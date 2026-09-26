@@ -89,14 +89,15 @@ namespace Depiction.Bridge
             {
                 Id = card.InstanceId,
                 Name = def.Name,
-                Cost = def.Cost,
+                // The cost a コスト −1 trait leaves right now is the core's (TurnLoop.Preview).
+                Cost = preview != null ? preview.Cost : def.Cost,
                 Kind = kind,
                 Aim = single ? CardAim.Single : CardAim.Self,
                 Affects = single ? (UnitSide?)null : UnitSide.Player,
                 TypeLabel = KindWord(kind) + (single ? "・敵単体" : "・自分"),
                 Description = Describe(def.Face, def.Attributes),
                 ValueText = ValueOf(def.Face, def.Attributes),
-                TraitText = TraitLine(def.Trait),
+                TraitText = TraitLines(def),
                 TraitLit = def.Trait != null && preview != null && preview.TraitHolds,
                 // §2.4: the reach is printed on the card; the two-valued RequiredRange cannot hold it,
                 // so the core's CanPlay (OutOfReach) is what refuses the card, not the script.
@@ -111,26 +112,104 @@ namespace Depiction.Bridge
             return EnemyAi.IsOpponentDirected(attributes, face, targets) ? face.ReachOrDefault.ToText() : "";
         }
 
-        /// <summary>One short sentence per face, in resolution order. §5: a status reads 「<語> を n 付与する」.</summary>
+        /// <summary>
+        /// One short sentence per face, in resolution order. §5: a status on the opponent reads
+        /// 「<語> を n 付与する」, one on the one playing 「自分に <語> を n 付与する」.
+        /// </summary>
         public static string Describe(Face face, BattleAttribute attributes)
         {
             var sentences = new List<string>();
             if (attributes.HasFlag(BattleAttribute.Attack)) sentences.Add("敵に " + face.Power + " ダメージ。");
+            if (face.Break > 0) sentences.Add("崩し " + face.Break + "。");
             if (face.Move > 0) sentences.Add("前へ " + face.Move + " 動く。");
             else if (face.Move < 0) sentences.Add("後ろへ " + (-face.Move) + " 動く。");
             if (face.Push > 0) sentences.Add("敵を " + face.Push + " マス押す。");
             else if (face.Push < 0) sentences.Add("敵を " + (-face.Push) + " マス引く。");
             if (face.Guard > 0) sentences.Add("Guard " + face.Guard + " を得る。");
-            if (face.Status.HasValue) sentences.Add(face.Status.Value.ToLabel() + "を " + face.StatusStacks + " 付与する。");
+            if (face.Heal > 0) sentences.Add("HP を " + face.Heal + " 回復する。");
+            foreach (StatusGrant grant in face.StatusList)
+            {
+                sentences.Add((grant.OnSelf ? "自分に" : "") + grant.Kind.ToLabel() + "を " + grant.Stacks + " 付与する。");
+            }
             if (face.Draw > 0) sentences.Add("カードを " + face.Draw + " 枚引く。");
             if (face.StaminaGain > 0) sentences.Add("スタミナ +" + face.StaminaGain + "。");
+            if (face.Stance != null) sentences.Add("構え: " + StanceText(face.Stance) + "。");
             return string.Join("", sentences);
+        }
+
+        /// <summary>§4: what a stance does while it stands, as one clause ("毎ターン開始に Guard +3").</summary>
+        public static string StanceText(StanceDef stance)
+        {
+            if (stance == null) return "";
+            switch (stance.Hook)
+            {
+                case StanceHook.TurnStart:
+                    return Spaced(WhenWord(stance, "始まるターンに"), Gains(stance.Guard, stance.Recovery, 0));
+                case StanceHook.TurnEnd:
+                    return Spaced(WhenWord(stance, "終えたターンに"), Gains(stance.Guard, 0, stance.NextRecovery));
+                case StanceHook.AttackBonus:
+                    switch (stance.When)
+                    {
+                        case StanceWhen.MovedThisTurn: return "ムーブを出したターン、アタック +" + stance.Power;
+                        case StanceWhen.GapAtMost: return "間合い " + stance.Threshold + " の相手へのアタック +" + stance.Power;
+                        case StanceWhen.TargetHasStatus:
+                            return (stance.Status.HasValue ? stance.Status.Value.ToLabel() : "") + "中の敵へのアタック +" + stance.Power;
+                        default: return "アタック +" + stance.Power;
+                    }
+                case StanceHook.OnHit:
+                {
+                    var parts = new List<string>();
+                    if (stance.Stamina > 0) parts.Add("スタミナ +" + stance.Stamina);
+                    if (stance.Guard > 0) parts.Add("Guard +" + stance.Guard);
+                    if (stance.Status.HasValue) parts.Add("敵に" + stance.Status.Value.ToLabel() + " " + stance.StatusStacks);
+                    return "被弾のたび" + (stance.OncePerTurn ? "（ターン 1 回）" : "") + string.Join("、", parts);
+                }
+                case StanceHook.PushImmune: return "押す / 引くを受けない";
+                case StanceHook.BreakOnFoeMove: return "敵が自分で動くたび崩し " + stance.Break;
+                default: return "";
+            }
+        }
+
+        private static string WhenWord(StanceDef stance, string tail)
+        {
+            switch (stance.When)
+            {
+                case StanceWhen.GapAtLeast: return "間合い " + stance.Threshold + " 以上で" + tail;
+                case StanceWhen.GapAtMost: return "間合い " + stance.Threshold + " 以下で" + tail;
+                case StanceWhen.OmenAttack: return "予兆が攻撃のターン開始に";
+                default: return "毎ターン開始に";
+            }
+        }
+
+        /// <summary>Japanese then a Latin word ("Guard") get a half-width space between them (rules: 和欧間).</summary>
+        private static string Spaced(string head, string tail)
+        {
+            bool latin = tail.Length > 0 && tail[0] < 0x80;
+            return latin ? head + " " + tail : head + tail;
+        }
+
+        private static string Gains(int guard, int recovery, int nextRecovery)
+        {
+            var parts = new List<string>();
+            if (guard > 0) parts.Add("Guard +" + guard);
+            if (recovery > 0) parts.Add("回復 +" + recovery);
+            if (nextRecovery > 0) parts.Add("次の回復 +" + nextRecovery);
+            return string.Join("、", parts);
         }
 
         public static string ValueOf(Face face, BattleAttribute attributes)
         {
             if (attributes.HasFlag(BattleAttribute.Attack)) return face.Power.ToString();
-            return face.Guard > 0 ? face.Guard.ToString() : "";
+            if (face.Guard > 0) return face.Guard.ToString();
+            return face.Heal > 0 ? face.Heal.ToString() : "";
+        }
+
+        /// <summary>Every trait of the card on one lamp line; 背水の陣's two read "間合い2以上 +5 ／ 死力 +3".</summary>
+        public static string TraitLines(CardDef def)
+        {
+            var lines = new List<string>();
+            foreach (Trait trait in def.AllTraits) lines.Add(TraitLine(trait));
+            return string.Join(" ／ ", lines);
         }
 
         /// <summary>The trait as printed on the lamp line: condition, then effect ("間合い0 +5", "残4 Guard+3").</summary>
@@ -152,6 +231,16 @@ namespace Depiction.Bridge
                     return "間合い" + trait.Threshold + "以上";
                 case BattleCore.TraitCondition.Unguarded: return "無防備";
                 case BattleCore.TraitCondition.Reserve: return "残" + trait.Threshold;
+                case BattleCore.TraitCondition.Combo: return "連動" + AttributeWord(trait.Attribute);
+                case BattleCore.TraitCondition.OmenIs: return "予兆" + (trait.Omen.HasValue ? OmenWord(trait.Omen.Value) : "");
+                case BattleCore.TraitCondition.Desperate: return "死力";
+                case BattleCore.TraitCondition.FirstPlay: return "初手";
+                case BattleCore.TraitCondition.Finisher: return "締め";
+                case BattleCore.TraitCondition.Broken: return "崩し後";
+                case BattleCore.TraitCondition.Chain: return "連打";
+                case BattleCore.TraitCondition.Thin: return "手薄";
+                case BattleCore.TraitCondition.FoeHas: return "相手" + (trait.Watch.HasValue ? trait.Watch.Value.ToLabel() : "");
+                case BattleCore.TraitCondition.SelfHas: return "自分" + (trait.Watch.HasValue ? trait.Watch.Value.ToLabel() : "");
                 default: return "";
             }
         }
@@ -164,7 +253,36 @@ namespace Depiction.Bridge
                 case TraitEffect.GuardBonus: return "Guard+" + trait.Amount;
                 case TraitEffect.NextTurnRecovery: return "回復+" + trait.Amount;
                 case TraitEffect.HeavyBlow: return "重撃";
+                case TraitEffect.StaminaGain: return "スタミナ+" + trait.Amount;
+                case TraitEffect.Draw: return "ドロー+" + trait.Amount;
+                case TraitEffect.Status:
+                    return trait.Grant == null ? "" : (trait.Grant.OnSelf ? "自分" : "") + trait.Grant.Kind.ToLabel() + "+" + trait.Grant.Stacks;
+                case TraitEffect.CostDown: return "コスト-" + trait.Amount;
+                case TraitEffect.Convert: return "転換";
+                case TraitEffect.FollowUp: return "追撃";
+                case TraitEffect.BreakBonus: return "崩し+" + trait.Amount;
                 default: return "";
+            }
+        }
+
+        private static string AttributeWord(BattleAttribute attribute)
+        {
+            if (attribute.HasFlag(BattleAttribute.Attack)) return "(攻)";
+            if (attribute.HasFlag(BattleAttribute.Guard)) return "(防)";
+            if (attribute.HasFlag(BattleAttribute.Move)) return "(動)";
+            if (attribute.HasFlag(BattleAttribute.Skill)) return "(技)";
+            if (attribute.HasFlag(BattleAttribute.Stance)) return "(構)";
+            return "";
+        }
+
+        private static string OmenWord(OmenKind kind)
+        {
+            switch (kind)
+            {
+                case OmenKind.Attack: return "攻撃";
+                case OmenKind.Move: return "移動";
+                case OmenKind.Guard: return "防御";
+                default: return new OmenLabel(kind).ToText();
             }
         }
 
@@ -200,7 +318,7 @@ namespace Depiction.Bridge
         /// One side's gauges. <paramref name="gap"/> is N, shown on the tag of the player only: the
         /// screen has one tag slot per side and one number says it all (#163 draws the cells).
         /// </summary>
-        public static UnitFrame UnitOf(CombatantState unit, bool showStamina, int? gap)
+        public static UnitFrame UnitOf(CombatantState unit, bool showStamina, int? gap, string stanceName = "")
         {
             var frame = new UnitFrame
             {
@@ -217,13 +335,18 @@ namespace Depiction.Bridge
                 frame.Range = SideOf(gap.Value);
                 frame.RangeGlyph = GapGlyph(gap.Value);
             }
-            frame.Statuses = Chips(unit.Statuses);
+            frame.Statuses = Chips(unit.Statuses, stanceName);
             return frame;
         }
 
-        public static List<StatusChip> Chips(StatusSet statuses)
+        /// <summary>
+        /// The chips under a gauge: the stance in the slot first (§4, #188; it has no stacks to count),
+        /// then the status words in their fixed order.
+        /// </summary>
+        public static List<StatusChip> Chips(StatusSet statuses, string stanceName = "")
         {
             var chips = new List<StatusChip>();
+            if (!string.IsNullOrEmpty(stanceName)) chips.Add(new StatusChip { Label = "構え・" + stanceName, Stacks = 0 });
             foreach (StatusKind kind in statuses.Kinds)
             {
                 chips.Add(new StatusChip { Label = kind.ToLabel(), Stacks = statuses.Stacks(kind) });

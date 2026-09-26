@@ -78,6 +78,21 @@ namespace BattleCore
         /// <summary>§2.3: the same condition + effect pair appears on at most 3 kinds.</summary>
         public const int SameTraitMax = 3;
 
+        /// <summary>
+        /// §2.3 手薄: the hand left after the play holds at most this many cards. The canon has 2
+        /// (§2.3, §19.2 S3) and the card and enemy tables 1; 2 was decided on 2026-09-23 (#193).
+        /// </summary>
+        public const int ThinHandMax = 2;
+
+        /// <summary>§2.3 締め: the play is the third of the turn or later.</summary>
+        public const int FinisherPlayNumber = 3;
+
+        /// <summary>§2.3 崩し後: the opponent's stamina is below this.</summary>
+        public const int BrokenBelow = 3;
+
+        /// <summary>§2.3 追撃: the next attack face this turn gets this much power.</summary>
+        public const int FollowUpPower = 5;
+
         // ---- Status (§5) ----
 
         /// <summary>§5: the player may hold six kinds at once. Enemies have no cap.</summary>
@@ -85,6 +100,17 @@ namespace BattleCore
 
         /// <summary>§3.1: applying a status gives 2 stacks unless the face says otherwise.</summary>
         public const int StatusApplyDefault = 2;
+
+        /// <summary>§3.1 / §5: 出血 and 再生 move HP by this much per stack at the holder's turn start.</summary>
+        public const int BleedPerStack = 2;
+
+        public const int RegenPerStack = 2;
+
+        /// <summary>§5 威圧: the holder's next action loses this much power and Guard.</summary>
+        public const int IntimidatePenalty = 3;
+
+        /// <summary>§5 疲労 / §9 step 2: the holder recovers this much less while it holds the word.</summary>
+        public const int FatiguePenalty = 1;
 
         /// <summary>§4: one stance at a time, for both sides.</summary>
         public const int StanceSlots = 1;
