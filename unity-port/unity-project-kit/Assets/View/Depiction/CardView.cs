@@ -1,5 +1,6 @@
-// One hand card. Layout lives in the Card prefab; this only binds a CardFace and
-// forwards drag events. It decides nothing about whether the card may be played.
+// One hand card. Layout lives in the Card prefab; this binds a CardFace, shrinks the name and
+// the trait line to fit their boxes (CardTextFit), and forwards drag events. It decides nothing
+// about whether the card may be played.
 #if UNITY_2021_2_OR_NEWER
 using System;
 using UnityEngine;
@@ -23,6 +24,8 @@ namespace Depiction.View
         [Tooltip("Dark sheet drawn over the card when it is dimmed. Without it the card fades through its alpha.")]
         public Image shade;
         public CanvasGroup group;
+        [Tooltip("In the fanned hand the right neighbour covers each card from about this far in (px from the card's left edge, down at the trait line), so the trait text ends before it.")]
+        public float traitVisibleRight = 150f;
 
         public event Action<CardView, PointerEventData> DragBegan;
         public event Action<CardView, PointerEventData> DragMoved;
@@ -39,8 +42,13 @@ namespace Depiction.View
             Face = face;
             CardId = face.Id;
             gameObject.name = "Card_" + face.Id;
+            RememberPrefabSizes();
             if (costText) costText.text = face.Cost.ToString();
-            if (nameText) nameText.text = face.Name;
+            if (nameText)
+            {
+                RectTransform box = nameText.rectTransform;
+                Print(nameText, CardTextFit.Name(face.Name, _nameSize, MinFontSize, box.rect.width, box.rect.height, MeasureWith(nameText)));
+            }
             if (typeText)
             {
                 typeText.text = face.TypeLabel;
@@ -57,7 +65,12 @@ namespace Depiction.View
             if (traitBox) traitBox.SetActive(hasTrait);
             if (traitText)
             {
-                traitText.text = face.TraitText;
+                if (hasTrait)
+                {
+                    float height = traitText.rectTransform.rect.height;
+                    Print(traitText, CardTextFit.Trait(face.TraitText, _traitSize, MinFontSize, TraitWidth(), height, MeasureWith(traitText)));
+                }
+                else traitText.text = "";
                 traitText.color = face.TraitLit ? BattleTheme.Warm : BattleTheme.Ink2;
             }
             if (traitLamp)
@@ -115,6 +128,53 @@ namespace Depiction.View
 
         private float _shadeAlpha = 0.5f;
         private int _dimTween;
+
+        // ---- fitting the name and the trait line (#210) ----------------------------------------
+
+        private const int MinFontSize = 12;
+        // The prefab's font sizes, read once: a card bound again starts from them, not from its last fit.
+        private int _nameSize;
+        private int _traitSize;
+
+        private void RememberPrefabSizes()
+        {
+            if (_nameSize == 0 && nameText) _nameSize = nameText.fontSize;
+            if (_traitSize == 0 && traitText) _traitSize = traitText.fontSize;
+        }
+
+        /// <summary>
+        /// Prints a fit without wrapping. Only a text that overflows even at the smallest size wraps,
+        /// and then it is clipped at its box rather than drawn over the line below.
+        /// </summary>
+        private static void Print(Text text, TextFit fit)
+        {
+            text.text = fit.Text;
+            text.fontSize = fit.Size;
+            text.horizontalOverflow = fit.Fits ? HorizontalWrapMode.Overflow : HorizontalWrapMode.Wrap;
+            text.verticalOverflow = fit.Fits ? VerticalWrapMode.Overflow : VerticalWrapMode.Truncate;
+        }
+
+        /// <summary>Unity's own measure with the text's font: one line per "\n", nothing wrapped.</summary>
+        private static TextMeasure MeasureWith(Text text)
+        {
+            return (string s, int size, out float width, out float height) =>
+            {
+                text.horizontalOverflow = HorizontalWrapMode.Overflow;
+                text.text = s;
+                text.fontSize = size;
+                width = text.preferredWidth;
+                height = text.preferredHeight;
+            };
+        }
+
+        /// <summary>The trait text's box, cut where the right neighbour in the fan starts covering the card.</summary>
+        private float TraitWidth()
+        {
+            RectTransform box = traitText.rectTransform;
+            Vector3 boxLeft = box.TransformPoint(new Vector3(box.rect.xMin, 0f, 0f));
+            float fromCardLeft = Rect.InverseTransformPoint(boxLeft).x - Rect.rect.xMin;
+            return Mathf.Min(box.rect.width, traitVisibleRight - fromCardLeft);
+        }
 
         public static Color KindColor(CardKind kind)
         {

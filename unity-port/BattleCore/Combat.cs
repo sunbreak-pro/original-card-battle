@@ -9,16 +9,17 @@ namespace BattleCore
     public static class Combat
     {
         /// <summary>
-        /// §5.1 / §17.6 F4: add first, then multiply.
+        /// §5.1 / §17.6 F4: add first, then multiply by at most one multiplier.
         ///
-        ///   (face + trait + followUp + conversion) × 強化 × 脆化 → round AwayFromZero → − Guard
+        ///   (face + trait + followUp + conversion) × one multiplier → round AwayFromZero → − Guard
         ///
         /// Rounding is away from zero (2.5 → 3), not banker's, because the design tables are read
         /// that way (decided 2026-09-12). This returns the raw power, before Guard; feed it to
         /// <see cref="ApplyGuard"/>.
         ///
-        /// The slice always passes 0 for followUp and conversion and 1.0 for both multipliers: 追撃,
-        /// 転換, 強化 and 脆化 are #48. The slots stay so that adding them does not reshape the call.
+        /// §19.5 S13: one multiplier per blow, 脆化 before 強化. The turn loop picks it for each blow
+        /// (TurnLoop.Resolve and TurnLoop.Preview) and hands it in as <paramref name="empowerMult"/>,
+        /// leaving <paramref name="fragileMult"/> at 1.0; the two slots stay so the call keeps its shape.
         /// </summary>
         public static int ComputeRawPower(
             int face,

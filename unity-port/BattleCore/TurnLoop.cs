@@ -666,7 +666,8 @@ namespace BattleCore
                     }
 
                     // §2.4 hits (#189): each blow meets Guard on its own. §17.6 F6: 追撃 rides the
-                    // first blow only; the trait's +n and 強化 ride every blow.
+                    // first blow only and the trait's +n every blow; 強化 rides only the blows 脆化
+                    // does not take (§5.1, §19.5 S13).
                     for (int blow = 0; blow < Math.Max(1, face.Hits); blow++)
                     {
                         if (foeSide == Actor.Enemy && !state.Enemies[foe].Alive) break;

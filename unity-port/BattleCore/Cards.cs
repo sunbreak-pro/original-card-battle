@@ -129,8 +129,19 @@ namespace BattleCore
         }
 
         /// <summary>
-        /// §8: a deck holds 20 to 40 cards and at most 3 of any one kind. Columns are checked too,
-        /// because a card outside 1..4 has no cost.
+        /// §8 (§19.6 S15): whether a card has a stance face. The attribute decides it, the same flag
+        /// that sends a played stance card to the exile pile (§4).
+        /// </summary>
+        public static bool IsStanceCard(CardDef def)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            return def.Attributes.HasFlag(BattleAttribute.Stance);
+        }
+
+        /// <summary>
+        /// §8: a deck holds 20 to 40 cards, at most 3 of any one kind, and at most 3 cards with a
+        /// stance face across all kinds (§19.6 S15). Columns are checked too, because a card outside
+        /// 1..4 has no cost.
         /// </summary>
         public static DeckValidation Validate(IReadOnlyList<CardInstance> deck)
         {
@@ -153,6 +164,12 @@ namespace BattleCore
                 {
                     errors.Add($"Deck holds {group.Count()} copies of \"{group.Key}\"; the maximum is {Constants.CopiesMax}.");
                 }
+            }
+
+            int stances = deck.Count(c => IsStanceCard(c.Def));
+            if (stances > Constants.StanceCardsMax)
+            {
+                errors.Add($"Deck holds {stances} stance cards; the maximum is {Constants.StanceCardsMax}.");
             }
 
             foreach (var id in deck.Select(c => c.Def)
