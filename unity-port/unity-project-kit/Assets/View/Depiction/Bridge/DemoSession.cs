@@ -1,8 +1,8 @@
 // The demo's run of battles (#191): one enemy on its own, or a chain (battle_core_v4 §12). Pure C#:
 // BattleCore only, no UnityEngine. It decides the order, the line each battle is fought on, what
-// carries between battles (BattleCore.Chain), the rest, the end of the run, and every word the mode
-// screen and the end screen print — so the View (DemoFlow) only lays the words out and forwards
-// the buttons.
+// carries between battles (BattleCore.Chain), the rest, a battle given up (#203), the end of the
+// run, and every word the mode screen, the end screen and the battle's one button print — so the
+// View (DemoFlow) only lays the words out and forwards the buttons.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -78,6 +78,9 @@ namespace Depiction.Bridge
 
         /// <summary>The tallies of the battles fought since the run (re)started, in order.</summary>
         public IReadOnlyList<BattleTally> Tallies => _tallies;
+
+        /// <summary>The run ended on 「降参する」 (#203): its last battle was given up, not lost on HP.</summary>
+        public bool Surrendered { get; private set; }
 
         private DemoSession(DemoMode mode, IReadOnlyList<EnemyDef> order, List<CardInstance> deck, int seed)
         {
@@ -170,6 +173,25 @@ namespace Depiction.Bridge
             return tally;
         }
 
+        /// <summary>
+        /// 「降参する」 (#203): the player gives up the battle being fought. It is tallied where it
+        /// stands — the turns, the HP left, the cards played so far — as a loss, and a loss ends the
+        /// run, a chain too (§12). Nothing carries. A battle the core has already decided (its last
+        /// events still on the screen) keeps its own result, as <see cref="Finish"/> tallies it.
+        /// </summary>
+        public BattleTally Surrender(CoreBattleSource source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (Stage != DemoStage.Fighting) throw new InvalidOperationException("DemoSession: no battle is being fought (" + Stage + ").");
+            if (source.State.Result != GameResult.Ongoing) return Finish(source);
+
+            BattleTally tally = BattleCore.Chain.Tally(source.State, source.History) with { Result = GameResult.Lost };
+            _tallies.Add(tally);
+            Surrendered = true;
+            Stage = DemoStage.Over;
+            return tally;
+        }
+
         /// <summary>§12: between chained battles, rest (HP +30% of the maximum, stamina full) or go straight on.</summary>
         public void GoOn(bool rest)
         {
@@ -192,6 +214,7 @@ namespace Depiction.Bridge
             _hp = null;
             _stamina = null;
             _tallies.Clear();
+            Surrendered = false;
             Stage = DemoStage.Ready;
         }
 
@@ -210,9 +233,9 @@ namespace Depiction.Bridge
             bool won = last.Result == GameResult.Won;
             var screen = new DemoEndScreen { Won = won };
 
-            if (Mode == DemoMode.Single) screen.Title = won ? enemy.Name + "に勝ちました" : enemy.Name + "に敗れました";
+            if (Mode == DemoMode.Single) screen.Title = won ? enemy.Name + "に勝ちました" : enemy.Name + (Surrendered ? "に降参しました" : "に敗れました");
             else if (AllWon) screen.Title = "連戦に全勝しました";
-            else screen.Title = won ? (Index + 1) + " 戦目に勝ちました" : (Index + 1) + " 戦目で力尽きました";
+            else screen.Title = won ? (Index + 1) + " 戦目に勝ちました" : (Index + 1) + (Surrendered ? " 戦目で降参しました" : " 戦目で力尽きました");
 
             if (Mode == DemoMode.Chain) screen.Lines.Add("何戦目: " + (Index + 1) + " / " + Order.Count + "（" + enemy.Name + "）");
             else screen.Lines.Add("相手: " + enemy.Name);
@@ -280,6 +303,11 @@ namespace Depiction.Bridge
         public static string RandomLabel => "ランダム";
 
         public static string BackToDeckLabel => "デッキ選択へ戻る";
+
+        // ---- the battle's word ----
+
+        /// <summary>The one button over a demo battle (#203): give it up and go to the end screen.</summary>
+        public static string SurrenderLabel => "降参する";
 
         /// <summary>The line an enemy has on the mode screen: 「錆槍の竜兵（通常・HP 60）」.</summary>
         public static string EnemyLine(EnemyDef enemy)

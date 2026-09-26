@@ -1,6 +1,7 @@
 // The demo's screens around the battle (#187): the deck screen (#190), the mode screen and the end
-// screen (#191), and the battles in between. Built in code on a canvas of its own above the battle,
-// so the scene and the prefabs stay as they are; BattleBootstrap adds it when its demo flow is on.
+// screen (#191), the battles in between, and the 「降参する」 button over them (#203). Built in
+// code on a canvas of its own above the battle, so the scene and the prefabs stay as they are;
+// BattleBootstrap adds it when its demo flow is on.
 // It holds no rule: the deck, the run of battles, what carries and every word come from
 // Depiction.Bridge (DeckBuilder, DemoSession), and the battles are the sources DemoSession starts.
 #if UNITY_2021_2_OR_NEWER
@@ -30,6 +31,7 @@ namespace Depiction.View
         private DeckSelectScreen _deckScreen;
         private ModeSelectScreen _modeScreen;
         private EndScreen _endScreen;
+        private SurrenderButton _surrender;
         private List<CardInstance> _deck;
         private DemoSession _session;
         private CoreBattleSource _source;
@@ -49,6 +51,7 @@ namespace Depiction.View
             _deckScreen = new DeckSelectScreen(_canvas, LoadDeck(), SaveDeck, OnDeckChosen);
             _modeScreen = new ModeSelectScreen(_canvas, StartSingle, StartRandom, StartChain, ShowDeckScreen);
             _endScreen = new EndScreen(_canvas, GoOn, Again, ShowDeckScreen);
+            _surrender = new SurrenderButton(_canvas, Surrender);
             ShowDeckScreen();
         }
 
@@ -65,6 +68,7 @@ namespace Depiction.View
             StopAllCoroutines();
             _modeScreen.Visible = false;
             _endScreen.Visible = false;
+            _surrender.Visible = false;
             _deckScreen.Visible = true;
         }
 
@@ -110,13 +114,29 @@ namespace Depiction.View
             _endScreen.Visible = false;
             _source = _session.StartBattle();
             _player.Restart(_source);
+            _surrender.Visible = true;
         }
 
         private void OnBattleFinished()
         {
             if (_session == null || _source == null || _session.Stage != DemoStage.Fighting) return;
+            _surrender.Visible = false;
             _session.Finish(_source);
             StartCoroutine(ShowEndScreenSoon());
+        }
+
+        /// <summary>
+        /// 「降参する」 (#203): the battle stops where it stands and the end screen comes up at once.
+        /// DemoSession tallies it as a loss, so a chain ends with it; its end screen offers the
+        /// same run again or the deck screen.
+        /// </summary>
+        private void Surrender()
+        {
+            if (_session == null || _source == null || _session.Stage != DemoStage.Fighting) return;
+            _surrender.Visible = false;
+            _player.Halt();
+            _session.Surrender(_source);
+            _endScreen.Show(_session.EndScreen());
         }
 
         private IEnumerator ShowEndScreenSoon()
