@@ -16,8 +16,12 @@ namespace BattleCore
     /// What the demo leaves out or stands in for (the PR of #189 carries the full list): the boss
     /// adaptations and stages (§4.4 / §5.4 / §6.1, §6.4) are left out and each boss fights on its
     /// base tree; the boss-only statuses become the nearest common word — 瘴気纏い / 深み / 枯らし
-    /// → 疲労, 呪縛 / 鉤爪 → 鈍足, 根張り → 出血 — with the default two stacks where the roster puts
-    /// one stack of a word that lasts the battle; 伸びる根 always pulls one cell.
+    /// → 疲労, 呪縛 / 鉤爪 → 鈍足, 根張り → 出血 — with 鈍足 at the default two stacks (one stack put
+    /// on in the enemy phase slows nothing, #197) and 疲労 / 出血 at the roster's one; 伸びる根 always
+    /// pulls one cell.
+    ///
+    /// The HP, the boss recovery 3 and the heavy blows on column 2 are the v4.4 numbers measured
+    /// headless for #204 (roster §0, §10).
     /// </summary>
     public static class Enemies
     {
@@ -96,10 +100,10 @@ namespace BattleCore
                     Description: "前へ 1 動き、Guard 2 を得る"),
             });
 
-        /// <summary>roster §2.2: 瘴牙の走竜. HP 50, favours gap 0: bites for bleed, leaps in from 1〜2, dashes from 3+.</summary>
+        /// <summary>roster §2.2: 瘴牙の走竜. HP 80, favours gap 0: bites for bleed, leaps in from 1〜2, dashes from 3+.</summary>
         public static readonly EnemyDef ShadowHound = Build(
             "shadow_hound", "瘴牙の走竜", EnemyRank.Normal,
-            maxHp: 50, maxStamina: 10, recovery: 2, size: 1,
+            maxHp: 80, maxStamina: 10, recovery: 2, size: 1,
             branchAtGapZero: new[] { "bite", "crouch" },
             branchAtGapOneToTwo: new[] { "lunge_in", "crouch" },
             branchAtGapThreePlus: new[] { "dash", "crouch" },
@@ -127,10 +131,10 @@ namespace BattleCore
                     "温存: 残 4 以上で次の回復 +1"),
             });
 
-        /// <summary>roster §2.3: 瘴甲の竜兵. HP 58, favours gap 0: sets 鉄の身 from afar, trudges in, swings heavy.</summary>
+        /// <summary>roster §2.3: 瘴甲の竜兵. HP 87, favours gap 0: sets 鉄の身 from afar, trudges in, swings heavy.</summary>
         public static readonly EnemyDef RustedRevenant = Build(
             "rusted_revenant", "瘴甲の竜兵", EnemyRank.Normal,
-            maxHp: 58, maxStamina: 10, recovery: 2, size: 1,
+            maxHp: 87, maxStamina: 10, recovery: 2, size: 1,
             branchAtGapZero: new[] { "heavy_swing", "iron_body", "trudge" },
             branchAtGapOneToTwo: new[] { "press", "trudge" },
             branchAtGapThreePlus: new[] { "iron_body", "trudge" },
@@ -157,10 +161,10 @@ namespace BattleCore
                     Description: "前へ 1、Guard 2"),
             });
 
-        /// <summary>roster §2.4: 灰弩の竜兵. HP 54, favours gap 2〜3: the bolt from afar, shoots and backs off at 1〜2, kicks away at 0.</summary>
+        /// <summary>roster §2.4: 灰弩の竜兵. HP 81, favours gap 2〜3: the bolt from afar, shoots and backs off at 1〜2, kicks away at 0.</summary>
         public static readonly EnemyDef CrossbowHunter = Build(
             "crossbow_hunter", "灰弩の竜兵", EnemyRank.Normal,
-            maxHp: 54, maxStamina: 10, recovery: 2, size: 1,
+            maxHp: 81, maxStamina: 10, recovery: 2, size: 1,
             branchAtGapZero: new[] { "kick_off", "brace" },
             branchAtGapOneToTwo: new[] { "backstep", "brace" },
             branchAtGapThreePlus: new[] { "bolt", "brace" },
@@ -186,10 +190,10 @@ namespace BattleCore
                     Description: "Guard 3"),
             });
 
-        /// <summary>roster §2.5: 燐弓の竜兵. HP 56, favours gap 2〜3: the misted arrow tires, fading pushes a close player off.</summary>
+        /// <summary>roster §2.5: 燐弓の竜兵. HP 72, favours gap 2〜3: the misted arrow tires, fading pushes a close player off.</summary>
         public static readonly EnemyDef MistArcher = Build(
             "mist_archer", "燐弓の竜兵", EnemyRank.Normal,
-            maxHp: 56, maxStamina: 10, recovery: 2, size: 1,
+            maxHp: 72, maxStamina: 10, recovery: 2, size: 1,
             branchAtGapZero: new[] { "fade", "scatter" },
             branchAtGapOneToTwo: new[] { "fade", "scatter" },
             branchAtGapThreePlus: new[] { "mist_arrow", "scatter" },
@@ -212,10 +216,10 @@ namespace BattleCore
                     Description: "間合い 0〜2 に届く"),
             });
 
-        /// <summary>roster §2.6: 燐刃の竜兵. HP 64, favours gap 0: the twin slash leaves 脆化 for its second blow.</summary>
+        /// <summary>roster §2.6: 燐刃の竜兵. HP 96, favours gap 0: the twin slash leaves 脆化 for its second blow.</summary>
         public static readonly EnemyDef TwinBladeWarped = Build(
             "twin_blade_warped", "燐刃の竜兵", EnemyRank.Normal,
-            maxHp: 64, maxStamina: 10, recovery: 2, size: 1,
+            maxHp: 96, maxStamina: 10, recovery: 2, size: 1,
             branchAtGapZero: new[] { "twin_slash", "retreat_cut", "cross_guard" },
             branchAtGapOneToTwo: new[] { "step_slash", "retreat_cut", "cross_guard" },
             branchAtGapThreePlus: new[] { "close_in", "cross_guard" },
@@ -249,10 +253,10 @@ namespace BattleCore
 
         // ---- §3 elite: two actions a phase ----
 
-        /// <summary>roster §3.1: 鉄壁の門竜. HP 90, size 2 (refuses push / pull), favours gap 0: breaks and slows up close.</summary>
+        /// <summary>roster §3.1: 鉄壁の門竜. HP 110, size 2 (refuses push / pull), favours gap 0: breaks and slows up close.</summary>
         public static readonly EnemyDef ArmoredWarden = Build(
             "armored_warden", "鉄壁の門竜", EnemyRank.Elite,
-            maxHp: 90, maxStamina: 12, recovery: 3, size: 2,
+            maxHp: 110, maxStamina: 12, recovery: 3, size: 2,
             branchAtGapZero: new[] { "helm_splitter", "shield_bash", "brace" },
             branchAtGapOneToTwo: new[] { "push_shield", "advance_guard", "brace" },
             branchAtGapThreePlus: new[] { "iron_wall", "advance_guard", "brace" },
@@ -264,8 +268,8 @@ namespace BattleCore
                     Targets: TargetKind.Self,
                     Description: "構え: 毎ターン開始に Guard +3"),
                 new EnemyActionDef(
-                    "helm_splitter", "兜割り", BattleAttribute.Attack, 3,
-                    new Face(Power: 13, Break: 1),
+                    "helm_splitter", "兜割り", BattleAttribute.Attack, 2,
+                    new Face(Power: 8, Break: 1),
                     AtMost(0, TraitEffect.BreakBonus, 1),
                     Description: "間合い 0〜1 に届く。崩し 1。間合い 0: 崩し +1"),
                 new EnemyActionDef(
@@ -292,10 +296,10 @@ namespace BattleCore
             },
             actionsPerPhase: Constants.EliteActions);
 
-        /// <summary>roster §3.2: 統牙の長竜. HP 100, favours gap 0: rends for bleed, herds a close player to the wall, pounces from afar.</summary>
+        /// <summary>roster §3.2: 統牙の長竜. HP 120, favours gap 0: rends for bleed, herds a close player to the wall, pounces from afar.</summary>
         public static readonly EnemyDef PackAlpha = Build(
             "pack_alpha", "統牙の長竜", EnemyRank.Elite,
-            maxHp: 100, maxStamina: 12, recovery: 3, size: 1,
+            maxHp: 120, maxStamina: 12, recovery: 3, size: 1,
             branchAtGapZero: new[] { "rend", "herd", "crouch" },
             branchAtGapOneToTwo: new[] { "pounce", "howl", "crouch" },
             branchAtGapThreePlus: new[] { "hunt_stance", "pounce", "howl" },
@@ -307,8 +311,8 @@ namespace BattleCore
                     Targets: TargetKind.Self,
                     Description: "構え: 相手との間合いが 0 のときアタック威力 +3"),
                 new EnemyActionDef(
-                    "rend", "引き裂き", BattleAttribute.Attack, 3,
-                    new Face(Power: 13, Reach: Reach.Only(0), Statuses: new[] { Foe(StatusKind.Bleed, 1) }),
+                    "rend", "引き裂き", BattleAttribute.Attack, 2,
+                    new Face(Power: 8, Reach: Reach.Only(0), Statuses: new[] { Foe(StatusKind.Bleed, 1) }),
                     FoeHas(StatusKind.Bleed, TraitEffect.PowerBonus, 3),
                     Description: "間合い 0 に届く。出血を 1 付与する。相手の状態（出血）: 威力 +3"),
                 new EnemyActionDef(
@@ -338,12 +342,12 @@ namespace BattleCore
         // ---- §4〜§6 bosses: two actions a phase, base tree only ----
 
         /// <summary>
-        /// roster §4: 大黒蛇 セルク. HP 160, size 2, never moves itself, favours gap 2+. 瘴気纏い stands
-        /// in as 疲労 2 and 呪縛 as 鈍足 2; the adaptations and the second stage are left out.
+        /// roster §4: 大黒蛇 セルク. HP 140, size 2, never moves itself, favours gap 2+. 瘴気纏い stands
+        /// in as 疲労 1 and 呪縛 as 鈍足 2; the adaptations and the second stage are left out.
         /// </summary>
         public static readonly EnemyDef MiasmaPriest = Build(
             "miasma_priest", "大黒蛇 セルク", EnemyRank.Boss,
-            maxHp: 160, maxStamina: 14, recovery: 4, size: 2,
+            maxHp: 140, maxStamina: 14, recovery: 3, size: 2,
             branchAtGapZero: new[] { "push_back", "staff_strike", "coil" },
             branchAtGapOneToTwo: new[] { "miasma_bolt", "binding_word", "coil" },
             branchAtGapThreePlus: new[] { "miasma_rite", "ward", "binding_word", "coil" },
@@ -356,8 +360,8 @@ namespace BattleCore
                     Description: "構え: 相手との間合いが 2 以上のターン開始に Guard +5"),
                 new EnemyActionDef(
                     "miasma_rite", "瘴気の儀", BattleAttribute.Skill, 3,
-                    new Face(Reach: new Reach(2, 4), Statuses: new[] { Foe(StatusKind.Fatigue, 2), Self(StatusKind.Regen, 2) }),
-                    Description: "間合い 2〜4 に届く。疲労を 2 付与する（瘴気纏いの代わり）。自分に再生を 2 付与する"),
+                    new Face(Reach: new Reach(2, 4), Statuses: new[] { Foe(StatusKind.Fatigue, 1), Self(StatusKind.Regen, 1) }),
+                    Description: "間合い 2〜4 に届く。疲労を 1 付与する（瘴気纏いの代わり）。自分に再生を 1 付与する"),
                 new EnemyActionDef(
                     "staff_strike", "錫杖の打ち込み", BattleAttribute.Attack, 3,
                     new Face(Power: 13),
@@ -387,11 +391,11 @@ namespace BattleCore
 
         /// <summary>
         /// roster §5: 獄竜 ガルド. HP 180, size 2, favours gap 0: hooks a far player and hauls them in.
-        /// 鉤爪 stands in as 鈍足 2 and 深み as 疲労 2; the adaptations and the second stage are left out.
+        /// 鉤爪 stands in as 鈍足 2 and 深み as 疲労 1; the adaptations and the second stage are left out.
         /// </summary>
         public static readonly EnemyDef AbyssAngler = Build(
             "abyss_angler", "獄竜 ガルド", EnemyRank.Boss,
-            maxHp: 180, maxStamina: 14, recovery: 4, size: 2,
+            maxHp: 180, maxStamina: 14, recovery: 3, size: 2,
             branchAtGapZero: new[] { "drown", "fathom_call", "deep_water", "line_whip" },
             branchAtGapOneToTwo: new[] { "reel_in", "line_whip", "slack_line" },
             branchAtGapThreePlus: new[] { "hook_cast", "reel_in" },
@@ -403,19 +407,19 @@ namespace BattleCore
                     AtLeast(3, TraitEffect.PowerBonus, 3),
                     Description: "間合い 2〜4 に届く。鈍足を 2 付与する（鉤爪の代わり）。間合い 3 以上: 威力 +3"),
                 new EnemyActionDef(
-                    "drown", "引きずり込む", BattleAttribute.Attack, 3,
-                    new Face(Power: 13),
-                    FoeHas(StatusKind.Slow, TraitEffect.PowerBonus, 5),
-                    Description: "間合い 0〜1 に届く。相手の状態（鈍足、鉤爪の代わり）: 威力 +5"),
+                    "drown", "引きずり込む", BattleAttribute.Attack, 2,
+                    new Face(Power: 8),
+                    FoeHas(StatusKind.Slow, TraitEffect.PowerBonus, 3),
+                    Description: "間合い 0〜1 に届く。相手の状態（鈍足、鉤爪の代わり）: 威力 +3"),
                 new EnemyActionDef(
                     "fathom_call", "深みへの呼び声", BattleAttribute.Skill, 2,
-                    new Face(Statuses: new[] { Foe(StatusKind.Fatigue, 2), Self(StatusKind.Regen, 2) }),
-                    Description: "間合い 0〜1 に届く。疲労を 2 付与する（深みの代わり）。自分に再生を 2 付与する"),
+                    new Face(Statuses: new[] { Foe(StatusKind.Fatigue, 1), Self(StatusKind.Regen, 1) }),
+                    Description: "間合い 0〜1 に届く。疲労を 1 付与する（深みの代わり）。自分に再生を 1 付与する"),
                 new EnemyActionDef(
                     "line_whip", "糸の一打", BattleAttribute.Attack, 2,
                     new Face(Power: 8, Reach: new Reach(0, 2)),
-                    FoeHas(StatusKind.Slow, TraitEffect.PowerBonus, 5),
-                    Description: "間合い 0〜2 に届く。相手の状態（鈍足）: 威力 +5"),
+                    FoeHas(StatusKind.Slow, TraitEffect.PowerBonus, 3),
+                    Description: "間合い 0〜2 に届く。相手の状態（鈍足）: 威力 +3"),
                 new EnemyActionDef(
                     "deep_water", "淀みを張る", BattleAttribute.Stance, 2,
                     new Face(Stance: new StanceDef(StanceHook.TurnStart, StanceWhen.GapAtMost, Threshold: 1, Guard: 5)),
@@ -437,20 +441,20 @@ namespace BattleCore
 
         /// <summary>
         /// roster §6: 歪みの根. HP 200, size 2, never moves itself, favours gap 2+. 根張り stands in as
-        /// 出血 2 and 枯らし as 疲労 2; 伸びる根 always pulls one; the adaptations and the three stages
+        /// 出血 1 and 枯らし as 疲労 2; 伸びる根 always pulls one; the adaptations and the three stages
         /// are left out (stage 1's tree throughout).
         /// </summary>
         public static readonly EnemyDef DistortionRoot = Build(
             "distortion_root", "歪みの根", EnemyRank.Boss,
-            maxHp: 200, maxStamina: 14, recovery: 4, size: 2,
+            maxHp: 200, maxStamina: 14, recovery: 3, size: 2,
             branchAtGapZero: new[] { "twist", "root_grip", "sweep", "creeping_root" },
             branchAtGapOneToTwo: new[] { "sweep", "root_grip", "thorn_volley", "creeping_root" },
             branchAtGapThreePlus: new[] { "wither_breath", "thorn_volley", "bark", "creeping_root" },
             actions: new[]
             {
                 new EnemyActionDef(
-                    "sweep", "薙ぎ払い", BattleAttribute.Attack, 3,
-                    new Face(Power: 13, Reach: new Reach(0, 2)),
+                    "sweep", "薙ぎ払い", BattleAttribute.Attack, 2,
+                    new Face(Power: 8, Reach: new Reach(0, 2)),
                     FoeHas(StatusKind.Bleed, TraitEffect.PowerBonus, 5),
                     Description: "間合い 0〜2 に届く。相手の状態（出血、根張りの代わり）: 威力 +5"),
                 new EnemyActionDef(
@@ -464,13 +468,13 @@ namespace BattleCore
                     Description: "間合い 2〜4 に届く。疲労を 3 付与する（枯らし 1 と疲労 1 の代わり）"),
                 new EnemyActionDef(
                     "root_grip", "根を張る", BattleAttribute.Skill, 2,
-                    new Face(Statuses: new[] { Foe(StatusKind.Bleed, 2), Self(StatusKind.Regen, 2) }),
-                    Description: "間合い 0〜1 に届く。出血を 2 付与する（根張りの代わり）。自分に再生を 2 付与する"),
+                    new Face(Statuses: new[] { Foe(StatusKind.Bleed, 1), Self(StatusKind.Regen, 1) }),
+                    Description: "間合い 0〜1 に届く。出血を 1 付与する（根張りの代わり）。自分に再生を 1 付与する"),
                 new EnemyActionDef(
                     "twist", "捻じる", BattleAttribute.Attack | BattleAttribute.Skill, 2,
                     new Face(Power: 5, Break: 1),
-                    When(TraitCondition.Broken, TraitEffect.PowerBonus, 5),
-                    Description: "間合い 0〜1 に届く。崩し 1。崩し後: 相手のスタミナ 3 未満で威力 +5"),
+                    When(TraitCondition.Broken, TraitEffect.PowerBonus, 3),
+                    Description: "間合い 0〜1 に届く。崩し 1。崩し後: 相手のスタミナ 3 未満で威力 +3"),
                 new EnemyActionDef(
                     "bark", "樹皮", BattleAttribute.Stance, 2,
                     new Face(Stance: new StanceDef(StanceHook.TurnStart, StanceWhen.GapAtLeast, Threshold: 2, Guard: 5)),

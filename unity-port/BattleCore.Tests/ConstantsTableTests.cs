@@ -31,6 +31,7 @@ namespace BattleCore.Tests
             ["HAND_LIMIT"] = Join(Constants.HandLimit),
             ["DECK_MIN / MAX"] = Join(Constants.DeckMin, Constants.DeckMax),
             ["COPIES_MAX"] = Join(Constants.CopiesMax),
+            ["STANCE_CARDS_MAX"] = Join(Constants.StanceCardsMax),
             ["OWNED_KINDS_MAX"] = Join(Constants.OwnedKindsMax),
             ["COLUMN_COUNT"] = Join(Constants.ColumnCount),
             ["COST_MIN / MAX"] = Join(Constants.CostMin, Constants.CostMax),

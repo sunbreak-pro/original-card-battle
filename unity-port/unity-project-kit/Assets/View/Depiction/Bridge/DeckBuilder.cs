@@ -1,8 +1,8 @@
 // The deck the demo fights with (#190), built from the eighty. Pure C#: BattleCore only, no
-// UnityEngine, so every rule the deck screen shows — the 20〜40 cards, the three of a kind, what a
-// filter keeps, what a saved string restores to, every word printed about a card — is decided here
-// and held under `dotnet test`. The screen (DeckSelectScreen) shows what this class says and stores
-// the string it hands out.
+// UnityEngine, so every rule the deck screen shows — the 20〜40 cards, the three of a kind, the
+// three stance cards, what a filter keeps, what a saved string restores to, every word printed
+// about a card — is decided here and held under `dotnet test`. The screen (DeckSelectScreen) shows
+// what this class says and stores the string it hands out.
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -85,10 +85,28 @@ namespace Depiction.Bridge
             return n;
         }
 
-        /// <summary>§8: a fourth copy, a 41st card, or an id the catalog does not know is refused.</summary>
+        /// <summary>Cards of the deck that have a stance face (§19.6 S15 counts them across kinds).</summary>
+        public int StanceCount
+        {
+            get
+            {
+                int n = 0;
+                foreach (CardDef def in CardCatalog.All)
+                {
+                    if (Cards.IsStanceCard(def)) n += CountOf(def.Id);
+                }
+                return n;
+            }
+        }
+
+        /// <summary>
+        /// §8: a fourth copy, a 41st card, a fourth card with a stance face (§19.6 S15), or an id the
+        /// catalog does not know is refused.
+        /// </summary>
         public bool CanAdd(string id)
         {
-            return Known(id) && CountOf(id) < Constants.CopiesMax && Total < Constants.DeckMax;
+            if (!Known(id) || CountOf(id) >= Constants.CopiesMax || Total >= Constants.DeckMax) return false;
+            return !Cards.IsStanceCard(CardCatalog.ById(id)) || StanceCount < Constants.StanceCardsMax;
         }
 
         public bool Add(string id)
@@ -124,7 +142,7 @@ namespace Depiction.Bridge
             return deck;
         }
 
-        /// <summary>§8 through the core's own check (Cards.Validate): 20〜40 cards, three of a kind at most.</summary>
+        /// <summary>§8 through the core's own check (Cards.Validate): 20〜40 cards, three of a kind at most, three stance cards at most (§19.6 S15).</summary>
         public DeckValidation Validate()
         {
             return Cards.Validate(Build());
@@ -139,7 +157,8 @@ namespace Depiction.Bridge
             {
                 int total = Total;
                 if (total < Constants.DeckMin) return total + " 枚です。あと " + (Constants.DeckMin - total) + " 枚入れると戦えます";
-                return total + " 枚です。" + Constants.DeckMin + "〜" + Constants.DeckMax + " 枚、1 種 " + Constants.CopiesMax + " 枚までを満たしています";
+                return total + " 枚です。" + Constants.DeckMin + "〜" + Constants.DeckMax + " 枚、1 種 " + Constants.CopiesMax
+                    + " 枚、構え " + Constants.StanceCardsMax + " 枚までを満たしています";
             }
         }
 
@@ -171,7 +190,7 @@ namespace Depiction.Bridge
         /// <summary>The deck screen's title, with §8's rule in it.</summary>
         public static string Title =>
             "デッキを組む（" + Constants.OwnedKindsMax + " 種から " + Constants.DeckMin + "〜" + Constants.DeckMax
-            + " 枚、1 種 " + Constants.CopiesMax + " 枚まで）";
+            + " 枚、1 種 " + Constants.CopiesMax + " 枚、構え " + Constants.StanceCardsMax + " 枚まで）";
 
         /// <summary>The attribute filters the screen offers, in the §2.2 order after 「全て」.</summary>
         public static IReadOnlyList<KeyValuePair<string, BattleAttribute>> AttributeOptions
@@ -273,7 +292,8 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// A random deck of <paramref name="size"/> cards (clamped to 20〜40), fixed by the seed. It
-        /// always passes §8: a kind that already holds three is skipped and another is drawn.
+        /// always passes §8: a kind that already holds three, or a fourth stance card (§19.6 S15), is
+        /// refused by Add and another is drawn.
         ///
         /// It also always holds one card that closes in from gap 3 even under 鈍足 (駆け込み or
         /// 疾風突き) and at least <see cref="RandomForwardMin"/> cards that step forward. Without them
@@ -346,8 +366,8 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// The deck a saved string describes. A string that does not read cleanly — an unknown id, a
-        /// count outside 1〜3, the same id twice, a deck past 40, stray text — gives an empty deck
-        /// rather than a guess.
+        /// count outside 1〜3, the same id twice, a deck past 40, more than three stance cards, stray
+        /// text — gives an empty deck rather than a guess.
         /// </summary>
         public static DeckBuilder Load(string saved)
         {

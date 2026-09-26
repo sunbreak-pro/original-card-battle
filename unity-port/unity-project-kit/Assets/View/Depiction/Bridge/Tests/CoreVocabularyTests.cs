@@ -244,7 +244,7 @@ namespace Depiction.Bridge.Tests
             return string.IsNullOrEmpty(cardId) ? "" : CardCatalog.ById(cardId).Name;
         }
 
-        /// <summary>A legal deck (§8): at most three of a kind, drawn from the eighty.</summary>
+        /// <summary>A legal deck (§8): at most three of a kind, at most three stance cards, drawn from the eighty.</summary>
         private static List<CardInstance> RandomDeck(IRng rng, int size)
         {
             var counts = new Dictionary<string, int>();
@@ -255,6 +255,7 @@ namespace Depiction.Bridge.Tests
                 int held;
                 counts.TryGetValue(def.Id, out held);
                 if (held >= Constants.CopiesMax) continue;
+                if (Cards.IsStanceCard(def) && deck.Count(c => Cards.IsStanceCard(c.Def)) >= Constants.StanceCardsMax) continue;
                 counts[def.Id] = held + 1;
                 deck.Add(new CardInstance(def.Id + "-" + held, def));
             }

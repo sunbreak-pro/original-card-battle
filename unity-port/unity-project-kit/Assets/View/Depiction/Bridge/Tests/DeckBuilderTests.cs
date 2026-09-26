@@ -12,7 +12,8 @@ namespace Depiction.Bridge.Tests
     {
         private static DeckBuilder Filled(int count)
         {
-            // Two copies of each kind in canon order, so any count up to 160 is reachable.
+            // Two copies of each kind in canon order, so any count up to 135 is reachable (the stance
+            // cards stop at three).
             var deck = new DeckBuilder();
             int i = 0;
             while (deck.Total < count)
@@ -35,7 +36,7 @@ namespace Depiction.Bridge.Tests
                 Assert.That(Filled(19).StatusText, Is.EqualTo("19 枚です。あと 1 枚入れると戦えます"));
                 Assert.That(Filled(20).IsValid, Is.True);
                 Assert.That(Filled(40).IsValid, Is.True);
-                Assert.That(Filled(40).StatusText, Is.EqualTo("40 枚です。20〜40 枚、1 種 3 枚までを満たしています"));
+                Assert.That(Filled(40).StatusText, Is.EqualTo("40 枚です。20〜40 枚、1 種 3 枚、構え 3 枚までを満たしています"));
             });
         }
 
@@ -43,7 +44,8 @@ namespace Depiction.Bridge.Tests
         public void TheFortyFirstCard_IsRefused()
         {
             var deck = Filled(40);
-            string next = CardCatalog.All.First(c => deck.CountOf(c.Id) == 0).Id;
+            // Not a stance card: Filled(40) already holds three, and that alone would refuse it.
+            string next = CardCatalog.All.First(c => deck.CountOf(c.Id) == 0 && !Cards.IsStanceCard(c)).Id;
             Assert.Multiple(() =>
             {
                 Assert.That(deck.CanAdd(next), Is.False);
@@ -65,6 +67,50 @@ namespace Depiction.Bridge.Tests
                 Assert.That(deck.Add("nothing"), Is.False);
                 Assert.That(deck.Add(null), Is.False);
             });
+        }
+
+        [Test]
+        public void TheFourthStanceCard_IsRefused_WhicheverKindItIs()
+        {
+            // §19.6 S15: three cards with a stance face across kinds; the three of a kind is a separate limit.
+            var deck = new DeckBuilder();
+            deck.Add("water_stance");
+            deck.Add("water_stance");
+            deck.Add("rock_stance");
+            Assert.Multiple(() =>
+            {
+                Assert.That(deck.StanceCount, Is.EqualTo(3));
+                Assert.That(deck.CanAdd("flow_stance"), Is.False);
+                Assert.That(deck.Add("iron_wall"), Is.False, "ガード + スタンス counts too");
+                Assert.That(deck.Add("water_stance"), Is.False, "a third copy would pass the three of a kind, not the three stances");
+                Assert.That(deck.CanAdd("thrust"), Is.True);
+                Assert.That(deck.StanceCount, Is.EqualTo(3));
+            });
+            deck.Remove("rock_stance");
+            Assert.That(deck.CanAdd("flow_stance"), Is.True, "one out, one may come in");
+        }
+
+        [Test]
+        public void TheRandomPreset_NeverHoldsMoreThanThreeStanceCards()
+        {
+            // §19.6 S15, at every size the preset builds. Before it, most 30-card decks held four or more.
+            foreach (int size in new[] { Constants.DeckMin, DeckBuilder.RandomDefaultSize, Constants.DeckMax })
+            {
+                for (int seed = 0; seed < 1000; seed++)
+                {
+                    var deck = DeckBuilder.Random(seed, size);
+                    int stances = deck.Build().Count(c => Cards.IsStanceCard(c.Def));
+                    Assert.That(stances, Is.LessThanOrEqualTo(Constants.StanceCardsMax), "seed " + seed + " size " + size);
+                    Assert.That(deck.StanceCount, Is.EqualTo(stances), "seed " + seed + " size " + size);
+                }
+            }
+        }
+
+        [Test]
+        public void ASavedDeckWithFourStanceCards_GivesAnEmptyDeck()
+        {
+            // Each kind is within three, but the stance cards are four (§19.6 S15): Add refuses the fourth.
+            Assert.That(DeckBuilder.Load("water_stance:2,rock_stance:2").Total, Is.EqualTo(0));
         }
 
         [Test]
@@ -229,7 +275,7 @@ namespace Depiction.Bridge.Tests
         {
             Assert.Multiple(() =>
             {
-                Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（80 種から 20〜40 枚、1 種 3 枚まで）"));
+                Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（80 種から 20〜40 枚、1 種 3 枚、構え 3 枚まで）"));
                 Assert.That(DeckBuilder.AttributeOptions.Select(o => o.Key), Is.EqualTo(new[] { "全て", "攻撃", "ムーブ", "防御", "技", "構え" }));
                 Assert.That(DeckBuilder.AttributeOptions.First().Value, Is.EqualTo(BattleAttribute.None));
                 Assert.That(DeckBuilder.CostOptions.Select(o => o.Key), Is.EqualTo(new[] { "全コスト", "コスト 1", "コスト 2", "コスト 3" }));
@@ -273,6 +319,16 @@ namespace Depiction.Bridge.Tests
             var launch = new BattleLaunch { Deck = Filled(19).Build() };
             var error = Assert.Throws<ArgumentException>(() => launch.BuildSetup());
             Assert.That(error.Message, Does.Contain("minimum is 20"));
+        }
+
+        [Test]
+        public void ADeckWithFourStanceCards_IsRefusedAtLaunch()
+        {
+            // The deck screen cannot build one; a list handed in directly still meets Cards.Validate.
+            var plain = CardCatalog.All.Where(c => !Cards.IsStanceCard(c)).Take(8).ToList();
+            var deck = Cards.BuildDeck(plain, 2).Concat(Cards.BuildDeck(new[] { CardCatalog.WaterStance, CardCatalog.RockStance }, 2)).ToList();
+            var error = Assert.Throws<ArgumentException>(() => new BattleLaunch { Deck = deck }.BuildSetup());
+            Assert.That(error.Message, Does.Contain("4 stance cards"));
         }
 
         [Test]
