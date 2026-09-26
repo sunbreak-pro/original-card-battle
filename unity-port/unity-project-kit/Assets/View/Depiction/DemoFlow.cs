@@ -48,9 +48,10 @@ namespace Depiction.View
             _seed = seed;
             _player.BattleFinished += OnBattleFinished;
             _canvas = BuildCanvas();
-            _deckScreen = new DeckSelectScreen(_canvas, LoadDeck(), SaveDeck, OnDeckChosen);
+            DeckBuilder saved = LoadDeck(out string notice);
+            _deckScreen = new DeckSelectScreen(_canvas, saved, notice, OnDeckChosen);
             _modeScreen = new ModeSelectScreen(_canvas, StartSingle, StartRandom, StartChain, ShowDeckScreen);
-            _endScreen = new EndScreen(_canvas, GoOn, Again, ShowDeckScreen);
+            _endScreen = new EndScreen(_canvas, GoOn, Again, ShowModeScreen, ShowDeckScreen);
             _surrender = new SurrenderButton(_canvas, Surrender);
             ShowDeckScreen();
         }
@@ -72,10 +73,20 @@ namespace Depiction.View
             _deckScreen.Visible = true;
         }
 
-        private void OnDeckChosen(List<CardInstance> deck)
+        private void OnDeckChosen(DeckBuilder deck)
         {
-            _deck = deck;
+            SaveDeck(deck);
+            _deck = deck.Build();
+            ShowModeScreen();
+        }
+
+        /// <summary>The mode screen with the deck kept: after 「戦闘へ」, and from a single battle's end screen (#211).</summary>
+        private void ShowModeScreen()
+        {
+            StopAllCoroutines();
             _deckScreen.Visible = false;
+            _endScreen.Visible = false;
+            _surrender.Visible = false;
             _modeScreen.Visible = true;
         }
 
@@ -108,13 +119,31 @@ namespace Depiction.View
             NextBattle();
         }
 
+        /// <summary>
+        /// Starts the session's next battle, and only then takes the screens down and puts 「降参する」
+        /// up (#211). A start that throws drops the run and puts the mode screen up, where every button
+        /// starts a run afresh: the end screen's 「休んで次へ」 or 「もう一度」 would find the run a step
+        /// on (Ready for its next battle, or Fighting one never shown) and throw.
+        /// </summary>
         private void NextBattle()
         {
+            try
+            {
+                // Held before Restart, which may already raise BattleFinished for this battle.
+                _source = _session.StartBattle();
+                _player.Restart(_source);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("[DemoFlow] the battle did not start: " + e);
+                _session = null;
+                _source = null;
+                ShowModeScreen();
+                return;
+            }
             _modeScreen.Visible = false;
             _endScreen.Visible = false;
-            _source = _session.StartBattle();
-            _player.Restart(_source);
-            _surrender.Visible = true;
+            _surrender.Visible = _session.Stage == DemoStage.Fighting;
         }
 
         private void OnBattleFinished()
@@ -128,7 +157,7 @@ namespace Depiction.View
         /// <summary>
         /// 「降参する」 (#203): the battle stops where it stands and the end screen comes up at once.
         /// DemoSession tallies it as a loss, so a chain ends with it; its end screen offers the
-        /// same run again or the deck screen.
+        /// same run again or the deck screen, and after a single battle the enemies (#211).
         /// </summary>
         private void Surrender()
         {
@@ -159,11 +188,15 @@ namespace Depiction.View
 
         // ---- the saved deck ----
 
-        private static DeckBuilder LoadDeck()
+        private static DeckBuilder LoadDeck(out string notice)
         {
-            return DeckBuilder.LoadOrPrototype(PlayerPrefs.HasKey(SavedDeckKey), PlayerPrefs.GetString(SavedDeckKey, ""));
+            return DeckBuilder.LoadOrPrototype(PlayerPrefs.HasKey(SavedDeckKey), PlayerPrefs.GetString(SavedDeckKey, ""), out notice);
         }
 
+        /// <summary>
+        /// On 「戦闘へ」 only (#211): one write to disk per deck, not one per +/−, and a saved string the
+        /// screen could not read stays as it was until the player fights with another deck.
+        /// </summary>
         private static void SaveDeck(DeckBuilder deck)
         {
             PlayerPrefs.SetString(SavedDeckKey, deck.Save());

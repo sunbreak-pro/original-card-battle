@@ -47,6 +47,10 @@ namespace Depiction.Bridge
         public string RestLabel = "";
         public string GoOnLabel = "";
 
+        /// <summary>A single battle ended, fought out or given up: the mode screen again, to pick another enemy with the same deck (#211).</summary>
+        public bool CanChooseEnemy;
+        public string ChooseEnemyLabel = "";
+
         public string AgainLabel = "";
         public string BackLabel = "デッキ選択へ戻る";
     }
@@ -198,7 +202,7 @@ namespace Depiction.Bridge
             if (Stage != DemoStage.BetweenBattles) throw new InvalidOperationException("DemoSession: there is no next battle (" + Stage + ").");
             if (rest)
             {
-                var rested = BattleCore.Chain.Rest(_hp ?? Constants.PlayerMaxHp, Constants.PlayerMaxHp, Constants.BaseMaxStamina);
+                var rested = RestAfter(_tallies[_tallies.Count - 1]);
                 _hp = rested.Hp;
                 _stamina = rested.Stamina;
             }
@@ -216,6 +220,17 @@ namespace Depiction.Bridge
             _tallies.Clear();
             Surrendered = false;
             Stage = DemoStage.Ready;
+        }
+
+        /// <summary>
+        /// §12's rest after the battle <paramref name="last"/> tallies: its HP left, back by 30% of its
+        /// maximum, and stamina full. The rest button's words and the rest itself both read this, so
+        /// the number printed is the number given (#211).
+        /// </summary>
+        public static (int Hp, int Stamina) RestAfter(BattleTally last)
+        {
+            if (last == null) throw new ArgumentNullException(nameof(last));
+            return BattleCore.Chain.Rest(last.HpLeft, last.MaxHp, Constants.BaseMaxStamina);
         }
 
         /// <summary>A chain won to the end.</summary>
@@ -254,10 +269,15 @@ namespace Depiction.Bridge
             if (Stage == DemoStage.BetweenBattles)
             {
                 screen.CanGoOn = true;
-                var rested = BattleCore.Chain.Rest(last.HpLeft, last.MaxHp, Constants.BaseMaxStamina);
+                var rested = RestAfter(last);
                 screen.RestLabel = "休んで次へ（HP +" + (rested.Hp - last.HpLeft) + "、スタミナ全回復）";
                 screen.GoOnLabel = "そのまま次へ";
                 screen.Lines.Add("次: " + Order[Index + 1].Name);
+            }
+            if (Mode == DemoMode.Single)
+            {
+                screen.CanChooseEnemy = true;
+                screen.ChooseEnemyLabel = "敵を選び直す";
             }
             screen.AgainLabel = Mode == DemoMode.Single ? "もう一度" : AllWon ? "同じ並びをもう一度" : "最初からもう一度";
             return screen;

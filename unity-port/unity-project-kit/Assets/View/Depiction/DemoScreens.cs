@@ -19,7 +19,8 @@ namespace Depiction.View
         public ModeSelectScreen(RectTransform parent, Action<string> single, Action random, Action chain, Action back)
         {
             _root = UiKit.Box(parent, "ModeSelect", 0f, 0f, 1f, 1f);
-            Image backdrop = UiKit.Fill(_root, "Back", BattleTheme.WithAlpha(BattleTheme.Ground, 0.97f));
+            // Opaque like the deck screen (#211): the battle underneath neither shows nor takes clicks.
+            Image backdrop = UiKit.Fill(_root, "Back", BattleTheme.Ground);
             backdrop.raycastTarget = true;
 
             UiKit.Label(_root, "Title", 40, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -93,7 +94,10 @@ namespace Depiction.View
         }
     }
 
-    /// <summary>§12's result: who won, which battle, the HP left, what was played, and the ways on.</summary>
+    /// <summary>
+    /// §12's result: who won, which battle, the HP left, what was played, and the ways on. Unlike the
+    /// select screens it stays see-through: the board is left under it, dimmed (battle_ui_ux_v2 §2.5).
+    /// </summary>
     public sealed class EndScreen
     {
         private readonly RectTransform _root;
@@ -102,12 +106,14 @@ namespace Depiction.View
         private readonly RectTransform _buttons;
         private readonly Action<bool> _goOn;
         private readonly Action _again;
+        private readonly Action _chooseEnemy;
         private readonly Action _back;
 
-        public EndScreen(RectTransform parent, Action<bool> goOn, Action again, Action back)
+        public EndScreen(RectTransform parent, Action<bool> goOn, Action again, Action chooseEnemy, Action back)
         {
             _goOn = goOn;
             _again = again;
+            _chooseEnemy = chooseEnemy;
             _back = back;
             _root = UiKit.Box(parent, "EndScreen", 0f, 0f, 1f, 1f);
             Image backdrop = UiKit.Fill(_root, "Back", BattleTheme.WithAlpha(BattleTheme.InkBlack, 0.82f));
@@ -139,6 +145,12 @@ namespace Depiction.View
                     new Vector2(0f, 0.52f), new Vector2(0.49f, 1f));
                 UiKit.Button(_buttons, "GoOn", screen.GoOnLabel, () => _goOn(false), BattleTheme.Panel, BattleTheme.Ink, 26,
                     new Vector2(0.51f, 0.52f), new Vector2(1f, 1f));
+            }
+            else if (screen.CanChooseEnemy)
+            {
+                // A single battle's end (#211): the top row, which only a chain's rest uses.
+                UiKit.Button(_buttons, "ChooseEnemy", screen.ChooseEnemyLabel, () => _chooseEnemy(), BattleTheme.Accent, BattleTheme.InkBlack, 26,
+                    new Vector2(0f, 0.52f), new Vector2(1f, 1f));
             }
             UiKit.Button(_buttons, "Again", screen.AgainLabel, () => _again(), BattleTheme.Panel, BattleTheme.Ink, 26,
                 new Vector2(0f, 0f), new Vector2(0.49f, 0.44f));
