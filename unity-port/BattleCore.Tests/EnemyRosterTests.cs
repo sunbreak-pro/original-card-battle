@@ -246,6 +246,35 @@ namespace BattleCore.Tests
         }
 
         [Test]
+        public void TheTwinSlash_TakesOneMultiplierABlow_AndSpendsEmpowerOnceOrNotAtAll()
+        {
+            // battle_core §5.1 (§19.5 S13): one multiplier a blow, 脆化 first. 強化 rides the blows
+            // 脆化 does not take and is spent once for the face; when 脆化 takes every blow it stays.
+            var enemy = Enemies.TwinBladeWarped;
+            var setup = new BattleSetup(enemy, Fillers(20), BattleSetup.SliceFieldCells, StartGap: 0);
+            var state = TurnLoop.BeginPlayerTurn(TurnLoop.Start(setup, NoShuffle).State, NoShuffle).State;
+            state = state.WithEnemy(state.Enemy with { Statuses = StatusSet.Of((StatusKind.Empower, 1)) });
+            state = state with { Player = state.Player with { Guard = 0, Stamina = 0 } };
+
+            // No 脆化 on the player: 強化 takes the first blow, the 脆化 it leaves takes the second.
+            var bare = TurnLoop.EndTurn(state, NoShuffle);
+            // 脆化 2 on the player: 脆化 takes both blows, and 強化 waits for the next attack.
+            var fragile = TurnLoop.EndTurn(state with { Player = state.Player with { Statuses = StatusSet.Of((StatusKind.Fragile, 2)) } }, NoShuffle);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(bare.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).Select(b => b.Raw), Is.EqualTo(new[] { 9, 9 }), "not 6 × 1.5 × 1.5 = 14 on the second");
+                Assert.That(bare.Events.OfType<StatusConsumed>().Count(c => c.Kind == StatusKind.Empower), Is.EqualTo(1));
+                Assert.That(bare.State.Enemy.Statuses.Has(StatusKind.Empower), Is.False);
+
+                Assert.That(fragile.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).Select(b => b.Raw), Is.EqualTo(new[] { 9, 9 }));
+                Assert.That(fragile.Events.OfType<StatusConsumed>().Any(c => c.Kind == StatusKind.Empower), Is.False);
+                Assert.That(fragile.State.Enemy.Statuses.Stacks(StatusKind.Empower), Is.EqualTo(1));
+                Assert.That(fragile.State.Player.Statuses.Stacks(StatusKind.Fragile), Is.EqualTo(1), "2 − 1, + 1 from the first blow, − 1");
+            });
+        }
+
+        [Test]
         public void TheHelmSplitter_BreaksTwoWhenAdjacent()
         {
             // roster §3.1: 崩し 1, +1 at gap 0.
@@ -345,6 +374,7 @@ namespace BattleCore.Tests
                 var def = pool[(int)(rng.NextDouble() * pool.Count) % pool.Count];
                 counts.TryGetValue(def.Id, out int held);
                 if (held >= Constants.CopiesMax) continue;
+                if (Cards.IsStanceCard(def) && deck.Count(c => Cards.IsStanceCard(c.Def)) >= Constants.StanceCardsMax) continue;
                 counts[def.Id] = held + 1;
                 deck.Add(new CardInstance(def.Id + "-" + held, def));
             }

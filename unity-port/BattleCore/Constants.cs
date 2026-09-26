@@ -27,6 +27,12 @@ namespace BattleCore
         public const int DeckMax = 40;
         public const int CopiesMax = 3;
 
+        /// <summary>
+        /// §8 (§19.6 S15): cards with a stance face in one deck, all kinds counted together. A limit
+        /// of its own, apart from the three of a kind.
+        /// </summary>
+        public const int StanceCardsMax = 3;
+
         /// <summary>§8: the kinds one character may own (40 to start, 40 learned).</summary>
         public const int OwnedKindsMax = 80;
 
@@ -187,7 +193,7 @@ namespace BattleCore
 
         // ---- Damage multipliers (§5.1) ----
 
-        /// <summary>強化 and 脆化 both multiply by 1.5. Neither is in the slice; the formula keeps the slot.</summary>
+        /// <summary>§5.1: 強化 and 脆化 both multiply by 1.5, and one blow takes only one of them, 脆化 first (§19.5 S13).</summary>
         public const double EmpowerMult = 1.5;
 
         public const double FragileMult = 1.5;
