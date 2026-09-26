@@ -150,23 +150,25 @@ namespace Depiction.Bridge.Tests
 
             Assert.That(source.Finished, Is.True);
             Assert.That(played.First().Kind, Is.EqualTo(DepictionEventKind.TurnStart));
-            Assert.That(played.Count(e => e.Kind == DepictionEventKind.PlayCard), Is.EqualTo(3), "shield_bash and body_check reach 0 only; 10 stamina pays for 3 + 3 + 3");
+            // #192: the unattended run no longer steps back from gap 2 or more, so from the opening gap
+            // of 3 it steps in (足捌き・前) and holds the rest: nothing else reaches or pays at gap 2.
+            Assert.That(played.Count(e => e.Kind == DepictionEventKind.PlayCard), Is.EqualTo(1));
             Assert.That(played.Skip(played.Count - 3).Select(e => e.Kind), Is.EqualTo(new[]
             {
                 DepictionEventKind.TurnEnd, DepictionEventKind.EnemyAction, DepictionEventKind.NextOmen,
             }));
             Assert.That(played.Select(e => e.Order), Is.EqualTo(Enumerable.Range(1, played.Count)));
 
-            // The end point (TurnLoopTests.PinnedSummaries, turn 1): the player backed off to gap 3,
-            // the sweep whiffed, and the polearm's next omen is its step in (動).
+            // The end point, turn 1: the player stepped in to gap 2 behind Guard 12 + 構え 3, the
+            // polearm stepped in to gap 1, and its next omen is the sweep (攻撃・1〜2).
             DepictionFrame last = played.Last().After;
             Assert.That(last.Corner.Turn, Is.EqualTo(1));
-            Assert.That(last.Player.RangeGlyph, Is.EqualTo("3"));
+            Assert.That(last.Player.RangeGlyph, Is.EqualTo("1"));
             Assert.That(last.Omen.Visible, Is.True);
-            Assert.That(last.Omen.KindLabel, Is.EqualTo("動"));
-            Assert.That(last.Omen.SideGlyph, Is.EqualTo(""));
+            Assert.That(last.Omen.KindLabel, Is.EqualTo("攻撃"));
+            Assert.That(last.Omen.SideGlyph, Is.EqualTo("1〜2"));
             Assert.That(last.Player.Hp, Is.EqualTo(50));
-            Assert.That(last.Player.Guard, Is.EqualTo(36));
+            Assert.That(last.Player.Guard, Is.EqualTo(15));
             Assert.That(last.Enemy.Hp, Is.EqualTo(60));
             Assert.That(last.Enemy.Statuses, Is.Empty);
             Assert.That(source.GuideText, Is.EqualTo(""));

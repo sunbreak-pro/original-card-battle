@@ -69,7 +69,12 @@ namespace Depiction.Bridge
 
         public bool CanEndTurn => WaitingForPlayer;
 
-        /// <summary>A played battle has no opinion about which card to drag; an unattended run takes the leftmost payable one.</summary>
+        /// <summary>
+        /// A played battle has no opinion about which card to drag; an unattended run takes the
+        /// leftmost payable one — except a card that steps back while the gap is already 2 or more
+        /// (#192). Backing off to the end of the line puts the player out of every reach of 大黒蛇
+        /// セルク, which never moves and binds the feet every phase, and the run would never end (#196).
+        /// </summary>
         public string SuggestedCardId
         {
             get
@@ -77,11 +82,15 @@ namespace Depiction.Bridge
                 if (!_suggestCards || !WaitingForPlayer) return "";
                 foreach (CardInstance card in _state.Hand)
                 {
+                    if (card.Def.Face.Move < 0 && _state.Gap >= FleeGap) continue;
                     if (TurnLoop.CanPlay(_state, card.InstanceId) == PlayRefusal.None) return card.InstanceId;
                 }
                 return "";
             }
         }
+
+        /// <summary>The gap from which the unattended run stops stepping back (<see cref="SuggestedCardId"/>).</summary>
+        public const int FleeGap = 2;
 
         public string GuideText
         {
