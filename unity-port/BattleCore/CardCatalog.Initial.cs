@@ -21,11 +21,11 @@ namespace BattleCore
             AtMost(0, TraitEffect.PowerBonus, 5),
             Description: "肩口から斬り下ろす");
 
-        /// <summary>#3. A heavy blow into a guard omen.</summary>
+        /// <summary>#3. A heavy blow into an attack omen (a guard omen shows on about 5% of plays, #208).</summary>
         public static readonly CardDef Overhead = new CardDef(
             "overhead", "大上段", BattleAttribute.Attack, 2,
             new Face(Power: 13),
-            OmenIs(OmenKind.Guard, TraitEffect.HeavyBlow),
+            OmenIs(OmenKind.Attack, TraitEffect.HeavyBlow),
             Description: "振りかぶって叩き落とす");
 
         /// <summary>#4. The light column-1 cut that hands back a stamina point when adjacent.</summary>

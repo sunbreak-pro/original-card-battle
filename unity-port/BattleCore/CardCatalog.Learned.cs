@@ -36,7 +36,7 @@ namespace BattleCore
         /// <summary>#44. Reaches 0〜2 (so 11, not 13) with a break; a heavy blow on a chain.</summary>
         public static readonly CardDef LineLash = new CardDef(
             "line_lash", "糸打ち", BattleAttribute.Attack, 2,
-            new Face(Power: 11, Break: 1, Reach: new Reach(0, 2)),
+            new Face(Power: 11, Break: 2, Reach: new Reach(0, 2)),
             When(TraitCondition.Chain, TraitEffect.HeavyBlow),
             Description: "糸を鞭のように打ち続けて骨を折る");
 
@@ -281,10 +281,10 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "怯んだ相手に押されない型");
 
-        /// <summary>#75. Column-1 attack with a break; a heavy blow once the foe is broken.</summary>
+        /// <summary>#75. Column-1 attack that breaks 2 (#208); a heavy blow once the foe is broken.</summary>
         public static readonly CardDef VitalThrust = new CardDef(
             "vital_thrust", "急所突き", BattleAttribute.Attack, 1,
-            new Face(Power: 6, Break: 1),
+            new Face(Power: 6, Break: 2),
             When(TraitCondition.Broken, TraitEffect.HeavyBlow),
             Description: "崩れた急所を突く");
 
@@ -311,10 +311,10 @@ namespace BattleCore
             SelfHas(StatusKind.Empower, TraitEffect.HeavyBlow),
             Description: "傷ついた獲物を追う型");
 
-        /// <summary>#79. Hits at 1〜2, then steps in one; +5 into a move omen.</summary>
+        /// <summary>#79. Hits at 1〜2, then steps in one; +5 into a move omen. A move omen mostly shows at gap 3+, so the trait is rare and the face carries the plain card's +2 (8 + 2, #208).</summary>
         public static readonly CardDef ShadowLunge = new CardDef(
             "shadow_lunge", "影踏み", BattleAttribute.Attack | BattleAttribute.Move, 2,
-            new Face(Power: 8, Move: 1, Reach: new Reach(1, 2)),
+            new Face(Power: 10, Move: 1, Reach: new Reach(1, 2)),
             OmenIs(OmenKind.Move, TraitEffect.PowerBonus, 5),
             Description: "動こうとした影を踏んで斬る");
 
