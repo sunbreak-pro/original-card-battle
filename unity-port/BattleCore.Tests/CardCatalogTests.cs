@@ -290,7 +290,7 @@ namespace BattleCore.Tests
             }
         }
 
-        /// <summary>A legal deck (§8): at most three of a kind, drawn from the eighty with the given RNG.</summary>
+        /// <summary>A legal deck (§8): at most three of a kind, at most three stance cards, drawn from the eighty with the given RNG.</summary>
         private static List<CardInstance> RandomDeck(IRng rng, int size)
         {
             var counts = new Dictionary<string, int>();
@@ -300,6 +300,7 @@ namespace BattleCore.Tests
                 var def = CardCatalog.All[(int)(rng.NextDouble() * CardCatalog.All.Count) % CardCatalog.All.Count];
                 counts.TryGetValue(def.Id, out int held);
                 if (held >= Constants.CopiesMax) continue;
+                if (Cards.IsStanceCard(def) && deck.Count(c => Cards.IsStanceCard(c.Def)) >= Constants.StanceCardsMax) continue;
                 counts[def.Id] = held + 1;
                 deck.Add(new CardInstance(def.Id + "-" + held, def));
             }

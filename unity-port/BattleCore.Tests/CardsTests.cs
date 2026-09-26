@@ -203,5 +203,62 @@ namespace BattleCore.Tests
                 Assert.That(result.Errors.Any(e => e.Contains("copies")), Is.True);
             });
         }
+
+        // ---- §19.6 S15: three cards with a stance face ----
+
+        /// <summary>A card with a stance face (§4).</summary>
+        private static CardDef StanceCard(string id) =>
+            Fixtures.Card(id, attributes: BattleAttribute.Stance, face: new Face(Stance: new StanceDef(StanceHook.TurnStart, Guard: 1)));
+
+        [Test]
+        public void AFourthStanceCard_IsRefused_EvenWhenEachKindIsOne()
+        {
+            // Sixteen plain cards and four stance kinds × 1: 20 cards, none past three of a kind,
+            // and still refused.
+            var plain = Enumerable.Range(0, 8).Select(i => Fixtures.Card($"k{i}")).ToList();
+            var stances = Enumerable.Range(0, 4).Select(i => StanceCard($"s{i}")).ToList();
+            var deck = Cards.BuildDeck(plain, copies: 2).Concat(Cards.BuildDeck(stances, copies: 1)).ToList();
+            var result = Cards.Validate(deck);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(deck, Has.Count.EqualTo(20));
+                Assert.That(result.Ok, Is.False);
+                Assert.That(result.Errors.Single(), Is.EqualTo("Deck holds 4 stance cards; the maximum is 3."));
+            });
+        }
+
+        [Test]
+        public void ThreeStanceCards_Pass_WhetherOneKindOrThree()
+        {
+            var plain = Enumerable.Range(0, 17).Select(i => Fixtures.Card($"k{i}")).ToList();
+            var oneKind = Cards.BuildDeck(plain, copies: 1).Concat(Cards.BuildDeck(new[] { StanceCard("s0") }, copies: 3)).ToList();
+            var threeKinds = Cards.BuildDeck(plain, copies: 1)
+                .Concat(Cards.BuildDeck(new[] { StanceCard("s0"), StanceCard("s1"), StanceCard("s2") }, copies: 1)).ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Cards.Validate(oneKind).Ok, Is.True, string.Join(" / ", Cards.Validate(oneKind).Errors));
+                Assert.That(Cards.Validate(threeKinds).Ok, Is.True, string.Join(" / ", Cards.Validate(threeKinds).Errors));
+            });
+        }
+
+        [Test]
+        public void EveryCardWithTheStanceAttribute_CountsAsAStanceCard_TwoAttributeOnesToo()
+        {
+            // 鉄壁の構え is ガード + スタンス: it takes one of the three like 水の構え does.
+            var plain = CardCatalog.All.Where(c => !Cards.IsStanceCard(c)).Take(8).ToList();
+            var deck = Cards.BuildDeck(plain, copies: 2)
+                .Concat(Cards.BuildDeck(new[] { CardCatalog.WaterStance, CardCatalog.RockStance, CardCatalog.FlowStance, CardCatalog.IronWall }, copies: 1))
+                .ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Cards.IsStanceCard(CardCatalog.IronWall), Is.True);
+                Assert.That(Cards.IsStanceCard(CardCatalog.Thrust), Is.False);
+                Assert.That(CardCatalog.All.Count(Cards.IsStanceCard), Is.EqualTo(14));
+                Assert.That(Cards.Validate(deck).Errors.Any(e => e.Contains("4 stance cards")), Is.True);
+            });
+        }
     }
 }
