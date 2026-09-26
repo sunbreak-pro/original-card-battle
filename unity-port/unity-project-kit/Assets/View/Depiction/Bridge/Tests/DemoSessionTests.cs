@@ -1,5 +1,5 @@
-// The demo's run of battles (#191): one enemy or §12's chain, what carries, the rest, the end of
-// the run, and the words of the mode and end screens.
+// The demo's run of battles (#191): one enemy or §12's chain, what carries, the rest, a battle
+// given up (#203), the end of the run, and the words of the mode and end screens.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,6 +37,54 @@ namespace Depiction.Bridge.Tests
                 source.TryPlay(card, DepictionText.RequiredZone(face.Aim), out played);
             }
             Assert.That(source.Finished, Is.True);
+        }
+
+        /// <summary>Plays the battle on until the core has decided it, leaving its last events unshown (the screen still playing them).</summary>
+        private static void FightUntilDecided(CoreBattleSource source)
+        {
+            int guard = 0;
+            while (source.State.Result == GameResult.Ongoing && !source.Finished && guard++ < 3000)
+            {
+                if (!source.WaitingForPlayer)
+                {
+                    source.AdvanceAuto();
+                    continue;
+                }
+                string card = source.SuggestedCardId;
+                if (card.Length == 0)
+                {
+                    source.EndTurn();
+                    continue;
+                }
+                CardFace face = DepictionText.Find(source.Frame.Hand, card);
+                DepictionEvent played;
+                source.TryPlay(card, DepictionText.RequiredZone(face.Aim), out played);
+            }
+            Assert.That(source.State.Result, Is.Not.EqualTo(GameResult.Ongoing), "the battle was not decided");
+        }
+
+        /// <summary>Plays the battle on until player turn <paramref name="turn"/> waits for a card, or the battle ends first.</summary>
+        private static void FightUntilTurn(CoreBattleSource source, int turn)
+        {
+            int guard = 0;
+            while (!source.Finished && guard++ < 3000)
+            {
+                if (!source.WaitingForPlayer)
+                {
+                    source.AdvanceAuto();
+                    continue;
+                }
+                if (source.State.Turn >= turn) return;
+                string card = source.SuggestedCardId;
+                if (card.Length == 0)
+                {
+                    source.EndTurn();
+                    continue;
+                }
+                CardFace face = DepictionText.Find(source.Frame.Hand, card);
+                DepictionEvent played;
+                source.TryPlay(card, DepictionText.RequiredZone(face.Aim), out played);
+            }
         }
 
         // ---- the line and the setup ----
@@ -343,7 +391,172 @@ namespace Depiction.Bridge.Tests
                 Assert.That(DemoSession.ChainHeading, Is.EqualTo("連戦（HP とスタミナを持ち越し、負けたら終わり）"));
                 Assert.That(DemoSession.RandomLabel, Is.EqualTo("ランダム"));
                 Assert.That(DemoSession.BackToDeckLabel, Is.EqualTo("デッキ選択へ戻る"));
+                Assert.That(DemoSession.SurrenderLabel, Is.EqualTo("降参する"));
             });
+        }
+
+        // ---- 「降参する」 (#203) ----
+
+        [Test]
+        public void ASurrender_MidChain_EndsTheChainAsALoss()
+        {
+            // Win the first battle, then give the second up on its second turn: the chain is over and lost.
+            for (int seed = 1; seed < 40; seed++)
+            {
+                var session = DemoSession.Chain(Deck(), seed);
+                CoreBattleSource first = session.StartBattle(suggestCards: true);
+                FightToTheEnd(first);
+                if (session.Finish(first).Result != GameResult.Won) continue;
+
+                session.GoOn(rest: false);
+                CoreBattleSource second = session.StartBattle(suggestCards: true);
+                FightUntilTurn(second, 2);
+                if (second.State.Result != GameResult.Ongoing) continue;
+                BattleState state = second.State;
+
+                BattleTally two = session.Surrender(second);
+                DemoEndScreen screen = session.EndScreen();
+                Assert.Multiple(() =>
+                {
+                    Assert.That(two.Result, Is.EqualTo(GameResult.Lost));
+                    Assert.That(two.Turns, Is.EqualTo(state.Turn));
+                    Assert.That(two.HpLeft, Is.EqualTo(state.Player.Hp), "the HP it had, not 0");
+                    Assert.That(two.CardsPlayed, Is.EqualTo(second.History.OfType<CardPlayed>().Count(c => c.Actor == Actor.Player)));
+                    Assert.That(session.Stage, Is.EqualTo(DemoStage.Over));
+                    Assert.That(session.Surrendered, Is.True);
+                    Assert.That(session.AllWon, Is.False);
+                    Assert.That(session.Tallies.Select(t => t.Result), Is.EqualTo(new[] { GameResult.Won, GameResult.Lost }));
+                    Assert.That(() => session.GoOn(false), Throws.InvalidOperationException);
+                    Assert.That(() => session.StartBattle(), Throws.InvalidOperationException);
+                    Assert.That(screen.Title, Is.EqualTo("2 戦目で降参しました"));
+                    Assert.That(screen.Won, Is.False);
+                    Assert.That(screen.CanGoOn, Is.False);
+                    Assert.That(screen.Lines[0], Is.EqualTo("何戦目: 2 / 3（瘴牙の走竜）"));
+                    Assert.That(screen.Lines[1], Is.EqualTo("残り HP: " + state.Player.Hp + " / 50"));
+                    Assert.That(screen.Lines.Any(l => l.StartsWith("連戦の合計（2 戦）")), Is.True, "the run is added up");
+                    Assert.That(screen.AgainLabel, Is.EqualTo("最初からもう一度"));
+                    Assert.That(screen.BackLabel, Is.EqualTo("デッキ選択へ戻る"));
+                });
+
+                session.Again();
+                BattleState again = session.StartBattle().State;
+                Assert.That(session.Surrendered, Is.False);
+                Assert.That(again.EnemyDef.Id, Is.EqualTo("polearm_warped"));
+                Assert.That(again.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp), "again starts at full HP");
+                return;
+            }
+            Assert.Fail("no seed won the first battle");
+        }
+
+        [Test]
+        public void ASurrender_BeforeTheFirstCard_EndsTheChainAtOnce()
+        {
+            var session = DemoSession.Chain(Deck(), 1);
+            CoreBattleSource source = session.StartBattle();
+            BattleTally tally = session.Surrender(source);
+            DemoEndScreen screen = session.EndScreen();
+            Assert.Multiple(() =>
+            {
+                Assert.That(tally.Result, Is.EqualTo(GameResult.Lost));
+                Assert.That(tally.HpLeft, Is.EqualTo(Constants.PlayerMaxHp));
+                Assert.That(tally.CardsPlayed, Is.EqualTo(0));
+                Assert.That(session.Stage, Is.EqualTo(DemoStage.Over));
+                Assert.That(screen.Title, Is.EqualTo("1 戦目で降参しました"));
+                Assert.That(screen.CanGoOn, Is.False);
+                Assert.That(screen.Lines.Any(l => l.StartsWith("連戦の合計")), Is.False, "one battle is not added up");
+            });
+        }
+
+        [Test]
+        public void ASurrenderedSingleBattle_IsALoss_WithTheBattleSoFar()
+        {
+            var session = DemoSession.Single(Deck(), "polearm_warped", 3);
+            CoreBattleSource source = session.StartBattle(suggestCards: true);
+            FightUntilTurn(source, 2);
+            Assert.That(source.State.Result, Is.EqualTo(GameResult.Ongoing), "seed 3 is still fighting on turn 2");
+            BattleState state = source.State;
+
+            BattleTally tally = session.Surrender(source);
+            DemoEndScreen screen = session.EndScreen();
+            Assert.Multiple(() =>
+            {
+                Assert.That(tally.Result, Is.EqualTo(GameResult.Lost));
+                Assert.That(tally.CardsPlayed, Is.GreaterThan(0), "turn 1 was played");
+                Assert.That(session.Stage, Is.EqualTo(DemoStage.Over));
+                Assert.That(screen.Title, Is.EqualTo("錆槍の竜兵に降参しました"));
+                Assert.That(screen.Won, Is.False);
+                Assert.That(screen.Lines, Is.EqualTo(new[]
+                {
+                    "相手: 錆槍の竜兵",
+                    "残り HP: " + state.Player.Hp + " / 50",
+                    "ターン数: " + state.Turn,
+                    "使った札 " + tally.CardsPlayed + " 枚の属性: " + DemoSession.Breakdown(tally),
+                    "特性の発動: " + tally.TraitsFired + " 回",
+                }));
+                Assert.That(screen.AgainLabel, Is.EqualTo("もう一度"));
+            });
+        }
+
+        [Test]
+        public void ASurrender_AfterTheCoreHasDecided_KeepsTheCoresResult()
+        {
+            // The button can be pressed while the last events are still on the screen.
+            for (int seed = 1; seed < 40; seed++)
+            {
+                var session = DemoSession.Single(Deck(), "polearm_warped", seed);
+                CoreBattleSource source = session.StartBattle(suggestCards: true);
+                FightUntilDecided(source);
+                if (source.Finished) continue; // decided with nothing left to show
+
+                BattleTally tally = session.Surrender(source);
+                Assert.Multiple(() =>
+                {
+                    Assert.That(tally.Result, Is.EqualTo(source.State.Result));
+                    Assert.That(session.Surrendered, Is.False);
+                    Assert.That(session.Stage, Is.EqualTo(DemoStage.Over));
+                    Assert.That(session.EndScreen().Title, Does.Not.Contain("降参"));
+                });
+                return;
+            }
+            Assert.Fail("no seed left the deciding events unshown");
+        }
+
+        [Test]
+        public void ASurrender_AsAChainedWinIsStillShown_GoesOnLikeTheWin()
+        {
+            // A chain's first battle won, its last events still on the screen: the chain goes on.
+            for (int seed = 1; seed < 40; seed++)
+            {
+                var session = DemoSession.Chain(Deck(), seed);
+                CoreBattleSource source = session.StartBattle(suggestCards: true);
+                FightUntilDecided(source);
+                if (source.State.Result != GameResult.Won || source.Finished) continue;
+
+                BattleTally tally = session.Surrender(source);
+                DemoEndScreen screen = session.EndScreen();
+                Assert.Multiple(() =>
+                {
+                    Assert.That(tally.Result, Is.EqualTo(GameResult.Won));
+                    Assert.That(session.Surrendered, Is.False);
+                    Assert.That(session.Stage, Is.EqualTo(DemoStage.BetweenBattles));
+                    Assert.That(screen.CanGoOn, Is.True);
+                    Assert.That(screen.Title, Is.EqualTo("1 戦目に勝ちました"));
+                });
+                return;
+            }
+            Assert.Fail("no seed won the first battle with its last events unshown");
+        }
+
+        [Test]
+        public void ASurrender_OutsideABattle_IsRefused()
+        {
+            var session = DemoSession.Single(Deck(), "polearm_warped", 1);
+            Assert.Throws<InvalidOperationException>(() => session.Surrender(DemoSession.Single(Deck(), "polearm_warped", 1).StartBattle()), "nothing started yet");
+            CoreBattleSource source = session.StartBattle();
+            Assert.Throws<ArgumentNullException>(() => session.Surrender(null));
+            session.Surrender(source);
+            Assert.Throws<InvalidOperationException>(() => session.Surrender(source), "the run is over");
+            Assert.Throws<InvalidOperationException>(() => session.Finish(source), "a battle given up is not finished again");
         }
 
         [Test]

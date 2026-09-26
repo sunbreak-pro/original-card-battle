@@ -100,6 +100,8 @@ namespace Depiction.View
         private bool _started;
         /// <summary><see cref="Hold"/>: Start waits for a battle instead of building its own.</summary>
         private bool _hold;
+        /// <summary><see cref="Halt"/>: the battle takes no input and pulls no event until the next <see cref="Restart"/>.</summary>
+        private bool _halted;
         private readonly List<CardView> _hand = new List<CardView>();
         private bool _busy;
         private bool _stepRequested;
@@ -159,6 +161,7 @@ namespace Depiction.View
             }
             StopAllCoroutines();
             UiTween.Speed = 1f;
+            _halted = false;
             _busy = false;
             _dragging = null;
             _hovered = null;
@@ -183,6 +186,30 @@ namespace Depiction.View
 
         /// <summary>Raised once a battle has played its last event (#190 / #191: the flow shows what comes next).</summary>
         public event System.Action BattleFinished;
+
+        /// <summary>
+        /// The demo's 「降参する」 (#203): the battle stops where it stands. The hand is let go and takes
+        /// no more input, the end-turn plate stops answering, and no further event is pulled from the
+        /// source. The event already on screen plays out at reduced-motion speed, so its effects clean
+        /// up after themselves before the next button can be pressed. <see cref="BattleFinished"/> is
+        /// not raised: the flow ended the battle itself. The next <see cref="Restart"/> clears the rest.
+        /// </summary>
+        public void Halt()
+        {
+            if (!_started)
+            {
+                _givenSource = null;
+                _hold = true;
+                return;
+            }
+            _halted = true;
+            UiTween.Speed = HaltedTweenSpeed;
+            if (_dragging != null) LetGo();
+            SetHandInteractable(false);
+        }
+
+        /// <summary>UiTween's reduced-motion factor: what is left of a halted event settles within a few frames.</summary>
+        private const float HaltedTweenSpeed = 1000f;
 
         private void Start()
         {
@@ -236,7 +263,7 @@ namespace Depiction.View
         private void UpdateEndTurn()
         {
             if (_source == null || _busy || _dragging != null || !endTurn) return;
-            if (!_source.CanEndTurn) return;
+            if (_halted || !_source.CanEndTurn) return;
             if (!TryPointerPress(out Vector2 pointer)) return;
             if (!RectTransformUtility.RectangleContainsScreenPoint(endTurn, pointer, null)) return;
             StartCoroutine(PlayThenContinue(_source.EndTurn()));
@@ -263,13 +290,14 @@ namespace Depiction.View
         private IEnumerator RunAutomaticEvents()
         {
             _busy = true;
-            while (!_source.Finished && !_source.WaitingForPlayer)
+            while (!_halted && !_source.Finished && !_source.WaitingForPlayer)
             {
                 DepictionEvent ev = _source.AdvanceAuto();
                 yield return PlayEvent(ev);
                 yield return UiTween.Wait(350f);
             }
             _busy = false;
+            if (_halted) yield break; // given up (#203): nothing follows, and no result card
             if (_source.Finished)
             {
                 Finished = true;
@@ -1263,6 +1291,27 @@ namespace Depiction.View
             _dragging.transform.position = DragPosition();
         }
 
+        /// <summary>Halt: a held card goes back to its place unplayed, and the drop zone goes.</summary>
+        private void LetGo()
+        {
+            CardView held = _dragging;
+            _dragging = null;
+            _dragSource = null;
+            _zoneHot = false;
+            _snapWeight = 0f;
+            _snapHandle = -1;
+            if (_zoneFade != null)
+            {
+                StopCoroutine(_zoneFade);
+                _zoneFade = null;
+            }
+            receiver.Hide();
+            throwLine.Hide();
+            HideTargetMarks();
+            if (held) held.group.alpha = 1f;
+            LayoutHand();
+        }
+
         private void Release(CardView card, DropZone zone)
         {
             _dragging = null;
@@ -1380,6 +1429,7 @@ namespace Depiction.View
         private IEnumerator AutoDrag()
         {
             yield return UiTween.Wait(400f);
+            if (_halted) yield break;
             string suggested = _source.SuggestedCardId;
             if (string.IsNullOrEmpty(suggested))
             {
@@ -1395,9 +1445,11 @@ namespace Depiction.View
             Vector3 to = aim == CardAim.Single
                 ? receiver.transform.position
                 : new Vector3(from.x, throwLine.transform.position.y + (throwLine.transform.position.y - from.y) * 0.35f, from.z);
-            yield return UiTween.Run(450f, Ease.InOut, t => { if (card) card.transform.position = Vector3.LerpUnclamped(from, to, t); });
+            yield return UiTween.Run(450f, Ease.InOut, t => { if (card && !_halted) card.transform.position = Vector3.LerpUnclamped(from, to, t); });
+            if (_halted) yield break; // Halt let the card go back to the fan mid-flight
             SetZoneHot(card, true);
             yield return Gate((EventSeconds.Count + 1) + "-hover");
+            if (_halted) yield break; // Halt let the card go
             Release(card, DepictionText.RequiredZone(aim));
         }
 
