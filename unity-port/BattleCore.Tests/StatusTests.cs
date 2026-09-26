@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using BattleCore;
 
@@ -145,6 +148,75 @@ namespace BattleCore.Tests
                 Assert.That(polearm.Statuses.Has(StatusKind.Slow), Is.True, "the chip still shows");
                 Assert.That(Combat.CellsAfterSlow(2, polearm.Statuses), Is.EqualTo(1), "the two-cell shove pushes one");
                 Assert.That(Combat.CellsAfterSlow(1, polearm.Statuses), Is.EqualTo(0), "the one-cell step is stopped");
+            });
+        }
+
+        // ---- §5 上限: the ターンで減る型 stops at four (#205) ----
+
+        private static IEnumerable<StatusKind> TurnDecayKinds() =>
+            Enum.GetValues(typeof(StatusKind)).Cast<StatusKind>().Where(k => Statuses.DecayOf(k) == StatusDecay.OnTurn);
+
+        private static IEnumerable<StatusKind> UseDecayKinds() =>
+            Enum.GetValues(typeof(StatusKind)).Cast<StatusKind>().Where(k => Statuses.DecayOf(k) == StatusDecay.OnUse);
+
+        [TestCaseSource(nameof(TurnDecayKinds))]
+        public void ATurnDecayWord_StopsAtTheCap_AndTheRestIsDropped(StatusKind kind)
+        {
+            var set = StatusSet.Empty.Add(kind, 3).Add(kind, 3);
+            Assert.That(set.Stacks(kind), Is.EqualTo(Constants.TurnDecayStackMax));
+        }
+
+        [TestCaseSource(nameof(UseDecayKinds))]
+        public void AUseDecayWord_IsNotCapped(StatusKind kind)
+        {
+            // §19.5 S14: 溜め放ち keeps its uncounted stacks.
+            var set = StatusSet.Empty.Add(kind, 3).Add(kind, 3);
+            Assert.That(set.Stacks(kind), Is.EqualTo(6));
+        }
+
+        [Test]
+        public void AFreshHolder_TakesColumnFoursBleedWhole()
+        {
+            // Column 4 of the card scale gives 出血 / 再生 4: the cap never cuts one card on a clean holder.
+            Assert.That(StatusSet.Empty.Add(StatusKind.Bleed, 4).Stacks(StatusKind.Bleed), Is.EqualTo(4));
+        }
+
+        [Test]
+        public void AWordAtTheCap_ComesBackUnchanged()
+        {
+            var full = StatusSet.Of((StatusKind.Regen, Constants.TurnDecayStackMax));
+            Assert.That(full.Add(StatusKind.Regen, 2), Is.SameAs(full));
+        }
+
+        [Test]
+        public void Of_HoldsATurnDecayWordToTheCap_ButNotAUseDecayWord()
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(StatusSet.Of((StatusKind.Regen, 9)).Stacks(StatusKind.Regen), Is.EqualTo(Constants.TurnDecayStackMax));
+                Assert.That(StatusSet.Of((StatusKind.Empower, 9)).Stacks(StatusKind.Empower), Is.EqualTo(9));
+            });
+        }
+
+        [TestCaseSource(nameof(TurnDecayKinds))]
+        public void ToppingUpTwiceEveryTurn_NeverClimbsPastTheCap(StatusKind kind)
+        {
+            // An elite or a boss can put the same word on twice a phase (2 + 2), and the holder loses
+            // one a turn. Uncapped, that climbs by three a turn; capped, it settles at 4 on, 3 after the tick.
+            var set = StatusSet.Empty;
+            var afterTopUp = new List<int>();
+            var afterTick = new List<int>();
+            for (int turn = 0; turn < 100; turn++)
+            {
+                set = set.Add(kind, 2).Add(kind, 2);
+                afterTopUp.Add(set.Stacks(kind));
+                set = set.TickTurnStart();
+                afterTick.Add(set.Stacks(kind));
+            }
+            Assert.Multiple(() =>
+            {
+                Assert.That(afterTopUp, Has.All.EqualTo(Constants.TurnDecayStackMax));
+                Assert.That(afterTick, Has.All.EqualTo(Constants.TurnDecayStackMax - 1));
             });
         }
     }

@@ -62,6 +62,37 @@ namespace Depiction.Bridge.Tests
             Assert.That(stalls, Is.Empty, id + ": stalled at seeds " + string.Join(", ", stalls));
         }
 
+        /// <summary>
+        /// #205's replay on a fixed deck of 29 with three stance cards, so a change to the random decks
+        /// (#206) leaves it alone. Measured 2026-09-26 against 大黒蛇 セルク, seed 21: uncapped, 鈍足
+        /// peaked at 11 (turn 12: 鈍足 8 / 疲労 5; 疲労 6 and the priest's 再生 5 at their highest);
+        /// capped, 鈍足, 疲労 and the priest's 再生 all peak at 4. The battle is lost at turn 15 either way.
+        /// </summary>
+        public const string ReplayDeck =
+            "overhead:1,flat_strike:1,reach_thrust:1,brace:1,iron_block:2,deep_breath:1,first_aid:1,observe:1," +
+            "back_leap:1,slide_step:1,stone_throw:2,parry_cut:1,twist_away:1,abyss_stance:1,haul_step:1,bulwark:2," +
+            "whirlwind:1,snap_guard:1,deflect:1,pommel_strike:1,keen_eye:1,resolve:1,gale_thrust:2,anchor_stance:1,vital_thrust:1";
+
+        [Test]
+        public void TheIssuesReplay_MiasmaPriestSeed21_HoldsFatigueSlowAndRegenAtTheCap()
+        {
+            CoreBattleSource source = Fight(Enemies.MiasmaPriest, DeckBuilder.Load(ReplayDeck).Build(), 21);
+            Assert.That(source, Is.Not.Null, "the replay ends without a stall");
+
+            List<StatusApplied> turnDecay = source.History.OfType<StatusApplied>()
+                .Where(a => Statuses.DecayOf(a.Kind) == StatusDecay.OnTurn).ToList();
+            int Peak(Actor target, StatusKind kind) =>
+                turnDecay.Where(a => a.Target == target && a.Kind == kind).Select(a => a.StacksAfter).DefaultIfEmpty(0).Max();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(turnDecay.Max(a => a.StacksAfter), Is.EqualTo(Constants.TurnDecayStackMax), "the words reach the cap and stop there");
+                Assert.That(Peak(Actor.Player, StatusKind.Slow), Is.EqualTo(Constants.TurnDecayStackMax), "鈍足");
+                Assert.That(Peak(Actor.Player, StatusKind.Fatigue), Is.EqualTo(Constants.TurnDecayStackMax), "疲労");
+                Assert.That(Peak(Actor.Enemy, StatusKind.Regen), Is.EqualTo(Constants.TurnDecayStackMax), "the priest's 再生");
+            });
+        }
+
         [Test, Explicit("prints the table for the #192 PR; slow")]
         public void PrintTheTable()
         {

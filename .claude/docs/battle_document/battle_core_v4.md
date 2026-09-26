@@ -420,6 +420,7 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | DUAL_FACE_RATIO            | 0.65       | 二属性の面の目安                                                              |
 | STATUS_KINDS_PLAYER        | 6          | プレイヤーが同時に持てる状態の種類                                            |
 | STATUS_KINDS_ENEMY         | 上限なし   | 敵は種類を数えない。スタック数はターンで減る型だけ数える（§5。確認待ち）      |
+| TURN_DECAY_STACK_MAX       | 4          | ターンで減る型の 1 語のスタック上限（両者）。超える分は捨てる（§5。確認待ち） |
 | STANCE_SLOTS               | 1          |                                                                               |
 | BOSS_STATUS_KINDS          | 2          | ボス専用の状態                                                                |
 | ENEMIES_MAX                | 3          | 同時に出る敵。1 体ずつ別のマスに立つ（§7.4）                                  |
@@ -431,6 +432,8 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | CHAIN_BATTLES_DEFAULT      | 3          | 連戦モードの既定（9 戦の並びも選べる）                                        |
 
 **廃止した定数**: `T0_ATTACK_POWER`、`MIN_INVEST_ZERO_KINDS`、`RANGE_MULT`、`STATUS_SLOTS`（4）、`STATUS_STACK_MAX`（3）、`DESPERATE_MULT`（1.5）。
+
+`STATUS_STACK_MAX`（3）は全ての状態に掛かる上限で、廃止したままです。ターンで減る型だけの上限として `TURN_DECAY_STACK_MAX`（4）を置きました（2026-09-26、#205）。battle レーンの案で、こうだいさんの確認待ちです（§23）。
 
 ---
 

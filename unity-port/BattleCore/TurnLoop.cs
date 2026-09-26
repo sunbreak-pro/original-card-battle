@@ -839,7 +839,8 @@ namespace BattleCore
             }
 
             // §5: the face's statuses, then the trait's. The player holds at most six kinds; an enemy
-            // has no limit. Statuses on the opponent need the blow to have reached them.
+            // has no kind limit. A ターンで減る型 word stops at four on either side (#205).
+            // Statuses on the opponent need the blow to have reached them.
             // A face of several blows has put its opponent statuses on already, after the first blow.
             var grants = new List<StatusGrant>();
             foreach (var grant in face.StatusList)
@@ -1039,15 +1040,20 @@ namespace BattleCore
             return Set(state, holder, unit, self with { Statuses = after });
         }
 
-        /// <summary>§5: stacks on one side; the player takes on at most six kinds, an enemy any number.</summary>
+        /// <summary>
+        /// §5: stacks on one side; the player takes on at most six kinds, an enemy any number. A
+        /// ターンで減る型 word stops at four on either side and the rest is dropped (#205): that is
+        /// not a refusal, so the event says how much was dropped instead.
+        /// </summary>
         private static BattleState ApplyStatus(
             BattleState state, Actor by, Actor target, int targetUnit, int eventUnit, StatusKind kind, int stacks, List<BattleEvent> events)
         {
             int? limit = target == Actor.Player ? Constants.StatusKindsPlayer : (int?)null;
             var other = Get(state, target, targetUnit);
             var after = other.Statuses.Add(kind, stacks, limit);
-            bool refused = after.Stacks(kind) == other.Statuses.Stacks(kind);
-            events.Add(new StatusApplied(by, target, kind, stacks, after.Stacks(kind), refused) { Unit = eventUnit });
+            bool refused = !after.Has(kind);
+            int dropped = refused ? 0 : stacks - (after.Stacks(kind) - other.Statuses.Stacks(kind));
+            events.Add(new StatusApplied(by, target, kind, stacks, after.Stacks(kind), refused) { Unit = eventUnit, Dropped = dropped });
             return Set(state, target, targetUnit, other with { Statuses = after });
         }
 

@@ -95,11 +95,18 @@ namespace BattleCore
 
         // ---- Status (§5) ----
 
-        /// <summary>§5: the player may hold six kinds at once. Enemies have no cap.</summary>
+        /// <summary>§5: the player may hold six kinds at once. Enemies have no kind cap.</summary>
         public const int StatusKindsPlayer = 6;
 
         /// <summary>§3.1: applying a status gives 2 stacks unless the face says otherwise.</summary>
         public const int StatusApplyDefault = 2;
+
+        /// <summary>
+        /// §5 (#205): a ターンで減る型 word holds at most this many stacks, on either side; whatever an
+        /// application would put over it is dropped. Column 4's 出血 / 再生 fits whole. The 使うと減る型
+        /// is not counted (§19.5 S14). The battle lane's proposal, pending the owner's confirmation (§23).
+        /// </summary>
+        public const int TurnDecayStackMax = 4;
 
         /// <summary>§3.1 / §5: 出血 and 再生 move HP by this much per stack at the holder's turn start.</summary>
         public const int BleedPerStack = 2;

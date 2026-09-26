@@ -247,7 +247,9 @@ namespace Depiction.Bridge
                     break;
 
                 case StatusApplied applied:
-                    if (!applied.Refused) SetStatus(ev, applied.Target, applied.Kind, applied.Stacks, applied.StacksAfter);
+                    // #205: a ターンで減る型 word stops at its cap, so what landed can be less than what
+                    // was given, or nothing; the core says how much.
+                    if (applied.Landed > 0) SetStatus(ev, applied.Target, applied.Kind, applied.Landed, applied.StacksAfter);
                     break;
 
                 case Drawn drawn:
