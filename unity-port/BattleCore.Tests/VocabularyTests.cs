@@ -51,6 +51,9 @@ namespace BattleCore.Tests
         /// <summary>A single attack of the given power at reach 0〜1.</summary>
         private static CardDef Jab(int power, int column = 1) => Fixtures.Card("jab" + power, column, new Face(Power: power));
 
+        /// <summary>An attack of two blows of the given power at reach 0〜1 (§2.4 hits).</summary>
+        private static CardDef TwoHits(int power) => Fixtures.Card("two_hits" + power, 1, new Face(Power: power, Hits: 2));
+
         // ---- Helpers ----
 
         /// <summary>The cards in this order, padded with fillers to one full hand.</summary>
@@ -447,6 +450,71 @@ namespace BattleCore.Tests
             });
         }
 
+        [Test]
+        public void Intimidate_Stays_WhenAnEnemyBlowWhiffs_WithNoGuard_AndWeakensItsNextAction()
+        {
+            // §5 威圧 (境目): a blow that whiffs with no Guard leaves it, and so does the enemy's 構え; the next blow that lands (mid_hit 4) takes the −3.
+            var enemy = Fixtures.Enemy("close", atZero: Fixtures.EnemyAction("close_hit", face: new Face(Power: 5, Reach: Reach.Only(0))));
+            var s = WithEnemyStatuses(Opened(0, enemy, StepOut), (StatusKind.Intimidate, 2));
+
+            var turn1 = End(Play(s, "step_out").State);
+            var turn2 = End(Begin(turn1.State).State);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(turn1.Events.OfType<ActionWhiffed>().Single().SourceId, Is.EqualTo("close_hit"));
+                Assert.That(turn1.Events.OfType<DamageDealt>(), Is.Empty);
+                Assert.That(turn1.Events.OfType<StatusConsumed>(), Is.Empty);
+                Assert.That(turn1.Events.OfType<ReserveChecked>().Last(), Is.EqualTo(new ReserveChecked(Actor.Enemy, 9, 3, 3)));
+                Assert.That(turn1.State.Enemy.Statuses.Stacks(StatusKind.Intimidate), Is.EqualTo(2));
+                Assert.That(turn1.State.Omen!.ActionId, Is.EqualTo("mid_hit"));
+
+                Assert.That(turn2.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 1, 1, 0, 2, 50)));
+                Assert.That(turn2.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Enemy, StatusKind.Intimidate, 1)));
+            });
+        }
+
+        [Test]
+        public void Intimidate_IsSpent_ByAWhiffedEnemyAction_ThatStillHasAGuard()
+        {
+            // §5 威圧 (境目): the blow whiffs, but the action's Guard takes the −3 (4 → 1), so one stack goes.
+            var braced = Fixtures.EnemyAction("braced_hit", face: new Face(Power: 5, Guard: 4, Reach: Reach.Only(0)),
+                attributes: BattleAttribute.Attack | BattleAttribute.Guard);
+            var s = WithEnemyStatuses(Opened(0, Fixtures.Enemy("braced", atZero: braced), StepOut), (StatusKind.Intimidate, 2));
+
+            var turn1 = End(Play(s, "step_out").State);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(turn1.Events.OfType<ActionWhiffed>().Single().SourceId, Is.EqualTo("braced_hit"));
+                Assert.That(turn1.Events.OfType<DamageDealt>(), Is.Empty);
+                Assert.That(turn1.Events.OfType<GuardGained>().Single(), Is.EqualTo(new GuardGained(Actor.Enemy, 1, 1)));
+                Assert.That(turn1.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Enemy, StatusKind.Intimidate, 1)));
+                AssertInOrder(turn1.Events, typeof(ActionWhiffed), typeof(StatusConsumed), typeof(GuardGained));
+            });
+        }
+
+        [Test]
+        public void Intimidate_IsSpentOnce_ByAMultiHitFace_AndTakesThreeOffEveryBlow()
+        {
+            // §5 威圧 (境目) / §2.4 hits: one stack for the whole face, and −3 on each blow (5 → 2, twice).
+            var s = WithPlayerStatuses(Opened(1, Idle, TwoHits(5)), (StatusKind.Intimidate, 2));
+
+            var preview = TurnLoop.Preview(s, InHand(s, "two_hits5"))!;
+            var play = Play(s, "two_hits5");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(preview.RawPower, Is.EqualTo(2));
+                Assert.That(play.Events.OfType<DamageDealt>(), Is.EqualTo(new[]
+                {
+                    new DamageDealt(Actor.Player, Actor.Enemy, 2, 0, 2, 0, 58),
+                    new DamageDealt(Actor.Player, Actor.Enemy, 2, 0, 2, 0, 56),
+                }));
+                Assert.That(play.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Player, StatusKind.Intimidate, 1)));
+            });
+        }
+
         // ---- §5 集中 (the demo reading, #188) ----
 
         [Test]
@@ -573,6 +641,96 @@ namespace BattleCore.Tests
                 Assert.That(play.Events.OfType<StatusConsumed>(), Is.Empty);
                 Assert.That(play.State.Enemy.Statuses.Stacks(StatusKind.Parry), Is.EqualTo(2));
                 Assert.That(play.State.Player.Hp, Is.EqualTo(50));
+            });
+        }
+
+        [Test]
+        public void Parry_Stays_OnThePlayer_WhenAnEnemyBlowMeetsNoGuard()
+        {
+            // §5 見切り (境目): the player takes the blow on Guard 0 (no 構え), so nothing goes back and the stack stays.
+            var s = Opened(0, Fixtures.Enemy());
+            s = s with { Player = s.Player with { Stamina = 0, Statuses = StatusSet.Of((StatusKind.Parry, 1)) } };
+
+            var end = End(s);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(end.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 5, 0, 5, 0, 45)));
+                Assert.That(end.Events.OfType<Reflected>(), Is.Empty);
+                Assert.That(end.Events.OfType<StatusConsumed>(), Is.Empty);
+                Assert.That(end.State.Player.Statuses.Stacks(StatusKind.Parry), Is.EqualTo(1));
+            });
+        }
+
+        [Test]
+        public void Parry_IsSpentByTheBlowItsGuardTakesWhole_AndNotByTheNextBlowThatMeetsNoGuard()
+        {
+            // §5 見切り (境目): judged blow by blow. Guard 5 takes the first blow whole (3 goes back); the second meets Guard 0 and leaves the last stack.
+            var s = Opened(1, Idle, TwoHits(5));
+            s = s.WithEnemy(s.Enemy with { Guard = 5, Statuses = StatusSet.Of((StatusKind.Parry, 2)) });
+
+            var play = Play(s, "two_hits5");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(play.Events.OfType<DamageDealt>(), Is.EqualTo(new[]
+                {
+                    new DamageDealt(Actor.Player, Actor.Enemy, 5, 5, 0, 0, 60),
+                    new DamageDealt(Actor.Player, Actor.Enemy, 5, 0, 5, 0, 55),
+                }));
+                Assert.That(play.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Enemy, StatusKind.Parry, 1)));
+                Assert.That(play.Events.OfType<Reflected>().Single(), Is.EqualTo(new Reflected(Actor.Enemy, Actor.Player, 3, 0, 3, 0, 47)));
+                AssertInOrder(play.Events, typeof(DamageDealt), typeof(StatusConsumed), typeof(Reflected), typeof(DamageDealt));
+                Assert.That(play.State.Enemy.Statuses.Stacks(StatusKind.Parry), Is.EqualTo(1));
+            });
+        }
+
+        [Test]
+        public void Parry_ReturnsOnEveryBlowItsGuardAbsorbs_WhileStacksLast()
+        {
+            // §5 見切り (境目): Guard 10 takes both blows. With 2 stacks each blow returns 3 and spends one;
+            // with 1 the first blow spends the last, and the second blow goes back to nobody.
+            var s = Opened(1, Idle, TwoHits(5));
+            var two = Play(s.WithEnemy(s.Enemy with { Guard = 10, Statuses = StatusSet.Of((StatusKind.Parry, 2)) }), "two_hits5");
+            var one = Play(s.WithEnemy(s.Enemy with { Guard = 10, Statuses = StatusSet.Of((StatusKind.Parry, 1)) }), "two_hits5");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(two.Events.OfType<StatusConsumed>(), Is.EqualTo(new[]
+                {
+                    new StatusConsumed(Actor.Enemy, StatusKind.Parry, 1),
+                    new StatusConsumed(Actor.Enemy, StatusKind.Parry, 0),
+                }));
+                Assert.That(two.Events.OfType<Reflected>().Select(r => r.Damage), Is.EqualTo(new[] { 3, 3 }));
+                Assert.That(two.State.Player.Hp, Is.EqualTo(44));
+                Assert.That(two.State.Enemy.Statuses.Has(StatusKind.Parry), Is.False);
+
+                Assert.That(one.Events.OfType<DamageDealt>().Select(d => d.Absorbed), Is.EqualTo(new[] { 5, 5 }));
+                Assert.That(one.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Enemy, StatusKind.Parry, 0)));
+                Assert.That(one.Events.OfType<Reflected>().Single(), Is.EqualTo(new Reflected(Actor.Enemy, Actor.Player, 3, 0, 3, 0, 47)));
+                Assert.That(one.State.Player.Hp, Is.EqualTo(47));
+            });
+        }
+
+        [Test]
+        public void Parry_Stays_WhenItsGuardTakesWallDamage()
+        {
+            // §5 見切り (境目) / §7.3: the wall is not a blow. A push of 2 moves the player one cell to the
+            // edge; the other is 3 wall damage, which Guard 5 takes whole, and 見切り neither returns nor goes.
+            var shove = Fixtures.EnemyAction("shove", face: new Face(Push: 2, Reach: Reach.Only(0)), attributes: BattleAttribute.Move);
+            var s = Opened(0, Fixtures.Enemy("shover", atZero: shove));
+            s = s with { Player = s.Player with { Stamina = 0, Guard = 5, Statuses = StatusSet.Of((StatusKind.Parry, 1)) } };
+
+            var end = End(s);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(end.Events.OfType<ActionExecuted>().Single().Action.Id, Is.EqualTo("shove"));
+                Assert.That(end.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Player, 2, 1, Pushed: true)));
+                Assert.That(end.Events.OfType<WallHit>().Single(), Is.EqualTo(new WallHit(Actor.Player, 1, 3, 3, 0, 2, 50)));
+                Assert.That(end.Events.OfType<Reflected>(), Is.Empty);
+                Assert.That(end.Events.OfType<StatusConsumed>(), Is.Empty);
+                Assert.That(end.State.Player.Statuses.Stacks(StatusKind.Parry), Is.EqualTo(1));
             });
         }
 
