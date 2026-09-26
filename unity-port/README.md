@@ -117,6 +117,18 @@ BattleCore と台本の型の両方を見るのは `Assets/View/Depiction/Bridge
 
 敵の構え（Guard +3）は、敵の行動ではなく次の予兆の出来事の頭で再生します。押し込みは「構え → 振り → 盾 → 傷 → 押し出し」で既に長く、同じ出来事に入れると 1 行動 2.0 秒を超えるためです。
 
+### デモ（#187）を遊ぶ
+
+`Battle.unity` はデッキ選択 → モード選択（1 体か連戦）→ 戦闘 → 終了画面の流れで始まります（`BattleBootstrap` の Demo Flow が on のとき）。
+
+1. `npm run unity:sync` で C# を Unity リポへ写します。
+2. Unity のメニュー `Tools > Depiction > Build Battle Scene` で、`BattleDepiction.unity` を元に `Battle.unity` を作り、ビルド設定の先頭に置きます。既にあるシーンは作り直しません。
+3. Editor で遊ぶなら `Battle.unity` を開いて Play します。Editor を開かずに遊ぶなら `Tools > Depiction > Build Battle Demo (Windows)` で `Builds/BattleDemo/BattleDemo.exe` を作ります。バッチモードでは `-executeMethod Depiction.View.BattleDemoBuilder.BuildWindows` です。
+
+PlayMode の `DemoFlowPlaybackTests` が、ボタンを名前で押してこの流れを 1 周します。Editor の画面ありで回すと、各画面のスクリーンショットを Unity リポの `Temp/DemoShots/` に残します。
+
+Unity の NUnit（`com.unity.ext.nunit`）には `Assert.Multiple` がありません。`BattleCore.Tests/UnityAssert.cs` と `Bridge/Tests/UnityAssert.cs` が Unity の中でだけ代わりを出し、ブロックをそのまま実行します。`Has.Count` も配列に効かないので、テストでは `.Count` を `Is.EqualTo` で比べます。
+
 ## 乱数と丸め
 
 - **乱数は `IRng`（`double NextDouble()`）の注入だけ**です。`SeededRng`（SplitMix64 をこの場に書いた実装。`dotnet test` でも Unity でも同じ種から同じ列が出るので、固定した戦闘はこれを使います）、`SystemRng`（`System.Random` の包み。ランタイムをまたいだ再現は約束されません）、`FixedRng`（固定値・既定 0）を用意しています。グローバルな乱数は呼びません。同じ種を渡せば同じシャッフル・同じ手札になります。

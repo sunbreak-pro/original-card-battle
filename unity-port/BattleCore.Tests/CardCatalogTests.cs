@@ -22,7 +22,7 @@ namespace BattleCore.Tests
         {
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.All, Has.Count.EqualTo(Constants.OwnedKindsMax));
+                Assert.That(CardCatalog.All.Count, Is.EqualTo(Constants.OwnedKindsMax));
                 Assert.That(CardCatalog.All.Select(c => c.Id).Distinct().Count(), Is.EqualTo(80));
                 Assert.That(CardCatalog.All.All(c => c != null), Is.True, "a field read before it was set");
                 foreach (var card in CardCatalog.All) Assert.That(CardCatalog.ById(card.Id), Is.SameAs(card), card.Id);

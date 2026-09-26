@@ -146,7 +146,7 @@ namespace BattleCore.Tests
         [Test]
         public void ThereAreTenKinds_WithUniqueIds()
         {
-            Assert.That(PrototypeDeck.Kinds, Has.Count.EqualTo(10));
+            Assert.That(PrototypeDeck.Kinds.Count, Is.EqualTo(10));
             Assert.That(PrototypeDeck.Kinds.Select(c => c.Id).Distinct().Count(), Is.EqualTo(10));
         }
 

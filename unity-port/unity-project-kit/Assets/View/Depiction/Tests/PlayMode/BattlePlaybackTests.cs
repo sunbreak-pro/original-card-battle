@@ -72,19 +72,20 @@ namespace Depiction.PlayModeTests
             Application.targetFrameRate = frameRateBefore;
             Assert.That(Get(player, "Finished"), Is.EqualTo(true), "one turn did not finish in " + PlaybackTimeoutSeconds + " s");
 
-            // Seed 20260921, turn 1: turn start, four cards (2 + 1 + 3 + 3 stamina), turn end, the shove, the next omen.
+            // Seed 20260921, turn 1 (as BattleLaunchTests under dotnet test): turn start, one card (the pilot keeps
+            // its distance from gap 2 on, #192), turn end, the enemy's action, the next omen.
             var seconds = (List<float>)Get(player, "EventSeconds");
-            Assert.That(seconds.Count, Is.EqualTo(8));
+            Assert.That(seconds.Count, Is.EqualTo(5));
             string all = string.Join(" / ", seconds.ConvertAll(s => s.ToString("0.00")));
             for (int i = 0; i < seconds.Count; i++)
             {
                 Assert.That(seconds[i], Is.LessThan(SecondsPerEventLimit), "event " + (i + 1) + " ran over; seconds per event: " + all);
             }
 
-            // The last settled frame, as printed on screen: untouched behind Guard, the enemy at 42,
-            // and the sweep announced from the far branch.
+            // The last settled frame, as printed on screen: untouched behind Guard, the enemy untouched
+            // at 60, and the next attack announced.
             Assert.That(Get(player, "playerStatus.hpText.text"), Is.EqualTo("50"));
-            Assert.That(Get(player, "enemyStatus.hpText.text"), Is.EqualTo("42"));
+            Assert.That(Get(player, "enemyStatus.hpText.text"), Is.EqualTo("60"));
             Assert.That(Get(player, "omenBadge.kindText.text"), Is.EqualTo("攻撃"));
         }
 
