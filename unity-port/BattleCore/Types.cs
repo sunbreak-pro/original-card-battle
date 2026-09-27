@@ -91,7 +91,7 @@ namespace BattleCore
         /// <summary>脆化: the next attack the holder takes is ×1.5. OnUse.</summary>
         Fragile,
 
-        /// <summary>威圧: the holder's next action has 3 less power and 3 less Guard. OnUse.</summary>
+        /// <summary>威圧: the holder's next action that lands an attack face or has a Guard loses 3 power and 3 Guard. OnUse.</summary>
         Intimidate,
 
         /// <summary>疲労: the holder recovers 1 less stamina at its turn start. OnTurn.</summary>

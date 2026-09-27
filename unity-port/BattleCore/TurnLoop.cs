@@ -558,7 +558,8 @@ namespace BattleCore
         ///
         /// The statuses the one acting holds work here: 集中 (the player's next card, one column to
         /// the right — the demo reads it as the scale's step added to power, Guard and heal), 威圧
-        /// (−3 on power and Guard, spent when there is either), 強化 (×1.5 on the attack face) and a
+        /// (−3 on power and Guard; spent by an action whose attack face lands or that has a Guard,
+        /// so a whiff with no Guard leaves it), 強化 (×1.5 on the attack face) and a
         /// waiting 追撃. On the one hit: 脆化 (×1.5, taken before 強化 — §19.5 S13, one multiplier per
         /// blow) and 見切り.
         /// </summary>
@@ -627,7 +628,8 @@ namespace BattleCore
             }
             if (outcome.StaminaGain > 0) state = GainStamina(state, actor, unit, outcome.StaminaGain, events);
 
-            // 集中: the player's next card, whatever it is. 威圧: the next action that has a power or a Guard.
+            // 集中: the player's next card, whatever it is. 威圧: the next action whose attack face lands
+            // or that has a Guard (§5: a whiff, a skill or a move, each with no Guard, and a rest leave it).
             var focus = FocusStep.None;
             if (actor == Actor.Player && Get(state, actor, unit).Statuses.Has(StatusKind.Focus))
             {
