@@ -1,11 +1,13 @@
 // Goes once around the demo (#187) in Assets/Scenes/Battle.unity with nobody at the mouse: the deck
-// screen, the mode screen, one battle to its end screen, back to the deck screen, then the chain up to
-// its end screen (and its second battle, should the first be won). The buttons are pressed by name. A
-// demo battle suggests no card, so the unattended switches only end each turn and the enemy wins; the
-// flow is what is checked, not the fight. A screenshot of each screen goes to Logs/DemoShots for a look
-// by eye (not in batchmode, which renders nothing). The saved deck the demo keeps in PlayerPrefs is put
-// back afterwards. A second walk gives a chain up with 「降参する」 (#203) and starts it again. The views
-// live in Assembly-CSharp, which an asmdef cannot reference, so everything is reached by name.
+// screen, opened on a saved deck that no longer reads (#211); the mode screen; one battle to its end
+// screen; back to the enemies from there for another, given up at once (#211); back to the deck
+// screen; then the chain up to its end screen (and its second battle, should the first be won). The
+// buttons are pressed by name. A demo battle suggests no card, so the unattended switches only end
+// each turn and the enemy wins; the flow is what is checked, not the fight. A screenshot of each
+// screen goes to Logs/DemoShots for a look by eye (not in batchmode, which renders nothing). The saved
+// deck the demo keeps in PlayerPrefs is put back afterwards. A second walk gives a chain up with
+// 「降参する」 (#203) and starts it again. The views live in Assembly-CSharp, which an asmdef cannot
+// reference, so everything is reached by name.
 #if UNITY_EDITOR
 using System;
 using System.Collections;
@@ -36,6 +38,10 @@ namespace Depiction.PlayModeTests
             Directory.CreateDirectory(ShotFolder);
             try
             {
+                // #211: a card renamed since the deck was saved. The deck screen says so, and the string
+                // stays saved until 「戦闘へ」 saves a deck over it.
+                const string broken = "thrust:2,old_thrust:1";
+                PlayerPrefs.SetString(SavedDeckKey, broken);
                 yield return EditorSceneManager.LoadSceneAsyncInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
                 yield return null;
 
@@ -44,13 +50,18 @@ namespace Depiction.PlayModeTests
 
                 // The deck screen first; the prototype deck is always legal.
                 Assert.That(Active("ToBattle"), Is.Not.Null, "the deck screen did not open");
+                Assert.That(DeckNotice(), Does.Contain("old_thrust"), "the deck screen did not say the saved deck did not read");
                 Press("Prototype");
+                Assert.That(PlayerPrefs.GetString(SavedDeckKey), Is.EqualTo(broken), "the deck was saved before 戦闘へ");
+                Assert.That(BackdropAlpha("DeckSelect"), Is.EqualTo(1f), "the deck screen lets the battle show through");
                 yield return Shot("01-deck");
                 Press("ToBattle");
                 yield return null;
+                Assert.That(PlayerPrefs.GetString(SavedDeckKey), Does.StartWith("thrust:2,kesa_cut:2,"), "戦闘へ did not save the prototype deck");
 
                 // The mode screen: one enemy, the first on the list.
                 Assert.That(Active("Chain"), Is.Not.Null, "the mode screen did not open");
+                Assert.That(BackdropAlpha("ModeSelect"), Is.EqualTo(1f), "the mode screen lets the battle show through");
                 yield return Shot("02-mode");
                 // The first turn waits for a hand at the mouse: see the hand dealt, then let the
                 // unattended switches end the turns from there (AutoDrag is what the player starts when
@@ -69,15 +80,34 @@ namespace Depiction.PlayModeTests
                 yield return Shot("04-end");
                 Assert.That(Active("Surrender"), Is.Null, "the 降参 button stayed up on the end screen");
 
+                // #211: a single battle's end screen goes back to the enemies with the same deck.
+                Press("ChooseEnemy");
+                yield return null;
+                Assert.That(Active("Again"), Is.Null, "the end screen stayed up after 敵を選び直す");
+                Assert.That(Active("Chain"), Is.Not.Null, "敵を選び直す did not show the mode screen");
+                Assert.That(Active("Surrender"), Is.Null, "the 降参 button is up on the mode screen");
+
+                // Another enemy, given up at once: its end screen offers the enemies again too.
+                Press("Enemy1");
+                yield return null;
+                Assert.That(Active("Chain"), Is.Null, "the mode screen stayed up over the battle");
+                Assert.That(Active("Surrender"), Is.Not.Null, "no 降参 button in the battle after 敵を選び直す");
+                Press("Surrender");
+                yield return null; // Show cleared the last end screen's buttons, which live until the frame ends
+                Assert.That(Active("ChooseEnemy"), Is.Not.Null, "a single battle given up does not offer the enemies again");
+
                 // Back to the deck screen, then the chain.
                 Press("BackToDeck");
                 yield return null;
                 Assert.That(Active("ToBattle"), Is.Not.Null, "BackToDeck did not show the deck screen");
+                Assert.That(DeckNotice(), Is.Empty, "the line about the saved deck stayed after 戦闘へ");
                 Press("ToBattle");
                 yield return null;
                 Press("Chain");
                 yield return WaitFor(() => Active("Again") != null, BattleTimeoutSeconds, "the chain's first battle did not reach its end screen");
                 yield return Shot("05-chain-end");
+                yield return null; // the single battle's buttons, cleared by Show, live until the frame ends
+                Assert.That(Active("ChooseEnemy"), Is.Null, "a chain's end screen offers to choose one enemy");
 
                 // A win offers the rest; take it and see the second battle start. A loss (what the
                 // unattended run gets) ends the chain.
@@ -173,6 +203,19 @@ namespace Depiction.PlayModeTests
             return "";
         }
 
+        /// <summary>The deck screen's line about the saved deck (#211), read by name like the buttons; null when the screen is not up.</summary>
+        private static string DeckNotice()
+        {
+            foreach (Transform t in UnityEngine.Object.FindObjectsByType<Transform>())
+            {
+                if (t.name != "Notice" || !t.gameObject.activeInHierarchy || t.parent == null || t.parent.name != "DeckSelect") continue;
+                Transform line = t.Find("Text");
+                Component text = line != null ? line.GetComponent("Text") : null;
+                if (text != null) return (string)text.GetType().GetProperty("text").GetValue(text);
+            }
+            return null;
+        }
+
         private static IEnumerator WaitFor(Func<bool> done, float seconds, string failure)
         {
             float deadline = Time.realtimeSinceStartup + seconds;
@@ -198,6 +241,20 @@ namespace Depiction.PlayModeTests
                 if (t.name == name && t.gameObject.activeInHierarchy && t.GetComponent("Button") != null) return t.gameObject;
             }
             return null;
+        }
+
+        /// <summary>The alpha of a demo screen's backdrop: the child "Back" of that screen that is not a button.</summary>
+        private static float BackdropAlpha(string screen)
+        {
+            foreach (Transform t in UnityEngine.Object.FindObjectsByType<Transform>())
+            {
+                if (t.name != "Back" || t.parent == null || t.parent.name != screen || t.GetComponent("Button") != null) continue;
+                Component image = t.GetComponent("Image");
+                Assert.That(image, Is.Not.Null, screen + "/Back has no Image");
+                return ((Color)image.GetType().GetProperty("color").GetValue(image)).a;
+            }
+            Assert.Fail("no backdrop under " + screen);
+            return 0f;
         }
 
         private static void Press(string name)

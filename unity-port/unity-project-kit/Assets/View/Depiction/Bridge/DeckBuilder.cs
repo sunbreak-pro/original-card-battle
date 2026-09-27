@@ -371,23 +371,7 @@ namespace Depiction.Bridge
         /// </summary>
         public static DeckBuilder Load(string saved)
         {
-            var builder = new DeckBuilder();
-            if (string.IsNullOrEmpty(saved)) return builder;
-            foreach (string entry in saved.Split(','))
-            {
-                string[] pair = entry.Split(':');
-                int n;
-                if (pair.Length != 2 || !Known(pair[0]) || !int.TryParse(pair[1], out n)
-                    || n < 1 || n > Constants.CopiesMax || builder.CountOf(pair[0]) > 0)
-                {
-                    return new DeckBuilder();
-                }
-                for (int i = 0; i < n; i++)
-                {
-                    if (!builder.Add(pair[0])) return new DeckBuilder();
-                }
-            }
-            return builder;
+            return Read(saved, out _);
         }
 
         /// <summary>
@@ -396,7 +380,68 @@ namespace Depiction.Bridge
         /// </summary>
         public static DeckBuilder LoadOrPrototype(bool saved, string text)
         {
-            return saved ? Load(text) : Prototype();
+            return LoadOrPrototype(saved, text, out _);
+        }
+
+        /// <summary>
+        /// <see cref="LoadOrPrototype(bool, string)"/>, and the one line the deck screen prints about it
+        /// (#211): why a saved string left the deck empty. "" when there is nothing to say: nothing
+        /// saved, a string that reads, or a deck the player emptied.
+        /// </summary>
+        public static DeckBuilder LoadOrPrototype(bool saved, string text, out string notice)
+        {
+            notice = "";
+            return saved ? Read(text, out notice) : Prototype();
+        }
+
+        /// <summary>
+        /// Reads a saved string (<see cref="Load"/>) and says why one gave an empty deck (#211). An entry
+        /// that is not "id:count" — an id in the catalog's shape, a count of 1 or more — or an id given
+        /// twice, does not read. An entry that reads but whose id the catalog does not know (most likely
+        /// a card renamed since) is named; stray text is never named as a card. A string that reads but
+        /// that <see cref="Add"/> refuses on the way breaks the deck's rules, which are not named, so the
+        /// line stays true as they grow. <paramref name="notice"/> is "" when it reads, an empty string too.
+        /// </summary>
+        private static DeckBuilder Read(string saved, out string notice)
+        {
+            notice = "";
+            var builder = new DeckBuilder();
+            if (string.IsNullOrEmpty(saved)) return builder;
+            foreach (string entry in saved.Split(','))
+            {
+                string[] pair = entry.Split(':');
+                int n;
+                if (pair.Length != 2 || !IdShaped(pair[0]) || !int.TryParse(pair[1], out n)
+                    || n < 1 || builder.CountOf(pair[0]) > 0)
+                {
+                    notice = "保存したデッキを読めなかったため、空のデッキから始めます";
+                    return new DeckBuilder();
+                }
+                if (!Known(pair[0]))
+                {
+                    notice = "保存したデッキに知らないカード「" + pair[0] + "」があったため、空のデッキから始めます";
+                    return new DeckBuilder();
+                }
+                for (int i = 0; i < n; i++)
+                {
+                    // A fourth copy, a 41st card: Add holds the rules, the count above is only read.
+                    if (builder.Add(pair[0])) continue;
+                    notice = "保存したデッキがデッキの決まりに合わないため、空のデッキから始めます";
+                    return new DeckBuilder();
+                }
+            }
+            return builder;
+        }
+
+        /// <summary>The shape every catalog id has ("kesa_cut"): lowercase letters, digits and '_'.</summary>
+        private static bool IdShaped(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return false;
+            foreach (char c in id)
+            {
+                if ((c < 'a' || c > 'z') && (c < '0' || c > '9') && c != '_') return false;
+            }
+            return true;
         }
 
         private static bool Known(string id)

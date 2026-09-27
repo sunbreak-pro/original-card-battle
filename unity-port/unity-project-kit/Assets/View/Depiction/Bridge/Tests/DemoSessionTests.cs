@@ -296,6 +296,60 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void OnlyASingleBattlesEndScreen_OffersToChooseTheEnemyAgain()
+        {
+            // #211: after one enemy, fought out or given up, another can be picked with the same deck. A
+            // chain's end screen keeps its own ways on, however its battle went.
+            var single = DemoSession.Single(Deck(), "polearm_warped", 3);
+            CoreBattleSource one = single.StartBattle(suggestCards: true);
+            FightToTheEnd(one);
+            single.Finish(one);
+            DemoEndScreen afterOne = single.EndScreen();
+
+            var givenUp = DemoSession.Single(Deck(), "polearm_warped", 3);
+            givenUp.Surrender(givenUp.StartBattle());
+            DemoEndScreen afterGivingUp = givenUp.EndScreen();
+
+            var chain = DemoSession.Chain(Deck(), 3, new[] { "polearm_warped" });
+            CoreBattleSource first = chain.StartBattle(suggestCards: true);
+            FightToTheEnd(first);
+            chain.Finish(first);
+            DemoEndScreen afterChain = chain.EndScreen();
+
+            var chainGivenUp = DemoSession.Chain(Deck(), 3);
+            chainGivenUp.Surrender(chainGivenUp.StartBattle());
+            DemoEndScreen afterGivingUpAChain = chainGivenUp.EndScreen();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(afterOne.CanChooseEnemy, Is.True);
+                Assert.That(afterOne.ChooseEnemyLabel, Is.EqualTo("敵を選び直す"));
+                Assert.That(afterOne.CanGoOn, Is.False);
+                Assert.That(afterGivingUp.Title, Is.EqualTo("錆槍の竜兵に降参しました"));
+                Assert.That(afterGivingUp.CanChooseEnemy, Is.True, "a single battle given up");
+                Assert.That(afterGivingUp.ChooseEnemyLabel, Is.EqualTo("敵を選び直す"));
+                Assert.That(afterChain.CanChooseEnemy, Is.False);
+                Assert.That(afterChain.ChooseEnemyLabel, Is.Empty);
+                Assert.That(afterGivingUpAChain.CanChooseEnemy, Is.False, "a chain given up");
+            });
+        }
+
+        [Test]
+        public void TheRestsWords_AndTheRest_ReadTheBattlesOwnMaximum()
+        {
+            // #211: the rest button's number and the rest itself come from one place, the tally's maximum.
+            var low = new BattleTally("polearm_warped", GameResult.Won, 5, 10, 80, 0, new Dictionary<BattleAttribute, int>(), 0);
+            var high = new BattleTally("polearm_warped", GameResult.Won, 5, 70, 80, 0, new Dictionary<BattleAttribute, int>(), 0);
+            Assert.Multiple(() =>
+            {
+                Assert.That(DemoSession.RestAfter(low).Hp, Is.EqualTo(34), "10 + 80 × 30%, not 10 + 50 × 30%");
+                Assert.That(DemoSession.RestAfter(low).Stamina, Is.EqualTo(Constants.BaseMaxStamina));
+                Assert.That(DemoSession.RestAfter(high).Hp, Is.EqualTo(80), "no further than the maximum");
+                Assert.That(() => DemoSession.RestAfter(null), Throws.ArgumentNullException);
+            });
+        }
+
+        [Test]
         public void TheBreakdown_AndTheAverage_ReadInOrder()
         {
             var tally = new BattleTally("polearm_warped", GameResult.Won, 7, 30, 50, 9,

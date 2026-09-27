@@ -1,7 +1,8 @@
 // The deck screen of the demo (#190): the eighty cards, a count per kind, the filters and presets,
 // and 「戦闘へ」 once the deck passes §8. Built in code with UiKit on the demo canvas, so no scene or
 // prefab changes. It decides nothing: which cards a filter keeps, what a page holds, every word
-// about a card and whether the deck may fight all come from Depiction.Bridge.DeckBuilder.
+// about a card, the line about a saved deck that did not read (#211) and whether the deck may
+// fight all come from Depiction.Bridge.DeckBuilder.
 #if UNITY_2021_2_OR_NEWER
 using System;
 using System.Collections.Generic;
@@ -19,8 +20,7 @@ namespace Depiction.View
         private const int PerPage = Columns * Rows;
 
         private readonly RectTransform _root;
-        private readonly Action<DeckBuilder> _changed;
-        private readonly Action<List<CardInstance>> _battle;
+        private readonly Action<DeckBuilder> _battle;
         private readonly DeckFilter _filter = new DeckFilter();
         private DeckBuilder _deck;
         private int _page;
@@ -30,6 +30,7 @@ namespace Depiction.View
         private readonly RectTransform _filterRow;
         private readonly RectTransform _grid;
         private readonly Text _pageText;
+        private readonly Text _notice;
         private readonly Text _detail;
         private readonly Text _status;
         private readonly Text _deckText;
@@ -37,20 +38,22 @@ namespace Depiction.View
 
         /// <param name="parent">The demo canvas.</param>
         /// <param name="deck">The deck to start from (the saved one, or the prototype).</param>
-        /// <param name="changed">Called after every change, so the flow can save the deck.</param>
-        /// <param name="battle">Called with the built deck when 「戦闘へ」 is pressed.</param>
-        public DeckSelectScreen(RectTransform parent, DeckBuilder deck, Action<DeckBuilder> changed, Action<List<CardInstance>> battle)
+        /// <param name="notice">DeckBuilder's line about a saved deck that did not read, or "" (#211).</param>
+        /// <param name="battle">Called with the deck when 「戦闘へ」 is pressed; the flow saves it then (#211).</param>
+        public DeckSelectScreen(RectTransform parent, DeckBuilder deck, string notice, Action<DeckBuilder> battle)
         {
             _deck = deck ?? new DeckBuilder();
-            _changed = changed;
             _battle = battle;
 
             _root = UiKit.Box(parent, "DeckSelect", 0f, 0f, 1f, 1f);
-            Image back = UiKit.Fill(_root, "Back", BattleTheme.WithAlpha(BattleTheme.Ground, 0.97f));
-            back.raycastTarget = true; // the battle underneath takes no clicks while the deck is built
+            // Opaque (#211): nothing of the battle underneath shows through, and it takes no clicks.
+            Image back = UiKit.Fill(_root, "Back", BattleTheme.Ground);
+            back.raycastTarget = true;
 
             UiKit.Label(_root, "Title", 34, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(1400f, 60f), new Vector2(40f, -20f), DeckBuilder.Title);
+            // Over the right column, past the title's words and above the detail panel: two lines' room.
+            _notice = UiKit.Text(UiKit.Box(_root, "Notice", 0.64f, 0.915f, 0.98f, 0.99f), "Text", 24, TextAnchor.MiddleRight, BattleTheme.Omen, notice ?? "");
 
             _filterRow = UiKit.Box(_root, "Filters", 0.02f, 0.86f, 0.62f, 0.91f);
             _grid = UiKit.Box(_root, "Cards", 0.02f, 0.13f, 0.62f, 0.85f);
@@ -73,7 +76,7 @@ namespace Depiction.View
             UiKit.Button(presets, "Clear", "空にする", () => Replace(new DeckBuilder()), BattleTheme.Panel, BattleTheme.Ink, 24, new Vector2(0.68f, 0f), new Vector2(1f, 1f));
 
             RectTransform go = UiKit.Box(_root, "Go", 0.64f, 0.02f, 0.98f, 0.085f);
-            _toBattle = UiKit.Button(go, "ToBattle", "戦闘へ", () => _battle?.Invoke(_deck.Build()), BattleTheme.Accent, BattleTheme.InkBlack, 30, Vector2.zero, Vector2.one);
+            _toBattle = UiKit.Button(go, "ToBattle", "戦闘へ", ToBattle, BattleTheme.Accent, BattleTheme.InkBlack, 30, Vector2.zero, Vector2.one);
 
             Refresh();
         }
@@ -95,27 +98,28 @@ namespace Depiction.View
         private void Replace(DeckBuilder deck)
         {
             _deck = deck;
-            Changed();
+            Refresh();
         }
 
         private void Add(CardDef def)
         {
             _selected = def;
-            if (_deck.Add(def.Id)) Changed();
-            else Refresh();
+            _deck.Add(def.Id);
+            Refresh();
         }
 
         private void Remove(CardDef def)
         {
             _selected = def;
-            if (_deck.Remove(def.Id)) Changed();
-            else Refresh();
+            _deck.Remove(def.Id);
+            Refresh();
         }
 
-        private void Changed()
+        private void ToBattle()
         {
-            _changed?.Invoke(_deck);
-            Refresh();
+            // The flow saves the deck now and at no other time (#211), over the string the notice was about.
+            _notice.text = "";
+            _battle?.Invoke(_deck);
         }
 
         // ---- drawing ----
