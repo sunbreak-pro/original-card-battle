@@ -220,6 +220,33 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void ACappedTopUp_BeatsOnlyWhatLanded_AndAFullWordGetsNoBeat()
+        {
+            // #205: a ターンで減る型 word stops at four. The beat shows what the core says landed.
+            List<CardInstance> deck = Cards.BuildDeck(new[] { CardCatalog.SecondWind }, 2);
+            deck.AddRange(Cards.BuildDeck(new[] { CardCatalog.Brace, CardCatalog.Feint, CardCatalog.KesaCut }, 1));
+            var setup = new BattleSetup(Enemies.PolearmWarped, deck, BattleSetup.SliceFieldCells, StartGap: 3);
+            BattleState state = TurnLoop.Start(setup, NoShuffle).State;
+            state = state with { Player = state.Player with { Statuses = StatusSet.Of((StatusKind.Regen, 3)) } };
+            var writer = new CoreScriptWriter(setup.Enemy);
+            writer.Opening(state);
+            StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            writer.Write(begin.Events, begin.State);
+            Assert.That(begin.State.Player.Statuses.Stacks(StatusKind.Regen), Is.EqualTo(2), "the turn start ticked 3 → 2");
+
+            StepResult first = TurnLoop.PlayCard(begin.State, InHand(begin.State, "second_wind"), NoShuffle);
+            Cue topUp = writer.Write(first.Events, first.State).Single().Cues.Single(c => c.Kind == CueKind.StatusChange);
+            Assert.That(topUp.Amount, Is.EqualTo(2), "2 + 3 stops at 4: two of the three land");
+            Assert.That(topUp.StacksAfter, Is.EqualTo(4));
+            Assert.That(StatusBeat.Of(topUp), Is.EqualTo(EffectId.StatusStack), "the held chip grows; it is not a new one");
+
+            StepResult second = TurnLoop.PlayCard(first.State, InHand(first.State, "second_wind"), NoShuffle);
+            DepictionEvent full = writer.Write(second.Events, second.State).Single();
+            Assert.That(full.Cues.Any(c => c.Kind == CueKind.StatusChange), Is.False, "4 stays 4: no chip beat");
+            Assert.That(full.After.Player.Statuses.Single(c => c.Label == "再生").Stacks, Is.EqualTo(4));
+        }
+
+        [Test]
         public void ASelfCard_IsThrownAboveTheLine_AndPreviewsItsGuard()
         {
             var source = new CoreBattleSource(

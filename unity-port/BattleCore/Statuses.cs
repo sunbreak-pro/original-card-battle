@@ -8,7 +8,10 @@ namespace BattleCore
     /// §5: the statuses one combatant carries, as word → stack count. Immutable: every change hands
     /// back a new set, so a battle state can be compared with the one before it.
     ///
-    /// A word with zero stacks is not held at all, which is what keeps the kind count honest.
+    /// A word with zero stacks is not held at all, which is what keeps the kind count honest. A
+    /// ターンで減る型 word never holds more than <see cref="Constants.TurnDecayStackMax"/> (§5, #205):
+    /// both ways in (<see cref="Of"/> and <see cref="Add"/>) stop it there, and the others only take
+    /// stacks away.
     /// </summary>
     public sealed class StatusSet : IEquatable<StatusSet>
     {
@@ -26,7 +29,7 @@ namespace BattleCore
             var map = new Dictionary<StatusKind, int>();
             foreach (var entry in entries)
             {
-                if (entry.Stacks > 0) map[entry.Kind] = entry.Stacks;
+                if (entry.Stacks > 0) map[entry.Kind] = Clamp(entry.Kind, entry.Stacks);
             }
             return new StatusSet(map);
         }
@@ -48,6 +51,10 @@ namespace BattleCore
         ///
         /// Which word gets pushed out when a seventh arrives is not settled in the canon, so nothing
         /// is pushed out here. That question returns with #47.
+        ///
+        /// §5 (#205): a ターンで減る型 word stops at <see cref="Constants.TurnDecayStackMax"/> and the
+        /// rest is dropped, on either side; a word already there comes back unchanged. The 使うと減る型
+        /// is not counted (§19.5 S14).
         /// </summary>
         public StatusSet Add(StatusKind kind, int stacks = Constants.StatusApplyDefault, int? kindLimit = null)
         {
@@ -55,10 +62,17 @@ namespace BattleCore
             bool isNewKind = !_stacks.ContainsKey(kind);
             if (isNewKind && kindLimit.HasValue && _stacks.Count >= kindLimit.Value) return this;
 
+            int next = Clamp(kind, Stacks(kind) + stacks);
+            if (next == Stacks(kind)) return this;
+
             var map = ToDictionary();
-            map[kind] = Stacks(kind) + stacks;
+            map[kind] = next;
             return new StatusSet(map);
         }
+
+        /// <summary>§5 (#205): the ターンで減る型 stops at the cap; the 使うと減る型 is not counted.</summary>
+        private static int Clamp(StatusKind kind, int stacks) =>
+            Statuses.DecayOf(kind) == StatusDecay.OnTurn ? Math.Min(stacks, Constants.TurnDecayStackMax) : stacks;
 
         /// <summary>
         /// §5: the ターンで減る型 loses one stack at the holder's turn start. The 使うと減る型 is

@@ -626,7 +626,7 @@ namespace BattleCore.Tests
         [Test]
         public void AnEnemy_TakesAnyNumberOfKinds()
         {
-            // §5 上限 (敵には置かない): 翻し足 lands three more words on an enemy already holding six.
+            // §5 上限 (敵は種類を数えない): 翻し足 lands three more words on an enemy already holding six.
             var s = Opened(1, Idle, CardCatalog.TwistAway);
             s = WithEnemyStatuses(s,
                 (StatusKind.Bleed, 1), (StatusKind.Fragile, 1), (StatusKind.Empower, 1),
@@ -643,6 +643,115 @@ namespace BattleCore.Tests
                     new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Intimidate, 2, 2, Refused: false),
                 }));
                 Assert.That(play.State.Enemy.Statuses.KindCount, Is.EqualTo(9));
+            });
+        }
+
+        [Test]
+        public void SecondWind_OnRegenThree_LandsOne_AndDropsTwo()
+        {
+            // §5 上限 (#205): a ターンで減る型 word stops at four; 3 + 3 lands one and drops two.
+            var s = Opened(1, Idle, CardCatalog.SecondWind);
+            s = s with { Player = s.Player with { Stamina = 10, Statuses = StatusSet.Of((StatusKind.Regen, 3)) } };
+
+            var play = Play(s, "second_wind");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(play.Events.OfType<StatusApplied>(), Is.EqualTo(new[]
+                {
+                    new StatusApplied(Actor.Player, Actor.Player, StatusKind.Regen, 3, 4, Refused: false) { Dropped = 2 },
+                }));
+                Assert.That(play.Events.OfType<StatusApplied>().Single().Landed, Is.EqualTo(1));
+                Assert.That(play.State.Player.Statuses.Stacks(StatusKind.Regen), Is.EqualTo(Constants.TurnDecayStackMax));
+            });
+        }
+
+        [Test]
+        public void SecondWind_OnAFullRegen_LandsNothing_IsNotRefused_AndItsTraitStillFires()
+        {
+            // §5 上限 (#205): putting more on a word at the cap is not refused like a seventh kind; the
+            // card resolves as usual and 自分の状態(再生) still holds.
+            var s = Opened(1, Idle, CardCatalog.SecondWind);
+            s = s with { Player = s.Player with { Stamina = 5, Statuses = StatusSet.Of((StatusKind.Regen, 4)) } };
+
+            var play = Play(s, "second_wind");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(play.Events.OfType<StatusApplied>(), Is.EqualTo(new[]
+                {
+                    new StatusApplied(Actor.Player, Actor.Player, StatusKind.Regen, 3, 4, Refused: false) { Dropped = 3 },
+                }));
+                Assert.That(play.Events.OfType<StatusApplied>().Single().Landed, Is.EqualTo(0));
+                Assert.That(play.State.Player.Statuses.Stacks(StatusKind.Regen), Is.EqualTo(4));
+                Assert.That(play.State.Player.Stamina, Is.EqualTo(5 - 3 + 1 + 1), "the face's +1 and the trait's +1");
+            });
+        }
+
+        [Test]
+        public void Rend_IntoAFoeOnBleedThree_StopsAtFour_AndDropsTheTraitsStack()
+        {
+            // §5 上限 (#205) holds for an enemy too. The face's 出血 1 goes on first (3 → 4), so the
+            // trait's 出血 +1 finds the word full.
+            var s = WithEnemyStatuses(Opened(1, Idle, CardCatalog.Rend), (StatusKind.Bleed, 3));
+
+            var play = Play(s, "rend");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(play.Events.OfType<StatusApplied>(), Is.EqualTo(new[]
+                {
+                    new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Bleed, 1, 4, Refused: false),
+                    new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Bleed, 1, 4, Refused: false) { Dropped = 1 },
+                }));
+                Assert.That(play.State.Enemy.Statuses.Stacks(StatusKind.Bleed), Is.EqualTo(Constants.TurnDecayStackMax));
+            });
+        }
+
+        [Test]
+        public void AnEliteThatBindsTwiceAPhase_NeverPushesATurnDecayWordPastTheCap_InSixtyTurns()
+        {
+            // #205: an elite whose two actions a phase each put 疲労 2 and 鈍足 2 on the player and 再生 2
+            // on itself. The words gain four a phase and lose one a turn, so uncapped they would climb by
+            // three a turn. It never attacks, so a player who only ends turns is never hit and the battle
+            // runs on. A test enemy rather than a roster one, so retuning the roster (#204 cut 大黒蛇 セルク's
+            // 瘴気の儀 to 疲労 1 / 再生 1) leaves the rule's test alone.
+            var grants = new[]
+            {
+                new StatusGrant(StatusKind.Fatigue, 2),
+                new StatusGrant(StatusKind.Slow, 2),
+                new StatusGrant(StatusKind.Regen, 2, OnSelf: true),
+            };
+            var bind = Fixtures.EnemyAction("bind", face: new Face(Reach: new Reach(0, 3), Statuses: grants), attributes: BattleAttribute.Skill);
+            var hex = Fixtures.EnemyAction("hex", face: new Face(Reach: new Reach(0, 3), Statuses: grants), attributes: BattleAttribute.Skill);
+            var both = new[] { bind.Id, hex.Id };
+            var enemy = new EnemyDef(
+                "binder", "binder", MaxHp: 60, MaxStamina: 10, Recovery: 2, Size: 1,
+                BranchAtGapZero: both, BranchAtGapOneToTwo: both, BranchAtGapThreePlus: both,
+                Actions: new Dictionary<string, EnemyActionDef> { [bind.Id] = bind, [hex.Id] = hex },
+                Rank: EnemyRank.Elite, ActionsPerPhase: Constants.EliteActions);
+            var setup = new BattleSetup(enemy, PrototypeDeck.Build(), Constants.PlayerStartCell + Constants.StartGap + enemy.Size);
+            var s = TurnLoop.Start(setup, NoRng).State;
+            int peakPlayer = 0, peakEnemy = 0;
+            for (int turn = 0; turn < 60 && s.Result == GameResult.Ongoing; turn++)
+            {
+                var begin = Begin(s);
+                var end = End(begin.State);
+                foreach (var applied in begin.Events.Concat(end.Events).OfType<StatusApplied>())
+                {
+                    if (Statuses.DecayOf(applied.Kind) != StatusDecay.OnTurn) continue;
+                    if (applied.Target == Actor.Player) peakPlayer = Math.Max(peakPlayer, applied.StacksAfter);
+                    else peakEnemy = Math.Max(peakEnemy, applied.StacksAfter);
+                }
+                s = end.State;
+            }
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(s.Result, Is.EqualTo(GameResult.Ongoing));
+                Assert.That(s.Turn, Is.EqualTo(60), "the passive player is never hit and the battle runs on");
+                Assert.That(peakPlayer, Is.EqualTo(Constants.TurnDecayStackMax), "疲労 / 鈍足 reach the cap and stop");
+                Assert.That(peakEnemy, Is.EqualTo(Constants.TurnDecayStackMax), "再生 reaches the cap and stops");
             });
         }
 

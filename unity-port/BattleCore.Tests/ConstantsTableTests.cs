@@ -56,6 +56,7 @@ namespace BattleCore.Tests
             ["DUAL_FACE_RATIO"] = Number(Columns.DualFaceRatio),
             ["STATUS_KINDS_PLAYER"] = Join(Constants.StatusKindsPlayer),
             ["STATUS_KINDS_ENEMY"] = "上限なし",
+            ["TURN_DECAY_STACK_MAX"] = Join(Constants.TurnDecayStackMax),
             ["STANCE_SLOTS"] = Join(Constants.StanceSlots),
             ["BOSS_STATUS_KINDS"] = Join(Constants.BossStatusKinds),
             ["ENEMIES_MAX"] = Join(Constants.EnemiesMax),
