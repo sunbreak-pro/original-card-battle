@@ -32,6 +32,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | 探索の瘴気と戦闘の数値の突き合わせ | `.claude/docs/danjeon_document/miasma_and_battle_v4.md` | dungeon | PROPOSED | battle |
 | ツールと消耗品（出立の枠の中身） | `.claude/docs/danjeon_document/tools_and_consumables_v4.md` | dungeon | PROPOSED | battle |
 | 継承の間の画面と導線 | `.claude/docs/camp_document/CAMP_FACILITIES_DESIGN.md` | design | V5.0 | dungeon |
+| 戦闘画面とカードの見た目（色・部品・数字の置き場・意味の伝え方） | `.claude/docs/art_document/battle-visual-v1.md` | design | 確定 v1（2026-09-27、Claude Design の案 1a。`battle_ui_ux_v2.md` の見た目の章・受け皿・ランプ・配置を置き換える。v2 の追従は #241） | battle, cards |
 | カードの絵の方針 | `.claude/docs/art_document/card-art-policy.md` | design | DRAFT v1 | cards |
 | 絵柄の規約（原本の大きさ・指示文・加筆） | `.claude/docs/art_document/style-guide.md` | design | DRAFT v1（指示文は未実測） | — |
 | 素材の取り込み規約（置き場・命名・Unity の設定） | `.claude/docs/art_document/asset-intake.md` | design | DRAFT v1 | battle |

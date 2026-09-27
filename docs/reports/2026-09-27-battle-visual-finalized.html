@@ -1,0 +1,252 @@
+<title>戦闘画面の見た目 v1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding-inline: 24px; padding-block: 48px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul, ol { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.7; margin: 0 0 16px; white-space: pre-wrap; word-break: break-word; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--muted); }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  .copyhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 8px; }
+  .copyhead p { margin: 0; }
+  button.copy { font: 700 14px/1 "BIZ UDPGothic", sans-serif; color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 6px; padding: 10px 16px; cursor: pointer; }
+  .status { font-size: 13px; color: var(--muted); min-height: 1.4em; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-27 / 判断 / original-card-battle</p>
+    <h1>Claude Design の案 1a を、戦闘画面とカードの見た目として確定しました</h1>
+    <p class="lede">こうだいさんが Claude Design で出した指示 11 件をそのまま入れ、設計書と食い違う文 4 件を直して、元になる文書 <code>battle-visual-v1.md</code> に書き起こしました。PR #245 を merge すると確定します。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">決定をそのまま入れた</span><h3>こうだいさんの指示 11 件</h3><p>色は 1a、人型は約 75%、床は 40 px、状態の説明パネル、ランプは 2 状態、対象は四角い枠、スタミナは束の上、などです。</p></li>
+    <li class="verdict later"><span class="tag">設計書に合わせて直した</span><h3>案の中の文 4 件</h3><p>岩の構え・観察・手薄・集中の文が、カードの設計書や戦闘の規則と違っていたので直しました。</p></li>
+    <li class="verdict later"><span class="tag">判断を置いた</span><h3>こちらで決めた点 5 つ</h3><p>ランプをどの敵で判定するか、予兆の語、素直な札の見せ方などです。下の表に理由を書きました。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>Claude Design のファイルは直していません。</strong>案の中の 4 件の文は古いままです。Claude Design のほうもそろえるなら、ページの下にある修正の依頼文をコピーして貼ってください。</div>
+
+  <h2>こうだいさんの決定</h2>
+  <p class="prose">Claude Design のチャットで出した指示を、元になる文書の一覧でいちばん強い「こうだいさんの決定」として扱います。指示の写しは Issue #240 に残しました。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>指示の要旨</th><th>確定版での形</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td>色は 1a（世界観の設定書の色）にする</td><td>自分とスタミナが琥珀、予兆と敵が菫、HP が緋です。Guard だけ淡い鋼青を足し、必ず盾の形と組にします。色の食い違いの Issue #180 は、この形で決着しました。</td></tr>
+        <tr><td class="num">2</td><td>キャラクターを少し小さく、遠目に見せる</td><td>人型の高さの基準を 226 px にしました。今の設計書の 300 px の約 75% です。</td></tr>
+        <tr><td class="num">3</td><td>間合いの床の高さを少し小さくする</td><td>床は 40 px、間合いの数字は 28 px です。</td></tr>
+        <tr><td class="num">4</td><td>状態名にホバーしたら説明パネルを出す</td><td>「効き方」と「減り方」の 2 行のパネルが出ます。10 語ぶんの文も書きました。</td></tr>
+        <tr><td class="num">5</td><td>カードの地の「斬」「守」は消す</td><td>カードの地には字も地紋も置きません。</td></tr>
+        <tr><td class="num">6</td><td>ランプは点灯と消灯の 2 つ。点灯でカードの周りが黄色く光る</td><td>点灯すると、枠ごと灯芯色（淡い黄）で光ります。</td></tr>
+        <tr><td class="num">7</td><td>ドラッグ中も大きさと影を変えない</td><td>変えません。</td></tr>
+        <tr><td class="num">8</td><td>ホバーしたカードを前面に出す</td><td>傾きを 0° にして最前面へ出し、28 px 持ち上げます。</td></tr>
+        <tr><td class="num">9</td><td>攻撃カードのホバー中とドラッグ中、届く間合いを床で光らせる</td><td>届くマスが琥珀で光ります。</td></tr>
+        <tr><td class="num">10</td><td>対象の示し方は、体を四角く囲む枠でよい</td><td>丸い受け皿をやめ、敵にも自分にも同じ枠を使います。予測値は枠の上辺に 1 つだけです。「58 ▸ 40」は消し、HP バーの斜線だけ残しました。</td></tr>
+        <tr><td class="num">11</td><td>スタミナは山札・捨札・除外の上に、同じ幅と形で置く</td><td>左下の束 3 つの上に、束と同じ幅 236 px の札で置きます。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>設計書に合わせて直した文</h2>
+  <p class="prose">案の文を、カードの設計書・戦闘の規則・戦闘プログラムと突き合わせました。レシピを清書するときに、分量の書き間違いを元の帳面と照らして直すのと同じ作業です。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>箇所</th><th>案の文</th><th>直した文</th><th>根拠</th></tr></thead>
+      <tbody>
+        <tr><td>岩の構え</td><td>毎ターン、予兆が攻撃なら Guard +3（計 +6）</td><td>置くときに敵の予兆が攻撃なら、その場で Guard +3（1 回だけ）</td><td>スタンスの特性は、置いた瞬間に 1 回だけ判定する規則です。</td></tr>
+        <tr><td>観察</td><td>初手: ドロー +1</td><td>手薄: ドロー +1</td><td>初手: ドロー +1 は、別の札「集中」の特性です。</td></tr>
+        <tr><td>用語「手薄」</td><td>手札が残り 1〜2 枚</td><td>手札が残り 2 枚以下（0 枚も含む）</td><td>戦闘の規則と実装が 2 枚以下です。</td></tr>
+        <tr><td>状態「集中」</td><td>1 段上のコストの値で効く</td><td>次に出す札の値が 1 段強くなる。コストは変わらない</td><td>集中は値の段を 1 つ上げるもので、コストとは関係しません。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>こちらで判断を置いた点</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>点</th><th>決めた形</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>ランプをどの敵で判定するか</td><td>敵に向ける札は、届く敵のうち 1 体でも成り立てば点灯します。掴んで敵を枠で囲んだら、その敵で判定し直します。自分に向ける札は、いちばん近い敵で判定します。</td><td>「1 体でも有効な敵がいたら点灯」という指示を、敵に向ける札に当てはめました。自分に向ける札は、規則がいちばん近い敵の予兆を読むので、ほかの敵で点けると嘘になります。</td></tr>
+        <tr><td>予兆の種別の語</td><td>攻撃 / 防御 / 移動 / 構え / 技 に、払えないときの「休み」を足しました。</td><td>札の特性の文と実装が「防御」「移動」を使っているからです。敵の設計書だけが「守り」「動」なので、そろえ方を Issue #243 にしました。</td></tr>
+        <tr><td>素直な札の特性の箱</td><td>破線の箱に「素直な札 / 特性なし（+2 込み）」と書き、ランプは出しません。</td><td>空欄だと書き忘れに見えるという案の考えを採りました。「+2 込み」にしたのは、さらに 2 足すと読まれないようにするためです。</td></tr>
+        <tr><td>アタックの札の枠の色</td><td>案のまま菫にします。</td><td>「敵に向ける札」の意味で筋が通るからです。実画面で手札に菫が多すぎたら、枠を鈍鋼にして数字だけ燐光にします。</td></tr>
+        <tr><td>細かな形</td><td>置いた後のスタンス枠にランプを出しません。敵の番の HP に「▸」を付けません。8 枚の手札の間隔を 128 px にします。瘴気で減った最大スタミナの粒は出しません。</td><td>判定が 1 回だけのものに点滅する印を付けないためと、表示の種類を減らすためです。8 枚の間隔は、手札の帯 1100 px に収めるためです。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>分けた Issue</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Issue</th><th>担当</th><th>中身</th><th>優先</th></tr></thead>
+      <tbody>
+        <tr><td class="num">#241</td><td>battle</td><td>画面と操作の設計書を確定版に合わせます。色の食い違い #180 もここで直ります。</td><td class="state maybe">次</td></tr>
+        <tr><td class="num">#242</td><td>battle</td><td>Unity の戦闘画面とカードを確定版で作り直します。#56 の受け皿と配置の部分は、こちらに置き換わります。</td><td class="state maybe">その後</td></tr>
+        <tr><td class="num">#243</td><td>cards</td><td>予兆の種別の語（守り / 動 と 防御 / 移動）をそろえます。</td><td class="state maybe">その後</td></tr>
+        <tr><td class="num">#244</td><td>design</td><td>結果画面・デッキを組む画面・連戦の休憩画面を、確定版の部品で作ります。</td><td class="state maybe">その後</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note prose">関連する #180・#56・#234・#213 には、この決定を書き残しました。</p>
+
+  <h2>置いた仮定と、確かめていないこと</h2>
+  <ul class="prose">
+    <li>Claude Design の中身は、こうだいさんがログインしている Chrome で開いて読みました。読むだけで、書き込みはしていません。途中で一度コメントを付けるモードに入りましたが、何も入力せずに抜けました。</li>
+    <li>画面の画像はリポジトリに入れていません。Chrome で Claude Design の画面を撮ろうとすると何度も固まったためです。px と色の値は、全てファイルの中身から取りました。</li>
+    <li>Claude Design のプロジェクトの URL は、公開リポジトリの文書と Issue に書いていません。</li>
+    <li>岩の構えの 2 行（「置く時 予兆が攻撃 / → Guard +3（1 回）」）がカードの特性の箱の幅に収まるかは、Unity で確かめていません。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ol class="prose">
+    <li><strong>PR #245 を merge してください。</strong>merge すると確定版が元になる文書になり、#241 と #242 に着手できます。</li>
+    <li><strong>予兆の語のそろえ方（#243）</strong>は、敵の設計書を「防御」「移動」に直す案を勧めます。カードの担当のチャットで扱ってください。</li>
+    <li><strong>Claude Design のファイルもそろえるか</strong>を決めてください。そろえるなら、下の依頼文をそのまま貼れます。</li>
+    <li><strong>残りの 3 画面（#244）</strong>の案を Claude Design で作るかどうかを決めてください。</li>
+  </ol>
+
+  <h2>Claude Design に貼る修正の依頼文</h2>
+  <div class="copyhead">
+    <p class="note">プロジェクト「Battle画面デザイン相談」のチャットに貼る文です。</p>
+    <div>
+      <button class="copy" id="copy-fix" type="button">依頼文をコピーする</button>
+      <div class="status" id="copy-status" aria-live="polite"></div>
+    </div>
+  </div>
+<pre id="fix-text">カードの文と一部の見せ方を、ゲームの設計書に合わせて直してください。
+
+1. 岩の構えの特性は、置いたときに 1 回だけ判定します。置くときに敵の予兆が攻撃なら、その場で Guard +3（1 回だけ）です。毎ターン +6 にはなりません。カードの上は「置く時 予兆が攻撃 / → Guard +3（1 回）」にしてください。
+2. 観察の特性は「手薄: ドロー +1」です（初手ではありません）。カードの上は「手薄 なら / → ドロー +1」にしてください。
+3. 用語「手薄」の定義は「この札を出したあと、手札が残り 2 枚以下」です。
+4. 状態「集中」の効き方は「次に出す札の値が 1 段強くなる（コストは変わらない。いちばん強い段は超えない）」です。
+5. スタンスを置いた後の枠からランプを消してください。特性は置いた瞬間に 1 回だけ判定するためです。
+6. 予兆の種別の語を「攻撃 / 防御 / 移動 / 構え / 技」にし、払える行動が無いときの「休み」の予兆の札（鈍鋼の破線の枠、数字なし）を足してください。
+7. 素直な札の特性の 2 行目を「特性なし（+2 込み）」にしてください。表の値に +2 は含まれています。
+8. 8 枚の手札の間隔を 128px にして、手札の帯 1100px に収めてください。</pre>
+
+  <p class="note prose">元になる文書: <code>.claude/docs/art_document/battle-visual-v1.md</code>（PR #245）。依頼文の控え: <code>docs/prompts/2026-09-27-claude-design-battle-redesign.md</code>。</p>
+</div>
+
+<script>
+  (function () {
+    var btn = document.getElementById('copy-fix');
+    var status = document.getElementById('copy-status');
+    var pre = document.getElementById('fix-text');
+    function selectText() {
+      var range = document.createRange();
+      range.selectNodeContents(pre);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    btn.addEventListener('click', function () {
+      var text = pre.textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          status.textContent = 'コピーしました。';
+        }, function () {
+          selectText();
+          status.textContent = 'コピーできなかったので本文を選択しました。Ctrl+C でコピーしてください。';
+        });
+      } else {
+        selectText();
+        status.textContent = '本文を選択しました。Ctrl+C でコピーしてください。';
+      }
+    });
+  })();
+</script>
