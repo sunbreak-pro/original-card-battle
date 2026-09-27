@@ -27,6 +27,12 @@ namespace DungeonCore
 
         /// <summary>The last layer's boss is down.</summary>
         Completed,
+
+        /// <summary>
+        /// The player closed the life alive: the 生存ルート (concept-v3.md §8.1). What the next
+        /// life receives from it is #108's; the run only records that it ended this way.
+        /// </summary>
+        Survived,
     }
 
     /// <summary>
@@ -117,7 +123,8 @@ namespace DungeonCore
         public int MaxStamina => Miasma.MaxStamina(TempMaxStaminaMod, MiasmaPercent);
 
         public bool IsOver =>
-            Phase == RunPhase.MiasmaDeath || Phase == RunPhase.Fallen || Phase == RunPhase.Completed;
+            Phase == RunPhase.MiasmaDeath || Phase == RunPhase.Fallen || Phase == RunPhase.Completed ||
+            Phase == RunPhase.Survived;
 
         public bool HasResolved(int nodeId) => Resolved.Contains(nodeId);
 

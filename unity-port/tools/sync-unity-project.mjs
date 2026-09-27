@@ -97,6 +97,23 @@ const plan = [
   ]),
   // parity-fixture replay script (npm run unity:trace) -> Resources so the View can load it
   [`${kit}/Assets/View/Resources/trace-actions.txt`, `${projectPath}/Assets/View/Resources/trace-actions.txt`],
+
+  // Exploration core + item catalogue (engine-free, like BattleCore) -> Assets/DungeonCore, Assets/DungeonContent
+  ...csFiles(`${repoRoot}/unity-port/DungeonCore`)
+    .filter((f) => !(noPolyfill && basename(f) === "IsExternalInit.cs"))
+    .map((src) => [src, `${projectPath}/Assets/DungeonCore/${basename(src)}`]),
+  [`${kit}/Assets/DungeonCore/DungeonCore.asmdef`, `${projectPath}/Assets/DungeonCore/DungeonCore.asmdef`],
+  ...csFiles(`${repoRoot}/unity-port/DungeonContent`).map((src) => [src, `${projectPath}/Assets/DungeonContent/${basename(src)}`]),
+  [`${kit}/Assets/DungeonContent/DungeonContent.asmdef`, `${projectPath}/Assets/DungeonContent/DungeonContent.asmdef`],
+
+  // Exploration screen (#101) and the journal drawer it shares with the battle: script assemblies,
+  // views, tests. No prefab or scene: ExplorationBootstrap builds the screen in code.
+  ...["Exploration", "Journal"].flatMap((folder) =>
+    treeFiles(`${kit}/Assets/View/${folder}`, [".cs", ".asmdef"]).map((src) => [
+      src,
+      `${projectPath}/Assets/View/${folder}/${src.slice(`${kit}/Assets/View/${folder}/`.length)}`,
+    ]),
+  ),
 ];
 
 // --- copy -------------------------------------------------------------------

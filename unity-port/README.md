@@ -65,13 +65,15 @@ unity-port/
 │   ├── Miasma.cs               蓄積・20% ごとの最大スタミナ・和らげる手段の計算
 │   ├── RunLoadout.cs           ツール 3 枠・消耗品 3 枠の口（中身は DungeonContent）
 │   ├── ExplorationState.cs     1 階層ぶんの状態（不変）
-│   └── ExplorationReducer.cs   刻限と瘴気の遷移
+│   └── ExplorationReducer.cs   刻限と瘴気の遷移・「この生を終える」
 ├── DungeonCore.Tests/          NUnit（net10.0）。種の再現・到達性・七層を通した潜行
 ├── DungeonContent/             持ち物の目録（netstandard2.1 / C# 9・データだけ・参照ゼロ）
 │   ├── ItemEffect.cs           効果の種類と、どちらのコアが読むか
 │   ├── ItemCatalogue.cs        ツール 8 種 / 消耗品 5 種（tools_and_consumables_v4.md）
 │   └── Loadout.cs              3 枠 + 3 枠の選択と入れ替えの規則
 ├── DungeonContent.Tests/       NUnit（net10.0）。枠の規則と目録の不変条件
+├── Exploration.Script/ ・ Exploration.Script.Tests/   探索の画面の組み立て役（kit の `Assets/View/Exploration/Script/` と `Tests/` を `dotnet test` で回す器。#101）
+├── Journal.Script/             手記のドロワーの頁の型（kit の `Assets/View/Journal/Script/` を回す器。戦闘の画面と共有）
 ├── tools/
 │   ├── gen-parity.mjs          fixture を live TS から再生成
 │   └── parity-check.mjs        再生成 → ドリフト検出 → dotnet test（ワンコマンド）

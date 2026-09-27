@@ -63,6 +63,24 @@ only a fallback — the sync script drops it in only when the project has none.
 - Distance is shown as **real on-screen spacing + posture sprites**, not a
   tab/track (2026-07-04 decision). `ViewModel.DistanceLabel` still gives the text.
 
+### 5. [Editor] The exploration screen (#101)
+
+`npm run unity:sync` also copies the exploration core (`DungeonCore/` →
+`Assets/DungeonCore/`, `DungeonContent/` → `Assets/DungeonContent/`), the
+exploration screen (`Assets/View/Exploration/`) and the journal drawer
+(`Assets/View/Journal/`). Nothing needs wiring beyond one component:
+
+- Create an empty scene, add an empty GameObject, attach `ExplorationBootstrap`
+  (namespace `Exploration.View`) and press Play. It builds its own canvas and
+  EventSystem; the Inspector sets the seed, the trial loadout and the starting
+  瘴気.
+- The screen computes nothing: `Exploration.Script` (pure C#, tested under
+  `dotnet test` in `unity-port/Exploration.Script.Tests/`) builds every frame
+  from the core. The look is a stand-in (grey squares, one accent colour); the
+  real one is the design lane's and #90's.
+- Battles are stand-ins until #99: a card asks whether the fight was won.
+- EditMode tests: `Exploration.Tests` (the same files `dotnet test` runs).
+
 ## Caveats when the core lands in Unity
 
 - **NUnit version.** The headless lib targets NUnit 4; Unity's Test Framework

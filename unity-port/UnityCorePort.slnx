@@ -9,4 +9,7 @@
   <Project Path="DungeonContent/DungeonContent.csproj" />
   <Project Path="DungeonCore.Tests/DungeonCore.Tests.csproj" />
   <Project Path="DungeonCore/DungeonCore.csproj" />
+  <Project Path="Exploration.Script.Tests/Exploration.Script.Tests.csproj" />
+  <Project Path="Exploration.Script/Exploration.Script.csproj" />
+  <Project Path="Journal.Script/Journal.Script.csproj" />
 </Solution>
