@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Compiles the exploration screen's pure-C# layer (the session and the screen builder), which
+         lives in the Unity kit under Assets/View/Exploration/Script/ and is mirrored into the Unity
+         project by `npm run unity:sync`. No source of its own, like Depiction.Script. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Exploration</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Exploration\Script\*.cs" LinkBase="Script" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DungeonCore\DungeonCore.csproj" />
+    <ProjectReference Include="..\DungeonContent\DungeonContent.csproj" />
+    <ProjectReference Include="..\Journal.Script\Journal.Script.csproj" />
+  </ItemGroup>
+
+</Project>

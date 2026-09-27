@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Compiles the journal drawer's page contract, which lives in the Unity kit under
+         Assets/View/Journal/Script/ and is mirrored into the Unity project by `npm run unity:sync`.
+         No source of its own: it exists so `dotnet test` holds the same files Unity's
+         Journal.Script assembly holds. netstandard2.1 + C# 9 + nullable off, as Unity compiles them. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Journal</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Journal\Script\*.cs" LinkBase="Script" />
+  </ItemGroup>
+
+</Project>

@@ -279,6 +279,42 @@ namespace DungeonCore.Tests
         }
 
         [Test]
+        public void EndingTheLifeStopsTheRunWhereItStands()
+        {
+            // tier1-core.md R1-11: 「この生を終える」 can be chosen at any point of the exploration.
+            var state = EnterLayer(3);
+            var ended = ExplorationReducer.EndLife(state);
+
+            Assert.That(ended.Phase, Is.EqualTo(RunPhase.Survived));
+            Assert.That(ended.IsOver, Is.True);
+            Assert.That(ended.TimeLeft, Is.EqualTo(state.TimeLeft), "closing the life spends no 刻限");
+            Assert.That(ended.MiasmaPercent, Is.EqualTo(state.MiasmaPercent), "and adds no 瘴気");
+            Assert.That(ended.Hp, Is.EqualTo(state.Hp));
+        }
+
+        [Test]
+        public void TheLifeCanAlsoBeClosedFromTheInterlude()
+        {
+            var cleared = WalkStraightDown(SevenLayers.Of(1), 9UL, RunLoadout.Empty, PlayerMaxHp, PlayerMaxHp, 10);
+            var rest = ExplorationReducer.Interlude(cleared);
+            Assert.That(ExplorationReducer.EndLife(rest).Phase, Is.EqualTo(RunPhase.Survived));
+        }
+
+        [Test]
+        public void AnEndedLifeTakesNoFurtherMoves()
+        {
+            var ended = ExplorationReducer.EndLife(EnterLayer(1));
+            int next = ended.ReachableUnresolved().First();
+
+            Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.EndLife(ended));
+            Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.Step(ended, next));
+            Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.Interlude(ended));
+
+            var fallen = ExplorationReducer.ReportBattle(EnterLayer(1), hpAfter: 0, staminaAfter: 0);
+            Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.EndLife(fallen), "a fallen life is not a survivor");
+        }
+
+        [Test]
         public void AStraightRunDownAllSevenLayersEndsAt89Percent()
         {
             // The headline number of seven_layers_v4.md §3.1, proved end to end rather than

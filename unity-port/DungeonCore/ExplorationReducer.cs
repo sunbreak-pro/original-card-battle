@@ -29,6 +29,12 @@ namespace DungeonCore
         /// <summary>休息 also lifts max stamina (concept-v3.md §7). Clamped with the other temporaries.</summary>
         public const int RestMaxStaminaBonus = 2;
 
+        /// <summary>HP a 休息 gives back at this maximum, before the maximum clamps it. The screen prints this.</summary>
+        public static int RestHeal(int maxHp) => Share(maxHp, RestHpPercent);
+
+        /// <summary>HP 階層間の休憩 gives back at this maximum, before the maximum clamps it.</summary>
+        public static int InterludeHeal(int maxHp) => Share(maxHp, InterludeHpPercent);
+
         /// <summary>Walks into a layer. The entry node is resolved on arrival and costs its 刻限.</summary>
         public static ExplorationState Enter(
             LayerProfile profile,
@@ -107,7 +113,7 @@ namespace DungeonCore
             if (state.Phase != RunPhase.LayerCleared && state.Phase != RunPhase.PushedOut)
                 throw new ExplorationRuleException($"there is no interlude from {state.Phase}");
 
-            int healed = Math.Min(state.MaxHp, state.Hp + Share(state.MaxHp, InterludeHpPercent));
+            int healed = Math.Min(state.MaxHp, state.Hp + InterludeHeal(state.MaxHp));
             return state.With(
                 hp: healed,
                 stamina: state.MaxStamina,
@@ -149,6 +155,20 @@ namespace DungeonCore
             return state.With(hp: hp, stamina: stamina, phase: phase);
         }
 
+        /// <summary>
+        /// 「この生を終える」. The player may close the life alive at any point of the
+        /// exploration, the interlude included (tier1-core.md R1-11). Nothing is spent and
+        /// nothing is healed: the life simply stops where it stands.
+        /// </summary>
+        public static ExplorationState EndLife(ExplorationState state)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (state.IsOver)
+                throw new ExplorationRuleException($"the life has already ended ({state.Phase})");
+
+            return state.With(phase: RunPhase.Survived);
+        }
+
         /// <summary>Spends the 刻限 for a node and applies what standing on it does.</summary>
         private static ExplorationState Resolve(ExplorationState state, int nodeId, RestChoice choice)
         {
@@ -164,7 +184,7 @@ namespace DungeonCore
             {
                 if (choice == RestChoice.Rest)
                 {
-                    hp = Math.Min(state.MaxHp, hp + Share(state.MaxHp, RestHpPercent));
+                    hp = Math.Min(state.MaxHp, hp + RestHeal(state.MaxHp));
                     temp = Clamp(temp + RestMaxStaminaBonus);
                 }
                 else
