@@ -70,6 +70,11 @@ const plan = [
     .filter((f) => !(noPolyfill && basename(f) === "IsExternalInit.cs"))
     .map((src) => [src, `${projectPath}/Assets/Core/${basename(src)}`]),
   [`${kit}/Assets/Core/BattleCore.asmdef`, `${projectPath}/Assets/Core/BattleCore.asmdef`],
+  // The core and its tests are written with nullable annotations (`string?`), and both .csproj
+  // compile with <Nullable>enable</Nullable>. A csc.rsp beside an asmdef applies to that assembly
+  // only (and replaces Assets/csc.rsp for it), so each Unity assembly gets the same one; without
+  // it every annotation is warning CS8632. Unity splits the file on whitespace: no comments in it.
+  [`${kit}/Assets/Core/csc.rsp`, `${projectPath}/Assets/Core/csc.rsp`],
 
   // EditMode tests -> Assets/Tests
   ...csFiles(`${repoRoot}/unity-port/BattleCore.Tests`)
@@ -79,6 +84,7 @@ const plan = [
     .filter((f) => withParity || basename(f) !== "ParityTests.cs")
     .map((src) => [src, `${projectPath}/Assets/Tests/${basename(src)}`]),
   [`${kit}/Assets/Tests/BattleCore.Tests.asmdef`, `${projectPath}/Assets/Tests/BattleCore.Tests.asmdef`],
+  [`${kit}/Assets/Core/csc.rsp`, `${projectPath}/Assets/Tests/csc.rsp`],
   ...(withParity
     ? [[
         `${repoRoot}/unity-port/BattleCore.Tests/Fixtures/parity-fixture.json`,
