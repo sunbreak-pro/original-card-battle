@@ -91,7 +91,7 @@ namespace Depiction.PlayModeTests
 
         private static MonoBehaviour Find(string typeName)
         {
-            foreach (MonoBehaviour behaviour in UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+            foreach (MonoBehaviour behaviour in UnityEngine.Object.FindObjectsByType<MonoBehaviour>())
             {
                 if (behaviour.GetType().FullName == typeName) return behaviour;
             }
