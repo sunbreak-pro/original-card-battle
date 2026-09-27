@@ -1,5 +1,35 @@
 # HISTORY (chat-dungeon)
 
+### 2026-09-27 - 探索の画面を Unity に作る（#101）
+
+#### 概要
+
+探索の画面を仮の見た目で Unity に作った。画面は値を計算せず、純 C# の組み立て役が探索のコアから作った値を置くだけにした。PR #238（open）。
+
+#### 変更点
+
+- **設計書**: `dungeon_exploration_v4.md` に §6「探索の画面」（出す値、ノードの段階開示、1 歩の予告、階層の切れ目、「この生を終える」、手記のドロワー、仮の戦闘、終わりの画面、Unity への写し方）と、§5 の判断 6・7（最後の層で刻限が尽きたとき / 生を終えられる時機）を足した
+- **コア**: `RunPhase.Survived` と `ExplorationReducer.EndLife` を足した。刻限も瘴気も動かさない。画面が回復量を読めるよう `RestHeal` / `InterludeHeal` を公開した
+- **組み立て役**（`Assets/View/Exploration/Script/`）: `ExplorationSession` が操作をコアの遷移へ渡し、`ExplorationScreenBuilder` が 1 フレームを作る。1 歩と降下の予告は、不変の状態にコアの遷移を試した結果なので実際の結果と一致する。敵の情報は差し込み口 `IEnemyIntel` から受け取り、#102 / #107 まで「？」
+- **手記のドロワー**（`Assets/View/Journal/`）: 頁の型 `JournalBook` / `JournalPage` と画面。探索の型に依存しないので戦闘の画面からも使える
+- **画面**: `ExplorationBootstrap` を空の GameObject に付けるとキャンバスまで組む。仮の色は `ExplorationPalette` だけ。`BattleTheme` と `Depiction/` には触っていない
+- **写しと器**: `sync-unity-project.mjs` が `DungeonCore` / `DungeonContent` / 探索の画面 / 手記を写す。`Exploration.Script(.Tests)` と `Journal.Script` を `UnityCorePort.slnx` に載せた
+- **食い違い**: 手記のタブ（`battle_ui_ux_v2.md` は 3 つ、`CAMP_FACILITIES_DESIGN.md` は 5 つ）を #234 に起票し、3 つに従った
+
+#### 実測・知見
+
+- レーンでは Unity を動かせないので、Unity 6000.5.5f1 の DLL と Unity プロジェクトの `Library/ScriptAssemblies/`（UnityEngine.UI / InputSystem）を読み取り専用で参照する使い捨ての csproj を作業用フォルダに置き、View のコンパイルを旧入力 / 新入力の両方で確かめた。テストは `-p:LangVersion=9.0` で Unity と同じ C# 9 でも通した
+- 第三者レビュー（PASS）で 3 点を直した: 休息で線を越えても最大スタミナが上がる場合の誤った警告、降りた先の入口での瘴気死に確認が無かったこと、画面側が文言を持っていたこと。札の暗幕の上に持ち物と「この生を終える」を置き、休憩中に浄化の香で降下を救えるようにした
+- 次の層の入口は着いた時点で踏んだことになるので、降下は 1 歩ぶんの瘴気をすぐ払う。予告もコアの `Descend` を試して出す
+
+#### 次
+
+- PR #238 は open。merge と Unity Editor での手触りの確認はメイン（`npm run unity:sync` → 空のシーンに `ExplorationBootstrap`）
+- `SOURCES.md` に探索の画面と共有の手記のドロワーの行を足すか、`CLAUDE.md` に探索の画面の 1 行を足すかはメインの判断
+- 戦闘をつなぐのは #99、敵の情報は #102 / #107、生存ルートの受け継ぎは #108
+
+---
+
 ### 2026-09-23 - 層ごとの戦闘の場のマス数と開始の間合い 3（#168）
 
 #### 概要
