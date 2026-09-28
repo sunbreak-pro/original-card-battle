@@ -53,8 +53,10 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// The core's reading of the omen on screen (#248, TurnLoop.PreviewOmen), and the omen it was
-        /// taken for. A frame is read against the state a whole move left, which in an enemy phase
-        /// already holds the next omen; until the one shown is spent it keeps its last number.
+        /// taken for. It is only taken on a state from the player's turn: a frame is read against the
+        /// state a whole move left, and after an enemy phase that state is past the turn end the
+        /// number already counts — even when the enemy chose the same action again. Until the omen
+        /// shown is spent it keeps the number the player last saw; a newly decided omen starts over.
         /// </summary>
         private OmenPreview _omenPreview;
         private Omen _omenPreviewFor;
@@ -278,6 +280,8 @@ namespace Depiction.Bridge
                 case OmenSet omen:
                 {
                     bool alreadyShown = _omenVisible && Equals(_omen, omen.Omen);
+                    // Step 12's omen is a new one even when it is the same action: the old number goes.
+                    if (omen.Decided) _omenPreviewFor = null;
                     _omen = omen.Omen;
                     _omenVisible = true;
                     // Step 5 re-announces the omen step 12 already put up; the screen shows it once.
@@ -634,12 +638,14 @@ namespace Depiction.Bridge
         }
 
         /// <summary>
-        /// The omen badge. Its number is the core's (TurnLoop.PreviewOmen) whenever the state read is
-        /// still the one the shown omen stands in; otherwise the last number it was shown with stays.
+        /// The omen badge. Its number is the core's (TurnLoop.PreviewOmen), taken whenever the state
+        /// read is the player's turn with the shown omen standing; otherwise the last number it was
+        /// shown with stays, or the face alone before there is one.
         /// </summary>
         private OmenFrame OmenFrameOf(BattleState after)
         {
-            if (_omen != null && after.Enemies.Count > 0 && Equals(after.Enemies[0].Omen, _omen))
+            if (_omen != null && after.Phase == BattlePhase.PlayerAction && after.Enemies.Count > 0
+                && Equals(after.Enemies[0].Omen, _omen))
             {
                 _omenPreview = TurnLoop.PreviewOmen(after, 0);
                 _omenPreviewFor = _omen;

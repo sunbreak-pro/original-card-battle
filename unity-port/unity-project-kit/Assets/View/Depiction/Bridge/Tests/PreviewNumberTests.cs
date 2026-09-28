@@ -67,6 +67,45 @@ namespace Depiction.Bridge.Tests
             Assert.That(whiff.Amount, Is.EqualTo(15), "the number the omen was showing");
         }
 
+        /// <summary>
+        /// 二段斬り's shape on every branch, with a trait that reads the enemy's own stamina (残 7:
+        /// +3 a blow), so the number differs between the player's turn and the state after the enemy
+        /// has paid for it — and the enemy chooses the same action again from any gap.
+        /// </summary>
+        private static EnemyDef SameTwinEveryTurn()
+        {
+            var twin = new EnemyActionDef(
+                "twin_slash", "二段斬り", BattleAttribute.Attack, 3,
+                new Face(Power: 6, Hits: 2, Reach: Reach.Only(0), Statuses: new[] { new StatusGrant(StatusKind.Fragile, 1) }),
+                new Trait(BattleCore.TraitCondition.Reserve, TraitEffect.PowerBonus, 3, Threshold: 7));
+            var branch = new[] { twin.Id };
+            return new EnemyDef(
+                "same_twin", "同じ二段", MaxHp: 60, MaxStamina: 10, Recovery: 2, Size: 1,
+                BranchAtGapZero: branch, BranchAtGapOneToTwo: branch, BranchAtGapThreePlus: branch,
+                Actions: new Dictionary<string, EnemyActionDef> { { twin.Id, twin } });
+        }
+
+        [Test]
+        public void TheSameActionTwice_KeepsTheNumberThePlayerSaw_ThroughTheEnemysTurn()
+        {
+            // Turn 1: 残 7 holds (10 − 3), so (6 + 3), then 脆化, then (6 + 3) × 1.5 → 14: 23. 牽制
+            // steps out to gap 1 and the blow whiffs. Read again after the enemy has paid (7 + 2 − 3
+            // = 6), the same omen would say 6 + 9 = 15; the screen must not switch to that.
+            var (begin, writer, _) = Begin(SameTwinEveryTurn());
+            StepResult feint = TurnLoop.PlayCard(begin.State, InHand(begin.State, "feint"), NoShuffle);
+            DepictionFrame held = writer.Write(feint.Events, feint.State)[0].After;
+            Assert.That(held.Omen.ValueText, Is.EqualTo("23"));
+
+            StepResult end = TurnLoop.EndTurn(feint.State, NoShuffle);
+            Assert.That(end.State.Omen, Is.EqualTo(feint.State.Omen), "the enemy chose the same action again");
+            List<DepictionEvent> written = writer.Write(end.Events, end.State);
+
+            DepictionEvent turnEnd = written.First(ev => ev.Kind == DepictionEventKind.TurnEnd);
+            Assert.That(turnEnd.After.Omen.ValueText, Is.EqualTo("23"), "the omen the enemy is about to carry out");
+            Cue whiff = written.SelectMany(ev => ev.Cues).Single(c => c.Text == "空振り");
+            Assert.That(whiff.Amount, Is.EqualTo(23), "the number the omen was showing");
+        }
+
         [Test]
         public void ACardFace_AndAnOmenWithoutThePreview_SumTheBlows()
         {

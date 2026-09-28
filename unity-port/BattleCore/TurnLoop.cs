@@ -322,7 +322,7 @@ namespace BattleCore
         private static (int Raw, int Damage) ResolvedOnCopy(BattleState state, CardInstance card, int read, TraitContext context)
         {
             var def = card.Def;
-            var copy = KeepStanding(state, Actor.Enemy);
+            var copy = KeepStanding(state, Actor.Enemy, read);
             copy = copy with { Player = copy.Player with { Stamina = Math.Max(copy.Player.Stamina, def.Cost) } };
             IReadOnlyList<int> foes = def.Targets == TargetKind.All
                 ? Reached(copy, def.Face.ReachOrDefault)
@@ -377,6 +377,9 @@ namespace BattleCore
         /// puts the player on the free cell nearest their own from which it would, so the number
         /// still says what it would do if it landed. With no such cell it falls back to the face
         /// alone (power × hits). Null when the enemy is not standing or has no omen.
+        ///
+        /// Call it on a state from the player's turn (<see cref="BattlePhase.PlayerAction"/>): it plays
+        /// that turn's end itself, so a state past it would have the turn end played twice.
         /// </summary>
         public static OmenPreview? PreviewOmen(BattleState state, int unit)
         {
@@ -407,12 +410,11 @@ namespace BattleCore
                 int cell = CellInReach(copy, unit, reach);
                 if (cell < 0)
                 {
-                    int raw = action.Attributes.HasFlag(BattleAttribute.Attack) ? action.Face.Power * Math.Max(1, action.Face.Hits) : 0;
-                    return new OmenPreview(raw, Combat.ApplyGuard(raw, copy.Player.Guard).Damage, Lands: false, Rests: false);
+                    return FaceAlone(action, copy.Player.Guard);
                 }
                 copy = copy with { Player = copy.Player with { Cell = cell } };
             }
-            copy = KeepStanding(copy, Actor.Player);
+            copy = KeepStanding(copy, Actor.Player, 0);
 
             events.Clear();
             Resolve(
@@ -443,15 +445,35 @@ namespace BattleCore
         }
 
         /// <summary>
-        /// A preview's copy with the side being struck unable to fall, so that no blow stops the rest
-        /// (§17.6 F9 would end the resolution there). Nothing a face or a trait reads looks at HP.
+        /// A preview's copy with the one being struck unable to fall, so that no blow stops the rest
+        /// (§17.6 F9 would end the resolution there): the player, or enemy <paramref name="unit"/> —
+        /// only the one the number is read on, so that any other enemy a card for all reaches falls
+        /// as it would and leaves its cells. Nothing a face or a trait reads looks at HP.
         /// </summary>
-        private static BattleState KeepStanding(BattleState state, Actor side)
+        private static BattleState KeepStanding(BattleState state, Actor side, int unit)
         {
             const int standing = 1_000_000;
             if (side == Actor.Player) return state with { Player = state.Player with { Hp = standing } };
-            foreach (int i in state.Living) state = state.WithEnemy(i, state.Enemies[i].Body with { Hp = standing });
-            return state;
+            return state.WithEnemy(unit, state.Enemies[unit].Body with { Hp = standing });
+        }
+
+        /// <summary>
+        /// An omen that can reach the player from no cell: the attack face alone, each blow meeting
+        /// <paramref name="guard"/> on its own as it would (§2.4 hits), with nothing the board adds.
+        /// </summary>
+        private static OmenPreview FaceAlone(EnemyActionDef action, int guard)
+        {
+            if (!action.Attributes.HasFlag(BattleAttribute.Attack)) return new OmenPreview(0, 0, Lands: false, Rests: false);
+            int raw = 0;
+            int damage = 0;
+            for (int blow = 0; blow < Math.Max(1, action.Face.Hits); blow++)
+            {
+                var hit = Combat.ApplyGuard(action.Face.Power, guard);
+                guard = hit.GuardAfter;
+                raw += action.Face.Power;
+                damage += hit.Damage;
+            }
+            return new OmenPreview(raw, damage, Lands: false, Rests: false);
         }
 
         /// <summary>The power (before Guard) and the HP loss (after) the events put on <paramref name="victim"/> <paramref name="unit"/>: its blows from <paramref name="attacker"/> and its wall.</summary>
