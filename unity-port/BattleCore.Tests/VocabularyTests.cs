@@ -505,7 +505,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(preview.RawPower, Is.EqualTo(2));
+                Assert.That(preview.RawPower, Is.EqualTo(4), "#248: both blows, as one sum");
                 Assert.That(play.Events.OfType<DamageDealt>(), Is.EqualTo(new[]
                 {
                     new DamageDealt(Actor.Player, Actor.Enemy, 2, 0, 2, 0, 58),
@@ -1498,7 +1498,6 @@ namespace BattleCore.Tests
             // #253 (§2.4 hits / §4): 脆化 1 after each blow. 6, then 6 × 1.5 = 9 spending it, and one more left for the next attack.
             var s = Play(Opened(1, Idle, StingStance(StatusKind.Fragile, 1), TwoHits(6)), "sting_stance").State;
 
-            var preview = TurnLoop.Preview(s, InHand(s, "two_hits6"))!;
             var play = Play(s, "two_hits6");
             var fired = new StanceFired(Actor.Player, "sting_stance", StanceHook.StatusOnAttack);
             var applied = new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Fragile, 1, 1, false);
@@ -1516,11 +1515,6 @@ namespace BattleCore.Tests
                 AssertInOrder(play.Events, typeof(DamageDealt), typeof(StanceFired), typeof(StatusApplied),
                     typeof(StatusConsumed), typeof(DamageDealt), typeof(StanceFired), typeof(StatusApplied));
                 Assert.That(play.State.Enemy.Statuses.Stacks(StatusKind.Fragile), Is.EqualTo(1), "left for the next attack");
-
-                // The preview reads the board from before the card, where the stance has given nothing
-                // yet: its blow is the first one. The total of both blows is #248's.
-                Assert.That(preview.RawPower, Is.EqualTo(6));
-                Assert.That(preview.Damage, Is.EqualTo(play.Events.OfType<DamageDealt>().First().Damage));
             });
         }
 

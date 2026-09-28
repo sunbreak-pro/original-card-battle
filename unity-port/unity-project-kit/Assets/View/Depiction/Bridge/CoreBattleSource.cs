@@ -154,15 +154,17 @@ namespace Depiction.Bridge
         }
 
         /// <summary>
-        /// The one number shown while a card is held. Provisional shape (the final one is #30): the
-        /// damage that would get past the enemy's Guard, or the Guard a card without an attack gives.
+        /// The one number shown while a card is held: for an attack, the whole card's power before
+        /// the enemy's Guard (#248: every blow and the wall, as one sum); else the Guard it gives.
+        /// The number sits beside the power icon, and what gets past the Guard is the HP bar's
+        /// hatching, not this (battle-visual-v1.md §5.2, §8).
         /// </summary>
         public string PreviewFor(string cardId)
         {
             if (Inspect(cardId) != PlayVerdict.Accepted) return "";
             PlayPreview preview = TurnLoop.Preview(_state, cardId);
             if (preview == null) return "";
-            if (preview.Attacks) return preview.Damage.ToString();
+            if (preview.Attacks) return preview.RawPower.ToString();
             return preview.GuardGain > 0 ? preview.GuardGain.ToString() : "";
         }
 
