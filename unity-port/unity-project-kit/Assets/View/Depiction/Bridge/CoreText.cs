@@ -78,9 +78,20 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// The face of one dealt card. <paramref name="preview"/> comes from the core
-        /// (TurnLoop.Preview), so the lamp is the core's verdict and not a guess made here.
+        /// (TurnLoop.Preview), so the lamp is the core's verdict and not a guess made here. The reach
+        /// hint reads the preview's own enemy only; with several enemies use the overload that takes
+        /// <see cref="ReachesNobody"/>.
         /// </summary>
         public static CardFace Face(CardInstance card, PlayPreview preview)
+        {
+            return Face(card, preview, preview != null && !preview.InReach);
+        }
+
+        /// <summary>
+        /// The face of one dealt card. <paramref name="outOfReach"/> is true when no standing enemy
+        /// is inside the card's reach (<see cref="ReachesNobody"/>); it fills <see cref="CardFace.ReachHint"/>.
+        /// </summary>
+        public static CardFace Face(CardInstance card, PlayPreview preview, bool outOfReach)
         {
             CardDef def = card.Def;
             CardKind kind = KindOf(def.Attributes);
@@ -103,7 +114,37 @@ namespace Depiction.Bridge
                 // so the core's CanPlay (OutOfReach) is what refuses the card, not the script.
                 RequiredRange = null,
                 RequiredRangeGlyph = ReachText(def.Attributes, def.Face, def.Targets),
+                ReachHint = outOfReach ? ReachHint(def.Attributes, def.Face, def.Targets) : "",
             };
+        }
+
+        /// <summary>
+        /// #261: true when the card aims at the opponent and every standing enemy is outside its
+        /// reach. Each enemy is asked through the core's own verdict (TurnLoop.Preview's InReach),
+        /// which looks at the gap only — so a card short of stamina alone is not out of reach, and
+        /// the answer holds in any phase. False for a card not in the hand or with nobody standing.
+        /// </summary>
+        public static bool ReachesNobody(BattleState state, string instanceId)
+        {
+            bool anyone = false;
+            foreach (int unit in state.Living)
+            {
+                PlayPreview preview = TurnLoop.Preview(state, instanceId, unit);
+                if (preview == null) return false;
+                if (preview.InReach) return false;
+                anyone = true;
+            }
+            return anyone;
+        }
+
+        /// <summary>
+        /// #261: the line beside a card nobody is in reach of ("相手との間合いが 1〜2 のとき使用可能",
+        /// "相手との間合いが 0 のとき使用可能"), or empty for a card that aims at nobody.
+        /// </summary>
+        public static string ReachHint(BattleAttribute attributes, Face face, TargetKind targets)
+        {
+            string reach = ReachText(attributes, face, targets);
+            return reach.Length == 0 ? "" : "相手との間合いが " + reach + " のとき使用可能";
         }
 
         /// <summary>The reach as printed ("0〜1"), or empty for a card that aims at nobody.</summary>
