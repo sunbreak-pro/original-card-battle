@@ -112,7 +112,7 @@
   </header>
 
   <ul class="verdicts">
-    <li class="verdict now"><span class="tag">おすすめ</span><h3>案 1: 間合いは数字の札、移動は語</h3><p>右上に「⊢⊣ 1〜2」の札を置き、移動は「→ 1 / 詰める」のように値と同じ形で書きます。記号を覚えなくても語で読めます。</p></li>
+    <li class="verdict now"><span class="tag">採用（2026-09-28）</span><h3>案 1: 間合いは数字の札、移動は語</h3><p>右上に「⊢⊣ 1〜2」の札を置き、移動は「→ 1 / 詰める」のように値と同じ形で書きます。記号を覚えなくても語で読めます。</p></li>
     <li class="verdict later"><span class="tag">次点</span><h3>案 2: 間合いは目盛り、移動は間合いの増減</h3><p>0〜3 の目盛りに数字を入れて届く所を塗ります。移動は「間合い −1」と書き、目盛りと同じ言葉でそろえます。</p></li>
     <li class="verdict skip"><span class="tag">見送り</span><h3>案 3: 間合いを名前の下に文で書く</h3><p>「間合い 1〜2 に届く」と文で書くので迷いませんが、1 行ぶん値と説明が下がり、説明の 3 行目が入らない札が出ます。</p></li>
   </ul>
@@ -141,7 +141,11 @@
   <div class="tabs" id="varTabs" role="group" aria-label="案"></div>
   <div class="stage"><div class="gallery" id="gallery"></div></div>
 
-  <h2>3. 属性の寄せ方</h2>
+  <h2>3. 今の間合いで出せない札のホバー</h2>
+  <p class="prose">今の間合いで出せない札にホバーすると、カードの右側にパネルが出て、いつ出せるかを書きます（#261）。下の例は、敵と隣り合っている（間合い 0）ときに、届く間合いが 1〜2 の伸び突きにホバーした場面です。スタミナが足りないだけの札には出しません。</p>
+  <div class="stage" id="hintDemo"></div>
+
+  <h2>4. 属性の寄せ方</h2>
   <p class="prose">2 つの効果を持つ札は、攻撃 ＞ 防御 ＞ スキル の順で 1 つの属性に寄せます。今の 80 枚に当てると次のとおりです。値（威力・Guard・コスト）は変えていません。</p>
   <div class="tablewrap mid">
     <table>
@@ -160,7 +164,7 @@
 
   <h2>置いた仮定</h2>
   <ul class="prose">
-    <li>永続の状態は、今のスタンスと同じく 1 つだけ持て、新しく置くと入れ替わります。置いた札は除外置き場へ行き、デッキに 3 枚までです（#256）。</li>
+    <li>永続の状態の数の制限は、2026-09-28 のこうだいさんの決定で完全に無くなりました。同時に持てる数の上限も、置き換えも、デッキに 3 枚までの制限もありません。同じ永続の状態を 2 回置いたときは重ならず 1 つのまま、と仮定しています（#256）。</li>
     <li>連動(ムーブ) は「移動後」（このターンに自分が動いた）に、連動(スタンス) は「連動 スキル」に置き換えました（#256）。</li>
     <li>移動の語は、自分が動くときは「詰める / 離れる」、相手を動かすときは「押す / 引く」です。今の「前へ / 後ろへ」は、敵がいつも右にいる前提の語なので、間合いの言葉に直しました。</li>
     <li>はみ出しの判定はブラウザのフォントの描画です。Unity の TextMeshPro とは字幅が数 % ずれることがあります。</li>
@@ -168,8 +172,8 @@
 
   <h2>次に判断が要る点</h2>
   <ul class="prose">
-    <li><strong>カードの顔はどの案にしますか。</strong> おすすめは案 1 です。選んだ案は #259 で design の担当が設計書に入れます。</li>
-    <li><strong>永続の状態は 1 つだけでよいですか。</strong> 2 つ以上を持てるようにすると、今のスタンスの釣り合い（#206 で 3 枚までにした）を測り直すことになります。</li>
+    <li><strong>同じ永続の状態を 2 回置いたときに重ねるかどうか。</strong> 今は「重ならず 1 つのまま」を仮定にしています。重ねるなら、岩の構えを 2 回置くと毎ターン Guard +6 になります。</li>
+    <li><strong>永続が積み上がる前提の釣り合い。</strong> 数の制限が無くなったので、スタンスを何枚も置く型が強くなります。試験台で測り直します（#258）。</li>
   </ul>
 </div>
 
@@ -368,6 +372,14 @@ document.getElementById('varTabs').addEventListener('click', e => { const b = e.
 function renderMap() {
   document.querySelector('#mapTable tbody').innerHTML = CARDS.map(c => `<tr><td class="num">${c.no}</td><td>${c.name}</td><td>${c.attrs.join(' + ')}</td><td><strong>${newAttr(c)}</strong></td></tr>`).join('');
 }
-renderTable(); renderCompare(); renderGallery(); renderMap();
+function renderHint() {
+  const c = CARDS.find(x => x.name === '伸び突き');
+  const v = VARIANTS[0];
+  // The panel sits to the card's right, vertically centred on the card's upper half.
+  document.getElementById('hintDemo').innerHTML = `<div class="row" style="align-items:center"><div class="cardbox" style="width:216px;height:304px">${cardHtml(c, v)}</div>
+    <div style="position:relative;margin-left:14px;background:#141925;border:1px solid #6d7787;border-radius:6px;padding:12px 16px;color:#ecebf2;font:16px/1.5 'Zen Kaku Gothic New',sans-serif;display:flex;align-items:center;gap:8px">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="${P.range}" fill="none" stroke="#ecebf2" stroke-width="2.2" stroke-linecap="round"/></svg>相手との間合いが <b style="font:700 20px 'IBM Plex Mono',monospace">1〜2</b> のとき使用可能</div></div>`;
+}
+renderTable(); renderCompare(); renderGallery(); renderMap(); renderHint();
 document.fonts.ready.then(() => { measureAll(); renderTable(); renderGallery(); document.body.dataset.measured = JSON.stringify(RESULT); });
 </script>
