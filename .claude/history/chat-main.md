@@ -1,5 +1,19 @@
 # HISTORY (chat-main)
 
+### 2026-09-28 - 見た目の確定版の点検、引きの構図と上帯とカードの案、予測値の合計化
+
+#### 概要
+
+design レーンが確定させた battle-visual-v1 を規則・カード表・BattleCore と突き合わせ、こうだいさんの指示（引きの構図、上帯の要素、カードの文の収まり、予測値を合計 1 つに）を案と実装に落とした。
+
+#### 変更点
+
+- **点検のレポート**: `docs/reports/2026-09-28-battle-visual-review.html`（Artifact `https://claude.ai/artifact/MAGNNi3MHyYomZknXaJjVx`）。高 8 件（隣り合いの重なり、3 体戦、カードの文、コアが出していない値など）と、次にやる Issue の順番（閉じ忘れの整理 → 設計書 v1.1 → #241 → #50 の予兆 2 段 → #78）
+- **案のレポート（#249、PR #250）**: `docs/reports/2026-09-28-battle-layout-options.html`（Artifact `https://claude.ai/artifact/LxeDKjmnH4wibLZz3F42oQ`）。8 マス・敵 3 体・隣り合いの画面、上帯 4 案、カード 4 案。全 80 枚をヘッドレス Chrome で描いて数えた結果、はみ出しは A 29 / B 5 / C 0 / D 10。おすすめは上帯 案 2、カード 案 C
+- **予測値（#248、PR #251）**: `TurnLoop.Preview` をコピー上の実解決で全撃と壁込みの合計にし、`TurnLoop.PreviewOmen` を追加（今ターンを終えたら来る値）。Bridge は Guard 前の合計を写し、`×` を出さない。テスト 19 件追加、`dotnet test` 883 件通過。role-qa の条件（敵の番の途中で予兆の数が入れ替わる）と改善 2 点を直した
+- **行き先**: 精鋭の 2 手目の数と、先に動く別の敵の見込みは #242 にコメント。閉じ忘れの Issue（#49 #55 #29 #56 など）は閉じていない（こうだいさんの判断待ち）
+- **作業場所**: worktree `layout-options`（#250）、`preview-248`（#251）、`tracker-main`。merge 後に消せる
+
 ### 2026-09-21 - 世界の正典 v4（竜の系譜）と、世界観の持ち主の main への移管
 
 #### 概要
