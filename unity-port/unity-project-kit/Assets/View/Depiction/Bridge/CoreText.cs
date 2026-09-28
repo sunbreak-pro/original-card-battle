@@ -197,11 +197,21 @@ namespace Depiction.Bridge
             return string.Join("、", parts);
         }
 
+        /// <summary>
+        /// The number on a face: an attack's power over all its blows as one sum (#248: "12", never
+        /// "6×2"), else its Guard, else its heal.
+        /// </summary>
         public static string ValueOf(Face face, BattleAttribute attributes)
         {
-            if (attributes.HasFlag(BattleAttribute.Attack)) return face.Hits > 1 ? face.Power + "×" + face.Hits : face.Power.ToString();
+            if (attributes.HasFlag(BattleAttribute.Attack)) return FacePower(face).ToString();
             if (face.Guard > 0) return face.Guard.ToString();
             return face.Heal > 0 ? face.Heal.ToString() : "";
+        }
+
+        /// <summary>The attack face alone, every blow summed: power × hits.</summary>
+        public static int FacePower(Face face)
+        {
+            return face.Power * System.Math.Max(1, face.Hits);
         }
 
         /// <summary>Every trait of the card on one lamp line; 背水の陣's two read "間合い2以上 +5 ／ 死力 +3".</summary>
@@ -289,12 +299,16 @@ namespace Depiction.Bridge
         // ---- omen ---------------------------------------------------------------------------
 
         /// <summary>
-        /// §6: 種別 + 狙うマス, plus the action's own face value. Until the floor shows the aimed cells
-        /// (#163) the reach goes where the one-character side used to be ("1〜2"). The trait bonus is
-        /// not folded into the number: whether it lands depends on where the player stands when the
-        /// blow comes.
+        /// §6: 種別 + 狙うマス, plus one number. Until the floor shows the aimed cells (#163) the reach
+        /// goes where the one-character side used to be ("1〜2").
+        ///
+        /// For an attack the number is the core's (#248, TurnLoop.PreviewOmen): the whole action's
+        /// power before the player's Guard — every blow, the wall, and the trait as the board stands
+        /// now — and what it would be if it landed when it does not reach. Without a
+        /// <paramref name="preview"/> it is the face alone (power × hits). Any other action shows its
+        /// Guard or heal.
         /// </summary>
-        public static OmenFrame OmenOf(Omen omen, EnemyDef enemy)
+        public static OmenFrame OmenOf(Omen omen, EnemyDef enemy, OmenPreview preview = null)
         {
             if (omen == null) return new OmenFrame { Visible = false };
 
@@ -307,7 +321,9 @@ namespace Depiction.Bridge
             EnemyActionDef action;
             if (enemy.Actions.TryGetValue(omen.ActionId, out action))
             {
-                frame.ValueText = ValueOf(action.Face, action.Attributes);
+                frame.ValueText = action.Attributes.HasFlag(BattleAttribute.Attack) && preview != null
+                    ? preview.RawPower.ToString()
+                    : ValueOf(action.Face, action.Attributes);
             }
             return frame;
         }

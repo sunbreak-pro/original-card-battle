@@ -2,9 +2,9 @@
 // (DepictionEvent / Cue / DepictionFrame). Pure C#: BattleCore + Depiction.Script, no UnityEngine.
 //
 // Nothing here works a rule out. Every number on a cue is copied from an event's settled value
-// (StaminaAfter, TargetHpAfter, GuardAfter …), and what a held card would do comes from the core's
-// own TurnLoop.Preview. What this class does decide is presentation: where one screen event ends
-// and the next begins, and which beat shows which number.
+// (StaminaAfter, TargetHpAfter, GuardAfter …), and what a held card or a shown omen would do comes
+// from the core's own TurnLoop.Preview / PreviewOmen. What this class does decide is presentation:
+// where one screen event ends and the next begins, and which beat shows which number.
 using System;
 using System.Collections.Generic;
 using BattleCore;
@@ -50,6 +50,20 @@ namespace Depiction.Bridge
         private int _turn;
         private Omen _omen;
         private bool _omenVisible;
+
+        /// <summary>
+        /// The core's reading of the omen on screen (#248, TurnLoop.PreviewOmen), and the omen it was
+        /// taken for. It is only taken on a state from the player's turn: a frame is read against the
+        /// state a whole move left, and after an enemy phase that state is past the turn end the
+        /// number already counts — even when the enemy chose the same action again. Until the omen
+        /// shown is spent it keeps the number the player last saw; a newly decided omen starts over.
+        /// </summary>
+        private OmenPreview _omenPreview;
+        private Omen _omenPreviewFor;
+
+        /// <summary>The power the card being written has put on the enemy it reads so far (#248), or −1 before its first blow.</summary>
+        private int _playedPower = -1;
+        private int _playedUnit;
         private bool _playerActs;
         private int _order;
 
@@ -105,7 +119,8 @@ namespace Depiction.Bridge
         /// second blow of 二段斬り and the step an enemy takes after its blow.
         ///
         /// <paramref name="after"/> is the state the move left. It is only asked what the cards still
-        /// in the hand would do (the lamp), never for a number an event already carries.
+        /// in the hand and the omen on screen would do (the lamp, the omen's number), never for a
+        /// number an event already carries.
         /// </summary>
         public List<DepictionEvent> Write(IReadOnlyList<BattleEvent> events, BattleState after)
         {
@@ -265,6 +280,8 @@ namespace Depiction.Bridge
                 case OmenSet omen:
                 {
                     bool alreadyShown = _omenVisible && Equals(_omen, omen.Omen);
+                    // Step 12's omen is a new one even when it is the same action: the old number goes.
+                    if (omen.Decided) _omenPreviewFor = null;
                     _omen = omen.Omen;
                     _omenVisible = true;
                     // Step 5 re-announces the omen step 12 already put up; the screen shows it once.
@@ -275,6 +292,8 @@ namespace Depiction.Bridge
                 case CardPlayed played:
                     _hand.Remove(played.Card);
                     _strike = CoreText.SystemOf(played.Card.Def);
+                    _playedPower = -1;
+                    _playedUnit = played.Unit;
                     break;
 
                 case ActionExecuted executed:
@@ -323,7 +342,7 @@ namespace Depiction.Bridge
                     ev.Cues.Add(new Cue
                     {
                         Kind = CueKind.SideBonusMiss, Target = UnitSide.Enemy,
-                        Amount = _enemyDef.Actions[whiff.SourceId].Face.Power * Math.Max(1, _enemyDef.Actions[whiff.SourceId].Face.Hits), Text = "空振り",
+                        Amount = ShownOmenPower(whiff.SourceId), Text = "空振り",
                     });
                     break;
 
@@ -421,7 +440,12 @@ namespace Depiction.Bridge
             unit.Guard = damage.TargetGuardAfter;
             unit.Hp = damage.TargetHpAfter;
 
-            if (ev.Kind == DepictionEventKind.PlayCard) ev.PreviewText = damage.Damage.ToString();
+            // #248: the held card's number was its whole power before Guard; the played card shows the same sum.
+            if (ev.Kind == DepictionEventKind.PlayCard && damage.Actor == Actor.Player && damage.Unit == _playedUnit)
+            {
+                _playedPower = Math.Max(0, _playedPower) + damage.Raw;
+                ev.PreviewText = _playedPower.ToString();
+            }
 
             bool splits = damage.Absorbed > 0 || damage.Actor == Actor.Enemy;
             if (!splits)
@@ -464,6 +488,12 @@ namespace Depiction.Bridge
             UnitModel unit = Unit(wall.Actor);
             unit.Guard = wall.GuardAfter;
             unit.Hp = wall.HpAfter;
+            // The wall a card's push drives the enemy into is part of the card's sum (TurnLoop.Preview).
+            if (ev.Kind == DepictionEventKind.PlayCard && wall.Actor == Actor.Enemy && wall.Unit == _playedUnit && _playedPower >= 0)
+            {
+                _playedPower += wall.Raw;
+                ev.PreviewText = _playedPower.ToString();
+            }
             if (wall.Absorbed > 0)
             {
                 ev.Cues.Add(new Cue { Kind = CueKind.GuardBlock, Target = target, Amount = wall.Absorbed, GuardAfter = wall.GuardAfter });
@@ -595,7 +625,7 @@ namespace Depiction.Bridge
                 Corner = new CornerFrame { Turn = _turn, Floor = 1, ChainIndex = ChainIndex, ChainTotal = ChainTotal, MiasmaPercent = 0 },
                 Player = UnitOf(_player, showStamina: true, gap: Gap),
                 Enemy = UnitOf(_enemy, showStamina: false, gap: null),
-                Omen = _omenVisible ? CoreText.OmenOf(_omen, _enemyDef) : new OmenFrame { Visible = false },
+                Omen = _omenVisible ? OmenFrameOf(after) : new OmenFrame { Visible = false },
             };
             foreach (CardInstance card in _hand)
             {
@@ -605,6 +635,29 @@ namespace Depiction.Bridge
             int reserve = waiting ? Combat.ReserveGuard(_player.Stamina) : 0;
             frame.StanceHint = reserve > 0 ? "+" + reserve : "";
             return frame;
+        }
+
+        /// <summary>
+        /// The omen badge. Its number is the core's (TurnLoop.PreviewOmen), taken whenever the state
+        /// read is the player's turn with the shown omen standing; otherwise the last number it was
+        /// shown with stays, or the face alone before there is one.
+        /// </summary>
+        private OmenFrame OmenFrameOf(BattleState after)
+        {
+            if (_omen != null && after.Phase == BattlePhase.PlayerAction && after.Enemies.Count > 0
+                && Equals(after.Enemies[0].Omen, _omen))
+            {
+                _omenPreview = TurnLoop.PreviewOmen(after, 0);
+                _omenPreviewFor = _omen;
+            }
+            return CoreText.OmenOf(_omen, _enemyDef, Equals(_omenPreviewFor, _omen) ? _omenPreview : null);
+        }
+
+        /// <summary>What a whiff strikes off: the number the omen badge was showing, or the face alone.</summary>
+        private int ShownOmenPower(string actionId)
+        {
+            if (_omenPreview != null && _omenPreviewFor != null && _omenPreviewFor.ActionId == actionId) return _omenPreview.RawPower;
+            return CoreText.FacePower(_enemyDef.Actions[actionId].Face);
         }
 
         private static UnitFrame UnitOf(UnitModel unit, bool showStamina, int? gap)
