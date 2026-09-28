@@ -170,7 +170,43 @@ namespace BattleCore.Tests
             Assert.That(preview.RawPower, Is.EqualTo(5));
         }
 
+        // ---- #253: a stance that gives a status on every attack ----
+
+        /// <summary>脆化 1 on the foe after each blow that lands (#253).</summary>
+        private static readonly StanceDef FragileOnAttack =
+            new StanceDef(StanceHook.StatusOnAttack, Status: StatusKind.Fragile, StatusStacks: 1);
+
+        [Test]
+        public void TheFragileAStanceGivesOnTheFirstBlow_CountsOnTheSecond()
+        {
+            // 6, then the stance's 脆化 on the enemy, then 6 × 1.5 = 9: the preview is the 15 PlayCard deals.
+            var stanceCard = Fixtures.Card("sting_stance", 1, new Face(Stance: FragileOnAttack), BattleAttribute.Stance, targets: TargetKind.Self);
+            var twoSix = Fixtures.Card("two_six", 1, new Face(Power: 6, Hits: 2));
+            var s = Opened(Idle, 1, stanceCard, twoSix);
+            s = TurnLoop.PlayCard(s, InHand(s, "sting_stance"), NoRng).State;
+
+            AssertPreviewIsWhatPlayDeals(s, "two_six", 15, 15);
+            Assert.That(s.Enemy.Statuses.Has(StatusKind.Fragile), Is.False, "the board is not touched");
+        }
+
         // ---- An enemy's omen ----
+
+        [Test]
+        public void ATwoBlowOmen_CountsTheFragileTheEnemysStanceGivesOnTheFirstBlow()
+        {
+            // #253: a plain 6 × 2 from an enemy holding the stance is 6, then 9, as the enemy phase deals it.
+            var twin = Fixtures.EnemyAction("twin", column: 3, face: new Face(Power: 6, Hits: 2, Reach: Reach.Only(0)));
+            var s = Opened(Fixtures.Enemy("twin_fixture", atZero: twin), 0);
+            s = s.WithEnemy(s.Enemy with { Stance = FragileOnAttack, StanceSource = "enemy_stance" });
+            s = s with { Player = s.Player with { Stamina = 0 } };
+            Assert.That(s.Omen!.ActionId, Is.EqualTo("twin"));
+
+            var omen = TurnLoop.PreviewOmen(s, 0)!;
+            var dealt = OnPlayer(TurnLoop.EndTurn(s, NoRng).Events);
+
+            Assert.That(omen, Is.EqualTo(new OmenPreview(15, 15, Lands: true, Rests: false)));
+            Assert.That(dealt, Is.EqualTo((15, 15)), "what the enemy phase deals");
+        }
 
         [Test]
         public void ATwoBlowOmen_IsOneSum_WithTheFragileItsFirstBlowLeaves()
