@@ -86,12 +86,12 @@ namespace BattleCore
     public sealed record PlayPreview(bool TraitHolds, bool Attacks, int RawPower, int Damage, int GuardGain, bool InReach, int Cost);
 
     /// <summary>
-    /// What an enemy's shown omen would do to the player, as one number (#248). See
-    /// <see cref="TurnLoop.PreviewOmen"/>. RawPower is every blow plus the wall damage before the
-    /// player's Guard, Damage the HP the player would lose after the Guard they hold now. Lands is
-    /// whether it reaches the player where they stand now; when it does not, the two numbers are
-    /// what it would do if it did. Rests is true when the enemy cannot pay for it (§6), and then
-    /// both numbers are 0.
+    /// What an enemy's shown omen would do to the player if the turn ended now, as one number
+    /// (#248). See <see cref="TurnLoop.PreviewOmen"/>. RawPower is every blow plus the wall damage
+    /// before the player's Guard, Damage the HP the player would lose after the Guard they would
+    /// hold by then (構え included). Lands is whether it reaches the player where they stand now;
+    /// when it does not, the two numbers are what it would do if it did. Rests is true when the
+    /// enemy cannot pay for it (§6) or falls to 出血 before it acts, and then both numbers are 0.
     /// </summary>
     public sealed record OmenPreview(int RawPower, int Damage, bool Lands, bool Rests);
 
@@ -360,15 +360,18 @@ namespace BattleCore
         }
 
         /// <summary>
-        /// What enemy <paramref name="unit"/>'s shown omen would do to the player if it were carried
-        /// out on the board as it stands now (#248): one number for the whole action — every blow,
-        /// with the 脆化 its first blow leaves, and the wall damage of its push. Like
-        /// <see cref="Preview"/> it resolves the action on a copy, against the player's Guard now.
+        /// What enemy <paramref name="unit"/>'s shown omen would do to the player if the player ended
+        /// the turn now (#248): one number for the whole action — every blow, with the 脆化 its first
+        /// blow leaves, and the wall damage of its push. Like <see cref="Preview"/> it resolves the
+        /// action on a copy, after the steps that come before it in the same order as
+        /// <see cref="EndTurn"/>: the player's turn-end stance and 構え (step 7; its Guard can take
+        /// 無防備 away), the played list cleared (step 8), and this enemy's own turn start (step 9:
+        /// its Guard reset, recovery and status ticks). Enemies that act before it are not played.
         ///
         /// The action is the one <see cref="EnemyAi.ActionToExecute"/> would carry out with the
-        /// stamina the enemy will hold after its next recovery — the same stamina the omen was
-        /// chosen with (<see cref="DecideNextOmen"/>) — so only a drained enemy rests. An elite's or
-        /// a boss's second action is not on the omen and is not counted.
+        /// stamina the enemy holds after that turn start, so only a drained enemy rests; one that
+        /// falls to 出血 there counts as a rest too. An elite's or a boss's second action is not on
+        /// the omen and is not counted.
         ///
         /// When the action does not reach the player where they stand, Lands is false and the copy
         /// puts the player on the free cell nearest their own from which it would, so the number
@@ -382,8 +385,15 @@ namespace BattleCore
             var enemy = state.Enemies[unit];
             if (enemy.Omen == null) return null;
 
-            int stamina = StaminaAtAction(enemy);
-            var action = EnemyAi.ActionToExecute(enemy.Def, enemy.Omen, stamina);
+            // Steps 7-9 on a copy, as EndTurn and EnemyPhase run them. What they emit is not wanted.
+            var events = new List<BattleEvent>();
+            var copy = StanceAtTurnEnd(state, Actor.Player, 0, events);
+            copy = CheckReserve(copy, Actor.Player, 0, events);
+            copy = copy with { Player = copy.Player with { Played = null, FollowUp = 0 } };
+            copy = OpenTurnFor(copy, Actor.Enemy, unit, enemy.Def.Recovery, events);
+            if (!copy.Enemies[unit].Alive) return new OmenPreview(0, 0, Lands: false, Rests: true);
+
+            var action = EnemyAi.ActionToExecute(enemy.Def, enemy.Omen, copy.Enemies[unit].Body.Stamina);
             if (action == null) return new OmenPreview(0, 0, Lands: false, Rests: true);
             if (!EnemyAi.IsOpponentDirected(action.Attributes, action.Face, action.Targets))
             {
@@ -391,21 +401,20 @@ namespace BattleCore
             }
 
             var reach = action.Face.ReachOrDefault;
-            bool lands = reach.Contains(state.GapTo(unit));
-            var copy = state.WithEnemy(unit, enemy.Body with { Stamina = stamina });
+            bool lands = reach.Contains(copy.GapTo(unit));
             if (!lands)
             {
                 int cell = CellInReach(copy, unit, reach);
                 if (cell < 0)
                 {
                     int raw = action.Attributes.HasFlag(BattleAttribute.Attack) ? action.Face.Power * Math.Max(1, action.Face.Hits) : 0;
-                    return new OmenPreview(raw, Combat.ApplyGuard(raw, state.Player.Guard).Damage, Lands: false, Rests: false);
+                    return new OmenPreview(raw, Combat.ApplyGuard(raw, copy.Player.Guard).Damage, Lands: false, Rests: false);
                 }
                 copy = copy with { Player = copy.Player with { Cell = cell } };
             }
             copy = KeepStanding(copy, Actor.Player);
 
-            var events = new List<BattleEvent>();
+            events.Clear();
             Resolve(
                 copy, Actor.Enemy, unit, Array.Empty<int>(), action.Id, action.Name, action.Attributes,
                 action.Column, action.Face, TraitsOf(action.Trait), action.Targets, action.Cost,

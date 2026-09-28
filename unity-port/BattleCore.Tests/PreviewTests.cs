@@ -240,5 +240,22 @@ namespace BattleCore.Tests
             Assert.That((omen.RawPower, omen.Damage), Is.EqualTo((11, 11)));
             Assert.That(dealt, Is.EqualTo((11, 11)));
         }
+
+        [Test]
+        public void TheReserveGuardTheTurnEndWouldGive_IsCountedBeforeTheOmen()
+        {
+            // §9 step 7: with 3 or more stamina left, 構え puts Guard 3 on the player before the enemy
+            // acts, so 無防備 no longer holds: the shove is 5, 3 of it absorbed, then 3 of wall.
+            var s = Opened(Enemies.PolearmWarped, 0);
+            Assert.That(s.Player.Stamina, Is.GreaterThanOrEqualTo(Constants.ReserveThreshold));
+            Assert.That(s.Player.Guard, Is.EqualTo(0));
+
+            var omen = TurnLoop.PreviewOmen(s, 0)!;
+            var dealt = OnPlayer(TurnLoop.EndTurn(s, NoRng).Events);
+
+            Assert.That((omen.RawPower, omen.Damage), Is.EqualTo((8, 5)));
+            Assert.That(dealt, Is.EqualTo((8, 5)), "what the enemy phase deals");
+            Assert.That(s.Player.Guard, Is.EqualTo(0), "the board is not touched");
+        }
     }
 }
