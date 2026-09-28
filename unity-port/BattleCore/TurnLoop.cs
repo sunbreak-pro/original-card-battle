@@ -77,8 +77,23 @@ namespace BattleCore
     /// false when the card aims at the opponent and N is outside its reach — the one reason a card
     /// with payable cost still cannot be released (§2.4). Cost is what playing it would take now,
     /// after a コスト −1 trait (#188).
+    ///
+    /// RawPower and Damage are the whole card on the enemy it reads (#248): every blow of a face
+    /// with hits, plus the wall damage of a push it could not take (§7.3). RawPower is before that
+    /// enemy's Guard, Damage the HP it would lose after it. Out of reach they are one blow's, worked
+    /// out without resolving (the screen shows no number on an enemy it cannot reach).
     /// </summary>
     public sealed record PlayPreview(bool TraitHolds, bool Attacks, int RawPower, int Damage, int GuardGain, bool InReach, int Cost);
+
+    /// <summary>
+    /// What an enemy's shown omen would do to the player, as one number (#248). See
+    /// <see cref="TurnLoop.PreviewOmen"/>. RawPower is every blow plus the wall damage before the
+    /// player's Guard, Damage the HP the player would lose after the Guard they hold now. Lands is
+    /// whether it reaches the player where they stand now; when it does not, the two numbers are
+    /// what it would do if it did. Rests is true when the enemy cannot pay for it (§6), and then
+    /// both numbers are 0.
+    /// </summary>
+    public sealed record OmenPreview(int RawPower, int Damage, bool Lands, bool Rests);
 
     /// <summary>Why a card cannot be played right now. None when it can.</summary>
     public enum PlayRefusal
@@ -254,6 +269,12 @@ namespace BattleCore
         /// number), so it never has to work a rule out by itself. Null when the card is not in the
         /// hand. The statuses that would be spent (集中, 威圧, 強化, 脆化) and a waiting 追撃 are
         /// counted in; nothing is spent.
+        ///
+        /// The power and the damage (#248) come from resolving the card for real on a copy of the
+        /// board, so a face of several blows, the 脆化 its first blow leaves, and the wall damage of a
+        /// push add up exactly as <see cref="PlayCard"/> would. The copy has the stamina to pay even
+        /// when the player lacks it, and keeps every enemy standing so that a blow that would fell
+        /// one does not hide the rest of the card's power.
         /// </summary>
         public static PlayPreview? Preview(BattleState state, string instanceId, int target = 0)
         {
@@ -264,9 +285,9 @@ namespace BattleCore
             var def = card.Def;
             int read = ReadableUnit(state, def, target);
             if (read < 0) return null;
-            var foe = state.Enemies[read].Body;
             var self = state.Player;
-            var outcome = Traits.EvaluateAll(def.AllTraits, PlayerContext(state, def, read));
+            var context = PlayerContext(state, def, read);
+            var outcome = Traits.EvaluateAll(def.AllTraits, context);
             var focus = self.Statuses.Has(StatusKind.Focus) ? FocusStep.Of(def.Attributes, def.Column, def.Face) : FocusStep.None;
 
             bool attacks = def.Attributes.HasFlag(BattleAttribute.Attack);
@@ -274,25 +295,175 @@ namespace BattleCore
             int intimidate = self.Statuses.Has(StatusKind.Intimidate) && (attacks || guardBase > 0)
                 ? Constants.IntimidatePenalty : 0;
 
+            bool inReach = AimRefusal(state, def, target) == PlayRefusal.None;
+            bool directed = EnemyAi.IsOpponentDirected(def.Attributes, def.Face, def.Targets);
             int raw = 0;
             int damage = 0;
-            if (attacks)
+            if (directed && inReach)
             {
-                int conversion = outcome.Convert ? Half(def.Face.Guard + focus.Guard) : 0;
-                double mult = foe.Statuses.Has(StatusKind.Fragile) ? Constants.FragileMult
-                    : self.Statuses.Has(StatusKind.Empower) ? Constants.EmpowerMult
-                    : 1.0;
-                raw = Combat.ComputeRawPower(
-                    def.Face.Power + focus.Power - intimidate,
-                    outcome.PowerBonus + StanceAttackBonus(state, Actor.Player, 0, Actor.Enemy, read),
-                    self.FollowUp, conversion, mult);
-                damage = Combat.ApplyGuard(raw, foe.Guard).Damage;
+                (raw, damage) = ResolvedOnCopy(state, card, read, context);
             }
-            bool inReach = AimRefusal(state, def, target) == PlayRefusal.None;
+            else if (attacks)
+            {
+                (raw, damage) = OneBlow(state, def, read, outcome, focus, intimidate);
+            }
             int guardGain = Math.Max(0, guardBase - (guardBase > 0 ? intimidate : 0));
             return new PlayPreview(
                 outcome.Triggered, attacks, raw, damage, guardGain, inReach,
                 Math.Max(0, def.Cost - outcome.CostDown));
+        }
+
+        /// <summary>
+        /// <see cref="PlayCard"/>'s own steps on a copy: the card leaves the hand and resolves. What
+        /// lands on enemy <paramref name="read"/> is summed — its blows (<see cref="DamageDealt"/>)
+        /// and the wall it is pushed into (<see cref="WallHit"/>). <paramref name="context"/> is read
+        /// from the real board, so a trait that reads stamina is judged on what the player holds.
+        /// </summary>
+        private static (int Raw, int Damage) ResolvedOnCopy(BattleState state, CardInstance card, int read, TraitContext context)
+        {
+            var def = card.Def;
+            var copy = KeepStanding(state, Actor.Enemy);
+            copy = copy with { Player = copy.Player with { Stamina = Math.Max(copy.Player.Stamina, def.Cost) } };
+            IReadOnlyList<int> foes = def.Targets == TargetKind.All
+                ? Reached(copy, def.Face.ReachOrDefault)
+                : new List<int> { read };
+
+            var hand = new List<CardInstance>(copy.Hand);
+            hand.Remove(card);
+            copy = copy with { Hand = hand };
+
+            var events = new List<BattleEvent>();
+            Resolve(
+                copy, Actor.Player, read, foes, def.Id, def.Name, def.Attributes, def.Column, def.Face,
+                def.AllTraits, def.Targets, def.Cost, context, new SeededRng(0), events);
+            return Landed(events, Actor.Player, Actor.Enemy, read);
+        }
+
+        /// <summary>
+        /// The one blow a card out of reach would deal, worked out without resolving: it cannot be
+        /// resolved there (<see cref="Resolve"/> refuses a player card out of reach).
+        /// </summary>
+        private static (int Raw, int Damage) OneBlow(
+            BattleState state, CardDef def, int read, TraitOutcome outcome, FocusStep focus, int intimidate)
+        {
+            var foe = state.Enemies[read].Body;
+            var self = state.Player;
+            int conversion = outcome.Convert ? Half(def.Face.Guard + focus.Guard) : 0;
+            double mult = foe.Statuses.Has(StatusKind.Fragile) ? Constants.FragileMult
+                : self.Statuses.Has(StatusKind.Empower) ? Constants.EmpowerMult
+                : 1.0;
+            int raw = Combat.ComputeRawPower(
+                def.Face.Power + focus.Power - intimidate,
+                outcome.PowerBonus + StanceAttackBonus(state, Actor.Player, 0, Actor.Enemy, read),
+                self.FollowUp, conversion, mult);
+            return (raw, Combat.ApplyGuard(raw, foe.Guard).Damage);
+        }
+
+        /// <summary>
+        /// What enemy <paramref name="unit"/>'s shown omen would do to the player if it were carried
+        /// out on the board as it stands now (#248): one number for the whole action — every blow,
+        /// with the 脆化 its first blow leaves, and the wall damage of its push. Like
+        /// <see cref="Preview"/> it resolves the action on a copy, against the player's Guard now.
+        ///
+        /// The action is the one <see cref="EnemyAi.ActionToExecute"/> would carry out with the
+        /// stamina the enemy will hold after its next recovery — the same stamina the omen was
+        /// chosen with (<see cref="DecideNextOmen"/>) — so only a drained enemy rests. An elite's or
+        /// a boss's second action is not on the omen and is not counted.
+        ///
+        /// When the action does not reach the player where they stand, Lands is false and the copy
+        /// puts the player on the free cell nearest their own from which it would, so the number
+        /// still says what it would do if it landed. With no such cell it falls back to the face
+        /// alone (power × hits). Null when the enemy is not standing or has no omen.
+        /// </summary>
+        public static OmenPreview? PreviewOmen(BattleState state, int unit)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (!IsStanding(state, unit)) return null;
+            var enemy = state.Enemies[unit];
+            if (enemy.Omen == null) return null;
+
+            int stamina = StaminaAtAction(enemy);
+            var action = EnemyAi.ActionToExecute(enemy.Def, enemy.Omen, stamina);
+            if (action == null) return new OmenPreview(0, 0, Lands: false, Rests: true);
+            if (!EnemyAi.IsOpponentDirected(action.Attributes, action.Face, action.Targets))
+            {
+                return new OmenPreview(0, 0, Lands: false, Rests: false);
+            }
+
+            var reach = action.Face.ReachOrDefault;
+            bool lands = reach.Contains(state.GapTo(unit));
+            var copy = state.WithEnemy(unit, enemy.Body with { Stamina = stamina });
+            if (!lands)
+            {
+                int cell = CellInReach(copy, unit, reach);
+                if (cell < 0)
+                {
+                    int raw = action.Attributes.HasFlag(BattleAttribute.Attack) ? action.Face.Power * Math.Max(1, action.Face.Hits) : 0;
+                    return new OmenPreview(raw, Combat.ApplyGuard(raw, state.Player.Guard).Damage, Lands: false, Rests: false);
+                }
+                copy = copy with { Player = copy.Player with { Cell = cell } };
+            }
+            copy = KeepStanding(copy, Actor.Player);
+
+            var events = new List<BattleEvent>();
+            Resolve(
+                copy, Actor.Enemy, unit, Array.Empty<int>(), action.Id, action.Name, action.Attributes,
+                action.Column, action.Face, TraitsOf(action.Trait), action.Targets, action.Cost,
+                EnemyContext(copy, unit, action), new SeededRng(0), events);
+            var (total, damage) = Landed(events, Actor.Enemy, Actor.Player, unit);
+            return new OmenPreview(total, damage, lands, Rests: false);
+        }
+
+        /// <summary>
+        /// The player's cell nearest their own (the nearer the enemy on a tie) from which enemy
+        /// <paramref name="unit"/>'s N falls inside <paramref name="reach"/>, left of every standing
+        /// enemy. −1 when the line has none.
+        /// </summary>
+        private static int CellInReach(BattleState state, int unit, Reach reach)
+        {
+            var player = state.Player;
+            int front = state.Enemies[state.Nearest].Body.Cell;
+            int best = -1;
+            for (int cell = 1; cell + player.Size - 1 < front; cell++)
+            {
+                int gap = state.Enemies[unit].Body.Cell - (cell + player.Size - 1) - 1;
+                if (!reach.Contains(gap)) continue;
+                if (best < 0 || Math.Abs(cell - player.Cell) <= Math.Abs(best - player.Cell)) best = cell;
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// A preview's copy with the side being struck unable to fall, so that no blow stops the rest
+        /// (§17.6 F9 would end the resolution there). Nothing a face or a trait reads looks at HP.
+        /// </summary>
+        private static BattleState KeepStanding(BattleState state, Actor side)
+        {
+            const int standing = 1_000_000;
+            if (side == Actor.Player) return state with { Player = state.Player with { Hp = standing } };
+            foreach (int i in state.Living) state = state.WithEnemy(i, state.Enemies[i].Body with { Hp = standing });
+            return state;
+        }
+
+        /// <summary>The power (before Guard) and the HP loss (after) the events put on <paramref name="victim"/> <paramref name="unit"/>: its blows from <paramref name="attacker"/> and its wall.</summary>
+        private static (int Raw, int Damage) Landed(IReadOnlyList<BattleEvent> events, Actor attacker, Actor victim, int unit)
+        {
+            int raw = 0;
+            int damage = 0;
+            foreach (var e in events)
+            {
+                if (e is DamageDealt blow && blow.Actor == attacker && blow.Target == victim && blow.Unit == unit)
+                {
+                    raw += blow.Raw;
+                    damage += blow.Damage;
+                }
+                else if (e is WallHit wall && wall.Actor == victim && wall.Unit == unit)
+                {
+                    raw += wall.Raw;
+                    damage += wall.Damage;
+                }
+            }
+            return (raw, damage);
         }
 
         public static StepResult PlayCard(BattleState state, string instanceId, IRng rng, int target = 0)
@@ -1133,16 +1304,22 @@ namespace BattleCore
         /// </summary>
         private static BattleState DecideNextOmen(BattleState state, int unit, List<BattleEvent> events)
         {
-            // 疲労 it already holds will take its 1 off that recovery too (§9 step 9); one put on it
-            // later is what "drained in between" means.
             var enemy = state.Enemies[unit];
-            int fatigue = enemy.Body.Statuses.Has(StatusKind.Fatigue) ? Constants.FatiguePenalty : 0;
-            int staminaThen = Combat.RecoverStamina(
-                enemy.Body.Stamina, enemy.Body.MaxStamina, enemy.Def.Recovery - fatigue, enemy.Body.NextTurnRecoveryBonus);
-
-            var omen = EnemyAi.DecideOmen(enemy.Def, state.GapTo(unit), staminaThen, enemy.Spent);
+            var omen = EnemyAi.DecideOmen(enemy.Def, state.GapTo(unit), StaminaAtAction(enemy), enemy.Spent);
             events.Add(new OmenSet(Actor.Enemy, omen, Decided: true) { Unit = unit });
             return state.WithOmen(unit, omen);
+        }
+
+        /// <summary>
+        /// The stamina an enemy will hold when its omen is carried out: now, plus its next recovery.
+        /// 疲労 it already holds will take its 1 off that recovery too (§9 step 9); one put on it
+        /// later is what "drained in between" means.
+        /// </summary>
+        private static int StaminaAtAction(EnemyUnit enemy)
+        {
+            int fatigue = enemy.Body.Statuses.Has(StatusKind.Fatigue) ? Constants.FatiguePenalty : 0;
+            return Combat.RecoverStamina(
+                enemy.Body.Stamina, enemy.Body.MaxStamina, enemy.Def.Recovery - fatigue, enemy.Body.NextTurnRecoveryBonus);
         }
 
         // ---- What a card or action reads (§2.3) ----
