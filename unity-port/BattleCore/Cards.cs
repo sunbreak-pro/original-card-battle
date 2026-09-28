@@ -139,9 +139,27 @@ namespace BattleCore
         }
 
         /// <summary>
+        /// §2.4 hits (#253): a card whose attack face strikes two or more times carries no status for
+        /// the opponent (出血 / 脆化 / 鈍足 / 威圧 / 疲労), neither on the face nor through a trait.
+        /// Statuses on the one playing are allowed, and so is a stance that gives one on every blow
+        /// (<see cref="StanceHook.StatusOnAttack"/>). Enemy actions are not cards and are not held to it.
+        /// </summary>
+        public static bool MultiHitCarriesNoFoeStatus(CardDef def)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            if (!def.Attributes.HasFlag(BattleAttribute.Attack) || def.Face.Hits < 2) return true;
+            if (def.Face.GivesFoeStatus) return false;
+            foreach (var trait in def.AllTraits)
+            {
+                if (trait.Grant != null && !trait.Grant.OnSelf) return false;
+            }
+            return true;
+        }
+
+        /// <summary>
         /// §8: a deck holds 20 to 40 cards, at most 3 of any one kind, and at most 3 cards with a
         /// stance face across all kinds (§19.6 S15). Columns are checked too, because a card outside
-        /// 1..4 has no cost.
+        /// 1..4 has no cost, and so is the multi-hit rule (#253).
         /// </summary>
         public static DeckValidation Validate(IReadOnlyList<CardInstance> deck)
         {
@@ -179,6 +197,15 @@ namespace BattleCore
                          .OrderBy(id => id, StringComparer.Ordinal))
             {
                 errors.Add($"Card \"{id}\" sits outside columns {Columns.Min}..{Columns.Max}.");
+            }
+
+            foreach (var id in deck.Select(c => c.Def)
+                         .Where(d => !MultiHitCarriesNoFoeStatus(d))
+                         .Select(d => d.Id)
+                         .Distinct(StringComparer.Ordinal)
+                         .OrderBy(id => id, StringComparer.Ordinal))
+            {
+                errors.Add($"Card \"{id}\" strikes more than once and gives the opponent a status.");
             }
 
             var duplicateIds = deck.GroupBy(c => c.InstanceId, StringComparer.Ordinal)

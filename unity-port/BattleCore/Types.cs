@@ -258,6 +258,13 @@ namespace BattleCore
 
         /// <summary>Each time an enemy moves itself, it loses Break stamina (根縛り).</summary>
         BreakOnFoeMove,
+
+        /// <summary>
+        /// 攻撃ごとの状態付与 (#253): each blow of the holder's attack faces that lands on a foe still
+        /// standing puts Status × StatusStacks on that foe, while the condition holds for it. A face
+        /// of several blows gives it once a blow, and it counts from the next blow on.
+        /// </summary>
+        StatusOnAttack,
     }
 
     /// <summary>§4 `when`: the condition a stance effect waits for.</summary>
@@ -284,8 +291,9 @@ namespace BattleCore
     /// <summary>
     /// §4: the stance a stance face sets into the holder's one slot. The numbers are the card's
     /// own (its column already decided them), and the slot keeps them until the battle ends or
-    /// another stance replaces it. Status is the word 狼の構え watches, or the word 槍衾 gives the
-    /// attacker; OncePerTurn limits an OnHit stance to one reaction per turn (司祭の祈り).
+    /// another stance replaces it. Status is the word 狼の構え watches, the word 槍衾 gives the
+    /// attacker, or the word a StatusOnAttack stance gives the foe it hits; OncePerTurn limits an
+    /// OnHit stance to one reaction per turn (司祭の祈り).
     /// </summary>
     public sealed record StanceDef(
         StanceHook Hook,
@@ -333,7 +341,10 @@ namespace BattleCore
     ///
     /// Hits (§2.4 `hits`, #189) splits the attack face into that many blows, each against Guard on
     /// its own; the opponent statuses of a face with two or more land after the first blow
-    /// (二段斬り's 脆化 is there for the second).
+    /// (二段斬り's 脆化 is there for the second). A card's face of two or more carries no opponent
+    /// status, on the face or in a trait (#253, <see cref="Cards.MultiHitCarriesNoFoeStatus"/>); an
+    /// enemy action may. A status given on every blow comes from a stance
+    /// (<see cref="StanceHook.StatusOnAttack"/>), not from the face.
     /// </summary>
     public sealed record Face(
         int Power = 0,

@@ -1484,6 +1484,112 @@ namespace BattleCore.Tests
             });
         }
 
+        // ---- #253: a stance that gives a status on every attack ----
+
+        /// <summary>A stance card whose stance gives the foe each blow lands on the word × stacks (#253).</summary>
+        private static CardDef StingStance(StatusKind kind, int stacks, StanceWhen when = StanceWhen.Always, int threshold = 0) =>
+            Fixtures.Card("sting_stance", 1,
+                new Face(Stance: new StanceDef(StanceHook.StatusOnAttack, when, threshold, Status: kind, StatusStacks: stacks)),
+                BattleAttribute.Stance, targets: TargetKind.Self);
+
+        [Test]
+        public void StatusOnAttack_GivesItsWordOnEveryBlow_AndTheSecondBlowTakesTheFragileTheFirstLeft()
+        {
+            // #253 (§2.4 hits / §4): 脆化 1 after each blow. 6, then 6 × 1.5 = 9 spending it, and one more left for the next attack.
+            var s = Play(Opened(1, Idle, StingStance(StatusKind.Fragile, 1), TwoHits(6)), "sting_stance").State;
+
+            var preview = TurnLoop.Preview(s, InHand(s, "two_hits6"))!;
+            var play = Play(s, "two_hits6");
+            var fired = new StanceFired(Actor.Player, "sting_stance", StanceHook.StatusOnAttack);
+            var applied = new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Fragile, 1, 1, false);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(play.Events.OfType<DamageDealt>(), Is.EqualTo(new[]
+                {
+                    new DamageDealt(Actor.Player, Actor.Enemy, 6, 0, 6, 0, 54),
+                    new DamageDealt(Actor.Player, Actor.Enemy, 9, 0, 9, 0, 45),
+                }));
+                Assert.That(play.Events.OfType<StanceFired>(), Is.EqualTo(new[] { fired, fired }));
+                Assert.That(play.Events.OfType<StatusApplied>(), Is.EqualTo(new[] { applied, applied }));
+                Assert.That(play.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Enemy, StatusKind.Fragile, 0)));
+                AssertInOrder(play.Events, typeof(DamageDealt), typeof(StanceFired), typeof(StatusApplied),
+                    typeof(StatusConsumed), typeof(DamageDealt), typeof(StanceFired), typeof(StatusApplied));
+                Assert.That(play.State.Enemy.Statuses.Stacks(StatusKind.Fragile), Is.EqualTo(1), "left for the next attack");
+
+                // The preview reads the board from before the card, where the stance has given nothing
+                // yet: its blow is the first one. The total of both blows is #248's.
+                Assert.That(preview.RawPower, Is.EqualTo(6));
+                Assert.That(preview.Damage, Is.EqualTo(play.Events.OfType<DamageDealt>().First().Damage));
+            });
+        }
+
+        [TestCase(0, true)]
+        [TestCase(1, false)]
+        public void StatusOnAttack_GivesItsWordOnce_ForASingleBlow_OnlyWhereItsConditionHolds(int gap, bool fires)
+        {
+            // #253 / §4 when: 出血 1 on attacks at a foe at gap 0.
+            var s = Play(Opened(gap, Idle, StingStance(StatusKind.Bleed, 1, StanceWhen.GapAtMost, 0), Jab(10)), "sting_stance").State;
+
+            var play = Play(s, "jab10");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(play.Events.OfType<StanceFired>().Count(), Is.EqualTo(fires ? 1 : 0));
+                Assert.That(play.Events.OfType<StatusApplied>().Count(), Is.EqualTo(fires ? 1 : 0));
+                Assert.That(play.State.Enemy.Statuses.Stacks(StatusKind.Bleed), Is.EqualTo(fires ? 1 : 0));
+            });
+        }
+
+        [Test]
+        public void StatusOnAttack_GivesNothing_ToAFoeTheBlowTookDown()
+        {
+            // #253: "a" falls to the first blow; the fight goes on against "b", and nothing lands on "a".
+            var s = Play(OpenedAgainstTwo(StingStance(StatusKind.Bleed, 1), TwoHits(6)), "sting_stance").State;
+            s = s.WithEnemy(0, s.Enemies[0].Body with { Hp = 5 });
+
+            var play = Play(s, "two_hits6");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(play.Events.OfType<DamageDealt>().Single().TargetHpAfter, Is.EqualTo(0));
+                Assert.That(play.Events.OfType<StanceFired>(), Is.Empty);
+                Assert.That(play.Events.OfType<StatusApplied>(), Is.Empty);
+                Assert.That(play.State.Result, Is.EqualTo(GameResult.Ongoing));
+            });
+        }
+
+        [Test]
+        public void StatusOnAttack_WorksTheSameForAnEnemy_AndGivesNothingOnAWhiff()
+        {
+            // #253: an enemy in the stance puts 脆化 1 on the player after each of its two blows (6, then 9);
+            // stepped out of its reach, the action whiffs and the stance does not fire.
+            var twin = Fixtures.EnemyAction("twin", face: new Face(Power: 6, Hits: 2, Reach: Reach.Only(0)));
+            var s = Opened(0, Fixtures.Enemy("twin_fixture", atZero: twin), StepOut);
+            s = s.WithEnemy(s.Enemy with { Stance = new StanceDef(StanceHook.StatusOnAttack, Status: StatusKind.Fragile, StatusStacks: 1), StanceSource = "enemy_stance" });
+
+            var hit = End(s with { Player = s.Player with { Stamina = 0, Guard = 0 } });
+            var whiff = End(Play(s, "step_out").State);
+            var fired = new StanceFired(Actor.Enemy, "enemy_stance", StanceHook.StatusOnAttack);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(hit.Events.OfType<DamageDealt>().Select(d => d.Raw), Is.EqualTo(new[] { 6, 9 }));
+                Assert.That(hit.Events.OfType<StanceFired>(), Is.EqualTo(new[] { fired, fired }));
+                Assert.That(hit.Events.OfType<StatusApplied>(), Is.EqualTo(new[]
+                {
+                    new StatusApplied(Actor.Enemy, Actor.Player, StatusKind.Fragile, 1, 1, false),
+                    new StatusApplied(Actor.Enemy, Actor.Player, StatusKind.Fragile, 1, 1, false),
+                }));
+                Assert.That(hit.State.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp - 15));
+                Assert.That(hit.State.Player.Statuses.Stacks(StatusKind.Fragile), Is.EqualTo(1));
+
+                Assert.That(whiff.Events.OfType<ActionWhiffed>().Single().SourceId, Is.EqualTo("twin"));
+                Assert.That(whiff.Events.OfType<StanceFired>(), Is.Empty);
+                Assert.That(whiff.State.Player.Statuses.Has(StatusKind.Fragile), Is.False);
+            });
+        }
+
         [Test]
         public void AnchorStance_RefusesThePolearmsShove()
         {
