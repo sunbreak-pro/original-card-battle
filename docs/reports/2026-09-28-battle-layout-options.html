@@ -161,7 +161,8 @@
   </header>
 
   <ul class="verdicts">
-    <li class="verdict now"><span class="tag">おすすめ</span><h3>上帯は案 2、カードは案 C</h3><p>上帯には、戦闘中の判断に効く連戦の進みと瘴気、それに手記とメニューだけを出します。カードは 216×304 にして語を短くすると、80 枚が全部収まります。</p></li>
+    <li class="verdict now"><span class="tag">決定（2026-09-28）</span><h3>カードは案 C、手札は下が画面の外、対象は四隅だけ</h3><p>カードは 216×304 で語を短くします。ホバーしていない札は上の 184 px だけを見せ、下は画面の外へ沈めます。敵を狙うときの枠は四隅だけを描きます。</p></li>
+    <li class="verdict now"><span class="tag">おすすめ</span><h3>上帯は案 2</h3><p>上帯には、戦闘中の判断に効く連戦の進みと瘴気、それに手記とメニューだけを出します。こちらはまだ決まっていません。</p></li>
     <li class="verdict later"><span class="tag">決め次第で変わる</span><h3>ツールを戦闘で使うなら上帯は案 4</h3><p>出立で持つツール 3 枠を戦闘中にも使えるなら、右上に 3 つの枠が要ります。使えるかどうかは、まだどの設計書にも書かれていません。</p></li>
     <li class="verdict skip"><span class="tag">見送り</span><h3>カードを今の大きさのまま使う案 A</h3><p>200×280 のまま今の言い回しで書くと、80 枚のうち 29 枚で特性の行か説明がはみ出します。語を短くしても 5 枚が残ります。</p></li>
   </ul>
@@ -177,6 +178,8 @@
   <div class="screen-wrap" id="screenWrap"><div class="screen" id="screen"></div></div>
   <p class="note" id="screenNote"></p>
 
+  <div class="callout mid"><strong>2026-09-28 に決まったこと</strong>: カードは案 C です。ホバーしていない札は、上の 184 px（コスト・技名・値・説明の 1 行目）だけが見え、下の 120 px は画面の外にあります。ホバーした札は丸ごと画面に入る高さまで上がります。特性のランプは沈んだ部分にありますが、点灯すると札の縁ごと光るので、沈んだままでも分かります。敵を狙うときの枠は、四隅の鉤だけを描き、辺は描きません。</div>
+
   <h3>寸法の比べ</h3>
   <div class="tablewrap mid">
     <table>
@@ -189,6 +192,8 @@
         <tr><td>スタンス枠</td><td>画面の左右の端に 1 つずつ</td><td>各キャラクターの札の中に旗の小札</td><td>敵が 3 体いても、誰のスタンスかが位置で分かります。</td></tr>
         <tr><td>予兆の札</td><td class="num">200×98</td><td class="num">136×72</td><td>種別はアイコンで示し、語は 16 px で 1 語だけ残しました。8 マスで隣の敵の札と 54 px 空きます。</td></tr>
         <tr><td>カード</td><td class="num">200×280</td><td class="num">216×304（案 C）</td><td>人型を縮めて空いた高さを手札に回しました。</td></tr>
+        <tr><td>手札の見える高さ</td><td class="num">280（全部）</td><td class="num">184（ホバーで 304 全部）</td><td>下の 120 px を画面の外へ沈め、戦場を広く見せます。</td></tr>
+        <tr><td>狙った敵の枠</td><td>四角い枠（3 px の辺）</td><td>四隅の鉤だけ（26 px、3 px）。人型の左右に 46 px 広げる</td><td>辺が敵の絵や予兆の札に重ならないようにしました。上の 2 つの鉤は、上辺の中央に出す予測値の札の左右に見えます。</td></tr>
       </tbody>
     </table>
   </div>
@@ -248,7 +253,8 @@
   <ul class="prose">
     <li><strong>数は Guard を引く前の値です。</strong> カードの本文の「敵に 13 ダメージ」と同じ意味にそろえました。上の画面では、袈裟斬り 13 に間合い 0 の +5 と脆化の 1.5 倍が乗って 27 と出ています。</li>
     <li><strong>Guard を引いた後の HP の減りは、HP バーの斜線で見せます。</strong> 上の画面では、敵の Guard 4 を引いた 23 の分が斜線になっています。</li>
-    <li><strong>敵の予兆の値も同じ決まりで出します。</strong> 二段の攻撃（6 を 2 回、1 撃目で脆化 1）は「15」と出ます。今の位置で届かないときも、当たったときの値を出し、外れの印を添えます。</li>
+    <li><strong>敵の予兆の値も同じ決まりで出します。</strong> 敵の二段斬り（6 を 2 回、1 撃目で脆化 1）は「15」と出ます。今の位置で届かないときも、当たったときの値を出し、外れの印を添えます。</li>
+    <li><strong>多段の札は状態異常を持ちません（2026-09-28 決定、#253）。</strong> ただし、スタンスやスキルや状態が「攻撃ごとに状態を付ける」効果を与えているときは、撃ごとに付きます。付いた状態は次の撃から効くので、脆化なら 2 撃目が 1.5 倍になり、予測値もその分を込みで出します。</li>
   </ul>
   <p class="prose">計算はコア（BattleCore）が行い、画面は写すだけです。実装は Issue #248 で進めています。</p>
 
@@ -465,11 +471,18 @@ document.getElementById('cardTabs').addEventListener('click', e => {
 
 // ---- the mock screen ----
 let hdr = '2';
+const HAND_VISIBLE = 184;
 const F = { x: 200, w: 1520, y: 492, h: 32, n: 8 };
 const CW = F.w / F.n;
 const cx = cell => F.x + CW * (cell + 0.5);
 function center(inner, extra = '') {
   return `<div class="flow" style="position:absolute;inset:0;${extra};display:flex;align-items:center;justify-content:center;gap:6px">${inner}</div>`;
+}
+// The target is marked by its four corners only; the edges between them stay open.
+function corners(l, t, r, b) {
+  const L = 26, W = 3, c = '#ffd89a', glow = 'filter:drop-shadow(0 0 6px rgba(232,168,76,.8))';
+  const one = (x, y, sides) => `<div style="left:${x}px;top:${y}px;width:${L}px;height:${L}px;${sides.map(sd => `border-${sd}:${W}px solid ${c}`).join(';')};${glow}"></div>`;
+  return one(l, t, ['top', 'left']) + one(r - L, t, ['top', 'right']) + one(l, b - L, ['bottom', 'left']) + one(r - L, b - L, ['bottom', 'right']);
 }
 function figure(x, feet, h, enemy, size) {
   const w = h * (size === 2 ? 0.7 : 0.42);
@@ -553,15 +566,17 @@ function drawScreen() {
     return `<div style="left:${F.x + CW * i + 3}px;top:${F.y}px;width:${CW - 6}px;height:${F.h}px;border-radius:6px;border:1px solid rgba(157,166,186,.26);background:${bg};${extra}${hatch}"></div>`;
   }).join('');
   const headOf = u => feet - u.h;
-  const frameL = cx(3) - 33 - 26, frameR = cx(3) + 33 + 26, frameT = headOf(e1) - 14, frameB = feet + 12;
+  // Wide enough that the top corners stand clear of the predicted number between them.
+  const frameL = cx(3) - 33 - 46, frameR = cx(3) + 33 + 46, frameT = headOf(e1) - 14, frameB = feet + 12;
   // hand
   const handIds = ['kesa_cut', 'reach_thrust', 'brace', 'rock_stance', 'stone_throw', 'body_check', 'observe'];
   const byId = Object.fromEntries(CARDS.map(c => [c.id, c]));
   const hand = handIds.map(id => byId[id]).filter(Boolean);
   const n = hand.length, sp = n <= 5 ? 160 : n === 6 ? 150 : n === 7 ? 140 : opt.spacing;
-  const fanW = (n - 1) * sp + opt.w, x0 = 960 - fanW / 2, topY = 1080 - opt.h - 32;
+  // At rest a card shows only its top HAND_VISIBLE px; the rest hangs below the screen. The hovered card rises whole.
+  const fanW = (n - 1) * sp + opt.w, x0 = 960 - fanW / 2, topY = 1080 - HAND_VISIBLE;
   const cards = hand.map((c, i) => {
-    const k = i - (n - 1) / 2, lift = i === 0 ? 28 : 0;
+    const k = i - (n - 1) / 2, lift = i === 0 ? opt.h - HAND_VISIBLE + 16 : 0;
     const rot = i === 0 ? 0 : k * 2.5, dy = i === 0 ? 0 : k * k * 3.2;
     return `<div style="left:${x0 + i * sp}px;top:${topY + dy - lift}px;width:${opt.w}px;height:${opt.h}px;transform:rotate(${rot}deg);transform-origin:50% 100%;z-index:${i === 0 ? 50 : i}">${cardHtml(c, opt, i === 0)}</div>`;
   }).join('');
@@ -576,7 +591,7 @@ function drawScreen() {
     ${omen(cx(e2.cell), headOf(e2), { kind: '攻撃', val: 15, hit: false, swatch: -45 })}
     ${omen(cx(el.cell), headOf(el), { kind: '防御', val: 12, swatch: 90 })}
     ${omen(cx(el.cell), headOf(el), { kind: '攻撃', val: 18 }, true)}
-    <div style="left:${frameL}px;top:${frameT}px;width:${frameR - frameL}px;height:${frameB - frameT}px;border:3px solid #ffd89a;border-radius:4px;box-shadow:0 0 18px rgba(232,168,76,.35)"></div>
+    ${corners(frameL, frameT, frameR, frameB)}
     <div class="gs" style="left:${(frameL + frameR) / 2 - 58}px;top:${frameT - 26}px;width:116px;height:52px;border:2px solid #ffd89a;z-index:5">${center(icon('sword', 28, '#b9a3ff') + '<span class="gm" style="font-size:40px;color:#ffd89a">27</span>')}</div>
     ${unitInfo(cx(pl.cell), CW - 14, { hp: 42, max: 60, guard: 3, st: [['regen', 2], ['empower', 1], ['focus', 1]], stance: '岩の構え' })}
     ${unitInfo(cx(e1.cell), CW - 14, { enemy: true, hp: 60, max: 72, guard: 4, sta: 6, loss: 23, swatch: 45, st: [['slow', 2, 1], ['bleed', 3, 1], ['fragile', 1, 1], ['intim', 2, 1], ['fatigue', 1, 1]] })}
