@@ -77,6 +77,12 @@ namespace Depiction
         public RangeSide? RequiredRange;
         /// <summary>The glyph of <see cref="RequiredRange"/> as printed ("近"). Empty when the card has none.</summary>
         public string RequiredRangeGlyph = "";
+        /// <summary>
+        /// The line the hover panel beside the card prints when the card aims at the opponent and no
+        /// standing enemy is inside its reach right now ("相手との間合いが 1〜2 のとき使用可能", #261).
+        /// Empty when the card reaches someone, aims at nobody, or is only short of stamina.
+        /// </summary>
+        public string ReachHint = "";
     }
 
     public sealed class StatusChip

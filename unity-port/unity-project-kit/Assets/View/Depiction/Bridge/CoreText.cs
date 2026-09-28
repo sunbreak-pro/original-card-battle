@@ -78,9 +78,20 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// The face of one dealt card. <paramref name="preview"/> comes from the core
-        /// (TurnLoop.Preview), so the lamp is the core's verdict and not a guess made here.
+        /// (TurnLoop.Preview), so the lamp is the core's verdict and not a guess made here. The reach
+        /// hint reads the preview's own enemy only; with several enemies use the overload that takes
+        /// <see cref="ReachesNobody"/>.
         /// </summary>
         public static CardFace Face(CardInstance card, PlayPreview preview)
+        {
+            return Face(card, preview, preview != null && !preview.InReach);
+        }
+
+        /// <summary>
+        /// The face of one dealt card. <paramref name="outOfReach"/> is true when no standing enemy
+        /// is inside the card's reach (<see cref="ReachesNobody"/>); it fills <see cref="CardFace.ReachHint"/>.
+        /// </summary>
+        public static CardFace Face(CardInstance card, PlayPreview preview, bool outOfReach)
         {
             CardDef def = card.Def;
             CardKind kind = KindOf(def.Attributes);
@@ -103,7 +114,37 @@ namespace Depiction.Bridge
                 // so the core's CanPlay (OutOfReach) is what refuses the card, not the script.
                 RequiredRange = null,
                 RequiredRangeGlyph = ReachText(def.Attributes, def.Face, def.Targets),
+                ReachHint = outOfReach ? ReachHint(def.Attributes, def.Face, def.Targets) : "",
             };
+        }
+
+        /// <summary>
+        /// #261: true when the card aims at the opponent and every standing enemy is outside its
+        /// reach. Each enemy is asked through the core's own verdict (TurnLoop.Preview's InReach),
+        /// which looks at the gap only — so a card short of stamina alone is not out of reach, and
+        /// the answer holds in any phase. False for a card not in the hand or with nobody standing.
+        /// </summary>
+        public static bool ReachesNobody(BattleState state, string instanceId)
+        {
+            bool anyone = false;
+            foreach (int unit in state.Living)
+            {
+                PlayPreview preview = TurnLoop.Preview(state, instanceId, unit);
+                if (preview == null) return false;
+                if (preview.InReach) return false;
+                anyone = true;
+            }
+            return anyone;
+        }
+
+        /// <summary>
+        /// #261: the line beside a card nobody is in reach of ("相手との間合いが 1〜2 のとき使用可能",
+        /// "相手との間合いが 0 のとき使用可能"), or empty for a card that aims at nobody.
+        /// </summary>
+        public static string ReachHint(BattleAttribute attributes, Face face, TargetKind targets)
+        {
+            string reach = ReachText(attributes, face, targets);
+            return reach.Length == 0 ? "" : "相手との間合いが " + reach + " のとき使用可能";
         }
 
         /// <summary>The reach as printed ("0〜1"), or empty for a card that aims at nobody.</summary>
@@ -197,11 +238,21 @@ namespace Depiction.Bridge
             return string.Join("、", parts);
         }
 
+        /// <summary>
+        /// The number on a face: an attack's power over all its blows as one sum (#248: "12", never
+        /// "6×2"), else its Guard, else its heal.
+        /// </summary>
         public static string ValueOf(Face face, BattleAttribute attributes)
         {
-            if (attributes.HasFlag(BattleAttribute.Attack)) return face.Hits > 1 ? face.Power + "×" + face.Hits : face.Power.ToString();
+            if (attributes.HasFlag(BattleAttribute.Attack)) return FacePower(face).ToString();
             if (face.Guard > 0) return face.Guard.ToString();
             return face.Heal > 0 ? face.Heal.ToString() : "";
+        }
+
+        /// <summary>The attack face alone, every blow summed: power × hits.</summary>
+        public static int FacePower(Face face)
+        {
+            return face.Power * System.Math.Max(1, face.Hits);
         }
 
         /// <summary>Every trait of the card on one lamp line; 背水の陣's two read "間合い2以上 +5 ／ 死力 +3".</summary>
@@ -289,12 +340,16 @@ namespace Depiction.Bridge
         // ---- omen ---------------------------------------------------------------------------
 
         /// <summary>
-        /// §6: 種別 + 狙うマス, plus the action's own face value. Until the floor shows the aimed cells
-        /// (#163) the reach goes where the one-character side used to be ("1〜2"). The trait bonus is
-        /// not folded into the number: whether it lands depends on where the player stands when the
-        /// blow comes.
+        /// §6: 種別 + 狙うマス, plus one number. Until the floor shows the aimed cells (#163) the reach
+        /// goes where the one-character side used to be ("1〜2").
+        ///
+        /// For an attack the number is the core's (#248, TurnLoop.PreviewOmen): the whole action's
+        /// power before the player's Guard — every blow, the wall, and the trait as the board stands
+        /// now — and what it would be if it landed when it does not reach. Without a
+        /// <paramref name="preview"/> it is the face alone (power × hits). Any other action shows its
+        /// Guard or heal.
         /// </summary>
-        public static OmenFrame OmenOf(Omen omen, EnemyDef enemy)
+        public static OmenFrame OmenOf(Omen omen, EnemyDef enemy, OmenPreview preview = null)
         {
             if (omen == null) return new OmenFrame { Visible = false };
 
@@ -307,7 +362,9 @@ namespace Depiction.Bridge
             EnemyActionDef action;
             if (enemy.Actions.TryGetValue(omen.ActionId, out action))
             {
-                frame.ValueText = ValueOf(action.Face, action.Attributes);
+                frame.ValueText = action.Attributes.HasFlag(BattleAttribute.Attack) && preview != null
+                    ? preview.RawPower.ToString()
+                    : ValueOf(action.Face, action.Attributes);
             }
             return frame;
         }

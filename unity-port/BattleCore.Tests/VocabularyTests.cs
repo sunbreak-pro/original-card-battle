@@ -505,7 +505,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(preview.RawPower, Is.EqualTo(2));
+                Assert.That(preview.RawPower, Is.EqualTo(4), "#248: both blows, as one sum");
                 Assert.That(play.Events.OfType<DamageDealt>(), Is.EqualTo(new[]
                 {
                     new DamageDealt(Actor.Player, Actor.Enemy, 2, 0, 2, 0, 58),
