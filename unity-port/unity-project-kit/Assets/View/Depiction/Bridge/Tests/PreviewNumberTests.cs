@@ -12,7 +12,11 @@ namespace Depiction.Bridge.Tests
     {
         private static readonly IRng NoShuffle = new FixedRng(0.9999999);
 
-        /// <summary>A player's card of two blows with 脆化 on the first, the shape of 二段斬り.</summary>
+        /// <summary>
+        /// A player's card of two blows with 脆化 on the first, the shape of 二段斬り. #253 made this
+        /// shape illegal for a card (Cards.Validate refuses it); test-only, never passed through
+        /// Validate. Do not copy it.
+        /// </summary>
         private static readonly CardDef TwinCut = new CardDef(
             "twin_cut", "二段", BattleAttribute.Attack, 1,
             new Face(Power: 6, Hits: 2, Statuses: new[] { new StatusGrant(StatusKind.Fragile, 1) }));

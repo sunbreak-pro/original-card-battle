@@ -262,7 +262,9 @@ namespace BattleCore
         /// <summary>
         /// 攻撃ごとの状態付与 (#253): each blow of the holder's attack faces that lands on a foe still
         /// standing puts Status × StatusStacks on that foe, while the condition holds for it. A face
-        /// of several blows gives it once a blow, and it counts from the next blow on.
+        /// of several blows gives it once a blow, and it counts from the next blow on. Status is both
+        /// the word it gives and, with When = TargetHasStatus, the word it watches: that pairing only
+        /// tops up a word the foe already has. No card uses it.
         /// </summary>
         StatusOnAttack,
     }

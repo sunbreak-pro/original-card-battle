@@ -29,7 +29,11 @@ namespace BattleCore.Tests
         /// <summary>A player's card of two blows (none in the catalogue has hits yet).</summary>
         private static readonly CardDef TwoHits = Fixtures.Card("two_hits", 1, new Face(Power: 5, Hits: 2));
 
-        /// <summary>二段斬り's shape on a player's card: 脆化 on the first blow, for the second.</summary>
+        /// <summary>
+        /// 二段斬り's shape on a player's card: 脆化 on the first blow, for the second. #253 made this
+        /// shape illegal for a card (Cards.Validate refuses it); it stays here as a test-only card to
+        /// pin the preview of a face that still carries it — an enemy action's. Do not copy it.
+        /// </summary>
         private static readonly CardDef TwinCut = Fixtures.Card(
             "twin_cut", 1, new Face(Power: 6, Hits: 2, Statuses: new[] { new StatusGrant(StatusKind.Fragile, 1) }));
 
