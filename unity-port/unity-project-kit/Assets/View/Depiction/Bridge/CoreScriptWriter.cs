@@ -599,7 +599,8 @@ namespace Depiction.Bridge
             };
             foreach (CardInstance card in _hand)
             {
-                frame.Hand.Add(CoreText.Face(card, TurnLoop.Preview(after, card.InstanceId)));
+                frame.Hand.Add(CoreText.Face(card, TurnLoop.Preview(after, card.InstanceId),
+                    CoreText.ReachesNobody(after, card.InstanceId)));
             }
             bool waiting = _playerActs && after.Result == GameResult.Ongoing;
             int reserve = waiting ? Combat.ReserveGuard(_player.Stamina) : 0;
