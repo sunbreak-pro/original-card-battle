@@ -12,7 +12,9 @@ design レーンが確定させた battle-visual-v1 を規則・カード表・B
 - **案のレポート（#249、PR #250）**: `docs/reports/2026-09-28-battle-layout-options.html`（Artifact `https://claude.ai/artifact/LxeDKjmnH4wibLZz3F42oQ`）。8 マス・敵 3 体・隣り合いの画面、上帯 4 案、カード 4 案。全 80 枚をヘッドレス Chrome で描いて数えた結果、はみ出しは A 29 / B 5 / C 0 / D 10。おすすめは上帯 案 2、カード 案 C
 - **予測値（#248、PR #251）**: `TurnLoop.Preview` をコピー上の実解決で全撃と壁込みの合計にし、`TurnLoop.PreviewOmen` を追加（今ターンを終えたら来る値）。Bridge は Guard 前の合計を写し、`×` を出さない。テスト 19 件追加、`dotnet test` 883 件通過。role-qa の条件（敵の番の途中で予兆の数が入れ替わる）と改善 2 点を直した
 - **行き先**: 精鋭の 2 手目の数と、先に動く別の敵の見込みは #242 にコメント。閉じ忘れの Issue（#49 #55 #29 #56 など）は閉じていない（こうだいさんの判断待ち）
-- **作業場所**: worktree `layout-options`（#250）、`preview-248`（#251）、`tracker-main`。merge 後に消せる
+- **決定の反映（同日の追加指示）**: カード案 C・手札は上 184 px だけ見せて下を画面外へ・対象の枠は四隅の鉤だけ、を案のページ（Version 2）に入れた。設計書への入れ込みは #254（lane:design）
+- **多段の決まり（#253、PR #255）**: `Cards.MultiHitCarriesNoFoeStatus` と `Cards.Validate` で、多段の札が相手向きの状態を持つのを拒否する。`StanceHook.StatusOnAttack` を足し、多段では撃ごとに付けて次の撃から効かせる。`battle_core_v4.md` の Status 行・§2.4・§4・§5.1 に追記。テスト 894 件通過、role-qa の条件を直した。敵の二段斬りは対象外のまま（こうだいさんに確認中）
+- **作業場所**: worktree `layout-options`（#250）、`preview-248`（#251）、`hits-status`（#255）、`tracker-main`。merge 後に消せる
 
 ### 2026-09-21 - 世界の正典 v4（竜の系譜）と、世界観の持ち主の main への移管
 
