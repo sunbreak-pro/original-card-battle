@@ -207,6 +207,9 @@ namespace Depiction.Bridge
                 }
                 case StanceHook.PushImmune: return "押す / 引くを受けない";
                 case StanceHook.BreakOnFoeMove: return "敵が自分で動くたび崩し " + stance.Break;
+                case StanceHook.StatusOnAttack:
+                    // #253: once a blow, so a face of two blows gives it twice.
+                    return "アタックのたび敵に" + (stance.Status.HasValue ? stance.Status.Value.ToLabel() : "") + " " + stance.StatusStacks;
                 default: return "";
             }
         }

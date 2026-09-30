@@ -921,6 +921,13 @@ namespace BattleCore
                                 state = ApplyStatus(state, actor, foeSide, foe, foeSide == Actor.Enemy ? foe : unit, grant.Kind, grant.Stacks, events);
                             }
                         }
+
+                        // #253: a stance that gives a status on every attack does so blow by blow, so
+                        // the word is there for the next blow (脆化 makes it ×1.5).
+                        if (foeSide == Actor.Player || state.Enemies[foe].Alive)
+                        {
+                            state = StanceStatusOnAttack(state, actor, unit, foeSide, foe, events);
+                        }
                     }
 
                     int broken = face.Break + outcome.BreakBonus;
@@ -1186,20 +1193,41 @@ namespace BattleCore
         /// <summary>§4 条件付き加算: the power an AttackBonus stance adds to a blow on this foe. 0 when it does not hold.</summary>
         private static int StanceAttackBonus(BattleState state, Actor actor, int unit, Actor foeSide, int foe)
         {
+            var stance = Get(state, actor, unit).Stance;
+            if (stance == null || stance.Hook != StanceHook.AttackBonus) return 0;
+            return StanceHoldsOn(state, actor, unit, stance, foeSide, foe) ? stance.Power : 0;
+        }
+
+        /// <summary>
+        /// §4 攻撃ごとの状態付与 (#253): a StatusOnAttack stance puts its word on the foe a blow has
+        /// just landed on, when the condition holds for that foe. The caller has checked the foe stands.
+        /// </summary>
+        private static BattleState StanceStatusOnAttack(
+            BattleState state, Actor actor, int unit, Actor foeSide, int foe, List<BattleEvent> events)
+        {
             var self = Get(state, actor, unit);
             var stance = self.Stance;
-            if (stance == null || stance.Hook != StanceHook.AttackBonus) return 0;
+            if (stance == null || stance.Hook != StanceHook.StatusOnAttack || !stance.Status.HasValue || stance.StatusStacks <= 0) return state;
+            if (!StanceHoldsOn(state, actor, unit, stance, foeSide, foe)) return state;
+
+            int eventUnit = foeSide == Actor.Enemy ? foe : unit;
+            events.Add(new StanceFired(actor, self.StanceSource ?? "", StanceHook.StatusOnAttack) { Unit = eventUnit });
+            return ApplyStatus(state, actor, foeSide, foe, eventUnit, stance.Status.Value, stance.StatusStacks, events);
+        }
+
+        /// <summary>§4 `when` for the stances that look at the one foe hit (AttackBonus, StatusOnAttack).</summary>
+        private static bool StanceHoldsOn(BattleState state, Actor actor, int unit, StanceDef stance, Actor foeSide, int foe)
+        {
             int gap = actor == Actor.Player ? state.GapTo(foe) : state.GapTo(unit);
-            bool holds = stance.When switch
+            return stance.When switch
             {
                 StanceWhen.Always => true,
                 StanceWhen.GapAtMost => gap <= stance.Threshold,
                 StanceWhen.GapAtLeast => gap >= stance.Threshold,
-                StanceWhen.MovedThisTurn => PlayedMove(self),
+                StanceWhen.MovedThisTurn => PlayedMove(Get(state, actor, unit)),
                 StanceWhen.TargetHasStatus => stance.Status.HasValue && Get(state, foeSide, foe).Statuses.Has(stance.Status.Value),
                 _ => false,
             };
-            return holds ? stance.Power : 0;
         }
 
         private static bool PlayedMove(CombatantState self)
