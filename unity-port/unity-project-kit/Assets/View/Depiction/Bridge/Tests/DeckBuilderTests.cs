@@ -36,7 +36,7 @@ namespace Depiction.Bridge.Tests
                 Assert.That(Filled(19).StatusText, Is.EqualTo("19 枚です。あと 1 枚入れると戦えます"));
                 Assert.That(Filled(20).IsValid, Is.True);
                 Assert.That(Filled(40).IsValid, Is.True);
-                Assert.That(Filled(40).StatusText, Is.EqualTo("40 枚です。20〜40 枚、1 種 3 枚、構え 3 枚までを満たしています"));
+                Assert.That(Filled(40).StatusText, Is.EqualTo("40 枚です。20〜40 枚、1 種 3 枚を満たしています"));
             });
         }
 
@@ -70,47 +70,44 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void TheFourthStanceCard_IsRefused_WhicheverKindItIs()
+        public void StanceCards_HaveNoCap_OnlyTheThreeOfAKindHolds()
         {
-            // §19.6 S15: three cards with a stance face across kinds; the three of a kind is a separate limit.
+            // §4 (v4.4): the three-card cap of §19.6 S15 is gone. Ten stance cards across four kinds go in;
+            // a fourth copy of one kind is still refused.
             var deck = new DeckBuilder();
-            deck.Add("water_stance");
-            deck.Add("water_stance");
-            deck.Add("rock_stance");
+            foreach (string id in new[] { "water_stance", "water_stance", "water_stance", "rock_stance", "rock_stance", "rock_stance", "flow_stance", "flow_stance", "flow_stance", "iron_wall" })
+            {
+                Assert.That(deck.Add(id), Is.True, id);
+            }
             Assert.Multiple(() =>
             {
-                Assert.That(deck.StanceCount, Is.EqualTo(3));
-                Assert.That(deck.CanAdd("flow_stance"), Is.False);
-                Assert.That(deck.Add("iron_wall"), Is.False, "ガード + スタンス counts too");
-                Assert.That(deck.Add("water_stance"), Is.False, "a third copy would pass the three of a kind, not the three stances");
+                Assert.That(deck.StanceCount, Is.EqualTo(10));
+                Assert.That(deck.CanAdd("water_stance"), Is.False, "a fourth copy of one kind");
+                Assert.That(deck.CanAdd("priest_prayer"), Is.True, "another stance kind");
                 Assert.That(deck.CanAdd("thrust"), Is.True);
-                Assert.That(deck.StanceCount, Is.EqualTo(3));
             });
-            deck.Remove("rock_stance");
-            Assert.That(deck.CanAdd("flow_stance"), Is.True, "one out, one may come in");
         }
 
         [Test]
-        public void TheRandomPreset_NeverHoldsMoreThanThreeStanceCards()
+        public void TheRandomPreset_IsAlwaysALegalDeck_AtEverySize()
         {
-            // §19.6 S15, at every size the preset builds. Before it, most 30-card decks held four or more.
             foreach (int size in new[] { Constants.DeckMin, DeckBuilder.RandomDefaultSize, Constants.DeckMax })
             {
                 for (int seed = 0; seed < 1000; seed++)
                 {
                     var deck = DeckBuilder.Random(seed, size);
-                    int stances = deck.Build().Count(c => Cards.IsStanceCard(c.Def));
-                    Assert.That(stances, Is.LessThanOrEqualTo(Constants.StanceCardsMax), "seed " + seed + " size " + size);
-                    Assert.That(deck.StanceCount, Is.EqualTo(stances), "seed " + seed + " size " + size);
+                    Assert.That(deck.Total, Is.EqualTo(size), "seed " + seed + " size " + size);
+                    Assert.That(deck.IsValid, Is.True, "seed " + seed + " size " + size);
+                    Assert.That(deck.StanceCount, Is.EqualTo(deck.Build().Count(c => Cards.IsStanceCard(c.Def))), "seed " + seed + " size " + size);
                 }
             }
         }
 
         [Test]
-        public void ASavedDeckWithFourStanceCards_GivesAnEmptyDeck()
+        public void ASavedDeckWithManyStanceCards_LoadsWholeNow()
         {
-            // Each kind is within three, but the stance cards are four (§19.6 S15): Add refuses the fourth.
-            Assert.That(DeckBuilder.Load("water_stance:2,rock_stance:2").Total, Is.EqualTo(0));
+            // Four stance cards in a saved deck were refused while the cap stood (§19.6 S15); now they load.
+            Assert.That(DeckBuilder.Load("water_stance:2,rock_stance:2").Total, Is.EqualTo(4));
         }
 
         [Test]
@@ -143,15 +140,16 @@ namespace Depiction.Bridge.Tests
         // ---- filters and pages ----
 
         [TestCase(BattleAttribute.None, 0, 80)]
-        [TestCase(BattleAttribute.Attack, 0, 39)]
+        [TestCase(BattleAttribute.Attack, 0, 36)]
+        [TestCase(BattleAttribute.Guard, 0, 16)]
+        [TestCase(BattleAttribute.Skill, 0, 14)]
         [TestCase(BattleAttribute.Stance, 0, 14)]
         [TestCase(BattleAttribute.None, 1, 25)]
         [TestCase(BattleAttribute.None, 2, 30)]
         [TestCase(BattleAttribute.None, 3, 25)]
-        [TestCase(BattleAttribute.Move, 1, 8)] // the six single moves (K5: all cost 1), 手繰りの歩み and 狩人の印
-        public void AFilter_KeepsTheCardsWithTheAttributeAndCost(BattleAttribute attribute, int cost, int kept)
+        public void AFilter_KeepsTheCardsCountedAsTheAttribute_AndTheCost(BattleAttribute attribute, int cost, int kept)
         {
-            // swordsman_cards_v4 §4.1 / §4.4: 39 carry an attack face, 14 a stance, costs 25 / 30 / 25.
+            // #256 draft, folded by battle_core_v4 §2.1: 攻撃 36 / 防御 16 / スキル 14 / スタンス 14, costs 25 / 30 / 25.
             var filter = new DeckFilter { Attribute = attribute, Cost = cost };
             List<CardDef> cards = new DeckBuilder().Filter(filter);
             Assert.That(cards, Has.Count.EqualTo(kept));
@@ -184,7 +182,7 @@ namespace Depiction.Bridge.Tests
             List<string> lines = DeckBuilder.DetailOf(CardCatalog.KesaCut);
             Assert.Multiple(() =>
             {
-                Assert.That(DeckBuilder.LineOf(CardCatalog.BoarRush), Is.EqualTo("猪突猛進　コスト 3　攻撃＋ムーブ"));
+                Assert.That(DeckBuilder.LineOf(CardCatalog.BoarRush), Is.EqualTo("猪突猛進　コスト 3　攻撃"));
                 Assert.That(lines, Is.EqualTo(new[]
                 {
                     "袈裟斬り", "コスト 2　攻撃　届く間合い 0〜1", "敵に 13 ダメージ。", "特性: 間合い0 +5", "「肩口から斬り下ろす」",
@@ -335,8 +333,8 @@ namespace Depiction.Bridge.Tests
         {
             Assert.Multiple(() =>
             {
-                Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（80 種から 20〜40 枚、1 種 3 枚、構え 3 枚まで）"));
-                Assert.That(DeckBuilder.AttributeOptions.Select(o => o.Key), Is.EqualTo(new[] { "全て", "攻撃", "ムーブ", "防御", "技", "構え" }));
+                Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（80 種から 20〜40 枚、1 種 3 枚まで）"));
+                Assert.That(DeckBuilder.AttributeOptions.Select(o => o.Key), Is.EqualTo(new[] { "全て", "攻撃", "防御", "技", "構え" }));
                 Assert.That(DeckBuilder.AttributeOptions.First().Value, Is.EqualTo(BattleAttribute.None));
                 Assert.That(DeckBuilder.CostOptions.Select(o => o.Key), Is.EqualTo(new[] { "全コスト", "コスト 1", "コスト 2", "コスト 3" }));
                 Assert.That(DeckBuilder.CostOptions.Select(o => o.Value), Is.EqualTo(new[] { 0, 1, 2, 3 }));
@@ -382,13 +380,12 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void ADeckWithFourStanceCards_IsRefusedAtLaunch()
+        public void ADeckWithFourStanceCards_LaunchesNow_ThereIsNoCap()
         {
-            // The deck screen cannot build one; a list handed in directly still meets Cards.Validate.
+            // v4.4: the stance cap of §19.6 S15 is gone, so the launch check lets four stance cards through.
             var plain = CardCatalog.All.Where(c => !Cards.IsStanceCard(c)).Take(8).ToList();
             var deck = Cards.BuildDeck(plain, 2).Concat(Cards.BuildDeck(new[] { CardCatalog.WaterStance, CardCatalog.RockStance }, 2)).ToList();
-            var error = Assert.Throws<ArgumentException>(() => new BattleLaunch { Deck = deck }.BuildSetup());
-            Assert.That(error.Message, Does.Contain("4 stance cards"));
+            Assert.DoesNotThrow(() => new BattleLaunch { Deck = deck }.BuildSetup());
         }
 
         [Test]

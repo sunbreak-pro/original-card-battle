@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BattleCore
 {
@@ -392,7 +393,7 @@ namespace BattleCore
             var events = new List<BattleEvent>();
             var copy = StanceAtTurnEnd(state, Actor.Player, 0, events);
             copy = CheckReserve(copy, Actor.Player, 0, events);
-            copy = copy with { Player = copy.Player with { Played = null, FollowUp = 0 } };
+            copy = copy with { Player = copy.Player with { Played = null, Moved = false, FollowUp = 0 } };
             copy = OpenTurnFor(copy, Actor.Enemy, unit, enemy.Def.Recovery, events);
             if (!copy.Enemies[unit].Alive) return new OmenPreview(0, 0, Lands: false, Rests: true);
 
@@ -530,11 +531,11 @@ namespace BattleCore
                 def.AllTraits, def.Targets, def.Cost, context, rng, events);
 
             // §2.3 playedAttributes: what this card was, for the cards after it this turn.
-            state = RecordPlayed(state, Actor.Player, 0, def.Attributes);
+            state = RecordPlayed(state, Actor.Player, 0, def.Attribute);
 
             // §4: a stance card goes to the exile pile and is not drawn again this battle; every
             // other card goes to the discard pile once it has resolved.
-            if (def.Attributes.HasFlag(BattleAttribute.Stance))
+            if (Cards.IsStanceCard(def))
             {
                 var exile = new List<CardInstance>(state.Exiled) { card };
                 state = state with { ExilePile = exile };
@@ -572,7 +573,7 @@ namespace BattleCore
             {
                 Hand = emptyHand,
                 DiscardPile = discardPile,
-                Player = state.Player with { Played = null, FollowUp = 0 },
+                Player = state.Player with { Played = null, Moved = false, FollowUp = 0 },
             };
             events.Add(new HandDiscarded(Actor.Player, discarded));
             events.Add(new TurnEnded(Actor.Player, state.Turn));
@@ -628,7 +629,7 @@ namespace BattleCore
             // The stance's turn-end effect, then 構え, which works for the enemy too (roster §1.2).
             state = StanceAtTurnEnd(state, Actor.Enemy, unit, events);
             state = CheckReserve(state, Actor.Enemy, unit, events);
-            state = state.WithEnemy(unit, state.Enemies[unit].Body with { Played = null, FollowUp = 0 });
+            state = state.WithEnemy(unit, state.Enemies[unit].Body with { Played = null, Moved = false, FollowUp = 0 });
 
             // Step 11.
             state = CheckDefeat(state, Actor.Enemy, unit, events);
@@ -656,7 +657,7 @@ namespace BattleCore
                 var spent = new List<string>(state.Enemies[unit].Spent) { action.Id };
                 state = state.WithUnit(unit, state.Enemies[unit] with { SpentStances = spent });
             }
-            return RecordPlayed(state, Actor.Enemy, unit, action.Attributes);
+            return RecordPlayed(state, Actor.Enemy, unit, action.Attribute);
         }
 
         // ---- Shared pieces ----
@@ -672,23 +673,28 @@ namespace BattleCore
             var self = Get(state, actor, unit);
 
             events.Add(new GuardCleared(actor, self.Guard) { Unit = unit });
-            self = self with { Guard = 0, Played = null };
+            self = self with { Guard = 0, Played = null, Moved = false };
 
-            var stance = self.Stance;
-            bool stanceFires = stance != null && stance.Hook == StanceHook.TurnStart && StanceHolds(state, actor, unit, stance);
-            if (stanceFires) events.Add(new StanceFired(actor, self.StanceSource ?? "", StanceHook.TurnStart) { Unit = unit });
+            // §4 (v4.4): every turn-start stance on the list fires on its own, so two of one work twice.
+            var firing = new List<StanceEntry>();
+            foreach (var entry in self.StanceList)
+            {
+                if (entry.Def.Hook == StanceHook.TurnStart && StanceHolds(state, actor, unit, entry.Def)) firing.Add(entry);
+            }
+            foreach (var entry in firing) events.Add(new StanceFired(actor, entry.Source, StanceHook.TurnStart) { Unit = unit });
 
             int fatigue = self.Statuses.Has(StatusKind.Fatigue) ? Constants.FatiguePenalty : 0;
-            int stanceRecovery = stanceFires ? stance!.Recovery : 0;
+            int stanceRecovery = firing.Sum(entry => entry.Def.Recovery);
             int staminaAfter = Combat.RecoverStamina(
                 self.Stamina, self.MaxStamina, recovery + stanceRecovery - fatigue, self.NextTurnRecoveryBonus);
             events.Add(new StaminaRecovered(actor, staminaAfter - self.Stamina, staminaAfter, self.MaxStamina) { Unit = unit });
             self = self with { Stamina = staminaAfter, NextTurnRecoveryBonus = 0 };
 
-            if (stanceFires && stance!.Guard > 0)
+            foreach (var entry in firing)
             {
-                self = self with { Guard = self.Guard + stance.Guard };
-                events.Add(new GuardGained(actor, stance.Guard, self.Guard) { Unit = unit });
+                if (entry.Def.Guard <= 0) continue;
+                self = self with { Guard = self.Guard + entry.Def.Guard };
+                events.Add(new GuardGained(actor, entry.Def.Guard, self.Guard) { Unit = unit });
             }
 
             int regen = self.Statuses.Stacks(StatusKind.Regen);
@@ -849,7 +855,7 @@ namespace BattleCore
 
             if (attacks)
             {
-                events.Add(new FaceResolved(actor, sourceId, BattleAttribute.Attack) { Unit = unit });
+                events.Add(new FaceResolved(actor, sourceId, FaceKind.Attack) { Unit = unit });
                 self = Get(state, actor, unit);
                 int followUp = self.FollowUp;
                 if (followUp > 0) state = Set(state, actor, unit, self with { FollowUp = 0 });
@@ -861,11 +867,7 @@ namespace BattleCore
                 {
                     if (foeSide == Actor.Enemy && !state.Enemies[foe].Alive) continue;
 
-                    int stanceBonus = StanceAttackBonus(state, actor, unit, foeSide, foe);
-                    if (stanceBonus > 0)
-                    {
-                        events.Add(new StanceFired(actor, Get(state, actor, unit).StanceSource ?? "", StanceHook.AttackBonus) { Unit = foeSide == Actor.Enemy ? foe : unit });
-                    }
+                    int stanceBonus = StanceAttackBonus(state, actor, unit, foeSide, foe, events);
 
                     // §2.4 hits (#189): each blow meets Guard on its own. §17.6 F6: 追撃 rides the
                     // first blow only and the trait's +n every blow; 強化 rides only the blows 脆化
@@ -940,9 +942,9 @@ namespace BattleCore
                 if (empowerUsed) state = Consume(state, actor, unit, StatusKind.Empower, events);
             }
 
-            if (attributes.HasFlag(BattleAttribute.Move))
+            if (AttributeRule.HasMovement(face))
             {
-                events.Add(new FaceResolved(actor, sourceId, BattleAttribute.Move) { Unit = unit });
+                events.Add(new FaceResolved(actor, sourceId, FaceKind.Move) { Unit = unit });
             }
             if (face.Move != 0)
             {
@@ -958,15 +960,19 @@ namespace BattleCore
                     var shift = Field.Move(state, actor, Math.Sign(face.Move) * cells, unit);
                     if (shift.To != shift.From)
                     {
-                        state = Set(state, actor, unit, self with { Cell = shift.To });
+                        // 移動後 (§2.3): the holder's own cell changed, so the rest of this turn reads it.
+                        state = Set(state, actor, unit, self with { Cell = shift.To, Moved = true });
                         events.Add(new CellsMoved(actor, shift.From, shift.To, Pushed: false) { Unit = unit });
 
-                        // 根縛り: an enemy that moves itself pays for it while the player holds the stance.
-                        var bind = state.Player.Stance;
-                        if (actor == Actor.Enemy && bind != null && bind.Hook == StanceHook.BreakOnFoeMove && bind.Break > 0)
+                        // 根縛り: an enemy that moves itself pays for it for each such stance the player holds.
+                        if (actor == Actor.Enemy)
                         {
-                            events.Add(new StanceFired(Actor.Player, state.Player.StanceSource ?? "", StanceHook.BreakOnFoeMove) { Unit = unit });
-                            state = Break(state, Actor.Player, Actor.Enemy, unit, bind.Break, unit, events);
+                            foreach (var bind in state.Player.StanceList)
+                            {
+                                if (bind.Def.Hook != StanceHook.BreakOnFoeMove || bind.Def.Break <= 0) continue;
+                                events.Add(new StanceFired(Actor.Player, bind.Source, StanceHook.BreakOnFoeMove) { Unit = unit });
+                                state = Break(state, Actor.Player, Actor.Enemy, unit, bind.Def.Break, unit, events);
+                            }
                         }
                     }
                 }
@@ -988,9 +994,10 @@ namespace BattleCore
                         events.Add(new PushRefused(foeSide, other.Size) { Unit = eventUnit });
                         continue;
                     }
-                    if (other.Stance != null && other.Stance.Hook == StanceHook.PushImmune)
+                    var immune = other.StanceList.FirstOrDefault(entry => entry.Def.Hook == StanceHook.PushImmune);
+                    if (immune != null)
                     {
-                        events.Add(new StanceFired(foeSide, other.StanceSource ?? "", StanceHook.PushImmune) { Unit = eventUnit });
+                        events.Add(new StanceFired(foeSide, immune.Source, StanceHook.PushImmune) { Unit = eventUnit });
                         events.Add(new PushRefused(foeSide, other.Size) { Unit = eventUnit, ByStance = true });
                         continue;
                     }
@@ -1026,7 +1033,7 @@ namespace BattleCore
             // (swordsman_cards_v4.md §1.2), and a move card may carry a small Guard of its own.
             if (attributes.HasFlag(BattleAttribute.Guard))
             {
-                events.Add(new FaceResolved(actor, sourceId, BattleAttribute.Guard) { Unit = unit });
+                events.Add(new FaceResolved(actor, sourceId, FaceKind.Guard) { Unit = unit });
             }
             int guardGain = guardBase > 0 ? Math.Max(0, guardBase - intimidate) : 0;
             if (guardGain > 0)
@@ -1039,7 +1046,7 @@ namespace BattleCore
 
             if (attributes.HasFlag(BattleAttribute.Skill))
             {
-                events.Add(new FaceResolved(actor, sourceId, BattleAttribute.Skill) { Unit = unit });
+                events.Add(new FaceResolved(actor, sourceId, FaceKind.Skill) { Unit = unit });
             }
             int heal = face.Heal > 0 ? face.Heal + focus.Heal : 0;
             if (heal > 0)
@@ -1076,17 +1083,17 @@ namespace BattleCore
             }
             if (face.StaminaGain > 0) state = GainStamina(state, actor, unit, face.StaminaGain, events);
 
-            // §4: the stance face takes the one slot; a stance already there ends.
+            // §4 (v4.4): the stance face joins the list of permanent effects. Nothing ends and there
+            // is no cap; the same stance twice is two entries and works twice.
             if (attributes.HasFlag(BattleAttribute.Stance))
             {
-                events.Add(new FaceResolved(actor, sourceId, BattleAttribute.Stance) { Unit = unit });
+                events.Add(new FaceResolved(actor, sourceId, FaceKind.Stance) { Unit = unit });
             }
             if (face.Stance != null)
             {
                 self = Get(state, actor, unit);
-                string? replaced = self.StanceSource;
-                state = Set(state, actor, unit, self with { Stance = face.Stance, StanceSource = sourceId, StanceReactedTurn = 0 });
-                events.Add(new StanceSet(actor, sourceId, sourceName, face.Stance, replaced) { Unit = unit });
+                state = Set(state, actor, unit, self.WithStance(face.Stance, sourceId));
+                events.Add(new StanceSet(actor, sourceId, sourceName, face.Stance) { Unit = unit });
             }
 
             int draw = face.Draw + outcome.Draw;
@@ -1126,24 +1133,32 @@ namespace BattleCore
                 events.Add(new Reflected(victim, attacker, raw, soaked, damage, striker.Guard, striker.Hp) { Unit = enemyUnit });
             }
 
-            hurt = Get(state, victim, victimUnit);
-            var stance = hurt.Stance;
-            if (stance == null || stance.Hook != StanceHook.OnHit) return state;
-            if (stance.OncePerTurn && hurt.StanceReactedTurn == state.Turn) return state;
-
-            events.Add(new StanceFired(victim, hurt.StanceSource ?? "", StanceHook.OnHit) { Unit = enemyUnit });
-            state = Set(state, victim, victimUnit, hurt with { StanceReactedTurn = state.Turn });
-            if (stance.Stamina > 0) state = GainStamina(state, victim, victimUnit, stance.Stamina, events);
-            if (stance.Guard > 0)
+            // §4 (v4.4): each OnHit stance on the list reacts on its own; OncePerTurn is counted per entry.
+            int entries = Get(state, victim, victimUnit).StanceList.Count;
+            for (int i = 0; i < entries; i++)
             {
                 hurt = Get(state, victim, victimUnit);
-                hurt = hurt with { Guard = hurt.Guard + stance.Guard };
-                state = Set(state, victim, victimUnit, hurt);
-                events.Add(new GuardGained(victim, stance.Guard, hurt.Guard) { Unit = enemyUnit });
-            }
-            if (stance.Status.HasValue && stance.StatusStacks > 0 && !Combat.IsDefeated(Get(state, attacker, attackerUnit).Hp))
-            {
-                state = ApplyStatus(state, victim, attacker, attackerUnit, enemyUnit, stance.Status.Value, stance.StatusStacks, events);
+                var entry = hurt.StanceList[i];
+                var stance = entry.Def;
+                if (stance.Hook != StanceHook.OnHit) continue;
+                if (stance.OncePerTurn && entry.ReactedTurn == state.Turn) continue;
+
+                events.Add(new StanceFired(victim, entry.Source, StanceHook.OnHit) { Unit = enemyUnit });
+                var reacted = new List<StanceEntry>(hurt.StanceList);
+                reacted[i] = entry with { ReactedTurn = state.Turn };
+                state = Set(state, victim, victimUnit, hurt with { Stances = reacted });
+                if (stance.Stamina > 0) state = GainStamina(state, victim, victimUnit, stance.Stamina, events);
+                if (stance.Guard > 0)
+                {
+                    hurt = Get(state, victim, victimUnit);
+                    hurt = hurt with { Guard = hurt.Guard + stance.Guard };
+                    state = Set(state, victim, victimUnit, hurt);
+                    events.Add(new GuardGained(victim, stance.Guard, hurt.Guard) { Unit = enemyUnit });
+                }
+                if (stance.Status.HasValue && stance.StatusStacks > 0 && !Combat.IsDefeated(Get(state, attacker, attackerUnit).Hp))
+                {
+                    state = ApplyStatus(state, victim, attacker, attackerUnit, enemyUnit, stance.Status.Value, stance.StatusStacks, events);
+                }
             }
             return state;
         }
@@ -1152,16 +1167,19 @@ namespace BattleCore
         private static BattleState StanceAtTurnEnd(BattleState state, Actor actor, int unit, List<BattleEvent> events)
         {
             var self = Get(state, actor, unit);
-            var stance = self.Stance;
-            if (stance == null || stance.Hook != StanceHook.TurnEnd || !StanceHolds(state, actor, unit, stance)) return state;
-
-            events.Add(new StanceFired(actor, self.StanceSource ?? "", StanceHook.TurnEnd) { Unit = unit });
-            if (stance.Guard > 0)
+            foreach (var entry in self.StanceList)
             {
-                self = self with { Guard = self.Guard + stance.Guard };
-                events.Add(new GuardGained(actor, stance.Guard, self.Guard) { Unit = unit });
+                var stance = entry.Def;
+                if (stance.Hook != StanceHook.TurnEnd || !StanceHolds(state, actor, unit, stance)) continue;
+
+                events.Add(new StanceFired(actor, entry.Source, StanceHook.TurnEnd) { Unit = unit });
+                if (stance.Guard > 0)
+                {
+                    self = self with { Guard = self.Guard + stance.Guard };
+                    events.Add(new GuardGained(actor, stance.Guard, self.Guard) { Unit = unit });
+                }
+                if (stance.NextRecovery > 0) self = self with { NextTurnRecoveryBonus = self.NextTurnRecoveryBonus + stance.NextRecovery };
             }
-            if (stance.NextRecovery > 0) self = self with { NextTurnRecoveryBonus = self.NextTurnRecoveryBonus + stance.NextRecovery };
             return Set(state, actor, unit, self);
         }
 
@@ -1176,7 +1194,7 @@ namespace BattleCore
                 case StanceWhen.Always: return true;
                 case StanceWhen.GapAtLeast: return OwnGap(state, actor, unit) >= stance.Threshold;
                 case StanceWhen.GapAtMost: return OwnGap(state, actor, unit) <= stance.Threshold;
-                case StanceWhen.MovedThisTurn: return PlayedMove(Get(state, actor, unit));
+                case StanceWhen.MovedThisTurn: return Get(state, actor, unit).Moved;
                 case StanceWhen.OmenAttack:
                     if (actor != Actor.Player) return false;
                     foreach (int i in state.Living)
@@ -1191,11 +1209,20 @@ namespace BattleCore
         }
 
         /// <summary>§4 条件付き加算: the power an AttackBonus stance adds to a blow on this foe. 0 when it does not hold.</summary>
-        private static int StanceAttackBonus(BattleState state, Actor actor, int unit, Actor foeSide, int foe)
+        private static int StanceAttackBonus(BattleState state, Actor actor, int unit, Actor foeSide, int foe, List<BattleEvent>? events = null)
         {
-            var stance = Get(state, actor, unit).Stance;
-            if (stance == null || stance.Hook != StanceHook.AttackBonus) return 0;
-            return StanceHoldsOn(state, actor, unit, stance, foeSide, foe) ? stance.Power : 0;
+            int total = 0;
+            foreach (var entry in Get(state, actor, unit).StanceList)
+            {
+                var stance = entry.Def;
+                if (stance.Hook != StanceHook.AttackBonus || !StanceHoldsOn(state, actor, unit, stance, foeSide, foe)) continue;
+                total += stance.Power;
+                if (stance.Power > 0 && events != null)
+                {
+                    events.Add(new StanceFired(actor, entry.Source, StanceHook.AttackBonus) { Unit = foeSide == Actor.Enemy ? foe : unit });
+                }
+            }
+            return total;
         }
 
         /// <summary>
@@ -1205,14 +1232,18 @@ namespace BattleCore
         private static BattleState StanceStatusOnAttack(
             BattleState state, Actor actor, int unit, Actor foeSide, int foe, List<BattleEvent> events)
         {
-            var self = Get(state, actor, unit);
-            var stance = self.Stance;
-            if (stance == null || stance.Hook != StanceHook.StatusOnAttack || !stance.Status.HasValue || stance.StatusStacks <= 0) return state;
-            if (!StanceHoldsOn(state, actor, unit, stance, foeSide, foe)) return state;
-
             int eventUnit = foeSide == Actor.Enemy ? foe : unit;
-            events.Add(new StanceFired(actor, self.StanceSource ?? "", StanceHook.StatusOnAttack) { Unit = eventUnit });
-            return ApplyStatus(state, actor, foeSide, foe, eventUnit, stance.Status.Value, stance.StatusStacks, events);
+            foreach (var entry in Get(state, actor, unit).StanceList)
+            {
+                var stance = entry.Def;
+                if (stance.Hook != StanceHook.StatusOnAttack || !stance.Status.HasValue || stance.StatusStacks <= 0) continue;
+                if (!StanceHoldsOn(state, actor, unit, stance, foeSide, foe)) continue;
+                if (foeSide == Actor.Enemy && !state.Enemies[foe].Alive) break;
+
+                events.Add(new StanceFired(actor, entry.Source, StanceHook.StatusOnAttack) { Unit = eventUnit });
+                state = ApplyStatus(state, actor, foeSide, foe, eventUnit, stance.Status.Value, stance.StatusStacks, events);
+            }
+            return state;
         }
 
         /// <summary>§4 `when` for the stances that look at the one foe hit (AttackBonus, StatusOnAttack).</summary>
@@ -1224,19 +1255,10 @@ namespace BattleCore
                 StanceWhen.Always => true,
                 StanceWhen.GapAtMost => gap <= stance.Threshold,
                 StanceWhen.GapAtLeast => gap >= stance.Threshold,
-                StanceWhen.MovedThisTurn => PlayedMove(Get(state, actor, unit)),
+                StanceWhen.MovedThisTurn => Get(state, actor, unit).Moved,
                 StanceWhen.TargetHasStatus => stance.Status.HasValue && Get(state, foeSide, foe).Statuses.Has(stance.Status.Value),
                 _ => false,
             };
-        }
-
-        private static bool PlayedMove(CombatantState self)
-        {
-            foreach (var attributes in self.PlayedThisTurn)
-            {
-                if (attributes.HasFlag(BattleAttribute.Move)) return true;
-            }
-            return false;
         }
 
         private static int OwnGap(BattleState state, Actor actor, int unit)
@@ -1399,7 +1421,8 @@ namespace BattleCore
                 OpponentOmen: foe.Omen?.Label.Kind,
                 SelfStatuses: self.Statuses,
                 OpponentStatuses: foe.Body.Statuses,
-                Attributes: def.Attributes);
+                Attributes: def.Attribute,
+                Moved: self.Moved);
         }
 
         /// <summary>The board an enemy action reads: the player is its opponent, and what it did earlier this phase is its playedAttributes.</summary>
@@ -1416,7 +1439,8 @@ namespace BattleCore
                 Played: self.PlayedThisTurn,
                 SelfStatuses: self.Statuses,
                 OpponentStatuses: player.Statuses,
-                Attributes: action.Attributes);
+                Attributes: action.Attribute,
+                Moved: self.Moved);
         }
 
         private static IReadOnlyList<Trait> TraitsOf(Trait? trait) =>
@@ -1507,8 +1531,10 @@ namespace BattleCore
         {
             if (face == null) throw new ArgumentNullException(nameof(face));
             if (!Columns.IsValid(column)) return None;
-            bool single = attributes == BattleAttribute.Attack || attributes == BattleAttribute.Guard
-                || attributes == BattleAttribute.Skill;
+            // A face beside a movement effect is one of two things the card does (§2.1: a 面 を 2 つ持つ札
+            // reads the 65% scale); the movement is no longer a declared flag, so read it off the face.
+            bool single = (attributes == BattleAttribute.Attack || attributes == BattleAttribute.Guard
+                || attributes == BattleAttribute.Skill) && !AttributeRule.HasMovement(face);
             int power = attributes.HasFlag(BattleAttribute.Attack) && face.Power > 0
                 ? Columns.StepRight(single ? Columns.SingleAttackPower : Columns.DualAttackPower, column) : 0;
             int guard = attributes.HasFlag(BattleAttribute.Guard) && face.Guard > 0

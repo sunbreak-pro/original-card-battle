@@ -65,7 +65,7 @@ namespace Depiction.Bridge.Tests
             var events = new List<BattleEvent>
             {
                 new CardPlayed(Actor.Player, new CardInstance("rock_stance-0", CardCatalog.RockStance), 3),
-                new StanceSet(Actor.Player, "rock_stance", "岩の構え", rock, null),
+                new StanceSet(Actor.Player, "rock_stance", "岩の構え", rock),
                 new StatusApplied(Actor.Player, Actor.Player, StatusKind.Empower, 2, 2, false),
                 new StatusConsumed(Actor.Player, StatusKind.Empower, 1),
             };
@@ -129,7 +129,7 @@ namespace Depiction.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(CoreText.TraitLines(CardCatalog.LastStand), Is.EqualTo("間合い2以上 +5 ／ 死力 +3"));
-                Assert.That(CoreText.TraitLines(CardCatalog.WaterStance), Is.EqualTo("連動(動) コスト-1"));
+                Assert.That(CoreText.TraitLines(CardCatalog.WaterStance), Is.EqualTo("移動後 コスト-1"));
                 Assert.That(CoreText.TraitLines(CardCatalog.SpiritRoar), Is.EqualTo("相手出血 脆化+2"));
                 Assert.That(CoreText.TraitLines(CardCatalog.Resolve), Is.EqualTo("死力 自分再生+1"));
                 Assert.That(CoreText.TraitLines(CardCatalog.PurgeFlash), Is.EqualTo("予兆攻撃 追撃"));
@@ -227,7 +227,7 @@ namespace Depiction.Bridge.Tests
                     Assert.That(frame.Enemy.Stamina, Is.EqualTo(state.Enemy.Stamina), at);
                     Assert.That(frame.Player.RangeGlyph, Is.EqualTo(state.Gap.ToString()), at);
                     Assert.That(frame.Player.Statuses.Select(c => c.Label + c.Stacks),
-                        Is.EqualTo(CoreText.Chips(state.Player.Statuses, NameOf(state.Player.StanceSource)).Select(c => c.Label + c.Stacks)), at);
+                        Is.EqualTo(CoreText.Chips(state.Player.Statuses, state.Player.StanceList.Select(e => NameOf(e.Source)).ToList()).Select(c => c.Label + c.Stacks)), at);
                     Assert.That(frame.Enemy.Statuses.Select(c => c.Label + c.Stacks),
                         Is.EqualTo(CoreText.Chips(state.Enemy.Statuses).Select(c => c.Label + c.Stacks)), at);
                     Assert.That(frame.Hand.Select(c => c.Id), Is.EqualTo(state.Hand.Select(c => c.InstanceId)), at);
@@ -257,7 +257,6 @@ namespace Depiction.Bridge.Tests
                 int held;
                 counts.TryGetValue(def.Id, out held);
                 if (held >= Constants.CopiesMax) continue;
-                if (Cards.IsStanceCard(def) && deck.Count(c => Cards.IsStanceCard(c.Def)) >= Constants.StanceCardsMax) continue;
                 counts[def.Id] = held + 1;
                 deck.Add(new CardInstance(def.Id + "-" + held, def));
             }

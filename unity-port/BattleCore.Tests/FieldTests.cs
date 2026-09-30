@@ -116,7 +116,7 @@ namespace BattleCore.Tests
         {
             // §7.3 / §21.3: a card may push since v4.3. Enemy on 5 of 6: a two-cell push moves one and hits the wall once.
             var shove = Fixtures.Card("shove", column: 2, face: new Face(Power: 5, Push: 2, Reach: new Reach(0, 2)),
-                attributes: BattleAttribute.Attack | BattleAttribute.Move);
+                attributes: BattleAttribute.Attack);
             var s = Battle(Fixtures.Enemy(), enemyCell: 5, hand: shove);
 
             var play = TurnLoop.PlayCard(s, InHand(s, "shove"), NoRng);
@@ -136,7 +136,7 @@ namespace BattleCore.Tests
             // The enemy pulls the player in by two from gap 2: the player stops one short (cell 4)
             // and the blocked cell costs nothing.
             var pull = Fixtures.EnemyAction("hook", column: 1, face: new Face(Power: 2, Push: -2, Reach: new Reach(0, 3)),
-                attributes: BattleAttribute.Attack | BattleAttribute.Move);
+                attributes: BattleAttribute.Attack);
             var s = Battle(Fixtures.Enemy(atOneToTwo: pull), enemyCell: 5);
             Assert.That(s.Omen!.ActionId, Is.EqualTo("hook"));
 
@@ -154,7 +154,7 @@ namespace BattleCore.Tests
         public void ALargeEnemy_RefusesThePush_AndTakesNoWall()
         {
             var shove = Fixtures.Card("shove", column: 2, face: new Face(Power: 5, Push: 2, Reach: new Reach(0, 2)),
-                attributes: BattleAttribute.Attack | BattleAttribute.Move);
+                attributes: BattleAttribute.Attack);
             var s = Battle(Fixtures.Enemy(size: 2), enemyCell: 5, hand: shove);
 
             var play = TurnLoop.PlayCard(s, InHand(s, "shove"), NoRng);
@@ -172,7 +172,7 @@ namespace BattleCore.Tests
         [Test]
         public void ASlowedPusher_PushesOneCellLess_AndTheTargetsSlowChangesNothing()
         {
-            var shove = Fixtures.Card("shove", column: 2, face: new Face(Push: 2), attributes: BattleAttribute.Move);
+            var shove = Fixtures.Card("shove", column: 2, face: new Face(Push: 2), attributes: BattleAttribute.None);
             var s = Battle(Fixtures.Enemy(), enemyCell: 4, hand: shove);   // player 2, enemy 4, gap 1
 
             var slowedPusher = s with { Player = s.Player with { Statuses = StatusSet.Of((StatusKind.Slow, 1)) } };
@@ -184,7 +184,7 @@ namespace BattleCore.Tests
             Assert.That(b.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Enemy, 4, 6, Pushed: true)));
 
             var onlyOne = s with { Player = s.Player with { Statuses = StatusSet.Of((StatusKind.Slow, 1)) } };
-            var oneCell = Fixtures.Card("nudge", column: 1, face: new Face(Push: 1), attributes: BattleAttribute.Move);
+            var oneCell = Fixtures.Card("nudge", column: 1, face: new Face(Push: 1), attributes: BattleAttribute.None);
             var c = TurnLoop.PlayCard(
                 onlyOne with { Hand = new[] { new CardInstance("nudge-0", oneCell) } }, "nudge-0", NoRng);
             Assert.That(c.Events.OfType<MoveBlocked>().Single(), Is.EqualTo(new MoveBlocked(Actor.Player, StatusKind.Slow)));
@@ -196,8 +196,8 @@ namespace BattleCore.Tests
             // The enemy's shove reaches 0 only; declared adjacent, the player then steps back.
             var shove = Fixtures.EnemyAction("shove", column: 2,
                 face: new Face(Power: 5, Push: 2, Guard: 2, Reach: Reach.Only(0)),
-                attributes: BattleAttribute.Attack | BattleAttribute.Move | BattleAttribute.Guard);
-            var back = Fixtures.Card("back", column: 1, face: new Face(Move: -1), attributes: BattleAttribute.Move, targets: TargetKind.Self);
+                attributes: BattleAttribute.Attack | BattleAttribute.Guard);
+            var back = Fixtures.Card("back", column: 1, face: new Face(Move: -1), attributes: BattleAttribute.None, targets: TargetKind.Self);
             var s = Battle(Fixtures.Enemy(atZero: shove), enemyCell: 3, hand: back);
             Assert.That(s.Omen!.ActionId, Is.EqualTo("shove"));
             s = TurnLoop.PlayCard(s, InHand(s, "back"), NoRng).State;
@@ -211,7 +211,7 @@ namespace BattleCore.Tests
                 Assert.That(end.Events.OfType<DamageDealt>(), Is.Empty);
                 Assert.That(end.Events.OfType<GuardGained>().Single(e => e.Actor == Actor.Enemy).Amount, Is.EqualTo(2));
                 Assert.That(end.Events.OfType<FaceResolved>().Where(f => f.Actor == Actor.Enemy).Select(f => f.Face),
-                    Is.EqualTo(new[] { BattleAttribute.Move, BattleAttribute.Guard }));
+                    Is.EqualTo(new[] { FaceKind.Move, FaceKind.Guard }));
             });
         }
 
