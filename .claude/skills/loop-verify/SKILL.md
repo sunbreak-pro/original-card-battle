@@ -49,8 +49,6 @@ disable-model-invocation: true
 ## 使ってよい道具
 
 - `session-verifier` スキル — ゲートの正本（Gate 0 Scope → 1 型 → 2 lint → 3 test → 4 coverage → 5 プロジェクト規約）
-- `debugging-active` スキル — 原因の切り分けが噛み合わないとき
-- `debugging-error-prevention` スキル — 同じ型のバグを繰り返しているとき
 - `.claude/docs/known-issues/INDEX.md` — 既知の環境起因パターンの照合先。**類似バグはまずここを grep**
 
 ## 環境の事実（推論では埋まらないので明記する）

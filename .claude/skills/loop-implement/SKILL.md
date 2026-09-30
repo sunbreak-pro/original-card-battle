@@ -39,7 +39,7 @@ disable-model-invocation: true
 - `role-engineer` エージェント — 重ティアの実装主体（起動はメインが Agent ツールで行う。再帰起動は不可）
 - `session-verifier` スキル — 検証ゲートの正本。ゲートの中身をこのループに転記しない
 - `git-workflow` / `git-branch-flow` スキル — commit 規約と破壊的操作のガードレール
-- ドメイン別スキル — `battle-system` / `card-creator` / `enemy-creator` / `dungeon-system` / `ui-ux-creator` / `character-class-creator`
+- ドメイン別スキル — `card-creator` / `enemy-creator` / `ui-ux-creator` / `character-class-creator`
 
 ## 検証コマンド（この repo の実物）
 

@@ -215,9 +215,6 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | Add new card                           | `card-creator`               |
 | Add new enemy                          | `enemy-creator`              |
 | Add character class                    | `character-class-creator`    |
-| Battle system changes                  | `battle-system`              |
-| Camp facility work                     | `camp-facility`              |
-| Dungeon system                         | `dungeon-system`             |
 | UI/UX work                             | `ui-ux-creator`              |
 | Character art / UI production pipeline | `visual-production-pipeline` |
 | 前のセッションの続きを引き継ぐ         | `session-successor`          |
@@ -229,9 +226,6 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | Issue 1 件を commit まで実装           | `/loop-implement`            |
 | 検証ゲートを通して原因を切り分ける     | `/loop-verify`               |
 | 失敗から再発防止の 1 行を回収          | `/loop-postmortem`           |
-| Find design docs                       | `design-research`            |
-| Bug investigation                      | `debugging-active`           |
-| Error prevention                       | `debugging-error-prevention` |
 
 ## Development Workflows
 
@@ -313,7 +307,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 - **正本どうしの食い違いは直さず Issue にする**（題は「正本の食い違い: 〜」）。他レーンの正本は書かない。どちらに従って進めたかを Issue と PR 本文に 1 行で残す。手順は `docs/SOURCES.md` §5
 - **決定は設計書の本文へ入れ込む**。末尾の「〜の決定」節は記録で、入れ込むまでは台帳の状態の欄に「未反映」と書く
 - **パスの読み方**: 本ファイルの `docs/…` は `.claude/docs/…` を指す。リポジトリ直下の `docs/`（`reports/` `briefs/` `mockups/` `prompts/`）は HTML レポートと制作物の置き場で、正本は置かない
-- **設計書 vs 実装**: ゲーム数値は `docs/*_document/` の設計書を正とし、差分は設計書側か実装側へ寄せて解消（`design-research` スキル）
+- **設計書 vs 実装**: ゲーム数値は `docs/*_document/` の設計書を正とし、差分は設計書側か実装側へ寄せて解消
 
 ## References
 
