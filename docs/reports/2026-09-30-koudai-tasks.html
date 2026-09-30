@@ -120,11 +120,11 @@
   <header>
     <p class="eyebrow">2026-09-30 / 作業の手順 / original-card-battle</p>
     <h1>こうだいさんの手でしか進まない作業は 10 件で、今日できるのは 8 件です</h1>
-    <p class="lede">merge 5 本と /goal の貼り付けは 15 分ほどで終わります。判断 2 件は Issue に一言返すだけです。Krita と Unity の手触りの確認は、まとまった時間が取れる日に回してください。</p>
+    <p class="lede">merge は 9 本あり、どれも 1〜2 分で済みます。/goal はカードの担当にもう 1 つ貼るだけです。判断 2 件は Issue に一言返すだけです。Krita と Unity の手触りの確認は、まとまった時間が取れる日に回してください。</p>
   </header>
 
   <ul class="verdicts">
-    <li class="verdict now"><span class="tag">今日できる（短い）</span><h3>merge 5 本、/goal を 3 つ貼る、判断 2 件</h3><p>各担当のチャットが動き出すのに要る作業です。先に片付けると、待たされている作業がいちばん多く進みます。</p></li>
+    <li class="verdict now"><span class="tag">今日できる（短い）</span><h3>merge 9 本、/goal を 1 つ貼る、判断 2 件</h3><p>各担当のチャットは PR を出して待っています。先に片付けると、待たされている作業がいちばん多く進みます。</p></li>
     <li class="verdict later"><span class="tag">今日できる（まとまった時間）</span><h3>Krita で立ち絵の候補を出す、描写の手触りを見る</h3><p>Krita は 30 分から 1 時間、描写の手触りは 10 分ほどです。</p></li>
     <li class="verdict wait"><span class="tag">まだできない</span><h3>1 ターンの手触り、3 戦通しての手触り</h3><p>演出の計測（#78）と戦闘画面の作り直し（#242）が終わってからです。手順だけ先に置いておきます。</p></li>
   </ul>
@@ -135,8 +135,8 @@
       <thead><tr><th>いつ</th><th>作業</th><th>かかる時間</th><th>終わると進むこと</th></tr></thead>
       <tbody>
         <tr><td><span class="chip now">今日</span></td><td>1. PR を 5 本 merge する</td><td class="num">5 分</td><td>色の役割（#247）と設計原則 V2（#61）が決着し、Unity 側に最新のコードが入ります</td></tr>
-        <tr><td><span class="chip now">今日</span></td><td>2. 各担当のチャットに /goal を貼る</td><td class="num">5 分</td><td>属性を 4 つにする作り直しが、戦闘・カード・見た目の 3 か所で同時に動きます</td></tr>
-        <tr><td><span class="chip now">今日</span></td><td>3. 担当が積んだ PR を順に merge する</td><td class="num">都度 2 分</td><td>積んだ PR が main に入らない事故（前回の #255）を防げます</td></tr>
+        <tr><td><span class="chip now">今日</span></td><td>2. 担当が出した PR を 4 本 merge し、カードの担当に /goal を貼る</td><td class="num">10 分</td><td>属性を 4 つにする作り直しの文書が main にそろい、カードの表の書き直しが始まります</td></tr>
+        <tr><td><span class="chip now">今日</span></td><td>3. 積んだ PR の取り込み先を付け替えてから merge する</td><td class="num">都度 2 分</td><td>積んだ PR が main に入らない事故（前回の #255）を防げます</td></tr>
         <tr><td><span class="chip now">今日</span></td><td>4. 背水の陣の特性 2 つを残すか決める（#213）</td><td class="num">2 分</td><td>カードの顔の設計書に特性の箱の形を書けます</td></tr>
         <tr><td><span class="chip now">今日</span></td><td>5. 疲労の読み方を決める（#221）</td><td class="num">2 分</td><td>疲労を付ける敵の強さが決まります</td></tr>
         <tr><td><span class="chip later">時間があるとき</span></td><td>6. Krita で立ち絵の候補を出す（#82）</td><td class="num">30〜60 分</td><td>1 体あたりの制作時間が分かり、残りの立ち絵の計画が立ちます</td></tr>
@@ -170,36 +170,29 @@
     </ol>
   </div>
 
-  <h2>2. 各担当のチャットに /goal を貼る</h2>
-  <p class="prose">各担当のチャットは、担当ごとの作業フォルダ（<code>C:\Users\user\orca\workspaces\original-card-battle\</code> の下の <code>battle</code>・<code>cards</code>・<code>design</code>）で開いているものです。下の文をコピーして、それぞれのチャットの入力欄に貼って送ってください。担当のチャットは PR を開いたところで止まり、merge はしません。</p>
-
-  <div class="copyblock">
-    <div class="bar"><span><strong>戦闘の担当（battle）</strong>に貼ります。PR が 4 本開いたら止まります。</span><button class="copy" type="button" data-target="goal-battle">コピー</button></div>
-    <pre id="goal-battle">/goal in the original-card-battle worktree for battle: these issues each have an opened PR in this order, and every PR branch passes npm run build, npm run lint, npm run test:run and dotnet test under unity-port with exit 0 — (1) #258 part 1: a docs PR on docs/battle-258 off origin/main that rewrites battle_core_v4.md for the four attributes decided in the #256 body (attack / guard / skill / stance, one attribute per card, attack &gt; guard &gt; skill folding, stance holds only permanent effects with no cap and with stacking, a used stance card is exiled but its copies stay, STANCE_CARDS_MAX removed, movement is an effect any card can carry, a moved-this-turn condition replaces 連動(M), the multi-hit rule also binds enemy actions) and passes npm run sources -- --check; open it before any code so the cards lane can align to its wording. (2) #258 part 2: a feat PR on feat/battle-258 branched from docs/battle-258, base docs/battle-258, with a body line saying to retarget to main once part 1 merges: BattleCore attributes, the list of permanent effects, EnemyActionDef validation, CardCatalog and Bridge CoreText; fold the catalog mechanically by the rule, keep the ten stance cards and the enemy double slash that #257 redesigns as placeholders listed in the PR body, and add a [TestCase] proving stamina recovery is 3 at every range so this PR closes #49. Both #258 PRs reference #258 without closing it. (3) #50 remaining work per its current body, stacked on feat/battle-258 the same way. (4) #78 on its own branch off origin/main. Before anything else merge origin/main, read .claude/skills/worktree-policy/SKILL.md and run npm run sources -- --lane battle: write only the sources that command lists as yours, and when two canonical sources disagree do not edit the other lane's file — file an issue titled 正本の食い違い, note in the issue and the PR which source you followed, and keep going. Update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.</pre>
+  <h2>2. 担当が出した PR を順に merge する</h2>
+  <div class="task">
+    <h3><span class="chip now">今日</span>戦闘・カード・見た目の担当は、もう PR を 4 本出しています</h3>
+    <p class="meta">3 つの /goal は各担当のチャットに届いていて、属性を 4 つにする作り直しが動き出しています。戦闘の担当は、続けてコアの PR を出す途中です。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>順</th><th>PR</th><th>中身</th><th>取り込み先</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/274">#274</a></td><td>戦闘の規則の文書を属性 4 つにしました（#258 の前半）。カードの担当は、これが main に入るのを待っています</td><td><code>main</code></td></tr>
+          <tr><td class="num">2</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/271">#271</a></td><td>敵の文書の予兆の種別の語を、カードの文書にそろえました（#243）</td><td><code>main</code></td></tr>
+          <tr><td class="num">3</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/272">#272</a></td><td>戦闘画面の見た目の文書に、カード案 C・沈んだ手札・四隅だけの枠を入れました（#254）</td><td><code>main</code></td></tr>
+          <tr><td class="num">4</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/275">#275</a></td><td>同じ文書に、4 属性のカードの顔と出せない札のパネルを入れました（#259）。#272 の上に積んであります</td><td><code>docs/design-254</code>（#272 の merge 後に <code>main</code> へ付け替えます）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>#274 をいちばん先にしているのは、merge したらすぐに、カードの担当へ次の /goal を貼れるからです。#271 と #272 は #274 と別のファイルを触るので、順番は自由です。#275 だけは、下の 3 の手順で取り込み先を付け替えてから merge します。</p>
   </div>
 
-  <div class="copyblock">
-    <div class="bar"><span><strong>カードの担当（cards）</strong>に今日貼ります。予兆の種別の語をそろえる #243 です。PR が 1 本開いたら止まります。</span><button class="copy" type="button" data-target="goal-cards-now">コピー</button></div>
-    <pre id="goal-cards-now">/goal in the original-card-battle worktree for cards: #243 正本の食い違い: 予兆の種別の語 has its own branch off origin/main, a local run of npm run build, npm run lint, npm run test:run and dotnet test under unity-port that all exit 0, npm run sources -- --check passing, and an opened PR that closes it; follow the option the issue recommends (enemy_roster_v4 uses 防御 / 移動). Before anything else merge origin/main, read .claude/skills/worktree-policy/SKILL.md and run npm run sources -- --lane cards: write only the sources that command lists as yours, and when two canonical sources disagree do not edit the other lane's file — file an issue titled 正本の食い違い, note in the issue and the PR which source you followed, and keep going. Update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.</pre>
-  </div>
-
-  <div class="copyblock">
-    <div class="bar"><span><strong>見た目の担当（design）</strong>に貼ります。#254 の上に #259 を積みます。PR が 2 本開いたら止まります。</span><button class="copy" type="button" data-target="goal-design">コピー</button></div>
-    <pre id="goal-design">/goal in the original-card-battle worktree for design: #254 and then #259 each have an opened PR whose branch passes npm run build, npm run lint, npm run test:run and dotnet test under unity-port with exit 0 and npm run sources -- --check — #254 on docs/design-254 off origin/main; #259 on docs/design-259 branched from docs/design-254, base docs/design-254, with a body line saying to retarget to main once #254 merges, because both edit battle-visual-v1.md; for #259 the #256 body is the decision source. Before anything else merge origin/main, read .claude/skills/worktree-policy/SKILL.md and run npm run sources -- --lane design: write only the sources that command lists as yours, and when two canonical sources disagree do not edit the other lane's file — file an issue titled 正本の食い違い, note in the issue and the PR which source you followed, and keep going. Update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.</pre>
-  </div>
-
-  <div class="callout prose"><strong>カードの担当には、もう 1 つ後で貼ります。</strong>戦闘の担当が出す「戦闘の規則の PR」（ブランチ <code>docs/battle-258</code>）を merge してから、下の文を貼ってください。カードの表は、規則の文書が決めた語（移動後・連動 スタンス・永続の効果）に合わせて書き直すためです。</div>
-
-  <div class="copyblock">
-    <div class="bar"><span><strong>カードの担当（cards）</strong>に、戦闘の規則の PR の merge 後に貼ります。PR が 1 本開いたら止まります。</span><button class="copy" type="button" data-target="goal-cards-later">コピー</button></div>
-    <pre id="goal-cards-later">/goal in the original-card-battle worktree for cards: #257 [属性 4 つ] カード表と敵の表の属性を寄せる has its own branch off origin/main, a local run of npm run build, npm run lint, npm run test:run and dotnet test under unity-port that all exit 0, npm run sources -- --check passing, and an opened PR that closes it. The #256 body is the decision source and the wording (移動後, 連動 スタンス, permanent effects) must match the four-attribute rules already in battle_core_v4.md on origin/main. Before anything else merge origin/main, read .claude/skills/worktree-policy/SKILL.md and run npm run sources -- --lane cards: write only the sources that command lists as yours, and when two canonical sources disagree do not edit the other lane's file — file an issue titled 正本の食い違い, note in the issue and the PR which source you followed, and keep going. Update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.</pre>
-  </div>
-
-  <h2>3. 担当が積んだ PR を順に merge する</h2>
+  <h2>3. 積んだ PR は、取り込み先を main に付け替えてから merge する</h2>
   <div class="task">
     <h3><span class="chip now">今日から</span>下の PR を merge したら、上の PR の取り込み先を main に付け替えます</h3>
     <p class="meta">引っ越しの段ボールを積んだまま下の箱だけ運び出すと、上の箱が宙に浮くのと同じです。付け替えないまま上の PR を merge すると、中身は消えた下のブランチに入り、main には届きません。前回の #255 はこれで main に入りませんでした。</p>
-    <p>積んだ PR は、戦闘の担当が 3 本（規則 → コア → 敵 AI）、見た目の担当が 2 本（#254 → #259）出します。どれも PR 本文に「merge 後に取り込み先を main に付け替える」と書かせています。</p>
+    <p>いま積んであるのは #272 → #275 です。戦闘の担当も、このあとコアの PR と敵 AI の PR を #274 の上に積みます。どれも PR 本文に「merge 後に取り込み先を main に付け替える」と書かせています。</p>
     <ol>
       <li>いちばん下の PR（取り込み先が <code>main</code> のもの）を merge します。</li>
       <li>その上に積まれた PR を開き、題の右の「Edit」を押します。</li>
@@ -208,6 +201,14 @@
       <li>さらに上の PR があれば、2〜4 を繰り返します。</li>
     </ol>
     <p class="note">merge した後のブランチに担当がコミットを足すと、その分は main に入りません。足したいことが出たら、新しい PR にするよう担当のチャットに伝えてください。</p>
+  </div>
+
+  <h2>#274 の merge 後: カードの担当に /goal をもう 1 つ貼る</h2>
+  <div class="callout prose"><strong>#274 を merge してから貼ってください。</strong>カードの表（#257）は、戦闘の規則の文書が決めた語（移動後・連動 スタンス・永続の効果）に合わせて書き直すためです。担当ごとの作業フォルダ <code>C:\Users\user\orca\workspaces\original-card-battle\cards</code> で開いているチャットに貼ります。</div>
+
+  <div class="copyblock">
+    <div class="bar"><span><strong>カードの担当（cards）</strong>に、戦闘の規則の PR の merge 後に貼ります。PR が 1 本開いたら止まります。</span><button class="copy" type="button" data-target="goal-cards-later">コピー</button></div>
+    <pre id="goal-cards-later">/goal in the original-card-battle worktree for cards: #257 [属性 4 つ] カード表と敵の表の属性を寄せる has its own branch off origin/main, a local run of npm run build, npm run lint, npm run test:run and dotnet test under unity-port that all exit 0, npm run sources -- --check passing, and an opened PR that closes it. The #256 body is the decision source and the wording (移動後, 連動 スタンス, permanent effects) must match the four-attribute rules already in battle_core_v4.md on origin/main. Before anything else merge origin/main, read .claude/skills/worktree-policy/SKILL.md and run npm run sources -- --lane cards: write only the sources that command lists as yours, and when two canonical sources disagree do not edit the other lane's file — file an issue titled 正本の食い違い, note in the issue and the PR which source you followed, and keep going. Update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.</pre>
   </div>
 
   <h2>4. 背水の陣の特性 2 つを残すか決める（#213）</h2>
