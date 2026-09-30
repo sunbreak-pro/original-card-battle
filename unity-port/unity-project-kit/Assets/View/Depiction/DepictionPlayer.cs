@@ -276,7 +276,7 @@ namespace Depiction.View
             SetHandInteractable(false);
             yield return PlayEvent(ev);
             _busy = false;
-            yield return UiTween.Wait(250f);
+            yield return UiTween.Wait(EffectFlow.AfterPlayerEventMs);
             yield return RunAutomaticEvents();
         }
 
@@ -294,7 +294,7 @@ namespace Depiction.View
             {
                 DepictionEvent ev = _source.AdvanceAuto();
                 yield return PlayEvent(ev);
-                yield return UiTween.Wait(350f);
+                yield return UiTween.Wait(EffectFlow.AfterAutoEventMs);
             }
             _busy = false;
             if (_halted) yield break; // given up (#203): nothing follows, and no result card
@@ -1371,7 +1371,7 @@ namespace Depiction.View
             EventSeconds.Add(seconds);
             Debug.Log("[Depiction] event " + ev.Order + " " + ev.Title + " settled in " + seconds.ToString("0.00") + " s");
             yield return Gate(ev.Order + "-end");
-            yield return UiTween.Wait(250f);
+            yield return UiTween.Wait(EffectFlow.AfterPlayerEventMs);
             yield return RunAutomaticEvents();
         }
 
