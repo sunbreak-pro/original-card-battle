@@ -12,14 +12,6 @@ This directory contains specialized skill guides for developing different aspect
 | **enemy-creator**           | Add new enemies | Enemy definitions, AI patterns, depth-specific data    |
 | **character-class-creator** | Add new classes | Class data, initial decks, class-specific mechanics    |
 
-### System Development
-
-| Skill              | Command          | Description                                      |
-| ------------------ | ---------------- | ------------------------------------------------ |
-| **battle-system**  | Battle features  | Buff/debuff, damage calculation, phase execution |
-| **camp-facility**  | Camp features    | Shop, Guild, Blacksmith, Sanctuary, Library      |
-| **dungeon-system** | Dungeon features | Map generation, node types, return system        |
-
 ### UI/UX
 
 | Skill                          | Command                       | Description                                                                                                                                   |
@@ -27,22 +19,12 @@ This directory contains specialized skill guides for developing different aspect
 | **ui-ux-creator**              | UI components                 | Color palettes, typography, animations, layouts                                                                                               |
 | **visual-production-pipeline** | Character art / UI production | Tools and prerequisites survey, one character or one UI screen through the pipeline, report → Artifact → life-editor note (tag `card-battle`) |
 
-### Research & Debugging
-
-| Skill                          | Command      | Description                                             |
-| ------------------------------ | ------------ | ------------------------------------------------------- |
-| **design-research**            | Search specs | Quick reference for game design documents               |
-| **debugging-error-prevention** | Prevent bugs | Error boundaries, type safety, async handling           |
-| **debugging-active**           | Debug issues | State inspection, diagnostic trees, root cause analysis |
-
 ## Usage
 
 Skills are automatically triggered by Claude Code when relevant requests are made. Examples:
 
 - "Add a new fire mage card" → `card-creator`
 - "Create a boss enemy for depth 5" → `enemy-creator`
-- "Debug why damage calculation is wrong" → `debugging-active`
-- "Check the card derivation specs" → `design-research`
 
 ## Skill File Structure
 
