@@ -76,6 +76,16 @@ namespace Depiction.Bridge
         // ---- cards --------------------------------------------------------------------------
 
         /// <summary>
+        /// The face of a catalog card that is not dealt: the deck screen prints the same face as the
+        /// hand does (no preview, so the cost is the printed one and no lamp is lit). The face's id is
+        /// the card's own id.
+        /// </summary>
+        public static CardFace FaceOf(CardDef def)
+        {
+            return Face(new CardInstance(def.Id, def), null, false);
+        }
+
+        /// <summary>
         /// The face of one dealt card. <paramref name="preview"/> comes from the core
         /// (TurnLoop.Preview), so the lamp is the core's verdict and not a guess made here. The reach
         /// hint reads the preview's own enemy only; with several enemies use the overload that takes
