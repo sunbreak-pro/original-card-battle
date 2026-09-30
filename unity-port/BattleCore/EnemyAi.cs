@@ -96,7 +96,7 @@ namespace BattleCore
 
         /// <summary>
         /// §6: the omen label, read off the action. The kind is the first attribute in the order
-        /// Attack, Move, Guard, Skill, Stance — a move is put before a guard here (unlike the card's
+        /// Attack, Move, Guard, Skill, Stance — the movement effect (not an attribute, §2.1) is put before a guard here (unlike the card's
         /// colour role, CoreText.KindOf) because where the enemy will stand is what the player has to
         /// read. The reach is the action's own when it has an opponent-directed face, else null.
         /// </summary>
@@ -108,7 +108,7 @@ namespace BattleCore
             OmenKind kind =
                 action.Omen.HasValue ? action.Omen.Value
                 : action.Attributes.HasFlag(BattleAttribute.Attack) ? OmenKind.Attack
-                : action.Attributes.HasFlag(BattleAttribute.Move) ? OmenKind.Move
+                : AttributeRule.HasMovement(action.Face) ? OmenKind.Move
                 : action.Attributes.HasFlag(BattleAttribute.Guard) ? OmenKind.Guard
                 : action.Attributes.HasFlag(BattleAttribute.Skill) ? OmenKind.Skill
                 : OmenKind.Stance;

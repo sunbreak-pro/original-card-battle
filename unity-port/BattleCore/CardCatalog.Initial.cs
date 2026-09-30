@@ -122,7 +122,7 @@ namespace BattleCore
         public static readonly CardDef WaterStance = new CardDef(
             "water_stance", "水の構え", BattleAttribute.Stance, 2,
             new Face(Stance: new StanceDef(StanceHook.TurnStart, StanceWhen.GapAtLeast, Threshold: 2, Recovery: 2)),
-            Combo(BattleAttribute.Move, TraitEffect.CostDown, 1),
+            When(TraitCondition.Moved, TraitEffect.CostDown, 1),
             Targets: TargetKind.Self,
             Description: "退いて息を戻す型");
 
@@ -138,7 +138,7 @@ namespace BattleCore
         public static readonly CardDef FlowStance = new CardDef(
             "flow_stance", "流れの構え", BattleAttribute.Stance, 3,
             new Face(Stance: new StanceDef(StanceHook.AttackBonus, StanceWhen.MovedThisTurn, Power: 5)),
-            Combo(BattleAttribute.Move, TraitEffect.Draw, 1),
+            When(TraitCondition.Moved, TraitEffect.Draw, 1),
             Targets: TargetKind.Self,
             Description: "動いてから斬る型");
 
@@ -193,7 +193,7 @@ namespace BattleCore
 
         /// <summary>#25. Steps forward one and draws; a stamina point as the first play.</summary>
         public static readonly CardDef Footwork = new CardDef(
-            "footwork", "足運び", BattleAttribute.Move, 1,
+            "footwork", "足運び", BattleAttribute.None, 1,
             new Face(Move: 1, Draw: 1),
             When(TraitCondition.FirstPlay, TraitEffect.StaminaGain, 1),
             Targets: TargetKind.Self,
@@ -201,7 +201,7 @@ namespace BattleCore
 
         /// <summary>#26. Leaps back two behind 4 Guard, +3 more into an attack omen.</summary>
         public static readonly CardDef BackLeap = new CardDef(
-            "back_leap", "後ろ跳び", BattleAttribute.Move, 1,
+            "back_leap", "後ろ跳び", BattleAttribute.None, 1,
             new Face(Move: -2, Guard: 4),
             OmenIs(OmenKind.Attack, TraitEffect.GuardBonus, 3),
             Targets: TargetKind.Self,
@@ -209,7 +209,7 @@ namespace BattleCore
 
         /// <summary>#27. Steps forward one behind 4 Guard; draws after a guard.</summary>
         public static readonly CardDef SlideStep = new CardDef(
-            "slide_step", "摺り足", BattleAttribute.Move, 1,
+            "slide_step", "摺り足", BattleAttribute.None, 1,
             new Face(Move: 1, Guard: 4),
             Combo(BattleAttribute.Guard, TraitEffect.Draw, 1),
             Targets: TargetKind.Self,
@@ -217,7 +217,7 @@ namespace BattleCore
 
         /// <summary>#28. Steps back one and regains a stamina point, one more as the third play or later.</summary>
         public static readonly CardDef BreakOff = new CardDef(
-            "break_off", "間合い切り", BattleAttribute.Move, 1,
+            "break_off", "間合い切り", BattleAttribute.None, 1,
             new Face(Move: -1, StaminaGain: 1),
             When(TraitCondition.Finisher, TraitEffect.StaminaGain, 1),
             Targets: TargetKind.Self,
@@ -227,21 +227,21 @@ namespace BattleCore
 
         /// <summary>#29. Hits at 1〜2, then steps in one; +3 after a stance.</summary>
         public static readonly CardDef Lunge = new CardDef(
-            "lunge", "踏み込み斬り", BattleAttribute.Attack | BattleAttribute.Move, 3,
+            "lunge", "踏み込み斬り", BattleAttribute.Attack, 3,
             new Face(Power: 14, Move: 1, Reach: new Reach(1, 2)),
             Combo(BattleAttribute.Stance, TraitEffect.PowerBonus, 3),
             Description: "型を決めてから踏み込んで斬る");
 
         /// <summary>#30. Hit, then step back one; +3 Guard when stamina is held back.</summary>
         public static readonly CardDef Feint = new CardDef(
-            "feint", "牽制", BattleAttribute.Attack | BattleAttribute.Move, 2,
+            "feint", "牽制", BattleAttribute.Attack, 2,
             new Face(Power: 8, Move: -1),
             Reserve(4, TraitEffect.GuardBonus, 3),
             Description: "牽制して退く");
 
         /// <summary>#31. The answer to being shoved away: reaches 1〜2, the gap is read before the move, so from 2 it lands at 20 and closes in.</summary>
         public static readonly CardDef BoarRush = new CardDef(
-            "boar_rush", "猪突猛進", BattleAttribute.Attack | BattleAttribute.Move, 3,
+            "boar_rush", "猪突猛進", BattleAttribute.Attack, 3,
             new Face(Power: 14, Move: 2, Reach: new Reach(1, 2)),
             AtLeast(2, TraitEffect.PowerBonus, 6),
             Description: "遠くから一気に駆けて斬る");
@@ -288,14 +288,14 @@ namespace BattleCore
 
         /// <summary>#37. Guard while closing in: 10 on the ruler plus the 素直 +2.</summary>
         public static readonly CardDef StepInGuard = new CardDef(
-            "step_in_guard", "足捌き・前", BattleAttribute.Guard | BattleAttribute.Move, 3,
+            "step_in_guard", "足捌き・前", BattleAttribute.Guard, 3,
             new Face(Guard: 12, Move: 1),
             Targets: TargetKind.Self,
             Description: "受けながら詰める");
 
         /// <summary>#38. Guard while backing off: 10 on the ruler plus the 素直 +2.</summary>
         public static readonly CardDef StepOutGuard = new CardDef(
-            "step_out_guard", "足捌き・後", BattleAttribute.Guard | BattleAttribute.Move, 3,
+            "step_out_guard", "足捌き・後", BattleAttribute.Guard, 3,
             new Face(Guard: 12, Move: -1),
             Targets: TargetKind.Self,
             Description: "受けながら退く");
@@ -314,7 +314,7 @@ namespace BattleCore
 
         /// <summary>#40. Slow, fatigue and intimidate at 0〜1, then step back one; a stamina point after an attack.</summary>
         public static readonly CardDef TwistAway = new CardDef(
-            "twist_away", "翻し足", BattleAttribute.Skill | BattleAttribute.Move, 3,
+            "twist_away", "翻し足", BattleAttribute.Skill, 3,
             new Face(Move: -1, Statuses: new[] { Foe(StatusKind.Slow, 2), Foe(StatusKind.Fatigue, 2), Foe(StatusKind.Intimidate, 2) }),
             Combo(BattleAttribute.Attack, TraitEffect.StaminaGain, 1),
             Description: "斬った後に身を翻し足を封じる");

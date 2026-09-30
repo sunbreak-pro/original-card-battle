@@ -49,7 +49,7 @@ namespace BattleCore
 
         /// <summary>#46. Hits at 1〜2 and pulls the foe one cell in; +5 once it is broken.</summary>
         public static readonly CardDef HaulStep = new CardDef(
-            "haul_step", "手繰りの歩み", BattleAttribute.Attack | BattleAttribute.Move, 1,
+            "haul_step", "手繰りの歩み", BattleAttribute.Attack, 1,
             new Face(Power: 4, Push: -1, Reach: new Reach(1, 2)),
             When(TraitCondition.Broken, TraitEffect.PowerBonus, 5),
             Description: "崩れた相手を手繰り寄せて潰す");
@@ -58,7 +58,7 @@ namespace BattleCore
 
         /// <summary>#47. Steps back one and sets a stance of 5 Guard at the end of turns ended at a gap of 2 or more.</summary>
         public static readonly CardDef RootStride = new CardDef(
-            "root_stride", "根渡り", BattleAttribute.Stance | BattleAttribute.Move, 3,
+            "root_stride", "根渡り", BattleAttribute.Stance, 3,
             new Face(Move: -1, Stance: new StanceDef(StanceHook.TurnEnd, StanceWhen.GapAtLeast, Threshold: 2, Guard: 5)),
             Combo(BattleAttribute.Skill, TraitEffect.GuardBonus, 3),
             Targets: TargetKind.Self,
@@ -106,7 +106,7 @@ namespace BattleCore
 
         /// <summary>#53. Hits, then steps in one; +5 when adjacent.</summary>
         public static readonly CardDef FangRush = new CardDef(
-            "fang_rush", "牙の突進", BattleAttribute.Attack | BattleAttribute.Move, 2,
+            "fang_rush", "牙の突進", BattleAttribute.Attack, 2,
             new Face(Power: 8, Move: 1),
             AtMost(0, TraitEffect.PowerBonus, 5),
             Description: "牙のように飛びかかる");
@@ -117,7 +117,7 @@ namespace BattleCore
         public static readonly CardDef Whirlwind = new CardDef(
             "whirlwind", "旋風斬り", BattleAttribute.Attack, 2,
             new Face(Power: 13),
-            Combo(BattleAttribute.Move, TraitEffect.HeavyBlow),
+            When(TraitCondition.Moved, TraitEffect.HeavyBlow),
             Description: "動いた勢いを刃に乗せる");
 
         /// <summary>#55. Column-1 Guard with parry; +3 when it leaves the hand thin.</summary>
@@ -132,7 +132,7 @@ namespace BattleCore
 
         /// <summary>#56. Marks the foe fragile at 0〜2 and steps back one; draws if it already was.</summary>
         public static readonly CardDef HunterMark = new CardDef(
-            "hunter_mark", "狩人の印", BattleAttribute.Skill | BattleAttribute.Move, 1,
+            "hunter_mark", "狩人の印", BattleAttribute.Skill, 1,
             new Face(Move: -1, Reach: new Reach(0, 2), Statuses: new[] { Foe(StatusKind.Fragile, 2) }),
             FoeHas(StatusKind.Fragile, TraitEffect.Draw, 1),
             Description: "退きながら的を付ける");
@@ -149,7 +149,7 @@ namespace BattleCore
 
         /// <summary>#58. Adjacent only: Guard and a push of one cell; a stamina point as the third play or later.</summary>
         public static readonly CardDef ShieldPush = new CardDef(
-            "shield_push", "盾押し", BattleAttribute.Guard | BattleAttribute.Move, 2,
+            "shield_push", "盾押し", BattleAttribute.Guard, 2,
             new Face(Guard: 6, Push: 1, Reach: Reach.Only(0)),
             When(TraitCondition.Finisher, TraitEffect.StaminaGain, 1),
             Description: "盾で押して間合いを空ける");
@@ -164,7 +164,7 @@ namespace BattleCore
 
         /// <summary>#60. Leaps back two and draws; a stamina point after an attack.</summary>
         public static readonly CardDef LeapBack = new CardDef(
-            "leap_back", "跳び退り", BattleAttribute.Move, 1,
+            "leap_back", "跳び退り", BattleAttribute.None, 1,
             new Face(Move: -2, Draw: 1),
             Combo(BattleAttribute.Attack, TraitEffect.StaminaGain, 1),
             Targets: TargetKind.Self,
@@ -172,7 +172,7 @@ namespace BattleCore
 
         /// <summary>#61. Hits, then steps in one; +3 as the first play.</summary>
         public static readonly CardDef RisingCut = new CardDef(
-            "rising_cut", "斬り上げ", BattleAttribute.Attack | BattleAttribute.Move, 3,
+            "rising_cut", "斬り上げ", BattleAttribute.Attack, 3,
             new Face(Power: 14, Move: 1),
             When(TraitCondition.FirstPlay, TraitEffect.PowerBonus, 3),
             Description: "踏み込んで下から斬り上げる");
@@ -188,7 +188,7 @@ namespace BattleCore
 
         /// <summary>#63. Dashes forward two and regains a stamina point; draws from a gap of 2 or more.</summary>
         public static readonly CardDef DashIn = new CardDef(
-            "dash_in", "駆け込み", BattleAttribute.Move, 1,
+            "dash_in", "駆け込み", BattleAttribute.None, 1,
             new Face(Move: 2, StaminaGain: 1),
             AtLeast(2, TraitEffect.Draw, 1),
             Targets: TargetKind.Self,
@@ -196,7 +196,7 @@ namespace BattleCore
 
         /// <summary>#64. Guard while stepping in one; +3 on a chain.</summary>
         public static readonly CardDef GuardWalk = new CardDef(
-            "guard_walk", "受け歩き", BattleAttribute.Guard | BattleAttribute.Move, 2,
+            "guard_walk", "受け歩き", BattleAttribute.Guard, 2,
             new Face(Guard: 6, Move: 1),
             When(TraitCondition.Chain, TraitEffect.GuardBonus, 3),
             Targets: TargetKind.Self,
@@ -242,7 +242,7 @@ namespace BattleCore
 
         /// <summary>#70. Steps back two and sets a stance of 3 Guard and +2 recovery after turns ended at a gap of 2 or more.</summary>
         public static readonly CardDef MistStep = new CardDef(
-            "mist_step", "霞み足", BattleAttribute.Stance | BattleAttribute.Move, 3,
+            "mist_step", "霞み足", BattleAttribute.Stance, 3,
             new Face(Move: -2, Stance: new StanceDef(StanceHook.TurnEnd, StanceWhen.GapAtLeast, Threshold: 2, Guard: 3, NextRecovery: 2)),
             Combo(BattleAttribute.Skill, TraitEffect.NextTurnRecovery, 1),
             Targets: TargetKind.Self,
@@ -268,7 +268,7 @@ namespace BattleCore
 
         /// <summary>#73. The one card reaching 2〜3 (so 11, not 14): hits, then dashes in two; a stamina point from a gap of 3.</summary>
         public static readonly CardDef GaleThrust = new CardDef(
-            "gale_thrust", "疾風突き", BattleAttribute.Attack | BattleAttribute.Move, 3,
+            "gale_thrust", "疾風突き", BattleAttribute.Attack, 3,
             new Face(Power: 11, Move: 2, Reach: new Reach(2, 3)),
             AtLeast(3, TraitEffect.StaminaGain, 1),
             Description: "離れた所から突き、風のように詰める");
@@ -313,7 +313,7 @@ namespace BattleCore
 
         /// <summary>#79. Hits at 1〜2, then steps in one; +5 into a move omen. A move omen mostly shows at gap 3+, so the trait is rare and the face carries the plain card's +2 (8 + 2, #208).</summary>
         public static readonly CardDef ShadowLunge = new CardDef(
-            "shadow_lunge", "影踏み", BattleAttribute.Attack | BattleAttribute.Move, 2,
+            "shadow_lunge", "影踏み", BattleAttribute.Attack, 2,
             new Face(Power: 10, Move: 1, Reach: new Reach(1, 2)),
             OmenIs(OmenKind.Move, TraitEffect.PowerBonus, 5),
             Description: "動こうとした影を踏んで斬る");

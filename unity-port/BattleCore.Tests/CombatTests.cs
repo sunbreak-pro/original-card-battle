@@ -137,11 +137,11 @@ namespace BattleCore.Tests
         {
             Assert.That(Constants.FaceOrder, Is.EqualTo(new[]
             {
-                BattleAttribute.Attack,
-                BattleAttribute.Move,
-                BattleAttribute.Guard,
-                BattleAttribute.Skill,
-                BattleAttribute.Stance,
+                FaceKind.Attack,
+                FaceKind.Move,
+                FaceKind.Guard,
+                FaceKind.Skill,
+                FaceKind.Stance,
             }));
         }
     }

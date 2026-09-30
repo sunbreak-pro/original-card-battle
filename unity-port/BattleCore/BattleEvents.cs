@@ -74,8 +74,8 @@ namespace BattleCore
     /// <summary>§2.2: judged once, before any face. Only emitted for a card or action that carries a trait.</summary>
     public sealed record TraitEvaluated(Actor Actor, string SourceId, Trait Trait, TraitOutcome Outcome) : BattleEvent(Actor);
 
-    /// <summary>One face of the card resolved. They come in §2.2 order: Attack, Move, Guard, Skill. Not emitted for a face a whiff skipped.</summary>
-    public sealed record FaceResolved(Actor Actor, string SourceId, BattleAttribute Face) : BattleEvent(Actor);
+    /// <summary>One face of the card resolved. They come in §2.2 order: Attack, Move, Guard, Skill, Stance (Move is the movement effect, not an attribute). Not emitted for a face a whiff skipped.</summary>
+    public sealed record FaceResolved(Actor Actor, string SourceId, FaceKind Face) : BattleEvent(Actor);
 
     /// <summary>Actor is the attacker. Raw − Absorbed = Damage; Absorbed is what the target's Guard soaked.</summary>
     public sealed record DamageDealt(
@@ -173,8 +173,8 @@ namespace BattleCore
         int TargetGuardAfter,
         int TargetHpAfter) : BattleEvent(Actor);
 
-    /// <summary>§4: Actor set a stance into its slot. Replaced is the source id of the stance it pushed out, if any.</summary>
-    public sealed record StanceSet(Actor Actor, string SourceId, string Name, StanceDef Stance, string? Replaced) : BattleEvent(Actor);
+    /// <summary>§4: Actor put a stance on its list of permanent effects. Nothing is pushed out (v4.4): the list has no cap and a repeat is another entry.</summary>
+    public sealed record StanceSet(Actor Actor, string SourceId, string Name, StanceDef Stance) : BattleEvent(Actor);
 
     /// <summary>§4: Actor's stance took effect. What it did follows as its own events (GuardGained, …).</summary>
     public sealed record StanceFired(Actor Actor, string SourceId, StanceHook Hook) : BattleEvent(Actor);

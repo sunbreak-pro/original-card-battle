@@ -67,10 +67,10 @@ namespace BattleCore.Tests
             {
                 Assert.That(Polearm.Actions["sweep"].Attributes, Is.EqualTo(BattleAttribute.Attack));
                 Assert.That(Polearm.Actions["shove"].Attributes,
-                    Is.EqualTo(BattleAttribute.Attack | BattleAttribute.Move));
+                    Is.EqualTo(BattleAttribute.Attack));
                 Assert.That(Polearm.Actions["reach_thrust"].Attributes, Is.EqualTo(BattleAttribute.Attack));
                 Assert.That(Polearm.Actions["guard_up"].Attributes, Is.EqualTo(BattleAttribute.Guard));
-                Assert.That(Polearm.Actions["step_forward"].Attributes, Is.EqualTo(BattleAttribute.Move | BattleAttribute.Guard));
+                Assert.That(Polearm.Actions["step_forward"].Attributes, Is.EqualTo(BattleAttribute.Guard));
             });
         }
 

@@ -171,7 +171,7 @@ namespace Depiction.Bridge.Tests
                     Assert.That(state.EnemyDef.Id, Is.EqualTo("shadow_hound"));
                     Assert.That(state.Player.Hp, Is.EqualTo(hp), "HP carries");
                     Assert.That(state.Player.Stamina, Is.EqualTo(stamina), "current stamina carries");
-                    Assert.That(state.Player.Stance, Is.Null);
+                    Assert.That(state.Player.StanceList, Is.Empty);
                     Assert.That(state.DrawPile.Select(c => c.InstanceId), Is.EquivalentTo(Deck().Select(c => c.InstanceId)), "the whole deck again");
                     Assert.That(second.Frame.Corner.ChainIndex, Is.EqualTo(2));
                     Assert.That(second.Frame.Corner.ChainTotal, Is.EqualTo(3));
@@ -353,8 +353,8 @@ namespace Depiction.Bridge.Tests
         public void TheBreakdown_AndTheAverage_ReadInOrder()
         {
             var tally = new BattleTally("polearm_warped", GameResult.Won, 7, 30, 50, 9,
-                new Dictionary<BattleAttribute, int> { [BattleAttribute.Guard] = 3, [BattleAttribute.Attack] = 6, [BattleAttribute.Move] = 2 }, 4);
-            Assert.That(DemoSession.Breakdown(tally), Is.EqualTo("攻撃 6・ムーブ 2・防御 3"));
+                new Dictionary<BattleAttribute, int> { [BattleAttribute.Guard] = 3, [BattleAttribute.Attack] = 6, [BattleAttribute.Skill] = 2 }, 4);
+            Assert.That(DemoSession.Breakdown(tally), Is.EqualTo("攻撃 6・防御 3・技 2"));
             Assert.That(DemoSession.Breakdown(new BattleTally("x", GameResult.Lost, 1, 0, 50, 0, new Dictionary<BattleAttribute, int>(), 0)), Is.EqualTo("なし"));
             Assert.That(DemoSession.EnemyLine(Enemies.AbyssAngler), Is.EqualTo("獄竜 ガルド（ボス・HP 180）"));
         }

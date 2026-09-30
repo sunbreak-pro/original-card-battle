@@ -41,7 +41,6 @@ namespace BattleCore.Tests
         {
             const BattleAttribute A = BattleAttribute.Attack;
             const BattleAttribute G = BattleAttribute.Guard;
-            const BattleAttribute M = BattleAttribute.Move;
             const BattleAttribute Sk = BattleAttribute.Skill;
 
             Assert.Multiple(() =>
@@ -52,10 +51,11 @@ namespace BattleCore.Tests
                 Assert.That(CardCatalog.BodyCheck.Attributes, Is.EqualTo(A | Sk));
                 Assert.That(CardCatalog.Brace.Attributes, Is.EqualTo(G));
                 Assert.That(CardCatalog.ShieldBash.Attributes, Is.EqualTo(A | G));
-                Assert.That(CardCatalog.Feint.Attributes, Is.EqualTo(A | M));
-                Assert.That(CardCatalog.BoarRush.Attributes, Is.EqualTo(A | M));
-                Assert.That(CardCatalog.StepInGuard.Attributes, Is.EqualTo(G | M));
-                Assert.That(CardCatalog.StepOutGuard.Attributes, Is.EqualTo(G | M));
+                Assert.That(CardCatalog.Feint.Attributes, Is.EqualTo(A));
+                Assert.That(AttributeRule.HasMovement(CardCatalog.Feint.Face), Is.True, "movement is an effect, not an attribute (v4.4)");
+                Assert.That(CardCatalog.BoarRush.Attributes, Is.EqualTo(A));
+                Assert.That(CardCatalog.StepInGuard.Attributes, Is.EqualTo(G));
+                Assert.That(CardCatalog.StepOutGuard.Attributes, Is.EqualTo(G));
             });
         }
 
@@ -216,7 +216,7 @@ namespace BattleCore.Tests
             // §13 / R102: the chance that 5 cards out of the deck hold no move face stays at or
             // under 25%. Hypergeometric: C(nonMovers, 5) / C(deck, 5).
             var deck = PrototypeDeck.Build();
-            int movers = deck.Count(c => c.Def.Attributes.HasFlag(BattleAttribute.Move));
+            int movers = deck.Count(c => AttributeRule.HasMovement(c.Def.Face));
             double chance = Choose(deck.Count - movers, 5) / Choose(deck.Count, 5);
 
             Assert.That(movers, Is.EqualTo(8));
