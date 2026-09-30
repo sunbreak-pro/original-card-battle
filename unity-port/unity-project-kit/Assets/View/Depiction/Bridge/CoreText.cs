@@ -29,14 +29,13 @@ namespace Depiction.Bridge
             return actor == Actor.Player ? UnitSide.Player : UnitSide.Enemy;
         }
 
-        /// <summary>The colour role a card borrows: its first attribute in resolution order (§2.2).</summary>
+        /// <summary>The colour role a card borrows: the one attribute it counts as (§2.1, v4.4). Movement is an effect, not a role of its own.</summary>
         public static CardKind KindOf(BattleAttribute attributes)
         {
             if (attributes.HasFlag(BattleAttribute.Attack)) return CardKind.Attack;
             if (attributes.HasFlag(BattleAttribute.Guard)) return CardKind.Guard;
-            if (attributes.HasFlag(BattleAttribute.Move)) return CardKind.Move;
             if (attributes.HasFlag(BattleAttribute.Skill)) return CardKind.Skill;
-            return CardKind.Stance;
+            return attributes.HasFlag(BattleAttribute.Stance) ? CardKind.Stance : CardKind.Skill;
         }
 
         public static string KindWord(CardKind kind)
@@ -94,7 +93,7 @@ namespace Depiction.Bridge
         public static CardFace Face(CardInstance card, PlayPreview preview, bool outOfReach)
         {
             CardDef def = card.Def;
-            CardKind kind = KindOf(def.Attributes);
+            CardKind kind = KindOf(def.Attribute);
             bool single = def.Targets == TargetKind.One;
             return new CardFace
             {
@@ -191,7 +190,7 @@ namespace Depiction.Bridge
                 case StanceHook.AttackBonus:
                     switch (stance.When)
                     {
-                        case StanceWhen.MovedThisTurn: return "ムーブを出したターン、アタック +" + stance.Power;
+                        case StanceWhen.MovedThisTurn: return "移動したターン、アタック +" + stance.Power;
                         case StanceWhen.GapAtMost: return "間合い " + stance.Threshold + " の相手へのアタック +" + stance.Power;
                         case StanceWhen.TargetHasStatus:
                             return (stance.Status.HasValue ? stance.Status.Value.ToLabel() : "") + "中の敵へのアタック +" + stance.Power;
@@ -286,6 +285,7 @@ namespace Depiction.Bridge
                 case BattleCore.TraitCondition.Unguarded: return "無防備";
                 case BattleCore.TraitCondition.Reserve: return "残" + trait.Threshold;
                 case BattleCore.TraitCondition.Combo: return "連動" + AttributeWord(trait.Attribute);
+                case BattleCore.TraitCondition.Moved: return "移動後";
                 case BattleCore.TraitCondition.OmenIs: return "予兆" + (trait.Omen.HasValue ? OmenWord(trait.Omen.Value) : "");
                 case BattleCore.TraitCondition.Desperate: return "死力";
                 case BattleCore.TraitCondition.FirstPlay: return "初手";
@@ -323,7 +323,6 @@ namespace Depiction.Bridge
         {
             if (attribute.HasFlag(BattleAttribute.Attack)) return "(攻)";
             if (attribute.HasFlag(BattleAttribute.Guard)) return "(防)";
-            if (attribute.HasFlag(BattleAttribute.Move)) return "(動)";
             if (attribute.HasFlag(BattleAttribute.Skill)) return "(技)";
             if (attribute.HasFlag(BattleAttribute.Stance)) return "(構)";
             return "";
@@ -378,7 +377,7 @@ namespace Depiction.Bridge
         /// One side's gauges. <paramref name="gap"/> is N, shown on the tag of the player only: the
         /// screen has one tag slot per side and one number says it all (#163 draws the cells).
         /// </summary>
-        public static UnitFrame UnitOf(CombatantState unit, bool showStamina, int? gap, string stanceName = "")
+        public static UnitFrame UnitOf(CombatantState unit, bool showStamina, int? gap, IReadOnlyList<string> stanceNames = null)
         {
             var frame = new UnitFrame
             {
@@ -395,7 +394,7 @@ namespace Depiction.Bridge
                 frame.Range = SideOf(gap.Value);
                 frame.RangeGlyph = GapGlyph(gap.Value);
             }
-            frame.Statuses = Chips(unit.Statuses, stanceName);
+            frame.Statuses = Chips(unit.Statuses, stanceNames ?? new string[0]);
             return frame;
         }
 
@@ -405,11 +404,42 @@ namespace Depiction.Bridge
         /// </summary>
         public static List<StatusChip> Chips(StatusSet statuses, string stanceName = "")
         {
-            var chips = new List<StatusChip>();
-            if (!string.IsNullOrEmpty(stanceName)) chips.Add(new StatusChip { Label = "構え・" + stanceName, Stacks = 0 });
+            return Chips(statuses, string.IsNullOrEmpty(stanceName) ? new string[0] : new[] { stanceName });
+        }
+
+        /// <summary>
+        /// The chips under a gauge (v4.4): the stances held first, one chip per stance, then the status
+        /// words in their fixed order. The same stance twice is one chip with a count of 2, since it
+        /// works twice (<see cref="StanceChips"/>).
+        /// </summary>
+        public static List<StatusChip> Chips(StatusSet statuses, IReadOnlyList<string> stanceNames)
+        {
+            var chips = StanceChips(stanceNames);
             foreach (StatusKind kind in statuses.Kinds)
             {
                 chips.Add(new StatusChip { Label = kind.ToLabel(), Stacks = statuses.Stacks(kind) });
+            }
+            return chips;
+        }
+
+        /// <summary>
+        /// One chip per distinct stance name in the order first held; a stance held more than once
+        /// shows its count in Stacks, a single one shows none.
+        /// </summary>
+        public static List<StatusChip> StanceChips(IReadOnlyList<string> stanceNames)
+        {
+            var chips = new List<StatusChip>();
+            var order = new List<string>();
+            var count = new Dictionary<string, int>();
+            foreach (string name in stanceNames)
+            {
+                if (string.IsNullOrEmpty(name)) continue;
+                if (!count.ContainsKey(name)) { order.Add(name); count[name] = 0; }
+                count[name]++;
+            }
+            foreach (string name in order)
+            {
+                chips.Add(new StatusChip { Label = "構え・" + name, Stacks = count[name] > 1 ? count[name] : 0 });
             }
             return chips;
         }

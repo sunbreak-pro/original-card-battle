@@ -57,7 +57,7 @@ namespace BattleCore.Tests
         {
             atZero ??= EnemyAction("near_hit", face: new Face(Power: 5));
             atOneToTwo ??= EnemyAction("mid_hit", face: new Face(Power: 4, Reach: new Reach(1, 2)));
-            atThreePlus ??= EnemyAction("advance", face: new Face(Move: 1), attributes: BattleAttribute.Move, targets: TargetKind.Self);
+            atThreePlus ??= EnemyAction("advance", face: new Face(Move: 1), attributes: BattleAttribute.None, targets: TargetKind.Self);
             var actions = new Dictionary<string, EnemyActionDef>();
             foreach (var a in new[] { atZero, atOneToTwo, atThreePlus }) actions[a.Id] = a;
             return new EnemyDef(

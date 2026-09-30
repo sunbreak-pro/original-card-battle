@@ -27,12 +27,6 @@ namespace BattleCore
         public const int DeckMax = 40;
         public const int CopiesMax = 3;
 
-        /// <summary>
-        /// §8 (§19.6 S15): cards with a stance face in one deck, all kinds counted together. A limit
-        /// of its own, apart from the three of a kind.
-        /// </summary>
-        public const int StanceCardsMax = 3;
-
         /// <summary>§8: the kinds one character may own (40 to start, 40 learned).</summary>
         public const int OwnedKindsMax = 80;
 
@@ -67,8 +61,8 @@ namespace BattleCore
 
         public const int HeavyBlowRecoveryPenalty = 1;
 
-        /// <summary>§2.3: the trait vocabulary — 12 conditions × 10 effects.</summary>
-        public const int TraitConditions = 12;
+        /// <summary>§2.3: the trait vocabulary — 13 conditions × 10 effects (v4.4: 移動後 replaced 連動(ムーブ) and made the thirteenth).</summary>
+        public const int TraitConditions = 13;
 
         public const int TraitEffects = 10;
 
@@ -124,9 +118,6 @@ namespace BattleCore
 
         /// <summary>§5 疲労 / §9 step 2: the holder recovers this much less while it holds the word.</summary>
         public const int FatiguePenalty = 1;
-
-        /// <summary>§4: one stance at a time, for both sides.</summary>
-        public const int StanceSlots = 1;
 
         /// <summary>§5: the boss-only statuses.</summary>
         public const int BossStatusKinds = 2;
@@ -189,13 +180,13 @@ namespace BattleCore
         /// The order faces resolve in within one card. The trait is evaluated once before all of
         /// them, so it is not a member of this list.
         /// </summary>
-        public static readonly IReadOnlyList<BattleAttribute> FaceOrder = new[]
+        public static readonly IReadOnlyList<FaceKind> FaceOrder = new[]
         {
-            BattleAttribute.Attack,
-            BattleAttribute.Move,
-            BattleAttribute.Guard,
-            BattleAttribute.Skill,
-            BattleAttribute.Stance,
+            FaceKind.Attack,
+            FaceKind.Move,
+            FaceKind.Guard,
+            FaceKind.Skill,
+            FaceKind.Stance,
         };
 
         // ---- Damage multipliers (§5.1) ----

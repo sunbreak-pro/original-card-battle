@@ -15,8 +15,15 @@ namespace BattleCore
     // push / pull by cells; the enemy tree branches on the gap band (§6.1). v4.2 stays in git history.
 
     /// <summary>
-    /// §2.1 の属性 5 つ. Flags because one card carries 1-2 of them (単属性 5 + 二属性 10 = 15 patterns).
-    /// Named BattleAttribute, not Attribute, so it never shadows System.Attribute.
+    /// §2.1 の属性 4 つ (v4.4, #258): 攻撃 / 防御 / スキル / スタンス. Movement is not one: it is an
+    /// effect any card can carry (<see cref="Face.Move"/>, <see cref="Face.Push"/>).
+    ///
+    /// Flags because a card DECLARES the faces it carries (攻撃 + 防御 is one card) — that is what
+    /// <see cref="CardDef.Attributes"/> holds. What a card COUNTS as is one value, folded by
+    /// <see cref="AttributeRule.Fold"/> (<see cref="CardDef.Attribute"/>): 攻撃 ＞ 防御 ＞ スキル, and
+    /// スタンス on its own. Everything that counts attributes (played this turn, 連動, 連打, the
+    /// tally) reads the folded value. Named BattleAttribute, not Attribute, so it never shadows
+    /// System.Attribute.
     /// </summary>
     [Flags]
     public enum BattleAttribute
@@ -24,9 +31,21 @@ namespace BattleCore
         None = 0,
         Attack = 1 << 0,
         Guard = 1 << 1,
-        Move = 1 << 2,
-        Skill = 1 << 3,
-        Stance = 1 << 4,
+        Skill = 1 << 2,
+        Stance = 1 << 3,
+    }
+
+    /// <summary>
+    /// §2.2: the five things one card resolves, in the order it resolves them. Not an attribute:
+    /// <see cref="Move"/> is the movement effect, which sits between the attack and the guard.
+    /// </summary>
+    public enum FaceKind
+    {
+        Attack,
+        Move,
+        Guard,
+        Skill,
+        Stance,
     }
 
     public enum Actor
@@ -137,7 +156,7 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// §2.3 の条件: the twelve words, plus 無防備 for enemy actions (§17.6 F1). 間合い is two rows
+    /// §2.3 の条件: the thirteen words, plus 無防備 for enemy actions (§17.6 F1). 間合い is two rows
     /// (at most / at least). The demo (#188) carries them at the precision a playable battle needs;
     /// #48 keeps the tests that pin every pairing.
     /// </summary>
@@ -155,8 +174,11 @@ namespace BattleCore
         /// <summary>温存: the stamina left after paying the cost is at or above the threshold.</summary>
         Reserve,
 
-        /// <summary>連動(X): something with <see cref="Trait.Attribute"/> was played earlier this turn (an enemy: this phase).</summary>
+        /// <summary>連動(X): something that counts as <see cref="Trait.Attribute"/> (folded, §2.1) was played earlier this turn (an enemy: this phase).</summary>
         Combo,
+
+        /// <summary>移動後 (v4.4): the holder's own cell changed earlier this turn (an enemy: this phase). Replaces 連動(ムーブ).</summary>
+        Moved,
 
         /// <summary>予兆(種別): the opponent's standing omen is <see cref="Trait.Omen"/>. Player cards only.</summary>
         OmenIs,
@@ -283,7 +305,7 @@ namespace BattleCore
         /// <summary>A standing enemy's omen is an attack (見切りの目). Player only.</summary>
         OmenAttack,
 
-        /// <summary>Something with the move attribute was played earlier this turn (流れの構え).</summary>
+        /// <summary>The holder's own cell changed earlier this turn (流れの構え; 移動後, §2.3).</summary>
         MovedThisTurn,
 
         /// <summary>The foe hit holds <see cref="StanceDef.Status"/> (狼の構え).</summary>
@@ -291,9 +313,16 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// §4: the stance a stance face sets into the holder's one slot. The numbers are the card's
-    /// own (its column already decided them), and the slot keeps them until the battle ends or
-    /// another stance replaces it. Status is the word 狼の構え watches, the word 槍衾 gives the
+    /// One entry of the holder's permanent effects (§4): the stance, the card or action that put it
+    /// there, and the turn an OncePerTurn stance last reacted in. Each entry works on its own.
+    /// </summary>
+    public sealed record StanceEntry(StanceDef Def, string Source, int ReactedTurn = 0);
+
+    /// <summary>
+    /// §4: the stance a stance face puts on the holder's list of permanent effects. The numbers are
+    /// the card's own (its column already decided them), and the list keeps them until the battle
+    /// ends. Nothing replaces a stance and there is no cap: the same stance twice is two entries and
+    /// works twice (v4.4, #258). Status is the word 狼の構え watches, the word 槍衾 gives the
     /// attacker, or the word a StatusOnAttack stance gives the foe it hits; OncePerTurn limits an
     /// OnHit stance to one reaction per turn (司祭の祈り).
     /// </summary>
@@ -332,8 +361,8 @@ namespace BattleCore
     /// (a CardDef and an EnemyActionDef are written from the same face rows), which is why #70 and
     /// #71 add data without adding types.
     ///
-    /// Move is the move face in cells: positive is 前へ (toward the opponent), negative is 後ろへ
-    /// (§7.3). Push moves the opponent by cells: positive pushes them away, negative pulls them in;
+    /// Move is the movement effect in cells (an effect any card can carry, not an attribute, v4.4):
+    /// positive is 前へ (toward the opponent), negative is 後ろへ (§7.3). Push moves the opponent by cells: positive pushes them away, negative pulls them in;
     /// Guard does not reduce it (§2.4). Reach is null for the default 0〜1; read it through
     /// <see cref="ReachOrDefault"/>. Both are at most `MOVE_STEP_MAX` in size.
     ///
@@ -342,10 +371,11 @@ namespace BattleCore
     /// sets. Statuses is null for none; read it through <see cref="StatusList"/>.
     ///
     /// Hits (§2.4 `hits`, #189) splits the attack face into that many blows, each against Guard on
-    /// its own; the opponent statuses of a face with two or more land after the first blow
-    /// (二段斬り's 脆化 is there for the second). A card's face of two or more carries no opponent
-    /// status, on the face or in a trait (#253, <see cref="Cards.MultiHitCarriesNoFoeStatus"/>); an
-    /// enemy action may. A status given on every blow comes from a stance
+    /// its own; the opponent statuses of a face with two or more land after the first blow. A face
+    /// of two or more carries no opponent status, on the face or in a trait, on a card (#253) and on
+    /// an enemy action alike (v4.4, <see cref="Cards.MultiHitCarriesNoFoeStatus(BattleAttribute, Face, IReadOnlyList{Trait})"/>).
+    /// The resolver still lands one where an action carries it: 二段斬り does until #257 redesigns
+    /// it. A status given on every blow comes from a stance
     /// (<see cref="StanceHook.StatusOnAttack"/>), not from the face.
     /// </summary>
     public sealed record Face(
@@ -400,6 +430,9 @@ namespace BattleCore
     {
         public int Cost => Columns.CostOf(Column);
 
+        /// <summary>The one attribute this card counts as (§2.1): the declared faces folded by 攻撃 ＞ 防御 ＞ スキル.</summary>
+        public BattleAttribute Attribute => AttributeRule.Fold(Attributes, Face);
+
         /// <summary>The traits in the order they are judged: <see cref="Trait"/>, then <see cref="ExtraTrait"/>.</summary>
         public IReadOnlyList<Trait> AllTraits
         {
@@ -442,6 +475,9 @@ namespace BattleCore
         OmenKind? Omen = null)
     {
         public int Cost => Columns.CostOf(Column);
+
+        /// <summary>The one attribute this action counts as (§2.1), folded like a card's.</summary>
+        public BattleAttribute Attribute => AttributeRule.Fold(Attributes, Face);
     }
 
     /// <summary>roster §1.1 `rank`: what kind of fight the enemy is. Elites and bosses act twice a phase.</summary>
@@ -487,11 +523,11 @@ namespace BattleCore
     /// Size the cells it uses. NextTurnRecoveryBonus is what 温存 leaves behind for the next turn
     /// start (§9 step 2).
     ///
-    /// #188: Stance is the one stance slot (§4) and StanceSource the card or action that set it.
-    /// FollowUp is the 追撃 waiting for the next attack face (§17.6 F7: gone at the end of the
-    /// holder's turn). Played lists the attributes of what the holder played this turn, in order
-    /// (§2.3 `playedAttributes`; 連動 / 初手 / 締め / 連打 read it), cleared at turn end.
-    /// StanceReactedTurn is the turn an OncePerTurn stance last reacted in.
+    /// #188 / v4.4: Stances is the list of permanent effects (§4), no cap, each entry with the card or
+    /// action that put it there. Moved says the holder's own cell changed this turn (移動後, §2.3);
+    /// it is cleared with Played. FollowUp is the 追撃 waiting for the next attack face (§17.6 F7: gone at the end of the
+    /// holder's turn). Played lists the attributes of what the holder played this turn, in order and
+    /// folded (§2.1, §2.3 `playedAttributes`; 連動 / 初手 / 締め / 連打 read it), cleared at turn end.
     /// </summary>
     public sealed record CombatantState(
         int Hp,
@@ -503,12 +539,21 @@ namespace BattleCore
         int Size,
         StatusSet Statuses,
         int NextTurnRecoveryBonus = 0,
-        StanceDef? Stance = null,
-        string? StanceSource = null,
+        IReadOnlyList<StanceEntry>? Stances = null,
         int FollowUp = 0,
         IReadOnlyList<BattleAttribute>? Played = null,
-        int StanceReactedTurn = 0)
+        bool Moved = false)
     {
+        /// <summary>The permanent effects held, oldest first; empty for none.</summary>
+        public IReadOnlyList<StanceEntry> StanceList => Stances ?? Array.Empty<StanceEntry>();
+
+        /// <summary>This holder with one more permanent effect (the same stance twice is two entries).</summary>
+        public CombatantState WithStance(StanceDef stance, string source)
+        {
+            var list = new List<StanceEntry>(StanceList) { new StanceEntry(stance, source) };
+            return this with { Stances = list };
+        }
+
         /// <summary>The rightmost cell used (equal to Cell for size 1).</summary>
         public int FarCell => Cell + Size - 1;
 
@@ -555,7 +600,7 @@ namespace BattleCore
         BattlePhase Phase = BattlePhase.AwaitingTurnStart,
         IReadOnlyList<CardInstance>? ExilePile = null)
     {
-        /// <summary>§4 (#188): the stance cards played this battle. They never go back into the deck.</summary>
+        /// <summary>§4 (#188): the stance cards played this battle, one instance each. Those instances never go back into the deck; a copy still in the deck is another instance.</summary>
         public IReadOnlyList<CardInstance> Exiled => ExilePile ?? Array.Empty<CardInstance>();
 
         /// <summary>The first enemy's body.</summary>

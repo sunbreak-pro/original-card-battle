@@ -10,10 +10,10 @@ namespace BattleCore
     /// StaminaAfterUse is the stamina left once the cost is paid, which is what 温存 reads;
     /// StaminaBefore is the stamina before paying, which is what 死力 reads.
     ///
-    /// #188 widened it to the twelve conditions: Played is what the one playing has played earlier
+    /// #188 widened it to the twelve conditions (v4.4: thirteen, with 移動後): Played is what the one playing has played earlier
     /// this turn, in order (連動 / 初手 / 締め / 連打); HandAfterPlay is the hand left once the card
     /// has left it (手薄); OpponentOmen is the standing omen of the enemy the card reads (予兆);
-    /// the two status sets are for 相手の状態 / 自分の状態; Attributes are the card's own, which 連打
+    /// the two status sets are for 相手の状態 / 自分の状態; Attributes is the one attribute the card counts as (folded, §2.1), which 連打
     /// holds against the card before it. The defaults of the fields #188 added make their conditions
     /// fail (死力, 崩し後, 手薄, 予兆, the statuses, 連動, 連打); the first three keep the slice's
     /// zeros, so an empty context still reads gap 0 (間合い n 以下), Guard 0 (無防備) and nothing
@@ -30,7 +30,8 @@ namespace BattleCore
         OmenKind? OpponentOmen = null,
         StatusSet? SelfStatuses = null,
         StatusSet? OpponentStatuses = null,
-        BattleAttribute Attributes = BattleAttribute.None);
+        BattleAttribute Attributes = BattleAttribute.None,
+        bool Moved = false);
 
     /// <summary>
     /// The bonuses the traits of one card or action contributed. All zero when no condition held.
@@ -123,6 +124,7 @@ namespace BattleCore
                     return trait.Watch.HasValue && context.OpponentStatuses != null && context.OpponentStatuses.Has(trait.Watch.Value);
                 case TraitCondition.SelfHas:
                     return trait.Watch.HasValue && context.SelfStatuses != null && context.SelfStatuses.Has(trait.Watch.Value);
+                case TraitCondition.Moved: return context.Moved;
                 case TraitCondition.Combo:
                     foreach (var attributes in played)
                     {

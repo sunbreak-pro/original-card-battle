@@ -129,27 +129,41 @@ namespace BattleCore
         }
 
         /// <summary>
-        /// §8 (§19.6 S15): whether a card has a stance face. The attribute decides it, the same flag
-        /// that sends a played stance card to the exile pile (§4).
+        /// §8: whether a card is a stance card — the attribute it counts as (§2.1). The same test
+        /// sends a played stance card to the exile pile (§4).
         /// </summary>
         public static bool IsStanceCard(CardDef def)
         {
             if (def == null) throw new ArgumentNullException(nameof(def));
-            return def.Attributes.HasFlag(BattleAttribute.Stance);
+            return def.Attribute == BattleAttribute.Stance;
         }
 
         /// <summary>
-        /// §2.4 hits (#253): a card whose attack face strikes two or more times carries no status for
-        /// the opponent (出血 / 脆化 / 鈍足 / 威圧 / 疲労), neither on the face nor through a trait.
-        /// Statuses on the one playing are allowed, and so is a stance that gives one on every blow
-        /// (<see cref="StanceHook.StatusOnAttack"/>). Enemy actions are not cards and are not held to it.
+        /// §2.4 hits (#253, and for enemy actions v4.4): a face that strikes two or more times carries
+        /// no status for the opponent (出血 / 脆化 / 鈍足 / 威圧 / 疲労), neither on the face nor through a
+        /// trait. Statuses on the one playing are allowed, and so is a stance that gives one on every
+        /// blow (<see cref="StanceHook.StatusOnAttack"/>).
         /// </summary>
         public static bool MultiHitCarriesNoFoeStatus(CardDef def)
         {
             if (def == null) throw new ArgumentNullException(nameof(def));
-            if (!def.Attributes.HasFlag(BattleAttribute.Attack) || def.Face.Hits < 2) return true;
-            if (def.Face.GivesFoeStatus) return false;
-            foreach (var trait in def.AllTraits)
+            return MultiHitCarriesNoFoeStatus(def.Attributes, def.Face, def.AllTraits);
+        }
+
+        /// <summary>The same rule for an enemy action (v4.4, #256 の 3).</summary>
+        public static bool MultiHitCarriesNoFoeStatus(EnemyActionDef action)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            return MultiHitCarriesNoFoeStatus(action.Attributes, action.Face, action.Trait == null ? Array.Empty<Trait>() : new[] { action.Trait });
+        }
+
+        public static bool MultiHitCarriesNoFoeStatus(BattleAttribute attributes, Face face, IReadOnlyList<Trait> traits)
+        {
+            if (face == null) throw new ArgumentNullException(nameof(face));
+            if (traits == null) throw new ArgumentNullException(nameof(traits));
+            if (!attributes.HasFlag(BattleAttribute.Attack) || face.Hits < 2) return true;
+            if (face.GivesFoeStatus) return false;
+            foreach (var trait in traits)
             {
                 if (trait.Grant != null && !trait.Grant.OnSelf) return false;
             }
@@ -157,9 +171,44 @@ namespace BattleCore
         }
 
         /// <summary>
-        /// §8: a deck holds 20 to 40 cards, at most 3 of any one kind, and at most 3 cards with a
-        /// stance face across all kinds (§19.6 S15). Columns are checked too, because a card outside
-        /// 1..4 has no cost, and so is the multi-hit rule (#253).
+        /// §4 (v4.4): a stance stands alone. A card that declares スタンス declares no other attribute
+        /// and does not move, and a card that carries a stance face declares スタンス. The ten cards
+        /// #257 rewrites are let through until then (<see cref="CardCatalog.StanceRedesignPending"/>).
+        /// </summary>
+        public static bool StanceStandsAlone(CardDef def)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            return AttributeRule.StanceStandsAlone(def.Attributes, def.Face) || CardCatalog.StanceRedesignPending.Contains(def.Id);
+        }
+
+        /// <summary>
+        /// §2.4 / §4 for an enemy action (v4.4): the multi-hit rule, the stance standing alone, and a
+        /// column that has a cost. Returns the reasons it is refused, empty when it passes. Nothing
+        /// in the core calls it during a battle; the roster test does.
+        /// </summary>
+        public static IReadOnlyList<string> ValidateEnemyAction(EnemyActionDef action)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            var errors = new List<string>();
+            if (!Columns.IsValid(action.Column))
+            {
+                errors.Add($"Action \"{action.Id}\" sits outside columns {Columns.Min}..{Columns.Max}.");
+            }
+            if (!AttributeRule.StanceStandsAlone(action.Attributes, action.Face))
+            {
+                errors.Add($"Action \"{action.Id}\" is a stance and also declares another attribute or moves.");
+            }
+            if (!MultiHitCarriesNoFoeStatus(action))
+            {
+                errors.Add($"Action \"{action.Id}\" strikes more than once and gives the opponent a status.");
+            }
+            return errors;
+        }
+
+        /// <summary>
+        /// §8: a deck holds 20 to 40 cards and at most 3 of any one kind. There is no limit on stance
+        /// cards (v4.4; §19.6 S15's three-card cap is gone). Columns are checked too, because a card
+        /// outside 1..4 has no cost, and so is the multi-hit rule (#253) and the stance standing alone (§4).
         /// </summary>
         public static DeckValidation Validate(IReadOnlyList<CardInstance> deck)
         {
@@ -184,10 +233,13 @@ namespace BattleCore
                 }
             }
 
-            int stances = deck.Count(c => IsStanceCard(c.Def));
-            if (stances > Constants.StanceCardsMax)
+            foreach (var id in deck.Select(c => c.Def)
+                         .Where(d => !StanceStandsAlone(d))
+                         .Select(d => d.Id)
+                         .Distinct(StringComparer.Ordinal)
+                         .OrderBy(id => id, StringComparer.Ordinal))
             {
-                errors.Add($"Deck holds {stances} stance cards; the maximum is {Constants.StanceCardsMax}.");
+                errors.Add($"Card \"{id}\" is a stance and also declares another attribute or moves; a stance stands alone.");
             }
 
             foreach (var id in deck.Select(c => c.Def)

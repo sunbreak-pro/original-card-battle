@@ -442,7 +442,6 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | HAND_LIMIT                 | 8          | 超過は捨札へ                                                                  |
 | DECK_MIN / MAX             | 20 / 40    | v4.1 の 15 / 80 を置き換える                                                  |
 | COPIES_MAX                 | 3          | 同種の上限                                                                    |
-| STANCE_CARDS_MAX           | 3          | **v4.4 で廃止**（§4）。コアの追従待ち、#258 の 2 本目。値はコアと突き合わせるために残す |
 | OWNED_KINDS_MAX            | 80         |                                                                               |
 | COLUMN_COUNT               | 4          | 列 1〜4                                                                       |
 | COST_MIN / MAX             | 1 / 3      | 列 4 のコストは 3。0 は習熟でだけ                                             |
@@ -452,7 +451,7 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | RESERVE_THRESHOLD          | 3          | 構えの閾値                                                                    |
 | RESERVE_GUARD              | 3          | 構えで付く Guard                                                              |
 | DESPERATE_THRESHOLD        | 2          | 死力の条件（倍率は持たない）                                                  |
-| TRAIT_CONDITIONS / EFFECTS | 12 / 10    | v4.4 で 13 / 10（移動後が加わる。コアの追従待ち、#258 の 2 本目）             |
+| TRAIT_CONDITIONS / EFFECTS | 13 / 10    | 移動後が加わった（v4.4。連動(ムーブ) を置き換えた）                           |
 | POSITION_TRAIT_CARDS       | 16         | 間合いの境目を条件にする札（4 マス × 4）                                      |
 | FIELD_CELLS                | 戦闘ごと   | 場のマスの数。既定値は持たず戦闘の開始時に受け取る。5〜8（§7.1、#168）        |
 | CELL_CAPACITY              | 1          | 1 マスに入れる敵の数（2026-09-23）。プレイヤーとは同居しない                  |
@@ -468,7 +467,6 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | STATUS_KINDS_PLAYER        | 6          | プレイヤーが同時に持てる状態の種類                                            |
 | STATUS_KINDS_ENEMY         | 上限なし   | 敵は種類を数えない。スタック数はターンで減る型だけ数える（§5）      |
 | TURN_DECAY_STACK_MAX       | 4          | ターンで減る型の 1 語のスタック上限（両者）。超える分は捨てる（§5） |
-| STANCE_SLOTS               | 1          | **v4.4 で廃止**（§4）。コアの追従待ち、#258 の 2 本目                         |
 | BOSS_STATUS_KINDS          | 2          | ボス専用の状態                                                                |
 | ENEMIES_MAX                | 3          | 同時に出る敵。1 体ずつ別のマスに立つ（§7.4）                                  |
 | ELITE_ACTIONS              | 2          | 精鋭・ボスの 1 フェーズの行動数                                               |
@@ -478,7 +476,7 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | MASTERY_THRESHOLDS         | 3 / 8 / 15 | 習熟の刻みの閾値（仮置き）                                                    |
 | CHAIN_BATTLES_DEFAULT      | 3          | 連戦モードの既定（9 戦の並びも選べる）                                        |
 
-**廃止した定数**: `T0_ATTACK_POWER`、`MIN_INVEST_ZERO_KINDS`、`RANGE_MULT`、`STATUS_SLOTS`（4）、`STATUS_STACK_MAX`（3）、`DESPERATE_MULT`（1.5）。
+**廃止した定数**: `STANCE_CARDS_MAX`（3、v4.4）、`STANCE_SLOTS`（1、v4.4）、`T0_ATTACK_POWER`、`MIN_INVEST_ZERO_KINDS`、`RANGE_MULT`、`STATUS_SLOTS`（4）、`STATUS_STACK_MAX`（3）、`DESPERATE_MULT`（1.5）。
 
 `STATUS_STACK_MAX`（3）は全ての状態に掛かる上限で、廃止したままです。ターンで減る型だけの上限として `TURN_DECAY_STACK_MAX`（4）を置きました（2026-09-26、#205）。同じ日にこうだいさんが確定しました（§23）。
 

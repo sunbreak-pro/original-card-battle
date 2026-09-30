@@ -201,7 +201,7 @@ namespace BattleCore.Tests
             // #253: a plain 6 × 2 from an enemy holding the stance is 6, then 9, as the enemy phase deals it.
             var twin = Fixtures.EnemyAction("twin", column: 3, face: new Face(Power: 6, Hits: 2, Reach: Reach.Only(0)));
             var s = Opened(Fixtures.Enemy("twin_fixture", atZero: twin), 0);
-            s = s.WithEnemy(s.Enemy with { Stance = FragileOnAttack, StanceSource = "enemy_stance" });
+            s = s.WithEnemy(s.Enemy.WithStance(FragileOnAttack, "enemy_stance"));
             s = s with { Player = s.Player with { Stamina = 0 } };
             Assert.That(s.Omen!.ActionId, Is.EqualTo("twin"));
 

@@ -76,7 +76,7 @@ namespace BattleCore
                     Description: "間合い 1〜2 に届く。間合い 2 以上: 威力 +3"),
 
                 new EnemyActionDef(
-                    "shove", "石突きの押し込み", BattleAttribute.Attack | BattleAttribute.Move, 2,
+                    "shove", "石突きの押し込み", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Push: 2, Reach: Reach.Only(0)),
                     When(TraitCondition.Unguarded, TraitEffect.PowerBonus, 3),
                     Description: "間合い 0 に届く。相手を 2 マス押す。無防備: 相手の Guard が 0 なら威力 +3"),
@@ -94,7 +94,7 @@ namespace BattleCore
                     "温存: 残 4 以上で次の回復 +1"),
 
                 new EnemyActionDef(
-                    "step_forward", "踏み込み", BattleAttribute.Move | BattleAttribute.Guard, 1,
+                    "step_forward", "踏み込み", BattleAttribute.Guard, 1,
                     new Face(Move: 1, Guard: 2),
                     Targets: TargetKind.Self,
                     Description: "前へ 1 動き、Guard 2 を得る"),
@@ -114,12 +114,12 @@ namespace BattleCore
                     new Face(Power: 8, Reach: Reach.Only(0), Statuses: new[] { Foe(StatusKind.Bleed, 2) }),
                     Description: "間合い 0 に届く。出血を 2 付与する"),
                 new EnemyActionDef(
-                    "lunge_in", "跳びかかり", BattleAttribute.Attack | BattleAttribute.Move, 2,
+                    "lunge_in", "跳びかかり", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Move: 2, Reach: new Reach(1, 2)),
                     AtLeast(2, TraitEffect.PowerBonus, 3),
                     Description: "間合い 1〜2 に届く。当ててから前へ 2。間合い 2 以上: 威力 +3"),
                 new EnemyActionDef(
-                    "dash", "駆け寄る", BattleAttribute.Move, 1,
+                    "dash", "駆け寄る", BattleAttribute.None, 1,
                     new Face(Move: 2),
                     Targets: TargetKind.Self,
                     Description: "前へ 2"),
@@ -151,11 +151,11 @@ namespace BattleCore
                     When(TraitCondition.Broken, TraitEffect.PowerBonus, 3),
                     Description: "間合い 0 に届く。崩し後: 相手のスタミナ 3 未満で威力 +3"),
                 new EnemyActionDef(
-                    "press", "押し込み", BattleAttribute.Attack | BattleAttribute.Move, 1,
+                    "press", "押し込み", BattleAttribute.Attack, 1,
                     new Face(Power: 3, Move: 1, Reach: new Reach(1, 2)),
                     Description: "間合い 1〜2 に届く。当ててから前へ 1"),
                 new EnemyActionDef(
-                    "trudge", "のし歩く", BattleAttribute.Move | BattleAttribute.Guard, 1,
+                    "trudge", "のし歩く", BattleAttribute.Guard, 1,
                     new Face(Move: 1, Guard: 2),
                     Targets: TargetKind.Self,
                     Description: "前へ 1、Guard 2"),
@@ -175,12 +175,12 @@ namespace BattleCore
                     new Face(Power: 13, Reach: new Reach(2, 3), Statuses: new[] { Foe(StatusKind.Intimidate, 1) }),
                     Description: "間合い 2〜3 に届く。威圧を 1 付与する"),
                 new EnemyActionDef(
-                    "backstep", "退き撃ち", BattleAttribute.Attack | BattleAttribute.Move, 2,
+                    "backstep", "退き撃ち", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Move: -1, Reach: new Reach(1, 2)),
                     Reserve(4, TraitEffect.GuardBonus, 3),
                     Description: "間合い 1〜2 に届く。撃ってから後ろへ 1。温存: 残 4 以上で Guard +3"),
                 new EnemyActionDef(
-                    "kick_off", "蹴り離し", BattleAttribute.Attack | BattleAttribute.Move, 2,
+                    "kick_off", "蹴り離し", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Push: 2, Reach: Reach.Only(0)),
                     Description: "間合い 0 に届く。相手を 2 マス押す"),
                 new EnemyActionDef(
@@ -205,7 +205,7 @@ namespace BattleCore
                     AtLeast(3, TraitEffect.PowerBonus, 5),
                     Description: "間合い 2〜3 に届く。疲労を 1 付与する。間合い 3 以上: 威力 +5"),
                 new EnemyActionDef(
-                    "fade", "靄に溶ける", BattleAttribute.Guard | BattleAttribute.Move, 2,
+                    "fade", "靄に溶ける", BattleAttribute.Guard, 2,
                     new Face(Guard: 4, Push: 2),
                     When(TraitCondition.Unguarded, TraitEffect.NextTurnRecovery, 1),
                     Description: "間合い 0〜1 に届く。Guard 4、相手を 2 マス押す。無防備: 次の回復 +1",
@@ -230,7 +230,7 @@ namespace BattleCore
                     new Face(Power: 6, Hits: 2, Reach: Reach.Only(0), Statuses: new[] { Foe(StatusKind.Fragile, 1) }),
                     Description: "間合い 0 に届く。威力 6 × 2。1 撃目で脆化を 1 付与する"),
                 new EnemyActionDef(
-                    "step_slash", "踏み込み斬り", BattleAttribute.Attack | BattleAttribute.Move, 2,
+                    "step_slash", "踏み込み斬り", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Move: 2, Reach: new Reach(1, 2)),
                     FoeHas(StatusKind.Fragile, TraitEffect.PowerBonus, 5),
                     Description: "間合い 1〜2 に届く。当ててから前へ 2。相手の状態（脆化）: 威力 +5"),
@@ -245,7 +245,7 @@ namespace BattleCore
                     TargetKind.Self,
                     "Guard 3。温存: 残 4 以上で見切りを 1 付与する"),
                 new EnemyActionDef(
-                    "close_in", "間を詰める", BattleAttribute.Move, 1,
+                    "close_in", "間を詰める", BattleAttribute.None, 1,
                     new Face(Move: 2),
                     Targets: TargetKind.Self,
                     Description: "前へ 2"),
@@ -273,7 +273,7 @@ namespace BattleCore
                     AtMost(0, TraitEffect.BreakBonus, 1),
                     Description: "間合い 0〜1 に届く。崩し 1。間合い 0: 崩し +1"),
                 new EnemyActionDef(
-                    "push_shield", "盾で押し出る", BattleAttribute.Attack | BattleAttribute.Move, 2,
+                    "push_shield", "盾で押し出る", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Move: 1, Reach: new Reach(1, 2)),
                     Description: "間合い 1〜2 に届く。当ててから前へ 1"),
                 new EnemyActionDef(
@@ -282,7 +282,7 @@ namespace BattleCore
                     new Trait(TraitCondition.Combo, TraitEffect.PowerBonus, 3, Attribute: BattleAttribute.Attack),
                     Description: "間合い 0 に届く。鈍足を 2 付与する（一覧は 1。#197）。連動: 同じフェーズにアタックを出していれば威力 +3"),
                 new EnemyActionDef(
-                    "advance_guard", "盾を掲げて前進", BattleAttribute.Guard | BattleAttribute.Move, 1,
+                    "advance_guard", "盾を掲げて前進", BattleAttribute.Guard, 1,
                     new Face(Guard: 2, Move: 1),
                     Targets: TargetKind.Self,
                     Description: "Guard 2、前へ 1",
@@ -316,12 +316,12 @@ namespace BattleCore
                     FoeHas(StatusKind.Bleed, TraitEffect.PowerBonus, 3),
                     Description: "間合い 0 に届く。出血を 1 付与する。相手の状態（出血）: 威力 +3"),
                 new EnemyActionDef(
-                    "pounce", "飛びかかり", BattleAttribute.Attack | BattleAttribute.Move, 2,
+                    "pounce", "飛びかかり", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Move: 2, Reach: new Reach(1, 3)),
                     AtLeast(2, TraitEffect.PowerBonus, 5),
                     Description: "間合い 1〜3 に届く。当ててから前へ 2。間合い 2 以上: 威力 +5"),
                 new EnemyActionDef(
-                    "herd", "追い立てる", BattleAttribute.Skill | BattleAttribute.Move, 1,
+                    "herd", "追い立てる", BattleAttribute.Skill, 1,
                     new Face(Push: 1, Reach: Reach.Only(0), Statuses: new[] { Foe(StatusKind.Slow, SlowStacks) }),
                     Description: "間合い 0 に届く。相手を 1 マス押し、鈍足を 2 付与する（一覧は 1。#197）",
                     Omen: OmenKind.Skill),
@@ -373,7 +373,7 @@ namespace BattleCore
                     FoeHas(StatusKind.Fatigue, TraitEffect.PowerBonus, 3),
                     Description: "間合い 1〜4 に届く。疲労を 1 付与する。相手の状態（疲労）: 威力 +3"),
                 new EnemyActionDef(
-                    "push_back", "払いのけ", BattleAttribute.Attack | BattleAttribute.Move, 2,
+                    "push_back", "払いのけ", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Push: 2, Reach: Reach.Only(0)),
                     When(TraitCondition.Unguarded, TraitEffect.PowerBonus, 5),
                     Description: "間合い 0 に届く。相手を 2 マス押す。無防備: 相手の Guard が 0 なら威力 +5"),
@@ -426,12 +426,12 @@ namespace BattleCore
                     Targets: TargetKind.Self,
                     Description: "構え: 相手との間合いが 1 以下のターン開始に Guard +5"),
                 new EnemyActionDef(
-                    "reel_in", "手繰り寄せる", BattleAttribute.Skill | BattleAttribute.Move, 1,
+                    "reel_in", "手繰り寄せる", BattleAttribute.Skill, 1,
                     new Face(Push: -2, Reach: new Reach(1, 4), Statuses: new[] { Foe(StatusKind.Slow, SlowStacks) }),
                     Description: "間合い 1〜4 に届く。相手を 2 マス引き、鈍足を 2 付与する（一覧は 1。#197）",
                     Omen: OmenKind.Skill),
                 new EnemyActionDef(
-                    "slack_line", "糸を緩める", BattleAttribute.Guard | BattleAttribute.Move, 1,
+                    "slack_line", "糸を緩める", BattleAttribute.Guard, 1,
                     new Face(Guard: 2, Move: -1),
                     Targets: TargetKind.Self,
                     Description: "Guard 2、後ろへ 1",
@@ -481,12 +481,19 @@ namespace BattleCore
                     Targets: TargetKind.Self,
                     Description: "構え: 相手との間合いが 2 以上のターン開始に Guard +5"),
                 new EnemyActionDef(
-                    "creeping_root", "伸びる根", BattleAttribute.Guard | BattleAttribute.Move, 1,
+                    "creeping_root", "伸びる根", BattleAttribute.Guard, 1,
                     new Face(Guard: 2, Push: -1, Reach: new Reach(0, 4)),
                     Description: "間合い 0〜4 に届く。Guard 2。相手を 1 マス引く（押すと引くの切り替えの代わり）",
                     Omen: OmenKind.Guard),
             },
             actionsPerPhase: Constants.EliteActions);
+
+        /// <summary>
+        /// The enemy actions that break the multi-hit rule (v4.4: <see cref="Cards.ValidateEnemyAction"/>):
+        /// 二段斬り puts 脆化 on after its first blow. #257 rewrites it (7 × 2 or 8 × 2, no status); until
+        /// it lands the action keeps its v4.3 numbers as a placeholder. Delete this list with that change.
+        /// </summary>
+        public static readonly IReadOnlyCollection<string> MultiHitRedesignPending = new HashSet<string> { "twin_slash" };
 
         /// <summary>Every enemy the core knows, in roster order: six normal, two elite, three bosses.</summary>
         public static readonly IReadOnlyList<EnemyDef> All = new[]

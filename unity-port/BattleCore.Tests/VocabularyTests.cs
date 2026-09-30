@@ -40,10 +40,10 @@ namespace BattleCore.Tests
             Fixtures.Card("block", 1, new Face(Guard: 4), BattleAttribute.Guard, targets: TargetKind.Self);
 
         private static readonly CardDef StepIn =
-            Fixtures.Card("step_in", 1, new Face(Move: 1), BattleAttribute.Move, targets: TargetKind.Self);
+            Fixtures.Card("step_in", 1, new Face(Move: 1), BattleAttribute.None, targets: TargetKind.Self);
 
         private static readonly CardDef StepOut =
-            Fixtures.Card("step_out", 1, new Face(Move: -1), BattleAttribute.Move, targets: TargetKind.Self);
+            Fixtures.Card("step_out", 1, new Face(Move: -1), BattleAttribute.None, targets: TargetKind.Self);
 
         private static readonly CardDef Breathe =
             Fixtures.Card("breathe", 1, new Face(StaminaGain: 1), BattleAttribute.Skill, targets: TargetKind.Self);
@@ -595,7 +595,7 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(FocusStep.Of(BattleAttribute.Attack, 4, new Face(Power: 30)), Is.EqualTo(FocusStep.None));
-                Assert.That(FocusStep.Of(BattleAttribute.Move, 1, new Face(Move: -2, Guard: 4)), Is.EqualTo(FocusStep.None));
+                Assert.That(FocusStep.Of(BattleAttribute.None, 1, new Face(Move: -2, Guard: 4)), Is.EqualTo(FocusStep.None));
                 Assert.That(FocusStep.Of(BattleAttribute.Attack | BattleAttribute.Guard, 2, new Face(Power: 8, Guard: 6)),
                     Is.EqualTo(new FocusStep(6, 4, 0)), "a dual card reads the dual scales");
 
@@ -717,7 +717,7 @@ namespace BattleCore.Tests
         {
             // §5 見切り (境目) / §7.3: the wall is not a blow. A push of 2 moves the player one cell to the
             // edge; the other is 3 wall damage, which Guard 5 takes whole, and 見切り neither returns nor goes.
-            var shove = Fixtures.EnemyAction("shove", face: new Face(Push: 2, Reach: Reach.Only(0)), attributes: BattleAttribute.Move);
+            var shove = Fixtures.EnemyAction("shove", face: new Face(Push: 2, Reach: Reach.Only(0)), attributes: BattleAttribute.None);
             var s = Opened(0, Fixtures.Enemy("shover", atZero: shove));
             s = s with { Player = s.Player with { Stamina = 0, Guard = 5, Statuses = StatusSet.Of((StatusKind.Parry, 1)) } };
 
@@ -922,12 +922,19 @@ namespace BattleCore.Tests
         {
             var none = Array.Empty<BattleAttribute>();
 
-            var combo = new Trait(TraitCondition.Combo, TraitEffect.PowerBonus, 1, Attribute: BattleAttribute.Move);
-            yield return Edge("Combo_Holds_AfterADualCardCarryingTheAttribute", combo,
-                new TraitContext(Played: new[] { BattleAttribute.Attack | BattleAttribute.Move }), true);
+            var combo = new Trait(TraitCondition.Combo, TraitEffect.PowerBonus, 1, Attribute: BattleAttribute.Skill);
+            yield return Edge("Combo_Holds_AfterACardCountedAsTheAttribute", combo,
+                new TraitContext(Played: new[] { BattleAttribute.Attack, BattleAttribute.Skill }), true);
             yield return Edge("Combo_Fails_WhenOnlyOtherAttributesWerePlayed", combo,
                 new TraitContext(Played: new[] { BattleAttribute.Attack, BattleAttribute.Guard }), false);
             yield return Edge("Combo_Fails_WithNothingPlayed", combo, new TraitContext(Played: none), false);
+
+            // v4.4: 連動(ムーブ) became 移動後, read off the holder's own cell rather than off a played attribute.
+            var moved = new Trait(TraitCondition.Moved, TraitEffect.PowerBonus, 1);
+            yield return Edge("Moved_Holds_WhenTheHoldersCellChangedThisTurn", moved, new TraitContext(Moved: true), true);
+            yield return Edge("Moved_Fails_WhenItDidNot", moved, new TraitContext(Moved: false), false);
+            yield return Edge("Moved_Fails_EvenAfterAnAttackWasPlayed", moved,
+                new TraitContext(Played: new[] { BattleAttribute.Attack }), false);
 
             var omen = new Trait(TraitCondition.OmenIs, TraitEffect.PowerBonus, 1, Omen: OmenKind.Attack);
             yield return Edge("OmenIs_Holds_OnTheNamedKind", omen, new TraitContext(OpponentOmen: OmenKind.Attack), true);
@@ -953,7 +960,7 @@ namespace BattleCore.Tests
 
             var chain = new Trait(TraitCondition.Chain, TraitEffect.PowerBonus, 1);
             yield return Edge("Chain_Holds_WhenThePreviousPlaySharesAnAttribute", chain,
-                new TraitContext(Played: new[] { BattleAttribute.Guard, BattleAttribute.Attack }, Attributes: BattleAttribute.Attack | BattleAttribute.Move), true);
+                new TraitContext(Played: new[] { BattleAttribute.Guard, BattleAttribute.Attack }, Attributes: BattleAttribute.Attack), true);
             yield return Edge("Chain_ReadsOnlyThePreviousPlay", chain,
                 new TraitContext(Played: new[] { BattleAttribute.Attack, BattleAttribute.Guard }, Attributes: BattleAttribute.Attack), false);
             yield return Edge("Chain_Fails_OnTheFirstPlay", chain, new TraitContext(Played: none, Attributes: BattleAttribute.Attack), false);
@@ -1275,9 +1282,9 @@ namespace BattleCore.Tests
         // ---- §4 stance ----
 
         [Test]
-        public void AStanceFace_TakesTheSlot_ASecondReplacesIt_AndBothCardsAreExiled()
+        public void AStanceFace_JoinsTheList_ASecondJoinsToo_AndBothCardsAreExiled()
         {
-            // §4: one slot; a new stance ends the old one; a stance card goes to the exile pile, never the discard pile.
+            // §4 (v4.4): a stance joins the list of permanent effects and nothing ends; a stance card goes to the exile pile, never the discard pile.
             var s = Opened(1, Idle, CardCatalog.RockStance, CardCatalog.WaterStance);
 
             var rock = Play(s, "rock_stance");
@@ -1288,17 +1295,20 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(rock.Events.OfType<StanceSet>().Single(), Is.EqualTo(new StanceSet(
-                    Actor.Player, "rock_stance", CardCatalog.RockStance.Name, CardCatalog.RockStance.Face.Stance!, Replaced: null)));
-                Assert.That(rock.State.Player.Stance, Is.EqualTo(CardCatalog.RockStance.Face.Stance));
-                Assert.That(rock.State.Player.StanceSource, Is.EqualTo("rock_stance"));
+                    Actor.Player, "rock_stance", CardCatalog.RockStance.Name, CardCatalog.RockStance.Face.Stance!)));
+                Assert.That(rock.State.Player.StanceList.Select(e => (e.Def, e.Source)),
+                    Is.EqualTo(new[] { (CardCatalog.RockStance.Face.Stance!, "rock_stance") }));
                 Assert.That(rock.Events.OfType<CardExiled>().Single().Card.Def.Id, Is.EqualTo("rock_stance"));
                 Assert.That(rock.State.Exiled.Select(c => c.Def.Id), Is.EqualTo(new[] { "rock_stance" }));
                 Assert.That(rock.State.DiscardPile, Is.Empty);
 
                 Assert.That(water.Events.OfType<StanceSet>().Single(), Is.EqualTo(new StanceSet(
-                    Actor.Player, "water_stance", CardCatalog.WaterStance.Name, CardCatalog.WaterStance.Face.Stance!, Replaced: "rock_stance")));
-                Assert.That(water.State.Player.Stance, Is.EqualTo(CardCatalog.WaterStance.Face.Stance));
-                Assert.That(water.State.Player.StanceSource, Is.EqualTo("water_stance"));
+                    Actor.Player, "water_stance", CardCatalog.WaterStance.Name, CardCatalog.WaterStance.Face.Stance!)));
+                Assert.That(water.State.Player.StanceList.Select(e => (e.Def, e.Source)), Is.EqualTo(new[]
+                {
+                    (CardCatalog.RockStance.Face.Stance!, "rock_stance"),
+                    (CardCatalog.WaterStance.Face.Stance!, "water_stance"),
+                }), "the first is not pushed out");
                 Assert.That(water.State.Exiled.Select(c => c.Def.Id), Is.EqualTo(new[] { "rock_stance", "water_stance" }));
 
                 // The rest of the hand goes to the discard pile; the stance cards stay out of the deck.
@@ -1307,6 +1317,113 @@ namespace BattleCore.Tests
                 Assert.That(end.State.Exiled, Has.Count.EqualTo(2));
                 Assert.That(next.State.Hand.Select(c => c.Def.Id), Is.All.EqualTo("filler"));
                 Assert.That(next.State.Hand, Has.Count.EqualTo(3));
+            });
+        }
+
+        [Test]
+        public void TheSameStanceTwice_WorksTwice_AndOnlyThePlayedCopyLeavesTheDeck()
+        {
+            // §4 (v4.4): stacking. Two 岩の構え give Guard +3 twice at the next turn start. A copy that
+            // was not played stays where it was — the exile takes the one instance, not the kind.
+            var s = Opened(1, Idle, CardCatalog.RockStance, CardCatalog.RockStance, CardCatalog.RockStance);
+
+            var first = Play(s, "rock_stance");
+            var second = Play(first.State, "rock_stance");
+            var end = End(second.State);
+            var next = Begin(end.State);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(first.State.Player.StanceList, Has.Count.EqualTo(1));
+                Assert.That(first.State.Hand.Count(c => c.Def.Id == "rock_stance"), Is.EqualTo(2), "the other copies are still in the hand");
+                Assert.That(first.State.Exiled.Select(c => c.InstanceId), Is.EqualTo(new[] { "rock_stance-0" }));
+                Assert.That(second.State.Player.StanceList.Select(e => e.Source), Is.EqualTo(new[] { "rock_stance", "rock_stance" }));
+                Assert.That(second.State.Exiled, Has.Count.EqualTo(2));
+                Assert.That(end.State.DiscardPile.Any(c => c.Def.Id == "rock_stance"), Is.True, "the unplayed third copy is discarded like any card");
+                Assert.That(next.Events.OfType<StanceFired>().Count(), Is.EqualTo(2));
+                Assert.That(next.Events.OfType<GuardGained>().Select(g => g.Amount), Is.EqualTo(new[] { 3, 3 }));
+                Assert.That(next.State.Player.Guard, Is.EqualTo(6), "two entries, two times the effect");
+            });
+        }
+
+        [Test]
+        public void ThereIsNoCapOnTheList_AndItEmptiesWhenTheNextBattleStarts()
+        {
+            var s = Opened(1, Idle, CardCatalog.RockStance, CardCatalog.WaterStance, CardCatalog.FlowStance);
+            s = s with { Player = s.Player with { Stamina = 10 } };
+            for (int i = 0; i < 3; i++)
+            {
+                s = Play(s, new[] { "rock_stance", "water_stance", "flow_stance" }[i]).State;
+            }
+            var again = TurnLoop.Start(new BattleSetup(Idle, Deck(new[] { Filler }), Cells, StartGap: 1), NoRng).State;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(s.Player.StanceList, Has.Count.EqualTo(3));
+                Assert.That(again.Player.StanceList, Is.Empty);
+            });
+        }
+
+        // ---- §2.3 移動後 (v4.4): 連動(ムーブ) is read off the holder's own cell ----
+
+        private static CardDef MovedJab() =>
+            Fixtures.Card("moved_jab", 1, new Face(Power: 4), trait: new Trait(TraitCondition.Moved, TraitEffect.PowerBonus, 5));
+
+        [Test]
+        public void MovedAfter_HoldsOnlyOnceTheHoldersCellHasChanged_InTheSameTurn()
+        {
+            var s = Opened(2, Idle, StepIn, MovedJab());
+
+            var cold = Play(Opened(1, Idle, StepIn, MovedJab()), "moved_jab");
+            var stepped = Play(s, "step_in");
+            var warm = Play(stepped.State, "moved_jab");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(cold.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(4), "no move yet: the trait fails");
+                Assert.That(stepped.State.Player.Moved, Is.True);
+                Assert.That(warm.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(9), "moved first: 4 + 5");
+                Assert.That(warm.Events.OfType<TraitEvaluated>().Single().Outcome.Triggered, Is.True);
+            });
+        }
+
+        [Test]
+        public void MovedAfter_DoesNotCountAMoveThatWentNowhere_NorTheNextTurn()
+        {
+            // Adjacent already: 前へ 1 has nowhere to go, so the cell did not change and 移動後 stays false.
+            var s = Opened(0, Idle, StepIn, MovedJab());
+
+            var blocked = Play(s, "step_in");
+            var after = Play(blocked.State, "moved_jab");
+
+            // A move that did happen lasts the turn and is cleared with the turn (§2.3).
+            var s2 = Opened(2, Idle, StepIn, MovedJab());
+            var moved = Play(s2, "step_in");
+            var nextTurn = Begin(End(moved.State).State);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(blocked.State.Player.Moved, Is.False);
+                Assert.That(after.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(4));
+                Assert.That(moved.State.Player.Moved, Is.True);
+                Assert.That(nextTurn.State.Player.Moved, Is.False, "cleared with the turn");
+            });
+        }
+
+        [Test]
+        public void MovedAfter_IsNotSetByBeingPushed()
+        {
+            // 押された動きは相手の番に起きるので数えない: the player's cell changes, the flag does not.
+            var shove = Fixtures.EnemyAction("shove", face: new Face(Push: 1, Reach: Reach.Only(0)), attributes: BattleAttribute.None);
+            var pusher = Fixtures.Enemy("pusher", atZero: shove, atOneToTwo: shove, atThreePlus: shove);
+            var s = Opened(0, pusher, Filler);
+
+            var end = End(s);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(end.Events.OfType<CellsMoved>().Any(m => m.Actor == Actor.Player && m.Pushed), Is.True, "the player was pushed");
+                Assert.That(end.State.Player.Moved, Is.False);
             });
         }
 
@@ -1560,7 +1677,7 @@ namespace BattleCore.Tests
             // stepped out of its reach, the action whiffs and the stance does not fire.
             var twin = Fixtures.EnemyAction("twin", face: new Face(Power: 6, Hits: 2, Reach: Reach.Only(0)));
             var s = Opened(0, Fixtures.Enemy("twin_fixture", atZero: twin), StepOut);
-            s = s.WithEnemy(s.Enemy with { Stance = new StanceDef(StanceHook.StatusOnAttack, Status: StatusKind.Fragile, StatusStacks: 1), StanceSource = "enemy_stance" });
+            s = s.WithEnemy(s.Enemy.WithStance(new StanceDef(StanceHook.StatusOnAttack, Status: StatusKind.Fragile, StatusStacks: 1), "enemy_stance"));
 
             var hit = End(s with { Player = s.Player with { Stamina = 0, Guard = 0 } });
             var whiff = End(Play(s, "step_out").State);

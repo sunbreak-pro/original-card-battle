@@ -227,7 +227,7 @@ namespace BattleCore.Tests
                 typeof(DefeatChecked),
             }));
             var faces = play.Events.OfType<FaceResolved>().Select(f => f.Face).ToList();
-            Assert.That(faces, Is.EqualTo(new[] { BattleAttribute.Attack, BattleAttribute.Move }));
+            Assert.That(faces, Is.EqualTo(new[] { FaceKind.Attack, FaceKind.Move }));
             Assert.That(play.Events.OfType<CardPlayed>().Single().GapBefore, Is.EqualTo(2));
             Assert.That(play.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(20), "the gap is read before the move");
             Assert.That(play.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Player, 2, 4, Pushed: false)));
@@ -313,6 +313,31 @@ namespace BattleCore.Tests
                 Assert.That(end.Events.OfType<ActionWhiffed>(), Is.Empty, "a self action reads no reach");
                 Assert.That(end.State.Gap, Is.EqualTo(2));
                 Assert.That(end.State.Omen!.ActionId, Is.EqualTo("sweep"));
+            });
+        }
+
+        // ---- #49: the player's recovery is 3 at every range ----
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        public void PlayerRecovery_IsThreeAtEveryRange(int gap)
+        {
+            // §9 step 2 / §18 K1: the recovery does not read the gap. Stamina starts empty so the cap
+            // never hides the amount, and the field is 8 cells wide so a gap of 5 exists.
+            var deck = Cards.BuildDeck(PrototypeDeck.Kinds.ToArray(), copies: 1);
+            var state = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, 8, StartGap: gap), NoRng).State;
+            state = state with { Player = state.Player with { Stamina = 0 } };
+
+            var begin = TurnLoop.BeginPlayerTurn(state, NoRng);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(begin.State.Gap, Is.EqualTo(gap));
+                Assert.That(begin.Events.OfType<StaminaRecovered>().Single(), Is.EqualTo(new StaminaRecovered(Actor.Player, 3, 3, 10)));
             });
         }
 
@@ -657,7 +682,7 @@ namespace BattleCore.Tests
 
             Assert.That(play.Events.OfType<GuardGained>().Single(), Is.EqualTo(new GuardGained(Actor.Player, 3, 3)));
             Assert.That(play.Events.OfType<FaceResolved>().Select(f => f.Face),
-                Is.EqualTo(new[] { BattleAttribute.Attack, BattleAttribute.Move }));
+                Is.EqualTo(new[] { FaceKind.Attack, FaceKind.Move }));
             Assert.That(play.State.Player.Cell, Is.EqualTo(1), "stepped back one");
         }
 
@@ -700,7 +725,7 @@ namespace BattleCore.Tests
                 Assert.That(play.State.Enemy.Hp, Is.EqualTo(0));
                 Assert.That(play.State.Result, Is.EqualTo(GameResult.Won));
                 Assert.That(play.State.Phase, Is.EqualTo(BattlePhase.Finished));
-                Assert.That(play.Events.OfType<FaceResolved>().Select(f => f.Face), Is.EqualTo(new[] { BattleAttribute.Attack }));
+                Assert.That(play.Events.OfType<FaceResolved>().Select(f => f.Face), Is.EqualTo(new[] { FaceKind.Attack }));
                 Assert.That(play.Events.OfType<CellsMoved>(), Is.Empty);
                 Assert.That(play.State.Player.Cell, Is.EqualTo(2));
                 Assert.That(play.Events.Last(), Is.EqualTo(new BattleEnded(Actor.Player, GameResult.Won)));

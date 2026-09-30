@@ -158,7 +158,7 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(end.Events.OfType<ActionExecuted>().Select(e => e.Action.Id), Is.EqualTo(new[] { "iron_wall", "advance_guard" }));
-                Assert.That(end.State.Enemy.Stance, Is.EqualTo(enemy.Actions["iron_wall"].Face.Stance));
+                Assert.That(end.State.Enemy.StanceList.Single().Def, Is.EqualTo(enemy.Actions["iron_wall"].Face.Stance));
                 Assert.That(end.State.Enemies[0].Spent, Is.EqualTo(new[] { "iron_wall" }));
                 Assert.That(end.State.Gap, Is.EqualTo(2));
                 Assert.That(end.State.Enemy.Stamina, Is.EqualTo(12 - 3));
@@ -374,11 +374,44 @@ namespace BattleCore.Tests
                 var def = pool[(int)(rng.NextDouble() * pool.Count) % pool.Count];
                 counts.TryGetValue(def.Id, out int held);
                 if (held >= Constants.CopiesMax) continue;
-                if (Cards.IsStanceCard(def) && deck.Count(c => Cards.IsStanceCard(c.Def)) >= Constants.StanceCardsMax) continue;
                 counts[def.Id] = held + 1;
                 deck.Add(new CardInstance(def.Id + "-" + held, def));
             }
             return deck;
+        }
+
+        [Test]
+        public void EveryRosterAction_PassesTheActionCheck_ExceptThePlaceholdersWaitingOn257()
+        {
+            // v4.4 (#256 の 3): the multi-hit rule binds enemy actions too, and a stance stands alone.
+            // 二段斬り still gives 脆化 after its first blow until #257 rewrites it; it is the one action
+            // let through, and the list must not grow.
+            var refused = Enemies.All.SelectMany(e => e.Actions.Values)
+                .Where(a => Cards.ValidateEnemyAction(a).Count > 0)
+                .Select(a => a.Id).Distinct().ToList();
+
+            Assert.That(refused, Is.EquivalentTo(Enemies.MultiHitRedesignPending));
+        }
+
+        [Test]
+        public void TheActionCheck_RefusesAMultiHitActionThatPutsAStatusOnThePlayer_AndAStanceThatAlsoStrikes()
+        {
+            var bleeding = Fixtures.EnemyAction("bleeding", face: new Face(Power: 4, Hits: 2, Statuses: new[] { new StatusGrant(StatusKind.Bleed, 1) }));
+            var viaTrait = new EnemyActionDef("via_trait", "via_trait", BattleAttribute.Attack, 1, new Face(Power: 4, Hits: 2),
+                new Trait(TraitCondition.FirstPlay, TraitEffect.Status, Grant: new StatusGrant(StatusKind.Fragile, 1)));
+            var selfOnly = Fixtures.EnemyAction("self_only", face: new Face(Power: 4, Hits: 2, Statuses: new[] { new StatusGrant(StatusKind.Empower, 1, OnSelf: true) }));
+            var single = Fixtures.EnemyAction("single", face: new Face(Power: 6, Statuses: new[] { new StatusGrant(StatusKind.Bleed, 1) }));
+            var strikingStance = Fixtures.EnemyAction("striking_stance", face: new Face(Power: 5, Stance: new StanceDef(StanceHook.TurnStart, Guard: 1)),
+                attributes: BattleAttribute.Attack | BattleAttribute.Stance);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Cards.ValidateEnemyAction(bleeding).Single(), Is.EqualTo("Action \"bleeding\" strikes more than once and gives the opponent a status."));
+                Assert.That(Cards.ValidateEnemyAction(viaTrait).Single(), Is.EqualTo("Action \"via_trait\" strikes more than once and gives the opponent a status."));
+                Assert.That(Cards.ValidateEnemyAction(selfOnly), Is.Empty, "a status on itself is fine");
+                Assert.That(Cards.ValidateEnemyAction(single), Is.Empty, "one blow may carry a status");
+                Assert.That(Cards.ValidateEnemyAction(strikingStance).Single(), Is.EqualTo("Action \"striking_stance\" is a stance and also declares another attribute or moves."));
+            });
         }
 
         private static void AssertInOrder(IReadOnlyList<BattleEvent> actual, params Type[] expected)
