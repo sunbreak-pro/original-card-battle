@@ -80,7 +80,9 @@ namespace Depiction.Bridge.Tests
             Assert.That(ev.After.Omen.Visible, Is.True);
             Assert.That(ev.After.Omen.KindLabel, Is.EqualTo("攻撃"));
             Assert.That(ev.After.Omen.SideGlyph, Is.EqualTo("0"), "the shove's reach, where the side glyph was (#163)");
-            Assert.That(ev.After.Omen.ValueText, Is.EqualTo("5"));
+            // #248: the shove as it would land if the turn ended now — 構え's Guard 3 takes 無防備's +3
+            // away, so 5, then the two-cell push finds one cell left and puts 3 of wall on top: 8.
+            Assert.That(ev.After.Omen.ValueText, Is.EqualTo("8"));
             Assert.That(ev.After.Corner.Turn, Is.EqualTo(1));
             Assert.That(ev.After.StanceHint, Is.EqualTo("+3"));
         }

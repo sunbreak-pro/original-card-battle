@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unity 戦闘の見通し</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .step code { font-size: 13px; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+  @media (max-width: 720px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head><body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-23 / 進捗 / original-card-battle</p>
+    <h1>Unity の戦闘は、敵 1 体ならもう最後まで戦えます</h1>
+    <p class="lede"><code>Battle.unity</code> を Play すると、長柄の歪み兵と試作デッキ 10 種で勝ち負けまで戦えます。本番の戦闘（敵 12 体・カード 80 種・2 体戦・連戦）までは、残りが 15 件前後で、見込みは 2〜4 週間です。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">いま</span><h3>敵 1 体と最後まで戦えます</h3><p>間合い N のコア（v4.3）が PR #170 で入りました。勝つと「敵を討ち取りました」、負けると「力尽きました」が出ます。絵は仮絵のままです。</p></li>
+    <li class="verdict later"><span class="tag">2〜4 日後</span><h3>縦切りが仕上がります</h3><p>演出 3 件と開始の間合い 3 を入れ、演出を測ってから、こうだいさんが触って要不要を答えます。</p></li>
+    <li class="verdict skip"><span class="tag">2〜4 週間後</span><h3>本番の戦闘になります</h3><p>コアの残り・カード 80 種と敵 12 体のデータ・2 体戦と連戦・画面の本番の形を入れます。依存が 6 段つながっているので、並行で縮められる幅は小さいです。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>見込みの根拠</strong>: 戦闘の担当は 9/20〜9/23 の 4 日で Issue を 20 件閉じました。ただし縦切りの Issue は小さく切ってあります。本番の Issue（特性 12 × 10、カード 80 種など）は 1 件が 2〜3 倍重いと見て割り戻しました。merge はこうだいさんの作業なので、その待ち時間で前後します。</div>
+
+  <h2>段階ごとの残りの作業</h2>
+  <p class="prose">引っ越しに例えると、いまは「1 部屋だけ家具が入って住める」状態です。残りは、その部屋の照明や動線を整える作業（縦切り）と、残りの部屋に家具を運び込む作業（本番）に分かれます。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>段階</th><th>状態</th><th>残りの Issue</th><th>中身</th></tr></thead>
+      <tbody>
+        <tr><td>1. 敵 1 体と戦える</td><td class="state yes">済み</td><td>なし</td><td>コア v4.3、長柄の歪み兵、試作デッキ 10 種、勝敗の表示までが入っています。</td></tr>
+        <tr><td>2. 縦切りの仕上げ</td><td class="state maybe">配布済み</td><td>#169 #75 #76 #77 → #78 → #79（こうだいさん） → #80</td><td>開始の間合い 3 と 1 マス 1 体をコアに入れ、札の動き・攻防・状態の演出を足します。演出を測ってから、実機で触って要不要を決めます。</td></tr>
+        <tr><td>3a. コアの残り</td><td class="state maybe">一部配布</td><td>#47 → #48 → #49 → #50</td><td>特性の評価器、状態 10 語、スタンス枠、敵 AI の決定木を入れます。#47 は v4.3 の残りに書き直してから進めます。</td></tr>
+        <tr><td>3b. データと試験台</td><td class="state no">待ち</td><td>#51 → #52 → #53</td><td>カード 80 種と敵 12 体を C# に入れ、2 体戦と連戦を足し、自動で何百戦も回して数値を測ります。</td></tr>
+        <tr><td>3c. 画面の本番の形</td><td class="state no">待ち</td><td>#163 → #54 #55 → #56 → #57</td><td>設計書を間合い N に直し、画面を v2.1 の形にします。#54 と #55 は縦切りで大半が入っているので、小さく済む見込みです。</td></tr>
+        <tr><td>3d. 設計書の追従</td><td class="state maybe">配布済み</td><td>#160 #168</td><td>カードと敵の一覧、層ごとのマス数を間合い N に合わせます。3b の前に要ります。</td></tr>
+        <tr><td>4. 戦闘を繰り返す理由</td><td class="state no">待ち</td><td>#58 #59 #60（こうだいさん）</td><td>出立の画面、習熟と才能、実機で 3 戦通す確認です。本番の戦闘の後に来ます。</td></tr>
+        <tr><td>5. 本番の絵</td><td class="state no">待ち</td><td>#82（こうだいさん） → #85 → #84 #86〜#92</td><td>戦闘そのものは仮絵で動きます。Krita の手順を 1 体ぶん測る作業が、絵の全体の入口です。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>PR #170 が入った後の <code>Battle.unity</code> を、Unity Editor で最後まで通したかは確かめていません。コードには勝敗の判定と表示があり、#74 の完了時にスクリーンショットが付いています。</li>
+    <li>2〜4 週間は、戦闘の担当が 1 日 1〜2 件の重い Issue を閉じ、merge が 1 日以内に回る前提です。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li>いまの状態を一度触ってみるなら、Unity で <code>Assets/Scenes/Battle.unity</code> を開いて Play を押すだけです。先に <code>npm run unity:sync</code> で最新の C# を写してください。</li>
+    <li>#79（縦切りを触って答える）が、本番の Issue の範囲を削る入口です。ここの返事が早いほど 3 の段階が短くなります。</li>
+  </ul>
+</div>
+</body></html>

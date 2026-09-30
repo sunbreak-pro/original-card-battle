@@ -260,5 +260,55 @@ namespace BattleCore.Tests
                 Assert.That(Cards.Validate(deck).Errors.Any(e => e.Contains("4 stance cards")), Is.True);
             });
         }
+
+        // ---- §2.4 hits (#253): a multi-hit card gives the opponent no status ----
+
+        [Test]
+        public void AMultiHitCard_WithAnOpponentStatus_OnTheFaceOrInATrait_IsRefused()
+        {
+            var onFace = Fixtures.Card("twin_bleed", face: new Face(Power: 4, Hits: 2, Statuses: new[] { new StatusGrant(StatusKind.Bleed, 1) }));
+            var inTrait = Fixtures.Card("twin_fragile", face: new Face(Power: 4, Hits: 2),
+                trait: new Trait(TraitCondition.FirstPlay, TraitEffect.Status, Grant: new StatusGrant(StatusKind.Fragile, 1)));
+            var inExtraTrait = new CardDef("twin_slow", "twin_slow", BattleAttribute.Attack, 1, new Face(Power: 4, Hits: 2),
+                ExtraTrait: new Trait(TraitCondition.FirstPlay, TraitEffect.Status, Grant: new StatusGrant(StatusKind.Slow, 1)));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Cards.MultiHitCarriesNoFoeStatus(onFace), Is.False);
+                Assert.That(Cards.MultiHitCarriesNoFoeStatus(inTrait), Is.False);
+                Assert.That(Cards.MultiHitCarriesNoFoeStatus(inExtraTrait), Is.False);
+            });
+        }
+
+        [Test]
+        public void AMultiHitCard_MayGiveItsOwnStatus_AndASingleBlowMayGiveTheOpponentOne()
+        {
+            var selfOnly = Fixtures.Card("twin_empower", face: new Face(Power: 4, Hits: 2, Statuses: new[] { new StatusGrant(StatusKind.Empower, 1, OnSelf: true) }),
+                trait: new Trait(TraitCondition.FirstPlay, TraitEffect.Status, Grant: new StatusGrant(StatusKind.Regen, 1, OnSelf: true)));
+            var singleBlow = Fixtures.Card("bleed_cut", face: new Face(Power: 6, Statuses: new[] { new StatusGrant(StatusKind.Bleed, 1) }));
+            var twoHitsStance = Fixtures.Card("twin_stance", face: new Face(Power: 4, Hits: 2,
+                Stance: new StanceDef(StanceHook.StatusOnAttack, Status: StatusKind.Bleed, StatusStacks: 1)), attributes: BattleAttribute.Attack | BattleAttribute.Stance);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Cards.MultiHitCarriesNoFoeStatus(selfOnly), Is.True);
+                Assert.That(Cards.MultiHitCarriesNoFoeStatus(singleBlow), Is.True);
+                Assert.That(Cards.MultiHitCarriesNoFoeStatus(twoHitsStance), Is.True, "rule 2: a stance gives it blow by blow");
+            });
+        }
+
+        [Test]
+        public void ADeckHoldingAMultiHitCardWithAnOpponentStatus_IsRefused()
+        {
+            var bad = Fixtures.Card("twin_bleed", face: new Face(Power: 4, Hits: 2, Statuses: new[] { new StatusGrant(StatusKind.Bleed, 1) }));
+            var plain = Enumerable.Range(0, 9).Select(i => Fixtures.Card($"k{i}")).ToList();
+            var result = Cards.Validate(Cards.BuildDeck(plain.Append(bad).ToList(), copies: 2));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(result.Ok, Is.False);
+                Assert.That(result.Errors.Single(), Is.EqualTo("Card \"twin_bleed\" strikes more than once and gives the opponent a status."));
+            });
+        }
     }
 }

@@ -1,0 +1,226 @@
+<title>戦闘画面の見た目の点検</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .step code { font-size: 13px; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+  @media (max-width: 720px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sev { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; }
+  .sev.hi { color: var(--stop); }
+  .sev.mid { color: var(--warn); }
+  .sev.lo { color: var(--muted); }
+  td.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  ol.prio { padding-left: 1.4em; }
+  ol.prio li { margin-bottom: 10px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-28 / 判断 / original-card-battle</p>
+    <h1>確定した戦闘画面の見た目は、寸法と値の出どころの穴を埋めてから Unity で組むのが安全です</h1>
+    <p class="lede">design の担当が 9/27 に確定させた見た目の設計書（battle-visual-v1）を、戦闘の規則・カード表・BattleCore の実装と突き合わせました。色と読む順の方向に問題はありません。ただ、敵と隣り合ったときの重なり、3 体戦、長いカードの文、コアがまだ出していない値の 4 点は、このまま組むと作り直しになります。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">設計書で直す</span><h3>重なりと文字の収まり</h3><p>数値パネル・予兆の札・スタミナの粒・カードの文の寸法を、場のマス数 5〜8 と最長の札で計算し直します。design の担当が 1 回の作業で直せる量です。</p></li>
+    <li class="verdict later"><span class="tag">コアに口を足す</span><h3>画面に出す値の出どころ</h3><p>2 手目の予兆、条件が成り立ったときの値、敵ごとのランプは、コアか Bridge が値を出すまで画面に描けません。#50 と #242 のあいだに挟みます。</p></li>
+    <li class="verdict skip"><span class="tag">こうだいさんが決める</span><h3>見た目の方針 3 つ</h3><p>3 体戦を v1 に含めるか、カードの文を短くするか枠を広げるか、閉じ忘れの Issue を閉じてよいかです。ページの最後に並べました。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: 規則では、敵は同時に 3 体まで、場のマスは 5〜8、最大スタミナは 3〜14、手札の上限は 8 です（<code>battle_core_v4.md</code> と <code>BattleCore/Constants.cs</code>）。設計書の寸法は、この範囲の全部で成り立つ必要があります。</div>
+
+  <h2>不安点と曖昧な点</h2>
+  <p class="prose">引っ越しでいえば、家具の色と置き場所は決まったものの、いちばん狭い部屋の寸法ではまだ測っていない状態です。重さの「高」は、このまま Unity で組むと作り直しになるものです。</p>
+
+  <h3>作り直しになるもの（高）</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>重さ</th><th>何が起きるか</th><th>根拠</th><th>直す先</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sev hi">高</span></td><td>敵と隣り合う（間合い 0）と、自分の数値パネルと敵の数値パネルが重なります。6 マスで 35 px、8 マスで 62 px 重なります。8 マスでは敵のパネルが 155 px に縮むため、状態チップが縦に伸びて投げ上げ線（y 790）を越えます。</td><td>自分のパネルは幅 300 で固定で、マスの幅は 165〜264 です（§4.2・§4.5）</td><td>設計書</td></tr>
+        <tr><td><span class="sev hi">高</span></td><td>7〜8 マスで敵が 2 体並ぶと、幅 200 の予兆の札どうしが重なります。前の UI 設計書にあった「互いに離れる向きへ滑る」決まりは、置き換えで消えています。</td><td>§4.4、<code>battle_ui_ux_v2.md</code> の予兆の節</td><td>設計書</td></tr>
+        <tr><td><span class="sev hi">高</span></td><td>規則は 3 体戦を許していますが、設計書は 2 体までしか想定していません。敵のスタンス枠は右端に 1 つだけで、2 体目からの置き場がありません。3 マスを使う竜神の大きさも決まっていません。</td><td><code>battle_core_v4.md</code> の「同時に出る敵は 3 体まで」、§4.6</td><td>設計書（判断 1）</td></tr>
+        <tr><td><span class="sev hi">高</span></td><td>カードの特性の文は 1 行 9 字に収める決まりですが、「相手の状態(出血)なら」は 11〜12 字で、同じ形の札が約 10 枚あります。見本の「連動(スタンス)なら」も 10 字です。一方で 16 px 未満の文字を禁じているので、今の自動縮小（<code>CardTextFit.cs</code>）と矛盾します。</td><td>§6.1・§9、<code>swordsman_cards_v4.md</code></td><td>設計書（判断 2）</td></tr>
+        <tr><td><span class="sev hi">高</span></td><td>値の並びは 3 つまでですが、翻し足は 4 つ持っています（鈍足・疲労・威圧・後ろへ 1）。説明欄は 2 行しか入らず、スタンスの札の効果文が入りません。</td><td>§6.1、<code>swordsman_cards_v4.md</code> の #40</td><td>設計書</td></tr>
+        <tr><td><span class="sev hi">高</span></td><td>精鋭とボスの 2 手目の予兆（控えの予兆）を、コアはまだ作っていません。台本の型も敵 1 体・予兆 1 つのままなので、「届く敵のうち 1 体でも成り立てば点灯」も作れません。</td><td><code>EnemyAi.cs:58</code>（2 段の予兆はデモで外したと明記）、<code>DepictionTypes.cs:138</code>（敵の枠が 1 つ）</td><td>#50 と台本の型</td></tr>
+        <tr><td><span class="sev hi">高</span></td><td>ホバーの「威力 13 → 18」は、条件が成り立ったらどうなるかの値です。コアの予測は今の盤面の値しか返さないので、画面の側で計算しない決まりのままでは出せません。</td><td>§7.2・§9、<code>TurnLoop.cs:81</code></td><td>コアの予測</td></tr>
+        <tr><td><span class="sev hi">高</span></td><td>前の UI 設計書にあった予兆の「開示度」（手記で敵を知るほど、予兆に出る中身が増える仕組み）に触れていません。開示度 2 の中身（技名・威力の幅）は、幅 200 の予兆の札に入りません。</td><td><code>battle_ui_ux_v2.md</code> の開示度の節、#107</td><td>設計書</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>決めておかないと実装で迷うもの（中）</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>重さ</th><th>何が曖昧か</th><th>根拠</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sev mid">中</span></td><td>最大スタミナは 14 まで上がりますが、スタミナの札に粒が入るのは 10 個までです。粒 16 px と間隔 4 px で 14 個並べると 280 px になり、札の内側の 212 px を超えます。</td><td>§4.7、<code>Constants.cs:52</code></td></tr>
+        <tr><td><span class="sev mid">中</span></td><td>ムーブの札を掴んだときの「移る先の残像」と「壁の印」が、新しい設計書にありません。受け皿をやめたので、前の設計書のこの文も置き場を失っています。残すのか消すのかが分かりません。</td><td><code>battle_ui_ux_v2.md:306</code>・<code>:443</code></td></tr>
+        <tr><td><span class="sev mid">中</span></td><td>置いたスタンスの枠にランプを出さない決まりのため、毎ターン条件を見るスタンス（水の構えなど）の状態が画面から消えます。前の設計書は枠の点灯と消灯を持っていました。</td><td>§4.6、<code>battle_ui_ux_v2.md:891</code></td></tr>
+        <tr><td><span class="sev mid">中</span></td><td>掴んだ札の予測値は 1 つだけ出す決まりです。ただ、威力と状態を両方持つ札（石礫など）でどれを出すかと、Guard を引く前の値か後の値かが書かれていません。</td><td>§5.2、#30</td></tr>
+        <tr><td><span class="sev mid">中</span></td><td>画面の座標が左上からの px だけで、どの端に寄せるかが書かれていません。16:10 や 21:9 の画面では、右端と下端の部品がはみ出します。</td><td>§4、<code>DepictionPrefabBuilder.cs:471</code>（画面の拡大の合わせ方が 0.5）</td></tr>
+        <tr><td><span class="sev mid">中</span></td><td>ホバーで持ち上げた札の上端（y 778）が、投げ上げ線（y 790）より上に出ます。自分に向ける札を、ホバーしただけで出したと判定しない決まりが要ります。</td><td>§4.8・§5.3</td></tr>
+        <tr><td><span class="sev mid">中</span></td><td>「構え」が 2 つの意味で出てきます。用語集では「残り 3 以上で Guard +3」で、予兆の種別では「スタンスを置く」です。</td><td>§4.4・§7.5</td></tr>
+        <tr><td><span class="sev mid">中</span></td><td>敵の構えの盾は「残り 3 以上なら実線」です。ただ、今のスタミナで見るのか、予兆の行動を払った後の見込みで見るのかが決まっていません。</td><td>§4.5</td></tr>
+        <tr><td><span class="sev mid">中</span></td><td>カードのホバーは幅 420 px に 1 行とありますが、見本の文は 28〜32 字あるので、18 px では 1 行に入りません。</td><td>§7.2・§9</td></tr>
+        <tr><td><span class="sev mid">中</span></td><td>届く敵が 1 体もいない札の見た目がありません。崩し・押す / 引く・重撃のアイコンもありません。</td><td>§6.2・§8・付録 A</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>小さいもの（低）</h3>
+  <ul class="prose">
+    <li>俊敏は状態の表にありますが、コアの状態にはまだ入っていません（<code>Types.cs:80</code>）。</li>
+    <li>「角の情報は変わらない値だけ」とありますが、ターン数は毎ターン変わります。届く間合いの書き方も「1-2」と「0〜1」で揃っていません。</li>
+    <li>ボスの HP は 140〜260 あるので、10 刻みの目盛りが最大 26 本並びます。</li>
+    <li>読みやすい版の HTML は「直した文 4 件」と書いていますが、設計書の §0.2 には 12 行あります。</li>
+    <li>design の担当の最後のコミット（#247 へのリンク 1 行、<code>fc2473fb</code>）が main に入っていません。PR #245 がその前に merge されたためです。</li>
+    <li>設計書の外の話ですが、弩の一射の届く間合いが、敵の一覧では 2〜5、コアでは 2〜3 と食い違っています（<code>Enemies.cs:175</code>）。</li>
+  </ul>
+
+  <h2>次にやること</h2>
+  <p class="prose">いま「依存待ち」の Issue が 30 件あります。そのうち数件は、依存の元がもう終わっているのに閉じ忘れで止まっているだけです。先にこの棚を片付けると、battle と dungeon の担当が同時に動けるようになります。</p>
+  <ol class="prio prose">
+    <li><strong>閉じ忘れの Issue を片付けます（メインのチャット）。</strong> #49（ターン進行）と #55（実戦の戦闘シーン）は完了条件を満たしています。#29 と #54 は変換器が入っていて、残りは #30 のしきい値だけです。#56 は対象のファイルが既に無く、受け皿と配置は #242 が引き取りました。#48・#50・#51 は、残っている作業だけに本文を絞ります。これで #50 と、探索と戦闘を繋ぐ #99 が依存待ちから外れます。</li>
+    <li><strong>見た目の設計書を v1.1 に直します（design）。</strong> 上の「高」のうち設計書で直せる 6 件を新しい Issue にして、design の担当へ回します。#241 と #242 より前に置きます。</li>
+    <li><strong>#241 で前の UI 設計書を新しい見た目に合わせます（battle）。</strong> 依存していた #245 は merge 済みです。v1.1 の直しと続けて済ませると、#180（色の食い違い）も閉じられます。</li>
+    <li><strong>#50 のうち、予兆 2 段だけを先に入れます（battle）。</strong> 控えの予兆を画面に出す前提になるからです。ボスの適応は判断待ちなので後に回します。</li>
+    <li><strong>#78 で演出を測ります（battle）。</strong> いちばん優先度が高い #67（長柄の歪み兵と 1 ターンを通す）への最短の道で、#79 の実機確認と #30 のしきい値につながります。</li>
+    <li><strong>小さい 2 件を片付けます。</strong> #243（予兆の語を 防御 / 移動 に揃える、cards）と #247（色の役割、メインのチャット）です。どちらも #242 の前に語と色を固めておきます。</li>
+  </ol>
+  <p class="prose">#242（Unity の戦闘画面の作り直し）は今 prio:3 ですが、#241 の直後に来るので prio:2 に上げるのが妥当です。対象のファイルが同じなので、#235（廃止 API の警告）も #242 と一緒に片付けられます。</p>
+
+  <h3>こうだいさんの作業で止まっているもの</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Issue</th><th>何をすると進むか</th><th>止めているもの</th></tr></thead>
+      <tbody>
+        <tr><td class="num">#82</td><td>Krita AI で 1 体ぶんの立ち絵を通して作り、かかった時間を測ります。</td><td>立ち絵と差分の全部（#85 → #84・#86・#88）です。</td></tr>
+        <tr><td class="num">#79 #60 #25</td><td>Unity で実際に戦い、手触りと演出の要不要を答えます。#25 は 9/19 から返事を待っています。</td><td>#80 の振り返りと、#30 のしきい値です。</td></tr>
+        <tr><td class="num">#213</td><td>背水の陣の特性 2 つを残すかを決めます。</td><td>カードの特性の箱の大きさです。</td></tr>
+        <tr><td class="num">#221</td><td>疲労が回復を一律 −1 削るのか、1 スタックにつき −1 削るのかを決めます。</td><td>状態の説明パネルの文です。</td></tr>
+        <tr><td class="num">#244</td><td>結果画面・デッキを組む画面・休憩画面の案を Claude Design で作って選びます。</td><td>残り 3 画面の見た目です。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>閉じ忘れの判定は、Issue の完了条件とコードと merge 済みの PR を照らした結果です。Unity リポ側の PR は、Issue のコメントと記録から読みました。</li>
+    <li>重なりの px は、設計書の寸法から計算した値です。Unity の画面ではまだ確かめていません。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li><strong>判断 1: 3 体戦を見た目 v1 に含めますか。</strong> 含めるなら、敵のスタンス枠と予兆の札の置き方を v1.1 で決めます。当面のデモが 2 体までなら、v1 は 2 体までと明記して先へ進めます。</li>
+    <li><strong>判断 2: カードの文が入らないとき、どちらで解きますか。</strong> 条件の語を短くする案（「相手の状態(出血)なら」を「出血中なら」にする）と、1 行の字数を 11 字に広げる案があります。私は語を短くするほうをおすすめします。カードの大きさと扇の間隔を動かさずに済むからです。</li>
+    <li><strong>判断 3: 閉じ忘れの Issue を、このチャットで閉じてよいですか。</strong> 閉じる前に、各 Issue へ根拠のコメントを 1 行残します。</li>
+  </ul>
+</div>

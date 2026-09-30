@@ -1,0 +1,389 @@
+<title>4 属性のカードの顔</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500;600;700&family=Shippori+Mincho:wght@700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6; --panel: #ffffff; --ink: #1c2327; --muted: #56636b; --line: #d5dcdf;
+    --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #dcefef; --ok: #2c7a4b; --warn: #a86a12; --stop: #a23c3c; --code-bg: #eaf0f0;
+    /* game palette (battle-visual-v1 §2). The card faces commit to the game's one dark look. */
+    --g-ground: #10141d; --g-card: #171c28; --g-ink: #ecebf2; --g-muted: #a9adbd; --g-rule: rgba(157,166,186,.26); --g-steel: #6d7787;
+    --g-amber: #e8a84c; --g-wick: #ffd89a; --g-violet: #8b6fd0; --g-phos: #b9a3ff; --g-guard: #8fc4d8; --g-hp-text: #e36a5e;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad; --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338; --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --ground: #13181b; --panel: #1b2226; --ink: #e4e9eb; --muted: #99a6ad; --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338; --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --code-bg: #0f1417; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: "BIZ UDPGothic", "Yu Gothic UI", "Meiryo", sans-serif; font-size: 16px; line-height: 1.75; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 760px; }
+  .mid { max-width: 1000px; }
+  header.top { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(26px, 3.6vw, 34px); line-height: 1.3; margin: 0 0 12px; text-wrap: balance; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 820px; }
+  h2 { font-size: 22px; margin: 56px 0 12px; text-wrap: balance; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  code { font-family: "IBM Plex Mono", monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: .9em; }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); } .verdict.later .tag { color: var(--warn); } .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; } .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .06em; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.pick td { background: var(--accent-soft); }
+  .yes { color: var(--ok); font-weight: 700; } .bad { color: var(--stop); font-weight: 700; }
+  .note { font-size: 14px; color: var(--muted); }
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 12px; }
+  .tabs button { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 3px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+  .tabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  details { margin: 8px 0 20px; } summary { cursor: pointer; color: var(--accent); }
+
+  .stage { background: var(--g-ground); border-radius: 6px; padding: 20px 16px 28px; overflow-x: auto; }
+  .row { display: flex; gap: 14px; align-items: flex-start; min-width: max-content; }
+  .row + .row { margin-top: 18px; }
+  .rowlabel { width: 120px; flex: none; color: var(--g-muted); font-size: 14px; line-height: 1.5; padding-top: 8px; }
+  .rowlabel b { display: block; color: var(--g-ink); font-size: 16px; }
+  .gallery { display: flex; flex-wrap: wrap; gap: 12px 12px; }
+  .cardbox { position: relative; flex: none; }
+  .flag { position: absolute; left: 4px; bottom: -20px; font-size: 12px; color: #ff8a8a; white-space: nowrap; }
+
+  /* ---- card face ---- */
+  .card { position: absolute; left: 0; top: 0; width: 216px; height: 304px; background: var(--g-card); border: 2px solid var(--ac); border-radius: 6px;
+    box-shadow: 0 6px 14px rgba(0,0,0,.45); color: var(--g-ink); overflow: hidden; font-family: "Zen Kaku Gothic New", "Yu Gothic UI", sans-serif; line-height: 1; }
+  .card * { position: absolute; }
+  .card .flow, .card .flow *, .card .top *, .card .desc *, .card.old .oldreach * { position: static; }
+  .card .band { left: 0; right: 0; top: 0; height: 6px; background: var(--ac); }
+  .card .cost { left: 14px; top: 14px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--g-amber); background: rgba(0,0,0,.45);
+    color: var(--g-amber); font: 700 28px/40px "IBM Plex Mono", monospace; text-align: center; }
+  .card .top { left: 64px; right: 10px; top: 16px; height: 40px; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
+  .card .top > * { position: static; flex: none; }
+  .card .top .grow { flex: 1; }
+  .card .attr { display: inline-flex; align-items: center; gap: 4px; font-size: 16px; font-weight: 700; color: var(--ac); }
+  .card .reach { display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 8px 0 6px; border: 1.5px solid var(--g-ink); border-radius: 15px; font: 700 20px "IBM Plex Mono", monospace; }
+  .card .reach.self { font: 700 16px "Zen Kaku Gothic New", sans-serif; }
+  .card .ruler { display: inline-flex; gap: 2px; }
+  .card .ruler i { display: inline-block; width: 18px; height: 22px; border-radius: 3px; border: 1.5px solid var(--g-steel); color: var(--g-steel); font: 700 14px/19px "IBM Plex Mono", monospace; text-align: center; font-style: normal; }
+  .card .ruler i.on { background: var(--g-ink); border-color: var(--g-ink); color: var(--g-card); }
+  .card .name { left: 14px; right: 10px; top: 64px; height: 30px; font: 700 22px/30px "Shippori Mincho", serif; letter-spacing: .02em; white-space: nowrap; overflow: hidden; }
+  .card .reachline { left: 14px; right: 10px; top: 96px; height: 20px; font-size: 16px; line-height: 20px; color: var(--g-ink); white-space: nowrap; overflow: hidden; }
+  .card .vals { left: 14px; right: 10px; height: 58px; display: flex; gap: 14px; overflow: hidden; white-space: nowrap; }
+  .card .vals .v { display: grid; grid-template-columns: auto auto; column-gap: 4px; align-items: center; }
+  .card .vals .v b { font: 700 36px/38px "IBM Plex Mono", monospace; color: var(--vc); }
+  .card .vals .v small { grid-column: 1 / 3; font-size: 16px; line-height: 16px; color: var(--g-muted); }
+  .card .vals .v.move small { color: var(--g-ink); font-weight: 700; }
+  .card .desc { left: 14px; right: 10px; font-size: 16px; line-height: 22px; overflow: hidden; }
+  .card .desc p { margin: 0; }
+  .card .desc .inf { color: var(--g-amber); font-weight: 700; margin-right: 4px; }
+  .card .trait { left: 12px; right: 7px; bottom: 7px; height: 62px; background: rgba(0,0,0,.34); border: 1px solid var(--g-rule); border-radius: 4px; }
+  .card .trait.plain { border-style: dashed; }
+  .card .lamp { left: 8px; top: 23px; width: 10px; height: 10px; border-radius: 50%; background: var(--g-steel); }
+  .card .tl { left: 28px; right: 4px; font-size: 16px; line-height: 20px; white-space: nowrap; overflow: hidden; }
+  .card .tl.t1 { top: 9px; } .card .tl.t2 { top: 32px; font-weight: 700; }
+  .card .trait.plain .tl { left: 12px; color: var(--g-muted); }
+  .card .over { outline: 2px solid #ff5a5a; outline-offset: -2px; background: rgba(255,90,90,.18); }
+  /* the old two-attribute face (option C of the layout page) for comparison */
+  .card.old .strip { left: 0; top: 0; bottom: 0; width: 8px; background: linear-gradient(var(--ac) 50%, var(--ac2) 50%); }
+  .card.old .band { background: linear-gradient(115deg, var(--ac) 50%, var(--ac2) 50%); height: 5px; }
+  .card.old .oldreach { right: 10px; top: 12px; width: 52px; text-align: center; }
+  .card.old .oldreach .cells { display: flex; gap: 3px; justify-content: center; }
+  .card.old .oldreach .cells i { display: block; width: 10px; height: 13px; border-radius: 2px; border: 1.5px solid var(--g-steel); }
+  .card.old .oldreach .cells i.on { background: var(--g-ink); border-color: var(--g-ink); }
+  .card.old .oldreach b { display: block; margin-top: 5px; font: 600 16px/1 "IBM Plex Mono", monospace; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">2026-09-28 / 判断 / original-card-battle / Issue #256・#259</p>
+    <h1>属性を 4 つにして 2 つ持ちを無くすと、塗り分けが消え、移動は「詰める 1」のような値として読めます</h1>
+    <p class="lede">属性は 攻撃・防御・スキル・スタンス の 4 つです（2026-09-28 の最新の決定）。どの案も、枠の色は属性 1 色だけで、移動は値の列に語と数で並べます。案ごとに違うのは、間合いの示し方と移動の書き方で、案 1 が採用になりました。全 80 枚を実際のフォントで描き、はみ出しを数えています。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">採用（2026-09-28）</span><h3>案 1: 間合いは数字の札、移動は語</h3><p>右上に「⊢⊣ 1〜2」の札を置き、移動は「→ 1 / 詰める」のように値と同じ形で書きます。記号を覚えなくても語で読めます。</p></li>
+    <li class="verdict later"><span class="tag">次点</span><h3>案 2: 間合いは目盛り、移動は間合いの増減</h3><p>0〜3 の目盛りに数字を入れて届く所を塗ります。移動は「間合い −1」と書き、目盛りと同じ言葉でそろえます。</p></li>
+    <li class="verdict skip"><span class="tag">見送り</span><h3>案 3: 間合いを名前の下に文で書く</h3><p>「間合い 1〜2 に届く」と文で書くので迷いませんが、1 行ぶん値と説明が下がり、説明の 3 行目が入らない札が出ます。</p></li>
+  </ul>
+
+  <h2>1. 今の顔と 3 案の比べ</h2>
+  <p class="prose">今の顔（配置の案 C）で見づらかった札を 5 枚並べました。2 つの属性の塗り分け、右上の小さな目盛り、→ と ← だけの移動が入っている札です。</p>
+  <div class="stage" id="compare"></div>
+
+  <h2>2. 3 案の違い</h2>
+  <div class="tablewrap mid">
+    <table id="variantTable">
+      <thead><tr><th>案</th><th>属性</th><th>間合い（届く所）</th><th>移動（自分が動く / 相手を動かす）</th><th>はみ出す札（80 枚中）</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <p class="note">はみ出す札の数は、このページを開いたときに実際のフォントで描いて数えています。</p>
+
+  <h3>どの案にも共通すること</h3>
+  <ul class="prose">
+    <li><strong>属性は 1 色です。</strong> 攻撃は菫、防御は鋼青、スキルは琥珀、スタンスは緋で、上の帯と枠をその 1 色で塗ります。左上のコストの隣に、属性のアイコン（攻撃は剣、防御は盾、スキルは星、スタンスは旗）を置きます。語はホバーと右クリックの詳細で出します。コストの隣に語まで置くと、間合いの札とぶつかるからです。</li>
+    <li><strong>移動は値の列に入れます。</strong> 移動は属性ではなくなったので、威力や Guard と同じ「アイコン・数・語」の形で並べます。値の列は 1 枚につき 2 つまでで、全 80 枚が収まります。</li>
+    <li><strong>スタンスの札は永続の効果だけを持ちます。</strong> 値の列は無く、説明の行に「∞ ターン開始 Guard +3」のように書きます。重ね掛けができるので、状態チップには ∞ と重ねた数（×2 など）を出します。スタンスの札は、使ったらその戦闘では手札・山札・捨札に戻りません。</li>
+    <li><strong>連動の語は寄せた後の属性です。</strong> 「連動 アタック」は「連動 攻撃」に、連動(ムーブ) は「移動後」に変わります。「連動 スタンス」はそのまま残ります（#256）。</li>
+  </ul>
+
+  <div class="tabs" id="varTabs" role="group" aria-label="案"></div>
+  <div class="stage"><div class="gallery" id="gallery"></div></div>
+
+  <h2>3. 今の間合いで出せない札のホバー</h2>
+  <p class="prose">今の間合いで出せない札にホバーすると、カードの右側にパネルが出て、いつ出せるかを書きます（#261）。下の例は、敵と隣り合っている（間合い 0）ときに、届く間合いが 1〜2 の伸び突きにホバーした場面です。スタミナが足りないだけの札には出しません。</p>
+  <div class="stage" id="hintDemo"></div>
+
+  <h2>4. 属性の寄せ方</h2>
+  <p class="prose">スタンスを含む札は、ほかの属性の部分を外してスタンスだけの札にします。残りの 2 つの効果を持つ札は、攻撃 ＞ 防御 ＞ スキル の順で 1 つの属性に寄せます。今の 80 枚に当てると次のとおりです。スタンスに作り直す 10 枚は、このページでは値と状態と移動を外した下書きの形で描いています。コストと効果の強さは cards の担当が決め直します（#257）。</p>
+  <div class="tablewrap mid">
+    <table>
+      <thead><tr><th>寄せた後</th><th>枚数</th><th>元の属性</th></tr></thead>
+      <tbody>
+        <tr><td><strong>攻撃</strong></td><td class="num">36</td><td>アタック 15、アタック + ムーブ 8、アタック + スキル 8、アタック + ガード 5</td></tr>
+        <tr><td><strong>防御</strong></td><td class="num">16</td><td>ガード 7、ガード + ムーブ 4、ガード + スキル 3、ムーブだけで Guard を持つ札 2（後ろ跳び・摺り足）</td></tr>
+        <tr><td><strong>スキル</strong></td><td class="num">14</td><td>スキル 8、スキル + ムーブ 2、ムーブだけの残り 4（足運び・間合い切り・跳び退り・駆け込み）</td></tr>
+        <tr><td><strong>スタンス</strong></td><td class="num">14</td><td>スタンス 4、作り直す 10（アタック + スタンス 3、ガード + スタンス 3、スタンス + ムーブ 2、スキル + スタンス 2）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <details class="prose"><summary>80 枚の一覧を開く</summary><div class="tablewrap"><table id="mapTable"><thead><tr><th>#</th><th>札</th><th>今</th><th>寄せた後</th></tr></thead><tbody></tbody></table></div></details>
+
+  <h3>釣り合いへの影響</h3>
+  <p class="prose">攻撃の札が 36 枚と半分近くになり、防御は 16 枚に減ります。攻撃しながら防御する札が防御に数えられなくなるので、「連動 防御」（受け太刀・柄当て・摺り足）は成り立ちにくくなります。逆に「連動 攻撃」と「連打」は成り立ちやすくなります。値は変えていないので、どれだけ変わるかは試験台で測り直します（#258）。</p>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>永続の効果は数の上限が無く、重ね掛けもできます。同じスタンスを 2 回置くと 2 回ぶん効きます。デッキに 3 枚までの制限も無くなりました（#256）。</li>
+    <li>「一度使ったら消える」のは使ったその 1 枚だけで、デッキに残っている同じ札の写しは消えません（2026-09-28 にこうだいさんが確定）。</li>
+    <li>連動(ムーブ) は「移動後」（このターンに自分が動いた）に置き換えました。連動(スタンス) はそのまま残します（#256）。</li>
+    <li>移動の語は、自分が動くときは「詰める / 離れる」、相手を動かすときは「押す / 引く」です。今の「前へ / 後ろへ」は、敵がいつも右にいる前提の語なので、間合いの言葉に直しました。</li>
+    <li>はみ出しの判定はブラウザのフォントの描画です。Unity の TextMeshPro とは字幅が数 % ずれることがあります。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li><strong>永続が積み上がる前提の釣り合い。</strong> 数の上限が無く重ね掛けもできるので、スタンスを何枚も置く型が強くなります。作り直す 10 枚のコストと合わせて、試験台で測り直します（#257・#258）。</li>
+  </ul>
+</div>
+
+<script>
+const CARDS = [{"no":1,"id":"thrust","name":"突き","attrs":["アタック"],"cost":3,"reach":"0-1","values":[{"v":"power","n":23}],"foe":[],"self":[],"stance":[],"plain":true,"traits":[]},{"no":2,"id":"kesa_cut","name":"袈裟斬り","attrs":["アタック"],"cost":2,"reach":"0-1","values":[{"v":"power","n":13}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 0","eff":"威力 +5"}]},{"no":3,"id":"overhead","name":"大上段","attrs":["アタック"],"cost":2,"reach":"0-1","values":[{"v":"power","n":13}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"予兆(攻撃)","eff":"重撃"}]},{"no":4,"id":"wrist_cut","name":"小手打ち","attrs":["アタック"],"cost":1,"reach":"0-1","values":[{"v":"power","n":6}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 0","eff":"スタミナ +1"}]},{"no":5,"id":"side_sweep","name":"横薙ぎ","attrs":["アタック"],"cost":3,"reach":"0-1","values":[{"v":"power","n":23}],"foe":[],"self":[],"stance":[],"plain":true,"traits":[]},{"no":6,"id":"flat_strike","name":"峰打ち","attrs":["アタック"],"cost":1,"reach":"0-1","values":[{"v":"power","n":6},{"v":"break","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"相手の状態(鈍足)","eff":"威力 +5"}]},{"no":7,"id":"probe_thrust","name":"探り突き","attrs":["アタック"],"cost":2,"reach":"0-2","values":[{"v":"power","n":11}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"予兆(攻撃)","eff":"威力 +3"}]},{"no":8,"id":"pierce","name":"貫き","attrs":["アタック"],"cost":1,"reach":"0-1","values":[{"v":"power","n":6}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"崩し後","eff":"重撃"}]},{"no":9,"id":"throw_blade","name":"投げ刃","attrs":["アタック"],"cost":2,"reach":"1-3","values":[{"v":"power","n":9}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 2 以上","eff":"ドロー +1"}]},{"no":10,"id":"reach_thrust","name":"伸び突き","attrs":["アタック"],"cost":2,"reach":"1-2","values":[{"v":"power","n":13}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 2 以上","eff":"威力 +5"}]},{"no":11,"id":"brace","name":"呼吸を整える","attrs":["ガード"],"cost":2,"reach":null,"values":[{"v":"guard","n":9}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"温存(残 ≥ 6)","eff":"次ターン回復 +1"}]},{"no":12,"id":"iron_block","name":"鉄の受け","attrs":["ガード"],"cost":3,"reach":null,"values":[{"v":"guard","n":17}],"foe":[],"self":[],"stance":[],"plain":true,"traits":[]},{"no":13,"id":"low_guard","name":"低い構え","attrs":["ガード"],"cost":3,"reach":null,"values":[{"v":"guard","n":15}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 1 以下","eff":"Guard +3"}]},{"no":14,"id":"riposte_guard","name":"受け太刀","attrs":["ガード"],"cost":2,"reach":null,"values":[{"v":"guard","n":9}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"連動(A)","eff":"Guard +3"}]},{"no":15,"id":"deep_breath","name":"深い呼吸","attrs":["ガード"],"cost":3,"reach":null,"values":[{"v":"guard","n":17}],"foe":[],"self":[],"stance":[],"plain":true,"traits":[]},{"no":16,"id":"water_stance","name":"水の構え","attrs":["スタンス"],"cost":2,"reach":null,"values":[],"foe":[],"self":[],"stance":["間合い 2 以上で始まるターンの回復 +2"],"plain":false,"traits":[{"cond":"連動(M)","eff":"コスト −1"}]},{"no":17,"id":"rock_stance","name":"岩の構え","attrs":["スタンス"],"cost":2,"reach":null,"values":[],"foe":[],"self":[],"stance":["ターン開始 Guard +3"],"plain":false,"traits":[{"cond":"予兆(攻撃)","eff":"Guard +3"}]},{"no":18,"id":"flow_stance","name":"流れの構え","attrs":["スタンス"],"cost":3,"reach":null,"values":[],"foe":[],"self":[],"stance":["ムーブをプレイしたターン、アタック威力 +5"],"plain":false,"traits":[{"cond":"連動(M)","eff":"ドロー +1"}]},{"no":19,"id":"first_aid","name":"応急処置","attrs":["スキル"],"cost":3,"reach":null,"values":[{"v":"heal","n":15}],"foe":[],"self":[],"stance":[],"plain":true,"traits":[]},{"no":20,"id":"spirit_roar","name":"気迫","attrs":["スキル"],"cost":1,"reach":"0-2","values":[],"foe":[{"s":"foe","k":"威圧","n":2}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"相手の状態(出血)","eff":"脆化を 2 付与"}]},{"no":21,"id":"focus","name":"集中","attrs":["スキル"],"cost":3,"reach":null,"values":[{"v":"draw","n":1}],"foe":[],"self":[{"s":"self","k":"集中","n":2},{"s":"self","k":"強化","n":2}],"stance":[],"plain":false,"traits":[{"cond":"初手","eff":"ドロー +1"}]},{"no":22,"id":"observe","name":"観察","attrs":["スキル"],"cost":1,"reach":null,"values":[{"v":"draw","n":2}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"手薄","eff":"ドロー +1"}]},{"no":23,"id":"war_cry","name":"鬨の声","attrs":["スキル"],"cost":2,"reach":"0-2","values":[],"foe":[{"s":"foe","k":"威圧","n":2}],"self":[{"s":"self","k":"強化","n":2}],"stance":[],"plain":false,"traits":[{"cond":"連打","eff":"脆化を 2 付与"}]},{"no":24,"id":"second_wind","name":"息継ぎ","attrs":["スキル"],"cost":3,"reach":null,"values":[{"v":"stamina","n":1}],"foe":[],"self":[{"s":"self","k":"再生","n":3}],"stance":[],"plain":false,"traits":[{"cond":"自分の状態(再生)","eff":"スタミナ +1"}]},{"no":25,"id":"footwork","name":"足運び","attrs":["ムーブ"],"cost":1,"reach":null,"values":[{"v":"fwd","n":1},{"v":"draw","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"初手","eff":"スタミナ +1"}]},{"no":26,"id":"back_leap","name":"後ろ跳び","attrs":["ムーブ"],"cost":1,"reach":null,"values":[{"v":"back","n":2},{"v":"guard","n":4}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"予兆(攻撃)","eff":"Guard +3"}]},{"no":27,"id":"slide_step","name":"摺り足","attrs":["ムーブ"],"cost":1,"reach":null,"values":[{"v":"fwd","n":1},{"v":"guard","n":4}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"連動(G)","eff":"ドロー +1"}]},{"no":28,"id":"break_off","name":"間合い切り","attrs":["ムーブ"],"cost":1,"reach":null,"values":[{"v":"back","n":1},{"v":"stamina","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"締め","eff":"スタミナ +1"}]},{"no":29,"id":"lunge","name":"踏み込み斬り","attrs":["アタック","ムーブ"],"cost":3,"reach":"1-2","values":[{"v":"power","n":14},{"v":"fwd","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"連動(St)","eff":"威力 +3"}]},{"no":30,"id":"feint","name":"牽制","attrs":["アタック","ムーブ"],"cost":2,"reach":"0-1","values":[{"v":"power","n":8},{"v":"back","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"温存(残 ≥ 4)","eff":"Guard +3"}]},{"no":31,"id":"boar_rush","name":"猪突猛進","attrs":["アタック","ムーブ"],"cost":3,"reach":"1-2","values":[{"v":"power","n":14},{"v":"fwd","n":2}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 2 以上","eff":"威力 +6"}]},{"no":32,"id":"rend","name":"裂き斬り","attrs":["アタック","スキル"],"cost":1,"reach":"0-1","values":[{"v":"power","n":4}],"foe":[{"s":"foe","k":"出血","n":1}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"相手の状態(出血)","eff":"出血 +1 スタック"}]},{"no":33,"id":"body_check","name":"体当たり","attrs":["アタック","スキル"],"cost":1,"reach":"0-1","values":[{"v":"power","n":4}],"foe":[{"s":"foe","k":"鈍足","n":2}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 0","eff":"重撃"}]},{"no":34,"id":"stone_throw","name":"石礫","attrs":["アタック","スキル"],"cost":2,"reach":"1-3","values":[{"v":"power","n":4}],"foe":[{"s":"foe","k":"脆化","n":2},{"s":"foe","k":"威圧","n":2}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 2 以上","eff":"コスト −1"}]},{"no":35,"id":"parry_cut","name":"受け流し斬り","attrs":["アタック","ガード"],"cost":3,"reach":"0-1","values":[{"v":"power","n":16},{"v":"guard","n":12}],"foe":[],"self":[],"stance":[],"plain":true,"traits":[]},{"no":36,"id":"guard_thrust","name":"柄当て","attrs":["アタック","ガード"],"cost":3,"reach":"0","values":[{"v":"power","n":17},{"v":"guard","n":10}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"連動(G)","eff":"威力 +3"}]},{"no":37,"id":"step_in_guard","name":"足捌き・前","attrs":["ガード","ムーブ"],"cost":3,"reach":null,"values":[{"v":"guard","n":12},{"v":"fwd","n":1}],"foe":[],"self":[],"stance":[],"plain":true,"traits":[]},{"no":38,"id":"step_out_guard","name":"足捌き・後","attrs":["ガード","ムーブ"],"cost":3,"reach":null,"values":[{"v":"guard","n":12},{"v":"back","n":1}],"foe":[],"self":[],"stance":[],"plain":true,"traits":[]},{"no":39,"id":"iron_wall","name":"鉄壁の構え","attrs":["ガード","スタンス"],"cost":3,"reach":null,"values":[{"v":"guard","n":10}],"foe":[],"self":[],"stance":["ターン開始 Guard +3"],"plain":false,"traits":[{"cond":"自分の状態(見切り)","eff":"Guard +3"}]},{"no":40,"id":"twist_away","name":"翻し足","attrs":["スキル","ムーブ"],"cost":3,"reach":"0-1","values":[{"v":"back","n":1}],"foe":[{"s":"foe","k":"鈍足","n":2},{"s":"foe","k":"疲労","n":2},{"s":"foe","k":"威圧","n":2}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"連動(A)","eff":"スタミナ +1"}]},{"no":41,"id":"miasma_blade","name":"瘴気の刃","attrs":["アタック","スキル"],"cost":1,"reach":"0-1","values":[{"v":"power","n":4}],"foe":[{"s":"foe","k":"疲労","n":2}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"相手の状態(疲労)","eff":"威力 +5"}]},{"no":42,"id":"priest_prayer","name":"司祭の祈り","attrs":["スタンス"],"cost":2,"reach":null,"values":[],"foe":[],"self":[],"stance":["被弾のたびスタミナ +1（ターン 1 回）＋ Guard +3"],"plain":false,"traits":[{"cond":"自分の状態(再生)","eff":"コスト −1"}]},{"no":43,"id":"purge_flash","name":"浄化の一閃","attrs":["アタック","スタンス"],"cost":2,"reach":"1-2","values":[{"v":"power","n":8}],"foe":[],"self":[],"stance":["間合い 2 以上で始まるターン Guard +3"],"plain":false,"traits":[{"cond":"予兆(攻撃)","eff":"追撃"}]},{"no":44,"id":"line_lash","name":"糸打ち","attrs":["アタック"],"cost":2,"reach":"0-2","values":[{"v":"power","n":11},{"v":"break","n":2}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"連打","eff":"重撃"}]},{"no":45,"id":"abyss_stance","name":"深淵の構え","attrs":["アタック","スタンス"],"cost":3,"reach":"0-1","values":[{"v":"power","n":14}],"foe":[],"self":[],"stance":["間合い 0 の相手へのアタック +5"],"plain":false,"traits":[{"cond":"間合い 0","eff":"威力 +3"}]},{"no":46,"id":"haul_step","name":"手繰りの歩み","attrs":["アタック","ムーブ"],"cost":1,"reach":"1-2","values":[{"v":"power","n":4},{"v":"pull","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"崩し後","eff":"威力 +5"}]},{"no":47,"id":"root_stride","name":"根渡り","attrs":["スタンス","ムーブ"],"cost":3,"reach":null,"values":[{"v":"back","n":1}],"foe":[],"self":[],"stance":["間合い 2 以上で終えたターン Guard +5"],"plain":false,"traits":[{"cond":"連動(Sk)","eff":"Guard +3"}]},{"no":48,"id":"thorn_shot","name":"棘の一射","attrs":["アタック"],"cost":2,"reach":"1-3","values":[{"v":"power","n":9}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"予兆(攻撃)","eff":"重撃"}]},{"no":49,"id":"root_bind","name":"根縛り","attrs":["スキル","スタンス"],"cost":1,"reach":"0-2","values":[],"foe":[{"s":"foe","k":"鈍足","n":2}],"self":[],"stance":["敵が自分で動くたび崩し 1"],"plain":false,"traits":[{"cond":"相手の状態(鈍足)","eff":"疲労を 2 付与"}]},{"no":50,"id":"bulwark","name":"城壁の受け","attrs":["ガード"],"cost":3,"reach":null,"values":[{"v":"guard","n":15}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"予兆(攻撃)","eff":"Guard +3"}]},{"no":51,"id":"shield_bash","name":"盾打ち","attrs":["アタック","ガード"],"cost":2,"reach":"0-1","values":[{"v":"power","n":8},{"v":"guard","n":6}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 0","eff":"Guard +3"}]},{"no":52,"id":"pack_howl","name":"群れの咆哮","attrs":["スキル"],"cost":2,"reach":"0-2","values":[],"foe":[{"s":"foe","k":"疲労","n":2}],"self":[{"s":"self","k":"強化","n":2}],"stance":[],"plain":false,"traits":[{"cond":"自分の状態(強化)","eff":"追撃"}]},{"no":53,"id":"fang_rush","name":"牙の突進","attrs":["アタック","ムーブ"],"cost":2,"reach":"0-1","values":[{"v":"power","n":8},{"v":"fwd","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 0","eff":"威力 +5"}]},{"no":54,"id":"whirlwind","name":"旋風斬り","attrs":["アタック"],"cost":2,"reach":"0-1","values":[{"v":"power","n":13}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"連動(M)","eff":"重撃"}]},{"no":55,"id":"riposte_stance","name":"返しの構え","attrs":["ガード","スキル"],"cost":1,"reach":null,"values":[{"v":"guard","n":3}],"foe":[],"self":[{"s":"self","k":"見切り","n":2}],"stance":[],"plain":false,"traits":[{"cond":"手薄","eff":"Guard +3"}]},{"no":56,"id":"hunter_mark","name":"狩人の印","attrs":["スキル","ムーブ"],"cost":1,"reach":"0-2","values":[{"v":"back","n":1}],"foe":[{"s":"foe","k":"脆化","n":2}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"相手の状態(脆化)","eff":"ドロー +1"}]},{"no":57,"id":"spear_wall","name":"槍衾","attrs":["ガード","スタンス"],"cost":1,"reach":null,"values":[{"v":"guard","n":3}],"foe":[],"self":[],"stance":["被弾のたび敵に出血 1"],"plain":false,"traits":[{"cond":"相手の状態(出血)","eff":"Guard +3"}]},{"no":58,"id":"shield_push","name":"盾押し","attrs":["ガード","ムーブ"],"cost":2,"reach":"0","values":[{"v":"guard","n":6},{"v":"push","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"締め","eff":"スタミナ +1"}]},{"no":59,"id":"snap_guard","name":"咄嗟の受け","attrs":["ガード"],"cost":3,"reach":null,"values":[{"v":"guard","n":15}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"初手","eff":"Guard +3"}]},{"no":60,"id":"leap_back","name":"跳び退り","attrs":["ムーブ"],"cost":1,"reach":null,"values":[{"v":"back","n":2},{"v":"draw","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"連動(A)","eff":"スタミナ +1"}]},{"no":61,"id":"rising_cut","name":"斬り上げ","attrs":["アタック","ムーブ"],"cost":3,"reach":"0-1","values":[{"v":"power","n":14},{"v":"fwd","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"初手","eff":"威力 +3"}]},{"no":62,"id":"leg_sweep","name":"足払い","attrs":["アタック","スキル"],"cost":1,"reach":"0","values":[{"v":"power","n":5}],"foe":[{"s":"foe","k":"鈍足","n":2}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"相手の状態(鈍足)","eff":"重撃"}]},{"no":63,"id":"dash_in","name":"駆け込み","attrs":["ムーブ"],"cost":1,"reach":null,"values":[{"v":"fwd","n":2},{"v":"stamina","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 2 以上","eff":"ドロー +1"}]},{"no":64,"id":"guard_walk","name":"受け歩き","attrs":["ガード","ムーブ"],"cost":2,"reach":null,"values":[{"v":"guard","n":6},{"v":"fwd","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"連打","eff":"Guard +3"}]},{"no":65,"id":"thorn_cut","name":"棘斬り","attrs":["アタック","スキル"],"cost":1,"reach":"0-1","values":[{"v":"power","n":4}],"foe":[{"s":"foe","k":"出血","n":1}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"崩し後","eff":"出血 +1 スタック"}]},{"no":66,"id":"calm_guard","name":"静の受け","attrs":["ガード","スキル"],"cost":3,"reach":null,"values":[{"v":"guard","n":10}],"foe":[],"self":[{"s":"self","k":"集中","n":2},{"s":"self","k":"再生","n":3}],"stance":[],"plain":false,"traits":[{"cond":"自分の状態(集中)","eff":"次ターン回復 +1"}]},{"no":67,"id":"deflect","name":"弾き","attrs":["ガード","スキル"],"cost":2,"reach":"0-1","values":[{"v":"guard","n":6}],"foe":[{"s":"foe","k":"威圧","n":2},{"s":"foe","k":"疲労","n":2}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 0","eff":"Guard +3"}]},{"no":68,"id":"crescent_cut","name":"三日月斬り","attrs":["アタック","ガード"],"cost":2,"reach":"0-1","values":[{"v":"power","n":8},{"v":"guard","n":6}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"締め","eff":"転換"}]},{"no":69,"id":"pommel_strike","name":"柄頭打ち","attrs":["アタック","スキル"],"cost":2,"reach":"0","values":[{"v":"power","n":10}],"foe":[{"s":"foe","k":"威圧","n":2},{"s":"foe","k":"疲労","n":2}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"連打","eff":"威力 +3"}]},{"no":70,"id":"mist_step","name":"霞み足","attrs":["スタンス","ムーブ"],"cost":3,"reach":null,"values":[{"v":"back","n":2}],"foe":[],"self":[],"stance":["間合い 2 以上で終えたターンの回復 +2、Guard +3"],"plain":false,"traits":[{"cond":"連動(Sk)","eff":"次ターン回復 +1"}]},{"no":71,"id":"keen_eye","name":"見切りの目","attrs":["スキル","スタンス"],"cost":2,"reach":null,"values":[{"v":"draw","n":1}],"foe":[],"self":[{"s":"self","k":"見切り","n":2}],"stance":["予兆が攻撃のとき Guard +3"],"plain":false,"traits":[{"cond":"予兆(攻撃)","eff":"ドロー +1"}]},{"no":72,"id":"resolve","name":"覚悟","attrs":["スキル"],"cost":1,"reach":null,"values":[],"foe":[],"self":[{"s":"self","k":"強化","n":2}],"stance":[],"plain":false,"traits":[{"cond":"死力","eff":"再生 +1 スタック"}]},{"no":73,"id":"gale_thrust","name":"疾風突き","attrs":["アタック","ムーブ"],"cost":3,"reach":"2-3","values":[{"v":"power","n":11},{"v":"fwd","n":2}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 3 以上","eff":"スタミナ +1"}]},{"no":74,"id":"anchor_stance","name":"錨の構え","attrs":["ガード","スタンス"],"cost":1,"reach":null,"values":[{"v":"guard","n":3}],"foe":[],"self":[],"stance":["押す / 引くを受けない"],"plain":false,"traits":[{"cond":"相手の状態(威圧)","eff":"Guard +3"}]},{"no":75,"id":"vital_thrust","name":"急所突き","attrs":["アタック"],"cost":1,"reach":"0-1","values":[{"v":"power","n":6},{"v":"break","n":2}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"崩し後","eff":"重撃"}]},{"no":76,"id":"evade_cut","name":"躱し斬り","attrs":["アタック","ガード"],"cost":2,"reach":"0-1","values":[{"v":"power","n":8},{"v":"guard","n":6}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"予兆(攻撃)","eff":"転換"}]},{"no":77,"id":"blood_dance","name":"血の舞","attrs":["アタック","スキル"],"cost":2,"reach":"0-2","values":[{"v":"power","n":6}],"foe":[{"s":"foe","k":"出血","n":2}],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 2 以上","eff":"出血 +1 スタック"}]},{"no":78,"id":"wolf_stance","name":"狼の構え","attrs":["アタック","スタンス"],"cost":2,"reach":"0-1","values":[{"v":"power","n":8}],"foe":[],"self":[],"stance":["出血中の敵へのアタック +3"],"plain":false,"traits":[{"cond":"自分の状態(強化)","eff":"重撃"}]},{"no":79,"id":"shadow_lunge","name":"影踏み","attrs":["アタック","ムーブ"],"cost":2,"reach":"1-2","values":[{"v":"power","n":10},{"v":"fwd","n":1}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"予兆(移動)","eff":"威力 +5"}]},{"no":80,"id":"last_stand","name":"背水の陣","attrs":["アタック"],"cost":1,"reach":"1-2","values":[{"v":"power","n":8}],"foe":[],"self":[],"stance":[],"plain":false,"traits":[{"cond":"間合い 2 以上","eff":"威力 +5"},{"cond":"死力","eff":"威力 +3"}]}];
+
+const COLOR = { '攻撃': '#8b6fd0', '防御': '#8fc4d8', 'スキル': '#e8a84c', 'スタンス': '#c2483f' };
+const OLD_COLOR = { 'アタック': '#8b6fd0', 'ガード': '#8fc4d8', 'スタンス': '#c2483f', 'スキル': '#e8a84c', 'ムーブ': '#ecebf2' };
+const RANK = { 'アタック': 3, 'ガード': 2, 'スキル': 1, 'スタンス': 1, 'ムーブ': 0 };
+const P = {
+  sword: 'M20 4l-1.5 5.5L9 19l-4-4 9.5-9.5zM6.5 13.5l4 4M3 21l3.5-3.5',
+  shield: 'M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z',
+  skill: 'M12 3l2 7 7 2-7 2-2 7-2-7-7-2 7-2z',
+  plus: 'M12 6v12M6 12h12', draw: 'M8 3h9v14H8zM5 7v14h9', dot: 'M12 6a6 6 0 110 12a6 6 0 010-12z',
+  range: 'M3 12h18M3 7v10M21 7v10', self: 'M12 4a3.5 3.5 0 110 7a3.5 3.5 0 010-7zM5 21c0-4 3-7 7-7s7 3 7 7',
+  break: 'M12 3a9 9 0 110 18a9 9 0 010-18zM9 7l4 5-3 2 4 4',
+  fwd: 'M4 12h14M13 6l6 6-6 6', back: 'M20 12H6M11 6l-6 6 6 6',
+  // move: toward the enemy's line / away from it; push = the enemy goes away, pull = it comes in.
+  close: 'M3 12h12M11 7l5 5-5 5M20 4v16', away: 'M20 4v16M16 12H4M8 7l-5 5 5 5',
+  push: 'M4 4v16M9 12h11M16 7l5 5-5 5', pull: 'M4 4v16M20 12H9M13 7l-5 5 5 5',
+  flag: 'M6 21V3M6 4h12l-3 4.5L18 13H6',
+};
+const FILLED = new Set(['dot']);
+function icon(name, size, color) {
+  const f = FILLED.has(name);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><path d="${P[name]}" fill="${f ? color : 'none'}" stroke="${f ? 'none' : color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+const ATTR_ICON = { '攻撃': 'sword', '防御': 'shield', 'スキル': 'skill', 'スタンス': 'flag' };
+
+function newAttr(c) {
+  // A stance stands alone: a card with a stance face becomes a stance card and nothing else.
+  if (c.attrs.includes('スタンス')) return 'スタンス';
+  if (c.attrs.length === 1 && c.attrs[0] === 'ムーブ') return c.values.some(v => v.v === 'guard') ? '防御' : 'スキル';
+  const r = Math.max(...c.attrs.map(a => RANK[a]));
+  return r === 3 ? '攻撃' : r === 2 ? '防御' : 'スキル';
+}
+const LINK = { A: '攻撃', G: '防御', Sk: 'スキル', St: 'スタンス' };
+const OLD_LINK = { A: 'アタック', G: 'ガード', Sk: 'スキル', St: 'スタンス', M: 'ムーブ' };
+function condText(cond, old) {
+  let m;
+  if (old && (m = cond.match(/^連動\((.+)\)$/))) return `連動 ${OLD_LINK[m[1]]}`;
+  if ((m = cond.match(/^相手の状態\((.+)\)$/))) return `敵が${m[1]}中`;
+  if ((m = cond.match(/^自分の状態\((.+)\)$/))) return `自分が${m[1]}中`;
+  if (cond === '連動(M)') return '移動後';
+  if ((m = cond.match(/^連動\((.+)\)$/))) return `連動 ${LINK[m[1]]}`;
+  if ((m = cond.match(/^予兆\((.+)\)$/))) return `予兆が${m[1]}`;
+  if ((m = cond.match(/^温存\(残 ≥ (\d+)\)$/))) return `温存 残り ${m[1]} 以上`;
+  return cond;
+}
+function effText(eff) {
+  let m;
+  if ((m = eff.match(/^(\S+)を (\d+) 付与$/))) return `→ 敵に${m[1]} ${m[2]}`;
+  if ((m = eff.match(/^(\S+) \+1 スタック$/))) return `→ ${m[1]} +1`;
+  if (eff === '次ターン回復 +1') return '→ 次の回復 +1';
+  return '→ ' + eff;
+}
+const STANCE_SHORT = {
+  '間合い 2 以上で始まるターンの回復 +2': '間合い 2 以上で始まるターン、回復 +2',
+  'ムーブをプレイしたターン、アタック威力 +5': '移動したターン、攻撃の威力 +5',
+  '被弾のたびスタミナ +1（ターン 1 回）＋ Guard +3': '被弾でスタミナ +1（ターン 1 回）、Guard +3',
+  '間合い 0 の相手へのアタック +5': '間合い 0 の敵への攻撃 +5',
+  '間合い 2 以上で終えたターンの回復 +2、Guard +3': '間合い 2 以上で終えたターン、回復 +2・Guard +3',
+  '出血中の敵へのアタック +3': '出血中の敵への攻撃 +3',
+};
+const VAL = {
+  power: ['sword', '#b9a3ff', '威力'], break: ['break', '#ecebf2', '崩し'], guard: ['shield', '#8fc4d8', 'Guard'],
+  heal: ['plus', '#e36a5e', '回復'], draw: ['draw', '#ecebf2', 'ドロー'], stamina: ['dot', '#e8a84c', 'スタミナ'],
+};
+const MOVE = { fwd: ['close', '詰める', -1], back: ['away', '離れる', 1], push: ['push', '押す', 1], pull: ['pull', '引く', -1] };
+const isMove = v => v.v in MOVE;
+
+function reachHtml(c, style) {
+  if (!c.reach) return style === 'ruler'
+    ? `<span class="reach self">${icon('self', 18, '#ecebf2')}自分</span>`
+    : `<span class="reach self">${icon('self', 18, '#ecebf2')}自分</span>`;
+  const [lo, hiRaw] = c.reach.split('-').map(Number);
+  const hi = Number.isNaN(hiRaw) || hiRaw === undefined ? lo : hiRaw;
+  if (style === 'ruler') return `<span class="ruler">${[0, 1, 2, 3].map(i => `<i class="${i >= lo && i <= hi ? 'on' : ''}">${i}</i>`).join('')}</span>`;
+  return `<span class="reach">${icon('range', 18, '#ecebf2')}${lo === hi ? lo : lo + '〜' + hi}</span>`;
+}
+function moveItem(v, style) {
+  const [ic, word, sign] = MOVE[v.v];
+  if (style === 'delta') {
+    const own = v.v === 'fwd' || v.v === 'back';
+    return `<div class="flow v move" style="--vc:#ecebf2">${icon('range', 24, '#ecebf2')}<b>${sign < 0 ? '−' : '+'}${v.n}</b><small>${own ? '間合い' : word}</small></div>`;
+  }
+  return `<div class="flow v move" style="--vc:#ecebf2">${icon(ic, 24, '#ecebf2')}<b>${v.n}</b><small>${word}</small></div>`;
+}
+function traitHtml(c, old) {
+  if (c.plain) return `<div class="trait plain"><div class="tl t1" data-m="特性">素直な札</div><div class="tl t2" data-m="特性">特性なし（+2 込み）</div></div>`;
+  if (c.traits.length === 2) {
+    const t = c.traits.map(x => `${condText(x.cond, old)} ${effText(x.eff)}`.replace(/ /g, ''));
+    return `<div class="trait"><i class="lamp"></i><div class="tl t1" data-m="特性">${t[0]}</div><div class="tl t2" data-m="特性">${t[1]}</div></div>`;
+  }
+  const x = c.traits[0];
+  return `<div class="trait"><i class="lamp"></i><div class="tl t1" data-m="特性">${condText(x.cond, old)}</div><div class="tl t2" data-m="特性">${effText(x.eff)}</div></div>`;
+}
+function descLines(c) {
+  const lines = [];
+  if (c.foe.length) lines.push('敵に ' + c.foe.map(s => `${s.k} ${s.n}`).join('・'));
+  if (c.self.length) lines.push('自分に ' + c.self.map(s => `${s.k} ${s.n}`).join('・'));
+  for (const s of c.stance) lines.push(`<span class="inf">∞</span>${STANCE_SHORT[s] || s}`);
+  return lines;
+}
+
+// V: 1 = reach pill + move word, 2 = numbered ruler + gap delta, 3 = reach as a sentence under the name.
+const VARIANTS = [
+  { key: '1', label: '数字の札・語', reach: 'pill', move: 'word', line: false, desc: '右上に「⊢⊣ 1〜2」の札', mv: '値の列に「→ 1 / 詰める」' },
+  { key: '2', label: '目盛り・増減', reach: 'ruler', move: 'delta', line: false, desc: '右上に 0〜3 の目盛り。届く所を塗り、数字を入れる', mv: '値の列に「⊢⊣ −1 / 間合い」' },
+  { key: '3', label: '文で書く', reach: 'line', move: 'word', line: true, desc: '名前の下に「間合い 1〜2 に届く」', mv: '値の列に「→ 1 / 詰める」' },
+];
+function cardHtml(c, v) {
+  const a = newAttr(c), col = COLOR[a];
+  const top = `<div class="top" data-m="上段"><span class="attr" title="${a}">${icon(ATTR_ICON[a], 24, col)}</span><span class="grow"></span>${v.line ? '' : reachHtml(c, v.reach)}</div>`;
+  const reachLine = v.line ? `<div class="reachline" data-m="間合い">${c.reach ? `間合い ${c.reach.replace('-', '〜')} に届く` : '自分に使う'}</div>` : '';
+  const valsTop = v.line ? 120 : 98;
+  const stance = a === 'スタンス';
+  const items = stance ? '' : c.values.map(x => isMove(x) ? moveItem(x, v.move) : (() => {
+    const [ic, vc, label] = VAL[x.v];
+    return `<div class="flow v" style="--vc:${vc}">${icon(ic, 24, vc)}<b>${x.v === 'stamina' ? '+' + x.n : x.n}</b><small>${label}</small></div>`;
+  })()).join('');
+  const descTop = valsTop + 62, descH = 304 - descTop - 62 - 7 - 6;
+  return `<div class="card" style="--ac:${col}"><i class="band"></i><div class="cost">${c.cost}</div>${top}
+    <div class="name" data-m="技名">${c.name}</div>${reachLine}
+    <div class="vals" data-m="値" style="top:${valsTop}px">${items}</div>
+    <div class="desc" data-m="説明" style="top:${descTop}px;height:${descH}px">${(stance ? descLines({ foe: [], self: [], stance: c.stance }) : descLines(c)).map(l => `<p>${l}</p>`).join('')}</div>
+    ${traitHtml(c)}</div>`;
+}
+function oldCardHtml(c) {
+  const a1 = OLD_COLOR[c.attrs[0]], a2 = OLD_COLOR[c.attrs[1] || c.attrs[0]];
+  let reach = '';
+  if (c.reach) {
+    const [lo, hiRaw] = c.reach.split('-').map(Number); const hi = hiRaw === undefined || Number.isNaN(hiRaw) ? lo : hiRaw;
+    reach = `<div class="oldreach"><div class="cells">${[0, 1, 2, 3].map(i => `<i class="${i >= lo && i <= hi ? 'on' : ''}"></i>`).join('')}</div><b>${c.reach}</b></div>`;
+  } else reach = `<div class="oldreach" style="font-size:14px">${icon('self', 22, '#ecebf2')}<div class="flow">自分</div></div>`;
+  const icons = c.attrs.map(x => icon({ 'アタック': 'sword', 'ガード': 'shield', 'スタンス': 'flag', 'スキル': 'skill', 'ムーブ': 'fwd' }[x], 22, OLD_COLOR[x])).join('');
+  const items = c.values.map(x => {
+    const map = { power: ['sword', '#b9a3ff', '威力'], break: ['break', '#ecebf2', '崩し'], guard: ['shield', '#8fc4d8', 'Guard'], fwd: ['fwd', '#ecebf2', '前へ'], back: ['back', '#ecebf2', '後ろへ'], push: ['fwd', '#ecebf2', '押す'], pull: ['back', '#ecebf2', '引く'], heal: ['plus', '#e36a5e', '回復'], draw: ['draw', '#ecebf2', 'ドロー'], stamina: ['dot', '#e8a84c', 'スタミナ'] }[x.v];
+    return `<div class="flow v" style="--vc:${map[1]}">${icon(map[0], 24, map[1])}<b>${x.v === 'stamina' ? '+' + x.n : x.n}</b><small>${map[2]}</small></div>`;
+  }).join('');
+  const lines = descLines(c).map(l => l.replace('<span class="inf">∞</span>', icon('flag', 16, '#e36a5e') + ' '));
+  return `<div class="card old" style="--ac:${a1};--ac2:${a2}"><i class="strip"></i><i class="band"></i><div class="cost" style="left:16px;top:11px">${c.cost}</div>
+    <div class="flow" style="position:absolute;left:68px;top:22px;display:flex;gap:4px">${icons}</div>${reach}
+    <div class="name" style="left:16px;top:62px">${c.name}</div>
+    <div class="vals" style="left:16px;top:96px">${items}</div>
+    <div class="desc" style="left:16px;top:156px;height:73px">${lines.map(l => `<p>${l}</p>`).join('')}</div>${traitHtml(c, true)}</div>`;
+}
+
+function measure(box) {
+  const bad = [];
+  box.querySelectorAll('[data-m]').forEach(el => {
+    const over = el.dataset.m === '説明' ? el.scrollHeight > el.clientHeight + 1 : el.scrollWidth > el.clientWidth + 1;
+    if (over) { el.classList.add('over'); bad.push(el.dataset.m); }
+  });
+  return [...new Set(bad)];
+}
+const RESULT = {};
+function measureAll() {
+  const host = document.createElement('div');
+  host.style.cssText = 'position:absolute;left:-9999px;top:0';
+  document.body.appendChild(host);
+  for (const v of VARIANTS) {
+    let count = 0; const byPart = {}; const names = [];
+    for (const c of CARDS) {
+      host.innerHTML = `<div class="cardbox" style="width:216px;height:304px">${cardHtml(c, v)}</div>`;
+      const bad = measure(host.firstChild);
+      if (bad.length) { count++; names.push(c.name); bad.forEach(b => byPart[b] = (byPart[b] || 0) + 1); }
+    }
+    RESULT[v.key] = { count, byPart, names };
+  }
+  host.remove();
+}
+function renderTable() {
+  document.querySelector('#variantTable tbody').innerHTML = VARIANTS.map(v => {
+    const r = RESULT[v.key];
+    const cell = !r ? '測定中' : r.count === 0 ? '<span class="yes">0 枚</span>'
+      : `<span class="bad">${r.count} 枚</span><br><span class="note">${Object.entries(r.byPart).map(([k, n]) => `${k} ${n}`).join('、')}（${r.names.slice(0, 6).join('・')}${r.names.length > 6 ? ' ほか' : ''}）</span>`;
+    return `<tr class="${v.key === '1' ? 'pick' : ''}"><td><strong>案 ${v.key}</strong><br><span class="note">${v.label}</span></td><td>1 色の枠と帯、左上にアイコン</td><td>${v.desc}</td><td>${v.mv}</td><td>${cell}</td></tr>`;
+  }).join('');
+}
+function renderCompare() {
+  const names = ['袈裟斬り', '踏み込み斬り', '後ろ跳び', '岩の構え', '盾押し', '受け流し斬り'];
+  const sample = names.map(n => CARDS.find(c => c.name === n)).filter(Boolean);
+  const box = html => `<div class="cardbox" style="width:${216 * .9}px;height:${304 * .9}px"><div style="position:absolute;left:0;top:0;width:216px;height:304px;transform:scale(.9);transform-origin:0 0">${html}</div></div>`;
+  const rows = [`<div class="row"><div class="rowlabel"><b>今の顔</b>配置の案 C</div>${sample.map(c => box(oldCardHtml(c))).join('')}</div>`]
+    .concat(VARIANTS.map(v => `<div class="row"><div class="rowlabel"><b>案 ${v.key}</b>${v.label}</div>${sample.map(c => box(cardHtml(c, v))).join('')}</div>`));
+  document.getElementById('compare').innerHTML = rows.join('');
+}
+let cur = '1';
+function renderGallery() {
+  const v = VARIANTS.find(x => x.key === cur);
+  const g = document.getElementById('gallery');
+  const s = .8;
+  g.innerHTML = CARDS.map(c => `<div class="cardbox" style="width:${216 * s}px;height:${304 * s + 18}px"><div style="position:absolute;left:0;top:0;width:216px;height:304px;transform:scale(${s});transform-origin:0 0">${cardHtml(c, v)}</div></div>`).join('');
+  g.querySelectorAll('.cardbox').forEach(b => { const bad = measure(b); if (bad.length) b.insertAdjacentHTML('beforeend', `<span class="flag">はみ出し: ${bad.join('・')}</span>`); });
+  document.getElementById('varTabs').innerHTML = VARIANTS.map(x => `<button type="button" data-v="${x.key}" aria-pressed="${x.key === cur}">案 ${x.key} の 80 枚</button>`).join('');
+}
+document.getElementById('varTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; cur = b.dataset.v; renderGallery(); });
+function renderMap() {
+  document.querySelector('#mapTable tbody').innerHTML = CARDS.map(c => `<tr><td class="num">${c.no}</td><td>${c.name}</td><td>${c.attrs.join(' + ')}</td><td><strong>${newAttr(c)}</strong></td></tr>`).join('');
+}
+function renderHint() {
+  const c = CARDS.find(x => x.name === '伸び突き');
+  const v = VARIANTS[0];
+  // The panel sits to the card's right, vertically centred on the card's upper half.
+  document.getElementById('hintDemo').innerHTML = `<div class="row" style="align-items:center"><div class="cardbox" style="width:216px;height:304px">${cardHtml(c, v)}</div>
+    <div style="position:relative;margin-left:14px;background:#141925;border:1px solid #6d7787;border-radius:6px;padding:12px 16px;color:#ecebf2;font:16px/1.5 'Zen Kaku Gothic New',sans-serif;display:flex;align-items:center;gap:8px">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="${P.range}" fill="none" stroke="#ecebf2" stroke-width="2.2" stroke-linecap="round"/></svg>相手との間合いが <b style="font:700 20px 'IBM Plex Mono',monospace">1〜2</b> のとき使用可能</div></div>`;
+}
+renderTable(); renderCompare(); renderGallery(); renderMap(); renderHint();
+document.fonts.ready.then(() => { measureAll(); renderTable(); renderGallery(); document.body.dataset.measured = JSON.stringify(RESULT); });
+</script>

@@ -200,6 +200,13 @@ namespace BattleCore.Tests
         }
 
         [Test]
+        public void EveryCard_KeepsTheMultiHitRule()
+        {
+            // §2.4 hits (#253): no card whose attack face strikes twice or more gives the opponent a status.
+            Assert.That(CardCatalog.All.Where(c => !Cards.MultiHitCarriesNoFoeStatus(c)).Select(c => c.Id), Is.Empty);
+        }
+
+        [Test]
         public void ThePrototypeDeck_StillNamesTheTenSliceCards()
         {
             Assert.That(PrototypeDeck.Kinds.Select(c => c.Id), Is.EqualTo(new[]
