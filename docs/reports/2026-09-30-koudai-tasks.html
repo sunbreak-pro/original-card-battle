@@ -120,11 +120,11 @@
   <header>
     <p class="eyebrow">2026-09-30 / 作業の手順 / original-card-battle</p>
     <h1>こうだいさんの手でしか進まない作業は 10 件で、今日できるのは 8 件です</h1>
-    <p class="lede">merge 4 本と /goal の貼り付けは 15 分ほどで終わります。判断 2 件は Issue に一言返すだけです。Krita と Unity の手触りの確認は、まとまった時間が取れる日に回してください。</p>
+    <p class="lede">merge 5 本と /goal の貼り付けは 15 分ほどで終わります。判断 2 件は Issue に一言返すだけです。Krita と Unity の手触りの確認は、まとまった時間が取れる日に回してください。</p>
   </header>
 
   <ul class="verdicts">
-    <li class="verdict now"><span class="tag">今日できる（短い）</span><h3>merge 4 本、/goal を 3 つ貼る、判断 2 件</h3><p>各担当のチャットが動き出すのに要る作業です。先に片付けると、待たされている作業がいちばん多く進みます。</p></li>
+    <li class="verdict now"><span class="tag">今日できる（短い）</span><h3>merge 5 本、/goal を 3 つ貼る、判断 2 件</h3><p>各担当のチャットが動き出すのに要る作業です。先に片付けると、待たされている作業がいちばん多く進みます。</p></li>
     <li class="verdict later"><span class="tag">今日できる（まとまった時間）</span><h3>Krita で立ち絵の候補を出す、描写の手触りを見る</h3><p>Krita は 30 分から 1 時間、描写の手触りは 10 分ほどです。</p></li>
     <li class="verdict wait"><span class="tag">まだできない</span><h3>1 ターンの手触り、3 戦通しての手触り</h3><p>演出の計測（#78）と戦闘画面の作り直し（#242）が終わってからです。手順だけ先に置いておきます。</p></li>
   </ul>
@@ -134,7 +134,7 @@
     <table>
       <thead><tr><th>いつ</th><th>作業</th><th>かかる時間</th><th>終わると進むこと</th></tr></thead>
       <tbody>
-        <tr><td><span class="chip now">今日</span></td><td>1. PR を 4 本 merge する</td><td class="num">5 分</td><td>色の役割（#247）と設計原則 V2（#61）が決着し、Unity 側に最新のコードが入ります</td></tr>
+        <tr><td><span class="chip now">今日</span></td><td>1. PR を 5 本 merge する</td><td class="num">5 分</td><td>色の役割（#247）と設計原則 V2（#61）が決着し、Unity 側に最新のコードが入ります</td></tr>
         <tr><td><span class="chip now">今日</span></td><td>2. 各担当のチャットに /goal を貼る</td><td class="num">5 分</td><td>属性を 4 つにする作り直しが、戦闘・カード・見た目の 3 か所で同時に動きます</td></tr>
         <tr><td><span class="chip now">今日</span></td><td>3. 担当が積んだ PR を順に merge する</td><td class="num">都度 2 分</td><td>積んだ PR が main に入らない事故（前回の #255）を防げます</td></tr>
         <tr><td><span class="chip now">今日</span></td><td>4. 背水の陣の特性 2 つを残すか決める（#213）</td><td class="num">2 分</td><td>カードの顔の設計書に特性の箱の形を書けます</td></tr>
@@ -148,18 +148,19 @@
     </table>
   </div>
 
-  <h2>1. PR を 4 本 merge する</h2>
+  <h2>1. PR を 5 本 merge する</h2>
   <div class="task">
     <h3><span class="chip now">今日</span>どれから merge しても大丈夫です</h3>
-    <p class="meta">4 本は互いに同じファイルを触っていないので、順番は自由です。</p>
+    <p class="meta">5 本は互いに同じファイルを触っていないので、順番は自由です。</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>PR</th><th>中身</th></tr></thead>
         <tbody>
           <tr><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/268">#268</a></td><td>世界観の文書の色の表に「戦闘画面の中の色の使い道は、戦闘画面の見た目の文書が決める」と 1 段落足しました（#247 の推奨の案 2）</td></tr>
           <tr><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/273">#273</a></td><td>設計原則 V2 を、9/21 に選んだ案 B「手番の配り方: 限られたスタミナで、どの順に何枚出すか」に書き直しました（#61）</td></tr>
+          <tr><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/276">#276</a></td><td>このページのファイルです（<code>docs/reports/2026-09-30-koudai-tasks.html</code>）</td></tr>
           <tr><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/270">#270</a></td><td>main のチャットの作業記録です</td></tr>
-          <tr><td><a href="https://github.com/sunbreak-pro/RPG-by-card/pull/7">RPG-by-card #7</a></td><td>Unity 側に、戦闘と探索のコード 75 ファイルを写しました。画面なしの Editor で、コンパイルエラー 0 件、EditMode テスト 791 件中 789 件が通ることを確かめています（失敗 0、スキップ 2）</td></tr>
+          <tr><td><a href="https://github.com/sunbreak-pro/RPG-by-card/pull/7">RPG-by-card #7</a></td><td>Unity 側に、戦闘と探索のコード 75 ファイルを写しました。画面なしの Editor で、コンパイルエラー 0 件、EditMode テスト 791 件中 789 件が通ることを確かめています（失敗 0、スキップ 2）。PlayMode テストも 4 件すべて通りました</td></tr>
         </tbody>
       </table>
     </div>
