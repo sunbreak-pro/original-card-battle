@@ -49,7 +49,7 @@ namespace Depiction.View
             _player.BattleFinished += OnBattleFinished;
             _canvas = BuildCanvas();
             DeckBuilder saved = LoadDeck(out string notice);
-            _deckScreen = new DeckSelectScreen(_canvas, saved, notice, OnDeckChosen);
+            _deckScreen = new DeckSelectScreen(_canvas, saved, notice, OnDeckChosen, player.cardPrefab);
             _modeScreen = new ModeSelectScreen(_canvas, StartSingle, StartRandom, StartChain, ShowDeckScreen);
             _endScreen = new EndScreen(_canvas, GoOn, Again, ShowModeScreen, ShowDeckScreen);
             _surrender = new SurrenderButton(_canvas, Surrender);

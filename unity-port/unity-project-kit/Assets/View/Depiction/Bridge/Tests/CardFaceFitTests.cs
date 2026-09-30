@@ -87,5 +87,20 @@ namespace Depiction.Bridge.Tests
             Assert.That(fit.Text, Is.EqualTo("間合い0 重撃"));
             Assert.That(fit.Size, Is.EqualTo(18));
         }
+
+        // The deck screen prints the catalog with the hand's face (no dealt instance behind it).
+        [Test]
+        public void EveryCatalogCard_HasAFaceForTheDeckScreen_WithItsOwnIdNameAndPrintedCost()
+        {
+            foreach (CardDef def in CardCatalog.All)
+            {
+                CardFace face = CoreText.FaceOf(def);
+                Assert.That(face.Id, Is.EqualTo(def.Id), def.Id);
+                Assert.That(face.Name, Is.EqualTo(def.Name), def.Id);
+                Assert.That(face.Cost, Is.EqualTo(def.Cost), def.Id);
+                Assert.That(face.TypeLabel, Is.Not.Empty, def.Id);
+                Assert.That(face.TraitLit, Is.False, def.Id);
+            }
+        }
     }
 }
