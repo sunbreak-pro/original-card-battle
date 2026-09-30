@@ -1,0 +1,351 @@
+<title>こうだいさんの作業 9/30</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --idle: #7b868c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --idle: #7f8b91;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --idle: #7f8b91;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 56px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul, ol { padding-left: 1.4em; margin: 0 0 14px; }
+  li { margin-bottom: 6px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.wait .tag { color: var(--idle); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .chip { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .06em; padding: 1px 8px; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; }
+  .chip.now { color: var(--ok); }
+  .chip.later { color: var(--warn); }
+  .chip.wait { color: var(--idle); }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.6; margin: 0; white-space: pre-wrap; word-break: break-word; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: .9em; }
+  .copyblock { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 20px; }
+  .copyblock .bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .copyblock .bar span { font-size: 14px; color: var(--muted); }
+  button.copy { font: inherit; font-size: 13px; font-weight: 700; color: var(--accent-ink); background: var(--accent); border: 0; border-radius: 3px; padding: 4px 12px; cursor: pointer; }
+  button.copy:hover { filter: brightness(1.08); }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .task { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 20px 22px 8px; margin: 16px 0 24px; }
+  .task h3 { margin: 0 0 6px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .task .meta { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+  .note { font-size: 14px; color: var(--muted); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 480px) { .wrap { padding: 32px 16px 64px; } .task { padding: 16px 16px 4px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-09-30 / 作業の手順 / original-card-battle</p>
+    <h1>こうだいさんの手でしか進まない作業は 10 件で、今日できるのは 8 件です</h1>
+    <p class="lede">merge は 9 本あり、どれも 1〜2 分で済みます。/goal はカードの担当にもう 1 つ貼るだけです。判断 2 件は Issue に一言返すだけです。Krita と Unity の手触りの確認は、まとまった時間が取れる日に回してください。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">今日できる（短い）</span><h3>merge 9 本、/goal を 1 つ貼る、判断 2 件</h3><p>各担当のチャットは PR を出して待っています。先に片付けると、待たされている作業がいちばん多く進みます。</p></li>
+    <li class="verdict later"><span class="tag">今日できる（まとまった時間）</span><h3>Krita で立ち絵の候補を出す、描写の手触りを見る</h3><p>Krita は 30 分から 1 時間、描写の手触りは 10 分ほどです。</p></li>
+    <li class="verdict wait"><span class="tag">まだできない</span><h3>1 ターンの手触り、3 戦通しての手触り</h3><p>演出の計測（#78）と戦闘画面の作り直し（#242）が終わってからです。手順だけ先に置いておきます。</p></li>
+  </ul>
+
+  <h2>一覧</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>いつ</th><th>作業</th><th>かかる時間</th><th>終わると進むこと</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip now">今日</span></td><td>1. PR を 5 本 merge する</td><td class="num">5 分</td><td>色の役割（#247）と設計原則 V2（#61）が決着し、Unity 側に最新のコードが入ります</td></tr>
+        <tr><td><span class="chip now">今日</span></td><td>2. 担当が出した PR を 4 本 merge し、カードの担当に /goal を貼る</td><td class="num">10 分</td><td>属性を 4 つにする作り直しの文書が main にそろい、カードの表の書き直しが始まります</td></tr>
+        <tr><td><span class="chip now">今日</span></td><td>3. 積んだ PR の取り込み先を付け替えてから merge する</td><td class="num">都度 2 分</td><td>積んだ PR が main に入らない事故（前回の #255）を防げます</td></tr>
+        <tr><td><span class="chip now">今日</span></td><td>4. 背水の陣の特性 2 つを残すか決める（#213）</td><td class="num">2 分</td><td>カードの顔の設計書に特性の箱の形を書けます</td></tr>
+        <tr><td><span class="chip now">今日</span></td><td>5. 疲労の読み方を決める（#221）</td><td class="num">2 分</td><td>疲労を付ける敵の強さが決まります</td></tr>
+        <tr><td><span class="chip later">時間があるとき</span></td><td>6. Krita で立ち絵の候補を出す（#82）</td><td class="num">30〜60 分</td><td>1 体あたりの制作時間が分かり、残りの立ち絵の計画が立ちます</td></tr>
+        <tr><td><span class="chip later">時間があるとき</span></td><td>7. 撮影用の描写シーンで手触りを見る（#25）</td><td class="num">10 分</td><td>ドラッグの手触りの所感が、画面の作り直し（#242）に入ります</td></tr>
+        <tr><td><span class="chip later">merge の後</span></td><td>8. #55 を閉じる</td><td class="num">1 分</td><td>実戦の戦闘シーンの Issue が片付きます</td></tr>
+        <tr><td><span class="chip wait">#78 の後</span></td><td>9. 1 ターンを実機で触る（#79）</td><td class="num">15 分</td><td>演出の要る・要らないが決まります</td></tr>
+        <tr><td><span class="chip wait">#242 の後</span></td><td>10. 3 戦通して手触りを見る（#60）</td><td class="num">30 分</td><td>次に直す 3 つが決まります</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>1. PR を 5 本 merge する</h2>
+  <div class="task">
+    <h3><span class="chip now">今日</span>どれから merge しても大丈夫です</h3>
+    <p class="meta">5 本は互いに同じファイルを触っていないので、順番は自由です。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>PR</th><th>中身</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/268">#268</a></td><td>世界観の文書の色の表に「戦闘画面の中の色の使い道は、戦闘画面の見た目の文書が決める」と 1 段落足しました（#247 の推奨の案 2）</td></tr>
+          <tr><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/273">#273</a></td><td>設計原則 V2 を、9/21 に選んだ案 B「手番の配り方: 限られたスタミナで、どの順に何枚出すか」に書き直しました（#61）</td></tr>
+          <tr><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/276">#276</a></td><td>このページのファイルです（<code>docs/reports/2026-09-30-koudai-tasks.html</code>）</td></tr>
+          <tr><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/270">#270</a></td><td>main のチャットの作業記録です</td></tr>
+          <tr><td><a href="https://github.com/sunbreak-pro/RPG-by-card/pull/7">RPG-by-card #7</a></td><td>Unity 側に、戦闘と探索のコード 75 ファイルを写しました。画面なしの Editor で、コンパイルエラー 0 件、EditMode テスト 791 件中 789 件が通ることを確かめています（失敗 0、スキップ 2）。PlayMode テストも 4 件すべて通りました</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ol>
+      <li>上の表の PR を開き、下の「Merge pull request」を押します。</li>
+      <li>Unity 側の #7 を merge したら、次に Unity を開く前に、ターミナルで <code>cd C:\Users\user\Unity\RPG-by-card</code> → <code>git checkout main</code> → <code>git pull</code> を流します。いま Unity 側のフォルダは同期用のブランチ <code>chore/sync-20260930</code> にいるので、main に戻すためです。</li>
+    </ol>
+  </div>
+
+  <h2>2. 担当が出した PR を順に merge する</h2>
+  <div class="task">
+    <h3><span class="chip now">今日</span>戦闘・カード・見た目の担当は、もう PR を 4 本出しています</h3>
+    <p class="meta">3 つの /goal は各担当のチャットに届いていて、属性を 4 つにする作り直しが動き出しています。戦闘の担当は、続けてコアの PR を出す途中です。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>順</th><th>PR</th><th>中身</th><th>取り込み先</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/274">#274</a></td><td>戦闘の規則の文書を属性 4 つにしました（#258 の前半）。カードの担当は、これが main に入るのを待っています</td><td><code>main</code></td></tr>
+          <tr><td class="num">2</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/271">#271</a></td><td>敵の文書の予兆の種別の語を、カードの文書にそろえました（#243）</td><td><code>main</code></td></tr>
+          <tr><td class="num">3</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/272">#272</a></td><td>戦闘画面の見た目の文書に、カード案 C・沈んだ手札・四隅だけの枠を入れました（#254）</td><td><code>main</code></td></tr>
+          <tr><td class="num">4</td><td><a href="https://github.com/sunbreak-pro/original-card-battle/pull/275">#275</a></td><td>同じ文書に、4 属性のカードの顔と出せない札のパネルを入れました（#259）。#272 の上に積んであります</td><td><code>docs/design-254</code>（#272 の merge 後に <code>main</code> へ付け替えます）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>#274 をいちばん先にしているのは、merge したらすぐに、カードの担当へ次の /goal を貼れるからです。#271 と #272 は #274 と別のファイルを触るので、順番は自由です。#275 だけは、下の 3 の手順で取り込み先を付け替えてから merge します。</p>
+  </div>
+
+  <h2>3. 積んだ PR は、取り込み先を main に付け替えてから merge する</h2>
+  <div class="task">
+    <h3><span class="chip now">今日から</span>下の PR を merge したら、上の PR の取り込み先を main に付け替えます</h3>
+    <p class="meta">引っ越しの段ボールを積んだまま下の箱だけ運び出すと、上の箱が宙に浮くのと同じです。付け替えないまま上の PR を merge すると、中身は消えた下のブランチに入り、main には届きません。前回の #255 はこれで main に入りませんでした。</p>
+    <p>いま積んであるのは #272 → #275 です。戦闘の担当も、このあとコアの PR と敵 AI の PR を #274 の上に積みます。どれも PR 本文に「merge 後に取り込み先を main に付け替える」と書かせています。</p>
+    <ol>
+      <li>いちばん下の PR（取り込み先が <code>main</code> のもの）を merge します。</li>
+      <li>その上に積まれた PR を開き、題の右の「Edit」を押します。</li>
+      <li>題の下に出る取り込み先（base）のボタンを押し、<code>main</code> を選びます。「Change base」の確認が出たら押します。</li>
+      <li>差分が、その PR で足した分だけになっていることを「Files changed」で確かめてから merge します。</li>
+      <li>さらに上の PR があれば、2〜4 を繰り返します。</li>
+    </ol>
+    <p class="note">merge した後のブランチに担当がコミットを足すと、その分は main に入りません。足したいことが出たら、新しい PR にするよう担当のチャットに伝えてください。</p>
+  </div>
+
+  <h2>#274 の merge 後: カードの担当に /goal をもう 1 つ貼る</h2>
+  <div class="callout prose"><strong>#274 を merge してから貼ってください。</strong>カードの表（#257）は、戦闘の規則の文書が決めた語（移動後・連動 スタンス・永続の効果）に合わせて書き直すためです。担当ごとの作業フォルダ <code>C:\Users\user\orca\workspaces\original-card-battle\cards</code> で開いているチャットに貼ります。</div>
+
+  <div class="copyblock">
+    <div class="bar"><span><strong>カードの担当（cards）</strong>に、戦闘の規則の PR の merge 後に貼ります。PR が 1 本開いたら止まります。</span><button class="copy" type="button" data-target="goal-cards-later">コピー</button></div>
+    <pre id="goal-cards-later">/goal in the original-card-battle worktree for cards: #257 [属性 4 つ] カード表と敵の表の属性を寄せる has its own branch off origin/main, a local run of npm run build, npm run lint, npm run test:run and dotnet test under unity-port that all exit 0, npm run sources -- --check passing, and an opened PR that closes it. The #256 body is the decision source and the wording (移動後, 連動 スタンス, permanent effects) must match the four-attribute rules already in battle_core_v4.md on origin/main. Before anything else merge origin/main, read .claude/skills/worktree-policy/SKILL.md and run npm run sources -- --lane cards: write only the sources that command lists as yours, and when two canonical sources disagree do not edit the other lane's file — file an issue titled 正本の食い違い, note in the issue and the PR which source you followed, and keep going. Update .claude/comm/.session-branch on every branch switch, keep the tracker out of implementation commits, run no dev server, and merge nothing yourself.</pre>
+  </div>
+
+  <h2>4. 背水の陣の特性 2 つを残すか決める（#213）</h2>
+  <div class="task">
+    <h3><span class="chip now">今日</span>おすすめは「残す」です</h3>
+    <p class="meta">背水の陣（#80）だけが特性を 2 つ持っています（「間合い 2 以上: 威力 +5」と「死力: 威力 +3」）。画面の設計書は「特性は 1 枚に 1 つまで」と書いていて、食い違っています。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>案</th><th>変わること</th></tr></thead>
+        <tbody>
+          <tr><td>A. 残す（おすすめ）</td><td>遊びは変わりません。画面の設計書に「背水の陣だけは 2 つ」と足し、特性の箱に 2 つをどう並べるかを決めます。カード案 C の実測で、背水の陣は 1 行に詰めた書き方（「間合い2以上→威力+5」）で枠に収まっています（残り 2 px）</td></tr>
+          <tr><td>B. 2 つ目を外す</td><td>背水の陣の効果が変わります。「離れていることと死力を重ねる」は戦闘の規則の文書の決定から来ているので、札の個性が薄れます</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ol>
+      <li><a href="https://github.com/sunbreak-pro/original-card-battle/issues/213">#213</a> を開きます。</li>
+      <li>コメントに「A で」か「B で」と書きます。理由は要りません。</li>
+    </ol>
+  </div>
+
+  <h2>5. 疲労の読み方を決める（#221）</h2>
+  <div class="task">
+    <h3><span class="chip now">今日</span>おすすめは「一律 −1」です</h3>
+    <p class="meta">疲労が次のターンの回復（毎ターン 3）をいくつ削るかが、2 つの文書で違います。いまの実装は一律 −1 です。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>案</th><th>変わること</th></tr></thead>
+        <tbody>
+          <tr><td>A. 一律 −1（おすすめ）</td><td>疲労がいくつ積まれても、回復は 2 です。スタックの数は「何ターン続くか」だけを表します。直すのは敵の文書の 1 文だけで、実装はそのままです</td></tr>
+          <tr><td>B. 1 スタックにつき −1</td><td>スタックの上限は 4 なので、疲労 4 で回復が 0 になり、そのターンは札を 1 枚も出せません。疲労を付ける敵（燐弓の竜兵、大黒蛇 セルクなど）がとても重くなります。規則の文書とコアの直しが要ります</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ol>
+      <li><a href="https://github.com/sunbreak-pro/original-card-battle/issues/221">#221</a> を開きます。</li>
+      <li>コメントに「A で」か「B で」と書きます。</li>
+    </ol>
+  </div>
+
+  <h2>6. Krita で立ち絵の候補を出す（#82）</h2>
+  <div class="task">
+    <h3><span class="chip later">時間があるとき</span>錆槍の竜兵の候補を 8〜16 枚出して、2〜3 枚を選びます</h3>
+    <p class="meta">絵を選ぶのと Krita を触るのはこうだいさん、指示文と絞り込みは Claude の担当です。1 枚はおよそ 21 秒なので、16 枚でも生成は 6 分ほどです。</p>
+    <ol>
+      <li>Krita を開き、右側の AI Image Generation の歯車（設定）を開きます。「Prompt translation」を <strong>Disabled</strong> にします。日本語への翻訳が入ったままだと、英語の指示文が壊れるためです。</li>
+      <li>新しい文書を <strong>幅 640 × 高さ 1536</strong> で作ります。#82 の本文は 1024 × 1536 ですが、9/23 に仕様カードで 640 × 1536 に直しました。</li>
+      <li>スタイルを <code>card-battle Animagine</code> にします。</li>
+      <li>指示文の欄に下の「指示文」を、負の指示文の欄に「負の指示文」を貼ります。</li>
+      <li>生成回数を 4 にして、Generate を 2〜4 回押します。スマホのストップウォッチで、押してから全部出るまでの時間を測ってください。</li>
+      <li>気に入った 2〜3 枚を PNG で書き出し、置いた場所を main のチャットに伝えます。左向きの絵は、そのままで大丈夫です（採用するときに反転します）。</li>
+      <li>かかった時間と、途中で落ちた回数を #82 にコメントします。</li>
+    </ol>
+    <div class="copyblock">
+      <div class="bar"><span>指示文</span><button class="copy" type="button" data-target="krita-pos">コピー</button></div>
+      <pre id="krita-pos">1other, solo, safe, full body, standing, from side, profile, monster, dragon horns, slit pupils, scales, brown scales, claws, dragon tail, holding polearm, polearm held upright, rust, shoulder armor, {torn clothes|torn cape|vambraces}, anime coloring, high contrast, limited palette, muted colors, brown theme, simple background, grey background</pre>
+    </div>
+    <div class="copyblock">
+      <div class="bar"><span>負の指示文</span><button class="copy" type="button" data-target="krita-neg">コピー</button></div>
+      <pre id="krita-neg">lowres, bad anatomy, bad hands, text, error, missing finger, extra digits, fewer digits, cropped, worst quality, low quality, low score, bad score, average score, signature, watermark, username, blurry, blood, nsfw, looking at viewer, upper body, out of frame, shiny skin, sparkle, scenery, white background, 1girl</pre>
+    </div>
+    <h3>一緒に答えてほしい 4 つ（9/19 の調べ直しの残り）</h3>
+    <p>#82 のコメントに、番号と答えを書いてください。Krita とローカルの生成はもう動いているので、1〜3 は今の状態を確かめるだけで済みます。</p>
+    <ol>
+      <li>CLIP STUDIO PAINT PRO は買いましたか。まだなら、買わずに Krita で進めるのがおすすめです。</li>
+      <li>画像の生成は、ローカル（Krita）を主にして、有料の API は予備にしますか。おすすめは「はい」です。</li>
+      <li>1 体目の制作時間を、この作業で最初に測る形でよいですか。おすすめは「はい」です。</li>
+      <li>ボスの動きは、Unity の 2D Animation で始め、パーツが 30 以内に収まれば Live2D FREE に移しますか。おすすめは「はい」です。9/16 の決定（ボスは Live2D）からの変更になります。</li>
+    </ol>
+  </div>
+
+  <h2>7. 撮影用の描写シーンで手触りを見る（#25）</h2>
+  <div class="task">
+    <h3><span class="chip later">時間があるとき</span>決まった台本の 1 ターンを、マウスで動かしてみます</h3>
+    <p class="meta">カードの見た目は、画面の作り直し（#242）でこれから大きく変わります。今回見てほしいのは、札を掴む・運ぶ・離すという手の感覚だけです。</p>
+    <ol>
+      <li>1 の手順で、Unity 側のフォルダを main に戻しておきます。</li>
+      <li>Unity Hub から RPG-by-card を開き、<code>Assets/Scenes/BattleDepiction.unity</code> を開きます。</li>
+      <li><strong>Editor のウィンドウを前面にしてから</strong> Play を押します。後ろに回っていると、画面の時間が進まずに止まります。</li>
+      <li>順 1 は自動で流れます。袈裟斬りを敵の足元の丸い受け皿の上で離します。皿の外で離すと手札に戻ります。</li>
+      <li>大上段を受け皿へ、後ろ跳びを点線より上へ出します。その後は自動で最後まで流れます。</li>
+    </ol>
+    <p>見てほしいのは次の 4 つです。掴んだ瞬間の持ち上がり、受け皿と点線の気づきやすさ、敵の攻撃の 1.62 秒が長く感じるか、ダメージの数字の位置です。<a href="https://github.com/sunbreak-pro/original-card-battle/issues/25">#25</a> に気になった点を書いてください。無ければ「問題なし」で閉じてください。</p>
+  </div>
+
+  <h2>8. #55 を閉じる</h2>
+  <div class="task">
+    <h3><span class="chip later">RPG-by-card #7 の merge 後</span>コメントは要りません</h3>
+    <p class="meta">#55 の残りは Unity 側への同期だけでした。同期とテストの結果は RPG-by-card #7 に書いてあります。</p>
+    <ol>
+      <li><a href="https://github.com/sunbreak-pro/original-card-battle/issues/55">#55</a> を開き、「Close issue」を押します。</li>
+    </ol>
+  </div>
+
+  <h2>9. 1 ターンを実機で触る（#79）</h2>
+  <div class="task">
+    <h3><span class="chip wait">演出の計測（#78）の後</span>戦闘の担当が #78 の PR を出し、merge したらできます</h3>
+    <ol>
+      <li>main のチャットに「Unity に同期して」と頼みます。Claude が同期して Unity 側の PR を出すので、merge します。</li>
+      <li>Unity で <code>Assets/Scenes/Battle.unity</code> を開き、Editor を前面にして Play を押します。</li>
+      <li>錆槍の竜兵と数ターン戦います。</li>
+      <li>1 ターンのテンポ（どこで待たされるか）、予兆を見て間合いを選ぶ判断が成り立つか、#78 が「人の好み」に回した演出の要る・要らない、手札 5 枚と固定コストの手触りを、<a href="https://github.com/sunbreak-pro/original-card-battle/issues/79">#79</a> にコメントします。</li>
+    </ol>
+  </div>
+
+  <h2>10. 3 戦通して手触りを見る（#60）</h2>
+  <div class="task">
+    <h3><span class="chip wait">戦闘画面の作り直し（#242）の後</span>新しい見た目で 3 戦通します</h3>
+    <ol>
+      <li>9 の 1〜2 と同じ手順で同期して、<code>Battle.unity</code> を開きます。</li>
+      <li>乱数は「実戦」を選び、3 戦続けて戦います。</li>
+      <li>1 ターンを 20 秒以内に決められるか、画面の情報が多すぎないか、1 ターンに 2 枚以上出せているか、特性の発火に気づけるかを見ます。</li>
+      <li>面白いところと退屈なところ、次に直したい 3 つを <a href="https://github.com/sunbreak-pro/original-card-battle/issues/60">#60</a> にコメントします。</li>
+    </ol>
+  </div>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>#79 と #60 の同期は、今回と同じく main のチャットが画面なしの Editor でテストを流してから、Unity 側の PR にする形にしています。</li>
+    <li>Krita の文書の大きさは、#82 の本文（1024 × 1536）より新しい仕様カードの値（640 × 1536）を使っています。</li>
+  </ul>
+</div>
+
+<script>
+  document.querySelectorAll("button.copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var el = document.getElementById(btn.dataset.target);
+      var text = el.textContent;
+      var done = function () { var t = btn.textContent; btn.textContent = "コピーしました"; setTimeout(function () { btn.textContent = t; }, 1600); };
+      var fallback = function () {
+        var r = document.createRange(); r.selectNodeContents(el);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        btn.textContent = "選択しました。Ctrl+C でコピーできます";
+      };
+      try {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } catch (e) { fallback(); }
+    });
+  });
+</script>

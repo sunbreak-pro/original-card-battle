@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>演出の計測と判定</title>
+<style>
+  :root { --ground:#f5f7f6; --panel:#fff; --ink:#1c2327; --muted:#56636b; --line:#d5dcdf; --accent:#0e6b74; --ok:#2c7a4b; --warn:#a86a12; --stop:#a23c3c; --code-bg:#eaf0f0; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground:#13181b; --panel:#1b2226; --ink:#e4e9eb; --muted:#99a6ad; --line:#2c363b; --accent:#5fc4cc; --ok:#6fc48f; --warn:#e0a94a; --stop:#e07a7a; --code-bg:#0f1417; color-scheme: dark; } }
+  :root[data-theme="dark"] { --ground:#13181b; --panel:#1b2226; --ink:#e4e9eb; --muted:#99a6ad; --line:#2c363b; --accent:#5fc4cc; --ok:#6fc48f; --warn:#e0a94a; --stop:#e07a7a; --code-bg:#0f1417; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font-family:"BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif; font-size:16px; line-height:1.75; }
+  .wrap { max-width:1280px; margin:0 auto; padding:40px 16px 80px; }
+  .prose { max-width:760px; }
+  h1 { font-size:clamp(24px,3.4vw,32px); line-height:1.3; margin:0 0 12px; }
+  h2 { font-size:21px; margin:48px 0 12px; }
+  h3 { font-size:17px; margin:24px 0 8px; }
+  p { margin:0 0 14px; } ul { padding-left:1.3em; margin:0 0 14px; } li { margin-bottom:6px; }
+  .eyebrow { font-size:12px; letter-spacing:.1em; color:var(--muted); font-weight:700; margin:0 0 8px; }
+  .lede { font-size:18px; color:var(--muted); margin:0 0 24px; max-width:820px; }
+  .muted { color:var(--muted); font-size:13px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:20px 0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
+  .card .big { font-size:28px; font-weight:700; line-height:1.2; }
+  .card p { margin:6px 0 0; font-size:14px; color:var(--muted); }
+  .tag { display:inline-block; padding:1px 8px; border-radius:4px; font-size:13px; font-weight:700; border:1px solid currentColor; }
+  .tag.ok { color:var(--ok); } .tag.warn { color:var(--warn); } .tag.stop { color:var(--stop); }
+  .scroll { overflow-x:auto; border:1px solid var(--line); border-radius:8px; background:var(--panel); }
+  table { border-collapse:collapse; width:100%; font-size:14px; line-height:1.55; }
+  th,td { border-bottom:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { position:sticky; top:0; background:var(--code-bg); font-size:13px; white-space:nowrap; }
+  td.num { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  td.reason { min-width:320px; }
+  .mono,code { font-family:"IBM Plex Mono",Consolas,monospace; font-size:13px; }
+  code { background:var(--code-bg); padding:1px 5px; border-radius:4px; }
+  .note { border-left:4px solid var(--warn); background:var(--panel); padding:10px 14px; margin:14px 0; border-radius:0 8px 8px 0; }
+  .note.ok { border-color:var(--ok); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="prose">
+  <p class="eyebrow">縦切り #78 演出の計測 / 2026-09-30</p>
+  <h1>演出 48 個を測り、要る 26・短くする 11・要らない 11 に分けました</h1>
+  <p class="lede">1 ターンの平均 6.23 秒のうち、演出の待ちが 4.66 秒を占めます。全部切ると 1.57 秒になります。1 行動の上限 2.0 秒は超えていませんが、最悪の行動で余裕が 40 ms しかありません。</p>
+</header>
+
+<div class="cards">
+  <div class="card"><div class="big">6.23 秒</div><p>1 ターンの平均（演出が全部あるとき）。最長は 11.81 秒です。</p></div>
+  <div class="card"><div class="big">1.57 秒</div><p>演出を全部切ったときの 1 ターン。残るのは行動と行動の間の待ちだけです。</p></div>
+  <div class="card"><div class="big">1960 ms</div><p>1 行動で最も長い出来事。上限 2000 ms まで 40 ms です。</p></div>
+  <div class="card"><div class="big">4.66 秒</div><p>ターン終了ボタンを押してから、次の自分の番まで入力が止まる平均の時間です。</p></div>
+</div>
+
+<div class="prose">
+<h2>結論</h2>
+<p>短くする演出 11 個を詰めれば、1 ターンの待ちを削れます。待ちの大きい順に、Guard を得る拍、札を引く動き、位置の切り替え、敵の番のバナーです。要らないと判定した 11 個のうち、待ちを生んでいるのは 4 個だけで、合計は 1 ターン平均 122 ms です。残りは画面に並行して走るため、切っても時間は変わりません。</p>
+<p>要らないの判定 11 個は、すべて触って確かめるまでは仮の判定です。手応えや見た目の好みに関わるため、#79 に回します。</p>
+
+<h2>1 ターンの時間</h2>
+<p>40 種の種で戦闘を最後まで進め、284 ターン、1479 個の出来事を集計しました。1 ターンは、ターン開始から次のターン開始の手前までです。手札を配り、札を出し、終了ボタンを押し、敵が動くところまでを含みます。</p>
+<ul>
+  <li>演出が全部あるとき、平均 6.23 秒、最長 11.81 秒です。</li>
+  <li>演出を全部切ると、平均 1.57 秒、最長 2.55 秒です。この差 4.66 秒が演出の待ちです。</li>
+  <li>行動と行動の間には、演出と関係なく 250 ms（自分の行動の後）か 350 ms（自動で進む出来事の後）が入ります。1 ターンは平均 5.2 個の出来事で、間だけで平均 1.57 秒です。</li>
+</ul>
+<p>プレイヤーが考える時間は含みません。ここまでは画面が勝手に進む時間です。</p>
+
+<h2>1 行動 2.0 秒の上限</h2>
+<p>2253 個の出来事（40 戦の全出来事と、全ての札を全ての間合い・敵の Guard で出した組み合わせ、敵の全行動）を測り、すべて 2000 ms 未満でした。最悪は 1960 ms です。</p>
+<div class="note"><p><strong>最悪の出来事は「牽制」を近間から、敵に Guard があるときです。</strong>札が飛ぶ 160、特性 200、踏み込み 100、振り 120、ヒットストップ 30、盾 320、傷 300、位置の切り替え 470、Guard 260 と続きます。1 本の待ちが最大 1 フレーム（60 fps で約 17 ms）延びると、9 本で最大 150 ms 増え、2110 ms に達して上限を超えます。実機での実測は #28 の PlayMode テストが持っています。この報告では測っていません。</p></div>
+<p>効果 1 個だけの最長は 1000 ms（ダメージ数字、Guard の数字、押し出し）でした。これらは並行して走るので、出来事の長さには足されません。</p>
+
+<h2>演出を切ったときの時間差</h2>
+<p>効果を 1 個だけ切ったとき、40 戦でどれだけ待ちが減るかを測りました。下の表は「1 ターンあたりの平均」です。全部の合計は 4.66 秒に一致します。</p>
+<div class="scroll"><table>
+<thead><tr><th>短くする演出</th><th>1 ターンあたりの待ち（ms）</th><th>最長の 1 回（ms）</th><th>詰める方向</th></tr></thead>
+<tbody>
+<tr><td class="mono">GuardGain</td><td class="num">512</td><td class="num">260</td><td class="reason">得た Guard の量を示しますが、260 ms 待ちます。40 戦の計測で、待ちの合計が最も大きい効果です。数字は同じ拍の中で出せるので、待ちを詰めます。</td></tr>
+<tr><td class="mono">CardDraw</td><td class="num">500</td><td class="num">500</td><td class="reason">新しい手札はターン開始の枠が先に持っているので、飛ぶ動きが運ぶのは「どれが来たか」だけです。5 枚で 500 ms 入力を止めるため、間隔を詰めます。</td></tr>
+<tr><td class="mono">RangeSwitch</td><td class="num">434</td><td class="num">470</td><td class="reason">位置が変わることを示す唯一の拍なので、情報は要ります。ただし 470 ms は移動 320 と一字札の反転 150 を続けており、重ねれば詰められます。</td></tr>
+<tr><td class="mono">EnemyTurnBanner</td><td class="num">344</td><td class="num">400</td><td class="reason">番が渡ったことは、終了ボタンの後に敵が動くことで分かります。400 ms 毎ターン入力を止めるので、詰めます。</td></tr>
+<tr><td class="mono">HandDiscard</td><td class="num">325</td><td class="num">480</td><td class="reason">ターン終了で手札が全部捨て札へ行くだけで、捨てた中身はもう決まっています。5 枚で 480 ms かかるため、間隔を詰めます。</td></tr>
+<tr><td class="mono">TurnBanner</td><td class="num">300</td><td class="num">300</td><td class="reason">自分の番が来たことは、手札が配られることでも分かります。300 ms 毎ターン入力を止めるので、詰めます。</td></tr>
+<tr><td class="mono">GuardBlock</td><td class="num">285</td><td class="num">320</td><td class="reason">Guard が受けた量を示すので必要ですが、320 ms は 1 つの行動で最も長い拍です。#78 の 1990 ms の出来事を作っています。</td></tr>
+<tr><td class="mono">CardRelease</td><td class="num">261</td><td class="num">160</td><td class="reason">札が受け入れられたことを示しますが、160 ms は毎回の出札で入力を止めます。どこまで詰められるかは触って確かめます。</td></tr>
+<tr><td class="mono">StaminaRecover</td><td class="num">202</td><td class="num">400</td><td class="reason">回復した量は最終の値が持っています。1 つずつ点ける方式は 5 個で 400 ms かかり、毎ターン平均で約 200 ms を使うため、間隔を詰めます。</td></tr>
+<tr><td class="mono">StanceCue</td><td class="num">63</td><td class="num">460</td><td class="reason">ターン終了時の構えによる Guard を示します。460 ms は毎ターンの長い拍で、盾と +3 は同時に出せます。</td></tr>
+<tr><td class="mono">RefusalShake</td><td class="num">0</td><td class="num">0</td><td class="reason">断られた理由は案内の文が言っています。揺れは「断られた」の合図で、入力をさらに 160 ms 止めるため短くします。</td></tr>
+</tbody></table></div>
+<p class="muted">短くする 11 個の合計は、1 ターンあたり 3225 ms です。半分に詰めれば約 1612 ms 減ります。</p>
+
+<h2>入力が止まる時間</h2>
+<p>画面は、出来事の演出と、その後の間のあいだ入力を閉じます（<code>_busy</code>）。</p>
+<ul>
+  <li>札を 1 枚出したあと、平均 1.24 秒、最長 2.21 秒閉じます。演出を全部切っても間の 250 ms は閉じます。</li>
+  <li>ターン終了ボタンを押すと、敵の番と次の自分のターン開始まで、平均 4.66 秒、最長 5.40 秒閉じます。全部切ると平均 1.30 秒です。</li>
+  <li>出せない札を離すと、札が戻る 200 ms と揺れ 160 ms のあいだ、360 ms 閉じます。</li>
+</ul>
+<p>札を出す間も、敵の番も、入力の閉じている時間は演出の待ちとほぼ同じです。演出を詰めれば、そのまま入力が開くまでの時間が減ります。</p>
+
+<h2>カタログと画面のずれ</h2>
+<ul>
+  <li><strong>StaminaChange</strong> は待つ拍として登録されていますが、画面は待たずに並行で走らせます。どの出来事の計画にも出てきません。このため、待ちの計測は 0 ms です。</li>
+  <li><strong>CardReturn と RefusalShake</strong> は並行の扱いですが、画面は札が戻り終わるまで入力を閉じます。計測の「入力が止まる時間」の表に、上の 360 ms として入れました。</li>
+</ul>
+
+<h2>全演出の一覧と判定</h2>
+<p>表は <code>EffectCatalog</code>（長さ）と <code>EffectAudit</code>（系統・運ぶ情報・判定）から、テストが作ります。効果を足したとき、<code>EffectAudit</code> に行が無いとテストが落ちるため、足した演出も必ずこの表に入ります。「切れるか」は全て「切れる」です。切ると、画面は終わった状態にすぐ移り、待ちが 0 になります。</p>
+<p class="muted">「1 ターンあたりの待ち」は、その演出が生む待ちの平均です。並行して走る演出は出来事の長さに足されないため 0 と書き、使用回数は数えていません。</p>
+<div class="scroll"><table>
+<thead><tr><th>id</th><th>系統</th><th>長さ（ms）</th><th>待つか</th><th>切れるか</th><th>運ぶ情報</th><th>40 戦での回数</th><th>1 ターンあたりの待ち（ms）</th><th>判定</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td colspan="10" style="background:var(--code-bg);font-weight:700">札の動き</td></tr>
+<tr>
+<td class="mono">CardDraw</td>
+<td>札の動き</td>
+<td class="num">260 (1 枚ごとに 60 遅れる)</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>手札・札</td>
+<td class="num">1420</td>
+<td class="num">500</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">新しい手札はターン開始の枠が先に持っているので、飛ぶ動きが運ぶのは「どれが来たか」だけです。5 枚で 500 ms 入力を止めるため、間隔を詰めます。</td></tr>
+<tr>
+<td class="mono">HandFan</td>
+<td>札の動き</td>
+<td class="num">120</td>
+<td>並行</td>
+<td>切れる</td>
+<td>手札・札</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">並行して走り、待ち時間はありません。切ると残りの札が一瞬で飛び、どの札が抜けたか追えなくなります。</td></tr>
+<tr>
+<td class="mono">CardHover</td>
+<td>札の動き</td>
+<td class="num">90</td>
+<td>並行</td>
+<td>切れる</td>
+<td>操作の返事</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">どの札を掴もうとしているかの唯一の返事です。並行で待ち時間はありません。</td></tr>
+<tr>
+<td class="mono">CardGrab</td>
+<td>札の動き</td>
+<td class="num">90</td>
+<td>並行</td>
+<td>切れる</td>
+<td>操作の返事</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">掴めたことの返事です。並行で待ち時間はありません。</td></tr>
+<tr>
+<td class="mono">ReceiverShow</td>
+<td>札の動き</td>
+<td class="num">150</td>
+<td>並行</td>
+<td>切れる</td>
+<td>誰が誰に・操作の返事</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">単体の札を離す場所と、狙う相手を示します。切ると離す場所が分かりません。</td></tr>
+<tr>
+<td class="mono">ThrowLineShow</td>
+<td>札の動き</td>
+<td class="num">150</td>
+<td>並行</td>
+<td>切れる</td>
+<td>操作の返事</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">自分に使う札を離す線を示します。切ると離す場所が分かりません。</td></tr>
+<tr>
+<td class="mono">ReceiverSnap</td>
+<td>札の動き</td>
+<td class="num">80</td>
+<td>並行</td>
+<td>切れる</td>
+<td>操作の返事</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">皿の上にいることは、皿が出ていることで分かります。吸い付きは手触りの演出で、情報を足しません。</td></tr>
+<tr>
+<td class="mono">CardRelease</td>
+<td>札の動き</td>
+<td class="num">160</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>手札・札</td>
+<td class="num">463</td>
+<td class="num">261</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">札が受け入れられたことを示しますが、160 ms は毎回の出札で入力を止めます。どこまで詰められるかは触って確かめます。</td></tr>
+<tr>
+<td class="mono">CardToDiscard</td>
+<td>札の動き</td>
+<td class="num">200</td>
+<td>並行</td>
+<td>切れる</td>
+<td>手札・札</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">捨て札の枚数は角の表示が持っています。並行で待ち時間はなく、切っても読み取れなくなる情報がありません。</td></tr>
+<tr>
+<td class="mono">CardReturn</td>
+<td>札の動き</td>
+<td class="num">200</td>
+<td>並行</td>
+<td>切れる</td>
+<td>手札・札・操作の返事</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">出せなかった札が手札に戻ることを示します。カタログでは待たない扱いですが、画面は入力を 200 ms 止めます。</td></tr>
+<tr>
+<td class="mono">RefusalShake</td>
+<td>札の動き</td>
+<td class="num">160</td>
+<td>並行</td>
+<td>切れる</td>
+<td>手札・札</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">断られた理由は案内の文が言っています。揺れは「断られた」の合図で、入力をさらに 160 ms 止めるため短くします。</td></tr>
+<tr>
+<td class="mono">HandDiscard</td>
+<td>札の動き</td>
+<td class="num">240 (1 枚ごとに 60 遅れる)</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>手札・札</td>
+<td class="num">808</td>
+<td class="num">325</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">ターン終了で手札が全部捨て札へ行くだけで、捨てた中身はもう決まっています。5 枚で 480 ms かかるため、間隔を詰めます。</td></tr>
+<tr>
+<td class="mono">UnpayableDim</td>
+<td>札の動き</td>
+<td class="num">120</td>
+<td>並行</td>
+<td>切れる</td>
+<td>手札・札</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">スタミナが足りない札を、掴む前に見分ける唯一の印です。</td></tr>
+<tr><td colspan="10" style="background:var(--code-bg);font-weight:700">攻撃と防御</td></tr>
+<tr>
+<td class="mono">AttackLunge</td>
+<td>攻撃と防御</td>
+<td class="num">100</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>誰が誰に</td>
+<td class="num">246</td>
+<td class="num">87</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">誰が殴りに行くかを示します。すでに 100 ms まで詰めてあります。</td></tr>
+<tr>
+<td class="mono">StrikeShape</td>
+<td>攻撃と防御</td>
+<td class="num">120</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>誰が誰に</td>
+<td class="num">372</td>
+<td class="num">157</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">斬 / 突 / 打 などの系統は、この形でしか見えません。</td></tr>
+<tr>
+<td class="mono">HitStop</td>
+<td>攻撃と防御</td>
+<td class="num">30</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>なし</td>
+<td class="num">282</td>
+<td class="num">30</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">30 ms の停止が運ぶ情報はありません。手応えの好みなので、確定は #79 です。</td></tr>
+<tr>
+<td class="mono">HitStopStrong</td>
+<td>攻撃と防御</td>
+<td class="num">90</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>なし</td>
+<td class="num">90</td>
+<td class="num">29</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">強い一撃であることは数字の大きさと画面の揺れも言っています。手応えの好みなので、確定は #79 です。</td></tr>
+<tr>
+<td class="mono">HitFlash</td>
+<td>攻撃と防御</td>
+<td class="num">260</td>
+<td>並行</td>
+<td>切れる</td>
+<td>誰が誰に</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">誰に当たったかを、数字が出る前に示します。並行で待ち時間はありません。</td></tr>
+<tr>
+<td class="mono">TargetRecoil</td>
+<td>攻撃と防御</td>
+<td class="num">260</td>
+<td>並行</td>
+<td>切れる</td>
+<td>なし</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">誰に当たったかは点滅と数字が言っています。のけぞりは重さの演出なので、確定は #79 です。</td></tr>
+<tr>
+<td class="mono">DamageNumber</td>
+<td>攻撃と防御</td>
+<td class="num">1000</td>
+<td>並行</td>
+<td>切れる</td>
+<td>ダメージ・Guard の量</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">ダメージの量が書かれる唯一の場所です。枠は新しい HP だけを持ちます。</td></tr>
+<tr>
+<td class="mono">HpDrain</td>
+<td>攻撃と防御</td>
+<td class="num">300</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>ダメージ・Guard の量</td>
+<td class="num">299</td>
+<td class="num">316</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">HP の減りを目で追える唯一の動きです。300 ms を待ちますが、切ると HP が一瞬で書き換わります。</td></tr>
+<tr>
+<td class="mono">HpTrail</td>
+<td>攻撃と防御</td>
+<td class="num">500</td>
+<td>並行</td>
+<td>切れる</td>
+<td>ダメージ・Guard の量</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">減った量は数字と HP バーの動きが言っています。灰色の残像は同じことの繰り返しで、待ち時間はありません。確定は #79 です。</td></tr>
+<tr>
+<td class="mono">ScreenShake</td>
+<td>攻撃と防御</td>
+<td class="num">180</td>
+<td>並行</td>
+<td>切れる</td>
+<td>なし</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">強い一撃の重さの演出で、情報を足しません。確定は #79 です。</td></tr>
+<tr>
+<td class="mono">AttackReturn</td>
+<td>攻撃と防御</td>
+<td class="num">120</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>なし</td>
+<td class="num">86</td>
+<td class="num">36</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">元の位置に戻るだけで、読み取れる情報がありません。攻撃のたびに 120 ms 入力を止めます。切ると人物が瞬間移動して見えるため、確定は #79 です。</td></tr>
+<tr>
+<td class="mono">EnemyMotion</td>
+<td>攻撃と防御</td>
+<td class="num">220</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>誰が誰に・敵の行動</td>
+<td class="num">244</td>
+<td class="num">189</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">敵が何をするかを、系統ごとの形で示します。切ると敵の動きが読めません。</td></tr>
+<tr>
+<td class="mono">OmenSpend</td>
+<td>攻撃と防御</td>
+<td class="num">200</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>敵の行動</td>
+<td class="num">55</td>
+<td class="num">39</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">予兆と実際の一撃を結びつけます。切ると、どの予兆が当たったのか分かりません。</td></tr>
+<tr>
+<td class="mono">EnemyReturn</td>
+<td>攻撃と防御</td>
+<td class="num">140</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>なし</td>
+<td class="num">55</td>
+<td class="num">27</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">元の位置に戻るだけです。敵の行動のたびに 140 ms 入力を止めます。切ると敵が瞬間移動して見えるため、確定は #79 です。</td></tr>
+<tr>
+<td class="mono">GuardBlock</td>
+<td>攻撃と防御</td>
+<td class="num">320</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>ダメージ・Guard の量・誰が誰に</td>
+<td class="num">253</td>
+<td class="num">285</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">Guard が受けた量を示すので必要ですが、320 ms は 1 つの行動で最も長い拍です。#78 の 1990 ms の出来事を作っています。</td></tr>
+<tr>
+<td class="mono">GuardNumber</td>
+<td>攻撃と防御</td>
+<td class="num">1000</td>
+<td>並行</td>
+<td>切れる</td>
+<td>ダメージ・Guard の量</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">Guard が吸った量が書かれる場所です。並行で待ち時間はありません。</td></tr>
+<tr>
+<td class="mono">GuardBreak</td>
+<td>攻撃と防御</td>
+<td class="num">200</td>
+<td>並行</td>
+<td>切れる</td>
+<td>状態</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">Guard が 0 になったことを示します。バッジの数字だけでは、割れた瞬間が分かりません。</td></tr>
+<tr>
+<td class="mono">GuardGain</td>
+<td>攻撃と防御</td>
+<td class="num">260</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>ダメージ・Guard の量</td>
+<td class="num">559</td>
+<td class="num">512</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">得た Guard の量を示しますが、260 ms 待ちます。40 戦の計測で、待ちの合計が最も大きい効果です。数字は同じ拍の中で出せるので、待ちを詰めます。</td></tr>
+<tr><td colspan="10" style="background:var(--code-bg);font-weight:700">そのほかの拍</td></tr>
+<tr>
+<td class="mono">OmenShow</td>
+<td>そのほかの拍</td>
+<td class="num">240</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>敵の行動</td>
+<td class="num">284</td>
+<td class="num">240</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">次の敵の行動を知らせる唯一の拍です。</td></tr>
+<tr>
+<td class="mono">TraitFire</td>
+<td>そのほかの拍</td>
+<td class="num">200</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>状態</td>
+<td class="num">194</td>
+<td class="num">137</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">特性の条件が成り立ったことを示します。切ると、なぜ効果が乗ったのか分かりません。</td></tr>
+<tr>
+<td class="mono">StaminaChange</td>
+<td>そのほかの拍</td>
+<td class="num">220</td>
+<td>登録は待つ、画面は並行</td>
+<td>切れる</td>
+<td>手札・札</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">スタミナ表示が一瞬弾みます。View は待たずに並行で走らせますが、カタログは待つ拍として登録しています。このずれは報告に書きます。</td></tr>
+<tr>
+<td class="mono">StanceCue</td>
+<td>そのほかの拍</td>
+<td class="num">460</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>ダメージ・Guard の量</td>
+<td class="num">39</td>
+<td class="num">63</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">ターン終了時の構えによる Guard を示します。460 ms は毎ターンの長い拍で、盾と +3 は同時に出せます。</td></tr>
+<tr>
+<td class="mono">RangeSwitch</td>
+<td>そのほかの拍</td>
+<td class="num">470</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>位置</td>
+<td class="num">262</td>
+<td class="num">434</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">位置が変わることを示す唯一の拍なので、情報は要ります。ただし 470 ms は移動 320 と一字札の反転 150 を続けており、重ねれば詰められます。</td></tr>
+<tr>
+<td class="mono">SideBonusMiss</td>
+<td>そのほかの拍</td>
+<td class="num">260</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>敵の行動</td>
+<td class="num">111</td>
+<td class="num">102</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">敵の予兆のボーナスが外れたことを示します。切ると、外れたのに何も起きなかったように見えます。</td></tr>
+<tr><td colspan="10" style="background:var(--code-bg);font-weight:700">状態とターン</td></tr>
+<tr>
+<td class="mono">StatusApply</td>
+<td>状態とターン</td>
+<td class="num">200</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>状態</td>
+<td class="num">29</td>
+<td class="num">20</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">状態が付いたことを示します。枠は付いた後のチップだけを持ちます。</td></tr>
+<tr>
+<td class="mono">StatusStack</td>
+<td>状態とターン</td>
+<td class="num">150</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>状態</td>
+<td class="num">7</td>
+<td class="num">4</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">スタックが増えたことを示します。</td></tr>
+<tr>
+<td class="mono">StatusTick</td>
+<td>状態とターン</td>
+<td class="num">120</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>状態</td>
+<td class="num">34</td>
+<td class="num">14</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">スタックが減ったことを示します。120 ms まで詰めてあります。</td></tr>
+<tr>
+<td class="mono">StatusVanish</td>
+<td>状態とターン</td>
+<td class="num">150</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>状態</td>
+<td class="num">14</td>
+<td class="num">7</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">状態が消えたことを示します。切るとチップが黙って消えます。</td></tr>
+<tr>
+<td class="mono">OmenBlink</td>
+<td>状態とターン</td>
+<td class="num">250</td>
+<td>並行</td>
+<td>切れる</td>
+<td>敵の行動</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">予兆はターン開始の時点ですでに表示されています。明滅は目を向けさせる演出です。確定は #79 です。</td></tr>
+<tr>
+<td class="mono">OmenExecute</td>
+<td>状態とターン</td>
+<td class="num">200</td>
+<td>並行</td>
+<td>切れる</td>
+<td>敵の行動</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag stop">要らない</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">予兆が実行されたことは、敵の動きと予兆の消え方が言っています。確定は #79 です。</td></tr>
+<tr>
+<td class="mono">PushMark</td>
+<td>状態とターン</td>
+<td class="num">1000</td>
+<td>並行</td>
+<td>切れる</td>
+<td>位置</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">相手に動かされたことを示す唯一の印です。自分の移動と見分けがつかなくなります。</td></tr>
+<tr>
+<td class="mono">TurnBanner</td>
+<td>状態とターン</td>
+<td class="num">300</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>番・勝敗</td>
+<td class="num">284</td>
+<td class="num">300</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">自分の番が来たことは、手札が配られることでも分かります。300 ms 毎ターン入力を止めるので、詰めます。</td></tr>
+<tr>
+<td class="mono">EnemyTurnBanner</td>
+<td>状態とターン</td>
+<td class="num">400</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>番・勝敗</td>
+<td class="num">244</td>
+<td class="num">344</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">#79 で確認</span></td>
+<td class="reason">番が渡ったことは、終了ボタンの後に敵が動くことで分かります。400 ms 毎ターン入力を止めるので、詰めます。</td></tr>
+<tr>
+<td class="mono">StaminaRecover</td>
+<td>状態とターン</td>
+<td class="num">80 (1 枚ごとに 80 遅れる)</td>
+<td>待つ</td>
+<td>切れる</td>
+<td>手札・札</td>
+<td class="num">717</td>
+<td class="num">202</td>
+<td><span class="tag warn">短くする</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">回復した量は最終の値が持っています。1 つずつ点ける方式は 5 個で 400 ms かかり、毎ターン平均で約 200 ms を使うため、間隔を詰めます。</td></tr>
+<tr>
+<td class="mono">ResultCard</td>
+<td>状態とターン</td>
+<td class="num">400</td>
+<td>並行</td>
+<td>切れる</td>
+<td>番・勝敗</td>
+<td class="num">数えない</td>
+<td class="num">0</td>
+<td><span class="tag ok">要る</span><br><span class="muted">台本から判定</span></td>
+<td class="reason">勝ち負けを知らせる唯一の札です。戦闘の最後に 1 度だけ出て、並行で待ち時間はありません。</td></tr>
+</tbody></table></div>
+
+<div class="prose">
+<h2>台本から判定したものと、#79 で触って確かめるもの</h2>
+<p>スクリーンショットは撮っていません。判定は、台本の値（Cue の項目と、演出が終わった後の枠）と、演出の長さ・待ちの計画から出しました。</p>
+<ul>
+  <li><strong>台本から判定 31 個。</strong>ダメージの量、誰が誰に当てたか、状態が付いたか、位置が変わったかは、台本の Cue が持ち、枠には新しい HP・Guard・状態の一覧・位置しか残りません。演出を切ると、その差分を読み取る手段が消えます。この見方で判定しました。</li>
+  <li><strong>#79 で確認 17 個。</strong>要らないの 11 個全部と、短くするのうち 6 個（札を引く・出す・捨てる動き、揺れ、ターンのバナー）が入ります。どれだけ詰めると読みにくくなるか、なくして瞬間移動に見えないかは、実際に触らないと分かりません。</li>
+</ul>
+<p>「要る」と書いたものも、台本の上で運ぶ情報があるという意味です。画面上で読み取れているかは確かめていません。</p>
+
+<h2>測れていないこと</h2>
+<ul>
+  <li>画面上の実測。ここの数字は、画面が待つ時間の公称値の足し算です。1 本の待ちごとの 1 フレームの延びは入っていません。PlayMode の実測は #28 のテストが持っています。</li>
+  <li>並行して走る演出（数字、点滅、HP の灰色の残像、画面の揺れ、札の移動など）が、次の出来事と重なって見にくくならないか。時間には影響しません。</li>
+  <li>演出を切ったときに読み取れなくなる情報を、画面で確かめること。</li>
+  <li>戦闘は 1 つの敵（長柄の歪み兵）だけです。敵が増えたら計測をやり直します。</li>
+  <li>プレイヤーが考える時間、カードを引きずる時間。</li>
+</ul>
+
+<h2>再現と追加</h2>
+<p><code>cd unity-port && dotnet test</code> で計測が回ります。<code>DEPICTION_EFFECT_REPORT_DIR</code> にフォルダを指定すると、表の元の <code>effects.json</code> がそこに出ます。演出を足したときは、<code>Script/Effects.cs</code> に長さ、<code>Script/EffectAudit.cs</code> に判定を書きます。待つ演出は <code>EffectPlan</code> に足せば、計測に入ります。</p>
+</div>
+</div>
+</body>
+</html>
