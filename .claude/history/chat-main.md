@@ -1,5 +1,18 @@
 # HISTORY (chat-main)
 
+### 2026-09-30 - Unity への同期、残りの worktree の片付け、こうだいさんの作業の手順書
+
+#### 概要
+
+こうだいさんの許可を受けて Unity 側へ同期してテストを通し、残っていた worktree を全部消し、作業待ちの 10 件を手順つきの HTML にした。
+
+#### 変更点
+
+- **Unity への同期（#55）**: `npm run unity:sync` で 75 ファイルを写した。Unity の Editor は起動しておらず（常駐していたのは `unity mcp` の小さなプロセスだけ）、画面なしの Editor で EditMode 791 件（789 通過、失敗 0、スキップ 2）と PlayMode 4 件が通った。警告は CS0618（#235）と、探索側の新しいファイルの CS8632。Unity 側のブランチ `chore/sync-20260930` を RPG-by-card#7 にした。#55 は #7 の merge 後に閉じる
+- **worktree**: canon / demo-play / le-bridge / sources / world を消した。どれも中身が main に入っていて、未コミットの変更はなかった。ローカルとリモートのブランチも消した
+- **#61**: 09-21 に回答済みの案 B を `core.md` の V2 に入れた（PR #273）。V1 は 09-22 の v4.3 で書き直し済みなので今の文のまま
+- **手順書**: `docs/reports/2026-09-30-koudai-tasks.html`（PR #276、Artifact `https://claude.ai/artifact/7KW5SP71humvjbngCiBfEj`）。merge 5 本、/goal 4 つ（コピーボタン付き）、積んだ PR の取り込み先の付け替え、#213・#221 の判断、Krita（#82）、描写の手触り（#25）、#55、#79、#60
+
 ### 2026-09-30 - 属性 4 つの振り分けと、閉じ忘れ・worktree・ブランチの整理
 
 #### 概要
