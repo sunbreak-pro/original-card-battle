@@ -59,6 +59,24 @@ namespace BattleCore
             throw new KeyNotFoundException($"Unknown card id \"{id}\".");
         }
 
+        // ---- v4.4 (#258): attributes are four, movement is an effect ----
+        // The six cards of movement only (足運び 後ろ跳び 摺り足 間合い切り 跳び退り 駆け込み) declare
+        // no face: BattleAttribute.None. AttributeRule.Fold counts them as 防御 when they carry a Guard
+        // (後ろ跳び 摺り足) and as スキル otherwise. Declaring nothing keeps 集中's column step where
+        // it was. The other cards that used to declare the move flag now just carry Face.Move / Face.Push.
+
+        /// <summary>
+        /// The ten stance cards that still carry a face besides the stance (浄化の一閃 深淵の構え
+        /// 狼の構え 鉄壁の構え 槍衾 錨の構え 根渡り 霞み足 根縛り 見切りの目). #257 rewrites them as stance
+        /// only, with new costs and strengths; until it lands they keep their v4.3 faces and are let
+        /// through <see cref="Cards.StanceStandsAlone"/>. Delete this list with that change.
+        /// </summary>
+        public static readonly IReadOnlyCollection<string> StanceRedesignPending = new HashSet<string>
+        {
+            "purge_flash", "abyss_stance", "wolf_stance", "iron_wall", "spear_wall",
+            "anchor_stance", "root_stride", "mist_step", "root_bind", "keen_eye",
+        };
+
         // ---- Trait shorthands: the conditions of §1.2, one per helper ----
         // grant is only for the Status effect (「<語>を n 付与」 / 「<語> +n スタック」).
 
@@ -78,7 +96,7 @@ namespace BattleCore
         private static Trait When(TraitCondition condition, TraitEffect effect, int amount = 0, StatusGrant? grant = null) =>
             new Trait(condition, effect, amount, Grant: grant);
 
-        /// <summary>連動(X).</summary>
+        /// <summary>連動(X): X is one of the four attributes (v4.4). 連動(ムーブ) is 移動後: <c>When(TraitCondition.Moved, ...)</c>.</summary>
         private static Trait Combo(BattleAttribute attribute, TraitEffect effect, int amount = 0, StatusGrant? grant = null) =>
             new Trait(TraitCondition.Combo, effect, amount, Attribute: attribute, Grant: grant);
 

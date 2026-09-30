@@ -41,7 +41,7 @@ namespace BattleCore.Tests
             });
         }
 
-        /// <summary>§4.1: the fifteen attribute patterns, initial + learned.</summary>
+        /// <summary>§4.1: the fifteen attribute patterns of the canon, initial + learned. "M" is the movement effect in v4.4: it is no attribute, so it is read off the face, not off the declared flags.</summary>
         [TestCase("A", 15)]
         [TestCase("G", 7)]
         [TestCase("St", 4)]
@@ -60,19 +60,20 @@ namespace BattleCore.Tests
         public void TheAttributePatterns_MatchTheCanonTally(string pattern, int count)
         {
             var attributes = BattleAttribute.None;
+            bool movement = false;
             foreach (string word in pattern.Split('+'))
             {
+                if (word == "M") { movement = true; continue; }
                 attributes |= word switch
                 {
                     "A" => BattleAttribute.Attack,
                     "G" => BattleAttribute.Guard,
                     "St" => BattleAttribute.Stance,
                     "Sk" => BattleAttribute.Skill,
-                    "M" => BattleAttribute.Move,
                     _ => throw new ArgumentException(word),
                 };
             }
-            Assert.That(CardCatalog.All.Count(c => c.Attributes == attributes), Is.EqualTo(count));
+            Assert.That(CardCatalog.All.Count(c => c.Attributes == attributes && AttributeRule.HasMovement(c.Face) == movement), Is.EqualTo(count));
         }
 
         [Test]
@@ -104,7 +105,8 @@ namespace BattleCore.Tests
         }
 
         /// <summary>§4.2: the condition tally (the #80 second trait is not counted).</summary>
-        [TestCase(TraitCondition.Combo, 11)]
+        [TestCase(TraitCondition.Combo, 8)]
+        [TestCase(TraitCondition.Moved, 3)]
         [TestCase(TraitCondition.OmenIs, 10)]
         [TestCase(TraitCondition.Reserve, 2)]
         [TestCase(TraitCondition.Desperate, 1)]
@@ -297,7 +299,7 @@ namespace BattleCore.Tests
             }
         }
 
-        /// <summary>A legal deck (§8): at most three of a kind, at most three stance cards, drawn from the eighty with the given RNG.</summary>
+        /// <summary>A legal deck (§8): at most three of a kind (no cap on stance cards since v4.4), drawn from the eighty with the given RNG.</summary>
         private static List<CardInstance> RandomDeck(IRng rng, int size)
         {
             var counts = new Dictionary<string, int>();
@@ -307,7 +309,6 @@ namespace BattleCore.Tests
                 var def = CardCatalog.All[(int)(rng.NextDouble() * CardCatalog.All.Count) % CardCatalog.All.Count];
                 counts.TryGetValue(def.Id, out int held);
                 if (held >= Constants.CopiesMax) continue;
-                if (Cards.IsStanceCard(def) && deck.Count(c => Cards.IsStanceCard(c.Def)) >= Constants.StanceCardsMax) continue;
                 counts[def.Id] = held + 1;
                 deck.Add(new CardInstance(def.Id + "-" + held, def));
             }

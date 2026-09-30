@@ -18,10 +18,10 @@ namespace BattleCore
         IReadOnlyDictionary<BattleAttribute, int> Attributes,
         int TraitsFired)
     {
-        /// <summary>The attributes in §2.2 order, for a breakdown printed the same way every time.</summary>
+        /// <summary>The four attributes (§2.1), for a breakdown printed the same way every time.</summary>
         public static readonly IReadOnlyList<BattleAttribute> Order = new[]
         {
-            BattleAttribute.Attack, BattleAttribute.Move, BattleAttribute.Guard, BattleAttribute.Skill, BattleAttribute.Stance,
+            BattleAttribute.Attack, BattleAttribute.Guard, BattleAttribute.Skill, BattleAttribute.Stance,
         };
 
         public int CountOf(BattleAttribute attribute) => Attributes.TryGetValue(attribute, out int n) ? n : 0;
@@ -95,11 +95,12 @@ namespace BattleCore
                 if (e is CardPlayed card && card.Actor == Actor.Player)
                 {
                     played++;
-                    foreach (var attribute in BattleTally.Order)
+                    // §2.1 (v4.4): a card is counted once, as the one attribute it folds to.
+                    var counted = card.Card.Def.Attribute;
+                    if (counted != BattleAttribute.None)
                     {
-                        if (!card.Card.Def.Attributes.HasFlag(attribute)) continue;
-                        attributes.TryGetValue(attribute, out int n);
-                        attributes[attribute] = n + 1;
+                        attributes.TryGetValue(counted, out int n);
+                        attributes[counted] = n + 1;
                     }
                 }
                 else if (e is TraitEvaluated trait && trait.Actor == Actor.Player && trait.Outcome.Triggered)

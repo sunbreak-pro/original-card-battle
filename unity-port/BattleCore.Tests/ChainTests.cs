@@ -45,7 +45,7 @@ namespace BattleCore.Tests
             state = TurnLoop.BeginPlayerTurn(state, NoShuffle).State;
             state = TurnLoop.PlayCard(state, "rock_stance-0", NoShuffle).State;
             state = TurnLoop.PlayCard(state, "focus-0", NoShuffle).State;
-            Assert.That(state.Player.Stance, Is.Not.Null);
+            Assert.That(state.Player.StanceList, Has.Count.EqualTo(1));
             Assert.That(state.Exiled, Has.Count.EqualTo(1));
 
             var (hp, stamina) = Chain.Carry(state);
@@ -55,7 +55,7 @@ namespace BattleCore.Tests
             {
                 Assert.That(next.Player.Hp, Is.EqualTo(state.Player.Hp));
                 Assert.That(next.Player.Stamina, Is.EqualTo(state.Player.Stamina));
-                Assert.That(next.Player.Stance, Is.Null);
+                Assert.That(next.Player.StanceList, Is.Empty);
                 Assert.That(next.Player.Statuses.KindCount, Is.EqualTo(0));
                 Assert.That(next.Player.Guard, Is.EqualTo(0));
                 Assert.That(next.Exiled, Is.Empty, "the exiled stance card is back in the deck");
@@ -113,11 +113,11 @@ namespace BattleCore.Tests
                 Assert.That(tally.Turns, Is.EqualTo(state.Turn));
                 Assert.That(tally.HpLeft, Is.EqualTo(state.Player.Hp));
                 Assert.That(tally.CardsPlayed, Is.EqualTo(played.Count));
-                Assert.That(tally.CountOf(BattleAttribute.Attack), Is.EqualTo(played.Count(p => p.Card.Def.Attributes.HasFlag(BattleAttribute.Attack))));
-                Assert.That(tally.CountOf(BattleAttribute.Move), Is.EqualTo(played.Count(p => p.Card.Def.Attributes.HasFlag(BattleAttribute.Move))));
+                Assert.That(tally.CountOf(BattleAttribute.Attack), Is.EqualTo(played.Count(p => p.Card.Def.Attribute == BattleAttribute.Attack)));
+                Assert.That(tally.CountOf(BattleAttribute.Guard), Is.EqualTo(played.Count(p => p.Card.Def.Attribute == BattleAttribute.Guard)));
                 Assert.That(tally.TraitsFired, Is.EqualTo(events.OfType<TraitEvaluated>().Count(t => t.Actor == Actor.Player && t.Outcome.Triggered)));
                 Assert.That(tally.TraitsFired, Is.GreaterThan(0));
-                Assert.That(tally.Attributes.Values.Sum(), Is.GreaterThanOrEqualTo(tally.CardsPlayed), "a two-attribute card counts for both");
+                Assert.That(tally.Attributes.Values.Sum(), Is.EqualTo(tally.CardsPlayed), "a card counts once, as the one attribute it folds to (v4.4)");
             });
         }
     }

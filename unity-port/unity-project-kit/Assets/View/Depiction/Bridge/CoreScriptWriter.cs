@@ -25,10 +25,10 @@ namespace Depiction.Bridge
             public int Size;
             public readonly SortedDictionary<StatusKind, int> Statuses = new SortedDictionary<StatusKind, int>();
 
-            /// <summary>§4: the name of the stance in the slot (#188), or empty.</summary>
-            public string Stance = "";
+            /// <summary>§4 (v4.4): the name of each stance on the list of permanent effects, in the order they were put on; a repeat is listed again.</summary>
+            public readonly List<string> Stances = new List<string>();
 
-            public void CopyFrom(CombatantState unit, string stanceName)
+            public void CopyFrom(CombatantState unit, EnemyDef enemy)
             {
                 Hp = unit.Hp;
                 HpMax = unit.MaxHp;
@@ -39,7 +39,8 @@ namespace Depiction.Bridge
                 Size = unit.Size;
                 Statuses.Clear();
                 foreach (StatusKind kind in unit.Statuses.Kinds) Statuses[kind] = unit.Statuses.Stacks(kind);
-                Stance = stanceName ?? "";
+                Stances.Clear();
+                foreach (StanceEntry entry in unit.StanceList) Stances.Add(StanceName(entry.Source, enemy));
             }
         }
 
@@ -100,8 +101,8 @@ namespace Depiction.Bridge
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             _turn = Math.Max(1, state.Turn);
-            _player.CopyFrom(state.Player, StanceName(state.Player.StanceSource, null));
-            _enemy.CopyFrom(state.Enemy, StanceName(state.Enemy.StanceSource, _enemyDef));
+            _player.CopyFrom(state.Player, null);
+            _enemy.CopyFrom(state.Enemy, _enemyDef);
             _hand.Clear();
             _hand.AddRange(state.Hand);
             _omen = state.Omen;
@@ -393,7 +394,7 @@ namespace Depiction.Bridge
                 }
 
                 case StanceSet set:
-                    Unit(set.Actor).Stance = set.Name;
+                    Unit(set.Actor).Stances.Add(set.Name);
                     ev.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = CoreText.Side(set.Actor), Text = "構え・" + set.Name });
                     break;
             }
@@ -674,8 +675,8 @@ namespace Depiction.Bridge
                 frame.Range = CoreText.SideOf(gap.Value);
                 frame.RangeGlyph = CoreText.GapGlyph(gap.Value);
             }
-            // §4: the stance in the slot leads the chips; it has no stacks to count.
-            if (unit.Stance.Length > 0) frame.Statuses.Add(new StatusChip { Label = "構え・" + unit.Stance, Stacks = 0 });
+            // §4: the stances held lead the chips, one chip per stance (a repeat is one chip with its count).
+            frame.Statuses.AddRange(CoreText.StanceChips(unit.Stances));
             foreach (KeyValuePair<StatusKind, int> pair in unit.Statuses)
             {
                 frame.Statuses.Add(new StatusChip { Label = pair.Key.ToLabel(), Stacks = pair.Value });

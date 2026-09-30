@@ -21,7 +21,7 @@ namespace Depiction.Bridge
         public bool Keeps(CardDef def)
         {
             if (def == null) return false;
-            if (Attribute != BattleAttribute.None && (def.Attributes & Attribute) == 0) return false;
+            if (Attribute != BattleAttribute.None && def.Attribute != Attribute) return false;
             return Cost == 0 || def.Cost == Cost;
         }
     }
@@ -85,7 +85,7 @@ namespace Depiction.Bridge
             return n;
         }
 
-        /// <summary>Cards of the deck that have a stance face (§19.6 S15 counts them across kinds).</summary>
+        /// <summary>Cards of the deck that are stances (v4.4: counted for the screen, not capped).</summary>
         public int StanceCount
         {
             get
@@ -100,13 +100,13 @@ namespace Depiction.Bridge
         }
 
         /// <summary>
-        /// §8: a fourth copy, a 41st card, a fourth card with a stance face (§19.6 S15), or an id the
+        /// §8: a fourth copy, a 41st card, or an id the
         /// catalog does not know is refused.
         /// </summary>
         public bool CanAdd(string id)
         {
-            if (!Known(id) || CountOf(id) >= Constants.CopiesMax || Total >= Constants.DeckMax) return false;
-            return !Cards.IsStanceCard(CardCatalog.ById(id)) || StanceCount < Constants.StanceCardsMax;
+            return Known(id) && CountOf(id) < Constants.CopiesMax && Total < Constants.DeckMax;
+            return true;
         }
 
         public bool Add(string id)
@@ -158,7 +158,7 @@ namespace Depiction.Bridge
                 int total = Total;
                 if (total < Constants.DeckMin) return total + " 枚です。あと " + (Constants.DeckMin - total) + " 枚入れると戦えます";
                 return total + " 枚です。" + Constants.DeckMin + "〜" + Constants.DeckMax + " 枚、1 種 " + Constants.CopiesMax
-                    + " 枚、構え " + Constants.StanceCardsMax + " 枚までを満たしています";
+                    + " 枚を満たしています";
             }
         }
 
@@ -190,7 +190,7 @@ namespace Depiction.Bridge
         /// <summary>The deck screen's title, with §8's rule in it.</summary>
         public static string Title =>
             "デッキを組む（" + Constants.OwnedKindsMax + " 種から " + Constants.DeckMin + "〜" + Constants.DeckMax
-            + " 枚、1 種 " + Constants.CopiesMax + " 枚、構え " + Constants.StanceCardsMax + " 枚まで）";
+            + " 枚、1 種 " + Constants.CopiesMax + " 枚まで）";
 
         /// <summary>The attribute filters the screen offers, in the §2.2 order after 「全て」.</summary>
         public static IReadOnlyList<KeyValuePair<string, BattleAttribute>> AttributeOptions
@@ -198,7 +198,7 @@ namespace Depiction.Bridge
             get
             {
                 var options = new List<KeyValuePair<string, BattleAttribute>> { new KeyValuePair<string, BattleAttribute>("全て", BattleAttribute.None) };
-                foreach (BattleAttribute attribute in new[] { BattleAttribute.Attack, BattleAttribute.Move, BattleAttribute.Guard, BattleAttribute.Skill, BattleAttribute.Stance })
+                foreach (BattleAttribute attribute in new[] { BattleAttribute.Attack, BattleAttribute.Guard, BattleAttribute.Skill, BattleAttribute.Stance })
                 {
                     options.Add(new KeyValuePair<string, BattleAttribute>(AttributeWords(attribute), attribute));
                 }
@@ -223,7 +223,7 @@ namespace Depiction.Bridge
         /// <summary>The line a card has in the list: 「突き　コスト 3　攻撃」.</summary>
         public static string LineOf(CardDef def)
         {
-            return def.Name + "　コスト " + def.Cost + "　" + AttributeWords(def.Attributes);
+            return def.Name + "　コスト " + def.Cost + "　" + AttributeWords(def.Attribute);
         }
 
         /// <summary>How many of the card the deck holds, as printed beside it: "×2", or "" for none.</summary>
@@ -243,7 +243,7 @@ namespace Depiction.Bridge
             var lines = new List<string>
             {
                 def.Name,
-                "コスト " + def.Cost + "　" + AttributeWords(def.Attributes)
+                "コスト " + def.Cost + "　" + AttributeWords(def.Attribute)
                     + (aims ? "　届く間合い " + def.Face.ReachOrDefault.ToText() : "　自分向き"),
                 CoreText.Describe(def.Face, def.Attributes),
             };
@@ -265,12 +265,11 @@ namespace Depiction.Bridge
             return lines;
         }
 
-        /// <summary>The words for a card's attributes, in the §2.2 order: 「攻撃＋ムーブ」.</summary>
+        /// <summary>The word for the attribute a card counts as (§2.1, v4.4): 「攻撃」「防御」「技」「構え」.</summary>
         public static string AttributeWords(BattleAttribute attributes)
         {
             var words = new List<string>();
             if (attributes.HasFlag(BattleAttribute.Attack)) words.Add("攻撃");
-            if (attributes.HasFlag(BattleAttribute.Move)) words.Add("ムーブ");
             if (attributes.HasFlag(BattleAttribute.Guard)) words.Add("防御");
             if (attributes.HasFlag(BattleAttribute.Skill)) words.Add("技");
             if (attributes.HasFlag(BattleAttribute.Stance)) words.Add("構え");

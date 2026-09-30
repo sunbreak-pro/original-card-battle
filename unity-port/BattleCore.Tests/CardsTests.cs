@@ -204,60 +204,104 @@ namespace BattleCore.Tests
             });
         }
 
-        // ---- §19.6 S15: three cards with a stance face ----
+        // ---- §4 (v4.4): a stance stands alone, and the deck has no cap on stance cards ----
 
         /// <summary>A card with a stance face (§4).</summary>
         private static CardDef StanceCard(string id) =>
             Fixtures.Card(id, attributes: BattleAttribute.Stance, face: new Face(Stance: new StanceDef(StanceHook.TurnStart, Guard: 1)));
 
         [Test]
-        public void AFourthStanceCard_IsRefused_EvenWhenEachKindIsOne()
+        public void ManyStanceCards_PassTheDeckCheck_ThereIsNoCapAnyMore()
         {
-            // Sixteen plain cards and four stance kinds × 1: 20 cards, none past three of a kind,
-            // and still refused.
+            // Eight plain kinds × 2 and four stance kinds × 3: 28 cards, twelve of them stances. The
+            // three-card cap of §19.6 S15 is gone (v4.4); only three of a kind still holds.
             var plain = Enumerable.Range(0, 8).Select(i => Fixtures.Card($"k{i}")).ToList();
             var stances = Enumerable.Range(0, 4).Select(i => StanceCard($"s{i}")).ToList();
-            var deck = Cards.BuildDeck(plain, copies: 2).Concat(Cards.BuildDeck(stances, copies: 1)).ToList();
+            var deck = Cards.BuildDeck(plain, copies: 2).Concat(Cards.BuildDeck(stances, copies: 3)).ToList();
             var result = Cards.Validate(deck);
 
             Assert.Multiple(() =>
             {
-                Assert.That(deck, Has.Count.EqualTo(20));
-                Assert.That(result.Ok, Is.False);
-                Assert.That(result.Errors.Single(), Is.EqualTo("Deck holds 4 stance cards; the maximum is 3."));
+                Assert.That(deck, Has.Count.EqualTo(28));
+                Assert.That(deck.Count(c => Cards.IsStanceCard(c.Def)), Is.EqualTo(12));
+                Assert.That(result.Ok, Is.True, string.Join(" / ", result.Errors));
             });
         }
 
         [Test]
-        public void ThreeStanceCards_Pass_WhetherOneKindOrThree()
+        public void TheFourteenStanceCards_CountAsStance_AndTheTenPlaceholdersAreLetThrough()
         {
-            var plain = Enumerable.Range(0, 17).Select(i => Fixtures.Card($"k{i}")).ToList();
-            var oneKind = Cards.BuildDeck(plain, copies: 1).Concat(Cards.BuildDeck(new[] { StanceCard("s0") }, copies: 3)).ToList();
-            var threeKinds = Cards.BuildDeck(plain, copies: 1)
-                .Concat(Cards.BuildDeck(new[] { StanceCard("s0"), StanceCard("s1"), StanceCard("s2") }, copies: 1)).ToList();
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(Cards.Validate(oneKind).Ok, Is.True, string.Join(" / ", Cards.Validate(oneKind).Errors));
-                Assert.That(Cards.Validate(threeKinds).Ok, Is.True, string.Join(" / ", Cards.Validate(threeKinds).Errors));
-            });
-        }
-
-        [Test]
-        public void EveryCardWithTheStanceAttribute_CountsAsAStanceCard_TwoAttributeOnesToo()
-        {
-            // 鉄壁の構え is ガード + スタンス: it takes one of the three like 水の構え does.
-            var plain = CardCatalog.All.Where(c => !Cards.IsStanceCard(c)).Take(8).ToList();
-            var deck = Cards.BuildDeck(plain, copies: 2)
-                .Concat(Cards.BuildDeck(new[] { CardCatalog.WaterStance, CardCatalog.RockStance, CardCatalog.FlowStance, CardCatalog.IronWall }, copies: 1))
-                .ToList();
+            // 鉄壁の構え is 防御 + スタンス in the v4.3 table: it still counts as a stance (a stance
+            // wins the fold), and until #257 rewrites the ten it is let through the standing-alone check.
+            var mixed = CardCatalog.All.Where(c => Cards.IsStanceCard(c) && !AttributeRule.StanceStandsAlone(c.Attributes, c.Face)).ToList();
 
             Assert.Multiple(() =>
             {
                 Assert.That(Cards.IsStanceCard(CardCatalog.IronWall), Is.True);
                 Assert.That(Cards.IsStanceCard(CardCatalog.Thrust), Is.False);
                 Assert.That(CardCatalog.All.Count(Cards.IsStanceCard), Is.EqualTo(14));
-                Assert.That(Cards.Validate(deck).Errors.Any(e => e.Contains("4 stance cards")), Is.True);
+                Assert.That(mixed.Select(c => c.Id), Is.EquivalentTo(CardCatalog.StanceRedesignPending),
+                    "exactly the ten cards #257 rewrites, so nothing else slips past the check");
+                Assert.That(mixed.All(Cards.StanceStandsAlone), Is.True);
+            });
+        }
+
+        [Test]
+        public void AStanceThatAlsoAttacksOrMoves_IsRefused_UnlessItIsOneOfThePlaceholders()
+        {
+            var attacks = Fixtures.Card("attacking_stance", attributes: BattleAttribute.Attack | BattleAttribute.Stance,
+                face: new Face(Power: 8, Stance: new StanceDef(StanceHook.TurnStart, Guard: 1)));
+            var moves = Fixtures.Card("moving_stance", attributes: BattleAttribute.Stance,
+                face: new Face(Move: -1, Stance: new StanceDef(StanceHook.TurnStart, Guard: 1)));
+            var stanceFaceOnly = Fixtures.Card("undeclared_stance", attributes: BattleAttribute.Guard,
+                face: new Face(Guard: 3, Stance: new StanceDef(StanceHook.TurnStart, Guard: 1)));
+            var plain = Enumerable.Range(0, 9).Select(i => Fixtures.Card($"k{i}")).ToList();
+
+            foreach (var bad in new[] { attacks, moves, stanceFaceOnly })
+            {
+                var result = Cards.Validate(Cards.BuildDeck(plain.Append(bad).ToList(), copies: 2));
+                Assert.That(result.Errors.Single(),
+                    Is.EqualTo($"Card \"{bad.Id}\" is a stance and also declares another attribute or moves; a stance stands alone."), bad.Id);
+            }
+            Assert.That(Cards.StanceStandsAlone(StanceCard("pure")), Is.True);
+        }
+
+        [Test]
+        public void FoldingCountsACardAsOneAttribute_AttackThenGuardThenSkill()
+        {
+            var dual = new Face(Power: 6, Guard: 4);
+            var guardSkill = new Face(Guard: 4, Statuses: new[] { new StatusGrant(StatusKind.Regen, 1, OnSelf: true) });
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(AttributeRule.Fold(BattleAttribute.Attack | BattleAttribute.Guard, dual), Is.EqualTo(BattleAttribute.Attack));
+                Assert.That(AttributeRule.Fold(BattleAttribute.Attack | BattleAttribute.Skill, dual), Is.EqualTo(BattleAttribute.Attack));
+                Assert.That(AttributeRule.Fold(BattleAttribute.Guard | BattleAttribute.Skill, guardSkill), Is.EqualTo(BattleAttribute.Guard));
+                Assert.That(AttributeRule.Fold(BattleAttribute.Skill, guardSkill), Is.EqualTo(BattleAttribute.Skill));
+                Assert.That(AttributeRule.Fold(BattleAttribute.Attack | BattleAttribute.Guard | BattleAttribute.Skill, dual), Is.EqualTo(BattleAttribute.Attack));
+                Assert.That(AttributeRule.Fold(BattleAttribute.Stance, new Face()), Is.EqualTo(BattleAttribute.Stance));
+                // Movement only: a Guard makes it 防御, anything else makes it スキル (2026-09-28 の割り振り).
+                Assert.That(AttributeRule.Fold(BattleAttribute.None, new Face(Move: -2, Guard: 4)), Is.EqualTo(BattleAttribute.Guard));
+                Assert.That(AttributeRule.Fold(BattleAttribute.None, new Face(Move: 1, Draw: 1)), Is.EqualTo(BattleAttribute.Skill));
+                Assert.That(AttributeRule.Fold(BattleAttribute.None, new Face(Move: 2, StaminaGain: 1)), Is.EqualTo(BattleAttribute.Skill));
+                Assert.That(AttributeRule.Fold(BattleAttribute.None, new Face()), Is.EqualTo(BattleAttribute.None));
+            });
+        }
+
+        [Test]
+        public void TheEightyCards_FoldToThirtySixSixteenFourteenFourteen()
+        {
+            // #256's draft, worked out by the rule and not by hand: 攻撃 36 / 防御 16 / スキル 14 / スタンス 14.
+            var counts = CardCatalog.All.GroupBy(c => c.Attribute).ToDictionary(g => g.Key, g => g.Count());
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(CardCatalog.All, Has.Count.EqualTo(80));
+                Assert.That(counts[BattleAttribute.Attack], Is.EqualTo(36));
+                Assert.That(counts[BattleAttribute.Guard], Is.EqualTo(16));
+                Assert.That(counts[BattleAttribute.Skill], Is.EqualTo(14));
+                Assert.That(counts[BattleAttribute.Stance], Is.EqualTo(14));
+                Assert.That(counts.ContainsKey(BattleAttribute.None), Is.False, "no card folds to nothing");
             });
         }
 

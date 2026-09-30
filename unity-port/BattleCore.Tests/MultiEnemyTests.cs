@@ -184,7 +184,7 @@ namespace BattleCore.Tests
         {
             // §7.3 入れないマス: a is pushed two cells toward b's cell and stops one short.
             var shove = Fixtures.Card("shove", face: new Face(Push: 2, Reach: new Reach(0, 2)),
-                attributes: BattleAttribute.Attack | BattleAttribute.Move);
+                attributes: BattleAttribute.Attack);
             var s = Place(Battle(8, 3, new[] { E("a"), E("b") }, shove), 3, 5);
 
             var play = TurnLoop.PlayCard(s, InHand(s, "shove"), NoRng, target: 0);
