@@ -16,11 +16,46 @@ namespace BattleCore
 
         public static readonly OmenLabel RestLabel = new OmenLabel(OmenKind.Rest);
 
-        /// <summary>§6.1: every enemy branches three ways on the gap band at the moment the omen is decided.</summary>
-        public static IReadOnlyList<string> BranchFor(EnemyDef def, int gap)
+        /// <summary>
+        /// §6.1: every enemy branches three ways on the gap band at the moment the omen is decided.
+        /// <paramref name="active"/> is the boss's swapped tree (#50): a branch it names replaces the
+        /// base one, a band it leaves null keeps the base branch.
+        /// </summary>
+        public static IReadOnlyList<string> BranchFor(EnemyDef def, int gap, TreeSwitch? active = null)
         {
             if (def == null) throw new ArgumentNullException(nameof(def));
-            return def.Branch(gap.ToBand());
+            var band = gap.ToBand();
+            return active?.Branch(band) ?? def.Branch(band);
+        }
+
+        /// <summary>
+        /// #50 the hook: the switch that holds now, or null for the base tree. Of the switches that
+        /// hold the last in the enemy's list wins (a later stage overrides an earlier one), and one
+        /// that stops holding lets the base tree back, so this is asked at every omen decision.
+        /// </summary>
+        public static TreeSwitch? ActiveSwitch(EnemyDef def, AdaptationView view)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            if (view == null) throw new ArgumentNullException(nameof(view));
+            TreeSwitch? found = null;
+            if (def.Switches == null) return null;
+            foreach (var each in def.Switches)
+            {
+                if (each.Holds(view)) found = each;
+            }
+            return found;
+        }
+
+        /// <summary>The switch of this id, or null (also for a null id).</summary>
+        public static TreeSwitch? SwitchById(EnemyDef def, string? id)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            if (id == null || def.Switches == null) return null;
+            foreach (var each in def.Switches)
+            {
+                if (string.Equals(each.Id, id, StringComparison.Ordinal)) return each;
+            }
+            return null;
         }
 
         /// <summary>
@@ -35,9 +70,10 @@ namespace BattleCore
         /// a stance action is used once a battle and then leaves the tree (roster §1.2) — and, for
         /// the second action of an elite or a boss, the first one (roster §1.3).
         /// </summary>
-        public static EnemyActionDef? ChooseAction(EnemyDef def, int gap, int stamina, IReadOnlyCollection<string>? skip = null)
+        public static EnemyActionDef? ChooseAction(
+            EnemyDef def, int gap, int stamina, IReadOnlyCollection<string>? skip = null, TreeSwitch? active = null)
         {
-            foreach (var actionId in BranchFor(def, gap))
+            foreach (var actionId in BranchFor(def, gap, active))
             {
                 if (skip != null && Contains(skip, actionId)) continue;
                 var action = def.Actions[actionId];
@@ -56,16 +92,40 @@ namespace BattleCore
         }
 
         /// <summary>
-        /// §6: the one-step omen for the next action — 種別 + 狙うマス. An elite or a boss shows its
-        /// first action only; the second is chosen when it comes (the demo leaves out the two-step
-        /// omen of §17.6 F11).
+        /// §6: the omen for the next action — 種別 + 狙うマス. An elite or a boss shows a second step
+        /// beside it, <see cref="DecidePlan"/>.
         /// </summary>
-        public static Omen DecideOmen(EnemyDef def, int gap, int stamina, IReadOnlyCollection<string>? skip = null)
+        public static Omen DecideOmen(
+            EnemyDef def, int gap, int stamina, IReadOnlyCollection<string>? skip = null, TreeSwitch? active = null)
         {
-            var action = ChooseAction(def, gap, stamina, skip);
-            return action == null
-                ? new Omen(RestActionId, RestLabel)
-                : new Omen(action.Id, LabelOf(action));
+            var action = ChooseAction(def, gap, stamina, skip, active);
+            return OmenOf(action);
+        }
+
+        /// <summary>The omen an action carries, or the rest omen for none.</summary>
+        public static Omen OmenOf(EnemyActionDef? action) =>
+            action == null ? new Omen(RestActionId, RestLabel) : new Omen(action.Id, LabelOf(action));
+
+        /// <summary>
+        /// §9 step 12 / §17.6 F11 (#50): the 予定 of an elite or a boss — the action it would take
+        /// second, chosen from the tree as it stands now with the first action's cost already paid
+        /// and the first action out of the running (roster §1.3). Null when it takes only one action
+        /// a phase, or when the first omen is a rest (nothing follows a rest). It is not a commitment:
+        /// the tree is read again after the first action (<see cref="TurnLoop"/>), and a different
+        /// answer is a 予定変更.
+        /// </summary>
+        public static Omen? DecidePlan(
+            EnemyDef def, int gap, int stamina, Omen first, IReadOnlyCollection<string>? skip = null, TreeSwitch? active = null)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            if (first == null) throw new ArgumentNullException(nameof(first));
+            if (def.ActionsPerPhase < 2 || first.ActionId == RestActionId) return null;
+
+            var firstAction = def.Actions[first.ActionId];
+            var second = new List<string>();
+            if (skip != null) second.AddRange(skip);
+            second.Add(first.ActionId);
+            return OmenOf(ChooseAction(def, gap, stamina - firstAction.Cost, second, active));
         }
 
         /// <summary>
