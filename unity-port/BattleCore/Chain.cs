@@ -81,6 +81,39 @@ namespace BattleCore
             return new BattleTally("", last.Result, turns, last.HpLeft, last.MaxHp, played, attributes, fired);
         }
 
+        // ---- 瘴気 across a chain (§12, #52) ----
+
+        /// <summary>§12: before each battle the gauge gains the layer's density × this many percent (濃度 1 なら 3%).</summary>
+        public const int MiasmaPerDensity = 3;
+
+        /// <summary>concept-v3 §6: 100% is 瘴気死. The chain keeps the gauge at or under it.</summary>
+        public const int MiasmaMax = 100;
+
+        /// <summary>concept-v3 §6: one point of max stamina per full 20%.</summary>
+        public const int MiasmaStepPercent = 20;
+
+        /// <summary>battle_core_v4 §13: the penalty stops at −4 (max stamina 6 at 80%).</summary>
+        public const int MiasmaMaxPenalty = 4;
+
+        /// <summary>§12: the gauge after one more battle's worth at this density, kept to 0..100.</summary>
+        public static int AccumulateMiasma(int percent, int density)
+        {
+            if (density < 0) throw new ArgumentOutOfRangeException(nameof(density), density, "A density is never negative.");
+            return Math.Min(MiasmaMax, Math.Max(0, percent) + density * MiasmaPerDensity);
+        }
+
+        /// <summary>
+        /// concept-v3 §6 / battle_core_v4 §1: the max stamina a battle starts from at this gauge —
+        /// BASE_MAX_STAMINA less 1 per full 20% (at most 4), kept to 3〜14. The same rule as the
+        /// exploration side's (DungeonCore.Miasma.MaxStamina with no temporary modifier).
+        /// </summary>
+        public static int MaxStaminaAt(int miasmaPercent)
+        {
+            int clamped = Math.Max(0, Math.Min(MiasmaMax - 1, miasmaPercent));
+            int penalty = Math.Min(MiasmaMaxPenalty, clamped / MiasmaStepPercent);
+            return Math.Max(3, Math.Min(14, Constants.BaseMaxStamina - penalty));
+        }
+
         /// <summary>The tally of one battle, from its final state and every event it emitted.</summary>
         public static BattleTally Tally(BattleState finished, IEnumerable<BattleEvent> events)
         {
