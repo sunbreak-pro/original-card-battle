@@ -105,6 +105,13 @@ namespace Depiction
         /// <summary>The one glyph on the tag at the unit's feet ("近" / "遠"). Required when <see cref="HasRange"/>.</summary>
         public string RangeGlyph = "";
         public List<StatusChip> Statuses = new List<StatusChip>();
+        /// <summary>
+        /// Whose art the figure wears (#288): the enemy's id, as the art folder is named
+        /// (<see cref="CharacterArt"/>). Empty, or an id with no art, keeps the placeholder silhouette.
+        /// </summary>
+        public string ArtId = "";
+        /// <summary>The unit has fallen and its figure is gone (battle_ui_ux_v2 §2.2 の 6). Set from the Defeat beat on.</summary>
+        public bool Down;
     }
 
     public sealed class OmenFrame
@@ -210,6 +217,8 @@ namespace Depiction
         TurnEnd,
         EnemyAction,
         NextOmen,
+        /// <summary>A unit falls (#288): the beat of its own that plays the 800 ms fall, after the blow's event.</summary>
+        Defeat,
     }
 
     public enum CueKind
@@ -239,6 +248,11 @@ namespace Depiction
         /// <see cref="Cue.Text"/> names the cause ("出血"). Unlike <see cref="Hit"/> it spends no omen.
         /// </summary>
         HpChange,
+        /// <summary>
+        /// The target falls (#288, battle_ui_ux_v2 §2.2 の 6): it tilts, sinks, darkens and is gone, and its
+        /// cell is empty. The frame after it carries <see cref="UnitFrame.Down"/>.
+        /// </summary>
+        Defeat,
     }
 
     /// <summary>

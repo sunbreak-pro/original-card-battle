@@ -175,6 +175,9 @@ namespace Depiction.View
             }
             ClearHand();
             if (enemyFigure) SnapHome(enemyFigure, _enemyHome);
+            // The last battle's effects were stopped mid-way: no flash, tilt or stretch is left over.
+            if (playerFigure) playerFigure.Settle();
+            if (enemyFigure) enemyFigure.Settle();
             _hoverHandle = -1;
             _snapHandle = -1;
             Trace = new EffectTrace(() => Time.unscaledTimeAsDouble);
@@ -430,8 +433,18 @@ namespace Depiction.View
                     SetHandInteractable(false);
                     // The moment the enemy does what it foretold: the omen flares beside its move.
                     StartCoroutine(Effect(EffectId.OmenExecute, omenBadge.Flare(_effects.Ms(EffectId.OmenExecute)), null));
-                    yield return Effect(EffectId.EnemyMotion, EnemyMotion(target, cue.System, _effects.Ms(EffectId.EnemyMotion)), null);
+                    yield return Effect(EffectId.EnemyMotion, EnemyMotion(target, cue.System, _effects.Ms(EffectId.EnemyMotion)),
+                        () => target.SetPose(FigurePose.Act));
                     break;
+
+                case CueKind.Defeat:
+                {
+                    // #288: the fallen enemy's omen goes with it (the frame after the beat keeps it hidden).
+                    float ms = _effects.Ms(EffectId.Defeat);
+                    if (cue.Target == UnitSide.Enemy && omenBadge) StartCoroutine(omenBadge.FadeOut(ms * 0.5f));
+                    yield return Effect(EffectId.Defeat, target.Fall(ms), () => target.SetDown(true));
+                    break;
+                }
 
                 case CueKind.SideBonusMiss:
                     yield return Effect(EffectId.SideBonusMiss, StrikeOffBonus(cue), omenBadge.StrikeSideNow);
@@ -462,7 +475,7 @@ namespace Depiction.View
                 {
                     bool strong = EffectStrength.IsStrong(cue.Intensity);
                     FloatEffect(EffectId.DamageNumber, numberAt, cue.Amount.ToString(), BattleTheme.Omen, DepictionFx.NumberFont(cue.Intensity));
-                    StartCoroutine(Effect(EffectId.HitFlash, DepictionFx.Flash(target.body, BattleTheme.Omen, _effects.Ms(EffectId.HitFlash)), null));
+                    StartCoroutine(Effect(EffectId.HitFlash, target.Flash(BattleTheme.Omen, _effects.Ms(EffectId.HitFlash)), null));
                     StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
                     if (strong) StartCoroutine(Effect(EffectId.ScreenShake, ShakeArena(), null));
                     yield return DrainHp(status, cue.HpAfter);
@@ -491,7 +504,10 @@ namespace Depiction.View
             bool strong = EffectStrength.IsStrong(cue.Intensity);
             FigureView attacker = byPlayer ? playerFigure : enemyFigure;
             Vector2 attackerHome = attacker.Rect.anchoredPosition;
-            if (byPlayer) yield return Effect(EffectId.AttackLunge, Lunge(attacker, 46f, _effects.Ms(EffectId.AttackLunge)), null);
+            // #288: both sides step in before the blow. The enemy draws back with EnemyReturn once the
+            // blow has landed, or beside the next event when Guard took all of it.
+            EffectId lunge = byPlayer ? EffectId.AttackLunge : EffectId.EnemyLunge;
+            yield return Effect(lunge, Lunge(attacker, 46f, _effects.Ms(lunge)), () => attacker.SetPose(FigurePose.Act));
             Color streak = byPlayer ? BattleTheme.Ink : BattleTheme.Omen;
             yield return Effect(EffectId.StrikeShape,
                 DepictionFx.Strike(this, fxLayer, chest, streak, cue.Intensity, !byPlayer, cue.System, _effects.Ms(EffectId.StrikeShape)), null);
@@ -505,7 +521,7 @@ namespace Depiction.View
 
             DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Omen, 200f + 60f * cue.Intensity);
             FloatEffect(EffectId.DamageNumber, chest + new Vector2(0f, 40f), cue.Amount.ToString(), BattleTheme.Ink, DepictionFx.NumberFont(cue.Intensity));
-            StartCoroutine(Effect(EffectId.HitFlash, DepictionFx.Flash(target.body, BattleTheme.White, _effects.Ms(EffectId.HitFlash)), null));
+            StartCoroutine(Effect(EffectId.HitFlash, target.Flash(BattleTheme.White, _effects.Ms(EffectId.HitFlash)), null));
             StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
             yield return DrainHp(status, cue.HpAfter);
             yield return Gate(ev.Order + "-impact");
@@ -531,12 +547,14 @@ namespace Depiction.View
             RectTransform body = figure.body ? figure.body.rectTransform : null;
             // The player faces right and reels to the left; the enemy the other way round.
             float lean = (strong ? 12f : 7f) * (figure.side == UnitSide.Player ? 1f : -1f);
+            figure.SetPose(FigurePose.Hit);
             StartCoroutine(UiTween.Shake(figure.Rect, strong ? 20f : 10f, 3, ms));
             yield return UiTween.Run(ms, Ease.Out, t =>
             {
                 if (body) body.localRotation = Quaternion.Euler(0f, 0f, lean * Mathf.Sin(t * Mathf.PI));
             });
             if (body) body.localRotation = Quaternion.identity;
+            if (figure) figure.SetPose(FigurePose.Idle);
         }
 
         /// <summary>A strong blow shakes the whole arena (the parent of the figures).</summary>
@@ -549,19 +567,18 @@ namespace Depiction.View
 
         /// <summary>
         /// The enemy moves into its action, shaped by its system so the slice's four actions read apart
-        /// with the placeholder art alone: 払 swings across, 突 drives straight in, 打 shoves with its
-        /// weight, 盾 raises the haft; a step just steps. The lean stays until the enemy returns.
+        /// on one picture: 払 swings across, 突 drives straight in, 打 shoves with its weight, 盾 raises
+        /// the haft; a step just steps (EnemyMotionShape). The stretch is taken on the body's scale at
+        /// rest, so a mirrored silhouette stays facing the player (#288). The lean stays until the enemy returns.
         /// </summary>
         private IEnumerator EnemyMotion(FigureView figure, StrikeSystem system, float ms)
         {
             RectTransform body = figure.body ? figure.body.rectTransform : null;
             float toward = figure.side == UnitSide.Player ? 1f : -1f;
             Vector2 from = figure.Rect.anchoredPosition;
-            float reach = system == StrikeSystem.Thrust ? 90f
-                : system == StrikeSystem.Sweep ? 40f
-                : system == StrikeSystem.Strike ? 60f
-                : system == StrikeSystem.Shield ? 0f
-                : 70f;
+            float reach = EnemyMotionShape.Reach(system);
+            float homeX = figure.BodyHomeScale.x;
+            figure.SetPose(FigurePose.Act);
             yield return UiTween.Run(ms, Ease.Out, t =>
             {
                 if (!figure) return;
@@ -569,28 +586,22 @@ namespace Depiction.View
                 float rise = system == StrikeSystem.Shield ? 16f * bell : 0f;
                 figure.Rect.anchoredPosition = from + new Vector2(reach * toward * t, rise);
                 if (!body) return;
+                (float x, float y) = FigureFacing.During(homeX, system, bell);
+                body.localScale = new Vector3(x, y, 1f);
                 switch (system)
                 {
                     case StrikeSystem.Sweep: // wound back, then across
                         body.localRotation = Quaternion.Euler(0f, 0f, -toward * Mathf.Lerp(-18f, 14f, t) * bell);
-                        body.localScale = new Vector3(1f + 0.08f * bell, 1f, 1f);
-                        break;
-                    case StrikeSystem.Thrust: // the whole body stretched along the line
-                        body.localScale = new Vector3(1f + 0.14f * bell, 1f - 0.05f * bell, 1f);
                         break;
                     case StrikeSystem.Strike: // leaning its weight into the push
                         body.localRotation = Quaternion.Euler(0f, 0f, -toward * 10f * bell);
-                        body.localScale = new Vector3(1f + 0.12f * bell, 1f - 0.08f * bell, 1f);
-                        break;
-                    case StrikeSystem.Shield: // the haft stood up
-                        body.localScale = new Vector3(1f, 1f + 0.14f * bell, 1f);
                         break;
                 }
             });
             if (body)
             {
                 body.localRotation = Quaternion.identity;
-                body.localScale = Vector3.one;
+                body.localScale = figure.BodyHomeScale;
             }
         }
 
@@ -598,11 +609,14 @@ namespace Depiction.View
         {
             if (!figure) yield break;
             yield return UiTween.Move(figure.Rect, figure.Rect.anchoredPosition, home, ms, Ease.InOut);
+            if (figure) figure.SetPose(FigurePose.Idle);
         }
 
         private static void SnapHome(FigureView figure, Vector2 home)
         {
-            if (figure) figure.Rect.anchoredPosition = home;
+            if (!figure) return;
+            figure.Rect.anchoredPosition = home;
+            figure.SetPose(FigurePose.Idle);
         }
 
         private IEnumerator GainGuard(Cue cue, StatusBarView status, Vector2 chest, Vector2 numberAt)
@@ -720,6 +734,7 @@ namespace Depiction.View
             float direction = figure.side == UnitSide.Player ? 1f : -1f;
             Vector2 from = figure.Rect.anchoredPosition;
             Vector2 to = from + new Vector2(pixels * direction, 0f);
+            figure.SetPose(FigurePose.Act);
             yield return UiTween.Move(figure.Rect, from, to, ms, Ease.Out);
         }
 
@@ -856,6 +871,11 @@ namespace Depiction.View
         private void ApplyFrame(DepictionFrame frame)
         {
             if (cornerInfo) cornerInfo.Bind(frame.Corner);
+            // #288: the art is the script's to name; the figure looks it up and keeps it while the id stays.
+            playerFigure.ShowArt(frame.Player.ArtId);
+            enemyFigure.ShowArt(frame.Enemy.ArtId);
+            playerFigure.SetDown(frame.Player.Down);
+            enemyFigure.SetDown(frame.Enemy.Down);
             playerStatus.Bind(frame.Player);
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);
