@@ -152,8 +152,11 @@ namespace Depiction.View
                 UiKit.Button(_buttons, "ChooseEnemy", screen.ChooseEnemyLabel, () => _chooseEnemy(), BattleTheme.Accent, BattleTheme.InkBlack, 26,
                     new Vector2(0f, 0.52f), new Vector2(1f, 1f));
             }
-            UiKit.Button(_buttons, "Again", screen.AgainLabel, () => _again(), BattleTheme.Panel, BattleTheme.Ink, 26,
-                new Vector2(0f, 0f), new Vector2(0.49f, 0.44f));
+            if (screen.CanAgain)
+            {
+                UiKit.Button(_buttons, "Again", screen.AgainLabel, () => _again(), BattleTheme.Panel, BattleTheme.Ink, 26,
+                    new Vector2(0f, 0f), new Vector2(0.49f, 0.44f));
+            }
             UiKit.Button(_buttons, "BackToDeck", screen.BackLabel, () => _back(), BattleTheme.Panel, BattleTheme.Ink, 26,
                 new Vector2(0.51f, 0f), new Vector2(1f, 0.44f));
             Visible = true;
