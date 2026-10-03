@@ -52,6 +52,13 @@ namespace BattleCore.Tests
             return (state, events);
         }
 
+        /// <summary>A battle on this setup, ended at once with this result, HP and stamina.</summary>
+        private static BattleState Ended(BattleSetup setup, GameResult result, int hp, int stamina)
+        {
+            var state = TurnLoop.Start(setup, new SeededRng(1)).State;
+            return state with { Player = state.Player with { Hp = hp, Stamina = stamina }, Result = result };
+        }
+
         private static ChainRun FightNext(ChainRun run, IRng rng, out BattleSetup setup, out BattleState finished)
         {
             setup = run.NextSetup(PrototypeDeck.Build());
@@ -96,6 +103,8 @@ namespace BattleCore.Tests
                 Assert.That(() => ChainOrder.Parse("polearm_warped+shadow_hound+mist_archer+pack_alpha"),
                     Throws.ArgumentException, "ENEMIES_MAX 3");
                 Assert.That(() => ChainOrder.FromArgs(new[] { "-chain" }), Throws.ArgumentException);
+                Assert.That(() => ChainOrder.Parse("armored_warden+abyss_angler"), Throws.ArgumentException,
+                    "two size-2 enemies need 9 cells, wider than FIELD_CELLS_MAX 8");
             });
         }
 
@@ -137,19 +146,22 @@ namespace BattleCore.Tests
         [Test]
         public void TheRest_ChangesTheNextBattlesStartingHp()
         {
-            var run = FightNext(ChainRun.Start(), new SeededRng(5), out _, out var first);
-            Assume.That(first.Player.Hp, Is.LessThan(Constants.PlayerMaxHp - 1), "the first battle cost some HP");
+            // The first battle is won on HP 20 and stamina 4, set outright so the test does not lean on a seed.
+            var run = ChainRun.Start();
+            var first = Ended(run.NextSetup(PrototypeDeck.Build()), GameResult.Won, hp: 20, stamina: 4);
+            run = run.Finish(first, Array.Empty<BattleEvent>());
+            Assert.That(run.Stage, Is.EqualTo(ChainStage.BetweenBattles));
 
             var rested = run.GoOn(rest: true).NextSetup(PrototypeDeck.Build());
             var pressed = run.GoOn(rest: false).NextSetup(PrototypeDeck.Build());
 
             Assert.Multiple(() =>
             {
-                Assert.That(pressed.StartHp, Is.EqualTo(first.Player.Hp));
-                Assert.That(rested.StartHp, Is.EqualTo(Math.Min(Constants.PlayerMaxHp, first.Player.Hp + 15)), "HP 30% of 50");
+                Assert.That(pressed.StartHp, Is.EqualTo(20));
+                Assert.That(rested.StartHp, Is.EqualTo(35), "HP 30% of 50");
                 Assert.That(rested.StartHp, Is.GreaterThan(pressed.StartHp));
                 Assert.That(rested.StartStamina, Is.EqualTo(rested.PlayerMaxStamina), "stamina full");
-                Assert.That(pressed.StartStamina, Is.EqualTo(Math.Min(pressed.PlayerMaxStamina, first.Player.Stamina)));
+                Assert.That(pressed.StartStamina, Is.EqualTo(4));
             });
         }
 
@@ -182,6 +194,7 @@ namespace BattleCore.Tests
             Assert.That(run.NextSetup(PrototypeDeck.Build()).PlayerMaxStamina, Is.EqualTo(10), "9% before the first");
             run = FightNext(run, new SeededRng(5), out _, out _);
             Assert.That(run.MiasmaPercent, Is.EqualTo(9));
+            Assert.That(run.MiasmaForNext, Is.EqualTo(24), "between battles it reads the battle to come, not the one just won");
             run = run.GoOn(rest: true);
             Assert.Multiple(() =>
             {
@@ -189,6 +202,45 @@ namespace BattleCore.Tests
                 Assert.That(run.Layer, Is.EqualTo(6));
                 Assert.That(run.MiasmaForNext, Is.EqualTo(24));
                 Assert.That(run.NextSetup(PrototypeDeck.Build()).PlayerMaxStamina, Is.EqualTo(9));
+            });
+        }
+
+        [Test]
+        public void AGaugeReaching100_IsMiasmaDeath_AndEndsThePassLost()
+        {
+            // Five battles on layer 7 (濃度 7): 21 / 42 / 63 / 84, and the fifth would bring the gauge to 100%.
+            var run = ChainRun.Start(ChainOrder.Parse("polearm_warped@7,polearm_warped,polearm_warped,polearm_warped,polearm_warped"));
+            var gauges = new List<int>();
+            for (int i = 0; i < 4; i++)
+            {
+                if (run.Stage == ChainStage.BetweenBattles) run = run.GoOn(rest: true);
+                gauges.Add(run.MiasmaForNext);
+                run = run.Finish(Ended(run.NextSetup(PrototypeDeck.Build()), GameResult.Won, hp: 40, stamina: 5), Array.Empty<BattleEvent>());
+            }
+            var root = (Dictionary<string, object?>)MiniJson.Parse(ChainLog.ToJson(run, new DateTime(2026, 10, 4)))!;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(gauges, Is.EqualTo(new[] { 21, 42, 63, 84 }));
+                Assert.That(run.Stage, Is.EqualTo(ChainStage.Over), "no rest is offered: it would not lower the gauge");
+                Assert.That(run.DiedOfMiasma, Is.True, "100% is 瘴気死 (concept-v3 §6)");
+                Assert.That(run.AllWon, Is.False, "the pass ends lost");
+                Assert.That(run.MiasmaPercent, Is.EqualTo(Chain.MiasmaMax));
+                Assert.That(run.ThisPass, Has.Count.EqualTo(4), "the fifth battle is never fought");
+                Assert.That(run.ThisPass.Select(e => e.Tally.Result), Has.All.EqualTo(GameResult.Won));
+                Assert.That(() => run.GoOn(rest: true), Throws.InvalidOperationException);
+                Assert.That(() => run.NextSetup(PrototypeDeck.Build()), Throws.InvalidOperationException);
+                Assert.That(root["result"], Is.EqualTo("lost"));
+                Assert.That(root["miasmaDeath"], Is.EqualTo(true));
+                Assert.That(root["reachedBattle"], Is.EqualTo(4.0));
+            });
+
+            var again = run.Again();
+            Assert.Multiple(() =>
+            {
+                Assert.That(again.DiedOfMiasma, Is.False);
+                Assert.That(again.MiasmaPercent, Is.EqualTo(0));
+                Assert.That(again.MiasmaForNext, Is.EqualTo(21));
             });
         }
 
@@ -248,6 +300,7 @@ namespace BattleCore.Tests
                 Assert.That(root["format"], Is.EqualTo(ChainLog.Format));
                 Assert.That(root["writtenAt"], Is.EqualTo("2026-10-04T15:30:05"));
                 Assert.That(root["result"], Is.EqualTo("won"));
+                Assert.That(root["miasmaDeath"], Is.EqualTo(false));
                 Assert.That(root["reachedBattle"], Is.EqualTo(3.0), "何戦目");
                 Assert.That(((List<object?>)root["order"]!).Count, Is.EqualTo(3));
                 Assert.That(battles, Has.Count.EqualTo(3));

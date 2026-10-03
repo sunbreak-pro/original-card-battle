@@ -86,7 +86,10 @@ namespace BattleCore
         /// <summary>§12: before each battle the gauge gains the layer's density × this many percent (濃度 1 なら 3%).</summary>
         public const int MiasmaPerDensity = 3;
 
-        /// <summary>concept-v3 §6: 100% is 瘴気死. The chain keeps the gauge at or under it.</summary>
+        /// <summary>
+        /// concept-v3 §6: 100% is 瘴気死, the end of the life. The gauge never reads more; a chain
+        /// whose next battle would bring it here ends the pass lost (ChainRun.DiedOfMiasma).
+        /// </summary>
         public const int MiasmaMax = 100;
 
         /// <summary>concept-v3 §6: one point of max stamina per full 20%.</summary>

@@ -132,7 +132,14 @@ namespace BattleCore
                 {
                     throw new ArgumentException($"-chain \"{spec}\": at most {Constants.EnemiesMax} enemies a battle (§7.4).", nameof(spec));
                 }
-                battles.Add(new ChainBattle(ids, layer));
+                var battle = new ChainBattle(ids, layer);
+                if (battle.FieldCells > Constants.FieldCellsMax)
+                {
+                    throw new ArgumentException(
+                        $"-chain \"{spec}\": \"{part}\" needs {battle.FieldCells} cells to start at START_GAP, more than the line's {Constants.FieldCellsMax} (§7.1).",
+                        nameof(spec));
+                }
+                battles.Add(battle);
             }
             return battles;
         }
@@ -162,7 +169,10 @@ namespace BattleCore
         /// <summary>A battle was won and another follows: rest or go on (<see cref="ChainRun.GoOn"/>).</summary>
         BetweenBattles,
 
-        /// <summary>Lost, or the last battle won. <see cref="ChainRun.Again"/> runs the same order again.</summary>
+        /// <summary>
+        /// Lost, died of 瘴気 on the way to the next battle (<see cref="ChainRun.DiedOfMiasma"/>), or
+        /// the last battle won. <see cref="ChainRun.Again"/> runs the same order again.
+        /// </summary>
         Over,
     }
 
@@ -188,7 +198,9 @@ namespace BattleCore
     ///
     /// 瘴気: before each battle the gauge gains density × 3% (<see cref="Chain.AccumulateMiasma"/>),
     /// and the battle's max stamina is what the gauge leaves (<see cref="Chain.MaxStaminaAt"/>). The
-    /// rest adds none (階層間の休憩 does not accumulate).
+    /// rest adds none (階層間の休憩 does not accumulate). When the next battle's share would bring the
+    /// gauge to 100%, that is 瘴気死 (concept-v3 §6, the end of the life): the battle won is the
+    /// pass's last, the pass ends lost and <see cref="DiedOfMiasma"/> is set.
     /// </summary>
     public sealed record ChainRun(
         IReadOnlyList<ChainBattle> Order,
@@ -215,8 +227,25 @@ namespace BattleCore
         /// <summary>The layer the run stands on: the current battle's.</summary>
         public int Layer => Current.Layer;
 
-        /// <summary>The gauge the next battle is fought under: the carried gauge plus its layer's share.</summary>
-        public int MiasmaForNext => Chain.AccumulateMiasma(MiasmaPercent, Current.Density);
+        /// <summary>
+        /// The pass ended in 瘴気死: a battle was won, but the next one's share brought the gauge to
+        /// 100% (<see cref="Chain.MiasmaMax"/>). <see cref="MiasmaPercent"/> then reads 100.
+        /// </summary>
+        public bool DiedOfMiasma { get; init; }
+
+        /// <summary>
+        /// The gauge the next battle is fought under: the carried gauge plus its layer's share. At
+        /// <see cref="ChainStage.Ready"/> the next battle is <see cref="Current"/>; at
+        /// <see cref="ChainStage.BetweenBattles"/> (the rest not yet chosen) it is the one after the
+        /// battle just won. At <see cref="ChainStage.Over"/> there is no next battle and this reads
+        /// <see cref="MiasmaPercent"/>.
+        /// </summary>
+        public int MiasmaForNext => Stage switch
+        {
+            ChainStage.Ready => Chain.AccumulateMiasma(MiasmaPercent, Current.Density),
+            ChainStage.BetweenBattles => Chain.AccumulateMiasma(MiasmaPercent, Order[Index + 1].Density),
+            _ => MiasmaPercent,
+        };
 
         /// <summary>The battles of the pass being run, in order.</summary>
         public IReadOnlyList<ChainEntry> ThisPass
@@ -252,6 +281,7 @@ namespace BattleCore
         {
             if (deck == null) throw new ArgumentNullException(nameof(deck));
             if (Stage != ChainStage.Ready) throw new InvalidOperationException($"ChainRun: no battle is ready ({Stage}).");
+            if (MiasmaForNext >= Chain.MiasmaMax) throw new InvalidOperationException("ChainRun: the gauge is at 100%; that is 瘴気死, not a battle.");
             var defs = Current.Defs;
             var more = new List<EnemyDef>();
             for (int i = 1; i < defs.Count; i++) more.Add(defs[i]);
@@ -265,7 +295,9 @@ namespace BattleCore
 
         /// <summary>
         /// The battle set up by <see cref="NextSetup"/> has ended: log it and carry what carries. A
-        /// loss, or the last battle won, ends the pass.
+        /// loss, or the last battle won, ends the pass. So does a win after which the next battle's
+        /// share would bring the gauge to 100%: 瘴気死 (<see cref="DiedOfMiasma"/>). The rest would
+        /// not save it, since 階層間の休憩 does not lower the gauge.
         /// </summary>
         public ChainRun Finish(BattleState finished, IEnumerable<BattleEvent> events)
         {
@@ -285,13 +317,15 @@ namespace BattleCore
             var log = new List<ChainEntry>(Log) { entry };
             var (hp, stamina) = Chain.Carry(finished);
             bool more = tally.Result == GameResult.Won && Index + 1 < Order.Count;
+            bool died = more && Chain.AccumulateMiasma(miasma, Order[Index + 1].Density) >= Chain.MiasmaMax;
             return this with
             {
-                Stage = more ? ChainStage.BetweenBattles : ChainStage.Over,
+                Stage = more && !died ? ChainStage.BetweenBattles : ChainStage.Over,
                 CarriedHp = hp,
                 CarriedStamina = stamina,
-                MiasmaPercent = miasma,
+                MiasmaPercent = died ? Chain.MiasmaMax : miasma,
                 RestedBeforeNext = false,
+                DiedOfMiasma = died,
                 Log = log,
             };
         }
@@ -332,6 +366,7 @@ namespace BattleCore
                 CarriedStamina = null,
                 MiasmaPercent = 0,
                 RestedBeforeNext = false,
+                DiedOfMiasma = false,
             };
         }
     }
@@ -375,6 +410,7 @@ namespace BattleCore
             var pass = run.ThisPass;
             Field(sb, 1, "passes", Num(run.Pass));
             Field(sb, 1, "result", Str(run.AllWon ? "won" : run.Stage == ChainStage.Over ? "lost" : "ongoing"));
+            Field(sb, 1, "miasmaDeath", run.DiedOfMiasma ? "true" : "false");
             Field(sb, 1, "reachedBattle", Num(pass.Count == 0 ? 0 : pass[pass.Count - 1].Battle));
 
             sb.Append("  \"battles\": [");
