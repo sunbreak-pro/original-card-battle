@@ -72,6 +72,7 @@ namespace Depiction.View
         private Image _flashMask;
         private Image _flashFill;
         private int _flashes;
+        private bool _falling;
 
         private void Awake()
         {
@@ -104,6 +105,7 @@ namespace Depiction.View
         public void SetPose(FigurePose pose)
         {
             if (_art == null || !body) return;
+            if (_falling && pose != FigurePose.Down) return; // a recoil still ending must not stand the fallen back up
             Sprite sprite = _art.For(pose);
             if (sprite != null && body.sprite != sprite) body.sprite = sprite;
         }
@@ -158,10 +160,14 @@ namespace Depiction.View
                 yield break;
             }
             Image fill = FlashFill();
-            _flashMask.sprite = body.sprite; // follows the pose being worn
             _flashMask.gameObject.SetActive(true);
             _flashes++;
-            yield return UiTween.Run(ms, Ease.Out, t => { if (fill) fill.color = BattleTheme.WithAlpha(color, 0.85f * (1f - t)); });
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                // The recoil swaps in the hit picture after the flash starts: the cut follows the picture worn.
+                if (_flashMask && body && _flashMask.sprite != body.sprite) _flashMask.sprite = body.sprite;
+                if (fill) fill.color = BattleTheme.WithAlpha(color, 0.85f * (1f - t));
+            });
             _flashes--;
             if (_flashes <= 0 && _flashMask) _flashMask.gameObject.SetActive(false);
         }
@@ -192,11 +198,17 @@ namespace Depiction.View
         /// </summary>
         public IEnumerator Fall(float ms)
         {
+            // The killing blow's flash and recoil may still be running (they run beside the flow): the
+            // fall starts from the body at rest, not from a tint or a lean caught half-way.
+            _flashes = 0;
+            if (_flashMask) _flashMask.gameObject.SetActive(false);
+            RestBody();
+            _falling = true;
             SetPose(FigurePose.Down);
             RectTransform rt = Rect;
             CanvasGroup group = UiKit.Group(rt);
             Vector2 from = rt.anchoredPosition;
-            Color color = body ? body.color : Color.white;
+            Color color = BodyHomeColor;
             yield return UiTween.Run(ms, Ease.Linear, t =>
             {
                 if (!rt) return;
@@ -229,6 +241,7 @@ namespace Depiction.View
         /// </summary>
         public void Settle()
         {
+            _falling = false;
             _flashes = 0;
             if (_flashMask) _flashMask.gameObject.SetActive(false);
             Rect.localRotation = Quaternion.identity;

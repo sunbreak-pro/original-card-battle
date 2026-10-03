@@ -345,6 +345,10 @@ namespace Depiction.View
             {
                 StartCoroutine(Effect(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome)));
             }
+            // A move that ends where it began (盾 reaches 0) never returns, and a blow Guard took part of
+            // skips the player's return: neither may keep its action picture into the next event.
+            else if (enemyFigure) enemyFigure.SetPose(FigurePose.Idle);
+            if (playerFigure) playerFigure.SetPose(FigurePose.Idle);
             ApplyFrame(ev.After);
             float seconds = Time.unscaledTime - startedAt;
             EventSeconds.Add(seconds);
@@ -440,9 +444,11 @@ namespace Depiction.View
                 case CueKind.Defeat:
                 {
                     // #288: the fallen enemy's omen goes with it (the frame after the beat keeps it hidden).
-                    float ms = _effects.Ms(EffectId.Defeat);
-                    if (cue.Target == UnitSide.Enemy && omenBadge) StartCoroutine(omenBadge.FadeOut(ms * 0.5f));
-                    yield return Effect(EffectId.Defeat, target.Fall(ms), () => target.SetDown(true));
+                    if (cue.Target == UnitSide.Enemy && omenBadge)
+                    {
+                        StartCoroutine(Effect(EffectId.OmenSpend, omenBadge.FadeOut(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideNow));
+                    }
+                    yield return Effect(EffectId.Defeat, target.Fall(_effects.Ms(EffectId.Defeat)), () => target.SetDown(true));
                     break;
                 }
 
