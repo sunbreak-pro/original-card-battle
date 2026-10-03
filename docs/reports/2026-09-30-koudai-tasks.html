@@ -252,16 +252,18 @@
   <h2>6. Krita で立ち絵の候補を出す（#82）</h2>
   <div class="task">
     <h3><span class="chip later">時間があるとき</span>錆槍の竜兵の候補を 8〜16 枚出して、2〜3 枚を選びます</h3>
-    <p class="meta">絵を選ぶのと Krita を触るのはこうだいさん、指示文と絞り込みは Claude の担当です。1 枚はおよそ 21 秒なので、16 枚でも生成は 6 分ほどです。</p>
+    <p class="meta">絵を選ぶのと Krita を触るのはこうだいさん、指示文と絞り込みは Claude の担当です。1 枚はおよそ 20 秒です（9/30 にこうだいさんが 1 枚で実測）。16 枚でも生成は 6 分ほどです。</p>
     <ol>
       <li>Krita を開き、右側の AI Image Generation の歯車（設定）を開きます。「Prompt translation」を <strong>Disabled</strong> にします。日本語への翻訳が入ったままだと、英語の指示文が壊れるためです。</li>
       <li>新しい文書を <strong>幅 640 × 高さ 1536</strong> で作ります。#82 の本文は 1024 × 1536 ですが、9/23 に仕様カードで 640 × 1536 に直しました。</li>
       <li>スタイルを <code>card-battle Animagine</code> にします。</li>
       <li>指示文の欄に下の「指示文」を、負の指示文の欄に「負の指示文」を貼ります。</li>
-      <li>生成回数を 4 にして、Generate を 2〜4 回押します。スマホのストップウォッチで、押してから全部出るまでの時間を測ってください。</li>
+      <li>「Generate」ボタンの<strong>すぐ右にある小さなアイコンのボタン</strong>（待ち行列のボタン）を押します。小さな窓が開き、「Jobs」の下に「Batches」のつまみがあります。つまみを <strong>4</strong> にします。1 回 Generate を押すと、1 枚ずつ 4 回続けて作るようになります。</li>
+      <li>Generate を 2〜4 回押すと、8〜16 枚が順に出ます。待っている間は別の作業をしていて大丈夫です。</li>
       <li>気に入った 2〜3 枚を PNG で書き出し、置いた場所を main のチャットに伝えます。左向きの絵は、そのままで大丈夫です（採用するときに反転します）。</li>
       <li>かかった時間と、途中で落ちた回数を #82 にコメントします。</li>
     </ol>
+    <div class="callout"><strong>1 回で 1 枚しか出ないのは設定のせいです。</strong>こうだいさんの Krita は、設定（歯車）→ Performance の「Maximum Batch Size」が 1 になっています。これは「1 回に同時に作る枚数」で、上げると 1 枚あたりは速くなりますが、8 GB の GPU では 640 × 1536 を 2 枚以上同時に作るとメモリが足りなくなるおそれがあります。なので同時の枚数は 1 のまま、上の「Batches」で回数を増やすのをおすすめします。コンビニのレジを 1 台のまま、並ぶ人を増やすやり方です。</div>
     <div class="copyblock">
       <div class="bar"><span>指示文</span><button class="copy" type="button" data-target="krita-pos">コピー</button></div>
       <pre id="krita-pos">1other, solo, safe, full body, standing, from side, profile, monster, dragon horns, slit pupils, scales, brown scales, claws, dragon tail, holding polearm, polearm held upright, rust, shoulder armor, {torn clothes|torn cape|vambraces}, anime coloring, high contrast, limited palette, muted colors, brown theme, simple background, grey background</pre>
