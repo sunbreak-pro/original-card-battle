@@ -64,6 +64,9 @@ namespace Depiction
         /// <summary>The player steps toward the enemy before the blow.</summary>
         AttackLunge,
 
+        /// <summary>The enemy steps toward the player before its blow (#288); it draws back with EnemyReturn.</summary>
+        EnemyLunge,
+
         /// <summary>The blow's shape (Cue.System: arc, line, band, ripple) across the target.</summary>
         StrikeShape,
 
@@ -169,6 +172,9 @@ namespace Depiction
 
         /// <summary>The one card at the end: 勝ち or 負け.</summary>
         ResultCard,
+
+        /// <summary>A fallen unit tilts, sinks, darkens and is gone; its cell is left empty (#288).</summary>
+        Defeat,
     }
 
     /// <summary>
@@ -240,6 +246,7 @@ namespace Depiction
                 // #76: the waits are the slice's (the 2.0 s budget is already spent to 1990 ms by 牽制),
                 // and what the issue adds runs beside them.
                 new EffectSpec(EffectId.AttackLunge, 100f, 0f, blocking: true, "#76 踏み込み（§5.5 順 1 は 180。2.0 s の予算に合わせて 100）"),
+                new EffectSpec(EffectId.EnemyLunge, 100f, 0f, blocking: true, "#288 敵の踏み込み（§5.5 は自分 → 敵の左右反転。自分の踏み込みと同じ 100）"),
                 new EffectSpec(EffectId.StrikeShape, 120f, 0f, blocking: true, "#76 系統の形（§5.3。長さは系統で変えず 120）"),
                 new EffectSpec(EffectId.HitStop, 30f, 0f, blocking: true, "#76 ヒットストップ・通常（強弱 2 段の仮置き）"),
                 new EffectSpec(EffectId.HitStopStrong, 90f, 0f, blocking: true, "#76 ヒットストップ・強（強弱 2 段の仮置き）"),
@@ -277,6 +284,9 @@ namespace Depiction
                 new EffectSpec(EffectId.EnemyTurnBanner, 400f, 0f, blocking: true, "battle_ui_ux_v2 §5.13 順 5 敵の番のバナー"),
                 new EffectSpec(EffectId.StaminaRecover, 80f, 80f, blocking: true, "battle_ui_ux_v2 §5.1 順 3 回復ピップ 1 個ずつ 80 × n"),
                 new EffectSpec(EffectId.ResultCard, 400f, 0f, blocking: false, "battle_ui_ux_v2 §5.19 順 5 せり上がり（勝ち / 負けの 1 枚）"),
+
+                // #288: its own beat, so the blow that fells the enemy keeps its 2.0 s.
+                new EffectSpec(EffectId.Defeat, 800f, 0f, blocking: true, "battle_ui_ux_v2 §2.2 の 6 / §5.18 倒れ（800。薄れて消えるまでを含む）"),
             };
             var map = new Dictionary<EffectId, EffectSpec>();
             foreach (EffectSpec spec in list) map.Add(spec.Id, spec);
@@ -414,7 +424,7 @@ namespace Depiction
                 {
                     // A slash with no settled HP is the swing alone: the GuardBlock / Hit cues carry the rest.
                     bool byPlayer = cue.Source == UnitSide.Player;
-                    if (byPlayer) steps.Add(new EffectStep(EffectId.AttackLunge, 1));
+                    steps.Add(new EffectStep(byPlayer ? EffectId.AttackLunge : EffectId.EnemyLunge, 1));
                     steps.Add(new EffectStep(EffectId.StrikeShape, 1));
                     steps.Add(new EffectStep(EffectStrength.IsStrong(cue.Intensity) ? EffectId.HitStopStrong : EffectId.HitStop, 1));
                     if (cue.HpAfter != Cue.Unchanged)
@@ -457,6 +467,9 @@ namespace Depiction
                 case CueKind.HpChange:
                     // The number rises beside it; the bar is what is waited for (#188).
                     steps.Add(new EffectStep(EffectId.HpDrain, 1));
+                    break;
+                case CueKind.Defeat:
+                    steps.Add(new EffectStep(EffectId.Defeat, 1));
                     break;
                 case CueKind.GuardReset:
                     break; // settles with the frame

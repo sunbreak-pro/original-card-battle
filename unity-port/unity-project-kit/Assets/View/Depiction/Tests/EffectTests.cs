@@ -95,7 +95,7 @@ namespace Depiction.Tests
             }));
             Assert.That(EffectPlan.BlockingMs(direct, EffectSwitches.AllOn()), Is.EqualTo(160f + 100f + 120f + 90f + 300f + 120f));
 
-            // An enemy blow: the swing alone, then the shield and the wound, then it draws back.
+            // An enemy blow: it steps in (#288), swings, then the shield and the wound, then it draws back.
             var enemy = new DepictionEvent { Kind = DepictionEventKind.EnemyAction, After = new DepictionFrame() };
             enemy.Cues.Add(new Cue { Kind = CueKind.EnemyWindup, Target = UnitSide.Enemy, System = StrikeSystem.Strike });
             enemy.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Enemy, Target = UnitSide.Player, Intensity = 1 });
@@ -103,9 +103,20 @@ namespace Depiction.Tests
             enemy.Cues.Add(new Cue { Kind = CueKind.Hit, Target = UnitSide.Player, Amount = 5, Intensity = 1, HpAfter = 45 });
             Assert.That(Steps(enemy), Is.EqualTo(new[]
             {
-                (EffectId.EnemyMotion, 1), (EffectId.StrikeShape, 1), (EffectId.HitStop, 1), (EffectId.GuardBlock, 1),
-                (EffectId.HpDrain, 1), (EffectId.OmenSpend, 1), (EffectId.EnemyReturn, 1),
+                (EffectId.EnemyMotion, 1), (EffectId.EnemyLunge, 1), (EffectId.StrikeShape, 1), (EffectId.HitStop, 1),
+                (EffectId.GuardBlock, 1), (EffectId.HpDrain, 1), (EffectId.OmenSpend, 1), (EffectId.EnemyReturn, 1),
             }));
+            Assert.That(EffectPlan.BlockingMs(enemy, EffectSwitches.AllOn()), Is.EqualTo(220f + 100f + 120f + 30f + 320f + 300f + 200f + 140f));
+        }
+
+        [Test]
+        public void AFall_IsItsOwnBeat_OfEightHundredMs()
+        {
+            var fall = new DepictionEvent { Kind = DepictionEventKind.Defeat, After = new DepictionFrame() };
+            fall.Cues.Add(new Cue { Kind = CueKind.Defeat, Target = UnitSide.Enemy });
+            Assert.That(Steps(fall), Is.EqualTo(new[] { (EffectId.Defeat, 1) }));
+            Assert.That(EffectPlan.BlockingMs(fall, EffectSwitches.AllOn()), Is.EqualTo(800f));
+            Assert.That(EffectPlan.BlockingMs(fall, EffectSwitches.AllOff()), Is.EqualTo(0f), "switched off, the figure is gone at once");
         }
 
         // ---- Status and turn (#77) ----

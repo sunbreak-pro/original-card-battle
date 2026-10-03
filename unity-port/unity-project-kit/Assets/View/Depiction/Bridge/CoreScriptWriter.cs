@@ -23,6 +23,8 @@ namespace Depiction.Bridge
             public int StaminaMax;
             public int Cell;
             public int Size;
+            /// <summary>The unit's fall has been written (#288); the frames from its Defeat beat on show it gone.</summary>
+            public bool Down;
             public readonly SortedDictionary<StatusKind, int> Statuses = new SortedDictionary<StatusKind, int>();
 
             /// <summary>§4 (v4.4): the name of each stance on the list of permanent effects, in the order they were put on; a repeat is listed again.</summary>
@@ -37,6 +39,7 @@ namespace Depiction.Bridge
                 StaminaMax = unit.MaxStamina;
                 Cell = unit.Cell;
                 Size = unit.Size;
+                Down = false;
                 Statuses.Clear();
                 foreach (StatusKind kind in unit.Statuses.Kinds) Statuses[kind] = unit.Statuses.Stacks(kind);
                 Stances.Clear();
@@ -84,6 +87,9 @@ namespace Depiction.Bridge
 
         /// <summary>The enemy's 構え, held back so it plays with the next omen and not inside the attack (see <see cref="Write"/>).</summary>
         private ReserveChecked _enemyReserveHeld;
+
+        /// <summary>The core said the enemy fell (EnemyDefeated, or BattleEnded won) in the move being written; its fall is written last (#288).</summary>
+        private bool _enemyFalls;
 
         /// <summary>§7.2: N as the two models stand now.</summary>
         private int Gap => _enemy.Cell - (_player.Cell + _player.Size - 1) - 1;
@@ -156,7 +162,22 @@ namespace Depiction.Bridge
             // battle ended and no omen follows — the enemy's own action.
             if (current != null) FlushHeldReserve(current);
             Close(current, after);
+
+            // #288: the fall is a beat of its own after everything the move did, so the 800 ms never
+            // lengthens the blow's event past its 2.0 s, and the figure stays up until it plays.
+            if (_enemyFalls) written.Add(WriteFall(after));
             return written;
+        }
+
+        private DepictionEvent WriteFall(BattleState after)
+        {
+            _enemyFalls = false;
+            _enemy.Down = true;
+            _omenVisible = false; // a fallen enemy takes its omen with it (TurnLoop.OnFall)
+            DepictionEvent ev = NewEvent(DepictionEventKind.Defeat, "倒れ");
+            ev.Cues.Add(new Cue { Kind = CueKind.Defeat, Target = UnitSide.Enemy });
+            Close(ev, after);
+            return ev;
         }
 
         // ---- where a screen event begins ----------------------------------------------------
@@ -431,6 +452,16 @@ namespace Depiction.Bridge
                     Unit(set.Actor).Stances.Add(set.Name);
                     ev.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = CoreText.Side(set.Actor), Text = "構え・" + set.Name });
                     break;
+
+                // #288: an enemy that falls with others standing is EnemyDefeated; the last one to fall
+                // ends the battle instead (TurnLoop.OnFall), and BattleEnded is all that says so.
+                case EnemyDefeated fell when fell.Unit == 0:
+                    _enemyFalls = true;
+                    break;
+
+                case BattleEnded ended when ended.Result == GameResult.Won:
+                    _enemyFalls = true;
+                    break;
             }
 
             // The omen is spent once the enemy has acted on it (or rested through it).
@@ -662,6 +693,8 @@ namespace Depiction.Bridge
                 Enemy = UnitOf(_enemy, showStamina: false, gap: null),
                 Omen = WithPlan(_omenVisible ? OmenFrameOf(after) : new OmenFrame { Visible = false }),
             };
+            // #288: the figure wears the art filed under the enemy's id; the View only looks it up.
+            frame.Enemy.ArtId = _enemyDef.Id;
             foreach (CardInstance card in _hand)
             {
                 frame.Hand.Add(CoreText.Face(card, TurnLoop.Preview(after, card.InstanceId),
@@ -716,7 +749,7 @@ namespace Depiction.Bridge
             {
                 Hp = unit.Hp, HpMax = unit.HpMax, Guard = unit.Guard,
                 ShowStamina = showStamina, Stamina = unit.Stamina, StaminaMax = unit.StaminaMax,
-                HasRange = gap.HasValue,
+                HasRange = gap.HasValue, Down = unit.Down,
             };
             if (gap.HasValue)
             {
