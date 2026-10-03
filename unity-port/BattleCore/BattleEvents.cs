@@ -137,6 +137,13 @@ namespace BattleCore
         public bool ByStance { get; init; }
     }
 
+    /// <summary>
+    /// §5 俊敏 (#48): the holder takes its free cell, +1 forward or −1 back. What the line made of it
+    /// follows as a <see cref="CellsMoved"/> (or a <see cref="MoveBlocked"/> under 鈍足, or nothing
+    /// when the line stops it), exactly as for a move face.
+    /// </summary>
+    public sealed record FreeStepTaken(Actor Actor, int Direction) : BattleEvent(Actor);
+
     /// <summary>§5 鈍足: the holder's move, push or pull was shortened to 0 cells and so did not happen.</summary>
     public sealed record MoveBlocked(Actor Actor, StatusKind By) : BattleEvent(Actor);
 
