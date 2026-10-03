@@ -110,6 +110,9 @@ namespace BattleCore
 
         /// <summary>§7.4: the card aims at one enemy and the one named is not a standing enemy.</summary>
         NoSuchTarget,
+
+        /// <summary>roster §4.1 呪縛 (#51): the player is bound and the card is one of movement only.</summary>
+        Bound,
     }
 
     /// <summary>
@@ -229,6 +232,12 @@ namespace BattleCore
             var card = FindInHand(state, instanceId);
             if (card == null) return PlayRefusal.NotInHand;
             if (!Combat.CanPay(CostNow(state, card.Def, target), state.Player.Stamina)) return PlayRefusal.NotEnoughStamina;
+
+            // roster §4.1 呪縛 (#51): 「移動が中心の札は使えない」.
+            if (state.Player.Statuses.Has(StatusKind.Binding) && AttributeRule.IsMovementCard(card.Def.Attributes, card.Def.Face))
+            {
+                return PlayRefusal.Bound;
+            }
 
             return AimRefusal(state, card.Def, target);
         }
@@ -397,8 +406,10 @@ namespace BattleCore
             copy = copy with { Player = copy.Player with { Played = null, Moved = false, FollowUp = 0 } };
             copy = OpenTurnFor(copy, Actor.Enemy, unit, enemy.Def.Recovery, events);
             if (!copy.Enemies[unit].Alive) return new OmenPreview(0, 0, Lands: false, Rests: true);
+            copy = Sway(copy, unit, events);
 
-            var action = EnemyAi.ActionToExecute(enemy.Def, enemy.Omen, copy.Enemies[unit].Body.Stamina);
+            var action = EnemyAi.ActionToExecute(
+                enemy.Def, enemy.Omen, copy.Enemies[unit].Body.Stamina, EnemyAi.SwitchById(enemy.Def, enemy.ActiveSwitch));
             if (action == null) return new OmenPreview(0, 0, Lands: false, Rests: true);
             if (!EnemyAi.IsOpponentDirected(action.Attributes, action.Face, action.Targets))
             {
@@ -421,7 +432,7 @@ namespace BattleCore
             events.Clear();
             Resolve(
                 copy, Actor.Enemy, unit, Array.Empty<int>(), action.Id, action.Name, action.Attributes,
-                action.Column, action.Face, TraitsOf(action.Trait), action.Targets, action.Cost,
+                action.Column, EnemyAi.FaceAt(action, copy.GapTo(unit)), TraitsOf(action.Trait), action.Targets, action.Cost,
                 EnemyContext(copy, unit, action), new SeededRng(0), events);
             var (total, damage) = Landed(events, Actor.Enemy, Actor.Player, unit);
             return new OmenPreview(total, damage, lands, Rests: false);
@@ -568,10 +579,13 @@ namespace BattleCore
             state = CheckReserve(state, Actor.Player, 0, events);
 
             // #50: what a boss's adaptation may count — the Guard held once 構え was judged, N, and a move.
+            // #51: and the cell it ended on (根張り) and how many cards it played (root_st).
             int nearest = state.Nearest;
             state = state with
             {
-                PlayerHistory = state.History.WithTurnEnd(new PlayerTurnEnd(state.Player.Guard, nearest < 0 ? 0 : state.GapTo(nearest), state.Player.Moved)),
+                PlayerHistory = state.History.WithTurnEnd(new PlayerTurnEnd(
+                    state.Player.Guard, nearest < 0 ? 0 : state.GapTo(nearest), state.Player.Moved,
+                    state.Player.Cell, state.Player.PlayedThisTurn.Count)),
             };
 
             // Step 8: the whole hand goes. Nothing is kept (§17.6 F2). playedAttributes and a 追撃
@@ -608,10 +622,13 @@ namespace BattleCore
                 return over ? CheckDefeat(state, Actor.Enemy, unit, events) : state;
             }
 
+            // #51 (roster §6.1 段階 3): a body that sways steps before it acts.
+            state = Sway(state, unit, events);
+
             // Step 10: the omen, as declared — or a rest when it cannot be paid for.
             var enemy = state.Enemies[unit];
-            var action = EnemyAi.ActionToExecute(enemy.Def, enemy.Omen!, enemy.Body.Stamina);
             var active = EnemyAi.SwitchById(enemy.Def, enemy.ActiveSwitch);
+            var action = EnemyAi.ActionToExecute(enemy.Def, enemy.Omen!, enemy.Body.Stamina, active);
             if (action == null)
             {
                 events.Add(new Rested(Actor.Enemy, enemy.Omen!) { Unit = unit });
@@ -631,6 +648,7 @@ namespace BattleCore
                 if (enemy.Def.ActionsPerPhase >= 2 && !Combat.IsDefeated(state.Player.Hp))
                 {
                     var skip = new List<string>(state.Enemies[unit].Spent) { action.Id };
+                    skip.AddRange(EnemyAi.Barred(enemy.Def, state.Player.Statuses, beforeFoeTurn: false));
                     var second = EnemyAi.ChooseAction(enemy.Def, state.GapTo(unit), state.Enemies[unit].Body.Stamina, skip, active);
                     state = RevisePlan(state, unit, EnemyAi.OmenOf(second), events);
                     if (second != null)
@@ -664,7 +682,8 @@ namespace BattleCore
             var context = EnemyContext(state, unit, action);
             state = Resolve(
                 state, Actor.Enemy, unit, Array.Empty<int>(), action.Id, action.Name, action.Attributes,
-                action.Column, action.Face, TraitsOf(action.Trait), action.Targets, action.Cost, context, rng, events);
+                action.Column, EnemyAi.FaceAt(action, state.GapTo(unit)), TraitsOf(action.Trait), action.Targets, action.Cost,
+                context, rng, events);
             fell = !state.Enemies[unit].Alive;
             var taken = new List<string>(state.Enemies[unit].ExecutedActions) { action.Id };
             state = state.WithUnit(unit, state.Enemies[unit] with { Executed = taken });
@@ -702,8 +721,10 @@ namespace BattleCore
 
             int fatigue = self.Statuses.Has(StatusKind.Fatigue) ? Constants.FatiguePenalty : 0;
             int stanceRecovery = firing.Sum(entry => entry.Def.Recovery);
+            // #51 (roster §5.1 深み, §6.2 枯らし): the boss words that thin the recovery, floor 0.
+            int withered = Statuses.RecoveryLoss(self.Statuses, adjacent: OwnGap(state, actor, unit) == 0 && state.Nearest >= 0);
             int staminaAfter = Combat.RecoverStamina(
-                self.Stamina, self.MaxStamina, recovery + stanceRecovery - fatigue, self.NextTurnRecoveryBonus);
+                self.Stamina, self.MaxStamina, recovery + stanceRecovery - fatigue - withered, self.NextTurnRecoveryBonus);
             events.Add(new StaminaRecovered(actor, staminaAfter - self.Stamina, staminaAfter, self.MaxStamina) { Unit = unit });
             self = self with { Stamina = staminaAfter, NextTurnRecoveryBonus = 0 };
 
@@ -726,6 +747,16 @@ namespace BattleCore
             {
                 int hpAfter = Math.Max(0, self.Hp - (bleed * Constants.BleedPerStack));
                 events.Add(new StatusHpChanged(actor, StatusKind.Bleed, hpAfter - self.Hp, hpAfter) { Unit = unit });
+                self = self with { Hp = hpAfter };
+            }
+
+            // #51 (roster §6.2 根張り): the player ended the last two turns on the same cell. Only the
+            // player's turns are kept in the history, and only a boss puts the word on the player.
+            int rooted = self.Statuses.Stacks(StatusKind.Rooting);
+            if (rooted > 0 && actor == Actor.Player && self.Hp > 0 && Statuses.StayedTwoTurns(state.History.TurnEnds))
+            {
+                int hpAfter = Math.Max(0, self.Hp - (rooted * Statuses.RootingHpPerStack));
+                events.Add(new StatusHpChanged(actor, StatusKind.Rooting, hpAfter - self.Hp, hpAfter) { Unit = unit });
                 self = self with { Hp = hpAfter };
             }
 
@@ -937,7 +968,7 @@ namespace BattleCore
                             foreach (var grant in face.StatusList)
                             {
                                 if (grant.OnSelf || grant.Stacks <= 0) continue;
-                                state = ApplyStatus(state, actor, foeSide, foe, foeSide == Actor.Enemy ? foe : unit, grant.Kind, grant.Stacks, events);
+                                state = ApplyStatus(state, actor, foeSide, foe, foeSide == Actor.Enemy ? foe : unit, grant.Kind, grant.Stacks, events, grant.Cap);
                             }
                         }
 
@@ -968,9 +999,22 @@ namespace BattleCore
                 // §7.3: 前へ / 後ろへ n, as far as the line allows. The mover's own 鈍足 takes one cell off.
                 self = Get(state, actor, unit);
                 int cells = Combat.CellsAfterSlow(Math.Abs(face.Move), self.Statuses);
-                if (cells == 0)
+                if (self.Statuses.Has(StatusKind.Binding))
+                {
+                    // #51 (roster §4.1 呪縛): the holder's own movement effect does not resolve at all.
+                    events.Add(new MoveBlocked(actor, StatusKind.Binding) { Unit = unit });
+                }
+                else if (cells == 0)
                 {
                     events.Add(new MoveBlocked(actor, StatusKind.Slow) { Unit = unit });
+                }
+                else if (face.Move < 0 && self.Statuses.Has(StatusKind.Hook))
+                {
+                    // #51 (roster §5.1 鉤爪): a move back that would go is stopped at 0 cells and spends
+                    // one stack. One that 鈍足 already stopped is not caught, and keeps the stack.
+                    state = Consume(state, actor, unit, StatusKind.Hook, events);
+                    events.Add(new MoveBlocked(actor, StatusKind.Hook) { Unit = unit });
+                    if (actor == Actor.Player) state = state with { PlayerHistory = state.History.WithHookSnag(state.Turn) };
                 }
                 else
                 {
@@ -1089,13 +1133,13 @@ namespace BattleCore
                 if (grant.Stacks <= 0) continue;
                 if (grant.OnSelf)
                 {
-                    state = ApplyStatus(state, actor, actor, unit, unit, grant.Kind, grant.Stacks, events);
+                    state = ApplyStatus(state, actor, actor, unit, unit, grant.Kind, grant.Stacks, events, grant.Cap);
                     continue;
                 }
                 foreach (int foe in hit)
                 {
                     if (foeSide == Actor.Enemy && !state.Enemies[foe].Alive) continue;
-                    state = ApplyStatus(state, actor, foeSide, foe, foeSide == Actor.Enemy ? foe : unit, grant.Kind, grant.Stacks, events);
+                    state = ApplyStatus(state, actor, foeSide, foe, foeSide == Actor.Enemy ? foe : unit, grant.Kind, grant.Stacks, events, grant.Cap);
                 }
             }
             if (face.StaminaGain > 0) state = GainStamina(state, actor, unit, face.StaminaGain, events);
@@ -1318,15 +1362,41 @@ namespace BattleCore
         /// not a refusal, so the event says how much was dropped instead.
         /// </summary>
         private static BattleState ApplyStatus(
-            BattleState state, Actor by, Actor target, int targetUnit, int eventUnit, StatusKind kind, int stacks, List<BattleEvent> events)
+            BattleState state, Actor by, Actor target, int targetUnit, int eventUnit, StatusKind kind, int stacks, List<BattleEvent> events,
+            int cap = 0)
         {
             int? limit = target == Actor.Player ? Constants.StatusKindsPlayer : (int?)null;
             var other = Get(state, target, targetUnit);
-            var after = other.Statuses.Add(kind, stacks, limit);
+            int before = other.Statuses.Stacks(kind);
+
+            // #51: a grant's own cap (the boss words, roster §4.1 / §5.1 / §6.2) drops what would go past
+            // it, the same way the turn-decay cap does; a word already at it takes nothing.
+            // giving is 0 only when the word is already held at the cap, so that is never a refusal.
+            int giving = cap > 0 ? Math.Min(stacks, Math.Max(0, cap - before)) : stacks;
+            var after = giving > 0 ? other.Statuses.Add(kind, giving, limit) : other.Statuses;
             bool refused = !after.Has(kind);
-            int dropped = refused ? 0 : stacks - (after.Stacks(kind) - other.Statuses.Stacks(kind));
+            int dropped = refused ? 0 : stacks - (after.Stacks(kind) - before);
             events.Add(new StatusApplied(by, target, kind, stacks, after.Stacks(kind), refused) { Unit = eventUnit, Dropped = dropped });
-            return Set(state, target, targetUnit, other with { Statuses = after });
+            state = Set(state, target, targetUnit, other with { Statuses = after });
+
+            // #51 (roster §6.4 root_sk): what the player has put on an enemy, counted by turn.
+            if (by == Actor.Player && target == Actor.Enemy && after.Stacks(kind) > before)
+            {
+                state = state with { PlayerHistory = state.History.WithInfliction(state.Turn) };
+            }
+
+            // #51 (battle_core_v4 §6.2 瘴気纏い): each stack lowers the holder's maximum stamina by 1, and
+            // what it holds is cut to the new maximum.
+            if (kind == StatusKind.MiasmaShroud && after.Stacks(kind) > before)
+            {
+                var holder = Get(state, target, targetUnit);
+                int lowered = after.Stacks(kind) - before;
+                int maxAfter = Math.Max(Constants.MaxStaminaFloor, holder.MaxStamina - lowered);
+                int staminaAfter = Math.Min(holder.Stamina, maxAfter);
+                events.Add(new MaxStaminaChanged(target, maxAfter - holder.MaxStamina, maxAfter, staminaAfter) { Unit = eventUnit });
+                state = Set(state, target, targetUnit, holder with { MaxStamina = maxAfter, Stamina = staminaAfter });
+            }
+            return state;
         }
 
         private static BattleState RecordPlayed(BattleState state, Actor actor, int unit, BattleAttribute attributes)
@@ -1405,29 +1475,99 @@ namespace BattleCore
             var enemy = state.Enemies[unit];
 
             // #50: the boss's tree is asked first. A switch that starts or stops holding is announced.
-            var active = EnemyAi.ActiveSwitch(enemy.Def, AdaptationViewOf(state, unit));
+            var view = AdaptationViewOf(state, unit);
+            var active = EnemyAi.ActiveSwitch(enemy.Def, view);
+
+            // #51: a switch holding for the first time this battle is remembered (a stage that never
+            // goes back reads it), and moves the body when it says so (EnterMove).
+            if (enemy.Def.Switches != null)
+            {
+                foreach (var each in enemy.Def.Switches)
+                {
+                    if (view.HasHeld(each.Id) || !each.Holds(view)) continue;
+                    var held = new List<string>(state.Enemies[unit].Held) { each.Id };
+                    state = state.WithUnit(unit, state.Enemies[unit] with { HeldSwitches = held });
+                    if (each.EnterMove != 0) state = MoveBySwitch(state, unit, each.EnterMove, events);
+                }
+                enemy = state.Enemies[unit];
+            }
+
             if (!string.Equals(active?.Id, enemy.ActiveSwitch, StringComparison.Ordinal))
             {
                 events.Add(new TreeSwitched(Actor.Enemy, enemy.ActiveSwitch, active?.Id) { Unit = unit });
+
+                // #51 (roster §6.4 root_sk): the switch that shakes off every word the enemy holds.
+                if (active != null && active.Cleanse)
+                {
+                    foreach (var kind in enemy.Body.Statuses.Kinds)
+                    {
+                        events.Add(new StatusCleared(Actor.Enemy, kind, enemy.Body.Statuses.Stacks(kind)) { Unit = unit });
+                    }
+                    state = state.WithEnemy(unit, enemy.Body with { Statuses = StatusSet.Empty });
+                    enemy = state.Enemies[unit];
+                }
             }
 
             int gap = state.GapTo(unit);
             int stamina = StaminaAtAction(enemy);
-            var omen = EnemyAi.DecideOmen(enemy.Def, gap, stamina, enemy.Spent, active);
+
+            // #51 (roster §4.3): an action the player's word keeps out, as it will stand after the
+            // player's next turn start, is passed over like a spent stance.
+            var skip = new List<string>(enemy.Spent);
+            skip.AddRange(EnemyAi.Barred(enemy.Def, state.Player.Statuses, beforeFoeTurn: true));
+            var omen = EnemyAi.DecideOmen(enemy.Def, gap, stamina, skip, active);
             events.Add(new OmenSet(Actor.Enemy, omen, Decided: true) { Unit = unit });
 
             // §17.6 F11 (#50): an elite or a boss shows its second step too, as a 予定.
-            var plan = EnemyAi.DecidePlan(enemy.Def, gap, stamina, omen, enemy.Spent, active);
+            var plan = EnemyAi.DecidePlan(enemy.Def, gap, stamina, omen, skip, active);
             if (plan != null) events.Add(new PlanSet(Actor.Enemy, plan, Decided: true) { Unit = unit });
 
             return state.WithUnit(unit, enemy with { Omen = omen, Plan = plan, ActiveSwitch = active?.Id });
         }
 
-        /// <summary>#50: what an adaptation of this enemy reads at this moment.</summary>
+        /// <summary>#50: what an adaptation of this enemy reads at this moment. #51 adds N and the switches that have held.</summary>
         private static AdaptationView AdaptationViewOf(BattleState state, int unit)
         {
             var enemy = state.Enemies[unit];
-            return new AdaptationView(state.Turn, enemy.Body.Hp, enemy.Body.MaxHp, enemy.ExecutedActions, state.History);
+            return new AdaptationView(
+                state.Turn, enemy.Body.Hp, enemy.Body.MaxHp, enemy.ExecutedActions, state.History,
+                state.GapTo(unit), enemy.Held);
+        }
+
+        /// <summary>
+        /// #51: the enemy moves itself because a switch says so — a stage's EnterMove, or a step of a
+        /// Sway. As far as the line allows, with no 鈍足 taken off (the roster's 「出られるだけ」 /
+        /// 「動けるだけ」). It is the enemy moving itself, so 根縛り fires on it as on a move face.
+        /// </summary>
+        private static BattleState MoveBySwitch(BattleState state, int unit, int cells, List<BattleEvent> events)
+        {
+            var shift = Field.Move(state, Actor.Enemy, cells, unit);
+            if (shift.To == shift.From) return state;
+            state = state.WithEnemy(unit, state.Enemies[unit].Body with { Cell = shift.To });
+            events.Add(new CellsMoved(Actor.Enemy, shift.From, shift.To, Pushed: false) { Unit = unit });
+            foreach (var bind in state.Player.StanceList)
+            {
+                if (bind.Def.Hook != StanceHook.BreakOnFoeMove || bind.Def.Break <= 0) continue;
+                events.Add(new StanceFired(Actor.Player, bind.Source, StanceHook.BreakOnFoeMove) { Unit = unit });
+                state = Break(state, Actor.Player, Actor.Enemy, unit, bind.Def.Break, unit, events);
+            }
+            return state;
+        }
+
+        /// <summary>
+        /// #51 (roster §6.1 段階 3): once a switch with Sway has held, the body steps at the start of
+        /// each of its phases — 前へ 1 on an odd turn, 後ろへ 1 on an even one — as far as it can.
+        /// </summary>
+        private static BattleState Sway(BattleState state, int unit, List<BattleEvent> events)
+        {
+            var enemy = state.Enemies[unit];
+            if (enemy.Def.Switches == null || enemy.Held.Count == 0) return state;
+            foreach (var each in enemy.Def.Switches)
+            {
+                if (!each.Sway || !enemy.Held.Contains(each.Id)) continue;
+                return MoveBySwitch(state, unit, state.Turn % 2 == 1 ? 1 : -1, events);
+            }
+            return state;
         }
 
         /// <summary>

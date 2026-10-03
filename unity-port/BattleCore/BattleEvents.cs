@@ -137,7 +137,11 @@ namespace BattleCore
         public bool ByStance { get; init; }
     }
 
-    /// <summary>§5 鈍足: the holder's move, push or pull was shortened to 0 cells and so did not happen.</summary>
+    /// <summary>
+    /// §5 鈍足: the holder's move, push or pull was shortened to 0 cells and so did not happen. #51:
+    /// By is 呪縛 when the holder is bound (no own move resolves) and 鉤爪 when a move back was
+    /// caught (one stack spent, StatusConsumed beside it).
+    /// </summary>
     public sealed record MoveBlocked(Actor Actor, StatusKind By) : BattleEvent(Actor);
 
     /// <summary>
@@ -213,6 +217,18 @@ namespace BattleCore
 
     /// <summary>Actor is the winner's side.</summary>
     public sealed record BattleEnded(Actor Actor, GameResult Result) : BattleEvent(Actor);
+
+    // ---- The boss-only words and the bosses' switches (#51) ----
+
+    /// <summary>
+    /// battle_core_v4 §6.2 瘴気纏い: Actor's maximum stamina moved by Amount (negative: lowered) to
+    /// MaxAfter, and the stamina held was cut to it (StaminaAfter). The one exception to a maximum
+    /// that never changes in battle.
+    /// </summary>
+    public sealed record MaxStaminaChanged(Actor Actor, int Amount, int MaxAfter, int StaminaAfter) : BattleEvent(Actor);
+
+    /// <summary>roster §6.4 root_sk: Actor shook off a word it held, all Stacks of it, when the switch that cleanses became active.</summary>
+    public sealed record StatusCleared(Actor Actor, StatusKind Kind, int Stacks) : BattleEvent(Actor);
 
     /// <summary>One move of the loop: the state it left and what happened on the way there.</summary>
     public sealed record StepResult(BattleState State, IReadOnlyList<BattleEvent> Events);

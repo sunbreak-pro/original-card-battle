@@ -7,9 +7,10 @@ using BattleCore;
 namespace BattleCore.Tests
 {
     /// <summary>
-    /// The eleven enemies of enemy_roster_v4.md v4.3 (#189): the roster's numbers and tree shapes,
-    /// the second action of elites and bosses (§1.3), the stance used once a battle (§1.2), the
-    /// two-blow face (§2.6), and every one of them fought to the end.
+    /// The thirteen enemies of enemy_roster_v4.md v4.6 (#189, #51): the roster's numbers and tree
+    /// shapes, the second action of elites and bosses (§1.3), the stance used once a battle (§1.2),
+    /// the two-blow face (§2.6), and every one of them fought to the end. The bosses' own words and
+    /// switches are BossStatusTests and BossSwitchTests.
     /// </summary>
     public class EnemyRosterTests
     {
@@ -30,14 +31,15 @@ namespace BattleCore.Tests
         // ---- The roster ----
 
         [Test]
-        public void TheRoster_HoldsElevenEnemies_InRosterOrder()
+        public void TheRoster_HoldsThirteenEnemies_InRosterOrder()
         {
+            // roster §1.8 (v4.6, #286): seven normal (§2.1〜§2.7), three elite (§3.1〜§3.3), three bosses.
             Assert.Multiple(() =>
             {
                 Assert.That(Enemies.All.Select(e => e.Id), Is.EqualTo(new[]
                 {
-                    "polearm_warped", "shadow_hound", "rusted_revenant", "crossbow_hunter", "mist_archer", "twin_blade_warped",
-                    "armored_warden", "pack_alpha",
+                    "polearm_warped", "shadow_hound", "rusted_revenant", "crossbow_hunter", "mist_archer", "twin_blade_warped", "polearm_crystal",
+                    "armored_warden", "pack_alpha", "polearm_unyielding",
                     "miasma_priest", "abyss_angler", "distortion_root",
                 }));
                 foreach (var enemy in Enemies.All) Assert.That(Enemies.ById(enemy.Id), Is.SameAs(enemy));
@@ -45,8 +47,8 @@ namespace BattleCore.Tests
             });
         }
 
-        [TestCase(EnemyRank.Normal, 6, 60, 100, 10, 2, 1)]
-        [TestCase(EnemyRank.Elite, 2, 110, 120, 12, 3, 2)]
+        [TestCase(EnemyRank.Normal, 7, 60, 100, 10, 2, 1)]
+        [TestCase(EnemyRank.Elite, 3, 110, 120, 12, 3, 2)]
         [TestCase(EnemyRank.Boss, 3, 140, 200, 14, 3, 2)]
         public void EachRank_KeepsToTheRosterScale(EnemyRank rank, int count, int hpMin, int hpMax, int stamina, int recovery, int actions)
         {
@@ -224,9 +226,9 @@ namespace BattleCore.Tests
         // ---- Faces the roster brought in ----
 
         [Test]
-        public void TheTwinSlash_LeavesFragileOnTheFirstBlow_ForTheSecond()
+        public void TheTwinSlash_StrikesSevenTwice_AndPutsNothingOnThePlayer()
         {
-            // roster §2.6: 6 × 2, 脆化 1 after the first blow, so the second is 9: 15 in all.
+            // roster §2.6 (v4.5, #257): 7 × 2 = 14, and no 脆化 between the blows (the multi-hit rule, #253).
             var enemy = Enemies.TwinBladeWarped;
             var setup = new BattleSetup(enemy, Fillers(20), BattleSetup.SliceFieldCells, StartGap: 0);
             var state = TurnLoop.Start(setup, NoShuffle).State;
@@ -238,10 +240,10 @@ namespace BattleCore.Tests
             var blows = end.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).ToList();
             Assert.Multiple(() =>
             {
-                Assert.That(blows.Select(b => b.Raw), Is.EqualTo(new[] { 6, 9 }));
-                Assert.That(end.State.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp - 15));
-                Assert.That(end.State.Player.Statuses.Has(StatusKind.Fragile), Is.False, "spent by the second blow");
-                AssertInOrder(end.Events, typeof(DamageDealt), typeof(StatusApplied), typeof(StatusConsumed), typeof(DamageDealt));
+                Assert.That(blows.Select(b => b.Raw), Is.EqualTo(new[] { 7, 7 }));
+                Assert.That(end.State.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp - 14));
+                Assert.That(end.Events.OfType<StatusApplied>().Where(a => a.Target == Actor.Player), Is.Empty);
+                Assert.That(enemy.Actions["twin_slash"].Face.StatusList, Is.Empty);
             });
         }
 
@@ -256,21 +258,21 @@ namespace BattleCore.Tests
             state = state.WithEnemy(state.Enemy with { Statuses = StatusSet.Of((StatusKind.Empower, 1)) });
             state = state with { Player = state.Player with { Guard = 0, Stamina = 0 } };
 
-            // No 脆化 on the player: 強化 takes the first blow, the 脆化 it leaves takes the second.
+            // No 脆化 on the player: 強化 takes both blows (7 × 1.5 → 11) and is spent once.
             var bare = TurnLoop.EndTurn(state, NoShuffle);
             // 脆化 2 on the player: 脆化 takes both blows, and 強化 waits for the next attack.
             var fragile = TurnLoop.EndTurn(state with { Player = state.Player with { Statuses = StatusSet.Of((StatusKind.Fragile, 2)) } }, NoShuffle);
 
             Assert.Multiple(() =>
             {
-                Assert.That(bare.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).Select(b => b.Raw), Is.EqualTo(new[] { 9, 9 }), "not 6 × 1.5 × 1.5 = 14 on the second");
+                Assert.That(bare.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).Select(b => b.Raw), Is.EqualTo(new[] { 11, 11 }));
                 Assert.That(bare.Events.OfType<StatusConsumed>().Count(c => c.Kind == StatusKind.Empower), Is.EqualTo(1));
                 Assert.That(bare.State.Enemy.Statuses.Has(StatusKind.Empower), Is.False);
 
-                Assert.That(fragile.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).Select(b => b.Raw), Is.EqualTo(new[] { 9, 9 }));
+                Assert.That(fragile.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).Select(b => b.Raw), Is.EqualTo(new[] { 11, 11 }));
                 Assert.That(fragile.Events.OfType<StatusConsumed>().Any(c => c.Kind == StatusKind.Empower), Is.False);
                 Assert.That(fragile.State.Enemy.Statuses.Stacks(StatusKind.Empower), Is.EqualTo(1));
-                Assert.That(fragile.State.Player.Statuses.Stacks(StatusKind.Fragile), Is.EqualTo(1), "2 − 1, + 1 from the first blow, − 1");
+                Assert.That(fragile.State.Player.Statuses.Has(StatusKind.Fragile), Is.False, "2 − 1 − 1");
             });
         }
 
@@ -291,18 +293,202 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheBossesStandIns_PutCommonWordsOnThePlayer()
+        public void TheBosses_PutTheirOwnWords_AndNoStandInIsLeft()
         {
-            // The demo's stand-ins for the boss-only statuses (roster §4.1 / §5.1 / §6.2).
+            // roster §4.1 / §5.1 / §6.2: each boss gives its two words, not the common word that stood in for them (#189).
             Assert.Multiple(() =>
             {
-                Assert.That(Enemies.MiasmaPriest.Actions["miasma_rite"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Fatigue, 1)));
-                Assert.That(Enemies.MiasmaPriest.Actions["binding_word"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Slow, 2)));
-                Assert.That(Enemies.AbyssAngler.Actions["hook_cast"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Slow, 2)));
-                Assert.That(Enemies.AbyssAngler.Actions["fathom_call"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Fatigue, 1)));
-                Assert.That(Enemies.DistortionRoot.Actions["root_grip"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Bleed, 1)));
-                Assert.That(Enemies.DistortionRoot.Actions["wither_breath"].Face.StatusList, Does.Contain(new StatusGrant(StatusKind.Fatigue, 3)));
-                Assert.That(Enemies.DistortionRoot.Actions["creeping_root"].Face.Push, Is.EqualTo(-1), "伸びる根 always pulls one");
+                Assert.That(Enemies.MiasmaPriest.Actions["miasma_rite"].Face.StatusList.Select(g => g.Kind), Is.EqualTo(new[] { StatusKind.MiasmaShroud, StatusKind.Regen }));
+                Assert.That(Enemies.MiasmaPriest.Actions["binding_word"].Face.StatusList, Is.EqualTo(new[] { new StatusGrant(StatusKind.Binding, 2), new StatusGrant(StatusKind.Intimidate, 1) }));
+                Assert.That(Enemies.AbyssAngler.Actions["hook_cast"].Face.StatusList.Select(g => g.Kind), Is.EqualTo(new[] { StatusKind.Hook }));
+                Assert.That(Enemies.AbyssAngler.Actions["fathom_call"].Face.StatusList.Select(g => g.Kind), Is.EqualTo(new[] { StatusKind.Depths, StatusKind.Regen }));
+                Assert.That(Enemies.AbyssAngler.Actions["drown"].Trait!.Watch, Is.EqualTo(StatusKind.Hook));
+                Assert.That(Enemies.DistortionRoot.Actions["root_grip"].Face.StatusList.Select(g => g.Kind), Is.EqualTo(new[] { StatusKind.Rooting, StatusKind.Regen }));
+                Assert.That(Enemies.DistortionRoot.Actions["wither_breath"].Face.StatusList.Select(g => (g.Kind, g.Stacks)),
+                    Is.EqualTo(new[] { (StatusKind.Withering, 1), (StatusKind.Fatigue, 1) }));
+                Assert.That(Enemies.DistortionRoot.Actions["sweep"].Trait!.Watch, Is.EqualTo(StatusKind.Rooting));
+
+                // Every boss word comes from a boss, and every boss gives exactly two of them (BOSS_STATUS_KINDS).
+                foreach (var enemy in Enemies.All)
+                {
+                    var words = enemy.Actions.Values.SelectMany(a => a.Face.StatusList).Where(g => Statuses.IsBossOnly(g.Kind)).Select(g => g.Kind).Distinct().ToList();
+                    Assert.That(words.Count, Is.EqualTo(enemy.Rank == EnemyRank.Boss ? Constants.BossStatusKinds : 0), enemy.Id);
+                }
+            });
+        }
+
+        // ---- v4.5 (#257): one attribute and one omen kind per action ----
+
+        /// <summary>
+        /// Each enemy's actions as the roster's tables write them: id → 属性 (A / G / Sk / St) and
+        /// 予兆 (攻 = 攻撃, 防 = 防御, 移 = 移動, 構 = 構え, 技 = 技).
+        /// </summary>
+        private static readonly Dictionary<string, string> RosterColumns = new Dictionary<string, string>
+        {
+            ["polearm_warped"] = "sweep:A:攻 shove:A:攻 reach_thrust:A:攻 guard_up:G:防 step_forward:G:移",
+            ["shadow_hound"] = "bite:A:攻 lunge_in:A:攻 dash:Sk:移 crouch:G:防",
+            ["rusted_revenant"] = "iron_body:St:構 heavy_swing:A:攻 press:A:攻 trudge:G:移",
+            ["crossbow_hunter"] = "bolt:A:攻 backstep:A:攻 kick_off:A:攻 brace:G:防",
+            ["mist_archer"] = "mist_arrow:A:攻 fade:G:防 scatter:A:攻",
+            ["twin_blade_warped"] = "twin_slash:A:攻 step_slash:A:攻 retreat_cut:A:攻 cross_guard:G:防 close_in:Sk:移",
+            ["polearm_crystal"] = "great_thrust:A:攻 crystal_rush:A:攻 recoil_thrust:A:攻 short_jab:A:攻 haft_guard:G:防",
+            ["armored_warden"] = "iron_wall:St:構 helm_splitter:A:攻 push_shield:A:攻 shield_bash:A:攻 advance_guard:G:防 brace:G:防",
+            ["pack_alpha"] = "hunt_stance:St:構 rend:A:攻 pounce:A:攻 herd:Sk:技 howl:Sk:技 crouch:G:防",
+            ["polearm_unyielding"] = "set_spear:St:構 long_thrust:A:攻 haft_shove:Sk:技 hook_in:Sk:技 plate_guard:G:防 clank_on:G:移",
+            ["miasma_priest"] = "ward:St:構 miasma_rite:Sk:技 staff_strike:A:攻 miasma_bolt:A:攻 push_back:A:攻 binding_word:Sk:技 coil:G:防",
+            ["abyss_angler"] = "hook_cast:A:攻 drown:A:攻 fathom_call:Sk:技 line_whip:A:攻 deep_water:St:構 reel_in:Sk:技 slack_line:G:防",
+            ["distortion_root"] = "sweep:A:攻 thorn_volley:A:攻 wither_breath:Sk:技 root_grip:Sk:技 twist:A:攻 bark:St:構 creeping_root:G:防",
+        };
+
+        [TestCaseSource(nameof(AllIds))]
+        public void EveryAction_CountsAsTheRostersAttribute_AndShowsItsOmenKind(string id)
+        {
+            var enemy = Enemies.ById(id);
+            var rows = RosterColumns[id].Split(' ').Select(row => row.Split(':')).ToList();
+            Assert.Multiple(() =>
+            {
+                Assert.That(enemy.Actions.Keys, Is.EquivalentTo(rows.Select(r => r[0])), id + ": the roster's actions, no more and no fewer");
+                foreach (var row in rows)
+                {
+                    var action = enemy.Actions[row[0]];
+                    var attribute = row[1] switch
+                    {
+                        "A" => BattleAttribute.Attack,
+                        "G" => BattleAttribute.Guard,
+                        "Sk" => BattleAttribute.Skill,
+                        _ => BattleAttribute.Stance,
+                    };
+                    var omen = row[2] switch
+                    {
+                        "攻" => OmenKind.Attack,
+                        "防" => OmenKind.Guard,
+                        "移" => OmenKind.Move,
+                        "構" => OmenKind.Stance,
+                        _ => OmenKind.Skill,
+                    };
+                    Assert.That(action.Attribute, Is.EqualTo(attribute), id + "." + row[0] + " 属性");
+                    Assert.That(EnemyAi.LabelOf(action).Kind, Is.EqualTo(omen), id + "." + row[0] + " 予兆");
+                }
+            });
+        }
+
+        // ---- v4.6 (#286): the two spear dragoons ----
+
+        [Test]
+        public void TheCrystalSpear_MovesItselfWithEveryBlow()
+        {
+            // roster §2.7: HP 90; the rush closes 2 from 2〜4 (+3 at 3+), the recoil thrust backs off 2 at 0.
+            var def = Enemies.PolearmCrystal;
+            Assert.Multiple(() =>
+            {
+                Assert.That((def.MaxHp, def.Rank, def.Size), Is.EqualTo((90, EnemyRank.Normal, 1)));
+                Assert.That(def.BranchAtGapZero, Is.EqualTo(new[] { "recoil_thrust", "short_jab", "haft_guard" }));
+                Assert.That(def.BranchAtGapOneToTwo, Is.EqualTo(new[] { "great_thrust", "short_jab", "haft_guard" }));
+                Assert.That(def.BranchAtGapThreePlus, Is.EqualTo(new[] { "crystal_rush", "haft_guard" }));
+                Assert.That((def.Actions["great_thrust"].Column, def.Actions["great_thrust"].Face.Power, def.Actions["great_thrust"].Face.ReachOrDefault), Is.EqualTo((3, 13, new Reach(1, 2))));
+                Assert.That((def.Actions["crystal_rush"].Face.Move, def.Actions["crystal_rush"].Face.ReachOrDefault), Is.EqualTo((2, new Reach(2, 4))));
+                Assert.That((def.Actions["recoil_thrust"].Face.Move, def.Actions["recoil_thrust"].Face.ReachOrDefault), Is.EqualTo((-2, Reach.Only(0))));
+                Assert.That(def.Actions.Values.Where(a => a.Face.Move != 0).All(a => a.Attributes == BattleAttribute.Attack), Is.True, "every move rides an attack");
+                Assert.That(def.Actions.Values.All(a => a.Face.Push == 0), Is.True, "it never moves the player");
+            });
+        }
+
+        [Test]
+        public void TheUnyieldingSpear_MovesThePlayer_ThenThrustsWithTheSkillsCombo()
+        {
+            // roster §3.3 典型: at gap 3, 穂先を据える → 穂で掛け寄せる (pull 2) leaves gap 1; the next
+            // phase, 長穂の突き 8 + 構え 3 = 11, then 甲で受ける.
+            var def = Enemies.PolearmUnyielding;
+            var state = TurnLoop.BeginPlayerTurn(TurnLoop.Start(new BattleSetup(def, Fillers(40), CellsFor(def)), NoShuffle).State, NoShuffle).State;
+            var first = TurnLoop.EndTurn(state, NoShuffle);
+            state = TurnLoop.BeginPlayerTurn(first.State, NoShuffle).State;
+            state = state with { Player = state.Player with { Guard = 0 } };
+            var second = TurnLoop.EndTurn(state, NoShuffle);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That((def.MaxHp, def.Rank, def.ActionsPerPhase), Is.EqualTo((120, EnemyRank.Elite, 2)));
+                Assert.That(first.Events.OfType<ActionExecuted>().Select(e => e.Action.Id), Is.EqualTo(new[] { "set_spear", "hook_in" }));
+                Assert.That(first.State.Gap, Is.EqualTo(1));
+                Assert.That(second.Events.OfType<ActionExecuted>().Select(e => e.Action.Id), Is.EqualTo(new[] { "long_thrust", "plate_guard" }));
+                Assert.That(second.Events.OfType<DamageDealt>().First(d => d.Target == Actor.Player).Raw, Is.EqualTo(11));
+                Assert.That(EnemyAi.LabelOf(def.Actions["haft_shove"]).Kind, Is.EqualTo(OmenKind.Skill), "予兆 技");
+                Assert.That(EnemyAi.LabelOf(def.Actions["hook_in"]).Kind, Is.EqualTo(OmenKind.Skill));
+                Assert.That(EnemyAi.LabelOf(def.Actions["clank_on"]).Kind, Is.EqualTo(OmenKind.Move), "予兆 移動");
+            });
+        }
+
+        // ---- The addendum of #196: what the far branch reaches ----
+
+        [TestCase("crossbow_hunter", "bolt", 2, 5)]
+        [TestCase("mist_archer", "mist_arrow", 2, 4)]
+        [TestCase("miasma_priest", "miasma_bolt", 1, 4)]
+        public void TheFarShot_ReachesWhatTheRosterSays(string enemy, string action, int min, int max)
+        {
+            // roster §2.4 / §2.5 / §4.2 (#196): 弩の一射 2〜5, 靄の矢 2〜4, 瘴気の矢 1〜4.
+            var def = Enemies.ById(enemy).Actions[action];
+            Assert.Multiple(() =>
+            {
+                Assert.That(def.Face.ReachOrDefault, Is.EqualTo(new Reach(min, max)));
+                Assert.That(EnemyAi.LabelOf(def).Reach, Is.EqualTo(new Reach(min, max)), "the omen aims at those cells");
+            });
+        }
+
+        [TestCase("crossbow_hunter", new[] { "kick_off", "brace" }, new[] { "backstep", "brace" }, new[] { "bolt", "brace" })]
+        [TestCase("mist_archer", new[] { "fade", "scatter" }, new[] { "fade", "scatter" }, new[] { "mist_arrow", "scatter" })]
+        [TestCase("miasma_priest", new[] { "push_back", "staff_strike", "coil" }, new[] { "miasma_bolt", "binding_word", "coil" },
+            new[] { "miasma_rite", "ward", "miasma_bolt", "coil" })]
+        public void TheBranches_AreTheRostersThree(string enemy, string[] zero, string[] oneToTwo, string[] threePlus)
+        {
+            // roster §2.4 / §2.5 / §4.3: the three base branches. セルク's 3+ holds 瘴気の矢 where 縛りの言葉 was (#196).
+            var def = Enemies.ById(enemy);
+            Assert.Multiple(() =>
+            {
+                Assert.That(def.BranchAtGapZero, Is.EqualTo(zero));
+                Assert.That(def.BranchAtGapOneToTwo, Is.EqualTo(oneToTwo));
+                Assert.That(def.BranchAtGapThreePlus, Is.EqualTo(threePlus));
+            });
+        }
+
+        [TestCase("crossbow_hunter", 4, "bolt")]
+        [TestCase("crossbow_hunter", 5, "bolt")]
+        [TestCase("mist_archer", 4, "mist_arrow")]
+        [TestCase("miasma_priest", 4, "miasma_rite")]
+        public void FromTheFarthestGap_TheFarBranchStillLands(string enemy, int gap, string first)
+        {
+            // roster §1.2 (#196): an enemy that never steps forward has something in its 3+ branch that
+            // reaches the farthest gap of its fields, so a player backed to cell 1 is still hit.
+            var def = Enemies.ById(enemy);
+            var action = EnemyAi.ChooseAction(def, gap, def.MaxStamina)!;
+            Assert.That(action.Id, Is.EqualTo(first));
+            Assert.That(def.BranchAtGapThreePlus.Select(id => def.Actions[id])
+                .Any(a => a.Attributes.HasFlag(BattleAttribute.Attack) && a.Face.ReachOrDefault.Contains(gap)), Is.True, "an attack lands at " + gap);
+        }
+
+        [Test]
+        public void TheBindingWord_IsNotTakenWhileBindingRemains_AndComesBackEveryOtherPhase()
+        {
+            // roster §4.3: 「縛りの言葉は、相手に呪縛が残っているフェーズには取りません。その枝の次の行動へ進みます」.
+            // At gap 2 the 1〜2 branch is 瘴気の矢 → 縛りの言葉. The player stays at gap 2 and does nothing.
+            var enemy = Enemies.MiasmaPriest;
+            var setup = new BattleSetup(enemy, Fillers(40), CellsFor(enemy) + 1, StartGap: 2);
+            var state = TurnLoop.Start(setup, NoShuffle).State;
+            var taken = new List<List<string>>();
+            for (int turn = 0; turn < 4; turn++)
+            {
+                state = TurnLoop.BeginPlayerTurn(state, NoShuffle).State;
+                state = state with { Player = state.Player with { Cell = state.Enemy.Cell - 3 } };
+                var end = TurnLoop.EndTurn(state, NoShuffle);
+                taken.Add(end.Events.OfType<ActionExecuted>().Select(e => e.Action.Id).ToList());
+                state = end.State;
+            }
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(taken[0], Is.EqualTo(new[] { "miasma_bolt", "binding_word" }), "no 呪縛 yet");
+                Assert.That(taken[1], Does.Not.Contain("binding_word"), "呪縛 2 → 1 remains through the next phase");
+                Assert.That(taken[2], Does.Contain("binding_word"), "gone by then, so it binds again");
+                Assert.That(taken[3], Does.Not.Contain("binding_word"));
             });
         }
 
@@ -354,9 +540,9 @@ namespace BattleCore.Tests
 
         /// <summary>
         /// A legal random deck (§8) that holds at least three cards stepping forward, one of them a card
-        /// that closes from gap 3 (駆け込み or 疾風突き). 大黒蛇 セルク never moves, never strikes from 3+ and binds the player's feet (鈍足,
-        /// standing in for 呪縛) every phase, so a deck whose only steps are one cell can neither win
-        /// nor lose against it — the other hole taken to the cards lane.
+        /// that closes from gap 3 (駆け込み or 疾風突き). Written when 大黒蛇 セルク bound the player's
+        /// feet every phase and struck nothing from 3+; since #51 (#196's addendum) it binds every
+        /// other phase and its 瘴気の矢 reaches 4, and the deck rule is kept as it was.
         /// </summary>
         private static List<CardInstance> RandomDeck(IRng rng, int size)
         {
@@ -381,16 +567,20 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void EveryRosterAction_PassesTheActionCheck_ExceptThePlaceholdersWaitingOn257()
+        public void EveryRosterAction_PassesTheActionCheck()
         {
             // v4.4 (#256 の 3): the multi-hit rule binds enemy actions too, and a stance stands alone.
-            // 二段斬り still gives 脆化 after its first blow until #257 rewrites it; it is the one action
-            // let through, and the list must not grow.
-            var refused = Enemies.All.SelectMany(e => e.Actions.Values)
-                .Where(a => Cards.ValidateEnemyAction(a).Count > 0)
-                .Select(a => a.Id).Distinct().ToList();
+            // 二段斬り was the one placeholder; #51 put it on v4.5's 7 × 2, so nothing is let through,
+            // the bosses' overrides included.
+            var actions = Enemies.All.SelectMany(e => e.Actions.Values)
+                .Concat(Enemies.All.SelectMany(e => e.Switches ?? Array.Empty<TreeSwitch>()).SelectMany(s => s.Overrides ?? Array.Empty<EnemyActionDef>()));
+            var refused = actions.Where(a => Cards.ValidateEnemyAction(a).Count > 0).Select(a => a.Id).Distinct().ToList();
 
-            Assert.That(refused, Is.EquivalentTo(Enemies.MultiHitRedesignPending));
+            Assert.Multiple(() =>
+            {
+                Assert.That(refused, Is.Empty);
+                Assert.That(Enemies.MultiHitRedesignPending, Is.Empty);
+            });
         }
 
         [Test]

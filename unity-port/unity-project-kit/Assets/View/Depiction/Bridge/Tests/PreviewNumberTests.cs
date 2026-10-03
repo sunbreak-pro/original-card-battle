@@ -44,13 +44,13 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void ATwoBlowOmen_ShowsOneSum_WithTheFragileItsFirstBlowLeaves()
+        public void ATwoBlowOmen_ShowsOneSum_OfBothBlows()
         {
-            // 二段斬り: 6, then 脆化 on the player, then 9.
+            // 二段斬り (v4.5, #257): 7, then 7.
             var (_, _, frame) = Begin(Enemies.TwinBladeWarped);
 
             Assert.That(frame.Omen.KindLabel, Is.EqualTo("攻撃"));
-            Assert.That(frame.Omen.ValueText, Is.EqualTo("15"));
+            Assert.That(frame.Omen.ValueText, Is.EqualTo("14"));
             Assert.That(frame.Omen.ValueText, Does.Not.Contain("×"));
         }
 
@@ -64,11 +64,11 @@ namespace Depiction.Bridge.Tests
 
             Assert.That(after.Player.RangeGlyph, Is.EqualTo("1"));
             Assert.That(TurnLoop.PreviewOmen(feint.State, 0).Lands, Is.False);
-            Assert.That(after.Omen.ValueText, Is.EqualTo("15"));
+            Assert.That(after.Omen.ValueText, Is.EqualTo("14"));
 
             StepResult end = TurnLoop.EndTurn(feint.State, NoShuffle);
             Cue whiff = writer.Write(end.Events, end.State).SelectMany(ev => ev.Cues).Single(c => c.Text == "空振り");
-            Assert.That(whiff.Amount, Is.EqualTo(15), "the number the omen was showing");
+            Assert.That(whiff.Amount, Is.EqualTo(14), "the number the omen was showing");
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace Depiction.Bridge.Tests
             Omen twin = new Omen("twin_slash", EnemyAi.LabelOf(Enemies.TwinBladeWarped.Actions["twin_slash"]));
 
             Assert.That(face.ValueText, Is.EqualTo("12"));
-            Assert.That(CoreText.OmenOf(twin, Enemies.TwinBladeWarped).ValueText, Is.EqualTo("12"));
+            Assert.That(CoreText.OmenOf(twin, Enemies.TwinBladeWarped).ValueText, Is.EqualTo("14"));
             Assert.That(face.ValueText + CoreText.OmenOf(twin, Enemies.TwinBladeWarped).ValueText, Does.Not.Contain("×"));
         }
 

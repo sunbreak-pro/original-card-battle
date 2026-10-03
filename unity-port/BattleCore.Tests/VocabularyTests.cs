@@ -132,13 +132,14 @@ namespace BattleCore.Tests
         [Test]
         public void TheTurnStartTick_TakesAStackOffTheTurnWords_AndLeavesTheUseWords()
         {
-            // §5: ターンで減る型 lose one stack at the holder's turn start; 使うと減る型 wait to be used. The demo has nine words (俊敏 left out).
+            // §5: ターンで減る型 lose one stack at the holder's turn start; 使うと減る型 wait to be used. The demo has nine words (俊敏 left out),
+            // and the six boss-only words (#51) follow them: 呪縛 is a turn word, 鉤爪 a use word, the other four last the battle.
             var kinds = Enum.GetValues(typeof(StatusKind)).Cast<StatusKind>().ToList();
             var ticked = StatusSet.Of(kinds.Select(k => (k, 2)).ToArray()).TickTurnStart();
 
             Assert.Multiple(() =>
             {
-                Assert.That(kinds, Has.Count.EqualTo(9));
+                Assert.That(kinds, Has.Count.EqualTo(9 + 6));
                 foreach (var kind in kinds)
                 {
                     int expected = Statuses.DecayOf(kind) == StatusDecay.OnTurn ? 1 : 2;
