@@ -217,6 +217,40 @@ namespace BattleCore.Tests
             });
         }
 
+        [Test]
+        public void Hook_DoesNotSpendAStack_OnAMoveBackTheEdgeStopsAnyway()
+        {
+            // A player on the first cell cannot go back: there is no move for 鉤爪 to catch, so it stays.
+            var s = WithPlayer(Opened(Idle, 3, CardCatalog.BackLeap), (StatusKind.Hook, 1));
+            s = s with { Player = s.Player with { Cell = 1 } };
+            var played = TurnLoop.PlayCard(s, InHand(s, "back_leap"), NoShuffle);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(played.State.Player.Cell, Is.EqualTo(1));
+                Assert.That(played.State.Player.Statuses.Stacks(StatusKind.Hook), Is.EqualTo(1), "the stack is kept");
+                Assert.That(played.Events.OfType<MoveBlocked>(), Is.Empty);
+                Assert.That(played.State.History.HookSnags, Is.Empty, "ガルドの snap does not count it");
+            });
+        }
+
+        [Test]
+        public void Hook_HasNoStackLimit()
+        {
+            // roster §5.1 / §5.4 give 鉤爪 no 「2 スタックまで」: a 鉤縄 on a player holding 2 leaves 3.
+            var s = Opened(Enemies.AbyssAngler, 3);
+            Assert.That(s.Omen!.ActionId, Is.EqualTo("hook_cast"));
+            s = WithPlayer(s, (StatusKind.Hook, 2));
+            var end = TurnLoop.EndTurn(s, NoShuffle);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(end.Events.OfType<StatusApplied>().Single(a => a.Kind == StatusKind.Hook).StacksAfter, Is.EqualTo(3));
+                Assert.That(Enemies.AbyssAngler.Switches!.Single(w => w.Id == "second_stage").Override("hook_cast")!.Face.StatusList.Single().Cap,
+                    Is.EqualTo(0), "the stage-2 鉤縄 is not capped either");
+            });
+        }
+
         // ---- 深み / 枯らし: the recovery ----
 
         [TestCase(0, 2, 1)]

@@ -349,6 +349,33 @@ namespace BattleCore.Tests
         }
 
         [Test]
+        public void Root_ShakesOffItsWords_AgainWhenTriggeredTwoTurnsInARow()
+        {
+            // root_sk triggered at two decisions in a row: the switch id does not change, but each
+            // trigger clears (roster §6.4 「自分に付いた状態を全て消す」 every time it holds).
+            var root = Enemies.DistortionRoot;
+            var s = TurnLoop.BeginPlayerTurn(TurnLoop.Start(new BattleSetup(root, Deck(), Cells, StartGap: 3), NoShuffle).State, NoShuffle).State;
+            s = s.WithEnemy(s.Enemy with { Statuses = StatusSet.Of((StatusKind.Bleed, 2), (StatusKind.Fragile, 1)) });
+            s = s with { PlayerHistory = s.History.WithInfliction(s.Turn).WithInfliction(s.Turn) };
+            var first = TurnLoop.EndTurn(s, NoShuffle);
+            Assert.That(first.State.Enemies[0].ActiveSwitch, Is.EqualTo("root_sk"), "first trigger");
+
+            s = TurnLoop.BeginPlayerTurn(first.State, NoShuffle).State;
+            s = s.WithEnemy(s.Enemy with { Statuses = StatusSet.Of((StatusKind.Bleed, 3), (StatusKind.Fragile, 1)) });
+            s = s with { PlayerHistory = s.History.WithInfliction(s.Turn).WithInfliction(s.Turn) };
+            var second = TurnLoop.EndTurn(s, NoShuffle);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(second.State.Enemies[0].ActiveSwitch, Is.EqualTo("root_sk"), "still the same switch");
+                Assert.That(second.Events.OfType<TreeSwitched>(), Is.Empty, "no change of switch is announced");
+                Assert.That(second.Events.OfType<StatusCleared>().Select(c => c.Kind),
+                    Is.EquivalentTo(new[] { StatusKind.Bleed, StatusKind.Fragile }), "the second trigger clears too");
+                Assert.That(second.State.Enemy.Statuses.KindCount, Is.EqualTo(0));
+            });
+        }
+
+        [Test]
         public void TheHistory_CountsTheWordsThePlayerPuts_OnAnEnemy()
         {
             // root_sk counts what lands: a card that puts 出血 on the root is one.

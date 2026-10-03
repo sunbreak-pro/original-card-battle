@@ -603,9 +603,11 @@ namespace BattleCore
             new[] { "reel_in", "line_whip", "slack_line" },
             new[] { "hook_cast", "reel_in" });
 
+        // roster §5.1 / §5.4 give 鉤爪 no stack limit (only 瘴気纏い / 深み / 枯らし / 根張り stop at 2),
+        // so the stacks add up: the stage-2 鉤縄 on a player holding 1 leaves 3.
         private static EnemyActionDef HookCast(int stacks) => new EnemyActionDef(
             "hook_cast", "鉤縄を打つ", BattleAttribute.Attack | BattleAttribute.Skill, 3,
-            new Face(Power: 9, Reach: new Reach(2, 4), Statuses: new[] { Foe(StatusKind.Hook, stacks, Statuses.BossWordStackMax) }),
+            new Face(Power: 9, Reach: new Reach(2, 4), Statuses: new[] { Foe(StatusKind.Hook, stacks) }),
             AtLeast(3, TraitEffect.PowerBonus, 3),
             Description: "間合い 2〜4 に届く。鉤爪を " + stacks + " 付与する。間合い 3 以上: 威力 +3");
 
@@ -655,6 +657,9 @@ namespace BattleCore
                     new Adaptation("root_g", view => GuardSiege(view),
                         tree => tree.Prefix("twist"), new[] { Twist(breaks: 2) }),
                     // root_st 「スタンスを置くと、その構えを枯らしにくる」: 枯らしの息 first.
+                    // NOT YET: the roster's other half — 「当たると、プレイヤーがいちばん新しく置いた
+                    // 永続の効果 1 つが 1 ターン働かなくなる」 — needs a way to switch one stance off
+                    // for a turn, which BattleCore does not have; left to a follow-up issue.
                     new Adaptation("root_st", view => PlacedStanceLastTurn(view),
                         tree => tree.Prefix("wither_breath")),
                     // root_sk 「状態を 2 つ付けられると、身を固めて振り払う」: 樹皮 → 薙ぎ払い, and

@@ -1008,18 +1008,19 @@ namespace BattleCore
                 {
                     events.Add(new MoveBlocked(actor, StatusKind.Slow) { Unit = unit });
                 }
-                else if (face.Move < 0 && self.Statuses.Has(StatusKind.Hook))
-                {
-                    // #51 (roster §5.1 鉤爪): a move back that would go is stopped at 0 cells and spends
-                    // one stack. One that 鈍足 already stopped is not caught, and keeps the stack.
-                    state = Consume(state, actor, unit, StatusKind.Hook, events);
-                    events.Add(new MoveBlocked(actor, StatusKind.Hook) { Unit = unit });
-                    if (actor == Actor.Player) state = state with { PlayerHistory = state.History.WithHookSnag(state.Turn) };
-                }
                 else
                 {
                     var shift = Field.Move(state, actor, Math.Sign(face.Move) * cells, unit);
-                    if (shift.To != shift.From)
+                    if (face.Move < 0 && shift.To != shift.From && self.Statuses.Has(StatusKind.Hook))
+                    {
+                        // #51 (roster §5.1 鉤爪): a move back that would go is stopped at 0 cells and
+                        // spends one stack. One that 鈍足 already stopped, or that the edge of the line
+                        // would stop anyway, is not caught, and keeps the stack.
+                        state = Consume(state, actor, unit, StatusKind.Hook, events);
+                        events.Add(new MoveBlocked(actor, StatusKind.Hook) { Unit = unit });
+                        if (actor == Actor.Player) state = state with { PlayerHistory = state.History.WithHookSnag(state.Turn) };
+                    }
+                    else if (shift.To != shift.From)
                     {
                         // 移動後 (§2.3): the holder's own cell changed, so the rest of this turn reads it.
                         state = Set(state, actor, unit, self with { Cell = shift.To, Moved = true });
@@ -1495,17 +1496,20 @@ namespace BattleCore
             if (!string.Equals(active?.Id, enemy.ActiveSwitch, StringComparison.Ordinal))
             {
                 events.Add(new TreeSwitched(Actor.Enemy, enemy.ActiveSwitch, active?.Id) { Unit = unit });
+            }
 
-                // #51 (roster §6.4 root_sk): the switch that shakes off every word the enemy holds.
-                if (active != null && active.Cleanse)
+            // #51 (roster §6.4 root_sk): the switch that shakes off every word the enemy holds. It
+            // clears at every decision where it holds, not only when it starts holding: root_sk holds
+            // only in the decision right after the turn that triggered it, so holding twice in a row
+            // means it was triggered twice, and each trigger clears.
+            if (active != null && active.Cleanse && enemy.Body.Statuses.Kinds.Count > 0)
+            {
+                foreach (var kind in enemy.Body.Statuses.Kinds)
                 {
-                    foreach (var kind in enemy.Body.Statuses.Kinds)
-                    {
-                        events.Add(new StatusCleared(Actor.Enemy, kind, enemy.Body.Statuses.Stacks(kind)) { Unit = unit });
-                    }
-                    state = state.WithEnemy(unit, enemy.Body with { Statuses = StatusSet.Empty });
-                    enemy = state.Enemies[unit];
+                    events.Add(new StatusCleared(Actor.Enemy, kind, enemy.Body.Statuses.Stacks(kind)) { Unit = unit });
                 }
+                state = state.WithEnemy(unit, enemy.Body with { Statuses = StatusSet.Empty });
+                enemy = state.Enemies[unit];
             }
 
             int gap = state.GapTo(unit);
