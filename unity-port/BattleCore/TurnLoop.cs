@@ -129,7 +129,7 @@ namespace BattleCore
     /// effects, heal and 崩し, and the stance slot with its exile pile. Where the canon leaves a
     /// moment open the choice is written at the spot. The enemies of the roster (#189) bring
     /// multi-blow faces, a second action for elites and bosses and a stance used once a battle;
-    /// the boss adaptations are #50.
+    /// the boss adaptations go through the hook of #50 (<see cref="TreeSwitch"/>) and their conditions are #51.
     /// </summary>
     public static class TurnLoop
     {
@@ -207,6 +207,7 @@ namespace BattleCore
             foreach (int i in state.Living)
             {
                 events.Add(new OmenSet(Actor.Enemy, state.Enemies[i].Omen!, Decided: false) { Unit = i });
+                if (state.Enemies[i].Plan != null) events.Add(new PlanSet(Actor.Enemy, state.Enemies[i].Plan!, Decided: false) { Unit = i });
             }
 
             return new StepResult(state with { Phase = BattlePhase.PlayerAction }, events);
@@ -532,6 +533,7 @@ namespace BattleCore
 
             // §2.3 playedAttributes: what this card was, for the cards after it this turn.
             state = RecordPlayed(state, Actor.Player, 0, def.Attribute);
+            state = state with { PlayerHistory = state.History.WithCard(def.Attribute) };
 
             // §4: a stance card goes to the exile pile and is not drawn again this battle; every
             // other card goes to the discard pile once it has resolved.
@@ -564,6 +566,13 @@ namespace BattleCore
             // Step 7: the stance's turn-end effect (根渡り, 霞み足), then 構え.
             state = StanceAtTurnEnd(state, Actor.Player, 0, events);
             state = CheckReserve(state, Actor.Player, 0, events);
+
+            // #50: what a boss's adaptation may count — the Guard held once 構え was judged, N, and a move.
+            int nearest = state.Nearest;
+            state = state with
+            {
+                PlayerHistory = state.History.WithTurnEnd(new PlayerTurnEnd(state.Player.Guard, nearest < 0 ? 0 : state.GapTo(nearest), state.Player.Moved)),
+            };
 
             // Step 8: the whole hand goes. Nothing is kept (§17.6 F2). playedAttributes and a 追撃
             // that found no attack face go with it (§17.6 F7).
@@ -602,22 +611,28 @@ namespace BattleCore
             // Step 10: the omen, as declared — or a rest when it cannot be paid for.
             var enemy = state.Enemies[unit];
             var action = EnemyAi.ActionToExecute(enemy.Def, enemy.Omen!, enemy.Body.Stamina);
+            var active = EnemyAi.SwitchById(enemy.Def, enemy.ActiveSwitch);
             if (action == null)
             {
                 events.Add(new Rested(Actor.Enemy, enemy.Omen!) { Unit = unit });
+
+                // #50: the phase ends on the rest, so the 予定 that was shown goes with it.
+                state = RevisePlan(state, unit, EnemyAi.OmenOf(null), events);
             }
             else
             {
                 state = Execute(state, unit, action, rng, events, out bool fell);
                 if (fell) return state.Living.Count == 0 ? CheckDefeat(state, Actor.Enemy, unit, events) : state;
 
-                // roster §1.3 (#189): an elite or a boss takes a second action. The tree is read again
-                // from the gap after the first, and the same action is not taken twice in one phase.
-                // The omen showed the first only; the second is chosen here.
+                // roster §1.3 (#189), §17.6 F11 (#50): an elite or a boss takes a second action. The
+                // omen showed the first and planned the second (予定). The tree is read again from the
+                // gap after the first — on the tree the omen was decided on — and the same action is
+                // not taken twice in one phase. A different answer is a 予定変更, shown before it acts.
                 if (enemy.Def.ActionsPerPhase >= 2 && !Combat.IsDefeated(state.Player.Hp))
                 {
                     var skip = new List<string>(state.Enemies[unit].Spent) { action.Id };
-                    var second = EnemyAi.ChooseAction(enemy.Def, state.GapTo(unit), state.Enemies[unit].Body.Stamina, skip);
+                    var second = EnemyAi.ChooseAction(enemy.Def, state.GapTo(unit), state.Enemies[unit].Body.Stamina, skip, active);
+                    state = RevisePlan(state, unit, EnemyAi.OmenOf(second), events);
                     if (second != null)
                     {
                         state = Execute(state, unit, second, rng, events, out fell);
@@ -651,6 +666,8 @@ namespace BattleCore
                 state, Actor.Enemy, unit, Array.Empty<int>(), action.Id, action.Name, action.Attributes,
                 action.Column, action.Face, TraitsOf(action.Trait), action.Targets, action.Cost, context, rng, events);
             fell = !state.Enemies[unit].Alive;
+            var taken = new List<string>(state.Enemies[unit].ExecutedActions) { action.Id };
+            state = state.WithUnit(unit, state.Enemies[unit] with { Executed = taken });
             if (fell) return state;
             if (action.Face.Stance != null)
             {
@@ -1386,9 +1403,43 @@ namespace BattleCore
         private static BattleState DecideNextOmen(BattleState state, int unit, List<BattleEvent> events)
         {
             var enemy = state.Enemies[unit];
-            var omen = EnemyAi.DecideOmen(enemy.Def, state.GapTo(unit), StaminaAtAction(enemy), enemy.Spent);
+
+            // #50: the boss's tree is asked first. A switch that starts or stops holding is announced.
+            var active = EnemyAi.ActiveSwitch(enemy.Def, AdaptationViewOf(state, unit));
+            if (!string.Equals(active?.Id, enemy.ActiveSwitch, StringComparison.Ordinal))
+            {
+                events.Add(new TreeSwitched(Actor.Enemy, enemy.ActiveSwitch, active?.Id) { Unit = unit });
+            }
+
+            int gap = state.GapTo(unit);
+            int stamina = StaminaAtAction(enemy);
+            var omen = EnemyAi.DecideOmen(enemy.Def, gap, stamina, enemy.Spent, active);
             events.Add(new OmenSet(Actor.Enemy, omen, Decided: true) { Unit = unit });
-            return state.WithOmen(unit, omen);
+
+            // §17.6 F11 (#50): an elite or a boss shows its second step too, as a 予定.
+            var plan = EnemyAi.DecidePlan(enemy.Def, gap, stamina, omen, enemy.Spent, active);
+            if (plan != null) events.Add(new PlanSet(Actor.Enemy, plan, Decided: true) { Unit = unit });
+
+            return state.WithUnit(unit, enemy with { Omen = omen, Plan = plan, ActiveSwitch = active?.Id });
+        }
+
+        /// <summary>#50: what an adaptation of this enemy reads at this moment.</summary>
+        private static AdaptationView AdaptationViewOf(BattleState state, int unit)
+        {
+            var enemy = state.Enemies[unit];
+            return new AdaptationView(state.Turn, enemy.Body.Hp, enemy.Body.MaxHp, enemy.ExecutedActions, state.History);
+        }
+
+        /// <summary>
+        /// #50 予定変更: the second action, read again after the first, is not the one planned. The
+        /// plan is replaced by what the tree now says; the event carries both.
+        /// </summary>
+        private static BattleState RevisePlan(BattleState state, int unit, Omen now, List<BattleEvent> events)
+        {
+            var planned = state.Enemies[unit].Plan;
+            if (planned == null || Equals(planned, now)) return state;
+            events.Add(new PlanChanged(Actor.Enemy, planned, now) { Unit = unit });
+            return state.WithUnit(unit, state.Enemies[unit] with { Plan = now });
         }
 
         /// <summary>

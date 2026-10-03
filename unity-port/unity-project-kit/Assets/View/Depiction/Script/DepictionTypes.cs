@@ -115,6 +115,20 @@ namespace Depiction
         /// <summary>The side the omen punishes, one glyph ("近" / "遠"). Empty when none.</summary>
         public string SideGlyph = "";
         public string ValueText = "";
+
+        /// <summary>
+        /// #50, §17.6 F11: the 予定 of an elite or a boss — the second action it plans, shown beside the
+        /// omen. It is not a commitment (the tree is read again after the first action). It stays up
+        /// after the first omen is spent, until the second action acts. Independent of
+        /// <see cref="Visible"/>.
+        /// </summary>
+        public bool PlanVisible;
+        /// <summary>The plan's kind: "攻撃", "防御", "休み"...</summary>
+        public string PlanKindLabel = "";
+        /// <summary>The cells the plan aims at, as <see cref="SideGlyph"/> writes them. Empty when none.</summary>
+        public string PlanSideGlyph = "";
+        /// <summary>True on the frames after a 予定変更, so the badge can mark the plan as changed.</summary>
+        public bool PlanChanged;
     }
 
     public sealed class CornerFrame

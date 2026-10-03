@@ -45,6 +45,26 @@ namespace BattleCore
     /// </summary>
     public sealed record OmenSet(Actor Actor, Omen Omen, bool Decided) : BattleEvent(Actor);
 
+    /// <summary>
+    /// The second step of an elite's or boss's omen (#50, §9 step 12, §17.6 F11): the action it
+    /// plans to take second, shown as a 予定 beside the first. Decided is as for <see cref="OmenSet"/>.
+    /// It is not a commitment: the tree is read again after the first action.
+    /// </summary>
+    public sealed record PlanSet(Actor Actor, Omen Plan, bool Decided) : BattleEvent(Actor);
+
+    /// <summary>
+    /// 予定変更 (#50): the tree, read again after the first action, gives a different second action
+    /// than the one planned. Now is a rest omen when nothing in the branch can be paid for, or when
+    /// the first action itself could not be paid and the phase ends there.
+    /// </summary>
+    public sealed record PlanChanged(Actor Actor, Omen Was, Omen Now) : BattleEvent(Actor);
+
+    /// <summary>
+    /// A boss's tree was swapped (#50, <see cref="TreeSwitch"/>): From and To are switch ids, null for
+    /// the base tree. Emitted at the omen decision that first sees the change.
+    /// </summary>
+    public sealed record TreeSwitched(Actor Actor, string? From, string? To) : BattleEvent(Actor);
+
     /// <summary>§9 step 7 (and the enemy's own turn end): 構え. GuardGained is 3 or 0.</summary>
     public sealed record ReserveChecked(Actor Actor, int StaminaLeft, int GuardGained, int GuardAfter) : BattleEvent(Actor);
 
