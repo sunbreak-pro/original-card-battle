@@ -40,11 +40,14 @@ namespace BattleCore
             When(TraitCondition.Chain, TraitEffect.HeavyBlow),
             Description: "糸を鞭のように打ち続けて骨を折る");
 
-        /// <summary>#45. Hits and sets a stance of +5 on attacks at a foe at gap 0; +3 now when adjacent.</summary>
+        /// <summary>
+        /// #45. Hits and sets a stance of +5 on attacks at a foe at gap 0; a 追撃 when adjacent. The
+        /// trait is v4.4's (#257: 間合い 0: 追撃, #51); the face is still v4.3's until the stance rewrite.
+        /// </summary>
         public static readonly CardDef AbyssStance = new CardDef(
             "abyss_stance", "深淵の構え", BattleAttribute.Attack | BattleAttribute.Stance, 3,
             new Face(Power: 14, Stance: new StanceDef(StanceHook.AttackBonus, StanceWhen.GapAtMost, Threshold: 0, Power: 5)),
-            AtMost(0, TraitEffect.PowerBonus, 3),
+            AtMost(0, TraitEffect.FollowUp, Constants.FollowUpPower),
             Description: "引きずり込んだ間合いで押し切る型");
 
         /// <summary>#46. Hits at 1〜2 and pulls the foe one cell in; +5 once it is broken.</summary>
@@ -71,11 +74,14 @@ namespace BattleCore
             OmenIs(OmenKind.Attack, TraitEffect.HeavyBlow),
             Description: "狙われた場所へ棘を飛ばし返す");
 
-        /// <summary>#49. Slows at 0〜2 and sets a stance that breaks 1 each time an enemy moves itself.</summary>
+        /// <summary>
+        /// #49. Slows at 0〜2 and sets a stance that breaks 1 each time an enemy moves itself; a draw
+        /// while the foe is slowed. The trait is v4.4's (#257: 相手の状態(鈍足): ドロー +1, #51).
+        /// </summary>
         public static readonly CardDef RootBind = new CardDef(
             "root_bind", "根縛り", BattleAttribute.Skill | BattleAttribute.Stance, 1,
             new Face(Reach: new Reach(0, 2), Statuses: new[] { Foe(StatusKind.Slow, 2) }, Stance: new StanceDef(StanceHook.BreakOnFoeMove, Break: 1)),
-            FoeHas(StatusKind.Slow, TraitEffect.Status, grant: Foe(StatusKind.Fatigue, 2)),
+            FoeHas(StatusKind.Slow, TraitEffect.Draw, 1),
             Description: "根を張って相手の足を縫う");
 
         // ---- Elite: 甲冑の番人 ----
@@ -304,11 +310,14 @@ namespace BattleCore
             AtLeast(2, TraitEffect.Status, grant: Foe(StatusKind.Bleed, 1)),
             Description: "流れた血の分だけ舞う");
 
-        /// <summary>#78. Hits and sets a stance of +3 on attacks at a bleeding foe; a heavy blow while empowered.</summary>
+        /// <summary>
+        /// #78. Hits and sets a stance of +3 on attacks at a bleeding foe; a 追撃 while empowered. The
+        /// trait is v4.4's (#257: 自分の状態(強化): 追撃, #51).
+        /// </summary>
         public static readonly CardDef WolfStance = new CardDef(
             "wolf_stance", "狼の構え", BattleAttribute.Attack | BattleAttribute.Stance, 2,
             new Face(Power: 8, Stance: new StanceDef(StanceHook.AttackBonus, StanceWhen.TargetHasStatus, Status: StatusKind.Bleed, Power: 3)),
-            SelfHas(StatusKind.Empower, TraitEffect.HeavyBlow),
+            SelfHas(StatusKind.Empower, TraitEffect.FollowUp, Constants.FollowUpPower),
             Description: "傷ついた獲物を追う型");
 
         /// <summary>#79. Hits at 1〜2, then steps in one; +5 into a move omen. A move omen mostly shows at gap 3+, so the trait is rare and the face carries the plain card's +2 (8 + 2, #208).</summary>
