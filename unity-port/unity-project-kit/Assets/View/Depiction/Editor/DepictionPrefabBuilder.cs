@@ -63,6 +63,7 @@ namespace Depiction.View
         {
             UpgradeFigure();
             UpgradeCard();
+            FigureArtCollector.CollectIntoFigurePrefab();
         }
 
         /// <summary>Adds the type line, the description and the dimming shade to a Card prefab built before they existed.</summary>
@@ -232,6 +233,7 @@ namespace Depiction.View
             view.rangeGlyph = UiKit.Label(view.rangeTag, "Glyph", 32, TextAnchor.MiddleCenter, BattleTheme.Accent, Half, Half, new Vector2(52f, 52f), Vector2.zero, "近");
             view.rangeGlyph.fontStyle = FontStyle.Bold;
             AddTargetMark(view, root);
+            view.artShelf = FigureArtCollector.Collect();
             return root.gameObject;
         }
 
@@ -498,9 +500,9 @@ namespace Depiction.View
             player.enemyFigure.name = "EnemyFigure";
             player.enemyFigure.side = UnitSide.Enemy;
             player.enemyFigure.useSpearSilhouette = true;
-            player.enemyFigure.body.rectTransform.localScale = new Vector3(-1f, 1f, 1f); // face the player
+            // Facing is FigureView's (#288): art is drawn facing the way it stands and is never
+            // mirrored; only the enemy's placeholder silhouette is, at run time.
             Overrides(player.enemyFigure);
-            Overrides(player.enemyFigure.body.rectTransform);
 
             player.omenBadge = Place<OmenBadgeView>("OmenBadge", arena, Half, new Vector2(400f, 468f));
             player.receiver = Place<ReceiverView>("Receiver", arena, Half, new Vector2(400f, 200f));

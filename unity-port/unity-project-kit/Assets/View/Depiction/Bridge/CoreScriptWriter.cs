@@ -23,6 +23,8 @@ namespace Depiction.Bridge
             public int StaminaMax;
             public int Cell;
             public int Size;
+            /// <summary>The unit's fall has been written (#288); the frames from its Defeat beat on show it gone.</summary>
+            public bool Down;
             public readonly SortedDictionary<StatusKind, int> Statuses = new SortedDictionary<StatusKind, int>();
 
             /// <summary>§4 (v4.4): the name of each stance on the list of permanent effects, in the order they were put on; a repeat is listed again.</summary>
@@ -37,6 +39,7 @@ namespace Depiction.Bridge
                 StaminaMax = unit.MaxStamina;
                 Cell = unit.Cell;
                 Size = unit.Size;
+                Down = false;
                 Statuses.Clear();
                 foreach (StatusKind kind in unit.Statuses.Kinds) Statuses[kind] = unit.Statuses.Stacks(kind);
                 Stances.Clear();
@@ -77,8 +80,16 @@ namespace Depiction.Bridge
         /// <summary>The enemy has carried out an action in this phase already (#189: an elite's second one opens a beat of its own).</summary>
         private bool _enemyActed;
 
+        /// <summary>#50: the 予定 (the second action an elite or a boss plans), whether it is on screen, and whether a 予定変更 has replaced it.</summary>
+        private Omen _plan;
+        private bool _planVisible;
+        private bool _planChanged;
+
         /// <summary>The enemy's 構え, held back so it plays with the next omen and not inside the attack (see <see cref="Write"/>).</summary>
         private ReserveChecked _enemyReserveHeld;
+
+        /// <summary>The core said the enemy fell (EnemyDefeated, or BattleEnded won) in the move being written; its fall is written last (#288).</summary>
+        private bool _enemyFalls;
 
         /// <summary>§7.2: N as the two models stand now.</summary>
         private int Gap => _enemy.Cell - (_player.Cell + _player.Size - 1) - 1;
@@ -106,6 +117,9 @@ namespace Depiction.Bridge
             _hand.Clear();
             _hand.AddRange(state.Hand);
             _omen = state.Omen;
+            _plan = state.Enemies.Count > 0 ? state.Enemies[0].Plan : null;
+            _planVisible = false;
+            _planChanged = false;
             _omenVisible = false;
             _playerActs = state.Phase == BattlePhase.PlayerAction;
             return Snapshot(state);
@@ -148,7 +162,22 @@ namespace Depiction.Bridge
             // battle ended and no omen follows — the enemy's own action.
             if (current != null) FlushHeldReserve(current);
             Close(current, after);
+
+            // #288: the fall is a beat of its own after everything the move did, so the 800 ms never
+            // lengthens the blow's event past its 2.0 s, and the figure stays up until it plays.
+            if (_enemyFalls) written.Add(WriteFall(after));
             return written;
+        }
+
+        private DepictionEvent WriteFall(BattleState after)
+        {
+            _enemyFalls = false;
+            _enemy.Down = true;
+            _omenVisible = false; // a fallen enemy takes its omen with it (TurnLoop.OnFall)
+            DepictionEvent ev = NewEvent(DepictionEventKind.Defeat, "倒れ");
+            ev.Cues.Add(new Cue { Kind = CueKind.Defeat, Target = UnitSide.Enemy });
+            Close(ev, after);
+            return ev;
         }
 
         // ---- where a screen event begins ----------------------------------------------------
@@ -221,6 +250,10 @@ namespace Depiction.Bridge
                     && current.Cues.Exists(c => c.Kind == CueKind.Slash && c.Source == UnitSide.Enemy):
                     return NewEvent(DepictionEventKind.EnemyAction, current.Title + "（2 撃目）");
 
+                // #50: a 予定変更 is a beat of its own, shown before the second action acts.
+                case PlanChanged _ when current != null:
+                    return NewEvent(DepictionEventKind.EnemyAction, "予定変更");
+
                 case OmenSet omen when omen.Decided && _order > 0:
                     return NewEvent(DepictionEventKind.NextOmen, "次の予兆");
 
@@ -282,7 +315,13 @@ namespace Depiction.Bridge
                 {
                     bool alreadyShown = _omenVisible && Equals(_omen, omen.Omen);
                     // Step 12's omen is a new one even when it is the same action: the old number goes.
-                    if (omen.Decided) _omenPreviewFor = null;
+                    if (omen.Decided)
+                    {
+                        _omenPreviewFor = null;
+                        _plan = null; // #50: the plan of the phase that just ended; a PlanSet follows if the new omen has one.
+                        _planVisible = false;
+                        _planChanged = false;
+                    }
                     _omen = omen.Omen;
                     _omenVisible = true;
                     // Step 5 re-announces the omen step 12 already put up; the screen shows it once.
@@ -297,7 +336,23 @@ namespace Depiction.Bridge
                     _playedUnit = played.Unit;
                     break;
 
+                // #50: the plan is shown from the omen until the second action acts; a phase that stops
+                // at one action (a rest, a stop at the first blow) replaces it with 予定変更.
+                case PlanSet planned:
+                    _plan = planned.Plan;
+                    _planVisible = true;
+                    _planChanged = false;
+                    break;
+
+                case PlanChanged changed:
+                    _plan = changed.Now;
+                    _planVisible = true;
+                    _planChanged = true;
+                    ev.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy, Text = "予定変更" });
+                    break;
+
                 case ActionExecuted executed:
+                    if (_enemyActed) _planVisible = false; // the second action of the phase spends the plan
                     _enemyActed = true;
                     ev.Title = executed.Action.Name;
                     _strike = CoreText.SystemOf(executed.Action);
@@ -396,6 +451,16 @@ namespace Depiction.Bridge
                 case StanceSet set:
                     Unit(set.Actor).Stances.Add(set.Name);
                     ev.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = CoreText.Side(set.Actor), Text = "構え・" + set.Name });
+                    break;
+
+                // #288: an enemy that falls with others standing is EnemyDefeated; the last one to fall
+                // ends the battle instead (TurnLoop.OnFall), and BattleEnded is all that says so.
+                case EnemyDefeated fell when fell.Unit == 0:
+                    _enemyFalls = true;
+                    break;
+
+                case BattleEnded ended when ended.Result == GameResult.Won:
+                    _enemyFalls = true;
                     break;
             }
 
@@ -626,8 +691,10 @@ namespace Depiction.Bridge
                 Corner = new CornerFrame { Turn = _turn, Floor = 1, ChainIndex = ChainIndex, ChainTotal = ChainTotal, MiasmaPercent = 0 },
                 Player = UnitOf(_player, showStamina: true, gap: Gap),
                 Enemy = UnitOf(_enemy, showStamina: false, gap: null),
-                Omen = _omenVisible ? OmenFrameOf(after) : new OmenFrame { Visible = false },
+                Omen = WithPlan(_omenVisible ? OmenFrameOf(after) : new OmenFrame { Visible = false }),
             };
+            // #288: the figure wears the art filed under the enemy's id; the View only looks it up.
+            frame.Enemy.ArtId = _enemyDef.Id;
             foreach (CardInstance card in _hand)
             {
                 frame.Hand.Add(CoreText.Face(card, TurnLoop.Preview(after, card.InstanceId),
@@ -655,6 +722,20 @@ namespace Depiction.Bridge
             return CoreText.OmenOf(_omen, _enemyDef, Equals(_omenPreviewFor, _omen) ? _omenPreview : null);
         }
 
+        /// <summary>
+        /// #50: the 予定 beside the omen, kind and cells only. Its number is not shown yet: a second
+        /// action's predicted value comes after this (#242). It outlives the spent first omen.
+        /// </summary>
+        private OmenFrame WithPlan(OmenFrame frame)
+        {
+            if (!_planVisible || _plan == null) return frame;
+            frame.PlanVisible = true;
+            frame.PlanKindLabel = new OmenLabel(_plan.Label.Kind).ToText();
+            frame.PlanSideGlyph = _plan.Label.Reach != null ? _plan.Label.Reach.ToText() : "";
+            frame.PlanChanged = _planChanged;
+            return frame;
+        }
+
         /// <summary>What a whiff strikes off: the number the omen badge was showing, or the face alone.</summary>
         private int ShownOmenPower(string actionId)
         {
@@ -668,7 +749,7 @@ namespace Depiction.Bridge
             {
                 Hp = unit.Hp, HpMax = unit.HpMax, Guard = unit.Guard,
                 ShowStamina = showStamina, Stamina = unit.Stamina, StaminaMax = unit.StaminaMax,
-                HasRange = gap.HasValue,
+                HasRange = gap.HasValue, Down = unit.Down,
             };
             if (gap.HasValue)
             {

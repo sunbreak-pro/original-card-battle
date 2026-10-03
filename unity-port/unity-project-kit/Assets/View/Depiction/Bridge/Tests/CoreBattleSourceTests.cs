@@ -79,6 +79,60 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void AWonFight_EndsOnTheEnemysFall_AsABeatOfItsOwn_AndTheFigureWearsTheEnemysArt()
+        {
+            // #288: the 800 ms fall follows the blow as its own event, so the blow keeps its 2.0 s, and
+            // the figure stays up (Down false) in every frame before the fall.
+            int won = 0;
+            for (int seed = 1; seed <= 40; seed++)
+            {
+                List<DepictionEvent> fight = PlayGreedy(CoreBattleSource.Slice(seed));
+                Assert.That(fight.Select(ev => ev.After.Enemy.ArtId).Distinct(), Is.EqualTo(new[] { Enemies.PolearmWarpedId }), "seed " + seed);
+                if (fight.Last().After.Outcome != BattleOutcome.Won)
+                {
+                    Assert.That(fight.Any(ev => ev.Kind == DepictionEventKind.Defeat), Is.False, "seed " + seed);
+                    continue;
+                }
+                won++;
+                DepictionEvent fall = fight.Last();
+                Assert.That(fall.Kind, Is.EqualTo(DepictionEventKind.Defeat), "seed " + seed);
+                Assert.That(fall.Cues.Select(c => (c.Kind, c.Target)), Is.EqualTo(new[] { (CueKind.Defeat, UnitSide.Enemy) }), "seed " + seed);
+                Assert.That(fall.After.Enemy.Down, Is.True, "seed " + seed);
+                Assert.That(fall.After.Omen.Visible, Is.False, "seed " + seed + ": the omen goes with the enemy");
+                Assert.That(fall.After.Enemy.Hp, Is.LessThanOrEqualTo(0), "seed " + seed);
+                Assert.That(fight.Take(fight.Count - 1).All(ev => !ev.After.Enemy.Down), Is.True, "seed " + seed + ": up until it falls");
+                Assert.That(fight.Count(ev => ev.Kind == DepictionEventKind.Defeat), Is.EqualTo(1), "seed " + seed);
+                Assert.That(NominalMs(fall), Is.EqualTo(800), "seed " + seed);
+            }
+            Assert.That(won, Is.GreaterThan(0), "no seed won; the fall was never written");
+        }
+
+        /// <summary>The first card that is allowed, else the end-turn plate, to the end of the battle.</summary>
+        private static List<DepictionEvent> PlayGreedy(CoreBattleSource source)
+        {
+            var events = new List<DepictionEvent>();
+            int guard = 0;
+            while (!source.Finished && guard++ < 400)
+            {
+                if (!source.WaitingForPlayer)
+                {
+                    events.Add(source.AdvanceAuto());
+                    continue;
+                }
+                CardFace next = source.Frame.Hand.FirstOrDefault(f => source.Inspect(f.Id) == PlayVerdict.Accepted);
+                if (next == null)
+                {
+                    events.Add(source.EndTurn());
+                    continue;
+                }
+                source.TryPlay(next.Id, DepictionText.RequiredZone(next.Aim), out DepictionEvent played);
+                events.Add(played);
+            }
+            Assert.That(source.Finished, Is.True);
+            return events;
+        }
+
+        [Test]
         public void ThePolearmsActions_EachMoveTheirOwnWay()
         {
             // #76: the four actions read apart with the placeholder art alone — sweep across, thrust in,

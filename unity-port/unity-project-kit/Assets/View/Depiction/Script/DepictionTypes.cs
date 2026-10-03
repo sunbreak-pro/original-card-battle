@@ -105,6 +105,13 @@ namespace Depiction
         /// <summary>The one glyph on the tag at the unit's feet ("近" / "遠"). Required when <see cref="HasRange"/>.</summary>
         public string RangeGlyph = "";
         public List<StatusChip> Statuses = new List<StatusChip>();
+        /// <summary>
+        /// Whose art the figure wears (#288): the enemy's id, as the art folder is named
+        /// (<see cref="CharacterArt"/>). Empty, or an id with no art, keeps the placeholder silhouette.
+        /// </summary>
+        public string ArtId = "";
+        /// <summary>The unit has fallen and its figure is gone (battle_ui_ux_v2 §2.2 の 6). Set from the Defeat beat on.</summary>
+        public bool Down;
     }
 
     public sealed class OmenFrame
@@ -115,6 +122,20 @@ namespace Depiction
         /// <summary>The side the omen punishes, one glyph ("近" / "遠"). Empty when none.</summary>
         public string SideGlyph = "";
         public string ValueText = "";
+
+        /// <summary>
+        /// #50, §17.6 F11: the 予定 of an elite or a boss — the second action it plans, shown beside the
+        /// omen. It is not a commitment (the tree is read again after the first action). It stays up
+        /// after the first omen is spent, until the second action acts. Independent of
+        /// <see cref="Visible"/>.
+        /// </summary>
+        public bool PlanVisible;
+        /// <summary>The plan's kind: "攻撃", "防御", "休み"...</summary>
+        public string PlanKindLabel = "";
+        /// <summary>The cells the plan aims at, as <see cref="SideGlyph"/> writes them. Empty when none.</summary>
+        public string PlanSideGlyph = "";
+        /// <summary>True on the frames after a 予定変更, so the badge can mark the plan as changed.</summary>
+        public bool PlanChanged;
     }
 
     public sealed class CornerFrame
@@ -210,6 +231,8 @@ namespace Depiction
         TurnEnd,
         EnemyAction,
         NextOmen,
+        /// <summary>A unit falls (#288): the beat of its own that plays the 800 ms fall, after the blow's event.</summary>
+        Defeat,
     }
 
     public enum CueKind
@@ -239,6 +262,11 @@ namespace Depiction
         /// <see cref="Cue.Text"/> names the cause ("出血"). Unlike <see cref="Hit"/> it spends no omen.
         /// </summary>
         HpChange,
+        /// <summary>
+        /// The target falls (#288, battle_ui_ux_v2 §2.2 の 6): it tilts, sinks, darkens and is gone, and its
+        /// cell is empty. The frame after it carries <see cref="UnitFrame.Down"/>.
+        /// </summary>
+        Defeat,
     }
 
     /// <summary>

@@ -146,6 +146,8 @@ namespace Depiction
                 // ---- Attack and defence ----
                 new EffectAuditEntry(EffectId.AttackLunge, Blow, Carries.WhoHitWhom, N, Sc,
                     "誰が殴りに行くかを示します。すでに 100 ms まで詰めてあります。"),
+                new EffectAuditEntry(EffectId.EnemyLunge, Blow, Carries.WhoHitWhom, N, H,
+                    "敵が殴りに来たことを、絵 1 枚のままで示します。構えの動きだけでは攻撃と守りの見分けが弱いため足しました。100 ms で足りるかは #79 で確かめます。"),
                 new EffectAuditEntry(EffectId.StrikeShape, Blow, Carries.WhoHitWhom, N, Sc,
                     "斬 / 突 / 打 などの系統は、この形でしか見えません。"),
                 new EffectAuditEntry(EffectId.HitStop, Blow, Carries.None, D, H,
@@ -218,6 +220,8 @@ namespace Depiction
                     "回復した量は最終の値が持っています。1 つずつ点ける方式は 5 個で 400 ms かかり、毎ターン平均で約 200 ms を使うため、間隔を詰めます。"),
                 new EffectAuditEntry(EffectId.ResultCard, StatusTurn, Carries.TurnOrResult, N, Sc,
                     "勝ち負けを知らせる唯一の札です。戦闘の最後に 1 度だけ出て、並行で待ち時間はありません。"),
+                new EffectAuditEntry(EffectId.Defeat, StatusTurn, Carries.TurnOrResult, N, Sc,
+                    "敵が倒れてマスが空いたことを示します。切ると人型が一瞬で消え、何が起きたか読めません。勝利の札はこの後に出ます（§2.2 の 6）。"),
             };
             var map = new Dictionary<EffectId, EffectAuditEntry>();
             foreach (EffectAuditEntry entry in list) map.Add(entry.Id, entry);

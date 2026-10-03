@@ -480,6 +480,76 @@ namespace BattleCore
         public BattleAttribute Attribute => AttributeRule.Fold(Attributes, Face);
     }
 
+    /// <summary>
+    /// One finished player turn, as a boss's adaptation may read it (roster §1.5, §4.4): the Guard
+    /// the player held once 構え was judged, N to the nearest enemy, and whether their own cell
+    /// changed that turn (移動後, §2.3).
+    /// </summary>
+    public sealed record PlayerTurnEnd(int Guard, int Gap, bool Moved);
+
+    /// <summary>
+    /// The player's side of the battle so far, kept so a boss's adaptation can be judged by counting
+    /// (roster §1.5: 条件は行動履歴を数えるだけで判定でき、乱数を使いません). Cards holds the attribute
+    /// each played card counted as (§2.1, folded), oldest first; TurnEnds one entry per finished turn.
+    /// </summary>
+    public sealed record BattleHistory(
+        IReadOnlyList<BattleAttribute>? PlayedCards = null,
+        IReadOnlyList<PlayerTurnEnd>? PlayerTurns = null)
+    {
+        public IReadOnlyList<BattleAttribute> Cards => PlayedCards ?? Array.Empty<BattleAttribute>();
+
+        public IReadOnlyList<PlayerTurnEnd> TurnEnds => PlayerTurns ?? Array.Empty<PlayerTurnEnd>();
+
+        public BattleHistory WithCard(BattleAttribute counted)
+        {
+            var cards = new List<BattleAttribute>(Cards) { counted };
+            return this with { PlayedCards = cards };
+        }
+
+        public BattleHistory WithTurnEnd(PlayerTurnEnd turn)
+        {
+            var turns = new List<PlayerTurnEnd>(TurnEnds) { turn };
+            return this with { PlayerTurns = turns };
+        }
+    }
+
+    /// <summary>
+    /// What an adaptation reads when the enemy decides its omen (#50): the enemy's own HP and the
+    /// actions it has taken, and the player's history. Nothing here is random and nothing can be
+    /// changed through it.
+    /// </summary>
+    public sealed record AdaptationView(
+        int Turn,
+        int Hp,
+        int MaxHp,
+        IReadOnlyList<string> EnemyActions,
+        BattleHistory Player);
+
+    /// <summary>
+    /// The one hook that swaps a boss's decision tree (#50, §9 step 12; roster §1.5). An adaptation
+    /// (a count over the player's history) and a stage (the enemy's HP) are the same thing here: a
+    /// named condition and the branches that replace the base ones while it holds. A branch left null
+    /// keeps the base branch of that band. Of the switches that hold, the LAST in the enemy's list
+    /// wins, so a later stage overrides an earlier one. Holds is judged at every omen decision, so a
+    /// switch that stops holding lets the base tree back. The conditions themselves are enemy data
+    /// (#51); the core fixes only how they are asked.
+    /// </summary>
+    public sealed record TreeSwitch(
+        string Id,
+        Func<AdaptationView, bool> Holds,
+        IReadOnlyList<string>? BranchAtGapZero = null,
+        IReadOnlyList<string>? BranchAtGapOneToTwo = null,
+        IReadOnlyList<string>? BranchAtGapThreePlus = null)
+    {
+        public IReadOnlyList<string>? Branch(GapBand band) => band switch
+        {
+            GapBand.Zero => BranchAtGapZero,
+            GapBand.OneToTwo => BranchAtGapOneToTwo,
+            GapBand.ThreePlus => BranchAtGapThreePlus,
+            _ => throw new ArgumentOutOfRangeException(nameof(band), band, null),
+        };
+    }
+
     /// <summary>roster §1.1 `rank`: what kind of fight the enemy is. Elites and bosses act twice a phase.</summary>
     public enum EnemyRank
     {
@@ -492,7 +562,8 @@ namespace BattleCore
     /// §6.1: every enemy branches three ways on the gap band. Each branch is an ordered list of
     /// action ids; the first affordable one becomes the omen. Size is the cells the enemy uses
     /// (§7.1, 1〜3); a size of 2 or more refuses push and pull (§7.3). ActionsPerPhase is 2 for
-    /// elites and bosses (roster §1.3, #189); their adaptation is #50.
+    /// elites and bosses (roster §1.3, #189). Switches is the hook a boss's tree is swapped through
+    /// (#50, <see cref="TreeSwitch"/>): null for an enemy that fights on its base tree.
     /// </summary>
     public sealed record EnemyDef(
         string Id,
@@ -506,7 +577,8 @@ namespace BattleCore
         IReadOnlyList<string> BranchAtGapThreePlus,
         IReadOnlyDictionary<string, EnemyActionDef> Actions,
         EnemyRank Rank = EnemyRank.Normal,
-        int ActionsPerPhase = 1)
+        int ActionsPerPhase = 1,
+        IReadOnlyList<TreeSwitch>? Switches = null)
     {
         public IReadOnlyList<string> Branch(GapBand band) => band switch
         {
@@ -566,7 +638,14 @@ namespace BattleCore
     /// declared. A fallen enemy stays in <see cref="BattleState.Enemies"/> (so the numbers events
     /// carry never shift) but leaves its cells and its omen: see <see cref="Alive"/>.
     /// </summary>
-    public sealed record EnemyUnit(EnemyDef Def, CombatantState Body, Omen? Omen, IReadOnlyList<string>? SpentStances = null)
+    public sealed record EnemyUnit(
+        EnemyDef Def,
+        CombatantState Body,
+        Omen? Omen,
+        IReadOnlyList<string>? SpentStances = null,
+        Omen? Plan = null,
+        string? ActiveSwitch = null,
+        IReadOnlyList<string>? Executed = null)
     {
         public bool Alive => !Combat.IsDefeated(Body.Hp);
 
@@ -575,6 +654,9 @@ namespace BattleCore
         /// then leaves its tree.
         /// </summary>
         public IReadOnlyList<string> Spent => SpentStances ?? Array.Empty<string>();
+
+        /// <summary>#50: the ids of the actions this enemy has taken this battle, in order, for an adaptation to count.</summary>
+        public IReadOnlyList<string> ExecutedActions => Executed ?? Array.Empty<string>();
     }
 
     /// <summary>
@@ -598,10 +680,14 @@ namespace BattleCore
         IReadOnlyList<CardInstance> DiscardPile,
         GameResult Result = GameResult.Ongoing,
         BattlePhase Phase = BattlePhase.AwaitingTurnStart,
-        IReadOnlyList<CardInstance>? ExilePile = null)
+        IReadOnlyList<CardInstance>? ExilePile = null,
+        BattleHistory? PlayerHistory = null)
     {
         /// <summary>§4 (#188): the stance cards played this battle, one instance each. Those instances never go back into the deck; a copy still in the deck is another instance.</summary>
         public IReadOnlyList<CardInstance> Exiled => ExilePile ?? Array.Empty<CardInstance>();
+
+        /// <summary>The player's side of the battle so far, for a boss's adaptation (#50).</summary>
+        public BattleHistory History => PlayerHistory ?? new BattleHistory();
 
         /// <summary>The first enemy's body.</summary>
         public CombatantState Enemy => Enemies[0].Body;
