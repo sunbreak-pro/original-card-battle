@@ -15,12 +15,13 @@ namespace Depiction.View
 {
     public sealed class DeckSelectScreen
     {
-        private const int Columns = 4;
-        private const int Rows = 5;
+        private const int Columns = 6;
+        private const int Rows = 3;
         private const int PerPage = Columns * Rows;
 
         private readonly RectTransform _root;
         private readonly Action<DeckBuilder> _battle;
+        private readonly CardView _cardPrefab;
         private readonly DeckFilter _filter = new DeckFilter();
         private DeckBuilder _deck;
         private int _page;
@@ -39,11 +40,13 @@ namespace Depiction.View
         /// <param name="parent">The demo canvas.</param>
         /// <param name="deck">The deck to start from (the saved one, or the prototype).</param>
         /// <param name="notice">DeckBuilder's line about a saved deck that did not read, or "" (#211).</param>
+        /// <param name="cardPrefab">The hand's Card prefab: the screen prints each card with it, as the battle does. Null draws the plain text buttons.</param>
         /// <param name="battle">Called with the deck when 「戦闘へ」 is pressed; the flow saves it then (#211).</param>
-        public DeckSelectScreen(RectTransform parent, DeckBuilder deck, string notice, Action<DeckBuilder> battle)
+        public DeckSelectScreen(RectTransform parent, DeckBuilder deck, string notice, Action<DeckBuilder> battle, CardView cardPrefab = null)
         {
             _deck = deck ?? new DeckBuilder();
             _battle = battle;
+            _cardPrefab = cardPrefab;
 
             _root = UiKit.Box(parent, "DeckSelect", 0f, 0f, 1f, 1f);
             // Opaque (#211): nothing of the battle underneath shows through, and it takes no clicks.
@@ -178,15 +181,43 @@ namespace Depiction.View
                 RectTransform cell = UiKit.Box(_grid, "Card" + i, x0 + 0.003f, y1 - 1f / Rows + 0.006f, x0 + 1f / Columns - 0.003f, y1 - 0.006f);
 
                 bool chosen = _selected != null && _selected.Id == def.Id;
-                Color back = chosen ? BattleTheme.WithAlpha(BattleTheme.Accent, 0.35f) : BattleTheme.Panel;
-                UiKit.Button(cell, "Select", DeckBuilder.LineOf(def), () => { _selected = def; Refresh(); }, back, BattleTheme.Ink, 20,
-                    new Vector2(0f, 0.34f), new Vector2(1f, 1f));
-                UiKit.Button(cell, "Minus", "−", () => Remove(def), BattleTheme.Panel, BattleTheme.Ink, 26, new Vector2(0f, 0f), new Vector2(0.3f, 0.3f));
-                Text count = UiKit.Text(UiKit.Box(cell, "Count", 0.3f, 0f, 0.7f, 0.3f), "Text", 24, TextAnchor.MiddleCenter, BattleTheme.Warm, _deck.CountText(def.Id));
+                if (_cardPrefab != null) DrawFace(cell, def, chosen);
+                else
+                {
+                    Color back = chosen ? BattleTheme.WithAlpha(BattleTheme.Accent, 0.35f) : BattleTheme.Panel;
+                    UiKit.Button(cell, "Select", DeckBuilder.LineOf(def), () => { _selected = def; Refresh(); }, back, BattleTheme.Ink, 20,
+                        new Vector2(0f, 0.34f), new Vector2(1f, 1f));
+                }
+                Button minus = UiKit.Button(cell, "Minus", "−", () => Remove(def), BattleTheme.Panel, BattleTheme.Ink, 26, new Vector2(0f, 0f), new Vector2(0.3f, ControlHeight));
+                Text count = UiKit.Text(UiKit.Box(cell, "Count", 0.3f, 0f, 0.7f, ControlHeight), "Text", 24, TextAnchor.MiddleCenter, BattleTheme.Warm, _deck.CountText(def.Id));
                 count.fontStyle = FontStyle.Bold;
-                Button plus = UiKit.Button(cell, "Plus", "＋", () => Add(def), BattleTheme.Panel, BattleTheme.Ink, 26, new Vector2(0.7f, 0f), new Vector2(1f, 0.3f));
+                Button plus = UiKit.Button(cell, "Plus", "＋", () => Add(def), BattleTheme.Panel, BattleTheme.Ink, 26, new Vector2(0.7f, 0f), new Vector2(1f, ControlHeight));
                 plus.interactable = _deck.CanAdd(def.Id);
             }
+        }
+
+        // The − count ＋ row under a card, as a share of the cell's height (cell 259 px at 1080: 34 px).
+        private const float ControlHeight = 0.13f;
+        // 216 × 304 card scaled to sit above the row: 304 × 0.72 = 219 px of the 225 px left.
+        private const float FaceScale = 0.72f;
+
+        /// <summary>One card printed as in the hand (#254's card face), pressed to read its effect below.</summary>
+        private void DrawFace(RectTransform cell, CardDef def, bool chosen)
+        {
+            if (chosen) UiKit.Fill(cell, "Chosen", BattleTheme.WithAlpha(BattleTheme.Accent, 0.35f));
+            CardView card = UnityEngine.Object.Instantiate(_cardPrefab, cell);
+            RectTransform rect = card.Rect;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -2f);
+            rect.localRotation = Quaternion.identity;
+            rect.localScale = Vector3.one * FaceScale;
+            card.Bind(CoreText.FaceOf(def));
+            card.SetDimmed(false);
+            card.Interactable = false;
+            var press = card.gameObject.AddComponent<Button>();
+            press.targetGraphic = card.background;
+            press.transition = Selectable.Transition.None;
+            press.onClick.AddListener(() => { _selected = def; Refresh(); });
         }
     }
 }
