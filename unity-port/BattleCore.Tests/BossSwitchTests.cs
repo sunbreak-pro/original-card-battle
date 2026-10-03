@@ -24,7 +24,7 @@ namespace BattleCore.Tests
         private static readonly BattleAttribute St = BattleAttribute.Stance;
 
         /// <summary>One finished player turn: the cards it played (folded), and how it ended.</summary>
-        private sealed record Turn(BattleAttribute[] Cards, int Guard = 0, int Gap = 3, bool Moved = false, int Cell = 2);
+        private sealed record Turn(BattleAttribute[] Cards, int Guard = 0, int Gap = 3, bool Moved = false, int Cell = 2, int LastMove = 0);
 
         private static BattleHistory History(params Turn[] turns)
         {
@@ -32,7 +32,7 @@ namespace BattleCore.Tests
             foreach (var turn in turns)
             {
                 foreach (var card in turn.Cards) history = history.WithCard(card);
-                history = history.WithTurnEnd(new PlayerTurnEnd(turn.Guard, turn.Gap, turn.Moved, turn.Cell, turn.Cards.Length));
+                history = history.WithTurnEnd(new PlayerTurnEnd(turn.Guard, turn.Gap, turn.Moved, turn.Cell, turn.Cards.Length, turn.LastMove));
             }
             return history;
         }
@@ -247,8 +247,12 @@ namespace BattleCore.Tests
             var guarded = History(new Turn(None, Guard: 9), new Turn(None, Guard: 10));
             var stance = History(new Turn(new[] { St }));
             var twoWords = History(new Turn(None), new Turn(None)).WithInfliction(1).WithInfliction(2);
-            var steppedIn = History(new Turn(None, Moved: true, Cell: 2), new Turn(None, Moved: true, Cell: 3));
-            var steppedOut = History(new Turn(None, Moved: true, Cell: 3), new Turn(None, Moved: true, Cell: 2));
+            var steppedIn = History(new Turn(None, Moved: true, Cell: 2, LastMove: 1), new Turn(None, Moved: true, Cell: 3, LastMove: 1));
+            var steppedOut = History(new Turn(None, Moved: true, Cell: 3, LastMove: -1), new Turn(None, Moved: true, Cell: 2, LastMove: -1));
+            // The cells say nothing moved (a push undid the step, or the player stepped out and back
+            // in); the way the last own move went still decides (roster §6.4 「直前に動いた向き」).
+            var inOnTheSameCell = History(new Turn(None, Moved: true, Cell: 3, LastMove: 1), new Turn(None, Moved: true, Cell: 3, LastMove: 1));
+            var outOnTheSameCell = History(new Turn(None, Moved: true, Cell: 3, LastMove: 1), new Turn(None, Moved: true, Cell: 3, LastMove: -1));
             var once = History(new Turn(None, Moved: false), new Turn(None, Moved: true));
 
             Assert.Multiple(() =>
@@ -260,6 +264,8 @@ namespace BattleCore.Tests
                 Assert.That(On(twoWords), Is.EqualTo("root_sk"));
                 Assert.That(On(steppedIn), Is.EqualTo("root_m_in"));
                 Assert.That(On(steppedOut), Is.EqualTo("root_m_out"));
+                Assert.That(On(inOnTheSameCell), Is.EqualTo("root_m_in"), "same turn-end cells, last move forward");
+                Assert.That(On(outOnTheSameCell), Is.EqualTo("root_m_out"), "same turn-end cells, last move back");
                 Assert.That(On(once), Is.Null);
             });
         }
@@ -372,6 +378,53 @@ namespace BattleCore.Tests
                 Assert.That(second.Events.OfType<StatusCleared>().Select(c => c.Kind),
                     Is.EquivalentTo(new[] { StatusKind.Bleed, StatusKind.Fragile }), "the second trigger clears too");
                 Assert.That(second.State.Enemy.Statuses.KindCount, Is.EqualTo(0));
+            });
+        }
+
+        [Test]
+        public void Root_Moved_ReadsTheWayThePlayerLastStepped_NotTheChangeOfCell()
+        {
+            // root_m in play: last turn the player stepped forward and was pushed back by 伸びる根, so
+            // this turn starts one cell short of where last turn ended. Stepping forward 1 ends the
+            // turn on the same cell as before: the cells differ by 0, but the last own move went in,
+            // so the root answers with the push (roster §6.4 「相手を直前に動いた向きと逆へ 1 マス」).
+            var forward = Fixtures.Card("forward", 1, new Face(Move: 1), BattleAttribute.None, targets: TargetKind.Self);
+            var root = Enemies.DistortionRoot;
+            var s = TurnLoop.BeginPlayerTurn(TurnLoop.Start(new BattleSetup(root, Deck(forward), Cells, StartGap: 3), NoShuffle).State, NoShuffle).State;
+            int lastEnd = s.Player.Cell + 1;
+            s = s with { PlayerHistory = History(new Turn(None, Moved: true, Cell: lastEnd, LastMove: 1)) };
+            s = TurnLoop.PlayCard(s, s.Hand.First(c => c.Def.Id == "forward").InstanceId, NoShuffle).State;
+            var end = TurnLoop.EndTurn(s, NoShuffle);
+
+            Assert.Multiple(() =>
+            {
+                var turn = end.State.History.TurnEnds.Last();
+                Assert.That(turn.Cell, Is.EqualTo(lastEnd), "the turn-end cells are equal");
+                Assert.That(turn.LastMove, Is.EqualTo(1), "the history keeps the way the player's own move went");
+                Assert.That(end.State.Enemies[0].ActiveSwitch, Is.EqualTo("root_m_in"));
+            });
+        }
+
+        [Test]
+        public void TheHistory_KeepsTheWayOfTheLastOwnMove_EvenWhenTheCellEndsWhereItBegan()
+        {
+            // Back 1 then forward 1 in one turn: the cell ends where it began, the last move went in.
+            var forward = Fixtures.Card("forward", 1, new Face(Move: 1), BattleAttribute.None, targets: TargetKind.Self);
+            var back = Fixtures.Card("back", 1, new Face(Move: -1), BattleAttribute.None, targets: TargetKind.Self);
+            var root = Enemies.DistortionRoot;
+            var s = TurnLoop.BeginPlayerTurn(TurnLoop.Start(new BattleSetup(root, Deck(forward, back), Cells, StartGap: 3), NoShuffle).State, NoShuffle).State;
+            s = s with { Player = s.Player with { Cell = s.Player.Cell + 1 } };
+            int began = s.Player.Cell;
+            s = TurnLoop.PlayCard(s, s.Hand.First(c => c.Def.Id == "back").InstanceId, NoShuffle).State;
+            s = TurnLoop.PlayCard(s, s.Hand.First(c => c.Def.Id == "forward").InstanceId, NoShuffle).State;
+            var end = TurnLoop.EndTurn(s, NoShuffle);
+
+            var turn = end.State.History.TurnEnds.Last();
+            Assert.Multiple(() =>
+            {
+                Assert.That(turn.Cell, Is.EqualTo(began));
+                Assert.That(turn.Moved, Is.True);
+                Assert.That(turn.LastMove, Is.EqualTo(1));
             });
         }
 

@@ -146,6 +146,16 @@ namespace BattleCore.Tests
         }
 
         [Test]
+        public void Binding_KeepsOutExactlyTheSixMovementCards_OfBattleCoreSection3()
+        {
+            // battle_core_v4 §3 「移動が中心の札 6 種」: the catalog's cards that declare nothing and move.
+            var movement = CardCatalog.All
+                .Where(c => AttributeRule.IsMovementCard(c.Attributes, c.Face))
+                .Select(c => c.Id);
+            Assert.That(movement, Is.EquivalentTo(new[] { "footwork", "back_leap", "slide_step", "break_off", "leap_back", "dash_in" }));
+        }
+
+        [Test]
         public void Binding_FromTheBindingWord_LastsTheNextPlayerTurnOnly()
         {
             // roster §4.1: 縛りの言葉 puts 2 on; 1 is left through the next player turn, none the turn after.

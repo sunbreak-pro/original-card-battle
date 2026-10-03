@@ -403,7 +403,7 @@ namespace BattleCore
             var events = new List<BattleEvent>();
             var copy = StanceAtTurnEnd(state, Actor.Player, 0, events);
             copy = CheckReserve(copy, Actor.Player, 0, events);
-            copy = copy with { Player = copy.Player with { Played = null, Moved = false, FollowUp = 0 } };
+            copy = copy with { Player = copy.Player with { Played = null, Moved = false, LastMove = 0, FollowUp = 0 } };
             copy = OpenTurnFor(copy, Actor.Enemy, unit, enemy.Def.Recovery, events);
             if (!copy.Enemies[unit].Alive) return new OmenPreview(0, 0, Lands: false, Rests: true);
             copy = Sway(copy, unit, events);
@@ -579,13 +579,14 @@ namespace BattleCore
             state = CheckReserve(state, Actor.Player, 0, events);
 
             // #50: what a boss's adaptation may count — the Guard held once 構え was judged, N, and a move.
-            // #51: and the cell it ended on (根張り) and how many cards it played (root_st).
+            // #51: and the cell it ended on (根張り), how many cards it played (root_st), and the way
+            // its own last move went (root_m).
             int nearest = state.Nearest;
             state = state with
             {
                 PlayerHistory = state.History.WithTurnEnd(new PlayerTurnEnd(
                     state.Player.Guard, nearest < 0 ? 0 : state.GapTo(nearest), state.Player.Moved,
-                    state.Player.Cell, state.Player.PlayedThisTurn.Count)),
+                    state.Player.Cell, state.Player.PlayedThisTurn.Count, state.Player.LastMove)),
             };
 
             // Step 8: the whole hand goes. Nothing is kept (§17.6 F2). playedAttributes and a 追撃
@@ -596,7 +597,7 @@ namespace BattleCore
             {
                 Hand = emptyHand,
                 DiscardPile = discardPile,
-                Player = state.Player with { Played = null, Moved = false, FollowUp = 0 },
+                Player = state.Player with { Played = null, Moved = false, LastMove = 0, FollowUp = 0 },
             };
             events.Add(new HandDiscarded(Actor.Player, discarded));
             events.Add(new TurnEnded(Actor.Player, state.Turn));
@@ -662,7 +663,7 @@ namespace BattleCore
             // The stance's turn-end effect, then 構え, which works for the enemy too (roster §1.2).
             state = StanceAtTurnEnd(state, Actor.Enemy, unit, events);
             state = CheckReserve(state, Actor.Enemy, unit, events);
-            state = state.WithEnemy(unit, state.Enemies[unit].Body with { Played = null, Moved = false, FollowUp = 0 });
+            state = state.WithEnemy(unit, state.Enemies[unit].Body with { Played = null, Moved = false, LastMove = 0, FollowUp = 0 });
 
             // Step 11.
             state = CheckDefeat(state, Actor.Enemy, unit, events);
@@ -709,7 +710,7 @@ namespace BattleCore
             var self = Get(state, actor, unit);
 
             events.Add(new GuardCleared(actor, self.Guard) { Unit = unit });
-            self = self with { Guard = 0, Played = null, Moved = false };
+            self = self with { Guard = 0, Played = null, Moved = false, LastMove = 0 };
 
             // §4 (v4.4): every turn-start stance on the list fires on its own, so two of one work twice.
             var firing = new List<StanceEntry>();
@@ -721,7 +722,9 @@ namespace BattleCore
 
             int fatigue = self.Statuses.Has(StatusKind.Fatigue) ? Constants.FatiguePenalty : 0;
             int stanceRecovery = firing.Sum(entry => entry.Def.Recovery);
-            // #51 (roster §5.1 深み, §6.2 枯らし): the boss words that thin the recovery, floor 0.
+            // #51 (roster §5.1 深み, §6.2 枯らし): the boss words that thin the recovery, floor 0. The
+            // 温存 bonus is deliberately inside that floor, as 疲労 is: RecoverStamina floors
+            // recovery + bonus together, so a bonus first fills what the loss took.
             int withered = Statuses.RecoveryLoss(self.Statuses, adjacent: OwnGap(state, actor, unit) == 0 && state.Nearest >= 0);
             int staminaAfter = Combat.RecoverStamina(
                 self.Stamina, self.MaxStamina, recovery + stanceRecovery - fatigue - withered, self.NextTurnRecoveryBonus);
@@ -1023,7 +1026,7 @@ namespace BattleCore
                     else if (shift.To != shift.From)
                     {
                         // 移動後 (§2.3): the holder's own cell changed, so the rest of this turn reads it.
-                        state = Set(state, actor, unit, self with { Cell = shift.To, Moved = true });
+                        state = Set(state, actor, unit, self with { Cell = shift.To, Moved = true, LastMove = Math.Sign(face.Move) });
                         events.Add(new CellsMoved(actor, shift.From, shift.To, Pushed: false) { Unit = unit });
 
                         // 根縛り: an enemy that moves itself pays for it for each such stance the player holds.

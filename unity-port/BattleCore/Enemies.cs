@@ -659,7 +659,7 @@ namespace BattleCore
                     // root_st 「スタンスを置くと、その構えを枯らしにくる」: 枯らしの息 first.
                     // NOT YET: the roster's other half — 「当たると、プレイヤーがいちばん新しく置いた
                     // 永続の効果 1 つが 1 ターン働かなくなる」 — needs a way to switch one stance off
-                    // for a turn, which BattleCore does not have; left to a follow-up issue.
+                    // for a turn, which BattleCore does not have; left to #334.
                     new Adaptation("root_st", view => PlacedStanceLastTurn(view),
                         tree => tree.Prefix("wither_breath")),
                     // root_sk 「状態を 2 つ付けられると、身を固めて振り払う」: 樹皮 → 薙ぎ払い, and
@@ -671,7 +671,7 @@ namespace BattleCore
                     // out by a pull.
                     new Adaptation("root_m_in", view => MovedTwiceLastTurn(view) && LastStep(view) > 0,
                         tree => tree.Prefix("creeping_root"), new[] { CreepingRoot(push: 1) }),
-                    new Adaptation("root_m_out", view => MovedTwiceLastTurn(view) && LastStep(view) <= 0,
+                    new Adaptation("root_m_out", view => MovedTwiceLastTurn(view) && LastStep(view) < 0,
                         tree => tree.Prefix("creeping_root"), new[] { CreepingRoot(push: -1) }),
                 },
                 stages: new[]
@@ -955,12 +955,16 @@ namespace BattleCore
             return completed;
         }
 
-        /// <summary>The way the player went over its last turn: the cell it ended on less the one before (positive: toward the enemies).</summary>
+        /// <summary>
+        /// The way the player's own last move of its last finished turn went (+1 前へ, toward the
+        /// enemies; -1 後ろへ; 0 none). Read from the move itself, not from the change of cell between
+        /// turn ends, which a push or pull in between, or a step out and back, would hide
+        /// (roster §6.4 「直前に動いた向き」).
+        /// </summary>
         private static int LastStep(AdaptationView view)
         {
             var turns = view.Player.TurnEnds;
-            if (turns.Count < 2) return 0;
-            return turns[turns.Count - 1].Cell - turns[turns.Count - 2].Cell;
+            return turns.Count == 0 ? 0 : turns[turns.Count - 1].LastMove;
         }
 
         /// <summary>

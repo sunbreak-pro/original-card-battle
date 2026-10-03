@@ -522,8 +522,10 @@ namespace BattleCore
     /// the player held once 構え was judged, N to the nearest enemy, and whether their own cell
     /// changed that turn (移動後, §2.3). Cell is where the player stood at the turn's end and Played
     /// how many cards they played in it (#51: 根張り counts the cell, root_st the stance cards).
+    /// LastMove is the way the player's own last move in the turn went (+1 前へ, -1 後ろへ, 0 none):
+    /// root_m reads it, not the change of Cell, since a push or pull would hide the way they went.
     /// </summary>
-    public sealed record PlayerTurnEnd(int Guard, int Gap, bool Moved, int Cell = 0, int Played = 0);
+    public sealed record PlayerTurnEnd(int Guard, int Gap, bool Moved, int Cell = 0, int Played = 0, int LastMove = 0);
 
     /// <summary>
     /// The player's side of the battle so far, kept so a boss's adaptation can be judged by counting
@@ -712,7 +714,8 @@ namespace BattleCore
     ///
     /// #188 / v4.4: Stances is the list of permanent effects (§4), no cap, each entry with the card or
     /// action that put it there. Moved says the holder's own cell changed this turn (移動後, §2.3);
-    /// it is cleared with Played. FollowUp is the 追撃 waiting for the next attack face (§17.6 F7: gone at the end of the
+    /// it is cleared with Played. LastMove (#51) is the way the holder's own last move this turn went
+    /// (+1 前へ, -1 後ろへ, 0 none), cleared with Moved; pushes and pulls do not touch it. FollowUp is the 追撃 waiting for the next attack face (§17.6 F7: gone at the end of the
     /// holder's turn). Played lists the attributes of what the holder played this turn, in order and
     /// folded (§2.1, §2.3 `playedAttributes`; 連動 / 初手 / 締め / 連打 read it), cleared at turn end.
     /// </summary>
@@ -729,7 +732,8 @@ namespace BattleCore
         IReadOnlyList<StanceEntry>? Stances = null,
         int FollowUp = 0,
         IReadOnlyList<BattleAttribute>? Played = null,
-        bool Moved = false)
+        bool Moved = false,
+        int LastMove = 0)
     {
         /// <summary>The permanent effects held, oldest first; empty for none.</summary>
         public IReadOnlyList<StanceEntry> StanceList => Stances ?? Array.Empty<StanceEntry>();
