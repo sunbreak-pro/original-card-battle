@@ -213,9 +213,9 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void ATwoBlowOmen_IsOneSum_WithTheFragileItsFirstBlowLeaves()
+        public void ATwoBlowOmen_IsOneSum_OfBothBlows()
         {
-            // roster §2.6 二段斬り: 6, then 脆化 on the player, then 9.
+            // roster §2.6 二段斬り (v4.5, #257): 7, then 7, and nothing on the player between them.
             var s = Opened(Enemies.TwinBladeWarped, 0);
             s = s with { Player = s.Player with { Stamina = 0 } };
             Assert.That(s.Omen!.ActionId, Is.EqualTo("twin_slash"));
@@ -223,22 +223,22 @@ namespace BattleCore.Tests
             var omen = TurnLoop.PreviewOmen(s, 0)!;
             var dealt = OnPlayer(TurnLoop.EndTurn(s, NoRng).Events);
 
-            Assert.That(omen, Is.EqualTo(new OmenPreview(15, 15, Lands: true, Rests: false)));
-            Assert.That(dealt, Is.EqualTo((15, 15)), "what the enemy phase deals");
+            Assert.That(omen, Is.EqualTo(new OmenPreview(14, 14, Lands: true, Rests: false)));
+            Assert.That(dealt, Is.EqualTo((14, 14)), "what the enemy phase deals");
         }
 
         [Test]
         public void ATwoBlowOmen_MeetsThePlayersGuardBlowByBlow()
         {
-            // Guard 10: 6 is all absorbed (4 left), then 9 into 4 → 5 through.
+            // Guard 10: 7 is all absorbed (3 left), then 7 into 3 → 4 through.
             var s = Opened(Enemies.TwinBladeWarped, 0);
             s = s with { Player = s.Player with { Stamina = 0, Guard = 10 } };
 
             var omen = TurnLoop.PreviewOmen(s, 0)!;
             var dealt = OnPlayer(TurnLoop.EndTurn(s, NoRng).Events);
 
-            Assert.That((omen.RawPower, omen.Damage), Is.EqualTo((15, 5)));
-            Assert.That(dealt, Is.EqualTo((15, 5)));
+            Assert.That((omen.RawPower, omen.Damage), Is.EqualTo((14, 4)));
+            Assert.That(dealt, Is.EqualTo((14, 4)));
         }
 
         [Test]
@@ -252,7 +252,7 @@ namespace BattleCore.Tests
             var omen = TurnLoop.PreviewOmen(s, 0)!;
 
             Assert.That(omen.Lands, Is.False);
-            Assert.That(omen.RawPower, Is.EqualTo(15));
+            Assert.That(omen.RawPower, Is.EqualTo(14));
             Assert.That(s.Player.Cell, Is.EqualTo(1), "the board is not touched");
         }
 

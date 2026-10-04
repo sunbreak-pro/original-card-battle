@@ -67,6 +67,10 @@ namespace Depiction.Bridge.Tests
         /// (#206) leaves it alone. Measured 2026-09-26 against 大黒蛇 セルク, seed 21, on the roster v4.4
         /// numbers (#204 cut 瘴気の儀 to 疲労 1 / 再生 1, so those two no longer climb): uncapped, the
         /// 鈍足 of 縛りの言葉 peaked at 11; capped, it stops at 4. The battle is lost at turn 15 either way.
+        ///
+        /// #51 replaced that 鈍足, which stood in for 呪縛, with 呪縛 itself, which 縛りの言葉 does not
+        /// put on again while it remains (roster §4.3). The replay now holds that the words セルク puts
+        /// on never grow: 呪縛 stays at 2, 瘴気纏い at 1, and nothing climbs past the cap.
         /// </summary>
         public const string ReplayDeck =
             "overhead:1,flat_strike:1,reach_thrust:1,brace:1,iron_block:2,deep_breath:1,first_aid:1,observe:1," +
@@ -74,20 +78,22 @@ namespace Depiction.Bridge.Tests
             "whirlwind:1,snap_guard:1,deflect:1,pommel_strike:1,keen_eye:1,resolve:1,gale_thrust:2,anchor_stance:1,vital_thrust:1";
 
         [Test]
-        public void TheIssuesReplay_MiasmaPriestSeed21_HoldsSlowAtTheCap()
+        public void TheIssuesReplay_MiasmaPriestSeed21_PutsWordsThatDoNotGrow()
         {
             CoreBattleSource source = Fight(Enemies.MiasmaPriest, DeckBuilder.Load(ReplayDeck).Build(), 21);
             Assert.That(source, Is.Not.Null, "the replay ends without a stall");
 
-            List<StatusApplied> turnDecay = source.History.OfType<StatusApplied>()
-                .Where(a => Statuses.DecayOf(a.Kind) == StatusDecay.OnTurn).ToList();
+            List<StatusApplied> applied = source.History.OfType<StatusApplied>().ToList();
             int Peak(Actor target, StatusKind kind) =>
-                turnDecay.Where(a => a.Target == target && a.Kind == kind).Select(a => a.StacksAfter).DefaultIfEmpty(0).Max();
+                applied.Where(a => a.Target == target && a.Kind == kind).Select(a => a.StacksAfter).DefaultIfEmpty(0).Max();
 
             Assert.Multiple(() =>
             {
-                Assert.That(turnDecay.Max(a => a.StacksAfter), Is.EqualTo(Constants.TurnDecayStackMax), "the words reach the cap and stop there");
-                Assert.That(Peak(Actor.Player, StatusKind.Slow), Is.EqualTo(Constants.TurnDecayStackMax), "鈍足 climbs to the cap and stops");
+                Assert.That(applied.Where(a => Statuses.DecayOf(a.Kind) == StatusDecay.OnTurn).Max(a => a.StacksAfter),
+                    Is.LessThanOrEqualTo(Constants.TurnDecayStackMax), "no turn word climbs past the cap");
+                Assert.That(Peak(Actor.Player, StatusKind.Slow), Is.EqualTo(0), "セルク puts no 鈍足 on any more");
+                Assert.That(Peak(Actor.Player, StatusKind.Binding), Is.EqualTo(2), "呪縛 2, never put on again while it remains");
+                Assert.That(Peak(Actor.Player, StatusKind.MiasmaShroud), Is.InRange(1, Statuses.BossWordStackMax), "瘴気纏い");
                 Assert.That(Peak(Actor.Player, StatusKind.Fatigue), Is.LessThanOrEqualTo(Constants.TurnDecayStackMax), "疲労");
                 Assert.That(Peak(Actor.Enemy, StatusKind.Regen), Is.LessThanOrEqualTo(Constants.TurnDecayStackMax), "the priest's 再生");
             });

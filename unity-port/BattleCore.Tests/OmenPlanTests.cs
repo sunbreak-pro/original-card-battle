@@ -152,7 +152,7 @@ namespace BattleCore.Tests
                 bool twice = enemy.ActionsPerPhase >= 2;
                 Assert.That(start.Enemies[0].Plan != null, Is.EqualTo(twice && start.Omen!.ActionId != EnemyAi.RestActionId), enemy.Id);
             }
-            Assert.That(Enemies.All.Count(e => e.ActionsPerPhase >= 2), Is.EqualTo(5), "two elites and three bosses");
+            Assert.That(Enemies.All.Count(e => e.ActionsPerPhase >= 2), Is.EqualTo(6), "three elites and three bosses");
         }
 
         // ---- 予定変更: read the tree again after the first action ----

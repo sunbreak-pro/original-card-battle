@@ -98,7 +98,8 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// §5 の状態: all ten words (俊敏 came in with #48). The order is the order the chips are listed in.
+    /// §5 の状態: all ten words (俊敏 came in with #48). The order is the order the chips are listed
+    /// in. The six boss-only words follow the ten (#51).
     /// </summary>
     public enum StatusKind
     {
@@ -140,19 +141,46 @@ namespace BattleCore
 
         /// <summary>再生: HP +2 × stacks at the holder's turn start. OnTurn.</summary>
         Regen,
+
+        // Boss-only words (#51): battle_core_v4 §5 「ボス専用の状態」, written in enemy_roster_v4
+        // §4.1 / §5.1 / §6.2. Each boss puts two of them on the player; nothing else gives them.
+
+        /// <summary>瘴気纏い (大黒蛇 セルク): the holder's max stamina is 1 lower per stack, and the stamina held is cut to it (§6.2). Lasting.</summary>
+        MiasmaShroud,
+
+        /// <summary>呪縛 (セルク): the holder's own movement effect does not resolve, and a card of movement only cannot be played. OnTurn.</summary>
+        Binding,
+
+        /// <summary>鉤爪 (獄竜 ガルド): the holder's own move back is stopped (0 cells), one stack spent each time. A move forward goes through. OnUse.</summary>
+        Hook,
+
+        /// <summary>深み (ガルド): starting a turn at N 0 to the nearest enemy, the holder recovers 1 less per stack (floor 0). Lasting.</summary>
+        Depths,
+
+        /// <summary>根張り (歪みの根): having ended two turns in a row on the same cell, the holder loses 4 HP per stack at the next turn start. Lasting.</summary>
+        Rooting,
+
+        /// <summary>枯らし (歪みの根): the holder recovers 1 less per stack at every turn start (floor 0). Lasting.</summary>
+        Withering,
     }
 
     /// <summary>
     /// One status a face or a trait gives: the word, its stacks, and whether it lands on the one who
-    /// played it (自分に) or on the opponent (相手に, which reads the reach).
+    /// played it (自分に) or on the opponent (相手に, which reads the reach). Cap (#51) is the most the
+    /// holder may hold of the word through this grant (0: no cap of its own); what would go past it
+    /// is dropped, as at the turn-decay cap. The bosses' words are capped this way (roster §4.1:
+    /// 瘴気纏いは 2 スタックまで, and 1 until the stage that lets it reach 2).
     /// </summary>
-    public sealed record StatusGrant(StatusKind Kind, int Stacks = Constants.StatusApplyDefault, bool OnSelf = false);
+    public sealed record StatusGrant(StatusKind Kind, int Stacks = Constants.StatusApplyDefault, bool OnSelf = false, int Cap = 0);
 
-    /// <summary>§5: 減り方の 2 型.</summary>
+    /// <summary>§5: 減り方の 2 型, and the boss-only words that last the battle (#51).</summary>
     public enum StatusDecay
     {
         OnUse,
         OnTurn,
+
+        /// <summary>戦闘終了まで (roster §4.1 / §5.1 / §6.2): neither the turn start nor its use takes a stack off.</summary>
+        Lasting,
     }
 
     /// <summary>§6.1: the three branches every enemy tree has, keyed on the gap N when the omen is decided.</summary>
@@ -387,8 +415,8 @@ namespace BattleCore
     /// its own; the opponent statuses of a face with two or more land after the first blow. A face
     /// of two or more carries no opponent status, on the face or in a trait, on a card (#253) and on
     /// an enemy action alike (v4.4, <see cref="Cards.MultiHitCarriesNoFoeStatus(BattleAttribute, Face, IReadOnlyList{Trait})"/>).
-    /// The resolver still lands one where an action carries it: 二段斬り does until #257 redesigns
-    /// it. A status given on every blow comes from a stance
+    /// The resolver would still land one after the first blow where an action carried it; none does
+    /// since #51 put 二段斬り on v4.5's 7 × 2. A status given on every blow comes from a stance
     /// (<see cref="StanceHook.StatusOnAttack"/>), not from the face.
     /// </summary>
     public sealed record Face(
@@ -485,33 +513,53 @@ namespace BattleCore
         Trait? Trait = null,
         TargetKind Targets = TargetKind.One,
         string Description = "",
-        OmenKind? Omen = null)
+        OmenKind? Omen = null,
+        StatusKind? NotWhileFoeHas = null,
+        int? PullBeyond = null)
     {
         public int Cost => Columns.CostOf(Column);
 
         /// <summary>The one attribute this action counts as (§2.1), folded like a card's.</summary>
         public BattleAttribute Attribute => AttributeRule.Fold(Attributes, Face);
+
+        // NotWhileFoeHas (#51, roster §4.3): the tree passes over this action while the player holds
+        // the word at the phase it would be taken in (縛りの言葉 and 呪縛). See EnemyAi.Barred.
+        //
+        // PullBeyond (#51, roster §6.3 伸びる根): when set, the face's Push is a push of |Push| cells
+        // while N is at most PullBeyond and a pull of |Push| cells beyond it, read when it resolves.
+        // See EnemyAi.FaceAt.
     }
 
     /// <summary>
     /// One finished player turn, as a boss's adaptation may read it (roster §1.5, §4.4): the Guard
     /// the player held once 構え was judged, N to the nearest enemy, and whether their own cell
-    /// changed that turn (移動後, §2.3).
+    /// changed that turn (移動後, §2.3). Cell is where the player stood at the turn's end and Played
+    /// how many cards they played in it (#51: 根張り counts the cell, root_st the stance cards).
+    /// LastMove is the way the player's own last move in the turn went (+1 前へ, -1 後ろへ, 0 none):
+    /// root_m reads it, not the change of Cell, since a push or pull would hide the way they went.
     /// </summary>
-    public sealed record PlayerTurnEnd(int Guard, int Gap, bool Moved);
+    public sealed record PlayerTurnEnd(int Guard, int Gap, bool Moved, int Cell = 0, int Played = 0, int LastMove = 0);
 
     /// <summary>
     /// The player's side of the battle so far, kept so a boss's adaptation can be judged by counting
     /// (roster §1.5: 条件は行動履歴を数えるだけで判定でき、乱数を使いません). Cards holds the attribute
     /// each played card counted as (§2.1, folded), oldest first; TurnEnds one entry per finished turn.
+    /// HookSnags (#51) is the turn of each 鉤爪 stack a stopped move back spent (roster §5.4 snap);
+    /// Inflictions the turn of each status the player put on an enemy (§6.4 root_sk).
     /// </summary>
     public sealed record BattleHistory(
         IReadOnlyList<BattleAttribute>? PlayedCards = null,
-        IReadOnlyList<PlayerTurnEnd>? PlayerTurns = null)
+        IReadOnlyList<PlayerTurnEnd>? PlayerTurns = null,
+        IReadOnlyList<int>? HookSnagTurns = null,
+        IReadOnlyList<int>? InflictionTurns = null)
     {
         public IReadOnlyList<BattleAttribute> Cards => PlayedCards ?? Array.Empty<BattleAttribute>();
 
         public IReadOnlyList<PlayerTurnEnd> TurnEnds => PlayerTurns ?? Array.Empty<PlayerTurnEnd>();
+
+        public IReadOnlyList<int> HookSnags => HookSnagTurns ?? Array.Empty<int>();
+
+        public IReadOnlyList<int> Inflictions => InflictionTurns ?? Array.Empty<int>();
 
         public BattleHistory WithCard(BattleAttribute counted)
         {
@@ -524,19 +572,61 @@ namespace BattleCore
             var turns = new List<PlayerTurnEnd>(TurnEnds) { turn };
             return this with { PlayerTurns = turns };
         }
+
+        public BattleHistory WithHookSnag(int turn)
+        {
+            var snags = new List<int>(HookSnags) { turn };
+            return this with { HookSnagTurns = snags };
+        }
+
+        public BattleHistory WithInfliction(int turn)
+        {
+            var inflictions = new List<int>(Inflictions) { turn };
+            return this with { InflictionTurns = inflictions };
+        }
+
+        /// <summary>The attributes of the cards played in the last finished turn, oldest first.</summary>
+        public IReadOnlyList<BattleAttribute> LastTurnCards
+        {
+            get
+            {
+                if (TurnEnds.Count == 0) return Array.Empty<BattleAttribute>();
+                int played = Math.Min(Cards.Count, TurnEnds[TurnEnds.Count - 1].Played);
+                var last = new List<BattleAttribute>();
+                for (int i = Cards.Count - played; i < Cards.Count; i++) last.Add(Cards[i]);
+                return last;
+            }
+        }
     }
 
     /// <summary>
     /// What an adaptation reads when the enemy decides its omen (#50): the enemy's own HP and the
     /// actions it has taken, and the player's history. Nothing here is random and nothing can be
-    /// changed through it.
+    /// changed through it. #51 adds the enemy's N to the player at that moment (roster §4.4 pusher:
+    /// 「間合いが 1 以上になる」で戻る) and the ids of the switches that have held so far this battle,
+    /// so a stage that never goes back (戻らない) can say so after 再生 lifts the HP over its line.
     /// </summary>
     public sealed record AdaptationView(
         int Turn,
         int Hp,
         int MaxHp,
         IReadOnlyList<string> EnemyActions,
-        BattleHistory Player);
+        BattleHistory Player,
+        int Gap = 0,
+        IReadOnlyList<string>? HeldSwitches = null)
+    {
+        public IReadOnlyList<string> Held => HeldSwitches ?? Array.Empty<string>();
+
+        /// <summary>Whether the switch of this id has held at some omen decision before this one.</summary>
+        public bool HasHeld(string id)
+        {
+            foreach (var each in Held)
+            {
+                if (string.Equals(each, id, StringComparison.Ordinal)) return true;
+            }
+            return false;
+        }
+    }
 
     /// <summary>
     /// The one hook that swaps a boss's decision tree (#50, §9 step 12; roster §1.5). An adaptation
@@ -546,13 +636,29 @@ namespace BattleCore
     /// wins, so a later stage overrides an earlier one. Holds is judged at every omen decision, so a
     /// switch that stops holding lets the base tree back. The conditions themselves are enemy data
     /// (#51); the core fixes only how they are asked.
+    ///
+    /// What the roster's adaptations and stages do besides swapping branches (#51, roster §4.4 /
+    /// §5.4 / §6.1 / §6.4) rides on the same switch:
+    /// - Overrides: actions that stand in for the enemy's own of the same id while the switch is the
+    ///   active one (錫杖 with 崩し 2, 鉤縄 with 鉤爪 2, 枯らしの息 reaching 0〜4 …). The omen is
+    ///   decided, and the action resolved, on the override.
+    /// - EnterMove: the enemy moves this many cells (前へ positive) the first time the switch holds in
+    ///   the battle, as far as the line lets it (ガルドの淵を出る 前へ 2, 根のせり上がり 前へ 1).
+    /// - Sway: once the switch has held, the enemy moves 前へ 1 and 後ろへ 1 in turn, one step at the
+    ///   start of each of its phases (歪みの根 段階 3).
+    /// - Cleanse: the enemy's own statuses are all taken off when the switch becomes the active one
+    ///   (root_sk 「自分に付いた状態を全て消す」).
     /// </summary>
     public sealed record TreeSwitch(
         string Id,
         Func<AdaptationView, bool> Holds,
         IReadOnlyList<string>? BranchAtGapZero = null,
         IReadOnlyList<string>? BranchAtGapOneToTwo = null,
-        IReadOnlyList<string>? BranchAtGapThreePlus = null)
+        IReadOnlyList<string>? BranchAtGapThreePlus = null,
+        IReadOnlyList<EnemyActionDef>? Overrides = null,
+        int EnterMove = 0,
+        bool Sway = false,
+        bool Cleanse = false)
     {
         public IReadOnlyList<string>? Branch(GapBand band) => band switch
         {
@@ -561,6 +667,17 @@ namespace BattleCore
             GapBand.ThreePlus => BranchAtGapThreePlus,
             _ => throw new ArgumentOutOfRangeException(nameof(band), band, null),
         };
+
+        /// <summary>The action that stands in for the enemy's own <paramref name="actionId"/> while this switch is active, or null.</summary>
+        public EnemyActionDef? Override(string actionId)
+        {
+            if (Overrides == null) return null;
+            foreach (var each in Overrides)
+            {
+                if (string.Equals(each.Id, actionId, StringComparison.Ordinal)) return each;
+            }
+            return null;
+        }
     }
 
     /// <summary>roster §1.1 `rank`: what kind of fight the enemy is. Elites and bosses act twice a phase.</summary>
@@ -610,7 +727,8 @@ namespace BattleCore
     ///
     /// #188 / v4.4: Stances is the list of permanent effects (§4), no cap, each entry with the card or
     /// action that put it there. Moved says the holder's own cell changed this turn (移動後, §2.3);
-    /// it is cleared with Played. FollowUp is the 追撃 waiting for the next attack face (§17.6 F7: gone at the end of the
+    /// it is cleared with Played. LastMove (#51) is the way the holder's own last move this turn went
+    /// (+1 前へ, -1 後ろへ, 0 none), cleared with Moved; pushes and pulls do not touch it. FollowUp is the 追撃 waiting for the next attack face (§17.6 F7: gone at the end of the
     /// holder's turn). Played lists the attributes of what the holder played this turn, in order and
     /// folded (§2.1, §2.3 `playedAttributes`; 連動 / 初手 / 締め / 連打 read it), cleared at turn end.
     /// FreeStep is the player's 俊敏 step waiting to be taken (§5, #48): set at the turn start when
@@ -630,7 +748,8 @@ namespace BattleCore
         int FollowUp = 0,
         IReadOnlyList<BattleAttribute>? Played = null,
         bool Moved = false,
-        bool FreeStep = false)
+        bool FreeStep = false,
+        int LastMove = 0)
     {
         /// <summary>The permanent effects held, oldest first; empty for none.</summary>
         public IReadOnlyList<StanceEntry> StanceList => Stances ?? Array.Empty<StanceEntry>();
@@ -661,9 +780,13 @@ namespace BattleCore
         IReadOnlyList<string>? SpentStances = null,
         Omen? Plan = null,
         string? ActiveSwitch = null,
-        IReadOnlyList<string>? Executed = null)
+        IReadOnlyList<string>? Executed = null,
+        IReadOnlyList<string>? HeldSwitches = null)
     {
         public bool Alive => !Combat.IsDefeated(Body.Hp);
+
+        /// <summary>#51: the ids of the switches that have held at some omen decision this battle, in the order they first did.</summary>
+        public IReadOnlyList<string> Held => HeldSwitches ?? Array.Empty<string>();
 
         /// <summary>
         /// roster §1.2 (#189): the stance actions this enemy has used. Each is used once a battle and
@@ -807,6 +930,13 @@ namespace BattleCore
             StatusKind.Focus => "focus",
             StatusKind.Parry => "parry",
             StatusKind.Regen => "regen",
+            // Boss-only words (#51).
+            StatusKind.MiasmaShroud => "miasma_shroud",
+            StatusKind.Binding => "binding",
+            StatusKind.Hook => "hook",
+            StatusKind.Depths => "depths",
+            StatusKind.Rooting => "rooting",
+            StatusKind.Withering => "withering",
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
@@ -822,6 +952,13 @@ namespace BattleCore
             StatusKind.Focus => "集中",
             StatusKind.Parry => "見切り",
             StatusKind.Regen => "再生",
+            // Boss-only words (#51).
+            StatusKind.MiasmaShroud => "瘴気纏い",
+            StatusKind.Binding => "呪縛",
+            StatusKind.Hook => "鉤爪",
+            StatusKind.Depths => "深み",
+            StatusKind.Rooting => "根張り",
+            StatusKind.Withering => "枯らし",
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 

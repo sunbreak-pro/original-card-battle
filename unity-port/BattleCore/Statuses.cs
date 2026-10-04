@@ -151,6 +151,13 @@ namespace BattleCore
             StatusKind.Empower => StatusDecay.OnUse,
             StatusKind.Focus => StatusDecay.OnUse,
             StatusKind.Parry => StatusDecay.OnUse,
+            // Boss-only words (#51): roster §4.1 / §5.1 / §6.2.
+            StatusKind.MiasmaShroud => StatusDecay.Lasting,
+            StatusKind.Binding => StatusDecay.OnTurn,
+            StatusKind.Hook => StatusDecay.OnUse,
+            StatusKind.Depths => StatusDecay.Lasting,
+            StatusKind.Rooting => StatusDecay.Lasting,
+            StatusKind.Withering => StatusDecay.Lasting,
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown status."),
         };
 
@@ -175,6 +182,52 @@ namespace BattleCore
         {
             if (statuses == null) throw new ArgumentNullException(nameof(statuses));
             return statuses.Has(StatusKind.Slow) ? 1 : 0;
+        }
+
+        // ---- The boss-only words (#51) ----
+
+        /// <summary>roster §6.2 根張り: HP lost per stack at the turn start after two turns ended on one cell.</summary>
+        public const int RootingHpPerStack = 4;
+
+        /// <summary>roster §4.1 / §5.1 / §6.2: the most stacks a boss puts of its word (瘴気纏い 2 → −2, 深み 2 → −2, 根張り 2 → −8, 枯らし 2 → −2).</summary>
+        public const int BossWordStackMax = 2;
+
+        /// <summary>Whether the word is one of the six a boss alone gives (battle_core_v4 §5 ボス専用の状態).</summary>
+        public static bool IsBossOnly(StatusKind kind) => kind switch
+        {
+            StatusKind.MiasmaShroud => true,
+            StatusKind.Binding => true,
+            StatusKind.Hook => true,
+            StatusKind.Depths => true,
+            StatusKind.Rooting => true,
+            StatusKind.Withering => true,
+            _ => false,
+        };
+
+        /// <summary>
+        /// roster §5.1 深み and §6.2 枯らし: what the turn-start recovery loses. 枯らし takes 1 a stack
+        /// always; 深み 1 a stack when the holder starts the turn adjacent (N 0) to the nearest enemy.
+        /// 疲労 is not counted here (battle_core_v4 §5: −1 while held). The floor 0 is the caller's.
+        /// </summary>
+        public static int RecoveryLoss(StatusSet statuses, bool adjacent)
+        {
+            if (statuses == null) throw new ArgumentNullException(nameof(statuses));
+            return statuses.Stacks(StatusKind.Withering) + (adjacent ? statuses.Stacks(StatusKind.Depths) : 0);
+        }
+
+        /// <summary>
+        /// roster §6.2 根張り, read at the holder's turn start from the last two turn ends: the same cell
+        /// both times, and the holder did not move itself in the later turn. A push or a pull that left
+        /// the holder elsewhere shows as another cell; one that the holder walked back from shows as a
+        /// move (数え直し).
+        /// </summary>
+        public static bool StayedTwoTurns(IReadOnlyList<PlayerTurnEnd> turnEnds)
+        {
+            if (turnEnds == null) throw new ArgumentNullException(nameof(turnEnds));
+            if (turnEnds.Count < 2) return false;
+            var last = turnEnds[turnEnds.Count - 1];
+            var before = turnEnds[turnEnds.Count - 2];
+            return last.Cell > 0 && last.Cell == before.Cell && !last.Moved;
         }
     }
 }

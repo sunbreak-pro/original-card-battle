@@ -78,6 +78,26 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void TheMiasmaShroud_LowersThePlayersPips_AndTheChipNamesTheWord()
+        {
+            // #51 瘴気纏い (battle_core_v4 §6.2): セルク's 瘴気の儀 takes the top pip off; the screen follows the core.
+            var setup = new BattleSetup(Enemies.MiasmaPriest, DeckBuilder.Random(3).Build(), 8);
+            BattleState state = TurnLoop.Start(setup, NoShuffle).State;
+            var writer = new CoreScriptWriter(state.EnemyDef);
+            writer.Opening(state);
+            StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            writer.Write(begin.Events, begin.State);
+            StepResult end = TurnLoop.EndTurn(begin.State, NoShuffle);
+            List<DepictionEvent> written = writer.Write(end.Events, end.State);
+            DepictionFrame after = written[written.Count - 1].After;
+
+            Assert.That(end.State.Player.MaxStamina, Is.EqualTo(Constants.BaseMaxStamina - 1));
+            Assert.That(after.Player.StaminaMax, Is.EqualTo(end.State.Player.MaxStamina));
+            Assert.That(after.Player.Stamina, Is.EqualTo(end.State.Player.Stamina));
+            Assert.That(after.Player.Statuses.Select(c => c.Label), Does.Contain("瘴気纏い"));
+        }
+
+        [Test]
         public void ATurnEndStance_PlaysInsideTheTurnEnd_BeforeReserve()
         {
             // 根渡り at gap 2 with 4 left: Guard 0 → 5 (the stance) → 8 (構え), all in one turn-end event.
