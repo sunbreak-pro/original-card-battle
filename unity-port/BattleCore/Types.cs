@@ -75,7 +75,9 @@ namespace BattleCore
     /// <summary>
     /// §2.4 / §7.4 targets. One is the opponent-directed default (the player picks one enemy on the
     /// drop zone); All is every enemy inside the reach; Self reads no reach. v4.3's cell left with
-    /// one enemy per cell (2026-09-23, #169); ally comes with the status words that use it (#48).
+    /// one enemy per cell (2026-09-23, #169). ally (a status put on another enemy) stays a rule of
+    /// §2.4 with no user yet (decided 2026-10-03, #269): no enemy carries it, so it has no value here
+    /// until one does.
     /// </summary>
     public enum TargetKind
     {
@@ -96,14 +98,21 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// §5 の状態. The demo (#188) carries nine of the ten words; 俊敏 is left out because no card
-    /// and no enemy gives it. The order is the order the chips are listed in. The six boss-only
-    /// words follow the nine (#51).
+    /// §5 の状態: all ten words (俊敏 came in with #48). The order is the order the chips are listed
+    /// in. The six boss-only words follow the ten (#51).
     /// </summary>
     public enum StatusKind
     {
         /// <summary>鈍足: the holder's own cell changes (move, push, pull) are one cell shorter. OnTurn.</summary>
         Slow,
+
+        /// <summary>
+        /// 俊敏 (#48): at the start of each turn it is held (the stacks before the tick, as 再生 and
+        /// 出血 read them), the holder may move one cell forward or back for free. The player takes
+        /// it with <see cref="TurnLoop.TakeFreeStep"/> before the first card, or lets it go; an enemy
+        /// steps toward its omen's reach (<see cref="EnemyAi.FreeStepDirection"/>). OnTurn.
+        /// </summary>
+        Swift,
 
         /// <summary>出血: HP −2 × stacks at the holder's turn start. OnTurn.</summary>
         Bleed,
@@ -120,7 +129,11 @@ namespace BattleCore
         /// <summary>強化: the holder's next attack face is ×1.5. OnUse.</summary>
         Empower,
 
-        /// <summary>集中: the holder's next card resolves one column to the right (demo approximation). OnUse.</summary>
+        /// <summary>
+        /// 集中: the holder's next card resolves one column to the right, never beyond column 4
+        /// (<see cref="FocusStep"/>): power, Guard and heal, and the stacks of the 出血 / 再生 it
+        /// gives, come from the next column of their scales. OnUse.
+        /// </summary>
         Focus,
 
         /// <summary>見切り: the next hit the holder's Guard absorbs returns half of it. OnUse.</summary>
@@ -718,6 +731,8 @@ namespace BattleCore
     /// (+1 前へ, -1 後ろへ, 0 none), cleared with Moved; pushes and pulls do not touch it. FollowUp is the 追撃 waiting for the next attack face (§17.6 F7: gone at the end of the
     /// holder's turn). Played lists the attributes of what the holder played this turn, in order and
     /// folded (§2.1, §2.3 `playedAttributes`; 連動 / 初手 / 締め / 連打 read it), cleared at turn end.
+    /// FreeStep is the player's 俊敏 step waiting to be taken (§5, #48): set at the turn start when
+    /// 俊敏 is held, gone once taken, once a card is played or once the turn ends.
     /// </summary>
     public sealed record CombatantState(
         int Hp,
@@ -733,6 +748,7 @@ namespace BattleCore
         int FollowUp = 0,
         IReadOnlyList<BattleAttribute>? Played = null,
         bool Moved = false,
+        bool FreeStep = false,
         int LastMove = 0)
     {
         /// <summary>The permanent effects held, oldest first; empty for none.</summary>
@@ -905,6 +921,7 @@ namespace BattleCore
         public static string ToToken(this StatusKind kind) => kind switch
         {
             StatusKind.Slow => "slow",
+            StatusKind.Swift => "swift",
             StatusKind.Bleed => "bleed",
             StatusKind.Fragile => "fragile",
             StatusKind.Intimidate => "intimidate",
@@ -926,6 +943,7 @@ namespace BattleCore
         public static string ToLabel(this StatusKind kind) => kind switch
         {
             StatusKind.Slow => "鈍足",
+            StatusKind.Swift => "俊敏",
             StatusKind.Bleed => "出血",
             StatusKind.Fragile => "脆化",
             StatusKind.Intimidate => "威圧",

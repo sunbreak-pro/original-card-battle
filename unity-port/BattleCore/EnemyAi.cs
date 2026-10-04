@@ -189,6 +189,23 @@ namespace BattleCore
         }
 
         /// <summary>
+        /// §5 俊敏 (#48): the free cell an enemy holding 俊敏 takes at its turn start (§9 step 9), as
+        /// +1 (forward, toward the player), −1 (back) or 0 (it stays). It serves the omen it is about
+        /// to carry out: an action aimed at the player whose reach the gap falls outside steps one
+        /// cell toward that reach. An action already in reach, one aimed at nobody, and a rest
+        /// (<paramref name="action"/> null) stay. Nothing random: the player can read it off the omen.
+        /// </summary>
+        public static int FreeStepDirection(EnemyActionDef? action, int gap)
+        {
+            if (action == null) return 0;
+            if (!IsOpponentDirected(action.Attributes, action.Face, action.Targets)) return 0;
+            var reach = action.Face.ReachOrDefault;
+            if (gap > reach.Max) return 1;
+            if (gap < reach.Min) return -1;
+            return 0;
+        }
+
+        /// <summary>
         /// §2.4 / §6: whether a face is aimed at the opponent, which is what a reach applies to — an
         /// attack, a status put on the opponent, a push / pull, or 崩し. A Self-targeted action reads
         /// no reach even when it carries those rows. One and All (§7.4) both aim at the opponent.

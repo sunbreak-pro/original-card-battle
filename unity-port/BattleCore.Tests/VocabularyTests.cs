@@ -7,7 +7,7 @@ using BattleCore;
 namespace BattleCore.Tests
 {
     /// <summary>
-    /// The demo vocabulary (#188): the nine status words (§5 / §5.1 / §19.5 S13), the trait
+    /// The demo vocabulary (#188): the status words (§5 / §5.1 / §19.5 S13), the trait
     /// conditions and effects (§2.3), heal and 崩し, and the stance slot with its exile pile (§4).
     ///
     /// Every scenario runs through the real TurnLoop (Start → BeginPlayerTurn → PlayCard → EndTurn).
@@ -114,6 +114,7 @@ namespace BattleCore.Tests
         // ---- §5: the two decay types and the two sides ----
 
         [TestCase(StatusKind.Slow, StatusDecay.OnTurn, false)]
+        [TestCase(StatusKind.Swift, StatusDecay.OnTurn, true)]
         [TestCase(StatusKind.Bleed, StatusDecay.OnTurn, false)]
         [TestCase(StatusKind.Fatigue, StatusDecay.OnTurn, false)]
         [TestCase(StatusKind.Regen, StatusDecay.OnTurn, true)]
@@ -132,14 +133,14 @@ namespace BattleCore.Tests
         [Test]
         public void TheTurnStartTick_TakesAStackOffTheTurnWords_AndLeavesTheUseWords()
         {
-            // §5: ターンで減る型 lose one stack at the holder's turn start; 使うと減る型 wait to be used. The demo has nine words (俊敏 left out),
+            // §5: ターンで減る型 lose one stack at the holder's turn start; 使うと減る型 wait to be used. All ten words (俊敏 since #48),
             // and the six boss-only words (#51) follow them: 呪縛 is a turn word, 鉤爪 a use word, the other four last the battle.
             var kinds = Enum.GetValues(typeof(StatusKind)).Cast<StatusKind>().ToList();
             var ticked = StatusSet.Of(kinds.Select(k => (k, 2)).ToArray()).TickTurnStart();
 
             Assert.Multiple(() =>
             {
-                Assert.That(kinds, Has.Count.EqualTo(9 + 6));
+                Assert.That(kinds, Has.Count.EqualTo(10 + 6));
                 foreach (var kind in kinds)
                 {
                     int expected = Statuses.DecayOf(kind) == StatusDecay.OnTurn ? 1 : 2;
