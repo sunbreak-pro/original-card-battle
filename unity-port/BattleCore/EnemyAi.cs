@@ -76,10 +76,56 @@ namespace BattleCore
             foreach (var actionId in BranchFor(def, gap, active))
             {
                 if (skip != null && Contains(skip, actionId)) continue;
-                var action = def.Actions[actionId];
+                var action = ActionOf(def, actionId, active);
                 if (Combat.CanPay(action.Cost, stamina)) return action;
             }
             return null;
+        }
+
+        /// <summary>
+        /// #51: the enemy's action of this id as it stands under the active switch — the switch's
+        /// override when it carries one (roster §4.4 breaker: 錫杖 with 崩し 2), else the enemy's own.
+        /// </summary>
+        public static EnemyActionDef ActionOf(EnemyDef def, string actionId, TreeSwitch? active = null)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            return active?.Override(actionId) ?? def.Actions[actionId];
+        }
+
+        /// <summary>
+        /// #51 (roster §4.3): the actions the tree passes over because the player holds the word the
+        /// action waits out (<see cref="EnemyActionDef.NotWhileFoeHas"/>: 縛りの言葉 while 呪縛 remains).
+        /// <paramref name="beforeFoeTurn"/> is true for an omen decided at step 12, which is taken
+        /// after the player's next turn start: a ターンで減る型 word loses a stack there, so it counts
+        /// as remaining only if a stack is left after that tick. False for the second action of a
+        /// phase, read with nothing in between.
+        /// </summary>
+        public static IReadOnlyList<string> Barred(EnemyDef def, StatusSet foe, bool beforeFoeTurn)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            if (foe == null) throw new ArgumentNullException(nameof(foe));
+            var barred = new List<string>();
+            foreach (var action in def.Actions.Values)
+            {
+                if (!action.NotWhileFoeHas.HasValue) continue;
+                var word = action.NotWhileFoeHas.Value;
+                int left = foe.Stacks(word) - (beforeFoeTurn && Statuses.DecayOf(word) == StatusDecay.OnTurn ? 1 : 0);
+                if (left > 0) barred.Add(action.Id);
+            }
+            return barred;
+        }
+
+        /// <summary>
+        /// #51 (roster §6.3 伸びる根): the face an action resolves with at gap <paramref name="gap"/>.
+        /// An action with <see cref="EnemyActionDef.PullBeyond"/> pushes |Push| cells at that gap or
+        /// nearer and pulls |Push| cells beyond it; every other action's face is its own.
+        /// </summary>
+        public static Face FaceAt(EnemyActionDef action, int gap)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            if (!action.PullBeyond.HasValue || action.Face.Push == 0) return action.Face;
+            int cells = Math.Abs(action.Face.Push);
+            return action.Face with { Push = gap <= action.PullBeyond.Value ? cells : -cells };
         }
 
         private static bool Contains(IReadOnlyCollection<string> ids, string id)
@@ -121,7 +167,7 @@ namespace BattleCore
             if (first == null) throw new ArgumentNullException(nameof(first));
             if (def.ActionsPerPhase < 2 || first.ActionId == RestActionId) return null;
 
-            var firstAction = def.Actions[first.ActionId];
+            var firstAction = ActionOf(def, first.ActionId, active);
             var second = new List<string>();
             if (skip != null) second.AddRange(skip);
             second.Add(first.ActionId);
@@ -132,13 +178,13 @@ namespace BattleCore
         /// §6: the omen is a commitment. The declared action is carried out as shown, and when it can
         /// no longer be paid for the enemy rests instead of picking something cheaper.
         /// </summary>
-        public static EnemyActionDef? ActionToExecute(EnemyDef def, Omen omen, int stamina)
+        public static EnemyActionDef? ActionToExecute(EnemyDef def, Omen omen, int stamina, TreeSwitch? active = null)
         {
             if (def == null) throw new ArgumentNullException(nameof(def));
             if (omen == null) throw new ArgumentNullException(nameof(omen));
             if (omen.ActionId == RestActionId) return null;
 
-            var action = def.Actions[omen.ActionId];
+            var action = ActionOf(def, omen.ActionId, active);
             return Combat.CanPay(action.Cost, stamina) ? action : null;
         }
 

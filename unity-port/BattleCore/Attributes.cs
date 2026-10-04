@@ -38,6 +38,16 @@ namespace BattleCore
         }
 
         /// <summary>
+        /// battle_core_v4 §3 「移動が中心の札 6 種」: a card that declares no attack, guard, skill or
+        /// stance face and moves (前へ / 後ろへ, with a small extra). 呪縛 keeps these out of play (#51).
+        /// </summary>
+        public static bool IsMovementCard(BattleAttribute declared, Face face)
+        {
+            if (face == null) throw new ArgumentNullException(nameof(face));
+            return declared == BattleAttribute.None && HasMovement(face);
+        }
+
+        /// <summary>
         /// §4: a stance is an attribute of its own. A card that declares スタンス declares nothing
         /// else and does not move; a card that carries a stance face declares スタンス.
         /// </summary>

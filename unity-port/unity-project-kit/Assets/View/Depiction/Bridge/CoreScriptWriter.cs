@@ -301,6 +301,21 @@ namespace Depiction.Bridge
                     if (applied.Landed > 0) SetStatus(ev, applied.Target, applied.Kind, applied.Landed, applied.StacksAfter);
                     break;
 
+                case MaxStaminaChanged lowered:
+                {
+                    // #51 瘴気纏い: the pips lose their top, and what is held is cut to the new maximum.
+                    UnitModel unit = Unit(lowered.Actor);
+                    int cut = lowered.StaminaAfter - unit.Stamina;
+                    unit.StaminaMax = lowered.MaxAfter;
+                    SetStamina(ev, lowered.Actor, cut, lowered.StaminaAfter);
+                    break;
+                }
+
+                case StatusCleared cleared:
+                    // #51 root_sk: the enemy shook the word off.
+                    SetStatus(ev, cleared.Actor, cleared.Kind, -cleared.Stacks, 0);
+                    break;
+
                 case Drawn drawn:
                 {
                     _hand.Add(drawn.Card);

@@ -122,6 +122,30 @@ namespace BattleCore.Tests
         }
 
         [Test]
+        public void Swift_TheFreeCell_IsAnOwnMove_ForTheBossWords_AndRecordsItsWay()
+        {
+            // #48 × #51: the free cell goes through the same own move as a move face, so 呪縛 stops it,
+            // 鉤爪 catches it going back, and the way it went is what root_m later reads (LastMove).
+            var bound = Begin(WithPlayerStatuses(Started(2, Idle), (StatusKind.Swift, 2), (StatusKind.Binding, 2)));
+            var hooked = Begin(WithPlayerStatuses(Started(2, Idle), (StatusKind.Swift, 2), (StatusKind.Hook, 1)));
+            var free = Begin(WithPlayerStatuses(Started(2, Idle), (StatusKind.Swift, 2)));
+
+            var boundStep = TurnLoop.TakeFreeStep(bound.State, 1);
+            var caughtBack = TurnLoop.TakeFreeStep(hooked.State, -1);
+            var forward = TurnLoop.TakeFreeStep(free.State, 1);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(boundStep.Events.OfType<MoveBlocked>().Single().By, Is.EqualTo(StatusKind.Binding));
+                Assert.That(boundStep.State.Player.Cell, Is.EqualTo(2), "呪縛: the free cell does not resolve");
+                Assert.That(caughtBack.Events.OfType<MoveBlocked>().Single().By, Is.EqualTo(StatusKind.Hook));
+                Assert.That(caughtBack.State.Player.Cell, Is.EqualTo(2), "鉤爪: a step back is caught");
+                Assert.That(caughtBack.State.Player.Statuses.Has(StatusKind.Hook), Is.False, "and spends the stack");
+                Assert.That(forward.State.Player.LastMove, Is.EqualTo(1), "the free cell's way is recorded");
+            });
+        }
+
+        [Test]
         public void Swift_LosesOneStackPerTurn_AndGivesOneTurnPerStack()
         {
             // §5 ターンで減る型: read before the tick, as 再生 / 出血 are, so 2 stacks are two turns of the free cell.

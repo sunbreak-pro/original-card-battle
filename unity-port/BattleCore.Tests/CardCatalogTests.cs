@@ -131,20 +131,99 @@ namespace BattleCore.Tests
                 Is.EqualTo(Constants.PositionTraitCards));
         }
 
-        /// <summary>§4.3: the effect tally.</summary>
+        /// <summary>
+        /// §4.3 (v4.4): the effect tally. #51 brought the traits of 深淵の構え (間合い 0: 追撃), 根縛り
+        /// (相手の状態(鈍足): ドロー +1) and 狼の構え (自分の状態(強化): 追撃) to v4.4 (#257).
+        /// </summary>
         [TestCase(TraitEffect.StaminaGain, 8)]
-        [TestCase(TraitEffect.PowerBonus, 15)]
+        [TestCase(TraitEffect.PowerBonus, 14)]
         [TestCase(TraitEffect.GuardBonus, 15)]
-        [TestCase(TraitEffect.Draw, 8)]
-        [TestCase(TraitEffect.Status, 7)]
+        [TestCase(TraitEffect.Draw, 9)]
+        [TestCase(TraitEffect.Status, 6)]
         [TestCase(TraitEffect.CostDown, 3)]
         [TestCase(TraitEffect.NextTurnRecovery, 3)]
-        [TestCase(TraitEffect.HeavyBlow, 9)]
+        [TestCase(TraitEffect.HeavyBlow, 8)]
         [TestCase(TraitEffect.Convert, 2)]
-        [TestCase(TraitEffect.FollowUp, 2)]
+        [TestCase(TraitEffect.FollowUp, 4)]
         public void TheEffects_MatchTheCanonTally(TraitEffect effect, int count)
         {
             Assert.That(CardCatalog.All.Count(c => c.Trait != null && c.Trait.Effect == effect), Is.EqualTo(count));
+        }
+
+        // ---- §1.2 / §4.4: the two rules over the whole table (#51) ----
+
+        /// <summary>
+        /// §1.2: 「同じ「条件 + 効果」の組は 3 枚までしか重ねません（条件は括弧の中身と境目の数まで含めて
+        /// 同じもの、効果は種類が同じものを数えます）」. A condition is its word with what is in its
+        /// brackets — the gap of 間合い, the bar of 温存, the attribute of 連動, the kind of 予兆, the word
+        /// of 相手の状態 / 自分の状態; an effect is its kind, whatever its amount or word. 背水の陣's two
+        /// traits are two pairs.
+        /// </summary>
+        private static string PairOf(Trait trait)
+        {
+            string bracket = trait.Condition switch
+            {
+                TraitCondition.GapAtMost or TraitCondition.GapAtLeast or TraitCondition.Reserve => trait.Threshold.ToString(),
+                TraitCondition.Combo => trait.Attribute.ToString(),
+                TraitCondition.OmenIs => trait.Omen?.ToString() ?? "",
+                TraitCondition.FoeHas or TraitCondition.SelfHas => trait.Watch?.ToString() ?? "",
+                _ => "",
+            };
+            return trait.Condition + "(" + bracket + ") : " + trait.Effect;
+        }
+
+        [Test]
+        public void NoConditionAndEffectPair_SitsOnMoreThanThreeCards()
+        {
+            var pairs = CardCatalog.All.SelectMany(c => c.AllTraits.Select(t => (Pair: PairOf(t), Card: c.Id)))
+                .GroupBy(p => p.Pair)
+                .ToDictionary(g => g.Key, g => g.Select(p => p.Card).ToList());
+            var over = pairs.Where(p => p.Value.Count > Constants.SameTraitMax)
+                .Select(p => p.Key + " on " + string.Join(", ", p.Value)).ToList();
+            var atTheCap = pairs.Where(p => p.Value.Count == Constants.SameTraitMax).Select(p => p.Key).ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(over, Is.Empty, "§1.2: three cards at most share a pair");
+                // §4.4 「上限 3。間合い 2 以上 + 威力、予兆(攻撃) + Guard の 2 組が 3 枚」.
+                Assert.That(atTheCap, Is.EquivalentTo(new[] { "GapAtLeast(2) : PowerBonus", "OmenIs(Attack) : GuardBonus" }));
+                Assert.That(pairs["GapAtLeast(2) : PowerBonus"], Is.EquivalentTo(new[] { "reach_thrust", "boar_rush", "last_stand" }));
+                Assert.That(pairs["OmenIs(Attack) : GuardBonus"], Is.EquivalentTo(new[] { "rock_stance", "back_leap", "bulwark" }));
+            });
+        }
+
+        /// <summary>
+        /// §1.2: the effects split in two when the four cells of 間合い are counted — 攻撃 is 威力 +n /
+        /// 重撃 / 転換 / 追撃 / a status on the opponent, 防御 is Guard +n / スタミナ +1 / ドロー +1 /
+        /// コスト −1 / 次ターン回復 +1 / a status on oneself.
+        /// </summary>
+        private static bool AttackEffect(Trait trait) => trait.Effect switch
+        {
+            TraitEffect.PowerBonus or TraitEffect.HeavyBlow or TraitEffect.Convert or TraitEffect.FollowUp => true,
+            TraitEffect.Status => trait.Grant != null && !trait.Grant.OnSelf,
+            _ => false,
+        };
+
+        [TestCase(true, true, new[] { "body_check", "kesa_cut", "fang_rush", "abyss_stance" })]
+        [TestCase(true, false, new[] { "last_stand", "reach_thrust", "blood_dance", "boar_rush" })]
+        [TestCase(false, true, new[] { "wrist_cut", "shield_bash", "deflect", "low_guard" })]
+        [TestCase(false, false, new[] { "dash_in", "throw_blade", "stone_throw", "gale_thrust" })]
+        public void TheSixteenGapCards_FillEachCellWithFour_OnColumnsOneTwoTwoThree(bool attack, bool close, string[] cards)
+        {
+            // §4.4 「攻撃 × 詰めて得 4 / 攻撃 × 離れて得 4 / 防御 × 詰めて得 4 / 防御 × 離れて得 4」, 「各マスの列は
+            // 1 / 2 / 2 / 3」 (§1.3 の 2). 詰めて得 is 間合い n 以下, 離れて得 間合い n 以上; 背水の陣 counts by
+            // its first trait (K6). The ids are §4.4's table, column 1 first.
+            var gapCards = CardCatalog.All.Where(c => c.Trait != null
+                && (c.Trait.Condition == TraitCondition.GapAtMost || c.Trait.Condition == TraitCondition.GapAtLeast)).ToList();
+            var cell = gapCards.Where(c => AttackEffect(c.Trait!) == attack && (c.Trait!.Condition == TraitCondition.GapAtMost) == close)
+                .OrderBy(c => c.Column).ToList();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(gapCards, Has.Count.EqualTo(Constants.PositionTraitCards));
+                Assert.That(cell.Select(c => c.Id), Is.EquivalentTo(cards));
+                Assert.That(cell.Select(c => c.Column), Is.EqualTo(new[] { 1, 2, 2, 3 }));
+            });
         }
 
         [Test]
