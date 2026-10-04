@@ -142,6 +142,7 @@ namespace BattleCore
         public static StatusDecay DecayOf(StatusKind kind) => kind switch
         {
             StatusKind.Slow => StatusDecay.OnTurn,
+            StatusKind.Swift => StatusDecay.OnTurn,
             StatusKind.Bleed => StatusDecay.OnTurn,
             StatusKind.Fatigue => StatusDecay.OnTurn,
             StatusKind.Regen => StatusDecay.OnTurn,
@@ -153,9 +154,10 @@ namespace BattleCore
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown status."),
         };
 
-        /// <summary>§5 向き: whether the word is one a side puts on itself (強化 / 集中 / 見切り / 再生).</summary>
+        /// <summary>§5 向き: whether the word is one a side puts on itself (俊敏 / 強化 / 集中 / 見切り / 再生).</summary>
         public static bool IsOwn(StatusKind kind) => kind switch
         {
+            StatusKind.Swift => true,
             StatusKind.Empower => true,
             StatusKind.Focus => true,
             StatusKind.Parry => true,

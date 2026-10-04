@@ -51,6 +51,8 @@ namespace Depiction.Bridge
         public bool CanChooseEnemy;
         public string ChooseEnemyLabel = "";
 
+        /// <summary>The same run again. Off only on DemoEnding's fallback, where the run is left half-done (#297).</summary>
+        public bool CanAgain = true;
         public string AgainLabel = "";
         public string BackLabel = "デッキ選択へ戻る";
     }

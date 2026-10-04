@@ -125,7 +125,7 @@ namespace BattleCore
     /// the enemies take their phases one by one in definition order, each running steps 9-12; the
     /// battle is won when the last one falls. A one-enemy battle emits the same stream as before.
     ///
-    /// The demo vocabulary (#188): the nine status words, the twelve trait conditions and ten
+    /// The demo vocabulary (#188): the status words (all ten since #48), the twelve trait conditions and ten
     /// effects, heal and 崩し, and the stance slot with its exile pile. Where the canon leaves a
     /// moment open the choice is written at the spot. The enemies of the roster (#189) bring
     /// multi-blow faces, a second action for elites and bosses and a stance used once a battle;
@@ -522,9 +522,10 @@ namespace BattleCore
             // hand it leaves behind).
             var context = PlayerContext(state, def, read);
 
+            // §5 俊敏 (#48): the free cell is taken before the first card or not at all.
             var hand = new List<CardInstance>(state.Hand);
             hand.Remove(card);
-            state = state with { Hand = hand };
+            state = state with { Hand = hand, Player = state.Player with { FreeStep = false } };
             events.Add(new CardPlayed(Actor.Player, card, state.GapTo(read)) { Unit = read });
 
             state = Resolve(
@@ -550,6 +551,44 @@ namespace BattleCore
             }
 
             state = CheckDefeat(state, Actor.Player, 0, events);
+            return new StepResult(state, events);
+        }
+
+        /// <summary>
+        /// §5 俊敏 (#48): whether the player may take the free cell now. It opens at the turn start
+        /// (§9 step 3) when 俊敏 is held and stays open until it is taken, the first card is played
+        /// or the turn ends — so the hand just drawn can inform the choice.
+        /// </summary>
+        public static bool CanTakeFreeStep(BattleState state)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            return state.Result == GameResult.Ongoing && state.Phase == BattlePhase.PlayerAction && state.Player.FreeStep;
+        }
+
+        /// <summary>
+        /// §5 俊敏 (#48): the player takes the free cell, <paramref name="direction"/> +1 forward or
+        /// −1 back. It moves like a move face of one cell, at no cost: 鈍足 takes it to 0, the line
+        /// stops it at the nearest enemy and at cell 1, and a cell that changes counts as 移動後
+        /// (§2.3). The step is spent even when the line stops it. Not moving needs no call: playing
+        /// a card or ending the turn lets it go.
+        /// </summary>
+        public static StepResult TakeFreeStep(BattleState state, int direction)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (direction != 1 && direction != -1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(direction), direction, "The free step is one cell: +1 (forward) or -1 (back).");
+            }
+            Require(state, BattlePhase.PlayerAction, nameof(TakeFreeStep));
+            if (!state.Player.FreeStep)
+            {
+                throw new InvalidOperationException("TakeFreeStep: the player has no free step this turn (no 俊敏, or already taken or let go).");
+            }
+
+            var events = new List<BattleEvent>();
+            state = state with { Player = state.Player with { FreeStep = false } };
+            events.Add(new FreeStepTaken(Actor.Player, direction));
+            state = MoveSelf(state, Actor.Player, 0, direction, events);
             return new StepResult(state, events);
         }
 
@@ -582,7 +621,7 @@ namespace BattleCore
             {
                 Hand = emptyHand,
                 DiscardPile = discardPile,
-                Player = state.Player with { Played = null, Moved = false, FollowUp = 0 },
+                Player = state.Player with { Played = null, Moved = false, FollowUp = 0, FreeStep = false },
             };
             events.Add(new HandDiscarded(Actor.Player, discarded));
             events.Add(new TurnEnded(Actor.Player, state.Turn));
@@ -682,15 +721,20 @@ namespace BattleCore
         /// <summary>
         /// §9 steps 1-3 for the player, step 9 for an enemy: the same things in the same order.
         /// Step 2 is the recovery, less 1 for 疲労 and plus a turn-start stance's recovery (水の構え);
-        /// step 3 is the stance's Guard, then 再生, then 出血, then the ターンで減る型 ticks. The
-        /// holder may fall to 出血 here; the caller looks.
+        /// step 3 is the stance's Guard, then 再生, then 出血, then the ターンで減る型 ticks, then 俊敏
+        /// (#48). The holder may fall to 出血 here; the caller looks.
+        ///
+        /// 俊敏 reads the stacks held before the tick, as 再生 and 出血 do, so n stacks give n turns
+        /// of it. The player's step is opened (<see cref="CombatantState.FreeStep"/>) and taken in
+        /// <see cref="TakeFreeStep"/>; an enemy takes its step here, toward the reach of the omen it is
+        /// about to carry out (<see cref="EnemyAi.FreeStepDirection"/>). One that fell to 出血 does not.
         /// </summary>
         private static BattleState OpenTurnFor(BattleState state, Actor actor, int unit, int recovery, List<BattleEvent> events)
         {
             var self = Get(state, actor, unit);
 
             events.Add(new GuardCleared(actor, self.Guard) { Unit = unit });
-            self = self with { Guard = 0, Played = null, Moved = false };
+            self = self with { Guard = 0, Played = null, Moved = false, FreeStep = false };
 
             // §4 (v4.4): every turn-start stance on the list fires on its own, so two of one work twice.
             var firing = new List<StanceEntry>();
@@ -729,6 +773,7 @@ namespace BattleCore
                 self = self with { Hp = hpAfter };
             }
 
+            bool swift = self.Statuses.Has(StatusKind.Swift);
             var ticked = self.Statuses.TickTurnStart();
             foreach (var kind in self.Statuses.Kinds)
             {
@@ -736,8 +781,17 @@ namespace BattleCore
                 events.Add(new StatusTicked(actor, kind, ticked.Stacks(kind)) { Unit = unit });
             }
             self = self with { Statuses = ticked };
+            state = Set(state, actor, unit, self);
 
-            return Set(state, actor, unit, self);
+            if (!swift || Combat.IsDefeated(self.Hp)) return state;
+            if (actor == Actor.Player) return Set(state, actor, unit, self with { FreeStep = true });
+
+            var enemy = state.Enemies[unit];
+            var omened = enemy.Omen == null ? null : EnemyAi.ActionToExecute(enemy.Def, enemy.Omen, self.Stamina);
+            int direction = EnemyAi.FreeStepDirection(omened, state.GapTo(unit));
+            if (direction == 0) return state;
+            events.Add(new FreeStepTaken(actor, direction) { Unit = unit });
+            return MoveSelf(state, actor, unit, direction, events);
         }
 
         private static BattleState DrawCards(BattleState state, int count, IRng rng, List<BattleEvent> events)
@@ -782,7 +836,7 @@ namespace BattleCore
         /// still resolves the rest. A player card never gets here out of reach (CanPlay refuses it).
         ///
         /// The statuses the one acting holds work here: 集中 (the player's next card, one column to
-        /// the right — the demo reads it as the scale's step added to power, Guard and heal), 威圧
+        /// the right — <see cref="FocusStep"/>: power, Guard, heal and the face's 出血 / 再生), 威圧
         /// (−3 on power and Guard; spent by an action whose attack face lands or that has a Guard,
         /// so a whiff with no Guard leaves it), 強化 (×1.5 on the attack face) and a
         /// waiting 追撃. On the one hit: 脆化 (×1.5, taken before 強化 — §19.5 S13, one multiplier per
@@ -937,7 +991,7 @@ namespace BattleCore
                             foreach (var grant in face.StatusList)
                             {
                                 if (grant.OnSelf || grant.Stacks <= 0) continue;
-                                state = ApplyStatus(state, actor, foeSide, foe, foeSide == Actor.Enemy ? foe : unit, grant.Kind, grant.Stacks, events);
+                                state = ApplyStatus(state, actor, foeSide, foe, foeSide == Actor.Enemy ? foe : unit, grant.Kind, focus.StacksOf(grant), events);
                             }
                         }
 
@@ -963,37 +1017,7 @@ namespace BattleCore
             {
                 events.Add(new FaceResolved(actor, sourceId, FaceKind.Move) { Unit = unit });
             }
-            if (face.Move != 0)
-            {
-                // §7.3: 前へ / 後ろへ n, as far as the line allows. The mover's own 鈍足 takes one cell off.
-                self = Get(state, actor, unit);
-                int cells = Combat.CellsAfterSlow(Math.Abs(face.Move), self.Statuses);
-                if (cells == 0)
-                {
-                    events.Add(new MoveBlocked(actor, StatusKind.Slow) { Unit = unit });
-                }
-                else
-                {
-                    var shift = Field.Move(state, actor, Math.Sign(face.Move) * cells, unit);
-                    if (shift.To != shift.From)
-                    {
-                        // 移動後 (§2.3): the holder's own cell changed, so the rest of this turn reads it.
-                        state = Set(state, actor, unit, self with { Cell = shift.To, Moved = true });
-                        events.Add(new CellsMoved(actor, shift.From, shift.To, Pushed: false) { Unit = unit });
-
-                        // 根縛り: an enemy that moves itself pays for it for each such stance the player holds.
-                        if (actor == Actor.Enemy)
-                        {
-                            foreach (var bind in state.Player.StanceList)
-                            {
-                                if (bind.Def.Hook != StanceHook.BreakOnFoeMove || bind.Def.Break <= 0) continue;
-                                events.Add(new StanceFired(Actor.Player, bind.Source, StanceHook.BreakOnFoeMove) { Unit = unit });
-                                state = Break(state, Actor.Player, Actor.Enemy, unit, bind.Def.Break, unit, events);
-                            }
-                        }
-                    }
-                }
-            }
+            if (face.Move != 0) state = MoveSelf(state, actor, unit, face.Move, events);
             if (face.Push != 0 && hit.Count > 0)
             {
                 // §7.3: push (away) / pull (in) the opponent; Guard does not stop it. A large opponent
@@ -1078,10 +1102,11 @@ namespace BattleCore
             // has no kind limit. A ターンで減る型 word stops at four on either side (#205).
             // Statuses on the opponent need the blow to have reached them.
             // A face of several blows has put its opponent statuses on already, after the first blow.
+            // 集中 grows the face's 出血 / 再生 to the next column; a trait's grant is not the column's.
             var grants = new List<StatusGrant>();
             foreach (var grant in face.StatusList)
             {
-                if (grant.OnSelf || face.Hits < 2 || !attacks) grants.Add(grant);
+                if (grant.OnSelf || face.Hits < 2 || !attacks) grants.Add(grant with { Stacks = focus.StacksOf(grant) });
             }
             grants.AddRange(outcome.GrantList);
             foreach (var grant in grants)
@@ -1124,6 +1149,42 @@ namespace BattleCore
             {
                 self = Get(state, actor, unit);
                 state = Set(state, actor, unit, self with { FollowUp = self.FollowUp + outcome.FollowUp });
+            }
+            return state;
+        }
+
+        /// <summary>
+        /// §7.3: 前へ / 後ろへ n of the holder's own, as far as the line allows — a move face, or the
+        /// 俊敏 free cell (#48). The mover's own 鈍足 takes one cell off. A cell that changes is 移動後
+        /// (§2.3) for the rest of the turn, and an enemy that moves itself pays each 根縛り the player
+        /// holds.
+        /// </summary>
+        private static BattleState MoveSelf(BattleState state, Actor actor, int unit, int move, List<BattleEvent> events)
+        {
+            var self = Get(state, actor, unit);
+            int cells = Combat.CellsAfterSlow(Math.Abs(move), self.Statuses);
+            if (cells == 0)
+            {
+                events.Add(new MoveBlocked(actor, StatusKind.Slow) { Unit = unit });
+                return state;
+            }
+
+            var shift = Field.Move(state, actor, Math.Sign(move) * cells, unit);
+            if (shift.To == shift.From) return state;
+
+            // 移動後 (§2.3): the holder's own cell changed, so the rest of this turn reads it.
+            state = Set(state, actor, unit, self with { Cell = shift.To, Moved = true });
+            events.Add(new CellsMoved(actor, shift.From, shift.To, Pushed: false) { Unit = unit });
+
+            // 根縛り: an enemy that moves itself pays for it for each such stance the player holds.
+            if (actor == Actor.Enemy)
+            {
+                foreach (var bind in state.Player.StanceList)
+                {
+                    if (bind.Def.Hook != StanceHook.BreakOnFoeMove || bind.Def.Break <= 0) continue;
+                    events.Add(new StanceFired(Actor.Player, bind.Source, StanceHook.BreakOnFoeMove) { Unit = unit });
+                    state = Break(state, Actor.Player, Actor.Enemy, unit, bind.Def.Break, unit, events);
+                }
             }
             return state;
         }
@@ -1569,12 +1630,19 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// §5 集中, the demo's reading (#188): the next card resolves one column to the right, taken as
-    /// the step to the next column on each scale the card is written from — added to its power, its
-    /// Guard and its heal. A face only grows on the attribute that owns it (a move card's small
-    /// Guard does not), and column 4 does not grow. Status stacks are left as they are.
+    /// §5 集中 (#188, #48): the next card resolves one column to the right, never beyond column 4.
+    /// A card is written into one column and keeps no table of the others, so the column to the
+    /// right is read off the §3.1 scales the card is written from: the step to the next column is
+    /// added to its power, its Guard and its heal, and to the stacks of each 出血 / 再生 its face
+    /// gives (the stack scale 1 / 2 / 3 / 4). A face only grows on the attribute that owns it (a
+    /// move card's small Guard does not), and column 4 does not grow.
+    ///
+    /// What is the same in every column stays: the other words (2 stacks whatever the column),
+    /// 崩し (§3.1: not on the scale), the cost, the reach, and a trait's grant (the trait belongs
+    /// to the card, not to its column). The skill face's "kinds" row is not read: which word a
+    /// column would add is the card author's choice, not a number.
     /// </summary>
-    public sealed record FocusStep(int Power, int Guard, int Heal)
+    public sealed record FocusStep(int Power, int Guard, int Heal, int TickStacks = 0)
     {
         public static readonly FocusStep None = new FocusStep(0, 0, 0);
 
@@ -1592,7 +1660,19 @@ namespace BattleCore
                 ? Columns.StepRight(single ? Columns.SingleGuard : Columns.DualGuard, column) : 0;
             int heal = attributes.HasFlag(BattleAttribute.Skill) && face.Heal > 0
                 ? Columns.StepRight(single ? Columns.SingleHeal : Columns.DualHeal, column) : 0;
-            return new FocusStep(power, guard, heal);
+            int ticks = face.StatusList.Any(grant => GrowsWithColumn(grant.Kind))
+                ? Columns.StepRight(Columns.TickStacks, column) : 0;
+            return new FocusStep(power, guard, heal, ticks);
         }
+
+        /// <summary>The stacks <paramref name="grant"/> lands with: one column further on the 出血 / 再生 scale, any other word as written.</summary>
+        public int StacksOf(StatusGrant grant)
+        {
+            if (grant == null) throw new ArgumentNullException(nameof(grant));
+            return GrowsWithColumn(grant.Kind) ? grant.Stacks + TickStacks : grant.Stacks;
+        }
+
+        /// <summary>§3.1: 出血 and 再生 are the two words whose stacks the column decides.</summary>
+        private static bool GrowsWithColumn(StatusKind kind) => kind == StatusKind.Bleed || kind == StatusKind.Regen;
     }
 }
