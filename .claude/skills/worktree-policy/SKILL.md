@@ -15,13 +15,13 @@ description: 本リポの multi-chat worktree 運用規約の正本。レーン�
 
 ## レーン一覧
 
-| slug      | 担当                                       | 宛先ラベル                                       | 主に触るパス                                                                    |
-| --------- | ------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------- |
-| `cards`   | カード設計・デッキ・習熟・敵ロースター     | `lane:cards`（既定 `area:cards` `area:enemy`）   | `src/constants/data/cards/`, `src/domain/cards/`, `docs/*_document/` のカード章 |
-| `design`  | 見た目。UI / UX 設計・演出・立ち絵・素材   | `lane:design`（既定 `area:ui` `area:art`）       | `src/ui/`, `unity-port/**/View/`, `docs/art_document/`, `briefs/`               |
-| `battle`  | 戦闘プログラム（C# の BattleCore が正）    | `lane:battle`（既定 `area:battle` `area:unity`） | `unity-port/BattleCore/`, `unity-port/BattleCore.Tests/`, `src/domain/battles/` |
-| `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード       | `lane:dungeon`（既定 `area:dungeon`）            | `src/domain/dungeon/`, 探索側の C# と設計書                                     |
-| `audit`   | 監査。設計書と実装の整合、既知課題の棚卸し | `lane:audit`（既定 `area:docs` `area:tooling`）  | **書き込みなし**（下記）                                                        |
+| slug | 担当 | 宛先ラベル | 主に触るパス |
+| --- | --- | --- | --- |
+| `cards` | カード設計・デッキ・習熟・敵ロースター | `lane:cards`（既定 `area:cards` `area:enemy`） | `src/constants/data/cards/`, `src/domain/cards/`, `docs/*_document/` のカード章 |
+| `design` | 見た目。UI / UX 設計・演出・立ち絵・素材 | `lane:design`（既定 `area:ui` `area:art`） | `src/ui/`, `unity-port/**/View/`, `docs/art_document/`, `briefs/` |
+| `battle` | 戦闘プログラム（C# の BattleCore が正） | `lane:battle`（既定 `area:battle` `area:unity`） | `unity-port/BattleCore/`, `unity-port/BattleCore.Tests/`, `src/domain/battles/` |
+| `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード | `lane:dungeon`（既定 `area:dungeon`） | `src/domain/dungeon/`, 探索側の C# と設計書 |
+| `audit` | 監査。設計書と実装の整合、既知課題の棚卸し | `lane:audit`（既定 `area:docs` `area:tooling`） | **書き込みなし**（下記） |
 
 **`audit` は読み取り専用です**（2026-09-20 こうだいさん決定）。整合監査の結果は Issue として起票し、修正は担当レーンへ回します。自分でコードを直しません。例外は自分の tracker（`memory/` `history/`）と `comm/outbox/` だけです。
 
@@ -78,6 +78,20 @@ echo <prefix>/<slug>-<issue> > .claude/comm/.session-branch   # 省略禁止
 取り込みを飛ばすと、古い設計書を正本として読みます。worktree は設計書のコピーを 1 組ずつ持つためです（2026-09-21 の実測でレーンは最大 37 コミット遅れ）。取り込んだ後に `npm run sources -- --lane <slug>` を引きます。
 
 feature ブランチでは (2) を `pull --ff-only` で代替できません（fast-forward が成立せず必ず失敗します）。コンフリクトは手動で解消し、判断に迷う衝突は自動解消せず停止して chat-main / こうだいさんに報告します。chat-main（`main` ブランチ）だけは `git pull --ff-only` のみで足ります。
+
+## 続きの PR は積む
+
+同じレーンが同じ正本を触る PR を続けて出すときは、2 本目のブランチをマージ待ちの 1 本目から切ります。
+
+```bash
+git checkout -b <prefix>/<slug>-<次の issue> <マージ待ちのブランチ>
+echo <prefix>/<slug>-<次の issue> > .claude/comm/.session-branch
+```
+
+- 理由は、設計書の冒頭の版の行と末尾の改訂履歴を、2 本の PR が同じ位置で書くからです。どちらも main から切ると、片方がマージされた時点でもう片方が必ずぶつかります（2026-10-03 の #257 と #286、09-26 の #206 と #207）
+- PR の base は `main` のままにし、本文に「#<前の PR> の上に積んでいます」と書きます。前の PR がマージされると、差分は自分の変更だけになります
+- 前の PR に直しが入ったら `git merge <前のブランチ>` で取り込みます。前の PR がマージされた後は、ふつうどおり `git merge origin/main` です
+- 触る正本が重ならない PR は積みません。ふつうどおり `origin/main` から切ります
 
 ## tracker の更新を実装ブランチに載せない
 

@@ -52,31 +52,31 @@ npx vitest run src/domain/cards/decks/__tests__/deck.test.ts  # Single file
 
 ### Conventions
 
-| Area            | Rule                                                        |
-| --------------- | ----------------------------------------------------------- |
-| Types           | `PascalCase`                                                |
-| Functions       | `camelCase`                                                 |
-| Constants       | `UPPER_SNAKE_CASE`                                          |
-| UI text         | Japanese                                                    |
-| Code/comments   | English                                                     |
-| CSS sizing      | `vh/vw` (use `px` only for borders)                         |
-| CSS selectors   | Scope with parent: `.battle-screen .card { }`               |
-| Adding classes  | Use `character-class-creator` skill                         |
-| Chat language   | Japanese。書き方は下の「こうだいさん向けの文章」に従う      |
+| Area | Rule |
+| --- | --- |
+| Types | `PascalCase` |
+| Functions | `camelCase` |
+| Constants | `UPPER_SNAKE_CASE` |
+| UI text | Japanese |
+| Code/comments | English |
+| CSS sizing | `vh/vw` (use `px` only for borders) |
+| CSS selectors | Scope with parent: `.battle-screen .card { }` |
+| Adding classes | Use `character-class-creator` skill |
+| Chat language | Japanese。書き方は下の「こうだいさん向けの文章」に従う |
 | State ownership | One context owns each piece of state; others read via hooks |
 
 ### こうだいさん向けの文章
 
 会話・報告・`docs/reports/` の HTML は、グローバルの `rules/japanese.md` と output style `tone-persona` に従う。本ファイルとスキルの文体（体言止め・内輪の語）を読み手向けの文章に持ち込まない。次の語は言い換える。
 
-| 内輪の語              | こうだいさん向けの書き方                 |
-| --------------------- | ---------------------------------------- |
-| 正本 / 台帳           | 元になる文書 / 元になる文書の一覧        |
-| レーン                | 担当ごとの作業場所（cards・design など） |
-| main の采配に落とす   | メインのチャットで扱う                   |
-| こうだいさんの手番    | こうだいさんの作業（何をするかまで書く） |
-| 宛先を付ける          | どの担当に回すかのラベルを付ける         |
-| 起票する / 退役させる | Issue を作る / 使わなくする              |
+| 内輪の語 | こうだいさん向けの書き方 |
+| --- | --- |
+| 正本 / 台帳 | 元になる文書 / 元になる文書の一覧 |
+| レーン | 担当ごとの作業場所（cards・design など） |
+| main の采配に落とす | メインのチャットで扱う |
+| こうだいさんの手番 | こうだいさんの作業（何をするかまで書く） |
+| 宛先を付ける | どの担当に回すかのラベルを付ける |
+| 起票する / 退役させる | Issue を作る / 使わなくする |
 
 スキル名・ラベル名・ファイル名は、何をするものかを先に言ってから添える。
 
@@ -166,15 +166,15 @@ Battle flow: Init phase queue (speed-sorted) → Player phase (draw, buffs, wait
 
 ### Core Systems
 
-| System              | Key Files                                             | Purpose                                              |
-| ------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
-| **Battle**          | `domain/battles/managements/useBattleOrchestrator.ts` | Turn-based card combat with phase queue              |
-| **Cards**           | `domain/cards/decks/deck.ts`, `deckReducer.ts`        | Deck shuffle/draw/discard (IMMUTABLE)                |
-| **Mastery**         | `domain/cards/state/masteryManager.ts`                | Card use tracking, derived card unlocks              |
-| **Class Abilities** | `domain/characters/player/`                           | Sword Energy (swordsman), Elemental Resonance (mage) |
-| **Enemy AI**        | `domain/characters/enemy/enemyAI.ts`                  | Energy-based action selection                        |
-| **Dungeon**         | `domain/dungeon/logic/dungeonLogic.ts`                | Procedural map generation (5 depths × 5 floors)      |
-| **Camps**           | `domain/camps/logic/`                                 | Shop, Blacksmith, Sanctuary, Guild                   |
+| System | Key Files | Purpose |
+| --- | --- | --- |
+| **Battle** | `domain/battles/managements/useBattleOrchestrator.ts` | Turn-based card combat with phase queue |
+| **Cards** | `domain/cards/decks/deck.ts`, `deckReducer.ts` | Deck shuffle/draw/discard (IMMUTABLE) |
+| **Mastery** | `domain/cards/state/masteryManager.ts` | Card use tracking, derived card unlocks |
+| **Class Abilities** | `domain/characters/player/` | Sword Energy (swordsman), Elemental Resonance (mage) |
+| **Enemy AI** | `domain/characters/enemy/enemyAI.ts` | Energy-based action selection |
+| **Dungeon** | `domain/dungeon/logic/dungeonLogic.ts` | Procedural map generation (5 depths × 5 floors) |
+| **Camps** | `domain/camps/logic/` | Shop, Blacksmith, Sanctuary, Guild |
 
 ### Data vs Logic Separation
 
@@ -210,22 +210,22 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 
 ## Skills Quick Reference
 
-| Task                                   | Skill                        |
-| -------------------------------------- | ---------------------------- |
-| Add new card                           | `card-creator`               |
-| Add new enemy                          | `enemy-creator`              |
-| Add character class                    | `character-class-creator`    |
-| UI/UX work                             | `ui-ux-creator`              |
+| Task | Skill |
+| --- | --- |
+| Add new card | `card-creator` |
+| Add new enemy | `enemy-creator` |
+| Add character class | `character-class-creator` |
+| UI/UX work | `ui-ux-creator` |
 | Character art / UI production pipeline | `visual-production-pipeline` |
-| 前のセッションの続きを引き継ぐ         | `session-successor`          |
-| セッション開始 / `/clear` の後         | `session-loader`             |
-| worktree / レーン / ブランチ切替       | `worktree-policy`            |
-| 課題を Issue として起票                | `issue-dispatch`             |
-| 次に着手する Issue を決める            | `issue-prompter`             |
-| open Issue を仕分ける                  | `/loop-triage`               |
-| Issue 1 件を commit まで実装           | `/loop-implement`            |
-| 検証ゲートを通して原因を切り分ける     | `/loop-verify`               |
-| 失敗から再発防止の 1 行を回収          | `/loop-postmortem`           |
+| 前のセッションの続きを引き継ぐ | `session-successor` |
+| セッション開始 / `/clear` の後 | `session-loader` |
+| worktree / レーン / ブランチ切替 | `worktree-policy` |
+| 課題を Issue として起票 | `issue-dispatch` |
+| 次に着手する Issue を決める | `issue-prompter` |
+| open Issue を仕分ける | `/loop-triage` |
+| Issue 1 件を commit まで実装 | `/loop-implement` |
+| 検証ゲートを通して原因を切り分ける | `/loop-verify` |
+| 失敗から再発防止の 1 行を回収 | `/loop-postmortem` |
 
 ## Development Workflows
 
@@ -264,13 +264,13 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 
 ### hooks（`.claude/settings.json`）
 
-| タイミング       | スクリプト                    | 役割                                                             |
-| ---------------- | ----------------------------- | ---------------------------------------------------------------- |
-| SessionStart     | `regen-index.sh`              | `memory/INDEX.md` と `history/INDEX.md` を再生成                 |
-| SessionStart     | `session-start-check.sh`      | `.session-name` / `.session-branch` の宣言整合を検査（警告のみ） |
-| PreToolUse(Bash) | `pre-commit-mcp-check.sh`     | `.mcp.json` のトークン平文化を commit 前に検出                   |
-| PreToolUse(Bash) | `pre-commit-index-guard.sh`   | 生成物 `INDEX.md` の commit 混入を自動除外                       |
-| PreToolUse(Bash) | `pre-commit-tracker-guard.sh` | tracker と実装の同梱コミットをブロック                           |
+| タイミング | スクリプト | 役割 |
+| --- | --- | --- |
+| SessionStart | `regen-index.sh` | `memory/INDEX.md` と `history/INDEX.md` を再生成 |
+| SessionStart | `session-start-check.sh` | `.session-name` / `.session-branch` の宣言整合を検査（警告のみ） |
+| PreToolUse(Bash) | `pre-commit-mcp-check.sh` | `.mcp.json` のトークン平文化を commit 前に検出 |
+| PreToolUse(Bash) | `pre-commit-index-guard.sh` | 生成物 `INDEX.md` の commit 混入を自動除外 |
+| PreToolUse(Bash) | `pre-commit-tracker-guard.sh` | tracker と実装の同梱コミットをブロック |
 
 実体は `$HOME/dev/Claude/hooks-lib/` を優先し、無ければ `.claude/scripts/hooks-lib/` の同梱版に落ちる。
 
@@ -284,13 +284,13 @@ main / master への直接 push、force push、`git reset --hard`、`git branch 
 
 worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card-battle\<slug>\` に置く（絶対パスで作る）。**1 レーン = 1 worktree = 1 チャット**で、ブランチは Issue ごとに切り替える。
 
-| slug      | 担当                                       | 既定の `area:`   |
-| --------- | ------------------------------------------ | ---------------- |
-| `cards`   | カード設計・デッキ・習熟・敵ロースター     | `cards` `enemy`  |
-| `design`  | 見た目。UI / UX 設計・演出・立ち絵・素材   | `ui` `art`       |
-| `battle`  | 戦闘プログラム（C# の BattleCore が正）    | `battle` `unity` |
-| `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード       | `dungeon`        |
-| `audit`   | 監査。設計書と実装の整合、既知課題の棚卸し | `docs` `tooling` |
+| slug | 担当 | 既定の `area:` |
+| --- | --- | --- |
+| `cards` | カード設計・デッキ・習熟・敵ロースター | `cards` `enemy` |
+| `design` | 見た目。UI / UX 設計・演出・立ち絵・素材 | `ui` `art` |
+| `battle` | 戦闘プログラム（C# の BattleCore が正） | `battle` `unity` |
+| `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード | `dungeon` |
+| `audit` | 監査。設計書と実装の整合、既知課題の棚卸し | `docs` `tooling` |
 
 - **宛先ラベルは `lane:<slug>`**。付けなければ `issue-prompter` が上の `area:` から既定のレーンへ振る
 - **世界観の正本は main（chat-main）**（2026-09-21 こうだいさん決定）。正典は `docs/vision/world-v1.md` で、**竜が全ての敵の親玉、敵は竜・亜竜・眷属の系譜に絞る**。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main の采配に落とす。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
@@ -303,7 +303,8 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 
 - **フロー**: Vision（`docs/vision/core.md`、ADR 不使用）→ 実装プラン（`docs/vision/plans/YYYY-MM-DD-<slug>.md`）→ 完了で `archive/` 移動・規約は本ファイルへ統合。進捗 / 履歴は per-chat（`memory/` `history/`、task-tracker 経由）
 - **Known Issue**: `docs/known-issues/` に Root Cause + 再発防止を蓄積。発見時 `NNN-<slug>.md` 作成 + `INDEX.md` 更新、解決時 Status=Fixed。**類似バグはまず `INDEX.md` を grep**
-- **正本の台帳は `docs/SOURCES.md`**。主題ごとの正本・持ち主のレーン・旧版の一覧・食い違ったときに勝つ側を持つ。他の文書とスキルは同じ表を持たず、ここを指す。正本を足す / 版を上げる / 退役させるコミットに台帳の行を含め、`npm run sources -- --check` を通す
+- **正本の台帳は `docs/SOURCES.md`**。主題ごとの正本・持ち主のレーン・旧版の一覧・食い違ったときに勝つ側を持つ。他の文書とスキルは同じ表を持たず、ここを指す。正本を足す / 退役させる / 持ち主を変えるコミットに台帳の行を含め、`npm run sources -- --check` を通す。版を上げるだけなら台帳は触らない（版は正本の冒頭の Status が持つ）
+- **Markdown の表は桁を揃えない**。1 マスが伸びるたびに表の全行が書き換わり、並行する PR がぶつかるため（known-issues 003）。`.md` は `.prettierrc.json` の `requirePragma` で prettier の対象から外し、表の空白は `npm run md:tables` で詰める。同じ正本を触る PR を続けて出すときは前の PR の上に積む（`worktree-policy`）
 - **正本どうしの食い違いは直さず Issue にする**（題は「正本の食い違い: 〜」）。他レーンの正本は書かない。どちらに従って進めたかを Issue と PR 本文に 1 行で残す。手順は `docs/SOURCES.md` §5
 - **決定は設計書の本文へ入れ込む**。末尾の「〜の決定」節は記録で、入れ込むまでは台帳の状態の欄に「未反映」と書く
 - **パスの読み方**: 本ファイルの `docs/…` は `.claude/docs/…` を指す。リポジトリ直下の `docs/`（`reports/` `briefs/` `mockups/` `prompts/`）は HTML レポートと制作物の置き場で、正本は置かない
@@ -311,19 +312,19 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 
 ## References
 
-| Resource                         | Contents                                                                   |
-| -------------------------------- | -------------------------------------------------------------------------- |
-| `memory/chat-<self>.md`          | タスクトラッカー — 進行中 / 直近の完了 / 予定（per-chat）                  |
-| `history/chat-<self>.md`         | 変更履歴（降順、概要+変更点。per-chat）                                    |
-| `.github/ISSUE_TEMPLATE/`        | Issue テンプレート 3 種（Known Issue / Roadmap Item / Human Task）         |
-| `.claude/hooks/`                 | SessionStart と PreToolUse の hook 5 本                                    |
-| `README.md`                      | プロジェクト概要・Development History（完了履歴の要約）                    |
-| `.claude/docs/SOURCES.md`        | 正本の台帳（主題 → 正本 → 持ち主のレーン、旧版、食い違いの手順）           |
-| `.claude/docs/INDEX.md`          | ドキュメント索引（標準構造 + ゲーム設計書）                                |
-| `.claude/docs/vision/core.md`    | Vision・設計原則                                                           |
-| `.claude/docs/*_document/`       | Game design specs (battle, cards, camps, dungeon, enemies, items, journal) |
-| `.claude/docs/code-explanation/` | Code analysis, vulnerability tracker, testing analysis                     |
-| `.claude/docs/vision/plans/`     | Active plans + future features (quest/title/NPC/dark market/PixiJS)        |
-| `.claude/docs/known-issues/`     | Root Cause + 再発防止知見（INDEX + LESSONS_LEARNED）                       |
-| `.claude/skills/`                | プロジェクト固有スキル（Skills Quick Reference 参照）                      |
-| `.claude/agents/`                | プロジェクト固有エージェント（リンク実体は agents-lib）                    |
+| Resource | Contents |
+| --- | --- |
+| `memory/chat-<self>.md` | タスクトラッカー — 進行中 / 直近の完了 / 予定（per-chat） |
+| `history/chat-<self>.md` | 変更履歴（降順、概要+変更点。per-chat） |
+| `.github/ISSUE_TEMPLATE/` | Issue テンプレート 3 種（Known Issue / Roadmap Item / Human Task） |
+| `.claude/hooks/` | SessionStart と PreToolUse の hook 5 本 |
+| `README.md` | プロジェクト概要・Development History（完了履歴の要約） |
+| `.claude/docs/SOURCES.md` | 正本の台帳（主題 → 正本 → 持ち主のレーン、旧版、食い違いの手順） |
+| `.claude/docs/INDEX.md` | ドキュメント索引（標準構造 + ゲーム設計書） |
+| `.claude/docs/vision/core.md` | Vision・設計原則 |
+| `.claude/docs/*_document/` | Game design specs (battle, cards, camps, dungeon, enemies, items, journal) |
+| `.claude/docs/code-explanation/` | Code analysis, vulnerability tracker, testing analysis |
+| `.claude/docs/vision/plans/` | Active plans + future features (quest/title/NPC/dark market/PixiJS) |
+| `.claude/docs/known-issues/` | Root Cause + 再発防止知見（INDEX + LESSONS_LEARNED） |
+| `.claude/skills/` | プロジェクト固有スキル（Skills Quick Reference 参照） |
+| `.claude/agents/` | プロジェクト固有エージェント（リンク実体は agents-lib） |

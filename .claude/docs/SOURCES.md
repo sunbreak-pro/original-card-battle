@@ -3,7 +3,7 @@
 > **役割**: 「どの主題は、どのファイルが正本で、どのレーンが書くか」を 1 か所に集めた台帳です。図書館の蔵書目録にあたります。本の中身は持たず、棚の場所と貸出係だけを持ちます。
 > **この台帳が正本であるもの**: 正本の場所、持ち主のレーン、食い違ったときの手順。他の文書とスキルは同じ表を持たず、ここを指します。
 > **引き方**: `npm run sources -- --lane <slug>` が、そのレーンの書くものと読むものを出します。`npm run sources -- --check` が台帳と実ファイルのずれを検出します。
-> **更新**: 正本を足す・版を上げる・退役させるコミットで、同じコミットに本書の行を含めます。書き手は chat-main です。レーンは自分の PR で自分の行だけを直します。
+> **更新**: 正本を足す・退役させる・持ち主を変えるコミットで、同じコミットに本書の行を含めます。**版を上げるだけのコミットでは本書を触りません**（版の番号は各正本の冒頭の Status が持ちます）。書き手は chat-main です。レーンは自分の PR で自分の表の行だけを直します。
 
 ## 1. 読む前に main を取り込む
 
@@ -13,74 +13,107 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 持ち主の `main` は chat-main、`人` はこうだいさんです。パスはリポジトリのルートからの相対です。
 
-| 主題                                                             | 正本                                                                              | 持ち主     | 状態                                                                                                                                                                                                                                                                           | 読むレーン             |
-| ---------------------------------------------------------------- | --------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
-| 構想（生と継承）                                                 | `.claude/docs/vision/concept-v3.md`                                               | main       | APPROVED                                                                                                                                                                                                                                                                       | all                    |
-| 設計原則                                                         | `.claude/docs/vision/core.md`                                                     | main       | APPROVED                                                                                                                                                                                                                                                                       | all                    |
-| 世界設定・用語・固有名詞                                         | `.claude/docs/vision/world-v1.md`                                                 | main       | 正典 v4                                                                                                                                                                                                                                                                        | cards, design, dungeon |
-| ゲーム全体像                                                     | `.claude/docs/Overall_document/game_design_master.md`                             | main       | V4.0                                                                                                                                                                                                                                                                           | audit                  |
-| 要件（何をどの順で）                                             | `.claude/docs/requirements/tier1-core.md`                                         | main       | v6（R1-10 に用語と状態の頁、#234）                                                                                                                                                                                                                                             | all                    |
-| 要件（支援）                                                     | `.claude/docs/requirements/tier2-support.md`                                      | main       | v3                                                                                                                                                                                                                                                                             | all                    |
-| 要件（実験・凍結）                                               | `.claude/docs/requirements/tier3-experimental.md`                                 | main       | v2                                                                                                                                                                                                                                                                             | audit                  |
-| 戦闘のルールと数値                                               | `.claude/docs/battle_document/battle_core_v4.md`                                  | battle     | v4.4（属性 4 つ、#258）+ §19 の習熟（S5〜S8）未反映                                                                                                                                                                                                                            | cards, design          |
-| 戦闘の画面と操作                                                 | `.claude/docs/battle_document/battle_ui_ux_v2.md`                                 | battle     | v2.3（2026-10-04、見た目の値を外して `battle-visual-v1.md` を指す形にした。#241。間合い N は v2.2、#163。本文が正。§10 / §11 / §13 は記録）                                                                                                                                    | design                 |
-| カード（剣士 80 種）                                             | `.claude/docs/card_document/swordsman_cards_v4.md`                                | cards      | v4.4（属性 4 つ、#257）                                                                                                                                                                                                                                                        | battle, design         |
-| 敵の数値とロースター                                             | `.claude/docs/enemy_document/enemy_roster_v4.md`                                  | cards      | v4.9（燐刃の竜兵の見切り、#222）。v4.8 は #221 が使う。v4.7 で技名の言い換え（#172）、v4.6 で槍の竜兵 2 体（#286）、v4.5 で属性 4 つと二段斬り（#257）                                                                                                                         | battle, design         |
-| 探索（刻限・瘴気・ノード）                                       | `.claude/docs/danjeon_document/dungeon_exploration_v4.md`                         | dungeon    | PROPOSED                                                                                                                                                                                                                                                                       | design                 |
-| concept-v3 の未確定の棚卸し                                      | `.claude/docs/danjeon_document/concept_v3_open_items.md`                          | dungeon    | PROPOSED（決定ではない）                                                                                                                                                                                                                                                       | design                 |
-| 七層の瘴気と刻限（層ごとの数値）                                 | `.claude/docs/danjeon_document/seven_layers_v4.md`                                | dungeon    | PROPOSED                                                                                                                                                                                                                                                                       | battle, cards          |
-| 探索の瘴気と戦闘の数値の突き合わせ                               | `.claude/docs/danjeon_document/miasma_and_battle_v4.md`                           | dungeon    | PROPOSED                                                                                                                                                                                                                                                                       | battle                 |
-| ツールと消耗品（出立の枠の中身）                                 | `.claude/docs/danjeon_document/tools_and_consumables_v4.md`                       | dungeon    | PROPOSED                                                                                                                                                                                                                                                                       | battle                 |
-| 継承の間の画面と導線                                             | `.claude/docs/camp_document/CAMP_FACILITIES_DESIGN.md`                            | design     | V5.1（間合い N、#167）                                                                                                                                                                                                                                                         | dungeon                |
-| 戦闘画面とカードの見た目（色・部品・数字の置き場・意味の伝え方） | `.claude/docs/art_document/battle-visual-v1.md`                                   | design     | 確定 v1（2026-09-27、Claude Design の案 1a。2026-09-28 にカード案 C・沈んだ手札・四隅だけの対象枠を入れ込み済み（#254）。4 属性のカードの顔と出せない札のパネルも入れ込み済み（#259）。`battle_ui_ux_v2.md` の見た目の章・受け皿・ランプ・配置を置き換える。v2 の追従は #241） | battle, cards          |
-| カードの絵の方針                                                 | `.claude/docs/art_document/card-art-policy.md`                                    | design     | DRAFT v1                                                                                                                                                                                                                                                                       | cards                  |
-| 絵柄の規約（原本の大きさ・指示文・加筆）                         | `.claude/docs/art_document/style-guide.md`                                        | design     | DRAFT v1（指示文は未実測。2026-10-03 に向きを「画面で向く向き。Unity で反転しない」へ変更、#85）                                                                                                                                                                               | —                      |
-| 素材の取り込み規約（置き場・命名・Unity の設定）                 | `.claude/docs/art_document/asset-intake.md`                                       | design     | DRAFT v1（2026-10-03 に向きを「画面で向く向き。Unity で反転しない」へ変更、#85）                                                                                                                                                                                               | battle                 |
-| アートの道具と前提                                               | `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md` | design     | 現行                                                                                                                                                                                                                                                                           | —                      |
-| 戦闘コアの実装                                                   | `unity-port/BattleCore/`                                                          | battle     | C# が正                                                                                                                                                                                                                                                                        | cards                  |
-| 戦闘描写の台本と View                                            | `unity-port/unity-project-kit/Assets/View/Depiction/`                             | battle     | C# はこのリポが正                                                                                                                                                                                                                                                              | design                 |
-| 実装規約・凍結範囲                                               | `.claude/CLAUDE.md`                                                               | main       | 現行                                                                                                                                                                                                                                                                           | all                    |
-| レーンの定義と worktree の手順                                   | `.claude/skills/worktree-policy/SKILL.md`                                         | main       | 現行                                                                                                                                                                                                                                                                           | all                    |
-| 課題の状態・担当・優先順位                                       | GitHub Issues（`npm run issues:next`）                                            | 人 + main  | —                                                                                                                                                                                                                                                                              | all                    |
-| ラベルの一覧                                                     | GitHub のラベル（`gh label list -R sunbreak-pro/original-card-battle`）           | main       | —                                                                                                                                                                                                                                                                              | all                    |
-| タスクの進捗（チャットごと）                                     | `.claude/memory/`                                                                 | 各チャット | task-tracker 経由                                                                                                                                                                                                                                                              | —                      |
+**表は持ち主ごとに分けています。** 担当の違う PR が隣り合う行を同時に直すと、git が自動で合流できずにぶつかるためです。行を足すときは自分の持ち主の表に足し、表の桁は揃えません（§6）。
 
-**状態の欄に但し書きがある行は、そのまま読むと間違えます。** `battle_core_v4.md` は §19（2026-09-21 の決定）が本文に入っていません。同じ文書は 2026-09-22 の v4.3（#159）で近間 / 遠間を間合い N（マスの距離）へ改めました。`swordsman_cards_v4.md`・`enemy_roster_v4.md`・`battle_ui_ux_v2.md` は近間 / 遠間のままで、追従は #160 と #163 です。間合いの規則が食い違ったら `battle_core_v4.md` が勝ちます。2026-09-30 の v4.4（#258）で属性が 4 つ（攻撃 / 防御 / スキル / スタンス）になりました。`swordsman_cards_v4.md` と `enemy_roster_v4.md` の属性の列・スタンスの書き方・連動(ムーブ) は追従前で、追従は #257 です。属性の規則が食い違ったら `battle_core_v4.md` が勝ちます。`battle_ui_ux_v2.md` は 2026-09-21 の v2.1 改訂（#46）で本文が正本に戻りました。
+**状態の欄には種類と未反映の印だけを書きます。** 種類は APPROVED / 正典 / 確定 / 現行 / DRAFT / PROPOSED のどれかです。版の番号と改訂の経緯は、各正本の冒頭の Status と改訂履歴を読みます。
+
+### main が書く正本
+
+| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| --- | --- | --- | --- | --- |
+| 構想（生と継承） | `.claude/docs/vision/concept-v3.md` | main | APPROVED | all |
+| 設計原則 | `.claude/docs/vision/core.md` | main | APPROVED | all |
+| 世界設定・用語・固有名詞 | `.claude/docs/vision/world-v1.md` | main | 正典 | cards, design, dungeon |
+| ゲーム全体像 | `.claude/docs/Overall_document/game_design_master.md` | main | 現行 | audit |
+| 要件（何をどの順で） | `.claude/docs/requirements/tier1-core.md` | main | DRAFT | all |
+| 要件（支援） | `.claude/docs/requirements/tier2-support.md` | main | 現行 | all |
+| 要件（実験・凍結） | `.claude/docs/requirements/tier3-experimental.md` | main | 現行 | audit |
+| 実装規約・凍結範囲 | `.claude/CLAUDE.md` | main | 現行 | all |
+| レーンの定義と worktree の手順 | `.claude/skills/worktree-policy/SKILL.md` | main | 現行 | all |
+| ラベルの一覧 | GitHub のラベル（`gh label list -R sunbreak-pro/original-card-battle`） | main | — | all |
+
+### battle が書く正本
+
+| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| --- | --- | --- | --- | --- |
+| 戦闘のルールと数値 | `.claude/docs/battle_document/battle_core_v4.md` | battle | 現行。§19 の習熟（S5〜S8）未反映 | cards, design |
+| 戦闘の画面と操作 | `.claude/docs/battle_document/battle_ui_ux_v2.md` | battle | 現行。本文が正で、§10 / §11 / §13 は記録 | design |
+| 戦闘コアの実装 | `unity-port/BattleCore/` | battle | C# が正 | cards |
+| 戦闘描写の台本と View | `unity-port/unity-project-kit/Assets/View/Depiction/` | battle | C# はこのリポが正 | design |
+
+`battle_core_v4.md` は §19（2026-09-21 の決定）が本文に入っていません。間合いと属性の規則が他の正本と食い違ったら、`battle_core_v4.md` が勝ちます。
 
 **`battle_ui_ux_v2.md` と `View/Depiction/` の持ち主は仮です。** レーンの定義では UI / UX 設計は design ですが、縦切り（#67）の間は #46 / #56 / #57 が `lane:battle` なので battle に置いています。縦切りの振り返り（#80）で見直します。
 
+### cards が書く正本
+
+| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| --- | --- | --- | --- | --- |
+| カード（剣士 80 種） | `.claude/docs/card_document/swordsman_cards_v4.md` | cards | 現行 | battle, design |
+| 敵の数値とロースター | `.claude/docs/enemy_document/enemy_roster_v4.md` | cards | DRAFT | battle, design |
+
+### dungeon が書く正本
+
+| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| --- | --- | --- | --- | --- |
+| 探索（刻限・瘴気・ノード） | `.claude/docs/danjeon_document/dungeon_exploration_v4.md` | dungeon | PROPOSED | design |
+| concept-v3 の未確定の棚卸し | `.claude/docs/danjeon_document/concept_v3_open_items.md` | dungeon | PROPOSED（決定ではない） | design |
+| 七層の瘴気と刻限（層ごとの数値） | `.claude/docs/danjeon_document/seven_layers_v4.md` | dungeon | PROPOSED | battle, cards |
+| 探索の瘴気と戦闘の数値の突き合わせ | `.claude/docs/danjeon_document/miasma_and_battle_v4.md` | dungeon | PROPOSED | battle |
+| ツールと消耗品（出立の枠の中身） | `.claude/docs/danjeon_document/tools_and_consumables_v4.md` | dungeon | PROPOSED | battle |
+
+### design が書く正本
+
+| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| --- | --- | --- | --- | --- |
+| 継承の間の画面と導線 | `.claude/docs/camp_document/CAMP_FACILITIES_DESIGN.md` | design | 現行 | dungeon |
+| 戦闘画面とカードの見た目（色・部品・数字の置き場・意味の伝え方） | `.claude/docs/art_document/battle-visual-v1.md` | design | 確定 | battle, cards |
+| カードの絵の方針 | `.claude/docs/art_document/card-art-policy.md` | design | DRAFT | cards |
+| 絵柄の規約（原本の大きさ・指示文・加筆） | `.claude/docs/art_document/style-guide.md` | design | DRAFT（指示文は未実測） | — |
+| 素材の取り込み規約（置き場・命名・Unity の設定） | `.claude/docs/art_document/asset-intake.md` | design | DRAFT | battle |
+| アートの道具と前提 | `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md` | design | 現行 | — |
+
+見た目の値（色・部品・配置）は `battle-visual-v1.md` が持ち、`battle_ui_ux_v2.md` はそこを指します。
+
+### こうだいさんと各チャットが書くもの
+
+| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| --- | --- | --- | --- | --- |
+| 課題の状態・担当・優先順位 | GitHub Issues（`npm run issues:next`） | 人 + main | — | all |
+| タスクの進捗（チャットごと） | `.claude/memory/` | 各チャット | task-tracker 経由 | — |
+
 ## 3. 旧版と記録（現行仕様として読まない）
 
-| ファイル                                                              | 状態                           | 代わりに読むもの             |
-| --------------------------------------------------------------------- | ------------------------------ | ---------------------------- |
-| `.claude/docs/vision/concept-v2.md`                                   | SUPERSEDED                     | `concept-v3.md`              |
-| `.claude/docs/vision/2026-06-11-gap-analysis.md`                      | SUPERSEDED                     | `requirements/tier1-core.md` |
-| `.claude/docs/vision/2026-06-11-realism-concept-kickoff.md`           | SUPERSEDED                     | `concept-v3.md`              |
-| `.claude/docs/battle_document/battle_core_v3.md`                      | SUPERSEDED                     | `battle_core_v4.md`          |
-| `.claude/docs/battle_document/battle_logic.md`                        | PARTIALLY SUPERSEDED           | `battle_core_v4.md`          |
-| `.claude/docs/battle_document/battle_ui_ux_v1.md`                     | 旧正本（View v1.1 の実装記録） | `battle_ui_ux_v2.md`         |
-| `.claude/docs/battle_document/buff_debuff_system.md`                  | WEB VERSION RECORD             | `battle_core_v4.md` §5       |
-| `.claude/docs/battle_document/element_system_spec.md`                 | WEB VERSION RECORD             | `battle_core_v4.md`          |
-| `.claude/docs/card_document/SWORDSMAN_CARDS_40.md`                    | Web 版の記録（バナーなし）     | `swordsman_cards_v4.md`      |
-| `.claude/docs/card_document/MAGE_CARDS_40.md`                         | Web 版の記録（バナーなし）     | なし（魔術師は未設計）       |
-| `.claude/docs/card_document/NEW_CHARACTER_SYSTEM_DESIGN.md`           | Web 版の記録（バナーなし）     | `concept-v3.md`              |
-| `.claude/docs/enemy_document/boss_system_redesign.md`                 | WEB VERSION RECORD             | `enemy_roster_v4.md`         |
-| `.claude/docs/enemy_document/depth1_enemy_database.md`                | WEB VERSION RECORD             | `enemy_roster_v4.md`         |
-| `.claude/docs/enemy_document/depth2_enemy_database.md`                | WEB VERSION RECORD             | `enemy_roster_v4.md`         |
-| `.claude/docs/enemy_document/depth3_enemy_database.md`                | WEB VERSION RECORD             | `enemy_roster_v4.md`         |
-| `.claude/docs/enemy_document/depth4_enemy_database.md`                | WEB VERSION RECORD             | `enemy_roster_v4.md`         |
-| `.claude/docs/enemy_document/depth5_boss_database.md`                 | WEB VERSION RECORD             | `enemy_roster_v4.md`         |
-| `.claude/docs/danjeon_document/dungeon_exploration_ui_design_v3.0.md` | SUPERSEDED                     | `dungeon_exploration_v4.md`  |
-| `.claude/docs/danjeon_document/return_system_design.md`               | SUPERSEDED                     | `dungeon_exploration_v4.md`  |
-| `.claude/docs/journal_document/journal_system_implementation_plan.md` | PARTIALLY SUPERSEDED           | `concept-v3.md` §5           |
-| `.claude/docs/Overall_document/DESIGN_CHANGE_PLAN_lives_system.md`    | SUPERSEDED                     | `concept-v3.md` §8           |
-| `.claude/docs/Overall_document/PROJECT_OVERVIEW.md`                   | スナップショット（2026-06-07） | `game_design_master.md`      |
-| `.claude/docs/ap-equipment-system.md`                                 | FROZEN                         | なし（防御は Guard のみ）    |
-| `.claude/docs/item_document/EQUIPMENT_AND_ITEMS_DESIGN.md`            | FROZEN                         | なし                         |
-| `.claude/docs/util_doument/inventory_design.md`                       | FROZEN                         | なし                         |
-| `.claude/docs/ui_ux_design_guide.md`                                  | WEB VERSION RECORD             | `battle_ui_ux_v2.md`         |
-| `src/`                                                                | 旧ループの Web 版              | `unity-port/`                |
-| `src/ui/battle-lab/core/`                                             | 凍結                           | `unity-port/BattleCore/`     |
+| ファイル | 状態 | 代わりに読むもの |
+| --- | --- | --- |
+| `.claude/docs/vision/concept-v2.md` | SUPERSEDED | `concept-v3.md` |
+| `.claude/docs/vision/2026-06-11-gap-analysis.md` | SUPERSEDED | `requirements/tier1-core.md` |
+| `.claude/docs/vision/2026-06-11-realism-concept-kickoff.md` | SUPERSEDED | `concept-v3.md` |
+| `.claude/docs/battle_document/battle_core_v3.md` | SUPERSEDED | `battle_core_v4.md` |
+| `.claude/docs/battle_document/battle_logic.md` | PARTIALLY SUPERSEDED | `battle_core_v4.md` |
+| `.claude/docs/battle_document/battle_ui_ux_v1.md` | 旧正本（View v1.1 の実装記録） | `battle_ui_ux_v2.md` |
+| `.claude/docs/battle_document/buff_debuff_system.md` | WEB VERSION RECORD | `battle_core_v4.md` §5 |
+| `.claude/docs/battle_document/element_system_spec.md` | WEB VERSION RECORD | `battle_core_v4.md` |
+| `.claude/docs/card_document/SWORDSMAN_CARDS_40.md` | Web 版の記録（バナーなし） | `swordsman_cards_v4.md` |
+| `.claude/docs/card_document/MAGE_CARDS_40.md` | Web 版の記録（バナーなし） | なし（魔術師は未設計） |
+| `.claude/docs/card_document/NEW_CHARACTER_SYSTEM_DESIGN.md` | Web 版の記録（バナーなし） | `concept-v3.md` |
+| `.claude/docs/enemy_document/boss_system_redesign.md` | WEB VERSION RECORD | `enemy_roster_v4.md` |
+| `.claude/docs/enemy_document/depth1_enemy_database.md` | WEB VERSION RECORD | `enemy_roster_v4.md` |
+| `.claude/docs/enemy_document/depth2_enemy_database.md` | WEB VERSION RECORD | `enemy_roster_v4.md` |
+| `.claude/docs/enemy_document/depth3_enemy_database.md` | WEB VERSION RECORD | `enemy_roster_v4.md` |
+| `.claude/docs/enemy_document/depth4_enemy_database.md` | WEB VERSION RECORD | `enemy_roster_v4.md` |
+| `.claude/docs/enemy_document/depth5_boss_database.md` | WEB VERSION RECORD | `enemy_roster_v4.md` |
+| `.claude/docs/danjeon_document/dungeon_exploration_ui_design_v3.0.md` | SUPERSEDED | `dungeon_exploration_v4.md` |
+| `.claude/docs/danjeon_document/return_system_design.md` | SUPERSEDED | `dungeon_exploration_v4.md` |
+| `.claude/docs/journal_document/journal_system_implementation_plan.md` | PARTIALLY SUPERSEDED | `concept-v3.md` §5 |
+| `.claude/docs/Overall_document/DESIGN_CHANGE_PLAN_lives_system.md` | SUPERSEDED | `concept-v3.md` §8 |
+| `.claude/docs/Overall_document/PROJECT_OVERVIEW.md` | スナップショット（2026-06-07） | `game_design_master.md` |
+| `.claude/docs/ap-equipment-system.md` | FROZEN | なし（防御は Guard のみ） |
+| `.claude/docs/item_document/EQUIPMENT_AND_ITEMS_DESIGN.md` | FROZEN | なし |
+| `.claude/docs/util_doument/inventory_design.md` | FROZEN | なし |
+| `.claude/docs/ui_ux_design_guide.md` | WEB VERSION RECORD | `battle_ui_ux_v2.md` |
+| `src/` | 旧ループの Web 版 | `unity-port/` |
+| `src/ui/battle-lab/core/` | 凍結 | `unity-port/BattleCore/` |
 
 台帳の外に置くもの: `vision/plans/`（計画書）、`art_document/briefs/`（制作指示）、`handover/`、`known-issues/`、`code-explanation/`、リポジトリ直下の `docs/`（レポート・ブリーフ・モック・プロンプト）。これらは正本を引用する側で、食い違えば正本が勝ちます。
 
@@ -108,5 +141,8 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 - **決定は本文へ入れ込む。** 「§N 20XX-XX-XX の決定」を末尾に積むのは記録としてだけです。積んだ時点で §2 の状態の欄に「§N 未反映」と書き、入れ込んだら消します。`battle_core_v4.md` §16〜§18 と `battle_ui_ux_v2.md` §11 で同じ形の食い違いが 2 回起きました
 - **他の文書の節番号と数値を写さない。** 「戦闘の正本は §16〜§18」のような案内は、相手が改訂されると嘘になります。ファイル名までを書き、節は相手の目次に任せます
-- **版を上げたら旧版にバナーを付け、§3 へ行を移す。** バナーの 1 行目に SUPERSEDED / FROZEN / WEB VERSION RECORD のいずれかと、代わりに読むファイルを書きます
-- **新しい設計書は §2 に行を足してから PR にする。** `npm run sources -- --check` が、台帳に無い設計書を検出します
+- **正本を新しいファイルに替えたら、旧版にバナーを付けて §3 へ行を移す。** バナーの 1 行目に SUPERSEDED / FROZEN / WEB VERSION RECORD のいずれかと、代わりに読むファイルを書きます
+- **新しい設計書は §2 の自分の表に行を足してから PR にする。** `npm run sources -- --check` が、台帳に無い設計書を検出します
+- **版を上げても本書を書かない。** 版の番号と経緯は正本の冒頭の Status と改訂履歴に書きます。状態の欄に経緯を書き足すと、その行が毎回の PR で書き換わり、並行する PR とぶつかります（2026-10-04 の実測で、9/24 以降のコンフリクト 9 件のうち 6 件が本書でした）
+- **表の桁を揃えない。** 1 マスが長くなるたびに全行の空白が変わり、表に触る他の PR がすべてぶつかります。Markdown は prettier の対象から外してあり（`.prettierrc.json` の `requirePragma`）、表の空白は `npm run md:tables` で詰めます。`npm run md:tables -- --check` が残った桁揃えを検出します
+- **同じ正本を触る PR を続けて出すときは、前の PR の上に積む。** 版の行と改訂履歴の末尾は、同じ担当の 2 本の PR でも必ずぶつかります。手順は `worktree-policy` スキルの「続きの PR は積む」です

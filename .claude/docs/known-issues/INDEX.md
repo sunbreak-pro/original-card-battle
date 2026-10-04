@@ -10,18 +10,19 @@
 
 ## カタログ
 
-| ID                                        | タイトル                                          | カテゴリ               | Status |
-| ----------------------------------------- | ------------------------------------------------- | ---------------------- | ------ |
-| [001](./001-resonance-debuff-card-lag.md) | Resonance debuff の 1-card-lag 非対称             | Battle / Class Ability | Open   |
+| ID | タイトル | カテゴリ | Status |
+| --- | --- | --- | --- |
+| [001](./001-resonance-debuff-card-lag.md) | Resonance debuff の 1-card-lag 非対称 | Battle / Class Ability | Open |
 | [002](./002-nunit-implicit-using-unity.md) | NUnit 暗黙 using 依存で Unity asmdef ビルド失敗 | Unity Port / Build | Fixed |
-| LESSONS_LEARNED #1                        | CSS クラス名衝突（親スコープ必須）                | CSS                    | 知見   |
-| LESSONS_LEARNED #2                        | Context Provider スコープ                         | React                  | 知見   |
-| LESSONS_LEARNED #3                        | React Hooks ルール違反                            | React                  | 知見   |
-| LESSONS_LEARNED #4                        | React 19 render 中 ref.current 参照禁止           | React 19               | 知見   |
-| LESSONS_LEARNED #5                        | UI 日本語 / コード英語の言語一貫性                | 規約                   | 知見   |
-| LESSONS_LEARNED #6                        | set-state-in-effect vs refs の衝突                | React 19               | 知見   |
-| LESSONS_LEARNED #7                        | setState 戻り値の Mutable Object パターン         | React                  | 知見   |
-| LESSONS_LEARNED #8                        | リソース state の単一真実源（gold / magicStones） | State                  | 知見   |
+| [003](./003-md-table-padding-conflicts.md) | 並行 PR が docs で必ずコンフリクトする（表の桁揃え・台帳の版） | Tooling / Git | Mitigated |
+| LESSONS_LEARNED #1 | CSS クラス名衝突（親スコープ必須） | CSS | 知見 |
+| LESSONS_LEARNED #2 | Context Provider スコープ | React | 知見 |
+| LESSONS_LEARNED #3 | React Hooks ルール違反 | React | 知見 |
+| LESSONS_LEARNED #4 | React 19 render 中 ref.current 参照禁止 | React 19 | 知見 |
+| LESSONS_LEARNED #5 | UI 日本語 / コード英語の言語一貫性 | 規約 | 知見 |
+| LESSONS_LEARNED #6 | set-state-in-effect vs refs の衝突 | React 19 | 知見 |
+| LESSONS_LEARNED #7 | setState 戻り値の Mutable Object パターン | React | 知見 |
+| LESSONS_LEARNED #8 | リソース state の単一真実源（gold / magicStones） | State | 知見 |
 
 ## 関連
 
