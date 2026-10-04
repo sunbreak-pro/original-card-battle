@@ -11,11 +11,11 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 ## Revision History
 
-| Version | Date       | Changes                                                                |
-| ------- | ---------- | ---------------------------------------------------------------------- |
-| v2.0    | -          | Initial creation                                                       |
-| v2.1    | 2026-01-10 | Resolved contradictions, finalized specifications, unified terminology |
-| v3.0    | 2026-01-23 | Lives system implementation, teleport stone unification, UI updates    |
+| Version | Date | Changes |
+| --- | --- | --- |
+| v2.0 | - | Initial creation |
+| v2.1 | 2026-01-10 | Resolved contradictions, finalized specifications, unified terminology |
+| v3.0 | 2026-01-23 | Lives system implementation, teleport stone unification, UI updates |
 
 ---
 
@@ -31,23 +31,23 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 ### 1.2 Terminology Definition
 
-| Term        | Definition                         | Notes                                |
-| ----------- | ---------------------------------- | ------------------------------------ |
-| Node / Room | A single point on the map          | Used interchangeably                 |
-| Depth       | Dungeon layer (1-5)                | Also referred to as "Shindo" (Depth) |
-| Exploration | From dungeon entry to return/death | No limit on exploration count        |
-| Lives       | Recovery chances after death       | Difficulty-based cap                 |
+| Term | Definition | Notes |
+| --- | --- | --- |
+| Node / Room | A single point on the map | Used interchangeably |
+| Depth | Dungeon layer (1-5) | Also referred to as "Shindo" (Depth) |
+| Exploration | From dungeon entry to return/death | No limit on exploration count |
+| Lives | Recovery chances after death | Difficulty-based cap |
 
 ### 1.3 Lives System (残機システム)
 
-| Element                 | Specification                                             |
-| ----------------------- | --------------------------------------------------------- |
-| Lives Cap (Hard)        | **2 Lives**                                               |
-| Lives Cap (Normal/Easy) | **3 Lives**                                               |
-| Decrease Timing         | **Death only** (Does NOT decrease on successful return)   |
-| Recovery Method         | **None** (No means of recovery exists)                    |
-| Reaching 0 Lives        | **Game Over** (Complete reset, only achievements persist) |
-| UI Position             | Header Top-Right (Heart icons: ❤️❤️❤️ or ❤️❤️)            |
+| Element | Specification |
+| --- | --- |
+| Lives Cap (Hard) | **2 Lives** |
+| Lives Cap (Normal/Easy) | **3 Lives** |
+| Decrease Timing | **Death only** (Does NOT decrease on successful return) |
+| Recovery Method | **None** (No means of recovery exists) |
+| Reaching 0 Lives | **Game Over** (Complete reset, only achievements persist) |
+| UI Position | Header Top-Right (Heart icons: ❤️❤️❤️ or ❤️❤️) |
 
 **Strategic Significance:**
 
@@ -58,12 +58,12 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 **Death Penalty Details:**
 
-| Lost on Death           | Gained on Death              |
-| ----------------------- | ---------------------------- |
-| All owned items         | 100% of soul remnants earned |
-| All equipped items      | (Souls are saved to total)   |
-| Items brought from Base |                              |
-| 1 Life                  |                              |
+| Lost on Death | Gained on Death |
+| --- | --- |
+| All owned items | 100% of soul remnants earned |
+| All equipped items | (Souls are saved to total) |
+| Items brought from Base | |
+| 1 Life | |
 
 > **Note:** The game allows unlimited exploration attempts. The tension comes from the permanent loss of items/equipment on death, not from limited exploration counts.
 
@@ -77,21 +77,21 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 **Current Implementation:** All depths share the same fixed map structure.
 
-| Config        | Value                     | Notes                     |
-| ------------- | ------------------------- | ------------------------- |
-| Total Rows    | **7**                     | Fixed for all depths      |
+| Config | Value | Notes |
+| --- | --- | --- |
+| Total Rows | **7** | Fixed for all depths |
 | Nodes Per Row | **[1, 2, 2, 2, 2, 2, 1]** | Start=1, middle=2, boss=1 |
-| Total Nodes   | **12**                    | Per floor                 |
+| Total Nodes | **12** | Per floor |
 
 **Node Type Probabilities (fixed, same for all depths):**
 
-| Type     | Chance | Notes                      |
-| -------- | ------ | -------------------------- |
-| Elite    | 15%    | Stronger enemies           |
-| Event    | 10%    | Random events              |
-| Rest     | 10%    | Recovery nodes             |
-| Treasure | 5%     | Loot nodes                 |
-| Battle   | 60%    | Default (remaining chance) |
+| Type | Chance | Notes |
+| --- | --- | --- |
+| Elite | 15% | Stronger enemies |
+| Event | 10% | Random events |
+| Rest | 10% | Recovery nodes |
+| Treasure | 5% | Loot nodes |
+| Battle | 60% | Default (remaining chance) |
 
 **Special rows:**
 
@@ -144,13 +144,13 @@ To help you visualize the structural concepts and UI layouts described in this d
 
 **Implemented Ratios (from `DEFAULT_MAP_CONFIG`):**
 
-| Type     | Probability | Notes               |
-| -------- | ----------- | ------------------- |
-| Battle   | 60%         | Default (remainder) |
-| Elite    | 15%         | Strong enemies      |
-| Event    | 10%         | Random events       |
-| Rest     | 10%         | Recovery            |
-| Treasure | 5%          | Loot                |
+| Type | Probability | Notes |
+| --- | --- | --- |
+| Battle | 60% | Default (remainder) |
+| Elite | 15% | Strong enemies |
+| Event | 10% | Random events |
+| Rest | 10% | Recovery |
+| Treasure | 5% | Loot |
 
 > **Design vs Implementation:** The original design had depth-dependent ratios (50-70% combat scaling by depth). The current implementation uses flat probabilities. Depth-dependent tuning may be added later.
 
@@ -183,21 +183,21 @@ interface MapGenerationConstraints {
 
 ### 3.1 Disclosure Stages
 
-| State                     | Combat Node                         | Event Node                        | Rest Node            |
-| ------------------------- | ----------------------------------- | --------------------------------- | -------------------- |
-| **Far (Unconnected)**     | Sword Icon                          | Event Icon (Suggests Risk/Reward) | Campfire Icon        |
-| **Adjacent (Selectable)** | Sword Icon                          | Event Icon                        | Campfire Icon        |
-| **Adjacent + Hover**      | Enemy Name, Threat, Drop Prediction | Event Name (If Known)             | Est. Recovery Amount |
+| State | Combat Node | Event Node | Rest Node |
+| --- | --- | --- | --- |
+| **Far (Unconnected)** | Sword Icon | Event Icon (Suggests Risk/Reward) | Campfire Icon |
+| **Adjacent (Selectable)** | Sword Icon | Event Icon | Campfire Icon |
+| **Adjacent + Hover** | Enemy Name, Threat, Drop Prediction | Event Name (If Known) | Est. Recovery Amount |
 
 ### 3.2 Enemy Threat Level System
 
-| Threat | Display Name | Corresponding Enemy Category           |
-| ------ | ------------ | -------------------------------------- |
-| 1      | Minion (Low) | Normal Enemy (Weak)                    |
-| 2      | Minion (Mid) | Normal Enemy (Strong)                  |
-| 3      | Elite        | Elite Enemy                            |
-| 4      | Floor Boss   | Floor Boss of each Depth               |
-| 5      | Abyss Boss   | Depth 5 Boss (Guardian, True Evil God) |
+| Threat | Display Name | Corresponding Enemy Category |
+| --- | --- | --- |
+| 1 | Minion (Low) | Normal Enemy (Weak) |
+| 2 | Minion (Mid) | Normal Enemy (Strong) |
+| 3 | Elite | Elite Enemy |
+| 4 | Floor Boss | Floor Boss of each Depth |
+| 5 | Abyss Boss | Depth 5 Boss (Guardian, True Evil God) |
 
 > **Note:** Threat classification is an initial definition; details will be adjusted in `overroll_enemy_design.md`.
 
@@ -368,14 +368,14 @@ interface MapGenerationConstraints {
 
 ### 5.3 Enemy Spawn Rules During Return
 
-| Item            | Specification                   |
-| --------------- | ------------------------------- |
-| Enemy Strength  | **70% HP/ATK** (V3.0: Weakened) |
-| Rewards         | **50%** (Gold, Stones, Souls)   |
-| Card Mastery    | **Increases normally**          |
-| Elite Enemies   | **Do not respawn**              |
-| Bosses          | **Do not respawn**              |
-| Enemy Type      | Same type as defeated enemies   |
+| Item | Specification |
+| --- | --- |
+| Enemy Strength | **70% HP/ATK** (V3.0: Weakened) |
+| Rewards | **50%** (Gold, Stones, Souls) |
+| Card Mastery | **Increases normally** |
+| Elite Enemies | **Do not respawn** |
+| Bosses | **Do not respawn** |
+| Enemy Type | Same type as defeated enemies |
 | Encounter Check | Performed individually per room |
 
 ### 5.4 Process After Starting Return
@@ -401,12 +401,12 @@ interface MapGenerationConstraints {
 
 **Escape Route Specifications:**
 
-| Item         | Specification              |
-| ------------ | -------------------------- |
-| Appearance   | After boss defeat          |
-| Combat       | **None** (Safe passage)    |
-| Rewards      | **100%** (Full carry-back) |
-| Route Length | Direct path to Base        |
+| Item | Specification |
+| --- | --- |
+| Appearance | After boss defeat |
+| Combat | **None** (Safe passage) |
+| Rewards | **100%** (Full carry-back) |
+| Route Length | Direct path to Base |
 
 **Process:**
 
@@ -425,13 +425,13 @@ interface MapGenerationConstraints {
 
 Eliminate excessive effects; differentiate via color tone, background, and icon design.
 
-| Depth | Background Color | Saturation     | Node Icon                       | Connection Line        | Notes                        |
-| ----- | ---------------- | -------------- | ------------------------------- | ---------------------- | ---------------------------- |
-| 1     | Brown tones      | Med            | Normal size, slightly worn      | Solid, cracked texture | Decay image                  |
-| 2     | Purple tones     | High           | Slightly irregular shapes       | Solid, slightly wavy   | Suggestion of Madness        |
-| 3     | Dark Red/Violet  | Very High      | Mixed designs                   | Complex mesh/web       | Chaos, visual pressure       |
-| 4     | Grey/White       | Very Low       | Semi-transparent, thin outlines | Dotted, fading         | Void, loss of info           |
-| 5     | Pure Black       | 0 (Monochrome) | White points only               | Thin white lines       | Abyss, simple & intimidating |
+| Depth | Background Color | Saturation | Node Icon | Connection Line | Notes |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Brown tones | Med | Normal size, slightly worn | Solid, cracked texture | Decay image |
+| 2 | Purple tones | High | Slightly irregular shapes | Solid, slightly wavy | Suggestion of Madness |
+| 3 | Dark Red/Violet | Very High | Mixed designs | Complex mesh/web | Chaos, visual pressure |
+| 4 | Grey/White | Very Low | Semi-transparent, thin outlines | Dotted, fading | Void, loss of info |
+| 5 | Pure Black | 0 (Monochrome) | White points only | Thin white lines | Abyss, simple & intimidating |
 
 ### 6.2 Dynamic Change Effects
 

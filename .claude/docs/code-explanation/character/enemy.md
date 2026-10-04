@@ -7,7 +7,7 @@ The enemy system defines enemy creatures across 5 depth tiers, each with AI patt
 ## File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/constants/data/characters/enemy/enemyDepth1.ts` | ~200 | Depth 1 enemies (Forest) — slime, goblin, wolf, treant, boss |
 | `src/constants/data/characters/enemy/enemyDepth2.ts` | ~200 | Depth 2 enemies (Cave) — bat, skeleton, spider, golem, boss |
 | `src/constants/data/characters/enemy/enemyDepth3.ts` | ~200 | Depth 3 enemies (Chaos) — cultist, demon, shadow, wraith, boss |

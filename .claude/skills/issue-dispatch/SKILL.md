@@ -15,23 +15,23 @@ description: プロダクトの課題を GitHub Issue として起票し、ラ�
 
 ## ラベル（`gh label list` が正本）
 
-| 系統      | 値                                                                             | 必須             |
-| --------- | ------------------------------------------------------------------------------ | ---------------- |
-| `type:`   | `bug` / `feature` / `task` / `human`                                           | 必須             |
-| `prio:`   | `1` / `2` / `3` / `4`                                                          | 必須（1 つだけ） |
-| `sev:`    | `blocking` / `important` / `minor`                                             | 任意             |
-| `area:`   | `battle` `cards` `enemy` `dungeon` `world` `ui` `art` `unity` `docs` `tooling` | 任意（複数可）   |
-| `lane:`   | `cards` `design` `battle` `dungeon` `audit`                                    | 任意（1 つだけ） |
-| `status:` | `monitoring` / `workaround` / `frozen`                                         | 任意             |
+| 系統 | 値 | 必須 |
+| --- | --- | --- |
+| `type:` | `bug` / `feature` / `task` / `human` | 必須 |
+| `prio:` | `1` / `2` / `3` / `4` | 必須（1 つだけ） |
+| `sev:` | `blocking` / `important` / `minor` | 任意 |
+| `area:` | `battle` `cards` `enemy` `dungeon` `world` `ui` `art` `unity` `docs` `tooling` | 任意（複数可） |
+| `lane:` | `cards` `design` `battle` `dungeon` `audit` | 任意（1 つだけ） |
+| `status:` | `monitoring` / `workaround` / `frozen` | 任意 |
 
 **`prio:` は着手の順番**です（2026-09-21 こうだいさん決定、#66）。`sev:` は影響の大きさで、別の軸として併用します。
 
-| ラベル   | 意味                 | 目安                                           |
-| -------- | -------------------- | ---------------------------------------------- |
+| ラベル | 意味 | 目安 |
+| --- | --- | --- |
 | `prio:1` | 最優先。いま着手する | ほかの作業を止めている、または次の一手そのもの |
-| `prio:2` | 次に着手する         | `prio:1` が終われば始められる                  |
-| `prio:3` | その後               | 設計や判断だけ並行で進められるものを含む       |
-| `prio:4` | いつか               | 前提が遠い。着手時に見直す                     |
+| `prio:2` | 次に着手する | `prio:1` が終われば始められる |
+| `prio:3` | その後 | 設計や判断だけ並行で進められるものを含む |
+| `prio:4` | いつか | 前提が遠い。着手時に見直す |
 
 起票するときに必ず 1 つ付けます。迷ったら「依存先の `prio:` より小さい数字を付けない」を基準にします。付け忘れは `npm run issues:next -- --check` と `.github/workflows/issue-priority.yml` が検出します。**見直す時機**は、親 Issue を閉じたときと、縦切りや束の振り返りのときです。
 

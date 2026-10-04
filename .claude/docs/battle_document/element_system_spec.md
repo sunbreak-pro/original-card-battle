@@ -26,25 +26,25 @@ There are 8 element types organized into 2 groups.
 
 ### 2.1 Complete Element Table
 
-| Element     | Group     | Icon | Label (JP) | Color     | Description                   |
-|-------------|-----------|------|------------|-----------|-------------------------------|
-| `fire`      | Magic     | 🔥   | 火         | `#ff4500` | Offensive, burn DoT           |
-| `ice`       | Magic     | ❄️   | 氷         | `#00bfff` | Control, freeze               |
-| `lightning` | Magic     | ⚡   | 雷         | `#ffd700` | Burst, stun                   |
-| `dark`      | Magic     | 🌑   | 闇         | `#6a0dad` | Sustain, lifesteal            |
-| `light`     | Magic     | ✨   | 光         | `#fffacd` | Support, cleanse/heal         |
-| `slash`     | Physical  | ⚔️   | 斬撃       | `#c0c0c0` | Cutting melee attacks         |
-| `impact`    | Physical  | 💥   | 衝撃       | `#ff8c00` | Blunt/impact attacks          |
-| `guard`     | Physical  | 🛡️   | 防御       | `#4682b4` | Defensive stance              |
+| Element | Group | Icon | Label (JP) | Color | Description |
+|---|---|---|---|---|---|
+| `fire` | Magic | 🔥 | 火 | `#ff4500` | Offensive, burn DoT |
+| `ice` | Magic | ❄️ | 氷 | `#00bfff` | Control, freeze |
+| `lightning` | Magic | ⚡ | 雷 | `#ffd700` | Burst, stun |
+| `dark` | Magic | 🌑 | 闇 | `#6a0dad` | Sustain, lifesteal |
+| `light` | Magic | ✨ | 光 | `#fffacd` | Support, cleanse/heal |
+| `slash` | Physical | ⚔️ | 斬撃 | `#c0c0c0` | Cutting melee attacks |
+| `impact` | Physical | 💥 | 衝撃 | `#ff8c00` | Blunt/impact attacks |
+| `guard` | Physical | 🛡️ | 防御 | `#4682b4` | Defensive stance |
 
 > **Note:** `impact` replaces the former `shock` naming. Code migration is tracked separately.
 
 ### 2.2 Element Groups
 
-| Group     | Elements                                    | Associated Class Ability |
-|-----------|---------------------------------------------|--------------------------|
-| Magic     | fire, ice, lightning, dark, light           | Mage Resonance           |
-| Physical  | slash, impact, guard                        | Swordsman Sword Energy (slash only) |
+| Group | Elements | Associated Class Ability |
+|---|---|---|
+| Magic | fire, ice, lightning, dark, light | Mage Resonance |
+| Physical | slash, impact, guard | Swordsman Sword Energy (slash only) |
 
 ---
 
@@ -56,10 +56,10 @@ Any class can play any element's card. The card's base effects (damage, buffs, d
 
 ### 3.2 Class Ability Activation by Element
 
-| Class     | Ability        | Activating Element(s) | Non-Activating Elements                     |
-|-----------|----------------|----------------------|---------------------------------------------|
-| Mage      | Resonance      | fire, ice, lightning, dark, light | slash, impact, guard |
-| Swordsman | Sword Energy gain | slash only          | impact, guard, fire, ice, lightning, dark, light |
+| Class | Ability | Activating Element(s) | Non-Activating Elements |
+|---|---|---|---|
+| Mage | Resonance | fire, ice, lightning, dark, light | slash, impact, guard |
+| Swordsman | Sword Energy gain | slash only | impact, guard, fire, ice, lightning, dark, light |
 
 ### 3.3 Examples
 
@@ -90,11 +90,11 @@ Non-magic elements (slash, impact, guard) break the resonance chain entirely.
 
 ### 4.2 Resonance Levels
 
-| Level | Name             | Damage Multiplier | Crit Bonus | Element Effect | Field Buff |
-|-------|------------------|-------------------|------------|----------------|------------|
-| 0     | —                | 1.00x             | 0%         | None           | None       |
-| 1     | 共鳴 (Resonance) | 1.15x             | 0%         | Minor          | None       |
-| 2     | 大共鳴 (Great Resonance) | 1.30x      | +10%       | Major          | Yes        |
+| Level | Name | Damage Multiplier | Crit Bonus | Element Effect | Field Buff |
+|---|---|---|---|---|---|
+| 0 | — | 1.00x | 0% | None | None |
+| 1 | 共鳴 (Resonance) | 1.15x | 0% | Minor | None |
+| 2 | 大共鳴 (Great Resonance) | 1.30x | +10% | Major | Yes |
 
 ### 4.3 Resonance Lifecycle
 
@@ -132,58 +132,58 @@ When resonance reaches level 1 or 2, each magic element triggers unique secondar
 
 ### 5.1 Fire
 
-| Level | Effect                     |
-|-------|----------------------------|
-| 1     | Burn: 1 stack, 2 turns     |
-| 2     | Burn: 2 stacks, 3 turns + `fireField` buff |
+| Level | Effect |
+|---|---|
+| 1 | Burn: 1 stack, 2 turns |
+| 2 | Burn: 2 stacks, 3 turns + `fireField` buff |
 
 **Design Intent:** Pure offensive. Burn is a stacking DoT that rewards sustained fire chains.
 
 ### 5.2 Ice
 
-| Level | Effect                     |
-|-------|----------------------------|
-| 1     | Freeze: 2 turns            |
-| 2     | Freeze: 3 turns + `iceField` buff |
+| Level | Effect |
+|---|---|
+| 1 | Freeze: 2 turns |
+| 2 | Freeze: 3 turns + `iceField` buff |
 
 **Design Intent:** Control element. Freeze disables enemy actions, providing defensive value and setup time.
 
 ### 5.3 Lightning
 
-| Level | Effect                     |
-|-------|----------------------------|
-| 1     | (none)                     |
-| 2     | Stun: 1 turn + `electroField` buff |
+| Level | Effect |
+|---|---|
+| 1 | (none) |
+| 2 | Stun: 1 turn + `electroField` buff |
 
 **Design Intent:** High-risk, high-reward. No level 1 bonus, but level 2 grants stun. Synergizes with multi-hit cards (e.g., mg_018 "連鎖雷" with 4 hits).
 
 ### 5.4 Dark
 
-| Level | Effect                     |
-|-------|----------------------------|
-| 1     | Lifesteal: 30%             |
-| 2     | Lifesteal: 40% + Weakness: 3 turns + `darkField` buff |
+| Level | Effect |
+|---|---|
+| 1 | Lifesteal: 30% |
+| 2 | Lifesteal: 40% + Weakness: 3 turns + `darkField` buff |
 
 **Design Intent:** Sustain element. Lifesteal provides self-healing proportional to damage dealt. Weakness at level 2 reduces enemy effectiveness.
 
 ### 5.5 Light
 
-| Level | Effect                     |
-|-------|----------------------------|
-| 1     | Cleanse: remove 1 debuff   |
-| 2     | Cleanse: remove 2 debuffs + Heal: 10 HP + `lightField` buff |
+| Level | Effect |
+|---|---|
+| 1 | Cleanse: remove 1 debuff |
+| 2 | Cleanse: remove 2 debuffs + Heal: 10 HP + `lightField` buff |
 
 **Design Intent:** Support/defensive. The only element providing direct healing and debuff removal through resonance.
 
 ### 5.6 Field Buffs
 
-| Element   | Field Buff      |
-|-----------|-----------------|
-| Fire      | `fireField`     |
-| Ice       | `iceField`      |
-| Lightning | `electroField`  |
-| Dark      | `darkField`     |
-| Light     | `lightField`    |
+| Element | Field Buff |
+|---|---|
+| Fire | `fireField` |
+| Ice | `iceField` |
+| Lightning | `electroField` |
+| Dark | `darkField` |
+| Light | `lightField` |
 
 Field buffs are applied at resonance level 2 and persist beyond the turn they were activated.
 
@@ -217,13 +217,13 @@ When designing Swordsman cards:
 
 40 Mage cards, 8 per magic element:
 
-| Element   | Card IDs      | Key Feature                        |
-|-----------|---------------|------------------------------------|
-| Fire      | mg_001–mg_008 | Burn stacking, offensive           |
-| Ice       | mg_009–mg_016 | Freeze, slow, defensive            |
-| Lightning | mg_017–mg_024 | Multi-hit, penetration, stun       |
-| Dark      | mg_025–mg_032 | Lifesteal, curse, weakness         |
-| Light     | mg_033–mg_040 | Healing, cleanse, immunity         |
+| Element | Card IDs | Key Feature |
+|---|---|---|
+| Fire | mg_001–mg_008 | Burn stacking, offensive |
+| Ice | mg_009–mg_016 | Freeze, slow, defensive |
+| Lightning | mg_017–mg_024 | Multi-hit, penetration, stun |
+| Dark | mg_025–mg_032 | Lifesteal, curse, weakness |
+| Light | mg_033–mg_040 | Healing, cleanse, immunity |
 
 Each element set includes:
 - **One 0-cost card:** Enables resonance building without energy cost
@@ -263,52 +263,52 @@ All nodes share:
 - **Prerequisite:** `mage_insight`
 - **Cost:** 60 souls each
 
-| Node ID                  | Name              | Icon | Effect                                        |
-|--------------------------|-------------------|------|-----------------------------------------------|
-| `fire_enhancement`       | Fire Mastery      | 🔥   | +1 burn stack at each resonance level          |
-| `ice_enhancement`        | Ice Mastery       | ❄️   | +1 freeze duration at each resonance level     |
-| `lightning_enhancement`  | Lightning Mastery | ⚡   | Adds stun effect at resonance level 1          |
-| `dark_enhancement`       | Dark Mastery      | 🌑   | +10% lifesteal at each resonance level         |
-| `light_enhancement`      | Light Mastery     | ✨   | +1 cleanse and +5 heal at each resonance level |
+| Node ID | Name | Icon | Effect |
+|---|---|---|---|
+| `fire_enhancement` | Fire Mastery | 🔥 | +1 burn stack at each resonance level |
+| `ice_enhancement` | Ice Mastery | ❄️ | +1 freeze duration at each resonance level |
+| `lightning_enhancement` | Lightning Mastery | ⚡ | Adds stun effect at resonance level 1 |
+| `dark_enhancement` | Dark Mastery | 🌑 | +10% lifesteal at each resonance level |
+| `light_enhancement` | Light Mastery | ✨ | +1 cleanse and +5 heal at each resonance level |
 
 ### 8.3 Enhanced vs Base Resonance Effects
 
 **Fire:**
 
-| Level | Base                       | Enhanced (with Fire Mastery)        |
-|-------|----------------------------|-------------------------------------|
-| 1     | Burn 1 stack, 2 turns      | Burn 2 stacks, 2 turns             |
-| 2     | Burn 2 stacks, 3 turns + field | Burn 3 stacks, 3 turns + field |
+| Level | Base | Enhanced (with Fire Mastery) |
+|---|---|---|
+| 1 | Burn 1 stack, 2 turns | Burn 2 stacks, 2 turns |
+| 2 | Burn 2 stacks, 3 turns + field | Burn 3 stacks, 3 turns + field |
 
 **Ice:**
 
-| Level | Base                  | Enhanced (with Ice Mastery)   |
-|-------|-----------------------|-------------------------------|
-| 1     | Freeze 2 turns        | Freeze 3 turns               |
-| 2     | Freeze 3 turns + field | Freeze 4 turns + field       |
+| Level | Base | Enhanced (with Ice Mastery) |
+|---|---|---|
+| 1 | Freeze 2 turns | Freeze 3 turns |
+| 2 | Freeze 3 turns + field | Freeze 4 turns + field |
 
 **Lightning:**
 
-| Level | Base                  | Enhanced (with Lightning Mastery) |
-|-------|-----------------------|-----------------------------------|
-| 1     | (none)                | Stun 1 turn                      |
-| 2     | Stun 1 turn + field   | Stun 1 turn + field (unchanged)  |
+| Level | Base | Enhanced (with Lightning Mastery) |
+|---|---|---|
+| 1 | (none) | Stun 1 turn |
+| 2 | Stun 1 turn + field | Stun 1 turn + field (unchanged) |
 
 > Lightning Mastery fills the empty level 1 slot, making lightning chains valuable earlier. The level 2 effect remains unchanged since it already grants stun.
 
 **Dark:**
 
-| Level | Base                              | Enhanced (with Dark Mastery)           |
-|-------|-----------------------------------|----------------------------------------|
-| 1     | Lifesteal 30%                     | Lifesteal 40%                          |
-| 2     | Lifesteal 40% + weakness + field  | Lifesteal 50% + weakness + field       |
+| Level | Base | Enhanced (with Dark Mastery) |
+|---|---|---|
+| 1 | Lifesteal 30% | Lifesteal 40% |
+| 2 | Lifesteal 40% + weakness + field | Lifesteal 50% + weakness + field |
 
 **Light:**
 
-| Level | Base                           | Enhanced (with Light Mastery)           |
-|-------|--------------------------------|-----------------------------------------|
-| 1     | Cleanse 1                      | Cleanse 2 + Heal 5                     |
-| 2     | Cleanse 2 + Heal 10 + field   | Cleanse 3 + Heal 15 + field            |
+| Level | Base | Enhanced (with Light Mastery) |
+|---|---|---|
+| 1 | Cleanse 1 | Cleanse 2 + Heal 5 |
+| 2 | Cleanse 2 + Heal 10 + field | Cleanse 3 + Heal 15 + field |
 
 ### 8.4 Skill Tree Layout
 
@@ -367,7 +367,7 @@ Card.element (universal tag on every card)
 ### 10.2 Key Files
 
 | File | Purpose |
-|------|---------|
+|---|---|
 | `src/types/characterTypes.ts` | `ElementType`, `ElementalState`, `ResonanceLevel` |
 | `src/types/cardTypes.ts` | `Card.element` field |
 | `src/types/battleTypes.ts` | `BuffDebuffType` including field buffs |

@@ -6,10 +6,10 @@ Here is the English translation of the design document.
 
 ## Revision History
 
-| Version | Date       | Changes                                                                |
-| ------- | ---------- | ---------------------------------------------------------------------- |
-| V1.0    | -          | Initial creation                                                       |
-| V3.0    | 2026-01-23 | Lives system integration, death penalty update, teleport stone unification |
+| Version | Date | Changes |
+| --- | --- | --- |
+| V1.0 | - | Initial creation |
+| V3.0 | 2026-01-23 | Lives system integration, death penalty update, teleport stone unification |
 
 ## Overview
 
@@ -23,12 +23,12 @@ Here is the English translation of the design document.
 
 ### Related Documents
 
-| Document                           | Related Content                                       |
-| ---------------------------------- | ----------------------------------------------------- |
-| `EQUIPMENT_AND_ITEMS_DESIGN.md`    | Detailed specifications for equipment and consumables |
-| `return_system_design.md` (V3.0)   | Item handling upon survival/death, lives system       |
-| `dungeon_exploration_ui_design.md` (V3.0) | UI layout, Inventory modal, lives display       |
-| `game_design_master.md` (V3.0)     | Core game loop with lives system                      |
+| Document | Related Content |
+| --- | --- |
+| `EQUIPMENT_AND_ITEMS_DESIGN.md` | Detailed specifications for equipment and consumables |
+| `return_system_design.md` (V3.0) | Item handling upon survival/death, lives system |
+| `dungeon_exploration_ui_design.md` (V3.0) | UI layout, Inventory modal, lives display |
+| `game_design_master.md` (V3.0) | Core game loop with lives system |
 
 ---
 
@@ -65,13 +65,13 @@ Here is the English translation of the design document.
 
 ### 1.2 Capacity Limit Summary
 
-| Category        | Limit           | Stack | Notes                      |
-| --------------- | --------------- | ----- | -------------------------- |
-| Equipped        | 6 Slots (Fixed) | -     | 1 per slot                 |
-| Spare Equipment | 10 Slots        | No    | Acquired gear goes here    |
-| Consumables     | 20 Slots        | No    | 1 item per slot            |
-| Magic Stones    | 99 each         | Yes   | 5 types managed separately |
-| Gold            | No Limit        | -     | Managed as a number only   |
+| Category | Limit | Stack | Notes |
+| --- | --- | --- | --- |
+| Equipped | 6 Slots (Fixed) | - | 1 per slot |
+| Spare Equipment | 10 Slots | No | Acquired gear goes here |
+| Consumables | 20 Slots | No | 1 item per slot |
+| Magic Stones | 99 each | Yes | 5 types managed separately |
+| Gold | No Limit | - | Managed as a number only |
 
 ---
 
@@ -199,16 +199,16 @@ const STONE_VALUES = {
 
 ### 3.2 Stacking Specifications
 
-| Item Type            | Stack | Limit      |
-| -------------------- | ----- | ---------- |
-| Equipment            | No    | 1 per slot |
-| Consumable           | No    | 1 per slot |
-| Magic Stone (Tiny)   | Yes   | 99         |
-| Magic Stone (Small)  | Yes   | 99         |
-| Magic Stone (Medium) | Yes   | 99         |
-| Magic Stone (Large)  | Yes   | 99         |
-| Magic Stone (Huge)   | Yes   | 99         |
-| Gold                 | -     | No Limit   |
+| Item Type | Stack | Limit |
+| --- | --- | --- |
+| Equipment | No | 1 per slot |
+| Consumable | No | 1 per slot |
+| Magic Stone (Tiny) | Yes | 99 |
+| Magic Stone (Small) | Yes | 99 |
+| Magic Stone (Medium) | Yes | 99 |
+| Magic Stone (Large) | Yes | 99 |
+| Magic Stone (Huge) | Yes | 99 |
+| Gold | - | No Limit |
 
 ---
 
@@ -303,26 +303,26 @@ const STONE_VALUES = {
 
 ### 5.1 Definition of Usage Scenarios
 
-| Item Example               | Map | Battle | Notes                   |
-| -------------------------- | --- | ------ | ----------------------- |
-| Small Potion               | ○   | ○      |                         |
-| Medium Potion              | ○   | ○      |                         |
-| Large Potion               | ○   | ○      |                         |
-| Full Potion                | ○   | ○      |                         |
-| Resurrection Stone         | -   | Auto   | Auto-activates on death |
-| Elixir of Attack           | ×   | ○      | Battle-only buff        |
-| Elixir of Defense          | ×   | ○      | Battle-only buff        |
-| Elixir of Speed            | ×   | ○      | Battle-only buff        |
-| Elixir of Omnipotence      | ×   | ○      | Battle-only buff        |
-| Elixir of Critical         | ×   | ○      | Battle-only buff        |
-| Teleport Stone (Unified)   | ○   | ×      | V3.0: Single type, 100% reward |
-| Hourglass of Time Stop     | ×   | ○      | Battle only             |
-| Crystal of Magic Explosion | ×   | ○      | Battle only             |
-| Treasure Map               | ○   | ×      | Map only                |
-| Merchant Discount Ticket   | ○   | ×      | Map only                |
-| Equipment Repair Kit       | ○   | ×      | Map only                |
-| XP Boost                   | ○   | ×      | Map only                |
-| Lucky Charm                | ○   | ×      | Map only                |
+| Item Example | Map | Battle | Notes |
+| --- | --- | --- | --- |
+| Small Potion | ○ | ○ | |
+| Medium Potion | ○ | ○ | |
+| Large Potion | ○ | ○ | |
+| Full Potion | ○ | ○ | |
+| Resurrection Stone | - | Auto | Auto-activates on death |
+| Elixir of Attack | × | ○ | Battle-only buff |
+| Elixir of Defense | × | ○ | Battle-only buff |
+| Elixir of Speed | × | ○ | Battle-only buff |
+| Elixir of Omnipotence | × | ○ | Battle-only buff |
+| Elixir of Critical | × | ○ | Battle-only buff |
+| Teleport Stone (Unified) | ○ | × | V3.0: Single type, 100% reward |
+| Hourglass of Time Stop | × | ○ | Battle only |
+| Crystal of Magic Explosion | × | ○ | Battle only |
+| Treasure Map | ○ | × | Map only |
+| Merchant Discount Ticket | ○ | × | Map only |
+| Equipment Repair Kit | ○ | × | Map only |
+| XP Boost | ○ | × | Map only |
+| Lucky Charm | ○ | × | Map only |
 
 ### 5.2 Auto-Activation Items
 
@@ -374,15 +374,15 @@ Inventory Limit Check
 
 ### 6.3 Loss Rules Upon Death (V3.0 - Major Change)
 
-| Item Type             | Process on Death     | Notes                                   |
-| --------------------- | -------------------- | --------------------------------------- |
-| Equipped Gear         | **ALL Lost**         | V3.0: No exceptions, even Legendary     |
-| Spare Equipment       | **ALL Lost**         | V3.0: No exceptions, even Legendary     |
-| Items Brought to Dungeon | **ALL Lost**      | V3.0: Items brought from base are lost too |
-| Consumables           | **ALL Lost**         |                                         |
-| Magic Stones          | **Becomes 0**        |                                         |
-| Gold                  | **Becomes 0**        | V3.0: Gold is also lost on death        |
-| Soul Remnants         | **100% Saved**       | V3.0: Souls are always saved to total   |
+| Item Type | Process on Death | Notes |
+| --- | --- | --- |
+| Equipped Gear | **ALL Lost** | V3.0: No exceptions, even Legendary |
+| Spare Equipment | **ALL Lost** | V3.0: No exceptions, even Legendary |
+| Items Brought to Dungeon | **ALL Lost** | V3.0: Items brought from base are lost too |
+| Consumables | **ALL Lost** | |
+| Magic Stones | **Becomes 0** | |
+| Gold | **Becomes 0** | V3.0: Gold is also lost on death |
+| Soul Remnants | **100% Saved** | V3.0: Souls are always saved to total |
 
 **V3.0 Important Changes**:
 

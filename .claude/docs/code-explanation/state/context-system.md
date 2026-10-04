@@ -7,7 +7,7 @@ The game uses a **nested React Context hierarchy** for persistent state manageme
 ## 2. File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/App.tsx` | 119 | Provider nesting, screen routing |
 | `src/contexts/GameStateContext.tsx` | 140 | Screen navigation, battle config, depth |
 | `src/contexts/ResourceContext.tsx` | 363 | Gold dual-pool, magic stones, exploration limit |
@@ -308,7 +308,7 @@ Death:
 ### Constants
 
 | Constant | Value | Location |
-|----------|-------|----------|
+|---|---|---|
 | `SAVE_VERSION` | `"1.0.0"` | `saveConstants.ts:8` |
 | `SAVE_KEY` | `"roguelike_card_save"` | `saveConstants.ts:11` |
 | `STORAGE_MAX_CAPACITY` | 100 | `campConstants.ts:116` |
@@ -322,7 +322,7 @@ Death:
 ### State Persistence Model
 
 | Data | Survives Battle | Survives Death | Saved to localStorage |
-|------|----------------|----------------|----------------------|
+|---|---|---|---|
 | baseCamp gold | Yes | Yes | Yes |
 | exploration gold | Yes | **No** | No |
 | baseCamp stones | Yes | Yes | Yes |

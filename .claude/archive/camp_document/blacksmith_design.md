@@ -35,12 +35,12 @@ The following properties will be added to all equipment items.
 
 **Effect:** Base stats (ATK/DEF/Magic) and Max AP increase with each level.
 
-| Level | Stat Mod | AP Mod | Special Effect             |
-| ----- | -------- | ------ | -------------------------- |
-| Lv0   | ±0%      | ±0%    | None                       |
-| Lv1   | +10%     | +20%   | None                       |
-| Lv2   | +20%     | +40%   | None                       |
-| Lv3   | +30%     | +60%   | Unlockable Skill Activated |
+| Level | Stat Mod | AP Mod | Special Effect |
+| --- | --- | --- | --- |
+| Lv0 | ±0% | ±0% | None |
+| Lv1 | +10% | +20% | None |
+| Lv2 | +20% | +40% | None |
+| Lv3 | +30% | +60% | Unlockable Skill Activated |
 
 #### 2.1.2 Quality
 
@@ -54,12 +54,12 @@ A system that realizes "different performance even with the same equipment name.
 
 **Quality Types:**
 
-| Quality Name | English ID | Modifier   | Initial Spawn Rate | Name Display Example |
-| ------------ | ---------- | ---------- | ------------------ | -------------------- |
-| Poor         | poor       | 0.95 (-5%) | 10%                | Rusty [Item]         |
-| Normal       | normal     | 1.00 (±0%) | 70%                | [Item]               |
-| Good         | good       | 1.03 (+3%) | 15%                | Tempered [Item]      |
-| Master       | master     | 1.05 (+5%) | 5%                 | Masterwork [Item]    |
+| Quality Name | English ID | Modifier | Initial Spawn Rate | Name Display Example |
+| --- | --- | --- | --- | --- |
+| Poor | poor | 0.95 (-5%) | 10% | Rusty [Item] |
+| Normal | normal | 1.00 (±0%) | 70% | [Item] |
+| Good | good | 1.03 (+3%) | 15% | Tempered [Item] |
+| Master | master | 1.05 (+5%) | 5% | Masterwork [Item] |
 
 **Modification Targets:** Numerical parameters like ATK, DEF, Magic, HP (AP is excluded).
 
@@ -75,11 +75,11 @@ Upgrade costs comply with `EQUIPMENT_AND_ITEMS_DESIGN.md`. **Balance adjustments
 
 **Reference Cost Table:**
 
-| Rarity    | Lv0→1            | Lv1→2            | Lv2→3             |
-| --------- | ---------------- | ---------------- | ----------------- |
-| Common    | 200G + Stone 5   | 400G + Stone 10  | 800G + Stone 20   |
-| Rare      | 400G + Stone 10  | 800G + Stone 20  | 1600G + Stone 40  |
-| Epic      | 800G + Stone 20  | 1600G + Stone 40 | 3200G + Stone 80  |
+| Rarity | Lv0→1 | Lv1→2 | Lv2→3 |
+| --- | --- | --- | --- |
+| Common | 200G + Stone 5 | 400G + Stone 10 | 800G + Stone 20 |
+| Rare | 400G + Stone 10 | 800G + Stone 20 | 1600G + Stone 40 |
+| Epic | 800G + Stone 20 | 1600G + Stone 40 | 3200G + Stone 80 |
 | Legendary | 1600G + Stone 40 | 3200G + Stone 80 | 6400G + Stone 160 |
 
 #### 2.2.2 Magic Stone Consumption
@@ -110,37 +110,37 @@ The **total value** and **type** of Magic Stones used change the Quality Upgrade
 
 **Magic Stone Priority Settings:**
 
-| Upgrade Option  | Stones Used           | Quality Up Rate | Minimum Guarantee  | Extra Cost |
-| --------------- | --------------------- | --------------- | ------------------ | ---------- |
-| Normal Upgrade  | Auto (Small→Med→Lrg)  | Base Rate       | None               | None       |
-| Quality Focused | Medium/Large Priority | High Rate       | `normal` Guarantee | +50% Gold  |
-| Max Quality Aim | Large Only            | Highest Rate    | `good` Guarantee   | +100% Gold |
+| Upgrade Option | Stones Used | Quality Up Rate | Minimum Guarantee | Extra Cost |
+| --- | --- | --- | --- | --- |
+| Normal Upgrade | Auto (Small→Med→Lrg) | Base Rate | None | None |
+| Quality Focused | Medium/Large Priority | High Rate | `normal` Guarantee | +50% Gold |
+| Max Quality Aim | Large Only | Highest Rate | `good` Guarantee | +100% Gold |
 
 **Base Quality Upgrade Probability (Normal Upgrade):**
 
 | Current Quality | Next Quality | Upgrade Chance |
-| --------------- | ------------ | -------------- |
-| poor            | normal       | 40%            |
-| normal          | good         | 20%            |
-| good            | master       | 10%            |
+| --- | --- | --- |
+| poor | normal | 40% |
+| normal | good | 20% |
+| good | master | 10% |
 
 **Quality Focused Upgrade (Priority on Medium+ Stones):**
 
 | Current Quality | Next Quality | Upgrade Chance |
-| --------------- | ------------ | -------------- |
-| poor            | normal       | 80%            |
-| normal          | good         | 40%            |
-| good            | master       | 15%            |
+| --- | --- | --- |
+| poor | normal | 80% |
+| normal | good | 40% |
+| good | master | 15% |
 
 **Guarantee:** Post-upgrade quality will be at least `normal`.
 
 **Max Quality Aim (Large Stones Only):**
 
 | Current Quality | Next Quality | Upgrade Chance |
-| --------------- | ------------ | -------------- |
-| poor            | normal       | 100%           |
-| normal          | good         | 60%            |
-| good            | master       | 25%            |
+| --- | --- | --- |
+| poor | normal | 100% |
+| normal | good | 60% |
+| good | master | 25% |
 
 **Guarantee:** Post-upgrade quality will be at least `good`.
 
@@ -235,12 +235,12 @@ Destroys equipment to extract "Magic Stones."
 
 **Base Return Rate (Fixed by Rarity):**
 
-| Rarity    | Return Rate |
-| --------- | ----------- |
-| Common    | 10%         |
-| Rare      | 15%         |
-| Epic      | 20%         |
-| Legendary | 25%         |
+| Rarity | Return Rate |
+| --- | --- |
+| Common | 10% |
+| Rare | 15% |
+| Epic | 20% |
+| Legendary | 25% |
 
 **Calculation Example:**
 
@@ -958,7 +958,7 @@ The Blacksmith facility has been implemented with all designed features:
 ### 9.1 Implemented Features
 
 | Feature | Status | Implementation File |
-|---------|--------|-------------------|
+|---|---|---|
 | Level Upgrade (Lv0-3) | ✅ Complete | `blacksmithLogic.ts` |
 | Quality Upgrade (3 options) | ✅ Complete | `blacksmithLogic.ts`, `BlacksmithData.ts` |
 | Repair System | ✅ Complete | `blacksmithLogic.ts` |

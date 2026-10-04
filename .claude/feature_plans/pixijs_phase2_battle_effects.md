@@ -3,7 +3,7 @@
 ## Change History
 
 | Date | Content |
-|------|---------|
+|---|---|
 | 2026-02-22 | Initial creation based on engine integration proposal |
 
 ---
@@ -49,7 +49,7 @@ Phase 1 で構築した PixiJS 基盤の上に、既存のDOMベースアニメ�
 
 #### 火属性 (fire)
 | Parameter | Value |
-|-----------|-------|
+|---|---|
 | パーティクル形状 | 炎の粒子（オレンジ→赤のグラデーション） |
 | 動き | 下→上に揺らぎながら上昇、拡散 |
 | 色 | #ff4400 → #ff8800 → #ffcc00 |
@@ -60,7 +60,7 @@ Phase 1 で構築した PixiJS 基盤の上に、既存のDOMベースアニメ�
 
 #### 氷属性 (ice)
 | Parameter | Value |
-|-----------|-------|
+|---|---|
 | パーティクル形状 | 結晶片（六角形スプライト or 菱形） |
 | 動き | ターゲットに向かって収束 → 放射状に弾ける |
 | 色 | #00ccff → #aaeeff → #ffffff |
@@ -70,7 +70,7 @@ Phase 1 で構築した PixiJS 基盤の上に、既存のDOMベースアニメ�
 
 #### 雷属性 (lightning)
 | Parameter | Value |
-|-----------|-------|
+|---|---|
 | パーティクル形状 | 電撃スパーク（小さな光点 + ライン） |
 | 動き | ランダムに瞬間移動、チェーン状に連鎖 |
 | 色 | #ffcc00 → #ffffff |
@@ -80,7 +80,7 @@ Phase 1 で構築した PixiJS 基盤の上に、既存のDOMベースアニメ�
 
 #### 闇属性 (dark)
 | Parameter | Value |
-|-----------|-------|
+|---|---|
 | パーティクル形状 | 黒い霧・渦巻き |
 | 動き | ターゲットを中心に渦巻き状に収束 |
 | 色 | #8800ff → #440088 → #000000 |
@@ -90,7 +90,7 @@ Phase 1 で構築した PixiJS 基盤の上に、既存のDOMベースアニメ�
 
 #### 光属性 (light)
 | Parameter | Value |
-|-----------|-------|
+|---|---|
 | パーティクル形状 | 光の粒子（星形スプライト） |
 | 動き | ターゲットから放射状に拡散、浮遊 |
 | 色 | #ffffaa → #ffffff → #ffffcc |
@@ -100,7 +100,7 @@ Phase 1 で構築した PixiJS 基盤の上に、既存のDOMベースアニメ�
 
 #### 物理属性 (physics / slash / impact)
 | Parameter | Value |
-|-----------|-------|
+|---|---|
 | パーティクル形状 | 衝撃波リング + 破片 |
 | 動き | インパクト点から放射 + 重力落下 |
 | 色 | #cccccc → #ffffff |
@@ -186,7 +186,7 @@ interface DamageEffectConfig {
 ### 4.1 バフ適用時エフェクト
 
 | バフカテゴリ | 視覚表現 |
-|-------------|----------|
+|---|---|
 | 攻撃力UP | 赤いオーラ上昇 + キャラクター周囲に赤い粒子 |
 | 防御力UP | 青いシールドリング展開 |
 | haste/superFast | 緑のスピードライン + 残像 |
@@ -197,7 +197,7 @@ interface DamageEffectConfig {
 ### 4.2 デバフ適用時エフェクト
 
 | デバフカテゴリ | 視覚表現 |
-|---------------|----------|
+|---|---|
 | bleed | 赤い滴パーティクル（下方向） |
 | poison | 紫の泡パーティクル（上方向） |
 | burn | 小さな炎パーティクル（キャラ周囲） |
@@ -208,7 +208,7 @@ interface DamageEffectConfig {
 ### 4.3 フィールドエフェクト
 
 | フィールド | 視覚表現 |
-|-----------|----------|
+|---|---|
 | fireField | 画面下部に揺らめく炎 + 熱波エフェクト |
 | electroField | 画面端にスパーク + 稲妻がランダムに走る |
 | iceField | 画面下部に霜 + 冷気パーティクル |
@@ -253,7 +253,7 @@ const FILTERS = {
 ### 5.2 フィルター適用タイミング
 
 | トリガー | フィルター | 対象 | 持続 |
-|---------|-----------|------|------|
+|---|---|---|---|
 | クリティカルヒット | bloom + screenFlash | EffectLayer全体 | 300ms |
 | 雷属性攻撃 | screenFlash(白) | 画面全体 | 50ms |
 | 闇属性攻撃 | colorShift(暗転) | BackgroundLayer | 1200ms |
@@ -362,7 +362,7 @@ interface EffectQueueItem {
 
 ### New Files
 | File | Purpose |
-|------|---------|
+|---|---|
 | `src/ui/pixi/shared/particles/ParticlePresets.ts` | 属性別パーティクル設定 |
 | `src/ui/pixi/shared/particles/effectQueue.ts` | エフェクトキュー管理 |
 | `src/ui/pixi/shared/filters/FilterPresets.ts` | WebGLフィルター設定 |
@@ -377,7 +377,7 @@ interface EffectQueueItem {
 
 ### Modified Files
 | File | Change |
-|------|--------|
+|---|---|
 | `src/ui/pixi/battle/PixiEffectBridge.ts` | 全エフェクトメソッド実装 |
 | `src/ui/pixi/battle/layers/EffectLayer.tsx` | エフェクト描画ロジック |
 | `src/ui/html/componentsHtml/useCardAnimation.tsx` | PixiJS版エフェクト呼び出しに切替 |
@@ -405,7 +405,7 @@ export const FEATURE_FLAGS = {
 ## 10. Performance Budget
 
 | Metric | Target | 現状(DOM) |
-|--------|--------|-----------|
+|---|---|---|
 | 同時パーティクル数 | 500+ | 90上限 |
 | フレームレート | 60fps維持 | 60fps（パーティクル少数時） |
 | メモリ増加 | +20MB以下 | ベースライン |

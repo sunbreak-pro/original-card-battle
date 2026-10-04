@@ -7,7 +7,7 @@ The card system defines ~81 cards across two classes (Swordsman 41, Mage 40) wit
 ## File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/types/cardTypes.ts` | 138 | Card interface, CardCategory, CardTag, Depth, Rarity |
 | `src/domain/cards/decks/deck.ts` | 106 | **IMMUTABLE** — createInitialDeck, getCardDataByClass |
 | `src/domain/cards/decks/deckReducer.ts` | ~66 | **IMMUTABLE** — deckReducer (draw/discard/shuffle/addToHand) |

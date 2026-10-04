@@ -70,14 +70,14 @@ computeAttackDamage(card, attackerStamina, distance):
 
 ### カード（剣士・初期デッキ 12 枚 = 6 種 × 2）
 
-| id       | 名前         | type   | cost | effRange | power | shift(距離変化) | guard | 備考                         |
-| -------- | ------------ | ------ | ---- | -------- | ----- | --------------- | ----- | ---------------------------- |
-| thrust   | 突き         | attack | 4    | close    | 9     | 0               | —     | 近接最大火力                 |
-| lunge    | 踏み込み斬り | attack | 5    | close    | 7     | -1（詰める）    | —     | 攻撃内蔵の前進               |
-| feint    | 牽制         | attack | 3    | mid      | 4     | +1（退く）      | —     | 削りつつ後退                 |
-| step_in  | 足捌き・前   | move   | 2    | —        | 0     | -1              | —     | 専用・詰め                   |
-| step_out | 足捌き・後   | move   | 1    | —        | 0     | +1              | —     | 専用・退き（安い）           |
-| brace    | 呼吸を整える | guard  | 2    | —        | 0     | 0               | 6     | 受けを固める（次の被弾軽減） |
+| id | 名前 | type | cost | effRange | power | shift(距離変化) | guard | 備考 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| thrust | 突き | attack | 4 | close | 9 | 0 | — | 近接最大火力 |
+| lunge | 踏み込み斬り | attack | 5 | close | 7 | -1（詰める） | — | 攻撃内蔵の前進 |
+| feint | 牽制 | attack | 3 | mid | 4 | +1（退く） | — | 削りつつ後退 |
+| step_in | 足捌き・前 | move | 2 | — | 0 | -1 | — | 専用・詰め |
+| step_out | 足捌き・後 | move | 1 | — | 0 | +1 | — | 専用・退き（安い） |
+| brace | 呼吸を整える | guard | 2 | — | 0 | 0 | 6 | 受けを固める（次の被弾軽減） |
 
 - `shift`: 距離 index への加算（- = 詰める / + = 離す）。攻撃適用後に距離変更、clamp[0,2]
 - **「移動カードが来ないターンでも詰まない」保証**: 攻撃カードの lunge/feint が footwork(shift) を内蔵。デッキ 12 枚中 shift≠0 は 8 枚。さらにデッキ再循環で必ず移動手段に到達するため恒久的な詰みは構造的に発生しない（検証 #4）
@@ -135,24 +135,24 @@ computeAttackDamage(card, attackerStamina, distance):
 
 ## Files
 
-| File                                                      | Operation | Notes                                                                              |
-| --------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------- |
-| `prototype.html`                                          | Create    | ルート起動口。`/src/ui/prototype/main.tsx` を読む。dev で `/prototype.html` を開く |
-| `src/ui/prototype/main.tsx`                               | Create    | StrictMode で `<PrototypeBattle/>` を #root に mount                               |
-| `src/ui/prototype/PrototypeBattle.tsx`                    | Create    | useReducer コンテナ。敵フェーズは reducer 内で同期解決（StrictMode 安全）          |
-| `src/ui/prototype/engine/types.ts`                        | Create    | 型のみ                                                                             |
-| `src/ui/prototype/engine/constants.ts`                    | Create    | 数値の正                                                                           |
-| `src/ui/prototype/engine/combat.ts`                       | Create    | 純関数                                                                             |
-| `src/ui/prototype/engine/cards.ts`                        | Create    | カード + 自前デッキ操作                                                            |
-| `src/ui/prototype/engine/enemy.ts`                        | Create    | 敵 + AI                                                                            |
-| `src/ui/prototype/engine/battleReducer.ts`                | Create    | 純 reducer + initState                                                             |
-| `src/ui/prototype/components/DistanceTrack.tsx`           | Create    | 間合い視覚化                                                                       |
-| `src/ui/prototype/components/CombatantPanel.tsx`          | Create    | HP/スタミナ/疲労帯/ガード                                                          |
-| `src/ui/prototype/components/HandView.tsx`                | Create    | 手札・予測ダメージ・不可理由                                                       |
-| `src/ui/prototype/components/BattleLog.tsx`               | Create    | ログ                                                                               |
-| `src/ui/prototype/prototype-battle.css`                   | Create    | `.prototype-battle` スコープ                                                       |
-| `src/ui/prototype/engine/__tests__/combat.test.ts`        | Create    | 純関数テスト                                                                       |
-| `src/ui/prototype/engine/__tests__/battleReducer.test.ts` | Create    | reducer テスト                                                                     |
+| File | Operation | Notes |
+| --- | --- | --- |
+| `prototype.html` | Create | ルート起動口。`/src/ui/prototype/main.tsx` を読む。dev で `/prototype.html` を開く |
+| `src/ui/prototype/main.tsx` | Create | StrictMode で `<PrototypeBattle/>` を #root に mount |
+| `src/ui/prototype/PrototypeBattle.tsx` | Create | useReducer コンテナ。敵フェーズは reducer 内で同期解決（StrictMode 安全） |
+| `src/ui/prototype/engine/types.ts` | Create | 型のみ |
+| `src/ui/prototype/engine/constants.ts` | Create | 数値の正 |
+| `src/ui/prototype/engine/combat.ts` | Create | 純関数 |
+| `src/ui/prototype/engine/cards.ts` | Create | カード + 自前デッキ操作 |
+| `src/ui/prototype/engine/enemy.ts` | Create | 敵 + AI |
+| `src/ui/prototype/engine/battleReducer.ts` | Create | 純 reducer + initState |
+| `src/ui/prototype/components/DistanceTrack.tsx` | Create | 間合い視覚化 |
+| `src/ui/prototype/components/CombatantPanel.tsx` | Create | HP/スタミナ/疲労帯/ガード |
+| `src/ui/prototype/components/HandView.tsx` | Create | 手札・予測ダメージ・不可理由 |
+| `src/ui/prototype/components/BattleLog.tsx` | Create | ログ |
+| `src/ui/prototype/prototype-battle.css` | Create | `.prototype-battle` スコープ |
+| `src/ui/prototype/engine/__tests__/combat.test.ts` | Create | 純関数テスト |
+| `src/ui/prototype/engine/__tests__/battleReducer.test.ts` | Create | reducer テスト |
 
 > 既存ファイルの編集は**ゼロ**。すべて新規。
 

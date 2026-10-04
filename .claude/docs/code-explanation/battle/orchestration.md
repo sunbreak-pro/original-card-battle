@@ -7,7 +7,7 @@
 ## File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/domain/battles/managements/useBattleOrchestrator.ts` | 882 | Main orchestrator — composes all hooks |
 | `src/domain/battles/managements/useBattleState.ts` | 620 | Player/enemy/target state management |
 | `src/domain/battles/managements/useBattlePhase.ts` | 212 | Phase queue, speed, turn order |

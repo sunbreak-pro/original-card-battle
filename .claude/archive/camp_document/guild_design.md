@@ -5,7 +5,7 @@
 ## Update History
 
 | Date | Content |
-|------|---------|
+|---|---|
 | 2026-02-05 | V3.1: Implemented 4-tab structure (Promotion, Rumors, Quests, Storage). Storage tab integrated. |
 | 2026-02-04 | V3.0: Restructured with 2 main tabs (Headquarters + Storage). Storage functionality integrated from storage_design.md. |
 | - | V2.1: Integrated Item Type System, String Grade support, Context API integration. |
@@ -84,23 +84,23 @@ Exams to raise the player's "Class Grade".
 
 #### 2.2.1 Swordsman Class
 
-| Grade   | Title        | Requirement | Exam Opponent               | Pass Benefit           |
-| ------- | ------------ | ----------- | --------------------------- | ---------------------- |
-| Grade 0 | Apprentice   | Initial     | -                           | -                      |
-| Grade 1 | Swordsman    | 5 Cards     | Training Dummy (Lv5)        | maxHP+10, Quest Slot+1 |
-| Grade 2 | Sword Master | 15 Cards    | Guild Instructor (Lv15)     | ATK+5%, Reward Bonus   |
-| Grade 3 | Sword Saint  | 30 Cards    | Veteran Warrior (Lv30)      | All Stats +5%          |
-| Grade 4 | Sword God    | 50 Cards    | Phantom of the Saint (Boss) | Unique Legend Equip    |
+| Grade | Title | Requirement | Exam Opponent | Pass Benefit |
+| --- | --- | --- | --- | --- |
+| Grade 0 | Apprentice | Initial | - | - |
+| Grade 1 | Swordsman | 5 Cards | Training Dummy (Lv5) | maxHP+10, Quest Slot+1 |
+| Grade 2 | Sword Master | 15 Cards | Guild Instructor (Lv15) | ATK+5%, Reward Bonus |
+| Grade 3 | Sword Saint | 30 Cards | Veteran Warrior (Lv30) | All Stats +5% |
+| Grade 4 | Sword God | 50 Cards | Phantom of the Saint (Boss) | Unique Legend Equip |
 
 #### 2.2.2 Mage Class
 
-| Grade   | Title       | Requirement | Exam Opponent              | Pass Benefit        |
-| ------- | ----------- | ----------- | -------------------------- | ------------------- |
-| Grade 0 | Apprentice  | Initial     | -                          | -                   |
-| Grade 1 | Mage        | 5 Cards     | Magic Puppet (Lv5)         | maxHP+8, maxAP+5    |
-| Grade 2 | Wizard      | 15 Cards    | Court Mage (Lv15)          | Magic Dmg +5%       |
-| Grade 3 | Archmage    | 30 Cards    | Ancient Sage (Lv30)        | All Stats +5%       |
-| Grade 4 | Magic Deity | 50 Cards    | Shadow of the Magus (Boss) | Unique Legend Equip |
+| Grade | Title | Requirement | Exam Opponent | Pass Benefit |
+| --- | --- | --- | --- | --- |
+| Grade 0 | Apprentice | Initial | - | - |
+| Grade 1 | Mage | 5 Cards | Magic Puppet (Lv5) | maxHP+8, maxAP+5 |
+| Grade 2 | Wizard | 15 Cards | Court Mage (Lv15) | Magic Dmg +5% |
+| Grade 3 | Archmage | 30 Cards | Ancient Sage (Lv30) | All Stats +5% |
+| Grade 4 | Magic Deity | 50 Cards | Shadow of the Magus (Boss) | Unique Legend Equip |
 
 ---
 
@@ -1057,7 +1057,7 @@ export const MAGIC_STONE_ITEMS: Item[] = [
 The Storage tab manages the critical distinction between safe storage and risky carry items.
 
 | Feature | Storage (Warehouse) | Inventory (On Hand) | Equipment Inventory | Equipment Slots |
-|---------|---------------------|---------------------|---------------------|-----------------|
+|---|---|---|---|---|
 | **Access** | BaseCamp only | Anywhere | Anywhere (Equip Only) | Equipped |
 | **Capacity** | 100 slots | 20 slots | 3 slots | 6 slots |
 | **Upon Death** | **RETAINED** | **LOST** | **LOST** | **LOST** |
@@ -1080,7 +1080,7 @@ The Storage tab manages the critical distinction between safe storage and risky 
 ### 10.3 Item Movement Operations
 
 | From | To | Operation |
-|------|----|-----------|
+|---|---|---|
 | Storage | Inventory | Retrieve from warehouse |
 | Inventory | Storage | Deposit into warehouse |
 | Storage | Equipment Slots | Equip directly |

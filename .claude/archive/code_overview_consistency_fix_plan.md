@@ -13,7 +13,7 @@ Updated `.claude/docs/code-explanation/` files to match the current codebase sta
 Removed all summoner references from 7+ documentation files:
 
 | File | Changes |
-|------|---------|
+|---|---|
 | `overall-summary.md` | CharacterClass updated to `"swordsman" \| "mage"`, removed summoner mentions |
 | `battle/class-abilities.md` | Removed SummonSystem, useSummonSystem, SummonState sections |
 | `character/player.md` | Removed SummonState and summoner class mechanics |
@@ -29,7 +29,7 @@ Removed all summoner references from 7+ documentation files:
 ### Category 2: File Path Corrections
 
 | File | Old Path | New Path |
-|------|----------|----------|
+|---|---|---|
 | `battle/class-abilities.md` | `src/domain/characters/classAbility/` | `src/domain/characters/player/classAbility/` |
 | `overall-summary.md` | `.claude/code/` | `.claude/docs/code-explanation/` |
 
@@ -38,7 +38,7 @@ Removed all summoner references from 7+ documentation files:
 ### Category 3: Line Count Updates
 
 | File | Old Lines | New Lines |
-|------|-----------|-----------|
+|---|---|---|
 | `PlayerContext.tsx` | 939/938 | ~675 |
 | `useBattleOrchestrator.ts` | 882 | ~870 |
 | `useCardExecution.ts` | 615 | ~748 |
@@ -48,7 +48,7 @@ Removed all summoner references from 7+ documentation files:
 ### Category 4: Card Count Corrections
 
 | Source | Swordsman Cards | Mage Cards |
-|--------|-----------------|------------|
+|---|---|---|
 | README.md | 43 → **41** | 40 |
 | code_overview docs | 40 → **41** | 40 |
 | Actual (constants/data/cards/) | 41 | 40 |
@@ -58,7 +58,7 @@ Removed all summoner references from 7+ documentation files:
 ### Category 5: Obsolete File Reference Fixes
 
 | File | Reference | Status |
-|------|-----------|--------|
+|---|---|---|
 | `vulnerability-remediation-guide.md` | `useDeckManage.ts` | Updated note (file no longer exists) |
 | Multiple files | `deckReducter.ts` | Corrected to `deckReducer.ts` |
 | Multiple files | `tittle.ts` | Corrected to `title.ts` |

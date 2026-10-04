@@ -5,7 +5,7 @@
 ## Revision History
 
 | Date | Version | Changes |
-|------|---------|---------|
+|---|---|---|
 | 2026-02-05 | V3.0 | Complete rewrite. Replaced incorrect Lives System content with proper Journal specifications. |
 
 ---
@@ -19,7 +19,7 @@ The Journal (手記) is the player's personal notebook, accessible from the head
 ### 1.1 Design Philosophy
 
 | Principle | Description |
-|-----------|-------------|
+|---|---|
 | Always Accessible | One-click access from header, regardless of location |
 | Information Hub | Centralized access to player knowledge and configuration |
 | Non-Intrusive | Overlay UI that doesn't interrupt gameplay flow |
@@ -93,7 +93,7 @@ Journal (手記)
 
 **Categories:**
 | Category | Content |
-|----------|---------|
+|---|---|
 | Cards | Discovered card details, effects, mastery info |
 | Equipment | Found equipment stats, effects, rarity info |
 | Monsters | Encountered enemy stats, patterns, weaknesses |
@@ -157,7 +157,7 @@ Journal (手記)
 
 **Settings Categories:**
 | Category | Options |
-|----------|---------|
+|---|---|
 | Audio | BGM volume, SFX volume, Voice volume |
 | Display | Screen size, Animation speed, Text speed |
 | Gameplay | Auto-advance, Confirm prompts, Tutorial hints |
@@ -330,7 +330,7 @@ JournalOverlay
 ### 5.2 Visual Style
 
 | Element | Style |
-|---------|-------|
+|---|---|
 | Background | Parchment texture, dark edges |
 | Typography | Serif font, hand-written feel |
 | Icons | Ink-sketch style |

@@ -152,7 +152,7 @@ export const DEPTH2_ENEMIES: EnemyDefinition[] = [
 ## Stat Guidelines by Depth
 
 | Depth | HP | AP | Speed | Characteristics |
-|-------|-----|-----|-------|-----------------|
+|---|---|---|---|---|
 | 1 | 20-40 | 0-5 | 30-50 | Simple AI |
 | 2 | 35-60 | 5-10 | 40-60 | Conditional actions |
 | 3 | 50-90 | 10-20 | 50-70 | Compound actions |

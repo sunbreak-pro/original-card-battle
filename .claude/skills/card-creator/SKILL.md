@@ -106,7 +106,7 @@ applyEnemyDebuff: [
 ## Balance Guidelines
 
 | Rarity | Cost Range | Damage Range | Effects |
-|--------|------------|--------------|---------|
+|---|---|---|---|
 | common | 0-2 | 8-15 | Simple single effect |
 | rare | 1-3 | 15-25 | Compound effects |
 | epic | 2-4 | 25-40 | Powerful + conditional |

@@ -65,7 +65,7 @@ Skips stat bonuses for broken defense equipment, always includes weapon bonuses.
 ## Integration Points
 
 | Component | Role |
-|-----------|------|
+|---|---|
 | `equipmentStats.ts` | Core AP calculation, durability distribution, broken item checks |
 | `PlayerContext.tsx` | `applyEquipmentDurabilityDamage()` — updates equipment + runtime AP |
 | `PlayerContext.tsx` | `resetRuntimeState()` — derives AP from equipment durability |

@@ -39,14 +39,14 @@ disable-model-invocation: true
 
 **判定式は「このリポジトリのコードを直せば直るか？」**
 
-| 答え                                                                                     | 足す先                                                 |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Yes（プロダクトの課題）                                                                  | GitHub Issue                                           |
-| No だが**この repo の設定**を直せば直る（`settings.json` / `hooks/` / `.gitattributes`） | GitHub Issue（実例 = #40）                             |
-| No（Claude Code の環境 / ツールの挙動）                                                  | `.claude/docs/known-issues/NNN-<slug>.md` + `INDEX.md` |
-| 同じ型のバグを繰り返している                                                             | `.claude/docs/known-issues/LESSONS_LEARNED.md`         |
-| 実装の規約が抜けていた                                                                   | `.claude/CLAUDE.md` の該当節（**新しい節を作らない**） |
-| 手順が抜けていた                                                                         | 該当スキルの `SKILL.md`                                |
+| 答え | 足す先 |
+| --- | --- |
+| Yes（プロダクトの課題） | GitHub Issue |
+| No だが**この repo の設定**を直せば直る（`settings.json` / `hooks/` / `.gitattributes`） | GitHub Issue（実例 = #40） |
+| No（Claude Code の環境 / ツールの挙動） | `.claude/docs/known-issues/NNN-<slug>.md` + `INDEX.md` |
+| 同じ型のバグを繰り返している | `.claude/docs/known-issues/LESSONS_LEARNED.md` |
+| 実装の規約が抜けていた | `.claude/CLAUDE.md` の該当節（**新しい節を作らない**） |
+| 手順が抜けていた | 該当スキルの `SKILL.md` |
 
 ## 環境の事実（推論では埋まらないので明記する）
 

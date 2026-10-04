@@ -35,7 +35,12 @@ function unquote(cell) {
   return m ? m[1] : null;
 }
 
-/** Table rows under the heading that starts with `## <section>.`, header and rule dropped. */
+const isRule = (row) => row.length > 0 && row.every((c) => /^:?-{3,}:?$/.test(c));
+
+/**
+ * Rows of every table under the heading that starts with `## <section>.`, each table's header and
+ * rule dropped. §2 holds one table per owner so that two lanes never edit neighbouring lines.
+ */
 export function tableRows(markdown, section) {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n');
   const start = lines.findIndex((l) => l.startsWith(`## ${section}.`));
@@ -43,9 +48,12 @@ export function tableRows(markdown, section) {
   const rows = [];
   for (const line of lines.slice(start + 1)) {
     if (line.startsWith('## ')) break;
-    if (line.startsWith('|')) rows.push(cells(line));
+    if (!line.startsWith('|')) continue;
+    const row = cells(line);
+    if (isRule(row)) rows.pop();
+    else rows.push(row);
   }
-  return rows.slice(2);
+  return rows;
 }
 
 export function parseLedger(markdown) {

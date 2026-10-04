@@ -78,3 +78,34 @@ test('check reports a missing file, an unlisted doc and a retired doc without a 
     'retired without a banner in its first 8 lines: .claude/docs/battle_document/core_old.md',
   ]);
 });
+
+test('parseLedger reads one table per owner under §2 and drops each header', () => {
+  const split = `# SOURCES
+
+## 2. 現行の正本
+
+### main が書く正本
+
+| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| --- | --- | --- | --- | --- |
+| 構想 | \`.claude/docs/vision/concept.md\` | main | APPROVED | all |
+
+注記の段落は表ではありません。
+
+### battle が書く正本
+
+| 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
+| :--- | --- | --- | --- | --- |
+| ルール | \`.claude/docs/battle_document/core.md\` | battle | 現行 | cards |
+
+## 3. 旧版と記録
+`;
+  const ledger = parseLedger(split);
+  assert.deepEqual(
+    ledger.current.map((r) => [r.topic, r.owner]),
+    [
+      ['構想', 'main'],
+      ['ルール', 'battle'],
+    ],
+  );
+});

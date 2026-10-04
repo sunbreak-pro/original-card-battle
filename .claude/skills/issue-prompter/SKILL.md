@@ -40,23 +40,23 @@ git worktree list
 
 ### 2. 宛先解決（上から順に当てはめる）
 
-| 判定                                                                                        | 宛先                                                                        |
-| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 判定 | 宛先 |
+| --- | --- |
 | 本文に依存宣言があり、依存先が未 close（`依存` 節 / `Parent: #<n>` / 「〜が終わらないと」） | **配らない**。依存先が close されるまで待ち行列へ（ラベルより先に判定する） |
-| `type:human` ラベル                                                                         | **配らない**。人手待ちの一覧に分けて出す                                    |
-| `lane:<slug>` ラベル                                                                        | その slug のレーン直行                                                      |
-| `lane:` 無し。下の既定表で `area:` から 1 レーンに決まる                                    | そのレーン                                                                  |
-| `area:` が複数レーンに跨る / どれにも当たらない / レーンの worktree が無い                  | **配らない**。「chat-main 采配」欄に番号だけ並べる                          |
+| `type:human` ラベル | **配らない**。人手待ちの一覧に分けて出す |
+| `lane:<slug>` ラベル | その slug のレーン直行 |
+| `lane:` 無し。下の既定表で `area:` から 1 レーンに決まる | そのレーン |
+| `area:` が複数レーンに跨る / どれにも当たらない / レーンの worktree が無い | **配らない**。「chat-main 采配」欄に番号だけ並べる |
 
 `area:` からの既定（`lane:` が無いときだけ使う）:
 
-| area:                      | レーン    |
-| -------------------------- | --------- |
-| `area:cards` `area:enemy`  | `cards`   |
-| `area:ui` `area:art`       | `design`  |
-| `area:battle` `area:unity` | `battle`  |
-| `area:dungeon`             | `dungeon` |
-| `area:docs` `area:tooling` | `audit`   |
+| area: | レーン |
+| --- | --- |
+| `area:cards` `area:enemy` | `cards` |
+| `area:ui` `area:art` | `design` |
+| `area:battle` `area:unity` | `battle` |
+| `area:dungeon` | `dungeon` |
+| `area:docs` `area:tooling` | `audit` |
 
 **`area:world` は既定のレーンを持ちません**（2026-09-21。世界観の持ち主は main）。`lane:` が無ければ「chat-main 采配」欄に出します。
 

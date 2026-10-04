@@ -3,7 +3,7 @@
 ## Change History
 
 | Date | Content |
-|------|---------|
+|---|---|
 | 2026-02-04 | Extracted from guild_design.md and camp_facilities_design.md |
 
 ---

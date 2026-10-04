@@ -7,7 +7,7 @@ The economy revolves around **three currencies** (gold, magic stones, souls) flo
 ## 2. File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/contexts/ResourceContext.tsx` | 363 | Gold dual-pool, magic stones, exploration limit state management |
 | `src/constants/itemConstants.ts` | 45 | Magic stone values, rarity sell/buy prices |
 | `src/constants/campConstants.ts` | 126 | Blacksmith modifiers, sanctuary constants, capacity limits |
@@ -183,7 +183,7 @@ Returns Item[6] → added to storage/equipmentInventory
 **Pack Rarity Distributions:**
 
 | Pack | Price | Common | Uncommon | Rare | Epic | Legendary |
-|------|-------|--------|----------|------|------|-----------|
+|---|---|---|---|---|---|---|
 | Common | 300G | 100% | 0% | 0% | 0% | 0% |
 | Rare | 500G | 60% | 0% | 35% | 5% | 0% |
 | Epic | 1000G | 30% | 0% | 45% | 20% | 5% |
@@ -288,7 +288,7 @@ Dungeon exit:
 ### Gold Constants
 
 | Item | Price | Source |
-|------|-------|--------|
+|---|---|---|
 | Healing Potion | shopPrice from ConsumableItemData | `ShopData.ts` |
 | Greater Healing Potion | shopPrice from ConsumableItemData | `ShopData.ts` |
 | Full Elixir | shopPrice from ConsumableItemData | `ShopData.ts` |
@@ -300,7 +300,7 @@ Dungeon exit:
 ### Equipment Buy Prices (Direct Purchase)
 
 | Rarity | Buy Price | Sell Price |
-|--------|-----------|------------|
+|---|---|---|
 | Common | 120G | 50G |
 | Uncommon | 250G | 100G |
 | Rare | 400G | 150G |
@@ -310,7 +310,7 @@ Dungeon exit:
 ### Magic Stone Values
 
 | Size | Gold Equivalent |
-|------|-----------------|
+|---|---|
 | Small | 30G |
 | Medium | 100G |
 | Large | 350G |
@@ -319,7 +319,7 @@ Dungeon exit:
 ### Blacksmith Upgrade Costs (Gold + MagicStone Gold-Equivalent)
 
 | Rarity | Lv0→1 | Lv1→2 | Lv2→3 |
-|--------|-------|-------|-------|
+|---|---|---|---|
 | Common | 200G + 150MS | 400G + 300MS | 800G + 600MS |
 | Uncommon | 200G + 150MS | 400G + 300MS | 800G + 600MS |
 | Rare | 400G + 300MS | 800G + 600MS | 1600G + 1200MS |
@@ -329,7 +329,7 @@ Dungeon exit:
 ### Level Stat Modifiers
 
 | Level | Stat Multiplier | AP Multiplier |
-|-------|----------------|---------------|
+|---|---|---|
 | 0 | 1.0x | 1.0x |
 | 1 | 1.1x (+10%) | 1.2x (+20%) |
 | 2 | 1.2x (+20%) | 1.4x (+40%) |
@@ -338,7 +338,7 @@ Dungeon exit:
 ### Quality Modifiers
 
 | Quality | Stat Multiplier |
-|---------|----------------|
+|---|---|
 | Poor | 0.95x (-5%) |
 | Normal | 1.0x |
 | Good | 1.03x (+3%) |
@@ -347,7 +347,7 @@ Dungeon exit:
 ### Quality Upgrade Success Rates
 
 | Transition | Normal (1.0x cost) | Quality Focused (1.5x) | Max Quality (2.0x) |
-|------------|-------------------|----------------------|-------------------|
+|---|---|---|---|
 | Poor → Normal | 40% | 80% | 100% |
 | Normal → Good | 20% | 40% | 60% |
 | Good → Master | 10% | 15% | 25% |
@@ -360,7 +360,7 @@ Dungeon exit:
 ### Dismantle Returns
 
 | Rarity | Gold Return % | Bonus Stone Chance |
-|--------|--------------|-------------------|
+|---|---|---|
 | Common | 10% of sellPrice | 0% |
 | Uncommon | 12% | 0% |
 | Rare | 15% | 10% |
@@ -372,7 +372,7 @@ Level bonus to stone chance: Lv1 +5%, Lv2 +10%, Lv3 +15%. Bonus stone value: 100
 ### Sanctuary Skill Tree (25 Nodes)
 
 | Tier | Cost Range | Node Count | Key Effects |
-|------|-----------|------------|-------------|
+|---|---|---|---|
 | 1 (Foundation) | 20-30 souls | 6 | +10 HP, +10% gold, class insight, basic appraisal |
 | 2 (Advancement) | 40-80 souls | 12 | +20 HP, +20% gold, +1 exploration, element mastery, full appraisal, +5 inventory |
 | 3 (Mastery) | 100-150 souls | 7 | +30 HP, +30% gold, +20% souls, death defiance, true appraisal, +2 exploration |
@@ -380,7 +380,7 @@ Level bonus to stone chance: Lv1 +5%, Lv2 +10%, Lv3 +15%. Bonus stone value: 100
 ### Soul Values
 
 | Source | Souls |
-|--------|-------|
+|---|---|
 | Normal enemy | 5 |
 | Elite enemy | 15 |
 | Boss | 50 |
@@ -389,7 +389,7 @@ Level bonus to stone chance: Lv1 +5%, Lv2 +10%, Lv3 +15%. Bonus stone value: 100
 ### Survival Multipliers (for resource transfer)
 
 | Exit Type | Multiplier |
-|-----------|-----------|
+|---|---|
 | Early return | 0.6x |
 | Normal return | 0.8x |
 | Full clear | 1.0x |

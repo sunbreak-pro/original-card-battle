@@ -3,7 +3,7 @@
 ## Section 1: File Registry
 
 | Path | Lines | System | Role |
-|------|-------|--------|------|
+|---|---|---|---|
 | `src/App.tsx` | 119 | state | Provider nesting, screen routing |
 | `src/contexts/GameStateContext.tsx` | 140 | state | Screen navigation, battle config, depth |
 | `src/contexts/ResourceContext.tsx` | 363 | economy | Gold dual-pool, magic stones, exploration limit |
@@ -225,7 +225,7 @@ GuildContext (STANDALONE — not in hierarchy, local to Guild facility component
 ## Section 4: Vulnerability Index
 
 | ID | Severity | Location | System | Type | Summary |
-|----|----------|----------|--------|------|---------|
+|---|---|---|---|---|---|
 | V-ORCH-01 | HIGH | `useBattleOrchestrator.ts:550-608` | battle | stale-closure | executeNextPhaseRef update gap between recreate and useEffect |
 | V-ORCH-02 | MEDIUM | `useBattleOrchestrator.ts:562` | battle | stale-closure | Phase queue expansion uses stale enemies array |
 | V-ORCH-03 | MEDIUM | `useBattleOrchestrator.ts:648` | battle | stale-closure | handleEndPhase reads stale phaseState.currentPhaseIndex |
@@ -329,7 +329,7 @@ GuildContext (STANDALONE — not in hierarchy, local to Guild facility component
 ## Section 5: Stub/Incomplete Systems
 
 | System | Status | Type Location | Implementation Location | Missing |
-|--------|--------|---------------|------------------------|---------|
+|---|---|---|---|---|
 | Equipment durability | PARTIAL | `itemTypes.ts` (durability, maxDurability) | `equipmentStats.ts` (stat calc exists) | No degradation during battle; repair exists but nothing to repair |
 | Title system | DISCONNECTED | `title.ts` (functions exist) | None | cardTypeCount not tracked; functions possibly never called |
 | Save migration | STUB | `saveTypes.ts` (version field) | `saveManager.ts:172-186` | migrate() stamps version only; no actual migration logic |
@@ -344,14 +344,14 @@ GuildContext (STANDALONE — not in hierarchy, local to Guild facility component
 ## Section 6: Immutable Files
 
 | File | Reason |
-|------|--------|
+|---|---|
 | `src/domain/cards/decks/deck.ts` | Marked IMMUTABLE in CLAUDE.md — createInitialDeck, drawCards, shuffleArray |
 | `src/domain/cards/decks/deckReducer.ts` | Marked IMMUTABLE in CLAUDE.md — deckReducer state machine |
 
 ## Section 7: Known Duplications
 
 | Item | Location A | Location B | Risk |
-|------|-----------|-----------|------|
+|---|---|---|---|
 | `SWORD_ENERGY_MAX` (=10) | `classAbilityUtils.ts:15` | `characterConstants.ts:30` | Value drift |
 | `DEFAULT_DAMAGE_MODIFIER` | `classAbilitySystem.ts:35-40` | `characterConstants.ts:37-42` | Value drift |
 | `calculateCardEffect` | `card.ts:52-82` | `cardPlayLogic.ts:14-43` | Behavior divergence |

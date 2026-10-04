@@ -3,7 +3,7 @@
 ## Change History
 
 | Date | Content |
-|------|---------|
+|---|---|
 | 2026-02-04 | Extracted from library_design.md and guild_design.md |
 
 ---
@@ -23,7 +23,7 @@ Achievement-based title system that provides cosmetic rewards and optional gamep
 ### 2.2 Title Examples
 
 | Title | Condition | Effect |
-|-------|-----------|--------|
+|---|---|---|
 | Goblin Slayer | Defeat 100 Goblins | Gold from Goblins +10% |
 | Flame Wielder | Use Fire cards 100 times | None (Cosmetic) |
 | Depth Master | Reach Depth 5 | None (Cosmetic) |

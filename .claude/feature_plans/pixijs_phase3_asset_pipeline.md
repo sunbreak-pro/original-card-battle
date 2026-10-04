@@ -3,7 +3,7 @@
 ## Change History
 
 | Date | Content |
-|------|---------|
+|---|---|
 | 2026-02-22 | Initial creation based on engine integration proposal |
 
 ---
@@ -120,7 +120,7 @@ full body, facing right, game character art
 ### 2.4 品質基準
 
 | 基準 | 要件 |
-|------|------|
+|---|---|
 | 解像度 | 最低 512x512 px（敵）、768x1024 px（プレイヤー） |
 | 背景 | 完全透過（PNG alpha） |
 | ポーズ | 正面～30度斜め、バトルレディ |
@@ -139,7 +139,7 @@ full body, facing right, game character art
 ### 3.2 Depth別バッチ生成計画
 
 | Depth | 敵数 | テーマ | 優先度 |
-|-------|------|--------|--------|
+|---|---|---|---|
 | Depth 1 (森林迷宮) | 10体 | 森の生物、ゴブリン、植物系 | 最高 |
 | Depth 2 (水晶洞窟) | 10体 | 結晶生物、洞窟モンスター | 高 |
 | Depth 3 (溶岩神殿) | 10体 | 溶岩・炎系、ゴーレム | 中 |
@@ -162,7 +162,7 @@ full body, facing right, game character art
 ### 3.4 AI生成ツール選定
 
 | ツール | 用途 | コスト |
-|--------|------|--------|
+|---|---|---|
 | Stable Diffusion (ローカル) | メイン生成。スタイル統一にLoRA活用 | 無料（GPU必要） |
 | PixelLab | キャラスプライト + アニメーション | 無料プランあり |
 | Ludo.ai | スプライトシート直接生成 | 無料プランあり |
@@ -323,7 +323,7 @@ atmospheric perspective, game background layer,
 ### 7.1 カードイラスト仕様
 
 | 項目 | 仕様 |
-|------|------|
+|---|---|
 | サイズ | 256x256 px（カード内イラストエリア） |
 | スタイル | アニメ調、属性色を強調 |
 | 背景 | 属性グラデーション（透過なし） |
@@ -443,7 +443,7 @@ const ASSET_MANIFEST = {
 
 ### New Files
 | File | Purpose |
-|------|---------|
+|---|---|
 | `src/ui/pixi/shared/textures/AssetManifest.ts` | アセットマニフェスト |
 | `src/ui/pixi/battle/layers/CharacterLayer.tsx` | キャラクター描画（本実装） |
 | `src/ui/pixi/battle/layers/BackgroundLayer.tsx` | パララックス背景（本実装） |
@@ -453,7 +453,7 @@ const ASSET_MANIFEST = {
 
 ### Modified Files
 | File | Change |
-|------|--------|
+|---|---|
 | `src/ui/pixi/shared/textures/TextureManager.ts` | スプライトシート読み込み実装 |
 | `src/ui/html/battleHtml/EnemyFrame.tsx` | Feature Flag による画像切替 |
 | `src/ui/html/battleHtml/PlayerFrame.tsx` | Feature Flag による画像切替 |

@@ -10,7 +10,7 @@ Design guidelines for dark fantasy roguelike card battle games.
 ## Design Philosophy
 
 | Principle | Description |
-|-----------|-------------|
+|---|---|
 | Clarity over Decoration | Information must be clear; decoration serves purpose |
 | Pressure through Simplicity | Create psychological tension with minimal elements |
 | Depth Visualization | Dungeon depth should be visually perceivable |
@@ -157,7 +157,7 @@ Design guidelines for dark fantasy roguelike card battle games.
 Display remaining lives prominently with color progression:
 
 | Lives | Color | Effect |
-|-------|-------|--------|
+|---|---|---|
 | 7-10 | Green | Normal |
 | 4-6 | Yellow | Warning |
 | 1-3 | Red | Danger + pulse animation |

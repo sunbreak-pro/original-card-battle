@@ -7,7 +7,7 @@ The inventory system manages three storage areas (inventory for consumables, equ
 ## File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/types/itemTypes.ts` | 175 | Item, Equipment, Consumable, MagicStones, EquipmentSlot types |
 | `src/domain/item_equipment/logic/generateItem.ts` | 69 | Item factory: consumable and equipment generation |
 | `src/domain/item_equipment/logic/itemUtils.ts` | 18 | calculateMagicStoneValue helper |

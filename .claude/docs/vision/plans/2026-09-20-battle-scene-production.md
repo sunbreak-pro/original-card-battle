@@ -41,14 +41,14 @@
 
 ### 2.1 決まっていること
 
-| 領域       | 状態                                                                                                                       |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 戦闘の規則 | `battle_core_v4.md` v4.2（2026-09-20 改訂）。列 1〜4 = コスト、近間 / 遠間、状態のスタック制、回復 3 固定、デッキ 20〜40   |
-| カード     | `swordsman_cards_v4.md` v4.2。80 種にコストを割り当て済み（1 / 2 / 3 が 25 / 30 / 25 枚）。位置条件 16 枚の 4 マス配分済み |
-| 敵         | `enemy_roster_v4.md` v4.2。通常 6 / 精鋭 2 + 取り巻き / ボス 3 + エクストラボスの枠。位置を持つのはボスと精鋭だけ          |
-| 操作       | 受け皿と投げ上げ線の併用（`battle_ui_ux_v2.md` §11.1）                                                                     |
-| 画面の方向 | 上帯を角へ、投入帯を消す、立ち位置と一字札、状態チップは自分 6 種（§10 / §11）                                             |
-| 開示度     | 3 段（0 / 1 / 2）。1 手目は種別 + 咎める側の一字（§11.3）                                                                  |
+| 領域 | 状態 |
+| --- | --- |
+| 戦闘の規則 | `battle_core_v4.md` v4.2（2026-09-20 改訂）。列 1〜4 = コスト、近間 / 遠間、状態のスタック制、回復 3 固定、デッキ 20〜40 |
+| カード | `swordsman_cards_v4.md` v4.2。80 種にコストを割り当て済み（1 / 2 / 3 が 25 / 30 / 25 枚）。位置条件 16 枚の 4 マス配分済み |
+| 敵 | `enemy_roster_v4.md` v4.2。通常 6 / 精鋭 2 + 取り巻き / ボス 3 + エクストラボスの枠。位置を持つのはボスと精鋭だけ |
+| 操作 | 受け皿と投げ上げ線の併用（`battle_ui_ux_v2.md` §11.1） |
+| 画面の方向 | 上帯を角へ、投入帯を消す、立ち位置と一字札、状態チップは自分 6 種（§10 / §11） |
+| 開示度 | 3 段（0 / 1 / 2）。1 手目は種別 + 咎める側の一字（§11.3） |
 
 ### 2.2 決まっていないこと
 
@@ -62,25 +62,25 @@
 
 **止めるもの**（先に決める）
 
-| 未確定                      | 誰が決めるか            | 効く先                   |
-| --------------------------- | ----------------------- | ------------------------ |
-| 演出の強弱 4 段の閾値       | #30                     | #57（演出の文法）        |
-| 投げ上げ線に出す予測値の形  | #46 / #30               | #56（画面の実装）        |
-| 敵側の状態チップの並べ方    | #46                     | #56                      |
-| ボスの適応 AI の仕様        | `concept-v3.md` §12-8   | #50 / #51                |
+| 未確定 | 誰が決めるか | 効く先 |
+| --- | --- | --- |
+| 演出の強弱 4 段の閾値 | #30 | #57（演出の文法） |
+| 投げ上げ線に出す予測値の形 | #46 / #30 | #56（画面の実装） |
+| 敵側の状態チップの並べ方 | #46 | #56 |
+| ボスの適応 AI の仕様 | `concept-v3.md` §12-8 | #50 / #51 |
 | 設計原則 V1 / V2 の言い直し | #61（こうだいさん判断） | 文書のみ。実装は止めない |
-| 主人公の見た目              | アート側（handover）    | 立ち絵。仮絵で進められる |
+| 主人公の見た目 | アート側（handover） | 立ち絵。仮絵で進められる |
 
 ### 2.3 環境の前提
 
-| 項目               | 値                                                           | 確認方法                              |
-| ------------------ | ------------------------------------------------------------ | ------------------------------------- |
-| Unity              | 6000.5.5f1                                                   | `ProjectSettings/ProjectVersion.txt`  |
-| URP                | 17.5.0                                                       | `Packages/manifest.json`              |
-| dotnet SDK         | 10.0.302                                                     | `dotnet --version`                    |
-| Unity プロジェクト | `C:\Users\user\Unity\RPG-by-card`（別リポジトリ）            | —                                     |
-| 同期               | `npm run unity:sync`（一方向・冪等）                         | `--dry-run` で 0 file(s) would change |
-| テスト             | `dotnet test`（54 件 + depiction 53 件）、EditMode、PlayMode | —                                     |
+| 項目 | 値 | 確認方法 |
+| --- | --- | --- |
+| Unity | 6000.5.5f1 | `ProjectSettings/ProjectVersion.txt` |
+| URP | 17.5.0 | `Packages/manifest.json` |
+| dotnet SDK | 10.0.302 | `dotnet --version` |
+| Unity プロジェクト | `C:\Users\user\Unity\RPG-by-card`（別リポジトリ） | — |
+| 同期 | `npm run unity:sync`（一方向・冪等） | `--dry-run` で 0 file(s) would change |
+| テスト | `dotnet test`（54 件 + depiction 53 件）、EditMode、PlayMode | — |
 
 ### 2.4 いま赤いもの
 
@@ -154,37 +154,37 @@ Issue の依存順です。上から 4 つの束に分かれ、束の中は並�
 
 ## 5. Files
 
-| File                                                        | Operation | Notes                                                            |
-| ----------------------------------------------------------- | --------- | ---------------------------------------------------------------- |
-| `unity-port/BattleCore/Types.cs`                            | 書き直し  | `Attribute` / `Position` / `Faces` / `Cost` / `Trait` / `Status` |
-| `unity-port/BattleCore/Constants.cs`                        | 書き直し  | §10 の表へ。`RANGE_MULT` を削除                                  |
-| `unity-port/BattleCore/Combat.cs`                           | 書き直し  | §5.1 のダメージ式、`EvaluateTrait`、状態の 2 型                  |
-| `unity-port/BattleCore/BattleReducer.cs`                    | 書き直し  | §9 の 12 手順                                                    |
-| `unity-port/BattleCore/Enemy.cs`                            | 書き直し  | 2 枝 / 4 枝、予兆 2 段、適応                                     |
-| `unity-port/BattleCore/Cards.cs`                            | 書き直し  | 80 種                                                            |
-| `unity-port/BattleCore/Enemies.cs`                          | 新規      | 12 体                                                            |
-| `unity-port/BattleCore/DeckRules.cs`                        | 新規      | 20〜40、同種 3                                                   |
-| `unity-port/BattleCore/Chain.cs`                            | 新規      | 連戦                                                             |
-| `unity-port/BattleCore/Mastery.cs`                          | 新規      | 刻み・段・才能                                                   |
-| `unity-port/BattleCore.Sim/`                                | 新規      | 試験台                                                           |
-| `Assets/View/Depiction/Script/`（変換器）                   | 新規      | コア → 台本                                                      |
-| `Assets/View/BattleHud.cs` / `HandView.cs` / `ArenaView.cs` | 書き直し  | v2.1                                                             |
-| Unity リポ `Assets/Scenes/Battle.unity`                     | 新規      | 実戦シーン                                                       |
-| `.claude/docs/battle_document/battle_ui_ux_v2.md`           | 書き直し  | §1〜§7 を v2.1 へ                                                |
+| File | Operation | Notes |
+| --- | --- | --- |
+| `unity-port/BattleCore/Types.cs` | 書き直し | `Attribute` / `Position` / `Faces` / `Cost` / `Trait` / `Status` |
+| `unity-port/BattleCore/Constants.cs` | 書き直し | §10 の表へ。`RANGE_MULT` を削除 |
+| `unity-port/BattleCore/Combat.cs` | 書き直し | §5.1 のダメージ式、`EvaluateTrait`、状態の 2 型 |
+| `unity-port/BattleCore/BattleReducer.cs` | 書き直し | §9 の 12 手順 |
+| `unity-port/BattleCore/Enemy.cs` | 書き直し | 2 枝 / 4 枝、予兆 2 段、適応 |
+| `unity-port/BattleCore/Cards.cs` | 書き直し | 80 種 |
+| `unity-port/BattleCore/Enemies.cs` | 新規 | 12 体 |
+| `unity-port/BattleCore/DeckRules.cs` | 新規 | 20〜40、同種 3 |
+| `unity-port/BattleCore/Chain.cs` | 新規 | 連戦 |
+| `unity-port/BattleCore/Mastery.cs` | 新規 | 刻み・段・才能 |
+| `unity-port/BattleCore.Sim/` | 新規 | 試験台 |
+| `Assets/View/Depiction/Script/`（変換器） | 新規 | コア → 台本 |
+| `Assets/View/BattleHud.cs` / `HandView.cs` / `ArenaView.cs` | 書き直し | v2.1 |
+| Unity リポ `Assets/Scenes/Battle.unity` | 新規 | 実戦シーン |
+| `.claude/docs/battle_document/battle_ui_ux_v2.md` | 書き直し | §1〜§7 を v2.1 へ |
 
 ---
 
 ## 6. Verification
 
-| ゲート   | コマンド                                                                         | 目安                                          |
-| -------- | -------------------------------------------------------------------------------- | --------------------------------------------- |
-| 単体     | `cd unity-port && dotnet test`                                                   | 緑。件数は改訂で増える                        |
-| 型・静的 | `npm run build` / `npm run lint`                                                 | #44 の赤を先に片付ける                        |
-| Unity 内 | `unity test C:/Users/user/Unity/RPG-by-card --mode EditMode` / `--mode PlayMode` | 緑                                            |
-| 同期     | `npm run unity:sync -- --dry-run`                                                | 0 file(s) would change                        |
-| 数値     | `dotnet run --project unity-port/BattleCore.Sim`                                 | 基準 12 項目。最初に見る 3 つを外していないか |
-| 画面     | Editor を前面にして Play                                                         | 実戦 3 戦が通る。スクリーンショットを撮る     |
-| 手触り   | 人手（#60）                                                                      | 1 ターン 20 秒以下、情報量の所感が解消        |
+| ゲート | コマンド | 目安 |
+| --- | --- | --- |
+| 単体 | `cd unity-port && dotnet test` | 緑。件数は改訂で増える |
+| 型・静的 | `npm run build` / `npm run lint` | #44 の赤を先に片付ける |
+| Unity 内 | `unity test C:/Users/user/Unity/RPG-by-card --mode EditMode` / `--mode PlayMode` | 緑 |
+| 同期 | `npm run unity:sync -- --dry-run` | 0 file(s) would change |
+| 数値 | `dotnet run --project unity-port/BattleCore.Sim` | 基準 12 項目。最初に見る 3 つを外していないか |
+| 画面 | Editor を前面にして Play | 実戦 3 戦が通る。スクリーンショットを撮る |
+| 手触り | 人手（#60） | 1 ターン 20 秒以下、情報量の所感が解消 |
 
 ---
 

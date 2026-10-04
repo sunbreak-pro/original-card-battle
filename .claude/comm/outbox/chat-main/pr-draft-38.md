@@ -33,13 +33,13 @@
 
 ## 検証
 
-| 項目                           | 結果                                                                                                                                          |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run test:run`             | 14 files / 204 tests 緑                                                                                                                       |
-| `cd unity-port && dotnet test` | 54 件 緑                                                                                                                                      |
-| `npm run build`                | 失敗。ただし本 PR の前から同じ（`parityFixture.test.ts` の `@types/node` 不足）。docs を stash して再現を確認済み                             |
-| `npm run lint`                 | 7 errors。全て `src/` と `.claude/skills/` の既存分。本 PR は docs のみ                                                                       |
-| 参照のずれ                     | 行番号の参照（`:77` `:85` `:92` `:111` `:132-146` `:142` `:283`）が動かないよう、ヘッダは行を足さず既存行へ追記。§348 以降を指す 1 件だけ更新 |
+| 項目 | 結果 |
+| --- | --- |
+| `npm run test:run` | 14 files / 204 tests 緑 |
+| `cd unity-port && dotnet test` | 54 件 緑 |
+| `npm run build` | 失敗。ただし本 PR の前から同じ（`parityFixture.test.ts` の `@types/node` 不足）。docs を stash して再現を確認済み |
+| `npm run lint` | 7 errors。全て `src/` と `.claude/skills/` の既存分。本 PR は docs のみ |
+| 参照のずれ | 行番号の参照（`:77` `:85` `:92` `:111` `:132-146` `:142` `:283`）が動かないよう、ヘッダは行を足さず既存行へ追記。§348 以降を指す 1 件だけ更新 |
 
 Unity Editor は未接続のため、EditMode / PlayMode は未実行です。本 PR は docs のみで C# を触っていません。
 

@@ -109,7 +109,7 @@ return <Component value={value} />;
 
 **When to Use Refs vs State:**
 | Use Refs | Use State |
-|----------|-----------|
+|---|---|
 | DOM element access | Values displayed in UI |
 | Mutable values without re-render | Values that trigger re-render |
 | One-time guards (e.g., `deathHandledRef`) | Values passed to child props |
@@ -214,7 +214,7 @@ GOOD: ResourceContext owns gold → all consumers use useResources().gold
 ## Quick Reference
 
 | Issue | One-Line Rule |
-|-------|---------------|
+|---|---|
 | CSS Class Collision | Scope with parent: `.battle-screen .card {}` |
 | Context Provider Scope | Persist state across screens → provider high in tree |
 | React Hooks | Call at top level, before conditional returns |

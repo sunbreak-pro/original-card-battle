@@ -6,17 +6,17 @@ This directory contains specialized skill guides for developing different aspect
 
 ### Content Creation
 
-| Skill                       | Command         | Description                                            |
-| --------------------------- | --------------- | ------------------------------------------------------ |
-| **card-creator**            | Add new cards   | Card data creation, type compliance, deck registration |
-| **enemy-creator**           | Add new enemies | Enemy definitions, AI patterns, depth-specific data    |
-| **character-class-creator** | Add new classes | Class data, initial decks, class-specific mechanics    |
+| Skill | Command | Description |
+| --- | --- | --- |
+| **card-creator** | Add new cards | Card data creation, type compliance, deck registration |
+| **enemy-creator** | Add new enemies | Enemy definitions, AI patterns, depth-specific data |
+| **character-class-creator** | Add new classes | Class data, initial decks, class-specific mechanics |
 
 ### UI/UX
 
-| Skill                          | Command                       | Description                                                                                                                                   |
-| ------------------------------ | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ui-ux-creator**              | UI components                 | Color palettes, typography, animations, layouts                                                                                               |
+| Skill | Command | Description |
+| --- | --- | --- |
+| **ui-ux-creator** | UI components | Color palettes, typography, animations, layouts |
 | **visual-production-pipeline** | Character art / UI production | Tools and prerequisites survey, one character or one UI screen through the pipeline, report → Artifact → life-editor note (tag `card-battle`) |
 
 ## Usage

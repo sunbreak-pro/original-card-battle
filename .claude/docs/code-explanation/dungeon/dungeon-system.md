@@ -7,7 +7,7 @@ The dungeon system generates procedural floor maps with node-based navigation. E
 ## File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/types/dungeonTypes.ts` | 87 | DungeonNode, DungeonFloor, DungeonRun, MapGenerationConfig |
 | `src/domain/dungeon/depth/deptManager.ts` | 41 | Depth names, neutral theme constants |
 | `src/domain/dungeon/logic/dungeonLogic.ts` | 362 | Map generation, node selection, progression, utilities |
