@@ -47,7 +47,7 @@
 
 **D の出典**: `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs:218`（`Root("Figure", new Vector2(210f, 450f), new Vector2(0.5f, 0f))`）と `:222`（`view.body.preserveAspect = true`）。
 
-**「140 × 300 px」は古い値です。** `briefs/` の 2 本が使っている 140 × 300 は旧 `ArenaView.cs:35-36` の数字で、いまの正本は Depiction の 210 × 450 です。しかも 210 と 450 は画素ではなく **Canvas の参照単位** です。`DepictionPrefabBuilder.cs:471-473` が `ScaleWithScreenSize` / 参照 1920×1080 / `matchWidthOrHeight = 0.5` を設定しているので、実画素は 1080p で 450、1440p で 600、4K で 900 になります。**線の太さと縁の粗さは 4K を基準に決めます。**
+**「140 × 300 px」は古い値です。** `briefs/` の 2 本が使っている 140 × 300 は旧 `ArenaView.cs:35-36` の数字で、いまの正本は Depiction の 210 × 450 です。しかも 210 と 450 は画素ではなく **Canvas の参照単位** です。`DepictionPrefabBuilder.cs:473-475` が `ScaleWithScreenSize` / 参照 1920×1080 / `matchWidthOrHeight = 0.5` を設定しているので、実画素は 1080p で 450、1440p で 600、4K で 900 になります。**線の太さと縁の粗さは 4K を基準に決めます。**
 
 書き出しは **原本のまま 640 × 1536** で出します。縮小しません。長辺 1024 へ縮めると幅が 683 になり、4 の倍数でなくなって BC7 圧縮が効かなくなります（理由は `asset-intake.md` §3）。
 
@@ -102,7 +102,7 @@ Animagine XL 4.0 のモデルカードは並びを `1girl/1boy/1other, character
 
 **絵は画面で向く向きのまま描きます**（2026-10-03 こうだいさん決定、#85）。敵は左向き、プレイヤーは右向きで描き、Unity はどちらも反転しません。描いた絵と画面の絵が同じ向きになるので、確かめるときに頭の中で裏返す手間がありません。
 
-出典は `Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs:492`（プレイヤーを x = −260 に置く）と `:497`（敵を x = +400 に置く）です。**`:501` にはまだ敵を反転する行（`localScale.x = −1`）が残っています。** これを外す作業は battle レーンの #288 です。#288 が入るまでは、左向きの敵の絵が画面では右（背中側）を向きます。
+出典は `Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs:494`（プレイヤーを x = −260 に置く）と `:499`（敵を x = +400 に置く）です。**Unity は敵の絵もプレイヤーの絵も反転しません。** 敵を反転していた行（`localScale.x = −1`）は、battle レーンの #288 で外しました。いまの向きは `Assets/View/Depiction/Script/FigureMotion.cs:61-64`（`FigureFacing.HomeScaleX`）が決めます。立ち絵がある体には、敵でもプレイヤーでも 1（反転なし）を返します。反転するのは、絵がまだ無い敵の仮の影だけです。仮の影は右向きで作られているからです。
 
 **候補が逆向きで出たら、採用前に Krita で水平反転して直します。** 敵なら左向きに、プレイヤーなら右向きにそろえます。`from side, profile` は横顔を作りますが左右は決めないので、候補の半分前後が逆向きで出ます。
 
