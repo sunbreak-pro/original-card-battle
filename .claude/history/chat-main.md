@@ -1,5 +1,19 @@
 # HISTORY (chat-main)
 
+### 2026-10-04 - docs のコンフリクト対策
+
+#### 概要
+
+並行するレーンの PR が docs でほぼ必ずぶつかる原因を実測し、3 つの対策を PR #338 にまとめた。グローバルの prettier の hook の直しは claude-dotfiles#36 に起票した。
+
+#### 変更点
+
+- **実測**: 2026-09-15 以降のマージ 181 件を `git merge-tree` で合流し直すと 16 件がコンフリクト。9/24 以降の 9 件のうち 6 件が `SOURCES.md`（4 件は表全体の空白の書き換え、2 件は別レーンの隣り合う行）、3 件は同じレーンの 2 本の PR が版の行と改訂履歴を同時に書いたもの
+- **表の桁揃え**: `.prettierrc.json` で `*.md` に `requirePragma` を付けて prettier から外した。`.prettierignore` は現在地から探されるので worktree に効かず、`proseWrap: "never"` は引用ブロックを 1 行に結合するので使わなかった。`scripts/md-tables.mjs`（`npm run md:tables`）で 111 ファイルの表の空白を詰めた
+- **台帳**: `SOURCES.md` §2 を持ち主ごとの表に分け、状態の欄から版と経緯を外し、版を上げるだけでは台帳を触らない決まりにした。`scripts/sources.mjs` を複数の表に対応させた
+- **続きの PR**: `worktree-policy` に「続きの PR は積む」を足した。記録は known-issues 003
+- **判断の資料**: `docs/reports/2026-10-04-docs-conflict-design.html`（メインのチェックアウトに未コミットで置いた設計時点の版。実装では prettier の止め方を変えた）
+
 ### 2026-09-30 - 積んだ PR の取り残し 2 件の救出、#213・#221 の決定の記録、Krita の手順の修正
 
 #### 概要
