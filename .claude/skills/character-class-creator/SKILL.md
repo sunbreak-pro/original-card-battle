@@ -133,7 +133,7 @@ function getCardDataByClass(classType: CharacterClass): Record<string, Card> {
 ## Existing Class Mechanics Reference
 
 | Class | Mechanic | System File |
-|-------|----------|-------------|
+|---|---|---|
 | Swordsman | Sword Energy | `swordEnergySystem.ts` |
 | Mage | Elemental Resonance | `elementalSystem.ts` |
 | Summoner | Summon System | `summonSystem.ts` |
@@ -141,7 +141,7 @@ function getCardDataByClass(classType: CharacterClass): Record<string, Card> {
 ## Stat Guidelines
 
 | Stat | Low | Medium | High |
-|------|-----|--------|------|
+|---|---|---|---|
 | HP | 60 | 80 | 100 |
 | AP | 20 | 25 | 30 |
 | Speed | 40 | 50 | 60 |

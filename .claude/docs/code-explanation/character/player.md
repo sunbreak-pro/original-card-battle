@@ -7,7 +7,7 @@ The player/character system defines two playable classes (Swordsman, Mage) with 
 ## File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/types/characterTypes.ts` | 344 | All character types: BattleStats, class abilities, enemy, player |
 | `src/constants/data/characters/PlayerData.tsx` | 82 | Base stats per class (HP, AP, speed, energy, deck config) |
 | `src/constants/data/characters/CharacterClassData.ts` | 226 | Class display info, descriptions, ability descriptions |

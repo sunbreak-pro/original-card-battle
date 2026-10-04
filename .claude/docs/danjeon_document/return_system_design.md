@@ -30,16 +30,16 @@ The Survival System presents a trade-off between **Risk Management** and **Resou
 
 ## 1.2 Survival vs. Death (Penalty Comparison)
 
-| Item              | Survival (Return)       | Death                                            |
-| ----------------- | ----------------------- | ------------------------------------------------ |
-| **Equipment**     | **Keep All**            | **Lose All** (including items brought from base) |
-| **Items**         | **Keep All**            | **Lose All**                                     |
-| **Durability**    | Persists                | -                                                |
-| **Mastery**       | Recorded                | Recorded                                         |
-| **Gold**          | **100% Carry-back**     | Zero                                             |
-| **Magic Stones**  | **100% Carry-back**     | Zero                                             |
-| **Soul Remnants** | **100% Added to Total** | **100% Added to Total** (V3.0 Change)            |
-| **Lives**         | **No Change**           | **-1 Life** (V3.0 Change)                        |
+| Item | Survival (Return) | Death |
+| --- | --- | --- |
+| **Equipment** | **Keep All** | **Lose All** (including items brought from base) |
+| **Items** | **Keep All** | **Lose All** |
+| **Durability** | Persists | - |
+| **Mastery** | Recorded | Recorded |
+| **Gold** | **100% Carry-back** | Zero |
+| **Magic Stones** | **100% Carry-back** | Zero |
+| **Soul Remnants** | **100% Added to Total** | **100% Added to Total** (V3.0 Change) |
+| **Lives** | **No Change** | **-1 Life** (V3.0 Change) |
 
 > **Nuance Note:** In English gaming terms, "Survival" often sounds like a genre. Here, we use **"Return"** or **"Extraction"** to emphasize the act of safely leaving the dungeon. **"Lose All"** is used to clearly signal the "Permadeath-lite" nature of the penalty.
 
@@ -54,10 +54,10 @@ The Survival System presents a trade-off between **Risk Management** and **Resou
 
 ## 2.2 Comparison
 
-| Method             | Requirement  | Immediacy   | Reward Multiplier | Risk             | Best Used When...     |
-| ------------------ | ------------ | ----------- | ----------------- | ---------------- | --------------------- |
-| **Teleport Stone** | Item in hand | **Instant** | 100%              | None             | Prioritizing safety   |
-| **Return Route**   | Combat-ready | Slow        | 100%              | Enemy encounters | Seeking extra rewards |
+| Method | Requirement | Immediacy | Reward Multiplier | Risk | Best Used When... |
+| --- | --- | --- | --- | --- | --- |
+| **Teleport Stone** | Item in hand | **Instant** | 100% | None | Prioritizing safety |
+| **Return Route** | Combat-ready | Slow | 100% | Enemy encounters | Seeking extra rewards |
 
 **Critical Rule:** All return methods are disabled in **The Abyss (Depth 5)**. Once you enter, it is "Slay the boss or die." However, an **Escape Route** appears only after the boss is defeated.
 
@@ -141,8 +141,8 @@ function handleDeath(player: Character, soulsEarnedThisRun: number): void {
 
 # 8. Summary of Tactical Balance
 
-| Method           | Rewards      | Risk     | Cost  | Nuance                                         |
-| ---------------- | ------------ | -------- | ----- | ---------------------------------------------- |
-| **Teleport**     | 100%         | Zero     | Item  | The "Safe Bet" for preserving rare loot.       |
-| **Return Route** | 100% + Bonus | Combat   | Time  | The "Greedy Play" for extra Mastery and Souls. |
-| **Abyss**        | 100%         | Absolute | Lives | The "Ultimate Gamble."                         |
+| Method | Rewards | Risk | Cost | Nuance |
+| --- | --- | --- | --- | --- |
+| **Teleport** | 100% | Zero | Item | The "Safe Bet" for preserving rare loot. |
+| **Return Route** | 100% + Bonus | Combat | Time | The "Greedy Play" for extra Mastery and Souls. |
+| **Abyss** | 100% | Absolute | Lives | The "Ultimate Gamble." |

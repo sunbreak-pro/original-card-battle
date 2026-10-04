@@ -7,7 +7,7 @@ Polymorphic class ability framework using `ClassAbilitySystem<T>` interface, wit
 ## File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/domain/characters/player/classAbility/classAbilitySystem.ts` | ~137 | Interface definition, DamageModifier type, combine/apply helpers |
 | `src/domain/characters/player/logic/swordEnergySystem.ts` | ~261 | Swordsman: energy gauge, bleed chance, consume/add functions |
 | `src/domain/characters/player/logic/elementalSystem.ts` | ~250 | Mage: resonance chain, element-specific effects, field buffs |

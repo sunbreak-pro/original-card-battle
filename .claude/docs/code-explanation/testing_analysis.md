@@ -9,7 +9,7 @@ This document provides a comprehensive analysis of the testing infrastructure, c
 ### Types of Testing
 
 | Type | Description | Example in This Codebase |
-|------|-------------|--------------------------|
+|---|---|---|
 | **Unit Testing** | Tests individual functions or modules in isolation | `deck.test.ts` testing `shuffleArray()` |
 | **Integration Testing** | Tests how multiple units work together | Testing `useCardExecution` with `damageCalculation` |
 | **End-to-End (E2E) Testing** | Tests complete user flows through the application | Full battle from start to victory (not implemented) |
@@ -31,7 +31,7 @@ The pyramid suggests writing **many unit tests**, **some integration tests**, an
 ### Common Testing Terminology
 
 | Term | Definition |
-|------|------------|
+|---|---|
 | **Test Suite** | A collection of related tests, created with `describe()` |
 | **Test Case** | A single test, created with `it()` or `test()` |
 | **Assertion** | A statement that checks expected behavior, e.g., `expect(value).toBe(5)` |
@@ -56,7 +56,7 @@ The pyramid suggests writing **many unit tests**, **some integration tests**, an
 ### Framework Configuration
 
 | Component | Value |
-|-----------|-------|
+|---|---|
 | Framework | Vitest 4.0.18 |
 | Environment | jsdom |
 | Globals | Enabled (`describe`, `it`, `expect` available globally) |
@@ -76,7 +76,7 @@ The pyramid suggests writing **many unit tests**, **some integration tests**, an
 ### Available NPM Scripts
 
 | Script | Purpose |
-|--------|---------|
+|---|---|
 | `npm run test` | Run tests in watch mode |
 | `npm run test:run` | Single test run (CI mode) |
 | `npm run test:coverage` | Run with coverage report |
@@ -122,7 +122,7 @@ Object.defineProperty(import.meta, 'env', {
 **31 test cases** covering the core deck manipulation functions:
 
 | Function | Tests | Key Patterns |
-|----------|-------|--------------|
+|---|---|---|
 | `shuffleArray()` | 5 | Math.random mocking, immutability verification |
 | `shuffleDiscardIntoDraw()` | 4 | Pile manipulation, edge cases |
 | `drawCards()` | 9 | Recycle logic, boundary conditions |
@@ -181,7 +181,7 @@ it('does not mutate original array', () => {
 **35 test cases** covering damage calculation logic:
 
 | Function | Tests | Key Patterns |
-|----------|-------|--------------|
+|---|---|---|
 | `resolveDamageType()` | 9 | Element → damage type mapping |
 | `calculateDamage()` | 13 | Critical hits, buff handling, null safety |
 | `applyDamageAllocation()` | 13 | Guard/AP/HP damage distribution |
@@ -230,7 +230,7 @@ it('handles card without baseDamage property', () => { /* ... */ });
 These systems directly affect game balance and player experience during combat:
 
 | File | Functions to Test | Complexity |
-|------|-------------------|------------|
+|---|---|---|
 | `buffLogic.ts` | `addBuffDebuff()`, `removeBuffDebuff()`, `tickBuffDurations()`, `hasImmunity()` | High - CRUD operations, duration tracking, immunity checks |
 | `buffCalculation.ts` | `calculateAttackModifier()`, `calculateDefenseModifier()`, `calculateDotDamage()`, `calculateHealAmount()` | High - Buff stacking, percentage calculations |
 | `equipmentStats.ts` | `calculateEquipmentAP()`, `applyDurabilityDamage()` | Medium - Multi-slot aggregation, degradation |
@@ -242,7 +242,7 @@ These systems directly affect game balance and player experience during combat:
 These systems affect dungeon exploration and progression:
 
 | File | Functions to Test | Complexity |
-|------|-------------------|------------|
+|---|---|---|
 | `dungeonLogic.ts` | `generateMap()`, `isNodeSelectable()`, `getAdjacentNodes()` | High - Procedural generation, graph traversal |
 | `enemyAI.ts` | `selectAction()`, `evaluateTarget()`, `getPatternWeight()` | High - Decision trees, energy management |
 | `blacksmithLogic.ts` | `calculateUpgradeCost()`, `upgradeEquipment()`, `repairEquipment()`, `dismantleEquipment()` | Medium - Cost formulas, success rates |
@@ -251,7 +251,7 @@ These systems affect dungeon exploration and progression:
 ### Medium Priority (Supporting Systems)
 
 | File | Functions to Test | Complexity |
-|------|-------------------|------------|
+|---|---|---|
 | `cardDerivation.ts` | `checkUnlockConditions()`, `deriveCard()` | Medium - Condition evaluation |
 | `elementalSystem.ts` | `buildResonanceStack()`, `consumeResonance()`, `calculateBonusDamage()` | Medium - Mage class mechanics |
 | `swordEnergySystem.ts` | `gainEnergy()`, `consumeEnergy()`, `calculateEnergyBonus()` | Medium - Swordsman class mechanics |
@@ -261,7 +261,7 @@ These systems affect dungeon exploration and progression:
 ### Lower Priority (UI/Integration)
 
 | File | Type | Notes |
-|------|------|-------|
+|---|---|---|
 | `useEquipmentAP.ts` | Hook | Requires `renderHook` from testing-library |
 | `useCardExecution.ts` | Hook | Complex dependencies, needs integration approach |
 | `useBattleOrchestrator.ts` | Hook | Orchestration layer, best tested via integration |
@@ -275,7 +275,7 @@ These systems affect dungeon exploration and progression:
 ### Not Configured
 
 | Missing Item | Purpose | Recommendation |
-|--------------|---------|----------------|
+|---|---|---|
 | Coverage Thresholds | Enforce minimum coverage | Add to `vitest.config.ts` |
 | Mock Directory (`__mocks__/`) | Centralized mock modules | Create for frequently mocked modules |
 | Test Fixtures Directory | Reusable test data | Create `src/test/fixtures/` |
@@ -330,7 +330,7 @@ expect(result.current.totalAP).toBe(15);
 ~90% of domain logic is pure functions. These are ideal testing targets:
 
 | Characteristic | Benefit |
-|----------------|---------|
+|---|---|
 | No side effects | No mocking required |
 | Deterministic | Same input → same output |
 | Isolated | No external dependencies |
@@ -400,7 +400,7 @@ describe('Buff + Damage Integration', () => {
 ### Mocking Strategies
 
 | Scenario | Approach |
-|----------|----------|
+|---|---|
 | Random values | `vi.spyOn(Math, 'random').mockReturnValue(0.5)` |
 | Date/Time | `vi.useFakeTimers()` |
 | External modules | `vi.mock('@/module')` |
@@ -411,7 +411,7 @@ describe('Buff + Damage Integration', () => {
 ## Summary
 
 | Metric | Current State |
-|--------|---------------|
+|---|---|
 | Test Files | 2 |
 | Total Test Cases | 66 |
 | Tested Systems | Deck manipulation, Damage calculation |

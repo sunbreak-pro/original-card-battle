@@ -34,15 +34,15 @@ disable-model-invocation: true
 
 **CI はまだ無い。** `.github/workflows/` が存在しないので、ゲートの正本は `.claude/CLAUDE.md` の Development Commands。
 
-| 順  | コマンド                          | 見るもの                    |
-| --- | --------------------------------- | --------------------------- |
-| 1   | `npm run build`                   | `tsc -b` の型 + vite build  |
-| 2   | `npm run lint`                    | eslint                      |
-| 3   | `npm run test:run`                | vitest 単発                 |
-| 4   | `cd unity-port && dotnet test`    | BattleCore 54 件            |
-| 5   | `npm run parity:check`            | TS / C# のパリティ          |
-| 6   | `npm run unity:sync`              | Unity リポへの写し漏れ 0 件 |
-| 7   | `unity-editor-mcp` の `run_tests` | EditMode / PlayMode         |
+| 順 | コマンド | 見るもの |
+| --- | --- | --- |
+| 1 | `npm run build` | `tsc -b` の型 + vite build |
+| 2 | `npm run lint` | eslint |
+| 3 | `npm run test:run` | vitest 単発 |
+| 4 | `cd unity-port && dotnet test` | BattleCore 54 件 |
+| 5 | `npm run parity:check` | TS / C# のパリティ |
+| 6 | `npm run unity:sync` | Unity リポへの写し漏れ 0 件 |
+| 7 | `unity-editor-mcp` の `run_tests` | EditMode / PlayMode |
 
 **`npm run build` はテストを見ない。** build が通っても `test:run` が落ちることがあるので、build 緑を「通った」と読まない。
 

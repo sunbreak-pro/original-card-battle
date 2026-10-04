@@ -104,16 +104,16 @@ src/ui/battle-lab/
 
 ## 比較評価（両方完成後に埋める・意思決定の根拠）
 
-| 軸               | 配点観点                        | PixiJS版                                                                                                 | Phaser 4版                                                                                       |
-| ---------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| 肌感（最重要）   | 触って気持ちいいか・テンポ      | （ユーザー記入 — 実機プレイ後）                                                                          | （ユーザー記入 — 実機プレイ後）                                                                  |
-| 演出のしやすさ   | tween/particle/数字ポップ       | △ tween 内蔵なし。Graphics + rAF 手動フェード（@pixi/particle-emitter は v8 で死）。ダメージポップ実装済 | ◎ Tween 1〜2行で宣言的（マーカースライド / ダメージポップ：y+alpha+scale 同時）。**Phaser 優位** |
-| カード UI        | テキスト主体リッチ UI の素直さ  | ◎ 手札 / ログ / 結果を DOM オーバーレイに逃がして容易。**Pixi 優位**                                     | △ canvas Text で実装。自動リフロー無・座標手計算・CJK 縦クリップ対策要。HTML比 2〜3x コスト      |
-| 既存統合         | React / Pixi Phase 1 資産の活用 | ◎ PixiStage / usePixiApp / StrictMode #602 ゲートを再利用し立ち上げ高速。**Pixi 優位**                   | △ 新規・React 非依存（薄い mount のみ。再利用資産なし）                                          |
-| 開発体験(DX)     | 実装時間・コード量・詰まり      | 872 LOC + 263 css。draw prop パターン一貫・既存統合速。pixiText の style 型に一度詰まり                  | 792 LOC + 35 css。単一 Scene。Tween は簡単だがテキスト座標が全部手計算で手間                     |
-| バンドルサイズ   | 追加 KB                         | ◎ コード分割・遅延ロード（PixiStage 401KB + WebGL 69KB ほか、gzip 合算 ≈ 200KB）。**Pixi 優位**          | △ 単一チャンク 1.40MB（gzip 375KB）を初回一括ロード                                              |
-| パフォーマンス   | 多スプライト/演出時のフレーム   | （要実機計測。turn-based で演出は軽量・両者十分の想定）                                                  | （要実機計測。同左）                                                                             |
-| 本実装への発展性 | 保守性・拡張容易さ              | ◎ 本番が React なので親和。Phase 1 基盤を継承できる。**Pixi 優位**                                       | △ 独立 canvas のため React 本番と状態を二重管理するリスク                                        |
+| 軸 | 配点観点 | PixiJS版 | Phaser 4版 |
+| --- | --- | --- | --- |
+| 肌感（最重要） | 触って気持ちいいか・テンポ | （ユーザー記入 — 実機プレイ後） | （ユーザー記入 — 実機プレイ後） |
+| 演出のしやすさ | tween/particle/数字ポップ | △ tween 内蔵なし。Graphics + rAF 手動フェード（@pixi/particle-emitter は v8 で死）。ダメージポップ実装済 | ◎ Tween 1〜2行で宣言的（マーカースライド / ダメージポップ：y+alpha+scale 同時）。**Phaser 優位** |
+| カード UI | テキスト主体リッチ UI の素直さ | ◎ 手札 / ログ / 結果を DOM オーバーレイに逃がして容易。**Pixi 優位** | △ canvas Text で実装。自動リフロー無・座標手計算・CJK 縦クリップ対策要。HTML比 2〜3x コスト |
+| 既存統合 | React / Pixi Phase 1 資産の活用 | ◎ PixiStage / usePixiApp / StrictMode #602 ゲートを再利用し立ち上げ高速。**Pixi 優位** | △ 新規・React 非依存（薄い mount のみ。再利用資産なし） |
+| 開発体験(DX) | 実装時間・コード量・詰まり | 872 LOC + 263 css。draw prop パターン一貫・既存統合速。pixiText の style 型に一度詰まり | 792 LOC + 35 css。単一 Scene。Tween は簡単だがテキスト座標が全部手計算で手間 |
+| バンドルサイズ | 追加 KB | ◎ コード分割・遅延ロード（PixiStage 401KB + WebGL 69KB ほか、gzip 合算 ≈ 200KB）。**Pixi 優位** | △ 単一チャンク 1.40MB（gzip 375KB）を初回一括ロード |
+| パフォーマンス | 多スプライト/演出時のフレーム | （要実機計測。turn-based で演出は軽量・両者十分の想定） | （要実機計測。同左） |
+| 本実装への発展性 | 保守性・拡張容易さ | ◎ 本番が React なので親和。Phase 1 基盤を継承できる。**Pixi 優位** | △ 独立 canvas のため React 本番と状態を二重管理するリスク |
 
 > **客観指標の傾き（2026-06-28 計測）**: 既存統合・バンドル・カード UI・発展性は **PixiJS 優位**、演出の手軽さは **Phaser 優位**。「肌感（最重要）」と「パフォーマンス」はユーザーの実機プレイ判断に委ねる。
 
@@ -157,22 +157,22 @@ src/ui/battle-lab/
 
 ## Files
 
-| File                                                | Operation     | Notes                                                                          |
-| --------------------------------------------------- | ------------- | ------------------------------------------------------------------------------ |
-| `package.json`                                      | Edit          | rollup 時限爆弾行を削除（0b）/ `phaser` 追加（0c）。**Phase 0 の独立コミット** |
-| `src/ui/battle-lab/core/*.ts`（6+1）                | Create        | 検証台 engine/ の昇格コピー + `viewModel.ts`                                   |
-| `src/ui/battle-lab/core/__tests__/*`                | Create        | 既存 33 件相当 + viewModel テスト                                              |
-| `src/ui/battle-lab/adapters/pixi/PixiBattle.tsx`    | Create        | React×Pixi コンテナ                                                            |
-| `src/ui/battle-lab/adapters/pixi/components/*`      | Create        | Pixi 描画群                                                                    |
-| `src/ui/battle-lab/adapters/pixi/main.tsx`          | Create        | StrictMode mount                                                               |
-| `src/ui/battle-lab/adapters/pixi/pixi-bakeoff.css`  | Create        | `.pixi-bakeoff` スコープ                                                       |
-| `src/ui/battle-lab/adapters/phaser/BattleScene.ts`  | Create        | Phaser シーン本体                                                              |
-| `src/ui/battle-lab/adapters/phaser/main.ts`         | Create        | `Phaser.Game` 構成                                                             |
-| `pixi-bakeoff.html`                                 | Create        | ルート起動口（Pixi）                                                           |
-| `phaser-bakeoff.html`                               | Create        | ルート起動口（Phaser）                                                         |
-| `src/ui/pixi/**`                                    | **Read-only** | Phase 1 資産を再利用（編集禁止）                                               |
-| `src/ui/prototype/**`                               | **Untouched** | DOM 対照群として保全                                                           |
-| `src/domain/cards/decks/deck.ts` / `deckReducer.ts` | **Untouched** | 不可侵                                                                         |
+| File | Operation | Notes |
+| --- | --- | --- |
+| `package.json` | Edit | rollup 時限爆弾行を削除（0b）/ `phaser` 追加（0c）。**Phase 0 の独立コミット** |
+| `src/ui/battle-lab/core/*.ts`（6+1） | Create | 検証台 engine/ の昇格コピー + `viewModel.ts` |
+| `src/ui/battle-lab/core/__tests__/*` | Create | 既存 33 件相当 + viewModel テスト |
+| `src/ui/battle-lab/adapters/pixi/PixiBattle.tsx` | Create | React×Pixi コンテナ |
+| `src/ui/battle-lab/adapters/pixi/components/*` | Create | Pixi 描画群 |
+| `src/ui/battle-lab/adapters/pixi/main.tsx` | Create | StrictMode mount |
+| `src/ui/battle-lab/adapters/pixi/pixi-bakeoff.css` | Create | `.pixi-bakeoff` スコープ |
+| `src/ui/battle-lab/adapters/phaser/BattleScene.ts` | Create | Phaser シーン本体 |
+| `src/ui/battle-lab/adapters/phaser/main.ts` | Create | `Phaser.Game` 構成 |
+| `pixi-bakeoff.html` | Create | ルート起動口（Pixi） |
+| `phaser-bakeoff.html` | Create | ルート起動口（Phaser） |
+| `src/ui/pixi/**` | **Read-only** | Phase 1 資産を再利用（編集禁止） |
+| `src/ui/prototype/**` | **Untouched** | DOM 対照群として保全 |
+| `src/domain/cards/decks/deck.ts` / `deckReducer.ts` | **Untouched** | 不可侵 |
 
 ---
 
@@ -226,14 +226,14 @@ src/ui/battle-lab/
 
 ## Pre-flight チェックリスト（前準備・本セッションで確認済み）
 
-| 項目                 | 状態      | メモ                                                                                                                                                                                                  |
-| -------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 検証台コアの再利用性 | ✅ 確認済 | `src/ui/prototype/engine/` は React/DOM 非依存・33 テスト付き・そのまま core/ 昇格可                                                                                                                  |
-| PixiJS 在庫          | ✅ あり   | `pixi.js@8.18.1` / `@pixi/react@8.0.5` 導入済。Phase 1 資産 `src/ui/pixi/`（11 ファイル）再利用可                                                                                                     |
-| Phaser 在庫          | ❌ 未導入 | Phase 0c で `npm install phaser`。先に時限爆弾除去が必要                                                                                                                                              |
-| rollup 時限爆弾      | ⚠️ 未対処 | `package.json` に `@rollup/rollup-linux-arm64-gnu@^4.57.1` ハードコード残存。darwin で `npm install` 非 force が落ちる。Phase 0b で除去（MEMORY 技術的負債 #5・独立コミット）                         |
-| ブランチ状態         | ⚠️ 要整理 | 検証台コア + 前プランは **origin/main(9b88536)**。本プラン + v2 docs は **docs/realism-concept-v2**（main と分岐: main +11 / docs +5）。Phase 0a で docs を main へマージしてから feat ブランチを切る |
-| vite ビルド入力      | ℹ️ 要確認 | Vite 既定 input は `index.html` のみ。新 HTML 2 つを `npm run build` 対象にするなら `vite.config.ts` の `build.rollupOptions.input` に追記（dev で開くだけなら不要）                                  |
+| 項目 | 状態 | メモ |
+| --- | --- | --- |
+| 検証台コアの再利用性 | ✅ 確認済 | `src/ui/prototype/engine/` は React/DOM 非依存・33 テスト付き・そのまま core/ 昇格可 |
+| PixiJS 在庫 | ✅ あり | `pixi.js@8.18.1` / `@pixi/react@8.0.5` 導入済。Phase 1 資産 `src/ui/pixi/`（11 ファイル）再利用可 |
+| Phaser 在庫 | ❌ 未導入 | Phase 0c で `npm install phaser`。先に時限爆弾除去が必要 |
+| rollup 時限爆弾 | ⚠️ 未対処 | `package.json` に `@rollup/rollup-linux-arm64-gnu@^4.57.1` ハードコード残存。darwin で `npm install` 非 force が落ちる。Phase 0b で除去（MEMORY 技術的負債 #5・独立コミット） |
+| ブランチ状態 | ⚠️ 要整理 | 検証台コア + 前プランは **origin/main(9b88536)**。本プラン + v2 docs は **docs/realism-concept-v2**（main と分岐: main +11 / docs +5）。Phase 0a で docs を main へマージしてから feat ブランチを切る |
+| vite ビルド入力 | ℹ️ 要確認 | Vite 既定 input は `index.html` のみ。新 HTML 2 つを `npm run build` 対象にするなら `vite.config.ts` の `build.rollupOptions.input` に追記（dev で開くだけなら不要） |
 
 ---
 

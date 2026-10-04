@@ -3,7 +3,7 @@
 ## Change History
 
 | Date | Content |
-|------|---------|
+|---|---|
 | 2026-02-22 | Initial creation based on engine integration proposal |
 
 ---
@@ -147,7 +147,7 @@ BattleScreen (既存JSX)
 
 **レイヤーの z-index 設計:**
 | Layer | z-index | 内容 |
-|-------|---------|------|
+|---|---|---|
 | battle-field | 1 | 既存のキャラクターフレーム |
 | BattleCanvas | 5 | PixiJS エフェクト描画 |
 | battle-header | 10 | ターン情報、クラスアビリティ |
@@ -197,7 +197,7 @@ Phase 1 では BattleScreen のみに導入するが、共通基盤は以下の�
 ### 3.1 将来のPixiJS適用候補画面
 
 | 画面 | 適用範囲 | 優先度 | 想定Phase |
-|------|----------|--------|-----------|
+|---|---|---|---|
 | BattleScreen | エフェクト・キャラクター描画 | 最高 | Phase 1-2 |
 | ExplorationScreen (NodeMap) | ノード間パーティクル演出 | 中 | Phase 4+ |
 | BaseCamp | キャンプファイヤー・環境エフェクト | 低 | Phase 4+ |
@@ -258,7 +258,7 @@ Phase 1 では BattleScreen のみに導入するが、共通基盤は以下の�
 
 ### New Files
 | File | Purpose |
-|------|---------|
+|---|---|
 | `src/ui/pixi/core/PixiStage.tsx` | 共通Stage wrapper |
 | `src/ui/pixi/core/PixiContextBridge.tsx` | Context bridge |
 | `src/ui/pixi/core/usePixiApp.ts` | Application access hook |
@@ -273,7 +273,7 @@ Phase 1 では BattleScreen のみに導入するが、共通基盤は以下の�
 
 ### Modified Files
 | File | Change |
-|------|--------|
+|---|---|
 | `package.json` | pixi.js, @pixi/react, @pixi/particle-emitter 追加 |
 | `vite.config.ts` | optimizeDeps 追加 |
 | `src/ui/html/battleHtml/BattleScreen.tsx` | BattleCanvas コンポーネント追加 |
@@ -324,7 +324,7 @@ Phase 1 では BattleScreen のみに導入するが、共通基盤は以下の�
 ## 9. Risks
 
 | Risk | Mitigation |
-|------|------------|
+|---|---|
 | @pixi/react v8 の React 19 互換性問題 | 導入初期に小規模PoC で検証 |
 | WebGL コンテキスト上限（ブラウザ制限） | 1つの Application を画面間で共有する設計 |
 | pointer-events: none が一部ブラウザで不安定 | 条件付きCSS + フォールバック |

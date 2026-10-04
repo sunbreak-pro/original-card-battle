@@ -4,36 +4,36 @@
 
 ## Update History
 
-| Date       | Content                                                                                                                                                                                                                                                                                            |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Date | Content |
+| --- | --- |
 | 2026-09-12 | 企画書「ゲーム設計(chat GPT)」で設計ルールを上書き。`vision/concept-v3.md` 新設（正本）、`requirements/tier1〜3` 全面改稿、`game_design_master.md` V4.0、`CAMP_FACILITIES_DESIGN.md` V5.0。旧ルール（ライフ制 / エクストラクション / 手記の死越え / AP）に SUPERSEDED・FROZEN バナー。アーマー凍結 |
-| 2026-05-17 | life-editor 準拠リファクタ: `code_overview`→`code-explanation`、`feature_plans`→`vision/plans`、`memories`→`known-issues` へ移行。標準サブディレクトリ追加                                                                                                                                         |
-| 2026-02-04 | Updated for facility consolidation (7 → 5). Removed deprecated files.                                                                                                                                                                                                                              |
+| 2026-05-17 | life-editor 準拠リファクタ: `code_overview`→`code-explanation`、`feature_plans`→`vision/plans`、`memories`→`known-issues` へ移行。標準サブディレクトリ追加 |
+| 2026-02-04 | Updated for facility consolidation (7 → 5). Removed deprecated files. |
 
 > **どれが正本かは [`SOURCES.md`](./SOURCES.md) が持ちます**（主題 → 正本 → 持ち主のレーン、旧版の一覧、食い違ったときの手順）。本書はフォルダの案内です。
 
 ## 標準ハーネス構造
 
-| Directory           | Description                                                                                                                                                                                |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `vision/`           | 抽象構想・設計原則（`core.md` + 正本 `concept-v3.md`「生と継承」。`concept-v2.md` は SUPERSEDED）。`vision/plans/` はアクティブ実装プラン + 将来機能（quest/title/NPC/dark market/PixiJS） |
-| `requirements/`     | 機能要件定義（Tier 別）。`tier1-core.md` v6（生と継承ループの必須要件 R1-1〜R1-17）/ `tier2-support.md` v3 / `tier3-experimental.md` v2（実験・凍結・廃棄）                                |
-| `known-issues/`     | Root Cause + 再発防止知見（`INDEX.md` で索引、`LESSONS_LEARNED.md` に 8 知見）                                                                                                             |
-| `code-explanation/` | コード解析・脆弱性トラッカー（`vulnerability-remediation-guide.md`）・テスト分析                                                                                                           |
+| Directory | Description |
+| --- | --- |
+| `vision/` | 抽象構想・設計原則（`core.md` + 正本 `concept-v3.md`「生と継承」。`concept-v2.md` は SUPERSEDED）。`vision/plans/` はアクティブ実装プラン + 将来機能（quest/title/NPC/dark market/PixiJS） |
+| `requirements/` | 機能要件定義（Tier 別）。`tier1-core.md` v6（生と継承ループの必須要件 R1-1〜R1-17）/ `tier2-support.md` v3 / `tier3-experimental.md` v2（実験・凍結・廃棄） |
+| `known-issues/` | Root Cause + 再発防止知見（`INDEX.md` で索引、`LESSONS_LEARNED.md` に 8 知見） |
+| `code-explanation/` | コード解析・脆弱性トラッカー（`vulnerability-remediation-guide.md`）・テスト分析 |
 
 ## ゲーム設計書（`*_document/`）
 
-| Directory           | Description                                                        |
-| ------------------- | ------------------------------------------------------------------ |
-| `Overall_document/` | High-level game design and architecture                            |
-| `battle_document/`  | Battle system mechanics, phases, damage calculation                |
-| `camp_document/`    | Camp facilities (Shop, Guild, Sanctuary, Blacksmith, Dungeon Gate) |
-| `card_document/`    | Card system, mastery, derivation mechanics                         |
-| `danjeon_document/` | Dungeon exploration, map generation, nodes                         |
-| `enemy_document/`   | Enemy definitions, AI patterns, boss design                        |
-| `item_document/`    | Items, equipment, consumables                                      |
-| `journal_document/` | Journal system (header UI for deck/encyclopedia/settings)          |
-| `util_doument/`     | Utility systems and helpers                                        |
+| Directory | Description |
+| --- | --- |
+| `Overall_document/` | High-level game design and architecture |
+| `battle_document/` | Battle system mechanics, phases, damage calculation |
+| `camp_document/` | Camp facilities (Shop, Guild, Sanctuary, Blacksmith, Dungeon Gate) |
+| `card_document/` | Card system, mastery, derivation mechanics |
+| `danjeon_document/` | Dungeon exploration, map generation, nodes |
+| `enemy_document/` | Enemy definitions, AI patterns, boss design |
+| `item_document/` | Items, equipment, consumables |
+| `journal_document/` | Journal system (header UI for deck/encyclopedia/settings) |
+| `util_doument/` | Utility systems and helpers |
 
 ## Key Documents
 

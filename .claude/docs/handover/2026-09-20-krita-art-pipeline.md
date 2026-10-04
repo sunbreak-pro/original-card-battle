@@ -9,16 +9,16 @@ Krita AI Diffusion 1.53.0 の導入と設定が終わり、1024×1024 の試し�
 
 ## 確認コマンド
 
-| 目的                 | コマンド                                                                | 期待                                                                        |
-| -------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| サーバーの起動       | `curl -s http://127.0.0.1:8188/system_stats`                            | JSON が返る。返らなければ Krita を起動してもらう                            |
-| モデルの一覧         | `curl -s http://127.0.0.1:8188/object_info/CheckpointLoaderSimple`      | 3 件。`animagine-xl-4.0-opt` を使う。`novaAnimeXL_ilV125` は製品に使わない  |
-| スタイルの設定       | `type "%APPDATA%\krita\ai_diffusion\styles\anime-illustrious.json"`     | `name` = card-battle Animagine、`architecture` = sdxl、`sampler_steps` = 28 |
+| 目的 | コマンド | 期待 |
+| --- | --- | --- |
+| サーバーの起動 | `curl -s http://127.0.0.1:8188/system_stats` | JSON が返る。返らなければ Krita を起動してもらう |
+| モデルの一覧 | `curl -s http://127.0.0.1:8188/object_info/CheckpointLoaderSimple` | 3 件。`animagine-xl-4.0-opt` を使う。`novaAnimeXL_ilV125` は製品に使わない |
+| スタイルの設定 | `type "%APPDATA%\krita\ai_diffusion\styles\anime-illustrious.json"` | `name` = card-battle Animagine、`architecture` = sdxl、`sampler_steps` = 28 |
 | 直近の落ちと生成時間 | `grep -c "Fatal Python error" "%APPDATA%\krita\ai_diffusion\logs\server.log"` | 1（2026-09-20 13:24:56、落とし穴の 4 件目）。2 以上なら新たに落ちている |
-| VRAM の空き          | `nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader` | 生成前で 4 GB 以上空いている                                                |
-| 直近の生成の中身     | `cat "%APPDATA%\krita\ai_diffusion\logs\workflow.json"` | 最後の生成のモデル・寸法・指示文。2026-09-20 は 1024×1024 の試し生成 |
-| 指示文の翻訳         | `grep translation "%APPDATA%\krita\ai_diffusion\settings.json"` | `translation_enabled` が `false`。`true` なら英語の指示文が壊れる |
-| 作業ファイル         | `ls "%USERPROFILE%\OneDrive\art"`                                       | まだ無い。段階 2 以降で `.kra` が置かれる                                   |
+| VRAM の空き | `nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader` | 生成前で 4 GB 以上空いている |
+| 直近の生成の中身 | `cat "%APPDATA%\krita\ai_diffusion\logs\workflow.json"` | 最後の生成のモデル・寸法・指示文。2026-09-20 は 1024×1024 の試し生成 |
+| 指示文の翻訳 | `grep translation "%APPDATA%\krita\ai_diffusion\settings.json"` | `translation_enabled` が `false`。`true` なら英語の指示文が壊れる |
+| 作業ファイル | `ls "%USERPROFILE%\OneDrive\art"` | まだ無い。段階 2 以降で `.kra` が置かれる |
 
 ## 次の一手
 

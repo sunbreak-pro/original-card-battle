@@ -65,11 +65,11 @@ idempotent — unchanged files are left alone, which keeps `.meta` files stable.
 
 Layout it produces:
 
-| Destination     | Source                                                                    |
-| --------------- | ------------------------------------------------------------------------- |
-| `Assets/Core/`  | `unity-port/BattleCore/*.cs` + `BattleCore.asmdef` (engine-free)          |
+| Destination | Source |
+| --- | --- |
+| `Assets/Core/` | `unity-port/BattleCore/*.cs` + `BattleCore.asmdef` (engine-free) |
 | `Assets/Tests/` | `unity-port/BattleCore.Tests/*.cs` + `BattleCore.Tests.asmdef` (EditMode) |
-| `Assets/View/`  | `unity-project-kit/Assets/View/BattleScreenView.cs`                       |
+| `Assets/View/` | `unity-project-kit/Assets/View/BattleScreenView.cs` |
 
 Flags for the two known Unity-side gotchas:
 

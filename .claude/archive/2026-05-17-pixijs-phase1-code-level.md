@@ -1,13 +1,13 @@
 # Plan: PixiJS Phase 1 — Foundation (Code-Level)
 
-| Field      | Value                                                                                                                                       |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Status     | COMPLETED（2026-05-23）— 実装完了・実機検証 OK・archive 済。Step 0 採用案 = **A 案**（React.lazy + useRef マウントガード、main.tsx 無変更） |
-| Created    | 2026-05-17                                                                                                                                  |
-| Task       | MEMORY.md → 予定「PixiJS 描画基盤 Phase 1」                                                                                                 |
-| Project    | /Users/newlife/dev/apps/original-card-battle                                                                                                |
-| Supersedes | `.claude/docs/vision/plans/pixijs_phase1_foundation.md`（抽象版・2026-02-22。本書を正とし旧版は archive 推奨）                              |
-| Verified   | PixiJS / @pixi/react / Vite7 の最新情報を 2026-05-17 に web 検証済（§0B）                                                                   |
+| Field | Value |
+| --- | --- |
+| Status | COMPLETED（2026-05-23）— 実装完了・実機検証 OK・archive 済。Step 0 採用案 = **A 案**（React.lazy + useRef マウントガード、main.tsx 無変更） |
+| Created | 2026-05-17 |
+| Task | MEMORY.md → 予定「PixiJS 描画基盤 Phase 1」 |
+| Project | /Users/newlife/dev/apps/original-card-battle |
+| Supersedes | `.claude/docs/vision/plans/pixijs_phase1_foundation.md`（抽象版・2026-02-22。本書を正とし旧版は archive 推奨） |
+| Verified | PixiJS / @pixi/react / Vite7 の最新情報を 2026-05-17 に web 検証済（§0B） |
 
 ---
 
@@ -30,14 +30,14 @@
 
 旧 `pixijs_phase1_foundation.md` を 6 観点で監査。**致命的な誤り 3 / 要修正 4** を検出。
 
-| #   | 旧計画の記述                                                | 検証結果                                                                                                                                                                                                              | 判定                       | 本書での対応                                                                                          |
-| --- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------- |
-| 1   | `@pixi/react v8` は「React 19 専用設計」                    | パッケージ名は正（改名なし）。peerDep は `react>=18`。**ただし StrictMode で WebGL コンテキスト stale → クラッシュする未解決 issue #602 が OPEN**。本リポは `main.tsx:7` で全 App を `<StrictMode>` ラップ → **直撃** | ⚠ NUANCED / **ブロッカー** | §3 Step 0 で StrictMode 回避策を必須化                                                                |
-| 2   | `pixi.js >= 8.16.0`（最新）                                 | 8.16.0 は 2026-02 時点。**現行最新は v8.18.1（2026-04）**。WebGPU は公式が「production 非推奨」明言                                                                                                                   | ❌ OUTDATED                | バージョン更新 + `preference:'webgl'` 固定                                                            |
-| 3   | `npm install @pixi/particle-emitter`                        | **v8 非対応。最新 v5.0.8(2022) は pixi v6 向け。v8 issue #211 はメンテ無反応＝事実上死亡**                                                                                                                            | ❌ FALSE / 高リスク        | **Phase 1 では一切入れない**。粒子は Phase 2 で v8 内蔵 `ParticleContainer` か community 版を別途評価 |
-| 4   | `vite.config.ts` に `optimizeDeps.include:['pixi.js']` 追加 | pixi.js v8 は native ESM。Vite7 で原則不要。**真のリスクは top-level await**（`Application.init()` を top-level await すると prod build で hang。issue #10456）                                                       | ⚠ NUANCED                  | optimizeDeps は入れない。§2.2 で await 罠を明記                                                       |
-| 5   | キャンバスを z-index:5、`pointer-events:none` で重ねる      | 実コードは `.battle-field` z-index **10**、hand **100**、particles **9999**。**z-index:5 だとフレーム背面に隠れる**。さらに `pointer-events:none` だけでは v8 の `pointermove` が document capture phase で漏れる     | ❌ FALSE（z）/ ⚠（events） | §2.6 で z-index **15** に修正 + `renderer.events.features.move=false` 明記                            |
-| 6   | 独自 `PixiContextBridge.tsx` で Context 伝播                | Context が reconciler を越えない事実は CONFIRMED。だが @pixi/react v8 は `its-fine` を内蔵済。**独自ブリッジは過剰設計**。props 渡し or `useApplication` で足りる                                                     | ⚠ 過剰設計                 | §2.5 で独自 Bridge を廃し props 注入に簡素化                                                          |
+| # | 旧計画の記述 | 検証結果 | 判定 | 本書での対応 |
+| --- | --- | --- | --- | --- |
+| 1 | `@pixi/react v8` は「React 19 専用設計」 | パッケージ名は正（改名なし）。peerDep は `react>=18`。**ただし StrictMode で WebGL コンテキスト stale → クラッシュする未解決 issue #602 が OPEN**。本リポは `main.tsx:7` で全 App を `<StrictMode>` ラップ → **直撃** | ⚠ NUANCED / **ブロッカー** | §3 Step 0 で StrictMode 回避策を必須化 |
+| 2 | `pixi.js >= 8.16.0`（最新） | 8.16.0 は 2026-02 時点。**現行最新は v8.18.1（2026-04）**。WebGPU は公式が「production 非推奨」明言 | ❌ OUTDATED | バージョン更新 + `preference:'webgl'` 固定 |
+| 3 | `npm install @pixi/particle-emitter` | **v8 非対応。最新 v5.0.8(2022) は pixi v6 向け。v8 issue #211 はメンテ無反応＝事実上死亡** | ❌ FALSE / 高リスク | **Phase 1 では一切入れない**。粒子は Phase 2 で v8 内蔵 `ParticleContainer` か community 版を別途評価 |
+| 4 | `vite.config.ts` に `optimizeDeps.include:['pixi.js']` 追加 | pixi.js v8 は native ESM。Vite7 で原則不要。**真のリスクは top-level await**（`Application.init()` を top-level await すると prod build で hang。issue #10456） | ⚠ NUANCED | optimizeDeps は入れない。§2.2 で await 罠を明記 |
+| 5 | キャンバスを z-index:5、`pointer-events:none` で重ねる | 実コードは `.battle-field` z-index **10**、hand **100**、particles **9999**。**z-index:5 だとフレーム背面に隠れる**。さらに `pointer-events:none` だけでは v8 の `pointermove` が document capture phase で漏れる | ❌ FALSE（z）/ ⚠（events） | §2.6 で z-index **15** に修正 + `renderer.events.features.move=false` 明記 |
+| 6 | 独自 `PixiContextBridge.tsx` で Context 伝播 | Context が reconciler を越えない事実は CONFIRMED。だが @pixi/react v8 は `its-fine` を内蔵済。**独自ブリッジは過剰設計**。props 渡し or `useApplication` で足りる | ⚠ 過剰設計 | §2.5 で独自 Bridge を廃し props 注入に簡素化 |
 
 **その他の実装現実とのズレ:**
 
@@ -269,23 +269,23 @@ Phase 1 では `EffectLayer` 内に `playTestParticle` のみ実装（`<pixiGrap
 
 ## 3. Files（影響一覧）
 
-| File                                                | Operation       | Notes                                                                 |
-| --------------------------------------------------- | --------------- | --------------------------------------------------------------------- |
-| `package.json`                                      | Modify          | `pixi.js@^8.18.1`, `@pixi/react@^8.0.5` 追加（particle-emitter 無し） |
-| `src/main.tsx`                                      | Modify (条件付) | Step 0-B 採用時のみ。A 採用なら変更なし                               |
-| `src/ui/pixi/core/PixiStage.tsx`                    | New             | Application wrapper + extend()                                        |
-| `src/ui/pixi/core/usePixiApp.ts`                    | New             | useApplication ラッパ + features.move=false                           |
-| `src/ui/pixi/types/pixiTypes.ts`                    | New             | BattlePixiProps                                                       |
-| `src/ui/pixi/battle/BattleCanvas.tsx`               | New             | オーバーレイ host                                                     |
-| `src/ui/pixi/battle/layers/BackgroundLayer.tsx`     | New             | 空                                                                    |
-| `src/ui/pixi/battle/layers/CharacterLayer.tsx`      | New             | 空                                                                    |
-| `src/ui/pixi/battle/layers/EffectLayer.tsx`         | New             | テスト粒子                                                            |
-| `src/ui/pixi/battle/PixiEffectBridge.ts`            | New             | 骨格                                                                  |
-| `src/ui/css/pages/battle/battle-layout.css`         | Modify          | `.battle-pixi-host` z-index:15 追加                                   |
-| `src/ui/html/battleHtml/BattleScreen.tsx`           | Modify          | `<BattleCanvas>` 挿入                                                 |
-| `src/ui/html/campsHtml/Guild/GuildBattleScreen.tsx` | Modify          | `<BattleCanvas>` 挿入（複製構造）                                     |
-| `src/ui/pixi/**/__tests__/*`                        | New             | §4 テスト                                                             |
-| `vite.config.ts`                                    | **変更しない**  | optimizeDeps 不要（§0B-4）                                            |
+| File | Operation | Notes |
+| --- | --- | --- |
+| `package.json` | Modify | `pixi.js@^8.18.1`, `@pixi/react@^8.0.5` 追加（particle-emitter 無し） |
+| `src/main.tsx` | Modify (条件付) | Step 0-B 採用時のみ。A 採用なら変更なし |
+| `src/ui/pixi/core/PixiStage.tsx` | New | Application wrapper + extend() |
+| `src/ui/pixi/core/usePixiApp.ts` | New | useApplication ラッパ + features.move=false |
+| `src/ui/pixi/types/pixiTypes.ts` | New | BattlePixiProps |
+| `src/ui/pixi/battle/BattleCanvas.tsx` | New | オーバーレイ host |
+| `src/ui/pixi/battle/layers/BackgroundLayer.tsx` | New | 空 |
+| `src/ui/pixi/battle/layers/CharacterLayer.tsx` | New | 空 |
+| `src/ui/pixi/battle/layers/EffectLayer.tsx` | New | テスト粒子 |
+| `src/ui/pixi/battle/PixiEffectBridge.ts` | New | 骨格 |
+| `src/ui/css/pages/battle/battle-layout.css` | Modify | `.battle-pixi-host` z-index:15 追加 |
+| `src/ui/html/battleHtml/BattleScreen.tsx` | Modify | `<BattleCanvas>` 挿入 |
+| `src/ui/html/campsHtml/Guild/GuildBattleScreen.tsx` | Modify | `<BattleCanvas>` 挿入（複製構造） |
+| `src/ui/pixi/**/__tests__/*` | New | §4 テスト |
+| `vite.config.ts` | **変更しない** | optimizeDeps 不要（§0B-4） |
 
 **不可侵:** `src/domain/cards/decks/deck.ts`, `deckReducer.ts`（触れない）
 
@@ -322,13 +322,13 @@ Phase 1 では `EffectLayer` 内に `playTestParticle` のみ実装（`<pixiGrap
 
 ## 6. Dependencies / Risks
 
-| Risk                                                       | 対策                                                                                                                           |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| @pixi/react #602（StrictMode crash, OPEN・未修正）         | Step 0 で A/B いずれか確定。受け入れ基準に往復テスト明記                                                                       |
+| Risk | 対策 |
+| --- | --- |
+| @pixi/react #602（StrictMode crash, OPEN・未修正） | Step 0 で A/B いずれか確定。受け入れ基準に往復テスト明記 |
 | @pixi/react 開発停滞（最新 v8.0.5 が 2024-12、issue 滞留） | バージョン固定（`^8.0.5`）。重大化したら Phase 2 で vanilla pixi.js 直叩きへ退避可能な構成（Bridge を命令型 API に寄せてある） |
-| @pixi/particle-emitter v8 死亡                             | Phase 1 は粒子ライブラリ非依存。Phase 2 で v8 内蔵 `ParticleContainer` を第一候補に再評価（別タスク化）                        |
-| Vite top-level await hang                                  | TextureManager を Phase1 で作らない＝罠を踏まない                                                                              |
-| pointermove 漏れ                                           | `renderer.events.features.move=false` を Step 5 で適用                                                                         |
+| @pixi/particle-emitter v8 死亡 | Phase 1 は粒子ライブラリ非依存。Phase 2 で v8 内蔵 `ParticleContainer` を第一候補に再評価（別タスク化） |
+| Vite top-level await hang | TextureManager を Phase1 で作らない＝罠を踏まない |
+| pointermove 漏れ | `renderer.events.features.move=false` を Step 5 で適用 |
 
 - **Blocks:** Phase 2(エフェクト移行)・3(アセット)・4(最適化)
 - **Blocked by:** なし（最初のフェーズ）

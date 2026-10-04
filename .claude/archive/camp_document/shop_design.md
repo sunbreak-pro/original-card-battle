@@ -104,11 +104,11 @@ Items are displayed in the following 3 categories.
 
 **Pack Types and Probabilities:**
 
-| Pack Name   | Price | Guaranteed Rarity | Common | Rare | Epic | Legendary |
-| ----------- | ----- | ----------------- | ------ | ---- | ---- | --------- |
-| Common Pack | 300G  | Common            | 100%   | 0%   | 0%   | 0%        |
-| Rare Pack   | 500G  | Rare or higher    | 60%    | 35%  | 5%   | 0%        |
-| Epic Pack   | 1000G | Epic or higher    | 30%    | 45%  | 20%  | 5%        |
+| Pack Name | Price | Guaranteed Rarity | Common | Rare | Epic | Legendary |
+| --- | --- | --- | --- | --- | --- | --- |
+| Common Pack | 300G | Common | 100% | 0% | 0% | 0% |
+| Rare Pack | 500G | Rare or higher | 60% | 35% | 5% | 0% |
+| Epic Pack | 1000G | Epic or higher | 30% | 45% | 20% | 5% |
 
 **Lottery Logic:**
 
@@ -314,12 +314,12 @@ const handleExchangeMagicStones = (targetValue: number) => {
 Epic consumables appear at increasing rates based on current dungeon depth:
 
 | Depth | Epic Appearance Rate |
-|-------|---------------------|
-| 1     | 5%                  |
-| 2     | 7%                  |
-| 3     | 10%                 |
-| 4     | 15%                 |
-| 5     | 20%                 |
+|---|---|
+| 1 | 5% |
+| 2 | 7% |
+| 3 | 10% |
+| 4 | 15% |
+| 5 | 20% |
 
 ### 2.5 Daily Sales (Original Design)
 
@@ -1439,7 +1439,7 @@ setGameState((prev) => ({
 The following differences exist between the original design and actual implementation:
 
 | Aspect | Original Design | Implementation |
-|--------|-----------------|----------------|
+|---|---|---|
 | Restock Timing | 3 battles after return | 7-10 battles (randomized) |
 | RNG | Standard random | Seeded RNG (deterministic per run) |
 | Epic Items | Not specified | Depth-dependent probability |

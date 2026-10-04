@@ -7,7 +7,7 @@ Card execution pipeline from click to effect application, covering energy cost, 
 ## File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/domain/battles/managements/useCardExecution.ts` | 615 | Core execution hook: damage loop, guard, heal, buffs, draw, bleed |
 | `src/domain/battles/managements/useDeckManage.ts` | 221 | Battle deck state management with animations |
 | `src/domain/cards/state/card.ts` | 83 | Effective power, mastery calc, canPlay, calculateCardEffect |

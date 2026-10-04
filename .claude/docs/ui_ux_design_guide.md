@@ -16,7 +16,7 @@ UI/UX設計の原則と仕様書。**なぜ**そう設計されているか（Wh
 ### Core Principles
 
 | Principle | Description | Rationale |
-|-----------|-------------|-----------|
+|---|---|---|
 | **Clarity over Decoration** | 情報伝達を最優先。装飾は目的を持つ場合のみ | プレイヤーは瞬時に判断する必要がある |
 | **Psychological Pressure** | 最小限の要素で心理的緊張を演出 | ローグライクの緊張感を視覚で増幅 |
 | **Depth Visualization** | ダンジョン深度を視覚的に認識可能に | 進行感と達成感を提供 |
@@ -57,7 +57,7 @@ UI/UX設計の原則と仕様書。**なぜ**そう設計されているか（Wh
 ### Facility Theme Colors
 
 | Facility | Primary | Secondary | Psychological Effect |
-|----------|---------|-----------|---------------------|
+|---|---|---|---|
 | **Blacksmith** | `#ff6b35` | `#ff9f66` | 炎・鍛冶の熱さ、力強さ |
 | **Shop** | `#d4af37` | `#ffd700` | 金・富、商取引の活気 |
 | **Sanctuary** | `#a855f7` | `#7c3aed` | 神秘・魔法、神聖さ |
@@ -75,7 +75,7 @@ UI/UX設計の原則と仕様書。**なぜ**そう設計されているか（Wh
 ### Semantic Status Colors
 
 | Status | Variable | Color | Usage |
-|--------|----------|-------|-------|
+|---|---|---|---|
 | HP | `--color-hp` | `#d94a4a` | HP表示、ダメージ |
 | AP | `--color-ap` | `#808080` | 行動力、コスト |
 | Guard | `--color-guard` | `#4488cc` | ガード値、防御 |
@@ -86,7 +86,7 @@ UI/UX設計の原則と仕様書。**なぜ**そう設計されているか（Wh
 ### Notification Colors
 
 | Type | Variable | Color | Usage |
-|------|----------|-------|-------|
+|---|---|---|---|
 | Success | `--color-success` | `#4caf50` | 成功、完了 |
 | Error | `--color-error` | `#f44336` | エラー、失敗 |
 | Warning | `--color-warning` | `#ffc107` | 警告、注意 |
@@ -96,7 +96,7 @@ UI/UX設計の原則と仕様書。**なぜ**そう設計されているか（Wh
 **寒色→暖色グラデーション**で成長を表現:
 
 | Level | Variable | Color | Meaning |
-|-------|----------|-------|---------|
+|---|---|---|---|
 | 0 | `--color-mastery-0` | `#343434` | 未熟練（グレー） |
 | 1 | `--color-mastery-1` | `#2196f3` | 初級（青） |
 | 2 | `--color-mastery-2` | `#9c27b0` | 中級（紫） |
@@ -107,7 +107,7 @@ UI/UX設計の原則と仕様書。**なぜ**そう設計されているか（Wh
 ### Quality Colors
 
 | Quality | Variable | Color |
-|---------|----------|-------|
+|---|---|---|
 | Poor | `--color-quality-poor` | `#5b5b5b` |
 | Normal | `--color-quality-normal` | `#9ee2e2` |
 | Good | `--color-quality-good` | `#05e758` |
@@ -116,7 +116,7 @@ UI/UX設計の原則と仕様書。**なぜ**そう設計されているか（Wh
 ### Currency Colors
 
 | Currency | Variable | Color |
-|----------|----------|-------|
+|---|---|---|
 | Gold | `--color-gold` | `#d4af37` |
 | Gold Light | `--color-gold-light` | `#ffd54f` |
 | Magic Stone | `--color-magic-stone` | `#6495ed` |
@@ -139,7 +139,7 @@ UI/UX設計の原則と仕様書。**なぜ**そう設計されているか（Wh
 ### Size Scale (vh-based)
 
 | Usage | Size | Example |
-|-------|------|---------|
+|---|---|---|
 | 極小テキスト | `1.2vh` | バッジ、補足情報 |
 | 小テキスト | `1.4vh` | カード説明、ステータス |
 | 標準 | `1.6vh` | 一般UI、ボタン |
@@ -170,7 +170,7 @@ font-variant-numeric: tabular-nums;
 ### Spacing Scale
 
 | Token | Value | Usage |
-|-------|-------|-------|
+|---|---|---|
 | `--spacing-xs` | `0.5vh` | 密接な要素間 |
 | `--spacing-sm` | `1vh` | 関連要素間 |
 | `--spacing-md` | `1.5vh` | 標準間隔 |
@@ -180,7 +180,7 @@ font-variant-numeric: tabular-nums;
 ### vh/vw Philosophy
 
 | Unit | Usage | Rationale |
-|------|-------|-----------|
+|---|---|---|
 | `vh/vw` | サイズ、間隔、フォント | 画面サイズに応じたスケーリング |
 | `px` | ボーダーのみ | 1px線の視認性確保 |
 
@@ -253,7 +253,7 @@ z-index: var(--z-modal);
 **Card Tag Colors (by Element):**
 
 | Element | Color | Meaning |
-|---------|-------|---------|
+|---|---|---|
 | physics | グレー系 | 物理攻撃 |
 | fire | 赤橙系 | 火属性 |
 | ice | 水色系 | 氷属性 |
@@ -267,7 +267,7 @@ z-index: var(--z-modal);
 ### Button Hierarchy
 
 | Level | Usage | Style |
-|-------|-------|-------|
+|---|---|---|
 | Primary | 主要アクション（購入、確定） | 施設テーマカラー、塗りつぶし |
 | Secondary | 副次アクション（キャンセル、詳細） | ボーダーのみ、透明背景 |
 | Tertiary | 補助アクション（閉じる） | テキストのみ |
@@ -293,7 +293,7 @@ z-index: var(--z-modal);
 ### Badge Pattern
 
 | Type | Background | Text |
-|------|------------|------|
+|---|---|---|
 | コストバッジ | 半透明黒 | 白 |
 | 数量バッジ | `--color-gold` | 黒 |
 | ステータスバッジ | セマンティックカラー | 白 |
@@ -322,7 +322,7 @@ z-index: var(--z-modal);
 ### Animation Principles
 
 | Principle | Description |
-|-----------|-------------|
+|---|---|
 | **Purpose-driven** | 状態変化、フィードバック、注目誘導のみ |
 | **Performance** | `transform`と`opacity`のみ（GPU加速） |
 | **Duration Limit** | 最大3秒（ユーザーを待たせない） |
@@ -341,7 +341,7 @@ z-index: var(--z-modal);
 **Reference:** `src/ui/css/animations/keyframes.css`
 
 | Category | Animation | Duration | Usage |
-|----------|-----------|----------|-------|
+|---|---|---|---|
 | **Notification** | `notification-slide` | 3s | トースト通知 |
 | **Notification** | `fadeInOut` | 2s | 短い通知 |
 | **Modal** | `fadeIn` | 0.3s | オーバーレイ |
@@ -414,7 +414,7 @@ CARD_ANIMATION = {
 ### Size Guidelines
 
 | Context | Size | Example |
-|---------|------|---------|
+|---|---|---|
 | ヘッダーアイコン | `2vh` | ライフ、ゴールド |
 | カード内アイコン | `1.5vh` | コスト、属性 |
 | ステータスバッジ | `1.2vh` | バフ/デバフ |
@@ -448,7 +448,7 @@ CARD_ANIMATION = {
 ### Interactive States
 
 | State | Visual Change | Timing |
-|-------|---------------|--------|
+|---|---|---|
 | **Default** | 基本スタイル | - |
 | **Hover** | 明度上昇、軽い浮き | `0.2s` |
 | **Active/Pressed** | 縮小、暗転 | 即時 |
@@ -460,7 +460,7 @@ CARD_ANIMATION = {
 ### Toast Notification System
 
 | Type | Color | Icon | Duration |
-|------|-------|------|----------|
+|---|---|---|---|
 | Success | `--color-success` | ✓ | 3s |
 | Error | `--color-error` | ✗ | 5s |
 | Warning | `--color-warning` | ⚠ | 4s |
@@ -477,7 +477,7 @@ CARD_ANIMATION = {
 ### Empty States
 
 | Context | Message | Action |
-|---------|---------|--------|
+|---|---|---|
 | デッキが空 | 「カードがありません」 | ショップへ誘導 |
 | 在庫なし | 「売り切れです」 | 再入荷情報 |
 | 検索結果なし | 「該当するカードがありません」 | フィルターリセット |
@@ -489,7 +489,7 @@ CARD_ANIMATION = {
 ### Contrast Requirements
 
 | Element | Minimum Ratio |
-|---------|---------------|
+|---|---|
 | 本文テキスト | 4.5:1 |
 | 大きなテキスト (18px+) | 3:1 |
 | UIコンポーネント | 3:1 |
@@ -500,7 +500,7 @@ CARD_ANIMATION = {
 **原則:** 色だけで情報を伝えない
 
 | Bad | Good |
-|-----|------|
+|---|---|
 | 赤=敵、緑=味方 | 赤+敵アイコン、緑+味方アイコン |
 | 色付きHP | 色+数値+バー |
 
@@ -526,7 +526,7 @@ CARD_ANIMATION = {
 ### Depth Color Progression
 
 | Depth | Theme | Atmosphere |
-|-------|-------|------------|
+|---|---|---|
 | 1 | 紫暗 | 入口、不気味だが明るめ |
 | 2 | 青暗 | 中層、冷たさ |
 | 3 | 赤暗 | 深層、危険 |
@@ -544,7 +544,7 @@ DEPTH_BACKGROUND_IMAGES: Record<number, string> = {
 ### Life System Visual Feedback
 
 | Lives | Color | Effect |
-|-------|-------|--------|
+|---|---|---|
 | 7-10 | 通常 | なし |
 | 4-6 | 黄色系 | 警告 |
 | 1-3 | 赤 | `critical-pulse`アニメーション |
@@ -556,7 +556,7 @@ DEPTH_BACKGROUND_IMAGES: Record<number, string> = {
 ### CSS File Reference Map
 
 | File | Purpose |
-|------|---------|
+|---|---|
 | `src/ui/css/core/variables.css` | CSS変数定義（色、間隔、フォント） |
 | `src/ui/css/core/reset.css` | ブラウザリセット |
 | `src/ui/css/animations/keyframes.css` | @keyframes定義 |

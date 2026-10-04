@@ -7,7 +7,7 @@ Layered damage system with Guard → AP → HP priority and a phase-aware buff d
 ## File Map
 
 | File | Lines | Role |
-|------|-------|------|
+|---|---|---|
 | `src/domain/battles/calculators/damageCalculation.ts` | 87 | Core damage formula + allocation |
 | `src/domain/battles/calculators/buffCalculation.ts` | 167 | Buff effect multipliers, healing, DoT, utility |
 | `src/domain/battles/logic/buffLogic.ts` | 153 | Buff CRUD operations + duration management |
@@ -267,7 +267,7 @@ enemyPhaseExecution.ts
 
 ### Damage-Dealing Debuffs
 | Name | Value | Stackable | Timing |
-|------|-------|-----------|--------|
+|---|---|---|---|
 | bleed | 5% maxHP | Yes | After card play |
 | poison | 5 flat | Yes | Phase end |
 | burn | 3 flat (+50% in fireField) | Yes | Phase end |
@@ -276,14 +276,14 @@ enemyPhaseExecution.ts
 
 ### Control Debuffs
 | Name | Effect | Stackable |
-|------|--------|-----------|
+|---|---|---|
 | stun | Skip turn | Yes |
 | freeze | Cannot act | No |
 | stagger | Cannot act | Yes |
 
 ### Stat Debuffs
 | Name | Effect | Stackable |
-|------|--------|-----------|
+|---|---|---|
 | atkDownMinor | -15% damage | No |
 | atkDownMajor | -30% damage | No |
 | defDownMinor | +15% incoming | No |
@@ -295,7 +295,7 @@ enemyPhaseExecution.ts
 
 ### Positive Buffs
 | Name | Effect | Stackable |
-|------|--------|-----------|
+|---|---|---|
 | atkUpMinor | +15% damage | No |
 | atkUpMajor | +30% damage | No |
 | defUpMinor | -15% incoming | No |
@@ -315,7 +315,7 @@ enemyPhaseExecution.ts
 
 ### Class Ability Buffs
 | Name | Effect | Class |
-|------|--------|-------|
+|---|---|---|
 | swordEnergyGain | +3% sword energy gain | Swordsman |
 | elementalMastery | +30% elemental damage | Mage |
 | fireField | +50% burn damage | Mage |

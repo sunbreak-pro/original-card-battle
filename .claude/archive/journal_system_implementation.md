@@ -26,7 +26,7 @@
 ### 実装済みファイル
 
 | ファイル | 状態 |
-|----------|------|
+|---|---|
 | `src/types/journalTypes.ts` | ✅ 作成済み |
 | `src/contexts/JournalContext.tsx` | ✅ 作成済み |
 | `src/ui/css/journal/Journal.css` | ✅ 作成済み |
@@ -55,7 +55,7 @@
 ### 実装済みファイル
 
 | ファイル | 状態 |
-|----------|------|
+|---|---|
 | `src/constants/data/journal/CardEncyclopediaData.ts` | ✅ 作成済み (re-export from camps) |
 | `src/constants/data/journal/EnemyEncyclopediaData.ts` | ✅ 作成済み (re-export from camps) |
 | `src/constants/data/journal/GameTipsData.ts` | ✅ 作成済み (re-export from camps) |
@@ -142,7 +142,7 @@ src/ui/css/camps/Library.css
 ## Key Reusable Code
 
 | Component | Location | Usage |
-|-----------|----------|-------|
+|---|---|---|
 | DeckTab | `src/ui/html/dungeonHtml/preparations/DeckTab.tsx` | Tactics page ✅ |
 | SoundSettings | `src/ui/html/componentsHtml/SettingsPanels/SoundSettings.tsx` | Settings page |
 | BrightnessSettings | `src/ui/html/componentsHtml/SettingsPanels/BrightnessSettings.tsx` | Settings page |

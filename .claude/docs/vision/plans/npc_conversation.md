@@ -3,7 +3,7 @@
 ## Change History
 
 | Date | Content |
-|------|---------|
+|---|---|
 | 2026-02-04 | Extracted from basecamp_consolidation.md as future feature |
 
 ---

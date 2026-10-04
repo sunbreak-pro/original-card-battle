@@ -8,14 +8,14 @@
 
 2026-09-19 の描写セッションで、固定台本の 1 ターンが Unity Editor で流れるようになった（Web リポ PR #24、Unity リポ PR #1）。そのとき範囲の外に出した点と、QA レビューで見送った点を Issue にした。このプランは、人の判断を待たずに Claude だけで進められる 4 件をまとめて片付ける。
 
-| Issue | 内容                                                       | このプランでの扱い                   |
-| ----- | ---------------------------------------------------------- | ------------------------------------ |
-| #25   | [人手] ドラッグの手触りと演出の長さ                        | 対象外。こうだいさんの確認           |
-| #26   | `BattleScreenView` の自動起動にシーンの条件を付ける        | 対象                                 |
-| #27   | `unity:sync` が改行コードだけの差分を作らないようにする    | 対象                                 |
-| #28   | 1 行動 2.0 秒の上限を PlayMode テストにする                | 対象                                 |
-| #29   | 台本の型の詰め（攻撃者・一字札の文字）と v4.2 コアの変換器 | 前半だけ対象。変換器は v4.2 コアの後 |
-| #30   | [設計] 強弱 4 段のしきい値と投げ上げ線の予測値の形         | 対象外。v4.2 / v2.1 の改訂で決める   |
+| Issue | 内容 | このプランでの扱い |
+| --- | --- | --- |
+| #25 | [人手] ドラッグの手触りと演出の長さ | 対象外。こうだいさんの確認 |
+| #26 | `BattleScreenView` の自動起動にシーンの条件を付ける | 対象 |
+| #27 | `unity:sync` が改行コードだけの差分を作らないようにする | 対象 |
+| #28 | 1 行動 2.0 秒の上限を PlayMode テストにする | 対象 |
+| #29 | 台本の型の詰め（攻撃者・一字札の文字）と v4.2 コアの変換器 | 前半だけ対象。変換器は v4.2 コアの後 |
+| #30 | [設計] 強弱 4 段のしきい値と投げ上げ線の予測値の形 | 対象外。v4.2 / v2.1 の改訂で決める |
 
 ## 2. 検討した代替案
 
@@ -40,16 +40,16 @@
 
 ## 5. Files
 
-| ファイル                                                             | 変更                                 |
-| -------------------------------------------------------------------- | ------------------------------------ |
-| `unity-port/tools/sync-unity-project.mjs`                            | 改行をそろえて比較                   |
-| `package.json`                                                       | `engines.node`                       |
-| `unity-port/unity-project-kit/Assets/View/BattleScreenView.cs`       | `Bootstrap` の条件 1 つ              |
-| `.../View/Depiction/DepictionPlayer.cs`                              | 回避の削除、`Cue.Source` を読む      |
-| `.../View/Depiction/FigureView.cs`                                   | 一字札の文字を引数で受ける           |
+| ファイル | 変更 |
+| --- | --- |
+| `unity-port/tools/sync-unity-project.mjs` | 改行をそろえて比較 |
+| `package.json` | `engines.node` |
+| `unity-port/unity-project-kit/Assets/View/BattleScreenView.cs` | `Bootstrap` の条件 1 つ |
+| `.../View/Depiction/DepictionPlayer.cs` | 回避の削除、`Cue.Source` を読む |
+| `.../View/Depiction/FigureView.cs` | 一字札の文字を引数で受ける |
 | `.../View/Depiction/Script/DepictionTypes.cs` / `TurnSliceScript.cs` | `Cue.Source`、`UnitFrame.RangeGlyph` |
-| `.../View/Depiction/Tests/DepictionScriptTests.cs`                   | 新しい 2 項目を必須に                |
-| `.../View/Depiction/Tests/PlayMode/*`（新規）                        | PlayMode テストと asmdef             |
+| `.../View/Depiction/Tests/DepictionScriptTests.cs` | 新しい 2 項目を必須に |
+| `.../View/Depiction/Tests/PlayMode/*`（新規） | PlayMode テストと asmdef |
 
 ## 6. Verification
 
@@ -99,13 +99,13 @@
 
 ## 8. この後の予定
 
-| 順  | 内容                                                                   | Issue / プラン                           |
-| --- | ---------------------------------------------------------------------- | ---------------------------------------- |
-| 1   | 手触りの確認                                                           | #25（人手）                              |
-| 2   | 描写の後片付け（本プラン）                                             | #26 / #27 / #28 / #29 前半               |
-| 3   | 戦闘 v4.2 の本文改訂。強弱のしきい値と投げ上げ線の予測値もここで決める | `MEMORY.md` の予定、#30                  |
-| 4   | v4.2 コアの C# 実装 + 試験台                                           | `2026-09-13-battle-v4-implementation.md` |
-| 5   | 描写をコアへつなぐ                                                     | #29 後半                                 |
+| 順 | 内容 | Issue / プラン |
+| --- | --- | --- |
+| 1 | 手触りの確認 | #25（人手） |
+| 2 | 描写の後片付け（本プラン） | #26 / #27 / #28 / #29 前半 |
+| 3 | 戦闘 v4.2 の本文改訂。強弱のしきい値と投げ上げ線の予測値もここで決める | `MEMORY.md` の予定、#30 |
+| 4 | v4.2 コアの C# 実装 + 試験台 | `2026-09-13-battle-v4-implementation.md` |
+| 5 | 描写をコアへつなぐ | #29 後半 |
 
 順 1 と順 2 は独立している。順 2 と順 3 も独立している。
 

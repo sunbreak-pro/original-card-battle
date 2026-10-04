@@ -54,12 +54,12 @@ V3.0 Design: Gained on Enemy Kill, Added to Total on BOTH Survival AND Death (10
 
 **Acquisition Timing:**
 
-| Timing        | Amount        | Notes                           |
-| ------------- | ------------- | ------------------------------- |
-| Minion Kill   | 5 Souls       | Added immediately during combat |
-| Elite Kill    | 15 Souls      | Elite enemies / Mid-bosses      |
-| Boss Kill     | 50 Souls      | Floor Bosses                    |
-| Return Battle | 100% (same)   | V3.0: No reduction on return    |
+| Timing | Amount | Notes |
+| --- | --- | --- |
+| Minion Kill | 5 Souls | Added immediately during combat |
+| Elite Kill | 15 Souls | Elite enemies / Mid-bosses |
+| Boss Kill | 50 Souls | Floor Bosses |
+| Return Battle | 100% (same) | V3.0: No reduction on return |
 
 **Important Mechanism (V3.0):**
 
@@ -190,34 +190,34 @@ COMPLETE RESET:
 
 **Tier 1 (Basic Upgrades): Cost 20-30 Souls**
 
-| Node Name            | Icon | Effect                                | Cost |
-| -------------------- | ---- | ------------------------------------- | ---- |
-| Blessing of Life I   | ❤️   | Initial HP +10                        | 20   |
-| Blessing of Wealth I | 💰   | Initial Gold +10%                     | 25   |
-| Swordsman's Insight  | ⚔️   | Swordsman: Start with +1 Sword Energy | 30   |
-| Mage's Insight       | 🔮   | Mage: Start with +1 Resonance Level   | 30   |
+| Node Name | Icon | Effect | Cost |
+| --- | --- | --- | --- |
+| Blessing of Life I | ❤️ | Initial HP +10 | 20 |
+| Blessing of Wealth I | 💰 | Initial Gold +10% | 25 |
+| Swordsman's Insight | ⚔️ | Swordsman: Start with +1 Sword Energy | 30 |
+| Mage's Insight | 🔮 | Mage: Start with +1 Resonance Level | 30 |
 
 **Tier 2 (Specialization): Cost 40-80 Souls**
 
-| Node Name                  | Icon | Effect                           | Cost | Prerequisite         |
-| -------------------------- | ---- | -------------------------------- | ---- | -------------------- |
-| Blessing of Life II        | ❤️❤️ | Initial HP +20                   | 50   | Blessing of Life I   |
-| Blessing of Wealth II      | 💰💰 | Initial Gold +20%                | 60   | Blessing of Wealth I |
-| Eye of Appraisal           | 👁️   | Displays detailed equipment info | 40   | -                    |
-| Expanded Bag               | 🎒   | Inventory +5                     | 50   | -                    |
-| Boon of Recovery           | 💊   | Recover +5% HP after combat      | 60   | Blessing of Life I   |
-| Soul Resonance I           | ✨   | Soul Remnants Gain +10%          | 50   | -                    |
+| Node Name | Icon | Effect | Cost | Prerequisite |
+| --- | --- | --- | --- | --- |
+| Blessing of Life II | ❤️❤️ | Initial HP +20 | 50 | Blessing of Life I |
+| Blessing of Wealth II | 💰💰 | Initial Gold +20% | 60 | Blessing of Wealth I |
+| Eye of Appraisal | 👁️ | Displays detailed equipment info | 40 | - |
+| Expanded Bag | 🎒 | Inventory +5 | 50 | - |
+| Boon of Recovery | 💊 | Recover +5% HP after combat | 60 | Blessing of Life I |
+| Soul Resonance I | ✨ | Soul Remnants Gain +10% | 50 | - |
 
 **Tier 3 (Ultimate Upgrades): Cost 100-150 Souls**
 
-| Node Name                   | Icon   | Effect                              | Cost | Prerequisite          |
-| --------------------------- | ------ | ----------------------------------- | ---- | --------------------- |
-| Blessing of Life III        | ❤️❤️❤️ | Initial HP +30                      | 100  | Blessing of Life II   |
-| Blessing of Wealth III      | 💰💰💰 | Initial Gold +30%                   | 100  | Blessing of Wealth II |
-| Indomitable Will            | 🛡️     | Survive with 1 HP once per run      | 120  | Blessing of Life II   |
-| Soul Resonance II           | ✨✨   | Soul Remnants Gain +20% (Total +30%)| 100  | Soul Resonance I      |
-| True Appraisal              | 👁️‍🗨️     | Displays hidden equipment effects   | 90   | Eye of Appraisal      |
-| Fortune's Favor             | 🍀    | +10% chance for rare drops          | 110  | Blessing of Wealth II |
+| Node Name | Icon | Effect | Cost | Prerequisite |
+| --- | --- | --- | --- | --- |
+| Blessing of Life III | ❤️❤️❤️ | Initial HP +30 | 100 | Blessing of Life II |
+| Blessing of Wealth III | 💰💰💰 | Initial Gold +30% | 100 | Blessing of Wealth II |
+| Indomitable Will | 🛡️ | Survive with 1 HP once per run | 120 | Blessing of Life II |
+| Soul Resonance II | ✨✨ | Soul Remnants Gain +20% (Total +30%)| 100 | Soul Resonance I |
+| True Appraisal | 👁️‍🗨️ | Displays hidden equipment effects | 90 | Eye of Appraisal |
+| Fortune's Favor | 🍀 | +10% chance for rare drops | 110 | Blessing of Wealth II |
 
 #### 2.2.3 Soul Resonance Skills (V3.0 Replacement)
 

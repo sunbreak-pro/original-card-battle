@@ -3,7 +3,7 @@
 ## Change History
 
 | Date | Content |
-|------|---------|
+|---|---|
 | 2026-02-22 | Initial creation based on engine integration proposal |
 
 ---
@@ -37,7 +37,7 @@ Phase 1-3 で構築した PixiJS エコシステムの品質仕上げを行う�
 Phase 2 で PixiJS に移行済みの以下のコードを完全に削除する。
 
 | ファイル | 削除対象 | 置換先 |
-|---------|----------|--------|
+|---|---|---|
 | `src/ui/animations/animationEngine.ts` | `createParticles()` 関数 | PixiJS ParticleEmitter |
 | `src/ui/animations/animationEngine.ts` | `showDamageText()` 関数 | PixiJS DamageEffect |
 | `src/ui/animations/animationEngine.ts` | `shakeElement()` 関数 | PixiJS ScreenShake |
@@ -96,7 +96,7 @@ extend({
 
 **目標バンドルサイズ:**
 | パッケージ | gzip前 | gzip後（目標） |
-|-----------|--------|---------------|
+|---|---|---|
 | pixi.js (tree-shaken) | ~300KB | ~80KB |
 | @pixi/react | ~20KB | ~6KB |
 | @pixi/particle-emitter | ~30KB | ~10KB |
@@ -143,7 +143,7 @@ class TextureManager {
 ### 3.4 モバイルパフォーマンス最適化
 
 | 対策 | 内容 |
-|------|------|
+|---|---|
 | 解像度制限 | モバイルでは `resolution: 1`（Retinaの2x を無効化） |
 | パーティクル数制限 | `maxParticles` をデバイス性能に応じて動的調整 |
 | フィルター制限 | ブルーム等のWebGLフィルターをモバイルでは無効化 |
@@ -252,7 +252,7 @@ const PERFORMANCE_PRESETS = {
 Phase 3 のスプライトシートアニメーション結果を踏まえ、以下の基準で判断する。
 
 | 基準 | Go 条件 | No-Go 条件 |
-|------|---------|------------|
+|---|---|---|
 | スプライトアニメーション品質 | 滑らかさに限界を感じる | 十分に満足できるクオリティ |
 | 制作コスト | Spine Essential $69 の価値がある | 現行で十分 |
 | 学習コスト | Spineツールの習得に投資可能 | 時間的に余裕がない |
@@ -306,7 +306,7 @@ Day 5:  品質・手間・パフォーマンスを評価し Go/No-Go 判断
 ### 6.1 更新対象
 
 | ドキュメント | 更新内容 |
-|-------------|----------|
+|---|---|
 | `CLAUDE.md` | Architecture Overview にPixiJSレイヤー構成を追記 |
 | `CLAUDE.md` | Development Commands にPixiJS関連コマンドを追記 |
 | `CLAUDE.md` | Skills Quick Reference に PixiJS スキルを追記 |
@@ -317,7 +317,7 @@ Day 5:  品質・手間・パフォーマンスを評価し Go/No-Go 判断
 ### 6.2 新規ドキュメント
 
 | ドキュメント | 内容 |
-|-------------|------|
+|---|---|
 | `.claude/docs/pixijs_architecture.md` | PixiJS統合アーキテクチャ詳細 |
 | `.claude/docs/style_guide.md` | ビジュアルスタイルガイド（Phase 3 で作成） |
 | `.claude/docs/asset_pipeline.md` | アセット制作ガイドライン |
@@ -388,14 +388,14 @@ Day 5:  品質・手間・パフォーマンスを評価し Go/No-Go 判断
 
 ### Deleted/Reduced Files
 | File | Change |
-|------|--------|
+|---|---|
 | `src/ui/animations/animationEngine.ts` | createParticles, showDamageText, shakeElement 削除 |
 | `src/ui/css/animations/particle-*.css` | パーティクル関連CSS削除 |
 | `src/constants/uiConstants.ts` | FEATURE_FLAGS 削除 |
 
 ### New Files
 | File | Purpose |
-|------|---------|
+|---|---|
 | `src/ui/pixi/core/PixiPerformanceConfig.ts` | パフォーマンス検出と設定 |
 | `src/ui/pixi/dungeon/DungeonMapCanvas.tsx` | ダンジョンマップ PixiJS（任意） |
 | `src/ui/pixi/transitions/TransitionManager.ts` | 画面遷移エフェクト（任意） |
@@ -404,7 +404,7 @@ Day 5:  品質・手間・パフォーマンスを評価し Go/No-Go 判断
 
 ### Modified Files
 | File | Change |
-|------|--------|
+|---|---|
 | `vite.config.ts` | チャンク分割設定追加 |
 | `CLAUDE.md` | アーキテクチャ情報更新 |
 | `README.md` | 開発履歴追記 |
@@ -433,7 +433,7 @@ Day 5:  品質・手間・パフォーマンスを評価し Go/No-Go 判断
 ## 11. Success Metrics
 
 | Metric | Before (Phase 0) | After (Phase 4) |
-|--------|------------------|-----------------|
+|---|---|---|
 | 同時パーティクル上限 | 90 (DOM) | 500+ (GPU) |
 | エフェクト種類 | 4種 (damage/heal/shield/discard) | 20種+ |
 | 敵画像カバー率 | 0% (50体未作成) | 100% (50体完成) |
