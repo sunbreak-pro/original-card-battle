@@ -150,8 +150,10 @@ namespace Depiction.View
         {
             if (_session == null || _source == null || _session.Stage != DemoStage.Fighting) return;
             _surrender.Visible = false;
-            _session.Finish(_source);
-            StartCoroutine(ShowEndScreenSoon());
+            DemoSession session = _session;
+            CoreBattleSource source = _source;
+            bool tallied = DemoEnding.Tally(() => session.Finish(source), Report);
+            StartCoroutine(ShowEndScreenSoon(tallied));
         }
 
         /// <summary>
@@ -163,15 +165,52 @@ namespace Depiction.View
         {
             if (_session == null || _source == null || _session.Stage != DemoStage.Fighting) return;
             _surrender.Visible = false;
-            _player.Halt();
-            _session.Surrender(_source);
-            _endScreen.Show(_session.EndScreen());
+            DemoSession session = _session;
+            CoreBattleSource source = _source;
+            bool tallied = DemoEnding.Tally(() =>
+            {
+                _player.Halt();
+                session.Surrender(source);
+            }, Report);
+            ShowEndScreen(tallied);
         }
 
-        private IEnumerator ShowEndScreenSoon()
+        private IEnumerator ShowEndScreenSoon(bool tallied)
         {
             yield return new WaitForSecondsRealtime(EndScreenDelaySeconds);
-            _endScreen.Show(_session.EndScreen());
+            ShowEndScreen(tallied);
+        }
+
+        /// <summary>
+        /// The end screen, or DemoEnding's fallback when the tally or the words threw (#297): the
+        /// exception is logged and 「戦い方を選び直す」 / 「デッキ選択へ戻る」 stay. The fallback drops the
+        /// run, half-done as it is; if even the screen will not come up, the deck screen does.
+        /// </summary>
+        private void ShowEndScreen(bool tallied)
+        {
+            DemoSession session = _session;
+            DemoEndScreen screen = DemoEnding.Screen(tallied && session != null, () => session.EndScreen(), Report);
+            if (!screen.CanAgain) // only the fallback turns 「もう一度」 off
+            {
+                _session = null;
+                _source = null;
+            }
+            try
+            {
+                _endScreen.Show(screen);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+                _session = null;
+                _source = null;
+                ShowDeckScreen();
+            }
+        }
+
+        private static void Report(System.Exception e)
+        {
+            Debug.LogException(e);
         }
 
         private void GoOn(bool rest)
