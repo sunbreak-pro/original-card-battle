@@ -75,6 +75,24 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void APlanThatMoves_WearsTheMoveIcon_AndShowsNoNumber()
+        {
+            // Gap 0 reads [strike, back_off]: the first omen is strike, the plan is back_off (移動).
+            EnemyDef enemy = Elite(new[] { Strike("strike"), BackOff("back_off", 1) }, new[] { Strike("shot") });
+            var (turn, _) = Play(enemy);
+
+            OmenFrame omen = turn.Single().After.Omen;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(omen.PlanVisible, Is.True);
+                Assert.That(omen.PlanIcon, Is.EqualTo(OmenIcon.Move));
+                Assert.That(omen.PlanKindLabel, Is.EqualTo("移動"));
+                Assert.That(omen.PlanValueText, Is.Empty, "#349: only attack and guard carry a number");
+            });
+        }
+
+        [Test]
         public void ANormalEnemy_ShowsNoPlan()
         {
             var setup = new BattleSetup(Enemies.PolearmWarped, Deck(), BattleSetup.SliceFieldCells, StartGap: 3);

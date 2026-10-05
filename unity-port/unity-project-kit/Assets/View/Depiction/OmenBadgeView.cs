@@ -1,8 +1,10 @@
 // The enemy's omen (battle-visual-v1 4.4, #349): the kind's icon and, for attack and guard, its
 // number on the first row; the kind word and the reach on the second; an elite's or a boss's plan
 // stacked above as a smaller badge. The badge from before #349 is laid out again here (icon and
-// value on the first row, kind word and reach on the second), because the prefab belongs to the
-// Unity project; the icon and the plan badge are made here for the same reason.
+// value on the first row, kind word and reach on the second), and the icon and the plan badge are
+// made here too: the prefab saved in the Unity project still has the old one-row parts, and
+// rebuilding it (DepictionPrefabBuilder) needs the Unity Editor. The runtime layout here wins over
+// the builder's until the builder follows (#242).
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using UnityEngine;
@@ -95,7 +97,8 @@ namespace Depiction.View
             _planValue.fontStyle = FontStyle.Bold;
             _planKind = UiKit.Label(_plan, "Kind", 16, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0f), new Vector2(0f, 0f),
                 new Vector2(100f, 22f), new Vector2(10f, 4f));
-            _planTag = UiKit.Label(_plan, "Tag", 14, TextAnchor.MiddleRight, BattleTheme.Ink2, new Vector2(1f, 0f), new Vector2(1f, 0f),
+            // battle-visual-v1 2.1: text under 24 px is written in body ink.
+            _planTag = UiKit.Label(_plan, "Tag", 14, TextAnchor.MiddleRight, BattleTheme.Ink, new Vector2(1f, 0f), new Vector2(1f, 0f),
                 new Vector2(80f, 20f), new Vector2(-8f, 4f));
         }
 
@@ -218,6 +221,28 @@ namespace Depiction.View
         public void HideNow()
         {
             if (group) group.alpha = 0f;
+        }
+
+        /// <summary>
+        /// The fallen enemy's badge and its plan fade together. FadeOut leaves the plan, whose group
+        /// ignores the badge's, because a spent first omen keeps the plan up; a fall takes both.
+        /// </summary>
+        public IEnumerator FadeOutAll(float ms)
+        {
+            float badgeFrom = group ? group.alpha : 0f;
+            float planFrom = _planGroup ? _planGroup.alpha : 0f;
+            yield return UiTween.Run(ms, Ease.In, t =>
+            {
+                if (group) group.alpha = Mathf.Lerp(badgeFrom, 0f, t);
+                if (_planGroup) _planGroup.alpha = Mathf.Lerp(planFrom, 0f, t);
+            });
+        }
+
+        /// <summary>The badge and its plan gone at once (EffectId.OmenSpend switched off on a fall).</summary>
+        public void HideAllNow()
+        {
+            if (group) group.alpha = 0f;
+            if (_planGroup) _planGroup.alpha = 0f;
         }
 
         /// <summary>The side struck off at once, without the shake (EffectId.SideBonusMiss switched off).</summary>

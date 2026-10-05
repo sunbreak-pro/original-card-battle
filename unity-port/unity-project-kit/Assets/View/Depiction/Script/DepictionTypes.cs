@@ -161,7 +161,11 @@ namespace Depiction
         /// since the plan is not a commitment. Empty for any other kind.
         /// </summary>
         public string PlanValueText = "";
-        /// <summary>The cells the plan aims at, as <see cref="SideGlyph"/> writes them. Empty when none.</summary>
+        /// <summary>
+        /// The cells the plan aims at, as <see cref="SideGlyph"/> writes them. Empty when none. The plan
+        /// badge does not draw it (battle-visual-v1 4.4 gives the plan no reach); it stays in the
+        /// script for the floor cells of #242.
+        /// </summary>
         public string PlanSideGlyph = "";
         /// <summary>True on the frames after a 予定変更, so the badge can mark the plan as changed.</summary>
         public bool PlanChanged;
