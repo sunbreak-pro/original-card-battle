@@ -14,6 +14,7 @@ namespace Depiction.Tests
             Assert.That(runner.Frame.Player.Stamina, Is.EqualTo(9));
             Assert.That(runner.Frame.Hand.Count, Is.EqualTo(5));
             Assert.That(runner.Frame.Omen.KindLabel + runner.Frame.Omen.SideGlyph + runner.Frame.Omen.ValueText, Is.EqualTo("攻撃近13"));
+            Assert.That(runner.Frame.Omen.Icon, Is.EqualTo(OmenIcon.Attack));
 
             Play(runner, TurnSliceScript.Kesagiri, DropZone.Receiver, 2);
             Assert.That(runner.Frame.Enemy.Hp, Is.EqualTo(51));
@@ -38,7 +39,16 @@ namespace Depiction.Tests
 
             Assert.That(runner.AdvanceAuto().Order, Is.EqualTo(7));
             Assert.That(runner.Frame.Omen.KindLabel, Is.EqualTo("防御"));
+            Assert.That(runner.Frame.Omen.Icon, Is.EqualTo(OmenIcon.Guard));
+            Assert.That(runner.Frame.Omen.ValueText, Is.EqualTo("9"));
             Assert.That(runner.Finished, Is.True);
+        }
+
+        [Test]
+        public void ThePlanTag_ReadsYotei_OrYoteiHenkouOnceChanged()
+        {
+            Assert.That(new OmenFrame().PlanTag, Is.EqualTo("予定"));
+            Assert.That(new OmenFrame { PlanChanged = true }.PlanTag, Is.EqualTo("予定変更"));
         }
 
         [Test]
