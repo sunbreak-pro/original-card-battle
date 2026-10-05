@@ -277,7 +277,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(plain.Events.OfType<ActionWhiffed>(), Has.Exactly(1).Items, "without 俊敏 it whiffs");
+                Assert.That(plain.Events, Has.Exactly(1).InstanceOf<ActionWhiffed>(), "without 俊敏 it whiffs");
 
                 Assert.That(stepped.Events.OfType<FreeStepTaken>().Single(), Is.EqualTo(new FreeStepTaken(Actor.Enemy, 1)));
                 Assert.That(stepped.Events.OfType<CellsMoved>().First(), Is.EqualTo(new CellsMoved(Actor.Enemy, 4, 3, Pushed: false)));
