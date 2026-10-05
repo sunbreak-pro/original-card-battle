@@ -82,6 +82,7 @@ const plan = [
     // already proven headlessly by `npm run parity:check`, so it stays out of
     // Unity unless asked for (then port its JSON reading to a TextAsset first).
     .filter((f) => withParity || basename(f) !== "ParityTests.cs")
+    .filter((f) => !(noPolyfill && basename(f) === "IsExternalInit.cs"))
     .map((src) => [src, `${projectPath}/Assets/Tests/${basename(src)}`]),
   [`${kit}/Assets/Tests/BattleCore.Tests.asmdef`, `${projectPath}/Assets/Tests/BattleCore.Tests.asmdef`],
   [`${kit}/Assets/Core/csc.rsp`, `${projectPath}/Assets/Tests/csc.rsp`],
