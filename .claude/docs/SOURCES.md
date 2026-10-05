@@ -43,7 +43,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 `battle_core_v4.md` は §19（2026-09-21 の決定）が本文に入っていません。間合いと属性の規則が他の正本と食い違ったら、`battle_core_v4.md` が勝ちます。
 
-**`battle_ui_ux_v2.md` と `View/Depiction/` の持ち主は仮です。** レーンの定義では UI / UX 設計は design ですが、縦切り（#67）の間は #46 / #56 / #57 が `lane:battle` なので battle に置いています。縦切りの振り返り（#80）で見直します。
+**`battle_ui_ux_v2.md` と `View/Depiction/` の持ち主は battle です**（2026-10-05、縦切りの振り返り #80 で仮を外しました）。見た目の値（色・部品・配置）は design の `battle-visual-v1.md` が持ち、battle は操作の流れ・演出の時間・View の実装を持ちます。縦切りの後の画面の Issue（#348 / #349 / #242）もこの分け方で、見た目の文書の直し（#350）だけを design に置いています。
 
 ### cards が書く正本
 
