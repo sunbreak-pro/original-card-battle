@@ -75,8 +75,8 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(ChainOrder.Default.Select(b => b.ToString()), Is.EqualTo(new[] { "polearm_warped@1", "shadow_hound@2", "armored_warden@4" }));
-                Assert.That(ChainOrder.Default, Has.Count.EqualTo(Constants.ChainBattlesDefault));
-                Assert.That(ChainOrder.Nine, Has.Count.EqualTo(9));
+                Assert.That(ChainOrder.Default.Count, Is.EqualTo(Constants.ChainBattlesDefault));
+                Assert.That(ChainOrder.Nine.Count, Is.EqualTo(9));
                 Assert.That(ChainOrder.Nine[2].EnemyIds, Is.EqualTo(new[] { "polearm_warped", "crossbow_hunter" }), "roster §9's third is the pair");
                 Assert.That(ChainOrder.Nine.Select(b => b.Layer), Is.Ordered, "the layer only goes down");
                 Assert.That(ChainOrder.Nine.Select(b => b.FieldCells), Is.EqualTo(new[] { 6, 6, 7, 6, 6, 7, 6, 6, 7 }), "7 for a size-2 enemy and for the pair");

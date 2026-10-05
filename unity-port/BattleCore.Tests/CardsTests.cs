@@ -296,7 +296,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.All, Has.Count.EqualTo(80));
+                Assert.That(CardCatalog.All.Count, Is.EqualTo(80));
                 Assert.That(counts[BattleAttribute.Attack], Is.EqualTo(36));
                 Assert.That(counts[BattleAttribute.Guard], Is.EqualTo(16));
                 Assert.That(counts[BattleAttribute.Skill], Is.EqualTo(14));
