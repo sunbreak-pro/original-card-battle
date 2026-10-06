@@ -82,6 +82,42 @@ namespace Depiction.Tests
             Assert.That(left.Y, Is.GreaterThan(0f), "a tilted pair is raised by its corner dip");
         }
 
+        [TestCase(1, 160f)]
+        [TestCase(5, 160f)]
+        [TestCase(6, 150f)]
+        [TestCase(7, 140f)]
+        [TestCase(8, 126f)]
+        public void TheSpacing_FollowsTheVisualTable(int count, float expected)
+        {
+            // battle-visual-v1.md §4.8, with the 160 px the inspector ships for five cards or fewer.
+            Assert.That(HandFan.Spacing(count, 160f), Is.EqualTo(expected).Within(1e-3f));
+        }
+
+        [Test]
+        public void TheSpacing_NeverWidens_AsTheHandGrows()
+        {
+            for (int count = 1; count < HandFan.MostCards; count++)
+            {
+                Assert.That(HandFan.Spacing(count + 1, Spacing), Is.LessThanOrEqualTo(HandFan.Spacing(count, Spacing)), count + " to " + (count + 1));
+            }
+        }
+
+        [Test]
+        public void EightCards_FitTheHandBand()
+        {
+            // §4.8: fan width = (count - 1) x spacing + the 216 px card; 1098 px inside the 1100 px band.
+            float width = (HandFan.MostCards - 1) * HandFan.Spacing(HandFan.MostCards, 160f) + 216f;
+            Assert.That(width, Is.EqualTo(1098f).Within(1e-2f));
+            Assert.That(width, Is.LessThanOrEqualTo(1100f));
+        }
+
+        [Test]
+        public void TheSpacing_ScalesWithTheInspectorValue()
+        {
+            Assert.That(HandFan.Spacing(6, 204f), Is.EqualTo(204f * 150f / 160f).Within(1e-3f));
+            Assert.That(HandFan.Spacing(3, 204f), Is.EqualTo(204f));
+        }
+
         private static FanPlace Place(int count, int index)
         {
             return HandFan.Place(count, index, Spacing, DegreesPerCard, DropPixels, CardWidth);
