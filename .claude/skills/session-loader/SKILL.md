@@ -52,7 +52,7 @@ npm run sources -- --lane <自分の slug>   # 書く正本と読む正本。メ
 
 状態の欄に但し書き（「§N 未反映」「§N が本文より優先」）がある行は、その但し書きごと読みます。絵の制作は `visual-production-pipeline` スキルです。
 
-設計書と実装の差分は、設計書側か実装側へ寄せて解消します。正本どうしの食い違いは直さず Issue にします（台帳 §5）。
+設計書と実装の差分は、設計書側か実装側へ寄せて解消します。正本どうしの食い違いは直さず、main への申し送りにします（台帳 §5）。Issue を立てるのは main だけです。
 
 ## Step 6: 要約表示
 
@@ -62,6 +62,7 @@ npm run sources -- --lane <自分の slug>   # 書く正本と読む正本。メ
 - open Issue: {件数}件（着手可 {n} / 人手待ち {n} / 依存待ち {n}）
 - ブランチ: {git branch --show-current}（.session-branch と一致するか）
 - 判断待ち: {decisions の未回答件数}
+- 申し送り: {main のときだけ。全 worktree の `.claude/comm/handoff/` の件数（`_TEMPLATE.md` を除く）。回収手順は issue-dispatch の手順 1}
 ```
 
 ## 注意事項

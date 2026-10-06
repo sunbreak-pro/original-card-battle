@@ -33,7 +33,7 @@ disable-model-invocation: true
 
 - `issue-dispatch` スキル — Issue と `docs/known-issues/` の境界の正本
 - `task-tracker` スキル — per-chat の `memory/` と `history/` の記録
-- 収集源: `.claude/comm/outbox/`・`.claude/comm/decisions/`・停止したループの仮説・`history/chat-*.md`・`gh issue list --state closed`
+- 収集源: `.claude/comm/outbox/`・`.claude/comm/handoff/`・`.claude/comm/decisions/`・停止したループの仮説・`history/chat-*.md`・`gh issue list --state closed`
 
 ## 足す先の判定
 
@@ -48,9 +48,11 @@ disable-model-invocation: true
 | 実装の規約が抜けていた | `.claude/CLAUDE.md` の該当節（**新しい節を作らない**） |
 | 手順が抜けていた | 該当スキルの `SKILL.md` |
 
+**Issue を立てるのは chat-main だけです**（#367）。レーンで回したときは、上の表で「GitHub Issue」になったものを `.claude/comm/handoff/` の申し送りにします。
+
 ## 環境の事実（推論では埋まらないので明記する）
 
-- **機械で止まっている禁止と、文章だけの禁止を混同しない**。前者に 1 行足しても意味が無く、後者は 1 行が唯一の防壁になる。いま機械で止まっているのは `.claude/settings.json` の `deny` / `ask` と hook 3 本だけ
+- **機械で止まっている禁止と、文章だけの禁止を混同しない**。前者に 1 行足しても意味が無く、後者は 1 行が唯一の防壁になる。いま機械で止まっているのは `.claude/settings.json` の `deny` / `ask` と PreToolUse の hook 4 本（commit 前の検査 3 本と、main 以外の `gh issue create` の停止）だけ
 - **実体の無い禁止を足そうとしたら、それは実装の話**。hook か `deny` に実体を作るほうが先
 - 数値・個数・列挙は正本 1 か所だけに書く。他の文書には参照を書く（改名・退役時に必ず漏れる）
 - 歴史的記述として残す行には「旧称」「retired」等の注記を同じ行に付ける
