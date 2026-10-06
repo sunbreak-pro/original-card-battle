@@ -220,7 +220,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | 前のセッションの続きを引き継ぐ | `session-successor` |
 | セッション開始 / `/clear` の後 | `session-loader` |
 | worktree / レーン / ブランチ切替 | `worktree-policy` |
-| 課題を Issue として起票 | `issue-dispatch` |
+| 課題を Issue として起票（main だけ。レーンは `.claude/comm/handoff/` に申し送り） | `issue-dispatch` |
 | 次に着手する Issue を決める | `issue-prompter` |
 | open Issue を仕分ける | `/loop-triage` |
 | Issue 1 件を commit まで実装 | `/loop-implement` |
@@ -233,7 +233,8 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 
 ### 課題追跡は GitHub Issues が正
 
-- **起票先**: `gh issue create -R sunbreak-pro/original-card-battle`。テンプレートは `.github/ISSUE_TEMPLATE/` の 3 種（Known Issue / Roadmap Item / Human Task）
+- **Issue を立てるのは chat-main だけ**（2026-10-06 こうだいさん決定、#367。life-editor の「起票は chat-main 一元」の移植）。レーンは `gh issue create` を打たず、課題を申し送りとして `.claude/comm/handoff/` に 1 件 1 ファイルで書いて先へ進む。main が全 worktree の申し送りを回収し、重複を確かめて `issue-dispatch` で Issue にし、処理したファイルを消す。レーンに許すのは自分宛て Issue へのコメントと PR の `Closes #n` だけ。`pre-issue-create-guard.sh` が main 以外の `gh issue create` を止める。手順と書式は `.claude/comm/README.md`
+- **起票先**: `gh issue create -R sunbreak-pro/original-card-battle`（main だけ）。テンプレートは `.github/ISSUE_TEMPLATE/` の 3 種（Known Issue / Roadmap Item / Human Task）
 - **ラベル**: `type:` (bug / feature / task / human) × `prio:` (1 / 2 / 3 / 4) × `sev:` (blocking / important / minor) × `area:` (battle / cards / enemy / dungeon / world / ui / art / unity / docs / tooling) × `status:` (monitoring / workaround / frozen)
 - **スコープの境界**: Issue は**プロダクトの課題専用**。Claude Code 環境やハーネス起因の問題は `docs/known-issues/` に置き、Issue にしない
 - **優先順位は必須**: Issue には `prio:1`〜`prio:4` を必ず 1 つ付ける（1 = いま着手 / 2 = 次 / 3 = その後 / 4 = いつか）。`sev:` は影響の大きさ、`prio:` は着手の順番で、別の軸。次にやることは `npm run issues:next`（`prio` → `sev` → 番号の順。依存先が open の Issue は待ちに回る）。付け忘れは `npm run issues:next -- --check` が検出する。見直すのは親 Issue を閉じたときと、縦切りや束の振り返りのとき
@@ -271,6 +272,7 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 | PreToolUse(Bash) | `pre-commit-mcp-check.sh` | `.mcp.json` のトークン平文化を commit 前に検出 |
 | PreToolUse(Bash) | `pre-commit-index-guard.sh` | 生成物 `INDEX.md` の commit 混入を自動除外 |
 | PreToolUse(Bash) | `pre-commit-tracker-guard.sh` | tracker と実装の同梱コミットをブロック |
+| PreToolUse(Bash) | `pre-issue-create-guard.sh` | `.session-name` が `main` でないチャットの `gh issue create` をブロック |
 
 実体は `$HOME/dev/Claude/hooks-lib/` を優先し、無ければ `.claude/scripts/hooks-lib/` の同梱版に落ちる。
 
@@ -294,7 +296,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 
 - **宛先ラベルは `lane:<slug>`**。付けなければ `issue-prompter` が上の `area:` から既定のレーンへ振る
 - **世界観の正本は main（chat-main）**（2026-09-21 こうだいさん決定）。正典は `docs/vision/world-v1.md` で、**竜が全ての敵の親玉、敵は竜・亜竜・眷属の系譜に絞る**。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main の采配に落とす。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
-- **`audit` は読み取り専用**。整合監査の結果を Issue に起票し、修正は担当レーンへ回す
+- **`audit` は読み取り専用**。整合監査の結果は申し送りにして main へ回し、修正は main が Issue にして担当レーンへ配る
 - **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで
 - **one writer per artifact**。同じファイルを 2 レーンに触らせない
 - **`.claude/comm/.session-name` と `.session-branch` を必ず書く**。ブランチを切り替えるたびに `.session-branch` を更新する（省略すると hook が無音スキップする）
@@ -305,7 +307,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 - **Known Issue**: `docs/known-issues/` に Root Cause + 再発防止を蓄積。発見時 `NNN-<slug>.md` 作成 + `INDEX.md` 更新、解決時 Status=Fixed。**類似バグはまず `INDEX.md` を grep**
 - **正本の台帳は `docs/SOURCES.md`**。主題ごとの正本・持ち主のレーン・旧版の一覧・食い違ったときに勝つ側を持つ。他の文書とスキルは同じ表を持たず、ここを指す。正本を足す / 退役させる / 持ち主を変えるコミットに台帳の行を含め、`npm run sources -- --check` を通す。版を上げるだけなら台帳は触らない（版は正本の冒頭の Status が持つ）
 - **Markdown の表は桁を揃えない**。1 マスが伸びるたびに表の全行が書き換わり、並行する PR がぶつかるため（known-issues 003）。`.md` は `.prettierrc.json` の `requirePragma` で prettier の対象から外し、表の空白は `npm run md:tables` で詰める。同じ正本を触る PR を続けて出すときは前の PR の上に積む（`worktree-policy`）
-- **正本どうしの食い違いは直さず Issue にする**（題は「正本の食い違い: 〜」）。他レーンの正本は書かない。どちらに従って進めたかを Issue と PR 本文に 1 行で残す。手順は `docs/SOURCES.md` §5
+- **正本どうしの食い違いは直さず、main への申し送りにする**（`kind: conflict`、題は「正本の食い違い: 〜」）。他レーンの正本は書かない。どちらに従って進めたかを申し送りと PR 本文に 1 行で残す。Issue にするのは main。手順は `docs/SOURCES.md` §5
 - **決定は設計書の本文へ入れ込む**。末尾の「〜の決定」節は記録で、入れ込むまでは台帳の状態の欄に「未反映」と書く
 - **パスの読み方**: 本ファイルの `docs/…` は `.claude/docs/…` を指す。リポジトリ直下の `docs/`（`reports/` `briefs/` `mockups/` `prompts/`）は HTML レポートと制作物の置き場で、正本は置かない
 - **設計書 vs 実装**: ゲーム数値は `docs/*_document/` の設計書を正とし、差分は設計書側か実装側へ寄せて解消
@@ -317,7 +319,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 | `memory/chat-<self>.md` | タスクトラッカー — 進行中 / 直近の完了 / 予定（per-chat） |
 | `history/chat-<self>.md` | 変更履歴（降順、概要+変更点。per-chat） |
 | `.github/ISSUE_TEMPLATE/` | Issue テンプレート 3 種（Known Issue / Roadmap Item / Human Task） |
-| `.claude/hooks/` | SessionStart と PreToolUse の hook 5 本 |
+| `.claude/hooks/` | SessionStart と PreToolUse の hook 6 本 |
 | `README.md` | プロジェクト概要・Development History（完了履歴の要約） |
 | `.claude/docs/SOURCES.md` | 正本の台帳（主題 → 正本 → 持ち主のレーン、旧版、食い違いの手順） |
 | `.claude/docs/INDEX.md` | ドキュメント索引（標準構造 + ゲーム設計書） |

@@ -1,0 +1,192 @@
+<title>Issue 起票の一元化</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); margin: 16px 0 20px; }
+  .step { padding: 18px 20px; border-right: 1px solid var(--line); }
+  .step:last-child { border-right: 0; }
+  .step .n { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent); font-weight: 500; letter-spacing: .08em; }
+  .step h3 { margin: 4px 0 6px; font-size: 17px; }
+  .step p { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+  .step code { font-size: 13px; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+  @media (max-width: 720px) { .flow { grid-template-columns: 1fr; } .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; } }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0 0 16px; font-size: 15px; }
+  dt { font-weight: 700; white-space: nowrap; }
+  dd { margin: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-10-06 / 判断 / original-card-battle</p>
+    <h1>Issue を立てるのは main のチャットだけにしました</h1>
+    <p class="lede">各レーンは課題を「申し送り」として 1 件 1 ファイルで書き、main が回収して Issue にします。life-editor の規約を写したうえで、レーンが <code>gh issue create</code> を打つと hook で止まるようにしました。PR #368 のマージで有効になります。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">今日から</span><h3>Issue は main だけが立てます</h3><p>レーンが打つと hook が止め、申し送りの書き方を返します。life-editor は文章で決めているだけだったので、ここを足しました。</p></li>
+    <li class="verdict now"><span class="tag">今日から</span><h3>申し送りは 1 件 1 ファイルで書きます</h3><p>テンプレートは Issue の本文と同じ並びです。main が Issue にしたらファイルを消すので、残っているものが未処理です。</p></li>
+    <li class="verdict later"><span class="tag">必要になったら</span><h3>ラベル変更と gh api も止めます</h3><p>レーンが他レーン宛ての Issue のラベルを変えたり、<code>gh api</code> で直接 Issue を作ったりした例が出たら、hook の対象に足します。</p></li>
+    <li class="verdict skip"><span class="tag">入れない</span><h3>朝のダイジェストと判断の台帳は今回入れていません</h3><p>life-editor の <code>dev-digest</code> と、決定を昇格させる台帳は、Issue の起票とは別の話なので今回の範囲から外しました。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>前提</strong>: 10 月 3〜6 日に立った Issue の約半分は、レーンが立てた「正本の食い違い」でした。レーンにそうさせていたのは、ハーネスの文書そのもの（正本の一覧の §5、各レーンへ配る <code>/goal</code> の文面、監査レーンの規約）です。</div>
+
+  <h2>life-editor と比べて何が同じで何が違うか</h2>
+  <p class="prose">家の郵便に例えると、life-editor は各自の日記帳の隅に「これ出しておいて」と書き、main がときどき全員の日記を読みに行く形です。こちらは 1 通ずつ封筒に入れて各自の郵便受けに置き、main が回収したら封筒を捨てる形にしました。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>項目</th><th>life-editor</th><th>このリポ（変更前）</th><th>このリポ（変更後）</th></tr></thead>
+      <tbody>
+        <tr><td>誰が Issue を立てるか</td><td>main だけです（2026-07-11 の決定、#227）。</td><td class="state no">各レーンが自分で立てていました。</td><td class="state yes">main だけです。</td></tr>
+        <tr><td>レーンはどこに書くか</td><td>自分の連絡帳 <code>outbox/chat-&lt;self&gt;.md</code> の先頭に書き足します。</td><td>連絡帳への依頼は README にだけ書かれ、ほかの文書は起票を指示していました。</td><td><code>.claude/comm/handoff/</code> に 1 件 1 ファイルで置きます。</td></tr>
+        <tr><td>書式</td><td>決まった型はなく、自由形式です。</td><td>決まった型はありませんでした。</td><td>テンプレートがあり、種類・領域・宛先の案・優先度の案・根拠・DoD の案を書きます。</td></tr>
+        <tr><td>main への届き方</td><td>git で追跡しています。main はマージ前の分を取りこぼしたので、各 worktree を直接読むようになりました（2026-07-31）。</td><td>連絡帳は git で追跡していて、PR のマージ待ちでした。</td><td>git で追跡しません。main は全 worktree のフォルダを直接読みます。</td></tr>
+        <tr><td>処理済みの印</td><td>ありません。main の連絡帳の返信と照らし合わせていて、10 件が 2 日残った例があります。</td><td>ありませんでした。</td><td>main が Issue にしたらファイルを消します。</td></tr>
+        <tr><td>機械で止めるか</td><td class="state no">止めていません。止めているのは無人実行の設定だけです。</td><td class="state no">止めていませんでした。</td><td class="state yes">hook が main 以外の <code>gh issue create</code> を止めます。</td></tr>
+        <tr><td>正本の食い違いの扱い</td><td>専用の手順はなく、連絡帳で main に頼むのが慣行です。</td><td>レーンが「正本の食い違い」の Issue を立てていました。</td><td>レーンは種類を「食い違い」にした申し送りを書き、どちらの文書を直すかは main が決めます。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>スキルとエージェントの違い</h2>
+  <p class="prose">Issue の起票に関わるのは、両方のリポにあるスキルです。グローバルのスキルとエージェント（実装役・レビュー役・検証ゲートなど）は両方で同じものを使っていて、どれも Issue を立てません。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>役割</th><th>life-editor</th><th>このリポ</th><th>今回の扱い</th></tr></thead>
+      <tbody>
+        <tr><td>Issue を立てるスキル（issue-dispatch）</td><td>main 専用と明記しています。</td><td>誰が使うかを書いていませんでした。</td><td>main 専用にし、申し送りの回収手順を足しました。</td></tr>
+        <tr><td>各レーンへ貼る指示文を作るスキル（issue-prompter）</td><td>読み取り専用で、宛先は section ラベルで決めます。</td><td>宛先は lane ラベルで決め、指示文がレーンに起票させていました。</td><td>指示文を「申し送りを書く。gh issue create は打たない」に変え、配る前に申し送りを回収するようにしました。</td></tr>
+        <tr><td>Issue 運用の決まりをまとめたスキル（docs-workflow）</td><td>あり、これが元になる文書です。</td><td>なく、CLAUDE.md と <code>.claude/comm/README.md</code> が同じ役を持ちます。</td><td>新しく作らず、手順と書式は <code>.claude/comm/README.md</code> に置きました。</td></tr>
+        <tr><td>着手判定・実装・振り返りの 3 本（loop-triage / loop-implement / loop-postmortem）</td><td>「起票は main だけ」と書いています。</td><td>実装の 1 本が食い違いの起票を指示していました。</td><td>3 本とも申し送りに書き換えました。</td></tr>
+        <tr><td>朝の采配ダイジェスト（dev-digest）</td><td>あり、連絡帳の新着を集めます。</td><td>ありません。</td><td>入れていません。代わりに、セッション開始時の読み込みスキルが main で申し送りの件数を出すようにしました。</td></tr>
+        <tr><td>プロジェクト固有のエージェント</td><td>同期とマイグレーションの監査役が 2 体あります。</td><td>バランス・戦闘ロジック・状態の監査役が 3 体あります。</td><td>どれも Issue を立てないので変えていません。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>確かめたこと</h2>
+  <ul class="prose">
+    <li>main では通り、レーン（<code>cards</code>）では 5 通りの打ち方がすべて止まりました。<code>gh issue comment</code> と <code>list</code>、コミットメッセージに書いた文字列、<code>gh pr create</code> は通ります。</li>
+    <li>宣言ファイルが無いときは、メインの作業ツリーなら通り、worktree なら止まりました。Windows の <code>C:/</code> と <code>/c/</code> の表記違いで判定が外れたので、直してから測り直しました。</li>
+    <li>全 worktree から申し送りを集める 1 行は、Windows のパスで動きました。</li>
+    <li><code>git worktree remove</code> は無視されたファイルを警告なしで消しました。そのため worktree を消す前に申し送りが空か確かめる手順を足しました。</li>
+  </ul>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>レーンが既存 Issue にコメントするのと、PR の <code>Closes #n</code> で閉じるのは許しました。依頼は「起票は main だけ」だったので、コメントまでは止めていません。</li>
+    <li>申し送りの処理済みの印は「ファイルを消す」にしました。消すのは main で、レーンのフォルダに手を入れる唯一の例外です。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>hook は Bash ツールだけに掛けています。レーンが PowerShell ツールで <code>gh issue create</code> を打った場合に止まるかは確かめていません。</li>
+    <li>実際のレーンのチャットでの動作は、マージ前なので見ていません。確かめたのは、hook を同じ構成の一時フォルダに置いて流した結果です。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li>PR #368（本体）と #369（作業記録）のマージをお願いします。</li>
+    <li>マージ後に各レーンで <code>git merge origin/main</code> が要ります。いま動いているレーンの <code>/goal</code> は古い文面のままなので、配り直すかどうかを決めてください。</li>
+    <li>すでにレーンが立てた「正本の食い違い」の Issue（#355〜#364 など）は、そのまま残しています。</li>
+  </ul>
+</div>

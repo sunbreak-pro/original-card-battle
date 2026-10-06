@@ -23,6 +23,23 @@ namespace Depiction
 
     public static class HandFan
     {
+        /// <summary>The largest hand the spacing still closes in for (HAND_LIMIT, battle_core_v4 §8).</summary>
+        public const int MostCards = 8;
+
+        /// <summary>
+        /// battle-visual-v1.md §4.8: neighbouring cards sit 160 px apart for five cards or fewer, then
+        /// 150 / 140 / 126 for six / seven / eight, so eight still fit the 1100 px hand band.
+        /// <paramref name="upToFive"/> is the inspector's spacing for five or fewer; six to eight scale it
+        /// by the same shares, so 160 gives the table exactly. Past eight the spacing stays at eight's.
+        /// </summary>
+        public static float Spacing(int count, float upToFive)
+        {
+            if (count <= 5) return upToFive;
+            if (count == 6) return upToFive * (150f / 160f);
+            if (count == 7) return upToFive * (140f / 160f);
+            return upToFive * (126f / 160f);
+        }
+
         /// <summary>
         /// Resting place of card <paramref name="index"/> of <paramref name="count"/> in a shallow fan.
         /// The centre of the middle card rises above the outermost cards' by <paramref name="dropPixels"/>

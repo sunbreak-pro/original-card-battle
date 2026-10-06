@@ -1,5 +1,19 @@
 # HISTORY (chat-main)
 
+### 2026-10-06 - Issue を立てるのを main だけにし、レーンは申し送りを書く
+
+#### 概要
+
+レーンが自分で Issue を立てていて、10/03〜06 の Issue の約半分がレーン発の「正本の食い違い」だった。life-editor の規約を移植し、申し送りの書式と、main 以外の起票を止める hook を足した（#367、PR #368 open）。
+
+#### 変更点
+
+- **規約**: CLAUDE.md の「課題追跡は GitHub Issues が正」に「Issue を立てるのは chat-main だけ」を足し、audit と正本の食い違いの行を申し送りに変えた。`SOURCES.md` §5 の 2 番を「main への申し送りにする」に変えた
+- **申し送り**: `.claude/comm/handoff/_TEMPLATE.md`（frontmatter に from / kind / area / lane / prio / related）。テンプレート以外は `.gitignore` で追跡しない。main は `git worktree list` のパスを直接読み、処理したら消す。書式と手順の正本は `.claude/comm/README.md`
+- **hook**: `pre-issue-create-guard.sh`。`.session-name` が `main`、または宣言が無くメインの作業ツリーなら通し、それ以外の `gh issue create` を exit 2 で止める。レーンの 5 通りの打ち方で止まり、comment / list / 文字列中の言及は通ることを確かめた
+- **スキル**: `issue-dispatch`（chat-main 専用、回収手順）、`issue-prompter`（`/goal` の文面、配る前の回収）、`worktree-policy`（audit、配り方、worktree を消す前の確認）、`loop-implement` / `loop-triage` / `loop-postmortem` / `session-loader`
+- **life-editor との差**: life-editor は連絡帳ファイルへの自由形式の追記で、処理済みの印も機械の停止も無かった。こちらは 1 件 1 ファイルとファイルの削除で処理済みを表し、hook で止める
+
 ### 2026-10-04 - docs のコンフリクト対策
 
 #### 概要

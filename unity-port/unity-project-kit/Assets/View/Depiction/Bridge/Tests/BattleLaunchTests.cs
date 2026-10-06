@@ -118,7 +118,7 @@ namespace Depiction.Bridge.Tests
             // TurnLoopTests.PinnedHands, turn 1: the same seed, the same generator, the same deal.
             Assert.That(source.State.Hand.Select(c => c.Def.Id), Is.EqualTo(new[]
             {
-                "shield_bash", "body_check", "step_out_guard", "step_in_guard", "step_out_guard",
+                "shield_bash", "body_check", "step_out_guard", "step_in_guard", "step_out_guard", "body_check",
             }));
 
             CoreBattleSource other = new BattleLaunch { Seed = 7 }.CreateSource();

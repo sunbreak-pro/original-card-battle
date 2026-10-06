@@ -296,7 +296,7 @@ namespace Depiction.Bridge
                 case BattleCore.TraitCondition.Reserve: return "残" + trait.Threshold;
                 case BattleCore.TraitCondition.Combo: return "連動" + AttributeWord(trait.Attribute);
                 case BattleCore.TraitCondition.Moved: return "移動後";
-                case BattleCore.TraitCondition.OmenIs: return "予兆" + (trait.Omen.HasValue ? OmenWord(trait.Omen.Value) : "");
+                case BattleCore.TraitCondition.OmenIs: return "予兆" + (trait.Omen.HasValue ? OmenKindWord(trait.Omen.Value) : "");
                 case BattleCore.TraitCondition.Desperate: return "死力";
                 case BattleCore.TraitCondition.FirstPlay: return "初手";
                 case BattleCore.TraitCondition.Finisher: return "締め";
@@ -338,47 +338,87 @@ namespace Depiction.Bridge
             return "";
         }
 
-        private static string OmenWord(OmenKind kind)
+        // ---- omen ---------------------------------------------------------------------------
+
+        /// <summary>
+        /// The omen's kind as a word: the words of battle-visual-v1 4.4, which #243 brought the
+        /// roster to as well (防御 / 移動). BattleCore's EnemyAi.ToText still reads 守り / 動.
+        /// </summary>
+        public static string OmenKindWord(OmenKind kind)
         {
             switch (kind)
             {
                 case OmenKind.Attack: return "攻撃";
-                case OmenKind.Move: return "移動";
                 case OmenKind.Guard: return "防御";
-                default: return new OmenLabel(kind).ToText();
+                case OmenKind.Move: return "移動";
+                case OmenKind.Skill: return "技";
+                case OmenKind.Stance: return "構え";
+                case OmenKind.Rest: return "休み";
+                default: return "";
             }
         }
 
-        // ---- omen ---------------------------------------------------------------------------
+        /// <summary>The icon of the omen's kind (#349): the skill kind wears the status-apply icon; its final look is #350.</summary>
+        public static OmenIcon IconOf(OmenKind kind)
+        {
+            switch (kind)
+            {
+                case OmenKind.Attack: return OmenIcon.Attack;
+                case OmenKind.Guard: return OmenIcon.Guard;
+                case OmenKind.Skill: return OmenIcon.Status;
+                case OmenKind.Move: return OmenIcon.Move;
+                case OmenKind.Stance: return OmenIcon.Stance;
+                case OmenKind.Rest: return OmenIcon.Rest;
+                default: return OmenIcon.None;
+            }
+        }
 
         /// <summary>
-        /// §6: 種別 + 狙うマス, plus one number. Until the floor shows the aimed cells (#163) the reach
-        /// goes where the one-character side used to be ("1〜2").
+        /// The number beside the omen's icon (#349): attack and guard only. An attack reads the
+        /// core's <paramref name="preview"/> when there is one, else its face (power × hits); a guard
+        /// reads the face's Guard. A move with a Guard face (踏み込み) shows none, since its kind is 移動.
+        /// </summary>
+        public static string OmenValueOf(OmenKind kind, EnemyActionDef action, OmenPreview preview)
+        {
+            if (action == null) return "";
+            switch (kind)
+            {
+                case OmenKind.Attack:
+                    return preview != null ? preview.RawPower.ToString() : FacePower(action.Face).ToString();
+                case OmenKind.Guard:
+                    return action.Face.Guard > 0 ? action.Face.Guard.ToString() : "";
+                default:
+                    return "";
+            }
+        }
+
+        /// <summary>
+        /// §6: 種別 (icon and word) + 狙うマス, plus one number for attack and guard (#349). Until the
+        /// floor shows the aimed cells (#242) the reach goes where the one-character side used to be
+        /// ("1〜2").
         ///
         /// For an attack the number is the core's (#248, TurnLoop.PreviewOmen): the whole action's
         /// power before the player's Guard — every blow, the wall, and the trait as the board stands
         /// now — and what it would be if it landed when it does not reach. Without a
-        /// <paramref name="preview"/> it is the face alone (power × hits). Any other action shows its
-        /// Guard or heal.
+        /// <paramref name="preview"/> it is the face alone (power × hits). A guard shows the face's
+        /// Guard; any other kind shows no number.
         /// </summary>
         public static OmenFrame OmenOf(Omen omen, EnemyDef enemy, OmenPreview preview = null)
         {
             if (omen == null) return new OmenFrame { Visible = false };
 
-            var frame = new OmenFrame
+            OmenKind kind = omen.Label.Kind;
+            EnemyActionDef action;
+            // A rest has no entry in the table (EnemyAi.RestActionId): action stays null, no number.
+            enemy.Actions.TryGetValue(omen.ActionId, out action);
+            return new OmenFrame
             {
                 Visible = true,
-                KindLabel = new OmenLabel(omen.Label.Kind).ToText(),
+                Icon = IconOf(kind),
+                KindLabel = OmenKindWord(kind),
                 SideGlyph = omen.Label.Reach != null ? omen.Label.Reach.ToText() : "",
+                ValueText = OmenValueOf(kind, action, preview),
             };
-            EnemyActionDef action;
-            if (enemy.Actions.TryGetValue(omen.ActionId, out action))
-            {
-                frame.ValueText = action.Attributes.HasFlag(BattleAttribute.Attack) && preview != null
-                    ? preview.RawPower.ToString()
-                    : ValueOf(action.Face, action.Attributes);
-            }
-            return frame;
         }
 
         // ---- units --------------------------------------------------------------------------

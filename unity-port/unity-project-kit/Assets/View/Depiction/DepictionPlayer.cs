@@ -43,7 +43,7 @@ namespace Depiction.View
         public Text handGuide;
 
         [Header("Hand layout")]
-        [Tooltip("Distance between neighbouring cards. Below the card width (190) the cards overlap like a spread bundle.")]
+        [Tooltip("Distance between neighbouring cards for a hand of five or fewer. Six, seven and eight close in to 150 / 140 / 126 of 160 (battle-visual-v1 §4.8). Below the card width (190) the cards overlap like a spread bundle.")]
         public float cardSpacing = 160f;
         [Tooltip("The hand is a shallow fan: each step away from the middle tilts a card by this many degrees...")]
         [Range(0f, 15f)] // HandFan assumes the outermost tilt stays within 90 degrees
@@ -534,9 +534,10 @@ namespace Depiction.View
                 case CueKind.Defeat:
                 {
                     // #288: the fallen enemy's omen goes with it (the frame after the beat keeps it hidden).
+                    // #349: and so does an elite's plan, which a plain FadeOut leaves up.
                     if (cue.Target == UnitSide.Enemy && omenBadge)
                     {
-                        StartCoroutine(Effect(EffectId.OmenSpend, omenBadge.FadeOut(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideNow));
+                        StartCoroutine(Effect(EffectId.OmenSpend, omenBadge.FadeOutAll(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideAllNow));
                     }
                     yield return Effect(EffectId.Defeat, target.Fall(_effects.Ms(EffectId.Defeat)), () => target.SetDown(true));
                     break;
@@ -1046,7 +1047,7 @@ namespace Depiction.View
         /// <summary>Resting place of the i-th card in a shallow fan (see <see cref="HandFan.Place"/>).</summary>
         private void HomeOf(int index, out Vector2 position, out float degrees)
         {
-            FanPlace place = HandFan.Place(_hand.Count, index, cardSpacing, fanDegreesPerCard, fanDropPixels, cardPrefab.Rect.rect.width);
+            FanPlace place = HandFan.Place(_hand.Count, index, HandFan.Spacing(_hand.Count, cardSpacing), fanDegreesPerCard, fanDropPixels, cardPrefab.Rect.rect.width);
             position = new Vector2(place.X, place.Y);
             degrees = place.Degrees;
         }

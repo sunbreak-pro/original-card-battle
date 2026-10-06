@@ -11,7 +11,7 @@ description: 本リポの multi-chat worktree 運用規約の正本。レーン�
 
 - **メイン（`C:\Users\user\orca\original-card-battle`）は chat-main 専有・`main` のみ**。メインで `git checkout <feature>` はしません。feature 作業は worktree から行います
 - **1 レーン = 1 worktree = 1 チャット。ブランチは Issue ごとに切り替えます**。1 つの worktree が複数 Issue を順に担当するので、Issue ごとにブランチを切り直します。**worktree に 1 ブランチを固定し続けない** — PR merge 後も同じブランチを使い回すと履歴が絡みます
-- **試運転はメインだけ**（2026-09-20 こうだいさん決定）。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行います。各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証までです。複数 worktree で localhost を重ねるとポートがずれて「どの画面がどの変更か」の確認が壊れます
+- **試運転はメインだけ**（2026-09-20 こうだいさん決定）。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行います。各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` / `npm run unity:check` の静的検証までです。C# を触ったら、`unity:check` で Unity のコンパイルを Editor を開かずに再現します（#344）。Unity の NUnit 3.5 と netstandard2.1 にだけ無い API は、`dotnet test` では見つからないためです。複数 worktree で localhost を重ねるとポートがずれて「どの画面がどの変更か」の確認が壊れます
 
 ## レーン一覧
 
@@ -23,7 +23,7 @@ description: 本リポの multi-chat worktree 運用規約の正本。レーン�
 | `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード | `lane:dungeon`（既定 `area:dungeon`） | `src/domain/dungeon/`, 探索側の C# と設計書 |
 | `audit` | 監査。設計書と実装の整合、既知課題の棚卸し | `lane:audit`（既定 `area:docs` `area:tooling`） | **書き込みなし**（下記） |
 
-**`audit` は読み取り専用です**（2026-09-20 こうだいさん決定）。整合監査の結果は Issue として起票し、修正は担当レーンへ回します。自分でコードを直しません。例外は自分の tracker（`memory/` `history/`）と `comm/outbox/` だけです。
+**`audit` は読み取り専用です**（2026-09-20 こうだいさん決定）。整合監査の結果は main への申し送り（`comm/handoff/`）にし、main が Issue にして担当レーンへ配ります。自分でコードを直しません。例外は自分の tracker（`memory/` `history/`）と `comm/outbox/` `comm/handoff/` だけです。
 
 **世界観の正本は main（chat-main）が持ちます**（2026-09-21 こうだいさん決定。2026-09-20 の「`design` が持つ」を置き換え）。世界の設定・用語・固有名詞・敵の系譜・層の名前を決め、`docs/vision/`（正典は `world-v1.md`）と `docs/Overall_document/` と `docs/journal_document/`（手記の文章）に落とします。`area:world` の Issue には `lane:` を付けず、chat-main の采配に落とします。`design` が見た目の約束を変えたいときは、案を Issue に書いて main が正典へ取り込みます。
 
@@ -31,7 +31,7 @@ description: 本リポの multi-chat worktree 運用規約の正本。レーン�
 
 **設計書の持ち主は `.claude/docs/SOURCES.md` §2 が正本です。** 上の表の「主に触るパス」は目安で、設計書 1 本ごとの書き手は台帳が決めます。`npm run sources -- --lane <slug>` が、自分の書く正本と読む正本を出します。表と台帳が食い違えば台帳が正です（2026-09-21 時点で `battle_ui_ux_v2.md` と `View/Depiction/` は縦切りの間だけ `battle` が持ちます）。
 
-**正本どうしの食い違いを見つけても、他レーンの正本は直しません。** 題を「正本の食い違い: 〜」で始めた Issue にし、どちらに従って進めたかを Issue と PR 本文に書いて先へ進みます（台帳 §5）。
+**正本どうしの食い違いを見つけても、他レーンの正本は直しません。** 題を「正本の食い違い: 〜」で始めた申し送り（`kind: conflict`）を main へ回し、どちらに従って進めたかを申し送りと PR 本文に書いて先へ進みます（台帳 §5）。
 
 **one writer per artifact**: 同じファイルを 2 レーンに触らせません。担当が重なる Issue は片方を chat-main の采配へ落とします。
 
@@ -109,6 +109,8 @@ squash merge されたブランチは `git diff origin/main <branch>` / `git log
 
 ## Windows での worktree 削除
 
+消す前に `.claude/comm/handoff/` が空であることを確かめます。申し送りは git で追跡しないので、`git worktree remove` が黙って消します。残っていれば main が回収してから消します。
+
 `git worktree remove` はディレクトリ削除で `Permission denied` になることがあります（`node_modules` をプロセスが掴んでいる）。この場合 git 側の登録だけ外れてディレクトリが残るので、`workspaces/original-card-battle/` に実体だけの残骸が溜まります。残骸は手動削除します（`git worktree list` に出ないものが対象）。掴んでいるのが Orca のターミナルのときは `orca terminal list --json` で該当 handle を探し、`orca terminal close --terminal <handle>` で解放してから削除します。
 
 ## Orca ADE 利用時の例外
@@ -117,7 +119,9 @@ Orca の GUI から作った worktree は `.session-name` / `.session-branch` �
 
 ## 課題の配り方
 
-chat-main が `issue-dispatch` で Issue を起票し、`lane:` ラベルで宛先を決めます。各レーンは自分宛の open Issue をタスクキューとして実行し、PR を開くまで担います（merge と close はこうだいさんの手番）。貼り付け用の `/goal` 文字列の組み立ては `issue-prompter` です。
+**Issue を立てるのは chat-main だけです**（2026-10-06、#367）。レーンは `gh issue create` を打たず、Issue にしてほしい課題を `.claude/comm/handoff/` に申し送りとして書きます（書式は `.claude/comm/README.md`）。`pre-issue-create-guard.sh` がレーンの `gh issue create` を止めます。
+
+chat-main が申し送りを回収して `issue-dispatch` で Issue を起票し、`lane:` ラベルで宛先を決めます。各レーンは自分宛の open Issue をタスクキューとして実行し、PR を開くまで担います（merge と close はこうだいさんの手番）。貼り付け用の `/goal` 文字列の組み立ては `issue-prompter` です。
 
 ## 既知制約
 

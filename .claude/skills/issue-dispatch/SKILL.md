@@ -1,14 +1,15 @@
 ---
 name: issue-dispatch
-description: プロダクトの課題を GitHub Issue として起票し、ラベルで種別・重要度・領域を付ける。重複チェックと DoD の型を持つ。Triggers include "課題を起票して", "Issue にして", "タスクを切って", "dispatch", "起票", "issue-dispatch".
+description: プロダクトの課題を GitHub Issue として起票し、ラベルで種別・重要度・領域を付ける。重複チェックと DoD の型を持つ。chat-main 専用で、レーンの申し送り（.claude/comm/handoff/）の回収もここで行う。Triggers include "課題を起票して", "Issue にして", "タスクを切って", "dispatch", "起票", "issue-dispatch".
 ---
 
-# issue-dispatch — GitHub Issue 駆動のタスク起票
+# issue-dispatch — GitHub Issue 駆動のタスク起票（chat-main 専用）
 
 課題の台帳 `.md` を作らず、**掲示板 1 枚 = GitHub Issues** に全部貼る方式です。進捗の台帳を別に作ると、必ず Issue と二重管理になって片方が腐ります。
 
 ## モデル（誰が何をするか）
 
+- **起票 = chat-main だけ**（2026-10-06 こうだいさん決定、#367。life-editor の 2026-07-11 の決定を移植）。レーンのチャットでこのスキルが呼ばれたら起票せず、`.claude/comm/handoff/` に申し送りを書いて終えます（書式は `.claude/comm/README.md`）。`pre-issue-create-guard.sh` が main 以外の `gh issue create` を止めます
 - **正本 = GitHub Issues**（`gh -R sunbreak-pro/original-card-battle`）。`docs/vision/plans/` の計画書は大型仕様の詳細だけに使い、**作業分配・進捗追跡の台帳 .md は新規作成しない**
 - **消化 = `loop-triage` → `loop-implement`**。本スキルは実装しません
 - **並べ直し = `issue-prompter`**。本スキルは `prio:` を付けるところまでで、レーンへの配り方は決めません
@@ -54,7 +55,17 @@ description: プロダクトの課題を GitHub Issue として起票し、ラ�
 
 ### 1. 課題収集
 
-ソース: こうだいさんの指示 / 検証レポート（`docs/reports/`）/ plans の残タスク / 整合監査。
+ソース: こうだいさんの指示 / **レーンの申し送り** / 検証レポート（`docs/reports/`）/ plans の残タスク / 整合監査。
+
+**申し送りは全 worktree から直接集めます。** 申し送りは git で追跡しないので、main のブランチには届きません。
+
+```bash
+git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r wt; do
+  ls "$wt"/.claude/comm/handoff/*.md 2>/dev/null | grep -v '/_TEMPLATE\.md$'
+done
+```
+
+1 件ずつ手順 2 と 3 を通します。frontmatter の `prio` `lane` は案なので、main が台帳（`.claude/docs/SOURCES.md` §2）とほかの open Issue を見て決め直します。既存 Issue と重なればコメントに回し、前提がコードで否定されたら立てません。**どの場合も処理を終えたファイルは main が消します。** Issue の本文には「申し送り: `<lane>/<ファイル名>`」を 1 行残します。
 
 サブエージェントの報告に含まれる file:line・件数・引用は、**起票前に必ず自分で開いて spot check** します。裏取りしていない findings の Issue 化は「矛盾の量産」になります。
 

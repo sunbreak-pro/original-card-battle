@@ -20,7 +20,8 @@ namespace Depiction
         public const int MaxStamina = 10;
         /// <summary>Stamina returned at the start of every turn.</summary>
         public const int Recovery = 3;
-        public const int HandSize = 5;
+        /// <summary>battle_core_v4 §8: cards drawn at every turn start (6 since #351).</summary>
+        public const int HandSize = 6;
         /// <summary>Stamina left at the turn's end that still earns the stance shield.</summary>
         public const int StanceThreshold = 3;
         public const int StanceGuard = 3;
@@ -532,10 +533,11 @@ namespace Depiction
             return _omenAttacks
                 ? new OmenFrame
                 {
-                    Visible = true, KindLabel = "攻撃",
+                    Visible = true, Icon = OmenIcon.Attack, KindLabel = "攻撃",
                     SideGlyph = DemoDeck.Glyph(OmenSide), ValueText = EnemyAttackPower.ToString(),
                 }
-                : new OmenFrame { Visible = true, KindLabel = "防御" };
+                // #349: the guard omen shows the Guard the enemy action adds (BuildEnemyAction).
+                : new OmenFrame { Visible = true, Icon = OmenIcon.Guard, KindLabel = "防御", ValueText = EnemyGuardPower.ToString() };
         }
 
         private List<CardFace> Faces()

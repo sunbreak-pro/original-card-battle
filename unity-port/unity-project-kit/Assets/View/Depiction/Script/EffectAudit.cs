@@ -125,7 +125,7 @@ namespace Depiction
             {
                 // ---- Card motion ----
                 new EffectAuditEntry(EffectId.CardDraw, Cards, Carries.Hand, S, H,
-                    "新しい手札はターン開始の枠が先に持っているので、飛ぶ動きが運ぶのは「どれが来たか」だけです。5 枚で 500 ms 入力を止めるため、間隔を詰めます。"),
+                    "新しい手札はターン開始の枠が先に持っているので、飛ぶ動きが運ぶのは「どれが来たか」だけです。6 枚で 560 ms 入力を止めるため、間隔を詰めます。"),
                 new EffectAuditEntry(EffectId.HandFan, Cards, Carries.Hand, N, Sc,
                     "並行して走り、待ち時間はありません。切ると残りの札が一瞬で飛び、どの札が抜けたか追えなくなります。"),
                 new EffectAuditEntry(EffectId.CardHover, Cards, Carries.Input, N, Sc,
@@ -147,7 +147,7 @@ namespace Depiction
                 new EffectAuditEntry(EffectId.RefusalShake, Cards, Carries.Hand, S, H,
                     "断られた理由は案内の文が言っています。揺れは「断られた」の合図で、入力をさらに 160 ms 止めるため短くします。"),
                 new EffectAuditEntry(EffectId.HandDiscard, Cards, Carries.Hand, S, H,
-                    "ターン終了で手札が全部捨て札へ行くだけで、捨てた中身はもう決まっています。5 枚で 480 ms かかるため、間隔を詰めます。"),
+                    "ターン終了で手札が全部捨て札へ行くだけで、捨てた中身はもう決まっています。6 枚で 540 ms かかるため、間隔を詰めます。"),
                 new EffectAuditEntry(EffectId.UnpayableDim, Cards, Carries.Hand, N, Sc,
                     "スタミナが足りない札を、掴む前に見分ける唯一の印です。"),
 

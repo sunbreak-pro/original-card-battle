@@ -213,11 +213,11 @@ namespace BattleCore.Tests
         [Test]
         public void AHandWithNoSwitchCard_IsRarerThanOneInFour()
         {
-            // §13 / R102: the chance that 5 cards out of the deck hold no move face stays at or
-            // under 25%. Hypergeometric: C(nonMovers, 5) / C(deck, 5).
+            // §13 / R102: the chance that a hand of six (Constants.HandDraw, #351) holds no move face
+            // stays at or under 25%. Hypergeometric: C(nonMovers, 6) / C(deck, 6) = 924 / 38760 ≈ 2.4%.
             var deck = PrototypeDeck.Build();
             int movers = deck.Count(c => AttributeRule.HasMovement(c.Def.Face));
-            double chance = Choose(deck.Count - movers, 5) / Choose(deck.Count, 5);
+            double chance = Choose(deck.Count - movers, Constants.HandDraw) / Choose(deck.Count, Constants.HandDraw);
 
             Assert.That(movers, Is.EqualTo(8));
             Assert.That(chance, Is.LessThanOrEqualTo(0.25));

@@ -26,7 +26,7 @@ open Issue すべてに「着手可 / 保留（理由 1 行）」の判定をつ
 ## 停止条件（人間に返す）
 
 - 判定の前提が**未回答の判断に依存**している（`.claude/comm/decisions/ANSWERS.md` に答えが無い）
-- 判定の結果、**Issue 本文の修正や新規起票が必要**と分かった（起票は `issue-dispatch` の担当）
+- 判定の結果、**Issue 本文の修正や新規起票が必要**と分かった（起票は chat-main だけ。レーンでは `.claude/comm/handoff/` に申し送りを書く）
 - **凍結領域に触る Issue** が混ざっていた（CLAUDE.md の凍結範囲。判定せずこうだいさんへ返す）
 - 上のいずれでもない曖昧さは停止せず、`decisions/chat-<self>.md` に書いて**次の Issue へ進む**
 
@@ -35,7 +35,7 @@ open Issue すべてに「着手可 / 保留（理由 1 行）」の判定をつ
 - `issue-dispatch` スキル — ラベルの意味・Issue と `docs/known-issues/` の境界の正本
 - `issue-prompter` スキル — 依存の読み取り方（本文の「依存」節）
 - `gh issue list` / `gh issue view`（`-R sunbreak-pro/original-card-battle`）— **読み取りのみ**
-- 書き込んでよいのは `.claude/comm/decisions/chat-<self>.md` と `.claude/comm/outbox/chat-<self>/` の 2 か所だけ
+- 書き込んでよいのは `.claude/comm/decisions/chat-<self>.md` と `.claude/comm/outbox/chat-<self>/` と `.claude/comm/handoff/` の 3 か所だけ
 
 ## 判定の順序（上から当てはめる）
 
@@ -50,7 +50,7 @@ open Issue すべてに「着手可 / 保留（理由 1 行）」の判定をつ
 
 - 自分のチャット名は `.claude/comm/.session-name`（`chat-` 接頭辞なし）
 - **worktree はまだ無い**。宛先ラベル（`section:`）も無いので、open Issue は全部自分宛として扱う
-- **Issue への書き込み（起票・コメント・close）は機械では止まっていない**。このループが読み取りだけで終わる規約は文章なので、自分で守る
+- **機械で止まっているのは main 以外の `gh issue create` だけ**（`pre-issue-create-guard.sh`）。コメント・close・ラベル変更は止まっていないので、このループが読み取りだけで終わる規約は自分で守る
 - 凍結範囲の正本は `.claude/CLAUDE.md`。アーマー / 装備・Gold・ソウル経済 / ショップ・鍛冶屋・サンクチュアリ / TS 側の `src/ui/battle-lab/core/`
 
 ---

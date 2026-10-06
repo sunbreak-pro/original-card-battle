@@ -43,7 +43,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 `battle_core_v4.md` は §19（2026-09-21 の決定）が本文に入っていません。間合いと属性の規則が他の正本と食い違ったら、`battle_core_v4.md` が勝ちます。
 
-**`battle_ui_ux_v2.md` と `View/Depiction/` の持ち主は仮です。** レーンの定義では UI / UX 設計は design ですが、縦切り（#67）の間は #46 / #56 / #57 が `lane:battle` なので battle に置いています。縦切りの振り返り（#80）で見直します。
+**`battle_ui_ux_v2.md` と `View/Depiction/` の持ち主は battle です**（2026-10-05、縦切りの振り返り #80 で仮を外しました）。見た目の値（色・部品・配置）は design の `battle-visual-v1.md` が持ち、battle は操作の流れ・演出の時間・View の実装を持ちます。縦切りの後の画面の Issue（#348 / #349 / #242）もこの分け方で、見た目の文書の直し（#350）だけを design に置いています。
 
 ### cards が書く正本
 
@@ -133,8 +133,8 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 ## 5. 食い違いを見つけたときの手順
 
 1. **他のレーンの正本を直さない。** 直してよいのは自分が持ち主の行だけです（one writer per artifact）
-2. **Issue にする。** 題を「正本の食い違い: <何と何が>」で始め、両方の `file:§` と、直し方ごとに変わる結果を書きます。ラベルは `type:task` と両方の `area:`、`lane:` は書く側が決まるまで付けません。重複は `gh issue list -R sunbreak-pro/original-card-battle --search "正本の食い違い in:title"` で確かめます
-3. **止まらずに進む。** どちらに従って進めたかを Issue と PR 本文に 1 行で書きます。既定は「自分の Issue の Scope が名指しする文書の字義どおり」です
+2. **main への申し送りにする。** レーンは Issue を立てません（`.claude/comm/README.md`「申し送り」）。`kind: conflict` で `.claude/comm/handoff/` に書き、題を「正本の食い違い: <何と何が>」で始め、両方の `file:§` と、直し方ごとに変わる結果を書きます。Issue にするのは main で、ラベルは `type:task` と両方の `area:`、`lane:` は書く側が決まるまで付けません。重複は main が `gh issue list -R sunbreak-pro/original-card-battle --search "正本の食い違い in:title"` で確かめます
+3. **止まらずに進む。** どちらに従って進めたかを申し送りと PR 本文に 1 行で書きます。既定は「自分の Issue の Scope が名指しする文書の字義どおり」です
 4. **決着したら、持ち主のレーンが自分の正本を直します。** 同じコミットで本書の状態の欄を直します
 
 ## 6. 正本を腐らせない書き方

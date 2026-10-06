@@ -252,7 +252,7 @@ namespace BattleCore.Tests
                 BranchAtGapZero: new[] { "shell" });
             var enemy = Boss(adapt);
             var jab = Fixtures.Card("jab", 1, new Face(Power: 1));
-            var s = Opened(enemy, 0, jab, Filler, Filler, Filler, Filler, jab);
+            var s = Opened(enemy, 0, jab, Filler, Filler, Filler, Filler, Filler, jab);
 
             var afterOne = TurnLoop.PlayCard(s, s.Hand.First(c => c.Def.Id == "jab").InstanceId, NoRng).State;
             Assert.That(End(afterOne).State.Omen!.ActionId, Is.EqualTo("base_hit"), "one attack is not yet two in a row");
