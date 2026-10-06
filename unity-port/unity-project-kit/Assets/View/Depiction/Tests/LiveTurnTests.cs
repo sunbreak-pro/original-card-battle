@@ -125,6 +125,20 @@ namespace Depiction.Tests
         }
 
         [Test]
+        public void TheFirstTurnStart_DealsSixCards_AsOneDrawBeat()
+        {
+            // battle_core_v4 §8 (#351): six cards a turn. The demo deck holds ten, so six are always there.
+            var turn = new LiveTurn(7);
+            DepictionEvent start = turn.AdvanceAuto();
+
+            Assert.That(start.Kind, Is.EqualTo(DepictionEventKind.TurnStart));
+            Assert.That(LiveTurn.HandSize, Is.EqualTo(6));
+            Assert.That(turn.Frame.Hand.Count, Is.EqualTo(6));
+            Assert.That(start.Cues.FindAll(c => c.Kind == CueKind.DrawHand).Count, Is.EqualTo(1));
+            Assert.That(start.Cues.Find(c => c.Kind == CueKind.DrawHand).Amount, Is.EqualTo(6));
+        }
+
+        [Test]
         public void EveryTurnDealsAFreshHandAndReturnsStamina()
         {
             LiveTurn turn = Opened();

@@ -12,7 +12,7 @@ namespace Depiction.Tests
 
             Assert.That(runner.AdvanceAuto().Order, Is.EqualTo(1));
             Assert.That(runner.Frame.Player.Stamina, Is.EqualTo(9));
-            Assert.That(runner.Frame.Hand.Count, Is.EqualTo(5));
+            Assert.That(runner.Frame.Hand.Count, Is.EqualTo(5), "the filmed slice keeps the five-card hand from before #351");
             Assert.That(runner.Frame.Omen.KindLabel + runner.Frame.Omen.SideGlyph + runner.Frame.Omen.ValueText, Is.EqualTo("攻撃近13"));
             Assert.That(runner.Frame.Omen.Icon, Is.EqualTo(OmenIcon.Attack));
 

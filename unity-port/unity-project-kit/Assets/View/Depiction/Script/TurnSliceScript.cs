@@ -2,6 +2,8 @@
 // Numbers are the §18 draft scale (attack 6 / 13 / 21, guard 4 / 9 / 15, recovery 3).
 // Every value below is a settled result written by hand; nothing here is a formula the
 // View could re-run.
+// The filmed hand stays at five cards, the rule before #351 (six since 2026-10-06): this is a
+// record of the recorded slice, not the current rule. LiveTurn and the core deal six.
 using System.Collections.Generic;
 
 namespace Depiction
