@@ -1,6 +1,6 @@
 ---
 name: issue-prompter
-description: open GitHub Issue を lane ラベルで worktree レーンごとに束ね、各レーンのチャットへ貼る /goal コマンド文字列を組み立てて表示する（chat-main 専用・読み取りのみ）。Triggers include "goal プロンプト", "各 worktree に配る", "レーンに投げる", "次どれやる", "貼り付け用プロンプト", "issue-prompter", "Issue を並べて", "着手順".
+description: open GitHub Issue を lane ラベルで worktree レーンごとに束ね、各レーンのチャットへ貼る /goal コマンド文字列を組み立てて表示する。ハーネス（規約・スキル・hook）の変更を取り込んでいないレーンには、反映用の指示文も必ず出す（chat-main 専用・読み取りのみ）。Triggers include "goal プロンプト", "各 worktree に配る", "レーンに投げる", "次どれやる", "貼り付け用プロンプト", "issue-prompter", "Issue を並べて", "着手順".
 ---
 
 # issue-prompter — Issue → 各レーンの貼り付け用 `/goal` プロンプト
@@ -27,6 +27,19 @@ gh issue list -R sunbreak-pro/original-card-battle --state open --limit 200 --js
 gh pr list -R sunbreak-pro/original-card-battle --state open --json number,title,headRefName,body
 git worktree list
 ```
+
+**ハーネスの追従も毎回測ります。** ハーネス（規約・スキル・hook）を変えた main のコミットを、各レーンの worktree が取り込んでいるかを見ます。
+
+```bash
+H=$(git log -1 --format=%H origin/main -- .claude/CLAUDE.md .claude/settings.json .claude/hooks .claude/skills .claude/comm/README.md .claude/comm/handoff .gitignore)
+git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r wt; do
+  [ "$(tr -d '[:space:]' < "$wt/.claude/comm/.session-name" 2>/dev/null)" = main ] && continue
+  git -C "$wt" merge-base --is-ancestor "$H" HEAD 2>/dev/null && s=ok || s=behind
+  echo "$s $(basename "$wt") [$(git -C "$wt" branch --show-current)]"
+done
+```
+
+`behind` のレーンには、配る Issue が無くても手順 3 の反映用の指示文を出します（2026-10-06、#367）。`.claude/docs/` の設計書はこの対象に入れません。設計書は `/goal` の先頭の「main を取り込む」で追いつくからです。
 
 **open PR が既に紐づく Issue は除外**します（PR の本文かブランチ名に `#<n>` を含むもの）。着手済みを再度配ると二重実装になります。
 
@@ -84,6 +97,16 @@ git worktree list
 
 **正本の案内は文面に写しません。** `/goal` には「main を取り込む → `npm run sources -- --lane <slug>` を引く」の 2 手だけを書き、どのファイルが正本かは台帳（`.claude/docs/SOURCES.md`）に任せます。文面にファイル名を写すと、版が上がった日に古い案内を配ることになります。配る前に chat-main 側でも `git pull --ff-only` と `npm run sources -- --check` を通します。**申し送りも先に回収します**（`issue-dispatch` の手順 1）。回収前に配ると、Issue になっていない課題がどのレーンにも届きません。
 
+**ハーネスの反映用の指示文は `/goal` にしません。** 手順 1 で `behind` だったレーンに、次の 1 行を出します。`/goal` を貼ると、そのレーンで動いている前の `/goal` が上書きされて消えるため、ふつうの指示文として貼ります。
+
+```
+ハーネスが更新されました（<H の短縮ハッシュ> <件名>）。いまの作業の区切りで git fetch origin && git merge origin/main --no-edit を実行し、.claude/CLAUDE.md の「Development Workflows」と、変わったスキルを読み直してから作業を続けてください。衝突したら自動で解かずに止めて報告してください。
+```
+
+`settings.json` か `hooks/` が変わったときは、確かめ方を 1 行添えます。**取り込んだ後、そのレーンで `/hooks` を開き、足した hook が並んでいるか見てください。並んでいなければチャットを開き直します。** Claude Code は設定ファイルの hook の編集を、通常はファイルの監視で拾います（公式ドキュメント hooks の「Direct edits to hooks in settings files are normally picked up automatically by the file watcher」）。「通常は」なので、効いていることを目で確かめます。
+
+同じ回に `/goal` を配るレーンには、反映用の指示文は出しません。`/goal` の先頭の「main を取り込む」で同じことが起きるからです。
+
 **Issue が名指しする設計書の持ち主と `lane:` が食い違うときは配りません。** 台帳 §2 の持ち主と違うレーンに書かせると one writer per artifact が崩れます。采配欄へ回します。
 
 **実装レーンの終端は「PR を開くまで」で切ります。** merge と Issue の close はこうだいさんの手番（`settings.json` の `ask` で `gh pr merge` が止まる）なので、そこを条件に入れると人待ちで永久に達成されません。
@@ -98,17 +121,19 @@ git worktree list
 停止: 2 本の PR が open になったら（merge は待たない）
 ```
 
-最後に 4 行だけ添えます。
+最後に 5 行だけ添えます。
 
 - **chat-main 采配**: 宛先が決まらなかった Issue 番号の列挙（無ければ「なし」）
 - **待ち行列**: 依存先が close されていない Issue を `#<n> ← #<依存先>` の形で列挙（無ければ「なし」）
 - **人手待ち**: `type:human` の Issue 番号（無ければ「なし」）
 - **除外**: open PR 済みでスキップした Issue 番号
+- **ハーネスの追従**: `behind` のレーンを列挙し、`/goal` を配らないレーンごとに反映用の指示文と、hook が変わったときは `/hooks` での確かめ方を出す（全レーンが `ok` なら「全レーン取り込み済み」）
 
 ## 安全則
 
 - `/goal` は Claude が実行しません。**文字列を出すだけ**です。こうだいさんが各レーンのチャットに貼ります
 - **1 レーンに 1 本まで**。同じレーンへ複数の `/goal` を並べない（後勝ちで前が消える）
+- **ハーネスの追従を省かない**。配る Issue が無いレーンも、`behind` なら反映用の指示文を出す。待機ブランチにいるレーンは `/goal` を受け取らないので、ここで出さないと古い規約のまま次の作業に入る
 - 各ブロックに「いつ止めるか」を必ず 1 行添える
 - `/goal` は CLI v2.1.139+ が要ります。古ければ `claude --version` を促す
 
