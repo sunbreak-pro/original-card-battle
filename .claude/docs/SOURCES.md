@@ -133,8 +133,8 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 ## 5. 食い違いを見つけたときの手順
 
 1. **他のレーンの正本を直さない。** 直してよいのは自分が持ち主の行だけです（one writer per artifact）
-2. **Issue にする。** 題を「正本の食い違い: <何と何が>」で始め、両方の `file:§` と、直し方ごとに変わる結果を書きます。ラベルは `type:task` と両方の `area:`、`lane:` は書く側が決まるまで付けません。重複は `gh issue list -R sunbreak-pro/original-card-battle --search "正本の食い違い in:title"` で確かめます
-3. **止まらずに進む。** どちらに従って進めたかを Issue と PR 本文に 1 行で書きます。既定は「自分の Issue の Scope が名指しする文書の字義どおり」です
+2. **main への申し送りにする。** レーンは Issue を立てません（`.claude/comm/README.md`「申し送り」）。`kind: conflict` で `.claude/comm/handoff/` に書き、題を「正本の食い違い: <何と何が>」で始め、両方の `file:§` と、直し方ごとに変わる結果を書きます。Issue にするのは main で、ラベルは `type:task` と両方の `area:`、`lane:` は書く側が決まるまで付けません。重複は main が `gh issue list -R sunbreak-pro/original-card-battle --search "正本の食い違い in:title"` で確かめます
+3. **止まらずに進む。** どちらに従って進めたかを申し送りと PR 本文に 1 行で書きます。既定は「自分の Issue の Scope が名指しする文書の字義どおり」です
 4. **決着したら、持ち主のレーンが自分の正本を直します。** 同じコミットで本書の状態の欄を直します
 
 ## 6. 正本を腐らせない書き方
