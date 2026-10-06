@@ -174,6 +174,7 @@ namespace Depiction.Bridge
             _enemyFalls = false;
             _enemy.Down = true;
             _omenVisible = false; // a fallen enemy takes its omen with it (TurnLoop.OnFall)
+            _planVisible = false; // a fallen elite takes its plan with it, now that the badge draws it (#349)
             DepictionEvent ev = NewEvent(DepictionEventKind.Defeat, "倒れ");
             ev.Cues.Add(new Cue { Kind = CueKind.Defeat, Target = UnitSide.Enemy });
             Close(ev, after);
@@ -252,7 +253,7 @@ namespace Depiction.Bridge
 
                 // #50: a 予定変更 is a beat of its own, shown before the second action acts.
                 case PlanChanged _ when current != null:
-                    return NewEvent(DepictionEventKind.EnemyAction, "予定変更");
+                    return NewEvent(DepictionEventKind.EnemyAction, DepictionText.PlanChangedTag);
 
                 case OmenSet omen when omen.Decided && _order > 0:
                     return NewEvent(DepictionEventKind.NextOmen, "次の予兆");
@@ -319,7 +320,7 @@ namespace Depiction.Bridge
                 case Drawn drawn:
                 {
                     _hand.Add(drawn.Card);
-                    // A hand of five is five core events and one beat on screen.
+                    // A hand of six is six core events and one beat on screen.
                     Cue last = ev.Cues.Count > 0 ? ev.Cues[ev.Cues.Count - 1] : null;
                     if (last != null && last.Kind == CueKind.DrawHand) last.Amount += 1;
                     else ev.Cues.Add(new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 1 });
@@ -363,7 +364,7 @@ namespace Depiction.Bridge
                     _plan = changed.Now;
                     _planVisible = true;
                     _planChanged = true;
-                    ev.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy, Text = "予定変更" });
+                    ev.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy, Text = DepictionText.PlanChangedTag });
                     break;
 
                 case ActionExecuted executed:
@@ -738,14 +739,20 @@ namespace Depiction.Bridge
         }
 
         /// <summary>
-        /// #50: the 予定 beside the omen, kind and cells only. Its number is not shown yet: a second
-        /// action's predicted value comes after this (#242). It outlives the spent first omen.
+        /// #50: the 予定 beside the omen: its kind (icon and word), its cells, and for attack and guard
+        /// the face number (#349). The second action's predicted value comes after this (#242). It
+        /// outlives the spent first omen.
         /// </summary>
         private OmenFrame WithPlan(OmenFrame frame)
         {
             if (!_planVisible || _plan == null) return frame;
+            OmenKind kind = _plan.Label.Kind;
+            EnemyActionDef planned;
+            _enemyDef.Actions.TryGetValue(_plan.ActionId, out planned);
             frame.PlanVisible = true;
-            frame.PlanKindLabel = new OmenLabel(_plan.Label.Kind).ToText();
+            frame.PlanIcon = CoreText.IconOf(kind);
+            frame.PlanKindLabel = CoreText.OmenKindWord(kind);
+            frame.PlanValueText = CoreText.OmenValueOf(kind, planned, null);
             frame.PlanSideGlyph = _plan.Label.Reach != null ? _plan.Label.Reach.ToText() : "";
             frame.PlanChanged = _planChanged;
             return frame;

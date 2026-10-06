@@ -169,7 +169,7 @@ namespace BattleCore.Tests
                 typeof(TurnStarted),        // 1
                 typeof(GuardCleared),       // 2
                 typeof(StaminaRecovered),   // 3
-                typeof(Drawn), typeof(Drawn), typeof(Drawn), typeof(Drawn), typeof(Drawn), // 5
+                typeof(Drawn), typeof(Drawn), typeof(Drawn), typeof(Drawn), typeof(Drawn), typeof(Drawn), // 5
                 typeof(OmenSet),            // 6
                 typeof(CardPlayed),         // 7
                 typeof(StaminaSpent),
@@ -185,7 +185,7 @@ namespace BattleCore.Tests
                 typeof(DefeatChecked),      // 16
                 typeof(OmenSet));           // 17
 
-            Assert.That(all.OfType<Drawn>().Count(), Is.EqualTo(5));
+            Assert.That(all.OfType<Drawn>().Count(), Is.EqualTo(6));
             Assert.That(all.Last(), Is.InstanceOf<OmenSet>(), "the turn closes on the next omen");
             Assert.That(end.Events.OfType<OmenSet>().Count(), Is.EqualTo(1));
             Assert.That(((OmenSet)all.Last()).Decided, Is.True);
@@ -200,7 +200,7 @@ namespace BattleCore.Tests
             Assert.That(TypesOf(begin.Events), Is.EqualTo(new[]
             {
                 typeof(TurnStarted), typeof(GuardCleared), typeof(StaminaRecovered),
-                typeof(Drawn), typeof(Drawn), typeof(Drawn), typeof(Drawn), typeof(Drawn),
+                typeof(Drawn), typeof(Drawn), typeof(Drawn), typeof(Drawn), typeof(Drawn), typeof(Drawn),
                 typeof(OmenSet),
             }));
             Assert.That(((OmenSet)begin.Events.Last()).Decided, Is.False, "step 5 shows the standing omen");
@@ -378,12 +378,12 @@ namespace BattleCore.Tests
             var state = StartUnshuffledAt(1, PrototypeDeck.Kinds.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
-            // Deck order: thrust(3) kesa_cut(2) reach_thrust(2) brace(2) feint(2).
+            // Deck order: thrust(3) kesa_cut(2) reach_thrust(2) brace(2) feint(2) boar_rush(3).
             var played = new[] { "thrust", "kesa_cut", "brace" };
             foreach (var id in played) s = TurnLoop.PlayCard(s, InHand(s, id), NoRng).State;
 
             Assert.That(s.Player.Stamina, Is.EqualTo(10 - (3 + 2 + 2)));
-            Assert.That(s.Hand, Has.Count.EqualTo(2));
+            Assert.That(s.Hand, Has.Count.EqualTo(3));
             Assert.That(s.DiscardPile.Select(c => c.Def.Id), Is.EqualTo(played));
         }
 
@@ -515,7 +515,10 @@ namespace BattleCore.Tests
         [Test]
         public void Number7_Damage_IsFacePlusTraitMinusGuard_AndNeverBelowZero()
         {
-            var state = StartUnshuffledAt(0, PrototypeDeck.Kinds.ToArray()).State;
+            // Six cards a turn (#351): shield_bash fills the sixth slot so boar_rush stays for turn 2.
+            var state = StartUnshuffledAt(0, CardCatalog.Thrust, CardCatalog.KesaCut, CardCatalog.ReachThrust,
+                CardCatalog.Brace, CardCatalog.Feint, CardCatalog.ShieldBash, CardCatalog.BoarRush,
+                CardCatalog.BodyCheck, CardCatalog.StepInGuard, CardCatalog.StepOutGuard).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
             // Gap 0: kesa_cut is 13 + 5 against Guard 0.
@@ -545,7 +548,7 @@ namespace BattleCore.Tests
         public void Number7_GuardSoaksFirst_ThenHp()
         {
             var deck = Cards.BuildDeck(new[] { CardCatalog.BodyCheck, CardCatalog.Thrust, CardCatalog.KesaCut,
-                CardCatalog.Brace, CardCatalog.Feint, CardCatalog.ReachThrust, CardCatalog.ShieldBash,
+                CardCatalog.Brace, CardCatalog.Feint, CardCatalog.ShieldBash, CardCatalog.ReachThrust,
                 CardCatalog.BoarRush, CardCatalog.StepInGuard, CardCatalog.StepOutGuard }, 1);
             var s = TurnLoop.Start(AtGap(ScenarioGap, deck), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
@@ -560,20 +563,20 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void Number8_TheHand_IsZeroAtTurnEnd_AndFiveAtTheNextStart()
+        public void Number8_TheHand_IsZeroAtTurnEnd_AndSixAtTheNextStart()
         {
             var rng = new SeededRng(Seed);
             var s = TurnLoop.Start(BattleSetup.Slice(), rng).State;
             s = TurnLoop.BeginPlayerTurn(s, rng).State;
-            Assert.That(s.Hand, Has.Count.EqualTo(5));
+            Assert.That(s.Hand, Has.Count.EqualTo(6));
 
             var end = TurnLoop.EndTurn(s, rng);
             Assert.That(end.State.Hand, Is.Empty);
-            Assert.That(end.Events.OfType<HandDiscarded>().Single().Count, Is.EqualTo(5));
-            Assert.That(end.State.DiscardPile, Has.Count.EqualTo(5));
+            Assert.That(end.Events.OfType<HandDiscarded>().Single().Count, Is.EqualTo(6));
+            Assert.That(end.State.DiscardPile, Has.Count.EqualTo(6));
 
             var next = TurnLoop.BeginPlayerTurn(end.State, rng);
-            Assert.That(next.State.Hand, Has.Count.EqualTo(5));
+            Assert.That(next.State.Hand, Has.Count.EqualTo(6));
         }
 
         // ---- The three end points ----
@@ -687,24 +690,25 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheDrawPileRunsOut_OnTurnFive_AndTheDiscardPileComesBack()
+        public void TheDrawPileRunsOut_OnTurnFour_AndTheDiscardPileComesBack()
         {
             var rng = new SeededRng(Seed);
             var s = TurnLoop.Start(BattleSetup.Slice(), rng).State;
 
-            for (int turn = 1; turn <= 4; turn++)
+            for (int turn = 1; turn <= 3; turn++)
             {
                 var begin = TurnLoop.BeginPlayerTurn(s, rng);
                 Assert.That(begin.Events.OfType<DeckReshuffled>(), Is.Empty, $"turn {turn}");
-                // Ending each turn without playing: 20 cards last exactly four hands of five.
+                // Ending each turn without playing: 20 cards last three hands of six, with 2 left over.
                 s = TurnLoop.EndTurn(begin.State, rng).State;
             }
 
-            var fifth = TurnLoop.BeginPlayerTurn(s, rng);
-            Assert.That(fifth.Events.OfType<DeckReshuffled>().Single().DrawPileCount, Is.EqualTo(20));
-            Assert.That(fifth.State.Hand, Has.Count.EqualTo(5));
-            Assert.That(fifth.State.DrawPile, Has.Count.EqualTo(15));
-            Assert.That(fifth.State.DiscardPile, Is.Empty);
+            // Turn 4 draws the 2 left, then the 18 discarded come back and 4 more are drawn.
+            var fourth = TurnLoop.BeginPlayerTurn(s, rng);
+            Assert.That(fourth.Events.OfType<DeckReshuffled>().Single().DrawPileCount, Is.EqualTo(18));
+            Assert.That(fourth.State.Hand, Has.Count.EqualTo(6));
+            Assert.That(fourth.State.DrawPile, Has.Count.EqualTo(14));
+            Assert.That(fourth.State.DiscardPile, Is.Empty);
         }
 
         // ---- The end of the battle ----
@@ -895,20 +899,22 @@ namespace BattleCore.Tests
             Assert.That(a.State.Hand.Select(c => c.InstanceId), Is.Not.EqualTo(b.State.Hand.Select(c => c.InstanceId)));
         }
 
-        // Walked by hand once, so these are rules and not just a recording (re-walked at START_GAP 3, #169):
-        //  T1 gap 3, 10 stamina. shield_bash and body_check reach 0 only, so: step_out_guard (Guard 12,
+        // Walked by hand once, so these are rules and not just a recording (re-walked at START_GAP 3, #169;
+        // and for six cards a turn, #351):
+        //  T1 gap 3, 10 stamina. shield_bash and both body_checks reach 0 only, so: step_out_guard (Guard 12,
         //     cell 1, gap 4) → step_in_guard (24, cell 2) → step_out_guard (36, cell 1), 1 left, no 構え.
         //     The omen from gap 3 is 踏み込み: the polearm steps to cell 5 with Guard 2 and keeps
         //     10 − 1 = 9 → 構え 3, Guard 5. Gap 3 again → 踏み込み again.
         //  T2 gap 3, 1 + 3 stamina. Only brace reaches nobody and is payable: Guard 9, 2 left.
         //     踏み込み: the polearm steps to cell 4 with Guard 2, keeps 9 → 5. Gap 2 → the sweep.
-        //  T3 gap 2, 2 + 3 stamina. reach_thrust 13 + 5 − 5 = 13, again 18: 60 − 31 = 29. The sweep
-        //     is 8 + 3 into no Guard: 50 − 11 = 39.
+        //  T3 gap 2, 2 + 3 stamina. feint and kesa_cut reach 0〜1 only. reach_thrust 13 + 5 − 5 = 13:
+        //     60 − 13 = 47, 3 left. step_in_guard: Guard 12, cell 2, gap 1, 0 left, no 構え.
+        //     The sweep at gap 1 is a bare 8 into Guard 12: Guard 4, HP 50.
         private static readonly string[] PinnedHands =
         {
-            "shield_bash,body_check,step_out_guard,step_in_guard,step_out_guard",
-            "body_check,kesa_cut,brace,boar_rush,thrust",
-            "reach_thrust,feint,feint,kesa_cut,reach_thrust",
+            "shield_bash,body_check,step_out_guard,step_in_guard,step_out_guard,body_check",
+            "kesa_cut,brace,boar_rush,thrust,reach_thrust,feint",
+            "feint,kesa_cut,reach_thrust,step_in_guard,shield_bash,boar_rush",
         };
 
         // turn, player hp/stamina/Guard/cell, enemy hp/stamina/Guard/cell/statuses, gap, next omen
@@ -916,9 +922,9 @@ namespace BattleCore.Tests
         {
             "T1 P 50/1/36/c1 E 60/9/5/c5/— gap 3 omen 動",
             "T2 P 50/2/9/c1 E 60/9/5/c4/— gap 2 omen 攻撃・1〜2",
-            "T3 P 39/1/0/c1 E 29/8/3/c4/— gap 2 omen 攻撃・1〜2",
+            "T3 P 50/0/4/c2 E 47/8/3/c4/— gap 1 omen 攻撃・1〜2",
         };
 
-        private static readonly int[] PinnedEventCounts = { 44, 29, 34 };
+        private static readonly int[] PinnedEventCounts = { 45, 30, 36 };
     }
 }

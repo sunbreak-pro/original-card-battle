@@ -84,6 +84,23 @@ Flags for the two known Unity-side gotchas:
 Different machine or a renamed project? Pass the path
 (`npm run unity:sync -- D:/path/to/Project`) or set `UNITY_PROJECT_PATH`.
 
+### 1b. Check Unity's compile without the Editor — `npm run unity:check`
+
+```powershell
+npm run unity:check               # compile every Unity assembly from this checkout's files
+npm run unity:check -- --warnings # also print each warning
+```
+
+`dotnet test` runs NUnit 4 on net10.0; Unity runs its own NUnit 3.5 on a
+netstandard2.1-like profile, and the View / Editor code never reaches
+`dotnet test`. The check replays the compiler arguments Unity wrote on its last
+compile (`Library/Bee/artifacts/<dag>/*.rsp`) through Unity's csc, with every
+file `unity:sync` would copy taken from this checkout, and writes nothing into
+the Unity project (#344). It needs the project to have been opened once, and a
+change to the arguments themselves (a new asmdef reference) shows only after
+Unity compiles again. Tests that compile but fail on NUnit 3.5 still need the
+EditMode run in Unity.
+
 Run `npm run unity:sync` after every change to the C# core, then let the Editor
 reimport.
 

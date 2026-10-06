@@ -4,7 +4,7 @@ using BattleCore;
 
 namespace BattleCore.Tests
 {
-    /// <summary>§8: five cards a turn, the whole hand away at the end, and one RNG for all of it.</summary>
+    /// <summary>§8: six cards a turn, the whole hand away at the end, and one RNG for all of it.</summary>
     public class CardsTests
     {
         private static IRng Seeded(int seed = 12345) => new SystemRng(seed);
@@ -22,17 +22,17 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void ATurnDrawsFive()
+        public void ATurnDrawsSix()
         {
             var deck = Fixtures.TwentyCardDeck();
             var result = Cards.Draw(deck, new CardInstance[0], new CardInstance[0], Combat.DrawCount(), Seeded());
 
             Assert.Multiple(() =>
             {
-                Assert.That(result.Hand, Has.Count.EqualTo(5));
-                Assert.That(result.DrawPile, Has.Count.EqualTo(15));
+                Assert.That(result.Hand, Has.Count.EqualTo(6));
+                Assert.That(result.DrawPile, Has.Count.EqualTo(14));
                 Assert.That(result.DiscardPile, Is.Empty);
-                Assert.That(result.Drawn, Is.EqualTo(5));
+                Assert.That(result.Drawn, Is.EqualTo(6));
             });
         }
 

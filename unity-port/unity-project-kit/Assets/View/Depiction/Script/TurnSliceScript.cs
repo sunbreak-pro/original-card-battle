@@ -2,6 +2,8 @@
 // Numbers are the §18 draft scale (attack 6 / 13 / 21, guard 4 / 9 / 15, recovery 3).
 // Every value below is a settled result written by hand; nothing here is a formula the
 // View could re-run.
+// The filmed hand stays at five cards, the rule before #351 (six since 2026-10-06): this is a
+// record of the recorded slice, not the current rule. LiveTurn and the core deal six.
 using System.Collections.Generic;
 
 namespace Depiction
@@ -25,7 +27,7 @@ namespace Depiction
             script.Opening = opening;
 
             // 1. Turn start: Guard 0, stamina 6 -> 9, draw five, show the omen.
-            OmenFrame attackNear = new OmenFrame { Visible = true, KindLabel = "攻撃", SideGlyph = "近", ValueText = "13" };
+            OmenFrame attackNear = new OmenFrame { Visible = true, Icon = OmenIcon.Attack, KindLabel = "攻撃", SideGlyph = "近", ValueText = "13" };
             var turnStart = new DepictionEvent
             {
                 Order = 1, Kind = DepictionEventKind.TurnStart, Title = "ターン開始",
@@ -97,12 +99,12 @@ namespace Depiction
             enemyAction.Cues.Add(new Cue { Kind = CueKind.Hit, Target = UnitSide.Player, Amount = 3, Intensity = 1, HpAfter = 47 });
             script.Events.Add(enemyAction);
 
-            // 7. Next omen: 防御.
+            // 7. Next omen: 防御 9, the same Guard as LiveTurn.EnemyGuardPower (#349).
             var nextOmen = new DepictionEvent
             {
                 Order = 7, Kind = DepictionEventKind.NextOmen, Title = "次の予兆",
                 After = Snapshot(47, 0, 5, RangeSide.Far, 38, new List<CardFace>(),
-                    new OmenFrame { Visible = true, KindLabel = "防御" }, stanceHint: ""),
+                    new OmenFrame { Visible = true, Icon = OmenIcon.Guard, KindLabel = "防御", ValueText = "9" }, stanceHint: ""),
             };
             nextOmen.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy });
             script.Events.Add(nextOmen);
