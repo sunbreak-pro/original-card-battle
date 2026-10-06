@@ -172,13 +172,13 @@ namespace BattleCore
 
         /// <summary>
         /// §4 (v4.4): a stance stands alone. A card that declares スタンス declares no other attribute
-        /// and does not move, and a card that carries a stance face declares スタンス. The ten cards
-        /// #257 rewrites are let through until then (<see cref="CardCatalog.StanceRedesignPending"/>).
+        /// and does not move, and a card that carries a stance face declares スタンス. All fourteen
+        /// stance cards of the catalog pass since #333 wrote the ten #257 rewrote as stance only.
         /// </summary>
         public static bool StanceStandsAlone(CardDef def)
         {
             if (def == null) throw new ArgumentNullException(nameof(def));
-            return AttributeRule.StanceStandsAlone(def.Attributes, def.Face) || CardCatalog.StanceRedesignPending.Contains(def.Id);
+            return AttributeRule.StanceStandsAlone(def.Attributes, def.Face);
         }
 
         /// <summary>

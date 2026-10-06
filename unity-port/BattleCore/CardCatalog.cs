@@ -4,9 +4,9 @@ using System.Collections.Generic;
 namespace BattleCore
 {
     /// <summary>
-    /// Card data, written as records from card_document/swordsman_cards_v4.md v4.3 (2026-09-23). The
-    /// numbers are the canon's and are not derived here: the 素直 +2 and the reach-width correction
-    /// of §1.4 are already inside them.
+    /// Card data, written as records from card_document/swordsman_cards_v4.md v4.5 (2026-10-06,
+    /// #352). The numbers are the canon's and are not derived here: the 素直 +2 and the band table
+    /// of §1.4 (the attack power by column and reach width) are already inside them.
     ///
     /// The core carries all eighty swordsman cards (#188): the initial forty (§2, #1-#40) live in
     /// CardCatalog.Initial.cs and the learned forty (§3, #41-#80) in CardCatalog.Learned.cs. This
@@ -62,20 +62,12 @@ namespace BattleCore
         // ---- v4.4 (#258): attributes are four, movement is an effect ----
         // The six cards of movement only (足運び 後ろ跳び 摺り足 間合い切り 跳び退り 駆け込み) declare
         // no face: BattleAttribute.None. AttributeRule.Fold counts them as 防御 when they carry a Guard
-        // (後ろ跳び 摺り足) and as スキル otherwise. Declaring nothing keeps 集中's column step where
-        // it was. The other cards that used to declare the move flag now just carry Face.Move / Face.Push.
-
-        /// <summary>
-        /// The ten stance cards that still carry a face besides the stance (浄化の一閃 深淵の構え
-        /// 狼の構え 鉄壁の構え 槍衾 錨の構え 根渡り 霞み足 根縛り 見切りの目). #257 rewrites them as stance
-        /// only, with new costs and strengths; until it lands they keep their v4.3 faces and are let
-        /// through <see cref="Cards.StanceStandsAlone"/>. Delete this list with that change.
-        /// </summary>
-        public static readonly IReadOnlyCollection<string> StanceRedesignPending = new HashSet<string>
-        {
-            "purge_flash", "abyss_stance", "wolf_stance", "iron_wall", "spear_wall",
-            "anchor_stance", "root_stride", "mist_step", "root_bind", "keen_eye",
-        };
+        // (後ろ跳び 摺り足, and 間合い切り since v4.5) and as スキル otherwise. Declaring nothing keeps
+        // 集中's column step where it was. The other cards that used to declare the move flag now
+        // just carry Face.Move / Face.Push.
+        //
+        // The fourteen stance cards are stance only (v4.4 #257, written here by #333): they declare
+        // BattleAttribute.Stance, carry nothing but the stance face and aim at nobody.
 
         // ---- Trait shorthands: the conditions of §1.2, one per helper ----
         // grant is only for the Status effect (「<語>を n 付与」 / 「<語> +n スタック」).

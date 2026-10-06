@@ -141,15 +141,16 @@ namespace Depiction.Bridge.Tests
 
         [TestCase(BattleAttribute.None, 0, 80)]
         [TestCase(BattleAttribute.Attack, 0, 36)]
-        [TestCase(BattleAttribute.Guard, 0, 16)]
-        [TestCase(BattleAttribute.Skill, 0, 14)]
+        [TestCase(BattleAttribute.Guard, 0, 19)]
+        [TestCase(BattleAttribute.Skill, 0, 11)]
         [TestCase(BattleAttribute.Stance, 0, 14)]
         [TestCase(BattleAttribute.None, 1, 25)]
-        [TestCase(BattleAttribute.None, 2, 30)]
-        [TestCase(BattleAttribute.None, 3, 25)]
+        [TestCase(BattleAttribute.None, 2, 31)]
+        [TestCase(BattleAttribute.None, 3, 24)]
         public void AFilter_KeepsTheCardsCountedAsTheAttribute_AndTheCost(BattleAttribute attribute, int cost, int kept)
         {
-            // #256 draft, folded by battle_core_v4 §2.1: 攻撃 36 / 防御 16 / スキル 14 / スタンス 14, costs 25 / 30 / 25.
+            // swordsman_cards_v4 v4.5 §4.1 / §4.4, folded by battle_core_v4 §2.1: 攻撃 36 / 防御 19 / スキル 11 /
+            // スタンス 14, costs 25 / 31 / 24.
             var filter = new DeckFilter { Attribute = attribute, Cost = cost };
             List<CardDef> cards = new DeckBuilder().Filter(filter);
             Assert.That(cards, Has.Count.EqualTo(kept));
@@ -185,7 +186,7 @@ namespace Depiction.Bridge.Tests
                 Assert.That(DeckBuilder.LineOf(CardCatalog.BoarRush), Is.EqualTo("猪突猛進　コスト 3　攻撃"));
                 Assert.That(lines, Is.EqualTo(new[]
                 {
-                    "袈裟斬り", "コスト 2　攻撃　届く間合い 0〜1", "敵に 13 ダメージ。", "特性: 間合い0 +5", "「肩口から斬り下ろす」",
+                    "袈裟斬り", "コスト 2　攻撃　届く間合い 0〜1", "敵に 15 ダメージ。", "特性: 間合い0 +5", "「肩口から斬り下ろす」",
                 }));
                 Assert.That(DeckBuilder.DetailOf(CardCatalog.Thrust)[3], Is.EqualTo("特性: なし（素直な札）"));
                 Assert.That(DeckBuilder.DetailOf(CardCatalog.Brace)[1], Is.EqualTo("コスト 2　防御　自分向き"));
@@ -220,7 +221,8 @@ namespace Depiction.Bridge.Tests
             Assert.That(DeckBuilder.Random(7).Save(), Is.EqualTo(DeckBuilder.Random(7).Save()), "the seed fixes it");
             Assert.That(DeckBuilder.Random(1, 5).Total, Is.EqualTo(20), "clamped to §8");
             Assert.That(DeckBuilder.Random(1, 99).Total, Is.EqualTo(40));
-            Assert.That(DeckBuilder.Closers.Select(c => c.Id), Is.EquivalentTo(new[] { "dash_in", "gale_thrust" }));
+            // v4.5 (#352): 猪突猛進 reaches 1〜3 and moves 前へ 2, so it closes from gap 3 too.
+            Assert.That(DeckBuilder.Closers.Select(c => c.Id), Is.EquivalentTo(new[] { "boar_rush", "dash_in", "gale_thrust" }));
         }
 
         // ---- the saved string ----

@@ -116,7 +116,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(kesa.Kind, Is.EqualTo(CardKind.Attack));
             Assert.That(kesa.Aim, Is.EqualTo(CardAim.Single));
             Assert.That(kesa.TypeLabel, Is.EqualTo("攻撃・敵単体"));
-            Assert.That(kesa.ValueText, Is.EqualTo("13"));
+            Assert.That(kesa.ValueText, Is.EqualTo("15"));
             Assert.That(kesa.TraitText, Is.EqualTo("間合い0 +5"));
             Assert.That(kesa.TraitLit, Is.True, "the player stands adjacent");
             Assert.That(kesa.RequiredRange, Is.Null);
@@ -131,12 +131,12 @@ namespace Depiction.Bridge.Tests
             Assert.That(brace.RequiredRangeGlyph, Is.EqualTo(""), "a self card reads no reach");
 
             CardFace bodyCheck = frame.Hand.First(c => c.Name == "体当たり");
-            Assert.That(bodyCheck.Description, Is.EqualTo("敵に 4 ダメージ。鈍足を 2 付与する。"), "§5: 「<語> を n 付与する」");
+            Assert.That(bodyCheck.Description, Is.EqualTo("敵に 5 ダメージ。鈍足を 2 付与する。"), "§5: 「<語> を n 付与する」");
             Assert.That(bodyCheck.TraitText, Is.EqualTo("間合い0 重撃"));
             Assert.That(bodyCheck.RequiredRangeGlyph, Is.EqualTo("0〜1"), "#179: v4.3 reaches 0〜1");
 
             CardFace feint = frame.Hand.First(c => c.Name == "牽制");
-            Assert.That(feint.Description, Is.EqualTo("敵に 8 ダメージ。後ろへ 1 動く。"));
+            Assert.That(feint.Description, Is.EqualTo("敵に 10 ダメージ。後ろへ 1 動く。"));
         }
 
         [Test]
@@ -171,7 +171,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(ev.CardId, Is.EqualTo(kesa));
             Assert.That(ev.Aim, Is.EqualTo(CardAim.Single));
             Assert.That(ev.Title, Is.EqualTo("袈裟斬り"));
-            Assert.That(ev.PreviewText, Is.EqualTo("18"));
+            Assert.That(ev.PreviewText, Is.EqualTo("20"));
             // §2.2: cost, then the trait, then the attack face.
             Assert.That(Kinds(ev), Is.EqualTo(new[] { CueKind.StaminaChange, CueKind.TraitFire, CueKind.Slash }));
 
@@ -185,11 +185,11 @@ namespace Depiction.Bridge.Tests
             Cue slash = ev.Cues[2];
             Assert.That(slash.Source, Is.EqualTo(UnitSide.Player), "the attacker is always named (#29)");
             Assert.That(slash.Target, Is.EqualTo(UnitSide.Enemy));
-            Assert.That(slash.Amount, Is.EqualTo(18));
+            Assert.That(slash.Amount, Is.EqualTo(20));
             Assert.That(slash.Intensity, Is.EqualTo(3));
-            Assert.That(slash.HpAfter, Is.EqualTo(42));
+            Assert.That(slash.HpAfter, Is.EqualTo(40));
 
-            Assert.That(ev.After.Enemy.Hp, Is.EqualTo(42));
+            Assert.That(ev.After.Enemy.Hp, Is.EqualTo(40));
             Assert.That(ev.After.Player.Stamina, Is.EqualTo(8));
             Assert.That(ev.After.Hand, Has.Count.EqualTo(4));
         }

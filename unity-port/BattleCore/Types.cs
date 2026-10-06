@@ -330,6 +330,16 @@ namespace BattleCore
         /// tops up a word the foe already has. No card uses it.
         /// </summary>
         StatusOnAttack,
+
+        /// <summary>
+        /// コストの割引 (鉄壁の構え, v4.4 #257): 「毎ターン 1 回、<属性> のカードのコスト −1」. Each entry
+        /// takes 1 off one card a turn that counts as <see cref="StanceDef.Attribute"/> (folded,
+        /// §2.1), floor 0, after the card's own コスト −1 trait; two entries discount two cards a turn
+        /// (§4), never the same card twice. An entry is spent only on a card it makes cheaper, and
+        /// it marks <see cref="StanceEntry.ReactedTurn"/>. See <see cref="TurnLoop.CostNow"/>.
+        /// The player's cards only: an enemy action pays its column (no enemy carries one).
+        /// </summary>
+        CostDiscount,
     }
 
     /// <summary>§4 `when`: the condition a stance effect waits for.</summary>
@@ -355,7 +365,8 @@ namespace BattleCore
 
     /// <summary>
     /// One entry of the holder's permanent effects (§4): the stance, the card or action that put it
-    /// there, and the turn an OncePerTurn stance last reacted in. Each entry works on its own.
+    /// there, and the turn an OncePerTurn stance last reacted in (or a CostDiscount stance last took
+    /// a cost down). Each entry works on its own.
     /// </summary>
     public sealed record StanceEntry(StanceDef Def, string Source, int ReactedTurn = 0);
 
@@ -365,7 +376,8 @@ namespace BattleCore
     /// ends. Nothing replaces a stance and there is no cap: the same stance twice is two entries and
     /// works twice (v4.4, #258). Status is the word 狼の構え watches, the word 槍衾 gives the
     /// attacker, or the word a StatusOnAttack stance gives the foe it hits; OncePerTurn limits an
-    /// OnHit stance to one reaction per turn (司祭の祈り).
+    /// OnHit stance to one reaction per turn (司祭の祈り). Attribute is the one a CostDiscount
+    /// stance discounts (鉄壁の構え: 防御), null for every other hook.
     /// </summary>
     public sealed record StanceDef(
         StanceHook Hook,
@@ -379,7 +391,8 @@ namespace BattleCore
         StatusKind? Status = null,
         int StatusStacks = 0,
         int Break = 0,
-        bool OncePerTurn = false);
+        bool OncePerTurn = false,
+        BattleAttribute? Attribute = null);
 
     /// <summary>
     /// §2.4 / §7.2: the gaps a face lands at, both ends inclusive. A card cannot be played at an

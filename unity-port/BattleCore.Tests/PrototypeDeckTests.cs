@@ -5,7 +5,7 @@ using BattleCore;
 namespace BattleCore.Tests
 {
     /// <summary>
-    /// The ten prototype cards (#71) against card_document/swordsman_cards_v4.md: every number is
+    /// The ten prototype cards (#71) against card_document/swordsman_cards_v4.md v4.5: every number is
     /// the canon's, the deck passes §8, and the selection covers what the slice needs to show.
     /// </summary>
     public class PrototypeDeckTests
@@ -14,13 +14,13 @@ namespace BattleCore.Tests
 
         //        id                name            column power guard
         [TestCase("thrust",         "突き",         3,     23,   0)]
-        [TestCase("kesa_cut",       "袈裟斬り",     2,     13,   0)]
-        [TestCase("reach_thrust",   "伸び突き",     2,     13,   0)]
-        [TestCase("body_check",     "体当たり",     1,     4,    0)]
+        [TestCase("kesa_cut",       "袈裟斬り",     2,     15,   0)]
+        [TestCase("reach_thrust",   "伸び突き",     2,     15,   0)]
+        [TestCase("body_check",     "体当たり",     1,     5,    0)]
         [TestCase("brace",          "呼吸を整える", 2,     0,    9)]
-        [TestCase("shield_bash",    "盾打ち",       2,     8,    6)]
-        [TestCase("feint",          "牽制",         2,     8,    0)]
-        [TestCase("boar_rush",      "猪突猛進",     3,     14,   0)]
+        [TestCase("shield_bash",    "盾打ち",       2,     10,   6)]
+        [TestCase("feint",          "牽制",         2,     10,   0)]
+        [TestCase("boar_rush",      "猪突猛進",     3,     11,   0)]
         [TestCase("step_in_guard",  "足捌き・前",   3,     0,    12)]
         [TestCase("step_out_guard", "足捌き・後",   3,     0,    12)]
         public void Numbers_MatchTheCanon(string id, string name, int column, int power, int guard)
@@ -108,14 +108,15 @@ namespace BattleCore.Tests
         [Test]
         public void Reaches_AreTheCanonOnes_AndNoneExceedsTheCommonBand()
         {
-            // §7.2: the common N is 0〜3; §2.4: the default reach is 0〜1.
+            // §7.2: the common N is 0〜3; §2.4: the default reach is 0〜1. v4.5 (#352) widened the
+            // thrust to 0〜2 and the boar rush to 1〜3.
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.Thrust.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
+                Assert.That(CardCatalog.Thrust.Face.ReachOrDefault, Is.EqualTo(new Reach(0, 2)));
                 Assert.That(CardCatalog.KesaCut.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
                 Assert.That(CardCatalog.Feint.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
                 Assert.That(CardCatalog.ReachThrust.Face.ReachOrDefault, Is.EqualTo(new Reach(1, 2)));
-                Assert.That(CardCatalog.BoarRush.Face.ReachOrDefault, Is.EqualTo(new Reach(1, 2)));
+                Assert.That(CardCatalog.BoarRush.Face.ReachOrDefault, Is.EqualTo(new Reach(1, 3)));
                 // #179: both reach 0〜1 in v4.3, so their 間合い 0 trait holds only when adjacent.
                 Assert.That(CardCatalog.BodyCheck.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
                 Assert.That(CardCatalog.ShieldBash.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
@@ -124,18 +125,22 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheNumbers_SitOnTheColumnRuler()
+        public void TheNumbers_SitOnTheBandTable_AndTheRulers()
         {
-            // §3.1: single-attribute faces read the ruler directly; 素直 adds 2; two-attribute faces
-            // read the dual ruler. A card that drifts off the ruler is a typo.
+            // swordsman_cards_v4 §1.4 (v4.5): an attack face reads the band table by column and reach
+            // width; 素直 adds 2. Guard faces read the §3.1 rulers, single or dual. The width-3 row of
+            // the band table is the §3.1 ruler itself. A card that drifts off them is a typo.
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.Thrust.Face.Power, Is.EqualTo(Columns.Value(Columns.SingleAttackPower, 3) + 2));
-                Assert.That(CardCatalog.KesaCut.Face.Power, Is.EqualTo(Columns.Value(Columns.SingleAttackPower, 2)));
+                Assert.That(CardCatalog.Thrust.Face.Power, Is.EqualTo(Columns.Value(Columns.SingleAttackPower, 3) + 2), "width 3 is the ruler");
+                Assert.That(CardCatalog.Thrust.Face.Power, Is.EqualTo(Bands.Single(3, 3) + 2));
+                Assert.That(CardCatalog.KesaCut.Face.Power, Is.EqualTo(Bands.Single(2, 2)));
+                Assert.That(CardCatalog.ReachThrust.Face.Power, Is.EqualTo(Bands.Single(2, 2)));
                 Assert.That(CardCatalog.Brace.Face.Guard, Is.EqualTo(Columns.Value(Columns.SingleGuard, 2)));
-                Assert.That(CardCatalog.BodyCheck.Face.Power, Is.EqualTo(Columns.Value(Columns.DualAttackPower, 1)));
-                Assert.That(CardCatalog.Feint.Face.Power, Is.EqualTo(Columns.Value(Columns.DualAttackPower, 2)));
-                Assert.That(CardCatalog.BoarRush.Face.Power, Is.EqualTo(Columns.Value(Columns.DualAttackPower, 3)));
+                Assert.That(CardCatalog.BodyCheck.Face.Power, Is.EqualTo(Bands.Dual(2, 1)));
+                Assert.That(CardCatalog.Feint.Face.Power, Is.EqualTo(Bands.Dual(2, 2)));
+                Assert.That(CardCatalog.BoarRush.Face.Power, Is.EqualTo(Bands.Dual(4, 3)));
+                Assert.That(CardCatalog.ShieldBash.Face.Power, Is.EqualTo(Bands.Dual(2, 2)));
                 Assert.That(CardCatalog.ShieldBash.Face.Guard, Is.EqualTo(Columns.Value(Columns.DualGuard, 2)));
                 Assert.That(CardCatalog.StepInGuard.Face.Guard, Is.EqualTo(Columns.Value(Columns.DualGuard, 3) + 2));
             });
@@ -259,9 +264,13 @@ namespace BattleCore.Tests
         [Test]
         public void BoarRush_ReadsTheGapFromBeforeTheMove()
         {
-            // §2.2: played at gap 2 it is 14 + 6, and only then does the player close in.
-            var outcome = Traits.Evaluate(CardCatalog.BoarRush.Trait, new TraitContext(Gap: 2));
-            Assert.That(Combat.ComputeRawPower(CardCatalog.BoarRush.Face.Power, outcome.PowerBonus), Is.EqualTo(20));
+            // §2.2: played at gap 2 or 3 it is 11 + 6, and only then does the player close in
+            // (swordsman_cards_v4 §5 の 10: 「間合い 3 から 17 を当てて間合い 1 まで詰められます」).
+            foreach (int gap in new[] { 2, 3 })
+            {
+                var outcome = Traits.Evaluate(CardCatalog.BoarRush.Trait, new TraitContext(Gap: gap));
+                Assert.That(Combat.ComputeRawPower(CardCatalog.BoarRush.Face.Power, outcome.PowerBonus), Is.EqualTo(17), "gap " + gap);
+            }
         }
 
         private static double Choose(int n, int k)

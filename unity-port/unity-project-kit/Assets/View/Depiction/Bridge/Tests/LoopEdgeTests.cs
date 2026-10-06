@@ -73,9 +73,10 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void AHandThatReachesNobody_NeverStopsTheBattle()
         {
-            // A deck of nothing but 投げ刃 (reach 1〜3) against 瘴牙の走竜, starting adjacent: its gap-0 branch bites and never steps away,
-            // so the whole hand reaches nobody every turn, and the battle must still run to its end.
-            var source = new CoreBattleSource(new BattleSetup(Enemies.ShadowHound, Copies(CardCatalog.ThrowBlade, 20), 6, StartGap: 0), 4, suggestCards: true);
+            // A deck of nothing but 伸び突き (reach 1〜2) against 瘴牙の走竜, starting adjacent: its gap-0 branch bites and never steps away,
+            // so the whole hand reaches nobody every turn, and the battle must still run to its end. (投げ刃 reaches 0〜3 since
+            // v4.5, #352, so it no longer serves.)
+            var source = new CoreBattleSource(new BattleSetup(Enemies.ShadowHound, Copies(CardCatalog.ReachThrust, 20), 6, StartGap: 0), 4, suggestCards: true);
             int turnsWithNothing = 0;
             int guard = 0;
             while (!source.Finished && guard++ < 3000)

@@ -291,13 +291,14 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// A random deck of <paramref name="size"/> cards (clamped to 20〜40), fixed by the seed. It
-        /// always passes §8: a kind that already holds three, or a fourth stance card (§19.6 S15), is
-        /// refused by Add and another is drawn.
+        /// always passes §8: a kind that already holds three is refused by Add and another is drawn.
+        /// Stance cards have no cap of their own (battle_core_v4 §4).
         ///
-        /// It also always holds one card that closes in from gap 3 even under 鈍足 (駆け込み or
-        /// 疾風突き) and at least <see cref="RandomForwardMin"/> cards that step forward. Without them
-        /// a random deck can be locked out by 大黒蛇 セルク, which never moves and binds the feet
-        /// every phase (#196), and the demo would hand the player a battle that cannot end.
+        /// It also always holds one card that closes in from gap 3 even under 鈍足 (駆け込み, 疾風突き,
+        /// or 猪突猛進 since it reaches 3 in v4.5) and at least <see cref="RandomForwardMin"/> cards
+        /// that step forward. Without them a random deck can be locked out by 大黒蛇 セルク, which never
+        /// moves and binds the feet every phase (#196), and the demo would hand the player a battle
+        /// that cannot end.
         /// </summary>
         public static DeckBuilder Random(int seed, int size = RandomDefaultSize)
         {

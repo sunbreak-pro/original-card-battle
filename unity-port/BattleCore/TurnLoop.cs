@@ -77,7 +77,7 @@ namespace BattleCore
     /// The settled numbers a held card would produce. See <see cref="TurnLoop.Preview"/>. InReach is
     /// false when the card aims at the opponent and N is outside its reach — the one reason a card
     /// with payable cost still cannot be released (§2.4). Cost is what playing it would take now,
-    /// after a コスト −1 trait (#188).
+    /// after a コスト −1 trait (#188) and a コストの割引 stance (§4), as <see cref="TurnLoop.CostNow"/>.
     ///
     /// RawPower and Damage are the whole card on the enemy it reads (#248): every blow of a face
     /// with hits, plus the wall damage of a push it could not take (§7.3). RawPower is before that
@@ -221,7 +221,7 @@ namespace BattleCore
         /// <summary>
         /// Whether the card can be released now. <paramref name="target"/> is the enemy a card that
         /// aims at one enemy is dropped on (§7.4); a card aimed at all, or at nobody, ignores it.
-        /// The cost is the one a コスト −1 trait leaves (#188).
+        /// The cost is the one a コスト −1 trait (#188) and a コストの割引 stance (§4) leave: <see cref="CostNow"/>.
         /// </summary>
         public static PlayRefusal CanPlay(BattleState state, string instanceId, int target = 0)
         {
@@ -244,17 +244,50 @@ namespace BattleCore
 
         /// <summary>
         /// What the card in the hand would cost if played now: its column's cost, less a コスト −1
-        /// trait that holds on the current board (floor 0). The screen prints this, so it never has
-        /// to judge the trait itself.
+        /// trait that holds on the current board (floor 0), less 1 more when a コストの割引 stance
+        /// (§4, <see cref="StanceHook.CostDiscount"/>) has a turn's discount left for the attribute
+        /// the card counts as. The screen prints this, so it never has to judge the trait or the
+        /// stance itself.
         /// </summary>
         public static int CostNow(BattleState state, CardDef def, int target = 0)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (def == null) throw new ArgumentNullException(nameof(def));
             int read = ReadableUnit(state, def, target);
+            // No enemy stands (the battle is over): the column's cost, as Preview's null leaves it on screen.
             if (read < 0) return def.Cost;
             var outcome = Traits.EvaluateAll(def.AllTraits, PlayerContext(state, def, read));
-            return Math.Max(0, def.Cost - outcome.CostDown);
+            return Discounted(state, def, Math.Max(0, def.Cost - outcome.CostDown));
+        }
+
+        /// <summary>
+        /// §4 コストの割引: <paramref name="cost"/> (the column's, after the card's own コスト −1)
+        /// less 1 when a <see cref="StanceHook.CostDiscount"/> entry would be spent on this card.
+        /// </summary>
+        private static int Discounted(BattleState state, CardDef def, int cost) =>
+            CostDiscountEntry(state, def, cost) >= 0 ? cost - 1 : cost;
+
+        /// <summary>
+        /// §4 コストの割引 (鉄壁の構え): the index on the player's list of the entry a play of
+        /// <paramref name="def"/> would spend, or −1. That is the oldest CostDiscount entry for the
+        /// attribute the card counts as (folded, §2.1) that has not taken a cost down this turn
+        /// (<see cref="StanceEntry.ReactedTurn"/>). One entry a card, so two entries make two cards
+        /// a turn cheaper (§4: 「毎ターン 1 回、コスト −1」が 2 つなら 1 ターンに 2 回). None when
+        /// <paramref name="cost"/> is already 0: an entry is not spent on a card it cannot make
+        /// cheaper. 温存 reads the stamina left after this discount (<see cref="PlayerContext"/>).
+        /// </summary>
+        private static int CostDiscountEntry(BattleState state, CardDef def, int cost)
+        {
+            if (cost <= 0) return -1;
+            var stances = state.Player.StanceList;
+            for (int i = 0; i < stances.Count; i++)
+            {
+                var entry = stances[i];
+                if (entry.Def.Hook != StanceHook.CostDiscount || entry.Def.Attribute != def.Attribute) continue;
+                if (entry.ReactedTurn == state.Turn) continue;
+                return i;
+            }
+            return -1;
         }
 
         /// <summary>
@@ -321,7 +354,7 @@ namespace BattleCore
             int guardGain = Math.Max(0, guardBase - (guardBase > 0 ? intimidate : 0));
             return new PlayPreview(
                 outcome.Triggered, attacks, raw, damage, guardGain, inReach,
-                Math.Max(0, def.Cost - outcome.CostDown));
+                Discounted(state, def, Math.Max(0, def.Cost - outcome.CostDown)));
         }
 
         /// <summary>
@@ -533,15 +566,29 @@ namespace BattleCore
             // hand it leaves behind).
             var context = PlayerContext(state, def, read);
 
+            // §4 コストの割引: the entry this card spends, judged on the same board as CostNow.
+            int discount = CostDiscountEntry(state, def, Math.Max(0, def.Cost - Traits.EvaluateAll(def.AllTraits, context).CostDown));
+
             // §5 俊敏 (#48): the free cell is taken before the first card or not at all.
             var hand = new List<CardInstance>(state.Hand);
             hand.Remove(card);
             state = state with { Hand = hand, Player = state.Player with { FreeStep = false } };
             events.Add(new CardPlayed(Actor.Player, card, state.GapTo(read)) { Unit = read });
 
+            if (discount >= 0)
+            {
+                var stances = new List<StanceEntry>(state.Player.StanceList);
+                var entry = stances[discount];
+                stances[discount] = entry with { ReactedTurn = state.Turn };
+                state = state with { Player = state.Player with { Stances = stances } };
+                events.Add(new StanceFired(Actor.Player, entry.Source, StanceHook.CostDiscount));
+            }
+
+            // The discount comes off before Resolve pays: the cost it was saving was at least 1
+            // after the trait, so Resolve's own floor never swallows it.
             state = Resolve(
                 state, Actor.Player, read, foes, def.Id, def.Name, def.Attributes, def.Column, def.Face,
-                def.AllTraits, def.Targets, def.Cost, context, rng, events);
+                def.AllTraits, def.Targets, discount >= 0 ? def.Cost - 1 : def.Cost, context, rng, events);
 
             // §2.3 playedAttributes: what this card was, for the cards after it this turn.
             state = RecordPlayed(state, Actor.Player, 0, def.Attribute);
@@ -1669,15 +1716,21 @@ namespace BattleCore
 
         // ---- What a card or action reads (§2.3) ----
 
-        /// <summary>The board a player's card reads, judged against enemy <paramref name="read"/>. The card is still in the hand.</summary>
+        /// <summary>
+        /// The board a player's card reads, judged against enemy <paramref name="read"/>. The card is
+        /// still in the hand. 温存 reads the stamina left once the cost is paid (§2.3), so a コストの割引
+        /// entry (§4) the card would spend comes off what it pays. The card's own コスト −1 trait does
+        /// not: it is judged on this context, and no card holds both it and 温存.
+        /// </summary>
         private static TraitContext PlayerContext(BattleState state, CardDef def, int read)
         {
             var foe = state.Enemies[read];
             var self = state.Player;
+            int paid = CostDiscountEntry(state, def, def.Cost) >= 0 ? def.Cost - 1 : def.Cost;
             return new TraitContext(
                 Gap: state.GapTo(read),
                 OpponentGuard: foe.Body.Guard,
-                StaminaAfterUse: self.Stamina - def.Cost,
+                StaminaAfterUse: self.Stamina - paid,
                 StaminaBefore: self.Stamina,
                 OpponentStamina: foe.Body.Stamina,
                 Played: self.PlayedThisTurn,

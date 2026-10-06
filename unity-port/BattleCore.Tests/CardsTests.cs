@@ -229,25 +229,32 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheFourteenStanceCards_CountAsStance_AndTheTenPlaceholdersAreLetThrough()
+        public void TheFourteenStanceCards_CountAsStance_AndEachStandsAlone()
         {
-            // 鉄壁の構え is 防御 + スタンス in the v4.3 table: it still counts as a stance (a stance
-            // wins the fold), and until #257 rewrites the ten it is let through the standing-alone check.
-            var mixed = CardCatalog.All.Where(c => Cards.IsStanceCard(c) && !AttributeRule.StanceStandsAlone(c.Attributes, c.Face)).ToList();
+            // v4.4 (#257, written by #333): the ten that carried another face are stance only now, so
+            // every stance card passes the standing-alone check on its own and aims at nobody.
+            var stances = CardCatalog.All.Where(Cards.IsStanceCard).ToList();
+            var rewritten = new[]
+            {
+                "purge_flash", "abyss_stance", "wolf_stance", "iron_wall", "spear_wall",
+                "anchor_stance", "root_stride", "mist_step", "root_bind", "keen_eye",
+            };
 
             Assert.Multiple(() =>
             {
                 Assert.That(Cards.IsStanceCard(CardCatalog.IronWall), Is.True);
                 Assert.That(Cards.IsStanceCard(CardCatalog.Thrust), Is.False);
-                Assert.That(CardCatalog.All.Count(Cards.IsStanceCard), Is.EqualTo(14));
-                Assert.That(mixed.Select(c => c.Id), Is.EquivalentTo(CardCatalog.StanceRedesignPending),
-                    "exactly the ten cards #257 rewrites, so nothing else slips past the check");
-                Assert.That(mixed.All(Cards.StanceStandsAlone), Is.True);
+                Assert.That(stances.Count, Is.EqualTo(14));
+                Assert.That(rewritten.All(id => stances.Any(c => c.Id == id)), Is.True, "the ten #257 rewrote are among them");
+                Assert.That(stances.Where(c => !AttributeRule.StanceStandsAlone(c.Attributes, c.Face)).Select(c => c.Id), Is.Empty);
+                Assert.That(stances.Where(c => c.Attributes != BattleAttribute.Stance).Select(c => c.Id), Is.Empty, "a stance declares nothing else");
+                Assert.That(stances.Where(c => c.Targets != TargetKind.Self).Select(c => c.Id), Is.Empty, "a stance aims at nobody");
+                Assert.That(stances.All(Cards.StanceStandsAlone), Is.True);
             });
         }
 
         [Test]
-        public void AStanceThatAlsoAttacksOrMoves_IsRefused_UnlessItIsOneOfThePlaceholders()
+        public void AStanceThatAlsoAttacksOrMoves_IsRefused()
         {
             var attacks = Fixtures.Card("attacking_stance", attributes: BattleAttribute.Attack | BattleAttribute.Stance,
                 face: new Face(Power: 8, Stance: new StanceDef(StanceHook.TurnStart, Guard: 1)));
@@ -289,17 +296,18 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheEightyCards_FoldToThirtySixSixteenFourteenFourteen()
+        public void TheEightyCards_FoldToThirtySixNineteenElevenFourteen()
         {
-            // #256's draft, worked out by the rule and not by hand: 攻撃 36 / 防御 16 / スキル 14 / スタンス 14.
+            // swordsman_cards_v4 §4.1 (v4.5), worked out by the rule and not by hand: 攻撃 36 / 防御 19 /
+            // スキル 11 / スタンス 14. 観察・間合い切り・覚悟 moved from スキル to 防御 (#352).
             var counts = CardCatalog.All.GroupBy(c => c.Attribute).ToDictionary(g => g.Key, g => g.Count());
 
             Assert.Multiple(() =>
             {
                 Assert.That(CardCatalog.All.Count, Is.EqualTo(80));
                 Assert.That(counts[BattleAttribute.Attack], Is.EqualTo(36));
-                Assert.That(counts[BattleAttribute.Guard], Is.EqualTo(16));
-                Assert.That(counts[BattleAttribute.Skill], Is.EqualTo(14));
+                Assert.That(counts[BattleAttribute.Guard], Is.EqualTo(19));
+                Assert.That(counts[BattleAttribute.Skill], Is.EqualTo(11));
                 Assert.That(counts[BattleAttribute.Stance], Is.EqualTo(14));
                 Assert.That(counts.ContainsKey(BattleAttribute.None), Is.False, "no card folds to nothing");
             });

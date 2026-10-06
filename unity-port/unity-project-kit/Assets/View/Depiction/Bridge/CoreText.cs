@@ -219,6 +219,9 @@ namespace Depiction.Bridge
                 case StanceHook.StatusOnAttack:
                     // #253: once a blow, so a face of two blows gives it twice.
                     return "アタックのたび敵に" + (stance.Status.HasValue ? stance.Status.Value.ToLabel() : "") + " " + stance.StatusStacks;
+                case StanceHook.CostDiscount:
+                    // §4 コストの割引 (鉄壁の構え, #333), in the attribute words the deck screen uses.
+                    return "毎ターン 1 回、" + (stance.Attribute.HasValue ? DeckBuilder.AttributeWords(stance.Attribute.Value) : "") + "のカードのコスト −1";
                 default: return "";
             }
         }
