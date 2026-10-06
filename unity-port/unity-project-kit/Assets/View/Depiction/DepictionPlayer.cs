@@ -444,9 +444,10 @@ namespace Depiction.View
                 case CueKind.Defeat:
                 {
                     // #288: the fallen enemy's omen goes with it (the frame after the beat keeps it hidden).
+                    // #349: and so does an elite's plan, which a plain FadeOut leaves up.
                     if (cue.Target == UnitSide.Enemy && omenBadge)
                     {
-                        StartCoroutine(Effect(EffectId.OmenSpend, omenBadge.FadeOut(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideNow));
+                        StartCoroutine(Effect(EffectId.OmenSpend, omenBadge.FadeOutAll(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideAllNow));
                     }
                     yield return Effect(EffectId.Defeat, target.Fall(_effects.Ms(EffectId.Defeat)), () => target.SetDown(true));
                     break;

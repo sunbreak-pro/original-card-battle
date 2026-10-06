@@ -532,10 +532,11 @@ namespace Depiction
             return _omenAttacks
                 ? new OmenFrame
                 {
-                    Visible = true, KindLabel = "攻撃",
+                    Visible = true, Icon = OmenIcon.Attack, KindLabel = "攻撃",
                     SideGlyph = DemoDeck.Glyph(OmenSide), ValueText = EnemyAttackPower.ToString(),
                 }
-                : new OmenFrame { Visible = true, KindLabel = "防御" };
+                // #349: the guard omen shows the Guard the enemy action adds (BuildEnemyAction).
+                : new OmenFrame { Visible = true, Icon = OmenIcon.Guard, KindLabel = "防御", ValueText = EnemyGuardPower.ToString() };
         }
 
         private List<CardFace> Faces()

@@ -203,6 +203,22 @@ namespace Depiction.Tests
             Assert.That(turn.GuideText, Does.Contain("ターン終了"));
         }
 
+        [Test]
+        public void TheOmenCarriesItsIcon_AndANumberForAttackAndGuard()
+        {
+            LiveTurn turn = Opened();
+            Assert.That(turn.Frame.Omen.Icon, Is.EqualTo(OmenIcon.Attack));
+            Assert.That(turn.Frame.Omen.ValueText, Is.EqualTo(LiveTurn.EnemyAttackPower.ToString()));
+
+            turn.EndTurn();
+            turn.AdvanceAuto(); // enemy
+            turn.AdvanceAuto(); // next omen
+
+            Assert.That(turn.Frame.Omen.Icon, Is.EqualTo(OmenIcon.Guard));
+            Assert.That(turn.Frame.Omen.KindLabel, Is.EqualTo("防御"));
+            Assert.That(turn.Frame.Omen.ValueText, Is.EqualTo(LiveTurn.EnemyGuardPower.ToString()));
+        }
+
         // ---- helpers -----------------------------------------------------------------------
 
         /// <summary>A turn opened on its first player phase.</summary>

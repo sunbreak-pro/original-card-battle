@@ -79,6 +79,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(ev.After.Hand.Select(c => c.Id), Is.EqualTo(begin.State.Hand.Select(c => c.InstanceId)));
             Assert.That(ev.After.Omen.Visible, Is.True);
             Assert.That(ev.After.Omen.KindLabel, Is.EqualTo("攻撃"));
+            Assert.That(ev.After.Omen.Icon, Is.EqualTo(OmenIcon.Attack));
             Assert.That(ev.After.Omen.SideGlyph, Is.EqualTo("0"), "the shove's reach, where the side glyph was (#163)");
             // #248: the shove as it would land if the turn ended now — 構え's Guard 3 takes 無防備's +3
             // away, so 5, then the two-cell push finds one cell left and puts 3 of wall on top: 8.
@@ -325,6 +326,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(next.Cues[0].GuardAfter, Is.EqualTo(3));
             Assert.That(next.After.Enemy.Guard, Is.EqualTo(3));
             Assert.That(next.After.Omen.KindLabel + "・" + next.After.Omen.SideGlyph, Is.EqualTo("攻撃・1〜2"));
+            Assert.That(next.After.Omen.Icon, Is.EqualTo(OmenIcon.Attack));
             Assert.That(next.After.Omen.ValueText, Is.EqualTo("8"));
         }
 
@@ -458,6 +460,27 @@ namespace Depiction.Bridge.Tests
             Assert.That(enemy.Cues.Single(c => c.Kind == CueKind.Hit).HpAfter, Is.EqualTo(41));
             Assert.That(enemy.After.Player.Hp, Is.EqualTo(41));
             Assert.That(enemy.After.Player.Guard, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AGuardOmen_IsWrittenWithTheShieldAndTheFaceGuard()
+        {
+            BattleState state = TurnLoop.Start(BattleSetup.Slice(), NoShuffle).State;
+            var writer = new CoreScriptWriter(state.EnemyDef);
+            writer.Opening(state);
+            EnemyActionDef guardUp = Enemies.PolearmWarped.Actions["guard_up"];
+
+            var stream = new List<BattleEvent>
+            {
+                new TurnStarted(Actor.Player, 2),
+                new OmenSet(Actor.Enemy, new Omen(guardUp.Id, EnemyAi.LabelOf(guardUp)), false),
+            };
+            OmenFrame omen = writer.Write(stream, state).Single().After.Omen;
+
+            // Not the omen the state stands on, so no core preview is taken: the face's Guard is shown.
+            Assert.That(omen.Icon, Is.EqualTo(OmenIcon.Guard));
+            Assert.That(omen.KindLabel, Is.EqualTo("防御"));
+            Assert.That(omen.ValueText, Is.EqualTo("3"));
         }
 
         [Test]
