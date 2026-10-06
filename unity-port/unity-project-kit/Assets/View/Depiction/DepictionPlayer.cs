@@ -69,9 +69,10 @@ namespace Depiction.View
         public bool logEffectTrace;
 
         [Header("Speed (#348)")]
-        [Tooltip("Starts at the speed saved by the last click (PlayerPrefs). Off: starts at 1.25x, the speed the 2.0 s cap is measured at (PlayMode tests switch it off).")]
+        [Tooltip("Starts at the speed saved by the last click (PlayerPrefs). Off: starts at 1.25x, the speed the 2.0 s cap is measured at (PlayMode tests switch it off). "
+                 + "Filming (scriptedPlayback, or a debugCaptureDir) always starts at 1.25x.")]
         public bool useSavedSpeed = true;
-        [Tooltip("Shows the provisional speed switch in the top-right corner. Off for filming.")]
+        [Tooltip("Shows the provisional speed switch in the top-right corner while a battle runs. Never shown when filming (scriptedPlayback, or a debugCaptureDir).")]
         public bool showSpeedButton = true;
 
         [Header("Mode")]
@@ -178,6 +179,7 @@ namespace Depiction.View
             // battle speed carries over from the last battle.
             DebugGate = "";
             ApplyTweenSpeed();
+            ShowSpeedButton(true);
             _busy = false;
             _dragging = null;
             _hovered = null;
@@ -223,6 +225,7 @@ namespace Depiction.View
             }
             _halted = true;
             ApplyTweenSpeed(); // BattleSpeed.HaltedTweenSpeed, whatever speed was picked
+            ShowSpeedButton(false);
             if (_dragging != null) LetGo();
             SetHandInteractable(false);
         }
@@ -276,6 +279,12 @@ namespace Depiction.View
             _speedButton.Show(BattleSpeed.Label(_speed));
         }
 
+        /// <summary>Puts the speed switch up while a battle runs and takes it down when it ends or is given up.</summary>
+        private void ShowSpeedButton(bool on)
+        {
+            if (_speedButton != null) _speedButton.Visible = on;
+        }
+
         private void Start()
         {
             // Keep playing while the Editor is unfocused (captures and remote-driven checks rely on it).
@@ -283,13 +292,16 @@ namespace Depiction.View
             EnsureEventSystem();
             _effects = EffectSwitches.WithOff(effectsOff, out List<string> unknownEffects);
             foreach (string name in unknownEffects) Debug.LogWarning("[Depiction] effectsOff: no effect is called \"" + name + "\"");
-            _speed = useSavedSpeed
+            // Filming (the fixed script, or frames captured at the debug gates) plays at the default
+            // speed with no switch on screen, so the shots look as they did before #348.
+            bool filming = scriptedPlayback || !string.IsNullOrEmpty(debugCaptureDir);
+            _speed = useSavedSpeed && !filming
                 ? BattleSpeed.Load(PlayerPrefs.HasKey(SavedSpeedKey), PlayerPrefs.GetString(SavedSpeedKey, ""))
                 : BattleSpeed.Default;
             Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
             DebugGate = "";
             ApplyTweenSpeed(); // also clears a 0 a debug gate left behind when domain reload is off
-            if (showSpeedButton) BuildSpeedButton(); // before the demo flow's early return, so its battles get it too
+            if (showSpeedButton && !filming) BuildSpeedButton(); // before the demo flow's early return, so its battles get it too
             if (backdrop && backdrop.sprite == null)
             {
                 BattleTheme.FloorPalette palette = BattleTheme.Floor(1);
@@ -300,7 +312,11 @@ namespace Depiction.View
 
             if (enemyFigure) _enemyHome = enemyFigure.Rect.anchoredPosition;
             _started = true;
-            if (_givenSource == null && _hold) return; // the demo flow starts the battle (Restart)
+            if (_givenSource == null && _hold)
+            {
+                ShowSpeedButton(false); // no battle yet: Restart puts the switch up with it
+                return; // the demo flow starts the battle (Restart)
+            }
 
             if (_givenSource != null) _source = _givenSource;
             else if (scriptedPlayback) _source = new DepictionRunner(TurnSliceScript.Build());
@@ -385,6 +401,7 @@ namespace Depiction.View
                 {
                     StartCoroutine(Effect(EffectId.ResultCard, ShowResult(outcome, _effects.Ms(EffectId.ResultCard)), () => ShowResultNow(outcome)));
                 }
+                ShowSpeedButton(false); // like the demo's 「降参する」, the switch is for the battle only
                 BattleFinished?.Invoke();
                 yield break;
             }

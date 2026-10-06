@@ -25,6 +25,13 @@ namespace Depiction.PlayModeTests
     {
         private const string ScenePath = "Assets/Scenes/Battle.unity";
         private const string SavedDeckKey = "Depiction.Demo.Deck";
+        private const string SavedSpeedKey = "Depiction.BattleSpeed";
+        // The battle speed's steps in the switch's order (#348): BattleSpeedStep's names, UiTween.Speed,
+        // the label and the saved form. Script/ is not referenced here, so they are written out.
+        private static readonly string[] SpeedSteps = { "Slow", "Normal", "Fast" };
+        private static readonly float[] SpeedTweens = { 0.8f, 1f, 1.2f };
+        private static readonly string[] SpeedLabels = { "速さ 1.0 倍", "速さ 1.25 倍", "速さ 1.5 倍" };
+        private static readonly string[] SpeedSaved = { "1.0", "1.25", "1.5" };
         private const float BattleTimeoutSeconds = 300f;
         private static readonly string ShotFolder = Path.GetFullPath(Path.Combine(Application.dataPath, "../Logs/DemoShots"));
 
@@ -35,6 +42,8 @@ namespace Depiction.PlayModeTests
 
             bool hadDeck = PlayerPrefs.HasKey(SavedDeckKey);
             string savedDeck = PlayerPrefs.GetString(SavedDeckKey, "");
+            bool hadSpeed = PlayerPrefs.HasKey(SavedSpeedKey);
+            string savedSpeed = PlayerPrefs.GetString(SavedSpeedKey, "");
             Directory.CreateDirectory(ShotFolder);
             try
             {
@@ -71,6 +80,21 @@ namespace Depiction.PlayModeTests
                 yield return Shot("03-battle");
                 Assert.That(Active("Surrender"), Is.Not.Null, "no 降参 button during the battle");
                 Assert.That(Active("BattleSpeed"), Is.Not.Null, "no speed switch during the battle (#348)");
+                // #348: one press moves the speed on, and UiTween, the label and PlayerPrefs follow at
+                // once; two more bring it back to where it started.
+                int before = Array.IndexOf(SpeedSteps, Get(player, "Speed").ToString());
+                Assert.That(before, Is.GreaterThanOrEqualTo(0), "an unknown battle speed " + Get(player, "Speed"));
+                Assert.That(TweenSpeed(player), Is.EqualTo(SpeedTweens[before]).Within(1e-4f), "UiTween.Speed is not the battle speed in force");
+                Press("BattleSpeed");
+                int after = (before + 1) % SpeedSteps.Length;
+                Assert.That(Get(player, "Speed").ToString(), Is.EqualTo(SpeedSteps[after]), "the switch did not move the speed on");
+                Assert.That(TweenSpeed(player), Is.EqualTo(SpeedTweens[after]).Within(1e-4f), "the switch did not reach UiTween.Speed");
+                Assert.That(SpeedLabel(), Is.EqualTo(SpeedLabels[after]), "the switch's label did not follow");
+                Assert.That(PlayerPrefs.GetString(SavedSpeedKey), Is.EqualTo(SpeedSaved[after]), "the picked speed was not saved");
+                Press("BattleSpeed");
+                Press("BattleSpeed");
+                Assert.That(Get(player, "Speed").ToString(), Is.EqualTo(SpeedSteps[before]), "three presses did not come back round");
+                Assert.That(TweenSpeed(player), Is.EqualTo(SpeedTweens[before]).Within(1e-4f), "UiTween.Speed did not come back round");
                 Set(player, "autoPlayDrags", true);
                 Set(player, "autoEndTurn", true);
                 MethodInfo autoDrag = player.GetType().GetMethod("AutoDrag", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -80,6 +104,7 @@ namespace Depiction.PlayModeTests
                 yield return WaitFor(() => Active("Again") != null, BattleTimeoutSeconds, "the first battle did not reach its end screen");
                 yield return Shot("04-end");
                 Assert.That(Active("Surrender"), Is.Null, "the 降参 button stayed up on the end screen");
+                Assert.That(Active("BattleSpeed"), Is.Null, "the speed switch stayed up on the end screen (#348)");
 
                 // #211: a single battle's end screen goes back to the enemies with the same deck.
                 Press("ChooseEnemy");
@@ -93,6 +118,7 @@ namespace Depiction.PlayModeTests
                 yield return null;
                 Assert.That(Active("Chain"), Is.Null, "the mode screen stayed up over the battle");
                 Assert.That(Active("Surrender"), Is.Not.Null, "no 降参 button in the battle after 敵を選び直す");
+                Assert.That(Active("BattleSpeed"), Is.Not.Null, "no speed switch in the battle after 敵を選び直す (#348)");
                 Press("Surrender");
                 yield return null; // Show cleared the last end screen's buttons, which live until the frame ends
                 Assert.That(Active("ChooseEnemy"), Is.Not.Null, "a single battle given up does not offer the enemies again");
@@ -130,6 +156,8 @@ namespace Depiction.PlayModeTests
             {
                 if (hadDeck) PlayerPrefs.SetString(SavedDeckKey, savedDeck);
                 else PlayerPrefs.DeleteKey(SavedDeckKey);
+                if (hadSpeed) PlayerPrefs.SetString(SavedSpeedKey, savedSpeed);
+                else PlayerPrefs.DeleteKey(SavedSpeedKey);
                 PlayerPrefs.Save();
             }
         }
@@ -202,6 +230,27 @@ namespace Depiction.PlayModeTests
                 if (text != null) return (string)text.GetType().GetProperty("text").GetValue(text);
             }
             return "";
+        }
+
+        /// <summary>UiTween.Speed, the factor every tween and wait runs at (UiTween lives in Assembly-CSharp, like the player).</summary>
+        private static float TweenSpeed(MonoBehaviour player)
+        {
+            Type uiTween = player.GetType().Assembly.GetType("UiTween");
+            Assert.That(uiTween, Is.Not.Null, "no UiTween next to " + player.GetType().Name);
+            FieldInfo speed = uiTween.GetField("Speed", BindingFlags.Static | BindingFlags.Public);
+            Assert.That(speed, Is.Not.Null, "UiTween has no public static Speed");
+            return (float)speed.GetValue(null);
+        }
+
+        /// <summary>The words on the speed switch (#348), read by name like the buttons.</summary>
+        private static string SpeedLabel()
+        {
+            GameObject button = Active("BattleSpeed");
+            Assert.That(button, Is.Not.Null, "no active speed switch");
+            Transform line = button.transform.Find("Label");
+            Component text = line != null ? line.GetComponent("Text") : null;
+            Assert.That(text, Is.Not.Null, "the speed switch has no Label text");
+            return (string)text.GetType().GetProperty("text").GetValue(text);
         }
 
         /// <summary>The deck screen's line about the saved deck (#211), read by name like the buttons; null when the screen is not up.</summary>
