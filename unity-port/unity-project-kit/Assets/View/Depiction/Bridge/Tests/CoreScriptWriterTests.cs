@@ -89,6 +89,22 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void TurnStart_OnTheSlice_DealsAFullHandOfSix_AsOneBeat()
+        {
+            // battle_core_v4 §8 (#351): six cards a turn. The slice's 20-card deck has enough for a full hand.
+            var rng = new SeededRng(1);
+            BattleState state = TurnLoop.Start(BattleSetup.Slice(), rng).State;
+            var writer = new CoreScriptWriter(state.EnemyDef);
+            writer.Opening(state);
+            StepResult begin = TurnLoop.BeginPlayerTurn(state, rng);
+
+            DepictionEvent ev = writer.Write(begin.Events, begin.State).Single();
+
+            Assert.That(ev.Cues.Single(c => c.Kind == CueKind.DrawHand).Amount, Is.EqualTo(6));
+            Assert.That(ev.After.Hand.Count, Is.EqualTo(Constants.HandDraw));
+        }
+
+        [Test]
         public void TheHandFaces_CarryTheCanonText_AndTheCoreDecidesTheLamp()
         {
             var (state, writer) = Begin(0, FiveCards);

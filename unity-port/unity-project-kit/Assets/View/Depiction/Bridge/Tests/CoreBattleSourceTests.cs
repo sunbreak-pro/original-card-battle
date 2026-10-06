@@ -187,7 +187,7 @@ namespace Depiction.Bridge.Tests
 
             Assert.That(start.Kind, Is.EqualTo(DepictionEventKind.TurnStart));
             Assert.That(source.Frame, Is.SameAs(start.After));
-            Assert.That(source.Frame.Hand, Has.Count.EqualTo(5));
+            Assert.That(source.Frame.Hand, Has.Count.EqualTo(6));
             Assert.That(source.WaitingForPlayer, Is.True);
             Assert.That(source.CanEndTurn, Is.True);
             Assert.That(() => source.AdvanceAuto(), Throws.InvalidOperationException, "the turn waits for the player");

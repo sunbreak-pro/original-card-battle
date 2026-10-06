@@ -33,7 +33,7 @@ namespace BattleCore
     /// <summary>§5: a ターンで減る型 word lost one stack at its holder's turn start.</summary>
     public sealed record StatusTicked(Actor Actor, StatusKind Kind, int StacksAfter) : BattleEvent(Actor);
 
-    /// <summary>§9 step 4: one card, so a hand of five is five events.</summary>
+    /// <summary>§9 step 4: one card, so a hand of six is six events.</summary>
     public sealed record Drawn(Actor Actor, CardInstance Card, int HandCountAfter) : BattleEvent(Actor);
 
     /// <summary>§8: the draw pile ran out and the discard pile was shuffled back in.</summary>
