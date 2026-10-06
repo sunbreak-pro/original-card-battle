@@ -1,6 +1,6 @@
 # 素材の取り込み規約 — 置き場・命名・Unity の設定・台帳
 
-> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決め、#128 を待つ記述を外しました（#327）。
+> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。
 > **役割**: 作った絵を Unity に入れるまでの規約を決めます。**立ち絵（キャラクター）だけを対象にします。** 背景・カードの絵・UI の部材は不透明度も圧縮形式も違うので、別の節が要ります（→ §9）。
 > **正本**: `.claude/docs/vision/world-v1.md`（世界の正典 v4）／ `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md`（道具と前提）
 > **読む用**: `docs/reports/2026-09-21-asset-intake-rules.html`
@@ -133,7 +133,7 @@ asset id : chr.<subject>.<category>.<label>
 
 `<subject>` は英字の小文字とアンダースコアだけにします。Preset Manager のフィルタがパスで絞るので、フォルダ名にも同じ語を使います。
 
-**`<subject>` はロースターの内部 ID をそのまま使い、改名しません。** `enemy_roster_v4.md` §1.8 が、竜の系譜への付け替えで名前だけを替え、内部 ID は替えないと決めたためです（#128 の決定）。内部 ID を替えなければ、実装・台本・パリティ生成が壊れません。仕様カードの `briefs/polearm_warped.md` `polearm_crystal.md` `polearm_unyielding.md` と、それに沿って描く絵は、この id のまま置きます。人型の兵や犬を思わせる ID（`shadow_hound` `rusted_revenant` など）も、表示名だけが竜の系譜の名前になり、ファイル名はそのままです。ロースターが ID をまとめて付け替えると決めたとき（同 §1.8 の「#70 / #51 の後」）に、絵の改名もあわせて決めます。
+**`<subject>` はロースターの内部 ID をそのまま使い、改名しません。** `enemy_roster_v4.md` §1.8 が、竜の系譜への付け替えで名前だけを替え、内部 ID は替えないと決めたためです（#128 の決定）。内部 ID を保てば、実装・台本・パリティ生成はそのまま動きます。仕様カードの `briefs/polearm_warped.md` `polearm_crystal.md` `polearm_unyielding.md` と、それに沿って描く絵は、この id のまま置きます。人型の兵や犬を思わせる ID（`shadow_hound` `rusted_revenant` など）も、ファイル名はそのままです。竜の系譜の名前になるのは表示名だけです。ロースターが ID をまとめて付け替えると決めたとき（同 §1.8 の「#70 / #51 の後」）に、絵の改名もあわせて決めます。
 
 ---
 
