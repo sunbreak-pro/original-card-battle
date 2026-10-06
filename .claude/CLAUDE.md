@@ -295,7 +295,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 - **宛先ラベルは `lane:<slug>`**。付けなければ `issue-prompter` が上の `area:` から既定のレーンへ振る
 - **世界観の正本は main（chat-main）**（2026-09-21 こうだいさん決定）。正典は `docs/vision/world-v1.md` で、**竜が全ての敵の親玉、敵は竜・亜竜・眷属の系譜に絞る**。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main の采配に落とす。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
 - **`audit` は読み取り専用**。整合監査の結果を Issue に起票し、修正は担当レーンへ回す
-- **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで
+- **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` / `npm run unity:check` の静的検証まで。C# を触ったら `unity:check` で Unity のコンパイルを Editor なしで再現する（#344。NUnit 3.5 と netstandard2.1 の違いは `dotnet test` では出ない）
 - **one writer per artifact**。同じファイルを 2 レーンに触らせない
 - **`.claude/comm/.session-name` と `.session-branch` を必ず書く**。ブランチを切り替えるたびに `.session-branch` を更新する（省略すると hook が無音スキップする）
 

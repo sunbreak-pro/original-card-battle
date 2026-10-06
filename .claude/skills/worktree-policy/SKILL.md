@@ -11,7 +11,7 @@ description: 本リポの multi-chat worktree 運用規約の正本。レーン�
 
 - **メイン（`C:\Users\user\orca\original-card-battle`）は chat-main 専有・`main` のみ**。メインで `git checkout <feature>` はしません。feature 作業は worktree から行います
 - **1 レーン = 1 worktree = 1 チャット。ブランチは Issue ごとに切り替えます**。1 つの worktree が複数 Issue を順に担当するので、Issue ごとにブランチを切り直します。**worktree に 1 ブランチを固定し続けない** — PR merge 後も同じブランチを使い回すと履歴が絡みます
-- **試運転はメインだけ**（2026-09-20 こうだいさん決定）。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行います。各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証までです。複数 worktree で localhost を重ねるとポートがずれて「どの画面がどの変更か」の確認が壊れます
+- **試運転はメインだけ**（2026-09-20 こうだいさん決定）。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行います。各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` / `npm run unity:check` の静的検証までです。C# を触ったら、`unity:check` で Unity のコンパイルを Editor を開かずに再現します（#344）。Unity の NUnit 3.5 と netstandard2.1 にだけ無い API は、`dotnet test` では見つからないためです。複数 worktree で localhost を重ねるとポートがずれて「どの画面がどの変更か」の確認が壊れます
 
 ## レーン一覧
 
