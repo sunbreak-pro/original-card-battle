@@ -29,6 +29,22 @@ namespace Depiction
         Move,
     }
 
+    /// <summary>
+    /// The icon on the omen badge (#349, battle-visual-v1 4.4). The script picks it; the View only
+    /// draws it. Status stands for the skill kind (a status put on, a push or pull, a break) until
+    /// #350 settles its look.
+    /// </summary>
+    public enum OmenIcon
+    {
+        None,
+        Attack,
+        Guard,
+        Status,
+        Move,
+        Stance,
+        Rest,
+    }
+
     /// <summary>How the card is released: on the target's receiver, or above the throw line.</summary>
     public enum CardAim
     {
@@ -117,10 +133,16 @@ namespace Depiction
     public sealed class OmenFrame
     {
         public bool Visible;
-        /// <summary>Kind only at disclosure 1: "攻撃", "防御".</summary>
+        /// <summary>The icon of the omen's kind (#349). None draws no icon.</summary>
+        public OmenIcon Icon = OmenIcon.None;
+        /// <summary>The kind as a word: "攻撃", "防御", "移動", "構え", "技", "休み".</summary>
         public string KindLabel = "";
-        /// <summary>The side the omen punishes, one glyph ("近" / "遠"). Empty when none.</summary>
+        /// <summary>
+        /// The reach the omen aims at ("1〜2"), kept until the floor shows the aimed cells (#242).
+        /// The v4.2 sources (LiveTurn, TurnSliceScript) still write the side glyph. Empty when none.
+        /// </summary>
         public string SideGlyph = "";
+        /// <summary>The number beside the icon: attack (the core preview) and guard only (#349). Empty for any other kind.</summary>
         public string ValueText = "";
 
         /// <summary>
@@ -130,12 +152,26 @@ namespace Depiction
         /// <see cref="Visible"/>.
         /// </summary>
         public bool PlanVisible;
+        /// <summary>The icon of the plan's kind (#349), as <see cref="Icon"/> picks it.</summary>
+        public OmenIcon PlanIcon = OmenIcon.None;
         /// <summary>The plan's kind: "攻撃", "防御", "休み"...</summary>
         public string PlanKindLabel = "";
-        /// <summary>The cells the plan aims at, as <see cref="SideGlyph"/> writes them. Empty when none.</summary>
+        /// <summary>
+        /// The plan's number, attack and guard only (#349): the face alone, no trait, stance or wall,
+        /// since the plan is not a commitment. Empty for any other kind.
+        /// </summary>
+        public string PlanValueText = "";
+        /// <summary>
+        /// The cells the plan aims at, as <see cref="SideGlyph"/> writes them. Empty when none. The plan
+        /// badge does not draw it (battle-visual-v1 4.4 gives the plan no reach); it stays in the
+        /// script for the floor cells of #242.
+        /// </summary>
         public string PlanSideGlyph = "";
         /// <summary>True on the frames after a 予定変更, so the badge can mark the plan as changed.</summary>
         public bool PlanChanged;
+
+        /// <summary>The tag on the plan badge: 予定, or 予定変更 once the plan was replaced (#50).</summary>
+        public string PlanTag => PlanChanged ? DepictionText.PlanChangedTag : DepictionText.PlanTag;
     }
 
     public sealed class CornerFrame
@@ -360,6 +396,10 @@ namespace Depiction
 
         /// <summary>The muted label on a figure the other side pushed (battle_ui_ux_v2 §5.7 順 6).</summary>
         public const string Pushed = "押し出し";
+
+        /// <summary>The tag on the plan badge (battle-visual-v1 4.4) and its form after a plan change (#50).</summary>
+        public const string PlanTag = "予定";
+        public const string PlanChangedTag = "予定変更";
 
         public static string OutcomeText(BattleOutcome outcome)
         {

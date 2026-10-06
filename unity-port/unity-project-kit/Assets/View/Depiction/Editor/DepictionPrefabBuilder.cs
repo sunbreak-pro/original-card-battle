@@ -357,6 +357,8 @@ namespace Depiction.View
             return root.gameObject;
         }
 
+        // The one-row badge from before #349. OmenBadgeView.EnsureParts lays it out again at run time
+        // (200×98, two rows) and adds the icon and the plan badge; this builder follows with #242.
         private static GameObject BuildOmenBadge()
         {
             RectTransform root = Root("OmenBadge", new Vector2(270f, 68f), Half);

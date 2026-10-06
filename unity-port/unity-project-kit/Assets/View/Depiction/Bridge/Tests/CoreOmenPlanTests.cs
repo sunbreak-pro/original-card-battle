@@ -54,8 +54,6 @@ namespace Depiction.Bridge.Tests
             return (turn, writer.Write(end.Events, end.State));
         }
 
-        private static string Label(OmenKind kind) => new OmenLabel(kind).ToText();
-
         [Test]
         public void TheSecondStep_ComesUpWithTheOmen_AsAPlanBesideIt()
         {
@@ -68,8 +66,29 @@ namespace Depiction.Bridge.Tests
             {
                 Assert.That(omen.Visible, Is.True);
                 Assert.That(omen.PlanVisible, Is.True, "the 予定 is beside the omen at the turn start");
-                Assert.That(omen.PlanKindLabel, Is.EqualTo(Label(OmenKind.Guard)));
+                Assert.That(omen.PlanKindLabel, Is.EqualTo("防御"));
+                Assert.That(omen.PlanIcon, Is.EqualTo(OmenIcon.Guard), "#349: the plan wears its kind's icon");
+                Assert.That(omen.PlanValueText, Is.EqualTo("2"), "#349: shell's face Guard");
                 Assert.That(omen.PlanChanged, Is.False);
+                Assert.That(omen.PlanTag, Is.EqualTo("予定"));
+            });
+        }
+
+        [Test]
+        public void APlanThatMoves_WearsTheMoveIcon_AndShowsNoNumber()
+        {
+            // Gap 0 reads [strike, back_off]: the first omen is strike, the plan is back_off (移動).
+            EnemyDef enemy = Elite(new[] { Strike("strike"), BackOff("back_off", 1) }, new[] { Strike("shot") });
+            var (turn, _) = Play(enemy);
+
+            OmenFrame omen = turn.Single().After.Omen;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(omen.PlanVisible, Is.True);
+                Assert.That(omen.PlanIcon, Is.EqualTo(OmenIcon.Move));
+                Assert.That(omen.PlanKindLabel, Is.EqualTo("移動"));
+                Assert.That(omen.PlanValueText, Is.Empty, "#349: only attack and guard carry a number");
             });
         }
 
@@ -114,7 +133,14 @@ namespace Depiction.Bridge.Tests
             // tree is read on the 1〜2 band and answers shell (防), so the plan changes before it acts.
             EnemyDef enemy = Elite(new[] { BackOff("back_off", 2), Strike("strike") }, new[] { Shell("shell") });
             var (turn, phase) = Play(enemy);
-            Assert.That(turn.Single().After.Omen.PlanKindLabel, Is.EqualTo(Label(OmenKind.Attack)), "planned as an attack");
+            OmenFrame planned = turn.Single().After.Omen;
+            Assert.Multiple(() =>
+            {
+                Assert.That(planned.PlanKindLabel, Is.EqualTo("攻撃"), "planned as an attack");
+                Assert.That(planned.PlanIcon, Is.EqualTo(OmenIcon.Attack));
+                Assert.That(planned.PlanValueText, Is.EqualTo("1"), "strike's face power");
+                Assert.That(planned.PlanTag, Is.EqualTo("予定"));
+            });
 
             int change = phase.FindIndex(e => e.Title == "予定変更");
             int second = phase.FindIndex(e => e.Title == "shell");
@@ -129,9 +155,35 @@ namespace Depiction.Bridge.Tests
                 Assert.That(beat.Cues[0].Text, Is.EqualTo("予定変更"));
                 Assert.That(beat.After.Omen.PlanVisible, Is.True);
                 Assert.That(beat.After.Omen.PlanChanged, Is.True);
-                Assert.That(beat.After.Omen.PlanKindLabel, Is.EqualTo(Label(OmenKind.Guard)), "the plan now reads what the tree said");
+                Assert.That(beat.After.Omen.PlanKindLabel, Is.EqualTo("防御"), "the plan now reads what the tree said");
+                Assert.That(beat.After.Omen.PlanIcon, Is.EqualTo(OmenIcon.Guard));
+                Assert.That(beat.After.Omen.PlanValueText, Is.EqualTo("2"));
+                Assert.That(beat.After.Omen.PlanTag, Is.EqualTo("予定変更"));
                 Assert.That(phase[second].After.Omen.PlanVisible, Is.False);
             });
+        }
+
+        [Test]
+        public void AFallenElite_TakesItsPlanWithIt()
+        {
+            // #349: the badge draws the plan now, so a plan left up would hang over the fallen elite.
+            EnemyDef enemy = Elite(new[] { Strike("strike"), Shell("shell") }, new[] { Strike("shot") });
+            var setup = new BattleSetup(enemy, Deck(), 8, StartGap: 0);
+            BattleState state = TurnLoop.Start(setup, NoShuffle).State;
+            var writer = new CoreScriptWriter(enemy);
+            writer.Opening(state);
+            StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            Assert.That(writer.Write(begin.Events, begin.State).Single().After.Omen.PlanVisible, Is.True);
+
+            var stream = new List<BattleEvent>
+            {
+                new TurnStarted(Actor.Player, 2),
+                new BattleEnded(Actor.Player, GameResult.Won),
+            };
+            DepictionEvent fall = writer.Write(stream, begin.State).Last();
+
+            Assert.That(fall.Kind, Is.EqualTo(DepictionEventKind.Defeat));
+            Assert.That(fall.After.Omen.PlanVisible, Is.False);
         }
 
         [Test]

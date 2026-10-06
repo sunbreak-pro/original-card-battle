@@ -322,8 +322,8 @@ namespace BattleCore.Tests
         public void Rooting_CostsHp_AfterTwoTurnsEndedOnTheSameCell(int stacks, bool moveInTheSecondTurn, int hpChange)
         {
             // roster §6.2: 「同じマスで 2 ターン続けてターンを終えると、ターン開始に HP −4。2 スタックで −8」.
-            // The first hand is five fillers; the second holds the two steps.
-            var s = WithPlayer(Opened(Idle, 3, Filler, Filler, Filler, Filler, Filler, CardCatalog.Footwork, CardCatalog.BreakOff), (StatusKind.Rooting, stacks));
+            // The first hand is six fillers; the second holds the two steps.
+            var s = WithPlayer(Opened(Idle, 3, Filler, Filler, Filler, Filler, Filler, Filler, CardCatalog.Footwork, CardCatalog.BreakOff), (StatusKind.Rooting, stacks));
             s = TurnLoop.EndTurn(s, NoShuffle).State;
             s = TurnLoop.BeginPlayerTurn(s, NoShuffle).State;
             if (moveInTheSecondTurn)

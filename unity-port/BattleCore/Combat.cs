@@ -71,7 +71,7 @@ namespace BattleCore
             return Math.Min(max, Math.Max(0, raw));
         }
 
-        /// <summary>§8: draw 5 plus whatever modifiers apply, clamped to 3..8.</summary>
+        /// <summary>§8: draw 6 plus whatever modifiers apply, clamped to 3..8.</summary>
         public static int DrawCount(int modifier = 0)
         {
             int raw = Constants.HandDraw + modifier;
