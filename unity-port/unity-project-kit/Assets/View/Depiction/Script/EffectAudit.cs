@@ -73,7 +73,9 @@ namespace Depiction
 
     /// <summary>
     /// Timing the flow adds between events, outside any effect. DepictionPlayer waits exactly these,
-    /// and the measurement counts the time input is closed with them.
+    /// and the measurement counts the time input is closed with them. Like EffectCatalog, the lengths
+    /// are written at 1.25 times: DepictionPlayer hands the constants to UiTween.Wait and the battle
+    /// speed (#348) is applied by UiTween.Speed. The *At forms are for the measurement.
     /// </summary>
     public static class EffectFlow
     {
@@ -83,8 +85,14 @@ namespace Depiction
         /// <summary>After each event the script plays by itself (the enemy's turn, the next turn start).</summary>
         public const float AfterAutoEventMs = 350f;
 
-        /// <summary>One frame at 60 fps: the most a tween can run past its length (UiTween ends on the first frame after it).</summary>
+        /// <summary>One frame at 60 fps: the most a tween can run past its length (UiTween ends on the first frame after it). A frame stays a frame at every speed.</summary>
         public const float FrameMs = 1000f / 60f;
+
+        /// <summary><see cref="AfterPlayerEventMs"/> as the screen really waits it at this battle speed.</summary>
+        public static float AfterPlayerEventMsAt(BattleSpeedStep speed) => BattleSpeed.WallMs(AfterPlayerEventMs, speed);
+
+        /// <summary><see cref="AfterAutoEventMs"/> as the screen really waits it at this battle speed.</summary>
+        public static float AfterAutoEventMsAt(BattleSpeedStep speed) => BattleSpeed.WallMs(AfterAutoEventMs, speed);
     }
 
     public static class EffectAudit

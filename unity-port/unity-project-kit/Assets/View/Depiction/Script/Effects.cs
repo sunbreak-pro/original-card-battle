@@ -209,7 +209,10 @@ namespace Depiction
         }
     }
 
-    /// <summary>The nominal length of every effect. The View animates for exactly these.</summary>
+    /// <summary>
+    /// The nominal length of every effect, written at the default battle speed of 1.25 times. The View
+    /// hands exactly these to UiTween; another speed stretches them through UiTween.Speed (BattleSpeed).
+    /// </summary>
     public static class EffectCatalog
     {
         private static readonly Dictionary<EffectId, EffectSpec> Specs = Build();
@@ -486,6 +489,13 @@ namespace Depiction
             foreach (EffectStep step in StepsOf(ev)) ms += switches.WaitMs(step.Id, step.Count);
             return ms;
         }
+
+        /// <summary>
+        /// The time the screen really waits on the event's effects at this battle speed (#348). The View
+        /// still hands UiTween the written ms; UiTween.Speed stretches them.
+        /// </summary>
+        public static float BlockingMs(DepictionEvent ev, EffectSwitches switches, BattleSpeedStep speed) =>
+            BattleSpeed.WallMs(BlockingMs(ev, switches), speed);
     }
 
     /// <summary>
@@ -516,6 +526,12 @@ namespace Depiction
 
         public IReadOnlyList<Entry> Entries => _entries;
 
+        /// <summary>
+        /// The battle speed in force when <see cref="Begin"/> records an effect's nominal length (#348),
+        /// so the nominal and the measured length are read on the same clock.
+        /// </summary>
+        public BattleSpeedStep Speed { get; set; } = BattleSpeed.Default;
+
         /// <summary>Starts timing one effect; hand the returned number to <see cref="End"/>.</summary>
         public int Begin(EffectId id, int eventOrder, int count = 1)
         {
@@ -524,7 +540,7 @@ namespace Depiction
                 Id = id,
                 EventOrder = eventOrder,
                 StartSeconds = _clock(),
-                NominalMs = EffectCatalog.Of(id).TotalMs(count),
+                NominalMs = BattleSpeed.WallMs(EffectCatalog.Of(id).TotalMs(count), Speed),
             });
             return _entries.Count - 1;
         }

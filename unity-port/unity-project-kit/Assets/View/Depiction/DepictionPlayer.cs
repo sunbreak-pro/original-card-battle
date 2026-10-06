@@ -68,6 +68,13 @@ namespace Depiction.View
         [Tooltip("Writes every effect that played (id, event, start, measured and nominal ms) to the log once the source finishes. For #78.")]
         public bool logEffectTrace;
 
+        [Header("Speed (#348)")]
+        [Tooltip("Starts at the speed saved by the last click (PlayerPrefs). Off: starts at 1.25x, the speed the 2.0 s cap is measured at (PlayMode tests switch it off). "
+                 + "Filming (scriptedPlayback, or a debugCaptureDir) always starts at 1.25x.")]
+        public bool useSavedSpeed = true;
+        [Tooltip("Shows the provisional speed switch in the top-right corner while a battle runs. Never shown when filming (scriptedPlayback, or a debugCaptureDir).")]
+        public bool showSpeedButton = true;
+
         [Header("Mode")]
         [Tooltip("Filming only: replays TurnSliceScript in its written order, refusing any other card. "
                  + "Off by default, so the hand is free and the fight is played for real.")]
@@ -93,6 +100,11 @@ namespace Depiction.View
         public EffectTrace Trace { get; private set; }
         /// <summary>Which effects play. Built from <see cref="effectsOff"/> in Start.</summary>
         public EffectSwitches Effects => _effects;
+        /// <summary>The battle speed in force (#348). Kept across <see cref="Restart"/>.</summary>
+        public BattleSpeedStep Speed => _speed;
+
+        /// <summary>Where the speed the player last picked is kept between launches.</summary>
+        public const string SavedSpeedKey = "Depiction.BattleSpeed";
 
         private IDepictionSource _source;
         private IDepictionSource _givenSource;
@@ -118,6 +130,8 @@ namespace Depiction.View
         private bool _zoneHot;
         private float _snapWeight;
         private int _snapHandle = -1;
+        private BattleSpeedStep _speed = BattleSpeed.Default;
+        private BattleSpeedButton _speedButton;
 
         /// <summary>How far a held card is drawn toward the dish once it is over it (EffectId.ReceiverSnap).</summary>
         private const float SnapPull = 0.35f;
@@ -160,8 +174,12 @@ namespace Depiction.View
                 return;
             }
             StopAllCoroutines();
-            UiTween.Speed = 1f;
             _halted = false;
+            // A gate stopped mid-way by StopAllCoroutines must not leave the tweens frozen at 0. The
+            // battle speed carries over from the last battle.
+            DebugGate = "";
+            ApplyTweenSpeed();
+            ShowSpeedButton(true);
             _busy = false;
             _dragging = null;
             _hovered = null;
@@ -180,7 +198,7 @@ namespace Depiction.View
             if (enemyFigure) enemyFigure.Settle();
             _hoverHandle = -1;
             _snapHandle = -1;
-            Trace = new EffectTrace(() => Time.unscaledTimeAsDouble);
+            Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
             _source = source;
             ApplyFrame(_source.Frame);
             RefreshPlayableLook(); // the last battle's outcome line goes with it
@@ -206,13 +224,66 @@ namespace Depiction.View
                 return;
             }
             _halted = true;
-            UiTween.Speed = HaltedTweenSpeed;
+            ApplyTweenSpeed(); // BattleSpeed.HaltedTweenSpeed, whatever speed was picked
+            ShowSpeedButton(false);
             if (_dragging != null) LetGo();
             SetHandInteractable(false);
         }
 
-        /// <summary>UiTween's reduced-motion factor: what is left of a halted event settles within a few frames.</summary>
-        private const float HaltedTweenSpeed = 1000f;
+        /// <summary>
+        /// The battle speed (#348): 1.0, 1.25 or 1.5 times. Takes effect at once, on the tweens and
+        /// waits already running, and is kept for the next launch.
+        /// </summary>
+        public void SetSpeed(BattleSpeedStep step)
+        {
+            _speed = step;
+            if (Trace != null) Trace.Speed = step;
+            ApplyTweenSpeed();
+            if (_speedButton != null) _speedButton.Show(BattleSpeed.Label(step));
+            PlayerPrefs.SetString(SavedSpeedKey, BattleSpeed.Save(step));
+            PlayerPrefs.Save();
+        }
+
+        private void CycleSpeed() => SetSpeed(BattleSpeed.Next(_speed));
+
+        /// <summary>
+        /// The factor the per-frame motions (the fan's hover, the pull toward the dish) advance by: the
+        /// battle speed UiTween.Speed also gets, read from BattleSpeed rather than from UiTween so a debug
+        /// gate's freeze and a halt leave them as they were before #348.
+        /// </summary>
+        private float FrameMotionSpeed => BattleSpeed.TweenSpeed(_speed);
+
+        /// <summary>
+        /// The one place that writes UiTween.Speed while the battle runs: the picked speed, or the
+        /// reduced-motion speed once halted. A debug gate holds it at 0 and calls this again on its way out.
+        /// </summary>
+        private void ApplyTweenSpeed()
+        {
+            if (!string.IsNullOrEmpty(DebugGate)) return;
+            UiTween.Speed = BattleSpeed.TweenSpeed(_speed, _halted);
+        }
+
+        /// <summary>
+        /// The provisional speed switch: top right, under the demo's 「降参する」. Where it sits and how it
+        /// looks is not in battle-visual-v1.md yet; the design lane decides it.
+        /// </summary>
+        private void BuildSpeedButton()
+        {
+            RectTransform canvas = handArea ? handArea.parent as RectTransform : null;
+            if (!canvas)
+            {
+                Debug.LogWarning("[Depiction] no canvas above the hand area; the speed switch is not shown");
+                return;
+            }
+            _speedButton = new BattleSpeedButton(canvas, CycleSpeed);
+            _speedButton.Show(BattleSpeed.Label(_speed));
+        }
+
+        /// <summary>Puts the speed switch up while a battle runs and takes it down when it ends or is given up.</summary>
+        private void ShowSpeedButton(bool on)
+        {
+            if (_speedButton != null) _speedButton.Visible = on;
+        }
 
         private void Start()
         {
@@ -221,8 +292,16 @@ namespace Depiction.View
             EnsureEventSystem();
             _effects = EffectSwitches.WithOff(effectsOff, out List<string> unknownEffects);
             foreach (string name in unknownEffects) Debug.LogWarning("[Depiction] effectsOff: no effect is called \"" + name + "\"");
-            Trace = new EffectTrace(() => Time.unscaledTimeAsDouble);
-            UiTween.Speed = 1f; // a debug gate may have left it at 0 when domain reload is off
+            // Filming (the fixed script, or frames captured at the debug gates) plays at the default
+            // speed with no switch on screen, so the shots look as they did before #348.
+            bool filming = scriptedPlayback || !string.IsNullOrEmpty(debugCaptureDir);
+            _speed = useSavedSpeed && !filming
+                ? BattleSpeed.Load(PlayerPrefs.HasKey(SavedSpeedKey), PlayerPrefs.GetString(SavedSpeedKey, ""))
+                : BattleSpeed.Default;
+            Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
+            DebugGate = "";
+            ApplyTweenSpeed(); // also clears a 0 a debug gate left behind when domain reload is off
+            if (showSpeedButton && !filming) BuildSpeedButton(); // before the demo flow's early return, so its battles get it too
             if (backdrop && backdrop.sprite == null)
             {
                 BattleTheme.FloorPalette palette = BattleTheme.Floor(1);
@@ -233,13 +312,23 @@ namespace Depiction.View
 
             if (enemyFigure) _enemyHome = enemyFigure.Rect.anchoredPosition;
             _started = true;
-            if (_givenSource == null && _hold) return; // the demo flow starts the battle (Restart)
+            if (_givenSource == null && _hold)
+            {
+                ShowSpeedButton(false); // no battle yet: Restart puts the switch up with it
+                return; // the demo flow starts the battle (Restart)
+            }
 
             if (_givenSource != null) _source = _givenSource;
             else if (scriptedPlayback) _source = new DepictionRunner(TurnSliceScript.Build());
             else _source = new LiveTurn();
             ApplyFrame(_source.Frame);
             StartCoroutine(RunAutomaticEvents());
+        }
+
+        private void OnEnable()
+        {
+            // OnDisable put the shared speed back to 1; a re-enabled battle takes its own speed back.
+            if (_started) ApplyTweenSpeed();
         }
 
         private void OnDisable()
@@ -312,6 +401,7 @@ namespace Depiction.View
                 {
                     StartCoroutine(Effect(EffectId.ResultCard, ShowResult(outcome, _effects.Ms(EffectId.ResultCard)), () => ShowResultNow(outcome)));
                 }
+                ShowSpeedButton(false); // like the demo's 「降参する」, the switch is for the battle only
                 BattleFinished?.Invoke();
                 yield break;
             }
@@ -1004,7 +1094,8 @@ namespace Depiction.View
             }
 
             float hoverMs = _effects.Ms(EffectId.CardHover);
-            float step = hoverMs > 0f ? Time.unscaledDeltaTime * 1000f / hoverMs : 1f;
+            // The battle speed (#348), like every tween. Input timing is not scaled (§6.2 rule 1).
+            float step = hoverMs > 0f ? Time.unscaledDeltaTime * FrameMotionSpeed * 1000f / hoverMs : 1f;
             for (int i = 0; i < _hand.Count; i++)
             {
                 CardView card = _hand[i];
@@ -1302,7 +1393,8 @@ namespace Depiction.View
             }
             float target = _dragging.Face.Aim == CardAim.Single && _zoneHot ? 1f : 0f;
             float ms = _effects.Ms(EffectId.ReceiverSnap);
-            float next = ms > 0f ? Mathf.MoveTowards(_snapWeight, target, Time.unscaledDeltaTime * 1000f / ms) : target;
+            // The battle speed (#348), like every tween.
+            float next = ms > 0f ? Mathf.MoveTowards(_snapWeight, target, Time.unscaledDeltaTime * FrameMotionSpeed * 1000f / ms) : target;
             if (next == _snapWeight) return;
             if (_snapWeight == 0f && next > 0f && Trace != null)
             {
@@ -1492,9 +1584,8 @@ namespace Depiction.View
         {
             bool capture = !string.IsNullOrEmpty(debugCaptureDir);
             if (!debugStepMode && !capture) yield break;
-            float speed = UiTween.Speed;
+            DebugGate = gateName; // set first: ApplyTweenSpeed leaves the 0 alone while a gate holds
             UiTween.Speed = 0f; // freezes every running tween so the frame can be captured
-            DebugGate = gateName;
             if (capture)
             {
                 System.IO.Directory.CreateDirectory(debugCaptureDir);
@@ -1505,7 +1596,7 @@ namespace Depiction.View
             _stepRequested = false;
             while (debugStepMode && !_stepRequested) yield return null;
             DebugGate = "";
-            UiTween.Speed = speed;
+            ApplyTweenSpeed(); // a speed picked while frozen takes effect here
         }
 
         private static void EnsureEventSystem()

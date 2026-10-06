@@ -360,6 +360,22 @@ namespace Depiction.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => trace.End(9));
         }
 
+        [Test]
+        public void TheTrace_RecordsTheNominalLength_AtTheSpeedInForce()
+        {
+            var trace = new EffectTrace(() => 0.0);
+            Assert.That(trace.Speed, Is.EqualTo(BattleSpeed.Default));
+            trace.Begin(EffectId.CardDraw, eventOrder: 1, count: 5);
+            trace.Speed = BattleSpeedStep.Slow;
+            trace.Begin(EffectId.CardDraw, eventOrder: 1, count: 5);
+            trace.Speed = BattleSpeedStep.Fast;
+            trace.Begin(EffectId.CardDraw, eventOrder: 1, count: 5);
+
+            Assert.That(trace.Entries[0].NominalMs, Is.EqualTo(500f), "1.25 times is the written length");
+            Assert.That(trace.Entries[1].NominalMs, Is.EqualTo(625f).Within(0.01), "1.0 times: 500 x 1.25");
+            Assert.That(trace.Entries[2].NominalMs, Is.EqualTo(416.67f).Within(0.01), "1.5 times: 500 x 1.25 / 1.5");
+        }
+
         // ---- Helpers ----
 
         private static (EffectId, int)[] Steps(DepictionEvent ev) =>
