@@ -2,7 +2,9 @@
 //   1. the time of a turn with every effect on and with every effect off,
 //   2. the 2.0 s cap over every effect (each alone, and each event the core can write),
 //   3. what each effect costs when it alone is switched off,
-//   4. how long input stays closed (after a card, after the end-turn plate, after a refusal).
+//   4. how long input stays closed (after a card, after the end-turn plate, after a refusal),
+//   5. 2 and 4 again at each of the three battle speeds (#348). The lengths are written at 1.25 times;
+//      the cap is 2.0 s at 1.25 and 1.5 times and 2.5 s at 1.0 times (BattleSpeed.EventCapMsAt).
 // The numbers are nominal: the sum of the waits DepictionPlayer holds (EffectPlan, EffectFlow), with no
 // frame added. A tween may run one frame past its length; FrameSlack counts that on top. Effects that
 // run beside the flow (numbers, flashes, the HP trail) never lengthen an event, so they cost 0 here
@@ -99,9 +101,11 @@ namespace Depiction.Bridge.Tests
         private static float GapMs(Pace pace) => pace == Pace.Auto ? EffectFlow.AfterAutoEventMs : EffectFlow.AfterPlayerEventMs;
 
         /// <summary>What the screen holds input closed for after this beat: its blocking effects, then the gap.</summary>
-        private static float ClosedMs(Beat beat, EffectSwitches switches) => EffectPlan.BlockingMs(beat.Event, switches) + GapMs(beat.Pace);
+        private static float ClosedMs(Beat beat, EffectSwitches switches, BattleSpeedStep speed = BattleSpeed.Default) =>
+            BattleSpeed.WallMs(EffectPlan.BlockingMs(beat.Event, switches) + GapMs(beat.Pace), speed);
 
-        private static float TurnMs(List<Beat> turn, EffectSwitches switches) => turn.Sum(b => ClosedMs(b, switches));
+        private static float TurnMs(List<Beat> turn, EffectSwitches switches, BattleSpeedStep speed = BattleSpeed.Default) =>
+            turn.Sum(b => ClosedMs(b, switches, speed));
 
         /// <summary>The events the core can write at its extremes: every card at every gap into Guard or not, and every enemy action.</summary>
         private static List<(string Label, DepictionEvent Event)> ExtremeEvents()
@@ -268,6 +272,65 @@ namespace Depiction.Bridge.Tests
             }
         }
 
+        // ---- 5. the three battle speeds (#348) ----------------------------------------------
+
+        [TestCase(BattleSpeedStep.Slow)]
+        [TestCase(BattleSpeedStep.Normal)]
+        [TestCase(BattleSpeedStep.Fast)]
+        public void EveryEventTheCoreCanWrite_FitsInsideTheCapForItsSpeed(BattleSpeedStep speed)
+        {
+            var on = EffectSwitches.AllOn();
+            var events = ExtremeEvents().Concat(AllBeats().Select(b => ("seed " + b.Seed + " " + b.Event.Title, b.Event))).ToList();
+            float cap = BattleSpeed.EventCapMsAt(speed);
+            float worst = 0f;
+            float worstWithFrames = 0f;
+            string worstLabel = "";
+            foreach ((string label, DepictionEvent ev) in events)
+            {
+                float wall = EffectPlan.BlockingMs(ev, on, speed);
+                // A frame stays a frame at every speed: the slack is not stretched.
+                float withFrames = wall + EffectPlan.StepsOf(ev).Count * EffectFlow.FrameMs;
+                Assert.That(wall, Is.LessThan(cap), speed + " " + label);
+                worst = Math.Max(worst, wall);
+                if (withFrames > worstWithFrames) { worstWithFrames = withFrames; worstLabel = label; }
+            }
+            TestContext.Out.WriteLine("speed " + speed + " (x" + BattleSpeed.Multiplier(speed).ToString("0.##", CultureInfo.InvariantCulture) + "), cap "
+                + cap.ToString("0") + " ms, worst " + worst.ToString("0") + " ms, worst with a frame per wait "
+                + worstWithFrames.ToString("0") + " ms (" + worstLabel + ")");
+            if (speed == BattleSpeedStep.Fast)
+            {
+                // 1.5 times keeps the 2.0 s even with a frame past every wait.
+                Assert.That(worstWithFrames, Is.LessThan(BattleSpeed.EventCapMs), worstLabel);
+            }
+            else if (worstWithFrames >= cap)
+            {
+                Assert.Warn("At " + speed + ", with a frame past every wait, " + worstLabel + " runs " + worstWithFrames.ToString("0") + " ms.");
+            }
+        }
+
+        [TestCase(BattleSpeedStep.Slow)]
+        [TestCase(BattleSpeedStep.Normal)]
+        [TestCase(BattleSpeedStep.Fast)]
+        public void InputIsClosed_ForTheSpeedsLength(BattleSpeedStep speed)
+        {
+            var on = EffectSwitches.AllOn();
+            var off = EffectSwitches.AllOff();
+            float scale = BattleSpeed.WallMs(1f, speed);
+            List<Beat> cards = AllBeats().Where(b => b.Pace == Pace.PlayerCard).ToList();
+            Assert.That(cards, Is.Not.Empty);
+            foreach (Beat card in cards)
+            {
+                string label = "seed " + card.Seed + " " + card.Event.Title;
+                Assert.That(ClosedMs(card, on, speed), Is.EqualTo(ClosedMs(card, on) * scale).Within(0.5f), label);
+                Assert.That(ClosedMs(card, on, speed), Is.LessThan(BattleSpeed.EventCapMsAt(speed) + EffectFlow.AfterPlayerEventMsAt(speed)), label);
+                Assert.That(ClosedMs(card, off, speed), Is.EqualTo(EffectFlow.AfterPlayerEventMsAt(speed)).Within(0.01f), label);
+            }
+            foreach (List<Beat> chain in Fights.Value.SelectMany(EndTurnChains))
+            {
+                Assert.That(TurnMs(chain, off, speed), Is.EqualTo(BattleSpeed.WallMs(chain.Sum(b => GapMs(b.Pace)), speed)).Within(0.5f));
+            }
+        }
+
         /// <summary>The plate press and every event the script plays after it, up to the player's next turn.</summary>
         private static IEnumerable<List<Beat>> EndTurnChains(List<Beat> fight)
         {
@@ -351,6 +414,27 @@ namespace Depiction.Bridge.Tests
               .Append(Pair("playerEventGapMs", EffectFlow.AfterPlayerEventMs)).Append(',')
               .Append(Pair("autoEventGapMs", EffectFlow.AfterAutoEventMs))
               .Append("},\n");
+
+            // 5. the three battle speeds (#348)
+            sb.Append("  \"speeds\": [");
+            sb.Append(string.Join(",", BattleSpeed.Steps.Select(s =>
+            {
+                float worstAt = everyEvent.Max(e => EffectPlan.BlockingMs(e.Event, on, s));
+                float worstFramesAt = everyEvent.Max(e => EffectPlan.BlockingMs(e.Event, on, s) + EffectPlan.StepsOf(e.Event).Count * EffectFlow.FrameMs);
+                return "\n    {"
+                    + "\"step\":" + Quote(s.ToString()) + ","
+                    + Pair("multiplier", BattleSpeed.Multiplier(s)) + ","
+                    + Pair("durationScale", BattleSpeed.WallMs(1f, s)) + ","
+                    + Pair("capMs", BattleSpeed.EventCapMsAt(s)) + ","
+                    + Pair("worstNominalMs", worstAt) + ","
+                    + Pair("worstWithFramesMs", worstFramesAt) + ","
+                    + Pair("turnMeanOnMs", turns.Average(t => TurnMs(t, on, s))) + ","
+                    + Pair("cardMaxClosedOnMs", cards.Max(b => ClosedMs(b, on, s))) + ","
+                    + Pair("plateMeanClosedOnMs", chains.Average(c => TurnMs(c, on, s))) + ","
+                    + Pair("plateMaxClosedOnMs", chains.Max(c => TurnMs(c, on, s)))
+                    + "}";
+            })));
+            sb.Append("\n  ],\n");
 
             // 3. per effect
             var plannedMax = new Dictionary<EffectId, float>();

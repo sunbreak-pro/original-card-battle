@@ -48,6 +48,7 @@ namespace Depiction.PlayModeTests
                 Set(bootstrap, "stopAfterTurns", 1);
                 Set(loaded, "autoPlayDrags", true);
                 Set(loaded, "autoEndTurn", true);
+                Set(loaded, "useSavedSpeed", false); // the 2.0 s cap is measured at 1.25x, whatever speed was clicked last (#348)
                 MethodInfo awake = bootstrap.GetType().GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic);
                 Assert.That(awake, Is.Not.Null, BootstrapTypeName + " has no Awake");
                 awake.Invoke(bootstrap, null);

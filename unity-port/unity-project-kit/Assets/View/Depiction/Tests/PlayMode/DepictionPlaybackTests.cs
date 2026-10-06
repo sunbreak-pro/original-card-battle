@@ -40,6 +40,7 @@ namespace Depiction.PlayModeTests
                 if (loaded == null) return;
                 Set(loaded, "scriptedPlayback", true);
                 Set(loaded, "autoPlayDrags", true);
+                Set(loaded, "useSavedSpeed", false); // the 2.0 s cap is measured at 1.25x, whatever speed was clicked last (#348)
             };
             SceneManager.sceneLoaded += onLoaded;
             try

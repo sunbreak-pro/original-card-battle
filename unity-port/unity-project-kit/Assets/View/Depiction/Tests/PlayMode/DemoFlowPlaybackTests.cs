@@ -70,6 +70,7 @@ namespace Depiction.PlayModeTests
                 yield return WaitFor(() => ((ICollection)Private(player, "_hand")).Count > 0 && !(bool)Private(player, "_busy"), 20f, "no hand was dealt");
                 yield return Shot("03-battle");
                 Assert.That(Active("Surrender"), Is.Not.Null, "no 降参 button during the battle");
+                Assert.That(Active("BattleSpeed"), Is.Not.Null, "no speed switch during the battle (#348)");
                 Set(player, "autoPlayDrags", true);
                 Set(player, "autoEndTurn", true);
                 MethodInfo autoDrag = player.GetType().GetMethod("AutoDrag", BindingFlags.Instance | BindingFlags.NonPublic);
