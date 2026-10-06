@@ -19,7 +19,8 @@ namespace BattleCore
     {
         // ---- Hand and deck (§8) ----
 
-        public const int HandDraw = 5;
+        /// <summary>§8: six cards a turn (5 until 2026-10-06, #351). Modifiers clamp to 3..8.</summary>
+        public const int HandDraw = 6;
         public const int HandDrawMin = 3;
         public const int HandDrawMax = 8;
         public const int HandLimit = 8;

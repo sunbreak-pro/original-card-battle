@@ -367,7 +367,7 @@ namespace Depiction.Bridge.Tests
             });
 
             source.AdvanceAuto();
-            Assert.That(source.Frame.Hand, Has.Count.EqualTo(5));
+            Assert.That(source.Frame.Hand, Has.Count.EqualTo(6));
             Assert.That(source.Frame.Hand.All(f => deck.Build().Any(c => c.InstanceId == f.Id)), Is.True, "the hand is dealt from the built deck");
         }
 

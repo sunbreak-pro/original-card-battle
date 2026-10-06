@@ -43,7 +43,7 @@ namespace Depiction.View
         public Text handGuide;
 
         [Header("Hand layout")]
-        [Tooltip("Distance between neighbouring cards. Below the card width (190) the cards overlap like a spread bundle.")]
+        [Tooltip("Distance between neighbouring cards for a hand of five or fewer. Six, seven and eight close in to 150 / 140 / 126 of 160 (battle-visual-v1 §4.8). Below the card width (190) the cards overlap like a spread bundle.")]
         public float cardSpacing = 160f;
         [Tooltip("The hand is a shallow fan: each step away from the middle tilts a card by this many degrees...")]
         [Range(0f, 15f)] // HandFan assumes the outermost tilt stays within 90 degrees
@@ -957,7 +957,7 @@ namespace Depiction.View
         /// <summary>Resting place of the i-th card in a shallow fan (see <see cref="HandFan.Place"/>).</summary>
         private void HomeOf(int index, out Vector2 position, out float degrees)
         {
-            FanPlace place = HandFan.Place(_hand.Count, index, cardSpacing, fanDegreesPerCard, fanDropPixels, cardPrefab.Rect.rect.width);
+            FanPlace place = HandFan.Place(_hand.Count, index, HandFan.Spacing(_hand.Count, cardSpacing), fanDegreesPerCard, fanDropPixels, cardPrefab.Rect.rect.width);
             position = new Vector2(place.X, place.Y);
             degrees = place.Degrees;
         }

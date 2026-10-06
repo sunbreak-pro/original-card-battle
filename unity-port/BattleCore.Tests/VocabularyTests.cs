@@ -216,7 +216,7 @@ namespace BattleCore.Tests
                 Assert.That(begin.Events.OfType<Drawn>(), Is.Empty);
                 Assert.That(begin.Events.OfType<OmenSet>(), Is.Empty);
                 Assert.That(begin.State.Hand, Is.Empty);
-                Assert.That(begin.State.DrawPile, Has.Count.EqualTo(5));
+                Assert.That(begin.State.DrawPile, Has.Count.EqualTo(Constants.HandDraw));
                 Assert.That(begin.Events.Last(), Is.EqualTo(new BattleEnded(Actor.Enemy, GameResult.Lost)));
             });
         }
@@ -1184,10 +1184,11 @@ namespace BattleCore.Tests
         public void Draw_OnObserve_WithAThinHand_DrawsThree()
         {
             // §2.3 手薄 → ドロー +1 (#193: 2 or fewer left): 観察 draws 2, or 3 when it leaves the hand thin.
-            var s = Opened(1, Idle, CardCatalog.Observe, Block, Block, Filler, Filler, Jab(5), Jab(6), Jab(7));
+            // With six cards a turn (#351) the hand is thin only from the fourth card on: three blocks first.
+            var s = Opened(1, Idle, CardCatalog.Observe, Block, Block, Block, Filler, Filler, Jab(5), Jab(6), Jab(7));
 
             var full = Play(s, "observe");
-            var thinned = Play(Play(s, "block").State, "block").State;
+            var thinned = Play(Play(Play(s, "block").State, "block").State, "block").State;
             var thin = Play(thinned, "observe");
 
             Assert.Multiple(() =>
@@ -1315,10 +1316,10 @@ namespace BattleCore.Tests
 
                 // The rest of the hand goes to the discard pile; the stance cards stay out of the deck.
                 Assert.That(end.State.DiscardPile.Select(c => c.Def.Id), Is.All.EqualTo("filler"));
-                Assert.That(end.State.DiscardPile, Has.Count.EqualTo(3));
+                Assert.That(end.State.DiscardPile, Has.Count.EqualTo(Constants.HandDraw - 2));
                 Assert.That(end.State.Exiled, Has.Count.EqualTo(2));
                 Assert.That(next.State.Hand.Select(c => c.Def.Id), Is.All.EqualTo("filler"));
-                Assert.That(next.State.Hand, Has.Count.EqualTo(3));
+                Assert.That(next.State.Hand, Has.Count.EqualTo(Constants.HandDraw - 2));
             });
         }
 

@@ -320,7 +320,7 @@ namespace Depiction.Bridge
                 case Drawn drawn:
                 {
                     _hand.Add(drawn.Card);
-                    // A hand of five is five core events and one beat on screen.
+                    // A hand of six is six core events and one beat on screen.
                     Cue last = ev.Cues.Count > 0 ? ev.Cues[ev.Cues.Count - 1] : null;
                     if (last != null && last.Kind == CueKind.DrawHand) last.Amount += 1;
                     else ev.Cues.Add(new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 1 });

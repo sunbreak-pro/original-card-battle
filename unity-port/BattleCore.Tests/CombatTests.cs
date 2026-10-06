@@ -87,12 +87,14 @@ namespace BattleCore.Tests
             Assert.That(Combat.RecoverStamina(current: 2, max: 10, recovery: 2, bonus: 1), Is.EqualTo(5));
         }
 
-        [TestCase(0, 5)]
-        [TestCase(2, 7)]
+        [TestCase(0, 6)]
+        [TestCase(1, 7)]
+        [TestCase(2, 8)]
+        [TestCase(-2, 4)]
         [TestCase(-3, 3)]
         [TestCase(-9, 3)]
         [TestCase(9, 8)]
-        public void DrawCount_IsFivePlusTheModifier_ClampedToThreeAndEight(int modifier, int expected)
+        public void DrawCount_IsSixPlusTheModifier_ClampedToThreeAndEight(int modifier, int expected)
         {
             Assert.That(Combat.DrawCount(modifier), Is.EqualTo(expected));
         }
@@ -118,7 +120,7 @@ namespace BattleCore.Tests
         {
             Assert.Multiple(() =>
             {
-                Assert.That(Constants.HandDraw, Is.EqualTo(5));
+                Assert.That(Constants.HandDraw, Is.EqualTo(6));
                 Assert.That(Constants.HandLimit, Is.EqualTo(8));
                 Assert.That(Constants.BaseMaxStamina, Is.EqualTo(10));
                 Assert.That(Constants.StaminaRecovery, Is.EqualTo(3));
