@@ -108,12 +108,15 @@ namespace BattleCore.Tests
             });
         }
 
+
         // ---- What carries ----
 
         [Test]
         public void AThreeBattleChain_CarriesHpAndStamina_IntoEveryNextBattle()
         {
-            var rng = new SeededRng(5);
+            // Seed 6, not 5: with v4.5's harder cards (#363) seed 5 wins the first two battles
+            // untouched, and the HP carried would not show.
+            var rng = new SeededRng(6);
             var run = ChainRun.Start();
             var finishes = new List<BattleState>();
             var setups = new List<BattleSetup>();

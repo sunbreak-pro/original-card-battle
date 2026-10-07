@@ -212,7 +212,7 @@ namespace BattleCore.Tests
         public void TheTraitIsJudgedBeforeAnyFace_AndFacesComeInOrder()
         {
             // boar_rush is Attack + Move with a trait: trait → attack → move. At gap 2 the trait holds
-            // (14 + 6) and the two-cell move then closes to gap 0.
+            // (11 + 6) and the two-cell move then closes to gap 0.
             var state = StartUnshuffled(CardCatalog.BoarRush, CardCatalog.Thrust, CardCatalog.Brace,
                 CardCatalog.KesaCut, CardCatalog.Feint).State;
             state = TurnLoop.BeginPlayerTurn(state, NoRng).State;
@@ -229,7 +229,7 @@ namespace BattleCore.Tests
             var faces = play.Events.OfType<FaceResolved>().Select(f => f.Face).ToList();
             Assert.That(faces, Is.EqualTo(new[] { FaceKind.Attack, FaceKind.Move }));
             Assert.That(play.Events.OfType<CardPlayed>().Single().GapBefore, Is.EqualTo(2));
-            Assert.That(play.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(20), "the gap is read before the move");
+            Assert.That(play.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(17), "the gap is read before the move");
             Assert.That(play.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Player, 2, 4, Pushed: false)));
             Assert.That(play.State.Gap, Is.EqualTo(0));
         }
@@ -250,23 +250,25 @@ namespace BattleCore.Tests
         [Test]
         public void ACardOutOfReach_IsRefused_AndThePreviewSaysSo()
         {
-            // Gap 2: the thrust (0〜1) cannot be released; the reach thrust (1〜2) can; a Guard card reads no reach.
+            // Gap 2: the kesa cut (0〜1) cannot be released; the reach thrust (1〜2) and, since v4.5,
+            // the thrust (0〜2) can; a Guard card reads no reach.
             var s = StartUnshuffled(PrototypeDeck.Kinds.ToArray()).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
             Assert.Multiple(() =>
             {
-                Assert.That(TurnLoop.CanPlay(s, InHand(s, "thrust")), Is.EqualTo(PlayRefusal.OutOfReach));
+                Assert.That(TurnLoop.CanPlay(s, InHand(s, "kesa_cut")), Is.EqualTo(PlayRefusal.OutOfReach));
                 Assert.That(TurnLoop.CanPlay(s, InHand(s, "reach_thrust")), Is.EqualTo(PlayRefusal.None));
+                Assert.That(TurnLoop.CanPlay(s, InHand(s, "thrust")), Is.EqualTo(PlayRefusal.None));
                 Assert.That(TurnLoop.CanPlay(s, InHand(s, "brace")), Is.EqualTo(PlayRefusal.None));
-                Assert.That(TurnLoop.Preview(s, InHand(s, "thrust"))!.InReach, Is.False);
+                Assert.That(TurnLoop.Preview(s, InHand(s, "kesa_cut"))!.InReach, Is.False);
                 Assert.That(TurnLoop.Preview(s, InHand(s, "reach_thrust"))!.InReach, Is.True);
-                Assert.That(() => TurnLoop.PlayCard(s, InHand(s, "thrust"), NoRng), Throws.InvalidOperationException);
+                Assert.That(() => TurnLoop.PlayCard(s, InHand(s, "kesa_cut"), NoRng), Throws.InvalidOperationException);
             });
 
             // Not enough stamina is reported before the reach.
             var broke = s with { Player = s.Player with { Stamina = 1 } };
-            Assert.That(TurnLoop.CanPlay(broke, InHand(broke, "thrust")), Is.EqualTo(PlayRefusal.NotEnoughStamina));
+            Assert.That(TurnLoop.CanPlay(broke, InHand(broke, "kesa_cut")), Is.EqualTo(PlayRefusal.NotEnoughStamina));
         }
 
         [Test]
@@ -521,10 +523,10 @@ namespace BattleCore.Tests
                 CardCatalog.BodyCheck, CardCatalog.StepInGuard, CardCatalog.StepOutGuard).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
-            // Gap 0: kesa_cut is 13 + 5 against Guard 0.
+            // Gap 0: kesa_cut is 15 + 5 against Guard 0.
             var kesa = TurnLoop.PlayCard(s, InHand(s, "kesa_cut"), NoRng);
             Assert.That(kesa.Events.OfType<DamageDealt>().Single(),
-                Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 18, 0, 18, 0, 42)));
+                Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 20, 0, 20, 0, 40)));
 
             // Gap 0: the thrust gets its plain 23; the reach thrust cannot be released at all.
             var thrust = TurnLoop.PlayCard(s, InHand(s, "thrust"), NoRng);
@@ -537,10 +539,10 @@ namespace BattleCore.Tests
             Assert.That(t2.Player.Hp, Is.EqualTo(50 - 2 - 3));
             Assert.That(t2.Enemy.Guard, Is.EqualTo(3), "the polearm holds its 構え Guard 3");
             Assert.That(t2.Gap, Is.EqualTo(1), "shoved to cell 1 on turn 1");
-            // Turn 2, gap 1: boar_rush is a bare 14 (its bonus needs gap 2), and the Guard 3 soaks 3 of it.
+            // Turn 2, gap 1: boar_rush is a bare 11 (its bonus needs gap 2), and the Guard 3 soaks 3 of it.
             var intoGuard = TurnLoop.PlayCard(t2, InHand(t2, "boar_rush"), NoRng);
             Assert.That(intoGuard.Events.OfType<DamageDealt>().Single(),
-                Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 14, 3, 11, 0, 49)));
+                Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 11, 3, 8, 0, 52)));
             Assert.That(intoGuard.State.Gap, Is.EqualTo(0), "then it closes in as far as the line allows");
         }
 
@@ -555,11 +557,11 @@ namespace BattleCore.Tests
             s = TurnLoop.EndTurn(s, NoRng).State;            // enemy now holds Guard 3; the sweep moved nobody
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
-            // At gap 2, reach_thrust is 13 + 5: Guard 3 soaks 3 and 15 goes through.
+            // At gap 2, reach_thrust is 15 + 5: Guard 3 soaks 3 and 17 goes through.
             Assert.That(s.Gap, Is.EqualTo(2));
             var hit = TurnLoop.PlayCard(s, InHand(s, "reach_thrust"), NoRng);
             Assert.That(hit.Events.OfType<DamageDealt>().Single(),
-                Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 18, 3, 15, 0, 45)));
+                Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 20, 3, 17, 0, 43)));
         }
 
         [Test]
@@ -625,8 +627,8 @@ namespace BattleCore.Tests
             var play = TurnLoop.PlayCard(s, InHand(s, "body_check"), NoRng);
             Assert.That(play.Events.OfType<StatusApplied>().Single(),
                 Is.EqualTo(new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Slow, 2, 2, false)));
-            // Gap 0 → 重撃: 4 + 6, and the next recovery is one short.
-            Assert.That(play.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(10));
+            // Gap 0 → 重撃: 5 + 6, and the next recovery is one short.
+            Assert.That(play.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(11));
             Assert.That(play.State.Player.NextTurnRecoveryBonus, Is.EqualTo(-1));
 
             var end = TurnLoop.EndTurn(play.State, NoRng);
@@ -656,7 +658,7 @@ namespace BattleCore.Tests
             Assert.That(play.Events.OfType<MoveBlocked>().Single(), Is.EqualTo(new MoveBlocked(Actor.Player, StatusKind.Slow)));
             Assert.That(play.Events.OfType<CellsMoved>(), Is.Empty);
             Assert.That(play.State.Player.Cell, Is.EqualTo(2));
-            Assert.That(play.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(8), "the attack face still lands");
+            Assert.That(play.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(10), "the attack face still lands");
         }
 
         [Test]
@@ -905,10 +907,11 @@ namespace BattleCore.Tests
         //     cell 1, gap 4) → step_in_guard (24, cell 2) → step_out_guard (36, cell 1), 1 left, no 構え.
         //     The omen from gap 3 is 踏み込み: the polearm steps to cell 5 with Guard 2 and keeps
         //     10 − 1 = 9 → 構え 3, Guard 5. Gap 3 again → 踏み込み again.
-        //  T2 gap 3, 1 + 3 stamina. Only brace reaches nobody and is payable: Guard 9, 2 left.
+        //  T2 gap 3, 1 + 3 stamina. kesa_cut is out of reach, so brace (reaching nobody) goes first:
+        //     Guard 9, 2 left. boar_rush reaches 3 since v4.5 (#363), but 2 cannot pay its 3.
         //     踏み込み: the polearm steps to cell 4 with Guard 2, keeps 9 → 5. Gap 2 → the sweep.
-        //  T3 gap 2, 2 + 3 stamina. feint and kesa_cut reach 0〜1 only. reach_thrust 13 + 5 − 5 = 13:
-        //     60 − 13 = 47, 3 left. step_in_guard: Guard 12, cell 2, gap 1, 0 left, no 構え.
+        //  T3 gap 2, 2 + 3 stamina. feint and kesa_cut reach 0〜1 only. reach_thrust 15 + 5 − 5 = 15:
+        //     60 − 15 = 45, 3 left. step_in_guard: Guard 12, cell 2, gap 1, 0 left, no 構え.
         //     The sweep at gap 1 is a bare 8 into Guard 12: Guard 4, HP 50.
         private static readonly string[] PinnedHands =
         {
@@ -922,7 +925,7 @@ namespace BattleCore.Tests
         {
             "T1 P 50/1/36/c1 E 60/9/5/c5/— gap 3 omen 動",
             "T2 P 50/2/9/c1 E 60/9/5/c4/— gap 2 omen 攻撃・1〜2",
-            "T3 P 50/0/4/c2 E 47/8/3/c4/— gap 1 omen 攻撃・1〜2",
+            "T3 P 50/0/4/c2 E 45/8/3/c4/— gap 1 omen 攻撃・1〜2",
         };
 
         private static readonly int[] PinnedEventCounts = { 45, 30, 36 };

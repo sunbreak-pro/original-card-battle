@@ -156,12 +156,14 @@ namespace Depiction.Bridge.Tests
                 Assert.That(CoreText.TraitLines(CardCatalog.Thrust), Is.EqualTo(""), "素直");
                 Assert.That(CoreText.Describe(CardCatalog.Focus.Face, CardCatalog.Focus.Attributes),
                     Is.EqualTo("自分に集中を 2 付与する。自分に強化を 2 付与する。カードを 1 枚引く。"));
-                Assert.That(CoreText.Describe(CardCatalog.FlatStrike.Face, CardCatalog.FlatStrike.Attributes), Is.EqualTo("敵に 6 ダメージ。崩し 1。"));
+                Assert.That(CoreText.Describe(CardCatalog.FlatStrike.Face, CardCatalog.FlatStrike.Attributes), Is.EqualTo("敵に 7 ダメージ。崩し 1。"));
                 Assert.That(CoreText.Describe(CardCatalog.FirstAid.Face, CardCatalog.FirstAid.Attributes), Is.EqualTo("HP を 15 回復する。"));
                 Assert.That(CoreText.Describe(CardCatalog.RockStance.Face, CardCatalog.RockStance.Attributes), Is.EqualTo("構え: 毎ターン開始に Guard +3。"));
                 Assert.That(CoreText.StanceText(CardCatalog.WaterStance.Face.Stance), Is.EqualTo("間合い 2 以上で始まるターンに回復 +2"));
                 Assert.That(CoreText.StanceText(CardCatalog.MistStep.Face.Stance), Is.EqualTo("間合い 2 以上で終えたターンに Guard +3、次の回復 +2"));
                 Assert.That(CoreText.StanceText(CardCatalog.PriestPrayer.Face.Stance), Is.EqualTo("被弾のたび（ターン 1 回）スタミナ +1、Guard +3"));
+                Assert.That(CoreText.StanceText(CardCatalog.IronWall.Face.Stance), Is.EqualTo("毎ターン 1 回、防御のカードのコスト −1"), "#333: 鉄壁の構え");
+                Assert.That(CoreText.Describe(CardCatalog.IronWall.Face, CardCatalog.IronWall.Attributes), Is.EqualTo("構え: 毎ターン 1 回、防御のカードのコスト −1。"));
                 Assert.That(CoreText.StanceText(new StanceDef(StanceHook.StatusOnAttack, Status: StatusKind.Bleed, StatusStacks: 1)),
                     Is.EqualTo("アタックのたび敵に出血 1"), "#253: no card carries one yet");
                 Assert.That(CoreText.ValueOf(CardCatalog.FirstAid.Face, CardCatalog.FirstAid.Attributes), Is.EqualTo("15"));

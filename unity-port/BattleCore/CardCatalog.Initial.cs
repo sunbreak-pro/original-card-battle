@@ -8,71 +8,71 @@ namespace BattleCore
     {
         // ---- A ----
 
-        /// <summary>#1. The plain column-3 attack: 21 on the ruler plus the 素直 +2.</summary>
+        /// <summary>#1. The plain column-3 attack at 0〜2 (width 3): 21 on the band table plus the 素直 +2.</summary>
         public static readonly CardDef Thrust = new CardDef(
             "thrust", "突き", BattleAttribute.Attack, 3,
-            new Face(Power: 23),
+            new Face(Power: 23, Reach: new Reach(0, 2)),
             Description: "まっすぐ突く");
 
         /// <summary>#2. Pays +5 for standing adjacent.</summary>
         public static readonly CardDef KesaCut = new CardDef(
             "kesa_cut", "袈裟斬り", BattleAttribute.Attack, 2,
-            new Face(Power: 13),
+            new Face(Power: 15),
             AtMost(0, TraitEffect.PowerBonus, 5),
             Description: "肩口から斬り下ろす");
 
         /// <summary>#3. A heavy blow into an attack omen (a guard omen shows on about 5% of plays, #208).</summary>
         public static readonly CardDef Overhead = new CardDef(
             "overhead", "大上段", BattleAttribute.Attack, 2,
-            new Face(Power: 13),
+            new Face(Power: 15),
             OmenIs(OmenKind.Attack, TraitEffect.HeavyBlow),
             Description: "振りかぶって叩き落とす");
 
         /// <summary>#4. The light column-1 cut that hands back a stamina point when adjacent.</summary>
         public static readonly CardDef WristCut = new CardDef(
             "wrist_cut", "小手打ち", BattleAttribute.Attack, 1,
-            new Face(Power: 6),
+            new Face(Power: 7),
             AtMost(0, TraitEffect.StaminaGain, 1),
             Description: "手元を狙う軽い一撃");
 
-        /// <summary>#5. The second plain column-3 attack, the same 23 as the thrust.</summary>
+        /// <summary>#5. The second plain column-3 attack, kept at 0〜1 (width 2): 24 on the band table plus the 素直 +2.</summary>
         public static readonly CardDef SideSweep = new CardDef(
             "side_sweep", "横薙ぎ", BattleAttribute.Attack, 3,
-            new Face(Power: 23),
+            new Face(Power: 26),
             Description: "水平に薙ぐ");
 
         /// <summary>#6. Breaks 1 stamina, and hits +5 harder at a slowed foe.</summary>
         public static readonly CardDef FlatStrike = new CardDef(
             "flat_strike", "峰打ち", BattleAttribute.Attack, 1,
-            new Face(Power: 6, Break: 1),
+            new Face(Power: 7, Break: 1),
             FoeHas(StatusKind.Slow, TraitEffect.PowerBonus, 5),
             Description: "足の止まった相手の体力を削る");
 
-        /// <summary>#7. Reaches 0〜2 (so 11, not 13) and pays +3 into an attack omen.</summary>
+        /// <summary>#7. Reaches 0〜2 (width 3, so 13, not the 15 of 0〜1) and pays +3 into an attack omen.</summary>
         public static readonly CardDef ProbeThrust = new CardDef(
             "probe_thrust", "探り突き", BattleAttribute.Attack, 2,
-            new Face(Power: 11, Reach: new Reach(0, 2)),
+            new Face(Power: 13, Reach: new Reach(0, 2)),
             OmenIs(OmenKind.Attack, TraitEffect.PowerBonus, 3),
             Description: "相手の出方を探る突き");
 
-        /// <summary>#8. A column-1 heavy blow once the foe's stamina is broken.</summary>
+        /// <summary>#8. Reaches 0〜2 (width 3, so 6, not the 7 of 0〜1); a column-1 heavy blow once the foe's stamina is broken.</summary>
         public static readonly CardDef Pierce = new CardDef(
             "pierce", "貫き", BattleAttribute.Attack, 1,
-            new Face(Power: 6),
+            new Face(Power: 6, Reach: new Reach(0, 2)),
             When(TraitCondition.Broken, TraitEffect.HeavyBlow),
             Description: "崩れた相手を刺し貫く");
 
-        /// <summary>#9. One of the four cards that reach 3 (so 9, not 13); draws when thrown from a gap of 2 or more.</summary>
+        /// <summary>#9. One of the five cards that reach 3: 0〜3 is width 5 (so 8, not the 15 of 0〜1); draws when thrown from a gap of 2 or more.</summary>
         public static readonly CardDef ThrowBlade = new CardDef(
             "throw_blade", "投げ刃", BattleAttribute.Attack, 2,
-            new Face(Power: 9, Reach: new Reach(1, 3)),
+            new Face(Power: 8, Reach: new Reach(0, 3)),
             AtLeast(2, TraitEffect.Draw, 1),
             Description: "小刀を投げる");
 
-        /// <summary>#10. Reaches 1〜2 and pays +5 at a gap of 2 — where the polearm punishes.</summary>
+        /// <summary>#10. Reaches 1〜2 (width 2, so 15) and pays +5 at a gap of 2 — where the polearm punishes.</summary>
         public static readonly CardDef ReachThrust = new CardDef(
             "reach_thrust", "伸び突き", BattleAttribute.Attack, 2,
-            new Face(Power: 13, Reach: new Reach(1, 2)),
+            new Face(Power: 15, Reach: new Reach(1, 2)),
             AtLeast(2, TraitEffect.PowerBonus, 5),
             Description: "腕を伸ばし切って突く");
 
@@ -142,7 +142,7 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "動いてから斬る型");
 
-        // ---- Sk ----
+        // ---- Sk (#22 is G+Sk since v4.5) ----
 
         /// <summary>#19. The plain heal: 13 on the ruler plus the 素直 +2.</summary>
         public static readonly CardDef FirstAid = new CardDef(
@@ -166,13 +166,13 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "次の一手に力を溜める");
 
-        /// <summary>#22. Draws two, three when it leaves the hand thin.</summary>
+        /// <summary>#22. 3 Guard (the two-face column-1 Guard) and a draw, one more draw when it leaves the hand thin. 防御 since v4.5.</summary>
         public static readonly CardDef Observe = new CardDef(
-            "observe", "観察", BattleAttribute.Skill, 1,
-            new Face(Draw: 2),
+            "observe", "観察", BattleAttribute.Guard | BattleAttribute.Skill, 1,
+            new Face(Guard: 3, Draw: 1),
             When(TraitCondition.Thin, TraitEffect.Draw, 1),
             Targets: TargetKind.Self,
-            Description: "相手をよく見る");
+            Description: "受けを固めて相手をよく見る");
 
         /// <summary>#23. Empowers self and intimidates the foe at 0〜2; fragile too on a chain.</summary>
         public static readonly CardDef WarCry = new CardDef(
@@ -215,34 +215,34 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "受けの後に静かに詰める");
 
-        /// <summary>#28. Steps back one and regains a stamina point, one more as the third play or later.</summary>
+        /// <summary>#28. Steps back one behind 4 Guard (防御 since v4.5); a stamina point as the third play or later.</summary>
         public static readonly CardDef BreakOff = new CardDef(
             "break_off", "間合い切り", BattleAttribute.None, 1,
-            new Face(Move: -1, StaminaGain: 1),
+            new Face(Move: -1, Guard: 4),
             When(TraitCondition.Finisher, TraitEffect.StaminaGain, 1),
             Targets: TargetKind.Self,
-            Description: "手を尽くして間合いを切る");
+            Description: "手を尽くした後、刃を立てて間合いを切る");
 
         // ---- A+M ----
 
-        /// <summary>#29. Hits at 1〜2, then steps in one; +3 after a stance.</summary>
+        /// <summary>#29. Hits at 1〜2 (two faces, width 2: 16), then steps in one; +3 after a stance.</summary>
         public static readonly CardDef Lunge = new CardDef(
             "lunge", "踏み込み斬り", BattleAttribute.Attack, 3,
-            new Face(Power: 14, Move: 1, Reach: new Reach(1, 2)),
+            new Face(Power: 16, Move: 1, Reach: new Reach(1, 2)),
             Combo(BattleAttribute.Stance, TraitEffect.PowerBonus, 3),
             Description: "型を決めてから踏み込んで斬る");
 
         /// <summary>#30. Hit, then step back one; +3 Guard when stamina is held back.</summary>
         public static readonly CardDef Feint = new CardDef(
             "feint", "牽制", BattleAttribute.Attack, 2,
-            new Face(Power: 8, Move: -1),
+            new Face(Power: 10, Move: -1),
             Reserve(4, TraitEffect.GuardBonus, 3),
             Description: "牽制して退く");
 
-        /// <summary>#31. The answer to being shoved away: reaches 1〜2, the gap is read before the move, so from 2 it lands at 20 and closes in.</summary>
+        /// <summary>#31. The answer to being shoved away: reaches 1〜3 (two faces, width 4: 11), the gap is read before the move, so from 2 or 3 it lands at 17 and closes in.</summary>
         public static readonly CardDef BoarRush = new CardDef(
             "boar_rush", "猪突猛進", BattleAttribute.Attack, 3,
-            new Face(Power: 14, Move: 2, Reach: new Reach(1, 2)),
+            new Face(Power: 11, Move: 2, Reach: new Reach(1, 3)),
             AtLeast(2, TraitEffect.PowerBonus, 6),
             Description: "遠くから一気に駆けて斬る");
 
@@ -251,36 +251,36 @@ namespace BattleCore
         /// <summary>#32. Bleed 1 on the hit, one more stack into a foe already bleeding.</summary>
         public static readonly CardDef Rend = new CardDef(
             "rend", "裂き斬り", BattleAttribute.Attack | BattleAttribute.Skill, 1,
-            new Face(Power: 4, Statuses: new[] { Foe(StatusKind.Bleed, 1) }),
+            new Face(Power: 5, Statuses: new[] { Foe(StatusKind.Bleed, 1) }),
             FoeHas(StatusKind.Bleed, TraitEffect.Status, grant: Foe(StatusKind.Bleed, 1)),
             Description: "傷口をさらに裂く");
 
         /// <summary>#33. The column-1 attack that slows; a heavy blow when adjacent.</summary>
         public static readonly CardDef BodyCheck = new CardDef(
             "body_check", "体当たり", BattleAttribute.Attack | BattleAttribute.Skill, 1,
-            new Face(Power: 4, Statuses: new[] { Foe(StatusKind.Slow, 2) }),
+            new Face(Power: 5, Statuses: new[] { Foe(StatusKind.Slow, 2) }),
             AtMost(0, TraitEffect.HeavyBlow),
             Description: "詰め切って身体ごとぶつかる");
 
-        /// <summary>#34. Reaches 1〜3 (so 4, not 8) with fragile and intimidate; costs one less from a gap of 2 or more.</summary>
+        /// <summary>#34. Reaches 0〜3 (two faces, width 5: 5, not the 10 of 0〜1) with fragile and intimidate; costs one less from a gap of 2 or more.</summary>
         public static readonly CardDef StoneThrow = new CardDef(
             "stone_throw", "石礫", BattleAttribute.Attack | BattleAttribute.Skill, 2,
-            new Face(Power: 4, Reach: new Reach(1, 3), Statuses: new[] { Foe(StatusKind.Fragile, 2), Foe(StatusKind.Intimidate, 2) }),
+            new Face(Power: 5, Reach: new Reach(0, 3), Statuses: new[] { Foe(StatusKind.Fragile, 2), Foe(StatusKind.Intimidate, 2) }),
             AtLeast(2, TraitEffect.CostDown, 1),
             Description: "離れていても石は投げられる");
 
         // ---- A+G ----
 
-        /// <summary>#35. The plain attack-and-guard: 14 / 10 on the ruler plus the 素直 +2 each.</summary>
+        /// <summary>#35. The plain attack-and-guard: 16 (two faces at 0〜1) / 10 on the scales plus the 素直 +2 each.</summary>
         public static readonly CardDef ParryCut = new CardDef(
             "parry_cut", "受け流し斬り", BattleAttribute.Attack | BattleAttribute.Guard, 3,
-            new Face(Power: 16, Guard: 12),
+            new Face(Power: 18, Guard: 12),
             Description: "受け流しざまに斬る");
 
-        /// <summary>#36. Adjacent only (so 17, not 14); +3 after a guard.</summary>
+        /// <summary>#36. Adjacent only (width 1, so 18, not the 16 of 0〜1); +3 after a guard.</summary>
         public static readonly CardDef GuardThrust = new CardDef(
             "guard_thrust", "柄当て", BattleAttribute.Attack | BattleAttribute.Guard, 3,
-            new Face(Power: 17, Guard: 10, Reach: Reach.Only(0)),
+            new Face(Power: 18, Guard: 10, Reach: Reach.Only(0)),
             Combo(BattleAttribute.Guard, TraitEffect.PowerBonus, 3),
             Description: "受けた勢いで柄を突き出す");
 
@@ -300,12 +300,12 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "受けながら退く");
 
-        // ---- G+St ----
+        // ---- St (stance only since v4.4, #257) ----
 
-        /// <summary>#39. Guard now and a stance of 3 Guard at every turn start; +3 while parrying.</summary>
+        /// <summary>#39. Stance: once a turn, a 防御 card costs one less (column 3 → 2 in v4.4); +3 Guard now while parrying.</summary>
         public static readonly CardDef IronWall = new CardDef(
-            "iron_wall", "鉄壁の構え", BattleAttribute.Guard | BattleAttribute.Stance, 3,
-            new Face(Guard: 10, Stance: new StanceDef(StanceHook.TurnStart, Guard: 3)),
+            "iron_wall", "鉄壁の構え", BattleAttribute.Stance, 2,
+            new Face(Stance: new StanceDef(StanceHook.CostDiscount, Attribute: BattleAttribute.Guard)),
             SelfHas(StatusKind.Parry, TraitEffect.GuardBonus, 3),
             Targets: TargetKind.Self,
             Description: "見切った上で壁になる");

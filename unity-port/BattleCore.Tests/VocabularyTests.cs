@@ -419,15 +419,15 @@ namespace BattleCore.Tests
                 Assert.That(skill.Events.OfType<StatusConsumed>(), Is.Empty);
                 Assert.That(skill.State.Player.Statuses.Stacks(StatusKind.Intimidate), Is.EqualTo(3));
 
-                // 盾打ち (8 / 6): both faces lose 3, and one stack goes for the card.
-                Assert.That(preview.RawPower, Is.EqualTo(5));
+                // 盾打ち (10 / 6): both faces lose 3, and one stack goes for the card.
+                Assert.That(preview.RawPower, Is.EqualTo(7));
                 Assert.That(preview.GuardGain, Is.EqualTo(3));
-                Assert.That(bash.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 5, 0, 5, 0, 55)));
+                Assert.That(bash.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 7, 0, 7, 0, 53)));
                 Assert.That(bash.Events.OfType<GuardGained>().Single(), Is.EqualTo(new GuardGained(Actor.Player, 3, 3)));
                 Assert.That(bash.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Player, StatusKind.Intimidate, 2)));
 
                 // Floor 0 on the power and on the Guard.
-                Assert.That(tiny.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 0, 0, 0, 0, 55)));
+                Assert.That(tiny.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 0, 0, 0, 0, 53)));
                 Assert.That(tiny.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Player, StatusKind.Intimidate, 1)));
                 Assert.That(guard.Events.OfType<GuardGained>(), Is.Empty);
                 Assert.That(guard.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Player, StatusKind.Intimidate, 0)));
@@ -762,9 +762,11 @@ namespace BattleCore.Tests
         public void ThePlayer_RefusesASeventhKind_ButKeepsStackingAHeldOne()
         {
             // §5 上限 (6 kinds): 覚悟 at 死力 gives 強化 (a seventh kind: refused) and 再生 (already held: stacked).
+            // 俊敏 rather than 威圧 among the six: 覚悟 carries a Guard since v4.5 (#352), which would
+            // spend a held 威圧 and free a slot before 強化 lands.
             var six = StatusSet.Of(
                 (StatusKind.Slow, 1), (StatusKind.Bleed, 1), (StatusKind.Fragile, 1),
-                (StatusKind.Intimidate, 1), (StatusKind.Fatigue, 1), (StatusKind.Regen, 2));
+                (StatusKind.Swift, 1), (StatusKind.Fatigue, 1), (StatusKind.Regen, 2));
             var s = Opened(1, Idle, CardCatalog.Resolve);
             s = s with { Player = s.Player with { Stamina = 2, Statuses = six } };
 
@@ -1128,7 +1130,8 @@ namespace BattleCore.Tests
         [Test]
         public void FollowUp_WaitsForTheNextAttackFace_NotTheCardsOwn()
         {
-            // §2.3 追撃 (このターンの次のアタック面): 浄化の一閃 into an attack omen hits its own 8 and hands +5 on.
+            // §2.3 追撃 (このターンの次のアタック面): 浄化の一閃 into an attack omen hands +5 on. It is a
+            // stance card since v4.4 (#257, #333), so it has no attack face of its own to spend it.
             var s = Opened(1, Fixtures.Enemy(), CardCatalog.PurgeFlash, Jab(10));
             Assert.That(s.Omen!.Label.Kind, Is.EqualTo(OmenKind.Attack));
 
@@ -1137,7 +1140,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(flash.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(8));
+                Assert.That(flash.Events.OfType<DamageDealt>(), Is.Empty);
                 Assert.That(flash.State.Player.FollowUp, Is.EqualTo(5));
                 Assert.That(jab.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(15));
                 Assert.That(jab.State.Player.FollowUp, Is.EqualTo(0));
@@ -1165,7 +1168,7 @@ namespace BattleCore.Tests
         [Test]
         public void Convert_OnCrescentCut_AsTheThirdPlay_AddsHalfItsGuardToItsPower()
         {
-            // §2.3 締め → 転換: 8 + ceil(6 / 2) = 11 as the third play, a plain 8 as the first; the Guard face still lands.
+            // §2.3 締め → 転換: 10 + ceil(6 / 2) = 13 as the third play, a plain 10 as the first; the Guard face still lands.
             var s = Opened(1, Idle, Block, Block, CardCatalog.CrescentCut);
 
             var first = Play(s, "crescent_cut");
@@ -1173,17 +1176,18 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(first.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(8));
+                Assert.That(first.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(10));
                 Assert.That(third.Events.OfType<TraitEvaluated>().Single().Outcome.Convert, Is.True);
-                Assert.That(third.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(11));
+                Assert.That(third.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(13));
                 Assert.That(third.Events.OfType<GuardGained>().Single(), Is.EqualTo(new GuardGained(Actor.Player, 6, 14)));
             });
         }
 
         [Test]
-        public void Draw_OnObserve_WithAThinHand_DrawsThree()
+        public void Draw_OnObserve_WithAThinHand_DrawsTwo()
         {
-            // §2.3 手薄 → ドロー +1 (#193: 2 or fewer left): 観察 draws 2, or 3 when it leaves the hand thin.
+            // §2.3 手薄 → ドロー +1 (#193: 2 or fewer left): 観察 draws 1 behind its Guard 3 (v4.5, #352),
+            // or 2 when it leaves the hand thin.
             // With six cards a turn (#351) the hand is thin only from the fourth card on: three blocks first.
             var s = Opened(1, Idle, CardCatalog.Observe, Block, Block, Block, Filler, Filler, Jab(5), Jab(6), Jab(7));
 
@@ -1194,12 +1198,13 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(full.Events.OfType<TraitEvaluated>().Single().Outcome.Triggered, Is.False);
-                Assert.That(full.Events.OfType<Drawn>().Count(), Is.EqualTo(2));
+                Assert.That(full.Events.OfType<Drawn>().Count(), Is.EqualTo(1));
+                Assert.That(full.Events.OfType<GuardGained>().Single(), Is.EqualTo(new GuardGained(Actor.Player, 3, 3)));
 
                 Assert.That(thinned.Hand, Has.Count.EqualTo(3));
                 Assert.That(thin.Events.OfType<TraitEvaluated>().Single().Outcome.Draw, Is.EqualTo(1));
-                Assert.That(thin.Events.OfType<Drawn>().Select(d => d.Card.Def.Id), Is.EqualTo(new[] { "jab5", "jab6", "jab7" }));
-                Assert.That(thin.State.Hand, Has.Count.EqualTo(5));
+                Assert.That(thin.Events.OfType<Drawn>().Select(d => d.Card.Def.Id), Is.EqualTo(new[] { "jab5", "jab6" }));
+                Assert.That(thin.State.Hand, Has.Count.EqualTo(4));
             });
         }
 
@@ -1253,7 +1258,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(full.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(6));
+                Assert.That(full.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(7));
                 Assert.That(full.Events.OfType<StaminaBroken>().Single(), Is.EqualTo(new StaminaBroken(Actor.Player, Actor.Enemy, 1, 9)));
                 AssertInOrder(full.Events, typeof(DamageDealt), typeof(StaminaBroken));
                 Assert.That(full.State.Enemy.Stamina, Is.EqualTo(9));
@@ -1468,11 +1473,12 @@ namespace BattleCore.Tests
             });
         }
 
-        [TestCase(1, true, 8)]
-        [TestCase(0, false, 3)]
+        [TestCase(2, true, 8)]
+        [TestCase(1, false, 3)]
         public void RootStride_GivesFiveGuard_AtTurnEnd_WhenTheGapIsTwoOrMore_BeforeReserve(int startGap, bool fires, int guardAfterReserve)
         {
-            // §4 (turn-end stance) / §9 step 7: 根渡り steps back one; at turn end +5 if N ≥ 2, then 構え.
+            // §4 (turn-end stance) / §9 step 7: at turn end 根渡り gives +5 if N ≥ 2, then 構え. It is a
+            // stance card only since v4.4 (#257, #333): it no longer steps back.
             var s = Opened(startGap, Idle, CardCatalog.RootStride);
 
             var played = Play(s, "root_stride").State;
@@ -1480,7 +1486,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(played.Gap, Is.EqualTo(startGap + 1));
+                Assert.That(played.Gap, Is.EqualTo(startGap));
                 Assert.That(end.Events.OfType<StanceFired>().Any(e => e.Actor == Actor.Player && e.Hook == StanceHook.TurnEnd), Is.EqualTo(fires));
                 Assert.That(end.Events.OfType<ReserveChecked>().First(), Is.EqualTo(new ReserveChecked(Actor.Player, 7, 3, guardAfterReserve)));
                 if (fires)
@@ -1520,7 +1526,8 @@ namespace BattleCore.Tests
         [Test]
         public void AbyssStance_AddsFive_OnlyAgainstATargetAtGapZero()
         {
-            // §4 条件付き加算 (深淵の構え: the foe hit stands at N 0). The card's own blow lands before its stance is set.
+            // §4 条件付き加算 (深淵の構え: the foe hit stands at N 0). A stance card only since v4.4 (#257,
+            // #333): it strikes nothing itself.
             var s = Opened(1, Idle, CardCatalog.AbyssStance, Jab(10), StepIn, Jab(10));
 
             var abyss = Play(s, "abyss_stance");
@@ -1529,7 +1536,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(abyss.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(14));
+                Assert.That(abyss.Events.OfType<DamageDealt>(), Is.Empty);
                 Assert.That(far.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(10), "gap 1: no bonus");
                 Assert.That(far.Events.OfType<StanceFired>(), Is.Empty);
                 Assert.That(close.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(15), "gap 0: +5");
@@ -1541,6 +1548,7 @@ namespace BattleCore.Tests
         public void WolfStance_AddsThree_OnlyAgainstABleedingTarget()
         {
             // §4 条件付き加算 (狼の構え: the foe hit holds 出血). 裂き斬り's own blow comes before its bleed.
+            // 狼の構え is a stance card only since v4.4 (#257, #333): it strikes nothing itself.
             var s = Opened(1, Idle, CardCatalog.WolfStance, Jab(10), CardCatalog.Rend, Jab(10));
 
             var wolf = Play(s, "wolf_stance");
@@ -1550,9 +1558,9 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(wolf.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(8));
+                Assert.That(wolf.Events.OfType<DamageDealt>(), Is.Empty);
                 Assert.That(dry.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(10));
-                Assert.That(rend.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(4));
+                Assert.That(rend.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(5));
                 Assert.That(rend.Events.OfType<StatusApplied>().Single(), Is.EqualTo(new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Bleed, 1, 1, false)));
                 Assert.That(bleeding.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(13));
                 Assert.That(bleeding.Events.OfType<StanceFired>().Single(), Is.EqualTo(new StanceFired(Actor.Player, "wolf_stance", StanceHook.AttackBonus)));
@@ -1601,6 +1609,159 @@ namespace BattleCore.Tests
                     new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Bleed, 1, 1, false) { Unit = 1 },
                 }));
                 Assert.That(end.State.Enemies.Select(e => e.Body.Statuses.Stacks(StatusKind.Bleed)), Is.EqualTo(new[] { 1, 1 }));
+            });
+        }
+
+        // ---- §4 コストの割引 (鉄壁の構え, #333) ----
+
+        /// <summary>A column-2 Guard card: cost 2, 2 − 1 = 1 under 鉄壁の構え.</summary>
+        private static readonly CardDef Wall2 =
+            Fixtures.Card("wall2", 2, new Face(Guard: 9), BattleAttribute.Guard, targets: TargetKind.Self);
+
+        private static int Spent(StepResult step) => step.Events.OfType<StaminaSpent>().Single().Amount;
+
+        private static bool Discounted(StepResult step) =>
+            step.Events.OfType<StanceFired>().Any(e => e.Hook == StanceHook.CostDiscount);
+
+        [Test]
+        public void IronWall_TakesOneOffOneGuardCard_OnceATurn_AndAgainNextTurn()
+        {
+            // battle_core_v4 §4 「毎ターン 1 回、<属性> のカードのコスト −1」: 鉄壁の構え discounts 防御.
+            var s = Opened(1, Idle, CardCatalog.IronWall, Wall2, Wall2, Jab(10, column: 2));
+            var walled = Play(s, "iron_wall");
+            var w = walled.State;
+            var previewFirst = TurnLoop.Preview(w, InHand(w, "wall2"))!;
+            var first = Play(w, "wall2");
+            var previewSecond = TurnLoop.Preview(first.State, InHand(first.State, "wall2"))!;
+            var second = Play(first.State, "wall2");
+            var next = Begin(End(second.State).State).State;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(TurnLoop.CostNow(s, Wall2), Is.EqualTo(2), "no stance yet");
+                Assert.That(walled.Events.OfType<StanceSet>().Single().Stance,
+                    Is.EqualTo(new StanceDef(StanceHook.CostDiscount, Attribute: BattleAttribute.Guard)));
+
+                // The first Guard card of the turn costs 1; the preview, CostNow and the payment agree.
+                Assert.That(TurnLoop.CostNow(w, Wall2), Is.EqualTo(1));
+                Assert.That(previewFirst.Cost, Is.EqualTo(1));
+                Assert.That(Spent(first), Is.EqualTo(previewFirst.Cost));
+                Assert.That(first.Events.OfType<StanceFired>().Single(),
+                    Is.EqualTo(new StanceFired(Actor.Player, "iron_wall", StanceHook.CostDiscount)));
+                AssertInOrder(first.Events, typeof(CardPlayed), typeof(StanceFired), typeof(StaminaSpent));
+                Assert.That(first.State.Player.Stamina, Is.EqualTo(10 - 2 - 1));
+
+                // The second pays its column: the one discount of the turn is spent.
+                Assert.That(previewSecond.Cost, Is.EqualTo(2));
+                Assert.That(Spent(second), Is.EqualTo(2));
+                Assert.That(Discounted(second), Is.False);
+
+                // The next turn has a discount again.
+                Assert.That(next.Turn, Is.EqualTo(2));
+                Assert.That(TurnLoop.CostNow(next, Wall2), Is.EqualTo(1));
+            });
+        }
+
+        [Test]
+        public void IronWall_LetsAGuardCardBePaidForWithOneStaminaLess()
+        {
+            // CanPlay reads the discounted cost: 1 stamina pays for a column-2 Guard card.
+            var s = Opened(1, Idle, CardCatalog.IronWall, Wall2);
+            var walled = Play(s, "iron_wall").State;
+            var poor = walled with { Player = walled.Player with { Stamina = 1 } };
+            var bare = s with { Player = s.Player with { Stamina = 1 } };
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(TurnLoop.CanPlay(bare, InHand(bare, "wall2")), Is.EqualTo(PlayRefusal.NotEnoughStamina));
+                Assert.That(TurnLoop.CanPlay(poor, InHand(poor, "wall2")), Is.EqualTo(PlayRefusal.None));
+                Assert.That(Play(poor, "wall2").State.Player.Stamina, Is.EqualTo(0));
+            });
+        }
+
+        [Test]
+        public void TwoIronWalls_DiscountTwoCardsATurn_OneEach()
+        {
+            // §4: two entries work twice a turn — on two cards, never 2 off the same card.
+            var s = Opened(1, Idle, CardCatalog.IronWall, CardCatalog.IronWall, Wall2, Wall2, Wall2);
+            var walled = Play(Play(s, "iron_wall").State, "iron_wall").State;
+            var first = Play(walled, "wall2");
+            var second = Play(first.State, "wall2");
+            var third = Play(second.State, "wall2");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(walled.Player.StanceList.Count(e => e.Def.Hook == StanceHook.CostDiscount), Is.EqualTo(2));
+                Assert.That(TurnLoop.CostNow(walled, Wall2), Is.EqualTo(1), "one entry a card");
+                Assert.That(Spent(first), Is.EqualTo(1));
+                Assert.That(Spent(second), Is.EqualTo(1));
+                Assert.That(Spent(third), Is.EqualTo(2));
+                Assert.That(first.Events.OfType<StanceFired>().Concat(second.Events.OfType<StanceFired>()).Count(), Is.EqualTo(2));
+                Assert.That(Discounted(third), Is.False);
+                Assert.That(third.State.Player.StanceList.All(e => e.ReactedTurn == 1), Is.True);
+            });
+        }
+
+        [Test]
+        public void IronWall_DiscountsOnlyCardsThatCountAsGuard()
+        {
+            // §2.1: the folded attribute decides. 観察 (G + Sk) and 後ろ跳び (movement with a Guard) count
+            // as 防御; 盾打ち (A + G) counts as 攻撃; 集中 is スキル and 岩の構え スタンス.
+            var walled = Play(Opened(0, Idle, CardCatalog.IronWall), "iron_wall").State;
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(TurnLoop.CostNow(walled, CardCatalog.Observe), Is.EqualTo(0));
+                Assert.That(TurnLoop.CostNow(walled, CardCatalog.BackLeap), Is.EqualTo(0));
+                Assert.That(TurnLoop.CostNow(walled, CardCatalog.Brace), Is.EqualTo(1));
+                Assert.That(TurnLoop.CostNow(walled, CardCatalog.ShieldBash), Is.EqualTo(2));
+                Assert.That(TurnLoop.CostNow(walled, CardCatalog.Focus), Is.EqualTo(3));
+                Assert.That(TurnLoop.CostNow(walled, CardCatalog.RockStance), Is.EqualTo(2));
+                Assert.That(TurnLoop.CostNow(walled, CardCatalog.IronWall), Is.EqualTo(2));
+            });
+        }
+
+        [Test]
+        public void IronWall_StopsAtZero_AndIsNotSpentOnACardAlreadyFree()
+        {
+            // Floor 0, after the card's own コスト −1: a Guard card its trait already makes free keeps the
+            // turn's discount for the next Guard card, which then costs 0.
+            var freeBlock = Fixtures.Card("free_block", 1, new Face(Guard: 4), BattleAttribute.Guard,
+                new Trait(TraitCondition.Combo, TraitEffect.CostDown, 1, Attribute: BattleAttribute.Stance), TargetKind.Self);
+            var walled = Play(Opened(1, Idle, CardCatalog.IronWall, freeBlock, Block, Block), "iron_wall").State;
+            var free = Play(walled, "free_block");
+            var block = Play(free.State, "block");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(TurnLoop.CostNow(walled, freeBlock), Is.EqualTo(0));
+                Assert.That(Spent(free), Is.EqualTo(0));
+                Assert.That(Discounted(free), Is.False, "nothing to save");
+                Assert.That(TurnLoop.CostNow(free.State, Block), Is.EqualTo(0), "1 − 1, not below 0");
+                Assert.That(Spent(block), Is.EqualTo(0));
+                Assert.That(Discounted(block), Is.True);
+                Assert.That(TurnLoop.CostNow(block.State, Block), Is.EqualTo(1));
+            });
+        }
+
+        [Test]
+        public void IronWall_Reserve_CountsTheStaminaLeftAfterTheDiscountedCost()
+        {
+            // §2.3 温存 「使用後の残スタミナ ≥ n」: #11 呼吸を整える (G, cost 2, 温存(残 ≥ 6)) at 7 stamina
+            // pays 1 under 鉄壁の構え and keeps 6; without the stance it pays 2 and keeps 5.
+            var s = Opened(1, Idle, CardCatalog.IronWall, CardCatalog.Brace);
+            var walled = Play(s, "iron_wall").State;
+            var seven = walled with { Player = walled.Player with { Stamina = 7 } };
+            var bare = s with { Player = s.Player with { Stamina = 7 } };
+            var braced = Play(seven, "brace");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(TurnLoop.Preview(seven, InHand(seven, "brace"))!.TraitHolds, Is.True);
+                Assert.That(TurnLoop.Preview(bare, InHand(bare, "brace"))!.TraitHolds, Is.False);
+                Assert.That(Spent(braced), Is.EqualTo(1));
+                Assert.That(braced.State.Player.NextTurnRecoveryBonus, Is.EqualTo(1));
+                Assert.That(Play(bare, "brace").State.Player.NextTurnRecoveryBonus, Is.EqualTo(0));
             });
         }
 
@@ -1715,8 +1876,9 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                // 錨 3 + 構え 3 = 6: the shove loses its 無防備 +3 and the Guard soaks its 5.
-                Assert.That(end.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 5, 5, 0, 1, 50)));
+                // 構え 3 (錨の構え gives no Guard of its own since v4.4, #333): the shove loses its 無防備 +3
+                // and the Guard soaks 3 of its 5.
+                Assert.That(end.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 5, 3, 2, 0, 48)));
                 Assert.That(end.Events.OfType<StanceFired>().Single(), Is.EqualTo(new StanceFired(Actor.Player, "anchor_stance", StanceHook.PushImmune)));
                 Assert.That(end.Events.OfType<PushRefused>().Single(), Is.EqualTo(new PushRefused(Actor.Player, 1) { ByStance = true }));
                 Assert.That(end.Events.OfType<CellsMoved>(), Is.Empty);
@@ -1740,7 +1902,7 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(bound.Events.OfType<StanceSet>().Single().SourceId, Is.EqualTo("root_bind"));
-                Assert.That(bound.Events.OfType<StatusApplied>().Single(), Is.EqualTo(new StatusApplied(Actor.Player, Actor.Enemy, StatusKind.Slow, 2, 2, false)));
+                Assert.That(bound.Events.OfType<StatusApplied>(), Is.Empty, "a stance card only since v4.4 (#333): it slows nobody");
                 Assert.That(backed.State.Gap, Is.EqualTo(3));
                 Assert.That(backed.Events.OfType<StaminaBroken>(), Is.Empty, "the player's own move does not count");
 
@@ -1749,8 +1911,8 @@ namespace BattleCore.Tests
                 Assert.That(turn1.Events.OfType<StaminaBroken>(), Is.Empty);
                 Assert.That(turn1.State.Omen!.ActionId, Is.EqualTo("step_forward"));
 
-                // Turn 2: 鈍足 has worn off, the polearm steps in 5 → 4 and the bind takes 1: 8 + 2 − 1 (cost) − 1 = 8.
-                Assert.That(turn2.Events.OfType<StatusTicked>().Single(), Is.EqualTo(new StatusTicked(Actor.Enemy, StatusKind.Slow, 0)));
+                // Turn 2: the polearm steps in 5 → 4 and the bind takes 1: 8 + 2 − 1 (cost) − 1 = 8.
+                Assert.That(turn2.Events.OfType<StatusTicked>(), Is.Empty, "nothing slowed it");
                 Assert.That(turn2.Events.OfType<CellsMoved>().Single(), Is.EqualTo(new CellsMoved(Actor.Enemy, 5, 4, Pushed: false)));
                 Assert.That(turn2.Events.OfType<StanceFired>().Single(), Is.EqualTo(new StanceFired(Actor.Player, "root_bind", StanceHook.BreakOnFoeMove)));
                 Assert.That(turn2.Events.OfType<StaminaBroken>().Single(), Is.EqualTo(new StaminaBroken(Actor.Player, Actor.Enemy, 1, 8)));
