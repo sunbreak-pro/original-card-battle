@@ -508,6 +508,8 @@ namespace BattleCore.Tests
         /// recovery of 3 to 0. Once both sides sit at 0 stamina and no HP moves, the fight never ends
         /// (<see cref="WitherLocked"/>). A fight that reaches that lock is let through and logged, not
         /// failed; the lock itself is the roster's to fix.
+        /// TODO: drop the lock check (<see cref="WitherLockEnemy"/>, <see cref="WitherLocked"/>) once
+        /// the cards lane fixes the hole (handoff 2026-10-08-battle-root-wither-lock.md; issue not yet filed).
         /// </summary>
         [TestCaseSource(nameof(AllIds))]
         public void EachEnemy_FightsToTheEnd_WithAFixedSeed(string id)
@@ -528,7 +530,7 @@ namespace BattleCore.Tests
                         state = TurnLoop.BeginPlayerTurn(state, rng).State;
                         turns++;
                         var hp = (state.Player.Hp, state.Enemy.Hp);
-                        lockedTurns = WitherLocked(state) && (lockedTurns == 0 || hp == lockedHp) ? lockedTurns + 1 : 0;
+                        lockedTurns = id == WitherLockEnemy && WitherLocked(state) ? (hp == lockedHp ? lockedTurns + 1 : 1) : 0;
                         lockedHp = hp;
                         if (lockedTurns >= WitherLockTurns) break;
                         while (state.Result == GameResult.Ongoing)
@@ -549,6 +551,9 @@ namespace BattleCore.Tests
                 TestContext.Out.WriteLine(id + " seed " + seed + ": " + state.Result + " in " + turns + " turns");
             }
         }
+
+        /// <summary>The only enemy whose fights may stop in the 枯らし lock; every other enemy must still end in 200 turns.</summary>
+        private const string WitherLockEnemy = "distortion_root";
 
         /// <summary>The turns in a row the 枯らし lock has to hold, with no HP moving, before a fight is taken to have stalled in it.</summary>
         private const int WitherLockTurns = 10;
