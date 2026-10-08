@@ -713,8 +713,19 @@ namespace Depiction.Bridge
             frame.Enemy.ArtId = _enemyDef.Id;
             foreach (CardInstance card in _hand)
             {
-                frame.Hand.Add(CoreText.Face(card, TurnLoop.Preview(after, card.InstanceId),
-                    CoreText.ReachesNobody(after, card.InstanceId)));
+                CardFace face = CoreText.Face(card, TurnLoop.Preview(after, card.InstanceId),
+                    CoreText.ReachesNobody(after, card.InstanceId));
+                // battle-visual-v1 §6.3 (#242): lit when any enemy in reach satisfies the trait, with each
+                // enemy's own verdict for the one a held card frames. A card the state no longer holds
+                // (the hand mirrored here runs ahead of it mid-event) keeps the preview's lamp.
+                List<bool> perEnemy;
+                bool lit = CardFaceText.Lamps(after, card.InstanceId, out perEnemy);
+                if (TurnLoop.Preview(after, card.InstanceId) != null)
+                {
+                    face.TraitLit = lit;
+                    face.LitOn = perEnemy;
+                }
+                frame.Hand.Add(face);
             }
             bool waiting = _playerActs && after.Result == GameResult.Ongoing;
             int reserve = waiting ? Combat.ReserveGuard(_player.Stamina) : 0;
@@ -782,7 +793,7 @@ namespace Depiction.Bridge
             frame.Statuses.AddRange(CoreText.StanceChips(unit.Stances));
             foreach (KeyValuePair<StatusKind, int> pair in unit.Statuses)
             {
-                frame.Statuses.Add(new StatusChip { Label = pair.Key.ToLabel(), Stacks = pair.Value });
+                frame.Statuses.Add(StatusChipText.Chip(pair.Key, pair.Value));
             }
             return frame;
         }
