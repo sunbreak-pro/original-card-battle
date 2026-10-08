@@ -69,7 +69,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | 継承の間の画面と導線 | `.claude/docs/camp_document/CAMP_FACILITIES_DESIGN.md` | design | 現行 | dungeon |
 | 戦闘画面とカードの見た目（色・部品・数字の置き場・意味の伝え方） | `.claude/docs/art_document/battle-visual-v1.md` | design | 確定 | battle, cards |
 | カードの絵の方針 | `.claude/docs/art_document/card-art-policy.md` | design | DRAFT | cards |
-| 絵柄の規約（原本の大きさ・指示文・加筆） | `.claude/docs/art_document/style-guide.md` | design | DRAFT（指示文は未実測） | — |
+| 絵柄の規約（原本の大きさ・指示文・加筆） | `.claude/docs/art_document/style-guide.md` | design | DRAFT | — |
 | 素材の取り込み規約（置き場・命名・Unity の設定） | `.claude/docs/art_document/asset-intake.md` | design | DRAFT | battle |
 | アートの道具と前提 | `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md` | design | 現行 | — |
 
