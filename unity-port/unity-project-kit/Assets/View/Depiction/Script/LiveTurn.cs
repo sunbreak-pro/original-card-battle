@@ -366,13 +366,13 @@ namespace Depiction
                 ev.Cues.Add(new Cue
                 {
                     Kind = CueKind.Slash, Source = source, Target = target,
-                    Amount = raw, Intensity = Intensity(raw), HpAfter = HpOf(target),
+                    Amount = raw, Intensity = EffectStrength.Uniform, HpAfter = HpOf(target),
                 });
                 return;
             }
 
             // A slash with no settled HP is the swing alone; the cues below carry the numbers.
-            ev.Cues.Add(new Cue { Kind = CueKind.Slash, Source = source, Target = target, Amount = raw, Intensity = Intensity(raw) });
+            ev.Cues.Add(new Cue { Kind = CueKind.Slash, Source = source, Target = target, Amount = raw, Intensity = EffectStrength.Uniform });
             if (absorbed > 0)
             {
                 SetGuard(target, guard - absorbed);
@@ -388,7 +388,7 @@ namespace Depiction
                 ev.Cues.Add(new Cue
                 {
                     Kind = CueKind.Hit, Target = target,
-                    Amount = through, Intensity = Intensity(through), HpAfter = HpOf(target),
+                    Amount = through, Intensity = EffectStrength.Uniform, HpAfter = HpOf(target),
                 });
             }
         }
@@ -403,21 +403,12 @@ namespace Depiction
             }
         }
 
-        /// <summary>How hard the beat looks, 1..4. The View never derives it from the amount itself.</summary>
-        private static int Intensity(int amount)
-        {
-            if (amount <= 9) return 1;
-            if (amount <= 16) return 2;
-            if (amount <= 24) return 3;
-            return 4;
-        }
-
         private static Cue GuardGain(UnitSide target, int amount, int guardAfter)
         {
             return new Cue
             {
                 Kind = CueKind.GuardGain, Target = target,
-                Amount = amount, Intensity = Intensity(amount), GuardAfter = guardAfter,
+                Amount = amount, Intensity = EffectStrength.Uniform, GuardAfter = guardAfter,
             };
         }
 
