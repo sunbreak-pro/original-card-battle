@@ -76,6 +76,8 @@ namespace Depiction.PlayModeTests
                 Assert.That(Interactable("SetOut"), Is.False, "出立する is open with no talent picked");
                 Press("Talent0");
                 Assert.That(Interactable("SetOut"), Is.True, "出立する stayed shut with the talent picked");
+                // Row4 is 間合いの履 because the screen lists ItemCatalogue.Tools in order; dotnet test
+                // pins that index (DepartureSuppliesTests.TheShoesAreTheFifthTool).
                 PressIn("Tools", "Row4", "Plus");
                 yield return Shot("01b-departure");
                 Press("SetOut");

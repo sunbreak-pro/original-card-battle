@@ -22,6 +22,13 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void TheShoesAreTheFifthTool()
+        {
+            // The PlayMode demo test presses Tools/Row4 to pick 間合いの履; this keeps that row honest.
+            Assert.That(DepartureSupplies.Tools.Select(o => o.Id).ToList().IndexOf("maai_no_kutsu"), Is.EqualTo(4));
+        }
+
+        [Test]
         public void TheSlotsAreTheSameOnBothSides()
         {
             Assert.That(DeckRules.ToolSlots, Is.EqualTo(Loadout.ToolSlots));
