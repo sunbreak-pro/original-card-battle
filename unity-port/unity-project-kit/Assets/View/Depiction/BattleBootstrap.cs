@@ -46,7 +46,8 @@ namespace Depiction.View
         // source in Start.
         private void Awake()
         {
-            if (!player) player = FindFirstObjectByType<DepictionPlayer>();
+            // The scene holds one DepictionPlayer, so FindAny (no order guarantee) still finds the one (#235).
+            if (!player) player = FindAnyObjectByType<DepictionPlayer>();
             if (!player)
             {
                 Debug.LogError("[BattleBootstrap] no DepictionPlayer in the scene; the battle cannot start.");

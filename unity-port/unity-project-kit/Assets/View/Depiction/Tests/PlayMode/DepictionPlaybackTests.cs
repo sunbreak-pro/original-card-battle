@@ -79,7 +79,7 @@ namespace Depiction.PlayModeTests
 
         private static MonoBehaviour FindPlayer()
         {
-            foreach (MonoBehaviour behaviour in UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+            foreach (MonoBehaviour behaviour in UnityEngine.Object.FindObjectsByType<MonoBehaviour>())
             {
                 if (behaviour.GetType().FullName == PlayerTypeName) return behaviour;
             }

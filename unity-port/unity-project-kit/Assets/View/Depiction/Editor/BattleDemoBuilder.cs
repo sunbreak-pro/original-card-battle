@@ -27,7 +27,8 @@ namespace Depiction.View
                     throw new IOException("could not copy " + DepictionPrefabBuilder.ScenePath + " to " + BattleScenePath);
 
                 var scene = EditorSceneManager.OpenScene(BattleScenePath, OpenSceneMode.Single);
-                DepictionPlayer player = Object.FindFirstObjectByType<DepictionPlayer>();
+                // The filming scene it copies holds one DepictionPlayer, so FindAny is enough (#235).
+                DepictionPlayer player = Object.FindAnyObjectByType<DepictionPlayer>();
                 if (!player) throw new MissingReferenceException("no DepictionPlayer in " + BattleScenePath);
                 // The battle is played by hand: none of the filming / unattended switches.
                 player.scriptedPlayback = false;
