@@ -378,6 +378,11 @@ namespace Depiction
         /// A live turn never answers this — there the hand is free (issue #36).
         /// </summary>
         OffScript,
+        /// <summary>
+        /// The player is bound (呪縛, enemy_roster_v4 §4.1) and the card is one of movement only (#335).
+        /// Only the core-driven source answers this; the View treats it as any other refusal.
+        /// </summary>
+        Bound,
     }
 
     /// <summary>Zones and strings the screen shows as given. Shared by every source.</summary>
