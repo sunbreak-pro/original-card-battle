@@ -496,5 +496,14 @@ namespace Depiction.Bridge
             }
             return chips;
         }
+
+        /// <summary>
+        /// #334 (roster §6.4 root_st): the line shown when a permanent effect stops for a turn, and the
+        /// one shown when it works again. The stance keeps its chip the while; only these lines say so.
+        /// </summary>
+        public static string StanceStoppedLine(string stanceName) => "構え停止・" + stanceName;
+
+        /// <summary>#334: see <see cref="StanceStoppedLine"/>.</summary>
+        public static string StanceResumedLine(string stanceName) => "構え復帰・" + stanceName;
     }
 }

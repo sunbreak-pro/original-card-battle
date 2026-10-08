@@ -469,6 +469,23 @@ namespace Depiction.Bridge
                     ev.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = CoreText.Side(set.Actor), Text = "構え・" + set.Name });
                     break;
 
+                // #334 (roster §6.4 root_st): one permanent effect stops for a turn, then comes back.
+                case StanceStopped stopped:
+                    ev.Cues.Add(new Cue
+                    {
+                        Kind = CueKind.TraitFire, Target = CoreText.Side(stopped.Actor),
+                        Text = CoreText.StanceStoppedLine(StanceName(stopped.SourceId, _enemyDef)),
+                    });
+                    break;
+
+                case StanceResumed resumed:
+                    ev.Cues.Add(new Cue
+                    {
+                        Kind = CueKind.TraitFire, Target = CoreText.Side(resumed.Actor),
+                        Text = CoreText.StanceResumedLine(StanceName(resumed.SourceId, _enemyDef)),
+                    });
+                    break;
+
                 // #288: an enemy that falls with others standing is EnemyDefeated; the last one to fall
                 // ends the battle instead (TurnLoop.OnFall), and BattleEnded is all that says so.
                 case EnemyDefeated fell when fell.Unit == 0:

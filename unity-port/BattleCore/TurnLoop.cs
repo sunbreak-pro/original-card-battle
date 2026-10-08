@@ -194,6 +194,10 @@ namespace BattleCore
             state = state with { Turn = state.Turn + 1 };
             events.Add(new TurnStarted(Actor.Player, state.Turn));
 
+            // #334: a permanent effect stopped through the last turn works again from here, before
+            // the turn-start stances fire.
+            state = ResumeStances(state, events);
+
             // Steps 1-3: Guard to 0, recover, the stance and the statuses at turn start.
             state = OpenTurnFor(state, Actor.Player, 0, Constants.StaminaRecovery, events);
 
@@ -284,7 +288,7 @@ namespace BattleCore
             {
                 var entry = stances[i];
                 if (entry.Def.Hook != StanceHook.CostDiscount || entry.Def.Attribute != def.Attribute) continue;
-                if (entry.ReactedTurn == state.Turn) continue;
+                if (entry.ReactedTurn == state.Turn || entry.StoppedIn(state.Turn)) continue;
                 return i;
             }
             return -1;
@@ -807,7 +811,7 @@ namespace BattleCore
             var firing = new List<StanceEntry>();
             foreach (var entry in self.StanceList)
             {
-                if (entry.Def.Hook == StanceHook.TurnStart && StanceHolds(state, actor, unit, entry.Def)) firing.Add(entry);
+                if (entry.Def.Hook == StanceHook.TurnStart && !entry.StoppedIn(state.Turn) && StanceHolds(state, actor, unit, entry.Def)) firing.Add(entry);
             }
             foreach (var entry in firing) events.Add(new StanceFired(actor, entry.Source, StanceHook.TurnStart) { Unit = unit });
 
@@ -1116,7 +1120,7 @@ namespace BattleCore
                         events.Add(new PushRefused(foeSide, other.Size) { Unit = eventUnit });
                         continue;
                     }
-                    var immune = other.StanceList.FirstOrDefault(entry => entry.Def.Hook == StanceHook.PushImmune);
+                    var immune = other.StanceList.FirstOrDefault(entry => entry.Def.Hook == StanceHook.PushImmune && !entry.StoppedIn(state.Turn));
                     if (immune != null)
                     {
                         events.Add(new StanceFired(foeSide, immune.Source, StanceHook.PushImmune) { Unit = eventUnit });
@@ -1206,6 +1210,18 @@ namespace BattleCore
             }
             if (face.StaminaGain > 0) state = GainStamina(state, actor, unit, face.StaminaGain, events);
 
+            // #334 (roster §6.4 root_st): the face stops the newest permanent effect of each opponent
+            // it reached. Like a status on the opponent, it needs the blow to have reached them.
+            if (face.StopStance)
+            {
+                foreach (int foe in hit)
+                {
+                    if (foeSide == Actor.Enemy && !state.Enemies[foe].Alive) continue;
+                    if (Combat.IsDefeated(Get(state, foeSide, foe).Hp)) continue;
+                    state = StopNewestStance(state, foeSide, foe, foeSide == Actor.Enemy ? foe : unit, events);
+                }
+            }
+
             // §4 (v4.4): the stance face joins the list of permanent effects. Nothing ends and there
             // is no cap; the same stance twice is two entries and works twice.
             if (attributes.HasFlag(BattleAttribute.Stance))
@@ -1281,7 +1297,7 @@ namespace BattleCore
             {
                 foreach (var bind in state.Player.StanceList)
                 {
-                    if (bind.Def.Hook != StanceHook.BreakOnFoeMove || bind.Def.Break <= 0) continue;
+                    if (bind.Def.Hook != StanceHook.BreakOnFoeMove || bind.Def.Break <= 0 || bind.StoppedIn(state.Turn)) continue;
                     events.Add(new StanceFired(Actor.Player, bind.Source, StanceHook.BreakOnFoeMove) { Unit = unit });
                     state = Break(state, Actor.Player, Actor.Enemy, unit, bind.Def.Break, unit, events);
                 }
@@ -1318,7 +1334,7 @@ namespace BattleCore
                 hurt = Get(state, victim, victimUnit);
                 var entry = hurt.StanceList[i];
                 var stance = entry.Def;
-                if (stance.Hook != StanceHook.OnHit) continue;
+                if (stance.Hook != StanceHook.OnHit || entry.StoppedIn(state.Turn)) continue;
                 if (stance.OncePerTurn && entry.ReactedTurn == state.Turn) continue;
 
                 events.Add(new StanceFired(victim, entry.Source, StanceHook.OnHit) { Unit = enemyUnit });
@@ -1341,6 +1357,55 @@ namespace BattleCore
             return state;
         }
 
+        /// <summary>
+        /// #334 (roster §6.4 root_st, battle_core_v4 §4): the holder's newest permanent effect — the
+        /// last entry on its list, which is kept in the order the entries were put on — does nothing
+        /// for the rest of this turn and the whole next one. One already stopped is stopped again,
+        /// to the later turn. A holder with no permanent effect loses nothing, and nothing is said.
+        /// </summary>
+        private static BattleState StopNewestStance(BattleState state, Actor holder, int unit, int eventUnit, List<BattleEvent> events)
+        {
+            var self = Get(state, holder, unit);
+            var list = self.StanceList;
+            if (list.Count == 0) return state;
+
+            int newest = list.Count - 1;
+            int through = state.Turn + 1;
+            var stopped = new List<StanceEntry>(list);
+            stopped[newest] = list[newest] with { StoppedThrough = through };
+            events.Add(new StanceStopped(holder, list[newest].Source, newest, through) { Unit = eventUnit });
+            return Set(state, holder, unit, self with { Stances = stopped });
+        }
+
+        /// <summary>
+        /// #334: at the start of a turn, every permanent effect (the player's and each enemy's) whose
+        /// stop ran through the turn before works again, and says so.
+        /// </summary>
+        private static BattleState ResumeStances(BattleState state, List<BattleEvent> events)
+        {
+            state = ResumeStancesOf(state, Actor.Player, 0, 0, events);
+            for (int i = 0; i < state.Enemies.Count; i++)
+            {
+                if (state.Enemies[i].Alive) state = ResumeStancesOf(state, Actor.Enemy, i, i, events);
+            }
+            return state;
+        }
+
+        private static BattleState ResumeStancesOf(BattleState state, Actor holder, int unit, int eventUnit, List<BattleEvent> events)
+        {
+            var self = Get(state, holder, unit);
+            var list = self.StanceList;
+            List<StanceEntry>? resumed = null;
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (list[i].StoppedThrough == 0 || list[i].StoppedIn(state.Turn)) continue;
+                resumed ??= new List<StanceEntry>(list);
+                resumed[i] = list[i] with { StoppedThrough = 0 };
+                events.Add(new StanceResumed(holder, list[i].Source, i) { Unit = eventUnit });
+            }
+            return resumed == null ? state : Set(state, holder, unit, self with { Stances = resumed });
+        }
+
         /// <summary>§4: the turn-end stance (根渡り, 霞み足), before 構え.</summary>
         private static BattleState StanceAtTurnEnd(BattleState state, Actor actor, int unit, List<BattleEvent> events)
         {
@@ -1348,7 +1413,7 @@ namespace BattleCore
             foreach (var entry in self.StanceList)
             {
                 var stance = entry.Def;
-                if (stance.Hook != StanceHook.TurnEnd || !StanceHolds(state, actor, unit, stance)) continue;
+                if (stance.Hook != StanceHook.TurnEnd || entry.StoppedIn(state.Turn) || !StanceHolds(state, actor, unit, stance)) continue;
 
                 events.Add(new StanceFired(actor, entry.Source, StanceHook.TurnEnd) { Unit = unit });
                 if (stance.Guard > 0)
@@ -1393,7 +1458,7 @@ namespace BattleCore
             foreach (var entry in Get(state, actor, unit).StanceList)
             {
                 var stance = entry.Def;
-                if (stance.Hook != StanceHook.AttackBonus || !StanceHoldsOn(state, actor, unit, stance, foeSide, foe)) continue;
+                if (stance.Hook != StanceHook.AttackBonus || entry.StoppedIn(state.Turn) || !StanceHoldsOn(state, actor, unit, stance, foeSide, foe)) continue;
                 total += stance.Power;
                 if (stance.Power > 0 && events != null)
                 {
@@ -1415,6 +1480,7 @@ namespace BattleCore
             {
                 var stance = entry.Def;
                 if (stance.Hook != StanceHook.StatusOnAttack || !stance.Status.HasValue || stance.StatusStacks <= 0) continue;
+                if (entry.StoppedIn(state.Turn)) continue;
                 if (!StanceHoldsOn(state, actor, unit, stance, foeSide, foe)) continue;
                 if (foeSide == Actor.Enemy && !state.Enemies[foe].Alive) break;
 
@@ -1667,7 +1733,7 @@ namespace BattleCore
             events.Add(new CellsMoved(Actor.Enemy, shift.From, shift.To, Pushed: false) { Unit = unit });
             foreach (var bind in state.Player.StanceList)
             {
-                if (bind.Def.Hook != StanceHook.BreakOnFoeMove || bind.Def.Break <= 0) continue;
+                if (bind.Def.Hook != StanceHook.BreakOnFoeMove || bind.Def.Break <= 0 || bind.StoppedIn(state.Turn)) continue;
                 events.Add(new StanceFired(Actor.Player, bind.Source, StanceHook.BreakOnFoeMove) { Unit = unit });
                 state = Break(state, Actor.Player, Actor.Enemy, unit, bind.Def.Break, unit, events);
             }
