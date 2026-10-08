@@ -32,8 +32,8 @@ namespace BattleCore.Tests
         [TestCase("sweep", "薙ぎ払い", 2, 8, 0, 0, 0, "1〜2", "攻撃・1〜2")]
         [TestCase("shove", "石突きの押し込み", 2, 5, 0, 2, 0, "0", "攻撃・0")]
         [TestCase("reach_thrust", "穂先の突き", 1, 4, 0, 0, 0, "0〜2", "攻撃・0〜2")]
-        [TestCase("guard_up", "柄で受ける", 1, 0, 3, 0, 0, "", "守り")]
-        [TestCase("step_forward", "踏み込み", 1, 0, 2, 0, 1, "", "動")]
+        [TestCase("guard_up", "柄で受ける", 1, 0, 3, 0, 0, "", "防御")]
+        [TestCase("step_forward", "踏み込み", 1, 0, 2, 0, 1, "", "移動")]
         public void Actions_MatchTheRosterTable(
             string id, string name, int column, int power, int guard, int push, int move, string reach, string omen)
         {
@@ -175,8 +175,8 @@ namespace BattleCore.Tests
                 Assert.That(EnemyAi.DecideOmen(Polearm, 0, 10),
                     Is.EqualTo(new Omen("shove", new OmenLabel(OmenKind.Attack, Reach.Only(0)))));
                 Assert.That(EnemyAi.DecideOmen(Polearm, 2, 1).Label.ToText(), Is.EqualTo("攻撃・0〜2"));
-                Assert.That(EnemyAi.DecideOmen(Polearm, 0, 1).Label.ToText(), Is.EqualTo("守り"));
-                Assert.That(EnemyAi.DecideOmen(Polearm, 3, 10).Label.ToText(), Is.EqualTo("動"));
+                Assert.That(EnemyAi.DecideOmen(Polearm, 0, 1).Label.ToText(), Is.EqualTo("防御"));
+                Assert.That(EnemyAi.DecideOmen(Polearm, 3, 10).Label.ToText(), Is.EqualTo("移動"));
             });
         }
 

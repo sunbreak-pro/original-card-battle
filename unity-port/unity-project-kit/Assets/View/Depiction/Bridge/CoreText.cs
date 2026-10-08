@@ -345,7 +345,7 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// The omen's kind as a word: the words of battle-visual-v1 4.4, which #243 brought the
-        /// roster to as well (防御 / 移動). BattleCore's EnemyAi.ToText still reads 守り / 動.
+        /// roster to as well (防御 / 移動). BattleCore's EnemyAi.ToText reads the same words (#357).
         /// </summary>
         public static string OmenKindWord(OmenKind kind)
         {
