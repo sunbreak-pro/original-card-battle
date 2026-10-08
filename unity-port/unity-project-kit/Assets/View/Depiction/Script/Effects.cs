@@ -377,7 +377,10 @@ namespace Depiction
         }
     }
 
-    /// <summary>§5.3 強弱, held at two steps for now (#76): intensity 3 and 4 are strong.</summary>
+    /// <summary>
+    /// §5.3 強弱, held at two steps for now (#76): intensity 3 and 4 are strong. Since #30 every
+    /// script writes only <see cref="Uniform"/> (2, not strong), so beats play the normal step.
+    /// </summary>
     public static class EffectStrength
     {
         /// <summary>
