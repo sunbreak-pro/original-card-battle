@@ -245,6 +245,14 @@ namespace BattleCore.Tests
                 Assert.That(result.RankUps, Is.EqualTo(new[] { new RankUp("lance", 0, 3) }));
                 Assert.That(result.Book.Mastered(lance).Column, Is.EqualTo(4), "the next battle fights with the grown card");
             });
+
+            // A lost battle counts the same (§3.2: 勝っても負けても).
+            var lost = book.AfterBattle(state with { Result = GameResult.Lost });
+            Assert.Multiple(() =>
+            {
+                Assert.That(lost.Book.TicksOf("lance"), Is.EqualTo(18));
+                Assert.That(lost.Book.RankOf("lance"), Is.EqualTo(3));
+            });
         }
 
         [Test]

@@ -159,6 +159,8 @@ namespace BattleCore
         {
             if (def == null) throw new ArgumentNullException(nameof(def));
             if (profile?.GapContext != null) return profile.GapContext.Contains(gap);
+            // Only the first 間合い trait is read. A card with two (say a main GapAtMost and an
+            // ExtraTrait GapAtLeast) would need both sides; no card in the table has that today.
             foreach (var trait in def.AllTraits)
             {
                 if (trait.Condition == TraitCondition.GapAtMost || trait.Condition == TraitCondition.GapAtLeast)
@@ -420,6 +422,8 @@ namespace BattleCore
         /// The steps the new ticks buy. Steps never go down. Step 3 goes to one card only: the one
         /// holding it keeps it, and when several reach it at the same moment the one with the most
         /// ticks takes it (then the talent card, then the id in ordinal order). The rest stop at 2.
+        /// This assumes <see cref="Constants.MasteryTopRankCards"/> is 1 (a single <see cref="TopRankHolder"/>);
+        /// raising that value needs this method to keep a set of holders instead.
         /// </summary>
         private MasteryResult Rerank(Dictionary<string, int> ticks)
         {
