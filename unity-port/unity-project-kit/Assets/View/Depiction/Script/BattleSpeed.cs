@@ -25,7 +25,7 @@ namespace Depiction
 
     /// <summary>
     /// The one place the battle speed's factors live. The View reads <see cref="TweenSpeed(BattleSpeedStep, bool)"/>
-    /// into UiTween.Speed and shows <see cref="Label"/>; the measurement reads <see cref="WallMs"/> and
+    /// into UiTween.Speed and shows <see cref="Label"/>, <see cref="Chevrons"/> and <see cref="Tooltip"/>; the measurement reads <see cref="WallMs"/> and
     /// <see cref="EventCapMsAt"/>.
     /// </summary>
     public static class BattleSpeed
@@ -82,17 +82,38 @@ namespace Depiction
             }
         }
 
-        /// <summary>The switch's words. The View shows them as they are.</summary>
+        /// <summary>
+        /// The number on the switch (battle-visual-v1 §4.1): "×1.0", "×1.25" or "×1.5", with no word.
+        /// The View shows it as it is, next to <see cref="Chevrons"/> chevrons.
+        /// </summary>
         public static string Label(BattleSpeedStep step)
         {
             switch (step)
             {
-                case BattleSpeedStep.Slow: return "速さ 1.0 倍";
-                case BattleSpeedStep.Normal: return "速さ 1.25 倍";
-                case BattleSpeedStep.Fast: return "速さ 1.5 倍";
+                case BattleSpeedStep.Slow: return "×1.0";
+                case BattleSpeedStep.Normal: return "×1.25";
+                case BattleSpeedStep.Fast: return "×1.5";
                 default: throw new ArgumentOutOfRangeException(nameof(step), step, "No label is written for this speed.");
             }
         }
+
+        /// <summary>
+        /// How many right-pointing chevrons the switch's icon stacks (battle-visual-v1 §4.1 and
+        /// 付録 A 「速さ」): one at 1.0 times, two at 1.25, three at 1.5.
+        /// </summary>
+        public static int Chevrons(BattleSpeedStep step)
+        {
+            switch (step)
+            {
+                case BattleSpeedStep.Slow: return 1;
+                case BattleSpeedStep.Normal: return 2;
+                case BattleSpeedStep.Fast: return 3;
+                default: throw new ArgumentOutOfRangeException(nameof(step), step, "No icon is written for this speed.");
+            }
+        }
+
+        /// <summary>The line the switch shows under itself while hovered (battle-visual-v1 §4.1).</summary>
+        public const string Tooltip = "戦闘の速さ。押すたびに ×1.0 → ×1.25 → ×1.5 と巡ります";
 
         /// <summary>What the screen stores (PlayerPrefs): fixed strings, so no culture's decimal mark gets in.</summary>
         public static string Save(BattleSpeedStep step)

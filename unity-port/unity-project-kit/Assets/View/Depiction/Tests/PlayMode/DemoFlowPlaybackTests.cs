@@ -27,10 +27,11 @@ namespace Depiction.PlayModeTests
         private const string SavedDeckKey = "Depiction.Demo.Deck";
         private const string SavedSpeedKey = "Depiction.BattleSpeed";
         // The battle speed's steps in the switch's order (#348): BattleSpeedStep's names, UiTween.Speed,
-        // the label and the saved form. Script/ is not referenced here, so they are written out.
+        // the label (the number only, battle-visual-v1 §4.1, #389) and the saved form. Script/ is not
+        // referenced here, so they are written out.
         private static readonly string[] SpeedSteps = { "Slow", "Normal", "Fast" };
         private static readonly float[] SpeedTweens = { 0.8f, 1f, 1.2f };
-        private static readonly string[] SpeedLabels = { "速さ 1.0 倍", "速さ 1.25 倍", "速さ 1.5 倍" };
+        private static readonly string[] SpeedLabels = { "×1.0", "×1.25", "×1.5" };
         private static readonly string[] SpeedSaved = { "1.0", "1.25", "1.5" };
         private const float BattleTimeoutSeconds = 300f;
         private static readonly string ShotFolder = Path.GetFullPath(Path.Combine(Application.dataPath, "../Logs/DemoShots"));
@@ -80,6 +81,9 @@ namespace Depiction.PlayModeTests
                 yield return Shot("03-battle");
                 Assert.That(Active("Surrender"), Is.Not.Null, "no 降参 button during the battle");
                 Assert.That(Active("BattleSpeed"), Is.Not.Null, "no speed switch during the battle (#348)");
+                // #389: the demo's 「降参する」 has left the top right to the speed switch.
+                Assert.That(ScreenRect(Active("Surrender")).Overlaps(ScreenRect(Active("BattleSpeed"))), Is.False,
+                    "降参 overlaps the speed switch");
                 // #348: one press moves the speed on, and UiTween, the label and PlayerPrefs follow at
                 // once; two more bring it back to where it started.
                 int before = Array.IndexOf(SpeedSteps, Get(player, "Speed").ToString());
@@ -242,7 +246,7 @@ namespace Depiction.PlayModeTests
             return (float)speed.GetValue(null);
         }
 
-        /// <summary>The words on the speed switch (#348), read by name like the buttons.</summary>
+        /// <summary>The number on the speed switch (#348, #389), read by name like the buttons.</summary>
         private static string SpeedLabel()
         {
             GameObject button = Active("BattleSpeed");
@@ -251,6 +255,14 @@ namespace Depiction.PlayModeTests
             Component text = line != null ? line.GetComponent("Text") : null;
             Assert.That(text, Is.Not.Null, "the speed switch has no Label text");
             return (string)text.GetType().GetProperty("text").GetValue(text);
+        }
+
+        /// <summary>Where a UI element is on the screen. Both canvases are screen-space overlays, so world corners are pixels.</summary>
+        private static Rect ScreenRect(GameObject go)
+        {
+            var corners = new Vector3[4];
+            ((RectTransform)go.transform).GetWorldCorners(corners);
+            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
         }
 
         /// <summary>The deck screen's line about the saved deck (#211), read by name like the buttons; null when the screen is not up.</summary>

@@ -239,7 +239,7 @@ namespace Depiction.View
             _speed = step;
             if (Trace != null) Trace.Speed = step;
             ApplyTweenSpeed();
-            if (_speedButton != null) _speedButton.Show(BattleSpeed.Label(step));
+            if (_speedButton != null) _speedButton.Show(BattleSpeed.Label(step), BattleSpeed.Chevrons(step));
             PlayerPrefs.SetString(SavedSpeedKey, BattleSpeed.Save(step));
             PlayerPrefs.Save();
         }
@@ -264,8 +264,8 @@ namespace Depiction.View
         }
 
         /// <summary>
-        /// The provisional speed switch: top right, under the demo's 「降参する」. Where it sits and how it
-        /// looks is not in battle-visual-v1.md yet; the design lane decides it.
+        /// The speed switch: top right, left of the journal button (battle-visual-v1 §4.1, #389). It is
+        /// never made non-interactable, so it can be pressed on the enemy's turn as well.
         /// </summary>
         private void BuildSpeedButton()
         {
@@ -276,7 +276,7 @@ namespace Depiction.View
                 return;
             }
             _speedButton = new BattleSpeedButton(canvas, CycleSpeed);
-            _speedButton.Show(BattleSpeed.Label(_speed));
+            _speedButton.Show(BattleSpeed.Label(_speed), BattleSpeed.Chevrons(_speed));
         }
 
         /// <summary>Puts the speed switch up while a battle runs and takes it down when it ends or is given up.</summary>
