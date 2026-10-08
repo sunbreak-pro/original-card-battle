@@ -52,6 +52,7 @@ unity-port/
 │   ├── TurnLoopTests.cs        縦切りの合格条件（並び 17 件・数値 8 点・終端 3 点）を間合い N で読み直し、届かない札の拒否・空振り・敵の踏み込み・壁、固定の種で 3 ターン
 │   └── Fixtures/
 │       └── parity-fixture.json TS 実装を FixedRng(0) 相当で走らせた正解データ
+├── BattleCore.Sim/ ・ BattleCore.Sim.Tests/   §13 の基準 19 項目を貪欲な打ち手で測る試験台（コンソール。BattleCore を読むだけ。#53）
 ├── Depiction.Script/ ・ Depiction.Script.Tests/   戦闘描写の台本の型（kit の `Assets/View/Depiction/Script/` と `Tests/` を `dotnet test` で回すための器）
 ├── Depiction.Bridge/ ・ Depiction.Bridge.Tests/   コアのイベント列 → 台本の変換器（kit の `Assets/View/Depiction/Bridge/` を回す器）
 ├── DungeonCore/                探索コア（netstandard2.1 / C# 9・engine-free・BattleCore を参照しない）
