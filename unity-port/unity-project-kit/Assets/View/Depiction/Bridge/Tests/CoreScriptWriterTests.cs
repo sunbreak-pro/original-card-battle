@@ -311,7 +311,7 @@ namespace Depiction.Bridge.Tests
             // The shove: 5 into Guard 3 → 3 blocked, 2 through; the two-cell push moves the player one
             // (cell 1), and the wall takes 3 more in an event of its own (§7.3).
             DepictionEvent shove = events[1];
-            Assert.That(shove.Title, Is.EqualTo("石突きの押し込み"));
+            Assert.That(shove.Title, Is.EqualTo("柄尻の押し込み"));
             Assert.That(Kinds(shove), Is.EqualTo(new[]
             {
                 CueKind.EnemyWindup, CueKind.Slash, CueKind.GuardBlock, CueKind.Hit, CueKind.RangeSwitch,
@@ -359,7 +359,7 @@ namespace Depiction.Bridge.Tests
             StepResult end = TurnLoop.EndTurn(play.State, NoShuffle);
             DepictionEvent sweep = writer.Write(end.Events, end.State)[1];
 
-            Assert.That(sweep.Title, Is.EqualTo("薙ぎ払い"));
+            Assert.That(sweep.Title, Is.EqualTo("払い斬り"));
             Cue miss = sweep.Cues.Single(c => c.Kind == CueKind.SideBonusMiss);
             Assert.That(miss.Text, Is.EqualTo("+3"));
             Assert.That(sweep.Cues.Any(c => c.Kind == CueKind.TraitFire), Is.False);
@@ -383,7 +383,7 @@ namespace Depiction.Bridge.Tests
             List<DepictionEvent> events = writer.Write(end.Events, end.State);
             DepictionEvent sweep = events[1];
 
-            Assert.That(sweep.Title, Is.EqualTo("薙ぎ払い"));
+            Assert.That(sweep.Title, Is.EqualTo("払い斬り"));
             Assert.That(Kinds(sweep), Is.EqualTo(new[] { CueKind.EnemyWindup, CueKind.SideBonusMiss }), "one strike-off, not two");
             Assert.That(sweep.Cues[1].Text, Is.EqualTo("空振り"));
             Assert.That(sweep.Cues[1].Amount, Is.EqualTo(8));
