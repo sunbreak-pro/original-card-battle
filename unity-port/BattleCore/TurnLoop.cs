@@ -567,7 +567,13 @@ namespace BattleCore
             var context = PlayerContext(state, def, read);
 
             // §4 コストの割引: the entry this card spends, judged on the same board as CostNow.
-            int discount = CostDiscountEntry(state, def, Math.Max(0, def.Cost - Traits.EvaluateAll(def.AllTraits, context).CostDown));
+            var judged = Traits.EvaluateAll(def.AllTraits, context);
+            int discount = CostDiscountEntry(state, def, Math.Max(0, def.Cost - judged.CostDown));
+
+            // §3.2 習熟 (#59): the contexts this play meets, read off the same board. They are only
+            // written down here; the ticks they make land once the battle is over.
+            int paid = Math.Max(0, (discount >= 0 ? def.Cost - 1 : def.Cost) - judged.CostDown);
+            var mastery = new MasteryPlay(def.Id, Mastery.ContextsOf(def, context, judged.Triggered, paid));
 
             // §5 俊敏 (#48): the free cell is taken before the first card or not at all.
             var hand = new List<CardInstance>(state.Hand);
@@ -592,7 +598,7 @@ namespace BattleCore
 
             // §2.3 playedAttributes: what this card was, for the cards after it this turn.
             state = RecordPlayed(state, Actor.Player, 0, def.Attribute);
-            state = state with { PlayerHistory = state.History.WithCard(def.Attribute) };
+            state = state with { PlayerHistory = state.History.WithCard(def.Attribute).WithMasteryPlay(mastery) };
 
             // §4: a stance card goes to the exile pile and is not drawn again this battle; every
             // other card goes to the discard pile once it has resolved.

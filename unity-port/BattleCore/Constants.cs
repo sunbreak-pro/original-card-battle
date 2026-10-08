@@ -134,6 +134,18 @@ namespace BattleCore
         /// <summary>§17.8: the mastery steps (placeholder).</summary>
         public static readonly IReadOnlyList<int> MasteryThresholds = new[] { 3, 8, 15 };
 
+        /// <summary>§3.2 / §19.3 S8: a 型替え card's steps (placeholder). Its trait is hard to meet, so it starts lower.</summary>
+        public static readonly IReadOnlyList<int> MasteryThresholdsReform = new[] { 2, 6, 12 };
+
+        /// <summary>§3.2 / §17.8: the cards of one life that may hold the third step. The others stop at the second.</summary>
+        public const int MasteryTopRankCards = 1;
+
+        /// <summary>§3.2 / §17.8 才能: the one card picked at the start gathers its ticks this many times over.</summary>
+        public const int TalentTickMultiplier = 2;
+
+        /// <summary>§3.2 / §17.8 習熟訓練: the ticks one training (one 刻限) gives the card it names.</summary>
+        public const int TrainingTicks = 1;
+
         /// <summary>§12: battles in a chain by default (a nine-battle order may be picked too).</summary>
         public const int ChainBattlesDefault = 3;
 

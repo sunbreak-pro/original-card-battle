@@ -470,6 +470,9 @@ namespace BattleCore
     ///
     /// ExtraTrait is the second trait of 背水の陣 (#80), the one card the canon lets carry two
     /// (swordsman_cards_v4 §3). Both are judged at once and their bonuses add up.
+    ///
+    /// FixedCost is set only by mastery (§3.2, #59): 伸び moves the faces (and Column) right while
+    /// the cost stays, and 軽さ takes the cost down to as low as 0. Null is the column's own cost.
     /// </summary>
     public sealed record CardDef(
         string Id,
@@ -480,9 +483,10 @@ namespace BattleCore
         Trait? Trait = null,
         TargetKind Targets = TargetKind.One,
         string Description = "",
-        Trait? ExtraTrait = null)
+        Trait? ExtraTrait = null,
+        int? FixedCost = null)
     {
-        public int Cost => Columns.CostOf(Column);
+        public int Cost => FixedCost ?? Columns.CostOf(Column);
 
         /// <summary>The one attribute this card counts as (§2.1): the declared faces folded by 攻撃 ＞ 防御 ＞ スキル.</summary>
         public BattleAttribute Attribute => AttributeRule.Fold(Attributes, Face);
@@ -559,13 +563,25 @@ namespace BattleCore
     /// each played card counted as (§2.1, folded), oldest first; TurnEnds one entry per finished turn.
     /// HookSnags (#51) is the turn of each 鉤爪 stack a stopped move back spent (roster §5.4 snap);
     /// Inflictions the turn of each status the player put on an enemy (§6.4 root_sk).
+    /// MasteryPlays (#59) is the contexts each played card met (§3.2), oldest first; the ticks
+    /// they make are only applied once the battle has ended (<see cref="MasteryBook.AfterBattle"/>).
     /// </summary>
     public sealed record BattleHistory(
         IReadOnlyList<BattleAttribute>? PlayedCards = null,
         IReadOnlyList<PlayerTurnEnd>? PlayerTurns = null,
         IReadOnlyList<int>? HookSnagTurns = null,
-        IReadOnlyList<int>? InflictionTurns = null)
+        IReadOnlyList<int>? InflictionTurns = null,
+        IReadOnlyList<MasteryPlay>? MasteryPlayList = null)
     {
+        public IReadOnlyList<MasteryPlay> MasteryPlays => MasteryPlayList ?? Array.Empty<MasteryPlay>();
+
+        public BattleHistory WithMasteryPlay(MasteryPlay play)
+        {
+            if (play == null) throw new ArgumentNullException(nameof(play));
+            var plays = new List<MasteryPlay>(MasteryPlays) { play };
+            return this with { MasteryPlayList = plays };
+        }
+
         public IReadOnlyList<BattleAttribute> Cards => PlayedCards ?? Array.Empty<BattleAttribute>();
 
         public IReadOnlyList<PlayerTurnEnd> TurnEnds => PlayerTurns ?? Array.Empty<PlayerTurnEnd>();
