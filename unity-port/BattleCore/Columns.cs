@@ -27,7 +27,7 @@ namespace BattleCore
         /// the polearm's own numbers come from enemy_roster_v4.md §2.1 and are not derived here.</summary>
         public const double EnemyFaceRatio = 0.6;
 
-        /// <summary>§2.1: each face of a two-attribute card is about 65% of the single-attribute column.</summary>
+        /// <summary>§2.1: each face of a two-face card is about 65% of the single-face column (the card still counts as one attribute).</summary>
         public const double DualFaceRatio = 0.65;
 
         public static readonly IReadOnlyList<int> SingleAttackPower = new[] { 6, 13, 21, 30 };

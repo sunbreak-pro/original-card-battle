@@ -1,7 +1,7 @@
 // The deck the demo fights with (#190), built from the eighty. Pure C#: BattleCore only, no
-// UnityEngine, so every rule the deck screen shows — the 20〜40 cards, the three of a kind, the
-// three stance cards, what a filter keeps, what a saved string restores to, every word printed
-// about a card — is decided here and held under `dotnet test`. The screen (DeckSelectScreen) shows
+// UnityEngine, so every rule the deck screen shows — the 20〜40 cards, the three of a kind (and no
+// cap on stance cards, §4 / §8 v4.4), what a filter keeps, what a saved string restores to, every
+// word printed about a card — is decided here and held under `dotnet test`. The screen (DeckSelectScreen) shows
 // what this class says and stores the string it hands out.
 using System;
 using System.Collections.Generic;
@@ -142,7 +142,10 @@ namespace Depiction.Bridge
             return deck;
         }
 
-        /// <summary>§8 through the core's own check (Cards.Validate): 20〜40 cards, three of a kind at most, three stance cards at most (§19.6 S15).</summary>
+        /// <summary>
+        /// §8 through the core's own check (Cards.Validate): 20〜40 cards and three of a kind at most.
+        /// Stance cards have no cap of their own (§4 / §8, v4.4; §24.1 retired §19.6 S15's three).
+        /// </summary>
         public DeckValidation Validate()
         {
             return Cards.Validate(Build());
@@ -292,7 +295,7 @@ namespace Depiction.Bridge
         /// <summary>
         /// A random deck of <paramref name="size"/> cards (clamped to 20〜40), fixed by the seed. It
         /// always passes §8: a kind that already holds three is refused by Add and another is drawn.
-        /// Stance cards have no cap of their own (battle_core_v4 §4).
+        /// Stance cards have no cap of their own (battle_core_v4 §4 / §8, v4.4).
         ///
         /// It also always holds one card that closes in from gap 3 even under 鈍足 (駆け込み, 疾風突き,
         /// or 猪突猛進 since it reaches 3 in v4.5) and at least <see cref="RandomForwardMin"/> cards
@@ -366,8 +369,8 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// The deck a saved string describes. A string that does not read cleanly — an unknown id, a
-        /// count outside 1〜3, the same id twice, a deck past 40, more than three stance cards, stray
-        /// text — gives an empty deck rather than a guess.
+        /// count outside 1〜3, the same id twice, a deck past 40, stray text — gives an empty deck
+        /// rather than a guess. Any number of stance cards reads (§4 / §8, v4.4).
         /// </summary>
         public static DeckBuilder Load(string saved)
         {

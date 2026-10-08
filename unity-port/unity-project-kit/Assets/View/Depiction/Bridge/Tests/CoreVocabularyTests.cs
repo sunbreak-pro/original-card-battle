@@ -268,7 +268,7 @@ namespace Depiction.Bridge.Tests
             return string.IsNullOrEmpty(cardId) ? "" : CardCatalog.ById(cardId).Name;
         }
 
-        /// <summary>A legal deck (§8): at most three of a kind, at most three stance cards, drawn from the eighty.</summary>
+        /// <summary>A legal deck (§8): at most three of a kind, drawn from the eighty. Stance cards have no cap (§4, v4.4).</summary>
         private static List<CardInstance> RandomDeck(IRng rng, int size)
         {
             var counts = new Dictionary<string, int>();
