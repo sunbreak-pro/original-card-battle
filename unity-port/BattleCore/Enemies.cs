@@ -227,14 +227,16 @@ namespace BattleCore
 
         /// <summary>
         /// roster §2.6: 燐刃の竜兵. HP 96, favours gap 0. The twin slash is 7 × 2 and puts nothing on
-        /// the player (v4.5, #257: the multi-hit rule binds enemy actions too).
+        /// the player (v4.5, #257: the multi-hit rule binds enemy actions too). 十字受け is the only
+        /// action of the 3+ branch and closes two cells with its Guard (v4.13, #328): the battle opens
+        /// at gap 3, so it is always the first action.
         /// </summary>
         public static readonly EnemyDef TwinBladeWarped = Build(
             "twin_blade_warped", "燐刃の竜兵", EnemyRank.Normal,
             maxHp: 96, maxStamina: 10, recovery: 2, size: 1,
-            branchAtGapZero: new[] { "twin_slash", "retreat_cut", "cross_guard" },
-            branchAtGapOneToTwo: new[] { "step_slash", "retreat_cut", "cross_guard" },
-            branchAtGapThreePlus: new[] { "close_in", "cross_guard" },
+            branchAtGapZero: new[] { "twin_slash", "retreat_cut" },
+            branchAtGapOneToTwo: new[] { "step_slash", "retreat_cut" },
+            branchAtGapThreePlus: new[] { "cross_guard" },
             actions: new[]
             {
                 new EnemyActionDef(
@@ -252,15 +254,10 @@ namespace BattleCore
                     Description: "間合い 0〜1 に届く"),
                 new EnemyActionDef(
                     "cross_guard", "十字受け", BattleAttribute.Guard, 1,
-                    new Face(Guard: 3),
+                    new Face(Guard: 2, Move: 2),
                     Reserve(4, TraitEffect.Status, grant: Self(StatusKind.Parry, 1)),
                     TargetKind.Self,
-                    "Guard 3。温存: 残 4 以上で見切りを 1 付与する"),
-                new EnemyActionDef(
-                    "close_in", "間を詰める", BattleAttribute.None, 1,
-                    new Face(Move: 2),
-                    Targets: TargetKind.Self,
-                    Description: "前へ 2"),
+                    "前へ 2、Guard 2。温存: 残 4 以上で見切りを 1 付与する"),
             });
 
         /// <summary>
