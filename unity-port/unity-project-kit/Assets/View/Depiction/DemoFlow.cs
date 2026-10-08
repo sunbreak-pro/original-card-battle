@@ -1,9 +1,11 @@
-// The demo's screens around the battle (#187): the deck screen (#190), the mode screen and the end
-// screen (#191), the battles in between, and the 「降参する」 button over them (#203). Built in
+// The demo's screens around the battle (#187): the deck screen (#190), the departure screen (#58),
+// the mode screen and the end screen (#191), the battles in between, and the 「降参する」 button over
+// them (#203). Single battles and the chain both set out through the departure screen. Built in
 // code on a canvas of its own above the battle, so the scene and the prefabs stay as they are;
 // BattleBootstrap adds it when its demo flow is on.
-// It holds no rule: the deck, the run of battles, what carries and every word come from
-// Depiction.Bridge (DeckBuilder, DemoSession), and the battles are the sources DemoSession starts.
+// It holds no rule: the deck, the departure, the run of battles, what carries and every word come
+// from Depiction.Bridge (DeckBuilder, DepartureBuilder, DemoSession), and the battles are the
+// sources DemoSession starts.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using System.Collections.Generic;
@@ -29,10 +31,12 @@ namespace Depiction.View
         private int _runs;
         private RectTransform _canvas;
         private DeckSelectScreen _deckScreen;
+        private DepartureScreen _departureScreen;
         private ModeSelectScreen _modeScreen;
         private EndScreen _endScreen;
         private SurrenderButton _surrender;
-        private List<CardInstance> _deck;
+        private DepartureBuilder _supplies;
+        private Departure _departure;
         private DemoSession _session;
         private CoreBattleSource _source;
 
@@ -50,6 +54,9 @@ namespace Depiction.View
             _canvas = BuildCanvas();
             DeckBuilder saved = LoadDeck(out string notice);
             _deckScreen = new DeckSelectScreen(_canvas, saved, notice, OnDeckChosen, player.cardPrefab);
+            // Kept across visits: the slots and the talent stay as picked while the deck is reworked.
+            _supplies = DepartureSupplies.NewBuilder();
+            _departureScreen = new DepartureScreen(_canvas, _supplies, OnSetOut, ShowDeckScreen);
             _modeScreen = new ModeSelectScreen(_canvas, StartSingle, StartRandom, StartChain, ShowDeckScreen);
             _endScreen = new EndScreen(_canvas, GoOn, Again, ShowModeScreen, ShowDeckScreen);
             _surrender = new SurrenderButton(_canvas, Surrender);
@@ -67,24 +74,36 @@ namespace Depiction.View
         private void ShowDeckScreen()
         {
             StopAllCoroutines();
+            _departureScreen.Visible = false;
             _modeScreen.Visible = false;
             _endScreen.Visible = false;
             _surrender.Visible = false;
             _deckScreen.Visible = true;
         }
 
+        /// <summary>「出立の支度へ」: the deck is saved (#211) and the departure screen opens on it (#58).</summary>
         private void OnDeckChosen(DeckBuilder deck)
         {
             SaveDeck(deck);
-            _deck = deck.Build();
+            _deckScreen.Visible = false;
+            _departureScreen.Show(deck);
+        }
+
+        /// <summary>「出立する」: what the run sets out with — the deck, the slots, the start and the talent (#58).</summary>
+        private void OnSetOut(Departure departure)
+        {
+            _departure = departure;
+            Debug.Log("[DemoFlow] set out: " + departure.Deck.Count + " cards / start cell " + departure.PlayerStartCell
+                + " gap " + departure.StartGap + " / talent " + departure.TalentCardId);
             ShowModeScreen();
         }
 
-        /// <summary>The mode screen with the deck kept: after 「戦闘へ」, and from a single battle's end screen (#211).</summary>
+        /// <summary>The mode screen with the departure kept: after 「出立する」, and from a single battle's end screen (#211).</summary>
         private void ShowModeScreen()
         {
             StopAllCoroutines();
             _deckScreen.Visible = false;
+            _departureScreen.Visible = false;
             _endScreen.Visible = false;
             _surrender.Visible = false;
             _modeScreen.Visible = true;
@@ -92,17 +111,17 @@ namespace Depiction.View
 
         private void StartSingle(string enemyId)
         {
-            Run(() => DemoSession.Single(_deck, enemyId, _seed, _runs++));
+            Run(() => DemoSession.Single(_departure, enemyId, _seed, _runs++));
         }
 
         private void StartRandom()
         {
-            Run(() => DemoSession.Single(_deck, DemoSession.RandomEnemyId(_seed, _randomPicks++), _seed, _runs++));
+            Run(() => DemoSession.Single(_departure, DemoSession.RandomEnemyId(_seed, _randomPicks++), _seed, _runs++));
         }
 
         private void StartChain()
         {
-            Run(() => DemoSession.Chain(_deck, _seed, null, _runs++));
+            Run(() => DemoSession.Chain(_departure, _seed, null, _runs++));
         }
 
         private void Run(System.Func<DemoSession> make)
@@ -233,7 +252,7 @@ namespace Depiction.View
         }
 
         /// <summary>
-        /// On 「戦闘へ」 only (#211): one write to disk per deck, not one per +/−, and a saved string the
+        /// On 「出立の支度へ」 only (#211): one write to disk per deck, not one per +/−, and a saved string the
         /// screen could not read stays as it was until the player fights with another deck.
         /// </summary>
         private static void SaveDeck(DeckBuilder deck)

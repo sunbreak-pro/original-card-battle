@@ -1,7 +1,8 @@
 // Goes once around the demo (#187) in Assets/Scenes/Battle.unity with nobody at the mouse: the deck
-// screen, opened on a saved deck that no longer reads (#211); the mode screen; one battle to its end
+// screen, opened on a saved deck that no longer reads (#211); the departure screen (#58), where the
+// talent is picked and 間合いの履 moves the start back; the mode screen; one battle to its end
 // screen; back to the enemies from there for another, given up at once (#211); back to the deck
-// screen; then the chain up to its end screen (and its second battle, should the first be won). The
+// screen and through the departure screen again, the talent still picked; then the chain up to its end screen (and its second battle, should the first be won). The
 // buttons are pressed by name. A demo battle suggests no card, so the unattended switches only end
 // each turn and the enemy wins; the flow is what is checked, not the fight. A screenshot of each
 // screen goes to Logs/DemoShots for a look by eye (not in batchmode, which renders nothing). The saved
@@ -48,7 +49,7 @@ namespace Depiction.PlayModeTests
             try
             {
                 // #211: a card renamed since the deck was saved. The deck screen says so, and the string
-                // stays saved until 「戦闘へ」 saves a deck over it.
+                // stays saved until 「出立の支度へ」 saves a deck over it.
                 const string broken = "thrust:2,old_thrust:1";
                 PlayerPrefs.SetString(SavedDeckKey, broken);
                 yield return EditorSceneManager.LoadSceneAsyncInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
@@ -61,12 +62,24 @@ namespace Depiction.PlayModeTests
                 Assert.That(Active("ToBattle"), Is.Not.Null, "the deck screen did not open");
                 Assert.That(DeckNotice(), Does.Contain("old_thrust"), "the deck screen did not say the saved deck did not read");
                 Press("Prototype");
-                Assert.That(PlayerPrefs.GetString(SavedDeckKey), Is.EqualTo(broken), "the deck was saved before 戦闘へ");
+                Assert.That(PlayerPrefs.GetString(SavedDeckKey), Is.EqualTo(broken), "the deck was saved before 出立の支度へ");
                 Assert.That(BackdropAlpha("DeckSelect"), Is.EqualTo(1f), "the deck screen lets the battle show through");
                 yield return Shot("01-deck");
                 Press("ToBattle");
                 yield return null;
-                Assert.That(PlayerPrefs.GetString(SavedDeckKey), Does.StartWith("thrust:2,kesa_cut:2,"), "戦闘へ did not save the prototype deck");
+                Assert.That(PlayerPrefs.GetString(SavedDeckKey), Does.StartWith("thrust:2,kesa_cut:2,"), "出立の支度へ did not save the prototype deck");
+
+                // #58: the departure screen. No talent yet, so it cannot set out; the first kind of the
+                // deck becomes the talent, and 間合いの履 (the fifth tool) moves the start to cell 1.
+                Assert.That(Active("SetOut"), Is.Not.Null, "the departure screen did not open");
+                Assert.That(BackdropAlpha("Departure"), Is.EqualTo(1f), "the departure screen lets the battle show through");
+                Assert.That(Interactable("SetOut"), Is.False, "出立する is open with no talent picked");
+                Press("Talent0");
+                Assert.That(Interactable("SetOut"), Is.True, "出立する stayed shut with the talent picked");
+                PressIn("Tools", "Row4", "Plus");
+                yield return Shot("01b-departure");
+                Press("SetOut");
+                yield return null;
 
                 // The mode screen: one enemy, the first on the list.
                 Assert.That(Active("Chain"), Is.Not.Null, "the mode screen did not open");
@@ -78,6 +91,10 @@ namespace Depiction.PlayModeTests
                 Press("Enemy0");
                 yield return WaitFor(() => ((ICollection)Private(player, "_hand")).Count > 0 && !(bool)Private(player, "_busy"), 20f, "no hand was dealt");
                 yield return Shot("03-battle");
+                object source = Private(Find("Depiction.View.DemoFlow"), "_source");
+                object state = source.GetType().GetProperty("State").GetValue(source);
+                object body = state.GetType().GetProperty("Player").GetValue(state);
+                Assert.That(body.GetType().GetProperty("Cell").GetValue(body), Is.EqualTo(1), "間合いの履 did not move the start to cell 1");
                 Assert.That(Active("Surrender"), Is.Not.Null, "no 降参 button during the battle");
                 Assert.That(Active("BattleSpeed"), Is.Not.Null, "no speed switch during the battle (#348)");
                 // #348: one press moves the speed on, and UiTween, the label and PlayerPrefs follow at
@@ -127,8 +144,11 @@ namespace Depiction.PlayModeTests
                 Press("BackToDeck");
                 yield return null;
                 Assert.That(Active("ToBattle"), Is.Not.Null, "BackToDeck did not show the deck screen");
-                Assert.That(DeckNotice(), Is.Empty, "the line about the saved deck stayed after 戦闘へ");
+                Assert.That(DeckNotice(), Is.Empty, "the line about the saved deck stayed after 出立の支度へ");
                 Press("ToBattle");
+                yield return null;
+                Assert.That(Interactable("SetOut"), Is.True, "the talent picked before was not kept");
+                Press("SetOut");
                 yield return null;
                 Press("Chain");
                 yield return WaitFor(() => Active("Again") != null, BattleTimeoutSeconds, "the chain's first battle did not reach its end screen");
@@ -182,6 +202,9 @@ namespace Depiction.PlayModeTests
                 Assert.That(Active("Surrender"), Is.Null, "the 降参 button is up on the deck screen");
                 Press("Prototype");
                 Press("ToBattle");
+                yield return null;
+                Press("Talent0");
+                Press("SetOut");
                 yield return null;
                 Assert.That(Active("Surrender"), Is.Null, "the 降参 button is up on the mode screen");
 
@@ -305,6 +328,31 @@ namespace Depiction.PlayModeTests
             }
             Assert.Fail("no backdrop under " + screen);
             return 0f;
+        }
+
+        /// <summary>Whether the active button of that name takes a press.</summary>
+        private static bool Interactable(string name)
+        {
+            GameObject go = Active(name);
+            Assert.That(go, Is.Not.Null, "no active button '" + name + "'");
+            Component button = go.GetComponent("Button");
+            return (bool)button.GetType().GetProperty("interactable").GetValue(button);
+        }
+
+        /// <summary>Presses the button <paramref name="name"/> under <paramref name="parent"/>/<paramref name="row"/> (the supply rows share their button names).</summary>
+        private static void PressIn(string parent, string row, string name)
+        {
+            foreach (Transform t in UnityEngine.Object.FindObjectsByType<Transform>())
+            {
+                if (t.name != parent || !t.gameObject.activeInHierarchy) continue;
+                Transform button = t.Find(row + "/" + name);
+                if (button == null) continue;
+                Component press = button.GetComponent("Button");
+                object onClick = press.GetType().GetProperty("onClick").GetValue(press);
+                onClick.GetType().GetMethod("Invoke", Type.EmptyTypes).Invoke(onClick, null);
+                return;
+            }
+            Assert.Fail("no button " + parent + "/" + row + "/" + name);
         }
 
         private static void Press(string name)

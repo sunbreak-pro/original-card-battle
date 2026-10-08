@@ -23,10 +23,19 @@
     <Compile Include="..\unity-project-kit\Assets\View\Depiction\Bridge\Tests\*.cs" LinkBase="Tests" />
   </ItemGroup>
 
+  <!-- #58: the departure screen's catalogue mapping lives in Assembly-CSharp (it reads DungeonContent,
+       which the Bridge does not reference). Its one pure file is compiled here with a dotnet-only
+       test, so the mapping to the battle's start is held under `dotnet test` too. -->
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Depiction\DepartureSupplies.cs" LinkBase="View" />
+    <Compile Include="DepartureSuppliesTests.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\BattleCore\BattleCore.csproj" />
     <ProjectReference Include="..\Depiction.Script\Depiction.Script.csproj" />
     <ProjectReference Include="..\Depiction.Bridge\Depiction.Bridge.csproj" />
+    <ProjectReference Include="..\DungeonContent\DungeonContent.csproj" />
   </ItemGroup>
 
 </Project>
