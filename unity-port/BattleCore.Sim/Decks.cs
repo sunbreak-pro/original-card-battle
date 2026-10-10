@@ -2,7 +2,7 @@ namespace BattleCore.Sim;
 
 /// <summary>
 /// One deck the bench fights with. Rows are card ids of <see cref="CardCatalog"/> and their copies,
-/// so the bench measures whatever numbers the catalog holds today (swordsman_cards_v4 v4.5 at the
+/// so the bench measures whatever numbers the catalog holds today (swordsman_cards_v4 v4.6 at the
 /// time of writing). Basis says why the deck is built this way.
 /// </summary>
 public sealed record SimDeck(string Id, string Name, IReadOnlyList<(string CardId, int Copies)> Rows, string Basis)

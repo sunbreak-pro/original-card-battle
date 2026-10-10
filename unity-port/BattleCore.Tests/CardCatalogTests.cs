@@ -7,7 +7,7 @@ using BattleCore;
 namespace BattleCore.Tests
 {
     /// <summary>
-    /// The eighty swordsman cards (#188) against card_document/swordsman_cards_v4.md v4.5: the
+    /// The eighty swordsman cards (#188) against card_document/swordsman_cards_v4.md v4.6: the
     /// catalog holds every one of them, its tallies match the canon's §4 tables, and every card can
     /// be played on some board without the loop throwing.
     /// </summary>
@@ -126,7 +126,6 @@ namespace BattleCore.Tests
             // swordsman_cards_v4 v4.5 (#352): a handful of the changes, read straight off the tables.
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.SideSweep.Face.Power, Is.EqualTo(26), "#5: 24 at 0〜1 plus 素直 +2");
                 Assert.That(CardCatalog.KesaCut.Face.Power, Is.EqualTo(15), "#2: column 2 at 0〜1");
                 Assert.That(CardCatalog.BoarRush.Face.Power, Is.EqualTo(11), "#31: two faces at 1〜3");
                 Assert.That(CardCatalog.BoarRush.Face.ReachOrDefault, Is.EqualTo(new Reach(1, 3)));
@@ -153,16 +152,34 @@ namespace BattleCore.Tests
         }
 
         [Test]
+        public void TheV46SideSweep_ReachesTwo_AtTwentyThree()
+        {
+            // swordsman_cards_v4 v4.6 (#401, followed by #402): #5 横薙ぎ widened from 0〜1 to 0〜2 and
+            // dropped from 26 to 23 (column 3 at width 3 is 21, plus 素直 +2), so the stacked desk blow
+            // (23 + 9 + 5) × 1.5 rounds to 56, under §13 基準 15's 57. Nothing else on the card moved.
+            var card = CardCatalog.SideSweep;
+            Assert.Multiple(() =>
+            {
+                Assert.That(card.Face.Power, Is.EqualTo(23), "#5: 21 at 0〜2 plus 素直 +2");
+                Assert.That(card.Face.ReachOrDefault, Is.EqualTo(new Reach(0, 2)));
+                Assert.That(card.Cost, Is.EqualTo(3));
+                Assert.That(card.Attributes, Is.EqualTo(BattleAttribute.Attack), "a lone attack face");
+                Assert.That(card.Trait, Is.Null, "素直");
+                Assert.That(card.Targets, Is.EqualTo(TargetKind.One));
+            });
+        }
+
+        [Test]
         public void TheAttackPowers_AddUpToTheCanonTotal()
         {
-            // §4.5: 「攻撃の値の合計は 351 から 393 になりました（初期 204 → 223、習得 147 → 170）」, over
-            // the 36 attack cards' faces.
+            // §4.5: 「攻撃の値の合計は、v4.4 の 351 から v4.5 で 393、v4.6 で 390 になりました」 (初期
+            // 204 → 220, 習得 147 → 170), over the 36 attack cards' faces. v4.6 took 3 off #5 横薙ぎ (#401).
             var attacks = CardCatalog.All.Where(c => c.Attribute == BattleAttribute.Attack).ToList();
             Assert.Multiple(() =>
             {
                 Assert.That(attacks.Count, Is.EqualTo(36));
-                Assert.That(attacks.Sum(c => c.Face.Power), Is.EqualTo(393));
-                Assert.That(CardCatalog.All.Take(40).Where(c => c.Attribute == BattleAttribute.Attack).Sum(c => c.Face.Power), Is.EqualTo(223));
+                Assert.That(attacks.Sum(c => c.Face.Power), Is.EqualTo(390));
+                Assert.That(CardCatalog.All.Take(40).Where(c => c.Attribute == BattleAttribute.Attack).Sum(c => c.Face.Power), Is.EqualTo(220));
                 Assert.That(CardCatalog.All.Skip(40).Where(c => c.Attribute == BattleAttribute.Attack).Sum(c => c.Face.Power), Is.EqualTo(170));
             });
         }
@@ -327,8 +344,9 @@ namespace BattleCore.Tests
         [Test]
         public void TheReaches_MatchTheCanonTable()
         {
-            // §4.5 (v4.5): 0 → 4, 0〜1 → 19, 1〜2 → 5, 0〜2 → 10, 2〜3 → 1, 1〜3 → 1, 0〜3 → 3, and 37 aim
-            // at nobody. The N they reach add up to 99 (36 / 38 / 20 / 5 at N 0 / 1 / 2 / 3).
+            // §4.5 (v4.6): 0 → 4, 0〜1 → 18, 1〜2 → 5, 0〜2 → 11, 2〜3 → 1, 1〜3 → 1, 0〜3 → 3, and 37 aim
+            // at nobody. The N they reach add up to 100 (36 / 38 / 21 / 5 at N 0 / 1 / 2 / 3): v4.6
+            // moved #5 横薙ぎ from 0〜1 to 0〜2 (#401).
             var directed = CardCatalog.All.Where(c => EnemyAi.IsOpponentDirected(c.Attributes, c.Face, c.Targets)).ToList();
             int Count(int min, int max) => directed.Count(c => c.Face.ReachOrDefault.Equals(new Reach(min, max)));
             int At(int gap) => directed.Count(c => c.Face.ReachOrDefault.Contains(gap));
@@ -337,15 +355,15 @@ namespace BattleCore.Tests
                 Assert.That(directed, Has.Count.EqualTo(43));
                 Assert.That(CardCatalog.All.Count(c => c.Targets == TargetKind.Self), Is.EqualTo(37));
                 Assert.That(Count(0, 0), Is.EqualTo(4));
-                Assert.That(Count(0, 1), Is.EqualTo(19));
+                Assert.That(Count(0, 1), Is.EqualTo(18));
                 Assert.That(Count(1, 2), Is.EqualTo(5));
-                Assert.That(Count(0, 2), Is.EqualTo(10));
+                Assert.That(Count(0, 2), Is.EqualTo(11));
                 Assert.That(Count(2, 3), Is.EqualTo(1));
                 Assert.That(Count(1, 3), Is.EqualTo(1));
                 Assert.That(Count(0, 3), Is.EqualTo(3));
                 Assert.That(At(0), Is.EqualTo(36));
                 Assert.That(At(1), Is.EqualTo(38));
-                Assert.That(At(2), Is.EqualTo(20));
+                Assert.That(At(2), Is.EqualTo(21));
                 Assert.That(At(3), Is.EqualTo(5), "§4.5: five reach gap 3");
                 Assert.That(directed.Where(c => c.Face.ReachOrDefault.Contains(3)).Select(c => c.Id),
                     Is.EquivalentTo(new[] { "throw_blade", "boar_rush", "stone_throw", "thorn_shot", "gale_thrust" }));

@@ -1,6 +1,6 @@
 # BattleCore.Sim — 戦闘コアの試験台（#53）
 
-`battle_core_v4.md` §13 の基準 19 項目を、貪欲な打ち手に `BattleCore` の戦闘を回させて測るコンソールアプリです。`BattleCore` は読むだけで、コアの値も規則も変えません。カードは `CardCatalog` の id で組むので、カード表の値が変わればそのまま測り直せます。いまのカード表は `swordsman_cards_v4` v4.5 です。
+`battle_core_v4.md` §13 の基準 19 項目を、貪欲な打ち手に `BattleCore` の戦闘を回させて測るコンソールアプリです。`BattleCore` は読むだけで、コアの値も規則も変えません。カードは `CardCatalog` の id で組むので、カード表の値が変わればそのまま測り直せます。いまのカード表は `swordsman_cards_v4` v4.6 です。
 
 ## 回し方
 
