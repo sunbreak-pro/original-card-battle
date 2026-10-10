@@ -32,6 +32,14 @@ namespace Depiction.View
         private const float PlanAlpha = 0.62f;
 
         private Image _icon;
+        private Image _frame;
+        private Image[] _restFrame = new Image[0];
+        private RectTransform _swatch;
+        private RectTransform _hit;
+        private Image _hitSolid;
+        private Image[] _hitDashed = new Image[0];
+        private Image _hitIcon;
+        private Image _hitStrike;
         private RectTransform _plan;
         private CanvasGroup _planGroup;
         private Image _planIcon;
@@ -69,6 +77,11 @@ namespace Depiction.View
             if (edge) edge.gameObject.SetActive(false);
             Image ring = VisualArt.Ring(Rect, "Frame", BattleTheme.Violet, 6, 2);
             ring.transform.SetSiblingIndex(backImage ? backImage.transform.GetSiblingIndex() + 1 : 0);
+            _frame = ring;
+            // §4.4 休み: a steel dashed frame in place of the violet one.
+            _restFrame = VisualArt.DashedFrame(Rect, BattleTheme.Steel, 2f);
+            foreach (Image dash in _restFrame) dash.enabled = false;
+            BuildHitParts();
             if (kindText)
             {
                 Place(kindText.rectTransform, new Vector2(0f, 0f), new Vector2(110f, 26f), new Vector2(14f, 6f));
@@ -116,6 +129,46 @@ namespace Depiction.View
                 new Vector2(80f, 20f), new Vector2(-8f, 4f));
         }
 
+        /// <summary>
+        /// §4.4 (#242): the swatch at the right of the first row (this enemy's red stripes, tying the
+        /// badge to the aimed cells on the floor) and the hit mark at the right of the second (a figure
+        /// icon in a small frame: phosphor and solid when the player stands in the aimed cells, steel,
+        /// dashed and struck through when not).
+        /// </summary>
+        private void BuildHitParts()
+        {
+            _swatch = UiKit.Point(Rect, "Swatch", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(22f, 22f), new Vector2(-12f, -14f));
+            VisualArt.Panel(_swatch, "Back", BattleTheme.PanelOpaque, 3);
+            Image stripes = UiKit.Image(_swatch, "Stripes", VisualArt.Stripes(0, false), BattleTheme.AimRed, Vector2.zero, Vector2.one);
+            stripes.type = Image.Type.Tiled;
+            VisualArt.Ring(_swatch, "Edge", BattleTheme.AimRed, 3, 1);
+            _swatch.gameObject.SetActive(false);
+
+            _hit = UiKit.Point(Rect, "Hit", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(30f, 26f), new Vector2(-10f, 6f));
+            _hitSolid = VisualArt.Ring(_hit, "Solid", BattleTheme.Phosphor, 3, 2);
+            _hitDashed = VisualArt.DashedFrame(_hit, BattleTheme.Whiff, 2f);
+            _hitIcon = UiKit.Sprite(_hit, "Icon", VisualArt.Icon(VisualIcon.Self), BattleTheme.Phosphor, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(18f, 18f), Vector2.zero);
+            _hitStrike = UiKit.Sprite(_hit, "Strike", ProceduralArt.White, BattleTheme.Whiff, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(34f, 2f), Vector2.zero);
+            _hitStrike.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 35f);
+            _hit.gameObject.SetActive(false);
+        }
+
+        private void BindHit(OmenFrame omen)
+        {
+            if (!_hit) return;
+            bool marked = omen.Hit != OmenHit.None;
+            _hit.gameObject.SetActive(marked);
+            if (_swatch) _swatch.gameObject.SetActive(marked);
+            if (!marked) return;
+            // The mark takes the place the reach glyph had on the v4.2 screen.
+            if (sideChip) sideChip.gameObject.SetActive(false);
+            bool lands = omen.Hit == OmenHit.Lands;
+            _hitSolid.enabled = lands;
+            foreach (Image dash in _hitDashed) dash.enabled = !lands;
+            _hitIcon.color = lands ? BattleTheme.Phosphor : BattleTheme.Whiff;
+            _hitStrike.enabled = !lands;
+        }
+
         /// <summary>A prefab child moved to one corner of the badge: anchor and pivot at that corner.</summary>
         private static void Place(RectTransform rt, Vector2 corner, Vector2 size, Vector2 offset)
         {
@@ -152,6 +205,10 @@ namespace Depiction.View
                 valueText.text = omen.ValueText;
                 valueText.color = RoleColor(omen.Icon);
             }
+            bool rests = omen.Icon == OmenIcon.Rest;
+            if (_frame) _frame.enabled = !rests;
+            foreach (Image dash in _restFrame) dash.enabled = rests;
+            BindHit(omen);
             BindPlan(omen);
         }
 

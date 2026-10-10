@@ -21,6 +21,46 @@ namespace Depiction.View
         Seal,
     }
 
+    /// <summary>
+    /// battle-visual-v1 §4 gives every place on the 1920×1080 screen, x from the left and y from the top
+    /// (#242). This puts such a point on the canvas the way the hand does (DepictionPlayer.HandPoint):
+    /// x kept from the screen's centre and y from its bottom, so a screen of another shape keeps the
+    /// lower parts on its bottom edge.
+    /// </summary>
+    public static class RefScreen
+    {
+        public static RectTransform Root(Transform t)
+        {
+            Canvas canvas = t ? t.GetComponentInParent<Canvas>() : null;
+            return canvas ? (RectTransform)canvas.rootCanvas.transform : null;
+        }
+
+        /// <summary>The world point of the screen point <paramref name="screen"/> on <paramref name="root"/>.</summary>
+        public static Vector3 World(RectTransform root, Vector2 screen)
+        {
+            Rect area = root.rect;
+            var local = new Vector2(area.center.x + (screen.x - BattleTheme.RefWidth * 0.5f), area.yMin + (BattleTheme.RefHeight - screen.y));
+            return root.TransformPoint(local);
+        }
+
+        /// <summary>The screen point (x from the left, y from the top) a world point stands on.</summary>
+        public static Vector2 Of(RectTransform root, Vector3 world)
+        {
+            Vector3 local = root.InverseTransformPoint(world);
+            Rect area = root.rect;
+            return new Vector2(local.x - area.center.x + BattleTheme.RefWidth * 0.5f, BattleTheme.RefHeight - (local.y - area.yMin));
+        }
+
+        /// <summary>Sizes <paramref name="rt"/> to <paramref name="size"/> px and puts its top-left on the screen point <paramref name="topLeft"/>.</summary>
+        public static void Place(RectTransform rt, RectTransform root, Vector2 topLeft, Vector2 size)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.sizeDelta = size;
+            rt.position = World(root, topLeft);
+        }
+    }
+
     public static class VisualArt
     {
         private const int IconSize = 48; // the 24-grid of 付録 A at twice its size
@@ -133,6 +173,97 @@ namespace Depiction.View
                 edges[i].gameObject.name = "Dashed" + edges[i].gameObject.name;
             }
             return edges;
+        }
+
+        // ---- §3.2 斜線 / §4.2 floor --------------------------------------------------------------------
+
+        private static readonly Dictionary<int, Sprite> StripeSprites = new Dictionary<int, Sprite>();
+        private static readonly Dictionary<int, Sprite> RingSprites = new Dictionary<int, Sprite>();
+        private static Sprite _fade;
+
+        /// <summary>
+        /// §3.2 斜線: white stripes 3 px wide, tiled (Image.Type.Tiled). <paramref name="direction"/> 0 is
+        /// 45° (／), 1 is −45° (＼), 2 is 90° (｜) — one per enemy (§4.2). Normal stripes are 11 px apart;
+        /// <paramref name="dense"/> ones (a cell that meets the omen's threshold) are 6 px apart. The tile
+        /// is a whole number of pixels, so a slanted spacing comes out within half a pixel of the value.
+        /// </summary>
+        public static Sprite Stripes(int direction, bool dense)
+        {
+            direction = Mathf.Clamp(direction, 0, 2);
+            int key = direction * 2 + (dense ? 1 : 0);
+            if (StripeSprites.TryGetValue(key, out Sprite cached) && cached && cached.texture) return cached;
+            float spacing = dense ? 6f : 11f;
+            const float width = 3f;
+            bool slanted = direction < 2;
+            // A slanted tile repeats every spacing × √2 along x and y.
+            int tile = Mathf.Max(4, Mathf.RoundToInt(slanted ? spacing * 1.41421356f : spacing));
+            float period = slanted ? tile / 1.41421356f : tile; // the spacing the tile really draws
+            var tex = new Texture2D(tile, tile, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Repeat };
+            var pixels = new Color[tile * tile];
+            for (int y = 0; y < tile; y++)
+            {
+                for (int x = 0; x < tile; x++)
+                {
+                    float along;
+                    if (direction == 0) along = ((x - y) % tile + tile) % tile / 1.41421356f;
+                    else if (direction == 1) along = ((x + y) % tile) / 1.41421356f;
+                    else along = x;
+                    // One stripe down the middle of each period.
+                    float distance = Mathf.Abs(along - period * 0.5f);
+                    float a = Mathf.Clamp01(width * 0.5f - distance + 0.5f);
+                    pixels[y * tile + x] = new Color(1f, 1f, 1f, a);
+                }
+            }
+            tex.SetPixels(pixels);
+            tex.Apply();
+            Sprite made = Sprite.Create(tex, new Rect(0, 0, tile, tile), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            StripeSprites[key] = made;
+            return made;
+        }
+
+        /// <summary>
+        /// A white fill whose alpha runs from 1 at the top down to 18 / 55 at the bottom: tinted amber at
+        /// 55%, it is §4.2's 届くマスの光 (琥珀の塗り、上 55% → 下 18%).
+        /// </summary>
+        public static Sprite Fade
+        {
+            get
+            {
+                if (_fade && _fade.texture) return _fade;
+                const int h = 32;
+                var tex = new Texture2D(1, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                for (int y = 0; y < h; y++) tex.SetPixel(0, y, new Color(1f, 1f, 1f, Mathf.Lerp(18f / 55f, 1f, y / (h - 1f))));
+                tex.Apply();
+                _fade = Sprite.Create(tex, new Rect(0, 0, 1, h), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                return _fade;
+            }
+        }
+
+        /// <summary>
+        /// A circle outline <paramref name="thickness"/> px wide on a 16 px dot (§4.7 粒: 3 px for the stamina
+        /// about to be paid, 2 px for an empty one). Drawn at twice the size; use Image.Type.Simple.
+        /// </summary>
+        public static Sprite CircleRing(float thickness)
+        {
+            int key = Mathf.RoundToInt(thickness * 10f);
+            if (RingSprites.TryGetValue(key, out Sprite cached) && cached && cached.texture) return cached;
+            const int size = 32;
+            float outer = size * 0.5f;
+            float inner = outer - thickness * 2f;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float d = new Vector2(x + 0.5f - outer, y + 0.5f - outer).magnitude;
+                    float a = Mathf.Clamp01(outer - d) * Mathf.Clamp01(d - inner);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            }
+            tex.Apply();
+            Sprite made = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            RingSprites[key] = made;
+            return made;
         }
 
         // ---- 付録 A line icons ---------------------------------------------------------------------

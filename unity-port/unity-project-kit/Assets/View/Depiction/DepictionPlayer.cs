@@ -133,6 +133,14 @@ namespace Depiction.View
         private Vector2 _enemyHome;
         private GameObject _resultCard;
 
+        // ---- battle-visual-v1 §4.2 / §4.7 (#242): parts made at run time --------------------------
+        /// <summary>The floor of cells under the figures; drawn when the script gives one (DepictionFrame.Floor).</summary>
+        private FloorView _floor;
+        /// <summary>The player's stamina tag above the piles.</summary>
+        private StaminaTagView _staminaTag;
+        /// <summary>The card whose reach the floor lights now, or null.</summary>
+        private CardView _reachFor;
+
         /// <summary>
         /// Hands the player the source to play instead of the two it can build by itself. Call it
         /// from Awake (BattleBootstrap does): Start reads it once.
@@ -194,6 +202,7 @@ namespace Depiction.View
             Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
             _source = source;
             ApplyFrame(_source.Frame);
+            if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
             RefreshPlayableLook(); // the last battle's outcome line goes with it
             StartCoroutine(RunAutomaticEvents());
         }
@@ -305,6 +314,7 @@ namespace Depiction.View
             StyleEndTurn();
 
             if (enemyFigure) _enemyHome = enemyFigure.Rect.anchoredPosition;
+            BuildVisualParts();
             _started = true;
             if (_givenSource == null && _hold)
             {
@@ -316,6 +326,7 @@ namespace Depiction.View
             else if (scriptedPlayback) _source = new DepictionRunner(TurnSliceScript.Build());
             else _source = new LiveTurn();
             ApplyFrame(_source.Frame);
+            if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
             StartCoroutine(RunAutomaticEvents());
         }
 
@@ -339,6 +350,117 @@ namespace Depiction.View
             UpdateHover();
             UpdateSnap();
             UpdateEndTurn();
+            UpdateFloorReach();
+            FollowFigures();
+        }
+
+        // ---- battle-visual-v1 §4.2 / §4.7 (#242) ------------------------------------------------------
+
+        /// <summary>
+        /// Makes the parts the scene from before #242 does not have: the floor, under the figures, and
+        /// the stamina tag, which takes the player's stamina over from the pips in the player's panel.
+        /// </summary>
+        private void BuildVisualParts()
+        {
+            if (enemyFigure && enemyFigure.Rect.parent is RectTransform arena) _floor = new FloorView(arena);
+            RectTransform root = RefScreen.Root(handArea ? handArea : (Transform)transform);
+            if (root && playerStatus)
+            {
+                int below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
+                _staminaTag = new StaminaTagView(root, below);
+                playerStatus.PipsElsewhere = true;
+                playerStatus.StaminaShown = (stamina, max) => _staminaTag.SetStamina(stamina, max);
+            }
+        }
+
+        /// <summary>
+        /// §4.2 / §4.3: the floor of <paramref name="frame"/>, with the player standing on its cells now
+        /// and the enemy's home on its own (the enemy is moved there by the next return or snap, so a
+        /// return already under way is not cut short). With a floor the one gap number is the floor's,
+        /// so the figure's own tag stays down.
+        /// </summary>
+        private void ApplyFloor(DepictionFrame frame)
+        {
+            if (_floor == null || !playerFigure) return;
+            _floor.Bind(frame.Floor, playerFigure.transform.position, frame.Corner.Floor);
+            _reachFor = null; // Bind put the reach out; the next Update lights it again for the card still hovered
+
+            if (!_floor.Shown) return;
+            FloorFrame floor = frame.Floor;
+            playerFigure.SetRange(false, "");
+            playerFigure.transform.position = _floor.FeetOf(floor.PlayerCell, floor.PlayerSize);
+            if (enemyFigure) _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(floor.EnemyCell, floor.EnemySize));
+        }
+
+        /// <summary>The anchored position that puts <paramref name="rt"/>'s pivot on the world point <paramref name="world"/>.</summary>
+        private static Vector2 AnchoredAt(RectTransform rt, Vector3 world)
+        {
+            Vector3 was = rt.position;
+            rt.position = world;
+            Vector2 anchored = rt.anchoredPosition;
+            rt.position = was;
+            return anchored;
+        }
+
+        /// <summary>
+        /// With a floor, the parts tied to a figure keep to its x: the omen badge and the release zone
+        /// over the enemy's home, and each number panel under its figure (§4.5), kept 24 px inside the
+        /// screen's edges. Their heights stay where the scene put them.
+        /// </summary>
+        private void FollowFigures()
+        {
+            if (_floor == null || !_floor.Shown || !enemyFigure || !playerFigure) return;
+            RectTransform root = RefScreen.Root(enemyFigure.transform);
+            if (!root) return;
+            Vector3 enemyHome = enemyFigure.Rect.parent.TransformPoint(EnemyHomeLocal());
+            float enemyX = RefScreen.Of(root, enemyHome).x;
+            float playerX = RefScreen.Of(root, playerFigure.transform.position).x;
+            if (omenBadge) KeepX(omenBadge.Rect, root, enemyX);
+            if (receiver) KeepX((RectTransform)receiver.transform, root, enemyX);
+            if (enemyStatus) KeepX((RectTransform)enemyStatus.transform, root, enemyX);
+            if (playerStatus) KeepX((RectTransform)playerStatus.transform, root, playerX);
+        }
+
+        /// <summary>The enemy's home in its parent's local space (its anchored position, back through its anchors).</summary>
+        private Vector3 EnemyHomeLocal()
+        {
+            RectTransform rt = enemyFigure.Rect;
+            Vector2 now = rt.anchoredPosition;
+            return rt.localPosition + (Vector3)(_enemyHome - now);
+        }
+
+        /// <summary>Moves <paramref name="rt"/> so its middle stands on screen x <paramref name="x"/>, its whole width 24 px inside the edges.</summary>
+        private static readonly Vector3[] Corners = new Vector3[4];
+
+        private static void KeepX(RectTransform rt, RectTransform root, float x)
+        {
+            Vector3[] corners = Corners;
+            rt.GetWorldCorners(corners);
+            float left = RefScreen.Of(root, corners[0]).x;
+            float right = RefScreen.Of(root, corners[2]).x;
+            float half = (right - left) * 0.5f;
+            float target = Mathf.Clamp(x, 24f + half, BattleTheme.RefWidth - 24f - half);
+            float shift = target - (left + half);
+            if (Mathf.Abs(shift) < 0.5f) return;
+            Vector3 from = RefScreen.World(root, new Vector2(left + half, 0f));
+            Vector3 to = RefScreen.World(root, new Vector2(target, 0f));
+            rt.position += new Vector3(to.x - from.x, 0f, 0f);
+        }
+
+        /// <summary>
+        /// §4.2 / §5.1 / §5.2: while an enemy-aimed card is hovered or held, the cells it reaches light
+        /// up (CardFace.ReachCells, the script's). Anything else puts them out.
+        /// </summary>
+        private void UpdateFloorReach()
+        {
+            if (_floor == null) return;
+            CardView card = _dragging ? _dragging : (!_busy ? _hovered : null);
+            if (!card || card.Face == null || card.Face.Aim != CardAim.Single) card = null;
+            // By reference: a played card is destroyed, and Unity's == would call it equal to null.
+            if (ReferenceEquals(card, _reachFor)) return;
+            _reachFor = card;
+            if (card) _floor.ShowReach(card.Face.ReachCells);
+            else _floor.HideReach();
         }
 
         /// <summary>
@@ -452,6 +574,12 @@ namespace Depiction.View
             {
                 yield return Effect(EffectId.EnemyTurnBanner, Banner(DepictionText.EnemyTurn, BattleTheme.Omen, _effects.Ms(EffectId.EnemyTurnBanner)), null);
             }
+            // §4.2 (#242): with a floor, home is the enemy's cell after the event, so the step back
+            // below also carries it onto a cell it was moved to.
+            if (_floor != null && _floor.Shown && enemyFigure && ev.After != null && ev.After.Floor.Cells > 0)
+            {
+                _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(ev.After.Floor.EnemyCell, ev.After.Floor.EnemySize));
+            }
             // An enemy whose blow was all taken by Guard (or who only guarded) is still leaning in:
             // it steps back beside the next event instead of holding this one up.
             if (enemyFigure && enemyFigure.Rect.anchoredPosition != _enemyHome)
@@ -533,8 +661,8 @@ namespace Depiction.View
                 case CueKind.RangeSwitch:
                     // Moved by the other side (the polearm's shove): a knock-back, and the muted label says so.
                     if (cue.Pushed) FloatEffect(EffectId.PushMark, labelAt, DepictionText.Pushed, BattleTheme.Ink2, 36);
-                    yield return Effect(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.RangeGlyphAfter, cue.Pushed),
-                        () => SnapRange(target, cue.RangeAfter, cue.RangeGlyphAfter));
+                    yield return Effect(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.RangeGlyphAfter, cue.Pushed, cue),
+                        () => SnapRange(target, cue.RangeAfter, cue.RangeGlyphAfter, cue));
                     break;
 
                 case CueKind.StanceCue:
@@ -858,15 +986,61 @@ namespace Depiction.View
             yield return UiTween.Move(figure.Rect, from, to, ms, Ease.Out);
         }
 
-        private void SnapRange(FigureView figure, RangeSide range, string glyph)
+        private void SnapRange(FigureView figure, RangeSide range, string glyph, Cue cue = null)
         {
+            if (OnFloor(cue))
+            {
+                figure.transform.position = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
+                if (enemyFigure && cue.EnemyCellAfter > 0)
+                {
+                    _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize));
+                    SnapHome(enemyFigure, _enemyHome);
+                }
+                _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter);
+                return;
+            }
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) figure.transform.position = slot.position;
             figure.SetRange(true, glyph);
         }
 
-        private IEnumerator SwitchRange(FigureView figure, RangeSide range, string glyph, bool pushed)
+        /// <summary>The move is drawn on the floor: one is shown and the cue says where both stand after it.</summary>
+        private bool OnFloor(Cue cue)
         {
+            return cue != null && _floor != null && _floor.Shown && cue.PlayerCellAfter > 0;
+        }
+
+        private int PlayerSize => _source != null && _source.Frame != null ? Mathf.Max(1, _source.Frame.Floor.PlayerSize) : 1;
+        private int EnemySize => _source != null && _source.Frame != null ? Mathf.Max(1, _source.Frame.Floor.EnemySize) : 1;
+
+        /// <summary>
+        /// §4.2 (#242): a move on the floor — the player walks to its new cell, an enemy that moved
+        /// (a push, a pull, its own step) slides to its own, and the gap number follows.
+        /// </summary>
+        private IEnumerator MoveOnFloor(FigureView figure, Cue cue)
+        {
+            Vector3 from = figure.transform.position;
+            Vector3 to = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
+            Vector2 enemyFrom = enemyFigure ? enemyFigure.Rect.anchoredPosition : Vector2.zero;
+            Vector2 enemyTo = enemyFigure && cue.EnemyCellAfter > 0 ? AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize)) : enemyFrom;
+            bool enemyMoves = enemyFigure && (enemyTo - _enemyHome).sqrMagnitude > 0.25f;
+            if (enemyMoves) _enemyHome = enemyTo;
+            // 320 ms to move (battle_ui_ux_v2 §10.6); a push starts fast and settles.
+            yield return UiTween.Run(320f, cue.Pushed ? Ease.Out : Ease.InOut, t =>
+            {
+                if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
+                if (enemyMoves && enemyFigure) enemyFigure.Rect.anchoredPosition = Vector2.LerpUnclamped(enemyFrom, enemyTo, t);
+            });
+            _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter);
+        }
+
+        private IEnumerator SwitchRange(FigureView figure, RangeSide range, string glyph, bool pushed, Cue cue = null)
+        {
+            if (OnFloor(cue))
+            {
+                yield return MoveOnFloor(figure, cue);
+                yield break;
+            }
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             Vector3 from = figure.transform.position;
             Vector3 to = slot ? slot.position : from;
@@ -1002,6 +1176,7 @@ namespace Depiction.View
             enemyFigure.SetRange(frame.Enemy.HasRange, frame.Enemy.RangeGlyph);
             RectTransform slot = frame.Player.Range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) playerFigure.transform.position = slot.position;
+            ApplyFloor(frame); // §4.2: with a floor, the figures stand on their cells instead of the slots
             omenBadge.Bind(frame.Omen);
             bool hasHint = !string.IsNullOrEmpty(frame.StanceHint);
             if (stanceHintText) stanceHintText.text = frame.StanceHint;
@@ -1394,6 +1569,8 @@ namespace Depiction.View
             card.transform.SetAsLastSibling();
             card.group.alpha = 0.92f;
             HideHoverPanels();
+            // §4.7 / §5.2: the stamina it would pay turns to rings, and "▸ n" shows.
+            _staminaTag?.ShowCost(card.Face.Cost);
             // §6.3: a card aimed at one enemy is judged again on the enemy it frames (the one enemy
             // the screen draws). The verdict is the script's (CardFace.LitFor); the View only shows it.
             if (card.Face.Aim == CardAim.Single) card.ShowLamp(card.Face.LitFor(0));
@@ -1553,6 +1730,7 @@ namespace Depiction.View
             receiver.Hide();
             throwLine.Hide();
             HideTargetMarks();
+            _staminaTag?.ShowCost(0);
             if (held)
             {
                 held.group.alpha = 1f;
@@ -1575,6 +1753,7 @@ namespace Depiction.View
             receiver.Hide();
             throwLine.Hide();
             HideTargetMarks();
+            _staminaTag?.ShowCost(0);
             PlayVerdict verdict = _source.TryPlay(card.CardId, zone, out DepictionEvent played);
             if (verdict == PlayVerdict.Accepted) StartCoroutine(PlayAccepted(card, played));
             else

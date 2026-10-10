@@ -65,6 +65,20 @@ namespace Depiction.View
         /// <summary>The stamina the pips show now (the start of a recovery that lights them one by one).</summary>
         public int Stamina { get; private set; }
 
+        /// <summary>
+        /// battle-visual-v1 §4.7 (#242): the player's stamina lives on the tag above the piles, not in
+        /// this panel. Set, the pips stay hidden and every stamina shown is handed on through
+        /// <see cref="StaminaShown"/> (stamina, maximum), the one-by-one recovery included.
+        /// </summary>
+        public bool PipsElsewhere { get; set; }
+
+        public System.Action<int, int> StaminaShown;
+
+        // §4.5: a black 55% mark across the HP bar every 10 HP.
+        private const int HpPerTick = 10;
+        private readonly List<Image> _ticks = new List<Image>();
+        private int _ticksFor = -1;
+
         private RectTransform Rect => (RectTransform)transform;
 
         private void Awake()
@@ -108,9 +122,10 @@ namespace Depiction.View
         public void Bind(UnitFrame unit)
         {
             _hpMax = Mathf.Max(1, unit.HpMax);
+            RenderTicks();
             SetHp(unit.Hp);
             SetGuard(unit.Guard);
-            if (pipRow) pipRow.gameObject.SetActive(unit.ShowStamina);
+            if (pipRow) pipRow.gameObject.SetActive(unit.ShowStamina && !PipsElsewhere);
             if (unit.ShowStamina) SetStamina(unit.Stamina, unit.StaminaMax);
             _statuses.Clear();
             foreach (StatusChip chip in unit.Statuses) _statuses.Add(Copy(chip));
@@ -495,6 +510,38 @@ namespace Depiction.View
                 pips[i].gameObject.SetActive(i < staminaMax);
                 pips[i].color = i < stamina ? BattleTheme.Warm : BattleTheme.WithAlpha(BattleTheme.Ink2, 0.25f);
             }
+            StaminaShown?.Invoke(stamina, staminaMax);
+        }
+
+        /// <summary>§4.5: the HP bar's marks, one every 10 HP of the maximum, over the fill.</summary>
+        private void RenderTicks()
+        {
+            if (!hpFill || !hpFill.parent || _ticksFor == _hpMax) return;
+            _ticksFor = _hpMax;
+            var bar = (RectTransform)hpFill.parent;
+            int count = (_hpMax - 1) / HpPerTick;
+            while (_ticks.Count < count)
+            {
+                Image tick = UiKit.Image(bar, "Tick" + _ticks.Count, ProceduralArt.White, BattleTheme.WithAlpha(Color.black, 0.55f), Vector2.zero, Vector2.one);
+                _ticks.Add(tick);
+            }
+            for (int i = 0; i < _ticks.Count; i++)
+            {
+                Image tick = _ticks[i];
+                bool used = i < count;
+                tick.gameObject.SetActive(used);
+                if (!used) continue;
+                float at = (i + 1) * HpPerTick / (float)_hpMax;
+                RectTransform rt = tick.rectTransform;
+                rt.anchorMin = new Vector2(at, 0f);
+                rt.anchorMax = new Vector2(at, 1f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.offsetMin = new Vector2(-1f, 0f);
+                rt.offsetMax = new Vector2(1f, 0f);
+                // Over the fill and the trail, under the number written on the bar.
+                rt.SetSiblingIndex(Mathf.Min(hpFill.GetSiblingIndex() + 1, bar.childCount - 1));
+            }
+            if (hpText && hpText.transform.parent == bar) hpText.transform.SetAsLastSibling();
         }
     }
 }
