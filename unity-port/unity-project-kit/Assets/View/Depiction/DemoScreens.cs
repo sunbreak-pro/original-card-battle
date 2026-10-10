@@ -65,11 +65,12 @@ namespace Depiction.View
     }
 
     /// <summary>
-    /// 「降参する」 (#203), shown only while a battle is fought. It sits in the top-right corner, where
-    /// the battle screen has nothing yet: the corner info is top-left, and the omen badge ends at x 1495
-    /// of 1920. battle_ui_ux_v2 keeps that corner for the journal icon, which the View does not have;
-    /// this demo-only button borrows it until then. Only the button takes the pointer, so the battle
-    /// underneath plays as before.
+    /// 「降参する」 (#203), shown only while a battle is fought. The final look has no place for it, as it
+    /// is the demo's alone. It sits top left, 12 under the corner info (CornerLayout.DemoSurrender,
+    /// #389): the top right is the journal button's and the speed switch's (battle-visual-v1 §4.1),
+    /// and the switch's tooltip opens leftwards under them, where this demo canvas, drawn above the
+    /// battle's, would hide it. Far from the switch, a run of presses on the speed cannot end the
+    /// battle by a slip. Only the button takes the pointer, so the battle underneath plays as before.
     /// </summary>
     public sealed class SurrenderButton
     {
@@ -77,12 +78,13 @@ namespace Depiction.View
 
         public SurrenderButton(RectTransform parent, Action surrender)
         {
+            ScreenBox box = CornerLayout.DemoSurrender;
             Button button = UiKit.Button(parent, "Surrender", DemoSession.SurrenderLabel, () => surrender(), BattleTheme.Panel, BattleTheme.Ink, 24,
-                new Vector2(1f, 1f), new Vector2(1f, 1f));
+                new Vector2(0f, 1f), new Vector2(0f, 1f));
             var rt = (RectTransform)button.transform;
-            rt.pivot = new Vector2(1f, 1f);
-            rt.sizeDelta = new Vector2(200f, 56f);
-            rt.anchoredPosition = new Vector2(-24f, -16f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.sizeDelta = new Vector2(box.Width, box.Height);
+            rt.anchoredPosition = new Vector2(box.X, -box.Y);
             _button = button.gameObject;
             Visible = false;
         }
