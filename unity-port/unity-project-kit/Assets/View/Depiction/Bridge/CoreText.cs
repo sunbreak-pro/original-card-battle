@@ -65,14 +65,6 @@ namespace Depiction.Bridge
                 action.Attributes.HasFlag(BattleAttribute.Guard) || action.Face.Guard > 0, action.Face.Move != 0, action.Face.Push != 0);
         }
 
-        public static int Intensity(int amount)
-        {
-            if (amount <= 9) return 1;
-            if (amount <= 16) return 2;
-            if (amount <= 24) return 3;
-            return 4;
-        }
-
         // ---- cards --------------------------------------------------------------------------
 
         /// <summary>

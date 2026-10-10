@@ -165,6 +165,8 @@ namespace Depiction.Tests
                 {
                     string where = "event " + ev.Order + " " + cue.Kind;
                     Assert.That(cue.Intensity, Is.InRange(1, 4), where);
+                    if (cue.Kind == CueKind.Slash || cue.Kind == CueKind.Hit || cue.Kind == CueKind.GuardGain)
+                        Assert.That(cue.Intensity, Is.EqualTo(EffectStrength.Uniform), "§5.3: one strength for every beat (#30), " + where);
                     if (cue.Kind == CueKind.Hit) Assert.That(cue.HpAfter, Is.Not.EqualTo(Cue.Unchanged), where);
                     if (cue.Kind == CueKind.Slash)
                     {

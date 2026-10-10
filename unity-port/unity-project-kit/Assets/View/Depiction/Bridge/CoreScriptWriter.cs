@@ -552,7 +552,7 @@ namespace Depiction.Bridge
                 ev.Cues.Add(new Cue
                 {
                     Kind = CueKind.Slash, Source = source, Target = target, System = _strike,
-                    Amount = damage.Raw, Intensity = CoreText.Intensity(damage.Raw), HpAfter = damage.TargetHpAfter,
+                    Amount = damage.Raw, Intensity = EffectStrength.Uniform, HpAfter = damage.TargetHpAfter,
                 });
                 return;
             }
@@ -560,7 +560,7 @@ namespace Depiction.Bridge
             ev.Cues.Add(new Cue
             {
                 Kind = CueKind.Slash, Source = source, Target = target, System = _strike,
-                Amount = damage.Raw, Intensity = CoreText.Intensity(damage.Raw),
+                Amount = damage.Raw, Intensity = EffectStrength.Uniform,
             });
             if (damage.Absorbed > 0)
             {
@@ -575,7 +575,7 @@ namespace Depiction.Bridge
                 ev.Cues.Add(new Cue
                 {
                     Kind = CueKind.Hit, Target = target,
-                    Amount = damage.Damage, Intensity = CoreText.Intensity(damage.Damage), HpAfter = damage.TargetHpAfter,
+                    Amount = damage.Damage, Intensity = EffectStrength.Uniform, HpAfter = damage.TargetHpAfter,
                 });
             }
         }
@@ -602,7 +602,7 @@ namespace Depiction.Bridge
                 ev.Cues.Add(new Cue
                 {
                     Kind = CueKind.Hit, Target = target,
-                    Amount = wall.Damage, Intensity = CoreText.Intensity(wall.Damage), HpAfter = wall.HpAfter,
+                    Amount = wall.Damage, Intensity = EffectStrength.Uniform, HpAfter = wall.HpAfter,
                 });
             }
         }
@@ -694,7 +694,7 @@ namespace Depiction.Bridge
             return new Cue
             {
                 Kind = CueKind.GuardGain, Target = CoreText.Side(actor),
-                Amount = amount, Intensity = CoreText.Intensity(amount), GuardAfter = guardAfter,
+                Amount = amount, Intensity = EffectStrength.Uniform, GuardAfter = guardAfter,
             };
         }
 

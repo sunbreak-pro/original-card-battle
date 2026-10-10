@@ -377,9 +377,19 @@ namespace Depiction
         }
     }
 
-    /// <summary>§5.3 強弱, held at two steps for now (#76): intensity 3 and 4 are strong.</summary>
+    /// <summary>
+    /// §5.3 強弱, held at two steps for now (#76): intensity 3 and 4 are strong. Since #30 every
+    /// script writes only <see cref="Uniform"/> (2, not strong), so beats play the normal step.
+    /// </summary>
     public static class EffectStrength
     {
+        /// <summary>
+        /// The one intensity every script writes (§5.3, decided 2026-10-03, #30): the strength stays
+        /// the same for every beat until each card gets its own animation. Tier 2 is the size-1.0
+        /// step, so the shapes play at the lengths §5.3 lists. The View still reads 1..4 from the cue.
+        /// </summary>
+        public const int Uniform = 2;
+
         public static bool IsStrong(int intensity) => intensity >= 3;
     }
 

@@ -186,7 +186,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(slash.Source, Is.EqualTo(UnitSide.Player), "the attacker is always named (#29)");
             Assert.That(slash.Target, Is.EqualTo(UnitSide.Enemy));
             Assert.That(slash.Amount, Is.EqualTo(20));
-            Assert.That(slash.Intensity, Is.EqualTo(3));
+            Assert.That(slash.Intensity, Is.EqualTo(EffectStrength.Uniform), "§5.3: one strength for every beat (#30)");
             Assert.That(slash.HpAfter, Is.EqualTo(40));
 
             Assert.That(ev.After.Enemy.Hp, Is.EqualTo(40));

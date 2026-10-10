@@ -107,6 +107,8 @@ namespace Depiction.Tests
                 foreach (Cue cue in ev.Cues)
                 {
                     Assert.That(cue.Intensity, Is.InRange(1, 4), "event " + ev.Order + " " + cue.Kind);
+                    if (cue.Kind == CueKind.Slash || cue.Kind == CueKind.Hit || cue.Kind == CueKind.GuardGain)
+                        Assert.That(cue.Intensity, Is.EqualTo(EffectStrength.Uniform), "§5.3: one strength for every beat (#30)");
                     if (cue.Kind == CueKind.Hit) Assert.That(cue.HpAfter, Is.Not.EqualTo(Cue.Unchanged));
                     if (cue.Kind == CueKind.GuardGain || cue.Kind == CueKind.GuardBlock || cue.Kind == CueKind.StanceCue)
                         Assert.That(cue.GuardAfter, Is.Not.EqualTo(Cue.Unchanged));

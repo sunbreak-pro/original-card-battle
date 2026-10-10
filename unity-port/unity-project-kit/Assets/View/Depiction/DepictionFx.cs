@@ -1,6 +1,7 @@
 // Transient effects for the depiction, all driven by UiTween (no DOTween, no Animator).
-// Strength comes in as a 1..4 tier that the script already decided from the settled
-// value (battle_ui_ux_v2 §11.4 J1); this file only maps a tier to size, hit-stop and shake.
+// Strength comes in as a 1..4 tier that the script already decided (battle_ui_ux_v2 §5.3;
+// since 2026-10-03 every script writes one tier, #30); this file only maps a tier to size,
+// hit-stop and shake.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using UnityEngine;
