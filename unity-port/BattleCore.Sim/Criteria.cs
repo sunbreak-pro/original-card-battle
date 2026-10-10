@@ -187,15 +187,15 @@ public static class Criteria
                 if (per.Max() - per.Min() >= 15) moved++;
             }
             int total = Enemies.All.Count;
-            int needed = (int)Math.Ceiling(total * 6.0 / 9.0);
-            rows.Add(new CriterionRow("10", "間合いの方針の差", "詰め続ける / 離れ続ける / 出入りする で勝率が 15 pt 以上動く敵が 9 体中 6 体以上",
+            int needed = (total * 2 + 2) / 3; // two thirds, rounded up (§13, #403)
+            rows.Add(new CriterionRow("10", "間合いの方針の差", "詰め続ける / 離れ続ける / 出入りする で勝率が 15 pt 以上動く敵が、敵の 3 分の 2 以上",
                 $"{moved} / {total} 体（合格は {needed} 体以上）", moved >= needed ? Verdict.Pass : Verdict.Fail,
-                $"正本の「9 体中 6 体」は敵が 9 体だったときの数で、コアの敵は今 {total} 体なので、同じ 6/9 の割合で {total} 体中 {needed} 体以上を合格とする。"
+                $"合格の線は敵の数の 3 分の 2 以上（端数は切り上げ）で、コアの敵は今 {total} 体なので {needed} 体以上。"
                 + "敵ごとに型 6 種をまとめた勝率の最大 − 最小で数える。全敵の勝率は "
                 + string.Join("、", three.Select(p => $"{PolicyName(p)} {Pct(WinRate(results.Policies[p]))}"))
                 + StallText(three.SelectMany(p => results.Policies[p]), "は勝てなかった戦闘に数える"), moved));
         }
-        else rows.Add(Skipped("10", "間合いの方針の差", "勝率が 15 pt 以上動く敵が 9 体中 6 体以上", SkippedNote));
+        else rows.Add(Skipped("10", "間合いの方針の差", "勝率が 15 pt 以上動く敵が、敵の 3 分の 2 以上", SkippedNote));
 
         // 11: no movement card in the hand.
         if (full && results.OpeningHands.Count > 0)
@@ -349,7 +349,7 @@ public static class Criteria
     /// <summary>The player's per-turn cap, in words for the notes of 4 and S13.</summary>
     public static string CapText(int maxPlays) =>
         maxPlays > 0
-            ? $"打ち手は 1 ターン {maxPlays} 枚まで（--max-plays {maxPlays}、§13 の「1〜2 枚」を字義どおりに読んだ方針）。"
+            ? $"打ち手は 1 ターン {maxPlays} 枚まで（--max-plays {maxPlays}。§13 の打ち手は上限を置かない）。"
             : "打ち手に 1 ターンの枚数の上限は無い（値が 0 を超える札を出し続ける。--max-plays で上限を付けられる）。";
 
     /// <summary>

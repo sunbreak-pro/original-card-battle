@@ -34,7 +34,7 @@ public enum Positioning
 public sealed record Choice(string InstanceId, int Target, double Value);
 
 /// <summary>
-/// The bench's player (§13: 「予兆に対して最も期待値の高い 1〜2 枚を選ぶ」貪欲法). The exact rule:
+/// The bench's player (§13 試験台の打ち手, the greedy method battle_core_v4 §13 describes since #403). The exact rule:
 ///
 /// 1. At the turn start, if 俊敏 offers a free step, the step (forward, back, or none) with the
 ///    highest value is taken when that value is above 0.
@@ -86,8 +86,8 @@ public sealed class GreedyPlayer
     public Positioning Positioning { get; }
 
     /// <summary>
-    /// The most cards played in one turn; 0 for no cap (the default). §13 words the player as one that
-    /// picks 「最も期待値の高い 1〜2 枚」; --max-plays 2 reads that literally.
+    /// The most cards played in one turn; 0 for no cap (the default, as §13 words the player since #403).
+    /// --max-plays 2 reproduces the older wording 「最も期待値の高い 1〜2 枚」.
     /// </summary>
     public int MaxPlays { get; }
 
