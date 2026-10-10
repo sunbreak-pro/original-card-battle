@@ -1,6 +1,6 @@
 # 素材の取り込み規約 — 置き場・命名・Unity の設定・台帳
 
-> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。
+> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。2026-10-10 に、Preset Manager のフィルタが `Assets/` から始まる形で当たると確かめた結果を §5.2 と §10 に入れました（#85。登録は RPG-by-card#10）。同じ日に、上級の槍の竜兵 2 枚の幅の例外（800 と 900）を §0・§1.2・§3.3 に足しました（#287）。
 > **役割**: 作った絵を Unity に入れるまでの規約を決めます。**立ち絵（キャラクター）だけを対象にします。** 背景・カードの絵・UI の部材は不透明度も圧縮形式も違うので、別の節が要ります（→ §9）。
 > **正本**: `.claude/docs/vision/world-v1.md`（世界の正典 v4）／ `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md`（道具と前提）
 > **読む用**: `docs/reports/2026-09-21-asset-intake-rules.html`
@@ -14,7 +14,7 @@
 | # | 決めたこと |
 | --- | --- |
 | 1 | 原本（`.kra`）は OneDrive に置き、どちらの git にも入れません |
-| 2 | 書き出しは **640 × 1536 の PNG**。縮小しません |
+| 2 | 書き出しは **640 × 1536 の PNG**。縮小しません。例外は上級の槍の竜兵 2 枚（800 × 1536 と 900 × 1536、→ §1.2） |
 | 3 | 絵の正本は **Unity リポ**（`RPG-by-card`）です。このリポには置きません |
 | 4 | 命名は `chr_<subject>_<category>_<label>.png`、asset id は `chr.<subject>.<category>.<label>` |
 | 5 | 取り込み設定は 1 枚の Preset にまとめ、Preset Manager にフォルダ絞りで登録します |
@@ -38,7 +38,7 @@
 
 | 項目 | 値 | 理由 |
 | --- | --- | --- |
-| 大きさ | **640 × 1536**（原本のまま。縮小しない） | `style-guide.md` §2 が正本です。4 の倍数なので BC7 が効きます（→ §3.3） |
+| 大きさ | **640 × 1536**（原本のまま。縮小しない）。晶槍の竜兵は 800 × 1536、不退の槍竜は 900 × 1536 のまま書き出す | `style-guide.md` §2 が正本で、幅の例外もそこにあります。どの幅も 4 の倍数なので BC7 が効きます（→ §3.3） |
 | 足の位置 | 足の裏をキャンバスの最下行に接地させる | 基準点を `(0.5, 0)` と書ける条件です |
 | 左右 | 足の中心をキャンバス幅のちょうど中央に置く | 同上 |
 | 向き | 画面で向く向き（敵は左向き、プレイヤーは右向き） | Unity では反転しません（2026-10-03 こうだいさん決定、#85。反転をやめる作業は #288） |
@@ -112,7 +112,7 @@ Unity 6 の項目名で書きます。括弧内は `.meta` のキーです。**`
 
 **BC7 は両辺が 4 の倍数のときだけ効きます。** 640 = 4 × 160、1536 = 4 × 384 なので通ります。割ったときに Unity が何と表示するかは未確認なので、取り込み後に Inspector 下端の情報行で実際の形式を見ます。
 
-**容量**: 640 × 1536 = 983,040 texel、BC7 は 8 bpp なので 1 枚 960 KiB。ミップマップ込みで 1.25 MiB。20 枚で 25 MiB です。非圧縮 RGBA32 なら 1 枚 3.75 MiB、20 枚で 75 MiB になります。**1 枚だけ縁にブロックが見えたら、その 1 枚を RGBA 32 bit に上げて、理由を台帳の `notes` に書きます。**
+**容量**: 640 × 1536 = 983,040 texel、BC7 は 8 bpp なので 1 枚 960 KiB。ミップマップ込みで 1.25 MiB。20 枚で 25 MiB です。幅の例外の 2 枚は、800 × 1536 が 1 枚 1,200 KiB、900 × 1536 が 1 枚 1,350 KiB です（ミップマップ抜き）。非圧縮 RGBA32 なら 1 枚 3.75 MiB、20 枚で 75 MiB になります。**1 枚だけ縁にブロックが見えたら、その 1 枚を RGBA 32 bit に上げて、理由を台帳の `notes` に書きます。**
 
 ### 3.4 Sprite Atlas は使いません
 
@@ -164,7 +164,7 @@ asset id : chr.<subject>.<category>.<label>
 - **既存のファイルに当て直せるのは 2 つだけです。** Inspector の importer のコンテキストメニューから **Reset** を選ぶか、C# で `preset.ApplyTo(importer)` してから `AssetDatabase.WriteImportSettingsIfDirty(path)` を呼ぶかです。**Reimport も `ImportAssetOptions.ForceUpdate` も効きません。** 既定 preset を当てる内部の処理が「`.meta` が無いとき」しか動かないためです。
 - **`.preset` を消して作り直さないでください。** GUID が変わって Preset Manager の行が黙って外れます。直すときは中身を編集します。
 - **3 つのファイルを一緒にコミットします。** `ProjectSettings/PresetManager.asset`、`Assets/Art/Characters/CharacterSprite.preset`、その `.preset.meta` です。
-- **フィルタに `Assets/` を付けるかは未確認です。** Unity のマニュアルの例は `glob:"foldername/*.fbx"` の形しか書いていません。PNG を 1 枚落として Inspector を見れば決まります。
+- **フィルタは `Assets/` から書きます。** Unity のマニュアルの例は `glob:"foldername/*.fbx"` の形しか書いていませんが、`glob:"Assets/Art/Characters/**.png"` で当たることを確かめました（2026-10-05、RPG-by-card#10）。試しの PNG を 1 枚落とし、Inspector で §3 の値が入るのを見ています。
 
 ---
 
@@ -286,7 +286,6 @@ model_id, weights_file, sha256, license, terms_url, terms_checked_on, notes
 
 ## 10. 未確認のこと
 
-- Preset Manager の Filter が `Assets/` から始まるか。PNG を 1 枚落とせば決まります。
 - 6000.x が書く Sprite の `.meta` の `serializedVersion`。実物を 1 枚貼ってもらう必要があります。
 - BC7 が両辺 4 の倍数を要求するときに Unity 6 が何と表示するか。一次情報に辿り着けませんでした。制約そのものはブロック圧縮の性質から確かです。
 - ミップマップの on / off の見え方（→ §9）。
