@@ -92,9 +92,27 @@ namespace Depiction.Tests
             Assert.That(BattleSpeed.Next(BattleSpeedStep.Slow), Is.EqualTo(BattleSpeedStep.Normal));
             Assert.That(BattleSpeed.Next(BattleSpeedStep.Normal), Is.EqualTo(BattleSpeedStep.Fast));
             Assert.That(BattleSpeed.Next(BattleSpeedStep.Fast), Is.EqualTo(BattleSpeedStep.Slow));
-            Assert.That(BattleSpeed.Label(BattleSpeedStep.Slow), Is.EqualTo("速さ 1.0 倍"));
-            Assert.That(BattleSpeed.Label(BattleSpeedStep.Normal), Is.EqualTo("速さ 1.25 倍"));
-            Assert.That(BattleSpeed.Label(BattleSpeedStep.Fast), Is.EqualTo("速さ 1.5 倍"));
+            // battle-visual-v1 §4.1 (#389): the number only, no word.
+            Assert.That(BattleSpeed.Label(BattleSpeedStep.Slow), Is.EqualTo("×1.0"));
+            Assert.That(BattleSpeed.Label(BattleSpeedStep.Normal), Is.EqualTo("×1.25"));
+            Assert.That(BattleSpeed.Label(BattleSpeedStep.Fast), Is.EqualTo("×1.5"));
+        }
+
+        [Test]
+        public void TheIcon_StacksOneTwoOrThreeChevrons_AndTheTooltipNamesTheThreeSteps()
+        {
+            // 付録 A 「速さ」: one chevron at ×1.0, two at ×1.25, three at ×1.5.
+            Assert.That(BattleSpeed.Chevrons(BattleSpeedStep.Slow), Is.EqualTo(1));
+            Assert.That(BattleSpeed.Chevrons(BattleSpeedStep.Normal), Is.EqualTo(2));
+            Assert.That(BattleSpeed.Chevrons(BattleSpeedStep.Fast), Is.EqualTo(3));
+            Assert.That(BattleSpeed.Tooltip, Is.EqualTo("戦闘の速さ。押すたびに ×1.0 → ×1.25 → ×1.5 と巡ります"));
+            // The tooltip walks the steps in the switch's order, written the way the button writes them.
+            string order = string.Join(" → ", BattleSpeed.Steps.Select(BattleSpeed.Label));
+            Assert.That(BattleSpeed.Tooltip, Does.Contain(order));
+            foreach (BattleSpeedStep step in BattleSpeed.Steps)
+            {
+                Assert.That(BattleSpeed.Label(step), Does.Not.Contain("速さ").And.Not.Contain("倍"), "the switch shows no word");
+            }
         }
 
         [Test]
