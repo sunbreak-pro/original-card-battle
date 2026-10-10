@@ -5,8 +5,10 @@ namespace BattleCore
 {
     /// <summary>
     /// What one finished battle adds up to (§12 の結果画面, #191), counted from its event stream: who
-    /// won, in how many turns, the HP left, the attributes of the cards played (a two-attribute card
-    /// counts once for each) and how often a card's trait held.
+    /// won, in how many turns, the HP left, the attributes of the cards played and how often a card's
+    /// trait held. A card counts once, as the one attribute it folds to (battle_core_v4 §2.1 / §24.1,
+    /// v4.4: 攻撃 ＞ 防御 ＞ スキル, <see cref="AttributeRule.Fold"/>), so the attribute counts add up
+    /// to <see cref="CardsPlayed"/> — an 攻撃 + 防御 card is one 攻撃, not one of each.
     /// </summary>
     public sealed record BattleTally(
         string EnemyId,
