@@ -248,6 +248,53 @@ namespace BattleCore.Tests
         }
 
         [Test]
+        public void TheCrossGuard_IsTheTwinBladesOnlyChoiceFromThreeAway_AndNeverCloser()
+        {
+            // roster §2.6 (v4.13, #328): 0 → twin_slash / retreat_cut, 1〜2 → step_slash / retreat_cut,
+            // 3+ → cross_guard. Under v4.12 the cost-1 退き斬り and 間を詰める came first and it was never chosen.
+            var enemy = Enemies.TwinBladeWarped;
+            Assert.Multiple(() =>
+            {
+                for (int gap = 0; gap <= 6; gap++)
+                {
+                    for (int stamina = 0; stamina <= enemy.MaxStamina; stamina++)
+                    {
+                        string? chosen = EnemyAi.ChooseAction(enemy, gap, stamina)?.Id;
+                        if (gap >= 3)
+                            Assert.That(chosen, Is.EqualTo(stamina >= 1 ? "cross_guard" : null), $"gap {gap}, stamina {stamina}");
+                        else
+                            Assert.That(chosen, Is.Not.EqualTo("cross_guard"), $"gap {gap}, stamina {stamina}");
+                    }
+                }
+                Assert.That(enemy.Actions.Keys, Is.EquivalentTo(new[] { "twin_slash", "step_slash", "retreat_cut", "cross_guard" }), "間を詰める is gone");
+            });
+        }
+
+        [Test]
+        public void TheTwinBlade_OpensWithTheCrossGuard_ClosingTwoAndTakingOneParry()
+        {
+            // roster §2.6 (v4.13, #328): the battle opens at gap 3, so the first omen is 十字受け, read
+            // as 移動 (§1.2). It closes to gap 1; Guard 2 + the opening stance's 3 = 5; 残 9 keeps the 温存
+            // and grants 見切り 1.
+            var enemy = Enemies.TwinBladeWarped;
+            var setup = new BattleSetup(enemy, Fillers(20), CellsFor(enemy), StartGap: 3);
+            var state = TurnLoop.Start(setup, NoShuffle).State;
+            Assert.That(state.Omen!.ActionId, Is.EqualTo("cross_guard"));
+            Assert.That(EnemyAi.LabelOf(enemy.Actions["cross_guard"]).Kind, Is.EqualTo(OmenKind.Move));
+
+            state = TurnLoop.BeginPlayerTurn(state, NoShuffle).State;
+            var end = TurnLoop.EndTurn(state with { Player = state.Player with { Stamina = 0 } }, NoShuffle);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(end.Events.OfType<ActionExecuted>().Select(e => e.Action.Id), Has.Member("cross_guard"));
+                Assert.That(end.State.Gap, Is.EqualTo(1));
+                Assert.That(end.State.Enemy.Guard, Is.EqualTo(5));
+                Assert.That(end.State.Enemy.Statuses.Stacks(StatusKind.Parry), Is.EqualTo(1));
+            });
+        }
+
+        [Test]
         public void TheTwinSlash_TakesOneMultiplierABlow_AndSpendsEmpowerOnceOrNotAtAll()
         {
             // battle_core §5.1 (§19.5 S13): one multiplier a blow, 脆化 first. 強化 rides the blows
@@ -330,7 +377,7 @@ namespace BattleCore.Tests
             ["rusted_revenant"] = "iron_body:St:構 heavy_swing:A:攻 press:A:攻 trudge:G:移",
             ["crossbow_hunter"] = "bolt:A:攻 backstep:A:攻 kick_off:A:攻 brace:G:防",
             ["mist_archer"] = "mist_arrow:A:攻 fade:G:防 scatter:A:攻",
-            ["twin_blade_warped"] = "twin_slash:A:攻 step_slash:A:攻 retreat_cut:A:攻 cross_guard:G:防 close_in:Sk:移",
+            ["twin_blade_warped"] = "twin_slash:A:攻 step_slash:A:攻 retreat_cut:A:攻 cross_guard:G:移",
             ["polearm_crystal"] = "great_thrust:A:攻 crystal_rush:A:攻 recoil_thrust:A:攻 short_jab:A:攻 haft_guard:G:防",
             ["armored_warden"] = "iron_wall:St:構 helm_splitter:A:攻 push_shield:A:攻 shield_bash:A:攻 advance_guard:G:防 brace:G:防",
             ["pack_alpha"] = "hunt_stance:St:構 rend:A:攻 pounce:A:攻 herd:Sk:技 howl:Sk:技 crouch:G:防",
