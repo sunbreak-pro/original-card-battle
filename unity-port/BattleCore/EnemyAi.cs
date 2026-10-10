@@ -83,6 +83,21 @@ namespace BattleCore
         }
 
         /// <summary>
+        /// §9 step 12: the stamina an enemy will hold when its omen is carried out — now, plus its
+        /// next recovery. 疲労 it already holds will take its 1 off that recovery too (§9 step 9); one
+        /// put on it later is what "drained in between" means. The turn loop passes this to
+        /// <see cref="DecideOmen"/> and <see cref="DecidePlan"/>; it is public so a test that walks
+        /// the trees (#395) reads the omen's stamina the same way.
+        /// </summary>
+        public static int StaminaAtAction(EnemyDef def, CombatantState body)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            if (body == null) throw new ArgumentNullException(nameof(body));
+            int fatigue = body.Statuses.Has(StatusKind.Fatigue) ? Constants.FatiguePenalty : 0;
+            return Combat.RecoverStamina(body.Stamina, body.MaxStamina, def.Recovery - fatigue, body.NextTurnRecoveryBonus);
+        }
+
+        /// <summary>
         /// #51: the enemy's action of this id as it stands under the active switch — the switch's
         /// override when it carries one (roster §4.4 breaker: 錫杖 with 崩し 2), else the enemy's own.
         /// </summary>
