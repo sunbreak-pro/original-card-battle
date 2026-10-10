@@ -63,6 +63,10 @@ namespace BattleCore.Tests
             ["EMPOWER_MULT"] = Number(Constants.EmpowerMult),
             ["FRAGILE_MULT"] = Number(Constants.FragileMult),
             ["MASTERY_THRESHOLDS"] = Join(Constants.MasteryThresholds.ToArray()),
+            ["MASTERY_THRESHOLDS_REFORM"] = Join(Constants.MasteryThresholdsReform.ToArray()),
+            ["MASTERY_TOP_RANK_CARDS"] = Join(Constants.MasteryTopRankCards),
+            ["TALENT_TICK_MULT"] = Join(Constants.TalentTickMultiplier),
+            ["TRAINING_TICKS"] = Join(Constants.TrainingTicks),
             ["CHAIN_BATTLES_DEFAULT"] = Join(Constants.ChainBattlesDefault),
         };
 
