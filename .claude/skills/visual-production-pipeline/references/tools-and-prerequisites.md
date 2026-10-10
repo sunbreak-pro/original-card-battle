@@ -1,7 +1,8 @@
 # ツールと前提（visual-production-pipeline の正本）
 
 - 確認日: 2026-09-19（0 円化の観点で調べ直し。6 観点 + 反証役 + 批評役。結論を左右する 6 件は Claude が一次情報で再確認。読む用: `docs/reports/2026-09-19-visual-production-survey.html`）。前回 2026-09-14（survey の 6 観点 + 反証役 4 + 批評役。外部の主張 265 件のうち、確認 231 / 訂正 30 / 未確認 4。結論を左右する 5 件は Claude が一次情報を直接開いて再確認した）
-- 判断の回答: 2026-09-14（§9 #1〜#17。戦闘の所感の反映と合わせて回答済み）と 2026-09-16（§9 #18〜#29。色・アート・運用の 12 件）
+- 判断の回答: 2026-09-14（§9 #1〜#17。戦闘の所感の反映と合わせて回答済み）と 2026-09-16（§9 #18〜#29。色・アート・運用の 12 件）と 2026-10-07（§9 #30〜#34。#82 で残っていた 0 円化の判断と、指示文の書き方）
+- 前提の更新: 2026-10-08（#407）。2026-10-07 の回答を本文に書き戻した。CLIP STUDIO PAINT PRO は買わず 0 円で続ける。絵の生成の主な道筋は手元の Krita AI で、クラウドの生成 API は手元で通らないときの保険にする。ボスの動きは Unity の 2D Animation で始める。§1〜§5・§9・§11・§12 を直した
 - 読む用のレポート: `docs/reports/2026-09-14-visual-production-survey.html`（回答前のスナップショット）
 - 数字の更新: 2026-09-23（#146）。人型の枠を Depiction の 210 × 450 に、原本と書き出しを 640 × 1536 に、台帳を 15 列に直した。正本は `.claude/docs/art_document/style-guide.md` §2 と `asset-intake.md` §1.2・§7
 - 間合いの更新: 2026-10-04（#167）。間合いの記述を横 1 列のマスの間合い N（`battle_core_v4.md` §7、`battle_ui_ux_v2.md` v2.2）に直した。人型の枠の向きを、敵の絵を反転しない実装（#288）に合わせた
@@ -11,10 +12,10 @@
 
 ## 1. 既定の道筋
 
-1. 候補は画像 API で作ります（Gemini を主、OpenAI を副、月の上限 $30）。
-2. 人が CLIP STUDIO PAINT PRO で加筆し、パーツに分けます。試走の 1 体はこうだいさんが行い、かかった時間を測ります。
+1. 候補は手元の Krita AI Diffusion で作ります（Local Managed Server と Animagine XL 4.0 opt。§12）。クラウドの画像 API（Gemini を主、OpenAI を副、使うときの月の上限 $30）は、手元で通らないときの保険です（2026-10-07 決定 → §9 #31）。指示文は基本だけを押さえ、細部は候補を見てこうだいさんが選びます（→ §9 #34、`style-guide.md` §4）。
+2. 人が Krita で加筆し、パーツに分けます。CLIP STUDIO PAINT PRO は買わず、0 円で続けます（2026-10-07 決定 → §9 #30）。試走の 1 体はこうだいさんが行い、かかった時間を測ります。
 3. 差分スプライトと白シルエット PNG を、いまの人型の `Image` に差し替えます（段階 0）。間合いは床のマスと間合いの数字で見せるので、体勢の差分は作りません。
-4. Live2D は主人公とボスの 2 体だけにします。Unity は 6000.5 のまま進め、Live2D を入れる時点で Cubism SDK を半日試します。
+4. Live2D は主人公に使い、0 円で続けるので FREE 版にします。ボスの動きは Unity の 2D Animation で始めます。パーツが 30 以内に収まるなら、ボスにも Live2D FREE を使ってかまいません（2026-10-07 決定 → §9 #32）。Unity は 6000.5 のまま進め、Live2D を入れる時点で Cubism SDK を半日試します。
 5. UI は HTML モックアップから UGUI の C#（`BattleTheme` / `UiKit` / `UiTween`）に写し、ビルド撮影で数値を確かめます。
 6. 演出では Particle System を使ってよくなりました（2026-09-14 決定、`v2:1072` の「使わない」を覆す）。Overlay の Canvas に出すため、ParticleEffectForUGUI を第一候補にします。
 7. 組む順は、スタイルガイドと主人公の見た目 → 長柄の歪み兵 1 体で全工程 → 残り 8 体と UI です。
@@ -25,7 +26,7 @@
 | --- | --- | --- |
 | テーマ | 「死ぬたびに人は変わる。だが、技と記憶は次の生へ。」操作するのは一人の固定キャラクター | `concept-v3.md:14-16` |
 | 主人公 | 見た目は固定 1 体。世代の違いは小物と色の差分で出す（2026-09-14 決定）。世代ごとに名前を持ち、小物と色は前の生の到達階層で決まる（2026-09-16 決定） | §9 #5 / #20 / #21 |
-| 絵柄 | アニメ 2.5D（Live2D は主人公とボス）。モチーフは瘴気と手記（和紙・墨・筆線） | `v2:511`、`art-plan:19` |
+| 絵柄 | アニメ 2.5D（Live2D は主人公。ボスは 2D Animation で始め、パーツ 30 以内なら Live2D FREE も可。2026-10-07 決定）。モチーフは瘴気と手記（和紙・墨・筆線） | `v2:511`、`art-plan:19`、§9 #32 |
 | 画面の見た目 | A「霧と灯り」の A+。色は役割にだけ使う。omen は予兆・敵・被弾・敵の作用だけ | `v2:535-540`、`v2:544-591` |
 | 間合い | 横 1 列のマスの上の距離 N（自分と相手のあいだの空きマスの数。隣り合えば 0）。素の効果は無く、カードと敵の行動が届く間合いと境目で読む。場は戦闘ごとに 5〜8 マスで、1 マスに 1 体。敵は大きさ（使うマスの数。1〜3）を持つ。画面では人型が自分のマスに立ち、選んでいる相手との N を間合いの数字 1 つで出す。札を持ち上げると届くマスが光り、予兆の狙うマスは床に斜線で出す（2026-09-22 / 09-23 決定）。8 マスの場（1 マス 168 px）で人型を縮めるかは #56 で決める | `core` §7.1〜§7.2、`v2` §1.1 A2・§2.1・§13.3 |
 | 人型の枠 | 210 × 450（Canvas の参照単位。実画素は 1080p で 450、4K で 900）、足元 pivot (0.5, 0)、`preserveAspect = true`。塗った絵は画面で向く向きのまま描き、Unity では反転しない。右向きの影絵（仮素材）を敵に使うときだけ `localScale.x = −1` で反転する（#288） | `Depiction/Editor/DepictionPrefabBuilder.cs:219,223`、`Depiction/Script/FigureMotion.cs:61-64`、`style-guide.md` §4.2 |
@@ -43,6 +44,7 @@
 
 - ある: RTX 5060 Ti（VRAM 8 GB、うち画面表示が約 1.8 GB）、Ryzen 7 5700X、RAM 32 GB、C: の空き約 300 GiB、Python 3.12.10（Pillow 12.3.0、numpy 2.5.1）、uv、Node v24.16.0、git-lfs 3.7.1、gh、.NET SDK 10、Unity Hub 3.21.1、Unity CLI 1.0.0-beta.6（`unity mcp` を `unity-editor-mcp` として登録済み）、Playwright の chromium-1228、Chrome、Noto Sans JP / Noto Serif JP / BIZ UD 系の書体。
 - 無い: Krita / CLIP STUDIO / Photoshop / GIMP / Aseprite / Blender / Live2D / Spine / Inkscape / Figma、ComfyUI と torch、PATH 上の ImageMagick と ffmpeg、DOTween、画像 API のクライアント。
+- その後に入ったもの: Krita 5.3.4 と Krita AI Diffusion 1.53.0（Local Managed Server）。いまの生成の主な道筋です（§12）。CLIP STUDIO は入れません（§9 #30）。
 - `.env`: original-card-battle は `chore/ignore-env`（PR #21）で無視するようにした。RPG-by-card はステージ済みの `.gitignore` に足した（コミットは Unity リポの運用を決めるときに行う）。
 - LFS: RPG-by-card の `.gitattributes` に `*.psb` と `*.moc3` を足した（ステージのみ）。
 - RTX 50 系でローカル生成するなら、CUDA 12.8 以降でビルドされた PyTorch が要る。
@@ -52,16 +54,16 @@
 | 役割 | 採用 | 代替・保留 | 費用・条件 | Claude が動かせるか |
 | --- | --- | --- | --- | --- |
 | コンセプト・影絵 | 仕様カード（md）と SVG の影絵を Playwright で撮る | `design` スキルのキャンバス | 0 円 | 可 |
-| 加筆・パーツ分け（人） | CLIP STUDIO PAINT PRO 買い切り 6,900 円（https://www.clipstudio.net/ja/purchase/）。2026-09-16 に購入を決定（→ §9 #22） | Krita（無料）、Photoshop 3,280 円/月 | Live2D が PSD の動作を保証するのは Photoshop と CSP（https://docs.live2d.com/en/cubism-editor-manual/divide-the-material/） | 不可 |
-| 画像生成（主） | Gemini `gemini-3.1-flash-image`（1K 約 $0.067/枚、Batch 半額、無料枠なし）。月の上限 $30 | `gemini-3.1-flash-lite-image`（1K 約 $0.0336/枚）、`gemini-3-pro-image`（1K 約 $0.134/枚、スタイル参照 3 枚） | https://ai.google.dev/gemini-api/docs/pricing 。Google は生成物の所有権を主張せず、全画像に SynthID が入る（https://ai.google.dev/gemini-api/terms） | 可 |
-| 画像生成（副） | OpenAI `gpt-image-2` / `gpt-image-2.5-sunburst` / `-flare` | — | 画像出力 $30 / 100 万トークン、Batch 半額（https://developers.openai.com/api/docs/pricing）。1 枚あたりは**未確認**（公式は計算機のみ）。API Organization Verification が要る場合がある。出力の権利は利用者に譲渡 | 可 |
-| 画像生成（ローカル） | 条件が来たら測る（2026-09-16 決定 → §9 #23）。2026-09-19 の調査は、ローカル主へ差し戻して工程 0 で実測することを推す（未回答）。ComfyUI ポータブルは Python 3.13 と PyTorch CUDA 13.0 を同梱し、RTX 50 系の torch を別に入れる手間が無くなった（https://github.com/Comfy-Org/ComfyUI ）。Illustrious XL v2.0 は creativeml-openrail-m。月 $30 に届くか、参照画像で同じ顔を保てないときに、8 GB で SDXL 系の速度と VRAM を測る | ComfyUI（GPL-3.0）+ Animagine XL 4.0（改変なしの RAIL++-M、商用可） | torch と CUDA 12.8 以降のビルドの導入から要る | 可 |
-| 一貫性の維持 | 承認済みの絵を参照画像に渡す（flash-image は物体 10・キャラクター 4 枚まで） | LoRA（kohya_ss、Python 3.11）、IP-Adapter、controlnet-union-sdxl、DWPose（いずれも Apache 2.0）。ローカルで測る範囲は LoRA 学習まで（2026-09-16 決定 → §9 #24） | API 代だけ | 可 |
+| 加筆・パーツ分け（人） | Krita（無料、導入済み）。CLIP STUDIO PAINT PRO は買わず、0 円で続ける（2026-10-07 決定 → §9 #30） | Live2D で PSD が通らないときだけ、CSP の最大 3 か月無料（1 人 1 回、終了後は課金）。Photoshop 3,280 円/月 | Live2D が PSD の動作を保証するのは Photoshop と CSP（https://docs.live2d.com/en/cubism-editor-manual/divide-the-material/）。2D Animation だけで動かす絵には関係しない | 不可 |
+| 画像生成（主） | Krita AI Diffusion の Local Managed Server。生成は Animagine XL 4.0 opt、ポーズ差分の編集は Flux 2 Klein 4B（§12）。2026-10-07 に主な道筋に決まった（→ §9 #31） | 下の 2 行のクラウド API（保険） | 0 円（電気代を除く）。1 枚約 20 秒（#82 で 2026-09-30 に実測）。使ってよいモデルと操作は §12・§13 | 可（指示文と絞り込み。Krita の操作はこうだいさん） |
+| 画像生成（保険の主） | Gemini `gemini-3.1-flash-image`（1K 約 $0.067/枚、Batch 半額、無料枠なし）。手元で通らないときだけ使い、使うときの月の上限は $30 | `gemini-3.1-flash-lite-image`（1K 約 $0.0336/枚）、`gemini-3-pro-image`（1K 約 $0.134/枚、スタイル参照 3 枚） | https://ai.google.dev/gemini-api/docs/pricing 。Google は生成物の所有権を主張せず、全画像に SynthID が入る（https://ai.google.dev/gemini-api/terms） | 可 |
+| 画像生成（保険の副） | OpenAI `gpt-image-2` / `gpt-image-2.5-sunburst` / `-flare` | — | 画像出力 $30 / 100 万トークン、Batch 半額（https://developers.openai.com/api/docs/pricing）。1 枚あたりは**未確認**（公式は計算機のみ）。API Organization Verification が要る場合がある。出力の権利は利用者に譲渡 | 可 |
+| 一貫性の維持 | 承認済みの絵を Krita の Reference（IP-Adapter、§13.3 で可）に渡す。差分は待機の絵の Reference と棒人間の Scribble で作る（`briefs/polearm_warped.md` §4.2） | LoRA（kohya_ss、Python 3.11）、controlnet-union-sdxl、DWPose（いずれも Apache 2.0）。ローカルで測る範囲は LoRA 学習まで（2026-09-16 決定 → §9 #24）。クラウドの保険では、flash-image に参照画像を渡す（物体 10・キャラクター 4 枚まで） | 0 円。クラウドの保険を使うときだけ API 代 | 可 |
 | 背景除去・拡大 | rembg `-m isnet-anime`（重みは Apache-2.0）か `-m birefnet-general`（MIT）、拡大は Real-ESRGAN ncnn-vulkan（BSD-3） | — | rembg 既定の `bria-rmbg` は重みが CC BY-NC 4.0 なので使わない。isnet-anime は Apache-2.0、BiRefNet は MIT（2026-09-19 確認） | 可 |
 | 白シルエット・横幅 | `scripts/silhouette.py` | — | 0 円 | 可 |
 | 動かす（段階 0） | `Image.sprite` の差し替え + `UiTween`。体勢の差分は作らず、間合いの変化はマスの移動（1 マス 160 ms、最大 2 マス）で見せる（`v2` §5.7） | — | 0 円 | 可 |
-| 動かす（段階 1） | Unity 2D Animation + PSD Importer（導入済み）。Sprite Skin は Sprite Renderer 前提なので、専用カメラ → RenderTexture → RawImage | — | 0 円 | 配線は可、リグは不可 |
-| 動かす（主人公とボス） | Live2D Cubism | Spine Professional $379（取消線付き $449 併記、期間限定かは未確認） | FREE は個人と年間売上 1,000 万円未満の事業者なら商用可。FREE の上限はテクスチャ 1 枚（2048 px）・パーツ 30・ArtMesh 100・パラメータ 30（https://www.live2d.com/en/cubism/comparison/）。PRO indie は税込 ¥2,288/月。SDK は小規模なら出版許諾不要。SDK の開発環境は Unity 6000.3.11f1 / 6000.0.71f1 LTS で、6000.5 は載っていない（https://github.com/Live2D/CubismUnityComponents）。Spine は過去 12 か月の収入 $500,000 以上で Enterprise | 配線は可、リグは不可 |
+| 動かす（段階 1） | Unity 2D Animation + PSD Importer（導入済み）。Sprite Skin は Sprite Renderer 前提なので、専用カメラ → RenderTexture → RawImage。ボスもここから始める（2026-10-07 決定 → §9 #32） | — | 0 円 | 配線は可、リグは不可 |
+| 動かす（主人公。ボスはパーツ 30 以内なら） | Live2D Cubism FREE。0 円で続けるので PRO は使わない（§9 #30）。ボスに使ってよいのは、パーツが FREE の上限 30 に収まるときだけ（§9 #32） | Spine Professional $379（取消線付き $449 併記、期間限定かは未確認）。0 円の方針では採らない | FREE は個人と年間売上 1,000 万円未満の事業者なら商用可。FREE の上限はテクスチャ 1 枚（2048 px）・パーツ 30・ArtMesh 100・パラメータ 30（https://www.live2d.com/en/cubism/comparison/）。PRO indie は税込 ¥2,288/月。SDK は小規模なら出版許諾不要。SDK の開発環境は Unity 6000.3.11f1 / 6000.0.71f1 LTS で、6000.5 は載っていない（https://github.com/Live2D/CubismUnityComponents）。Spine は過去 12 か月の収入 $500,000 以上で Enterprise | 配線は可、リグは不可 |
 | VFX | Particle System（2026-09-14 に許可）。Overlay の Canvas には ParticleEffectForUGUI（MIT、https://github.com/mob-sakai/ParticleEffectForUGUI）で出す。`Image` の手動アニメと `UiTween` も併用 | PrimeTween（無料）はヒットストップや一括スキップが要るとき | VFX Graph はコンピュートシェーダー必須で Canvas に載らない。減速設定は `UiTween` と Particle の両方にそろえる | 可 |
 | UI デザイン | HTML モックアップ（`docs/mockups/`）+ Artifact | Penpot（MPL-2.0、公式 MCP） | Figma は Starter の MCP 呼び出しが月 20 回なので採らない | 可 |
 | UI 実装 | UGUI を C# で組む | UI Toolkit はメニュー画面で後日 | Timeline と連携できるのは UGUI | 可 |
@@ -74,7 +76,7 @@
 
 **使わないもの**: Midjourney（規約が自動ツールでの生成を禁じる）、NoobAI 系（生成物の商用化を禁じる）、CMU OpenPose（非商用の研究目的に限る）、rembg の既定モデル `bria-rmbg`、VFX Graph、Figma MCP、Yuji Syuku。
 
-**費用の目安**: 基本の立ち姿 10 体 × 候補 8 = 80 枚です。`gemini-3.1-flash-image` の 1K で約 $5.4、Batch で約 $2.7 です。差分 66 枚を編集で作る分と参照画像の入力は含みません。月の上限は $30 です。OpenAI は 1 体目で実測します。
+**費用の目安**: 基本の立ち姿 10 体 × 候補 8 = 80 枚です。手元の Krita AI なら 0 円（電気代を除く）で、1 枚約 20 秒なので GPU の時間は約 27 分です（計算値）。クラウドの保険を使った場合は、`gemini-3.1-flash-image` の 1K で約 $5.4、Batch で約 $2.7 です。この金額は、差分 66 枚を編集で作る分と参照画像の入力を含みません。保険を使うときの月の上限は $30 です。OpenAI の 1 枚あたりは、保険で使うときに測ります。
 
 ## 5. 必要なアセット（80% 範囲）
 
@@ -90,7 +92,7 @@
 | armored_warden | 精鋭 / 階層 3〜4 | 全身の甲冑と盾 | 差分 9 |
 | pack_alpha | 精鋭 / 階層 4 | 大型の獣、表示 1.25 倍 | 差分 9 |
 | pack_hound | 随伴 | shadow_hound の色替え | テクスチャ 1 |
-| miasma_priest | ボス / 階層 5 | ローブと錫杖 | Live2D（同上） |
+| miasma_priest | ボス / 階層 5 | ローブと錫杖 | 2D Animation。パーツが 30 以内なら Live2D FREE も可（§9 #32） |
 
 出典は `roster:132-313` と `v2:1194-1209` です。差分の数は、旧表から体勢 3 枚を外した値です（合計 66 枚）。敵ごとの得意な間合いは、v4.3 から N の幅（例: 0 / 1〜2 / 2〜3 / 2 以上）で表し、値は `roster` が持ちます（`roster:69`・`:215`・`:490`）。
 
@@ -126,13 +128,13 @@
 
 `human_work` と `.kra` のレイヤーと選定の理由（`notes`）が、人の創作的寄与の記録になります。モデルごとのライセンスは 1 枚ごとの行に持たず、`asset-intake.md` §7.2 のモデルの表に持ちます。30 列から外した列と理由は `asset-intake.md` §7.4 にあります。置き場は Unity プロジェクトの `Docs/art/asset-ledger.csv` を既定にします。
 
-## 9. 判断（#1〜#17 は 2026-09-14、#18〜#29 は 2026-09-16 に回答済み）
+## 9. 判断（#1〜#17 は 2026-09-14、#18〜#29 は 2026-09-16、#30〜#34 は 2026-10-07 に回答済み）
 
 | # | 判断 | 回答 |
 | --- | --- | --- |
 | 1 | Unity の版 | 6000.5 のまま進める。Live2D を入れる時点で Cubism SDK を半日試し、動かなければ 6000.3 LTS へ |
 | 2 | 立ち絵の描画方式 | 段階 0 は `Image.sprite` の差し替え + 白シルエット。体勢の差分は作らない |
-| 3 | Live2D の範囲 | 主人公とボスだけ |
+| 3 | Live2D の範囲 | 主人公とボスだけ。ボスは #32 で改めた |
 | 4 | 試走の 1 体 | 長柄の歪み兵（スタイルと主人公の見た目を先に決める） |
 | 5 | 主人公の世代差 | 固定 1 体。小物と色の差分 |
 | 6 | Particle | 全面的に使ってよい（`v2:1072` を覆す） |
@@ -143,7 +145,7 @@
 | 11 | 背景 | グラデーションと靄のまま |
 | 12 | 色トークン | 投入の色を外してから登録。間合いの部品は新しい色を足さず、形で見せる（v2.2 の狙うマスも斜線の向きで敵を分ける） |
 | 13 | 配置の許容値 | モックアップの作り直し後に ±8 px |
-| 14 | 生成の主経路 | クラウド主（Gemini 主・OpenAI 副）、月の上限 $30 |
+| 14 | 生成の主経路 | クラウド主（Gemini 主・OpenAI 副）、月の上限 $30。#31 で手元の Krita AI を主に改めた |
 | 15 | 加筆・パーツ分け・リグ | 試走の 1 体はこうだいさんが行い、時間を測ってから残りを決める |
 | 16 | クレジットと art の範囲 | クレジット画面を v2 の残り 20% に足す。art は別のフェーズとして開く |
 | 17 | 体勢差分の軸 | 作らない（間合いは床のマスと間合いの数字で見せる） |
@@ -151,16 +153,21 @@
 | 19 | 近い色の 4 組 | 形の差で区別する（色は変えず、アイコンや線種で見分ける） |
 | 20 | 主人公の名前 | 世代ごとに名前を持つ |
 | 21 | 世代差（小物と色） | 前の生の到達階層で決まる |
-| 22 | 描画アプリ | CLIP STUDIO PAINT PRO を買う（買い切り 6,900 円） |
-| 23 | ローカル画像生成 | 条件が来たら測る（月 $30 に届く、または参照画像で同じ顔を保てないとき） |
+| 22 | 描画アプリ | CLIP STUDIO PAINT PRO を買う（買い切り 6,900 円）。#30 で買わないことにした |
+| 23 | ローカル画像生成 | 条件が来たら測る（月 $30 に届く、または参照画像で同じ顔を保てないとき）。#31 と #33 で、ローカルが主になり実測も先に進んだ |
 | 24 | 測る範囲 | LoRA 学習まで |
 | 25 | 配布先 | Windows 主で進める（ブラウザ版は後回し） |
 | 26 | C# の正本 | いまのまま同期（`unity-port/` が正本、Unity 側へ写す） |
 | 27 | 写しの扱い | 写しもコミットする |
 | 28 | 初回コミット | いま入れる（RPG-by-card） |
 | 29 | URP の版 | 17.5.0 に直す（manifest と PHASE3-KICKOFF の記述） |
+| 30 | 描画アプリ（#22 の見直し） | CLIP STUDIO PAINT PRO は買っていない。0 円で続け、加筆とパーツ分けは Krita で行う |
+| 31 | 生成の主経路（#14 の見直し） | 手元の Krita AI（Local Managed Server、Animagine XL 4.0 opt）を主にする。クラウドの生成 API（Gemini 主・OpenAI 副）は、手元で通らないときの保険にする |
+| 32 | ボスの動き | Unity の 2D Animation で始める。パーツが 30 以内に収まるなら、無料版の Live2D も使ってよい |
+| 33 | ローカルの実測を先にするか | 錆槍の竜兵と上級の槍の竜兵 2 体の候補を手元で作ったので、実際には先に進んだ。残りは 1 体ぶんの所要時間の実測（#82） |
+| 34 | 指示文の書き方 | 正確な条件を細かく書き込まない。基本だけを押さえ、細部はニュアンスの噛み合わせなので、候補を見てこうだいさんが直観で選ぶ（`style-guide.md` §4） |
 
-#18〜#29 の出典は 2026-09-16 のこうだいさんの回答です（一覧の K1〜K12）。同じ日の回答のうち、戦闘の規則は `battle_core_v4.md` §17、UI は `battle_ui_ux_v2.md` §11 が持ちます。
+#18〜#29 の出典は 2026-09-16 のこうだいさんの回答です（一覧の K1〜K12）。同じ日の回答のうち、戦闘の規則は `battle_core_v4.md` §17、UI は `battle_ui_ux_v2.md` §11 が持ちます。#30〜#33 の出典は #82 の 2026-10-07 のコメントで、#34 は #326 の同じ日のコメントです。どちらもこうだいさんの回答を chat-main が確かめたものです。
 
 ## 10. 未確認
 
@@ -174,7 +181,16 @@
 - OneDrive の容量とプラン。
 - RPG-by-card の URP が manifest の 17.6.0 と lock の 17.5.0 のどちらで解決されるか。**解消**（2026-09-16 の決定で 17.5.0 に直す → §9 #29）。
 
-## 11. 0 円化の比較（2026-09-19）
+## 11. 0 円化の比較（2026-09-19）と回答（2026-10-07）
+
+**2026-10-07 の回答で、0 円の道筋を採りました**（§9 #30〜#33）。下の表の上 3 行は、どれも 0 円の側に決まっています。
+
+- **画像 API**: 手元の生成を主にしました。中身は表の「ComfyUI ローカル」ではなく、Krita AI Diffusion の Local Managed Server（内部で ComfyUI を動かす）です。モデルは Animagine XL 4.0 opt で、Illustrious 系は使いません（§12）。8 GB での速度は 1 枚約 20 秒と実測しました（#82）。クラウドの API は、手元で通らないときの保険として残します。
+- **CSP PRO**: 買っていません。加筆とパーツ分けは Krita で行います。Live2D で PSD が通らないときに限り、CSP の無料期間を使うかを改めて決めます。
+- **Live2D PRO**: 使いません。主人公は Live2D FREE で、ボスは 2D Animation で始めます。ボスのパーツが 30 以内に収まるなら、Live2D FREE を使ってかまいません。
+- **パーツ分け**: 表の 4 行目（See-through）は、まだ決めていません。手作業が既定のままです。
+
+表と下の箇条は、2026-09-19 時点の比較の記録です。
 
 | 有料の予定 | 0 円の代わり | 失うもの |
 | --- | --- | --- |
@@ -187,8 +203,11 @@
 - 背景は「グラデーション + 靄」が 0 円の既定のまま。塗るなら 5 階層で人の手 10〜20 時間（推定）。
 - 見つかった実装の穴: `FigureView.SetSprite` は静止画専用で RenderTexture を受けられない。塗った絵では `DepictionFx.Flash`（乗算）の白点滅が見えない。`DepictionFx.cs:15-16` のヒットストップと揺れが v2 §5.3 とずれる。
 
-## 12. Krita AI Diffusion の使い方の前提（2026-09-19、2026-09-23 に #145 で更新）
+## 12. Krita AI Diffusion の使い方の前提（2026-09-19、2026-09-23 に #145 で更新、2026-10-08 に #407 で更新）
 
+- 位置づけ: 絵の生成の主な道筋です（2026-10-07 決定 → §9 #31）。クラウドの生成 API は、ここで通らないときの保険です（§4）。
+- 役割の分け方: 絵を選ぶのと Krita を操作するのはこうだいさんで、Claude は指示文と絞り込みを担当します（#82）。指示文は基本だけを押さえ、細部はこうだいさんが候補を見て直観で選びます（→ §9 #34、`style-guide.md` §4）。
+- 実測（#82）: 1 枚の生成は約 20 秒です（2026-09-30）。8 GB の GPU なので、同時に作る枚数（Batch Size）は 1 のままにし、枚数は待ち行列の Batches のつまみで増やします。
 - 導入: Krita 5.3.4 + Krita AI Diffusion 1.53.0（Krita 5 系は 1.x）。生成サーバーは Local Managed Server（CUDA）。サーバーの置き場は `%APPDATA%\krita\ai_diffusion\ComfyUI` です（`settings.json` の `server_path`。2026-09-23 に実機で確かめ、旧記述の `C:\ai\krita-server` を直した）。Comfy Desktop 1.0.47 は使わない。手順書は `docs/reports/2026-09-19-krita-ai-setup-guide.html`。
 - ワークロード: SDXL と Flux 2 Klein 4B だけ。生成は Animagine XL 4.0 opt（OpenRAIL++-M）、ポーズ差分の編集は Flux 2 Klein 4B（Apache-2.0。実機のファイルは `black-forest-labs/FLUX.2-klein-4b-fp8` の fp8 版）。SDXL の部品 xinsir union / h94 IP-Adapter / OmniSR / HAT は Apache-2.0。**実機には Illustrious のワークロードの部品も入っています**（→ §13.3）。
 - 使わない（2026-09-23 の棚卸しで確定。表は §13）:
