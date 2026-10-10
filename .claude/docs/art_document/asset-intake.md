@@ -1,6 +1,6 @@
 # 素材の取り込み規約 — 置き場・命名・Unity の設定・台帳
 
-> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。
+> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。2026-10-10 に、Preset Manager のフィルタが `Assets/` から始まる形で当たると確かめた結果を §5.2 と §10 に入れました（#85。登録は RPG-by-card#10）。
 > **役割**: 作った絵を Unity に入れるまでの規約を決めます。**立ち絵（キャラクター）だけを対象にします。** 背景・カードの絵・UI の部材は不透明度も圧縮形式も違うので、別の節が要ります（→ §9）。
 > **正本**: `.claude/docs/vision/world-v1.md`（世界の正典 v4）／ `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md`（道具と前提）
 > **読む用**: `docs/reports/2026-09-21-asset-intake-rules.html`
@@ -164,7 +164,7 @@ asset id : chr.<subject>.<category>.<label>
 - **既存のファイルに当て直せるのは 2 つだけです。** Inspector の importer のコンテキストメニューから **Reset** を選ぶか、C# で `preset.ApplyTo(importer)` してから `AssetDatabase.WriteImportSettingsIfDirty(path)` を呼ぶかです。**Reimport も `ImportAssetOptions.ForceUpdate` も効きません。** 既定 preset を当てる内部の処理が「`.meta` が無いとき」しか動かないためです。
 - **`.preset` を消して作り直さないでください。** GUID が変わって Preset Manager の行が黙って外れます。直すときは中身を編集します。
 - **3 つのファイルを一緒にコミットします。** `ProjectSettings/PresetManager.asset`、`Assets/Art/Characters/CharacterSprite.preset`、その `.preset.meta` です。
-- **フィルタに `Assets/` を付けるかは未確認です。** Unity のマニュアルの例は `glob:"foldername/*.fbx"` の形しか書いていません。PNG を 1 枚落として Inspector を見れば決まります。
+- **フィルタは `Assets/` から書きます。** Unity のマニュアルの例は `glob:"foldername/*.fbx"` の形しか書いていませんが、`glob:"Assets/Art/Characters/**.png"` で当たることを確かめました（2026-10-05、RPG-by-card#10）。試しの PNG を 1 枚落とし、Inspector で §3 の値が入るのを見ています。
 
 ---
 
@@ -286,7 +286,6 @@ model_id, weights_file, sha256, license, terms_url, terms_checked_on, notes
 
 ## 10. 未確認のこと
 
-- Preset Manager の Filter が `Assets/` から始まるか。PNG を 1 枚落とせば決まります。
 - 6000.x が書く Sprite の `.meta` の `serializedVersion`。実物を 1 枚貼ってもらう必要があります。
 - BC7 が両辺 4 の倍数を要求するときに Unity 6 が何と表示するか。一次情報に辿り着けませんでした。制約そのものはブロック圧縮の性質から確かです。
 - ミップマップの on / off の見え方（→ §9）。
