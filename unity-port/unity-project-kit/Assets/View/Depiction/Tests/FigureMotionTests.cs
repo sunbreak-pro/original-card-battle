@@ -24,6 +24,43 @@ namespace Depiction.Tests
             Assert.Throws<ArgumentException>(() => CharacterArt.Folder(""));
         }
 
+        // ---- the frame's width (#302) ----
+
+        private const float RestWidth = 210f;
+        private const float FrameHeight = 450f;
+
+        [TestCase(640f, 210f, TestName = "Art640_KeepsTheRestFrame")]
+        [TestCase(800f, 234.375f, TestName = "Art800_WidensTo234")]
+        [TestCase(900f, 263.671875f, TestName = "Art900_WidensTo264")]
+        public void TheFrame_WidensToTheArtsShape_AtTheFrameHeight(float artWidth, float expected)
+        {
+            Assert.That(FigureFrame.Width(RestWidth, FrameHeight, artWidth, 1536f), Is.EqualTo(expected).Within(1e-3f));
+        }
+
+        [TestCase(640f)]
+        [TestCase(800f)]
+        [TestCase(900f)]
+        public void EveryPicture_StandsOnTheFloorLine_AtFullHeight_InItsFrame(float artWidth)
+        {
+            float width = FigureFrame.Width(RestWidth, FrameHeight, artWidth, 1536f);
+            Assert.That(FigureFrame.Lift(width, FrameHeight, artWidth, 1536f), Is.EqualTo(0f).Within(1e-3f));
+        }
+
+        [Test]
+        public void WithoutTheWidening_TheWideSpearmenWouldFloat_AsTheIssueMeasured()
+        {
+            Assert.That(FigureFrame.Lift(RestWidth, FrameHeight, 640f, 1536f), Is.EqualTo(0f));
+            Assert.That(FigureFrame.Lift(RestWidth, FrameHeight, 800f, 1536f), Is.EqualTo(23.4f).Within(1e-3f));
+            Assert.That(FigureFrame.Lift(RestWidth, FrameHeight, 900f, 1536f), Is.EqualTo(45.8f).Within(1e-3f));
+        }
+
+        [Test]
+        public void APictureWithNoSize_KeepsTheRestFrame()
+        {
+            Assert.That(FigureFrame.Width(RestWidth, FrameHeight, 0f, 1536f), Is.EqualTo(RestWidth));
+            Assert.That(FigureFrame.Width(RestWidth, FrameHeight, 800f, 0f), Is.EqualTo(RestWidth));
+        }
+
         // ---- facing ----
 
         [Test]

@@ -75,6 +75,40 @@ namespace Depiction
     }
 
     /// <summary>
+    /// How wide a figure's frame is for the art it wears (#302). The body is drawn with preserveAspect
+    /// in a frame of fixed height whose bottom edge is the feet; art wider than the frame's rest shape
+    /// would be shrunk to fit the width, and Unity hands the lost height out half above, half below,
+    /// so the figure would float off the floor line. The frame is widened instead, to the art's own
+    /// shape at the frame's height; art no wider than the rest shape (the 640 x 1536 pictures in a
+    /// 210 x 450 frame) keeps the rest frame, so it looks exactly as before.
+    /// </summary>
+    public static class FigureFrame
+    {
+        /// <summary>
+        /// The frame's width for one picture of <paramref name="artWidth"/> x <paramref name="artHeight"/>
+        /// pixels: <c>height x artWidth / artHeight</c>, never narrower than <paramref name="restWidth"/>.
+        /// A picture with no size (or no picture) keeps the rest width.
+        /// </summary>
+        public static float Width(float restWidth, float height, float artWidth, float artHeight)
+        {
+            if (artWidth <= 0f || artHeight <= 0f || height <= 0f) return restWidth;
+            return Math.Max(restWidth, height * artWidth / artHeight);
+        }
+
+        /// <summary>
+        /// How high above the frame's bottom edge a preserveAspect picture's feet are drawn, with the
+        /// body's pivot at the centre (Unity's Image splits the unused height evenly). Zero means the
+        /// picture stands on the frame's bottom edge, which is the floor line.
+        /// </summary>
+        public static float Lift(float frameWidth, float frameHeight, float artWidth, float artHeight)
+        {
+            if (artWidth <= 0f || artHeight <= 0f || frameWidth <= 0f || frameHeight <= 0f) return 0f;
+            float drawnHeight = Math.Min(frameHeight, frameWidth * artHeight / artWidth);
+            return (frameHeight - drawnHeight) / 2f;
+        }
+    }
+
+    /// <summary>
     /// How the enemy's body moves into its action (EffectId.EnemyMotion), by system, so the four actions
     /// read apart on one picture: 払 swings across, 突 drives straight in, 打 shoves with its weight,
     /// 盾 raises the haft; a step just steps. <c>bell</c> runs 0 → 1 → 0 over the move.

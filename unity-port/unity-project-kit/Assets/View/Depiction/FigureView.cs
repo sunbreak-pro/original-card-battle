@@ -73,6 +73,8 @@ namespace Depiction.View
         private Image _flashFill;
         private int _flashes;
         private bool _falling;
+        private bool _frameTaken;
+        private Vector2 _restFrame;
 
         private void Awake()
         {
@@ -276,7 +278,35 @@ namespace Depiction.View
             {
                 body.sprite = _placeholder;
             }
+            FitFrame(art);
             RestBody();
+        }
+
+        /// <summary>
+        /// Widens the frame to the widest of the art's pictures at the frame's height (#302), so art
+        /// wider than 210 x 450 (the 800 and 900 x 1536 spearmen) is drawn at full height on the floor
+        /// line instead of shrunk and floating. The frame's pivot is its feet and stays put; the range
+        /// tag and the chest and head points hang off the bottom centre, and the target brackets
+        /// stretch with the frame, so they follow. The silhouette and 640 x 1536 art keep the rest frame.
+        /// </summary>
+        private void FitFrame(FigureArt art)
+        {
+            RectTransform rt = Rect;
+            if (!_frameTaken)
+            {
+                _restFrame = rt.sizeDelta;
+                _frameTaken = true;
+            }
+            float width = _restFrame.x;
+            if (art != null)
+            {
+                foreach (Sprite sprite in new[] { art.idle, art.act, art.hit, art.down })
+                {
+                    if (sprite == null) continue;
+                    width = Mathf.Max(width, FigureFrame.Width(_restFrame.x, _restFrame.y, sprite.rect.width, sprite.rect.height));
+                }
+            }
+            rt.sizeDelta = new Vector2(width, _restFrame.y);
         }
 
         /// <summary>Keeps the silhouette and its tint, so a figure that loses its art (the next battle's enemy has none) can go back to it.</summary>
