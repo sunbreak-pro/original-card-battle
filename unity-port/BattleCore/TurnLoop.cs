@@ -1701,7 +1701,7 @@ namespace BattleCore
             }
 
             int gap = state.GapTo(unit);
-            int stamina = StaminaAtAction(enemy);
+            int stamina = EnemyAi.StaminaAtAction(enemy.Def, enemy.Body);
 
             // #51 (roster §4.3): an action the player's word keeps out, as it will stand after the
             // player's next turn start, is passed over like a spent stance.
@@ -1772,18 +1772,6 @@ namespace BattleCore
             if (planned == null || Equals(planned, now)) return state;
             events.Add(new PlanChanged(Actor.Enemy, planned, now) { Unit = unit });
             return state.WithUnit(unit, state.Enemies[unit] with { Plan = now });
-        }
-
-        /// <summary>
-        /// The stamina an enemy will hold when its omen is carried out: now, plus its next recovery.
-        /// 疲労 it already holds will take its 1 off that recovery too (§9 step 9); one put on it
-        /// later is what "drained in between" means.
-        /// </summary>
-        private static int StaminaAtAction(EnemyUnit enemy)
-        {
-            int fatigue = enemy.Body.Statuses.Has(StatusKind.Fatigue) ? Constants.FatiguePenalty : 0;
-            return Combat.RecoverStamina(
-                enemy.Body.Stamina, enemy.Body.MaxStamina, enemy.Def.Recovery - fatigue, enemy.Body.NextTurnRecoveryBonus);
         }
 
         // ---- What a card or action reads (§2.3) ----
