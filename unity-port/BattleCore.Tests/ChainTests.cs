@@ -120,5 +120,44 @@ namespace BattleCore.Tests
                 Assert.That(tally.Attributes.Values.Sum(), Is.EqualTo(tally.CardsPlayed), "a card counts once, as the one attribute it folds to (v4.4)");
             });
         }
+
+        [Test]
+        public void TheTally_CountsATwoFaceCardOnce_AsTheAttributeItFoldsTo()
+        {
+            // battle_core_v4 §2.1 / §24.1 (v4.4, #304): one card, one attribute, 攻撃 ＞ 防御 ＞ スキル.
+            // An 攻撃 + 防御 card is one 攻撃, a 防御 + スキル card one 防御, and a card that only moves
+            // with a Guard on it one 防御. The enemy's cards are not the player's tally.
+            var strikeAndBrace = Fixtures.Card("strike_brace", attributes: BattleAttribute.Attack | BattleAttribute.Guard,
+                face: new Face(Power: 4, Guard: 3));
+            var braceAndDraw = Fixtures.Card("brace_draw", attributes: BattleAttribute.Guard | BattleAttribute.Skill,
+                face: new Face(Guard: 3, Draw: 1));
+            var stepBack = Fixtures.Card("step_back", attributes: BattleAttribute.None, face: new Face(Guard: 4, Move: -1));
+            var foeStrike = Fixtures.Card("foe_strike", attributes: BattleAttribute.Attack | BattleAttribute.Guard,
+                face: new Face(Power: 4, Guard: 3));
+
+            var state = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, PrototypeDeck.Build(), 6), NoShuffle).State;
+            var events = new List<BattleEvent>
+            {
+                new CardPlayed(Actor.Player, new CardInstance("strike_brace-0", strikeAndBrace), 2),
+                new CardPlayed(Actor.Player, new CardInstance("brace_draw-0", braceAndDraw), 2),
+                new CardPlayed(Actor.Player, new CardInstance("step_back-0", stepBack), 2),
+                new CardPlayed(Actor.Enemy, new CardInstance("foe_strike-0", foeStrike), 2),
+            };
+
+            var tally = Chain.Tally(state, events);
+            var total = Chain.Total(new[] { tally, tally });
+            Assert.Multiple(() =>
+            {
+                Assert.That(tally.CardsPlayed, Is.EqualTo(3));
+                Assert.That(tally.CountOf(BattleAttribute.Attack), Is.EqualTo(1));
+                Assert.That(tally.CountOf(BattleAttribute.Guard), Is.EqualTo(2));
+                Assert.That(tally.CountOf(BattleAttribute.Skill), Is.EqualTo(0), "the skill face of 防御 + スキル is not counted again");
+                Assert.That(tally.CountOf(BattleAttribute.Stance), Is.EqualTo(0));
+                Assert.That(tally.Attributes.Values.Sum(), Is.EqualTo(tally.CardsPlayed));
+                Assert.That(total.CountOf(BattleAttribute.Attack), Is.EqualTo(2));
+                Assert.That(total.CountOf(BattleAttribute.Guard), Is.EqualTo(4));
+                Assert.That(total.Attributes.Values.Sum(), Is.EqualTo(total.CardsPlayed), "a chain adds up the same way");
+            });
+        }
     }
 }
