@@ -22,9 +22,9 @@ namespace Depiction.View
         public Image sideStrike;
         public Text valueText;
 
-        // battle-visual-v1 2.1. Folded into BattleTheme with #242; BattleTheme still carries the A+ tokens.
-        private static readonly Color Phosphor = BattleTheme.Hex("#b9a3ff");
-        private static readonly Color GuardInk = BattleTheme.Hex("#8fc4d8");
+        // battle-visual-v1 2.1, from BattleTheme since #242.
+        private static readonly Color Phosphor = BattleTheme.Phosphor;
+        private static readonly Color GuardInk = BattleTheme.Guard;
 
         private static readonly Vector2 BadgeSize = new Vector2(200f, 98f);
         private static readonly Vector2 PlanSize = new Vector2(170f, 66f);
@@ -55,6 +55,20 @@ namespace Depiction.View
             _built = true;
 
             Rect.sizeDelta = BadgeSize;
+            // §4.4 (#242): an opaque panel with a 2 px violet frame and 6 px corners. The prefab's
+            // translucent back and its 4 px left edge give way to it.
+            Transform back = Rect.Find("Back");
+            Image backImage = back ? back.GetComponent<Image>() : null;
+            if (backImage)
+            {
+                backImage.sprite = VisualArt.Rounded(6);
+                backImage.type = Image.Type.Sliced;
+                backImage.color = BattleTheme.PanelOpaque;
+            }
+            Transform edge = Rect.Find("Edge");
+            if (edge) edge.gameObject.SetActive(false);
+            Image ring = VisualArt.Ring(Rect, "Frame", BattleTheme.Violet, 6, 2);
+            ring.transform.SetSiblingIndex(backImage ? backImage.transform.GetSiblingIndex() + 1 : 0);
             if (kindText)
             {
                 Place(kindText.rectTransform, new Vector2(0f, 0f), new Vector2(110f, 26f), new Vector2(14f, 6f));
@@ -86,8 +100,8 @@ namespace Depiction.View
             _planGroup.blocksRaycasts = false;
             _planGroup.alpha = 0f;
             UiKit.Fill(_plan, "Back", BattleTheme.WithAlpha(BattleTheme.InkBlack, 0.88f));
-            // battle-visual-v1 4.4 draws a dashed frame; a solid one stands in until #242.
-            UiKit.Frame(_plan, BattleTheme.Ink2, 2f);
+            // battle-visual-v1 4.4: the plan's frame is dashed, in the note colour.
+            VisualArt.DashedFrame(_plan, BattleTheme.Ink2, 2f);
             _planIcon = UiKit.Sprite(_plan, "Icon", null, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(24f, 24f), new Vector2(10f, -8f));
             _planIcon.preserveAspect = true;

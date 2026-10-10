@@ -17,6 +17,13 @@ namespace Depiction.View
 
         private void Awake()
         {
+            // battle-visual-v1 §5.3 (#242): an amber 3 px dashed line; the predicted value moves to the
+            // tag on the frame around the player (TargetMarkView).
+            foreach (Image dash in dashes)
+            {
+                if (dash) dash.rectTransform.sizeDelta = new Vector2(dash.rectTransform.sizeDelta.x, 3f);
+            }
+            if (previewText) previewText.enabled = false;
             Hide();
         }
 
@@ -41,12 +48,11 @@ namespace Depiction.View
 
         public void SetHot(bool hot)
         {
-            Color c = BattleTheme.WithAlpha(hot ? BattleTheme.Guard : BattleTheme.Ink, hot ? 0.95f : 0.5f);
+            Color c = BattleTheme.WithAlpha(BattleTheme.Amber, hot ? 1f : 0.6f);
             foreach (Image dash in dashes)
             {
                 if (dash) dash.color = c;
             }
-            if (previewText) previewText.color = hot ? BattleTheme.Guard : BattleTheme.Ink2;
         }
 
         public bool IsAbove(Vector2 screenPoint, Camera eventCamera)
