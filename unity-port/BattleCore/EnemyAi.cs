@@ -227,7 +227,7 @@ namespace BattleCore
         {
             if (action == null) throw new ArgumentNullException(nameof(action));
             // The roster's 予兆 column wins where the attribute order would read it otherwise (#189:
-            // 盾を掲げて前進 is 守り, 追い立てる is 技 — the same faces as moves that read 動).
+            // 盾を掲げて前進 is 防御, 追い立てる is 技 — the same faces as moves that read 移動).
             OmenKind kind =
                 action.Omen.HasValue ? action.Omen.Value
                 : action.Attributes.HasFlag(BattleAttribute.Attack) ? OmenKind.Attack
@@ -260,15 +260,15 @@ namespace BattleCore
             return cells;
         }
 
-        /// <summary>§6: the omen as the screen words it — "攻撃・1〜2", "守り", "休み".</summary>
+        /// <summary>§6: the omen as the screen words it — "攻撃・1〜2", "防御", "休み" (battle-visual-v1 4.4, #357).</summary>
         public static string ToText(this OmenLabel label)
         {
             if (label == null) throw new ArgumentNullException(nameof(label));
             string kind = label.Kind switch
             {
                 OmenKind.Attack => "攻撃",
-                OmenKind.Guard => "守り",
-                OmenKind.Move => "動",
+                OmenKind.Guard => "防御",
+                OmenKind.Move => "移動",
                 OmenKind.Skill => "技",
                 OmenKind.Stance => "構え",
                 OmenKind.Rest => "休み",

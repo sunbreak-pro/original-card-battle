@@ -126,7 +126,7 @@ namespace BattleCore.Tests
         [TestCase("rusted_revenant", "trudge", OmenKind.Move)]
         public void TheOmenKind_IsTheRostersColumn(string enemy, string action, OmenKind kind)
         {
-            // roster §2〜§6 予兆: the same faces read 守り or 動 by the roster's column, not by attribute order.
+            // roster §2〜§6 予兆: the same faces read 防御 or 移動 by the roster's column, not by attribute order.
             Assert.That(EnemyAi.LabelOf(Enemies.ById(enemy).Actions[action]).Kind, Is.EqualTo(kind));
         }
 
