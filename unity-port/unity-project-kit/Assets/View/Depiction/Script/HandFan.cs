@@ -59,4 +59,53 @@ namespace Depiction
             return new FanPlace(step * spacing, (edge * edge - step * step) * dropPixels + edgeCornerDip, degrees);
         }
     }
+
+    /// <summary>
+    /// battle-visual-v1 §4.8 (#242): where the hand's cards rest and rise on the 1920×1080 screen.
+    /// Coordinates are screen pixels, x from the left and y from the top, as the document gives them.
+    /// </summary>
+    public static class HandSpec
+    {
+        public const float CardWidth = 216f;
+        public const float CardHeight = 304f;
+        public const float CentreX = 960f;
+
+        /// <summary>The middle card's top: only its upper 184 px show above the screen's bottom.</summary>
+        public const float MiddleTop = 896f;
+
+        /// <summary>The k-th card from the middle sits k² times this much lower.</summary>
+        public const float DropPerStep = 3.2f;
+
+        /// <summary>A hovered card's top: its bottom then sits 16 px above the screen's bottom.</summary>
+        public const float HoverTop = 760f;
+
+        /// <summary>
+        /// The resting place of card <paramref name="index"/> of <paramref name="count"/>: its centre on
+        /// the screen (X, Y from the top) and its tilt (counter-clockwise, cards left of the middle lean
+        /// left). The tilt turns the card about the middle of its bottom edge, as §4.8 says.
+        /// </summary>
+        public static FanPlace Rest(int count, int index, float spacing, float degreesPerCard)
+        {
+            float step = index - (count - 1) * 0.5f;
+            float x = CentreX + step * spacing;
+            float top = MiddleTop + step * step * DropPerStep;
+            float degrees = -step * degreesPerCard;
+            double radians = degrees * Math.PI / 180.0;
+            float half = CardHeight * 0.5f;
+            return new FanPlace(x - half * (float)Math.Sin(radians), top + CardHeight - half * (float)Math.Cos(radians), degrees);
+        }
+
+        /// <summary>A hovered card's centre: upright, above its own place in the fan, top at <see cref="HoverTop"/>.</summary>
+        public static FanPlace Hover(int count, int index, float spacing)
+        {
+            float step = index - (count - 1) * 0.5f;
+            return new FanPlace(CentreX + step * spacing, HoverTop + CardHeight * 0.5f, 0f);
+        }
+
+        /// <summary>The width the hand spans at rest, ignoring the tilt: (count − 1) × spacing + one card.</summary>
+        public static float Width(int count, float spacing)
+        {
+            return count <= 0 ? 0f : (count - 1) * spacing + CardWidth;
+        }
+    }
 }

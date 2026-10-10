@@ -97,7 +97,7 @@ namespace Depiction.Bridge
             CardDef def = card.Def;
             CardKind kind = KindOf(def.Attribute);
             bool single = def.Targets == TargetKind.One;
-            return new CardFace
+            var face = new CardFace
             {
                 Id = card.InstanceId,
                 Name = def.Name,
@@ -117,6 +117,9 @@ namespace Depiction.Bridge
                 RequiredRangeGlyph = ReachText(def.Attributes, def.Face, def.Targets),
                 ReachHint = outOfReach ? ReachHint(def.Attributes, def.Face, def.Targets) : "",
             };
+            // battle-visual-v1 §6 / §7 / §9 (#242): values, rows, trait box, hover line and detail.
+            CardFaceText.Fill(face, def);
+            return face;
         }
 
         /// <summary>
@@ -482,34 +485,16 @@ namespace Depiction.Bridge
         /// </summary>
         public static List<StatusChip> Chips(StatusSet statuses, IReadOnlyList<string> stanceNames)
         {
-            var chips = StanceChips(stanceNames);
-            foreach (StatusKind kind in statuses.Kinds)
-            {
-                chips.Add(new StatusChip { Label = kind.ToLabel(), Stacks = statuses.Stacks(kind) });
-            }
-            return chips;
+            return StatusChipText.Chips(statuses, stanceNames);
         }
 
         /// <summary>
         /// One chip per distinct stance name in the order first held; a stance held more than once
-        /// shows its count in Stacks, a single one shows none.
+        /// shows its count in Stacks, a single one shows none. The panel text is StatusChipText's (#242).
         /// </summary>
         public static List<StatusChip> StanceChips(IReadOnlyList<string> stanceNames)
         {
-            var chips = new List<StatusChip>();
-            var order = new List<string>();
-            var count = new Dictionary<string, int>();
-            foreach (string name in stanceNames)
-            {
-                if (string.IsNullOrEmpty(name)) continue;
-                if (!count.ContainsKey(name)) { order.Add(name); count[name] = 0; }
-                count[name]++;
-            }
-            foreach (string name in order)
-            {
-                chips.Add(new StatusChip { Label = "構え・" + name, Stacks = count[name] > 1 ? count[name] : 0 });
-            }
-            return chips;
+            return StatusChipText.StanceChips(stanceNames);
         }
 
         /// <summary>

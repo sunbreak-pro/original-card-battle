@@ -1,5 +1,5 @@
-// The receiver: a large dish over a target figure, shown only while a single-target
-// card is held. Releasing on it confirms the play. It carries one predicted value.
+// The receiver: the place over a target figure where a single-target card is released, live only
+// while one is held. Since #242 it draws nothing; TargetMarkView frames the figure instead.
 #if UNITY_2021_2_OR_NEWER
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,6 +19,12 @@ namespace Depiction.View
         {
             if (dish && dish.sprite == null) dish.sprite = ProceduralArt.SoftCircle;
             if (ring && ring.sprite == null) ring.sprite = ProceduralArt.Circle;
+            // battle-visual-v1 §0.1 decision 10 (#242): the round dish and its number are gone. The
+            // receiver stays as the place a card is released on; the frame around the enemy
+            // (TargetMarkView) shows who is aimed at and carries the predicted value.
+            if (dish) dish.enabled = false;
+            if (ring) ring.enabled = false;
+            if (previewText) previewText.enabled = false;
             Hide();
         }
 

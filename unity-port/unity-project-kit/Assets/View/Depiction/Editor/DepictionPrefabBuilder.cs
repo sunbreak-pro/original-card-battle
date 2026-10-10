@@ -22,8 +22,8 @@ namespace Depiction.View
         public const string ScenePath = "Assets/Scenes/BattleDepiction.unity";
 
         private static readonly Vector2 Half = new Vector2(0.5f, 0.5f);
-        private static readonly Color CardBack = BattleTheme.Hex("#15252f");
-        private static readonly Color PanelBack = BattleTheme.Hex("#0b151c", 0.88f);
+        private static readonly Color CardBack = BattleTheme.CardGround; // battle-visual-v1 §2.1 (#242)
+        private static readonly Color PanelBack = BattleTheme.Panel;
 
         [MenuItem("Tools/Depiction/Build Prefabs And Scene")]
         public static void BuildAll()
@@ -174,7 +174,11 @@ namespace Depiction.View
 
         private static GameObject BuildCard()
         {
-            RectTransform root = Root("Card", new Vector2(190f, 260f), Half);
+            // battle-visual-v1 §6 (#242): 216×304. The children below are the parts CardView points at;
+            // CardView.EnsureParts moves them to their §6.1 places and makes the rest (frame, bands,
+            // reach tag, value columns, the trait box's second row) at run time, so a prefab built
+            // before #242 and one built now look the same in play.
+            RectTransform root = Root("Card", CardView.Size, Half);
             var view = root.gameObject.AddComponent<CardView>();
             view.group = root.gameObject.AddComponent<CanvasGroup>();
 
