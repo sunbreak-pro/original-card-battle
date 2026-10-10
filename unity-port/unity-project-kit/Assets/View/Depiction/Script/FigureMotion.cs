@@ -8,6 +8,9 @@ namespace Depiction
     /// <summary>
     /// The four pictures a figure can wear. Only <see cref="Idle"/> is required; a pose with no picture
     /// shows the idle one, and the motion alone carries the moment.
+    /// battle_ui_ux_v2 §6.4 lists the same four. 崩れ (the stagger of §5.14 順 2) has no picture of its
+    /// own (#309): the script carries no beat for the moment of a break, so the stagger is motion only.
+    /// A collapse pose comes with that beat.
     /// </summary>
     public enum FigurePose
     {
