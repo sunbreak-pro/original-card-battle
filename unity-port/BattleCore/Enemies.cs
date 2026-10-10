@@ -635,7 +635,7 @@ namespace BattleCore
                     new Face(Power: 8, Reach: new Reach(1, 4), Statuses: new[] { Foe(StatusKind.Bleed, 1) }),
                     AtLeast(3, TraitEffect.PowerBonus, 5),
                     Description: "間合い 1〜4 に届く。出血を 1 付与する。間合い 3 以上: 威力 +5"),
-                WitherBreath(reach: new Reach(2, 4), cap: 1),
+                RootWitherBreath,
                 RootGrip(reach: Reach.Default, cap: 1),
                 Twist(breaks: 1),
                 new EnemyActionDef(
@@ -656,12 +656,13 @@ namespace BattleCore
                     // root_g 「Guard で 2 ターン受け切ると、崩しに回る」: 捻じる with 崩し 2, on top.
                     new Adaptation("root_g", view => GuardSiege(view),
                         tree => tree.Prefix("twist"), new[] { Twist(breaks: 2) }),
-                    // root_st 「スタンスを置くと、その構えを枯らしにくる」: 枯らしの息 first.
-                    // NOT YET: the roster's other half — 「当たると、プレイヤーがいちばん新しく置いた
-                    // 永続の効果 1 つが 1 ターン働かなくなる」 — needs a way to switch one stance off
-                    // for a turn, which BattleCore does not have; left to #334.
+                    // root_st 「スタンスを置くと、その構えを枯らしにくる」: 枯らしの息 first, and when
+                    // it lands 「プレイヤーがいちばん新しく置いた永続の効果 1 つが 1 ターン働かなくなる」
+                    // (#334). The breath is the one of the layer it holds over — a stage's 0〜4 one
+                    // keeps its reach — with the stop added (Face.StopStance).
                     new Adaptation("root_st", view => PlacedStanceLastTurn(view),
-                        tree => tree.Prefix("wither_breath")),
+                        tree => tree.Prefix("wither_breath"),
+                        Retouch: layer => new[] { StoppingStance(Find(layer, "wither_breath") ?? RootWitherBreath) }),
                     // root_sk 「状態を 2 つ付けられると、身を固めて振り払う」: 樹皮 → 薙ぎ払い, and
                     // every word on the root is shaken off.
                     new Adaptation("root_sk", view => EverySecondInLastTurn(view, view.Player.Inflictions),
@@ -704,6 +705,25 @@ namespace BattleCore
             "wither_breath", "枯らしの息", BattleAttribute.Skill, 2,
             new Face(Reach: reach, Statuses: new[] { Foe(StatusKind.Withering, 1, cap), Foe(StatusKind.Fatigue, 1) }),
             Description: "間合い " + reach.ToText() + " に届く。枯らしを 1 付与する" + (cap >= 2 ? "（2 まで重なる）" : "") + "。疲労を 1 付与する");
+
+        /// <summary>The root's own 枯らしの息 (roster §6.3): 2〜4, 枯らし 1 at most.</summary>
+        private static EnemyActionDef RootWitherBreath => WitherBreath(reach: new Reach(2, 4), cap: 1);
+
+        /// <summary>
+        /// root_st (#334): the breath, which on landing also stops the player's newest permanent
+        /// effect for the rest of the turn and the next one (<see cref="Face.StopStance"/>).
+        /// </summary>
+        private static EnemyActionDef StoppingStance(EnemyActionDef breath) => breath with
+        {
+            Face = breath.Face with { StopStance = true },
+            Description = breath.Description + "。当たると、相手がいちばん新しく置いた永続の効果 1 つが 1 ターン働かない",
+        };
+
+        private static EnemyActionDef? Find(IReadOnlyList<EnemyActionDef> actions, string id)
+        {
+            foreach (var each in actions) if (each.Id == id) return each;
+            return null;
+        }
 
         private static EnemyActionDef RootGrip(Reach reach, int cap) => new EnemyActionDef(
             "root_grip", "根を張る", BattleAttribute.Skill, 2,
@@ -783,13 +803,38 @@ namespace BattleCore
             }
         }
 
-        /// <summary>One adaptation of roster §4.4 / §5.4 / §6.4: a count over the history, and how it reshapes the tree it holds over.</summary>
+        /// <summary>
+        /// One adaptation of roster §4.4 / §5.4 / §6.4: a count over the history, and how it reshapes
+        /// the tree it holds over. Overrides are fixed; Retouch works overrides out of the ones the
+        /// layer it holds over already has (none on the base tree, the stage's over a stage), for an
+        /// adaptation that changes an action a stage changes too (root_st's 枯らしの息, #334).
+        /// </summary>
         private sealed record Adaptation(
             string Id,
             Func<AdaptationView, bool> Holds,
             Func<Tree, Tree> Reshape,
             IReadOnlyList<EnemyActionDef>? Overrides = null,
-            bool Cleanse = false);
+            bool Cleanse = false,
+            Func<IReadOnlyList<EnemyActionDef>, IReadOnlyList<EnemyActionDef>>? Retouch = null)
+        {
+            /// <summary>The overrides of this adaptation over a layer that has <paramref name="layer"/>: the layer's, then its own on top.</summary>
+            public List<EnemyActionDef> Over(IReadOnlyList<EnemyActionDef> layer)
+            {
+                var overrides = new List<EnemyActionDef>(layer);
+                Put(overrides, Overrides ?? Array.Empty<EnemyActionDef>());
+                if (Retouch != null) Put(overrides, Retouch(layer));
+                return overrides;
+            }
+
+            private static void Put(List<EnemyActionDef> overrides, IReadOnlyList<EnemyActionDef> added)
+            {
+                foreach (var each in added)
+                {
+                    overrides.RemoveAll(o => o.Id == each.Id);
+                    overrides.Add(each);
+                }
+            }
+        }
 
         /// <summary>
         /// One stage: an HP line that, once crossed, holds for the rest of the battle (戻らない — 再生
@@ -822,7 +867,8 @@ namespace BattleCore
             var switches = new List<TreeSwitch>();
             foreach (var adaptation in adaptations)
             {
-                switches.Add(Switch(adaptation.Id, adaptation.Holds, adaptation.Reshape(baseTree), adaptation.Overrides, cleanse: adaptation.Cleanse));
+                var overrides = adaptation.Over(Array.Empty<EnemyActionDef>());
+                switches.Add(Switch(adaptation.Id, adaptation.Holds, adaptation.Reshape(baseTree), overrides.Count == 0 ? null : overrides, cleanse: adaptation.Cleanse));
             }
             foreach (var stage in stages)
             {
@@ -831,12 +877,7 @@ namespace BattleCore
                 switches.Add(Switch(stage.Id, stage.Holds, stageTree, stage.Overrides, stage.EnterMove, stage.Sway));
                 foreach (var adaptation in adaptations)
                 {
-                    var overrides = new List<EnemyActionDef>(stage.Overrides);
-                    foreach (var each in adaptation.Overrides ?? Array.Empty<EnemyActionDef>())
-                    {
-                        overrides.RemoveAll(o => o.Id == each.Id);
-                        overrides.Add(each);
-                    }
+                    var overrides = adaptation.Over(stage.Overrides);
                     var adaptationHolds = adaptation.Holds;
                     var stageHolds = (Func<AdaptationView, bool>)stage.Holds;
                     switches.Add(Switch(

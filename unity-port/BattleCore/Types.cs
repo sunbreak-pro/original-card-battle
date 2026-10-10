@@ -367,8 +367,17 @@ namespace BattleCore
     /// One entry of the holder's permanent effects (§4): the stance, the card or action that put it
     /// there, and the turn an OncePerTurn stance last reacted in (or a CostDiscount stance last took
     /// a cost down). Each entry works on its own.
+    ///
+    /// StoppedThrough (#334, roster §6.4 root_st) is the last battle turn the entry does nothing in,
+    /// 0 for an entry that works: a <see cref="Face.StopStance"/> that lands stops the holder's newest
+    /// entry for the rest of the turn it lands in and the whole of the next one. The entry stays on
+    /// the list meanwhile, and it is back at the start of the turn after (<see cref="StanceResumed"/>).
     /// </summary>
-    public sealed record StanceEntry(StanceDef Def, string Source, int ReactedTurn = 0);
+    public sealed record StanceEntry(StanceDef Def, string Source, int ReactedTurn = 0, int StoppedThrough = 0)
+    {
+        /// <summary>Whether the entry does nothing in battle turn <paramref name="turn"/> (#334).</summary>
+        public bool StoppedIn(int turn) => StoppedThrough >= turn;
+    }
 
     /// <summary>
     /// §4: the stance a stance face puts on the holder's list of permanent effects. The numbers are
@@ -431,6 +440,11 @@ namespace BattleCore
     /// The resolver would still land one after the first blow where an action carried it; none does
     /// since #51 put 二段斬り on v4.5's 7 × 2. A status given on every blow comes from a stance
     /// (<see cref="StanceHook.StatusOnAttack"/>), not from the face.
+    ///
+    /// StopStance (#334, roster §6.4 root_st) stops the newest permanent effect of each opponent the
+    /// face lands on (in reach, still standing) for the rest of this turn and the whole next one
+    /// (<see cref="StanceEntry.StoppedThrough"/>). Only the 枯らしの息 歪みの根 takes under root_st
+    /// carries it; an opponent with no permanent effect loses nothing.
     /// </summary>
     public sealed record Face(
         int Power = 0,
@@ -444,7 +458,8 @@ namespace BattleCore
         int Heal = 0,
         int Break = 0,
         StanceDef? Stance = null,
-        int Hits = 1)
+        int Hits = 1,
+        bool StopStance = false)
     {
         public Reach ReachOrDefault => Reach ?? Reach.Default;
 
