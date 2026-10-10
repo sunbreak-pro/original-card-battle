@@ -37,7 +37,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
 | --- | --- | --- | --- | --- |
 | 戦闘のルールと数値 | `.claude/docs/battle_document/battle_core_v4.md` | battle | 現行。§19 の習熟（S5〜S8）未反映。§3.1 の攻撃の行（#364）は `swordsman_cards_v4.md` §1.4 と `enemy_roster_v4.md` §0 の写しに未反映 | cards, design |
-| 戦闘の画面と操作 | `.claude/docs/battle_document/battle_ui_ux_v2.md` | battle | 現行。本文が正で、§10 / §11 / §13 は記録 | design |
+| 戦闘の画面と操作 | `.claude/docs/battle_document/battle_ui_ux_v2.md` | battle | 現行。本文が正で、§10 / §11 / §13 は記録。狙うマスの色は `battle-visual-v1.md` を指す（#356） | design |
 | 戦闘コアの実装 | `unity-port/BattleCore/` | battle | C# が正 | cards |
 | 戦闘描写の台本と View | `unity-port/unity-project-kit/Assets/View/Depiction/` | battle | C# はこのリポが正 | design |
 
