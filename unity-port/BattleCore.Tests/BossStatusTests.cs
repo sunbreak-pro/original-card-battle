@@ -347,7 +347,7 @@ namespace BattleCore.Tests
         [Test]
         public void Rooting_IsWhatTheRootsSweepReads()
         {
-            // roster §6.3 薙ぎ払い: 相手の状態（根張り）: 威力 +5.
+            // roster §6.3 根の横払い: 相手の状態（根張り）: 威力 +5.
             var sweep = Enemies.DistortionRoot.Actions["sweep"];
             var rooted = new TraitContext(Gap: 1, OpponentGuard: 0, StaminaAfterUse: 5, StaminaBefore: 7, OpponentStamina: 5,
                 OpponentStatuses: StatusSet.Of((StatusKind.Rooting, 1)));

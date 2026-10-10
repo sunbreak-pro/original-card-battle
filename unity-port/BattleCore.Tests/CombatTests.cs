@@ -9,7 +9,7 @@ namespace BattleCore.Tests
         [Test]
         public void RawPower_IsTheFacePlusTheTrait()
         {
-            // 薙ぎ払い against a player standing 遠間: 8 + 3.
+            // 払い斬り against a player 2 or more cells away: 8 + 3.
             Assert.That(Combat.ComputeRawPower(face: 8, traitBonus: 3), Is.EqualTo(11));
         }
 

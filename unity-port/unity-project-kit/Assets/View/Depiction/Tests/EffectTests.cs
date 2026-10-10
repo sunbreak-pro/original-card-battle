@@ -191,13 +191,14 @@ namespace Depiction.Tests
 
         // ---- The system a blow draws (battle_ui_ux_v2 §5.3) ----
 
-        [TestCase("薙ぎ払い", true, false, false, false, StrikeSystem.Sweep)]
+        [TestCase("払い斬り", true, false, false, false, StrikeSystem.Sweep)] // 払 is read before 斬
         [TestCase("穂先の突き", true, false, false, false, StrikeSystem.Thrust)]
-        [TestCase("石突きの押し込み", true, false, true, true, StrikeSystem.Strike)] // the push wins over the 突 in its name
+        [TestCase("石突きの押し込み", true, false, true, true, StrikeSystem.Strike)] // the push wins over a 突 in the name (the old name of 柄尻の押し込み)
         [TestCase("柄で受ける", false, true, false, false, StrikeSystem.Shield)]
         [TestCase("踏み込み", false, true, true, false, StrikeSystem.Step)]
         [TestCase("袈裟斬り", true, false, false, false, StrikeSystem.Slash)]
         [TestCase("盾打ち", true, true, false, false, StrikeSystem.Strike)]
+        [TestCase("打ち下ろし", true, false, false, false, StrikeSystem.Strike)] // 鉄壁の門竜: 斬 under its old name 兜割り, 打 since #311
         [TestCase("牽制", true, false, true, false, StrikeSystem.Sweep)]
         [TestCase("伸び突き", true, false, false, false, StrikeSystem.Thrust)]
         public void TheSystem_ComesFromTheNameAndTheFaces(string name, bool attacks, bool guards, bool moves, bool pushes, StrikeSystem expected)

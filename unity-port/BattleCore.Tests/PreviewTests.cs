@@ -269,7 +269,7 @@ namespace BattleCore.Tests
         [Test]
         public void AShoveOmen_CountsItsTraitAndTheWall()
         {
-            // 石突きの押し込み at gap 0: 5 + 3 (無防備), then the push finds one of its two cells → 3 of wall.
+            // 柄尻の押し込み at gap 0: 5 + 3 (無防備), then the push finds one of its two cells → 3 of wall.
             var s = Opened(Enemies.PolearmWarped, 0);
             s = s with { Player = s.Player with { Stamina = 0 } };
             Assert.That(s.Omen!.ActionId, Is.EqualTo("shove"));
