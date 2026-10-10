@@ -524,6 +524,7 @@ namespace Depiction
                 Omen = OmenNow(),
                 Hand = Faces(),
                 StanceHint = _phase == Phase.PlayerTurn && _stamina >= StanceThreshold ? "+" + StanceGuard : "",
+                StanceDivider = StanceThreshold,
             };
         }
 

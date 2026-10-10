@@ -74,7 +74,9 @@ namespace Depiction.Bridge.Tests
 
             Assert.That(FloorCells.HitOf(omen, aim, 4, 1), Is.EqualTo(OmenHit.Lands));
             Assert.That(FloorCells.HitOf(omen, aim, 2, 1), Is.EqualTo(OmenHit.Misses));
-            Assert.That(FloorCells.HitOf(omen, aim, 3, 2), Is.EqualTo(OmenHit.Lands), "a body on two cells is hit on either");
+            Assert.That(FloorCells.HitOf(omen, aim, 3, 2), Is.EqualTo(OmenHit.Lands), "a body on 3-4: its near edge, 4, is aimed at");
+            Assert.That(FloorCells.HitOf(omen, new[] { 2 }, 2, 2), Is.EqualTo(OmenHit.Misses),
+                "a body on 2-3: its far cell, 2, does not count; the core measures N from the near edge (FarCell)");
             Assert.That(FloorCells.HitOf(new Omen("crouch", new OmenLabel(OmenKind.Guard)), aim, 4, 1), Is.EqualTo(OmenHit.None),
                 "an action that aims at nobody has no mark");
         }
@@ -96,9 +98,46 @@ namespace Depiction.Bridge.Tests
             Assert.That(frame.Floor.Gap, Is.EqualTo(now.GapTo(0)));
             Assert.That(frame.Omen.Visible, Is.True, "step 5 shows the first omen");
             Assert.That(frame.Floor.AimCells, Is.EqualTo(EnemyAi.TargetCells(now.Omen.Label, now.Enemy)));
+            OmenPreview preview = TurnLoop.PreviewOmen(now, 0);
             OmenHit expected = now.Omen.Label.Reach == null ? OmenHit.None
-                : frame.Floor.AimCells.Contains(now.Player.Cell) ? OmenHit.Lands : OmenHit.Misses;
+                : preview.Lands ? OmenHit.Lands : OmenHit.Misses;
             Assert.That(frame.Omen.Hit, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void TheHitMark_IsTheCoresLands_EvenWhenTheEnemysTurnStartMovesIt()
+        {
+            // 歪みの根 at stage 3 sways a cell forward or back at its own turn start (TurnLoop.Sway),
+            // before it acts. The core's OmenPreview plays that sway; the cells drawn now do not. On a
+            // player cell where the two disagree, the mark must follow the core.
+            EnemyDef root = Enemies.DistortionRoot;
+            var setup = new BattleSetup(root, Cards.BuildDeck(Hand, 1), 8, StartGap: 3);
+            BattleState s = TurnLoop.BeginPlayerTurn(TurnLoop.Start(setup, NoShuffle).State, NoShuffle).State;
+            s = s.WithEnemy(s.Enemy with { Hp = 60 });
+            s = TurnLoop.EndTurn(s, NoShuffle).State; // stages 2 and 3 are held from this step 12
+            // One cell short of the far end: the omen's reach (0〜4 at stage 3) ends inside the line, and
+            // the sway has room either way. On turn 2 it steps back, so the player on cell 1 is drawn
+            // inside the aimed cells while the core says the blow will not reach them.
+            s = s.WithEnemy(s.Enemy with { Cell = s.FieldCells - s.Enemy.Size });
+
+            int differing = 0;
+            for (int cell = 1; cell < s.Enemy.Cell; cell++)
+            {
+                BattleState at = s with { Player = s.Player with { Cell = cell } };
+                var writer = new CoreScriptWriter(root);
+                writer.Opening(at);
+                StepResult begin = TurnLoop.BeginPlayerTurn(at, NoShuffle);
+                DepictionFrame frame = writer.Write(begin.Events, begin.State).Last().After;
+                BattleState now = begin.State;
+                if (now.Result != GameResult.Ongoing || now.Omen == null || now.Omen.Label.Reach == null) continue;
+                OmenPreview preview = TurnLoop.PreviewOmen(now, 0);
+                if (preview == null || preview.Rests) continue;
+
+                Assert.That(frame.Omen.Hit, Is.EqualTo(preview.Lands ? OmenHit.Lands : OmenHit.Misses), "player on cell " + cell);
+                OmenHit fromCellsNow = FloorCells.HitOf(now.Omen, frame.Floor.AimCells, now.Player.Cell, now.Player.Size);
+                if (fromCellsNow != frame.Omen.Hit) differing++;
+            }
+            Assert.That(differing, Is.GreaterThan(0), "the sway makes the core's Lands differ from the cells drawn on some cell");
         }
 
         [Test]

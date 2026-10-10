@@ -43,17 +43,16 @@ namespace Depiction.Bridge
         }
 
         /// <summary>
-        /// §4.4 当たり外れの印: Lands when one of the player's cells is aimed at, Misses when none is, and
-        /// None for an omen that aims at nobody (自分にだけ効く行動には出しません).
+        /// §4.4 当たり外れの印, read off the cells drawn now: Lands when the player's near edge (the cell
+        /// facing the enemy, CombatantState.FarCell — the one the core counts N from) is aimed at,
+        /// Misses when it is not, and None for an omen that aims at nobody (自分にだけ効く行動には出しません).
+        /// The writer prefers the core's OmenPreview.Lands and falls back to this only without one.
         /// </summary>
         public static OmenHit HitOf(Omen omen, IReadOnlyList<int> aim, int playerCell, int playerSize)
         {
             if (omen == null || omen.Label.Reach == null) return OmenHit.None;
-            for (int cell = playerCell; cell < playerCell + Math.Max(1, playerSize); cell++)
-            {
-                if (Contains(aim, cell)) return OmenHit.Lands;
-            }
-            return OmenHit.Misses;
+            int near = playerCell + Math.Max(1, playerSize) - 1;
+            return Contains(aim, near) ? OmenHit.Lands : OmenHit.Misses;
         }
 
         private static bool Contains(IReadOnlyList<int> cells, int cell)

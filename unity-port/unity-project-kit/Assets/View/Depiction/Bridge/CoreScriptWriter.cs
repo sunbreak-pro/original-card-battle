@@ -714,18 +714,18 @@ namespace Depiction.Bridge
             // #288: the figure wears the art filed under the enemy's id; the View only looks it up.
             frame.Enemy.ArtId = _enemyDef.Id;
             frame.Floor = FloorOf(after);
-            if (frame.Omen.Visible) frame.Omen.Hit = FloorCells.HitOf(_omen, frame.Floor.AimCells, _player.Cell, _player.Size);
+            if (frame.Omen.Visible) frame.Omen.Hit = HitMark(frame.Floor.AimCells);
             foreach (CardInstance card in _hand)
             {
-                CardFace face = CoreText.Face(card, TurnLoop.Preview(after, card.InstanceId),
-                    CoreText.ReachesNobody(after, card.InstanceId));
+                PlayPreview preview = TurnLoop.Preview(after, card.InstanceId);
+                CardFace face = CoreText.Face(card, preview, CoreText.ReachesNobody(after, card.InstanceId));
                 face.ReachCells = FloorCells.ReachOf(card.Def, _player.Cell, _player.Size, after.FieldCells);
                 // battle-visual-v1 §6.3 (#242): lit when any enemy in reach satisfies the trait, with each
                 // enemy's own verdict for the one a held card frames. A card the state no longer holds
                 // (the hand mirrored here runs ahead of it mid-event) keeps the preview's lamp.
                 List<bool> perEnemy;
                 bool lit = CardFaceText.Lamps(after, card.InstanceId, out perEnemy);
-                if (TurnLoop.Preview(after, card.InstanceId) != null)
+                if (preview != null)
                 {
                     face.TraitLit = lit;
                     face.LitOn = perEnemy;
@@ -735,6 +735,7 @@ namespace Depiction.Bridge
             bool waiting = _playerActs && after.Result == GameResult.Ongoing;
             int reserve = waiting ? Combat.ReserveGuard(_player.Stamina) : 0;
             frame.StanceHint = reserve > 0 ? "+" + reserve : "";
+            frame.StanceDivider = Constants.ReserveThreshold; // §4.7: the stamina tag's divider
             return frame;
         }
 
@@ -758,6 +759,23 @@ namespace Depiction.Bridge
                 floor.AimCells = FloorCells.AimOf(_omen, after.Enemies[0].Body, _enemy.Cell);
             }
             return floor;
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §4.4 当たり外れの印 (#242): the core's OmenPreview.Lands whenever the preview
+        /// read belongs to the omen on screen and is not a rest — it plays the enemy's turn start first
+        /// (a stage's Sway moves it), so it can differ from the cells drawn now. Otherwise the aimed
+        /// cells against the player's near edge, as the core counts N (FloorCells.HitOf). None for an
+        /// omen that aims at nobody.
+        /// </summary>
+        private OmenHit HitMark(IReadOnlyList<int> aim)
+        {
+            if (_omen == null || _omen.Label.Reach == null) return OmenHit.None;
+            if (_omenPreview != null && Equals(_omenPreviewFor, _omen) && !_omenPreview.Rests)
+            {
+                return _omenPreview.Lands ? OmenHit.Lands : OmenHit.Misses;
+            }
+            return FloorCells.HitOf(_omen, aim, _player.Cell, _player.Size);
         }
 
         /// <summary>

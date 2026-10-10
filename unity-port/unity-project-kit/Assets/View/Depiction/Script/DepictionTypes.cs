@@ -275,8 +275,9 @@ namespace Depiction
         public string ValueText = "";
         /// <summary>
         /// battle-visual-v1 §4.4 当たり外れの印 (#242): whether the omen reaches the player where they
-        /// stand now (the core's OmenPreview.Lands). None for an omen that aims at nobody, and for the
-        /// v4.2 sources, which keep <see cref="SideGlyph"/> in its place.
+        /// stand now. The core's OmenPreview.Lands when the bridge holds one for this omen that is not
+        /// a rest; otherwise the aimed cells against the player's near edge. None for an omen that aims
+        /// at nobody, and for the v4.2 sources, which keep <see cref="SideGlyph"/> in its place.
         /// </summary>
         public OmenHit Hit = OmenHit.None;
 
@@ -338,6 +339,11 @@ namespace Depiction
         public List<CardFace> Hand = new List<CardFace>();
         /// <summary>Shield hint beside the end-turn button ("+3"); empty when the stance would not trigger.</summary>
         public string StanceHint = "";
+        /// <summary>
+        /// battle-visual-v1 §4.7 (#242): the stamina 構え needs left at the turn end; the stamina tag
+        /// puts its divider after that many dots. 0 draws no divider.
+        /// </summary>
+        public int StanceDivider;
         /// <summary>battle-visual-v1 §4.2 (#242): the floor. <see cref="FloorFrame.Cells"/> 0 draws none (the v4.2 sources).</summary>
         public FloorFrame Floor = new FloorFrame();
     }
