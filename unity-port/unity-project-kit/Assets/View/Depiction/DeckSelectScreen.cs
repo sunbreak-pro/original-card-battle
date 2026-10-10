@@ -1,5 +1,5 @@
 // The deck screen of the demo (#190): the eighty cards, a count per kind, the filters and presets,
-// and 「戦闘へ」 once the deck passes §8. Built in code with UiKit on the demo canvas, so no scene or
+// and 「出立の支度へ」 once the deck passes §8 (the departure screen follows, #58). Built in code with UiKit on the demo canvas, so no scene or
 // prefab changes. It decides nothing: which cards a filter keeps, what a page holds, every word
 // about a card, the line about a saved deck that did not read (#211) and whether the deck may
 // fight all come from Depiction.Bridge.DeckBuilder.
@@ -41,7 +41,7 @@ namespace Depiction.View
         /// <param name="deck">The deck to start from (the saved one, or the prototype).</param>
         /// <param name="notice">DeckBuilder's line about a saved deck that did not read, or "" (#211).</param>
         /// <param name="cardPrefab">The hand's Card prefab: the screen prints each card with it, as the battle does. Null draws the plain text buttons.</param>
-        /// <param name="battle">Called with the deck when 「戦闘へ」 is pressed; the flow saves it then (#211).</param>
+        /// <param name="battle">Called with the deck when 「出立の支度へ」 is pressed; the flow saves it then (#211).</param>
         public DeckSelectScreen(RectTransform parent, DeckBuilder deck, string notice, Action<DeckBuilder> battle, CardView cardPrefab = null)
         {
             _deck = deck ?? new DeckBuilder();
@@ -79,7 +79,7 @@ namespace Depiction.View
             UiKit.Button(presets, "Clear", "空にする", () => Replace(new DeckBuilder()), BattleTheme.Panel, BattleTheme.Ink, 24, new Vector2(0.68f, 0f), new Vector2(1f, 1f));
 
             RectTransform go = UiKit.Box(_root, "Go", 0.64f, 0.02f, 0.98f, 0.085f);
-            _toBattle = UiKit.Button(go, "ToBattle", "戦闘へ", ToBattle, BattleTheme.Accent, BattleTheme.InkBlack, 30, Vector2.zero, Vector2.one);
+            _toBattle = UiKit.Button(go, "ToBattle", "出立の支度へ", ToBattle, BattleTheme.Accent, BattleTheme.InkBlack, 30, Vector2.zero, Vector2.one);
 
             Refresh();
         }
