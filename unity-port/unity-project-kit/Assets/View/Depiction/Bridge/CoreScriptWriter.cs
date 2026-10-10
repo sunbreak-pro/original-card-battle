@@ -401,6 +401,8 @@ namespace Depiction.Bridge
                     {
                         Kind = CueKind.RangeSwitch, Target = UnitSide.Player, Pushed = moved.Pushed,
                         RangeAfter = CoreText.SideOf(Gap), RangeGlyphAfter = CoreText.GapGlyph(Gap),
+                        // battle-visual-v1 §4.2 (#242): where both stand after the move, for the floor.
+                        PlayerCellAfter = _player.Cell, EnemyCellAfter = _enemy.Cell, GapAfter = Gap,
                     });
                     break;
 
@@ -711,10 +713,13 @@ namespace Depiction.Bridge
             };
             // #288: the figure wears the art filed under the enemy's id; the View only looks it up.
             frame.Enemy.ArtId = _enemyDef.Id;
+            frame.Floor = FloorOf(after);
+            if (frame.Omen.Visible) frame.Omen.Hit = FloorCells.HitOf(_omen, frame.Floor.AimCells, _player.Cell, _player.Size);
             foreach (CardInstance card in _hand)
             {
                 CardFace face = CoreText.Face(card, TurnLoop.Preview(after, card.InstanceId),
                     CoreText.ReachesNobody(after, card.InstanceId));
+                face.ReachCells = FloorCells.ReachOf(card.Def, _player.Cell, _player.Size, after.FieldCells);
                 // battle-visual-v1 §6.3 (#242): lit when any enemy in reach satisfies the trait, with each
                 // enemy's own verdict for the one a held card frames. A card the state no longer holds
                 // (the hand mirrored here runs ahead of it mid-event) keeps the preview's lamp.
@@ -731,6 +736,28 @@ namespace Depiction.Bridge
             int reserve = waiting ? Combat.ReserveGuard(_player.Stamina) : 0;
             frame.StanceHint = reserve > 0 ? "+" + reserve : "";
             return frame;
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §4.2 (#242): the floor as the models stand — the line's width, both
+        /// figures' cells, N, and the cells the omen on screen aims at (none while it is hidden).
+        /// </summary>
+        private FloorFrame FloorOf(BattleState after)
+        {
+            var floor = new FloorFrame
+            {
+                Cells = after.FieldCells,
+                PlayerCell = _player.Cell,
+                PlayerSize = Math.Max(1, _player.Size),
+                EnemyCell = _enemy.Cell,
+                EnemySize = Math.Max(1, _enemy.Size),
+                Gap = Gap,
+            };
+            if (_omenVisible && after.Enemies.Count > 0)
+            {
+                floor.AimCells = FloorCells.AimOf(_omen, after.Enemies[0].Body, _enemy.Cell);
+            }
+            return floor;
         }
 
         /// <summary>

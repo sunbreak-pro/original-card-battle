@@ -45,6 +45,14 @@ namespace Depiction
         Rest,
     }
 
+    /// <summary>battle-visual-v1 §4.4 当たり外れの印: none, lands (phosphor, solid), or misses (steel, dashed, struck).</summary>
+    public enum OmenHit
+    {
+        None,
+        Lands,
+        Misses,
+    }
+
     /// <summary>How the card is released: on the target's receiver, or above the throw line.</summary>
     public enum CardAim
     {
@@ -134,6 +142,12 @@ namespace Depiction
         public List<bool> LitOn = new List<bool>();
         /// <summary>§7.2: the one line above a hovered card, with the values of now ("間合い 2 以上なら、この札の威力 13 → 18").</summary>
         public string HoverLine = "";
+        /// <summary>
+        /// battle-visual-v1 §4.2 届くマスの光 (#242): the floor cells (1-based, as <see cref="FloorFrame"/>
+        /// counts them) this card reaches from where the player stands now, lit while it is hovered or
+        /// held. Empty for a card that aims at nobody, or when the source draws no floor.
+        /// </summary>
+        public List<int> ReachCells = new List<int>();
         /// <summary>§7.4: the right-click detail. Null when the source writes none (the v4.2 script).</summary>
         public CardDetail Detail;
 
@@ -259,6 +273,12 @@ namespace Depiction
         public string SideGlyph = "";
         /// <summary>The number beside the icon: attack (the core preview) and guard only (#349). Empty for any other kind.</summary>
         public string ValueText = "";
+        /// <summary>
+        /// battle-visual-v1 §4.4 当たり外れの印 (#242): whether the omen reaches the player where they
+        /// stand now (the core's OmenPreview.Lands). None for an omen that aims at nobody, and for the
+        /// v4.2 sources, which keep <see cref="SideGlyph"/> in its place.
+        /// </summary>
+        public OmenHit Hit = OmenHit.None;
 
         /// <summary>
         /// #50, §17.6 F11: the 予定 of an elite or a boss — the second action it plans, shown beside the
@@ -318,6 +338,28 @@ namespace Depiction
         public List<CardFace> Hand = new List<CardFace>();
         /// <summary>Shield hint beside the end-turn button ("+3"); empty when the stance would not trigger.</summary>
         public string StanceHint = "";
+        /// <summary>battle-visual-v1 §4.2 (#242): the floor. <see cref="FloorFrame.Cells"/> 0 draws none (the v4.2 sources).</summary>
+        public FloorFrame Floor = new FloorFrame();
+    }
+
+    /// <summary>
+    /// The line of floor cells under the figures (battle-visual-v1 §4.2, #242). Cells count from 1 at
+    /// the player's end, as BattleCore does. Every cell here is the core's; the View only draws them.
+    /// </summary>
+    public sealed class FloorFrame
+    {
+        /// <summary>How many cells the line has (5〜8). 0: the source draws no floor.</summary>
+        public int Cells;
+        /// <summary>The player's lowest cell and how many cells it takes.</summary>
+        public int PlayerCell;
+        public int PlayerSize = 1;
+        /// <summary>The enemy's lowest cell and how many cells it takes (2 for a large elite).</summary>
+        public int EnemyCell;
+        public int EnemySize = 1;
+        /// <summary>N: the empty cells between the player and the enemy. The one number on the floor.</summary>
+        public int Gap;
+        /// <summary>The cells the shown omen reaches (赤の斜線). Empty when it aims at nobody or is hidden.</summary>
+        public List<int> AimCells = new List<int>();
     }
 
     /// <summary>
@@ -450,6 +492,13 @@ namespace Depiction
         public StrikeSystem System = StrikeSystem.Slash;
         /// <summary>RangeSwitch only: the other side moved the player (a push or a pull), not the player itself.</summary>
         public bool Pushed;
+        /// <summary>
+        /// RangeSwitch only (battle-visual-v1 §4.2, #242): the lowest cell of the player and of the enemy
+        /// after the move, and N after it, for a source that draws the floor. 0 when it draws none.
+        /// </summary>
+        public int PlayerCellAfter;
+        public int EnemyCellAfter;
+        public int GapAfter;
     }
 
     public sealed class DepictionEvent
