@@ -71,13 +71,13 @@ namespace BattleCore
             actions: new[]
             {
                 new EnemyActionDef(
-                    "sweep", "薙ぎ払い", BattleAttribute.Attack, 2,
+                    "sweep", "払い斬り", BattleAttribute.Attack, 2,
                     new Face(Power: 8, Reach: new Reach(1, 2)),
                     AtLeast(2, TraitEffect.PowerBonus, 3),
                     Description: "間合い 1〜2 に届く。間合い 2 以上: 威力 +3"),
 
                 new EnemyActionDef(
-                    "shove", "石突きの押し込み", BattleAttribute.Attack, 2,
+                    "shove", "柄尻の押し込み", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Push: 2, Reach: Reach.Only(0)),
                     When(TraitCondition.Unguarded, TraitEffect.PowerBonus, 3),
                     Description: "間合い 0 に届く。相手を 2 マス押す。無防備: 相手の Guard が 0 なら威力 +3"),
@@ -316,7 +316,7 @@ namespace BattleCore
                     Targets: TargetKind.Self,
                     Description: "構え: 毎ターン開始に Guard +3"),
                 new EnemyActionDef(
-                    "helm_splitter", "兜割り", BattleAttribute.Attack, 2,
+                    "helm_splitter", "打ち下ろし", BattleAttribute.Attack, 2,
                     new Face(Power: 8, Break: 1),
                     AtMost(0, TraitEffect.BreakBonus, 1),
                     Description: "間合い 0〜1 に届く。崩し 1。間合い 0: 崩し +1"),
@@ -516,7 +516,7 @@ namespace BattleCore
                 : "間合い 2〜4 に届く。瘴気纏いを 1 付与する。自分に再生を 1 付与する");
 
         private static EnemyActionDef StaffStrike(int breaks) => new EnemyActionDef(
-            "staff_strike", "錫杖の打ち込み", BattleAttribute.Attack, 3,
+            "staff_strike", "鎌首の打ち込み", BattleAttribute.Attack, 3,
             new Face(Power: 13, Break: breaks),
             AtMost(0, TraitEffect.PowerBonus, 5),
             Description: breaks > 0
@@ -623,7 +623,7 @@ namespace BattleCore
             actions: new[]
             {
                 new EnemyActionDef(
-                    "sweep", "薙ぎ払い", BattleAttribute.Attack, 2,
+                    "sweep", "根の横払い", BattleAttribute.Attack, 2,
                     new Face(Power: 8, Reach: new Reach(0, 2)),
                     FoeHas(StatusKind.Rooting, TraitEffect.PowerBonus, 5),
                     Description: "間合い 0〜2 に届く。相手の状態（根張り）: 威力 +5"),
@@ -660,7 +660,7 @@ namespace BattleCore
                     new Adaptation("root_st", view => PlacedStanceLastTurn(view),
                         tree => tree.Prefix("wither_breath"),
                         Retouch: layer => new[] { StoppingStance(Find(layer, "wither_breath") ?? RootWitherBreath) }),
-                    // root_sk 「状態を 2 つ付けられると、身を固めて振り払う」: 樹皮 → 薙ぎ払い, and
+                    // root_sk 「状態を 2 つ付けられると、身を固めて振り払う」: 樹皮 → 根の横払い, and
                     // every word on the root is shaken off.
                     new Adaptation("root_sk", view => EverySecondInLastTurn(view, view.Player.Inflictions),
                         tree => Tree.All("bark", "sweep", "creeping_root"), Cleanse: true),
@@ -682,7 +682,7 @@ namespace BattleCore
                         EnterMove: 1),
                     // stage_3 「HP が 3 分の 1 を切ると、根と息を同じフェーズで使う」: the body sways each
                     // phase; 根を張る also reaches 0〜4 and 根張り stacks to 2; every band is 根を張る
-                    // → 薙ぎ払い / 枯らしの息.
+                    // → 根の横払い / 枯らしの息.
                     new Stage("stage_3", view => view.Hp <= 66,
                         tree => Tree.All("root_grip", "sweep", "wither_breath", "creeping_root"),
                         new[]

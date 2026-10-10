@@ -29,8 +29,8 @@ namespace BattleCore.Tests
             });
         }
 
-        [TestCase("sweep", "薙ぎ払い", 2, 8, 0, 0, 0, "1〜2", "攻撃・1〜2")]
-        [TestCase("shove", "石突きの押し込み", 2, 5, 0, 2, 0, "0", "攻撃・0")]
+        [TestCase("sweep", "払い斬り", 2, 8, 0, 0, 0, "1〜2", "攻撃・1〜2")]
+        [TestCase("shove", "柄尻の押し込み", 2, 5, 0, 2, 0, "0", "攻撃・0")]
         [TestCase("reach_thrust", "穂先の突き", 1, 4, 0, 0, 0, "0〜2", "攻撃・0〜2")]
         [TestCase("guard_up", "柄で受ける", 1, 0, 3, 0, 0, "", "守り")]
         [TestCase("step_forward", "踏み込み", 1, 0, 2, 0, 1, "", "動")]

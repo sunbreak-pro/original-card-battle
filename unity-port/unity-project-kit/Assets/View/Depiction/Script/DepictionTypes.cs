@@ -239,7 +239,7 @@ namespace Depiction
             name = name ?? "";
             if (attacks)
             {
-                // A push or pull is what the action is for (石突きの押し込み, whose name holds 突), so it plays as 打.
+                // A push or pull is what the action is for, even when its name holds 突 or 払, so it plays as 打.
                 if (pushes) return StrikeSystem.Strike;
                 if (HasAny(name, "突", "貫", "矢", "弩", "撃", "投")) return StrikeSystem.Thrust;
                 if (HasAny(name, "打", "当", "礫", "圧殺", "押し込み")) return StrikeSystem.Strike;
