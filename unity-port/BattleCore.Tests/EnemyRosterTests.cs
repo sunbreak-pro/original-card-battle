@@ -550,13 +550,10 @@ namespace BattleCore.Tests
         /// never end (a hole in the roster's far branches, taken to the cards lane). The sweep over
         /// many seeds, the stall count and the win-rate table are #192's.
         ///
-        /// 歪みの根 has a second such hole (#334 found it; handed to main on 2026-10-08): from stage 2
-        /// its 枯らしの息 reaches every gap, and 枯らし 2 with the breath's 疲労 1 takes the player's
-        /// recovery of 3 to 0. Once both sides sit at 0 stamina and no HP moves, the fight never ends
-        /// (<see cref="WitherLocked"/>). A fight that reaches that lock is let through and logged, not
-        /// failed; the lock itself is the roster's to fix.
-        /// TODO: drop the lock check (<see cref="WitherLockEnemy"/>, <see cref="WitherLocked"/>) once
-        /// the cards lane fixes the hole (handoff 2026-10-08-battle-root-wither-lock.md; issue not yet filed).
+        /// 歪みの根 had a second such hole (#334 found it): from stage 2 its 枯らしの息 reaches every
+        /// gap, and 枯らし 2 with the breath's 疲労 1 took the player's recovery of 3 to 0, so both
+        /// sides sat at 0 stamina and the fight never ended. Roster v4.14 (#399) floors 枯らし at a
+        /// recovery of 1 and #400 follows it, so 歪みの根 is held to the same 200 turns as the rest.
         /// </summary>
         [TestCaseSource(nameof(AllIds))]
         public void EachEnemy_FightsToTheEnd_WithAFixedSeed(string id)
@@ -568,18 +565,12 @@ namespace BattleCore.Tests
                 var deck = seed % 2 == 0 ? PrototypeDeck.Build() : RandomDeck(rng, 20 + seed * 3);
                 var state = TurnLoop.Start(new BattleSetup(enemy, deck, CellsFor(enemy)), rng).State;
                 int turns = 0;
-                int lockedTurns = 0;
-                (int Player, int Enemy) lockedHp = (0, 0);
                 Assert.DoesNotThrow(() =>
                 {
                     while (state.Result == GameResult.Ongoing && turns < 200)
                     {
                         state = TurnLoop.BeginPlayerTurn(state, rng).State;
                         turns++;
-                        var hp = (state.Player.Hp, state.Enemy.Hp);
-                        lockedTurns = id == WitherLockEnemy && WitherLocked(state) ? (hp == lockedHp ? lockedTurns + 1 : 1) : 0;
-                        lockedHp = hp;
-                        if (lockedTurns >= WitherLockTurns) break;
                         while (state.Result == GameResult.Ongoing)
                         {
                             var next = state.Hand.FirstOrDefault(c => TurnLoop.CanPlay(state, c.InstanceId) == PlayRefusal.None && Fights(state, c.Def));
@@ -589,32 +580,10 @@ namespace BattleCore.Tests
                         if (state.Result == GameResult.Ongoing) state = TurnLoop.EndTurn(state, rng).State;
                     }
                 }, id + " seed " + seed);
-                if (lockedTurns >= WitherLockTurns)
-                {
-                    TestContext.Out.WriteLine(id + " seed " + seed + ": the 枯らし lock (a roster hole) from turn " + (turns - WitherLockTurns + 1));
-                    continue;
-                }
                 Assert.That(state.Result, Is.Not.EqualTo(GameResult.Ongoing), id + " seed " + seed + " did not end in 200 turns");
                 TestContext.Out.WriteLine(id + " seed " + seed + ": " + state.Result + " in " + turns + " turns");
             }
         }
-
-        /// <summary>The only enemy whose fights may stop in the 枯らし lock; every other enemy must still end in 200 turns.</summary>
-        private const string WitherLockEnemy = "distortion_root";
-
-        /// <summary>The turns in a row the 枯らし lock has to hold, with no HP moving, before a fight is taken to have stalled in it.</summary>
-        private const int WitherLockTurns = 10;
-
-        /// <summary>
-        /// The 枯らし lock at the player's turn start: the player holds 枯らし at the boss cap and has
-        /// no stamina, so nothing in the hand can be paid for, and the enemy has none either.
-        /// </summary>
-        private static bool WitherLocked(BattleState state) =>
-            state.Result == GameResult.Ongoing
-            && state.Player.Stamina == 0
-            && state.Player.Statuses.Stacks(StatusKind.Withering) >= Statuses.BossWordStackMax
-            && state.Enemy.Stamina == 0
-            && state.Hand.All(c => TurnLoop.CanPlay(state, c.InstanceId) != PlayRefusal.None);
 
         private static IEnumerable<string> AllIds() => Enemies.All.Select(e => e.Id);
 
