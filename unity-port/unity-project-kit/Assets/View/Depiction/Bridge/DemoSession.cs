@@ -65,7 +65,6 @@ namespace Depiction.Bridge
         /// </summary>
         public static readonly IReadOnlyList<string> DefaultChain = new[] { "polearm_warped", "shadow_hound", "armored_warden" };
 
-        private readonly List<CardInstance> _deck;
         private readonly int _seed;
         private readonly List<BattleTally> _tallies = new List<BattleTally>();
         private int _started;
@@ -73,6 +72,12 @@ namespace Depiction.Bridge
         private int? _stamina;
 
         public DemoMode Mode { get; }
+
+        /// <summary>
+        /// What the run set out with (#58): the deck every battle is shuffled from, the slots, the
+        /// start a tool moved back, and the talent card. The talent is only recorded; #59 reads it.
+        /// </summary>
+        public Departure Departure { get; }
 
         /// <summary>The enemies of the run, in the order they are fought.</summary>
         public IReadOnlyList<EnemyDef> Order { get; }
@@ -88,14 +93,20 @@ namespace Depiction.Bridge
         /// <summary>The run ended on 「降参する」 (#203): its last battle was given up, not lost on HP.</summary>
         public bool Surrendered { get; private set; }
 
-        private DemoSession(DemoMode mode, IReadOnlyList<EnemyDef> order, List<CardInstance> deck, int seed)
+        /// <summary>
+        /// The deck is checked against §8 here as well as on the departure screen, because a run can be
+        /// made without the screen (the tests, a bare deck). The slots and the talent are the screen's
+        /// to check (DepartureBuilder.CanSetOut); a run made from a bare deck has neither.
+        /// </summary>
+        private DemoSession(DemoMode mode, IReadOnlyList<EnemyDef> order, Departure departure, int seed)
         {
-            if (deck == null) throw new ArgumentNullException(nameof(deck));
-            DeckValidation validation = Cards.Validate(deck);
+            if (departure == null || departure.Deck == null) throw new ArgumentNullException(nameof(departure));
+            DeckValidation validation = Cards.Validate(departure.Deck);
             if (!validation.Ok) throw new ArgumentException("DemoSession: the deck breaks §8 — " + string.Join(" / ", validation.Errors));
+            if (departure.StartCellsBack < 0) throw new ArgumentException("DemoSession: the start never moves forward.");
             Mode = mode;
             Order = order;
-            _deck = new List<CardInstance>(deck);
+            Departure = departure with { Deck = new List<CardInstance>(departure.Deck) };
             _seed = seed;
         }
 
@@ -105,17 +116,35 @@ namespace Depiction.Bridge
         /// </summary>
         public static DemoSession Single(List<CardInstance> deck, string enemyId, int seed, int run = 0)
         {
-            return new DemoSession(DemoMode.Single, new[] { Enemies.ById(enemyId ?? "") }, deck, RunSeed(seed, run));
+            return Single(Plain(deck), enemyId, seed, run);
+        }
+
+        /// <summary>One enemy on its own, with what the departure screen set out with (#58).</summary>
+        public static DemoSession Single(Departure departure, string enemyId, int seed, int run = 0)
+        {
+            return new DemoSession(DemoMode.Single, new[] { Enemies.ById(enemyId ?? "") }, departure, RunSeed(seed, run));
         }
 
         /// <summary>§12: a chain of battles, by default <see cref="DefaultChain"/>.</summary>
         public static DemoSession Chain(List<CardInstance> deck, int seed, IReadOnlyList<string> order = null, int run = 0)
         {
+            return Chain(Plain(deck), seed, order, run);
+        }
+
+        /// <summary>§12's chain with what the departure screen set out with (#58): the same screen leads to both modes.</summary>
+        public static DemoSession Chain(Departure departure, int seed, IReadOnlyList<string> order = null, int run = 0)
+        {
             order = order ?? DefaultChain;
             if (order.Count == 0) throw new ArgumentException("DemoSession: a chain needs at least one enemy.");
             var enemies = new List<EnemyDef>();
             foreach (string id in order) enemies.Add(Enemies.ById(id));
-            return new DemoSession(DemoMode.Chain, enemies, deck, RunSeed(seed, run));
+            return new DemoSession(DemoMode.Chain, enemies, departure, RunSeed(seed, run));
+        }
+
+        private static Departure Plain(List<CardInstance> deck)
+        {
+            if (deck == null) throw new ArgumentNullException(nameof(deck));
+            return Departure.Plain(deck);
         }
 
         private static int RunSeed(int seed, int run)
@@ -137,17 +166,27 @@ namespace Depiction.Bridge
         /// </summary>
         public static int FieldCellsFor(EnemyDef enemy)
         {
+            return FieldCellsFor(enemy, Constants.PlayerStartCell, Constants.StartGap);
+        }
+
+        /// <summary>
+        /// The same for a start a tool moved (#58). A cell back is a cell more of gap, so the enemy's
+        /// cell and the width stay what they were.
+        /// </summary>
+        public static int FieldCellsFor(EnemyDef enemy, int playerStartCell, int startGap)
+        {
             if (enemy == null) throw new ArgumentNullException(nameof(enemy));
-            return Math.Max(BattleSetup.SliceFieldCells, Constants.PlayerStartCell + Constants.StartGap + enemy.Size);
+            return Math.Max(BattleSetup.SliceFieldCells, playerStartCell + startGap + enemy.Size);
         }
 
         public EnemyDef Current => Order[Index];
 
-        /// <summary>The next battle: this enemy, its line, the deck (shuffled by TurnLoop.Start), and what the last one carried.</summary>
+        /// <summary>The next battle: this enemy, its line, the deck (shuffled by TurnLoop.Start), the start, and what the last one carried.</summary>
         public BattleSetup NextSetup()
         {
             EnemyDef enemy = Current;
-            return new BattleSetup(enemy, _deck, FieldCellsFor(enemy), PlayerStartHp: _hp, PlayerStartStamina: _stamina);
+            int cells = FieldCellsFor(enemy, Departure.PlayerStartCell, Departure.StartGap);
+            return Departure.SetupFor(enemy, cells, _hp, _stamina);
         }
 
         /// <summary>Starts the next battle. Every start takes a seed of its own, so a retry is dealt afresh.</summary>

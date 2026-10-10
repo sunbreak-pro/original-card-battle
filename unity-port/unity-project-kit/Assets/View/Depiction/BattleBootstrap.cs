@@ -30,7 +30,7 @@ namespace Depiction.View
         public int startGap = BattleLaunch.DefaultStartGap;
 
         [Header("Demo (#187)")]
-        [Tooltip("Opens the deck screen (#190), then the mode screen (#191: one enemy or the chain) and the end screen. Off: the Inspector's battle starts at once with the prototype deck, as the slice did.")]
+        [Tooltip("Opens the deck screen (#190), then the departure screen (#58: tools, consumables, talent), the mode screen (#191: one enemy or the chain) and the end screen. Off: the Inspector's battle starts at once with the prototype deck, as the slice did.")]
         public bool demoFlow = true;
 
         [Header("Unattended runs (captures, PlayMode test)")]

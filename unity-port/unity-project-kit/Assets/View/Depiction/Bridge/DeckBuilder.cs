@@ -56,6 +56,24 @@ namespace Depiction.Bridge
 
         private readonly Dictionary<string, int> _counts = new Dictionary<string, int>(StringComparer.Ordinal);
 
+        /// <param name="owned">
+        /// The kinds the character owns (§8: at most 80). Null owns the whole catalog, which is what the
+        /// demo hands every character until the inheritance side decides what a life starts with.
+        /// </param>
+        public DeckBuilder(IReadOnlyCollection<string> owned = null)
+        {
+            if (owned == null)
+            {
+                var all = new List<string>();
+                foreach (CardDef def in CardCatalog.All) all.Add(def.Id);
+                owned = all;
+            }
+            Owned = owned;
+        }
+
+        /// <summary>The kinds that may go in (#58). A kind outside it has its ＋ greyed out and fails <see cref="Validate"/>.</summary>
+        public IReadOnlyCollection<string> Owned { get; }
+
         /// <summary>Every card that can go in, in canon order (#1 first).</summary>
         public IReadOnlyList<CardDef> Catalog => CardCatalog.All;
 
@@ -100,13 +118,12 @@ namespace Depiction.Bridge
         }
 
         /// <summary>
-        /// §8: a fourth copy, a 41st card, or an id the
-        /// catalog does not know is refused.
+        /// §8 through <see cref="DeckRules.CanAdd"/> (#58): a fourth copy, a 41st card, or a kind not
+        /// owned is refused, and so is an id the catalog does not know.
         /// </summary>
         public bool CanAdd(string id)
         {
-            return Known(id) && CountOf(id) < Constants.CopiesMax && Total < Constants.DeckMax;
-            return true;
+            return Known(id) && DeckRules.CanAdd(Build(), id, Owned);
         }
 
         public bool Add(string id)
@@ -142,15 +159,15 @@ namespace Depiction.Bridge
             return deck;
         }
 
-        /// <summary>§8 through the core's own check (Cards.Validate): 20〜40 cards, three of a kind at most, three stance cards at most (§19.6 S15).</summary>
+        /// <summary>§8 through the core's own check (DeckRules.ValidateDeck, #58): 20〜40 cards, three of a kind at most, every kind owned.</summary>
         public DeckValidation Validate()
         {
-            return Cards.Validate(Build());
+            return DeckRules.ValidateDeck(Build(), Owned);
         }
 
         public bool IsValid => Validate().Ok;
 
-        /// <summary>The one line the screen shows beside 「戦闘へ」: how many cards, and what is still missing.</summary>
+        /// <summary>The one line the screen shows beside 「出立の支度へ」: how many cards, and what is still missing.</summary>
         public string StatusText
         {
             get
