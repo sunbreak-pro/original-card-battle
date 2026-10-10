@@ -408,6 +408,17 @@ namespace Depiction.Bridge
                     ApplyWallHit(ev, wall);
                     break;
 
+                case MoveBlocked blocked:
+                {
+                    // #335: 呪縛 / 鉤爪 stopped the move; nothing moved, so the line is all there is to show.
+                    string line = CoreText.MoveBlockedLine(blocked.By);
+                    if (line.Length > 0)
+                    {
+                        ev.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = CoreText.Side(blocked.Actor), Text = line });
+                    }
+                    break;
+                }
+
                 case ActionWhiffed whiff:
                     // The blow finds nobody: the omen's number is struck off, the way a missed side bonus is.
                     _whiffed = true;

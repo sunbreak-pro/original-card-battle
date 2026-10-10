@@ -341,6 +341,29 @@ namespace Depiction.Bridge
             return "";
         }
 
+        // ---- the boss words that stop a move (#335) -------------------------------------------
+
+        /// <summary>
+        /// The line a move that did not happen shows over the one who could not move (#335):
+        /// 呪縛 stops every move of the holder's own, 鉤爪 catches a move back (enemy_roster_v4 §4.1 /
+        /// §5.1). Empty for any other cause; 鈍足 has no line of its own yet.
+        /// </summary>
+        public static string MoveBlockedLine(StatusKind by)
+        {
+            switch (by)
+            {
+                case StatusKind.Binding: return by.ToLabel() + "で動けない";
+                case StatusKind.Hook: return by.ToLabel() + "で下がれない";
+                default: return "";
+            }
+        }
+
+        /// <summary>Why a card of movement only goes back to the hand while the player is bound (#335, roster §4.1 呪縛).</summary>
+        public static string BoundRefusal(string cardName)
+        {
+            return "「" + cardName + "」は移動が中心の札です。" + StatusKind.Binding.ToLabel() + "が付いている間は出せません";
+        }
+
         // ---- omen ---------------------------------------------------------------------------
 
         /// <summary>

@@ -134,6 +134,8 @@ namespace Depiction.Bridge
                 case PlayRefusal.NotInHand: return PlayVerdict.NotInHand;
                 case PlayRefusal.NotEnoughStamina: return PlayVerdict.NotEnoughStamina;
                 case PlayRefusal.OutOfReach: return PlayVerdict.OutOfRange;
+                // #335: 呪縛 has a reason of its own to give, not the silent "not now".
+                case PlayRefusal.Bound: return PlayVerdict.Bound;
                 default: return PlayVerdict.NotWaiting;
             }
         }
@@ -180,6 +182,8 @@ namespace Depiction.Bridge
                     return "「" + face.Name + "」は間合い " + face.RequiredRangeGlyph + " の相手にしか出せません。いまは " + Frame.Player.RangeGlyph + " です";
                 case PlayVerdict.WrongZone:
                     return "「" + face.Name + "」は" + DepictionText.ZoneName(face.Aim) + "で離すと出せます";
+                case PlayVerdict.Bound:
+                    return CoreText.BoundRefusal(face.Name);
                 default:
                     return "";
             }
