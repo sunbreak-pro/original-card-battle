@@ -825,8 +825,12 @@ namespace BattleCore
             int stanceRecovery = firing.Sum(entry => entry.Def.Recovery);
             // #51 (roster §5.1 深み, §6.2 枯らし): the boss words that thin the recovery, floor 0. The
             // 温存 bonus is deliberately inside that floor, as 疲労 is: RecoverStamina floors
-            // recovery + bonus together, so a bonus first fills what the loss took.
-            int withered = Statuses.RecoveryLoss(self.Statuses, adjacent: OwnGap(state, actor, unit) == 0 && state.Nearest >= 0);
+            // recovery + bonus together, so a bonus first fills what the loss took. #400: 枯らし stops
+            // at a recovery of 1 counted the same way (疲労 and the bonus in), 深み does not.
+            int withered = Statuses.RecoveryLoss(
+                self.Statuses,
+                adjacent: OwnGap(state, actor, unit) == 0 && state.Nearest >= 0,
+                recoveryBefore: recovery + stanceRecovery - fatigue + self.NextTurnRecoveryBonus);
             int staminaAfter = Combat.RecoverStamina(
                 self.Stamina, self.MaxStamina, recovery + stanceRecovery - fatigue - withered, self.NextTurnRecoveryBonus);
             events.Add(new StaminaRecovered(actor, staminaAfter - self.Stamina, staminaAfter, self.MaxStamina) { Unit = unit });

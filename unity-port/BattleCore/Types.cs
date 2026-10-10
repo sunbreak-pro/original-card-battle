@@ -160,7 +160,7 @@ namespace BattleCore
         /// <summary>根張り (歪みの根): having ended two turns in a row on the same cell, the holder loses 4 HP per stack at the next turn start. Lasting.</summary>
         Rooting,
 
-        /// <summary>枯らし (歪みの根): the holder recovers 1 less per stack at every turn start (floor 0). Lasting.</summary>
+        /// <summary>枯らし (歪みの根): the holder recovers 1 less per stack at every turn start, never below 1 even with 疲労 (#400). Lasting.</summary>
         Withering,
     }
 
