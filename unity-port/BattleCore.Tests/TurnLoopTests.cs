@@ -302,7 +302,7 @@ namespace BattleCore.Tests
         public void TheEnemyStepsIn_FromGapThree_AndTheNextOmenIsTheSweep()
         {
             var s = TurnLoop.Start(AtGap(3), NoRng).State;
-            Assert.That(s.Omen!.Label.ToText(), Is.EqualTo("動"));
+            Assert.That(s.Omen!.Label.ToText(), Is.EqualTo("移動"));
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
             var end = TurnLoop.EndTurn(s, NoRng);
@@ -923,7 +923,7 @@ namespace BattleCore.Tests
         // turn, player hp/stamina/Guard/cell, enemy hp/stamina/Guard/cell/statuses, gap, next omen
         private static readonly string[] PinnedSummaries =
         {
-            "T1 P 50/1/36/c1 E 60/9/5/c5/— gap 3 omen 動",
+            "T1 P 50/1/36/c1 E 60/9/5/c5/— gap 3 omen 移動",
             "T2 P 50/2/9/c1 E 60/9/5/c4/— gap 2 omen 攻撃・1〜2",
             "T3 P 50/0/4/c2 E 45/8/3/c4/— gap 1 omen 攻撃・1〜2",
         };
