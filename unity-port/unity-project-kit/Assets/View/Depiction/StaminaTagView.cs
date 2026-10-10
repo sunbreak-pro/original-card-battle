@@ -22,8 +22,8 @@ namespace Depiction.View
         private const float PadY = 10f;
         private const float DotSize = 16f;
         private const float DotGap = 4f;
-        /// <summary>§4.7: the divider follows the third dot — 構え needs 3 left (Guard +3).</summary>
-        private const int DividerAfter = 3;
+        /// <summary>§4.7: the divider follows this many dots — the stamina 構え needs left (the script's DepictionFrame.StanceDivider). 0 draws none.</summary>
+        private int _dividerAfter;
 
         private readonly RectTransform _root;
         private readonly Text _number;
@@ -73,6 +73,15 @@ namespace Depiction.View
             Render();
         }
 
+        /// <summary>Where the divider stands: after <paramref name="after"/> dots, or nowhere for 0.</summary>
+        public void SetDivider(int after)
+        {
+            int next = Mathf.Max(0, after);
+            if (next == _dividerAfter) return;
+            _dividerAfter = next;
+            Render();
+        }
+
         /// <summary>
         /// §4.7 / §5.2: while a card is held, the points it would pay turn to rings and "▸ n" shows.
         /// 0 puts both away.
@@ -98,7 +107,7 @@ namespace Depiction.View
                 bool used = i < _max;
                 dot.gameObject.SetActive(used);
                 if (!used) continue;
-                if (i == DividerAfter)
+                if (_dividerAfter > 0 && i == _dividerAfter)
                 {
                     // The divider stands in the gap after the third dot, the gap widened to hold it.
                     _divider.rectTransform.anchoredPosition = new Vector2(x + DotGap * 0.5f, 0f);
@@ -122,7 +131,7 @@ namespace Depiction.View
                     dot.color = BattleTheme.Steel;
                 }
             }
-            _divider.enabled = _max > DividerAfter;
+            _divider.enabled = _dividerAfter > 0 && _max > _dividerAfter;
         }
     }
 }

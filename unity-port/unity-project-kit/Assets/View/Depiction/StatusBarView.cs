@@ -456,12 +456,21 @@ namespace Depiction.View
 
         private float Width(int hp) => Mathf.Clamp01(hp / (float)_hpMax);
 
+        /// <summary>The badge's solid shield, kept while the dashed one stands in for Guard 0.</summary>
+        private Sprite _solidShield;
+
         public void SetGuard(int guard)
         {
             if (guardText) guardText.text = guard.ToString();
-            // §4.5: with no Guard the shield turns steel and the number the note colour, at 70%.
+            // §4.5: with no Guard the shield turns to a steel dashed outline and the number the note
+            // colour, at 70%.
             Color c = guard > 0 ? BattleTheme.Guard : BattleTheme.WithAlpha(BattleTheme.Steel, 0.7f);
-            if (guardIcon) guardIcon.color = c;
+            if (guardIcon)
+            {
+                if (!_solidShield) _solidShield = guardIcon.sprite && guardIcon.sprite != VisualArt.DashedShield ? guardIcon.sprite : ProceduralArt.Shield;
+                guardIcon.sprite = guard > 0 ? _solidShield : VisualArt.DashedShield;
+                guardIcon.color = c;
+            }
             if (guardText) guardText.color = guard > 0 ? BattleTheme.Ink : BattleTheme.WithAlpha(BattleTheme.Ink2, 0.7f);
         }
 

@@ -185,6 +185,10 @@ namespace Depiction.View
             _dragging = null;
             _hovered = null;
             _refusal = null;
+            // A card held or hovered when the last battle stopped may have left these up.
+            _staminaTag?.ShowCost(0);
+            HideHoverPanels();
+            HideTargetMarks();
             Finished = false;
             EventSeconds.Clear();
             if (_resultCard)
@@ -403,9 +407,9 @@ namespace Depiction.View
         }
 
         /// <summary>
-        /// With a floor, the parts tied to a figure keep to its x: the omen badge and the release zone
-        /// over the enemy's home, and each number panel under its figure (§4.5), kept 24 px inside the
-        /// screen's edges. Their heights stay where the scene put them.
+        /// With a floor, the parts tied to the enemy keep to its x: the omen badge and the release zone
+        /// over the enemy's home, kept 24 px inside the screen's edges. Their heights stay where the
+        /// scene put them.
         /// </summary>
         private void FollowFigures()
         {
@@ -414,11 +418,11 @@ namespace Depiction.View
             if (!root) return;
             Vector3 enemyHome = enemyFigure.Rect.parent.TransformPoint(EnemyHomeLocal());
             float enemyX = RefScreen.Of(root, enemyHome).x;
-            float playerX = RefScreen.Of(root, playerFigure.transform.position).x;
             if (omenBadge) KeepX(omenBadge.Rect, root, enemyX);
             if (receiver) KeepX((RectTransform)receiver.transform, root, enemyX);
-            if (enemyStatus) KeepX((RectTransform)enemyStatus.transform, root, enemyX);
-            if (playerStatus) KeepX((RectTransform)playerStatus.transform, root, playerX);
+            // The two number panels stay where the scene put them. They follow their figures only once
+            // §4.5's 300 / 210 px panels exist: the scene's are 480 px wide, so at a gap of 0 the two
+            // would overlap if they followed now.
         }
 
         /// <summary>The enemy's home in its parent's local space (its anchored position, back through its anchors).</summary>
@@ -1170,6 +1174,7 @@ namespace Depiction.View
             enemyFigure.ShowArt(frame.Enemy.ArtId);
             playerFigure.SetDown(frame.Player.Down);
             enemyFigure.SetDown(frame.Enemy.Down);
+            _staminaTag?.SetDivider(frame.StanceDivider); // before the bind below shows the stamina
             playerStatus.Bind(frame.Player);
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);
@@ -1289,9 +1294,9 @@ namespace Depiction.View
         // ---- hover ----------------------------------------------------------------------------
 
         /// <summary>
-        /// Lifts the card under the pointer and brings it to the front. The test runs against the
-        /// card's resting place, not the lifted one, so the card does not flicker when the pointer
-        /// sits on its bottom edge.
+        /// Lifts the card under the pointer and brings it to the front. A card starts its hover from its
+        /// resting place, so it does not flicker when the pointer sits on its bottom edge; once hovered,
+        /// its raised place counts as well (<see cref="HoveredRectContains"/>).
         /// </summary>
         private void UpdateHover()
         {
@@ -1402,7 +1407,9 @@ namespace Depiction.View
         {
             if (!TryPointer(out Vector2 pointer)) return null;
             // The hovered card is drawn in front, so it wins where two cards overlap.
-            if (_hovered && _hovered.Interactable && RestingRectContains(_hovered, _hand.IndexOf(_hovered), pointer)) return _hovered;
+            // It is also caught on its raised part (§4.8: up to 136 px above its resting place), so moving
+            // onto what the hover lifted keeps the hover, and the right click (§7.4) works there too.
+            if (_hovered && _hovered.Interactable && HoveredRectContains(_hovered, _hand.IndexOf(_hovered), pointer)) return _hovered;
             for (int i = _hand.Count - 1; i >= 0; i--)
             {
                 CardView card = _hand[i];
@@ -1419,13 +1426,30 @@ namespace Depiction.View
         private bool RestingRectContains(CardView card, int index, Vector2 pointer)
         {
             if (index < 0) return false;
-            if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(handArea, pointer, null, out Vector3 world)) return false;
             HomeOf(index, out Vector2 home, out float degrees);
-            // anchoredPosition and localPosition differ by a constant, so the resting localPosition is
-            // the current one moved by how far the card sits from home.
-            Vector3 restLocal = card.Rect.localPosition + (Vector3)(home - card.Rect.anchoredPosition);
+            return RectAtContains(card, home, degrees, pointer);
+        }
+
+        /// <summary>
+        /// The hovered card's test: its resting place or its raised one (<see cref="HoverPlace"/>,
+        /// upright). Testing only the resting place dropped the hover once the pointer followed the
+        /// card up onto the part the hover lifts (§4.8: 136 px).
+        /// </summary>
+        private bool HoveredRectContains(CardView card, int index, Vector2 pointer)
+        {
+            if (index < 0) return false;
+            return RestingRectContains(card, index, pointer) || RectAtContains(card, HoverPlace(index), 0f, pointer);
+        }
+
+        /// <summary>True when the pointer is over the card as it would stand at <paramref name="place"/>, tilted <paramref name="degrees"/>, unscaled.</summary>
+        private bool RectAtContains(CardView card, Vector2 place, float degrees, Vector2 pointer)
+        {
+            if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(handArea, pointer, null, out Vector3 world)) return false;
+            // anchoredPosition and localPosition differ by a constant, so the localPosition at that place
+            // is the current one moved by how far the card sits from it.
+            Vector3 atLocal = card.Rect.localPosition + (Vector3)(place - card.Rect.anchoredPosition);
             Vector3 inHand = handArea.InverseTransformPoint(world);
-            Vector3 inCard = Quaternion.Inverse(Quaternion.Euler(0f, 0f, degrees)) * (inHand - restLocal);
+            Vector3 inCard = Quaternion.Inverse(Quaternion.Euler(0f, 0f, degrees)) * (inHand - atLocal);
             return card.Rect.rect.Contains(inCard);
         }
 
@@ -1528,7 +1552,7 @@ namespace Depiction.View
             if (_busy || _dragging != null) return;
             CardView held = card;
             if (_hovered && _hovered != card && _hovered.Interactable
-                && RestingRectContains(_hovered, _hand.IndexOf(_hovered), e.position)) held = _hovered;
+                && HoveredRectContains(_hovered, _hand.IndexOf(_hovered), e.position)) held = _hovered;
             _dragSource = card;
             BeginHold(held);
             _dragPointerWorld = PointerWorld(e);
@@ -1639,8 +1663,8 @@ namespace Depiction.View
 
         private void HideTargetMarks()
         {
-            if (playerFigure.targetMark) playerFigure.targetMark.Hide();
-            if (enemyFigure.targetMark) enemyFigure.targetMark.Hide();
+            if (playerFigure && playerFigure.targetMark) playerFigure.targetMark.Hide();
+            if (enemyFigure && enemyFigure.targetMark) enemyFigure.targetMark.Hide();
         }
 
         private void SetZoneHot(CardView card, bool hot)

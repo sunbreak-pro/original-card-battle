@@ -36,6 +36,8 @@ namespace Depiction.View
         private const float BandLeft = 8f;
         private const float BandTop = 5f;
         private const float FrameWidth = 2f;
+        private const float ShadowDrop = 6f;  // 影 0 6px 14px
+        private const float ShadowBlur = 14f;
         private const float CostSize = 44f;
         private static readonly Vector2 CostAt = new Vector2(16f, 11f);
         private const float KindIconSize = 24f;
@@ -122,6 +124,14 @@ namespace Depiction.View
             _glow.transform.SetAsFirstSibling();
             _glow.enabled = false;
 
+            // §6.1 影: 0 6px 14px rgba(0,0,0,.45), behind the light. §0.1 decision 7: a held card keeps it as it is.
+            Image shadow = UiKit.Image(root, "Shadow", VisualArt.SoftShadow(6, (int)ShadowBlur), BattleTheme.WithAlpha(Color.black, 0.45f), Vector2.zero, Vector2.one);
+            shadow.type = Image.Type.Sliced;
+            shadow.raycastTarget = false;
+            shadow.rectTransform.offsetMin = new Vector2(-ShadowBlur, -ShadowBlur - ShadowDrop);
+            shadow.rectTransform.offsetMax = new Vector2(ShadowBlur, ShadowBlur - ShadowDrop);
+            shadow.transform.SetAsFirstSibling();
+
             if (background)
             {
                 UiKit.Stretch(background.rectTransform);
@@ -203,7 +213,10 @@ namespace Depiction.View
             Place(cost, CostAt, new Vector2(CostSize, CostSize));
             _costRing = cost.GetComponent<Image>();
             if (!_costRing) _costRing = cost.gameObject.AddComponent<Image>();
-            _costRing.sprite = ProceduralArt.Circle;
+            // §6.1: a 2 px amber ring over a black 45% fill (the Fill below), not an amber disc. A rounded
+            // ring whose corner radius is half its side is a circle, sliced so the 2 px hold at 44 px.
+            _costRing.sprite = VisualArt.RoundedRing(Mathf.RoundToInt(CostSize * 0.5f), 2);
+            _costRing.type = Image.Type.Sliced;
             _costRing.color = BattleTheme.Amber;
             _costRing.raycastTarget = false;
             _costFill = UiKit.Sprite(cost, "Fill", ProceduralArt.Circle, BattleTheme.WithAlpha(Color.black, 0.45f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),

@@ -175,6 +175,90 @@ namespace Depiction.View
             return edges;
         }
 
+        // ---- §6.1 card shadow / §4.5 Guard 0 ----------------------------------------------------------
+
+        private static readonly Dictionary<int, Sprite> ShadowSprites = new Dictionary<int, Sprite>();
+        private static Sprite _dashedShield;
+
+        /// <summary>
+        /// A box shadow (§6.1: <c>0 6px 14px</c>) for a rounded rectangle of corner <paramref name="radius"/>:
+        /// opaque inside the shape, fading out over <paramref name="blur"/> px around it. Sliced; give its
+        /// Image the shape's rect grown by <paramref name="blur"/> px on every side.
+        /// </summary>
+        public static Sprite SoftShadow(int radius, int blur)
+        {
+            radius = Mathf.Max(0, radius);
+            blur = Mathf.Max(1, blur);
+            int key = radius * 1000 + blur;
+            if (ShadowSprites.TryGetValue(key, out Sprite cached) && cached && cached.texture) return cached;
+            int border = blur + radius + 1;
+            int size = border * 2 + 2;
+            float half = size * 0.5f;
+            float inner = half - blur; // the shape's half side inside the texture
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            var pixels = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float qx = Mathf.Abs(x + 0.5f - half) - (inner - radius);
+                    float qy = Mathf.Abs(y + 0.5f - half) - (inner - radius);
+                    float outside = new Vector2(Mathf.Max(qx, 0f), Mathf.Max(qy, 0f)).magnitude + Mathf.Min(Mathf.Max(qx, qy), 0f) - radius;
+                    // A Gaussian-like fall: half strength on the edge, gone blur px out.
+                    float t = Mathf.Clamp01(outside / blur * 0.5f + 0.5f);
+                    float a = 1f - t * t * (3f - 2f * t);
+                    pixels[y * size + x] = new Color(1f, 1f, 1f, a);
+                }
+            }
+            tex.SetPixels(pixels);
+            tex.Apply();
+            Sprite made = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect,
+                new Vector4(border, border, border, border));
+            ShadowSprites[key] = made;
+            return made;
+        }
+
+        /// <summary>
+        /// §4.5 Guard 0: the shield of ProceduralArt.Shield as an outline about 2 px wide at the badge's
+        /// size, broken into dashes (§3.2) cut by angle around its middle. 64×72 like the solid one, so
+        /// the badge keeps its shape when it swaps between them.
+        /// </summary>
+        public static Sprite DashedShield
+        {
+            get
+            {
+                if (_dashedShield && _dashedShield.texture) return _dashedShield;
+                const int w = 64, h = 72, dashes = 32;
+                var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var pixels = new Color[w * h];
+                for (int y = 0; y < h; y++)
+                {
+                    for (int x = 0; x < w; x++)
+                    {
+                        float u = (x + 0.5f) / w;
+                        float v = 1f - (y + 0.5f) / h;
+                        bool edge = InsideShield(u, v, 0f) && !InsideShield(u, v, 0.12f);
+                        float angle = Mathf.Atan2(v - 0.45f, u - 0.5f) + Mathf.PI;
+                        bool on = Mathf.FloorToInt(angle / (2f * Mathf.PI) * dashes) % 2 == 0;
+                        pixels[y * w + x] = new Color(1f, 1f, 1f, edge && on ? 1f : 0f);
+                    }
+                }
+                tex.SetPixels(pixels);
+                tex.Apply();
+                _dashedShield = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 100f);
+                return _dashedShield;
+            }
+        }
+
+        /// <summary>ProceduralArt's shield shape: u 0..1 left→right, v 0..1 top→bottom, straight top, pointed bottom.</summary>
+        private static bool InsideShield(float u, float v, float inset)
+        {
+            float cx = Mathf.Abs(u - 0.5f) * 2f;
+            float width = v < 0.45f ? 1f : 1f - Mathf.Pow((v - 0.45f) / 0.55f, 1.15f);
+            width -= inset;
+            return v >= 0.02f + inset && v <= 0.98f - inset && cx <= width * 0.96f;
+        }
+
         // ---- §3.2 斜線 / §4.2 floor --------------------------------------------------------------------
 
         private static readonly Dictionary<int, Sprite> StripeSprites = new Dictionary<int, Sprite>();
