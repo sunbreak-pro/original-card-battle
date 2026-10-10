@@ -48,7 +48,7 @@ namespace Depiction
             };
             kesagiri.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -1, StaminaAfter = 8, StaminaMax = 10 });
             kesagiri.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = UnitSide.Player, Text = "初手 +3" });
-            kesagiri.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Amount = 9, Intensity = 1, HpAfter = 51 });
+            kesagiri.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Amount = 9, Intensity = EffectStrength.Uniform, HpAfter = 51 });
             script.Events.Add(kesagiri);
 
             // 3. 大上段 (cost 2): 13 damage, enemy 51 -> 38, stamina 8 -> 6.
@@ -59,7 +59,7 @@ namespace Depiction
                 After = Snapshot(50, 0, 6, RangeSide.Near, 38, HandWithout(Kesagiri, Daijodan), attackNear),
             };
             daijodan.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -2, StaminaAfter = 6, StaminaMax = 10 });
-            daijodan.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Amount = 13, Intensity = 2, HpAfter = 38 });
+            daijodan.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Amount = 13, Intensity = EffectStrength.Uniform, HpAfter = 38 });
             script.Events.Add(daijodan);
 
             // 4. 後ろ跳び (cost 1): switch to far, Guard 4, trait 予兆(攻撃) Guard +3 fires -> Guard 7, stamina 6 -> 5.
@@ -71,9 +71,9 @@ namespace Depiction
             };
             ushirotobi.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -1, StaminaAfter = 5, StaminaMax = 10 });
             ushirotobi.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, RangeAfter = RangeSide.Far, RangeGlyphAfter = GlyphOf(RangeSide.Far) });
-            ushirotobi.Cues.Add(new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 4, Intensity = 1, GuardAfter = 4 });
+            ushirotobi.Cues.Add(new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 4, Intensity = EffectStrength.Uniform, GuardAfter = 4 });
             ushirotobi.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = UnitSide.Player, Text = "予兆 +3" });
-            ushirotobi.Cues.Add(new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 3, Intensity = 1, GuardAfter = 7 });
+            ushirotobi.Cues.Add(new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 3, Intensity = EffectStrength.Uniform, GuardAfter = 7 });
             script.Events.Add(ushirotobi);
 
             // 5. Turn end: stance (5 left >= 3) Guard +3 -> 10, discard the remaining two.
@@ -94,9 +94,9 @@ namespace Depiction
             };
             enemyAction.Cues.Add(new Cue { Kind = CueKind.EnemyWindup, Target = UnitSide.Enemy });
             enemyAction.Cues.Add(new Cue { Kind = CueKind.SideBonusMiss, Target = UnitSide.Enemy, Amount = 5, Text = "+5" });
-            enemyAction.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Enemy, Target = UnitSide.Player, Amount = 13, Intensity = 2 });
+            enemyAction.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Enemy, Target = UnitSide.Player, Amount = 13, Intensity = EffectStrength.Uniform });
             enemyAction.Cues.Add(new Cue { Kind = CueKind.GuardBlock, Target = UnitSide.Player, Amount = 10, GuardAfter = 0 });
-            enemyAction.Cues.Add(new Cue { Kind = CueKind.Hit, Target = UnitSide.Player, Amount = 3, Intensity = 1, HpAfter = 47 });
+            enemyAction.Cues.Add(new Cue { Kind = CueKind.Hit, Target = UnitSide.Player, Amount = 3, Intensity = EffectStrength.Uniform, HpAfter = 47 });
             script.Events.Add(enemyAction);
 
             // 7. Next omen: 防御 9, the same Guard as LiveTurn.EnemyGuardPower (#349).

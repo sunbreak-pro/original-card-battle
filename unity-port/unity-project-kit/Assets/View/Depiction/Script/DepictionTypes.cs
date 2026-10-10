@@ -319,7 +319,7 @@ namespace Depiction
         public UnitSide? Source;
         public int Amount;
         public string Text = "";
-        /// <summary>Strength of the effect, 1..4, decided from the settled value by whoever writes the script.</summary>
+        /// <summary>Strength of the effect, 1..4, decided by whoever writes the script (for now always <see cref="EffectStrength.Uniform"/>, §5.3 / #30).</summary>
         public int Intensity = 1;
         public int HpAfter = Unchanged;
         public int GuardAfter = Unchanged;
