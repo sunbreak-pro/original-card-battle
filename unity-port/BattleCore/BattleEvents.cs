@@ -210,6 +210,16 @@ namespace BattleCore
     /// <summary>§4: Actor's stance took effect. What it did follows as its own events (GuardGained, …).</summary>
     public sealed record StanceFired(Actor Actor, string SourceId, StanceHook Hook) : BattleEvent(Actor);
 
+    /// <summary>
+    /// #334 (roster §6.4 root_st): Actor's newest permanent effect — Index on its list, put there by
+    /// SourceId — stopped working, through battle turn Through. It stays on the list; see
+    /// <see cref="StanceResumed"/>.
+    /// </summary>
+    public sealed record StanceStopped(Actor Actor, string SourceId, int Index, int Through) : BattleEvent(Actor);
+
+    /// <summary>#334: Actor's permanent effect at Index (put there by SourceId) works again, from this turn start on.</summary>
+    public sealed record StanceResumed(Actor Actor, string SourceId, int Index) : BattleEvent(Actor);
+
     /// <summary>§4: a stance card left for the exile pile once it resolved. It is not drawn again this battle.</summary>
     public sealed record CardExiled(Actor Actor, CardInstance Card) : BattleEvent(Actor);
 

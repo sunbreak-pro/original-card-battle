@@ -78,6 +78,37 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void TheRootsBreath_StopsTheStanceForATurn_AndTheScreenSaysWhenItStopsAndComesBack()
+        {
+            // #334 (roster §6.4 root_st): 岩の構え placed in turn 1, stopped by the breath in turn 2,
+            // back at the start of turn 4. The chip stays; the two lines say what happened.
+            var deck = new List<CardInstance> { new CardInstance("rock_stance-0", CardCatalog.RockStance) };
+            for (int i = deck.Count; i < Constants.DeckMin; i++) deck.Add(new CardInstance("thrust-" + i, CardCatalog.Thrust));
+            BattleState state = TurnLoop.Start(new BattleSetup(Enemies.DistortionRoot, deck, 8, StartGap: 3), NoShuffle).State;
+            var writer = new CoreScriptWriter(state.EnemyDef);
+            writer.Opening(state);
+            var lines = new List<string>();
+            void Step(StepResult step)
+            {
+                foreach (DepictionEvent ev in writer.Write(step.Events, step.State))
+                {
+                    lines.AddRange(ev.Cues.Where(c => c.Kind == CueKind.TraitFire && c.Target == UnitSide.Player).Select(c => c.Text));
+                }
+                state = step.State;
+            }
+
+            Step(TurnLoop.BeginPlayerTurn(state, NoShuffle));
+            Step(TurnLoop.PlayCard(state, "rock_stance-0", NoShuffle));
+            for (int turn = 1; turn <= 3; turn++)
+            {
+                Step(TurnLoop.EndTurn(state, NoShuffle));
+                Step(TurnLoop.BeginPlayerTurn(state, NoShuffle));
+            }
+
+            Assert.That(lines.Where(t => t.StartsWith("構え")), Is.EqualTo(new[] { "構え・岩の構え", "構え停止・岩の構え", "構え復帰・岩の構え" }));
+        }
+
+        [Test]
         public void TheMiasmaShroud_LowersThePlayersPips_AndTheChipNamesTheWord()
         {
             // #51 瘴気纏い (battle_core_v4 §6.2): セルク's 瘴気の儀 takes the top pip off; the screen follows the core.
