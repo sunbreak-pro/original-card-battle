@@ -30,14 +30,19 @@ namespace Depiction.Bridge
         /// <param name="stopAfterTurns">Unattended runs only: report Finished once this many turns have closed on their next omen. 0 = fight to the end.</param>
         /// <param name="chainIndex">§12 連戦 (#191): which battle of the chain this is (1-based), for the corner of the screen.</param>
         /// <param name="chainTotal">How many battles the chain holds; 1 for a battle on its own.</param>
-        public CoreBattleSource(BattleSetup setup, int seed, bool suggestCards = false, int stopAfterTurns = 0, int chainIndex = 1, int chainTotal = 1)
+        /// <param name="disclosure">
+        /// battle-visual-v1 §4.4 (#455): the journal's 開示度 for this enemy (0〜2); below 2 the omen shows
+        /// no numbers. 2 until the journal hands a level to the battle.
+        /// </param>
+        public CoreBattleSource(BattleSetup setup, int seed, bool suggestCards = false, int stopAfterTurns = 0, int chainIndex = 1, int chainTotal = 1,
+            int disclosure = OmenDisclosure.Full)
         {
             if (setup == null) throw new ArgumentNullException(nameof(setup));
             if (stopAfterTurns < 0) throw new ArgumentOutOfRangeException(nameof(stopAfterTurns), stopAfterTurns, "0 or more.");
             _suggestCards = suggestCards;
             _stopAfterTurns = stopAfterTurns;
             _rng = new SeededRng(seed);
-            _writer = new CoreScriptWriter(setup.Enemy) { ChainIndex = chainIndex, ChainTotal = chainTotal };
+            _writer = new CoreScriptWriter(setup.Enemy) { ChainIndex = chainIndex, ChainTotal = chainTotal, Disclosure = disclosure };
             StepResult start = TurnLoop.Start(setup, _rng);
             _state = start.State;
             _history.AddRange(start.Events);

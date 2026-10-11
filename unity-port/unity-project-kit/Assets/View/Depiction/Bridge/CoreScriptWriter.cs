@@ -102,6 +102,13 @@ namespace Depiction.Bridge
 
         public int ChainTotal { get; set; } = 1;
 
+        /// <summary>
+        /// battle-visual-v1 §4.4 (#455): how far the journal has read this enemy (開示度 0〜2). Below 2 the
+        /// omen's numbers are left off the script (OmenDisclosure). The journal does not hand a level to
+        /// the battle yet, so it is 2, everything shown, unless a caller sets it.
+        /// </summary>
+        public int Disclosure { get; set; } = OmenDisclosure.Full;
+
         public CoreScriptWriter(EnemyDef enemyDef)
         {
             _enemyDef = enemyDef ?? throw new ArgumentNullException(nameof(enemyDef));
@@ -792,6 +799,7 @@ namespace Depiction.Bridge
             frame.Player.NextRecovery = TurnLoop.PreviewRecovery(AsShown(after));
             frame.Floor = FloorOf(after);
             if (frame.Omen.Visible) frame.Omen.Hit = HitMark(frame.Floor.AimCells);
+            OmenDisclosure.Apply(frame.Omen, Disclosure);
             foreach (CardInstance card in _hand)
             {
                 PlayPreview preview = TurnLoop.Preview(after, card.InstanceId);

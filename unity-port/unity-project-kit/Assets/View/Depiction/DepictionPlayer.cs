@@ -201,6 +201,7 @@ namespace Depiction.View
             _staminaTag?.ShowCost(0);
             HideHoverPanels();
             HideTargetMarks();
+            if (omenBadge) omenBadge.SetActing(false); // a battle stopped on the enemy's turn
             Finished = false;
             EventSeconds.Clear();
             if (_resultCard)
@@ -645,6 +646,9 @@ namespace Depiction.View
         private IEnumerator PlayEvent(DepictionEvent ev)
         {
             float startedAt = Time.unscaledTime;
+            // §4.4 敵の番 (#455): the acting omen's light lasts through the enemy's beats and goes out
+            // with the first event that is not one of them (the next omen, the turn start, a fall).
+            if (ev.Kind != DepictionEventKind.EnemyAction && omenBadge) omenBadge.SetActing(false);
             if (ev.Kind == DepictionEventKind.TurnStart)
             {
                 yield return Effect(EffectId.TurnBanner, Banner(DepictionText.YourTurn, BattleTheme.Accent, _effects.Ms(EffectId.TurnBanner)), null);
@@ -776,7 +780,9 @@ namespace Depiction.View
 
                 case CueKind.EnemyWindup:
                     SetHandInteractable(false);
-                    // The moment the enemy does what it foretold: the omen flares beside its move.
+                    // The moment the enemy does what it foretold: the omen lights up (§4.4 敵の番) and
+                    // flares beside its move.
+                    omenBadge.SetActing(true);
                     StartCoroutine(Effect(EffectId.OmenExecute, omenBadge.Flare(_effects.Ms(EffectId.OmenExecute)), null));
                     yield return Effect(EffectId.EnemyMotion, EnemyMotion(target, cue.System, _effects.Ms(EffectId.EnemyMotion)),
                         () => target.SetPose(FigurePose.Act));

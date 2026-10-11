@@ -297,6 +297,14 @@ namespace Depiction
         public OmenHit Hit = OmenHit.None;
 
         /// <summary>
+        /// battle-visual-v1 §4.4 / battle_ui_ux_v2 §7 (#455): how far the journal has read this enemy,
+        /// 0〜2. The writer has already blanked what the level does not show (<see cref="OmenDisclosure"/>),
+        /// so the View draws the frame as it is. Every source writes <see cref="OmenDisclosure.Full"/>
+        /// until the journal hands a level to the battle.
+        /// </summary>
+        public int Disclosure = OmenDisclosure.Full;
+
+        /// <summary>
         /// #50, §17.6 F11: the 予定 of an elite or a boss — the second action it plans, shown beside the
         /// omen. It is not a commitment (the tree is read again after the first action). It stays up
         /// after the first omen is spent, until the second action acts. Independent of
