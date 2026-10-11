@@ -1,6 +1,6 @@
 # 踏破者（player_swordsman）— 仕様カード
 
-- 作成日: 2026-09-20 / 更新: 2026-09-23（#146。寸法と指示文を直した）/ 工程: C0（`visual-production-pipeline character player_swordsman`）
+- 作成日: 2026-09-20 / 更新: 2026-09-23（#146。寸法と指示文を直した）/ 2026-10-11（#447。§4 の差分を `battle_ui_ux_v2.md` §6.4 と View の 4 つの口に合わせ、崩れを保留にした）/ 工程: C0（`visual-production-pipeline character player_swordsman`）
 - 正本: `.claude/docs/vision/concept-v3.md` §16（襲名と装束）/ §1 / §14 / `.claude/docs/battle_document/battle_ui_ux_v2.md:1202-1206` / `.claude/docs/art_document/style-guide.md`（原本の大きさと指示文）/ `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs`（枠と配置）
 - 手順書: `docs/reports/2026-09-19-krita-ai-setup-guide.html` 4 章
 
@@ -39,7 +39,7 @@
 
 ## 4. 差分の枚数
 
-`battle_ui_ux_v2.md:1206` のプレイヤー行がそのまま適用されます。
+`battle_ui_ux_v2.md` §6.4 の表のプレイヤー行がそのまま適用されます。差分の種類は待機 / 行動 / 被弾 / 倒れの 4 つで、View の口（`FigureMotion.cs` の `FigurePose`）と同じです。いまの差分は行動 1 + 被弾 / 倒れ 2 + 待機 1 の 4 枚で、行動の絵は 1 枚をどの行動にも出します。下の表は、行動ごとに描き分けたときの枚数（§6.4 の「差分（行動ごと）」の 11）です。崩れの差分は保留です。台本に崩しの拍が入り、View に崩れの口が入るまで作りません（§6.4、#309）。
 
 | 区分 | 内容 | 枚数 |
 | --- | --- | --- |
@@ -49,12 +49,13 @@
 | スキル | 固有 | 1 |
 | 息 | 呼吸 | 1 |
 | ムーブ | 残像と位置補間で作る（差分なし） | 0 |
-| 被弾 / 崩れ / 倒れ | | 3 |
-| 体勢 | lean で畳む | 3→1 |
+| 被弾 / 倒れ | 崩れは保留 | 2 |
+| 待機 | | 1 |
+| 体勢 | 作らない（§6.4、2026-09-14 決定） | 0 |
 
 **C3 で作るのは待機 1 枚だけ**です。ファイル名は `Assets/Art/Characters/player_swordsman/chr_player_swordsman_<category>_<label>.png`、待機は `chr.player_swordsman.idle.stand`。
 
-**要判断**: `battle_ui_ux_v2.md:1202` はプレイヤーの Live2D パラメータを lean + 目 + 口 の 3 としています。面で顔が隠れるので 目・口 は使えません。lean 1 に減らすか、面の角度を別パラメータに立てるかを決める必要があります（`concept-v3.md` §16.5-3）。
+**要判断**: `battle_ui_ux_v2.md` §6.4 はプレイヤーの Live2D パラメータを目・口の 2 としています。面で顔が隠れるので 目・口 は使えません。lean 1 に替えるか、面の角度を別パラメータに立てるかを決める必要があります（`concept-v3.md` §16.5-3）。
 
 ## 5. 生成の指示文（段階 1・案出し用）
 

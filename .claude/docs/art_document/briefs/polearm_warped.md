@@ -1,6 +1,6 @@
 # 錆槍の竜兵（polearm_warped）— 仕様カード
 
-- 作成日: 2026-09-20 / 更新: 2026-09-23（#146。寸法・生成時間・指示文を直し、題材を #128 の竜人へ寄せた）/ 2026-10-03（#85。向きを左向きに変え、待機の絵を Unity リポへ入れた）/ 2026-10-04（#85。行動をロースター v4.6 の 5 つに揃え、間合いをマスの語に直し、差分の指示文を足した）/ 2026-10-10（#85。取り込み設定と画面での確認が済んだので、進捗を差分の作成待ちに直した）/ 2026-10-11（#85。技名をロースター v4.7 の言い換えに、行動と階層を v4.16 に合わせ、枠の幅（#302）と予兆の札の大きさを今のコードに合わせた）/ 工程: C0（`visual-production-pipeline character polearm_warped`）
+- 作成日: 2026-09-20 / 更新: 2026-09-23（#146。寸法・生成時間・指示文を直し、題材を #128 の竜人へ寄せた）/ 2026-10-03（#85。向きを左向きに変え、待機の絵を Unity リポへ入れた）/ 2026-10-04（#85。行動をロースター v4.6 の 5 つに揃え、間合いをマスの語に直し、差分の指示文を足した）/ 2026-10-10（#85。取り込み設定と画面での確認が済んだので、進捗を差分の作成待ちに直した）/ 2026-10-11（#85。技名をロースター v4.7 の言い換えに、行動と階層を v4.16 に合わせ、枠の幅（#302）と予兆の札の大きさを今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵と踏み込みの扱いを `battle_ui_ux_v2.md` §6.4 に合わせた）/ 工程: C0（`visual-production-pipeline character polearm_warped`）
 - 正本: `.claude/docs/enemy_document/enemy_roster_v4.md`（錆槍の竜兵の節）/ `.claude/docs/vision/world-v1.md`（竜の系譜）/ `.claude/docs/battle_document/battle_core_v4.md` §7（マスと間合い）/ `.claude/docs/battle_document/battle_ui_ux_v2.md`（床のマス・届くマス・狙うマス）/ `.claude/docs/art_document/style-guide.md`（原本の大きさと指示文）/ `.claude/docs/art_document/asset-intake.md`（書き出しと取り込み）/ `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs`（枠と配置）/ `unity-port/unity-project-kit/Assets/View/Depiction/Script/FigureMotion.cs`（差分の絵の名前と動き）
 - 手順書: `docs/reports/2026-09-19-krita-ai-setup-guide.html` 4 章（待機）/ `docs/reports/2026-10-03-enemy-motion.html`（差分）
 - 内部 ID は `polearm_warped` のままです。ロースターが ID を替えないと決めているので、ファイル名と asset id もこの ID を使います（`enemy_roster_v4.md` §1.8）。
@@ -51,7 +51,7 @@
 
 ### 3.1 差分の一覧と作る順
 
-差分は「待機 / 行動 / 被弾 / 崩れ / 倒れ」で、体勢（構え）の差分は作りません（skill 命名節、2026-09-14 決定）。#85 が挙げる 8 枚を、作る順に並べました。ファイル名は `Assets/Art/Characters/polearm_warped/chr_polearm_warped_<category>_<label>.png` です（`asset-intake.md` §4）。
+差分は「待機 / 行動 / 被弾 / 倒れ」の 4 種で、`battle_ui_ux_v2.md` §6.4 と View の口（`FigureMotion.cs` の `FigurePose`）にそろえます。崩れの差分は保留です。台本に崩しの拍が入り、View に崩れの口が入るまで作りません（§6.4、#309）。体勢（構え）の差分は作りません（skill 命名節、2026-09-14 決定）。#85 が挙げる 8 枚を、作る順に並べました。崩れは保留の行として残しています。ファイル名は `Assets/Art/Characters/polearm_warped/chr_polearm_warped_<category>_<label>.png` です（`asset-intake.md` §4）。
 
 | 差分 | asset_id | View の口 | 順 | 状態 |
 | --- | --- | --- | --- | --- |
@@ -62,14 +62,15 @@
 | 突き | `chr.polearm_warped.act.reach_thrust` | 行動 | 3 | 未作成。指示文は §4.2 の 4 |
 | 押し込み | `chr.polearm_warped.act.shove` | 行動 | 3 | 未作成。指示文は §4.2 の 5 |
 | 受け | `chr.polearm_warped.act.guard_up` | 行動 | 3 | 未作成。指示文は §4.2 の 6 |
-| 崩れ | `chr.polearm_warped.react.<未定>` | なし | 4 | 未作成。指示文は §4.2 の 7。名前は未定 |
+| 崩れ | `chr.polearm_warped.react.<未定>` | なし | 保留 | 保留。台本に崩しの拍が入り、View に崩れの口が入るまで作りません。§4.2 の 7 は、そのとき使う下書きです。名前は未定です |
 
-順 2 以降と崩れの構えは、この版で置いた仮の案です。手触りの確認（#79・#60）の結果で見直します。
+順 2 以降と、保留の崩れの構えは、この版で置いた仮の案です。手触りの確認（#79・#60）の結果で見直します。
 
 - **順 1 は 2 枚です。** 攻撃 1 枚と倒れ 1 枚を先に作り、1 枚で足りるかを手触りの確認で見てから増やします（`docs/reports/2026-10-03-enemy-motion.html`）。作り始めるのは、待機の絵が `Battle.unity` に映ったのを確かめてからです（§6）。
-- **View の口は 4 つです。** 待機 / 行動 / 被弾 / 倒れで、崩れの口はありません（`FigureMotion.cs:12-18`、`battle_ui_ux_v2.md:1109`）。崩れの名前（`react.` の後ろ）は、View に崩れの口が入るときに、`asset-intake.md` §4 の付け方で決めます。
-- **行動の口は 1 つだけです。** `chr_polearm_warped_act_*.png` のうち、名前順で最初の 1 枚を全ての行動に使います（`FigureArtCollector.cs:72-85`）。敵が予兆を実行する瞬間は、受けと踏み込みも行動の絵に替わります（`DepictionPlayer.cs:680-686`）。
-- **順 3 の 3 枚は、View が行動 id ごとに絵を引くようになるまで Unity に置きません。** `act_guard_up` / `act_reach_thrust` / `act_shove` はどれも名前順で `act_sweep` より前なので、1 枚でも置くとその絵が全ての行動に出ます。
+- **View の口は 4 つです。** 待機 / 行動 / 被弾 / 倒れで、崩れの口はありません（`FigureMotion.cs:15-21` の `FigurePose`、`battle_ui_ux_v2.md` §6.4）。保留のあいだ、崩れは絵を替えず、いまの絵を傾ける動きだけで見せます（§6.4）。崩れの名前（`react.` の後ろ）は、View に崩れの口が入るときに、`asset-intake.md` §4 の付け方で決めます。
+- **行動の口は 1 つだけです。** `chr_polearm_warped_act_*.png` のうち、名前順で最初の 1 枚を全ての行動に使います（`battle_ui_ux_v2.md` §6.4、`FigureArtCollector.cs` の `FirstAct`）。敵が予兆を実行する瞬間は、受けと踏み込みも行動の絵に替わります（`DepictionPlayer.cs:1025`、`EnemyMotion`）。
+- **順 3 の 3 枚は、View が行動（または系統）ごとに絵を引くようになるまで Unity に置きません**（`battle_ui_ux_v2.md` §6.4 の「いま Unity に置かない絵」）。`act_guard_up` / `act_reach_thrust` / `act_shove` はどれも名前順で `act_sweep` より前なので、1 枚でも置くとその絵が全ての行動に出ます。
+- **踏み込みには、置いた 1 枚の払い斬りの絵が出ます。** 踏み込み（`step_forward`）は差分を描かない移動の行動です。踏み込み用の絵（`act_default` など）は描かず、払い斬りの絵を、踏み込みに出ても読める構えにします。
 
 **絵柄**: 線・塗り・色・光と、瘴気の帯び方（錆）・竜の系譜の段（眷属・竜人）の描き分けは、`art_document/style-guide.md` の第 2 部（§12〜§19）に従います。影絵は同 §17 の関門を通してから C3 へ進みます。差分も同じ関門を通します。
 
@@ -106,7 +107,7 @@
 - **Batches を 4 にして生成し、待機の絵にいちばん近い 1 枚を選びます。** 甲の形・角の本数・槍の飾りがずれていたら手で描き足し、そのレイヤーは結合せずに残します。選択範囲を描き直すときは、Refine を強度 80% 以下で使います（`style-guide.md` §6）。
 - **負の指示文は `style-guide.md` §4.4 のままです。**
 
-**指示文は、待機の採用文（§4.1、`vambraces` で固定）のうち姿勢の語だけを替えます。** 替えるのは姿勢と表情の語です。[3] 画角の `standing` と、[5] 持ち物・構えの `holding polearm, polearm held upright` を替え、被弾・倒れ・崩れでは表情と体の向きの語も足します。材質・塗り・背景のスロットは待機と同じにして、顔・鱗・甲を揃えます（スロットは `style-guide.md` §4.1）。
+**指示文は、待機の採用文（§4.1、`vambraces` で固定）のうち姿勢の語だけを替えます。** 替えるのは姿勢と表情の語です。[3] 画角の `standing` と、[5] 持ち物・構えの `holding polearm, polearm held upright` を替え、被弾・倒れ（と保留の崩れ）では表情と体の向きの語も足します。材質・塗り・背景のスロットは待機と同じにして、顔・鱗・甲を揃えます（スロットは `style-guide.md` §4.1）。
 
 竜兵の動きの作り方の報告（`docs/reports/2026-10-03-enemy-motion.html`）が足す語のうち、`attacking` と `defeated` は 2026-10-04 に Danbooru で 0 件でした。`swinging polearm` と `dropped polearm` はタグではありません。0 件の語は条件付けにならないので（`style-guide.md` §5）、下の文では実在のタグに替えています。括弧の件数は 2026-10-04 に Danbooru の公開 API で引いた値です。素の英語（タグではない語）は各文の下に挙げます。
 
@@ -122,7 +123,7 @@
 
 **2. 倒れ（`react.down`、順 1）**
 
-棒人間: 片膝をつき、頭を下げて上体を前へ崩します。槍は手から離れ、穂先を左の床に着けて、柄が右上へ斜めに倒れかけた形にします。床に寝かせた槍は 640 px に収まらないためです。
+棒人間: 片膝をつき、頭を下げて上体を前へ倒します。槍は手から離れ、穂先を左の床に着けて、柄が右上へ斜めに倒れかけた形にします。床に寝かせた槍は 640 px に収まらないためです。
 
 ```
 1other, solo, safe, full body, on one knee, from side, profile, monster, dragon horns, slit pupils, scales, brown scales, claws, dragon tail, polearm, head down, exhausted, polearm falling from hand, rust, shoulder armor, vambraces, anime coloring, high contrast, limited palette, muted colors, brown theme, simple background, grey background
@@ -130,7 +131,7 @@
 
 `standing` を `on one knee`（19,054）に替え、`holding polearm` を `polearm`（75,355）にしました。手から離れた槍を描かせるためです。動きの報告の `kneeling` は両膝をつく形も含むので、片膝の `on one knee` にしました。足した語は `head down`（3,833）と `exhausted`（3,815）です。素の英語は `polearm falling from hand` です。
 
-View は倒れの 800 ms で、絵ごと足元を軸に右（後ろ）へ 24° 傾け、40 単位沈めて暗くし、消します（`FigureMotion.cs:145-185`、`Effects.cs:292`）。前へ崩れた絵が後ろへ傾く動きと合うかは、Editor で確かめます（§6）。
+View は倒れの 800 ms で、絵ごと足元を軸に右（後ろ）へ 24° 傾け、40 単位沈めて暗くし、消します（`FigureMotion.cs:145-185`、`Effects.cs:292`）。前へ倒れ込んだ絵が後ろへ傾く動きと合うかは、Editor で確かめます（§6）。
 
 **3. 被弾（`react.hit`、順 2）**
 
@@ -172,7 +173,9 @@ View は倒れの 800 ms で、絵ごと足元を軸に右（後ろ）へ 24° �
 
 足した語は `fighting stance` と `blocking`（979）です。`blocking` は目安の 1,000 件を下回る弱い語なので、構えは棒人間で決めます。素の英語は `polearm held diagonally across the body` です。
 
-**7. 崩れ（`react.<未定>`、順 4）**
+**7. 崩れ（`react.<未定>`、保留）**
+
+崩れは保留です（§3.1）。下の文は、台本に崩しの拍が入り、View に崩れの口が入ったときに使う下書きとして残します。
 
 棒人間（仮）: 足は待機の位置のまま、上体を前へ丸めます。柄の先を下げ、構えが解けた形にします。
 
