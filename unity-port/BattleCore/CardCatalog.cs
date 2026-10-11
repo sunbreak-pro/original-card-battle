@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace BattleCore
 {
     /// <summary>
-    /// Card data, written as records from card_document/swordsman_cards_v4.md v4.5 (2026-10-06,
-    /// #352). The numbers are the canon's and are not derived here: the 素直 +2 and the band table
+    /// Card data, written as records from card_document/swordsman_cards_v4.md v4.6 (2026-10-08,
+    /// #401: v4.5 of #352 with #5 横薙ぎ at 0〜2 and 23). The numbers are the canon's and are not derived here: the 素直 +2 and the band table
     /// of §1.4 (the attack power by column and reach width) are already inside them.
     ///
     /// The core carries all eighty swordsman cards (#188): the initial forty (§2, #1-#40) live in
