@@ -204,6 +204,10 @@ namespace Depiction
                     "位置が変わることを示す唯一の拍なので、情報は要ります。ただし 470 ms は移動 320 と一字札の反転 150 を続けており、重ねれば詰められます。"),
                 new EffectAuditEntry(EffectId.SideBonusMiss, Beats, Carries.Intent, N, Sc,
                     "敵の予兆のボーナスが外れたことを示します。切ると、外れたのに何も起きなかったように見えます。"),
+                new EffectAuditEntry(EffectId.GrammarMark, Beats, Carries.WhoHitWhom, N, H,
+                    "盾・型・気・息の系統は、この形でしか見えません。並行で待ち時間はありません。8 系統が画面で見分けられるかは、見本の撮影で確かめます（#57）。"),
+                new EffectAuditEntry(EffectId.TraitAccent, Beats, Carries.Status, N, H,
+                    "どの一撃に特性が乗ったかを、一撃の上で示します。150 ms で並行に走り、待ち時間はありません。合図として足りるかは見本の撮影で確かめます（#57）。"),
 
                 // ---- Status and turn ----
                 new EffectAuditEntry(EffectId.StatusApply, StatusTurn, Carries.Status, N, Sc,

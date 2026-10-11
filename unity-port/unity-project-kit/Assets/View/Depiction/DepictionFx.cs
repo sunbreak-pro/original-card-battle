@@ -1,7 +1,8 @@
 // Transient effects for the depiction, all driven by UiTween (no DOTween, no Animator).
 // Strength comes in as a 1..4 tier that the script already decided (battle_ui_ux_v2 §5.3;
 // since 2026-10-03 every script writes one tier, #30); this file only maps a tier to size,
-// hit-stop and shake.
+// hit-stop and shake. The shape comes in as the system the script wrote (Cue.System for a blow,
+// Cue.Fx for the rest, #57): one form per system, never chosen here.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using UnityEngine;
@@ -57,6 +58,123 @@ namespace Depiction.View
                 default:
                     return Slash(host, layer, at, color, tier, towardLeft, ms);
             }
+        }
+
+        /// <summary>§5.3 大きさ: 0.6 / 1.0 / 1.3 / 1.7 by tier. Every script writes tier 2 for now (#30), so 1.0.</summary>
+        private static readonly float[] MarkScale = { 0.6f, 1f, 1.3f, 1.7f };
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.3 (#57): the shape of a system that is not a blow, drawn beside the beat it
+        /// belongs to. One form per system, so the same system always looks the same: 盾 a ring standing
+        /// in front of the figure, 型 a crest at its feet whose light stays a moment, 気 a mark falling
+        /// from above onto the chest, 息 a glow breathing at the chest. A blow system draws nothing here:
+        /// its shape is <see cref="Strike"/>. <paramref name="facing"/> is +1 when the figure faces right.
+        /// </summary>
+        public static IEnumerator Mark(MonoBehaviour host, RectTransform layer, Vector2 chest, Vector2 head, Vector2 feet,
+            float facing, FxSystem system, int tier, float ms)
+        {
+            float scale = MarkScale[Index(tier)];
+            switch (system)
+            {
+                case FxSystem.Shield:
+                    return StandingRing(host, layer, chest + new Vector2(70f * facing, 0f), scale, ms);
+                case FxSystem.Form:
+                    return Crest(host, layer, feet, scale, ms);
+                case FxSystem.Spirit:
+                    return Sigil(host, layer, head + new Vector2(0f, 60f), chest, scale, ms);
+                case FxSystem.Breath:
+                    return Breathe(host, layer, chest, scale, ms);
+                default:
+                    return Nothing();
+            }
+        }
+
+        /// <summary>
+        /// §5.9 順 1 (J2, #57): a trait fired on this blow. Two thin rings flare out from the point of the
+        /// blow and are gone, laid over the shape without touching its tier, size or length.
+        /// </summary>
+        public static IEnumerator TraitAccent(MonoBehaviour host, RectTransform layer, Vector2 at, float ms)
+        {
+            Image outer = UiKit.Sprite(layer, "TraitAccent", VisualArt.CircleRing(1f), BattleTheme.WithAlpha(BattleTheme.Wick, 0.95f), Half, Half, new Vector2(150f, 150f), at);
+            Image inner = UiKit.Sprite(layer, "TraitAccentInner", VisualArt.CircleRing(1.5f), BattleTheme.WithAlpha(BattleTheme.Amber, 0.9f), Half, Half, new Vector2(96f, 96f), at);
+            outer.raycastTarget = false;
+            inner.raycastTarget = false;
+            RectTransform a = outer.rectTransform, b = inner.rectTransform;
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                float s = Mathf.Lerp(0.5f, 1.35f, t);
+                if (a) a.localScale = new Vector3(s, s, 1f);
+                if (b) b.localScale = new Vector3(s * 0.9f, s * 0.9f, 1f);
+            });
+            host.StartCoroutine(FadeAndDestroy(outer, 120f));
+            host.StartCoroutine(FadeAndDestroy(inner, 120f));
+        }
+
+        private static IEnumerator Nothing()
+        {
+            yield break;
+        }
+
+        /// <summary>盾: a ring seen edge-on, rising to full height in front of the figure.</summary>
+        private static IEnumerator StandingRing(MonoBehaviour host, RectTransform layer, Vector2 at, float scale, float ms)
+        {
+            Image ring = UiKit.Sprite(layer, "ShieldRing", VisualArt.CircleRing(2f), BattleTheme.WithAlpha(BattleTheme.Guard, 0.95f), Half, Half, new Vector2(110f * scale, 230f * scale), at);
+            ring.raycastTarget = false;
+            Burst(host, layer, at, BattleTheme.Guard, 160f * scale);
+            RectTransform rt = ring.rectTransform;
+            yield return UiTween.Run(ms, Ease.Out, t => { if (rt) rt.localScale = new Vector3(Mathf.Lerp(0.6f, 1f, t), t, 1f); });
+            host.StartCoroutine(FadeAndDestroy(ring, 220f));
+        }
+
+        /// <summary>型: two flat rings open under the feet, and the crest's light lingers before it fades.</summary>
+        private static IEnumerator Crest(MonoBehaviour host, RectTransform layer, Vector2 feet, float scale, float ms)
+        {
+            Image outer = UiKit.Sprite(layer, "FormCrest", VisualArt.CircleRing(1.5f), BattleTheme.WithAlpha(BattleTheme.Amber, 0.95f), Half, Half, new Vector2(280f * scale, 72f * scale), feet);
+            Image inner = UiKit.Sprite(layer, "FormCrestInner", VisualArt.CircleRing(1f), BattleTheme.WithAlpha(BattleTheme.Wick, 0.85f), Half, Half, new Vector2(170f * scale, 44f * scale), feet);
+            Image glow = UiKit.Sprite(layer, "FormGlow", ProceduralArt.Glow, BattleTheme.WithAlpha(BattleTheme.Amber, 0.35f), Half, Half, new Vector2(200f * scale, 320f * scale), feet + new Vector2(0f, 140f * scale));
+            outer.raycastTarget = inner.raycastTarget = glow.raycastTarget = false;
+            RectTransform a = outer.rectTransform, b = inner.rectTransform;
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                if (a) a.localScale = new Vector3(Mathf.Lerp(0.3f, 1f, t), Mathf.Lerp(0.3f, 1f, t), 1f);
+                if (b) b.localScale = new Vector3(Mathf.Lerp(0.6f, 1f, t), Mathf.Lerp(0.6f, 1f, t), 1f);
+            });
+            // §5.3 「300 + 残る」: the light stays a while beside the flow.
+            host.StartCoroutine(FadeAndDestroy(outer, 600f));
+            host.StartCoroutine(FadeAndDestroy(inner, 600f));
+            host.StartCoroutine(FadeAndDestroy(glow, 600f));
+        }
+
+        /// <summary>気: a diamond mark drops from above the head onto the chest and bursts there.</summary>
+        private static IEnumerator Sigil(MonoBehaviour host, RectTransform layer, Vector2 from, Vector2 to, float scale, float ms)
+        {
+            RectTransform rt = UiKit.Point(layer, "SpiritMark", Half, Half, new Vector2(40f * scale, 40f * scale), from);
+            rt.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            var img = rt.gameObject.AddComponent<Image>();
+            img.sprite = ProceduralArt.White;
+            img.color = BattleTheme.WithAlpha(BattleTheme.Phosphor, 0.95f);
+            img.raycastTarget = false;
+            yield return UiTween.Run(ms, Ease.In, t => { if (rt) rt.anchoredPosition = Vector2.LerpUnclamped(from, to, t); });
+            Burst(host, layer, to, BattleTheme.Phosphor, 140f * scale);
+            host.StartCoroutine(FadeAndDestroy(img, 150f));
+        }
+
+        /// <summary>息: a soft light swells and settles at the chest, once.</summary>
+        private static IEnumerator Breathe(MonoBehaviour host, RectTransform layer, Vector2 at, float scale, float ms)
+        {
+            Image glow = UiKit.Sprite(layer, "BreathGlow", ProceduralArt.Glow, BattleTheme.WithAlpha(BattleTheme.Wick, 0.75f), Half, Half, new Vector2(220f * scale, 220f * scale), at);
+            glow.raycastTarget = false;
+            RectTransform rt = glow.rectTransform;
+            Color from = glow.color;
+            yield return UiTween.Run(ms, Ease.InOut, t =>
+            {
+                if (!rt) return;
+                float swell = Mathf.Sin(t * Mathf.PI); // in, then out
+                float s = 0.7f + 0.4f * swell;
+                rt.localScale = new Vector3(s, s, 1f);
+                glow.color = BattleTheme.WithAlpha(from, from.a * (0.4f + 0.6f * swell));
+            });
+            if (glow) Object.Destroy(glow.gameObject);
         }
 
         private static IEnumerator Streak(MonoBehaviour host, RectTransform layer, Vector2 at, Color color, float degrees, float length, float thickness, float ms)

@@ -77,6 +77,9 @@ namespace Depiction.Bridge
         /// <summary>The system (§5.3) of the card or action whose blows are being written.</summary>
         private StrikeSystem _strike = StrikeSystem.Slash;
 
+        /// <summary>#57 (§5.9 J2): a trait of the card or action being written fired, so its blows carry the short cue.</summary>
+        private bool _traitLit;
+
         /// <summary>The enemy has carried out an action in this phase already (#189: an elite's second one opens a beat of its own).</summary>
         private bool _enemyActed;
 
@@ -289,7 +292,7 @@ namespace Depiction.Bridge
                     break;
 
                 case StaminaGained gained:
-                    SetStamina(ev, gained.Actor, gained.Amount, gained.StaminaAfter);
+                    Grammar(ev, SetStamina(ev, gained.Actor, gained.Amount, gained.StaminaAfter), FxSystem.Breath);
                     break;
 
                 case StatusTicked ticked:
@@ -299,7 +302,7 @@ namespace Depiction.Bridge
                 case StatusApplied applied:
                     // #205: a ターンで減る型 word stops at its cap, so what landed can be less than what
                     // was given, or nothing; the core says how much.
-                    if (applied.Landed > 0) SetStatus(ev, applied.Target, applied.Kind, applied.Landed, applied.StacksAfter);
+                    if (applied.Landed > 0) Grammar(ev, SetStatus(ev, applied.Target, applied.Kind, applied.Landed, applied.StacksAfter), FxSystem.Spirit);
                     break;
 
                 case MaxStaminaChanged lowered:
@@ -323,7 +326,7 @@ namespace Depiction.Bridge
                     // A hand of six is six core events and one beat on screen.
                     Cue last = ev.Cues.Count > 0 ? ev.Cues[ev.Cues.Count - 1] : null;
                     if (last != null && last.Kind == CueKind.DrawHand) last.Amount += 1;
-                    else ev.Cues.Add(new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 1 });
+                    else ev.Cues.Add(Grammar(ev, new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 1 }, FxSystem.Breath));
                     break;
                 }
 
@@ -348,6 +351,9 @@ namespace Depiction.Bridge
                 case CardPlayed played:
                     _hand.Remove(played.Card);
                     _strike = CoreText.SystemOf(played.Card.Def);
+                    _traitLit = false;
+                    ev.Systems.Clear();
+                    ev.Systems.AddRange(CardSystems.Of(played.Card.Def));
                     _playedPower = -1;
                     _playedUnit = played.Unit;
                     break;
@@ -372,6 +378,9 @@ namespace Depiction.Bridge
                     _enemyActed = true;
                     ev.Title = executed.Action.Name;
                     _strike = CoreText.SystemOf(executed.Action);
+                    _traitLit = false;
+                    ev.Systems.Clear();
+                    ev.Systems.AddRange(CardSystems.Of(executed.Action));
                     ev.Cues.Add(new Cue { Kind = CueKind.EnemyWindup, Target = UnitSide.Enemy, System = _strike });
                     break;
 
@@ -380,6 +389,7 @@ namespace Depiction.Bridge
                     break;
 
                 case TraitEvaluated trait:
+                    if (trait.Outcome.Triggered) _traitLit = true;
                     ApplyTrait(ev, trait);
                     break;
 
@@ -389,7 +399,7 @@ namespace Depiction.Bridge
 
                 case GuardGained guard:
                     Unit(guard.Actor).Guard = guard.GuardAfter;
-                    ev.Cues.Add(GuardGain(guard.Actor, guard.Amount, guard.GuardAfter));
+                    ev.Cues.Add(Grammar(ev, GuardGain(guard.Actor, guard.Amount, guard.GuardAfter), FxSystem.Shield));
                     break;
 
                 case CellsMoved moved:
@@ -454,7 +464,7 @@ namespace Depiction.Bridge
                     break;
 
                 case Healed healed:
-                    SetHp(ev, healed.Actor, healed.Amount, healed.HpAfter, "回復");
+                    Grammar(ev, SetHp(ev, healed.Actor, healed.Amount, healed.HpAfter, "回復"), FxSystem.Breath);
                     break;
 
                 case StaminaBroken broken:
@@ -479,7 +489,7 @@ namespace Depiction.Bridge
 
                 case StanceSet set:
                     Unit(set.Actor).Stances.Add(set.Name);
-                    ev.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = CoreText.Side(set.Actor), Text = "構え・" + set.Name });
+                    ev.Cues.Add(Grammar(ev, new Cue { Kind = CueKind.TraitFire, Target = CoreText.Side(set.Actor), Text = "構え・" + set.Name }, FxSystem.Form));
                     break;
 
                 // #334 (roster §6.4 root_st): one permanent effect stops for a turn, then comes back.
@@ -565,6 +575,7 @@ namespace Depiction.Bridge
                 ev.Cues.Add(new Cue
                 {
                     Kind = CueKind.Slash, Source = source, Target = target, System = _strike,
+                    Fx = EffectGrammar.FromStrike(_strike), TraitAccent = _traitLit,
                     Amount = damage.Raw, Intensity = EffectStrength.Uniform, HpAfter = damage.TargetHpAfter,
                 });
                 return;
@@ -573,6 +584,7 @@ namespace Depiction.Bridge
             ev.Cues.Add(new Cue
             {
                 Kind = CueKind.Slash, Source = source, Target = target, System = _strike,
+                Fx = EffectGrammar.FromStrike(_strike), TraitAccent = _traitLit,
                 Amount = damage.Raw, Intensity = EffectStrength.Uniform,
             });
             if (damage.Absorbed > 0)
@@ -652,41 +664,69 @@ namespace Depiction.Bridge
             ev.Cues.Insert(0, GuardGain(Actor.Enemy, reserve.GuardGained, reserve.GuardAfter));
         }
 
-        private void SetStamina(DepictionEvent ev, Actor actor, int amount, int staminaAfter)
+        /// <summary>Writes the pips' cue and hands it back; null when nothing is shown (the enemy's stamina, no change).</summary>
+        private Cue SetStamina(DepictionEvent ev, Actor actor, int amount, int staminaAfter)
         {
             UnitModel unit = Unit(actor);
             unit.Stamina = staminaAfter;
             // Only the player's pips are on screen (the enemy's stamina is not disclosed).
-            if (actor != Actor.Player || amount == 0) return;
-            ev.Cues.Add(new Cue
+            if (actor != Actor.Player || amount == 0) return null;
+            var cue = new Cue
             {
                 Kind = CueKind.StaminaChange, Target = UnitSide.Player,
                 Amount = amount, StaminaAfter = staminaAfter, StaminaMax = unit.StaminaMax,
-            });
+            };
+            ev.Cues.Add(cue);
+            return cue;
         }
 
-        private void SetStatus(DepictionEvent ev, Actor holder, StatusKind kind, int change, int stacksAfter)
+        private Cue SetStatus(DepictionEvent ev, Actor holder, StatusKind kind, int change, int stacksAfter)
         {
             UnitModel unit = Unit(holder);
             if (stacksAfter > 0) unit.Statuses[kind] = stacksAfter;
             else unit.Statuses.Remove(kind);
-            ev.Cues.Add(new Cue
+            var cue = new Cue
             {
                 Kind = CueKind.StatusChange, Target = CoreText.Side(holder),
                 Amount = change, Text = kind.ToLabel(), StacksAfter = stacksAfter,
-            });
+            };
+            ev.Cues.Add(cue);
+            return cue;
         }
 
         /// <summary>HP moved without a blow: 出血 / 再生, a heal, a 見切り return. The bar follows the settled value.</summary>
-        private void SetHp(DepictionEvent ev, Actor actor, int amount, int hpAfter, string cause)
+        private Cue SetHp(DepictionEvent ev, Actor actor, int amount, int hpAfter, string cause)
         {
             Unit(actor).Hp = hpAfter;
-            if (amount == 0) return;
-            ev.Cues.Add(new Cue
+            if (amount == 0) return null;
+            var cue = new Cue
             {
                 Kind = CueKind.HpChange, Target = CoreText.Side(actor),
                 Amount = amount, HpAfter = hpAfter, Text = cause,
-            });
+            };
+            ev.Cues.Add(cue);
+            return cue;
+        }
+
+        /// <summary>
+        /// §5.3 (#57): marks a beat that a card or an enemy action plays with its system, at the one
+        /// strength every beat has (#30). A beat outside a play (a turn start's tick, the reserve's
+        /// Guard) and a loss (a spent pip, a lost stack) keep none. Hands the cue back, null stays null.
+        /// </summary>
+        private Cue Grammar(DepictionEvent ev, Cue cue, FxSystem system)
+        {
+            if (cue == null || !InPlay(ev)) return cue;
+            bool counted = cue.Kind == CueKind.StaminaChange || cue.Kind == CueKind.HpChange || cue.Kind == CueKind.StatusChange;
+            if (counted && cue.Amount <= 0) return cue;
+            cue.Fx = system;
+            cue.Intensity = EffectStrength.Uniform;
+            return cue;
+        }
+
+        /// <summary>The event is a card being played, or the enemy carrying out the action it chose.</summary>
+        private bool InPlay(DepictionEvent ev)
+        {
+            return ev.Kind == DepictionEventKind.PlayCard || (ev.Kind == DepictionEventKind.EnemyAction && _enemyActed);
         }
 
         /// <summary>The display name of a stance's source: a card for the player, an action of the enemy's.</summary>

@@ -611,6 +611,12 @@ namespace Depiction.View
             // omen badge or off the top edge.
             Vector2 numberAt = chest + new Vector2(0f, 40f);
             Vector2 labelAt = head + new Vector2(0f, -30f);
+            // §5.3 (#57): a beat of a play draws its system's shape beside it; a blow draws its own in Attack.
+            if (cue.Fx.HasValue && !EffectGrammar.IsBlow(cue.Fx.Value))
+            {
+                StartCoroutine(Effect(EffectId.GrammarMark, DepictionFx.Mark(this, fxLayer, chest, head, DepictionFx.PointOn(fxLayer, target.transform),
+                    target.side == UnitSide.Player ? 1f : -1f, cue.Fx.Value, cue.Intensity, _effects.Ms(EffectId.GrammarMark)), null));
+            }
 
             switch (cue.Kind)
             {
@@ -761,6 +767,8 @@ namespace Depiction.View
             EffectId lunge = byPlayer ? EffectId.AttackLunge : EffectId.EnemyLunge;
             yield return Effect(lunge, Lunge(attacker, 46f, _effects.Ms(lunge)), () => attacker.SetPose(FigurePose.Act));
             Color streak = byPlayer ? BattleTheme.Ink : BattleTheme.Omen;
+            // §5.9 J2 (#57): a fired trait lays its short cue over the blow; the tier stays as written.
+            if (cue.TraitAccent) StartCoroutine(Effect(EffectId.TraitAccent, DepictionFx.TraitAccent(this, fxLayer, chest, _effects.Ms(EffectId.TraitAccent)), null));
             yield return Effect(EffectId.StrikeShape,
                 DepictionFx.Strike(this, fxLayer, chest, streak, cue.Intensity, !byPlayer, cue.System, _effects.Ms(EffectId.StrikeShape)), null);
             EffectId stop = strong ? EffectId.HitStopStrong : EffectId.HitStop;
