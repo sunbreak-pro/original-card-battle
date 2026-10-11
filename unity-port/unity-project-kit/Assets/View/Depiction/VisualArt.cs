@@ -19,6 +19,10 @@ namespace Depiction.View
         Heal,
         Draw,
         Seal,
+        /// <summary>付録 A 捨札 (#455).</summary>
+        Discard,
+        /// <summary>付録 A 除外 (#455).</summary>
+        Exile,
     }
 
     /// <summary>
@@ -467,6 +471,10 @@ namespace Depiction.View
                         S(4, 13, 20, 13), S(20, 13, 20, 17), S(20, 17, 4, 17), S(4, 17, 4, 13),
                         S(6, 21, 18, 21),
                     };
+                // 付録 A: M12 4v10 M7 9l5 5 5-5 M4 20h16
+                case VisualIcon.Discard: return new[] { S(12, 4, 12, 14), S(7, 9, 12, 14), S(12, 14, 17, 9), S(4, 20, 20, 20) };
+                // 付録 A: M6 6l12 12 M18 6L6 18
+                case VisualIcon.Exile: return new[] { S(6, 6, 18, 18), S(18, 6, 6, 18) };
                 case VisualIcon.Self: return new float[0][];
                 default: return new float[0][];
             }

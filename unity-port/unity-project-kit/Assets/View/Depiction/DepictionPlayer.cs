@@ -140,6 +140,8 @@ namespace Depiction.View
         private StaminaTagView _staminaTag;
         /// <summary>The card whose reach the floor lights now, or null.</summary>
         private CardView _reachFor;
+        /// <summary>battle-visual-v1 §4.7 (#455): the draw, discard and exile piles under the stamina tag.</summary>
+        private PilesView _piles;
 
         // ---- battle-visual-v1 §4.5 (#455): the number panels under the figures ------------------------
         /// <summary>Where the player figure stands between its motions (its cell or slot); a lunge does not move it.</summary>
@@ -375,8 +377,9 @@ namespace Depiction.View
         // ---- battle-visual-v1 §4.2 / §4.7 (#242) ------------------------------------------------------
 
         /// <summary>
-        /// Makes the parts the scene from before #242 does not have: the floor, under the figures, and
-        /// the stamina tag, which takes the player's stamina over from the pips in the player's panel.
+        /// Makes the parts the scene from before #242 does not have: the floor, under the figures, the
+        /// stamina tag, which takes the player's stamina over from the pips in the player's panel, and
+        /// the piles under it (#455).
         /// </summary>
         private void BuildVisualParts()
         {
@@ -389,6 +392,25 @@ namespace Depiction.View
                 playerStatus.PipsElsewhere = true;
                 playerStatus.StaminaShown = (stamina, max) => _staminaTag.SetStamina(stamina, max);
             }
+            if (root)
+            {
+                int below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
+                _piles = new PilesView(root, below);
+            }
+        }
+
+        /// <summary>
+        /// §4.7 (#455): the piles with the script's counts. While they are drawn, drawn cards fly from
+        /// the draw pile and the discarded hand and the played card's ghost fly to the discard pile
+        /// (battle_ui_ux_v2 「スタミナの札と束」), so the scene's two points move onto them.
+        /// </summary>
+        private void ApplyPiles(PileFrame piles)
+        {
+            if (_piles == null) return;
+            _piles.Bind(piles);
+            if (!_piles.Shown) return;
+            if (deckPoint) deckPoint.position = _piles.MiddleOf(PileKind.Draw);
+            if (discardPoint) discardPoint.position = _piles.MiddleOf(PileKind.Discard);
         }
 
         /// <summary>
@@ -1300,6 +1322,7 @@ namespace Depiction.View
             enemyFigure.StandTall(FigureFrame.HeightFor(frame.Floor.EnemySize));
             _staminaTag?.SetDivider(frame.StanceDivider); // before the bind below shows the stamina
             _staminaTag?.SetNextRecovery(frame.Player.NextRecovery); // §4.7 (#455): the dashed dots
+            ApplyPiles(frame.Piles);
             playerStatus.Bind(frame.Player);
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);

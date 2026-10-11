@@ -798,6 +798,8 @@ namespace Depiction.Bridge
             // battle-visual-v1 §4.7 (#455): the dashed dots, the core's estimate of the next recovery.
             frame.Player.NextRecovery = TurnLoop.PreviewRecovery(AsShown(after));
             frame.Floor = FloorOf(after);
+            // battle-visual-v1 §4.7 (#455): the piles' counts, as the move left them.
+            frame.Piles = new PileFrame { Shown = true, Draw = after.DrawPile.Count, Discard = after.DiscardPile.Count, Exile = after.Exiled.Count };
             if (frame.Omen.Visible) frame.Omen.Hit = HitMark(frame.Floor.AimCells);
             OmenDisclosure.Apply(frame.Omen, Disclosure);
             foreach (CardInstance card in _hand)

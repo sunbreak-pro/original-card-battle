@@ -369,6 +369,22 @@ namespace Depiction
         public int StanceDivider;
         /// <summary>battle-visual-v1 §4.2 (#242): the floor. <see cref="FloorFrame.Cells"/> 0 draws none (the v4.2 sources).</summary>
         public FloorFrame Floor = new FloorFrame();
+        /// <summary>battle-visual-v1 §4.7 (#455): the draw, discard and exile piles. <see cref="PileFrame.Shown"/> false draws none.</summary>
+        public PileFrame Piles = new PileFrame();
+    }
+
+    /// <summary>
+    /// The three piles at the bottom left (battle-visual-v1 §4.7, #455): how many cards each holds.
+    /// The View stacks that many sheets' worth of thickness (PileLayout) and writes no number
+    /// (battle_ui_ux_v2 §1.1 B9: 束は厚みだけ).
+    /// </summary>
+    public sealed class PileFrame
+    {
+        /// <summary>Whether the source keeps piles at all. The fixed filming script does not.</summary>
+        public bool Shown;
+        public int Draw;
+        public int Discard;
+        public int Exile;
     }
 
     /// <summary>
