@@ -142,6 +142,8 @@ namespace Depiction.View
         private CardView _reachFor;
         /// <summary>battle-visual-v1 §4.7 (#455): the draw, discard and exile piles under the stamina tag.</summary>
         private PilesView _piles;
+        /// <summary>battle-visual-v1 §4.6 (#455): each side's stance list at its edge.</summary>
+        private StanceListView _stanceLists;
 
         // ---- battle-visual-v1 §4.5 (#455): the number panels under the figures ------------------------
         /// <summary>Where the player figure stands between its motions (its cell or slot); a lunge does not move it.</summary>
@@ -396,6 +398,8 @@ namespace Depiction.View
             {
                 int below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
                 _piles = new PilesView(root, below);
+                below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
+                _stanceLists = new StanceListView(root, below);
             }
         }
 
@@ -1323,6 +1327,7 @@ namespace Depiction.View
             _staminaTag?.SetDivider(frame.StanceDivider); // before the bind below shows the stamina
             _staminaTag?.SetNextRecovery(frame.Player.NextRecovery); // §4.7 (#455): the dashed dots
             ApplyPiles(frame.Piles);
+            _stanceLists?.Bind(frame); // §4.6 (#455)
             playerStatus.Bind(frame.Player);
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);

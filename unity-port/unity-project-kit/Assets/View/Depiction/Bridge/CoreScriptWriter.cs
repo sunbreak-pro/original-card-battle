@@ -800,6 +800,8 @@ namespace Depiction.Bridge
             frame.Floor = FloorOf(after);
             // battle-visual-v1 §4.7 (#455): the piles' counts, as the move left them.
             frame.Piles = new PileFrame { Shown = true, Draw = after.DrawPile.Count, Discard = after.DiscardPile.Count, Exile = after.Exiled.Count };
+            // battle-visual-v1 §4.6 (#455): both sides' stance lists, from the stances the models hold.
+            frame.StanceListsShown = true;
             if (frame.Omen.Visible) frame.Omen.Hit = HitMark(frame.Floor.AimCells);
             OmenDisclosure.Apply(frame.Omen, Disclosure);
             foreach (CardInstance card in _hand)
@@ -941,6 +943,8 @@ namespace Depiction.Bridge
             }
             // §4: the stances held lead the chips, one chip per stance (a repeat is one chip with its count).
             frame.Statuses.AddRange(CoreText.StanceChips(unit.Stances));
+            // battle-visual-v1 §4.6 (#455): the same stances as the list at the unit's edge.
+            frame.Stances = StanceList.Rows(unit.Stances);
             foreach (KeyValuePair<StatusKind, int> pair in unit.Statuses)
             {
                 frame.Statuses.Add(StatusChipText.Chip(pair.Key, pair.Value));

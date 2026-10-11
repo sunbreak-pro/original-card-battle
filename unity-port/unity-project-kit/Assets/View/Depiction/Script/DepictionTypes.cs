@@ -272,6 +272,19 @@ namespace Depiction
         public string ArtId = "";
         /// <summary>The unit has fallen and its figure is gone (battle_ui_ux_v2 §2.2 の 6). Set from the Defeat beat on.</summary>
         public bool Down;
+        /// <summary>
+        /// battle-visual-v1 §4.6 / battle_core_v4 §4 v4.4 (#455): the stances the unit holds, in the
+        /// order its list shows them (<see cref="StanceList.Rows"/>: the newest last, a repeat counted
+        /// on one row). Drawn at the unit's edge when <see cref="DepictionFrame.StanceListsShown"/>.
+        /// </summary>
+        public List<StanceRow> Stances = new List<StanceRow>();
+    }
+
+    /// <summary>One stance on a side's list (#455): its name and how many times it is held (1 prints no "×1").</summary>
+    public sealed class StanceRow
+    {
+        public string Name = "";
+        public int Count = 1;
     }
 
     public sealed class OmenFrame
@@ -371,6 +384,12 @@ namespace Depiction
         public FloorFrame Floor = new FloorFrame();
         /// <summary>battle-visual-v1 §4.7 (#455): the draw, discard and exile piles. <see cref="PileFrame.Shown"/> false draws none.</summary>
         public PileFrame Piles = new PileFrame();
+        /// <summary>
+        /// battle-visual-v1 §4.6 (#455): the source keeps the stance lists (<see cref="UnitFrame.Stances"/>),
+        /// so each side's edge shows its list, or the dashed empty frame. False draws neither (the v4.2
+        /// sources and the filming script).
+        /// </summary>
+        public bool StanceListsShown;
     }
 
     /// <summary>
