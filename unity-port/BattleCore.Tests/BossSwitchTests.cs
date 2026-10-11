@@ -67,6 +67,63 @@ namespace BattleCore.Tests
         }
 
         [Test]
+        public void Priest_Turtle_CountsAgainFromZero_OnceTheRunReachesThree()
+        {
+            // roster §1.5 (v4.12, #336): the count goes back to 0 when it reaches n, so the attack of
+            // turn 2 is the first of a new run, not the fourth of the old one.
+            var priest = Enemies.MiasmaPriest;
+            var threeThenOne = History(new Turn(new[] { A, A, A }), new Turn(new[] { A }));
+            var threeThenTwo = History(new Turn(new[] { A, A, A }), new Turn(new[] { A, A }));
+            var threeThenThree = History(new Turn(new[] { A, A, A }), new Turn(new[] { A, A, A }));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Active(priest, View(priest, History(new Turn(new[] { A, A, A })))), Is.EqualTo("turtle"), "3 in turn 1");
+                Assert.That(Active(priest, View(priest, threeThenOne)), Is.Null, "the 4th attack is the 1st of a new run");
+                Assert.That(Active(priest, View(priest, threeThenTwo)), Is.Null, "the 5th is the 2nd");
+                Assert.That(Active(priest, View(priest, threeThenThree)), Is.EqualTo("turtle"), "the 6th completes the second run");
+            });
+        }
+
+        [Test]
+        public void Priest_Turtle_SixAttacksInOneTurn_SwitchesForOnePhaseOnly()
+        {
+            // Six in a row are two runs, both completed in the same turn: one phase is swapped, not two.
+            var priest = Enemies.MiasmaPriest;
+            var six = new Turn(new[] { A, A, A, A, A, A });
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(Active(priest, View(priest, History(six))), Is.EqualTo("turtle"), "the phase after the six");
+                Assert.That(Active(priest, View(priest, History(six, new Turn(None)))), Is.Null, "1 フェーズで戻る");
+                Assert.That(Active(priest, View(priest, History(six, new Turn(new[] { A })))), Is.Null, "the second run reset the count to 0");
+                Assert.That(Active(priest, View(priest, History(six, new Turn(new[] { A, A })))), Is.Null, "2 is not 3");
+            });
+        }
+
+        [Test]
+        public void Priest_Turtle_AStanceCardOrAMoveOnlyCard_ResetsTheCount()
+        {
+            // 「攻撃属性でない札を出すと、数は 0 に戻ります」: not only a guard. A card of movement only
+            // declares nothing and folds to スキル (battle_core_v4 §2.1), so it breaks the run as well.
+            var priest = Enemies.MiasmaPriest;
+            var moveOnly = AttributeRule.Fold(BattleAttribute.None, new Face(Move: 1));
+            var unbroken = History(new Turn(new[] { A, A }), new Turn(new[] { A }));
+            var stance = History(new Turn(new[] { A, A, St }), new Turn(new[] { A }));
+            var moved = History(new Turn(new[] { A, A, moveOnly }), new Turn(new[] { A }));
+            var stanceThenThree = History(new Turn(new[] { A, St }), new Turn(new[] { A, A, A }));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(moveOnly, Is.EqualTo(BattleAttribute.Skill), "a move-only card is counted as スキル");
+                Assert.That(Active(priest, View(priest, unbroken)), Is.EqualTo("turtle"), "the same history without the break");
+                Assert.That(Active(priest, View(priest, stance)), Is.Null, "a stance card broke the run");
+                Assert.That(Active(priest, View(priest, moved)), Is.Null, "a move-only card broke the run");
+                Assert.That(Active(priest, View(priest, stanceThenThree)), Is.EqualTo("turtle"), "counted from 0 after the stance card");
+            });
+        }
+
+        [Test]
         public void Priest_Breaker_AfterTwoTurnsOnGuardNine_PutsTheBreakingStaffOnTop_UntilGuardFive()
         {
             var priest = Enemies.MiasmaPriest;
@@ -272,6 +329,23 @@ namespace BattleCore.Tests
                 Assert.That(On(inOnTheSameCell), Is.EqualTo("root_m_in"), "same turn-end cells, last move forward");
                 Assert.That(On(outOnTheSameCell), Is.EqualTo("root_m_out"), "same turn-end cells, last move back");
                 Assert.That(On(once), Is.Null);
+            });
+        }
+
+        [Test]
+        public void Root_RootA_CountsAgainFromZero_OnceTheRunReachesFour()
+        {
+            var root = Enemies.DistortionRoot;
+            string? On(BattleHistory history) => Active(root, View(root, history));
+            var four = new Turn(new[] { A, A, A, A });
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(On(History(four)), Is.EqualTo("root_a"));
+                Assert.That(On(History(four, new Turn(new[] { A, A, A }))), Is.Null, "the 5th to 7th are the 1st to 3rd of a new run");
+                Assert.That(On(History(four, new Turn(new[] { A, A, A, A }))), Is.EqualTo("root_a"), "the 8th completes the second run");
+                Assert.That(On(History(new Turn(new[] { A, A, A, A, A, A, A, A }))), Is.EqualTo("root_a"), "two runs in one turn: one phase");
+                Assert.That(On(History(new Turn(new[] { A, A, A, A, A, A, A, A }), new Turn(new[] { A, A, A }))), Is.Null, "3 after two runs");
             });
         }
 

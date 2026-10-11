@@ -246,8 +246,10 @@ namespace BattleCore.Tests
         [Test]
         public void AnAdaptationByTheHistory_SwapsTheTreeThroughTheSameHook()
         {
-            // The player's last two cards were both attacks: the enemy turns to its shell.
-            var adapt = new TreeSwitch("turtle",
+            // The player's last two cards were both attacks: the enemy turns to its shell. A hand-made
+            // condition to test the hook only; the bosses' 「アタックを n 回続けて受けると」 counts runs
+            // that start over at n instead (roster §1.5, BossSwitchTests).
+            var adapt = new TreeSwitch("hand_made_shell",
                 view => view.Player.Cards.Count >= 2 && view.Player.Cards.Skip(view.Player.Cards.Count - 2).All(c => c == BattleAttribute.Attack),
                 BranchAtGapZero: new[] { "shell" });
             var enemy = Boss(adapt);
@@ -264,7 +266,7 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(afterTwo.History.Cards, Is.EqualTo(new[] { BattleAttribute.Attack, BattleAttribute.Attack }));
-                Assert.That(end.Events.OfType<TreeSwitched>().Single().To, Is.EqualTo("turtle"));
+                Assert.That(end.Events.OfType<TreeSwitched>().Single().To, Is.EqualTo("hand_made_shell"));
                 Assert.That(end.State.Omen!.ActionId, Is.EqualTo("shell"));
             });
         }
