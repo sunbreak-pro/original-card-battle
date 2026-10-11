@@ -1,6 +1,6 @@
 # 晶槍の竜兵（polearm_crystal）— 仕様カード
 
-- 作成日: 2026-10-04（#287。こうだいさんが Krita で作った待機の絵を Unity リポへ入れた）/ 更新: 2026-10-10（#287。幅の例外を規約に入れ、枠の幅（#302）と BattleCore の追加に進捗を合わせた）/ 2026-10-11（#287。予兆の札の大きさを実行時の 200 × 98 に直し、コードの行番号を今のコードに合わせた）/ 工程: C0（`visual-production-pipeline character polearm_crystal`）
+- 作成日: 2026-10-04（#287。こうだいさんが Krita で作った待機の絵を Unity リポへ入れた）/ 更新: 2026-10-10（#287。幅の例外を規約に入れ、枠の幅（#302）と BattleCore の追加に進捗を合わせた）/ 2026-10-11（#287。予兆の札の大きさを実行時の 200 × 98 に直し、コードの行番号を今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵の参照を `battle_ui_ux_v2.md` §6.4 に替えた）/ 工程: C0（`visual-production-pipeline character polearm_crystal`）
 - 正本: `.claude/docs/enemy_document/enemy_roster_v4.md`（§2.7 晶槍の竜兵）/ `.claude/docs/vision/world-v1.md`（竜の系譜）/ `.claude/docs/art_document/style-guide.md`（原本の大きさ・指示文・帯び方）/ `.claude/docs/art_document/asset-intake.md`（書き出しと取り込み）/ `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs`（枠と配置）
 - 手順書: `docs/reports/2026-09-19-krita-ai-setup-guide.html` 4 章（待機の絵）/ `docs/reports/2026-10-03-enemy-motion.html`（攻撃と倒れの差分の作り方）
 - 内部 ID は `polearm_crystal` です。v4.6 で足した敵で、錆槍の竜兵の `polearm_warped` にそろえて `polearm_` で始めています（`enemy_roster_v4.md` §1.8）。ファイル名と asset id もこの ID を使います。`asset-intake.md` §4 も、2026-10-06 にロースターの内部 ID を使う形に直りました（#327）。
@@ -41,7 +41,7 @@
 
 ## 3. 行動と、絵が要る場面
 
-`enemy_roster_v4.md` §2.7 の 5 行動です。差分は「待機 / 行動 / 被弾 / 崩れ / 倒れ」で、体勢（構え）の差分は作りません（skill 命名節、2026-09-14 決定）。表の「届く」は届く間合いで、敵のマスから数えます。
+`enemy_roster_v4.md` §2.7 の 5 行動です。差分は「待機 / 行動 / 被弾 / 倒れ」の 4 種で、`battle_ui_ux_v2.md` §6.4 と View の口（`FigureMotion.cs` の `FigurePose`）にそろえます。崩れの差分は保留です。台本に崩しの拍が入り、View に崩れの口が入るまで作りません（§6.4、#309）。体勢（構え）の差分は作りません（skill 命名節、2026-09-14 決定）。表の「届く」は届く間合いで、敵のマスから数えます。
 
 | 行動 id | 名前 | 絵で見せること | asset_id |
 | --- | --- | --- | --- |
@@ -53,14 +53,14 @@
 
 前へ 2 と後ろへ 2 は、画面の側で人型をマスごと動かして見せます（`battle_ui_ux_v2.md` §5.7）。移動だけの絵は作りません。
 
-待機は `chr.polearm_crystal.idle.stand`、被弾・崩れ・倒れは `chr.polearm_crystal.react.*` です。ファイル名は `Assets/Art/Characters/polearm_crystal/chr_polearm_crystal_<category>_<label>.png` です（`asset-intake.md` §4、`FigureMotion.cs:37-40`）。View の口は待機 / 行動 / 被弾 / 倒れの 4 つで、崩れの口はありません（`FigureMotion.cs:12-18`、食い違いは #309）。崩れの名前は口が入るときに決めます。
+待機は `chr.polearm_crystal.idle.stand`、被弾・倒れは `chr.polearm_crystal.react.*` です。ファイル名は `Assets/Art/Characters/polearm_crystal/chr_polearm_crystal_<category>_<label>.png` です（`asset-intake.md` §4、`FigureMotion.cs:38-42`）。View の口は待機 / 行動 / 被弾 / 倒れの 4 つで、崩れの口はありません（`FigureMotion.cs:15-21` の `FigurePose`、`battle_ui_ux_v2.md` §6.4）。保留の崩れの名前は、口が入るときに決めます。
 
-**差分は攻撃 1 枚と倒れ 1 枚から作ります**（`docs/reports/2026-10-03-enemy-motion.html` の 2 段目）。行動の絵は、`act_` で始まるファイルのうち名前順で最初の 1 枚が全ての行動に出ます（`FigureArtCollector.cs:72-85`、食い違いは #310。この版は View に従いました）。そこで 1 枚で 5 行動を代表させます。`act_crystal_rush` は名前順で `act_great_thrust` より前なので、View が行動 id ごとに絵を引くようになるまで Unity に置きません。
+**差分は攻撃 1 枚と倒れ 1 枚から作ります**（`docs/reports/2026-10-03-enemy-motion.html` の 2 段目）。行動の絵は、`act_` で始まるファイルのうち名前順で最初の 1 枚が全ての行動に出ます（`battle_ui_ux_v2.md` §6.4、`FigureArtCollector.cs` の `FirstAct`）。そこで 1 枚で 5 行動を代表させます。`act_crystal_rush` は名前順で `act_great_thrust` より前なので、View が行動（または系統）ごとに絵を引くようになるまで Unity に置きません（§6.4 の「いま Unity に置かない絵」）。
 
 | 順 | 差分 | asset_id | ファイル名 | 見せること |
 | --- | --- | --- | --- | --- |
 | 1 | 攻撃 | `chr.polearm_crystal.act.great_thrust` | `chr_polearm_crystal_act_great_thrust.png` | 大穂の突き。前のめりの体から、穂先を画面左へ真っ直ぐ伸ばす |
-| 2 | 倒れ | `chr.polearm_crystal.react.down` | `chr_polearm_crystal_react_down.png` | 膝をつき、上体が前へ崩れ、槍が手から離れて床に落ちる |
+| 2 | 倒れ | `chr.polearm_crystal.react.down` | `chr_polearm_crystal_react_down.png` | 膝をつき、上体が前へ倒れ込み、槍が手から離れて床に落ちる |
 
 被弾（`react.hit`）と、残りの行動の差分（`act_crystal_rush` を除く）は、手触りの確認（#79・#60）で 1 枚で足りるかを見てから足します。差分は待機の絵と同じ 800 × 1536 で作り、足の位置も待機の絵にそろえます。絵が切り替わったときに足元が跳ねないようにするためです。突きの穂先が左端からはみ出しそうなら、穂先をやや下へ向けて枠の中に収めます。
 
