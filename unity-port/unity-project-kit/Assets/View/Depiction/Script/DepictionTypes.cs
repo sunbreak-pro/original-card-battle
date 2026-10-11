@@ -45,6 +45,14 @@ namespace Depiction
         Rest,
     }
 
+    /// <summary>battle-visual-v1 §4.4 当たり外れの印: none, lands (phosphor, solid), or misses (steel, dashed, struck).</summary>
+    public enum OmenHit
+    {
+        None,
+        Lands,
+        Misses,
+    }
+
     /// <summary>How the card is released: on the target's receiver, or above the throw line.</summary>
     public enum CardAim
     {
@@ -99,12 +107,133 @@ namespace Depiction
         /// Empty when the card reaches someone, aims at nobody, or is only short of stamina.
         /// </summary>
         public string ReachHint = "";
+
+        // ---- battle-visual-v1 §6 / §7 / §9 (#242). The script writes every line; the View prints. ----
+
+        /// <summary>
+        /// §6.1 値: the value columns, at most two (power, Guard, a move, a draw...). Statuses are never
+        /// a column; they lead <see cref="TextLines"/>. A stance card has none.
+        /// </summary>
+        public List<CardValue> Values = new List<CardValue>();
+        /// <summary>
+        /// §6.1 説明: the rows under the values, at most three. A card that puts a status writes it on
+        /// the first row ("敵に 鈍足 2・疲労 2"). A stance card writes one lasting effect per row and
+        /// sets <see cref="Lasting"/>, so the View puts ∞ at the head of each row.
+        /// </summary>
+        public List<string> TextLines = new List<string>();
+        /// <summary>§6.1 スタンスの札: the rows of <see cref="TextLines"/> are lasting effects (∞ at their head).</summary>
+        public bool Lasting;
+        /// <summary>§6.1 素直な札: no trait, every value +2. The trait box is dashed and has no lamp.</summary>
+        public bool Plain;
+        /// <summary>
+        /// §6.1 特性の箱: the two rows printed in the box. One trait: the condition, then "→ effect".
+        /// 背水の陣's two traits: one trait per row ("間合い2以上→威力+5"). A plain card: 素直な札 /
+        /// 特性なし（+2 込み）. Empty for a card with no trait box at all.
+        /// </summary>
+        public string TraitTop = "";
+        public string TraitBottom = "";
+        /// <summary>§6.1 コスト円: the printed cost before a discount; Cost below it means the circle is filled and "▼n" shows.</summary>
+        public int PrintedCost;
+        /// <summary>
+        /// §6.3: the lamp for each enemy slot (the index in the core's enemy list), so the View can
+        /// re-light the lamp for the enemy a held card frames without judging the condition itself.
+        /// Empty when the card aims at nobody: <see cref="TraitLit"/> is its lamp everywhere.
+        /// </summary>
+        public List<bool> LitOn = new List<bool>();
+        /// <summary>§7.2: the one line above a hovered card, with the values of now ("間合い 2 以上なら、この札の威力 13 → 18").</summary>
+        public string HoverLine = "";
+        /// <summary>
+        /// battle-visual-v1 §4.2 届くマスの光 (#242): the floor cells (1-based, as <see cref="FloorFrame"/>
+        /// counts them) this card reaches from where the player stands now, lit while it is hovered or
+        /// held. Empty for a card that aims at nobody, or when the source draws no floor.
+        /// </summary>
+        public List<int> ReachCells = new List<int>();
+        /// <summary>§7.4: the right-click detail. Null when the source writes none (the v4.2 script).</summary>
+        public CardDetail Detail;
+
+        /// <summary>
+        /// §6.3: the lamp while the card frames enemy <paramref name="enemy"/>. A card with no lamp per
+        /// enemy (one aimed at nobody, or a source that writes none) keeps <see cref="TraitLit"/>.
+        /// </summary>
+        public bool LitFor(int enemy)
+        {
+            return enemy >= 0 && enemy < LitOn.Count ? LitOn[enemy] : TraitLit;
+        }
+
+        /// <summary>§6.1: the cost circle is filled and marked "▼n" when the cost is below the printed one.</summary>
+        public int CostDrop => PrintedCost > Cost ? PrintedCost - Cost : 0;
+    }
+
+    /// <summary>The kind of one value column on a card face (battle-visual-v1 §6.1 / §8): its icon.</summary>
+    public enum CardValueKind
+    {
+        Power,
+        Guard,
+        Heal,
+        /// <summary>詰める: the one playing moves toward the opponent (→).</summary>
+        Close,
+        /// <summary>離れる: the one playing moves away (←).</summary>
+        Back,
+        /// <summary>押す: the opponent is moved away (→).</summary>
+        Push,
+        /// <summary>引く: the opponent is moved closer (←).</summary>
+        Pull,
+        Draw,
+    }
+
+    /// <summary>One value column: the icon's kind, the 36 px number and the 16 px word under it ("威力").</summary>
+    public sealed class CardValue
+    {
+        public CardValueKind Kind;
+        public string Number = "";
+        public string Word = "";
+    }
+
+    /// <summary>A word with a dotted underline and what it means (battle-visual-v1 §7.1 / §7.5).</summary>
+    public sealed class TermDefinition
+    {
+        public string Word = "";
+        public string Meaning = "";
+    }
+
+    /// <summary>The right-click detail of a card (battle-visual-v1 §7.4): name, kind line, full text, terms.</summary>
+    public sealed class CardDetail
+    {
+        public string Name = "";
+        /// <summary>"攻撃 ・ 敵 1 体 ・ 間合い 0〜1", or "防御 ・ 自分".</summary>
+        public string KindLine = "";
+        /// <summary>The full text, one sentence after another.</summary>
+        public string Body = "";
+        public List<TermDefinition> Terms = new List<TermDefinition>();
+    }
+
+    /// <summary>
+    /// Which family a status chip belongs to (battle-visual-v1 §7.3). The View draws the corner from it:
+    /// a square chip for the words put on the opponent, a round one for the words put on oneself, ∞ for
+    /// a lasting stance, the boss colour's double frame for a boss's word.
+    /// </summary>
+    public enum ChipKind
+    {
+        OnFoe,
+        OnSelf,
+        Lasting,
+        Boss,
     }
 
     public sealed class StatusChip
     {
         public string Label;
+        /// <summary>The stacks; for a <see cref="ChipKind.Lasting"/> chip the times the same stance is held (1 prints no "×1").</summary>
         public int Stacks;
+        public ChipKind Kind = ChipKind.OnFoe;
+        /// <summary>§7.3 説明パネルの見出し: "鈍足 2", "岩の構え ×2".</summary>
+        public string Title = "";
+        /// <summary>§7.3: the family on the panel's right, "相手に付ける系" / "自分に付ける系" / "永続" / "ボス専用".</summary>
+        public string Group = "";
+        /// <summary>§7.3 効き方, written from the status table's values.</summary>
+        public string Effect = "";
+        /// <summary>§7.3 減り方.</summary>
+        public string Decay = "";
     }
 
     public sealed class UnitFrame
@@ -144,6 +273,13 @@ namespace Depiction
         public string SideGlyph = "";
         /// <summary>The number beside the icon: attack (the core preview) and guard only (#349). Empty for any other kind.</summary>
         public string ValueText = "";
+        /// <summary>
+        /// battle-visual-v1 §4.4 当たり外れの印 (#242): whether the omen reaches the player where they
+        /// stand now. The core's OmenPreview.Lands when the bridge holds one for this omen that is not
+        /// a rest; otherwise the aimed cells against the player's near edge. None for an omen that aims
+        /// at nobody, and for the v4.2 sources, which keep <see cref="SideGlyph"/> in its place.
+        /// </summary>
+        public OmenHit Hit = OmenHit.None;
 
         /// <summary>
         /// #50, §17.6 F11: the 予定 of an elite or a boss — the second action it plans, shown beside the
@@ -203,6 +339,33 @@ namespace Depiction
         public List<CardFace> Hand = new List<CardFace>();
         /// <summary>Shield hint beside the end-turn button ("+3"); empty when the stance would not trigger.</summary>
         public string StanceHint = "";
+        /// <summary>
+        /// battle-visual-v1 §4.7 (#242): the stamina 構え needs left at the turn end; the stamina tag
+        /// puts its divider after that many dots. 0 draws no divider.
+        /// </summary>
+        public int StanceDivider;
+        /// <summary>battle-visual-v1 §4.2 (#242): the floor. <see cref="FloorFrame.Cells"/> 0 draws none (the v4.2 sources).</summary>
+        public FloorFrame Floor = new FloorFrame();
+    }
+
+    /// <summary>
+    /// The line of floor cells under the figures (battle-visual-v1 §4.2, #242). Cells count from 1 at
+    /// the player's end, as BattleCore does. Every cell here is the core's; the View only draws them.
+    /// </summary>
+    public sealed class FloorFrame
+    {
+        /// <summary>How many cells the line has (5〜8). 0: the source draws no floor.</summary>
+        public int Cells;
+        /// <summary>The player's lowest cell and how many cells it takes.</summary>
+        public int PlayerCell;
+        public int PlayerSize = 1;
+        /// <summary>The enemy's lowest cell and how many cells it takes (2 for a large elite).</summary>
+        public int EnemyCell;
+        public int EnemySize = 1;
+        /// <summary>N: the empty cells between the player and the enemy. The one number on the floor.</summary>
+        public int Gap;
+        /// <summary>The cells the shown omen reaches (赤の斜線). Empty when it aims at nobody or is hidden.</summary>
+        public List<int> AimCells = new List<int>();
     }
 
     /// <summary>
@@ -335,6 +498,13 @@ namespace Depiction
         public StrikeSystem System = StrikeSystem.Slash;
         /// <summary>RangeSwitch only: the other side moved the player (a push or a pull), not the player itself.</summary>
         public bool Pushed;
+        /// <summary>
+        /// RangeSwitch only (battle-visual-v1 §4.2, #242): the lowest cell of the player and of the enemy
+        /// after the move, and N after it, for a source that draws the floor. 0 when it draws none.
+        /// </summary>
+        public int PlayerCellAfter;
+        public int EnemyCellAfter;
+        public int GapAfter;
     }
 
     public sealed class DepictionEvent

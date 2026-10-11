@@ -22,9 +22,9 @@ namespace Depiction.View
         public Image sideStrike;
         public Text valueText;
 
-        // battle-visual-v1 2.1. Folded into BattleTheme with #242; BattleTheme still carries the A+ tokens.
-        private static readonly Color Phosphor = BattleTheme.Hex("#b9a3ff");
-        private static readonly Color GuardInk = BattleTheme.Hex("#8fc4d8");
+        // battle-visual-v1 2.1, from BattleTheme since #242.
+        private static readonly Color Phosphor = BattleTheme.Phosphor;
+        private static readonly Color GuardInk = BattleTheme.Guard;
 
         private static readonly Vector2 BadgeSize = new Vector2(200f, 98f);
         private static readonly Vector2 PlanSize = new Vector2(170f, 66f);
@@ -32,6 +32,14 @@ namespace Depiction.View
         private const float PlanAlpha = 0.62f;
 
         private Image _icon;
+        private Image _frame;
+        private Image[] _restFrame = new Image[0];
+        private RectTransform _swatch;
+        private RectTransform _hit;
+        private Image _hitSolid;
+        private Image[] _hitDashed = new Image[0];
+        private Image _hitIcon;
+        private Image _hitStrike;
         private RectTransform _plan;
         private CanvasGroup _planGroup;
         private Image _planIcon;
@@ -55,6 +63,25 @@ namespace Depiction.View
             _built = true;
 
             Rect.sizeDelta = BadgeSize;
+            // §4.4 (#242): an opaque panel with a 2 px violet frame and 6 px corners. The prefab's
+            // translucent back and its 4 px left edge give way to it.
+            Transform back = Rect.Find("Back");
+            Image backImage = back ? back.GetComponent<Image>() : null;
+            if (backImage)
+            {
+                backImage.sprite = VisualArt.Rounded(6);
+                backImage.type = Image.Type.Sliced;
+                backImage.color = BattleTheme.PanelOpaque;
+            }
+            Transform edge = Rect.Find("Edge");
+            if (edge) edge.gameObject.SetActive(false);
+            Image ring = VisualArt.Ring(Rect, "Frame", BattleTheme.Violet, 6, 2);
+            ring.transform.SetSiblingIndex(backImage ? backImage.transform.GetSiblingIndex() + 1 : 0);
+            _frame = ring;
+            // §4.4 休み: a steel dashed frame in place of the violet one.
+            _restFrame = VisualArt.DashedFrame(Rect, BattleTheme.Steel, 2f);
+            foreach (Image dash in _restFrame) dash.enabled = false;
+            BuildHitParts();
             if (kindText)
             {
                 Place(kindText.rectTransform, new Vector2(0f, 0f), new Vector2(110f, 26f), new Vector2(14f, 6f));
@@ -86,8 +113,8 @@ namespace Depiction.View
             _planGroup.blocksRaycasts = false;
             _planGroup.alpha = 0f;
             UiKit.Fill(_plan, "Back", BattleTheme.WithAlpha(BattleTheme.InkBlack, 0.88f));
-            // battle-visual-v1 4.4 draws a dashed frame; a solid one stands in until #242.
-            UiKit.Frame(_plan, BattleTheme.Ink2, 2f);
+            // battle-visual-v1 4.4: the plan's frame is dashed, in the note colour.
+            VisualArt.DashedFrame(_plan, BattleTheme.Ink2, 2f);
             _planIcon = UiKit.Sprite(_plan, "Icon", null, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(24f, 24f), new Vector2(10f, -8f));
             _planIcon.preserveAspect = true;
@@ -100,6 +127,46 @@ namespace Depiction.View
             // battle-visual-v1 2.1: text under 24 px is written in body ink.
             _planTag = UiKit.Label(_plan, "Tag", 14, TextAnchor.MiddleRight, BattleTheme.Ink, new Vector2(1f, 0f), new Vector2(1f, 0f),
                 new Vector2(80f, 20f), new Vector2(-8f, 4f));
+        }
+
+        /// <summary>
+        /// §4.4 (#242): the swatch at the right of the first row (this enemy's red stripes, tying the
+        /// badge to the aimed cells on the floor) and the hit mark at the right of the second (a figure
+        /// icon in a small frame: phosphor and solid when the player stands in the aimed cells, steel,
+        /// dashed and struck through when not).
+        /// </summary>
+        private void BuildHitParts()
+        {
+            _swatch = UiKit.Point(Rect, "Swatch", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(22f, 22f), new Vector2(-12f, -14f));
+            VisualArt.Panel(_swatch, "Back", BattleTheme.PanelOpaque, 3);
+            Image stripes = UiKit.Image(_swatch, "Stripes", VisualArt.Stripes(0, false), BattleTheme.AimRed, Vector2.zero, Vector2.one);
+            stripes.type = Image.Type.Tiled;
+            VisualArt.Ring(_swatch, "Edge", BattleTheme.AimRed, 3, 1);
+            _swatch.gameObject.SetActive(false);
+
+            _hit = UiKit.Point(Rect, "Hit", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(30f, 26f), new Vector2(-10f, 6f));
+            _hitSolid = VisualArt.Ring(_hit, "Solid", BattleTheme.Phosphor, 3, 2);
+            _hitDashed = VisualArt.DashedFrame(_hit, BattleTheme.Whiff, 2f);
+            _hitIcon = UiKit.Sprite(_hit, "Icon", VisualArt.Icon(VisualIcon.Self), BattleTheme.Phosphor, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(18f, 18f), Vector2.zero);
+            _hitStrike = UiKit.Sprite(_hit, "Strike", ProceduralArt.White, BattleTheme.Whiff, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(34f, 2f), Vector2.zero);
+            _hitStrike.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 35f);
+            _hit.gameObject.SetActive(false);
+        }
+
+        private void BindHit(OmenFrame omen)
+        {
+            if (!_hit) return;
+            bool marked = omen.Hit != OmenHit.None;
+            _hit.gameObject.SetActive(marked);
+            if (_swatch) _swatch.gameObject.SetActive(marked);
+            if (!marked) return;
+            // The mark takes the place the reach glyph had on the v4.2 screen.
+            if (sideChip) sideChip.gameObject.SetActive(false);
+            bool lands = omen.Hit == OmenHit.Lands;
+            _hitSolid.enabled = lands;
+            foreach (Image dash in _hitDashed) dash.enabled = !lands;
+            _hitIcon.color = lands ? BattleTheme.Phosphor : BattleTheme.Whiff;
+            _hitStrike.enabled = !lands;
         }
 
         /// <summary>A prefab child moved to one corner of the badge: anchor and pivot at that corner.</summary>
@@ -138,6 +205,10 @@ namespace Depiction.View
                 valueText.text = omen.ValueText;
                 valueText.color = RoleColor(omen.Icon);
             }
+            bool rests = omen.Icon == OmenIcon.Rest;
+            if (_frame) _frame.enabled = !rests;
+            foreach (Image dash in _restFrame) dash.enabled = rests;
+            BindHit(omen);
             BindPlan(omen);
         }
 
