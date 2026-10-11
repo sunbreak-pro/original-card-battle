@@ -1589,7 +1589,13 @@ namespace Depiction.View
             }
             if (TryRightPress()) panels.ToggleDetail(over, cardPrefab);
             if (panels.DetailShown) panels.HideHover();
-            else panels.ShowHover(over);
+            else
+            {
+                panels.ShowHover(over);
+                // §7.1 (#455): a pointer on an underlined term shows what it means, above the word.
+                if (TryPointer(out Vector2 pointer) && over.TryTermAt(pointer, out TermMark term, out RectTransform word)) panels.ShowTerm(word, term);
+                else panels.HideTerm();
+            }
         }
 
         private void HideHoverPanels()

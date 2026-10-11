@@ -164,6 +164,25 @@ namespace Depiction.View
         }
 
         public static Sprite DashH => _dashH && _dashH.texture ? _dashH : (_dashH = DashSprite(true));
+
+        private static Sprite _dotH;
+
+        /// <summary>
+        /// §7.1 点線: 2 px dots 2 px apart along x, tiled (Image.Type.Tiled) under a term on a 2 px tall
+        /// image. A dotted line, not §3.2's 3 px dashes, so an underline never reads as 外れ or 予定.
+        /// </summary>
+        public static Sprite DotH
+        {
+            get
+            {
+                if (_dotH && _dotH.texture) return _dotH;
+                var tex = new Texture2D(4, 1, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat };
+                tex.SetPixels(new[] { Color.white, Color.white, Color.clear, Color.clear });
+                tex.Apply();
+                _dotH = Sprite.Create(tex, new Rect(0, 0, 4, 1), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                return _dotH;
+            }
+        }
         public static Sprite DashV => _dashV && _dashV.texture ? _dashV : (_dashV = DashSprite(false));
 
         /// <summary>Four dashed edges inside <paramref name="parent"/>, as UiKit.Frame draws solid ones.</summary>

@@ -93,6 +93,19 @@ namespace Depiction.View
         private Image[] _traitDashed = new Image[0];
         private Text _traitBottom;
         private Image _lampGlow;
+        private readonly List<TermSpot> _terms = new List<TermSpot>();
+
+        // §7.1 用語の下線: 2 px, 4 px under the text, in the note colour.
+        private const float UnderlineGap = 4f;
+        private const float UnderlineThickness = 2f;
+
+        /// <summary>One underlined term: the box the pointer finds it by, its dotted line and what it stands for.</summary>
+        private sealed class TermSpot
+        {
+            public RectTransform Hit;
+            public Image Line;
+            public TermMark Mark;
+        }
 
         private sealed class ValueSlot
         {
@@ -469,7 +482,11 @@ namespace Depiction.View
             }
             bool hasBox = !string.IsNullOrEmpty(top) || !string.IsNullOrEmpty(bottom);
             if (traitBox) traitBox.SetActive(hasBox);
-            if (!hasBox) return;
+            if (!hasBox)
+            {
+                BindTerms(face); // takes down the last face's underlines
+                return;
+            }
             bool plain = face.Plain;
             // §6.1 素直な札: a dashed frame, no lamp, both rows in the note colour.
             foreach (Image edge in _traitFrame) edge.enabled = !plain;
@@ -486,6 +503,92 @@ namespace Depiction.View
                 _traitBottom.color = plain ? BattleTheme.Ink2 : BattleTheme.Ink;
                 _traitBottom.fontStyle = plain ? FontStyle.Normal : FontStyle.Bold;
             }
+            BindTerms(face);
+        }
+
+        // ---- §7.1 用語の下線 (#455) -------------------------------------------------------------------
+
+        /// <summary>
+        /// Draws a dotted underline under each term the script marked in the trait box (CardFace.Terms)
+        /// and keeps a box over it for the hover (<see cref="TryTermAt"/>). Where a term stands is read
+        /// off Unity's own layout of the row, so it follows the font as it is.
+        /// </summary>
+        private void BindTerms(CardFace face)
+        {
+            foreach (TermSpot spot in _terms) spot.Hit.gameObject.SetActive(false);
+            if (face.Terms == null || !traitBox || !traitBox.activeSelf) return;
+            int used = 0;
+            foreach (TermMark mark in face.Terms)
+            {
+                Text row = mark.Row == TermRow.TraitTop ? traitText : _traitBottom;
+                if (!row || !TermSpan(row, mark.Start, mark.Length, out float x0, out float x1)) continue;
+                if (used == _terms.Count) _terms.Add(MakeTermSpot());
+                TermSpot spot = _terms[used++];
+                spot.Mark = mark;
+                RectTransform hit = spot.Hit;
+                hit.SetParent(row.rectTransform, false);
+                // x counts from the row's pivot, as Unity lays the text out; y from the row's middle.
+                hit.anchorMin = hit.anchorMax = new Vector2(row.rectTransform.pivot.x, 0.5f);
+                hit.pivot = new Vector2(0f, 0.5f);
+                hit.sizeDelta = new Vector2(x1 - x0, row.rectTransform.rect.height);
+                hit.anchoredPosition = new Vector2(x0, 0f);
+                RectTransform line = spot.Line.rectTransform;
+                line.sizeDelta = new Vector2(x1 - x0, UnderlineThickness);
+                line.anchoredPosition = new Vector2(0f, -(row.fontSize * 0.5f + UnderlineGap));
+                hit.gameObject.SetActive(true);
+            }
+        }
+
+        private TermSpot MakeTermSpot()
+        {
+            var spot = new TermSpot();
+            spot.Hit = UiKit.Rect(Rect, "Term", Vector2.zero, Vector2.zero);
+            spot.Line = UiKit.Image(spot.Hit, "Underline", VisualArt.DotH, BattleTheme.Ink2, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f));
+            spot.Line.type = Image.Type.Tiled;
+            RectTransform line = spot.Line.rectTransform;
+            line.pivot = new Vector2(0f, 1f);
+            spot.Hit.gameObject.SetActive(false);
+            return spot;
+        }
+
+        /// <summary>
+        /// The left and right of characters [<paramref name="start"/>, start + <paramref name="length"/>) of
+        /// <paramref name="text"/>'s one line, in its local space (x from its pivot), as Unity lays it out.
+        /// </summary>
+        private static bool TermSpan(Text text, int start, int length, out float x0, out float x1)
+        {
+            x0 = x1 = 0f;
+            string s = text.text;
+            if (string.IsNullOrEmpty(s) || start < 0 || length <= 0 || start + length > s.Length) return false;
+            TextGenerationSettings settings = text.GetGenerationSettings(text.rectTransform.rect.size);
+            var generator = new TextGenerator(s.Length);
+            generator.Populate(s, settings);
+            IList<UICharInfo> chars = generator.characters;
+            if (chars.Count < start + length) return false;
+            float unit = 1f / Mathf.Max(0.0001f, text.pixelsPerUnit);
+            UICharInfo last = chars[start + length - 1];
+            x0 = chars[start].cursorPos.x * unit;
+            x1 = (last.cursorPos.x + last.charWidth) * unit;
+            return x1 > x0;
+        }
+
+        /// <summary>
+        /// §7.1: the underlined term under <paramref name="screenPoint"/>, and the box it is drawn in, so the
+        /// hover can show its meaning above it. False when the point is on no term.
+        /// </summary>
+        public bool TryTermAt(Vector2 screenPoint, out TermMark mark, out RectTransform at)
+        {
+            foreach (TermSpot spot in _terms)
+            {
+                if (!spot.Hit.gameObject.activeInHierarchy) continue;
+                if (!RectTransformUtility.RectangleContainsScreenPoint(spot.Hit, screenPoint, null)) continue;
+                mark = spot.Mark;
+                at = spot.Hit;
+                return true;
+            }
+            mark = null;
+            at = null;
+            return false;
         }
 
         /// <summary>

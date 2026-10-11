@@ -157,6 +157,12 @@ namespace Depiction
         /// writes none, and the hint stays as the frame has it.
         /// </summary>
         public string StanceHintAfterPay;
+        /// <summary>
+        /// battle-visual-v1 §7.1 / §6.1 (#455): the glossary words printed in the trait box, where they
+        /// stand in their row, and what they mean. The View draws a dotted underline under each and
+        /// shows the meaning on hover. Empty when the box holds no term, or the source writes none.
+        /// </summary>
+        public List<TermMark> Terms = new List<TermMark>();
 
         /// <summary>
         /// §6.3: the lamp while the card frames enemy <paramref name="enemy"/>. A card with no lamp per
@@ -199,6 +205,28 @@ namespace Depiction
     /// <summary>A word with a dotted underline and what it means (battle-visual-v1 §7.1 / §7.5).</summary>
     public sealed class TermDefinition
     {
+        public string Word = "";
+        public string Meaning = "";
+    }
+
+    /// <summary>The row of the trait box a term is printed in (battle-visual-v1 §6.1 特性の箱).</summary>
+    public enum TermRow
+    {
+        TraitTop,
+        TraitBottom,
+    }
+
+    /// <summary>
+    /// One underlined term on a card face (battle-visual-v1 §7.1, #455): the characters
+    /// [<see cref="Start"/>, <see cref="Start"/> + <see cref="Length"/>) of its row as printed, the
+    /// glossary word they stand for (§7.5) and its meaning.
+    /// </summary>
+    public sealed class TermMark
+    {
+        public TermRow Row;
+        public int Start;
+        public int Length;
+        /// <summary>The glossary's word ("連動 X"), the heading the hover shows.</summary>
         public string Word = "";
         public string Meaning = "";
     }

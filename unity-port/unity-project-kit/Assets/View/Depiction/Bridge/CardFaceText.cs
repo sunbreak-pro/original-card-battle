@@ -38,6 +38,93 @@ namespace Depiction.Bridge
             face.TraitBottom = rows[1];
             face.HoverLine = HoverLine(def);
             face.Detail = Detail(def);
+            face.Terms = TermMarks(def, face.TraitTop, face.TraitBottom);
+        }
+
+        // ---- §7.1 用語の下線 ----------------------------------------------------------------------
+
+        /// <summary>
+        /// §7.1 / §6.1 (#455): the glossary words the card uses (<see cref="TermsOf"/>) where its trait box
+        /// prints them, so the View underlines those characters and shows the meaning on hover. A word
+        /// is looked for in the top row, then the bottom one, and never on characters another word has
+        /// taken (崩し後 holds 崩し). A word the box does not print is left to the right-click detail.
+        /// </summary>
+        public static List<TermMark> TermMarks(CardDef def, string top, string bottom)
+        {
+            var marks = new List<TermMark>();
+            // The longer printed word first, so 崩し後 takes its characters before 崩し can.
+            List<string> words = TermsOf(def);
+            var order = new List<string>(words);
+            order.Sort((a, b) =>
+            {
+                int byLength = LongestForm(b).CompareTo(LongestForm(a));
+                return byLength != 0 ? byLength : words.IndexOf(a).CompareTo(words.IndexOf(b));
+            });
+            foreach (string word in order)
+            {
+                string meaning;
+                if (!Glossary.TryGetValue(word, out meaning)) continue;
+                foreach (string printed in PrintedForms(word))
+                {
+                    if (Mark(marks, TermRow.TraitTop, top, printed, word, meaning)) break;
+                    if (Mark(marks, TermRow.TraitBottom, bottom, printed, word, meaning)) break;
+                }
+            }
+            marks.Sort((a, b) => a.Row != b.Row ? a.Row.CompareTo(b.Row) : a.Start.CompareTo(b.Start));
+            return marks;
+        }
+
+        private static int LongestForm(string word)
+        {
+            int longest = 0;
+            foreach (string form in PrintedForms(word)) longest = Math.Max(longest, form.Length);
+            return longest;
+        }
+
+        /// <summary>
+        /// How a glossary word is printed on a face: "連動 X" as 連動, "崩し n" as 崩し, and a pair such as
+        /// "詰める / 離れる" as either of its words.
+        /// </summary>
+        public static IEnumerable<string> PrintedForms(string word)
+        {
+            if (word.Contains(" / "))
+            {
+                foreach (string part in word.Split(new[] { " / " }, StringSplitOptions.RemoveEmptyEntries)) yield return part;
+                yield break;
+            }
+            if (word.EndsWith(" X", StringComparison.Ordinal) || word.EndsWith(" n", StringComparison.Ordinal))
+            {
+                yield return word.Substring(0, word.Length - 2);
+                yield break;
+            }
+            yield return word;
+        }
+
+        private static bool Mark(List<TermMark> marks, TermRow row, string text, string printed, string word, string meaning)
+        {
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(printed)) return false;
+            int from = 0;
+            while (from <= text.Length - printed.Length)
+            {
+                int at = text.IndexOf(printed, from, StringComparison.Ordinal);
+                if (at < 0) return false;
+                if (!Taken(marks, row, at, printed.Length))
+                {
+                    marks.Add(new TermMark { Row = row, Start = at, Length = printed.Length, Word = word, Meaning = meaning });
+                    return true;
+                }
+                from = at + 1;
+            }
+            return false;
+        }
+
+        private static bool Taken(List<TermMark> marks, TermRow row, int start, int length)
+        {
+            foreach (TermMark mark in marks)
+            {
+                if (mark.Row == row && start < mark.Start + mark.Length && mark.Start < start + length) return true;
+            }
+            return false;
         }
 
         // ---- §6.1 値 ----------------------------------------------------------------------------
