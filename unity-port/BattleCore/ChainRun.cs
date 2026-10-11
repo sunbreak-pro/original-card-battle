@@ -81,8 +81,7 @@ namespace BattleCore
 
         /// <summary>
         /// The 瘴気 density of each layer, 1〜7: `seven_layers_v4.md` §2 (1 / 1 / 2 / 3 / 4 / 5 / 7).
-        /// roster §9 still reads the layer number as its density until #130's table is in; this
-        /// follows the table.
+        /// The densities come from that table; the roster no longer carries them (v4.11, #320).
         /// </summary>
         public static readonly IReadOnlyList<int> Densities = new[] { 1, 1, 2, 3, 4, 5, 7 };
 
