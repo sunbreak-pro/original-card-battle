@@ -422,8 +422,10 @@ namespace Depiction.View
 
         /// <summary>
         /// With a floor, the parts tied to the enemy keep to its x: the omen badge and the release zone
-        /// over the enemy's home, kept 24 px inside the screen's edges. Their heights stay where the
-        /// scene put them. The two number panels follow their figures with or without a floor (§4.5).
+        /// over the enemy's home, kept 24 px inside the screen's edges. The badge's bottom also stands
+        /// 14 px over the enemy's head (§4.4, #455: the figure is 226 or 264 px tall since §4.3); the
+        /// release zone's height stays where the scene put it. The two number panels follow their
+        /// figures with or without a floor (§4.5).
         /// </summary>
         private void FollowFigures()
         {
@@ -434,7 +436,12 @@ namespace Depiction.View
             float enemyX = RefScreen.Of(root, enemyHome).x;
             if (_floor != null && _floor.Shown)
             {
-                if (omenBadge) KeepX(omenBadge.Rect, root, enemyX);
+                if (omenBadge)
+                {
+                    KeepX(omenBadge.Rect, root, enemyX);
+                    float head = RefScreen.Of(root, enemyHome).y - FigureFrame.HeightFor(EnemySize);
+                    KeepBottom(omenBadge.Rect, root, head - OmenOverHead);
+                }
                 if (receiver) KeepX((RectTransform)receiver.transform, root, enemyX);
             }
             float playerX = RefScreen.Of(root, _playerHomeSet ? _playerHome : playerFigure.transform.position).x;
@@ -496,6 +503,22 @@ namespace Depiction.View
 
         /// <summary>Moves <paramref name="rt"/> so its middle stands on screen x <paramref name="x"/>, its whole width 24 px inside the edges.</summary>
         private static readonly Vector3[] Corners = new Vector3[4];
+
+        /// <summary>battle-visual-v1 §4.4: the omen badge sits 14 px above the head.</summary>
+        private const float OmenOverHead = 14f;
+
+        /// <summary>
+        /// Moves <paramref name="rt"/> up or down so its bottom edge stands on screen y <paramref name="bottom"/>.
+        /// Read from its rect and pivot, not its corners, so a pop or a flare scaling it does not move it.
+        /// </summary>
+        private static void KeepBottom(RectTransform rt, RectTransform root, float bottom)
+        {
+            float pivotY = bottom - rt.rect.height * rt.pivot.y;
+            Vector2 now = RefScreen.Of(root, rt.position);
+            if (Mathf.Abs(now.y - pivotY) < 0.5f) return;
+            Vector3 to = RefScreen.World(root, new Vector2(now.x, pivotY));
+            rt.position = new Vector3(rt.position.x, to.y, rt.position.z);
+        }
 
         private static void KeepX(RectTransform rt, RectTransform root, float x)
         {
@@ -1266,6 +1289,9 @@ namespace Depiction.View
             enemyFigure.ShowArt(frame.Enemy.ArtId);
             playerFigure.SetDown(frame.Player.Down);
             enemyFigure.SetDown(frame.Enemy.Down);
+            // §4.3 (#455): 226 px tall, 264 for an elite on two cells (the script's sizes).
+            playerFigure.StandTall(FigureFrame.HeightFor(frame.Floor.PlayerSize));
+            enemyFigure.StandTall(FigureFrame.HeightFor(frame.Floor.EnemySize));
             _staminaTag?.SetDivider(frame.StanceDivider); // before the bind below shows the stamina
             _staminaTag?.SetNextRecovery(frame.Player.NextRecovery); // §4.7 (#455): the dashed dots
             playerStatus.Bind(frame.Player);

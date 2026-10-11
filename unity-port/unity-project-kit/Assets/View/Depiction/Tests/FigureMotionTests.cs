@@ -61,6 +61,40 @@ namespace Depiction.Tests
             Assert.That(FigureFrame.Width(RestWidth, FrameHeight, 800f, 0f), Is.EqualTo(RestWidth));
         }
 
+        // ---- the height on screen (battle-visual-v1 §4.3, #455) ----
+
+        [Test]
+        public void AFigure_Stands226Tall_AndATwoCellElite264()
+        {
+            Assert.That(FigureFrame.HeightFor(1), Is.EqualTo(226f));
+            Assert.That(FigureFrame.HeightFor(2), Is.EqualTo(264f));
+            Assert.That(FigureFrame.StandardHeight / 300f, Is.EqualTo(0.75f).Within(0.01f), "about 75% of battle_ui_ux_v2's 300 px");
+        }
+
+        [Test]
+        public void The450Frame_IsDrawnAtTheHeightOnScreen()
+        {
+            float scale = FigureFrame.ScaleFor(FigureFrame.StandardHeight, FrameHeight);
+            Assert.That(FrameHeight * scale, Is.EqualTo(226f).Within(1e-3f));
+            Assert.That(FigureFrame.ScaleFor(226f, 0f), Is.EqualTo(1f), "a frame with no height is left as it is");
+        }
+
+        [TestCase(0.5022f)]
+        [TestCase(0.5867f)]
+        [TestCase(1f)]
+        public void ACountedChild_KeepsItsScreenPixels_UnderAScaledFigure(float figureScale)
+        {
+            // The target brackets: a 26 px hook drawn inside a figure at figureScale is still 26 px on screen.
+            Assert.That(26f * FigureFrame.Counter(figureScale) * figureScale, Is.EqualTo(26f).Within(1e-3f));
+            Assert.That(FigureFrame.Counter(-figureScale), Is.EqualTo(FigureFrame.Counter(figureScale)), "a mirrored parent counts the same");
+        }
+
+        [Test]
+        public void ACountedChild_UnderNoScale_IsLeftAsItIs()
+        {
+            Assert.That(FigureFrame.Counter(0f), Is.EqualTo(1f));
+        }
+
         // ---- facing ----
 
         [Test]

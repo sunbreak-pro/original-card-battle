@@ -106,6 +106,49 @@ namespace Depiction
             float drawnHeight = Math.Min(frameHeight, frameWidth * artHeight / artWidth);
             return (frameHeight - drawnHeight) / 2f;
         }
+
+        // ---- battle-visual-v1 §4.3 人型 (#455) ----------------------------------------------------
+
+        /// <summary>
+        /// §4.3: a figure stands 226 px tall on the 1920×1080 screen, feet on y 570 — about 75% of the
+        /// 300 px battle_ui_ux_v2 drew it at. The Unity frame is 450 tall, so it is drawn at 226 / 450.
+        /// </summary>
+        public const float StandardHeight = 226f;
+
+        /// <summary>§4.3: an elite that takes two cells stands 264 px tall.</summary>
+        public const float LargeHeight = 264f;
+
+        /// <summary>§4.3 足元の灯り: an ellipse under the feet, 60 px tall and twice as wide as the figure.</summary>
+        public const float FootLightHeight = 60f;
+
+        public const float FootLightWidthRatio = 2f;
+
+        /// <summary>How tall a figure that takes <paramref name="cells"/> cells stands on the screen.</summary>
+        public static float HeightFor(int cells)
+        {
+            return cells >= 2 ? LargeHeight : StandardHeight;
+        }
+
+        /// <summary>
+        /// The scale that draws a frame <paramref name="frameHeight"/> tall at <paramref name="height"/>
+        /// screen pixels. A frame with no height is drawn as it is.
+        /// </summary>
+        public static float ScaleFor(float height, float frameHeight)
+        {
+            if (height <= 0f || frameHeight <= 0f) return 1f;
+            return height / frameHeight;
+        }
+
+        /// <summary>
+        /// The scale a child takes so its own sizes stay in screen pixels under a parent drawn at
+        /// <paramref name="parentScale"/> (the target brackets, the foot light's height). A parent
+        /// with no usable scale leaves the child as it is.
+        /// </summary>
+        public static float Counter(float parentScale)
+        {
+            float scale = Math.Abs(parentScale);
+            return scale < 0.01f ? 1f : 1f / scale;
+        }
     }
 
     /// <summary>

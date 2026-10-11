@@ -2,7 +2,8 @@
 // corner hooks and no sides, so nothing covers the figure or its omen. A card that reaches draws them
 // in wick with a weak amber light and carries the one predicted value on a tag in the middle of the
 // top edge; an enemy the card cannot reach gets steel hooks and no number. Which figure is framed,
-// and the value, come from the script (CardFace.Aim / Affects, the source's PreviewFor).
+// and the value, come from the script (CardFace.Aim / Affects, the source's PreviewFor). The frame is
+// a child of the figure, which §4.3 draws at 226 / 450 (#455), so its sizes count that scale back out.
 #if UNITY_2021_2_OR_NEWER
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,27 +36,28 @@ namespace Depiction.View
         private Text _tagText;
         private Image _light;
 
+        /// <summary>
+        /// 1 over the figure's scale on the screen (#455). The brackets are a child of the figure, which
+        /// §4.3 draws at 226 / 450; every size here is multiplied by this so the hooks, the gap around
+        /// the figure and the value tag keep §5.2's screen pixels.
+        /// </summary>
+        private float _counter = 1f;
+
         private void Awake()
         {
             // The prefab's frame (8 px out, 5 px hooks of 46) takes §5.2's measures.
             Rect.anchorMin = Vector2.zero;
             Rect.anchorMax = Vector2.one;
-            Rect.offsetMin = OutMin;
-            Rect.offsetMax = OutMax;
-            _restMin = Rect.offsetMin;
-            _restMax = Rect.offsetMax;
             pulsePixels = 0f;
             BuildParts();
+            FitToFigure();
             Hide();
         }
 
         private void BuildParts()
         {
             _light = UiKit.Image(Rect, "Light", ProceduralArt.Glow, BattleTheme.WithAlpha(BattleTheme.Amber, 0.35f), Vector2.zero, Vector2.one);
-            _light.rectTransform.offsetMin = new Vector2(-10f, -10f);
-            _light.rectTransform.offsetMax = new Vector2(10f, 10f);
             _light.transform.SetAsFirstSibling();
-            foreach (Image bar in bars) SizeHook(bar, HookThickness);
 
             // §5.2 予測値: one tag on the middle of the top edge; the top hooks show either side of it.
             _tag = UiKit.Point(Rect, "Preview", new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(150f, TagHeight), Vector2.zero);
@@ -70,13 +72,44 @@ namespace Depiction.View
             _tag.gameObject.SetActive(false);
         }
 
-        /// <summary>A hook bar keeps its corner and takes the length and thickness asked.</summary>
-        private static void SizeHook(Image bar, float thickness)
+        /// <summary>A hook bar keeps its corner and takes the length and thickness asked, in screen pixels.</summary>
+        private void SizeHook(Image bar, float thickness)
         {
             if (!bar) return;
             RectTransform rt = bar.rectTransform;
             bool across = rt.sizeDelta.x >= rt.sizeDelta.y;
-            rt.sizeDelta = across ? new Vector2(HookLength, thickness) : new Vector2(thickness, HookLength);
+            float length = HookLength * _counter;
+            float thick = thickness * _counter;
+            rt.sizeDelta = across ? new Vector2(length, thick) : new Vector2(thick, length);
+        }
+
+        /// <summary>
+        /// #455: takes the figure's scale on the screen now and sizes the frame by its inverse: the
+        /// frame 46 / 22 / 12 px out, the light 10 px past it, the tag at 1:1. Run on every Show,
+        /// because the figure's height (and with it the scale) is set per battle.
+        /// </summary>
+        private void FitToFigure()
+        {
+            _counter = FigureFrame.Counter(ScaleOnScreen());
+            Rect.offsetMin = OutMin * _counter;
+            Rect.offsetMax = OutMax * _counter;
+            _restMin = Rect.offsetMin;
+            _restMax = Rect.offsetMax;
+            if (_light)
+            {
+                _light.rectTransform.offsetMin = new Vector2(-10f, -10f) * _counter;
+                _light.rectTransform.offsetMax = new Vector2(10f, 10f) * _counter;
+            }
+            if (_tag) _tag.localScale = new Vector3(_counter, _counter, 1f);
+        }
+
+        /// <summary>How many screen pixels one unit of this frame is: the figure's scale against the canvas's.</summary>
+        private float ScaleOnScreen()
+        {
+            Transform parent = Rect.parent;
+            RectTransform root = RefScreen.Root(transform);
+            if (!parent || !root || Mathf.Approximately(root.lossyScale.y, 0f)) return 1f;
+            return parent.lossyScale.y / root.lossyScale.y;
         }
 
         /// <summary>The frame of the A+ screen, kept for callers that only colour it.</summary>
@@ -91,6 +124,7 @@ namespace Depiction.View
         /// </summary>
         public void Show(bool reaches, Color hookColor, string preview, Sprite icon, Color iconColor)
         {
+            FitToFigure();
             _shown = true;
             if (group) group.alpha = 1f;
             foreach (Image bar in bars)
@@ -133,7 +167,7 @@ namespace Depiction.View
         {
             if (!_shown || pulseSeconds <= 0f || pulsePixels <= 0f) return;
             float wave = (Mathf.Sin(Time.unscaledTime * 2f * Mathf.PI / pulseSeconds) + 1f) * 0.5f;
-            Vector2 inset = new Vector2(wave * pulsePixels, wave * pulsePixels);
+            Vector2 inset = new Vector2(wave * pulsePixels, wave * pulsePixels) * _counter;
             Rect.offsetMin = _restMin + inset;
             Rect.offsetMax = _restMax - inset;
         }
