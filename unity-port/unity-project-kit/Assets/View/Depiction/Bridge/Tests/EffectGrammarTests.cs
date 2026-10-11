@@ -177,6 +177,12 @@ namespace Depiction.Bridge.Tests
                     if (cue.Kind == CueKind.StaminaChange)
                     {
                         Assert.That(cue.Fx, Is.EqualTo(cue.Amount > 0 ? FxSystem.Breath : (FxSystem?)null), def.Name + ": a stamina point is 息, the cost is nothing");
+                        Assert.That(EffectGrammar.MarkOf(cue), Is.EqualTo(FxMark.None), def.Name + ": 息 on the pips is the pips lighting");
+                    }
+                    if (cue.Kind == CueKind.HpChange && cue.Amount > 0 && cue.Target == UnitSide.Player)
+                    {
+                        Assert.That(cue.Fx, Is.EqualTo(FxSystem.Breath), def.Name + ": a heal in a play is 息");
+                        Assert.That(EffectGrammar.MarkOf(cue), Is.EqualTo(FxMark.ChestHeave), def.Name + ": a heal adds the chest's 400 (§5.3)");
                     }
                 }
                 if (ev.Systems.Contains(FxSystem.Form))
@@ -262,6 +268,7 @@ namespace Depiction.Bridge.Tests
             var on = EffectSwitches.AllOn();
             Assert.That(EffectCatalog.Of(EffectId.GrammarMark).Blocking, Is.False);
             Assert.That(EffectCatalog.Of(EffectId.TraitAccent).Blocking, Is.False);
+            Assert.That(EffectCatalog.Of(EffectId.BreathHeave).Blocking, Is.False);
             var report = new StringBuilder();
             foreach (CardDef def in CardCatalog.All)
             {

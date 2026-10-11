@@ -85,6 +85,23 @@ namespace Depiction.Tests
         }
 
         [Test]
+        public void TheViewDraws_TheShapeOfShieldFormAndSpirit_AndBreathIsThePipsWithTheChestOnlyOnAHeal()
+        {
+            // §5.3: 盾 / 型 / 気 draw their shape beside the beat; a blow draws its own inside the attack.
+            Assert.That(EffectGrammar.MarkOf(new Cue { Kind = CueKind.GuardGain, Amount = 3, Fx = FxSystem.Shield }), Is.EqualTo(FxMark.Shape));
+            Assert.That(EffectGrammar.MarkOf(new Cue { Kind = CueKind.TraitFire, Fx = FxSystem.Form }), Is.EqualTo(FxMark.Shape));
+            Assert.That(EffectGrammar.MarkOf(new Cue { Kind = CueKind.StatusChange, Amount = 1, Fx = FxSystem.Spirit }), Is.EqualTo(FxMark.Shape));
+            Assert.That(EffectGrammar.MarkOf(new Cue { Kind = CueKind.Slash, Amount = 9, Fx = FxSystem.Thrust }), Is.EqualTo(FxMark.None));
+            // 息's form is the pips lighting (the stamina beat itself) and the draw is its own beat; a heal adds the chest's 400.
+            Assert.That(EffectGrammar.MarkOf(new Cue { Kind = CueKind.StaminaChange, Amount = 1, Fx = FxSystem.Breath }), Is.EqualTo(FxMark.None));
+            Assert.That(EffectGrammar.MarkOf(new Cue { Kind = CueKind.DrawHand, Amount = 1, Fx = FxSystem.Breath }), Is.EqualTo(FxMark.None));
+            Assert.That(EffectGrammar.MarkOf(new Cue { Kind = CueKind.HpChange, Amount = 4, Fx = FxSystem.Breath }), Is.EqualTo(FxMark.ChestHeave));
+            Assert.That(EffectGrammar.MarkOf(new Cue { Kind = CueKind.HpChange, Amount = 4 }), Is.EqualTo(FxMark.None), "no system, nothing beside the beat");
+            Assert.That(EffectGrammar.FormOf(FxSystem.Breath), Is.EqualTo(FxForm.Pips));
+            Assert.That(EffectCatalog.Of(EffectId.BreathHeave).Ms, Is.EqualTo(400f), "§5.3 息: 回復は + 400");
+        }
+
+        [Test]
         public void TheBlowSystems_MapToTheirShapeAndBack()
         {
             var blows = new List<FxSystem>();
@@ -113,6 +130,7 @@ namespace Depiction.Tests
         {
             Assert.That(EffectCatalog.Of(EffectId.GrammarMark).Blocking, Is.False);
             Assert.That(EffectCatalog.Of(EffectId.TraitAccent).Blocking, Is.False);
+            Assert.That(EffectCatalog.Of(EffectId.BreathHeave).Blocking, Is.False);
             var ev = new DepictionEvent { Kind = DepictionEventKind.PlayCard };
             ev.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Amount = 9, HpAfter = 40, Intensity = EffectStrength.Uniform });
             ev.Cues.Add(new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 3, GuardAfter = 3, Intensity = EffectStrength.Uniform });

@@ -65,25 +65,25 @@ namespace Depiction.View
 
         /// <summary>
         /// battle_ui_ux_v2 §5.3 (#57): the shape of a system that is not a blow, drawn beside the beat it
-        /// belongs to. One form per system, so the same system always looks the same: 盾 a ring standing
-        /// in front of the figure, 型 a crest at its feet whose light stays a moment, 気 a mark falling
-        /// from above onto the chest, 息 a glow breathing at the chest. A blow system draws nothing here:
-        /// its shape is <see cref="Strike"/>. <paramref name="facing"/> is +1 when the figure faces right.
+        /// belongs to. The form is the grammar's (<see cref="EffectGrammar.FormOf"/>), one per system, so the
+        /// same system always looks the same: 盾 a ring standing in front of the figure, 型 a crest at its
+        /// feet whose light fades 600 ms later, 気 a mark falling from above onto the chest. A blow draws
+        /// nothing here (its shape is <see cref="Strike"/>), and neither does 息, whose form is the pips
+        /// lighting (a heal's chest is the player's <c>Heave</c>). <paramref name="facing"/> is +1 when the
+        /// figure faces right.
         /// </summary>
         public static IEnumerator Mark(MonoBehaviour host, RectTransform layer, Vector2 chest, Vector2 head, Vector2 feet,
             float facing, FxSystem system, int tier, float ms)
         {
             float scale = MarkScale[Index(tier)];
-            switch (system)
+            switch (EffectGrammar.FormOf(system))
             {
-                case FxSystem.Shield:
+                case FxForm.Ring:
                     return StandingRing(host, layer, chest + new Vector2(70f * facing, 0f), scale, ms);
-                case FxSystem.Form:
+                case FxForm.Crest:
                     return Crest(host, layer, feet, scale, ms);
-                case FxSystem.Spirit:
+                case FxForm.Sigil:
                     return Sigil(host, layer, head + new Vector2(0f, 60f), chest, scale, ms);
-                case FxSystem.Breath:
-                    return Breathe(host, layer, chest, scale, ms);
                 default:
                     return Nothing();
             }
@@ -139,7 +139,8 @@ namespace Depiction.View
                 if (a) a.localScale = new Vector3(Mathf.Lerp(0.3f, 1f, t), Mathf.Lerp(0.3f, 1f, t), 1f);
                 if (b) b.localScale = new Vector3(Mathf.Lerp(0.6f, 1f, t), Mathf.Lerp(0.6f, 1f, t), 1f);
             });
-            // §5.3 「300 + 残る」: the light stays a while beside the flow.
+            // §5.3 「300 + 600 で薄れる」: the light stays a while beside the flow. The light that lasts while the
+            // stance is in the slot is §5.11 順 2's StanceGlow, not this.
             host.StartCoroutine(FadeAndDestroy(outer, 600f));
             host.StartCoroutine(FadeAndDestroy(inner, 600f));
             host.StartCoroutine(FadeAndDestroy(glow, 600f));
@@ -157,24 +158,6 @@ namespace Depiction.View
             yield return UiTween.Run(ms, Ease.In, t => { if (rt) rt.anchoredPosition = Vector2.LerpUnclamped(from, to, t); });
             Burst(host, layer, to, BattleTheme.Phosphor, 140f * scale);
             host.StartCoroutine(FadeAndDestroy(img, 150f));
-        }
-
-        /// <summary>息: a soft light swells and settles at the chest, once.</summary>
-        private static IEnumerator Breathe(MonoBehaviour host, RectTransform layer, Vector2 at, float scale, float ms)
-        {
-            Image glow = UiKit.Sprite(layer, "BreathGlow", ProceduralArt.Glow, BattleTheme.WithAlpha(BattleTheme.Wick, 0.75f), Half, Half, new Vector2(220f * scale, 220f * scale), at);
-            glow.raycastTarget = false;
-            RectTransform rt = glow.rectTransform;
-            Color from = glow.color;
-            yield return UiTween.Run(ms, Ease.InOut, t =>
-            {
-                if (!rt) return;
-                float swell = Mathf.Sin(t * Mathf.PI); // in, then out
-                float s = 0.7f + 0.4f * swell;
-                rt.localScale = new Vector3(s, s, 1f);
-                glow.color = BattleTheme.WithAlpha(from, from.a * (0.4f + 0.6f * swell));
-            });
-            if (glow) Object.Destroy(glow.gameObject);
         }
 
         private static IEnumerator Streak(MonoBehaviour host, RectTransform layer, Vector2 at, Color color, float degrees, float length, float thickness, float ms)

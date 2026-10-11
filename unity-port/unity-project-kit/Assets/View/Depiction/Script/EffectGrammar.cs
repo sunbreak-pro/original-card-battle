@@ -31,13 +31,16 @@ namespace Depiction
         /// <summary>盾: a ring stands up in front of the figure. A guard face, a Guard +n.</summary>
         Shield,
 
-        /// <summary>型: a crest at the feet, its light staying a little. A stance face.</summary>
+        /// <summary>型: a crest at the feet and a faint light on the body, fading 600 ms after it opens. A stance face.</summary>
         Form,
 
         /// <summary>気: a mark falls from above onto the chest. A status put on.</summary>
         Spirit,
 
-        /// <summary>息: a glow at the chest. A heal, a draw, a stamina point.</summary>
+        /// <summary>
+        /// 息: the pips lighting. A heal, a draw, a stamina point. Its form is the beat itself (the pips
+        /// of a stamina gain, the cards of a draw); only a heal adds the chest rising once (§5.3, 400 ms).
+        /// </summary>
         Breath,
     }
 
@@ -51,7 +54,18 @@ namespace Depiction
         Ring,
         Crest,
         Sigil,
-        Glow,
+        Pips,
+    }
+
+    /// <summary>What the View starts beside a beat for the grammar (§5.3), read off the script alone.</summary>
+    public enum FxMark
+    {
+        /// <summary>Nothing beside the beat: no system, a blow (drawn inside the attack), or a 息 that is its own beat.</summary>
+        None,
+        /// <summary>The system's shape (<see cref="EffectGrammar.FormOf"/>): 盾 ring, 型 crest, 気 mark.</summary>
+        Shape,
+        /// <summary>息 on a heal: the chest rises and settles once beside the HP beat.</summary>
+        ChestHeave,
     }
 
     /// <summary>
@@ -139,7 +153,7 @@ namespace Depiction
                 case FxSystem.Shield: return FxForm.Ring;
                 case FxSystem.Form: return FxForm.Crest;
                 case FxSystem.Spirit: return FxForm.Sigil;
-                case FxSystem.Breath: return FxForm.Glow;
+                case FxSystem.Breath: return FxForm.Pips;
                 default: throw new ArgumentOutOfRangeException(nameof(system), system, "No form is written for this system.");
             }
         }
@@ -151,6 +165,21 @@ namespace Depiction
         public static string LookId(FxSystem system)
         {
             return "fx." + FormOf(system).ToString().ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// §5.3: what the View starts beside this beat. A blow draws its shape inside the attack beat
+        /// (StrikeShape), so nothing here. 盾 / 型 / 気 draw their shape. 息's form is the pips lighting,
+        /// which the stamina beat already is, and a draw is its own beat, so only a heal adds the chest's
+        /// 400 ms.
+        /// </summary>
+        public static FxMark MarkOf(Cue cue)
+        {
+            if (cue == null || !cue.Fx.HasValue) return FxMark.None;
+            FxSystem system = cue.Fx.Value;
+            if (IsBlow(system)) return FxMark.None;
+            if (system != FxSystem.Breath) return FxMark.Shape;
+            return cue.Kind == CueKind.HpChange && cue.Amount > 0 ? FxMark.ChestHeave : FxMark.None;
         }
 
         /// <summary>The system's one character, as §5.3 names it.</summary>

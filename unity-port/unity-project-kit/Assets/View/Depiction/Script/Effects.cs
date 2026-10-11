@@ -140,11 +140,14 @@ namespace Depiction
 
         // ---- The effect grammar (#57, battle_ui_ux_v2 §5.3 / §5.9) ----
 
-        /// <summary>The shape of a beat's system that is not a blow (Cue.Fx): 盾 ring, 型 crest, 気 mark, 息 glow.</summary>
+        /// <summary>The shape of a beat's system that is not a blow (Cue.Fx): 盾 ring, 型 crest, 気 mark.</summary>
         GrammarMark,
 
         /// <summary>A trait fired: a short cue layered on the blow, the tier unchanged (§5.9 順 1, J2).</summary>
         TraitAccent,
+
+        /// <summary>息 on a heal: the chest rises and settles once beside the HP beat (§5.3).</summary>
+        BreathHeave,
 
         // ---- Status and turn (#77, battle_ui_ux_v2 §5.1 / §5.10 / §5.13) ----
 
@@ -284,8 +287,9 @@ namespace Depiction
                 new EffectSpec(EffectId.SideBonusMiss, 260f, 0f, blocking: true, "縦切りの長さ"),
 
                 // #57: both run beside the beat they belong to, so the grammar adds no wait to any event.
-                new EffectSpec(EffectId.GrammarMark, 300f, 0f, blocking: false, "battle_ui_ux_v2 §5.3 盾 / 型 / 気 の形（大きさ 1.0 で 300。息も同じ長さ。面の拍と並行）"),
+                new EffectSpec(EffectId.GrammarMark, 300f, 0f, blocking: false, "battle_ui_ux_v2 §5.3 盾 / 型 / 気 の形（大きさ 1.0 で 300。型の紋と光はこの後 600 で薄れる。面の拍と並行）"),
                 new EffectSpec(EffectId.TraitAccent, 150f, 0f, blocking: false, "battle_ui_ux_v2 §5.9 順 1 発火の合図 150（一撃に重ね、段は変えない）"),
+                new EffectSpec(EffectId.BreathHeave, 400f, 0f, blocking: false, "battle_ui_ux_v2 §5.3 息 HP 回復の面だけ胸の上下 400（HP の拍と並行。息のほかの形はピップの点灯 StaminaRecover）"),
 
                 // #77
                 new EffectSpec(EffectId.StatusApply, 200f, 0f, blocking: true, "battle_ui_ux_v2 §5.10 順 2 チップが膨らんで収まる"),
