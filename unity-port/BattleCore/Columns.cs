@@ -13,7 +13,8 @@ namespace BattleCore
     ///
     /// The heal scales came in with the eighty cards (#188), the 出血 / 再生 stack scale with #48:
     /// 集中 reads them to find the column to the right. The stance step-up stays on the cards
-    /// themselves.
+    /// themselves. The two attack scales are not §3.1's attack rows any more (#364, #451): they only
+    /// hold the steps 集中 and 伸び add to an attack face (§5), so no card is authored from them.
     /// </summary>
     public static class Columns
     {
@@ -30,9 +31,25 @@ namespace BattleCore
         /// <summary>§2.1: each face of a two-face card is about 65% of the single-face column (the card still counts as one attribute).</summary>
         public const double DualFaceRatio = 0.65;
 
+        /// <summary>
+        /// §5 集中 (#364, #451): the base of what one column to the right adds to a lone attack face,
+        /// +7 / +8 / +9 through <see cref="StepRight"/>. These are the v4.4 attack row, kept for 集中
+        /// and 伸び only. §3.1's attack row is now 7 / 15 / 24 / 33 and is not read here: a card's own
+        /// power comes from the reach band table in swordsman_cards_v4.md §1.4.
+        /// </summary>
         public static readonly IReadOnlyList<int> SingleAttackPower = new[] { 6, 13, 21, 30 };
+
+        /// <summary>§3.1: a lone guard face.</summary>
         public static readonly IReadOnlyList<int> SingleGuard = new[] { 4, 9, 15, 22 };
+
+        /// <summary>
+        /// §5 集中 (#364, #451): the base of what one column to the right adds to the attack face of a
+        /// card with two faces, +4 / +6 / +6 through <see cref="StepRight"/>. These are the v4.4 row,
+        /// kept for 集中 and 伸び only; §3.1's row is now 5 / 10 / 16 / 22 and is not read here.
+        /// </summary>
         public static readonly IReadOnlyList<int> DualAttackPower = new[] { 4, 8, 14, 20 };
+
+        /// <summary>§3.1: the guard face of a card with two faces.</summary>
         public static readonly IReadOnlyList<int> DualGuard = new[] { 3, 6, 10, 14 };
         public static readonly IReadOnlyList<int> SingleHeal = new[] { 3, 8, 13, 19 };
         public static readonly IReadOnlyList<int> DualHeal = new[] { 2, 5, 8, 12 };

@@ -27,6 +27,8 @@ namespace BattleCore.Tests
         [Test]
         public void Scales_MatchTheCanonTable()
         {
+            // The guard and skill rows are §3.1's. The two attack rows are not (#364, #451): they are
+            // the v4.4 rows that §5 keeps as the base of what 集中 adds, +7 / +8 / +9 and +4 / +6 / +6.
             Assert.Multiple(() =>
             {
                 Assert.That(Columns.SingleAttackPower, Is.EqualTo(new[] { 6, 13, 21, 30 }));
@@ -40,6 +42,7 @@ namespace BattleCore.Tests
         [Test]
         public void Value_ReadsColumnsOneBased()
         {
+            // Any scale reads the same way; this one is §5's 集中 base, not §3.1's attack row.
             Assert.That(Columns.Value(Columns.SingleAttackPower, 1), Is.EqualTo(6));
             Assert.That(Columns.Value(Columns.SingleAttackPower, 4), Is.EqualTo(30));
         }
