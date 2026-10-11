@@ -70,6 +70,7 @@ namespace Depiction.View
         }
 
         /// <summary>The act picture: the first chr_&lt;id&gt;_act_*.png by name (one stands for every action for now).</summary>
+        // battle_ui_ux_v2 §6.4 (#310) counts one act picture per figure and keeps the other act_* out of Unity until the View picks by action id.
         private static Sprite FirstAct(string folder, string id)
         {
             string prefix = CharacterArt.FileName(id, FigurePose.Act);
