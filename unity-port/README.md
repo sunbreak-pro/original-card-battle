@@ -66,7 +66,8 @@ unity-port/
 │   ├── Miasma.cs               蓄積・20% ごとの最大スタミナ・和らげる手段の計算
 │   ├── RunLoadout.cs           ツール 3 枠・消耗品 3 枠の口（中身は DungeonContent）
 │   ├── ExplorationState.cs     1 階層ぶんの状態（不変）
-│   └── ExplorationReducer.cs   刻限と瘴気の遷移・「この生を終える」
+│   ├── ExplorationReducer.cs   刻限と瘴気の遷移・「この生を終える」
+│   └── LayerEncounters.cs      層ごとの出会いの表（encounters_and_rewards_v4.md §2、敵は roster §9、id は roster §1.8）
 ├── DungeonCore.Tests/          NUnit（net10.0）。種の再現・到達性・七層を通した潜行
 ├── DungeonContent/             持ち物の目録（netstandard2.1 / C# 9・データだけ・参照ゼロ）
 │   ├── ItemEffect.cs           効果の種類と、どちらのコアが読むか
