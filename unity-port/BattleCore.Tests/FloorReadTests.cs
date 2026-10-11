@@ -128,5 +128,60 @@ namespace BattleCore.Tests
             // An action that does not move the enemy.
             Assert.That(TurnLoop.OmenMoveCell(Opened(Enemies.PolearmWarped, 2), 0), Is.EqualTo(-1), "払い斬り");
         }
+
+        // ---- §4.7 次のターンに回復する分 -------------------------------------------------------------------
+
+        [Test]
+        public void TheRecovery_IsThreeUnderTheMaximum()
+        {
+            BattleState state = Opened(Idle, 3);
+            BattleState spent = state with { Player = state.Player with { Stamina = 4 } };
+            Assert.That(TurnLoop.PreviewRecovery(spent), Is.EqualTo(Constants.StaminaRecovery));
+            Assert.That(TurnLoop.PreviewRecovery(spent with { Player = spent.Player with { Stamina = 9 } }), Is.EqualTo(1), "capped at 10");
+            Assert.That(TurnLoop.PreviewRecovery(state), Is.EqualTo(0), "full");
+        }
+
+        [Test]
+        public void TheRecovery_CountsFatigueAndTheBonusLeftForIt()
+        {
+            BattleState state = Opened(Idle, 3);
+            BattleState spent = state with { Player = state.Player with { Stamina = 2 } };
+            BattleState tired = spent with { Player = spent.Player with { Statuses = StatusSet.Of((StatusKind.Fatigue, 1)) } };
+            Assert.That(TurnLoop.PreviewRecovery(tired), Is.EqualTo(2), "疲労: −1");
+            BattleState saved = spent with { Player = spent.Player with { NextTurnRecoveryBonus = 1 } };
+            Assert.That(TurnLoop.PreviewRecovery(saved), Is.EqualTo(4), "温存: +1");
+            BattleState heavy = spent with { Player = spent.Player with { NextTurnRecoveryBonus = -1 } };
+            Assert.That(TurnLoop.PreviewRecovery(heavy), Is.EqualTo(2), "重撃: −1");
+        }
+
+        [Test]
+        public void TheRecovery_MatchesWhatTheNextTurnStartGives()
+        {
+            BattleState state = Opened(Idle, 3);
+            foreach (var (stamina, statuses, bonus) in new[]
+            {
+                (4, StatusSet.Empty, 0),
+                (2, StatusSet.Of((StatusKind.Fatigue, 1)), 0),
+                (8, StatusSet.Empty, 1),
+                (5, StatusSet.Of((StatusKind.Fatigue, 2)), 2),
+            })
+            {
+                BattleState set = state with { Player = state.Player with { Stamina = stamina, Statuses = statuses, NextTurnRecoveryBonus = bonus } };
+                int preview = TurnLoop.PreviewRecovery(set);
+                BattleState ended = TurnLoop.EndTurn(set, NoRng).State;
+                Assert.That(TurnLoop.PreviewRecovery(ended), Is.EqualTo(preview), "the same estimate once the turn has ended");
+                var begun = TurnLoop.BeginPlayerTurn(ended, NoRng);
+                int recovered = begun.Events.OfType<StaminaRecovered>().First(e => e.Actor == Actor.Player).Amount;
+                Assert.That(preview, Is.EqualTo(recovered), $"stamina {stamina}, bonus {bonus}");
+            }
+        }
+
+        [Test]
+        public void AFinishedBattle_RecoversNothing()
+        {
+            BattleState state = Opened(Idle, 3);
+            BattleState over = state with { Player = state.Player with { Stamina = 2 }, Result = GameResult.Won };
+            Assert.That(TurnLoop.PreviewRecovery(over), Is.EqualTo(0));
+        }
     }
 }

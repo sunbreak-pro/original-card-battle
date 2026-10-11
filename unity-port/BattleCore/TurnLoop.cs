@@ -512,6 +512,38 @@ namespace BattleCore
             return to == from ? -1 : to;
         }
 
+        /// <summary>
+        /// battle-visual-v1 §4.7 次のターンに回復する分 (#455): the stamina the player would get back at
+        /// the next turn start if the turn ended now — §9 step 7's turn-end stance (its 次の回復), then
+        /// steps 1-3's recovery with the bonus 温存 and 重撃 left, 疲労, a turn-start stance's
+        /// recovery and the boss words that thin it, capped at the maximum, as
+        /// <see cref="BeginPlayerTurn"/> will count it. It is an estimate: what the enemy phases in
+        /// between do (a 疲労 put on, a move that changes the gap a stance reads) is not played.
+        /// Called on a state awaiting the turn start, the turn end is behind it and only the turn
+        /// start is counted. 0 once the battle is over.
+        /// </summary>
+        public static int PreviewRecovery(BattleState state)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (state.Result != GameResult.Ongoing) return 0;
+            var events = new List<BattleEvent>();
+            var copy = state;
+            if (state.Phase == BattlePhase.PlayerAction)
+            {
+                copy = StanceAtTurnEnd(copy, Actor.Player, 0, events);
+                copy = copy with { Player = copy.Player with { Played = null, Moved = false, LastMove = 0, FollowUp = 0, FreeStep = false } };
+            }
+            copy = copy with { Turn = copy.Turn + 1 };
+            copy = ResumeStances(copy, events);
+            int before = events.Count;
+            OpenTurnFor(copy, Actor.Player, 0, Constants.StaminaRecovery, events);
+            for (int i = before; i < events.Count; i++)
+            {
+                if (events[i] is StaminaRecovered recovered && recovered.Actor == Actor.Player) return recovered.Amount;
+            }
+            return 0;
+        }
+
         /// <summary>The action enemy <paramref name="unit"/>'s omen names, under the switch it was decided on; null for none or a rest.</summary>
         private static EnemyActionDef? OmenAction(BattleState state, int unit)
         {

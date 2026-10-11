@@ -244,6 +244,12 @@ namespace Depiction
         public bool ShowStamina;
         public int Stamina;
         public int StaminaMax;
+        /// <summary>
+        /// battle-visual-v1 §4.7 次のターンに回復する分 (#455): the stamina that comes back at the next turn
+        /// start if the turn ended now (the core's estimate, already capped at the maximum). The stamina
+        /// tag draws that many dashed dots after the ones held. 0 draws none.
+        /// </summary>
+        public int NextRecovery;
         /// <summary>Only bosses, elites and the player hold a range side (battle_core_v4 §17.3).</summary>
         public bool HasRange;
         public RangeSide Range;

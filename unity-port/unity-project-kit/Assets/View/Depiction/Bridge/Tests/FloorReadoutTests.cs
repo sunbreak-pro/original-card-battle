@@ -121,5 +121,57 @@ namespace Depiction.Bridge.Tests
             Assert.That(next.Floor.MoveCells, Is.Empty, "噛みつき does not move it");
             Assert.That(next.Floor.DenseCells, Is.Empty, "噛みつき reads no gap");
         }
+
+        // ---- §4.7 次のターンに回復する分 -------------------------------------------------------------------
+
+        [Test]
+        public void TheNextRecovery_FillsWhatTheTurnSpent()
+        {
+            // Three 呼吸を整える (cost 2; 温存: 残 6 以上で次ターン回復 +1) and three 後ろ跳び (cost 1).
+            var deck = Cards.BuildDeck(new[] { CardCatalog.Brace, CardCatalog.BackLeap }, 3);
+            var (state, writer, frame) = Begun(Enemies.PolearmWarped, 3, deck);
+            Assert.That(state.Player.Stamina, Is.EqualTo(10));
+            Assert.That(frame.Player.NextRecovery, Is.EqualTo(0), "full: nothing comes back");
+
+            // 10 → 8, 温存 +1: 3 + 1 back, capped at 10.
+            state = Play(ref writer, state, "brace", out frame);
+            Assert.That(state.Player.Stamina, Is.EqualTo(8));
+            Assert.That(frame.Player.NextRecovery, Is.EqualTo(2));
+
+            // 8 → 6, 温存 +1 again: 3 + 2 back, capped at 10.
+            state = Play(ref writer, state, "brace", out frame);
+            Assert.That(frame.Player.NextRecovery, Is.EqualTo(4));
+
+            // 6 → 5: 3 + 2 back, the whole of it.
+            state = Play(ref writer, state, "back_leap", out frame);
+            Assert.That(state.Player.Stamina, Is.EqualTo(5));
+            Assert.That(frame.Player.NextRecovery, Is.EqualTo(5));
+
+            // The estimate is what the next turn start gives.
+            StepResult end = TurnLoop.EndTurn(state, NoShuffle);
+            Assert.That(writer.Write(end.Events, end.State).Last().After.Player.NextRecovery, Is.EqualTo(5));
+            StepResult begin = TurnLoop.BeginPlayerTurn(end.State, NoShuffle);
+            Assert.That(begin.Events.OfType<StaminaRecovered>().First(e => e.Actor == Actor.Player).Amount, Is.EqualTo(5));
+        }
+
+        [Test]
+        public void TheNextRecovery_LosesOneToFatigue()
+        {
+            var deck = Cards.BuildDeck(new[] { CardCatalog.Brace, CardCatalog.BackLeap }, 3);
+            var (state, writer, _) = Begun(Enemies.PolearmWarped, 3, deck);
+            state = state with { Player = state.Player with { Stamina = 4, Statuses = StatusSet.Of((StatusKind.Fatigue, 1)) } };
+            // A guard of 4 → 2 that leaves 温存 unmet: 3 − 1 back.
+            state = Play(ref writer, state, "brace", out DepictionFrame frame);
+            Assert.That(state.Player.Stamina, Is.EqualTo(2));
+            Assert.That(frame.Player.NextRecovery, Is.EqualTo(2));
+        }
+
+        private static BattleState Play(ref CoreScriptWriter writer, BattleState state, string cardId, out DepictionFrame frame)
+        {
+            string id = state.Hand.First(c => c.Def.Id == cardId).InstanceId;
+            StepResult play = TurnLoop.PlayCard(state, id, NoShuffle);
+            frame = writer.Write(play.Events, play.State).Last().After;
+            return play.State;
+        }
     }
 }

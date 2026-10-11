@@ -1202,6 +1202,7 @@ namespace Depiction.View
             playerFigure.SetDown(frame.Player.Down);
             enemyFigure.SetDown(frame.Enemy.Down);
             _staminaTag?.SetDivider(frame.StanceDivider); // before the bind below shows the stamina
+            _staminaTag?.SetNextRecovery(frame.Player.NextRecovery); // §4.7 (#455): the dashed dots
             playerStatus.Bind(frame.Player);
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);

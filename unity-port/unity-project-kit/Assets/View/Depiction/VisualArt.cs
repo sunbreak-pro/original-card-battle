@@ -350,6 +350,40 @@ namespace Depiction.View
             return made;
         }
 
+        /// <summary>
+        /// §4.7 次のターンに回復する分: <see cref="CircleRing"/> broken into dashes (§3.2 破線, 3 px on and 3 px
+        /// off, measured round the middle of the line on a 16 px dot), cut by angle. Image.Type.Simple.
+        /// </summary>
+        public static Sprite DashedCircleRing(float thickness)
+        {
+            int key = -1 - Mathf.RoundToInt(thickness * 10f);
+            if (RingSprites.TryGetValue(key, out Sprite cached) && cached && cached.texture) return cached;
+            const int size = 32; // twice the 16 px dot
+            float outer = size * 0.5f;
+            float inner = outer - thickness * 2f;
+            // On the 16 px dot the middle of the line is a circle of diameter 16 − thickness; a dash and
+            // its gap take 6 px of it, so it holds that many pairs, rounded to a whole number.
+            float around = Mathf.PI * (16f - thickness);
+            int pairs = Mathf.Max(3, Mathf.RoundToInt(around / 6f));
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    Vector2 p = new Vector2(x + 0.5f - outer, y + 0.5f - outer);
+                    float d = p.magnitude;
+                    float a = Mathf.Clamp01(outer - d) * Mathf.Clamp01(d - inner);
+                    float turn = (Mathf.Atan2(p.y, p.x) + Mathf.PI) / (2f * Mathf.PI); // 0..1 round the dot
+                    if (Mathf.FloorToInt(turn * pairs * 2f) % 2 == 1) a = 0f;
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            }
+            tex.Apply();
+            Sprite made = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            RingSprites[key] = made;
+            return made;
+        }
+
         // ---- 付録 A line icons ---------------------------------------------------------------------
 
         /// <summary>The sprite of a 付録 A icon, white so the Image tints it.</summary>

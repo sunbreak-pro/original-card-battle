@@ -781,6 +781,8 @@ namespace Depiction.Bridge
             };
             // #288: the figure wears the art filed under the enemy's id; the View only looks it up.
             frame.Enemy.ArtId = _enemyDef.Id;
+            // battle-visual-v1 §4.7 (#455): the dashed dots, the core's estimate of the next recovery.
+            frame.Player.NextRecovery = TurnLoop.PreviewRecovery(AsShown(after));
             frame.Floor = FloorOf(after);
             if (frame.Omen.Visible) frame.Omen.Hit = HitMark(frame.Floor.AimCells);
             foreach (CardInstance card in _hand)
