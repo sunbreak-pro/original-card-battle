@@ -1979,9 +1979,9 @@ namespace BattleCore
     /// <summary>
     /// §5 集中 (#188, #48): the next card resolves one column to the right, never beyond column 4.
     /// A card is written into one column and keeps no table of the others, so the column to the
-    /// right is read off the §3.1 scales the card is written from: the step to the next column is
-    /// added to its power, its Guard and its heal, and to the stacks of each 出血 / 再生 its face
-    /// gives (the stack scale 1 / 2 / 3 / 4). A face only grows on the attribute that owns it (a
+    /// right is read off the <see cref="Columns"/> scales: the step to the next column is added to
+    /// its power (the v4.4 attack rows §5 keeps, #364), its Guard and its heal (§3.1's rows), and
+    /// to the stacks of each 出血 / 再生 its face gives (the stack scale 1 / 2 / 3 / 4). A face only grows on the attribute that owns it (a
     /// move card's small Guard does not), and column 4 does not grow.
     ///
     /// What is the same in every column stays: the other words (2 stacks whatever the column),

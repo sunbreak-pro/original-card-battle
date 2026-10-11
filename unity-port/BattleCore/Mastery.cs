@@ -202,9 +202,10 @@ namespace BattleCore
 
         /// <summary>
         /// The card at <paramref name="rank"/> (§3.2). 伸び moves the faces one column right per step
-        /// the way 集中 reads the column to the right (<see cref="FocusStep"/>: the §3.1 step on
-        /// power, Guard, heal and 出血 / 再生), never beyond column 4, and keeps the cost. 軽さ takes
-        /// the cost 1 down per step, floor 0. 型替え takes the profile's trait for the step. The name
+        /// the way 集中 reads the column to the right (<see cref="FocusStep"/>: the step on power,
+        /// Guard, heal and 出血 / 再生 read off the <see cref="Columns"/> scales; the attack rows are the
+        /// v4.4 steps §5 keeps, #364, the others §3.1's), never beyond column 4, and keeps the cost.
+        /// 軽さ takes the cost 1 down per step, floor 0. 型替え takes the profile's trait for the step. The name
         /// is the profile's for the step when it has one. The id stays, so the record still finds it.
         /// </summary>
         public static CardDef Master(CardDef def, int rank, MasteryProfile profile)
