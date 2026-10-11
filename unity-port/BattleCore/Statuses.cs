@@ -204,15 +204,26 @@ namespace BattleCore
             _ => false,
         };
 
+        /// <summary>roster §6.2 枯らし (v4.14, #399 / #400): the recovery 枯らし leaves at the least, 疲労 included.</summary>
+        public const int WitheringRecoveryFloor = 1;
+
         /// <summary>
         /// roster §5.1 深み and §6.2 枯らし: what the turn-start recovery loses. 枯らし takes 1 a stack
         /// always; 深み 1 a stack when the holder starts the turn adjacent (N 0) to the nearest enemy.
-        /// 疲労 is not counted here (battle_core_v4 §5: −1 while held). The floor 0 is the caller's.
+        /// 疲労 is not counted here (battle_core_v4 §5: −1 while held); it is already out of
+        /// <paramref name="recoveryBefore"/>, the recovery the turn would give without these two words.
+        ///
+        /// 枯らし takes only as much as brings <paramref name="recoveryBefore"/> down to
+        /// <see cref="WitheringRecoveryFloor"/> (roster §6.2 「疲労と重なっても、回復は 1 より下がらない
+        /// （1 が下限）」), and nothing when it is already 1 or less. The floor is a 枯らし rule only:
+        /// 深み keeps its 「0 が下限」 (roster §5.1, and the v4.14 history: 深み is not changed), so it
+        /// comes after 枯らし and may still take the recovery below 1. The floor 0 is the caller's.
         /// </summary>
-        public static int RecoveryLoss(StatusSet statuses, bool adjacent)
+        public static int RecoveryLoss(StatusSet statuses, bool adjacent, int recoveryBefore)
         {
             if (statuses == null) throw new ArgumentNullException(nameof(statuses));
-            return statuses.Stacks(StatusKind.Withering) + (adjacent ? statuses.Stacks(StatusKind.Depths) : 0);
+            int withering = Math.Min(statuses.Stacks(StatusKind.Withering), Math.Max(0, recoveryBefore - WitheringRecoveryFloor));
+            return withering + (adjacent ? statuses.Stacks(StatusKind.Depths) : 0);
         }
 
         /// <summary>

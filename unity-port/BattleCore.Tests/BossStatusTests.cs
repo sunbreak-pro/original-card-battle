@@ -282,10 +282,12 @@ namespace BattleCore.Tests
 
         [TestCase(1, 0, 2)]
         [TestCase(2, 0, 1)]
-        [TestCase(2, 1, 0)]
-        public void Withering_ThinsEveryRecovery_DownToZero(int stacks, int fatigue, int recovered)
+        [TestCase(1, 1, 1)]
+        [TestCase(2, 1, 1)]
+        public void Withering_ThinsEveryRecovery_DownToOne(int stacks, int fatigue, int recovered)
         {
-            // roster §6.2: 「ターン開始の回復 −1。2 スタックで −2（0 が下限）」, at any gap; 疲労 adds its own −1.
+            // roster §6.2 (v4.14, #399 / #400): 「ターン開始の回復 −1。2 スタックで −2。疲労と重なっても、
+            // 回復は 1 より下がらない（1 が下限）」, at any gap. 枯らし 2 with 疲労 1 used to give 3 − 2 − 1 = 0.
             var s = TurnLoop.Start(new BattleSetup(Idle, Deck(), Cells, StartGap: 3), NoShuffle).State;
             var words = fatigue > 0
                 ? StatusSet.Of((StatusKind.Withering, stacks), (StatusKind.Fatigue, fatigue))
@@ -298,6 +300,37 @@ namespace BattleCore.Tests
                 Assert.That(begin.Events.OfType<StaminaRecovered>().Single().Amount, Is.EqualTo(recovered));
                 Assert.That(begin.State.Player.Statuses.Stacks(StatusKind.Withering), Is.EqualTo(stacks), "it lasts the battle");
             });
+        }
+
+        [TestCase(2, 0, 1, 0)]
+        [TestCase(1, 0, 1, 1)]
+        [TestCase(2, 1, 1, 0)]
+        [TestCase(2, 0, 2, 0)]
+        public void Withering_Floor_DoesNotShieldDepths(int withering, int fatigue, int depths, int recovered)
+        {
+            // The floor of 1 is the 枯らし row's (roster §6.2); 深み keeps its 「0 が下限」 (§5.1, and the
+            // v4.14 history leaves it unchanged). So 枯らし stops at 1 first and 深み, adjacent, still
+            // takes from that 1. No fight of the roster puts both on (ガルド is the sixth layer's boss,
+            // 歪みの根 the seventh's, and both words end with the battle), so only this test meets it.
+            var s = TurnLoop.Start(new BattleSetup(Idle, Deck(), Cells, StartGap: 0), NoShuffle).State;
+            var words = new List<(StatusKind, int)> { (StatusKind.Withering, withering), (StatusKind.Depths, depths) };
+            if (fatigue > 0) words.Add((StatusKind.Fatigue, fatigue));
+            s = s with { Player = s.Player with { Stamina = 0, Statuses = StatusSet.Of(words.ToArray()) } };
+            var begin = TurnLoop.BeginPlayerTurn(s, NoShuffle);
+
+            Assert.That(begin.Events.OfType<StaminaRecovered>().Single().Amount, Is.EqualTo(recovered));
+        }
+
+        [TestCase(2, 3, 2)]
+        [TestCase(2, 2, 1)]
+        [TestCase(2, 1, 0)]
+        [TestCase(2, 0, 0)]
+        [TestCase(1, -1, 0)]
+        public void Withering_TakesNoMoreThan_LeavesOne(int stacks, int recoveryBefore, int loss)
+        {
+            // What comes in is the recovery with 疲労, a turn-start stance and the 温存 / 重撃 bonus
+            // already counted; 枯らし takes it down to 1 and no further, and nothing from 1 or less.
+            Assert.That(Statuses.RecoveryLoss(StatusSet.Of((StatusKind.Withering, stacks)), adjacent: false, recoveryBefore), Is.EqualTo(loss));
         }
 
         [Test]

@@ -35,10 +35,10 @@ namespace BattleCore
             AtMost(0, TraitEffect.StaminaGain, 1),
             Description: "手元を狙う軽い一撃");
 
-        /// <summary>#5. The second plain column-3 attack, kept at 0〜1 (width 2): 24 on the band table plus the 素直 +2.</summary>
+        /// <summary>#5. The second plain column-3 attack, widened to 0〜2 (width 3) in v4.6 (#401): 21 on the band table plus the 素直 +2.</summary>
         public static readonly CardDef SideSweep = new CardDef(
             "side_sweep", "横薙ぎ", BattleAttribute.Attack, 3,
-            new Face(Power: 26),
+            new Face(Power: 23, Reach: new Reach(0, 2)),
             Description: "水平に薙ぐ");
 
         /// <summary>#6. Breaks 1 stamina, and hits +5 harder at a slowed foe.</summary>

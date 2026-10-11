@@ -61,6 +61,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 | 七層の瘴気と刻限（層ごとの数値） | `.claude/docs/danjeon_document/seven_layers_v4.md` | dungeon | PROPOSED | battle, cards |
 | 探索の瘴気と戦闘の数値の突き合わせ | `.claude/docs/danjeon_document/miasma_and_battle_v4.md` | dungeon | PROPOSED | battle |
 | ツールと消耗品（出立の枠の中身） | `.claude/docs/danjeon_document/tools_and_consumables_v4.md` | dungeon | PROPOSED | battle |
+| 層ごとの出会い・報酬・イベント | `.claude/docs/danjeon_document/encounters_and_rewards_v4.md` | dungeon | PROPOSED | battle, cards |
 
 ### design が書く正本
 

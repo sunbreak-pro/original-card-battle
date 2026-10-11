@@ -1,6 +1,6 @@
 # 錆槍の竜兵（polearm_warped）— 仕様カード
 
-- 作成日: 2026-09-20 / 更新: 2026-09-23（#146。寸法・生成時間・指示文を直し、題材を #128 の竜人へ寄せた）/ 2026-10-03（#85。向きを左向きに変え、待機の絵を Unity リポへ入れた）/ 2026-10-04（#85。行動をロースター v4.6 の 5 つに揃え、間合いをマスの語に直し、差分の指示文を足した）/ 工程: C0（`visual-production-pipeline character polearm_warped`）
+- 作成日: 2026-09-20 / 更新: 2026-09-23（#146。寸法・生成時間・指示文を直し、題材を #128 の竜人へ寄せた）/ 2026-10-03（#85。向きを左向きに変え、待機の絵を Unity リポへ入れた）/ 2026-10-04（#85。行動をロースター v4.6 の 5 つに揃え、間合いをマスの語に直し、差分の指示文を足した）/ 2026-10-10（#85。取り込み設定と画面での確認が済んだので、進捗を差分の作成待ちに直した）/ 工程: C0（`visual-production-pipeline character polearm_warped`）
 - 正本: `.claude/docs/enemy_document/enemy_roster_v4.md`（錆槍の竜兵の節）/ `.claude/docs/vision/world-v1.md`（竜の系譜）/ `.claude/docs/battle_document/battle_core_v4.md` §7（マスと間合い）/ `.claude/docs/battle_document/battle_ui_ux_v2.md`（床のマス・届くマス・狙うマス）/ `.claude/docs/art_document/style-guide.md`（原本の大きさと指示文）/ `.claude/docs/art_document/asset-intake.md`（書き出しと取り込み）/ `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs`（枠と配置）/ `unity-port/unity-project-kit/Assets/View/Depiction/Script/FigureMotion.cs`（差分の絵の名前と動き）
 - 手順書: `docs/reports/2026-09-19-krita-ai-setup-guide.html` 4 章（待機）/ `docs/reports/2026-10-03-enemy-motion.html`（差分）
 - 内部 ID は `polearm_warped` のままです。ロースターが ID を替えないと決めているので、ファイル名と asset id もこの ID を使います（`enemy_roster_v4.md` §1.8）。
@@ -198,12 +198,12 @@ View は倒れの 800 ms で、絵ごと足元を軸に右（後ろ）へ 24° �
 | C3 | 済み | こうだいさんが Krita で待機を生成した（`竜の槍兵2.kra`、候補 6 枚） |
 | C4 | 済み | こうだいさんが一番上の候補（種 2367636945）を採用した（2026-10-03、#85 のコメント） |
 | C5 | 一部 | 背景の灰色は抜いた。足元の影は残した。類似確認（台帳の `similarity_check`）はまだ |
-| C6 | 未着手 | 加筆はせずに待機の絵を先に入れた。差分は §3.1 の順で作る。順 1（薙ぎ払い・倒れ）は、待機の絵が `Battle.unity` に映ったのを確かめてから。差分の絵は 1 枚もまだ無い |
+| C6 | 未着手 | 加筆はせずに待機の絵を先に入れた。差分は §3.1 の順で作る。待機の絵が `Battle.unity` に映ったので（C8）、順 1（薙ぎ払い・倒れ）に進める。差分の絵は 1 枚もまだ無い |
 | C7 | 一部 | #288（PR #293）で、絵 1 枚を画面で動かす段が入った。敵の踏み込み（46 単位、100 ms）、行動の系統ごとの体の伸び、800 ms の倒れが動く（`DepictionPlayer.cs:516`、`FigureMotion.cs:77-151`、`Effects.cs:249`、`:289`） |
-| C8 | 一部 | 待機の絵（640 × 1536、左向き、背景透明）は RPG-by-card#8 で Unity リポに入った（2026-10-03）。View は敵の id で絵を引き（`BattleBootstrap.cs:22` の既定が `polearm_warped`、`CoreScriptWriter.cs:697`）、敵の反転は #288 で外れた。`Battle.unity` に映るかは未確認 |
+| C8 | 一部 | 待機の絵（640 × 1536、左向き、背景透明）は RPG-by-card#8 で Unity リポに入った（2026-10-03）。取り込み設定（`asset-intake.md` §3）は RPG-by-card#10 で当て、同じ PR で Preset を Preset Manager に登録し、Figure の絵の棚に `polearm_warped` を載せた（2026-10-05）。敵の反転は #288 で外れた。こうだいさんの試運転で、`Battle.unity` の錆槍の竜兵が待機の絵のまま左を向いて立つのを確かめた（2026-10-05、#79）。差分が入るまでは一部のまま |
 
-**人に渡したもの**: Unity リポの RPG-by-card#8（待機の絵・台帳・生成条件の写し。merge 済み）と、§4.2 の差分の指示文です。
+**人に渡したもの**: Unity リポの RPG-by-card#8（待機の絵・台帳・生成条件の写し）と RPG-by-card#10（取り込み設定・Preset・絵の棚。どちらも merge 済み）、§4.2 の差分の指示文です。
 
-**次に人がすること**: こうだいさんが、メインの作業場所の Unity Editor で Tools ▸ Depiction ▸ Collect Character Art を実行し、`Battle.unity` を再生して、錆槍の竜兵が待機の絵のまま左を向いて立つかを確かめます。各担当の作業場所では Editor を開かないので、この確認はメインでしかできません。取り込み設定（`asset-intake.md` §3 と §5 の Preset）が当たっているかも、同じときに Inspector で見ます。映ったら、§4.2 の 1 と 2（薙ぎ払い・倒れ）を Krita で作ります。
+**次に人がすること**: こうだいさんが、§4.2 の 1 と 2（薙ぎ払い・倒れ）を Krita で作ります。待機の絵と同じ 640 × 1536 で、足の位置も待機の絵にそろえます。できた差分は Claude が受け取り、背景を抜いて Unity リポの `Assets/Art/Characters/polearm_warped/` に入れます。差分の PNG には、登録済みの Preset が初回の取り込みで自動で当たります（`asset-intake.md` §5）。
 
 **前提**: 絵柄の規約（`style-guide.md`）と取り込み規約（`asset-intake.md`）はあります。Unity リポの台帳 `Docs/art/asset-ledger.csv` は RPG-by-card#8 で `.claude/docs/art_document/asset-ledger.template.csv` から置きました。列の定義は `asset-intake.md` §7 です。

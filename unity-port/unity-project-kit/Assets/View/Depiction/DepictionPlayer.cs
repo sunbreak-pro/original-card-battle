@@ -43,18 +43,11 @@ namespace Depiction.View
         public Text handGuide;
 
         [Header("Hand layout")]
-        [Tooltip("Distance between neighbouring cards for a hand of five or fewer. Six, seven and eight close in to 150 / 140 / 126 of 160 (battle-visual-v1 §4.8). Below the card width (190) the cards overlap like a spread bundle.")]
+        [Tooltip("Distance between neighbouring cards for a hand of five or fewer. Six, seven and eight close in to 150 / 140 / 126 of 160 (battle-visual-v1 §4.8). Below the card width (216) the cards overlap like a spread bundle.")]
         public float cardSpacing = 160f;
-        [Tooltip("The hand is a shallow fan: each step away from the middle tilts a card by this many degrees...")]
-        [Range(0f, 15f)] // HandFan assumes the outermost tilt stays within 90 degrees
+        [Tooltip("The hand is a shallow fan: each step away from the middle tilts a card by this many degrees, about the middle of its bottom edge (battle-visual-v1 §4.8).")]
+        [Range(0f, 15f)]
         public float fanDegreesPerCard = 2.5f;
-        [Tooltip("...and the middle rises above the outermost cards by this many pixels times the step squared.")]
-        public float fanDropPixels = 4f;
-
-        [Header("Hover")]
-        [Tooltip("A card under the pointer rises by this much and comes to the front. Its fan angle is kept.")]
-        public float hoverLiftPixels = 28f;
-        public float hoverScale = 1.05f;
 
         [Header("Guide")]
         [Tooltip("How long the reason a card came back stays on the guide line.")]
@@ -140,6 +133,14 @@ namespace Depiction.View
         private Vector2 _enemyHome;
         private GameObject _resultCard;
 
+        // ---- battle-visual-v1 §4.2 / §4.7 (#242): parts made at run time --------------------------
+        /// <summary>The floor of cells under the figures; drawn when the script gives one (DepictionFrame.Floor).</summary>
+        private FloorView _floor;
+        /// <summary>The player's stamina tag above the piles.</summary>
+        private StaminaTagView _staminaTag;
+        /// <summary>The card whose reach the floor lights now, or null.</summary>
+        private CardView _reachFor;
+
         /// <summary>
         /// Hands the player the source to play instead of the two it can build by itself. Call it
         /// from Awake (BattleBootstrap does): Start reads it once.
@@ -184,6 +185,10 @@ namespace Depiction.View
             _dragging = null;
             _hovered = null;
             _refusal = null;
+            // A card held or hovered when the last battle stopped may have left these up.
+            _staminaTag?.ShowCost(0);
+            HideHoverPanels();
+            HideTargetMarks();
             Finished = false;
             EventSeconds.Clear();
             if (_resultCard)
@@ -201,6 +206,7 @@ namespace Depiction.View
             Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
             _source = source;
             ApplyFrame(_source.Frame);
+            if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
             RefreshPlayableLook(); // the last battle's outcome line goes with it
             StartCoroutine(RunAutomaticEvents());
         }
@@ -309,8 +315,10 @@ namespace Depiction.View
                 backdrop.color = Color.white;
             }
             if (stanceHintIcon && stanceHintIcon.sprite == null) stanceHintIcon.sprite = ProceduralArt.Shield;
+            StyleEndTurn();
 
             if (enemyFigure) _enemyHome = enemyFigure.Rect.anchoredPosition;
+            BuildVisualParts();
             _started = true;
             if (_givenSource == null && _hold)
             {
@@ -322,6 +330,7 @@ namespace Depiction.View
             else if (scriptedPlayback) _source = new DepictionRunner(TurnSliceScript.Build());
             else _source = new LiveTurn();
             ApplyFrame(_source.Frame);
+            if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
             StartCoroutine(RunAutomaticEvents());
         }
 
@@ -345,6 +354,146 @@ namespace Depiction.View
             UpdateHover();
             UpdateSnap();
             UpdateEndTurn();
+            UpdateFloorReach();
+            FollowFigures();
+        }
+
+        // ---- battle-visual-v1 §4.2 / §4.7 (#242) ------------------------------------------------------
+
+        /// <summary>
+        /// Makes the parts the scene from before #242 does not have: the floor, under the figures, and
+        /// the stamina tag, which takes the player's stamina over from the pips in the player's panel.
+        /// </summary>
+        private void BuildVisualParts()
+        {
+            if (enemyFigure && enemyFigure.Rect.parent is RectTransform arena) _floor = new FloorView(arena);
+            RectTransform root = RefScreen.Root(handArea ? handArea : (Transform)transform);
+            if (root && playerStatus)
+            {
+                int below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
+                _staminaTag = new StaminaTagView(root, below);
+                playerStatus.PipsElsewhere = true;
+                playerStatus.StaminaShown = (stamina, max) => _staminaTag.SetStamina(stamina, max);
+            }
+        }
+
+        /// <summary>
+        /// §4.2 / §4.3: the floor of <paramref name="frame"/>, with the player standing on its cells now
+        /// and the enemy's home on its own (the enemy is moved there by the next return or snap, so a
+        /// return already under way is not cut short). With a floor the one gap number is the floor's,
+        /// so the figure's own tag stays down.
+        /// </summary>
+        private void ApplyFloor(DepictionFrame frame)
+        {
+            if (_floor == null || !playerFigure) return;
+            _floor.Bind(frame.Floor, playerFigure.transform.position, frame.Corner.Floor);
+            _reachFor = null; // Bind put the reach out; the next Update lights it again for the card still hovered
+
+            if (!_floor.Shown) return;
+            FloorFrame floor = frame.Floor;
+            playerFigure.SetRange(false, "");
+            playerFigure.transform.position = _floor.FeetOf(floor.PlayerCell, floor.PlayerSize);
+            if (enemyFigure) _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(floor.EnemyCell, floor.EnemySize));
+        }
+
+        /// <summary>The anchored position that puts <paramref name="rt"/>'s pivot on the world point <paramref name="world"/>.</summary>
+        private static Vector2 AnchoredAt(RectTransform rt, Vector3 world)
+        {
+            Vector3 was = rt.position;
+            rt.position = world;
+            Vector2 anchored = rt.anchoredPosition;
+            rt.position = was;
+            return anchored;
+        }
+
+        /// <summary>
+        /// With a floor, the parts tied to the enemy keep to its x: the omen badge and the release zone
+        /// over the enemy's home, kept 24 px inside the screen's edges. Their heights stay where the
+        /// scene put them.
+        /// </summary>
+        private void FollowFigures()
+        {
+            if (_floor == null || !_floor.Shown || !enemyFigure || !playerFigure) return;
+            RectTransform root = RefScreen.Root(enemyFigure.transform);
+            if (!root) return;
+            Vector3 enemyHome = enemyFigure.Rect.parent.TransformPoint(EnemyHomeLocal());
+            float enemyX = RefScreen.Of(root, enemyHome).x;
+            if (omenBadge) KeepX(omenBadge.Rect, root, enemyX);
+            if (receiver) KeepX((RectTransform)receiver.transform, root, enemyX);
+            // The two number panels stay where the scene put them. They follow their figures only once
+            // §4.5's 300 / 210 px panels exist: the scene's are 480 px wide, so at a gap of 0 the two
+            // would overlap if they followed now.
+        }
+
+        /// <summary>The enemy's home in its parent's local space (its anchored position, back through its anchors).</summary>
+        private Vector3 EnemyHomeLocal()
+        {
+            RectTransform rt = enemyFigure.Rect;
+            Vector2 now = rt.anchoredPosition;
+            return rt.localPosition + (Vector3)(_enemyHome - now);
+        }
+
+        /// <summary>Moves <paramref name="rt"/> so its middle stands on screen x <paramref name="x"/>, its whole width 24 px inside the edges.</summary>
+        private static readonly Vector3[] Corners = new Vector3[4];
+
+        private static void KeepX(RectTransform rt, RectTransform root, float x)
+        {
+            Vector3[] corners = Corners;
+            rt.GetWorldCorners(corners);
+            float left = RefScreen.Of(root, corners[0]).x;
+            float right = RefScreen.Of(root, corners[2]).x;
+            float half = (right - left) * 0.5f;
+            float target = Mathf.Clamp(x, 24f + half, BattleTheme.RefWidth - 24f - half);
+            float shift = target - (left + half);
+            if (Mathf.Abs(shift) < 0.5f) return;
+            Vector3 from = RefScreen.World(root, new Vector2(left + half, 0f));
+            Vector3 to = RefScreen.World(root, new Vector2(target, 0f));
+            rt.position += new Vector3(to.x - from.x, 0f, 0f);
+        }
+
+        /// <summary>
+        /// §4.2 / §5.1 / §5.2: while an enemy-aimed card is hovered or held, the cells it reaches light
+        /// up (CardFace.ReachCells, the script's). Anything else puts them out.
+        /// </summary>
+        private void UpdateFloorReach()
+        {
+            if (_floor == null) return;
+            CardView card = _dragging ? _dragging : (!_busy ? _hovered : null);
+            if (!card || card.Face == null || card.Face.Aim != CardAim.Single) card = null;
+            // By reference: a played card is destroyed, and Unity's == would call it equal to null.
+            if (ReferenceEquals(card, _reachFor)) return;
+            _reachFor = card;
+            if (card) _floor.ShowReach(card.Face.ReachCells);
+            else _floor.HideReach();
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §4.9 (#242): the end-turn plate in amber — a 2 px amber frame over an amber
+        /// 16% fill, its label at 24 px. The plate belongs to the scene, so it is restyled here.
+        /// </summary>
+        private void StyleEndTurn()
+        {
+            if (!endTurn) return;
+            Image plate = endTurn.GetComponent<Image>();
+            if (plate)
+            {
+                plate.sprite = VisualArt.Rounded(6);
+                plate.type = Image.Type.Sliced;
+                plate.color = BattleTheme.WithAlpha(BattleTheme.Amber, 0.16f);
+            }
+            foreach (string edge in new[] { "FrameTop", "FrameBottom", "FrameLeft", "FrameRight" })
+            {
+                Transform old = endTurn.Find(edge);
+                if (old) old.gameObject.SetActive(false);
+            }
+            if (!endTurn.Find("AmberFrame")) VisualArt.Ring(endTurn, "AmberFrame", BattleTheme.Amber, 6, 2);
+            Text label = endTurn.GetComponentInChildren<Text>();
+            if (label)
+            {
+                label.fontSize = 24;
+                label.fontStyle = FontStyle.Bold;
+                label.color = BattleTheme.Ink;
+            }
         }
 
         /// <summary>
@@ -429,6 +578,12 @@ namespace Depiction.View
             {
                 yield return Effect(EffectId.EnemyTurnBanner, Banner(DepictionText.EnemyTurn, BattleTheme.Omen, _effects.Ms(EffectId.EnemyTurnBanner)), null);
             }
+            // §4.2 (#242): with a floor, home is the enemy's cell after the event, so the step back
+            // below also carries it onto a cell it was moved to.
+            if (_floor != null && _floor.Shown && enemyFigure && ev.After != null && ev.After.Floor.Cells > 0)
+            {
+                _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(ev.After.Floor.EnemyCell, ev.After.Floor.EnemySize));
+            }
             // An enemy whose blow was all taken by Guard (or who only guarded) is still leaning in:
             // it steps back beside the next event instead of holding this one up.
             if (enemyFigure && enemyFigure.Rect.anchoredPosition != _enemyHome)
@@ -510,8 +665,8 @@ namespace Depiction.View
                 case CueKind.RangeSwitch:
                     // Moved by the other side (the polearm's shove): a knock-back, and the muted label says so.
                     if (cue.Pushed) FloatEffect(EffectId.PushMark, labelAt, DepictionText.Pushed, BattleTheme.Ink2, 36);
-                    yield return Effect(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.RangeGlyphAfter, cue.Pushed),
-                        () => SnapRange(target, cue.RangeAfter, cue.RangeGlyphAfter));
+                    yield return Effect(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.RangeGlyphAfter, cue.Pushed, cue),
+                        () => SnapRange(target, cue.RangeAfter, cue.RangeGlyphAfter, cue));
                     break;
 
                 case CueKind.StanceCue:
@@ -835,15 +990,61 @@ namespace Depiction.View
             yield return UiTween.Move(figure.Rect, from, to, ms, Ease.Out);
         }
 
-        private void SnapRange(FigureView figure, RangeSide range, string glyph)
+        private void SnapRange(FigureView figure, RangeSide range, string glyph, Cue cue = null)
         {
+            if (OnFloor(cue))
+            {
+                figure.transform.position = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
+                if (enemyFigure && cue.EnemyCellAfter > 0)
+                {
+                    _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize));
+                    SnapHome(enemyFigure, _enemyHome);
+                }
+                _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter);
+                return;
+            }
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) figure.transform.position = slot.position;
             figure.SetRange(true, glyph);
         }
 
-        private IEnumerator SwitchRange(FigureView figure, RangeSide range, string glyph, bool pushed)
+        /// <summary>The move is drawn on the floor: one is shown and the cue says where both stand after it.</summary>
+        private bool OnFloor(Cue cue)
         {
+            return cue != null && _floor != null && _floor.Shown && cue.PlayerCellAfter > 0;
+        }
+
+        private int PlayerSize => _source != null && _source.Frame != null ? Mathf.Max(1, _source.Frame.Floor.PlayerSize) : 1;
+        private int EnemySize => _source != null && _source.Frame != null ? Mathf.Max(1, _source.Frame.Floor.EnemySize) : 1;
+
+        /// <summary>
+        /// §4.2 (#242): a move on the floor — the player walks to its new cell, an enemy that moved
+        /// (a push, a pull, its own step) slides to its own, and the gap number follows.
+        /// </summary>
+        private IEnumerator MoveOnFloor(FigureView figure, Cue cue)
+        {
+            Vector3 from = figure.transform.position;
+            Vector3 to = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
+            Vector2 enemyFrom = enemyFigure ? enemyFigure.Rect.anchoredPosition : Vector2.zero;
+            Vector2 enemyTo = enemyFigure && cue.EnemyCellAfter > 0 ? AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize)) : enemyFrom;
+            bool enemyMoves = enemyFigure && (enemyTo - _enemyHome).sqrMagnitude > 0.25f;
+            if (enemyMoves) _enemyHome = enemyTo;
+            // 320 ms to move (battle_ui_ux_v2 §10.6); a push starts fast and settles.
+            yield return UiTween.Run(320f, cue.Pushed ? Ease.Out : Ease.InOut, t =>
+            {
+                if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
+                if (enemyMoves && enemyFigure) enemyFigure.Rect.anchoredPosition = Vector2.LerpUnclamped(enemyFrom, enemyTo, t);
+            });
+            _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter);
+        }
+
+        private IEnumerator SwitchRange(FigureView figure, RangeSide range, string glyph, bool pushed, Cue cue = null)
+        {
+            if (OnFloor(cue))
+            {
+                yield return MoveOnFloor(figure, cue);
+                yield break;
+            }
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             Vector3 from = figure.transform.position;
             Vector3 to = slot ? slot.position : from;
@@ -973,12 +1174,14 @@ namespace Depiction.View
             enemyFigure.ShowArt(frame.Enemy.ArtId);
             playerFigure.SetDown(frame.Player.Down);
             enemyFigure.SetDown(frame.Enemy.Down);
+            _staminaTag?.SetDivider(frame.StanceDivider); // before the bind below shows the stamina
             playerStatus.Bind(frame.Player);
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);
             enemyFigure.SetRange(frame.Enemy.HasRange, frame.Enemy.RangeGlyph);
             RectTransform slot = frame.Player.Range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) playerFigure.transform.position = slot.position;
+            ApplyFloor(frame); // §4.2: with a floor, the figures stand on their cells instead of the slots
             omenBadge.Bind(frame.Omen);
             bool hasHint = !string.IsNullOrEmpty(frame.StanceHint);
             if (stanceHintText) stanceHintText.text = frame.StanceHint;
@@ -1044,12 +1247,40 @@ namespace Depiction.View
             }
         }
 
-        /// <summary>Resting place of the i-th card in a shallow fan (see <see cref="HandFan.Place"/>).</summary>
+        /// <summary>
+        /// Resting place of the i-th card (battle-visual-v1 §4.8, #242): centred on x 960, the middle
+        /// card's top at y 896 so only its upper 184 px show, the k-th from the middle k² × 3.2 px lower,
+        /// tilted 2.5° a step about the middle of its bottom edge. Worked out on the 1920×1080 screen and
+        /// put into the hand area's space, so where the hand area stands in the scene no longer matters.
+        /// </summary>
         private void HomeOf(int index, out Vector2 position, out float degrees)
         {
-            FanPlace place = HandFan.Place(_hand.Count, index, HandFan.Spacing(_hand.Count, cardSpacing), fanDegreesPerCard, fanDropPixels, cardPrefab.Rect.rect.width);
-            position = new Vector2(place.X, place.Y);
-            degrees = place.Degrees;
+            FanPlace rest = HandSpec.Rest(_hand.Count, index, HandFan.Spacing(_hand.Count, cardSpacing), fanDegreesPerCard);
+            position = HandPoint(new Vector2(rest.X, rest.Y));
+            degrees = rest.Degrees;
+        }
+
+        /// <summary>§4.8 ホバー: upright, in front, raised until its bottom is 16 px above the screen's (top at y 760).</summary>
+        private Vector2 HoverPlace(int index)
+        {
+            FanPlace hover = HandSpec.Hover(_hand.Count, index, HandFan.Spacing(_hand.Count, cardSpacing));
+            return HandPoint(new Vector2(hover.X, hover.Y));
+        }
+
+        /// <summary>
+        /// A point given on the 1920×1080 screen (x from the left, y from the top) as an anchored position
+        /// under the hand area. x is kept from the screen's centre and y from its bottom, so a screen of
+        /// another shape keeps the hand on its bottom edge.
+        /// </summary>
+        private Vector2 HandPoint(Vector2 screen)
+        {
+            Canvas canvas = handArea ? handArea.GetComponentInParent<Canvas>() : null;
+            if (!canvas) return new Vector2(screen.x - BattleTheme.RefWidth * 0.5f, BattleTheme.RefHeight * 0.5f - screen.y);
+            var root = (RectTransform)canvas.rootCanvas.transform;
+            Rect area = root.rect;
+            var local = new Vector2(area.center.x + (screen.x - BattleTheme.RefWidth * 0.5f), area.yMin + (BattleTheme.RefHeight - screen.y));
+            Vector3 inHand = handArea.InverseTransformPoint(root.TransformPoint(local));
+            return new Vector2(inHand.x, inHand.y);
         }
 
         private void PlaceAtHome(CardView card, int index)
@@ -1063,9 +1294,9 @@ namespace Depiction.View
         // ---- hover ----------------------------------------------------------------------------
 
         /// <summary>
-        /// Lifts the card under the pointer and brings it to the front. The test runs against the
-        /// card's resting place, not the lifted one, so the card does not flicker when the pointer
-        /// sits on its bottom edge.
+        /// Lifts the card under the pointer and brings it to the front. A card starts its hover from its
+        /// resting place, so it does not flicker when the pointer sits on its bottom edge; once hovered,
+        /// its raised place counts as well (<see cref="HoveredRectContains"/>).
         /// </summary>
         private void UpdateHover()
         {
@@ -1075,6 +1306,7 @@ namespace Depiction.View
                 // Tweens own the cards now; they end in LayoutHand, which also drops the hover.
                 _hovered = null;
                 _hoverWeight.Clear();
+                HideHoverPanels();
                 return;
             }
 
@@ -1084,6 +1316,7 @@ namespace Depiction.View
                 RestoreCardOrder();
                 if (over) over.transform.SetAsLastSibling();
                 _hovered = over;
+                if (_panels != null) _panels.HideDetail(); // the detail belongs to the card it was opened on
                 // EffectId.CardHover: timed from the moment a card starts to rise until it is fully up.
                 _hoverHandle = -1;
                 if (over && Trace != null)
@@ -1110,18 +1343,73 @@ namespace Depiction.View
                     _hoverHandle = -1;
                 }
                 float eased = next * next * (3f - 2f * next);
-                HomeOf(i, out Vector2 home, out _);
-                card.Rect.anchoredPosition = home + new Vector2(0f, hoverLiftPixels * eased);
-                float scale = Mathf.Lerp(1f, hoverScale, eased);
-                card.Rect.localScale = new Vector3(scale, scale, 1f);
+                HomeOf(i, out Vector2 home, out float degrees);
+                // §4.8 / §6.2: upright and raised to the hover height; the size never changes.
+                card.Rect.anchoredPosition = Vector2.Lerp(home, HoverPlace(i), eased);
+                card.Rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.LerpAngle(degrees, 0f, eased));
+                card.Rect.localScale = Vector3.one;
             }
+            UpdateHoverPanels(over);
+        }
+
+        // ---- the panels around a hovered card (battle-visual-v1 §5.1 / §7.2 / §7.4, #242) ----
+
+        private CardPanels _panels;
+
+        private CardPanels Panels
+        {
+            get
+            {
+                if (_panels != null || !handArea) return _panels;
+                Canvas canvas = handArea.GetComponentInParent<Canvas>();
+                if (canvas) _panels = new CardPanels((RectTransform)canvas.rootCanvas.transform);
+                return _panels;
+            }
+        }
+
+        /// <summary>
+        /// Follows the hovered card with its hover line and, when the script says nobody is in its reach,
+        /// the reason on its right. A right click on it opens the detail (§7.4); moving off it closes it.
+        /// </summary>
+        private void UpdateHoverPanels(CardView over)
+        {
+            CardPanels panels = Panels;
+            if (panels == null) return;
+            if (!over)
+            {
+                HideHoverPanels();
+                return;
+            }
+            if (TryRightPress()) panels.ToggleDetail(over, cardPrefab);
+            if (panels.DetailShown) panels.HideHover();
+            else panels.ShowHover(over);
+        }
+
+        private void HideHoverPanels()
+        {
+            if (_panels == null) return;
+            _panels.HideHover();
+            _panels.HideDetail();
+        }
+
+        /// <summary>True on the frame the right button went down (§7.4 右クリック).</summary>
+        private static bool TryRightPress()
+        {
+#if ENABLE_INPUT_SYSTEM
+            UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
+            return mouse != null && mouse.rightButton.wasPressedThisFrame;
+#else
+            return Input.GetMouseButtonDown(1);
+#endif
         }
 
         private CardView CardUnderPointer()
         {
             if (!TryPointer(out Vector2 pointer)) return null;
             // The hovered card is drawn in front, so it wins where two cards overlap.
-            if (_hovered && _hovered.Interactable && RestingRectContains(_hovered, _hand.IndexOf(_hovered), pointer)) return _hovered;
+            // It is also caught on its raised part (§4.8: up to 136 px above its resting place), so moving
+            // onto what the hover lifted keeps the hover, and the right click (§7.4) works there too.
+            if (_hovered && _hovered.Interactable && HoveredRectContains(_hovered, _hand.IndexOf(_hovered), pointer)) return _hovered;
             for (int i = _hand.Count - 1; i >= 0; i--)
             {
                 CardView card = _hand[i];
@@ -1138,13 +1426,30 @@ namespace Depiction.View
         private bool RestingRectContains(CardView card, int index, Vector2 pointer)
         {
             if (index < 0) return false;
-            if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(handArea, pointer, null, out Vector3 world)) return false;
             HomeOf(index, out Vector2 home, out float degrees);
-            // anchoredPosition and localPosition differ by a constant, so the resting localPosition is
-            // the current one moved by how far the card sits from home.
-            Vector3 restLocal = card.Rect.localPosition + (Vector3)(home - card.Rect.anchoredPosition);
+            return RectAtContains(card, home, degrees, pointer);
+        }
+
+        /// <summary>
+        /// The hovered card's test: its resting place or its raised one (<see cref="HoverPlace"/>,
+        /// upright). Testing only the resting place dropped the hover once the pointer followed the
+        /// card up onto the part the hover lifts (§4.8: 136 px).
+        /// </summary>
+        private bool HoveredRectContains(CardView card, int index, Vector2 pointer)
+        {
+            if (index < 0) return false;
+            return RestingRectContains(card, index, pointer) || RectAtContains(card, HoverPlace(index), 0f, pointer);
+        }
+
+        /// <summary>True when the pointer is over the card as it would stand at <paramref name="place"/>, tilted <paramref name="degrees"/>, unscaled.</summary>
+        private bool RectAtContains(CardView card, Vector2 place, float degrees, Vector2 pointer)
+        {
+            if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(handArea, pointer, null, out Vector3 world)) return false;
+            // anchoredPosition and localPosition differ by a constant, so the localPosition at that place
+            // is the current one moved by how far the card sits from it.
+            Vector3 atLocal = card.Rect.localPosition + (Vector3)(place - card.Rect.anchoredPosition);
             Vector3 inHand = handArea.InverseTransformPoint(world);
-            Vector3 inCard = Quaternion.Inverse(Quaternion.Euler(0f, 0f, degrees)) * (inHand - restLocal);
+            Vector3 inCard = Quaternion.Inverse(Quaternion.Euler(0f, 0f, degrees)) * (inHand - atLocal);
             return card.Rect.rect.Contains(inCard);
         }
 
@@ -1247,7 +1552,7 @@ namespace Depiction.View
             if (_busy || _dragging != null) return;
             CardView held = card;
             if (_hovered && _hovered != card && _hovered.Interactable
-                && RestingRectContains(_hovered, _hand.IndexOf(_hovered), e.position)) held = _hovered;
+                && HoveredRectContains(_hovered, _hand.IndexOf(_hovered), e.position)) held = _hovered;
             _dragSource = card;
             BeginHold(held);
             _dragPointerWorld = PointerWorld(e);
@@ -1287,10 +1592,16 @@ namespace Depiction.View
             _hoverWeight.Clear();
             card.transform.SetAsLastSibling();
             card.group.alpha = 0.92f;
-            // EffectId.CardGrab: a held card stands upright and grows to 1.08.
+            HideHoverPanels();
+            // §4.7 / §5.2: the stamina it would pay turns to rings, and "▸ n" shows.
+            _staminaTag?.ShowCost(card.Face.Cost);
+            // §6.3: a card aimed at one enemy is judged again on the enemy it frames (the one enemy
+            // the screen draws). The verdict is the script's (CardFace.LitFor); the View only shows it.
+            if (card.Face.Aim == CardAim.Single) card.ShowLamp(card.Face.LitFor(0));
+            // EffectId.CardGrab: a held card stands upright. §0.1 decision 7: its size and shadow stay.
             Quaternion tilt = card.Rect.localRotation;
             Vector3 scaleFrom = card.Rect.localScale;
-            Vector3 heldScale = new Vector3(1.08f, 1.08f, 1f);
+            Vector3 heldScale = Vector3.one;
             StartCoroutine(Effect(EffectId.CardGrab,
                 UiTween.Run(_effects.Ms(EffectId.CardGrab), Ease.Out, t =>
                 {
@@ -1314,31 +1625,46 @@ namespace Depiction.View
             {
                 throwLine.Show(PreviewFor(card));
                 _zoneFade = StartCoroutine(Effect(EffectId.ThrowLineShow, throwLine.FadeIn(_effects.Ms(EffectId.ThrowLineShow)), null));
-                ShowTargetMark(card);
             }
+            ShowTargetMark(card);
         }
 
-        /// <summary>The throw line says where to release; the mark says who the card lands on.</summary>
+        /// <summary>
+        /// battle-visual-v1 §5.2 / §5.3 (#242): the four hooks around the figure the card lands on, with
+        /// the one predicted value on the top edge. A card aimed at one enemy frames the enemy (steel and
+        /// no number when the script says nobody is in reach: CardFace.ReachHint); a self card frames
+        /// the figure the script names (CardFace.Affects).
+        /// </summary>
         private void ShowTargetMark(CardView card)
         {
-            if (!card.Face.Affects.HasValue)
+            FigureView figure;
+            bool reaches = true;
+            if (card.Face.Aim == CardAim.Single)
+            {
+                figure = enemyFigure;
+                reaches = string.IsNullOrEmpty(card.Face.ReachHint);
+            }
+            else if (!card.Face.Affects.HasValue)
             {
                 Debug.LogError("[Depiction] card " + card.CardId + " is a throw-line card but the script gave no Affects");
                 return;
             }
-            FigureView figure = card.Face.Affects.Value == UnitSide.Player ? playerFigure : enemyFigure;
-            if (!figure.targetMark)
+            else figure = card.Face.Affects.Value == UnitSide.Player ? playerFigure : enemyFigure;
+            if (!figure || !figure.targetMark)
             {
-                Debug.LogError("[Depiction] " + figure.name + " has no targetMark; run Tools > Depiction > Upgrade Prefabs");
+                Debug.LogError("[Depiction] " + (figure ? figure.name : "a figure") + " has no targetMark; run Tools > Depiction > Upgrade Prefabs");
                 return;
             }
-            figure.targetMark.Show(CardView.KindColor(card.Face.Kind));
+            CardValueKind kind = card.Face.Values != null && card.Face.Values.Count > 0
+                ? card.Face.Values[0].Kind
+                : card.Face.Kind == CardKind.Guard ? CardValueKind.Guard : CardValueKind.Power;
+            figure.targetMark.Show(reaches, BattleTheme.Wick, PreviewFor(card), VisualArt.ValueIcon(kind), VisualArt.ValueColor(kind));
         }
 
         private void HideTargetMarks()
         {
-            if (playerFigure.targetMark) playerFigure.targetMark.Hide();
-            if (enemyFigure.targetMark) enemyFigure.targetMark.Hide();
+            if (playerFigure && playerFigure.targetMark) playerFigure.targetMark.Hide();
+            if (enemyFigure && enemyFigure.targetMark) enemyFigure.targetMark.Hide();
         }
 
         private void SetZoneHot(CardView card, bool hot)
@@ -1346,6 +1672,7 @@ namespace Depiction.View
             if (card.Face.Aim == CardAim.Single)
             {
                 receiver.SetHot(hot);
+                if (enemyFigure.targetMark) enemyFigure.targetMark.SetHot(hot);
                 return;
             }
             throwLine.SetHot(hot);
@@ -1427,7 +1754,12 @@ namespace Depiction.View
             receiver.Hide();
             throwLine.Hide();
             HideTargetMarks();
-            if (held) held.group.alpha = 1f;
+            _staminaTag?.ShowCost(0);
+            if (held)
+            {
+                held.group.alpha = 1f;
+                held.ShowLamp(held.Face.TraitLit);
+            }
             LayoutHand();
         }
 
@@ -1445,6 +1777,7 @@ namespace Depiction.View
             receiver.Hide();
             throwLine.Hide();
             HideTargetMarks();
+            _staminaTag?.ShowCost(0);
             PlayVerdict verdict = _source.TryPlay(card.CardId, zone, out DepictionEvent played);
             if (verdict == PlayVerdict.Accepted) StartCoroutine(PlayAccepted(card, played));
             else
@@ -1470,7 +1803,7 @@ namespace Depiction.View
             {
                 if (!card) return;
                 card.transform.position = Vector3.LerpUnclamped(from, to, t);
-                float s = Mathf.Lerp(1.08f, 0.5f, t);
+                float s = Mathf.Lerp(1f, 0.5f, t);
                 card.Rect.localScale = new Vector3(s, s, 1f);
                 card.group.alpha = 1f - t;
             }), null);
@@ -1530,11 +1863,14 @@ namespace Depiction.View
             {
                 if (!card) return;
                 card.transform.position = Vector3.LerpUnclamped(from, home, t);
-                float s = Mathf.Lerp(1.08f, 1f, t);
-                card.Rect.localScale = new Vector3(s, s, 1f);
+                card.Rect.localScale = Vector3.one;
                 card.Rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.LerpAngle(0f, homeDegrees, t));
             }), null);
-            if (card) card.group.alpha = 1f;
+            if (card)
+            {
+                card.group.alpha = 1f;
+                card.ShowLamp(card.Face.TraitLit);
+            }
             if (shake && card) yield return Effect(EffectId.RefusalShake, UiTween.Shake(card.Rect, 8f, 2, _effects.Ms(EffectId.RefusalShake)), null);
             LayoutHand();
             _busy = false;

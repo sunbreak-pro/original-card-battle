@@ -128,6 +128,7 @@ namespace Depiction
                 Omen = omen,
                 Hand = hand,
                 StanceHint = stanceHint,
+                StanceDivider = LiveTurn.StanceThreshold,
             };
         }
 
