@@ -144,6 +144,12 @@ namespace Depiction.View
         private PilesView _piles;
         /// <summary>battle-visual-v1 §4.6 (#455): each side's stance list at its edge.</summary>
         private StanceListView _stanceLists;
+        /// <summary>battle-visual-v1 §4.9 (#455): the four frames of the attributes played this turn.</summary>
+        private PlayedAttributesView _played;
+        /// <summary>battle-visual-v1 §4.9 (#455): the 構えの予告 at x 1560, y 984.</summary>
+        private ReserveHintView _reserveHint;
+        /// <summary>The 構えの予告 of the frame on screen, which a held card's own hint stands in for.</summary>
+        private string _frameStanceHint = "";
 
         // ---- battle-visual-v1 §4.5 (#455): the number panels under the figures ------------------------
         /// <summary>Where the player figure stands between its motions (its cell or slot); a lunge does not move it.</summary>
@@ -400,7 +406,25 @@ namespace Depiction.View
                 _piles = new PilesView(root, below);
                 below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
                 _stanceLists = new StanceListView(root, below);
+                below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
+                _played = new PlayedAttributesView(root, below);
+                below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
+                _reserveHint = new ReserveHintView(root, below);
+                // §4.9: the 構えの予告 is made here at its own place; the scene's icon and number give way to it.
+                if (stanceHintIcon) stanceHintIcon.gameObject.SetActive(false);
+                if (stanceHintText) stanceHintText.gameObject.SetActive(false);
             }
+        }
+
+        /// <summary>
+        /// §4.9 / §5.3 (#455): while a card is held, the 構えの予告 reads as it would once the card is paid
+        /// for (CardFace.StanceHintAfterPay, the script's); otherwise as the frame has it.
+        /// </summary>
+        private void ShowReserveHint(CardView held)
+        {
+            if (_reserveHint == null) return;
+            string afterPay = held && held.Face != null ? held.Face.StanceHintAfterPay : null;
+            _reserveHint.Show(afterPay ?? _frameStanceHint);
         }
 
         /// <summary>
@@ -1340,6 +1364,9 @@ namespace Depiction.View
             bool hasHint = !string.IsNullOrEmpty(frame.StanceHint);
             if (stanceHintText) stanceHintText.text = frame.StanceHint;
             if (stanceHintIcon) stanceHintIcon.enabled = hasHint;
+            _frameStanceHint = frame.StanceHint ?? "";
+            ShowReserveHint(_dragging); // §4.9 (#455)
+            _played?.Bind(frame.Played);
             if (!SameHand(frame.Hand)) BuildHand(frame.Hand);
             else for (int i = 0; i < _hand.Count; i++) _hand[i].Bind(frame.Hand[i]);
             LayoutHand();
@@ -1749,6 +1776,7 @@ namespace Depiction.View
             HideHoverPanels();
             // §4.7 / §5.2: the stamina it would pay turns to rings, and "▸ n" shows.
             _staminaTag?.ShowCost(card.Face.Cost);
+            ShowReserveHint(card); // §4.9 / §5.3 (#455): the 構えの予告 after this card is paid for
             // §6.3: a card aimed at one enemy is judged again on the enemy it frames (the one enemy
             // the screen draws). The verdict is the script's (CardFace.LitFor); the View only shows it.
             if (card.Face.Aim == CardAim.Single) card.ShowLamp(card.Face.LitFor(0));
@@ -1909,6 +1937,7 @@ namespace Depiction.View
             throwLine.Hide();
             HideTargetMarks();
             _staminaTag?.ShowCost(0);
+            ShowReserveHint(null);
             if (held)
             {
                 held.group.alpha = 1f;
@@ -1932,6 +1961,7 @@ namespace Depiction.View
             throwLine.Hide();
             HideTargetMarks();
             _staminaTag?.ShowCost(0);
+            ShowReserveHint(null);
             PlayVerdict verdict = _source.TryPlay(card.CardId, zone, out DepictionEvent played);
             if (verdict == PlayVerdict.Accepted) StartCoroutine(PlayAccepted(card, played));
             else

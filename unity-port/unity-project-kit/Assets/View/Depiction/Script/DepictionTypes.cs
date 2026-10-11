@@ -150,6 +150,13 @@ namespace Depiction
         public List<int> ReachCells = new List<int>();
         /// <summary>§7.4: the right-click detail. Null when the source writes none (the v4.2 script).</summary>
         public CardDetail Detail;
+        /// <summary>
+        /// battle-visual-v1 §4.9 / §5.3 構えの予告 (#455): the hint by the end-turn plate while this card
+        /// is held — <see cref="DepictionFrame.StanceHint"/> as it would read once the card's cost is
+        /// paid ("+3"), or "" when the stamina left would fall under 構え's threshold. Null: the source
+        /// writes none, and the hint stays as the frame has it.
+        /// </summary>
+        public string StanceHintAfterPay;
 
         /// <summary>
         /// §6.3: the lamp while the card frames enemy <paramref name="enemy"/>. A card with no lamp per
@@ -390,6 +397,8 @@ namespace Depiction
         /// sources and the filming script).
         /// </summary>
         public bool StanceListsShown;
+        /// <summary>battle-visual-v1 §4.9 (#455): the attributes played this turn. <see cref="PlayedFrame.Shown"/> false draws no frames.</summary>
+        public PlayedFrame Played = new PlayedFrame();
     }
 
     /// <summary>
@@ -404,6 +413,49 @@ namespace Depiction
         public int Draw;
         public int Discard;
         public int Exile;
+    }
+
+    /// <summary>
+    /// The attributes played this turn (battle-visual-v1 §4.9 / battle_ui_ux_v2 §1.1 B6, #455): how many
+    /// cards of each, and which attribute the last one counted as. The core folds a card into one
+    /// attribute (battle_core_v4 §2.1); a card of movement only counts as none.
+    /// </summary>
+    public sealed class PlayedFrame
+    {
+        /// <summary>Whether the source keeps this tally. The v4.2 sources do not, and draw no frames.</summary>
+        public bool Shown;
+        public int Attack;
+        public int Guard;
+        public int Skill;
+        public int Stance;
+        /// <summary>B6 直前のカードに下線: the attribute of the card played last this turn, or null.</summary>
+        public CardKind? Last;
+
+        public int CountOf(CardKind kind)
+        {
+            switch (kind)
+            {
+                case CardKind.Attack: return Attack;
+                case CardKind.Guard: return Guard;
+                case CardKind.Skill: return Skill;
+                case CardKind.Stance: return Stance;
+                default: return 0;
+            }
+        }
+
+        /// <summary>Counts one more card of <paramref name="kind"/> and makes it the last one.</summary>
+        public void Add(CardKind kind)
+        {
+            switch (kind)
+            {
+                case CardKind.Attack: Attack++; break;
+                case CardKind.Guard: Guard++; break;
+                case CardKind.Skill: Skill++; break;
+                case CardKind.Stance: Stance++; break;
+                default: return;
+            }
+            Last = kind;
+        }
     }
 
     /// <summary>

@@ -804,6 +804,10 @@ namespace Depiction.Bridge
             frame.StanceListsShown = true;
             if (frame.Omen.Visible) frame.Omen.Hit = HitMark(frame.Floor.AimCells);
             OmenDisclosure.Apply(frame.Omen, Disclosure);
+            bool waiting = _playerActs && after.Result == GameResult.Ongoing;
+            // battle-visual-v1 §4.9 (#455): the attributes the player has played this turn, as the core
+            // folds and keeps them (CombatantState.PlayedThisTurn, cleared when the turn ends).
+            frame.Played = PlayedOf(after.Player.PlayedThisTurn);
             foreach (CardInstance card in _hand)
             {
                 PlayPreview preview = TurnLoop.Preview(after, card.InstanceId);
@@ -819,12 +823,32 @@ namespace Depiction.Bridge
                     face.TraitLit = lit;
                     face.LitOn = perEnemy;
                 }
+                // §4.9 / §5.3 (#455): the 構えの予告 once this card's cost is paid, the rule's own
+                // Combat.ReserveGuard on what would be left.
+                face.StanceHintAfterPay = waiting ? ReserveHint(_player.Stamina - face.Cost) : "";
                 frame.Hand.Add(face);
             }
-            bool waiting = _playerActs && after.Result == GameResult.Ongoing;
-            int reserve = waiting ? Combat.ReserveGuard(_player.Stamina) : 0;
-            frame.StanceHint = reserve > 0 ? "+" + reserve : "";
+            frame.StanceHint = waiting ? ReserveHint(_player.Stamina) : "";
             frame.StanceDivider = Constants.ReserveThreshold; // §4.7: the stamina tag's divider
+            return frame;
+        }
+
+        /// <summary>構えの予告 for <paramref name="stamina"/> left at the turn end: "+3" when 構え would give Guard, "" when not.</summary>
+        private static string ReserveHint(int stamina)
+        {
+            int reserve = Combat.ReserveGuard(Math.Max(0, stamina));
+            return reserve > 0 ? "+" + reserve : "";
+        }
+
+        /// <summary>§4.9 (#455): the played attributes counted per kind, the last one marked. A card of movement only counts as none.</summary>
+        private static PlayedFrame PlayedOf(IReadOnlyList<BattleAttribute> played)
+        {
+            var frame = new PlayedFrame { Shown = true };
+            foreach (BattleAttribute attribute in played)
+            {
+                if (attribute == BattleAttribute.None) continue;
+                frame.Add(CoreText.KindOf(attribute));
+            }
             return frame;
         }
 
