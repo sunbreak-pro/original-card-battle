@@ -825,8 +825,26 @@ namespace Depiction.Bridge
             if (_omenVisible && after.Enemies.Count > 0)
             {
                 floor.AimCells = FloorCells.AimOf(_omen, after.Enemies[0].Body, _enemy.Cell);
+                // #455: the thick stripes and the move's frame are the core's, read on the board as shown.
+                BattleState shown = AsShown(after);
+                floor.DenseCells = FloorCells.DenseOf(shown, 0);
+                floor.MoveCells = FloorCells.MoveOf(shown, 0);
             }
             return floor;
+        }
+
+        /// <summary>
+        /// <paramref name="after"/> as the frame being written shows it (#455): the two models' cells, the
+        /// player's stamina and the omen on screen. A move's frames are all read against the state the
+        /// whole move left, which can be past them — an EndTurn ends on the next omen, after the enemy
+        /// has moved — so what the core reads for a frame is read on this.
+        /// </summary>
+        private BattleState AsShown(BattleState after)
+        {
+            if (after.Enemies.Count == 0) return after;
+            EnemyUnit unit = after.Enemies[0];
+            BattleState shown = after with { Player = after.Player with { Cell = _player.Cell, Stamina = _player.Stamina } };
+            return shown.WithUnit(0, unit with { Body = unit.Body with { Cell = _enemy.Cell }, Omen = _omen ?? unit.Omen });
         }
 
         /// <summary>

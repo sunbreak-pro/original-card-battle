@@ -366,6 +366,18 @@ namespace Depiction
         public int Gap;
         /// <summary>The cells the shown omen reaches (赤の斜線). Empty when it aims at nobody or is hidden.</summary>
         public List<int> AimCells = new List<int>();
+        /// <summary>
+        /// battle-visual-v1 §4.2 境目を満たすマス (#455): of <see cref="AimCells"/>, the ones whose gap meets
+        /// the boundary the omen's action reads (間合い n 以上 / n 以下). Their stripes are drawn 6 px
+        /// apart instead of 11. Empty when the action reads no boundary or the omen is hidden.
+        /// </summary>
+        public List<int> DenseCells = new List<int>();
+        /// <summary>
+        /// battle_ui_ux_v2 §5.8 / battle-visual-v1 §4.2 敵が動く予兆の移る先 (#455): the cells the enemy
+        /// would stand on after the move its shown omen makes (菫の破線の枠, no stripes). Empty when the
+        /// omen does not move it, or is hidden.
+        /// </summary>
+        public List<int> MoveCells = new List<int>();
     }
 
     /// <summary>

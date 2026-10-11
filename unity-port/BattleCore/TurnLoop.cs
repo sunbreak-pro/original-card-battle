@@ -476,6 +476,52 @@ namespace BattleCore
         }
 
         /// <summary>
+        /// §6 「境目を満たすマスを濃く出します」 (#455): the cells enemy <paramref name="unit"/>'s
+        /// shown omen aims at whose gap meets the boundary its action reads, counted from where it
+        /// stands now as <see cref="EnemyAi.TargetCells"/> counts the aimed ones. The action is the
+        /// one the omen names under the switch it was decided on (#51 overrides). Empty when the enemy
+        /// is not standing, has no omen, rests, or its action reads no boundary.
+        /// </summary>
+        public static IReadOnlyList<int> OmenBoundaryCells(BattleState state, int unit)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            var action = OmenAction(state, unit);
+            if (action == null) return Array.Empty<int>();
+            return EnemyAi.BoundaryCells(action, state.Enemies[unit].Body);
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.8 / battle-visual-v1 §4.2 敵が動く予兆の移る先 (#455): the cell enemy
+        /// <paramref name="unit"/> would stand on (its lowest cell) after the movement effect of its
+        /// shown omen, moved from where both sides stand now by the rule <see cref="EndTurn"/> moves it
+        /// by — 鈍足 takes a cell off, 呪縛 and 鉤爪 stop it, the line and the player stop it short.
+        /// Read off the board as it is, not after the turn start a 歪みの根 sways in, and before any
+        /// push of the same action. −1 when the enemy is not standing, has no omen, rests, its action
+        /// does not move it, or it would not get anywhere.
+        /// </summary>
+        public static int OmenMoveCell(BattleState state, int unit)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            var action = OmenAction(state, unit);
+            if (action == null) return -1;
+            var face = EnemyAi.FaceAt(action, state.GapTo(unit));
+            if (face.Move == 0) return -1;
+            int from = state.Enemies[unit].Body.Cell;
+            var moved = MoveSelf(state, Actor.Enemy, unit, face.Move, new List<BattleEvent>());
+            int to = moved.Enemies[unit].Body.Cell;
+            return to == from ? -1 : to;
+        }
+
+        /// <summary>The action enemy <paramref name="unit"/>'s omen names, under the switch it was decided on; null for none or a rest.</summary>
+        private static EnemyActionDef? OmenAction(BattleState state, int unit)
+        {
+            if (!IsStanding(state, unit)) return null;
+            var enemy = state.Enemies[unit];
+            if (enemy.Omen == null || enemy.Omen.ActionId == EnemyAi.RestActionId) return null;
+            return EnemyAi.ActionOf(enemy.Def, enemy.Omen.ActionId, EnemyAi.SwitchById(enemy.Def, enemy.ActiveSwitch));
+        }
+
+        /// <summary>
         /// The player's cell nearest their own (the nearer the enemy on a tie) from which enemy
         /// <paramref name="unit"/>'s N falls inside <paramref name="reach"/>, left of every standing
         /// enemy. −1 when the line has none.

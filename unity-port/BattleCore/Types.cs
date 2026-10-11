@@ -420,6 +420,17 @@ namespace BattleCore
     }
 
     /// <summary>
+    /// §2.3 / §6 間合いの境目: the gap a trait of 間合い n 以上 (AtLeast) or 間合い n 以下 reads.
+    /// An enemy action reads it at the gap it is carried out at; the screen thickens the aimed cells
+    /// that meet it (battle-visual-v1 §4.2). See <see cref="EnemyAi.BoundaryOf"/>.
+    /// </summary>
+    public sealed record GapBoundary(bool AtLeast, int Threshold)
+    {
+        /// <summary>Whether gap <paramref name="gap"/> meets the boundary.</summary>
+        public bool Holds(int gap) => AtLeast ? gap >= Threshold : gap <= Threshold;
+    }
+
+    /// <summary>
     /// §2.4: what one column of a card or action does. Cards and enemy actions share this table
     /// (a CardDef and an EnemyActionDef are written from the same face rows), which is why #70 and
     /// #71 add data without adding types.
