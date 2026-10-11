@@ -611,6 +611,18 @@ namespace Depiction.View
             // omen badge or off the top edge.
             Vector2 numberAt = chest + new Vector2(0f, 40f);
             Vector2 labelAt = head + new Vector2(0f, -30f);
+            // §5.3 (#57): a beat of a play draws its system's shape beside it; a blow draws its own in Attack,
+            // and 息 is the pips lighting, with the chest rising only on a heal.
+            switch (EffectGrammar.MarkOf(cue))
+            {
+                case FxMark.Shape:
+                    StartCoroutine(Effect(EffectId.GrammarMark, DepictionFx.Mark(this, fxLayer, chest, head, DepictionFx.PointOn(fxLayer, target.transform),
+                        target.side == UnitSide.Player ? 1f : -1f, cue.Fx.Value, cue.Intensity, _effects.Ms(EffectId.GrammarMark)), null));
+                    break;
+                case FxMark.ChestHeave:
+                    StartCoroutine(Effect(EffectId.BreathHeave, Heave(target, _effects.Ms(EffectId.BreathHeave)), null));
+                    break;
+            }
 
             switch (cue.Kind)
             {
@@ -761,6 +773,8 @@ namespace Depiction.View
             EffectId lunge = byPlayer ? EffectId.AttackLunge : EffectId.EnemyLunge;
             yield return Effect(lunge, Lunge(attacker, 46f, _effects.Ms(lunge)), () => attacker.SetPose(FigurePose.Act));
             Color streak = byPlayer ? BattleTheme.Ink : BattleTheme.Omen;
+            // §5.9 J2 (#57): a fired trait lays its short cue over the blow; the tier stays as written.
+            if (cue.TraitAccent) StartCoroutine(Effect(EffectId.TraitAccent, DepictionFx.TraitAccent(this, fxLayer, chest, _effects.Ms(EffectId.TraitAccent)), null));
             yield return Effect(EffectId.StrikeShape,
                 DepictionFx.Strike(this, fxLayer, chest, streak, cue.Intensity, !byPlayer, cue.System, _effects.Ms(EffectId.StrikeShape)), null);
             EffectId stop = strong ? EffectId.HitStopStrong : EffectId.HitStop;
@@ -807,6 +821,19 @@ namespace Depiction.View
             });
             if (body) body.localRotation = Quaternion.identity;
             if (figure) figure.SetPose(FigurePose.Idle);
+        }
+
+        /// <summary>§5.3 息 on a heal (#57): the body rises a little and settles once, beside the HP beat.</summary>
+        private IEnumerator Heave(FigureView figure, float ms)
+        {
+            RectTransform body = figure.body ? figure.body.rectTransform : null;
+            if (!body) yield break;
+            Vector3 home = figure.BodyHomeScale;
+            yield return UiTween.Run(ms, Ease.InOut, t =>
+            {
+                if (body) body.localScale = new Vector3(home.x, home.y * (1f + 0.05f * Mathf.Sin(t * Mathf.PI)), home.z);
+            });
+            if (body) body.localScale = home;
         }
 
         /// <summary>A strong blow shakes the whole arena (the parent of the figures).</summary>

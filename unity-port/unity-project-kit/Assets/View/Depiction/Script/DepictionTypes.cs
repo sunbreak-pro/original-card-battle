@@ -394,32 +394,18 @@ namespace Depiction
         Step,
     }
 
-    /// <summary>§5.3: the system from the technique's name and faces. The canon's priority is 突 → 打 → 払 → 斬.</summary>
+    /// <summary>
+    /// §5.3: the blow's shape and the enemy's move from the technique's name and faces. The words and
+    /// their priority (突 → 打 → 払 → 斬) are the grammar's (<see cref="EffectGrammar.BlowOf"/>).
+    /// </summary>
     public static class StrikeSystems
     {
         public static StrikeSystem Of(string name, bool attacks, bool guards, bool moves, bool pushes)
         {
-            name = name ?? "";
-            if (attacks)
-            {
-                // A push or pull is what the action is for, even when its name holds 突 or 払, so it plays as 打.
-                if (pushes) return StrikeSystem.Strike;
-                if (HasAny(name, "突", "貫", "矢", "弩", "撃", "投")) return StrikeSystem.Thrust;
-                if (HasAny(name, "打", "当", "礫", "圧殺", "押し込み")) return StrikeSystem.Strike;
-                if (HasAny(name, "薙", "払", "牽制")) return StrikeSystem.Sweep;
-                return StrikeSystem.Slash;
-            }
+            // A push or pull is what the action is for, even when its name holds 突 or 払, so it plays as 打.
+            if (attacks) return EffectGrammar.ToStrike(EffectGrammar.BlowOf(name, pushes));
             if (moves) return StrikeSystem.Step;
             return guards ? StrikeSystem.Shield : StrikeSystem.Step;
-        }
-
-        private static bool HasAny(string name, params string[] words)
-        {
-            foreach (string word in words)
-            {
-                if (name.Contains(word)) return true;
-            }
-            return false;
         }
     }
 
@@ -496,6 +482,18 @@ namespace Depiction
         public int StacksAfter = Unchanged;
         /// <summary>Slash and EnemyWindup: the shape of the blow and of the enemy's move (§5.3).</summary>
         public StrikeSystem System = StrikeSystem.Slash;
+        /// <summary>
+        /// §5.3 (#57): the system this beat draws, written by the script from the card or action that
+        /// plays it: the blow's on a Slash, 盾 on a guard gained, 型 on a stance set, 気 on a status put
+        /// on, 息 on a heal, a draw or a stamina point. Null: the beat draws no shape of the grammar
+        /// (a turn start's tick, the reserve's Guard). The View draws <see cref="EffectGrammar.LookId"/>.
+        /// </summary>
+        public FxSystem? Fx;
+        /// <summary>
+        /// Slash only (§5.9 順 1, J2): a trait of the card or action fired, so the View layers a short
+        /// cue on the blow. It never changes <see cref="Intensity"/>.
+        /// </summary>
+        public bool TraitAccent;
         /// <summary>RangeSwitch only: the other side moved the player (a push or a pull), not the player itself.</summary>
         public bool Pushed;
         /// <summary>
@@ -517,6 +515,11 @@ namespace Depiction
         public CardAim Aim;
         /// <summary>PlayCard only: the single predicted value shown on the receiver while dragging.</summary>
         public string PreviewText = "";
+        /// <summary>
+        /// PlayCard and the enemy's action (#57): the systems of the card or action, in the order its
+        /// faces resolve (§5.4). Empty for any other event, and for a movement-only card.
+        /// </summary>
+        public List<FxSystem> Systems = new List<FxSystem>();
         public List<Cue> Cues = new List<Cue>();
         /// <summary>The settled screen once every cue has played.</summary>
         public DepictionFrame After;
