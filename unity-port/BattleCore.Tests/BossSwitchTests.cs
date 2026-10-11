@@ -105,7 +105,7 @@ namespace BattleCore.Tests
         public void Priest_Turtle_AStanceCardOrAMoveOnlyCard_ResetsTheCount()
         {
             // 「攻撃属性でない札を出すと、数は 0 に戻ります」: not only a guard. A card of movement only
-            // declares nothing and folds to スキル (battle_core_v4 §3), so it breaks the run as well.
+            // declares nothing and folds to スキル (battle_core_v4 §2.1), so it breaks the run as well.
             var priest = Enemies.MiasmaPriest;
             var moveOnly = AttributeRule.Fold(BattleAttribute.None, new Face(Move: 1));
             var unbroken = History(new Turn(new[] { A, A }), new Turn(new[] { A }));
