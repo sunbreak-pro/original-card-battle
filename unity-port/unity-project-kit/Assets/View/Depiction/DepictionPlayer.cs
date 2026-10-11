@@ -51,7 +51,7 @@ namespace Depiction.View
 
         [Header("Guide")]
         [Tooltip("How long the reason a card came back stays on the guide line.")]
-        public float refusalSeconds = 3.5f;
+        public float refusalSeconds = RefusalLineLayout.Seconds; // §5.4: 3.5 s
 
         [Header("Effects (#75-#77)")]
         [Tooltip("Effects to switch off, by id (EffectId: CardDraw, HandFan, CardHover, CardGrab, ReceiverShow, "
@@ -148,6 +148,8 @@ namespace Depiction.View
         private PlayedAttributesView _played;
         /// <summary>battle-visual-v1 §4.9 (#455): the 構えの予告 at x 1560, y 984.</summary>
         private ReserveHintView _reserveHint;
+        /// <summary>battle-visual-v1 §5.4 (#455): the one line saying why a released card went back.</summary>
+        private RefusalLineView _refusalLine;
         /// <summary>The 構えの予告 of the frame on screen, which a held card's own hint stands in for.</summary>
         private string _frameStanceHint = "";
 
@@ -207,6 +209,7 @@ namespace Depiction.View
             _dragging = null;
             _hovered = null;
             _refusal = null;
+            _refusalLine?.Hide();
             // A card held or hovered when the last battle stopped may have left these up.
             _staminaTag?.ShowCost(0);
             HideHoverPanels();
@@ -371,6 +374,7 @@ namespace Depiction.View
             UiTween.Speed = 1f;
             // Stopping the component also stops the refusal coroutine; do not leave the guide line stuck.
             _refusal = null;
+            _refusalLine?.Hide();
         }
 
         private void Update()
@@ -410,6 +414,9 @@ namespace Depiction.View
                 _played = new PlayedAttributesView(root, below);
                 below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
                 _reserveHint = new ReserveHintView(root, below);
+                // §5.4: over the hand, so a card's back does not hide the reason it came back.
+                int above = handArea && handArea.parent == root ? handArea.GetSiblingIndex() + 1 : -1;
+                _refusalLine = new RefusalLineView(root, above);
                 // §4.9: the 構えの予告 is made here at its own place; the scene's icon and number give way to it.
                 if (stanceHintIcon) stanceHintIcon.gameObject.SetActive(false);
                 if (stanceHintText) stanceHintText.gameObject.SetActive(false);
@@ -1674,6 +1681,7 @@ namespace Depiction.View
             {
                 StopCoroutine(_refusal);
                 _refusal = null;
+                _refusalLine?.Hide();
             }
             RefreshPlayableLook();
         }
@@ -1704,19 +1712,33 @@ namespace Depiction.View
         /// <summary>Says why a released card went back to the hand, then returns to the guide line.</summary>
         private void ShowRefusal(CardView card, PlayVerdict verdict)
         {
-            if (!handGuide || _source == null) return;
+            if ((!handGuide && _refusalLine == null) || _source == null) return;
             string text = _source.RefusalText(card.CardId, verdict);
             if (string.IsNullOrEmpty(text)) return;
             if (_refusal != null) StopCoroutine(_refusal);
             _refusal = StartCoroutine(Refusal(text));
         }
 
+        /// <summary>
+        /// battle-visual-v1 §5.4 (#455): the reason stands on its own line above the hand for
+        /// <see cref="refusalSeconds"/> (3.5 s), and the guide line steps aside meanwhile. A scene
+        /// without the canvas the line is made on keeps the old guide-line text.
+        /// </summary>
         private IEnumerator Refusal(string text)
         {
-            handGuide.color = BattleTheme.Omen;
-            handGuide.text = text;
+            if (_refusalLine != null)
+            {
+                _refusalLine.Show(text);
+                if (handGuide) handGuide.text = "";
+            }
+            else
+            {
+                handGuide.color = BattleTheme.Omen;
+                handGuide.text = text;
+            }
             yield return new WaitForSecondsRealtime(refusalSeconds);
             _refusal = null;
+            _refusalLine?.Hide();
             RefreshPlayableLook();
         }
 
