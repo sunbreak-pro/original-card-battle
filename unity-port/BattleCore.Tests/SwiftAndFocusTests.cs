@@ -329,7 +329,7 @@ namespace BattleCore.Tests
         [Test]
         public void Focus_TakesTheBleedStacks_FromTheRightColumn_WithThePower()
         {
-            // §5 集中 / §3.1: a column-2 attack (13, 出血 2) resolves as column 3: 21 and 出血 3.
+            // §5 集中 (the v4.4 attack step, #364): a column-2 attack (13, 出血 2) resolves as column 3: 21 and 出血 3.
             var cut = Fixtures.Card("cut", 2, new Face(Power: 13, Statuses: new[] { new StatusGrant(StatusKind.Bleed, 2) }));
             var s = WithPlayerStatuses(Opened(1, Idle, cut), (StatusKind.Focus, 1));
 

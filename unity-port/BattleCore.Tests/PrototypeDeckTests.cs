@@ -129,10 +129,11 @@ namespace BattleCore.Tests
         {
             // swordsman_cards_v4 §1.4 (v4.5): an attack face reads the band table by column and reach
             // width; 素直 adds 2. Guard faces read the §3.1 rulers, single or dual. The width-3 row of
-            // the band table is the §3.1 ruler itself. A card that drifts off them is a typo.
+            // the band table is the v4.4 attack row that §5 keeps as 集中's base (Columns.SingleAttackPower,
+            // #364, #451), not §3.1's attack row, which is the width-2 row. A card that drifts off them is a typo.
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.Thrust.Face.Power, Is.EqualTo(Columns.Value(Columns.SingleAttackPower, 3) + 2), "width 3 is the ruler");
+                Assert.That(CardCatalog.Thrust.Face.Power, Is.EqualTo(Columns.Value(Columns.SingleAttackPower, 3) + 2), "width 3 is 集中's base row");
                 Assert.That(CardCatalog.Thrust.Face.Power, Is.EqualTo(Bands.Single(3, 3) + 2));
                 Assert.That(CardCatalog.KesaCut.Face.Power, Is.EqualTo(Bands.Single(2, 2)));
                 Assert.That(CardCatalog.ReachThrust.Face.Power, Is.EqualTo(Bands.Single(2, 2)));
