@@ -79,13 +79,13 @@ namespace BattleCore.Tests
         {
             var sweep = Polearm.Actions["sweep"].Trait!;
             var shove = Polearm.Actions["shove"].Trait!;
-            var guardUp = Polearm.Actions["guard_up"].Trait!;
 
             Assert.Multiple(() =>
             {
                 Assert.That(sweep, Is.EqualTo(new Trait(TraitCondition.GapAtLeast, TraitEffect.PowerBonus, 3, Threshold: 2)));
                 Assert.That(shove, Is.EqualTo(new Trait(TraitCondition.Unguarded, TraitEffect.PowerBonus, 3)));
-                Assert.That(guardUp, Is.EqualTo(new Trait(TraitCondition.Reserve, TraitEffect.NextTurnRecovery, 1, Threshold: 4)));
+                // roster v4.15 (#396, #446): 柄で受ける's 温存 is gone; it is chosen only at stamina 1.
+                Assert.That(Polearm.Actions["guard_up"].Trait, Is.Null);
                 Assert.That(Polearm.Actions["reach_thrust"].Trait, Is.Null);
                 Assert.That(Polearm.Actions["step_forward"].Trait, Is.Null);
             });
@@ -268,15 +268,19 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void GuardUp_LeavesARecoveryBonus_OnlyWithFourOrMoreLeft()
+        public void GuardUp_LeavesNoRecoveryBonus_HoweverMuchIsLeft()
         {
+            // roster v4.15 (#396): the 温存 (残 4 以上で次の回復 +1) never held — 柄で受ける is chosen only
+            // when a fatigued recovery brings back 1, and paying it leaves 0 — so it was taken off.
             var guardUp = Polearm.Actions["guard_up"];
+            var rich = Traits.Evaluate(guardUp.Trait, new TraitContext(StaminaAfterUse: 10 - guardUp.Cost));
 
-            var rich = Traits.Evaluate(guardUp.Trait, new TraitContext(StaminaAfterUse: 5 - guardUp.Cost));
-            var poor = Traits.Evaluate(guardUp.Trait, new TraitContext(StaminaAfterUse: 4 - guardUp.Cost));
-
-            Assert.That(rich.NextTurnRecoveryBonus, Is.EqualTo(1));
-            Assert.That(poor.Triggered, Is.False);
+            Assert.Multiple(() =>
+            {
+                Assert.That(rich.Triggered, Is.False);
+                Assert.That(rich.NextTurnRecoveryBonus, Is.EqualTo(0));
+                Assert.That(guardUp.Description, Is.EqualTo("Guard 3"));
+            });
         }
 
         [Test]
