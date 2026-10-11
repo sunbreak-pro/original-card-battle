@@ -1,11 +1,12 @@
 // The 出立 step after the deck (#58): the three tool slots, the three consumable slots, the start a
-// tool moves back, and the talent card. Pure C#: BattleCore only, no UnityEngine, so every rule the
-// screen shows is held under `dotnet test`. The rules themselves are BattleCore.DeckRules'; this
-// class keeps what the player picked and prints it.
+// tool moves back, the other battle tools' amounts (#452), and the talent card. Pure C#: BattleCore
+// only, no UnityEngine, so every rule the screen shows is held under `dotnet test`. The rules
+// themselves are BattleCore.DeckRules'; this class keeps what the player picked and prints it.
 //
 // The tools and consumables are the dungeon side's (tools_and_consumables_v4.md, read only here).
 // This assembly does not reference DungeonContent: the View hands them in as SupplyOptions
-// (DepartureSupplies), carrying only what the battle reads — how many cells a tool moves the start.
+// (DepartureSupplies), carrying only what the battle reads: how many cells a tool moves the start,
+// and the amounts of 息継ぎの笛 / 竜鱗の欠片 / 竜語の符 (battle_core_v4 §9.1).
 using System;
 using System.Collections.Generic;
 using BattleCore;
@@ -24,17 +25,30 @@ namespace Depiction.Bridge
         /// <summary>Cells the player's start moves back while it is carried (間合いの履: 1). 0 for the rest.</summary>
         public readonly int StartCellsBack;
 
-        public SupplyOption(string id, string name, string note, int startCellsBack = 0)
+        /// <summary>Stamina added at the start of each battle (息継ぎの笛: 3). 0 for the rest.</summary>
+        public readonly int StartStaminaBonus;
+
+        /// <summary>Guard given once a battle, before the first enemy blow that reaches the player (竜鱗の欠片: 5). 0 for the rest.</summary>
+        public readonly int FirstHitGuard;
+
+        /// <summary>Stacks lower the boss-only words sit on the player (竜語の符: 1). 0 for the rest.</summary>
+        public readonly int BossWordWard;
+
+        public SupplyOption(string id, string name, string note, int startCellsBack = 0,
+            int startStaminaBonus = 0, int firstHitGuard = 0, int bossWordWard = 0)
         {
             if (string.IsNullOrEmpty(id)) throw new ArgumentException("A supply needs an id.", nameof(id));
             Id = id;
             Name = name ?? id;
             Note = note ?? "";
             StartCellsBack = Math.Max(0, startCellsBack);
+            StartStaminaBonus = Math.Max(0, startStaminaBonus);
+            FirstHitGuard = Math.Max(0, firstHitGuard);
+            BossWordWard = Math.Max(0, bossWordWard);
         }
 
-        /// <summary>Whether the battles of this demo feel it. Only the start is wired so far (#58).</summary>
-        public bool WorksInBattle => StartCellsBack > 0;
+        /// <summary>Whether the battles of this demo feel it: the four battle tools since #452, none of the exploration ones.</summary>
+        public bool WorksInBattle => StartCellsBack > 0 || StartStaminaBonus > 0 || FirstHitGuard > 0 || BossWordWard > 0;
     }
 
     public sealed class DepartureBuilder
@@ -105,6 +119,24 @@ namespace Depiction.Bridge
 
         public int StartGap => DeckRules.StartGap(StartCellsBack);
 
+        // ---- the other battle tools (#452) ----
+
+        /// <summary>The stamina the carried tools add at each battle's start (息継ぎの笛 +3 each).</summary>
+        public int StartStaminaBonus => Sum(o => o.StartStaminaBonus);
+
+        /// <summary>The Guard the carried tools give before the first enemy blow of each battle (竜鱗の欠片 5 each).</summary>
+        public int FirstHitGuard => Sum(o => o.FirstHitGuard);
+
+        /// <summary>How many stacks lower the boss-only words sit (竜語の符 1 each).</summary>
+        public int BossWordWard => Sum(o => o.BossWordWard);
+
+        private int Sum(Func<SupplyOption, int> amount)
+        {
+            int total = 0;
+            foreach (string id in _tools) total += amount(Find(ToolOptions, id));
+            return total;
+        }
+
         /// <summary>「開始のマス 2・開始の間合い 3」, and the tool that moved it: 「開始のマス 1・開始の間合い 4（間合いの履）」.</summary>
         public string StartLine
         {
@@ -168,7 +200,8 @@ namespace Depiction.Bridge
         public Departure Build(DeckBuilder deck)
         {
             if (deck == null) throw new ArgumentNullException(nameof(deck));
-            return new Departure(deck.Build(), _tools.ToArray(), _consumables.ToArray(), StartCellsBack, TalentIn(deck));
+            return new Departure(deck.Build(), _tools.ToArray(), _consumables.ToArray(), StartCellsBack, TalentIn(deck),
+                StartStaminaBonus, FirstHitGuard, BossWordWard);
         }
 
         public DeckValidation Validate(DeckBuilder deck)

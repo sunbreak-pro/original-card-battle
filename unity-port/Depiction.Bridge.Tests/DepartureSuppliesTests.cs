@@ -45,6 +45,41 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void TheOtherThreeBattleTools_CarryTheirAmounts_AndOnlyTheExplorationOnesKeepTheSuffix()
+        {
+            // #452: each battle tool reaches the core with the catalogue's Amount; nothing else does.
+            var byId = DepartureSupplies.Tools.ToDictionary(o => o.Id);
+            Assert.That(byId["ikitsugi_no_fue"].StartStaminaBonus, Is.EqualTo(3));
+            Assert.That(byId["ryurin_no_kakera"].FirstHitGuard, Is.EqualTo(5));
+            Assert.That(byId["ryugo_no_fu"].BossWordWard, Is.EqualTo(1));
+            Assert.That(DepartureSupplies.Tools.Where(o => o.StartStaminaBonus > 0).Select(o => o.Id), Is.EqualTo(new[] { "ikitsugi_no_fue" }));
+            Assert.That(DepartureSupplies.Tools.Where(o => o.FirstHitGuard > 0).Select(o => o.Id), Is.EqualTo(new[] { "ryurin_no_kakera" }));
+            Assert.That(DepartureSupplies.Tools.Where(o => o.BossWordWard > 0).Select(o => o.Id), Is.EqualTo(new[] { "ryugo_no_fu" }));
+            Assert.That(DepartureSupplies.Consumables.All(o => !o.WorksInBattle), Is.True);
+
+            // The screen's suffix stays on exactly the tools the dungeon side reads.
+            foreach (ItemDef item in ItemCatalogue.Tools)
+            {
+                string line = DepartureBuilder.LineOf(DepartureSupplies.Of(item));
+                bool battle = item.Effect.Side() == EffectSide.Battle;
+                Assert.That(line.EndsWith("（この試験の戦闘では効果が出ません）"), Is.EqualTo(!battle), item.Id);
+            }
+        }
+
+        [Test]
+        public void TheFluteFromTheCatalogue_OpensTheBattleThreePastTheMaximum()
+        {
+            DeckBuilder deck = DeckBuilder.Prototype();
+            DepartureBuilder builder = DepartureSupplies.NewBuilder();
+            builder.ChooseTalent(deck, PrototypeDeck.Kinds[0].Id);
+            Assert.That(builder.AddTool("ikitsugi_no_fue"), Is.True);
+
+            BattleState state = DemoSession.Chain(builder.Build(deck), 2).StartBattle().State;
+            Assert.That(state.Player.Stamina, Is.EqualTo(Constants.BaseMaxStamina + 3));
+            Assert.That(state.Player.MaxStamina, Is.EqualTo(Constants.BaseMaxStamina));
+        }
+
+        [Test]
         public void TheShoesFromTheCatalogue_StartTheBattleOnCellOneAtGapFour()
         {
             DeckBuilder deck = DeckBuilder.Prototype();

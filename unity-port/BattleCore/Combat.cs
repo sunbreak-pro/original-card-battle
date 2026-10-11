@@ -64,9 +64,13 @@ namespace BattleCore
         /// <summary>
         /// §9 steps 2 and 9: recover, then cap at the maximum. The bonus is what 温存 left behind on
         /// the previous turn; 疲労 would subtract here, and is #48.
+        ///
+        /// §9.1 (#452): stamina already at or above the maximum (息継ぎの笛 opens past it) is kept as
+        /// it is: recovery adds nothing to it and does not cut it back either.
         /// </summary>
         public static int RecoverStamina(int current, int max, int recovery, int bonus = 0)
         {
+            if (current >= max) return current;
             int raw = current + Math.Max(0, recovery + bonus);
             return Math.Min(max, Math.Max(0, raw));
         }

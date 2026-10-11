@@ -854,6 +854,25 @@ namespace BattleCore
     }
 
     /// <summary>
+    /// §9.1 (#452): the departure tools (tools_and_consumables_v4.md §2) that act inside one battle,
+    /// as amounts. 息継ぎの笛 is spent at the start (<see cref="BattleSetup.StartStamina"/>) and is
+    /// not kept here.
+    ///
+    /// ScaleGuard is 竜鱗の欠片: the Guard the player gains just before the first enemy blow or wall
+    /// damage that reaches them this battle; 0 once it has been given (or without the tool).
+    /// BossWordWard is 竜語の符: how many stacks lower the boss-only words sit on the player.
+    /// Warded counts, per 戦闘終了まで word (瘴気纏い / 深み / 根張り / 枯らし), the stacks the ward
+    /// has already kept off, so that the word sits exactly BossWordWard lower than it would.
+    /// </summary>
+    public sealed record CarriedTools(int ScaleGuard = 0, int BossWordWard = 0, StatusSet? Warded = null)
+    {
+        public static readonly CarriedTools None = new CarriedTools();
+
+        /// <summary>The stacks the ward has kept off so far, per lasting boss word.</summary>
+        public StatusSet WardedStacks => Warded ?? StatusSet.Empty;
+    }
+
+    /// <summary>
     /// The whole battle. <see cref="TurnLoop"/> moves it forward; this record only fixes what the
     /// loop may carry. The event stream is handed back beside the state, not kept inside it.
     /// FieldCells is the width of the line (§7.1), handed in per battle.
@@ -875,8 +894,12 @@ namespace BattleCore
         GameResult Result = GameResult.Ongoing,
         BattlePhase Phase = BattlePhase.AwaitingTurnStart,
         IReadOnlyList<CardInstance>? ExilePile = null,
-        BattleHistory? PlayerHistory = null)
+        BattleHistory? PlayerHistory = null,
+        CarriedTools? PlayerTools = null)
     {
+        /// <summary>§9.1 (#452): what the player's departure tools still hold for this battle; <see cref="CarriedTools.None"/> without them.</summary>
+        public CarriedTools Tools => PlayerTools ?? CarriedTools.None;
+
         /// <summary>§4 (#188): the stance cards played this battle, one instance each. Those instances never go back into the deck; a copy still in the deck is another instance.</summary>
         public IReadOnlyList<CardInstance> Exiled => ExilePile ?? Array.Empty<CardInstance>();
 

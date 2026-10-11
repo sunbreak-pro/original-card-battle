@@ -20,7 +20,9 @@ namespace Depiction.Bridge.Tests
             {
                 new SupplyOption("bosho_no_men", "防瘴の面", "層の濃度を 1 下げる"),
                 new SupplyOption(Shoes, "間合いの履", "開始のマスが 2 から 1 になる", 1),
-                new SupplyOption("ikitsugi_no_fue", "息継ぎの笛", "戦闘開始時のスタミナ +3"),
+                new SupplyOption("ikitsugi_no_fue", "息継ぎの笛", "戦闘開始時のスタミナ +3", startStaminaBonus: 3),
+                new SupplyOption("ryurin_no_kakera", "竜鱗の欠片", "1 戦につき最初の 1 回だけ Guard 5", firstHitGuard: 5),
+                new SupplyOption("ryugo_no_fu", "竜語の符", "ボス専用の状態が常に 1 スタック低く乗る", bossWordWard: 1),
             };
             var consumables = new[]
             {
@@ -237,8 +239,43 @@ namespace Depiction.Bridge.Tests
         public void ASupplyTheBattleDoesNotFeel_SaysSo()
         {
             DepartureBuilder builder = Builder();
+            Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[0]), Is.EqualTo("防瘴の面　層の濃度を 1 下げる（この試験の戦闘では効果が出ません）"));
             Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[1]), Is.EqualTo("間合いの履　開始のマスが 2 から 1 になる"));
-            Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[2]), Does.EndWith("（この試験の戦闘では効果が出ません）"));
+        }
+
+        [Test]
+        public void TheOtherThreeBattleTools_CarryNoSuffix_AndReachTheDeparture()
+        {
+            // #452: 息継ぎの笛 / 竜鱗の欠片 / 竜語の符 now act in the battle, so the screen drops the word.
+            DepartureBuilder builder = Builder();
+            Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[2]), Is.EqualTo("息継ぎの笛　戦闘開始時のスタミナ +3"));
+            Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[3]), Is.EqualTo("竜鱗の欠片　1 戦につき最初の 1 回だけ Guard 5"));
+            Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[4]), Is.EqualTo("竜語の符　ボス専用の状態が常に 1 スタック低く乗る"));
+
+            DeckBuilder deck = Deck();
+            Assert.That(builder.ChooseTalent(deck, PrototypeDeck.Kinds[0].Id), Is.True);
+            builder.AddTool("ikitsugi_no_fue");
+            builder.AddTool("ryurin_no_kakera");
+            builder.AddTool("ryugo_no_fu");
+            Departure departure = builder.Build(deck);
+            Assert.That(departure.StartStaminaBonus, Is.EqualTo(3));
+            Assert.That(departure.FirstHitGuard, Is.EqualTo(5));
+            Assert.That(departure.BossWordWard, Is.EqualTo(1));
+            Assert.That(builder.CanSetOut(deck), Is.True);
+        }
+
+        [Test]
+        public void TheSameToolTwice_AddsItsAmountTwice()
+        {
+            // tools_and_consumables_v4.md §6 の 1 lets the same tool fill two slots; that the two amounts
+            // add up is battle's rule for the three battle tools (battle_core_v4 §9.1, #452).
+            DepartureBuilder builder = Builder();
+            builder.AddTool("ikitsugi_no_fue");
+            builder.AddTool("ikitsugi_no_fue");
+            builder.AddTool("ryugo_no_fu");
+            Assert.That(builder.StartStaminaBonus, Is.EqualTo(6));
+            Assert.That(builder.FirstHitGuard, Is.EqualTo(0));
+            Assert.That(builder.BossWordWard, Is.EqualTo(1));
         }
     }
 }

@@ -6,19 +6,25 @@ namespace BattleCore
 {
     /// <summary>
     /// What 出立 (#58) hands the battles of one life: the deck, the ids in the tool and consumable
-    /// slots, how many cells a tool moves the player's start back, and the talent card.
+    /// slots, how many cells a tool moves the player's start back, the talent card, and what the
+    /// other battle tools add (#452).
     ///
-    /// The core reads the deck, the start and the talent. It does not read the tool and consumable
-    /// ids: what each one does is the dungeon side's catalogue (tools_and_consumables_v4.md,
-    /// unity-port/DungeonContent), and the one battle effect wired here, 間合いの履, reaches the
-    /// core as <see cref="StartCellsBack"/>. The ids are kept so the slots can be checked and shown.
+    /// The core reads the deck, the start, the talent and the amounts. It does not read the tool and
+    /// consumable ids: what each one does is the dungeon side's catalogue (tools_and_consumables_v4.md,
+    /// unity-port/DungeonContent), and the four battle effects reach the core as amounts summed over
+    /// the slots (the same tool may fill two): 間合いの履 as <see cref="StartCellsBack"/>, 息継ぎの笛
+    /// as <see cref="StartStaminaBonus"/>, 竜鱗の欠片 as <see cref="FirstHitGuard"/> and 竜語の符 as
+    /// <see cref="BossWordWard"/> (§9.1). The ids are kept so the slots can be checked and shown.
     /// </summary>
     public sealed record Departure(
         IReadOnlyList<CardInstance> Deck,
         IReadOnlyList<string> Tools,
         IReadOnlyList<string> Consumables,
         int StartCellsBack,
-        string? TalentCardId)
+        string? TalentCardId,
+        int StartStaminaBonus = 0,
+        int FirstHitGuard = 0,
+        int BossWordWard = 0)
     {
         /// <summary>A deck and nothing else: no tools, no consumables, the default start, no talent yet.</summary>
         public static Departure Plain(IReadOnlyList<CardInstance> deck) =>
@@ -32,13 +38,14 @@ namespace BattleCore
 
         /// <summary>
         /// One battle of this life: this deck (shuffled by <see cref="TurnLoop.Start"/>), this start,
-        /// and what a chain carries in (§12).
+        /// the tools' amounts (§9.1), and what a chain carries in (§12).
         /// </summary>
         public BattleSetup SetupFor(EnemyDef enemy, int fieldCells, int? playerStartHp = null, int? playerStartStamina = null)
         {
             if (enemy == null) throw new ArgumentNullException(nameof(enemy));
             return new BattleSetup(enemy, Deck, fieldCells, StartGap, PlayerStartCell,
-                PlayerStartHp: playerStartHp, PlayerStartStamina: playerStartStamina);
+                PlayerStartHp: playerStartHp, PlayerStartStamina: playerStartStamina,
+                PlayerStartStaminaBonus: StartStaminaBonus, FirstHitGuard: FirstHitGuard, BossWordWard: BossWordWard);
         }
     }
 
@@ -134,6 +141,10 @@ namespace BattleCore
             if (departure.StartCellsBack < 0)
             {
                 errors.Add($"The start moves {departure.StartCellsBack} cells back; it never moves forward.");
+            }
+            if (departure.StartStaminaBonus < 0 || departure.FirstHitGuard < 0 || departure.BossWordWard < 0)
+            {
+                errors.Add("A tool's amount is never negative.");
             }
 
             if (string.IsNullOrEmpty(departure.TalentCardId))

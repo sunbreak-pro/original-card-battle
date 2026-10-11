@@ -12,6 +12,11 @@ namespace BattleCore
     ///
     /// MoreEnemies (§7.4, #47) are the second and third enemy, in phase order. Each starts on the
     /// first free cell behind the one before it; a line too short to hold them all is refused.
+    ///
+    /// The last three are the departure tools that act inside a battle (§9.1, #452), as amounts:
+    /// PlayerStartStaminaBonus is 息継ぎの笛 (+3 a flute), FirstHitGuard 竜鱗の欠片 (Guard 5 a
+    /// scale, given once, just before the first enemy blow or wall that reaches the player) and
+    /// BossWordWard 竜語の符 (the boss-only words sit 1 stack lower a charm). 0 is no tool.
     /// </summary>
     public sealed record BattleSetup(
         EnemyDef Enemy,
@@ -23,7 +28,10 @@ namespace BattleCore
         int PlayerMaxStamina = Constants.BaseMaxStamina,
         IReadOnlyList<EnemyDef>? MoreEnemies = null,
         int? PlayerStartHp = null,
-        int? PlayerStartStamina = null)
+        int? PlayerStartStamina = null,
+        int PlayerStartStaminaBonus = 0,
+        int FirstHitGuard = 0,
+        int BossWordWard = 0)
     {
         /// <summary>
         /// §12 連戦 (#191): the HP and the current stamina the player carries in from the battle
@@ -32,7 +40,27 @@ namespace BattleCore
         /// </summary>
         public int StartHp => PlayerStartHp.HasValue ? Math.Max(1, Math.Min(PlayerMaxHp, PlayerStartHp.Value)) : PlayerMaxHp;
 
-        public int StartStamina => PlayerStartStamina.HasValue ? Math.Max(0, Math.Min(PlayerMaxStamina, PlayerStartStamina.Value)) : PlayerMaxStamina;
+        /// <summary>
+        /// The stamina the player opens with: the carried stamina kept to 0..max (full without one),
+        /// then 息継ぎの笛's bonus on top (§9.1, #452). The bonus may take it past the maximum, never
+        /// past <see cref="Constants.MaxStaminaCeil"/>. Recovery and gains add nothing to stamina at
+        /// or above the maximum (<see cref="Combat.RecoverStamina"/>), so the extra is only spent.
+        /// </summary>
+        public int StartStamina
+        {
+            get
+            {
+                int carried = PlayerStartStamina.HasValue ? Math.Max(0, Math.Min(PlayerMaxStamina, PlayerStartStamina.Value)) : PlayerMaxStamina;
+                int bonus = Math.Max(0, PlayerStartStaminaBonus);
+                return bonus == 0 ? carried : Math.Min(Math.Max(carried, Constants.MaxStaminaCeil), carried + bonus);
+            }
+        }
+
+        /// <summary>§9.1 (#452): what the tools hold for the battle (竜鱗の欠片 and 竜語の符); null without them.</summary>
+        public CarriedTools? Tools =>
+            FirstHitGuard > 0 || BossWordWard > 0
+                ? new CarriedTools(ScaleGuard: Math.Max(0, FirstHitGuard), BossWordWard: Math.Max(0, BossWordWard))
+                : null;
 
         /// <summary>The width the vertical slice is fought on until the dungeon hands one in (#168).</summary>
         public const int SliceFieldCells = 6;
@@ -175,7 +203,8 @@ namespace BattleCore
                 Turn: 0, setup.FieldCells, player, units,
                 Hand: new List<CardInstance>(),
                 DrawPile: Cards.Shuffle(setup.Deck, rng),
-                DiscardPile: new List<CardInstance>());
+                DiscardPile: new List<CardInstance>(),
+                PlayerTools: setup.Tools);
 
             var events = new List<BattleEvent>();
             for (int i = 0; i < units.Count; i++) state = DecideNextOmen(state, i, events);
@@ -460,7 +489,7 @@ namespace BattleCore
                 int cell = CellInReach(copy, unit, reach);
                 if (cell < 0)
                 {
-                    return FaceAlone(action, copy.Player.Guard);
+                    return FaceAlone(action, copy.Player.Guard + copy.Tools.ScaleGuard);
                 }
                 copy = copy with { Player = copy.Player with { Cell = cell } };
             }
@@ -1119,6 +1148,7 @@ namespace BattleCore
                     for (int blow = 0; blow < Math.Max(1, face.Hits); blow++)
                     {
                         if (foeSide == Actor.Enemy && !state.Enemies[foe].Alive) break;
+                        state = RaiseScale(state, foeSide, events);
                         var other = Get(state, foeSide, foe);
 
                         // §19.5 S13: one multiplier per blow, 脆化 first.
@@ -1232,6 +1262,8 @@ namespace BattleCore
                     }
                     if (face.Push > 0 && shift.Blocked > 0)
                     {
+                        state = RaiseScale(state, foeSide, events);
+                        other = Get(state, foeSide, foe);
                         int raw = Field.WallDamage(shift.Blocked);
                         var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw, other.Guard);
                         other = other with { Guard = guardAfter, Hp = Math.Max(0, other.Hp - damage) };
@@ -1603,7 +1635,8 @@ namespace BattleCore
         private static BattleState GainStamina(BattleState state, Actor actor, int unit, int amount, List<BattleEvent> events)
         {
             var self = Get(state, actor, unit);
-            int staminaAfter = Math.Min(self.MaxStamina, self.Stamina + amount);
+            // §9.1 (#452): stamina 息継ぎの笛 took past the maximum is kept, but a gain adds nothing to it.
+            int staminaAfter = self.Stamina >= self.MaxStamina ? self.Stamina : Math.Min(self.MaxStamina, self.Stamina + amount);
             events.Add(new StaminaGained(actor, staminaAfter - self.Stamina, staminaAfter) { Unit = unit });
             return Set(state, actor, unit, self with { Stamina = staminaAfter });
         }
@@ -1640,14 +1673,23 @@ namespace BattleCore
             var other = Get(state, target, targetUnit);
             int before = other.Statuses.Stacks(kind);
 
+            // §9.1 竜語の符 (#452): a boss-only word sits the ward's stacks lower on the player.
+            int warded = 0;
+            if (target == Actor.Player && Statuses.IsBossOnly(kind) && state.Tools.BossWordWard > 0)
+            {
+                state = Ward(state, kind, stacks, cap, before, out warded, out cap);
+            }
+
             // #51: a grant's own cap (the boss words, roster §4.1 / §5.1 / §6.2) drops what would go past
             // it, the same way the turn-decay cap does; a word already at it takes nothing.
-            // giving is 0 only when the word is already held at the cap, so that is never a refusal.
-            int giving = cap > 0 ? Math.Min(stacks, Math.Max(0, cap - before)) : stacks;
+            // giving is 0 only when the word is already held at the cap or the ward kept it all off,
+            // so neither is a refusal.
+            int offered = stacks - warded;
+            int giving = cap > 0 ? Math.Min(offered, Math.Max(0, cap - before)) : offered;
             var after = giving > 0 ? other.Statuses.Add(kind, giving, limit) : other.Statuses;
-            bool refused = !after.Has(kind);
-            int dropped = refused ? 0 : stacks - (after.Stacks(kind) - before);
-            events.Add(new StatusApplied(by, target, kind, stacks, after.Stacks(kind), refused) { Unit = eventUnit, Dropped = dropped });
+            bool refused = giving > 0 && !after.Has(kind);
+            int dropped = refused ? 0 : offered - (after.Stacks(kind) - before);
+            events.Add(new StatusApplied(by, target, kind, stacks, after.Stacks(kind), refused) { Unit = eventUnit, Dropped = dropped, Warded = warded });
             state = Set(state, target, targetUnit, other with { Statuses = after });
 
             // #51 (roster §6.4 root_sk): what the player has put on an enemy, counted by turn.
@@ -1668,6 +1710,70 @@ namespace BattleCore
                 state = Set(state, target, targetUnit, holder with { MaxStamina = maxAfter, Stamina = staminaAfter });
             }
             return state;
+        }
+
+        /// <summary>
+        /// §9.1 竜語の符 (#452): how many of <paramref name="stacks"/> the ward keeps off a boss-only
+        /// word headed for the player (<paramref name="warded"/>), and the cap the rest then meets
+        /// (<paramref name="wardedCap"/>, 0 for none).
+        ///
+        /// A 戦闘終了まで word (瘴気纏い / 深み / 根張り / 枯らし) never leaves, so it sits exactly the
+        /// ward lower than it would: the first ward-many stacks given this battle are kept off
+        /// (counted in <see cref="CarriedTools.Warded"/>) and its cap is the ward lower; a cap the ward
+        /// takes to 0 lets nothing on. What the lowered cap stops is counted as warded, not dropped.
+        /// A word that wears off (呪縛 by the turn, 鉤爪 by use) comes and goes, so every grant of it
+        /// is the ward lower, floor 0.
+        /// </summary>
+        private static BattleState Ward(BattleState state, StatusKind kind, int stacks, int cap, int before, out int warded, out int wardedCap)
+        {
+            var tools = state.Tools;
+            int ward = tools.BossWordWard;
+            wardedCap = cap;
+            if (Statuses.DecayOf(kind) != StatusDecay.Lasting)
+            {
+                warded = Math.Min(stacks, ward);
+                return state;
+            }
+
+            int keptOff = Math.Min(stacks, Math.Max(0, ward - tools.WardedStacks.Stacks(kind)));
+            warded = keptOff;
+            if (cap > 0)
+            {
+                int lowered = cap - ward;
+                if (lowered <= 0)
+                {
+                    warded = stacks;
+                }
+                else
+                {
+                    int offered = stacks - keptOff;
+                    int underCap = Math.Min(offered, Math.Max(0, cap - before));
+                    int underLowered = Math.Min(offered, Math.Max(0, lowered - before));
+                    warded = keptOff + (underCap - underLowered);
+                    wardedCap = lowered;
+                }
+            }
+            if (keptOff > 0)
+            {
+                state = state with { PlayerTools = tools with { Warded = tools.WardedStacks.Add(kind, keptOff) } };
+            }
+            return state;
+        }
+
+        /// <summary>
+        /// §9.1 竜鱗の欠片 (#452): the first enemy blow or wall damage that reaches the player this
+        /// battle meets the scale's Guard first. The Guard is gained just before it resolves (a
+        /// <see cref="GuardGained"/> on the player) and then behaves as any Guard: what the blow does
+        /// not take stays until the player's next turn start (§9 step 1).
+        /// </summary>
+        private static BattleState RaiseScale(BattleState state, Actor victim, List<BattleEvent> events)
+        {
+            if (victim != Actor.Player) return state;
+            int scale = state.Tools.ScaleGuard;
+            if (scale <= 0) return state;
+            var player = state.Player with { Guard = state.Player.Guard + scale };
+            events.Add(new GuardGained(Actor.Player, scale, player.Guard));
+            return state with { Player = player, PlayerTools = state.Tools with { ScaleGuard = 0 } };
         }
 
         private static BattleState RecordPlayed(BattleState state, Actor actor, int unit, BattleAttribute attributes)
