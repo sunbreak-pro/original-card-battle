@@ -69,6 +69,12 @@ namespace Depiction.Bridge
         private int _playedPower = -1;
         private int _playedUnit;
         private bool _playerActs;
+
+        /// <summary>
+        /// battle-visual-v1 §5.5 (#455): from the player's turn end until the next turn start the enemy
+        /// has the turn. Unlike <see cref="_playerActs"/> it is false before turn 1 opens.
+        /// </summary>
+        private bool _enemyTurn;
         private int _order;
 
         /// <summary>The enemy action being written whiffed (§6): its trait miss has nothing to strike off.</summary>
@@ -132,6 +138,7 @@ namespace Depiction.Bridge
             _planChanged = false;
             _omenVisible = false;
             _playerActs = state.Phase == BattlePhase.PlayerAction;
+            _enemyTurn = false;
             return Snapshot(state);
         }
 
@@ -205,6 +212,7 @@ namespace Depiction.Bridge
                 case TurnStarted started when started.Actor == Actor.Player:
                     _turn = started.Turn;
                     _playerActs = true;
+                    _enemyTurn = false;
                     return NewEvent(DepictionEventKind.TurnStart, "ターン開始");
 
                 case CardPlayed played:
@@ -219,11 +227,13 @@ namespace Depiction.Bridge
                 // and belongs to the same event, so 構え does not open a second one.
                 case StanceFired fired when fired.Actor == Actor.Player && fired.Hook == StanceHook.TurnEnd:
                     _playerActs = false;
+                    _enemyTurn = true;
                     return NewEvent(DepictionEventKind.TurnEnd, "ターン終了");
 
                 case ReserveChecked reserve when reserve.Actor == Actor.Player
                     && (current == null || current.Kind != DepictionEventKind.TurnEnd):
                     _playerActs = false;
+                    _enemyTurn = true;
                     return NewEvent(DepictionEventKind.TurnEnd, "ターン終了");
 
                 case GuardCleared cleared when cleared.Actor == Actor.Enemy:
@@ -829,6 +839,8 @@ namespace Depiction.Bridge
                 frame.Hand.Add(face);
             }
             frame.StanceHint = waiting ? ReserveHint(_player.Stamina) : "";
+            // §5.5 (#455): the screen sinks below the throw line while the enemy has the turn.
+            frame.EnemyTurn = _enemyTurn && after.Result == GameResult.Ongoing;
             frame.StanceDivider = Constants.ReserveThreshold; // §4.7: the stamina tag's divider
             return frame;
         }

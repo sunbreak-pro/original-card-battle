@@ -399,6 +399,12 @@ namespace Depiction
         public bool StanceListsShown;
         /// <summary>battle-visual-v1 §4.9 (#455): the attributes played this turn. <see cref="PlayedFrame.Shown"/> false draws no frames.</summary>
         public PlayedFrame Played = new PlayedFrame();
+        /// <summary>
+        /// battle-visual-v1 §5.5 (#455): the enemy's turn — from the player's turn end until the next
+        /// turn start. The screen sinks below y 790 and the end-turn plate dims while it holds. The
+        /// v4.2 sources leave it false.
+        /// </summary>
+        public bool EnemyTurn;
     }
 
     /// <summary>

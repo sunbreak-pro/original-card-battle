@@ -150,6 +150,8 @@ namespace Depiction.View
         private ReserveHintView _reserveHint;
         /// <summary>battle-visual-v1 §5.4 (#455): the one line saying why a released card went back.</summary>
         private RefusalLineView _refusalLine;
+        /// <summary>battle-visual-v1 §5.5 (#455): the black gradient below y 790 on the enemy's turn.</summary>
+        private EnemyTurnShadeView _enemyShade;
         /// <summary>The 構えの予告 of the frame on screen, which a held card's own hint stands in for.</summary>
         private string _frameStanceHint = "";
 
@@ -417,10 +419,23 @@ namespace Depiction.View
                 // §5.4: over the hand, so a card's back does not hide the reason it came back.
                 int above = handArea && handArea.parent == root ? handArea.GetSiblingIndex() + 1 : -1;
                 _refusalLine = new RefusalLineView(root, above);
+                // §5.5: over the hand and everything else below the throw line.
+                above = handArea && handArea.parent == root ? handArea.GetSiblingIndex() + 1 : -1;
+                _enemyShade = new EnemyTurnShadeView(root, above);
                 // §4.9: the 構えの予告 is made here at its own place; the scene's icon and number give way to it.
                 if (stanceHintIcon) stanceHintIcon.gameObject.SetActive(false);
                 if (stanceHintText) stanceHintText.gameObject.SetActive(false);
             }
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §5.5 / §4.9 (#455): on the enemy's turn the screen sinks below y 790 and the
+        /// end-turn plate stands at 40%. Whose turn it is comes from the script (DepictionFrame.EnemyTurn).
+        /// </summary>
+        private void ShowEnemyTurn(bool on)
+        {
+            _enemyShade?.Show(on);
+            if (endTurn) UiKit.Group(endTurn).alpha = on ? EnemyTurnShadeLayout.EndTurnAlpha : 1f;
         }
 
         /// <summary>
@@ -706,6 +721,9 @@ namespace Depiction.View
             // §4.4 敵の番 (#455): the acting omen's light lasts through the enemy's beats and goes out
             // with the first event that is not one of them (the next omen, the turn start, a fall).
             if (ev.Kind != DepictionEventKind.EnemyAction && omenBadge) omenBadge.SetActing(false);
+            // §5.5 (#455): the screen comes back up as the event that ends the enemy's turn starts (the
+            // turn start's banner), not after it has played; it sinks when the turn end's frame lands.
+            if (ev.After != null && !ev.After.EnemyTurn) ShowEnemyTurn(false);
             if (ev.Kind == DepictionEventKind.TurnStart)
             {
                 yield return Effect(EffectId.TurnBanner, Banner(DepictionText.YourTurn, BattleTheme.Accent, _effects.Ms(EffectId.TurnBanner)), null);
@@ -1374,6 +1392,7 @@ namespace Depiction.View
             _frameStanceHint = frame.StanceHint ?? "";
             ShowReserveHint(_dragging); // §4.9 (#455)
             _played?.Bind(frame.Played);
+            ShowEnemyTurn(frame.EnemyTurn); // §5.5 (#455): sinks once the turn end has played
             if (!SameHand(frame.Hand)) BuildHand(frame.Hand);
             else for (int i = 0; i < _hand.Count; i++) _hand[i].Bind(frame.Hand[i]);
             LayoutHand();
