@@ -4,9 +4,15 @@ using System.Collections.Generic;
 namespace BattleCore
 {
     /// <summary>
-    /// Enemy data, written as records from enemy_document/enemy_roster_v4.md v4.6 (2026-10-03).
+    /// Enemy data, written as records from enemy_document/enemy_roster_v4.md v4.16 (2026-10-10).
     /// Nothing here decides anything: the decision tree is walked by <see cref="EnemyAi"/> and the
     /// numbers are resolved by the turn loop (#72).
+    ///
+    /// v4.15 (#396, followed by #446) reordered four trees so no action sits where it is never chosen
+    /// (統牙の長竜 1〜2, 獄竜 ガルド 0, 大黒蛇 セルク 0 — 払いのけ only under pusher —, 歪みの根 3+ without
+    /// 樹皮, which only root_sk takes) and the root's stage 3, and took off seven traits that could
+    /// never hold (the three 温存 of a guard picked only at stamina 1, the 脆化 / 出血 / 疲労 bonuses
+    /// on words gone before the next blow, and 盾を構える's 追撃 that dies with the phase).
     ///
     /// The thirteen of the 80% roster: the seven normal enemies (§2), the three elites (§3) and the
     /// three bosses (§4〜§6). Every row is an <see cref="EnemyActionDef"/> written off the same face
@@ -90,9 +96,8 @@ namespace BattleCore
                 new EnemyActionDef(
                     "guard_up", "柄で受ける", BattleAttribute.Guard, 1,
                     new Face(Guard: 3),
-                    Reserve(4, TraitEffect.NextTurnRecovery, 1),
-                    TargetKind.Self,
-                    "温存: 残 4 以上で次の回復 +1"),
+                    Targets: TargetKind.Self,
+                    Description: "Guard 3"),
 
                 new EnemyActionDef(
                     "step_forward", "踏み込み", BattleAttribute.Guard, 1,
@@ -127,9 +132,8 @@ namespace BattleCore
                 new EnemyActionDef(
                     "crouch", "身を低くする", BattleAttribute.Guard, 1,
                     new Face(Guard: 3),
-                    Reserve(4, TraitEffect.NextTurnRecovery, 1),
-                    TargetKind.Self,
-                    "温存: 残 4 以上で次の回復 +1"),
+                    Targets: TargetKind.Self,
+                    Description: "Guard 3"),
             });
 
         /// <summary>roster §2.3: 瘴甲の竜兵. HP 87, favours gap 0: sets 鉄の身 from afar, trudges in, swings heavy.</summary>
@@ -246,8 +250,7 @@ namespace BattleCore
                 new EnemyActionDef(
                     "step_slash", "踏み込み斬り", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Move: 2, Reach: new Reach(1, 2)),
-                    FoeHas(StatusKind.Fragile, TraitEffect.PowerBonus, 5),
-                    Description: "間合い 1〜2 に届く。当ててから前へ 2。相手の状態（脆化）: 威力 +5"),
+                    Description: "間合い 1〜2 に届く。当ててから前へ 2"),
                 new EnemyActionDef(
                     "retreat_cut", "退き斬り", BattleAttribute.Attack, 1,
                     new Face(Power: 4),
@@ -294,9 +297,8 @@ namespace BattleCore
                 new EnemyActionDef(
                     "haft_guard", "柄を立てる", BattleAttribute.Guard, 1,
                     new Face(Guard: 3),
-                    Reserve(4, TraitEffect.NextTurnRecovery, 1),
-                    TargetKind.Self,
-                    "Guard 3。温存: 残 4 以上で次の回復 +1"),
+                    Targets: TargetKind.Self,
+                    Description: "Guard 3"),
             });
 
         // ---- §3 elite: two actions a phase ----
@@ -338,9 +340,8 @@ namespace BattleCore
                 new EnemyActionDef(
                     "brace", "盾を構える", BattleAttribute.Guard, 1,
                     new Face(Guard: 3),
-                    When(TraitCondition.Unguarded, TraitEffect.FollowUp, Constants.FollowUpPower),
-                    TargetKind.Self,
-                    "Guard 3。無防備: 相手の Guard が 0 なら追撃"),
+                    Targets: TargetKind.Self,
+                    Description: "Guard 3"),
             },
             actionsPerPhase: Constants.EliteActions);
 
@@ -349,7 +350,7 @@ namespace BattleCore
             "pack_alpha", "統牙の長竜", EnemyRank.Elite,
             maxHp: 120, maxStamina: 12, recovery: 3, size: 1,
             branchAtGapZero: new[] { "rend", "herd", "crouch" },
-            branchAtGapOneToTwo: new[] { "pounce", "howl", "crouch" },
+            branchAtGapOneToTwo: new[] { "pounce", "crouch", "howl" },
             branchAtGapThreePlus: new[] { "hunt_stance", "pounce", "howl" },
             actions: new[]
             {
@@ -361,8 +362,7 @@ namespace BattleCore
                 new EnemyActionDef(
                     "rend", "引き裂き", BattleAttribute.Attack, 2,
                     new Face(Power: 8, Reach: Reach.Only(0), Statuses: new[] { Foe(StatusKind.Bleed, 1) }),
-                    FoeHas(StatusKind.Bleed, TraitEffect.PowerBonus, 3),
-                    Description: "間合い 0 に届く。出血を 1 付与する。相手の状態（出血）: 威力 +3"),
+                    Description: "間合い 0 に届く。出血を 1 付与する"),
                 new EnemyActionDef(
                     "pounce", "飛びかかり", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Move: 2, Reach: new Reach(1, 3)),
@@ -460,8 +460,7 @@ namespace BattleCore
                 new EnemyActionDef(
                     "miasma_bolt", "瘴気の矢", BattleAttribute.Attack, 2,
                     new Face(Power: 8, Reach: new Reach(1, 4), Statuses: new[] { Foe(StatusKind.Fatigue, 1) }),
-                    FoeHas(StatusKind.Fatigue, TraitEffect.PowerBonus, 3),
-                    Description: "間合い 1〜4 に届く。疲労を 1 付与する。相手の状態（疲労）: 威力 +3"),
+                    Description: "間合い 1〜4 に届く。疲労を 1 付与する"),
                 new EnemyActionDef(
                     "push_back", "払いのけ", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Push: 2, Reach: Reach.Only(0)),
@@ -504,7 +503,7 @@ namespace BattleCore
                 }));
 
         private static Tree PriestBase => new Tree(
-            new[] { "push_back", "staff_strike", "coil" },
+            new[] { "staff_strike", "coil" },
             new[] { "miasma_bolt", "binding_word", "coil" },
             new[] { "miasma_rite", "ward", "miasma_bolt", "coil" });
 
@@ -596,7 +595,7 @@ namespace BattleCore
                 }));
 
         private static Tree AnglerBase => new Tree(
-            new[] { "drown", "fathom_call", "deep_water", "line_whip" },
+            new[] { "drown", "deep_water", "fathom_call", "line_whip" },
             new[] { "reel_in", "line_whip", "slack_line" },
             new[] { "hook_cast", "reel_in" });
 
@@ -681,10 +680,16 @@ namespace BattleCore
                         new[] { WitherBreath(reach: new Reach(0, 4), cap: Statuses.BossWordStackMax) },
                         EnterMove: 1),
                     // stage_3 「HP が 3 分の 1 を切ると、根と息を同じフェーズで使う」: the body sways each
-                    // phase; 根を張る also reaches 0〜4 and 根張り stacks to 2; every band is 根を張る
-                    // → 根の横払い / 枯らしの息.
+                    // phase; 根を張る also reaches 0〜4 and 根張り stacks to 2; every band leads with 根を張る,
+                    // and the second move is 根の横払い at 0〜2 but 枯らしの息 at 3+, where the sweep
+                    // (0〜2) would miss (roster v4.15, #396). The roster names only those two moves; the
+                    // rest of each band is ours: 0〜2 keep the breath and 伸びる根 behind the sweep, and 3+
+                    // ends on 伸びる根 (#446, handed to cards to write into the roster).
                     new Stage("stage_3", view => view.Hp <= 66,
-                        tree => Tree.All("root_grip", "sweep", "wither_breath", "creeping_root"),
+                        tree => new Tree(
+                            new[] { "root_grip", "sweep", "wither_breath", "creeping_root" },
+                            new[] { "root_grip", "sweep", "wither_breath", "creeping_root" },
+                            new[] { "root_grip", "wither_breath", "creeping_root" }),
                         new[]
                         {
                             WitherBreath(reach: new Reach(0, 4), cap: Statuses.BossWordStackMax),
@@ -696,7 +701,7 @@ namespace BattleCore
         private static Tree RootBase => new Tree(
             new[] { "twist", "root_grip", "sweep", "creeping_root" },
             new[] { "sweep", "root_grip", "thorn_volley", "creeping_root" },
-            new[] { "wither_breath", "thorn_volley", "bark", "creeping_root" });
+            new[] { "wither_breath", "thorn_volley", "creeping_root" });
 
         private static EnemyActionDef WitherBreath(Reach reach, int cap) => new EnemyActionDef(
             "wither_breath", "枯らしの息", BattleAttribute.Skill, 2,

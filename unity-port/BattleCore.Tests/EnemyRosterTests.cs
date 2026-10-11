@@ -483,11 +483,12 @@ namespace BattleCore.Tests
 
         [TestCase("crossbow_hunter", new[] { "kick_off", "brace" }, new[] { "backstep", "brace" }, new[] { "bolt", "brace" })]
         [TestCase("mist_archer", new[] { "fade", "scatter" }, new[] { "fade", "scatter" }, new[] { "mist_arrow", "scatter" })]
-        [TestCase("miasma_priest", new[] { "push_back", "staff_strike", "coil" }, new[] { "miasma_bolt", "binding_word", "coil" },
+        [TestCase("miasma_priest", new[] { "staff_strike", "coil" }, new[] { "miasma_bolt", "binding_word", "coil" },
             new[] { "miasma_rite", "ward", "miasma_bolt", "coil" })]
         public void TheBranches_AreTheRostersThree(string enemy, string[] zero, string[] oneToTwo, string[] threePlus)
         {
-            // roster §2.4 / §2.5 / §4.3: the three base branches. セルク's 3+ holds 瘴気の矢 where 縛りの言葉 was (#196).
+            // roster §2.4 / §2.5 / §4.3: the three base branches. セルク's 3+ holds 瘴気の矢 where 縛りの言葉 was (#196),
+            // and its 0 is 鎌首の打ち込み / とぐろ with 払いのけ only under pusher (v4.15, #396, #446).
             var def = Enemies.ById(enemy);
             Assert.Multiple(() =>
             {
@@ -495,6 +496,98 @@ namespace BattleCore.Tests
                 Assert.That(def.BranchAtGapOneToTwo, Is.EqualTo(oneToTwo));
                 Assert.That(def.BranchAtGapThreePlus, Is.EqualTo(threePlus));
             });
+        }
+
+        // ---- v4.15 (#396, followed by #446): every base tree and every trait as the roster writes them ----
+
+        /// <summary>roster §2〜§6's 決定木, "gap 0 | 1〜2 | 3 以上", for all thirteen.</summary>
+        private static readonly IReadOnlyDictionary<string, string> RosterTrees = new Dictionary<string, string>
+        {
+            ["polearm_warped"] = "shove guard_up reach_thrust | sweep reach_thrust guard_up | step_forward guard_up",
+            ["shadow_hound"] = "bite crouch | lunge_in crouch | dash crouch",
+            ["rusted_revenant"] = "heavy_swing iron_body trudge | press trudge | iron_body trudge",
+            ["crossbow_hunter"] = "kick_off brace | backstep brace | bolt brace",
+            ["mist_archer"] = "fade scatter | fade scatter | mist_arrow scatter",
+            ["twin_blade_warped"] = "twin_slash retreat_cut | step_slash retreat_cut | cross_guard",
+            ["polearm_crystal"] = "recoil_thrust short_jab haft_guard | great_thrust short_jab haft_guard | crystal_rush haft_guard",
+            ["armored_warden"] = "helm_splitter shield_bash brace | push_shield advance_guard brace | iron_wall advance_guard brace",
+            ["pack_alpha"] = "rend herd crouch | pounce crouch howl | hunt_stance pounce howl",
+            ["polearm_unyielding"] = "haft_shove plate_guard | long_thrust plate_guard | set_spear hook_in clank_on",
+            ["miasma_priest"] = "staff_strike coil | miasma_bolt binding_word coil | miasma_rite ward miasma_bolt coil",
+            ["abyss_angler"] = "drown deep_water fathom_call line_whip | reel_in line_whip slack_line | hook_cast reel_in",
+            ["distortion_root"] = "twist root_grip sweep creeping_root | sweep root_grip thorn_volley creeping_root | wither_breath thorn_volley creeping_root",
+        };
+
+        [TestCaseSource(nameof(AllIds))]
+        public void TheBaseTree_IsTheRosters(string id)
+        {
+            var def = Enemies.ById(id);
+            string tree = string.Join(" | ", new[] { def.BranchAtGapZero, def.BranchAtGapOneToTwo, def.BranchAtGapThreePlus }
+                .Select(branch => string.Join(" ", branch)));
+            Assert.That(tree, Is.EqualTo(RosterTrees[id]));
+        }
+
+        /// <summary>
+        /// roster §2〜§6's 特性 column, "action:trait" with "—" for none. Written short:
+        /// condition / effect / amount, then @threshold, (watched word), [combo attribute] or {granted word}.
+        /// </summary>
+        private static readonly IReadOnlyDictionary<string, string> RosterTraits = new Dictionary<string, string>
+        {
+            ["polearm_warped"] = "sweep:GapAtLeast/PowerBonus/3@2 shove:Unguarded/PowerBonus/3 reach_thrust:— guard_up:— step_forward:—",
+            ["shadow_hound"] = "bite:— lunge_in:GapAtLeast/PowerBonus/3@2 dash:— crouch:—",
+            ["rusted_revenant"] = "iron_body:— heavy_swing:Broken/PowerBonus/3 press:— trudge:—",
+            ["crossbow_hunter"] = "bolt:— backstep:Reserve/GuardBonus/3@4 kick_off:— brace:—",
+            ["mist_archer"] = "mist_arrow:GapAtLeast/PowerBonus/5@3 fade:Unguarded/NextTurnRecovery/1 scatter:—",
+            ["twin_blade_warped"] = "twin_slash:— step_slash:— retreat_cut:— cross_guard:Reserve/Status/0@4{Parry,1,self}",
+            ["polearm_crystal"] = "great_thrust:— crystal_rush:GapAtLeast/PowerBonus/3@3 recoil_thrust:Unguarded/PowerBonus/3 short_jab:— haft_guard:—",
+            ["armored_warden"] = "iron_wall:— helm_splitter:GapAtMost/BreakBonus/1 push_shield:— shield_bash:Combo/PowerBonus/3[Attack] advance_guard:— brace:—",
+            ["pack_alpha"] = "hunt_stance:— rend:— pounce:GapAtLeast/PowerBonus/5@2 herd:— howl:— crouch:Reserve/GuardBonus/3@5",
+            ["polearm_unyielding"] = "set_spear:— long_thrust:Combo/PowerBonus/3[Skill] haft_shove:— hook_in:— plate_guard:Reserve/GuardBonus/3@5 clank_on:—",
+            ["miasma_priest"] = "ward:— miasma_rite:— staff_strike:GapAtMost/PowerBonus/5 miasma_bolt:— push_back:Unguarded/PowerBonus/5 binding_word:— coil:—",
+            ["abyss_angler"] = "hook_cast:GapAtLeast/PowerBonus/3@3 drown:FoeHas/PowerBonus/3(Hook) fathom_call:— line_whip:FoeHas/PowerBonus/3(Slow) deep_water:— reel_in:— slack_line:—",
+            ["distortion_root"] = "sweep:FoeHas/PowerBonus/5(Rooting) thorn_volley:GapAtLeast/PowerBonus/5@3 wither_breath:— root_grip:— twist:Broken/PowerBonus/3 bark:— creeping_root:—",
+        };
+
+        [TestCaseSource(nameof(AllIds))]
+        public void EveryTrait_IsTheRosters(string id)
+        {
+            var def = Enemies.ById(id);
+            string traits = string.Join(" ", RosterTraits[id].Split(' ').Select(pair => pair.Substring(0, pair.IndexOf(':')))
+                .Select(action => action + ":" + Short(def.Actions[action].Trait)));
+            Assert.Multiple(() =>
+            {
+                Assert.That(def.Actions.Keys, Is.EquivalentTo(RosterTraits[id].Split(' ').Select(pair => pair.Substring(0, pair.IndexOf(':')))));
+                Assert.That(traits, Is.EqualTo(RosterTraits[id]));
+            });
+        }
+
+        [TestCase("polearm_warped", "guard_up", "Guard 3")]
+        [TestCase("shadow_hound", "crouch", "Guard 3")]
+        [TestCase("polearm_crystal", "haft_guard", "Guard 3")]
+        [TestCase("twin_blade_warped", "step_slash", "間合い 1〜2 に届く。当ててから前へ 2")]
+        [TestCase("pack_alpha", "rend", "間合い 0 に届く。出血を 1 付与する")]
+        [TestCase("miasma_priest", "miasma_bolt", "間合い 1〜4 に届く。疲労を 1 付与する")]
+        [TestCase("armored_warden", "brace", "Guard 3")]
+        public void TheSevenTraitsV415TookOff_AreGone_FromTheDataAndTheText(string enemy, string action, string description)
+        {
+            // roster §11 v4.15 (#396): seven traits that never held were taken off; #446 follows.
+            var def = Enemies.ById(enemy).Actions[action];
+            Assert.Multiple(() =>
+            {
+                Assert.That(def.Trait, Is.Null);
+                Assert.That(def.Description, Is.EqualTo(description));
+            });
+        }
+
+        private static string Short(Trait? trait)
+        {
+            if (trait == null) return "—";
+            string text = trait.Condition + "/" + trait.Effect + "/" + trait.Amount;
+            if (trait.Threshold != 0) text += "@" + trait.Threshold;
+            if (trait.Watch != null) text += "(" + trait.Watch + ")";
+            if (trait.Attribute != BattleAttribute.None) text += "[" + trait.Attribute + "]";
+            if (trait.Grant != null) text += "{" + trait.Grant.Kind + "," + trait.Grant.Stacks + (trait.Grant.OnSelf ? ",self" : "") + "}";
+            return text;
         }
 
         [TestCase("crossbow_hunter", 4, "bolt")]

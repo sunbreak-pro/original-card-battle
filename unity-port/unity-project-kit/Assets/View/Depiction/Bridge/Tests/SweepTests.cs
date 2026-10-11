@@ -82,6 +82,13 @@ namespace Depiction.Bridge.Tests
         /// #51 replaced that 鈍足, which stood in for 呪縛, with 呪縛 itself, which 縛りの言葉 does not
         /// put on again while it remains (roster §4.3). The replay now holds that the words セルク puts
         /// on never grow: 呪縛 stays at 2, 瘴気纏い at 1, and nothing climbs past the cap.
+        ///
+        /// Since roster v4.15 (#396, #446) セルク's gap-0 branch opens with 鎌首の打ち込み instead of
+        /// 払いのけ, so this player is no longer thrown back to gap 2: it fights from gap 1, where every
+        /// 縛りの言葉 misses (2〜4), and 呪縛 never lands. The line is held as "2 at most"; that the word
+        /// lands with 2 and is not put on again while it remains is pinned in BattleCore.Tests by
+        /// Binding_FromTheBindingWord_LastsTheNextPlayerTurnOnly and
+        /// TheBindingWord_IsNotTakenWhileBindingRemains_AndComesBackEveryOtherPhase.
         /// </summary>
         public const string ReplayDeck =
             "overhead:1,flat_strike:1,reach_thrust:1,brace:1,iron_block:2,deep_breath:1,first_aid:1,observe:1," +
@@ -103,7 +110,7 @@ namespace Depiction.Bridge.Tests
                 Assert.That(applied.Where(a => Statuses.DecayOf(a.Kind) == StatusDecay.OnTurn).Max(a => a.StacksAfter),
                     Is.LessThanOrEqualTo(Constants.TurnDecayStackMax), "no turn word climbs past the cap");
                 Assert.That(Peak(Actor.Player, StatusKind.Slow), Is.EqualTo(0), "セルク puts no 鈍足 on any more");
-                Assert.That(Peak(Actor.Player, StatusKind.Binding), Is.EqualTo(2), "呪縛 2, never put on again while it remains");
+                Assert.That(Peak(Actor.Player, StatusKind.Binding), Is.LessThanOrEqualTo(2), "呪縛 2 at most, never put on again while it remains");
                 Assert.That(Peak(Actor.Player, StatusKind.MiasmaShroud), Is.InRange(1, Statuses.BossWordStackMax), "瘴気纏い");
                 Assert.That(Peak(Actor.Player, StatusKind.Fatigue), Is.LessThanOrEqualTo(Constants.TurnDecayStackMax), "疲労");
                 Assert.That(Peak(Actor.Enemy, StatusKind.Regen), Is.LessThanOrEqualTo(Constants.TurnDecayStackMax), "the priest's 再生");

@@ -177,9 +177,11 @@ namespace BattleCore.Tests
         [Test]
         public void Binding_IsNotSlow_APushFromTheOtherSideStillMovesTheHolder()
         {
-            // 呪縛 stops the holder's own moves only; 払いのけ still throws a bound player two cells back.
-            var s = Opened(Enemies.MiasmaPriest, 0);
-            Assert.That(s.Omen!.ActionId, Is.EqualTo("push_back"));
+            // 呪縛 stops the holder's own moves only; a push still throws a bound player two cells back.
+            // セルク's 払いのけ comes only under pusher since roster v4.15 (#396, #446), so the 錆槍's
+            // 柄尻の押し込み (the same 2-cell push at gap 0) opens the phase here.
+            var s = Opened(Enemies.PolearmWarped, 0);
+            Assert.That(s.Omen!.ActionId, Is.EqualTo("shove"));
             s = WithPlayer(s, (StatusKind.Binding, 2));
             var end = TurnLoop.EndTurn(s, NoShuffle);
             Assert.That(end.Events.OfType<CellsMoved>().Any(m => m.Actor == Actor.Player && m.Pushed), Is.True);

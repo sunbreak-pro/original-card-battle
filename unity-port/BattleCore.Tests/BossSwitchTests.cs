@@ -97,6 +97,11 @@ namespace BattleCore.Tests
                 Assert.That(Active(priest, View(priest, close, gap: 2)), Is.Null, "「間合いが 1 以上になる」で戻る");
                 Assert.That(Active(priest, View(priest, History(new Turn(None, Gap: 0)), gap: 0)), Is.Null, "one turn is not two");
                 Assert.That(Switch(priest, "pusher").BranchAtGapOneToTwo![0], Is.EqualTo("push_back"), "全ての枝の先頭");
+                // roster §4.3 v4.15 (#396, #446): 払いのけ stands only here, so pusher changes the 0 branch.
+                Assert.That(priest.BranchAtGapZero, Does.Not.Contain("push_back"));
+                Assert.That(Switch(priest, "pusher").BranchAtGapZero, Is.EqualTo(new[] { "push_back", "staff_strike", "coil" }));
+                Assert.That(EnemyAi.ChooseAction(priest, 0, priest.MaxStamina)!.Id, Is.EqualTo("staff_strike"), "the base tree strikes at 0");
+                Assert.That(EnemyAi.ChooseAction(priest, 0, priest.MaxStamina, null, Switch(priest, "pusher"))!.Id, Is.EqualTo("push_back"));
             });
         }
 
@@ -282,6 +287,8 @@ namespace BattleCore.Tests
                 Assert.That(Switch(root, "root_st").BranchAtGapZero![0], Is.EqualTo("wither_breath"));
                 Assert.That(Switch(root, "root_sk").BranchAtGapZero!.Take(2), Is.EqualTo(new[] { "bark", "sweep" }));
                 Assert.That(Switch(root, "root_sk").Cleanse, Is.True);
+                // roster §6.5 v4.15 (#396, #446): 樹皮 is taken only by root_sk, never by the base tree.
+                Assert.That(root.BranchAtGapZero.Concat(root.BranchAtGapOneToTwo).Concat(root.BranchAtGapThreePlus), Does.Not.Contain("bark"));
                 Assert.That(Switch(root, "root_m_in").BranchAtGapZero![0], Is.EqualTo("creeping_root"));
                 Assert.That(EnemyAi.FaceAt(Switch(root, "root_m_in").Override("creeping_root")!, 3).Push, Is.EqualTo(1), "moved in: pushed back out");
                 Assert.That(EnemyAi.FaceAt(Switch(root, "root_m_out").Override("creeping_root")!, 0).Push, Is.EqualTo(-1), "moved out: pulled back in");
@@ -304,6 +311,13 @@ namespace BattleCore.Tests
                 Assert.That((stage3.EnterMove, stage3.Sway), Is.EqualTo((0, true)), "前へ 1 と後ろへ 1 を交互に");
                 Assert.That(stage2.BranchAtGapZero![0], Is.EqualTo("wither_breath"));
                 Assert.That(stage3.BranchAtGapZero!.Take(2), Is.EqualTo(new[] { "root_grip", "sweep" }));
+                // roster §6.4 v4.15 (#396, #446): the second move is 根の横払い at 0〜2 but 枯らしの息 at 3+,
+                // where the sweep (0〜2) would miss. The tails past the second move are #446's.
+                Assert.That(stage3.BranchAtGapZero, Is.EqualTo(new[] { "root_grip", "sweep", "wither_breath", "creeping_root" }));
+                Assert.That(stage3.BranchAtGapOneToTwo, Is.EqualTo(new[] { "root_grip", "sweep", "wither_breath", "creeping_root" }));
+                Assert.That(stage3.BranchAtGapThreePlus, Is.EqualTo(new[] { "root_grip", "wither_breath", "creeping_root" }));
+                Assert.That(EnemyAi.ChooseAction(root, 3, 14 - 2, new[] { "root_grip" }, stage3)!.Id, Is.EqualTo("wither_breath"), "2 手目 at 3+");
+                Assert.That(EnemyAi.ChooseAction(root, 2, 14 - 2, new[] { "root_grip" }, stage3)!.Id, Is.EqualTo("sweep"), "2 手目 at 0〜2");
                 Assert.That(stage3.Override("root_grip")!.Face.ReachOrDefault, Is.EqualTo(new Reach(0, 4)), "根を張るの届く間合いも 0〜4");
                 Assert.That(stage3.Override("wither_breath")!.Face.ReachOrDefault, Is.EqualTo(new Reach(0, 4)), "stage 2's reach carries on");
                 Assert.That(Active(root, View(root, History(new Turn(new[] { St })), hp: 60)), Is.EqualTo("stage_3+root_st"), "the adaptations work through the stages");

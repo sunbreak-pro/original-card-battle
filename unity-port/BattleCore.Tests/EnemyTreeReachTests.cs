@@ -32,17 +32,13 @@ namespace BattleCore.Tests
 
         /// <summary>
         /// The actions no scene chooses today, "enemy.action" → why and where it is being fixed.
-        /// Empty is the goal.
+        /// Empty is the goal, and it is empty since #446 followed roster v4.15 (#396): 統牙の長竜's
+        /// 身を伏せる and 獄竜 ガルド's 淀みを張る moved up their trees
+        /// (<see cref="TheTwoActionsV415MovedUp_AreChosenWhereTheRosterSays"/>). A line added here has
+        /// to come with the reason and the issue.
         /// </summary>
         private static readonly IReadOnlyDictionary<string, string> NeverChosen = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["pack_alpha.crouch"] =
-                "身を伏せる sits third on the 0 and 1〜2 branches behind the cost-1 追い立てる / 遠吠え. Roster v4.15 (#396) moves it "
-                + "second on 1〜2 (飛びかかり / 身を伏せる / 遠吠え); Enemies.cs has not followed yet (#396, 申し送り 2026-10-10).",
-            ["abyss_angler.deep_water"] =
-                "淀みを張る sits third on the 0 branch behind the same-cost 引きずり込む and 深みへの呼び声, and a phase skips only one. "
-                + "Roster v4.15 (#396) moves it second (引きずり込む / 淀みを張る / 深みへの呼び声 / 糸の一打); Enemies.cs has not followed "
-                + "yet (#396, 申し送り 2026-10-10).",
         };
 
         private static IEnumerable<string> EnemyIds() => Enemies.All.Select(e => e.Id);
@@ -105,6 +101,26 @@ namespace BattleCore.Tests
                 Assert.That(EnemyAi.StaminaAtAction(def, fatigued), Is.EqualTo(1));
                 Assert.That(EnemyAi.StaminaAtAction(def, Body(def, stamina: 0, fatigue: false, bonus: 0)), Is.EqualTo(2));
                 Assert.That(ChosenSomewhere(def).ContainsKey("guard_up"), Is.True);
+            });
+        }
+
+        [Test]
+        public void TheTwoActionsV415MovedUp_AreChosenWhereTheRosterSays()
+        {
+            // roster §3.2 (v4.15, #396): after 狩りの構え, a 飛びかかり from 3〜4 lands at 1〜2 and the
+            // redrawn second action is 身を伏せる, ahead of 遠吠え.
+            var alpha = Enemies.PackAlpha;
+            var alphaSecond = EnemyAi.ChooseAction(alpha, 1, alpha.MaxStamina - 2 - 2, new[] { "hunt_stance", "pounce" });
+
+            // roster §5.3 (v4.15, #396): the first phase that hauls the player in is 引きずり込む → 淀みを張る.
+            var angler = Enemies.AbyssAngler;
+            var anglerSecond = EnemyAi.ChooseAction(angler, 0, 4 - 2, new[] { "drown" });
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(alphaSecond?.Id, Is.EqualTo("crouch"));
+                Assert.That(anglerSecond?.Id, Is.EqualTo("deep_water"));
+                Assert.That(NeverChosen, Is.Empty, "nothing is left unreached since #446");
             });
         }
 
