@@ -90,6 +90,8 @@ StyleCopReport.xml
 *.rsp
 # but not Directory.Build.rsp, as it configures directory-level build defaults
 !Directory.Build.rsp
+# and not the tracked csc.rsp (enables nullable annotations), so ripgrep still finds it
+!unity-project-kit/Assets/Core/csc.rsp
 *.sbr
 *.tlb
 *.tli
