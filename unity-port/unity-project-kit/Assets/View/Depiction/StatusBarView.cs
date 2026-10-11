@@ -1,7 +1,13 @@
-// HP bar, Guard badge, stamina pips and status chips for one unit. Shows the values it
-// is handed; the bar width is the only thing derived here (a drawing scale, not a rule).
-// The chips and their hover panel follow battle-visual-v1 §7.3 (#242); their words are the
-// script's (StatusChip.Title / Group / Effect / Decay).
+// HP bar, Guard badge, stamina and status chips for one unit: battle-visual-v1 §4.5's number
+// panel. Shows the values it is handed; the bar width is the only thing derived here (a drawing
+// scale, not a rule). The chips and their hover panel follow battle-visual-v1 §7.3 (#242); their
+// words are the script's (StatusChip.Title / Group / Effect / Decay).
+//
+// The prefab saved in the Unity project is the 480 x 96 bar from before #242. Rebuilding it
+// (DepictionPrefabBuilder) needs the Unity Editor, so the panel is laid out again here at run time
+// (#455), as OmenBadgeView does with its badge: 300 wide for the player and 210 for an enemy (the
+// width is handed in, StatusPanelLayout), hanging from its top-left corner, the rows inside 8 / 10 /
+// 10 px of padding. Where it stands on the screen is DepictionPlayer's to say (PlaceAt).
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using System.Collections.Generic;
@@ -34,9 +40,8 @@ namespace Depiction.View
         // The prefab's chips are plain Texts; the chips are made here instead (the prefab belongs to
         // the Unity project): 30 px tall, 6 / 8 px padding, the label and the stacks at 16 px, black 35%,
         // a square corner for the words put on the opponent and a round one for those put on oneself.
-        private const float ChipHeight = 30f;
-        private const float ChipGap = 5f;
-        private const float RowWidth = 400f;
+        private const float ChipHeight = StatusPanelLayout.ChipHeight;
+        private const float ChipGap = StatusPanelLayout.ChipGap;
         private const int PlayerChipsMax = 6;
         private const int EnemyChipsMax = 4;
         private const float PanelWidth = 340f;
@@ -81,6 +86,181 @@ namespace Depiction.View
 
         private RectTransform Rect => (RectTransform)transform;
 
+        // ---- battle-visual-v1 §4.5 (#455): the panel laid out at run time --------------------------------
+        /// <summary>The HP number's slot: three digits at 24 px.</summary>
+        private const float HpNumberWidth = 44f;
+        /// <summary>The space between the parts of a row.</summary>
+        private const float PartGap = 6f;
+        /// <summary>The enemy's stamina number's slot: two digits at 24 px.</summary>
+        private const float StaminaNumberWidth = 30f;
+
+        private bool _built;
+        private float _width;
+        private Image _panelEdge;
+        private RectTransform _hpBar;
+        private RectTransform _reserveGroup;
+        private Text _staminaText;
+        private Image _reserveShield;
+
+        /// <summary>The panel's width now: 300 for the player and 210 for an enemy until told otherwise.</summary>
+        public float LaidOutWidth => _width;
+
+        /// <summary>The room the rows have inside the side padding.</summary>
+        private float RowWidth => StatusPanelLayout.ContentWidth(_width);
+
+        private static float RowMiddle(float top, float height) => -(top + height * 0.5f);
+
+        private static float HpRowY => RowMiddle(StatusPanelLayout.PadTop, StatusPanelLayout.HpRowHeight);
+
+        private static float GuardRowY => RowMiddle(StatusPanelLayout.PadTop + StatusPanelLayout.HpRowHeight + StatusPanelLayout.RowGap, StatusPanelLayout.GuardRowHeight);
+
+        /// <summary>
+        /// §4.5: the panel (6 px corners, a 1 px rule frame), and in it the HP row (a 20 px heart, the
+        /// number at 24 px, a 14 px bar), the Guard row (a 28 px shield and its number at 24 px; an
+        /// enemy's stamina dot, number and 構えの盾 on the right) and the chip row under them. The
+        /// prefab's parts are moved into place; the ones it lacks are made.
+        /// </summary>
+        private void EnsureLayout()
+        {
+            if (_built) return;
+            _built = true;
+            UiKit.EnsureFont();
+            RectTransform rt = Rect;
+            // Hang from the top-left corner, kept where the scene put it until PlaceAt moves it.
+            var corners = new Vector3[4];
+            rt.GetWorldCorners(corners);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.position = corners[1];
+
+            Image back = VisualArt.Panel(rt, "PanelBack", BattleTheme.Panel, 6);
+            back.transform.SetSiblingIndex(0);
+            _panelEdge = VisualArt.Ring(rt, "PanelEdge", BattleTheme.Line, 6, 1);
+            _panelEdge.transform.SetSiblingIndex(1);
+
+            // 1 行目: the heart, the number in body ink, the bar.
+            UiKit.Sprite(rt, "Heart", VisualArt.Heart, BattleTheme.Scarlet, new Vector2(0f, 1f), new Vector2(0f, 0.5f),
+                new Vector2(20f, 20f), new Vector2(StatusPanelLayout.PadSide, HpRowY));
+            if (hpText)
+            {
+                hpText.rectTransform.SetParent(rt, false);
+                Place(hpText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(HpNumberWidth, StatusPanelLayout.HpRowHeight + 6f),
+                    new Vector2(StatusPanelLayout.PadSide + 20f + PartGap, HpRowY));
+                hpText.fontSize = 24;
+                hpText.fontStyle = FontStyle.Bold;
+                hpText.color = BattleTheme.Ink;
+                hpText.alignment = TextAnchor.MiddleLeft;
+                hpText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            }
+            _hpBar = hpFill ? hpFill.parent as RectTransform : null;
+            if (_hpBar)
+            {
+                // A black 50% groove with a rule frame, 3 px corners, filled scarlet.
+                Image groove = _hpBar.GetComponent<Image>();
+                if (groove)
+                {
+                    groove.sprite = VisualArt.Rounded(3);
+                    groove.type = Image.Type.Sliced;
+                    groove.color = BattleTheme.WithAlpha(Color.black, 0.5f);
+                }
+                if (hpFillImage)
+                {
+                    hpFillImage.sprite = VisualArt.Rounded(3);
+                    hpFillImage.type = Image.Type.Sliced;
+                }
+                VisualArt.Ring(_hpBar, "Frame", BattleTheme.Line, 3, 1); // over the fill and the ticks made later
+            }
+
+            // 2 行目: the shield and the Guard number beside it.
+            if (guardBadge)
+            {
+                Place(guardBadge, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(StatusPanelLayout.GuardRowHeight, StatusPanelLayout.GuardRowHeight),
+                    new Vector2(StatusPanelLayout.PadSide, GuardRowY));
+            }
+            if (guardIcon) guardIcon.preserveAspect = true;
+            if (guardText)
+            {
+                Place(guardText.rectTransform, new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(48f, StatusPanelLayout.GuardRowHeight + 6f), new Vector2(PartGap, 0f));
+                guardText.fontSize = 24;
+                guardText.alignment = TextAnchor.MiddleLeft;
+                guardText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            }
+
+            // 2 行目の右 (an enemy's): the stamina dot in the note colour, the number, the 構えの盾, right-aligned.
+            float groupWidth = 16f + PartGap + StaminaNumberWidth + PartGap + 24f;
+            _reserveGroup = UiKit.Point(rt, "StaminaReserve", new Vector2(1f, 1f), new Vector2(1f, 0.5f),
+                new Vector2(groupWidth, StatusPanelLayout.GuardRowHeight), new Vector2(-StatusPanelLayout.PadSide, GuardRowY));
+            _reserveShield = UiKit.Sprite(_reserveGroup, "Reserve", VisualArt.DashedShield, BattleTheme.Guard, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                new Vector2(24f, 24f), Vector2.zero);
+            _reserveShield.preserveAspect = true;
+            _staminaText = UiKit.Label(_reserveGroup, "Stamina", 24, TextAnchor.MiddleRight, BattleTheme.Ink, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                new Vector2(StaminaNumberWidth, StatusPanelLayout.GuardRowHeight + 6f), new Vector2(-(24f + PartGap), 0f));
+            _staminaText.fontStyle = FontStyle.Bold;
+            _staminaText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            UiKit.Sprite(_reserveGroup, "Dot", ProceduralArt.Circle, BattleTheme.Ink2, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
+                new Vector2(16f, 16f), new Vector2(-(24f + PartGap + StaminaNumberWidth + PartGap), 0f));
+            _reserveGroup.gameObject.SetActive(false);
+
+            if (pipRow) pipRow.gameObject.SetActive(false);
+            SetWidth(side == UnitSide.Player ? StatusPanelLayout.PlayerWidth : StatusPanelLayout.EnemyWidth);
+        }
+
+        private static void Place(RectTransform rt, Vector2 anchor, Vector2 pivot, Vector2 size, Vector2 offset)
+        {
+            rt.anchorMin = rt.anchorMax = anchor;
+            rt.pivot = pivot;
+            rt.sizeDelta = size;
+            rt.anchoredPosition = offset;
+        }
+
+        /// <summary>
+        /// §4.5: the panel's width (StatusPanelLayout: 300 for the player, 210 or less for an enemy).
+        /// The bar takes what the heart and the number leave, and the chips wrap again in the new room.
+        /// </summary>
+        public void SetWidth(float width)
+        {
+            EnsureLayout();
+            width = Mathf.Max(StatusPanelLayout.PadSide * 2f, width);
+            if (Mathf.Approximately(width, _width)) return;
+            _width = width;
+            Rect.sizeDelta = new Vector2(_width, Rect.sizeDelta.y);
+            if (_hpBar)
+            {
+                float barLeft = StatusPanelLayout.PadSide + 20f + PartGap + HpNumberWidth + PartGap;
+                Place(_hpBar, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(Mathf.Max(8f, _width - StatusPanelLayout.PadSide - barLeft), 14f),
+                    new Vector2(barLeft, HpRowY));
+            }
+            if (_chipRow)
+            {
+                Place(_chipRow, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(RowWidth, 0f),
+                    new Vector2(StatusPanelLayout.PadSide, -StatusPanelLayout.ChipRowTop));
+            }
+            RenderChips();
+        }
+
+        /// <summary>Puts the panel's top-left corner on the screen point <paramref name="topLeft"/> (battle-visual-v1 §4 coordinates).</summary>
+        public void PlaceAt(RectTransform root, Vector2 topLeft)
+        {
+            EnsureLayout();
+            if (!root) return;
+            Rect.position = RefScreen.World(root, topLeft);
+        }
+
+        /// <summary>§4.5 構えの盾: Guard-coloured, solid when 構え is expected (UnitFrame.ReserveLikely), dashed when not.</summary>
+        private void SetReserve(bool likely)
+        {
+            if (!_reserveShield) return;
+            _reserveShield.sprite = likely ? ProceduralArt.Shield : VisualArt.DashedShield;
+            _reserveShield.color = BattleTheme.Guard;
+        }
+
+        /// <summary>§4.5: an elite's panel has a phosphor frame in place of the rule.</summary>
+        private void SetElite(bool elite)
+        {
+            if (!_panelEdge) return;
+            _panelEdge.sprite = VisualArt.RoundedRing(6, elite ? 2 : 1);
+            _panelEdge.color = elite ? BattleTheme.Phosphor : BattleTheme.Line;
+        }
+
         private void Awake()
         {
             if (guardIcon && guardIcon.sprite == null) guardIcon.sprite = ProceduralArt.Shield;
@@ -90,13 +270,14 @@ namespace Depiction.View
             }
             // §4.5: the HP bar is scarlet on both sides; whose it is, its place under the figure tells.
             if (hpFillImage) hpFillImage.color = BattleTheme.Scarlet;
-            EnsureTrail();
             foreach (Text chip in chips)
             {
                 if (chip) chip.gameObject.SetActive(false);
             }
             _chipRow = chips.Length > 0 && chips[0] ? chips[0].rectTransform.parent as RectTransform : null;
-            if (!_chipRow) _chipRow = UiKit.Point(Rect, "Statuses", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(RowWidth, 0f), new Vector2(76f, 0f));
+            if (!_chipRow) _chipRow = UiKit.Point(Rect, "Statuses", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(RowWidth, 0f), Vector2.zero);
+            EnsureLayout();
+            EnsureTrail(); // after the layout, so the band takes the bar's rounded sprite
         }
 
         /// <summary>The prefab belongs to the Unity project, so a missing band is made here, just behind the bar.</summary>
@@ -125,7 +306,12 @@ namespace Depiction.View
             RenderTicks();
             SetHp(unit.Hp);
             SetGuard(unit.Guard);
-            if (pipRow) pipRow.gameObject.SetActive(unit.ShowStamina && !PipsElsewhere);
+            // §4.5 (#455): the prefab's row of pips is not on the panel any more. The player's stamina is
+            // on the tag above the piles (§4.7); an enemy's is a dot and a number on the Guard row.
+            if (pipRow) pipRow.gameObject.SetActive(false);
+            if (_reserveGroup) _reserveGroup.gameObject.SetActive(unit.ShowStamina && side == UnitSide.Enemy);
+            SetReserve(unit.ReserveLikely);
+            SetElite(unit.Elite);
             if (unit.ShowStamina) SetStamina(unit.Stamina, unit.StaminaMax);
             _statuses.Clear();
             foreach (StatusChip chip in unit.Statuses) _statuses.Add(Copy(chip));
@@ -161,7 +347,8 @@ namespace Depiction.View
             int needed = gather ? most : _statuses.Count;
             while (_chipViews.Count < needed) _chipViews.Add(MakeChip(_chipViews.Count));
             float x = 0f;
-            float y = -4f;
+            float y = 0f;
+            int rows = needed > 0 ? 1 : 0;
             for (int i = 0; i < _chipViews.Count; i++)
             {
                 ChipView view = _chipViews[i];
@@ -175,12 +362,15 @@ namespace Depiction.View
                 {
                     x = 0f;
                     y -= ChipHeight + ChipGap;
+                    rows++;
                 }
                 view.Root.anchoredPosition = new Vector2(x, y);
                 view.Root.localScale = Vector3.one;
                 view.Group.alpha = 1f;
                 x += width + ChipGap;
             }
+            // §4.5: the panel grows down to hold the rows of chips it has.
+            Rect.sizeDelta = new Vector2(_width, StatusPanelLayout.Height(rows));
             HidePanel();
         }
 
@@ -513,6 +703,7 @@ namespace Depiction.View
         public void SetStamina(int stamina, int staminaMax)
         {
             Stamina = stamina;
+            if (_staminaText) _staminaText.text = stamina.ToString();
             for (int i = 0; i < pips.Length; i++)
             {
                 if (!pips[i]) continue;

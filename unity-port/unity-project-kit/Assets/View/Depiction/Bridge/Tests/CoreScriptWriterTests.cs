@@ -53,7 +53,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(frame.Player.Range, Is.EqualTo(RangeSide.Far), "gap 2 and up stand in the far slot until #163");
             Assert.That(frame.Enemy.Hp, Is.EqualTo(60));
             Assert.That(frame.Enemy.HasRange, Is.False, "one tag says it all");
-            Assert.That(frame.Enemy.ShowStamina, Is.False);
+            Assert.That(frame.Enemy.ShowStamina, Is.True, "battle-visual-v1 §4.5 (#455): on the enemy's number panel");
             Assert.That(frame.Omen.Visible, Is.False, "step 5 of turn 1 is what shows it");
             Assert.That(frame.Hand, Is.Empty);
         }

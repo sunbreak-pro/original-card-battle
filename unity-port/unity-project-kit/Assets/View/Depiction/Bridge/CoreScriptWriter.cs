@@ -669,7 +669,9 @@ namespace Depiction.Bridge
         {
             UnitModel unit = Unit(actor);
             unit.Stamina = staminaAfter;
-            // Only the player's pips are on screen (the enemy's stamina is not disclosed).
+            // Only the player's pips play a cue. The enemy's stamina is on its number panel since #455,
+            // but it settles with the event's frame: battle_ui_ux_v2 §5.5 順 0 (its pips going by the cost
+            // before the blow) is not played yet.
             if (actor != Actor.Player || amount == 0) return null;
             var cue = new Cue
             {
@@ -776,11 +778,16 @@ namespace Depiction.Bridge
                 // Floor and miasma belong to the exploration layer (#99); the chain position is the demo's (#191).
                 Corner = new CornerFrame { Turn = _turn, Floor = 1, ChainIndex = ChainIndex, ChainTotal = ChainTotal, MiasmaPercent = 0 },
                 Player = UnitOf(_player, showStamina: true, gap: Gap),
-                Enemy = UnitOf(_enemy, showStamina: false, gap: null),
+                // battle-visual-v1 §4.5 (#455): the enemy's stamina is on its number panel (a dot and the number).
+                Enemy = UnitOf(_enemy, showStamina: true, gap: null),
                 Omen = WithPlan(_omenVisible ? OmenFrameOf(after) : new OmenFrame { Visible = false }),
             };
             // #288: the figure wears the art filed under the enemy's id; the View only looks it up.
             frame.Enemy.ArtId = _enemyDef.Id;
+            // §4.5 構えの盾: solid while the stamina it holds meets 構え's threshold (残り 3 以上), the
+            // rule's own Combat.ReserveGuard; an elite's panel takes the phosphor frame.
+            frame.Enemy.ReserveLikely = !_enemy.Down && Combat.ReserveGuard(_enemy.Stamina) > 0;
+            frame.Enemy.Elite = _enemyDef.Rank == EnemyRank.Elite;
             // battle-visual-v1 §4.7 (#455): the dashed dots, the core's estimate of the next recovery.
             frame.Player.NextRecovery = TurnLoop.PreviewRecovery(AsShown(after));
             frame.Floor = FloorOf(after);

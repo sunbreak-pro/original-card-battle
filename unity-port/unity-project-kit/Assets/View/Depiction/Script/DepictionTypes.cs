@@ -250,6 +250,15 @@ namespace Depiction
         /// tag draws that many dashed dots after the ones held. 0 draws none.
         /// </summary>
         public int NextRecovery;
+        /// <summary>
+        /// battle-visual-v1 §4.5 構えの盾 (#455), an enemy's only: whether 構え is expected to give it
+        /// Guard at the end of its phase, read off the stamina it holds now against the rule's
+        /// threshold (残り 3 以上). A solid shield when set, a dashed one when not. It is an estimate:
+        /// 構え is judged after the enemy acts.
+        /// </summary>
+        public bool ReserveLikely;
+        /// <summary>battle-visual-v1 §4.5 (#455): an elite's number panel has a phosphor frame.</summary>
+        public bool Elite;
         /// <summary>Only bosses, elites and the player hold a range side (battle_core_v4 §17.3).</summary>
         public bool HasRange;
         public RangeSide Range;

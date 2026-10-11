@@ -259,6 +259,60 @@ namespace Depiction.View
             return v >= 0.02f + inset && v <= 0.98f - inset && cx <= width * 0.96f;
         }
 
+        private static Sprite _heart;
+
+        /// <summary>
+        /// §4.5 / 付録 A HP（ハート）: the filled heart of the path <c>M12 21s-8-5-8-11a4.5 4.5 0 018-2.8A4.5 4.5
+        /// 0 0120 10c0 6-8 11-8 11z</c>, white so the Image tints it. Two lobes of radius 4.5 (centres
+        /// about (7.5, 7.2) and (16.5, 7.2) on the 24 grid) over a point at (12, 21) whose sides bow out
+        /// to x 4 and 20 at y 10. A placeholder until #92 draws the icon; sampled 4×4 a pixel for a soft edge.
+        /// </summary>
+        public static Sprite Heart
+        {
+            get
+            {
+                if (_heart && _heart.texture) return _heart;
+                const int size = IconSize;
+                const float scale = size / 24f;
+                var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var pixels = new Color[size * size];
+                for (int py = 0; py < size; py++)
+                {
+                    for (int px = 0; px < size; px++)
+                    {
+                        int inside = 0;
+                        for (int sy = 0; sy < 4; sy++)
+                        {
+                            for (int sx = 0; sx < 4; sx++)
+                            {
+                                // Texture rows count from the bottom; the grid counts from the top.
+                                float gx = (px + (sx + 0.5f) / 4f) / scale;
+                                float gy = (size - py - (sy + 0.5f) / 4f) / scale;
+                                if (InsideHeart(gx, gy)) inside++;
+                            }
+                        }
+                        pixels[py * size + px] = new Color(1f, 1f, 1f, inside / 16f);
+                    }
+                }
+                tex.SetPixels(pixels);
+                tex.Apply();
+                _heart = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+                return _heart;
+            }
+        }
+
+        /// <summary>Whether the 24-grid point (x right, y down) is inside 付録 A's heart.</summary>
+        private static bool InsideHeart(float x, float y)
+        {
+            const float lobeY = 7.17f, lobeR = 4.5f;
+            if ((new Vector2(x - 7.5f, y - lobeY)).sqrMagnitude <= lobeR * lobeR) return true;
+            if ((new Vector2(x - 16.5f, y - lobeY)).sqrMagnitude <= lobeR * lobeR) return true;
+            if (y < 9f || y > 21f) return false;
+            // Below the lobes the sides bow from x 4 / 20 at y 10 into the point at (12, 21).
+            float half = y <= 10f ? 8f : 8f * Mathf.Sqrt((21f - y) / 11f);
+            return Mathf.Abs(x - 12f) <= half;
+        }
+
         // ---- §3.2 斜線 / §4.2 floor --------------------------------------------------------------------
 
         private static readonly Dictionary<int, Sprite> StripeSprites = new Dictionary<int, Sprite>();

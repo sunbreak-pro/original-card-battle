@@ -141,6 +141,18 @@ namespace Depiction.View
         /// <summary>The card whose reach the floor lights now, or null.</summary>
         private CardView _reachFor;
 
+        // ---- battle-visual-v1 §4.5 (#455): the number panels under the figures ------------------------
+        /// <summary>Where the player figure stands between its motions (its cell or slot); a lunge does not move it.</summary>
+        private Vector3 _playerHome;
+        private bool _playerHomeSet;
+        /// <summary>The panels' left edges on the 1920 screen now, eased toward StatusPanelLayout's.</summary>
+        private float _playerPanelLeft;
+        private float _enemyPanelLeft;
+        /// <summary>The next placing puts the panels straight on their places (a battle's first frame).</summary>
+        private bool _snapPanels = true;
+        /// <summary>How fast a panel closes on its place, per second: a 320 ms step is about done when the figure lands.</summary>
+        private const float PanelFollowRate = 14f;
+
         /// <summary>
         /// Hands the player the source to play instead of the two it can build by itself. Call it
         /// from Awake (BattleBootstrap does): Start reads it once.
@@ -205,6 +217,7 @@ namespace Depiction.View
             _snapHandle = -1;
             Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
             _source = source;
+            _snapPanels = true;
             ApplyFrame(_source.Frame);
             if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
             RefreshPlayableLook(); // the last battle's outcome line goes with it
@@ -393,6 +406,7 @@ namespace Depiction.View
             FloorFrame floor = frame.Floor;
             playerFigure.SetRange(false, "");
             playerFigure.transform.position = _floor.FeetOf(floor.PlayerCell, floor.PlayerSize);
+            SetPlayerHome(playerFigure);
             if (enemyFigure) _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(floor.EnemyCell, floor.EnemySize));
         }
 
@@ -409,20 +423,67 @@ namespace Depiction.View
         /// <summary>
         /// With a floor, the parts tied to the enemy keep to its x: the omen badge and the release zone
         /// over the enemy's home, kept 24 px inside the screen's edges. Their heights stay where the
-        /// scene put them.
+        /// scene put them. The two number panels follow their figures with or without a floor (§4.5).
         /// </summary>
         private void FollowFigures()
         {
-            if (_floor == null || !_floor.Shown || !enemyFigure || !playerFigure) return;
+            if (!enemyFigure || !playerFigure) return;
             RectTransform root = RefScreen.Root(enemyFigure.transform);
             if (!root) return;
             Vector3 enemyHome = enemyFigure.Rect.parent.TransformPoint(EnemyHomeLocal());
             float enemyX = RefScreen.Of(root, enemyHome).x;
-            if (omenBadge) KeepX(omenBadge.Rect, root, enemyX);
-            if (receiver) KeepX((RectTransform)receiver.transform, root, enemyX);
-            // The two number panels stay where the scene put them. They follow their figures only once
-            // §4.5's 300 / 210 px panels exist: the scene's are 480 px wide, so at a gap of 0 the two
-            // would overlap if they followed now.
+            if (_floor != null && _floor.Shown)
+            {
+                if (omenBadge) KeepX(omenBadge.Rect, root, enemyX);
+                if (receiver) KeepX((RectTransform)receiver.transform, root, enemyX);
+            }
+            float playerX = RefScreen.Of(root, _playerHomeSet ? _playerHome : playerFigure.transform.position).x;
+            FollowPanels(root, playerX, enemyX);
+        }
+
+        /// <summary>The figure's place between its motions is where it stands now (<paramref name="figure"/> the player's only).</summary>
+        private void SetPlayerHome(FigureView figure)
+        {
+            if (figure) SetPlayerHome(figure, figure.transform.position);
+        }
+
+        private void SetPlayerHome(FigureView figure, Vector3 world)
+        {
+            if (!figure || figure != playerFigure) return;
+            _playerHome = world;
+            _playerHomeSet = true;
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §4.5 (#455): each number panel at y 614 under its figure's home, 300 wide for
+        /// the player and as wide as the enemy's cells allow (StatusPanelLayout), pushed apart where they
+        /// would meet. They ease toward their places, both by the same share each frame, so two panels
+        /// apart before and apart after are never over each other on the way.
+        /// </summary>
+        private void FollowPanels(RectTransform root, float playerX, float enemyX)
+        {
+            if (!playerStatus || !enemyStatus) return;
+            FloorFrame floor = _source != null && _source.Frame != null ? _source.Frame.Floor : null;
+            int cells = _floor != null && _floor.Shown && floor != null ? floor.Cells : 0;
+            float enemyWidth = StatusPanelLayout.EnemyPanelWidth(cells, EnemySize);
+            if (!Mathf.Approximately(enemyWidth, enemyStatus.LaidOutWidth)) _snapPanels = true; // a new line: no easing across widths
+            playerStatus.SetWidth(StatusPanelLayout.PlayerWidth);
+            enemyStatus.SetWidth(enemyWidth);
+            StatusPanelLayout.Place(playerX, StatusPanelLayout.PlayerWidth, enemyX, enemyWidth, out float playerLeft, out float enemyLeft);
+            if (_snapPanels)
+            {
+                _playerPanelLeft = playerLeft;
+                _enemyPanelLeft = enemyLeft;
+                _snapPanels = false;
+            }
+            else
+            {
+                float share = 1f - Mathf.Exp(-PanelFollowRate * FrameMotionSpeed * Time.unscaledDeltaTime);
+                _playerPanelLeft = Mathf.Abs(playerLeft - _playerPanelLeft) < 0.25f ? playerLeft : Mathf.Lerp(_playerPanelLeft, playerLeft, share);
+                _enemyPanelLeft = Mathf.Abs(enemyLeft - _enemyPanelLeft) < 0.25f ? enemyLeft : Mathf.Lerp(_enemyPanelLeft, enemyLeft, share);
+            }
+            playerStatus.PlaceAt(root, new Vector2(_playerPanelLeft, StatusPanelLayout.Top));
+            enemyStatus.PlaceAt(root, new Vector2(_enemyPanelLeft, StatusPanelLayout.Top));
         }
 
         /// <summary>The enemy's home in its parent's local space (its anchored position, back through its anchors).</summary>
@@ -1022,6 +1083,7 @@ namespace Depiction.View
             if (OnFloor(cue))
             {
                 figure.transform.position = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
+                SetPlayerHome(figure);
                 if (enemyFigure && cue.EnemyCellAfter > 0)
                 {
                     _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize));
@@ -1032,6 +1094,7 @@ namespace Depiction.View
             }
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) figure.transform.position = slot.position;
+            SetPlayerHome(figure);
             figure.SetRange(true, glyph);
         }
 
@@ -1056,6 +1119,7 @@ namespace Depiction.View
             Vector2 enemyTo = enemyFigure && cue.EnemyCellAfter > 0 ? AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize)) : enemyFrom;
             bool enemyMoves = enemyFigure && (enemyTo - _enemyHome).sqrMagnitude > 0.25f;
             if (enemyMoves) _enemyHome = enemyTo;
+            SetPlayerHome(figure, to); // the panels set off for the new cells as the figures do
             // 320 ms to move (battle_ui_ux_v2 §10.6); a push starts fast and settles.
             yield return UiTween.Run(320f, cue.Pushed ? Ease.Out : Ease.InOut, t =>
             {
@@ -1075,6 +1139,7 @@ namespace Depiction.View
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             Vector3 from = figure.transform.position;
             Vector3 to = slot ? slot.position : from;
+            SetPlayerHome(figure, to);
             // 320 ms to move, then the tag flips in 150 ms (battle_ui_ux_v2 §10.6). A push is a knock-back:
             // it starts fast and settles, where a step of one's own eases in and out.
             yield return UiTween.Run(320f, pushed ? Ease.Out : Ease.InOut, t => { if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t); });
@@ -1209,6 +1274,7 @@ namespace Depiction.View
             enemyFigure.SetRange(frame.Enemy.HasRange, frame.Enemy.RangeGlyph);
             RectTransform slot = frame.Player.Range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) playerFigure.transform.position = slot.position;
+            SetPlayerHome(playerFigure);
             ApplyFloor(frame); // §4.2: with a floor, the figures stand on their cells instead of the slots
             omenBadge.Bind(frame.Omen);
             bool hasHint = !string.IsNullOrEmpty(frame.StanceHint);
