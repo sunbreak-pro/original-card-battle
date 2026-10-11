@@ -23,6 +23,9 @@
   <ItemGroup>
     <ProjectReference Include="..\BattleCore\BattleCore.csproj" />
     <ProjectReference Include="..\BattleCore.Sim\BattleCore.Sim.csproj" />
+    <!-- #456: EncounterTableTests reads DungeonCore's encounter table. This project is dotnet-only
+         (unity-sync-plan.mjs does not copy it into Unity), so no asmdef needs the reference. -->
+    <ProjectReference Include="..\DungeonCore\DungeonCore.csproj" />
   </ItemGroup>
 
 </Project>
