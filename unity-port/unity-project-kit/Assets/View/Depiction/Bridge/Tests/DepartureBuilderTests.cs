@@ -267,7 +267,8 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void TheSameToolTwice_AddsItsAmountTwice()
         {
-            // tools_and_consumables_v4.md §6 の 1: the same tool may fill two slots, and both count.
+            // tools_and_consumables_v4.md §6 の 1 lets the same tool fill two slots; that the two amounts
+            // add up is battle's rule for the three battle tools (battle_core_v4 §9.1, #452).
             DepartureBuilder builder = Builder();
             builder.AddTool("ikitsugi_no_fue");
             builder.AddTool("ikitsugi_no_fue");

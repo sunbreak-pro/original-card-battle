@@ -1,7 +1,7 @@
 // The 出立 step after the deck (#58): the three tool slots, the three consumable slots, the start a
-// tool moves back, the other battle tools' amounts (#452), and the talent card. Pure C#: BattleCore only, no UnityEngine, so every rule the
-// screen shows is held under `dotnet test`. The rules themselves are BattleCore.DeckRules'; this
-// class keeps what the player picked and prints it.
+// tool moves back, the other battle tools' amounts (#452), and the talent card. Pure C#: BattleCore
+// only, no UnityEngine, so every rule the screen shows is held under `dotnet test`. The rules
+// themselves are BattleCore.DeckRules'; this class keeps what the player picked and prints it.
 //
 // The tools and consumables are the dungeon side's (tools_and_consumables_v4.md, read only here).
 // This assembly does not reference DungeonContent: the View hands them in as SupplyOptions
