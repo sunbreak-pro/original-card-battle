@@ -23,16 +23,16 @@ namespace BattleCore.Tests
         public void RawPower_AddsBeforeItMultiplies()
         {
             // (6 + 4) × 1.5 = 15, not 6 + (4 × 1.5).
-            Assert.That(Combat.ComputeRawPower(face: 6, traitBonus: 4, empowerMult: 1.5), Is.EqualTo(15));
+            Assert.That(Combat.ComputeRawPower(face: 6, traitBonus: 4, blowMult: 1.5), Is.EqualTo(15));
         }
 
         [Test]
         public void RawPower_RoundsHalfAwayFromZero()
         {
             // 5 × 1.5 = 7.5 → 8, not the banker's 7 that the design tables would not read as.
-            Assert.That(Combat.ComputeRawPower(face: 5, empowerMult: 1.5), Is.EqualTo(8));
+            Assert.That(Combat.ComputeRawPower(face: 5, blowMult: 1.5), Is.EqualTo(8));
             // 3 × 1.5 = 4.5 → 5.
-            Assert.That(Combat.ComputeRawPower(face: 3, empowerMult: 1.5), Is.EqualTo(5));
+            Assert.That(Combat.ComputeRawPower(face: 3, blowMult: 1.5), Is.EqualTo(5));
         }
 
         [Test]

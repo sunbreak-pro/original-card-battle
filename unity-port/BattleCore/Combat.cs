@@ -18,18 +18,18 @@ namespace BattleCore
         /// <see cref="ApplyGuard"/>.
         ///
         /// §19.5 S13: one multiplier per blow, 脆化 before 強化. The turn loop picks it for each blow
-        /// (TurnLoop.Resolve and TurnLoop.Preview) and hands it in as <paramref name="empowerMult"/>,
-        /// leaving <paramref name="fragileMult"/> at 1.0; the two slots stay so the call keeps its shape.
+        /// (TurnLoop.Resolve and TurnLoop.Preview) and hands it in as <paramref name="blowMult"/> —
+        /// 脆化's or 強化's, or 1.0 when neither applies. There is one slot, so two multipliers can
+        /// never be stacked on the same blow.
         /// </summary>
         public static int ComputeRawPower(
             int face,
             int traitBonus = 0,
             int followUp = 0,
             int conversion = 0,
-            double empowerMult = 1.0,
-            double fragileMult = 1.0)
+            double blowMult = 1.0)
         {
-            double raw = (face + traitBonus + followUp + conversion) * empowerMult * fragileMult;
+            double raw = (face + traitBonus + followUp + conversion) * blowMult;
             return Math.Max(0, (int)Math.Round(raw, MidpointRounding.AwayFromZero));
         }
 
