@@ -12,7 +12,7 @@ namespace BattleCore.Sim.Tests;
 /// </summary>
 public class EncounterTableTests
 {
-    // enemy_roster_v4.md §0 「大きさ」. Pinned here rather than read from BattleCore.Enemies, so a size
+    // enemy_roster_v4.md §1.8, column 「大きさ」. Pinned here rather than read from BattleCore.Enemies, so a size
     // changed there without the roster changing fails the field check below.
     private static readonly Dictionary<string, int> RosterSizes = new()
     {
