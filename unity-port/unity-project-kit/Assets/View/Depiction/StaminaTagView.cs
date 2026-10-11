@@ -1,8 +1,9 @@
 // The player's stamina tag above the piles (battle-visual-v1 §4.7, #242): the amber dot and number on
 // the first row, with "▸ n" on its right while a card is held; one dot per point of the maximum on
 // the second, a divider after the third (the 構え mark), the stamina there now in amber, the points a
-// held card would pay as amber rings, the rest as steel rings. It shows the numbers it is handed
-// (UnitFrame / StaminaChange cue through StatusBarView, the held card's CardFace.Cost) and works out
+// held card would pay as amber rings, the stamina the next turn start brings back as amber dashed
+// rings (#455), the rest as steel rings. It shows the numbers it is handed (UnitFrame / StaminaChange
+// cue through StatusBarView, UnitFrame.NextRecovery, the held card's CardFace.Cost) and works out
 // nothing.
 //
 // The scene belongs to the Unity project, so the tag is made at run time on the canvas, at x 32,
@@ -34,6 +35,7 @@ namespace Depiction.View
         private int _stamina;
         private int _max;
         private int _cost;
+        private int _next;
 
         public StaminaTagView(RectTransform canvasRoot, int siblingIndex)
         {
@@ -83,6 +85,18 @@ namespace Depiction.View
         }
 
         /// <summary>
+        /// §4.7 次のターンに回復する分 (#455): that many dots after the ones held turn to amber 2 px dashed
+        /// rings — the script's estimate (UnitFrame.NextRecovery), already capped at the maximum. 0 draws none.
+        /// </summary>
+        public void SetNextRecovery(int next)
+        {
+            int value = Mathf.Max(0, next);
+            if (value == _next) return;
+            _next = value;
+            Render();
+        }
+
+        /// <summary>
         /// §4.7 / §5.2: while a card is held, the points it would pay turn to rings and "▸ n" shows.
         /// 0 puts both away.
         /// </summary>
@@ -123,6 +137,11 @@ namespace Depiction.View
                 else if (i < _stamina)
                 {
                     dot.sprite = VisualArt.CircleRing(3f); // to be paid: an amber 3 px ring
+                    dot.color = BattleTheme.Amber;
+                }
+                else if (i < _stamina + _next)
+                {
+                    dot.sprite = VisualArt.DashedCircleRing(2f); // back next turn: an amber 2 px dashed ring
                     dot.color = BattleTheme.Amber;
                 }
                 else

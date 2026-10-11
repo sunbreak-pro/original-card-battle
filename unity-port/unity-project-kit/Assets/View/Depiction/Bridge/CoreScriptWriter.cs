@@ -69,6 +69,12 @@ namespace Depiction.Bridge
         private int _playedPower = -1;
         private int _playedUnit;
         private bool _playerActs;
+
+        /// <summary>
+        /// battle-visual-v1 §5.5 (#455): from the player's turn end until the next turn start the enemy
+        /// has the turn. Unlike <see cref="_playerActs"/> it is false before turn 1 opens.
+        /// </summary>
+        private bool _enemyTurn;
         private int _order;
 
         /// <summary>The enemy action being written whiffed (§6): its trait miss has nothing to strike off.</summary>
@@ -102,6 +108,13 @@ namespace Depiction.Bridge
 
         public int ChainTotal { get; set; } = 1;
 
+        /// <summary>
+        /// battle-visual-v1 §4.4 (#455): how far the journal has read this enemy (開示度 0〜2). Below 2 the
+        /// omen's numbers are left off the script (OmenDisclosure). The journal does not hand a level to
+        /// the battle yet, so it is 2, everything shown, unless a caller sets it.
+        /// </summary>
+        public int Disclosure { get; set; } = OmenDisclosure.Full;
+
         public CoreScriptWriter(EnemyDef enemyDef)
         {
             _enemyDef = enemyDef ?? throw new ArgumentNullException(nameof(enemyDef));
@@ -125,6 +138,7 @@ namespace Depiction.Bridge
             _planChanged = false;
             _omenVisible = false;
             _playerActs = state.Phase == BattlePhase.PlayerAction;
+            _enemyTurn = false;
             return Snapshot(state);
         }
 
@@ -198,6 +212,7 @@ namespace Depiction.Bridge
                 case TurnStarted started when started.Actor == Actor.Player:
                     _turn = started.Turn;
                     _playerActs = true;
+                    _enemyTurn = false;
                     return NewEvent(DepictionEventKind.TurnStart, "ターン開始");
 
                 case CardPlayed played:
@@ -212,11 +227,13 @@ namespace Depiction.Bridge
                 // and belongs to the same event, so 構え does not open a second one.
                 case StanceFired fired when fired.Actor == Actor.Player && fired.Hook == StanceHook.TurnEnd:
                     _playerActs = false;
+                    _enemyTurn = true;
                     return NewEvent(DepictionEventKind.TurnEnd, "ターン終了");
 
                 case ReserveChecked reserve when reserve.Actor == Actor.Player
                     && (current == null || current.Kind != DepictionEventKind.TurnEnd):
                     _playerActs = false;
+                    _enemyTurn = true;
                     return NewEvent(DepictionEventKind.TurnEnd, "ターン終了");
 
                 case GuardCleared cleared when cleared.Actor == Actor.Enemy:
@@ -669,7 +686,9 @@ namespace Depiction.Bridge
         {
             UnitModel unit = Unit(actor);
             unit.Stamina = staminaAfter;
-            // Only the player's pips are on screen (the enemy's stamina is not disclosed).
+            // Only the player's pips play a cue. The enemy's stamina is on its number panel since #455,
+            // but it settles with the event's frame: battle_ui_ux_v2 §5.5 順 0 (its pips going by the cost
+            // before the blow) is not played yet.
             if (actor != Actor.Player || amount == 0) return null;
             var cue = new Cue
             {
@@ -776,13 +795,29 @@ namespace Depiction.Bridge
                 // Floor and miasma belong to the exploration layer (#99); the chain position is the demo's (#191).
                 Corner = new CornerFrame { Turn = _turn, Floor = 1, ChainIndex = ChainIndex, ChainTotal = ChainTotal, MiasmaPercent = 0 },
                 Player = UnitOf(_player, showStamina: true, gap: Gap),
-                Enemy = UnitOf(_enemy, showStamina: false, gap: null),
+                // battle-visual-v1 §4.5 (#455): the enemy's stamina is on its number panel (a dot and the number).
+                Enemy = UnitOf(_enemy, showStamina: true, gap: null),
                 Omen = WithPlan(_omenVisible ? OmenFrameOf(after) : new OmenFrame { Visible = false }),
             };
             // #288: the figure wears the art filed under the enemy's id; the View only looks it up.
             frame.Enemy.ArtId = _enemyDef.Id;
+            // §4.5 構えの盾: solid while the stamina it holds meets 構え's threshold (残り 3 以上), the
+            // rule's own Combat.ReserveGuard; an elite's panel takes the phosphor frame.
+            frame.Enemy.ReserveLikely = !_enemy.Down && Combat.ReserveGuard(_enemy.Stamina) > 0;
+            frame.Enemy.Elite = _enemyDef.Rank == EnemyRank.Elite;
+            // battle-visual-v1 §4.7 (#455): the dashed dots, the core's estimate of the next recovery.
+            frame.Player.NextRecovery = TurnLoop.PreviewRecovery(AsShown(after));
             frame.Floor = FloorOf(after);
+            // battle-visual-v1 §4.7 (#455): the piles' counts, as the move left them.
+            frame.Piles = new PileFrame { Shown = true, Draw = after.DrawPile.Count, Discard = after.DiscardPile.Count, Exile = after.Exiled.Count };
+            // battle-visual-v1 §4.6 (#455): both sides' stance lists, from the stances the models hold.
+            frame.StanceListsShown = true;
             if (frame.Omen.Visible) frame.Omen.Hit = HitMark(frame.Floor.AimCells);
+            OmenDisclosure.Apply(frame.Omen, Disclosure);
+            bool waiting = _playerActs && after.Result == GameResult.Ongoing;
+            // battle-visual-v1 §4.9 (#455): the attributes the player has played this turn, as the core
+            // folds and keeps them (CombatantState.PlayedThisTurn, cleared when the turn ends).
+            frame.Played = PlayedOf(after.Player.PlayedThisTurn);
             foreach (CardInstance card in _hand)
             {
                 PlayPreview preview = TurnLoop.Preview(after, card.InstanceId);
@@ -798,12 +833,34 @@ namespace Depiction.Bridge
                     face.TraitLit = lit;
                     face.LitOn = perEnemy;
                 }
+                // §4.9 / §5.3 (#455): the 構えの予告 once this card's cost is paid, the rule's own
+                // Combat.ReserveGuard on what would be left.
+                face.StanceHintAfterPay = waiting ? ReserveHint(_player.Stamina - face.Cost) : "";
                 frame.Hand.Add(face);
             }
-            bool waiting = _playerActs && after.Result == GameResult.Ongoing;
-            int reserve = waiting ? Combat.ReserveGuard(_player.Stamina) : 0;
-            frame.StanceHint = reserve > 0 ? "+" + reserve : "";
+            frame.StanceHint = waiting ? ReserveHint(_player.Stamina) : "";
+            // §5.5 (#455): the screen sinks below the throw line while the enemy has the turn.
+            frame.EnemyTurn = _enemyTurn && after.Result == GameResult.Ongoing;
             frame.StanceDivider = Constants.ReserveThreshold; // §4.7: the stamina tag's divider
+            return frame;
+        }
+
+        /// <summary>構えの予告 for <paramref name="stamina"/> left at the turn end: "+3" when 構え would give Guard, "" when not.</summary>
+        private static string ReserveHint(int stamina)
+        {
+            int reserve = Combat.ReserveGuard(Math.Max(0, stamina));
+            return reserve > 0 ? "+" + reserve : "";
+        }
+
+        /// <summary>§4.9 (#455): the played attributes counted per kind, the last one marked. A card of movement only counts as none.</summary>
+        private static PlayedFrame PlayedOf(IReadOnlyList<BattleAttribute> played)
+        {
+            var frame = new PlayedFrame { Shown = true };
+            foreach (BattleAttribute attribute in played)
+            {
+                if (attribute == BattleAttribute.None) continue;
+                frame.Add(CoreText.KindOf(attribute));
+            }
             return frame;
         }
 
@@ -825,8 +882,26 @@ namespace Depiction.Bridge
             if (_omenVisible && after.Enemies.Count > 0)
             {
                 floor.AimCells = FloorCells.AimOf(_omen, after.Enemies[0].Body, _enemy.Cell);
+                // #455: the thick stripes and the move's frame are the core's, read on the board as shown.
+                BattleState shown = AsShown(after);
+                floor.DenseCells = FloorCells.DenseOf(shown, 0);
+                floor.MoveCells = FloorCells.MoveOf(shown, 0);
             }
             return floor;
+        }
+
+        /// <summary>
+        /// <paramref name="after"/> as the frame being written shows it (#455): the two models' cells, the
+        /// player's stamina and the omen on screen. A move's frames are all read against the state the
+        /// whole move left, which can be past them — an EndTurn ends on the next omen, after the enemy
+        /// has moved — so what the core reads for a frame is read on this.
+        /// </summary>
+        private BattleState AsShown(BattleState after)
+        {
+            if (after.Enemies.Count == 0) return after;
+            EnemyUnit unit = after.Enemies[0];
+            BattleState shown = after with { Player = after.Player with { Cell = _player.Cell, Stamina = _player.Stamina } };
+            return shown.WithUnit(0, unit with { Body = unit.Body with { Cell = _enemy.Cell }, Omen = _omen ?? unit.Omen });
         }
 
         /// <summary>
@@ -904,6 +979,8 @@ namespace Depiction.Bridge
             }
             // §4: the stances held lead the chips, one chip per stance (a repeat is one chip with its count).
             frame.Statuses.AddRange(CoreText.StanceChips(unit.Stances));
+            // battle-visual-v1 §4.6 (#455): the same stances as the list at the unit's edge.
+            frame.Stances = StanceList.Rows(unit.Stances);
             foreach (KeyValuePair<StatusKind, int> pair in unit.Statuses)
             {
                 frame.Statuses.Add(StatusChipText.Chip(pair.Key, pair.Value));

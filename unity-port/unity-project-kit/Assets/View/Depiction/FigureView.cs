@@ -1,7 +1,8 @@
 // A standing figure shared by the player and enemies, with the one-glyph range tag
 // ("近" / "遠") at its feet. It wears the art filed under the id the script names (#288), or the
 // ProceduralArt silhouette when there is none. Which way the body faces, the shapes it takes and
-// the fall are read from Script/FigureMotion.cs; this view only applies them.
+// the fall are read from Script/FigureMotion.cs; this view only applies them. It stands 226 px tall
+// (264 for a two-cell elite) over a light at its feet, as battle-visual-v1 §4.3 draws it (#455).
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using UnityEngine;
@@ -75,11 +76,65 @@ namespace Depiction.View
         private bool _falling;
         private bool _frameTaken;
         private Vector2 _restFrame;
+        private Image _footLight;
+        private float _height = FigureFrame.StandardHeight;
 
         private void Awake()
         {
             TakePlaceholder();
+            TakeFrame();
+            BuildFootLight();
+            StandTall(_height);
             RestBody();
+        }
+
+        // ---- battle-visual-v1 §4.3 (#455): the height on screen and the light at the feet ----------
+
+        /// <summary>
+        /// §4.3: draws the whole figure <paramref name="pixels"/> tall on the 1920×1080 screen (226, or
+        /// 264 for an elite on two cells: FigureFrame.HeightFor). The frame keeps its 450 units and is
+        /// scaled about its feet, so its parts — the chest and head points the numbers rise from, the
+        /// range tag — come down with it. The target brackets and the foot light count the scale back
+        /// out, so they keep the screen pixels §5.2 and §4.3 give them.
+        /// </summary>
+        public void StandTall(float pixels)
+        {
+            if (pixels <= 0f) return;
+            _height = pixels;
+            float scale = FigureFrame.ScaleFor(pixels, TakeFrame().y);
+            Rect.localScale = new Vector3(scale, scale, 1f);
+            FitFootLight();
+        }
+
+        /// <summary>
+        /// §4.3 足元の灯り: a radial light in an ellipse under the feet, twice the figure's width and
+        /// 60 px tall — amber 55% for the player, violet 35% for the enemy. It sits behind the body.
+        /// </summary>
+        private void BuildFootLight()
+        {
+            if (_footLight) return;
+            Color color = side == UnitSide.Player ? BattleTheme.WithAlpha(BattleTheme.Amber, 0.55f) : BattleTheme.WithAlpha(BattleTheme.Violet, 0.35f);
+            _footLight = UiKit.Sprite(Rect, "FootLight", ProceduralArt.Glow, color, new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _footLight.transform.SetAsFirstSibling();
+        }
+
+        /// <summary>The light's width follows the frame (it is scaled with it); its 60 px height is counted back out of the scale.</summary>
+        private void FitFootLight()
+        {
+            if (!_footLight) return;
+            float counter = FigureFrame.Counter(Rect.localScale.y);
+            _footLight.rectTransform.sizeDelta = new Vector2(Rect.sizeDelta.x * FigureFrame.FootLightWidthRatio, FigureFrame.FootLightHeight * counter);
+        }
+
+        /// <summary>The frame's size as the prefab made it, taken once before any art widens it.</summary>
+        private Vector2 TakeFrame()
+        {
+            if (!_frameTaken)
+            {
+                _restFrame = Rect.sizeDelta;
+                _frameTaken = true;
+            }
+            return _restFrame;
         }
 
         /// <summary>
@@ -292,11 +347,7 @@ namespace Depiction.View
         private void FitFrame(FigureArt art)
         {
             RectTransform rt = Rect;
-            if (!_frameTaken)
-            {
-                _restFrame = rt.sizeDelta;
-                _frameTaken = true;
-            }
+            TakeFrame();
             float width = _restFrame.x;
             if (art != null)
             {
@@ -307,6 +358,7 @@ namespace Depiction.View
                 }
             }
             rt.sizeDelta = new Vector2(width, _restFrame.y);
+            FitFootLight();
         }
 
         /// <summary>Keeps the silhouette and its tint, so a figure that loses its art (the next battle's enemy has none) can go back to it.</summary>

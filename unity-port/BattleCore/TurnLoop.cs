@@ -476,6 +476,84 @@ namespace BattleCore
         }
 
         /// <summary>
+        /// §6 「境目を満たすマスを濃く出します」 (#455): the cells enemy <paramref name="unit"/>'s
+        /// shown omen aims at whose gap meets the boundary its action reads, counted from where it
+        /// stands now as <see cref="EnemyAi.TargetCells"/> counts the aimed ones. The action is the
+        /// one the omen names under the switch it was decided on (#51 overrides). Empty when the enemy
+        /// is not standing, has no omen, rests, or its action reads no boundary.
+        /// </summary>
+        public static IReadOnlyList<int> OmenBoundaryCells(BattleState state, int unit)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            var action = OmenAction(state, unit);
+            if (action == null) return Array.Empty<int>();
+            return EnemyAi.BoundaryCells(action, state.Enemies[unit].Body);
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.8 / battle-visual-v1 §4.2 敵が動く予兆の移る先 (#455): the cell enemy
+        /// <paramref name="unit"/> would stand on (its lowest cell) after the movement effect of its
+        /// shown omen, moved from where both sides stand now by the rule <see cref="EndTurn"/> moves it
+        /// by — 鈍足 takes a cell off, 呪縛 and 鉤爪 stop it, the line and the player stop it short.
+        /// Read off the board as it is, not after the turn start a 歪みの根 sways in, and before any
+        /// push of the same action. −1 when the enemy is not standing, has no omen, rests, its action
+        /// does not move it, or it would not get anywhere.
+        /// </summary>
+        public static int OmenMoveCell(BattleState state, int unit)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            var action = OmenAction(state, unit);
+            if (action == null) return -1;
+            var face = EnemyAi.FaceAt(action, state.GapTo(unit));
+            if (face.Move == 0) return -1;
+            int from = state.Enemies[unit].Body.Cell;
+            var moved = MoveSelf(state, Actor.Enemy, unit, face.Move, new List<BattleEvent>());
+            int to = moved.Enemies[unit].Body.Cell;
+            return to == from ? -1 : to;
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §4.7 次のターンに回復する分 (#455): the stamina the player would get back at
+        /// the next turn start if the turn ended now — §9 step 7's turn-end stance (its 次の回復), then
+        /// steps 1-3's recovery with the bonus 温存 and 重撃 left, 疲労, a turn-start stance's
+        /// recovery and the boss words that thin it, capped at the maximum, as
+        /// <see cref="BeginPlayerTurn"/> will count it. It is an estimate: what the enemy phases in
+        /// between do (a 疲労 put on, a move that changes the gap a stance reads) is not played.
+        /// Called on a state awaiting the turn start, the turn end is behind it and only the turn
+        /// start is counted. 0 once the battle is over.
+        /// </summary>
+        public static int PreviewRecovery(BattleState state)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (state.Result != GameResult.Ongoing) return 0;
+            var events = new List<BattleEvent>();
+            var copy = state;
+            if (state.Phase == BattlePhase.PlayerAction)
+            {
+                copy = StanceAtTurnEnd(copy, Actor.Player, 0, events);
+                copy = copy with { Player = copy.Player with { Played = null, Moved = false, LastMove = 0, FollowUp = 0, FreeStep = false } };
+            }
+            copy = copy with { Turn = copy.Turn + 1 };
+            copy = ResumeStances(copy, events);
+            int before = events.Count;
+            OpenTurnFor(copy, Actor.Player, 0, Constants.StaminaRecovery, events);
+            for (int i = before; i < events.Count; i++)
+            {
+                if (events[i] is StaminaRecovered recovered && recovered.Actor == Actor.Player) return recovered.Amount;
+            }
+            return 0;
+        }
+
+        /// <summary>The action enemy <paramref name="unit"/>'s omen names, under the switch it was decided on; null for none or a rest.</summary>
+        private static EnemyActionDef? OmenAction(BattleState state, int unit)
+        {
+            if (!IsStanding(state, unit)) return null;
+            var enemy = state.Enemies[unit];
+            if (enemy.Omen == null || enemy.Omen.ActionId == EnemyAi.RestActionId) return null;
+            return EnemyAi.ActionOf(enemy.Def, enemy.Omen.ActionId, EnemyAi.SwitchById(enemy.Def, enemy.ActiveSwitch));
+        }
+
+        /// <summary>
         /// The player's cell nearest their own (the nearer the enemy on a tie) from which enemy
         /// <paramref name="unit"/>'s N falls inside <paramref name="reach"/>, left of every standing
         /// enemy. −1 when the line has none.

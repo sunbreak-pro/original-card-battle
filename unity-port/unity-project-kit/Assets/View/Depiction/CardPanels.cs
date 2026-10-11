@@ -91,6 +91,59 @@ namespace Depiction.View
 
         public bool DetailShown => _detail.gameObject.activeSelf;
 
+        // ---- §7.1 用語のホバー (#455) ------------------------------------------------------------------
+
+        // §7 ② and §7.3's panel look: an opaque panel with a steel frame, the word at 18 px bold and its
+        // meaning at 16 px under it, 340 wide, standing 8 px above the underlined word.
+        private const float TermWidth = 340f;
+        private const float TermPadX = 12f;
+        private const float TermPadY = 8f;
+        private const float TermTitleHeight = 24f;
+        private const float TermLineGap = 4f;
+        private RectTransform _term;
+        private Text _termTitle;
+        private Text _termBody;
+
+        private void BuildTerm()
+        {
+            _term = UiKit.Point(_layer, "TermDefinition", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0f), new Vector2(TermWidth, 60f), Vector2.zero);
+            VisualArt.Panel(_term, "Back", BattleTheme.PanelOpaque, 6);
+            VisualArt.Ring(_term, "Edge", BattleTheme.Steel, 6, 1);
+            float inner = TermWidth - TermPadX * 2f;
+            _termTitle = UiKit.Label(_term, "Word", 18, TextAnchor.UpperLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(inner, TermTitleHeight), new Vector2(TermPadX, -TermPadY));
+            _termTitle.fontStyle = FontStyle.Bold;
+            _termBody = UiKit.Label(_term, "Meaning", 16, TextAnchor.UpperLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(inner, 22f), new Vector2(TermPadX, -TermPadY - TermTitleHeight - TermLineGap));
+            _term.gameObject.SetActive(false);
+        }
+
+        /// <summary>§7.1: the meaning of <paramref name="mark"/> above the word it underlines (<paramref name="at"/>).</summary>
+        public void ShowTerm(RectTransform at, TermMark mark)
+        {
+            if (!at || mark == null)
+            {
+                HideTerm();
+                return;
+            }
+            if (!_term) BuildTerm();
+            _term.gameObject.SetActive(true);
+            _term.SetAsLastSibling();
+            _termTitle.text = mark.Word;
+            _termBody.text = mark.Meaning;
+            float body = Mathf.Max(22f, _termBody.preferredHeight);
+            _termBody.rectTransform.sizeDelta = new Vector2(TermWidth - TermPadX * 2f, body);
+            float height = TermPadY + TermTitleHeight + TermLineGap + body + TermPadY;
+            _term.sizeDelta = new Vector2(TermWidth, height);
+            Rect word = Bounds(at);
+            _term.anchoredPosition = ClampX(new Vector2(word.center.x, word.yMax + HoverGap), TermWidth);
+        }
+
+        public void HideTerm()
+        {
+            if (_term) _term.gameObject.SetActive(false);
+        }
+
         // ---- §7.2 / §5.1 ------------------------------------------------------------------------
 
         /// <summary>Places the hover line above <paramref name="card"/> and, when the script says nobody is in reach, the reason on its right.</summary>
@@ -134,6 +187,7 @@ namespace Depiction.View
         {
             _hover.gameObject.SetActive(false);
             _reach.gameObject.SetActive(false);
+            HideTerm();
         }
 
         // ---- §7.4 ---------------------------------------------------------------------------------

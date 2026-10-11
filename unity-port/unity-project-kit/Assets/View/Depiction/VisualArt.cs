@@ -19,6 +19,10 @@ namespace Depiction.View
         Heal,
         Draw,
         Seal,
+        /// <summary>付録 A 捨札 (#455).</summary>
+        Discard,
+        /// <summary>付録 A 除外 (#455).</summary>
+        Exile,
     }
 
     /// <summary>
@@ -160,6 +164,25 @@ namespace Depiction.View
         }
 
         public static Sprite DashH => _dashH && _dashH.texture ? _dashH : (_dashH = DashSprite(true));
+
+        private static Sprite _dotH;
+
+        /// <summary>
+        /// §7.1 点線: 2 px dots 2 px apart along x, tiled (Image.Type.Tiled) under a term on a 2 px tall
+        /// image. A dotted line, not §3.2's 3 px dashes, so an underline never reads as 外れ or 予定.
+        /// </summary>
+        public static Sprite DotH
+        {
+            get
+            {
+                if (_dotH && _dotH.texture) return _dotH;
+                var tex = new Texture2D(4, 1, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat };
+                tex.SetPixels(new[] { Color.white, Color.white, Color.clear, Color.clear });
+                tex.Apply();
+                _dotH = Sprite.Create(tex, new Rect(0, 0, 4, 1), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                return _dotH;
+            }
+        }
         public static Sprite DashV => _dashV && _dashV.texture ? _dashV : (_dashV = DashSprite(false));
 
         /// <summary>Four dashed edges inside <paramref name="parent"/>, as UiKit.Frame draws solid ones.</summary>
@@ -259,6 +282,60 @@ namespace Depiction.View
             return v >= 0.02f + inset && v <= 0.98f - inset && cx <= width * 0.96f;
         }
 
+        private static Sprite _heart;
+
+        /// <summary>
+        /// §4.5 / 付録 A HP（ハート）: the filled heart of the path <c>M12 21s-8-5-8-11a4.5 4.5 0 018-2.8A4.5 4.5
+        /// 0 0120 10c0 6-8 11-8 11z</c>, white so the Image tints it. Two lobes of radius 4.5 (centres
+        /// about (7.5, 7.2) and (16.5, 7.2) on the 24 grid) over a point at (12, 21) whose sides bow out
+        /// to x 4 and 20 at y 10. A placeholder until #92 draws the icon; sampled 4×4 a pixel for a soft edge.
+        /// </summary>
+        public static Sprite Heart
+        {
+            get
+            {
+                if (_heart && _heart.texture) return _heart;
+                const int size = IconSize;
+                const float scale = size / 24f;
+                var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                var pixels = new Color[size * size];
+                for (int py = 0; py < size; py++)
+                {
+                    for (int px = 0; px < size; px++)
+                    {
+                        int inside = 0;
+                        for (int sy = 0; sy < 4; sy++)
+                        {
+                            for (int sx = 0; sx < 4; sx++)
+                            {
+                                // Texture rows count from the bottom; the grid counts from the top.
+                                float gx = (px + (sx + 0.5f) / 4f) / scale;
+                                float gy = (size - py - (sy + 0.5f) / 4f) / scale;
+                                if (InsideHeart(gx, gy)) inside++;
+                            }
+                        }
+                        pixels[py * size + px] = new Color(1f, 1f, 1f, inside / 16f);
+                    }
+                }
+                tex.SetPixels(pixels);
+                tex.Apply();
+                _heart = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+                return _heart;
+            }
+        }
+
+        /// <summary>Whether the 24-grid point (x right, y down) is inside 付録 A's heart.</summary>
+        private static bool InsideHeart(float x, float y)
+        {
+            const float lobeY = 7.17f, lobeR = 4.5f;
+            if ((new Vector2(x - 7.5f, y - lobeY)).sqrMagnitude <= lobeR * lobeR) return true;
+            if ((new Vector2(x - 16.5f, y - lobeY)).sqrMagnitude <= lobeR * lobeR) return true;
+            if (y < 9f || y > 21f) return false;
+            // Below the lobes the sides bow from x 4 / 20 at y 10 into the point at (12, 21).
+            float half = y <= 10f ? 8f : 8f * Mathf.Sqrt((21f - y) / 11f);
+            return Mathf.Abs(x - 12f) <= half;
+        }
+
         // ---- §3.2 斜線 / §4.2 floor --------------------------------------------------------------------
 
         private static readonly Dictionary<int, Sprite> StripeSprites = new Dictionary<int, Sprite>();
@@ -350,6 +427,40 @@ namespace Depiction.View
             return made;
         }
 
+        /// <summary>
+        /// §4.7 次のターンに回復する分: <see cref="CircleRing"/> broken into dashes (§3.2 破線, 3 px on and 3 px
+        /// off, measured round the middle of the line on a 16 px dot), cut by angle. Image.Type.Simple.
+        /// </summary>
+        public static Sprite DashedCircleRing(float thickness)
+        {
+            int key = -1 - Mathf.RoundToInt(thickness * 10f);
+            if (RingSprites.TryGetValue(key, out Sprite cached) && cached && cached.texture) return cached;
+            const int size = 32; // twice the 16 px dot
+            float outer = size * 0.5f;
+            float inner = outer - thickness * 2f;
+            // On the 16 px dot the middle of the line is a circle of diameter 16 − thickness; a dash and
+            // its gap take 6 px of it, so it holds that many pairs, rounded to a whole number.
+            float around = Mathf.PI * (16f - thickness);
+            int pairs = Mathf.Max(3, Mathf.RoundToInt(around / 6f));
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    Vector2 p = new Vector2(x + 0.5f - outer, y + 0.5f - outer);
+                    float d = p.magnitude;
+                    float a = Mathf.Clamp01(outer - d) * Mathf.Clamp01(d - inner);
+                    float turn = (Mathf.Atan2(p.y, p.x) + Mathf.PI) / (2f * Mathf.PI); // 0..1 round the dot
+                    if (Mathf.FloorToInt(turn * pairs * 2f) % 2 == 1) a = 0f;
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            }
+            tex.Apply();
+            Sprite made = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            RingSprites[key] = made;
+            return made;
+        }
+
         // ---- 付録 A line icons ---------------------------------------------------------------------
 
         /// <summary>The sprite of a 付録 A icon, white so the Image tints it.</summary>
@@ -379,6 +490,10 @@ namespace Depiction.View
                         S(4, 13, 20, 13), S(20, 13, 20, 17), S(20, 17, 4, 17), S(4, 17, 4, 13),
                         S(6, 21, 18, 21),
                     };
+                // 付録 A: M12 4v10 M7 9l5 5 5-5 M4 20h16
+                case VisualIcon.Discard: return new[] { S(12, 4, 12, 14), S(7, 9, 12, 14), S(12, 14, 17, 9), S(4, 20, 20, 20) };
+                // 付録 A: M6 6l12 12 M18 6L6 18
+                case VisualIcon.Exile: return new[] { S(6, 6, 18, 18), S(18, 6, 6, 18) };
                 case VisualIcon.Self: return new float[0][];
                 default: return new float[0][];
             }

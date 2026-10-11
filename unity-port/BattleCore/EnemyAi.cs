@@ -275,6 +275,45 @@ namespace BattleCore
             return cells;
         }
 
+        /// <summary>
+        /// §6 「行動が間合いの境目を読むとき」: the gap boundary <paramref name="action"/>'s trait reads
+        /// (間合い n 以上 / 間合い n 以下), or null for an action whose trait reads none.
+        /// </summary>
+        public static GapBoundary? BoundaryOf(EnemyActionDef action)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            var trait = action.Trait;
+            if (trait == null) return null;
+            return trait.Condition switch
+            {
+                TraitCondition.GapAtLeast => new GapBoundary(AtLeast: true, trait.Threshold),
+                TraitCondition.GapAtMost => new GapBoundary(AtLeast: false, trait.Threshold),
+                _ => null,
+            };
+        }
+
+        /// <summary>
+        /// §6: 境目を満たすマス — of the cells <paramref name="action"/> aims at from where
+        /// <paramref name="enemy"/> stands (<see cref="TargetCells"/>), the ones whose gap meets the
+        /// boundary its trait reads. A player standing on one would meet the trait when the action is
+        /// carried out from there. Empty when the action reads no boundary or aims at nobody. Lowest
+        /// cell first.
+        /// </summary>
+        public static IReadOnlyList<int> BoundaryCells(EnemyActionDef action, CombatantState enemy)
+        {
+            if (action == null) throw new ArgumentNullException(nameof(action));
+            if (enemy == null) throw new ArgumentNullException(nameof(enemy));
+            var cells = new List<int>();
+            var boundary = BoundaryOf(action);
+            if (boundary == null) return cells;
+            foreach (int cell in TargetCells(LabelOf(action), enemy))
+            {
+                // TargetCells counts a cell as enemy.Cell − 1 − gap; read the gap back off it.
+                if (boundary.Holds(enemy.Cell - 1 - cell)) cells.Add(cell);
+            }
+            return cells;
+        }
+
         /// <summary>§6: the omen as the screen words it — "攻撃・1〜2", "防御", "休み" (battle-visual-v1 4.4, #357).</summary>
         public static string ToText(this OmenLabel label)
         {

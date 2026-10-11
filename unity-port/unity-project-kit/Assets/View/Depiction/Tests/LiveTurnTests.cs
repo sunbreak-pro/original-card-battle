@@ -235,6 +235,22 @@ namespace Depiction.Tests
             Assert.That(turn.Frame.Omen.ValueText, Is.EqualTo(LiveTurn.EnemyGuardPower.ToString()));
         }
 
+        [Test]
+        public void ThePiles_HoldEveryCardTheHandDoesNot()
+        {
+            // battle-visual-v1 §4.7 (#455): the hand-written turn hands its pile counts to the piles.
+            int deck = DemoDeck.All.Count * DemoDeck.Copies;
+            LiveTurn turn = Opened();
+            PileFrame piles = turn.Frame.Piles;
+            Assert.That(piles.Shown, Is.True);
+            Assert.That(piles.Draw + piles.Discard + piles.Exile + turn.Frame.Hand.Count, Is.EqualTo(deck));
+            Assert.That(piles.Discard, Is.EqualTo(0));
+
+            turn.EndTurn();
+            Assert.That(turn.Frame.Piles.Discard, Is.EqualTo(deck - turn.Frame.Piles.Draw), "the hand went to the discard pile");
+            Assert.That(turn.Frame.Piles.Exile, Is.EqualTo(0));
+        }
+
         // ---- helpers -----------------------------------------------------------------------
 
         /// <summary>A turn opened on its first player phase.</summary>

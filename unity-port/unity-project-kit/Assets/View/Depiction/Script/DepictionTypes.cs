@@ -150,6 +150,19 @@ namespace Depiction
         public List<int> ReachCells = new List<int>();
         /// <summary>§7.4: the right-click detail. Null when the source writes none (the v4.2 script).</summary>
         public CardDetail Detail;
+        /// <summary>
+        /// battle-visual-v1 §4.9 / §5.3 構えの予告 (#455): the hint by the end-turn plate while this card
+        /// is held — <see cref="DepictionFrame.StanceHint"/> as it would read once the card's cost is
+        /// paid ("+3"), or "" when the stamina left would fall under 構え's threshold. Null: the source
+        /// writes none, and the hint stays as the frame has it.
+        /// </summary>
+        public string StanceHintAfterPay;
+        /// <summary>
+        /// battle-visual-v1 §7.1 / §6.1 (#455): the glossary words printed in the trait box, where they
+        /// stand in their row, and what they mean. The View draws a dotted underline under each and
+        /// shows the meaning on hover. Empty when the box holds no term, or the source writes none.
+        /// </summary>
+        public List<TermMark> Terms = new List<TermMark>();
 
         /// <summary>
         /// §6.3: the lamp while the card frames enemy <paramref name="enemy"/>. A card with no lamp per
@@ -192,6 +205,28 @@ namespace Depiction
     /// <summary>A word with a dotted underline and what it means (battle-visual-v1 §7.1 / §7.5).</summary>
     public sealed class TermDefinition
     {
+        public string Word = "";
+        public string Meaning = "";
+    }
+
+    /// <summary>The row of the trait box a term is printed in (battle-visual-v1 §6.1 特性の箱).</summary>
+    public enum TermRow
+    {
+        TraitTop,
+        TraitBottom,
+    }
+
+    /// <summary>
+    /// One underlined term on a card face (battle-visual-v1 §7.1, #455): the characters
+    /// [<see cref="Start"/>, <see cref="Start"/> + <see cref="Length"/>) of its row as printed, the
+    /// glossary word they stand for (§7.5) and its meaning.
+    /// </summary>
+    public sealed class TermMark
+    {
+        public TermRow Row;
+        public int Start;
+        public int Length;
+        /// <summary>The glossary's word ("連動 X"), the heading the hover shows.</summary>
         public string Word = "";
         public string Meaning = "";
     }
@@ -244,6 +279,21 @@ namespace Depiction
         public bool ShowStamina;
         public int Stamina;
         public int StaminaMax;
+        /// <summary>
+        /// battle-visual-v1 §4.7 次のターンに回復する分 (#455): the stamina that comes back at the next turn
+        /// start if the turn ended now (the core's estimate, already capped at the maximum). The stamina
+        /// tag draws that many dashed dots after the ones held. 0 draws none.
+        /// </summary>
+        public int NextRecovery;
+        /// <summary>
+        /// battle-visual-v1 §4.5 構えの盾 (#455), an enemy's only: whether 構え is expected to give it
+        /// Guard at the end of its phase, read off the stamina it holds now against the rule's
+        /// threshold (残り 3 以上). A solid shield when set, a dashed one when not. It is an estimate:
+        /// 構え is judged after the enemy acts.
+        /// </summary>
+        public bool ReserveLikely;
+        /// <summary>battle-visual-v1 §4.5 (#455): an elite's number panel has a phosphor frame.</summary>
+        public bool Elite;
         /// <summary>Only bosses, elites and the player hold a range side (battle_core_v4 §17.3).</summary>
         public bool HasRange;
         public RangeSide Range;
@@ -257,6 +307,19 @@ namespace Depiction
         public string ArtId = "";
         /// <summary>The unit has fallen and its figure is gone (battle_ui_ux_v2 §2.2 の 6). Set from the Defeat beat on.</summary>
         public bool Down;
+        /// <summary>
+        /// battle-visual-v1 §4.6 / battle_core_v4 §4 v4.4 (#455): the stances the unit holds, in the
+        /// order its list shows them (<see cref="StanceList.Rows"/>: the newest last, a repeat counted
+        /// on one row). Drawn at the unit's edge when <see cref="DepictionFrame.StanceListsShown"/>.
+        /// </summary>
+        public List<StanceRow> Stances = new List<StanceRow>();
+    }
+
+    /// <summary>One stance on a side's list (#455): its name and how many times it is held (1 prints no "×1").</summary>
+    public sealed class StanceRow
+    {
+        public string Name = "";
+        public int Count = 1;
     }
 
     public sealed class OmenFrame
@@ -280,6 +343,14 @@ namespace Depiction
         /// at nobody, and for the v4.2 sources, which keep <see cref="SideGlyph"/> in its place.
         /// </summary>
         public OmenHit Hit = OmenHit.None;
+
+        /// <summary>
+        /// battle-visual-v1 §4.4 / battle_ui_ux_v2 §7 (#455): how far the journal has read this enemy,
+        /// 0〜2. The writer has already blanked what the level does not show (<see cref="OmenDisclosure"/>),
+        /// so the View draws the frame as it is. Every source writes <see cref="OmenDisclosure.Full"/>
+        /// until the journal hands a level to the battle.
+        /// </summary>
+        public int Disclosure = OmenDisclosure.Full;
 
         /// <summary>
         /// #50, §17.6 F11: the 予定 of an elite or a boss — the second action it plans, shown beside the
@@ -346,6 +417,79 @@ namespace Depiction
         public int StanceDivider;
         /// <summary>battle-visual-v1 §4.2 (#242): the floor. <see cref="FloorFrame.Cells"/> 0 draws none (the v4.2 sources).</summary>
         public FloorFrame Floor = new FloorFrame();
+        /// <summary>battle-visual-v1 §4.7 (#455): the draw, discard and exile piles. <see cref="PileFrame.Shown"/> false draws none.</summary>
+        public PileFrame Piles = new PileFrame();
+        /// <summary>
+        /// battle-visual-v1 §4.6 (#455): the source keeps the stance lists (<see cref="UnitFrame.Stances"/>),
+        /// so each side's edge shows its list, or the dashed empty frame. False draws neither (the v4.2
+        /// sources and the filming script).
+        /// </summary>
+        public bool StanceListsShown;
+        /// <summary>battle-visual-v1 §4.9 (#455): the attributes played this turn. <see cref="PlayedFrame.Shown"/> false draws no frames.</summary>
+        public PlayedFrame Played = new PlayedFrame();
+        /// <summary>
+        /// battle-visual-v1 §5.5 (#455): the enemy's turn — from the player's turn end until the next
+        /// turn start. The screen sinks below y 790 and the end-turn plate dims while it holds. The
+        /// v4.2 sources leave it false.
+        /// </summary>
+        public bool EnemyTurn;
+    }
+
+    /// <summary>
+    /// The three piles at the bottom left (battle-visual-v1 §4.7, #455): how many cards each holds.
+    /// The View stacks that many sheets' worth of thickness (PileLayout) and writes no number
+    /// (battle_ui_ux_v2 §1.1 B9: 束は厚みだけ).
+    /// </summary>
+    public sealed class PileFrame
+    {
+        /// <summary>Whether the source keeps piles at all. The fixed filming script does not.</summary>
+        public bool Shown;
+        public int Draw;
+        public int Discard;
+        public int Exile;
+    }
+
+    /// <summary>
+    /// The attributes played this turn (battle-visual-v1 §4.9 / battle_ui_ux_v2 §1.1 B6, #455): how many
+    /// cards of each, and which attribute the last one counted as. The core folds a card into one
+    /// attribute (battle_core_v4 §2.1); a card of movement only counts as none.
+    /// </summary>
+    public sealed class PlayedFrame
+    {
+        /// <summary>Whether the source keeps this tally. The v4.2 sources do not, and draw no frames.</summary>
+        public bool Shown;
+        public int Attack;
+        public int Guard;
+        public int Skill;
+        public int Stance;
+        /// <summary>B6 直前のカードに下線: the attribute of the card played last this turn, or null.</summary>
+        public CardKind? Last;
+
+        public int CountOf(CardKind kind)
+        {
+            switch (kind)
+            {
+                case CardKind.Attack: return Attack;
+                case CardKind.Guard: return Guard;
+                case CardKind.Skill: return Skill;
+                case CardKind.Stance: return Stance;
+                default: return 0;
+            }
+        }
+
+        /// <summary>Counts one more card of <paramref name="kind"/> and makes it the last one.</summary>
+        public void Add(CardKind kind)
+        {
+            switch (kind)
+            {
+                case CardKind.Attack: Attack++; break;
+                case CardKind.Guard: Guard++; break;
+                case CardKind.Skill: Skill++; break;
+                case CardKind.Stance: Stance++; break;
+                default: return;
+            }
+            Last = kind;
+        }
     }
 
     /// <summary>
@@ -366,6 +510,18 @@ namespace Depiction
         public int Gap;
         /// <summary>The cells the shown omen reaches (赤の斜線). Empty when it aims at nobody or is hidden.</summary>
         public List<int> AimCells = new List<int>();
+        /// <summary>
+        /// battle-visual-v1 §4.2 境目を満たすマス (#455): of <see cref="AimCells"/>, the ones whose gap meets
+        /// the boundary the omen's action reads (間合い n 以上 / n 以下). Their stripes are drawn 6 px
+        /// apart instead of 11. Empty when the action reads no boundary or the omen is hidden.
+        /// </summary>
+        public List<int> DenseCells = new List<int>();
+        /// <summary>
+        /// battle_ui_ux_v2 §5.8 / battle-visual-v1 §4.2 敵が動く予兆の移る先 (#455): the cells the enemy
+        /// would stand on after the move its shown omen makes (菫の破線の枠, no stripes). Empty when the
+        /// omen does not move it, or is hidden.
+        /// </summary>
+        public List<int> MoveCells = new List<int>();
     }
 
     /// <summary>

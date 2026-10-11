@@ -1,6 +1,7 @@
 // The floor under the figures (battle-visual-v1 §4.2, #242): the line of cells, the cells the omen
-// aims at in red stripes (#350), the cells a hovered or held card reaches in amber, and the one gap
-// number between the player and the enemy. Every cell comes from the script (DepictionFrame.Floor,
+// aims at in red stripes (#350) — 6 px apart on those that meet the boundary its action reads, and
+// a violet dashed frame on the cell a moving omen takes the enemy to (#455) — the cells a hovered or
+// held card reaches in amber, and the one gap number between the player and the enemy. Every cell comes from the script (DepictionFrame.Floor,
 // CardFace.ReachCells); this only draws them and says where a cell stands on the screen, so the
 // figures can stand on theirs.
 //
@@ -40,7 +41,10 @@ namespace Depiction.View
             public Image ReachFill;
             public Image Stripes;
             public Image AimFrame;
+            public Image[] MoveFrame;
             public Image ReachTop;
+            /// <summary>Which stripes the cell holds now, so the sprite is only swapped when it changes.</summary>
+            public bool Dense;
         }
 
         private readonly RectTransform _root;
@@ -84,7 +88,8 @@ namespace Depiction.View
         }
 
         /// <summary>
-        /// Draws <paramref name="floor"/>: the cells, the aimed ones, and the gap. The floor's top goes
+        /// Draws <paramref name="floor"/>: the cells, the aimed ones (dense where they meet the omen's
+        /// boundary), the cells a moving omen lands on, and the gap. The floor's top goes
         /// 10 px above <paramref name="playerFeet"/> (a world point). A floor with no cells hides it all.
         /// </summary>
         public void Bind(FloorFrame floor, Vector3 playerFeet, int layer)
@@ -114,6 +119,16 @@ namespace Depiction.View
                 cell.Stripes.enabled = aimed;
                 cell.AimFrame.enabled = aimed;
                 cell.AimLight.enabled = aimed;
+                // §4.2 境目を満たすマス: the same red stripes, 6 px apart instead of 11 (#455).
+                bool dense = aimed && floor.DenseCells.Contains(i + 1);
+                if (dense != cell.Dense)
+                {
+                    cell.Dense = dense;
+                    cell.Stripes.sprite = VisualArt.Stripes(0, dense);
+                }
+                // 敵が動く予兆の移る先: a violet dashed frame, never stripes (battle_ui_ux_v2 §5.8, #455).
+                bool moveTo = floor.MoveCells.Contains(i + 1);
+                foreach (Image edge in cell.MoveFrame) edge.enabled = moveTo;
             }
             HideReach();
             SetGap(floor.Gap, floor.PlayerCell, floor.PlayerSize, floor.EnemyCell);
@@ -204,6 +219,9 @@ namespace Depiction.View
             cell.Stripes.rectTransform.offsetMin = new Vector2(2f, 2f);
             cell.Stripes.rectTransform.offsetMax = new Vector2(-2f, -2f);
             cell.AimFrame = VisualArt.Ring(cell.Root, "AimFrame", BattleTheme.AimRed, 6, 2);
+            // §3.2 破線 (3 px dashes 3 px apart) at the 2 px of a frame, in violet: where a moving omen lands.
+            cell.MoveFrame = VisualArt.DashedFrame(cell.Root, BattleTheme.Violet, 2f);
+            foreach (Image edge in cell.MoveFrame) edge.enabled = false;
             cell.ReachTop = UiKit.Image(cell.Root, "ReachTop", ProceduralArt.White, BattleTheme.Amber, new Vector2(0f, 1f), new Vector2(1f, 1f));
             cell.ReachTop.rectTransform.offsetMin = new Vector2(4f, -3f);
             cell.ReachTop.rectTransform.offsetMax = new Vector2(-4f, 0f);

@@ -4,7 +4,8 @@
 // value on the first row, kind word and reach on the second), and the icon and the plan badge are
 // made here too: the prefab saved in the Unity project still has the old one-row parts, and
 // rebuilding it (DepictionPrefabBuilder) needs the Unity Editor. The runtime layout here wins over
-// the builder's until the builder follows (#242).
+// the builder's until the builder follows (#242). While the enemy carries the omen out, the badge
+// wears a phosphor edge and a violet light (§4.4 敵の番, #455).
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using UnityEngine;
@@ -30,9 +31,13 @@ namespace Depiction.View
         private static readonly Vector2 PlanSize = new Vector2(170f, 66f);
         private const float PlanGap = 8f;
         private const float PlanAlpha = 0.62f;
+        /// <summary>§4.4 敵の番: the violet light reaches 30 px out from the acting badge.</summary>
+        private const int ActingGlow = 30;
 
         private Image _icon;
         private Image _frame;
+        private Image _actingLight;
+        private Image _actingEdge;
         private Image[] _restFrame = new Image[0];
         private RectTransform _swatch;
         private RectTransform _hit;
@@ -78,6 +83,17 @@ namespace Depiction.View
             Image ring = VisualArt.Ring(Rect, "Frame", BattleTheme.Violet, 6, 2);
             ring.transform.SetSiblingIndex(backImage ? backImage.transform.GetSiblingIndex() + 1 : 0);
             _frame = ring;
+            // §4.4 敵の番 (#455): the acting omen adds a phosphor 2 px edge over the violet frame and a
+            // violet 60% light 30 px out, behind the panel. Both wait for SetActing.
+            _actingEdge = VisualArt.Ring(Rect, "ActingEdge", BattleTheme.Phosphor, 6, 2);
+            _actingEdge.transform.SetSiblingIndex(ring.transform.GetSiblingIndex() + 1);
+            _actingEdge.enabled = false;
+            _actingLight = UiKit.Image(Rect, "ActingLight", VisualArt.SoftShadow(6, ActingGlow), BattleTheme.WithAlpha(BattleTheme.Violet, 0.6f), Vector2.zero, Vector2.one);
+            _actingLight.type = Image.Type.Sliced;
+            _actingLight.rectTransform.offsetMin = new Vector2(-ActingGlow, -ActingGlow);
+            _actingLight.rectTransform.offsetMax = new Vector2(ActingGlow, ActingGlow);
+            _actingLight.transform.SetAsFirstSibling();
+            _actingLight.enabled = false;
             // §4.4 休み: a steel dashed frame in place of the violet one.
             _restFrame = VisualArt.DashedFrame(Rect, BattleTheme.Steel, 2f);
             foreach (Image dash in _restFrame) dash.enabled = false;
@@ -241,6 +257,19 @@ namespace Depiction.View
                 case OmenIcon.Guard: return GuardInk;
                 default: return BattleTheme.Ink;
             }
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §4.4 / §5.5 敵の番 (#455): the omen the enemy is carrying out now wears the
+        /// phosphor edge and the violet light. The player lights it on the enemy's windup (the script's
+        /// EnemyWindup cue) and puts it out when an event other than the enemy's action begins. The
+        /// light belongs to the badge, so it fades with it when the omen is spent; the plan has none.
+        /// </summary>
+        public void SetActing(bool acting)
+        {
+            EnsureParts();
+            if (_actingEdge) _actingEdge.enabled = acting;
+            if (_actingLight) _actingLight.enabled = acting;
         }
 
         public IEnumerator PopIn(float ms)

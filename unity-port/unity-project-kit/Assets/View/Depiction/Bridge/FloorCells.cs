@@ -1,7 +1,9 @@
 // The floor the screen draws (battle-visual-v1 §4.2, #242): which cells a card reaches from where the
-// player stands, which cells the shown omen aims at, and whether the player stands in them. Every
-// cell is read from the core (EnemyAi.TargetCells, the card's printed reach, Field's gap), so the
-// View only draws. Pure C#: BattleCore + Depiction.Script, no UnityEngine.
+// player stands, which cells the shown omen aims at, and whether the player stands in them; and
+// (#455) which aimed cells meet the boundary the omen reads and where a moving omen takes the enemy.
+// Every cell is read from the core (EnemyAi.TargetCells, TurnLoop.OmenBoundaryCells / OmenMoveCell,
+// the card's printed reach, Field's gap), so the View only draws. Pure C#: BattleCore +
+// Depiction.Script, no UnityEngine.
 using System;
 using System.Collections.Generic;
 using BattleCore;
@@ -39,6 +41,32 @@ namespace Depiction.Bridge
             var cells = new List<int>();
             if (omen == null || enemy == null) return cells;
             cells.AddRange(EnemyAi.TargetCells(omen.Label, enemy with { Cell = enemyCell }));
+            return cells;
+        }
+
+        /// <summary>
+        /// §4.2 境目を満たすマス (#455): the aimed cells whose gap meets the boundary the omen's action
+        /// reads (TurnLoop.OmenBoundaryCells), lowest first. Empty when it reads none.
+        /// </summary>
+        public static List<int> DenseOf(BattleState state, int unit)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            return new List<int>(TurnLoop.OmenBoundaryCells(state, unit));
+        }
+
+        /// <summary>
+        /// §4.2 敵が動く予兆の移る先 (#455): every cell enemy <paramref name="unit"/> would take after the
+        /// move its omen makes (TurnLoop.OmenMoveCell, then its size), lowest first. Empty when it does
+        /// not move.
+        /// </summary>
+        public static List<int> MoveOf(BattleState state, int unit)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            var cells = new List<int>();
+            int to = TurnLoop.OmenMoveCell(state, unit);
+            if (to < 1) return cells;
+            int size = Math.Max(1, state.Enemies[unit].Body.Size);
+            for (int i = 0; i < size; i++) cells.Add(to + i);
             return cells;
         }
 

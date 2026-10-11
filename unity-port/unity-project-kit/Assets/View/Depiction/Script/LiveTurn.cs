@@ -516,6 +516,8 @@ namespace Depiction
                 Hand = Faces(),
                 StanceHint = _phase == Phase.PlayerTurn && _stamina >= StanceThreshold ? "+" + StanceGuard : "",
                 StanceDivider = StanceThreshold,
+                // battle-visual-v1 §4.7 (#455): the hand-written turn keeps a draw and a discard pile, and exiles nothing.
+                Piles = new PileFrame { Shown = true, Draw = _drawPile.Count, Discard = _discardPile.Count, Exile = 0 },
             };
         }
 

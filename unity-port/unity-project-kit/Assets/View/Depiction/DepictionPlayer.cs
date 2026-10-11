@@ -51,7 +51,7 @@ namespace Depiction.View
 
         [Header("Guide")]
         [Tooltip("How long the reason a card came back stays on the guide line.")]
-        public float refusalSeconds = 3.5f;
+        public float refusalSeconds = RefusalLineLayout.Seconds; // §5.4: 3.5 s
 
         [Header("Effects (#75-#77)")]
         [Tooltip("Effects to switch off, by id (EffectId: CardDraw, HandFan, CardHover, CardGrab, ReceiverShow, "
@@ -140,6 +140,32 @@ namespace Depiction.View
         private StaminaTagView _staminaTag;
         /// <summary>The card whose reach the floor lights now, or null.</summary>
         private CardView _reachFor;
+        /// <summary>battle-visual-v1 §4.7 (#455): the draw, discard and exile piles under the stamina tag.</summary>
+        private PilesView _piles;
+        /// <summary>battle-visual-v1 §4.6 (#455): each side's stance list at its edge.</summary>
+        private StanceListView _stanceLists;
+        /// <summary>battle-visual-v1 §4.9 (#455): the four frames of the attributes played this turn.</summary>
+        private PlayedAttributesView _played;
+        /// <summary>battle-visual-v1 §4.9 (#455): the 構えの予告 at x 1560, y 984.</summary>
+        private ReserveHintView _reserveHint;
+        /// <summary>battle-visual-v1 §5.4 (#455): the one line saying why a released card went back.</summary>
+        private RefusalLineView _refusalLine;
+        /// <summary>battle-visual-v1 §5.5 (#455): the black gradient below y 790 on the enemy's turn.</summary>
+        private EnemyTurnShadeView _enemyShade;
+        /// <summary>The 構えの予告 of the frame on screen, which a held card's own hint stands in for.</summary>
+        private string _frameStanceHint = "";
+
+        // ---- battle-visual-v1 §4.5 (#455): the number panels under the figures ------------------------
+        /// <summary>Where the player figure stands between its motions (its cell or slot); a lunge does not move it.</summary>
+        private Vector3 _playerHome;
+        private bool _playerHomeSet;
+        /// <summary>The panels' left edges on the 1920 screen now, eased toward StatusPanelLayout's.</summary>
+        private float _playerPanelLeft;
+        private float _enemyPanelLeft;
+        /// <summary>The next placing puts the panels straight on their places (a battle's first frame).</summary>
+        private bool _snapPanels = true;
+        /// <summary>How fast a panel closes on its place, per second: a 320 ms step is about done when the figure lands.</summary>
+        private const float PanelFollowRate = 14f;
 
         /// <summary>
         /// Hands the player the source to play instead of the two it can build by itself. Call it
@@ -185,10 +211,12 @@ namespace Depiction.View
             _dragging = null;
             _hovered = null;
             _refusal = null;
+            _refusalLine?.Hide();
             // A card held or hovered when the last battle stopped may have left these up.
             _staminaTag?.ShowCost(0);
             HideHoverPanels();
             HideTargetMarks();
+            if (omenBadge) omenBadge.SetActing(false); // a battle stopped on the enemy's turn
             Finished = false;
             EventSeconds.Clear();
             if (_resultCard)
@@ -205,6 +233,7 @@ namespace Depiction.View
             _snapHandle = -1;
             Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
             _source = source;
+            _snapPanels = true;
             ApplyFrame(_source.Frame);
             if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
             RefreshPlayableLook(); // the last battle's outcome line goes with it
@@ -347,6 +376,7 @@ namespace Depiction.View
             UiTween.Speed = 1f;
             // Stopping the component also stops the refusal coroutine; do not leave the guide line stuck.
             _refusal = null;
+            _refusalLine?.Hide();
         }
 
         private void Update()
@@ -361,8 +391,9 @@ namespace Depiction.View
         // ---- battle-visual-v1 §4.2 / §4.7 (#242) ------------------------------------------------------
 
         /// <summary>
-        /// Makes the parts the scene from before #242 does not have: the floor, under the figures, and
-        /// the stamina tag, which takes the player's stamina over from the pips in the player's panel.
+        /// Makes the parts the scene from before #242 does not have: the floor, under the figures, the
+        /// stamina tag, which takes the player's stamina over from the pips in the player's panel, and
+        /// the piles under it (#455).
         /// </summary>
         private void BuildVisualParts()
         {
@@ -375,6 +406,61 @@ namespace Depiction.View
                 playerStatus.PipsElsewhere = true;
                 playerStatus.StaminaShown = (stamina, max) => _staminaTag.SetStamina(stamina, max);
             }
+            if (root)
+            {
+                int below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
+                _piles = new PilesView(root, below);
+                below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
+                _stanceLists = new StanceListView(root, below);
+                below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
+                _played = new PlayedAttributesView(root, below);
+                below = handArea && handArea.parent == root ? handArea.GetSiblingIndex() : -1;
+                _reserveHint = new ReserveHintView(root, below);
+                // §5.4: over the hand, so a card's back does not hide the reason it came back.
+                int above = handArea && handArea.parent == root ? handArea.GetSiblingIndex() + 1 : -1;
+                _refusalLine = new RefusalLineView(root, above);
+                // §5.5: over the hand and everything else below the throw line.
+                above = handArea && handArea.parent == root ? handArea.GetSiblingIndex() + 1 : -1;
+                _enemyShade = new EnemyTurnShadeView(root, above);
+                // §4.9: the 構えの予告 is made here at its own place; the scene's icon and number give way to it.
+                if (stanceHintIcon) stanceHintIcon.gameObject.SetActive(false);
+                if (stanceHintText) stanceHintText.gameObject.SetActive(false);
+            }
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §5.5 / §4.9 (#455): on the enemy's turn the screen sinks below y 790 and the
+        /// end-turn plate stands at 40%. Whose turn it is comes from the script (DepictionFrame.EnemyTurn).
+        /// </summary>
+        private void ShowEnemyTurn(bool on)
+        {
+            _enemyShade?.Show(on);
+            if (endTurn) UiKit.Group(endTurn).alpha = on ? EnemyTurnShadeLayout.EndTurnAlpha : 1f;
+        }
+
+        /// <summary>
+        /// §4.9 / §5.3 (#455): while a card is held, the 構えの予告 reads as it would once the card is paid
+        /// for (CardFace.StanceHintAfterPay, the script's); otherwise as the frame has it.
+        /// </summary>
+        private void ShowReserveHint(CardView held)
+        {
+            if (_reserveHint == null) return;
+            string afterPay = held && held.Face != null ? held.Face.StanceHintAfterPay : null;
+            _reserveHint.Show(afterPay ?? _frameStanceHint);
+        }
+
+        /// <summary>
+        /// §4.7 (#455): the piles with the script's counts. While they are drawn, drawn cards fly from
+        /// the draw pile and the discarded hand and the played card's ghost fly to the discard pile
+        /// (battle_ui_ux_v2 「スタミナの札と束」), so the scene's two points move onto them.
+        /// </summary>
+        private void ApplyPiles(PileFrame piles)
+        {
+            if (_piles == null) return;
+            _piles.Bind(piles);
+            if (!_piles.Shown) return;
+            if (deckPoint) deckPoint.position = _piles.MiddleOf(PileKind.Draw);
+            if (discardPoint) discardPoint.position = _piles.MiddleOf(PileKind.Discard);
         }
 
         /// <summary>
@@ -393,6 +479,7 @@ namespace Depiction.View
             FloorFrame floor = frame.Floor;
             playerFigure.SetRange(false, "");
             playerFigure.transform.position = _floor.FeetOf(floor.PlayerCell, floor.PlayerSize);
+            SetPlayerHome(playerFigure);
             if (enemyFigure) _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(floor.EnemyCell, floor.EnemySize));
         }
 
@@ -408,21 +495,75 @@ namespace Depiction.View
 
         /// <summary>
         /// With a floor, the parts tied to the enemy keep to its x: the omen badge and the release zone
-        /// over the enemy's home, kept 24 px inside the screen's edges. Their heights stay where the
-        /// scene put them.
+        /// over the enemy's home, kept 24 px inside the screen's edges. The badge's bottom also stands
+        /// 14 px over the enemy's head (§4.4, #455: the figure is 226 or 264 px tall since §4.3); the
+        /// release zone's height stays where the scene put it. The two number panels follow their
+        /// figures with or without a floor (§4.5).
         /// </summary>
         private void FollowFigures()
         {
-            if (_floor == null || !_floor.Shown || !enemyFigure || !playerFigure) return;
+            if (!enemyFigure || !playerFigure) return;
             RectTransform root = RefScreen.Root(enemyFigure.transform);
             if (!root) return;
             Vector3 enemyHome = enemyFigure.Rect.parent.TransformPoint(EnemyHomeLocal());
             float enemyX = RefScreen.Of(root, enemyHome).x;
-            if (omenBadge) KeepX(omenBadge.Rect, root, enemyX);
-            if (receiver) KeepX((RectTransform)receiver.transform, root, enemyX);
-            // The two number panels stay where the scene put them. They follow their figures only once
-            // §4.5's 300 / 210 px panels exist: the scene's are 480 px wide, so at a gap of 0 the two
-            // would overlap if they followed now.
+            if (_floor != null && _floor.Shown)
+            {
+                if (omenBadge)
+                {
+                    KeepX(omenBadge.Rect, root, enemyX);
+                    float head = RefScreen.Of(root, enemyHome).y - FigureFrame.HeightFor(EnemySize);
+                    KeepBottom(omenBadge.Rect, root, head - OmenOverHead);
+                }
+                if (receiver) KeepX((RectTransform)receiver.transform, root, enemyX);
+            }
+            float playerX = RefScreen.Of(root, _playerHomeSet ? _playerHome : playerFigure.transform.position).x;
+            FollowPanels(root, playerX, enemyX);
+        }
+
+        /// <summary>The figure's place between its motions is where it stands now (<paramref name="figure"/> the player's only).</summary>
+        private void SetPlayerHome(FigureView figure)
+        {
+            if (figure) SetPlayerHome(figure, figure.transform.position);
+        }
+
+        private void SetPlayerHome(FigureView figure, Vector3 world)
+        {
+            if (!figure || figure != playerFigure) return;
+            _playerHome = world;
+            _playerHomeSet = true;
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §4.5 (#455): each number panel at y 614 under its figure's home, 300 wide for
+        /// the player and as wide as the enemy's cells allow (StatusPanelLayout), pushed apart where they
+        /// would meet. They ease toward their places, both by the same share each frame, so two panels
+        /// apart before and apart after are never over each other on the way.
+        /// </summary>
+        private void FollowPanels(RectTransform root, float playerX, float enemyX)
+        {
+            if (!playerStatus || !enemyStatus) return;
+            FloorFrame floor = _source != null && _source.Frame != null ? _source.Frame.Floor : null;
+            int cells = _floor != null && _floor.Shown && floor != null ? floor.Cells : 0;
+            float enemyWidth = StatusPanelLayout.EnemyPanelWidth(cells, EnemySize);
+            if (!Mathf.Approximately(enemyWidth, enemyStatus.LaidOutWidth)) _snapPanels = true; // a new line: no easing across widths
+            playerStatus.SetWidth(StatusPanelLayout.PlayerWidth);
+            enemyStatus.SetWidth(enemyWidth);
+            StatusPanelLayout.Place(playerX, StatusPanelLayout.PlayerWidth, enemyX, enemyWidth, out float playerLeft, out float enemyLeft);
+            if (_snapPanels)
+            {
+                _playerPanelLeft = playerLeft;
+                _enemyPanelLeft = enemyLeft;
+                _snapPanels = false;
+            }
+            else
+            {
+                float share = 1f - Mathf.Exp(-PanelFollowRate * FrameMotionSpeed * Time.unscaledDeltaTime);
+                _playerPanelLeft = Mathf.Abs(playerLeft - _playerPanelLeft) < 0.25f ? playerLeft : Mathf.Lerp(_playerPanelLeft, playerLeft, share);
+                _enemyPanelLeft = Mathf.Abs(enemyLeft - _enemyPanelLeft) < 0.25f ? enemyLeft : Mathf.Lerp(_enemyPanelLeft, enemyLeft, share);
+            }
+            playerStatus.PlaceAt(root, new Vector2(_playerPanelLeft, StatusPanelLayout.Top));
+            enemyStatus.PlaceAt(root, new Vector2(_enemyPanelLeft, StatusPanelLayout.Top));
         }
 
         /// <summary>The enemy's home in its parent's local space (its anchored position, back through its anchors).</summary>
@@ -435,6 +576,22 @@ namespace Depiction.View
 
         /// <summary>Moves <paramref name="rt"/> so its middle stands on screen x <paramref name="x"/>, its whole width 24 px inside the edges.</summary>
         private static readonly Vector3[] Corners = new Vector3[4];
+
+        /// <summary>battle-visual-v1 §4.4: the omen badge sits 14 px above the head.</summary>
+        private const float OmenOverHead = 14f;
+
+        /// <summary>
+        /// Moves <paramref name="rt"/> up or down so its bottom edge stands on screen y <paramref name="bottom"/>.
+        /// Read from its rect and pivot, not its corners, so a pop or a flare scaling it does not move it.
+        /// </summary>
+        private static void KeepBottom(RectTransform rt, RectTransform root, float bottom)
+        {
+            float pivotY = bottom - rt.rect.height * rt.pivot.y;
+            Vector2 now = RefScreen.Of(root, rt.position);
+            if (Mathf.Abs(now.y - pivotY) < 0.5f) return;
+            Vector3 to = RefScreen.World(root, new Vector2(now.x, pivotY));
+            rt.position = new Vector3(rt.position.x, to.y, rt.position.z);
+        }
 
         private static void KeepX(RectTransform rt, RectTransform root, float x)
         {
@@ -561,6 +718,12 @@ namespace Depiction.View
         private IEnumerator PlayEvent(DepictionEvent ev)
         {
             float startedAt = Time.unscaledTime;
+            // §4.4 敵の番 (#455): the acting omen's light lasts through the enemy's beats and goes out
+            // with the first event that is not one of them (the next omen, the turn start, a fall).
+            if (ev.Kind != DepictionEventKind.EnemyAction && omenBadge) omenBadge.SetActing(false);
+            // §5.5 (#455): the screen comes back up as the event that ends the enemy's turn starts (the
+            // turn start's banner), not after it has played; it sinks when the turn end's frame lands.
+            if (ev.After != null && !ev.After.EnemyTurn) ShowEnemyTurn(false);
             if (ev.Kind == DepictionEventKind.TurnStart)
             {
                 yield return Effect(EffectId.TurnBanner, Banner(DepictionText.YourTurn, BattleTheme.Accent, _effects.Ms(EffectId.TurnBanner)), null);
@@ -692,7 +855,9 @@ namespace Depiction.View
 
                 case CueKind.EnemyWindup:
                     SetHandInteractable(false);
-                    // The moment the enemy does what it foretold: the omen flares beside its move.
+                    // The moment the enemy does what it foretold: the omen lights up (§4.4 敵の番) and
+                    // flares beside its move.
+                    omenBadge.SetActing(true);
                     StartCoroutine(Effect(EffectId.OmenExecute, omenBadge.Flare(_effects.Ms(EffectId.OmenExecute)), null));
                     yield return Effect(EffectId.EnemyMotion, EnemyMotion(target, cue.System, _effects.Ms(EffectId.EnemyMotion)),
                         () => target.SetPose(FigurePose.Act));
@@ -1022,6 +1187,7 @@ namespace Depiction.View
             if (OnFloor(cue))
             {
                 figure.transform.position = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
+                SetPlayerHome(figure);
                 if (enemyFigure && cue.EnemyCellAfter > 0)
                 {
                     _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize));
@@ -1032,6 +1198,7 @@ namespace Depiction.View
             }
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) figure.transform.position = slot.position;
+            SetPlayerHome(figure);
             figure.SetRange(true, glyph);
         }
 
@@ -1056,6 +1223,7 @@ namespace Depiction.View
             Vector2 enemyTo = enemyFigure && cue.EnemyCellAfter > 0 ? AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize)) : enemyFrom;
             bool enemyMoves = enemyFigure && (enemyTo - _enemyHome).sqrMagnitude > 0.25f;
             if (enemyMoves) _enemyHome = enemyTo;
+            SetPlayerHome(figure, to); // the panels set off for the new cells as the figures do
             // 320 ms to move (battle_ui_ux_v2 §10.6); a push starts fast and settles.
             yield return UiTween.Run(320f, cue.Pushed ? Ease.Out : Ease.InOut, t =>
             {
@@ -1075,6 +1243,7 @@ namespace Depiction.View
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             Vector3 from = figure.transform.position;
             Vector3 to = slot ? slot.position : from;
+            SetPlayerHome(figure, to);
             // 320 ms to move, then the tag flips in 150 ms (battle_ui_ux_v2 §10.6). A push is a knock-back:
             // it starts fast and settles, where a step of one's own eases in and out.
             yield return UiTween.Run(320f, pushed ? Ease.Out : Ease.InOut, t => { if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t); });
@@ -1201,18 +1370,29 @@ namespace Depiction.View
             enemyFigure.ShowArt(frame.Enemy.ArtId);
             playerFigure.SetDown(frame.Player.Down);
             enemyFigure.SetDown(frame.Enemy.Down);
+            // §4.3 (#455): 226 px tall, 264 for an elite on two cells (the script's sizes).
+            playerFigure.StandTall(FigureFrame.HeightFor(frame.Floor.PlayerSize));
+            enemyFigure.StandTall(FigureFrame.HeightFor(frame.Floor.EnemySize));
             _staminaTag?.SetDivider(frame.StanceDivider); // before the bind below shows the stamina
+            _staminaTag?.SetNextRecovery(frame.Player.NextRecovery); // §4.7 (#455): the dashed dots
+            ApplyPiles(frame.Piles);
+            _stanceLists?.Bind(frame); // §4.6 (#455)
             playerStatus.Bind(frame.Player);
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);
             enemyFigure.SetRange(frame.Enemy.HasRange, frame.Enemy.RangeGlyph);
             RectTransform slot = frame.Player.Range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) playerFigure.transform.position = slot.position;
+            SetPlayerHome(playerFigure);
             ApplyFloor(frame); // §4.2: with a floor, the figures stand on their cells instead of the slots
             omenBadge.Bind(frame.Omen);
             bool hasHint = !string.IsNullOrEmpty(frame.StanceHint);
             if (stanceHintText) stanceHintText.text = frame.StanceHint;
             if (stanceHintIcon) stanceHintIcon.enabled = hasHint;
+            _frameStanceHint = frame.StanceHint ?? "";
+            ShowReserveHint(_dragging); // §4.9 (#455)
+            _played?.Bind(frame.Played);
+            ShowEnemyTurn(frame.EnemyTurn); // §5.5 (#455): sinks once the turn end has played
             if (!SameHand(frame.Hand)) BuildHand(frame.Hand);
             else for (int i = 0; i < _hand.Count; i++) _hand[i].Bind(frame.Hand[i]);
             LayoutHand();
@@ -1409,7 +1589,13 @@ namespace Depiction.View
             }
             if (TryRightPress()) panels.ToggleDetail(over, cardPrefab);
             if (panels.DetailShown) panels.HideHover();
-            else panels.ShowHover(over);
+            else
+            {
+                panels.ShowHover(over);
+                // §7.1 (#455): a pointer on an underlined term shows what it means, above the word.
+                if (TryPointer(out Vector2 pointer) && over.TryTermAt(pointer, out TermMark term, out RectTransform word)) panels.ShowTerm(word, term);
+                else panels.HideTerm();
+            }
         }
 
         private void HideHoverPanels()
@@ -1520,6 +1706,7 @@ namespace Depiction.View
             {
                 StopCoroutine(_refusal);
                 _refusal = null;
+                _refusalLine?.Hide();
             }
             RefreshPlayableLook();
         }
@@ -1550,19 +1737,33 @@ namespace Depiction.View
         /// <summary>Says why a released card went back to the hand, then returns to the guide line.</summary>
         private void ShowRefusal(CardView card, PlayVerdict verdict)
         {
-            if (!handGuide || _source == null) return;
+            if ((!handGuide && _refusalLine == null) || _source == null) return;
             string text = _source.RefusalText(card.CardId, verdict);
             if (string.IsNullOrEmpty(text)) return;
             if (_refusal != null) StopCoroutine(_refusal);
             _refusal = StartCoroutine(Refusal(text));
         }
 
+        /// <summary>
+        /// battle-visual-v1 §5.4 (#455): the reason stands on its own line above the hand for
+        /// <see cref="refusalSeconds"/> (3.5 s), and the guide line steps aside meanwhile. A scene
+        /// without the canvas the line is made on keeps the old guide-line text.
+        /// </summary>
         private IEnumerator Refusal(string text)
         {
-            handGuide.color = BattleTheme.Omen;
-            handGuide.text = text;
+            if (_refusalLine != null)
+            {
+                _refusalLine.Show(text);
+                if (handGuide) handGuide.text = "";
+            }
+            else
+            {
+                handGuide.color = BattleTheme.Omen;
+                handGuide.text = text;
+            }
             yield return new WaitForSecondsRealtime(refusalSeconds);
             _refusal = null;
+            _refusalLine?.Hide();
             RefreshPlayableLook();
         }
 
@@ -1622,6 +1823,7 @@ namespace Depiction.View
             HideHoverPanels();
             // §4.7 / §5.2: the stamina it would pay turns to rings, and "▸ n" shows.
             _staminaTag?.ShowCost(card.Face.Cost);
+            ShowReserveHint(card); // §4.9 / §5.3 (#455): the 構えの予告 after this card is paid for
             // §6.3: a card aimed at one enemy is judged again on the enemy it frames (the one enemy
             // the screen draws). The verdict is the script's (CardFace.LitFor); the View only shows it.
             if (card.Face.Aim == CardAim.Single) card.ShowLamp(card.Face.LitFor(0));
@@ -1782,6 +1984,7 @@ namespace Depiction.View
             throwLine.Hide();
             HideTargetMarks();
             _staminaTag?.ShowCost(0);
+            ShowReserveHint(null);
             if (held)
             {
                 held.group.alpha = 1f;
@@ -1805,6 +2008,7 @@ namespace Depiction.View
             throwLine.Hide();
             HideTargetMarks();
             _staminaTag?.ShowCost(0);
+            ShowReserveHint(null);
             PlayVerdict verdict = _source.TryPlay(card.CardId, zone, out DepictionEvent played);
             if (verdict == PlayVerdict.Accepted) StartCoroutine(PlayAccepted(card, played));
             else
