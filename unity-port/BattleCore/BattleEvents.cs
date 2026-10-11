@@ -167,8 +167,11 @@ namespace BattleCore
         /// <summary>§5 (#205): what the ターンで減る型 cap threw away. A word already at the cap drops all of it; that is not a refusal.</summary>
         public int Dropped { get; init; }
 
-        /// <summary>What actually went on — the number the screen shows. 0 when refused or when all of it was dropped.</summary>
-        public int Landed => Refused ? 0 : Stacks - Dropped;
+        /// <summary>§9.1 竜語の符 (#452): the stacks of a boss-only word the player's ward kept off. Not a refusal either.</summary>
+        public int Warded { get; init; }
+
+        /// <summary>What actually went on — the number the screen shows. 0 when refused or when all of it was dropped or warded.</summary>
+        public int Landed => Refused ? 0 : Stacks - Dropped - Warded;
     }
 
     public sealed record StaminaGained(Actor Actor, int Amount, int StaminaAfter) : BattleEvent(Actor);
