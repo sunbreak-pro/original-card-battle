@@ -304,9 +304,12 @@ namespace Depiction.Bridge.Tests
             Assert.That(checkedCards, Is.GreaterThan(0));
         }
 
-        /// <summary>The cards with an attack face and a move of the player's own (踏み込み斬り, 牽制, ...), read off the data.</summary>
+        /// <summary>
+        /// The cards with an attack face and a move (踏み込み斬り, 牽制, ...), read off the data. A push or a
+        /// pull is a move too (§5.4 / §5.7, 手繰りの歩み): it follows the blow the same way.
+        /// </summary>
         private static bool AttacksAndMoves(CardDef def) =>
-            CardSystems.FacesOf(def.Name, def.Attributes, def.Face).Attacks && def.Face.Move != 0;
+            CardSystems.FacesOf(def.Name, def.Attributes, def.Face).Attacks && (def.Face.Move != 0 || def.Face.Push != 0);
 
         /// <summary>
         /// Every way the core can write the card's play into the slice's fight: each gap it can be played
@@ -343,14 +346,14 @@ namespace Depiction.Bridge.Tests
             // core can write it. The core always writes the cells, so the move plays on the floor
             // (EffectPlan.MovesOnFloor); the waits are EffectPlan's, so whatever steps the floor move
             // comes to hold are counted here as they land.
-            // A blow Guard takes only part of is three beats on the script (§5.5: Slash, GuardBlock, Hit)
-            // where §5.0's row reckons one; those plays are held to the 2.0 s cap and listed, not to 1545.
+            // A blow Guard takes only part of is three beats on the script (§5.5: Slash, GuardBlock, Hit);
+            // those plays are held to 1545 too: the move starts on the number + 80 (§5.4 順 2) and a trait
+            // fired before the first face shows beside the release (§5.4 順 0).
             const float AttackAndMoveCapMs = 1545f;
             var on = EffectSwitches.AllOn();
             List<CardDef> cards = CardCatalog.All.Where(AttacksAndMoves).ToList();
             Assert.That(cards, Is.Not.Empty, "the swordsman has cards that attack and move");
             var report = new StringBuilder();
-            var split = new StringBuilder();
             foreach (CardDef def in cards)
             {
                 float worst = 0f;
@@ -364,12 +367,6 @@ namespace Depiction.Bridge.Tests
                     float ms = EffectPlan.BlockingMs(ev, on);
                     string where = def.Name + " at " + label + ": "
                         + string.Join(" + ", EffectPlan.StepsOf(ev).Select(s => s.Id + " " + EffectPlan.WaitMs(s, on).ToString("0")));
-                    if (ev.Cues.Any(c => c.Kind == CueKind.GuardBlock) && ev.Cues.Any(c => c.Kind == CueKind.Hit))
-                    {
-                        Assert.That(ms, Is.LessThan(BattleSpeed.EventCapMs), where);
-                        if (ms > AttackAndMoveCapMs) split.Append(ms.ToString("0")).Append(" ms  ").Append(where).Append('\n');
-                        continue;
-                    }
                     Assert.That(ms, Is.LessThanOrEqualTo(AttackAndMoveCapMs), where);
                     if (ms > worst)
                     {
@@ -381,7 +378,6 @@ namespace Depiction.Bridge.Tests
                 report.Append(worst.ToString("0")).Append(" ms  ").Append(worstLabel).Append('\n');
             }
             TestContext.Out.Write(report.ToString());
-            if (split.Length > 0) TestContext.Out.Write("Over 1545 ms with Guard taking part of the blow:\n" + split);
         }
 
         private static Cue Strip(Cue cue)
