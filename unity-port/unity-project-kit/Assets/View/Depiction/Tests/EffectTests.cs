@@ -280,11 +280,16 @@ namespace Depiction.Tests
         }
 
         // ---- The waits the screen holds (#495) ----
-        // DepictionPlayer.Hold takes each event's steps from EffectPlan.StepsOf and holds the flow at each
+        // DepictionPlayer.HoldBeat takes each event's steps from EffectPlan.StepsOf and holds the flow at each
         // one for EffectPlan.WaitMs. These pin that the event's length the tests sum is exactly those waits.
+        // They do not prove the screen holds those beats: DepictionPlayer is Unity-only and not compiled here.
+        // That the screen waits for each planned step in order is checked only at play time, by its LogError
+        // on a drifted beat (PlayMode DemoFlowPlaybackTests / BattlePlaybackTests). Beats whose animation
+        // length is written in code rather than read from the catalog (ShieldBlock, Reserve, the shield
+        // badge's pop) can still run longer than the plan without that LogError.
 
         [Test]
-        public void AnEventsLength_IsTheSumOfTheWaitsTheScreenHoldsStepByStep()
+        public void AnEventsLength_IsTheSumOfThePlansStepWaits()
         {
             var oneOff = EffectSwitches.AllOn();
             oneOff.Set(EffectId.HpDrain, false);
