@@ -54,7 +54,6 @@ namespace Exploration.Tests
             Assert.That(far, Is.Not.Empty);
             foreach (var node in far)
             {
-                Assert.That(node.ShowsContents, Is.False);
                 Assert.That(node.Lines, Is.Empty);
                 Assert.That(node.Options, Is.Empty);
                 Assert.That(node.Glyph, Is.Not.Empty);
@@ -317,7 +316,7 @@ namespace Exploration.Tests
 
             Assert.That(book.Context, Is.EqualTo(JournalContext.Exploration));
             Assert.That(book.Pages.Select(p => p.Tab), Is.EqualTo(new[] { JournalTab.Enemy, JournalTab.Dungeon, JournalTab.Memo, JournalTab.Terms }));
-            Assert.That(book.Openable.Count, Is.EqualTo(book.Pages.Count), "every tab opens while exploring");
+            Assert.That(book.Pages.All(book.CanOpen), Is.True, "every tab opens while exploring");
 
             var dungeon = book.Pages.Single(p => p.Tab == JournalTab.Dungeon);
             Assert.That(dungeon.Title, Is.EqualTo("第 1 層　燦光の樹海"));

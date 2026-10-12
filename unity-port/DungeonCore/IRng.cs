@@ -35,10 +35,6 @@ namespace DungeonCore
             _state = seed;
         }
 
-        public SeededRng(int seed) : this(unchecked((ulong)seed))
-        {
-        }
-
         /// <summary>Raw 64-bit draw. Exposed so tests can pin known vectors.</summary>
         public ulong NextUInt64()
         {
@@ -53,19 +49,6 @@ namespace DungeonCore
         }
 
         public double NextDouble() => (NextUInt64() >> 11) * (1.0 / TwoPow53);
-    }
-
-    /// <summary>Always returns the same value. For tests that need one fixed branch.</summary>
-    public sealed class FixedRng : IRng
-    {
-        private readonly double _value;
-
-        public FixedRng(double value = 0.0)
-        {
-            _value = value;
-        }
-
-        public double NextDouble() => _value;
     }
 
     public static class RngExtensions

@@ -204,10 +204,7 @@ namespace Exploration
 
         public NodeStanding Standing { get; }
 
-        /// <summary>A far node shows its kind only; the rest show what is inside (§6.3).</summary>
-        public bool ShowsContents => Standing != NodeStanding.Far;
-
-        /// <summary>What is inside. Empty for a far node.</summary>
+        /// <summary>What is inside. Empty for a far node, which shows its kind only (§6.3).</summary>
         public IReadOnlyList<string> Lines { get; }
 
         /// <summary>The buttons the detail panel offers. Empty unless the node can be walked to now.</summary>
@@ -244,9 +241,6 @@ namespace Exploration
     /// <summary>The 瘴気 gauge and what the next new node adds to it.</summary>
     public sealed class MiasmaGauge
     {
-        /// <summary>The gauge is drawn as ten cells (concept-v3.md §6: ■■■■■■□□□□ 60%).</summary>
-        public const int Cells = 10;
-
         public MiasmaGauge(int percent, int nextPercent, string label, string forecastLabel, IReadOnlyList<int> stepLines)
         {
             Percent = percent;
@@ -264,8 +258,6 @@ namespace Exploration
         public float Fill => Percent / 100f;
 
         public float NextFill => NextPercent / 100f;
-
-        public int FilledCells => Percent * Cells / 100;
 
         public string Label { get; }
 
