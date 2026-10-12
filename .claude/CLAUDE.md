@@ -241,6 +241,15 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 - **着手前に必ず open を見る**: `gh issue list --label type:bug`。重複起票を避ける
 - **1 Issue = 1 ブランチ = 1 PR**。PR 本文に `Closes #<n>` を書く。**merge は常に人**（`gh pr merge` は settings.json の `ask` で止まる）
 
+### 進行役（pdca-harness）の PR とラベルは、起票と merge の決まりの例外
+
+定時に動く進行役（`~/dev/pdca-harness`）が、`pdca:auto` の付いた open Issue を 1 件 1 PR にします（2026-10-12 こうだいさん決定）。
+
+- **例外にするもの:** 進行役が作る `pdca/*` ブランチの PR と、`state:*` `goal:*` のラベルです。進行役は Issue を作らず、merge もしません。merge は常に人です
+- **`pdca:auto` を付けるのは chat-main だけ**です。こうだいさんの指示があるときか、`issue-dispatch` の判断で付けます。付いた Issue は、同じ Issue を 2 者が実装しないように、レーンの `/goal` に配りません（`issue-prompter` が「pdca 担当」に分けます）
+- **拾われない Issue:** 本文が `.claude/` のパスを挙げるもの、除外ラベル（`type:human` `area:art` `area:world` `status:frozen` など）が付いたもの、題が判断を求めるもの、子 Issue を持つ親です。進行役は `.claude/` と `.github/` に書けません
+- **判断が要るとき:** 進行役は `state:needs-human` を付け、Gmail で知らせます
+
 ### 判断の控えは life-editor
 
 GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（何を作るか決めて記録する場所）。**Issue の代替にはしない**（2026-09-20 こうだいさん決定）。

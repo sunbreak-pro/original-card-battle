@@ -67,7 +67,7 @@ Skill の `args` の先頭語でモードを決めます。`<id>` は `enemy_ros
 
 | 工程 | Claude | 人 | 関門 |
 | --- | --- | --- | --- |
-| S0 | 未決の判断を選択肢つきで並べる。`.gitattributes`（`*.psb` `*.moc3`）と `.gitignore`（`.env`）の差分案を作る。台帳を `templates/asset-ledger.csv` から置く。`UiTween` の開始・終了ログとビルド引数 `-floor` `-range`（撮る場のマスの数と、自分と敵のマスの組）の実装を `lead-pipeline` に渡す | API キー、OpenAI の組織認証、課金の月上限を設定する。CLIP STUDIO PAINT PRO を買って入れる（2026-09-16 決定）。判断に答える | 判断の記録がある。`.env` が無視される。各 API で 1 枚試し生成し、台帳に書けた |
+| S0 | 未決の判断を選択肢つきで並べる。`.gitattributes`（`*.psb` `*.moc3`）と `.gitignore`（`.env`）の差分案を作る。台帳を `templates/asset-ledger.csv` から置く。`UiTween` の開始・終了ログとビルド引数 `-floor` `-range`（撮る場のマスの数と、自分と敵のマスの組）の実装を `lead-pipeline` に渡す | Krita と Krita AI Diffusion（Local Managed Server）を動かす。クラウドの画像 API（Gemini が主、OpenAI が副、月の上限 $30）は手元で通らないときの保険なので、使うときだけキーと課金の月上限を設定する。CLIP STUDIO PAINT PRO は買わない（2026-10-07 決定、`references/tools-and-prerequisites.md` §9 #30）。判断に答える | 判断の記録がある。`.env` が無視される。Krita AI で 1 枚出し、台帳に書けた。クラウドの画像 API を使うときだけ、その API でも 1 枚試し生成し、台帳に書けた |
 | S1 | 主人公の見た目の設定案と、主人公と長柄の歪み兵を並べたスタイルフレームの依頼パックを作る。光の向き、線の太さ、利き手と盾の持ち手（反転後の見え方）、四足の横幅の上限、命名、roster の行動 id との対応表を書く | 主人公の見た目とスタイルフレームを承認する | 人の承認。`style-guide.md` と参照画像の台帳の行がある |
 
 ## character（C0 → C11）
@@ -81,7 +81,7 @@ Skill の `args` の先頭語でモードを決めます。`<id>` は `enemy_ros
 | C4 | 比較と選定 | 候補を並べた比較 HTML に所見を付け、Artifact で公開する | 1 案を選び、理由を一言書く | 比較の Artifact、選定理由 | 人の承認。理由が台帳の `notes` にある |
 | C5 | 後処理と類似確認 | 背景を抜き、`scripts/silhouette.py` で白シルエットと横幅を出す。縁のハローを読む。類似確認の手順を用意する | 類似確認の最終判断 | 透過 PNG、`_sil.png`、`postprocess` と `similarity_check` | 縁の残りが Blocking 0 件。重みのライセンスが未確認なら `pending` のまま |
 | C6 | 加筆とパーツ分け | パーツの切り方、命名、差分の一覧、PSD のチェックリスト（RGB 8bit、1 パーツ 1 レイヤー、Unity 取り込みは `.psb`）を渡す | 加筆・修正・レイヤー分けをし、時間を記録する | `<id>_parts.psb`、差分 PNG | 台帳に `human_edit` と `human_minutes` がある |
-| C7 | 動かす | v2 §5 から動き（待機・前進・後退・予兆・被弾・崩れ・倒れ）と ms を抜く。段階 0 は `UiTween` の値、段階 1 は取り込みと RenderTexture → RawImage の配線 | ボーン・ウェイト・キーを付ける（Live2D は主人公とボスだけ） | アニメーション一式 | `UiTween` のログで 1 行動 2.0 秒以内、攻撃 1030 ms |
+| C7 | 動かす | v2 §5 から動き（待機・前進・後退・予兆・被弾・崩れ・倒れ）と ms を抜く。段階 0 は `UiTween` の値、段階 1 は取り込みと RenderTexture → RawImage の配線 | ボーン・ウェイト・キーを付ける（Live2D FREE は主人公に使う。ボスは Unity の 2D Animation から始め、パーツが 30 以内に収まるときだけ Live2D FREE も可。§9 #31 #32） | アニメーション一式 | `UiTween` のログで 1 行動 2.0 秒以内、攻撃 1030 ms |
 | C8 | Unity への取り込み | `Assets/Art/Characters/<id>/` に置き、長辺 1024・BC7・Sprite Atlas に設定する。本体と白シルエットの 2 枚を受ける差し替えの実装を `lead-pipeline` に渡す | Editor を前面にして手触りを確かめる | 素材と View の差分 | `dotnet test` と EditMode テストが緑。`git lfs ls-files` に新しいバイナリ |
 | C9 | 実画面の確認 | ビルドを `-captureDir -demoUi -floor 1/3/5 -range` で 2 解像度撮り、▼ と頭、胸と数字、Rim・Flash・残像・撃破シルエットを切り抜いて読む。縁の画素と背景のコントラストを計算する | — | 所見と縁のコントラスト表 | Blocking 0 件。縁が 3:1 以上 |
 | C10 | 台帳の確定 | 空欄を `unknown` にし、`iptc_digital_source_type` と `watermark` を書く。クレジットと Steam 開示の草案に反映する | `pending` の行のライセンスを判断する | 確定した台帳の行 | 製品に入る行は `commercial_ok=yes` で、`model_license` / `terms_url` / `similarity_check` に `unknown` が無い |
