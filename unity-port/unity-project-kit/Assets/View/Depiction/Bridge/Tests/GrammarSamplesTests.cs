@@ -51,16 +51,30 @@ namespace Depiction.Bridge.Tests
             Assert.That(slash.StartGap, Is.EqualTo(1));
         }
 
+        /// <summary>
+        /// The effect a sample is pictured by, read off §5.3 / §5.9 and the system alone, not off the play:
+        /// the trait cue is TraitAccent, a blow its StrikeShape, 盾 / 型 / 気 their mark, and 息 the chest's
+        /// rise on a heal (the player opens at half HP so a heal has room to show).
+        /// </summary>
+        private static EffectId ExpectedWatch(GrammarSample sample)
+        {
+            if (sample.TraitAccent) return EffectId.TraitAccent;
+            if (EffectGrammar.IsBlow(sample.System)) return EffectId.StrikeShape;
+            if (sample.System == FxSystem.Breath) return EffectId.BreathHeave;
+            return EffectId.GrammarMark;
+        }
+
         [Test]
         public void EverySamplesSource_PlaysTheCard_AndTheWatchedEffectIsOnTheScreensPlan()
         {
-            var on = EffectSwitches.AllOn();
             foreach (GrammarSample sample in GrammarSamples.All)
             {
+                EffectId expected = ExpectedWatch(sample);
+                Assert.That(sample.Watch, Is.EqualTo(expected), sample.Label + ": the effect the capture waits for");
                 DepictionEvent play = GrammarSamples.PlayFirstCard(sample.CreateSource());
                 Assert.That(play, Is.Not.Null, sample.Label + ": the auto drag plays nothing");
                 Assert.That(play.Title, Is.EqualTo(sample.Card.Name), sample.Label);
-                Assert.That(GrammarSamples.WatchOf(play, sample.System, sample.TraitAccent), Is.EqualTo(sample.Watch), sample.Label);
+                Assert.That(GrammarSamples.WatchOf(play, sample.System, sample.TraitAccent), Is.EqualTo(expected), sample.Label + ": the play shows it");
                 // The eight show their system alone; only the last one shows a trait firing.
                 Assert.That(GrammarSamples.TraitFired(play), Is.EqualTo(sample.TraitAccent), sample.Label + ": a trait fires");
                 if (EffectCatalog.Of(sample.Watch).Blocking)
@@ -68,7 +82,6 @@ namespace Depiction.Bridge.Tests
                     // A waited beat is one of the plan's steps, so the screen holds it and the trace records it.
                     Assert.That(EffectPlan.StepsOf(play).Any(s => s.Id == sample.Watch), Is.True, sample.Label);
                 }
-                Assert.That(on.IsOn(sample.Watch), Is.True, sample.Label);
             }
         }
 

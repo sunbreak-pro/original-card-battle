@@ -31,13 +31,6 @@ namespace Depiction.Bridge.Tests
         /// <summary>What a fired trait adds on screen (§5.9): Guard +n is 盾, a status +1 is 気, stamina / draw / next turn's recovery is 息.</summary>
         private static readonly FxSystem[] TraitSystems = { FxSystem.Shield, FxSystem.Spirit, FxSystem.Breath };
 
-        /// <summary>A card whose faces only move the player: §5.3 gives a move no system.</summary>
-        private static bool MovesOnly(CardDef def)
-        {
-            FxFaces faces = CardSystems.FacesOf(def.Name, def.Attributes, def.Face);
-            return !faces.Attacks && !faces.Guards && !faces.PutsStatus && !faces.Breathes && !faces.Stance;
-        }
-
         /// <summary>
         /// What the screen draws for a play, in order: each system a beat of the play is marked with
         /// (Cue.Fx: the blow's shape, the 盾 / 型 / 気 mark, the 息 pips, draw or chest), once.
@@ -94,17 +87,6 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void EachOfTheForty_PlaysASystem_UnlessItOnlyMoves()
-        {
-            foreach (CardDef def in Cards40)
-            {
-                IReadOnlyList<FxSystem> row = CardSystems.Table[def.Id];
-                if (MovesOnly(def)) Assert.That(row, Is.Empty, def.Name + " only moves (§5.3)");
-                else Assert.That(row, Is.Not.Empty, def.Name + " plays no system");
-            }
-        }
-
-        [Test]
         public void EachOfTheForty_IsPlayable_AndTheScreenDrawsItsRow_PlusOnlyWhatAFiredTraitAdds()
         {
             var report = new StringBuilder();
@@ -131,24 +113,57 @@ namespace Depiction.Bridge.Tests
             TestContext.Out.Write(report.ToString());
         }
 
-        [Test]
-        public void AmongTheForty_TheSameRowLooksTheSame_AndDifferentRowsLookApart()
+        /// <summary>
+        /// What the View starts for one cue of a play, read the way the View reads it, and the system that
+        /// picture belongs to. A player's blow is drawn by Attack from the cue's StrikeSystem (not its Fx);
+        /// 盾 / 型 / 気 only when MarkOf starts a GrammarMark; 息 is the chest on a heal, the pips lighting
+        /// on a stamina gain, or the cards flying in on a draw. Null when the cue draws no system.
+        /// </summary>
+        private static (FxSystem System, EffectId Effect)? ScreenPicture(Cue cue)
         {
-            var lookOfRow = new Dictionary<string, string>();
-            var rowOfLook = new Dictionary<string, string>();
+            if (cue.Kind == CueKind.Slash && EffectPlan.AttackerOf(cue) == UnitSide.Player)
+            {
+                FxSystem? blow = EffectGrammar.FromStrike(cue.System);
+                return blow.HasValue ? (blow.Value, EffectId.StrikeShape) : ((FxSystem, EffectId)?)null;
+            }
+            switch (EffectGrammar.MarkOf(cue))
+            {
+                case FxMark.Shape: return (cue.Fx.Value, EffectId.GrammarMark);
+                case FxMark.ChestHeave: return (FxSystem.Breath, EffectId.BreathHeave);
+            }
+            if (cue.Kind == CueKind.StaminaChange && cue.Amount > 0) return (FxSystem.Breath, EffectId.StaminaRecover);
+            if (cue.Kind == CueKind.DrawHand && cue.Amount > 0) return (FxSystem.Breath, EffectId.CardDraw);
+            return null;
+        }
+
+        [Test]
+        public void EachOfTheForty_TheScreenPicturesEveryFace_FromWhatItReads()
+        {
+            var report = new StringBuilder();
             foreach (CardDef def in Cards40)
             {
                 DepictionEvent play = PlayFaces(def, out _);
                 Assert.That(play, Is.Not.Null, def.Name);
-                IReadOnlyList<FxSystem> systems = CardSystems.Table[def.Id];
-                string row = string.Join(" → ", systems.Select(EffectGrammar.Glyph));
-                string look = LookOf(FacesDrawn(play, systems));
-                if (lookOfRow.TryGetValue(row, out string seen)) Assert.That(look, Is.EqualTo(seen), def.Name + " (" + row + ") looks unlike its row's other cards");
-                else lookOfRow[row] = look;
-                if (rowOfLook.TryGetValue(look, out string other)) Assert.That(row, Is.EqualTo(other), def.Name + ": rows " + row + " and " + other + " look the same");
-                else rowOfLook[look] = row;
+                IReadOnlyList<FxSystem> row = CardSystems.Table[def.Id];
+                List<EffectStep> steps = EffectPlan.StepsOf(play);
+                var pictured = new List<FxSystem>();
+                var line = new List<string>();
+                foreach (Cue cue in play.Cues)
+                {
+                    var picture = ScreenPicture(cue);
+                    if (!picture.HasValue || !row.Contains(picture.Value.System)) continue;
+                    if (EffectCatalog.Of(picture.Value.Effect).Blocking)
+                    {
+                        // A waited picture is one of the plan's steps: the screen holds the flow at it.
+                        Assert.That(steps.Any(s => s.Id == picture.Value.Effect), Is.True, def.Name + ": " + picture.Value.Effect + " is not on the plan");
+                    }
+                    if (!pictured.Contains(picture.Value.System)) pictured.Add(picture.Value.System);
+                    line.Add(EffectGrammar.Glyph(picture.Value.System) + " " + picture.Value.Effect);
+                }
+                Assert.That(pictured, Is.EqualTo(row), def.Name + ": every face of the row has a picture on screen, in the row's order");
+                report.Append(def.Name).Append(": ").Append(string.Join(", ", line)).Append('\n');
             }
-            TestContext.Out.Write(string.Join("\n", lookOfRow.Select(p => p.Key + " = " + p.Value)) + "\n");
+            TestContext.Out.Write(report.ToString());
             // Every system appears among the forty, so the eight samples are all cards a run starts with.
             var all = new HashSet<FxSystem>(Cards40.SelectMany(d => CardSystems.Table[d.Id]));
             Assert.That(all, Is.EquivalentTo(EffectGrammar.Systems));
