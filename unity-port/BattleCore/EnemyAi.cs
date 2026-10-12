@@ -114,20 +114,52 @@ namespace BattleCore
         /// after the player's next turn start: a ターンで減る型 word loses a stack there, so it counts
         /// as remaining only if a stack is left after that tick. False for the second action of a
         /// phase, read with nothing in between.
+        ///
+        /// #497 (roster v4.18 §4.3): also the actions that would put nothing more on the player
+        /// (<see cref="EnemyActionDef.NotAtFoeCap"/>: 瘴気の儀 once 瘴気纏い is at its cap), read
+        /// off the action as it stands under <paramref name="active"/> (the second stage's cap of 2).
+        /// <paramref name="warded"/> is what 竜語の符 has kept off (§9.1, #452): the word counts as it
+        /// would sit without the ward, so the ward lowers the word and leaves the choice as it is.
         /// </summary>
-        public static IReadOnlyList<string> Barred(EnemyDef def, StatusSet foe, bool beforeFoeTurn)
+        public static IReadOnlyList<string> Barred(
+            EnemyDef def, StatusSet foe, bool beforeFoeTurn, TreeSwitch? active = null, StatusSet? warded = null)
         {
             if (def == null) throw new ArgumentNullException(nameof(def));
             if (foe == null) throw new ArgumentNullException(nameof(foe));
             var barred = new List<string>();
-            foreach (var action in def.Actions.Values)
+            foreach (var own in def.Actions.Values)
             {
-                if (!action.NotWhileFoeHas.HasValue) continue;
-                var word = action.NotWhileFoeHas.Value;
-                int left = foe.Stacks(word) - (beforeFoeTurn && Statuses.DecayOf(word) == StatusDecay.OnTurn ? 1 : 0);
-                if (left > 0) barred.Add(action.Id);
+                var action = ActionOf(def, own.Id, active);
+                if (action.NotWhileFoeHas.HasValue && Left(foe, action.NotWhileFoeHas.Value, beforeFoeTurn) > 0)
+                {
+                    barred.Add(action.Id);
+                }
+                else if (action.NotAtFoeCap && AtFoeCap(action, foe, beforeFoeTurn, warded ?? StatusSet.Empty))
+                {
+                    barred.Add(action.Id);
+                }
             }
             return barred;
+        }
+
+        /// <summary>The stacks of <paramref name="word"/> the player holds when the action is taken (see <see cref="Barred"/>).</summary>
+        private static int Left(StatusSet foe, StatusKind word, bool beforeFoeTurn) =>
+            foe.Stacks(word) - (beforeFoeTurn && Statuses.DecayOf(word) == StatusDecay.OnTurn ? 1 : 0);
+
+        /// <summary>
+        /// #497: every capped word the action puts on the player is held at the cap. An action with
+        /// no capped grant on the player is never at it.
+        /// </summary>
+        private static bool AtFoeCap(EnemyActionDef action, StatusSet foe, bool beforeFoeTurn, StatusSet warded)
+        {
+            bool capped = false;
+            foreach (var grant in action.Face.StatusList)
+            {
+                if (grant.OnSelf || grant.Cap <= 0) continue;
+                capped = true;
+                if (Left(foe, grant.Kind, beforeFoeTurn) + warded.Stacks(grant.Kind) < grant.Cap) return false;
+            }
+            return capped;
         }
 
         /// <summary>

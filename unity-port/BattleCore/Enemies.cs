@@ -4,7 +4,8 @@ using System.Collections.Generic;
 namespace BattleCore
 {
     /// <summary>
-    /// Enemy data, written as records from enemy_document/enemy_roster_v4.md v4.16 (2026-10-10).
+    /// Enemy data, written as records from enemy_document/enemy_roster_v4.md v4.18 (2026-10-11); the
+    /// normal seven's attack of v4.19 is #498.
     /// Nothing here decides anything: the decision tree is walked by <see cref="EnemyAi"/> and the
     /// numbers are resolved by the turn loop (#72).
     ///
@@ -460,7 +461,8 @@ namespace BattleCore
                 new EnemyActionDef(
                     "miasma_bolt", "瘴気の矢", BattleAttribute.Attack, 2,
                     new Face(Power: 8, Reach: new Reach(1, 4), Statuses: new[] { Foe(StatusKind.Fatigue, 1) }),
-                    Description: "間合い 1〜4 に届く。疲労を 1 付与する"),
+                    AtLeast(3, TraitEffect.PowerBonus, 7),
+                    Description: "間合い 1〜4 に届く。疲労を 1 付与する。間合い 3 以上: 威力 +7"),
                 new EnemyActionDef(
                     "push_back", "払いのけ", BattleAttribute.Attack, 2,
                     new Face(Power: 5, Push: 2, Reach: Reach.Only(0)),
@@ -486,10 +488,11 @@ namespace BattleCore
                     // とぐろ → 帳 (or 瘴気の矢 once 帳 is spent), every band, for one phase.
                     new Adaptation("turtle", view => RunCompletedLastTurn(view, 3),
                         tree => Tree.All("coil", "ward", "miasma_bolt")),
-                    // 「Guard を 9 以上で 2 ターン受け続けると、崩しを狙う」: 錫杖 with 崩し 2, on top,
-                    // until the player ends a turn on 5 or less.
+                    // 「Guard を 9 以上で 2 ターン受け続けると、崩しを狙う」: 錫杖 with 崩し 2, on top of
+                    // the 0 and 1〜2 bands only (v4.18, #497: it reaches 0〜1, so on top of 3+ it was
+                    // chosen out of reach every phase), until the player ends a turn on 5 or less.
                     new Adaptation("breaker", view => GuardSiege(view),
-                        tree => tree.Prefix("staff_strike"), new[] { StaffStrike(breaks: 2) }),
+                        tree => tree.PrefixNear("staff_strike"), new[] { StaffStrike(breaks: 2) }),
                     // 「隣に 2 ターン居続けると、払いのけで押し返す」: 払いのけ on top of every band
                     // until N is 1 or more.
                     new Adaptation("pusher", view => Lingered(view, gap => gap == 0, gap => gap >= 1),
@@ -511,8 +514,9 @@ namespace BattleCore
             "miasma_rite", "瘴気の儀", BattleAttribute.Skill, 3,
             new Face(Reach: new Reach(2, 4), Statuses: new[] { Foe(StatusKind.MiasmaShroud, 1, cap), Self(StatusKind.Regen, 1) }),
             Description: cap >= 2
-                ? "間合い 2〜4 に届く。瘴気纏いを 1 付与する（2 まで重なる）。自分に再生を 1 付与する"
-                : "間合い 2〜4 に届く。瘴気纏いを 1 付与する。自分に再生を 1 付与する");
+                ? "間合い 2〜4 に届く。瘴気纏いを 1 付与する（2 まで重なる）。自分に再生を 1 付与する。瘴気纏いが上限のあいだは使わない"
+                : "間合い 2〜4 に届く。瘴気纏いを 1 付与する。自分に再生を 1 付与する。瘴気纏いが上限のあいだは使わない",
+            NotAtFoeCap: true);
 
         private static EnemyActionDef StaffStrike(int breaks) => new EnemyActionDef(
             "staff_strike", "鎌首の打ち込み", BattleAttribute.Attack, 3,
@@ -782,6 +786,9 @@ namespace BattleCore
 
             /// <summary>The action on top of every band; where it already stood further down, it leaves that place.</summary>
             public Tree Prefix(string id) => new Tree(Front(id, Zero), Front(id, One), Front(id, Three));
+
+            /// <summary>The action on top of the 0 and 1〜2 bands as <see cref="Prefix"/> puts it; the 3+ band stays as it is.</summary>
+            public Tree PrefixNear(string id) => new Tree(Front(id, Zero), Front(id, One), Three);
 
             public Tree Without(IReadOnlyCollection<string> ids) => new Tree(Drop(ids, Zero), Drop(ids, One), Drop(ids, Three));
 

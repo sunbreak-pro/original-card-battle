@@ -852,7 +852,7 @@ namespace BattleCore
                 if (enemy.Def.ActionsPerPhase >= 2 && !Combat.IsDefeated(state.Player.Hp))
                 {
                     var skip = new List<string>(state.Enemies[unit].Spent) { action.Id };
-                    skip.AddRange(EnemyAi.Barred(enemy.Def, state.Player.Statuses, beforeFoeTurn: false));
+                    skip.AddRange(EnemyAi.Barred(enemy.Def, state.Player.Statuses, beforeFoeTurn: false, active: active, warded: state.Tools.WardedStacks));
                     var second = EnemyAi.ChooseAction(enemy.Def, state.GapTo(unit), state.Enemies[unit].Body.Stamina, skip, active);
                     state = RevisePlan(state, unit, EnemyAi.OmenOf(second), events);
                     if (second != null)
@@ -1892,9 +1892,10 @@ namespace BattleCore
             int stamina = EnemyAi.StaminaAtAction(enemy.Def, enemy.Body);
 
             // #51 (roster §4.3): an action the player's word keeps out, as it will stand after the
-            // player's next turn start, is passed over like a spent stance.
+            // player's next turn start, is passed over like a spent stance — and, #497 (v4.18), one
+            // whose word the player already holds at the cap of the switch decided here.
             var skip = new List<string>(enemy.Spent);
-            skip.AddRange(EnemyAi.Barred(enemy.Def, state.Player.Statuses, beforeFoeTurn: true));
+            skip.AddRange(EnemyAi.Barred(enemy.Def, state.Player.Statuses, beforeFoeTurn: true, active: active, warded: state.Tools.WardedStacks));
             var omen = EnemyAi.DecideOmen(enemy.Def, gap, stamina, skip, active);
             events.Add(new OmenSet(Actor.Enemy, omen, Decided: true) { Unit = unit });
 
