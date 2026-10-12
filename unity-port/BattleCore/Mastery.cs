@@ -365,7 +365,7 @@ namespace BattleCore
         /// <summary>
         /// §3.2 (#504): what 伸び adds, by step, to the small Guard of a movement-centred card
         /// (<see cref="AttributeRule.IsMovementCard"/>): 4 → 6 → 9 → 9. Step 2 is one column of the
-        /// single Guard (列 1 → 2, +5) and step 1 is half of it on the way.
+        /// single Guard (列 1 → 2, +5) and step 1 is a value on the way to it (+2).
         /// </summary>
         public static readonly IReadOnlyList<int> MovementGuardByRank = new[] { 0, 2, 5, 5 };
 
