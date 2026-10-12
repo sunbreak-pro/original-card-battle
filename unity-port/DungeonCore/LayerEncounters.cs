@@ -136,6 +136,9 @@ namespace DungeonCore
     /// flagged <see cref="Encounter.IsStandIn"/>. On layers 4 and 5 that borrowing moves a §9 elite
     /// into the boss slot. Enemy ids are plain strings that match BattleCore.Enemies (roster §1.8)
     /// — DungeonCore does not reference BattleCore (#97).
+    ///
+    /// Nothing in the exploration draws from this table yet: #99, which hands a combat node's fight
+    /// to the battle, is where it gets wired in. Until then only the tests read it (#517).
     /// </summary>
     public static class LayerEncounters
     {

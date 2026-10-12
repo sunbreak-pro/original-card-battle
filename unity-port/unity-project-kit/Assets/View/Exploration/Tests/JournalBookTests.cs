@@ -53,8 +53,8 @@ namespace Exploration.Tests
             var battle = new JournalBook(pages, JournalContext.Battle);
             var exploring = new JournalBook(pages, JournalContext.Exploration);
 
-            Assert.That(battle.Openable.Select(p => p.Tab), Is.EqualTo(new[] { JournalTab.Enemy, JournalTab.Terms }));
-            Assert.That(exploring.Openable.Count, Is.EqualTo(4));
+            Assert.That(pages.Where(battle.CanOpen).Select(p => p.Tab), Is.EqualTo(new[] { JournalTab.Enemy, JournalTab.Terms }));
+            Assert.That(pages.All(exploring.CanOpen), Is.True);
             Assert.That(battle.ClosingHint, Is.EqualTo("閉じるとプレイできます"));
             Assert.That(exploring.ClosingHint, Is.Empty);
         }

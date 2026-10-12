@@ -18,6 +18,12 @@ namespace DungeonContent
     /// ボーナス raises the tool slots to four for one life (§8.2).
     ///
     /// Immutable: picking something up returns a new loadout, so a run can be replayed.
+    ///
+    /// The exploration core does not carry this type: it carries DungeonCore.RunLoadout, which holds
+    /// only what the core acts on. The rules kept here and nowhere else — ids checked against the
+    /// catalogue, picking up and swapping on the way, dropping consumables on leaving — belong to the
+    /// 出立 screen and the run around it. #104 is where a chosen Loadout becomes a RunLoadout; until
+    /// then only the tests build one (#517).
     /// </summary>
     public sealed class Loadout
     {

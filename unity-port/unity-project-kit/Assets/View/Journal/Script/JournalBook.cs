@@ -135,8 +135,6 @@ namespace Journal
         public bool CanOpen(JournalPage page) =>
             page != null && (Context == JournalContext.Exploration || page.Tab == JournalTab.Enemy || page.Tab == JournalTab.Terms);
 
-        public IReadOnlyList<JournalPage> Openable => Pages.Where(CanOpen).ToList();
-
         /// <summary>The page the drawer shows first: the first that may be opened here, or null.</summary>
         public JournalPage First => Pages.FirstOrDefault(CanOpen);
 

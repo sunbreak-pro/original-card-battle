@@ -263,14 +263,14 @@ namespace Exploration.Tests
             var map = session.State.Map;
             int survey = map.Nodes.Single(n => n.Kind == NodeKind.Survey).Id;
 
-            var combat = session.Screen().Nodes.First(n => n.ShowsContents && ExplorationText.IsCombat(n.Kind));
+            var combat = session.Screen().Nodes.First(n => n.Standing != NodeStanding.Far && ExplorationText.IsCombat(n.Kind));
             Assert.That(combat.Lines, Has.Member("敵: 歪み兵（開示度 1 / 2）"));
 
             foreach (int id in RouteTo(map, session.State.CurrentNodeId, survey)) Step(session, id);
             Assert.That(session.Surveyed, Is.True);
 
             var screen = session.Screen();
-            var anyCombat = screen.Nodes.First(n => n.ShowsContents && ExplorationText.IsCombat(n.Kind));
+            var anyCombat = screen.Nodes.First(n => n.Standing != NodeStanding.Far && ExplorationText.IsCombat(n.Kind));
             Assert.That(anyCombat.Lines, Has.Member("敵: 歪み兵（開示度 2 / 2）"));
             Assert.That(anyCombat.Lines, Has.Member("傾向: 間合い 1〜2 で突く"));
             Assert.That(screen.Journal.Pages.First().Title, Is.EqualTo("歪み兵"));
