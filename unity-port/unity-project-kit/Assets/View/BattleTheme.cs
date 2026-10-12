@@ -9,6 +9,8 @@ using UnityEngine;
 public static class BattleTheme
 {
     // ---- §2.1 tokens --------------------------------------------------------------------
+    // The whole §2.1 table is copied, including tokens no screen reads yet (Caution, Paper,
+    // PaperInk): they wait for the prediction's △ and the journal / result screens (#516).
     /// <summary>地: the outer frame and the result screens. The battle backdrop is the layer's (§2.4).</summary>
     public static readonly Color Ground = Hex("#10141d");
     /// <summary>パネル (88%): number panels, the corner info, the stance frames. No blur.</summary>
@@ -146,17 +148,6 @@ public static class BattleTheme
     // ---- layout (reference 1920×1080, anchors as fractions of the canvas) ---------
     public const float RefWidth = 1920f;
     public const float RefHeight = 1080f;
-
-    // Bands, given as (yMin, yMax) from the bottom. Spec §2.1 lists them from the top.
-    public static readonly Vector2 TopBand = new Vector2(0.93f, 1.00f);
-    public static readonly Vector2 Arena = new Vector2(0.42f, 0.93f);
-    public static readonly Vector2 StatusBand = new Vector2(0.32f, 0.42f);
-    public static readonly Vector2 StaminaBand = new Vector2(0.24f, 0.32f);
-    public static readonly Vector2 HandBand = new Vector2(0.00f, 0.24f);
-    public static readonly Vector2 HandX = new Vector2(0.24f, 0.76f);
-    public static readonly Vector2 LeftBottomX = new Vector2(0.02f, 0.22f);
-    public static readonly Vector2 RightBottomX = new Vector2(0.78f, 0.98f);
-    public const float FloorFraction = 0.08f; // floor line above the arena's bottom edge
 
     // ---- helpers -------------------------------------------------------------
     public static Color Hex(string hex, float alpha = 1f)
