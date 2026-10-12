@@ -65,12 +65,16 @@ namespace Depiction.Bridge.Tests
             DepictionEvent placed = writer.Write(rock.Events, rock.State).Last();
             Assert.That(placed.Cues.Any(c => c.Target == UnitSide.Player && c.Fx == FxSystem.Form), Is.True,
                 "the 型 beat the light opens with (§5.11 順 2 足元に紋、身体に薄い光)");
+            Assert.That(StanceGlow.CrestCarriesLight(player.Shown), Is.True, "the first crest brings its body light");
             Assert.That(player.Land(placed.After.Player), Is.EqualTo(StanceGlowChange.Light));
             Assert.That(enemy.Land(placed.After.Enemy), Is.EqualTo(StanceGlowChange.Keep), "the player's stance lights the player only");
 
-            // A second stance adds no second light.
+            // A second stance adds no second light: its crest is drawn alone, and the kept light stays as it is.
             StepResult water = TurnLoop.PlayCard(rock.State, "water-0", NoShuffle);
-            Assert.That(player.Land(writer.Write(water.Events, water.State).Last().After.Player), Is.EqualTo(StanceGlowChange.Keep));
+            DepictionEvent second = writer.Write(water.Events, water.State).Last();
+            Assert.That(second.Cues.Any(c => c.Target == UnitSide.Player && c.Fx == FxSystem.Form), Is.True, "the crest is drawn again");
+            Assert.That(StanceGlow.CrestCarriesLight(player.Shown), Is.False, "2 つ目からは光を重ねず、紋だけを出し直す");
+            Assert.That(player.Land(second.After.Player), Is.EqualTo(StanceGlowChange.Keep));
             Assert.That(player.Shown, Is.True);
 
             // The stances last the battle (battle_core_v4 §4): through the turn end and the enemy's turn the light stays.
@@ -83,10 +87,13 @@ namespace Depiction.Bridge.Tests
                 Assert.That(player.Shown, Is.True, "the light stays while the list holds a stance: " + ev.Title);
             }
 
-            // The list empties only when a new battle opens: the light goes out with it.
+            // The list empties only when a new battle opens. The screen does not fade the light then: it
+            // snaps each light to the opening frame (DepictionPlayer.SnapStanceGlows, StanceGlow.IsOn) before
+            // the frame lands, so it is off at once. §5.18 順 3's fade on the carry-over panel is the run
+            // screen's, not built yet.
             DepictionFrame next = new CoreScriptWriter(Enemies.PolearmWarped).Opening(TurnLoop.Start(Setup(), NoShuffle).State);
-            Assert.That(player.Land(next.Player), Is.EqualTo(StanceGlowChange.Fade));
-            Assert.That(player.Shown, Is.False);
+            Assert.That(StanceGlow.IsOn(next.Player), Is.False, "a new battle snaps the light off");
+            Assert.That(StanceGlow.IsOn(next.Enemy), Is.False);
         }
 
         [Test]

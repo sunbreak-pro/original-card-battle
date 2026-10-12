@@ -791,8 +791,11 @@ namespace Depiction.View
             switch (EffectGrammar.MarkOf(cue))
             {
                 case FxMark.Shape:
+                    // §5.11 順 2 (#501): read before the light below changes. A unit that already keeps a
+                    // stance light gets the crest alone, with no second light over its body.
+                    bool crestLight = StanceGlow.CrestCarriesLight(target.StanceGlowShown);
                     StartCoroutine(Effect(EffectId.GrammarMark, DepictionFx.Mark(this, fxLayer, chest, head, DepictionFx.PointOn(fxLayer, target.transform),
-                        target.side == UnitSide.Player ? 1f : -1f, cue.Fx.Value, cue.Intensity, _effects.Ms(EffectId.GrammarMark)), null));
+                        target.side == UnitSide.Player ? 1f : -1f, cue.Fx.Value, cue.Intensity, _effects.Ms(EffectId.GrammarMark), crestLight), null));
                     LightStanceGlowWithCrest(ev, cue, target); // §5.11 順 2 (#501)
                     break;
                 case FxMark.ChestHeave:

@@ -35,7 +35,8 @@ namespace Depiction.Tests
         public void TheLight_ComesOnWithTheFirstStance_StaysUntilTheListEmpties_AndGoesOutThen()
         {
             // The frames a unit goes through: nothing, a stance put down, a second, a repeat, a turn
-            // later, and the list emptied (a new battle's opening frame).
+            // later, and the list emptied. The last is the rule only: no frame within a battle empties the
+            // list (battle_core_v4 §4), and a new battle snaps the light off instead of fading it.
             var frames = new List<(UnitFrame Frame, StanceGlowChange Expected, bool OnAfter)>
             {
                 (Holding(), StanceGlowChange.Keep, false),
@@ -62,6 +63,16 @@ namespace Depiction.Tests
         {
             // §5.11 順 2: 2 つ目からは光を重ねず、紋だけを出し直す.
             Assert.That(StanceGlow.Change(true, Holding("岩の構え", "水の構え")), Is.EqualTo(StanceGlowChange.Keep));
+            // The crest drawn for it comes without the crest's own body light, so nothing is laid over the kept light.
+            Assert.That(StanceGlow.CrestCarriesLight(true), Is.False);
+        }
+
+        [Test]
+        public void TheFirstStance_CrestBringsItsBodyLight()
+        {
+            // §5.11 順 2 足元に紋、身体に薄い光: the first crest brings the §5.3 型 light as the kept light comes on.
+            Assert.That(StanceGlow.CrestCarriesLight(false), Is.True);
+            Assert.That(StanceGlow.Change(false, Holding("岩の構え")), Is.EqualTo(StanceGlowChange.Light));
         }
 
         [Test]

@@ -70,10 +70,11 @@ namespace Depiction.View
         /// feet whose light fades 600 ms later, 気 a mark falling from above onto the chest. A blow draws
         /// nothing here (its shape is <see cref="Strike"/>), and neither does 息, whose form is the pips
         /// lighting (a heal's chest is the player's <c>Heave</c>). <paramref name="facing"/> is +1 when the
-        /// figure faces right.
+        /// figure faces right. <paramref name="crestLight"/> false draws the 型 crest without its body light
+        /// (§5.11 順 2: from the second stance on only the crest is drawn again, <see cref="StanceGlow.CrestCarriesLight"/>).
         /// </summary>
         public static IEnumerator Mark(MonoBehaviour host, RectTransform layer, Vector2 chest, Vector2 head, Vector2 feet,
-            float facing, FxSystem system, int tier, float ms)
+            float facing, FxSystem system, int tier, float ms, bool crestLight = true)
         {
             float scale = MarkScale[Index(tier)];
             switch (EffectGrammar.FormOf(system))
@@ -81,7 +82,7 @@ namespace Depiction.View
                 case FxForm.Ring:
                     return StandingRing(host, layer, chest + new Vector2(70f * facing, 0f), scale, ms);
                 case FxForm.Crest:
-                    return Crest(host, layer, feet, scale, ms);
+                    return Crest(host, layer, feet, scale, ms, crestLight);
                 case FxForm.Sigil:
                     return Sigil(host, layer, head + new Vector2(0f, 60f), chest, scale, ms);
                 default:
@@ -126,13 +127,19 @@ namespace Depiction.View
             host.StartCoroutine(FadeAndDestroy(ring, 220f));
         }
 
-        /// <summary>型: two flat rings open under the feet, and the crest's light lingers before it fades.</summary>
-        private static IEnumerator Crest(MonoBehaviour host, RectTransform layer, Vector2 feet, float scale, float ms)
+        /// <summary>
+        /// 型: two flat rings open under the feet, and the crest's light lingers before it fades. Without
+        /// <paramref name="withLight"/> only the rings are drawn (a unit that already keeps a stance light).
+        /// </summary>
+        private static IEnumerator Crest(MonoBehaviour host, RectTransform layer, Vector2 feet, float scale, float ms, bool withLight)
         {
             Image outer = UiKit.Sprite(layer, "FormCrest", VisualArt.CircleRing(1.5f), BattleTheme.WithAlpha(BattleTheme.Amber, 0.95f), Half, Half, new Vector2(280f * scale, 72f * scale), feet);
             Image inner = UiKit.Sprite(layer, "FormCrestInner", VisualArt.CircleRing(1f), BattleTheme.WithAlpha(BattleTheme.Wick, 0.85f), Half, Half, new Vector2(170f * scale, 44f * scale), feet);
-            Image glow = UiKit.Sprite(layer, "FormGlow", ProceduralArt.Glow, BattleTheme.WithAlpha(BattleTheme.Amber, 0.35f), Half, Half, new Vector2(200f * scale, 320f * scale), feet + new Vector2(0f, 140f * scale));
-            outer.raycastTarget = inner.raycastTarget = glow.raycastTarget = false;
+            Image glow = withLight
+                ? UiKit.Sprite(layer, "FormGlow", ProceduralArt.Glow, BattleTheme.WithAlpha(BattleTheme.Amber, 0.35f), Half, Half, new Vector2(200f * scale, 320f * scale), feet + new Vector2(0f, 140f * scale))
+                : null;
+            outer.raycastTarget = inner.raycastTarget = false;
+            if (glow) glow.raycastTarget = false;
             RectTransform a = outer.rectTransform, b = inner.rectTransform;
             yield return UiTween.Run(ms, Ease.Out, t =>
             {
@@ -143,7 +150,7 @@ namespace Depiction.View
             // stance list holds one is §5.11 順 2's StanceGlow (FigureView, #501), not this.
             host.StartCoroutine(FadeAndDestroy(outer, 600f));
             host.StartCoroutine(FadeAndDestroy(inner, 600f));
-            host.StartCoroutine(FadeAndDestroy(glow, 600f));
+            if (glow) host.StartCoroutine(FadeAndDestroy(glow, 600f));
         }
 
         /// <summary>気: a diamond mark drops from above the head onto the chest and bursts there.</summary>
