@@ -912,7 +912,7 @@ namespace BattleCore.Tests
         //     踏み込み: the polearm steps to cell 4 with Guard 2, keeps 9 → 5. Gap 2 → the sweep.
         //  T3 gap 2, 2 + 3 stamina. feint and kesa_cut reach 0〜1 only. reach_thrust 15 + 5 − 5 = 15:
         //     60 − 15 = 45, 3 left. step_in_guard: Guard 12, cell 2, gap 1, 0 left, no 構え.
-        //     The sweep at gap 1 is a bare 8 into Guard 12: Guard 4, HP 50.
+        //     The sweep at gap 1 is a bare 9 into Guard 12: Guard 3, HP 50.
         private static readonly string[] PinnedHands =
         {
             "shield_bash,body_check,step_out_guard,step_in_guard,step_out_guard,body_check",

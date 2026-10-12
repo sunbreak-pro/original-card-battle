@@ -247,7 +247,7 @@ namespace BattleCore
                 new EnemyActionDef(
                     "twin_slash", "二段斬り", BattleAttribute.Attack, 3,
                     new Face(Power: 8, Hits: 2, Reach: Reach.Only(0)),
-                    Description: "間合い 0 に届く。威力 7 × 2"),
+                    Description: "間合い 0 に届く。威力 8 × 2"),
                 new EnemyActionDef(
                     "step_slash", "踏み込み斬り", BattleAttribute.Attack, 2,
                     new Face(Power: 6, Move: 2, Reach: new Reach(1, 2)),
@@ -280,7 +280,7 @@ namespace BattleCore
                 new EnemyActionDef(
                     "great_thrust", "大穂の突き", BattleAttribute.Attack, 3,
                     new Face(Power: 15, Reach: new Reach(1, 2)),
-                    Description: "間合い 1〜2 に届く。威力 13"),
+                    Description: "間合い 1〜2 に届く。威力 15"),
                 new EnemyActionDef(
                     "crystal_rush", "晶穂の突進", BattleAttribute.Attack, 2,
                     new Face(Power: 6, Move: 2, Reach: new Reach(2, 4)),
