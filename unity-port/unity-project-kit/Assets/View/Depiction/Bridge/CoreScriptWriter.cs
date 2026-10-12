@@ -274,8 +274,9 @@ namespace Depiction.Bridge
                     && current.Cues.Exists(c => c.Kind == CueKind.Slash && c.Source == UnitSide.Enemy):
                     return NewEvent(DepictionEventKind.EnemyAction, current.Title + "（2 撃目）");
 
-                // #50: a 予定変更 is a beat of its own, shown before the second action acts.
-                case PlanChanged _ when current != null:
+                // #50: a 予定変更 is a beat of its own, shown before the second action acts. An enemy read
+                // to 0 shows no plan (#455), so its change has no beat and costs no gap between events.
+                case PlanChanged _ when current != null && OmenDisclosure.ShowsPlan(Disclosure):
                     return NewEvent(DepictionEventKind.EnemyAction, DepictionText.PlanChangedTag);
 
                 case OmenSet omen when omen.Decided && _order > 0:
