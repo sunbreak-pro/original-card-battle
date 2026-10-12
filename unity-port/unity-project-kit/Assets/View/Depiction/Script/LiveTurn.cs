@@ -517,8 +517,32 @@ namespace Depiction
                 StanceHint = _phase == Phase.PlayerTurn && _stamina >= StanceThreshold ? "+" + StanceGuard : "",
                 StanceDivider = StanceThreshold,
                 // battle-visual-v1 §4.7 (#455): the hand-written turn keeps a draw and a discard pile, and exiles nothing.
-                Piles = new PileFrame { Shown = true, Draw = _drawPile.Count, Discard = _discardPile.Count, Exile = 0 },
+                Piles = new PileFrame
+                {
+                    Shown = true, Draw = _drawPile.Count, Discard = _discardPile.Count, Exile = 0,
+                    DrawCards = PileRows(_drawPile), DiscardCards = PileRows(_discardPile),
+                },
             };
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §1.1 C4 (#455): the list a click on the pile opens, one row per kind of card
+        /// in the deck's order, never the pile's (the draw order stays hidden). Every kind has
+        /// <see cref="DemoDeck.Copies"/> copies in the battle.
+        /// </summary>
+        private static List<PileCard> PileRows(List<Dealt> pile)
+        {
+            var rows = new List<PileCard>();
+            foreach (DemoCard def in DemoDeck.All)
+            {
+                int inPile = 0;
+                foreach (Dealt card in pile)
+                {
+                    if (card.Def.DefId == def.DefId) inPile += 1;
+                }
+                if (inPile > 0) rows.Add(new PileCard { Name = def.Name, InPile = inPile, InDeck = DemoDeck.Copies });
+            }
+            return rows;
         }
 
         private OmenFrame OmenNow()
