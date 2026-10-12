@@ -2,7 +2,9 @@
 // ("近" / "遠") at its feet. It wears the art filed under the id the script names (#288), or the
 // ProceduralArt silhouette when there is none. Which way the body faces, the shapes it takes and
 // the fall are read from Script/FigureMotion.cs; this view only applies them. It stands 226 px tall
-// (264 for a two-cell elite) over a light at its feet, as battle-visual-v1 §4.3 draws it (#455).
+// (264 for a two-cell elite) over a light at its feet, as battle-visual-v1 §4.3 draws it (#455). The
+// silhouette is the side's dark shade with a 2 px light round its edge (§4.3 シルエット); real art
+// wears neither.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using UnityEngine;
@@ -36,7 +38,7 @@ namespace Depiction.View
     {
         public UnitSide side;
         public bool useSpearSilhouette;
-        [Tooltip("Tints the silhouette toward the role colour so it reads against the dark backdrop. Real art is never tinted.")]
+        [Tooltip("Tints the silhouette to its side's shade (battle-visual-v1 §4.3), lifted off the backdrop by its edge light. Real art is never tinted.")]
         public bool tintByRole = true;
         public Image body;
         public RectTransform chest;
@@ -48,6 +50,10 @@ namespace Depiction.View
         public TargetMarkView targetMark;
         [Tooltip("The art this figure can wear, by id (#288). Filled by Tools > Depiction > Collect Character Art.")]
         public FigureArt[] artShelf = new FigureArt[0];
+
+        /// <summary>battle-visual-v1 §4.3 シルエット: the player's #2b2f3a, an enemy's #1b1722.</summary>
+        private static readonly Color PlayerSilhouette = BattleTheme.Hex("#2b2f3a");
+        private static readonly Color EnemySilhouette = BattleTheme.Hex("#1b1722");
 
         public RectTransform Rect => (RectTransform)transform;
         public Color RoleColor => side == UnitSide.Player ? BattleTheme.Accent : BattleTheme.Omen;
@@ -77,6 +83,7 @@ namespace Depiction.View
         private bool _frameTaken;
         private Vector2 _restFrame;
         private Image _footLight;
+        private Outline _edgeLight;
         private float _height = FigureFrame.StandardHeight;
 
         private void Awake()
@@ -84,6 +91,7 @@ namespace Depiction.View
             TakePlaceholder();
             TakeFrame();
             BuildFootLight();
+            BuildEdgeLight();
             StandTall(_height);
             RestBody();
         }
@@ -104,6 +112,29 @@ namespace Depiction.View
             float scale = FigureFrame.ScaleFor(pixels, TakeFrame().y);
             Rect.localScale = new Vector3(scale, scale, 1f);
             FitFootLight();
+            FitEdgeLight();
+        }
+
+        /// <summary>
+        /// §4.3 シルエット: a 2 px light round the silhouette's edge — amber 28% for the player, violet
+        /// 35% for the enemy. It follows the body's alpha, so it goes with the body.
+        /// </summary>
+        private void BuildEdgeLight()
+        {
+            if (_edgeLight || !body) return;
+            _edgeLight = body.GetComponent<Outline>();
+            if (!_edgeLight) _edgeLight = body.gameObject.AddComponent<Outline>();
+            _edgeLight.effectColor = side == UnitSide.Player ? BattleTheme.WithAlpha(BattleTheme.Amber, 0.28f) : BattleTheme.WithAlpha(BattleTheme.Violet, 0.35f);
+            _edgeLight.useGraphicAlpha = true;
+            _edgeLight.enabled = !WearsArt;
+        }
+
+        /// <summary>The light's 2 px are counted back out of the figure's scale (FigureFrame.EdgeLightOffset).</summary>
+        private void FitEdgeLight()
+        {
+            if (!_edgeLight) return;
+            float offset = FigureFrame.EdgeLightOffset(Rect.localScale.y);
+            _edgeLight.effectDistance = new Vector2(offset, offset);
         }
 
         /// <summary>
@@ -334,6 +365,8 @@ namespace Depiction.View
                 body.sprite = _placeholder;
             }
             FitFrame(art);
+            // §4.3: the edge light belongs to the silhouette; a picture is drawn as it is painted.
+            if (_edgeLight) _edgeLight.enabled = art == null;
             RestBody();
         }
 
@@ -368,7 +401,8 @@ namespace Depiction.View
             if (body.sprite == null)
             {
                 body.sprite = useSpearSilhouette ? ProceduralArt.FigureWithSpear : ProceduralArt.Figure;
-                if (tintByRole) body.color = Color.Lerp(BattleTheme.InkBlack, RoleColor, 0.42f);
+                // §4.3 シルエット: each side's own dark shade, which its edge light lifts off the backdrop.
+                if (tintByRole) body.color = side == UnitSide.Player ? PlayerSilhouette : EnemySilhouette;
             }
             _placeholder = body.sprite;
             _placeholderColor = body.color;

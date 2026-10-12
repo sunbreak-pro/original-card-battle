@@ -126,6 +126,19 @@ namespace Depiction
 
         public const float FootLightWidthRatio = 2f;
 
+        /// <summary>§4.3 シルエット: the silhouette's edge light is 2 px wide on the screen.</summary>
+        public const float EdgeLightWidth = 2f;
+
+        /// <summary>
+        /// How far the edge light is drawn out from the silhouette, in the body's own units, under a
+        /// figure drawn at <paramref name="figureScale"/>: the 2 px counted back out of the scale, so it
+        /// stays 2 px on the screen at 226 and at 264.
+        /// </summary>
+        public static float EdgeLightOffset(float figureScale)
+        {
+            return EdgeLightWidth * Counter(figureScale);
+        }
+
         /// <summary>How tall a figure that takes <paramref name="cells"/> cells stands on the screen.</summary>
         public static float HeightFor(int cells)
         {
