@@ -1397,10 +1397,19 @@ namespace Depiction.View
 
         /// <summary>
         /// The played card's ghost drifts from where the card vanished onto the pile the core put it in
-        /// (DepictionEvent.PlayedTo): the discard pile (EffectId.CardToDiscard), or for a stance card the
-        /// exile pile, 600 ms on and 220 ms in (EffectId.CardToExile, battle_ui_ux_v2 §5.11 順 4, #455).
+        /// (DepictionEvent.PlayedTo): the discard pile (EffectId.CardToDiscard) at once, or for a stance
+        /// card the exile pile, 220 ms in on the beat 600 counted from the release's start
+        /// (EffectId.CardToExile, battle_ui_ux_v2 §5.11 順 4, #455). The release has already run its
+        /// CardRelease length, so only the rest of the 600 is waited, and nothing is drawn while it is.
         /// It runs beside the event's beats and holds nothing up.
         /// </summary>
+        private IEnumerator GhostToPile(Vector2 from, PileKind pile)
+        {
+            bool exiled = pile == PileKind.Exile;
+            if (exiled) yield return UiTween.Wait(Mathf.Max(0f, EffectCatalog.CardToExileDelayMs - _effects.Ms(EffectId.CardRelease)));
+            yield return Effect(exiled ? EffectId.CardToExile : EffectId.CardToDiscard, FlyGhostTo(from, pile), null);
+        }
+
         private IEnumerator FlyGhostTo(Vector2 from, PileKind pile)
         {
             bool exiled = pile == PileKind.Exile;
@@ -1414,7 +1423,6 @@ namespace Depiction.View
             Image ghost = UiKit.Sprite(fxLayer, exiled ? "ExileGhost" : "DiscardGhost", ProceduralArt.White, tint, Half, Half, new Vector2(76f, 104f), from);
             ghost.raycastTarget = false;
             RectTransform rt = ghost.rectTransform;
-            if (exiled) yield return UiTween.Wait(EffectCatalog.CardToExileDelayMs);
             yield return UiTween.Run(_effects.Ms(id), exiled ? Ease.In : Ease.InOut, t =>
             {
                 if (!rt) return;
@@ -2261,7 +2269,7 @@ namespace Depiction.View
                 ? DepictionFx.PointOn(fxLayer, receiver.transform)
                 : DepictionFx.PointOn(fxLayer, card.transform);
             Destroy(card.gameObject);
-            StartCoroutine(Effect(ev.PlayedTo == PileKind.Exile ? EffectId.CardToExile : EffectId.CardToDiscard, FlyGhostTo(vanishedAt, ev.PlayedTo), null));
+            StartCoroutine(GhostToPile(vanishedAt, ev.PlayedTo));
             StartCoroutine(Effect(EffectId.HandFan, SettleHand(_effects.Ms(EffectId.HandFan)), LayoutHand));
 
             foreach (Cue cue in ev.Cues)
