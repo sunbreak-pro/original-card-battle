@@ -100,11 +100,6 @@ public static class UiKit
         return edges;
     }
 
-    public static void SetFrameColor(Image[] frame, Color color)
-    {
-        foreach (var e in frame) e.color = color;
-    }
-
     public static Text Text(RectTransform parent, string name, int size, TextAnchor anchor, Color color, string text = "")
     {
         EnsureFont();
