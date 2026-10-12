@@ -467,6 +467,31 @@ namespace Depiction
             return switches.WaitMs(step.Id, step.Count);
         }
 
+        /// <summary>
+        /// battle_ui_ux_v2 §3.14 / §5.1 順 6 (#455): when the discard pile starts to slide onto the draw
+        /// pile, counted from the start of the draw: one stagger after the last card the old pile held
+        /// has left (at 0 when the old pile was already empty).
+        /// </summary>
+        public static float RebuildStartMs(int rebuildAfter, EffectSwitches switches)
+        {
+            if (switches == null) throw new ArgumentNullException(nameof(switches));
+            return Math.Max(0, rebuildAfter) * switches.StaggerMs(EffectId.CardDraw);
+        }
+
+        /// <summary>
+        /// When card <paramref name="index"/> of a draw leaves the draw pile, counted from the start of
+        /// the draw. The cards keep one stagger apart. In a draw that ran the pile out
+        /// (<paramref name="rebuildAfter"/> ≥ 0, Cue.RebuildAfter) the cards from the new pile wait for
+        /// the slide, so the last card lands on PileRebuild's wait + CardDraw's wait (#455).
+        /// </summary>
+        public static float DrawCardStartMs(int index, int rebuildAfter, EffectSwitches switches)
+        {
+            if (switches == null) throw new ArgumentNullException(nameof(switches));
+            float at = Math.Max(0, index) * switches.StaggerMs(EffectId.CardDraw);
+            if (rebuildAfter >= 0 && index >= rebuildAfter) at += switches.WaitMs(EffectId.PileRebuild);
+            return at;
+        }
+
         public static List<EffectStep> StepsOf(DepictionEvent ev)
         {
             if (ev == null) throw new ArgumentNullException(nameof(ev));
@@ -486,8 +511,8 @@ namespace Depiction
                 // moving is no beat at all, as on screen (#495).
                 case CueKind.DrawHand:
                     // §3.14 / §5.1 順 6 (#455): a draw that ran the pile out holds 200 for the discard pile
-                    // to slide onto it. The slide plays at the head of the draw, so the cards keep one
-                    // stagger and the draw is 260 + (n − 1) × 60 + 200, as §5.1 counts it.
+                    // to slide onto it. The slide plays in the middle of the draw, once the old pile is
+                    // empty (DrawCardStartMs), and the draw is 260 + (n − 1) × 60 + 200, as §5.1 counts it.
                     if (cue.Amount > 0 && cue.RebuildAfter >= 0) steps.Add(new EffectStep(EffectId.PileRebuild, 1));
                     if (cue.Amount > 0) steps.Add(new EffectStep(EffectId.CardDraw, cue.Amount));
                     break;

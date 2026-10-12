@@ -835,9 +835,8 @@ namespace Depiction.View
                 }
 
                 case CueKind.DrawHand:
-                    // §3.14 (#455): a draw that ran the pile out shows the discard pile sliding onto it first.
-                    if (cue.Amount > 0 && cue.RebuildAfter >= 0) yield return HoldBeat(EffectId.PileRebuild, SlideDiscardOntoDraw(), null);
-                    yield return DrawHand(ev.After.Hand, cue.Amount);
+                    // §3.14 (#455): a draw that ran the pile out slides the discard pile onto it mid-draw.
+                    yield return DrawHand(ev.After.Hand, cue.Amount, cue.RebuildAfter);
                     break;
 
                 case CueKind.OmenShow:
@@ -1288,16 +1287,35 @@ namespace Depiction.View
         /// <summary>
         /// Rebuilds the hand from the settled faces, and flies the <paramref name="drawn"/> newest cards
         /// (the right end of the fan) in from the draw pile one stagger apart (EffectId.CardDraw).
+        /// A draw that ran the pile out (<paramref name="rebuildAfter"/> ≥ 0, battle_ui_ux_v2 §3.14 /
+        /// §5.1 順 6, #455) slides the discard pile onto the draw pile once the cards left on the old pile
+        /// have gone, and the rest follow it (EffectPlan.DrawCardStartMs). The flow is held for the plan's
+        /// PileRebuild and CardDraw waits in turn, and the draw ends on their sum.
         /// </summary>
-        private IEnumerator DrawHand(List<CardFace> faces, int drawn)
+        private IEnumerator DrawHand(List<CardFace> faces, int drawn, int rebuildAfter)
         {
+            bool rebuild = drawn > 0 && rebuildAfter >= 0;
+            if (rebuild && !(_effects.IsOn(EffectId.PileRebuild) && _effects.IsOn(EffectId.CardDraw)))
+            {
+                // With either beat off there is no draw to slide into: the slide (or its skip) comes first.
+                yield return HoldBeat(EffectId.PileRebuild, SlideDiscardOntoDraw(), null);
+                rebuild = false;
+            }
             BuildHand(faces);
             int count = Mathf.Clamp(drawn, 0, _hand.Count);
             if (count == 0) yield break;
-            yield return HoldBeat(EffectId.CardDraw, FlyDrawn(_hand.Count - count), null, count);
+            if (!rebuild)
+            {
+                yield return HoldBeat(EffectId.CardDraw, FlyDrawn(_hand.Count - count, Cue.Unchanged), null, count);
+                yield break;
+            }
+            bool flown = false;
+            StartCoroutine(Then(FlyDrawn(_hand.Count - count, rebuildAfter), () => flown = true));
+            yield return HoldBeat(EffectId.PileRebuild, Nothing(), null);
+            yield return HoldBeat(EffectId.CardDraw, Until(() => flown), null, count);
         }
 
-        private IEnumerator FlyDrawn(int first)
+        private IEnumerator FlyDrawn(int first, int rebuildAfter)
         {
             Vector3 from = deckPoint ? deckPoint.position : handArea.position;
             var flying = new List<(CardView card, Vector3 home)>();
@@ -1309,13 +1327,39 @@ namespace Depiction.View
                 card.group.alpha = 0f;
             }
             float ms = _effects.Ms(EffectId.CardDraw);
-            float stagger = _effects.StaggerMs(EffectId.CardDraw);
+            float clock = 0f;
             for (int i = 0; i < flying.Count; i++)
             {
+                if (i == rebuildAfter)
+                {
+                    // The old pile is empty: the discard pile slides onto it, and the next card leaves the new one.
+                    float slideAt = EffectPlan.RebuildStartMs(rebuildAfter, _effects);
+                    yield return UiTween.Wait(slideAt - clock);
+                    clock = slideAt;
+                    StartCoroutine(SlideDiscardOntoDraw());
+                }
+                float startAt = EffectPlan.DrawCardStartMs(i, rebuildAfter, _effects);
+                yield return UiTween.Wait(startAt - clock);
+                clock = startAt;
                 StartCoroutine(FlyCard(flying[i].card, from, flying[i].home, ms, 0f, 1f, Ease.Out));
-                if (i < flying.Count - 1) yield return UiTween.Wait(stagger);
             }
             yield return UiTween.Wait(ms);
+        }
+
+        private static IEnumerator Then(IEnumerator play, System.Action done)
+        {
+            yield return play;
+            done();
+        }
+
+        private static IEnumerator Nothing()
+        {
+            yield break;
+        }
+
+        private static IEnumerator Until(System.Func<bool> done)
+        {
+            while (!done()) yield return null;
         }
 
         /// <summary>Turn end: the whole hand flies to the discard pile one stagger apart (EffectId.HandDiscard).</summary>
@@ -1389,8 +1433,9 @@ namespace Depiction.View
 
         /// <summary>
         /// battle_ui_ux_v2 §3.14 山札切れ (#455): the discard pile slides onto the draw pile in 200 ms (out)
-        /// before the cards fly. A card back of the piles' 64×84 crosses from one to the other; the
-        /// piles' own thickness follows with the event's settled frame. The exile pile does not move.
+        /// in the middle of the draw, once the old pile is empty. A card back of the piles' 64×84 crosses
+        /// from one to the other; the piles' own thickness follows with the event's settled frame. The
+        /// exile pile does not move.
         /// </summary>
         private IEnumerator SlideDiscardOntoDraw()
         {

@@ -280,6 +280,25 @@ namespace Depiction.Tests
             Assert.That(EffectPlan.StepsOf(plain).Select(s => s.Id), Has.No.Member(EffectId.PileRebuild));
         }
 
+        [TestCase(0)]
+        [TestCase(2)]
+        [TestCase(7)]
+        public void TheRebuildSlide_ComesWhenTheOldPileIsEmpty_AndTheDrawEndsOnThePlan(int rebuildAfter)
+        {
+            // battle_ui_ux_v2 §3.14: 「ドロー中に山札が 0 になったら … 200 ms を挟み、残りを続けて引く」.
+            EffectSwitches on = EffectSwitches.AllOn();
+            const int n = 8;
+            float slide = EffectPlan.RebuildStartMs(rebuildAfter, on);
+            Assert.That(slide, Is.EqualTo(rebuildAfter * 60f), "one stagger after the old pile's last card");
+            for (int i = 0; i < rebuildAfter; i++)
+                Assert.That(EffectPlan.DrawCardStartMs(i, rebuildAfter, on), Is.LessThan(slide), "card " + i + " comes off the old pile first");
+            Assert.That(EffectPlan.DrawCardStartMs(rebuildAfter, rebuildAfter, on), Is.EqualTo(slide + 200f), "the new pile's first card waits for the slide");
+            float lastEnds = EffectPlan.DrawCardStartMs(n - 1, rebuildAfter, on) + EffectCatalog.Of(EffectId.CardDraw).Ms;
+            Assert.That(lastEnds, Is.EqualTo(260f + (n - 1) * 60f + 200f), "§5.1: the same wait as the slide at the head of the draw");
+            Assert.That(lastEnds, Is.EqualTo(on.WaitMs(EffectId.PileRebuild) + on.WaitMs(EffectId.CardDraw, n)));
+            Assert.That(EffectPlan.DrawCardStartMs(n - 1, Cue.Unchanged, on), Is.EqualTo((n - 1) * 60f), "a plain draw keeps one stagger");
+        }
+
         [Test]
         public void AStanceCard_LeavesForTheExilePile_OnTheBeat600()
         {
