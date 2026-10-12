@@ -2,7 +2,9 @@
 // fixed script kept for filming. Some events wait for the player; the rest run on their own. This
 // class computes no rule: every number, label, verdict and line of text it shows comes from the
 // source (DepictionFrame / DepictionEvent / Cue / PlayVerdict). Positions come from the scene
-// objects at run time, so prefab instances can be moved in the Editor freely.
+// objects at run time, so prefab instances can be moved in the Editor freely. How long an event
+// holds the flow is EffectPlan's (Script/Effects.cs, #495): HoldBeat waits each step the plan lists, so
+// the EditMode tests that sum the plan measure the screen's own waits.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using System.Collections.Generic;
@@ -93,7 +95,11 @@ namespace Depiction.View
         public EffectTrace Trace { get; private set; }
         /// <summary>Which effects play. Built from <see cref="effectsOff"/> in Start.</summary>
         public EffectSwitches Effects => _effects;
-        /// <summary>The battle speed in force (#348). Kept across <see cref="Restart"/>.</summary>
+        /// <summary>
+        /// The battle speed in force (#348). Kept across <see cref="Restart"/>. Nothing in the code reads
+        /// it: the PlayMode test DemoFlowPlaybackTests reads it by reflection to check the speed switch,
+        /// so keep the name.
+        /// </summary>
         public BattleSpeedStep Speed => _speed;
 
         /// <summary>Where the speed the player last picked is kept between launches.</summary>
@@ -231,6 +237,8 @@ namespace Depiction.View
             if (enemyFigure) enemyFigure.Settle();
             _hoverHandle = -1;
             _snapHandle = -1;
+            _planned.Clear(); // the last battle's event was stopped mid-way: its plan goes with it
+            _plannedEvent = null;
             Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
             _source = source;
             _snapPanels = true;
@@ -718,6 +726,7 @@ namespace Depiction.View
         private IEnumerator PlayEvent(DepictionEvent ev)
         {
             float startedAt = Time.unscaledTime;
+            BeginPlan(ev);
             // §4.4 敵の番 (#455): the acting omen's light lasts through the enemy's beats and goes out
             // with the first event that is not one of them (the next omen, the turn start, a fall).
             if (ev.Kind != DepictionEventKind.EnemyAction && omenBadge) omenBadge.SetActing(false);
@@ -726,7 +735,7 @@ namespace Depiction.View
             if (ev.After != null && !ev.After.EnemyTurn) ShowEnemyTurn(false);
             if (ev.Kind == DepictionEventKind.TurnStart)
             {
-                yield return Effect(EffectId.TurnBanner, Banner(DepictionText.YourTurn, BattleTheme.Accent, _effects.Ms(EffectId.TurnBanner)), null);
+                yield return HoldBeat(EffectId.TurnBanner, Banner(DepictionText.YourTurn, BattleTheme.Accent, _effects.Ms(EffectId.TurnBanner)), null);
                 // An omen already standing since the enemy's phase blinks once; a new one drops in with its cue.
                 if (ev.After.Omen.Visible && !ev.Cues.Exists(c => c.Kind == CueKind.OmenShow))
                 {
@@ -739,7 +748,7 @@ namespace Depiction.View
             }
             if (ev.Kind == DepictionEventKind.TurnEnd)
             {
-                yield return Effect(EffectId.EnemyTurnBanner, Banner(DepictionText.EnemyTurn, BattleTheme.Omen, _effects.Ms(EffectId.EnemyTurnBanner)), null);
+                yield return HoldBeat(EffectId.EnemyTurnBanner, Banner(DepictionText.EnemyTurn, BattleTheme.Omen, _effects.Ms(EffectId.EnemyTurnBanner)), null);
             }
             // §4.2 (#242): with a floor, home is the enemy's cell after the event, so the step back
             // below also carries it onto a cell it was moved to.
@@ -757,10 +766,11 @@ namespace Depiction.View
             // skips the player's return: neither may keep its action picture into the next event.
             else if (enemyFigure) enemyFigure.SetPose(FigurePose.Idle);
             if (playerFigure) playerFigure.SetPose(FigurePose.Idle);
+            EndPlan();
             ApplyFrame(ev.After);
             float seconds = Time.unscaledTime - startedAt;
             EventSeconds.Add(seconds);
-            Debug.Log("[Depiction] event " + ev.Order + " " + ev.Title + " settled in " + seconds.ToString("0.00") + " s");
+            LogSettled(ev, seconds);
             yield return Gate(ev.Order + "-end");
         }
 
@@ -797,7 +807,7 @@ namespace Depiction.View
                     if (cue.Amount > 0)
                     {
                         // A gain lights its pips one by one and is waited for.
-                        yield return Effect(EffectId.StaminaRecover,
+                        yield return HoldBeat(EffectId.StaminaRecover,
                             status.LightPips(cue.StaminaAfter, cue.StaminaMax, _effects.Ms(EffectId.StaminaRecover)),
                             () => status.SetStamina(cue.StaminaAfter, cue.StaminaMax), cue.Amount);
                     }
@@ -812,7 +822,7 @@ namespace Depiction.View
                 case CueKind.StatusChange:
                 {
                     EffectId beat = StatusBeat.Of(cue);
-                    yield return Effect(beat, status.PlayStatus(cue.Text, cue.StacksAfter, beat, _effects.Ms(beat)), () => status.SetStatus(cue.Text, cue.StacksAfter));
+                    yield return HoldBeat(beat, status.PlayStatus(cue.Text, cue.StacksAfter, beat, _effects.Ms(beat)), () => status.SetStatus(cue.Text, cue.StacksAfter));
                     break;
                 }
 
@@ -822,11 +832,11 @@ namespace Depiction.View
 
                 case CueKind.OmenShow:
                     omenBadge.Bind(ev.After.Omen);
-                    yield return Effect(EffectId.OmenShow, omenBadge.PopIn(_effects.Ms(EffectId.OmenShow)), () => omenBadge.Rect.localScale = Vector3.one);
+                    yield return HoldBeat(EffectId.OmenShow, omenBadge.PopIn(_effects.Ms(EffectId.OmenShow)), () => omenBadge.Rect.localScale = Vector3.one);
                     break;
 
                 case CueKind.TraitFire:
-                    yield return Effect(EffectId.TraitFire, FireTrait(labelAt, cue.Text), null);
+                    yield return HoldBeat(EffectId.TraitFire, FireTrait(labelAt, cue.Text), null);
                     break;
 
                 case CueKind.Slash:
@@ -834,18 +844,27 @@ namespace Depiction.View
                     break;
 
                 case CueKind.GuardGain:
-                    yield return Effect(EffectId.GuardGain, GainGuard(cue, status, chest, numberAt), () => status.SetGuard(cue.GuardAfter));
+                    yield return HoldBeat(EffectId.GuardGain, GainGuard(cue, status, chest, numberAt), () => status.SetGuard(cue.GuardAfter));
                     break;
 
                 case CueKind.RangeSwitch:
+                {
                     // Moved by the other side (the polearm's shove): a knock-back, and the muted label says so.
                     if (cue.Pushed) FloatEffect(EffectId.PushMark, labelAt, DepictionText.Pushed, BattleTheme.Ink2, 36);
-                    yield return Effect(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.RangeGlyphAfter, cue.Pushed, cue),
-                        () => SnapRange(target, cue.RangeAfter, cue.RangeGlyphAfter, cue));
+                    bool onFloor = OnFloor(cue);
+                    yield return HoldBeat(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.Pushed, cue, onFloor),
+                        () => SnapRange(target, cue.RangeAfter, cue, onFloor));
+                    // #495: without a floor the tag at the feet flips to the new glyph, its own beat as in EffectPlan.
+                    if (!onFloor)
+                    {
+                        yield return HoldBeat(EffectId.RangeTagFlip, target.FlipRangeTag(cue.RangeGlyphAfter, _effects.Ms(EffectId.RangeTagFlip)),
+                            () => target.SetRange(true, cue.RangeGlyphAfter));
+                    }
                     break;
+                }
 
                 case CueKind.StanceCue:
-                    yield return Effect(EffectId.StanceCue, Reserve(cue, status, chest, numberAt), () => status.SetGuard(cue.GuardAfter));
+                    yield return HoldBeat(EffectId.StanceCue, Reserve(cue, status, chest, numberAt), () => status.SetGuard(cue.GuardAfter));
                     yield return Gate(ev.Order + "-impact");
                     break;
 
@@ -859,7 +878,7 @@ namespace Depiction.View
                     // flares beside its move.
                     omenBadge.SetActing(true);
                     StartCoroutine(Effect(EffectId.OmenExecute, omenBadge.Flare(_effects.Ms(EffectId.OmenExecute)), null));
-                    yield return Effect(EffectId.EnemyMotion, EnemyMotion(target, cue.System, _effects.Ms(EffectId.EnemyMotion)),
+                    yield return HoldBeat(EffectId.EnemyMotion, EnemyMotion(target, cue.System, _effects.Ms(EffectId.EnemyMotion)),
                         () => target.SetPose(FigurePose.Act));
                     break;
 
@@ -871,12 +890,12 @@ namespace Depiction.View
                     {
                         StartCoroutine(Effect(EffectId.OmenSpend, omenBadge.FadeOutAll(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideAllNow));
                     }
-                    yield return Effect(EffectId.Defeat, target.Fall(_effects.Ms(EffectId.Defeat)), () => target.SetDown(true));
+                    yield return HoldBeat(EffectId.Defeat, target.Fall(_effects.Ms(EffectId.Defeat)), () => target.SetDown(true));
                     break;
                 }
 
                 case CueKind.SideBonusMiss:
-                    yield return Effect(EffectId.SideBonusMiss, StrikeOffBonus(cue), omenBadge.StrikeSideNow);
+                    yield return HoldBeat(EffectId.SideBonusMiss, StrikeOffBonus(cue), omenBadge.StrikeSideNow);
                     break;
 
                 case CueKind.GuardBlock:
@@ -886,7 +905,7 @@ namespace Depiction.View
                     if (cue.GuardAfter == 0) StartCoroutine(Effect(EffectId.GuardBreak, status.CrackGuard(_effects.Ms(EffectId.GuardBreak)), null));
                     else if (status.guardBadge) StartCoroutine(UiTween.Pop(status.guardBadge, 260f));
                     FloatEffect(EffectId.GuardNumber, numberAt + new Vector2(-60f, 0f), "Guard −" + cue.Amount, BattleTheme.Guard, 44);
-                    yield return Effect(EffectId.GuardBlock, DepictionFx.ShieldBlock(this, fxLayer, chest, cue.Amount.ToString(), () => Gate(ev.Order + "-block")), null);
+                    yield return HoldBeat(EffectId.GuardBlock, DepictionFx.ShieldBlock(this, fxLayer, chest, cue.Amount.ToString(), () => Gate(ev.Order + "-block")), null);
                     break;
                 }
 
@@ -913,8 +932,8 @@ namespace Depiction.View
                     {
                         // The blow that lands on the player is the enemy's own: its omen is spent and
                         // it draws back. A blow the player lands does neither.
-                        yield return Effect(EffectId.OmenSpend, omenBadge.FadeOut(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideNow);
-                        yield return Effect(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome));
+                        yield return HoldBeat(EffectId.OmenSpend, omenBadge.FadeOut(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideNow);
+                        yield return HoldBeat(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome));
                     }
                     break;
                 }
@@ -926,9 +945,9 @@ namespace Depiction.View
         private IEnumerator Attack(DepictionEvent ev, Cue cue, FigureView target, StatusBarView status, Vector2 chest)
         {
             // The script must name the attacker. A missing one is a script bug: say so, then fall back
-            // to the opposite of the target so the beat still plays.
+            // to the opposite of the target so the beat still plays (EffectPlan.AttackerOf, which the plan reads too).
             if (!cue.Source.HasValue) Debug.LogError("[Depiction] event " + ev.Order + ": Slash cue has no Source");
-            UnitSide source = cue.Source ?? (cue.Target == UnitSide.Enemy ? UnitSide.Player : UnitSide.Enemy);
+            UnitSide source = EffectPlan.AttackerOf(cue);
             bool byPlayer = source == UnitSide.Player;
             bool strong = EffectStrength.IsStrong(cue.Intensity);
             FigureView attacker = byPlayer ? playerFigure : enemyFigure;
@@ -936,14 +955,14 @@ namespace Depiction.View
             // #288: both sides step in before the blow. The enemy draws back with EnemyReturn once the
             // blow has landed, or beside the next event when Guard took all of it.
             EffectId lunge = byPlayer ? EffectId.AttackLunge : EffectId.EnemyLunge;
-            yield return Effect(lunge, Lunge(attacker, 46f, _effects.Ms(lunge)), () => attacker.SetPose(FigurePose.Act));
+            yield return HoldBeat(lunge, Lunge(attacker, 46f, _effects.Ms(lunge)), () => attacker.SetPose(FigurePose.Act));
             Color streak = byPlayer ? BattleTheme.Ink : BattleTheme.Omen;
             // §5.9 J2 (#57): a fired trait lays its short cue over the blow; the tier stays as written.
             if (cue.TraitAccent) StartCoroutine(Effect(EffectId.TraitAccent, DepictionFx.TraitAccent(this, fxLayer, chest, _effects.Ms(EffectId.TraitAccent)), null));
-            yield return Effect(EffectId.StrikeShape,
+            yield return HoldBeat(EffectId.StrikeShape,
                 DepictionFx.Strike(this, fxLayer, chest, streak, cue.Intensity, !byPlayer, cue.System, _effects.Ms(EffectId.StrikeShape)), null);
             EffectId stop = strong ? EffectId.HitStopStrong : EffectId.HitStop;
-            yield return Effect(stop, UiTween.Wait(_effects.Ms(stop)), null);
+            yield return HoldBeat(stop, UiTween.Wait(_effects.Ms(stop)), null);
             if (strong) StartCoroutine(Effect(EffectId.ScreenShake, ShakeArena(), null));
 
             // A slash with no settled HP is the swing alone: the GuardBlock / Hit cues that follow
@@ -958,7 +977,7 @@ namespace Depiction.View
             yield return Gate(ev.Order + "-impact");
             if (byPlayer)
             {
-                yield return Effect(EffectId.AttackReturn, ReturnHome(attacker, attackerHome, _effects.Ms(EffectId.AttackReturn)), () => SnapHome(attacker, attackerHome));
+                yield return HoldBeat(EffectId.AttackReturn, ReturnHome(attacker, attackerHome, _effects.Ms(EffectId.AttackReturn)), () => SnapHome(attacker, attackerHome));
             }
         }
 
@@ -967,7 +986,7 @@ namespace Depiction.View
         /// <summary>The bar drops (blocking), then the grey band follows it down beside the flow.</summary>
         private IEnumerator DrainHp(StatusBarView status, int hp)
         {
-            yield return Effect(EffectId.HpDrain, status.AnimateHp(hp, _effects.Ms(EffectId.HpDrain)), () => status.SetHpKeepingTrail(hp));
+            yield return HoldBeat(EffectId.HpDrain, status.AnimateHp(hp, _effects.Ms(EffectId.HpDrain)), () => status.SetHpKeepingTrail(hp));
             StartCoroutine(Effect(EffectId.HpTrail, status.AnimateTrail(_effects.Ms(EffectId.HpTrail)), status.SnapTrail));
         }
 
@@ -1182,9 +1201,10 @@ namespace Depiction.View
             yield return UiTween.Move(figure.Rect, from, to, ms, Ease.Out);
         }
 
-        private void SnapRange(FigureView figure, RangeSide range, string glyph, Cue cue = null)
+        /// <summary>The move's end state at once. The tag's glyph is the flip's to settle (EffectId.RangeTagFlip, #495).</summary>
+        private void SnapRange(FigureView figure, RangeSide range, Cue cue, bool onFloor)
         {
-            if (OnFloor(cue))
+            if (onFloor)
             {
                 figure.transform.position = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
                 SetPlayerHome(figure);
@@ -1199,13 +1219,15 @@ namespace Depiction.View
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) figure.transform.position = slot.position;
             SetPlayerHome(figure);
-            figure.SetRange(true, glyph);
         }
 
-        /// <summary>The move is drawn on the floor: one is shown and the cue says where both stand after it.</summary>
+        /// <summary>
+        /// The move is drawn on the floor: one is shown and the cue says where both stand after it
+        /// (EffectPlan.MovesOnFloor, which also decides that no tag flip is waited for).
+        /// </summary>
         private bool OnFloor(Cue cue)
         {
-            return cue != null && _floor != null && _floor.Shown && cue.PlayerCellAfter > 0;
+            return cue != null && _floor != null && _floor.Shown && EffectPlan.MovesOnFloor(cue);
         }
 
         private int PlayerSize => _source != null && _source.Frame != null ? Mathf.Max(1, _source.Frame.Floor.PlayerSize) : 1;
@@ -1224,8 +1246,8 @@ namespace Depiction.View
             bool enemyMoves = enemyFigure && (enemyTo - _enemyHome).sqrMagnitude > 0.25f;
             if (enemyMoves) _enemyHome = enemyTo;
             SetPlayerHome(figure, to); // the panels set off for the new cells as the figures do
-            // 320 ms to move (battle_ui_ux_v2 §10.6); a push starts fast and settles.
-            yield return UiTween.Run(320f, cue.Pushed ? Ease.Out : Ease.InOut, t =>
+            // EffectId.RangeSwitch, 320 ms to move (battle_ui_ux_v2 §10.6); a push starts fast and settles.
+            yield return UiTween.Run(_effects.Ms(EffectId.RangeSwitch), cue.Pushed ? Ease.Out : Ease.InOut, t =>
             {
                 if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
                 if (enemyMoves && enemyFigure) enemyFigure.Rect.anchoredPosition = Vector2.LerpUnclamped(enemyFrom, enemyTo, t);
@@ -1233,9 +1255,13 @@ namespace Depiction.View
             _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter);
         }
 
-        private IEnumerator SwitchRange(FigureView figure, RangeSide range, string glyph, bool pushed, Cue cue = null)
+        /// <summary>
+        /// The move alone (EffectId.RangeSwitch): onto the cells on the floor, or into the slot N maps to.
+        /// Without a floor the tag's flip follows as its own beat (EffectId.RangeTagFlip, #495).
+        /// </summary>
+        private IEnumerator SwitchRange(FigureView figure, RangeSide range, bool pushed, Cue cue, bool onFloor)
         {
-            if (OnFloor(cue))
+            if (onFloor)
             {
                 yield return MoveOnFloor(figure, cue);
                 yield break;
@@ -1244,10 +1270,9 @@ namespace Depiction.View
             Vector3 from = figure.transform.position;
             Vector3 to = slot ? slot.position : from;
             SetPlayerHome(figure, to);
-            // 320 ms to move, then the tag flips in 150 ms (battle_ui_ux_v2 §10.6). A push is a knock-back:
-            // it starts fast and settles, where a step of one's own eases in and out.
-            yield return UiTween.Run(320f, pushed ? Ease.Out : Ease.InOut, t => { if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t); });
-            yield return figure.FlipRangeTag(glyph, 150f);
+            // 320 ms to move (battle_ui_ux_v2 §10.6). A push is a knock-back: it starts fast and settles,
+            // where a step of one's own eases in and out.
+            yield return UiTween.Run(_effects.Ms(EffectId.RangeSwitch), pushed ? Ease.Out : Ease.InOut, t => { if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t); });
         }
 
         /// <summary>
@@ -1259,7 +1284,7 @@ namespace Depiction.View
             BuildHand(faces);
             int count = Mathf.Clamp(drawn, 0, _hand.Count);
             if (count == 0) yield break;
-            yield return Effect(EffectId.CardDraw, FlyDrawn(_hand.Count - count), null, count);
+            yield return HoldBeat(EffectId.CardDraw, FlyDrawn(_hand.Count - count), null, count);
         }
 
         private IEnumerator FlyDrawn(int first)
@@ -1287,7 +1312,7 @@ namespace Depiction.View
         private IEnumerator DiscardHand()
         {
             int count = _hand.Count;
-            if (count > 0) yield return Effect(EffectId.HandDiscard, FlyDiscarded(), null, count);
+            if (count > 0) yield return HoldBeat(EffectId.HandDiscard, FlyDiscarded(), null, count);
             ClearHand();
         }
 
@@ -1358,6 +1383,96 @@ namespace Depiction.View
             int handle = Trace != null ? Trace.Begin(id, CurrentOrder, count) : -1;
             yield return play;
             if (handle >= 0) Trace.End(handle);
+        }
+
+        // ---- the plan's waits (#495) ------------------------------------------------------------
+
+        /// <summary>The waits EffectPlan lists for the event playing now, taken in order by <see cref="HoldBeat"/>.</summary>
+        private readonly Queue<EffectStep> _planned = new Queue<EffectStep>();
+        /// <summary>The event <see cref="_planned"/> belongs to, or null between events.</summary>
+        private DepictionEvent _plannedEvent;
+
+        /// <summary>
+        /// An event starts: the flow will be held at exactly the steps EffectPlan.StepsOf lists for it,
+        /// the same steps the EditMode tests add up against the 2.0 s cap.
+        /// </summary>
+        private void BeginPlan(DepictionEvent ev)
+        {
+            _planned.Clear();
+            _plannedEvent = ev;
+            foreach (EffectStep step in EffectPlan.StepsOf(ev)) _planned.Enqueue(step);
+        }
+
+        /// <summary>An event has played its beats. A planned wait the screen never held means the two have drifted apart.</summary>
+        private void EndPlan()
+        {
+            if (_plannedEvent != null && _planned.Count > 0)
+            {
+                var left = new List<string>();
+                foreach (EffectStep step in _planned) left.Add(step.Id + " x" + step.Count);
+                Debug.LogError("[Depiction] event " + _plannedEvent.Order + " " + _plannedEvent.Title
+                    + ": EffectPlan lists waits the screen did not hold: " + string.Join(", ", left));
+            }
+            _planned.Clear();
+            _plannedEvent = null;
+        }
+
+        /// <summary>The plan's next step, which must be the beat the screen is about to wait for.</summary>
+        private EffectStep TakePlanned(EffectId id, int count)
+        {
+            if (_plannedEvent == null) return new EffectStep(id, count); // a beat outside any event: nothing to hold it to
+            string where = "[Depiction] event " + _plannedEvent.Order + " " + _plannedEvent.Title + ": ";
+            if (_planned.Count == 0 || _planned.Peek().Id != id)
+            {
+                Debug.LogError(where + "the screen waits for " + id + " where EffectPlan lists "
+                    + (_planned.Count > 0 ? _planned.Peek().Id.ToString() : "nothing more"));
+                return new EffectStep(id, count);
+            }
+            EffectStep planned = _planned.Dequeue();
+            if (planned.Count != count)
+            {
+                Debug.LogError(where + id + " plays " + count + " items where EffectPlan lists " + planned.Count);
+            }
+            return planned;
+        }
+
+        /// <summary>
+        /// Plays one beat the event waits for (#495). The flow is held for the plan's wait for this step
+        /// (EffectPlan.WaitMs: the number EffectPlan.BlockingMs adds up for the tests) while
+        /// <paramref name="play"/> runs beside it. The animation is built from the same catalog length;
+        /// when it runs a frame or so past the wait (UiTween ends on the first frame after its length),
+        /// the flow lets it finish, so nothing on screen is cut short. Off, the beat settles at once and
+        /// holds nothing up, like <see cref="Effect"/>. Beats that run beside the flow keep using Effect.
+        /// </summary>
+        private IEnumerator HoldBeat(EffectId id, IEnumerator play, System.Action settle, int count = 1)
+        {
+            EffectStep step = TakePlanned(id, count);
+            if (!_effects.IsOn(id))
+            {
+                settle?.Invoke();
+                Trace?.Skip(id, CurrentOrder);
+                yield break;
+            }
+            int handle = Trace != null ? Trace.Begin(id, CurrentOrder, step.Count) : -1;
+            bool waited = false;
+            StartCoroutine(WaitThen(EffectPlan.WaitMs(step, _effects), () => waited = true));
+            yield return play;
+            while (!waited) yield return null;
+            if (handle >= 0) Trace.End(handle);
+        }
+
+        private static IEnumerator WaitThen(float ms, System.Action done)
+        {
+            yield return UiTween.Wait(ms);
+            done();
+        }
+
+        /// <summary>The settled event in the log, beside what the plan says it should take at the speed in force.</summary>
+        private void LogSettled(DepictionEvent ev, float seconds)
+        {
+            float planned = EffectPlan.BlockingMs(ev, _effects, _speed);
+            Debug.Log("[Depiction] event " + ev.Order + " " + ev.Title + " settled in " + seconds.ToString("0.00")
+                + " s (EffectPlan " + planned.ToString("0") + " ms)");
         }
 
         // ---- frame -> screen ------------------------------------------------------------------
@@ -2025,12 +2140,13 @@ namespace Depiction.View
             _busy = true;
             SetHandInteractable(false);
             float startedAt = Time.unscaledTime;
+            BeginPlan(ev);
             _hand.Remove(card);
             Vector3 from = card.transform.position;
             Vector3 to = ev.Aim == CardAim.Single
                 ? receiver.transform.position
                 : from + new Vector3(0f, 140f * handArea.lossyScale.y, 0f); // a self card is tossed upward
-            yield return Effect(EffectId.CardRelease, UiTween.Run(_effects.Ms(EffectId.CardRelease), Ease.In, t =>
+            yield return HoldBeat(EffectId.CardRelease, UiTween.Run(_effects.Ms(EffectId.CardRelease), Ease.In, t =>
             {
                 if (!card) return;
                 card.transform.position = Vector3.LerpUnclamped(from, to, t);
@@ -2049,10 +2165,11 @@ namespace Depiction.View
             {
                 yield return PlayCue(ev, cue);
             }
+            EndPlan();
             ApplyFrame(ev.After);
             float seconds = Time.unscaledTime - startedAt;
             EventSeconds.Add(seconds);
-            Debug.Log("[Depiction] event " + ev.Order + " " + ev.Title + " settled in " + seconds.ToString("0.00") + " s");
+            LogSettled(ev, seconds);
             yield return Gate(ev.Order + "-end");
             yield return UiTween.Wait(EffectFlow.AfterPlayerEventMs);
             yield return RunAutomaticEvents();

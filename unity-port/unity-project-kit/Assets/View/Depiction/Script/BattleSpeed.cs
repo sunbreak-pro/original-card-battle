@@ -67,6 +67,7 @@ namespace Depiction
         /// <summary>
         /// The cap one action is held to at this speed: 2.0 s at 1.25 and 1.5 times, and the same
         /// 2.0 s stretched by the slow step's factor (2.5 s) at 1.0 times (battle_ui_ux_v2 §5.0).
+        /// Test-only (#495): the screen never checks a cap; the measurement holds EffectPlan's waits to it.
         /// </summary>
         public static float EventCapMsAt(BattleSpeedStep step) => Multiplier(step) >= BaseMultiplier ? EventCapMs : WallMs(EventCapMs, step);
 

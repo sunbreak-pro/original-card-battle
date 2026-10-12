@@ -2,6 +2,10 @@
 // Pure C#, next to EffectCatalog, so the table the report prints is built from the code and an effect
 // added later cannot ship without a row here (EffectAuditTests fails until it has one).
 //
+// Only the tests read this file's judgements (#495): Carries, Verdict, Basis, EffectAuditEntry and
+// EffectAudit feed EffectAuditTests and the table EffectMeasurementTests writes for the report. The
+// screen never asks for a judgement; what it plays is EffectCatalog's and EffectPlan's.
+//
 // The judgements below were made from the script data alone (Cue fields, the settled frames, the
 // lengths in EffectCatalog and the waits in EffectPlan). Nothing was captured on screen. Where the
 // call rests on how an effect looks or feels, Basis is HandsOn and the effect goes to #79.
@@ -75,7 +79,8 @@ namespace Depiction
     /// Timing the flow adds between events, outside any effect. DepictionPlayer waits exactly these,
     /// and the measurement counts the time input is closed with them. Like EffectCatalog, the lengths
     /// are written at 1.25 times: DepictionPlayer hands the constants to UiTween.Wait and the battle
-    /// speed (#348) is applied by UiTween.Speed. The *At forms are for the measurement.
+    /// speed (#348) is applied by UiTween.Speed. <see cref="FrameMs"/> and the *At forms are for the
+    /// measurement only (#495): the screen never reads them.
     /// </summary>
     public static class EffectFlow
     {
@@ -85,13 +90,23 @@ namespace Depiction
         /// <summary>After each event the script plays by itself (the enemy's turn, the next turn start).</summary>
         public const float AfterAutoEventMs = 350f;
 
-        /// <summary>One frame at 60 fps: the most a tween can run past its length (UiTween ends on the first frame after it). A frame stays a frame at every speed.</summary>
+        /// <summary>
+        /// One frame at 60 fps: the most a tween can run past its length (UiTween ends on the first frame
+        /// after it). A frame stays a frame at every speed. Test-only: the screen does not add it anywhere,
+        /// it is how far UiTween's loop can overrun a wait, and BattleSpeedTests holds UiTween's loop to it.
+        /// </summary>
         public const float FrameMs = 1000f / 60f;
 
-        /// <summary><see cref="AfterPlayerEventMs"/> as the screen really waits it at this battle speed.</summary>
+        /// <summary>
+        /// <see cref="AfterPlayerEventMs"/> as the screen really waits it at this battle speed. Test-only:
+        /// DepictionPlayer hands UiTween.Wait the written constant and UiTween.Speed does this stretch.
+        /// </summary>
         public static float AfterPlayerEventMsAt(BattleSpeedStep speed) => BattleSpeed.WallMs(AfterPlayerEventMs, speed);
 
-        /// <summary><see cref="AfterAutoEventMs"/> as the screen really waits it at this battle speed.</summary>
+        /// <summary>
+        /// <see cref="AfterAutoEventMs"/> as the screen really waits it at this battle speed. Test-only,
+        /// like <see cref="AfterPlayerEventMsAt"/>.
+        /// </summary>
         public static float AfterAutoEventMsAt(BattleSpeedStep speed) => BattleSpeed.WallMs(AfterAutoEventMs, speed);
     }
 
@@ -200,8 +215,10 @@ namespace Depiction
                     "スタミナ表示が一瞬弾みます。View は待たずに並行で走らせますが、カタログは待つ拍として登録しています。このずれは報告に書きます。"),
                 new EffectAuditEntry(EffectId.StanceCue, Beats, Carries.Amount, S, Sc,
                     "ターン終了時の構えによる Guard を示します。460 ms は毎ターンの長い拍で、盾と +3 は同時に出せます。"),
-                new EffectAuditEntry(EffectId.RangeSwitch, Beats, Carries.Position, S, Sc,
-                    "位置が変わることを示す唯一の拍なので、情報は要ります。ただし 470 ms は移動 320 と一字札の反転 150 を続けており、重ねれば詰められます。"),
+                new EffectAuditEntry(EffectId.RangeSwitch, Beats, Carries.Position, N, Sc,
+                    "位置が変わることを示す唯一の拍です。320 ms 待ちます。床のマスへの移動も同じ 320 ms です。"),
+                new EffectAuditEntry(EffectId.RangeTagFlip, Beats, Carries.Position, S, Sc,
+                    "床の無い画面で、移動の後に近 / 遠の一字札を裏返します。移動 320 の後に 150 ms 続けて待つため、移動と重ねれば詰められます。床のある戦闘では間合いの数字が同じことを言うので、この拍は出ません。"),
                 new EffectAuditEntry(EffectId.SideBonusMiss, Beats, Carries.Intent, N, Sc,
                     "敵の予兆のボーナスが外れたことを示します。切ると、外れたのに何も起きなかったように見えます。"),
                 new EffectAuditEntry(EffectId.GrammarMark, Beats, Carries.WhoHitWhom, N, H,
