@@ -1,5 +1,6 @@
 // The journal drawer's page contract (Assets/View/Journal/Script/), shared with the battle screen:
-// hidden rows read 「？」, in battle only the enemy pages open (battle_ui_ux_v2.md, 手記ドロワー).
+// hidden rows read 「？」, in battle only the enemy pages and the page of terms open
+// (battle_ui_ux_v2.md, 手記ドロワー; dungeon_exploration_v4.md §6.7).
 using System;
 using System.Linq;
 using Journal;
@@ -46,14 +47,14 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void InBattleOnlyTheEnemyPagesOpen()
+        public void InBattleOnlyTheEnemyPagesAndTheTermsOpen()
         {
-            var pages = new[] { Enemy(1), Dungeon(), Memo() };
+            var pages = new[] { Enemy(1), Dungeon(), Memo(), JournalTerms.Page() };
             var battle = new JournalBook(pages, JournalContext.Battle);
             var exploring = new JournalBook(pages, JournalContext.Exploration);
 
-            Assert.That(battle.Openable.Select(p => p.Tab), Is.EqualTo(new[] { JournalTab.Enemy }));
-            Assert.That(exploring.Openable.Count, Is.EqualTo(3));
+            Assert.That(battle.Openable.Select(p => p.Tab), Is.EqualTo(new[] { JournalTab.Enemy, JournalTab.Terms }));
+            Assert.That(exploring.Openable.Count, Is.EqualTo(4));
             Assert.That(battle.ClosingHint, Is.EqualTo("閉じるとプレイできます"));
             Assert.That(exploring.ClosingHint, Is.Empty);
         }
@@ -82,6 +83,7 @@ namespace Exploration.Tests
             Assert.That(JournalBook.TabText(Enemy(1)), Is.EqualTo("歪み兵"));
             Assert.That(JournalBook.TabText(Dungeon()), Is.EqualTo("ダンジョン"));
             Assert.That(JournalBook.TabText(Memo()), Is.EqualTo("メモ"));
+            Assert.That(JournalBook.TabText(JournalTerms.Page()), Is.EqualTo("用語"));
         }
 
         [Test]
@@ -90,6 +92,41 @@ namespace Exploration.Tests
             Assert.That(JournalBook.TabLabel(JournalTab.Enemy), Is.EqualTo("敵"));
             Assert.That(JournalBook.TabLabel(JournalTab.Dungeon), Is.EqualTo("ダンジョン"));
             Assert.That(JournalBook.TabLabel(JournalTab.Memo), Is.EqualTo("メモ"));
+            Assert.That(JournalBook.TabLabel(JournalTab.Terms), Is.EqualTo("用語"));
+        }
+
+        [Test]
+        public void ThePageOfTermsHasTermsAboveStatusesAndHidesNothing()
+        {
+            // battle-visual-v1.md §7.5 has 16 terms and §7.3 ten statuses; every row reads from the first life.
+            var page = JournalTerms.Page();
+
+            Assert.That(page.Title, Is.EqualTo("用語と状態"));
+            Assert.That(page.Rows.First().Label, Is.EqualTo(JournalTerms.TermsHeading));
+            Assert.That(page.Rows.Select(r => r.Label).ToList().IndexOf(JournalTerms.StatusesHeading), Is.EqualTo(1 + 16));
+            Assert.That(page.Rows.Count, Is.EqualTo(2 + 16 + 10));
+            Assert.That(page.Rows.Select(page.TextOf), Does.Not.Contain(JournalRow.Hidden));
+            Assert.That(page.Rows.All(r => r.NeedsDisclosure == 0), Is.True);
+            Assert.That(page.DisclosureLabel, Is.Empty);
+        }
+
+        [Test]
+        public void EachStatusSaysWhoCarriesItHowItActsAndHowItWearsOff()
+        {
+            var bleed = JournalTerms.Statuses.First();
+
+            Assert.That(bleed.Label, Is.EqualTo("出血（相手に付ける）"));
+            Assert.That(bleed.Text, Is.EqualTo("効き方: 相手のターン開始に HP −2×スタック\n減り方: ターンごとに 1 減る"));
+            Assert.That(JournalTerms.Statuses.Count(s => s.Label.EndsWith("（自分に付ける）")), Is.EqualTo(5));
+        }
+
+        [Test]
+        public void AHeadingPrintsItsLabelAlone()
+        {
+            var page = new JournalPage("p", JournalTab.Terms, "用語と状態",
+                new[] { new JournalRow("【用語】", ""), new JournalRow("間合い", "空きマスの数") });
+
+            Assert.That(page.Body, Is.EqualTo("【用語】\n\n間合い\n空きマスの数"));
         }
 
         [Test]
