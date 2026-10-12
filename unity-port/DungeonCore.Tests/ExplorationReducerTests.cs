@@ -96,12 +96,12 @@ namespace DungeonCore.Tests
         public void RunningOutOfTimeEndsTheLayer()
         {
             // dungeon_exploration_v4.md §4.3.
-            // Layer seven holds 刻限 4 over five nodes. Combing the middle row instead of
+            // Layer seven holds 刻限 4 over six nodes. Combing the middle row instead of
             // dropping onto the root spends every unit and pushes the run out empty-handed.
             var state = EnterLayer(7, seed: 4UL, stamina: 10);
             int entry = state.CurrentNodeId;
             var middle = state.Map.Row(1).Select(n => n.Id).ToList();
-            Assert.That(middle.Count, Is.EqualTo(3));
+            Assert.That(middle.Count, Is.EqualTo(4));
 
             foreach (int id in middle)
             {

@@ -21,14 +21,42 @@ namespace DungeonCore.Tests
             // danjeon_document/seven_layers_v4.md §2.
             Assert.That(SevenLayers.All.Select(l => l.Density), Is.EqualTo(new[] { 1, 1, 2, 3, 4, 5, 7 }));
             Assert.That(SevenLayers.All.Select(l => l.TimeLimit), Is.EqualTo(new[] { 10, 10, 10, 7, 7, 6, 4 }));
-            Assert.That(SevenLayers.All.Select(l => l.MapSpec.NodeCount), Is.EqualTo(new[] { 11, 11, 11, 8, 8, 7, 5 }));
+            Assert.That(SevenLayers.All.Select(l => l.MapSpec.NodeCount), Is.EqualTo(new[] { 11, 11, 11, 8, 8, 8, 6 }));
             Assert.That(SevenLayers.All.Select(l => l.ShortestPathCost), Is.EqualTo(new[] { 5, 5, 5, 4, 4, 4, 3 }));
+        }
+
+        [Test]
+        public void EveryLayerOffersTwoNodesThatMoveMaxStamina()
+        {
+            // requirements/tier2-support.md R2-4, counted the way seven_layers_v4.md §4.1 counts
+            // (Issue #530). A rest always can (+2). An event only counts on layer seven, the one
+            // layer whose event draw leaves out 泉 (encounters_and_rewards_v4.md §5); the events
+            // of layers one to three may be a spring, so their rests carry the count alone.
+            foreach (var layer in SevenLayers.All)
+            {
+                var map = layer.Map(7UL);
+                int rests = map.CountOf(NodeKind.Rest);
+                int events = layer.Layer == SevenLayers.RootLayer ? map.CountOf(NodeKind.Event) : 0;
+                Assert.That(rests + events, Is.GreaterThanOrEqualTo(2), $"layer {layer.Layer}");
+            }
+        }
+
+        [Test]
+        public void TheDeepLayersWidenARowInsteadOfAddingOne()
+        {
+            // seven_layers_v4.md §4.1: the node added to layers six and seven sits in an existing
+            // middle row, so the straight run, its 瘴気 and the 刻限 budget stay as §2 draws them.
+            Assert.That(SevenLayers.Of(6).MapSpec.RowWidths, Is.EqualTo(new[] { 1, 3, 3, 1 }));
+            Assert.That(SevenLayers.Of(7).MapSpec.RowWidths, Is.EqualTo(new[] { 1, 4, 1 }));
+
+            var middle = SevenLayers.Of(7).Map(7UL).Row(1).Select(n => n.Kind);
+            Assert.That(middle, Is.EquivalentTo(new[] { NodeKind.Battle, NodeKind.Elite, NodeKind.Rest, NodeKind.Event }));
         }
 
         [Test]
         public void NoLayerCanBeSeenInFull()
         {
-            // seven_layers_v4.md §2.2: 刻限 always falls one short of the node count.
+            // seven_layers_v4.md §2.2: 刻限 always falls at least one short of the node count.
             foreach (var layer in SevenLayers.All)
             {
                 Assert.That(layer.TimeLimit, Is.LessThan(layer.MapSpec.NodeCount), $"layer {layer.Layer}");
