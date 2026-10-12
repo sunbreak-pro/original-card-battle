@@ -123,6 +123,24 @@ namespace Depiction.Tests
                 (EffectId.CardRelease, 1), (EffectId.AttackLunge, 1), (EffectId.StrikeShape, 1),
                 (EffectId.HitStop, 1), (EffectId.HpDrain, 1), (EffectId.RangeSwitch, 1),
             }));
+            // §5.4 順 2: the move starts on the number + 80; the bar drains on beside it.
+            Assert.That(EffectPlan.StepsOf(feint).Single(s => s.Id == EffectId.HpDrain).LeadMs, Is.EqualTo(EffectPlan.NextFaceLeadMs));
+            Assert.That(EffectPlan.BlockingMs(feint, EffectSwitches.AllOn()), Is.EqualTo(160f + 100f + 120f + 30f + 80f + 320f));
+
+            // A blow Guard takes part of is three beats; the move starts on the wound's number the same way.
+            var split = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
+            split.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Intensity = 2 });
+            split.Cues.Add(new Cue { Kind = CueKind.GuardBlock, Target = UnitSide.Enemy, Amount = 3, GuardAfter = 0 });
+            var wound = new Cue { Kind = CueKind.Hit, Target = UnitSide.Enemy, Amount = 5, Intensity = 2, HpAfter = 45 };
+            split.Cues.Add(wound);
+            split.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2 });
+            Assert.That(EffectPlan.MoveFollows(split, wound), Is.True);
+            Assert.That(EffectPlan.BlockingMs(split, EffectSwitches.AllOn()), Is.EqualTo(160f + 100f + 120f + 30f + 320f + 80f + 320f));
+
+            // Switched off, the drain holds nothing, lead or not.
+            var noDrain = EffectSwitches.AllOn();
+            noDrain.Set(EffectId.HpDrain, false);
+            Assert.That(EffectPlan.BlockingMs(feint, noDrain), Is.EqualTo(160f + 100f + 120f + 30f + 320f));
 
             // Anything between the blow and the move (here a status) and the player steps back as usual.
             var apart = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
@@ -132,6 +150,29 @@ namespace Depiction.Tests
             apart.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2 });
             Assert.That(EffectPlan.MoveFollows(apart, first), Is.False);
             Assert.That(Steps(apart), Does.Contain((EffectId.AttackReturn, 1)));
+        }
+
+        [Test]
+        public void ATraitBeforeTheFirstFace_ShowsBesideTheRelease()
+        {
+            // §5.4 順 0 / §5.9 順 1 (#499): the trait's cue starts as the card is released, so the release
+            // holds nothing of its own and the trait's 200 covers the card's 160 flight.
+            var traited = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
+            traited.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -1, StaminaAfter = 2, StaminaMax = 3 });
+            traited.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = UnitSide.Player, Text = "間合い +3" });
+            traited.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Intensity = 2, HpAfter = 40 });
+            List<EffectStep> steps = EffectPlan.StepsOf(traited);
+            Assert.That(steps[0].Id, Is.EqualTo(EffectId.CardRelease));
+            Assert.That(steps[0].LeadMs, Is.EqualTo(0f));
+            Assert.That(steps[1].Id, Is.EqualTo(EffectId.TraitFire));
+            Assert.That(EffectPlan.BlockingMs(traited, EffectSwitches.AllOn()), Is.EqualTo(200f + 100f + 120f + 30f + 300f + 120f));
+
+            // A trait cue after the first face (a stance set, a bonus on the Guard) is its own beat as before.
+            var later = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
+            later.Cues.Add(new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 3, GuardAfter = 3 });
+            later.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = UnitSide.Player, Text = "連動 +2" });
+            Assert.That(EffectPlan.StepsOf(later)[0].LeadMs, Is.Null);
+            Assert.That(EffectPlan.BlockingMs(later, EffectSwitches.AllOn()), Is.EqualTo(160f + 260f + 200f));
         }
 
         [Test]
