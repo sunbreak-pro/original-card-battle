@@ -140,7 +140,7 @@ namespace Depiction.View
                 if (b) b.localScale = new Vector3(Mathf.Lerp(0.6f, 1f, t), Mathf.Lerp(0.6f, 1f, t), 1f);
             });
             // §5.3 「300 + 600 で薄れる」: the light stays a while beside the flow. The light that lasts while the
-            // stance is in the slot is §5.11 順 2's StanceGlow, not this.
+            // stance list holds one is §5.11 順 2's StanceGlow (FigureView, #501), not this.
             host.StartCoroutine(FadeAndDestroy(outer, 600f));
             host.StartCoroutine(FadeAndDestroy(inner, 600f));
             host.StartCoroutine(FadeAndDestroy(glow, 600f));
