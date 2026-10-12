@@ -1551,7 +1551,7 @@ namespace Depiction.View
             if (stanceHintIcon) stanceHintIcon.enabled = hasHint;
             _frameStanceHint = frame.StanceHint ?? "";
             ShowReserveHint(_dragging); // §4.9 (#455)
-            _played?.Bind(frame.Played);
+            _played?.Bind(frame.Played, this);
             ShowEnemyTurn(frame.EnemyTurn); // §5.5 (#455): sinks once the turn end has played
             if (!SameHand(frame.Hand)) BuildHand(frame.Hand);
             else for (int i = 0; i < _hand.Count; i++) _hand[i].Bind(frame.Hand[i]);

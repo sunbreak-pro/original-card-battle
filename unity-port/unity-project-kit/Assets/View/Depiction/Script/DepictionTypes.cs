@@ -531,6 +531,12 @@ namespace Depiction
         public int Stance;
         /// <summary>B6 直前のカードに下線: the attribute of the card played last this turn, or null.</summary>
         public CardKind? Last;
+        /// <summary>
+        /// battle_ui_ux_v2 §1.1 B6 / §3.6 (f) (#455): the power a 追撃 adds to the player's next attack face
+        /// this turn, as the core holds it (CombatantState.FollowUp). The row shows "+5" at its left end
+        /// while it is above 0; the core clears it when the next attack face spends it or the turn ends.
+        /// </summary>
+        public int FollowUp;
 
         public int CountOf(CardKind kind)
         {

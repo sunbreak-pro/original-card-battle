@@ -846,6 +846,8 @@ namespace Depiction.Bridge
             // battle-visual-v1 §4.9 (#455): the attributes the player has played this turn, as the core
             // folds and keeps them (CombatantState.PlayedThisTurn, cleared when the turn ends).
             frame.Played = PlayedOf(after.Player.PlayedThisTurn);
+            // battle_ui_ux_v2 §1.1 B6 (#455): a 追撃 waiting for the next attack face, as the core keeps it.
+            frame.Played.FollowUp = after.Player.FollowUp;
             foreach (CardInstance card in _hand)
             {
                 PlayPreview preview = TurnLoop.Preview(after, card.InstanceId);
