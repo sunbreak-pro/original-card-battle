@@ -132,8 +132,11 @@ namespace Depiction
         /// <summary>構え: the shield and "+3" at turn end.</summary>
         StanceCue,
 
-        /// <summary>The player moves to the stand point N maps to, and the tag flips.</summary>
+        /// <summary>The player moves to the stand point N maps to, or to its cell on the floor.</summary>
         RangeSwitch,
+
+        /// <summary>Without a floor, the 近 / 遠 tag at the player's feet flips over once the move has landed (#495).</summary>
+        RangeTagFlip,
 
         /// <summary>A bonus the enemy did not get (or a whiffed blow) is struck off the omen.</summary>
         SideBonusMiss,
@@ -283,7 +286,9 @@ namespace Depiction
                 new EffectSpec(EffectId.TraitFire, 200f, 0f, blocking: true, "#76 特性の合図（光は 260 で並行。待つのは 200）"),
                 new EffectSpec(EffectId.StaminaChange, 220f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
                 new EffectSpec(EffectId.StanceCue, 460f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
-                new EffectSpec(EffectId.RangeSwitch, 470f, 0f, blocking: true, "battle_ui_ux_v2 §5.7 移動 320 + 札の裏返し 150"),
+                // #495: the move and the flip are two beats, because on the floor there is no tag to flip.
+                new EffectSpec(EffectId.RangeSwitch, 320f, 0f, blocking: true, "battle_ui_ux_v2 §10.6 移動 320（床のマスへの移動も 320）"),
+                new EffectSpec(EffectId.RangeTagFlip, 150f, 0f, blocking: true, "battle_ui_ux_v2 §10.6 一字札の裏返し 150（床の無い画面だけ）"),
                 new EffectSpec(EffectId.SideBonusMiss, 260f, 0f, blocking: true, "縦切りの長さ"),
 
                 // #57: both run beside the beat they belong to, so the grammar adds no wait to any event.
@@ -413,12 +418,41 @@ namespace Depiction
 
     /// <summary>
     /// The blocking effects an event plays, in order, read off its kind and its cues. The View waits
-    /// for exactly these, and the tests hold the event lengths against the 2.0 s budget with them.
-    /// Effects that run beside the flow (numbers, flashes, the HP trail) are not listed: they never
-    /// lengthen an event.
+    /// for exactly these (#495): DepictionPlayer takes the event's steps from <see cref="StepsOf"/> and
+    /// holds the flow at each one for <see cref="WaitMs"/>, so the tests that hold the event lengths
+    /// against the 2.0 s budget sum the same waits the screen holds. Effects that run beside the flow
+    /// (numbers, flashes, the HP trail) are not listed: they never lengthen an event.
     /// </summary>
     public static class EffectPlan
     {
+        /// <summary>
+        /// Who swings a Slash: its Source, or the side opposite its target when a script left the
+        /// Source out (DepictionPlayer logs that as a script bug and still plays the beat this way).
+        /// </summary>
+        public static UnitSide AttackerOf(Cue cue)
+        {
+            if (cue == null) throw new ArgumentNullException(nameof(cue));
+            return cue.Source ?? (cue.Target == UnitSide.Enemy ? UnitSide.Player : UnitSide.Enemy);
+        }
+
+        /// <summary>
+        /// A RangeSwitch drawn on the floor (battle-visual-v1 §4.2): the source gave the cells after the
+        /// move, so the figure walks to its cell and the gap number changes with no tag to flip.
+        /// </summary>
+        public static bool MovesOnFloor(Cue cue)
+        {
+            if (cue == null) throw new ArgumentNullException(nameof(cue));
+            return cue.PlayerCellAfter > 0;
+        }
+
+        /// <summary>How long the flow is held at one step with these switches: the one wait both the screen and the tests use.</summary>
+        public static float WaitMs(EffectStep step, EffectSwitches switches)
+        {
+            if (step == null) throw new ArgumentNullException(nameof(step));
+            if (switches == null) throw new ArgumentNullException(nameof(switches));
+            return switches.WaitMs(step.Id, step.Count);
+        }
+
         public static List<EffectStep> StepsOf(DepictionEvent ev)
         {
             if (ev == null) throw new ArgumentNullException(nameof(ev));
@@ -434,12 +468,13 @@ namespace Depiction
         {
             switch (cue.Kind)
             {
-                // Both hand cues carry how many cards move: the ones drawn, the ones thrown away.
+                // Both hand cues carry how many cards move: the ones drawn, the ones thrown away. No card
+                // moving is no beat at all, as on screen (#495).
                 case CueKind.DrawHand:
-                    steps.Add(new EffectStep(EffectId.CardDraw, Math.Max(0, cue.Amount)));
+                    if (cue.Amount > 0) steps.Add(new EffectStep(EffectId.CardDraw, cue.Amount));
                     break;
                 case CueKind.DiscardHand:
-                    steps.Add(new EffectStep(EffectId.HandDiscard, Math.Max(0, cue.Amount)));
+                    if (cue.Amount > 0) steps.Add(new EffectStep(EffectId.HandDiscard, cue.Amount));
                     break;
                 case CueKind.StaminaChange:
                     // A gain lights its pips one by one; a spend pops beside the card's beats.
@@ -454,7 +489,7 @@ namespace Depiction
                 case CueKind.Slash:
                 {
                     // A slash with no settled HP is the swing alone: the GuardBlock / Hit cues carry the rest.
-                    bool byPlayer = cue.Source == UnitSide.Player;
+                    bool byPlayer = AttackerOf(cue) == UnitSide.Player;
                     steps.Add(new EffectStep(byPlayer ? EffectId.AttackLunge : EffectId.EnemyLunge, 1));
                     steps.Add(new EffectStep(EffectId.StrikeShape, 1));
                     steps.Add(new EffectStep(EffectStrength.IsStrong(cue.Intensity) ? EffectId.HitStopStrong : EffectId.HitStop, 1));
@@ -470,6 +505,7 @@ namespace Depiction
                     break;
                 case CueKind.RangeSwitch:
                     steps.Add(new EffectStep(EffectId.RangeSwitch, 1));
+                    if (!MovesOnFloor(cue)) steps.Add(new EffectStep(EffectId.RangeTagFlip, 1));
                     break;
                 case CueKind.StanceCue:
                     steps.Add(new EffectStep(EffectId.StanceCue, 1));
@@ -514,13 +550,14 @@ namespace Depiction
         {
             if (switches == null) throw new ArgumentNullException(nameof(switches));
             float ms = 0f;
-            foreach (EffectStep step in StepsOf(ev)) ms += switches.WaitMs(step.Id, step.Count);
+            foreach (EffectStep step in StepsOf(ev)) ms += WaitMs(step, switches);
             return ms;
         }
 
         /// <summary>
-        /// The time the screen really waits on the event's effects at this battle speed (#348). The View
-        /// still hands UiTween the written ms; UiTween.Speed stretches them.
+        /// The time the screen really waits on the event's effects at this battle speed (#348). For the
+        /// measurement only: the View never rescales a length, it hands UiTween the written ms and
+        /// UiTween.Speed (BattleSpeed.TweenSpeed) stretches them by the same factor.
         /// </summary>
         public static float BlockingMs(DepictionEvent ev, EffectSwitches switches, BattleSpeedStep speed) =>
             BattleSpeed.WallMs(BlockingMs(ev, switches), speed);

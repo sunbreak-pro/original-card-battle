@@ -279,6 +279,83 @@ namespace Depiction.Tests
             Assert.That(CardSteps(turnEnd), Is.EqualTo(new[] { (EffectId.HandDiscard, 2) }));
         }
 
+        // ---- The waits the screen holds (#495) ----
+        // DepictionPlayer.Hold takes each event's steps from EffectPlan.StepsOf and holds the flow at each
+        // one for EffectPlan.WaitMs. These pin that the event's length the tests sum is exactly those waits.
+
+        [Test]
+        public void AnEventsLength_IsTheSumOfTheWaitsTheScreenHoldsStepByStep()
+        {
+            var oneOff = EffectSwitches.AllOn();
+            oneOff.Set(EffectId.HpDrain, false);
+            foreach (EffectSwitches switches in new[] { EffectSwitches.AllOn(), oneOff, EffectSwitches.AllOff() })
+            {
+                foreach (DepictionEvent ev in TurnSliceScript.Build().Events.Concat(LiveTurnEvents()))
+                {
+                    float held = EffectPlan.StepsOf(ev).Sum(step => EffectPlan.WaitMs(step, switches));
+                    Assert.That(EffectPlan.BlockingMs(ev, switches), Is.EqualTo(held), "event " + ev.Order + " " + ev.Title);
+                }
+            }
+        }
+
+        [Test]
+        public void AStepsWait_IsItsCatalogLengthForItsCount_AndNothingWhenSwitchedOff()
+        {
+            var on = EffectSwitches.AllOn();
+            Assert.That(EffectPlan.WaitMs(new EffectStep(EffectId.CardDraw, 5), on), Is.EqualTo(260f + 4 * 60f));
+            Assert.That(EffectPlan.WaitMs(new EffectStep(EffectId.StaminaRecover, 3), on), Is.EqualTo(3 * 80f));
+            Assert.That(EffectPlan.WaitMs(new EffectStep(EffectId.GuardBlock, 1), on), Is.EqualTo(320f));
+            Assert.That(EffectPlan.WaitMs(new EffectStep(EffectId.CardDraw, 5), EffectSwitches.AllOff()), Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void AMove_Waits320_AndFlipsTheTagFor150_OnlyWithoutAFloor()
+        {
+            Assert.That(EffectCatalog.Of(EffectId.RangeSwitch).Ms, Is.EqualTo(320f));
+            Assert.That(EffectCatalog.Of(EffectId.RangeTagFlip).Ms, Is.EqualTo(150f));
+            Assert.That(EffectCatalog.Of(EffectId.RangeTagFlip).Blocking, Is.True);
+
+            // The fixed slice and the live turn draw no floor: the figure moves to its slot, then the tag flips.
+            var slot = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
+            slot.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, RangeAfter = RangeSide.Far, RangeGlyphAfter = "遠" });
+            Assert.That(Steps(slot), Is.EqualTo(new[] { (EffectId.CardRelease, 1), (EffectId.RangeSwitch, 1), (EffectId.RangeTagFlip, 1) }));
+            Assert.That(EffectPlan.BlockingMs(slot, EffectSwitches.AllOn()), Is.EqualTo(160f + 320f + 150f));
+
+            // The core's battles draw the floor: the figure walks to its cell and there is no tag to flip.
+            var floor = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
+            floor.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 2, EnemyCellAfter = 5, GapAfter = 2 });
+            Assert.That(EffectPlan.MovesOnFloor(floor.Cues[0]), Is.True);
+            Assert.That(EffectPlan.MovesOnFloor(slot.Cues[0]), Is.False);
+            Assert.That(Steps(floor), Is.EqualTo(new[] { (EffectId.CardRelease, 1), (EffectId.RangeSwitch, 1) }));
+            Assert.That(EffectPlan.BlockingMs(floor, EffectSwitches.AllOn()), Is.EqualTo(160f + 320f));
+        }
+
+        [Test]
+        public void NoCardMoving_IsNoBeat()
+        {
+            var ev = new DepictionEvent { Kind = DepictionEventKind.TurnEnd, After = new DepictionFrame() };
+            ev.Cues.Add(new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 0 });
+            ev.Cues.Add(new Cue { Kind = CueKind.DiscardHand, Target = UnitSide.Player, Amount = 0 });
+            Assert.That(Steps(ev), Is.EqualTo(new[] { (EffectId.EnemyTurnBanner, 1) }), "the screen flies no card and waits for none");
+        }
+
+        [Test]
+        public void ASlashWithNoSource_IsSwungByTheSideOppositeItsTarget_OnScreenAndInThePlan()
+        {
+            var atEnemy = new Cue { Kind = CueKind.Slash, Target = UnitSide.Enemy, Intensity = 2, HpAfter = 40 };
+            var atPlayer = new Cue { Kind = CueKind.Slash, Target = UnitSide.Player, Intensity = 2 };
+            Assert.That(EffectPlan.AttackerOf(atEnemy), Is.EqualTo(UnitSide.Player));
+            Assert.That(EffectPlan.AttackerOf(atPlayer), Is.EqualTo(UnitSide.Enemy));
+            Assert.That(EffectPlan.AttackerOf(new Cue { Kind = CueKind.Slash, Source = UnitSide.Enemy, Target = UnitSide.Enemy }), Is.EqualTo(UnitSide.Enemy), "a named Source wins");
+
+            var ev = new DepictionEvent { Kind = DepictionEventKind.EnemyAction, After = new DepictionFrame() };
+            ev.Cues.Add(atEnemy);
+            Assert.That(Steps(ev), Is.EqualTo(new[]
+            {
+                (EffectId.AttackLunge, 1), (EffectId.StrikeShape, 1), (EffectId.HitStop, 1), (EffectId.HpDrain, 1), (EffectId.AttackReturn, 1),
+            }));
+        }
+
         [Test]
         public void EveryCueKind_HasAPlan()
         {
