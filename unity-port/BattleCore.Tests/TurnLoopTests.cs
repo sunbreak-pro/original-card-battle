@@ -451,14 +451,14 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void Number5_TheSweep_IsElevenAtGapTwo_AndEightAtGapOne()
+        public void Number5_TheSweep_IsTwelveAtGapTwo_AndNineAtGapOne()
         {
-            // Gap 2 is where the sweep is declared. Staying there eats 11.
+            // Gap 2 is where the sweep is declared. Staying there eats 12.
             var stay = TurnLoop.BeginPlayerTurn(TurnLoop.Start(AtGap(2), NoRng).State, NoRng).State;
             var stayEnd = TurnLoop.EndTurn(stay, NoRng);
-            var eleven = stayEnd.Events.OfType<DamageDealt>().Single();
-            // The player kept 10 stamina, so the 構え Guard 3 soaks part of it: 11 − 3 = 8.
-            Assert.That(eleven, Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 11, 3, 8, 0, 42)));
+            var twelve = stayEnd.Events.OfType<DamageDealt>().Single();
+            // The player kept 10 stamina, so the 構え Guard 3 soaks part of it: 12 − 3 = 9.
+            Assert.That(twelve, Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 12, 3, 9, 0, 41)));
 
             // Stepping in one with step_in_guard: the committed sweep still comes, still reaches, without its +3.
             var deck = Cards.BuildDeck(new[] { CardCatalog.StepInGuard, CardCatalog.Thrust, CardCatalog.KesaCut,
@@ -470,11 +470,11 @@ namespace BattleCore.Tests
             var end = TurnLoop.EndTurn(s, NoRng);
 
             Assert.That(end.Events.OfType<ActionExecuted>().Single().Action.Id, Is.EqualTo("sweep"));
-            Assert.That(end.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(8));
+            Assert.That(end.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(9));
         }
 
         [Test]
-        public void Number6_TheShove_IsEightAgainstNoGuard_FiveAgainstGuard_AndPushesTwo_IntoTheWall()
+        public void Number6_TheShove_IsNineAgainstNoGuard_SixAgainstGuard_AndPushesTwo_IntoTheWall()
         {
             // Adjacent, so the omen is the shove. The player has one cell behind (§7.3): a two-cell
             // push moves one and the other cell is the wall (§7.3 WALL_DAMAGE 3).
@@ -489,11 +489,11 @@ namespace BattleCore.Tests
             {
                 Assert.That(bareEnd.Events.OfType<ActionExecuted>().Single().Action.Id, Is.EqualTo("shove"));
                 Assert.That(bareEnd.Events.OfType<DamageDealt>().Single(),
-                    Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 8, 0, 8, 0, 42)));
+                    Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 9, 0, 9, 0, 41)));
                 Assert.That(bareEnd.Events.OfType<CellsMoved>().Single(),
                     Is.EqualTo(new CellsMoved(Actor.Player, 2, 1, Pushed: true)));
                 Assert.That(bareEnd.Events.OfType<WallHit>().Single(),
-                    Is.EqualTo(new WallHit(Actor.Player, BlockedCells: 1, Raw: 3, Absorbed: 0, Damage: 3, GuardAfter: 0, HpAfter: 39)));
+                    Is.EqualTo(new WallHit(Actor.Player, BlockedCells: 1, Raw: 3, Absorbed: 0, Damage: 3, GuardAfter: 0, HpAfter: 38)));
                 Assert.That(bareEnd.State.Gap, Is.EqualTo(1));
                 Assert.That(bareEnd.State.Omen!.ActionId, Is.EqualTo("sweep"), "pushed to gap 1, the tree changes branch");
             });
@@ -506,11 +506,11 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(guardedEnd.Events.OfType<DamageDealt>().Single(),
-                    Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 5, 5, 0, 7, 50)));
+                    Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 6, 6, 0, 6, 50)));
                 Assert.That(guardedEnd.Events.OfType<CellsMoved>().Single(),
                     Is.EqualTo(new CellsMoved(Actor.Player, 2, 1, Pushed: true)));
                 Assert.That(guardedEnd.Events.OfType<WallHit>().Single(),
-                    Is.EqualTo(new WallHit(Actor.Player, 1, 3, 3, 0, 4, 50)));
+                    Is.EqualTo(new WallHit(Actor.Player, 1, 3, 3, 0, 3, 50)));
             });
         }
 
@@ -533,10 +533,10 @@ namespace BattleCore.Tests
             Assert.That(thrust.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(23));
             Assert.That(TurnLoop.CanPlay(s, InHand(s, "reach_thrust")), Is.EqualTo(PlayRefusal.OutOfReach));
 
-            // Turn 2: nothing was played, so 構え 3 soaks 3 of the shove's 5 and the wall takes 3 more.
+            // Turn 2: nothing was played, so 構え 3 soaks 3 of the shove's 6 and the wall takes 3 more.
             var end = TurnLoop.EndTurn(s, NoRng);
             var t2 = TurnLoop.BeginPlayerTurn(end.State, NoRng).State;
-            Assert.That(t2.Player.Hp, Is.EqualTo(50 - 2 - 3));
+            Assert.That(t2.Player.Hp, Is.EqualTo(50 - 3 - 3));
             Assert.That(t2.Enemy.Guard, Is.EqualTo(3), "the polearm holds its 構え Guard 3");
             Assert.That(t2.Gap, Is.EqualTo(1), "shoved to cell 1 on turn 1");
             // Turn 2, gap 1: boar_rush is a bare 11 (its bonus needs gap 2), and the Guard 3 soaks 3 of it.
@@ -747,7 +747,7 @@ namespace BattleCore.Tests
         {
             var s = TurnLoop.Start(AtGap(ScenarioGap), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
-            s = s with { Player = s.Player with { Hp = 3, Stamina = 0 } };   // no 構え, so the sweep is 11
+            s = s with { Player = s.Player with { Hp = 3, Stamina = 0 } };   // no 構え, so the sweep is 12
 
             var end = TurnLoop.EndTurn(s, NoRng);
 
@@ -763,17 +763,17 @@ namespace BattleCore.Tests
         [Test]
         public void TheWall_CanEndTheBattleToo()
         {
-            // Adjacent, HP 4, no Guard: the shove's 8 is fatal on its own here, so give the player
-            // Guard 8 to soak it and let the wall's 3 be what ends it.
+            // Adjacent, HP 2, no Guard: the shove's 9 is fatal on its own here, so give the player
+            // Guard 6 to soak it and let the wall's 3 be what ends it.
             var s = TurnLoop.Start(AtGap(0), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
-            s = s with { Player = s.Player with { Hp = 2, Stamina = 0, Guard = 5 } };
+            s = s with { Player = s.Player with { Hp = 2, Stamina = 0, Guard = 6 } };
 
             var end = TurnLoop.EndTurn(s, NoRng);
 
             Assert.Multiple(() =>
             {
-                Assert.That(end.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 5, 5, 0, 0, 2)));
+                Assert.That(end.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 6, 6, 0, 0, 2)));
                 Assert.That(end.Events.OfType<WallHit>().Single().HpAfter, Is.EqualTo(0));
                 Assert.That(end.State.Result, Is.EqualTo(GameResult.Lost));
                 Assert.That(end.Events.OfType<OmenSet>(), Is.Empty);
@@ -925,7 +925,7 @@ namespace BattleCore.Tests
         {
             "T1 P 50/1/36/c1 E 60/9/5/c5/— gap 3 omen 移動",
             "T2 P 50/2/9/c1 E 60/9/5/c4/— gap 2 omen 攻撃・1〜2",
-            "T3 P 50/0/4/c2 E 45/8/3/c4/— gap 1 omen 攻撃・1〜2",
+            "T3 P 50/0/3/c2 E 45/8/3/c4/— gap 1 omen 攻撃・1〜2",
         };
 
         private static readonly int[] PinnedEventCounts = { 45, 30, 36 };

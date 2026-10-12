@@ -1877,8 +1877,8 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 // 構え 3 (錨の構え gives no Guard of its own since v4.4, #333): the shove loses its 無防備 +3
-                // and the Guard soaks 3 of its 5.
-                Assert.That(end.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 5, 3, 2, 0, 48)));
+                // and the Guard soaks 3 of its 6.
+                Assert.That(end.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 6, 3, 3, 0, 47)));
                 Assert.That(end.Events.OfType<StanceFired>().Single(), Is.EqualTo(new StanceFired(Actor.Player, "anchor_stance", StanceHook.PushImmune)));
                 Assert.That(end.Events.OfType<PushRefused>().Single(), Is.EqualTo(new PushRefused(Actor.Player, 1) { ByStance = true }));
                 Assert.That(end.Events.OfType<CellsMoved>(), Is.Empty);

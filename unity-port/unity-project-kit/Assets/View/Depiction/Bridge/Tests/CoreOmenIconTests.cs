@@ -26,7 +26,7 @@ namespace Depiction.Bridge.Tests
                 Assert.That(frame.Icon, Is.EqualTo(OmenIcon.Attack));
                 Assert.That(frame.KindLabel, Is.EqualTo("攻撃"));
                 Assert.That(frame.ValueText, Is.EqualTo("17"));
-                Assert.That(CoreText.OmenOf(sweep, Enemies.PolearmWarped).ValueText, Is.EqualTo("8"), "the face alone without a preview");
+                Assert.That(CoreText.OmenOf(sweep, Enemies.PolearmWarped).ValueText, Is.EqualTo("9"), "the face alone without a preview");
             });
         }
 

@@ -226,9 +226,9 @@ namespace BattleCore.Tests
         // ---- Faces the roster brought in ----
 
         [Test]
-        public void TheTwinSlash_StrikesSevenTwice_AndPutsNothingOnThePlayer()
+        public void TheTwinSlash_StrikesEightTwice_AndPutsNothingOnThePlayer()
         {
-            // roster §2.6 (v4.5, #257): 7 × 2 = 14, and no 脆化 between the blows (the multi-hit rule, #253).
+            // roster §2.6 (v4.5, #257; v4.19, #498): 8 × 2 = 16, and no 脆化 between the blows (the multi-hit rule, #253).
             var enemy = Enemies.TwinBladeWarped;
             var setup = new BattleSetup(enemy, Fillers(20), BattleSetup.SliceFieldCells, StartGap: 0);
             var state = TurnLoop.Start(setup, NoShuffle).State;
@@ -240,8 +240,8 @@ namespace BattleCore.Tests
             var blows = end.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).ToList();
             Assert.Multiple(() =>
             {
-                Assert.That(blows.Select(b => b.Raw), Is.EqualTo(new[] { 7, 7 }));
-                Assert.That(end.State.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp - 14));
+                Assert.That(blows.Select(b => b.Raw), Is.EqualTo(new[] { 8, 8 }));
+                Assert.That(end.State.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp - 16));
                 Assert.That(end.Events.OfType<StatusApplied>().Where(a => a.Target == Actor.Player), Is.Empty);
                 Assert.That(enemy.Actions["twin_slash"].Face.StatusList, Is.Empty);
             });
@@ -305,18 +305,18 @@ namespace BattleCore.Tests
             state = state.WithEnemy(state.Enemy with { Statuses = StatusSet.Of((StatusKind.Empower, 1)) });
             state = state with { Player = state.Player with { Guard = 0, Stamina = 0 } };
 
-            // No 脆化 on the player: 強化 takes both blows (7 × 1.5 → 11) and is spent once.
+            // No 脆化 on the player: 強化 takes both blows (8 × 1.5 → 12) and is spent once.
             var bare = TurnLoop.EndTurn(state, NoShuffle);
             // 脆化 2 on the player: 脆化 takes both blows, and 強化 waits for the next attack.
             var fragile = TurnLoop.EndTurn(state with { Player = state.Player with { Statuses = StatusSet.Of((StatusKind.Fragile, 2)) } }, NoShuffle);
 
             Assert.Multiple(() =>
             {
-                Assert.That(bare.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).Select(b => b.Raw), Is.EqualTo(new[] { 11, 11 }));
+                Assert.That(bare.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).Select(b => b.Raw), Is.EqualTo(new[] { 12, 12 }));
                 Assert.That(bare.Events.OfType<StatusConsumed>().Count(c => c.Kind == StatusKind.Empower), Is.EqualTo(1));
                 Assert.That(bare.State.Enemy.Statuses.Has(StatusKind.Empower), Is.False);
 
-                Assert.That(fragile.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).Select(b => b.Raw), Is.EqualTo(new[] { 11, 11 }));
+                Assert.That(fragile.Events.OfType<DamageDealt>().Where(d => d.Target == Actor.Player).Select(b => b.Raw), Is.EqualTo(new[] { 12, 12 }));
                 Assert.That(fragile.Events.OfType<StatusConsumed>().Any(c => c.Kind == StatusKind.Empower), Is.False);
                 Assert.That(fragile.State.Enemy.Statuses.Stacks(StatusKind.Empower), Is.EqualTo(1));
                 Assert.That(fragile.State.Player.Statuses.Has(StatusKind.Fragile), Is.False, "2 − 1 − 1");
@@ -432,7 +432,7 @@ namespace BattleCore.Tests
                 Assert.That(def.BranchAtGapZero, Is.EqualTo(new[] { "recoil_thrust", "short_jab", "haft_guard" }));
                 Assert.That(def.BranchAtGapOneToTwo, Is.EqualTo(new[] { "great_thrust", "short_jab", "haft_guard" }));
                 Assert.That(def.BranchAtGapThreePlus, Is.EqualTo(new[] { "crystal_rush", "haft_guard" }));
-                Assert.That((def.Actions["great_thrust"].Column, def.Actions["great_thrust"].Face.Power, def.Actions["great_thrust"].Face.ReachOrDefault), Is.EqualTo((3, 13, new Reach(1, 2))));
+                Assert.That((def.Actions["great_thrust"].Column, def.Actions["great_thrust"].Face.Power, def.Actions["great_thrust"].Face.ReachOrDefault), Is.EqualTo((3, 15, new Reach(1, 2))));
                 Assert.That((def.Actions["crystal_rush"].Face.Move, def.Actions["crystal_rush"].Face.ReachOrDefault), Is.EqualTo((2, new Reach(2, 4))));
                 Assert.That((def.Actions["recoil_thrust"].Face.Move, def.Actions["recoil_thrust"].Face.ReachOrDefault), Is.EqualTo((-2, Reach.Only(0))));
                 Assert.That(def.Actions.Values.Where(a => a.Face.Move != 0).All(a => a.Attributes == BattleAttribute.Attack), Is.True, "every move rides an attack");
