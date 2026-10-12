@@ -22,11 +22,6 @@ public static class ProceduralArt
     private static Sprite _shield;
     private static Sprite _figure;
     private static Sprite _figureSpear;
-    private static Sprite _floorNoise;
-    private static Sprite _mist;
-    private static Sprite _paperGrain;
-    private static Sprite _triangle;
-    private static Sprite _vignette;
     private static readonly Sprite[] Icons = new Sprite[4];
 
     public static Sprite White => Cached(ref _white, () => Make(4, 4, (x, y) => Color.white));
@@ -57,46 +52,6 @@ public static class ProceduralArt
     public static Sprite Figure => Cached(ref _figure, () => Make(140, 300, (x, y) => Alpha(InsideFigure(x, y, false) ? 1f : 0f)));
 
     public static Sprite FigureWithSpear => Cached(ref _figureSpear, () => Make(140, 300, (x, y) => Alpha(InsideFigure(x, y, true) ? 1f : 0f)));
-
-    /// <summary>Wet cobble: value noise with a faint horizontal highlight band.</summary>
-    public static Sprite FloorNoise => Cached(ref _floorNoise, () => Make(256, 64, (x, y) =>
-    {
-        float n = Mathf.PerlinNoise(x * 0.11f, y * 0.23f) * 0.6f + Mathf.PerlinNoise(x * 0.37f + 9f, y * 0.51f) * 0.4f;
-        float band = Mathf.Exp(-Mathf.Pow((y - 46f) / 5f, 2f)) * 0.35f;
-        float v = Mathf.Clamp01(0.55f + (n - 0.5f) * 0.8f + band);
-        return new Color(v, v, v, 1f);
-    }));
-
-    /// <summary>Horizontally seamless soft noise for the two mist layers (tiled by UGUI).</summary>
-    public static Sprite Mist => Cached(ref _mist, () => Make(512, 128, (x, y) =>
-    {
-        const float w = 512f;
-        float t = x / w;
-        float a = Mathf.PerlinNoise(x * 0.012f, y * 0.03f);
-        float b = Mathf.PerlinNoise((x - w) * 0.012f, y * 0.03f);
-        float n = Mathf.Lerp(a, b, t);
-        float edge = Mathf.Sin(y / 128f * Mathf.PI); // fade at top and bottom
-        return Alpha(Mathf.Clamp01((n - 0.35f) * 1.6f) * edge);
-    }));
-
-    /// <summary>Paper fibres: sparse grey speckle with alpha.</summary>
-    public static Sprite PaperGrain => Cached(ref _paperGrain, () => Make(256, 256, (x, y) =>
-    {
-        float n = Mathf.PerlinNoise(x * 0.9f, y * 0.9f);
-        float fibre = Mathf.PerlinNoise(x * 0.05f, y * 0.6f);
-        float a = Mathf.Clamp01((n - 0.62f) * 2f) * 0.5f + Mathf.Clamp01((fibre - 0.6f) * 3f) * 0.3f;
-        return new Color(0.2f, 0.15f, 0.1f, a * 0.5f);
-    }));
-
-    /// <summary>Right triangle filling the top-right half (page tear).</summary>
-    public static Sprite Triangle => Cached(ref _triangle, () => Make(64, 64, (x, y) => Alpha(x >= 64 - y ? 1f : 0f)));
-
-    /// <summary>Corner vignette: opaque in the corner, clear toward the centre. Rotate per corner.</summary>
-    public static Sprite Vignette => Cached(ref _vignette, () => Make(128, 128, (x, y) =>
-    {
-        float d = Mathf.Clamp01(Dist(x, y, 0f, 0f) / 128f);
-        return Alpha((1f - d) * (1f - d));
-    }));
 
     public static Sprite Icon(IconKind kind)
     {
