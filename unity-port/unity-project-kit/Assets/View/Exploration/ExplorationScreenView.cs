@@ -27,6 +27,7 @@ namespace Exploration.View
         private readonly Action<int, RestChoice> _step;
         private readonly Action<ScreenAction> _act;
         private readonly Action<int> _useConsumable;
+        private readonly Action<Overlay> _toggle;
 
         private readonly Text _layerTitle;
         private readonly Text _timeLabel;
@@ -50,6 +51,9 @@ namespace Exploration.View
         private readonly RectTransform _slots;
         private readonly Button _endLife;
         private readonly RectTransform _cardLayer;
+        private readonly Button _cardsButton;
+        private readonly Button _settingsButton;
+        private readonly RectTransform _overlayLayer;
         private readonly JournalDrawerView _journal;
 
         private ExplorationScreen _screen;
@@ -61,11 +65,14 @@ namespace Exploration.View
         /// <param name="step">Walk to a node with a choice (the choice only matters on a 休息 node).</param>
         /// <param name="act">A card button or 「この生を終える」.</param>
         /// <param name="useConsumable">Burn the consumable in a slot.</param>
-        public ExplorationScreenView(RectTransform canvas, Action<int, RestChoice> step, Action<ScreenAction> act, Action<int> useConsumable)
+        /// <param name="toggle">A band button or a close button: open or close that screen.</param>
+        public ExplorationScreenView(RectTransform canvas, Action<int, RestChoice> step, Action<ScreenAction> act, Action<int> useConsumable,
+            Action<Overlay> toggle)
         {
             _step = step;
             _act = act;
             _useConsumable = useConsumable;
+            _toggle = toggle;
 
             RectTransform root = UiKit.Box(canvas, "Exploration", 0f, 0f, 1f, 1f);
             UiKit.Fill(root, "Ground", ExplorationPalette.Ground);
@@ -73,7 +80,8 @@ namespace Exploration.View
             // Sibling order is draw order. The map and the detail go first, then the card layer that
             // covers them; the band, the carried items and 「この生を終える」 sit above a card so the
             // gauge stays readable and an item can still be used at the interlude. Whether those
-            // buttons work is the screen's CanUse / CanEndLife, not the layering.
+            // buttons work is the screen's CanUse / CanEndLife, not the layering. 所持カード and
+            // 設定・セーブ cover all of that but the band, whose buttons switch between them.
 
             // ---- the map ----
             _mapPanel = UiKit.Box(root, "Map", 0.015f, 0.11f, 0.665f, 0.89f);
@@ -94,29 +102,34 @@ namespace Exploration.View
             // ---- the card layer ----
             _cardLayer = UiKit.Box(root, "Cards", 0f, 0f, 1f, 1f);
 
-            // ---- top band: layer, 刻限, 瘴気, HP / stamina, journal ----
+            // ---- top band: layer, 刻限, 瘴気, HP / stamina, then journal / cards / settings ----
             RectTransform band = UiKit.Box(root, "Band", 0f, 0.905f, 1f, 1f);
             UiKit.Fill(band, "Back", ExplorationPalette.Band);
-            _layerTitle = UiKit.Text(UiKit.Box(band, "Layer", 0.01f, 0f, 0.24f, 1f), "Text", 30, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
+            _layerTitle = UiKit.Text(UiKit.Box(band, "Layer", 0.01f, 0f, 0.20f, 1f), "Text", 30, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
 
-            RectTransform time = UiKit.Box(band, "Time", 0.25f, 0f, 0.37f, 1f);
+            RectTransform time = UiKit.Box(band, "Time", 0.21f, 0f, 0.31f, 1f);
             _timeLabel = UiKit.Text(UiKit.Box(time, "Label", 0f, 0.45f, 1f, 1f), "Text", 24, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
             _timePips = UiKit.Box(time, "Pips", 0.04f, 0.14f, 0.96f, 0.40f);
 
-            RectTransform miasma = UiKit.Box(band, "Miasma", 0.38f, 0f, 0.63f, 1f);
+            RectTransform miasma = UiKit.Box(band, "Miasma", 0.32f, 0f, 0.53f, 1f);
             _miasmaLabel = UiKit.Text(UiKit.Box(miasma, "Label", 0f, 0.45f, 0.4f, 1f), "Text", 24, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
             _miasmaForecast = UiKit.Text(UiKit.Box(miasma, "Forecast", 0.4f, 0.45f, 1f, 1f), "Text", 18, TextAnchor.MiddleRight, ExplorationPalette.InkSoft);
             _gauge = UiKit.Box(miasma, "Gauge", 0.02f, 0.14f, 0.98f, 0.40f);
 
             // Three short lines: HP and the training marks, stamina, and how max stamina is made up.
-            RectTransform body = UiKit.Box(band, "Body", 0.64f, 0f, 0.89f, 1f);
+            RectTransform body = UiKit.Box(band, "Body", 0.54f, 0f, 0.77f, 1f);
             _hpLabel = UiKit.Text(UiKit.Box(body, "Hp", 0f, 0.64f, 0.5f, 1f), "Text", 20, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
             _marksLabel = UiKit.Text(UiKit.Box(body, "Marks", 0.5f, 0.64f, 1f, 1f), "Text", 16, TextAnchor.MiddleRight, ExplorationPalette.InkSoft);
             _staminaLabel = UiKit.Text(UiKit.Box(body, "Stamina", 0f, 0.32f, 1f, 0.66f), "Text", 20, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
             _maxStaminaLabel = UiKit.Text(UiKit.Box(body, "MaxStamina", 0f, 0f, 1f, 0.34f), "Text", 16, TextAnchor.MiddleLeft, ExplorationPalette.InkSoft);
 
-            UiKit.Button(band, "Journal", ExplorationText.JournalButton, ToggleJournal, ExplorationPalette.Button, ExplorationPalette.Ink, 22,
-                new Vector2(0.90f, 0.18f), new Vector2(0.99f, 0.82f));
+            // Left to right: journal, cards, and the gear at the very end, away from 「この生を終える」 (§6.2).
+            UiKit.Button(band, "Journal", ExplorationText.JournalButton, () => _toggle(Overlay.Journal),
+                ExplorationPalette.Button, ExplorationPalette.Ink, 18, new Vector2(0.78f, 0.18f), new Vector2(0.845f, 0.82f));
+            _cardsButton = UiKit.Button(band, "Cards", ExplorationText.CardsButton, () => _toggle(Overlay.Cards),
+                ExplorationPalette.Button, ExplorationPalette.Ink, 18, new Vector2(0.85f, 0.18f), new Vector2(0.925f, 0.82f));
+            _settingsButton = UiKit.Button(band, "Settings", ExplorationText.SettingsButton, () => _toggle(Overlay.Settings),
+                ExplorationPalette.Button, ExplorationPalette.Ink, 18, new Vector2(0.93f, 0.18f), new Vector2(0.99f, 0.82f));
 
             // ---- what is carried ----
             RectTransform carried = UiKit.Box(root, "Carried", 0.68f, 0.11f, 0.985f, 0.34f);
@@ -128,13 +141,13 @@ namespace Exploration.View
             _endLife = UiKit.Button(root, "EndLife", ExplorationText.EndLifeButton, () => _act(ScreenAction.AskEndLife),
                 ExplorationPalette.Button, ExplorationPalette.Ink, 24, new Vector2(0.015f, 0.02f), new Vector2(0.2f, 0.095f));
 
+            // ---- 所持カード / 設定・セーブ, under the band so its buttons stay pressable ----
+            _overlayLayer = UiKit.Box(root, "Overlay", 0f, 0f, 1f, 1f);
+            band.SetAsLastSibling();
+
             // The journal may be read at any time, so it opens above everything.
-            _journal = new JournalDrawerView(root);
+            _journal = new JournalDrawerView(root, () => _toggle(Overlay.Journal));
         }
-
-        public bool JournalOpen => _journal.IsOpen;
-
-        public void ToggleJournal() => _journal.Toggle();
 
         public void Render(ExplorationScreen screen)
         {
@@ -166,7 +179,14 @@ namespace Exploration.View
             _endLife.gameObject.SetActive(screen.ShowsEndLife);
             _endLife.interactable = screen.CanEndLife;
             DrawCard(screen.Card);
+
+            _cardsButton.interactable = screen.CanOpenCards;
+            _settingsButton.interactable = screen.CanOpenSettings;
+            DrawOverlay(screen);
             _journal.Show(screen.Journal);
+            bool journal = screen.OpenOverlay == Overlay.Journal;
+            if (journal && !_journal.IsOpen) _journal.Open();
+            else if (!journal && _journal.IsOpen) _journal.Close();
         }
 
         // ---- top band ----
@@ -365,6 +385,28 @@ namespace Exploration.View
                     i == 0 ? ExplorationPalette.InkOnAccent : ExplorationPalette.Ink, 24,
                     new Vector2(i * width, 0f), new Vector2((i + 1) * width - 0.02f, 1f));
             }
+        }
+
+        // ---- 所持カード / 設定・セーブ ----
+
+        private void DrawOverlay(ExplorationScreen screen)
+        {
+            UiKit.ClearChildren(_overlayLayer);
+            Overlay open = screen.OpenOverlay;
+            OverlayPage page = open == Overlay.Cards ? screen.Cards : open == Overlay.Settings ? screen.Settings : null;
+            if (page == null) return;
+
+            Image dim = UiKit.Fill(_overlayLayer, "Dim", ExplorationPalette.Dim);
+            dim.raycastTarget = true;
+
+            RectTransform plate = UiKit.Box(_overlayLayer, "Plate", 0.22f, 0.14f, 0.78f, 0.86f);
+            UiKit.Fill(plate, "Back", ExplorationPalette.Band);
+            UiKit.Frame(plate, ExplorationPalette.Accent, 3f);
+            UiKit.Text(UiKit.Box(plate, "Title", 0.04f, 0.86f, 0.70f, 0.97f), "Text", 34, TextAnchor.MiddleLeft, ExplorationPalette.Ink, page.Title);
+            UiKit.Button(plate, "Close", page.CloseLabel, () => _toggle(open), ExplorationPalette.Button, ExplorationPalette.Ink, 20,
+                new Vector2(0.72f, 0.875f), new Vector2(0.96f, 0.955f));
+            UiKit.Text(UiKit.Box(plate, "Lines", 0.04f, 0.05f, 0.96f, 0.83f), "Text", 22, TextAnchor.UpperLeft, ExplorationPalette.Ink,
+                string.Join("\n", page.Lines));
         }
     }
 }

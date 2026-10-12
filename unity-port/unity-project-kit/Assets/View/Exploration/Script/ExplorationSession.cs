@@ -1,6 +1,6 @@
 // Holds one run of the exploration screen: the core's state, the few flags the screen needs on top
-// of it (the carving, the survey, the stand-in battle, the confirmations), and the inputs the View
-// forwards. Every rule is the core's: this class only chooses which ExplorationReducer call a click
+// of it (the carving, the survey, the stand-in battle, the confirmations, what the top band has
+// open), and the inputs the View forwards. Every rule is the core's: this class only chooses which ExplorationReducer call a click
 // becomes, and refuses clicks the screen should not have offered.
 using System;
 using System.Linq;
@@ -94,8 +94,16 @@ namespace Exploration
         /// <summary>Nothing waits on the player but the map.</summary>
         public bool IsIdle => !HasPendingBattle && !HasPendingStep && !ConfirmingEndLife && !ConfirmingDescend;
 
-        /// <summary>The map takes steps: the layer is being explored and no card covers it.</summary>
-        public bool MapIsLive => State.Phase == RunPhase.Exploring && IsIdle;
+        /// <summary>
+        /// The map takes steps: the layer is being explored, and neither a card nor a screen opened
+        /// from the band covers it. The journal drawer sits beside the map and leaves it live.
+        /// </summary>
+        public bool MapIsLive => State.Phase == RunPhase.Exploring && IsIdle && !CoversMap;
+
+        /// <summary>What the top band has open over the screen (dungeon_exploration_v4.md §6.2).</summary>
+        public Overlay OpenOverlay { get; private set; }
+
+        private bool CoversMap => OpenOverlay == Overlay.Cards || OpenOverlay == Overlay.Settings;
 
         public bool CanEndLife => !State.IsOver && IsIdle;
 
@@ -215,6 +223,46 @@ namespace Exploration
                 default:
                     throw new ArgumentOutOfRangeException(nameof(action), action, null);
             }
+        }
+
+        /// <summary>
+        /// 所持カード and 設定・セーブ stay shut while the stand-in battle waits, which counts as being in
+        /// battle (§6.2): a battle plays its deck only, and its state is not part of a save. The journal
+        /// opens everywhere.
+        /// </summary>
+        public bool CanOpen(Overlay overlay) =>
+            overlay == Overlay.Journal || (overlay != Overlay.None && !HasPendingBattle);
+
+        /// <summary>
+        /// A band button, J or C: opens that screen in place of whichever was open, or closes it when it
+        /// is the one open. False when it may not open now.
+        /// </summary>
+        public bool Toggle(Overlay overlay)
+        {
+            if (overlay == Overlay.None) return false;
+            if (OpenOverlay == overlay)
+            {
+                OpenOverlay = Overlay.None;
+                return true;
+            }
+            if (!CanOpen(overlay)) return false;
+            OpenOverlay = overlay;
+            return true;
+        }
+
+        /// <summary>
+        /// Esc (§6.2): an open confirmation is answered 「やめる」 first; failing that, the journal or
+        /// 所持カード closes; only when neither is open does 設定・セーブ open or close.
+        /// </summary>
+        public bool Escape()
+        {
+            if (HasPendingStep || ConfirmingDescend || ConfirmingEndLife) return Act(ScreenAction.Cancel);
+            if (OpenOverlay == Overlay.Journal || OpenOverlay == Overlay.Cards)
+            {
+                OpenOverlay = Overlay.None;
+                return true;
+            }
+            return Toggle(Overlay.Settings);
         }
 
         /// <summary>

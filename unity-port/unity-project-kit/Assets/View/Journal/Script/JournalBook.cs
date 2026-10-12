@@ -8,22 +8,34 @@ using System.Linq;
 
 namespace Journal
 {
-    /// <summary>The drawer's tabs: one per enemy, the dungeon's page, the player's memo.</summary>
+    /// <summary>
+    /// The drawer's tabs: one per enemy, the dungeon's page, the player's memo, and the page of terms
+    /// and statuses (#234). Pages are handed over in this order, so the tabs read left to right in it.
+    /// </summary>
     public enum JournalTab
     {
         Enemy,
         Dungeon,
         Memo,
+
+        /// <summary>The rules' words and the statuses: no disclosure, never left at a death (JournalTerms).</summary>
+        Terms,
     }
 
-    /// <summary>Where the journal is read. In battle only the enemy pages open; while exploring, all of them.</summary>
+    /// <summary>
+    /// Where the journal is read. In battle only the enemy pages and the page of terms open; while
+    /// exploring, all of them.
+    /// </summary>
     public enum JournalContext
     {
         Exploration,
         Battle,
     }
 
-    /// <summary>One line of a page. A row the reader has not learned yet reads as 「？」.</summary>
+    /// <summary>
+    /// One line of a page. A row the reader has not learned yet reads as 「？」. A row with a label and
+    /// no text is a heading.
+    /// </summary>
     public sealed class JournalRow
     {
         public const string Hidden = "？";
@@ -46,7 +58,7 @@ namespace Journal
         public int NeedsDisclosure { get; }
     }
 
-    /// <summary>One page of the journal: an enemy, the dungeon, or the memo.</summary>
+    /// <summary>One page of the journal: an enemy, the dungeon, the memo, or the terms.</summary>
     public sealed class JournalPage
     {
         /// <summary>Encounter gives 1, observation gives 2 (concept-v3.md §14).</summary>
@@ -76,8 +88,8 @@ namespace Journal
         public int Disclosure { get; }
 
         /// <summary>
-        /// 「開示度 1 / 2」 beside an enemy page's title. Dungeon and memo pages carry none, and neither
-        /// does an enemy page at 0: a real page exists only after an encounter, so 0 is a stand-in.
+        /// 「開示度 1 / 2」 beside an enemy page's title. The other pages carry none, and neither does an
+        /// enemy page at 0: a real page exists only after an encounter, so 0 is a stand-in.
         /// </summary>
         public string DisclosureLabel =>
             Tab == JournalTab.Enemy && Disclosure > 0 ? $"開示度 {Disclosure} / {MaxDisclosure}" : "";
@@ -87,9 +99,14 @@ namespace Journal
         /// <summary>What the drawer prints for a row: its text, or 「？」 when it is not learned yet.</summary>
         public string TextOf(JournalRow row) => row == null ? "" : IsHidden(row) ? JournalRow.Hidden : row.Text;
 
-        /// <summary>The page's text as the drawer prints it: each row's label over its text, a blank line between rows.</summary>
+        /// <summary>
+        /// The page's text as the drawer prints it: each row's label over its text, a blank line between
+        /// rows. A heading prints its label alone.
+        /// </summary>
         public string Body => string.Join("\n\n", Rows.Select(row =>
-            row.Label.Length == 0 ? TextOf(row) : row.Label + "\n" + TextOf(row)));
+            row.Label.Length == 0 ? TextOf(row)
+            : row.Text.Length == 0 ? row.Label
+            : row.Label + "\n" + TextOf(row)));
     }
 
     /// <summary>The pages one screen hands the drawer, and which of them may be opened there.</summary>
@@ -114,8 +131,9 @@ namespace Journal
         /// <summary>A line beside the close button. Only the battle has one: the hand waits while the drawer is open.</summary>
         public string ClosingHint => Context == JournalContext.Battle ? "閉じるとプレイできます" : "";
 
+        /// <summary>In battle the dungeon page and the memo stay shut (dungeon_exploration_v4.md §6.7).</summary>
         public bool CanOpen(JournalPage page) =>
-            page != null && (Context == JournalContext.Exploration || page.Tab == JournalTab.Enemy);
+            page != null && (Context == JournalContext.Exploration || page.Tab == JournalTab.Enemy || page.Tab == JournalTab.Terms);
 
         public IReadOnlyList<JournalPage> Openable => Pages.Where(CanOpen).ToList();
 
@@ -138,6 +156,7 @@ namespace Journal
             JournalTab.Enemy => "敵",
             JournalTab.Dungeon => "ダンジョン",
             JournalTab.Memo => "メモ",
+            JournalTab.Terms => "用語",
             _ => throw new ArgumentOutOfRangeException(nameof(tab), tab, null),
         };
     }

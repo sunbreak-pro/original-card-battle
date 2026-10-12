@@ -72,8 +72,43 @@ namespace Exploration
                 session.CanEndLife,
                 !state.IsOver,
                 Card(session),
-                Book(session));
+                Book(session),
+                session.OpenOverlay,
+                session.CanOpen(Overlay.Cards),
+                session.CanOpen(Overlay.Settings),
+                CardsPage,
+                SettingsPage);
         }
+
+        /// <summary>
+        /// 所持カード (CAMP_FACILITIES_DESIGN.md §3.4): a stand-in until #244's deck screen lends its
+        /// parts and the run carries the character's cards.
+        /// </summary>
+        private static readonly OverlayPage CardsPage = new OverlayPage("所持カード（仮）",
+            new[]
+            {
+                "今のキャラクターが持つカードの、現在の名称・習熟度・永続能力を読む画面です。",
+                "読むだけで、戦闘デッキは組み替えられません。",
+                "",
+                "カードの一覧はまだつながっていません。",
+            },
+            "閉じる（C）");
+
+        /// <summary>
+        /// 設定・セーブ (CAMP_FACILITIES_DESIGN.md §3.5): the items it will hold, none of them wired yet.
+        /// 「保存してゲームを閉じる」 saves without ending the life; 「この生を終える」 is a different button.
+        /// </summary>
+        private static readonly OverlayPage SettingsPage = new OverlayPage("設定・セーブ（仮）",
+            new[]
+            {
+                "戦闘の速さ: ×1.0 / ×1.25 / ×1.5（既定は ×1.25）",
+                "演出短縮: 入れる / 切る",
+                "音の大きさ",
+                "保存してゲームを閉じる: 今の状態を保存して閉じる。生は終わらない",
+                "",
+                "設定と保存はまだつながっていません。いまは開け閉めだけができます。",
+            },
+            "閉じる（Esc）");
 
         private static NodeStanding StandingOf(ExplorationState state, int id, HashSet<int> neighbours, bool canStep)
         {
@@ -486,6 +521,8 @@ namespace Exploration
 
             pages.Add(new JournalPage("memo", JournalTab.Memo, "メモ",
                 new[] { new JournalRow("", "メモはまだありません。") }));
+
+            pages.Add(JournalTerms.Page());
 
             return new JournalBook(pages, JournalContext.Exploration);
         }
