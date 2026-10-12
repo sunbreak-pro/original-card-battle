@@ -32,6 +32,21 @@ namespace Depiction.Bridge.Tests
                 actions, EnemyRank.Elite, ActionsPerPhase: 2);
         }
 
+        /// <summary>An elite that, at gap 0, puts 鈍足 and then plans 出血: a 状態付与 omen and plan.</summary>
+        private static EnemyDef Binder()
+        {
+            var bind = new EnemyActionDef("bind", "bind", BattleAttribute.Skill, 1,
+                new Face(Reach: Reach.Only(0), Statuses: new[] { new StatusGrant(StatusKind.Slow, 1) }), Omen: OmenKind.Skill);
+            var cut = new EnemyActionDef("cut", "cut", BattleAttribute.Skill, 1,
+                new Face(Reach: Reach.Only(0), Statuses: new[] { new StatusGrant(StatusKind.Bleed, 1) }), Omen: OmenKind.Skill);
+            EnemyActionDef far = Stay("far");
+            var actions = new Dictionary<string, EnemyActionDef> { [bind.Id] = bind, [cut.Id] = cut, [far.Id] = far };
+            return new EnemyDef(
+                "binder", "binder", 60, MaxStamina: 10, Recovery: 2, Size: 1,
+                new[] { bind.Id, cut.Id }, new[] { bind.Id }, new[] { far.Id },
+                actions, EnemyRank.Elite, ActionsPerPhase: 2);
+        }
+
         private static List<CardInstance> Deck()
         {
             CardDef filler = new CardDef("filler", "filler", BattleAttribute.Guard, 1, new Face(Guard: 1), Targets: TargetKind.Self);
@@ -41,9 +56,9 @@ namespace Depiction.Bridge.Tests
         }
 
         /// <summary>The omen at the first turn start, written by a writer set to <paramref name="disclosure"/> (none: left at its default).</summary>
-        private static OmenFrame TurnStartOmen(int? disclosure)
+        private static OmenFrame TurnStartOmen(int? disclosure, EnemyDef enemyDef = null)
         {
-            EnemyDef enemy = Elite();
+            EnemyDef enemy = enemyDef ?? Elite();
             BattleState state = TurnLoop.Start(new BattleSetup(enemy, Deck(), 8, StartGap: 0), NoShuffle).State;
             var writer = new CoreScriptWriter(enemy);
             if (disclosure.HasValue) writer.Disclosure = disclosure.Value;
@@ -79,10 +94,57 @@ namespace Depiction.Bridge.Tests
                 Assert.That(omen.Icon, Is.EqualTo(OmenIcon.Attack));
                 Assert.That(omen.KindLabel, Is.EqualTo("攻撃"));
                 Assert.That(omen.ValueText, Is.Empty);
+                Assert.That(omen.PlanValueText, Is.Empty);
+            });
+        }
+
+        [Test]
+        public void ReadToOne_ThePlanShowsItsKind()
+        {
+            OmenFrame omen = TurnStartOmen(1);
+            Assert.Multiple(() =>
+            {
                 Assert.That(omen.PlanVisible, Is.True);
                 Assert.That(omen.PlanIcon, Is.EqualTo(OmenIcon.Guard));
                 Assert.That(omen.PlanKindLabel, Is.EqualTo("防御"));
-                Assert.That(omen.PlanValueText, Is.Empty);
+            });
+        }
+
+        [Test]
+        public void ReadToZero_ThePlanIsNotShown()
+        {
+            // battle_ui_ux_v2 §7 / §5.16 順 2 (#455): 開示度 0 は 1 手目の種別だけ.
+            OmenFrame omen = TurnStartOmen(0);
+            Assert.That(omen.Visible, Is.True);
+            Assert.That(omen.PlanVisible, Is.False);
+        }
+
+        [Test]
+        public void ReadToTwo_AStatusApplyingOmenAndPlan_CarryTheirStatuses()
+        {
+            // battle-visual-v1 §4.4 状態付与 (#455): the stamp, and the status where a number would stand.
+            OmenFrame omen = TurnStartOmen(2, Binder());
+            Assert.Multiple(() =>
+            {
+                Assert.That(omen.Icon, Is.EqualTo(OmenIcon.Seal));
+                Assert.That(omen.Statuses.Select(s => s.Glyph), Is.EqualTo(new[] { StatusGlyph.Slow }));
+                Assert.That(omen.PlanVisible, Is.True);
+                Assert.That(omen.PlanIcon, Is.EqualTo(OmenIcon.Seal));
+                Assert.That(omen.PlanStatuses.Select(s => s.Glyph), Is.EqualTo(new[] { StatusGlyph.Bleed }));
+            });
+        }
+
+        [Test]
+        public void ReadToOne_AStatusApplyingOmen_KeepsTheStamp_WithoutItsStatuses()
+        {
+            // §4.4: 数字と状態のアイコンは開示度 2 の敵にだけ. The stamp is the kind's icon and stays.
+            OmenFrame omen = TurnStartOmen(1, Binder());
+            Assert.Multiple(() =>
+            {
+                Assert.That(omen.Icon, Is.EqualTo(OmenIcon.Seal));
+                Assert.That(omen.Statuses, Is.Empty);
+                Assert.That(omen.PlanIcon, Is.EqualTo(OmenIcon.Seal));
+                Assert.That(omen.PlanStatuses, Is.Empty);
             });
         }
 

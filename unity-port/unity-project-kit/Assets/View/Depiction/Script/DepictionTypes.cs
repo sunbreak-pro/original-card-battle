@@ -31,8 +31,8 @@ namespace Depiction
 
     /// <summary>
     /// The icon on the omen badge (#349, battle-visual-v1 4.4). The script picks it; the View only
-    /// draws it. Status stands for the skill kind (a status put on, a push or pull, a break) until
-    /// #350 settles its look.
+    /// draws it. Status is the star of a 技 that puts no status on the opponent (a buff on itself, a
+    /// push or pull); Seal is the stamp of a 技 that does (状態付与, 決定 19, #455).
     /// </summary>
     public enum OmenIcon
     {
@@ -43,6 +43,29 @@ namespace Depiction
         Move,
         Stance,
         Rest,
+        Seal,
+    }
+
+    /// <summary>
+    /// The icon of a status a 状態付与 omen puts on the player (battle-visual-v1 §4.4 / 付録 A, #455).
+    /// None is a word with no icon in 付録 A (a boss's word, 鉤爪...): the badge writes its name in the
+    /// boss colour's double frame instead.
+    /// </summary>
+    public enum StatusGlyph
+    {
+        None,
+        Bleed,
+        Fragile,
+        Slow,
+        Intimidate,
+        Fatigue,
+    }
+
+    /// <summary>One status a 状態付与 omen puts on: its name as printed and its icon.</summary>
+    public sealed class OmenStatus
+    {
+        public string Label = "";
+        public StatusGlyph Glyph = StatusGlyph.None;
     }
 
     /// <summary>battle-visual-v1 §4.4 当たり外れの印: none, lands (phosphor, solid), or misses (steel, dashed, struck).</summary>
@@ -345,6 +368,13 @@ namespace Depiction
         public OmenHit Hit = OmenHit.None;
 
         /// <summary>
+        /// battle-visual-v1 §4.4 状態付与 (#455): for a <see cref="OmenIcon.Seal"/> omen, the statuses it
+        /// puts on the player, at most two, drawn at 28 px where the number would stand. Empty for any
+        /// other omen, and below 開示度 2 (<see cref="OmenDisclosure"/>).
+        /// </summary>
+        public List<OmenStatus> Statuses = new List<OmenStatus>();
+
+        /// <summary>
         /// battle-visual-v1 §4.4 / battle_ui_ux_v2 §7 (#455): how far the journal has read this enemy,
         /// 0〜2. The writer has already blanked what the level does not show (<see cref="OmenDisclosure"/>),
         /// so the View draws the frame as it is. Every source writes <see cref="OmenDisclosure.Full"/>
@@ -368,6 +398,8 @@ namespace Depiction
         /// since the plan is not a commitment. Empty for any other kind.
         /// </summary>
         public string PlanValueText = "";
+        /// <summary>§4.4: the plan's statuses as <see cref="Statuses"/> writes them, drawn at 20 px.</summary>
+        public List<OmenStatus> PlanStatuses = new List<OmenStatus>();
         /// <summary>
         /// The cells the plan aims at, as <see cref="SideGlyph"/> writes them. Empty when none. The plan
         /// badge does not draw it (battle-visual-v1 4.4 gives the plan no reach); it stays in the

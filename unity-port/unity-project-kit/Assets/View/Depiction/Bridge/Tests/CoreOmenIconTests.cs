@@ -1,6 +1,7 @@
 // #349: the omen badge carries the kind's icon and, for attack and guard only, a number. Runs under
 // `dotnet test` (Depiction.Bridge.Tests.csproj) and in Unity's EditMode runner from the same file.
 using System;
+using System.Linq;
 using BattleCore;
 using NUnit.Framework;
 
@@ -47,16 +48,75 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void ASkillOmen_CarriesTheStatusIcon_AndNoNumber()
+        public void ASkillThatPutsAStatusOnThePlayer_CarriesTheStamp_AndTheStatusInPlaceOfANumber()
         {
+            // battle-visual-v1 §4.4 状態付与 (#455): 追い立てる pushes and puts 鈍足 on the player.
             OmenFrame frame = CoreText.OmenOf(OmenFor(Enemies.PackAlpha, "herd"), Enemies.PackAlpha);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(frame.Icon, Is.EqualTo(OmenIcon.Seal));
+                Assert.That(frame.KindLabel, Is.EqualTo("技"));
+                Assert.That(frame.ValueText, Is.Empty);
+                Assert.That(frame.Statuses.Select(s => s.Label), Is.EqualTo(new[] { "鈍足" }));
+                Assert.That(frame.Statuses.Select(s => s.Glyph), Is.EqualTo(new[] { StatusGlyph.Slow }));
+            });
+        }
+
+        [Test]
+        public void ASkillThatPutsNoStatusOnThePlayer_CarriesTheStar_AndNothingInPlaceOfANumber()
+        {
+            // 遠吠え puts 強化 on the hound itself: a 技, but not a 状態付与.
+            OmenFrame frame = CoreText.OmenOf(OmenFor(Enemies.PackAlpha, "howl"), Enemies.PackAlpha);
 
             Assert.Multiple(() =>
             {
                 Assert.That(frame.Icon, Is.EqualTo(OmenIcon.Status));
                 Assert.That(frame.KindLabel, Is.EqualTo("技"));
                 Assert.That(frame.ValueText, Is.Empty);
+                Assert.That(frame.Statuses, Is.Empty);
             });
+        }
+
+        [Test]
+        public void AStatusWithNoIcon_IsCarriedByName_AndTheSelfStatusIsLeftOut()
+        {
+            // 縛りの言葉 puts 呪縛 (no 付録 A icon: the badge writes the name) and 威圧 on the player.
+            OmenFrame frame = CoreText.OmenOf(OmenFor(Enemies.MiasmaPriest, "binding_word"), Enemies.MiasmaPriest);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(frame.Icon, Is.EqualTo(OmenIcon.Seal));
+                Assert.That(frame.Statuses.Select(s => s.Label), Is.EqualTo(new[] { StatusKind.Binding.ToLabel(), StatusKind.Intimidate.ToLabel() }));
+                Assert.That(frame.Statuses.Select(s => s.Glyph), Is.EqualTo(new[] { StatusGlyph.None, StatusGlyph.Intimidate }));
+            });
+        }
+
+        [Test]
+        public void AnAttackThatAlsoPutsAStatus_KeepsTheSword_AndItsNumber()
+        {
+            // 盾打ち strikes and puts 鈍足: its kind is 攻撃, so the sword and the power, no stamp.
+            OmenFrame frame = CoreText.OmenOf(OmenFor(Enemies.ArmoredWarden, "shield_bash"), Enemies.ArmoredWarden);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(frame.Icon, Is.EqualTo(OmenIcon.Attack));
+                Assert.That(frame.ValueText, Is.Not.Empty);
+                Assert.That(frame.Statuses, Is.Empty);
+            });
+        }
+
+        [Test]
+        public void AtMostTwoStatuses_AreCarried()
+        {
+            EnemyActionDef many = new EnemyActionDef("many", "many", BattleAttribute.Skill, 1,
+                new Face(Reach: Reach.Only(0), Statuses: new[]
+                {
+                    new StatusGrant(StatusKind.Bleed, 1), new StatusGrant(StatusKind.Regen, 1, OnSelf: true),
+                    new StatusGrant(StatusKind.Slow, 1), new StatusGrant(StatusKind.Fatigue, 1),
+                }));
+            Assert.That(CoreText.OmenStatusesOf(OmenKind.Skill, many).Select(s => s.Glyph),
+                Is.EqualTo(new[] { StatusGlyph.Bleed, StatusGlyph.Slow }), "the self status is skipped; the third foe status is not shown");
         }
 
         [Test]

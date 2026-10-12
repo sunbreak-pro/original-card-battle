@@ -110,7 +110,7 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// battle-visual-v1 §4.4 (#455): how far the journal has read this enemy (開示度 0〜2). Below 2 the
-        /// omen's numbers are left off the script (OmenDisclosure). The journal does not hand a level to
+        /// omen's numbers and statuses are left off the script, and at 0 its plan (OmenDisclosure). The journal does not hand a level to
         /// the battle yet, so it is 2, everything shown, unless a caller sets it.
         /// </summary>
         public int Disclosure { get; set; } = OmenDisclosure.Full;
@@ -387,7 +387,11 @@ namespace Depiction.Bridge
                     _plan = changed.Now;
                     _planVisible = true;
                     _planChanged = true;
-                    ev.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy, Text = DepictionText.PlanChangedTag });
+                    // #455: an enemy read to 0 shows no plan (battle_ui_ux_v2 §7), so its change has nothing to pop.
+                    if (OmenDisclosure.ShowsPlan(Disclosure))
+                    {
+                        ev.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy, Text = DepictionText.PlanChangedTag });
+                    }
                     break;
 
                 case ActionExecuted executed:
@@ -949,9 +953,10 @@ namespace Depiction.Bridge
             EnemyActionDef planned;
             _enemyDef.Actions.TryGetValue(_plan.ActionId, out planned);
             frame.PlanVisible = true;
-            frame.PlanIcon = CoreText.IconOf(kind);
+            frame.PlanIcon = CoreText.IconOf(kind, planned);
             frame.PlanKindLabel = CoreText.OmenKindWord(kind);
             frame.PlanValueText = CoreText.OmenValueOf(kind, planned, null);
+            frame.PlanStatuses = CoreText.OmenStatusesOf(kind, planned);
             frame.PlanSideGlyph = _plan.Label.Reach != null ? _plan.Label.Reach.ToText() : "";
             frame.PlanChanged = _planChanged;
             return frame;
