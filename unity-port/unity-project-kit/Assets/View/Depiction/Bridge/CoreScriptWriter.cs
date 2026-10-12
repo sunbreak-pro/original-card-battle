@@ -80,6 +80,9 @@ namespace Depiction.Bridge
         /// <summary>The enemy action being written whiffed (§6): its trait miss has nothing to strike off.</summary>
         private bool _whiffed;
 
+        /// <summary>#455: the core has just made the draw pile again (DeckReshuffled); the next Drawn marks its beat.</summary>
+        private bool _rebuildPending;
+
         /// <summary>The system (§5.3) of the card or action whose blows are being written.</summary>
         private StrikeSystem _strike = StrikeSystem.Slash;
 
@@ -342,10 +345,28 @@ namespace Depiction.Bridge
                     _hand.Add(drawn.Card);
                     // A hand of six is six core events and one beat on screen.
                     Cue last = ev.Cues.Count > 0 ? ev.Cues[ev.Cues.Count - 1] : null;
-                    if (last != null && last.Kind == CueKind.DrawHand) last.Amount += 1;
-                    else ev.Cues.Add(Grammar(ev, new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 1 }, FxSystem.Breath));
+                    if (last == null || last.Kind != CueKind.DrawHand)
+                    {
+                        last = Grammar(ev, new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 0 }, FxSystem.Breath);
+                        ev.Cues.Add(last);
+                    }
+                    // §3.14 (#455): the core made the draw pile again just before this card; the cards
+                    // already drawn in this beat came off the old pile.
+                    if (_rebuildPending && last.RebuildAfter == Cue.Unchanged) last.RebuildAfter = last.Amount;
+                    _rebuildPending = false;
+                    last.Amount += 1;
                     break;
                 }
+
+                // §3.14 山札切れ (#455): the discard pile is shuffled into the draw pile; the next Drawn is its first card.
+                case DeckReshuffled _:
+                    _rebuildPending = true;
+                    break;
+
+                // battle-visual-v1 §4.7 / battle_ui_ux_v2 §5.11 順 4 (#455): the played stance card goes to the exile pile.
+                case CardExiled exiled when exiled.Actor == Actor.Player && ev.Kind == DepictionEventKind.PlayCard:
+                    ev.PlayedTo = PileKind.Exile;
+                    break;
 
                 case OmenSet omen:
                 {
@@ -780,6 +801,7 @@ namespace Depiction.Bridge
         {
             _order += 1;
             _whiffed = false;
+            _rebuildPending = false;
             return new DepictionEvent { Order = _order, Kind = kind, Title = title };
         }
 
@@ -814,6 +836,8 @@ namespace Depiction.Bridge
             frame.Floor = FloorOf(after);
             // battle-visual-v1 §4.7 (#455): the piles' counts, as the move left them.
             frame.Piles = new PileFrame { Shown = true, Draw = after.DrawPile.Count, Discard = after.DiscardPile.Count, Exile = after.Exiled.Count };
+            // battle_ui_ux_v2 §1.1 C4 (#455): what each pile holds, for the list a click on it opens.
+            PileCards.Fill(frame.Piles, after);
             // battle-visual-v1 §4.6 (#455): both sides' stance lists, from the stances the models hold.
             frame.StanceListsShown = true;
             if (frame.Omen.Visible) frame.Omen.Hit = HitMark(frame.Floor.AimCells);

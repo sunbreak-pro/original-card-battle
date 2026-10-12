@@ -36,6 +36,8 @@ namespace Depiction.Tests
         [TestCase(EffectId.ReceiverSnap, 80f, 0f, false)]
         [TestCase(EffectId.CardRelease, 160f, 0f, true)]
         [TestCase(EffectId.CardToDiscard, 200f, 0f, false)]
+        [TestCase(EffectId.CardToExile, 220f, 0f, false)]
+        [TestCase(EffectId.PileRebuild, 200f, 0f, true)]
         [TestCase(EffectId.CardReturn, 200f, 0f, false)]
         [TestCase(EffectId.RefusalShake, 160f, 0f, false)]
         [TestCase(EffectId.HandDiscard, 240f, 60f, true)]
@@ -260,6 +262,47 @@ namespace Depiction.Tests
             EffectId.ThrowLineShow, EffectId.ReceiverSnap, EffectId.CardRelease, EffectId.CardToDiscard,
             EffectId.CardReturn, EffectId.RefusalShake, EffectId.HandDiscard, EffectId.UnpayableDim,
         };
+
+        [Test]
+        public void ADrawThatRanThePileOut_HoldsTheRebuildBeforeTheCards_AndKeepsOneStagger()
+        {
+            // battle_ui_ux_v2 §3.14 / §5.1 順 6 (#455): 260 + (n − 1) × 60 + 200 for the draw that met the end of the pile.
+            var ev = new DepictionEvent { Kind = DepictionEventKind.TurnStart };
+            ev.Cues.Add(new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 8, RebuildAfter = 2 });
+            List<EffectStep> steps = EffectPlan.StepsOf(ev);
+            Assert.That(steps.Select(s => (s.Id, s.Count)),
+                Is.EqualTo(new[] { (EffectId.TurnBanner, 1), (EffectId.PileRebuild, 1), (EffectId.CardDraw, 8) }));
+            float draw = steps.Skip(1).Sum(s => EffectPlan.WaitMs(s, EffectSwitches.AllOn()));
+            Assert.That(draw, Is.EqualTo(260f + 7 * 60f + 200f), "§5.1: the worst draw is 880 ms");
+
+            var plain = new DepictionEvent { Kind = DepictionEventKind.TurnStart };
+            plain.Cues.Add(new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 6 });
+            Assert.That(EffectPlan.StepsOf(plain).Select(s => s.Id), Has.No.Member(EffectId.PileRebuild));
+        }
+
+        [Test]
+        public void AStanceCard_LeavesForTheExilePile_OnTheBeat600()
+        {
+            // battle_ui_ux_v2 §5.11: 順 1 (300) and 順 2 (300) come first; 順 4 flies 220 ms beside the beats.
+            Assert.That(EffectCatalog.CardToExileDelayMs, Is.EqualTo(300f + 300f));
+            Assert.That(EffectCatalog.Of(EffectId.CardToExile).Blocking, Is.False);
+            Assert.That(new DepictionEvent().PlayedTo, Is.EqualTo(PileKind.Discard), "a card goes to the discard pile unless the core exiles it");
+        }
+
+        [Test]
+        public void ThePileList_WritesOneRowPerKind_OrNone()
+        {
+            // battle_ui_ux_v2 §1.1 C4: 同種の残り「突き 2 / 3」.
+            var rows = new List<PileCard>
+            {
+                new PileCard { Name = "突き", InPile = 2, InDeck = 3 },
+                new PileCard { Name = "岩の構え", InPile = 1, InDeck = 1 },
+            };
+            Assert.That(PileList.BodyText(rows), Is.EqualTo("突き 2 / 3\n岩の構え 1 / 1"));
+            Assert.That(PileList.BodyText(new List<PileCard>()), Is.EqualTo(PileList.Empty));
+            Assert.That(new[] { PileKind.Draw, PileKind.Discard, PileKind.Exile }.Select(PileList.TabLabel), Is.EqualTo(new[] { "山札", "捨札", "除外" }));
+            Assert.That(PileList.WidthShare, Is.EqualTo(0.30f), "the journal drawer's mirror: the left 30%");
+        }
 
         [Test]
         public void TheFixedSlice_WaitsForTheDrawsTheReleasesAndTheDiscard()

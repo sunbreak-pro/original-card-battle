@@ -148,6 +148,8 @@ namespace Depiction.View
         private CardView _reachFor;
         /// <summary>battle-visual-v1 §4.7 (#455): the draw, discard and exile piles under the stamina tag.</summary>
         private PilesView _piles;
+        /// <summary>battle_ui_ux_v2 §1.1 C4 (#455): the drawer a click on a pile opens with its list.</summary>
+        private PileListView _pileList;
         /// <summary>battle-visual-v1 §4.6 (#455): each side's stance list at its edge.</summary>
         private StanceListView _stanceLists;
         /// <summary>battle-visual-v1 §4.9 (#455): the four frames of the attributes played this turn.</summary>
@@ -389,6 +391,8 @@ namespace Depiction.View
 
         private void Update()
         {
+            // battle_ui_ux_v2 §3.4: Esc closes the drawer (the pile lists, #455).
+            if (_pileList != null && _pileList.IsOpen && TryEscape()) _pileList.Close();
             UpdateHover();
             UpdateSnap();
             UpdateEndTurn();
@@ -430,6 +434,9 @@ namespace Depiction.View
                 // §5.5: over the hand and everything else below the throw line.
                 above = handArea && handArea.parent == root ? handArea.GetSiblingIndex() + 1 : -1;
                 _enemyShade = new EnemyTurnShadeView(root, above);
+                // battle_ui_ux_v2 §1.1 C4: a click on a pile opens its list over everything.
+                _pileList = new PileListView(root);
+                _piles.Clicked += pile => _pileList.Toggle(pile);
                 // §4.9: the 構えの予告 is made here at its own place; the scene's icon and number give way to it.
                 if (stanceHintIcon) stanceHintIcon.gameObject.SetActive(false);
                 if (stanceHintText) stanceHintText.gameObject.SetActive(false);
@@ -466,6 +473,7 @@ namespace Depiction.View
         {
             if (_piles == null) return;
             _piles.Bind(piles);
+            _pileList?.Show(piles);
             if (!_piles.Shown) return;
             if (deckPoint) deckPoint.position = _piles.MiddleOf(PileKind.Draw);
             if (discardPoint) discardPoint.position = _piles.MiddleOf(PileKind.Discard);
@@ -827,6 +835,8 @@ namespace Depiction.View
                 }
 
                 case CueKind.DrawHand:
+                    // §3.14 (#455): a draw that ran the pile out shows the discard pile sliding onto it first.
+                    if (cue.Amount > 0 && cue.RebuildAfter >= 0) yield return HoldBeat(EffectId.PileRebuild, SlideDiscardOntoDraw(), null);
                     yield return DrawHand(ev.After.Hand, cue.Amount);
                     break;
 
@@ -1342,24 +1352,59 @@ namespace Depiction.View
         }
 
         /// <summary>
-        /// The played card's ghost drifts from where the card vanished onto the discard pile
-        /// (EffectId.CardToDiscard). It runs beside the event's beats and holds nothing up.
+        /// The played card's ghost drifts from where the card vanished onto the pile the core put it in
+        /// (DepictionEvent.PlayedTo): the discard pile (EffectId.CardToDiscard), or for a stance card the
+        /// exile pile, 600 ms on and 220 ms in (EffectId.CardToExile, battle_ui_ux_v2 §5.11 順 4, #455).
+        /// It runs beside the event's beats and holds nothing up.
         /// </summary>
-        private IEnumerator FlyGhostToDiscard(Vector2 from)
+        private IEnumerator FlyGhostTo(Vector2 from, PileKind pile)
         {
-            if (!fxLayer || !discardPoint) yield break;
-            Vector2 to = DepictionFx.PointOn(fxLayer, discardPoint);
+            bool exiled = pile == PileKind.Exile;
+            if (!fxLayer) yield break;
+            Vector2 to;
+            if (exiled && _piles != null && _piles.Shown) to = PointOnFx(_piles.MiddleOf(PileKind.Exile));
+            else if (!exiled && discardPoint) to = DepictionFx.PointOn(fxLayer, discardPoint);
+            else yield break;
+            EffectId id = exiled ? EffectId.CardToExile : EffectId.CardToDiscard;
             Color tint = BattleTheme.WithAlpha(BattleTheme.Ink, 0.55f);
-            Image ghost = UiKit.Sprite(fxLayer, "DiscardGhost", ProceduralArt.White, tint, Half, Half, new Vector2(76f, 104f), from);
+            Image ghost = UiKit.Sprite(fxLayer, exiled ? "ExileGhost" : "DiscardGhost", ProceduralArt.White, tint, Half, Half, new Vector2(76f, 104f), from);
             ghost.raycastTarget = false;
             RectTransform rt = ghost.rectTransform;
-            yield return UiTween.Run(_effects.Ms(EffectId.CardToDiscard), Ease.InOut, t =>
+            if (exiled) yield return UiTween.Wait(EffectCatalog.CardToExileDelayMs);
+            yield return UiTween.Run(_effects.Ms(id), exiled ? Ease.In : Ease.InOut, t =>
             {
                 if (!rt) return;
                 rt.anchoredPosition = Vector2.LerpUnclamped(from, to, t);
                 ghost.color = BattleTheme.WithAlpha(tint, tint.a * (1f - t));
             });
             if (ghost) Destroy(ghost.gameObject);
+        }
+
+        /// <summary>A world point as an offset from the fx layer's centre, as DepictionFx.PointOn gives a transform's.</summary>
+        private Vector2 PointOnFx(Vector3 world)
+        {
+            Vector2 local = fxLayer.InverseTransformPoint(world);
+            return local - fxLayer.rect.center;
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §3.14 山札切れ (#455): the discard pile slides onto the draw pile in 200 ms (out)
+        /// before the cards fly. A card back of the piles' 64×84 crosses from one to the other; the
+        /// piles' own thickness follows with the event's settled frame. The exile pile does not move.
+        /// </summary>
+        private IEnumerator SlideDiscardOntoDraw()
+        {
+            if (!fxLayer || _piles == null || !_piles.Shown) yield break;
+            Vector2 from = PointOnFx(_piles.MiddleOf(PileKind.Discard));
+            Vector2 to = PointOnFx(_piles.MiddleOf(PileKind.Draw));
+            RectTransform sheet = UiKit.Point(fxLayer, "RebuildSheet", Half, Half, new Vector2(PileLayout.Width, PileLayout.Height), from);
+            VisualArt.Panel(sheet, "Back", BattleTheme.CardGround, 5);
+            VisualArt.Ring(sheet, "Edge", BattleTheme.Steel, 5, 1);
+            yield return UiTween.Run(_effects.Ms(EffectId.PileRebuild), Ease.Out, t =>
+            {
+                if (sheet) sheet.anchoredPosition = Vector2.LerpUnclamped(from, to, t);
+            });
+            if (sheet) Destroy(sheet.gameObject);
         }
 
         // ---- effects (#75-#77) -----------------------------------------------------------------
@@ -1731,9 +1776,22 @@ namespace Depiction.View
 #endif
         }
 
+        /// <summary>True on the frame Esc went down.</summary>
+        private static bool TryEscape()
+        {
+#if ENABLE_INPUT_SYSTEM
+            UnityEngine.InputSystem.Keyboard keyboard = UnityEngine.InputSystem.Keyboard.current;
+            return keyboard != null && keyboard.escapeKey.wasPressedThisFrame;
+#else
+            return Input.GetKeyDown(KeyCode.Escape);
+#endif
+        }
+
         private CardView CardUnderPointer()
         {
             if (!TryPointer(out Vector2 pointer)) return null;
+            // A card under the open pile list (#455) is not hovered through it.
+            if (_pileList != null && _pileList.Covers(pointer)) return null;
             // The hovered card is drawn in front, so it wins where two cards overlap.
             // It is also caught on its raised part (§4.8: up to 136 px above its resting place), so moving
             // onto what the hover lifted keeps the hover, and the right click (§7.4) works there too.
@@ -2158,7 +2216,7 @@ namespace Depiction.View
                 ? DepictionFx.PointOn(fxLayer, receiver.transform)
                 : DepictionFx.PointOn(fxLayer, card.transform);
             Destroy(card.gameObject);
-            StartCoroutine(Effect(EffectId.CardToDiscard, FlyGhostToDiscard(vanishedAt), null));
+            StartCoroutine(Effect(ev.PlayedTo == PileKind.Exile ? EffectId.CardToExile : EffectId.CardToDiscard, FlyGhostTo(vanishedAt, ev.PlayedTo), null));
             StartCoroutine(Effect(EffectId.HandFan, SettleHand(_effects.Ms(EffectId.HandFan)), LayoutHand));
 
             foreach (Cue cue in ev.Cues)

@@ -47,6 +47,12 @@ namespace Depiction
         /// <summary>The played card's ghost settles on the discard pile, beside the event's beats.</summary>
         CardToDiscard,
 
+        /// <summary>A played stance card's ghost flies to the exile pile, beside the event's beats (#455).</summary>
+        CardToExile,
+
+        /// <summary>The draw pile ran out mid-draw: the discard pile slides onto it before the cards fly (#455).</summary>
+        PileRebuild,
+
         /// <summary>A card released elsewhere slides back to its fan place.</summary>
         CardReturn,
 
@@ -231,6 +237,12 @@ namespace Depiction
     {
         private static readonly Dictionary<EffectId, EffectSpec> Specs = Build();
 
+        /// <summary>
+        /// battle_ui_ux_v2 §5.11 順 4 (#455): a stance card leaves for the exile pile on the beat 600 ms
+        /// after it is released, once its 型 (順 2, 300 from 300) has shown.
+        /// </summary>
+        public const float CardToExileDelayMs = 600f;
+
         public static IReadOnlyCollection<EffectSpec> All => Specs.Values;
 
         public static EffectSpec Of(EffectId id)
@@ -255,6 +267,8 @@ namespace Depiction
                 new EffectSpec(EffectId.ReceiverSnap, 80f, 0f, blocking: false, "#75 受け皿への吸い付き"),
                 new EffectSpec(EffectId.CardRelease, 160f, 0f, blocking: true, "battle_ui_ux_v2 §3.2 離す（皿の上 / 線より上）"),
                 new EffectSpec(EffectId.CardToDiscard, 200f, 0f, blocking: false, "#75 捨て札への移動"),
+                new EffectSpec(EffectId.CardToExile, 220f, 0f, blocking: false, "battle_ui_ux_v2 §5.11 順 4 除外の束へ飛ぶ 220 in（拍 600。面の拍と並行）"),
+                new EffectSpec(EffectId.PileRebuild, 200f, 0f, blocking: true, "battle_ui_ux_v2 §3.14 / §5.1 順 6 山札の作り直し 200（#453 で 300 から詰めた仮の値）"),
                 new EffectSpec(EffectId.CardReturn, 200f, 0f, blocking: false, "battle_ui_ux_v2 §3.2 離す（それ以外）"),
                 new EffectSpec(EffectId.RefusalShake, 160f, 0f, blocking: false, "#75 出せない札の揺れ"),
                 new EffectSpec(EffectId.HandDiscard, 240f, 60f, blocking: true, "battle_ui_ux_v2 §3.2 全捨て"),
@@ -471,6 +485,10 @@ namespace Depiction
                 // Both hand cues carry how many cards move: the ones drawn, the ones thrown away. No card
                 // moving is no beat at all, as on screen (#495).
                 case CueKind.DrawHand:
+                    // §3.14 / §5.1 順 6 (#455): a draw that ran the pile out holds 200 for the discard pile
+                    // to slide onto it. The slide plays at the head of the draw, so the cards keep one
+                    // stagger and the draw is 260 + (n − 1) × 60 + 200, as §5.1 counts it.
+                    if (cue.Amount > 0 && cue.RebuildAfter >= 0) steps.Add(new EffectStep(EffectId.PileRebuild, 1));
                     if (cue.Amount > 0) steps.Add(new EffectStep(EffectId.CardDraw, cue.Amount));
                     break;
                 case CueKind.DiscardHand:
