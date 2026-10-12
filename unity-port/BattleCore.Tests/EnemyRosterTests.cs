@@ -543,7 +543,7 @@ namespace BattleCore.Tests
             ["armored_warden"] = "iron_wall:— helm_splitter:GapAtMost/BreakBonus/1 push_shield:— shield_bash:Combo/PowerBonus/3[Attack] advance_guard:— brace:—",
             ["pack_alpha"] = "hunt_stance:— rend:— pounce:GapAtLeast/PowerBonus/5@2 herd:— howl:— crouch:Reserve/GuardBonus/3@5",
             ["polearm_unyielding"] = "set_spear:— long_thrust:Combo/PowerBonus/3[Skill] haft_shove:— hook_in:— plate_guard:Reserve/GuardBonus/3@5 clank_on:—",
-            ["miasma_priest"] = "ward:— miasma_rite:— staff_strike:GapAtMost/PowerBonus/5 miasma_bolt:— push_back:Unguarded/PowerBonus/5 binding_word:— coil:—",
+            ["miasma_priest"] = "ward:— miasma_rite:— staff_strike:GapAtMost/PowerBonus/5 miasma_bolt:GapAtLeast/PowerBonus/7@3 push_back:Unguarded/PowerBonus/5 binding_word:— coil:—",
             ["abyss_angler"] = "hook_cast:GapAtLeast/PowerBonus/3@3 drown:FoeHas/PowerBonus/3(Hook) fathom_call:— line_whip:FoeHas/PowerBonus/3(Slow) deep_water:— reel_in:— slack_line:—",
             ["distortion_root"] = "sweep:FoeHas/PowerBonus/5(Rooting) thorn_volley:GapAtLeast/PowerBonus/5@3 wither_breath:— root_grip:— twist:Broken/PowerBonus/3 bark:— creeping_root:—",
         };
@@ -566,11 +566,12 @@ namespace BattleCore.Tests
         [TestCase("polearm_crystal", "haft_guard", "Guard 3")]
         [TestCase("twin_blade_warped", "step_slash", "間合い 1〜2 に届く。当ててから前へ 2")]
         [TestCase("pack_alpha", "rend", "間合い 0 に届く。出血を 1 付与する")]
-        [TestCase("miasma_priest", "miasma_bolt", "間合い 1〜4 に届く。疲労を 1 付与する")]
         [TestCase("armored_warden", "brace", "Guard 3")]
         public void TheSevenTraitsV415TookOff_AreGone_FromTheDataAndTheText(string enemy, string action, string description)
         {
             // roster §11 v4.15 (#396): seven traits that never held were taken off; #446 follows.
+            // 瘴気の矢 was the seventh; v4.18 (#450, #497) gave it a new one (間合い 3 以上: 威力 +7),
+            // which EveryTrait_IsTheRosters reads, so six are left here.
             var def = Enemies.ById(enemy).Actions[action];
             Assert.Multiple(() =>
             {

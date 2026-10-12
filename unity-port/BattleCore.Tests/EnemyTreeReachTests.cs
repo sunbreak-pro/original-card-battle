@@ -146,7 +146,7 @@ namespace BattleCore.Tests
 
                 // §9 step 12: the omen, decided as DecideNextOmen decides it.
                 var skip = new List<string>(spent);
-                skip.AddRange(EnemyAi.Barred(def, foe, beforeFoeTurn: true));
+                skip.AddRange(EnemyAi.Barred(def, foe, beforeFoeTurn: true, active: active));
                 var omen = EnemyAi.DecideOmen(def, gap, stamina, skip, active);
                 if (omen.ActionId == EnemyAi.RestActionId) continue;
                 var first = EnemyAi.ActionOf(def, omen.ActionId, active);
@@ -159,7 +159,7 @@ namespace BattleCore.Tests
 
                 // roster §1.3: the tree read again after the first action, as step 10 reads it.
                 var again = new List<string>(spent) { first.Id };
-                again.AddRange(EnemyAi.Barred(def, foe, beforeFoeTurn: false));
+                again.AddRange(EnemyAi.Barred(def, foe, beforeFoeTurn: false, active: active));
                 Saw(EnemyAi.ChooseAction(def, gap, stamina - first.Cost, again, active), scene + ", second");
             }
             return chosen;
@@ -198,13 +198,17 @@ namespace BattleCore.Tests
 
         /// <summary>
         /// roster §4.3: the player holding none, or 1 or 2 stacks of each word an action of this enemy
-        /// waits out (<see cref="EnemyActionDef.NotWhileFoeHas"/>). One stack of a ターンで減る型 word
+        /// waits out (<see cref="EnemyActionDef.NotWhileFoeHas"/>) or stops at the cap of
+        /// (<see cref="EnemyActionDef.NotAtFoeCap"/>, #497). One stack of a ターンで減る型 word
         /// bars the second action but not the omen, which <see cref="EnemyAi.Barred"/> reads.
         /// </summary>
         private static IEnumerable<StatusSet> FoeWords(EnemyDef def)
         {
             yield return StatusSet.Empty;
-            var words = def.Actions.Values.Where(a => a.NotWhileFoeHas.HasValue).Select(a => a.NotWhileFoeHas!.Value).Distinct();
+            var waited = def.Actions.Values.Where(a => a.NotWhileFoeHas.HasValue).Select(a => a.NotWhileFoeHas!.Value);
+            var capped = def.Actions.Values.Where(a => a.NotAtFoeCap)
+                .SelectMany(a => a.Face.StatusList.Where(g => !g.OnSelf && g.Cap > 0).Select(g => g.Kind));
+            var words = waited.Concat(capped).Distinct();
             foreach (var word in words)
             {
                 yield return StatusSet.Of((word, 1));

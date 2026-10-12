@@ -558,7 +558,8 @@ namespace BattleCore
         string Description = "",
         OmenKind? Omen = null,
         StatusKind? NotWhileFoeHas = null,
-        int? PullBeyond = null)
+        int? PullBeyond = null,
+        bool NotAtFoeCap = false)
     {
         public int Cost => Columns.CostOf(Column);
 
@@ -567,6 +568,10 @@ namespace BattleCore
 
         // NotWhileFoeHas (#51, roster §4.3): the tree passes over this action while the player holds
         // the word at the phase it would be taken in (縛りの言葉 and 呪縛). See EnemyAi.Barred.
+        //
+        // NotAtFoeCap (#497, roster v4.18 §4.3): the tree passes over this action while every capped
+        // word it puts on the player is already held at the cap of the action as it stands under the
+        // active switch (瘴気の儀: 瘴気纏い 1, 2 from the second stage). See EnemyAi.Barred.
         //
         // PullBeyond (#51, roster §6.3 伸びる根): when set, the face's Push is a push of |Push| cells
         // while N is at most PullBeyond and a pull of |Push| cells beyond it, read when it resolves.

@@ -104,19 +104,21 @@ namespace BattleCore.Tests
         public void MiasmaShroud_StaysAtOneUntilTheSecondStage_ThenReachesTwo()
         {
             // roster §4.1 / §4.4: 「2 スタックまで重なり −2」 and the second stage 「瘴気纏いが 2 スタックまで重なる」.
+            // v4.18 (#497, §4.3): the rite is not taken while 瘴気纏い is at the cap, so the phase
+            // between puts nothing on; before v4.18 it rited again and the stack past the cap dropped.
             var s = Opened(Enemies.MiasmaPriest, 3);
             var first = TurnLoop.EndTurn(s, NoShuffle).State;                           // 瘴気の儀 → 1
             s = TurnLoop.BeginPlayerTurn(first, NoShuffle).State;
             s = s.WithEnemy(s.Enemy with { Hp = 68 });                                   // + 再生 2 at its turn start = 70: the second stage at step 12
-            var second = TurnLoop.EndTurn(s, NoShuffle);                                 // 瘴気の儀 again: held at 1
+            var second = TurnLoop.EndTurn(s, NoShuffle);                                 // no 瘴気の儀: held at the cap of 1
             s = TurnLoop.BeginPlayerTurn(second.State, NoShuffle).State;
             var third = TurnLoop.EndTurn(s, NoShuffle);                                  // the stage's 瘴気の儀 → 2
 
-            var secondRite = second.Events.OfType<StatusApplied>().Single(a => a.Kind == StatusKind.MiasmaShroud);
             Assert.Multiple(() =>
             {
-                Assert.That(secondRite.StacksAfter, Is.EqualTo(1));
-                Assert.That(secondRite.Landed, Is.EqualTo(0), "the stack past the cap is dropped");
+                Assert.That(second.Events.OfType<ActionExecuted>().Select(e => e.Action.Id), Does.Not.Contain("miasma_rite"));
+                Assert.That(second.Events.OfType<StatusApplied>().Where(a => a.Kind == StatusKind.MiasmaShroud), Is.Empty);
+                Assert.That(second.State.Player.Statuses.Stacks(StatusKind.MiasmaShroud), Is.EqualTo(1));
                 Assert.That(second.State.Player.MaxStamina, Is.EqualTo(9));
                 Assert.That(second.State.Enemies[0].ActiveSwitch, Is.EqualTo("second_stage"));
                 Assert.That(third.Events.OfType<ActionExecuted>().First().Action.Id, Is.EqualTo("miasma_rite"));
