@@ -57,6 +57,11 @@ namespace Exploration
 
         public const string JournalButton = "手記（J）";
 
+        public const string CardsButton = "所持カード（C）";
+
+        /// <summary>The gear of 設定・セーブ, in words until the design lane draws the icon.</summary>
+        public const string SettingsButton = "設定（Esc）";
+
         public const string EndLifeButton = "この生を終える";
 
         public const string FarNode = "遠いノードは種別しか分かりません";

@@ -74,6 +74,24 @@ namespace Exploration
         Survived,
     }
 
+    /// <summary>
+    /// What the top band's buttons open over the screen (dungeon_exploration_v4.md §6.2), one at a
+    /// time. The journal is a drawer beside the map; the other two cover it.
+    /// </summary>
+    public enum Overlay
+    {
+        None,
+
+        /// <summary>The journal drawer: the band's button or J.</summary>
+        Journal,
+
+        /// <summary>The cards the character holds, read only: the band's button or C.</summary>
+        Cards,
+
+        /// <summary>Settings and 「保存してゲームを閉じる」: the band's gear or Esc.</summary>
+        Settings,
+    }
+
     /// <summary>The run's numbers before and after entering one node, straight from ExplorationReducer.Step.</summary>
     public sealed class StepForecast
     {
@@ -311,6 +329,27 @@ namespace Exploration
         public IReadOnlyList<CardButton> Buttons { get; }
 
         public bool IsShown => Kind != CardKind.None;
+
+        /// <summary>A card that waits for a yes or a no. Esc answers no before it does anything else (§6.2).</summary>
+        public bool IsConfirmation =>
+            Kind == CardKind.ConfirmStep || Kind == CardKind.ConfirmDescend || Kind == CardKind.ConfirmEndLife;
+    }
+
+    /// <summary>A screen the top band opens over the map: 所持カード or 設定・セーブ (§6.2).</summary>
+    public sealed class OverlayPage
+    {
+        public OverlayPage(string title, IReadOnlyList<string> lines, string closeLabel)
+        {
+            Title = title;
+            Lines = lines;
+            CloseLabel = closeLabel;
+        }
+
+        public string Title { get; }
+        public IReadOnlyList<string> Lines { get; }
+
+        /// <summary>「閉じる（C）」 and the like: the button and the key that close it.</summary>
+        public string CloseLabel { get; }
     }
 
     /// <summary>One frame of the exploration screen.</summary>
@@ -335,7 +374,12 @@ namespace Exploration
             bool canEndLife,
             bool showsEndLife,
             ScreenCard card,
-            JournalBook journal)
+            JournalBook journal,
+            Overlay openOverlay,
+            bool canOpenCards,
+            bool canOpenSettings,
+            OverlayPage cards,
+            OverlayPage settings)
         {
             LayerTitle = layerTitle;
             TimeLabel = timeLabel;
@@ -356,6 +400,11 @@ namespace Exploration
             ShowsEndLife = showsEndLife;
             Card = card;
             Journal = journal;
+            OpenOverlay = openOverlay;
+            CanOpenCards = canOpenCards;
+            CanOpenSettings = canOpenSettings;
+            Cards = cards;
+            Settings = settings;
         }
 
         /// <summary>「第 2 層　■■の秘跡」.</summary>
@@ -403,6 +452,23 @@ namespace Exploration
         public ScreenCard Card { get; }
 
         public JournalBook Journal { get; }
+
+        /// <summary>What is open over the screen from the top band, if anything.</summary>
+        public Overlay OpenOverlay { get; }
+
+        /// <summary>
+        /// The band's 所持カード button is live. Like the gear, it goes dead while the stand-in battle
+        /// card is up, which counts as being in battle (§6.2). The journal's button never does.
+        /// </summary>
+        public bool CanOpenCards { get; }
+
+        public bool CanOpenSettings { get; }
+
+        /// <summary>The 所持カード screen. Its contents wait for #244; until then it is a stand-in.</summary>
+        public OverlayPage Cards { get; }
+
+        /// <summary>The 設定・セーブ screen. Settings and saving are not wired yet; it is a stand-in.</summary>
+        public OverlayPage Settings { get; }
 
         /// <summary>
         /// The map takes input only while no card covers it. The carried items, the band and

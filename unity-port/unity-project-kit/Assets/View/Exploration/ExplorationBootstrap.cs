@@ -41,14 +41,18 @@ namespace Exploration.View
             });
 
             EnsureEventSystem();
-            _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable);
+            _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable, Toggle);
             Render();
             Debug.Log("[ExplorationBootstrap] seed " + used);
         }
 
+        // J, C and Esc do what the band's three buttons do; Esc's order is the session's (§6.2).
         private void Update()
         {
-            if (_view != null && JournalKeyPressed()) _view.ToggleJournal();
+            if (_view == null) return;
+            if (Pressed(KeyCode.J)) Toggle(Overlay.Journal);
+            if (Pressed(KeyCode.C)) Toggle(Overlay.Cards);
+            if (Pressed(KeyCode.Escape) && _session.Escape()) Render();
         }
 
         private void OnDestroy()
@@ -73,6 +77,11 @@ namespace Exploration.View
             if (_session.UseConsumable(index)) Render();
         }
 
+        private void Toggle(Overlay overlay)
+        {
+            if (_session.Toggle(overlay)) Render();
+        }
+
         private void Render() => _view.Render(_session.Screen());
 
         private RectTransform BuildCanvas()
@@ -87,13 +96,20 @@ namespace Exploration.View
             return (RectTransform)_canvas.transform;
         }
 
-        private static bool JournalKeyPressed()
+        private static bool Pressed(KeyCode key)
         {
 #if ENABLE_INPUT_SYSTEM
             UnityEngine.InputSystem.Keyboard keyboard = UnityEngine.InputSystem.Keyboard.current;
-            return keyboard != null && keyboard.jKey.wasPressedThisFrame;
+            if (keyboard == null) return false;
+            return key switch
+            {
+                KeyCode.J => keyboard.jKey.wasPressedThisFrame,
+                KeyCode.C => keyboard.cKey.wasPressedThisFrame,
+                KeyCode.Escape => keyboard.escapeKey.wasPressedThisFrame,
+                _ => false,
+            };
 #else
-            return Input.GetKeyDown(KeyCode.J);
+            return Input.GetKeyDown(key);
 #endif
         }
 
