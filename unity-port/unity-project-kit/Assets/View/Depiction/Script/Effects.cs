@@ -445,6 +445,18 @@ namespace Depiction
             return cue.PlayerCellAfter > 0;
         }
 
+        /// <summary>
+        /// §5.4 順 2 / §5.5 順 8 (#499): the cue right after this blow is a move, so the player does not
+        /// step back first; the move carries the figure on from where the lunge left it. The screen
+        /// (DepictionPlayer.Attack) and the plan both ask here, so they leave out the same return.
+        /// </summary>
+        public static bool MoveFollows(DepictionEvent ev, Cue blow)
+        {
+            if (ev == null) throw new ArgumentNullException(nameof(ev));
+            int index = ev.Cues.IndexOf(blow);
+            return index >= 0 && index + 1 < ev.Cues.Count && ev.Cues[index + 1].Kind == CueKind.RangeSwitch;
+        }
+
         /// <summary>How long the flow is held at one step with these switches: the one wait both the screen and the tests use.</summary>
         public static float WaitMs(EffectStep step, EffectSwitches switches)
         {
@@ -459,12 +471,12 @@ namespace Depiction
             var steps = new List<EffectStep>();
             if (ev.Kind == DepictionEventKind.PlayCard) steps.Add(new EffectStep(EffectId.CardRelease, 1));
             if (ev.Kind == DepictionEventKind.TurnStart) steps.Add(new EffectStep(EffectId.TurnBanner, 1));
-            foreach (Cue cue in ev.Cues) AddSteps(steps, cue);
+            foreach (Cue cue in ev.Cues) AddSteps(steps, ev, cue);
             if (ev.Kind == DepictionEventKind.TurnEnd) steps.Add(new EffectStep(EffectId.EnemyTurnBanner, 1));
             return steps;
         }
 
-        private static void AddSteps(List<EffectStep> steps, Cue cue)
+        private static void AddSteps(List<EffectStep> steps, DepictionEvent ev, Cue cue)
         {
             switch (cue.Kind)
             {
@@ -496,7 +508,7 @@ namespace Depiction
                     if (cue.HpAfter != Cue.Unchanged)
                     {
                         steps.Add(new EffectStep(EffectId.HpDrain, 1));
-                        if (byPlayer) steps.Add(new EffectStep(EffectId.AttackReturn, 1));
+                        if (byPlayer && !MoveFollows(ev, cue)) steps.Add(new EffectStep(EffectId.AttackReturn, 1));
                     }
                     break;
                 }

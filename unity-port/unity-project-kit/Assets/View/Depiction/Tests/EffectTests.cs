@@ -110,6 +110,31 @@ namespace Depiction.Tests
         }
 
         [Test]
+        public void ABlowAMoveFollows_LeavesOutTheReturn_TheMoveCarriesThePlayerOn()
+        {
+            // §5.4 順 2 / §5.5 順 8 (#499): 牽制 hits, then steps back one cell; the step back is the move.
+            var feint = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
+            var blow = new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Intensity = 2, HpAfter = 40 };
+            feint.Cues.Add(blow);
+            feint.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2 });
+            Assert.That(EffectPlan.MoveFollows(feint, blow), Is.True);
+            Assert.That(Steps(feint), Is.EqualTo(new[]
+            {
+                (EffectId.CardRelease, 1), (EffectId.AttackLunge, 1), (EffectId.StrikeShape, 1),
+                (EffectId.HitStop, 1), (EffectId.HpDrain, 1), (EffectId.RangeSwitch, 1),
+            }));
+
+            // Anything between the blow and the move (here a status) and the player steps back as usual.
+            var apart = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
+            var first = new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Intensity = 2, HpAfter = 40 };
+            apart.Cues.Add(first);
+            apart.Cues.Add(new Cue { Kind = CueKind.StatusChange, Target = UnitSide.Enemy, Text = "出血", Amount = 1, StacksAfter = 1 });
+            apart.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2 });
+            Assert.That(EffectPlan.MoveFollows(apart, first), Is.False);
+            Assert.That(Steps(apart), Does.Contain((EffectId.AttackReturn, 1)));
+        }
+
+        [Test]
         public void AFall_IsItsOwnBeat_OfEightHundredMs()
         {
             var fall = new DepictionEvent { Kind = DepictionEventKind.Defeat, After = new DepictionFrame() };

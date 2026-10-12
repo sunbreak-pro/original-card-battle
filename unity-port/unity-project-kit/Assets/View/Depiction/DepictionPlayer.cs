@@ -763,7 +763,8 @@ namespace Depiction.View
                 StartCoroutine(Effect(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome)));
             }
             // A move that ends where it began (盾 reaches 0) never returns, and a blow Guard took part of
-            // skips the player's return: neither may keep its action picture into the next event.
+            // (or one a move follows, #499) skips the player's return: neither may keep its action
+            // picture into the next event.
             else if (enemyFigure) enemyFigure.SetPose(FigurePose.Idle);
             if (playerFigure) playerFigure.SetPose(FigurePose.Idle);
             EndPlan();
@@ -975,7 +976,9 @@ namespace Depiction.View
             StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
             yield return DrainHp(status, cue.HpAfter);
             yield return Gate(ev.Order + "-impact");
-            if (byPlayer)
+            // §5.4 順 2 / §5.5 順 8 (#499): a move right after the blow carries the player on from the
+            // lunge (SwitchRange starts where the figure stands), so there is no step back first.
+            if (byPlayer && !EffectPlan.MoveFollows(ev, cue))
             {
                 yield return HoldBeat(EffectId.AttackReturn, ReturnHome(attacker, attackerHome, _effects.Ms(EffectId.AttackReturn)), () => SnapHome(attacker, attackerHome));
             }
