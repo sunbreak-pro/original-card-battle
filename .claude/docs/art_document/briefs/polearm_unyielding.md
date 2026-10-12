@@ -1,6 +1,6 @@
 # 不退の槍竜（polearm_unyielding）— 仕様カード
 
-- 作成日: 2026-10-04（#287。こうだいさんが Krita で作った待機の絵を Unity リポへ入れた）/ 更新: 2026-10-10（#287。幅の例外を規約に入れ、枠の幅（#302）と BattleCore の追加に進捗を合わせた）/ 2026-10-11（#287。予兆の札の大きさを実行時の 200 × 98 に直し、コードの行番号を今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵の参照を `battle_ui_ux_v2.md` §6.4 に替えた）/ 工程: C0（`visual-production-pipeline character polearm_unyielding`）
+- 作成日: 2026-10-04（#287。こうだいさんが Krita で作った待機の絵を Unity リポへ入れた）/ 更新: 2026-10-10（#287。幅の例外を規約に入れ、枠の幅（#302）と BattleCore の追加に進捗を合わせた）/ 2026-10-11（#287。予兆の札の大きさを実行時の 200 × 98 に直し、コードの行番号を今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵の参照を `battle_ui_ux_v2.md` §6.4 に替えた）/ 2026-10-12（#287。ずれたコードの行番号を今の行に直した）/ 工程: C0（`visual-production-pipeline character polearm_unyielding`）
 - 正本: `.claude/docs/enemy_document/enemy_roster_v4.md`（§3.3 不退の槍竜）/ `.claude/docs/vision/world-v1.md`（竜の系譜）/ `.claude/docs/art_document/style-guide.md`（原本の大きさ・指示文・帯び方）/ `.claude/docs/art_document/asset-intake.md`（書き出しと取り込み）/ `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs`（枠と配置）
 - 手順書: `docs/reports/2026-09-19-krita-ai-setup-guide.html` 4 章（待機の絵）/ `docs/reports/2026-10-03-enemy-motion.html`（攻撃と倒れの差分の作り方）
 - 内部 ID は `polearm_unyielding` です。v4.6 で足した敵で、錆槍の竜兵の `polearm_warped` にそろえて `polearm_` で始めています（`enemy_roster_v4.md` §1.8）。ファイル名と asset id もこの ID を使います。`asset-intake.md` §4 も、2026-10-06 にロースターの内部 ID を使う形に直りました（#327）。
@@ -24,7 +24,7 @@
 | 基準点 | 足元の中央（枠の pivot は (0.5, 0)） | `DepictionPrefabBuilder.cs:223` |
 | 左右の向き | 左向きで描きます。Unity は反転せず、画面右（x = +400）から左のプレイヤーをそのまま向きます | `DepictionPrefabBuilder.cs:505`、`:509-510`、`FigureView.cs:58` |
 | 頭上の空き | 予兆の札は、実行時に 200 × 98 になり、枠の上端から約 29 単位上に出ます。精鋭は札を 2 段積む設計で、2 段目はさらに上に出ます（2 段目は未実装）。枠の中は上端まで描いてかまいません | `OmenBadgeView.cs:29`、`:66`（札の大きさ。プレハブの 270 × 68（`DepictionPrefabBuilder.cs:368`）は実行時に置き換わる）、`DepictionPrefabBuilder.cs:513`（札の中心が y = 468）、`:496`（足元が y = −60）、`battle_ui_ux_v2.md` §2.1・§3.10 |
-| 数字と文字の位置 | 数字は足元から 310 単位（胸の 270 + 40）、ラベルは 440 単位（頭の 470 − 30）に出ます | `DepictionPrefabBuilder.cs:228-229`、`DepictionPlayer.cs:612-613` |
+| 数字と文字の位置 | 数字は足元から 310 単位（胸の 270 + 40）、ラベルは 440 単位（頭の 470 − 30）に出ます | `DepictionPrefabBuilder.cs:228-229`、`DepictionPlayer.cs:785-786` |
 | 原本の大きさ | **900 × 1536** です。決まりの 640 × 1536 より 260 広く、書き出しも 900 × 1536 のままです。900 は 4 の倍数なので BC7 が効きます | `style-guide.md` §2、`asset-intake.md` §1.2・§3 |
 
 幅の例外（晶槍の竜兵の 800 と不退の槍竜の 900）は、`style-guide.md` §2 と `asset-intake.md` §1.2 に書きました（2026-10-10、#287）。
