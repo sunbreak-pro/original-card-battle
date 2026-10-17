@@ -82,8 +82,8 @@ namespace Depiction.Bridge.Tests
             Assert.That(ev.After.Omen.Icon, Is.EqualTo(OmenIcon.Attack));
             Assert.That(ev.After.Omen.SideGlyph, Is.EqualTo("0"), "the shove's reach, where the side glyph was (#163)");
             // #248: the shove as it would land if the turn ended now — 構え's Guard 3 takes 無防備's +3
-            // away, so 5, then the two-cell push finds one cell left and puts 3 of wall on top: 8.
-            Assert.That(ev.After.Omen.ValueText, Is.EqualTo("8"));
+            // away, so 6, then the two-cell push finds one cell left and puts 3 of wall on top: 9.
+            Assert.That(ev.After.Omen.ValueText, Is.EqualTo("9"));
             Assert.That(ev.After.Corner.Turn, Is.EqualTo(1));
             Assert.That(ev.After.StanceHint, Is.EqualTo("+3"));
         }
@@ -308,7 +308,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(turnEnd.After.Player.Guard, Is.EqualTo(3));
             Assert.That(turnEnd.After.StanceHint, Is.EqualTo(""));
 
-            // The shove: 5 into Guard 3 → 3 blocked, 2 through; the two-cell push moves the player one
+            // The shove: 6 into Guard 3 → 3 blocked, 3 through; the two-cell push moves the player one
             // (cell 1), and the wall takes 3 more in an event of its own (§7.3).
             DepictionEvent shove = events[1];
             Assert.That(shove.Title, Is.EqualTo("柄尻の押し込み"));
@@ -320,8 +320,8 @@ namespace Depiction.Bridge.Tests
             Assert.That(shove.Cues[1].HpAfter, Is.EqualTo(Cue.Unchanged), "an enemy slash is the swing alone");
             Assert.That(shove.Cues[2].Amount, Is.EqualTo(3));
             Assert.That(shove.Cues[2].GuardAfter, Is.EqualTo(0));
-            Assert.That(shove.Cues[3].Amount, Is.EqualTo(2));
-            Assert.That(shove.Cues[3].HpAfter, Is.EqualTo(48));
+            Assert.That(shove.Cues[3].Amount, Is.EqualTo(3));
+            Assert.That(shove.Cues[3].HpAfter, Is.EqualTo(47));
             Assert.That(shove.Cues[4].Target, Is.EqualTo(UnitSide.Player));
             Assert.That(shove.Cues[4].RangeGlyphAfter, Is.EqualTo("1"));
             Assert.That(shove.After.Omen.Visible, Is.False, "the omen is spent");
@@ -332,8 +332,8 @@ namespace Depiction.Bridge.Tests
             Assert.That(Kinds(wall), Is.EqualTo(new[] { CueKind.Hit }));
             Assert.That(wall.Cues[0].Target, Is.EqualTo(UnitSide.Player));
             Assert.That(wall.Cues[0].Amount, Is.EqualTo(3));
-            Assert.That(wall.Cues[0].HpAfter, Is.EqualTo(45));
-            Assert.That(wall.After.Player.Hp, Is.EqualTo(45));
+            Assert.That(wall.Cues[0].HpAfter, Is.EqualTo(44));
+            Assert.That(wall.After.Player.Hp, Is.EqualTo(44));
 
             // Next omen: the enemy's 構え goes up, then the sweep is announced from the 1〜2 branch.
             DepictionEvent next = events[3];
@@ -343,7 +343,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(next.After.Enemy.Guard, Is.EqualTo(3));
             Assert.That(next.After.Omen.KindLabel + "・" + next.After.Omen.SideGlyph, Is.EqualTo("攻撃・1〜2"));
             Assert.That(next.After.Omen.Icon, Is.EqualTo(OmenIcon.Attack));
-            Assert.That(next.After.Omen.ValueText, Is.EqualTo("8"));
+            Assert.That(next.After.Omen.ValueText, Is.EqualTo("9"));
         }
 
         [Test]
@@ -363,7 +363,7 @@ namespace Depiction.Bridge.Tests
             Cue miss = sweep.Cues.Single(c => c.Kind == CueKind.SideBonusMiss);
             Assert.That(miss.Text, Is.EqualTo("+3"));
             Assert.That(sweep.Cues.Any(c => c.Kind == CueKind.TraitFire), Is.False);
-            Assert.That(sweep.Cues.Single(c => c.Kind == CueKind.Slash).Amount, Is.EqualTo(8));
+            Assert.That(sweep.Cues.Single(c => c.Kind == CueKind.Slash).Amount, Is.EqualTo(9));
         }
 
         [Test]
@@ -386,7 +386,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(sweep.Title, Is.EqualTo("払い斬り"));
             Assert.That(Kinds(sweep), Is.EqualTo(new[] { CueKind.EnemyWindup, CueKind.SideBonusMiss }), "one strike-off, not two");
             Assert.That(sweep.Cues[1].Text, Is.EqualTo("空振り"));
-            Assert.That(sweep.Cues[1].Amount, Is.EqualTo(8));
+            Assert.That(sweep.Cues[1].Amount, Is.EqualTo(9));
             Assert.That(sweep.After.Player.Hp, Is.EqualTo(50));
             Assert.That(events[2].After.Omen.KindLabel + "・" + events[2].After.Omen.SideGlyph, Is.EqualTo("攻撃・0"), "the adjacent branch now");
         }

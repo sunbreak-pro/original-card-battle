@@ -29,9 +29,9 @@ namespace BattleCore.Tests
             });
         }
 
-        [TestCase("sweep", "払い斬り", 2, 8, 0, 0, 0, "1〜2", "攻撃・1〜2")]
-        [TestCase("shove", "柄尻の押し込み", 2, 5, 0, 2, 0, "0", "攻撃・0")]
-        [TestCase("reach_thrust", "穂先の突き", 1, 4, 0, 0, 0, "0〜2", "攻撃・0〜2")]
+        [TestCase("sweep", "払い斬り", 2, 9, 0, 0, 0, "1〜2", "攻撃・1〜2")]
+        [TestCase("shove", "柄尻の押し込み", 2, 6, 0, 2, 0, "0", "攻撃・0")]
+        [TestCase("reach_thrust", "穂先の突き", 1, 5, 0, 0, 0, "0〜2", "攻撃・0〜2")]
         [TestCase("guard_up", "柄で受ける", 1, 0, 3, 0, 0, "", "防御")]
         [TestCase("step_forward", "踏み込み", 1, 0, 2, 0, 1, "", "移動")]
         public void Actions_MatchTheRosterTable(
@@ -220,20 +220,20 @@ namespace BattleCore.Tests
         // ---- The push and pull this enemy exists to teach (roster §2.1) ----
 
         [Test]
-        public void StayingAtGapTwo_EatsTheSweepAtEleven_EveryTurn()
+        public void StayingAtGapTwo_EatsTheSweepAtTwelve_EveryTurn()
         {
             for (int turn = 0; turn < 3; turn++)
             {
                 var action = EnemyAi.ChooseAction(Polearm, 2, stamina: 10)!;
                 Assert.That(action.Id, Is.EqualTo("sweep"));
-                Assert.That(RawPower(action, gap: 2, guard: 0, staminaBefore: 10), Is.EqualTo(11));
+                Assert.That(RawPower(action, gap: 2, guard: 0, staminaBefore: 10), Is.EqualTo(12));
             }
         }
 
         [Test]
-        public void SteppingInToGapOne_LightensTheSweepToEight()
+        public void SteppingInToGapOne_LightensTheSweepToNine()
         {
-            Assert.That(RawPower(Polearm.Actions["sweep"], gap: 1, guard: 0, staminaBefore: 10), Is.EqualTo(8));
+            Assert.That(RawPower(Polearm.Actions["sweep"], gap: 1, guard: 0, staminaBefore: 10), Is.EqualTo(9));
         }
 
         [Test]
@@ -241,7 +241,7 @@ namespace BattleCore.Tests
         {
             var shove = EnemyAi.ChooseAction(Polearm, 0, stamina: 10)!;
             Assert.That(shove.Id, Is.EqualTo("shove"));
-            Assert.That(RawPower(shove, gap: 0, guard: 0, staminaBefore: 10), Is.EqualTo(8), "5 + 3 against Guard 0");
+            Assert.That(RawPower(shove, gap: 0, guard: 0, staminaBefore: 10), Is.EqualTo(9), "6 + 3 against Guard 0");
             Assert.That(shove.Face.Push, Is.EqualTo(2));
 
             // After a two-cell push the gap is 2, and the next omen is the sweep.
@@ -251,7 +251,7 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheShove_IsFiveAgainstAGuard_ButStillPushes()
+        public void TheShove_IsSixAgainstAGuard_ButStillPushes()
         {
             var shove = Polearm.Actions["shove"];
 
@@ -260,8 +260,8 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(raw, Is.EqualTo(5));
-                Assert.That(damage, Is.EqualTo(1));
+                Assert.That(raw, Is.EqualTo(6));
+                Assert.That(damage, Is.EqualTo(2));
                 Assert.That(guardAfter, Is.EqualTo(0));
                 Assert.That(shove.Face.Push, Is.EqualTo(2), "Guard soaks the damage, not the push (§2.4)");
             });
