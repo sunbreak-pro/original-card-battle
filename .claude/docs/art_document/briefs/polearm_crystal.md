@@ -1,6 +1,6 @@
 # 晶槍の竜兵（polearm_crystal）— 仕様カード
 
-- 作成日: 2026-10-04（#287。こうだいさんが Krita で作った待機の絵を Unity リポへ入れた）/ 更新: 2026-10-10（#287。幅の例外を規約に入れ、枠の幅（#302）と BattleCore の追加に進捗を合わせた）/ 2026-10-11（#287。予兆の札の大きさを実行時の 200 × 98 に直し、コードの行番号を今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵の参照を `battle_ui_ux_v2.md` §6.4 に替えた）/ 工程: C0（`visual-production-pipeline character polearm_crystal`）
+- 作成日: 2026-10-04（#287。こうだいさんが Krita で作った待機の絵を Unity リポへ入れた）/ 更新: 2026-10-10（#287。幅の例外を規約に入れ、枠の幅（#302）と BattleCore の追加に進捗を合わせた）/ 2026-10-11（#287。予兆の札の大きさを実行時の 200 × 98 に直し、コードの行番号を今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵の参照を `battle_ui_ux_v2.md` §6.4 に替えた）/ 2026-10-12（#287。攻撃 4 つの威力をロースター v4.21 に合わせ、ずれたコードの行番号を今の行に直した）/ 工程: C0（`visual-production-pipeline character polearm_crystal`）
 - 正本: `.claude/docs/enemy_document/enemy_roster_v4.md`（§2.7 晶槍の竜兵）/ `.claude/docs/vision/world-v1.md`（竜の系譜）/ `.claude/docs/art_document/style-guide.md`（原本の大きさ・指示文・帯び方）/ `.claude/docs/art_document/asset-intake.md`（書き出しと取り込み）/ `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs`（枠と配置）
 - 手順書: `docs/reports/2026-09-19-krita-ai-setup-guide.html` 4 章（待機の絵）/ `docs/reports/2026-10-03-enemy-motion.html`（攻撃と倒れの差分の作り方）
 - 内部 ID は `polearm_crystal` です。v4.6 で足した敵で、錆槍の竜兵の `polearm_warped` にそろえて `polearm_` で始めています（`enemy_roster_v4.md` §1.8）。ファイル名と asset id もこの ID を使います。`asset-intake.md` §4 も、2026-10-06 にロースターの内部 ID を使う形に直りました（#327）。
@@ -26,7 +26,7 @@
 | 基準点 | 足元の中央（枠の pivot は (0.5, 0)） | `DepictionPrefabBuilder.cs:223` |
 | 左右の向き | 左向きで描きます。Unity は反転せず、画面右（x = +400）から左のプレイヤーをそのまま向きます | `DepictionPrefabBuilder.cs:505`、`:509-510`、`FigureView.cs:58` |
 | 頭上の空き | 予兆の札は、実行時に 200 × 98 になり、枠の上端から約 29 単位上に出ます。枠の中は上端まで描いてかまいません | `OmenBadgeView.cs:29`、`:66`（札の大きさ。プレハブの 270 × 68（`DepictionPrefabBuilder.cs:368`）は実行時に置き換わる）、`DepictionPrefabBuilder.cs:513`（札の中心が y = 468）、`:496`（足元が y = −60） |
-| 数字と文字の位置 | 数字は足元から 310 単位（胸の 270 + 40）、ラベルは 440 単位（頭の 470 − 30）に出ます | `DepictionPrefabBuilder.cs:228-229`、`DepictionPlayer.cs:612-613` |
+| 数字と文字の位置 | 数字は足元から 310 単位（胸の 270 + 40）、ラベルは 440 単位（頭の 470 − 30）に出ます | `DepictionPrefabBuilder.cs:228-229`、`DepictionPlayer.cs:785-786` |
 | 原本の大きさ | **800 × 1536** です。決まりの 640 × 1536 より 160 広く、書き出しも 800 × 1536 のままです。800 は 4 の倍数なので BC7 が効きます | `style-guide.md` §2、`asset-intake.md` §1.2・§3 |
 
 幅の例外（晶槍の竜兵の 800 と不退の槍竜の 900）は、`style-guide.md` §2 と `asset-intake.md` §1.2 に書きました（2026-10-10、#287）。
@@ -45,13 +45,15 @@
 
 | 行動 id | 名前 | 絵で見せること | asset_id |
 | --- | --- | --- | --- |
-| `great_thrust` | 大穂の突き | 前のめりのまま、穂先を真っ直ぐ突き出す。主力（列 3、届く 1〜2、威力 13） | `chr.polearm_crystal.act.great_thrust` |
-| `crystal_rush` | 晶穂の突進 | 穂先を前に据えて突き進む。当ててから前へ 2（列 2、届く 2〜4、威力 5。間合い 3 以上で +3） | `chr.polearm_crystal.act.crystal_rush` |
-| `recoil_thrust` | 引き突き | 突いた直後に後ろへ退く。当ててから後ろへ 2（列 2、届く 0、威力 5。相手の Guard が 0 なら +3） | `chr.polearm_crystal.act.recoil_thrust` |
-| `short_jab` | 短い突き | 柄を短く持って小さく突く。削り（列 1、届く 0〜2、威力 4） | `chr.polearm_crystal.act.short_jab` |
+| `great_thrust` | 大穂の突き | 前のめりのまま、穂先を真っ直ぐ突き出す。主力（列 3、届く 1〜2、威力 15） | `chr.polearm_crystal.act.great_thrust` |
+| `crystal_rush` | 晶穂の突進 | 穂先を前に据えて突き進む。当ててから前へ 2（列 2、届く 2〜4、威力 6。間合い 3 以上で +3） | `chr.polearm_crystal.act.crystal_rush` |
+| `recoil_thrust` | 引き突き | 突いた直後に後ろへ退く。当ててから後ろへ 2（列 2、届く 0、威力 6。相手の Guard が 0 なら +3） | `chr.polearm_crystal.act.recoil_thrust` |
+| `short_jab` | 短い突き | 柄を短く持って小さく突く。削り（列 1、届く 0〜2、威力 5） | `chr.polearm_crystal.act.short_jab` |
 | `haft_guard` | 柄を立てる | 柄を縦に立てて受ける（列 1、自分にだけ効く、Guard 3） | `chr.polearm_crystal.act.haft_guard` |
 
 前へ 2 と後ろへ 2 は、画面の側で人型をマスごと動かして見せます（`battle_ui_ux_v2.md` §5.7）。移動だけの絵は作りません。
+
+2026-10-12 に、攻撃 4 つの威力を 13・5・5・4 から 15・6・6・5 に直しました。ロースター v4.19（#353）が、通常敵 7 体の攻撃を約 7 割へ上げたためです（`enemy_roster_v4.md:889`）。BattleCore の `Enemies.cs:282`、`:286`、`:291`、`:296` はまだ 13・5・5・4 で、追従は #498 です。威力が上がっても構えと動きは変わらないので、下の差分の案はそのまま使えます。
 
 待機は `chr.polearm_crystal.idle.stand`、被弾・倒れは `chr.polearm_crystal.react.*` です。ファイル名は `Assets/Art/Characters/polearm_crystal/chr_polearm_crystal_<category>_<label>.png` です（`asset-intake.md` §4、`FigureMotion.cs:38-42`）。View の口は待機 / 行動 / 被弾 / 倒れの 4 つで、崩れの口はありません（`FigureMotion.cs:15-21` の `FigurePose`、`battle_ui_ux_v2.md` §6.4）。保留の崩れの名前は、口が入るときに決めます。
 
@@ -116,7 +118,7 @@
 
 | 工程 | 状態 | 備考 |
 | --- | --- | --- |
-| C0 | 済み | このファイル（2026-10-04、#287） |
+| C0 | 済み | このファイル（2026-10-04、#287）。2026-10-12 に攻撃 4 つの威力をロースター v4.21 に合わせた（#287） |
 | C1 | 一部 | SVG の影絵は作っていない。待機の絵を黒で塗って高さ 450 px で見て、穂先は上端から 8 px、下の刃は左端から 12 px の内側にあり、尾の棘は右端にほぼ接する（原本で 2 px）と確かめた（2026-10-04） |
 | C2 | 済み | 錆槍の竜兵の指示文をそのまま使った（§4）。台帳 `Docs/art/asset-ledger.csv` に行を足した（RPG-by-card PR #9） |
 | C3 | 済み | こうだいさんが Krita で生成した（`竜の上級槍兵.kra`、生成のレイヤー 1 枚） |
@@ -126,6 +128,6 @@
 | C7 | 未着手 | — |
 | C8 | 一部 | 待機の絵（800 × 1536、左向き、背景透明）を Unity リポに置いた（RPG-by-card PR #9）。枠の幅は #302 で入った。Preset は RPG-by-card#10 で登録済みで、この PNG にはまだ `.meta` が無いので、Unity が次に取り込むときに Preset が当たる（`asset-intake.md` §5.2）。`.meta` のコミット、Figure の絵の棚への登録（`Tools > Depiction > Upgrade Prefabs`）、Unity Editor での確認はまだ |
 
-**人に渡したもの**: Unity リポの PR #9（https://github.com/sunbreak-pro/RPG-by-card/pull/9。待機の絵・台帳・生成条件の写し）。**次に人がすること**: こうだいさんがメインの作業場所で Unity を開き、Unity が書いた `chr_polearm_crystal_idle_stand.png.meta` に `asset-intake.md` §3 の値が入っているかを Inspector で見ます。続けて `Tools > Depiction > Upgrade Prefabs` で Figure の絵の棚に `polearm_crystal` を載せ、`.meta` と `Figure.prefab` を Unity リポにコミットします。敵は BattleCore に入ったので（`unity-port/BattleCore/Enemies.cs:269`）、`Battle.unity` の `BattleBootstrap` の敵 id を `polearm_crystal` にすれば、晶槍の竜兵と戦って見え方を確かめられます。映ったら、差分（攻撃・倒れ）を §3 の順で Krita で作ります。
+**人に渡したもの**: Unity リポの PR #9（https://github.com/sunbreak-pro/RPG-by-card/pull/9。待機の絵・台帳・生成条件の写し）。**次に人がすること**: こうだいさんがメインの作業場所で Unity を開き、Unity が書いた `chr_polearm_crystal_idle_stand.png.meta` に `asset-intake.md` §3 の値が入っているかを Inspector で見ます。続けて `Tools > Depiction > Upgrade Prefabs` で Figure の絵の棚に `polearm_crystal` を載せ、`.meta` と `Figure.prefab` を Unity リポにコミットします。敵は BattleCore に入ったので（`unity-port/BattleCore/Enemies.cs:272`）、`Battle.unity` の `BattleBootstrap` の敵 id を `polearm_crystal` にすれば、晶槍の竜兵と戦って見え方を確かめられます。映ったら、差分（攻撃・倒れ）を §3 の順で Krita で作ります。
 
 **前提**: 絵柄の規約（`style-guide.md`）と取り込み規約（`asset-intake.md`）はあります。#287 の本文にある「右向きに反転する」は、2026-10-03 の決定（#287 のコメント、#85）で外れました。敵は左向きのまま使います。
