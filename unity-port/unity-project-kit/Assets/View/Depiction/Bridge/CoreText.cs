@@ -498,31 +498,6 @@ namespace Depiction.Bridge
         // ---- units --------------------------------------------------------------------------
 
         /// <summary>
-        /// One side's gauges. <paramref name="gap"/> is N, shown on the tag of the player only: the
-        /// screen has one tag slot per side and one number says it all (#163 draws the cells).
-        /// </summary>
-        public static UnitFrame UnitOf(CombatantState unit, bool showStamina, int? gap, IReadOnlyList<string> stanceNames = null)
-        {
-            var frame = new UnitFrame
-            {
-                Hp = unit.Hp,
-                HpMax = unit.MaxHp,
-                Guard = unit.Guard,
-                ShowStamina = showStamina,
-                Stamina = unit.Stamina,
-                StaminaMax = unit.MaxStamina,
-                HasRange = gap.HasValue,
-            };
-            if (gap.HasValue)
-            {
-                frame.Range = SideOf(gap.Value);
-                frame.RangeGlyph = GapGlyph(gap.Value);
-            }
-            frame.Statuses = Chips(unit.Statuses, stanceNames ?? new string[0]);
-            return frame;
-        }
-
-        /// <summary>
         /// The chips under a gauge: the stance in the slot first (§4, #188; it has no stacks to count),
         /// then the status words in their fixed order.
         /// </summary>

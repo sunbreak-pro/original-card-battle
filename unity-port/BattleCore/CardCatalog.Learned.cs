@@ -7,7 +7,7 @@ namespace BattleCore
     /// </summary>
     public static partial class CardCatalog
     {
-        // ---- Boss: 瘴気の司祭 ----
+        // ---- Boss: 大黒蛇 セルク ----
 
         /// <summary>#41. Fatigues on the hit, +5 into a fatigued foe.</summary>
         public static readonly CardDef MiasmaBlade = new CardDef(
@@ -32,7 +32,7 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "離れた場所で光を纏う");
 
-        // ---- Boss: 深淵の釣り人 ----
+        // ---- Boss: 獄竜 ガルド ----
 
         /// <summary>#44. Reaches 0〜2 (width 3, so 13, not the 15 of 0〜1) with a break; a heavy blow on a chain.</summary>
         public static readonly CardDef LineLash = new CardDef(
@@ -87,7 +87,7 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "根を張って相手の足を縫う");
 
-        // ---- Elite: 甲冑の番人 ----
+        // ---- Elite: 鉄壁の門竜 ----
 
         /// <summary>#50. Column-3 Guard, +3 into an attack omen.</summary>
         public static readonly CardDef Bulwark = new CardDef(
@@ -104,7 +104,7 @@ namespace BattleCore
             AtMost(0, TraitEffect.GuardBonus, 3),
             Description: "固めた盾で打つ");
 
-        // ---- Elite: 群れの長 ----
+        // ---- Elite: 統牙の長竜 ----
 
         /// <summary>#52. Empowers self and fatigues the foe at 0〜2; a follow-up while already empowered.</summary>
         public static readonly CardDef PackHowl = new CardDef(

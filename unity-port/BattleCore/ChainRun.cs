@@ -54,8 +54,7 @@ namespace BattleCore
         public const string Switch = "-chain";
 
         /// <summary>
-        /// §12's default three: 錆槍の竜兵 → 瘴牙の走竜 → 鉄壁の門竜 (v4.1 named them 長柄の歪み兵 →
-        /// 影走りの犬 → 甲冑の番人). The layers are the first each appears on in roster §9 that keeps
+        /// §12's default three: 錆槍の竜兵 → 瘴牙の走竜 → 鉄壁の門竜. The layers are the first each appears on in roster §9 that keeps
         /// the chain going down: 1, 2, 4.
         /// </summary>
         public static readonly IReadOnlyList<ChainBattle> Default = new[]
