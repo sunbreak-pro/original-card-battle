@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>敵の一覧の 6 件</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* 左に追従する目次 + 右に 1 本の読み筋(題 → 結論 → 理由 → 根拠 → 参考)。本文と表は同じ幅 */
+  :root {
+    --ground: #f2f5f4; --panel: #ffffff; --ink: #1c2327; --muted: #56636b;
+    --line: #d5dcdf; --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #dcefef;
+    --row: #f7f9f9; --ok: #2c7a4b; --warn: #966010; --stop: #a23c3c; --idle: #e3e8eb; --code-bg: #eaf0f0;
+    --shadow: 0 1px 2px rgba(20, 40, 45, .06), 0 4px 14px rgba(20, 40, 45, .05);
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    --font-mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #111618; --panel: #1a2125; --ink: #e4e9eb; --muted: #99a6ad;
+      --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --row: #1e262a; --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --idle: #2c363b; --code-bg: #0f1417;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #111618; --panel: #1a2125; --ink: #e4e9eb; --muted: #99a6ad;
+    --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+    --row: #1e262a; --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --idle: #2c363b; --code-bg: #0f1417;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .35);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-body);
+    font-size: 16px; line-height: 1.8; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: var(--font-mono); }
+
+  /* レイアウト */
+  .page { max-width: 1180px; margin: 0 auto; padding: 32px 24px 96px; display: grid;
+    grid-template-columns: 250px minmax(0, 880px); gap: 44px; justify-content: center; }
+  .page.no-toc { grid-template-columns: minmax(0, 880px); }
+  .main { min-width: 0; }
+  section { scroll-margin-top: 24px; padding-top: 8px; }
+  @media (max-width: 999px) {
+    .page { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 20px 16px 72px; }
+    .main { display: contents; }
+    .hero { order: -2; }
+    .toc { order: -1; position: static !important; max-height: none !important; margin: 0 0 8px; }
+  }
+
+  /* 目次 */
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start;
+    max-height: calc(100vh - 48px); overflow-y: auto; font-size: 14px; }
+  .toc-title { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 0 8px; }
+  .toc-progress { height: 3px; background: var(--idle); border-radius: 4px; overflow: hidden; margin: 0 0 12px; }
+  .toc-progress > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s linear; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; padding: 7px 10px;
+    border-radius: 4px; color: var(--muted); text-decoration: none; line-height: 1.45; border-left: 3px solid transparent; }
+  .toc a:hover { background: var(--row); color: var(--ink); }
+  .toc .lbl { display: block; font-size: 14px; }
+  .toc .toc-claim { display: block; font-size: 13px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+  .toc a[aria-current="location"] .toc-claim { color: var(--ink); }
+  .toc .no { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px;
+    font-weight: 700; font-family: var(--font-mono); background: var(--idle); color: var(--ink); }
+  .toc a.done .no { background: transparent; color: var(--ok); box-shadow: inset 0 0 0 1.5px var(--ok); }
+  .toc a.done .no::before { content: "✓"; font-family: var(--font-body); }
+  .toc a.done .no > span { display: none; }
+  .toc a[aria-current="location"] { background: var(--accent-soft); color: var(--accent); font-weight: 700; border-left-color: var(--accent); }
+  .toc a[aria-current="location"] .no { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+
+  /* 題の面 */
+  .hero { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: 28px 32px 24px; margin-bottom: 28px; }
+  @media (max-width: 599px) { .hero { padding: 20px 18px 18px; } }
+  .eyebrow { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13px; color: var(--muted); font-weight: 700; margin: 0 0 12px; }
+  h1 { font-size: clamp(25px, 3.4vw, 34px); line-height: 1.4; margin: 0 0 14px; text-wrap: balance; font-weight: 700; letter-spacing: .01em; }
+  .lede { font-size: 17px; color: var(--muted); margin: 0; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 18px 0 0; padding: 14px 0 0; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted); list-style: none; }
+  .meta b { color: var(--ink); font-weight: 700; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+  /* 見出しと本文 */
+  .kicker { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--accent); font-weight: 700; margin: 52px 0 6px; }
+  .kicker .no { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  .kicker::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  h2 { font-size: 22px; line-height: 1.5; margin: 0 0 14px; text-wrap: balance; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul, ol { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+  sup.ref { font-size: 12px; margin-left: 1px; }
+  sup.ref a { text-decoration: none; }
+
+  /* 部品 */
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 0 0 8px; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 18px 20px 16px;
+    display: flex; flex-direction: column; gap: 8px; min-width: 0; break-inside: avoid; }
+  .verdict .tag { font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); } .verdict.later .tag { color: var(--warn); } .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 17px; line-height: 1.5; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+  .chip { display: inline-block; border-radius: 4px; padding: 1px 8px; font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--accent-ink); white-space: nowrap; }
+  .chip.ok { background: var(--ok); } .chip.warn { background: var(--warn); } .chip.stop { background: var(--stop); }
+  .chip.idle { background: var(--idle); color: var(--ink); } .chip.kind { background: var(--accent); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0 0 12px; padding: 0; list-style: none; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--idle); border-radius: 8px; box-shadow: var(--shadow); padding: 12px 16px 14px; }
+  .tile.ok { border-top-color: var(--ok); } .tile.warn { border-top-color: var(--warn); } .tile.stop { border-top-color: var(--stop); }
+  .tile .n { font-size: 32px; font-weight: 700; line-height: 1.2; font-family: var(--font-mono); display: block; }
+  .tile .l { font-size: 13px; color: var(--muted); }
+  .dist { display: flex; height: 10px; border-radius: 4px; overflow: hidden; background: var(--idle); gap: 2px; margin: 0 0 6px; }
+  .dist > span { display: block; height: 100%; }
+  .dist .ok { background: var(--ok); } .dist .warn { background: var(--warn); } .dist .stop { background: var(--stop); } .dist .idle { background: var(--muted); }
+  .bar { height: 8px; background: var(--idle); border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar > span { display: block; height: 100%; background: var(--accent); }
+  .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .compare > figure { margin: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  .compare figcaption { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); margin: 16px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+  caption { caption-side: top; text-align: left; font-weight: 700; font-size: 15px; padding: 14px 16px 10px; border-bottom: 1px solid var(--line); }
+  th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); background: var(--row); font-weight: 700; white-space: nowrap; }
+  tbody tr:nth-child(even) td { background: var(--row); }
+  th.num, td.num { text-align: right; white-space: nowrap; font-family: var(--font-mono); }
+  td.nowrap { white-space: nowrap; }
+  tr { break-inside: avoid; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); } td.state.no { color: var(--stop); } td.state.maybe { color: var(--warn); }
+  .callout { border: 1px solid var(--line); background: var(--accent-soft); padding: 12px 16px; border-radius: 8px; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .finding { border-left: 3px solid var(--line); padding: 4px 0 4px 14px; margin: 0 0 14px; }
+  .finding.stop { border-left-color: var(--stop); } .finding.warn { border-left-color: var(--warn); } .finding.ok { border-left-color: var(--ok); }
+  .note { font-size: 14px; color: var(--muted); }
+  .refs { font-size: 14px; color: var(--muted); padding: 16px 20px 16px 2.6em; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .refs li { margin-bottom: 6px; overflow-wrap: anywhere; }
+  .refs li:target { color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media print {
+    :root, :root[data-theme="dark"], :root:not([data-theme="light"]) {
+      --ground: #ffffff; --panel: #ffffff; --ink: #000000; --muted: #3a4349; --line: #b9c2c6; --row: #f4f6f6;
+      --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #eef6f6; --shadow: none;
+      --ok: #2c7a4b; --warn: #966010; --stop: #a23c3c; --idle: #e3e8eb; --code-bg: #f3f5f5;
+      color-scheme: light;
+    }
+    .toc { display: none; }
+    .page { display: block; padding: 0; max-width: none; }
+    h2, .kicker, h3 { break-after: avoid; }
+    .refs a::after { content: " (" attr(href) ")"; }
+  }
+</style>
+</head>
+<body>
+<div class="page" lang="ja">
+  <nav class="toc" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <div class="toc-progress" aria-hidden="true"><span></span></div>
+    <ol>
+      <li><a href="#s-why" data-target="s-why"><span class="no"><span>1</span></span><span><span class="lbl">なぜこの結論か</span><span class="toc-claim">同じ文書なので積んだ</span></span></a></li>
+      <li><a href="#s-prs" data-target="s-prs"><span class="no"><span>2</span></span><span><span class="lbl">6 本の PR</span><span class="toc-claim">全検査が通っている</span></span></a></li>
+      <li><a href="#s-328" data-target="s-328"><span class="no"><span>3</span></span><span><span class="lbl">十字受けの直し方</span><span class="toc-claim">詰める手に構えを足した</span></span></a></li>
+      <li><a href="#s-open" data-target="s-open"><span class="no"><span>4</span></span><span><span class="lbl">置いた仮定</span><span class="toc-claim">休憩と濃度は自分で決めた</span></span></a></li>
+      <li><a href="#s-handoff" data-target="s-handoff"><span class="no"><span>5</span></span><span><span class="lbl">申し送り</span><span class="toc-claim">9 件を main に回した</span></span></a></li>
+      <li><a href="#s-next" data-target="s-next"><span class="no"><span>6</span></span><span><span class="lbl">次に判断が要る点</span><span class="toc-claim">merge と 3 つの確認</span></span></a></li>
+      <li><a href="#s-refs" data-target="s-refs"><span class="no"><span>7</span></span><span><span class="lbl">参考</span><span class="toc-claim">出典 8 件</span></span></a></li>
+    </ol>
+  </nav>
+
+  <main class="main">
+    <header class="hero">
+      <p class="eyebrow"><span class="chip kind">判断</span><span>2026-10-06</span><span>cards の担当・敵の一覧</span></p>
+      <h1>敵の一覧の 6 件を PR #379〜#384 として開きました。#379 から順に merge すれば衝突しません</h1>
+      <p class="lede">6 件とも同じ文書（敵の一覧 <code>enemy_roster_v4.md</code>）を書くので、ブランチを 1 本の鎖に積みました。こうだいさんに見てほしいのは、休憩の時機・十字受けの直し方・瘴気の濃度の扱いの 3 つの判断です。</p>
+      <ul class="meta"><li><b>8</b>件の出典</li><li><b>約 7 分</b>で読めます(推定)</li></ul>
+    </header>
+
+    <ul class="verdicts">
+      <li class="verdict now"><span class="tag">今日から</span><h3>#379 から #384 の順に merge します</h3><p>6 本とも同じ文書の冒頭と変更履歴を書きます。下から順に入れれば、差分はそのまま縮みます。</p></li>
+      <li class="verdict later"><span class="tag">必要になったら</span><h3>連戦の休憩を 3 戦目と 6 戦目の後に戻します</h3><p>戻すと決めたときだけ、戦闘の担当が <code>ChainRun.cs</code> を直します。いまは戦闘の間ごとに選べる形にそろえました。</p></li>
+      <li class="verdict skip"><span class="tag">入れない</span><h3>十字受けを並べ替えるだけの直し方は採りません</h3><p>並べ替えだけでは見切りの条件が成り立ちません。プレイヤーは見切りに出会わないままです。</p></li>
+    </ul>
+
+    <section id="s-why">
+      <p class="kicker"><span class="no">01</span>なぜこの結論か</p>
+      <h2>6 件とも同じ文書の冒頭と変更履歴を書くので、1 本の鎖に積みました</h2>
+      <p>どの PR も、敵の一覧の題・Status の行・§11 の先頭に版と記録を足します。別々に main から切ると、1 本目が入った時点で残りの 5 本が必ずぶつかります。同じ棚の同じ段に 6 人が順番に本を差し込む場面に似ていて、前の人が入れ終わってから次の人が入れれば揉めません。そこで worktree-policy の「続きの PR は積む」に従い、2 本目からは前のブランチから切りました<sup class="ref"><a href="#ref-2">[2]</a></sup>。各 PR の base は main のままで、前の PR が入ると差分は自分の分だけになります。</p>
+      <div class="callout"><strong>確認済み</strong>: 6 本とも GitHub の判定は MERGEABLE で、ほかの担当の open な PR（#373〜#378）は敵の一覧と台帳を触っていません。</div>
+    </section>
+
+    <section id="s-prs">
+      <p class="kicker"><span class="no">02</span>6 本の PR</p>
+      <h2>6 本とも、ビルド・lint・テスト・C# のテスト・台帳と表の検査が通っています</h2>
+      <p>push の前に、1 本ずつ別の目で読み直しました。数値と規則に誤りは無く、誤解を招く文言を 11 か所直しています。たとえば「休憩は勝つたびに選べます」は、最後の戦闘の後と瘴気死の場面まで含んでしまうので書き直しました。</p>
+      <div class="tablewrap">
+        <table>
+          <caption>版を上げたのは中身が変わる 4 本で、記録の直しだけの 2 本は版を上げていません</caption>
+          <thead><tr><th>PR</th><th>Issue</th><th>版</th><th>直したこと</th></tr></thead>
+          <tbody>
+            <tr><td class="nowrap">#379</td><td>#307</td><td class="nowrap">v4.9 のまま</td><td>冒頭の「battle_core の本文は決定の前の値のまま」を消しました。#222 のマージで落ちていた v4.8（#221）の記録も戻しました。</td></tr>
+            <tr><td class="nowrap">#380</td><td>#314</td><td class="nowrap">v4.9 のまま</td><td>燐弓の竜兵の手記の HP を 56 から 72 にしました。</td></tr>
+            <tr><td class="nowrap">#381</td><td>#319</td><td class="nowrap">v4.10</td><td>連戦の休憩を、戦闘の間ごとに選べる形にしました。休憩の量は写さず、戦闘の規則の文書を指します。</td></tr>
+            <tr><td class="nowrap">#382</td><td>#320</td><td class="nowrap">v4.11</td><td>出現表から仮の瘴気の濃度の列を外し、層ごとの濃度は <code>seven_layers_v4.md</code> を指します。</td></tr>
+            <tr><td class="nowrap">#383</td><td>#336</td><td class="nowrap">v4.12</td><td>「アタックを n 回続けて受けると」を、n に届くたびに数え直す読み方に決めました。実装と同じです。</td></tr>
+            <tr><td class="nowrap">#384</td><td>#328</td><td class="nowrap">v4.13</td><td>燐刃の竜兵の十字受けに前へ 2 を持たせ、間合い 3 以上の枝のただ 1 つの行動にしました。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>#320 は数字の上でも効きます。仮の濃度のまま 9 戦の並びを回すと、8 戦目の前で瘴気が 96% になり、獄竜 ガルドと戦う前に瘴気死していました（計算）。<code>seven_layers_v4.md</code> の濃度なら、最後の戦闘の前で 90% に止まります<sup class="ref"><a href="#ref-5">[5]</a></sup>。進捗の記録は実装と分け、PR #385 に入れました。</p>
+    </section>
+
+    <section id="s-328">
+      <p class="kicker"><span class="no">03</span>十字受けの直し方</p>
+      <h2>十字受けを「構えたまま詰める手」にすると、どの戦闘でも見切りが付き、C# もデータの直しだけで済みます</h2>
+      <p>十字受けは、どの枝でも同じコスト 1 の行動の後ろに並んでいて、一度も選ばれませんでした<sup class="ref"><a href="#ref-3">[3]</a></sup>。直し方を 3 つ、実装の選び方とスタミナの推移で数えて比べました<sup class="ref"><a href="#ref-4">[4]</a></sup>。</p>
+      <div class="tablewrap">
+        <table>
+          <caption>3 案のうち、見切りが毎回出て決定木の書き方も増えないのは採った案だけです</caption>
+          <thead><tr><th>案</th><th>見切りが出る戦闘</th><th>C# の直し</th><th>弱いところ</th></tr></thead>
+          <tbody>
+            <tr><td>並べ替え（間合い 0 を 二段斬り / 十字受け / 退き斬り）</td><td class="state no">出ません</td><td>データだけです</td><td>十字受けはスタミナ 1〜2 のときだけ選ばれ、払った後に 4 以上残らないので見切りが付きません。</td></tr>
+            <tr><td>条件付きで先頭（見切りが残っていれば十字受けを飛ばす）</td><td class="state yes">毎回出ます</td><td>決定木に新しい書き方が要ります</td><td>開幕に構えるぶん二段斬りが 1 フェーズ遅れ、スタミナが細ると寄ってこなくなります。</td></tr>
+            <tr><td>採った案（十字受けが前へ 2 を兼ねる）</td><td class="state yes">毎回出ます</td><td>データだけです</td><td>間を詰めるを外すので、行動が 5 つから 4 つに減ります。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>採った案では、開幕の一手がいつも十字受けになります。払った後のスタミナが 9 残るので見切りが 1 付き、構えと合わせた Guard 5 が次のプレイヤーのターンに一撃を受け止めて返します。詰める速さも、間合い 0〜2 での行動も変わらないので、1 フェーズの出力は v4.12 と同じです（推定）。</p>
+      <div class="finding warn"><span class="chip warn">要確認</span> <strong>C# が追いつくまで、実戦には出ません。</strong><p>敵のデータ（<code>Enemies.cs</code>）を直すのは戦闘の担当で、申し送りに書きました。</p></div>
+    </section>
+
+    <section id="s-open">
+      <p class="kicker"><span class="no">04</span>置いた仮定</p>
+      <h2>休憩の時機と濃度の扱いは、Issue が cards に任せた判断として自分で決めました</h2>
+      <ul>
+        <li><strong>休憩（#319）</strong>: 戦闘の規則の文書と実装に合わせ、戦闘の間ごとに選べる形にしました。同書は、この選択を探索での判断の代わりに置いています<sup class="ref"><a href="#ref-1">[1]</a></sup>。台帳は、遊びの結果が変わる食い違いを順位で片づけないと定めているので、固定に戻すかの判断はこうだいさんに残しました<sup class="ref"><a href="#ref-6">[6]</a></sup>。</li>
+        <li><strong>濃度（#320）</strong>: 新しい値を写さず、列ごと外しました。濃度の持ち主は探索の担当で、写すと相手が直すたびにまた食い違うためです<sup class="ref"><a href="#ref-6">[6]</a></sup>。値を表に見せたいときは、列を戻すだけで済みます。</li>
+        <li><strong>数え方（#336）</strong>: 直近の n 枚を見る読み方だと、攻め続けるプレイヤーに毎フェーズ同じ差し替えが来ます。そこで実装と同じ読み方にしました<sup class="ref"><a href="#ref-7">[7]</a></sup>。</li>
+        <li><strong>v4.8 の記録（#307）</strong>: Status の「v4.8 は #221 が使います」も冒頭の古い但し書きなので、#307 の範囲に入れて戻しました。</li>
+      </ul>
+    </section>
+
+    <section id="s-handoff">
+      <p class="kicker"><span class="no">05</span>申し送り</p>
+      <h2>Issue にしてほしい課題 9 件を、main への申し送りに回しました</h2>
+      <p>どれも <code>.claude/comm/handoff/</code> に 1 件 1 ファイルで置いてあり、Issue は立てていません。行き先は戦闘の担当が 5 件、cards が 2 件、探索の担当と main が 1 件ずつです。</p>
+      <div class="tablewrap">
+        <table>
+          <caption>いちばん大きいのは、ほかにも一度も選ばれない行動が 2 つ見つかったことです</caption>
+          <thead><tr><th>行き先</th><th>ファイル</th><th>中身</th></tr></thead>
+          <tbody>
+            <tr><td class="nowrap">戦闘</td><td><code>twin-blade-cross-guard-cs</code></td><td><code>Enemies.cs</code> の燐刃の竜兵を v4.13 に合わせます。</td></tr>
+            <tr><td class="nowrap">cards</td><td><code>unreachable-actions</code></td><td>統牙の長竜の身を伏せると獄竜 ガルドの淀みを張るが、どの木でも選ばれません。成り立たない特性もあります。</td></tr>
+            <tr><td class="nowrap">戦闘</td><td><code>reachability-test</code></td><td>全ての敵の全ての行動が選ばれうることを、テストで確かめます。</td></tr>
+            <tr><td class="nowrap">戦闘</td><td><code>omen-stamina-timing</code></td><td>予兆を決めるときのスタミナの読み方を、規則の文書に書きます。</td></tr>
+            <tr><td class="nowrap">戦闘</td><td><code>attack-run-tests</code></td><td>「n 回続けて」の数え直しを確かめるテストを足します。</td></tr>
+            <tr><td class="nowrap">戦闘</td><td><code>chain-run-comment</code></td><td><code>ChainRun.cs</code> の古い注記を直します。</td></tr>
+            <tr><td class="nowrap">cards</td><td><code>roster-stale-counts</code></td><td>題の「11 体」や「通常敵 6 体」など、古い体数と参照を直します。</td></tr>
+            <tr><td class="nowrap">探索</td><td><code>seven-layers-roster-rows</code></td><td><code>seven_layers_v4.md</code> に、敵の一覧の済んだ行が残っています。</td></tr>
+            <tr><td class="nowrap">main</td><td><code>concept-roster-note</code></td><td><code>concept-v3.md</code> の注記が「敵の一覧はまだ 5 階層」と書いています。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="s-next">
+      <p class="kicker"><span class="no">06</span>次に判断が要る点</p>
+      <h2>merge の順を守っていただき、3 つの判断に異論があれば PR に一言ください</h2>
+      <ul>
+        <li>PR #379 → #380 → #381 → #382 → #383 → #384 の順に merge してください<sup class="ref"><a href="#ref-8">[8]</a></sup>。進捗の記録の PR #385 は、どの時点でも構いません。</li>
+        <li>十字受けの直し方（#384）でよいかを決めてください。名前「十字受け」は変えていません。</li>
+        <li>連戦の休憩を戦闘の間ごとのままにするか、固定に戻すかを決めてください（#381）。</li>
+        <li>濃度の列を外したまま（#382）にするか、表の値を写して戻すかを決めてください。</li>
+        <li>main で申し送り 9 件を回収してください。燐刃の竜兵の C# の直しが入るまで、#384 の十字受けは実戦に出ません。</li>
+      </ul>
+    </section>
+
+    <section id="s-refs">
+      <p class="kicker"><span class="no">07</span>参考</p>
+      <ol class="refs">
+        <li id="ref-1"><code>.claude/docs/battle_document/battle_core_v4.md</code> 連戦モードの節（529〜541 行目）</li>
+        <li id="ref-2"><code>.claude/skills/worktree-policy/SKILL.md</code>「続きの PR は積む」</li>
+        <li id="ref-3"><code>unity-port/BattleCore/Enemies.cs:232-264</code>（燐刃の竜兵）と <code>EnemyAi.cs:73-83</code>（払える最初の行動を取る）</li>
+        <li id="ref-4"><code>unity-port/BattleCore/TurnLoop.cs:704</code>（構え）、<code>:757</code>（敵の Guard を 0 に）、<code>:1663-1668</code>（予兆を決めるスタミナ）、<code>Traits.cs:116</code>（温存）</li>
+        <li id="ref-5"><code>.claude/docs/danjeon_document/seven_layers_v4.md</code> §2 の表と <code>unity-port/BattleCore.Tests/ChainRunTests.cs:189</code></li>
+        <li id="ref-6"><code>.claude/docs/SOURCES.md</code>「食い違ったときに勝つ側」と「正本を腐らせない書き方」</li>
+        <li id="ref-7"><code>unity-port/BattleCore/Enemies.cs:860-879</code>（<code>RunCompletedLastTurn</code>）と <code>BossSwitchTests.cs:51-67</code></li>
+        <li id="ref-8">PR の一覧 <a href="https://github.com/sunbreak-pro/original-card-battle/pulls?q=is%3Apr+is%3Aopen+head%3Adocs%2Fcards">https://github.com/sunbreak-pro/original-card-battle/pulls?q=is%3Apr+is%3Aopen+head%3Adocs%2Fcards</a></li>
+      </ol>
+    </section>
+  </main>
+</div>
+
+<script>
+  (() => {
+    const links = [...document.querySelectorAll('.toc a[data-target]')];
+    const sections = links.map(a => document.getElementById(a.dataset.target));
+    const bar = document.querySelector('.toc-progress > span');
+    if (!links.length || sections.some(s => !s)) return;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const root = document.documentElement;
+      const line = window.innerHeight * 0.3;
+      let idx = 0;
+      sections.forEach((s, i) => { if (s.getBoundingClientRect().top <= line) idx = i; });
+      const max = root.scrollHeight - window.innerHeight;
+      if (max > 0 && window.scrollY >= max - 4) idx = sections.length - 1;
+      links.forEach((a, i) => {
+        a.classList.toggle('done', i < idx);
+        if (i === idx) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+      });
+      if (bar) bar.style.width = (max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 100) + '%';
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    update();
+  })();
+</script>
+</body>
+</html>
