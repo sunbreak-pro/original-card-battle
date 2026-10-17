@@ -723,8 +723,6 @@ namespace Depiction
             _entries.Add(new Entry { Id = id, EventOrder = eventOrder, StartSeconds = _clock(), Skipped = true, Finished = true });
         }
 
-        public void Clear() => _entries.Clear();
-
         /// <summary>One line per effect: id, event, start, measured ms, nominal ms, skipped.</summary>
         public string ToCsv()
         {

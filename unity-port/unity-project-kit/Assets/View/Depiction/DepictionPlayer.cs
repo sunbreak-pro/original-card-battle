@@ -81,7 +81,7 @@ namespace Depiction.View
         public bool autoPlayDrags;
         [Tooltip("With Auto Play Drags: ends the turn by itself once the source suggests no card. For unattended runs.")]
         public bool autoEndTurn;
-        [Tooltip("Freezes at named gates (hover / impact / end) until DebugStep() is called. For screenshots.")]
+        [Tooltip("Freezes at named gates (hover / impact / end) until DebugStep() is called (the component's ⋮ menu: Debug Step). For screenshots.")]
         public bool debugStepMode;
         [Tooltip("Folder (absolute, or relative to the project) that receives one PNG per gate. Empty = no capture.")]
         public string debugCaptureDir = "";
@@ -93,8 +93,6 @@ namespace Depiction.View
         public readonly List<float> EventSeconds = new List<float>();
         /// <summary>Every effect that played or was switched off, with its measured length (#78 reads it).</summary>
         public EffectTrace Trace { get; private set; }
-        /// <summary>Which effects play. Built from <see cref="effectsOff"/> in Start.</summary>
-        public EffectSwitches Effects => _effects;
         /// <summary>
         /// The battle speed in force (#348). Kept across <see cref="Restart"/>. Nothing in the code reads
         /// it: the PlayMode test DemoFlowPlaybackTests reads it by reflection to check the speed switch,
@@ -696,6 +694,7 @@ namespace Depiction.View
             yield return RunAutomaticEvents();
         }
 
+        [ContextMenu("Debug Step")]
         public void DebugStep()
         {
             _stepRequested = true;

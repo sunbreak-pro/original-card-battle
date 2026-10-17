@@ -4,10 +4,7 @@ using System.Collections.Generic;
 namespace BattleCore
 {
     /// <summary>Where a shift left its owner and how many of the asked-for cells it could not take.</summary>
-    public sealed record Shift(int From, int To, int Blocked)
-    {
-        public int Moved => Math.Abs(To - From);
-    }
+    public sealed record Shift(int From, int To, int Blocked);
 
     /// <summary>
     /// §7: the line of cells. The player stands on the left and the enemies on the right, so "toward"

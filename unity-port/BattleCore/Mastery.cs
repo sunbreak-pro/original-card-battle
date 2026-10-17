@@ -418,8 +418,6 @@ namespace BattleCore
     /// </summary>
     public sealed record MasteryTally(IReadOnlyDictionary<string, int> Ticks)
     {
-        public static readonly MasteryTally Empty = new MasteryTally(new Dictionary<string, int>(StringComparer.Ordinal));
-
         public static MasteryTally Of(BattleState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
