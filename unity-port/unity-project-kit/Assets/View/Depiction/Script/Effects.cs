@@ -152,6 +152,9 @@ namespace Depiction
         /// <summary>息 on a heal: the chest rises and settles once beside the HP beat (§5.3).</summary>
         BreathHeave,
 
+        /// <summary>型 (#501): the body's light fades in with the first stance and out when the list empties (§5.11 順 2).</summary>
+        StanceGlow,
+
         // ---- Status and turn (#77, battle_ui_ux_v2 §5.1 / §5.10 / §5.13) ----
 
         /// <summary>A status word appears: its chip pops in.</summary>
@@ -183,6 +186,9 @@ namespace Depiction
 
         /// <summary>The recovered pips light one by one.</summary>
         StaminaRecover,
+
+        /// <summary>構え's 息 (#501): pips 1-3 glow at turn end before the shield and "+3" (§5.13 順 1).</summary>
+        ReservePips,
 
         /// <summary>The one card at the end: 勝ち or 負け.</summary>
         ResultCard,
@@ -295,6 +301,8 @@ namespace Depiction
                 new EffectSpec(EffectId.GrammarMark, 300f, 0f, blocking: false, "battle_ui_ux_v2 §5.3 盾 / 型 / 気 の形（大きさ 1.0 で 300。型の紋と光はこの後 600 で薄れる。面の拍と並行）"),
                 new EffectSpec(EffectId.TraitAccent, 150f, 0f, blocking: false, "battle_ui_ux_v2 §5.9 順 1 発火の合図 150（一撃に重ね、段は変えない）"),
                 new EffectSpec(EffectId.BreathHeave, 400f, 0f, blocking: false, "battle_ui_ux_v2 §5.3 息 HP 回復の面だけ胸の上下 400（HP の拍と並行。息のほかの形はピップの点灯 StaminaRecover）"),
+                // #501: the light itself stays for as long as the stance list holds one; only its fade is timed.
+                new EffectSpec(EffectId.StanceGlow, 300f, 0f, blocking: false, "battle_ui_ux_v2 §5.11 順 2 身体に薄い光 300（型の紋と並行。消えるときも同じ 300）"),
 
                 // #77
                 new EffectSpec(EffectId.StatusApply, 200f, 0f, blocking: true, "battle_ui_ux_v2 §5.10 順 2 チップが膨らんで収まる"),
@@ -307,6 +315,7 @@ namespace Depiction
                 new EffectSpec(EffectId.TurnBanner, 300f, 0f, blocking: true, "battle_ui_ux_v2 §5.1 順 1 ターン開始のバナー"),
                 new EffectSpec(EffectId.EnemyTurnBanner, 400f, 0f, blocking: true, "battle_ui_ux_v2 §5.13 順 5 敵の番のバナー"),
                 new EffectSpec(EffectId.StaminaRecover, 80f, 80f, blocking: true, "battle_ui_ux_v2 §5.1 順 3 回復ピップ 1 個ずつ 80 × n"),
+                new EffectSpec(EffectId.ReservePips, 250f, 0f, blocking: true, "battle_ui_ux_v2 §5.13 順 1 構え ピップ 1〜3 が光る（息）250"),
                 new EffectSpec(EffectId.ResultCard, 400f, 0f, blocking: false, "battle_ui_ux_v2 §5.19 順 5 せり上がり（勝ち / 負けの 1 枚）"),
 
                 // #288: its own beat, so the blow that fells the enemy keeps its 2.0 s.
@@ -549,6 +558,8 @@ namespace Depiction
                     if (!MovesOnFloor(cue)) steps.Add(new EffectStep(EffectId.RangeTagFlip, 1));
                     break;
                 case CueKind.StanceCue:
+                    // §5.13 順 1-2 (#501): the pips 1-3 glow (構え's 息), then the shield and "+3".
+                    steps.Add(new EffectStep(EffectId.ReservePips, 1));
                     steps.Add(new EffectStep(EffectId.StanceCue, 1));
                     break;
                 case CueKind.EnemyWindup:

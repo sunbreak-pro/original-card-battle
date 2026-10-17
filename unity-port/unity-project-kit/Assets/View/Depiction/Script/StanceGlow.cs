@@ -1,0 +1,53 @@
+// The light a unit's body keeps while it holds a stance (battle_ui_ux_v2 §5.11 順 2 / §5.3 型 StanceGlow,
+// #501). Pure C#, so `dotnet test` holds when the light is on with the same rule the screen follows.
+//
+// The light is read off the frame alone: on while the unit's stance list (UnitFrame.Stances) holds at
+// least one stance, off while it is empty. Since battle_core_v4 v4.4 (#454) a stance joins a list and
+// is never replaced, so a second stance adds no second light (§5.11 順 2: 2 つ目からは光を重ねず) and
+// there is no old light to fade out under a new one: the 型 crest drawn for it comes without the crest's
+// own body light (CrestCarriesLight). The light goes out only when the list empties. Stances last the
+// battle (battle_core_v4 §4), so no frame within a battle empties it; a new battle snaps the light off
+// with no fade, and §5.18 順 3's fade on the carry-over panel belongs to the run screen, not built yet.
+namespace Depiction
+{
+    /// <summary>What the screen does to a unit's stance light when a frame lands.</summary>
+    public enum StanceGlowChange
+    {
+        /// <summary>The light stays as it is (on and still held, or off and still empty).</summary>
+        Keep,
+        /// <summary>The first stance was put down: the light fades in.</summary>
+        Light,
+        /// <summary>The last stance is gone: the light fades out.</summary>
+        Fade,
+    }
+
+    public static class StanceGlow
+    {
+        /// <summary>§5.11 順 2: the light is the stance attribute's colour at α 0.25.</summary>
+        public const float Alpha = 0.25f;
+
+        /// <summary>The light is on while <paramref name="unit"/> holds at least one stance.</summary>
+        public static bool IsOn(UnitFrame unit)
+        {
+            return unit != null && unit.Stances != null && unit.Stances.Count > 0;
+        }
+
+        /// <summary>What a light now <paramref name="shown"/> (or not) does when <paramref name="unit"/>'s frame lands.</summary>
+        public static StanceGlowChange Change(bool shown, UnitFrame unit)
+        {
+            bool on = IsOn(unit);
+            if (on == shown) return StanceGlowChange.Keep;
+            return on ? StanceGlowChange.Light : StanceGlowChange.Fade;
+        }
+
+        /// <summary>
+        /// §5.11 順 2: whether a 型 crest put down now brings the crest's own body light (§5.3 型 「身体に薄い光」).
+        /// Only on a unit with no light yet; from the second stance on the crest is drawn alone
+        /// (2 つ目からは光を重ねず、紋だけを出し直す). <paramref name="shown"/> is the light before the stance lands.
+        /// </summary>
+        public static bool CrestCarriesLight(bool shown)
+        {
+            return !shown;
+        }
+    }
+}

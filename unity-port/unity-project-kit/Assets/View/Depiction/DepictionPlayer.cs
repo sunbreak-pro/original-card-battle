@@ -242,6 +242,7 @@ namespace Depiction.View
             Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
             _source = source;
             _snapPanels = true;
+            SnapStanceGlows(_source.Frame);
             ApplyFrame(_source.Frame);
             if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
             RefreshPlayableLook(); // the last battle's outcome line goes with it
@@ -366,6 +367,7 @@ namespace Depiction.View
             if (_givenSource != null) _source = _givenSource;
             else if (scriptedPlayback) _source = new DepictionRunner(TurnSliceScript.Build());
             else _source = new LiveTurn();
+            SnapStanceGlows(_source.Frame);
             ApplyFrame(_source.Frame);
             if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
             StartCoroutine(RunAutomaticEvents());
@@ -790,8 +792,12 @@ namespace Depiction.View
             switch (EffectGrammar.MarkOf(cue))
             {
                 case FxMark.Shape:
+                    // §5.11 順 2 (#501): read before the light below changes. A unit that already keeps a
+                    // stance light gets the crest alone, with no second light over its body.
+                    bool crestLight = StanceGlow.CrestCarriesLight(target.StanceGlowShown);
                     StartCoroutine(Effect(EffectId.GrammarMark, DepictionFx.Mark(this, fxLayer, chest, head, DepictionFx.PointOn(fxLayer, target.transform),
-                        target.side == UnitSide.Player ? 1f : -1f, cue.Fx.Value, cue.Intensity, _effects.Ms(EffectId.GrammarMark)), null));
+                        target.side == UnitSide.Player ? 1f : -1f, cue.Fx.Value, cue.Intensity, _effects.Ms(EffectId.GrammarMark), crestLight), null));
+                    LightStanceGlowWithCrest(ev, cue, target); // §5.11 順 2 (#501)
                     break;
                 case FxMark.ChestHeave:
                     StartCoroutine(Effect(EffectId.BreathHeave, Heave(target, _effects.Ms(EffectId.BreathHeave)), null));
@@ -865,6 +871,8 @@ namespace Depiction.View
                 }
 
                 case CueKind.StanceCue:
+                    // §5.13 順 1 (#501): pips 1-3 glow first (構え's 息), then the shield and "+3" (順 2).
+                    yield return HoldBeat(EffectId.ReservePips, GlowReservePips(cue.Target, _effects.Ms(EffectId.ReservePips)), null);
                     yield return HoldBeat(EffectId.StanceCue, Reserve(cue, status, chest, numberAt), () => status.SetGuard(cue.GuardAfter));
                     yield return Gate(ev.Order + "-impact");
                     break;
@@ -1106,6 +1114,56 @@ namespace Depiction.View
             DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Guard, 300f);
             DepictionFx.FloatText(this, fxLayer, numberAt, cue.Text, BattleTheme.Guard, 48);
             yield return status.PopGuard(cue.GuardAfter);
+        }
+
+        /// <summary>
+        /// §5.13 順 1 (#501): the player's pips 1-3 on the stamina tag glow. An enemy's stamina is a number
+        /// on its panel with no pips (§4.5), and its 構え plays as a GuardGain, so for it the beat only holds.
+        /// </summary>
+        private IEnumerator GlowReservePips(UnitSide side, float ms)
+        {
+            if (side == UnitSide.Player && _staminaTag != null) yield return _staminaTag.GlowReserve(ms);
+            else yield return UiTween.Wait(ms);
+        }
+
+        // ---- §5.11 順 2 (#501): the light a unit keeps while it holds a stance -------------------
+
+        /// <summary>
+        /// Brings each figure's stance light to what <paramref name="frame"/> says: on while the unit's
+        /// stance list holds one (StanceGlow), faded in or out beside the flow. A light already lit with
+        /// the 型 crest (<see cref="LightStanceGlowWithCrest"/>) is kept.
+        /// </summary>
+        private void ApplyStanceGlows(DepictionFrame frame)
+        {
+            ApplyStanceGlow(playerFigure, frame.Player);
+            ApplyStanceGlow(enemyFigure, frame.Enemy);
+        }
+
+        private void ApplyStanceGlow(FigureView figure, UnitFrame unit)
+        {
+            if (!figure) return;
+            StanceGlowChange change = StanceGlow.Change(figure.StanceGlowShown, unit);
+            if (change == StanceGlowChange.Keep) return;
+            bool on = change == StanceGlowChange.Light;
+            StartCoroutine(Effect(EffectId.StanceGlow, figure.FadeStanceGlow(on, _effects.Ms(EffectId.StanceGlow)), () => figure.SetStanceGlow(on)));
+        }
+
+        /// <summary>A new battle: each light is as the first frame says at once, with no fade.</summary>
+        private void SnapStanceGlows(DepictionFrame frame)
+        {
+            if (playerFigure) playerFigure.SetStanceGlow(StanceGlow.IsOn(frame.Player));
+            if (enemyFigure) enemyFigure.SetStanceGlow(StanceGlow.IsOn(frame.Enemy));
+        }
+
+        /// <summary>
+        /// §5.11 順 2: the light opens with the 型 crest (足元に紋、身体に薄い光), so a 型 beat on a unit whose
+        /// list holds a stance once the event has played lights it there, not when the frame lands.
+        /// </summary>
+        private void LightStanceGlowWithCrest(DepictionEvent ev, Cue cue, FigureView target)
+        {
+            if (!target || cue.Fx != FxSystem.Form || ev.After == null) return;
+            UnitFrame unit = cue.Target == UnitSide.Player ? ev.After.Player : ev.After.Enemy;
+            ApplyStanceGlow(target, unit);
         }
 
         private IEnumerator FireTrait(Vector2 labelAt, string text)
@@ -1522,6 +1580,7 @@ namespace Depiction.View
             _staminaTag?.SetNextRecovery(frame.Player.NextRecovery); // §4.7 (#455): the dashed dots
             ApplyPiles(frame.Piles);
             _stanceLists?.Bind(frame); // §4.6 (#455)
+            ApplyStanceGlows(frame); // §5.11 順 2 (#501): the body's light while the list holds a stance
             playerStatus.Bind(frame.Player);
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);
