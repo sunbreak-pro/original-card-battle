@@ -1,4 +1,6 @@
 <Solution>
+  <Project Path="Backdrop.Script.Tests/Backdrop.Script.Tests.csproj" />
+  <Project Path="Backdrop.Script/Backdrop.Script.csproj" />
   <Project Path="BattleCore.Tests/BattleCore.Tests.csproj" />
   <Project Path="BattleCore/BattleCore.csproj" />
   <Project Path="BattleCore.Sim.Tests/BattleCore.Sim.Tests.csproj" />
@@ -14,4 +16,6 @@
   <Project Path="Exploration.Script.Tests/Exploration.Script.Tests.csproj" />
   <Project Path="Exploration.Script/Exploration.Script.csproj" />
   <Project Path="Journal.Script/Journal.Script.csproj" />
+  <Project Path="UiArt.Script.Tests/UiArt.Script.Tests.csproj" />
+  <Project Path="UiArt.Script/UiArt.Script.csproj" />
 </Solution>

@@ -92,57 +92,32 @@ public static class BattleTheme
     }
 
     // ---- §2.4 the layer's backdrop ------------------------------------------------------------
+    // The seven layers' values live once, in Backdrop.BackdropSpec (#89), which BackdropView draws
+    // behind the battle. This palette is the part the rest of the View reads: the sky's two ends for a
+    // plain gradient, and the floor tile.
     public struct FloorPalette
     {
         public Color Top;
         public Color Bottom;
-        public Color Mist;
         /// <summary>床のタイル: the fill of a floor cell (§4.2).</summary>
         public Color Tile;
-        public bool Embers;
     }
-
-    private static readonly FloorPalette Floor1 = new FloorPalette
-    {
-        Top = Hex("#1d3340"), Bottom = Hex("#0f1a22"), Mist = new Color(1f, 1f, 1f, 0.10f), Tile = Hex("#0a1016", 0.72f), Embers = false,
-    };
-
-    // Layers 2, 3, 6 and 7 are #89's to settle (§2.4); 3 keeps the A+ value until then.
-    private static readonly FloorPalette Floor3 = new FloorPalette
-    {
-        Top = Hex("#1a1f3a"), Bottom = Hex("#0b0d1a"), Mist = Hex("#8a6fd6", 0.07f), Tile = Hex("#0c0e1c", 0.78f), Embers = false,
-    };
-
-    /// <summary>The brightest layer: #e4e6f2 → #b7bbd6 → #7d82a8 (the middle stop is folded into the gradient's ends).</summary>
-    private static readonly FloorPalette Floor4 = new FloorPalette
-    {
-        Top = Hex("#e4e6f2"), Bottom = Hex("#7d82a8"), Mist = new Color(1f, 1f, 1f, 0.35f), Tile = Hex("#0e101c", 0.82f), Embers = false,
-    };
-
-    private static readonly FloorPalette Floor5 = new FloorPalette
-    {
-        Top = Hex("#1a0e12"), Bottom = Hex("#070507"), Mist = Hex("#8c1e28", 0.28f), Tile = Hex("#0c080a", 0.80f), Embers = true,
-    };
 
     public static FloorPalette Floor(int floor)
     {
-        if (floor <= 1) return Floor1;
-        if (floor == 2) return Lerp(Floor1, Floor3, 0.5f, false);
-        if (floor == 3) return Floor3;
-        if (floor == 4) return Floor4;
-        return Floor5;
-    }
-
-    private static FloorPalette Lerp(FloorPalette a, FloorPalette b, float t, bool embers)
-    {
+        Backdrop.LayerBackdrop backdrop = Backdrop.BackdropSpec.For(floor);
         return new FloorPalette
         {
-            Top = Color.Lerp(a.Top, b.Top, t),
-            Bottom = Color.Lerp(a.Bottom, b.Bottom, t),
-            Mist = Color.Lerp(a.Mist, b.Mist, t),
-            Tile = Color.Lerp(a.Tile, b.Tile, t),
-            Embers = embers,
+            Top = Of(backdrop.Sky[0].Color),
+            Bottom = Of(backdrop.Sky[backdrop.Sky.Length - 1].Color),
+            Tile = Of(backdrop.Tile),
         };
+    }
+
+    /// <summary>A colour of the pure-C# backdrop spec as a Unity colour.</summary>
+    public static Color Of(Backdrop.Rgba c)
+    {
+        return new Color(c.R, c.G, c.B, c.A);
     }
 
     // ---- layout (reference 1920×1080, anchors as fractions of the canvas) ---------
