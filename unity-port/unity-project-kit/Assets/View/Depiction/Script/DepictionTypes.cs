@@ -31,8 +31,8 @@ namespace Depiction
 
     /// <summary>
     /// The icon on the omen badge (#349, battle-visual-v1 4.4). The script picks it; the View only
-    /// draws it. Status stands for the skill kind (a status put on, a push or pull, a break) until
-    /// #350 settles its look.
+    /// draws it. Status is the star of a 技 that puts no status on the opponent (a buff on itself, a
+    /// push or pull); Seal is the stamp of a 技 that does (状態付与, 決定 19, #455).
     /// </summary>
     public enum OmenIcon
     {
@@ -43,6 +43,29 @@ namespace Depiction
         Move,
         Stance,
         Rest,
+        Seal,
+    }
+
+    /// <summary>
+    /// The icon of a status a 状態付与 omen puts on the player (battle-visual-v1 §4.4 / 付録 A, #455).
+    /// None is a word with no icon in 付録 A (a boss's word, 鉤爪...): the badge writes its name in the
+    /// boss colour's double frame instead.
+    /// </summary>
+    public enum StatusGlyph
+    {
+        None,
+        Bleed,
+        Fragile,
+        Slow,
+        Intimidate,
+        Fatigue,
+    }
+
+    /// <summary>One status a 状態付与 omen puts on: its name as printed and its icon.</summary>
+    public sealed class OmenStatus
+    {
+        public string Label = "";
+        public StatusGlyph Glyph = StatusGlyph.None;
     }
 
     /// <summary>battle-visual-v1 §4.4 当たり外れの印: none, lands (phosphor, solid), or misses (steel, dashed, struck).</summary>
@@ -345,6 +368,13 @@ namespace Depiction
         public OmenHit Hit = OmenHit.None;
 
         /// <summary>
+        /// battle-visual-v1 §4.4 状態付与 (#455): for a <see cref="OmenIcon.Seal"/> omen, the statuses it
+        /// puts on the player, at most two, drawn at 28 px where the number would stand. Empty for any
+        /// other omen, and below 開示度 2 (<see cref="OmenDisclosure"/>).
+        /// </summary>
+        public List<OmenStatus> Statuses = new List<OmenStatus>();
+
+        /// <summary>
         /// battle-visual-v1 §4.4 / battle_ui_ux_v2 §7 (#455): how far the journal has read this enemy,
         /// 0〜2. The writer has already blanked what the level does not show (<see cref="OmenDisclosure"/>),
         /// so the View draws the frame as it is. Every source writes <see cref="OmenDisclosure.Full"/>
@@ -368,6 +398,8 @@ namespace Depiction
         /// since the plan is not a commitment. Empty for any other kind.
         /// </summary>
         public string PlanValueText = "";
+        /// <summary>§4.4: the plan's statuses as <see cref="Statuses"/> writes them, drawn at 20 px.</summary>
+        public List<OmenStatus> PlanStatuses = new List<OmenStatus>();
         /// <summary>
         /// The cells the plan aims at, as <see cref="SideGlyph"/> writes them. Empty when none. The plan
         /// badge does not draw it (battle-visual-v1 4.4 gives the plan no reach); it stays in the
@@ -447,6 +479,41 @@ namespace Depiction
         public int Draw;
         public int Discard;
         public int Exile;
+
+        /// <summary>
+        /// battle_ui_ux_v2 §1.1 C4 / §3.13 (#455): what each pile holds, for the list a click on the pile
+        /// opens. One row per kind of card, never in draw order (the order of the draw pile stays
+        /// hidden). Empty when the source keeps no lists.
+        /// </summary>
+        public List<PileCard> DrawCards = new List<PileCard>();
+        public List<PileCard> DiscardCards = new List<PileCard>();
+        public List<PileCard> ExileCards = new List<PileCard>();
+
+        /// <summary>The rows of <paramref name="pile"/>'s list.</summary>
+        public List<PileCard> CardsOf(PileKind pile)
+        {
+            switch (pile)
+            {
+                case PileKind.Draw: return DrawCards;
+                case PileKind.Discard: return DiscardCards;
+                case PileKind.Exile: return ExileCards;
+                default: throw new ArgumentOutOfRangeException(nameof(pile), pile, null);
+            }
+        }
+    }
+
+    /// <summary>
+    /// One row of a pile's list (battle_ui_ux_v2 §1.1 C4 同種の残り「突き 2 / 3」): a kind of card, how
+    /// many of it the pile holds, and how many the battle's deck holds in all.
+    /// </summary>
+    public sealed class PileCard
+    {
+        public string Name = "";
+        public int InPile;
+        public int InDeck;
+
+        /// <summary>"突き 2 / 3".</summary>
+        public string RowText => Name + " " + InPile + " / " + InDeck;
     }
 
     /// <summary>
@@ -464,6 +531,12 @@ namespace Depiction
         public int Stance;
         /// <summary>B6 直前のカードに下線: the attribute of the card played last this turn, or null.</summary>
         public CardKind? Last;
+        /// <summary>
+        /// battle_ui_ux_v2 §1.1 B6 / §3.6 (f) (#455): the power a 追撃 adds to the player's next attack face
+        /// this turn, as the core holds it (CombatantState.FollowUp). The row shows "+5" at its left end
+        /// while it is above 0; the core clears it when the next attack face spends it or the turn ends.
+        /// </summary>
+        public int FollowUp;
 
         public int CountOf(CardKind kind)
         {
@@ -636,6 +709,12 @@ namespace Depiction
         public string RangeGlyphAfter = "";
         /// <summary>StatusChange only: the stacks left of the word named in <see cref="Text"/> (0 = gone).</summary>
         public int StacksAfter = Unchanged;
+        /// <summary>
+        /// DrawHand only (battle_ui_ux_v2 §3.14 山札切れ, #455): the draw pile ran out while this cue's
+        /// cards were drawn and the core made it again from the discard pile (DeckReshuffled) after this
+        /// many of them. <see cref="Unchanged"/> when the pile was not made again.
+        /// </summary>
+        public int RebuildAfter = Unchanged;
         /// <summary>Slash and EnemyWindup: the shape of the blow and of the enemy's move (§5.3).</summary>
         public StrikeSystem System = StrikeSystem.Slash;
         /// <summary>
@@ -671,6 +750,12 @@ namespace Depiction
         public CardAim Aim;
         /// <summary>PlayCard only: the single predicted value shown on the receiver while dragging.</summary>
         public string PreviewText = "";
+        /// <summary>
+        /// PlayCard only (battle-visual-v1 §4.7 / battle_ui_ux_v2 §5.11 順 4, #455): the pile the played
+        /// card goes to, as the core put it — the exile pile for a stance card (CardExiled), the discard
+        /// pile for any other. Its ghost flies there.
+        /// </summary>
+        public PileKind PlayedTo = PileKind.Discard;
         /// <summary>
         /// PlayCard and the enemy's action (#57): the systems of the card or action, in the order its
         /// faces resolve (§5.4). Empty for any other event, and for a movement-only card.

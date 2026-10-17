@@ -379,7 +379,10 @@ namespace Depiction.Bridge
             }
         }
 
-        /// <summary>The icon of the omen's kind (#349): the skill kind wears the status-apply icon; its final look is #350.</summary>
+        /// <summary>
+        /// The icon of the omen's kind (#349) when the action is not at hand: a 技 wears the star. With
+        /// the action, <see cref="IconOf(OmenKind, EnemyActionDef)"/> tells a 状態付与 apart.
+        /// </summary>
         public static OmenIcon IconOf(OmenKind kind)
         {
             switch (kind)
@@ -391,6 +394,55 @@ namespace Depiction.Bridge
                 case OmenKind.Stance: return OmenIcon.Stance;
                 case OmenKind.Rest: return OmenIcon.Rest;
                 default: return OmenIcon.None;
+            }
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §4.4 (決定 19, #455): a 技 whose face puts a status on the opponent
+        /// (BattleCore's Face.GivesFoeStatus) wears the stamp (状態付与); any other 技 the star. Every
+        /// other kind is <see cref="IconOf(OmenKind)"/>'s. An attack that also puts a status keeps the
+        /// sword, since its kind is 攻撃.
+        /// </summary>
+        public static OmenIcon IconOf(OmenKind kind, EnemyActionDef action)
+        {
+            if (kind == OmenKind.Skill && action != null && action.Face.GivesFoeStatus) return OmenIcon.Seal;
+            return IconOf(kind);
+        }
+
+        /// <summary>battle-visual-v1 §4.4: a 状態付与 omen shows at most two of the statuses it puts on.</summary>
+        public const int OmenStatusMax = 2;
+
+        /// <summary>
+        /// §4.4 状態付与 (#455): the statuses a <see cref="OmenIcon.Seal"/> omen puts on the player, in the
+        /// order the action lists them, at most <see cref="OmenStatusMax"/>. Empty for any other omen.
+        /// </summary>
+        public static List<OmenStatus> OmenStatusesOf(OmenKind kind, EnemyActionDef action)
+        {
+            var statuses = new List<OmenStatus>();
+            if (IconOf(kind, action) != OmenIcon.Seal) return statuses;
+            foreach (StatusGrant grant in action.Face.StatusList)
+            {
+                if (grant.OnSelf) continue;
+                if (statuses.Count >= OmenStatusMax) break;
+                statuses.Add(new OmenStatus { Label = grant.Kind.ToLabel(), Glyph = GlyphOf(grant.Kind) });
+            }
+            return statuses;
+        }
+
+        /// <summary>
+        /// The 付録 A icon of a status an enemy puts on the player. The words 付録 A draws no icon for (the
+        /// boss's 呪縛 and 瘴気纏い, 鉤爪, 根張り...) are None: the badge writes their name instead.
+        /// </summary>
+        public static StatusGlyph GlyphOf(StatusKind kind)
+        {
+            switch (kind)
+            {
+                case StatusKind.Bleed: return StatusGlyph.Bleed;
+                case StatusKind.Fragile: return StatusGlyph.Fragile;
+                case StatusKind.Slow: return StatusGlyph.Slow;
+                case StatusKind.Intimidate: return StatusGlyph.Intimidate;
+                case StatusKind.Fatigue: return StatusGlyph.Fatigue;
+                default: return StatusGlyph.None;
             }
         }
 
@@ -435,10 +487,11 @@ namespace Depiction.Bridge
             return new OmenFrame
             {
                 Visible = true,
-                Icon = IconOf(kind),
+                Icon = IconOf(kind, action),
                 KindLabel = OmenKindWord(kind),
                 SideGlyph = omen.Label.Reach != null ? omen.Label.Reach.ToText() : "",
                 ValueText = OmenValueOf(kind, action, preview),
+                Statuses = OmenStatusesOf(kind, action),
             };
         }
 

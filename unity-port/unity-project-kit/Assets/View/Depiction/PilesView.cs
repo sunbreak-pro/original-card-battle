@@ -6,6 +6,7 @@
 //
 // The scene belongs to the Unity project, so the piles are made at run time on the canvas, like the
 // stamina tag above them. Their middles are where drawn cards fly from and discarded ones fly to.
+// A click on a pile opens its list (battle_ui_ux_v2 §1.1 C4, PileListView); the piles say which.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections.Generic;
 using UnityEngine;
@@ -36,12 +37,13 @@ namespace Depiction.View
             _canvas = canvasRoot;
             _root = UiKit.Rect(canvasRoot, "Piles", Vector2.zero, Vector2.one);
             if (siblingIndex >= 0) _root.SetSiblingIndex(siblingIndex);
-            CanvasGroup group = UiKit.Group(_root);
-            group.blocksRaycasts = false;
-            group.interactable = false;
+            // Only each pile's own hit area takes a click (C4); the rest of the full-screen root lets them through.
             foreach (PileKind kind in Kinds) _piles.Add(MakePile(kind));
             _root.gameObject.SetActive(false);
         }
+
+        /// <summary>battle_ui_ux_v2 §1.1 C4 (#455): a pile was clicked; its list opens.</summary>
+        public event System.Action<PileKind> Clicked;
 
         /// <summary>Whether the piles are drawn (the script keeps them).</summary>
         public bool Shown => _root.gameObject.activeSelf;
@@ -96,6 +98,11 @@ namespace Depiction.View
             pile.Icon = UiKit.Sprite(front, "Icon", VisualArt.Icon(IconOf(kind)), BattleTheme.Ink, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(PileLayout.IconSize, PileLayout.IconSize), Vector2.zero);
             pile.Icon.preserveAspect = true;
+
+            // C4: the whole 64×84 of the pile, empty or not, opens its list.
+            Image hit = UiKit.Image(root, "Hit", ProceduralArt.White, Color.clear, Vector2.zero, Vector2.one);
+            hit.raycastTarget = true;
+            UiKit.OnPointer(hit.gameObject, UnityEngine.EventSystems.EventTriggerType.PointerClick, _ => Clicked?.Invoke(kind));
             return pile;
         }
 

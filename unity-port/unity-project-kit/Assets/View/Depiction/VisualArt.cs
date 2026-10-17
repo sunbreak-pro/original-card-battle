@@ -23,6 +23,12 @@ namespace Depiction.View
         Discard,
         /// <summary>付録 A 除外 (#455).</summary>
         Exile,
+        /// <summary>付録 A 出血 / 脆化 / 鈍足 / 威圧 / 疲労: the statuses a 状態付与 omen shows (§4.4, #455).</summary>
+        Bleed,
+        Fragile,
+        Slow,
+        Intimidate,
+        Fatigue,
     }
 
     /// <summary>
@@ -494,16 +500,79 @@ namespace Depiction.View
                 case VisualIcon.Discard: return new[] { S(12, 4, 12, 14), S(7, 9, 12, 14), S(12, 14, 17, 9), S(4, 20, 20, 20) };
                 // 付録 A: M6 6l12 12 M18 6L6 18
                 case VisualIcon.Exile: return new[] { S(6, 6, 18, 18), S(18, 6, 6, 18) };
+                // 付録 A 出血 (#455): M12 3c4 5 6 8 6 11 a6 6 0 01-12 0 c0-3 2-6 6-11z — the arc is a ring (Rings).
+                case VisualIcon.Bleed: return Join(Cubic(12, 3, 16, 8, 18, 11, 18, 14), Cubic(6, 14, 6, 11, 8, 8, 12, 3));
+                // 付録 A 脆化: M12 3l-2 6 4 3-3 4 2 5 M5 5l4 4 M19 6l-4 3
+                case VisualIcon.Fragile:
+                    return new[] { S(12, 3, 10, 9), S(10, 9, 14, 12), S(14, 12, 11, 16), S(11, 16, 13, 21), S(5, 5, 9, 9), S(19, 6, 15, 9) };
+                // 付録 A 鈍足: M6 9l6 5 6-5 M6 4l6 5 6-5 M4 20h16
+                case VisualIcon.Slow:
+                    return new[] { S(6, 9, 12, 14), S(12, 14, 18, 9), S(6, 4, 12, 9), S(12, 9, 18, 4), S(4, 20, 20, 20) };
+                // 付録 A 威圧: M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z M12 9v6 (the smooth curves written out)
+                case VisualIcon.Intimidate:
+                    return Join(Cubic(2, 12, 2, 12, 6, 6, 12, 6), Cubic(12, 6, 18, 6, 22, 12, 22, 12),
+                        Cubic(22, 12, 22, 12, 18, 18, 12, 18), Cubic(12, 18, 6, 18, 2, 12, 2, 12), new[] { S(12, 9, 12, 15) });
+                // 付録 A 疲労: M3 8h15v8H3z M18 11h3v2 M6 11h3v2H6z
+                case VisualIcon.Fatigue:
+                    return new[]
+                    {
+                        S(3, 8, 18, 8), S(18, 8, 18, 16), S(18, 16, 3, 16), S(3, 16, 3, 8),
+                        S(18, 11, 21, 11), S(21, 11, 21, 13),
+                        S(6, 11, 9, 11), S(9, 11, 9, 13), S(9, 13, 6, 13), S(6, 13, 6, 11),
+                    };
                 case VisualIcon.Self: return new float[0][];
                 default: return new float[0][];
             }
         }
 
-        /// <summary>Ring arcs: centre x, centre y, radius, and whether only the upper half is drawn.</summary>
+        /// <summary>
+        /// Ring arcs: centre x, centre y, radius, and which part is drawn — 0 the whole ring, 1 the upper
+        /// half only, 2 the lower half only.
+        /// </summary>
         private static float[][] Rings(VisualIcon icon)
         {
             if (icon == VisualIcon.Self) return new[] { new[] { 12f, 7.5f, 3.5f, 0f }, new[] { 12f, 21f, 7f, 1f } };
+            // 出血's a6 6 0 01-12 0: the lower half of a circle about (12, 14).
+            if (icon == VisualIcon.Bleed) return new[] { new[] { 12f, 14f, 6f, 2f } };
             return new float[0][];
+        }
+
+        /// <summary>A cubic Bézier of the 24 grid as <paramref name="steps"/> straight segments.</summary>
+        private static float[][] Cubic(float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3, int steps = 10)
+        {
+            var segments = new float[steps][];
+            float px = x0, py = y0;
+            for (int i = 1; i <= steps; i++)
+            {
+                float t = i / (float)steps, u = 1f - t;
+                float x = u * u * u * x0 + 3f * u * u * t * x1 + 3f * u * t * t * x2 + t * t * t * x3;
+                float y = u * u * u * y0 + 3f * u * u * t * y1 + 3f * u * t * t * y2 + t * t * t * y3;
+                segments[i - 1] = S(px, py, x, y);
+                px = x;
+                py = y;
+            }
+            return segments;
+        }
+
+        private static float[][] Join(params float[][][] parts)
+        {
+            var all = new List<float[]>();
+            foreach (float[][] part in parts) all.AddRange(part);
+            return all.ToArray();
+        }
+
+        /// <summary>battle-visual-v1 §4.4 / 付録 A (#455): the icon of a status a 状態付与 omen puts on; null for one 付録 A has none for.</summary>
+        public static Sprite StatusIcon(StatusGlyph glyph)
+        {
+            switch (glyph)
+            {
+                case StatusGlyph.Bleed: return Icon(VisualIcon.Bleed);
+                case StatusGlyph.Fragile: return Icon(VisualIcon.Fragile);
+                case StatusGlyph.Slow: return Icon(VisualIcon.Slow);
+                case StatusGlyph.Intimidate: return Icon(VisualIcon.Intimidate);
+                case StatusGlyph.Fatigue: return Icon(VisualIcon.Fatigue);
+                default: return null;
+            }
         }
 
         private static float[] S(float x0, float y0, float x1, float y1)
@@ -528,7 +597,8 @@ namespace Depiction.View
                     foreach (float[] s in segments) best = Mathf.Min(best, SegmentDistance(gx, gy, s[0], s[1], s[2], s[3]));
                     foreach (float[] r in rings)
                     {
-                        if (r[3] > 0f && gy > r[1]) continue;
+                        if (r[3] == 1f && gy > r[1]) continue;
+                        if (r[3] == 2f && gy < r[1]) continue;
                         best = Mathf.Min(best, Mathf.Abs(new Vector2(gx - r[0], gy - r[1]).magnitude - r[2]));
                     }
                     float a = Mathf.Clamp01((halfWidth - best) * scale + 0.5f);

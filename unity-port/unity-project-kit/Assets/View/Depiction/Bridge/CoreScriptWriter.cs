@@ -80,6 +80,9 @@ namespace Depiction.Bridge
         /// <summary>The enemy action being written whiffed (§6): its trait miss has nothing to strike off.</summary>
         private bool _whiffed;
 
+        /// <summary>#455: the core has just made the draw pile again (DeckReshuffled); the next Drawn marks its beat.</summary>
+        private bool _rebuildPending;
+
         /// <summary>The system (§5.3) of the card or action whose blows are being written.</summary>
         private StrikeSystem _strike = StrikeSystem.Slash;
 
@@ -110,7 +113,7 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// battle-visual-v1 §4.4 (#455): how far the journal has read this enemy (開示度 0〜2). Below 2 the
-        /// omen's numbers are left off the script (OmenDisclosure). The journal does not hand a level to
+        /// omen's numbers and statuses are left off the script, and at 0 its plan (OmenDisclosure). The journal does not hand a level to
         /// the battle yet, so it is 2, everything shown, unless a caller sets it.
         /// </summary>
         public int Disclosure { get; set; } = OmenDisclosure.Full;
@@ -271,8 +274,9 @@ namespace Depiction.Bridge
                     && current.Cues.Exists(c => c.Kind == CueKind.Slash && c.Source == UnitSide.Enemy):
                     return NewEvent(DepictionEventKind.EnemyAction, current.Title + "（2 撃目）");
 
-                // #50: a 予定変更 is a beat of its own, shown before the second action acts.
-                case PlanChanged _ when current != null:
+                // #50: a 予定変更 is a beat of its own, shown before the second action acts. An enemy read
+                // to 0 shows no plan (#455), so its change has no beat and costs no gap between events.
+                case PlanChanged _ when current != null && OmenDisclosure.ShowsPlan(Disclosure):
                     return NewEvent(DepictionEventKind.EnemyAction, DepictionText.PlanChangedTag);
 
                 case OmenSet omen when omen.Decided && _order > 0:
@@ -342,10 +346,28 @@ namespace Depiction.Bridge
                     _hand.Add(drawn.Card);
                     // A hand of six is six core events and one beat on screen.
                     Cue last = ev.Cues.Count > 0 ? ev.Cues[ev.Cues.Count - 1] : null;
-                    if (last != null && last.Kind == CueKind.DrawHand) last.Amount += 1;
-                    else ev.Cues.Add(Grammar(ev, new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 1 }, FxSystem.Breath));
+                    if (last == null || last.Kind != CueKind.DrawHand)
+                    {
+                        last = Grammar(ev, new Cue { Kind = CueKind.DrawHand, Target = UnitSide.Player, Amount = 0 }, FxSystem.Breath);
+                        ev.Cues.Add(last);
+                    }
+                    // §3.14 (#455): the core made the draw pile again just before this card; the cards
+                    // already drawn in this beat came off the old pile.
+                    if (_rebuildPending && last.RebuildAfter == Cue.Unchanged) last.RebuildAfter = last.Amount;
+                    _rebuildPending = false;
+                    last.Amount += 1;
                     break;
                 }
+
+                // §3.14 山札切れ (#455): the discard pile is shuffled into the draw pile; the next Drawn is its first card.
+                case DeckReshuffled _:
+                    _rebuildPending = true;
+                    break;
+
+                // battle-visual-v1 §4.7 / battle_ui_ux_v2 §5.11 順 4 (#455): the played stance card goes to the exile pile.
+                case CardExiled exiled when exiled.Actor == Actor.Player && ev.Kind == DepictionEventKind.PlayCard:
+                    ev.PlayedTo = PileKind.Exile;
+                    break;
 
                 case OmenSet omen:
                 {
@@ -387,7 +409,11 @@ namespace Depiction.Bridge
                     _plan = changed.Now;
                     _planVisible = true;
                     _planChanged = true;
-                    ev.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy, Text = DepictionText.PlanChangedTag });
+                    // #455: an enemy read to 0 shows no plan (battle_ui_ux_v2 §7), so its change has nothing to pop.
+                    if (OmenDisclosure.ShowsPlan(Disclosure))
+                    {
+                        ev.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy, Text = DepictionText.PlanChangedTag });
+                    }
                     break;
 
                 case ActionExecuted executed:
@@ -776,6 +802,7 @@ namespace Depiction.Bridge
         {
             _order += 1;
             _whiffed = false;
+            _rebuildPending = false;
             return new DepictionEvent { Order = _order, Kind = kind, Title = title };
         }
 
@@ -810,6 +837,8 @@ namespace Depiction.Bridge
             frame.Floor = FloorOf(after);
             // battle-visual-v1 §4.7 (#455): the piles' counts, as the move left them.
             frame.Piles = new PileFrame { Shown = true, Draw = after.DrawPile.Count, Discard = after.DiscardPile.Count, Exile = after.Exiled.Count };
+            // battle_ui_ux_v2 §1.1 C4 (#455): what each pile holds, for the list a click on it opens.
+            PileCards.Fill(frame.Piles, after);
             // battle-visual-v1 §4.6 (#455): both sides' stance lists, from the stances the models hold.
             frame.StanceListsShown = true;
             if (frame.Omen.Visible) frame.Omen.Hit = HitMark(frame.Floor.AimCells);
@@ -818,6 +847,8 @@ namespace Depiction.Bridge
             // battle-visual-v1 §4.9 (#455): the attributes the player has played this turn, as the core
             // folds and keeps them (CombatantState.PlayedThisTurn, cleared when the turn ends).
             frame.Played = PlayedOf(after.Player.PlayedThisTurn);
+            // battle_ui_ux_v2 §1.1 B6 (#455): a 追撃 waiting for the next attack face, as the core keeps it.
+            frame.Played.FollowUp = after.Player.FollowUp;
             foreach (CardInstance card in _hand)
             {
                 PlayPreview preview = TurnLoop.Preview(after, card.InstanceId);
@@ -949,9 +980,10 @@ namespace Depiction.Bridge
             EnemyActionDef planned;
             _enemyDef.Actions.TryGetValue(_plan.ActionId, out planned);
             frame.PlanVisible = true;
-            frame.PlanIcon = CoreText.IconOf(kind);
+            frame.PlanIcon = CoreText.IconOf(kind, planned);
             frame.PlanKindLabel = CoreText.OmenKindWord(kind);
             frame.PlanValueText = CoreText.OmenValueOf(kind, planned, null);
+            frame.PlanStatuses = CoreText.OmenStatusesOf(kind, planned);
             frame.PlanSideGlyph = _plan.Label.Reach != null ? _plan.Label.Reach.ToText() : "";
             frame.PlanChanged = _planChanged;
             return frame;

@@ -5,7 +5,9 @@
 // made here too: the prefab saved in the Unity project still has the old one-row parts, and
 // rebuilding it (DepictionPrefabBuilder) needs the Unity Editor. The runtime layout here wins over
 // the builder's until the builder follows (#242). While the enemy carries the omen out, the badge
-// wears a phosphor edge and a violet light (§4.4 敵の番, #455).
+// wears a phosphor edge and a violet light (§4.4 敵の番, #455). A 状態付与 omen wears the stamp and
+// shows the statuses it puts on where the number would stand (§4.4, #455); what the journal has not
+// read is already off the script (OmenDisclosure).
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using UnityEngine;
@@ -51,9 +53,78 @@ namespace Depiction.View
         private Text _planValue;
         private Text _planKind;
         private Text _planTag;
+        private StatusRow _statuses;
+        private StatusRow _planStatuses;
         private bool _built;
         /// <summary>Whether the first omen is up, as the last Bind left it; PopIn keeps to it.</summary>
         private bool _shown;
+
+        /// <summary>§4.4 状態付与: a status icon is 28 px on the omen and 20 px on the plan.</summary>
+        private const float StatusIconSize = 28f;
+        private const float PlanStatusIconSize = 20f;
+
+        /// <summary>
+        /// The statuses a 状態付与 omen puts on (battle-visual-v1 §4.4, #455), left to right in body ink,
+        /// one §3.2 step (6 px) apart. A word with no 付録 A icon is written by name at 16 px in the boss
+        /// colour's double frame, as §4.4 says for 呪縛 and 瘴気纏い.
+        /// </summary>
+        private sealed class StatusRow
+        {
+            private const float Gap = 6f;
+            private const float NamePad = 6f;
+            private readonly RectTransform _root;
+            private readonly float _size;
+            private readonly RectTransform[] _slots = new RectTransform[2];
+            private readonly Image[] _icons = new Image[2];
+            private readonly Image[] _outer = new Image[2];
+            private readonly Image[] _inner = new Image[2];
+            private readonly Text[] _names = new Text[2];
+
+            public StatusRow(RectTransform parent, string name, float size, Vector2 topLeft)
+            {
+                _size = size;
+                _root = UiKit.Point(parent, name, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(120f, size), topLeft);
+                for (int i = 0; i < _slots.Length; i++)
+                {
+                    RectTransform slot = UiKit.Point(_root, "Status" + i, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(size, size), Vector2.zero);
+                    _icons[i] = UiKit.Sprite(slot, "Icon", null, BattleTheme.Ink, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(size, size), Vector2.zero);
+                    _icons[i].preserveAspect = true;
+                    _outer[i] = VisualArt.Ring(slot, "Frame", BattleTheme.Boss, 3, 1);
+                    _inner[i] = VisualArt.Ring(slot, "Inner", BattleTheme.Boss, 3, 1, -3f);
+                    _names[i] = UiKit.Label(slot, "Name", 16, TextAnchor.MiddleCenter, BattleTheme.Ink, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+                        new Vector2(size, size), Vector2.zero);
+                    _names[i].horizontalOverflow = HorizontalWrapMode.Overflow;
+                    _slots[i] = slot;
+                }
+                _root.gameObject.SetActive(false);
+            }
+
+            public void Bind(System.Collections.Generic.List<OmenStatus> statuses)
+            {
+                int count = statuses == null ? 0 : Mathf.Min(statuses.Count, _slots.Length);
+                _root.gameObject.SetActive(count > 0);
+                float x = 0f;
+                for (int i = 0; i < _slots.Length; i++)
+                {
+                    bool on = i < count;
+                    _slots[i].gameObject.SetActive(on);
+                    if (!on) continue;
+                    OmenStatus status = statuses[i];
+                    Sprite icon = VisualArt.StatusIcon(status.Glyph);
+                    bool named = icon == null;
+                    _icons[i].sprite = icon;
+                    _icons[i].enabled = !named;
+                    _outer[i].enabled = _inner[i].enabled = named;
+                    _names[i].enabled = named;
+                    _names[i].text = named ? status.Label : "";
+                    float width = named ? _names[i].preferredWidth + 2f * NamePad : _size;
+                    _slots[i].sizeDelta = new Vector2(width, _size);
+                    _names[i].rectTransform.sizeDelta = new Vector2(width, _size);
+                    _slots[i].anchoredPosition = new Vector2(x, 0f);
+                    x += width + Gap;
+                }
+            }
+        }
 
         public RectTransform Rect => (RectTransform)transform;
 
@@ -114,6 +185,8 @@ namespace Depiction.View
                 valueText.fontSize = 48;
                 valueText.alignment = TextAnchor.MiddleLeft;
             }
+            // §4.4 状態付与 (#455): the statuses at 28 px where the 48 px number would stand, on its middle.
+            _statuses = new StatusRow(Rect, "Statuses", StatusIconSize, new Vector2(54f, -4f - (56f - StatusIconSize) * 0.5f));
             if (sideChip) Place(sideChip, new Vector2(1f, 0f), new Vector2(64f, 28f), new Vector2(-8f, 6f));
             if (sideText)
             {
@@ -138,6 +211,8 @@ namespace Depiction.View
             _planValue = UiKit.Label(_plan, "Value", 28, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(90f, 36f), new Vector2(40f, -2f));
             _planValue.fontStyle = FontStyle.Bold;
+            // §4.4: the plan's statuses at 20 px where its 28 px number would stand.
+            _planStatuses = new StatusRow(_plan, "Statuses", PlanStatusIconSize, new Vector2(40f, -2f - (36f - PlanStatusIconSize) * 0.5f));
             _planKind = UiKit.Label(_plan, "Kind", 16, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0f), new Vector2(0f, 0f),
                 new Vector2(100f, 22f), new Vector2(10f, 4f));
             // battle-visual-v1 2.1: text under 24 px is written in body ink.
@@ -224,6 +299,7 @@ namespace Depiction.View
             bool rests = omen.Icon == OmenIcon.Rest;
             if (_frame) _frame.enabled = !rests;
             foreach (Image dash in _restFrame) dash.enabled = rests;
+            _statuses?.Bind(omen.Statuses);
             BindHit(omen);
             BindPlan(omen);
         }
@@ -245,6 +321,7 @@ namespace Depiction.View
                 _planValue.color = RoleColor(omen.PlanIcon);
             }
             if (_planKind) _planKind.text = omen.PlanKindLabel;
+            _planStatuses?.Bind(omen.PlanStatuses);
             if (_planTag) _planTag.text = omen.PlanTag;
         }
 

@@ -251,6 +251,38 @@ namespace Depiction.Tests
             Assert.That(turn.Frame.Piles.Exile, Is.EqualTo(0));
         }
 
+        [Test]
+        public void ThePileLists_CountEachKind_InTheDecksOrder()
+        {
+            // battle_ui_ux_v2 §1.1 C4 (#455): a click on a pile opens its list, so the default source fills it.
+            LiveTurn turn = Opened();
+            AssertRows(turn.Frame.Piles.DrawCards, turn.Frame.Piles.Draw);
+            Assert.That(turn.Frame.Piles.DiscardCards, Is.Empty);
+
+            turn.EndTurn();
+            PileFrame piles = turn.Frame.Piles;
+            AssertRows(piles.DrawCards, piles.Draw);
+            AssertRows(piles.DiscardCards, piles.Discard);
+            Assert.That(piles.ExileCards, Is.Empty, "the hand-written turn exiles nothing");
+        }
+
+        private static void AssertRows(List<PileCard> rows, int cards)
+        {
+            int sum = 0;
+            int last = -1;
+            var names = new List<string>();
+            foreach (DemoCard def in DemoDeck.All) names.Add(def.Name);
+            foreach (PileCard row in rows)
+            {
+                sum += row.InPile;
+                Assert.That(row.InDeck, Is.EqualTo(DemoDeck.Copies), row.Name);
+                int at = names.IndexOf(row.Name);
+                Assert.That(at, Is.GreaterThan(last), "one row per kind, in the deck's order: " + row.Name);
+                last = at;
+            }
+            Assert.That(sum, Is.EqualTo(cards), "every card of the pile is on a row");
+        }
+
         // ---- helpers -----------------------------------------------------------------------
 
         /// <summary>A turn opened on its first player phase.</summary>

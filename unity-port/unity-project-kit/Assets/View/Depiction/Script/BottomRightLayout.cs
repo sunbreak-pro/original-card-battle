@@ -29,6 +29,30 @@ namespace Depiction
         /// <summary>The span of the four frames.</summary>
         public static float SpanWidth => Order.Length * Size + (Order.Length - 1) * Gap;
 
+        // ---- battle_ui_ux_v2 §1.1 B6 / §3.6 (f) 追撃のバッジ (#455) ----
+
+        /// <summary>
+        /// B6: while a 追撃 waits, its "+5" stands at the row's left end — one more 40×40 frame, a gap to
+        /// the left of 攻撃's. It grows to the right of nothing: a wider number widens it leftwards.
+        /// </summary>
+        public static float FollowUpRight => LeftOf(0) - Gap;
+
+        /// <summary>The badge's number: 24 px (§3.1 の HP・Guard・敵のスタミナの段), in phosphor, the colour of power (§8 威力).</summary>
+        public const int FollowUpText = 24;
+
+        /// <summary>The padding either side of a number wider than the 40 px frame.</summary>
+        public const float FollowUpPad = 6f;
+
+        /// <summary>§3.6 (f): the badge pops in 150 ms when the 追撃 fires and goes in 150 ms when it is spent or the turn ends.</summary>
+        public const float FollowUpPopMs = 150f;
+        public const float FollowUpVanishMs = 150f;
+
+        /// <summary>"+5" for a 追撃 of 5 waiting; "" when none waits.</summary>
+        public static string FollowUpLabel(int followUp)
+        {
+            return followUp > 0 ? "+" + followUp : "";
+        }
+
         /// <summary>The left edge of the <paramref name="index"/>-th frame on the 1920×1080 screen.</summary>
         public static float LeftOf(int index)
         {

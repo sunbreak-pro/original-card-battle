@@ -21,6 +21,20 @@ namespace Depiction.Tests
         }
 
         [Test]
+        public void TheFollowUpBadge_StandsAtTheRowsLeftEnd_OneGapBeforeAttack()
+        {
+            // battle_ui_ux_v2 §1.1 B6: 追撃の予約中は「+5」のバッジを左端に出す (#455).
+            Assert.That(PlayedLayout.FollowUpRight, Is.EqualTo(PlayedLayout.LeftOf(0) - 6f));
+            Assert.That(PlayedLayout.FollowUpRight - PlayedLayout.Size, Is.EqualTo(1672f), "a 40 px frame from x 1672, over the end-turn plate's left edge");
+            Assert.That(PlayedLayout.FollowUpLabel(5), Is.EqualTo("+5"));
+            Assert.That(PlayedLayout.FollowUpLabel(10), Is.EqualTo("+10"));
+            Assert.That(PlayedLayout.FollowUpLabel(0), Is.Empty);
+            Assert.That(PlayedLayout.FollowUpPopMs, Is.EqualTo(150f));
+            Assert.That(PlayedLayout.FollowUpVanishMs, Is.EqualTo(150f));
+            Assert.That(new PlayedFrame().FollowUp, Is.EqualTo(0));
+        }
+
+        [Test]
         public void ThePlayedFrames_EndAboveTheEndTurnPlate()
         {
             // §4.9 ターン終了: right 24, y 976, 224×72. The frames end at y 936 and the underline 6 px below.

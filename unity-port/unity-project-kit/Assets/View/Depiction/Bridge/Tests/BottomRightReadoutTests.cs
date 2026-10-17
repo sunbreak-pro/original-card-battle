@@ -102,6 +102,40 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void AFollowUp_ShowsFromTheCardThatFiresIt_UntilTheNextAttackSpendsIt()
+        {
+            // battle_ui_ux_v2 §1.1 B6 / §3.6 (f) (#455): the "+5" is the core's CombatantState.FollowUp.
+            var rally = new CardDef("rally", "rally", BattleAttribute.Guard, 1, new Face(Guard: 1),
+                new Trait(BattleCore.TraitCondition.GapAtLeast, TraitEffect.FollowUp, Constants.FollowUpPower, Threshold: 0),
+                Targets: TargetKind.Self);
+            var deck = new List<CardInstance>
+            {
+                new CardInstance("rally-0", rally),
+                new CardInstance("reach-0", CardCatalog.ReachThrust),
+                new CardInstance("brace-0", CardCatalog.Brace),
+                new CardInstance("brace-1", CardCatalog.Brace),
+                new CardInstance("kesa-0", CardCatalog.KesaCut),
+                new CardInstance("feint-0", CardCatalog.Feint),
+                new CardInstance("kesa-1", CardCatalog.KesaCut),
+            };
+            var setup = new BattleSetup(Enemies.PolearmWarped, deck, BattleSetup.SliceFieldCells, StartGap: 2);
+            BattleState start = TurnLoop.Start(setup, NoShuffle).State;
+            var writer = new CoreScriptWriter(Enemies.PolearmWarped);
+            writer.Opening(start);
+            StepResult begin = TurnLoop.BeginPlayerTurn(start, NoShuffle);
+            DepictionFrame opened = writer.Write(begin.Events, begin.State).Last().After;
+            Assert.That(opened.Played.FollowUp, Is.EqualTo(0), "none waits at the turn start");
+
+            var (fired, s1) = Play(writer, begin.State, "rally-0");
+            Assert.That(s1.Player.FollowUp, Is.EqualTo(Constants.FollowUpPower), "the trait fired at gap 2");
+            Assert.That(fired.Played.FollowUp, Is.EqualTo(5));
+            Assert.That(PlayedLayout.FollowUpLabel(fired.Played.FollowUp), Is.EqualTo("+5"));
+
+            var (spent, _) = Play(writer, s1, "reach-0");
+            Assert.That(spent.Played.FollowUp, Is.EqualTo(0), "the next attack face spends it");
+        }
+
+        [Test]
         public void OnTheEnemysTurn_NoHintIsShown()
         {
             var (writer, state, _) = Begun();

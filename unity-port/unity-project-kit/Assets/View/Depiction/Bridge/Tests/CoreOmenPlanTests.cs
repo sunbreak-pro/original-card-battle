@@ -41,11 +41,11 @@ namespace Depiction.Bridge.Tests
         }
 
         /// <summary>The battle dealt at gap 0, with the writer past the opening, then the player's turn begun and ended.</summary>
-        private static (List<DepictionEvent> Turn, List<DepictionEvent> Enemy) Play(EnemyDef enemy)
+        private static (List<DepictionEvent> Turn, List<DepictionEvent> Enemy) Play(EnemyDef enemy, int disclosure = OmenDisclosure.Full)
         {
             var setup = new BattleSetup(enemy, Deck(), 8, StartGap: 0);
             BattleState state = TurnLoop.Start(setup, NoShuffle).State;
-            var writer = new CoreScriptWriter(enemy);
+            var writer = new CoreScriptWriter(enemy) { Disclosure = disclosure };
             writer.Opening(state);
 
             StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
@@ -160,6 +160,25 @@ namespace Depiction.Bridge.Tests
                 Assert.That(beat.After.Omen.PlanValueText, Is.EqualTo("2"));
                 Assert.That(beat.After.Omen.PlanTag, Is.EqualTo("予定変更"));
                 Assert.That(phase[second].After.Omen.PlanVisible, Is.False);
+            });
+        }
+
+        [Test]
+        public void AChangedPlan_ReadToZero_WritesNoBeat()
+        {
+            // battle_ui_ux_v2 §7 (#455): an enemy read to 0 shows no plan, so its change has nothing to
+            // show and must not hold the flow for an empty event.
+            EnemyDef enemy = Elite(new[] { BackOff("back_off", 2), Strike("strike") }, new[] { Shell("shell") });
+            var (_, full) = Play(enemy);
+            var (_, hidden) = Play(enemy, disclosure: 0);
+            Assert.Multiple(() =>
+            {
+                Assert.That(full.Any(e => e.Title == "予定変更"), Is.True, "read to 2, the change is a beat");
+                Assert.That(hidden.Any(e => e.Title == "予定変更"), Is.False, "read to 0, it is not");
+                Assert.That(hidden.Count, Is.EqualTo(full.Count - 1), "no other beat is lost or added");
+                Assert.That(hidden.Any(e => e.Title == "shell"), Is.True, "the second action still acts");
+                Assert.That(hidden.All(e => e.Cues.Count > 0), Is.True, "no event is left without cues");
+                Assert.That(hidden.SelectMany(e => e.Cues).Any(c => c.Kind == CueKind.OmenShow && c.Text == "予定変更"), Is.False);
             });
         }
 

@@ -1,6 +1,6 @@
-// Placeholder icons for the omen badge (#349). Drawn in code until the UI art (#92); the status
-// icon look is #350 to settle. The sword and the shield are ProceduralArt's own; the other four are
-// drawn here after battle-visual-v1 付録 A, in white, so the badge tints them.
+// Placeholder icons for the omen badge (#349). Drawn in code until the UI art (#92). The sword and
+// the shield are ProceduralArt's own and the 状態付与 stamp is VisualArt's line icon (#455); the
+// other four are drawn here after battle-visual-v1 付録 A, in white, so the badge tints them.
 #if UNITY_2021_2_OR_NEWER
 using System;
 using UnityEngine;
@@ -20,6 +20,8 @@ namespace Depiction.View
                 case OmenIcon.None: return null;
                 case OmenIcon.Attack: return ProceduralArt.Icon(ProceduralArt.IconKind.Sword);
                 case OmenIcon.Guard: return ProceduralArt.Icon(ProceduralArt.IconKind.Shield);
+                // 付録 A 状態付与 (印): the line icon VisualArt draws (#455).
+                case OmenIcon.Seal: return VisualArt.Icon(VisualIcon.Seal);
             }
             int slot = (int)icon;
             // Domain reload on entering Play Mode is off, so the statics outlive the sprites that

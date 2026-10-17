@@ -95,6 +95,16 @@ namespace Depiction.Tests
             Assert.That(FigureFrame.Counter(0f), Is.EqualTo(1f));
         }
 
+        [TestCase(226f)]
+        [TestCase(264f)]
+        public void TheSilhouettesEdgeLight_Is2PxOnScreen_AtEitherHeight(float height)
+        {
+            // battle-visual-v1 §4.3: 縁に 2 px の光, whatever the figure is scaled to.
+            float scale = FigureFrame.ScaleFor(height, FrameHeight);
+            Assert.That(FigureFrame.EdgeLightOffset(scale) * scale, Is.EqualTo(2f).Within(1e-3f));
+            Assert.That(FigureFrame.EdgeLightOffset(-scale), Is.EqualTo(FigureFrame.EdgeLightOffset(scale)), "the mirrored enemy counts the same");
+        }
+
         // ---- facing ----
 
         [Test]
