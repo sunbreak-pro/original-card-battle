@@ -80,6 +80,13 @@ export function buildSyncPlan({ repoRoot, projectPath, noPolyfill = false, withP
     ...csFiles(`${repoRoot}/unity-port/DungeonContent`).map((src) => [src, `${projectPath}/Assets/DungeonContent/${basename(src)}`]),
     [`${kit}/Assets/DungeonContent/DungeonContent.asmdef`, `${projectPath}/Assets/DungeonContent/DungeonContent.asmdef`],
 
+    // Battle backdrop (#89): the seven layers' values and motion (pure script assembly, tests) and the
+    // view that draws them behind the battle. No prefab or scene: BackdropView attaches itself at run time.
+    ...treeFiles(`${kit}/Assets/View/Backdrop`, [".cs", ".asmdef"]).map((src) => [
+      src,
+      `${projectPath}/Assets/View/Backdrop/${src.slice(`${kit}/Assets/View/Backdrop/`.length)}`,
+    ]),
+
     // Exploration screen (#101) and the journal drawer it shares with the battle: script assemblies,
     // views, tests. No prefab or scene: ExplorationBootstrap builds the screen in code.
     ...["Exploration", "Journal"].flatMap((folder) =>

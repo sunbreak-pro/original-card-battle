@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Compiles the battle backdrop's pure-C# layer (the seven layers' values and their motion, #89),
+         which lives in the Unity kit under Assets/View/Backdrop/Script/ and is mirrored into the Unity
+         project by `npm run unity:sync`. No source of its own, like Depiction.Script. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Backdrop</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Backdrop\Script\*.cs" LinkBase="Script" />
+  </ItemGroup>
+
+</Project>
