@@ -376,14 +376,23 @@ namespace Depiction
     /// <summary>One effect an event waits for, with how many items it plays.</summary>
     public sealed class EffectStep
     {
-        public EffectStep(EffectId id, int count)
+        public EffectStep(EffectId id, int count, float? leadMs = null)
         {
+            if (leadMs < 0f) throw new ArgumentOutOfRangeException(nameof(leadMs));
             Id = id;
             Count = count;
+            LeadMs = leadMs;
         }
 
         public EffectId Id { get; }
         public int Count { get; }
+
+        /// <summary>
+        /// §5.4 (#499): when set, the next step starts this long after this one does, and this one plays
+        /// on beside it. The flow is held for the lead only (or the whole effect, if that is shorter).
+        /// Null holds the whole effect.
+        /// </summary>
+        public float? LeadMs { get; }
     }
 
     /// <summary>§5.10: which of the four chip beats a StatusChange cue is, read off its change and what is left.</summary>
@@ -445,12 +454,34 @@ namespace Depiction
             return cue.PlayerCellAfter > 0;
         }
 
+        /// <summary>
+        /// §5.4 順 2: the second face (or the move) starts this long after the first face's result beat
+        /// (the number of a blow appearing) and overlaps the first face's tail.
+        /// </summary>
+        public const float NextFaceLeadMs = 80f;
+
+        /// <summary>
+        /// §5.4 順 2 / §5.5 順 8 (#499): the cue right after this blow (the Slash that settles the HP, or
+        /// the Hit of a blow Guard took part of) is a move, so the player does not step back first; the
+        /// move carries the figure on from where the lunge left it, and it starts
+        /// <see cref="NextFaceLeadMs"/> after the number while the HP bar drains beside it. The screen
+        /// (DepictionPlayer.Attack and the Hit beat) and the plan both ask here, so they leave out the
+        /// same return and hold the same lead.
+        /// </summary>
+        public static bool MoveFollows(DepictionEvent ev, Cue blow)
+        {
+            if (ev == null) throw new ArgumentNullException(nameof(ev));
+            int index = ev.Cues.IndexOf(blow);
+            return index >= 0 && index + 1 < ev.Cues.Count && ev.Cues[index + 1].Kind == CueKind.RangeSwitch;
+        }
+
         /// <summary>How long the flow is held at one step with these switches: the one wait both the screen and the tests use.</summary>
         public static float WaitMs(EffectStep step, EffectSwitches switches)
         {
             if (step == null) throw new ArgumentNullException(nameof(step));
             if (switches == null) throw new ArgumentNullException(nameof(switches));
-            return switches.WaitMs(step.Id, step.Count);
+            float whole = switches.WaitMs(step.Id, step.Count);
+            return step.LeadMs.HasValue ? Math.Min(whole, step.LeadMs.Value) : whole;
         }
 
         public static List<EffectStep> StepsOf(DepictionEvent ev)
@@ -459,12 +490,18 @@ namespace Depiction
             var steps = new List<EffectStep>();
             if (ev.Kind == DepictionEventKind.PlayCard) steps.Add(new EffectStep(EffectId.CardRelease, 1));
             if (ev.Kind == DepictionEventKind.TurnStart) steps.Add(new EffectStep(EffectId.TurnBanner, 1));
-            foreach (Cue cue in ev.Cues) AddSteps(steps, cue);
+            foreach (Cue cue in ev.Cues) AddSteps(steps, ev, cue);
             if (ev.Kind == DepictionEventKind.TurnEnd) steps.Add(new EffectStep(EffectId.EnemyTurnBanner, 1));
+            // §5.4 順 0 / §5.9 順 1 (#499): a trait that fires before the first face is shown as the card
+            // is released, beside the card's flight, so the release holds nothing of its own.
+            if (ev.Kind == DepictionEventKind.PlayCard && steps.Count > 1 && steps[1].Id == EffectId.TraitFire)
+            {
+                steps[0] = new EffectStep(EffectId.CardRelease, 1, leadMs: 0f);
+            }
             return steps;
         }
 
-        private static void AddSteps(List<EffectStep> steps, Cue cue)
+        private static void AddSteps(List<EffectStep> steps, DepictionEvent ev, Cue cue)
         {
             switch (cue.Kind)
             {
@@ -495,8 +532,12 @@ namespace Depiction
                     steps.Add(new EffectStep(EffectStrength.IsStrong(cue.Intensity) ? EffectId.HitStopStrong : EffectId.HitStop, 1));
                     if (cue.HpAfter != Cue.Unchanged)
                     {
-                        steps.Add(new EffectStep(EffectId.HpDrain, 1));
-                        if (byPlayer) steps.Add(new EffectStep(EffectId.AttackReturn, 1));
+                        if (byPlayer && MoveFollows(ev, cue)) steps.Add(new EffectStep(EffectId.HpDrain, 1, NextFaceLeadMs));
+                        else
+                        {
+                            steps.Add(new EffectStep(EffectId.HpDrain, 1));
+                            if (byPlayer) steps.Add(new EffectStep(EffectId.AttackReturn, 1));
+                        }
                     }
                     break;
                 }
@@ -520,7 +561,10 @@ namespace Depiction
                     steps.Add(new EffectStep(EffectId.GuardBlock, 1));
                     break;
                 case CueKind.Hit:
-                    steps.Add(new EffectStep(EffectId.HpDrain, 1));
+                {
+                    // The player's blow Guard took part of: a move right after it starts on the number too.
+                    bool movesOn = cue.Target == UnitSide.Enemy && MoveFollows(ev, cue);
+                    steps.Add(new EffectStep(EffectId.HpDrain, 1, movesOn ? NextFaceLeadMs : (float?)null));
                     if (cue.Target == UnitSide.Player)
                     {
                         // The blow on the player is the enemy's own: its omen is spent and it draws back.
@@ -528,6 +572,7 @@ namespace Depiction
                         steps.Add(new EffectStep(EffectId.EnemyReturn, 1));
                     }
                     break;
+                }
                 case CueKind.StatusChange:
                     steps.Add(new EffectStep(StatusBeat.Of(cue), 1));
                     break;

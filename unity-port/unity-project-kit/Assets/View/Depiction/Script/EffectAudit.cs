@@ -190,7 +190,7 @@ namespace Depiction
                 new EffectAuditEntry(EffectId.ScreenShake, Blow, Carries.None, D, H,
                     "強い一撃の重さの演出で、情報を足しません。確定は #79 です。"),
                 new EffectAuditEntry(EffectId.AttackReturn, Blow, Carries.None, D, H,
-                    "元の位置に戻るだけで、読み取れる情報がありません。攻撃のたびに 120 ms 入力を止めます。切ると人物が瞬間移動して見えるため、確定は #79 です。"),
+                    "元の位置に戻るだけで、読み取れる情報がありません。攻撃のたびに 120 ms 入力を止めます。移動がすぐ続く一撃では出さず、移動が戻りを兼ねます（#499）。切ると人物が瞬間移動して見えるため、確定は #79 です。"),
                 new EffectAuditEntry(EffectId.EnemyMotion, Blow, Carries.WhoHitWhom | Carries.Intent, N, Sc,
                     "敵が何をするかを、系統ごとの形で示します。切ると敵の動きが読めません。"),
                 new EffectAuditEntry(EffectId.OmenSpend, Blow, Carries.Intent, N, Sc,
