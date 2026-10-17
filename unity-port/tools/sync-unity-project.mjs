@@ -56,13 +56,31 @@ const plan = buildSyncPlan({ repoRoot, projectPath, noPolyfill, withParity });
 let written = 0;
 let unchanged = 0;
 
-// Every synced file is text. The two repos check the same content out with different line
+// Every other synced file is text. The two repos check the same content out with different line
 // endings (core.autocrlf here; there `.asmdef` is `eol=lf` and `.cs` is plain `text`), so a
 // byte compare would rewrite unchanged files on every run. Compare with line endings folded to LF.
 const toLf = (text) => text.replace(/\r\n/g, "\n");
 const toCrlf = (text) => toLf(text).replace(/\n/g, "\r\n");
 
+// Fonts are the one binary kind: compared and copied byte for byte.
+const isBinary = (path) => path.endsWith(".ttf");
+
 for (const [src, dest] of plan) {
+  if (isBinary(src)) {
+    const bytes = readFileSync(src);
+    const same = existsSync(dest) && readFileSync(dest).equals(bytes);
+    if (same) {
+      unchanged += 1;
+      continue;
+    }
+    console.log(`  ${existsSync(dest) ? "update" : "add   "}  ${dest.slice(projectPath.length + 1)}`);
+    if (!dryRun) {
+      mkdirSync(dirname(dest), { recursive: true });
+      writeFileSync(dest, bytes);
+    }
+    written += 1;
+    continue;
+  }
   const body = readFileSync(src, "utf8");
   const current = existsSync(dest) ? readFileSync(dest, "utf8") : null;
   if (current !== null && toLf(current) === toLf(body)) {

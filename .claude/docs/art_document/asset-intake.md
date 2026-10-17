@@ -1,6 +1,6 @@
 # 素材の取り込み規約 — 置き場・命名・Unity の設定・台帳
 
-> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。2026-10-10 に、Preset Manager のフィルタが `Assets/` から始まる形で当たると確かめた結果を §5.2 と §10 に入れました（#85。登録は RPG-by-card#10）。同じ日に、上級の槍の竜兵 2 枚の幅の例外（800 と 900）を §0・§1.2・§3.3 に足しました（#287）。
+> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。2026-10-10 に、Preset Manager のフィルタが `Assets/` から始まる形で当たると確かめた結果を §5.2 と §10 に入れました（#85。登録は RPG-by-card#10）。同じ日に、上級の槍の竜兵 2 枚の幅の例外（800 と 900）を §0・§1.2・§3.3 に足しました（#287）。2026-10-17 に、UI の部材と書体の取り込みと、書体のライセンスの記録を §12 に足しました（#92）。
 > **役割**: 作った絵を Unity に入れるまでの規約を決めます。**立ち絵（キャラクター）だけを対象にします。** 背景・カードの絵・UI の部材は不透明度も圧縮形式も違うので、別の節が要ります（→ §9）。
 > **正本**: `.claude/docs/vision/world-v1.md`（世界の正典 v4）／ `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md`（道具と前提）
 > **読む用**: `docs/reports/2026-09-21-asset-intake-rules.html`
@@ -297,3 +297,33 @@ model_id, weights_file, sha256, license, terms_url, terms_checked_on, notes
 
 - **自動検査を置くか。** 規約を書いても、`.meta` を人が見なければ崩れます。`-batchmode -quit -executeMethod` で TextureImporter を読んで差分を吐く Editor のスクリプトが要ります。実行は Unity 側なので、このレーンの静的検証には載りません。
 - **`tools-and-prerequisites.md` の 2 箇所。** §8 の 30 列と §9 #8 の「取り込み長辺 1024・BC7」は本書で置き換わります。同ファイルは design が書く正本なので、別 Issue で直します。
+
+## 12. UI の部材と書体（#92）
+
+立ち絵の規約（§0〜§11）とは別に、UI の部材と書体だけをここで決めます。何を絵にするかは `battle-visual-v1.md` §11 が元になる文書です。
+
+### 12.1 UI の部材
+
+| 項目 | 値 |
+| --- | --- |
+| 原本 | 透明の地に白 1 色の形、128×128 の PNG。色はコードが付けるので、色を塗らない |
+| 置き場 | Unity リポの `Assets/Resources/UiArt/icon-<id>.png`。id は `UiArtCatalog.cs` の小文字のケバブ（例: `bleed`、`adapt-1`） |
+| Texture Type | Sprite (2D and UI) |
+| 圧縮 | なし（RGBA32）。23 枚で約 1.5 MiB なので、縁のにじみを避けるほうを取ります |
+| Mip Map | off（表示は 18〜34 px で、拡大縮小の幅が小さいため） |
+| Filter | Bilinear |
+
+### 12.2 書体のライセンスの記録
+
+3 つの書体はどれも SIL Open Font License 1.1 で、ゲームへの同梱と商用の配布ができます。書体のファイル単体を売ることと、Reserved Font Name を改変版に使うことだけが禁止です。ゲームの配布物には、各書体の `OFL-<family>.txt` を同梱します。
+
+| 書体 | ファイル | 著作権表示 | 元の版 |
+| --- | --- | --- | --- |
+| Shippori Mincho | `ShipporiMincho-Bold.ttf` | Copyright 2021 The Shippori Mincho Project Authors | fontdasu/ShipporiMincho `63431fe` |
+| Zen Kaku Gothic New | `ZenKakuGothicNew-Regular.ttf` / `ZenKakuGothicNew-Bold.ttf` | Copyright 2022 The Zen Kaku Gothic Project Authors | googlefonts/zen-kakugothic `2705757` |
+| IBM Plex Mono | `IBMPlexMono-Bold.ttf` | Copyright © 2017 IBM Corp. with Reserved Font Name "Plex" | googlefonts/plex `9ab3b5b` |
+
+- 取得元は github.com/google/fonts の `ofl/<family>/` で、コミット `47d54ca1ebb14fd864695f1d39dc734f39017c33`（2026-10-17）に固定しています。ファイルごとの SHA-256 は `unity-port/tools/fetch-fonts.mjs` が持ち、取得のたびに照合します。
+- ファイルは約 13 MB あるので git に入れず、`npm run fonts:fetch` で `unity-port/unity-project-kit/Assets/View/Resources/Fonts/` に取得し、`npm run unity:sync` で Unity の `Assets/View/Resources/Fonts/` へ写します。
+- Unity の Font の取り込みは既定（Dynamic）のままにします。TextMeshPro の SDF アトラスは使いません（`battle_ui_ux_v2.md` §8 で残り 20% に置いた作業です）。
+- 版を上げるときは、`fetch-fonts.mjs` のコミットとハッシュと、この表を同じコミットで直します。

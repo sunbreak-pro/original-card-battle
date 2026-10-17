@@ -15,6 +15,39 @@ public static class UiKit
         if (Font == null) Font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
     }
 
+    // ---- the battle screen's typefaces (battle-visual-v1 §3.1, #92) --------------------------
+    // `npm run fonts:fetch` puts them in Resources/Fonts (SIL OFL 1.1; the record is asset-intake.md §11).
+    // Font above stays LegacyRuntime until the battle lane moves each label over: the new faces are wider,
+    // so every label has to be checked as it switches. A face that is not there falls back to Font.
+
+    /// <summary>Zen Kaku Gothic New 400: card text, chips, tooltips (§3.1 16 px).</summary>
+    public static Font BodyFont => Face(ref _body, "ZenKakuGothicNew-Regular");
+    /// <summary>Zen Kaku Gothic New 700: tooltip headings, the end-turn button (§3.1 18 / 24 px).</summary>
+    public static Font BodyBoldFont => Face(ref _bodyBold, "ZenKakuGothicNew-Bold");
+    /// <summary>Shippori Mincho 700/800: card names, stance names, banners (§3.1 20〜64 px). 800 is drawn as 700 for now.</summary>
+    public static Font HeadingFont => Face(ref _heading, "ShipporiMincho-Bold");
+    /// <summary>IBM Plex Mono 700: every number (§3.1). It has no Japanese glyphs, so a label mixing both splits its digits into their own Text.</summary>
+    public static Font NumberFont => Face(ref _number, "IBMPlexMono-Bold");
+
+    private static Font _body;
+    private static Font _bodyBold;
+    private static Font _heading;
+    private static Font _number;
+
+    private static Font Face(ref Font slot, string file)
+    {
+        if (slot != null) return slot;
+        slot = Resources.Load<Font>("Fonts/" + file);
+        if (slot == null)
+        {
+            // A warning, not an error: a missing font must not fail the PlayMode tests.
+            Debug.LogWarning("[UiKit] Resources/Fonts/" + file + " is missing (npm run fonts:fetch, then npm run unity:sync); using the built-in font.");
+            EnsureFont();
+            slot = Font;
+        }
+        return slot;
+    }
+
     public static RectTransform Rect(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax)
     {
         var go = new GameObject(name, typeof(RectTransform));
