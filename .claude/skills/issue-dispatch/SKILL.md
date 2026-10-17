@@ -99,6 +99,20 @@ gh issue create -R sunbreak-pro/original-card-battle \
   --body-file <(cat)
 ```
 
+### 3.5 `pdca:auto` を付けるかを決める
+
+進行役（pdca-harness）に任せる Issue には `pdca:auto` を付けます。付けるのは chat-main だけで、レーンは付けません。付いた Issue は `issue-prompter` がレーンの `/goal` に配りません。
+
+付けてよい Issue は、コードだけで完結し、完了条件を `dotnet build` `dotnet test` `npm run lint` `npm run build` `npm run test:run` で確かめられるものです。次の Issue には付けません。
+
+- 本文が `.claude/` のパスを挙げるもの（設計書を直す Issue を含む）。進行役は `.claude/` に書けず、機械の足切りで外れます。**本文に `.claude/` のパスを書くと拾われない**ので、付けたい Issue では参照先を設計書の名前だけにするか、Scope に書きません
+- `area:art` `area:world` `type:human` `status:frozen` が付いたもの、題が判断を求めるもの、子 Issue を持つ親
+- 判断（数値・規則・画面の流れ）を Issue が決めていないもの。進行役は仮定を置かず、`state:needs-human` にします
+
+Unity Editor での確認が要る完了条件があっても付けてかまいません。その条件は PR の本文の「人が確かめること」に回り、こうだいさんが確かめます。`unity:check` `parity:check` は進行役が動かせません。
+
+**試運転が済むまでは少数にします。** いまの試運転は #457 です（#495 も候補でしたが、付ける前にレーンが直しました）。#99 は、試運転に問題がなければ足します。広げるときは、PR の質と merge の手間を見てから決めます（merge 待ちの上限は 3 件です）。
+
 ### 4. 完了追跡
 
 作業の区切りに open Issue を巡回し、停滞・close 漏れ・「merge 済みなのに open」を検出します。PR merge / Issue close の後は plan の Status と per-chat の `memory/` を追随させます（`task-tracker`）。

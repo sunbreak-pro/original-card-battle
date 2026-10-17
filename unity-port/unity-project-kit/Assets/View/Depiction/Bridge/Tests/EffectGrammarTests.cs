@@ -304,6 +304,82 @@ namespace Depiction.Bridge.Tests
             Assert.That(checkedCards, Is.GreaterThan(0));
         }
 
+        /// <summary>
+        /// The cards with an attack face and a move (踏み込み斬り, 牽制, ...), read off the data. A push or a
+        /// pull is a move too (§5.4 / §5.7, 手繰りの歩み): it follows the blow the same way.
+        /// </summary>
+        private static bool AttacksAndMoves(CardDef def) =>
+            CardSystems.FacesOf(def.Name, def.Attributes, def.Face).Attacks && (def.Face.Move != 0 || def.Face.Push != 0);
+
+        /// <summary>
+        /// Every way the core can write the card's play into the slice's fight: each gap it can be played
+        /// from, into no Guard, a little and a wall of it, with the stamina the turn gives and with it full
+        /// (so a trait on held-back stamina fires too).
+        /// </summary>
+        private static IEnumerable<(string Label, DepictionEvent Event)> EveryPlayOf(CardDef card)
+        {
+            foreach (int gap in new[] { 0, 1, 2, 3, 4 })
+            foreach (int enemyGuard in new[] { 0, 3, 40 })
+            foreach (bool fullStamina in new[] { false, true })
+            {
+                var setup = new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(new[] { card }, 6),
+                    BattleSetup.SliceFieldCells, StartGap: gap);
+                BattleState state = TurnLoop.Start(setup, NoShuffle).State;
+                state = TurnLoop.BeginPlayerTurn(state, NoShuffle).State;
+                state = state.WithEnemy(state.Enemy with { Guard = enemyGuard });
+                if (fullStamina) state = state with { Player = state.Player with { Stamina = state.Player.MaxStamina } };
+                string id = state.Hand.First().InstanceId;
+                if (TurnLoop.CanPlay(state, id) != PlayRefusal.None) continue;
+                var writer = new CoreScriptWriter(setup.Enemy);
+                writer.Opening(state);
+                StepResult play = TurnLoop.PlayCard(state, id, NoShuffle);
+                yield return ("gap " + gap + ", enemy Guard " + enemyGuard + (fullStamina ? ", full stamina" : ""),
+                    writer.Write(play.Events, play.State).First(e => e.Kind == DepictionEventKind.PlayCard));
+            }
+        }
+
+        [Test]
+        public void EveryAttackThatMoves_StaysInsideOneAndAHalfAttacks()
+        {
+            // §5.0 / §5.3 (#499): an attack face with a move added plays within 1.5 times an attack-only
+            // card (1545 ms). The set is read off the swordsman's cards, and each is played every way the
+            // core can write it. The core always writes the cells, so the move plays on the floor
+            // (EffectPlan.MovesOnFloor); the waits are EffectPlan's, so whatever steps the floor move
+            // comes to hold are counted here as they land.
+            // A blow Guard takes only part of is three beats on the script (§5.5: Slash, GuardBlock, Hit);
+            // those plays are held to 1545 too: the move starts on the number + 80 (§5.4 順 2) and a trait
+            // fired before the first face shows beside the release (§5.4 順 0).
+            const float AttackAndMoveCapMs = 1545f;
+            var on = EffectSwitches.AllOn();
+            List<CardDef> cards = CardCatalog.All.Where(AttacksAndMoves).ToList();
+            Assert.That(cards, Is.Not.Empty, "the swordsman has cards that attack and move");
+            var report = new StringBuilder();
+            foreach (CardDef def in cards)
+            {
+                float worst = 0f;
+                string worstLabel = "";
+                int plays = 0;
+                foreach ((string label, DepictionEvent ev) in EveryPlayOf(def))
+                {
+                    // Against the edge or the enemy the move may come to nothing (§5.7 順 5); those plays are
+                    // held to the cap too, but the card must move in at least one of them.
+                    if (ev.Cues.Any(c => c.Kind == CueKind.RangeSwitch)) plays += 1;
+                    float ms = EffectPlan.BlockingMs(ev, on);
+                    string where = def.Name + " at " + label + ": "
+                        + string.Join(" + ", EffectPlan.StepsOf(ev).Select(s => s.Id + " " + EffectPlan.WaitMs(s, on).ToString("0")));
+                    Assert.That(ms, Is.LessThanOrEqualTo(AttackAndMoveCapMs), where);
+                    if (ms > worst)
+                    {
+                        worst = ms;
+                        worstLabel = where;
+                    }
+                }
+                Assert.That(plays, Is.GreaterThan(0), def.Name + " is played with its move from some gap");
+                report.Append(worst.ToString("0")).Append(" ms  ").Append(worstLabel).Append('\n');
+            }
+            TestContext.Out.Write(report.ToString());
+        }
+
         private static Cue Strip(Cue cue)
         {
             return new Cue

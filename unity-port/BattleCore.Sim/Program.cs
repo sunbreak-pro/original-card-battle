@@ -7,12 +7,12 @@ namespace BattleCore.Sim;
 /// <summary>
 /// #53: dotnet run --project BattleCore.Sim -- [--seed N] [--runs N] [--json path] [--only first3] [--threads N] [--max-plays N].
 /// Prints the §13 table to stdout; the run time goes to stderr so that stdout and the JSON depend on
-/// the seed alone.
+/// the seed alone. --layers [--layer-hp P] prints #457's layer measurement as JSON instead.
 /// </summary>
 public static class Program
 {
     public const string Usage =
-        "usage: BattleCore.Sim [--seed N] [--runs N] [--json <path>] [--only first3] [--threads N] [--max-plays N] [--trace deck:enemy[:policy]] [-h]";
+        "usage: BattleCore.Sim [--seed N] [--runs N] [--json <path>] [--only first3] [--threads N] [--max-plays N] [--trace deck:enemy[:policy]] [--layers [--layer-hp P]] [-h]";
 
     public static int Main(string[] args)
     {
@@ -40,6 +40,8 @@ public static class Program
             return 2;
         }
 
+        if (options.Layers != null) return Layers(options.Layers, jsonPath);
+
         var clock = Stopwatch.StartNew();
         var results = Bench.Run(options);
         var rows = Criteria.Compute(results);
@@ -61,6 +63,33 @@ public static class Program
         }
         int battles = results.Main.Count + results.Policies.Values.Sum(p => p.Count) + results.LowStamina.Count + results.Pairs.Count;
         Console.Error.WriteLine($"{battles} battles (pairs counted once) in {clock.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s");
+        return 0;
+    }
+
+    /// <summary>
+    /// --layers (#457): encounters_and_rewards_v4 §6's M1 / M2 / M3 for every layer and type, as JSON
+    /// on stdout, and in the --json file too when one is named.
+    /// </summary>
+    private static int Layers(LayerOptions options, string? jsonPath)
+    {
+        var clock = Stopwatch.StartNew();
+        var rows = LayerBench.Run(options);
+        clock.Stop();
+        string json = LayerBench.Json(options, rows);
+        Console.Write(json);
+        if (jsonPath != null)
+        {
+            try
+            {
+                File.WriteAllText(jsonPath, json, new UTF8Encoding(false));
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine($"cannot write --json \"{jsonPath}\": {e.Message}");
+                return 1;
+            }
+        }
+        Console.Error.WriteLine($"layer measurement in {clock.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture)} s");
         return 0;
     }
 
@@ -161,7 +190,8 @@ public static class Program
     public static bool TryParse(IReadOnlyList<string> args, out BenchOptions options, out string? jsonPath, out string? trace, out bool help, out string? error)
     {
         int seed = BenchOptions.DefaultSeed, runs = BenchOptions.DefaultRuns, threads = 0, maxPlays = 0;
-        bool onlyFirstThree = false;
+        int? layerHp = null;
+        bool onlyFirstThree = false, layers = false;
         jsonPath = null;
         trace = null;
         help = false;
@@ -198,6 +228,13 @@ public static class Program
                     trace = Next();
                     if (trace == null) { error = "--trace needs deck:enemy[:policy]"; return false; }
                     break;
+                case "--layers":
+                    layers = true;
+                    break;
+                case "--layer-hp":
+                    if (!int.TryParse(Next(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int hp) || hp < 1 || hp > 100) { error = "--layer-hp needs a percentage 1〜100"; return false; }
+                    layerHp = hp;
+                    break;
                 case "-h":
                 case "--help":
                     help = true;
@@ -207,7 +244,12 @@ public static class Program
                     return false;
             }
         }
-        options = new BenchOptions(seed, runs, onlyFirstThree, threads, maxPlays);
+        if (layerHp.HasValue && !layers) { error = "--layer-hp goes with --layers"; return false; }
+        if (layers && (onlyFirstThree || trace != null)) { error = "--layers does not go with --only or --trace"; return false; }
+        options = new BenchOptions(seed, runs, onlyFirstThree, threads, maxPlays)
+        {
+            Layers = layers ? new LayerOptions(seed, runs, layerHp ?? LayerOptions.DefaultStartHpPercent, threads, maxPlays) : null,
+        };
         return true;
     }
 }

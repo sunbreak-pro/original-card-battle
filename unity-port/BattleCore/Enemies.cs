@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace BattleCore
 {
     /// <summary>
-    /// Enemy data, written as records from enemy_document/enemy_roster_v4.md v4.18 (2026-10-11); the
-    /// normal seven's attack of v4.19 is #498.
+    /// Enemy data, written as records from enemy_document/enemy_roster_v4.md v4.19 (2026-10-11): the
+    /// normal seven's attack faces sit at about 70% of the player's (#353, followed by #498).
     /// Nothing here decides anything: the decision tree is walked by <see cref="EnemyAi"/> and the
     /// numbers are resolved by the turn loop (#72).
     ///
@@ -23,7 +23,7 @@ namespace BattleCore
     /// and folds to スキル, as the six movement cards do.
     ///
     /// #51 brought the roster in whole: the addendum of #196 (弩の一射 2〜5, 靄の矢 2〜4, セルクの
-    /// 3 以上の枝に瘴気の矢, 呪縛が残るフェーズに縛りの言葉を取らない), 二段斬り 7 × 2 (#257), the
+    /// 3 以上の枝に瘴気の矢, 呪縛が残るフェーズに縛りの言葉を取らない), 二段斬り 7 × 2 (#257; 8 × 2 since v4.19), the
     /// two spear dragoons of v4.6 (#286), the six boss-only words with their own effects (§4.1 /
     /// §5.1 / §6.2) and the bosses' adaptations and stages on the hook of #50 (§4.4 / §5.4 / §6.4,
     /// <see cref="TreeSwitch"/>). How each condition is counted is written beside it below.
@@ -79,19 +79,19 @@ namespace BattleCore
             {
                 new EnemyActionDef(
                     "sweep", "払い斬り", BattleAttribute.Attack, 2,
-                    new Face(Power: 8, Reach: new Reach(1, 2)),
+                    new Face(Power: 9, Reach: new Reach(1, 2)),
                     AtLeast(2, TraitEffect.PowerBonus, 3),
                     Description: "間合い 1〜2 に届く。間合い 2 以上: 威力 +3"),
 
                 new EnemyActionDef(
                     "shove", "柄尻の押し込み", BattleAttribute.Attack, 2,
-                    new Face(Power: 5, Push: 2, Reach: Reach.Only(0)),
+                    new Face(Power: 6, Push: 2, Reach: Reach.Only(0)),
                     When(TraitCondition.Unguarded, TraitEffect.PowerBonus, 3),
                     Description: "間合い 0 に届く。相手を 2 マス押す。無防備: 相手の Guard が 0 なら威力 +3"),
 
                 new EnemyActionDef(
                     "reach_thrust", "穂先の突き", BattleAttribute.Attack, 1,
-                    new Face(Power: 4, Reach: new Reach(0, 2)),
+                    new Face(Power: 5, Reach: new Reach(0, 2)),
                     Description: "間合い 0〜2 に届く"),
 
                 new EnemyActionDef(
@@ -118,11 +118,11 @@ namespace BattleCore
             {
                 new EnemyActionDef(
                     "bite", "噛みつき", BattleAttribute.Attack, 2,
-                    new Face(Power: 8, Reach: Reach.Only(0), Statuses: new[] { Foe(StatusKind.Bleed, 2) }),
+                    new Face(Power: 9, Reach: Reach.Only(0), Statuses: new[] { Foe(StatusKind.Bleed, 2) }),
                     Description: "間合い 0 に届く。出血を 2 付与する"),
                 new EnemyActionDef(
                     "lunge_in", "跳びかかり", BattleAttribute.Attack, 2,
-                    new Face(Power: 5, Move: 2, Reach: new Reach(1, 2)),
+                    new Face(Power: 6, Move: 2, Reach: new Reach(1, 2)),
                     AtLeast(2, TraitEffect.PowerBonus, 3),
                     Description: "間合い 1〜2 に届く。当ててから前へ 2。間合い 2 以上: 威力 +3"),
                 new EnemyActionDef(
@@ -153,12 +153,12 @@ namespace BattleCore
                     Description: "構え: 毎ターン開始に Guard +3"),
                 new EnemyActionDef(
                     "heavy_swing", "大振り", BattleAttribute.Attack, 3,
-                    new Face(Power: 13, Reach: Reach.Only(0)),
+                    new Face(Power: 15, Reach: Reach.Only(0)),
                     When(TraitCondition.Broken, TraitEffect.PowerBonus, 3),
                     Description: "間合い 0 に届く。崩し後: 相手のスタミナ 3 未満で威力 +3"),
                 new EnemyActionDef(
                     "press", "押し込み", BattleAttribute.Attack, 1,
-                    new Face(Power: 3, Move: 1, Reach: new Reach(1, 2)),
+                    new Face(Power: 4, Move: 1, Reach: new Reach(1, 2)),
                     Description: "間合い 1〜2 に届く。当ててから前へ 1"),
                 new EnemyActionDef(
                     "trudge", "のし歩く", BattleAttribute.Guard, 1,
@@ -182,16 +182,16 @@ namespace BattleCore
             {
                 new EnemyActionDef(
                     "bolt", "弩の一射", BattleAttribute.Attack, 3,
-                    new Face(Power: 13, Reach: new Reach(2, 5), Statuses: new[] { Foe(StatusKind.Intimidate, 1) }),
+                    new Face(Power: 15, Reach: new Reach(2, 5), Statuses: new[] { Foe(StatusKind.Intimidate, 1) }),
                     Description: "間合い 2〜5 に届く。威圧を 1 付与する"),
                 new EnemyActionDef(
                     "backstep", "退き撃ち", BattleAttribute.Attack, 2,
-                    new Face(Power: 5, Move: -1, Reach: new Reach(1, 2)),
+                    new Face(Power: 6, Move: -1, Reach: new Reach(1, 2)),
                     Reserve(4, TraitEffect.GuardBonus, 3),
                     Description: "間合い 1〜2 に届く。撃ってから後ろへ 1。温存: 残 4 以上で Guard +3"),
                 new EnemyActionDef(
                     "kick_off", "蹴り離し", BattleAttribute.Attack, 2,
-                    new Face(Power: 5, Push: 2, Reach: Reach.Only(0)),
+                    new Face(Power: 6, Push: 2, Reach: Reach.Only(0)),
                     Description: "間合い 0 に届く。相手を 2 マス押す"),
                 new EnemyActionDef(
                     "brace", "盾を構える", BattleAttribute.Guard, 1,
@@ -215,7 +215,7 @@ namespace BattleCore
             {
                 new EnemyActionDef(
                     "mist_arrow", "靄の矢", BattleAttribute.Attack, 3,
-                    new Face(Power: 13, Reach: new Reach(2, 4), Statuses: new[] { Foe(StatusKind.Fatigue, 1) }),
+                    new Face(Power: 15, Reach: new Reach(2, 4), Statuses: new[] { Foe(StatusKind.Fatigue, 1) }),
                     AtLeast(3, TraitEffect.PowerBonus, 5),
                     Description: "間合い 2〜4 に届く。疲労を 1 付与する。間合い 3 以上: 威力 +5"),
                 new EnemyActionDef(
@@ -226,12 +226,12 @@ namespace BattleCore
                     Omen: OmenKind.Guard),
                 new EnemyActionDef(
                     "scatter", "散り矢", BattleAttribute.Attack, 1,
-                    new Face(Power: 4, Reach: new Reach(0, 2)),
+                    new Face(Power: 5, Reach: new Reach(0, 2)),
                     Description: "間合い 0〜2 に届く"),
             });
 
         /// <summary>
-        /// roster §2.6: 燐刃の竜兵. HP 96, favours gap 0. The twin slash is 7 × 2 and puts nothing on
+        /// roster §2.6: 燐刃の竜兵. HP 96, favours gap 0. The twin slash is 8 × 2 and puts nothing on
         /// the player (v4.5, #257: the multi-hit rule binds enemy actions too). 十字受け is the only
         /// action of the 3+ branch and closes two cells with its Guard (v4.13, #328): the battle opens
         /// at gap 3, so it is always the first action.
@@ -246,15 +246,15 @@ namespace BattleCore
             {
                 new EnemyActionDef(
                     "twin_slash", "二段斬り", BattleAttribute.Attack, 3,
-                    new Face(Power: 7, Hits: 2, Reach: Reach.Only(0)),
-                    Description: "間合い 0 に届く。威力 7 × 2"),
+                    new Face(Power: 8, Hits: 2, Reach: Reach.Only(0)),
+                    Description: "間合い 0 に届く。威力 8 × 2"),
                 new EnemyActionDef(
                     "step_slash", "踏み込み斬り", BattleAttribute.Attack, 2,
-                    new Face(Power: 5, Move: 2, Reach: new Reach(1, 2)),
+                    new Face(Power: 6, Move: 2, Reach: new Reach(1, 2)),
                     Description: "間合い 1〜2 に届く。当ててから前へ 2"),
                 new EnemyActionDef(
                     "retreat_cut", "退き斬り", BattleAttribute.Attack, 1,
-                    new Face(Power: 4),
+                    new Face(Power: 5),
                     Description: "間合い 0〜1 に届く"),
                 new EnemyActionDef(
                     "cross_guard", "十字受け", BattleAttribute.Guard, 1,
@@ -279,21 +279,21 @@ namespace BattleCore
             {
                 new EnemyActionDef(
                     "great_thrust", "大穂の突き", BattleAttribute.Attack, 3,
-                    new Face(Power: 13, Reach: new Reach(1, 2)),
-                    Description: "間合い 1〜2 に届く。威力 13"),
+                    new Face(Power: 15, Reach: new Reach(1, 2)),
+                    Description: "間合い 1〜2 に届く。威力 15"),
                 new EnemyActionDef(
                     "crystal_rush", "晶穂の突進", BattleAttribute.Attack, 2,
-                    new Face(Power: 5, Move: 2, Reach: new Reach(2, 4)),
+                    new Face(Power: 6, Move: 2, Reach: new Reach(2, 4)),
                     AtLeast(3, TraitEffect.PowerBonus, 3),
                     Description: "間合い 2〜4 に届く。当ててから前へ 2。間合い 3 以上: 威力 +3"),
                 new EnemyActionDef(
                     "recoil_thrust", "引き突き", BattleAttribute.Attack, 2,
-                    new Face(Power: 5, Move: -2, Reach: Reach.Only(0)),
+                    new Face(Power: 6, Move: -2, Reach: Reach.Only(0)),
                     When(TraitCondition.Unguarded, TraitEffect.PowerBonus, 3),
                     Description: "間合い 0 に届く。当ててから後ろへ 2。無防備: 相手の Guard が 0 なら威力 +3"),
                 new EnemyActionDef(
                     "short_jab", "短い突き", BattleAttribute.Attack, 1,
-                    new Face(Power: 4, Reach: new Reach(0, 2)),
+                    new Face(Power: 5, Reach: new Reach(0, 2)),
                     Description: "間合い 0〜2 に届く"),
                 new EnemyActionDef(
                     "haft_guard", "柄を立てる", BattleAttribute.Guard, 1,

@@ -194,7 +194,7 @@ namespace Depiction
                 new EffectAuditEntry(EffectId.ScreenShake, Blow, Carries.None, D, H,
                     "強い一撃の重さの演出で、情報を足しません。確定は #79 です。"),
                 new EffectAuditEntry(EffectId.AttackReturn, Blow, Carries.None, D, H,
-                    "元の位置に戻るだけで、読み取れる情報がありません。攻撃のたびに 120 ms 入力を止めます。切ると人物が瞬間移動して見えるため、確定は #79 です。"),
+                    "元の位置に戻るだけで、読み取れる情報がありません。攻撃のたびに 120 ms 入力を止めます。移動がすぐ続く一撃では出さず、移動が戻りを兼ねます（#499）。切ると人物が瞬間移動して見えるため、確定は #79 です。"),
                 new EffectAuditEntry(EffectId.EnemyMotion, Blow, Carries.WhoHitWhom | Carries.Intent, N, Sc,
                     "敵が何をするかを、系統ごとの形で示します。切ると敵の動きが読めません。"),
                 new EffectAuditEntry(EffectId.OmenSpend, Blow, Carries.Intent, N, Sc,
@@ -231,6 +231,8 @@ namespace Depiction
                     "どの一撃に特性が乗ったかを、一撃の上で示します。150 ms で並行に走り、待ち時間はありません。合図として足りるかは見本の撮影で確かめます（#57）。"),
                 new EffectAuditEntry(EffectId.BreathHeave, Beats, Carries.Amount, N, H,
                     "回復の面の息を、ピップの点灯と分けて示します。400 ms で HP の拍と並行に走り、待ち時間はありません。足りるかは見本の撮影で確かめます（#57）。"),
+                new EffectAuditEntry(EffectId.StanceGlow, Beats, Carries.Status, N, H,
+                    "スタンスを 1 つでも持っている間、身体に薄い光を残します（§5.11 順 2）。一覧を見なくても、構えている側が人型で分かります。光が開く 300 ms と消える 300 ms は並行で、待ち時間はありません。見えるかどうかは見本の撮影で確かめます（#501）。"),
 
                 // ---- Status and turn ----
                 new EffectAuditEntry(EffectId.StatusApply, StatusTurn, Carries.Status, N, Sc,
@@ -253,6 +255,8 @@ namespace Depiction
                     "番が渡ったことは、終了ボタンの後に敵が動くことで分かります。400 ms 毎ターン入力を止めるので、詰めます。"),
                 new EffectAuditEntry(EffectId.StaminaRecover, StatusTurn, Carries.Hand, S, Sc,
                     "回復した量は最終の値が持っています。1 つずつ点ける方式は 5 個で 400 ms かかり、毎ターン平均で約 200 ms を使うため、間隔を詰めます。"),
+                new EffectAuditEntry(EffectId.ReservePips, StatusTurn, Carries.Hand, N, H,
+                    "構えの Guard が、残したスタミナ 3 から来たことを、ピップ 1〜3 の光で示します（§5.13 順 1）。盾と +3 だけでは、何と引き換えだったかが分かりません。構えのある毎ターン 250 ms 待つので、長さが妥当かは #79 の試運転で確かめます。"),
                 new EffectAuditEntry(EffectId.ResultCard, StatusTurn, Carries.TurnOrResult, N, Sc,
                     "勝ち負けを知らせる唯一の札です。戦闘の最後に 1 度だけ出て、並行で待ち時間はありません。"),
                 new EffectAuditEntry(EffectId.Defeat, StatusTurn, Carries.TurnOrResult, N, Sc,

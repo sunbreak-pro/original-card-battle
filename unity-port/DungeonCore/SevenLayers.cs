@@ -119,22 +119,22 @@ namespace DungeonCore
             new LayerProfile(5, "血染めの死海", null, density: 4, timeLimit: 7,
                 Narrow(5, battles: 2, rests: 2, surveys: 1)),
 
+            // A second rest widens the third row to three, so every layer offers two nodes that
+            // move max stamina (R2-4, Issue #530). The row count stays, and so does the 刻限 a
+            // straight run pays: only the number of nodes left behind grows.
             new LayerProfile(6, "獄雷峡", null, density: 5, timeLimit: 6,
-                new LayerMapSpec(6, new[] { 1, 3, 2, 1 }, new Dictionary<NodeKind, int>
-                {
-                    [NodeKind.Battle] = 2,
-                    [NodeKind.Elite] = 1,
-                    [NodeKind.Rest] = 1,
-                    [NodeKind.Survey] = 1,
-                })),
+                Narrow(6, battles: 2, rests: 2, surveys: 1)),
 
             // The void. Density jumps a step because the layer is made of 瘴気 (world-v1.md §4).
+            // Its middle row takes an event rather than a second rest: with two rests side by side
+            // the spare 刻限 would buy both right before 歪みの根 (seven_layers_v4.md §4.1).
             new LayerProfile(7, "果てなき世界", null, density: 7, timeLimit: 4,
-                new LayerMapSpec(7, new[] { 1, 3, 1 }, new Dictionary<NodeKind, int>
+                new LayerMapSpec(7, new[] { 1, 4, 1 }, new Dictionary<NodeKind, int>
                 {
                     [NodeKind.Battle] = 1,
                     [NodeKind.Elite] = 1,
                     [NodeKind.Rest] = 1,
+                    [NodeKind.Event] = 1,
                 })),
         };
 

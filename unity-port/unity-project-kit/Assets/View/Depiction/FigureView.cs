@@ -84,7 +84,11 @@ namespace Depiction.View
         private Vector2 _restFrame;
         private Image _footLight;
         private Outline _edgeLight;
+        private Image _stanceGlow;
         private float _height = FigureFrame.StandardHeight;
+
+        /// <summary>True while the stance light (§5.11 順 2) is on, or fading in.</summary>
+        public bool StanceGlowShown { get; private set; }
 
         private void Awake()
         {
@@ -92,8 +96,62 @@ namespace Depiction.View
             TakeFrame();
             BuildFootLight();
             BuildEdgeLight();
+            BuildStanceGlow();
             StandTall(_height);
             RestBody();
+        }
+
+        // ---- battle_ui_ux_v2 §5.11 順 2 (#501): the light kept while a stance is held ------------------
+
+        /// <summary>
+        /// §5.11 順 2 StanceGlow: a soft light over the body in the stance attribute's colour at α 0.25
+        /// (StanceGlow.Alpha). It stretches with the frame, so art that widens the frame widens it too,
+        /// and sits behind the body, in front of the foot light. Hidden until a stance is held.
+        /// </summary>
+        private void BuildStanceGlow()
+        {
+            if (_stanceGlow) return;
+            _stanceGlow = UiKit.Image(Rect, "StanceGlow", ProceduralArt.Glow, StanceGlowColor(0f), new Vector2(-0.2f, -0.02f), new Vector2(1.2f, 1.04f));
+            _stanceGlow.transform.SetSiblingIndex(_footLight ? _footLight.transform.GetSiblingIndex() + 1 : 0);
+            _stanceGlow.enabled = false;
+        }
+
+        private static Color StanceGlowColor(float strength) =>
+            BattleTheme.WithAlpha(BattleTheme.KindFrame(CardKind.Stance), StanceGlow.Alpha * strength);
+
+        /// <summary>Puts the stance light on or off at once (a new battle, or the effect switched off).</summary>
+        public void SetStanceGlow(bool on)
+        {
+            StanceGlowShown = on;
+            _glowFades++; // a fade still running stops touching the light
+            if (!_stanceGlow) return;
+            _stanceGlow.color = StanceGlowColor(on ? 1f : 0f);
+            _stanceGlow.enabled = on;
+        }
+
+        private int _glowFades;
+
+        /// <summary>
+        /// Fades the stance light in or out over <paramref name="ms"/> (EffectId.StanceGlow). A newer call,
+        /// fade or set, takes over the light; the one it interrupts stops where it is.
+        /// </summary>
+        public IEnumerator FadeStanceGlow(bool on, float ms)
+        {
+            StanceGlowShown = on;
+            int mine = ++_glowFades;
+            if (!_stanceGlow) yield break;
+            float from = _stanceGlow.enabled ? _stanceGlow.color.a / StanceGlow.Alpha : 0f;
+            float to = on ? 1f : 0f;
+            _stanceGlow.enabled = true;
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                if (_stanceGlow && mine == _glowFades) _stanceGlow.color = StanceGlowColor(Mathf.Lerp(from, to, t));
+            });
+            if (_stanceGlow && mine == _glowFades)
+            {
+                _stanceGlow.color = StanceGlowColor(to);
+                _stanceGlow.enabled = on;
+            }
         }
 
         // ---- battle-visual-v1 §4.3 (#455): the height on screen and the light at the feet ----------

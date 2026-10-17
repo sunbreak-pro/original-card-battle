@@ -244,6 +244,7 @@ namespace Depiction.View
             Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
             _source = source;
             _snapPanels = true;
+            SnapStanceGlows(_source.Frame);
             ApplyFrame(_source.Frame);
             if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
             RefreshPlayableLook(); // the last battle's outcome line goes with it
@@ -368,6 +369,7 @@ namespace Depiction.View
             if (_givenSource != null) _source = _givenSource;
             else if (scriptedPlayback) _source = new DepictionRunner(TurnSliceScript.Build());
             else _source = new LiveTurn();
+            SnapStanceGlows(_source.Frame);
             ApplyFrame(_source.Frame);
             if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
             StartCoroutine(RunAutomaticEvents());
@@ -771,7 +773,8 @@ namespace Depiction.View
                 StartCoroutine(Effect(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome)));
             }
             // A move that ends where it began (盾 reaches 0) never returns, and a blow Guard took part of
-            // skips the player's return: neither may keep its action picture into the next event.
+            // (or one a move follows, #499) skips the player's return: neither may keep its action
+            // picture into the next event.
             else if (enemyFigure) enemyFigure.SetPose(FigurePose.Idle);
             if (playerFigure) playerFigure.SetPose(FigurePose.Idle);
             EndPlan();
@@ -797,8 +800,12 @@ namespace Depiction.View
             switch (EffectGrammar.MarkOf(cue))
             {
                 case FxMark.Shape:
+                    // §5.11 順 2 (#501): read before the light below changes. A unit that already keeps a
+                    // stance light gets the crest alone, with no second light over its body.
+                    bool crestLight = StanceGlow.CrestCarriesLight(target.StanceGlowShown);
                     StartCoroutine(Effect(EffectId.GrammarMark, DepictionFx.Mark(this, fxLayer, chest, head, DepictionFx.PointOn(fxLayer, target.transform),
-                        target.side == UnitSide.Player ? 1f : -1f, cue.Fx.Value, cue.Intensity, _effects.Ms(EffectId.GrammarMark)), null));
+                        target.side == UnitSide.Player ? 1f : -1f, cue.Fx.Value, cue.Intensity, _effects.Ms(EffectId.GrammarMark), crestLight), null));
+                    LightStanceGlowWithCrest(ev, cue, target); // §5.11 順 2 (#501)
                     break;
                 case FxMark.ChestHeave:
                     StartCoroutine(Effect(EffectId.BreathHeave, Heave(target, _effects.Ms(EffectId.BreathHeave)), null));
@@ -873,6 +880,8 @@ namespace Depiction.View
                 }
 
                 case CueKind.StanceCue:
+                    // §5.13 順 1 (#501): pips 1-3 glow first (構え's 息), then the shield and "+3" (順 2).
+                    yield return HoldBeat(EffectId.ReservePips, GlowReservePips(cue.Target, _effects.Ms(EffectId.ReservePips)), null);
                     yield return HoldBeat(EffectId.StanceCue, Reserve(cue, status, chest, numberAt), () => status.SetGuard(cue.GuardAfter));
                     yield return Gate(ev.Order + "-impact");
                     break;
@@ -937,6 +946,8 @@ namespace Depiction.View
                     if (strong) StartCoroutine(Effect(EffectId.ScreenShake, ShakeArena(), null));
                     yield return DrainHp(status, cue.HpAfter);
                     yield return Gate(ev.Order + "-impact");
+                    // The player's blow Guard took part of, with a move right after it (#499): as in Attack.
+                    if (cue.Target == UnitSide.Enemy && EffectPlan.MoveFollows(ev, cue) && playerFigure) playerFigure.SetPose(FigurePose.Idle);
                     if (cue.Target == UnitSide.Player)
                     {
                         // The blow that lands on the player is the enemy's own: its omen is spent and
@@ -984,19 +995,27 @@ namespace Depiction.View
             StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
             yield return DrainHp(status, cue.HpAfter);
             yield return Gate(ev.Order + "-impact");
-            if (byPlayer)
+            // §5.4 順 2 / §5.5 順 8 (#499): a move right after the blow carries the player on from the
+            // lunge (SwitchRange starts where the figure stands), so there is no step back first; the
+            // figure walks in its standing pose, as the return would have left it.
+            if (byPlayer && !EffectPlan.MoveFollows(ev, cue))
             {
                 yield return HoldBeat(EffectId.AttackReturn, ReturnHome(attacker, attackerHome, _effects.Ms(EffectId.AttackReturn)), () => SnapHome(attacker, attackerHome));
             }
+            else if (byPlayer) attacker.SetPose(FigurePose.Idle);
         }
 
         // ---- attack and defence beats (#76) -----------------------------------------------------
 
-        /// <summary>The bar drops (blocking), then the grey band follows it down beside the flow.</summary>
+        /// <summary>
+        /// The bar drops (blocking), then the grey band follows it down beside the flow. A move right
+        /// after the blow starts 80 ms into the drop (EffectPlan.MoveFollows, #499); the band still
+        /// waits for the bar to land, so it follows the settled width.
+        /// </summary>
         private IEnumerator DrainHp(StatusBarView status, int hp)
         {
-            yield return HoldBeat(EffectId.HpDrain, status.AnimateHp(hp, _effects.Ms(EffectId.HpDrain)), () => status.SetHpKeepingTrail(hp));
-            StartCoroutine(Effect(EffectId.HpTrail, status.AnimateTrail(_effects.Ms(EffectId.HpTrail)), status.SnapTrail));
+            yield return HoldBeat(EffectId.HpDrain, status.AnimateHp(hp, _effects.Ms(EffectId.HpDrain)), () => status.SetHpKeepingTrail(hp),
+                played: () => StartCoroutine(Effect(EffectId.HpTrail, status.AnimateTrail(_effects.Ms(EffectId.HpTrail)), status.SnapTrail)));
         }
 
         /// <summary>The struck figure leans away from the blow and shakes; a strong blow does both harder.</summary>
@@ -1104,6 +1123,56 @@ namespace Depiction.View
             DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Guard, 300f);
             DepictionFx.FloatText(this, fxLayer, numberAt, cue.Text, BattleTheme.Guard, 48);
             yield return status.PopGuard(cue.GuardAfter);
+        }
+
+        /// <summary>
+        /// §5.13 順 1 (#501): the player's pips 1-3 on the stamina tag glow. An enemy's stamina is a number
+        /// on its panel with no pips (§4.5), and its 構え plays as a GuardGain, so for it the beat only holds.
+        /// </summary>
+        private IEnumerator GlowReservePips(UnitSide side, float ms)
+        {
+            if (side == UnitSide.Player && _staminaTag != null) yield return _staminaTag.GlowReserve(ms);
+            else yield return UiTween.Wait(ms);
+        }
+
+        // ---- §5.11 順 2 (#501): the light a unit keeps while it holds a stance -------------------
+
+        /// <summary>
+        /// Brings each figure's stance light to what <paramref name="frame"/> says: on while the unit's
+        /// stance list holds one (StanceGlow), faded in or out beside the flow. A light already lit with
+        /// the 型 crest (<see cref="LightStanceGlowWithCrest"/>) is kept.
+        /// </summary>
+        private void ApplyStanceGlows(DepictionFrame frame)
+        {
+            ApplyStanceGlow(playerFigure, frame.Player);
+            ApplyStanceGlow(enemyFigure, frame.Enemy);
+        }
+
+        private void ApplyStanceGlow(FigureView figure, UnitFrame unit)
+        {
+            if (!figure) return;
+            StanceGlowChange change = StanceGlow.Change(figure.StanceGlowShown, unit);
+            if (change == StanceGlowChange.Keep) return;
+            bool on = change == StanceGlowChange.Light;
+            StartCoroutine(Effect(EffectId.StanceGlow, figure.FadeStanceGlow(on, _effects.Ms(EffectId.StanceGlow)), () => figure.SetStanceGlow(on)));
+        }
+
+        /// <summary>A new battle: each light is as the first frame says at once, with no fade.</summary>
+        private void SnapStanceGlows(DepictionFrame frame)
+        {
+            if (playerFigure) playerFigure.SetStanceGlow(StanceGlow.IsOn(frame.Player));
+            if (enemyFigure) enemyFigure.SetStanceGlow(StanceGlow.IsOn(frame.Enemy));
+        }
+
+        /// <summary>
+        /// §5.11 順 2: the light opens with the 型 crest (足元に紋、身体に薄い光), so a 型 beat on a unit whose
+        /// list holds a stance once the event has played lights it there, not when the frame lands.
+        /// </summary>
+        private void LightStanceGlowWithCrest(DepictionEvent ev, Cue cue, FigureView target)
+        {
+            if (!target || cue.Fx != FxSystem.Form || ev.After == null) return;
+            UnitFrame unit = cue.Target == UnitSide.Player ? ev.After.Player : ev.After.Enemy;
+            ApplyStanceGlow(target, unit);
         }
 
         private IEnumerator FireTrait(Vector2 labelAt, string text)
@@ -1539,24 +1608,43 @@ namespace Depiction.View
         /// (EffectPlan.WaitMs: the number EffectPlan.BlockingMs adds up for the tests) while
         /// <paramref name="play"/> runs beside it. The animation is built from the same catalog length;
         /// when it runs a frame or so past the wait (UiTween ends on the first frame after its length),
-        /// the flow lets it finish, so nothing on screen is cut short. Off, the beat settles at once and
-        /// holds nothing up, like <see cref="Effect"/>. Beats that run beside the flow keep using Effect.
+        /// the flow lets it finish, so nothing on screen is cut short. A step the plan gives a lead
+        /// (EffectStep.LeadMs, §5.4, #499) holds the flow for the lead only and plays on beside what
+        /// follows. Off, the beat settles at once and holds nothing up, like <see cref="Effect"/>.
+        /// <paramref name="played"/> runs once the beat has played out (or settled), lead or not.
+        /// Beats that run beside the flow keep using Effect.
         /// </summary>
-        private IEnumerator HoldBeat(EffectId id, IEnumerator play, System.Action settle, int count = 1)
+        private IEnumerator HoldBeat(EffectId id, IEnumerator play, System.Action settle, int count = 1, System.Action played = null)
         {
             EffectStep step = TakePlanned(id, count);
             if (!_effects.IsOn(id))
             {
                 settle?.Invoke();
                 Trace?.Skip(id, CurrentOrder);
+                played?.Invoke();
                 yield break;
             }
             int handle = Trace != null ? Trace.Begin(id, CurrentOrder, step.Count) : -1;
+            if (step.LeadMs.HasValue)
+            {
+                StartCoroutine(PlayOn(play, handle, played));
+                yield return UiTween.Wait(EffectPlan.WaitMs(step, _effects));
+                yield break;
+            }
             bool waited = false;
             StartCoroutine(WaitThen(EffectPlan.WaitMs(step, _effects), () => waited = true));
             yield return play;
             while (!waited) yield return null;
             if (handle >= 0) Trace.End(handle);
+            played?.Invoke();
+        }
+
+        /// <summary>The rest of a beat with a lead, beside the flow: it plays out, then is timed and handed on.</summary>
+        private IEnumerator PlayOn(IEnumerator play, int handle, System.Action played)
+        {
+            yield return play;
+            if (handle >= 0) Trace.End(handle);
+            played?.Invoke();
         }
 
         private static IEnumerator WaitThen(float ms, System.Action done)
@@ -1590,6 +1678,7 @@ namespace Depiction.View
             _staminaTag?.SetNextRecovery(frame.Player.NextRecovery); // §4.7 (#455): the dashed dots
             ApplyPiles(frame.Piles);
             _stanceLists?.Bind(frame); // §4.6 (#455)
+            ApplyStanceGlows(frame); // §5.11 順 2 (#501): the body's light while the list holds a stance
             playerStatus.Bind(frame.Player);
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);
@@ -2257,6 +2346,8 @@ namespace Depiction.View
             Vector3 to = ev.Aim == CardAim.Single
                 ? receiver.transform.position
                 : from + new Vector3(0f, 140f * handArea.lossyScale.y, 0f); // a self card is tossed upward
+            // §5.4 順 0 (#499): a trait that fires before the first face shows as the card is released,
+            // so the plan gives the release no wait of its own and the card flies off beside the cue.
             yield return HoldBeat(EffectId.CardRelease, UiTween.Run(_effects.Ms(EffectId.CardRelease), Ease.In, t =>
             {
                 if (!card) return;
@@ -2264,18 +2355,15 @@ namespace Depiction.View
                 float s = Mathf.Lerp(1f, 0.5f, t);
                 card.Rect.localScale = new Vector3(s, s, 1f);
                 card.group.alpha = 1f - t;
-            }), null);
-            Vector2 vanishedAt = card.Face.Aim == CardAim.Single && receiver
-                ? DepictionFx.PointOn(fxLayer, receiver.transform)
-                : DepictionFx.PointOn(fxLayer, card.transform);
-            Destroy(card.gameObject);
-            StartCoroutine(GhostToPile(vanishedAt, ev.PlayedTo));
-            StartCoroutine(Effect(EffectId.HandFan, SettleHand(_effects.Ms(EffectId.HandFan)), LayoutHand));
+            }), null, played: () => Released(card, ev.PlayedTo));
 
             foreach (Cue cue in ev.Cues)
             {
                 yield return PlayCue(ev, cue);
             }
+            // As in PlayEvent: a blow with no return (Guard took part of it, or a move followed it)
+            // may not keep its action picture into the next event.
+            if (playerFigure) playerFigure.SetPose(FigurePose.Idle);
             EndPlan();
             ApplyFrame(ev.After);
             float seconds = Time.unscaledTime - startedAt;
@@ -2284,6 +2372,18 @@ namespace Depiction.View
             yield return Gate(ev.Order + "-end");
             yield return UiTween.Wait(EffectFlow.AfterPlayerEventMs);
             yield return RunAutomaticEvents();
+        }
+
+        /// <summary>The released card is gone: a ghost flies to the pile the core put it in and the hand closes up.</summary>
+        private void Released(CardView card, PileKind playedTo)
+        {
+            if (!card) return;
+            Vector2 vanishedAt = card.Face.Aim == CardAim.Single && receiver
+                ? DepictionFx.PointOn(fxLayer, receiver.transform)
+                : DepictionFx.PointOn(fxLayer, card.transform);
+            Destroy(card.gameObject);
+            StartCoroutine(GhostToPile(vanishedAt, playedTo));
+            StartCoroutine(Effect(EffectId.HandFan, SettleHand(_effects.Ms(EffectId.HandFan)), LayoutHand));
         }
 
         /// <summary>

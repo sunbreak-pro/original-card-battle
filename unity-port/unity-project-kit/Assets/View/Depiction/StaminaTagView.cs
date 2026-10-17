@@ -9,6 +9,7 @@
 // The scene belongs to the Unity project, so the tag is made at run time on the canvas, at x 32,
 // y 846, 236×84 as §4.7 gives it.
 #if UNITY_2021_2_OR_NEWER
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -104,6 +105,40 @@ namespace Depiction.View
         {
             _cost = Mathf.Max(0, cost);
             Render();
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.13 順 1 (#501): at turn end, with the stamina 構え needs left, the dots up to
+        /// the divider (pips 1-3) glow once over <paramref name="ms"/> — 構え's 息 (EffectId.ReservePips).
+        /// The count is the divider the script gave (DepictionFrame.StanceDivider); with none, nothing glows.
+        /// </summary>
+        public IEnumerator GlowReserve(float ms)
+        {
+            int count = Mathf.Min(_dividerAfter, _dots.Count);
+            var glows = new List<Image>();
+            for (int i = 0; i < count; i++)
+            {
+                RectTransform dot = _dots[i].rectTransform;
+                Image glow = UiKit.Sprite(_row, "ReserveGlow" + i, ProceduralArt.Glow, BattleTheme.WithAlpha(BattleTheme.Amber, 0f),
+                    new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(DotSize * 2.4f, DotSize * 2.4f), dot.anchoredPosition + new Vector2(DotSize * 0.5f, 0f));
+                glow.transform.SetSiblingIndex(0); // behind the dots
+                glows.Add(glow);
+            }
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                float a = 0.9f * Mathf.Sin(t * Mathf.PI); // up and back down within the beat
+                float s = 1f + 0.25f * Mathf.Sin(t * Mathf.PI);
+                for (int i = 0; i < glows.Count; i++)
+                {
+                    if (glows[i]) glows[i].color = BattleTheme.WithAlpha(BattleTheme.Amber, a);
+                    if (i < _dots.Count && _dots[i]) _dots[i].rectTransform.localScale = new Vector3(s, s, 1f);
+                }
+            });
+            for (int i = 0; i < glows.Count; i++)
+            {
+                if (glows[i]) Object.Destroy(glows[i].gameObject);
+                if (i < _dots.Count && _dots[i]) _dots[i].rectTransform.localScale = Vector3.one;
+            }
         }
 
         private void Render()

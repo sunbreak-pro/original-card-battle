@@ -18,6 +18,9 @@ public sealed record BenchOptions(int Seed = BenchOptions.DefaultSeed, int Runs 
     /// on 16 threads; a win rate then moves by about 3 pt at most from one seed to another.
     /// </summary>
     public const int DefaultRuns = 200;
+
+    /// <summary>--layers (#457): run <see cref="LayerBench"/> on these options instead of the §13 bench; null runs the bench.</summary>
+    public LayerOptions? Layers { get; init; }
 }
 
 /// <summary>One pair of §13 「HP 持ち越しの 2 連戦」 for a deck: won when both battles were, stalled when either hit the turn limit.</summary>

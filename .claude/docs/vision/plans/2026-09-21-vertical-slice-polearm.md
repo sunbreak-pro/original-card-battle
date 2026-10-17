@@ -6,6 +6,7 @@
 - **Project**: `C:\Users\user\orca\original-card-battle`（作業は worktree `workspaces/original-card-battle/battle`）
 - **計画書**: `.claude/docs/vision/plans/2026-09-21-vertical-slice-polearm.md`
 - **Issue**: #68（`lane:battle` / `prio:1`）。親は #67、子は #69〜#80
+- **注（2026-10-12）**: 手札は 6 枚になった（`battle_core_v4.md` §8、#351）。本文の「5 枚」は当時の記録
 - **入力の正本**: `battle_document/battle_core_v4.md`（v4.2 本文 + §19）、`enemy_document/enemy_roster_v4.md`（v4.2）
 - **全量版の計画**: `2026-09-20-battle-scene-production.md`。本プランはその前段
 
