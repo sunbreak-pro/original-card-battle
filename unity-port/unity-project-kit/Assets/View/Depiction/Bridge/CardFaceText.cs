@@ -525,6 +525,37 @@ namespace Depiction.Bridge
             return holds;
         }
 
+        /// <summary>
+        /// battle-visual-v1 §4.5 HP の減る分 (#507): for each enemy slot, the HP card
+        /// <paramref name="instanceId"/> would take off that enemy if it were played on it now. The
+        /// number is the core's (Preview's Damage: every blow past the Guard, and the wall damage of a
+        /// push the enemy cannot take, decision A of 2026-10-17), so a Guard card that pushes, such as
+        /// 盾押し, has a stripe too although it does not attack. The preview keeps the enemy standing,
+        /// so the number is cut to the HP the enemy has. 0 for a slot out of reach or fallen. Empty
+        /// for a card aimed at nobody, a card not in the hand, and a card aimed at every enemy in reach
+        /// — the core previews that one on the nearest alone, and no card in the catalogue has it yet.
+        /// </summary>
+        public static List<int> HpLoss(BattleState state, string instanceId)
+        {
+            var loss = new List<int>();
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            CardInstance card = Find(state, instanceId);
+            if (card == null || !Directed(card.Def) || card.Def.Targets != TargetKind.One) return loss;
+
+            var living = new HashSet<int>(state.Living);
+            for (int i = 0; i < state.Enemies.Count; i++)
+            {
+                int hp = 0;
+                if (living.Contains(i))
+                {
+                    PlayPreview preview = TurnLoop.Preview(state, instanceId, i);
+                    if (preview != null && preview.InReach) hp = Math.Min(preview.Damage, state.Enemies[i].Body.Hp);
+                }
+                loss.Add(hp);
+            }
+            return loss;
+        }
+
         private static CardInstance Find(BattleState state, string instanceId)
         {
             foreach (CardInstance card in state.Hand)
