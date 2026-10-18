@@ -113,8 +113,8 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// battle-visual-v1 §4.4 (#455): how far the journal has read this enemy (開示度 0〜2). Below 2 the
-        /// omen's numbers and statuses are left off the script, and at 0 its plan (OmenDisclosure). The journal does not hand a level to
-        /// the battle yet, so it is 2, everything shown, unless a caller sets it.
+        /// omen's numbers and statuses are left off the script, and at 0 its plan (OmenDisclosure). CoreBattleSource sets
+        /// it once as the battle starts (#500); left unset it is 2, everything shown.
         /// </summary>
         public int Disclosure { get; set; } = OmenDisclosure.Full;
 

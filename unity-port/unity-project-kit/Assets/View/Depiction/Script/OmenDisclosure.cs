@@ -1,7 +1,7 @@
 // What the omen badge may show for how far the journal has read the enemy (battle-visual-v1 §4.4,
 // battle_ui_ux_v2 §7, #455). Pure C#: the writer of the script applies it, so the View shows what it
-// is handed and judges nothing. The journal does not hand a level to the battle yet, so every source
-// writes Full (2) and the badge looks as it did before.
+// is handed and judges nothing. The level reaches the writer once, as the battle starts (#500:
+// BattleLaunch, DemoSession); a battle nobody hands a level to is written at Full (2).
 using System;
 
 namespace Depiction

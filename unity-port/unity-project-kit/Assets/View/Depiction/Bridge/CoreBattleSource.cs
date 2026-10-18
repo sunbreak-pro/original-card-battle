@@ -32,7 +32,7 @@ namespace Depiction.Bridge
         /// <param name="chainTotal">How many battles the chain holds; 1 for a battle on its own.</param>
         /// <param name="disclosure">
         /// battle-visual-v1 §4.4 (#455): the journal's 開示度 for this enemy (0〜2); below 2 the omen shows
-        /// no numbers. 2 until the journal hands a level to the battle.
+        /// no numbers. Read once here, as the battle starts (#500): BattleLaunch and DemoSession hand it in.
         /// </param>
         public CoreBattleSource(BattleSetup setup, int seed, bool suggestCards = false, int stopAfterTurns = 0, int chainIndex = 1, int chainTotal = 1,
             int disclosure = OmenDisclosure.Full)
