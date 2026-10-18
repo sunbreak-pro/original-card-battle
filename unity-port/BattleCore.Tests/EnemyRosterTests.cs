@@ -117,8 +117,8 @@ namespace BattleCore.Tests
         }
 
         [TestCase("mist_archer", "fade", OmenKind.Guard)]
-        [TestCase("armored_warden", "advance_guard", OmenKind.Guard)]
-        [TestCase("abyss_angler", "slack_line", OmenKind.Guard)]
+        [TestCase("armored_warden", "advance_guard", OmenKind.Move)]
+        [TestCase("abyss_angler", "slack_line", OmenKind.Move)]
         [TestCase("distortion_root", "creeping_root", OmenKind.Guard)]
         [TestCase("pack_alpha", "herd", OmenKind.Skill)]
         [TestCase("abyss_angler", "reel_in", OmenKind.Skill)]
@@ -379,11 +379,11 @@ namespace BattleCore.Tests
             ["mist_archer"] = "mist_arrow:A:攻 fade:G:防 scatter:A:攻",
             ["twin_blade_warped"] = "twin_slash:A:攻 step_slash:A:攻 retreat_cut:A:攻 cross_guard:G:移",
             ["polearm_crystal"] = "great_thrust:A:攻 crystal_rush:A:攻 recoil_thrust:A:攻 short_jab:A:攻 haft_guard:G:防",
-            ["armored_warden"] = "iron_wall:St:構 helm_splitter:A:攻 push_shield:A:攻 shield_bash:A:攻 advance_guard:G:防 brace:G:防",
+            ["armored_warden"] = "iron_wall:St:構 helm_splitter:A:攻 push_shield:A:攻 shield_bash:A:攻 advance_guard:G:移 brace:G:防",
             ["pack_alpha"] = "hunt_stance:St:構 rend:A:攻 pounce:A:攻 herd:Sk:技 howl:Sk:技 crouch:G:防",
             ["polearm_unyielding"] = "set_spear:St:構 long_thrust:A:攻 haft_shove:Sk:技 hook_in:Sk:技 plate_guard:G:防 clank_on:G:移",
             ["miasma_priest"] = "ward:St:構 miasma_rite:Sk:技 staff_strike:A:攻 miasma_bolt:A:攻 push_back:A:攻 binding_word:Sk:技 coil:G:防",
-            ["abyss_angler"] = "hook_cast:A:攻 drown:A:攻 fathom_call:Sk:技 line_whip:A:攻 deep_water:St:構 reel_in:Sk:技 slack_line:G:防",
+            ["abyss_angler"] = "hook_cast:A:攻 drown:A:攻 fathom_call:Sk:技 line_whip:A:攻 deep_water:St:構 reel_in:Sk:技 slack_line:G:移",
             ["distortion_root"] = "sweep:A:攻 thorn_volley:A:攻 wither_breath:Sk:技 root_grip:Sk:技 twist:A:攻 bark:St:構 creeping_root:G:防",
         };
 

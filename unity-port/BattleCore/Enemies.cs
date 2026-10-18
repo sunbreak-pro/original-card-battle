@@ -336,8 +336,7 @@ namespace BattleCore
                     "advance_guard", "盾を掲げて前進", BattleAttribute.Guard, 1,
                     new Face(Guard: 2, Move: 1),
                     Targets: TargetKind.Self,
-                    Description: "Guard 2、前へ 1",
-                    Omen: OmenKind.Guard),
+                    Description: "Guard 2、前へ 1"),
                 new EnemyActionDef(
                     "brace", "盾を構える", BattleAttribute.Guard, 1,
                     new Face(Guard: 3),
@@ -569,8 +568,7 @@ namespace BattleCore
                     "slack_line", "糸を緩める", BattleAttribute.Guard, 1,
                     new Face(Guard: 2, Move: -1),
                     Targets: TargetKind.Self,
-                    Description: "Guard 2、後ろへ 1",
-                    Omen: OmenKind.Guard),
+                    Description: "Guard 2、後ろへ 1"),
             },
             actionsPerPhase: Constants.EliteActions,
             switches: Layered(
