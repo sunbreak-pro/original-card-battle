@@ -1,5 +1,6 @@
 // The receiver: the place over a target figure where a single-target card is released, live only
-// while one is held. Since #242 it draws nothing; TargetMarkView frames the figure instead.
+// while one is held. Since #242 it draws nothing; TargetMarkView frames the figure instead. Whether it
+// takes the held card is ReceiverDrop's (#568): half the card on it, or the pointer inside it.
 #if UNITY_2021_2_OR_NEWER
 using UnityEngine;
 using UnityEngine.UI;

@@ -2126,6 +2126,7 @@ namespace Depiction.View
         {
             if (_dragging == null || card != _dragSource) return;
             _dragSource = null;
+            _dragPointerWorld = PointerWorld(e);
             CardView held = _dragging;
             Release(held, ZoneAt(held, e.position));
         }
@@ -2245,8 +2246,39 @@ namespace Depiction.View
 
         private DropZone ZoneAt(CardView card, Vector2 screenPoint)
         {
-            if (card.Face.Aim == CardAim.Single) return receiver.Contains(screenPoint, null) ? DropZone.Receiver : DropZone.None;
+            if (card.Face.Aim == CardAim.Single) return ReceiverTakes(card, screenPoint) ? DropZone.Receiver : DropZone.None;
             return throwLine.IsAbove(screenPoint, null) ? DropZone.AboveThrowLine : DropZone.None;
+        }
+
+        /// <summary>
+        /// #568: the receiver takes a single-target card when half of the card lies on it or the pointer
+        /// is inside it (ReceiverDrop.Takes). The card is measured where the pointer carries it, before
+        /// the snap draws it in, so the pull cannot hold a card that has already left.
+        /// </summary>
+        private bool ReceiverTakes(CardView card, Vector2 screenPoint)
+        {
+            RectTransform root = RefScreen.Root(receiver.transform);
+            if (!root) return receiver.Contains(screenPoint, null);
+            ScreenBox dish = BoxOn(root, receiver.Rect, Vector3.zero);
+            ScreenBox held = BoxOn(root, card.Rect, _dragPointerWorld + _grabOffset - card.transform.position);
+            Vector2 pointer = RefScreen.Of(root, _dragPointerWorld);
+            return ReceiverDrop.Takes(held, dish, pointer.x, pointer.y);
+        }
+
+        /// <summary>The box <paramref name="rt"/> covers on the reference screen once moved by <paramref name="shift"/> (world units); a tilted card counts its whole outline.</summary>
+        private static ScreenBox BoxOn(RectTransform root, RectTransform rt, Vector3 shift)
+        {
+            rt.GetWorldCorners(Corners);
+            float left = float.MaxValue, top = float.MaxValue, right = float.MinValue, bottom = float.MinValue;
+            foreach (Vector3 corner in Corners)
+            {
+                Vector2 at = RefScreen.Of(root, corner + shift);
+                left = Mathf.Min(left, at.x);
+                right = Mathf.Max(right, at.x);
+                top = Mathf.Min(top, at.y);
+                bottom = Mathf.Max(bottom, at.y);
+            }
+            return new ScreenBox(left, top, right - left, bottom - top);
         }
 
         private void UpdateHot(CardView card, Vector2 screenPoint)
