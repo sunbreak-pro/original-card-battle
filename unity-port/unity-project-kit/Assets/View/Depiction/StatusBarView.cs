@@ -33,6 +33,10 @@ namespace Depiction.View
         public Text[] chips = new Text[0];
 
         private int _hpMax = 1;
+        /// <summary>The HP the bar is filled to, and the part of it a held card would take off (§4.5 HP の減る分, #455).</summary>
+        private int _hp;
+        private int _hpLoss;
+        private Image _hpWick;
         /// <summary>The chips as shown, in order: the stances (lasting) first, then the status words.</summary>
         private readonly List<StatusChip> _statuses = new List<StatusChip>();
 
@@ -605,9 +609,45 @@ namespace Depiction.View
             SnapTrail();
         }
 
+        /// <summary>
+        /// §4.5 / §5.2 HP の減る分 (#455): the HP a held card would take off, drawn as wick stripes over
+        /// the end of the bar it would empty. The amount is the script's (CardFace.HpLossFor); 0 takes
+        /// the stripes away.
+        /// </summary>
+        public void ShowHpLoss(int loss)
+        {
+            _hpLoss = loss;
+            RenderWick();
+        }
+
+        private void RenderWick()
+        {
+            if (!hpFill || !hpFill.parent) return;
+            if (!HpWickSpec.Span(_hp, _hpMax, _hpLoss, out float from, out float to))
+            {
+                if (_hpWick) _hpWick.enabled = false;
+                return;
+            }
+            if (!_hpWick)
+            {
+                _hpWick = UiKit.Image((RectTransform)hpFill.parent, "HpWick", VisualArt.WickStripes, BattleTheme.Hex(HpWickSpec.ColorHex),
+                    Vector2.zero, Vector2.one);
+                _hpWick.type = Image.Type.Tiled;
+            }
+            RectTransform rt = _hpWick.rectTransform;
+            rt.anchorMin = new Vector2(from, 0f);
+            rt.anchorMax = new Vector2(to, 1f);
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            // Over the fill, under the 10 HP marks and the frame.
+            rt.SetSiblingIndex(hpFill.GetSiblingIndex() + 1);
+            _hpWick.enabled = true;
+        }
+
         /// <summary>The bar and the number move at once; the grey band stays where it was until it is told to follow.</summary>
         public void SetHpKeepingTrail(int hp)
         {
+            _hp = hp;
+            RenderWick();
             if (hpText) hpText.text = hp.ToString();
             if (hpFill) hpFill.anchorMax = new Vector2(Width(hp), hpFill.anchorMax.y);
             if (hpTrail && hpFill && hpTrail.anchorMax.x < hpFill.anchorMax.x) SnapTrail(); // a heal leaves no band behind
@@ -616,6 +656,8 @@ namespace Depiction.View
         /// <summary>Slides the bar from its current width to <paramref name="hp"/>; the number lands at once.</summary>
         public IEnumerator AnimateHp(int hp, float ms)
         {
+            _hp = hp;
+            RenderWick();
             if (hpText) hpText.text = hp.ToString();
             if (!hpFill) yield break;
             float from = hpFill.anchorMax.x;

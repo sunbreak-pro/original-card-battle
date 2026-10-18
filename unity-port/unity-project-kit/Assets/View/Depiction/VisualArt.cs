@@ -388,6 +388,31 @@ namespace Depiction.View
             return made;
         }
 
+        private static Sprite _wickStripes;
+
+        /// <summary>
+        /// §4.5 HP の減る分 (#455): white stripes running ／, 3 px wide and 3 px apart, tiled
+        /// (Image.Type.Tiled). The tile is HpWickSpec's; tint it with HpWickSpec.ColorHex.
+        /// </summary>
+        public static Sprite WickStripes
+        {
+            get
+            {
+                if (_wickStripes && _wickStripes.texture) return _wickStripes;
+                int tile = HpWickSpec.TileSize;
+                var tex = new Texture2D(tile, tile, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Repeat };
+                var pixels = new Color[tile * tile];
+                for (int y = 0; y < tile; y++)
+                {
+                    for (int x = 0; x < tile; x++) pixels[y * tile + x] = new Color(1f, 1f, 1f, HpWickSpec.Alpha(x, y));
+                }
+                tex.SetPixels(pixels);
+                tex.Apply();
+                _wickStripes = Sprite.Create(tex, new Rect(0, 0, tile, tile), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                return _wickStripes;
+            }
+        }
+
         /// <summary>
         /// A white fill whose alpha runs from 1 at the top down to 18 / 55 at the bottom: tinted amber at
         /// 55%, it is §4.2's 届くマスの光 (琥珀の塗り、上 55% → 下 18%).
