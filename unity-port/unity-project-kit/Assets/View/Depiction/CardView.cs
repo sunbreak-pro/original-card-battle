@@ -446,28 +446,21 @@ namespace Depiction.View
         private void BindText(CardFace face)
         {
             if (!descriptionText) return;
-            List<string> rows = face.TextLines;
-            string text;
-            if (rows != null && rows.Count > 0)
-            {
-                var lines = new List<string>();
-                foreach (string row in rows)
-                {
-                    string line = row.Replace(' ', ' ');
-                    lines.Add(face.Lasting ? "<color=#" + ColorUtility.ToHtmlStringRGB(BattleTheme.HpInk) + ">∞</color> " + line : line);
-                }
-                text = string.Join("\n", lines);
-            }
-            else
-            {
-                // UI Text breaks lines only at spaces and knows no Japanese line-breaking rules, so
-                // each sentence of a v4.2 description gets its own line instead.
-                text = face.Description.Replace(' ', ' ').Replace("。", "。\n").TrimEnd('\n');
-            }
-            descriptionText.text = text;
             // §6.1 スタンスの札: the lasting rows start where the value columns would.
-            bool lasting = face.Lasting && rows != null && rows.Count > 0;
-            Place(descriptionText.rectTransform, lasting ? ValuesAt : TextAt, new Vector2(Size.x - TextAt.x - 12f, TextLine * (lasting ? 4f : 3f)));
+            bool lasting = CardTextFit.PrintsLasting(face);
+            Vector2 box = new Vector2(Size.x - TextAt.x - 12f, TextLine * (lasting ? 4f : 3f));
+            Place(descriptionText.rectTransform, lasting ? ValuesAt : TextAt, box);
+            descriptionText.supportRichText = false; // measured plain; the ∞ takes its colour after
+            TextFit fit = CardTextFit.Description(CardTextFit.DescriptionRows(face), TextSize, MinFontSize, box.x, box.y, MeasureWith(descriptionText));
+            // UI Text breaks lines again at spaces and knows no Japanese line-breaking rules. The fit
+            // has placed every break, so the spaces turn non-breaking and nothing wraps after it.
+            string text = fit.Text.Replace(' ', '\u00A0');
+            if (lasting) text = text.Replace(CardTextFit.LastingMark, "<color=#" + ColorUtility.ToHtmlStringRGB(BattleTheme.HpInk) + ">" + CardTextFit.LastingMark + "</color>");
+            descriptionText.supportRichText = true;
+            descriptionText.text = text;
+            descriptionText.fontSize = fit.Size;
+            descriptionText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            descriptionText.verticalOverflow = VerticalWrapMode.Truncate; // the last guard: clip at the box
         }
 
         private void BindTrait(CardFace face)
