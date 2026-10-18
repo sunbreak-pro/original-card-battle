@@ -163,6 +163,15 @@ namespace Depiction
         /// Empty when the card aims at nobody: <see cref="TraitLit"/> is its lamp everywhere.
         /// </summary>
         public List<bool> LitOn = new List<bool>();
+        /// <summary>
+        /// battle-visual-v1 §4.5 HP の減る分 (#507): for each enemy slot (the index in the core's enemy
+        /// list), the HP this card would take off that enemy if it were played on it now — every blow
+        /// past its Guard, plus the wall damage of a push it cannot take (decision A, 2026-10-17), never
+        /// more than the HP it has. The View draws it as the wick stripe over that enemy's HP bar and
+        /// works nothing out. 0 for a slot the card cannot reach or that has fallen. Empty when the
+        /// card aims at nobody, or the source writes none.
+        /// </summary>
+        public List<int> HpLossOn = new List<int>();
         /// <summary>§7.2: the one line above a hovered card, with the values of now ("間合い 2 以上なら、この札の威力 13 → 18").</summary>
         public string HoverLine = "";
         /// <summary>
@@ -194,6 +203,12 @@ namespace Depiction
         public bool LitFor(int enemy)
         {
             return enemy >= 0 && enemy < LitOn.Count ? LitOn[enemy] : TraitLit;
+        }
+
+        /// <summary>§4.5 (#507): the wick stripe on enemy <paramref name="enemy"/>'s HP bar while this card is held. 0 when the source writes none.</summary>
+        public int HpLossFor(int enemy)
+        {
+            return enemy >= 0 && enemy < HpLossOn.Count ? HpLossOn[enemy] : 0;
         }
 
         /// <summary>§6.1: the cost circle is filled and marked "▼n" when the cost is below the printed one.</summary>
