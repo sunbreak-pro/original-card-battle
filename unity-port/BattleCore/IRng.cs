@@ -17,8 +17,6 @@ namespace BattleCore
     {
         private readonly Random _random;
 
-        public SystemRng() : this(new Random()) { }
-
         public SystemRng(int seed) : this(new Random(seed)) { }
 
         public SystemRng(Random random)

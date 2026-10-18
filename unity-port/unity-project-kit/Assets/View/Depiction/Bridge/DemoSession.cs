@@ -60,8 +60,7 @@ namespace Depiction.Bridge
     public sealed class DemoSession
     {
         /// <summary>
-        /// §12's default three, on the v4.3 ids: 錆槍の竜兵 → 瘴牙の走竜 → 鉄壁の門竜 (the canon names
-        /// them 長柄の歪み兵 → 影走りの犬 → 甲冑の番人, their v4.1 names).
+        /// §12's default three, on the v4.3 ids: 錆槍の竜兵 → 瘴牙の走竜 → 鉄壁の門竜.
         /// </summary>
         public static readonly IReadOnlyList<string> DefaultChain = new[] { "polearm_warped", "shadow_hound", "armored_warden" };
 

@@ -112,12 +112,6 @@ namespace Depiction.View
             return parent.lossyScale.y / root.lossyScale.y;
         }
 
-        /// <summary>The frame of the A+ screen, kept for callers that only colour it.</summary>
-        public void Show(Color color)
-        {
-            Show(true, color, "", null, BattleTheme.Ink);
-        }
-
         /// <summary>
         /// §5.2 / §5.3: wick hooks with the light and, when given, the predicted value with its kind's
         /// icon (<paramref name="reaches"/>); steel hooks, no light and no number otherwise.

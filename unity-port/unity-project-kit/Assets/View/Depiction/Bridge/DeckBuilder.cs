@@ -74,9 +74,6 @@ namespace Depiction.Bridge
         /// <summary>The kinds that may go in (#58). A kind outside it has its ＋ greyed out and fails <see cref="Validate"/>.</summary>
         public IReadOnlyCollection<string> Owned { get; }
 
-        /// <summary>Every card that can go in, in canon order (#1 first).</summary>
-        public IReadOnlyList<CardDef> Catalog => CardCatalog.All;
-
         /// <summary>Cards in the deck.</summary>
         public int Total
         {
@@ -140,11 +137,6 @@ namespace Depiction.Bridge
             if (n == 1) _counts.Remove(id);
             else _counts[id] = n - 1;
             return true;
-        }
-
-        public void Clear()
-        {
-            _counts.Clear();
         }
 
         /// <summary>The deck laid out in canon order, instance ids "thrust-0", "thrust-1".</summary>

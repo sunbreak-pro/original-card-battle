@@ -982,25 +982,6 @@ namespace BattleCore
             return gap <= 2 ? GapBand.OneToTwo : GapBand.ThreePlus;
         }
 
-        public static string ToToken(this GapBand band) => band switch
-        {
-            GapBand.Zero => "gap0",
-            GapBand.OneToTwo => "gap1-2",
-            GapBand.ThreePlus => "gap3+",
-            _ => throw new ArgumentOutOfRangeException(nameof(band), band, null),
-        };
-
-        public static string ToToken(this OmenKind kind) => kind switch
-        {
-            OmenKind.Attack => "attack",
-            OmenKind.Guard => "guard",
-            OmenKind.Move => "move",
-            OmenKind.Skill => "skill",
-            OmenKind.Stance => "stance",
-            OmenKind.Rest => "rest",
-            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
-        };
-
         public static string ToToken(this StatusKind kind) => kind switch
         {
             StatusKind.Slow => "slow",
@@ -1043,14 +1024,6 @@ namespace BattleCore
             StatusKind.Rooting => "根張り",
             StatusKind.Withering => "枯らし",
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
-        };
-
-        public static string ToToken(this GameResult result) => result switch
-        {
-            GameResult.Ongoing => "ongoing",
-            GameResult.Won => "won",
-            GameResult.Lost => "lost",
-            _ => throw new ArgumentOutOfRangeException(nameof(result), result, null),
         };
     }
 }

@@ -1,7 +1,7 @@
 // Transient effects for the depiction, all driven by UiTween (no DOTween, no Animator).
 // Strength comes in as a 1..4 tier that the script already decided (battle_ui_ux_v2 §5.3;
-// since 2026-10-03 every script writes one tier, #30); this file only maps a tier to size,
-// hit-stop and shake. The shape comes in as the system the script wrote (Cue.System for a blow,
+// since 2026-10-03 every script writes one tier, #30); this file only maps a tier to size.
+// The shape comes in as the system the script wrote (Cue.System for a blow,
 // Cue.Fx for the rest, #57): one form per system, never chosen here.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
@@ -14,12 +14,8 @@ namespace Depiction.View
     {
         private static readonly float[] SlashLength = { 300f, 380f, 460f, 560f };
         private static readonly float[] SlashThickness = { 8f, 12f, 16f, 22f };
-        private static readonly float[] HitStopMs = { 0f, 40f, 70f, 110f };
-        private static readonly float[] ShakeAmplitude = { 6f, 10f, 16f, 24f };
         private static readonly int[] NumberSize = { 56, 72, 88, 108 };
 
-        public static float HitStop(int tier) => HitStopMs[Index(tier)];
-        public static float Shake(int tier) => ShakeAmplitude[Index(tier)];
         public static int NumberFont(int tier) => NumberSize[Index(tier)];
 
         private static int Index(int tier) => Mathf.Clamp(tier, 1, 4) - 1;

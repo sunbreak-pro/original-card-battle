@@ -95,15 +95,6 @@ namespace Depiction
             },
         };
 
-        public static DemoCard Def(string defId)
-        {
-            foreach (DemoCard card in All)
-            {
-                if (card.DefId == defId) return card;
-            }
-            throw new ArgumentOutOfRangeException(nameof(defId), defId, "not a demo card");
-        }
-
         /// <summary>The kind an instance id belongs to ("kesagiri#1" -> "kesagiri").</summary>
         public static string DefIdOf(string instanceId)
         {

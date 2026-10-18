@@ -480,8 +480,6 @@ namespace Depiction.Bridge.Tests
             return "\"" + name + "\":" + value.ToString("0.##", CultureInfo.InvariantCulture);
         }
 
-        private static string Pair(string name, double value) => Pair(name, (float)value);
-
         private static string Quote(string text)
         {
             return "\"" + (text ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", " ") + "\"";
