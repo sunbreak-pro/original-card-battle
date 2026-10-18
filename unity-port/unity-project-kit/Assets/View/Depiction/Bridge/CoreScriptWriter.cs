@@ -864,6 +864,8 @@ namespace Depiction.Bridge
                     face.TraitLit = lit;
                     face.LitOn = perEnemy;
                 }
+                // battle-visual-v1 §4.5 (#507): the HP the card would take off each enemy, wall included.
+                face.HpLossOn = CardFaceText.HpLoss(after, card.InstanceId);
                 // §4.9 / §5.3 (#455): the 構えの予告 once this card's cost is paid, the rule's own
                 // Combat.ReserveGuard on what would be left.
                 face.StanceHintAfterPay = waiting ? ReserveHint(_player.Stamina - face.Cost) : "";
