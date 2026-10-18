@@ -137,8 +137,8 @@ namespace DungeonCore
     /// into the boss slot. Enemy ids are plain strings that match BattleCore.Enemies (roster §1.8)
     /// — DungeonCore does not reference BattleCore (#97).
     ///
-    /// Nothing in the exploration draws from this table yet: #99, which hands a combat node's fight
-    /// to the battle, is where it gets wired in. Until then only the tests read it (#517).
+    /// The exploration screen draws a combat node's encounter from here as the node is reached
+    /// (Exploration.ExplorationSession.PendingEncounter), and #99 hands it to the battle.
     /// </summary>
     public static class LayerEncounters
     {

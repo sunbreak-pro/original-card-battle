@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Compiles the hand-over between the exploration and the battle (#99): what a combat node hands
+         the battle and what the battle brings back. Like Depiction.Bridge, no source of its own: the
+         files live in the Unity kit under Assets/View/Exploration/Bridge/ and are mirrored by
+         `npm run unity:sync`. It is the one place that sees both the exploration and the battle. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Exploration.Bridge</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Exploration\Bridge\*.cs" LinkBase="Bridge" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Exploration.Script\Exploration.Script.csproj" />
+    <ProjectReference Include="..\DungeonCore\DungeonCore.csproj" />
+    <ProjectReference Include="..\DungeonContent\DungeonContent.csproj" />
+    <ProjectReference Include="..\BattleCore\BattleCore.csproj" />
+    <ProjectReference Include="..\Depiction.Script\Depiction.Script.csproj" />
+    <ProjectReference Include="..\Depiction.Bridge\Depiction.Bridge.csproj" />
+  </ItemGroup>
+
+</Project>
