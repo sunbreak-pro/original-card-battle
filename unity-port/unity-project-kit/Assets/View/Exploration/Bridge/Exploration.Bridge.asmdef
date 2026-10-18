@@ -1,0 +1,22 @@
+{
+  "name": "Exploration.Bridge",
+  "rootNamespace": "Exploration.Bridge",
+  "references": [
+    "Exploration.Script",
+    "DungeonCore",
+    "DungeonContent",
+    "Journal.Script",
+    "BattleCore",
+    "Depiction.Script",
+    "Depiction.Bridge"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

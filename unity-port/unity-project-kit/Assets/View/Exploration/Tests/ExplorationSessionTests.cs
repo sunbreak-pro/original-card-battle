@@ -200,6 +200,40 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void TheEntryBattle_DrawsWhoIsFought_FromTheLayersTable()
+        {
+            var session = new ExplorationSession(new RunStart { Seed = 7 });
+            var kind = session.State.Map.Node(session.PendingBattleNode).Kind;
+
+            Assert.That(session.PendingEncounter, Is.Not.Null);
+            Assert.That(LayerEncounters.Of(1).PoolFor(kind), Does.Contain(session.PendingEncounter));
+            Assert.That(new ExplorationSession(new RunStart { Seed = 7 }).PendingEncounter, Is.EqualTo(session.PendingEncounter),
+                "the same life meets the same enemy on the same node");
+        }
+
+        [Test]
+        public void TheBattlesResult_ComesBackAsHpAndStamina()
+        {
+            var session = new ExplorationSession();
+            Assert.That(session.ReportBattle(31, 4), Is.True);
+
+            Assert.That(session.State.Hp, Is.EqualTo(31));
+            Assert.That(session.State.Stamina, Is.EqualTo(4));
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Exploring));
+            Assert.That(session.HasPendingBattle, Is.False);
+            Assert.That(session.PendingEncounter, Is.Null);
+            Assert.That(session.ReportBattle(31, 4), Is.False, "no battle is waiting");
+        }
+
+        [Test]
+        public void HpZero_FromTheBattle_EndsTheLife()
+        {
+            var session = new ExplorationSession();
+            Assert.That(session.ReportBattle(0, 6), Is.True);
+            Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Fallen));
+        }
+
+        [Test]
         public void ANewLifeStartsOverFromLayerOneWithTheNextSeed()
         {
             var session = new ExplorationSession(new RunStart { Seed = 5 });

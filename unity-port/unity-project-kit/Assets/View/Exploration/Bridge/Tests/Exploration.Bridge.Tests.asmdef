@@ -1,0 +1,31 @@
+{
+  "name": "Exploration.Bridge.Tests",
+  "rootNamespace": "Exploration.Bridge.Tests",
+  "references": [
+    "Exploration.Bridge",
+    "Exploration.Script",
+    "DungeonCore",
+    "DungeonContent",
+    "Journal.Script",
+    "BattleCore",
+    "Depiction.Script",
+    "Depiction.Bridge",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

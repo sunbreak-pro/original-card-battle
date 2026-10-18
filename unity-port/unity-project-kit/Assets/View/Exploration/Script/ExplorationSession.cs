@@ -1,6 +1,6 @@
 // Holds one run of the exploration screen: the core's state, the few flags the screen needs on top
-// of it (the carving, the survey, the stand-in battle, the confirmations, what the top band has
-// open), and the inputs the View forwards. Every rule is the core's: this class only chooses which ExplorationReducer call a click
+// of it (the carving, the survey, the battle waiting on a combat node and who is fought there, the
+// confirmations, what the top band has open), and the inputs the View forwards. Every rule is the core's: this class only chooses which ExplorationReducer call a click
 // becomes, and refuses clicks the screen should not have offered.
 using System;
 using System.Linq;
@@ -12,7 +12,7 @@ namespace Exploration
     /// <summary>How a run starts. The exploration screen's own stand-ins until 出立 (#104) hands a real one in.</summary>
     public sealed class RunStart
     {
-        /// <summary>The battle core's PLAYER_MAX_HP (BattleCore.Constants). #99 hands the real one across.</summary>
+        /// <summary>The battle core's PLAYER_MAX_HP (BattleCore.Constants). #99 hands it to every battle as the maximum.</summary>
         public const int DefaultMaxHp = 50;
 
         public ulong Seed { get; set; } = 1UL;
@@ -71,8 +71,15 @@ namespace Exploration
         /// <summary>This layer's 情報収集 node has been resolved.</summary>
         public bool Surveyed { get; private set; }
 
-        /// <summary>The combat node waiting on the stand-in battle's result, or −1.</summary>
+        /// <summary>The combat node waiting on its battle's result, or −1.</summary>
         public int PendingBattleNode { get; private set; } = None;
+
+        /// <summary>
+        /// Who is fought on <see cref="PendingBattleNode"/> (encounters_and_rewards_v4.md §2), drawn
+        /// from the layer's table as the node is reached; null while no battle waits. #99 hands it to
+        /// the battle.
+        /// </summary>
+        public Encounter PendingEncounter { get; private set; }
 
         /// <summary>The node whose step waits on a confirmation because it ends the life, or −1.</summary>
         public int PendingStepNode { get; private set; } = None;
@@ -152,16 +159,10 @@ namespace Exploration
             switch (action)
             {
                 case ScreenAction.WinBattle:
-                    if (!HasPendingBattle) return false;
-                    State = ExplorationReducer.ReportBattle(State, State.Hp, State.Stamina);
-                    PendingBattleNode = None;
-                    return true;
+                    return ReportBattle(State.Hp, State.Stamina);
 
                 case ScreenAction.FallInBattle:
-                    if (!HasPendingBattle) return false;
-                    State = ExplorationReducer.ReportBattle(State, 0, State.Stamina);
-                    PendingBattleNode = None;
-                    return true;
+                    return ReportBattle(0, State.Stamina);
 
                 case ScreenAction.GoToInterlude:
                     if (!IsIdle) return false;
@@ -226,6 +227,20 @@ namespace Exploration
         }
 
         /// <summary>
+        /// The battle on the pending node is over (#99): HP and current stamina come back through the
+        /// core's ReportBattle, and HP 0 is a fall. The stand-in card's two buttons come here as well.
+        /// False when no battle waits.
+        /// </summary>
+        public bool ReportBattle(int hpAfter, int staminaAfter)
+        {
+            if (!HasPendingBattle) return false;
+            State = ExplorationReducer.ReportBattle(State, hpAfter, staminaAfter);
+            PendingBattleNode = None;
+            PendingEncounter = null;
+            return true;
+        }
+
+        /// <summary>
         /// 所持カード and 設定・セーブ stay shut while the stand-in battle waits, which counts as being in
         /// battle (§6.2): a battle plays its deck only, and its state is not part of a save. The journal
         /// opens everywhere.
@@ -280,6 +295,13 @@ namespace Exploration
         public static ulong LayerSeed(ulong runSeed, int layer) =>
             unchecked(runSeed * 0x9E3779B97F4A7C15UL + (ulong)layer);
 
+        /// <summary>
+        /// The seed a combat node's encounter is drawn from: the layer's map seed and the node, so the
+        /// same life meets the same enemies on the same nodes.
+        /// </summary>
+        public static ulong EncounterSeed(ulong runSeed, int layer, int nodeId) =>
+            unchecked(LayerSeed(runSeed, layer) * 0xBF58476D1CE4E5B9UL + (ulong)(nodeId + 1));
+
         private void Begin(ulong seed)
         {
             RunSeed = seed;
@@ -287,6 +309,7 @@ namespace Exploration
             CarvingTaken = false;
             Surveyed = false;
             PendingBattleNode = None;
+            PendingEncounter = null;
             PendingStepNode = None;
             ConfirmingEndLife = false;
             ConfirmingDescend = false;
@@ -327,7 +350,12 @@ namespace Exploration
             if (kind == NodeKind.Carving) CarvingTaken = true;
             if (kind == NodeKind.Survey) Surveyed = true;
             // 瘴気死 ends the life on the node before any fight starts.
-            if (ExplorationText.IsCombat(kind) && State.Phase != RunPhase.MiasmaDeath) PendingBattleNode = nodeId;
+            if (ExplorationText.IsCombat(kind) && State.Phase != RunPhase.MiasmaDeath)
+            {
+                PendingBattleNode = nodeId;
+                int layer = State.Profile.Layer;
+                PendingEncounter = LayerEncounters.Pick(kind, layer, new SeededRng(EncounterSeed(RunSeed, layer, nodeId)));
+            }
         }
     }
 }

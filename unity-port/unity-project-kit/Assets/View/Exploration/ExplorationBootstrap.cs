@@ -2,10 +2,23 @@
 // It builds its own canvas and EventSystem, so no scene or prefab changes are needed. It decides
 // nothing: the Inspector fields become a RunStart, clicks go to ExplorationSession, and every frame
 // is ExplorationSession.Screen() handed to the view.
+//
+// #99: a combat node's battle is fought in the battle scene (Assets/Scenes/Battle.unity), loaded on
+// top of this one and unloaded when it ends. This scene stays loaded underneath with its objects
+// hidden, so the exploration keeps its state in memory and the battle scene stays as the Unity repo
+// authored it. Expedition (pure C#) builds what goes in and takes what comes back; this class only
+// loads, waits and unloads.
 #if UNITY_2021_2_OR_NEWER
+using System.Collections;
+using System.Collections.Generic;
+using BattleCore;
+using Depiction.Bridge;
+using Depiction.View;
 using DungeonCore;
+using Exploration.Bridge;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem.UI;
@@ -26,19 +39,30 @@ namespace Exploration.View
         [Range(0, 99)]
         public int startMiasma;
 
+        [Header("Battle (#99)")]
+        [Tooltip("Fights each combat node in the battle scene, loaded on top of this one. Off: the stand-in card's 「勝ったことにする」 / 「倒れたことにする」.")]
+        public bool realBattles = true;
+        [Tooltip("The battle scene's path in the project. A player build needs it in Build Settings; the Editor loads it from the path.")]
+        public string battleScenePath = "Assets/Scenes/Battle.unity";
+        [Tooltip("Seconds the battle's result card stays on screen before the exploration comes back.")]
+        public float resultSeconds = 2f;
+
+        private Expedition _expedition;
         private ExplorationSession _session;
         private ExplorationScreenView _view;
         private GameObject _canvas;
+        private bool _inBattle;
 
         private void Start()
         {
             int used = randomSeed ? Random.Range(1, int.MaxValue) : Mathf.Max(0, seed);
-            _session = new ExplorationSession(new RunStart
+            _expedition = new Expedition(new RunStart
             {
                 Seed = (ulong)used,
                 Loadout = trialLoadout ? RunStart.TrialLoadout() : RunLoadout.Empty,
                 MiasmaPercent = startMiasma,
             });
+            _session = _expedition.Session;
 
             EnsureEventSystem();
             _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable, Toggle);
@@ -49,7 +73,7 @@ namespace Exploration.View
         // J, C and Esc do what the band's three buttons do; Esc's order is the session's (§6.2).
         private void Update()
         {
-            if (_view == null) return;
+            if (_view == null || _inBattle) return;
             if (Pressed(KeyCode.J)) Toggle(Overlay.Journal);
             if (Pressed(KeyCode.C)) Toggle(Overlay.Cards);
             if (Pressed(KeyCode.Escape) && _session.Escape()) Render();
@@ -82,7 +106,123 @@ namespace Exploration.View
             if (_session.Toggle(overlay)) Render();
         }
 
-        private void Render() => _view.Render(_session.Screen());
+        private void Render()
+        {
+            _view.Render(_session.Screen());
+            if (realBattles && !_inBattle && _session.HasPendingBattle && _expedition.Battle == null) StartCoroutine(FightPendingBattle());
+        }
+
+        // ---- the battle scene (#99) ----
+
+        /// <summary>
+        /// Fights the pending node's encounter, one battle scene per fight, then brings the result back
+        /// and shows the map again. A scene that cannot be loaded leaves the stand-in card's buttons.
+        /// </summary>
+        private IEnumerator FightPendingBattle()
+        {
+            EncounterBattle battle = _expedition.StartEncounter();
+            if (battle == null) yield break;
+            _inBattle = true;
+            Scene home = gameObject.scene;
+
+            while (!battle.Over)
+            {
+                CoreBattleSource source = battle.StartNext();
+                var before = new HashSet<GameObject>(home.GetRootGameObjects());
+                List<GameObject> hidden = HideHome(home);
+
+                BattleBootstrap.HandIn(source);
+                AsyncOperation load = LoadBattleScene();
+                if (load == null)
+                {
+                    BattleBootstrap.HandIn(null);
+                    Debug.LogError("[ExplorationBootstrap] the battle scene " + battleScenePath + " is not in Build Settings; the stand-in card stays.");
+                    Show(hidden);
+                    _expedition.Abandon();
+                    _inBattle = false;
+                    realBattles = false;
+                    Render();
+                    yield break;
+                }
+                yield return load;
+
+                Scene arena = SceneManager.GetSceneByPath(battleScenePath);
+                if (arena.IsValid()) SceneManager.SetActiveScene(arena);
+                DepictionPlayer player = FindPlayer(arena);
+                if (!player) Debug.LogError("[ExplorationBootstrap] the battle scene has no DepictionPlayer; the fight is taken as it stands.");
+                while (player && player.enabled && !player.Finished) yield return null;
+                yield return new WaitForSeconds(resultSeconds);
+
+                SceneManager.SetActiveScene(home);
+                if (arena.IsValid()) yield return SceneManager.UnloadSceneAsync(arena);
+                // Whatever the battle created in this scene (an EventSystem, while this one was hidden) goes with it.
+                foreach (GameObject root in home.GetRootGameObjects())
+                {
+                    if (!before.Contains(root)) Destroy(root);
+                }
+                Show(hidden);
+
+                if (source.State.Result == GameResult.Ongoing)
+                {
+                    // The battle never reached its end (no player to play it): the node waits on the stand-in card.
+                    _expedition.Abandon();
+                    _inBattle = false;
+                    realBattles = false;
+                    Render();
+                    yield break;
+                }
+                battle.Finish(source);
+            }
+
+            BattleReturn back = _expedition.Return();
+            Debug.Log("[ExplorationBootstrap] battle " + (back.Won ? "won" : "lost") + " / HP " + back.Hp + " / stamina " + back.Stamina
+                + " / learned " + string.Join(", ", back.Learned) + (back.Offered.Count > 0 ? " / to pick: " + string.Join(", ", back.Offered) : ""));
+            _inBattle = false;
+            Render();
+        }
+
+        private AsyncOperation LoadBattleScene()
+        {
+            var parameters = new LoadSceneParameters(LoadSceneMode.Additive);
+            if (SceneUtility.GetBuildIndexByScenePath(battleScenePath) >= 0) return SceneManager.LoadSceneAsync(battleScenePath, parameters);
+#if UNITY_EDITOR
+            return UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(battleScenePath, parameters);
+#else
+            return null;
+#endif
+        }
+
+        /// <summary>Hides every object of this scene but this one (the map's canvas, the camera, the EventSystem) while the battle shows.</summary>
+        private List<GameObject> HideHome(Scene home)
+        {
+            var hidden = new List<GameObject>();
+            foreach (GameObject root in home.GetRootGameObjects())
+            {
+                if (root == gameObject || !root.activeSelf) continue;
+                root.SetActive(false);
+                hidden.Add(root);
+            }
+            return hidden;
+        }
+
+        private static void Show(List<GameObject> hidden)
+        {
+            foreach (GameObject root in hidden)
+            {
+                if (root) root.SetActive(true);
+            }
+        }
+
+        private static DepictionPlayer FindPlayer(Scene arena)
+        {
+            if (!arena.IsValid()) return null;
+            foreach (GameObject root in arena.GetRootGameObjects())
+            {
+                DepictionPlayer player = root.GetComponentInChildren<DepictionPlayer>(true);
+                if (player) return player;
+            }
+            return null;
+        }
 
         private RectTransform BuildCanvas()
         {

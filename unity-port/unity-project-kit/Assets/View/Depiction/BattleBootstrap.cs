@@ -45,6 +45,16 @@ namespace Depiction.View
         /// <summary>The seed the running battle was started with (the drawn one when Random Seed is on).</summary>
         public int SeedInUse { get; private set; }
 
+        // #99: a battle handed in from the exploration scene, which loads this scene on top of itself.
+        // Static because this scene's Awake runs while it loads, before the loader can reach it.
+        private static CoreBattleSource s_handedIn;
+
+        /// <summary>
+        /// #99: the exploration hands its battle in here just before it loads this scene. The next
+        /// Awake plays it in place of the Inspector's battle and the demo flow, once.
+        /// </summary>
+        public static void HandIn(CoreBattleSource source) => s_handedIn = source;
+
         // Awake, not Start: every Awake in the scene runs before any Start, and the player reads its
         // source in Start.
         private void Awake()
@@ -54,6 +64,17 @@ namespace Depiction.View
             if (!player)
             {
                 Debug.LogError("[BattleBootstrap] no DepictionPlayer in the scene; the battle cannot start.");
+                return;
+            }
+
+            if (s_handedIn != null)
+            {
+                CoreBattleSource handed = s_handedIn;
+                s_handedIn = null;
+                DemoFlow screens = GetComponent<DemoFlow>();
+                if (screens) Destroy(screens);
+                player.UseSource(handed);
+                Debug.Log("[BattleBootstrap] handed in by the exploration: " + handed.State.EnemyDef.Id + " / " + handed.State.FieldCells + " cells");
                 return;
             }
 

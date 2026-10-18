@@ -61,6 +61,41 @@ namespace Depiction.Bridge
         /// </summary>
         public List<CardInstance> Deck;
 
+        // ---- What the exploration hands in (#99). The defaults are a fresh battle, as before. ----
+
+        /// <summary>
+        /// The enemies standing behind <see cref="EnemyId"/> on the same line, in phase order (roster
+        /// §9's pair: 錆槍 in front, 灰弩 behind). Null or empty for one enemy.
+        /// </summary>
+        public List<string> MoreEnemyIds;
+
+        /// <summary>The player's HP maximum (PLAYER_MAX_HP until the exploration carries another).</summary>
+        public int PlayerMaxHp = Constants.PlayerMaxHp;
+
+        /// <summary>
+        /// The max stamina the battle starts from: the exploration's temporary changes and 瘴気 already
+        /// counted (battle_core_v4 §1, concept-v3 §6). The battle's own 瘴気纏い goes on top inside it.
+        /// </summary>
+        public int MaxStamina = Constants.BaseMaxStamina;
+
+        /// <summary>The HP the player walks in with; null is full.</summary>
+        public int? StartHp;
+
+        /// <summary>The current stamina the player walks in with; null is full.</summary>
+        public int? StartStamina;
+
+        /// <summary>The player's cell on turn 1 (§7.3: 2; 間合いの履 moves it to 1, widening <see cref="StartGap"/> by the same).</summary>
+        public int PlayerStartCell = Constants.PlayerStartCell;
+
+        /// <summary>§9.1 (#452): the in-battle tools, as amounts — 息継ぎの笛, 竜鱗の欠片 and 竜語の符. 0 is no tool.</summary>
+        public int StartStaminaBonus;
+        public int FirstHitGuard;
+        public int BossWordWard;
+
+        /// <summary>Which battle of a back-to-back encounter this is, for the header (1 of 1 for a lone battle).</summary>
+        public int ChainIndex = 1;
+        public int ChainTotal = 1;
+
         public List<CardInstance> BuildDeck()
         {
             if (Deck == null) return PrototypeDeck.Build();
@@ -74,17 +109,12 @@ namespace Depiction.Bridge
 
         public BattleSetup BuildSetup()
         {
-            EnemyDef enemy;
-            try
+            EnemyDef enemy = EnemyById(EnemyId);
+            List<EnemyDef> more = null;
+            if (MoreEnemyIds != null && MoreEnemyIds.Count > 0)
             {
-                enemy = Enemies.ById(EnemyId ?? "");
-            }
-            catch (KeyNotFoundException)
-            {
-                var known = new List<string>();
-                foreach (EnemyDef def in Enemies.All) known.Add(def.Id);
-                throw new ArgumentException(
-                    "BattleLaunch: no enemy has the id \"" + EnemyId + "\". Known ids: " + string.Join(", ", known) + ".");
+                more = new List<EnemyDef>();
+                foreach (string id in MoreEnemyIds) more.Add(EnemyById(id));
             }
 
             if (StartGap < 0) throw new ArgumentOutOfRangeException(nameof(StartGap), StartGap, "0 or more.");
@@ -93,7 +123,30 @@ namespace Depiction.Bridge
                 throw new ArgumentOutOfRangeException(
                     nameof(FieldCells), FieldCells, Constants.FieldCellsMin + ".." + Constants.FieldCellsMax + " cells.");
             }
-            return new BattleSetup(enemy, BuildDeck(), FieldCells, StartGap);
+            if (PlayerMaxHp < 1) throw new ArgumentOutOfRangeException(nameof(PlayerMaxHp), PlayerMaxHp, "1 or more.");
+            if (MaxStamina < Constants.MaxStaminaFloor || MaxStamina > Constants.MaxStaminaCeil)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(MaxStamina), MaxStamina, Constants.MaxStaminaFloor + ".." + Constants.MaxStaminaCeil + " (battle_core_v4 §1).");
+            }
+            if (PlayerStartCell < 1) throw new ArgumentOutOfRangeException(nameof(PlayerStartCell), PlayerStartCell, "cell 1 or further right.");
+            return new BattleSetup(enemy, BuildDeck(), FieldCells, StartGap, PlayerStartCell, PlayerMaxHp, MaxStamina, more,
+                StartHp, StartStamina, StartStaminaBonus, FirstHitGuard, BossWordWard);
+        }
+
+        private static EnemyDef EnemyById(string id)
+        {
+            try
+            {
+                return Enemies.ById(id ?? "");
+            }
+            catch (KeyNotFoundException)
+            {
+                var known = new List<string>();
+                foreach (EnemyDef def in Enemies.All) known.Add(def.Id);
+                throw new ArgumentException(
+                    "BattleLaunch: no enemy has the id \"" + id + "\". Known ids: " + string.Join(", ", known) + ".");
+            }
         }
 
         public CoreBattleSource CreateSource()
@@ -103,7 +156,7 @@ namespace Depiction.Bridge
                 throw new ArgumentOutOfRangeException(
                     nameof(Disclosure), Disclosure, LowestDisclosure + ".." + OmenDisclosure.Full + " (battle_ui_ux_v2 §7).");
             }
-            return new CoreBattleSource(BuildSetup(), Seed, AutoPlay, StopAfterTurns, disclosure: OmenDisclosure.Clamp(Disclosure));
+            return new CoreBattleSource(BuildSetup(), Seed, AutoPlay, StopAfterTurns, ChainIndex, ChainTotal, OmenDisclosure.Clamp(Disclosure));
         }
     }
 }
