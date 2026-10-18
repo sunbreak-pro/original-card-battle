@@ -47,3 +47,6 @@ yarn-error.log*
 # 追跡すると並行チャットが同じ行を書き換えて必ず衝突する。
 .claude/memory/INDEX.md
 .claude/history/INDEX.md
+
+# 戦闘画面の書体（OFL、約 13 MB）。npm run fonts:fetch が版を固定して取得する（#92、asset-intake.md §11）。
+unity-port/unity-project-kit/Assets/View/Resources/Fonts/

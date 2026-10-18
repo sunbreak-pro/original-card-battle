@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Compiles the UI art's pure-C# layer (which parts are drawn as art and where they load from, #92),
+         which lives in the Unity kit under Assets/View/UiArt/Script/ and is mirrored into the Unity
+         project by `npm run unity:sync`. No source of its own, like Depiction.Script. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>UiArt</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\UiArt\Script\*.cs" LinkBase="Script" />
+  </ItemGroup>
+
+</Project>

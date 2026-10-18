@@ -69,6 +69,12 @@ export function buildSyncPlan({ repoRoot, projectPath, noPolyfill = false, withP
       src,
       `${projectPath}/Assets/View/Depiction/${src.slice(`${kit}/Assets/View/Depiction/`.length)}`,
     ]),
+    // The battle screen's typefaces and their licences (npm run fonts:fetch, #92) -> Resources so UiKit
+    // can load them. Fetched, not committed: the folder is absent until fonts:fetch has run.
+    ...treeFiles(`${kit}/Assets/View/Resources/Fonts`, [".ttf", ".txt"]).map((src) => [
+      src,
+      `${projectPath}/Assets/View/Resources/Fonts/${basename(src)}`,
+    ]),
     // parity-fixture replay script (npm run unity:trace) -> Resources so the View can load it
     [`${kit}/Assets/View/Resources/trace-actions.txt`, `${projectPath}/Assets/View/Resources/trace-actions.txt`],
 
@@ -85,6 +91,13 @@ export function buildSyncPlan({ repoRoot, projectPath, noPolyfill = false, withP
     ...treeFiles(`${kit}/Assets/View/Backdrop`, [".cs", ".asmdef"]).map((src) => [
       src,
       `${projectPath}/Assets/View/Backdrop/${src.slice(`${kit}/Assets/View/Backdrop/`.length)}`,
+    ]),
+
+    // UI art (#92): which parts are drawn as art and where they load from (pure script assembly, tests),
+    // and the loader that falls back to the code-drawn shape while a part has no art yet.
+    ...treeFiles(`${kit}/Assets/View/UiArt`, [".cs", ".asmdef"]).map((src) => [
+      src,
+      `${projectPath}/Assets/View/UiArt/${src.slice(`${kit}/Assets/View/UiArt/`.length)}`,
     ]),
 
     // Exploration screen (#101) and the journal drawer it shares with the battle: script assemblies,
