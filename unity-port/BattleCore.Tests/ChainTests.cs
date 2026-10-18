@@ -159,5 +159,18 @@ namespace BattleCore.Tests
                 Assert.That(total.Attributes.Values.Sum(), Is.EqualTo(total.CardsPlayed), "a chain adds up the same way");
             });
         }
+
+        [Test]
+        public void TheMaxStamina_FallsByOneEveryTwentyPercentOfMiasma_ToSixAtMost()
+        {
+            // concept-v3 §6 / battle_core_v4 §13. Moved from ChainRunTests when #518 removed ChainRun.
+            Assert.Multiple(() =>
+            {
+                Assert.That(Chain.MaxStaminaAt(19), Is.EqualTo(10));
+                Assert.That(Chain.MaxStaminaAt(20), Is.EqualTo(9));
+                Assert.That(Chain.MaxStaminaAt(80), Is.EqualTo(6), "§13: max stamina 6 at 80%");
+                Assert.That(Chain.MaxStaminaAt(100), Is.EqualTo(6), "−4 at most");
+            });
+        }
     }
 }
