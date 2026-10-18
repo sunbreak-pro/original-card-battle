@@ -222,6 +222,7 @@ namespace Depiction.View
             _staminaTag?.ShowCost(0);
             HideHoverPanels();
             HideTargetMarks();
+            ShowHpLoss(null);
             if (omenBadge) omenBadge.SetActing(false); // a battle stopped on the enemy's turn
             Finished = false;
             EventSeconds.Clear();
@@ -462,6 +463,17 @@ namespace Depiction.View
             if (_reserveHint == null) return;
             string afterPay = held && held.Face != null ? held.Face.StanceHintAfterPay : null;
             _reserveHint.Show(afterPay ?? _frameStanceHint);
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §4.5 / §5.2 HP の減る分 (#455): while a card is held, the HP it would take
+        /// off the enemy the screen draws (CardFace.HpLossFor(0), the script's) shows as wick stripes on
+        /// that enemy's HP bar; with no card held, or a loss of 0, there are none.
+        /// </summary>
+        private void ShowHpLoss(CardView held)
+        {
+            if (!enemyStatus) return;
+            enemyStatus.ShowHpLoss(held && held.Face != null ? held.Face.HpLossFor(0) : 0);
         }
 
         /// <summary>
@@ -1697,6 +1709,7 @@ namespace Depiction.View
             if (!SameHand(frame.Hand)) BuildHand(frame.Hand);
             else for (int i = 0; i < _hand.Count; i++) _hand[i].Bind(frame.Hand[i]);
             LayoutHand();
+            ShowHpLoss(_dragging); // §4.5 (#455): the bar was bound again, and so was the held card's face
         }
 
         private bool SameHand(List<CardFace> faces)
@@ -2138,6 +2151,7 @@ namespace Depiction.View
             // §4.7 / §5.2: the stamina it would pay turns to rings, and "▸ n" shows.
             _staminaTag?.ShowCost(card.Face.Cost);
             ShowReserveHint(card); // §4.9 / §5.3 (#455): the 構えの予告 after this card is paid for
+            ShowHpLoss(card); // §4.5 / §5.2 (#455): the wick stripe on the enemy's HP bar
             // §6.3: a card aimed at one enemy is judged again on the enemy it frames (the one enemy
             // the screen draws). The verdict is the script's (CardFace.LitFor); the View only shows it.
             if (card.Face.Aim == CardAim.Single) card.ShowLamp(card.Face.LitFor(0));
@@ -2299,6 +2313,7 @@ namespace Depiction.View
             HideTargetMarks();
             _staminaTag?.ShowCost(0);
             ShowReserveHint(null);
+            ShowHpLoss(null);
             if (held)
             {
                 held.group.alpha = 1f;
@@ -2323,6 +2338,7 @@ namespace Depiction.View
             HideTargetMarks();
             _staminaTag?.ShowCost(0);
             ShowReserveHint(null);
+            ShowHpLoss(null);
             PlayVerdict verdict = _source.TryPlay(card.CardId, zone, out DepictionEvent played);
             if (verdict == PlayVerdict.Accepted) StartCoroutine(PlayAccepted(card, played));
             else
