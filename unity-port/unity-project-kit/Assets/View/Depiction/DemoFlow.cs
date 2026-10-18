@@ -26,6 +26,8 @@ namespace Depiction.View
 
         private DepictionPlayer _player;
         private int _seed;
+        /// <summary>The journal's 開示度 by enemy id, handed to each battle as it starts (#500). Null: every enemy at 2.</summary>
+        private System.Func<string, int> _disclosureOf;
         private int _randomPicks;
         /// <summary>Runs made from this seed, so choosing the same mode again deals afresh (DemoSession mixes it in).</summary>
         private int _runs;
@@ -41,8 +43,9 @@ namespace Depiction.View
         private CoreBattleSource _source;
 
         /// <summary>Sets the flow up and shows the deck screen. <paramref name="seed"/> fixes the run (each battle takes its own from it).</summary>
-        public void Begin(DepictionPlayer player, int seed)
+        public void Begin(DepictionPlayer player, int seed, System.Func<string, int> disclosureOf = null)
         {
+            _disclosureOf = disclosureOf;
             StopAllCoroutines();
             _session = null;
             _source = null;
@@ -111,17 +114,17 @@ namespace Depiction.View
 
         private void StartSingle(string enemyId)
         {
-            Run(() => DemoSession.Single(_departure, enemyId, _seed, _runs++));
+            Run(() => DemoSession.Single(_departure, enemyId, _seed, _runs++, _disclosureOf));
         }
 
         private void StartRandom()
         {
-            Run(() => DemoSession.Single(_departure, DemoSession.RandomEnemyId(_seed, _randomPicks++), _seed, _runs++));
+            Run(() => DemoSession.Single(_departure, DemoSession.RandomEnemyId(_seed, _randomPicks++), _seed, _runs++, _disclosureOf));
         }
 
         private void StartChain()
         {
-            Run(() => DemoSession.Chain(_departure, _seed, null, _runs++));
+            Run(() => DemoSession.Chain(_departure, _seed, null, _runs++, _disclosureOf));
         }
 
         private void Run(System.Func<DemoSession> make)

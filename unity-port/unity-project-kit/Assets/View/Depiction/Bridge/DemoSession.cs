@@ -69,6 +69,7 @@ namespace Depiction.Bridge
         private int _started;
         private int? _hp;
         private int? _stamina;
+        private readonly Func<string, int> _disclosureOf;
 
         public DemoMode Mode { get; }
 
@@ -97,7 +98,7 @@ namespace Depiction.Bridge
         /// made without the screen (the tests, a bare deck). The slots and the talent are the screen's
         /// to check (DepartureBuilder.CanSetOut); a run made from a bare deck has neither.
         /// </summary>
-        private DemoSession(DemoMode mode, IReadOnlyList<EnemyDef> order, Departure departure, int seed)
+        private DemoSession(DemoMode mode, IReadOnlyList<EnemyDef> order, Departure departure, int seed, Func<string, int> disclosureOf)
         {
             if (departure == null || departure.Deck == null) throw new ArgumentNullException(nameof(departure));
             DeckValidation validation = Cards.Validate(departure.Deck);
@@ -107,37 +108,39 @@ namespace Depiction.Bridge
             Order = order;
             Departure = departure with { Deck = new List<CardInstance>(departure.Deck) };
             _seed = seed;
+            _disclosureOf = disclosureOf;
         }
 
         /// <summary>
         /// One enemy on its own. <paramref name="run"/> counts the runs started from the same seed (the
         /// flow passes how many it has made), so choosing the same mode again deals afresh.
+        /// <paramref name="disclosureOf"/> is the journal's 開示度 by enemy id (<see cref="DisclosureOf"/>).
         /// </summary>
-        public static DemoSession Single(List<CardInstance> deck, string enemyId, int seed, int run = 0)
+        public static DemoSession Single(List<CardInstance> deck, string enemyId, int seed, int run = 0, Func<string, int> disclosureOf = null)
         {
-            return Single(Plain(deck), enemyId, seed, run);
+            return Single(Plain(deck), enemyId, seed, run, disclosureOf);
         }
 
         /// <summary>One enemy on its own, with what the departure screen set out with (#58).</summary>
-        public static DemoSession Single(Departure departure, string enemyId, int seed, int run = 0)
+        public static DemoSession Single(Departure departure, string enemyId, int seed, int run = 0, Func<string, int> disclosureOf = null)
         {
-            return new DemoSession(DemoMode.Single, new[] { Enemies.ById(enemyId ?? "") }, departure, RunSeed(seed, run));
+            return new DemoSession(DemoMode.Single, new[] { Enemies.ById(enemyId ?? "") }, departure, RunSeed(seed, run), disclosureOf);
         }
 
         /// <summary>§12: a chain of battles, by default <see cref="DefaultChain"/>.</summary>
-        public static DemoSession Chain(List<CardInstance> deck, int seed, IReadOnlyList<string> order = null, int run = 0)
+        public static DemoSession Chain(List<CardInstance> deck, int seed, IReadOnlyList<string> order = null, int run = 0, Func<string, int> disclosureOf = null)
         {
-            return Chain(Plain(deck), seed, order, run);
+            return Chain(Plain(deck), seed, order, run, disclosureOf);
         }
 
         /// <summary>§12's chain with what the departure screen set out with (#58): the same screen leads to both modes.</summary>
-        public static DemoSession Chain(Departure departure, int seed, IReadOnlyList<string> order = null, int run = 0)
+        public static DemoSession Chain(Departure departure, int seed, IReadOnlyList<string> order = null, int run = 0, Func<string, int> disclosureOf = null)
         {
             order = order ?? DefaultChain;
             if (order.Count == 0) throw new ArgumentException("DemoSession: a chain needs at least one enemy.");
             var enemies = new List<EnemyDef>();
             foreach (string id in order) enemies.Add(Enemies.ById(id));
-            return new DemoSession(DemoMode.Chain, enemies, departure, RunSeed(seed, run));
+            return new DemoSession(DemoMode.Chain, enemies, departure, RunSeed(seed, run), disclosureOf);
         }
 
         private static Departure Plain(List<CardInstance> deck)
@@ -188,13 +191,24 @@ namespace Depiction.Bridge
             return Departure.SetupFor(enemy, cells, _hp, _stamina);
         }
 
+        /// <summary>
+        /// battle_ui_ux_v2 §7 (#500): the journal's 開示度 for <paramref name="enemy"/>, read once as its
+        /// battle starts — it does not move during a battle, and a chain reads each enemy as its turn
+        /// comes. A run made without a journal is fully disclosed (2); −1 has no parts yet and reads as 0.
+        /// </summary>
+        public int DisclosureOf(EnemyDef enemy)
+        {
+            if (enemy == null) throw new ArgumentNullException(nameof(enemy));
+            return _disclosureOf == null ? OmenDisclosure.Full : OmenDisclosure.Clamp(_disclosureOf(enemy.Id));
+        }
+
         /// <summary>Starts the next battle. Every start takes a seed of its own, so a retry is dealt afresh.</summary>
         public CoreBattleSource StartBattle(bool suggestCards = false)
         {
             if (Stage != DemoStage.Ready) throw new InvalidOperationException("DemoSession: no battle is ready (" + Stage + ").");
             int seed = unchecked(_seed + (_started * 7919));
             int total = Mode == DemoMode.Chain ? Order.Count : 1;
-            var source = new CoreBattleSource(NextSetup(), seed, suggestCards, 0, Index + 1, total);
+            var source = new CoreBattleSource(NextSetup(), seed, suggestCards, 0, Index + 1, total, DisclosureOf(Current));
             _started++;
             Stage = DemoStage.Fighting; // only once the battle is built, so a failed start leaves the run Ready
             return source;

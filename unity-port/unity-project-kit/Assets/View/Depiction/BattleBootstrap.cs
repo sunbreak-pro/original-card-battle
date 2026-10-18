@@ -28,6 +28,9 @@ namespace Depiction.View
         public int fieldCells = BattleLaunch.SliceFieldCells;
         [Tooltip("The gap N on turn 1 (battle_core_v4 §7.3: 3). The player stands on cell 2; a line too short puts the enemy at its end.")]
         public int startGap = BattleLaunch.DefaultStartGap;
+        [Tooltip("The journal's 開示度 for the enemy (battle_ui_ux_v2 §7: 0〜2, −1 reads as 0), handed to the omen once as the battle starts. Below 2 the omen shows no numbers. Stands in for the journal until its data reaches the battle (#107); the demo flow reads it for every enemy.")]
+        [Range(BattleLaunch.LowestDisclosure, 2)]
+        public int disclosure = BattleLaunch.DefaultDisclosure;
 
         [Header("Demo (#187)")]
         [Tooltip("Opens the deck screen (#190), then the departure screen (#58: tools, consumables, talent), the mode screen (#191: one enemy or the chain) and the end screen. Off: the Inspector's battle starts at once with the prototype deck, as the slice did.")]
@@ -64,8 +67,8 @@ namespace Depiction.View
             {
                 player.Hold();
                 if (!flow) flow = gameObject.AddComponent<DemoFlow>();
-                flow.Begin(player, SeedInUse);
-                Debug.Log("[BattleBootstrap] demo flow / seed " + SeedInUse);
+                flow.Begin(player, SeedInUse, _ => disclosure);
+                Debug.Log("[BattleBootstrap] demo flow / seed " + SeedInUse + " / disclosure " + disclosure);
                 return;
             }
             // Awake run again with the flow switched off (the PlayMode test does): its screens go.
@@ -77,6 +80,7 @@ namespace Depiction.View
                 Seed = SeedInUse,
                 FieldCells = fieldCells,
                 StartGap = Mathf.Max(0, startGap),
+                Disclosure = disclosure,
                 AutoPlay = autoPlay,
                 StopAfterTurns = Mathf.Max(0, stopAfterTurns),
             };
@@ -92,7 +96,8 @@ namespace Depiction.View
                 player.enabled = false;
                 return;
             }
-            Debug.Log("[BattleBootstrap] " + enemyId + " / seed " + SeedInUse + " / " + fieldCells + " cells / start gap " + startGap);
+            Debug.Log("[BattleBootstrap] " + enemyId + " / seed " + SeedInUse + " / " + fieldCells + " cells / start gap " + startGap
+                + " / disclosure " + disclosure);
         }
     }
 }

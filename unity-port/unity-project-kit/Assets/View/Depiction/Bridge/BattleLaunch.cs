@@ -36,6 +36,19 @@ namespace Depiction.Bridge
         /// </summary>
         public int StartGap = DefaultStartGap;
 
+        /// <summary>
+        /// The journal's 開示度 for the enemy (battle_ui_ux_v2 §7, #500), handed to the omen once as the
+        /// battle starts: it does not move during a battle. Below 2 the omen shows no numbers; −1 (the
+        /// 100% run's enemies) has no parts yet and reads as 0. 2 until the journal's data (#107) reaches it.
+        /// </summary>
+        public int Disclosure = DefaultDisclosure;
+
+        /// <summary>battle_ui_ux_v2 §7: 開示度 2, everything the omen has.</summary>
+        public const int DefaultDisclosure = OmenDisclosure.Full;
+
+        /// <summary>battle_ui_ux_v2 §7: −1, the enemies of the 100% run, hidden whole.</summary>
+        public const int LowestDisclosure = -1;
+
         /// <summary>Unattended runs only: the source plays the leftmost payable card by itself.</summary>
         public bool AutoPlay;
 
@@ -85,7 +98,12 @@ namespace Depiction.Bridge
 
         public CoreBattleSource CreateSource()
         {
-            return new CoreBattleSource(BuildSetup(), Seed, AutoPlay, StopAfterTurns);
+            if (Disclosure < LowestDisclosure || Disclosure > OmenDisclosure.Full)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(Disclosure), Disclosure, LowestDisclosure + ".." + OmenDisclosure.Full + " (battle_ui_ux_v2 §7).");
+            }
+            return new CoreBattleSource(BuildSetup(), Seed, AutoPlay, StopAfterTurns, disclosure: OmenDisclosure.Clamp(Disclosure));
         }
     }
 }
