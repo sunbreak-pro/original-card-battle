@@ -19,8 +19,8 @@ namespace Depiction
 
         /// <summary>
         /// battle-visual-v1 §4.4: the numbers (attack and guard, on the omen and on the plan) show for an
-        /// enemy read to 2 only; 0 and 1 show the icon and the kind word. battle_ui_ux_v2 §7 shows them
-        /// from 1, a battle-lane assumption that #455 leaves to the handoff on the conflict.
+        /// enemy read to 2 only; 0 and 1 show the icon and the kind word. battle_ui_ux_v2 §7 says the same
+        /// since #496 (decision A, 2026-10-12).
         /// </summary>
         public static bool ShowsNumbers(int level)
         {
