@@ -36,7 +36,6 @@ namespace Depiction
         {
             TurnStart,
             PlayerTurn,
-            TurnEnd,
             EnemyAction,
             NextOmen,
             Over,

@@ -979,11 +979,6 @@ namespace Depiction
             return "";
         }
 
-        public static DropZone RequiredZone(CardAim aim)
-        {
-            return DepictionText.RequiredZone(aim);
-        }
-
         private DepictionEvent Take()
         {
             DepictionEvent ev = _script.Events[Index];

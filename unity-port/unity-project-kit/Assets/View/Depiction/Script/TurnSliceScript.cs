@@ -14,14 +14,12 @@ namespace Depiction
         public const string Kesagiri = DemoDeck.Kesagiri;
         public const string Daijodan = DemoDeck.Daijodan;
         public const string Ushirotobi = DemoDeck.Ushirotobi;
-        public const string TetsuNoUke = DemoDeck.TetsuNoUke;
-        public const string Kansatsu = DemoDeck.Kansatsu;
 
         public static DepictionScript Build()
         {
             var script = new DepictionScript();
 
-            // Turn 2 opens: HP 50/50, stamina 6/10, near. Enemy 長柄の歪み兵 HP 60/60, no range side.
+            // Turn 2 opens: HP 50/50, stamina 6/10, near. Enemy 錆槍の竜兵 HP 60/60, no range side.
             DepictionFrame opening = Snapshot(playerHp: 50, playerGuard: 0, stamina: 6, range: RangeSide.Near,
                 enemyHp: 60, hand: new List<CardFace>(), omen: new OmenFrame { Visible = false });
             script.Opening = opening;

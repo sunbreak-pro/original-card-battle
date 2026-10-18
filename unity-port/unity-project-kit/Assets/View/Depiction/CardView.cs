@@ -693,12 +693,6 @@ namespace Depiction.View
             };
         }
 
-        /// <summary>§2.2: the colour role of a card's attribute, for the parts outside the card (the target frame).</summary>
-        public static Color KindColor(CardKind kind)
-        {
-            return BattleTheme.KindFrame(kind);
-        }
-
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (Interactable) DragBegan?.Invoke(this, eventData);

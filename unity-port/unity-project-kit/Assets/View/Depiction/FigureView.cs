@@ -239,14 +239,6 @@ namespace Depiction.View
             Wear(Find(artId));
         }
 
-        /// <summary>Replacement point for one picture of real art, outside the shelf.</summary>
-        public void SetSprite(Sprite sprite)
-        {
-            if (sprite == null) return;
-            _artId = "";
-            Wear(new FigureArt { idle = sprite });
-        }
-
         /// <summary>Shows the picture for <paramref name="pose"/>. The silhouette has one picture and ignores it.</summary>
         public void SetPose(FigurePose pose)
         {

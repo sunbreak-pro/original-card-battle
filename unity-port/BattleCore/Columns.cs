@@ -24,10 +24,6 @@ namespace BattleCore
         /// <summary>§2.1: a single-attribute move card is always cost 1, whatever it carries.</summary>
         public const int MoveCardColumn = 1;
 
-        /// <summary>§3.1: an enemy face is about 6 tenths of the player ruler. Authoring guidance only —
-        /// the polearm's own numbers come from enemy_roster_v4.md §2.1 and are not derived here.</summary>
-        public const double EnemyFaceRatio = 0.6;
-
         /// <summary>§2.1: each face of a two-face card is about 65% of the single-face column (the card still counts as one attribute).</summary>
         public const double DualFaceRatio = 0.65;
 
