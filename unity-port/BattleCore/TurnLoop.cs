@@ -35,10 +35,24 @@ namespace BattleCore
     {
         /// <summary>
         /// §12 連戦 (#191): the HP and the current stamina the player carries in from the battle
-        /// before; null is full. HP is kept to 1..max and stamina to 0..max. Nothing else carries:
-        /// the deck is shuffled afresh (2026-09-23), statuses, Guard and the stance slot start empty.
+        /// before; null is full. HP above max is kept to max and stamina to 0..max. A carried HP of 0
+        /// or less throws (#574): a fallen character never starts a battle, so it is a caller's bug,
+        /// not a value to lift to 1. Nothing else carries: the deck is shuffled afresh (2026-09-23),
+        /// statuses, Guard and the stance slot start empty.
         /// </summary>
-        public int StartHp => PlayerStartHp.HasValue ? Math.Max(1, Math.Min(PlayerMaxHp, PlayerStartHp.Value)) : PlayerMaxHp;
+        public int StartHp
+        {
+            get
+            {
+                if (!PlayerStartHp.HasValue) return PlayerMaxHp;
+                if (PlayerStartHp.Value < 1)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(PlayerStartHp), PlayerStartHp.Value, "A carried HP is 1 or more: a fallen character does not start a battle.");
+                }
+                return Math.Min(PlayerMaxHp, PlayerStartHp.Value);
+            }
+        }
 
         /// <summary>
         /// The stamina the player opens with: the carried stamina kept to 0..max (full without one),

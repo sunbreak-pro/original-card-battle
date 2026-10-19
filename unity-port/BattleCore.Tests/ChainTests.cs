@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -31,8 +32,20 @@ namespace BattleCore.Tests
                 var clamped = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, 6, PlayerStartHp: 99, PlayerStartStamina: -3), NoShuffle).State;
                 Assert.That(clamped.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp));
                 Assert.That(clamped.Player.Stamina, Is.EqualTo(0));
-                Assert.That(new BattleSetup(Enemies.PolearmWarped, deck, 6, PlayerStartHp: 0).StartHp, Is.EqualTo(1), "a carried HP never starts the player fallen");
+                Assert.That(new BattleSetup(Enemies.PolearmWarped, deck, 6, PlayerStartHp: 1).StartHp, Is.EqualTo(1));
             });
+        }
+
+        [Test]
+        public void ACarriedHpOfZeroOrLess_Throws_InsteadOfStartingTheFallenAtOne()
+        {
+            var deck = PrototypeDeck.Build();
+            foreach (int hp in new[] { 0, -5 })
+            {
+                var setup = new BattleSetup(Enemies.PolearmWarped, deck, 6, PlayerStartHp: hp);
+                Assert.Throws<ArgumentOutOfRangeException>(() => { _ = setup.StartHp; }, "StartHp " + hp);
+                Assert.Throws<ArgumentOutOfRangeException>(() => TurnLoop.Start(setup, NoShuffle), "Start " + hp);
+            }
         }
 
         [Test]

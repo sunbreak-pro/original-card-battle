@@ -109,12 +109,12 @@ namespace Depiction.Bridge
 
         public BattleSetup BuildSetup()
         {
-            EnemyDef enemy = EnemyById(EnemyId);
+            EnemyDef enemy = EnemyById(EnemyId, nameof(BattleLaunch));
             List<EnemyDef> more = null;
             if (MoreEnemyIds != null && MoreEnemyIds.Count > 0)
             {
                 more = new List<EnemyDef>();
-                foreach (string id in MoreEnemyIds) more.Add(EnemyById(id));
+                foreach (string id in MoreEnemyIds) more.Add(EnemyById(id, nameof(BattleLaunch)));
             }
 
             if (StartGap < 0) throw new ArgumentOutOfRangeException(nameof(StartGap), StartGap, "0 or more.");
@@ -134,7 +134,12 @@ namespace Depiction.Bridge
                 StartHp, StartStamina, StartStaminaBonus, FirstHitGuard, BossWordWard);
         }
 
-        private static EnemyDef EnemyById(string id)
+        /// <summary>
+        /// <see cref="Enemies.ById"/>, with an unknown id as an <see cref="ArgumentException"/> that lists
+        /// the known ids, the type the callers (BattleBootstrap, DemoFlow) catch. <paramref name="caller"/>
+        /// heads the message.
+        /// </summary>
+        internal static EnemyDef EnemyById(string id, string caller)
         {
             try
             {
@@ -145,7 +150,7 @@ namespace Depiction.Bridge
                 var known = new List<string>();
                 foreach (EnemyDef def in Enemies.All) known.Add(def.Id);
                 throw new ArgumentException(
-                    "BattleLaunch: no enemy has the id \"" + id + "\". Known ids: " + string.Join(", ", known) + ".");
+                    caller + ": no enemy has the id \"" + id + "\". Known ids: " + string.Join(", ", known) + ".");
             }
         }
 

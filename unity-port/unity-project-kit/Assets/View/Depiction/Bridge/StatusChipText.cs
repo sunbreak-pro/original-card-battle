@@ -1,6 +1,7 @@
 // The status chips and their hover panel (battle-visual-v1 §7.3, #242): the family a word belongs to,
 // and its 効き方 / 減り方 written from the status table's values (BattleCore Constants / Statuses), so
 // the View prints the panel and computes nothing. Pure C#: BattleCore + Depiction.Script.
+using System;
 using System.Collections.Generic;
 using BattleCore;
 
@@ -68,8 +69,15 @@ namespace Depiction.Bridge
                 case StatusKind.Swift:
                 case StatusKind.Regen:
                     return ChipKind.OnSelf;
-                default:
+                case StatusKind.MiasmaShroud:
+                case StatusKind.Binding:
+                case StatusKind.Hook:
+                case StatusKind.Depths:
+                case StatusKind.Rooting:
+                case StatusKind.Withering:
                     return ChipKind.Boss;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(kind), kind, "No chip family for the status " + kind);
             }
         }
 
@@ -80,7 +88,8 @@ namespace Depiction.Bridge
                 case ChipKind.OnFoe: return OnFoeGroup;
                 case ChipKind.OnSelf: return OnSelfGroup;
                 case ChipKind.Lasting: return LastingGroup;
-                default: return BossGroup;
+                case ChipKind.Boss: return BossGroup;
+                default: throw new ArgumentOutOfRangeException(nameof(kind), kind, "No group word for the chip family " + kind);
             }
         }
 
@@ -126,7 +135,7 @@ namespace Depiction.Bridge
                 case StatusKind.Withering:
                     return "ターン開始のスタミナ回復が スタック 1 につき 1 減る";
                 default:
-                    return "";
+                    throw new ArgumentOutOfRangeException(nameof(kind), kind, "No panel text for the status " + kind);
             }
         }
 

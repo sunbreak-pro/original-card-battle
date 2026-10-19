@@ -100,10 +100,10 @@ namespace Depiction.View
                 EnemyId = enemyId,
                 Seed = SeedInUse,
                 FieldCells = fieldCells,
-                StartGap = Mathf.Max(0, startGap),
+                StartGap = startGap,
                 Disclosure = disclosure,
                 AutoPlay = autoPlay,
-                StopAfterTurns = Mathf.Max(0, stopAfterTurns),
+                StopAfterTurns = stopAfterTurns,
             };
 
             try

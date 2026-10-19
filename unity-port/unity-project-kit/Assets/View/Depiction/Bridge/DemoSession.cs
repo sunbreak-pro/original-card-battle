@@ -124,7 +124,7 @@ namespace Depiction.Bridge
         /// <summary>One enemy on its own, with what the departure screen set out with (#58).</summary>
         public static DemoSession Single(Departure departure, string enemyId, int seed, int run = 0, Func<string, int> disclosureOf = null)
         {
-            return new DemoSession(DemoMode.Single, new[] { Enemies.ById(enemyId ?? "") }, departure, RunSeed(seed, run), disclosureOf);
+            return new DemoSession(DemoMode.Single, new[] { BattleLaunch.EnemyById(enemyId, nameof(DemoSession)) }, departure, RunSeed(seed, run), disclosureOf);
         }
 
         /// <summary>§12: a chain of battles, by default <see cref="DefaultChain"/>.</summary>
@@ -139,7 +139,7 @@ namespace Depiction.Bridge
             order = order ?? DefaultChain;
             if (order.Count == 0) throw new ArgumentException("DemoSession: a chain needs at least one enemy.");
             var enemies = new List<EnemyDef>();
-            foreach (string id in order) enemies.Add(Enemies.ById(id));
+            foreach (string id in order) enemies.Add(BattleLaunch.EnemyById(id, nameof(DemoSession)));
             return new DemoSession(DemoMode.Chain, enemies, departure, RunSeed(seed, run), disclosureOf);
         }
 
