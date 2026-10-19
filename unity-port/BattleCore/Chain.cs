@@ -103,7 +103,7 @@ namespace BattleCore
         {
             int clamped = Math.Max(0, Math.Min(MiasmaMax - 1, miasmaPercent));
             int penalty = Math.Min(MiasmaMaxPenalty, clamped / MiasmaStepPercent);
-            return Math.Max(3, Math.Min(14, Constants.BaseMaxStamina - penalty));
+            return Math.Max(Constants.MaxStaminaFloor, Math.Min(Constants.MaxStaminaCeil, Constants.BaseMaxStamina - penalty));
         }
 
         /// <summary>The tally of one battle, from its final state and every event it emitted.</summary>
