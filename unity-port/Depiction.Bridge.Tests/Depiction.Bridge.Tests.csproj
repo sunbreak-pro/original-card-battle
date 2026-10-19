@@ -31,6 +31,12 @@
     <Compile Include="DepartureSuppliesTests.cs" />
   </ItemGroup>
 
+  <!-- #572: the View may hold BattleCore's definitions to pass along, never call its rules. The View
+       files never reach dotnet test, so this dotnet-only test reads them as text. -->
+  <ItemGroup>
+    <Compile Include="ViewRulesBoundaryTests.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\BattleCore\BattleCore.csproj" />
     <ProjectReference Include="..\Depiction.Script\Depiction.Script.csproj" />
