@@ -22,8 +22,28 @@ namespace BattleCore
         {
             if (player == null) throw new ArgumentNullException(nameof(player));
             if (enemy == null) throw new ArgumentNullException(nameof(enemy));
-            return enemy.Cell - player.FarCell - 1;
+            return Gap(player.Cell, player.Size, enemy.Cell);
         }
+
+        /// <summary>
+        /// §7.2 (#573): N for a player whose cells start at <paramref name="playerCell"/> and run
+        /// <paramref name="playerSize"/> long, against an enemy whose near edge stands on
+        /// <paramref name="enemyCell"/>. The one place N is counted: the turn loop, the enemy's aim and
+        /// the screen's tags and floor all read it from here or its inverses below.
+        /// </summary>
+        public static int Gap(int playerCell, int playerSize, int enemyCell) => GapFrom(FrontCell(playerCell, playerSize), enemyCell);
+
+        /// <summary>§7.2: the player's cell facing the enemies (<see cref="CombatantState.FarCell"/>), which N is counted from.</summary>
+        public static int FrontCell(int playerCell, int playerSize) => playerCell + playerSize - 1;
+
+        /// <summary>§7.2: N from the player's front cell <paramref name="frontCell"/> to an enemy's near edge on <paramref name="enemyCell"/>.</summary>
+        public static int GapFrom(int frontCell, int enemyCell) => enemyCell - frontCell - 1;
+
+        /// <summary>§7.2 read back: the player's front cell that leaves N = <paramref name="gap"/> to an enemy's near edge on <paramref name="enemyCell"/>.</summary>
+        public static int FrontCellAt(int gap, int enemyCell) => enemyCell - 1 - gap;
+
+        /// <summary>§7.2 read back: the enemy's near edge that leaves N = <paramref name="gap"/> to the player's front cell <paramref name="frontCell"/>.</summary>
+        public static int NearEdgeAt(int gap, int frontCell) => frontCell + 1 + gap;
 
         /// <summary>
         /// §7.3: move one side by <paramref name="cells"/> toward the other (positive) or away

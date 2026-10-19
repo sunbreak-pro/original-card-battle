@@ -43,6 +43,38 @@ namespace BattleCore.Tests
             Assert.That(Field.GapBetween(Fixtures.Combatant(cell: 2), dragon), Is.EqualTo(1));
         }
 
+        // #573: Field.Gap is the one place N is counted; the rest read it or its inverses.
+        [TestCase(2, 1, 5, 2)]
+        [TestCase(2, 1, 3, 0)]
+        [TestCase(1, 2, 5, 2)]
+        [TestCase(2, 2, 4, 0)]
+        [TestCase(1, 2, 7, 4)]
+        public void Gap_CountsFromThePlayersFrontCell_ForSizeOneAndTwo(int playerCell, int playerSize, int enemyCell, int gap)
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(Field.Gap(playerCell, playerSize, enemyCell), Is.EqualTo(gap));
+                Assert.That(Field.FrontCell(playerCell, playerSize), Is.EqualTo(playerCell + playerSize - 1));
+                Assert.That(Field.GapBetween(Fixtures.Combatant(cell: playerCell, size: playerSize), Fixtures.Combatant(cell: enemyCell)),
+                    Is.EqualTo(gap), "GapBetween reads Field.Gap");
+            });
+        }
+
+        [TestCase(0, 5)]
+        [TestCase(2, 6)]
+        [TestCase(3, 8)]
+        public void TheInverses_ReadTheSameNBack(int gap, int enemyCell)
+        {
+            int front = Field.FrontCellAt(gap, enemyCell);
+            Assert.Multiple(() =>
+            {
+                Assert.That(Field.GapFrom(front, enemyCell), Is.EqualTo(gap));
+                Assert.That(Field.NearEdgeAt(gap, front), Is.EqualTo(enemyCell));
+                Assert.That(Field.Gap(front, 1, enemyCell), Is.EqualTo(gap), "a size-1 player on the front cell");
+                Assert.That(Field.Gap(front - 1, 2, enemyCell), Is.EqualTo(gap), "a size-2 player whose front is that cell");
+            });
+        }
+
         [TestCase(0, GapBand.Zero)]
         [TestCase(1, GapBand.OneToTwo)]
         [TestCase(2, GapBand.OneToTwo)]

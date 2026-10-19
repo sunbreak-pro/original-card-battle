@@ -822,7 +822,7 @@ namespace BattleCore
         }
 
         /// <summary>The rightmost cell used (equal to Cell for size 1).</summary>
-        public int FarCell => Cell + Size - 1;
+        public int FarCell => Field.FrontCell(Cell, Size);
 
         /// <summary>The attributes played this turn, in order; empty at the start of a turn.</summary>
         public IReadOnlyList<BattleAttribute> PlayedThisTurn => Played ?? Array.Empty<BattleAttribute>();
