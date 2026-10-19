@@ -13,6 +13,7 @@ namespace Depiction.Bridge.Tests
     public class DepartureBuilderTests
     {
         private const string Shoes = "maai_no_kutsu";
+        private const string RyugoNote = "ボス専用の状態が 1 スタック低く乗る";
 
         private static DepartureBuilder Builder()
         {
@@ -22,7 +23,7 @@ namespace Depiction.Bridge.Tests
                 new SupplyOption(Shoes, "間合いの履", "開始のマスが 2 から 1 になる", 1),
                 new SupplyOption("ikitsugi_no_fue", "息継ぎの笛", "戦闘開始時のスタミナ +3", startStaminaBonus: 3),
                 new SupplyOption("ryurin_no_kakera", "竜鱗の欠片", "1 戦につき最初の 1 回だけ Guard 5", firstHitGuard: 5),
-                new SupplyOption("ryugo_no_fu", "竜語の符", "ボス専用の状態が常に 1 スタック低く乗る", bossWordWard: 1),
+                new SupplyOption("ryugo_no_fu", "竜語の符", RyugoNote, bossWordWard: 1),
             };
             var consumables = new[]
             {
@@ -250,7 +251,7 @@ namespace Depiction.Bridge.Tests
             DepartureBuilder builder = Builder();
             Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[2]), Is.EqualTo("息継ぎの笛　戦闘開始時のスタミナ +3"));
             Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[3]), Is.EqualTo("竜鱗の欠片　1 戦につき最初の 1 回だけ Guard 5"));
-            Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[4]), Is.EqualTo("竜語の符　ボス専用の状態が常に 1 スタック低く乗る"));
+            Assert.That(DepartureBuilder.LineOf(builder.ToolOptions[4]), Is.EqualTo("竜語の符　" + RyugoNote));
 
             DeckBuilder deck = Deck();
             Assert.That(builder.ChooseTalent(deck, PrototypeDeck.Kinds[0].Id), Is.True);
