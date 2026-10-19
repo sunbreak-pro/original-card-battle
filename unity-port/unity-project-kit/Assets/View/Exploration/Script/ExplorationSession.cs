@@ -151,6 +151,17 @@ namespace Exploration
             return true;
         }
 
+        /// <summary>
+        /// Spends one 習熟訓練 mark (#625). The card it goes to is named outside the exploration
+        /// (Exploration.Bridge.Expedition.Train). False when no mark is left or something else waits.
+        /// </summary>
+        public bool SpendTrainingMark()
+        {
+            if (State.IsOver || !IsIdle || State.TrainingMarks <= 0) return false;
+            State = ExplorationReducer.SpendTrainingMark(State);
+            return true;
+        }
+
         /// <summary>A button on a card, or 「この生を終える」. False when the action does not apply now.</summary>
         public bool Act(ScreenAction action)
         {

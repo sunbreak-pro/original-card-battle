@@ -176,7 +176,10 @@ namespace Exploration.View
 
             BattleReturn back = _expedition.Return();
             Debug.Log("[ExplorationBootstrap] battle " + (back.Won ? "won" : "lost") + " / HP " + back.Hp + " / stamina " + back.Stamina
-                + " / learned " + string.Join(", ", back.Learned) + (back.Offered.Count > 0 ? " / to pick: " + string.Join(", ", back.Offered) : ""));
+                + " / learned " + string.Join(", ", back.Learned)
+                + (_expedition.Offer.Count > 0 ? " / to pick: " + string.Join(", ", _expedition.Offer) : "")
+                + (back.Reward.Consumables.Count > 0 ? " / found: " + string.Join(", ", back.Reward.Consumables) : "")
+                + (back.Reward.Pages > 0 ? " / pages +" + back.Reward.Pages : ""));
             _inBattle = false;
             Render();
         }

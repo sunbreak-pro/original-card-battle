@@ -332,6 +332,120 @@ namespace Exploration.Bridge.Tests
             Assert.That(named.All(learned.Contains), Is.True);
         }
 
+        // ---- the rest of the reward and the picks (#625) ----
+
+        [Test]
+        public void AWonNormalBattle_BringsOneOfCardConsumableOrPage_Back()
+        {
+            var expedition = new Expedition(new RunStart { Seed = 3 });
+            BattleReturn back = WinPending(expedition);
+            BattleReward reward = back.Reward;
+            int parts = (reward.CardChoices.Count > 0 ? 1 : 0) + reward.Consumables.Count + reward.Pages;
+            Assert.That(parts, Is.EqualTo(1), "§4.2: one of the three");
+            Assert.That(expedition.Offer, Is.EqualTo(reward.CardChoices));
+            Assert.That(expedition.Consumables, Is.EqualTo(reward.Consumables));
+            Assert.That(expedition.Pages, Is.EqualTo(reward.Pages));
+        }
+
+        [Test]
+        public void TheReward_IsDrawnFromTheExplorationsSeed()
+        {
+            BattleReturn a = WinPending(new Expedition(new RunStart { Seed = 8 }));
+            BattleReturn b = WinPending(new Expedition(new RunStart { Seed = 8 }));
+            Assert.That(b.Reward.CardChoices, Is.EqualTo(a.Reward.CardChoices));
+            Assert.That(b.Reward.Consumables, Is.EqualTo(a.Reward.Consumables));
+            Assert.That(b.Reward.Pages, Is.EqualTo(a.Reward.Pages));
+        }
+
+        [Test]
+        public void ALostBattle_BringsNoReward()
+        {
+            var expedition = new Expedition(new RunStart { Seed = 3 });
+            EndEveryFight(expedition.StartEncounter(), GameResult.Lost, hp: 0);
+            BattleReturn back = expedition.Return();
+            Assert.That(back.Reward.IsEmpty, Is.True);
+            Assert.That(expedition.Offer, Is.Empty);
+        }
+
+        [Test]
+        public void APileCard_PickedWithLearn_IsOwnedAndInTheDeck()
+        {
+            Expedition expedition = WinUntilACardIsOffered();
+            string card = expedition.Offer[0];
+            Assert.That(CardPile.Of(1).Contains(card), Is.True, "layer 1 deals its own pile");
+            Assert.That(expedition.Learn(card), Is.True);
+            Assert.That(expedition.Owned.Contains(card), Is.True);
+            Assert.That(expedition.Deck.Any(c => c.Def.Id == card), Is.True);
+            Assert.That(expedition.Offer, Is.Empty, "one card of the three");
+        }
+
+        [Test]
+        public void ARealElitesCard_PickedWithLearn_IsOwnedAndInTheDeck()
+        {
+            // Layer 7's elite is always 統牙の長竜, and no boss before it teaches its cards.
+            var expedition = new Expedition(new RunStart { Seed = 5 });
+            WalkToLayer(expedition, 7);
+            BattleReturn back = WalkToAndWin(expedition, NodeKind.Elite);
+
+            Assert.That(back.Offered, Is.EqualTo(UniqueCards.OfElite("pack_alpha")), "a real elite offers its two cards");
+            Assert.That(expedition.Offer, Is.EqualTo(back.Offered));
+            Assert.That(back.Reward.CardChoices, Is.Empty, "the elite's cards are the card");
+            Assert.That(back.Reward.Consumables.Count, Is.EqualTo(1), "§4.2: an elite always drops a consumable");
+
+            string card = back.Offered[1];
+            Assert.That(expedition.Learn(card), Is.True);
+            Assert.That(expedition.Owned.Contains(card), Is.True);
+            Assert.That(expedition.Deck.Any(c => c.Def.Id == card), Is.True);
+            Assert.That(expedition.Owned.Contains(back.Offered[0]), Is.False, "one of the two");
+            Assert.That(expedition.Learn(back.Offered[0]), Is.False, "the offer is spent");
+        }
+
+        [Test]
+        public void AnEliteWhoseCardsAreOwned_DealsThreeCardsFromThePileInstead()
+        {
+            // Seed 5 draws 鉄壁の門竜 for layer 5's elite. Layer 4's stand-in boss is the same 門竜, and
+            // beating it taught both of its cards (§4.2), so the elite has nothing left to offer.
+            var expedition = new Expedition(new RunStart { Seed = 5 });
+            WalkToLayer(expedition, 5);
+            Assert.That(UniqueCards.OfElite("armored_warden").All(expedition.Owned.Contains), Is.True);
+            BattleReturn back = WalkToAndWin(expedition, NodeKind.Elite);
+
+            Assert.That(back.Offered, Is.Empty);
+            Assert.That(back.Reward.CardChoices.Count, Is.EqualTo(CardPile.Choices));
+            Assert.That(back.Reward.CardChoices.All(CardPile.Of(5).Concat(CardPile.Of(4)).Contains), Is.True, "layer 5's pile first, then layer 4's");
+            Assert.That(expedition.Offer, Is.EqualTo(back.Reward.CardChoices));
+        }
+
+        [Test]
+        public void ATrainingMark_SpentOnACard_GoesThroughTrainIntoTheMasteryBook()
+        {
+            var expedition = new Expedition(new RunStart { Seed = 3 });
+            ExplorationSession session = expedition.Session;
+            WinPending(expedition);
+            WalkTo(expedition, NodeKind.Rest, RestChoice.Train);
+            Assert.That(session.State.TrainingMarks, Is.EqualTo(1));
+
+            string card = CardCatalog.Thrust.Id;
+            int before = expedition.Mastery.TicksOf(card);
+            Assert.That(expedition.Train(card), Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(expedition.Mastery.TicksOf(card), Is.EqualTo(before + Constants.TrainingTicks));
+                Assert.That(session.State.TrainingMarks, Is.EqualTo(0), "the mark is spent");
+                Assert.That(expedition.Train(card), Is.False, "no mark left");
+            });
+        }
+
+        [Test]
+        public void ATrainingMark_IsNotSpentOnACardNotOwned()
+        {
+            var expedition = new Expedition(new RunStart { Seed = 3 });
+            WinPending(expedition);
+            WalkTo(expedition, NodeKind.Rest, RestChoice.Train);
+            Assert.That(expedition.Train(CardCatalog.LastStand.Id), Is.False, "#80 is not owned at the start");
+            Assert.That(expedition.Session.State.TrainingMarks, Is.EqualTo(1));
+        }
+
         // ---- helpers ----
 
         private static Encounter Single(string id, bool standIn) => new Encounter(new[] { new Fight(new[] { id }) }, standIn);
@@ -430,20 +544,58 @@ namespace Exploration.Bridge.Tests
             }
         }
 
-        /// <summary>Breadth-first over the map: the nodes from where the player stands to the boss, the boss last.</summary>
-        private static IReadOnlyList<int> PathToBoss(ExplorationState state)
+        /// <summary>The first seed whose entry battle, won, lays out the card pile to pick from.</summary>
+        private static Expedition WinUntilACardIsOffered()
+        {
+            for (ulong seed = 1; seed < 100; seed++)
+            {
+                var expedition = new Expedition(new RunStart { Seed = seed });
+                if (WinPending(expedition).Reward.CardChoices.Count > 0) return expedition;
+            }
+            Assert.Fail("no seed in 1〜99 dealt a card at the entry battle");
+            return null;
+        }
+
+        /// <summary>
+        /// Walks the shortest way to the nearest unresolved node of this kind, winning every battle on
+        /// the way, and steps onto it with the choice given. The battle fought there, or null.
+        /// </summary>
+        private static BattleReturn WalkToAndWin(Expedition expedition, NodeKind kind, RestChoice choice = RestChoice.Rest)
+        {
+            ExplorationSession session = expedition.Session;
+            if (session.HasPendingBattle) WinPending(expedition);
+            IReadOnlyList<int> path = PathTo(session.State, kind);
+            BattleReturn there = null;
+            foreach (int node in path)
+            {
+                bool last = node == path[path.Count - 1];
+                Assert.That(session.Step(node, last ? choice : RestChoice.Rest), Is.True, $"step to {node}");
+                if (session.HasPendingStep) Assert.That(session.Act(ScreenAction.ConfirmStep), Is.True);
+                if (!session.HasPendingBattle) continue;
+                BattleReturn back = WinPending(expedition);
+                if (last) there = back;
+            }
+            return there;
+        }
+
+        private static void WalkTo(Expedition expedition, NodeKind kind, RestChoice choice) => WalkToAndWin(expedition, kind, choice);
+
+        private static IReadOnlyList<int> PathToBoss(ExplorationState state) => PathTo(state, NodeKind.Boss);
+
+        /// <summary>Breadth-first over the map: the nodes from where the player stands to the nearest unresolved node of this kind, that node last.</summary>
+        private static IReadOnlyList<int> PathTo(ExplorationState state, NodeKind kind)
         {
             LayerMap map = state.Map;
             var from = new Dictionary<int, int> { [state.CurrentNodeId] = -1 };
             var queue = new Queue<int>();
             queue.Enqueue(state.CurrentNodeId);
-            int boss = -1;
+            int target = -1;
             while (queue.Count > 0)
             {
                 int node = queue.Dequeue();
-                if (map.Node(node).Kind == NodeKind.Boss)
+                if (map.Node(node).Kind == kind && !state.HasResolved(node))
                 {
-                    boss = node;
+                    target = node;
                     break;
                 }
                 foreach (int next in map.Neighbours(node))
@@ -453,9 +605,9 @@ namespace Exploration.Bridge.Tests
                     queue.Enqueue(next);
                 }
             }
-            Assert.That(boss, Is.Not.EqualTo(-1), "the boss is reachable");
+            Assert.That(target, Is.Not.EqualTo(-1), $"a {kind} node is reachable");
             var path = new List<int>();
-            for (int node = boss; node != state.CurrentNodeId; node = from[node]) path.Add(node);
+            for (int node = target; node != state.CurrentNodeId; node = from[node]) path.Add(node);
             path.Reverse();
             return path;
         }
