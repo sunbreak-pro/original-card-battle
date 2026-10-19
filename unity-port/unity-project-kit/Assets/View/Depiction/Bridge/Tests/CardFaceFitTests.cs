@@ -1,4 +1,4 @@
-// #210: the eighty cards' names and trait lines inside the Card prefab's boxes. The measure is a
+// #210: the eighty cards' names and trait lines inside the Card prefab's boxes; #567: their descriptions. The measure is a
 // stand-in wider than the prefab's font (Arial with a Japanese fallback): a Japanese letter one em,
 // a space 0.3 em, any other letter 0.6 em (Arial's "Guard+3" runs 3.9 em, this 4.2), a line 1.2 em high.
 using System;
@@ -86,6 +86,59 @@ namespace Depiction.Bridge.Tests
 
             Assert.That(fit.Text, Is.EqualTo("間合い0 重撃"));
             Assert.That(fit.Size, Is.EqualTo(18));
+        }
+
+        // #567: the description box (CardView): 188 px wide, three 22 px lines at 16 px (a lasting
+        // card's four). A line is 22 / 16 of the size high, as the Text's lineSpacing makes it.
+        private const int TextSize = 16;
+        private const float TextWidth = 216f - 16f - 12f;
+        private const float TextHeight = 22f * 3f;
+        private const float LastingHeight = 22f * 4f;
+
+        private static void DescriptionStandIn(string text, int size, out float width, out float height)
+        {
+            StandIn(text.Replace(CardTextFit.LastingMark, "　"), size, out width, out _);
+            height = text.Split('\n').Length * (22f / 16f) * size;
+        }
+
+        private static TextFit DescriptionOf(CardDef def)
+        {
+            CardFace face = CoreText.FaceOf(def);
+            float height = CardTextFit.PrintsLasting(face) ? LastingHeight : TextHeight;
+            return CardTextFit.Description(CardTextFit.DescriptionRows(face), TextSize, MinSize, TextWidth, height, DescriptionStandIn);
+        }
+
+        [Test]
+        public void EveryDescription_FitsItsBox_WithNoLineOpeningOnPunctuation()
+        {
+            Assert.That(CardCatalog.All.Count, Is.EqualTo(80));
+            var misfits = new List<string>();
+            foreach (CardDef def in CardCatalog.All)
+            {
+                TextFit fit = DescriptionOf(def);
+                if (!fit.Fits) misfits.Add(def.Id + " " + def.Name + " 「" + fit.Text.Replace("\n", " / ") + "」");
+                foreach (string line in fit.Text.Split('\n'))
+                {
+                    if (line.Length > 0 && CardTextFit.NoLineStart.IndexOf(line[0]) >= 0) misfits.Add(def.Id + " opens a line with 「" + line + "」");
+                }
+            }
+            Assert.That(misfits, Is.Empty);
+        }
+
+        [Test]
+        public void TheLongDescriptions_ShrinkOrWrap_AsPinned()
+        {
+            // Shrunk on one line.
+            Assert.That(DescriptionOf(CardCatalog.ById("flow_stance")).Size, Is.EqualTo(12));
+            Assert.That(DescriptionOf(CardCatalog.ById("wolf_stance")).Size, Is.EqualTo(13));
+            Assert.That(DescriptionOf(CardCatalog.ById("twist_away")).Size, Is.EqualTo(14));
+            // Too long for one line even at 12: wrapped at 16 inside a lasting card's four lines.
+            TextFit abyss = DescriptionOf(CardCatalog.ById("abyss_stance"));
+            Assert.That(abyss.Text, Is.EqualTo("∞ 間合い 0 の相手への\nアタック +5"));
+            Assert.That(abyss.Size, Is.EqualTo(16));
+            TextFit mist = DescriptionOf(CardCatalog.ById("mist_step"));
+            Assert.That(mist.Text.Split('\n').Length, Is.EqualTo(3));
+            Assert.That(mist.Size, Is.EqualTo(16));
         }
 
         // The deck screen prints the catalog with the hand's face (no dealt instance behind it).

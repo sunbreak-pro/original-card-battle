@@ -1,7 +1,9 @@
 // How a card's name and trait line fit their boxes (#210). Pure arithmetic over a measure the View
 // hands in (Unity's Text.preferredWidth / preferredHeight with the prefab's font), so the EditMode
 // tests can hold the choice with a stand-in measure. The boxes and the largest size are the prefab's.
+// The description rows fit the same way, wrapping only once shrinking alone runs out (#567).
 using System;
+using System.Collections.Generic;
 
 namespace Depiction
 {
@@ -60,6 +62,126 @@ namespace Depiction
             if (join >= 0) return trait.Substring(0, join) + "\n" + trait.Substring(join + TraitJoin.Length);
             int space = trait.IndexOf(' ');
             return space >= 0 ? trait.Substring(0, space) + "\n" + trait.Substring(space + 1) : null;
+        }
+
+        // ---- the description (#567) ---------------------------------------------------------------
+
+        /// <summary>Characters that never open a line (行頭禁則): closing marks, punctuation, small kana, the long vowel.</summary>
+        public const string NoLineStart = "、。，．,.：；:;！？!?）)」』】〕］]｝}〉》・ー～…％%ぁぃぅぇぉっゃゅょァィゥェォッャュョ々";
+
+        /// <summary>Characters that never close a line (行末禁則): opening marks.</summary>
+        public const string NoLineEnd = "（(「『【〔［[｛{〈《";
+
+        /// <summary>The mark at the head of a lasting row (§6.1 スタンスの札); the View colours it.</summary>
+        public const string LastingMark = "∞";
+
+        /// <summary>Whether the face prints lasting rows, which start higher and take four lines.</summary>
+        public static bool PrintsLasting(CardFace face)
+        {
+            return face.Lasting && face.TextLines != null && face.TextLines.Count > 0;
+        }
+
+        /// <summary>
+        /// The rows the description prints before fitting: <see cref="CardFace.TextLines"/> (each lasting
+        /// row behind <see cref="LastingMark"/>), or for a v4.2 face one row per sentence of its description.
+        /// </summary>
+        public static List<string> DescriptionRows(CardFace face)
+        {
+            var rows = new List<string>();
+            if (face.TextLines != null && face.TextLines.Count > 0)
+            {
+                bool lasting = PrintsLasting(face);
+                foreach (string row in face.TextLines) rows.Add(lasting ? LastingMark + " " + row : row);
+                return rows;
+            }
+            foreach (string sentence in (face.Description ?? "").Replace("。", "。\n").Split('\n'))
+            {
+                if (sentence.Trim().Length > 0) rows.Add(sentence);
+            }
+            return rows;
+        }
+
+        /// <summary>
+        /// The description rows inside the box, one row per line where they fit. First the largest size
+        /// from <paramref name="maxSize"/> down to <paramref name="minSize"/> that holds every row on one
+        /// line; when even <paramref name="minSize"/> overflows, the rows are wrapped (no punctuation at a
+        /// line start, no number or katakana word cut in two) at the largest size whose lines stay inside the box; when
+        /// that also overflows, the lines past the box's foot are dropped and <see cref="TextFit.Fits"/> is false.
+        /// </summary>
+        public static TextFit Description(IList<string> rows, int maxSize, int minSize, float width, float height, TextMeasure measure)
+        {
+            minSize = Math.Min(minSize, maxSize);
+            if (rows == null || rows.Count == 0) return new TextFit("", maxSize, true);
+            TextFit shrunk = Largest(string.Join("\n", rows), maxSize, minSize, width, height, measure);
+            if (shrunk.Fits) return shrunk;
+            for (int size = maxSize; size >= minSize; size--)
+            {
+                string wrapped = string.Join("\n", Wrap(rows, size, width, measure));
+                measure(wrapped, size, out _, out float h);
+                if (h <= height) return new TextFit(wrapped, size, true);
+            }
+            List<string> lines = Wrap(rows, minSize, width, measure);
+            while (lines.Count > 1)
+            {
+                measure(string.Join("\n", lines), minSize, out _, out float h);
+                if (h <= height) break;
+                lines.RemoveAt(lines.Count - 1);
+            }
+            return new TextFit(string.Join("\n", lines), minSize, false);
+        }
+
+        /// <summary>Each row broken into lines no wider than <paramref name="width"/> at <paramref name="size"/>.</summary>
+        public static List<string> Wrap(IList<string> rows, int size, float width, TextMeasure measure)
+        {
+            var lines = new List<string>();
+            foreach (string row in rows)
+            {
+                string rest = (row ?? "").Trim();
+                while (true)
+                {
+                    if (rest.Length <= 1 || WidthOf(rest, size, measure) <= width)
+                    {
+                        lines.Add(rest);
+                        break;
+                    }
+                    int cut = 1;
+                    while (cut < rest.Length && WidthOf(rest.Substring(0, cut + 1), size, measure) <= width) cut++;
+                    int at = cut;
+                    while (at > 0 && !CanBreakBefore(rest, at)) at--;
+                    if (at == 0) at = cut; // nowhere allowed: cut where the width runs out
+                    lines.Add(rest.Substring(0, at).TrimEnd());
+                    rest = rest.Substring(at).TrimStart();
+                }
+            }
+            return lines;
+        }
+
+        /// <summary>Whether a line may break between <c>text[at - 1]</c> and <c>text[at]</c>.</summary>
+        public static bool CanBreakBefore(string text, int at)
+        {
+            if (at <= 0 || at >= text.Length) return false;
+            char before = text[at - 1];
+            char after = text[at];
+            if (NoLineStart.IndexOf(after) >= 0 || NoLineEnd.IndexOf(before) >= 0) return false;
+            if (IsKatakana(before) && IsKatakana(after)) return false; // アタック, スタミナ stay whole
+            return !(IsWordChar(before) && IsWordChar(after));
+        }
+
+        private static bool IsKatakana(char c)
+        {
+            return c >= 'ァ' && c <= 'ヺ';
+        }
+
+        // "+12", "×2", "Guard": a run of half-width letters, digits and signs stays on one line.
+        private static bool IsWordChar(char c)
+        {
+            return (c < 0x80 && char.IsLetterOrDigit(c)) || c == '+' || c == '-' || c == '−' || c == '×' || c == '＋' || c == '－';
+        }
+
+        private static float WidthOf(string text, int size, TextMeasure measure)
+        {
+            measure(text, size, out float w, out _);
+            return w;
         }
 
         private static TextFit Largest(string text, int maxSize, int minSize, float width, float height, TextMeasure measure)
