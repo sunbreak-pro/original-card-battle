@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unity 操作の判断</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* 左に追従する目次 + 右に 1 本の読み筋(題 → 結論 → 理由 → 根拠 → 参考)。
+     ライトが既定。ダークは右上のボタンで選んだときだけ使う(OS の設定には追従しない)。
+     色は :root とダークのブロックにだけ hex で書き、ほかはすべてトークン(var(--…))で当てる。 */
+  :root {
+    --ground: #f6f8f9; --panel: #ffffff; --ink: #1c2327; --muted: #56636b;
+    --line: #d9e0e3; --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #e2f0f0;
+    --row: #f1f5f6; --ok: #2c7a4b; --warn: #966010; --stop: #a23c3c; --idle: #e3e8eb; --code-bg: #eef3f4;
+    --shadow: 0 1px 2px rgba(20, 40, 45, .05), 0 6px 18px rgba(20, 40, 45, .04);
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    --font-mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+    /* 余白のスケール */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 72px; --sp-9: 96px;
+    /* チャート: カテゴリ(系列そのものが主題のときだけ使う。ふつうは accent 1 本 + グレー) */
+    --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300;
+    /* チャート: 連続(1 色相。明るい → 濃い)と、各段に載せる文字の色 */
+    --seq-1: #cde2fb; --seq-2: #86b6ef; --seq-3: #3987e5; --seq-4: #1c5cab; --seq-5: #0d366b;
+    --seq-1-ink: #1c2327; --seq-2-ink: #1c2327; --seq-3-ink: #0b1114; --seq-4-ink: #ffffff; --seq-5-ink: #ffffff;
+    /* チャート: 罫線と軸(軸は棒の「その他」の塗りにも使う) */
+    --grid: #e4e9ec; --axis: #75848b;
+    color-scheme: light;
+  }
+  @media not print {
+    :root[data-theme="dark"] {
+      --ground: #111618; --panel: #1a2125; --ink: #e4e9eb; --muted: #99a6ad;
+      --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --row: #1e262a; --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --idle: #2c363b; --code-bg: #0f1417;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35);
+      --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300;
+      --seq-1: #1f3a57; --seq-2: #2a5a92; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-5: #cde2fb;
+      --seq-1-ink: #e4e9eb; --seq-2-ink: #ffffff; --seq-3-ink: #0b1114; --seq-4-ink: #0b1114; --seq-5-ink: #0b1114;
+      --grid: #2a3439; --axis: #7f8d94;
+      color-scheme: dark;
+    }
+  }
+  :root { --gap-section: var(--sp-8); --gap-card: var(--sp-5); }
+  @media (max-width: 599px) { :root { --gap-section: var(--sp-7); --gap-card: var(--sp-4); } }
+
+  * { box-sizing: border-box; }
+  /* scroll-padding-top: 固定のテーマボタン(下端 56px)に、目次・脚注・Shift+Tab で飛んだ先を隠さない(節ごとの scroll-margin は持たない) */
+  html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-body);
+    font-size: 16px; line-height: 1.9; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: var(--font-mono); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+
+  /* テーマ切り替え(右上に固定。.page の上に 64px の予約余白を取って本文と重ねない)。
+     JS が data-theme を付けるまで出さない(JS が動かないとき、効かないボタンを残さない)。印刷では出さない */
+  .themeswitch { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: calc(env(safe-area-inset-right, 0px) + 16px); z-index: 50;
+    display: none; gap: 2px; padding: 3px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow); }
+  @media screen { :root[data-theme] .themeswitch { display: inline-flex; } }
+  .themeswitch button { appearance: none; font: inherit; font-size: 14px; line-height: 1; height: 36px; min-width: 64px; padding: 0 14px;
+    border: 0; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; }
+  .themeswitch button:hover { background: var(--row); color: var(--ink); }
+  .themeswitch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+
+  /* レイアウト: 目次 250px + 本文 最大 880px。本文の列は子の間を gap で空ける */
+  .page { max-width: 1226px; margin: 0 auto; padding: 64px 24px 96px; display: grid;
+    grid-template-columns: 250px minmax(0, 880px); gap: var(--sp-7); justify-content: center; }
+  .page.no-toc { grid-template-columns: minmax(0, 880px); }
+  .main { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-6); }
+  section { display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  /* 節と節の間 = main の gap(32px) + この margin = 72px(幅 600px 未満は 48px) */
+  .main > section { margin-top: calc(var(--gap-section) - var(--sp-6)); }
+  /* 幅 999px 以下は 1 列。並びは 題の面 → 結論カード → 目次 → 節(結論カードがない報告書は 題の面 → 目次 → 節) */
+  @media (max-width: 999px) {
+    .page { display: flex; flex-direction: column; gap: var(--sp-6); padding: 64px 16px 72px; }
+    .main { display: contents; }
+    .hero { order: -2; }
+    .main > :is(.verdicts, .tiles) { order: -1; }
+  }
+
+  /* 目次 */
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start;
+    max-height: calc(100vh - 48px); overflow-y: auto; font-size: 14px; }
+  .toc-title { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 0 var(--sp-2); }
+  .toc-progress { height: 3px; background: var(--idle); border-radius: 4px; overflow: hidden; margin: 0 0 var(--sp-3); }
+  .toc-progress > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s linear; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; padding: 8px 10px;
+    border-radius: 4px; color: var(--muted); text-decoration: none; line-height: 1.5; border-left: 3px solid transparent; }
+  .toc a:hover { background: var(--row); color: var(--ink); }
+  /* .toc は overflow-y: auto で横も切るので、焦点の輪は外ではなくリンクの内側に描く */
+  .toc a:focus-visible { outline-offset: -2px; }
+  .toc .lbl { display: block; font-size: 14px; }
+  .toc .toc-claim { display: block; font-size: 13px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+  .toc a[aria-current="location"] .toc-claim { color: var(--ink); }
+  .toc .no { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px;
+    font-weight: 700; font-family: var(--font-mono); background: var(--idle); color: var(--ink); }
+  .toc a.done .no { background: transparent; color: var(--ok); box-shadow: inset 0 0 0 1.5px var(--ok); }
+  .toc a.done .no::before { content: "✓"; font-family: var(--font-body); }
+  .toc a.done .no > span { display: none; }
+  .toc a[aria-current="location"] { background: var(--accent-soft); color: var(--accent); font-weight: 700; border-left-color: var(--accent); }
+  .toc a[aria-current="location"] .no { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+  @media (max-width: 999px) {
+    .toc { order: 0; position: static; max-height: none; align-self: stretch; }
+  }
+
+  /* 題の面 */
+  .hero { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: 40px 44px; display: flex; flex-direction: column; gap: var(--sp-4); }
+  @media (max-width: 599px) { .hero { padding: 24px 20px; } }
+  .eyebrow { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; font-size: 13px; color: var(--muted); font-weight: 700; margin: 0; }
+  h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.4; margin: 0; text-wrap: balance; font-weight: 700; letter-spacing: .01em; }
+  .lede { font-size: 17px; color: var(--muted); margin: 0; }
+  .meta { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted); list-style: none; }
+  .meta b { color: var(--ink); font-weight: 700; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+  /* 見出しと本文。本文の 1 行は全角 40 字前後(40em)。図・表・カードは列の幅いっぱい */
+  .kicker { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--accent); font-weight: 700; margin: 0; max-width: none; }
+  .kicker .no { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  .kicker::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  h2 { font-size: 24px; line-height: 1.5; margin: 0; text-wrap: balance; }
+  /* 小さな分類名(kicker)と主張(h2)は近づけて 1 組に見せる。この 1 か所だけ負の margin で gap を詰める */
+  .kicker + h2 { margin-top: calc(var(--sp-3) - var(--sp-5)); }
+  h3 { font-size: 17px; line-height: 1.5; margin: 0; }
+  p { margin: 0; }
+  p, ul, ol { max-width: 40em; }
+  ul, ol { padding-left: 1.4em; margin: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+  /* flex でない箱(.callout・.finding・li・td・dd)の中で段落や一覧が続くとき、間隔が 0 にならないようにする */
+  :is(.callout, .finding, li, td, dd) > :is(p, ul, ol) + :is(p, ul, ol) { margin-top: var(--sp-4); }
+  /* 日本語の折り返し: 見出し・リード文・カードの文は語や句の途中で割らない。段落の最終行を 1〜2 字にしない。
+     対応していないブラウザでは無視され、従来どおりに折り返す */
+  h1, h2, h3, .lede, .verdict p, .fig > figcaption, .compare figcaption, .hbar-label, .tile .l, .vhead p { word-break: auto-phrase; }
+  .page :is(p, li, td, dd, caption) { word-break: auto-phrase; }
+  p, li, td, dd, caption { text-wrap: pretty; }
+  /* 英単語・ファイル名・製品名を折り返させない(見出し・カード・図のラベルは全角 12 字以内にするか、これで守る) */
+  .nobr { white-space: nowrap; }
+  a { color: var(--accent); }
+  sup.ref { font-size: 13px; margin-left: 1px; line-height: 0; }
+  sup.ref a { text-decoration: none; }
+
+  /* 大きな塊(図・表・カード列・案パネル)の上下は、gap(24px) + この margin(8px) = 32px 以上 */
+  .fig, .tablewrap, .verdicts, .tiles, .compare, .split, .variants, .callout, .steps, pre { margin-block: var(--sp-2); }
+  .main > section > :last-child { margin-bottom: 0; }
+
+  /* 部品: 結論カード・チップ・数字タイル */
+  .verdicts, .tiles, .meta, .legend, .hbar, .steps, .refs, .toc ol { max-width: none; }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; break-inside: avoid; }
+  .verdict .tag { font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); } .verdict.later .tag { color: var(--warn); } .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { font-size: 18px; text-wrap: balance; }
+  .verdict p { color: var(--muted); font-size: 15px; line-height: 1.8; }
+  .chip { display: inline-block; border-radius: 4px; padding: 1px 8px; font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--accent-ink); white-space: nowrap; }
+  .chip.ok { background: var(--ok); } .chip.warn { background: var(--warn); } .chip.stop { background: var(--stop); }
+  .chip.idle { background: var(--idle); color: var(--ink); } .chip.kind { background: var(--accent); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--idle); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-4) var(--sp-5) var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-1); }
+  .tile.ok { border-top-color: var(--ok); } .tile.warn { border-top-color: var(--warn); } .tile.stop { border-top-color: var(--stop); }
+  .tile .n { font-size: 32px; font-weight: 700; line-height: 1.3; font-family: var(--font-mono); display: block; white-space: nowrap; }
+  /* 数字の後ろの単位(36<span class="u">か月</span>)は小さく添える。数字と単位が別の行に割れない */
+  .tile .n .u { font: 700 16px var(--font-body); margin-left: 4px; }
+  .tile .l { font-size: 14px; line-height: 1.6; color: var(--muted); text-wrap: balance; }
+  .dist { display: flex; height: 10px; border-radius: 4px; overflow: hidden; background: var(--idle); gap: 2px; }
+  .dist > span { display: block; height: 100%; }
+  .dist .ok { background: var(--ok); } .dist .warn { background: var(--warn); } .dist .stop { background: var(--stop); } .dist .idle { background: var(--muted); }
+  /* 進捗バー(HTML)。svg の帯(rect.bar、.chart .bar)には当てない: CSS の height が rect の height 属性を上書きするため */
+  .bar:not(rect) { height: 8px; background: var(--idle); border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar:not(rect) > span { display: block; height: 100%; background: var(--accent); }
+  .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--gap-card); }
+  .compare > figure { margin: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); }
+  .compare figcaption { font-size: 14px; font-weight: 700; color: var(--muted); }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-4) var(--sp-5); overflow-x: auto; font-size: 14px; line-height: 1.7; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: .9em; }
+  .callout { border: 1px solid var(--line); background: var(--accent-soft); padding: var(--sp-5); border-radius: 8px; font-size: 15px; line-height: 1.8; }
+  .callout strong { color: var(--accent); }
+  .finding { border-left: 3px solid var(--line); padding: var(--sp-1) 0 var(--sp-1) var(--sp-4); }
+  .finding.stop { border-left-color: var(--stop); } .finding.warn { border-left-color: var(--warn); } .finding.ok { border-left-color: var(--ok); }
+  .note { font-size: 14px; color: var(--muted); }
+
+  /* 表: セルの内側は 12px × 20px */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.7; font-variant-numeric: tabular-nums; }
+  caption { caption-side: top; text-align: left; font-weight: 700; font-size: 15px; line-height: 1.7; padding: var(--sp-4) 20px var(--sp-3); border-bottom: 1px solid var(--line); }
+  th, td { text-align: left; padding: 12px 20px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); background: var(--row); font-weight: 700; white-space: nowrap; }
+  tbody tr:nth-child(even) td { background: var(--row); }
+  th.num, td.num { text-align: right; white-space: nowrap; font-family: var(--font-mono); }
+  td.nowrap { white-space: nowrap; }
+  tr { break-inside: avoid; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.wrap { white-space: normal; } /* 結果が文のセル(td class="state wrap yes")。短い状態語は wrap なしで折り返さない */
+  td.state.yes { color: var(--ok); } td.state.no { color: var(--stop); } td.state.maybe { color: var(--warn); }
+  /* 3 列以上の表は、狭い幅で列が数文字に潰れないよう、表の枠の中で横に動かす。列が多いほど最小幅を広げる(後ろの規則が勝つ)。
+     :where() で詳しさを 0 にしてあるので、table.stack や印刷の min-width: 0 が素直に勝つ */
+  .tablewrap > table:where(:has(thead th:nth-child(3))) { min-width: 36em; }
+  .tablewrap > table:where(:has(thead th:nth-child(4))) { min-width: 44em; }
+  .tablewrap > table:where(:has(thead th:nth-child(5))) { min-width: 48em; }
+  /* 標題は、表が横に動いても枠の見えている幅に留めて左端に残す。幅は枠の幅(100cqw)で決める。
+     container query の単位が使えない古いブラウザでは、幅 999px 以下だけ画面の幅から近似する */
+  .tablewrap caption { position: sticky; left: 0; box-sizing: border-box; }
+  @media (max-width: 999px) { .tablewrap caption { width: min(100%, calc(100vw - 34px)); } }
+  @supports (width: 1cqw) {
+    .tablewrap { container-type: inline-size; }
+    .tablewrap caption { width: 100cqw; }
+  }
+  /* 文章が主体の表(table class="stack"。各 td に data-label="列の名前")。幅 599px 以下では、行を縦に積み、
+     セルの前に data-label の文字を出す。thead は見えない位置に置く(読み上げには残る)。
+     数字が主体の表と評価表(table.heat)には付けない */
+  @media (max-width: 599px) {
+    .tablewrap > table.stack { min-width: 0; }
+    table.stack colgroup { display: none; }
+    table.stack tbody, table.stack tr, table.stack td { display: block; }
+    table.stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    table.stack td { border-bottom: 0; padding: var(--sp-1) var(--sp-5); text-align: left; white-space: normal; }
+    table.stack td[data-label]::before { content: attr(data-label); display: block; font-size: 13px; line-height: 1.6; font-weight: 700; color: var(--muted); }
+    table.stack td:first-child { padding-top: var(--sp-3); font-weight: 700; }
+    table.stack td:last-child { padding-bottom: var(--sp-3); border-bottom: 1px solid var(--line); }
+    table.stack tbody tr:last-child td:last-child { border-bottom: 0; }
+  }
+
+  /* 図の枠: 図の主張(figcaption)を図の上に出す */
+  .fig { margin-inline: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; overflow-x: auto; break-inside: avoid; }
+  .fig > figcaption { font-size: 16px; font-weight: 700; line-height: 1.6; color: var(--ink); }
+  .fig-note { font-size: 13px; line-height: 1.7; color: var(--muted); max-width: none; }
+  /* svg.chart は幅 640px 未満では横に動く。SVG だけを <div class="chartscroll"> で包み、図の主張(figcaption)・凡例・注記は動かさない。
+     動かせる側の端に影を出して知らせる(動かせるときだけ見える。白(--panel)の覆いが中身と一緒に動き、端まで来ると影を隠す)。
+     右端は初めに切れて見えるので、値は図の左側に置く。color-mix が効かないブラウザでは影を出さず、.fig の白がそのまま残る */
+  .chartscroll { overflow-x: auto; min-width: 0; }
+  @supports (background: color-mix(in srgb, red 50%, transparent)) {
+    .chartscroll {
+      background:
+        linear-gradient(to right, var(--panel) 40%, transparent) left center / 32px 100% no-repeat local,
+        linear-gradient(to left, var(--panel) 40%, transparent) right center / 32px 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) left center / 12px 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) right center / 12px 100% no-repeat scroll,
+        var(--panel);
+    }
+  }
+
+  /* 横棒グラフ: 大きさの比較。値は右に文字でも書く。強調する 1 行だけ accent、ほかはグレー */
+  .hbar { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .hbar-row { display: grid; grid-template-columns: minmax(8em, 14em) minmax(0, 1fr) 4.5em; gap: var(--sp-2) var(--sp-4); align-items: center; }
+  .hbar-label { font-size: 15px; line-height: 1.6; min-width: 0; }
+  .hbar-track { display: block; height: 14px; background: var(--idle); border-radius: 4px; overflow: hidden; }
+  .hbar-fill { display: block; height: 100%; border-radius: 4px; background: var(--bar, var(--axis)); }
+  .hbar-val { font-family: var(--font-mono); font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+  .hbar .is-focus { --bar: var(--accent); }
+  .hbar-row.is-focus .hbar-label, .hbar-row.is-focus .hbar-val { font-weight: 700; }
+  .hbar .c1 { --bar: var(--c1); } .hbar .c2 { --bar: var(--c2); } .hbar .c3 { --bar: var(--c3); }
+  .hbar .c4 { --bar: var(--c4); } .hbar .c5 { --bar: var(--c5); } .hbar .c6 { --bar: var(--c6); }
+  @media (max-width: 599px) {
+    .hbar-row { grid-template-columns: minmax(0, 1fr) 4em; }
+    .hbar-label { grid-column: 1 / -1; }
+  }
+  /* 文と図の並び(.split)の中の横棒: 列が 325〜490px しかなく、既定のラベル列(最大 14em)だと棒が 0px になる。
+     ラベルを棒の上の行に出して、棒と値だけを並べる(幅 760px 未満は .split が 1 列になるので、既定の並びのまま) */
+  @media (min-width: 760px) {
+    .split .hbar-row { grid-template-columns: minmax(0, 1fr) 3.5em; gap: var(--sp-1) var(--sp-3); }
+    .split .hbar-label { grid-column: 1 / -1; }
+  }
+
+  /* 凡例: 2 系列以上のとき必須 */
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); font-size: 14px; line-height: 1.6; color: var(--muted); }
+  .legend li { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 4px; background: var(--axis); flex: none; }
+  .sw.c1 { background: var(--c1); } .sw.c2 { background: var(--c2); } .sw.c3 { background: var(--c3); }
+  .sw.c4 { background: var(--c4); } .sw.c5 { background: var(--c5); } .sw.c6 { background: var(--c6); }
+
+  /* SVG チャート: viewBox の幅は 640 にそろえる(最小幅 640px で等倍になり、文字は 13px を下回らない) */
+  svg.chart { display: block; width: 100%; min-width: 640px; height: auto; overflow: visible; }
+  .chart .grid { stroke: var(--grid); stroke-width: 1; fill: none; }
+  .chart .axis { stroke: var(--axis); stroke-width: 1.5; fill: none; }
+  .chart .tick { stroke: var(--axis); stroke-width: 1; fill: none; }
+  .chart .t { fill: var(--ink); font-family: var(--font-body); font-size: 13px; }
+  .chart .t-muted { fill: var(--muted); }
+  .chart .ln-1 { --series: var(--c1); } .chart .ln-2 { --series: var(--c2); }
+  .chart .ln-3 { --series: var(--c3); } .chart .ln-4 { --series: var(--c4); }
+  .chart .is-focus { --series: var(--accent); }
+  .chart .ln { fill: none; stroke: var(--series, var(--axis)); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .chart .area { fill: var(--series, var(--axis)); fill-opacity: .14; stroke: none; }
+  .chart .dot { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  /* 期間の帯(rect class="bar" に x・y・width・height を属性で書く)。重なる帯は --panel の縁で分ける */
+  .chart .bar { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  .chart .quad { fill: var(--row); stroke: var(--line); stroke-width: 1; }
+  .chart .quad.is-focus { fill: var(--accent-soft); stroke: var(--accent); }
+  .chart .node { fill: var(--panel); stroke: var(--axis); stroke-width: 1.5; }
+  .chart .node.is-focus { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .chart .edge { fill: none; stroke: var(--axis); stroke-width: 1.5; }
+  .chart .arrowhead { fill: var(--axis); stroke: none; }
+  .chart .edge-label { fill: var(--muted); font-family: var(--font-body); font-size: 13px; paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
+
+  /* 評価表: 案 × 基準の点数を濃淡で見せる(数値は必ず文字で載せる) */
+  table.heat td, table.heat th { text-align: center; }
+  table.heat td { vertical-align: middle; }
+  table.heat th:first-child, table.heat td:first-child { text-align: left; min-width: 9em; }
+  table.heat td[data-l] { font-family: var(--font-mono); font-weight: 700; border-left: 1px solid var(--panel); }
+  table.heat td[data-l="1"] { background: var(--seq-1); color: var(--seq-1-ink); }
+  table.heat td[data-l="2"] { background: var(--seq-2); color: var(--seq-2-ink); }
+  table.heat td[data-l="3"] { background: var(--seq-3); color: var(--seq-3-ink); }
+  table.heat td[data-l="4"] { background: var(--seq-4); color: var(--seq-4-ink); }
+  table.heat td[data-l="5"] { background: var(--seq-5); color: var(--seq-5-ink); }
+  /* 幅 599px 以下で横に動かしても、先頭列(行の名前)は左に残す。固定した列の背景は行の色と同じにして、後ろのセルを隠す */
+  @media (max-width: 599px) {
+    table.heat th:first-child, table.heat td:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--line); }
+    table.heat tbody td:first-child { background: var(--panel); }
+    table.heat tbody tr:nth-child(even) td:first-child { background: var(--row); }
+  }
+
+  /* 手順: 順番に意味があるときだけ。番号は CSS カウンタ */
+  .steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: flex; flex-direction: column; gap: var(--sp-4); }
+  .steps > li { counter-increment: step; position: relative; padding: 2px 0 0 52px; min-height: 36px; }
+  .steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+  .steps strong { display: block; }
+
+  /* 文と図の並び: 幅 760px 未満で縦積み */
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--sp-6); align-items: start; }
+  .split > div { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .split > .fig { margin-block: 0; }
+  .split.rev > :first-child { order: 2; }
+  @media (max-width: 759px) {
+    .split { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+    .split.rev > :first-child { order: 0; }
+  }
+
+  /* 参考 */
+  .refs { font-size: 14px; line-height: 1.8; color: var(--muted); padding: var(--sp-5) var(--sp-5) var(--sp-5) calc(var(--sp-5) + 1.6em);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .refs li { overflow-wrap: anywhere; }
+  .refs li:target { color: var(--ink); }
+
+  /* 切り替え式の案パネル(UI/UX 案)。JS が動くと .is-ready が付き、ボタンで 1 案ずつ見せる。
+     動かないときはタブを隠して全案を縦に並べる。全パネルを同じ grid セルに重ねるので、切り替えても高さは変わらない */
+  .variants { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .variants-tabs { display: none; }
+  .variants.is-ready .variants-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  @media (max-width: 699px) {
+    .variants.is-ready .variants-tabs { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* 案が奇数個のとき、最後の 1 つは 2 列ぶんの幅にして、左に 1 つだけ残らないようにする */
+    .variants.is-ready .variants-tabs > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
+  .variants-tabs .chip { margin-left: auto; }
+  .variants-tabs [role="tab"] { appearance: none; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; color: var(--ink); text-align: left;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-height: 44px; padding: 10px 14px 13px; cursor: pointer;
+    position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; align-content: center; gap: var(--sp-1) 10px; }
+  .variants-tabs [role="tab"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+  .variants-tabs [role="tab"]:hover { background: var(--row); }
+  .variants-tabs [role="tab"][aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  .variants-tabs [role="tab"][aria-selected="true"]::after { background: var(--accent); }
+  .vt-key { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 4px; background: var(--idle); color: var(--ink);
+    font-family: var(--font-mono); font-size: 13px; }
+  [aria-selected="true"] > .vt-key { background: var(--accent); color: var(--accent-ink); }
+  .vt-name { flex: 1 1 auto; min-width: 0; }
+  .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+  .variants.is-ready .variants-stage { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .vpanel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  .variants.is-ready .vpanel { grid-area: 1 / 1; visibility: hidden; opacity: 0; }
+  .variants.is-ready .vpanel.is-active { visibility: visible; opacity: 1; }
+  /* 切り替えのフェードは、利用者が最初に案を切り替えたとき(script が .is-live を付ける)から。
+     最初の描画で動かすと、スクリーンショットや印刷が途中の半透明の画面を写す */
+  .variants.is-live .vpanel { transition: opacity .12s ease, visibility 0s linear .12s; }
+  .variants.is-live .vpanel.is-active { transition: opacity .12s ease; }
+  /* 幅 700px 未満は、見せていない案を高さ 0 にたたむ(重ねたままだと、短い案の下に最も高い案ぶんの空白が残る)。
+     印刷は全案を並べるので、画面(screen)だけに効かせる */
+  @media screen and (max-width: 699px) {
+    .variants.is-ready .vpanel:not(.is-active) { max-height: 0; overflow: hidden; padding-block: 0; border-width: 0; box-shadow: none; }
+  }
+  .vhead { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .vhead h3 { font-size: 18px; }
+  .vhead p { color: var(--muted); }
+  .vnotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line); }
+  .vnotes > div { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .vnotes dt { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .vnotes dd { margin: 0; font-size: 15px; line-height: 1.8; }
+
+  /* モックアップの枠(案の中身は #mockup-styles が .mk-<記号> で持つ。レポートのトークンとは独立) */
+  .mock { container-type: inline-size; min-width: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+  /* container query が効かないブラウザでは、案が枠より広くなる。切り捨てず、枠の中で横に動かして読めるようにする */
+  @supports not (container-type: inline-size) { .mock { overflow-x: auto; } }
+  .mock-bar { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 14px; background: var(--row); border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.4; color: var(--muted); }
+  .mock-dots { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--axis); margin-right: 40px; box-shadow: 16px 0 0 var(--axis), 32px 0 0 var(--axis); }
+  .mock-url { flex: 1; min-width: 0; padding: 2px 10px; border-radius: 4px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mock[data-device="phone"] { width: 100%; max-width: 390px; margin-inline: auto; border-width: 2px; border-radius: 28px; }
+  .mock[data-device="phone"] .mock-bar { display: none; }
+  .mocks { display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: flex-start; }
+  .mocks > .mock { flex: 1 1 320px; margin-inline: 0; }
+  .mocks > .mock[data-device="phone"] { flex: 0 1 390px; }
+  /* 広い画面とスマホ画面を縦に重ねるとき(.mocks に stack を付ける)。横に並べると広い画面が 416px 前後に狭まる */
+  .mocks.stack { flex-direction: column; align-items: stretch; }
+  .mocks.stack > .mock { flex: none; width: 100%; }
+  .mocks.stack > .mock[data-device="phone"] { width: min(100%, 390px); align-self: center; }
+
+  @media print {
+    :root { --shadow: none; }
+    /* 背景のグラフィックを刷らない設定(Chrome の既定)でも、評価表・チップ・棒グラフ・手順の番号の色を残す */
+    *, *::before, *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: var(--panel); }
+    .chartscroll { background: var(--panel); }
+    /* 印刷では表を横に動かせない。枠を切らず、最小幅を外して列を詰め、見出しも折り返して、右端の列(評価表の合計など)を失わない */
+    .tablewrap { overflow: visible; }
+    .tablewrap > table { min-width: 0; }
+    th { white-space: normal; word-break: auto-phrase; }
+    .themeswitch, .toc { display: none; }
+    .page { display: block; padding: 0; max-width: none; }
+    .main { display: flex; }
+    h2, .kicker, h3 { break-after: avoid; }
+    .refs a::after { content: " (" attr(href) ")"; }
+    .variants-tabs, .variants.is-ready .variants-tabs { display: none; }
+    .variants.is-ready .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+    .variants.is-ready .vpanel { visibility: visible; opacity: 1; }
+  }
+</style>
+<!-- 案(UI/UX のモックアップ)が必要な報告書だけ、この直後に <style id="mockup-styles"> を足す。セレクタは必ず .mk-<案の記号> から始める。 -->
+</head>
+<body>
+<script>
+  /* テーマの初期化: 描画前に data-theme を決める。保存値(light / dark)があればそれ、なければ light。
+     本文の最初の要素に置く(Artifact で外枠を外しても動く)。localStorage が使えなくても止まらない */
+  (function () {
+    var t = 'light';
+    try {
+      var s = localStorage.getItem('html-report-theme');
+      if (s === 'light' || s === 'dark') t = s;
+    } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+
+<div class="themeswitch" role="group" aria-label="表示の明るさ">
+  <button type="button" data-theme-set="light" aria-pressed="true">ライト</button>
+  <button type="button" data-theme-set="dark" aria-pressed="false">ダーク</button>
+</div>
+
+<div class="page" lang="ja">
+  <nav class="toc" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <div class="toc-progress" aria-hidden="true"><span></span></div>
+    <ol>
+      <li><a href="#s-result" data-target="s-result"><span class="no"><span>1</span></span><span><span class="lbl">試験の結果</span><span class="toc-claim">札の操作まで通った</span></span></a></li>
+      <li><a href="#s-why" data-target="s-why"><span class="no"><span>2</span></span><span><span class="lbl">訂正</span><span class="toc-claim">前提が誤りだった</span></span></a></li>
+      <li><a href="#s-compare" data-target="s-compare"><span class="no"><span>3</span></span><span><span class="lbl">比較</span><span class="toc-claim">既製ツールが先頭</span></span></a></li>
+      <li><a href="#s-risk" data-target="s-risk"><span class="no"><span>4</span></span><span><span class="lbl">残る穴と注意</span><span class="toc-claim">止まる所が 3 つ</span></span></a></li>
+      <li><a href="#s-open" data-target="s-open"><span class="no"><span>5</span></span><span><span class="lbl">仮定と未確認</span><span class="toc-claim">未確認が 4 つ</span></span></a></li>
+      <li><a href="#s-next" data-target="s-next"><span class="no"><span>6</span></span><span><span class="lbl">次の判断</span><span class="toc-claim">決めることは 2 つ</span></span></a></li>
+      <li><a href="#s-refs" data-target="s-refs"><span class="no"><span>7</span></span><span><span class="lbl">参考</span><span class="toc-claim">出典 16 件</span></span></a></li>
+    </ol>
+  </nav>
+
+  <main class="main">
+    <header class="hero">
+      <p class="eyebrow"><span class="chip kind">判断</span><span>2026-10-19</span></p>
+      <h1>既製ツールの <span class="nobr">unity-cli-loop</span> で、札のドラッグまで Claude が実機で動かせました</h1>
+      <p class="lede">Claude が Unity のゲーム画面を、<span class="nobr">Playwright MCP</span> のように動かせるかを試しました。試験は <span class="nobr">2026-10-19</span> に、<span class="nobr">Unity 6000.5.5f1</span> の Editor で行いました。札を掴む、動かす、離す、「ターン終了」を押す、札のホバーを出す、の操作が実機で通りました。足りないのは、1&nbsp;フレームごとの数字です。</p>
+      <ul class="meta"><li><b>16</b>件の出典</li><li><b>約 11 分</b>で読めます（推定）</li></ul>
+    </header>
+
+    <ul class="verdicts">
+      <li class="verdict now"><span class="tag">できた</span><h3>札の操作が、実機で最後まで通りました</h3><p><span class="nobr">unity-cli-loop</span>（星 582、MIT）を Unity のプロジェクトに入れ、<span class="nobr">Battle.unity</span> を Play しました。札を出す、間合い外で拒否される、「ターン終了」を押す、札のホバーを出す、の流れを、Claude が動かせました。画面も撮れました <sup class="ref"><a href="#ref-16">[16]</a></sup>。</p></li>
+      <li class="verdict later"><span class="tag">足りない</span><h3>フレームごとの動きは、まだ数字になりません</h3><p><span class="nobr">uloop</span> の呼び出しは 1 回で 0.3〜1.5 秒かかり、その間に Editor は約 450〜550 fps で回ります（計算）。掴んでいる間の札の位置は、2〜3 点しか読めません <sup class="ref"><a href="#ref-16">[16]</a></sup>。</p></li>
+      <li class="verdict now"><span class="tag">Issue にした</span><h3>記録する部品を、Issue #643 にしました</h3><p>ドラッグの間の札と受け皿の状態を、フレームごとに JSON で記録する部品を、battle（戦闘）担当の Issue にしました。Editor なしの Windows ビルドで動かす案は、記録の中身を見てから決めます。</p></li>
+    </ul>
+
+    <p>最初の調査では、いまのゲームがドラッグを <span class="nobr">Pointer.current</span> から読むと見ていました。そのため、画面の部品へクリックを送る道具は、ドラッグに届かないと書きました。この見立ては誤りでした。札のドラッグは <span class="nobr">CardView</span> の EventSystem の処理で動き、<span class="nobr">Pointer.current</span> を読むのは「ターン終了」の押下と札のホバーです。道具ごとに届く先が違い、<span class="nobr">unity-cli-loop</span> の 2 つの道具を使い分けると、1 ターンの操作がすべて届きました。実機で確かめる前に書いた予測が外れたので、この報告書は試験の結果で書き直しています。</p>
+
+    <section id="s-result">
+      <p class="kicker"><span class="no">01</span>試験の結果</p>
+      <h2>札の掴みから「ターン終了」まで、<span class="nobr">unity-cli-loop</span> の 2&nbsp;つの道具で届きました</h2>
+      <p>試験は、<span class="nobr">uloop</span> の CLI 3.9.0 と、Unity 用パッケージ 3.17.0 で行いました。<span class="nobr">Battle.unity</span> を Play し、デッキを組む画面から戦闘まで、すべて <span class="nobr">uloop</span> のコマンドで進めました <sup class="ref"><a href="#ref-16">[16]</a></sup>。</p>
+      <ul class="tiles">
+        <li class="tile ok"><span class="n">8</span><span class="l">通した操作</span></li>
+        <li class="tile warn"><span class="n">1</span><span class="l">届かなかった操作</span></li>
+        <li class="tile"><span class="n">2〜3</span><span class="u">点</span><span class="l">掴む間に読める位置</span></li>
+        <li class="tile"><span class="n">450〜550</span><span class="u">fps</span><span class="l">Editor の速さ</span></li>
+      </ul>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>試験で通した操作は 8 つで、届かなかったのは「ターン終了」への simulate-mouse-ui の 1 件だけです。</caption>
+          <thead><tr><th>操作</th><th>使った道具</th><th>結果</th></tr></thead>
+          <tbody>
+            <tr><td data-label="操作">デッキ選択から戦闘までのボタン</td><td data-label="使った道具"><span class="nobr">simulate-mouse-ui</span> の Click</td><td data-label="結果">4 つのボタン（ToBattle、Talent0、SetOut、Enemy0）に当たり、戦闘が始まりました。</td></tr>
+            <tr><td data-label="操作">札を掴んで動かし、離して出す</td><td data-label="使った道具"><span class="nobr">simulate-mouse-ui</span> の Drag</td><td data-label="結果">「呼吸を整える」が出て、Guard が 0 から 9、スタミナが 10 から 8 になりました。</td></tr>
+            <tr><td data-label="操作">掴んだまま止めて撮る</td><td data-label="使った道具"><span class="nobr">DragStart</span> と <span class="nobr">DragMove</span> のあとに screenshot</td><td data-label="結果">札が持ち上がって追従し、間合いのマスが橙に光り、スタミナの予告「▶1」が出ていました。</td></tr>
+            <tr><td data-label="操作">間合い外で離す</td><td data-label="使った道具"><span class="nobr">DragEnd</span></td><td data-label="結果">札が手札へ戻り、拒否の行（『背水の陣』は間合い 1〜2 の相手にしか出せません。いまは 3 です）が出ました。</td></tr>
+            <tr><td data-label="操作">「ターン終了」を押す</td><td data-label="使った道具"><span class="nobr">simulate-mouse-input</span> の Click</td><td data-label="結果">ターンが終わり、敵の「踏み込み」が進みました。<span class="nobr">simulate-mouse-ui</span> の Click は「no UI element hit」で届きませんでした。</td></tr>
+            <tr><td data-label="操作">札のホバー</td><td data-label="使った道具"><span class="nobr">simulate-mouse-input</span> の Click でポインタを置く</td><td data-label="結果">札が持ち上がり、特性の文（自分が見切り中なら、その場で Guard +3、1 回だけ）が出ました。</td></tr>
+            <tr><td data-label="操作">画面の撮影と、ボタンの一覧</td><td data-label="使った道具"><span class="nobr">screenshot</span>（<span class="nobr">--annotate-elements</span>）</td><td data-label="結果">2560×1440 の PNG と、ボタンの名前と座標が取れました。</td></tr>
+            <tr><td data-label="操作">札の位置を数字で読む</td><td data-label="使った道具"><span class="nobr">execute-dynamic-code</span></td><td data-label="結果">掴む前は (0, -108)、動かしている間は (337.5, 192)、離したあとは (0, -108) でした。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>撮った画面の記号と座標は、そのまま <span class="nobr">simulate-mouse-ui</span> に渡せます。Claude が座標を目で読み取る必要はありません。</p>
+    </section>
+
+    <section id="s-why">
+      <p class="kicker"><span class="no">02</span>訂正</p>
+      <h2>最初の見立ては誤りで、札のドラッグは EventSystem で動いていました</h2>
+      <ul>
+        <li>札のドラッグは、EventSystem の処理で動きます。<code>CardView</code> が <code>IBeginDragHandler</code>・<code>IDragHandler</code>・<code>IEndDragHandler</code> を実装しています（<code>CardView.cs:18</code>）。</li>
+        <li>ドラッグを受けるのは、<code>DepictionPlayer</code> の <code>OnDragBegan</code>・<code>OnDragMoved</code>・<code>OnDragEnded</code> です（<code>DepictionPlayer.cs:2105</code>〜<code>2125</code>）<sup class="ref"><a href="#ref-14">[14]</a></sup>。</li>
+        <li><code>Pointer.current</code> を読むのは、「ターン終了」の押下（<code>:693</code>）、札のホバー（<code>:1944</code>）、用語のホバー（<code>:1910</code>）です <sup class="ref"><a href="#ref-14">[14]</a></sup>。</li>
+        <li>「ターン終了」は Button を持たず、押した位置を <code>RectTransform</code> の範囲で判定します。EventSystem へ送る道具は、ここに当たりません。</li>
+      </ul>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>入力の送り方で、届く操作が分かれます。</caption>
+          <thead><tr><th>道具</th><th>入力の送り方</th><th>届いた操作</th><th>届かなかった操作</th></tr></thead>
+          <tbody>
+            <tr><td data-label="道具"><span class="nobr">simulate-mouse-ui</span> <sup class="ref"><a href="#ref-4">[4]</a></sup></td><td data-label="入力の送り方">画面の部品へ、ポインタのイベントを送ります（EventSystem）。</td><td data-label="届いた操作">札のドラッグ、メニューのボタン。</td><td data-label="届かなかった操作">「ターン終了」。</td></tr>
+            <tr><td data-label="道具"><span class="nobr">simulate-mouse-input</span> <sup class="ref"><a href="#ref-4">[4]</a></sup></td><td data-label="入力の送り方">Input System のマウスへ、押す・離す・位置を書きます。</td><td data-label="届いた操作">「ターン終了」、札のホバー。</td><td data-label="届かなかった操作">札のドラッグは試していません。押したまま動かす呼び出しが、文書にありません。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul>
+        <li><span class="nobr">Funplay</span> の simulate_mouse_click <sup class="ref"><a href="#ref-12">[12]</a></sup> と <span class="nobr">playcaller</span> <sup class="ref"><a href="#ref-15">[15]</a></sup> も、EventSystem へ送る方式です。<span class="nobr">simulate-mouse-ui</span> と同じ結果になる見込みです（推定）。</li>
+        <li>操作ごとに Claude へ往復する方式（<span class="nobr">Windows-MCP</span> <sup class="ref"><a href="#ref-13">[13]</a></sup>、<span class="nobr">Playwright MCP</span> の標準のドラッグ <sup class="ref"><a href="#ref-7">[7]</a></sup>）は、100 ms 単位の動きを作れません。<span class="nobr">DragMove</span> は <code>--drag-speed</code> で速さを指定でき、試験では 400〜800 px/s で動きました。</li>
+      </ul>
+    </section>
+
+    <section id="s-compare">
+      <p class="kicker"><span class="no">03</span>比較</p>
+      <h2>既製ツールで足りたので、ほかの案は予備にします</h2>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>6 つの案を、時間制御と Editor の要否と弱い所で見比べます。</caption>
+          <thead><tr><th>案</th><th>ドラッグの時間制御</th><th>Editor は要るか</th><th>弱い所</th><th>向き</th></tr></thead>
+          <tbody>
+            <tr><td data-label="案">既製の Unity ツール（<span class="nobr">unity-cli-loop</span>）</td><td data-label="ドラッグの時間制御"><span class="nobr">DragMove</span> の <code>--drag-speed</code> で、速さを指定できます。試験は 400〜800 px/s でした。</td><td data-label="Editor は要るか">要ります。Play モードの Editor だけです。</td><td data-label="弱い所">1 フレームごとの記録は取れません。Editor は約 450〜550 fps で回るため、60 fps のビルドの手触りとは別です（推定）。</td><td data-label="向き">採用の見込みです。</td></tr>
+            <tr><td data-label="案">ゲームに入れる記録の部品（Issue #643）</td><td data-label="ドラッグの時間制御">1 フレーム単位で、札と受け皿の状態を記録できます。</td><td data-label="Editor は要るか">記録だけなら、Editor が要ります。Editor なしの実行は別の Issue にします。</td><td data-label="弱い所">実装が要ります（推定で 1 つの PR）。</td><td data-label="向き">足りない所を埋めます。</td></tr>
+            <tr><td data-label="案"><span class="nobr">UniCortex</span></td><td data-label="ドラッグの時間制御"><span class="nobr">drag_mouse</span> は秒数を指定でき、毎フレーム動かします <sup class="ref"><a href="#ref-1">[1]</a></sup><sup class="ref"><a href="#ref-2">[2]</a></sup>。</td><td data-label="Editor は要るか">要ります。</td><td data-label="弱い所">星 1 で、API が予告なく変わると書いてあります <sup class="ref"><a href="#ref-1">[1]</a></sup>。Windows では試していません。</td><td data-label="向き">予備です。</td></tr>
+            <tr><td data-label="案"><span class="nobr">WebGL</span> ビルドと <span class="nobr">Playwright MCP</span></td><td data-label="ドラッグの時間制御">標準のドラッグは終点へ 1 回で飛びます。時間を付けるには <span class="nobr">browser_run_code_unsafe</span> で書きます <sup class="ref"><a href="#ref-7">[7]</a></sup>。</td><td data-label="Editor は要るか">要りません。</td><td data-label="弱い所">Unity での前例が見つかりません。ビルド時間と日本語フォントは未確認で、Windows の手触りとは別物です（推定） <sup class="ref"><a href="#ref-8">[8]</a></sup>。</td><td data-label="向き">予備です。</td></tr>
+            <tr><td data-label="案">OS の入力を直接動かす（自作の Win32 入力と画面取り込み）</td><td data-label="ドラッグの時間制御">スクリプトの中のループで、16 ms 刻みにできる見込みです（推定）。</td><td data-label="Editor は要るか">要りません。</td><td data-label="弱い所">物理マウスを占有します。Unity に届くかは未確認です。Claude の computer use は、CLI では macOS だけです <sup class="ref"><a href="#ref-10">[10]</a></sup>。</td><td data-label="向き">予備です。</td></tr>
+            <tr><td data-label="案"><span class="nobr">AltTester</span></td><td data-label="ドラッグの時間制御"><span class="nobr">MoveMouse</span> と <span class="nobr">HoldButton</span> に秒数を指定できます <sup class="ref"><a href="#ref-11">[11]</a></sup>。</td><td data-label="Editor は要るか">要りません。ビルドでも動きます。</td><td data-label="弱い所">新しい Input System だけの構成に、既知の不具合が 3 件あります。CLI は Pro（月 €75）の項に載っています <sup class="ref"><a href="#ref-11">[11]</a></sup>。</td><td data-label="向き">見送ります。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>入力の注入を持たないため、見送った道具があります。Unity 公式の MCP、<span class="nobr">CoplayDev/unity-mcp</span>（星 15.1k。入力ツールの要望 #1408 は未対応 <sup class="ref"><a href="#ref-6">[6]</a></sup>）、<span class="nobr">IvanMurzak/Unity-MCP</span>、<span class="nobr">CoderGamester/mcp-unity</span> <sup class="ref"><a href="#ref-15">[15]</a></sup> です。<span class="nobr">GameDriver</span> は有料で、文書を読めませんでした。<span class="nobr">Unity Automated QA</span> は開発が止まっています <sup class="ref"><a href="#ref-15">[15]</a></sup>。</p>
+    </section>
+
+    <section id="s-risk">
+      <p class="kicker"><span class="no">04</span>残る穴と注意</p>
+      <h2>止まる所は、フレーム単位の記録、フォーカス、Editor の占有の 3&nbsp;つです</h2>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>止まる所は 3 つあり、対処はどれも決まっています。</caption>
+          <thead><tr><th>止まる所</th><th>起きたこと</th><th>対処</th></tr></thead>
+          <tbody>
+            <tr><td data-label="止まる所">フレーム単位の記録</td><td data-label="起きたこと"><span class="nobr">uloop</span> の呼び出しは 1 回で 0.3〜1.5 秒かかります。<code>Time.frameCount</code> は 0.525 秒で 124263 から 124499 へ進み、Editor は約 450 fps で回っていました（計算）。札の追従の曲線と、受け皿の判定が切り替わる瞬間は、数字になりません。</td><td data-label="対処">Issue #643 の部品で記録します。</td></tr>
+            <tr><td data-label="止まる所">フォーカス</td><td data-label="起きたこと">Input System の既定は、Game ビューにフォーカスがないとポインタの入力を止めます <sup class="ref"><a href="#ref-9">[9]</a></sup>。試験では、<code>Application.isFocused</code> が <code>False</code> になる場面があり、<code>uloop focus-window</code> で <code>True</code> に戻りました。自分で <code>QueueDeltaStateEvent</code> に書いたマウスの位置は、読み返すと別の値で、ホバーが出ませんでした。原因は未確認です。</td><td data-label="対処">道具の <span class="nobr">simulate-mouse-input</span> を使います。操作の前に <code>uloop focus-window</code> を呼びます。</td></tr>
+            <tr><td data-label="止まる所">Editor の占有と安全</td><td data-label="起きたこと">試験の間は Claude が Editor を操作するので、同じ Editor を人が使えません。<span class="nobr">execute-dynamic-code</span> は、Editor の中で任意の C# を動かせます。この環境では、<code>sandbox.excludedCommands</code> に何も足さずに <span class="nobr">uloop</span> が動きました。</td><td data-label="対処">信頼できるプロジェクトだけに入れます。次に Editor を占有する時間は、こうだいさんと決めます。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>離す側については、注入の最後にボタンの状態を 0 へ戻さないと押しっぱなしになる、という報告があります <sup class="ref"><a href="#ref-5">[5]</a></sup>。試験では、離したあとに札が手札へ戻り、押しっぱなしにはなりませんでした。</p>
+      </section>
+
+    <section id="s-open">
+      <p class="kicker"><span class="no">05</span>仮定と未確認</p>
+      <h2>確かめられなかったことが 4&nbsp;つあります</h2>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>未確認の 4 つは、どれもいまの作業を止めません。</caption>
+          <thead><tr><th>未確認のこと</th><th>影響</th><th>確かめ方</th></tr></thead>
+          <tbody>
+            <tr><td data-label="未確認のこと"><span class="nobr">UniCortex</span> の Windows での動作</td><td data-label="影響"><span class="nobr">unity-cli-loop</span> で足りたため、いまは困りません。</td><td data-label="確かめ方">必要になったときに試します。</td></tr>
+            <tr><td data-label="未確認のこと">Editor なしの Windows ビルドで、操作を流せるか</td><td data-label="影響">担当ごとの作業場所では Unity を開けないため、手触りを確かめられるのはメインだけです。</td><td data-label="確かめ方">Issue #643 の記録を見てから、別の Issue にします。</td></tr>
+            <tr><td data-label="未確認のこと">Editor（約 450〜550 fps）とビルド（60 fps）で、追従の見え方がどれだけ変わるか</td><td data-label="影響">Editor で良く見えても、ビルドでは違う可能性があります。</td><td data-label="確かめ方">ビルドを作り、同じ操作を流して比べます。</td></tr>
+            <tr><td data-label="未確認のこと"><span class="nobr">WebGL</span> ビルドの、ビルド時間と日本語フォント、ブラウザのマウスが <span class="nobr">Mouse.current</span> に届くか</td><td data-label="影響"><span class="nobr">WebGL</span> の案を採るときだけ要ります。</td><td data-label="確かめ方">採るときに試します。</td></tr>
+          </tbody>
+        </table>
+      </div>
+            <p>置いた仮定: 試験は、Unity リポの作業コピーで行いました。未コミットの同期を含むため、このリポジトリの kit と違う所があり得ます。記録する部品の工数は 1 つの PR と見ましたが、推定です。星の数と更新日と README の記述は、GitHub で確かめました（<sup class="ref"><a href="#ref-1">[1]</a></sup><sup class="ref"><a href="#ref-3">[3]</a></sup><sup class="ref"><a href="#ref-4">[4]</a></sup><sup class="ref"><a href="#ref-6">[6]</a></sup>）。そのほかの外部の事実は、別の調査の報告です。要約を返す取得ツールで読んだものが多く、細部に取りこぼしがある可能性があります。Claude は再確認していません。</p>
+    </section>
+
+    <section id="s-next">
+      <p class="kicker"><span class="no">06</span>次の判断</p>
+      <h2>こうだいさんに決めてほしいことは 2&nbsp;つです</h2>
+      <ol class="steps">
+        <li><span class="nobr">unity-cli-loop</span> を採用するか。採用する場合は、メインのチャットが次の 3 つを PR にします。Unity リポの <code>Packages/manifest.json</code>、<code>Packages/packages-lock.json</code>、<code>.uloop/</code> です。戻す場合は、2 つの JSON をバックアップから戻し、<code>.uloop/</code> を消します。いまは未コミットの変更として残っています。</li>
+        <li>Issue #643（記録する部品）の優先順位を、<code>prio:3</code> のままにするか。動きの手触りを数字で確かめたいなら、<code>prio:2</code> に上げます。</li>
+      </ol>
+    </section>
+
+    <section id="s-refs">
+      <p class="kicker"><span class="no">07</span>参考</p>
+      <ol class="refs">
+        <li id="ref-1">UniCortex の README（<a href="https://github.com/VeyronSakai/UniCortex">https://github.com/VeyronSakai/UniCortex</a>）。星 1、MIT、最終更新 2026-10-12、drag_mouse と move_mouse の記載を Claude が確認。</li>
+        <li id="ref-2">UniCortex の PR #258（<a href="https://github.com/VeyronSakai/UniCortex/pull/258">https://github.com/VeyronSakai/UniCortex/pull/258</a>）。ドラッグの仕様。2026-10-06 にマージ。別の調査の報告。</li>
+        <li id="ref-3">unity-cli-loop の README（<a href="https://github.com/hatayama/unity-cli-loop">https://github.com/hatayama/unity-cli-loop</a>）。星 582、MIT、最終更新 2026-10-18 を Claude が確認。</li>
+        <li id="ref-4">unity-cli-loop の tools.md（<a href="https://github.com/hatayama/unity-cli-loop/blob/main/Packages/src/Documentation~/tools.md">https://github.com/hatayama/unity-cli-loop/blob/main/Packages/src/Documentation~/tools.md</a>）。simulate-mouse-ui が EventSystem 方式で、simulate-mouse-input が Mouse.current へ入れる記述を Claude が確認。</li>
+        <li id="ref-5">kitwright/unity-mcp の PR #24（<a href="https://github.com/kitwright/unity-mcp/pull/24">https://github.com/kitwright/unity-mcp/pull/24</a>）。離すときにボタンを 0 へ戻す修正とフォーカスの注意。別の調査の報告。</li>
+        <li id="ref-6">CoplayDev/unity-mcp の Issue #1408（<a href="https://github.com/CoplayDev/unity-mcp/issues/1408">https://github.com/CoplayDev/unity-mcp/issues/1408</a>）。入力ツールの要望で、open のまま。星 15.1k は Claude が確認。</li>
+        <li id="ref-7">Playwright MCP（<a href="https://github.com/microsoft/playwright-mcp">https://github.com/microsoft/playwright-mcp</a>）と、そのマウスの操作と run_code のソース。別の調査の報告。</li>
+        <li id="ref-8">Unity 6000.5 の Web の技術的な制限（<a href="https://docs.unity.com/en-us/engine/6000.5/manual/platform-specific/webgl/intro/technical-overview.md">https://docs.unity.com/en-us/engine/6000.5/manual/platform-specific/webgl/intro/technical-overview.md</a>）。別の調査の報告。</li>
+        <li id="ref-9">Input System 1.19 の設定（<a href="https://docs.unity3d.com/Packages/com.unity.inputsystem@1.19/manual/Settings.html">https://docs.unity3d.com/Packages/com.unity.inputsystem@1.19/manual/Settings.html</a>）。別の調査の報告。</li>
+        <li id="ref-10">Claude Code の computer use（<a href="https://code.claude.com/docs/en/computer-use">https://code.claude.com/docs/en/computer-use</a>）。CLI は macOS のみ。別の調査の報告。</li>
+        <li id="ref-11">AltTester の既知の問題（<a href="https://alttester.com/docs/sdk/latest/pages/known-issues.html">https://alttester.com/docs/sdk/latest/pages/known-issues.html</a>）と価格改定（<a href="https://alttester.com/alttester-pricing-plans-update-effective-from-july-1st-2026/">https://alttester.com/alttester-pricing-plans-update-effective-from-july-1st-2026/</a>）。別の調査の報告。</li>
+        <li id="ref-12">Funplay の入力のソース（<a href="https://raw.githubusercontent.com/FunplayAI/funplay-unity-mcp/main/Editor/Tools/Builtins/InputSimulationFunctions.cs">https://raw.githubusercontent.com/FunplayAI/funplay-unity-mcp/main/Editor/Tools/Builtins/InputSimulationFunctions.cs</a>）。別の調査の報告。</li>
+        <li id="ref-13">Windows-MCP（<a href="https://github.com/CursorTouch/Windows-MCP">https://github.com/CursorTouch/Windows-MCP</a>）。README が、ゲーム向きではないと明記。別の調査の報告。</li>
+        <li id="ref-14">このリポジトリのコード（<code>unity-port/unity-project-kit/Assets/View/Depiction/DepictionPlayer.cs</code> の 336、693、1910、1944、1997〜2025、2105〜2125 行目と、<code>CardView.cs</code> の 18、689〜702 行目）。Claude が読んだもの。</li>
+        <li id="ref-15">入力の注入を持たないと報告された道具のページ（<a href="https://github.com/IvanMurzak/Unity-MCP">IvanMurzak/Unity-MCP</a>、<a href="https://github.com/CoderGamester/mcp-unity">CoderGamester/mcp-unity</a>、<a href="https://github.com/takashicompany/playcaller">playcaller</a>）、Unity 公式の MCP の紹介（<a href="https://unity.com/blog/unity-ai-mcp-how-to-get-started">https://unity.com/blog/unity-ai-mcp-how-to-get-started</a>）、GameDriver の価格（<a href="https://www2.gamedriver.io/en-us/pricing">https://www2.gamedriver.io/en-us/pricing</a>）、Unity Automated QA（<a href="https://docs.unity3d.com/Packages/com.unity.automated-testing@0.8/manual/index.html">https://docs.unity3d.com/Packages/com.unity.automated-testing@0.8/manual/index.html</a>）。別の調査の報告。</li>
+        <li id="ref-16">2026-10-19 の試験。Unity 6000.5.5f1 の Editor で Battle.unity を Play し、uloop の CLI 3.9.0 と、パッケージ io.github.hatayama.uloopmcp 3.17.0 で操作しました。Claude が実機で確認したものです。</li>
+      </ol>
+    </section>
+  </main>
+</div>
+
+<script>
+  /* 目次: 現在地の強調(aria-current)、読み終えた節(.done)、上端の進捗バー。節が 3 つ以下で目次がなければ何もしない */
+  (() => {
+    const links = [...document.querySelectorAll('.toc a[data-target]')];
+    const sections = links.map(a => document.getElementById(a.dataset.target));
+    const bar = document.querySelector('.toc-progress > span');
+    if (!links.length || sections.some(s => !s)) return;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const root = document.documentElement;
+      const line = window.innerHeight * 0.3;
+      let idx = 0;
+      sections.forEach((s, i) => { if (s.getBoundingClientRect().top <= line) idx = i; });
+      const max = root.scrollHeight - window.innerHeight;
+      if (max > 0 && window.scrollY >= max - 4) idx = sections.length - 1;
+      links.forEach((a, i) => {
+        a.classList.toggle('done', i < idx);
+        if (i === idx) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+      });
+      if (bar) bar.style.width = (max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 100) + '%';
+      /* 目次が画面より高いとき(.toc は内側でスクロールする)、現在地のリンクを目次の見える範囲に入れる */
+      const box = links[idx].closest('.toc');
+      if (box && box.scrollHeight > box.clientHeight + 1) {
+        const b = box.getBoundingClientRect(), r = links[idx].getBoundingClientRect();
+        if (r.top < b.top) box.scrollTop -= b.top - r.top + 8;
+        else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8;
+      }
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    update();
+  })();
+
+  /* テーマ切り替え: data-theme と aria-pressed を更新し、選んだ値を保存する(保存できなくても切り替えは効く) */
+  (() => {
+    const root = document.documentElement;
+    const buttons = [...document.querySelectorAll('[data-theme-set]')];
+    if (!buttons.length) return;
+    const current = () => (root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    const paint = () => {
+      const now = current();
+      buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === now)));
+    };
+    buttons.forEach(b => b.addEventListener('click', () => {
+      const v = b.dataset.themeSet === 'dark' ? 'dark' : 'light';
+      root.setAttribute('data-theme', v);
+      try { localStorage.setItem('html-report-theme', v); } catch (e) {}
+      paint();
+    }));
+    if (root.getAttribute('data-theme') !== current()) root.setAttribute('data-theme', current());
+    /* ホストが後から data-theme を外したら light を付け直す(付いていないと、切り替えボタンごと消える)。付けた値(dark など)には従う */
+    new MutationObserver(() => {
+      if (!root.hasAttribute('data-theme')) root.setAttribute('data-theme', 'light');
+      paint();
+    }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    paint();
+  })();
+
+  /* 印刷: ダークを選んでいても、印刷の間だけ light にして、印刷のあとで元に戻す(案の画面の暗い上書きも印刷に出さない)。
+     印刷の間に別の値へ変わっていたら、戻さない。利用者がボタンを押したら、控え(saved)を捨てる
+     (afterprint が来ない環境で、古い控えが残って次の印刷を素通りさせたり、選んだ値を戻したりしない)。
+     保存値(localStorage)は触らない。ボタンの押下表示は印刷の間だけ light になる */
+  (() => {
+    const root = document.documentElement;
+    let saved = null;
+    document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => { saved = null; }));
+    const toLight = () => {
+      if (saved !== null) return;
+      saved = root.getAttribute('data-theme') || 'light';
+      if (saved !== 'light') root.setAttribute('data-theme', 'light');
+    };
+    const restore = () => {
+      if (saved === null) return;
+      const back = saved;
+      saved = null;
+      if (root.getAttribute('data-theme') === 'light') root.setAttribute('data-theme', back);
+    };
+    addEventListener('beforeprint', toLight);
+    addEventListener('afterprint', restore);
+    try {
+      const mq = matchMedia('print');
+      const onChange = e => (e.matches ? toLight() : restore());
+      if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+    } catch (e) {}
+  })();
+
+  /* 切り替え式の案パネル: クリックと 矢印キー左右 / Home / End で案を切り替える(選んだタブだけ tabindex=0)。
+     見せない案には inert と aria-hidden を付ける。案の数に依存しない。JS が動かないときは .is-ready が付かず、全案が縦に並ぶ。
+     利用者が最初に切り替えたとき .is-live を付け、フェードはそこから動く(最初の描画では動かさない) */
+  (() => {
+    document.querySelectorAll('[data-variants]').forEach(root => {
+      const tabs = [...root.querySelectorAll('[role="tab"]')];
+      const panels = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
+      if (!tabs.length || panels.some(p => !p)) return;
+      const select = (i, focus) => {
+        tabs.forEach((t, j) => {
+          const on = i === j;
+          t.setAttribute('aria-selected', String(on));
+          t.setAttribute('tabindex', on ? '0' : '-1');
+          panels[j].classList.toggle('is-active', on);
+          if (on) { panels[j].removeAttribute('inert'); panels[j].removeAttribute('aria-hidden'); }
+          else { panels[j].setAttribute('inert', ''); panels[j].setAttribute('aria-hidden', 'true'); }
+        });
+        if (focus) tabs[i].focus();
+      };
+      const live = () => root.classList.add('is-live');
+      tabs.forEach((t, i) => {
+        t.addEventListener('click', () => { live(); select(i, false); });
+        t.addEventListener('keydown', e => {
+          if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+          let next = -1;
+          if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+          else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+          else if (e.key === 'Home') next = 0;
+          else if (e.key === 'End') next = tabs.length - 1;
+          if (next < 0) return;
+          e.preventDefault();
+          live();
+          select(next, true);
+        });
+      });
+      const first = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+      select(first < 0 ? 0 : first, false);
+      root.classList.add('is-ready');
+    });
+  })();
+</script>
+</body>
+</html>
