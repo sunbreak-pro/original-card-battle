@@ -15,14 +15,12 @@ namespace Exploration
         {
             var state = session.State;
             var map = state.Map;
-            var neighbours = new HashSet<int>(map.Neighbours(state.CurrentNodeId));
-            bool canStep = state.Phase == RunPhase.Exploring;
             bool mapLive = session.MapIsLive;
 
             var nodes = new List<NodeCard>();
             foreach (var node in map.Nodes.OrderBy(n => n.Id))
             {
-                var standing = StandingOf(state, node.Id, neighbours, canStep);
+                var standing = StandingOf(state, node.Id);
                 int rowWidth = map.Row(node.Row).Count;
                 float x = (node.Column + 0.5f) / rowWidth;
                 float y = map.RowCount == 1 ? 0.5f : 1f - (float)node.Row / (map.RowCount - 1);
@@ -110,15 +108,11 @@ namespace Exploration
             },
             "閉じる（Esc）");
 
-        private static NodeStanding StandingOf(ExplorationState state, int id, HashSet<int> neighbours, bool canStep)
+        private static NodeStanding StandingOf(ExplorationState state, int id)
         {
             if (id == state.CurrentNodeId) return NodeStanding.Current;
             bool resolved = state.HasResolved(id);
-            if (canStep && neighbours.Contains(id))
-            {
-                if (resolved) return NodeStanding.Revisit;
-                if (state.TimeLeft > 0) return NodeStanding.Reachable;
-            }
+            if (ExplorationReducer.CanStep(state, id)) return resolved ? NodeStanding.Revisit : NodeStanding.Reachable;
             return resolved ? NodeStanding.Resolved : NodeStanding.Far;
         }
 
@@ -167,9 +161,7 @@ namespace Exploration
 
             switch (node.Kind)
             {
-                case NodeKind.Battle:
-                case NodeKind.Elite:
-                case NodeKind.Boss:
+                case NodeKind kind when kind.IsCombat():
                     if (node.Kind == NodeKind.Elite) lines.Add("避けて通れる寄り道");
                     if (node.Kind == NodeKind.Boss)
                     {
@@ -404,7 +396,7 @@ namespace Exploration
             }
 
             // What the interlude will give, tried on the state the way a step's forecast is.
-            string interludeLine = state.Phase == RunPhase.LayerCleared || state.Phase == RunPhase.PushedOut
+            string interludeLine = ExplorationReducer.CanInterlude(state)
                 ? $"階層間の休憩: HP +{ExplorationReducer.Interlude(state).Hp - state.Hp}" +
                   $"（最大の {ExplorationReducer.InterludeHpPercent}%）・スタミナ全回復・瘴気はたまらない"
                 : "";

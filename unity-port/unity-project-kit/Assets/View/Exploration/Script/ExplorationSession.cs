@@ -127,12 +127,10 @@ namespace Exploration
         public bool Step(int nodeId, RestChoice choice = RestChoice.Rest)
         {
             if (!MapIsLive) return false;
-            if (!State.Map.Neighbours(State.CurrentNodeId).Contains(nodeId)) return false;
+            if (!ExplorationReducer.CanStep(State, nodeId)) return false;
 
             bool fresh = !State.HasResolved(nodeId);
-            if (fresh && State.TimeLeft <= 0) return false;
-
-            if (fresh && ExplorationReducer.Step(State, nodeId, choice).Phase == RunPhase.MiasmaDeath)
+            if (fresh &&ExplorationReducer.Step(State, nodeId, choice).Phase == RunPhase.MiasmaDeath)
             {
                 PendingStepNode = nodeId;
                 PendingStepChoice = choice;
@@ -166,7 +164,7 @@ namespace Exploration
 
                 case ScreenAction.GoToInterlude:
                     if (!IsIdle) return false;
-                    if (State.Phase != RunPhase.LayerCleared && State.Phase != RunPhase.PushedOut) return false;
+                    if (!ExplorationReducer.CanInterlude(State)) return false;
                     int hpBefore = State.Hp;
                     State = ExplorationReducer.Interlude(State);
                     InterludeHealed = State.Hp - hpBefore;
@@ -350,7 +348,7 @@ namespace Exploration
             if (kind == NodeKind.Carving) CarvingTaken = true;
             if (kind == NodeKind.Survey) Surveyed = true;
             // 瘴気死 ends the life on the node before any fight starts.
-            if (ExplorationText.IsCombat(kind) && State.Phase != RunPhase.MiasmaDeath)
+            if (kind.IsCombat() && State.Phase != RunPhase.MiasmaDeath)
             {
                 PendingBattleNode = nodeId;
                 int layer = State.Profile.Layer;

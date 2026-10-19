@@ -63,5 +63,13 @@ namespace DungeonCore
         /// </summary>
         public static bool IsDetour(this NodeKind kind) =>
             kind == NodeKind.Elite || kind == NodeKind.Trace || kind == NodeKind.Carving;
+
+        /// <summary>
+        /// Kinds that hold a fight: arriving starts a battle drawn from the layer's pool
+        /// (LayerEncounters.PoolFor). The one place this is decided; whether a 死亡地点の痕跡
+        /// joins them is #106's.
+        /// </summary>
+        public static bool IsCombat(this NodeKind kind) =>
+            kind == NodeKind.Battle || kind == NodeKind.Elite || kind == NodeKind.Boss;
     }
 }
