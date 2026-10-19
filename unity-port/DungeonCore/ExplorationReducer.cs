@@ -169,6 +169,22 @@ namespace DungeonCore
             return state.With(phase: RunPhase.Survived);
         }
 
+        /// <summary>
+        /// Spends one mark a 習熟訓練 node earned. The card it goes to and the ticks it takes are the
+        /// battle core's (Mastery.Train, #625); the exploration core only counts the marks down.
+        /// Costs no 刻限: the node already took it.
+        /// </summary>
+        public static ExplorationState SpendTrainingMark(ExplorationState state)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (state.IsOver)
+                throw new ExplorationRuleException($"the life has already ended ({state.Phase})");
+            if (state.TrainingMarks <= 0)
+                throw new ExplorationRuleException("no 習熟訓練 mark left to spend");
+
+            return state.With(trainingMarks: state.TrainingMarks - 1);
+        }
+
         /// <summary>Spends the 刻限 for a node and applies what standing on it does.</summary>
         private static ExplorationState Resolve(ExplorationState state, int nodeId, RestChoice choice)
         {

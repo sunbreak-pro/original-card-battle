@@ -2,8 +2,10 @@
 // the life share — the deck, the cards owned, the mastery book, the in-battle tools and what the
 // journal has learned of each enemy. It hands a combat node's battle in (EncounterBattle) and takes
 // its result back: HP and stamina into the exploration core, the ticks into the mastery book, the
-// 開示度 into the journal, the unique cards into the cards owned and the deck. Pure C#; the View that
-// loads the battle scene only forwards the source and the end of each fight.
+// 開示度 into the journal, the unique cards into the cards owned and the deck, and the rest of the
+// reward (#625: the pile's cards to pick one from, consumables, pages). It also spends the marks a
+// 習熟訓練 node earns on the card the player names. Pure C#; the View that loads the battle scene only
+// forwards the source and the end of each fight.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,9 +26,11 @@ namespace Exploration.Bridge
         private readonly Dictionary<string, int> _journal = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly HashSet<string> _owned = new HashSet<string>(StringComparer.Ordinal);
         private List<CardInstance> _deck;
+        private readonly List<string> _consumables = new List<string>();
         private List<string> _offer = new List<string>();
         private int _life;
         private int _learnedCopies;
+        private int _pages;
 
         /// <param name="start">How the exploration starts (seed, HP, stamina, gauge, exploration tools).</param>
         /// <param name="deck">The deck the life sets out with; null for the slice's prototype deck.</param>
@@ -84,13 +88,39 @@ namespace Exploration.Bridge
         /// <summary>The in-battle tools (§9.1, #452) as amounts, with the deck and the talent the battles read.</summary>
         public Departure Tools { get; }
 
-        /// <summary>A real elite's cards waiting for the player to pick one (<see cref="Learn"/>). Empty when none waits.</summary>
+        /// <summary>
+        /// Cards waiting for the player to pick one (<see cref="Learn"/>): a real elite's two, or the card
+        /// pile's three (encounters_and_rewards_v4.md §4.2 / §4.3). Empty when none waits.
+        /// </summary>
         public IReadOnlyList<string> Offer
         {
             get
             {
                 SyncLife();
                 return _offer;
+            }
+        }
+
+        /// <summary>
+        /// The consumables the battles of this life dropped, as catalogue ids in the order found. They do
+        /// not reach the exploration's slots yet: RunLoadout holds only what relieves 瘴気.
+        /// </summary>
+        public IReadOnlyList<string> Consumables
+        {
+            get
+            {
+                SyncLife();
+                return _consumables;
+            }
+        }
+
+        /// <summary>The rare journal pages the battles of this life dropped. What a page holds is #107's.</summary>
+        public int Pages
+        {
+            get
+            {
+                SyncLife();
+                return _pages;
             }
         }
 
@@ -144,7 +174,9 @@ namespace Exploration.Bridge
         /// The encounter is over: bring its result back. HP and stamina go to the exploration core
         /// (HP 0 is a fall), every fight's ticks to the mastery book (steps go up only now, §17.8), the
         /// 開示度 to the journal (every enemy fought reads at least 1, and 2 once a 観察 was played
-        /// against it), and a won encounter's unique cards to the cards owned.
+        /// against it), and a won encounter's unique cards to the cards owned. A won encounter also
+        /// draws the rest of its reward (§4.2) from the exploration's seed: the cards to pick one from
+        /// wait in <see cref="Offer"/>, the consumables and pages are kept.
         /// </summary>
         public BattleReturn Return()
         {
@@ -173,18 +205,32 @@ namespace Exploration.Bridge
                 }
             }
 
+            BattleHandIn handIn = battle.HandIn;
             UniqueCardReward reward = battle.Won
-                ? UniqueCards.For(battle.HandIn.Kind, battle.HandIn.Encounter, _owned)
+                ? UniqueCards.For(handIn.Kind, handIn.Encounter, _owned)
                 : UniqueCardReward.None;
             foreach (string id in reward.Learned) Take(id);
-            _offer = reward.Offered.ToList();
+            BattleReward rest = battle.Won
+                ? BattleRewards.Roll(handIn.Kind, handIn.Layer, handIn.Encounter, reward, _owned,
+                    new DungeonCore.SeededRng(RewardSeed(Session.RunSeed, handIn.Layer, Session.PendingBattleNode)))
+                : BattleReward.None;
+            _offer = (reward.Offered.Count > 0 ? reward.Offered : rest.CardChoices).ToList();
+            _consumables.AddRange(rest.Consumables);
+            _pages += rest.Pages;
 
             Session.ReportBattle(battle.HpAfter, battle.StaminaAfter);
 
             return new BattleReturn(
                 battle.Won, battle.HpAfter, battle.StaminaAfter, MasteryTally.Of(plays), ranks,
-                disclosure, observed, reward.Learned, reward.Offered);
+                disclosure, observed, reward.Learned, reward.Offered, rest);
         }
+
+        /// <summary>
+        /// The seed a won node's reward is drawn from: the node's encounter seed, salted so the reward
+        /// does not replay the draw that picked the encounter.
+        /// </summary>
+        public static ulong RewardSeed(ulong runSeed, int layer, int nodeId) =>
+            ExplorationSession.EncounterSeed(runSeed, layer, nodeId) ^ 0xD1B54A32D192ED03UL;
 
         /// <summary>
         /// The battle could not be shown (the View found no battle scene to play it in): it is dropped
@@ -195,13 +241,31 @@ namespace Exploration.Bridge
             Battle = null;
         }
 
-        /// <summary>Picks one card of a real elite's offer (encounters_and_rewards_v4.md §4.2). False when it is not on offer.</summary>
+        /// <summary>
+        /// Picks one card of the offer — a real elite's or the card pile's (encounters_and_rewards_v4.md
+        /// §4.2 / §4.3). False when it is not on offer.
+        /// </summary>
         public bool Learn(string cardId)
         {
             SyncLife();
             if (cardId == null || !_offer.Contains(cardId)) return false;
             Take(cardId);
             _offer.Clear();
+            return true;
+        }
+
+        /// <summary>
+        /// 習熟訓練 (battle_core_v4.md §17.8): spends one mark a 習熟訓練 node earned
+        /// (ExplorationState.TrainingMarks) on a card this character owns, which takes the training's
+        /// ticks in the mastery book. False when no mark is left, the card is not owned or the
+        /// exploration is not waiting on the map.
+        /// </summary>
+        public bool Train(string cardId)
+        {
+            SyncLife();
+            if (cardId == null || !_owned.Contains(cardId)) return false;
+            if (!Session.SpendTrainingMark()) return false;
+            Mastery = Mastery.Train(cardId).Book;
             return true;
         }
 
@@ -233,6 +297,8 @@ namespace Exploration.Bridge
             _journal.Clear();
             foreach (var pair in _startJournal) _journal[pair.Key] = pair.Value;
             _offer = new List<string>();
+            _consumables.Clear();
+            _pages = 0;
             _learnedCopies = 0;
             Battle = null;
             Mastery = MasteryBook.Begin(_talent);

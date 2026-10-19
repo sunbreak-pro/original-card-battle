@@ -89,7 +89,7 @@ namespace Exploration.Bridge
     /// <summary>
     /// What a finished encounter brings back to the exploration (#99): HP and current stamina, whether
     /// the player fell, the mastery ticks and the steps they bought, what the journal learned (開示度,
-    /// raised as the battle ends), and the unique cards it taught.
+    /// raised as the battle ends), the unique cards it taught and the rest of its reward (#625).
     /// </summary>
     public sealed class BattleReturn
     {
@@ -102,7 +102,8 @@ namespace Exploration.Bridge
             IReadOnlyDictionary<string, int> disclosure,
             IReadOnlyList<string> observed,
             IReadOnlyList<string> learned,
-            IReadOnlyList<string> offered)
+            IReadOnlyList<string> offered,
+            BattleReward reward = null)
         {
             Won = won;
             Hp = hp;
@@ -113,6 +114,7 @@ namespace Exploration.Bridge
             Observed = observed ?? Array.Empty<string>();
             Learned = learned ?? Array.Empty<string>();
             Offered = offered ?? Array.Empty<string>();
+            Reward = reward ?? BattleReward.None;
         }
 
         /// <summary>Every fight of the encounter was won.</summary>
@@ -142,6 +144,12 @@ namespace Exploration.Bridge
 
         /// <summary>A real elite's cards to pick one from (Expedition.Learn).</summary>
         public IReadOnlyList<string> Offered { get; }
+
+        /// <summary>
+        /// The rest of a won encounter's reward (encounters_and_rewards_v4.md §4.2): the pile's cards to
+        /// pick one from (Expedition.Learn), consumables and pages. None for a lost encounter.
+        /// </summary>
+        public BattleReward Reward { get; }
     }
 
     /// <summary>One fight as it ended: its enemies, the final state and every event it emitted.</summary>
