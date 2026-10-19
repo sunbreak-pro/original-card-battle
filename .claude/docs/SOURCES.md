@@ -36,12 +36,12 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 | 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
 | --- | --- | --- | --- | --- |
-| 戦闘のルールと数値 | `.claude/docs/battle_document/battle_core_v4.md` | battle | 現行。§19 の習熟（S5〜S8）未反映 | cards, design |
+| 戦闘のルールと数値 | `.claude/docs/battle_document/battle_core_v4.md` | battle | 現行。§19.4 の位置と特性の噛み合い（S9〜S11）未反映 | cards, design |
 | 戦闘の画面と操作 | `.claude/docs/battle_document/battle_ui_ux_v2.md` | battle | 現行。本文が正で、§10 / §11 / §13 は記録。狙うマスの色は `battle-visual-v1.md` を指す（#356） | design |
 | 戦闘コアの実装 | `unity-port/BattleCore/` | battle | C# が正 | cards |
 | 戦闘描写の台本と View | `unity-port/unity-project-kit/Assets/View/Depiction/` | battle | C# はこのリポが正 | design |
 
-`battle_core_v4.md` は §19（2026-09-21 の決定）が本文に入っていません。間合いと属性の規則が他の正本と食い違ったら、`battle_core_v4.md` が勝ちます。
+`battle_core_v4.md` は §19（2026-09-21 の決定）のうち、§19.4 の S9〜S11 が本文に入っていません（§21.5 の表）。間合いと属性の規則が他の正本と食い違ったら、`battle_core_v4.md` が勝ちます。
 
 **`battle_ui_ux_v2.md` と `View/Depiction/` の持ち主は battle です**（2026-10-05、縦切りの振り返り #80 で仮を外しました）。見た目の値（色・部品・配置）は design の `battle-visual-v1.md` が持ち、battle は操作の流れ・演出の時間・View の実装を持ちます。縦切りの後の画面の Issue（#348 / #349 / #242）もこの分け方で、見た目の文書の直し（#350）だけを design に置いています。
 
