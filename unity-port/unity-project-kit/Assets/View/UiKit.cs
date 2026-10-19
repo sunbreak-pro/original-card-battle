@@ -28,11 +28,14 @@ public static class UiKit
     public static Font HeadingFont => Face(ref _heading, "ShipporiMincho-Bold");
     /// <summary>IBM Plex Mono 700: every number (§3.1). It has no Japanese glyphs, so a label mixing both splits its digits into their own Text.</summary>
     public static Font NumberFont => Face(ref _number, "IBMPlexMono-Bold");
+    /// <summary>IBM Plex Mono 600: the corner info and stance name (§3.1 20 px), the battle speed, the stance count "×2" (§3.1 16 px).</summary>
+    public static Font NumberSemiBoldFont => Face(ref _numberSemiBold, "IBMPlexMono-SemiBold");
 
     private static Font _body;
     private static Font _bodyBold;
     private static Font _heading;
     private static Font _number;
+    private static Font _numberSemiBold;
 
     private static Font Face(ref Font slot, string file)
     {

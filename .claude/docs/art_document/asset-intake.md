@@ -1,6 +1,6 @@
 # 素材の取り込み規約 — 置き場・命名・Unity の設定・台帳
 
-> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。2026-10-10 に、Preset Manager のフィルタが `Assets/` から始まる形で当たると確かめた結果を §5.2 と §10 に入れました（#85。登録は RPG-by-card#10）。同じ日に、上級の槍の竜兵 2 枚の幅の例外（800 と 900）を §0・§1.2・§3.3 に足しました（#287）。2026-10-17 に、UI の部材と書体の取り込みと、書体のライセンスの記録を §12 に足しました（#92）。
+> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。2026-10-10 に、Preset Manager のフィルタが `Assets/` から始まる形で当たると確かめた結果を §5.2 と §10 に入れました（#85。登録は RPG-by-card#10）。同じ日に、上級の槍の竜兵 2 枚の幅の例外（800 と 900）を §0・§1.2・§3.3 に足しました（#287）。2026-10-17 に、UI の部材と書体の取り込みと、書体のライセンスの記録を §12 に足しました（#92）。2026-10-19 に、数字の 600 に使う `IBMPlexMono-SemiBold.ttf` を §12.2 の表に足しました（#610）。
 > **役割**: 作った絵を Unity に入れるまでの規約を決めます。**立ち絵（キャラクター）だけを対象にします。** 背景・カードの絵・UI の部材は不透明度も圧縮形式も違うので、別の節が要ります（→ §9）。
 > **正本**: `.claude/docs/vision/world-v1.md`（世界の正典 v4）／ `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md`（道具と前提）
 > **読む用**: `docs/reports/2026-09-21-asset-intake-rules.html`
@@ -321,7 +321,7 @@ model_id, weights_file, sha256, license, terms_url, terms_checked_on, notes
 | --- | --- | --- | --- |
 | Shippori Mincho | `ShipporiMincho-Bold.ttf` | Copyright 2021 The Shippori Mincho Project Authors | fontdasu/ShipporiMincho `63431fe` |
 | Zen Kaku Gothic New | `ZenKakuGothicNew-Regular.ttf` / `ZenKakuGothicNew-Bold.ttf` | Copyright 2022 The Zen Kaku Gothic Project Authors | googlefonts/zen-kakugothic `2705757` |
-| IBM Plex Mono | `IBMPlexMono-Bold.ttf` | Copyright © 2017 IBM Corp. with Reserved Font Name "Plex" | googlefonts/plex `9ab3b5b` |
+| IBM Plex Mono | `IBMPlexMono-SemiBold.ttf` / `IBMPlexMono-Bold.ttf` | Copyright © 2017 IBM Corp. with Reserved Font Name "Plex" | googlefonts/plex `9ab3b5b` |
 
 - 取得元は github.com/google/fonts の `ofl/<family>/` で、コミット `47d54ca1ebb14fd864695f1d39dc734f39017c33`（2026-10-17）に固定しています。ファイルごとの SHA-256 は `unity-port/tools/fetch-fonts.mjs` が持ち、取得のたびに照合します。
 - ファイルは約 13 MB あるので git に入れず、`npm run fonts:fetch` で `unity-port/unity-project-kit/Assets/View/Resources/Fonts/` に取得し、`npm run unity:sync` で Unity の `Assets/View/Resources/Fonts/` へ写します。
