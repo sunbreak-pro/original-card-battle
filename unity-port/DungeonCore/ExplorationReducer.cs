@@ -76,18 +76,29 @@ namespace DungeonCore
         /// </summary>
         public static ExplorationState Step(ExplorationState state, int nodeId, RestChoice choice = RestChoice.Rest)
         {
-            if (state == null) throw new ArgumentNullException(nameof(state));
-            if (state.Phase != RunPhase.Exploring)
-                throw new ExplorationRuleException($"the layer is no longer being explored ({state.Phase})");
-            if (!state.Map.Neighbours(state.CurrentNodeId).Contains(nodeId))
-                throw new ExplorationRuleException($"node {nodeId} does not touch node {state.CurrentNodeId}");
-
+            if (!CanStep(state, nodeId)) throw new ExplorationRuleException(WhyNoStep(state, nodeId));
             if (state.HasResolved(nodeId)) return state.With(currentNodeId: nodeId);
-
-            if (state.TimeLeft <= 0)
-                throw new ExplorationRuleException("no 刻限 left to spend on a new node");
-
             return Resolve(state, nodeId, choice);
+        }
+
+        /// <summary>
+        /// Whether <see cref="Step"/> takes this node: the layer is being explored, the node touches
+        /// the one the player stands on, and it is either already resolved or a 刻限 is left to enter it.
+        /// The screen asks this before it offers a step.
+        /// </summary>
+        public static bool CanStep(ExplorationState state, int nodeId)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            return state.Phase == RunPhase.Exploring
+                && state.Map.Neighbours(state.CurrentNodeId).Contains(nodeId)
+                && (state.HasResolved(nodeId) || state.TimeLeft > 0);
+        }
+
+        private static string WhyNoStep(ExplorationState state, int nodeId)
+        {
+            if (state.Phase != RunPhase.Exploring) return $"the layer is no longer being explored ({state.Phase})";
+            if (!state.Map.Neighbours(state.CurrentNodeId).Contains(nodeId)) return $"node {nodeId} does not touch node {state.CurrentNodeId}";
+            return "no 刻限 left to spend on a new node";
         }
 
         /// <summary>Burns one consumable. Costs no 刻限, so it never moves the gauge upward.</summary>
@@ -109,8 +120,7 @@ namespace DungeonCore
         /// </summary>
         public static ExplorationState Interlude(ExplorationState state)
         {
-            if (state == null) throw new ArgumentNullException(nameof(state));
-            if (state.Phase != RunPhase.LayerCleared && state.Phase != RunPhase.PushedOut)
+            if (!CanInterlude(state))
                 throw new ExplorationRuleException($"there is no interlude from {state.Phase}");
 
             int healed = Math.Min(state.MaxHp, state.Hp + InterludeHeal(state.MaxHp));
@@ -118,6 +128,16 @@ namespace DungeonCore
                 hp: healed,
                 stamina: state.MaxStamina,
                 phase: RunPhase.Interlude);
+        }
+
+        /// <summary>
+        /// Whether <see cref="Interlude"/> applies: the layer was left, by its boss falling or by the
+        /// 刻限 running out.
+        /// </summary>
+        public static bool CanInterlude(ExplorationState state)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            return state.Phase == RunPhase.LayerCleared || state.Phase == RunPhase.PushedOut;
         }
 
         /// <summary>Drops into the next layer, carrying HP, stamina and the gauge (concept-v3.md §7.1).</summary>

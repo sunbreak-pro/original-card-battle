@@ -46,8 +46,8 @@ namespace Exploration
             _ => "",
         };
 
-        public static bool IsCombat(NodeKind kind) =>
-            kind == NodeKind.Battle || kind == NodeKind.Elite || kind == NodeKind.Boss;
+        /// <summary>Whether the node holds a fight. The rule is DungeonCore's (NodeKindTokens.IsCombat).</summary>
+        public static bool IsCombat(NodeKind kind) => kind.IsCombat();
 
         public static string LayerTitle(int layer, string name) => $"第 {layer} 層　{name}";
 

@@ -110,13 +110,17 @@ namespace DungeonCore
         public IReadOnlyList<Encounter> Boss { get; }
 
         /// <summary>The pool a node kind draws from, or an empty list for a kind that holds no fight.</summary>
-        public IReadOnlyList<Encounter> PoolFor(NodeKind kind) => kind switch
+        public IReadOnlyList<Encounter> PoolFor(NodeKind kind)
         {
-            NodeKind.Battle => Normal,
-            NodeKind.Elite => Elite,
-            NodeKind.Boss => Boss,
-            _ => Array.Empty<Encounter>(),
-        };
+            if (!kind.IsCombat()) return Array.Empty<Encounter>();
+            return kind switch
+            {
+                NodeKind.Battle => Normal,
+                NodeKind.Elite => Elite,
+                NodeKind.Boss => Boss,
+                _ => throw new InvalidOperationException($"{kind} holds a fight but no pool is kept for it"),
+            };
+        }
 
         private static IReadOnlyList<Encounter> Freeze(IReadOnlyList<Encounter> pool, string name)
         {
