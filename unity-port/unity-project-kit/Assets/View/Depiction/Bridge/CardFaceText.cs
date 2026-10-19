@@ -241,7 +241,7 @@ namespace Depiction.Bridge
                 case BattleCore.TraitCondition.Thin: return "手薄";
                 case BattleCore.TraitCondition.FoeHas: return "敵が" + WatchWord(trait) + "中";
                 case BattleCore.TraitCondition.SelfHas: return "自分が" + WatchWord(trait) + "中";
-                default: return "";
+                default: throw new ArgumentOutOfRangeException(nameof(trait), trait.Condition, "No short words for the trait condition " + trait.Condition);
             }
         }
 
@@ -262,7 +262,7 @@ namespace Depiction.Bridge
                 case TraitEffect.Convert: return "転換";
                 case TraitEffect.FollowUp: return "追撃";
                 case TraitEffect.BreakBonus: return "崩し +" + trait.Amount;
-                default: return "";
+                default: throw new ArgumentOutOfRangeException(nameof(trait), trait.Effect, "No short words for the trait effect " + trait.Effect);
             }
         }
 
@@ -320,7 +320,7 @@ namespace Depiction.Bridge
                 case BattleCore.TraitCondition.Thin: return "出した直後の手札が " + Constants.ThinHandMax + " 枚以下なら";
                 case BattleCore.TraitCondition.FoeHas: return "敵が" + WatchWord(trait) + "中なら";
                 case BattleCore.TraitCondition.SelfHas: return "自分が" + WatchWord(trait) + "中なら";
-                default: return "";
+                default: throw new ArgumentOutOfRangeException(nameof(trait), trait.Condition, "No clause for the trait condition " + trait.Condition);
             }
         }
 
@@ -348,7 +348,7 @@ namespace Depiction.Bridge
                 case TraitEffect.Convert: return "この札で得る Guard の半分を威力に足す（転換）";
                 case TraitEffect.FollowUp: return "このターンに次に出す攻撃の威力 +" + Constants.FollowUpPower + "（追撃）";
                 case TraitEffect.BreakBonus: return "崩し +" + trait.Amount;
-                default: return "";
+                default: throw new ArgumentOutOfRangeException(nameof(trait), trait.Effect, "No clause for the trait effect " + trait.Effect);
             }
         }
 
@@ -452,6 +452,7 @@ namespace Depiction.Bridge
                 case BattleCore.TraitCondition.Broken: return "崩し後";
                 case BattleCore.TraitCondition.Chain: return "連打";
                 case BattleCore.TraitCondition.Thin: return "手薄";
+                // Empty is right here: the other conditions (間合い, 予兆, 相手の状態...) are no glossary word.
                 default: return "";
             }
         }

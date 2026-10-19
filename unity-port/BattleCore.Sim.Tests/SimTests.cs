@@ -357,6 +357,24 @@ public class CriteriaTests
     }
 
     [Test]
+    public void ADeckIdWithNoBattles_Throws_InsteadOfEnteringTheVerdictsAt0Percent()
+    {
+        var types = new[] { new SimDeck("t1", "型 1", new[] { ("thrust", 1) }, "") };
+        var main = new List<BattleRecord> { Rec("t1", true, 6, new[] { 2 }), Rec("ones", true, 6, new[] { 2 }) };
+        var rates = Criteria.RatesByDeck(main);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(Criteria.RateOf(rates, "t1"), Is.EqualTo(100));
+            var missing = Assert.Throws<KeyNotFoundException>(() => Criteria.RateOf(rates, "no_such_deck"));
+            Assert.That(missing!.Message, Does.Contain("no_such_deck").And.Contain("t1").And.Contain("ones"));
+            Assert.Throws<KeyNotFoundException>(() => Criteria.ComputeFirstThree(main, types, "no_such_deck", CardCatalog.All, Enemies.All));
+            var typo = new[] { new SimDeck("t9", "型 9", new[] { ("thrust", 1) }, "") };
+            Assert.Throws<KeyNotFoundException>(() => Criteria.ComputeFirstThree(main, typo, "ones", CardCatalog.All, Enemies.All));
+        });
+    }
+
+    [Test]
     public void TheDeskBlow_CountsTheCardsOwnPowerTrait_Separately()
     {
         var heavy = new CardDef("h", "重い札", BattleAttribute.Attack, 2, new Face(Power: 13), new Trait(TraitCondition.FirstPlay, TraitEffect.HeavyBlow));
@@ -399,11 +417,15 @@ public class CriteriaTests
         Assert.That(rows.Single(r => r.Id == "3").Verdict, Is.AnyOf(Verdict.Pass, Verdict.Fail));
     }
 
+    /// <summary>
+    /// The bench's results around <paramref name="main"/>. A main deck the fixture leaves out fights one
+    /// won battle, as every deck does in a real run: the win rates throw on a deck with no battles (#574).
+    /// </summary>
     private static BenchResults Fixture(IReadOnlyList<BattleRecord> main, IReadOnlyList<PairRecord>? pairs = null) => new BenchResults
     {
         Options = new BenchOptions(Runs: 1),
         Decks = Bench.MainDecks(),
-        Main = main,
+        Main = main.Concat(Bench.MainDecks().Where(d => main.All(r => r.DeckId != d.Id)).Select(d => Rec(d.Id, true, 5, new[] { 2 }))).ToList(),
         Policies = Bench.PolicyRuns.ToDictionary(p => p, _ => (IReadOnlyList<BattleRecord>)Array.Empty<BattleRecord>()),
         LowStamina = Array.Empty<BattleRecord>(),
         Pairs = pairs ?? Array.Empty<PairRecord>(),
@@ -461,9 +483,9 @@ public class CriteriaTests
     [Test]
     public void CriterionS14_FailsAtExactlyTenPointsBelow()
     {
-        string type = Decks.Archetypes[0].Id;
+        // Every type fights the same battles, so the rows read the same rates as one type alone.
         IEnumerable<BattleRecord> Battles(int n, int won, int moves) =>
-            Enumerable.Range(0, n).Select(i => Rec(type, i < won, 5, new[] { 2 }, moves: moves));
+            Decks.Archetypes.SelectMany(type => Enumerable.Range(0, n).Select(i => Rec(type.Id, i < won, 5, new[] { 2 }, moves: moves)));
 
         var tenBelow = Battles(10, 8, moves: 2).Concat(Battles(10, 9, moves: 0)).ToList(); // 80% vs 90%
         var row = Criteria.Compute(Fixture(tenBelow)).Single(r => r.Id == "S14");
@@ -509,7 +531,7 @@ public class CriteriaTests
             Assert.That(measured, Does.Contain($"60（{forty.Name}）"), id);
             Assert.That(measured, Does.Not.Contain(forty.Id), id);
         }
-        var first = Criteria.ComputeFirstThree(main, Decks.Archetypes, Decks.CostOneOnly().Id, CardCatalog.All, Enemies.All);
+        var first = Criteria.ComputeFirstThree(results.Main, Decks.Archetypes, Decks.CostOneOnly().Id, CardCatalog.All, Enemies.All);
         Assert.That(Report.Markdown(results, rows, first), Does.Contain($"試験台 60（{forty.Name}）"));
         Assert.That(Report.Json(results, rows, first), Does.Contain($"\"observedMaxSingleHitDeck\": \"{forty.Id}\""));
     }

@@ -80,14 +80,25 @@ public static class Criteria
     public static IReadOnlyDictionary<string, double> RatesByDeck(IEnumerable<BattleRecord> records) =>
         records.GroupBy(r => r.DeckId).ToDictionary(g => g.Key, g => WinRate(g));
 
+    /// <summary>
+    /// A deck's win rate from <see cref="RatesByDeck"/>. A deck id with no battles throws: a renamed or
+    /// mistyped id must not enter the verdicts as a 0% deck (#574).
+    /// </summary>
+    public static double RateOf(IReadOnlyDictionary<string, double> rates, string deckId)
+    {
+        if (rates.TryGetValue(deckId, out double rate)) return rate;
+        throw new KeyNotFoundException(
+            $"No battles for the deck id '{deckId}'. Known ids: {string.Join(", ", rates.Keys.OrderBy(k => k, StringComparer.Ordinal))}");
+    }
+
     public static FirstThree ComputeFirstThree(
         IReadOnlyList<BattleRecord> main, IReadOnlyList<SimDeck> archetypes, string costOneId,
         IEnumerable<CardDef> catalog, IEnumerable<EnemyDef> roster)
     {
         var typeIds = archetypes.Select(d => d.Id).ToHashSet();
         var rates = RatesByDeck(main);
-        double typeAverage = archetypes.Average(d => rates.TryGetValue(d.Id, out double r) ? r : 0);
-        double costOne = rates.TryGetValue(costOneId, out double c) ? c : 0;
+        double typeAverage = archetypes.Average(d => RateOf(rates, d.Id));
+        double costOne = RateOf(rates, costOneId);
         double plays = Median(main.Where(r => typeIds.Contains(r.DeckId)).SelectMany(r => r.PlaysPerTurn));
         var top = main.OrderByDescending(r => r.MaxBlow).FirstOrDefault();
         var cards = catalog.ToList();
@@ -144,7 +155,7 @@ public static class Criteria
             first.BlowPasses ? Verdict.Pass : Verdict.Fail, blowNote, first.ObservedMaxBlow));
 
         // 6: spread of the six types.
-        var typeRates = archetypes.Select(d => (d.Name, Rate: rates.TryGetValue(d.Id, out double r) ? r : 0)).ToList();
+        var typeRates = archetypes.Select(d => (d.Name, Rate: RateOf(rates, d.Id))).ToList();
         var strongest = typeRates.OrderByDescending(t => t.Rate).First();
         var weakest = typeRates.OrderBy(t => t.Rate).First();
         double spread = strongest.Rate - weakest.Rate;
@@ -284,7 +295,7 @@ public static class Criteria
     {
         const string Criterion = "スタンス無しデッキの勝率";
         const string Target = "最強 − 15 pt 以上（差し替え版は元の型に 15 pt 以上負けない）";
-        double Rate(string id) => rates.TryGetValue(id, out double r) ? r : 0;
+        double Rate(string id) => RateOf(rates, id);
         var gaps = archetypes
             .Select(d => (Type: d, Twin: Sim.Decks.WithoutStances(d)))
             .Where(p => p.Twin != null)

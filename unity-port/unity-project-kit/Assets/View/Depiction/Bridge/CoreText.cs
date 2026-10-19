@@ -217,7 +217,7 @@ namespace Depiction.Bridge
                 case StanceHook.CostDiscount:
                     // §4 コストの割引 (鉄壁の構え, #333), in the attribute words the deck screen uses.
                     return "毎ターン 1 回、" + (stance.Attribute.HasValue ? DeckBuilder.AttributeWords(stance.Attribute.Value) : "") + "のカードのコスト −1";
-                default: return "";
+                default: throw new System.ArgumentOutOfRangeException(nameof(stance), stance.Hook, "No clause for the stance hook " + stance.Hook);
             }
         }
 
@@ -282,7 +282,8 @@ namespace Depiction.Bridge
             return condition.Length == 0 ? effect : condition + " " + effect;
         }
 
-        private static string ConditionWord(Trait trait)
+        /// <summary>The condition half of <see cref="TraitLine"/> ("間合い0", "残4", "予兆攻撃").</summary>
+        public static string ConditionWord(Trait trait)
         {
             switch (trait.Condition)
             {
@@ -303,11 +304,12 @@ namespace Depiction.Bridge
                 case BattleCore.TraitCondition.Thin: return "手薄";
                 case BattleCore.TraitCondition.FoeHas: return "相手" + (trait.Watch.HasValue ? trait.Watch.Value.ToLabel() : "");
                 case BattleCore.TraitCondition.SelfHas: return "自分" + (trait.Watch.HasValue ? trait.Watch.Value.ToLabel() : "");
-                default: return "";
+                default: throw new System.ArgumentOutOfRangeException(nameof(trait), trait.Condition, "No lamp word for the trait condition " + trait.Condition);
             }
         }
 
-        private static string EffectWord(Trait trait)
+        /// <summary>The effect half of <see cref="TraitLine"/> ("+5", "Guard+3", "重撃").</summary>
+        public static string EffectWord(Trait trait)
         {
             switch (trait.Effect)
             {
@@ -323,7 +325,7 @@ namespace Depiction.Bridge
                 case TraitEffect.Convert: return "転換";
                 case TraitEffect.FollowUp: return "追撃";
                 case TraitEffect.BreakBonus: return "崩し+" + trait.Amount;
-                default: return "";
+                default: throw new System.ArgumentOutOfRangeException(nameof(trait), trait.Effect, "No lamp word for the trait effect " + trait.Effect);
             }
         }
 
@@ -349,6 +351,7 @@ namespace Depiction.Bridge
             {
                 case StatusKind.Binding: return by.ToLabel() + "で動けない";
                 case StatusKind.Hook: return by.ToLabel() + "で下がれない";
+                // Empty is right here: no other word stops a move with a line of its own (鈍足 shortens it).
                 default: return "";
             }
         }
@@ -375,7 +378,7 @@ namespace Depiction.Bridge
                 case OmenKind.Skill: return "技";
                 case OmenKind.Stance: return "構え";
                 case OmenKind.Rest: return "休み";
-                default: return "";
+                default: throw new System.ArgumentOutOfRangeException(nameof(kind), kind, "No word for the omen kind " + kind);
             }
         }
 
