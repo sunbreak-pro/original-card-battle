@@ -87,7 +87,7 @@ namespace DungeonContent
 
             new ItemDef("ryugo_no_fu", "竜語の符", "りゅうごのふ",
                 ItemEffect.BluntBossState, 1,
-                "ボス専用の状態が常に 1 スタック低く乗る（battle_core_v4.md §5）"),
+                "ボス専用の状態が 1 スタック低く乗る（battle_core_v4.md §5）"),
         };
 
         /// <summary>
