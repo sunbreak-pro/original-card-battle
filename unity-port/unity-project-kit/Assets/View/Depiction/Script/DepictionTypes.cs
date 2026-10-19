@@ -117,9 +117,9 @@ namespace Depiction
         /// <summary>True when the trait's condition holds right now (lamp lit).</summary>
         public bool TraitLit;
         /// <summary>
-        /// The range side the card may be played from, or null when either side works. A live turn
-        /// refuses a card held on the other side (<see cref="PlayVerdict.OutOfRange"/>); the fixed
-        /// script never looks at it.
+        /// The range side the card may be played from, or null when either side works. The fixed
+        /// script prints it and never looks at it; a core battle refuses by reach instead
+        /// (<see cref="PlayVerdict.OutOfRange"/>).
         /// </summary>
         public RangeSide? RequiredRange;
         /// <summary>The glyph of <see cref="RequiredRange"/> as printed ("近"). Empty when the card has none.</summary>
@@ -369,7 +369,7 @@ namespace Depiction
         public string KindLabel = "";
         /// <summary>
         /// The reach the omen aims at ("1〜2"), kept until the floor shows the aimed cells (#242).
-        /// The v4.2 sources (LiveTurn, TurnSliceScript) still write the side glyph. Empty when none.
+        /// The fixed script (TurnSliceScript), written for v4.2, still writes the side glyph. Empty when none.
         /// </summary>
         public string SideGlyph = "";
         /// <summary>The number beside the icon: attack (the core preview) and guard only (#349). Empty for any other kind.</summary>
@@ -804,7 +804,7 @@ namespace Depiction
         WrongZone,
         /// <summary>
         /// Fixed-script playback only: the script writes one order and this is not its next card.
-        /// A live turn never answers this — there the hand is free (issue #36).
+        /// A played battle never answers this — there the hand is free (issue #36).
         /// </summary>
         OffScript,
         /// <summary>
@@ -845,6 +845,12 @@ namespace Depiction
             return aim == CardAim.Single ? "敵の受け皿の上" : "投げ上げ線より上";
         }
 
+        /// <summary>Why a card released in the wrong zone went back to the hand. Every source says it the same way.</summary>
+        public static string WrongZoneText(CardFace face)
+        {
+            return "「" + face.Name + "」は" + ZoneName(face.Aim) + "で離すと出せます";
+        }
+
         public static CardFace Find(List<CardFace> hand, string cardId)
         {
             foreach (CardFace face in hand)
@@ -863,8 +869,9 @@ namespace Depiction
 
     /// <summary>
     /// What the screen plays, and what it may refuse. Two sources answer it: the fixed script kept
-    /// for filming (<see cref="DepictionRunner"/>) and the turn the player actually fights
-    /// (<see cref="LiveTurn"/>). The View holds one of them and never asks which it is.
+    /// for filming (<see cref="DepictionRunner"/>) and the fight the player actually plays, which the
+    /// bridge runs on the BattleCore rules (CoreBattleSource, #571). The View holds one of them and
+    /// never asks which it is.
     /// Every line of text it shows is written here, so the View still prints rather than computes.
     /// </summary>
     public interface IDepictionSource
@@ -908,8 +915,8 @@ namespace Depiction
     /// <summary>
     /// Walks a fixed script in order, for captures and for filming a known slice. Holds no rules:
     /// it only knows which event is next, whether that event waits for a drag, and whether a
-    /// released card is the one the script wrote. A player who wants a free hand takes
-    /// <see cref="LiveTurn"/> instead.
+    /// released card is the one the script wrote. A player who wants a free hand fights through the
+    /// bridge's CoreBattleSource instead.
     /// </summary>
     public sealed class DepictionRunner : IDepictionSource
     {
@@ -989,7 +996,7 @@ namespace Depiction
             }
             if (verdict == PlayVerdict.WrongZone)
             {
-                return "「" + face.Name + "」は" + DepictionText.ZoneName(face.Aim) + "で離すと出せます";
+                return DepictionText.WrongZoneText(face);
             }
             return "";
         }

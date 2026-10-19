@@ -33,7 +33,7 @@ namespace Depiction.PlayModeTests
 
             // Neither flag is saved in the scene; switch both on before the player's Start runs.
             // scriptedPlayback is what this test measures: the filmed slice, in its written order.
-            // The scene itself now opens on the live turn, where the player picks the cards.
+            // The Tools > Depiction builder saves the scene with scriptedPlayback on (#571); set it anyway.
             UnityEngine.Events.UnityAction<Scene, LoadSceneMode> onLoaded = (scene, mode) =>
             {
                 MonoBehaviour loaded = FindPlayer();

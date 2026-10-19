@@ -231,32 +231,6 @@ namespace Depiction.Tests
             Assert.That(Steps(end).Last(), Is.EqualTo((EffectId.EnemyTurnBanner, 1)));
         }
 
-        [Test]
-        public void ALiveFight_EndsOnAFrameThatSaysWhoWon()
-        {
-            var live = new LiveTurn();
-            for (int guard = 0; guard < 400 && !live.Finished; guard++)
-            {
-                if (!live.WaitingForPlayer)
-                {
-                    DepictionEvent ev = live.AdvanceAuto();
-                    if (!live.Finished) Assert.That(ev.After.Outcome, Is.EqualTo(BattleOutcome.Ongoing), "event " + ev.Order);
-                    continue;
-                }
-                string card = live.Frame.Hand.Select(c => c.Id).FirstOrDefault(id => live.Inspect(id) == PlayVerdict.Accepted);
-                if (card == null)
-                {
-                    live.EndTurn();
-                    continue;
-                }
-                CardFace face = DepictionText.Find(live.Frame.Hand, card);
-                live.TryPlay(card, DepictionText.RequiredZone(face.Aim), out DepictionEvent _);
-            }
-            Assert.That(live.Finished, Is.True);
-            Assert.That(live.Frame.Outcome, Is.EqualTo(live.PlayerWon ? BattleOutcome.Won : BattleOutcome.Lost));
-            Assert.That(DepictionText.OutcomeText(live.Frame.Outcome), Is.EqualTo(live.PlayerWon ? "勝ち" : "負け"));
-        }
-
         // ---- The system a blow draws (battle_ui_ux_v2 §5.3) ----
 
         [TestCase("払い斬り", true, false, false, false, StrikeSystem.Sweep)] // 払 is read before 斬
@@ -423,7 +397,7 @@ namespace Depiction.Tests
             oneOff.Set(EffectId.HpDrain, false);
             foreach (EffectSwitches switches in new[] { EffectSwitches.AllOn(), oneOff, EffectSwitches.AllOff() })
             {
-                foreach (DepictionEvent ev in TurnSliceScript.Build().Events.Concat(LiveTurnEvents()))
+                foreach (DepictionEvent ev in TurnSliceScript.Build().Events)
                 {
                     float held = EffectPlan.StepsOf(ev).Sum(step => EffectPlan.WaitMs(step, switches));
                     Assert.That(EffectPlan.BlockingMs(ev, switches), Is.EqualTo(held), "event " + ev.Order + " " + ev.Title);
@@ -448,7 +422,7 @@ namespace Depiction.Tests
             Assert.That(EffectCatalog.Of(EffectId.RangeTagFlip).Ms, Is.EqualTo(150f));
             Assert.That(EffectCatalog.Of(EffectId.RangeTagFlip).Blocking, Is.True);
 
-            // The fixed slice and the live turn draw no floor: the figure moves to its slot, then the tag flips.
+            // The fixed slice draws no floor: the figure moves to its slot, then the tag flips.
             var slot = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
             slot.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, RangeAfter = RangeSide.Far, RangeGlyphAfter = "遠" });
             Assert.That(Steps(slot), Is.EqualTo(new[] { (EffectId.CardRelease, 1), (EffectId.RangeSwitch, 1), (EffectId.RangeTagFlip, 1) }));
@@ -503,7 +477,7 @@ namespace Depiction.Tests
         [Test]
         public void SwitchingAnyEffectOff_NeverLengthensAnEvent_AndAllOff_TheTurnStillPlaysToTheEnd()
         {
-            List<DepictionEvent> events = LiveTurnEvents();
+            List<DepictionEvent> events = TurnSliceScript.Build().Events;
             Assert.That(events.Count, Is.GreaterThan(3));
 
             foreach (EffectId id in Enum.GetValues(typeof(EffectId)))
@@ -532,7 +506,7 @@ namespace Depiction.Tests
         public void EveryEvent_FitsInsideTheTwoSecondBudget()
         {
             var all = EffectSwitches.AllOn();
-            foreach (DepictionEvent ev in TurnSliceScript.Build().Events.Concat(LiveTurnEvents()))
+            foreach (DepictionEvent ev in TurnSliceScript.Build().Events)
             {
                 Assert.That(EffectPlan.BlockingMs(ev, all), Is.LessThan(2000f), "event " + ev.Order + " " + ev.Title);
             }
@@ -594,23 +568,5 @@ namespace Depiction.Tests
 
         private static (EffectId, int)[] CardSteps(DepictionEvent ev) =>
             Steps(ev).Where(s => CardMotion.Contains(s.Item1)).ToArray();
-
-        /// <summary>One live turn with nobody at the mouse: the turn start, the turn end, the enemy.</summary>
-        private static List<DepictionEvent> LiveTurnEvents()
-        {
-            var live = new LiveTurn();
-            var events = new List<DepictionEvent>();
-            while (!live.Finished && !live.WaitingForPlayer) events.Add(live.AdvanceAuto());
-            string first = live.Frame.Hand.Select(c => c.Id).FirstOrDefault(id => live.Inspect(id) == PlayVerdict.Accepted);
-            if (first != null)
-            {
-                CardFace face = DepictionText.Find(live.Frame.Hand, first);
-                Assert.That(live.TryPlay(first, DepictionText.RequiredZone(face.Aim), out DepictionEvent played), Is.EqualTo(PlayVerdict.Accepted));
-                events.Add(played);
-            }
-            events.Add(live.EndTurn());
-            while (!live.Finished && !live.WaitingForPlayer) events.Add(live.AdvanceAuto());
-            return events;
-        }
     }
 }

@@ -107,6 +107,22 @@ namespace Depiction.Bridge.Tests
             Assert.That(won, Is.GreaterThan(0), "no seed won; the fall was never written");
         }
 
+        [Test]
+        public void APlayedFight_EndsOnAFrameThatSaysWhoWon()
+        {
+            // Moved from the Script tests when the hand-written source went (#571): a played battle is the core's.
+            var source = CoreBattleSource.Slice(20260920);
+            List<DepictionEvent> fight = PlayGreedy(source);
+            Assert.That(source.State.Result, Is.Not.EqualTo(GameResult.Ongoing));
+            BattleOutcome expected = source.State.Result == GameResult.Won ? BattleOutcome.Won : BattleOutcome.Lost;
+            // Ongoing until the deciding blow; from there (the blow, then the fall of #288) every frame says who won.
+            List<BattleOutcome> settled = fight.Select(ev => ev.After.Outcome).SkipWhile(o => o == BattleOutcome.Ongoing).ToList();
+            Assert.That(settled, Is.Not.Empty);
+            Assert.That(settled, Is.All.EqualTo(expected));
+            Assert.That(source.Frame.Outcome, Is.EqualTo(expected));
+            Assert.That(DepictionText.OutcomeText(source.Frame.Outcome), Is.EqualTo(expected == BattleOutcome.Won ? "勝ち" : "負け"));
+        }
+
         /// <summary>The first card that is allowed, else the end-turn plate, to the end of the battle.</summary>
         private static List<DepictionEvent> PlayGreedy(CoreBattleSource source)
         {

@@ -1,9 +1,10 @@
 // Starts the vertical-slice battle scene (Assets/Scenes/Battle.unity): on Play it hands the
 // DepictionPlayer a battle run by the v4.3 core — the polearm warped soldier against the prototype
-// deck — instead of the hand-written LiveTurn. It decides nothing itself: the Inspector fields are
-// copied into a BattleLaunch (pure C#, tested under `dotnet test`), which builds the source.
+// deck. It decides nothing itself: the Inspector fields are copied into a BattleLaunch (pure C#,
+// tested under `dotnet test`), which builds the source.
 //
-// BattleDepiction.unity (the filming scene) has no bootstrap and keeps playing as before.
+// BattleDepiction.unity (the filming scene) has no bootstrap: it replays the fixed script
+// (DepictionPlayer.scriptedPlayback, #571).
 #if UNITY_2021_2_OR_NEWER
 using Depiction.Bridge;
 using UnityEngine;
@@ -112,7 +113,7 @@ namespace Depiction.View
             }
             catch (System.ArgumentException e)
             {
-                // A wrong id must not quietly fall back to the hand-written LiveTurn: stop the player instead.
+                // A wrong id must not quietly start some other battle: stop the player instead.
                 Debug.LogError("[BattleBootstrap] " + e.Message);
                 player.enabled = false;
                 return;
