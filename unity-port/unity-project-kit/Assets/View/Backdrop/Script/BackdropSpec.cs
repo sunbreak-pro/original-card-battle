@@ -2,9 +2,9 @@
 // it, the light that breathes in the haze, the motes that drift through it, and the floor tile drawn
 // on top. Pure C#, so `dotnet test` holds the values the screen draws.
 //
-// Only the backdrop changes with the layer; the UI keeps its colours (world-v1 §6). Layers 1, 4 and 5
-// are the values §2.4 fixed before #89; 2, 3, 6 and 7 are #89's, read off world-v1 §4 (the light
-// source, the brightness and the main colours of each layer). The art for a layer (a far view and a
+// Only the backdrop changes with the layer; the UI keeps its colours (world-v1 §6). Layers 4 and 5
+// are the values §2.4 fixed before #89; 2, 3, 6 and 7 are #89's and 1 is #609's, read off world-v1 §4
+// (the light source, the brightness and the main colours of each layer). The art for a layer (a far view and a
 // ground, #89's second half) goes between the sky and the haze, so everything here stays when it lands.
 namespace Backdrop
 {
@@ -159,24 +159,26 @@ namespace Backdrop
         public const float ReachRedMinContrast = 3f;
 
         private static readonly Rgba White = new Rgba(1f, 1f, 1f);
+        private static readonly Rgba Sunlight = Rgba.Hex("#f4f8dc"); // the pale yellow-green sun of layer 1
         private static readonly Rgba Phosphor = Rgba.Hex("#b9a3ff"); // 燐光 (world-v1 §6)
         private static readonly Rgba Violet = Rgba.Hex("#8b6fd0");   // 菫 (world-v1 §6)
 
         private static readonly LayerBackdrop[] All =
         {
-            // 1 燦光の樹海: daylight through the hole in the roof. §2.4: light from above (white 10%) and a white 5% band halfway down.
+            // 1 燦光の樹海, bright (#609): young grass under the sun falling through the hole in the roof, in
+            // near-upright shafts. The sun is pale yellow-green and white, never amber (world-v1 §3 rule 4), and no crystal grows here (rule 5).
             new LayerBackdrop
             {
                 Layer = 1,
                 Name = "燦光の樹海",
-                Sky = new[] { new SkyStop(0f, Rgba.Hex("#1d3340")), new SkyStop(1f, Rgba.Hex("#0f1a22")) },
+                Sky = new[] { new SkyStop(0f, Rgba.Hex("#d6e8a4")), new SkyStop(0.4f, Rgba.Hex("#7cab4a")), new SkyStop(1f, Rgba.Hex("#22391c")) },
                 Hazes = new[]
                 {
-                    new Haze { Shape = HazeShape.TopGlow, Color = White.WithAlpha(0.10f), Size = 0.55f, Flicker = new Flicker(6000, 0.25f) },
-                    new Haze { Shape = HazeShape.Band, Color = White.WithAlpha(0.05f), Y = 0.45f, Size = 0.12f },
+                    new Haze { Shape = HazeShape.Shafts, Color = White.WithAlpha(0.28f), X = 0.42f, Size = 0.05f, Count = 4, Angle = 8f, Flicker = new Flicker(6000, 0.25f) },
+                    new Haze { Shape = HazeShape.TopGlow, Color = Sunlight.WithAlpha(0.30f), Size = 0.5f },
                 },
-                Motes = new Motes { Count = 24, Color = White.WithAlpha(0.22f), SizePx = 4f, SpeedX = 6f, SpeedY = 10f, Twinkle = 0.5f },
-                Tile = Rgba.Bytes(10, 16, 22, 0.72f),
+                Motes = new Motes { Count = 24, Color = Sunlight.WithAlpha(0.35f), SizePx = 4f, SpeedX = 6f, SpeedY = 10f, Twinkle = 0.5f },
+                Tile = Rgba.Bytes(10, 18, 12, 0.82f),
             },
             // 2 ■■の秘跡: sand and white stone in a slanting light; the first violet crystals sprout at the foot of the pillars.
             new LayerBackdrop

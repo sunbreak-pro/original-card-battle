@@ -3,7 +3,7 @@
 // map, its links and its labels — drawn straight on the backdrop, not on panels — read on every layer.
 // Pure C#, so `dotnet test` holds the values the screen draws.
 //
-// The veil is thin on the dark layers and thick on the two bright ones (2 and 4), and each alpha is the
+// The veil is thin on the dark layers and thick on the three bright ones (1, 2 and 4), and each alpha is the
 // least that keeps the body text and the amber accent readable at the backdrop's brightest point, with
 // a little to spare. The hand-drawn map ground, when it lands, goes between the place and the veil.
 namespace Backdrop
@@ -31,9 +31,9 @@ namespace Backdrop
         public static readonly Rgba Amber = Rgba.Hex("#e8a84c");
         public const float AmberMinContrast = 3f;
 
-        // The veil's alpha by layer (index 0 is layer 1). 2 and 4 are the bright layers of world-v1 §3
+        // The veil's alpha by layer (index 0 is layer 1). 1, 2 and 4 are the bright layers of world-v1 §3
         // rule 3; layer 4 stays the brightest after the veil.
-        private static readonly float[] VeilAlpha = { 0.35f, 0.68f, 0.35f, 0.70f, 0.35f, 0.35f, 0.35f };
+        private static readonly float[] VeilAlpha = { 0.72f, 0.68f, 0.35f, 0.70f, 0.35f, 0.35f, 0.35f };
 
         /// <summary>The exploration backdrop of <paramref name="layer"/>; anything outside 1〜7 is held to the nearest end.</summary>
         public static ExplorationBackdrop For(int layer)

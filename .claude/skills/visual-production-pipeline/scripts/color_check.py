@@ -4,6 +4,10 @@ Defaults are the A+ tokens (battle_ui_ux_v2.md section 4.5 / 4.8) and the floor
 gradients (BattleTheme.cs). Override with --tokens tokens.json
 ({"roles": {...}, "texts": {...}, "grounds": {...}}).
 
+The defaults are a record of the palette before battle-visual-v1: the roles are
+now battle-visual-v1.md section 2.1, and layer 1 is no longer the dark #1d3340 but
+young grass and sun (#609, BackdropSpec.cs). Pass --tokens to check today's screen.
+
 Contrast: WCAG 2.x relative luminance. Text needs 4.5:1, non-text 3:1.
 Colour-vision distance: Machado, Oliveira & Fernandes 2009 matrices (severity 1.0)
 applied in linear sRGB, then CIE76 delta E in CIELAB (D65). The delta E threshold

@@ -6,6 +6,7 @@
 - 読む用のレポート: `docs/reports/2026-09-14-visual-production-survey.html`（回答前のスナップショット）
 - 数字の更新: 2026-09-23（#146）。人型の枠を Depiction の 210 × 450 に、原本と書き出しを 640 × 1536 に、台帳を 15 列に直した。正本は `.claude/docs/art_document/style-guide.md` §2 と `asset-intake.md` §1.2・§7
 - 間合いの更新: 2026-10-04（#167）。間合いの記述を横 1 列のマスの間合い N（`battle_core_v4.md` §7、`battle_ui_ux_v2.md` v2.2）に直した。人型の枠の向きを、敵の絵を反転しない実装（#288）に合わせた
+- 背景の更新: 2026-10-19（#609）。1 層の背景が明るい若草と陽になったので、§6 の 1 層の数字を旧い記録と書き分けた
 - 価格・ライセンスは変わります。使う直前に `terms_url` を開き、台帳の `terms_checked_on` を書き換えます。
 
 略称: `v2` = `.claude/docs/battle_document/battle_ui_ux_v2.md`、`core` = `.claude/docs/battle_document/battle_core_v4.md`、`roster` = `.claude/docs/enemy_document/enemy_roster_v4.md`、`art-plan` = `.claude/docs/vision/plans/2026-06-28-unity-migration-character-art.md`。
@@ -106,6 +107,7 @@
 ## 6. 読みやすさ（`scripts/color_check.py` の計算値）
 
 - 階層 1 の背景上端 `#1d3340` に対して、omen 4.32:1、boss 4.28:1、whiff 3.68:1 で、本文の 4.5:1 を下回ります。これらの色を背景に直接置く文字に使わず、下に panel の帯を敷く規則を v2 に提案します。24 px 以上の文字は 3:1 でよい規定です（2026-09-16 決定 → §9 #18）。この 3 色はいずれも 3:1 を上回ります。大きな見出しなら帯なしで置けます。小さい脇ラベルは ink にします。
+- 上の数字は、1 層が暗かったころ（#609 の前）の旧い役割色で測った記録です。1 層は #609 で明るい若草と陽（上端 `#d6e8a4`）になりました。今の役割色は `battle-visual-v1.md` §2.1、階層の背景は同 §2.4 と `Assets/View/Backdrop/Script/BackdropSpec.cs` が元になる文書です。`scripts/color_check.py` の既定値は旧い組のままなので、今の画面を測るときは `--tokens` で今の値を渡します。
 - 役割色の組で ΔE 20 を下回るのは 4 組です。warm と amber は正常色覚でも 12.3 です。omen と amber は 2 型色覚で 13.3、warm と omen は 2 型色覚で 18.7、whiff と boss は 3 型色覚で 19.0 です。この 4 組は色を変えず、アイコンや線種の形の差で見分けます（2026-09-16 決定 → §9 #19）。
 - 投入の色（投入帯と amber の投入の役割）は外してから登録します。間合いの部品（床のマス・間合いの数字・届くマスの光・狙うマス）にも新しい色を足しません（2026-09-14 決定を v2.2 が引き継ぐ）。床のマスは補助の色で描き、間合いの数字には良し悪しの色を付けません。届くマスの光は自分の色で塗り、狙うマスは敵の色の斜線で描きます（`v2` §4.8。色の値は `battle-visual-v1.md` §2.1、置き方は §4.2）。
 - ΔE 20 は規格ではありません。プロジェクトで決める仮の値です。
