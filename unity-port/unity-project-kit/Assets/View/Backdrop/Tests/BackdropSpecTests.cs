@@ -1,6 +1,6 @@
-// #89: the seven layers' backdrops (battle-visual-v1 §2.4). The values §2.4 fixed before #89 stay, every
-// layer keeps the reach red readable on its floor tile (§2.3), and the brightness follows world-v1 §3's
-// rule 3 (1 and 2 bright, 3 dark, 4 the brightest, then darker down to 7).
+// #89: the seven layers' backdrops (battle-visual-v1 §2.4). The values §2.4 fixes stay, every layer keeps
+// the reach red readable on its floor tile (§2.3), and the brightness follows world-v1 §3's rule 3
+// (1 and 2 bright, 3 dark, 4 the brightest, then darker down to 7). #609 made layer 1 bright.
 using NUnit.Framework;
 
 namespace Backdrop.Tests
@@ -31,16 +31,18 @@ namespace Backdrop.Tests
         }
 
         [Test]
-        public void Layers1_4_5_KeepTheValuesFixedBefore89()
+        public void Layers1_4_5_KeepTheValuesSection24Fixes()
         {
-            AssertHex(BackdropSpec.For(1).Sky[0].Color, "#1d3340");
-            AssertHex(BackdropSpec.For(1).Sky[1].Color, "#0f1a22");
+            // 1 is #609's young grass and sun; 4 and 5 are the values fixed before #89.
+            AssertHex(BackdropSpec.For(1).Sky[0].Color, "#d6e8a4");
+            AssertHex(BackdropSpec.For(1).Sky[1].Color, "#7cab4a");
+            AssertHex(BackdropSpec.For(1).Sky[2].Color, "#22391c");
             AssertHex(BackdropSpec.For(4).Sky[0].Color, "#e4e6f2");
             AssertHex(BackdropSpec.For(4).Sky[1].Color, "#b7bbd6");
             AssertHex(BackdropSpec.For(4).Sky[2].Color, "#7d82a8");
             AssertHex(BackdropSpec.For(5).Sky[0].Color, "#1a0e12");
             AssertHex(BackdropSpec.For(5).Sky[1].Color, "#070507");
-            Assert.That(BackdropSpec.For(1).Tile.A, Is.EqualTo(0.72f));
+            Assert.That(BackdropSpec.For(1).Tile.A, Is.EqualTo(0.82f));
             Assert.That(BackdropSpec.For(4).Tile.A, Is.EqualTo(0.82f));
             Assert.That(BackdropSpec.For(5).Tile.A, Is.EqualTo(0.80f));
         }
@@ -58,7 +60,7 @@ namespace Backdrop.Tests
         [Test]
         public void Layer4_IsTheLowestForTheRed_AsSection23Measured()
         {
-            // §2.3 measured 3.0〜4.0 on layer 4 and 4.4 or more on 1 and 5; layer 4 stays the tightest.
+            // §2.3 measured 3.0〜4.0 on layer 4 and 3.7 or more on the rest; layer 4 stays the tightest.
             double four = BackdropSpec.ReachRedContrast(BackdropSpec.For(4));
             Assert.That(four, Is.LessThan(4.0));
             for (int layer = 1; layer <= BackdropSpec.Layers; layer++)
@@ -78,6 +80,7 @@ namespace Backdrop.Tests
             {
                 if (layer != 4) Assert.That(l[4], Is.GreaterThan(l[layer]), "4 is the brightest, above " + layer);
             }
+            Assert.That(l[1], Is.GreaterThan(l[3]), "1 is bright, above 3");
             Assert.That(l[2], Is.GreaterThan(l[3]), "3 drops after 2");
             Assert.That(l[5], Is.LessThan(l[4]));
             Assert.That(l[6], Is.LessThan(l[5]), "5 onward goes darker");
