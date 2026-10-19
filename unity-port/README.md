@@ -105,11 +105,11 @@ unity-port/
 
 **複数体**（#47）: 同時に 3 体まで、1 マスに 1 体。`BattleState.Enemies` に並びの順で持ち、イベントの `Unit` がどの敵のことかを示します。1 体の戦いのイベント列は変わりません。
 
-**外してあるもの**: スタンス枠と除外置き場（#49）、2 行動の敵と予兆 2 段（#50）、連戦モード（#52）、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担います。台本の型（`Script/`）と View は BattleCore に依存しません。
+**外してあるもの**: スタンス枠と除外置き場（#49）、2 行動の敵と予兆 2 段（#50）、連戦モード（#52）、View 契約（`IBattleView` / `ViewModel` / `BattleStore`）。v3 の実装は git の履歴にあります。戦闘描写の画面は `unity-project-kit/Assets/View/Depiction/` が担います。台本の型（`Script/`）は BattleCore に依存しません。View は `CardDef` `EnemyDef` `Departure` `BattleAttribute` などの定義を、計算せず受け渡すためだけに持ってよく、BattleCore の規則は呼びません（#572）。
 
 ## コアから戦闘描写へ（#73）
 
-BattleCore と台本の型の両方を見るのは `Assets/View/Depiction/Bridge/`（アセンブリ `Depiction.Bridge`）だけです。
+BattleCore の規則（`TurnLoop` `EnemyAi` `Field` など）を呼ぶのは `Assets/View/Depiction/Bridge/`（アセンブリ `Depiction.Bridge`）だけです。View の他のファイルが規則を呼んでいないことは、`Depiction.Bridge.Tests/ViewRulesBoundaryTests.cs` が `dotnet test` で確かめます（#572）。
 
 - `CoreScriptWriter.cs`: `TurnLoop` が返したイベントの列を、画面が再生する `DepictionEvent` / `Cue` / `DepictionFrame` へ写します。数字はイベントが持つ確定後の値をそのまま写し、計算しません。`BeginPlayerTurn` と `PlayCard` は 1 つの出来事、`EndTurn` は「ターン終了 / 敵の行動 / 次の予兆」の 3 つになります。
 - `CoreBattleSource.cs`: `IDepictionSource` の 3 つ目の実装です。`TurnLoop` で戦闘を進め、画面が待っているのがプレイヤーか自動の出来事かだけを決めます。`DemoDeck` は読みません。
