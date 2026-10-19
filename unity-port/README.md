@@ -112,12 +112,12 @@ unity-port/
 BattleCore と台本の型の両方を見るのは `Assets/View/Depiction/Bridge/`（アセンブリ `Depiction.Bridge`）だけです。
 
 - `CoreScriptWriter.cs`: `TurnLoop` が返したイベントの列を、画面が再生する `DepictionEvent` / `Cue` / `DepictionFrame` へ写します。数字はイベントが持つ確定後の値をそのまま写し、計算しません。`BeginPlayerTurn` と `PlayCard` は 1 つの出来事、`EndTurn` は「ターン終了 / 敵の行動 / 次の予兆」の 3 つになります。
-- `CoreBattleSource.cs`: `IDepictionSource` の 3 つ目の実装です。`TurnLoop` で戦闘を進め、画面が待っているのがプレイヤーか自動の出来事かだけを決めます。`DemoDeck` は読みません。
+- `CoreBattleSource.cs`: 実戦の `IDepictionSource` です（もう 1 つは撮影用の固定台本 `DepictionRunner`。#571）。`TurnLoop` で戦闘を進め、画面が待っているのがプレイヤーか自動の出来事かだけを決めます。`DemoDeck` は読みません。
 - `CoreText.cs`: 札・予兆・状態チップの文言です。ランプ（特性の条件が今成り立つか）と持っている札の予測値は、コアの `TurnLoop.Preview` に聞きます。
 
 - `BattleLaunch.cs`（#74）: 戦闘シーンを何で始めるか（敵の id / 乱数の種 / 開始位置 / 無人実行の 2 項目）を持ち、`CoreBattleSource` を作ります。知らない敵の id はここで弾きます。
 
-縦切り用の戦闘シーン（Unity リポの `Assets/Scenes/Battle.unity`）は、`Assets/View/Depiction/BattleBootstrap.cs` を 1 つ置くだけで始まります。`Awake` で Inspector の値を `BattleLaunch` へ写し、できた source を `DepictionPlayer.UseSource` へ渡します。`BattleBootstrap` の無いシーン（撮影用の `BattleDepiction.unity`）は今までどおり `LiveTurn` か固定台本で動きます。無人で流すときは、`BattleBootstrap` の Auto Play と、`DepictionPlayer` の Auto Play Drags / Auto End Turn を入れます。
+縦切り用の戦闘シーン（Unity リポの `Assets/Scenes/Battle.unity`）は、`Assets/View/Depiction/BattleBootstrap.cs` を 1 つ置くだけで始まります。`Awake` で Inspector の値を `BattleLaunch` へ写し、できた source を `DepictionPlayer.UseSource` へ渡します。`BattleBootstrap` の無いシーン（撮影用の `BattleDepiction.unity`）は、`DepictionPlayer` の Scripted Playback を付けて固定台本で動きます。source も Scripted Playback も無いとき、`DepictionPlayer` はエラーを出して止まります（#571）。無人で流すときは、`BattleBootstrap` の Auto Play と、`DepictionPlayer` の Auto Play Drags / Auto End Turn を入れます。
 
 敵の構え（Guard +3）は、敵の行動ではなく次の予兆の出来事の頭で再生します。押し込みは「構え → 振り → 盾 → 傷 → 押し出し」で既に長く、同じ出来事に入れると 1 行動 2.0 秒を超えるためです。
 

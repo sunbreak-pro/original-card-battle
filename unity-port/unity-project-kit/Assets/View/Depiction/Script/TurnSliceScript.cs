@@ -3,7 +3,7 @@
 // Every value below is a settled result written by hand; nothing here is a formula the
 // View could re-run.
 // The filmed hand stays at five cards, the rule before #351 (six since 2026-10-06): this is a
-// record of the recorded slice, not the current rule. LiveTurn and the core deal six.
+// record of the recorded slice, not the current rule. The core deals six.
 using System.Collections.Generic;
 
 namespace Depiction
@@ -14,6 +14,9 @@ namespace Depiction
         public const string Kesagiri = DemoDeck.Kesagiri;
         public const string Daijodan = DemoDeck.Daijodan;
         public const string Ushirotobi = DemoDeck.Ushirotobi;
+
+        /// <summary>Stamina left at the turn's end that still earned the stance shield in the recorded slice.</summary>
+        public const int StanceThreshold = 3;
 
         public static DepictionScript Build()
         {
@@ -97,7 +100,7 @@ namespace Depiction
             enemyAction.Cues.Add(new Cue { Kind = CueKind.Hit, Target = UnitSide.Player, Amount = 3, Intensity = EffectStrength.Uniform, HpAfter = 47 });
             script.Events.Add(enemyAction);
 
-            // 7. Next omen: 防御 9, the same Guard as LiveTurn.EnemyGuardPower (#349).
+            // 7. Next omen: 防御 9, the enemy Guard of the recorded slice (#349).
             var nextOmen = new DepictionEvent
             {
                 Order = 7, Kind = DepictionEventKind.NextOmen, Title = "次の予兆",
@@ -126,7 +129,7 @@ namespace Depiction
                 Omen = omen,
                 Hand = hand,
                 StanceHint = stanceHint,
-                StanceDivider = LiveTurn.StanceThreshold,
+                StanceDivider = StanceThreshold,
             };
         }
 
@@ -137,8 +140,7 @@ namespace Depiction
         }
 
         /// <summary>
-        /// The five faces the slice opens with, printed from the shared table so the fixed script and
-        /// the live turn can never describe the same card differently. The slice is written at the top
+        /// The five faces the slice opens with, printed from DemoDeck's table. The slice is written at the top
         /// of a turn with the attack omen showing, so both printed traits are lit.
         /// </summary>
         private static List<CardFace> FullHand()

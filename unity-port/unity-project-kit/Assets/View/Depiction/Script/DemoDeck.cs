@@ -1,8 +1,6 @@
-// The five cards the depiction demo fights with, and what each one does. Pure C#: no UnityEngine,
-// no BattleCore. Numbers are the §18 draft scale (attack 6 / 13 / 21, guard 4 / 9 / 15).
-//
-// One table, two readers: TurnSliceScript prints these faces into its fixed script, and LiveTurn
-// plays them by their rules. Keeping them apart is how the two drifted before.
+// The five card faces the fixed filming script prints. Pure C#: no UnityEngine, no BattleCore.
+// The numbers are the §18 draft scale the slice was recorded at (attack 6 / 13, guard 4 / 9); they
+// are print, not rules. A played battle takes its cards and rules from BattleCore (#571).
 using System;
 using System.Collections.Generic;
 
@@ -18,7 +16,7 @@ namespace Depiction
         AgainstAttackOmen,
     }
 
-    /// <summary>One card kind: what it prints, and the settled numbers it produces.</summary>
+    /// <summary>One card kind: what its face prints. It holds no rule.</summary>
     public sealed class DemoCard
     {
         public string DefId = "";
@@ -34,12 +32,6 @@ namespace Depiction
         public TraitCondition Trait = TraitCondition.None;
         /// <summary>The range side the card may be played from; null when either side works.</summary>
         public RangeSide? RequiredRange;
-
-        public int Damage;
-        public int Guard;
-        /// <summary>The side the player ends up on; null when the card does not move.</summary>
-        public RangeSide? MovesTo;
-        public int Draw;
     }
 
     public static class DemoDeck
@@ -50,12 +42,6 @@ namespace Depiction
         public const string TetsuNoUke = "tetsu-no-uke";
         public const string Kansatsu = "kansatsu";
 
-        /// <summary>Both printed traits add the same amount (§18 draft).</summary>
-        public const int TraitBonus = 3;
-
-        /// <summary>How many of each kind the live deck holds.</summary>
-        public const int Copies = 2;
-
         public static readonly IList<DemoCard> All = new List<DemoCard>
         {
             new DemoCard
@@ -63,13 +49,13 @@ namespace Depiction
                 DefId = Kesagiri, Name = "袈裟斬り", Cost = 1, Kind = CardKind.Attack, Aim = CardAim.Single,
                 TypeLabel = "攻撃・敵単体", Description = "敵に 6 ダメージ。ターン最初なら +3。",
                 ValueText = "6", TraitText = "初手 +3", Trait = TraitCondition.FirstCardOfTurn,
-                RequiredRange = RangeSide.Near, Damage = 6,
+                RequiredRange = RangeSide.Near,
             },
             new DemoCard
             {
                 DefId = Daijodan, Name = "大上段", Cost = 2, Kind = CardKind.Attack, Aim = CardAim.Single,
                 TypeLabel = "攻撃・敵単体", Description = "敵に 13 ダメージ。振りかぶる一撃。",
-                ValueText = "13", RequiredRange = RangeSide.Near, Damage = 13,
+                ValueText = "13", RequiredRange = RangeSide.Near,
             },
             new DemoCard
             {
@@ -77,21 +63,20 @@ namespace Depiction
                 Affects = UnitSide.Player,
                 TypeLabel = "ムーブ・自分", Description = "遠間へ下がる。Guard 4 を得る。予兆が攻撃なら +3。",
                 ValueText = "4", TraitText = "予兆 +3", Trait = TraitCondition.AgainstAttackOmen,
-                RequiredRange = RangeSide.Near, Guard = 4, MovesTo = RangeSide.Far,
+                RequiredRange = RangeSide.Near,
             },
             new DemoCard
             {
                 DefId = TetsuNoUke, Name = "鉄の受け", Cost = 2, Kind = CardKind.Guard, Aim = CardAim.Self,
                 Affects = UnitSide.Player,
                 TypeLabel = "防御・自分", Description = "Guard 9 を得る。重い一撃に備える。",
-                ValueText = "9", Guard = 9,
+                ValueText = "9",
             },
             new DemoCard
             {
                 // Its text follows swordsman_cards_v4 (draw 1 at the first tier).
                 DefId = Kansatsu, Name = "観察", Cost = 1, Kind = CardKind.Skill, Aim = CardAim.Single,
                 TypeLabel = "技・敵単体", Description = "カードを 1 枚引く。相手をよく見る。",
-                Draw = 1,
             },
         };
 

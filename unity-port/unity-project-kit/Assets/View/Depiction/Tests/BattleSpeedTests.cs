@@ -35,7 +35,7 @@ namespace Depiction.Tests
         public void AWait_LastsTodaysLengthTimesOnePointTwoFiveOverTheMultiplier(BattleSpeedStep step, float scale)
         {
             var on = EffectSwitches.AllOn();
-            List<DepictionEvent> events = TurnSliceScript.Build().Events.Concat(LiveTurnEvents()).ToList();
+            List<DepictionEvent> events = TurnSliceScript.Build().Events;
             Assert.That(events, Is.Not.Empty);
             foreach (DepictionEvent ev in events)
             {
@@ -164,24 +164,6 @@ namespace Depiction.Tests
                 frames++;
             }
             return frames;
-        }
-
-        /// <summary>One live turn with nobody at the mouse, as EffectTests plays it.</summary>
-        private static List<DepictionEvent> LiveTurnEvents()
-        {
-            var live = new LiveTurn();
-            var events = new List<DepictionEvent>();
-            while (!live.Finished && !live.WaitingForPlayer) events.Add(live.AdvanceAuto());
-            string first = live.Frame.Hand.Select(c => c.Id).FirstOrDefault(id => live.Inspect(id) == PlayVerdict.Accepted);
-            if (first != null)
-            {
-                CardFace face = DepictionText.Find(live.Frame.Hand, first);
-                Assert.That(live.TryPlay(first, DepictionText.RequiredZone(face.Aim), out DepictionEvent played), Is.EqualTo(PlayVerdict.Accepted));
-                events.Add(played);
-            }
-            events.Add(live.EndTurn());
-            while (!live.Finished && !live.WaitingForPlayer) events.Add(live.AdvanceAuto());
-            return events;
         }
     }
 }

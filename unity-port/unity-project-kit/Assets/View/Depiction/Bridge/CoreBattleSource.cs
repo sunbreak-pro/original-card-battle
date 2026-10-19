@@ -1,8 +1,9 @@
 // The battle the v4.3 core runs, offered to the screen as an IDepictionSource. Pure C#:
 // BattleCore + Depiction.Script, no UnityEngine.
 //
-// This is the third source beside LiveTurn (the §18 draft rules written by hand) and
-// DepictionRunner (the fixed script kept for filming). It holds no rule of its own: TurnLoop moves
+// This is the source of every played battle; the only other one is DepictionRunner (the fixed
+// script kept for filming). The source that wrote the rules by hand is gone (#571), so the battle
+// rules live in BattleCore alone. This class holds no rule of its own either: TurnLoop moves
 // the battle, CoreScriptWriter turns what happened into screen events, and this class only decides
 // which of the two the screen is waiting for. It does not read DemoDeck.
 using System;
@@ -186,7 +187,7 @@ namespace Depiction.Bridge
                 case PlayVerdict.OutOfRange:
                     return "「" + face.Name + "」は間合い " + face.RequiredRangeGlyph + " の相手にしか出せません。いまは " + Frame.Player.RangeGlyph + " です";
                 case PlayVerdict.WrongZone:
-                    return "「" + face.Name + "」は" + DepictionText.ZoneName(face.Aim) + "で離すと出せます";
+                    return DepictionText.WrongZoneText(face);
                 case PlayVerdict.Bound:
                     return CoreText.BoundRefusal(face.Name);
                 default:

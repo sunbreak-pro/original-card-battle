@@ -1,5 +1,6 @@
-// Plays whatever an IDepictionSource hands it: the live turn the player fights by default, or the
-// fixed script kept for filming. Some events wait for the player; the rest run on their own. This
+// Plays whatever an IDepictionSource hands it: the battle the BattleCore rules run (a bridge source
+// given through UseSource / Restart), or the fixed script kept for filming (scriptedPlayback). With
+// neither it logs an error and stops (#571). Some events wait for the player; the rest run on their own. This
 // class computes no rule: every number, label, verdict and line of text it shows comes from the
 // source (DepictionFrame / DepictionEvent / Cue / PlayVerdict). Positions come from the scene
 // objects at run time, so prefab instances can be moved in the Editor freely. How long an event
@@ -72,7 +73,8 @@ namespace Depiction.View
 
         [Header("Mode")]
         [Tooltip("Filming only: replays TurnSliceScript in its written order, refusing any other card. "
-                 + "Off by default, so the hand is free and the fight is played for real.")]
+                 + "A played battle leaves it off and gets its source from BattleBootstrap or the demo flow; "
+                 + "with neither, the player stops with an error.")]
         public bool scriptedPlayback;
 
         [Header("Debug")]
@@ -185,7 +187,7 @@ namespace Depiction.View
 
         /// <summary>
         /// The demo flow (#190): start with no battle at all. Start sets the screen up and waits for
-        /// <see cref="Restart"/> instead of falling back to the hand-written LiveTurn. Call it from
+        /// <see cref="Restart"/> instead of stopping for want of a source. Call it from
         /// Awake, like <see cref="UseSource"/>.
         /// </summary>
         public void Hold()
@@ -367,7 +369,15 @@ namespace Depiction.View
 
             if (_givenSource != null) _source = _givenSource;
             else if (scriptedPlayback) _source = new DepictionRunner(TurnSliceScript.Build());
-            else _source = new LiveTurn();
+            else
+            {
+                // A played battle runs on the BattleCore rules, which only a bridge source brings
+                // (BattleBootstrap, the demo flow). With none given there is nothing to play: stop
+                // instead of making up a battle (#571).
+                Debug.LogError("[Depiction] no source to play: add a BattleBootstrap, or turn on Scripted Playback to film the fixed script.");
+                enabled = false;
+                return;
+            }
             SnapStanceGlows(_source.Frame);
             ApplyFrame(_source.Frame);
             if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
@@ -2485,7 +2495,7 @@ namespace Depiction.View
 
         /// <summary>
         /// Debug only: performs the drag the source suggests, so a slice can be captured without a
-        /// mouse. Only a fixed script suggests one; a live turn leaves the choice to the player.
+        /// mouse. A fixed script suggests its next card, and a core battle started with auto play the leftmost one it can pay for.
         /// </summary>
         private IEnumerator AutoDrag()
         {

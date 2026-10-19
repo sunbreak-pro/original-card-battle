@@ -50,7 +50,7 @@ namespace Depiction.Bridge
             }
         }
 
-        /// <summary>How hard a beat looks, 1..4. The same steps LiveTurn uses; the thresholds are #30's to settle.</summary>
+        /// <summary>How hard a beat looks, 1..4. The thresholds are #30's to settle.</summary>
         /// <summary>§5.3: the system a card's blow draws, from its name and faces (StrikeSystems.Of).</summary>
         public static StrikeSystem SystemOf(CardDef def)
         {

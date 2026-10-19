@@ -482,6 +482,9 @@ namespace Depiction.View
             var canvas = (RectTransform)canvasGo.transform;
 
             var player = new GameObject("DepictionPlayer").AddComponent<DepictionPlayer>();
+            // The filming scene has no BattleBootstrap: it replays the fixed script, and a player with
+            // neither stops with an error (#571).
+            player.scriptedPlayback = true;
             player.cardPrefab = Load<CardView>("Card");
 
             player.backdrop = Img(canvas, "Backdrop", BattleTheme.Ground, Vector2.zero, Vector2.one);
