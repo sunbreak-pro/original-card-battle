@@ -213,6 +213,32 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void AnEnemyBlowThatPushesTwoCells_FitsInsideTheCap()
+        {
+            // battle_ui_ux_v2 §5.0 / §5.7 順 6 (#586): the push walks 160 a cell, then the gap number is
+            // counted again for 150, so a push of 2 cells is the longest move an enemy's blow carries.
+            var on = EffectSwitches.AllOn();
+            var pushes = ExtremeEvents().Concat(AllBeats().Select(b => ("seed " + b.Seed + " " + b.Event.Title, b.Event)))
+                .Where(e => e.Item2.Kind == DepictionEventKind.EnemyAction
+                    && EffectPlan.StepsOf(e.Item2).Any(s => s.Id == EffectId.FloorMove && s.Count == 2))
+                .ToList();
+            Assert.That(pushes, Is.Not.Empty, "the corpus has an enemy blow that pushes 2 cells");
+            float worst = 0f;
+            string worstLabel = "";
+            foreach ((string label, DepictionEvent ev) in pushes)
+            {
+                float ms = EffectPlan.BlockingMs(ev, on);
+                Assert.That(ms, Is.LessThan(BudgetMs), label);
+                if (ms > worst)
+                {
+                    worst = ms;
+                    worstLabel = label + ": " + string.Join(" + ", EffectPlan.StepsOf(ev).Select(s => s.Id + " " + EffectPlan.WaitMs(s, on).ToString("0")));
+                }
+            }
+            TestContext.Out.WriteLine("pushes of 2 cells " + pushes.Count + ", worst " + worst.ToString("0") + " ms (" + worstLabel + ")");
+        }
+
+        [Test]
         public void EveryWaitedEffect_IsOneTheCatalogCallsBlocking()
         {
             var seen = new HashSet<EffectId>();

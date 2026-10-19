@@ -181,5 +181,29 @@ namespace Depiction.Bridge.Tests
             Assert.That(move.GapAfter, Is.EqualTo(play.State.GapTo(0)));
             Assert.That(ev.After.Floor.Gap, Is.EqualTo(move.GapAfter));
         }
+
+        [TestCase("feint", 0, 1)]
+        [TestCase("boar_rush", 2, 2)]
+        public void AMove_CarriesHowManyCellsItWalked(string cardId, int gap, int cells)
+        {
+            // battle_ui_ux_v2 §5.7 順 1 (#586): the walk takes 160 ms a cell, so each move's cue carries
+            // the cells the core moved, in the order the core moved them.
+            CardDef def = CardCatalog.All.Single(c => c.Id == cardId);
+            var setup = new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(new[] { def, CardCatalog.Brace }, 3),
+                BattleSetup.SliceFieldCells, StartGap: gap);
+            BattleState state = TurnLoop.Start(setup, NoShuffle).State;
+            var writer = new CoreScriptWriter(setup.Enemy);
+            writer.Opening(state);
+            StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            writer.Write(begin.Events, begin.State);
+
+            string card = begin.State.Hand.First(c => c.Def.Id == cardId).InstanceId;
+            StepResult play = TurnLoop.PlayCard(begin.State, card, NoShuffle);
+            DepictionEvent ev = writer.Write(play.Events, play.State)[0];
+
+            int[] walked = play.Events.OfType<CellsMoved>().Select(m => System.Math.Abs(m.To - m.From)).ToArray();
+            Assert.That(walked, Is.EqualTo(new[] { cells }), cardId + " from gap " + gap);
+            Assert.That(ev.Cues.Where(c => c.Kind == CueKind.RangeSwitch).Select(c => c.CellsMoved), Is.EqualTo(walked));
+        }
     }
 }

@@ -456,6 +456,8 @@ namespace Depiction.Bridge
                         RangeAfter = CoreText.SideOf(Gap), RangeGlyphAfter = CoreText.GapGlyph(Gap),
                         // battle-visual-v1 §4.2 (#242): where both stand after the move, for the floor.
                         PlayerCellAfter = _player.Cell, EnemyCellAfter = _enemy.Cell, GapAfter = Gap,
+                        // battle_ui_ux_v2 §5.7 順 1 (#586): the walk takes 160 ms a cell.
+                        CellsMoved = Math.Abs(moved.To - moved.From),
                     });
                     break;
 

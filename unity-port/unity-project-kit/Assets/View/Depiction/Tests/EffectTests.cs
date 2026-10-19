@@ -118,16 +118,16 @@ namespace Depiction.Tests
             var feint = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
             var blow = new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Intensity = 2, HpAfter = 40 };
             feint.Cues.Add(blow);
-            feint.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2 });
+            feint.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2, CellsMoved = 1 });
             Assert.That(EffectPlan.MoveFollows(feint, blow), Is.True);
             Assert.That(Steps(feint), Is.EqualTo(new[]
             {
                 (EffectId.CardRelease, 1), (EffectId.AttackLunge, 1), (EffectId.StrikeShape, 1),
-                (EffectId.HitStop, 1), (EffectId.HpDrain, 1), (EffectId.RangeSwitch, 1),
+                (EffectId.HitStop, 1), (EffectId.HpDrain, 1), (EffectId.FloorMove, 1), (EffectId.GapRecount, 1),
             }));
             // §5.4 順 2: the move starts on the number + 80; the bar drains on beside it.
             Assert.That(EffectPlan.StepsOf(feint).Single(s => s.Id == EffectId.HpDrain).LeadMs, Is.EqualTo(EffectPlan.NextFaceLeadMs));
-            Assert.That(EffectPlan.BlockingMs(feint, EffectSwitches.AllOn()), Is.EqualTo(160f + 100f + 120f + 30f + 80f + 320f));
+            Assert.That(EffectPlan.BlockingMs(feint, EffectSwitches.AllOn()), Is.EqualTo(160f + 100f + 120f + 30f + 80f + 160f + 150f));
 
             // A blow Guard takes part of is three beats; the move starts on the wound's number the same way.
             var split = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
@@ -135,21 +135,21 @@ namespace Depiction.Tests
             split.Cues.Add(new Cue { Kind = CueKind.GuardBlock, Target = UnitSide.Enemy, Amount = 3, GuardAfter = 0 });
             var wound = new Cue { Kind = CueKind.Hit, Target = UnitSide.Enemy, Amount = 5, Intensity = 2, HpAfter = 45 };
             split.Cues.Add(wound);
-            split.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2 });
+            split.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2, CellsMoved = 1 });
             Assert.That(EffectPlan.MoveFollows(split, wound), Is.True);
-            Assert.That(EffectPlan.BlockingMs(split, EffectSwitches.AllOn()), Is.EqualTo(160f + 100f + 120f + 30f + 320f + 80f + 320f));
+            Assert.That(EffectPlan.BlockingMs(split, EffectSwitches.AllOn()), Is.EqualTo(160f + 100f + 120f + 30f + 320f + 80f + 160f + 150f));
 
             // Switched off, the drain holds nothing, lead or not.
             var noDrain = EffectSwitches.AllOn();
             noDrain.Set(EffectId.HpDrain, false);
-            Assert.That(EffectPlan.BlockingMs(feint, noDrain), Is.EqualTo(160f + 100f + 120f + 30f + 320f));
+            Assert.That(EffectPlan.BlockingMs(feint, noDrain), Is.EqualTo(160f + 100f + 120f + 30f + 160f + 150f));
 
             // Anything between the blow and the move (here a status) and the player steps back as usual.
             var apart = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
             var first = new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Intensity = 2, HpAfter = 40 };
             apart.Cues.Add(first);
             apart.Cues.Add(new Cue { Kind = CueKind.StatusChange, Target = UnitSide.Enemy, Text = "出血", Amount = 1, StacksAfter = 1 });
-            apart.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2 });
+            apart.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2, CellsMoved = 1 });
             Assert.That(EffectPlan.MoveFollows(apart, first), Is.False);
             Assert.That(Steps(apart), Does.Contain((EffectId.AttackReturn, 1)));
         }
@@ -442,7 +442,7 @@ namespace Depiction.Tests
         }
 
         [Test]
-        public void AMove_Waits320_AndFlipsTheTagFor150_OnlyWithoutAFloor()
+        public void AMoveWithoutAFloor_Waits320_AndFlipsTheTagFor150()
         {
             Assert.That(EffectCatalog.Of(EffectId.RangeSwitch).Ms, Is.EqualTo(320f));
             Assert.That(EffectCatalog.Of(EffectId.RangeTagFlip).Ms, Is.EqualTo(150f));
@@ -451,16 +451,39 @@ namespace Depiction.Tests
             // The fixed slice and the live turn draw no floor: the figure moves to its slot, then the tag flips.
             var slot = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
             slot.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, RangeAfter = RangeSide.Far, RangeGlyphAfter = "遠" });
+            Assert.That(EffectPlan.MovesOnFloor(slot.Cues[0]), Is.False);
             Assert.That(Steps(slot), Is.EqualTo(new[] { (EffectId.CardRelease, 1), (EffectId.RangeSwitch, 1), (EffectId.RangeTagFlip, 1) }));
             Assert.That(EffectPlan.BlockingMs(slot, EffectSwitches.AllOn()), Is.EqualTo(160f + 320f + 150f));
+        }
 
-            // The core's battles draw the floor: the figure walks to its cell and there is no tag to flip.
-            var floor = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
-            floor.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 2, EnemyCellAfter = 5, GapAfter = 2 });
-            Assert.That(EffectPlan.MovesOnFloor(floor.Cues[0]), Is.True);
-            Assert.That(EffectPlan.MovesOnFloor(slot.Cues[0]), Is.False);
-            Assert.That(Steps(floor), Is.EqualTo(new[] { (EffectId.CardRelease, 1), (EffectId.RangeSwitch, 1) }));
-            Assert.That(EffectPlan.BlockingMs(floor, EffectSwitches.AllOn()), Is.EqualTo(160f + 320f));
+        [Test]
+        public void AMoveOnTheFloor_Walks160ACell_ThenCountsTheGapAgainFor150()
+        {
+            // battle_ui_ux_v2 §5.7 順 1〜2 / §5.0 (#586): 160 × cells, then 150 to count the gap number again.
+            Assert.That(EffectCatalog.Of(EffectId.FloorMove).TotalMs(1), Is.EqualTo(160f));
+            Assert.That(EffectCatalog.Of(EffectId.FloorMove).TotalMs(2), Is.EqualTo(320f));
+            Assert.That(EffectCatalog.Of(EffectId.GapRecount).Ms, Is.EqualTo(150f));
+            Assert.That(EffectCatalog.Of(EffectId.FloorMove).Blocking, Is.True);
+            Assert.That(EffectCatalog.Of(EffectId.GapRecount).Blocking, Is.True);
+
+            var on = EffectSwitches.AllOn();
+            foreach ((int cells, float ms) in new[] { (1, 310f), (2, 470f) })
+            {
+                // The core's battles draw the floor: the figure walks to its cell and there is no tag to flip.
+                var move = new DepictionEvent { Kind = DepictionEventKind.EnemyAction, After = new DepictionFrame() };
+                move.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 2, EnemyCellAfter = 5, GapAfter = 2, CellsMoved = cells });
+                Assert.That(EffectPlan.MovesOnFloor(move.Cues[0]), Is.True);
+                Assert.That(Steps(move), Is.EqualTo(new[] { (EffectId.FloorMove, cells), (EffectId.GapRecount, 1) }));
+                Assert.That(EffectPlan.StepsOf(move).Sum(step => EffectPlan.WaitMs(step, on)), Is.EqualTo(ms), cells + " cells");
+            }
+        }
+
+        [Test]
+        public void AMoveOnTheFloor_ThatDoesNotSayHowFar_Stops()
+        {
+            var move = new DepictionEvent { Kind = DepictionEventKind.EnemyAction, After = new DepictionFrame() };
+            move.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 2, EnemyCellAfter = 5, GapAfter = 2 });
+            Assert.Throws<ArgumentOutOfRangeException>(() => EffectPlan.StepsOf(move));
         }
 
         [Test]

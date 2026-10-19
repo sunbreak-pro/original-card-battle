@@ -878,15 +878,21 @@ namespace Depiction.View
                 {
                     // Moved by the other side (the polearm's shove): a knock-back, and the muted label says so.
                     if (cue.Pushed) FloatEffect(EffectId.PushMark, labelAt, DepictionText.Pushed, BattleTheme.Ink2, 36);
-                    bool onFloor = OnFloor(cue);
-                    yield return HoldBeat(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.Pushed, cue, onFloor),
-                        () => SnapRange(target, cue.RangeAfter, cue, onFloor));
-                    // #495: without a floor the tag at the feet flips to the new glyph, its own beat as in EffectPlan.
-                    if (!onFloor)
+                    if (OnFloor(cue))
                     {
-                        yield return HoldBeat(EffectId.RangeTagFlip, target.FlipRangeTag(cue.RangeGlyphAfter, _effects.Ms(EffectId.RangeTagFlip)),
-                            () => target.SetRange(true, cue.RangeGlyphAfter));
+                        // §5.7 順 1〜2 (#586): the walk, 160 a cell, then the gap number counted again on arrival.
+                        int cells = EffectPlan.CellsOf(cue);
+                        yield return HoldBeat(EffectId.FloorMove, MoveOnFloor(target, cue, cells), () => SnapOnFloor(target, cue), cells);
+                        yield return HoldBeat(EffectId.GapRecount,
+                            _floor.RecountGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter, _effects.Ms(EffectId.GapRecount)),
+                            () => _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter));
+                        break;
                     }
+                    yield return HoldBeat(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.Pushed),
+                        () => SnapRange(target, cue.RangeAfter));
+                    // #495: without a floor the tag at the feet flips to the new glyph, its own beat as in EffectPlan.
+                    yield return HoldBeat(EffectId.RangeTagFlip, target.FlipRangeTag(cue.RangeGlyphAfter, _effects.Ms(EffectId.RangeTagFlip)),
+                        () => target.SetRange(true, cue.RangeGlyphAfter));
                     break;
                 }
 
@@ -1007,7 +1013,7 @@ namespace Depiction.View
             yield return DrainHp(status, cue.HpAfter);
             yield return Gate(ev.Order + "-impact");
             // §5.4 順 2 / §5.5 順 8 (#499): a move right after the blow carries the player on from the
-            // lunge (SwitchRange starts where the figure stands), so there is no step back first; the
+            // lunge (MoveOnFloor and SwitchRange start where the figure stands), so there is no step back first; the
             // figure walks in its standing pose, as the return would have left it.
             if (byPlayer && !EffectPlan.MoveFollows(ev, cue))
             {
@@ -1290,29 +1296,33 @@ namespace Depiction.View
             yield return UiTween.Move(figure.Rect, from, to, ms, Ease.Out);
         }
 
-        /// <summary>The move's end state at once. The tag's glyph is the flip's to settle (EffectId.RangeTagFlip, #495).</summary>
-        private void SnapRange(FigureView figure, RangeSide range, Cue cue, bool onFloor)
+        /// <summary>The move's end state at once, without a floor. The tag's glyph is the flip's to settle (EffectId.RangeTagFlip, #495).</summary>
+        private void SnapRange(FigureView figure, RangeSide range)
         {
-            if (onFloor)
-            {
-                figure.transform.position = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
-                SetPlayerHome(figure);
-                if (enemyFigure && cue.EnemyCellAfter > 0)
-                {
-                    _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize));
-                    SnapHome(enemyFigure, _enemyHome);
-                }
-                _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter);
-                return;
-            }
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             if (slot) figure.transform.position = slot.position;
             SetPlayerHome(figure);
         }
 
         /// <summary>
+        /// The walk's end state at once, on the floor: both figures on their cells. The gap number is
+        /// the recount's to settle (EffectId.GapRecount, #586).
+        /// </summary>
+        private void SnapOnFloor(FigureView figure, Cue cue)
+        {
+            figure.transform.position = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
+            SetPlayerHome(figure);
+            if (enemyFigure && cue.EnemyCellAfter > 0)
+            {
+                _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize));
+                SnapHome(enemyFigure, _enemyHome);
+            }
+        }
+
+        /// <summary>
         /// The move is drawn on the floor: one is shown and the cue says where both stand after it
-        /// (EffectPlan.MovesOnFloor, which also decides that no tag flip is waited for).
+        /// (EffectPlan.MovesOnFloor, which also decides that the walk and the recount are waited for
+        /// instead of the move to a slot and the tag's flip).
         /// </summary>
         private bool OnFloor(Cue cue)
         {
@@ -1323,10 +1333,11 @@ namespace Depiction.View
         private int EnemySize => _source != null && _source.Frame != null ? Mathf.Max(1, _source.Frame.Floor.EnemySize) : 1;
 
         /// <summary>
-        /// §4.2 (#242): a move on the floor — the player walks to its new cell, an enemy that moved
-        /// (a push, a pull, its own step) slides to its own, and the gap number follows.
+        /// §4.2 (#242) / §5.7 順 1 (#586): a move on the floor — the player walks to its new cell, an
+        /// enemy that moved (a push, a pull, its own step) slides to its own, 160 ms a cell
+        /// (EffectId.FloorMove). The gap number is counted again after it (EffectId.GapRecount).
         /// </summary>
-        private IEnumerator MoveOnFloor(FigureView figure, Cue cue)
+        private IEnumerator MoveOnFloor(FigureView figure, Cue cue, int cells)
         {
             Vector3 from = figure.transform.position;
             Vector3 to = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
@@ -1335,26 +1346,20 @@ namespace Depiction.View
             bool enemyMoves = enemyFigure && (enemyTo - _enemyHome).sqrMagnitude > 0.25f;
             if (enemyMoves) _enemyHome = enemyTo;
             SetPlayerHome(figure, to); // the panels set off for the new cells as the figures do
-            // EffectId.RangeSwitch, 320 ms to move (battle_ui_ux_v2 §10.6); a push starts fast and settles.
-            yield return UiTween.Run(_effects.Ms(EffectId.RangeSwitch), cue.Pushed ? Ease.Out : Ease.InOut, t =>
+            // 160 ms a cell (EffectSpec.TotalMs of FloorMove); a push starts fast and settles.
+            yield return UiTween.Run(_effects.WaitMs(EffectId.FloorMove, cells), cue.Pushed ? Ease.Out : Ease.InOut, t =>
             {
                 if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
                 if (enemyMoves && enemyFigure) enemyFigure.Rect.anchoredPosition = Vector2.LerpUnclamped(enemyFrom, enemyTo, t);
             });
-            _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter);
         }
 
         /// <summary>
-        /// The move alone (EffectId.RangeSwitch): onto the cells on the floor, or into the slot N maps to.
-        /// Without a floor the tag's flip follows as its own beat (EffectId.RangeTagFlip, #495).
+        /// The move alone without a floor (EffectId.RangeSwitch): into the slot N maps to. The tag's
+        /// flip follows as its own beat (EffectId.RangeTagFlip, #495).
         /// </summary>
-        private IEnumerator SwitchRange(FigureView figure, RangeSide range, bool pushed, Cue cue, bool onFloor)
+        private IEnumerator SwitchRange(FigureView figure, RangeSide range, bool pushed)
         {
-            if (onFloor)
-            {
-                yield return MoveOnFloor(figure, cue);
-                yield break;
-            }
             RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
             Vector3 from = figure.transform.position;
             Vector3 to = slot ? slot.position : from;

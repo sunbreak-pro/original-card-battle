@@ -753,6 +753,11 @@ namespace Depiction
         public int PlayerCellAfter;
         public int EnemyCellAfter;
         public int GapAfter;
+        /// <summary>
+        /// RangeSwitch on the floor only (battle_ui_ux_v2 §5.7 順 1, #586): how many cells the side that
+        /// moved went, so the walk takes 160 ms a cell. 0 when the source draws no floor.
+        /// </summary>
+        public int CellsMoved;
     }
 
     public sealed class DepictionEvent
