@@ -138,11 +138,17 @@ namespace Depiction
         /// <summary>構え: the shield and "+3" at turn end.</summary>
         StanceCue,
 
-        /// <summary>The player moves to the stand point N maps to, or to its cell on the floor.</summary>
+        /// <summary>Without a floor, the player moves to the stand point N maps to.</summary>
         RangeSwitch,
 
         /// <summary>Without a floor, the 近 / 遠 tag at the player's feet flips over once the move has landed (#495).</summary>
         RangeTagFlip,
+
+        /// <summary>On the floor, the side that moves walks one cell after another, 160 ms a cell (battle_ui_ux_v2 §5.7 順 1, #586).</summary>
+        FloorMove,
+
+        /// <summary>On the floor, the gap number is counted again on arrival: the old one leaves upward, the new one comes in from below (§5.7 順 2, #586).</summary>
+        GapRecount,
 
         /// <summary>A bonus the enemy did not get (or a whiffed blow) is struck off the omen.</summary>
         SideBonusMiss,
@@ -307,8 +313,11 @@ namespace Depiction
                 new EffectSpec(EffectId.StaminaChange, 220f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
                 new EffectSpec(EffectId.StanceCue, 460f, 0f, blocking: true, "縦切りの長さ（#77 で詰める）"),
                 // #495: the move and the flip are two beats, because on the floor there is no tag to flip.
-                new EffectSpec(EffectId.RangeSwitch, 320f, 0f, blocking: true, "battle_ui_ux_v2 §10.6 移動 320（床のマスへの移動も 320）"),
+                new EffectSpec(EffectId.RangeSwitch, 320f, 0f, blocking: true, "battle_ui_ux_v2 §10.6 移動 320（床の無い画面だけ）"),
                 new EffectSpec(EffectId.RangeTagFlip, 150f, 0f, blocking: true, "battle_ui_ux_v2 §10.6 一字札の裏返し 150（床の無い画面だけ）"),
+                // #586: each cell is 160 and the next starts as it ends, so TotalMs(cells) = 160 × cells.
+                new EffectSpec(EffectId.FloorMove, 160f, 160f, blocking: true, "battle_ui_ux_v2 §5.7 順 1 床の上の移動 160 × マス数"),
+                new EffectSpec(EffectId.GapRecount, 150f, 0f, blocking: true, "battle_ui_ux_v2 §5.7 順 2 到着の拍で間合いの数字を数え直す 150"),
                 new EffectSpec(EffectId.SideBonusMiss, 260f, 0f, blocking: true, "縦切りの長さ"),
 
                 // #57: both run beside the beat they belong to, so the grammar adds no wait to any event.
@@ -478,6 +487,21 @@ namespace Depiction
         }
 
         /// <summary>
+        /// How many cells a move on the floor walks (Cue.CellsMoved, §5.7 順 1). A source that draws the
+        /// floor always writes it, so a missing count is a script bug and stops here, not a 0 ms walk.
+        /// </summary>
+        public static int CellsOf(Cue cue)
+        {
+            if (cue == null) throw new ArgumentNullException(nameof(cue));
+            if (!MovesOnFloor(cue)) throw new ArgumentException("A move without a floor walks no cells.", nameof(cue));
+            if (cue.CellsMoved < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(cue), cue.CellsMoved, "A move on the floor must say how many cells it walks (Cue.CellsMoved).");
+            }
+            return cue.CellsMoved;
+        }
+
+        /// <summary>
         /// §5.4 順 2: the second face (or the move) starts this long after the first face's result beat
         /// (the number of a blow appearing) and overlaps the first face's tail.
         /// </summary>
@@ -597,8 +621,18 @@ namespace Depiction
                     steps.Add(new EffectStep(EffectId.GuardGain, 1));
                     break;
                 case CueKind.RangeSwitch:
-                    steps.Add(new EffectStep(EffectId.RangeSwitch, 1));
-                    if (!MovesOnFloor(cue)) steps.Add(new EffectStep(EffectId.RangeTagFlip, 1));
+                    // §5.7 順 1〜2 (#586): on the floor, 160 a cell, then the gap number is counted again
+                    // for 150. Without a floor, the move to the slot and the tag's flip (#495).
+                    if (MovesOnFloor(cue))
+                    {
+                        steps.Add(new EffectStep(EffectId.FloorMove, CellsOf(cue)));
+                        steps.Add(new EffectStep(EffectId.GapRecount, 1));
+                    }
+                    else
+                    {
+                        steps.Add(new EffectStep(EffectId.RangeSwitch, 1));
+                        steps.Add(new EffectStep(EffectId.RangeTagFlip, 1));
+                    }
                     break;
                 case CueKind.StanceCue:
                     // §5.13 順 1-2 (#501): the pips 1-3 glow (構え's 息), then the shield and "+3".

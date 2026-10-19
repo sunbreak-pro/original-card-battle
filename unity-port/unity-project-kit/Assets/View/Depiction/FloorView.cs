@@ -10,6 +10,7 @@
 // feet, the way §4.2 and §4.3 put the floor at y 560 and the feet at y 570, so it stays under the
 // figures wherever the scene stands them.
 #if UNITY_2021_2_OR_NEWER
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -30,6 +31,8 @@ namespace Depiction.View
         private const float TagTop = 3f;
         private const float TagHeight = 34f;
         private const float TagAtZero = FloorSpec.TagAtZero;
+        // battle_ui_ux_v2 §5.7 順 2: how far the old number rises out and the new one rises in from.
+        private const float RecountTravel = 14f;
 
         private sealed class Cell
         {
@@ -182,6 +185,47 @@ namespace Depiction.View
             float inset = CellInset + 4f;
             PlaceBracket(_bracketLeft, spanLeft + inset, middle - tagWidth * 0.5f, y);
             PlaceBracket(_bracketRight, middle + tagWidth * 0.5f, spanRight - inset, y);
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.7 順 2 (#586): the gap number is counted again on arrival. The old number
+        /// rises out of the tag, the new one rises in from below, and the tag slides to the middle of the
+        /// new empty cells, all in <paramref name="ms"/> (EffectId.GapRecount). The brackets wait for the
+        /// end and stand where <see cref="SetGap"/> puts them.
+        /// </summary>
+        public IEnumerator RecountGap(int gap, int playerCell, int playerSize, int enemyCell, float ms)
+        {
+            if (!Shown) yield break;
+            string before = _tagText.text;
+            Vector3 fromPosition = _tag.position;
+            Vector2 fromSize = _tag.sizeDelta;
+            SetGap(gap, playerCell, playerSize, enemyCell); // the end state, read back to tween towards
+            string after = _tagText.text;
+            Vector3 toPosition = _tag.position;
+            Vector2 toSize = _tag.sizeDelta;
+            bool brackets = _bracketLeft.enabled;
+            _bracketLeft.enabled = _bracketRight.enabled = false;
+            RectTransform number = _tagText.rectTransform;
+            Vector2 rest = number.anchoredPosition;
+            Color ink = _tagText.color;
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                if (!_tag) return;
+                _tag.position = Vector3.LerpUnclamped(fromPosition, toPosition, t);
+                _tag.sizeDelta = Vector2.LerpUnclamped(fromSize, toSize, t);
+                bool leaving = t < 0.5f;
+                float half = leaving ? t * 2f : (t - 0.5f) * 2f;
+                _tagText.text = leaving ? before : after;
+                number.anchoredPosition = rest + new Vector2(0f, leaving ? RecountTravel * half : -RecountTravel * (1f - half));
+                _tagText.color = BattleTheme.WithAlpha(ink, ink.a * (leaving ? 1f - half : half));
+            });
+            if (!_tag) yield break;
+            _tag.position = toPosition;
+            _tag.sizeDelta = toSize;
+            _tagText.text = after;
+            number.anchoredPosition = rest;
+            _tagText.color = ink;
+            _bracketLeft.enabled = _bracketRight.enabled = brackets;
         }
 
         /// <summary>

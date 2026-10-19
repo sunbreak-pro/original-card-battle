@@ -387,8 +387,10 @@ namespace Depiction.Bridge.Tests
                 Kind = cue.Kind, Target = cue.Target, Source = cue.Source, Amount = cue.Amount, Text = cue.Text,
                 Intensity = cue.Intensity, HpAfter = cue.HpAfter, GuardAfter = cue.GuardAfter, StaminaAfter = cue.StaminaAfter,
                 StaminaMax = cue.StaminaMax, StacksAfter = cue.StacksAfter, System = cue.System,
-                // A move's cells decide whether the tag flip is waited for (#495); they are not grammar.
+                // A move's cells decide whether the tag flip is waited for (#495) and how long the walk
+                // is (#586); they are not grammar.
                 Pushed = cue.Pushed, PlayerCellAfter = cue.PlayerCellAfter, EnemyCellAfter = cue.EnemyCellAfter, GapAfter = cue.GapAfter,
+                CellsMoved = cue.CellsMoved,
             };
         }
     }
