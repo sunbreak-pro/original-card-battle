@@ -26,6 +26,7 @@ const FONT_FILES = [
   ["shipporimincho", "ShipporiMincho-Bold.ttf", "63bc4eddc74793f671c3ab827c5175e773ffbe569d0bf50ee65375ea9e3bc286"],
   ["zenkakugothicnew", "ZenKakuGothicNew-Regular.ttf", "b840cd07a67d89cacca44249ae49aa99ee7640eb5ce623be8d8983d6aabac801"],
   ["zenkakugothicnew", "ZenKakuGothicNew-Bold.ttf", "0081cedabc4921982fcd061f845a005664ac7fb642af2dd34b4007bc63ccd235"],
+  ["ibmplexmono", "IBMPlexMono-SemiBold.ttf", "d3c38e55c78f5b0f28009fddba4834ec503278936a5986032424c9bd2d23aa46"],
   ["ibmplexmono", "IBMPlexMono-Bold.ttf", "ac27abd6450a64dd94467580a02fe6235156d5b92f2926ebbc8e7489df64e0be"],
   ["shipporimincho", "OFL.txt", null],
   ["zenkakugothicnew", "OFL.txt", null],
