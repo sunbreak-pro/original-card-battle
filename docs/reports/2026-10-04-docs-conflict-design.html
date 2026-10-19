@@ -1,0 +1,187 @@
+<title>docs のコンフリクト対策</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #f5f7f6;
+    --panel: #ffffff;
+    --ink: #1c2327;
+    --muted: #56636b;
+    --line: #d5dcdf;
+    --accent: #0e6b74;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefef;
+    --ok: #2c7a4b;
+    --warn: #a86a12;
+    --stop: #a23c3c;
+    --code-bg: #eaf0f0;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #13181b;
+      --panel: #1b2226;
+      --ink: #e4e9eb;
+      --muted: #99a6ad;
+      --line: #2c363b;
+      --accent: #5fc4cc;
+      --accent-ink: #0f1c1e;
+      --accent-soft: #163338;
+      --ok: #6fc48f;
+      --warn: #e0a94a;
+      --stop: #e07a7a;
+      --code-bg: #0f1417;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #13181b;
+    --panel: #1b2226;
+    --ink: #e4e9eb;
+    --muted: #99a6ad;
+    --line: #2c363b;
+    --accent: #5fc4cc;
+    --accent-ink: #0f1c1e;
+    --accent-soft: #163338;
+    --ok: #6fc48f;
+    --warn: #e0a94a;
+    --stop: #e07a7a;
+    --code-bg: #0f1417;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono { font-family: "IBM Plex Mono", "Consolas", "Courier New", monospace; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+  .prose { max-width: 720px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 4vw, 38px); line-height: 1.25; margin: 0 0 12px; text-wrap: balance; font-weight: 700; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0; max-width: 720px; }
+  h2 { font-size: 22px; margin: 48px 0 12px; text-wrap: balance; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 24px 0 8px; }
+  p { margin: 0 0 14px; }
+  ul { padding-left: 1.3em; margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .verdict .tag { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); }
+  .verdict.later .tag { color: var(--warn); }
+  .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { margin: 0; font-size: 18px; }
+  .verdict p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 16px; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); margin: 12px 0 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--ground); font-weight: 700; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.yes { color: var(--ok); }
+  td.state.no { color: var(--muted); font-weight: 400; }
+  td.state.maybe { color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0 20px; font-size: 15px; }
+  .callout strong { color: var(--accent); }
+  .note { font-size: 14px; color: var(--muted); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">2026-10-04 / 判断 / original-card-battle</p>
+    <h1>docs のコンフリクトは、正本の一覧表の書き方を変えれば大半が消えます</h1>
+    <p class="lede">9 月 24 日以降に起きたコンフリクト 9 件のうち 7 件は、正本の一覧表（<code>.claude/docs/SOURCES.md</code>）の 1 枚で起きていました。原因は、表の桁揃えが毎回やり直されることと、版を上げるたびに一覧表も書き換える決まりの 2 つです。</p>
+  </header>
+
+  <ul class="verdicts">
+    <li class="verdict now"><span class="tag">今日から</span><h3>1. 表の桁揃えを止めます</h3><p>編集のたびに走る整形ツールが、表の 1 マスが長くなると表全体の空白を詰め直しています。整形の設定を 1 行足すと、幅の広い表は桁を揃えない書き方になります。</p></li>
+    <li class="verdict now"><span class="tag">今日から</span><h3>2. 一覧表を持ち主ごとに分け、版を書かないようにします</h3><p>状態の欄から版の番号と経緯を外し、版を上げても一覧表に触らないようにします。表は持ち主の担当ごとに分け、別々の担当の行が隣り合わないようにします。</p></li>
+    <li class="verdict now"><span class="tag">今日から</span><h3>3. 同じ担当の続きの PR は前の PR の上に積みます</h3><p>同じ担当が同じ設計書を触る PR を 2 本出すときは、2 本目のブランチをマージ待ちの 1 本目から切ります。設計書の版の行と改訂履歴の取り合いが起きなくなります。</p></li>
+    <li class="verdict later"><span class="tag">必要になったら</span><h3>改訂履歴を別ファイルにして自動で両方残す</h3><p>3 を守っても改訂履歴でぶつかり続けたら、履歴を設計書の外に出し、git の union（両方の行を残す合流のしかた）を設定します。</p></li>
+    <li class="verdict skip"><span class="tag">入れない</span><h3>マージキューや一覧表の自動生成</h3><p>今の衝突は書き方で起きているので、仕組みを足す前に書き方で消せます。docs の書き込みを main のチャットだけに集めるのも、待ち行列が増えるので入れません。</p></li>
+  </ul>
+
+  <div class="callout prose"><strong>たとえると</strong>、町内会の回覧板に全員が 1 行ずつ書き込む形です。そこへ、誰かが書くたびに回覧板をまるごと清書し直す人がいます。清書の分だけ全員の書き込みとぶつかります。対策 1 は清書をやめることで、対策 2 は回覧板を班ごとの用紙に分けることにあたります。</div>
+
+  <h2>実測：どこでぶつかっているか</h2>
+  <p class="prose">9 月 15 日以降の全ブランチのマージ 181 件を <code>git merge-tree</code> で合流し直し、コンフリクトが出た 16 件を数えました。9 月 23 日までの 7 件は主に <code>unity-port/README.md</code> の構成図で、9 月 24 日以降はこの図での衝突は起きていません。</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>ファイル</th><th>件数</th><th>うち 9/24 以降</th><th>ぶつかり方</th></tr></thead>
+      <tbody>
+        <tr><td><code>.claude/docs/SOURCES.md</code></td><td>7</td><td>6</td><td>4 件は、片方が表全体の 31〜61 行を空白だけ書き換えていました。残り 3 件は、別の担当が隣り合う行をそれぞれ 1 行ずつ直していました。</td></tr>
+        <tr><td><code>battle_core_v4.md</code></td><td>2</td><td>2</td><td>戦闘の担当の 2 本の PR が、末尾の改訂履歴の同じ場所にそれぞれ 1 項目を足していました。</td></tr>
+        <tr><td><code>enemy_roster_v4.md</code></td><td>1</td><td>1</td><td>カードの担当の 2 本の PR が、題の版（v4.5 と v4.6）と改訂履歴の同じ場所を書いていました。</td></tr>
+        <tr><td><code>unity-port/README.md</code></td><td>5</td><td>0</td><td>構成図の同じ場所に、探索と戦闘の担当が新しいフォルダの行を足していました。</td></tr>
+        <tr><td><code>.claude/CLAUDE.md</code></td><td>2</td><td>0</td><td>ゲームループの節の同じ箇条を、別のチャットが書き足していました。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>表全体が書き換わる仕組み</h3>
+  <p class="prose">グローバル設定の hook（<code>~/.claude/hooks/post-edit-prettier.mjs</code>）が、Edit と Write のたびに <code>.md</code> へ prettier（コード整形ツール）をかけています。prettier は Markdown の表の列幅を、いちばん長いマスに合わせて揃えます。デザインの担当が「戦闘画面とカードの見た目」の行の状態の欄に経緯を書き足すたびに列が広がり、表の 31 行すべてに空白が足されていました（#254 で 61 行、#259 で 31 行）。この書き換えがマージされると、その時点で一覧表を触っている他の担当の PR がすべてぶつかります。</p>
+
+  <h2>対策 1：表の桁揃えを止める</h2>
+  <p class="prose">リポジトリの直下に prettier の設定を置き、Markdown だけ <code>proseWrap: "never"</code> にします。この設定のとき prettier は、揃えると 80 桁を超える表を <code>| a | b |</code> の詰めた形で書きます。設定はファイルの場所からさかのぼって読まれるので、各担当の作業場所（worktree）でも同じに効きます。</p>
+<pre><code>// .prettierrc.json
+{ "overrides": [{ "files": "*.md", "options": { "proseWrap": "never" } }] }</code></pre>
+  <p class="prose">いまの docs に試しにかけると、変わる行のほとんどは表の空白でした。<code>battle_core_v4.md</code> では変わる 404 行のうち 397 行が表の行で、残りは段落の折り返しの結合です。</p>
+  <p class="prose"><strong>入れ方に注意が要ります。</strong>設定だけを入れると、各担当が次にファイルを触ったときにそのファイル全体が詰め直され、移行の間だけ衝突が増えます。docs の PR が 1 本も開いていない時点で、設定と全 Markdown の詰め直しを 1 本の PR にしてマージします。</p>
+
+  <h2>対策 2：一覧表を持ち主ごとに分け、版を書かない</h2>
+  <ul class="prose">
+    <li><strong>状態の欄は種類だけにします。</strong>APPROVED / DRAFT / PROPOSED / 現行と「§N 未反映」の印だけを書きます。版の番号と「いつ何を入れ込んだか」は、設計書自身の冒頭と改訂履歴に任せます。</li>
+    <li><strong>版を上げても一覧表に触らない決まりにします。</strong>いまの決まり（「版を上げるコミットで本書の行を含める」）を外し、一覧表を書くのは正本を足す・使わなくする・持ち主を変えるときだけにします。これで普段の PR は一覧表に触らなくなります。</li>
+    <li><strong>§2 の表を持ち主ごとに分けます。</strong>main・battle・cards・design・dungeon の小見出しの下にそれぞれ表を置き、表の下の但し書きもその担当の節へ移します。担当の違う変更のあいだに小見出しの行が挟まるので、git は両方を自動で合流できます。</li>
+    <li><strong>読み取りのスクリプトを直します。</strong><code>scripts/sources.mjs</code> の <code>tableRows</code> は §2 の中の表を 1 つと見なしています。複数の表の見出し行と区切り行を飛ばすように直し、<code>npm run sources -- --check</code> に「状態の欄が長すぎる行」の検出を足します。</li>
+  </ul>
+
+  <h2>対策 3：同じ担当の続きの PR は積み重ねる</h2>
+  <p class="prose">担当ごとの作業場所は 1 つのチャットで順に進みますが、PR はこうだいさんのマージ待ちのあいだに次のブランチを main から切っています。そのため同じ担当の 2 本の PR が、同じ設計書の版の行と改訂履歴の末尾を同時に書いていました。2 本目が同じ設計書を触るときは <code>git switch -c &lt;次&gt; &lt;マージ待ちのブランチ&gt;</code> で切り、PR 本文に「#前の PR の上に積んでいます」と書きます。1 本目がマージされると、2 本目の差分は自分の変更だけになります。この決まりは worktree の運用の手順書（<code>worktree-policy</code> スキル）に 1 項目足します。</p>
+
+  <h2>効果の見込み</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>9/24 以降の 9 件</th><th>件数</th><th>消える対策</th></tr></thead>
+      <tbody>
+        <tr><td>一覧表の空白の書き換え</td><td>4</td><td>対策 1 と、状態の欄に経緯を書かない対策 2</td></tr>
+        <tr><td>一覧表の隣り合う行</td><td>2</td><td>対策 2（版を上げても触らない、持ち主ごとの表）</td></tr>
+        <tr><td>設計書の版の行と改訂履歴</td><td>3</td><td>対策 3</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>置いた仮定</h2>
+  <ul class="prose">
+    <li>一覧表の「状態」の欄に版を書いているのは、版を一覧で見るためだと考えました。版は設計書の冒頭で見られるので、一覧表から外しても困らないと判断しています。</li>
+    <li>担当の違う PR どうしが同じ設計書の本文を同時に書き換えることは、one writer per artifact（1 つの文書を書くのは 1 つの担当だけ）の決まりで起きない前提にしています。実測でもこの形の衝突はありませんでした。</li>
+  </ul>
+
+  <h2>未確認のこと</h2>
+  <ul class="prose">
+    <li>GitHub の PR 画面のマージボタンが、git の union の設定を守るかは確かめていません。「必要になったら」の案を入れるときに確かめます。各担当の作業場所で <code>git merge origin/main</code> するときは守られます。</li>
+    <li>80 桁に収まる小さな表は、設定を変えたあとも桁が揃います。日本語は 1 文字を 2 桁と数えるので、docs の表の多くは 80 桁を超えますが、全部の表では確かめていません。</li>
+  </ul>
+
+  <h2>次に判断が要る点</h2>
+  <ul class="prose">
+    <li>3 つの対策を 1 本の PR にまとめて入れてよいかを決めてください。対策 1 の詰め直しは docs の PR が開いていない時点で入れる必要があり、今は docs を触る PR が 3 本開いています（#331・#332・#337）。#331 と #332 はどちらもカードの担当で、一覧表と敵ロースターの両方を触っているので、片方をマージするともう片方がぶつかる見込みです。</li>
+    <li>prettier の hook はグローバル設定にあるので、ほかのプロジェクトの Markdown の表も同じように詰め直されています。ほかのプロジェクトにも同じ設定を入れるかを決めてください。</li>
+  </ul>
+</div>
