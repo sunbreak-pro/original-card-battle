@@ -592,9 +592,9 @@ namespace BattleCore
             var player = state.Player;
             int front = state.Enemies[state.Nearest].Body.Cell;
             int best = -1;
-            for (int cell = 1; cell + player.Size - 1 < front; cell++)
+            for (int cell = 1; Field.FrontCell(cell, player.Size) < front; cell++)
             {
-                int gap = state.Enemies[unit].Body.Cell - (cell + player.Size - 1) - 1;
+                int gap = Field.Gap(cell, player.Size, state.Enemies[unit].Body.Cell);
                 if (!reach.Contains(gap)) continue;
                 if (best < 0 || Math.Abs(cell - player.Cell) <= Math.Abs(best - player.Cell)) best = cell;
             }

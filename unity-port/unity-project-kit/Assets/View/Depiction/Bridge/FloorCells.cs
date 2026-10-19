@@ -23,10 +23,10 @@ namespace Depiction.Bridge
             var cells = new List<int>();
             if (!EnemyAi.IsOpponentDirected(def.Attributes, def.Face, def.Targets)) return cells;
             Reach reach = def.Face.ReachOrDefault;
-            int front = playerCell + Math.Max(1, playerSize) - 1;
+            int front = Field.FrontCell(playerCell, Math.Max(1, playerSize));
             for (int gap = reach.Min; gap <= reach.Max; gap++)
             {
-                int cell = front + 1 + gap;
+                int cell = Field.NearEdgeAt(gap, front);
                 if (cell >= 1 && cell <= fieldCells) cells.Add(cell);
             }
             return cells;
@@ -79,7 +79,7 @@ namespace Depiction.Bridge
         public static OmenHit HitOf(Omen omen, IReadOnlyList<int> aim, int playerCell, int playerSize)
         {
             if (omen == null || omen.Label.Reach == null) return OmenHit.None;
-            int near = playerCell + Math.Max(1, playerSize) - 1;
+            int near = Field.FrontCell(playerCell, Math.Max(1, playerSize));
             return Contains(aim, near) ? OmenHit.Lands : OmenHit.Misses;
         }
 

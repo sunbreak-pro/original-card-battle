@@ -104,7 +104,7 @@ namespace Depiction.Bridge
         private bool _enemyFalls;
 
         /// <summary>§7.2: N as the two models stand now.</summary>
-        private int Gap => _enemy.Cell - (_player.Cell + _player.Size - 1) - 1;
+        private int Gap => Field.Gap(_player.Cell, _player.Size, _enemy.Cell);
 
         /// <summary>§12 連戦 (#191): which battle of the chain this is, and how many there are; 1 / 1 alone.</summary>
         public int ChainIndex { get; set; } = 1;

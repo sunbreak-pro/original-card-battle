@@ -301,7 +301,7 @@ namespace BattleCore
             if (label.Reach == null) return cells;
             for (int gap = label.Reach.Max; gap >= label.Reach.Min; gap--)
             {
-                int cell = enemy.Cell - 1 - gap;
+                int cell = Field.FrontCellAt(gap, enemy.Cell);
                 if (cell >= 1) cells.Add(cell);
             }
             return cells;
@@ -340,8 +340,8 @@ namespace BattleCore
             if (boundary == null) return cells;
             foreach (int cell in TargetCells(LabelOf(action), enemy))
             {
-                // TargetCells counts a cell as enemy.Cell − 1 − gap; read the gap back off it.
-                if (boundary.Holds(enemy.Cell - 1 - cell)) cells.Add(cell);
+                // TargetCells counts a cell as Field.FrontCellAt(gap, …); read the gap back off it.
+                if (boundary.Holds(Field.GapFrom(cell, enemy.Cell))) cells.Add(cell);
             }
             return cells;
         }
