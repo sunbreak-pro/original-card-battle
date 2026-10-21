@@ -1,0 +1,283 @@
+/* Original Card Battle — battle screen components. Every colour and size comes from tokens.css (tokens.json). */
+
+.ocb-root, .ocb-root *, .ocb-root *::before, .ocb-root *::after { box-sizing: border-box; }
+.ocb-root { font-family: var(--font-body); color: var(--ink); -webkit-font-smoothing: antialiased; line-height: 1.375; }
+.ocb-root p { margin: 0; }
+.ocb-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.ocb-disp { font-family: var(--font-display); }
+.ocb-icon { display: inline-block; flex: none; overflow: visible; vertical-align: middle; }
+
+/* ---------- panels ---------- */
+.ocb-root .ocb-panel { background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); }
+.ocb-root .ocb-solid { background: var(--panel-solid); border: var(--stroke-rule) solid var(--steel); border-radius: var(--radius-panel); }
+
+/* ---------- card (216×304) ---------- */
+.ocb-root .ocb-card { position: relative; width: 216px; height: 304px; border-radius: var(--radius-panel); background: var(--card); box-shadow: var(--shadow-card); --attr: var(--steel); --attr-ink: var(--ink); user-select: none; }
+.ocb-root .ocb-card.is-attack { --attr: var(--violet); --attr-ink: var(--phosphor); }
+.ocb-root .ocb-card.is-defense { --attr: var(--guard); --attr-ink: var(--guard); }
+.ocb-root .ocb-card.is-skill { --attr: var(--amber); --attr-ink: var(--amber); }
+.ocb-root .ocb-card.is-stance { --attr: var(--crimson); --attr-ink: var(--hp-text); }
+.ocb-root .ocb-card-clip { position: absolute; inset: 0; border-radius: var(--radius-panel); overflow: hidden; pointer-events: none; }
+.ocb-root .ocb-card-clip::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background: var(--attr); }
+.ocb-root .ocb-card-clip::after { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 5px; background: var(--attr); }
+.ocb-root .ocb-card-edge { position: absolute; inset: 0; border: var(--stroke-frame) solid var(--attr); border-radius: var(--radius-panel); pointer-events: none; }
+.ocb-root .ocb-card.is-lit .ocb-card-edge { border-color: var(--wick); }
+.ocb-root .ocb-card.is-lit { box-shadow: var(--shadow-card), var(--shadow-lamp); }
+.ocb-root .ocb-cost { position: absolute; left: 16px; top: 11px; width: 44px; height: 44px; border-radius: 50%; border: var(--stroke-frame) solid var(--amber); background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; font: 700 28px/1 var(--font-mono); color: var(--amber); }
+.ocb-root .ocb-cost.is-down { background: var(--amber); color: var(--ground); }
+.ocb-root .ocb-cost .ocb-down { position: absolute; left: 50%; transform: translateX(-50%); bottom: -9px; height: 18px; padding: 0 4px; border-radius: 3px; background: var(--panel-solid); border: 1px solid var(--amber); font: 400 14px/16px var(--font-body); color: var(--ink); white-space: nowrap; }
+.ocb-root .ocb-attr-icon { position: absolute; left: 68px; top: 21px; }
+.ocb-root .ocb-reach { position: absolute; right: 12px; top: 11px; height: 32px; padding: 0 8px; display: flex; align-items: center; gap: 4px; background: var(--panel-solid); border: 1px solid var(--steel); border-radius: var(--radius-tag); font: 700 20px/1 var(--font-mono); color: var(--ink); white-space: nowrap; }
+.ocb-root .ocb-reach small { font: 400 14px/1 var(--font-body); }
+.ocb-root .ocb-card-name { position: absolute; left: 16px; top: 60px; right: 12px; font: 700 22px/28px var(--font-display); letter-spacing: .02em; white-space: nowrap; }
+.ocb-root .ocb-values { position: absolute; left: 16px; top: 94px; display: flex; gap: 14px; }
+.ocb-root .ocb-val { display: grid; grid-template-columns: 24px auto; column-gap: 4px; align-items: center; }
+.ocb-root .ocb-val b { font: 700 36px/40px var(--font-mono); color: var(--val-ink, var(--attr-ink)); }
+.ocb-root .ocb-val small { grid-column: 2; font: 400 16px/18px var(--font-body); color: var(--ink-muted); margin-top: -2px; }
+.ocb-root .ocb-desc { position: absolute; left: 16px; top: 156px; width: 188px; height: 66px; font: 400 16px/22px var(--font-body); color: var(--ink); line-break: strict; word-break: normal; overflow-wrap: anywhere; }
+.ocb-root .ocb-card.is-stance .ocb-desc { top: 94px; height: 88px; }
+.ocb-root .ocb-desc .ocb-inf { display: flex; gap: 6px; align-items: center; height: 22px; white-space: nowrap; }
+.ocb-root .ocb-desc.fit-unity { white-space: nowrap; overflow: visible; }
+.ocb-root .ocb-desc.fit-clip { overflow: hidden; }
+.ocb-root .ocb-desc .ocb-more { color: var(--ink-muted); }
+.ocb-root .ocb-trait { position: absolute; left: 12px; right: 7px; bottom: 7px; height: 62px; background: rgba(0,0,0,.34); border: 1px solid var(--rule); border-radius: var(--radius-tag); display: flex; align-items: center; padding: 0 4px 0 0; }
+.ocb-root .ocb-trait.is-plain { border-style: dashed; border-color: var(--steel); color: var(--ink-muted); padding-left: 12px; }
+.ocb-root .ocb-trait .ocb-lamp-slot { width: 26px; display: flex; justify-content: center; flex: none; }
+.ocb-root .ocb-trait p { font: 400 16px/22px var(--font-body); white-space: nowrap; }
+.ocb-root .ocb-trait p + p { font-weight: 700; }
+.ocb-root .ocb-lamp { width: 10px; height: 10px; border-radius: 50%; background: var(--steel); }
+.ocb-root .ocb-lamp.is-on { width: 16px; height: 16px; background: var(--wick); box-shadow: 0 0 10px rgba(255,216,154,.8); }
+.ocb-root .ocb-card-dim { position: absolute; inset: 0; border-radius: var(--radius-panel); background: #000; opacity: 0; pointer-events: none; }
+.ocb-root .ocb-card.is-unpayable .ocb-card-dim { opacity: var(--opacity-unpayable); }
+.ocb-root .ocb-term { text-decoration: underline dotted var(--ink-muted) 2px; text-underline-offset: 4px; }
+
+/* ---------- omen plate (200×98) ---------- */
+.ocb-root .ocb-omen { position: relative; width: 200px; height: 98px; background: var(--panel-solid); border: var(--stroke-frame) solid var(--violet); border-radius: var(--radius-panel); padding: 8px 12px; display: flex; flex-direction: column; justify-content: space-between; transition: box-shadow .12s; }
+.ocb-root .ocb-omen.is-active { border-color: var(--phosphor); box-shadow: var(--shadow-omen-active); }
+.ocb-root .ocb-omen.is-rest { border: var(--stroke-frame) dashed var(--steel); }
+.ocb-root .ocb-omen-row1 { display: flex; align-items: center; gap: 8px; height: 52px; }
+.ocb-root .ocb-omen-row1 b { font: 700 48px/52px var(--font-mono); }
+.ocb-root .ocb-omen-row1 .ocb-swatch { margin-left: auto; }
+.ocb-root .ocb-omen-row2 { display: flex; align-items: center; justify-content: space-between; height: 26px; font: 400 16px/22px var(--font-body); }
+.ocb-root .ocb-hitmark { width: 30px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 4px; position: relative; }
+.ocb-root .ocb-hitmark.is-hit { border: 2px solid var(--phosphor); }
+.ocb-root .ocb-hitmark.is-miss { border: 2px dashed var(--miss); }
+.ocb-root .ocb-hitmark.is-miss::after { content: ""; position: absolute; left: 2px; right: 2px; top: 50%; height: 2px; background: var(--miss); transform: rotate(-24deg); }
+.ocb-root .ocb-omen-reserve { width: 170px; height: 66px; opacity: .62; border: var(--stroke-frame) dashed var(--ink-muted); background: var(--panel-solid); border-radius: var(--radius-panel); padding: 6px 10px; display: flex; align-items: center; gap: 8px; position: relative; }
+.ocb-root .ocb-omen-reserve b { font: 700 28px/1 var(--font-mono); }
+.ocb-root .ocb-omen-reserve .ocb-plan { position: absolute; right: 6px; bottom: 6px; font: 400 14px/16px var(--font-body); border: 1px dashed var(--ink-muted); border-radius: 3px; padding: 0 4px; }
+
+/* ---------- floor ---------- */
+.ocb-root .ocb-tile { position: absolute; height: 40px; border-radius: var(--radius-panel); background: var(--floor-tile); border: var(--stroke-rule) solid var(--rule); }
+.ocb-root .ocb-tile-reach { position: absolute; inset: 0; border-radius: var(--radius-panel); background: linear-gradient(rgba(232,168,76,.55), rgba(232,168,76,.18)); box-shadow: var(--shadow-reach); opacity: 0; }
+.ocb-root .ocb-tile-reach-line { position: absolute; left: 0; right: 0; top: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--amber); opacity: 0; }
+.ocb-root .ocb-tile-threat { position: absolute; inset: -1px; border-radius: var(--radius-panel); border: var(--stroke-frame) solid var(--reach-red); box-shadow: var(--shadow-threat); overflow: hidden; }
+.ocb-root .ocb-tile-threat svg { position: absolute; inset: 0; }
+.ocb-root .ocb-tile-move { position: absolute; inset: -1px; border-radius: var(--radius-panel); border: var(--stroke-frame) dashed var(--violet); }
+.ocb-root .ocb-dist { position: absolute; height: 34px; display: flex; align-items: center; justify-content: center; }
+.ocb-root .ocb-dist-chip { position: relative; z-index: 1; height: 34px; padding: 0 10px; display: flex; align-items: center; gap: 6px; background: var(--panel-solid); border: 1px solid var(--steel); border-radius: var(--radius-panel); font: 700 28px/1 var(--font-mono); }
+.ocb-root .ocb-dist-arm { position: absolute; top: 50%; height: 12px; margin-top: -6px; border: 1px solid rgba(236,235,242,.55); border-right: 0; border-left-width: 1px; }
+
+/* ---------- figures ---------- */
+.ocb-root .ocb-figure { position: absolute; }
+.ocb-root .ocb-footlight { position: absolute; height: 60px; border-radius: 50%; }
+
+/* ---------- status panel ---------- */
+.ocb-root .ocb-stat { position: relative; padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 8px; }
+.ocb-root .ocb-stat.is-elite { border-color: var(--phosphor); }
+.ocb-root .ocb-hp { display: flex; align-items: center; gap: 6px; height: 28px; }
+.ocb-root .ocb-hp b { font: 700 24px/28px var(--font-mono); min-width: 40px; text-align: right; }
+.ocb-root .ocb-bar { position: relative; flex: 1; height: 14px; border-radius: 3px; background: rgba(0,0,0,.5); border: 1px solid var(--rule); overflow: hidden; }
+.ocb-root .ocb-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--crimson); transition: width .3s ease-out; }
+.ocb-root .ocb-bar-loss { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, var(--wick) 0 2px, transparent 2px 5px); }
+.ocb-root .ocb-bar-ticks { position: absolute; inset: 0; }
+.ocb-root .ocb-bar-ticks i { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(0,0,0,.55); }
+.ocb-root .ocb-guardrow { display: flex; align-items: center; gap: 6px; height: 30px; }
+.ocb-root .ocb-guardrow b { font: 700 24px/28px var(--font-mono); color: var(--guard); }
+.ocb-root .ocb-guardrow.is-zero { opacity: var(--opacity-guard-zero); }
+.ocb-root .ocb-guardrow.is-zero b { color: var(--ink-muted); }
+.ocb-root .ocb-foe-st { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+.ocb-root .ocb-foe-st b { color: var(--ink); }
+.ocb-root .ocb-chips { display: flex; flex-wrap: wrap; gap: 5px; min-height: 0; }
+.ocb-root .ocb-chips:empty { display: none; }
+
+/* ---------- status chip + tooltip ---------- */
+.ocb-root .ocb-chip { height: 30px; padding: 0 8px 0 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(0,0,0,.35); border: 1px solid var(--ink-muted); border-radius: var(--radius-chip-foe); font: 400 16px/1 var(--font-body); white-space: nowrap; cursor: default; }
+.ocb-root .ocb-chip.is-self { border-color: var(--steel); border-radius: var(--radius-chip-self); }
+.ocb-root .ocb-chip.is-boss { border: 3px double var(--boss); }
+.ocb-root .ocb-chip:hover, .ocb-root .ocb-chip.is-hover { border-color: var(--ink); background: rgba(255,255,255,.1); }
+.ocb-root .ocb-chip .ocb-mono { font-weight: 600; }
+.ocb-root .ocb-tip { width: 340px; padding: 10px 12px 12px; background: var(--panel-solid); border: 1px solid var(--steel); border-radius: var(--radius-panel); box-shadow: var(--shadow-tip); }
+.ocb-root .ocb-tip-head { display: flex; align-items: center; gap: 6px; font: 700 18px/24px var(--font-body); margin-bottom: 6px; }
+.ocb-root .ocb-tip-head small { margin-left: auto; font: 400 14px/18px var(--font-body); color: var(--ink-muted); }
+.ocb-root .ocb-tip p { font: 400 16px/22px var(--font-body); }
+.ocb-root .ocb-tip p span { color: var(--ink-muted); margin-right: 8px; }
+
+/* ---------- stance slot (250×52) ---------- */
+.ocb-root .ocb-stance { position: relative; width: 250px; height: 52px; padding: 0 12px; display: flex; align-items: center; gap: 8px; background: var(--panel); border: var(--stroke-frame) solid var(--hp-text); border-radius: var(--radius-panel); font: 700 20px/26px var(--font-display); }
+.ocb-root .ocb-stance.is-foe { border-color: var(--violet); }
+.ocb-root .ocb-stance.is-empty { background: none; border: var(--stroke-frame) dashed var(--steel); }
+.ocb-root .ocb-stance .ocb-x { margin-left: auto; width: 40px; text-align: right; font: 600 16px/1 var(--font-mono); }
+.ocb-root .ocb-stance.is-hover { background: rgba(40,44,58,.92); }
+
+/* ---------- stamina plate + piles ---------- */
+.ocb-root .ocb-stamina { position: relative; width: 236px; height: 84px; padding: 10px 12px; background: var(--card); border: 1px solid var(--steel); border-radius: var(--radius-plate); }
+.ocb-root .ocb-st-row1 { display: flex; align-items: center; gap: 8px; height: 36px; }
+.ocb-root .ocb-st-row1 b { font: 700 34px/36px var(--font-mono); color: var(--amber); }
+.ocb-root .ocb-st-pay { margin-left: auto; font: 700 24px/1 var(--font-mono); color: var(--wick); opacity: 0; }
+.ocb-root .ocb-st-pay.is-on { opacity: 1; }
+.ocb-root .ocb-pips { display: flex; align-items: center; gap: 4px; height: 20px; margin-top: 8px; }
+.ocb-root .ocb-pip { width: 16px; height: 16px; border-radius: 50%; flex: none; }
+.ocb-root .ocb-pip.is-have { background: var(--amber); }
+.ocb-root .ocb-pip.is-pay { border: 3px solid var(--amber); }
+.ocb-root .ocb-pip.is-next { border: 2px dashed var(--amber); }
+.ocb-root .ocb-pip.is-empty { border: 2px solid var(--steel); }
+.ocb-root .ocb-pip.is-lit { animation: ocb-pip-lit .32s ease-out; }
+@keyframes ocb-pip-lit { 0% { box-shadow: 0 0 0 0 rgba(255,216,154,.9); transform: scale(1.35); } 100% { box-shadow: 0 0 0 8px rgba(255,216,154,0); transform: scale(1); } }
+.ocb-root .ocb-pip-div { width: 2px; height: 20px; background: rgba(236,235,242,.7); flex: none; }
+.ocb-root .ocb-pile { position: relative; width: 64px; height: 84px; cursor: pointer; }
+.ocb-root .ocb-pile-sheet { position: absolute; left: 0; width: 64px; height: 84px; border-radius: 5px; background: var(--card); border: 1px solid var(--steel); }
+.ocb-root .ocb-pile-face { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 5px; background: var(--card); border: 1px solid var(--steel); }
+.ocb-root .ocb-pile.is-empty .ocb-pile-face { background: none; border-style: dashed; }
+.ocb-root .ocb-pile:hover .ocb-pile-face { border-color: var(--ink); }
+
+/* ---------- target frame + prediction + throw line ---------- */
+.ocb-root .ocb-frame { position: absolute; pointer-events: none; }
+.ocb-root .ocb-frame svg { position: absolute; inset: 0; overflow: visible; }
+.ocb-root .ocb-pred { position: absolute; height: 60px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: var(--panel-solid); border: var(--stroke-frame) solid var(--wick); border-radius: var(--radius-panel); font: 700 48px/1 var(--font-mono); color: var(--wick); white-space: nowrap; transform: translate(-50%, -50%); }
+.ocb-root .ocb-throwline { position: absolute; height: 3px; background: repeating-linear-gradient(90deg, var(--amber) 0 9px, transparent 9px 15px); filter: drop-shadow(0 0 0 var(--keyline)); }
+
+/* ---------- notices ---------- */
+.ocb-root .ocb-hoverline { width: 420px; min-height: 48px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; background: var(--panel-solid); border: 1px solid var(--steel); border-radius: var(--radius-panel); font: 400 18px/26px var(--font-body); }
+.ocb-root .ocb-reachpanel { width: 280px; height: 76px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; background: var(--panel-solid); border: 1px dashed var(--miss); border-radius: var(--radius-panel); font: 400 18px/26px var(--font-body); }
+.ocb-root .ocb-refusal { height: 48px; padding: 0 20px 0 16px; display: inline-flex; align-items: center; gap: 12px; background: var(--panel-solid); border: 1px solid var(--steel); border-radius: var(--radius-panel); font: 400 20px/28px var(--font-body); white-space: nowrap; }
+.ocb-root .ocb-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--amber); flex: none; }
+.ocb-root .ocb-banner { position: absolute; left: 0; right: 0; height: 132px; display: flex; align-items: center; justify-content: center; background: linear-gradient(90deg, rgba(10,12,18,0), rgba(10,12,18,.8) 28%, rgba(10,12,18,.8) 72%, rgba(10,12,18,0)); font: 800 64px/72px var(--font-display); letter-spacing: .12em; pointer-events: none; }
+.ocb-root .ocb-banner::before, .ocb-root .ocb-banner::after { content: ""; position: absolute; left: 22%; right: 22%; height: 2px; background: var(--banner-line, var(--amber)); opacity: .7; }
+.ocb-root .ocb-banner::before { top: 10px; } .ocb-root .ocb-banner::after { bottom: 10px; }
+.ocb-root .ocb-banner.is-foe { --banner-line: var(--violet); }
+.ocb-root .ocb-float { position: absolute; display: flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 6px; background: rgba(0,0,0,.8); white-space: nowrap; pointer-events: none; transform: translate(-50%, -50%); }
+.ocb-root .ocb-float b { font: 700 48px/52px var(--font-mono); color: var(--hp-text); }
+.ocb-root .ocb-float.is-guard b { font-size: 34px; line-height: 40px; color: var(--guard); }
+.ocb-root .ocb-float.is-miss b { font: 400 24px/32px var(--font-body); color: var(--ink); text-decoration: line-through 2px var(--miss); }
+.ocb-root .ocb-float small { font: 400 16px/20px var(--font-body); color: var(--ink); }
+
+/* ---------- guide line (above the hand) ---------- */
+.ocb-game .ocb-guide { position: absolute; left: 0; right: 0; top: 743px; height: 28px; display: flex; align-items: center; justify-content: center; gap: 10px; font: 400 22px/28px var(--font-body); color: var(--ink); text-shadow: 0 1px 3px rgba(0,0,0,.7); pointer-events: none; transition: opacity .2s; }
+
+/* ---------- HUD ---------- */
+.ocb-root .ocb-corner { height: 44px; padding: 0 16px; display: inline-flex; align-items: center; gap: 18px; font: 600 20px/1 var(--font-mono); white-space: nowrap; }
+.ocb-root .ocb-corner span { display: inline-flex; align-items: center; gap: 6px; }
+.ocb-root .ocb-btn-sq { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ocb-root .ocb-speed { width: 120px; height: 56px; padding: 0 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 20px/1 var(--font-mono); cursor: pointer; }
+.ocb-root .ocb-speed:hover, .ocb-root .ocb-btn-sq:hover { border-color: var(--ink); background: rgba(40,44,58,.92); }
+.ocb-root .ocb-attrs { display: flex; gap: 6px; }
+.ocb-root .ocb-attr { position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; opacity: var(--opacity-unplayed); }
+.ocb-root .ocb-attr.is-on { opacity: 1; }
+.ocb-root .ocb-attr .ocb-count { position: absolute; right: -8px; top: -8px; width: 20px; height: 20px; border-radius: 50%; background: var(--panel-solid); border: 1px solid var(--ink-muted); font: 400 14px/18px var(--font-mono); text-align: center; }
+.ocb-root .ocb-guardpre { height: 56px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border: 1px dashed var(--guard); border-radius: var(--radius-panel); background: rgba(16,20,30,.6); font: 700 24px/1 var(--font-mono); color: var(--guard); }
+.ocb-root .ocb-endturn { width: 224px; height: 72px; display: flex; align-items: center; justify-content: center; border: var(--stroke-frame) solid var(--amber); border-radius: var(--radius-panel); background: rgba(232,168,76,.16); font: 700 24px/28px var(--font-body); letter-spacing: .08em; color: var(--ink); cursor: pointer; }
+.ocb-root .ocb-endturn:hover { background: rgba(232,168,76,.28); }
+.ocb-root .ocb-endturn.is-off { opacity: var(--opacity-enemy-turn); cursor: default; }
+.ocb-root .ocb-detail { width: 560px; height: 280px; padding: 16px; display: flex; gap: 16px; background: var(--panel-solid); border: var(--stroke-frame) solid var(--steel); border-radius: var(--radius-panel); box-shadow: var(--shadow-tip); }
+.ocb-root .ocb-detail-card { width: 173px; height: 243px; flex: none; position: relative; }
+.ocb-root .ocb-detail-card > .ocb-card { transform: scale(.8); transform-origin: 0 0; }
+.ocb-root .ocb-detail-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ocb-root .ocb-detail-body h3 { margin: 0; font: 700 24px/32px var(--font-display); }
+.ocb-root .ocb-detail-body .ocb-meta { font: 400 16px/22px var(--font-body); color: var(--ink-muted); }
+.ocb-root .ocb-detail-body .ocb-full { font: 400 16px/22px var(--font-body); }
+.ocb-root .ocb-detail-terms { margin-top: auto; padding: 8px 10px; background: rgba(0,0,0,.35); border-radius: 4px; font: 400 16px/22px var(--font-body); }
+.ocb-root .ocb-detail-terms b { margin-right: 6px; }
+
+/* ---------- pile drawer variants ---------- */
+.ocb-root .ocb-drawer { position: absolute; display: flex; flex-direction: column; }
+.ocb-root .ocb-drawer-tabs { display: flex; gap: 4px; }
+.ocb-root .ocb-drawer-tab { font: 700 18px/1 var(--font-body); color: var(--ink-muted); padding: 10px 14px; cursor: pointer; border-bottom: 2px solid transparent; }
+.ocb-root .ocb-drawer-tab.is-on { color: var(--ink); border-bottom-color: var(--amber); }
+.ocb-root .ocb-drawer-row { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-bottom: 1px solid var(--rule); font: 400 18px/1 var(--font-body); }
+.ocb-root .ocb-drawer-row .ocb-mono { margin-left: auto; font-weight: 600; }
+.ocb-root .ocb-drawer-row i { width: 6px; height: 24px; border-radius: 2px; background: var(--attr); flex: none; }
+
+/* ---------- end screen ---------- */
+.ocb-root .ocb-end { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(8,10,14,.62); }
+.ocb-root .ocb-end-paper { width: 720px; padding: 48px 56px 40px; background: var(--washi); color: var(--washi-ink); border-radius: 4px; box-shadow: 0 18px 40px rgba(0,0,0,.5); text-align: center; }
+.ocb-root .ocb-end-paper h2 { margin: 0 0 8px; font: 800 64px/72px var(--font-display); letter-spacing: .12em; }
+.ocb-root .ocb-end-paper p { font: 400 20px/32px var(--font-body); }
+.ocb-root .ocb-end-paper button { margin-top: 28px; font: 700 22px/1 var(--font-body); letter-spacing: .08em; color: var(--washi-ink); background: none; border: 2px solid var(--washi-ink); border-radius: 6px; padding: 16px 36px; cursor: pointer; }
+
+/* ---------- the playable screen ---------- */
+.ocb-game { position: relative; width: 100%; background: var(--ground); font-family: var(--font-body); color: var(--ink); }
+.ocb-game .ocb-viewport { position: relative; width: 100%; overflow: hidden; background: var(--ground); touch-action: none; }
+.ocb-game.is-full { position: fixed; inset: 0; z-index: 50; overflow: auto; }
+.ocb-game .ocb-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; user-select: none; -webkit-user-select: none; cursor: default; }
+.ocb-game .ocb-abs { position: absolute; }
+.ocb-game .ocb-layer { position: absolute; inset: 0; pointer-events: none; }
+.ocb-game .ocb-layer > * { pointer-events: auto; }
+.ocb-game .ocb-layer > .ocb-pe-none { pointer-events: none; }
+.ocb-game .ocb-hand-card { position: absolute; left: 0; top: 0; transform-origin: 108px 304px; will-change: transform; }
+.ocb-game .ocb-backdrop { position: absolute; inset: 0; overflow: hidden; }
+.ocb-game .ocb-sky { position: absolute; left: 0; right: 0; top: 0; height: 380px; background: linear-gradient(var(--sky-top), var(--sky-bottom)); }
+.ocb-game .ocb-meadow { position: absolute; left: 0; right: 0; top: 380px; height: 176px; background: linear-gradient(var(--meadow-top), var(--meadow-bottom)); }
+.ocb-game .ocb-earth { position: absolute; left: 0; right: 0; top: 556px; bottom: 0; background: linear-gradient(var(--earth-top), var(--earth-bottom)); }
+.ocb-game .ocb-horizon { position: absolute; left: 0; right: 0; top: 555px; height: 1px; background: rgba(236,235,242,.22); }
+.ocb-game .ocb-sun { position: absolute; inset: 0; animation: ocb-breathe 6.4s ease-in-out infinite; background: linear-gradient(var(--sun), rgba(255,255,255,0) 520px); }
+.ocb-game .ocb-stage[data-theme="wakakusa-a"] .ocb-sun { background: radial-gradient(1100px 760px at 300px -80px, var(--sun), rgba(255,255,255,0) 70%); }
+.ocb-game .ocb-stage[data-theme="wakakusa-b"] .ocb-sun { background: linear-gradient(112deg, rgba(255,255,255,0) 14%, var(--sun) 15%, rgba(255,255,255,0) 22%, rgba(255,255,255,0) 31%, var(--sun) 33%, rgba(255,255,255,0) 41%, rgba(255,255,255,0) 52%, var(--sun) 54%, rgba(255,255,255,0) 58%); -webkit-mask-image: linear-gradient(#000, rgba(0,0,0,0) 560px); mask-image: linear-gradient(#000, rgba(0,0,0,0) 560px); }
+.ocb-game .ocb-haze { position: absolute; left: 0; right: 0; top: 420px; height: 136px; background: linear-gradient(transparent, var(--haze), transparent); animation: ocb-breathe 8s ease-in-out infinite reverse; }
+@keyframes ocb-breathe { 0%,100% { opacity: 1; } 50% { opacity: .68; } }
+.ocb-game .ocb-mote { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--haze); animation: ocb-drift linear infinite; }
+@keyframes ocb-drift { from { transform: translate(0,0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } to { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+.ocb-game .ocb-enemy-shade { position: absolute; left: 0; right: 0; top: 790px; bottom: 0; background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.72) 40%); opacity: 0; pointer-events: none; transition: opacity .24s; }
+.ocb-game .ocb-enemy-shade.is-on { opacity: 1; }
+.ocb-game .ocb-debug { position: absolute; pointer-events: none; border: 2px dashed #46e3ff; }
+.ocb-game .ocb-debug.is-card { border-color: #ffffff; }
+.ocb-game .ocb-debug-label { position: absolute; font: 700 22px/1 var(--font-mono); color: #46e3ff; background: rgba(0,0,0,.75); padding: 4px 8px; border-radius: 4px; pointer-events: none; white-space: nowrap; }
+.ocb-game .ocb-flow { position: absolute; left: 50%; top: 20px; transform: translateX(-50%); height: 44px; padding: 0 6px 0 12px; display: flex; align-items: center; gap: 4px; border: 1px dashed var(--steel); border-radius: 22px; background: rgba(16,20,30,.7); font: 400 14px/1 var(--font-body); color: var(--ink-muted); cursor: pointer; }
+.ocb-game .ocb-flow span { padding: 6px 8px; border-radius: 12px; white-space: nowrap; }
+.ocb-game .ocb-flow span.is-on { background: rgba(232,168,76,.22); color: var(--ink); }
+.ocb-game .ocb-flow em { font-style: normal; color: var(--ink); border-left: 1px solid var(--rule); padding: 6px 10px; margin-left: 4px; }
+.ocb-game .ocb-tool-note { position: absolute; font: 400 14px/18px var(--font-body); color: var(--ink-muted); }
+
+/* ---------- lab (outside the 1920×1080 screen) ---------- */
+.ocb-lab { background: #0b0e15; color: var(--ink); font: 400 14px/1.45 var(--font-body); border-top: 1px solid var(--rule); }
+.ocb-lab button, .ocb-lab select, .ocb-lab input { font: inherit; color: inherit; }
+.ocb-lab .ocb-lab-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--rule); }
+.ocb-lab .ocb-lab-bar .ocb-read { display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--font-mono); font-size: 13px; color: var(--ink-muted); margin-right: auto; }
+.ocb-lab .ocb-lab-bar .ocb-read b { color: var(--ink); font-weight: 600; }
+.ocb-lab .ocb-lbtn { background: var(--panel-solid); border: 1px solid var(--steel); border-radius: 6px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+.ocb-lab .ocb-lbtn:hover { border-color: var(--ink); }
+.ocb-lab .ocb-lbtn.is-primary { border-color: var(--amber); background: rgba(232,168,76,.16); }
+.ocb-lab .ocb-lbtn.is-on { border-color: var(--wick); color: var(--wick); }
+.ocb-lab .ocb-tabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--rule); }
+.ocb-lab .ocb-tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 12px; cursor: pointer; color: var(--ink-muted); }
+.ocb-lab .ocb-tabs button.is-on { color: var(--ink); border-bottom-color: var(--amber); }
+.ocb-lab .ocb-pane { padding: 12px; display: none; }
+.ocb-lab .ocb-pane.is-on { display: block; }
+.ocb-lab .ocb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+.ocb-lab details { background: var(--panel-solid); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; }
+.ocb-lab summary { cursor: pointer; font-weight: 700; color: var(--ink); }
+.ocb-lab summary small { font-weight: 400; color: var(--ink-muted); margin-left: 6px; }
+.ocb-lab .ocb-row { display: grid; grid-template-columns: 1fr 76px; grid-template-areas: 'l l' 'r n'; align-items: center; gap: 2px 8px; padding: 6px 0; border-top: 1px solid rgba(157,166,186,.12); }
+.ocb-lab .ocb-row > label { grid-area: l; }
+.ocb-lab .ocb-row > input[type=range] { grid-area: r; }
+.ocb-lab .ocb-row > input[type=number] { grid-area: n; }
+.ocb-lab .ocb-row:first-of-type { border-top: 0; }
+.ocb-lab .ocb-row label { color: var(--ink); }
+.ocb-lab .ocb-row label small { display: block; color: var(--ink-muted); font-size: 12px; line-height: 1.35; }
+.ocb-lab .ocb-row.is-changed label::before { content: "●"; color: var(--amber); margin-right: 4px; }
+.ocb-lab .ocb-row input[type=range] { width: 100%; accent-color: var(--amber); }
+.ocb-lab .ocb-row input[type=number], .ocb-lab .ocb-row select { width: 100%; background: #05070b; border: 1px solid var(--steel); border-radius: 4px; padding: 2px 4px; }
+.ocb-lab .ocb-row.is-wide { grid-template-columns: 1fr 160px; grid-template-areas: 'l c'; }
+.ocb-lab .ocb-row.is-wide > select, .ocb-lab .ocb-row.is-wide > span { grid-area: c; }
+.ocb-lab .ocb-note { color: var(--ink-muted); font-size: 13px; margin: 6px 0 0; }
+.ocb-lab .ocb-variant { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.ocb-lab .ocb-why { margin: 6px 0 0; padding-left: 18px; color: var(--ink-muted); font-size: 13px; }
+.ocb-lab textarea { width: 100%; min-height: 220px; background: #05070b; color: var(--ink); border: 1px solid var(--steel); border-radius: 6px; font: 12px/1.5 var(--font-mono); padding: 8px; }
+.ocb-lab .ocb-sound-row { display: grid; grid-template-columns: 1fr 34px; gap: 6px; align-items: center; }
+.ocb-lab .ocb-play { width: 30px; height: 26px; padding: 0; }
+.ocb-lab table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.ocb-lab td, .ocb-lab th { border-top: 1px solid var(--rule); padding: 4px 6px; text-align: left; vertical-align: top; }
+
+/* ---------- galleries (static previews) ---------- */
+.ocb-gallery { position: relative; overflow: hidden; background: var(--ground); }
+.ocb-scaled { transform-origin: 0 0; }

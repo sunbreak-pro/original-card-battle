@@ -1,0 +1,52 @@
+/* The battle scene's root and layers (docs/BATTLE_SCENE.md §2.1). Tokens only; every selector under
+   .ocbg-battle. The modules bring their own CSS (hand.css, field.css, hud.css). Owned by the architect. */
+
+.ocbg-battle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.ocbg-battle .ocbg-battle-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  pointer-events: none;
+}
+
+/* bottom → top: layout.md 「重なりの順」 */
+.ocbg-battle .ocbg-battle-layer--backdrop { z-index: 0; }
+.ocbg-battle .ocbg-battle-layer--field { z-index: 10; }
+.ocbg-battle .ocbg-battle-layer--fx { z-index: 15; }
+.ocbg-battle .ocbg-battle-layer--panels { z-index: 20; }
+.ocbg-battle .ocbg-battle-layer--marks { z-index: 30; }
+.ocbg-battle .ocbg-battle-layer--hud { z-index: 40; }
+.ocbg-battle .ocbg-battle-layer--shade { z-index: 50; }
+.ocbg-battle .ocbg-battle-layer--hand { z-index: 60; }
+.ocbg-battle .ocbg-battle-layer--held { z-index: 70; }
+.ocbg-battle .ocbg-battle-layer--float { z-index: 80; }
+.ocbg-battle .ocbg-battle-layer--over { z-index: 90; }
+
+/* Interactive pieces opt back in. */
+.ocbg-battle .ocbg-battle-hit { pointer-events: auto; }
+
+/* The journal drawer's host inside the over layer. */
+.ocbg-battle .ocbg-battle-journal { position: absolute; inset: 0; pointer-events: auto; }
+
+/* The scene's clock owns every length (battle speed, 演出短縮, fast-forward). The design system's own CSS
+   transitions run on real time and would fight it, so they are switched off inside the scene. */
+.ocbg-battle .ocb-bar-fill,
+.ocbg-battle .ocb-omen,
+.ocbg-battle .ocb-guide,
+.ocbg-battle .ocb-card-dim { transition: none; }

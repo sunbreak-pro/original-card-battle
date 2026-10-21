@@ -1,0 +1,458 @@
+/* The meta screens: title, 継承の間, 出立, the ending card, settings, owned cards, the journal drawer.
+   Tokens only; every selector is scoped under a scene root (.ocbg-meta-<screen>). Text under 24 px is
+   --ink on the dark screens and --washi-ink on washi. */
+
+/* ------------------------------------------------------------------ shared */
+.ocbg-meta { position: absolute; inset: 0; overflow: hidden; font-family: var(--font-body); color: var(--ink); }
+.ocbg-meta * { box-sizing: border-box; }
+.ocbg-meta h1, .ocbg-meta h2, .ocbg-meta h3, .ocbg-meta h4, .ocbg-meta p, .ocbg-meta ul { margin: 0; padding: 0; }
+.ocbg-meta ul { list-style: none; }
+.ocbg-meta button { font-family: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.ocbg-meta button:focus-visible { outline: 2px solid var(--wick); outline-offset: 3px; }
+.ocbg-meta button[disabled] { cursor: default; }
+.ocbg-meta .ocbg-meta-backdrop { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; display: block; pointer-events: none; }
+.ocbg-meta .ocbg-meta-fade { position: absolute; background: var(--ground); pointer-events: none; z-index: 50; }
+.ocbg-meta .ocbg-meta-keys { position: absolute; font: 400 16px/22px var(--font-body); color: var(--ink); letter-spacing: .06em; white-space: nowrap; }
+.ocbg-meta .ocbg-meta-keys.is-in-panel { position: static; }
+.ocbg-meta .ocbg-meta-shade { position: absolute; background: color-mix(in srgb, var(--ground) 72%, transparent); }
+.ocbg-meta .ocbg-meta-shade.is-light { background: color-mix(in srgb, var(--ground) 30%, transparent); }
+.ocbg-meta .ocbg-meta-shade.is-deep { background: color-mix(in srgb, var(--ground) 86%, transparent); }
+.ocbg-meta .ocbg-meta-panel { background: var(--panel-solid); border: var(--stroke-rule) solid var(--steel); border-radius: var(--radius-panel); box-shadow: var(--shadow-tip); }
+.ocbg-meta .ocbg-meta-x { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); }
+.ocbg-meta .ocbg-meta-x:hover { border-color: var(--ink); }
+.ocbg-meta .ocbg-meta-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--steel); flex: none; }
+.ocbg-meta ::-webkit-scrollbar { width: 8px; height: 8px; }
+.ocbg-meta ::-webkit-scrollbar-thumb { background: var(--steel); border-radius: 4px; }
+.ocbg-meta ::-webkit-scrollbar-track { background: transparent; }
+
+/* buttons */
+.ocbg-meta .ocbg-meta-primary { display: flex; align-items: center; justify-content: center; gap: var(--space-16); border: var(--stroke-frame) solid var(--amber); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--amber) 16%, transparent); font: 700 28px/1 var(--font-display); letter-spacing: .2em; color: var(--ink); transition: background .14s, box-shadow .14s, transform .14s, opacity .2s; }
+.ocbg-meta .ocbg-meta-primary small { font: 400 16px/1 var(--font-mono); letter-spacing: .04em; padding: 4px 8px; border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-tag); }
+.ocbg-meta .ocbg-meta-primary:hover:not([disabled]) { background: color-mix(in srgb, var(--amber) 28%, transparent); box-shadow: var(--shadow-reach); transform: translateY(-2px); }
+.ocbg-meta .ocbg-meta-primary[disabled] { opacity: .32; }
+.ocbg-meta .ocbg-meta-primary.is-compact { height: 56px; padding: 0 28px; font-size: 22px; }
+.ocbg-meta .ocbg-meta-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-8); height: 100%; padding: 0 var(--space-24); background: var(--panel); border: var(--stroke-rule) solid var(--steel); border-radius: var(--radius-panel); font: 700 20px/1 var(--font-body); letter-spacing: .06em; transition: border-color .14s, background .14s, transform .14s; }
+.ocbg-meta .ocbg-meta-btn:hover:not([disabled]) { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, var(--panel-solid)); transform: translateY(-1px); }
+.ocbg-meta .ocbg-meta-chip-btn { display: flex; align-items: center; justify-content: center; gap: var(--space-8); background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); font: 700 20px/1 var(--font-body); }
+.ocbg-meta .ocbg-meta-chip-btn small { font: 400 16px/1 var(--font-mono); }
+.ocbg-meta .ocbg-meta-chip-btn:hover { border-color: var(--ink); }
+
+/* ------------------------------------------------------------------ title */
+.ocbg-meta-title .ocbg-meta-title-ground { position: absolute; pointer-events: none; background: linear-gradient(180deg, color-mix(in srgb, var(--ground) 0%, transparent), color-mix(in srgb, var(--ground) 92%, transparent) 70%); }
+.ocbg-meta-title .ocbg-meta-title-figure { position: absolute; transform-origin: 50% 100%; }
+.ocbg-meta-title .ocbg-meta-title-figure .ocb-footlight { position: absolute; }
+.ocbg-meta-title .ocbg-meta-title-figure svg { position: relative; }
+.ocbg-meta-title .ocbg-meta-title-name { font: 700 30px/1 var(--font-display); letter-spacing: .34em; color: var(--ink); white-space: nowrap; text-shadow: 0 2px 12px color-mix(in srgb, var(--ground) 80%, transparent); }
+.ocbg-meta-title .ocbg-meta-title-rule { position: absolute; display: block; background: linear-gradient(90deg, var(--amber), color-mix(in srgb, var(--amber) 0%, transparent)); }
+.ocbg-meta-title .ocbg-meta-title-tagline { display: flex; flex-direction: row-reverse; justify-content: flex-start; gap: 40px; }
+.ocbg-meta-title .ocbg-meta-title-col { writing-mode: vertical-rl; font: 400 46px/1 var(--font-display); letter-spacing: .22em; color: var(--ink); text-shadow: 0 0 18px color-mix(in srgb, var(--violet) 40%, transparent); }
+.ocbg-meta-title .ocbg-meta-title-col:last-child { margin-top: 96px; }
+.ocbg-meta-title .ocbg-meta-title-col span { display: inline-block; }
+.ocbg-meta-title .ocbg-meta-title-menu { display: flex; flex-direction: column; gap: var(--space-12); }
+.ocbg-meta-title .ocbg-meta-title-item { position: relative; display: flex; align-items: baseline; gap: var(--space-16); padding: 10px 0 10px 48px; text-align: left; font: 700 36px/1.2 var(--font-display); letter-spacing: .14em; color: var(--ink); transition: letter-spacing .2s, text-shadow .2s; }
+.ocbg-meta-title .ocbg-meta-title-item small { font: 400 16px/1 var(--font-body); letter-spacing: .04em; }
+.ocbg-meta-title .ocbg-meta-title-mark { position: absolute; left: 0; top: 50%; width: 32px; height: 2px; margin-top: -1px; background: var(--amber); transform: scaleX(0); transform-origin: 0 50%; transition: transform .22s; }
+.ocbg-meta-title .ocbg-meta-title-mark::after { content: ""; position: absolute; right: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--wick); box-shadow: 0 0 10px var(--wick); opacity: 0; transition: opacity .22s; }
+.ocbg-meta-title .ocbg-meta-title-item.is-on { letter-spacing: .2em; text-shadow: 0 0 22px color-mix(in srgb, var(--amber) 45%, transparent); }
+.ocbg-meta-title .ocbg-meta-title-item.is-on .ocbg-meta-title-mark { transform: scaleX(1); }
+.ocbg-meta-title .ocbg-meta-title-item.is-on .ocbg-meta-title-mark::after { opacity: 1; }
+.ocbg-meta-title .ocbg-meta-title-item.is-off { cursor: default; }
+.ocbg-meta-title .ocbg-meta-title-item.is-off > span { opacity: .4; }
+.ocbg-meta-title .ocbg-meta-title-item.is-off small { color: var(--ink); opacity: .85; }
+
+/* ------------------------------------------------------------------ 継承の間 */
+.ocbg-meta-hall .ocbg-meta-hall-title { font: 800 56px/1.1 var(--font-display); letter-spacing: .24em; color: var(--ink); text-shadow: 0 0 30px color-mix(in srgb, var(--amber) 30%, transparent); }
+.ocbg-meta-hall .ocbg-meta-hall-lead, .ocbg-meta-hall .ocbg-meta-hall-empty { font: 400 20px/1.4 var(--font-body); letter-spacing: .04em; }
+.ocbg-meta-hall .ocbg-meta-hall-empty { color: var(--ink); }
+.ocbg-meta-hall .ocbg-meta-hall-h2 { font: 700 24px/1 var(--font-display); letter-spacing: .14em; white-space: nowrap; padding-bottom: 12px; }
+.ocbg-meta-hall .ocbg-meta-hall-h2::after { content: ""; position: absolute; left: 0; bottom: 0; width: 56px; height: 2px; background: var(--amber); }
+.ocbg-meta-hall .ocbg-meta-hall-lives { display: flex; flex-direction: column; gap: var(--space-16); overflow-y: auto; padding-right: 6px; }
+.ocbg-meta-hall .ocbg-meta-hall-life { position: relative; background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-left: 3px solid var(--steel); border-radius: var(--radius-panel); padding: 14px 16px 12px 18px; display: flex; flex-direction: column; gap: 6px; }
+.ocbg-meta-hall .ocbg-meta-hall-life.is-alive { border-left-color: var(--amber); }
+.ocbg-meta-hall .ocbg-meta-hall-life header { display: flex; align-items: baseline; gap: var(--space-12); }
+.ocbg-meta-hall .ocbg-meta-gen { font: 600 18px/1 var(--font-mono); letter-spacing: .02em; }
+.ocbg-meta-hall .ocbg-meta-hall-lifename { font: 700 28px/1.1 var(--font-display); letter-spacing: .1em; }
+.ocbg-meta-hall .ocbg-meta-ending { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 6px; border: var(--stroke-rule) solid var(--steel); border-radius: var(--radius-tag); font: 700 18px/1.2 var(--font-body); white-space: nowrap; align-self: center; }
+.ocbg-meta-hall .ocbg-meta-ending.is-alive { border-color: var(--amber); }
+.ocbg-meta-hall .ocbg-meta-hall-line { font: 400 18px/1.45 var(--font-body); }
+.ocbg-meta-hall .ocbg-meta-hall-place { display: flex; align-items: center; gap: 8px; font: 400 18px/1.4 var(--font-body); }
+.ocbg-meta-hall .ocbg-meta-hall-life footer { display: flex; justify-content: space-between; gap: var(--space-12); margin-top: 6px; padding-top: 8px; border-top: var(--stroke-rule) solid var(--rule); font: 400 18px/1.4 var(--font-body); }
+.ocbg-meta-hall .ocbg-meta-tier { white-space: nowrap; }
+.ocbg-meta-hall .ocbg-meta-hall-none { font: 400 18px/1.6 var(--font-body); padding: var(--space-16) 0; }
+
+.ocbg-meta-hall .ocbg-meta-hall-column { position: absolute; }
+.ocbg-meta-hall .ocbg-meta-stratum { overflow: hidden; border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); transition: box-shadow .2s, border-color .2s; }
+.ocbg-meta-hall .ocbg-meta-stratum-veil { position: absolute; inset: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--ground) 86%, transparent), color-mix(in srgb, var(--ground) 18%, transparent) 70%, color-mix(in srgb, var(--ground) 40%, transparent)); }
+.ocbg-meta-hall .ocbg-meta-stratum-label { position: absolute; left: 12px; top: 12px; display: flex; align-items: center; gap: 10px; padding: 5px 12px 5px 6px; background: var(--panel); border-radius: var(--radius-tag); font: 700 20px/1 var(--font-display); letter-spacing: .08em; white-space: nowrap; }
+.ocbg-meta-hall .ocbg-meta-stratum-n { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border: var(--stroke-rule) solid var(--steel); border-radius: 50%; font: 600 16px/1 var(--font-mono); letter-spacing: 0; }
+.ocbg-meta-hall .ocbg-meta-stratum-marks { position: absolute; right: 12px; bottom: 12px; display: flex; gap: var(--space-8); }
+.ocbg-meta-hall .ocbg-meta-stratum.is-sel { border-color: var(--wick); box-shadow: 0 0 0 1px var(--wick), 0 0 22px color-mix(in srgb, var(--wick) 30%, transparent); }
+.ocbg-meta-hall .ocbg-meta-mark { position: relative; width: 44px; height: 44px; border-radius: 50%; background: var(--panel-solid); border: var(--stroke-frame) solid var(--steel); display: inline-flex; align-items: center; justify-content: center; cursor: default; }
+.ocbg-meta-hall .ocbg-meta-mark-n { font: 600 18px/1 var(--font-mono); }
+.ocbg-meta-hall .ocbg-meta-mark.is-alive { border-color: var(--amber); }
+.ocbg-meta-hall .ocbg-meta-mark.is-taken { border-style: dashed; }
+.ocbg-meta-hall .ocbg-meta-mark.is-trace { border-color: var(--wick); cursor: pointer; box-shadow: var(--shadow-lamp); }
+.ocbg-meta-hall .ocbg-meta-mark.is-trace:hover { transform: translateY(-2px); }
+.ocbg-meta-hall .ocbg-meta-flame { position: absolute; right: -5px; top: -5px; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(closest-side, var(--wick), color-mix(in srgb, var(--wick) 0%, transparent)); }
+
+.ocbg-meta-hall .ocbg-meta-hall-trace { display: flex; flex-direction: column; gap: var(--space-16); background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); padding: 20px 22px 18px; }
+.ocbg-meta-hall .ocbg-meta-hall-trace-body { display: flex; flex-direction: column; gap: var(--space-12); min-height: 0; overflow-y: auto; }
+.ocbg-meta-hall .ocbg-meta-hall-trace header { display: flex; flex-direction: column; gap: var(--space-8); }
+.ocbg-meta-hall .ocbg-meta-hall-trace-top { display: flex; align-items: center; }
+.ocbg-meta-hall .ocbg-meta-hall-trace-top .ocbg-meta-ending { margin-left: 0; }
+.ocbg-meta-hall .ocbg-meta-pager { margin-left: auto; font: 600 18px/1 var(--font-mono); }
+.ocbg-meta-hall .ocbg-meta-hall-trace h3 { font: 700 26px/1.25 var(--font-display); letter-spacing: .06em; }
+.ocbg-meta-hall .ocbg-meta-hall-appears { display: flex; align-items: center; gap: 10px; font: 400 18px/1.4 var(--font-body); }
+.ocbg-meta-hall .ocbg-meta-hall-appears .ocbg-meta-dot { background: var(--wick); box-shadow: 0 0 8px var(--wick); }
+.ocbg-meta-hall .ocbg-meta-hall-appears.is-waiting .ocbg-meta-dot { background: var(--steel); box-shadow: none; }
+.ocbg-meta-hall .ocbg-meta-hall-note { font: 400 16px/1.45 var(--font-body); padding: 8px 10px; border-left: 2px solid var(--amber); background: color-mix(in srgb, var(--amber) 8%, transparent); }
+.ocbg-meta-hall .ocbg-meta-hall-count { font: 700 18px/1.4 var(--font-body); padding-top: var(--space-8); border-top: var(--stroke-rule) solid var(--rule); }
+.ocbg-meta-hall .ocbg-meta-cands li { display: grid; grid-template-columns: 136px 1fr auto; align-items: center; gap: var(--space-12); min-height: 42px; border-bottom: var(--stroke-rule) solid var(--rule); }
+.ocbg-meta-hall .ocbg-meta-cand-kind { display: inline-flex; align-items: center; gap: 6px; font: 400 16px/1 var(--font-body); white-space: nowrap; }
+.ocbg-meta-hall .ocbg-meta-cands b { font: 700 20px/1.2 var(--font-display); letter-spacing: .04em; }
+.ocbg-meta-hall .ocbg-meta-cand-detail { font: 400 16px/1.2 var(--font-body); white-space: nowrap; }
+.ocbg-meta-hall .ocbg-meta-hall-trace h4 { font: 700 18px/1.3 var(--font-body); margin-top: var(--space-8); }
+.ocbg-meta-hall .ocbg-meta-withheld li { display: flex; justify-content: space-between; gap: var(--space-12); padding: 6px 0 6px 12px; border-left: 2px dashed var(--steel); font: 400 16px/1.4 var(--font-body); }
+.ocbg-meta-hall .ocbg-meta-withheld b { font: 700 18px/1.3 var(--font-display); }
+.ocbg-meta-hall .ocbg-meta-hall-rules { display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.ocbg-meta-hall .ocbg-meta-hall-rules li { position: relative; padding-left: 16px; font: 400 18px/1.4 var(--font-body); }
+.ocbg-meta-hall .ocbg-meta-hall-rules li::before { content: ""; position: absolute; left: 2px; top: 10px; width: 5px; height: 5px; border-radius: 50%; background: var(--ink); }
+
+.ocbg-meta-hall .ocbg-meta-hall-heir { display: flex; flex-direction: column; gap: var(--space-16); }
+.ocbg-meta-hall .ocbg-meta-heir-gen { display: flex; align-items: baseline; gap: var(--space-12); font: 700 26px/1 var(--font-display); letter-spacing: .1em; }
+.ocbg-meta-hall .ocbg-meta-heir-gen span { font: 400 18px/1 var(--font-body); letter-spacing: .1em; }
+.ocbg-meta-hall .ocbg-meta-heir-namerow { display: flex; align-items: center; gap: var(--space-24); height: 96px; }
+.ocbg-meta-hall .ocbg-meta-heir-name { font: 800 72px/1 var(--font-display); letter-spacing: .14em; white-space: nowrap; text-shadow: 0 0 34px color-mix(in srgb, var(--amber) 32%, transparent); }
+.ocbg-meta-hall .ocbg-meta-heir-name span { display: inline-block; }
+.ocbg-meta-hall .ocbg-meta-seal { width: 62px; height: 92px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid var(--amber); border-radius: var(--radius-tag); font: 800 30px/1.08 var(--font-display); color: var(--amber); background: color-mix(in srgb, var(--amber) 10%, transparent); }
+.ocbg-meta-hall .ocbg-meta-seal.is-stamped { animation: ocbg-meta-stamp .7s ease-out; }
+@keyframes ocbg-meta-stamp { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--amber) 70%, transparent); } 100% { box-shadow: 0 0 0 22px color-mix(in srgb, var(--amber) 0%, transparent); } }
+.ocbg-meta-hall .ocbg-meta-heir-attire { width: 262px; display: flex; flex-direction: column; gap: 6px; }
+.ocbg-meta-hall .ocbg-meta-heir-attire h4 { font: 700 18px/1 var(--font-body); letter-spacing: .2em; }
+.ocbg-meta-hall .ocbg-meta-heir-tier { font: 700 26px/1.2 var(--font-display); letter-spacing: .08em; }
+.ocbg-meta-hall .ocbg-meta-heir-reason { font: 400 18px/1.4 var(--font-body); }
+.ocbg-meta-hall .ocbg-meta-heir-attire ul { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.ocbg-meta-hall .ocbg-meta-heir-attire li { display: flex; align-items: center; gap: 10px; font: 400 16px/1.3 var(--font-body); }
+.ocbg-meta-hall .ocbg-meta-swatch { width: 24px; height: 24px; flex: none; border-radius: var(--radius-tag); border: var(--stroke-rule) solid var(--steel); }
+.ocbg-meta-hall .ocbg-meta-swatch.is-none { border-style: dashed; }
+.ocbg-meta-hall .ocbg-meta-part { width: 96px; flex: none; }
+.ocbg-meta-hall .ocbg-meta-heir-figure { position: absolute; right: 16px; top: 166px; width: 140px; height: 226px; }
+.ocbg-meta-hall .ocbg-meta-heir-figure .ocb-footlight { position: absolute; }
+.ocbg-meta-hall .ocbg-meta-heir-figure svg { position: relative; }
+.ocbg-meta-hall .ocbg-meta-heir-survivor { margin-top: var(--space-8); padding: 14px 16px; border: var(--stroke-rule) solid var(--amber); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--amber) 8%, var(--panel)); display: flex; flex-direction: column; gap: 6px; }
+.ocbg-meta-hall .ocbg-meta-heir-survivor h4 { font: 700 18px/1.2 var(--font-body); letter-spacing: .12em; }
+.ocbg-meta-hall .ocbg-meta-heir-survivor-line { font: 700 24px/1.2 var(--font-display); letter-spacing: .06em; }
+.ocbg-meta-hall .ocbg-meta-heir-survivor li { display: flex; align-items: center; gap: 8px; font: 400 18px/1.4 var(--font-body); }
+/* the bonus was used up by the last life (Inheritance.hallView SurvivorSpent): no warm colour, it no longer gives anything */
+.ocbg-meta-hall .ocbg-meta-heir-survivor.is-spent { border-color: color-mix(in srgb, var(--ink) 30%, transparent); background: var(--panel); }
+.ocbg-meta-hall .ocbg-meta-heir-duration { font: 400 16px/1.3 var(--font-body); }
+
+/* ------------------------------------------------------------------ 出立 */
+.ocbg-meta-departure .ocbg-meta-dep-page { position: absolute; }
+.ocbg-meta-departure .ocbg-meta-back { display: inline-flex; align-items: center; gap: var(--space-8); padding: 0 18px; background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); font: 700 18px/1 var(--font-body); letter-spacing: .06em; transition: border-color .14s; }
+.ocbg-meta-departure .ocbg-meta-back:hover { border-color: var(--ink); }
+.ocbg-meta-departure .ocbg-meta-stepper { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-12); }
+.ocbg-meta-departure .ocbg-meta-stepper span { display: inline-flex; align-items: center; gap: 10px; font: 700 20px/1 var(--font-display); letter-spacing: .1em; opacity: .5; transition: opacity .2s; }
+.ocbg-meta-departure .ocbg-meta-stepper b { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: var(--stroke-frame) solid var(--steel); border-radius: 50%; font: 600 16px/1 var(--font-mono); }
+.ocbg-meta-departure .ocbg-meta-stepper span.is-on { opacity: 1; }
+.ocbg-meta-departure .ocbg-meta-stepper span.is-on b { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 18%, transparent); }
+.ocbg-meta-departure .ocbg-meta-stepper i { width: 56px; height: 1px; background: var(--rule); }
+.ocbg-meta-departure .ocbg-meta-dep-title { font: 700 32px/1.2 var(--font-display); letter-spacing: .06em; white-space: nowrap; }
+.ocbg-meta-departure .ocbg-meta-dep-notice { font: 400 18px/1.4 var(--font-body); }
+.ocbg-meta-departure .ocbg-meta-dep-h2 { font: 700 20px/1.4 var(--font-body); letter-spacing: .04em; white-space: nowrap; }
+.ocbg-meta-departure .ocbg-meta-dep-h2.is-wrap { white-space: normal; }
+
+.ocbg-meta-departure .ocbg-meta-filters { display: flex; gap: var(--space-8); }
+.ocbg-meta-departure .ocbg-meta-filter { height: 48px; padding: 0 14px; flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); font: 700 18px/1 var(--font-body); white-space: nowrap; transition: border-color .14s, background .14s; }
+.ocbg-meta-departure .ocbg-meta-filter:hover { border-color: var(--ink); }
+.ocbg-meta-departure .ocbg-meta-filter.is-on { border: var(--stroke-frame) solid var(--amber); background: color-mix(in srgb, var(--amber) 16%, var(--panel)); }
+.ocbg-meta-departure .ocbg-meta-filter-gap { flex: 0 0 12px; }
+.ocbg-meta-departure .ocbg-meta-costdot { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; border: var(--stroke-frame) solid var(--amber); border-radius: 50%; font: 700 16px/1 var(--font-mono); font-style: normal; }
+
+.ocbg-meta .ocbg-meta-grid { position: absolute; }
+.ocbg-meta .ocbg-meta-cardslot { position: relative; flex: none; }
+.ocbg-meta-departure .ocbg-meta-cell { position: absolute; }
+.ocbg-meta-departure .ocbg-meta-cell-face { position: relative; display: block; width: 156px; height: 219px; margin: 0 auto; border-radius: var(--radius-panel); transition: transform .14s ease-out, box-shadow .14s; }
+.ocbg-meta-departure .ocbg-meta-cell-face:hover { transform: translateY(-6px); box-shadow: 0 10px 22px color-mix(in srgb, var(--ground) 80%, transparent); }
+.ocbg-meta-departure .ocbg-meta-cell.is-sel .ocbg-meta-cell-face { box-shadow: 0 0 0 3px var(--amber), 0 0 20px color-mix(in srgb, var(--amber) 40%, transparent); }
+.ocbg-meta-departure .ocbg-meta-cell.is-unowned .ocbg-meta-cell-face { opacity: .4; }
+.ocbg-meta-departure .ocbg-meta-unowned { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); padding: 4px 10px; background: var(--panel-solid); border: var(--stroke-rule) solid var(--steel); border-radius: var(--radius-tag); font: 700 16px/1 var(--font-body); pointer-events: none; }
+.ocbg-meta .ocbg-meta-cell-row { position: absolute; left: 13px; right: 13px; bottom: 0; height: 36px; display: flex; align-items: center; justify-content: space-between; }
+.ocbg-meta .ocbg-meta-step { width: 44px; height: 36px; display: inline-flex; align-items: center; justify-content: center; background: var(--panel-solid); border: var(--stroke-rule) solid var(--steel); border-radius: var(--radius-tag); font: 700 22px/1 var(--font-body); transition: border-color .12s, background .12s; }
+.ocbg-meta .ocbg-meta-step:hover:not([disabled]) { border-color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, var(--panel-solid)); }
+.ocbg-meta .ocbg-meta-step[disabled] { opacity: .28; }
+.ocbg-meta .ocbg-meta-count { min-width: 44px; text-align: center; font: 700 26px/1 var(--font-mono); color: var(--amber); display: inline-block; }
+
+.ocbg-meta .ocbg-meta-pagenav { display: flex; align-items: center; justify-content: space-between; }
+.ocbg-meta .ocbg-meta-nav { height: 48px; padding: 0 20px; display: inline-flex; align-items: center; gap: 8px; background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); font: 700 18px/1 var(--font-body); transition: border-color .14s; }
+.ocbg-meta .ocbg-meta-nav.is-small { height: 40px; padding: 0 14px; font-size: 16px; }
+.ocbg-meta .ocbg-meta-nav:hover:not([disabled]) { border-color: var(--ink); }
+.ocbg-meta .ocbg-meta-nav[disabled] { opacity: .3; }
+.ocbg-meta .ocbg-meta-pagetext { font: 400 20px/1 var(--font-body); }
+
+.ocbg-meta .ocbg-meta-detail { background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); }
+.ocbg-meta .ocbg-meta-detail-hint { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; font: 400 20px/1.5 var(--font-body); }
+.ocbg-meta .ocbg-meta-detail-text h3 { font: 700 30px/1.2 var(--font-display); letter-spacing: .06em; margin-bottom: var(--space-12); }
+.ocbg-meta .ocbg-meta-detail-text p { font: 400 18px/1.5 var(--font-body); margin-bottom: var(--space-8); }
+.ocbg-meta .ocbg-meta-detail-text p.is-flavour, .ocbg-meta .ocbg-meta-owned-lines p.is-flavour { font-family: var(--font-display); }
+.ocbg-meta .ocbg-meta-terms { display: flex; flex-direction: column; gap: 4px; padding-top: var(--space-12); border-top: var(--stroke-rule) solid var(--rule); max-height: 104px; overflow-y: auto; }
+.ocbg-meta .ocbg-meta-term { font: 400 16px/1.4 var(--font-body); }
+.ocbg-meta .ocbg-meta-term b { font: 700 16px/1.4 var(--font-display); margin-right: 10px; }
+
+.ocbg-meta-departure .ocbg-meta-countbox { background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); padding: 16px 22px; display: flex; flex-direction: column; gap: var(--space-12); }
+.ocbg-meta-departure .ocbg-meta-count-row { display: flex; align-items: center; gap: var(--space-24); }
+.ocbg-meta-departure .ocbg-meta-total-wrap { display: flex; align-items: baseline; gap: 8px; min-width: 128px; }
+.ocbg-meta-departure .ocbg-meta-total { font: 700 64px/1 var(--font-mono); color: var(--amber); display: inline-block; min-width: 80px; text-align: right; }
+.ocbg-meta-departure .ocbg-meta-total-wrap span { font: 700 24px/1 var(--font-body); }
+.ocbg-meta-departure .ocbg-meta-gauge-wrap { position: relative; flex: 1; padding-bottom: 24px; }
+.ocbg-meta-departure .ocbg-meta-gauge { position: relative; height: 14px; border-radius: 7px; background: color-mix(in srgb, var(--ground) 70%, transparent); border: var(--stroke-rule) solid var(--rule); overflow: hidden; }
+.ocbg-meta-departure .ocbg-meta-gauge-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--steel); transition: width .26s ease-out, background .2s; }
+.ocbg-meta-departure .ocbg-meta-gauge.is-ok .ocbg-meta-gauge-fill { background: var(--amber); }
+.ocbg-meta-departure .ocbg-meta-gauge-min { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--ink); }
+.ocbg-meta-departure .ocbg-meta-gauge-labels span { position: absolute; top: 22px; transform: translateX(-50%); font: 600 16px/1 var(--font-mono); }
+.ocbg-meta-departure .ocbg-meta-gauge-labels span:last-child { transform: translateX(-100%); }
+.ocbg-meta .ocbg-meta-status { display: flex; align-items: flex-start; gap: 10px; font: 400 20px/1.45 var(--font-body); }
+.ocbg-meta .ocbg-meta-status::before { content: ""; width: 12px; height: 12px; margin-top: 8px; flex: none; border-radius: 50%; border: var(--stroke-frame) solid var(--steel); }
+.ocbg-meta .ocbg-meta-status.is-ok::before { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 10px color-mix(in srgb, var(--amber) 60%, transparent); }
+/* いまのデッキ: three whole rows of chips (24 px + a 6 px gap, the 84 px body); a longer deck scrolls by whole
+   rows, fades at the edge it continues past and names the keys in its heading (departure.js listEdge). */
+.ocbg-meta-departure .ocbg-meta-decklist { background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); padding: 10px 16px; display: flex; flex-direction: column; gap: 6px; }
+.ocbg-meta-departure .ocbg-meta-decklist header { display: flex; align-items: baseline; gap: 12px; height: 16px; }
+.ocbg-meta-departure .ocbg-meta-decklist h4 { font: 700 16px/1 var(--font-body); letter-spacing: .1em; }
+.ocbg-meta-departure .ocbg-meta-decklist-kinds { font: 600 16px/1 var(--font-mono); }
+.ocbg-meta-departure .ocbg-meta-decklist-more { margin-left: auto; font: 400 16px/1 var(--font-body); letter-spacing: .06em; white-space: nowrap; }
+.ocbg-meta-departure .ocbg-meta-decklist-more:not(:empty)::before { content: "▼"; display: inline-block; margin-right: 6px; font-size: 12px; color: var(--amber); transform: translateY(-1px); }
+.ocbg-meta-departure .ocbg-meta-decklist-more.is-up:not(:empty)::before { content: "▲"; }
+.ocbg-meta-departure .ocbg-meta-decklist-body { position: relative; display: flex; flex-wrap: wrap; gap: 6px 8px; overflow-y: auto; height: 84px; flex: none; align-content: flex-start; scroll-snap-type: y mandatory; scrollbar-width: none; }
+.ocbg-meta-departure .ocbg-meta-decklist-body::-webkit-scrollbar { display: none; }
+.ocbg-meta-departure .ocbg-meta-deckchip { height: 24px; padding: 2px 8px; border-radius: var(--radius-tag); background: color-mix(in srgb, var(--ink) 7%, transparent); font: 400 16px/20px var(--font-body); white-space: nowrap; scroll-snap-align: start; transition: box-shadow .14s, background .14s; }
+.ocbg-meta-departure .ocbg-meta-deckchip:hover { background: color-mix(in srgb, var(--ink) 13%, transparent); }
+.ocbg-meta-departure .ocbg-meta-deckchip.is-sel { box-shadow: inset 0 0 0 var(--stroke-rule) var(--amber); background: color-mix(in srgb, var(--amber) 16%, transparent); }
+.ocbg-meta-departure .ocbg-meta-decklist-body.is-more-below { -webkit-mask-image: linear-gradient(180deg, var(--ground) 86%, transparent); mask-image: linear-gradient(180deg, var(--ground) 86%, transparent); }
+.ocbg-meta-departure .ocbg-meta-decklist-body.is-more-above { -webkit-mask-image: linear-gradient(0deg, var(--ground) 86%, transparent); mask-image: linear-gradient(0deg, var(--ground) 86%, transparent); }
+.ocbg-meta-departure .ocbg-meta-decklist-body.is-more-above.is-more-below { -webkit-mask-image: linear-gradient(180deg, transparent, var(--ground) 24%, var(--ground) 86%, transparent); mask-image: linear-gradient(180deg, transparent, var(--ground) 24%, var(--ground) 86%, transparent); }
+.ocbg-meta-departure .ocbg-meta-presets { display: flex; gap: var(--space-12); }
+.ocbg-meta-departure .ocbg-meta-presets .ocbg-meta-btn { flex: 1; }
+
+.ocbg-meta-departure .ocbg-meta-slots { position: absolute; }
+.ocbg-meta-departure .ocbg-meta-slot { position: absolute; display: flex; align-items: center; gap: 12px; padding: 0 14px; background: color-mix(in srgb, var(--ground) 55%, transparent); border: var(--stroke-frame) dashed var(--steel); border-radius: var(--radius-panel); text-align: left; cursor: default; transition: border-color .14s, background .14s; }
+.ocbg-meta-departure .ocbg-meta-slot b { font: 700 20px/1.2 var(--font-display); letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ocbg-meta-departure .ocbg-meta-slot-n { width: 26px; height: 26px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: var(--stroke-rule) solid var(--steel); border-radius: 50%; font: 600 16px/1 var(--font-mono); }
+.ocbg-meta-departure .ocbg-meta-slot.is-full { border-style: solid; border-color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, var(--panel)); cursor: pointer; }
+.ocbg-meta-departure .ocbg-meta-slot.is-full:hover { background: color-mix(in srgb, var(--amber) 20%, var(--panel)); }
+.ocbg-meta-departure .ocbg-meta-slot.is-bonus:not(.is-full) { border-color: var(--wick); }
+.ocbg-meta-departure .ocbg-meta-supgrid { position: absolute; }
+.ocbg-meta-departure .ocbg-meta-supply { display: flex; align-items: center; gap: var(--space-12); padding: 8px 14px 8px 16px; background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); transition: border-color .14s; }
+.ocbg-meta-departure .ocbg-meta-supply.is-in { border-color: var(--amber); }
+.ocbg-meta-departure .ocbg-meta-supply.is-pulse { animation: ocbg-meta-pulse .5s ease-out; }
+@keyframes ocbg-meta-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--amber) 60%, transparent); } 100% { box-shadow: 0 0 0 14px color-mix(in srgb, var(--amber) 0%, transparent); } }
+.ocbg-meta-departure .ocbg-meta-supply-text { flex: 1; min-width: 0; }
+.ocbg-meta-departure .ocbg-meta-supply-head { display: flex; align-items: baseline; gap: 10px; }
+.ocbg-meta-departure .ocbg-meta-supply-head b { font: 700 22px/1.2 var(--font-display); letter-spacing: .04em; white-space: nowrap; }
+.ocbg-meta-departure .ocbg-meta-supply-head small { font: 400 16px/1 var(--font-body); white-space: nowrap; }
+.ocbg-meta-departure .ocbg-meta-side { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-tag); font: 400 16px/1.2 var(--font-body); white-space: nowrap; align-self: center; }
+.ocbg-meta-departure .ocbg-meta-supply p { font: 400 16px/1.35 var(--font-body); margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ocbg-meta-departure .ocbg-meta-supply .ocbg-meta-cell-row { position: static; width: 152px; flex: none; gap: 6px; }
+.ocbg-meta-departure .ocbg-meta-talents { position: absolute; }
+.ocbg-meta-departure .ocbg-meta-talent { position: absolute; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); font: 700 18px/1 var(--font-body); white-space: nowrap; overflow: hidden; transition: border-color .14s, background .14s; }
+.ocbg-meta-departure .ocbg-meta-talent span { overflow: hidden; text-overflow: ellipsis; }
+.ocbg-meta-departure .ocbg-meta-talent:hover { border-color: var(--ink); }
+.ocbg-meta-departure .ocbg-meta-talent.is-on { border: var(--stroke-frame) solid var(--amber); background: color-mix(in srgb, var(--amber) 22%, var(--panel)); box-shadow: 0 0 14px color-mix(in srgb, var(--amber) 35%, transparent); }
+.ocbg-meta-departure .ocbg-meta-info { background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); padding: 14px 20px; }
+.ocbg-meta-departure .ocbg-meta-info h4 { font: 700 16px/1 var(--font-body); letter-spacing: .1em; }
+.ocbg-meta-departure .ocbg-meta-lane { position: relative; height: 112px; }
+.ocbg-meta-departure .ocbg-meta-lane-unit { position: absolute; display: flex; align-items: flex-end; justify-content: center; }
+.ocbg-meta-departure .ocbg-meta-info-lines li { font: 400 18px/1.6 var(--font-body); }
+
+/* ------------------------------------------------------------------ washi (ending card, journal) */
+.ocbg-meta .ocbg-meta-washi { background-color: var(--washi); color: var(--washi-ink);
+  background-image:
+    var(--ocbg-washi-tex, none),
+    radial-gradient(ellipse at 30% 18%, color-mix(in srgb, var(--washi) 65%, var(--ink) 35%) 0%, color-mix(in srgb, var(--washi) 0%, transparent) 60%),
+    radial-gradient(ellipse at 78% 92%, color-mix(in srgb, var(--washi-ink) 7%, transparent) 0%, color-mix(in srgb, var(--washi-ink) 0%, transparent) 55%);
+  background-size: 360px 360px, 100% 100%, 100% 100%; }
+
+/* ------------------------------------------------------------------ ending */
+.ocbg-meta-ending .ocbg-meta-ending-glow { position: absolute; pointer-events: none; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--wick) 26%, transparent), color-mix(in srgb, var(--wick) 0%, transparent)); }
+.ocbg-meta-ending.is-death .ocbg-meta-ending-glow { background: radial-gradient(closest-side, color-mix(in srgb, var(--violet) 22%, transparent), color-mix(in srgb, var(--violet) 0%, transparent)); }
+.ocbg-meta-ending .ocbg-meta-ending-sheet { display: flex; flex-direction: column; gap: var(--space-16); min-height: 560px; padding: 64px 92px 52px; border-radius: 3px; box-shadow: 0 34px 80px color-mix(in srgb, var(--ground) 85%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--washi-ink) 10%, transparent), inset 0 0 60px color-mix(in srgb, var(--washi-ink) 7%, transparent); transform-origin: 50% 40%; }
+.ocbg-meta-ending .ocbg-meta-ending-sheet header { display: flex; align-items: center; gap: var(--space-24); }
+.ocbg-meta-ending .ocbg-meta-ending-mark { width: 72px; height: 72px; flex: none; display: flex; align-items: center; justify-content: center; border: var(--stroke-frame) solid var(--washi-ink); border-radius: 50%; }
+.ocbg-meta-ending .ocbg-meta-ending-sheet h1 { font: 800 72px/1 var(--font-display); letter-spacing: .32em; }
+.ocbg-meta-ending .ocbg-meta-ending-sheet h1 span, .ocbg-meta-ending .ocbg-meta-ending-sentence span { display: inline-block; }
+.ocbg-meta-ending .ocbg-meta-ending-heir { font: 700 26px/1.3 var(--font-display); letter-spacing: .1em; margin-top: var(--space-8); }
+.ocbg-meta-ending .ocbg-meta-ending-sentence { font: 400 34px/1.6 var(--font-display); letter-spacing: .06em; }
+.ocbg-meta-ending .ocbg-meta-ending-rule { display: block; height: 2px; background: color-mix(in srgb, var(--washi-ink) 28%, transparent); margin: var(--space-8) 0; }
+.ocbg-meta-ending .ocbg-meta-ending-lines { display: flex; flex-direction: column; gap: var(--space-12); }
+.ocbg-meta-ending .ocbg-meta-ending-lines li { display: flex; align-items: baseline; gap: var(--space-16); font: 400 22px/1.5 var(--font-body); }
+.ocbg-meta-ending .ocbg-meta-ending-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--washi-ink); transform: translateY(-4px); }
+.ocbg-meta-ending .ocbg-meta-ending-sheet footer { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: var(--space-24); padding-top: var(--space-24); border-top: var(--stroke-rule) solid color-mix(in srgb, var(--washi-ink) 22%, transparent); }
+.ocbg-meta-ending .ocbg-meta-ending-next { font: 700 26px/1.3 var(--font-display); letter-spacing: .08em; }
+.ocbg-meta .ocbg-meta-washi-btn { display: inline-flex; align-items: center; gap: var(--space-16); padding: 16px 30px; border: var(--stroke-frame) solid var(--washi-ink); border-radius: var(--radius-panel); color: var(--washi-ink); font: 700 26px/1 var(--font-display); letter-spacing: .16em; transition: background .14s, transform .14s; }
+.ocbg-meta .ocbg-meta-washi-btn small { font: 400 16px/1 var(--font-mono); letter-spacing: .04em; padding: 4px 8px; border: var(--stroke-rule) solid color-mix(in srgb, var(--washi-ink) 40%, transparent); border-radius: var(--radius-tag); }
+.ocbg-meta .ocbg-meta-washi-btn:hover { background: color-mix(in srgb, var(--washi-ink) 8%, transparent); transform: translateY(-2px); }
+
+/* ------------------------------------------------------------------ settings */
+.ocbg-meta-settings .ocbg-meta-settings-panel { padding: 28px 36px 24px; display: flex; flex-direction: column; gap: 6px; }
+.ocbg-meta-settings header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-12); }
+.ocbg-meta-settings header h2 { font: 700 34px/1.2 var(--font-display); letter-spacing: .16em; }
+.ocbg-meta-settings .ocbg-meta-set-row { position: relative; display: grid; grid-template-columns: 176px 1fr auto; align-items: center; gap: var(--space-16); min-height: 64px; padding: 6px 14px; border-radius: var(--radius-panel); transition: background .14s; }
+.ocbg-meta-settings .ocbg-meta-set-row.is-focus { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.ocbg-meta-settings .ocbg-meta-set-row.is-focus::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 2px; background: var(--amber); }
+.ocbg-meta-settings .ocbg-meta-set-label { font: 700 22px/1.2 var(--font-display); letter-spacing: .08em; }
+.ocbg-meta-settings .ocbg-meta-seg { display: flex; gap: var(--space-8); }
+.ocbg-meta-settings .ocbg-meta-seg button { min-width: 132px; height: 48px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--panel); border: var(--stroke-rule) solid var(--steel); border-radius: var(--radius-panel); font: 700 20px/1 var(--font-body); transition: border-color .14s, background .14s; }
+.ocbg-meta-settings .ocbg-meta-seg button span { font-family: var(--font-mono); font-weight: 600; }
+.ocbg-meta-settings .ocbg-meta-seg button:hover { border-color: var(--ink); }
+.ocbg-meta-settings .ocbg-meta-seg button.is-on { border: var(--stroke-frame) solid var(--amber); background: color-mix(in srgb, var(--amber) 16%, var(--panel)); }
+.ocbg-meta-settings .ocbg-meta-set-note { font: 400 16px/1.45 var(--font-body); padding-left: 206px; margin-top: -4px; margin-bottom: 4px; }
+.ocbg-meta-settings .ocbg-meta-set-h3 { font: 700 20px/1 var(--font-body); letter-spacing: .1em; margin-top: 12px; padding: 16px 14px 6px; border-top: var(--stroke-rule) solid var(--rule); }
+.ocbg-meta-settings .ocbg-meta-slider { position: relative; height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--ground) 80%, transparent); border: var(--stroke-rule) solid var(--rule); cursor: pointer; touch-action: none; }
+.ocbg-meta-settings .ocbg-meta-slider::after { content: ""; position: absolute; left: 0; right: 0; top: -14px; bottom: -14px; }
+.ocbg-meta-settings .ocbg-meta-slider-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--amber); }
+.ocbg-meta-settings .ocbg-meta-slider-knob { position: absolute; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; background: var(--panel-solid); border: var(--stroke-frame) solid var(--amber); box-shadow: 0 0 10px color-mix(in srgb, var(--amber) 40%, transparent); }
+.ocbg-meta-settings .ocbg-meta-slider-num { width: 56px; text-align: right; font: 600 24px/1 var(--font-mono); }
+.ocbg-meta-settings footer { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-16); margin-top: var(--space-16); padding-top: var(--space-16); border-top: var(--stroke-rule) solid var(--rule); }
+.ocbg-meta-settings footer .ocbg-meta-set-note { padding: 0; margin: 0 auto 0 0; max-width: 300px; flex: 1 1 auto; min-width: 0; }
+/* the buttons keep their words on one line (「保存してタイトルへ」 is the longest); the note gives up the width */
+.ocbg-meta-settings footer .ocbg-meta-btn, .ocbg-meta-settings footer .ocbg-meta-primary { height: 56px; flex: none; white-space: nowrap; }
+.ocbg-meta-settings footer .is-focus { box-shadow: 0 0 0 2px var(--wick); }
+.ocbg-meta-settings .ocbg-meta-keys.is-in-panel { margin-top: var(--space-12); text-align: right; }
+
+/* ------------------------------------------------------------------ owned cards */
+.ocbg-meta-owned .ocbg-meta-owned-panel > header { position: absolute; left: 28px; right: 24px; top: 20px; display: flex; align-items: center; gap: var(--space-16); }
+.ocbg-meta-owned .ocbg-meta-owned-panel > header h2 { font: 700 34px/1.2 var(--font-display); letter-spacing: .16em; }
+.ocbg-meta-owned .ocbg-meta-owned-count { font: 600 22px/1 var(--font-mono); }
+.ocbg-meta-owned .ocbg-meta-owned-panel > header .ocbg-meta-keys { margin-left: auto; }
+.ocbg-meta-owned .ocbg-meta-cell { position: absolute; display: flex; flex-direction: column; align-items: center; padding-top: 4px; border-radius: var(--radius-panel); transition: background .14s; }
+.ocbg-meta-owned .ocbg-meta-cell:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.ocbg-meta-owned .ocbg-meta-cell .ocbg-meta-cardslot { transition: transform .14s; }
+.ocbg-meta-owned .ocbg-meta-cell:hover .ocbg-meta-cardslot { transform: translateY(-5px); }
+.ocbg-meta-owned .ocbg-meta-cell.is-sel { background: color-mix(in srgb, var(--amber) 10%, transparent); box-shadow: inset 0 0 0 2px var(--amber); }
+.ocbg-meta-owned .ocbg-meta-owned-row { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 34px; display: flex; align-items: center; justify-content: center; gap: var(--space-8); font: 400 16px/1 var(--font-body); }
+.ocbg-meta-owned .ocbg-meta-indeck { display: inline-flex; margin-left: 4px; }
+.ocbg-meta .ocbg-meta-pips { display: inline-flex; gap: 4px; }
+.ocbg-meta .ocbg-meta-pips i { width: 12px; height: 12px; border-radius: 50%; border: var(--stroke-frame) solid var(--amber); }
+.ocbg-meta .ocbg-meta-pips i.is-on { background: var(--amber); }
+.ocbg-meta .ocbg-meta-pips.is-big { gap: 8px; }
+.ocbg-meta .ocbg-meta-pips.is-big i { width: 20px; height: 20px; }
+.ocbg-meta-owned .ocbg-meta-detail.is-owned { background: var(--panel); }
+.ocbg-meta-owned .ocbg-meta-indeck-line { display: flex; align-items: center; gap: 8px; }
+.ocbg-meta-owned .ocbg-meta-mastery, .ocbg-meta-owned .ocbg-meta-lasting { display: flex; flex-direction: column; gap: 10px; padding-top: var(--space-12); border-top: var(--stroke-rule) solid var(--rule); }
+.ocbg-meta-owned .ocbg-meta-mastery h4, .ocbg-meta-owned .ocbg-meta-lasting h4 { font: 700 18px/1 var(--font-body); letter-spacing: .14em; }
+.ocbg-meta-owned .ocbg-meta-mastery-rank { display: flex; align-items: center; gap: var(--space-16); }
+.ocbg-meta-owned .ocbg-meta-mastery-rank b { font: 700 30px/1 var(--font-display); letter-spacing: .06em; }
+.ocbg-meta-owned .ocbg-meta-mastery-next { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-12); font: 400 18px/1.3 var(--font-body); }
+.ocbg-meta-owned .ocbg-meta-mastery-next b { font: 600 20px/1 var(--font-mono); }
+.ocbg-meta-owned .ocbg-meta-ticks { position: relative; height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--ground) 70%, transparent); border: var(--stroke-rule) solid var(--rule); overflow: hidden; }
+.ocbg-meta-owned .ocbg-meta-ticks i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--amber); }
+.ocbg-meta-owned .ocbg-meta-mastery p, .ocbg-meta-owned .ocbg-meta-lasting p { display: flex; align-items: center; gap: 8px; font: 400 18px/1.45 var(--font-body); }
+.ocbg-meta-owned .ocbg-meta-owned-lines p { font: 400 18px/1.5 var(--font-body); margin-bottom: 6px; }
+
+/* ------------------------------------------------------------------ journal drawer */
+.ocbg-meta-journal .ocbg-meta-drawer { display: flex; flex-direction: column; padding: 26px 28px 18px; box-shadow: -18px 0 40px color-mix(in srgb, var(--ground) 70%, transparent); border-left: 1px solid color-mix(in srgb, var(--washi-ink) 25%, transparent); }
+.ocbg-meta-journal .ocbg-meta-drawer-head { display: flex; align-items: center; gap: var(--space-12); }
+.ocbg-meta-journal .ocbg-meta-drawer-head h2 { display: inline-flex; align-items: center; gap: 12px; font: 800 36px/1 var(--font-display); letter-spacing: .3em; }
+.ocbg-meta-journal .ocbg-meta-drawer-hint { margin-left: auto; font: 400 16px/1.3 var(--font-body); }
+.ocbg-meta-journal .ocbg-meta-drawer-close { margin-left: auto; height: 40px; padding: 0 14px; border: var(--stroke-rule) solid color-mix(in srgb, var(--washi-ink) 45%, transparent); border-radius: var(--radius-tag); font: 700 16px/1 var(--font-body); color: var(--washi-ink); }
+.ocbg-meta-journal .ocbg-meta-drawer-hint + .ocbg-meta-drawer-close { margin-left: var(--space-8); }
+.ocbg-meta-journal .ocbg-meta-drawer-close:hover { background: color-mix(in srgb, var(--washi-ink) 8%, transparent); }
+.ocbg-meta-journal .ocbg-meta-drawer-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 20px; }
+.ocbg-meta-journal .ocbg-meta-drawer-tab { height: 46px; font: 700 20px/1 var(--font-display); letter-spacing: .08em; color: var(--washi-ink); background: color-mix(in srgb, var(--washi-ink) 6%, transparent); border-bottom: 3px solid transparent; border-radius: 4px 4px 0 0; transition: background .14s; }
+.ocbg-meta-journal .ocbg-meta-drawer-tab:hover:not([disabled]) { background: color-mix(in srgb, var(--washi-ink) 11%, transparent); }
+.ocbg-meta-journal .ocbg-meta-drawer-tab.is-on { background: color-mix(in srgb, var(--washi-ink) 13%, transparent); border-bottom-color: var(--washi-ink); }
+.ocbg-meta-journal .ocbg-meta-drawer-tab.is-shut { opacity: .32; }
+.ocbg-meta-journal .ocbg-meta-drawer-tab.is-enemy { padding: 0 4px; font: 700 18px/1.15 var(--font-display); letter-spacing: .02em; word-break: keep-all; overflow-wrap: anywhere; }
+.ocbg-meta-journal .ocbg-meta-drawer-tabs.is-n5 .ocbg-meta-drawer-tab { padding: 0 2px; font: 700 17px/1.15 var(--font-display); letter-spacing: 0; word-break: keep-all; overflow-wrap: anywhere; }
+.ocbg-meta-journal .ocbg-meta-drawer-tabs.is-n6 .ocbg-meta-drawer-tab { padding: 0 2px; font: 700 15px/1.15 var(--font-display); letter-spacing: 0; word-break: keep-all; overflow-wrap: anywhere; }
+.ocbg-meta-journal .ocbg-meta-drawer-sub { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-top: 12px; }
+.ocbg-meta-journal .ocbg-meta-drawer-subtab { padding: 6px 14px; border: var(--stroke-rule) solid color-mix(in srgb, var(--washi-ink) 35%, transparent); border-radius: 16px; font: 700 16px/1.2 var(--font-body); color: var(--washi-ink); }
+.ocbg-meta-journal .ocbg-meta-drawer-subtab.is-on { border: var(--stroke-frame) solid var(--washi-ink); background: color-mix(in srgb, var(--washi-ink) 10%, transparent); }
+.ocbg-meta-journal .ocbg-meta-drawer-titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-12); margin-top: 20px; padding-bottom: 12px; border-bottom: var(--stroke-rule) solid color-mix(in srgb, var(--washi-ink) 25%, transparent); }
+.ocbg-meta-journal .ocbg-meta-drawer-titlerow h3 { font: 700 28px/1.25 var(--font-display); letter-spacing: .06em; }
+.ocbg-meta-journal .ocbg-meta-disclosure { display: inline-flex; align-items: center; gap: 10px; font: 700 16px/1 var(--font-body); white-space: nowrap; }
+.ocbg-meta-journal .ocbg-meta-disclosure-dots { display: inline-flex; gap: 4px; }
+.ocbg-meta-journal .ocbg-meta-disclosure-dots i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--washi-ink); }
+.ocbg-meta-journal .ocbg-meta-disclosure-dots i.is-on { background: var(--washi-ink); }
+.ocbg-meta-journal .ocbg-meta-drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 8px 12px 0; }
+.ocbg-meta-journal .ocbg-meta-drawer-body::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--washi-ink) 30%, transparent); }
+.ocbg-meta-journal .ocbg-meta-rows-h { font: 700 18px/1 var(--font-display); letter-spacing: .14em; margin: 20px 0 8px; }
+.ocbg-meta-journal .ocbg-meta-rows-pair { display: grid; grid-template-columns: 132px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px dotted color-mix(in srgb, var(--washi-ink) 25%, transparent); }
+.ocbg-meta-journal .ocbg-meta-rows-pair b { font: 700 18px/1.35 var(--font-display); }
+.ocbg-meta-journal .ocbg-meta-rows-pair span, .ocbg-meta-journal .ocbg-meta-rows-stack span { font: 400 16px/1.5 var(--font-body); white-space: pre-line; }
+.ocbg-meta-journal .ocbg-meta-rows-stack { display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-bottom: 1px dotted color-mix(in srgb, var(--washi-ink) 25%, transparent); }
+.ocbg-meta-journal .ocbg-meta-rows-stack b { font: 700 18px/1.35 var(--font-display); letter-spacing: .04em; }
+.ocbg-meta-journal .ocbg-meta-rows-p { font: 400 18px/1.7 var(--font-body); padding: 10px 0; white-space: pre-line; }
+.ocbg-meta-journal .ocbg-meta-hidden { display: inline-block; min-width: 44px; padding: 0 8px; text-align: center; border: 1px dashed color-mix(in srgb, var(--washi-ink) 45%, transparent); border-radius: 3px; font: 700 16px/1.6 var(--font-body); }
+.ocbg-meta-journal .ocbg-meta-drawer-keys { margin-top: 10px; padding-top: 10px; border-top: var(--stroke-rule) solid color-mix(in srgb, var(--washi-ink) 18%, transparent); font: 400 16px/1 var(--font-body); color: var(--washi-ink); }
+
+/* cards drawn by the design system keep their multi-row text */
+.ocbg-meta .ocb-card .ocb-desc { white-space: pre-line; }
+.ocbg-meta .ocb-card .ocb-desc.is-small { font-size: 14px; line-height: 19px; }
+.ocbg-meta .ocb-card .ocb-desc .ocb-inf { white-space: normal; height: auto; min-height: 22px; align-items: flex-start; line-height: 20px; }
+.ocbg-meta .ocb-card .ocb-desc.is-small .ocb-inf { line-height: 18px; }
+.ocbg-meta .ocb-card .ocb-desc .ocb-inf svg { flex: none; margin-top: 1px; }
+.ocbg-meta .ocbg-meta-cell, .ocbg-meta .ocbg-meta-cell-face { text-align: left; }
+.ocbg-meta-hall .ocbg-meta-hall-trace-body.is-empty { flex: 1; align-items: center; justify-content: center; gap: var(--space-16); }
+.ocbg-meta-hall .ocbg-meta-wick-off { width: 18px; height: 18px; border-radius: 50%; border: var(--stroke-frame) solid var(--steel); }
+.ocbg-meta-hall .ocbg-meta-hall-rules { background: var(--panel); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); padding: 14px 16px; margin: 0; }
+.ocbg-meta-hall .ocbg-meta-cands li b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ocbg-meta-hall .ocbg-meta-cands li { grid-template-columns: 136px minmax(0, 1fr) auto; }
+.ocbg-meta-ending .ocbg-meta-ending-sheet h1 span, .ocbg-meta-ending .ocbg-meta-ending-sentence span { white-space: pre; }
+.ocbg-meta-hall .ocbg-meta-cands li.is-long { grid-template-columns: 136px minmax(0, 1fr); row-gap: 2px; padding: 6px 0; }
+.ocbg-meta-hall .ocbg-meta-cands li.is-long .ocbg-meta-cand-detail { grid-column: 2 / 3; white-space: normal; }
+.ocbg-meta-ending .ocbg-meta-ending-place { display: flex; align-items: center; justify-content: center; gap: var(--space-24); font: 700 26px/1 var(--font-display); letter-spacing: .2em; color: var(--ink); text-shadow: 0 2px 14px color-mix(in srgb, var(--ground) 90%, transparent); }
+.ocbg-meta-ending .ocbg-meta-ending-place i { width: 120px; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 0%, transparent), color-mix(in srgb, var(--ink) 55%, transparent)); }
+.ocbg-meta-ending .ocbg-meta-ending-place i:last-child { transform: scaleX(-1); }
+.ocbg-meta-owned .ocbg-meta-owned-below { display: flex; flex-direction: column; gap: var(--space-24); overflow-y: auto; }
+.ocbg-meta-title .ocbg-meta-title-ground { background: linear-gradient(180deg, color-mix(in srgb, var(--ground) 0%, transparent), color-mix(in srgb, var(--ground) 45%, transparent) 80%); }
+.ocbg-meta-title .ocbg-meta-title-ground::before { content: ""; position: absolute; left: 22%; right: 22%; top: 0; height: 1px; background: linear-gradient(90deg, color-mix(in srgb, var(--violet) 0%, transparent), color-mix(in srgb, var(--violet) 55%, transparent), color-mix(in srgb, var(--violet) 0%, transparent)); }
+
+/* review pass: the heir's figure stands clear of the survivor's box; long candidate names wrap */
+.ocbg-meta-hall .ocbg-meta-heir-survivor { margin-top: auto; }
+.ocbg-meta-hall .ocbg-meta-cands li.is-long b { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; padding-top: 4px; }
+.ocbg-meta-hall .ocbg-meta-hall-lives.is-more-below { -webkit-mask-image: linear-gradient(180deg, var(--ground) 84%, transparent); mask-image: linear-gradient(180deg, var(--ground) 84%, transparent); }
+.ocbg-meta-hall .ocbg-meta-hall-lives.is-more-above { -webkit-mask-image: linear-gradient(0deg, var(--ground) 84%, transparent); mask-image: linear-gradient(0deg, var(--ground) 84%, transparent); }
+.ocbg-meta-hall .ocbg-meta-hall-lives.is-more-above.is-more-below { -webkit-mask-image: linear-gradient(180deg, transparent, var(--ground) 14%, var(--ground) 86%, transparent); mask-image: linear-gradient(180deg, transparent, var(--ground) 14%, var(--ground) 86%, transparent); }
+.ocbg-meta .ocbg-meta-chip-btn.is-square { padding: 0; }
+.ocbg-meta .ocbg-meta-chip-btn { transition: border-color .14s, transform .14s; }
+.ocbg-meta .ocbg-meta-chip-btn:hover { transform: translateY(-1px); }
+.ocbg-meta .ocbg-meta-keys.is-right { text-align: right; }
+.ocbg-meta-departure .ocbg-meta-slot-x { margin-left: auto; display: inline-flex; opacity: .55; transition: opacity .14s; }
+.ocbg-meta-departure .ocbg-meta-slot.is-full:hover .ocbg-meta-slot-x { opacity: 1; }
+.ocbg-meta-departure .ocbg-meta-back { white-space: nowrap; }
+.ocbg-meta-departure .ocbg-meta-back:hover { transform: translateX(-2px); }
+.ocbg-meta-departure .ocbg-meta-back { transition: border-color .14s, transform .14s; }
+.ocbg-meta-journal .ocbg-meta-memo { display: flex; flex-direction: column; min-height: 100%; }
+.ocbg-meta-journal .ocbg-meta-rows-stack.is-scribble span { font-family: var(--font-display); font-size: 18px; line-height: 1.6; }
+.ocbg-meta-journal .ocbg-meta-memo-sheet { display: block; width: 100%; flex: 1; min-height: 360px; margin-top: 12px; padding: 4px 6px; resize: none; border: 0; outline: none; border-radius: 0;
+  background-color: transparent; color: var(--washi-ink); caret-color: var(--washi-ink); font: 400 20px/36px var(--font-display); letter-spacing: .04em;
+  background-image: linear-gradient(180deg, transparent 35px, color-mix(in srgb, var(--washi-ink) 22%, transparent) 35px, color-mix(in srgb, var(--washi-ink) 22%, transparent) 36px);
+  background-size: 100% 36px; background-attachment: local; }
+.ocbg-meta-journal .ocbg-meta-memo-sheet::placeholder { color: var(--washi-ink); opacity: .55; }
+.ocbg-meta-journal .ocbg-meta-memo-sheet:focus { background-color: color-mix(in srgb, var(--washi-ink) 4%, transparent); }
+.ocbg-meta-hall .ocbg-meta-cands li.is-long b { font-size: 18px; letter-spacing: 0; }
+.ocbg-meta p, .ocbg-meta li { text-wrap: pretty; }
+.ocbg-meta-hall .ocbg-meta-stratum.is-live { cursor: pointer; }
+.ocbg-meta-hall .ocbg-meta-stratum.is-live:hover:not(.is-sel) { border-color: color-mix(in srgb, var(--wick) 55%, var(--rule)); }
+.ocbg-meta p, .ocbg-meta li, .ocbg-meta h3 { word-break: auto-phrase; }
+.ocbg-meta .ocb-card p, .ocbg-meta .ocb-card li { word-break: normal; text-wrap: wrap; }
+.ocbg-meta-hall .ocbg-meta-hall-line, .ocbg-meta-hall .ocbg-meta-heir-reason { text-wrap: balance; }
+
+/* 出立: the life's raised limits beside a step's title (docs/EXTENSIONS.md 「出立の枠（DeckLimits）」 試作で決めたこと 6). */
+.ocbg-meta-departure .ocbg-meta-dep-head { display: flex; align-items: center; gap: var(--space-24); }
+.ocbg-meta-departure .ocbg-meta-bonus { display: inline-flex; align-items: center; gap: 10px; padding: 7px 16px; border: var(--stroke-rule) solid var(--wick); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--wick) 10%, var(--panel)); color: var(--ink); font: 400 18px/1.2 var(--font-body); white-space: nowrap; }
+.ocbg-meta-departure .ocbg-meta-bonus b { font: 700 18px/1.2 var(--font-body); letter-spacing: .04em; }
+.ocbg-meta-departure .ocbg-meta-bonus-dot { width: 10px; height: 10px; flex: none; border-radius: 50%; background: var(--wick); box-shadow: 0 0 8px var(--wick); }
+/* 所持カード: a 2 段 card held back by the life's one 3 段 (concept-v3 §14 1 つの生の段数). */
+.ocbg-meta-owned .ocbg-meta-mastery p.ocbg-meta-mastery-capped { display: block; padding: 8px 12px; border-left: 2px solid var(--steel); background: color-mix(in srgb, var(--steel) 10%, transparent); }
+.ocbg-meta-owned .ocbg-meta-mastery p.ocbg-meta-mastery-ticks { font: 600 18px/1.3 var(--font-mono); }
+/* 継承の間: a trace whose candidates run past the panel fades at the edge it continues past (R-12), like the lives list. */
+.ocbg-meta-hall .ocbg-meta-hall-trace-body.is-more-below { -webkit-mask-image: linear-gradient(180deg, var(--ground) 86%, transparent); mask-image: linear-gradient(180deg, var(--ground) 86%, transparent); }
+.ocbg-meta-hall .ocbg-meta-hall-trace-body.is-more-above { -webkit-mask-image: linear-gradient(0deg, var(--ground) 86%, transparent); mask-image: linear-gradient(0deg, var(--ground) 86%, transparent); }
+.ocbg-meta-hall .ocbg-meta-hall-trace-body.is-more-above.is-more-below { -webkit-mask-image: linear-gradient(180deg, transparent, var(--ground) 12%, var(--ground) 88%, transparent); mask-image: linear-gradient(180deg, transparent, var(--ground) 12%, var(--ground) 88%, transparent); }
+/* The layer column's key (review: three looks of mark, no key): small marks with their words, under the column. */
+.ocbg-meta-hall .ocbg-meta-mark-key { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font: 400 18px/24px var(--font-body); }
+.ocbg-meta-hall .ocbg-meta-mark-key > span { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.ocbg-meta-hall .ocbg-meta-mark.is-key { width: 22px; height: 22px; box-shadow: none; cursor: default; }
+.ocbg-meta-hall .ocbg-meta-mark.is-key.is-trace { box-shadow: 0 0 8px color-mix(in srgb, var(--wick) 60%, transparent); }

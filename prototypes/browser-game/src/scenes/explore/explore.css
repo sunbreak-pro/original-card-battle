@@ -1,0 +1,435 @@
+/* The exploration scene. Tokens only; every selector is scoped under .ocbg-explore.
+   Colours by role: amber = what the player can do now / the player's side (wick stays for lit lamps
+   only), phosphor = miasma, violet = enemies, boss = double frame, caution = with △. */
+
+.ocbg-explore { position: absolute; inset: 0; overflow: hidden; background: var(--ground); color: var(--ink); font-family: var(--font-body); }
+.ocbg-explore .ocbg-explore-num { font-family: var(--font-mono); font-weight: 600; letter-spacing: 0; }
+/* a layer name still hidden (「■■の秘跡」): sealed blocks in a quiet ink, never glaring white squares */
+.ocbg-explore .ocbg-explore-sealed { color: color-mix(in srgb, var(--ink) 34%, transparent); letter-spacing: .06em; }
+.ocbg-explore .is-washi .ocbg-explore-sealed, .ocbg-explore .ocbg-explore-lull-plate .ocbg-explore-sealed { color: color-mix(in srgb, var(--washi-ink) 38%, transparent); }
+.ocbg-explore.is-returning { animation: ocbg-explore-fade 420ms ease-out both; }
+.ocbg-explore kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; font: 600 16px/1 var(--font-mono); color: var(--ink); border: 1px solid var(--steel); border-radius: var(--radius-tag); background: var(--panel-solid); }
+.ocbg-explore button { font-family: var(--font-body); }
+
+/* ---------------------------------------------------------------- backdrop, veil, shade */
+.ocbg-explore .ocbg-explore-bdhost { position: absolute; inset: 0; z-index: 0; }
+.ocbg-explore .ocbg-explore-bd { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.ocbg-explore .ocbg-explore-veil { position: absolute; inset: 0; transition: background-color 400ms ease-in-out; }
+.ocbg-explore .ocbg-explore-shade { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.ocbg-explore .ocbg-explore-lull { position: absolute; inset: 0; opacity: 0; transition: opacity 900ms ease-in-out;
+  background:
+    radial-gradient(60% 55% at 34% 88%, color-mix(in srgb, var(--amber) 14%, transparent), transparent 70%),
+    linear-gradient(color-mix(in srgb, var(--ground) 62%, transparent), color-mix(in srgb, var(--ground) 40%, transparent)); }
+.ocbg-explore .ocbg-explore-lull.is-on { opacity: 1; }
+
+/* ---------------------------------------------------------------- the band */
+.ocbg-explore .ocbg-explore-band { position: absolute; left: 0; top: 0; width: 1920px; height: 96px; z-index: 7; display: flex; align-items: center; gap: 24px; padding: 0 24px; background: var(--panel); border-bottom: 1px solid var(--rule); box-shadow: 0 6px 18px color-mix(in srgb, var(--ground) 60%, transparent); }
+.ocbg-explore .ocbg-explore-row { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.ocbg-explore .ocbg-explore-band-layer { width: 360px; display: flex; align-items: center; gap: 12px; flex: none; }
+.ocbg-explore .ocbg-explore-layer-title { font: 700 28px/36px var(--font-display); letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ocbg-explore .ocbg-explore-layer-title .ocbg-explore-num { font-family: var(--font-display); font-weight: 700; }
+.ocbg-explore .ocbg-explore-band-time { width: 210px; flex: none; }
+.ocbg-explore .ocbg-explore-band-label { font: 700 22px/28px var(--font-body); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-band-label.is-rolled, .ocbg-explore .ocbg-explore-small.is-rolled, .ocbg-explore .ocbg-explore-marks.is-rolled { animation: ocbg-explore-roll 900ms ease-out; }
+@keyframes ocbg-explore-roll { 0% { text-shadow: 0 0 0 transparent; } 25% { text-shadow: 0 0 12px color-mix(in srgb, var(--ink) 70%, transparent); } 100% { text-shadow: 0 0 0 transparent; } }
+.ocbg-explore .ocbg-explore-pips { display: flex; gap: 6px; margin-top: 12px; height: 14px; }
+.ocbg-explore .ocbg-explore-pips i { width: 14px; height: 14px; border-radius: 3px; border: 2px solid var(--steel); transition: background-color 420ms ease-out, border-color 420ms ease-out, box-shadow 420ms ease-out; }
+.ocbg-explore .ocbg-explore-pips i.is-left { background: var(--amber); border-color: var(--amber); box-shadow: 0 0 8px color-mix(in srgb, var(--amber) 45%, transparent); }
+.ocbg-explore .ocbg-explore-band-miasma { width: 380px; flex: none; }
+.ocbg-explore .ocbg-explore-band-miasma .ocbg-explore-row { gap: 8px; }
+.ocbg-explore .ocbg-explore-forecast { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font: 400 18px/24px var(--font-body); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-gauge { position: relative; width: 380px; height: 18px; margin-top: 10px; border: 1px solid; border-radius: 4px; overflow: hidden; }
+.ocbg-explore .ocbg-explore-gauge-ahead, .ocbg-explore .ocbg-explore-gauge-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; }
+.ocbg-explore .ocbg-explore-gauge.is-warn .ocbg-explore-gauge-ahead { animation: ocbg-explore-pulse 1.6s ease-in-out infinite; }
+.ocbg-explore .ocbg-explore-gauge-ticks { position: absolute; inset: 0; }
+.ocbg-explore .ocbg-explore-gauge-ticks i { position: absolute; bottom: 0; width: 2px; transform: translateX(-1px); }
+@keyframes ocbg-explore-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+.ocbg-explore .ocbg-explore-band-body { width: 460px; flex: none; display: grid; grid-template-columns: 186px 1fr; grid-template-rows: 30px 26px; column-gap: 16px; row-gap: 6px; align-items: center; }
+.ocbg-explore .ocbg-explore-small { font: 400 16px/22px var(--font-body); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-marks { justify-self: start; font: 400 16px/22px var(--font-body); color: var(--ink); background: none; border: 1px solid transparent; border-radius: var(--radius-chip-self); padding: 0 10px; margin-left: -10px; white-space: nowrap; cursor: default; }
+.ocbg-explore .ocbg-explore-marks:not([disabled]) { border-color: var(--amber); cursor: pointer; background: color-mix(in srgb, var(--amber) 12%, transparent); }
+.ocbg-explore .ocbg-explore-marks:not([disabled]):hover { background: color-mix(in srgb, var(--amber) 24%, transparent); }
+.ocbg-explore .ocbg-explore-band-buttons { margin-left: auto; display: flex; gap: 8px; }
+.ocbg-explore .ocbg-explore-bandbtn { height: 72px; padding: 6px 12px 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--ink); background: var(--panel-solid); border: 1px solid var(--steel); border-radius: var(--radius-panel); cursor: pointer; font: 400 16px/20px var(--font-body); white-space: nowrap; transition: border-color 90ms, background-color 90ms, transform 90ms; }
+.ocbg-explore .ocbg-explore-bandbtn:hover:not([disabled]) { border-color: var(--ink); transform: translateY(-2px); }
+.ocbg-explore .ocbg-explore-bandbtn[disabled] { opacity: .4; cursor: default; }
+.ocbg-explore .is-washi .ocbg-btn:focus-visible, .ocbg-explore .ocbg-explore-lull-plate .ocbg-btn:focus-visible { outline: 3px solid var(--washi-ink); outline-offset: 3px; }
+.ocbg-explore .ocbg-explore-bandbtn:focus-visible, .ocbg-explore .ocbg-explore-slot:focus-visible, .ocbg-explore .ocbg-explore-marks:focus-visible { outline: 2px solid var(--wick); outline-offset: 2px; }
+
+/* trial mode: 刻限の砂 beside the 刻限, 防瘴の面 under the gauge (the player's tools: amber) */
+/* both sit under their block, out of the flow, so the band keeps the C# screen's widths */
+.ocbg-explore .ocbg-explore-band-time, .ocbg-explore .ocbg-explore-band-miasma { position: relative; }
+.ocbg-explore .ocbg-explore-bonus { position: absolute; left: 0; top: calc(100% + 3px); padding: 0 8px; font: 700 16px/18px var(--font-body); color: var(--ink); border: 1px solid var(--amber); border-radius: var(--radius-chip-self); background: color-mix(in srgb, var(--amber) 16%, transparent); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-pips.is-long { gap: 4px; }
+.ocbg-explore .ocbg-explore-pips.is-long i { width: 12px; height: 12px; }
+.ocbg-explore .ocbg-explore-relief { position: absolute; left: 0; top: calc(100% + 1px); font: 400 17px/18px var(--font-body); color: var(--ink); white-space: nowrap; }
+
+/* ---------------------------------------------------------------- the map */
+.ocbg-explore .ocbg-explore-map { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; transition: opacity 500ms ease-in-out, filter 400ms ease-in-out; }
+/* (overflow: the lamp's pool under a walker on the boss row reached below 1080 and let a focus scroll the scene root) */
+.ocbg-explore.is-engaging .ocbg-explore-map { filter: brightness(.55); }
+.ocbg-explore .ocbg-explore-pool { position: absolute; left: 0; top: 0; width: 520px; height: 400px; border-radius: 50%; pointer-events: none; will-change: transform;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--amber) 16%, transparent), color-mix(in srgb, var(--amber) 5%, transparent) 55%, transparent); }
+.ocbg-explore .ocbg-explore-edges { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; }
+.ocbg-explore .ocbg-explore-edge { stroke: var(--steel); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 3 9; fill: none; transition: stroke 300ms, stroke-width 300ms; }
+.ocbg-explore .is-walked .ocbg-explore-edge { stroke: color-mix(in srgb, var(--ink) 55%, transparent); stroke-dasharray: none; }
+.ocbg-explore .is-lit .ocbg-explore-edge { stroke: var(--amber); stroke-width: 4; stroke-dasharray: none; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--amber) 55%, transparent)); }
+.ocbg-explore .ocbg-explore-edge-flow { stroke: color-mix(in srgb, var(--amber) 55%, var(--ink)); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 2 22; opacity: 0; fill: none; }
+.ocbg-explore .is-lit .ocbg-explore-edge-flow { opacity: .95; animation: ocbg-explore-flow 1.2s linear infinite; }
+/* the edge the walker is on lights up behind it, then hands over to the walked style */
+.ocbg-explore .ocbg-explore-trail { stroke: var(--amber); stroke-width: 5; stroke-linecap: round; fill: none; opacity: 1; filter: drop-shadow(0 0 7px color-mix(in srgb, var(--amber) 60%, transparent)); transition: opacity 480ms ease-out; }
+.ocbg-explore .ocbg-explore-trail.is-fading { opacity: 0; }
+@keyframes ocbg-explore-flow { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+
+.ocbg-explore .ocbg-explore-node { position: absolute; pointer-events: auto; cursor: default; outline: none; }
+.ocbg-explore .ocbg-explore-node-lift { position: absolute; inset: 0; transition: transform 90ms cubic-bezier(.4,0,.2,1), opacity 300ms; }
+.ocbg-explore .ocbg-explore-node:hover .ocbg-explore-node-lift { transform: translateY(-6px) scale(1.04); }
+.ocbg-explore .ocbg-explore-node.is-live { cursor: pointer; }
+.ocbg-explore .ocbg-explore-node-face { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--panel-solid); border: 2px solid var(--steel); border-radius: var(--radius-panel); box-shadow: var(--shadow-card); transition: border-color 300ms, box-shadow 300ms, background-color 300ms; }
+.ocbg-explore .ocbg-explore-node-label { position: absolute; left: 50%; top: 96px; transform: translateX(-50%); font: 700 16px/20px var(--font-body); color: var(--ink); white-space: nowrap; text-shadow: 0 0 6px var(--ground), 0 1px 2px var(--ground); }
+.ocbg-explore .ocbg-explore-node.is-current .ocbg-explore-node-face { border: 3px solid var(--amber); box-shadow: var(--shadow-card), var(--shadow-reach); }
+.ocbg-explore .ocbg-explore-node.is-reachable .ocbg-explore-node-face { border-color: var(--amber); animation: ocbg-explore-beckon 2.4s ease-in-out infinite; }
+@keyframes ocbg-explore-beckon { 0%, 100% { box-shadow: var(--shadow-card), 0 0 0 0 color-mix(in srgb, var(--amber) 0%, transparent); } 50% { box-shadow: var(--shadow-card), 0 0 18px 2px color-mix(in srgb, var(--amber) 38%, transparent); } }
+.ocbg-explore .ocbg-explore-node.is-revisit .ocbg-explore-node-face { border: 2px solid color-mix(in srgb, var(--ink) 60%, transparent); }
+.ocbg-explore .ocbg-explore-node.is-resolved .ocbg-explore-node-lift { opacity: .6; }
+.ocbg-explore .ocbg-explore-node.is-resolved .ocbg-explore-node-face { border: 1px solid var(--rule); }
+.ocbg-explore .ocbg-explore-node.is-far .ocbg-explore-node-face { border: 2px dashed var(--steel); background: color-mix(in srgb, var(--panel-solid) 72%, transparent); box-shadow: none; }
+.ocbg-explore .ocbg-explore-node.kind-boss .ocbg-explore-node-face { outline: 2px solid var(--boss); outline-offset: 4px; }
+.ocbg-explore .ocbg-explore-node.kind-boss.is-far .ocbg-explore-node-face { outline-style: dashed; }
+
+.ocbg-explore .ocbg-explore-node-face::after { content: ""; position: absolute; inset: -3px; border-radius: var(--radius-panel); border: 2px solid var(--amber); opacity: 0; pointer-events: none; }
+.ocbg-explore .ocbg-explore-node.is-arrived .ocbg-explore-node-face::after { animation: ocbg-explore-ripple 820ms cubic-bezier(.22,.61,.36,1); }
+@keyframes ocbg-explore-ripple { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.55); } }
+.ocbg-explore .ocbg-explore-sel { position: absolute; left: 0; top: 0; opacity: 0; transition: transform 160ms cubic-bezier(.22,.61,.36,1), opacity 160ms; pointer-events: none; }
+.ocbg-explore .ocbg-explore-sel.is-on { opacity: 1; }
+.ocbg-explore.is-busy .ocbg-explore-sel { opacity: 0; }
+
+.ocbg-explore .ocbg-explore-walker { position: absolute; left: 0; top: 0; width: 52px; height: 52px; z-index: 3; pointer-events: none; will-change: transform; }
+.ocbg-explore .ocbg-explore-walker-glow { position: absolute; inset: -24px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--amber) 42%, transparent), transparent); animation: ocbg-explore-breathe 2.6s ease-in-out infinite; }
+@keyframes ocbg-explore-breathe { 0%, 100% { opacity: .75; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.06); } }
+.ocbg-explore .ocbg-explore-walker-disc { position: absolute; inset: 6px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--panel-solid); border: 3px solid var(--amber); box-shadow: 0 2px 6px color-mix(in srgb, var(--ground) 80%, transparent), var(--shadow-reach); }
+.ocbg-explore .ocbg-explore-walker.is-landed .ocbg-explore-walker-disc { animation: ocbg-explore-land 320ms cubic-bezier(.22,.61,.36,1); }
+@keyframes ocbg-explore-land { 0% { transform: scale(1.18, .84); } 60% { transform: scale(.96, 1.05); } 100% { transform: none; } }
+
+/* ---------------------------------------------------------------- banner */
+.ocbg-explore .ocbg-explore-banner { position: absolute; left: 24px; width: 1256px; top: 392px; height: 200px; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; pointer-events: none; opacity: 0; transform: translateY(8px); transition: opacity 420ms ease-out, transform 420ms ease-out;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ground) 92%, transparent) 18%, color-mix(in srgb, var(--ground) 92%, transparent) 82%, transparent); }
+.ocbg-explore .ocbg-explore-banner.is-encounter { top: 362px; height: 260px; gap: 6px; }
+.ocbg-explore .ocbg-explore-banner.is-on { opacity: 1; transform: none; }
+.ocbg-explore .ocbg-explore-banner::before, .ocbg-explore .ocbg-explore-banner::after { content: ""; position: absolute; left: 24%; right: 24%; height: 2px; background: var(--amber); opacity: .7; }
+.ocbg-explore .ocbg-explore-banner::before { top: 10px; }
+.ocbg-explore .ocbg-explore-banner::after { bottom: 10px; }
+.ocbg-explore .ocbg-explore-banner.is-encounter::before, .ocbg-explore .ocbg-explore-banner.is-encounter::after { background: var(--violet); }
+.ocbg-explore .ocbg-explore-banner small { font: 700 26px/32px var(--font-display); letter-spacing: .2em; }
+.ocbg-explore .ocbg-explore-banner strong { font: 800 64px/76px var(--font-display); letter-spacing: .14em; }
+.ocbg-explore .ocbg-explore-banner em { font: 400 24px/32px var(--font-body); font-style: normal; letter-spacing: .04em; }
+.ocbg-explore .ocbg-explore-banner.is-encounter strong { font-size: 56px; line-height: 64px; }
+/* a result said once over the map (X-15 / X-16): the training's 刻み, the survey's enemy */
+.ocbg-explore .ocbg-explore-banner.is-note { top: 412px; height: 160px; }
+.ocbg-explore .ocbg-explore-banner.is-note small { display: flex; align-items: center; gap: 10px; }
+.ocbg-explore .ocbg-explore-banner.is-note strong { max-width: 1120px; font-size: 40px; line-height: 52px; letter-spacing: .06em; text-align: center; }
+.ocbg-explore .ocbg-explore-banner-icon { display: flex; }
+
+/* ---------------------------------------------------------------- the node detail */
+.ocbg-explore .ocbg-explore-detail { z-index: 3; display: flex; flex-direction: column; gap: 16px; padding: 24px 28px; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius-panel); overflow: hidden; transition: opacity 400ms ease-in-out; }
+.ocbg-explore .ocbg-explore-detail-head { display: grid; grid-template-columns: 72px 1fr auto; column-gap: 16px; align-items: center; }
+.ocbg-explore .ocbg-explore-detail-token { width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; background: var(--panel-solid); border: 2px solid var(--steel); border-radius: var(--radius-panel); }
+.ocbg-explore .ocbg-explore-detail-token.is-current, .ocbg-explore .ocbg-explore-detail-token.is-reachable { border-color: var(--amber); }
+.ocbg-explore .ocbg-explore-detail-token.is-far { border-style: dashed; }
+.ocbg-explore .ocbg-explore-detail-token.kind-boss { outline: 2px solid var(--boss); outline-offset: 3px; }
+.ocbg-explore .ocbg-explore-detail-titles h2 { margin: 0; font: 700 32px/40px var(--font-display); letter-spacing: .04em; }
+.ocbg-explore .ocbg-explore-detail-titles p { margin: 2px 0 0; font: 400 18px/26px var(--font-body); }
+.ocbg-explore .ocbg-explore-pill { align-self: start; padding: 3px 12px; font: 700 16px/22px var(--font-body); border: 1px solid var(--steel); border-radius: var(--radius-chip-self); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-pill.is-current { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 22%, transparent); }
+.ocbg-explore .ocbg-explore-pill.is-reachable { border-color: var(--amber); }
+.ocbg-explore .ocbg-explore-pill.is-revisit { border-color: var(--ink); }
+.ocbg-explore .ocbg-explore-pill.is-far { border-style: dashed; }
+.ocbg-explore .ocbg-explore-detail-lines { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--rule); }
+.ocbg-explore .ocbg-explore-kv { display: grid; grid-template-columns: 92px 1fr; column-gap: 12px; align-items: baseline; }
+.ocbg-explore .ocbg-explore-kv.is-wide { grid-template-columns: 1fr; }
+.ocbg-explore .ocbg-explore-k { font: 700 16px/24px var(--font-body); letter-spacing: .04em; }
+.ocbg-explore .ocbg-explore-v { font: 400 20px/28px var(--font-body); }
+.ocbg-explore .ocbg-explore-detail-far { margin: 0; padding-top: 14px; border-top: 1px solid var(--rule); font: 400 18px/26px var(--font-body); }
+.ocbg-explore .ocbg-explore-options { margin-top: auto; display: grid; gap: 14px; }
+.ocbg-explore .ocbg-explore-options.n2 { grid-template-columns: 1fr 1fr; }
+.ocbg-explore .ocbg-explore-option { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; background: color-mix(in srgb, var(--panel-solid) 85%, transparent); border: 1px solid var(--rule); border-radius: var(--radius-panel); }
+.ocbg-explore .ocbg-explore-option.is-lethal { border-color: var(--caution); }
+.ocbg-explore .ocbg-explore-option.is-bare { padding: 0; background: none; border: 0; }
+.ocbg-explore .ocbg-explore-option-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 700 18px/24px var(--font-body); }
+.ocbg-explore .ocbg-explore-option-label kbd { font-size: 16px; height: 22px; }
+.ocbg-explore .ocbg-explore-fc { display: flex; align-items: center; gap: 10px; font: 400 18px/26px var(--font-body); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-fc-dot { width: 20px; flex: none; }
+.ocbg-explore .ocbg-explore-warn { display: flex; align-items: flex-start; gap: 10px; margin: 2px 0 0; padding: 8px 10px; font: 400 17px/24px var(--font-body); background: color-mix(in srgb, var(--caution) 10%, transparent); border-left: 3px solid var(--caution); border-radius: 0 var(--radius-tag) var(--radius-tag) 0; }
+.ocbg-explore .ocbg-explore-warn svg { flex: none; margin-top: 1px; }
+.ocbg-explore .ocbg-explore-option-foot { margin-top: auto; padding-top: 6px; }
+.ocbg-explore .ocbg-explore-go { width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 14px 18px; font-size: 24px; letter-spacing: .12em; white-space: nowrap; }
+.ocbg-explore .ocbg-explore-go kbd { background: transparent; }
+/* a rest node's two forecasts with warnings: tighter type so the buttons stay in the panel */
+.ocbg-explore .ocbg-explore-detail.is-tight { gap: 12px; padding-top: 20px; padding-bottom: 20px; }
+.ocbg-explore .ocbg-explore-detail.is-tight .ocbg-explore-detail-lines { gap: 4px; padding-top: 10px; }
+.ocbg-explore .ocbg-explore-detail.is-tight .ocbg-explore-v { font-size: 18px; line-height: 25px; }
+.ocbg-explore .ocbg-explore-detail.is-tight .ocbg-explore-option { gap: 4px; padding: 10px 12px 12px; }
+.ocbg-explore .ocbg-explore-detail.is-tight .ocbg-explore-fc { font-size: 17px; line-height: 23px; }
+.ocbg-explore .ocbg-explore-detail.is-tight .ocbg-explore-warn { padding: 6px 8px; font-size: 16px; line-height: 22px; }
+.ocbg-explore .ocbg-explore-detail.is-tight .ocbg-explore-go { padding: 10px 14px; font-size: 22px; }
+.ocbg-explore .ocbg-explore-detail.is-tighter .ocbg-explore-detail-head { grid-template-columns: 56px 1fr auto; }
+.ocbg-explore .ocbg-explore-detail.is-tighter .ocbg-explore-detail-token { width: 56px; height: 56px; }
+.ocbg-explore .ocbg-explore-detail.is-tighter .ocbg-explore-detail-titles h2 { font-size: 28px; line-height: 34px; }
+.ocbg-explore .ocbg-explore-detail.is-tighter .ocbg-explore-v, .ocbg-explore .ocbg-explore-detail.is-tighter .ocbg-explore-fc { font-size: 16px; line-height: 21px; }
+
+/* ---------------------------------------------------------------- carried items, end life, hint */
+.ocbg-explore .ocbg-explore-carried { z-index: 6; display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius-panel); }
+.ocbg-explore .ocbg-explore-tools { display: flex; align-items: center; gap: 10px; font: 400 20px/26px var(--font-body); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ocbg-explore .ocbg-explore-slot { position: relative; height: 112px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px; color: var(--ink); background: var(--panel-solid); border: 2px solid var(--steel); border-radius: var(--radius-panel); font: 700 18px/22px var(--font-body); cursor: default; transition: transform 90ms, border-color 120ms, background-color 120ms; }
+.ocbg-explore .ocbg-explore-slot.is-usable { border-color: var(--amber); cursor: pointer; }
+.ocbg-explore .ocbg-explore-slot.is-usable:hover { transform: translateY(-4px); background: color-mix(in srgb, var(--amber) 12%, var(--panel-solid)); }
+.ocbg-explore .ocbg-explore-slot.is-empty { border-style: dashed; font-weight: 400; }
+.ocbg-explore .ocbg-explore-slot[disabled]:not(.is-empty) { opacity: .55; }
+.ocbg-explore .ocbg-explore-slot kbd { position: absolute; left: 8px; top: 8px; height: 22px; min-width: 22px; font-size: 16px; }
+.ocbg-explore .ocbg-explore-slot.is-empty kbd { opacity: .5; }
+.ocbg-explore .ocbg-explore-slot-use { position: absolute; right: 10px; top: 8px; font: 400 16px/22px var(--font-body); }
+/* trial mode: the tools as chips, the slots with what they would change, 標の石 being aimed */
+.ocbg-explore .ocbg-explore-carried.is-trial { gap: 10px; padding-top: 14px; }
+.ocbg-explore .ocbg-explore-tools.is-chips { gap: 6px 8px; flex-wrap: wrap; white-space: normal; }
+.ocbg-explore .ocbg-explore-tool { display: inline-flex; align-items: baseline; gap: 6px; padding: 2px 10px; border: 1px solid var(--amber); border-radius: var(--radius-chip-self); background: color-mix(in srgb, var(--amber) 10%, transparent); font: 700 16px/22px var(--font-body); white-space: nowrap; cursor: default; }
+.ocbg-explore .ocbg-explore-tool.is-battle { border-color: var(--steel); background: none; }
+.ocbg-explore .ocbg-explore-tool-effect { font-weight: 400; font-size: 17px; color: var(--ink); }
+.ocbg-explore .is-trial .ocbg-explore-slot { height: auto; min-height: 120px; gap: 2px; padding-top: 12px; }
+.ocbg-explore .ocbg-explore-slot-fc { display: flex; flex-direction: column; align-items: center; max-width: 100%; font: 400 17px/22px var(--font-body); color: var(--ink); text-align: center; }
+.ocbg-explore .ocbg-explore-slot-fcl { white-space: nowrap; }
+.ocbg-explore .ocbg-explore-slot-fc.is-reason { font-size: 16px; white-space: normal; text-align: center; }
+.ocbg-explore .ocbg-explore-carried.is-held .ocbg-explore-slot { pointer-events: none; opacity: .5; border-color: var(--steel); }
+.ocbg-explore .ocbg-explore-carried.is-held .ocbg-explore-slot-use { visibility: hidden; }
+.ocbg-explore .ocbg-explore-slot.is-aiming { border-color: var(--wick); box-shadow: var(--shadow-lamp); animation: ocbg-explore-pulse 1.6s ease-in-out infinite; cursor: pointer; }
+.ocbg-explore .ocbg-explore-node.is-jump .ocbg-explore-node-face { border: 2px dashed var(--amber); box-shadow: var(--shadow-reach); animation: ocbg-explore-beckon 2.4s ease-in-out infinite; }
+.ocbg-explore .ocbg-explore-walker { transition: opacity 240ms ease-in-out; }
+.ocbg-explore .ocbg-explore-walker.is-leaping { opacity: 0; }
+
+.ocbg-explore .ocbg-explore-found { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 400 16px/22px var(--font-body); }
+.ocbg-explore .ocbg-explore-chip { display: inline-flex; align-items: center; gap: 6px; padding: 1px 10px; border: 1px solid var(--rule); border-radius: var(--radius-chip-self); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-endlife { z-index: 6; font-size: 22px; letter-spacing: .08em; }
+.ocbg-explore .ocbg-explore-hint { z-index: 6; display: flex; align-items: center; font: 400 20px/30px var(--font-body); text-shadow: 0 0 8px var(--ground), 0 1px 2px var(--ground); transition: opacity 400ms; }
+.ocbg-explore .ocbg-explore-hint > span { text-wrap: balance; }
+.ocbg-explore .ocbg-explore-legend { z-index: 6; display: flex; align-items: center; justify-content: flex-end; gap: 20px; font: 400 16px/22px var(--font-body); white-space: nowrap; text-shadow: 0 0 6px var(--ground); transition: opacity 400ms; pointer-events: none; }
+.ocbg-explore .ocbg-explore-legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+/* ---------------------------------------------------------------- cards over the map */
+.ocbg-explore .ocbg-explore-cards { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.ocbg-explore .ocbg-explore-dim { position: absolute; inset: 0; pointer-events: auto; background: color-mix(in srgb, var(--ground) 64%, transparent); animation: ocbg-explore-fade 260ms ease-out both; }
+.ocbg-explore .ocbg-explore-dim.is-leaving { animation: ocbg-explore-fadeout 220ms ease-in both; }
+@keyframes ocbg-explore-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ocbg-explore-fadeout { from { opacity: 1; } to { opacity: 0; } }
+.ocbg-explore .ocbg-explore-plate { pointer-events: auto; display: flex; flex-direction: column; gap: 14px; padding: 36px 44px 32px; border-radius: var(--radius-panel); box-shadow: var(--shadow-tip); animation: ocbg-explore-plate-in 300ms cubic-bezier(.22,.61,.36,1) both; }
+.ocbg-explore .ocbg-explore-plate.is-leaving { animation: ocbg-explore-plate-out 220ms ease-in both; }
+@keyframes ocbg-explore-plate-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes ocbg-explore-plate-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(10px); } }
+.ocbg-explore .ocbg-explore-plate h2 { margin: 0; font: 800 44px/54px var(--font-display); letter-spacing: .06em; }
+.ocbg-explore .ocbg-explore-plate-lines p { margin: 0 0 6px; font: 400 22px/34px var(--font-body); }
+.ocbg-explore .ocbg-explore-plate-kicker { display: flex; align-items: center; gap: 10px; font: 700 18px/24px var(--font-display); letter-spacing: .08em; }
+.ocbg-explore .ocbg-explore-plate-buttons { margin-top: auto; padding-top: 10px; display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
+.ocbg-explore .ocbg-explore-plate-buttons .ocbg-btn { min-width: 220px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+
+.ocbg-explore .ocbg-explore-plate.is-washi { background: var(--washi); color: var(--washi-ink); border: 1px solid color-mix(in srgb, var(--washi-ink) 22%, transparent);
+  box-shadow: inset 0 0 90px color-mix(in srgb, var(--washi-ink) 14%, transparent), var(--shadow-tip); }
+.ocbg-explore .is-washi .ocbg-btn { background: var(--panel-solid); }
+.ocbg-explore .is-washi .ocbg-btn.is-primary { background: color-mix(in srgb, var(--amber) 24%, var(--panel-solid)); }
+.ocbg-explore .is-washi .ocbg-btn.is-primary:hover { background: color-mix(in srgb, var(--amber) 36%, var(--panel-solid)); }
+.ocbg-explore .ocbg-explore-plate.is-break h2 { font-size: 52px; line-height: 64px; }
+.ocbg-explore .ocbg-explore-plate.is-break .ocbg-explore-plate-lines { padding-top: 12px; border-top: 1px solid color-mix(in srgb, var(--washi-ink) 25%, transparent); }
+
+.ocbg-explore .ocbg-explore-plate.is-solid, .ocbg-explore .ocbg-explore-plate.is-end { background: var(--panel-solid); border: 1px solid var(--steel); }
+.ocbg-explore .ocbg-explore-plate.is-end { align-items: center; text-align: center; padding-top: 44px; background:
+  radial-gradient(80% 70% at 50% 0%, color-mix(in srgb, var(--violet) 14%, transparent), transparent 70%), var(--panel-solid); }
+.ocbg-explore .ocbg-explore-plate.is-end h2 { font-size: 64px; line-height: 76px; letter-spacing: .2em; }
+.ocbg-explore .ocbg-explore-plate.is-end .ocbg-explore-plate-lines { padding: 14px 40px 6px; border-top: 1px solid var(--rule); }
+.ocbg-explore .ocbg-explore-plate.is-end .ocbg-explore-plate-buttons { padding-top: 22px; }
+.ocbg-explore .ocbg-explore-plate.is-break .ocbg-explore-plate-buttons { padding-top: 26px; }
+.ocbg-explore .ocbg-explore-plate.is-end .ocbg-explore-plate-buttons { justify-content: center; }
+.ocbg-explore .ocbg-explore-plate.is-survived, .ocbg-explore .ocbg-explore-plate.is-completed { background:
+  radial-gradient(80% 70% at 50% 0%, color-mix(in srgb, var(--amber) 12%, transparent), transparent 70%), var(--panel-solid); border-color: color-mix(in srgb, var(--amber) 50%, var(--steel)); }
+.ocbg-explore .ocbg-explore-plate.is-fallen { border-top: 3px solid var(--crimson); }
+.ocbg-explore .ocbg-explore-end-mark { width: 76px; height: 76px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--rule); border-radius: 50%; }
+
+.ocbg-explore .ocbg-explore-detail-mark { position: absolute; right: -36px; top: 150px; opacity: .05; pointer-events: none; }
+.ocbg-explore .ocbg-explore-detail > :not(.ocbg-explore-detail-mark) { position: relative; }
+
+/* the result and the reward pick */
+.ocbg-explore .is-washi .ocb-card { color: var(--ink); }
+.ocbg-explore .ocbg-explore-plate.is-compact .ocbg-explore-result-side { display: grid; grid-template-columns: 1fr 1fr; column-gap: 40px; row-gap: 14px; padding: 4px 0 6px; border-right: 0; }
+.ocbg-explore .ocbg-explore-plate.is-result .ocbg-explore-plate-buttons { padding-top: 18px; }
+.ocbg-explore .ocbg-explore-result-head h2 { white-space: nowrap; }
+.ocbg-explore .ocbg-explore-result-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 14px; border-bottom: 1px solid color-mix(in srgb, var(--washi-ink) 25%, transparent); }
+.ocbg-explore .ocbg-explore-result-stats { display: flex; gap: 14px; }
+.ocbg-explore .ocbg-explore-result-stats > span { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; font: 700 22px/28px var(--font-body); color: var(--ink); background: var(--panel-solid); border-radius: var(--radius-panel); }
+.ocbg-explore .ocbg-explore-result-body { display: grid; grid-template-columns: 300px 1fr; column-gap: 36px; padding-top: 4px; }
+.ocbg-explore .ocbg-explore-result-side { display: flex; flex-direction: column; gap: 16px; padding: 6px 28px 0 0; border-right: 1px solid color-mix(in srgb, var(--washi-ink) 22%, transparent); overflow: hidden; }
+.ocbg-explore .ocbg-explore-result-group { display: flex; flex-direction: column; gap: 6px; }
+.ocbg-explore .ocbg-explore-result-side h4 { margin: 0 0 2px; font: 700 18px/24px var(--font-display); letter-spacing: .06em; }
+.ocbg-explore .ocbg-explore-result-side p { margin: 0; display: flex; align-items: center; gap: 8px; font: 400 18px/26px var(--font-body); }
+.ocbg-explore .ocbg-explore-result-side p.is-quiet { opacity: .7; }
+/* a rank-up (X-15): 「突き → 鋭い突き」 then 「0 → 1 段目」, which breaks to a line of its own rather than inside */
+.ocbg-explore .ocbg-explore-result-side p.ocbg-explore-rankup { align-items: flex-start; }
+.ocbg-explore .ocbg-explore-result-side p.ocbg-explore-rankup > svg { flex: none; margin-top: 5px; }
+.ocbg-explore .ocbg-explore-rankup-steps { display: inline-block; margin-left: .5em; white-space: nowrap; }
+/* a note under a group or the pick (a pile spent, a card a full deck kept out): it wraps, a size down */
+.ocbg-explore .ocbg-explore-result-side p.ocbg-explore-result-note, .ocbg-explore .ocbg-explore-result-note { display: block; margin: 0; font: 400 16px/23px var(--font-body); }
+.ocbg-explore .ocbg-explore-plate.is-compact .ocbg-explore-result-note { grid-column: 1 / -1; }
+.ocbg-explore .ocbg-explore-result-main .ocbg-explore-result-note { margin-top: -10px; }
+/* what a trace gave */
+.ocbg-explore .ocbg-explore-plate.is-taken .ocbg-explore-result-side { display: flex; flex-direction: column; }
+.ocbg-explore .ocbg-explore-plate.is-taken .ocbg-explore-taken-row { display: grid; grid-template-columns: 22px 150px 1fr auto; column-gap: 12px; align-items: center; }
+.ocbg-explore .ocbg-explore-taken-row strong { font: 700 20px/26px var(--font-body); }
+/* what a taken card gave this heir (X-11): under its row, a size down; 「何も増えなかった」 set firmer */
+.ocbg-explore .ocbg-explore-plate.is-taken .ocbg-explore-taken-item { display: flex; flex-direction: column; gap: 2px; }
+.ocbg-explore .ocbg-explore-result-side p.ocbg-explore-taken-gain { display: block; margin: 0 0 4px 34px; font: 400 16px/22px var(--font-body); }
+.ocbg-explore .ocbg-explore-taken-item.is-nothing .ocbg-explore-taken-gain { font-weight: 700; }
+.ocbg-explore .ocbg-explore-result-main { display: flex; flex-direction: column; gap: 18px; }
+.ocbg-explore .ocbg-explore-result-main h3, .ocbg-explore .ocbg-explore-train-lead { margin: 0; font: 700 26px/34px var(--font-display); letter-spacing: .06em; }
+.ocbg-explore .ocbg-explore-result-cards { display: flex; justify-content: center; gap: 32px; padding: 18px 0 44px; }
+.ocbg-explore .ocbg-explore-pick { position: relative; width: 216px; height: 304px; animation: ocbg-explore-deal 460ms cubic-bezier(.22,.61,.36,1) both; transition: transform 120ms cubic-bezier(.4,0,.2,1); }
+@keyframes ocbg-explore-deal { from { opacity: 0; transform: translateY(36px) rotate(-4deg); } to { opacity: 1; transform: none; } }
+.ocbg-explore .ocbg-explore-pick.is-pickable { cursor: pointer; }
+.ocbg-explore .ocbg-explore-pick.is-pickable:hover, .ocbg-explore .ocbg-explore-pick.is-chosen { transform: translateY(-10px); }
+.ocbg-explore .ocbg-explore-pick-frame { position: absolute; left: -10px; top: -10px; opacity: 0; transition: opacity 140ms; pointer-events: none; }
+.ocbg-explore .ocbg-explore-pick-key { position: absolute; left: 50%; bottom: -38px; transform: translateX(-50%); }
+.ocbg-explore .ocbg-explore-pick.is-chosen .ocbg-explore-pick-key { border-color: var(--amber); }
+.ocbg-explore .is-chosen .ocbg-explore-pick-frame { opacity: 1; }
+.ocbg-explore .ocbg-explore-cardstub { width: 216px; height: 304px; display: flex; align-items: center; justify-content: center; background: var(--card); color: var(--ink); border-radius: var(--radius-panel); font: 700 22px/28px var(--font-display); }
+
+/* the trace */
+.ocbg-explore .ocbg-explore-trace-heir { margin: -6px 0 0; font: 700 22px/30px var(--font-display); }
+.ocbg-explore .ocbg-explore-trace-note, .ocbg-explore .ocbg-explore-trace-lead { margin: 0; font: 400 18px/26px var(--font-body); }
+.ocbg-explore .ocbg-explore-trace-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; border-top: 1px solid color-mix(in srgb, var(--washi-ink) 25%, transparent); }
+.ocbg-explore .ocbg-explore-trace-list h4 { margin: 14px 0 4px; font: 700 18px/24px var(--font-display); }
+.ocbg-explore .ocbg-explore-trace-row { display: grid; grid-template-columns: 28px 150px 1fr auto; align-items: center; column-gap: 14px; min-height: 52px; padding: 6px 8px; text-align: left; color: var(--washi-ink); background: none; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--washi-ink) 15%, transparent); cursor: pointer; font: 400 18px/24px var(--font-body); }
+.ocbg-explore .ocbg-explore-trace-row:hover:not([disabled]) { background: color-mix(in srgb, var(--washi-ink) 6%, transparent); }
+.ocbg-explore .ocbg-explore-trace-row strong { font: 700 20px/26px var(--font-body); }
+.ocbg-explore .ocbg-explore-trace-row.is-locked { opacity: .5; }
+.ocbg-explore .ocbg-explore-trace-row.is-cursor { background: color-mix(in srgb, var(--washi-ink) 8%, transparent); box-shadow: inset 3px 0 0 var(--amber); }
+.ocbg-explore .ocbg-explore-trace-row:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }
+.ocbg-explore .ocbg-explore-trace-row.is-withheld { grid-template-columns: 28px 1fr auto; opacity: .7; cursor: default; }
+/* what a card candidate gives this heir when it is not what the row reads (X-11): a second line under name and 段 */
+.ocbg-explore .ocbg-explore-trace-list > * { flex-shrink: 0; } /* a row with its note under it keeps its height in the scrolling list */
+.ocbg-explore .ocbg-explore-trace-gain { grid-column: 3 / -1; margin-top: 2px; font: 400 16px/22px var(--font-body); color: var(--washi-ink); }
+.ocbg-explore .ocbg-explore-trace-row.is-nothing .ocbg-explore-trace-gain { font-weight: 700; }
+/* one note a line: what the trace held, then what this heir gets (TraceGain) */
+.ocbg-explore .ocbg-explore-trace-gain > span, .ocbg-explore .ocbg-explore-taken-gain > span { display: block; }
+.ocbg-explore .ocbg-explore-trace-lead.is-warn { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.ocbg-explore .ocbg-explore-trace-row.is-withheld.is-cursor { opacity: .9; }
+/* a list that runs past its box fades at the edge it continues past (the hall's lists do the same) */
+.ocbg-explore .ocbg-explore-trace-list.is-more-below, .ocbg-explore .ocbg-explore-train-list.is-more-below { -webkit-mask-image: linear-gradient(180deg, var(--ground) 82%, transparent); mask-image: linear-gradient(180deg, var(--ground) 82%, transparent); }
+.ocbg-explore .ocbg-explore-trace-list.is-more-above, .ocbg-explore .ocbg-explore-train-list.is-more-above { -webkit-mask-image: linear-gradient(0deg, var(--ground) 82%, transparent); mask-image: linear-gradient(0deg, var(--ground) 82%, transparent); }
+.ocbg-explore .ocbg-explore-trace-list.is-more-above.is-more-below, .ocbg-explore .ocbg-explore-train-list.is-more-above.is-more-below { -webkit-mask-image: linear-gradient(180deg, transparent, var(--ground) 14%, var(--ground) 86%, transparent); mask-image: linear-gradient(180deg, transparent, var(--ground) 14%, var(--ground) 86%, transparent); }
+.ocbg-explore .ocbg-explore-trace-kind { justify-self: start; padding: 1px 10px; font: 700 16px/22px var(--font-body); border: 1px solid color-mix(in srgb, var(--washi-ink) 40%, transparent); border-radius: var(--radius-tag); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-check { width: 22px; height: 22px; border: 2px solid color-mix(in srgb, var(--washi-ink) 55%, transparent); border-radius: 50%; }
+.ocbg-explore .is-on .ocbg-explore-check { border-color: var(--amber); background: radial-gradient(closest-side, var(--amber) 60%, transparent 66%); }
+.ocbg-explore .is-withheld .ocbg-explore-check { border-style: dashed; }
+.ocbg-explore .ocbg-explore-trace-count { margin-right: auto; font: 700 24px/30px var(--font-body); }
+
+/* the training pick */
+.ocbg-explore .ocbg-explore-plate.is-train .ocbg-explore-plate-kicker { color: var(--ink); }
+.ocbg-explore .ocbg-explore-train-lead { margin: -4px 0 0; font: 400 20px/28px var(--font-body); }
+.ocbg-explore .ocbg-explore-train-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 216px; column-gap: 40px; align-items: start; }
+.ocbg-explore .ocbg-explore-train-list { display: flex; flex-direction: column; max-height: 470px; overflow: auto; border-top: 1px solid var(--rule); }
+.ocbg-explore .ocbg-explore-train-row { display: grid; grid-template-columns: 28px 1fr 48px 132px 96px; align-items: center; column-gap: 14px; min-height: 46px; padding: 4px 12px; color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--rule); text-align: left; cursor: pointer; font: 400 18px/24px var(--font-body); }
+.ocbg-explore .ocbg-explore-train-row strong { font: 700 20px/26px var(--font-display); }
+.ocbg-explore .ocbg-explore-train-row:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.ocbg-explore .ocbg-explore-train-row.is-chosen { background: color-mix(in srgb, var(--amber) 16%, transparent); box-shadow: inset 3px 0 0 var(--amber); }
+.ocbg-explore .ocbg-explore-train-copies { font: 400 18px/24px var(--font-body); }
+.ocbg-explore .ocbg-explore-rank { justify-self: end; padding: 1px 10px; font: 700 16px/22px var(--font-body); border: 1px solid var(--amber); border-radius: var(--radius-chip-self); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-rank.is-zero { border-color: var(--steel); font-weight: 400; }
+.ocbg-explore .ocbg-explore-train-preview { position: relative; width: 216px; height: 304px; border: 1px dashed var(--steel); border-radius: var(--radius-panel); }
+.ocbg-explore .ocbg-explore-train-preview .ocb-card { position: absolute; left: -1px; top: -1px; animation: ocbg-explore-fade 160ms ease-out both; }
+/* the 刻み toward the next 段 (X-15) */
+.ocbg-explore .ocbg-explore-train-ticks { justify-self: end; font: 400 18px/24px var(--font-body); white-space: nowrap; }
+.ocbg-explore .ocbg-explore-train-ticks.is-quiet { font-size: 16px; }
+.ocbg-explore .ocbg-explore-train-about { position: absolute; left: -1px; top: 318px; width: 236px; display: flex; flex-direction: column; gap: 4px; }
+.ocbg-explore .ocbg-explore-train-about p { margin: 0; font: 400 18px/26px var(--font-body); }
+
+/* ---------------------------------------------------------------- the interlude */
+.ocbg-explore .ocbg-explore-lullview { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.ocbg-explore .ocbg-explore-lull-plate { position: absolute; left: 96px; top: 236px; width: 1112px; pointer-events: auto; display: flex; flex-direction: column; gap: 18px; padding: 44px 56px 40px; color: var(--washi-ink); background: var(--washi); border: 1px solid color-mix(in srgb, var(--washi-ink) 22%, transparent); border-radius: var(--radius-panel);
+  box-shadow: inset 0 0 110px color-mix(in srgb, var(--washi-ink) 14%, transparent), var(--shadow-tip); animation: ocbg-explore-plate-in 600ms cubic-bezier(.22,.61,.36,1) both; }
+.ocbg-explore .ocbg-explore-lull-plate h2 { margin: 0; font: 800 60px/72px var(--font-display); letter-spacing: .16em; }
+.ocbg-explore .ocbg-explore-lull-rest { display: flex; flex-direction: column; gap: 14px; padding: 22px 0; border-top: 1px solid color-mix(in srgb, var(--washi-ink) 25%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--washi-ink) 25%, transparent); }
+.ocbg-explore .ocbg-explore-lull-rest p { margin: 0; display: flex; align-items: center; gap: 16px; font: 400 26px/36px var(--font-body); }
+.ocbg-explore .ocbg-explore-lull-next { pointer-events: auto; display: flex; flex-direction: column; gap: 16px; padding: 24px 28px; color: var(--ink); background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius-panel); animation: ocbg-explore-plate-in 700ms 120ms cubic-bezier(.22,.61,.36,1) both; }
+.ocbg-explore .ocbg-explore-lull-window { position: relative; width: 536px; height: 302px; border: 1px solid var(--rule); border-radius: var(--radius-tag); overflow: hidden; }
+.ocbg-explore .ocbg-explore-lull-window canvas { display: block; width: 534px; height: 300px; animation: ocbg-explore-window 9s ease-in-out infinite alternate; }
+.ocbg-explore .ocbg-explore-lull-window::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 40px color-mix(in srgb, var(--ground) 70%, transparent); pointer-events: none; }
+@keyframes ocbg-explore-window { from { transform: scale(1.02) translateY(0); } to { transform: scale(1.08) translateY(-6px); } }
+.ocbg-explore .ocbg-explore-lull-next p { margin: 0; font: 400 20px/30px var(--font-body); }
+.ocbg-explore .ocbg-explore-lull-next h3.ocbg-explore-lull-name { margin: 2px 0 -6px; font: 700 32px/42px var(--font-display); letter-spacing: .06em; }
+.ocbg-explore .ocbg-explore-lull-next h3.ocbg-explore-lull-name .ocbg-explore-num { font-family: var(--font-display); font-weight: 700; }
+.ocbg-explore .ocbg-explore-lull-next p.ocbg-explore-lull-ahead { font: 400 22px/34px var(--font-body); }
+.ocbg-explore .ocbg-explore-lull-next .ocbg-explore-warn { font-size: 18px; line-height: 26px; }
+.ocbg-explore .ocbg-explore-lull-buttons { margin-top: 12px; display: flex; justify-content: flex-end; gap: 16px; }
+.ocbg-explore .ocbg-explore-lull-buttons .ocbg-btn { min-width: 260px; display: inline-flex; align-items: center; justify-content: center; gap: 12px; background: var(--panel-solid); }
+.ocbg-explore .ocbg-explore-lull-buttons .ocbg-btn.is-primary { background: color-mix(in srgb, var(--amber) 24%, var(--panel-solid)); }
+.ocbg-explore.is-interlude .ocbg-explore-map, .ocbg-explore.is-interlude .ocbg-explore-detail, .ocbg-explore.is-interlude .ocbg-explore-banner { opacity: 0; pointer-events: none; }
+.ocbg-explore.is-interlude .ocbg-explore-node { pointer-events: none; }
+
+/* ---------------------------------------------------------------- fallback overlays (no app overlay) */
+.ocbg-explore .ocbg-explore-overlays { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
+.ocbg-explore .ocbg-explore-ovshade { position: absolute; inset: 0; pointer-events: auto; background: color-mix(in srgb, var(--ground) 70%, transparent); animation: ocbg-explore-fade 200ms ease-out both; }
+.ocbg-explore .ocbg-explore-journal { position: absolute; right: 0; top: 0; width: 576px; height: 1080px; pointer-events: auto; display: flex; flex-direction: column; gap: 14px; padding: 28px 32px; color: var(--washi-ink); background: var(--washi); box-shadow: var(--shadow-tip); animation: ocbg-explore-drawer 220ms cubic-bezier(.22,.61,.36,1) both; }
+.ocbg-explore .ocbg-explore-journal.is-leaving { animation: ocbg-explore-drawer-out 200ms ease-in both; }
+@keyframes ocbg-explore-drawer { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes ocbg-explore-drawer-out { from { transform: none; } to { transform: translateX(100%); } }
+.ocbg-explore .ocbg-explore-jhead { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ocbg-explore .ocbg-explore-jhead h2 { margin: 0; font: 800 36px/44px var(--font-display); }
+.ocbg-explore .ocbg-explore-jhead .ocbg-btn { font-size: 18px; padding: 10px 18px; }
+.ocbg-explore .ocbg-explore-jtabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.ocbg-explore .ocbg-explore-jtabs button { padding: 6px 14px; font: 700 16px/22px var(--font-body); color: var(--washi-ink); background: color-mix(in srgb, var(--washi-ink) 8%, transparent); border: 1px solid color-mix(in srgb, var(--washi-ink) 30%, transparent); border-radius: var(--radius-tag); cursor: pointer; }
+.ocbg-explore .ocbg-explore-jtabs button.is-on { background: var(--panel-solid); color: var(--ink); }
+.ocbg-explore .ocbg-explore-jtabs button[disabled] { opacity: .45; cursor: default; }
+.ocbg-explore .ocbg-explore-jbody { flex: 1; overflow: auto; }
+.ocbg-explore .ocbg-explore-jbody h3 { margin: 6px 0 12px; display: flex; align-items: baseline; justify-content: space-between; font: 700 28px/36px var(--font-display); }
+.ocbg-explore .ocbg-explore-jbody h3 small { font: 400 18px/24px var(--font-body); }
+.ocbg-explore .ocbg-explore-jbody h4 { margin: 14px 0 2px; font: 700 18px/24px var(--font-body); }
+.ocbg-explore .ocbg-explore-jbody p { margin: 0 0 6px; font: 400 18px/28px var(--font-body); }
+.ocbg-explore .ocbg-explore-ovpage { position: absolute; left: 430px; top: 150px; width: 1060px; height: 780px; pointer-events: auto; display: flex; flex-direction: column; gap: 18px; padding: 36px 44px; background: var(--panel-solid); border: 1px solid var(--steel); border-radius: var(--radius-panel); box-shadow: var(--shadow-tip); animation: ocbg-explore-plate-in 260ms cubic-bezier(.22,.61,.36,1) both; }
+.ocbg-explore .ocbg-explore-ovpage.is-leaving { animation: ocbg-explore-plate-out 200ms ease-in both; }
+.ocbg-explore .ocbg-explore-ovlines p { margin: 0 0 8px; font: 400 22px/34px var(--font-body); }
+
+/* the shared confirm card, inside this scene */
+.ocbg-explore .ocbg-confirm-card p { white-space: pre-line; }
+.ocbg-explore .ocbg-confirm-card { animation: ocbg-explore-plate-in 240ms cubic-bezier(.22,.61,.36,1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ocbg-explore .ocbg-explore-node-face, .ocbg-explore .ocbg-explore-walker-glow, .ocbg-explore .is-lit .ocbg-explore-edge-flow, .ocbg-explore .ocbg-explore-lull-window canvas { animation: none; }
+}
+
+/* ---------------------------------------------------------------- trial mode: choice cards (event / swap / survey) */
+.ocbg-explore .ocbg-explore-kicker-sub { margin-left: 10px; padding-left: 12px; border-left: 1px solid color-mix(in srgb, var(--washi-ink) 30%, transparent); font-weight: 400; }
+.ocbg-explore .ocbg-explore-choice-lead { margin: 0; font: 700 24px/34px var(--font-body); }
+.ocbg-explore .ocbg-explore-plate-lines.is-list { padding: 8px 0 4px; border-top: 1px solid color-mix(in srgb, var(--washi-ink) 22%, transparent); }
+.ocbg-explore .ocbg-explore-plate-lines.is-list p { margin: 0; font-size: 20px; line-height: 32px; }
+.ocbg-explore .ocbg-explore-choice-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding-top: 6px; }
+.ocbg-explore .ocbg-explore-choice-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-height: 150px; padding: 20px 24px 18px 64px; text-align: left; color: var(--ink); background: var(--panel-solid); border: 2px solid var(--steel); border-radius: var(--radius-panel); cursor: pointer; transition: transform 90ms, border-color 120ms, background-color 120ms; }
+.ocbg-explore .ocbg-explore-choice-tile.is-primary { border-color: var(--amber); }
+.ocbg-explore .ocbg-explore-choice-tile:hover { transform: translateY(-4px); background: color-mix(in srgb, var(--amber) 12%, var(--panel-solid)); }
+.ocbg-explore .ocbg-explore-choice-tile kbd { position: absolute; left: 20px; top: 22px; }
+.ocbg-explore .ocbg-explore-choice-tile strong { font: 800 32px/40px var(--font-display); letter-spacing: .08em; }
+.ocbg-explore .ocbg-explore-choice-note { display: flex; flex-direction: column; gap: 4px; font: 400 18px/26px var(--font-body); }
+.ocbg-explore .ocbg-explore-choice-note > span { display: inline-flex; align-items: center; gap: 8px; }
+.ocbg-explore .ocbg-explore-swap-body { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: stretch; padding-top: 6px; }
+.ocbg-explore .ocbg-explore-swap-label { font: 700 16px/22px var(--font-display); letter-spacing: .08em; }
+.ocbg-explore .ocbg-explore-swap-found { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 18px 20px; text-align: center; border: 2px solid var(--amber); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--amber) 10%, transparent); }
+.ocbg-explore .ocbg-explore-swap-found strong { font: 800 30px/38px var(--font-display); }
+.ocbg-explore .ocbg-explore-swap-found .ocbg-explore-choice-note { font-size: 17px; line-height: 24px; }
+.ocbg-explore .ocbg-explore-swap-side { display: flex; flex-direction: column; gap: 10px; }
+.ocbg-explore .ocbg-explore-swap-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; flex: 1; }
+.ocbg-explore .ocbg-explore-swap-slot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 12px 14px; text-align: center; color: var(--ink); background: var(--panel-solid); border: 2px solid var(--steel); border-radius: var(--radius-panel); cursor: pointer; transition: transform 90ms, border-color 120ms; }
+.ocbg-explore .ocbg-explore-swap-slot:hover { transform: translateY(-4px); border-color: var(--amber); }
+.ocbg-explore .ocbg-explore-swap-slot kbd { position: absolute; left: 10px; top: 10px; }
+.ocbg-explore .ocbg-explore-swap-slot strong { font: 700 22px/28px var(--font-body); }
+.ocbg-explore .ocbg-explore-swap-slot .ocbg-explore-choice-note { font-size: 15px; line-height: 21px; }
+.ocbg-explore .ocbg-explore-swap-go { margin-top: auto; padding: 4px 14px; font: 700 16px/22px var(--font-body); border: 1px solid var(--amber); border-radius: var(--radius-chip-self); }
+.ocbg-explore .ocbg-explore-survey-list { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+.ocbg-explore .ocbg-explore-survey-row { display: flex; align-items: center; gap: 14px; padding: 14px 18px; text-align: left; color: var(--ink); background: var(--panel-solid); border: 2px solid var(--steel); border-radius: var(--radius-panel); cursor: pointer; font: 400 22px/28px var(--font-body); transition: transform 90ms, border-color 120ms; }
+.ocbg-explore .ocbg-explore-survey-row:hover { border-color: var(--amber); transform: translateX(4px); }
+.ocbg-explore .ocbg-explore-survey-row strong { font-weight: 700; }
+.ocbg-explore .ocbg-explore-plate.is-event.is-compact .ocbg-explore-result-side { display: flex; grid-template-columns: none; }
+.ocbg-explore .ocbg-explore-plate.is-event .ocbg-explore-result-side p { font-size: 22px; line-height: 32px; }
