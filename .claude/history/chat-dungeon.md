@@ -1,5 +1,30 @@
 # HISTORY (chat-dungeon)
 
+### 2026-10-21 - 探索の 3 件: 身代わりへの切り替えのログ、拾った消耗品、札を選ぶ画面（#649 / #651 / #626）
+
+#### 概要
+
+dungeon 宛ての open な Issue 3 件を、それぞれ origin/main から切ったブランチで実装して PR にした。PR #663（#649）、#666（#651）、#668（#626）はどれも open。
+
+#### 変更点
+
+- **#649（PR #663）**: `ExplorationBootstrap` が身代わりのカードへ切り替える 2 か所で `Debug.LogWarning` を出し、切り替えを private の欄に持つ。`EncounterBattle.TryFinish` を足して View が `GameResult` を読まないようにし、`ViewRulesBoundaryTests` の許可の一覧から 1 行外した。`BattleHandIn` は開示度が足りないと例外にする。`UniqueCardsTests` が代役でないボスと精鋭の全てに表の行があることを確かめ、行を消すと落ちることも実測した
+- **#651（PR #666）**: `ReliefKind` に薬草・濃い干し肉・忘れ水・標の石を足し、`ExplorationReducer.UseConsumable` が効きを持つ。拾う操作は `RunLoadout.Take` / `ExplorationReducer.TakeConsumable`。`Expedition.Return` が拾った品を空いた枠へ入れ、入らない品は `WaitingConsumables` に残す。入れ替えは `SwapConsumable`、諦めは `DiscardConsumable`。標の石は枠に入るが使えない
+- **#626（PR #668）**: 純 C# の `Bridge/CardPicks.cs` が選ぶ画面の中身を作り、`ExplorationScreenView.ShowPick` が戦闘の `CardView` をコードで作って並べる。訓練の候補はデッキの札の種類にした
+- **申し送り**: 入れ替えを選ぶ画面を別の Issue にするため、`handoff/2026-10-21-dungeon-consumable-swap-screen-651.md` を main に回した
+
+#### 実測・知見
+
+- 3 本とも `dotnet test UnityCorePort.slnx`、`npm run unity:check`、`npm run build`、`npm run lint`、`npm run test:run` が exit 0
+- `ExplorationBootstrap.cs` の `Render()` は #663 と #668 が隣の行を書き換えるので、あとから merge する側で取り込みが要る
+- 札のプレハブが無いシーンでも、`CardView` は地の画像だけ渡せば残りの部品を自分で作る
+
+#### 次
+
+- 3 本の merge と、Unity Editor での見た目の確認はメインの作業
+
+---
+
 ### 2026-09-27 - 探索の画面を Unity に作る（#101）
 
 #### 概要
