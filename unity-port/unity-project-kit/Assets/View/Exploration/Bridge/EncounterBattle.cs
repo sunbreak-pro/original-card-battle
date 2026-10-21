@@ -40,6 +40,9 @@ namespace Exploration.Bridge
             Tools = tools ?? throw new ArgumentNullException(nameof(tools));
             if (fieldCells.Count != encounter.Fights.Count)
                 throw new ArgumentException("one line per fight", nameof(fieldCells));
+            string unknown = encounter.EnemyIds.FirstOrDefault(id => !disclosure.ContainsKey(id));
+            if (unknown != null)
+                throw new ArgumentException($"no 開示度 for {unknown}: every enemy of the encounter needs one", nameof(disclosure));
             Layer = layer;
             Kind = kind;
             Hp = hp;
@@ -227,7 +230,7 @@ namespace Exploration.Bridge
                 FieldCells = HandIn.FieldCells[Index],
                 PlayerStartCell = tools.PlayerStartCell,
                 StartGap = tools.StartGap,
-                Disclosure = fight.EnemyIds.Min(id => HandIn.Disclosure.TryGetValue(id, out int level) ? level : 0),
+                Disclosure = fight.EnemyIds.Min(id => HandIn.Disclosure[id]),
                 Deck = new List<CardInstance>(HandIn.Deck),
                 PlayerMaxHp = HandIn.MaxHp,
                 MaxStamina = HandIn.MaxStamina,
@@ -253,6 +256,19 @@ namespace Exploration.Bridge
             CoreBattleSource source = launch.CreateSource();
             _fighting = true;
             return source;
+        }
+
+        /// <summary>
+        /// The fight started last, if it has ended: records it and returns true. False, recording
+        /// nothing, when the battle never reached its end (the scene had no player to play it out), so
+        /// the View that loads the battle scene never reads the core's result itself.
+        /// </summary>
+        public bool TryFinish(CoreBattleSource source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source.State.Result == GameResult.Ongoing) return false;
+            Finish(source);
+            return true;
         }
 
         /// <summary>The fight started last has ended.</summary>
