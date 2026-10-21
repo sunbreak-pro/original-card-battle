@@ -65,7 +65,7 @@ namespace BattleCore.Tests
                 foreach (var profile in reforms)
                 {
                     var own = CardCatalog.ById(profile.CardId).Trait!;
-                    Assert.That(profile.RankTraits, Has.Count.EqualTo(3), profile.CardId);
+                    Assert.That(profile.RankTraits!.Count, Is.EqualTo(3), profile.CardId);
                     foreach (var trait in profile.RankTraits!)
                     {
                         Assert.That(trait.Effect, Is.EqualTo(own.Effect), profile.CardId);
