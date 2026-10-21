@@ -1,5 +1,21 @@
 # HISTORY (chat-design)
 
+### 2026-10-21 - design 宛ての 4 件を 1 件 1 PR で進める（#623 / #85 / #287 / #244）
+
+#### 概要
+
+`/goal` で渡された 4 件を、origin/main から切ったブランチ 1 本ずつで PR まで進めた。PR #662 / #671 / #672 / #673 はすべて open。#623 だけ Closes で、ほかの 3 件はこうだいさんの作業（差分の絵・案づくり）が残るので Refs にした。
+
+#### 変更点
+
+- **#623（PR #662）**: `battle-visual-v1.md` v1.10。§3.1 に、カードの技名（22 px から）と説明（16 px から）が枠に収まらないときだけ 12 px まで縮める例外を書き、`CardView.cs` の `MinFontSize = 12` にそろえた。特性の箱は今のコードが縮めないので 16 px のまま。12 px は最後の守りとし、16 px 未満で出る 5 枚の文を短くする件は cards へ申し送った
+- **#85（PR #671）**: `briefs/polearm_warped.md` を #455 の人型 226 px（`StandardHeight`）とロースター v4.23 に合わせた。予兆の札・数字の高さ、#498 の追従、2 体の組の出る枠、ずれた行番号
+- **#287（PR #672）**: `briefs/polearm_crystal.md` と `polearm_unyielding.md` を同じく直した。#349 の 2 段目の札、`.meta` のコミット、v4.23 の代役の枠も入れた
+- **#244（PR #673）**: 依頼文を `battle-visual-v1.md` v1.9 と今のコードに合わせ、勝ったときの結果画面（段が上がった札）を頼む項目を足した
+- **申し送り（`.claude/comm/handoff/`）**: cards 宛て「説明が 16 px 未満で出る 5 枚の文を短くする」、battle 宛ての食い違い 2 件（`battle_ui_ux_v2.md:1187` の技の前の名前、浮かぶ数字の高さの §5.0 と View）
+- **検証**: 4 本のブランチの先頭で `npm run build` / `lint` / `test:run`（204 件）/ `dotnet test`（10 プロジェクト）/ `npm run sources -- --check` が exit 0
+- **乖離**: #85 の commit を一度、既にあった `docs/design-85` の名前で切り損ねて #623 のブランチに積んだ。push 前に soft reset で外し、`docs/design-85-v423` に積み直した。`style-guide.md` §2 と `asset-intake.md` §3 の 450 px 前提は範囲外として予定に回した
+
 ### 2026-10-06 - 見た目の文書の食い違い 3 件と、戦闘の速さの切り替えの置き場（#322 / #366 / #324 / #327）
 
 #### 概要
