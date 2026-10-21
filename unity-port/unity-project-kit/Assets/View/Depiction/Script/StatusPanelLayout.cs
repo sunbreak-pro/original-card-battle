@@ -8,6 +8,7 @@
 // pair apart evenly about their middle until there is a gap between them, and keeps both inside
 // the edges. The player always stands left of the enemies, so the player's panel is kept on the left.
 using System;
+using System.Collections.Generic;
 
 namespace Depiction
 {
@@ -124,6 +125,147 @@ namespace Depiction
                 out float playerLeft, out float enemyLeft);
             player = new ScreenBox(playerLeft, Top, PlayerWidth, height);
             enemy = new ScreenBox(enemyLeft, Top, enemyWidth, height);
+        }
+
+        /// <summary>
+        /// #589: the left edges of a row of panels in their order from left to right, each centred on its
+        /// x in <paramref name="centres"/> where there is room. Two panels are placed by
+        /// <see cref="Place"/>. With more, each is first kept 24 px inside the edges; panels that would
+        /// come closer than <see cref="MinGap"/> are gathered into a run spaced <see cref="MinGap"/>
+        /// apart and set where its members are, on average, as close to their own x as they can be;
+        /// then a run that leaves an edge is pushed back in. As long as the row fits between the edges,
+        /// no two panels overlap and each keeps its place in the order.
+        /// </summary>
+        public static float[] PlaceRow(float[] centres, float[] widths)
+        {
+            if (centres == null) throw new ArgumentNullException(nameof(centres));
+            if (widths == null) throw new ArgumentNullException(nameof(widths));
+            if (centres.Length != widths.Length) throw new ArgumentException("One width per panel.", nameof(widths));
+            int count = centres.Length;
+            var lefts = new float[count];
+            foreach (float width in widths)
+            {
+                if (width < 0f) throw new ArgumentOutOfRangeException(nameof(widths), "A panel has no negative width.");
+            }
+            if (count == 0) return lefts;
+            if (count == 2)
+            {
+                Place(centres[0], widths[0], centres[1], widths[1], out lefts[0], out lefts[1]);
+                return lefts;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                lefts[i] = Clamp(centres[i] - widths[i] * 0.5f, EdgeInset, CornerLayout.CanvasWidth - EdgeInset - widths[i]);
+            }
+
+            // Runs of panels that touch: each run starts at a panel and holds the ones after it.
+            var starts = new List<int>();
+            var ends = new List<int>();
+            var bases = new List<float>();
+            for (int i = 0; i < count; i++)
+            {
+                int start = i;
+                float at = lefts[i];
+                while (starts.Count > 0)
+                {
+                    int last = starts.Count - 1;
+                    float runEnd = bases[last] + Span(widths, starts[last], ends[last]);
+                    if (at >= runEnd + MinGap) break;
+                    start = starts[last];
+                    starts.RemoveAt(last);
+                    ends.RemoveAt(last);
+                    bases.RemoveAt(last);
+                    at = RunBase(lefts, widths, start, i);
+                }
+                starts.Add(start);
+                ends.Add(i);
+                bases.Add(at);
+            }
+            for (int r = 0; r < starts.Count; r++)
+            {
+                float x = bases[r];
+                for (int i = starts[r]; i <= ends[r]; i++)
+                {
+                    lefts[i] = x;
+                    x += widths[i] + MinGap;
+                }
+            }
+
+            // Keep the row inside the edges: push right from the left edge, then left from the right one.
+            for (int i = 0; i < count; i++)
+            {
+                float lowest = i == 0 ? EdgeInset : lefts[i - 1] + widths[i - 1] + MinGap;
+                if (lefts[i] < lowest) lefts[i] = lowest;
+            }
+            for (int i = count - 1; i >= 0; i--)
+            {
+                float highest = i == count - 1 ? CornerLayout.CanvasWidth - EdgeInset - widths[i] : lefts[i + 1] - MinGap - widths[i];
+                if (lefts[i] > highest) lefts[i] = highest;
+            }
+            return lefts;
+        }
+
+        /// <summary>
+        /// #589: the player's panel and one per enemy for figures standing on a line of
+        /// <paramref name="cells"/>, as <see cref="OnFloor(int, int, int, int, int, float, out ScreenBox, out ScreenBox)"/>
+        /// places the pair. The boxes come back as the player's first, then the enemies' in the order
+        /// given. The panels are laid out by where their figures stand, so an enemy given first but
+        /// standing further right still gets the panel further right.
+        /// </summary>
+        public static ScreenBox[] OnFloor(int cells, int playerCell, int playerSize, int[] enemyCells, int[] enemySizes, float height)
+        {
+            if (enemyCells == null) throw new ArgumentNullException(nameof(enemyCells));
+            if (enemySizes == null) throw new ArgumentNullException(nameof(enemySizes));
+            if (enemyCells.Length != enemySizes.Length) throw new ArgumentException("One size per enemy.", nameof(enemySizes));
+            int count = enemyCells.Length + 1;
+            var centres = new float[count];
+            var widths = new float[count];
+            centres[0] = FloorSpec.FeetX(cells, playerCell, playerSize);
+            widths[0] = PlayerWidth;
+            for (int i = 0; i < enemyCells.Length; i++)
+            {
+                centres[i + 1] = FloorSpec.FeetX(cells, enemyCells[i], enemySizes[i]);
+                widths[i + 1] = EnemyPanelWidth(cells, enemySizes[i]);
+            }
+
+            // Left to right by where each figure stands; the player first on a tie (it stands left).
+            var order = new int[count];
+            for (int i = 0; i < count; i++) order[i] = i;
+            Array.Sort(order, (a, b) => centres[a] != centres[b] ? centres[a].CompareTo(centres[b]) : a.CompareTo(b));
+            var sortedCentres = new float[count];
+            var sortedWidths = new float[count];
+            for (int i = 0; i < count; i++)
+            {
+                sortedCentres[i] = centres[order[i]];
+                sortedWidths[i] = widths[order[i]];
+            }
+            float[] lefts = PlaceRow(sortedCentres, sortedWidths);
+
+            var boxes = new ScreenBox[count];
+            for (int i = 0; i < count; i++) boxes[order[i]] = new ScreenBox(lefts[i], Top, sortedWidths[i], height);
+            return boxes;
+        }
+
+        /// <summary>The width a run of panels from <paramref name="first"/> to <paramref name="last"/> takes, <see cref="MinGap"/> between each.</summary>
+        private static float Span(float[] widths, int first, int last)
+        {
+            float span = 0f;
+            for (int i = first; i <= last; i++) span += widths[i] + (i > first ? MinGap : 0f);
+            return span;
+        }
+
+        /// <summary>Where a run from <paramref name="first"/> to <paramref name="last"/> starts so its panels sit, on average, at their own lefts.</summary>
+        private static float RunBase(float[] lefts, float[] widths, int first, int last)
+        {
+            float sum = 0f;
+            float offset = 0f;
+            for (int i = first; i <= last; i++)
+            {
+                sum += lefts[i] - offset;
+                offset += widths[i] + MinGap;
+            }
+            return sum / (last - first + 1);
         }
 
         private static float Clamp(float value, float min, float max)
