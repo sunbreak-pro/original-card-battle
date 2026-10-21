@@ -58,6 +58,17 @@ public class LayerBenchTests
     }
 
     [Test]
+    public void TheLines_AreTheDungeonsBattleField_ForEveryLayerAndKind()
+    {
+        foreach (var spec in LayerBench.Layers)
+        {
+            Assert.That(spec.CellsFor(NodeFight.Normal), Is.EqualTo(BattleField.Cells(spec.Layer, NodeKind.Battle)), $"layer {spec.Layer} normal");
+            Assert.That(spec.CellsFor(NodeFight.Elite), Is.EqualTo(BattleField.Cells(spec.Layer, NodeKind.Elite)), $"layer {spec.Layer} elite");
+            Assert.That(spec.CellsFor(NodeFight.Boss), Is.EqualTo(BattleField.Cells(spec.Layer, NodeKind.Boss)), $"layer {spec.Layer} boss");
+        }
+    }
+
+    [Test]
     public void TheMaxStamina_IsSection6s_EntryForNormals_BeforeTheBossForTheRest()
     {
         Assert.That(LayerBench.Layers.Select(l => l.NormalFights[0].MaxStamina), Is.EqualTo(new[] { 10, 10, 10, 9, 9, 8, 7 }));
