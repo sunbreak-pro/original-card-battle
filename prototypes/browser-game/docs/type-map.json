@@ -1,0 +1,1004 @@
+{
+"AttributeRule": [
+"src/core/battle/Attributes.js"
+],
+"BattleEvent": [
+"src/core/battle/BattleEvents.js"
+],
+"TurnStarted": [
+"src/core/battle/BattleEvents.js"
+],
+"GuardCleared": [
+"src/core/battle/BattleEvents.js"
+],
+"StaminaRecovered": [
+"src/core/battle/BattleEvents.js"
+],
+"StatusTicked": [
+"src/core/battle/BattleEvents.js"
+],
+"Drawn": [
+"src/core/battle/BattleEvents.js"
+],
+"DeckReshuffled": [
+"src/core/battle/BattleEvents.js"
+],
+"OmenSet": [
+"src/core/battle/BattleEvents.js"
+],
+"PlanSet": [
+"src/core/battle/BattleEvents.js"
+],
+"PlanChanged": [
+"src/core/battle/BattleEvents.js"
+],
+"TreeSwitched": [
+"src/core/battle/BattleEvents.js"
+],
+"ReserveChecked": [
+"src/core/battle/BattleEvents.js"
+],
+"HandDiscarded": [
+"src/core/battle/BattleEvents.js"
+],
+"TurnEnded": [
+"src/core/battle/BattleEvents.js"
+],
+"CardPlayed": [
+"src/core/battle/BattleEvents.js"
+],
+"ActionExecuted": [
+"src/core/battle/BattleEvents.js"
+],
+"ActionWhiffed": [
+"src/core/battle/BattleEvents.js"
+],
+"Rested": [
+"src/core/battle/BattleEvents.js"
+],
+"StaminaSpent": [
+"src/core/battle/BattleEvents.js"
+],
+"TraitEvaluated": [
+"src/core/battle/BattleEvents.js"
+],
+"FaceResolved": [
+"src/core/battle/BattleEvents.js"
+],
+"DamageDealt": [
+"src/core/battle/BattleEvents.js"
+],
+"GuardGained": [
+"src/core/battle/BattleEvents.js"
+],
+"CellsMoved": [
+"src/core/battle/BattleEvents.js"
+],
+"WallHit": [
+"src/core/battle/BattleEvents.js"
+],
+"PushRefused": [
+"src/core/battle/BattleEvents.js"
+],
+"FreeStepTaken": [
+"src/core/battle/BattleEvents.js"
+],
+"MoveBlocked": [
+"src/core/battle/BattleEvents.js"
+],
+"StatusApplied": [
+"src/core/battle/BattleEvents.js"
+],
+"StaminaGained": [
+"src/core/battle/BattleEvents.js"
+],
+"StatusConsumed": [
+"src/core/battle/BattleEvents.js"
+],
+"StatusHpChanged": [
+"src/core/battle/BattleEvents.js"
+],
+"Healed": [
+"src/core/battle/BattleEvents.js"
+],
+"StaminaBroken": [
+"src/core/battle/BattleEvents.js"
+],
+"Reflected": [
+"src/core/battle/BattleEvents.js"
+],
+"StanceSet": [
+"src/core/battle/BattleEvents.js"
+],
+"StanceFired": [
+"src/core/battle/BattleEvents.js"
+],
+"StanceStopped": [
+"src/core/battle/BattleEvents.js"
+],
+"StanceResumed": [
+"src/core/battle/BattleEvents.js"
+],
+"CardExiled": [
+"src/core/battle/BattleEvents.js"
+],
+"EnemyDefeated": [
+"src/core/battle/BattleEvents.js"
+],
+"DefeatChecked": [
+"src/core/battle/BattleEvents.js"
+],
+"BattleEnded": [
+"src/core/battle/BattleEvents.js"
+],
+"MaxStaminaChanged": [
+"src/core/battle/BattleEvents.js"
+],
+"StatusCleared": [
+"src/core/battle/BattleEvents.js"
+],
+"StepResult": [
+"src/core/battle/BattleEvents.js"
+],
+"CardCatalog": [
+"src/core/battle/CardCatalog.Initial.js",
+"src/core/battle/CardCatalog.Learned.js",
+"src/core/battle/CardCatalog.js"
+],
+"PrototypeDeck": [
+"src/core/battle/CardCatalog.js"
+],
+"DrawResult": [
+"src/core/battle/Cards.js"
+],
+"DeckValidation": [
+"src/core/battle/Cards.js"
+],
+"Cards": [
+"src/core/battle/Cards.js"
+],
+"BattleTally": [
+"src/core/battle/Chain.js"
+],
+"Chain": [
+"src/core/battle/Chain.js"
+],
+"ChainBattle": [
+"src/core/battle/ChainOrder.js"
+],
+"ChainOrder": [
+"src/core/battle/ChainOrder.js"
+],
+"Columns": [
+"src/core/battle/Columns.js"
+],
+"Combat": [
+"src/core/battle/Combat.js"
+],
+"Constants": [
+"src/core/battle/Constants.js"
+],
+"Departure": [
+"src/core/battle/DeckRules.js"
+],
+"DeckRules": [
+"src/core/battle/DeckRules.js"
+],
+"Enemies": [
+"src/core/battle/Enemies.js"
+],
+"EnemyAi": [
+"src/core/battle/EnemyAi.js"
+],
+"Shift": [
+"src/core/battle/Field.js"
+],
+"Field": [
+"src/core/battle/Field.js"
+],
+"IRng": [
+"src/core/battle/IRng.js",
+"src/core/dungeon/IRng.js"
+],
+"SystemRng": [
+"src/core/battle/IRng.js"
+],
+"SeededRng": [
+"src/core/battle/IRng.js",
+"src/core/dungeon/IRng.js"
+],
+"FixedRng": [
+"src/core/battle/IRng.js"
+],
+"MasteryContext": [
+"src/core/battle/Mastery.js"
+],
+"MasteryKind": [
+"src/core/battle/Mastery.js"
+],
+"MasteryPlay": [
+"src/core/battle/Mastery.js"
+],
+"MasteryProfile": [
+"src/core/battle/Mastery.js"
+],
+"MasteryProfiles": [
+"src/core/battle/Mastery.js"
+],
+"Mastery": [
+"src/core/battle/Mastery.js"
+],
+"MasteryTally": [
+"src/core/battle/Mastery.js"
+],
+"CardMastery": [
+"src/core/battle/Mastery.js"
+],
+"RankUp": [
+"src/core/battle/Mastery.js"
+],
+"MasteryResult": [
+"src/core/battle/Mastery.js"
+],
+"MasteryBook": [
+"src/core/battle/Mastery.js"
+],
+"StatusSet": [
+"src/core/battle/Statuses.js"
+],
+"Statuses": [
+"src/core/battle/Statuses.js"
+],
+"TraitContext": [
+"src/core/battle/Traits.js"
+],
+"TraitOutcome": [
+"src/core/battle/Traits.js"
+],
+"Traits": [
+"src/core/battle/Traits.js"
+],
+"BattleSetup": [
+"src/core/battle/TurnLoop.js"
+],
+"PlayPreview": [
+"src/core/battle/TurnLoop.js"
+],
+"OmenPreview": [
+"src/core/battle/TurnLoop.js"
+],
+"PlayRefusal": [
+"src/core/battle/TurnLoop.js"
+],
+"TurnLoop": [
+"src/core/battle/TurnLoop.js"
+],
+"FocusStep": [
+"src/core/battle/TurnLoop.js"
+],
+"BattleAttribute": [
+"src/core/battle/Types.js"
+],
+"FaceKind": [
+"src/core/battle/Types.js"
+],
+"Actor": [
+"src/core/battle/Types.js"
+],
+"GameResult": [
+"src/core/battle/Types.js"
+],
+"BattlePhase": [
+"src/core/battle/Types.js"
+],
+"TargetKind": [
+"src/core/battle/Types.js"
+],
+"OmenKind": [
+"src/core/battle/Types.js"
+],
+"StatusKind": [
+"src/core/battle/Types.js"
+],
+"StatusGrant": [
+"src/core/battle/Types.js"
+],
+"StatusDecay": [
+"src/core/battle/Types.js"
+],
+"GapBand": [
+"src/core/battle/Types.js"
+],
+"TraitCondition": [
+"src/core/battle/Types.js",
+"src/bridge/depictionScript/DemoDeck.js"
+],
+"TraitEffect": [
+"src/core/battle/Types.js"
+],
+"Trait": [
+"src/core/battle/Types.js"
+],
+"StanceHook": [
+"src/core/battle/Types.js"
+],
+"StanceWhen": [
+"src/core/battle/Types.js"
+],
+"StanceEntry": [
+"src/core/battle/Types.js"
+],
+"StanceDef": [
+"src/core/battle/Types.js"
+],
+"Reach": [
+"src/core/battle/Types.js"
+],
+"GapBoundary": [
+"src/core/battle/Types.js"
+],
+"Face": [
+"src/core/battle/Types.js"
+],
+"CardDef": [
+"src/core/battle/Types.js"
+],
+"CardInstance": [
+"src/core/battle/Types.js"
+],
+"OmenLabel": [
+"src/core/battle/Types.js"
+],
+"Omen": [
+"src/core/battle/Types.js"
+],
+"EnemyActionDef": [
+"src/core/battle/Types.js"
+],
+"PlayerTurnEnd": [
+"src/core/battle/Types.js"
+],
+"BattleHistory": [
+"src/core/battle/Types.js"
+],
+"AdaptationView": [
+"src/core/battle/Types.js"
+],
+"TreeSwitch": [
+"src/core/battle/Types.js"
+],
+"EnemyRank": [
+"src/core/battle/Types.js"
+],
+"EnemyDef": [
+"src/core/battle/Types.js"
+],
+"CombatantState": [
+"src/core/battle/Types.js"
+],
+"EnemyUnit": [
+"src/core/battle/Types.js"
+],
+"CarriedTools": [
+"src/core/battle/Types.js"
+],
+"BattleState": [
+"src/core/battle/Types.js"
+],
+"EnumTokens": [
+"src/core/battle/Types.js"
+],
+"BattleField": [
+"src/core/dungeon/BattleField.js"
+],
+"ExplorationRuleException": [
+"src/core/dungeon/ExplorationReducer.js"
+],
+"ExplorationReducer": [
+"src/core/dungeon/ExplorationReducer.js"
+],
+"RunPhase": [
+"src/core/dungeon/ExplorationState.js"
+],
+"RestChoice": [
+"src/core/dungeon/ExplorationState.js"
+],
+"ExplorationState": [
+"src/core/dungeon/ExplorationState.js"
+],
+"RngExtensions": [
+"src/core/dungeon/IRng.js"
+],
+"Fight": [
+"src/core/dungeon/LayerEncounters.js"
+],
+"Encounter": [
+"src/core/dungeon/LayerEncounters.js"
+],
+"LayerEncounterTable": [
+"src/core/dungeon/LayerEncounters.js"
+],
+"LayerEncounters": [
+"src/core/dungeon/LayerEncounters.js"
+],
+"MapNode": [
+"src/core/dungeon/LayerMap.js"
+],
+"LayerMap": [
+"src/core/dungeon/LayerMap.js"
+],
+"LayerMapSpec": [
+"src/core/dungeon/LayerMapSpec.js"
+],
+"MapGenerator": [
+"src/core/dungeon/MapGenerator.js"
+],
+"MapValidationException": [
+"src/core/dungeon/MapValidator.js"
+],
+"MapValidator": [
+"src/core/dungeon/MapValidator.js"
+],
+"Miasma": [
+"src/core/dungeon/Miasma.js"
+],
+"NodeKind": [
+"src/core/dungeon/NodeKind.js"
+],
+"NodeKindTokens": [
+"src/core/dungeon/NodeKind.js"
+],
+"ReliefKind": [
+"src/core/dungeon/RunLoadout.js"
+],
+"ReliefItem": [
+"src/core/dungeon/RunLoadout.js"
+],
+"RunLoadout": [
+"src/core/dungeon/RunLoadout.js"
+],
+"LayerProfile": [
+"src/core/dungeon/SevenLayers.js"
+],
+"SevenLayers": [
+"src/core/dungeon/SevenLayers.js"
+],
+"ItemDef": [
+"src/core/dungeonContent/ItemCatalogue.js"
+],
+"ItemCatalogue": [
+"src/core/dungeonContent/ItemCatalogue.js"
+],
+"ItemEffect": [
+"src/core/dungeonContent/ItemEffect.js"
+],
+"EffectSide": [
+"src/core/dungeonContent/ItemEffect.js"
+],
+"ItemEffects": [
+"src/core/dungeonContent/ItemEffect.js"
+],
+"LoadoutRuleException": [
+"src/core/dungeonContent/Loadout.js"
+],
+"Loadout": [
+"src/core/dungeonContent/Loadout.js"
+],
+"BattleReward": [
+"src/bridge/exploration/BattleRewards.js"
+],
+"CardPile": [
+"src/bridge/exploration/BattleRewards.js"
+],
+"BattleRewards": [
+"src/bridge/exploration/BattleRewards.js"
+],
+"BattleHandIn": [
+"src/bridge/exploration/EncounterBattle.js"
+],
+"BattleReturn": [
+"src/bridge/exploration/EncounterBattle.js"
+],
+"FoughtBattle": [
+"src/bridge/exploration/EncounterBattle.js"
+],
+"EncounterBattle": [
+"src/bridge/exploration/EncounterBattle.js"
+],
+"Expedition": [
+"src/bridge/exploration/Expedition.js"
+],
+"UniqueCardReward": [
+"src/bridge/exploration/UniqueCards.js"
+],
+"UniqueCards": [
+"src/bridge/exploration/UniqueCards.js"
+],
+"NodeIntel": [
+"src/bridge/explorationScript/EnemyIntel.js"
+],
+"IEnemyIntel": [
+"src/bridge/explorationScript/EnemyIntel.js"
+],
+"NoEnemyIntel": [
+"src/bridge/explorationScript/EnemyIntel.js"
+],
+"NodeStanding": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"ScreenAction": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"CardKind": [
+"src/bridge/explorationScript/ExplorationScreen.js",
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"Overlay": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"StepForecast": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"StepOption": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"NodeCard": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"EdgeLine": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"MiasmaGauge": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"SlotCard": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"CardButton": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"ScreenCard": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"OverlayPage": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"ExplorationScreen": [
+"src/bridge/explorationScript/ExplorationScreen.js"
+],
+"ExplorationScreenBuilder": [
+"src/bridge/explorationScript/ExplorationScreenBuilder.js"
+],
+"RunStart": [
+"src/bridge/explorationScript/ExplorationSession.js"
+],
+"ExplorationSession": [
+"src/bridge/explorationScript/ExplorationSession.js"
+],
+"ExplorationText": [
+"src/bridge/explorationScript/ExplorationText.js"
+],
+"JournalTab": [
+"src/bridge/journal/JournalBook.js"
+],
+"JournalContext": [
+"src/bridge/journal/JournalBook.js"
+],
+"JournalRow": [
+"src/bridge/journal/JournalBook.js"
+],
+"JournalPage": [
+"src/bridge/journal/JournalBook.js"
+],
+"JournalBook": [
+"src/bridge/journal/JournalBook.js"
+],
+"JournalTerms": [
+"src/bridge/journal/JournalTerms.js"
+],
+"BattleLaunch": [
+"src/bridge/depiction/BattleLaunch.js"
+],
+"CardFaceText": [
+"src/bridge/depiction/CardFaceText.js"
+],
+"CardSystems": [
+"src/bridge/depiction/CardSystems.js"
+],
+"CoreBattleSource": [
+"src/bridge/depiction/CoreBattleSource.js"
+],
+"CoreScriptWriter": [
+"src/bridge/depiction/CoreScriptWriter.js"
+],
+"CoreText": [
+"src/bridge/depiction/CoreText.js"
+],
+"DeckFilter": [
+"src/bridge/depiction/DeckBuilder.js"
+],
+"DeckPage": [
+"src/bridge/depiction/DeckBuilder.js"
+],
+"DeckBuilder": [
+"src/bridge/depiction/DeckBuilder.js"
+],
+"DemoEnding": [
+"src/bridge/depiction/DemoEnding.js"
+],
+"DemoMode": [
+"src/bridge/depiction/DemoSession.js"
+],
+"DemoStage": [
+"src/bridge/depiction/DemoSession.js"
+],
+"DemoEndScreen": [
+"src/bridge/depiction/DemoSession.js"
+],
+"DemoSession": [
+"src/bridge/depiction/DemoSession.js"
+],
+"SupplyOption": [
+"src/bridge/depiction/DepartureBuilder.js"
+],
+"DepartureBuilder": [
+"src/bridge/depiction/DepartureBuilder.js"
+],
+"FloorCells": [
+"src/bridge/depiction/FloorCells.js"
+],
+"GrammarSample": [
+"src/bridge/depiction/GrammarSamples.js"
+],
+"GrammarSamples": [
+"src/bridge/depiction/GrammarSamples.js"
+],
+"PileCards": [
+"src/bridge/depiction/PileCards.js"
+],
+"StatusChipText": [
+"src/bridge/depiction/StatusChipText.js"
+],
+"BattleSpeedStep": [
+"src/bridge/depictionScript/BattleSpeed.js"
+],
+"BattleSpeed": [
+"src/bridge/depictionScript/BattleSpeed.js"
+],
+"PlayedLayout": [
+"src/bridge/depictionScript/BottomRightLayout.js"
+],
+"ReserveHintLayout": [
+"src/bridge/depictionScript/BottomRightLayout.js"
+],
+"TextFit": [
+"src/bridge/depictionScript/CardTextFit.js"
+],
+"CardTextFit": [
+"src/bridge/depictionScript/CardTextFit.js"
+],
+"ScreenBox": [
+"src/bridge/depictionScript/CornerLayout.js"
+],
+"CornerLayout": [
+"src/bridge/depictionScript/CornerLayout.js"
+],
+"DemoCard": [
+"src/bridge/depictionScript/DemoDeck.js"
+],
+"DemoDeck": [
+"src/bridge/depictionScript/DemoDeck.js"
+],
+"RangeSide": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"UnitSide": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"OmenIcon": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"StatusGlyph": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"OmenStatus": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"OmenHit": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"CardAim": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"DropZone": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"CardFace": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"CardValueKind": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"CardValue": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"TermDefinition": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"TermRow": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"TermMark": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"CardDetail": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"ChipKind": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"StatusChip": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"UnitFrame": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"StanceRow": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"OmenFrame": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"CornerFrame": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"BattleOutcome": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"DepictionFrame": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"PileFrame": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"PileCard": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"PlayedFrame": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"FloorFrame": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"StrikeSystem": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"StrikeSystems": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"DepictionEventKind": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"CueKind": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"Cue": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"DepictionEvent": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"DepictionScript": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"PlayVerdict": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"DepictionText": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"IDepictionSource": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"DepictionRunner": [
+"src/bridge/depictionScript/DepictionTypes.js"
+],
+"Carries": [
+"src/bridge/depictionScript/EffectAudit.js"
+],
+"Verdict": [
+"src/bridge/depictionScript/EffectAudit.js"
+],
+"Basis": [
+"src/bridge/depictionScript/EffectAudit.js"
+],
+"EffectAuditEntry": [
+"src/bridge/depictionScript/EffectAudit.js"
+],
+"EffectFlow": [
+"src/bridge/depictionScript/EffectAudit.js"
+],
+"EffectAudit": [
+"src/bridge/depictionScript/EffectAudit.js"
+],
+"FxSystem": [
+"src/bridge/depictionScript/EffectGrammar.js"
+],
+"FxForm": [
+"src/bridge/depictionScript/EffectGrammar.js"
+],
+"FxMark": [
+"src/bridge/depictionScript/EffectGrammar.js"
+],
+"FxFaces": [
+"src/bridge/depictionScript/EffectGrammar.js"
+],
+"EffectGrammar": [
+"src/bridge/depictionScript/EffectGrammar.js"
+],
+"EffectId": [
+"src/bridge/depictionScript/Effects.js"
+],
+"EffectSpec": [
+"src/bridge/depictionScript/Effects.js"
+],
+"EffectCatalog": [
+"src/bridge/depictionScript/Effects.js"
+],
+"EffectSwitches": [
+"src/bridge/depictionScript/Effects.js"
+],
+"EffectStep": [
+"src/bridge/depictionScript/Effects.js"
+],
+"StatusBeat": [
+"src/bridge/depictionScript/Effects.js"
+],
+"EffectStrength": [
+"src/bridge/depictionScript/Effects.js"
+],
+"EffectPlan": [
+"src/bridge/depictionScript/Effects.js"
+],
+"EffectTrace": [
+"src/bridge/depictionScript/Effects.js"
+],
+"Entry": [
+"src/bridge/depictionScript/Effects.js"
+],
+"EnemyTurnShadeLayout": [
+"src/bridge/depictionScript/EnemyTurnShadeLayout.js"
+],
+"FigurePose": [
+"src/bridge/depictionScript/FigureMotion.js"
+],
+"CharacterArt": [
+"src/bridge/depictionScript/FigureMotion.js"
+],
+"FigureFacing": [
+"src/bridge/depictionScript/FigureMotion.js"
+],
+"FigureFrame": [
+"src/bridge/depictionScript/FigureMotion.js"
+],
+"EnemyMotionShape": [
+"src/bridge/depictionScript/FigureMotion.js"
+],
+"DefeatShape": [
+"src/bridge/depictionScript/FigureMotion.js"
+],
+"FloorSpec": [
+"src/bridge/depictionScript/FloorSpec.js"
+],
+"FanPlace": [
+"src/bridge/depictionScript/HandFan.js"
+],
+"HandFan": [
+"src/bridge/depictionScript/HandFan.js"
+],
+"HandSpec": [
+"src/bridge/depictionScript/HandFan.js"
+],
+"HpWickSpec": [
+"src/bridge/depictionScript/HpWickSpec.js"
+],
+"OmenDisclosure": [
+"src/bridge/depictionScript/OmenDisclosure.js"
+],
+"PileKind": [
+"src/bridge/depictionScript/PileLayout.js"
+],
+"PileLayout": [
+"src/bridge/depictionScript/PileLayout.js"
+],
+"PileList": [
+"src/bridge/depictionScript/PileList.js"
+],
+"ReceiverDrop": [
+"src/bridge/depictionScript/ReceiverDrop.js"
+],
+"RefusalLineLayout": [
+"src/bridge/depictionScript/RefusalLineLayout.js"
+],
+"StanceGlowChange": [
+"src/bridge/depictionScript/StanceGlow.js"
+],
+"StanceGlow": [
+"src/bridge/depictionScript/StanceGlow.js"
+],
+"StanceList": [
+"src/bridge/depictionScript/StanceList.js"
+],
+"StatusPanelLayout": [
+"src/bridge/depictionScript/StatusPanelLayout.js"
+],
+"TurnSliceScript": [
+"src/bridge/depictionScript/TurnSliceScript.js"
+],
+"BackdropMotion": [
+"src/bridge/backdrop/BackdropMotion.js"
+],
+"Rgba": [
+"src/bridge/backdrop/BackdropSpec.js"
+],
+"SkyStop": [
+"src/bridge/backdrop/BackdropSpec.js"
+],
+"HazeShape": [
+"src/bridge/backdrop/BackdropSpec.js"
+],
+"Flicker": [
+"src/bridge/backdrop/BackdropSpec.js"
+],
+"Haze": [
+"src/bridge/backdrop/BackdropSpec.js"
+],
+"Motes": [
+"src/bridge/backdrop/BackdropSpec.js"
+],
+"LayerBackdrop": [
+"src/bridge/backdrop/BackdropSpec.js"
+],
+"BackdropSpec": [
+"src/bridge/backdrop/BackdropSpec.js"
+],
+"BackdropSwitch": [
+"src/bridge/backdrop/BackdropSwitch.js"
+],
+"Change": [
+"src/bridge/backdrop/BackdropSwitch.js"
+],
+"ExplorationBackdrop": [
+"src/bridge/backdrop/ExplorationBackdrop.js"
+],
+"ExplorationBackdropSpec": [
+"src/bridge/backdrop/ExplorationBackdrop.js"
+],
+"MiasmaWarning": [
+"src/bridge/backdrop/MiasmaLook.js"
+],
+"GaugeTick": [
+"src/bridge/backdrop/MiasmaLook.js"
+],
+"MiasmaShade": [
+"src/bridge/backdrop/MiasmaLook.js"
+],
+"MiasmaLook": [
+"src/bridge/backdrop/MiasmaLook.js"
+],
+"SimDeck": [
+"src/sim/Decks.js"
+],
+"Decks": [
+"src/sim/Decks.js"
+],
+"Positioning": [
+"src/sim/GreedyPlayer.js"
+],
+"Choice": [
+"src/sim/GreedyPlayer.js"
+],
+"GreedyPlayer": [
+"src/sim/GreedyPlayer.js"
+]
+}

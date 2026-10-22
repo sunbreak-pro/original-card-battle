@@ -1,0 +1,113 @@
+/* The battle scene's field (docs/BATTLE_SCENE.md §6b): backdrop, floor, figures, effects, enemy-turn shade.
+   Tokens only, except the layer's backdrop colours, which field/backdrop.js paints from BackdropSpec as data,
+   and the enemy-turn shade's black, which comes from EnemyTurnShadeLayout. Every selector under .ocbg-battle.
+   No CSS transitions: every timed change runs on the scene's clock (battle speed, 演出短縮, fast-forward). */
+
+/* ---- backdrop (BackdropLayers + the DS earth below the horizon) ---- */
+.ocbg-battle .ocbg-battle-backdrop { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--ground); }
+.ocbg-battle .ocbg-battle-sky { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+.ocbg-battle .ocbg-battle-earth { position: absolute; left: 0; top: 556px; width: 1920px; height: 524px; background: linear-gradient(180deg, color-mix(in srgb, var(--ground) 80%, transparent), color-mix(in srgb, var(--ground) 92%, transparent)); }
+.ocbg-battle .ocbg-battle-haze { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; will-change: opacity; }
+.ocbg-battle .ocbg-battle-haze.is-radial { border-radius: 50%; }
+/* The light shafts: one canvas painted once (field/backdrop.js, the 560 px fade baked in); only its opacity moves. */
+.ocbg-battle .ocbg-battle-shafts { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; will-change: opacity; }
+.ocbg-battle .ocbg-battle-mote { position: absolute; left: 0; top: 0; border-radius: 50%; will-change: transform, opacity; }
+.ocbg-battle .ocbg-battle-horizon { position: absolute; left: 0; top: 555px; width: 1920px; height: 1px; background: color-mix(in srgb, var(--ink) 22%, transparent); }
+
+/* ---- floor (FloorView over OCB.FloorTile) ---- */
+.ocbg-battle .ocbg-battle-floor { position: absolute; left: 0; top: 0; }
+.ocbg-battle .ocbg-battle-tile .ocb-tile-reach,
+.ocbg-battle .ocbg-battle-tile .ocb-tile-reach-line { transition: none; }
+.ocbg-battle .ocbg-battle-tile .ocb-tile-reach-line { left: 4px; right: 4px; }
+/* An enemy's move destination on a cell another enemy aims at (floor.js): the violet dashed frame in front of the red
+   one, 4 px inside it, on a dark keyline so the dashes read over the stripes. */
+.ocbg-battle .ocbg-battle-tile .ocb-tile-move.ocbg-battle-move-over { inset: 4px; box-shadow: 0 0 0 2px var(--panel-solid), inset 0 0 0 2px var(--panel-solid); }
+/* the gap number stands over the figures (field.js paints them at z 2–9) */
+.ocbg-battle .ocbg-battle-gap { z-index: 20; }
+.ocbg-battle .ocbg-battle-gap .ocb-dist-chip { white-space: nowrap; box-sizing: border-box; justify-content: center; }
+.ocbg-battle .ocbg-battle-gap-num { display: inline-block; min-width: 18px; text-align: center; }
+.ocbg-battle .ocbg-battle-gap-arm { position: absolute; top: 9px; height: 17px; display: none; }
+.ocbg-battle .ocbg-battle-gap-arm::after { content: ''; position: absolute; left: 0; right: 0; top: 8px; height: 1px; background: color-mix(in srgb, var(--ink) 55%, transparent); }
+.ocbg-battle .ocbg-battle-gap-arm.is-left { left: 8px; right: 50%; border-left: 1px solid color-mix(in srgb, var(--ink) 55%, transparent); }
+.ocbg-battle .ocbg-battle-gap-arm.is-right { right: 8px; left: 50%; border-right: 1px solid color-mix(in srgb, var(--ink) 55%, transparent); }
+.ocbg-battle .ocbg-battle-gap.has-brackets .ocbg-battle-gap-arm { display: block; }
+
+/* ---- 俊敏's choice (field/freestep.js): arrows over the cells before and behind, 留まる on the player's tile ---- */
+.ocbg-battle .ocbg-battle-freestep { position: absolute; left: 0; top: 0; }
+.ocbg-battle .ocbg-battle-fs-mark { position: absolute; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: var(--space-6); background: var(--panel-solid); border: var(--stroke-rule) solid var(--steel); border-radius: var(--radius-panel); font: 700 20px/1 var(--font-body); color: var(--ink); white-space: nowrap; cursor: pointer; }
+.ocbg-battle .ocbg-battle-fs-mark.is-stay { font-size: 18px; }
+/* review 19: the marks are icons; the word stands on a tip over the hovered or focused one */
+.ocbg-battle .ocbg-battle-fs-tip { position: absolute; transform: translate(-50%, -100%); pointer-events: none; z-index: 2; }
+.ocbg-battle .ocbg-battle-fs-mark.is-focus { border: 2px solid var(--amber); background: color-mix(in srgb, var(--amber) 16%, var(--panel-solid)); box-shadow: 0 0 12px color-mix(in srgb, var(--amber) 40%, transparent); }
+
+/* ---- figures (FigureView) ---- */
+.ocbg-battle .ocbg-battle-figure { position: absolute; left: 0; top: 0; will-change: transform; }
+.ocbg-battle .ocbg-battle-figure .ocbg-battle-foot { position: absolute; }
+.ocbg-battle .ocbg-battle-stance-glow { position: absolute; opacity: 0; }
+.ocbg-battle .ocbg-battle-halo { position: absolute; pointer-events: none; }
+.ocbg-battle .ocbg-battle-body { position: absolute; left: 0; top: 0; }
+.ocbg-battle .ocbg-battle-art,
+.ocbg-battle .ocbg-battle-glowbody,
+.ocbg-battle .ocbg-battle-flash { position: absolute; left: 0; top: 0; }
+.ocbg-battle .ocbg-battle-flash { opacity: 0; }
+/* §5.11 順 2: the stance's body light — a radial light inside the silhouette (field.js BODY_LIGHT), screened over the art so it
+   lightens the body rather than painting it, gone before the edge so the rim stays (review 21); field.js sets its opacity */
+.ocbg-battle .ocbg-battle-glowbody { opacity: 0; mix-blend-mode: screen; }
+.ocbg-battle .ocbg-battle-art svg,
+.ocbg-battle .ocbg-battle-glowbody svg,
+.ocbg-battle .ocbg-battle-flash svg { display: block; }
+
+/* scene addition (Unity draws Enemies[0] only): the enemies standing behind, muted */
+.ocbg-battle .ocbg-battle-extras { position: absolute; left: 0; top: 0; }
+.ocbg-battle .ocbg-battle-extra { position: absolute; left: 0; top: 0; filter: brightness(0.82); }
+.ocbg-battle .ocbg-battle-extra .ocbg-battle-foot { position: absolute; }
+.ocbg-battle .ocbg-battle-extra > svg { position: relative; display: block; }
+.ocbg-battle .ocbg-battle-extra-plate { position: absolute; top: 614px; width: 120px; box-sizing: border-box; padding: var(--space-6) var(--space-8) var(--space-8); display: flex; flex-direction: column; gap: var(--space-6); }
+.ocbg-battle .ocbg-battle-extra-hp { display: flex; align-items: center; gap: var(--space-6); }
+.ocbg-battle .ocbg-battle-extra-hp b { font: 700 24px/24px var(--font-mono); color: var(--ink); }
+.ocbg-battle .ocbg-battle-extra-bar { position: relative; height: 6px; border-radius: 3px; background: var(--ground); overflow: hidden; }
+.ocbg-battle .ocbg-battle-extra-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--crimson); }
+
+/* ---- the enemy-turn shade (EnemyTurnShadeView): on or off, no fade ---- */
+.ocbg-battle .ocbg-battle-shade { position: absolute; left: 0; width: 1920px; display: none; }
+.ocbg-battle .ocbg-battle-shade.is-on { display: block; }
+
+/* ---- the low-HP vignette (battle_ui_ux_v2 §5.6 順 5): crimson at the screen's edge; field.js sets its opacity ---- */
+.ocbg-battle .ocbg-battle-vignette { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse 72% 66% at 50% 50%, transparent 58%, color-mix(in srgb, var(--crimson) 70%, transparent) 86%, var(--crimson) 100%); }
+/* review 21: over a bright sky (layers 1, 2, 4) the rim deepens toward the flood at the edge, so it reads red, not beige */
+.ocbg-battle .ocbg-battle-vignette.is-bright {
+  background: radial-gradient(ellipse 60% 58% at 50% 50%, transparent 66%, color-mix(in srgb, var(--crimson) 70%, transparent) 86%, color-mix(in srgb, var(--crimson) 75%, var(--flood, #06090c)) 100%); }
+
+/* ---- effects (DepictionFx) ---- */
+.ocbg-battle .ocbg-battle-fx { position: absolute; pointer-events: none; }
+.ocbg-battle .ocbg-battle-fx-svg { position: absolute; left: 0; top: 0; display: block; overflow: visible; }
+.ocbg-battle .ocbg-battle-streak { filter: drop-shadow(0 0 6px currentColor); }
+.ocbg-battle .ocbg-battle-ripple,
+.ocbg-battle .ocbg-battle-burst { border-radius: 50%; }
+.ocbg-battle .ocbg-battle-shield { display: block; }
+/* review 17: the shield is a rim of light over a see-through face; a broken one's halves part from the crack */
+.ocbg-battle .ocbg-battle-shield-half { position: absolute; inset: 0; transform-origin: 50% 90%; }
+.ocbg-battle .ocbg-battle-ghost { border-radius: var(--radius-panel); background: color-mix(in srgb, var(--ink) 55%, transparent); }
+.ocbg-battle .ocbg-battle-ghost.is-card { background: none; overflow: visible; }
+.ocbg-battle .ocbg-battle-ghost.is-card > * { position: absolute; left: 0; top: 0; }
+.ocbg-battle .ocbg-battle-sheet { box-sizing: border-box; border-radius: var(--radius-plate); background: var(--card); border: var(--stroke-rule) solid var(--steel); }
+
+/* floating numbers: the DS FloatNum tag (black 80%, an icon with every number), sized by the tier. A float that is
+   a word or a line (a trait's cue, 「構え・…」, 「空振り」, 「押し出し」) stands on the same black 80 % tag, fitted close
+   (review fix: bare text with a 2 px shadow read at 1.1–1.9 : 1 over the bright skies of layers 1, 2 and 4;
+   battle-visual-v1 §2.1: every number and word sits on a near-opaque panel so the contrast holds on every layer —
+   the DS miss float wears it too). The floats of one action still stand one under another (field/fx.js). */
+.ocbg-battle .ocbg-battle-float.is-word,
+.ocbg-battle .ocbg-battle-float.is-miss { padding: 0 10px; }
+.ocbg-battle .ocbg-battle-float.is-word b,
+.ocbg-battle .ocbg-battle-float.is-miss b { text-shadow: none; }
+.ocbg-battle .ocbg-battle-float { position: absolute; z-index: 1; will-change: transform, opacity; }
+.ocbg-battle .ocbg-battle-float b { font-family: var(--font-mono); font-weight: 700; white-space: nowrap; }
+.ocbg-battle .ocbg-battle-float b.is-word { font-family: var(--font-body); }
+.ocbg-battle .ocbg-battle-float.is-miss b { font-family: var(--font-body); color: var(--ink); text-decoration: line-through 3px var(--miss); }
+.ocbg-battle .ocbg-battle-float small { white-space: nowrap; }
+/* §5.7 順 7 壁 (review 19): the end of the floor a pushed figure hit lights for 80 ms */
+.ocbg-battle .ocbg-battle-wall-edge { position: absolute; border-radius: 5px; background: linear-gradient(180deg, transparent, var(--ink) 55%, var(--ink)); box-shadow: 0 0 14px 4px color-mix(in srgb, var(--ink) 70%, transparent); pointer-events: none; }
+/* §5.0 主数字 + 脇ラベル (review 19): the side label after the number, 16 px body ink */
+.ocbg-battle .ocbg-battle-float .ocbg-battle-float-side { font: 400 16px/1 var(--font-body); color: var(--ink); margin-left: 6px; white-space: nowrap; }

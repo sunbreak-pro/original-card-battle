@@ -1,0 +1,18 @@
+{
+  "full2.carving": "Battle=2,Elite=1,Rest=2,Survey=1,Event=2,Carving=1",
+  "minimal.battle0": "Rest=1,Survey=1,Battle=1,Elite=1",
+  "minimal.battle5": "Rest=1,Survey=1,Battle=1,Elite=1",
+  "minimal.survey0": "Rest=1,Battle=2,Elite=1",
+  "minimal.trace1": "Rest=1,Survey=1,Elite=1,Trace=1",
+  "noBattle.rest0": "Battle=2,Survey=2",
+  "noBattle.survey1": "Rest=2,Survey=1,Battle=1",
+  "full3.event0.carving1": "Battle=4,Elite=1,Rest=2,Survey=1,Carving=1",
+  "full3.battle0": "Battle=3,Elite=1,Rest=2,Survey=1,Event=2",
+  "layer1": "Battle=3,Elite=1,Rest=2,Survey=1,Event=2",
+  "layer2": "Battle=2,Elite=1,Rest=2,Survey=1,Event=2,Carving=1",
+  "layer3": "Battle=3,Elite=1,Rest=2,Survey=1,Event=2",
+  "layer4": "Battle=2,Elite=1,Rest=2,Survey=1",
+  "layer5": "Battle=2,Elite=1,Rest=2,Survey=1",
+  "layer6": "Battle=2,Elite=1,Rest=2,Survey=1",
+  "layer7": "Battle=1,Elite=1,Rest=1,Event=1"
+}

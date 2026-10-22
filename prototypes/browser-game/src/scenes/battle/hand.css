@@ -1,0 +1,64 @@
+/* The hand module (docs/BATTLE_SCENE.md §6a): cards, panels around a hovered card, hold decorations, the
+   refusal and guide lines. The card face itself is the design system's .ocb-card (bundle.css); this file
+   only places pieces and adds what the face needs for CardTextFit's lines. Tokens only; every selector
+   under .ocbg-battle. Nothing here transitions: every length runs on the scene clock. */
+
+/* ---- cards in the fan / held ---- */
+.ocbg-battle .ocbg-battle-card { position: absolute; left: 0; top: 0; width: 216px; height: 304px; transform-origin: 50% 50%; will-change: transform, opacity; }
+.ocbg-battle.ocbg-battle--grab { cursor: grab; }
+.ocbg-battle.ocbg-battle--grabbing { cursor: grabbing; }
+
+/* The face: the name and the description print the fit CardTextFit chose (size, breaks); nothing wraps again. */
+.ocbg-battle .ocbg-battle-face .ocb-card-name { overflow: hidden; }
+.ocbg-battle .ocbg-battle-face .ocbg-battle-desc { white-space: pre; overflow: hidden; line-break: auto; overflow-wrap: normal; }
+.ocbg-battle .ocbg-battle-face .ocbg-battle-desc-line { white-space: pre; }
+.ocbg-battle .ocbg-battle-face .ocbg-battle-lasting { color: var(--hp-text); }
+.ocbg-battle .ocbg-battle-face .ocbg-battle-trait-rows { min-width: 0; }
+/* ▼n at the cost circle's lower right (CardView.BindCost: anchor (1, 0), 2 px in), clear of the name. */
+.ocbg-battle .ocbg-battle-face .ocb-cost .ocb-down { left: 42px; top: 42px; bottom: auto; transform: translate(-50%, -50%); }
+.ocbg-battle .ocbg-battle-face .ocb-trait.is-plain .ocbg-battle-trait-rows p { color: var(--ink-muted); font-weight: 400; }
+.ocbg-battle .ocbg-battle-face .ocbg-battle-term { text-decoration: underline dotted var(--ink-muted) 2px; text-underline-offset: 4px; }
+
+/* ---- hold decorations (TargetMarkView, ThrowLineView, the prediction tag) ---- */
+.ocbg-battle .ocbg-battle-hooks { left: 0; top: 0; will-change: transform, opacity; }
+.ocbg-battle .ocbg-battle-hooks-light { position: absolute; pointer-events: none; }
+/* several enemies: the focused frame of a card that cannot reach it (steel hooks) reads brighter and thicker */
+.ocbg-battle .ocbg-battle-hooks.is-steel.is-focus svg path:last-child { stroke: var(--ink-muted); stroke-width: 3px; }
+.ocbg-battle .ocbg-battle-hooks.is-steel.is-focus svg path:first-child { stroke-width: 7px; }
+.ocbg-battle .ocbg-battle-throw { position: absolute; height: 3px; box-shadow: 0 0 0 2px var(--keyline); pointer-events: none; }
+.ocbg-battle .ocbg-battle-pred { pointer-events: none; z-index: 1; }
+/* several enemies: the tags of the frames not in focus step back, greyed but opaque */
+.ocbg-battle .ocbg-battle-pred.is-other { filter: grayscale(0.85) brightness(0.62); }
+
+/* ---- panels around a hovered card (CardPanels) ---- */
+.ocbg-battle .ocbg-battle-hoverline { position: absolute; left: 0; top: 0; pointer-events: none; }
+.ocbg-battle .ocbg-battle-hoverline span { white-space: pre-line; }
+.ocbg-battle .ocbg-battle-reachpanel { position: absolute; left: 0; top: 0; pointer-events: none; }
+.ocbg-battle .ocbg-battle-termtip { position: absolute; left: 0; top: 0; pointer-events: none; }
+.ocbg-battle .ocbg-battle-detail { position: absolute; left: 0; top: 0; pointer-events: none; overflow: hidden; }
+.ocbg-battle .ocbg-battle-detail .ocb-detail-body { flex: 1; }
+/* Review 19 (a repeat: the glossary cut a definition short): the detail grows to hold its whole text and every
+   definition (battle-visual-v1 §7 ③ 全文と用語の定義) — the DS's 280 is its least height. Only a detail past 600 px would cut
+   (hand-panels.js fitDetail, 「…」). */
+.ocbg-battle .ocbg-battle-detail.ocb-detail { height: auto; min-height: 280px; max-height: 600px; }
+.ocbg-battle .ocbg-battle-detail .ocbg-battle-detail-text { max-height: 264px; overflow: hidden; }
+.ocbg-battle .ocbg-battle-detail .ocbg-battle-detail-terms { position: relative; box-sizing: content-box; max-height: 330px; overflow: hidden; flex: none; padding-bottom: 0; border-bottom: 8px solid transparent; }
+.ocbg-battle .ocbg-battle-detail .ocbg-battle-detail-terms b { margin-right: 0; }
+
+/* ---- the guide line (handGuide: centre x 960, y ≈ 757, body 22 px in ink, no panel) ---- */
+.ocbg-battle .ocbg-battle-guide { position: absolute; left: 0; width: 1920px; display: flex; align-items: center; justify-content: center; font: 400 22px/28px var(--font-body); color: var(--ink); text-shadow: 0 1px 3px var(--ground), 0 0 8px var(--ground); white-space: nowrap; pointer-events: none; }
+
+/* ---- the refusal line (RefusalLineView: RefusalLineLayout's box, centred on x 960) ---- */
+.ocbg-battle .ocbg-battle-refusal { position: absolute; transform: translateX(-50%); pointer-events: none; }
+/* review 19, §5.9 順 1: the fired trait's condition word on the released card, over its trait box (it leaves with the card) */
+.ocbg-battle .ocbg-battle-card-trait { position: absolute; left: 0; bottom: 100%; margin-bottom: 6px; padding: 2px 10px; background: var(--panel-solid); border: var(--stroke-frame) solid var(--wick); border-radius: var(--radius-tag, 4px); font: 700 20px/26px var(--font-body); color: var(--ink); white-space: nowrap; box-shadow: 0 0 12px color-mix(in srgb, var(--amber) 45%, transparent); }
+
+/* review 21 (battle_ui_ux_v2 §3.13): the detail's 「離す先 / 今の判定 / 予測値」 rows, as the chips' panel rows (head + text) */
+.ocbg-battle .ocbg-battle-detail .ocbg-battle-detail-now { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; font: 400 16px/22px var(--font-body); color: var(--ink); }
+.ocbg-battle .ocbg-battle-detail .ocbg-battle-detail-now p { margin: 0; }
+.ocbg-battle .ocbg-battle-detail .ocbg-battle-detail-now span { display: inline-block; min-width: 72px; margin-right: 8px; color: var(--ink-muted); }
+/* review 21 (§3.5 集中 / 威圧, §5.10 強化): a held status's mark after the card's values, ink 16 px with its icon */
+.ocbg-battle .ocbg-battle-mods { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; align-self: center; margin-left: -4px; }
+.ocbg-battle .ocbg-battle-mods.is-end { position: absolute; right: 6px; top: 92px; align-items: flex-end; margin-left: 0; z-index: 1; }
+.ocbg-battle .ocbg-battle-mod { display: inline-flex; align-items: center; gap: 2px; height: 20px; padding: 0 3px; border-radius: 4px; background: color-mix(in srgb, var(--card) 70%, var(--ink) 18%); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 25%, transparent); white-space: nowrap; }
+.ocbg-battle .ocbg-battle-mod b { font: 600 16px/20px var(--font-mono); color: var(--ink); }

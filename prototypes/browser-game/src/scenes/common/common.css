@@ -1,0 +1,23 @@
+/* Shared scene chrome. Tokens only. */
+html, body { margin: 0; height: 100%; background: var(--ground); overflow: hidden; }
+.ocbg-viewport { position: fixed; inset: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); background: var(--ground); overflow: hidden; touch-action: none; }
+.ocbg-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; user-select: none; -webkit-user-select: none; font-family: var(--font-body); color: var(--ink); }
+.ocbg-scene { position: absolute; inset: 0; overflow: hidden; }
+.ocbg-btn { font: 700 22px/1 var(--font-body); letter-spacing: .06em; color: var(--ink); background: var(--panel-solid); border: 1px solid var(--steel); border-radius: var(--radius-panel); padding: 16px 28px; cursor: pointer; }
+.ocbg-btn:hover { border-color: var(--ink); background: rgba(40,44,58,.92); }
+.ocbg-btn:focus-visible { outline: 2px solid var(--wick); outline-offset: 2px; }
+.ocbg-btn.is-primary { border: 2px solid var(--amber); background: rgba(232,168,76,.16); }
+.ocbg-btn.is-primary:hover { background: rgba(232,168,76,.28); }
+.ocbg-btn.is-danger { border-color: var(--hp-text); background: rgba(194,72,63,.18); }
+.ocbg-btn[disabled] { opacity: .4; cursor: default; }
+.ocbg-confirm { position: absolute; inset: 0; z-index: 900; display: flex; align-items: center; justify-content: center; background: rgba(5,6,10,.62); }
+.ocbg-confirm-card { width: 760px; padding: 32px 36px 28px; box-shadow: var(--shadow-tip); }
+.ocbg-confirm-card h3 { margin: 0 0 12px; font: 700 30px/40px var(--font-display); }
+.ocbg-confirm-card p { margin: 0; font: 400 20px/32px var(--font-body); }
+.ocbg-confirm-row { display: flex; justify-content: flex-end; gap: 16px; margin-top: 28px; }
+.ocbg-notice { position: absolute; z-index: 880; box-sizing: border-box; padding: 12px 20px; font: 400 20px/30px var(--font-body); color: var(--ink); background: var(--panel-solid); border: 1px solid var(--rule); border-left: 3px solid var(--caution); border-radius: var(--radius-panel); box-shadow: var(--shadow-tip); white-space: pre-line; transition: opacity .6s; pointer-events: none; }
+.ocbg-notice.is-leaving { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .ocbg-stage * { animation-duration: 1ms !important; transition-duration: 1ms !important; } }
+/* Review (1280×720): the card's 「自分」 tag is the design system's 14 px (9 px on a 1280 window); every card face in the
+   game prints it at 17 px. The tag sizes itself to its words. */
+.ocbg-stage .ocb-card .ocb-reach small { font-size: 17px; }

@@ -1,0 +1,195 @@
+/* The battle scene's hud (docs/BATTLE_SCENE.md §6c). Tokens only; every selector under .ocbg-battle. The
+   design system's classes (.ocb-…) carry the looks; these rules place them as the Unity views do and keep
+   every timed change on the scene clock (no CSS transitions or animations). Text under 24 px is --ink. */
+
+/* ---- the number panels (StatusBarView, §4.5) ------------------------------------------------------- */
+.ocbg-battle .ocbg-battle-stat { position: absolute; top: 614px; box-sizing: border-box; background: var(--panel); border-radius: var(--radius-panel); color: var(--ink); }
+.ocbg-battle .ocbg-battle-stat-edge { position: absolute; inset: 0; box-sizing: border-box; border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); pointer-events: none; }
+.ocbg-battle .ocbg-battle-stat.is-elite .ocbg-battle-stat-edge { border: var(--stroke-frame) solid var(--phosphor); }
+/* review 19: the enemy a Tab at rest chose wears the battle's focus, the amber edge (as every focus the player sets) */
+.ocbg-battle .ocbg-battle-stat.is-focus .ocbg-battle-stat-edge { border: var(--stroke-frame) solid var(--amber); box-shadow: 0 0 10px color-mix(in srgb, var(--amber) 45%, transparent); }
+.ocbg-battle .ocbg-battle-stat-heart { position: absolute; }
+.ocbg-battle .ocbg-battle-stat-hp { position: absolute; height: 30px; font: 700 24px/30px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.ocbg-battle .ocbg-battle-bar { position: absolute; box-sizing: border-box; border: var(--stroke-rule) solid var(--rule); border-radius: 3px; overflow: hidden; background: color-mix(in srgb, var(--ground) 80%, transparent); }
+.ocbg-battle .ocbg-battle-bar > i { position: absolute; top: 0; bottom: 0; left: 0; }
+.ocbg-battle .ocbg-battle-bar-fill { background: var(--crimson); }
+.ocbg-battle .ocbg-battle-bar-wick { display: none; }
+.ocbg-battle .ocbg-battle-bar-ticks { position: absolute; inset: 0; }
+.ocbg-battle .ocbg-battle-bar-ticks i { position: absolute; top: 0; bottom: 0; width: 2px; background: color-mix(in srgb, var(--ground) 72%, transparent); }
+/* review 19: a mark every 10 HP always; on a narrow bar (marks closer than 8 px) they are 1 px wide */
+.ocbg-battle .ocbg-battle-bar-ticks.is-thin i { width: 1px; }
+.ocbg-battle .ocbg-battle-guard { position: absolute; display: flex; align-items: center; gap: 6px; transform-origin: 14px 50%; }
+.ocbg-battle .ocbg-battle-guard-icon { display: flex; width: 28px; height: 28px; }
+.ocbg-battle .ocbg-battle-guard-num { min-width: 48px; font: 700 24px/28px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--guard); }
+.ocbg-battle .ocbg-battle-guard.is-zero .ocbg-battle-guard-icon,
+.ocbg-battle .ocbg-battle-guard.is-zero .ocbg-battle-guard-num { opacity: var(--opacity-guard-zero); }
+.ocbg-battle .ocbg-battle-guard.is-zero .ocbg-battle-guard-num { color: var(--ink-muted); }
+.ocbg-battle .ocbg-battle-foe-st { position: absolute; display: flex; align-items: center; gap: 6px; }
+.ocbg-battle .ocbg-battle-foe-st > .ocb-icon { flex: none; }
+.ocbg-battle .ocbg-battle-dot { display: block; flex: none; border-radius: 50%; }
+.ocbg-battle .ocbg-battle-foe-st-num { display: inline-block; text-align: right; font: 700 24px/28px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); transform-origin: 50% 50%; }
+.ocbg-battle .ocbg-battle-foe-st-shield { display: flex; width: 24px; height: 24px; }
+.ocbg-battle .ocbg-battle-stat.is-narrow .ocbg-battle-foe-st { gap: 3px; }
+.ocbg-battle .ocbg-battle-stat.is-narrow .ocbg-battle-foe-st > .ocb-icon,
+.ocbg-battle .ocbg-battle-stat.is-narrow .ocbg-battle-foe-st > .ocbg-battle-dot { width: 12px !important; height: 12px !important; }
+.ocbg-battle .ocbg-battle-stat.is-narrow .ocbg-battle-foe-st-shield,
+.ocbg-battle .ocbg-battle-stat.is-narrow .ocbg-battle-foe-st-shield .ocb-icon { width: 20px; height: 20px; }
+.ocbg-battle .ocbg-battle-stat.is-narrow .ocbg-battle-foe-st-num { min-width: 0; }
+.ocbg-battle .ocbg-battle-stat.is-narrow .ocbg-battle-guard-num { min-width: 0; }
+.ocbg-battle .ocbg-battle-stat.is-solid { background: var(--panel-solid); }
+.ocbg-battle .ocbg-battle-stat-swatch { position: absolute; }
+/* battle_ui_ux_v2 §2.2.6: a fallen enemy's panel stays under its emptied cell, grey */
+.ocbg-battle .ocbg-battle-stat.is-down { opacity: var(--opacity-unplayed); filter: grayscale(1); }
+.ocbg-battle .ocbg-battle-stat.is-down .ocbg-battle-bar-fill { background: var(--steel); }
+.ocbg-battle .ocbg-battle-chips { position: absolute; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 5px; }
+.ocbg-battle .ocbg-battle-chip { pointer-events: auto; box-sizing: border-box; color: var(--ink); transform-origin: 50% 50%; }
+.ocbg-battle .ocbg-battle-chip .ocb-mono { font-variant-numeric: tabular-nums; }
+
+/* ---- tooltips: the chips' 説明パネル, the stance frames, the corner buttons ------------------------------ */
+.ocbg-battle .ocbg-battle-tip { position: absolute; pointer-events: none; box-sizing: border-box; }
+.ocbg-battle .ocbg-battle-chiptip .ocb-tip-head { color: var(--ink); }
+.ocbg-battle .ocbg-battle-chiptip .ocb-tip-head small { color: var(--ink); font-weight: 400; }
+.ocbg-battle .ocbg-battle-chiptip p { color: var(--ink); }
+.ocbg-battle .ocbg-battle-chiptip p + p { margin-top: 4px; }
+.ocbg-battle .ocbg-battle-chiptip p span { color: var(--ink); font-weight: 700; margin-right: 10px; }
+.ocbg-battle .ocbg-battle-linetip { padding: 8px 12px; display: flex; align-items: center; justify-content: center; background: var(--panel-solid); border: var(--stroke-rule) solid var(--steel); border-radius: var(--radius-panel); box-shadow: var(--shadow-tip); font: 400 16px/22px var(--font-body); color: var(--ink); white-space: nowrap; }
+.ocbg-battle .ocbg-battle-linetip > span { display: inline-block; }
+/* the pile's name, a caption on the pile under its icon (hud/piles.js) */
+.ocbg-battle .ocbg-battle-linetip.ocbg-battle-pilecap { height: 22px; padding: 0 6px; box-shadow: none; line-height: 20px; }
+
+/* ---- the omen badge and its plan (OmenBadgeView, §4.4) --------------------------------------------- */
+.ocbg-battle .ocbg-battle-omenwrap { position: absolute; left: 0; top: 0; width: 200px; height: 98px; transform-origin: 50% 50%; z-index: 2; }
+/* review 17: a walking enemy's badge passes behind its neighbours' (hud.follow) */
+.ocbg-battle .ocbg-battle-omenwrap.is-behind { z-index: 1; }
+.ocbg-battle .ocbg-battle-omen { box-sizing: border-box; color: var(--ink); }
+.ocbg-battle .ocbg-battle-omen { position: relative; }
+.ocbg-battle .ocbg-battle-omen .ocb-omen-row1 { gap: 8px; padding-right: 26px; overflow: hidden; }
+.ocbg-battle .ocbg-battle-omen-swatch { position: absolute; right: 12px; top: 14px; }
+/* the ▼ under every badge on its enemy's head (in the badge's frame colour; review 17: one enemy's too) */
+.ocbg-battle .ocbg-battle-omen-tail { position: absolute; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 9px solid var(--violet); pointer-events: none; }
+.ocbg-battle .ocbg-battle-omen.is-active .ocbg-battle-omen-tail { border-top-color: var(--phosphor); }
+.ocbg-battle .ocbg-battle-omen.is-rest .ocbg-battle-omen-tail { border-top-color: var(--steel); }
+.ocbg-battle .ocbg-battle-omen .ocb-omen-row1 b { font-variant-numeric: tabular-nums; }
+.ocbg-battle .ocbg-battle-omen-noicon { display: inline-block; width: 34px; height: 34px; flex: none; }
+.ocbg-battle .ocbg-battle-omen-kind { color: var(--ink); white-space: nowrap; }
+.ocbg-battle .ocbg-battle-omen-statuses { display: inline-flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; }
+.ocbg-battle .ocbg-battle-omen .ocbg-battle-omen-statuses { max-width: 106px; }
+.ocbg-battle .ocbg-battle-bossword { display: inline-flex; align-items: center; flex: none; box-sizing: border-box; padding: 0 2px; letter-spacing: -0.04em; border: 3px double var(--boss); border-radius: var(--radius-chip-foe); font: 700 16px/1 var(--font-body); color: var(--ink); white-space: nowrap; }
+.ocbg-battle .ocbg-battle-omen-side { display: inline-flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; width: 64px; height: 28px; border: var(--stroke-frame) solid var(--violet); border-radius: var(--radius-tag); font: 600 20px/1 var(--font-mono); color: var(--ink); }
+.ocbg-battle .ocbg-battle-omen-side.is-struck { border-style: dashed; border-color: var(--miss); opacity: 0.8; }
+.ocbg-battle .ocbg-battle-omen-side.is-struck::after { content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 2px; background: var(--miss); transform: rotate(-24deg); }
+.ocbg-battle .ocbg-battle-plan { position: absolute; box-sizing: border-box; width: 170px; height: 66px; padding: 4px 10px 5px; display: flex; flex-direction: column; justify-content: space-between; background: var(--panel-solid); border-radius: var(--radius-panel); color: var(--ink); }
+.ocbg-battle .ocbg-battle-plan::before { content: ""; position: absolute; inset: 0; border: var(--stroke-frame) dashed var(--ink-muted); border-radius: var(--radius-panel); opacity: var(--plan-alpha, 0.62); pointer-events: none; }
+.ocbg-battle .ocbg-battle-plan > div { opacity: var(--plan-alpha, 0.62); }
+.ocbg-battle .ocbg-battle-plan:empty { display: none; }
+.ocbg-battle .ocbg-battle-plan-row1 { display: flex; align-items: center; gap: 8px; height: 32px; }
+.ocbg-battle .ocbg-battle-plan-row1 b { font: 700 28px/32px var(--font-mono); font-variant-numeric: tabular-nums; }
+.ocbg-battle .ocbg-battle-plan-row2 { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 20px; font: 400 16px/20px var(--font-body); white-space: nowrap; }
+.ocbg-battle .ocbg-battle-plan-tag { font: 400 14px/16px var(--font-body); color: var(--ink); border: var(--stroke-rule) dashed var(--ink-muted); border-radius: 3px; padding: 0 4px; }
+.ocbg-battle .ocbg-battle-plan-tag.is-changed { border-style: solid; border-color: var(--ink); }
+
+/* ---- the stance lists (StanceListView, §4.6) ------------------------------------------------------- */
+.ocbg-battle .ocbg-battle-stances { position: absolute; left: 0; top: 0; }
+.ocbg-battle .ocbg-battle-stance { box-sizing: border-box; color: var(--ink); }
+.ocbg-battle .ocbg-battle-stance > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- the stamina tag (StaminaTagView, §4.7) -------------------------------------------------------- */
+.ocbg-battle .ocbg-battle-stamina { position: absolute; box-sizing: border-box; }
+.ocbg-battle .ocbg-battle-stamina .ocb-st-row1 b { font-variant-numeric: tabular-nums; transform-origin: 0 50%; }
+.ocbg-battle .ocbg-battle-stamina .ocb-pip { box-sizing: border-box; transform-origin: 50% 50%; }
+
+/* ---- the piles and their lists (PilesView, PileListView) ------------------------------------------- */
+.ocbg-battle .ocbg-battle-pile.ocb-pile { position: absolute; }
+.ocbg-battle .ocbg-battle-pile .ocb-pile-sheet,
+.ocbg-battle .ocbg-battle-pile .ocb-pile-face { box-sizing: border-box; }
+.ocbg-battle .ocbg-battle-drawer.ocb-drawer { left: 0; top: 0; height: 1080px; box-sizing: border-box; background: var(--panel-solid); border-right: var(--stroke-rule) solid var(--rule); box-shadow: var(--shadow-tip); }
+.ocbg-battle .ocbg-battle-drawer-head { display: flex; align-items: flex-end; gap: 12px; padding: 20px 16px 0 16px; border-bottom: var(--stroke-rule) solid var(--rule); }
+.ocbg-battle .ocbg-battle-drawer-tab.ocb-drawer-tab { color: var(--ink); opacity: 0.72; padding: 12px 16px; }
+.ocbg-battle .ocbg-battle-drawer-tab.ocb-drawer-tab.is-on { opacity: 1; }
+.ocbg-battle .ocbg-battle-drawer-tab.ocb-drawer-tab:hover { opacity: 1; }
+/* 「閉じるとプレイできます」: its own line under the close button, right-aligned (the head row holds the tabs and the button) */
+.ocbg-battle .ocbg-battle-drawer-head { flex-wrap: wrap; row-gap: 0; }
+.ocbg-battle .ocbg-battle-drawer-head .ocb-drawer-tabs { flex: none; }
+.ocbg-battle .ocbg-battle-drawer-tab { white-space: nowrap; }
+.ocbg-battle .ocbg-battle-drawer-hint { order: 3; flex: 0 0 100%; margin: 0 0 10px; text-align: right; font: 400 16px/22px var(--font-body); color: var(--ink); white-space: nowrap; }
+.ocbg-battle .ocbg-battle-drawer-close { margin: 0 0 8px auto; padding: 10px 14px; font: 400 18px/1 var(--font-body); color: var(--ink); background: var(--card); border: var(--stroke-rule) solid var(--rule); border-radius: var(--radius-panel); cursor: pointer; white-space: nowrap; }
+.ocbg-battle .ocbg-battle-drawer-close:hover { border-color: var(--ink); }
+.ocbg-battle .ocbg-battle-drawer-body { flex: 1; overflow: auto; padding: 8px 16px 24px; }
+.ocbg-battle .ocbg-battle-drawer-row.ocb-drawer-row { color: var(--ink); }
+.ocbg-battle .ocbg-battle-drawer-row .ocb-mono { font-variant-numeric: tabular-nums; }
+.ocbg-battle .ocbg-battle-drawer-empty { padding: 16px 12px; font: 400 18px/1.4 var(--font-body); color: var(--ink); }
+/* review 19 (§1.1 C4): the log tab — one line a row, the turns' heads set apart */
+.ocbg-battle .ocbg-battle-drawer-log { display: flex; flex-direction: column; padding: 8px 4px; }
+.ocbg-battle .ocbg-battle-log-line { font: 400 16px/26px var(--font-body); color: var(--ink); white-space: pre-wrap; }
+.ocbg-battle .ocbg-battle-log-line.is-head { margin-top: 8px; font-weight: 700; }
+
+/* ---- the lower right (PlayedAttributesView, ReserveHintView, the end-turn plate, §4.9) -------------- */
+.ocbg-battle .ocbg-battle-attr.ocb-attr { position: absolute; box-sizing: border-box; }
+.ocbg-battle .ocbg-battle-attr-icon { display: flex; }
+.ocbg-battle .ocbg-battle-attr .ocb-count { box-sizing: border-box; font-weight: 700; color: var(--ink); }
+.ocbg-battle .ocbg-battle-attr-last { position: absolute; left: 4px; right: 4px; bottom: -7px; height: 2px; }
+.ocbg-battle .ocbg-battle-followup { position: absolute; box-sizing: border-box; min-width: 40px; height: 40px; padding: 0 6px; display: flex; align-items: center; justify-content: center; transform-origin: 100% 0; }
+.ocbg-battle .ocbg-battle-followup b { font: 700 24px/1 var(--font-mono); color: var(--phosphor); white-space: nowrap; }
+.ocbg-battle .ocbg-battle-hint { position: absolute; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: var(--panel); border: var(--stroke-rule) dashed var(--guard); border-radius: var(--radius-panel); }
+.ocbg-battle .ocbg-battle-hint b { font: 700 24px/1 var(--font-mono); color: var(--guard); white-space: nowrap; }
+.ocbg-battle .ocbg-battle-endturn.ocb-endturn { position: absolute; box-sizing: border-box; transform-origin: 50% 50%; user-select: none; }
+.ocbg-battle .ocbg-battle-endturn.ocb-endturn.is-off:hover { background: color-mix(in srgb, var(--amber) 16%, transparent); }
+/* the battle is over: the plate reads as off, not pressable (review fix) */
+.ocbg-battle .ocbg-battle-endturn.ocb-endturn.is-over,
+.ocbg-battle .ocbg-battle-endturn.ocb-endturn.is-over:hover { border-color: var(--steel); background: transparent; }
+
+/* ---- the corner, the speed switch, the journal button (§4.1) --------------------------------------- */
+.ocbg-battle .ocbg-battle-corner.ocb-corner { position: absolute; box-sizing: border-box; color: var(--ink); }
+.ocbg-battle .ocbg-battle-corner b { font: inherit; font-variant-numeric: tabular-nums; }
+/* CornerInfoView's chain dots (battle-visual-v1 §4.1): 12 px circles, the fights up to this one filled */
+.ocbg-battle .ocbg-battle-corner-chain { display: inline-flex; align-items: center; gap: var(--space-4); }
+.ocbg-battle .ocbg-battle-chain-dot { display: block; box-sizing: border-box; border-radius: 50%; border: var(--stroke-frame) solid var(--ink-muted); }
+.ocbg-battle .ocbg-battle-chain-dot.is-done { background: var(--ink); border-color: var(--ink); }
+.ocbg-battle .ocbg-battle-speed { position: absolute; box-sizing: border-box; display: flex; align-items: center; justify-content: flex-start; font: 600 20px/1 var(--font-mono); color: var(--ink); cursor: pointer; white-space: nowrap; }
+.ocbg-battle .ocbg-battle-speed:hover { border-color: var(--ink); background-image: linear-gradient(color-mix(in srgb, var(--ink) 10%, transparent), color-mix(in srgb, var(--ink) 10%, transparent)); }
+.ocbg-battle .ocbg-battle-speed-icon { display: flex; flex: none; }
+.ocbg-battle .ocbg-battle-journalbtn.ocb-btn-sq { box-sizing: border-box; }
+
+/* ---- banners and the result card ------------------------------------------------------------------- */
+/* the field dims under the result card (the DS's end card: a scrim of the ground at 62 %) */
+.ocbg-battle .ocbg-battle-endscrim { position: absolute; inset: 0; background: color-mix(in srgb, var(--ground) 62%, transparent); pointer-events: none; }
+.ocbg-battle .ocbg-battle-banner.ocb-banner { color: var(--ink); }
+/* review 21: the end of the battle in the DS's end-screen look (bundle.css .ocb-end / .ocb-end-paper: a scrim of the ground at
+   62 %, washi paper, washi ink). A won battle: the 720 px paper; a lost one: the 922×626 result screen of battle_ui_ux_v2 §2.5. */
+.ocbg-battle .ocbg-battle-result.ocb-end { position: absolute; inset: 0; width: 1920px; height: 1080px; z-index: 3; }
+.ocbg-battle .ocbg-battle-result.is-lost.ocb-end { background: color-mix(in srgb, var(--flood, #06090c) 40%, transparent); }
+.ocbg-battle .ocbg-battle-result-paper { box-sizing: border-box; pointer-events: auto; transform-origin: 50% 50%; }
+.ocbg-battle .ocbg-battle-result-paper.is-lost { display: flex; flex-direction: column; align-items: stretch; gap: 14px; padding: 48px 72px 40px; text-align: left; }
+.ocbg-battle .ocbg-battle-result-paper .ocbg-battle-result-title { margin: 0 0 6px; font: 800 48px/60px var(--font-display); letter-spacing: 0.08em; text-align: center; }
+.ocbg-battle .ocbg-battle-result-paper p { margin: 0; }
+.ocbg-battle .ocbg-battle-result-paper .ocbg-battle-result-line { font: 400 22px/32px var(--font-body); text-align: center; }
+.ocbg-battle .ocbg-battle-result-bars { display: flex; flex-direction: column; gap: 8px; margin: 6px 64px; }
+.ocbg-battle .ocbg-battle-result-bars-head { font: 400 18px/24px var(--font-body); opacity: 0.8; }
+.ocbg-battle .ocbg-battle-result-bar { display: grid; grid-template-columns: 96px 1fr 48px; align-items: center; column-gap: 14px; font: 400 20px/28px var(--font-body); }
+.ocbg-battle .ocbg-battle-result-bar b { text-align: right; font: 600 22px/28px var(--font-mono); }
+.ocbg-battle .ocbg-battle-result-bar-track { position: relative; height: 16px; border-radius: 3px; background: color-mix(in srgb, var(--washi-ink) 12%, transparent); overflow: hidden; }
+.ocbg-battle .ocbg-battle-result-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 3px; }
+.ocbg-battle .ocbg-battle-result-paper .ocbg-battle-result-button { align-self: center; margin-top: 18px; }
+.ocbg-battle .ocbg-battle-result-paper .ocbg-battle-result-button:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+
+/* review 21, battle_ui_ux_v2 §2.5 切替バナー / §5.18 順 6: a chain's next fight opens on the dark board with 「n 戦目」 and the
+   enemy's name at the middle */
+.ocbg-battle .ocbg-battle-chainbanner { position: absolute; inset: 0; width: 1920px; height: 1080px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--ground) 86%, transparent); pointer-events: none; z-index: 2; }
+.ocbg-battle .ocbg-battle-chainbanner-band { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 28px 96px; border-top: 2px solid color-mix(in srgb, var(--ink) 40%, transparent); border-bottom: 2px solid color-mix(in srgb, var(--ink) 40%, transparent); }
+.ocbg-battle .ocbg-battle-chainbanner-band b { font: 800 64px/72px var(--font-display); letter-spacing: 0.12em; color: var(--ink); }
+.ocbg-battle .ocbg-battle-chainbanner-band span { font: 700 28px/36px var(--font-display); color: var(--ink); letter-spacing: 0.06em; }
+
+/* review 19, §5.11 順 8: an enemy's stance omen flying to the enemy's stance list */
+.ocbg-battle .ocbg-battle-omenfly { position: absolute; pointer-events: none; }
+/* review 19, §5.19 順 2〜3: the ink of a lost battle and 「力尽きた」 */
+.ocbg-battle .ocbg-battle-ink { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; overflow: hidden; }
+.ocbg-battle .ocbg-battle-ink-fill { position: absolute; left: 0; width: 1920px; height: 1240px; background: linear-gradient(180deg, transparent 0, color-mix(in srgb, var(--flood, #06090c) 94%, transparent) 160px); }
+.ocbg-battle .ocbg-battle-ink-word { position: absolute; left: 0; width: 1920px; top: 560px; text-align: center; font: 700 64px/80px var(--font-display); color: var(--ink); white-space: nowrap; }
+/* review 19, §5.9 順 12: an enemy's fired trait's condition word at the right end of its badge */
+.ocbg-battle .ocbg-battle-omen-trait { position: absolute; right: 8px; top: 50%; translate: 0 -50%; padding: 4px 10px; background: var(--panel-solid); border: var(--stroke-frame) solid var(--phosphor); border-radius: var(--radius-tag, 4px); font: 400 16px/22px var(--font-body); color: var(--ink); white-space: nowrap; pointer-events: none; z-index: 2; box-shadow: 0 0 0 3px var(--panel-solid); }
+/* review 21: the badge whose trait word shows stands over its neighbours (the word was painted over by the next badge) */
+.ocbg-battle .ocbg-battle-omenwrap.is-trait { z-index: 4; }
+
+/* review 21: the high place's one frame carries 「+n」 for the stances folded on it */
+.ocbg-battle .ocbg-battle-stance-more { margin-left: auto; font: 600 16px/1 var(--font-mono); color: var(--ink); white-space: nowrap; }
+.ocbg-battle .ocb-x + .ocbg-battle-stance-more { margin-left: 6px; }

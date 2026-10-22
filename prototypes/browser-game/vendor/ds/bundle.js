@@ -1,0 +1,2941 @@
+/* @ds-bundle: {"format": 4, "namespace": "OCB", "components": [{"name": "Icon"}, {"name": "BattleCard"}, {"name": "HandFan"}, {"name": "OmenPlate"}, {"name": "FloorLane"}, {"name": "Figure"}, {"name": "StatusPanel"}, {"name": "StatusChip"}, {"name": "StanceSlot"}, {"name": "StaminaPlate"}, {"name": "TargetFrame"}, {"name": "Notices"}, {"name": "TurnControls"}, {"name": "CardDetail"}, {"name": "PileDrawer"}, {"name": "PursuitBadge"}]} */
+(function () {
+'use strict';
+var FALLBACK_TOKENS_CSS = "/* Original Card Battle 戦闘画面 — generated from tokens.json */\n:root, [data-theme=\"dusk\"] { --ground: #10141d; --panel: rgba(16,20,30,.88); --panel-solid: #141925; --card: #171c28; --ink: #ecebf2; --ink-muted: #a9adbd; --rule: rgba(157,166,186,.26); --steel: #6d7787; --amber: #e8a84c; --wick: #ffd89a; --crimson: #c2483f; --hp-text: #e36a5e; --violet: #8b6fd0; --reach-red: #ff1f4f; --phosphor: #b9a3ff; --guard: #8fc4d8; --miss: var(--steel); --caution: #e6c35c; --boss: #d08cf0; --washi: #f0e6d0; --washi-ink: #1d1a16; --figure-self: #2b2f3a; --figure-enemy: #1b1722; --sky-top: #1d3340; --sky-bottom: #182b37; --meadow-top: #182b37; --meadow-bottom: #152530; --earth-top: #13212b; --earth-bottom: #0f1a22; --floor-tile: rgba(10,16,22,.72); --sun: rgba(255,255,255,.10); --haze: rgba(255,255,255,.05); --keyline: rgba(16,20,30,0); --shadow-card: 0 6px 14px rgba(0,0,0,.45); --shadow-lamp: 0 0 0 2px #ffd89a, 0 0 20px 5px rgba(255,216,154,.5); --shadow-threat: 0 0 8px rgba(255,31,79,.3); --shadow-reach: 0 0 22px rgba(232,168,76,.5); --shadow-omen-active: 0 0 30px rgba(139,111,208,.6); --shadow-tip: 0 8px 18px rgba(0,0,0,.45); }\n[data-theme=\"wakakusa-a\"] { --sky-top: #f4f2df; --sky-bottom: #dde9cb; --meadow-top: #b9d394; --meadow-bottom: #86a862; --earth-top: #5f7d45; --earth-bottom: #10170d; --floor-tile: rgba(14,20,12,.82); --sun: rgba(255,255,255,.55); --haze: rgba(255,255,255,.14); --keyline: rgba(16,20,30,.85); }\n[data-theme=\"wakakusa-b\"] { --sky-top: #e3ebd3; --sky-bottom: #c3d6ad; --meadow-top: #97b878; --meadow-bottom: #64844c; --earth-top: #4a663a; --earth-bottom: #0c130b; --floor-tile: rgba(12,18,12,.80); --sun: rgba(255,255,255,.35); --haze: rgba(255,255,255,.10); --keyline: rgba(16,20,30,.85); }\n:root { --space-4: 4px; --space-6: 6px; --space-8: 8px; --space-12: 12px; --space-16: 16px; --space-24: 24px; --space-32: 32px; --space-48: 48px; --radius-panel: 6px; --radius-plate: 5px; --radius-tag: 4px; --radius-chip-foe: 3px; --radius-chip-self: 15px; --radius-pip: 50%; --stroke-rule: 1px; --stroke-frame: 2px; --stroke-icon: 2.2px; --stroke-bold: 3px; --dash: 3px; --hatch-gap: 11px; --opacity-unpayable: 0.6; --opacity-held: 0.92; --opacity-idle-hooks: 0.75; --opacity-unplayed: 0.55; --opacity-enemy-turn: 0.4; --opacity-guard-zero: 0.7; --screen-w: 1920px; --screen-h: 1080px; --card-w: 216px; --card-h: 304px; --cell-h: 40px; --figure-h: 226px; --font-display: \"Shippori Mincho\", \"Hiragino Mincho ProN\", \"Yu Mincho\", serif; --font-body: \"Zen Kaku Gothic New\", \"Hiragino Sans\", \"Yu Gothic\", sans-serif; --font-mono: \"IBM Plex Mono\", ui-monospace, Menlo, monospace; }\n";
+
+// Original Card Battle — battle screen components and the playable battle prototype.
+// One classic script; assigns window.OCB. No imports, no network. Values that Unity copies live in
+// OCB.LAYOUT (positions), OCB.FEEL (motion), OCB.SOUND (audio); all game numbers come from OCB.SCRIPT via the Core.
+
+var OCB = {};
+var SVGNS = 'http://www.w3.org/2000/svg';
+
+// ---------- DOM helpers ----------
+function h(tag, props) {
+  var el = document.createElement(tag);
+  if (props) {
+    for (var k in props) {
+      var v = props[k];
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k === 'html') el.innerHTML = v;
+      else if (k === 'style') {
+        if (typeof v === 'string') el.style.cssText = v; else for (var s in v) el.style.setProperty(s, v[s]);
+      } else if (k.slice(0, 2) === 'on' && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v);
+    }
+  }
+  for (var i = 2; i < arguments.length; i++) add(el, arguments[i]);
+  return el;
+}
+function add(el, c) {
+  if (c == null || c === false) return;
+  if (Array.isArray(c)) { c.forEach(function (x) { add(el, x); }); return; }
+  el.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c);
+}
+function sv(tag, attrs) {
+  var el = document.createElementNS(SVGNS, tag);
+  for (var k in attrs) el.setAttribute(k, attrs[k]);
+  for (var i = 2; i < arguments.length; i++) if (arguments[i]) el.appendChild(arguments[i]);
+  return el;
+}
+function px(n) { return n + 'px'; }
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function place(el, x, y, w, ht) {
+  el.style.position = 'absolute'; el.style.left = px(x); el.style.top = px(y);
+  if (w != null) el.style.width = px(w);
+  if (ht != null) el.style.height = px(ht);
+  return el;
+}
+
+// ---------- easing (the cubic set from the brief) ----------
+var EASE = {
+  out: function (t) { return 1 - Math.pow(1 - t, 3); },
+  'in': function (t) { return t * t * t; },
+  inout: function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; },
+  linear: function (t) { return t; },
+  smooth: function (t) { return t * t * (3 - 2 * t); }
+};
+OCB.EASE = EASE;
+
+// ---------- icons (battle-visual-v1.md appendix A; 24×24, stroke 2.2, round caps) ----------
+var ICONS = {
+  sword: 'M20 4l-1.5 5.5L9 19l-4-4 9.5-9.5zM6.5 13.5l4 4M3 21l3.5-3.5',
+  shield: 'M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z',
+  heart: 'M12 21s-8-5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 6-8 11-8 11z',
+  heal: 'M12 6v12M6 12h12',
+  forward: 'M4 12h14M13 6l6 6-6 6',
+  back: 'M20 12H6M11 6l-6 6 6 6',
+  range: 'M3 12h18M3 7v10M21 7v10',
+  infinity: 'M18.2 8c5.1 0 5.1 8 0 8-5.1 0-7.1-8-12.7-8-4.6 0-4.6 8 0 8 5.6 0 7.6-8 12.7-8z',
+  pip: 'M12 6a6 6 0 110 12a6 6 0 010-12z',
+  draw: 'M8 3h9v14H8zM5 7v14h9',
+  discard: 'M12 4v10M7 9l5 5 5-5M4 20h16',
+  exile: 'M6 6l12 12M18 6L6 18',
+  flag: 'M6 21V3M6 4h12l-3 4.5L18 13H6',
+  star: 'M12 3l2 7 7 2-7 2-2 7-2-7-7-2 7-2z',
+  hourglass: 'M7 3h10M7 21h10M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9',
+  stairs: 'M3 20h5v-5h5v-5h5V5h3',
+  miasma: 'M3 9c3-3 6 3 9 0s6 3 9 0M3 15c3-3 6 3 9 0s6 3 9 0',
+  journal: 'M4 5c3-1 6-1 8 1v14c-2-2-5-2-8-1zM20 5c-3-1-6-1-8 1v14c2-2 5-2 8-1z',
+  person: 'M12 4a3.5 3.5 0 110 7a3.5 3.5 0 010-7zM5 21c0-4 3-7 7-7s7 3 7 7',
+  target: 'M4 20L20 4M4 12l8-8M12 20l8-8',
+  seal: 'M9 3h6v6H9zM9 9l-3 4h12l-3-4M4 13h16v4H4zM6 21h12',
+  bleed: 'M12 3c4 5 6 8 6 11a6 6 0 01-12 0c0-3 2-6 6-11z',
+  brittle: 'M12 3l-2 6 4 3-3 4 2 5M5 5l4 4M19 6l-4 3',
+  slow: 'M6 9l6 5 6-5M6 4l6 5 6-5M4 20h16',
+  intimidate: 'M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12zM12 9v6',
+  fatigue: 'M3 8h15v8H3zM18 11h3v2M6 11h3v2H6z',
+  empower: 'M6 13l6-6 6 6M6 19l6-6 6 6',
+  focus: 'M12 4a8 8 0 110 16a8 8 0 010-16zM12 10a2 2 0 110 4a2 2 0 010-4z',
+  insight: 'M3 12h9M8 7l5 5-5 5M17 4v16',
+  agile: 'M4 8h9a3 3 0 10-3-3M4 16h12a3 3 0 11-3 3M4 12h6',
+  regen: 'M12 21V11M12 11c0-4 3-7 8-7 0 5-3 7-8 7zM12 15c0-3-2-5-6-5 0 3 2 5 6 5z',
+  plus: 'M5 12h14M12 5v14',
+  rest: 'M5 12h14',
+  speed1: 'M9 6l6 6-6 6',
+  speed2: 'M6 6l6 6-6 6M12 6l6 6-6 6',
+  speed3: 'M4 6l5 6-5 6M10 6l5 6-5 6M16 6l5 6-5 6'
+};
+var ICON_LABELS = {
+  sword: '威力（剣）', shield: 'Guard（盾）', heart: 'HP（ハート）', heal: '回復', forward: '前へ', back: '後ろへ',
+  range: '間合い', infinity: '永続（∞）', pip: 'スタミナの粒', draw: 'ドロー / 山札', discard: '捨札', exile: '除外',
+  flag: 'スタンス（旗）', star: 'スキル', hourglass: 'ターン', stairs: '階層', miasma: '瘴気', journal: '手記',
+  person: '自分', target: '狙うマス', seal: '状態付与（印）', bleed: '出血', brittle: '脆化', slow: '鈍足',
+  intimidate: '威圧', fatigue: '疲労', empower: '強化', focus: '集中', insight: '見切り', agile: '俊敏', regen: '再生',
+  plus: '「+n」', rest: '休み', speed1: '速さ ×1.0', speed2: '速さ ×1.25', speed3: '速さ ×1.5'
+};
+var FILLED = { heart: 1, pip: 1 };
+
+// icon(name, size, color, {fill, dashed, fillOpacity})
+function icon(name, size, color, opts) {
+  opts = opts || {};
+  size = size || 24; color = color || 'currentColor';
+  var s = sv('svg', { viewBox: '0 0 24 24', width: size, height: size, 'class': 'ocb-icon', 'aria-hidden': 'true' });
+  var p = sv('path', { d: ICONS[name] || ICONS.plus, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  if (FILLED[name]) { p.setAttribute('fill', color); p.setAttribute('stroke', 'none'); }
+  else {
+    p.setAttribute('fill', opts.fill || 'none');
+    if (opts.fill && opts.fillOpacity != null) p.setAttribute('fill-opacity', opts.fillOpacity);
+    p.setAttribute('stroke', color); p.setAttribute('stroke-width', opts.width || 2.2);
+    if (opts.dashed) p.setAttribute('stroke-dasharray', '2.4 2.4');
+  }
+  s.appendChild(p);
+  return s;
+}
+OCB.ICONS = ICONS; OCB.ICON_LABELS = ICON_LABELS; OCB.icon = icon;
+
+// Red hatch for floor cells and swatches: 3px lines every `gap` px at `angle`.
+var hatchSeq = 0;
+function hatch(w, ht, angle, gap, color, width) {
+  var id = 'ocbh' + (++hatchSeq);
+  gap = gap || 11; width = width || 3;
+  var pat = sv('pattern', { id: id, width: gap, height: gap, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(' + (angle || 45) + ')' },
+    sv('rect', { x: 0, y: 0, width: width, height: gap, fill: color || 'var(--reach-red)' }));
+  var s = sv('svg', { width: w, height: ht, viewBox: '0 0 ' + w + ' ' + ht, 'aria-hidden': 'true' },
+    sv('defs', {}, pat), sv('rect', { x: 0, y: 0, width: w, height: ht, fill: 'url(#' + id + ')' }));
+  return s;
+}
+function swatch(angle, size) {
+  size = size || 22;
+  var wrap = h('span', { 'class': 'ocb-swatch', style: { display: 'inline-block', width: px(size), height: px(size), border: '2px solid var(--reach-red)', 'border-radius': '3px', overflow: 'hidden', flex: 'none' } });
+  wrap.appendChild(hatch(size, size, angle, 6, null, 2));
+  wrap.firstChild.style.display = 'block';
+  return wrap;
+}
+OCB.hatch = hatch; OCB.swatch = swatch;
+
+// ---------- tokens fallback (used only when tokens.css is not on the page) ----------
+function ensureTokens(doc) {
+  doc = doc || document;
+  try {
+    var v = getComputedStyle(doc.documentElement).getPropertyValue('--ground');
+    if (v && v.trim()) return;
+  } catch (e) { /* ignore */ }
+  if (doc.getElementById('ocb-fallback-tokens')) return;
+  var st = doc.createElement('style');
+  st.id = 'ocb-fallback-tokens';
+  st.textContent = FALLBACK_TOKENS_CSS;
+  (doc.head || doc.documentElement).appendChild(st);
+}
+OCB.ensureTokens = ensureTokens;
+
+// ======================================================================
+// Static data the components read (battle-visual-v1.md §7.3, §2.2)
+// ======================================================================
+var STATUS = {
+  bleed:      { name: '出血', self: false, how: '相手のターン開始に HP −2×スタック', decay: 'ターンごとに 1 減る' },
+  brittle:    { name: '脆化', self: false, how: '次に受ける攻撃の威力が 1.5 倍（Guard で引く前の値）', decay: '効くと 1 減る' },
+  slow:       { name: '鈍足', self: false, how: '次のターン、自分が動くマスと、押す / 引くマスが 1 減る', decay: 'ターンごとに 1 減る' },
+  intimidate: { name: '威圧', self: false, how: '次の行動の威力と Guard が −3', decay: '効くと 1 減る' },
+  fatigue:    { name: '疲労', self: false, how: '次のターン開始のスタミナ回復が −1', decay: 'ターンごとに 1 減る' },
+  empower:    { name: '強化', self: true, how: '次の攻撃の威力が 1.5 倍', decay: '効くと 1 減る' },
+  focus:      { name: '集中', self: true, how: '次に出す札の値が 1 段強くなる（コストは変わらない）', decay: '効くと 1 減る' },
+  insight:    { name: '見切り', self: true, how: '次に攻撃を受けたとき、Guard で防いだ分の半分を相手に返す', decay: '効くと 1 減る（Guard 0 で受けたときは減らない）' },
+  agile:      { name: '俊敏', self: true, how: 'ターン開始に、1 マスだけ無料で前か後ろへ動ける', decay: 'ターンごとに 1 減る' },
+  regen:      { name: '再生', self: true, how: 'ターン開始に HP +2×スタック', decay: 'ターンごとに 1 減る' }
+};
+OCB.STATUS = STATUS;
+
+var ATTR = {
+  attack:  { name: '攻撃', icon: 'sword', frame: 'var(--violet)', ink: 'var(--phosphor)' },
+  defense: { name: '防御', icon: 'shield', frame: 'var(--guard)', ink: 'var(--guard)' },
+  skill:   { name: 'スキル', icon: 'star', frame: 'var(--amber)', ink: 'var(--amber)' },
+  stance:  { name: 'スタンス', icon: 'flag', frame: 'var(--crimson)', ink: 'var(--hp-text)' }
+};
+OCB.ATTR = ATTR;
+
+function reachText(r) { return r[0] === r[1] ? String(r[0]) : r[0] + '〜' + r[1]; }
+
+// ======================================================================
+// Card (216×304) — battle-visual-v1.md §6
+// def: {name, attr, cost, reach:[min,max]|'self', values:[{icon,n,word,ink?}], desc, lines (stance), trait:{cond,eff}|null}
+// st:  {cost, costDown, lamp:true|false, unpayable, desc, fit:'unity'|'a'|'b'|'c'}
+// ======================================================================
+function Card(def, st) {
+  st = st || {};
+  var a = ATTR[def.attr] || ATTR.attack;
+  var el = h('div', { 'class': 'ocb-card is-' + def.attr + (st.lamp ? ' is-lit' : '') + (st.unpayable ? ' is-unpayable' : '') });
+  el.appendChild(h('div', { 'class': 'ocb-card-clip' }));
+  var cost = st.cost != null ? st.cost : def.cost;
+  var down = st.costDown || cost < def.cost;
+  var costEl = h('div', { 'class': 'ocb-cost' + (down ? ' is-down' : '') }, String(cost));
+  if (down) costEl.appendChild(h('span', { 'class': 'ocb-down' }, '▼' + (def.cost - cost)));
+  el.appendChild(costEl);
+  var ai = icon(a.icon, 24, a.ink); ai.classList.add('ocb-attr-icon'); el.appendChild(ai);
+  var reach = h('div', { 'class': 'ocb-reach' });
+  if (def.reach === 'self') { reach.appendChild(icon('person', 22, 'var(--ink)')); reach.appendChild(h('small', null, '自分')); }
+  else { reach.appendChild(icon('range', 18, 'var(--ink)')); reach.appendChild(document.createTextNode(reachText(def.reach))); }
+  el.appendChild(reach);
+  el.appendChild(h('div', { 'class': 'ocb-card-name' }, def.name));
+  if (def.attr !== 'stance' && def.values && def.values.length) {
+    var vals = h('div', { 'class': 'ocb-values' });
+    def.values.forEach(function (v) {
+      var ink = v.ink || (v.icon === 'sword' ? 'var(--phosphor)' : v.icon === 'shield' ? 'var(--guard)' : v.icon === 'heal' ? 'var(--hp-text)' : 'var(--ink)');
+      vals.appendChild(h('div', { 'class': 'ocb-val', style: { '--val-ink': ink } }, icon(v.icon, 24, ink), h('b', null, String(v.n)), h('small', null, v.word)));
+    });
+    el.appendChild(vals);
+  }
+  var desc = h('div', { 'class': 'ocb-desc' });
+  if (def.attr === 'stance' && !st.desc) {
+    (def.lines || []).forEach(function (line) { desc.appendChild(h('div', { 'class': 'ocb-inf' }, icon('infinity', 18, 'var(--hp-text)'), line)); });
+  } else {
+    desc.textContent = st.desc != null ? st.desc : (def.desc || '');
+  }
+  if (st.fit) { desc.dataset.fit = st.fit; desc.dataset.text = desc.textContent; }
+  el.appendChild(desc);
+  var trait = h('div', { 'class': 'ocb-trait' + (def.trait ? '' : ' is-plain') });
+  if (def.trait) {
+    trait.appendChild(h('div', { 'class': 'ocb-lamp-slot' }, h('i', { 'class': 'ocb-lamp' + (st.lamp ? ' is-on' : '') })));
+    trait.appendChild(h('div', null, h('p', null, def.trait.cond), h('p', null, def.trait.eff)));
+  } else {
+    trait.appendChild(h('div', null, h('p', null, '素直な札'), h('p', { style: 'font-weight:400' }, '特性なし（+2 込み）')));
+  }
+  el.appendChild(trait);
+  el.appendChild(h('div', { 'class': 'ocb-card-dim' }));
+  el.appendChild(h('div', { 'class': 'ocb-card-edge' }));
+  if (st.fit) fitCardText(el);
+  return el;
+}
+OCB.Card = Card;
+
+// Long-description handling (undecided look 5). Measures with a hidden twin, so the card must use the real fonts.
+var measurer = null;
+function measureBox(text, size, width, wrap) {
+  if (!measurer) {
+    measurer = h('div', { 'class': 'ocb-root', style: 'position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none' });
+    (document.body || document.documentElement).appendChild(measurer);
+  }
+  var d = h('div', { style: 'font-family:var(--font-body);font-size:' + size + 'px;line-height:' + Math.round(size * 1.375) + 'px;line-break:strict;overflow-wrap:anywhere;' + (wrap ? 'width:' + width + 'px;' : 'white-space:nowrap;display:inline-block;') }, text);
+  measurer.appendChild(d);
+  var r = { w: d.scrollWidth, h: d.scrollHeight };
+  measurer.removeChild(d);
+  return r;
+}
+function fitCardText(card) {
+  var d = card.querySelector('.ocb-desc');
+  if (!d || !d.dataset.fit) return;
+  var mode = d.dataset.fit, text = d.dataset.text, W = 188, H = card.classList.contains('is-stance') ? 88 : 66;
+  d.className = 'ocb-desc'; d.style.cssText = ''; d.textContent = text;
+  if (mode === 'unity') { d.classList.add('fit-unity'); return; }
+  var size;
+  if (mode === 'a') {
+    for (size = 16; size > 12 && measureBox(text, size, W, false).w > W; size--) { /* shrink */ }
+    d.style.cssText = 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:' + size + 'px';
+    return;
+  }
+  if (mode === 'b') {
+    for (size = 16; size > 12 && measureBox(text, size, W, true).h > H; size--) { /* shrink */ }
+    var lh = Math.round(size * 1.375), lines = Math.floor(H / lh);
+    d.style.cssText = 'font-size:' + size + 'px;line-height:' + lh + 'px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:' + lines + ';overflow:hidden';
+    return;
+  }
+  if (mode === 'c') {
+    var cut = text.indexOf('、');
+    var parts = cut > 0 ? [text.slice(0, cut + 1), text.slice(cut + 1)] : [text];
+    d.textContent = '';
+    parts.forEach(function (p) {
+      for (var s = 16; s > 12 && measureBox(p, s, W, false).w > W; s--) { /* shrink */ }
+      d.appendChild(h('div', { style: 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:' + s + 'px;line-height:22px' }, p));
+    });
+  }
+}
+OCB.fitCardText = fitCardText;
+
+// Right-click detail (560×280) — §7.4
+function CardDetail(def, st) {
+  var mini = Card(def, st || {});
+  var terms = (def.terms || []).map(function (t) { return h('div', null, h('b', null, t[0]), t[1]); });
+  var meta = (ATTR[def.attr] || ATTR.attack).name + ' ・ ' + (def.reach === 'self' ? '自分' : '敵 1 体 ・ 間合い ' + reachText(def.reach));
+  return h('div', { 'class': 'ocb-detail' },
+    h('div', { 'class': 'ocb-detail-card' }, mini),
+    h('div', { 'class': 'ocb-detail-body' },
+      h('h3', null, def.name), h('div', { 'class': 'ocb-meta' }, meta), h('div', { 'class': 'ocb-full' }, def.detail || ''),
+      terms.length ? h('div', { 'class': 'ocb-detail-terms' }, terms) : null));
+}
+OCB.CardDetail = CardDetail;
+
+// ======================================================================
+// Omen plate (200×98) — §4.4
+// d: {kind, value, angle, hit:true|false|null, statusIcons:[], active}
+// ======================================================================
+var OMEN_KIND = {
+  '攻撃': { icon: 'sword', color: 'var(--phosphor)' },
+  '防御': { icon: 'shield', color: 'var(--guard)' },
+  '移動': { icon: 'back', color: 'var(--ink)' },
+  '構え': { icon: 'flag', color: 'var(--ink)' },
+  '技': { icon: 'star', color: 'var(--ink)' },
+  '状態': { icon: 'seal', color: 'var(--ink)' },
+  '休み': { icon: 'rest', color: 'var(--steel)' }
+};
+function OmenPlate(d) {
+  var el = h('div', { 'class': 'ocb-omen' });
+  el.update = function (d) {
+    el.innerHTML = '';
+    var k = OMEN_KIND[d.icon || d.kind] || OMEN_KIND['技'];
+    el.classList.toggle('is-rest', d.kind === '休み');
+    el.classList.toggle('is-active', !!d.active);
+    var r1 = h('div', { 'class': 'ocb-omen-row1' }, icon(k.icon, 34, k.color));
+    if (d.value != null) r1.appendChild(h('b', { style: { color: k.color } }, String(d.value)));
+    (d.statusIcons || []).forEach(function (s) { r1.appendChild(icon(s, 28, 'var(--ink)')); });
+    if (d.angle != null && d.kind !== '休み') r1.appendChild(swatch(d.angle, 22));
+    el.appendChild(r1);
+    var r2 = h('div', { 'class': 'ocb-omen-row2' }, h('span', null, d.kind === '状態' ? '技' : d.kind));
+    if (d.hit != null) r2.appendChild(h('span', { 'class': 'ocb-hitmark ' + (d.hit ? 'is-hit' : 'is-miss') }, icon('person', 18, d.hit ? 'var(--phosphor)' : 'var(--miss)')));
+    el.appendChild(r2);
+  };
+  el.update(d);
+  return el;
+}
+OCB.OmenPlate = OmenPlate;
+function ReserveOmen(d) {
+  var k = OMEN_KIND[d.icon || d.kind] || OMEN_KIND['技'];
+  return h('div', { 'class': 'ocb-omen-reserve' }, icon(k.icon, 24, k.color), d.value != null ? h('b', { style: { color: k.color } }, String(d.value)) : null,
+    h('span', { style: 'font-size:16px' }, d.kind), h('span', { 'class': 'ocb-plan' }, '予定'));
+}
+OCB.ReserveOmen = ReserveOmen;
+
+// ======================================================================
+// Status chips + tooltip — §7.3
+// ======================================================================
+function StatusChip(c) {
+  var s = STATUS[c.id] || { name: c.id, self: false };
+  var el = h('span', { 'class': 'ocb-chip' + (s.self ? ' is-self' : '') + (c.boss ? ' is-boss' : '') + (c.hover ? ' is-hover' : '') },
+    icon(c.id, 18, 'var(--ink)'), s.name, h('span', { 'class': 'ocb-mono' }, String(c.n)));
+  el.dataset.status = c.id; el.dataset.n = c.n;
+  return el;
+}
+function StatusTip(c) {
+  var s = STATUS[c.id];
+  return h('div', { 'class': 'ocb-tip' },
+    h('div', { 'class': 'ocb-tip-head' }, icon(c.id, 20, 'var(--ink)'), s.name + ' ' + c.n, h('small', null, s.self ? '自分に付ける系' : '相手に付ける系')),
+    h('p', null, h('span', null, '効き方'), s.how), h('p', null, h('span', null, '減り方'), s.decay));
+}
+OCB.StatusChip = StatusChip; OCB.StatusTip = StatusTip;
+
+// ======================================================================
+// Status panel — §4.5. d: {side, width, hp, maxHp, loss, guard, st, reserve, chips, elite, swatchAngle}
+// ======================================================================
+function StatusPanel(d) {
+  var el = h('div', { 'class': 'ocb-panel ocb-stat' + (d.elite ? ' is-elite' : '') });
+  el.style.width = px(d.width || (d.side === 'foe' ? 210 : 300));
+  var hpNum = h('b', { 'class': 'ocb-mono' });
+  var fill = h('i', { 'class': 'ocb-bar-fill' }), loss = h('i', { 'class': 'ocb-bar-loss' }), ticks = h('div', { 'class': 'ocb-bar-ticks' });
+  var bar = h('div', { 'class': 'ocb-bar' }, fill, loss, ticks);
+  var hpRow = h('div', { 'class': 'ocb-hp' });
+  if (d.swatchAngle != null) hpRow.appendChild(swatch(d.swatchAngle, 16));
+  hpRow.appendChild(icon('heart', 20, 'var(--crimson)')); hpRow.appendChild(hpNum); hpRow.appendChild(bar);
+  var gRow = h('div', { 'class': 'ocb-guardrow' });
+  var chips = h('div', { 'class': 'ocb-chips' });
+  el.appendChild(hpRow); el.appendChild(gRow); el.appendChild(chips);
+  var lastMax = -1;
+  el.update = function (d) {
+    hpNum.textContent = d.hp;
+    fill.style.width = (100 * Math.max(0, d.hp) / d.maxHp) + '%';
+    var l = Math.min(d.loss || 0, d.hp);
+    loss.style.left = (100 * (d.hp - l) / d.maxHp) + '%'; loss.style.width = (100 * l / d.maxHp) + '%';
+    loss.style.display = l > 0 ? 'block' : 'none';
+    if (lastMax !== d.maxHp) {
+      ticks.innerHTML = '';
+      for (var t = 10; t < d.maxHp; t += 10) ticks.appendChild(h('i', { style: { left: 'calc(' + (100 * t / d.maxHp) + '% - 1px)' } }));
+      lastMax = d.maxHp;
+    }
+    gRow.innerHTML = '';
+    gRow.className = 'ocb-guardrow' + (d.guard > 0 ? '' : ' is-zero');
+    gRow.appendChild(d.guard > 0 ? icon('shield', 28, 'var(--guard)', { fill: 'var(--guard)', fillOpacity: 0.2 }) : icon('shield', 28, 'var(--steel)', { dashed: true }));
+    gRow.appendChild(h('b', { 'class': 'ocb-mono' }, String(d.guard)));
+    if (d.side === 'foe') {
+      gRow.appendChild(h('span', { 'class': 'ocb-foe-st' }, icon('pip', 16, 'var(--ink-muted)'), h('b', { 'class': 'ocb-mono', style: 'font:700 24px/28px var(--font-mono)' }, String(d.st)),
+        d.reserve ? icon('shield', 24, 'var(--guard)', { fill: 'var(--guard)', fillOpacity: 0.2 }) : icon('shield', 24, 'var(--guard)', { dashed: true })));
+    }
+    chips.innerHTML = '';
+    var list = d.chips || [], max = d.side === 'foe' ? 4 : 6;
+    var shown = list.length > max ? list.slice(0, max - 1) : list;
+    if (d.badges) d.badges().forEach(function (b) { chips.appendChild(b); });
+    shown.forEach(function (c) { chips.appendChild(StatusChip(c)); });
+    if (list.length > max) {
+      var more = h('span', { 'class': 'ocb-chip' }, icon('plus', 18, 'var(--ink)'), h('span', { 'class': 'ocb-mono' }, String(list.length - shown.length)));
+      more.dataset.more = '1'; chips.appendChild(more);
+    }
+  };
+  el.update(d);
+  return el;
+}
+OCB.StatusPanel = StatusPanel;
+
+// ======================================================================
+// Stance slot (250×52) — §4.6. d: {name, count, foe, empty, more, swatchAngle}
+// ======================================================================
+function StanceSlot(d) {
+  d = d || {};
+  if (d.empty) return h('div', { 'class': 'ocb-stance is-empty' + (d.foe ? ' is-foe' : '') }, icon('flag', 24, 'var(--steel)'));
+  var el = h('div', { 'class': 'ocb-stance' + (d.foe ? ' is-foe' : '') });
+  if (d.swatchAngle != null) el.appendChild(swatch(d.swatchAngle, 16));
+  el.appendChild(icon('flag', 24, d.foe ? 'var(--phosphor)' : 'var(--hp-text)'));
+  el.appendChild(h('span', null, d.more ? '+' + d.more : d.name));
+  if (!d.more && d.count > 1) el.appendChild(h('span', { 'class': 'ocb-x' }, '×' + d.count));
+  return el;
+}
+function StanceTip(d) {
+  return h('div', { 'class': 'ocb-tip' },
+    h('div', { 'class': 'ocb-tip-head' }, icon('flag', 20, 'var(--hp-text)'), d.name + (d.count > 1 ? ' ×' + d.count : ''), h('small', null, '永続')),
+    h('p', null, h('span', null, '効き方'), d.how + (d.count > 1 ? '（重ねた ' + d.count + ' つぶん効く）' : '')),
+    h('p', null, h('span', null, '減り方'), '減らない（永続）'));
+}
+OCB.StanceSlot = StanceSlot; OCB.StanceTip = StanceTip;
+
+// ======================================================================
+// Stamina plate (236×84) + piles — §4.7. d: {st, max, pay, next, showPay, lit:[indexes]}
+// ======================================================================
+function StaminaPlate(d) {
+  var el = h('div', { 'class': 'ocb-stamina' });
+  var num = h('b', null), pay = h('span', { 'class': 'ocb-st-pay' }), pips = h('div', { 'class': 'ocb-pips' });
+  el.appendChild(h('div', { 'class': 'ocb-st-row1' }, icon('pip', 18, 'var(--amber)'), num, pay));
+  el.appendChild(pips);
+  el.update = function (d) {
+    num.textContent = d.st;
+    pay.textContent = '▸ ' + (d.pay || 0);
+    pay.classList.toggle('is-on', !!d.showPay);
+    pips.innerHTML = '';
+    var pay0 = d.showPay ? d.pay || 0 : 0;
+    for (var i = 0; i < d.max; i++) {
+      var cls = i < d.st - pay0 ? 'is-have' : i < d.st ? 'is-pay' : i < d.st + (d.next || 0) ? 'is-next' : 'is-empty';
+      if (d.lit && d.lit.indexOf(i) >= 0) cls += ' is-lit';
+      pips.appendChild(h('i', { 'class': 'ocb-pip ' + cls }));
+      if (i === 2) pips.appendChild(h('i', { 'class': 'ocb-pip-div' }));
+    }
+  };
+  el.update(d);
+  return el;
+}
+OCB.StaminaPlate = StaminaPlate;
+var PILE_ICON = { deck: 'draw', discard: 'discard', exile: 'exile' };
+var PILE_NAME = { deck: '山札', discard: '捨札', exile: '除外' };
+function Pile(kind, count) {
+  var el = h('div', { 'class': 'ocb-pile' + (count ? '' : ' is-empty'), title: PILE_NAME[kind] + ' ' + count + ' 枚' });
+  var layers = count ? Math.min(3, Math.ceil(count / 3)) : 0;
+  for (var i = layers; i >= 1; i--) el.appendChild(h('i', { 'class': 'ocb-pile-sheet', style: { top: px(-4 * i), opacity: String(1 - i * 0.18) } }));
+  el.appendChild(h('div', { 'class': 'ocb-pile-face' }, icon(PILE_ICON[kind], 28, count ? 'var(--ink)' : 'var(--steel)')));
+  el.dataset.pile = kind;
+  return el;
+}
+OCB.Pile = Pile;
+
+// ======================================================================
+// Floor pieces — §4.2
+// ======================================================================
+function FloorTile(w) {
+  var el = h('div', { 'class': 'ocb-tile', style: { width: px(w) } });
+  el.reach = h('i', { 'class': 'ocb-tile-reach' }); el.reachLine = h('i', { 'class': 'ocb-tile-reach-line' });
+  el.appendChild(el.reach);
+  el.threatBox = h('div', { 'class': 'ocb-pe-none', style: 'position:absolute;inset:0' });
+  el.appendChild(el.threatBox);
+  el.appendChild(el.reachLine);
+  // threats: [{angle, boundary}], move: bool
+  el.setThreat = function (threats, move) {
+    el.threatBox.innerHTML = '';
+    if (move) el.threatBox.appendChild(h('i', { 'class': 'ocb-tile-move' }));
+    if (!threats || !threats.length) return;
+    var box = h('div', { 'class': 'ocb-tile-threat' });
+    threats.forEach(function (t) { box.appendChild(hatch(w, 40, t.angle, t.boundary ? 6 : 11)); });
+    el.threatBox.appendChild(box);
+  };
+  return el;
+}
+function DistanceChip(n, span) {
+  // span: width of the empty cells it brackets (0 = adjacent: 100px wide at the boundary)
+  var w = Math.max(100, span || 0);
+  var el = h('div', { 'class': 'ocb-dist', style: { width: px(w) } });
+  if (span > 0) {
+    // thin bracket lines (ink 55%) from the chip out to the ends of the empty cells, with an end tick
+    var ln = 'position:absolute;background:rgba(236,235,242,.55);';
+    el.appendChild(h('i', { style: ln + 'left:8px;right:50%;top:17px;height:1px' }));
+    el.appendChild(h('i', { style: ln + 'right:8px;left:50%;top:17px;height:1px' }));
+    el.appendChild(h('i', { style: ln + 'left:8px;top:9px;width:1px;height:17px' }));
+    el.appendChild(h('i', { style: ln + 'right:8px;top:9px;width:1px;height:17px' }));
+  }
+  el.appendChild(h('div', { 'class': 'ocb-dist-chip' }, icon('range', 22, 'var(--ink)'), String(n)));
+  return el;
+}
+OCB.FloorTile = FloorTile; OCB.DistanceChip = DistanceChip;
+
+// ======================================================================
+// Target frame (four hooks only), prediction tag, throw line — §5.2, §5.3
+// ======================================================================
+function TargetFrame(w, ht, o) {
+  o = o || {};
+  var len = o.hook || 26, sw = o.reachable === false ? 2 : (o.width || 3);
+  var col = o.reachable === false ? 'var(--steel)' : 'var(--wick)';
+  var d = 'M0 ' + len + 'V0H' + len + 'M' + (w - len) + ' 0H' + w + 'V' + len + 'M' + w + ' ' + (ht - len) + 'V' + ht + 'H' + (w - len) + 'M' + len + ' ' + ht + 'H0V' + (ht - len);
+  var s = sv('svg', { width: w, height: ht, viewBox: '0 0 ' + w + ' ' + ht },
+    sv('path', { d: d, fill: 'none', stroke: 'var(--keyline)', 'stroke-width': sw + 4, 'stroke-linecap': 'square' }),
+    sv('path', { d: d, fill: 'none', stroke: col, 'stroke-width': sw, 'stroke-linecap': 'square' }));
+  var el = h('div', { 'class': 'ocb-frame', style: { width: px(w), height: px(ht) } });
+  if (o.reachable !== false) s.style.filter = 'drop-shadow(0 0 ' + (o.glow != null ? o.glow : 10) + 'px rgba(232,168,76,' + (o.glowAlpha != null ? o.glowAlpha : 0.35) + '))';
+  el.appendChild(s);
+  return el;
+}
+function PredTag(ic, n, iconColor) {
+  return h('div', { 'class': 'ocb-pred' }, icon(ic, 32, iconColor || 'var(--phosphor)'), String(n));
+}
+OCB.TargetFrame = TargetFrame; OCB.PredTag = PredTag;
+
+// ======================================================================
+// Notices — §5.1, §5.4, §7.2, banners, floating numbers
+// ======================================================================
+function HoverLine(text, lit) {
+  return h('div', { 'class': 'ocb-hoverline' }, h('i', { 'class': 'ocb-lamp' + (lit ? ' is-on' : '') }), h('span', null, text));
+}
+function ReachPanel(text) {
+  var t1 = text, t2 = '';
+  var cut = text.indexOf('間合いが');
+  if (cut >= 0) { t1 = text.slice(0, cut + 4); t2 = text.slice(cut + 4); }
+  return h('div', { 'class': 'ocb-reachpanel' }, icon('range', 22, 'var(--ink)'), h('div', null, h('div', null, t1), t2 ? h('div', null, t2) : null));
+}
+function RefusalLine(text) { return h('div', { 'class': 'ocb-refusal' }, h('i', { 'class': 'ocb-dot' }), text); }
+function Banner(text, foe) { return h('div', { 'class': 'ocb-banner' + (foe ? ' is-foe' : '') }, text); }
+function FloatNum(kind, n, label) {
+  var ic = kind === 'guard' ? icon('shield', 30, 'var(--guard)', { fill: 'var(--guard)', fillOpacity: 0.2 }) : kind === 'heal' ? icon('heal', 34, 'var(--hp-text)') : kind === 'miss' ? null : icon('heart', 36, 'var(--hp-text)');
+  return h('div', { 'class': 'ocb-float' + (kind === 'guard' ? ' is-guard' : kind === 'miss' ? ' is-miss' : '') }, ic, h('b', null, String(n)), label ? h('small', null, label) : null);
+}
+OCB.HoverLine = HoverLine; OCB.ReachPanel = ReachPanel; OCB.RefusalLine = RefusalLine; OCB.Banner = Banner; OCB.FloatNum = FloatNum;
+
+// ======================================================================
+// HUD — §4.1, §4.9
+// ======================================================================
+function CornerInfo(d) {
+  return h('div', { 'class': 'ocb-panel ocb-corner' },
+    h('span', null, icon('hourglass', 22, 'var(--ink)'), String(d.turn)),
+    h('span', null, icon('stairs', 22, 'var(--ink)'), String(d.floor)),
+    h('span', null, icon('miasma', 22, 'var(--phosphor)'), d.miasma + '%'));
+}
+function SpeedToggle(speed) {
+  var n = speed >= 1.5 ? 3 : speed >= 1.25 ? 2 : 1;
+  return h('div', { 'class': 'ocb-panel ocb-speed', role: 'button', title: '戦闘の速さ。押すたびに ×1.0 → ×1.25 → ×1.5 と巡ります' },
+    icon('speed' + n, 24, 'var(--ink)'), '×' + (speed === 1 ? '1.0' : String(speed)));
+}
+function JournalButton() { return h('div', { 'class': 'ocb-panel ocb-btn-sq', role: 'button', title: '手記' }, icon('journal', 30, 'var(--ink)')); }
+function PlayedAttrs(counts) {
+  counts = counts || {};
+  var el = h('div', { 'class': 'ocb-attrs' });
+  ['attack', 'defense', 'skill', 'stance'].forEach(function (k) {
+    var n = counts[k] || 0, a = ATTR[k];
+    var box = h('div', { 'class': 'ocb-panel ocb-attr' + (n ? ' is-on' : '') }, icon(a.icon, 24, n ? a.ink : 'var(--steel)'));
+    if (n) box.appendChild(h('span', { 'class': 'ocb-count' }, String(n)));
+    el.appendChild(box);
+  });
+  return el;
+}
+function GuardPreview(n) { return h('div', { 'class': 'ocb-guardpre' }, icon('shield', 30, 'var(--guard)', { fill: 'var(--guard)', fillOpacity: 0.2 }), '+' + n); }
+function EndTurnButton(off) { return h('div', { 'class': 'ocb-endturn' + (off ? ' is-off' : ''), role: 'button' }, 'ターン終了'); }
+OCB.CornerInfo = CornerInfo; OCB.SpeedToggle = SpeedToggle; OCB.JournalButton = JournalButton; OCB.PlayedAttrs = PlayedAttrs; OCB.GuardPreview = GuardPreview; OCB.EndTurnButton = EndTurnButton;
+
+// ======================================================================
+// Figures (single-colour silhouettes until standing art arrives) — §4.3
+// Each: viewBox w×h with feet on the bottom edge; `body` = width used for target frames.
+// ======================================================================
+function poly(x1, y1, x2, y2, w) {
+  var dx = x2 - x1, dy = y2 - y1, l = Math.sqrt(dx * dx + dy * dy), nx = -dy / l * w / 2, ny = dx / l * w / 2;
+  return 'M' + (x1 + nx) + ' ' + (y1 + ny) + 'L' + (x2 + nx) + ' ' + (y2 + ny) + 'L' + (x2 - nx) + ' ' + (y2 - ny) + 'L' + (x1 - nx) + ' ' + (y1 - ny) + 'Z';
+}
+var FIGURES = {
+  swordsman: { w: 140, h: 226, body: 100, cx: 62, side: 'self', paths: [
+    'M62 6c8 0 14 6 14 14s-6 14-14 14-14-6-14-14 6-14 14-14z',
+    'M50 12C42 16 39 26 43 34L50 26Z',
+    'M56 32h12v10H56z',
+    'M40 46C46 40 56 38 62 38S80 40 86 46L90 80 86 112 96 150H28L38 112 34 80Z',
+    'M80 48L94 70 100 94 92 98 86 74 74 56Z',
+    'M44 50L40 76 60 94 94 90 94 99 56 104 32 80 36 52Z',
+    poly(100, 92, 136, 22, 5),
+    poly(91, 87, 109, 97, 4),
+    poly(93, 106, 100, 92, 4),
+    'M66 148H80L92 188 104 222 90 224 78 192Z',
+    'M34 148H50L46 186 36 222H22L32 186Z',
+    'M88 220H110L112 226H86ZM18 220H40V226H16Z'
+  ] },
+  spearman: { w: 170, h: 226, body: 110, cx: 104, side: 'foe', paths: [
+    'M120 8C110 0 96 2 90 10L70 16Q63 21 68 27L92 31 96 39 118 41C127 32 129 16 120 8Z',
+    'M110 9L132 1 121 15Z',
+    'M100 36L118 38 123 55 96 57Z',
+    'M88 55C96 48 124 48 132 56L137 92 128 128H92L86 92Z',
+    'M126 116C148 128 161 160 167 204L160 207C150 172 138 148 120 130Z',
+    'M92 60L74 86 61 104 68 110 82 93 99 70Z',
+    'M128 62L121 92 104 99 106 106 126 99 137 70Z',
+    poly(20, 164, 152, 30, 5),
+    'M30 148L4 180 38 158Z',
+    'M92 124H108L100 160 108 196 96 222 72 226 71 219 89 214 92 197 84 160Z',
+    'M112 124H128L124 162 132 198 124 222 102 226 101 219 117 214 116 198 108 160Z'
+  ] },
+  hound: { w: 230, h: 218, body: 180, cx: 110, side: 'foe', paths: [
+    'M40 70C46 54 64 48 78 54L94 66 88 82 60 86 34 84Z',
+    'M30 70L6 64 10 76 30 82Z',
+    'M72 52L84 36 88 58Z',
+    'M80 70C110 60 160 62 190 76L204 104 186 132 120 134 86 120 76 96Z',
+    'M196 84C214 92 226 118 228 150L220 152C216 126 206 106 190 98Z',
+    'M88 116L76 160 70 216 84 218 92 162 104 124Z',
+    'M112 122L114 170 104 216 118 218 128 170 128 124Z',
+    'M160 124L170 168 160 216 174 218 186 166 178 122Z',
+    'M182 118L196 164 192 216 206 218 210 162 196 114Z'
+  ] },
+  serpent: { w: 220, h: 234, body: 160, cx: 96, side: 'foe', paths: [
+    'M58 8C72 0 92 4 98 18L102 34 84 42 62 38 42 30C40 20 46 12 58 8Z',
+    'M44 22L18 26 22 34 44 32Z',
+    'M80 36C96 40 104 60 100 84 96 110 82 132 86 156L60 160C54 132 70 108 74 84 78 64 72 48 68 40Z',
+    'M60 150C40 166 34 196 56 214 84 234 150 234 186 218 214 204 216 178 196 166 172 152 130 160 110 176L120 196C138 186 164 180 176 188 188 196 180 208 160 212 128 220 92 218 72 206 58 196 62 176 78 166Z',
+    'M108 178C124 196 156 200 184 194L190 206C160 216 118 212 98 192Z'
+  ] },
+  warden: { w: 220, h: 264, body: 180, cx: 120, side: 'foe', paths: [
+    'M136 10C124 0 106 4 100 14L80 22Q72 28 78 34L104 38 108 48 132 50C142 38 144 20 136 10Z',
+    'M126 10L150 0 138 18Z',
+    'M108 46H138L144 66 102 68Z',
+    'M86 66C100 56 150 56 166 68L176 118 164 168H92L80 118Z',
+    'M160 160C186 174 204 210 212 252L202 256C192 218 176 192 152 178Z',
+    'M30 70H86L92 92 88 190 58 206 28 190 24 92Z',
+    'M96 160H120L114 214 122 258 92 264 88 256 102 250 98 214Z',
+    'M136 160H160L160 214 170 256 140 264 136 256 150 250 140 214Z'
+  ] }
+};
+OCB.FIGURES = FIGURES;
+function Figure(kind, o) {
+  o = o || {};
+  var f = FIGURES[kind] || FIGURES.swordsman;
+  var foe = f.side === 'foe';
+  var fill = o.fill || (foe ? 'var(--figure-enemy)' : 'var(--figure-self)');
+  var rim = o.rim || (foe ? 'rgba(139,111,208,.35)' : 'rgba(232,168,76,.28)');
+  var s = sv('svg', { width: f.w, height: f.h, viewBox: '0 0 ' + f.w + ' ' + f.h, 'class': 'ocb-figure-svg', style: 'overflow:visible;display:block' });
+  var gr = sv('g', { fill: rim, stroke: rim, 'stroke-width': 4, 'stroke-linejoin': 'round' });
+  var gf = sv('g', { fill: fill });
+  f.paths.forEach(function (d) { gr.appendChild(sv('path', { d: d })); gf.appendChild(sv('path', { d: d })); });
+  s.appendChild(gr); s.appendChild(gf);
+  if (o.scaleTo) { s.setAttribute('width', f.w * o.scaleTo / f.h); s.setAttribute('height', o.scaleTo); }
+  return s;
+}
+OCB.Figure = Figure;
+function FootLight(w, foe) {
+  return h('div', { 'class': 'ocb-footlight', style: { width: px(w), background: 'radial-gradient(closest-side, ' + (foe ? 'rgba(139,111,208,.35)' : 'rgba(232,168,76,.55)') + ', rgba(0,0,0,0))' } });
+}
+OCB.FootLight = FootLight;
+
+// ======================================================================
+// Sound — synthesised with WebAudio, no audio files. One named preset per event.
+// Rule (battle_ui_ux_v2.md §5.20): at most two sounds per action — the action sound and the result sound.
+// No sound at the moment a number floats; the step-in is silent. Dark, quiet, damp: no fanfare, no bright beeps.
+// ======================================================================
+var TIMBRES = {
+  paper: '紙（擦れ）', slide: '紙の束（滑り）', wood: '木の小さな音', thud: '鈍い音', swish: '風切り',
+  slash: '斬撃', thrust: '突き', blunt: '打撃', metal: '金属', seal: '印（判）', string: '低い弦',
+  chime: '小さな灯', breath: '息を吸う', body: '体に当たる', heart: '鼓動', crack: '盾が割れる'
+};
+var SOUND_DEFAULTS = {
+  hover:        { label: '札にホバーして持ち上がる', spec: '指定なし', role: '—', timbre: 'paper', vol: 0.05, pitch: 3400, dur: 26, tone: 0.5 },
+  grab:         { label: '札を掴む', spec: '指定なし', role: '—', timbre: 'paper', vol: 0.16, pitch: 1500, dur: 80, tone: 0.4 },
+  frameIn:      { label: '対象の枠に入る', spec: '指定なし', role: '—', timbre: 'wood', vol: 0.11, pitch: 980, dur: 42, tone: 0.5 },
+  frameOut:     { label: '対象の枠から出る', spec: '指定なし', role: '—', timbre: 'wood', vol: 0.06, pitch: 560, dur: 40, tone: 0.3 },
+  noReach:      { label: '届かない相手の上', spec: '指定なし', role: '—', timbre: 'thud', vol: 0.07, pitch: 150, dur: 70, tone: 0.2 },
+  releaseAttack:{ label: '攻撃の札を離す', spec: '指定なし', role: '動作', timbre: 'swish', vol: 0.18, pitch: 900, dur: 150, tone: 0.5 },
+  hitSlash:     { label: '命中・斬撃', spec: '系統の音', role: '結果', timbre: 'slash', vol: 0.30, pitch: 2600, dur: 190, tone: 0.6 },
+  hitThrust:    { label: '命中・突き', spec: '系統の音', role: '結果', timbre: 'thrust', vol: 0.30, pitch: 1900, dur: 140, tone: 0.6 },
+  hitBlunt:     { label: '命中・打撃', spec: '系統の音', role: '結果', timbre: 'blunt', vol: 0.32, pitch: 120, dur: 170, tone: 0.4 },
+  releaseDefense:{ label: '防御の札を離す', spec: '指定なし', role: '動作', timbre: 'paper', vol: 0.14, pitch: 1100, dur: 90, tone: 0.3 },
+  guardUp:      { label: '盾の輪が立つ', spec: '金属（小）', role: '結果', timbre: 'metal', vol: 0.16, pitch: 1240, dur: 340, tone: 0.45 },
+  releaseSkill: { label: 'スキルの札を離す', spec: '指定なし', role: '動作', timbre: 'paper', vol: 0.14, pitch: 1300, dur: 90, tone: 0.4 },
+  seal:         { label: '状態が付く（印）', spec: '印', role: '結果', timbre: 'seal', vol: 0.22, pitch: 150, dur: 140, tone: 0.5 },
+  releaseStance:{ label: 'スタンスの札を離す', spec: '指定なし', role: '動作', timbre: 'paper', vol: 0.12, pitch: 900, dur: 110, tone: 0.3 },
+  stance:       { label: '型が立つ', spec: '低い弦（短）', role: '結果', timbre: 'string', vol: 0.20, pitch: 98, dur: 700, tone: 0.4 },
+  cancel:       { label: '取り消して手札に戻る', spec: '指定なし', role: '—', timbre: 'slide', vol: 0.10, pitch: 700, dur: 120, tone: 0.2 },
+  refusal:      { label: '出せない（理由の行）', spec: '指定なし', role: '—', timbre: 'wood', vol: 0.09, pitch: 300, dur: 34, tone: 0.2 },
+  draw:         { label: 'ドロー（1 枚ごと）', spec: '紙 × 枚数', role: '—', timbre: 'paper', vol: 0.07, pitch: 2200, dur: 60, tone: 0.5 },
+  discard:      { label: '全捨て（1 枚ごと）', spec: '紙', role: '—', timbre: 'paper', vol: 0.06, pitch: 1600, dur: 55, tone: 0.4 },
+  rebuild:      { label: '山札の作り直し', spec: '指定なし', role: '—', timbre: 'slide', vol: 0.12, pitch: 900, dur: 220, tone: 0.4 },
+  pip:          { label: '回復の粒が点く', spec: '小さな灯', role: '—', timbre: 'chime', vol: 0.06, pitch: 1180, dur: 260, tone: 0.3 },
+  breath:       { label: '構え・息を吸う', spec: '息を吸う', role: '動作', timbre: 'breath', vol: 0.12, pitch: 900, dur: 360, tone: 0.4 },
+  reserve:      { label: '構え・盾', spec: '金属（小）', role: '結果', timbre: 'metal', vol: 0.14, pitch: 1240, dur: 300, tone: 0.4 },
+  foeTurn:      { label: '敵の番の始まり', spec: '低い弦', role: '—', timbre: 'string', vol: 0.18, pitch: 73, dur: 900, tone: 0.3 },
+  omenDrop:     { label: '次の予兆が降りる', spec: '低い弦', role: '—', timbre: 'string', vol: 0.14, pitch: 73, dur: 700, tone: 0.3 },
+  hitGuard:     { label: '被弾・Guard が受ける', spec: '金属', role: '結果', timbre: 'metal', vol: 0.24, pitch: 620, dur: 420, tone: 0.6 },
+  guardBreak:   { label: '被弾・盾が割れる', spec: '金属', role: '結果', timbre: 'crack', vol: 0.24, pitch: 700, dur: 300, tone: 0.6 },
+  hitBody:      { label: '被弾・HP が減る', spec: '指定なし', role: '結果', timbre: 'body', vol: 0.30, pitch: 90, dur: 220, tone: 0.4 },
+  heartbeat:    { label: 'HP 15 未満の鼓動', spec: '低い鼓動', role: '—', timbre: 'heart', vol: 0.16, pitch: 55, dur: 160, tone: 0.3 }
+};
+OCB.SOUND_DEFAULTS = SOUND_DEFAULTS; OCB.TIMBRES = TIMBRES;
+
+function Sound() {
+  var S = { muted: false, master: 0.8, reverb: 0.18, presets: JSON.parse(JSON.stringify(SOUND_DEFAULTS)) };
+  var ctx = null, out = null, wet = null, noise = null, turn = 0;
+  function ensure() {
+    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return true; }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    ctx = new AC();
+    var comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 4;
+    out = ctx.createGain(); out.gain.value = S.master;
+    out.connect(comp); comp.connect(ctx.destination);
+    // A short damp room: decaying noise as the impulse, mostly low frequencies.
+    var len = Math.floor(ctx.sampleRate * 1.4), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    var seed = 7;
+    for (var ch = 0; ch < 2; ch++) {
+      var dd = ir.getChannelData(ch);
+      for (var i = 0; i < len; i++) { seed = (seed * 16807) % 2147483647; dd[i] = ((seed / 2147483647) * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+    }
+    var conv = ctx.createConvolver(); conv.buffer = ir;
+    var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400;
+    wet = ctx.createGain(); wet.gain.value = S.reverb;
+    wet.connect(lp); lp.connect(conv); conv.connect(out);
+    var nb = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), nd = nb.getChannelData(0), sd = 11;
+    for (var j = 0; j < nd.length; j++) { sd = (sd * 16807) % 2147483647; nd[j] = (sd / 2147483647) * 2 - 1; }
+    noise = nb;
+    return true;
+  }
+  var unlocked = false;
+  S.unlock = function () { unlocked = true; ensure(); };
+  S.setMaster = function (v) { S.master = v; if (out) out.gain.value = v; };
+  S.setReverb = function (v) { S.reverb = v; if (wet) wet.gain.value = v; };
+  function dest(g) { g.connect(out); g.connect(wet); }
+  function env(g, t, a, peak, dur) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + a);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(a + 0.01, dur));
+  }
+  function noiseSrc(t, dur) { var s = ctx.createBufferSource(); s.buffer = noise; s.loop = true; s.start(t, (turn * 0.137) % 0.8); s.stop(t + dur + 0.05); return s; }
+  function osc(type, f, t, dur) { var o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); o.start(t); o.stop(t + dur + 0.05); return o; }
+  function filt(type, f, q) { var b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q || 0.7; return b; }
+  var SYN = {
+    paper: function (t, p, d, v) {
+      var n = noiseSrc(t, d), bp = filt('bandpass', p, 0.8 + p_tone(p) * 2), hp = filt('highpass', 500), g = ctx.createGain();
+      n.connect(bp); bp.connect(hp); hp.connect(g); env(g, t, 0.004, v, d); dest(g);
+    },
+    slide: function (t, p, d, v) {
+      var n = noiseSrc(t, d), bp = filt('bandpass', p, 0.6), g = ctx.createGain();
+      bp.frequency.setValueAtTime(p * 1.3, t); bp.frequency.exponentialRampToValueAtTime(p * 0.7, t + d);
+      n.connect(bp); bp.connect(g); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + d * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, t + d); dest(g);
+    },
+    wood: function (t, p, d, v) {
+      var o = osc('triangle', p, t, d), g = ctx.createGain();
+      o.frequency.exponentialRampToValueAtTime(p * 0.82, t + d);
+      o.connect(g); env(g, t, 0.002, v, d); dest(g);
+      var n = noiseSrc(t, 0.02), hp = filt('highpass', 2500), g2 = ctx.createGain(); n.connect(hp); hp.connect(g2); env(g2, t, 0.001, v * 0.35, 0.018); dest(g2);
+    },
+    thud: function (t, p, d, v) {
+      var o = osc('sine', p, t, d), g = ctx.createGain();
+      o.frequency.exponentialRampToValueAtTime(p * 0.55, t + d);
+      o.connect(g); env(g, t, 0.003, v, d); dest(g);
+    },
+    swish: function (t, p, d, v) {
+      var n = noiseSrc(t, d), bp = filt('bandpass', p * 0.5, 1.4), g = ctx.createGain();
+      bp.frequency.setValueAtTime(p * 0.45, t); bp.frequency.exponentialRampToValueAtTime(p * 1.7, t + d);
+      n.connect(bp); bp.connect(g); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + d * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + d); dest(g);
+    },
+    slash: function (t, p, d, v) {
+      var n = noiseSrc(t, d), bp = filt('bandpass', p, 2.2), g = ctx.createGain();
+      bp.frequency.setValueAtTime(p, t); bp.frequency.exponentialRampToValueAtTime(p * 0.28, t + d * 0.8);
+      n.connect(bp); bp.connect(g); env(g, t, 0.003, v, d); dest(g);
+      SYN.thud(t + 0.01, 120, 0.14, v * 0.7);
+    },
+    thrust: function (t, p, d, v) {
+      var n = noiseSrc(t, d), hp = filt('bandpass', p, 3), g = ctx.createGain();
+      n.connect(hp); hp.connect(g); env(g, t, 0.002, v * 0.8, d * 0.6); dest(g);
+      SYN.thud(t, 170, d, v);
+    },
+    blunt: function (t, p, d, v) {
+      SYN.thud(t, p, d, v);
+      var n = noiseSrc(t, 0.08), lp = filt('lowpass', 900), g = ctx.createGain(); n.connect(lp); lp.connect(g); env(g, t, 0.002, v * 0.6, 0.08); dest(g);
+    },
+    metal: function (t, p, d, v) {
+      [[1, 1, 1], [2.76, 0.45, 0.7], [5.4, 0.25, 0.45], [8.93, 0.12, 0.3]].forEach(function (r) {
+        var o = osc('sine', p * r[0], t, d), g = ctx.createGain(); o.connect(g); env(g, t, 0.002, v * r[1] * (r[0] > 1 ? 0.6 + p_tone(p) : 1), d * r[2]); dest(g);
+      });
+      var n = noiseSrc(t, 0.02), hp = filt('highpass', 4000), g2 = ctx.createGain(); n.connect(hp); hp.connect(g2); env(g2, t, 0.001, v * 0.3, 0.02); dest(g2);
+    },
+    crack: function (t, p, d, v) {
+      SYN.metal(t, p, d * 0.6, v * 0.7);
+      var n = noiseSrc(t, d), hp = filt('highpass', 1800), g = ctx.createGain(); n.connect(hp); hp.connect(g); env(g, t + 0.02, 0.002, v * 0.8, d * 0.5); dest(g);
+    },
+    seal: function (t, p, d, v) {
+      SYN.thud(t, p, d * 0.7, v);
+      SYN.wood(t + 0.012, 1500, 0.025, v * 0.5);
+    },
+    string: function (t, p, d, v) {
+      var lp = filt('lowpass', p * 10, 1.2), g = ctx.createGain();
+      lp.frequency.setValueAtTime(p * 10, t); lp.frequency.exponentialRampToValueAtTime(p * 1.6, t + d * 0.7);
+      var o1 = osc('sawtooth', p, t, d), o2 = osc('triangle', p * 1.003, t, d);
+      o1.connect(lp); o2.connect(lp); lp.connect(g); env(g, t, 0.006, v, d); dest(g);
+    },
+    chime: function (t, p, d, v) {
+      var o = osc('sine', p, t, d), o2 = osc('sine', p * 2.01, t, d * 0.5), g = ctx.createGain(), g2 = ctx.createGain();
+      o.connect(g); o2.connect(g2); env(g, t, 0.006, v, d); env(g2, t, 0.004, v * 0.25, d * 0.5); dest(g); dest(g2);
+    },
+    breath: function (t, p, d, v) {
+      var n = noiseSrc(t, d), bp = filt('bandpass', p, 0.7), lp = filt('lowpass', 2200), g = ctx.createGain();
+      bp.frequency.setValueAtTime(p * 0.7, t); bp.frequency.linearRampToValueAtTime(p * 1.2, t + d);
+      n.connect(bp); bp.connect(lp); lp.connect(g);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + d * 0.75); g.gain.exponentialRampToValueAtTime(0.0001, t + d); dest(g);
+    },
+    body: function (t, p, d, v) {
+      SYN.thud(t, p, d, v);
+      var n = noiseSrc(t, d * 0.5), lp = filt('lowpass', 420), g = ctx.createGain(); n.connect(lp); lp.connect(g); env(g, t, 0.003, v * 0.8, d * 0.5); dest(g);
+    },
+    heart: function (t, p, d, v) {
+      SYN.thud(t, p, d, v); SYN.thud(t + 0.16, p * 0.9, d, v * 0.7);
+    }
+  };
+  var curTone = 0.5;
+  function p_tone() { return curTone; }
+  var lastAt = {};
+  S.play = function (name, delayMs, mult) {
+    if (S.muted) return;
+    var pr = S.presets[name]; if (!pr || !unlocked || !ensure()) return;
+    var now = ctx.currentTime;
+    if (name === 'hover' && lastAt.hover && now - lastAt.hover < 0.05) return;
+    lastAt[name] = now; turn++;
+    curTone = pr.tone;
+    var t = now + (delayMs || 0) / 1000;
+    // Alternate the pitch by ±3% so repeated paper sounds do not stack into one tone (no randomness).
+    var wob = (pr.timbre === 'paper' || pr.timbre === 'wood') ? (turn % 3 - 1) * 0.03 : 0;
+    try { SYN[pr.timbre](t, pr.pitch * (1 + wob), pr.dur / 1000, pr.vol * (mult || 1)); } catch (e) { /* ignore a bad preset */ }
+  };
+  S.reset = function () { S.presets = JSON.parse(JSON.stringify(SOUND_DEFAULTS)); };
+  return S;
+}
+OCB.Sound = Sound;
+
+// ======================================================================
+// FEEL — every motion value of grabbing, moving and releasing a card.
+// Defaults are Unity's values as read on 2026-10-18 (DepictionPlayer.cs, Effects.cs, HandFan.cs, TargetMarkView.cs).
+// ms are the lengths at battle speed ×1.25; at speed k every ms is multiplied by 1.25 / k.
+// [group, key, label, unit, default, min, max, step, unityValue, source]  (select rows: options array in place of min)
+// ======================================================================
+var EASES = ['out', 'in', 'inout', 'linear'];
+var FEEL_DEFS = [
+  ['手札の扇', 'fan.spacing5', '間隔（5 枚以下）', 'px', 160, 100, 220, 1, '160', 'battle-visual §4.8 / HandFan.cs'],
+  ['手札の扇', 'fan.spacing6', '間隔（6 枚）', 'px', 150, 100, 220, 1, '150', 'battle-visual §4.8'],
+  ['手札の扇', 'fan.rot', '1 枚ごとの傾き', '°', 2.5, 0, 8, 0.1, '2.5', 'HandFan.cs'],
+  ['手札の扇', 'fan.top', '中央の札の上端', 'px', 896, 820, 960, 1, '896', 'HandFan.cs'],
+  ['手札の扇', 'fan.sink', '中央から k 枚目を k² × この値だけ下げる', 'px', 3.2, 0, 10, 0.1, '3.2', 'HandFan.cs'],
+  ['手札の扇', 'fan.ms', '組み直しの長さ', 'ms', 120, 0, 600, 10, '120', 'Effects.cs HandFan'],
+  ['手札の扇', 'fan.ease', '組み直しの補間', '', 'out', EASES, null, null, 'out', 'Effects.cs HandFan'],
+  ['ホバー', 'hover.top', '持ち上げた札の上端', 'px', 760, 700, 896, 1, '760', 'DepictionPlayer.UpdateHover'],
+  ['ホバー', 'hover.ms', '長さ', 'ms', 90, 0, 400, 5, '90', 'DepictionPlayer.UpdateHover（仕様も 90）'],
+  ['ホバー', 'hover.curve', '補間', '', 'smooth', ['smooth', 'out'], null, null, 'smooth（直線の重み × smoothstep）', '仕様は ease-out'],
+  ['掴み始め', 'grab.threshold', 'ドラッグが始まる距離', 'px', 8, 0, 40, 1, 'Unity 標準のしきい値（EventSystem、画面の px）', '仕様 §3.1 は 8'],
+  ['起き上がり', 'rise.ms', '傾き 0° へ起こす長さ', 'ms', 90, 0, 400, 5, '90', 'DepictionPlayer.BeginHold'],
+  ['起き上がり', 'rise.ease', '補間', '', 'out', EASES, null, null, 'out', 'BeginHold'],
+  ['起き上がり', 'rise.opacity', '掴んだ札の不透明度', '', 0.92, 0.5, 1, 0.01, '0.92', '実装だけの値'],
+  ['ポインタへの追従', 'follow.keepOffset', '掴んだ点のずれを保つ', '', true, null, null, null, 'オン', 'OnDragMoved / DragPosition'],
+  ['対象の枠', 'frame.ms', '出る長さ', 'ms', 150, 0, 600, 10, '150', 'Effects.cs ReceiverShow'],
+  ['対象の枠', 'frame.ease', '出る補間', '', 'out', EASES, null, null, 'out', 'ReceiverShow'],
+  ['対象の枠', 'frame.hook', '鉤の 1 辺', 'px', 26, 8, 60, 1, '26', 'TargetMarkView.cs'],
+  ['対象の枠', 'frame.width', '鉤の太さ', 'px', 3, 1, 8, 0.5, '3', 'TargetMarkView.cs'],
+  ['対象の枠', 'frame.padX', '人型の外（左右）', 'px', 46, 0, 120, 1, '46', 'TargetMarkView.cs'],
+  ['対象の枠', 'frame.padTop', '人型の外（上）', 'px', 22, 0, 80, 1, '22', 'TargetMarkView.cs'],
+  ['対象の枠', 'frame.padBottom', '人型の外（下）', 'px', 12, 0, 80, 1, '12', 'TargetMarkView.cs'],
+  ['対象の枠', 'frame.glow', '光の広がり', 'px', 10, 0, 40, 1, '10', 'TargetMarkView.cs'],
+  ['対象の枠', 'frame.glowAlpha', '光の濃さ（琥珀）', '', 0.35, 0, 1, 0.05, '0.35', 'TargetMarkView.cs'],
+  ['対象の枠', 'frame.idle', '当たり判定の外での鉤の不透明度', '', 0.75, 0, 1, 0.05, '0.75', 'TargetMarkView.SetHot'],
+  ['対象の枠', 'tag.lift', '予測値の札のぶん予兆の札を上へよける', 'px', 0, 0, 80, 2, '0（よけない）', '試作で足した値。0 だと予測値の札が予兆の札の 2 行目を隠す'],
+  ['離す先の当たり判定', 'zone.w', '四角の幅', 'px', 340, 240, 520, 10, '340', 'ReceiverView'],
+  ['離す先の当たり判定', 'zone.h', '四角の高さ', 'px', 340, 240, 520, 10, '340', 'ReceiverView'],
+  ['離す先の当たり判定', 'zone.overlap', '成立に要る、札の面積の重なり', '%', 50, 0, 100, 1, '使わない（ポインタだけを見る）', '#568 の方針'],
+  ['離す先の当たり判定', 'zone.pointer', 'ポインタが四角の中なら重なりが足りなくても成立', '', true, null, null, null, 'オン（今はこれだけ）', 'DepictionPlayer.ZoneAt'],
+  ['離す先の当たり判定', 'zone.debug', 'デバッグ表示（札の矩形・四角・重なり %）', '', false, null, null, null, '—', '#568'],
+  ['吸い付き', 'snap.pull', '当たり判定の中心へ引く最大の割合', '', 0.35, 0, 1, 0.01, '0.35', 'DepictionPlayer.UpdateSnap（実装だけの値）'],
+  ['吸い付き', 'snap.ms', '長さ（smoothstep）', 'ms', 80, 0, 400, 5, '80', 'DepictionPlayer.UpdateSnap'],
+  ['投げ上げ線', 'throw.ms', '出る長さ', 'ms', 150, 0, 600, 10, '150', 'Effects.cs ThrowLineShow'],
+  ['投げ上げ線', 'throw.y', '線の y', 'px', 790, 600, 900, 1, '790', 'battle-visual §5.3'],
+  ['投げ上げ線', 'throw.below', 'カーソルが線より下のときの不透明度', '', 0.6, 0, 1, 0.05, '0.6', 'ThrowLineView.cs'],
+  ['離す（成立）', 'release.ms', '長さ', 'ms', 160, 0, 600, 10, '160', 'PlayAccepted / Effects.cs CardRelease'],
+  ['離す（成立）', 'release.ease', '補間', '', 'in', EASES, null, null, 'in', 'CardRelease'],
+  ['離す（成立）', 'release.scale', '終わりの大きさ', '', 0.5, 0.1, 1.2, 0.05, '0.5', 'CardRelease'],
+  ['離す（成立）', 'release.rise', '自分に向ける札が真上へ上がる量', 'px', 140, 0, 400, 5, '140', 'CardRelease'],
+  ['離したあと', 'ghost.ms', '札の影が捨札へ飛ぶ長さ', 'ms', 200, 0, 800, 10, '200', 'GhostToPile'],
+  ['離したあと', 'ghost.ease', '補間', '', 'inout', EASES, null, null, 'inout', 'GhostToPile'],
+  ['離したあと', 'ghost.stanceDelay', 'スタンスの影の遅れ', 'ms', 600, 0, 1500, 10, '600', 'GhostToPile'],
+  ['離したあと', 'ghost.stanceMs', 'スタンスの影が除外へ飛ぶ長さ', 'ms', 220, 0, 800, 10, '220', 'GhostToPile'],
+  ['離したあと', 'settle.ms', '残りの扇の組み直し', 'ms', 120, 0, 600, 10, '120', 'SettleHand'],
+  ['戻る（取り消し）', 'return.ms', '元の位置へ戻る長さ', 'ms', 200, 0, 800, 10, '200', 'ReturnToHand / CardReturn'],
+  ['戻る（取り消し）', 'return.ease', '補間', '', 'out', EASES, null, null, 'out', 'CardReturn'],
+  ['出せない', 'shake.px', '水平の揺れ幅', 'px', 8, 0, 30, 1, '8', 'RefusalShake（実装だけ）'],
+  ['出せない', 'shake.cycles', '往復', '回', 2, 0, 6, 1, '2', 'RefusalShake'],
+  ['出せない', 'shake.ms', '揺れの長さ', 'ms', 160, 0, 600, 10, '160', 'RefusalShake'],
+  ['出せない', 'refusal.hold', '理由の 1 行を出す長さ', 'ms', 3500, 500, 8000, 100, '3500', 'RefusalLineView.cs'],
+  ['出せない札の暗い幕', 'dim.alpha', '黒の濃さ', '', 0.6, 0, 1, 0.05, '0.6', 'Effects.cs UnpayableDim'],
+  ['出せない札の暗い幕', 'dim.ms', '長さ', 'ms', 120, 0, 600, 10, '120', 'UnpayableDim'],
+  ['ドロー', 'draw.ms', '1 枚の長さ', 'ms', 260, 0, 800, 10, '260', 'Effects.cs CardDraw'],
+  ['ドロー', 'draw.stagger', 'ずらし', 'ms', 60, 0, 200, 5, '60', 'CardDraw'],
+  ['全捨て', 'discard.ms', '1 枚の長さ', 'ms', 240, 0, 800, 10, '240', 'Effects.cs HandDiscard（§5.13 は 180）'],
+  ['全捨て', 'discard.stagger', 'ずらし', 'ms', 60, 0, 200, 5, '60', 'HandDiscard（§5.13 は 40）'],
+  ['山札の作り直し', 'rebuild.ms', '捨札が山札へ滑る長さ', 'ms', 200, 0, 800, 10, '200', 'Effects.cs PileRebuild'],
+  ['試したい（今は無い）', 'try.lag', '追従の遅れ（ばね）', 'ms', 0, 0, 200, 5, '0（無し）', '試作'],
+  ['試したい（今は無い）', 'try.tilt', '動く向きへの傾き（最大）', '°', 0, 0, 20, 0.5, '0（無し）', '試作'],
+  ['試したい（今は無い）', 'try.liftScale', '掴んだ札の大きさ', '', 1, 1, 1.2, 0.01, '1.0（変えない決まり）', '決定 7'],
+  ['試したい（今は無い）', 'try.liftShadow', '掴んだ札の影を足す強さ', '', 0, 0, 1, 0.05, '0（変えない決まり）', '決定 7'],
+  ['試したい（今は無い）', 'try.pulseMs', '離した瞬間の枠のひと呼吸', 'ms', 0, 0, 400, 10, '0（無し）', '試作'],
+  ['試したい（今は無い）', 'try.pulseWidth', 'そのときの鉤の太さの増分', 'px', 0, 0, 6, 0.5, '0', '試作'],
+  ['試したい（今は無い）', 'try.pulseGlow', 'そのときの光の増分', 'px', 0, 0, 30, 1, '0', '試作']
+];
+OCB.FEEL_DEFS = FEEL_DEFS;
+
+function Feel() {
+  var F = { v: {} };
+  F.reset = function () { FEEL_DEFS.forEach(function (d) { F.v[d[1]] = d[4]; }); };
+  F.get = function (k) { return F.v[k]; };
+  F.set = function (k, val) { F.v[k] = val; };
+  F.changed = function (k) { var d = FEEL_DEFS.filter(function (x) { return x[1] === k; })[0]; return d && F.v[k] !== d[4]; };
+  F.reset();
+  return F;
+}
+OCB.Feel = Feel;
+
+// Export: JSON + a Markdown table (名前 / 今の値 / 単位 / Unity の元の値 / 変えたか)
+function exportValues(feel, sound, extra) {
+  var json = { feel: {}, changed: [], sound: {}, extra: extra || {} };
+  var md = ['| 名前 | 今の値 | 単位 | Unity の元の値 | 変えたか |', '| --- | --- | --- | --- | --- |'];
+  FEEL_DEFS.forEach(function (d) {
+    var v = feel.get(d[1]), ch = v !== d[4];
+    json.feel[d[1]] = v; if (ch) json.changed.push(d[1]);
+    md.push('| ' + d[0] + '・' + d[2] + '（' + d[1] + '） | ' + v + ' | ' + (d[3] || '—') + ' | ' + d[8] + ' | ' + (ch ? '● 変えた' : '') + ' |');
+  });
+  var smd = ['', '| 出来事 | 仕様の音 | 役 | 音色 | 音量 | 高さ（Hz） | 長さ（ms） | 明るさ | 変えたか |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- |'];
+  Object.keys(SOUND_DEFAULTS).forEach(function (k) {
+    var p = sound.presets[k], d = SOUND_DEFAULTS[k];
+    json.sound[k] = { timbre: p.timbre, vol: p.vol, pitch: p.pitch, dur: p.dur, tone: p.tone };
+    var ch = p.timbre !== d.timbre || p.vol !== d.vol || p.pitch !== d.pitch || p.dur !== d.dur || p.tone !== d.tone;
+    smd.push('| ' + d.label + '（' + k + '） | ' + d.spec + ' | ' + d.role + ' | ' + TIMBRES[p.timbre] + ' | ' + p.vol + ' | ' + p.pitch + ' | ' + p.dur + ' | ' + p.tone + ' | ' + (ch ? '● 変えた' : '') + ' |');
+  });
+  json.sound._master = sound.master; json.sound._reverb = sound.reverb; json.sound._muted = sound.muted;
+  return { json: JSON.stringify(json, null, 2), md: md.join('\n') + '\n' + smd.join('\n') };
+}
+OCB.exportValues = exportValues;
+
+// ======================================================================
+// SCRIPT — the sample battle, written in one place. The screen only copies what the Core derives from it.
+// Cards from swordsman_cards_v4.md v4.7 / battle-visual-v1.md §9; the enemy from enemy_roster_v4.md §2.1,
+// cut to the three branches the brief asks for (no wall damage, no stamina fallback, no status ticks).
+// ======================================================================
+var SCRIPT = {
+  cells: 6,
+  handSize: 6,
+  reserve: { threshold: 3, guard: 3 },
+  player: { name: '剣士', hp: 50, maxHp: 50, st: 10, stMax: 10, regen: 3, cell: 1, figure: 'swordsman' },
+  enemies: [{ id: 'polearm_warped', name: '錆槍の竜兵', hp: 60, maxHp: 60, st: 10, stMax: 10, regen: 2, cell: 5, figure: 'spearman', angle: 45 }],
+  openingHand: ['ishitsubute', 'nobizuki', 'kesagiri', 'kokyu', 'ushirotobi', 'iwanokamae'],
+  openingDeck: ['fumikomi'],
+  deckOrder: ['fumikomi', 'ishitsubute', 'nobizuki', 'kesagiri', 'kokyu', 'ushirotobi', 'iwanokamae'],
+  cards: {
+    ishitsubute: {
+      name: '石礫', attr: 'attack', cost: 2, reach: [0, 3], target: 'foe',
+      values: [{ icon: 'sword', n: 5, word: '威力' }], desc: '敵に 脆化 2・威圧 2',
+      trait: { cond: '間合い 2 以上', eff: '→ コスト −1' }, when: { dist: [2, 99] }, then: { cost: -1 },
+      power: 5, statuses: { brittle: 2, intimidate: 2 }, hit: 'blunt',
+      hover: '間合い 2 以上なら、この札のコスト 2 → 1',
+      detail: '敵に 5 ダメージ、脆化 2 と威圧 2 を付ける。出す前の間合いが 2 以上なら、コストが 1 下がって 1。',
+      terms: [['脆化', '次に受ける攻撃の威力が 1.5 倍'], ['威圧', '次の行動の威力と Guard が −3']]
+    },
+    nobizuki: {
+      name: '伸び突き', attr: 'attack', cost: 2, reach: [1, 2], target: 'foe',
+      values: [{ icon: 'sword', n: 15, word: '威力' }], desc: '',
+      trait: { cond: '間合い 2 以上', eff: '→ 威力 +5' }, when: { dist: [2, 99] }, then: { power: 5 },
+      power: 15, hit: 'thrust',
+      hover: '間合い 2 以上なら、この札の威力 15 → 20',
+      detail: '敵に 15 ダメージ。出す前の間合いが 2 以上なら、ダメージが 5 増えて 20。届くのは 1〜2 なので、成り立つのは間合い 2 のとき。',
+      terms: [['間合い', '自分と相手のあいだの空きマスの数。0 は隣り合っている']]
+    },
+    kesagiri: {
+      name: '袈裟斬り', attr: 'attack', cost: 2, reach: [0, 1], target: 'foe',
+      values: [{ icon: 'sword', n: 15, word: '威力' }], desc: '',
+      trait: { cond: '間合い 0', eff: '→ 威力 +5' }, when: { dist: [0, 0] }, then: { power: 5 },
+      power: 15, hit: 'slash',
+      hover: '隣り合っていれば、この札の威力 15 → 20',
+      detail: '敵に 15 ダメージ。出す前の間合いが 0（隣り合っている）なら、ダメージが 5 増えて 20。',
+      terms: [['間合い', '自分と相手のあいだの空きマスの数。0 は隣り合っている']]
+    },
+    kokyu: {
+      name: '呼吸を整える', attr: 'defense', cost: 2, reach: 'self', target: 'self',
+      values: [{ icon: 'shield', n: 9, word: 'Guard' }], desc: '',
+      trait: { cond: '温存 残り 6 以上', eff: '→ 次ターン回復+1' }, when: { conserve: 6 }, then: { regenNext: 1 },
+      guard: 9,
+      hover: '出した後スタミナが 6 以上残れば、次ターンの回復 3 → 4',
+      detail: 'Guard を 9 得る。温存：この札を出したあともスタミナが 6 以上残るなら、次のターン開始のスタミナ回復が 1 増える（3 → 4）。',
+      terms: [['温存', 'この札を出したあとも、スタミナが n 以上残る']]
+    },
+    ushirotobi: {
+      name: '後ろ跳び', attr: 'defense', cost: 1, reach: 'self', target: 'self',
+      values: [{ icon: 'back', n: 2, word: '離れる' }, { icon: 'shield', n: 4, word: 'Guard' }], desc: '',
+      trait: { cond: '予兆が攻撃', eff: '→ Guard +3' }, when: { omen: '攻撃' }, then: { guard: 3 },
+      move: -2, guard: 4,
+      hover: 'いちばん近い敵の予兆が攻撃なら、この札の Guard 4 → 7',
+      detail: '2 マス離れ、Guard 4 を得る。いちばん近い敵の予兆が攻撃なら、Guard がさらに 3 増えて 7。',
+      terms: [['離れる', '自分が動いて、相手との間合いを広げる']]
+    },
+    iwanokamae: {
+      name: '岩の構え', attr: 'stance', cost: 2, reach: 'self', target: 'self',
+      lines: ['ターン開始 Guard +3'],
+      trait: { cond: '置く時 予兆が攻撃', eff: '→ Guard +3（1 回）' }, when: { omen: '攻撃' }, then: { guardNow: 3 },
+      stance: { turnStartGuard: 3, how: '自分のターン開始に Guard +3' },
+      hover: '置くときに敵の予兆が攻撃なら、その場で Guard +3（1 回だけ）',
+      detail: 'スタンス。置いている間、自分のターン開始に Guard を 3 得る。置くときに敵の予兆が攻撃なら、その場で Guard +3（1 回だけ）。',
+      terms: [['永続', '消えずに残る。重ねると重ねた数のぶん効く']]
+    },
+    fumikomi: {
+      name: '踏み込み斬り', attr: 'attack', cost: 3, reach: [1, 2], target: 'foe',
+      values: [{ icon: 'sword', n: 16, word: '威力' }, { icon: 'forward', n: 1, word: '詰める' }], desc: '',
+      trait: { cond: '連動 スタンス', eff: '→ 威力 +3' }, when: { linked: 'stance' }, then: { power: 3 },
+      power: 16, moveAfter: 1, hit: 'slash',
+      hover: 'このターンにスタンス札を出していれば、威力 16 → 19',
+      detail: '敵に 16 ダメージを与え、そのあと 1 マス詰める。連動 スタンス：このターンにスタンス札をもう出していれば、威力 +3 で 19。',
+      terms: [['連動 X', 'このターンに属性 X のカードをもう出している'], ['詰める', '自分が動いて、相手との間合いを縮める']]
+    }
+  },
+  // Omens by distance band (enemy_roster_v4.md §2.1, the first branch of each band).
+  actions: {
+    step:  { name: '踏み込み', kind: '移動', cost: 1, move: -1, guard: 2 },
+    sweep: { name: '払い斬り', kind: '攻撃', cost: 2, reach: [1, 2], power: 9, bonus: { dist: 2, power: 3 }, hit: 'slash' },
+    shove: { name: '柄尻の押し込み', kind: '攻撃', cost: 2, reach: [0, 0], power: 6, push: 2, hit: 'blunt' }
+  },
+  decide: function (dist) { return dist >= 3 ? 'step' : dist >= 1 ? 'sweep' : 'shove'; }
+};
+OCB.SCRIPT = SCRIPT;
+
+// ======================================================================
+// Core — the rules for the sample. Pure data in, events out; the screen never computes a number.
+// ======================================================================
+function Core(script) {
+  var S = script || SCRIPT;
+  var C = {};
+  var st;
+  var uidSeq = 0;
+  function mkCard(id) { return { uid: 'c' + (++uidSeq), id: id }; }
+  C.reset = function () {
+    uidSeq = 0;
+    var p = S.player;
+    st = {
+      turn: 0, phase: 'start', over: null,
+      player: { hp: p.hp, maxHp: p.maxHp, guard: 0, st: p.st, stMax: p.stMax, regen: p.regen, cell: p.cell, statuses: {}, stances: [], regenBonus: 0 },
+      enemies: S.enemies.map(function (e) { return { id: e.id, name: e.name, hp: e.hp, maxHp: e.maxHp, guard: 0, st: e.st, stMax: e.stMax, regen: e.regen, cell: e.cell, angle: e.angle, statuses: {}, omen: null, figure: e.figure }; }),
+      hand: [], deck: [], discard: [], exile: [], cards: {},
+      played: { attack: 0, defense: 0, skill: 0, stance: 0 }
+    };
+    S.openingDeck.forEach(function (id) { var c = mkCard(id); st.cards[c.uid] = c; st.deck.push(c.uid); });
+    st.opening = S.openingHand.map(function (id) { var c = mkCard(id); st.cards[c.uid] = c; return c.uid; });
+    st.enemies.forEach(function (e) { e.omen = S.decide(dist(e)); });
+    return C;
+  };
+  function dist(e) { return Math.abs(e.cell - st.player.cell) - 1; }
+  function nearest() { var best = null; st.enemies.forEach(function (e) { if (e.hp > 0 && (!best || dist(e) < dist(best))) best = e; }); return best; }
+  function def(uid) { return S.cards[st.cards[uid].id]; }
+  function inRange(r, d) { return d >= r[0] && d <= r[1]; }
+  C.state = function () { return st; };
+  C.distance = function (i) { return dist(st.enemies[i || 0]); };
+
+  // Trait test against one enemy (foe cards) or the nearest enemy (self cards) — battle-visual-v1.md §6.3
+  function traitHolds(d, e, payAfter) {
+    var w = d.when; if (!w) return false;
+    if (w.dist) return inRange(w.dist, dist(e));
+    if (w.omen) { var o = omenOf(e); return o && o.kind === w.omen; }
+    if (w.conserve != null) return payAfter >= w.conserve;
+    if (w.linked) return st.played[w.linked] > 0;
+    return false;
+  }
+  function costFor(d, e) { return Math.max(0, d.cost + (d.then.cost && traitHolds(d, e) ? d.then.cost : 0)); }
+  function reachableEnemies(d) {
+    if (d.target !== 'foe') return [];
+    return st.enemies.map(function (e, i) { return e.hp > 0 && inRange(d.reach, dist(e)) ? i : -1; }).filter(function (i) { return i >= 0; });
+  }
+  // What a hand card shows right now (cost, lamp, payable, reach) — the view copies this.
+  C.cardView = function (uid) {
+    var d = def(uid), e = nearest();
+    var reach = reachableEnemies(d);
+    // Foe cards judge only the enemies they reach (battle-visual §6.3); nothing in reach → lamp off, base cost.
+    var judge = d.target === 'foe' ? reach.map(function (i) { return st.enemies[i]; }) : [e];
+    var cost = d.target === 'foe' ? (judge.length ? Math.min.apply(null, judge.map(function (x) { return costFor(d, x); })) : d.cost) : d.cost;
+    var lamp = judge.some(function (x) { return traitHolds(d, x, st.player.st - cost); });
+    return {
+      uid: uid, id: st.cards[uid].id, def: d, cost: cost, costDown: cost < d.cost, lamp: lamp,
+      payable: st.player.st >= cost, self: d.target !== 'foe', reachable: reach,
+      outOfReach: d.target === 'foe' && !reach.length ? '相手との間合いが ' + reachText(d.reach) + ' のとき使用可能' : null,
+      hover: d.hover
+    };
+  };
+  // Prediction while held over a target (enemy index, or 'self').
+  C.predict = function (uid, target) {
+    var d = def(uid);
+    if (target === 'self') {
+      var e = nearest(), cost = d.cost, after = st.player.st - cost, holds = traitHolds(d, e, after);
+      if (d.attr === 'stance') {
+        var have = st.player.stances.filter(function (s) { return s.id === st.cards[uid].id; }).length;
+        return holds ? { icon: 'shield', n: '+' + (d.then.guardNow || 0), color: 'var(--guard)', lamp: true, cost: cost } : { icon: 'flag', n: '×' + (have + 1), color: 'var(--hp-text)', lamp: false, cost: cost };
+      }
+      var g = (d.guard || 0) + (holds && d.then.guard ? d.then.guard : 0);
+      return { icon: 'shield', n: '+' + g, color: 'var(--guard)', lamp: holds, cost: cost };
+    }
+    var en = st.enemies[target];
+    var ok = inRange(d.reach, dist(en));
+    var c2 = costFor(d, en);
+    if (!ok) return { reachable: false, cost: c2 };
+    var r = attackOn(d, en);
+    return { reachable: true, icon: 'sword', n: r.power, color: 'var(--phosphor)', hpLoss: r.hpLoss, guardLoss: r.guardLoss, lamp: traitHolds(d, en), cost: c2 };
+  };
+  function attackOn(d, e) {
+    var p = d.power || 0, labels = [];
+    if (d.then.power && traitHolds(d, e)) { p += d.then.power; labels.push('+' + d.then.power + ' ' + (d.when.dist ? '間合い' : '連動')); }
+    var brittle = (e.statuses.brittle || 0) > 0;
+    if (brittle) { p = Math.floor(p * 1.5); labels.push('×1.5 脆化'); }
+    var gl = Math.min(e.guard, p);
+    return { power: p, guardLoss: gl, hpLoss: p - gl, label: labels.join(' '), brittle: brittle };
+  }
+  // Can the held card be played on this target? Returns {ok, reason}
+  C.check = function (uid, target) {
+    var d = def(uid);
+    if (st.phase !== 'player') return { ok: false, reason: 'いまは敵の番です' };
+    var cost = target === 'self' || target == null ? d.cost : costFor(d, st.enemies[target]);
+    if (d.target === 'foe') {
+      var e = st.enemies[target];
+      if (!inRange(d.reach, dist(e))) return { ok: false, reason: 'いまの間合い ' + dist(e) + ' では届きません。この札は ' + reachText(d.reach) + ' です' };
+    }
+    if (st.player.st < cost) return { ok: false, reason: 'スタミナ ' + cost + ' が要ります。残りは ' + st.player.st + ' です' };
+    return { ok: true, cost: cost };
+  };
+  // Play a card. Returns the events the view animates, in order.
+  C.play = function (uid, target) {
+    var chk = C.check(uid, target);
+    if (!chk.ok) return [{ t: 'refuse', reason: chk.reason }];
+    var d = def(uid), p = st.player, ev = [];
+    var e = d.target === 'foe' ? st.enemies[target] : nearest();
+    var cost = chk.cost;
+    var holds = d.target === 'foe' ? traitHolds(d, e) : traitHolds(d, e, p.st - cost);
+    var from = p.st; p.st -= cost;
+    ev.push({ t: 'pay', from: from, to: p.st, n: cost });
+    st.hand.splice(st.hand.indexOf(uid), 1);
+    if (d.target === 'foe') {
+      var r = attackOn(d, e);
+      if (r.brittle) e.statuses.brittle--;
+      e.guard -= r.guardLoss; e.hp = Math.max(0, e.hp - r.hpLoss);
+      ev.push({ t: 'hit', who: target, guardLoss: r.guardLoss, hpLoss: r.hpLoss, power: r.power, label: r.label, sound: d.hit, trait: holds, brittle: r.brittle });
+      if (d.statuses) for (var k in d.statuses) { e.statuses[k] = (e.statuses[k] || 0) + d.statuses[k]; ev.push({ t: 'status', who: target, id: k, n: d.statuses[k] }); }
+      if (d.moveAfter && e.hp > 0) {
+        var to = Math.min(p.cell + d.moveAfter, e.cell - 1);
+        if (to !== p.cell) { ev.push({ t: 'move', who: 'self', from: p.cell, to: to }); p.cell = to; }
+      }
+    } else {
+      if (d.move) {
+        var to2 = clamp(p.cell + d.move, 0, S.cells - 1);
+        if (to2 !== p.cell) { ev.push({ t: 'move', who: 'self', from: p.cell, to: to2 }); p.cell = to2; }
+      }
+      var g = (d.guard || 0) + (holds && d.then.guard ? d.then.guard : 0);
+      if (g) { p.guard += g; ev.push({ t: 'guard', who: 'self', n: g, label: holds && d.then.guard ? '+' + d.then.guard + ' 予兆' : '' }); }
+      if (holds && d.then.regenNext) { p.regenBonus += d.then.regenNext; ev.push({ t: 'regenBonus', n: d.then.regenNext }); }
+      if (d.attr === 'stance') {
+        var id = st.cards[uid].id;
+        p.stances.push({ id: id, name: d.name, how: d.stance.how });
+        ev.push({ t: 'stance', id: id });
+        if (holds && d.then.guardNow) { p.guard += d.then.guardNow; ev.push({ t: 'guard', who: 'self', n: d.then.guardNow, label: '特性' }); }
+      }
+    }
+    st.played[d.attr]++;
+    var pile = d.attr === 'stance' ? 'exile' : 'discard';
+    st[pile].push(uid);
+    ev.push({ t: 'toPile', uid: uid, pile: pile });
+    if (st.enemies.every(function (x) { return x.hp <= 0; })) { st.over = 'win'; ev.push({ t: 'end', result: 'win' }); }
+    return ev;
+  };
+  // ---- turn start (battle_ui_ux_v2.md §5.1) ----
+  C.startTurn = function () {
+    var p = st.player, ev = [];
+    st.turn++; st.phase = 'start';
+    st.played = { attack: 0, defense: 0, skill: 0, stance: 0 };
+    ev.push({ t: 'banner', text: 'あなたの番' });
+    if (p.guard) ev.push({ t: 'guardReset', who: 'self' });
+    p.guard = 0;
+    if (st.turn > 1) {
+      var from = p.st; p.st = Math.min(p.stMax, p.st + p.regen + p.regenBonus);
+      ev.push({ t: 'regen', who: 'self', from: from, to: p.st });
+      p.regenBonus = 0;
+    }
+    var sg = p.stances.reduce(function (a, s) { return a + (S.cards[s.id].stance.turnStartGuard || 0); }, 0);
+    if (sg) { p.guard += sg; ev.push({ t: 'guard', who: 'self', n: sg, label: '構え' }); }
+    if (st.turn === 1) { st.opening.forEach(function (u) { st.hand.push(u); ev.push({ t: 'draw', uid: u }); }); }
+    while (st.hand.length < S.handSize) {
+      if (!st.deck.length) {
+        if (!st.discard.length) break;
+        var order = S.deckOrder;
+        st.deck = st.discard.slice().sort(function (a, b) { return order.indexOf(st.cards[a].id) - order.indexOf(st.cards[b].id); });
+        st.discard = [];
+        ev.push({ t: 'rebuild', n: st.deck.length });
+      }
+      var u = st.deck.shift(); st.hand.push(u); ev.push({ t: 'draw', uid: u });
+    }
+    ev.push({ t: 'omenFlash' });
+    ev.push({ t: 'phase', phase: 'player' });
+    if (p.hp < 15) ev.push({ t: 'lowHp' });
+    return ev;
+  };
+  C.setPhase = function (ph) { st.phase = ph; };
+  // ---- turn end (§5.13 順 1〜4) ----
+  C.endTurn = function () {
+    var p = st.player, ev = [];
+    st.phase = 'end';
+    if (p.st >= S.reserve.threshold) { p.guard += S.reserve.guard; ev.push({ t: 'reserve', who: 'self', n: S.reserve.guard }); }
+    var uids = st.hand.slice(); st.discard = st.discard.concat(uids); st.hand = [];
+    ev.push({ t: 'discardAll', uids: uids });
+    ev.push({ t: 'clearPlayed' });
+    return ev;
+  };
+  // ---- enemy turn (§5.13 順 5〜9) ----
+  C.enemyTurn = function () {
+    var p = st.player, ev = [];
+    st.phase = 'enemy';
+    ev.push({ t: 'banner', text: '敵の番', foe: true });
+    st.enemies.forEach(function (e, i) {
+      if (e.hp <= 0 || st.over) return;
+      if (e.guard) ev.push({ t: 'guardReset', who: i });
+      e.guard = 0;
+      var f = e.st; e.st = Math.min(e.stMax, e.st + e.regen); ev.push({ t: 'regen', who: i, from: f, to: e.st });
+      var a = S.actions[e.omen], o = omenOf(e);
+      ev.push({ t: 'act', who: i, action: e.omen, name: a.name });
+      if (e.st < a.cost) { ev.push({ t: 'rest', who: i }); }
+      else {
+        e.st -= a.cost;
+        var intim = (e.statuses.intimidate || 0) > 0;
+        if (a.move) {
+          var to = e.cell + a.move;
+          if (to > p.cell) { ev.push({ t: 'move', who: i, from: e.cell, to: to }); e.cell = to; }
+          var g = Math.max(0, a.guard - (intim ? 3 : 0));
+          if (g) { e.guard += g; ev.push({ t: 'guard', who: i, n: g, label: intim ? '−3 威圧' : '' }); }
+        } else {
+          var hitIt = o.hit;
+          if (hitIt) {
+            var pw = o.value;
+            var gl = Math.min(p.guard, pw); p.guard -= gl; p.hp = Math.max(0, p.hp - (pw - gl));
+            ev.push({ t: 'hit', who: 'self', from: i, guardLoss: gl, hpLoss: pw - gl, power: pw, label: o.label, sound: a.hit, broke: gl > 0 && p.guard === 0 });
+            if (a.push && p.hp > 0) {
+              var t2 = Math.max(0, p.cell - a.push);
+              if (t2 !== p.cell) { ev.push({ t: 'move', who: 'self', from: p.cell, to: t2, pushed: true }); p.cell = t2; }
+            }
+          } else ev.push({ t: 'miss', who: 'self', from: i, sound: a.hit });
+        }
+        if (intim) { e.statuses.intimidate--; ev.push({ t: 'statusUse', who: i, id: 'intimidate' }); }
+      }
+      if (p.hp <= 0) { st.over = 'lose'; ev.push({ t: 'end', result: 'lose' }); return; }
+      if (e.st >= S.reserve.threshold) { e.guard += S.reserve.guard; ev.push({ t: 'reserve', who: i, n: S.reserve.guard }); }
+      e.omen = S.decide(dist(e));
+      ev.push({ t: 'omen', who: i });
+    });
+    return ev;
+  };
+  // Omen as the plate shows it, from the current positions (§4.4).
+  function omenOf(e) {
+    var a = S.actions[e.omen]; if (!a) return null;
+    var d = dist(e), intim = (e.statuses.intimidate || 0) > 0;
+    var o = { kind: a.kind, name: a.name, angle: e.angle, cells: [], boundary: [], move: null, value: null, hit: null, label: '' };
+    if (a.move) { o.move = e.cell + a.move > st.player.cell ? e.cell + a.move : null; return o; }
+    for (var c = 0; c < S.cells; c++) {
+      var dd = Math.abs(e.cell - c) - 1;
+      if (c < e.cell && inRange(a.reach, dd)) { o.cells.push(c); if (a.bonus && dd >= a.bonus.dist) o.boundary.push(c); }
+    }
+    var v = a.power, lab = [];
+    if (a.bonus && d >= a.bonus.dist) { v += a.bonus.power; lab.push('+' + a.bonus.power + ' 間合い'); }
+    if (intim) { v = Math.max(0, v - 3); lab.push('−3 威圧'); }
+    o.value = v; o.label = lab.join(' ');
+    o.hit = o.cells.indexOf(st.player.cell) >= 0;
+    return o;
+  }
+  C.omen = function (i) { return omenOf(st.enemies[i]); };
+  // The enemy's stance-guard is a projection: stamina after its next turn's recovery and action (§4.5).
+  C.foeReserve = function (i) {
+    var e = st.enemies[i], a = S.actions[e.omen];
+    return Math.min(e.stMax, e.st + e.regen) - (a ? a.cost : 0) >= S.reserve.threshold;
+  };
+  C.pileList = function (pile) {
+    var counts = {}, owned = {};
+    Object.keys(st.cards).forEach(function (u) {
+      var id = st.cards[u].id;
+      owned[id] = (owned[id] || 0) + 1;
+    });
+    (st[pile] || []).forEach(function (u) { var id = st.cards[u].id; counts[id] = (counts[id] || 0) + 1; });
+    return S.deckOrder.filter(function (id) { return counts[id]; }).map(function (id) { return { id: id, def: S.cards[id], n: counts[id], owned: owned[id] }; });
+  };
+  C.reserveAfter = function (pay) { return st.player.st - (pay || 0) >= S.reserve.threshold; };
+  C.cheat = function (k) {
+    if (k === 'lowhp') st.player.hp = 12;
+    if (k === 'foe5') st.enemies[0].hp = 5;
+  };
+  return C.reset();
+}
+OCB.Core = Core;
+
+// ======================================================================
+// LAYOUT — battle-visual-v1.md §4 (1920×1080, origin top-left, px)
+// ======================================================================
+var LAYOUT = {
+  W: 1920, H: 1080, floorX0: 300, floorX1: 1620, floorY: 560, cellH: 40, cellGap: 3,
+  footY: 570, omenGap: 14, omenW: 200, omenH: 98,
+  panelY: 614, panelSelfW: 300, panelFoeW: 210, edge: 24,
+  stanceY: 470, stanceW: 250, stanceH: 52, stanceGap: 6, stanceMax: 3,
+  distY: 563, throwX0: 400, throwX1: 1520,
+  stamina: { x: 32, y: 846 }, piles: { x: 32, y: 948, w: 64, h: 84, gap: 22 },
+  attrs: { x: 1718, y: 896 }, guardPre: { x: 1560, y: 984 }, endTurn: { x: 1672, y: 976 },
+  corner: { x: 24, y: 20 }, journal: { x: 1840, y: 20 }, speed: { x: 1708, y: 20 },
+  hand: { cx: 960 }, refusalBottom: 884, bannerY: 400
+};
+OCB.LAYOUT = LAYOUT;
+
+function mountBattle(root, opts) {
+  opts = opts || {};
+  ensureTokens();
+  var L = LAYOUT;
+  var feel = opts.feel || Feel(), sound = opts.sound || Sound();
+  var F = feel.get;
+  var core = Core(SCRIPT);
+  var S = core.state();
+  var speed = 1.25, ff = false, busy = false, phase = 'start', flowStep = 0;
+  var VAR = { theme: opts.theme || 'dusk', drawer: 'a', pursuit: false, pursuitV: 'a', heights: 'a', body: 'spearman', longText: false, longLen: 30, fit: 'unity', step: false, guide: 'real' };
+  function T(ms) { return ff ? 1 : ms * 1.25 / speed; }
+
+  // ---------------- clock, tweens, timers ----------------
+  var nowMs = performance.now(), tweens = [], timers = [];
+  function tween(obj, to, ms, ease, delay) {
+    return new Promise(function (res) {
+      var keys = Object.keys(to);
+      tweens = tweens.filter(function (tw) {
+        if (tw.obj !== obj) return true;
+        keys.forEach(function (k) { delete tw.to[k]; });
+        if (!Object.keys(tw.to).length) { tw.res(); return false; }
+        return true;
+      });
+      tweens.push({ obj: obj, to: Object.assign({}, to), from: null, ms: Math.max(0, ms), ease: EASE[ease] || ease || EASE.out, t0: nowMs + (delay || 0), res: res });
+    });
+  }
+  function wait(ms) { return new Promise(function (res) { timers.push({ at: nowMs + ms, res: res }); }); }
+  function stepClock() {
+    var done = [];
+    tweens = tweens.filter(function (tw) {
+      if (nowMs < tw.t0) return true;
+      if (!tw.from) { tw.from = {}; for (var k in tw.to) tw.from[k] = tw.obj[k]; }
+      var t = tw.ms ? Math.min(1, (nowMs - tw.t0) / tw.ms) : 1, e = tw.ease(t);
+      for (var k2 in tw.to) tw.obj[k2] = tw.from[k2] + (tw.to[k2] - tw.from[k2]) * e;
+      if (t >= 1) { done.push(tw.res); return false; }
+      return true;
+    });
+    timers = timers.filter(function (tm) { if (nowMs >= tm.at) { done.push(tm.res); return false; } return true; });
+    done.forEach(function (r) { r(); });
+  }
+
+  // ---------------- DOM ----------------
+  root.innerHTML = '';
+  root.classList.add('ocb-root');
+  var game = h('div', { 'class': 'ocb-game' });
+  var vp = h('div', { 'class': 'ocb-viewport' });
+  var stage = h('div', { 'class': 'ocb-stage', 'data-theme': VAR.theme });
+  var layerZ = 0;
+  function layer() { var l = h('div', { 'class': 'ocb-layer', style: { zIndex: String(++layerZ * 10) } }); stage.appendChild(l); return l; }
+  vp.appendChild(stage); game.appendChild(vp); root.appendChild(game);
+
+  // backdrop: sky / meadow / earth, light, haze, drifting motes (§2.4 layer 1)
+  var back = h('div', { 'class': 'ocb-backdrop' },
+    h('div', { 'class': 'ocb-sky' }), h('div', { 'class': 'ocb-meadow' }), h('div', { 'class': 'ocb-earth' }),
+    h('div', { 'class': 'ocb-sun' }), h('div', { 'class': 'ocb-haze' }), h('div', { 'class': 'ocb-horizon' }));
+  var seed = 3;
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  for (var mi = 0; mi < 28; mi++) {
+    back.appendChild(h('i', { 'class': 'ocb-mote', style: { left: px(Math.round(rnd() * 1900)), top: px(Math.round(40 + rnd() * 520)), '--dx': px(Math.round(40 + rnd() * 90)), '--dy': px(Math.round(-30 - rnd() * 60)), 'animation-duration': (9 + rnd() * 9).toFixed(1) + 's', 'animation-delay': (-rnd() * 12).toFixed(1) + 's', opacity: '0' } }));
+  }
+  stage.appendChild(back);
+  var Lfield = layer(), Lpanels = layer(), Lfx = layer(), Lhud = layer();
+  var shade = h('div', { 'class': 'ocb-enemy-shade', style: { zIndex: String(++layerZ * 10) } }); stage.appendChild(shade);
+  var Lhand = layer(), Lheld = layer(), Lfloat = layer(), Lover = layer();
+  [Lfield, Lfx, Lhand, Lheld, Lfloat].forEach(function (l) { l.style.pointerEvents = 'none'; l.classList.add('ocb-pe-all-none'); });
+
+  // ---------------- view model (what the screen shows; updated only by events) ----------------
+  var V;
+  function snapshotView() {
+    V = {
+      p: { hp: S.player.hp, maxHp: S.player.maxHp, guard: S.player.guard, st: S.player.st, stMax: S.player.stMax, cell: S.player.cell, regen: S.player.regen, regenBonus: S.player.regenBonus, stances: [], statuses: {} },
+      e: S.enemies.map(function (e) { return { hp: e.hp, maxHp: e.maxHp, guard: e.guard, st: e.st, cell: e.cell, statuses: {} }; }),
+      deck: S.deck.length + (S.turn === 0 ? S.opening.length : 0), discard: 0, exile: 0, played: { attack: 0, defense: 0, skill: 0, stance: 0 }, turn: S.turn
+    };
+  }
+  snapshotView();
+  var cellW = (L.floorX1 - L.floorX0) / SCRIPT.cells;
+  function cellX(c) { return L.floorX0 + cellW * (c + 0.5); }
+
+  // ---------------- floor ----------------
+  var tiles = [];
+  for (var ci = 0; ci < SCRIPT.cells; ci++) {
+    var tile = FloorTile(cellW - 2 * L.cellGap);
+    place(tile, L.floorX0 + ci * cellW + L.cellGap, L.floorY);
+    tiles.push(tile); Lfield.appendChild(tile);
+  }
+  var distHost = h('div', { 'class': 'ocb-abs', style: { left: '0', top: px(L.distY) } }); Lfield.appendChild(distHost);
+
+  // ---------------- figures ----------------
+  var ENEMY_H = { a: { spearman: 226, hound: 218, serpent: 232, warden: 264 }, b: { spearman: 232, hound: 218, serpent: 240, warden: 264 }, c: { spearman: 226, hound: 226, serpent: 226, warden: 264 } };
+  function makeFig(kind, foe, height) {
+    var f = FIGURES[kind], k = (height || f.h) / f.h;
+    var wrap = h('div', { 'class': 'ocb-figure' });
+    var foot = FootLight(f.body * 2, foe); wrap.appendChild(foot);
+    var svgEl = Figure(kind); svgEl.setAttribute('width', f.w * k); svgEl.setAttribute('height', f.h * k);
+    var body = h('div', { style: 'position:absolute' }, svgEl);
+    wrap.appendChild(body);
+    Lfield.appendChild(wrap);
+    return { el: wrap, foot: foot, body: body, kind: kind, f: f, k: k, hgt: f.h * k, bw: f.body * k, x: 0, dx: 0, dy: 0, foe: foe };
+  }
+  var figP = makeFig('swordsman', false);
+  var figE = [];
+  function buildEnemyFigs() {
+    figE.forEach(function (g) { g.el.remove(); });
+    figE = S.enemies.map(function (e, i) {
+      var kind = i === 0 ? VAR.body : e.figure;
+      var g = makeFig(kind, true, ENEMY_H[VAR.heights][kind] || 226);
+      g.x = cellX(V.e[i].cell);
+      return g;
+    });
+  }
+  figP.x = cellX(V.p.cell);
+  buildEnemyFigs();
+
+  // ---------------- panels, omens, stances ----------------
+  var panelLoss = {};
+  var panelP = StatusPanel(viewPanel('self')); Lpanels.appendChild(panelP);
+  var panelE = S.enemies.map(function (e, i) { var p = StatusPanel(viewPanel(i)); Lpanels.appendChild(p); return p; });
+  var omenEls = S.enemies.map(function (e, i) { var o = OmenPlate({ kind: '移動' }); o.style.position = 'absolute'; Lpanels.appendChild(o); return { el: o, y: 0, op: 1, flash: 0, lift: 0 }; });
+  var stanceHostP = h('div', { 'class': 'ocb-abs' }); Lpanels.appendChild(stanceHostP);
+  var stanceHostE = h('div', { 'class': 'ocb-abs' }); Lpanels.appendChild(stanceHostE);
+  function viewPanel(who) {
+    if (who === 'self') return { side: 'self', width: L.panelSelfW, hp: V.p.hp, maxHp: V.p.maxHp, guard: V.p.guard, chips: chipsOf(V.p.statuses) };
+    var e = V.e[who];
+    return { side: 'foe', width: L.panelFoeW, hp: e.hp, maxHp: e.maxHp, guard: e.guard, st: e.st, reserve: core.foeReserve(who), chips: chipsOf(e.statuses), loss: panelLoss[who] || 0, badges: VAR.pursuit ? FoeBadges : null };
+  }
+  function chipsOf(sts) { var out = []; for (var k in sts) if (sts[k] > 0) out.push({ id: k, n: sts[k] }); return out; }
+  function renderStances() {
+    function build(host, list, foe, x) {
+      host.innerHTML = '';
+      var groups = [];
+      list.forEach(function (s) { var g = groups.filter(function (q) { return q.id === s.id; })[0]; if (g) g.count++; else groups.push({ id: s.id, name: s.name, how: s.how, count: 1 }); });
+      var slots = [];
+      if (!groups.length) slots.push({ empty: true, foe: foe });
+      else {
+        var newest = groups.slice().reverse();
+        if (newest.length > L.stanceMax) { slots = newest.slice(0, L.stanceMax - 1).map(function (g) { return Object.assign({ foe: foe }, g); }); slots.push({ more: newest.length - (L.stanceMax - 1), foe: foe, hidden: newest.slice(L.stanceMax - 1) }); }
+        else slots = newest.map(function (g) { return Object.assign({ foe: foe }, g); });
+      }
+      slots.forEach(function (sd, i) {
+        var el = StanceSlot(sd);
+        place(el, x, L.stanceY - i * (L.stanceH + L.stanceGap));
+        if (!sd.empty) {
+          el.addEventListener('mouseenter', function () {
+            el.classList.add('is-hover');
+            var tip = sd.more ? h('div', { 'class': 'ocb-tip' }, sd.hidden.map(function (g) { return h('p', null, g.name + ' ×' + g.count + '：' + g.how); })) : StanceTip(sd);
+            showTip(tip, foe ? x - 352 : x + L.stanceW + 12, L.stanceY - i * (L.stanceH + L.stanceGap) - 10);
+          });
+          el.addEventListener('mouseleave', function () { el.classList.remove('is-hover'); hideTip(); });
+          if (sd.flash) el.animate([{ boxShadow: '0 0 0 3px rgba(227,106,94,.9)' }, { boxShadow: '0 0 0 0 rgba(227,106,94,0)' }], { duration: T(300) });
+        }
+        host.appendChild(el);
+      });
+    }
+    build(stanceHostP, V.p.stances, false, L.edge);
+    build(stanceHostE, [], true, L.W - L.edge - L.stanceW);
+  }
+
+  // ---------------- HUD ----------------
+  var cornerHost = h('div', { 'class': 'ocb-abs', style: { left: px(L.corner.x), top: px(L.corner.y) } }); Lhud.appendChild(cornerHost);
+  var flowBar = h('div', { 'class': 'ocb-flow', title: '試作の道具（ゲームの画面には出しません）。押すと次の段階へ進みます' }); Lhud.appendChild(flowBar);
+  var FLOW = ['ターン開始', 'あなたの番', 'ターン終了', '敵の番', '敵の行動', '次の予兆', '決着'];
+  function renderFlow() {
+    flowBar.innerHTML = '';
+    FLOW.forEach(function (n, i) { flowBar.appendChild(h('span', { 'class': i === flowStep ? 'is-on' : '' }, (i + 1) + ' ' + n)); });
+    flowBar.appendChild(h('em', null, VAR.step ? '▶ 次へ' : phase === 'player' ? '▶ 番を終える' : '▶ 早送り'));
+  }
+  function setFlow(i) { flowStep = i; renderFlow(); }
+  flowBar.addEventListener('click', function () {
+    if (gateRes) { var r = gateRes; gateRes = null; r(); return; }
+    if (phase === 'player' && !busy) { runEndTurn(); return; }
+    if (busy) ff = true;
+  });
+  var speedHost = h('div', { 'class': 'ocb-abs', style: { left: px(L.speed.x), top: px(L.speed.y) } }); Lhud.appendChild(speedHost);
+  function renderSpeed() {
+    speedHost.innerHTML = '';
+    var b = SpeedToggle(speed);
+    b.addEventListener('click', function () { speed = speed === 1 ? 1.25 : speed === 1.25 ? 1.5 : 1; renderSpeed(); if (api.onChange) api.onChange(); });
+    b.addEventListener('mouseenter', function () { showTip(h('div', { 'class': 'ocb-tip', style: 'width:auto;padding:8px 12px' }, h('p', null, '戦闘の速さ。押すたびに ×1.0 → ×1.25 → ×1.5 と巡ります')), L.speed.x + 120 - 470, L.speed.y + 64); });
+    b.addEventListener('mouseleave', hideTip);
+    speedHost.appendChild(b);
+  }
+  var journal = JournalButton(); place(journal, L.journal.x, L.journal.y); Lhud.appendChild(journal);
+  journal.addEventListener('click', function () { showRefusal('手記は、この試作では開きません'); });
+  var stamina = StaminaPlate({ st: V.p.st, max: V.p.stMax }); place(stamina, L.stamina.x, L.stamina.y); Lhud.appendChild(stamina);
+  var pileHosts = {};
+  ['deck', 'discard', 'exile'].forEach(function (k, i) {
+    var host = h('div', { 'class': 'ocb-abs', style: { left: px(L.piles.x + i * (L.piles.w + L.piles.gap)), top: px(L.piles.y) } });
+    host.addEventListener('click', function () { openDrawer(k); });
+    pileHosts[k] = host; Lhud.appendChild(host);
+  });
+  function pileCenter(k) { var i = ['deck', 'discard', 'exile'].indexOf(k); return { x: L.piles.x + i * (L.piles.w + L.piles.gap) + 32, y: L.piles.y + 42 }; }
+  var attrsHost = h('div', { 'class': 'ocb-abs', style: { left: px(L.attrs.x), top: px(L.attrs.y) } }); Lhud.appendChild(attrsHost);
+  var pursuitHost = h('div', { 'class': 'ocb-abs' }); Lhud.appendChild(pursuitHost);
+  var guardPre = GuardPreview(3); place(guardPre, L.guardPre.x, L.guardPre.y); Lhud.appendChild(guardPre);
+  var endBtn = EndTurnButton(false); place(endBtn, L.endTurn.x, L.endTurn.y); Lhud.appendChild(endBtn);
+  endBtn.addEventListener('click', function () { if (phase === 'player' && !busy && !held) runEndTurn(); });
+  // The guide line just above the hand (brief §3, 2026-10-19): Unity keeps the hint up for the whole player turn
+  // and swaps in the refusal reason for 3.5 s; the spec shows only reasons and the result.
+  var GUIDE_TEXT = '出したい札を離してください。手が済んだら「ターン終了」';
+  var guideEl = h('div', { 'class': 'ocb-guide' }); Lhud.appendChild(guideEl);
+  var guideReasonUntil = 0;
+  function setGuide(text, reason) {
+    guideEl.innerHTML = '';
+    if (!text) { guideEl.style.opacity = '0'; return; }
+    if (reason) guideEl.appendChild(h('i', { 'class': 'ocb-dot' }));
+    guideEl.appendChild(h('span', null, text));
+    guideEl.style.opacity = '1';
+  }
+  function guideIdle() {
+    if (nowMs < guideReasonUntil) return;
+    setGuide(VAR.guide === 'real' && phase === 'player' ? GUIDE_TEXT : '');
+  }
+
+  // overlay pieces
+  var hoverLine = null, reachPanel = null, refusalEl = null, tipEl = null, detailEl = null, drawerEl = null, galleryEl = null, endEl = null;
+  function showTip(el, x, y) { hideTip(); tipEl = el; el.style.position = 'absolute'; el.style.left = px(x); el.style.top = px(y); el.style.pointerEvents = 'none'; Lover.appendChild(el); if (y < 0 || el.dataset.above) { /* keep */ } }
+  function hideTip() { if (tipEl) { tipEl.remove(); tipEl = null; } }
+  function showRefusal(text) {
+    if (VAR.guide === 'real') {
+      setGuide(text, true); guideReasonUntil = nowMs + T(F('refusal.hold'));
+      wait(T(F('refusal.hold'))).then(guideIdle);
+      return;
+    }
+    if (refusalEl) refusalEl.remove();
+    var el = RefusalLine(text); el.style.position = 'absolute'; el.style.left = '960px'; el.style.top = px(L.refusalBottom - 48); el.style.transform = 'translateX(-50%)';
+    Lover.appendChild(el); refusalEl = el;
+    var my = el;
+    el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120, fill: 'forwards' });
+    wait(T(F('refusal.hold'))).then(function () { if (refusalEl === my) { my.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }); wait(200).then(function () { my.remove(); if (refusalEl === my) refusalEl = null; }); } });
+  }
+
+  // chip tooltips (delegated)
+  Lpanels.addEventListener('mouseover', function (ev) {
+    var chip = ev.target.closest && ev.target.closest('.ocb-chip');
+    if (!chip || !chip.dataset.status) return;
+    var r = rectIn(chip);
+    var tip = StatusTip({ id: chip.dataset.status, n: chip.dataset.n });
+    showTip(tip, clamp(r.x - 20, 8, L.W - 348), 0);
+    tip.style.top = px(r.y + r.h - 38 - tip.offsetHeight);
+  });
+  Lpanels.addEventListener('mouseout', function (ev) { if (ev.target.closest && ev.target.closest('.ocb-chip')) hideTip(); });
+  function rectIn(el) { var a = el.getBoundingClientRect(), b = stage.getBoundingClientRect(); return { x: (a.left - b.left) / scale, y: (a.top - b.top) / scale, w: a.width / scale, h: a.height / scale }; }
+
+  // ---------------- scaling ----------------
+  var scale = 1, offX = 0, offY = 0, full = false;
+  function fit() {
+    var w = vp.clientWidth || 960;
+    if (full) {
+      var hh = window.innerHeight - (labOpen ? 0 : 0);
+      scale = Math.min(w / L.W, hh / L.H); vp.style.height = px(hh);
+      offX = (w - L.W * scale) / 2; offY = (hh - L.H * scale) / 2;
+    } else { scale = w / L.W; vp.style.height = px(Math.round(L.H * scale)); offX = 0; offY = 0; }
+    stage.style.transform = 'translate(' + offX + 'px,' + offY + 'px) scale(' + scale + ')';
+  }
+  var labOpen = true;
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(vp); else window.addEventListener('resize', fit);
+  fit();
+
+  // ---------------- hand ----------------
+  var hand = [];        // [{uid, el, inner, base:{x,y,rot,s,op}, hw, view, shake}]
+  var hovered = null, held = null, down = null, ptr = { x: -999, y: -999 };
+  function handSpacing(n) { return n <= 5 ? F('fan.spacing5') : n === 6 ? F('fan.spacing6') : n === 7 ? 140 : 126; }
+  function restPose(i, n) {
+    var k = i - (n - 1) / 2, sp = handSpacing(n);
+    return { x: L.hand.cx + k * sp - 108, y: F('fan.top') + k * k * F('fan.sink'), rot: k * F('fan.rot') };
+  }
+  function layoutHand(ms, ease) {
+    var list = hand.filter(function (c) { return !c.leaving; });
+    list.forEach(function (c, i) { c.rest = restPose(i, list.length); c.z = i; if (!c.drawing) tween(c.base, { x: c.rest.x, y: c.rest.y, rot: c.rest.rot }, T(ms), ease || F('fan.ease')); });
+  }
+  function cardState(c) {
+    var v = core.cardView(c.uid);
+    var st = { cost: v.cost, costDown: v.costDown, lamp: v.lamp, unpayable: phase === 'player' ? !v.payable : false };
+    if (VAR.longText && c.uid === longUid()) { st.desc = LONG_TEXTS[VAR.longLen]; st.fit = VAR.fit; }
+    return { v: v, st: st };
+  }
+  function longUid() { var x = hand.filter(function (c) { return core.state().cards[c.uid].id === 'nobizuki'; })[0]; return x ? x.uid : null; }
+  function renderCard(c, force) {
+    var cs = cardState(c), key = JSON.stringify(cs.st) + (phase === 'enemy' ? 'E' : '');
+    c.view = cs.v;
+    if (!force && key === c.key) return;
+    c.key = key;
+    var el = Card(cs.v.def, cs.st);
+    if (phase !== 'player' && phase !== 'start') el.classList.add('is-unpayable');
+    el.querySelector('.ocb-card-dim').style.transition = 'opacity ' + T(F('dim.ms')) + 'ms linear';
+    el.querySelector('.ocb-card-dim').style.setProperty('--opacity-unpayable', F('dim.alpha'));
+    c.wrap.innerHTML = ''; c.wrap.appendChild(el); c.card = el;
+  }
+  function addHandCard(uid) {
+    var wrap = h('div', { 'class': 'ocb-hand-card' });
+    var pc = pileCenter('deck');
+    var c = { uid: uid, wrap: wrap, base: { x: pc.x - 108, y: pc.y - 152, rot: 0, s: 0.3, op: 0 }, hw: 0, z: 0 };
+    renderCard(c, true);
+    Lhand.appendChild(wrap); hand.push(c);
+    return c;
+  }
+  function refreshCards() { hand.forEach(function (c) { if (!c.leaving) renderCard(c); }); }
+
+  // pointer-in-card test against the resting pose (rotation about the bottom centre)
+  function inRest(c, p) {
+    var b = c.base, a = -b.rot * Math.PI / 180, px0 = b.x + 108, py0 = b.y + 304;
+    var dx = p.x - px0, dy = p.y - py0;
+    var lx = dx * Math.cos(a) - dy * Math.sin(a) + 108, ly = dx * Math.sin(a) + dy * Math.cos(a) + 304;
+    return lx >= 0 && lx <= 216 && ly >= 0 && ly <= 304;
+  }
+  function pick(p) {
+    if (phase === 'enemy') return null;
+    var cands = hand.filter(function (c) { return !c.leaving && !c.drawing && !c.hold && c !== held && (inRest(c, p) || (c === hovered && p.x >= c.base.x && p.x <= c.base.x + 216 && p.y >= F('hover.top'))); });
+    if (!cands.length) return null;
+    cands.sort(function (a, b) { return Math.abs(a.base.x + 108 - p.x) - Math.abs(b.base.x + 108 - p.x); });
+    return cands[0];
+  }
+  function setHovered(c) {
+    if (c === hovered) return;
+    hovered = c;
+    if (hoverLine) { hoverLine.remove(); hoverLine = null; }
+    if (reachPanel) { reachPanel.remove(); reachPanel = null; }
+    showReach(null);
+    if (!c) return;
+    sound.play('hover');
+    var v = c.view;
+    hoverLine = HoverLine(v.hover, v.lamp); place(hoverLine, c.base.x + 108 - 210, 0); Lover.appendChild(hoverLine);
+    hoverLine.style.top = px(F('hover.top') - 12 - hoverLine.offsetHeight);
+    hoverLine.style.pointerEvents = 'none';
+    if (v.outOfReach) {
+      reachPanel = ReachPanel(v.outOfReach);
+      var rx = c.base.x + 216 + 12; if (rx + 280 > 1620) rx = c.base.x - 12 - 280;
+      place(reachPanel, rx, F('hover.top')); reachPanel.style.pointerEvents = 'none'; Lover.appendChild(reachPanel);
+    }
+    if (!v.self) showReach(v.def.reach);
+  }
+  // amber reach glow on the floor (§4.2)
+  var reachOn = null;
+  function showReach(r) {
+    reachOn = r;
+    tiles.forEach(function (t, c) {
+      var d = c - V.p.cell - 1, on = !!r && c > V.p.cell && d >= r[0] && d <= r[1];
+      t.reach.style.transition = 'opacity ' + (on ? T(F('frame.ms')) : T(120)) + 'ms'; t.reach.style.opacity = on ? 1 : 0;
+      t.reachLine.style.transition = t.reach.style.transition; t.reachLine.style.opacity = on ? 1 : 0;
+    });
+  }
+
+  // ---------------- holding a card ----------------
+  var frames = [], predEl = null, throwLine = null, debugEls = [];
+  function frameRect(g) {
+    var w = g.bw + 2 * F('frame.padX');
+    return { x: g.x + g.dx - w / 2, y: L.footY - g.hgt - F('frame.padTop'), w: w, h: g.hgt + F('frame.padTop') + F('frame.padBottom') };
+  }
+  function makeFrame(g, reachable) {
+    var r = frameRect(g);
+    var el = TargetFrame(r.w, r.h, { reachable: reachable, hook: F('frame.hook'), width: F('frame.width'), glow: F('frame.glow'), glowAlpha: F('frame.glowAlpha') });
+    place(el, r.x, r.y); el.style.opacity = '0'; Lfx.appendChild(el);
+    var fr = { el: el, g: g, reachable: reachable, op: 0, hot: false };
+    tween(fr, { op: 1 }, T(F('frame.ms')), F('frame.ease'));
+    return fr;
+  }
+  function beginHold(c) {
+    held = c; hovered = null;
+    if (hoverLine) { hoverLine.remove(); hoverLine = null; }
+    if (reachPanel) { reachPanel.remove(); reachPanel = null; }
+    var b = c.base, w = c.hw >= 1 ? 1 : (F('hover.curve') === 'smooth' ? EASE.smooth(c.hw) : EASE.out(c.hw));
+    var y = lerp(b.y, F('hover.top'), w), rot = lerp(b.rot, 0, w), a = rot * Math.PI / 180;
+    var cx = b.x + 108 + 152 * Math.sin(a), cy = y + 304 - 152 * Math.cos(a);
+    c.hold = { cx: cx, cy: cy, fx: cx, fy: cy, rot: rot, tilt: 0, s: 1, op: 1, snapW: 0, vx: 0, offX: F('follow.keepOffset') ? ptr.x - cx : 0, offY: F('follow.keepOffset') ? ptr.y - cy : 0, zone: -1, above: false };
+    tween(c.hold, { rot: 0, op: F('rise.opacity'), s: F('try.liftScale') }, T(F('rise.ms')), F('rise.ease'));
+    Lheld.appendChild(c.wrap);
+    c.wrap.style.transformOrigin = '108px 152px';
+    if (F('try.liftShadow') > 0) c.card.style.boxShadow = '0 ' + (6 + 18 * F('try.liftShadow')) + 'px ' + (14 + 30 * F('try.liftShadow')) + 'px rgba(0,0,0,' + (0.45 + 0.25 * F('try.liftShadow')) + ')';
+    sound.play('grab');
+    var v = c.view;
+    if (v.self) {
+      throwLine = h('div', { 'class': 'ocb-throwline' }); place(throwLine, L.throwX0, F('throw.y') - 1.5, L.throwX1 - L.throwX0, 3);
+      throwLine.style.boxShadow = '0 0 0 2px var(--keyline)'; throwLine.style.opacity = '0'; Lfx.appendChild(throwLine);
+      c.hold.lineOp = 0; tween(c.hold, { lineOp: 1 }, T(F('throw.ms')), 'out');
+      frames.push(makeFrame(figP, true));
+    } else {
+      showReach(v.def.reach);
+      figE.forEach(function (g, i) { frames.push(makeFrame(g, v.reachable.indexOf(i) >= 0)); });
+    }
+    updatePay(v.cost);
+  }
+  function updatePay(n) {
+    var showing = n != null;
+    stamina.update({ st: V.p.st, max: V.p.stMax, pay: n || 0, showPay: showing, next: Math.min(V.p.regen + V.p.regenBonus, V.p.stMax - V.p.st) });
+    var after = V.p.st - (n || 0);
+    guardPre.style.display = phase === 'player' && after >= SCRIPT.reserve.threshold ? '' : 'none';
+  }
+  function zoneRect(i) { var g = figE[i]; return { x: g.x + g.dx - F('zone.w') / 2, y: L.footY - g.hgt / 2 - F('zone.h') / 2, w: F('zone.w'), h: F('zone.h') }; }
+  function zoneTest(hd) {
+    var best = -1, bestR = -1, info = [];
+    figE.forEach(function (g, i) {
+      if (V.e[i].hp <= 0) return;
+      var z = zoneRect(i), cx = hd.fx, cy = hd.fy;
+      var ix = Math.max(0, Math.min(cx + 108, z.x + z.w) - Math.max(cx - 108, z.x));
+      var iy = Math.max(0, Math.min(cy + 152, z.y + z.h) - Math.max(cy - 152, z.y));
+      var ratio = ix * iy / (216 * 304);
+      var pin = ptr.x >= z.x && ptr.x <= z.x + z.w && ptr.y >= z.y && ptr.y <= z.y + z.h;
+      var ok = ratio * 100 >= F('zone.overlap') - 1e-9 || (F('zone.pointer') && pin);
+      info.push({ i: i, z: z, ratio: ratio, pin: pin, ok: ok });
+      if (ok && ratio > bestR) { best = i; bestR = ratio; }
+    });
+    return { zone: best, info: info };
+  }
+  function setPred(target) {
+    if (predEl) { predEl.remove(); predEl = null; }
+    omenEls.forEach(function (o) { tween(o, { lift: 0 }, T(120), 'out'); });
+    panelLoss = {};
+    if (target == null) { panelE.forEach(function (p, i) { p.update(viewPanel(i)); }); return; }
+    var pr = core.predict(held.uid, target);
+    var fr = target === 'self' ? frames[0] : frames[target];
+    if (!fr) return;
+    if (pr.reachable === false) { panelE.forEach(function (p, i) { p.update(viewPanel(i)); }); return; }
+    predEl = PredTag(pr.icon, pr.n, pr.color);
+    var r = frameRect(fr.g);
+    predEl.style.left = px(r.x + r.w / 2); predEl.style.top = px(r.y);
+    Lfloat.appendChild(predEl);
+    if (target !== 'self') {
+      panelLoss[target] = pr.hpLoss;
+      if (F('tag.lift') > 0) tween(omenEls[target], { lift: F('tag.lift') }, T(120), 'out');
+    }
+    panelE.forEach(function (p, i) { p.update(viewPanel(i)); });
+    if (held && held.card) { held.card.classList.toggle('is-lit', !!pr.lamp); var lamp = held.card.querySelector('.ocb-lamp'); if (lamp) lamp.classList.toggle('is-on', !!pr.lamp); }
+    updatePay(pr.cost);
+  }
+  function updateHold(dt) {
+    var hd = held.hold;
+    var tx = ptr.x - hd.offX, ty = ptr.y - hd.offY;
+    var lag = F('try.lag');
+    if (lag > 0) { var k = 1 - Math.exp(-dt / lag); hd.fx += (tx - hd.fx) * k; hd.fy += (ty - hd.fy) * k; } else { hd.fx = tx; hd.fy = ty; }
+    hd.vx = lerp(hd.vx, (ptr.x - (hd.lastPx == null ? ptr.x : hd.lastPx)) / Math.max(1, dt) * 1000, 0.25); hd.lastPx = ptr.x;
+    hd.tilt = F('try.tilt') ? clamp(hd.vx / 1500, -1, 1) * F('try.tilt') : 0;
+    var v = held.view, inside = false, zc = null;
+    if (v.self) {
+      var above = ptr.y < F('throw.y');
+      if (above !== hd.above) { hd.above = above; sound.play(above ? 'frameIn' : 'frameOut'); setPred(above ? 'self' : null); frames[0].hot = above; }
+      if (throwLine) throwLine.style.opacity = String(hd.lineOp * (above ? 1 : F('throw.below')));
+    } else {
+      var zt = zoneTest(hd);
+      if (zt.zone !== hd.zone) {
+        var reach = zt.zone >= 0 && v.reachable.indexOf(zt.zone) >= 0;
+        if (zt.zone >= 0) sound.play(reach ? 'frameIn' : 'noReach'); else if (hd.zone >= 0) sound.play('frameOut');
+        hd.zone = zt.zone;
+        frames.forEach(function (fr, i) { fr.hot = i === zt.zone; });
+        setPred(zt.zone >= 0 ? zt.zone : null);
+      }
+      if (zt.zone >= 0 && v.reachable.indexOf(zt.zone) >= 0) { inside = true; var z = zoneRect(zt.zone); zc = { x: z.x + z.w / 2, y: z.y + z.h / 2 }; }
+      renderDebug(zt);
+    }
+    hd.snapW = clamp(hd.snapW + (inside ? 1 : -1) * dt / Math.max(1, T(F('snap.ms'))), 0, 1);
+    if (zc) hd.zc = zc;
+    var pull = hd.zc ? F('snap.pull') * EASE.smooth(hd.snapW) : 0;
+    hd.cx = lerp(hd.fx, hd.zc ? hd.zc.x : hd.fx, pull); hd.cy = lerp(hd.fy, hd.zc ? hd.zc.y : hd.fy, pull);
+  }
+  function renderDebug(zt) {
+    debugEls.forEach(function (e) { e.remove(); }); debugEls = [];
+    if (!F('zone.debug') || !held) return;
+    var hd = held.hold;
+    zt.info.forEach(function (q) {
+      var zr = h('div', { 'class': 'ocb-debug', style: { left: px(q.z.x), top: px(q.z.y), width: px(q.z.w), height: px(q.z.h), borderColor: q.ok ? '#46ffa0' : '#46e3ff' } });
+      var lab = h('div', { 'class': 'ocb-debug-label', style: { left: px(q.z.x), top: px(q.z.y - 30) } }, '重なり ' + Math.round(q.ratio * 100) + '%' + (q.pin ? ' ・ ポインタは中' : '') + (q.ok ? ' → 成立' : ''));
+      Lfx.appendChild(zr); Lfx.appendChild(lab); debugEls.push(zr, lab);
+    });
+    var cr = h('div', { 'class': 'ocb-debug is-card', style: { left: px(hd.fx - 108), top: px(hd.fy - 152), width: '216px', height: '304px' } });
+    Lfx.appendChild(cr); debugEls.push(cr);
+  }
+  function endHoldVisuals() {
+    frames.forEach(function (fr) { var el = fr.el; tween(fr, { op: 0 }, T(120), 'linear').then(function () { el.remove(); }); });
+    frames = [];
+    if (predEl) { predEl.remove(); predEl = null; }
+    if (throwLine) { var tl = throwLine; tl.animate([{ opacity: tl.style.opacity }, { opacity: 0 }], { duration: T(120), fill: 'forwards' }); wait(T(120)).then(function () { tl.remove(); }); throwLine = null; }
+    showReach(null);
+    debugEls.forEach(function (e) { e.remove(); }); debugEls = [];
+    omenEls.forEach(function (o) { tween(o, { lift: 0 }, T(120), 'out'); });
+    panelLoss = {}; panelE.forEach(function (p, i) { p.update(viewPanel(i)); });
+    updatePay(null);
+  }
+  function release() {
+    var c = held; if (!c) return;
+    var hd = c.hold, v = c.view, target = null;
+    if (v.self) { if (ptr.y < F('throw.y')) target = 'self'; }
+    else if (hd.zone >= 0) target = hd.zone;
+    if (target == null) { cancelHold(); return; }
+    var chk = core.check(c.uid, target);
+    if (!chk.ok) { refuse(chk.reason); return; }
+    accept(target);
+  }
+  function backToHand(c) {
+    var list = hand.filter(function (x) { return !x.leaving; }), i = list.indexOf(c);
+    var rp = restPose(i, list.length), a = rp.rot * Math.PI / 180;
+    var tcx = rp.x + 108 + 152 * Math.sin(a), tcy = rp.y + 304 - 152 * Math.cos(a);
+    c.returning = true;
+    return tween(c.hold, { cx: tcx, cy: tcy, fx: tcx, fy: tcy, rot: rp.rot, tilt: 0, s: 1, op: 1 }, T(F('return.ms')), F('return.ease')).then(function () {
+      c.returning = false; c.hold = null; c.hw = 0;
+      c.base.x = rp.x; c.base.y = rp.y; c.base.rot = rp.rot; c.base.s = 1; c.base.op = 1;
+      c.wrap.style.transformOrigin = '108px 304px'; c.card.style.boxShadow = '';
+      Lhand.appendChild(c.wrap);
+      renderCard(c, true);
+    });
+  }
+  function cancelHold() {
+    var c = held; held = null; endHoldVisuals();
+    sound.play('cancel');
+    backToHand(c);
+  }
+  function refuse(reason) {
+    var c = held; held = null; endHoldVisuals();
+    sound.play('refusal'); sound.play('refusal', 70);
+    showRefusal(reason);
+    backToHand(c).then(function () { c.shake = { t0: nowMs, ms: T(F('shake.ms')), a: F('shake.px'), n: F('shake.cycles') }; });
+  }
+  function accept(target) {
+    var c = held; held = null;
+    var d = c.view.def;
+    var fr = target === 'self' ? frames[0] : frames[target];
+    if (F('try.pulseMs') > 0 && fr) {
+      var pr = frameRect(fr.g), pulse = TargetFrame(pr.w, pr.h, { hook: F('frame.hook'), width: F('frame.width') + F('try.pulseWidth'), glow: F('frame.glow') + F('try.pulseGlow'), glowAlpha: Math.min(1, F('frame.glowAlpha') + 0.3) });
+      place(pulse, pr.x, pr.y); Lfx.appendChild(pulse);
+      pulse.animate([{ opacity: 1 }, { opacity: 0 }], { duration: T(F('try.pulseMs')), easing: 'ease-out', fill: 'forwards' });
+      wait(T(F('try.pulseMs'))).then(function () { pulse.remove(); });
+    }
+    endHoldVisuals();
+    sound.play(d.attr === 'attack' ? 'releaseAttack' : d.attr === 'defense' ? 'releaseDefense' : d.attr === 'stance' ? 'releaseStance' : 'releaseSkill');
+    c.leaving = true;
+    var hd = c.hold, to;
+    if (target === 'self') to = { cy: hd.cy - F('release.rise'), s: F('release.scale'), op: 0, rot: 0, tilt: 0 };
+    else { var z = zoneRect(target); to = { cx: z.x + z.w / 2, cy: z.y + z.h / 2, s: F('release.scale'), op: 0, rot: 0, tilt: 0 }; }
+    var lastPos = { x: hd.cx, y: hd.cy };
+    var ev = core.play(c.uid, target);
+    var flying = tween(hd, to, T(F('release.ms')), F('release.ease')).then(function () {
+      lastPos = { x: hd.cx, y: hd.cy };
+      c.wrap.remove(); hand.splice(hand.indexOf(c), 1);
+    });
+    layoutHand(F('settle.ms'));
+    enqueue(function () { return flying.then(function () { return playEvents(ev, { from: lastPos, card: c }); }).then(afterPlay); });
+  }
+  function afterPlay() {
+    refreshAll();
+    if (S.over) return finish(S.over);
+  }
+
+  // ---------------- input ----------------
+  function toStage(e) { var r = stage.getBoundingClientRect(); return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale }; }
+  stage.addEventListener('pointermove', function (e) {
+    ptr = toStage(e);
+    if (down && !held) {
+      var dx = ptr.x - down.x, dy = ptr.y - down.y;
+      if (Math.sqrt(dx * dx + dy * dy) * scale >= F('grab.threshold') * scale && down.card && canGrab()) beginHold(down.card);
+    }
+    if (!held && !down) setHovered(pick(ptr));
+    if (api.onRead) api.onRead();
+  });
+  stage.addEventListener('pointerleave', function () { if (!held) { ptr = { x: -999, y: -999 }; setHovered(null); } });
+  stage.addEventListener('pointerdown', function (e) {
+    sound.unlock();
+    if (e.button !== 0) return;
+    ptr = toStage(e);
+    if (detailEl) { detailEl.remove(); detailEl = null; }
+    var c = pick(ptr);
+    if (c && canGrab()) { down = { x: ptr.x, y: ptr.y, card: c, t: nowMs }; try { stage.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } }
+  });
+  stage.addEventListener('pointerup', function () {
+    if (held) release();
+    down = null;
+  });
+  stage.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+    var c = hovered || pick(toStage(e));
+    if (!c || held) return;
+    if (detailEl) detailEl.remove();
+    detailEl = CardDetail(c.view.def, { cost: c.view.cost, costDown: c.view.costDown, lamp: c.view.lamp });
+    place(detailEl, clamp(c.base.x + 108 - 280, 24, L.W - 584), F('hover.top') - 12 - 280);
+    detailEl.style.pointerEvents = 'none';
+    Lover.appendChild(detailEl);
+    setHovered(null);
+  });
+  function onKey(e) {
+    if (e.key === 'Escape') {
+      if (held) cancelHold();
+      if (detailEl) { detailEl.remove(); detailEl = null; }
+      if (drawerEl) closeDrawer();
+      if (galleryEl) closeGallery();
+    }
+  }
+  window.addEventListener('keydown', onKey);
+  function canGrab() { return phase === 'player' && !S.over && !held; }
+
+  // ---------------- frame loop ----------------
+  var raf = 0, alive = true;
+  function frame(t) {
+    if (!alive) return;
+    var dt = Math.min(50, t - nowMs); nowMs = t;
+    stepClock();
+    var hw = F('hover.ms');
+    hand.forEach(function (c, idx) {
+      if (c.hold) return;
+      var target = (c === hovered && !held && !down) || (down && down.card === c && !held) ? 1 : 0;
+      c.hw = clamp(c.hw + (target ? 1 : -1) * dt / Math.max(1, T(hw)), 0, 1);
+    });
+    if (held && held.hold) updateHold(dt);
+    render();
+    raf = requestAnimationFrame(frame);
+  }
+  function render() {
+    var ht = F('hover.top');
+    hand.forEach(function (c, i) {
+      var b = c.base, x, y, rot, s, op, z;
+      if (c.hold) {
+        var hd = c.hold;
+        x = hd.cx - 108; y = hd.cy - 152; rot = hd.rot + hd.tilt; s = hd.s; op = hd.op; z = 500;
+      } else {
+        var w = F('hover.curve') === 'smooth' ? EASE.smooth(c.hw) : EASE.out(c.hw);
+        x = b.x; y = lerp(b.y, ht, w); rot = lerp(b.rot, 0, w); s = b.s; op = b.op; z = c === hovered || c.hw > 0.01 ? 200 + Math.round(c.hw * 10) : 10 + (c.z || 0);
+        if (c.shake) {
+          var t = (nowMs - c.shake.t0) / c.shake.ms;
+          if (t >= 1) c.shake = null; else x += c.shake.a * (1 - t) * Math.sin(2 * Math.PI * c.shake.n * t);
+        }
+      }
+      c.wrap.style.transform = 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) rotate(' + rot.toFixed(3) + 'deg) scale(' + s.toFixed(3) + ')';
+      c.wrap.style.opacity = op.toFixed(3);
+      c.wrap.style.zIndex = z;
+    });
+    frames.forEach(function (fr) { fr.el.style.opacity = String(fr.op * (fr.hot ? 1 : F('frame.idle'))); });
+    // figures, panels, omens follow their x
+    placeFig(figP, null);
+    figE.forEach(function (g, i) { placeFig(g, i); });
+  }
+  function placeFig(g, i) {
+    var fx = g.x + g.dx;
+    g.el.style.transform = 'translate(' + (fx - g.f.cx * g.k).toFixed(1) + 'px,' + (L.footY - g.hgt + g.dy).toFixed(1) + 'px)';
+    g.foot.style.left = px(g.f.cx * g.k - g.bw); g.foot.style.top = px(g.hgt - 30 - g.dy);
+    var pw = i == null ? L.panelSelfW : L.panelFoeW, pnl = i == null ? panelP : panelE[i];
+    pnl.style.position = 'absolute'; pnl.style.left = px(clamp(g.x - pw / 2, L.edge, L.W - L.edge - pw)); pnl.style.top = px(L.panelY);
+    if (i != null) {
+      var o = omenEls[i];
+      o.el.style.left = px(g.x - L.omenW / 2);
+      o.el.style.top = px(L.footY - g.hgt - L.omenGap - L.omenH + o.y - o.lift);
+      o.el.style.opacity = String(o.op);
+      o.el.style.filter = o.flash > 0 ? 'brightness(' + (1 + o.flash * 0.6) + ')' : '';
+    }
+  }
+
+  // ---------------- whole-screen refresh from the core (between sequences) ----------------
+  function refreshAll() {
+    var p = S.player;
+    V.p.hp = p.hp; V.p.guard = p.guard; V.p.st = p.st; V.p.cell = p.cell; V.p.regenBonus = p.regenBonus;
+    S.enemies.forEach(function (e, i) { var ve = V.e[i]; ve.hp = e.hp; ve.guard = e.guard; ve.st = e.st; ve.cell = e.cell; ve.statuses = Object.assign({}, e.statuses); });
+    V.p.stances = p.stances.slice();
+    V.deck = S.deck.length; V.discard = S.discard.length; V.exile = S.exile.length; V.played = Object.assign({}, S.played);
+    figP.x = cellX(V.p.cell); figE.forEach(function (g, i) { g.x = cellX(V.e[i].cell); });
+    renderPanels(); renderOmens(); renderFloor(); renderStances(); renderPiles(); renderAttrs(); renderCorner(); updatePay(held ? held.view.cost : null);
+    refreshCards();
+  }
+  function renderPanels() { panelP.update(viewPanel('self')); panelE.forEach(function (p, i) { p.update(viewPanel(i)); }); }
+  function renderOmens() {
+    S.enemies.forEach(function (e, i) {
+      var o = core.omen(i);
+      if (!o || V.e[i].hp <= 0) { omenEls[i].el.style.display = 'none'; return; }
+      omenEls[i].el.style.display = '';
+      omenEls[i].el.update({ kind: o.kind, value: o.value, angle: o.cells.length ? o.angle : null, hit: o.kind === '攻撃' ? o.hit : null, active: omenEls[i].active });
+    });
+  }
+  function renderFloor() {
+    var threats = tiles.map(function () { return []; }), moves = tiles.map(function () { return false; });
+    S.enemies.forEach(function (e, i) {
+      if (V.e[i].hp <= 0) return;
+      var o = core.omen(i); if (!o) return;
+      o.cells.forEach(function (c) { threats[c].push({ angle: o.angle, boundary: o.boundary.indexOf(c) >= 0 }); });
+      if (o.move != null) moves[o.move] = true;
+    });
+    tiles.forEach(function (t, c) { t.setThreat(threats[c], moves[c]); });
+    renderDistance();
+    if (reachOn) showReach(reachOn);
+  }
+  function renderDistance() {
+    distHost.innerHTML = '';
+    var e = V.e[0]; if (!e || e.hp <= 0) return;
+    var a = Math.min(V.p.cell, e.cell), b = Math.max(V.p.cell, e.cell), n = b - a - 1;
+    var span = n * cellW, chip = DistanceChip(n, span);
+    var left = n > 0 ? L.floorX0 + (a + 1) * cellW : L.floorX0 + b * cellW - 50;
+    chip.style.left = px(left); distHost.appendChild(chip);
+  }
+  function renderPiles() {
+    ['deck', 'discard', 'exile'].forEach(function (k) { pileHosts[k].innerHTML = ''; pileHosts[k].appendChild(Pile(k, V[k])); });
+  }
+  function renderAttrs() {
+    attrsHost.innerHTML = ''; attrsHost.appendChild(PlayedAttrs(V.played));
+    renderPursuit();
+  }
+  function renderCorner() { cornerHost.innerHTML = ''; cornerHost.appendChild(CornerInfo({ turn: Math.max(1, V.turn), floor: 1, miasma: 0 })); }
+
+  // ---------------- events → animation ----------------
+  var queue = Promise.resolve();
+  function enqueue(fn) { busy = true; queue = queue.then(fn).catch(function (err) { if (window.console) console.error(err); }).then(function () { busy = false; ff = phase === 'player' ? false : ff; }); return queue; }
+  function figOf(who) { return who === 'self' ? figP : figE[who]; }
+  function floatAt(who, kind, n, label, dx) {
+    var g = figOf(who), el = FloatNum(kind, n, label);
+    var y0 = L.footY - g.hgt * 0.65, y1 = L.footY - g.hgt * 0.84;
+    el.style.left = px(g.x + g.dx + (dx || 0)); el.style.top = px(y0); Lfloat.appendChild(el);
+    var o = { y: y0, op: 1 };
+    var stepF = function () { el.style.top = px(o.y); el.style.opacity = String(o.op); };
+    var iv = setInterval(stepF, 16);
+    return tween(o, { y: y1 }, T(600), 'out').then(function () { return tween(o, { op: 0 }, T(200), 'linear'); }).then(function () { clearInterval(iv); el.remove(); });
+  }
+  function shakeFig(g, amp) {
+    var o = { t: 0 };
+    var iv = setInterval(function () { g.dx = amp * (1 - o.t) * Math.sin(o.t * Math.PI * 6); }, 16);
+    return tween(o, { t: 1 }, T(180), 'linear').then(function () { clearInterval(iv); g.dx = 0; });
+  }
+  function lunge(g, dir) { return tween(g, { dx: dir * 28 }, T(180), 'out').then(function () { return tween(g, { dx: 0 }, T(220), 'inout'); }); }
+  function ghostToPile(from, pile, delay, ms, ease) {
+    var gh = h('div', { style: 'position:absolute;width:76px;height:104px;margin:-52px 0 0 -38px;border-radius:5px;background:rgba(236,235,242,.55)' });
+    var o = { x: from.x, y: from.y, op: 1 };
+    var set = function () { gh.style.left = px(o.x); gh.style.top = px(o.y); gh.style.opacity = String(o.op); };
+    set(); Lfloat.appendChild(gh);
+    var iv = setInterval(set, 16);
+    var pc = pileCenter(pile);
+    return wait(delay || 0).then(function () { return tween(o, { x: pc.x, y: pc.y, op: 0.15 }, ms, ease); }).then(function () { clearInterval(iv); gh.remove(); });
+  }
+  function playEvents(list, ctx) {
+    ctx = ctx || {};
+    var i = 0;
+    function next() {
+      if (i >= list.length) return Promise.resolve();
+      var e = list[i++];
+      if (e.t === 'draw') {
+        var draws = [e];
+        while (i < list.length && list[i].t === 'draw') draws.push(list[i++]);
+        return doDraws(draws).then(next);
+      }
+      var fn = H[e.t];
+      return Promise.resolve(fn ? fn(e, ctx) : null).then(next);
+    }
+    return next();
+  }
+  function doDraws(draws) {
+    var made = draws.map(function (e) { var c = addHandCard(e.uid); c.drawing = true; return c; });
+    var list = hand.filter(function (c) { return !c.leaving; });
+    list.forEach(function (c, i) { c.rest = restPose(i, list.length); c.z = i; });
+    var ps = made.map(function (c, k) {
+      sound.play('draw', T(F('draw.stagger')) * k);
+      V.deck = Math.max(0, V.deck - 1);
+      return tween(c.base, { x: c.rest.x, y: c.rest.y, rot: c.rest.rot, s: 1, op: 1 }, T(F('draw.ms')), F('draw.ease') || 'out', T(F('draw.stagger')) * k).then(function () { c.drawing = false; });
+    });
+    list.forEach(function (c) { if (made.indexOf(c) < 0) tween(c.base, { x: c.rest.x, y: c.rest.y, rot: c.rest.rot }, T(F('fan.ms')), F('fan.ease')); });
+    renderPiles();
+    return Promise.all(ps).then(function () { renderPiles(); });
+  }
+  var H = {
+    banner: function (e) {
+      var el = Banner(e.text, e.foe); el.style.top = px(L.bannerY); el.style.opacity = '0'; Lover.appendChild(el);
+      var o = { op: 0 }, iv = setInterval(function () { el.style.opacity = String(o.op); }, 16);
+      if (e.foe) { sound.play('foeTurn'); enemyTurnLook(true); setFlow(3); }
+      var dur = e.foe ? 400 : 300;
+      return tween(o, { op: 1 }, T(dur), 'out').then(function () { return wait(T(dur)); }).then(function () { return tween(o, { op: 0 }, T(200), 'linear'); }).then(function () { clearInterval(iv); el.remove(); });
+    },
+    guardReset: function (e) {
+      if (e.who === 'self') V.p.guard = 0; else V.e[e.who].guard = 0;
+      renderPanels(); return wait(T(150));
+    },
+    regen: function (e) {
+      if (e.who !== 'self') { V.e[e.who].st = e.to; renderPanels(); return wait(T(80)); }
+      var lit = [], p = Promise.resolve();
+      for (var k = e.from; k < e.to; k++) (function (k) {
+        p = p.then(function () { V.p.st = k + 1; lit = [k]; stamina.update({ st: V.p.st, max: V.p.stMax, next: Math.min(V.p.regen, V.p.stMax - V.p.st), lit: lit }); sound.play('pip'); return wait(T(80)); });
+      })(k);
+      return p.then(function () { V.p.regenBonus = 0; updatePay(null); });
+    },
+    guard: function (e) {
+      if (e.who === 'self') V.p.guard += e.n; else V.e[e.who].guard += e.n;
+      renderPanels();
+      // The stance trait's Guard +3 would be a third sound after release + string (two-sound rule): number only.
+      if (e.label !== '特性') sound.play('guardUp');
+      return floatAt(e.who, 'guard', '+' + e.n, e.label, -60);
+    },
+    reserve: function (e) {
+      if (e.who === 'self') {
+        sound.play('breath');
+        stamina.update({ st: V.p.st, max: V.p.stMax, lit: [0, 1, 2] });
+        return wait(T(250)).then(function () { V.p.guard += e.n; renderPanels(); sound.play('reserve'); return floatAt('self', 'guard', '+' + e.n, '構え', -60); });
+      }
+      V.e[e.who].guard += e.n; renderPanels(); sound.play('reserve', 0, 0.7);
+      return floatAt(e.who, 'guard', '+' + e.n, '構え', -60);
+    },
+    rebuild: function (e) {
+      sound.play('rebuild');
+      var p = ghostToPile(pileCenter('discard'), 'deck', 0, T(F('rebuild.ms')), 'inout');
+      V.deck = e.n; V.discard = 0; renderPiles();
+      return p;
+    },
+    omenFlash: function () {
+      setFlow(0);
+      return Promise.all(omenEls.map(function (o, i) { return wait(T(120) * i).then(function () { return tween(o, { flash: 1 }, T(125), 'inout'); }).then(function () { return tween(o, { flash: 0 }, T(125), 'inout'); }); }));
+    },
+    phase: function (e) { core.setPhase(e.phase); setPhase(e.phase); },
+    lowHp: function () { for (var k = 0; k < 3; k++) sound.play('heartbeat', k * 900); },
+    pay: function (e) {
+      var p = Promise.resolve();
+      for (var k = e.from; k > e.to; k--) (function (k) { p = p.then(function () { V.p.st = k - 1; updatePay(null); return wait(T(60)); }); })(k);
+      return p;
+    },
+    hit: function (e, ctx) {
+      if (e.who === 'self') {
+        var g = figE[e.from], ve = V.e[e.from];
+        omenEls[e.from].active = true; renderOmens();
+        sound.play(e.sound === 'blunt' ? 'hitBlunt' : 'hitSlash');
+        return lunge(g, -1).then(function () { return null; }).then(function () {
+          V.p.guard -= e.guardLoss; V.p.hp -= e.hpLoss; renderPanels();
+          sound.play(e.hpLoss > 0 ? 'hitBody' : e.broke ? 'guardBreak' : 'hitGuard');
+          var ps = [shakeFig(figP, 8)];
+          if (e.guardLoss) ps.push(floatAt('self', 'guard', '−' + e.guardLoss, '', e.hpLoss ? -80 : 0));
+          if (e.hpLoss) ps.push(wait(T(60)).then(function () { return floatAt('self', 'hp', '−' + e.hpLoss, e.label, e.guardLoss ? 70 : 0); }));
+          return Promise.all(ps);
+        }).then(function () { omenEls[e.from].active = false; });
+      }
+      var ge = figE[e.who], v2 = V.e[e.who];
+      sound.play(e.sound === 'blunt' ? 'hitBlunt' : e.sound === 'thrust' ? 'hitThrust' : 'hitSlash');
+      v2.guard -= e.guardLoss; v2.hp -= e.hpLoss; if (e.brittle) v2.statuses.brittle = Math.max(0, (v2.statuses.brittle || 0) - 1);
+      renderPanels();
+      var ps2 = [shakeFig(ge, 10)];
+      if (e.guardLoss) ps2.push(floatAt(e.who, 'guard', '−' + e.guardLoss, '', e.hpLoss ? -80 : 0));
+      if (e.hpLoss) ps2.push(wait(T(60)).then(function () { return floatAt(e.who, 'hp', '−' + e.hpLoss, e.label, e.guardLoss ? 70 : 0); }));
+      if (!e.hpLoss && !e.guardLoss) ps2.push(floatAt(e.who, 'hp', '0', e.label));
+      return Promise.all(ps2);
+    },
+    miss: function (e) {
+      var g = figE[e.from];
+      omenEls[e.from].active = true; renderOmens();
+      sound.play('releaseAttack', 0, 0.8);
+      return lunge(g, -1).then(function () { return floatAt('self', 'miss', '空振り', ''); }).then(function () { omenEls[e.from].active = false; });
+    },
+    status: function (e) { V.e[e.who].statuses[e.id] = (V.e[e.who].statuses[e.id] || 0) + e.n; renderPanels(); return wait(T(80)); },
+    statusUse: function (e) { V.e[e.who].statuses[e.id] = Math.max(0, (V.e[e.who].statuses[e.id] || 0) - 1); renderPanels(); },
+    move: function (e) {
+      var g = figOf(e.who), cells = Math.abs(e.to - e.from);
+      if (e.who === 'self') V.p.cell = e.to; else V.e[e.who].cell = e.to;
+      return tween(g, { x: cellX(e.to) }, T(160) * cells, 'inout').then(function () { renderDistance(); return wait(T(150)); });
+    },
+    stance: function (e) {
+      var d = SCRIPT.cards[e.id];
+      V.p.stances.push({ id: e.id, name: d.name, how: d.stance.how });
+      renderStances();
+      var slot = stanceHostP.firstChild; if (slot) slot.animate([{ boxShadow: '0 0 0 4px rgba(227,106,94,.9)', transform: 'scale(1.04)' }, { boxShadow: '0 0 0 0 rgba(227,106,94,0)', transform: 'scale(1)' }], { duration: T(300) });
+      sound.play('stance');
+      return wait(T(300));
+    },
+    regenBonus: function () { V.p.regenBonus += 1; updatePay(null); },
+    toPile: function (e, ctx) {
+      var d = SCRIPT.cards[S.cards[e.uid].id];
+      V.played[d.attr] = (V.played[d.attr] || 0) + 1; renderAttrs();
+      var from = ctx.from || { x: 960, y: 500 };
+      var stanceCard = e.pile === 'exile';
+      var p = ghostToPile(from, e.pile, stanceCard ? T(F('ghost.stanceDelay')) : 0, T(stanceCard ? F('ghost.stanceMs') : F('ghost.ms')), stanceCard ? 'in' : F('ghost.ease'));
+      p.then(function () { V[e.pile] += 1; renderPiles(); });
+      return null;
+    },
+    discardAll: function (e) {
+      var ps = [];
+      var list = hand.slice();
+      list.forEach(function (c, k) {
+        c.leaving = true;
+        var pc = pileCenter('discard');
+        sound.play('discard', T(F('discard.stagger')) * k);
+        ps.push(tween(c.base, { x: pc.x - 108, y: pc.y - 152, rot: 0, s: 0.3, op: 0 }, T(F('discard.ms')), F('discard.ease') || 'in', T(F('discard.stagger')) * k).then(function () {
+          c.wrap.remove(); hand.splice(hand.indexOf(c), 1); V.discard += 1; renderPiles();
+        }));
+      });
+      setHovered(null);
+      return Promise.all(ps);
+    },
+    clearPlayed: function () { V.played = { attack: 0, defense: 0, skill: 0, stance: 0 }; renderAttrs(); return wait(T(150)); },
+    act: function (e) { setFlow(4); omenEls[e.who].active = true; renderOmens(); return wait(T(120)); },
+    rest: function (e) { return floatAt(e.who, 'miss', '休み', ''); },
+    omen: function (e) {
+      setFlow(5);
+      omenEls[e.who].active = false;
+      V.e[e.who].st = S.enemies[e.who].st;
+      renderOmens(); renderFloor(); renderPanels();
+      var o = omenEls[e.who]; o.y = -24; o.op = 0;
+      sound.play('omenDrop');
+      return tween(o, { y: 0, op: 1 }, T(260), 'out');
+    },
+    end: function () { return null; },
+    refuse: function (e) { showRefusal(e.reason); }
+  };
+  function enemyTurnLook(on) {
+    shade.classList.toggle('is-on', on);
+    endBtn.classList.toggle('is-off', on);
+  }
+  function setPhase(ph) {
+    phase = ph;
+    if (ph === 'player') { setFlow(1); enemyTurnLook(false); ff = false; }
+    guideIdle();
+    refreshCards(); updatePay(null);
+  }
+
+  // ---------------- turn flow ----------------
+  var gateRes = null;
+  function gate() { if (!VAR.step) return Promise.resolve(); renderFlow(); return new Promise(function (res) { gateRes = res; }); }
+  function runStartTurn() {
+    return enqueue(function () {
+      setFlow(0); phase = 'start'; guideIdle();
+      V.turn = S.turn + 1; renderCorner();
+      var ev = core.startTurn();
+      return playEvents(ev).then(function () { refreshAll(); setFlow(1); });
+    });
+  }
+  function runEndTurn() {
+    if (held) return;
+    setHovered(null);
+    return enqueue(function () {
+      setFlow(2); phase = 'end'; guideIdle();
+      var ev = core.endTurn();
+      return playEvents(ev).then(gate).then(function () {
+        var ev2 = core.enemyTurn(); phase = 'enemy';
+        refreshCards();
+        return playEvents(ev2).then(function () { refreshAll(); });
+      }).then(gate).then(function () {
+        if (S.over) return finish(S.over);
+        enemyTurnLook(false);
+        ff = false;
+        return null;
+      });
+    }).then(function () { if (!S.over) runStartTurn(); });
+  }
+  function finish(result) {
+    setFlow(6); phase = 'over'; enemyTurnLook(false);
+    if (endEl) endEl.remove();
+    var win = result === 'win';
+    guideReasonUntil = 0; setGuide(win ? SCRIPT.enemies[0].name + 'を倒しました' : '倒れました');
+    endEl = h('div', { 'class': 'ocb-end' },
+      h('div', { 'class': 'ocb-end-paper' },
+        h('h2', null, win ? '勝利' : '敗北'),
+        h('p', null, win ? SCRIPT.enemies[0].name + 'を倒した。' : '倒れた。手記は、この場所に残る。'),
+        h('p', null, 'ターン ' + S.turn + ' ・ 残りの HP ' + S.player.hp + ' / ' + S.player.maxHp),
+        h('button', { onclick: function () { restart(); } }, 'もう一度')));
+    endEl.style.opacity = '0';
+    wait(T(900)).then(function () { if (!endEl) return; Lover.appendChild(endEl); endEl.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, fill: 'forwards' }); });
+  }
+  function restart() {
+    if (endEl) { endEl.remove(); endEl = null; }
+    closeDrawer(); closeGallery(); guideReasonUntil = 0; setGuide('');
+    hand.forEach(function (c) { c.wrap.remove(); }); hand = []; held = null; hovered = null; down = null;
+    tweens = []; timers = []; ff = false;
+    core = Core(SCRIPT); S = core.state();
+    snapshotView(); buildEnemyFigs(); figP.x = cellX(V.p.cell);
+    queue = Promise.resolve(); busy = false;
+    refreshAll(); renderFlow(); renderSpeed();
+    runStartTurn();
+  }
+
+  // ---------------- undecided looks inside the prototype ----------------
+  var LONG_TEXTS = {
+    20: '敵に脆化 2 を付け、自分は 1 マス離れる。',
+    30: '間合い 2 以上で出すと、敵の脆化を 1 つ延ばしてから 1 マス押し返す。',
+    40: 'このターンにスタンスを置いていれば、敵の威圧と脆化を 1 つずつ延ばし、自分は 1 マス詰める。'
+  };
+  function renderPursuit() {
+    pursuitHost.innerHTML = '';
+    if (!VAR.pursuit) return;
+    var el = PursuitBadge(VAR.pursuitV);
+    var r = VAR.pursuitV === 'b' ? { x: L.attrs.x, y: L.attrs.y } : VAR.pursuitV === 'c' ? { x: L.attrs.x - 6 - 120, y: L.attrs.y } : { x: L.attrs.x - 6 - 40, y: L.attrs.y };
+    place(el, r.x, r.y);
+    pursuitHost.appendChild(el);
+    el.animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: T(150), easing: 'ease-out' });
+  }
+  function openDrawer(kind) {
+    if (drawerEl) closeDrawer();
+    var api2 = { tab: kind, list: function (k) { return k === 'log' ? null : core.pileList(k); }, close: closeDrawer };
+    drawerEl = PileDrawer(VAR.drawer, api2);
+    Lover.appendChild(drawerEl);
+  }
+  function closeDrawer() { if (drawerEl) { drawerEl.remove(); drawerEl = null; } }
+  function openGallery(kind) {
+    closeGallery();
+    galleryEl = h('div', { style: 'position:absolute;inset:0;background:var(--ground)' });
+    galleryEl.appendChild(Gallery(kind, { heights: VAR.heights }));
+    var close = h('div', { 'class': 'ocb-panel ocb-speed', style: 'position:absolute;right:24px;top:20px;width:auto;padding:0 18px;font:700 20px/1 var(--font-body)', role: 'button' }, '閉じる（Esc）');
+    close.addEventListener('click', closeGallery);
+    galleryEl.appendChild(close);
+    Lover.appendChild(galleryEl);
+  }
+  function closeGallery() { if (galleryEl) { galleryEl.remove(); galleryEl = null; } }
+
+  // ---------------- public API for the lab ----------------
+  var api = {
+    feel: feel, sound: sound, VAR: VAR, game: game, stage: stage,
+    restart: restart,
+    setTheme: function (t) { VAR.theme = t; stage.setAttribute('data-theme', t); },
+    setVariant: function (k, v) {
+      VAR[k] = v;
+      if (k === 'body' || k === 'heights') { buildEnemyFigs(); refreshAll(); }
+      if (k === 'pursuit' || k === 'pursuitV') { renderPursuit(); renderPanels(); }
+      if (k === 'longText' || k === 'longLen' || k === 'fit') refreshCards();
+    },
+    setStep: function (on) { VAR.step = on; renderFlow(); },
+    setGuideMode: function (m) { VAR.guide = m; guideReasonUntil = 0; guideIdle(); },
+    cheat: function (k) { core.cheat(k); refreshAll(); if (k === 'lowhp') H.lowHp(); },
+    openGallery: openGallery, openDrawer: openDrawer,
+    relayout: function () { layoutHand(F('fan.ms')); },
+    read: function () {
+      var hd = held && held.hold;
+      return {
+        pointer: Math.round(ptr.x) + ', ' + Math.round(ptr.y),
+        card: hd ? Math.round(hd.cx) + ', ' + Math.round(hd.cy) : '—',
+        inFrame: hd ? (held.view.self ? (hd.above ? 'はい（線より上）' : 'いいえ') : hd.zone >= 0 ? (held.view.reachable.indexOf(hd.zone) >= 0 ? 'はい' : '枠の中（届かない）') : 'いいえ') : '—',
+        distance: core.distance(0),
+        pay: held ? (held.view.cost) : '—',
+        speed: speed
+      };
+    },
+    fullscreen: function () {
+      full = !full; game.classList.toggle('is-full', full);
+      if (full && game.requestFullscreen) game.requestFullscreen().catch(function () { /* the frame may not allow it */ });
+      if (!full && document.fullscreenElement) document.exitFullscreen().catch(function () {});
+      fit();
+    },
+    destroy: function () { alive = false; cancelAnimationFrame(raf); window.removeEventListener('keydown', onKey); }
+  };
+  document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && full) { full = false; game.classList.remove('is-full'); fit(); } });
+
+  // ---------------- start ----------------
+  renderFlow(); renderSpeed(); refreshAll();
+  raf = requestAnimationFrame(frame);
+  var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  Promise.race([fontsReady, wait(1500)]).then(function () { if (opts.autostart !== false) runStartTurn(); });
+  if (opts.lab !== false) game.appendChild(Lab(api));
+  return api;
+}
+OCB.mountBattle = mountBattle;
+
+// ======================================================================
+// Lab — the tuning panel under the 1920×1080 screen (面 2・面 3・未決の見た目・面 4)
+// ======================================================================
+var VARIANT_NOTES = {
+  theme: [
+    ['dusk', '今の暗い地（既定）', ['優先: 今の Unity と同じ値。試運転の見え方を変えない', '捨てた: 世界観の設定書の「明るい若草と陽」', '床のタイルの上の赤 #ff1f4f: 4.5〜4.9']],
+    ['wakakusa-a', '若草と陽 A・昼', ['優先: 設定書どおりの明るい空と若草。地平線から下は影の地面にし、手札と数値は暗い地に残す', '捨てた: 画面の下半分の明るさ。灯芯の鉤には暗い縁（keyline）が要る（縁なしは若草の上で 1.2）', '空 #f4f2df→#dde9cb ・ 若草 #b9d394→#86a862 ・ 地面 #5f7d45→#10170d ・ 床のタイル rgba(14,20,12,.82) ・ 赤 3.9〜4.1']],
+    ['wakakusa-b', '若草と陽 B・木漏れ日', ['優先: 明るさを一段落とし、斜めの光の筋で「陽」を出す。長く遊んでも目が疲れにくい', '捨てた: 真昼の開けた感じ', '空 #e3ebd3→#c3d6ad ・ 若草 #97b878→#64844c ・ 地面 #4a663a→#0c130b ・ 床のタイル rgba(12,18,12,.80) ・ 赤 4.1〜4.3']]
+  ],
+  drawer: [
+    ['a', 'A 仮の形を整える', ['優先: 手記のドロワー（右 30%）の鏡像。覚える形を 1 つにする', '捨てた: 札の顔（値と特性は読めない）', '左 576 px ・ #141925 ・ 下線のタブ 18 px ・ 行 40 px ・ 開く 220 ms ease-out']],
+    ['b', 'B 札の顔で並べる', ['優先: 値と特性まで一目で読める', '捨てた: 一覧の短さ（札が増えると 2 画面ぶん）', '左 744 px ・ 札 50%（108×152）を 5 列 ・ 右上に「×2」 ・ 開く 260 ms ease-out']],
+    ['c', 'C 束の上に浮かぶ小窓', ['優先: 戦場を隠さない。束から目を動かさずに読める', '捨てた: ログ全文の置き場（ログは手記へ回す）', '束の上 420×520 ・ 行 36 px ・ 束から 140 ms で拡大']]
+  ],
+  pursuit: [
+    ['a', 'A 仮の形', ['優先: 今の実装のまま。攻撃の枠の 6 px 左', '捨てた: 何の +5 かの手がかり（剣が無い）', '40×40 ・ パネル ・ 罫線の枠 ・ 燐光 #b9a3ff の 24 px ・ 出る 150 ms']],
+    ['b', 'B 攻撃の枠に付ける', ['優先: 「次の攻撃に効く」が位置で読める', '捨てた: 回数の札との区別（攻撃の枠に数が 2 つ）', '攻撃の枠を燐光 2 px で縁取り、真下に 40×28 の札「+5」（燐光 24 px）']],
+    ['c', 'C 語を添える', ['優先: 「追撃」と語で読める', '捨てた: 静止時の固定ラベルの予算（2 字増える）', '120×40 ・ 剣 20 px ・「追撃」16 px ・「+5」燐光 24 px']]
+  ],
+  heights: [
+    ['a', 'A 差を小さく（既定）', ['優先: 予兆の札の高さがほぼそろい、目の動きが 1 本のまま（差は最大 14 px）', '捨てた: 種類ごとの迫力の差', '二足 226 ・ 四足 218 ・ 蛇 232 ・ 大型（2 マス）264']],
+    ['b', 'B 体格どおり', ['優先: シルエットだけで種類が分かる', '捨てた: 予兆の札の高さのそろい（差 22 px）', '二足 232 ・ 四足 218 ・ 蛇 240 ・ 大型（2 マス）264']],
+    ['c', 'C 全員そろえる', ['優先: 予兆の札が同じ高さ。作るのがいちばん楽', '捨てた: 四足と蛇の体つき（首を上げた姿勢で高さを稼ぐ）', '二足・四足・蛇 226 ・ 大型（2 マス）264']]
+  ],
+  fit: [
+    ['unity', '今の Unity', ['折り返しも縮小もしない。長い文は札の右端の外へはみ出す（#567）', '—', '枠 188×66 px（スタンス 88）・ 16 px']],
+    ['a', 'A 縮めるだけ', ['優先: 沈んだ手札でも 1 行目が読める', '捨てた: 30 字を超える文（12 px でも入らず「…」で切る。全文は詳細）', '1 行のまま 16 → 12 px']],
+    ['b', 'B 縮めてから折り返す', ['優先: 全文を札の上で読める。行頭に句読点を置かない', '捨てた: 文字の大きさのそろい（16 px 未満が出る）', '3 行（66 px）を超えたら 15 → 12 px。それでも超えたら 3 行目の末尾を「…」']],
+    ['c', 'C 文を 2 段に分ける', ['優先: 条件と効果が行で分かれて読める', '捨てた: 「、」の無い文（1 段になる）', '最初の「、」で 2 行に分け、各行を 12 px まで縮める']]
+  ]
+};
+OCB.VARIANT_NOTES = VARIANT_NOTES;
+
+function Lab(api) {
+  var feel = api.feel, sound = api.sound;
+  var lab = h('div', { 'class': 'ocb-lab' });
+  function btn(text, fn, cls) { var b = h('button', { 'class': 'ocb-lbtn ' + (cls || ''), type: 'button' }, text); b.addEventListener('click', fn); return b; }
+  var read = h('div', { 'class': 'ocb-read' });
+  var muteBtn = btn('音: 入', function () { sound.muted = !sound.muted; muteBtn.textContent = sound.muted ? '音: 切' : '音: 入'; muteBtn.classList.toggle('is-on', sound.muted); });
+  lab.appendChild(h('div', { 'class': 'ocb-lab-bar' }, read,
+    btn('全画面', api.fullscreen), muteBtn, btn('最初から', api.restart),
+    btn('値を書き出す', function () { show('export'); fillExport(); }, 'is-primary'),
+    btn('元に戻す', function () { feel.reset(); sound.reset(); buildFeel(); buildSound(); api.relayout(); })));
+  function updateRead() {
+    var r = api.read();
+    read.innerHTML = '';
+    [['ポインタ', r.pointer], ['札', r.card], ['対象の枠', r.inFrame], ['間合い', r.distance], ['払うスタミナ', r.pay], ['速さ', '×' + r.speed]].forEach(function (x) { read.appendChild(h('span', null, x[0] + ' ', h('b', null, String(x[1])))); });
+  }
+  api.onRead = updateRead; api.onChange = updateRead;
+  setInterval(updateRead, 250);
+
+  var TABS = [['feel', '手触り（今の Unity の値）'], ['try', '試したい'], ['sound', '音'], ['looks', '背景と未決の見た目'], ['flow', '流れ'], ['export', '書き出し']];
+  var tabBar = h('div', { 'class': 'ocb-tabs' }), panes = {};
+  TABS.forEach(function (t) {
+    var b = h('button', { type: 'button' }, t[1]); b.dataset.tab = t[0];
+    b.addEventListener('click', function () { show(t[0]); });
+    tabBar.appendChild(b);
+    panes[t[0]] = h('div', { 'class': 'ocb-pane' });
+  });
+  lab.appendChild(tabBar);
+  TABS.forEach(function (t) { lab.appendChild(panes[t[0]]); });
+  function show(k) {
+    Array.prototype.forEach.call(tabBar.children, function (b) { b.classList.toggle('is-on', b.dataset.tab === k); });
+    for (var p in panes) panes[p].classList.toggle('is-on', p === k);
+  }
+
+  // ---- feel rows ----
+  function feelRow(d) {
+    var key = d[1], val = feel.get(key);
+    var row = h('div', { 'class': 'ocb-row' + (feel.changed(key) ? ' is-changed' : '') });
+    var lab2 = h('label', null, d[2] + (d[3] ? '（' + d[3] + '）' : ''), h('small', null, 'Unity: ' + d[8] + (d[9] ? ' ・ ' + d[9] : '')));
+    row.appendChild(lab2);
+    function changed(v) { feel.set(key, v); row.classList.toggle('is-changed', feel.changed(key)); if (/^fan\./.test(key)) api.relayout(); }
+    if (Array.isArray(d[5])) {
+      var sel = h('select'); d[5].forEach(function (o) { sel.appendChild(h('option', { value: o, selected: o === val ? 'selected' : null }, o)); });
+      sel.addEventListener('change', function () { changed(sel.value); });
+      row.classList.add('is-wide'); row.appendChild(sel);
+    } else if (typeof d[4] === 'boolean') {
+      var cb = h('input', { type: 'checkbox' }); cb.checked = !!val;
+      cb.addEventListener('change', function () { changed(cb.checked); });
+      row.classList.add('is-wide'); row.appendChild(h('span', null, cb, cb.checked ? '' : ''));
+    } else {
+      var rg = h('input', { type: 'range', min: d[5], max: d[6], step: d[7], value: val });
+      var nm = h('input', { type: 'number', min: d[5], max: d[6], step: d[7], value: val });
+      rg.addEventListener('input', function () { nm.value = rg.value; changed(parseFloat(rg.value)); });
+      nm.addEventListener('change', function () { rg.value = nm.value; changed(parseFloat(nm.value)); });
+      row.appendChild(rg); row.appendChild(nm);
+    }
+    return row;
+  }
+  function buildFeel() {
+    ['feel', 'try'].forEach(function (pane) {
+      var el = panes[pane]; el.innerHTML = '';
+      if (pane === 'feel') el.appendChild(h('p', { 'class': 'ocb-note' }, '値を変えると、次に掴んだ札からすぐ効きます。ms は戦闘の速さ ×1.25 のときの長さで、速さ k では 1.25 ÷ k 倍になります。● は Unity の値から変えた行です。当たり判定の「デバッグ表示」を入れると、掴んでいる間に札の矩形・四角・重なりの割合が出ます。'));
+      else el.appendChild(h('p', { 'class': 'ocb-note' }, '今の Unity に無い動きです。初期値は 0（無し）です。採るかどうかはこうだいさんが決めます。'));
+      var grid = h('div', { 'class': 'ocb-grid' }), groups = {};
+      FEEL_DEFS.forEach(function (d) {
+        var isTry = /^試したい/.test(d[0]);
+        if ((pane === 'try') !== isTry) return;
+        if (!groups[d[0]]) { groups[d[0]] = h('details', { open: 'open' }, h('summary', null, d[0])); grid.appendChild(groups[d[0]]); }
+        groups[d[0]].appendChild(feelRow(d));
+      });
+      el.appendChild(grid);
+    });
+  }
+
+  // ---- sound ----
+  function buildSound() {
+    var el = panes.sound; el.innerHTML = '';
+    el.appendChild(h('p', { 'class': 'ocb-note' }, '音は全て WebAudio で作っています（音声ファイルなし）。1 回の行動の効果音は 2 つまで（動作 → 結果）。数字が浮かぶ瞬間と踏み込みは無音です。画面を 1 度クリックすると鳴り始めます。'));
+    var gl = h('div', { 'class': 'ocb-grid' });
+    var g0 = h('details', { open: 'open' }, h('summary', null, '全体'));
+    function slider(label, v, min, max, step, fn) {
+      var rg = h('input', { type: 'range', min: min, max: max, step: step, value: v }), nm = h('input', { type: 'number', min: min, max: max, step: step, value: v });
+      rg.addEventListener('input', function () { nm.value = rg.value; fn(parseFloat(rg.value)); });
+      nm.addEventListener('change', function () { rg.value = nm.value; fn(parseFloat(nm.value)); });
+      return h('div', { 'class': 'ocb-row' }, h('label', null, label), rg, nm);
+    }
+    g0.appendChild(slider('全体の音量', sound.master, 0, 1, 0.01, function (v) { sound.setMaster(v); }));
+    g0.appendChild(slider('湿り（残響）', sound.reverb, 0, 0.6, 0.01, function (v) { sound.setReverb(v); }));
+    g0.appendChild(h('div', { 'class': 'ocb-variant' }, btn('攻撃の札を出したときの 2 音', function () { sound.play('releaseAttack'); sound.play('hitSlash', 170); }), btn('防御の札', function () { sound.play('releaseDefense'); sound.play('guardUp', 120); }), btn('ターン終了の構え', function () { sound.play('breath'); sound.play('reserve', 280); })));
+    gl.appendChild(g0);
+    Object.keys(SOUND_DEFAULTS).forEach(function (k) {
+      var p = sound.presets[k], d = SOUND_DEFAULTS[k];
+      var det = h('details', null, h('summary', null, d.label, h('small', null, '仕様: ' + d.spec + (d.role !== '—' ? ' ・ ' + d.role + 'の音' : ''))));
+      var play = btn('▶', function () { sound.unlock(); sound.play(k); }, 'ocb-play');
+      var head = h('div', { 'class': 'ocb-sound-row' }, h('span', { 'class': 'ocb-note', style: 'margin:0' }, '音色: ' + TIMBRES[p.timbre]), play);
+      det.appendChild(head);
+      var sel = h('select'); Object.keys(TIMBRES).forEach(function (t) { sel.appendChild(h('option', { value: t, selected: t === p.timbre ? 'selected' : null }, TIMBRES[t])); });
+      sel.addEventListener('change', function () { p.timbre = sel.value; head.firstChild.textContent = '音色: ' + TIMBRES[p.timbre]; });
+      det.appendChild(h('div', { 'class': 'ocb-row is-wide' }, h('label', null, '音色'), sel));
+      det.appendChild(slider('音量', p.vol, 0, 0.6, 0.01, function (v) { p.vol = v; }));
+      det.appendChild(slider('高さ（Hz）', p.pitch, 30, 5000, 1, function (v) { p.pitch = v; }));
+      det.appendChild(slider('長さ（ms）', p.dur, 10, 1500, 1, function (v) { p.dur = v; }));
+      det.appendChild(slider('明るさ', p.tone, 0, 1, 0.05, function (v) { p.tone = v; }));
+      gl.appendChild(det);
+    });
+    el.appendChild(gl);
+  }
+
+  // ---- looks (background + the five undecided looks) ----
+  function radioSet(key, list, cur, onPick) {
+    var wrap = h('div');
+    var row = h('div', { 'class': 'ocb-variant' });
+    var why = h('ul', { 'class': 'ocb-why' });
+    function paint(v) {
+      Array.prototype.forEach.call(row.children, function (b) { b.classList.toggle('is-on', b.dataset.v === v); });
+      var n = list.filter(function (x) { return x[0] === v; })[0];
+      why.innerHTML = ''; if (n) n[2].forEach(function (l) { why.appendChild(h('li', null, l)); });
+    }
+    list.forEach(function (x) { var b = btn(x[1], function () { onPick(x[0]); paint(x[0]); }); b.dataset.v = x[0]; row.appendChild(b); });
+    wrap.appendChild(row); wrap.appendChild(why); paint(cur);
+    return wrap;
+  }
+  function buildLooks() {
+    var el = panes.looks; el.innerHTML = '';
+    var V2 = api.VAR, grid = h('div', { 'class': 'ocb-grid' });
+    var d0 = h('details', { open: 'open' }, h('summary', null, '背景（1 層）', h('small', null, '#609')));
+    d0.appendChild(radioSet('theme', VARIANT_NOTES.theme, V2.theme, function (v) { api.setTheme(v); }));
+    grid.appendChild(d0);
+    var d1 = h('details', { open: 'open' }, h('summary', null, '1. 山札・捨札・除外の一覧'));
+    d1.appendChild(radioSet('drawer', VARIANT_NOTES.drawer, V2.drawer, function (v) { api.setVariant('drawer', v); api.openDrawer('deck'); }));
+    d1.appendChild(h('p', { 'class': 'ocb-note' }, '左下の束を押しても開きます。Esc で閉じます。'));
+    grid.appendChild(d1);
+    var d2 = h('details', { open: 'open' }, h('summary', null, '2. 追撃の「+5」バッジ'));
+    var cbP = h('input', { type: 'checkbox' }); cbP.checked = V2.pursuit;
+    cbP.addEventListener('change', function () { api.setVariant('pursuit', cbP.checked); });
+    d2.appendChild(h('label', { 'class': 'ocb-note', style: 'display:block' }, cbP, ' 追撃を待たせた状態にする（自分の右下と、敵の数値パネルの「追撃」「回復」）'));
+    d2.appendChild(radioSet('pursuitV', VARIANT_NOTES.pursuit, V2.pursuitV, function (v) { api.setVariant('pursuitV', v); if (!cbP.checked) { cbP.checked = true; api.setVariant('pursuit', true); } }));
+    d2.appendChild(h('p', { 'class': 'ocb-note' }, '燐光は威力の色です。追撃は次の攻撃の威力を足すので、燐光で合います。敵の回復は HP の文字の色 #e36a5e にしました。'));
+    grid.appendChild(d2);
+    var d3 = h('details', { open: 'open' }, h('summary', null, '3. 敵ごとの人型の高さ'));
+    d3.appendChild(radioSet('heights', VARIANT_NOTES.heights, V2.heights, function (v) { api.setVariant('heights', v); }));
+    var sel = h('select'); [['spearman', '二足（錆槍の竜兵）'], ['hound', '四足'], ['serpent', '蛇'], ['warden', '大型（2 マスの精鋭）']].forEach(function (o) { sel.appendChild(h('option', { value: o[0], selected: o[0] === V2.body ? 'selected' : null }, o[1])); });
+    sel.addEventListener('change', function () { api.setVariant('body', sel.value); });
+    d3.appendChild(h('div', { 'class': 'ocb-row is-wide' }, h('label', null, '戦闘画面の敵の姿（見た目だけ）'), sel));
+    d3.appendChild(h('div', { 'class': 'ocb-variant' }, btn('4 種を並べて見比べる', function () { api.openGallery('heights'); })));
+    grid.appendChild(d3);
+    var d4 = h('details', { open: 'open' }, h('summary', null, '4. 3 マスを使う敵（竜神）'));
+    d4.appendChild(h('p', { 'class': 'ocb-note' }, '8 マス（1 マス 165 px）の場に、幅 495 px・高さ 382 px までの竜神を置きます。首が長いので懐（間合い 0）には届かないことを、首の下の空きと狙うマスで見せます。'));
+    d4.appendChild(h('div', { 'class': 'ocb-variant' }, btn('3 案を見比べる', function () { api.openGallery('dragon'); })));
+    grid.appendChild(d4);
+    var d5 = h('details', { open: 'open' }, h('summary', null, '5. 長い説明文の収め方'));
+    var cbL = h('input', { type: 'checkbox' }); cbL.checked = V2.longText;
+    cbL.addEventListener('change', function () { api.setVariant('longText', cbL.checked); });
+    d5.appendChild(h('label', { 'class': 'ocb-note', style: 'display:block' }, cbL, ' 手札の「伸び突き」の説明文を長い文に差し替える'));
+    var lenRow = h('div', { 'class': 'ocb-variant' });
+    [20, 30, 40].forEach(function (n) { var b = btn('全角 ' + n + ' 字', function () { api.setVariant('longLen', n); Array.prototype.forEach.call(lenRow.children, function (x) { x.classList.toggle('is-on', x === b); }); if (!cbL.checked) { cbL.checked = true; api.setVariant('longText', true); } }); if (n === V2.longLen) b.classList.add('is-on'); lenRow.appendChild(b); });
+    d5.appendChild(lenRow);
+    d5.appendChild(radioSet('fit', VARIANT_NOTES.fit, V2.fit, function (v) { api.setVariant('fit', v); if (!cbL.checked) { cbL.checked = true; api.setVariant('longText', true); } }));
+    d5.appendChild(h('div', { 'class': 'ocb-variant' }, btn('20・30・40 字 × 4 つの収め方を並べる', function () { api.openGallery('text'); })));
+    grid.appendChild(d5);
+    el.appendChild(grid);
+  }
+
+  // ---- flow ----
+  function buildFlow() {
+    var el = panes.flow; el.innerHTML = '';
+    var cb = h('input', { type: 'checkbox' }); cb.checked = api.VAR.step;
+    cb.addEventListener('change', function () { api.setStep(cb.checked); });
+    el.appendChild(h('div', { 'class': 'ocb-grid' },
+      h('details', { open: 'open' }, h('summary', null, '(a) ターンの流れ'),
+        h('p', { 'class': 'ocb-note' }, '画面の上の中央にある「流れ」のバーを押すと、次の段階へ進みます（あなたの番なら番を終え、演出中なら早送り）。'),
+        h('label', { 'class': 'ocb-note', style: 'display:block' }, cb, ' 1 段ずつ止める（段階の終わりで待ち、バーを押すと進む）'),
+        h('div', { 'class': 'ocb-variant' }, btn('自分の HP を 12 にする（鼓動の確認）', function () { api.cheat('lowhp'); }), btn('敵の HP を 5 にする（勝ちの確認）', function () { api.cheat('foe5'); }))),
+      h('details', { open: 'open' }, h('summary', null, '案内の行（手札のすぐ上）'),
+        radioSet('guide', [
+          ['real', '実物どおり（既定）', ['手番の間ずっと「出したい札を離してください。手が済んだら「ターン終了」」を出す', '札が手札へ戻ったときは理由に 3.5 秒差し替え、決着で決着の 1 行', '中央 x 960、y 約 757、22 px（2026-10-19 の画像から読んだ値）']],
+          ['spec', '仕様どおり', ['手番の間は何も出さない', '理由は手札の上の 1 行（下端 y 884、高さ 48、不透明パネル、鈍鋼の枠、琥珀の粒、20 px）、3.5 秒', 'battle-visual-v1.md §5.4']]
+        ], api.VAR.guide, function (v) { api.setGuideMode(v); }),
+        h('p', { 'class': 'ocb-note' }, '実物の位置は、ホバーした札の上端（y 760）と説明の行（y 700〜748）に重なります。')),
+      h('details', { open: 'open' }, h('summary', null, '(b) 戦闘のまわりの画面の流れ'),
+        h('p', { 'class': 'ocb-note' }, '今の Unity の試作と、作りたい本編の流れを並べ、違う所に △ を付けた図です。'),
+        h('div', { 'class': 'ocb-variant' }, btn('図を開く', function () { api.openGallery('flow'); })))));
+  }
+
+  // ---- export ----
+  var taJ = h('textarea', { readonly: 'readonly' }), taM = h('textarea', { readonly: 'readonly' });
+  function fillExport() {
+    var V2 = api.VAR;
+    var r = exportValues(feel, sound, { theme: V2.theme, drawer: V2.drawer, pursuit: V2.pursuitV, heights: V2.heights, textFit: V2.fit, speed: api.read().speed });
+    taJ.value = r.json; taM.value = r.md;
+  }
+  function copy(ta) { ta.select(); try { document.execCommand('copy'); } catch (e) { /* ignore */ } if (navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(function () {}); }
+  panes.export.appendChild(h('div', { 'class': 'ocb-grid' },
+    h('details', { open: 'open' }, h('summary', null, 'JSON'), taJ, h('div', { 'class': 'ocb-variant' }, btn('写す', function () { copy(taJ); }))),
+    h('details', { open: 'open' }, h('summary', null, 'Markdown の表'), taM, h('div', { 'class': 'ocb-variant' }, btn('写す', function () { copy(taM); })))));
+
+  buildFeel(); buildSound(); buildLooks(); buildFlow(); fillExport();
+  show('feel');
+  return lab;
+}
+OCB.Lab = Lab;
+
+// ======================================================================
+// Undecided look 1 — the deck / discard / exile list. api: {tab, list(kind) → [{def,n,owned}], close}
+// ======================================================================
+function PileDrawer(variant, api) {
+  var tabsDef = variant === 'c' ? [['deck', '山札'], ['discard', '捨札'], ['exile', '除外']] : [['deck', '山札'], ['discard', '捨札'], ['exile', '除外'], ['log', 'ログ全文']];
+  var cur = api.tab || 'deck';
+  var el = h('div', { 'class': 'ocb-drawer' });
+  var body = h('div', { style: 'flex:1;overflow:auto' });
+  var tabs = h('div', { 'class': 'ocb-drawer-tabs' });
+  function paint() {
+    tabs.innerHTML = '';
+    tabsDef.forEach(function (t) {
+      var b = h('div', { 'class': 'ocb-drawer-tab' + (t[0] === cur ? ' is-on' : '') }, t[1]);
+      b.addEventListener('click', function () { cur = t[0]; paint(); });
+      tabs.appendChild(b);
+    });
+    body.innerHTML = '';
+    var list = api.list ? api.list(cur) : null;
+    if (cur === 'log' || !list) { body.appendChild(h('p', { style: 'padding:16px 12px;color:var(--ink-muted);font-size:18px' }, 'ログ全文は、まだ中身がありません。')); return; }
+    if (!list.length) { body.appendChild(h('p', { style: 'padding:16px 12px;color:var(--ink-muted);font-size:18px' }, '（空です）')); return; }
+    if (variant === 'b') {
+      var grid = h('div', { style: 'display:grid;grid-template-columns:repeat(5,108px);gap:20px 20px;padding:20px 24px' });
+      list.forEach(function (r) {
+        var holder = h('div', { style: 'position:relative;width:108px;height:152px' });
+        var c = Card(r.def, {}); c.style.transform = 'scale(.5)'; c.style.transformOrigin = '0 0'; c.style.position = 'absolute';
+        holder.appendChild(c);
+        holder.appendChild(h('span', { 'class': 'ocb-mono', style: 'position:absolute;right:-8px;top:-8px;min-width:30px;height:24px;padding:0 6px;border-radius:12px;background:var(--panel-solid);border:1px solid var(--ink-muted);font:600 16px/22px var(--font-mono);text-align:center' }, '×' + r.n));
+        grid.appendChild(holder);
+      });
+      body.appendChild(grid);
+      return;
+    }
+    list.forEach(function (r) {
+      var row = h('div', { 'class': 'ocb-drawer-row', style: { '--attr': ATTR[r.def.attr].frame, height: variant === 'c' ? '36px' : '40px' } }, h('i'), r.def.name, h('span', { 'class': 'ocb-mono' }, r.n + ' / ' + r.owned));
+      body.appendChild(row);
+    });
+  }
+  var close = h('div', { style: 'margin-left:auto;padding:10px 12px;cursor:pointer;color:var(--ink-muted);font:400 16px/1 var(--font-body)' }, '閉じる（Esc）');
+  close.addEventListener('click', function () { api.close && api.close(); });
+  var head = h('div', { style: 'display:flex;align-items:center;padding:12px 12px 0;border-bottom:1px solid var(--rule)' }, tabs, close);
+  el.appendChild(head); el.appendChild(body);
+  if (variant === 'c') {
+    el.style.cssText = 'left:32px;top:420px;width:420px;height:520px;background:var(--panel-solid);border:1px solid var(--steel);border-radius:6px;box-shadow:var(--shadow-tip);transform-origin:20px 100%';
+    el.appendChild(h('i', { style: 'position:absolute;left:24px;bottom:-9px;width:16px;height:16px;background:var(--panel-solid);border-right:1px solid var(--steel);border-bottom:1px solid var(--steel);transform:rotate(45deg)' }));
+    el.animate([{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 140, easing: 'cubic-bezier(.33,1,.68,1)' });
+  } else {
+    var w = variant === 'b' ? 744 : 576;
+    el.style.cssText = 'left:0;top:0;width:' + w + 'px;height:1080px;background:var(--panel-solid);border-right:1px solid var(--rule);box-shadow:var(--shadow-tip)';
+    el.animate([{ transform: 'translateX(-100%)' }, { transform: 'translateX(0)' }], { duration: variant === 'b' ? 260 : 220, easing: 'cubic-bezier(.33,1,.68,1)' });
+  }
+  paint();
+  return el;
+}
+OCB.PileDrawer = PileDrawer;
+
+// ======================================================================
+// Undecided look 2 — the pending pursuit badge (+5). Variants a / b / c; positioned by the caller.
+// ======================================================================
+function PursuitBadge(variant) {
+  if (variant === 'b') {
+    return h('div', { style: 'width:40px;height:74px;position:relative' },
+      h('div', { style: 'position:absolute;left:-2px;top:-2px;width:44px;height:44px;border:2px solid var(--phosphor);border-radius:7px' }),
+      h('div', { 'class': 'ocb-mono', style: 'position:absolute;left:0;top:46px;width:40px;height:28px;border-radius:4px;background:var(--panel-solid);border:1px solid var(--phosphor);font:700 24px/26px var(--font-mono);color:var(--phosphor);text-align:center;letter-spacing:-.04em' }, '+5'));
+  }
+  if (variant === 'c') {
+    return h('div', { 'class': 'ocb-panel', style: 'width:120px;height:40px;display:flex;align-items:center;justify-content:center;gap:4px' },
+      icon('sword', 20, 'var(--phosphor)'), h('span', { style: 'font:400 16px/1 var(--font-body)' }, '追撃'), h('b', { 'class': 'ocb-mono', style: 'font:700 24px/1 var(--font-mono);color:var(--phosphor)' }, '+5'));
+  }
+  return h('div', { 'class': 'ocb-panel', style: 'width:40px;height:40px;display:flex;align-items:center;justify-content:center;font:700 24px/1 var(--font-mono);color:var(--phosphor);letter-spacing:-.04em' }, '+5');
+}
+OCB.PursuitBadge = PursuitBadge;
+
+// ======================================================================
+// Undecided look 4 — the three-cell dragon god. Box: up to 495 px wide footprint, ≤382 px tall.
+// Each: {w, h, foot:[x0,x1] (the three cells), head:{x,y}, paths}
+// ======================================================================
+var DRAGONS = {
+  a: { name: 'A 首を前へ低く', w: 640, h: 300, foot: [145, 640], reach: [1, 3], paths: [
+    'M300 120C360 80 470 90 520 130 580 150 620 190 630 240L600 250 560 236C520 250 420 252 360 236 320 226 290 200 280 170Z',
+    'M600 200C630 210 640 240 638 300H626C624 262 612 236 590 226Z',
+    'M330 220L310 300H350L362 236Z', 'M392 232L384 300H420L428 238Z', 'M520 230L540 300H580L560 228Z',
+    'M300 140C240 120 180 118 120 128L118 150C180 146 238 152 290 176Z',
+    'M122 122C100 110 64 110 30 122L6 134 30 146C64 154 100 158 124 152Z', 'M96 118L122 92 112 122Z',
+    'M360 120C380 60 430 20 500 10 470 50 460 90 470 120Z'
+  ] },
+  b: { name: 'B 首を高く掲げる', w: 560, h: 382, foot: [65, 560], reach: [1, 3], paths: [
+    'M220 230C260 200 380 200 450 230 500 250 540 290 545 340L515 345C480 352 330 356 270 340 230 330 205 300 205 270Z',
+    'M230 244C196 186 188 124 204 72L238 70C228 126 240 186 270 240Z',
+    'M252 26C242 6 214 2 194 12L158 34 116 60 122 72 168 64 206 72C234 68 254 50 252 26Z', 'M226 14L250 0 244 22Z',
+    'M300 220C300 140 340 60 420 18 400 80 410 150 440 210Z', 'M330 226C360 160 430 110 520 96 488 140 484 190 492 234Z',
+    'M262 330L246 382H286L294 336Z', 'M340 340L334 382H372L378 344Z', 'M470 336L486 382H526L510 330Z',
+    'M540 300C556 320 560 350 558 382H548C546 356 540 332 528 316Z'
+  ] },
+  c: { name: 'C 翼で場を覆う', w: 620, h: 340, foot: [125, 620], reach: [1, 3], paths: [
+    'M300 170C360 130 470 136 520 170 576 190 610 230 614 280L586 288C540 296 420 296 360 280 316 270 292 240 288 210Z',
+    'M330 176C292 96 212 40 92 26 136 66 150 112 142 158 182 136 236 146 272 178Z',
+    'M392 160C412 80 470 22 580 0 548 50 540 100 552 156Z',
+    'M300 186C262 170 252 132 226 122 196 112 166 128 154 156L174 162C184 142 202 136 218 142 238 150 248 186 292 208Z',
+    'M158 150C140 140 108 140 84 152L66 164 86 172C110 178 140 178 160 170Z',
+    'M330 270L314 340H354L364 276Z', 'M520 276L540 340H580L562 272Z', 'M600 250C618 270 620 300 618 340H608C606 310 600 286 590 270Z'
+  ] }
+};
+OCB.DRAGONS = DRAGONS;
+
+// ======================================================================
+// Galleries shown inside the 1920×1080 screen: 'heights' | 'dragon' | 'text' | 'flow'
+// ======================================================================
+function Gallery(kind, o) {
+  o = o || {};
+  var root = h('div', { 'class': 'ocb-root', style: 'position:absolute;inset:0;overflow:hidden;color:var(--ink);background:linear-gradient(var(--sky-top), var(--meadow-bottom) 52%, var(--earth-top) 52%, var(--earth-bottom))' });
+  function title(t, sub) {
+    root.appendChild(h('div', { style: 'position:absolute;left:48px;top:28px' }, h('div', { style: 'font:700 34px/44px var(--font-display)' }, t), sub ? h('div', { style: 'font:400 18px/28px var(--font-body);color:var(--ink-muted);margin-top:4px' }, sub) : null));
+  }
+  function floorRow(host, x0, y, cells, cw, opts) {
+    opts = opts || {};
+    for (var i = 0; i < cells; i++) {
+      var t = FloorTile(cw - 6); place(t, x0 + i * cw + 3, y);
+      if (opts.threat && opts.threat.indexOf(i) >= 0) t.setThreat([{ angle: 45 }]);
+      if (opts.safe === i) { t.appendChild(h('div', { style: 'position:absolute;inset:-1px;border:2px dashed var(--miss);border-radius:6px' })); }
+      host.appendChild(t);
+    }
+  }
+  if (kind === 'heights') {
+    title('敵ごとの人型の高さ（未決 3）', '足は y 570。予兆の札は頭の 14 px 上に載るので、高いほど札が上がります。左の目盛りは y 300〜360。');
+    var sets = ['a', 'b', 'c'], kinds = [['spearman', '二足'], ['hound', '四足'], ['serpent', '蛇'], ['warden', '大型（2 マス）']];
+    var HT = { a: { spearman: 226, hound: 218, serpent: 232, warden: 264 }, b: { spearman: 232, hound: 218, serpent: 240, warden: 264 }, c: { spearman: 226, hound: 226, serpent: 226, warden: 264 } };
+    sets.forEach(function (sid, row) {
+      var host = h('div', { style: 'position:absolute;left:0;top:' + (150 + row * 300) + 'px;width:1920px;height:300px;transform:scale(1)' });
+      var note = VARIANT_NOTES.heights[row];
+      host.appendChild(h('div', { style: 'position:absolute;left:48px;top:20px;width:300px' }, h('div', { style: 'font:700 22px/30px var(--font-display)' }, note[1]), note[2].map(function (l) { return h('div', { style: 'font:400 16px/22px var(--font-body);color:var(--ink-muted);margin-top:6px' }, l); })));
+      var sc = 0.62, inner = h('div', { style: 'position:absolute;left:380px;top:0;width:2400px;height:480px;transform:scale(' + sc + ');transform-origin:0 0' });
+      floorRow(inner, 0, 400, 9, 240, {});
+      kinds.forEach(function (k, i) {
+        var f = FIGURES[k[0]], hh = HT[sid][k[0]], kk = hh / f.h, cx = 120 + i * 560 + (k[0] === 'warden' ? 120 : 0);
+        var svgEl = Figure(k[0]); svgEl.setAttribute('width', f.w * kk); svgEl.setAttribute('height', hh);
+        inner.appendChild(place(h('div', null, svgEl), cx - f.cx * kk, 410 - hh));
+        var om = OmenPlate({ kind: '攻撃', value: 9, angle: 45, hit: true }); inner.appendChild(place(om, cx - 100, 410 - hh - 14 - 98));
+        inner.appendChild(place(h('div', { 'class': 'ocb-mono', style: 'font:700 28px/1 var(--font-mono);white-space:nowrap' }, k[1] + ' ' + hh), cx + 120, 360));
+      });
+      [300, 330, 360].forEach(function (y) { inner.appendChild(place(h('div', { style: 'height:1px;background:rgba(236,235,242,.18)' }), 0, 410 - (570 - y) - 0, 2300, 1)); });
+      host.appendChild(inner);
+      root.appendChild(host);
+    });
+    return root;
+  }
+  if (kind === 'dragon') {
+    title('3 マスを使う敵・竜神（未決 4）', '8 マスの場（1 マス 165 px）。竜神は奥の 3 マス（幅 495 px）を使い、高さは予兆の札の上端が y 76 に収まる 382 px まで。数値パネルは 485 px まで。');
+    var pick = o.dragon || 'a';
+    var scene = h('div', { style: 'position:absolute;left:0;top:150px;width:1920px;height:820px' });
+    var btns = h('div', { style: 'position:absolute;left:48px;top:118px;display:flex;gap:8px' });
+    root.appendChild(btns); root.appendChild(scene);
+    var NOTES = {
+      a: ['優先: 首の下の空き（懐）が影になり、そこへ攻撃が来ないことが形で分かる', '捨てた: 竜の大きさの見せ場（高さ 300 で、上限 382 を使わない）', '頭は場の 4 マス目（懐）の上 y 400 前後。息は前下へ'],
+      b: ['優先: いちばん大きく見える。上限の 382 px を使い切る', '捨てた: 予兆の札と頭の近さ（札が y 76 まで上がる）', '首を立て、頭から前下へ。懐は胸の真下で、頭から最も遠い'],
+      c: ['優先: 翼が場を覆うので「3 マス使う」が幅で読める', '捨てた: 胴の形の読みやすさ（翼と首が重なる）', '高さ 340。首は S 字で、頭は翼の先より前']
+    };
+    function draw(id) {
+      scene.innerHTML = ''; btns.innerHTML = '';
+      Object.keys(DRAGONS).forEach(function (k) { var b = h('button', { 'class': 'ocb-lbtn' + (k === id ? ' is-on' : ''), type: 'button', style: 'font:700 18px/1 var(--font-body);padding:10px 16px;background:var(--panel-solid);border:1px solid ' + (k === id ? 'var(--wick)' : 'var(--steel)') + ';color:var(--ink);border-radius:6px;cursor:pointer' }, DRAGONS[k].name); b.addEventListener('click', function () { draw(k); }); btns.appendChild(b); });
+      var D = DRAGONS[id], cw = 165, x0 = 300, feetY = 570 - 150;
+      var cells = 8, dragonCells = [5, 6, 7], playerCell = 1;
+      var threat = []; for (var c = 0; c < cells; c++) { var dd = 5 - c - 1; if (dd >= D.reach[0] && dd <= D.reach[1]) threat.push(c); }
+      floorRow(scene, x0, feetY - 10, cells, cw, { threat: threat, safe: 4 });
+      var sx = x0 + dragonCells[0] * cw - (D.foot[0] * 495 / (D.foot[1] - D.foot[0]));
+      var k2 = 495 / (D.foot[1] - D.foot[0]);
+      var g = sv('svg', { width: D.w * k2, height: D.h * k2, viewBox: '0 0 ' + D.w + ' ' + D.h, style: 'overflow:visible;display:block' });
+      var gr = sv('g', { fill: 'rgba(139,111,208,.35)', stroke: 'rgba(139,111,208,.35)', 'stroke-width': 4 / k2, 'stroke-linejoin': 'round' }), gf = sv('g', { fill: 'var(--figure-enemy)' });
+      D.paths.forEach(function (d) { gr.appendChild(sv('path', { d: d })); gf.appendChild(sv('path', { d: d })); });
+      g.appendChild(gr); g.appendChild(gf);
+      scene.appendChild(place(h('div', null, g), sx, feetY - D.h * k2));
+      var pw = 485, px0 = x0 + dragonCells[0] * cw + 5;
+      var pn = StatusPanel({ side: 'foe', width: pw, hp: 248, maxHp: 260, guard: 6, st: 12, reserve: true, chips: [] }); scene.appendChild(place(pn, px0, feetY + 44));
+      var om = OmenPlate({ kind: '攻撃', value: 18, angle: 45, hit: true }); scene.appendChild(place(om, x0 + 6 * cw + cw / 2 - 100, feetY - D.h * k2 - 14 - 98));
+      var pf = FIGURES.swordsman; var ps = Figure('swordsman'); scene.appendChild(place(h('div', null, ps), x0 + cw * (playerCell + 0.5) - pf.cx, feetY - pf.h));
+      scene.appendChild(place(h('div', { style: 'font:400 16px/22px var(--font-body);color:var(--ink-muted);text-align:center;width:' + cw + 'px' }, '懐（間合い 0）', h('br'), '届かない'), x0 + 4 * cw, feetY + 40));
+      var notes = h('div', { style: 'position:absolute;left:48px;top:' + (feetY + 230) + 'px;width:1400px' });
+      NOTES[id].forEach(function (l) { notes.appendChild(h('div', { style: 'font:400 18px/28px var(--font-body);color:var(--ink)' }, l)); });
+      notes.appendChild(h('div', { style: 'font:400 16px/24px var(--font-body);color:var(--ink-muted);margin-top:8px' }, '赤い斜線は間合い 1〜3（竜神の息が届く所）。破線の枠のマスは懐で、首が長いので届かない。数値パネルは幅 485 px（3 マス × 165 − 10）。'));
+      scene.appendChild(notes);
+    }
+    draw(pick);
+    return root;
+  }
+  if (kind === 'text') {
+    title('長い説明文の収め方（未決 5）', '枠は 188×66 px（スタンスは 88）、本文は 16 px。行頭の句読点は禁則で避けます。文字の大きさの下限は 12 px。');
+    var LT = { 20: '敵に脆化 2 を付け、自分は 1 マス離れる。', 30: '間合い 2 以上で出すと、敵の脆化を 1 つ延ばしてから 1 マス押し返す。', 40: 'このターンにスタンスを置いていれば、敵の威圧と脆化を 1 つずつ延ばし、自分は 1 マス詰める。' };
+    var def = SCRIPT.cards.nobizuki, modes = VARIANT_NOTES.fit;
+    modes.forEach(function (m, col) {
+      var x = 300 + col * 400;
+      root.appendChild(place(h('div', { style: 'font:700 22px/28px var(--font-display);white-space:nowrap' }, m[1]), x, 128));
+      [20, 30, 40].forEach(function (n, row) {
+        var holder = h('div', { style: 'position:absolute;width:216px;height:304px;transform:scale(.88);transform-origin:0 0' });
+        holder.appendChild(Card(def, { desc: LT[n], fit: m[0] }));
+        place(holder, x, 170 + row * 296);
+        root.appendChild(holder);
+      });
+    });
+    [20, 30, 40].forEach(function (n, row) { root.appendChild(place(h('div', { style: 'font:700 24px/1 var(--font-mono);white-space:nowrap' }, '全角 ' + n + ' 字'), 60, 290 + row * 296)); });
+    // fit after insertion (measurement needs the real fonts)
+    setTimeout(function () { Array.prototype.forEach.call(root.querySelectorAll('.ocb-card'), fitCardText); }, 0);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { Array.prototype.forEach.call(root.querySelectorAll('.ocb-card'), fitCardText); });
+    return root;
+  }
+  if (kind === 'flow') {
+    title('戦闘のまわりの画面の流れ（面 4 b）', '上が今の Unity の試作、下が作りたい本編。△ は本編と違う所です。');
+    var rows = [
+      { y: 260, label: '今の試作', items: [['デッキ選択', 1], ['出立', 0], ['モード選択（1 体か連戦）', 1], ['戦闘', 0], ['終了画面（連戦なら戦闘のあいだに休憩）', 1]] },
+      { y: 620, label: '本編', items: [['継承の間', 1], ['出立（戦闘のデッキを組む）', 1], ['ダンジョン', 1], ['戦闘', 0], ['結果', 1], ['探索へ戻る', 1]] }
+    ];
+    var svgF = sv('svg', { width: 1920, height: 1080, viewBox: '0 0 1920 1080', style: 'position:absolute;left:0;top:0' });
+    rows.forEach(function (r) {
+      root.appendChild(place(h('div', { style: 'font:700 26px/32px var(--font-display)' }, r.label), 60, r.y - 60));
+      var n = r.items.length, gap = 40, w = Math.floor((1800 - gap * (n - 1)) / n), x = 60;
+      r.items.forEach(function (it, i) {
+        var box = h('div', { style: 'position:absolute;left:' + x + 'px;top:' + r.y + 'px;width:' + w + 'px;height:110px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 14px;border-radius:6px;background:var(--panel-solid);border:' + (it[1] ? '2px solid var(--caution)' : '1px solid var(--steel)') + ';font:700 20px/28px var(--font-body)' }, it[1] ? h('span', { style: 'color:var(--caution);margin-right:8px;font-size:24px' }, '△') : null, it[0]);
+        root.appendChild(box);
+        if (i < n - 1) svgF.appendChild(sv('path', { d: 'M' + (x + w + 6) + ' ' + (r.y + 55) + 'h' + (gap - 14) + 'm-8 -7l8 7-8 7', stroke: 'var(--ink)', 'stroke-width': 2.2, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+        r.items[i].x = x; r.items[i].w = w;
+        x += w + gap;
+      });
+    });
+    var a = rows[1].items[5], b2 = rows[1].items[2], aE = rows[1].items[4], first = rows[1].items[0];
+    svgF.appendChild(sv('path', { d: 'M' + (a.x + a.w / 2) + ' 730 v50 H' + (b2.x + b2.w / 2) + ' v-46 m-7 8l7-8 7 8', stroke: 'var(--ink)', 'stroke-width': 2.2, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+    svgF.appendChild(sv('path', { d: 'M' + (aE.x + aE.w / 2) + ' 730 v110 H' + (first.x + first.w / 2) + ' v-106 m-7 8l7-8 7 8', stroke: 'var(--ink-muted)', 'stroke-width': 2.2, fill: 'none', 'stroke-dasharray': '6 6', 'stroke-linecap': 'round' }));
+    root.appendChild(svgF);
+    root.appendChild(place(h('div', { style: 'font:400 18px/26px var(--font-body);color:var(--ink)' }, '生き延びたら探索へ戻る'), b2.x + 20, 786));
+    root.appendChild(place(h('div', { style: 'font:400 18px/26px var(--font-body);color:var(--ink-muted)' }, '死んだら、次のキャラクターで継承の間から（死亡地点に遺産と手記を残す）'), first.x + 20, 846));
+    var notes = ['デッキ選択は、本編では出立の中（戦闘のデッキを組む）に入ります。', 'モード選択（1 体か連戦）は本編にありません。連戦の休憩も、探索の中の出来事に置き換わります。', '終了画面は「結果」になり、終わりではなく探索へ戻る分かれ道になります。', '継承の間とダンジョンは、今の試作にありません。'];
+    notes.forEach(function (t, i) { root.appendChild(place(h('div', { style: 'font:400 18px/26px var(--font-body);color:var(--ink-muted)' }, '・' + t), 60, 920 + i * 30)); });
+    root.appendChild(place(h('div', { style: 'font:400 16px/1 var(--font-body);color:var(--ink-muted)' }, '矢印は画面の移り方。破線は死んだときの戻り道。'), 1300, 420));
+    return root;
+  }
+  return root;
+}
+OCB.Gallery = Gallery;
+
+// Enemy-side pending badges (pursuit / recovery), shown in the enemy panel's chip row while undecided look 2 is on.
+function FoeBadges() {
+  return [
+    h('span', { 'class': 'ocb-chip', style: 'gap:4px' }, icon('sword', 18, 'var(--phosphor)'), h('b', { style: 'font:700 24px/1 var(--font-mono);color:var(--phosphor)' }, '+5')),
+    h('span', { 'class': 'ocb-chip', style: 'gap:4px' }, icon('heal', 18, 'var(--hp-text)'), h('b', { style: 'font:700 24px/1 var(--font-mono);color:var(--hp-text)' }, '+3'))
+  ];
+}
+OCB.FoeBadges = FoeBadges;
+
+// ======================================================================
+// Showcase helpers — what the component previews call. Layouts are drawn at their 1920×1080 size and
+// scaled down to the frame's width, like the game itself.
+// ======================================================================
+function Stage(w, ht, opts) {
+  opts = opts || {};
+  ensureTokens();
+  var outer = h('div', { 'class': 'ocb-root ocb-gallery', style: { position: 'relative', width: '100%', overflow: 'hidden', background: opts.bg || 'var(--ground)' } });
+  var inner = h('div', { 'class': 'ocb-scaled', style: { position: 'absolute', left: '0', top: '0', width: px(w), height: px(ht) } });
+  if (opts.theme) inner.setAttribute('data-theme', opts.theme);
+  outer.appendChild(inner);
+  function fit() { var k = Math.min(opts.maxScale || 1, (outer.clientWidth || w) / w); inner.style.transform = 'scale(' + k + ')'; outer.style.height = px(Math.ceil(ht * k)); }
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(outer); else window.addEventListener('resize', fit);
+  setTimeout(fit, 0);
+  return { outer: outer, inner: inner, add: function (el, x, y) { inner.appendChild(place(el, x, y)); return el; } };
+}
+OCB.Stage = Stage;
+OCB.Icon = icon;
+OCB.BattleCard = Card;
+
+// The resting fan of up to 8 cards, one of them hovered (battle-visual §4.8, §5.1).
+// d: {cards:[{def, st}], hover: index|null, top: 896, hoverTop: 760}
+function HandFan(d) {
+  var n = d.cards.length, sp = n <= 5 ? 160 : n === 6 ? 150 : n === 7 ? 140 : 126;
+  var host = h('div', { style: 'position:absolute;left:0;top:0;width:1920px;height:1080px' });
+  d.cards.forEach(function (c, i) {
+    var k = i - (n - 1) / 2, hov = i === d.hover;
+    var el = Card(c.def, c.st || {});
+    el.style.position = 'absolute';
+    el.style.left = px(960 + k * sp - 108);
+    el.style.top = px(hov ? (d.hoverTop || 760) : (d.top || 896) + k * k * 3.2);
+    el.style.transformOrigin = '108px 304px';
+    el.style.transform = hov ? 'none' : 'rotate(' + (k * 2.5) + 'deg)';
+    el.style.zIndex = hov ? 50 : i;
+    host.appendChild(el);
+  });
+  return host;
+}
+OCB.HandFan = HandFan;
+
+// A floor lane with figures standing on it. d: {cells, player, enemy, threat:[{cell, angle, boundary}], reach:[cells], move: cell}
+function FloorLane(d) {
+  var cells = d.cells || 6, cw = 1320 / cells;
+  var host = h('div', { style: 'position:absolute;left:0;top:0;width:1920px;height:640px' });
+  for (var i = 0; i < cells; i++) {
+    var t = FloorTile(cw - 6); place(t, 300 + i * cw + 3, 560);
+    var th = (d.threat || []).filter(function (x) { return x.cell === i; });
+    t.setThreat(th, d.move === i);
+    if ((d.reach || []).indexOf(i) >= 0) { t.reach.style.opacity = 1; t.reachLine.style.opacity = 1; }
+    host.appendChild(t);
+  }
+  if (d.player != null && d.enemy != null) {
+    var a = Math.min(d.player, d.enemy), b = Math.max(d.player, d.enemy), gap = b - a - 1;
+    var chip = DistanceChip(gap, gap * cw); place(chip, gap > 0 ? 300 + (a + 1) * cw : 300 + b * cw - 50, 563); host.appendChild(chip);
+  }
+  [['swordsman', d.player], ['spearman', d.enemy]].forEach(function (q) {
+    if (q[1] == null) return;
+    var f = FIGURES[q[0]], x = 300 + cw * (q[1] + 0.5);
+    var fl = FootLight(f.body * 2, f.side === 'foe'); place(fl, x - f.body, 540); host.appendChild(fl);
+    host.appendChild(place(h('div', null, Figure(q[0])), x - f.cx, 570 - f.h));
+  });
+  return host;
+}
+OCB.FloorLane = FloorLane;
+
+// Small notices in one call: kind = 'hover' | 'reach' | 'refusal' | 'banner' | 'float'
+function Notices(kind, a, b, c) {
+  if (kind === 'hover') return HoverLine(a, b);
+  if (kind === 'reach') return ReachPanel(a);
+  if (kind === 'refusal') return RefusalLine(a);
+  if (kind === 'banner') return Banner(a, b);
+  return FloatNum(a, b, c);
+}
+OCB.Notices = Notices;
+
+// The HUD pieces around the edges, placed at their battle-visual §4 coordinates on a 1920×1080 host.
+function TurnControls(d) {
+  d = d || {};
+  var host = h('div', { style: 'position:absolute;left:0;top:0;width:1920px;height:1080px' });
+  host.appendChild(place(CornerInfo({ turn: d.turn || 3, floor: d.floor || 1, miasma: d.miasma || 12 }), 24, 20));
+  host.appendChild(place(SpeedToggle(d.speed || 1.25), 1708, 20));
+  host.appendChild(place(JournalButton(), 1840, 20));
+  host.appendChild(place(PlayedAttrs(d.played || { attack: 2, defense: 1 }), 1718, 896));
+  if (d.guard !== false) host.appendChild(place(GuardPreview(3), 1560, 984));
+  host.appendChild(place(EndTurnButton(!!d.enemyTurn), 1672, 976));
+  return host;
+}
+OCB.TurnControls = TurnControls;
+
+// Sound palette: one button per event, playing the default preset.
+function SoundPalette() {
+  var snd = Sound();
+  var wrap = h('div', { 'class': 'ocb-root ocb-lab', style: 'padding:12px' });
+  wrap.appendChild(h('p', { 'class': 'ocb-note', style: 'margin:0 0 10px' }, '押すと鳴ります（WebAudio で作った音。音声ファイルは使いません）。1 回の行動は「動作 → 結果」の 2 音までです。'));
+  var grid = h('div', { 'class': 'ocb-grid', style: 'grid-template-columns:repeat(auto-fill,minmax(220px,1fr))' });
+  Object.keys(SOUND_DEFAULTS).forEach(function (k) {
+    var d = SOUND_DEFAULTS[k];
+    var b = h('button', { 'class': 'ocb-lbtn', type: 'button', style: 'text-align:left;white-space:normal' }, '▶ ' + d.label, h('br'), h('small', { style: 'color:var(--ink-muted)' }, TIMBRES[d.timbre] + ' ・ 仕様: ' + d.spec));
+    b.addEventListener('click', function () { snd.unlock(); snd.play(k); });
+    grid.appendChild(b);
+  });
+  wrap.appendChild(grid);
+  return wrap;
+}
+OCB.SoundPalette = SoundPalette;
+
+OCB.version = '1.0.0';
+window.OCB = OCB;
+})();
