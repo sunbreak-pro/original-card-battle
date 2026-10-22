@@ -110,3 +110,41 @@ export function buildSyncPlan({ repoRoot, projectPath, noPolyfill = false, withP
     ),
   ];
 }
+
+// The Unity project folders whose .cs and .asmdef files come only from this checkout. A flat root owns
+// its own files; a recursive root owns everything below it as well. Anything of those kinds found there
+// that the plan does not write is a leftover: a copy of a file this checkout has since deleted or moved
+// (#615). The rest of Assets/ (Scenes, Prefabs, Editor tools the Unity repo keeps) is never looked at.
+export const OWNED_ROOTS = [
+  { folder: "Assets/Core", recursive: false },
+  { folder: "Assets/Tests", recursive: false },
+  { folder: "Assets/View", recursive: false },
+  { folder: "Assets/DungeonCore", recursive: false },
+  { folder: "Assets/DungeonContent", recursive: false },
+  { folder: "Assets/View/Depiction", recursive: true },
+  { folder: "Assets/View/Backdrop", recursive: true },
+  { folder: "Assets/View/UiArt", recursive: true },
+  { folder: "Assets/View/Exploration", recursive: true },
+  { folder: "Assets/View/Journal", recursive: true },
+];
+
+const OWNED_KINDS = [".cs", ".asmdef"];
+
+/**
+ * The .cs and .asmdef files under OWNED_ROOTS that the plan does not write, as project-relative paths
+ * ("Assets/..."), sorted. These are what `unity:sync --prune` removes and what `unity:check` refuses.
+ */
+export function findLeftovers({ projectPath, plan }) {
+  const written = new Set(plan.map(([, dest]) => toSlash(dest).slice(projectPath.length + 1)));
+  const found = new Set();
+  for (const { folder, recursive } of OWNED_ROOTS) {
+    const dir = `${projectPath}/${folder}`;
+    if (!existsSync(dir)) continue;
+    for (const entry of readdirSync(dir, { withFileTypes: true, recursive })) {
+      if (!entry.isFile() || !OWNED_KINDS.some((x) => entry.name.endsWith(x))) continue;
+      const rel = toSlash(join(entry.parentPath, entry.name)).slice(projectPath.length + 1);
+      if (!written.has(rel)) found.add(rel);
+    }
+  }
+  return [...found].sort();
+}

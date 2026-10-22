@@ -11,32 +11,41 @@
 //
 // Usage:
 //   node unity-port/tools/check-unity-compile.mjs [projectPath] [--warnings] [--keep] [--no-polyfill] [--with-parity]
+//                                                 [--allow-leftovers] [--allow-unbuilt]
 //   npm run unity:check
 //
-//   --warnings      print every warning, not only the count
-//   --keep          keep the temp folder (its path is printed)
+//   --warnings         print every warning, not only the count
+//   --keep             keep the temp folder (its path is printed)
 //   --no-polyfill / --with-parity   the same switches as unity:sync, so the files match what it copies
+//   --allow-leftovers  list the leftovers but do not fail on them (0 instead of 3)
+//   --allow-unbuilt    list the assemblies Unity has not compiled yet but do not fail on them (0 instead of 4)
 //
-// Exit code: 0 clean, 1 compile errors, 2 the check could not run (no Unity build to replay, no csc).
+// Exit code: 0 clean, 1 compile errors, 2 the check could not run (no Unity build to replay, no csc),
+// 3 leftovers in the Unity project, 4 an assembly Unity has not compiled yet. When several apply, the
+// lowest number wins.
 //
 // Limits: the arguments are the ones from the last Editor compile, so a change to the arguments
 // themselves (a new asmdef reference, a new define, a new assembly) shows up only after Unity has
-// compiled once more; a new assembly is reported and skipped. Files in the folders the sync owns that
-// this checkout no longer has are left out (they are listed): the sync never deletes them, so remove
-// them from the Unity project when they are gone for good. Runtime differences (a test that compiles
-// but fails on NUnit 3.5, #345) need the EditMode tests in Unity.
+// compiled once more. A new assembly cannot be checked until then, so it fails with 4: open Unity once
+// (#615). Leftovers are the .cs and .asmdef files under the folders the sync owns (OWNED_ROOTS in
+// unity-sync-plan.mjs, a folder this checkout dropped as a whole included) that this checkout no longer
+// has. The Editor still compiles them, so a deleted declaration lives on there; they are left out of
+// this compile and fail with 3 until `npm run unity:sync -- --prune` removes them (#615). Runtime
+// differences (a test that compiles but fails on NUnit 3.5, #345) need the EditMode tests in Unity.
 
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, posix } from "node:path";
 import { spawnSync } from "node:child_process";
-import { buildSyncPlan, resolveProjectPath, toSlash } from "./unity-sync-plan.mjs";
+import { buildSyncPlan, findLeftovers, resolveProjectPath, toSlash } from "./unity-sync-plan.mjs";
 
 const args = process.argv.slice(2);
 const showWarnings = args.includes("--warnings");
 const keep = args.includes("--keep");
 const noPolyfill = args.includes("--no-polyfill");
 const withParity = args.includes("--with-parity");
+const allowLeftovers = args.includes("--allow-leftovers");
+const allowUnbuilt = args.includes("--allow-unbuilt");
 const positional = args.filter((a) => !a.startsWith("-"));
 
 const projectPath = resolveProjectPath(positional[0]);
@@ -104,11 +113,13 @@ const referenceTo = (line) => {
 
 // --- this checkout's files in place of the copies ---------------------------
 
+const plan = buildSyncPlan({ repoRoot, projectPath, noPolyfill, withParity });
 const fromRepo = new Map(); // "Assets/..." -> file in this checkout
-for (const [src, dest] of buildSyncPlan({ repoRoot, projectPath, noPolyfill, withParity })) {
+for (const [src, dest] of plan) {
   if (/\.(cs|asmdef)$/.test(dest)) fromRepo.set(dest.slice(projectPath.length + 1), toSlash(src));
 }
-const ownedFolders = new Set([...fromRepo.keys()].filter((p) => p.endsWith(".cs")).map((p) => posix.dirname(p)));
+const leftovers = findLeftovers({ projectPath, plan });
+const isLeftover = new Set(leftovers);
 
 // The assembly a file belongs to: the nearest .asmdef above it (this checkout's copy first), else
 // Unity's predefined Assembly-CSharp(-Editor).
@@ -133,15 +144,13 @@ const assemblyOf = (rel) => {
 };
 
 const sourcesOf = new Map();
-const leftovers = [];
 const listed = new Set();
 for (const [name, { sources }] of assemblies) {
   const files = [];
   for (const rel of sources) {
     listed.add(rel);
     if (fromRepo.has(rel)) files.push(fromRepo.get(rel));
-    else if (ownedFolders.has(posix.dirname(rel))) leftovers.push(rel);
-    else files.push(rel); // the Unity repo's own file
+    else if (!isLeftover.has(rel)) files.push(rel); // the Unity repo's own file
   }
   sourcesOf.set(name, files);
 }
@@ -223,11 +232,11 @@ for (const name of order) {
 
 if (added.length > 0) console.log(`\nNew files, placed by their nearest .asmdef:\n${added.map((a) => `    ${a}`).join("\n")}`);
 if (unbuilt.size > 0) {
-  console.log("\nNot checked (Unity has not compiled these assemblies yet; open Unity once):");
+  console.log("\nNot checked (Unity has not compiled these assemblies yet):");
   for (const [name, files] of unbuilt) console.log(`    ${name}: ${files.join(", ")}`);
 }
 if (leftovers.length > 0) {
-  console.log(`\nLeft out (in the Unity project, not in this checkout; unity:sync never deletes):\n${leftovers.map((l) => `    ${l}`).join("\n")}`);
+  console.log(`\nLeft out (in the Unity project, not in this checkout; the Editor still compiles them):\n${leftovers.map((l) => `    ${l}`).join("\n")}`);
 }
 
 if (keep) console.log(`\nTemp folder kept: ${out}`);
@@ -235,4 +244,21 @@ else rmSync(out, { recursive: true, force: true });
 
 const failed = order.filter((n) => !built.has(n));
 console.log(failed.length === 0 ? "\n✓ Every Unity assembly compiles." : `\n✗ ${errorCount} errors in ${failed.join(", ")}.`);
-process.exit(failed.length === 0 ? 0 : 1);
+if (failed.length > 0) process.exit(1);
+if (leftovers.length > 0) {
+  const fix = "Remove them with `npm run unity:sync -- --prune` (add --dry-run to see the list first).";
+  if (!allowLeftovers) {
+    console.log(`✗ ${leftovers.length} leftover file(s) in the Unity project. ${fix}`);
+    process.exit(3);
+  }
+  console.log(`! ${leftovers.length} leftover file(s) allowed by --allow-leftovers. ${fix}`);
+}
+if (unbuilt.size > 0) {
+  const fix = "Open the Unity project once so it compiles them and writes their arguments, then run this again.";
+  if (!allowUnbuilt) {
+    console.log(`✗ ${unbuilt.size} assembly(ies) not checked: ${[...unbuilt.keys()].join(", ")}. ${fix}`);
+    process.exit(4);
+  }
+  console.log(`! ${unbuilt.size} unchecked assembly(ies) allowed by --allow-unbuilt. ${fix}`);
+}
+process.exit(0);
