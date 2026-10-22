@@ -1,0 +1,15 @@
+[
+  "Rest choice: the rest node has no choice plate in this build. Its two ways in (休む / 訓練する) are the buttons of the node's preview panel (727); 訓練する then opens the training card (732–734).",
+  "情報収集 choice plate exists only when the life carries 写しの帳, so the first heir took it (720–722). Without it the survey only shows a note banner.",
+  "Event choice plate: the events on the first heir's layer-1 path were 泉 (no choice; 726 is its result card). The choice plate (特殊な食事) is the third heir's (820–822).",
+  "Status chip tooltip: no status appeared in the first heir's fights (the opening fight was won on turn 2; the layer-2 boss put none on the heir). The chips are from the third heir's first fight (670–672), after 石礫 (威圧 2 / 脆化 2 on the enemy); 集中 and 石礫 were added to that deck for this.",
+  "Battle loss: forced on the first heir's layer-2 boss by ending every turn with nothing played (660–668). The loss result card waits for 手記へ.",
+  "Trace flow: the first heir's trace on layer 2 was never reached. The second heir fell to the layer-1 boss under autobattle (860–862 are its end card and ending), and the third heir's first try (cap-life3.mjs) fell to an elite under autobattle after the chip shots. The second try (cap-life3b.mjs) started again from the same hall checkpoint (same life seed, same map), carried 標の石 and jumped over the elite onto the second heir's trace on layer 1 (824–836). The first heir's trace stays uncollected (853).",
+  "Ending screens: a death on layer 2 (801–803, played through), a death on layer 1 (861–862, the second shot after the click that lays the whole sheet down), a life closed alive (850–851).",
+  "Native title tooltips (the hall's life marks, 807) are browser tooltips and are not drawn in headless screenshots; the shot shows the hover state only.",
+  "Not reached: the training card before a descent (is-descend; the only mark of layer 1 was spent at the rest), the confirmation before a step into 瘴気死 (miasma never passed 10 %), layers 3–7, a fight with two or three enemies, 俊敏's free step, and a cleared run (Completed).",
+  "The enemy's action and the omen change are inside the end-turn sequences (624-…-from-x, 624-…-enemy-banner, 663-…): the enemy moves and gains Guard, and the omen badge changes 移動 → 攻撃 by the next turn (compare 603 / 625 / 627).",
+  "Title intro times are measured from the title root attaching (the game boots after document.fonts.ready), not from navigation start.",
+  "Settings in battle open on the Esc key's release (keyup), as the game does (614).",
+  "Each life's map and fights depend on the lineage seed, which the game draws from Date.now() and Math.random() when はじめから is pressed. cap-meta.mjs pins both for that one click (seed 789591033); every later section starts from a localStorage checkpoint, so re-running a section reproduces it."
+]
