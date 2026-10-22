@@ -24,6 +24,7 @@
     <ProjectReference Include="..\BattleCore\BattleCore.csproj" />
     <ProjectReference Include="..\Depiction.Script\Depiction.Script.csproj" />
     <ProjectReference Include="..\Depiction.Bridge\Depiction.Bridge.csproj" />
+    <ProjectReference Include="..\InheritanceCore\InheritanceCore.csproj" />
   </ItemGroup>
 
 </Project>

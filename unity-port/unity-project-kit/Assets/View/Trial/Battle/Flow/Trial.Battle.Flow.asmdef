@@ -1,0 +1,23 @@
+{
+    "name": "Trial.Battle.Flow",
+    "rootNamespace": "Trial.Battle",
+    "references": [
+        "Trial.Async",
+        "Trial.Script",
+        "Trial.Bridge",
+        "BattleCore",
+        "Depiction.Script",
+        "Depiction.Bridge",
+        "Backdrop.Script",
+        "Journal.Script"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

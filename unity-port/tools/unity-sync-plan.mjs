@@ -108,6 +108,17 @@ export function buildSyncPlan({ repoRoot, projectPath, noPolyfill = false, withP
         `${projectPath}/Assets/View/${folder}/${src.slice(`${kit}/Assets/View/${folder}/`.length)}`,
       ]),
     ),
+
+    // The browser trial's port (title → hall → departure → exploration ↔ battle → ending), built in code:
+    // engine-free assemblies (Async, Geometry, Audio/Synth, Bridge, Script, Battle/Flow) and the Unity views.
+    // Their dotnet tests live in unity-port/Trial.*.Tests and are not copied.
+    ...treeFiles(`${kit}/Assets/View/Trial`, [".cs", ".asmdef"]).map((src) => [
+      src,
+      `${projectPath}/Assets/View/Trial/${src.slice(`${kit}/Assets/View/Trial/`.length)}`,
+    ]),
+    // The inheritance rules core (engine-free, like DungeonCore) -> Assets/InheritanceCore
+    ...csFiles(`${repoRoot}/unity-port/InheritanceCore`).map((src) => [src, `${projectPath}/Assets/InheritanceCore/${basename(src)}`]),
+    [`${kit}/Assets/InheritanceCore/InheritanceCore.asmdef`, `${projectPath}/Assets/InheritanceCore/InheritanceCore.asmdef`],
   ];
 }
 
@@ -126,6 +137,8 @@ export const OWNED_ROOTS = [
   { folder: "Assets/View/UiArt", recursive: true },
   { folder: "Assets/View/Exploration", recursive: true },
   { folder: "Assets/View/Journal", recursive: true },
+  { folder: "Assets/View/Trial", recursive: true },
+  { folder: "Assets/InheritanceCore", recursive: false },
 ];
 
 const OWNED_KINDS = [".cs", ".asmdef"];
