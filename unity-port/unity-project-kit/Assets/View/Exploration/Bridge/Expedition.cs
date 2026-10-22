@@ -3,8 +3,9 @@
 // journal has learned of each enemy. It hands a combat node's battle in (EncounterBattle) and takes
 // its result back: HP and stamina into the exploration core, the ticks into the mastery book, the
 // 開示度 into the journal, the unique cards into the cards owned and the deck, and the rest of the
-// reward (#625: the pile's cards to pick one from, consumables, pages). It also spends the marks a
-// 習熟訓練 node earns on the card the player names. Pure C#; the View that loads the battle scene only
+// reward (#625: the pile's cards to pick one from, consumables, pages). A consumable found goes into a
+// free slot of the exploration (#651), or waits for the player to swap it in or give it up. It also
+// spends the marks a 習熟訓練 node earns on the card the player names. Pure C#; the View that loads the battle scene only
 // forwards the source and the end of each fight.
 using System;
 using System.Collections.Generic;
@@ -27,6 +28,7 @@ namespace Exploration.Bridge
         private readonly HashSet<string> _owned = new HashSet<string>(StringComparer.Ordinal);
         private List<CardInstance> _deck;
         private readonly List<string> _consumables = new List<string>();
+        private readonly List<string> _waiting = new List<string>();
         private List<string> _offer = new List<string>();
         private int _life;
         private int _learnedCopies;
@@ -102,8 +104,8 @@ namespace Exploration.Bridge
         }
 
         /// <summary>
-        /// The consumables the battles of this life dropped, as catalogue ids in the order found. They do
-        /// not reach the exploration's slots yet: RunLoadout holds only what relieves 瘴気.
+        /// The consumables the battles of this life dropped, as catalogue ids in the order found: the
+        /// ones that went into a slot and the ones in <see cref="WaitingConsumables"/> alike.
         /// </summary>
         public IReadOnlyList<string> Consumables
         {
@@ -111,6 +113,20 @@ namespace Exploration.Bridge
             {
                 SyncLife();
                 return _consumables;
+            }
+        }
+
+        /// <summary>
+        /// Consumables found while every slot was full (tools_and_consumables_v4.md §3: swap in place or
+        /// give up), as catalogue ids in the order found. They wait for <see cref="SwapConsumable"/> or
+        /// <see cref="DiscardConsumable"/>; the exploration does not stop for them. Empty when none waits.
+        /// </summary>
+        public IReadOnlyList<string> WaitingConsumables
+        {
+            get
+            {
+                SyncLife();
+                return _waiting;
             }
         }
 
@@ -176,7 +192,8 @@ namespace Exploration.Bridge
         /// 開示度 to the journal (every enemy fought reads at least 1, and 2 once a 観察 was played
         /// against it), and a won encounter's unique cards to the cards owned. A won encounter also
         /// draws the rest of its reward (§4.2) from the exploration's seed: the cards to pick one from
-        /// wait in <see cref="Offer"/>, the consumables and pages are kept.
+        /// wait in <see cref="Offer"/>, the consumables go into the exploration's free slots (the rest wait
+        /// in <see cref="WaitingConsumables"/>) and the pages are kept.
         /// </summary>
         public BattleReturn Return()
         {
@@ -219,6 +236,7 @@ namespace Exploration.Bridge
             _pages += rest.Pages;
 
             Session.ReportBattle(battle.HpAfter, battle.StaminaAfter);
+            foreach (string id in rest.Consumables) Stow(id);
 
             return new BattleReturn(
                 battle.Won, battle.HpAfter, battle.StaminaAfter, MasteryTally.Of(plays), ranks,
@@ -255,6 +273,27 @@ namespace Exploration.Bridge
         }
 
         /// <summary>
+        /// Swaps a waiting consumable in for the one in <paramref name="replaceSlot"/>. A slot freed since
+        /// it was found takes it without a swap. False when it is not waiting or the life is over; a
+        /// swap into full slots that names no slot throws (DungeonCore.RunLoadout.Take).
+        /// </summary>
+        public bool SwapConsumable(string consumableId, int replaceSlot)
+        {
+            SyncLife();
+            if (consumableId == null || !_waiting.Contains(consumableId)) return false;
+            if (!Session.TakeConsumable(RunStart.Consumable(consumableId), replaceSlot)) return false;
+            _waiting.Remove(consumableId);
+            return true;
+        }
+
+        /// <summary>Gives a waiting consumable up. False when it is not waiting.</summary>
+        public bool DiscardConsumable(string consumableId)
+        {
+            SyncLife();
+            return consumableId != null && _waiting.Remove(consumableId);
+        }
+
+        /// <summary>
         /// 習熟訓練 (battle_core_v4.md §17.8): spends one mark a 習熟訓練 node earned
         /// (ExplorationState.TrainingMarks) on a card this character owns, which takes the training's
         /// ticks in the mastery book. False when no mark is left, the card is not owned or the
@@ -281,6 +320,14 @@ namespace Exploration.Bridge
             _deck.Add(new CardInstance($"{cardId}-learned-{_learnedCopies}", CardCatalog.ById(cardId)));
         }
 
+        /// <summary>A consumable found: into a free slot, or onto the list waiting for a swap.</summary>
+        private void Stow(string consumableId)
+        {
+            ExplorationState state = Session.State;
+            if (!state.IsOver && !state.Loadout.ConsumableSlotsFull && Session.TakeConsumable(RunStart.Consumable(consumableId))) return;
+            _waiting.Add(consumableId);
+        }
+
         /// <summary>A new life (ExplorationSession's 「新しい生」) starts from what the expedition set out with.</summary>
         private void SyncLife()
         {
@@ -298,6 +345,7 @@ namespace Exploration.Bridge
             foreach (var pair in _startJournal) _journal[pair.Key] = pair.Value;
             _offer = new List<string>();
             _consumables.Clear();
+            _waiting.Clear();
             _pages = 0;
             _learnedCopies = 0;
             Battle = null;
