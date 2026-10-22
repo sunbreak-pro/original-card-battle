@@ -22,4 +22,11 @@
     <ProjectReference Include="..\InheritanceCore\InheritanceCore.csproj" />
   </ItemGroup>
 
+  <!-- What the JS gives (Fixtures/js-oracle.mjs and js-fuzz.mjs write them): JsParityTests, JsonTests and
+       FuzzParityTests compare with them. -->
+  <ItemGroup>
+    <None Include="Fixtures\js-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\js-fuzz.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

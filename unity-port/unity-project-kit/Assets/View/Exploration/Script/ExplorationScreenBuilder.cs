@@ -9,7 +9,7 @@ using Journal;
 
 namespace Exploration
 {
-    public static class ExplorationScreenBuilder
+    public static partial class ExplorationScreenBuilder
     {
         public static ExplorationScreen Build(ExplorationSession session)
         {
@@ -26,8 +26,11 @@ namespace Exploration
                 float y = map.RowCount == 1 ? 0.5f : 1f - (float)node.Row / (map.RowCount - 1);
 
                 var lines = standing == NodeStanding.Far ? new string[0] : ContentLines(session, node);
-                var options = mapLive ? Options(state, node, standing) : new StepOption[0];
-                string note = NoteOf(standing);
+                // Trial extension (js: ExplorationScreenBuilder.js:692): while a 標の石 is aimed, the nodes it can land
+                // on take its jump instead.
+                var jumps = mapLive && session.IsAiming ? JumpOptions(session, node, session.AimingSlot, standing) : null;
+                var options = jumps ?? (mapLive ? Options(state, node, standing, ArrivalEvent(session, node)) : new StepOption[0]);
+                string note = jumps != null && jumps.Count > 0 ? ExplorationText.JumpNote : NoteOf(standing);
                 nodes.Add(new NodeCard(
                     node,
                     x,
@@ -51,11 +54,19 @@ namespace Exploration
                 }
             }
 
+            // Trial extension (js: ExplorationScreenBuilder.js:717): 刻限の砂 and 防瘴の面 shown where their numbers are
+            // (the band), and the aim's hint. state.TimeLimit is the profile's outside trial.
+            string timeBonusLabel = state.TimeBonus > 0
+                ? ExplorationText.TimeBonus(ToolNames(state.Loadout, ReliefKind.Time), state.TimeBonus) : "";
+            string reliefLabel = session.Trial && state.Loadout.DensityRelief > 0 ? ReliefLabel(session) : "";
+            string hint = !mapLive ? "" : session.IsAiming ? ExplorationText.AimHint
+                : "明るい枠のノードへ進めます。踏んだノードへは刻限を使わずに移れます。";
+
             return new ExplorationScreen(
                 ExplorationText.LayerTitle(state.Profile.Layer, state.Profile.DisplayName(session.CarvingTaken)),
-                $"刻限 {state.TimeLeft} / {state.Profile.TimeLimit}",
+                $"刻限 {state.TimeLeft} / {state.TimeLimit}",
                 state.TimeLeft,
-                state.Profile.TimeLimit,
+                state.TimeLimit,
                 Gauge(session),
                 $"HP {state.Hp} / {state.MaxHp}",
                 $"スタミナ {state.Stamina} / {state.MaxStamina}",
@@ -64,7 +75,7 @@ namespace Exploration
                 nodes,
                 edges,
                 state.CurrentNodeId,
-                mapLive ? "明るい枠のノードへ進めます。踏んだノードへは刻限を使わずに移れます。" : "",
+                hint,
                 ToolsLabel(state.Loadout),
                 Slots(session),
                 session.CanEndLife,
@@ -75,7 +86,12 @@ namespace Exploration
                 session.CanOpen(Overlay.Cards),
                 session.CanOpen(Overlay.Settings),
                 CardsPage,
-                SettingsPage);
+                SettingsPage,
+                ToolCards(session),
+                timeBonusLabel,
+                reliefLabel,
+                session.IsAiming,
+                session.Events);
         }
 
         /// <summary>
@@ -182,23 +198,37 @@ namespace Exploration
                     break;
 
                 case NodeKind.Rest:
-                    lines.Add($"休む: HP +{ExplorationReducer.RestHeal(state.MaxHp)}（最大の {ExplorationReducer.RestHpPercent}%）・" +
+                {
+                    // Trial extension (js: ExplorationScreenBuilder.js:141): the HP the rest would give now, marked when the
+                    // maximum stops it (「HP +4（最大の 15%・上限まで）」); the C# prints the share.
+                    int share = ExplorationReducer.RestHeal(state.MaxHp);
+                    int gain = session.Trial ? System.Math.Min(share, System.Math.Max(0, state.MaxHp - state.Hp)) : share;
+                    lines.Add($"休む: HP +{gain}（最大の {ExplorationReducer.RestHpPercent}%{(gain < share ? ExplorationText.CappedMark : "")}）・" +
                               $"スタミナ全回復・最大スタミナ +{ExplorationReducer.RestMaxStaminaBonus}");
                     lines.Add("訓練する: 選んだ 1 枚に習熟の刻み 1");
                     lines.Add("どちらか 1 つだけを選ぶ");
                     break;
+                }
 
                 case NodeKind.Survey:
                     lines.Add("この層の敵 1 種の開示度が 2 段目へ上がる");
-                    if (session.Surveyed) lines.Add("この層では済ませた");
+                    // Trial extension (js: ExplorationScreenBuilder.js:156): once done, the node says which enemy it
+                    // raised (SurveyLine), not only that it was done.
+                    if (session.Surveyed) lines.Add(SurveyLine(session) ?? "この層では済ませた");
+                    // Trial extension: 写しの帳 (tools_and_consumables_v4.md §2.2).
+                    if (session.Trial && state.Loadout.ChoosesSurvey && !session.Surveyed) lines.Add(ExplorationText.SurveyChooseLine);
                     break;
 
                 case NodeKind.Event:
-                    lines.Add("泉 / 重い宝箱 / 特殊な食事 のどれかが起きる");
+                    if (session.Trial) lines.AddRange(TrialEventLines(session, node));
+                    else lines.Add("泉 / 重い宝箱 / 特殊な食事 のどれかが起きる");
                     break;
 
                 case NodeKind.Trace:
-                    lines.Add("前の生の遺産を受け取れる");
+                    // Trial extension (js: ExplorationScreenBuilder.js:169): once this life collected the layer's trace
+                    // (the Expedition's Inherit sets InheritedTraceId / InheritedLayer), the node says so.
+                    lines.Add(session.Trial && session.Keeper != null && session.Keeper.InheritedTraceId != null &&
+                        session.Keeper.InheritedLayer == state.Profile.Layer ? ExplorationText.TraceCollected : "前の生の遺産を受け取れる");
                     lines.Add("受け取れるのは 1 つの生で 1 件");
                     break;
 
@@ -210,7 +240,8 @@ namespace Exploration
             return lines;
         }
 
-        private static IReadOnlyList<StepOption> Options(ExplorationState state, MapNode node, NodeStanding standing)
+        // js: bridge/explorationScript/ExplorationScreenBuilder.js:242
+        private static IReadOnlyList<StepOption> Options(ExplorationState state, MapNode node, NodeStanding standing, EventKind? arrivalEvent = null)
         {
             if (standing == NodeStanding.Revisit)
                 return new[] { new StepOption("移る", RestChoice.Rest, null) };
@@ -225,13 +256,22 @@ namespace Exploration
                     new StepOption("訓練する", RestChoice.Train, Forecast(state, node.Id, RestChoice.Train)),
                 };
             }
-            return new[] { new StepOption("進む", RestChoice.Rest, Forecast(state, node.Id, RestChoice.Rest)) };
+            return new[] { new StepOption("進む", RestChoice.Rest, Forecast(state, node.Id, RestChoice.Rest, -1, arrivalEvent)) };
         }
 
-        /// <summary>The step tried on the current state, told as before → after (dungeon_exploration_v4.md §6.4).</summary>
-        public static StepForecast Forecast(ExplorationState before, int nodeId, RestChoice choice)
+        /// <summary>
+        /// The step tried on the current state, told as before → after (dungeon_exploration_v4.md §6.4).
+        /// Trial extension (js: ExplorationScreenBuilder.js:769): with <paramref name="jumpSlot"/> (≥ 0) it is 標の石's
+        /// jump from that slot instead of a step; with <paramref name="arrivalEvent"/> the event the node resolves on
+        /// arrival is counted too.
+        /// </summary>
+        public static StepForecast Forecast(ExplorationState before, int nodeId, RestChoice choice, int jumpSlot = -1, EventKind? arrivalEvent = null)
         {
-            var after = ExplorationReducer.Step(before, nodeId, choice);
+            var after = jumpSlot >= 0
+                ? ExplorationReducer.Teleport(before, jumpSlot, nodeId, choice)
+                : ExplorationReducer.Step(before, nodeId, choice);
+            // Trial extension: a 泉 heals on arrival, so its step's forecast counts the HP.
+            if (arrivalEvent != null && !after.IsOver) after = ExplorationReducer.ResolveEvent(after, arrivalEvent.Value, true);
 
             var lines = new List<string>
             {
@@ -280,7 +320,9 @@ namespace Exploration
             {
                 // The next layer's entry node is resolved on arrival, so descending costs one step at once.
                 next = below.MiasmaPercent;
-                forecast = $"降りると +{below.MiasmaPercent - percent}%";
+                // Trial extension (js: ExplorationScreenBuilder.js:273): the label says what a step of the next layer adds
+                // — its density, as the map's 「次の 1 歩で +N%」 does — not the gap to the 100% cap.
+                forecast = $"降りると +{(session.Trial ? below.EffectiveDensity : below.MiasmaPercent - percent)}%";
             }
 
             var stepLines = new List<int>();
@@ -315,6 +357,7 @@ namespace Exploration
 
         private static IReadOnlyList<SlotCard> Slots(ExplorationSession session)
         {
+            if (session.Trial) return TrialSlots(session); // Trial extension
             var carried = session.State.Loadout.Consumables;
             var slots = new List<SlotCard>();
             for (int i = 0; i < RunLoadout.ConsumableSlots; i++)
@@ -395,10 +438,19 @@ namespace Exploration
                     });
             }
 
+            // Trial extension (js: ExplorationScreenBuilder.js:510): an event, a survey pick or a swap waits before the
+            // layer's end.
+            if (session.Trial)
+            {
+                var trial = TrialCard(session);
+                if (trial != null) return trial;
+            }
+
             // What the interlude will give, tried on the state the way a step's forecast is.
+            int interludeGain = ExplorationReducer.CanInterlude(state) ? ExplorationReducer.Interlude(state).Hp - state.Hp : 0;
             string interludeLine = ExplorationReducer.CanInterlude(state)
-                ? $"階層間の休憩: HP +{ExplorationReducer.Interlude(state).Hp - state.Hp}" +
-                  $"（最大の {ExplorationReducer.InterludeHpPercent}%）・スタミナ全回復・瘴気はたまらない"
+                ? $"階層間の休憩: HP +{interludeGain}" +
+                  $"{InterludeShare(state, interludeGain < ExplorationReducer.InterludeHealOf(state))}・スタミナ全回復・瘴気はたまらない"
                 : "";
             var toInterlude = new[] { new CardButton("階層間の休憩へ", ScreenAction.GoToInterlude) };
 
@@ -420,7 +472,7 @@ namespace Exploration
                         toInterlude);
 
                 case RunPhase.Interlude:
-                    return InterludeCard(session);
+                    return InterludeCardOf(session);
 
                 case RunPhase.MiasmaDeath:
                     return EndCard(CardKind.MiasmaDeath, "瘴気死", $"瘴気が 100% に達し、第 {layer} 層でこの生が終わった。", state);
@@ -439,14 +491,19 @@ namespace Exploration
             }
         }
 
-        private static ScreenCard InterludeCard(ExplorationSession session)
+        // js: bridge/explorationScript/ExplorationScreenBuilder.js:558
+        private static ScreenCard InterludeCardOf(ExplorationSession session)
         {
             var state = session.State;
+            // Trial extension: the rest's own lines read the state the rest left (session.InterludeState), so a
+            // consumable used at the interlude (§6.5 「休憩の間も消耗品は使える」) changes the band and the slots, not what
+            // the rest is said to have given. The C# reads the state itself.
+            var rest = session.Trial && session.InterludeState != null ? session.InterludeState : state;
             var lines = new List<string>
             {
-                $"HP +{session.InterludeHealed}（最大の {ExplorationReducer.InterludeHpPercent}%）で HP {state.Hp} / {state.MaxHp}",
-                $"スタミナが全回復した（{state.Stamina} / {state.MaxStamina}）",
-                $"瘴気はたまらない（{state.MiasmaPercent}%）",
+                $"HP +{session.InterludeHealed}{InterludeShare(rest, session.Trial && session.InterludeHealed < ExplorationReducer.InterludeHealOf(rest))}で HP {rest.Hp} / {rest.MaxHp}",
+                $"スタミナが全回復した（{rest.Stamina} / {rest.MaxStamina}）",
+                $"瘴気はたまらない（{rest.MiasmaPercent}%）",
             };
             var buttons = new List<CardButton>();
 
@@ -459,7 +516,13 @@ namespace Exploration
                 var next = SevenLayers.Of(state.Profile.Layer + 1);
                 int density = Miasma.EffectiveDensity(next.Density, state.Loadout.DensityRelief);
                 // A hidden name stays hidden until its own carving is read, so the next layer shows its first name.
-                lines.Add($"次は第 {next.Layer} 層　{next.Name}: 1 歩ごとに瘴気 +{density}%、刻限 {next.TimeLimit}");
+                // Trial extension: 刻限の砂 adds to the next layer's 刻限 too.
+                string time = state.TimeBonus > 0
+                    ? $"{next.TimeLimit + state.TimeBonus}（{ExplorationText.TimeBonus(ToolNames(state.Loadout, ReliefKind.Time), state.TimeBonus)}）"
+                    : $"{next.TimeLimit}";
+                // The name the life knows (DisplayName) — the same as Name in the C#, where the layer-two carving is
+                // never read before its own layer; a lineage that read it in an earlier life knows it from the start (R-20).
+                lines.Add($"次は第 {next.Layer} 層　{next.DisplayName(session.CarvingTaken)}: 1 歩ごとに瘴気 +{density}%、刻限 {time}");
                 if (session.TryDescend().Phase == RunPhase.MiasmaDeath)
                     lines.Add("！ 降りると入口で瘴気が 100% に達し、この生が終わります");
                 buttons.Add(new CardButton("次の層へ降りる", ScreenAction.Descend));
@@ -495,21 +558,41 @@ namespace Exploration
             var profile = state.Profile;
             int relief = state.Loadout.DensityRelief;
             string density = $"1 刻限ごとに +{state.EffectiveDensity}%";
-            if (relief > 0) density += $"（層の濃さ {profile.Density} − ツール {relief}）";
+            // Trial extension (js: ExplorationScreenBuilder.js:634): the density stops at its floor (seven_layers_v4.md
+            // §3.2 「濃度は 1 より下がりません」), so a subtraction that would go below it says so.
+            if (relief > 0 && session.Trial && profile.Density - relief < state.EffectiveDensity)
+                density += $"（{ExplorationText.ReliefFloor(profile.Density, relief, state.EffectiveDensity)}）";
+            else if (relief > 0) density += $"（層の濃さ {profile.Density} − ツール {relief}）";
 
             var counts = System.Enum.GetValues(typeof(NodeKind)).Cast<NodeKind>()
                 .Where(k => state.Map.CountOf(k) > 0)
                 .Select(k => $"{ExplorationText.KindLabel(k)} {state.Map.CountOf(k)}");
 
+            var rows = new List<JournalRow>
+            {
+                new JournalRow("瘴気の濃さ", density),
+                new JournalRow("刻限", $"{state.TimeLimit}（寄り道なしの踏破は {state.Map.ShortestPathCost}）"),
+                new JournalRow("ノード", string.Join("・", counts)),
+                new JournalRow("情報収集", session.Surveyed ? SurveyLine(session) ?? "済ませた。この層の敵 1 種が開示度 2 になった" : "まだ"),
+            };
+            // Trial extension (js: ExplorationScreenBuilder.js:650): the events of this layer (encounters_and_rewards_v4.md
+            // §5: 「起きたイベントは、手記のダンジョンの頁に…残します」).
+            if (session.Trial && state.Map.CountOf(NodeKind.Event) > 0)
+            {
+                var here = session.Events.Where(e => e.Layer == layer).ToList();
+                rows.Add(new JournalRow(ExplorationText.EventsRow, here.Count == 0
+                    ? ExplorationText.NoEvents
+                    : string.Join(" ／ ", here.Select(e => ExplorationText.EventRecord(e.Name, e.Accepted, e.Summary)))));
+            }
             pages.Add(new JournalPage($"dungeon-{layer}", JournalTab.Dungeon,
-                ExplorationText.LayerTitle(layer, profile.DisplayName(session.CarvingTaken)),
-                new[]
-                {
-                    new JournalRow("瘴気の濃さ", density),
-                    new JournalRow("刻限", $"{profile.TimeLimit}（寄り道なしの踏破は {state.Map.ShortestPathCost}）"),
-                    new JournalRow("ノード", string.Join("・", counts)),
-                    new JournalRow("情報収集", session.Surveyed ? "済ませた。この層の敵 1 種が開示度 2 になった" : "まだ"),
-                }));
+                ExplorationText.LayerTitle(layer, profile.DisplayName(session.CarvingTaken)), rows));
+            // Trial extension (js: ExplorationScreenBuilder.js:661): reading the layer-two carving adds a page
+            // (seven_layers_v4.md §5 「手記に頁が 1 つ増える」); a life that knows the name from an earlier life has it too.
+            if (session.Trial && session.CarvingTaken)
+            {
+                pages.Add(new JournalPage("carving", JournalTab.Dungeon, ExplorationText.CarvingPageTitle,
+                    ExplorationText.CarvingPageRows.Select(row => new JournalRow(row.Label, row.Text)).ToList()));
+            }
 
             pages.Add(new JournalPage("memo", JournalTab.Memo, "メモ",
                 new[] { new JournalRow("", "メモはまだありません。") }));

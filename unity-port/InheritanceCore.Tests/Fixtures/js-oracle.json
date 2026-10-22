@@ -1,0 +1,548 @@
+{
+ "numbers": [
+  [
+   "0.1",
+   "0.1"
+  ],
+  [
+   "0.3333333333333333",
+   "0.3333333333333333"
+  ],
+  [
+   "0.6666666666666666",
+   "0.6666666666666666"
+  ],
+  [
+   "1e+21",
+   "1e+21"
+  ],
+  [
+   "100000000000000000000",
+   "100000000000000000000"
+  ],
+  [
+   "123456789012345680000",
+   "123456789012345680000"
+  ],
+  [
+   "1e-7",
+   "1e-7"
+  ],
+  [
+   "0.000001",
+   "0.000001"
+  ],
+  [
+   "0.000001234",
+   "0.000001234"
+  ],
+  [
+   "1.23e-18",
+   "1.23e-18"
+  ],
+  [
+   "5e-324",
+   "5e-324"
+  ],
+  [
+   "1.7976931348623157e+308",
+   "1.7976931348623157e+308"
+  ],
+  [
+   "9007199254740992",
+   "9007199254740992"
+  ],
+  [
+   "9007199254740994",
+   "9007199254740994"
+  ],
+  [
+   "1152921504606847000",
+   "1152921504606847000"
+  ],
+  [
+   "1.5",
+   "1.5"
+  ],
+  [
+   "-2.5e-8",
+   "-2.5e-8"
+  ],
+  [
+   "100",
+   "100"
+  ],
+  [
+   "-0",
+   "0"
+  ],
+  [
+   "0.3",
+   "0.3"
+  ],
+  [
+   "1.1",
+   "1.1"
+  ],
+  [
+   "4.35",
+   "4.35"
+  ],
+  [
+   "9.95",
+   "9.95"
+  ],
+  [
+   "1e+300",
+   "1e+300"
+  ],
+  [
+   "125000000000",
+   "125000000000"
+  ],
+  [
+   "3.14159",
+   "3.14159"
+  ],
+  [
+   "-1e-7",
+   "-1e-7"
+  ],
+  [
+   "1.0000000000000002",
+   "1.0000000000000002"
+  ],
+  [
+   "299792458",
+   "299792458"
+  ],
+  [
+   "0.30000000000000004",
+   "0.30000000000000004"
+  ],
+  [
+   "10000000000000000",
+   "10000000000000000"
+  ],
+  [
+   "12000000000000000",
+   "12000000000000000"
+  ],
+  [
+   "4294967295",
+   "4294967295"
+  ],
+  [
+   "4294967296.5",
+   "4294967296.5"
+  ],
+  [
+   "2.2250738585072014e-308",
+   "2.2250738585072014e-308"
+  ]
+ ],
+ "strings": [
+  [
+   [
+    112,
+    108,
+    97,
+    105,
+    110
+   ],
+   "\"plain\""
+  ],
+  [
+   [
+    113,
+    117,
+    111,
+    116,
+    101,
+    32,
+    34,
+    32,
+    97,
+    110,
+    100,
+    32,
+    32,
+    98,
+    97,
+    99,
+    107
+   ],
+   "\"quote \\\" and  back\""
+  ],
+  [
+   [
+    8,
+    12,
+    10,
+    13,
+    9
+   ],
+   "\"\\b\\f\\n\\r\\t\""
+  ],
+  [
+   [
+    0,
+    31,
+    127
+   ],
+   "\"\\u0000\\u001f\""
+  ],
+  [
+   [
+    8232,
+    8233,
+    47
+   ],
+   "\"  /\""
+  ],
+  [
+   [
+    12354,
+    55357,
+    56832
+   ],
+   "\"あ😀\""
+  ],
+  [
+   [
+    55296,
+    120
+   ],
+   "\"\\ud800x\""
+  ],
+  [
+   [
+    120,
+    56320
+   ],
+   "\"x\\udc00\""
+  ],
+  [
+   [
+    55357
+   ],
+   "\"\\ud83d\""
+  ]
+ ],
+ "indent": "{\n  \"2\": \"two\",\n  \"10\": null,\n  \"a\": 1,\n  \"b\": [\n    1,\n    {\n      \"c\": []\n    },\n    {}\n  ],\n  \"01\": true,\n  \"d\": \"x\"\n}",
+ "order": "{\"2\":4,\"10\":2,\"4294967294\":6,\"b\":1,\"a\":3,\"4294967295\":5,\"-1\":7,\"01\":8}",
+ "names42": [
+  "テオ",
+  "ヴェラ",
+  "リーネ",
+  "カリナ",
+  "キリエ",
+  "ナディア",
+  "ウルス",
+  "ヨハン",
+  "ユリア",
+  "スヴェン",
+  "ノエル",
+  "ロタ",
+  "ヒルダ",
+  "トーヴァ",
+  "シオン",
+  "タリス",
+  "オスカ",
+  "ルカ",
+  "クラウ",
+  "マルタ",
+  "ケイト",
+  "レア",
+  "カイル",
+  "ホルン",
+  "ティモ",
+  "エルカ",
+  "コルネ",
+  "フェン",
+  "オリヴ",
+  "ヘルガ",
+  "ハンナ",
+  "ソラ",
+  "イーダ",
+  "アルマ",
+  "イリス",
+  "ニコ",
+  "エミル",
+  "ミロ",
+  "サリア",
+  "ラウル",
+  "ミロ",
+  "タリス",
+  "カリナ",
+  "ヘルガ",
+  "ラウル",
+  "ニコ",
+  "トーヴァ",
+  "テオ",
+  "マルタ",
+  "キリエ",
+  "カイル",
+  "ホルン",
+  "リーネ",
+  "オリヴ",
+  "スヴェン",
+  "フェン",
+  "ノエル",
+  "ウルス",
+  "ティモ",
+  "アルマ",
+  "ハンナ",
+  "ユリア",
+  "ソラ",
+  "ケイト",
+  "エミル",
+  "エルカ",
+  "オスカ",
+  "ナディア",
+  "コルネ",
+  "ヒルダ",
+  "サリア",
+  "レア",
+  "ルカ",
+  "シオン",
+  "クラウ",
+  "ヴェラ",
+  "イリス",
+  "ヨハン",
+  "イーダ",
+  "ロタ",
+  "レア"
+ ],
+ "firstNames": [
+  "オリヴ",
+  "コルネ",
+  "ホルン",
+  "ルカ",
+  "ナディア",
+  "ニコ",
+  "ヘルガ",
+  "カイル"
+ ],
+ "bigSeedName": "コルネ",
+ "wrapSeedName": [
+  "ルカ",
+  "ルカ"
+ ],
+ "lifeSeeds": [
+  "9374464294568755474",
+  "727590445041181892",
+  "13242932063682629818"
+ ],
+ "r23": "{\"Version\":1,\"Seed\":\"99\",\"Lives\":[{\"Generation\":1,\"Name\":\"アルマ\",\"Tier\":0,\"Seed\":\"5\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Fallen\",\"Layer\":3,\"NodeId\":4,\"NodeKind\":null,\"TraceId\":\"trace-1\",\"CollectedBy\":3,\"ReplacedSurvivor\":null},{\"Generation\":2,\"Name\":\"ヒルダ\",\"Tier\":1,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Survived\",\"Layer\":4,\"NodeId\":2,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null}],\"Current\":{\"Generation\":3,\"Name\":\"イーダ\",\"Tier\":2,\"Seed\":\"4051002623379932275\",\"SurvivorBonus\":true,\"SurvivorFrom\":2,\"InheritedJournal\":true,\"TakenTraceId\":\"trace-1\",\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Traces\":[],\"Survivor\":null,\"Player\":{\"CarvingTaken\":false,\"RootDefeated\":false}}",
+ "mixed": [
+  "{\"Version\":1,\"Seed\":\"42\",\"Lives\":[{\"Generation\":1,\"Name\":\"テオ\",\"Tier\":0,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Fallen\",\"Layer\":4,\"NodeId\":4,\"NodeKind\":null,\"TraceId\":\"trace-1\",\"CollectedBy\":null,\"ReplacedSurvivor\":null},{\"Generation\":2,\"Name\":\"ヴェラ\",\"Tier\":2,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Survived\",\"Layer\":2,\"NodeId\":2,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null}],\"Current\":null,\"Traces\":[{\"Id\":\"trace-1\",\"Generation\":1,\"Name\":\"テオ\",\"Layer\":4,\"NodeId\":4,\"NodeKind\":null,\"Ending\":\"Fallen\",\"Cleared\":false,\"Candidates\":[{\"Id\":\"card:kansatsu\",\"Kind\":\"Card\",\"CardId\":\"kansatsu\",\"Rank\":3,\"Ticks\":15,\"Name\":\"kansatsu\"},{\"Id\":\"card:tsuki\",\"Kind\":\"Card\",\"CardId\":\"tsuki\",\"Rank\":2,\"Ticks\":8,\"Name\":\"tsuki\"},{\"Id\":\"card:harai\",\"Kind\":\"Card\",\"CardId\":\"harai\",\"Rank\":1,\"Ticks\":3,\"Name\":\"harai\"},{\"Id\":\"enemy:sabiyari\",\"Kind\":\"EnemyPage\",\"EnemyId\":\"sabiyari\",\"Disclosure\":2,\"Name\":\"sabiyari\"},{\"Id\":\"enemy:shoga\",\"Kind\":\"EnemyPage\",\"EnemyId\":\"shoga\",\"Disclosure\":1,\"Name\":\"shoga\"},{\"Id\":\"page:r-2\",\"Kind\":\"DungeonPage\",\"PageId\":\"r-2\",\"Name\":\"崩れた天井の頁\",\"Text\":\"大穴の下は陽が届く\"},{\"Id\":\"scribble:0\",\"Kind\":\"Scribble\",\"Generation\":1,\"From\":\"X\",\"Text\":\"古い\",\"Name\":\"走り書き（第 1 代 X）\"},{\"Id\":\"memo\",\"Kind\":\"Scribble\",\"Generation\":1,\"From\":\"テオ\",\"Text\":\"門竜は押すと崩れる\",\"Name\":\"走り書き（第 1 代 テオ）\"}],\"Withheld\":[]}],\"Survivor\":{\"Generation\":2,\"Name\":\"ヴェラ\",\"BonusLivesLeft\":1,\"BonusLives\":1,\"Journal\":{\"Disclosure\":{\"2\":1,\"10\":1,\"b\":2},\"Pages\":[],\"Memo\":\"生存者\",\"Scribbles\":[]}},\"Player\":{\"CarvingTaken\":false,\"RootDefeated\":false}}",
+  "{\"Version\":1,\"Seed\":\"42\",\"Lives\":[{\"Generation\":1,\"Name\":\"テオ\",\"Tier\":0,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Fallen\",\"Layer\":4,\"NodeId\":4,\"NodeKind\":null,\"TraceId\":\"trace-1\",\"CollectedBy\":null,\"ReplacedSurvivor\":null},{\"Generation\":2,\"Name\":\"ヴェラ\",\"Tier\":2,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Survived\",\"Layer\":2,\"NodeId\":2,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null}],\"Current\":{\"Generation\":3,\"Name\":\"リーネ\",\"Tier\":1,\"Seed\":\"123456789012345678\",\"SurvivorBonus\":true,\"SurvivorFrom\":2,\"InheritedJournal\":true,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Traces\":[{\"Id\":\"trace-1\",\"Generation\":1,\"Name\":\"テオ\",\"Layer\":4,\"NodeId\":4,\"NodeKind\":null,\"Ending\":\"Fallen\",\"Cleared\":false,\"Candidates\":[{\"Id\":\"card:kansatsu\",\"Kind\":\"Card\",\"CardId\":\"kansatsu\",\"Rank\":3,\"Ticks\":15,\"Name\":\"kansatsu\"},{\"Id\":\"card:tsuki\",\"Kind\":\"Card\",\"CardId\":\"tsuki\",\"Rank\":2,\"Ticks\":8,\"Name\":\"tsuki\"},{\"Id\":\"card:harai\",\"Kind\":\"Card\",\"CardId\":\"harai\",\"Rank\":1,\"Ticks\":3,\"Name\":\"harai\"},{\"Id\":\"enemy:sabiyari\",\"Kind\":\"EnemyPage\",\"EnemyId\":\"sabiyari\",\"Disclosure\":2,\"Name\":\"sabiyari\"},{\"Id\":\"enemy:shoga\",\"Kind\":\"EnemyPage\",\"EnemyId\":\"shoga\",\"Disclosure\":1,\"Name\":\"shoga\"},{\"Id\":\"page:r-2\",\"Kind\":\"DungeonPage\",\"PageId\":\"r-2\",\"Name\":\"崩れた天井の頁\",\"Text\":\"大穴の下は陽が届く\"},{\"Id\":\"scribble:0\",\"Kind\":\"Scribble\",\"Generation\":1,\"From\":\"X\",\"Text\":\"古い\",\"Name\":\"走り書き（第 1 代 X）\"},{\"Id\":\"memo\",\"Kind\":\"Scribble\",\"Generation\":1,\"From\":\"テオ\",\"Text\":\"門竜は押すと崩れる\",\"Name\":\"走り書き（第 1 代 テオ）\"}],\"Withheld\":[]}],\"Survivor\":null,\"Player\":{\"CarvingTaken\":false,\"RootDefeated\":false}}",
+  "{\"Version\":1,\"Seed\":\"42\",\"Lives\":[{\"Generation\":1,\"Name\":\"テオ\",\"Tier\":0,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Fallen\",\"Layer\":4,\"NodeId\":4,\"NodeKind\":null,\"TraceId\":\"trace-1\",\"CollectedBy\":3,\"ReplacedSurvivor\":null},{\"Generation\":2,\"Name\":\"ヴェラ\",\"Tier\":2,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Survived\",\"Layer\":2,\"NodeId\":2,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null}],\"Current\":{\"Generation\":3,\"Name\":\"リーネ\",\"Tier\":1,\"Seed\":\"123456789012345678\",\"SurvivorBonus\":true,\"SurvivorFrom\":2,\"InheritedJournal\":true,\"TakenTraceId\":\"trace-1\",\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Traces\":[],\"Survivor\":null,\"Player\":{\"CarvingTaken\":false,\"RootDefeated\":false}}",
+  "{\"TraceId\":\"trace-1\",\"Cards\":[{\"CardId\":\"tsuki\",\"Rank\":2,\"Ticks\":8,\"Name\":\"tsuki\"}],\"Journal\":{\"Disclosure\":{},\"Pages\":[{\"Id\":\"r-2\",\"Title\":\"崩れた天井の頁\",\"Text\":\"大穴の下は陽が届く\"}],\"Memo\":\"\",\"Scribbles\":[{\"Generation\":1,\"Name\":\"テオ\",\"Text\":\"門竜は押すと崩れる\"}]},\"Lost\":5}"
+ ],
+ "mixedStart": "{\"Journal\":{\"Disclosure\":{\"2\":1,\"10\":1,\"b\":2},\"Pages\":[],\"Memo\":\"生存者\",\"Scribbles\":[]},\"JournalFrom\":{\"Generation\":2,\"Name\":\"ヴェラ\"},\"heir\":{\"Disclosure\":{\"2\":1,\"10\":1,\"b\":2},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[{\"Generation\":2,\"Name\":\"ヴェラ\",\"Text\":\"生存者\"}]},\"TraceLayers\":[4],\"ToolSlots\":4,\"DeckMax\":45,\"Seed\":\"123456789012345678\"}",
+ "cleared": "{\"Version\":1,\"Seed\":\"42\",\"Lives\":[{\"Generation\":1,\"Name\":\"テオ\",\"Tier\":0,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Completed\",\"Layer\":7,\"NodeId\":2,\"NodeKind\":null,\"TraceId\":\"trace-1\",\"CollectedBy\":null,\"ReplacedSurvivor\":null}],\"Current\":null,\"Traces\":[{\"Id\":\"trace-1\",\"Generation\":1,\"Name\":\"テオ\",\"Layer\":7,\"NodeId\":2,\"NodeKind\":null,\"Ending\":\"Completed\",\"Cleared\":true,\"Candidates\":[{\"Id\":\"card:kansatsu\",\"Kind\":\"Card\",\"CardId\":\"kansatsu\",\"Rank\":3,\"Ticks\":15,\"Name\":\"kansatsu\"},{\"Id\":\"card:tsuki\",\"Kind\":\"Card\",\"CardId\":\"tsuki\",\"Rank\":2,\"Ticks\":8,\"Name\":\"tsuki\"},{\"Id\":\"card:harai\",\"Kind\":\"Card\",\"CardId\":\"harai\",\"Rank\":1,\"Ticks\":3,\"Name\":\"harai\"},{\"Id\":\"card:ne_shibari\",\"Kind\":\"Card\",\"CardId\":\"ne_shibari\",\"Rank\":0,\"Ticks\":0,\"Name\":\"ne_shibari\"},{\"Id\":\"card:ne_watari\",\"Kind\":\"Card\",\"CardId\":\"ne_watari\",\"Rank\":0,\"Ticks\":0,\"Name\":\"ne_watari\"}],\"Withheld\":[]}],\"Survivor\":{\"Generation\":1,\"Name\":\"テオ\",\"BonusLivesLeft\":2,\"BonusLives\":2,\"Journal\":{\"Disclosure\":{\"sabiyari\":2,\"shoga\":1},\"Pages\":[{\"Id\":\"page-1\",\"Title\":\"希少な頁 1\"},{\"Id\":\"page-2\",\"Title\":\"希少な頁 2\"}],\"Memo\":\"門竜は押すと崩れる\",\"Scribbles\":[]}},\"Player\":{\"CarvingTaken\":false,\"RootDefeated\":true}}",
+ "clearedHall": "{\"Title\":\"継承の間\",\"Lead\":\"前の生から次の生へ渡すものを見る部屋。\",\"Empty\":\"\",\"NextHeirHeading\":\"次の踏破者\",\"NextHeir\":{\"Generation\":2,\"GenerationLabel\":\"第 2 代\",\"Name\":\"ヴェラ\",\"Title\":\"踏破者 ヴェラ\",\"Line\":\"第 2 代 踏破者 ヴェラ\",\"Tier\":4,\"TierName\":\"灯芯の留め\",\"TierReason\":\"前の生（第 1 代 テオ）が歪みの根を倒したため\",\"Attire\":[{\"Part\":\"面の縁飾り\",\"Text\":\"白銀の二重の縁\",\"Color\":\"#dfe4ea\"},{\"Part\":\"マントの裏地\",\"Text\":\"銀糸を織った深い紺の裏地\",\"Color\":\"#1c2238\"},{\"Part\":\"留め具\",\"Text\":\"灯芯色の玉の留め具\",\"Color\":\"#ffd89a\"}]},\"PastLivesHeading\":\"これまでの踏破者\",\"PastLives\":[{\"Generation\":1,\"GenerationLabel\":\"第 1 代\",\"Name\":\"テオ\",\"Line\":\"第 1 代 踏破者 テオ\",\"TierName\":\"縁なし\",\"Ending\":\"Completed\",\"EndingLabel\":\"踏破\",\"EndingLine\":\"歪みの根を倒した。\",\"PlaceLine\":\"第 7 層　果てなき世界\",\"TraceLine\":\"痕跡：未回収\"}],\"TraceHeading\":\"未回収の痕跡\",\"NoTraces\":\"\",\"Traces\":[{\"Id\":\"trace-1\",\"Generation\":1,\"HeirLine\":\"第 1 代 踏破者 テオ\",\"Layer\":7,\"NodeId\":2,\"PlaceLine\":\"第 7 層　果てなき世界\",\"EndingLabel\":\"踏破\",\"Cleared\":true,\"Note\":\"歪みの根を倒した生の痕跡。札だけを残し、手記は生存者として渡った\",\"Visible\":true,\"AppearsLine\":\"この層の通常戦闘 1 つと入れ替わって現れる\",\"CountLine\":\"遺産の候補：技術 5 ／ 頁 0 ／ 走り書き 0\",\"Candidates\":[{\"Id\":\"card:kansatsu\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"kansatsu\",\"Detail\":\"3 段目\",\"CardId\":\"kansatsu\",\"Rank\":3},{\"Id\":\"card:tsuki\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"tsuki\",\"Detail\":\"2 段目\",\"CardId\":\"tsuki\",\"Rank\":2},{\"Id\":\"card:harai\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"harai\",\"Detail\":\"1 段目\",\"CardId\":\"harai\",\"Rank\":1},{\"Id\":\"card:ne_shibari\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"ne_shibari\",\"Detail\":\"0 段目\",\"CardId\":\"ne_shibari\",\"Rank\":0},{\"Id\":\"card:ne_watari\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"ne_watari\",\"Detail\":\"0 段目\",\"CardId\":\"ne_watari\",\"Rank\":0}],\"Withheld\":[]}],\"TraceRules\":[\"遺産の受け取りは、死亡地点を訪れたときに行う。ここでは候補を見るだけ。\",\"1 つの生で受け取れる痕跡は 1 件（最初に訪れた痕跡）。\",\"痕跡は回収されるまで残る。\",\"習熟 2 段目以上の札は、第 3 層より浅い死では遺産に残らない。\"],\"SurvivorHeading\":\"前回の生存者\",\"Survivor\":{\"Generation\":1,\"Line\":\"第 1 代 踏破者 テオ\",\"Lines\":[\"手記を丸ごと受け継ぐ\",\"ツール枠 +1（3 → 4）\",\"デッキ上限 +5（40 → 45）\"],\"DurationLine\":\"あと 2 生\",\"BonusLivesLeft\":2},\"SurvivorSpent\":null,\"StartButton\":\"出立の支度へ\"}",
+ "clearedEnding": "{\"Ending\":\"Completed\",\"Title\":\"踏破\",\"Sentence\":\"歪みの根を倒した。\",\"HeirLine\":\"第 1 代 踏破者 テオ\",\"Lines\":[\"手記は丸ごと次の生へ渡る\",\"生存者ボーナス：ツール枠 +1 ／ デッキ上限 +5（次の 2 生）\",\"第 7 層　果てなき世界に札の痕跡が残った（歪みの根の札を含む）\"],\"NextLine\":\"次の踏破者：第 2 代 ヴェラ\",\"Button\":\"継承の間へ\"}",
+ "hall": "{\"Title\":\"継承の間\",\"Lead\":\"前の生から次の生へ渡すものを見る部屋。\",\"Empty\":\"\",\"NextHeirHeading\":\"次の踏破者\",\"NextHeir\":{\"Generation\":4,\"GenerationLabel\":\"第 4 代\",\"Name\":\"カリナ\",\"Title\":\"踏破者 カリナ\",\"Line\":\"第 4 代 踏破者 カリナ\",\"Tier\":2,\"TierName\":\"銀の縁\",\"TierReason\":\"前の生（第 3 代 リーネ）が第 5 層まで届いたため\",\"Attire\":[{\"Part\":\"面の縁飾り\",\"Text\":\"銀の縁\",\"Color\":\"#aeb6c2\"},{\"Part\":\"マントの裏地\",\"Text\":\"紺の裏地\",\"Color\":\"#2b3552\"},{\"Part\":\"留め具\",\"Text\":\"琥珀の留め具\",\"Color\":\"#e8a84c\"}]},\"PastLivesHeading\":\"これまでの踏破者\",\"PastLives\":[{\"Generation\":3,\"GenerationLabel\":\"第 3 代\",\"Name\":\"リーネ\",\"Line\":\"第 3 代 踏破者 リーネ\",\"TierName\":\"鉄の縁\",\"Ending\":\"MiasmaDeath\",\"EndingLabel\":\"瘴気死\",\"EndingLine\":\"瘴気が 100% に達し、第 5 層でこの生が終わった。\",\"PlaceLine\":\"第 5 層　血染めの死海（階層ボス）\",\"TraceLine\":\"痕跡：未回収\"},{\"Generation\":2,\"GenerationLabel\":\"第 2 代\",\"Name\":\"ヴェラ\",\"Line\":\"第 2 代 踏破者 ヴェラ\",\"TierName\":\"鉄の縁\",\"Ending\":\"Survived\",\"EndingLabel\":\"生存ルート\",\"EndingLine\":\"生きたまま、第 2 層でこの生を閉じた。\",\"PlaceLine\":\"第 2 層　■■の秘跡\",\"TraceLine\":\"痕跡なし（生きて閉じた）\"},{\"Generation\":1,\"GenerationLabel\":\"第 1 代\",\"Name\":\"テオ\",\"Line\":\"第 1 代 踏破者 テオ\",\"TierName\":\"縁なし\",\"Ending\":\"Fallen\",\"EndingLabel\":\"倒れた\",\"EndingLine\":\"第 3 層の戦いで倒れた。\",\"PlaceLine\":\"第 3 層　大黒蛇の住処\",\"TraceLine\":\"痕跡：第 3 代 リーネが受け取った\"}],\"TraceHeading\":\"未回収の痕跡\",\"NoTraces\":\"\",\"Traces\":[{\"Id\":\"trace-3\",\"Generation\":3,\"HeirLine\":\"第 3 代 踏破者 リーネ\",\"Layer\":5,\"NodeId\":3,\"PlaceLine\":\"第 5 層　血染めの死海（階層ボス）\",\"EndingLabel\":\"瘴気死\",\"Cleared\":false,\"Note\":\"\",\"Visible\":true,\"AppearsLine\":\"この層の通常戦闘 1 つと入れ替わって現れる\",\"CountLine\":\"遺産の候補：技術 3 ／ 頁 0 ／ 走り書き 1\",\"Candidates\":[{\"Id\":\"card:kansatsu\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"kansatsu\",\"Detail\":\"3 段目\",\"CardId\":\"kansatsu\",\"Rank\":3},{\"Id\":\"card:tsuki\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"tsuki\",\"Detail\":\"2 段目\",\"CardId\":\"tsuki\",\"Rank\":2},{\"Id\":\"card:harai\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"harai\",\"Detail\":\"1 段目\",\"CardId\":\"harai\",\"Rank\":1},{\"Id\":\"memo\",\"Kind\":\"Scribble\",\"KindLabel\":\"走り書き\",\"Name\":\"走り書き（第 3 代 リーネ）\",\"Detail\":\"xxxxxxxxxxxxxxxxxxxx…\",\"Generation\":3,\"From\":\"リーネ\",\"Text\":\"xxxxxxxxxxxxxxxxxxxxxxxxx\"}],\"Withheld\":[]}],\"TraceRules\":[\"遺産の受け取りは、死亡地点を訪れたときに行う。ここでは候補を見るだけ。\",\"1 つの生で受け取れる痕跡は 1 件（最初に訪れた痕跡）。\",\"痕跡は回収されるまで残る。\",\"習熟 2 段目以上の札は、第 3 層より浅い死では遺産に残らない。\"],\"SurvivorHeading\":\"前回の生存者\",\"Survivor\":null,\"SurvivorSpent\":{\"Generation\":2,\"Line\":\"第 2 代 踏破者 ヴェラ\",\"Lines\":[\"第 3 代 リーネの生でボーナスを使い終えた\",\"ツール枠 3 ／ デッキ上限 40 に戻った\"]},\"StartButton\":\"出立の支度へ\"}",
+ "ending": "{\"Ending\":\"MiasmaDeath\",\"Title\":\"瘴気死\",\"Sentence\":\"瘴気が 100% に達し、第 5 層でこの生が終わった。\",\"HeirLine\":\"第 3 代 踏破者 リーネ\",\"Lines\":[\"第 5 層　血染めの死海に痕跡と手記が残った\",\"遺産の候補：技術 3 ／ 頁 0 ／ 走り書き 1\",\"次の踏破者が第 5 層を訪れると、3 つまで選んで受け取れる\"],\"NextLine\":\"次の踏破者：第 4 代 カリナ\",\"Button\":\"継承の間へ\"}",
+ "hallLineage": "{\"Version\":1,\"Seed\":\"42\",\"Lives\":[{\"Generation\":1,\"Name\":\"テオ\",\"Tier\":0,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Fallen\",\"Layer\":3,\"NodeId\":4,\"NodeKind\":null,\"TraceId\":\"trace-1\",\"CollectedBy\":3,\"ReplacedSurvivor\":null},{\"Generation\":2,\"Name\":\"ヴェラ\",\"Tier\":1,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Survived\",\"Layer\":2,\"NodeId\":2,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},{\"Generation\":3,\"Name\":\"リーネ\",\"Tier\":1,\"Seed\":\"1\",\"SurvivorBonus\":true,\"SurvivorFrom\":2,\"InheritedJournal\":true,\"TakenTraceId\":\"trace-1\",\"Ending\":\"MiasmaDeath\",\"Layer\":5,\"NodeId\":3,\"NodeKind\":\"Boss\",\"TraceId\":\"trace-3\",\"CollectedBy\":null,\"ReplacedSurvivor\":null}],\"Current\":null,\"Traces\":[{\"Id\":\"trace-3\",\"Generation\":3,\"Name\":\"リーネ\",\"Layer\":5,\"NodeId\":3,\"NodeKind\":\"Boss\",\"Ending\":\"MiasmaDeath\",\"Cleared\":false,\"Candidates\":[{\"Id\":\"card:kansatsu\",\"Kind\":\"Card\",\"CardId\":\"kansatsu\",\"Rank\":3,\"Ticks\":15,\"Name\":\"kansatsu\"},{\"Id\":\"card:tsuki\",\"Kind\":\"Card\",\"CardId\":\"tsuki\",\"Rank\":2,\"Ticks\":8,\"Name\":\"tsuki\"},{\"Id\":\"card:harai\",\"Kind\":\"Card\",\"CardId\":\"harai\",\"Rank\":1,\"Ticks\":3,\"Name\":\"harai\"},{\"Id\":\"memo\",\"Kind\":\"Scribble\",\"Generation\":3,\"From\":\"リーネ\",\"Text\":\"xxxxxxxxxxxxxxxxxxxxxxxxx\",\"Name\":\"走り書き（第 3 代 リーネ）\"}],\"Withheld\":[]}],\"Survivor\":null,\"Player\":{\"CarvingTaken\":false,\"RootDefeated\":false}}",
+ "traceNode": "{\"Title\":\"死亡地点の痕跡\",\"TraceId\":\"trace-3\",\"HeirLine\":\"第 3 代 踏破者 リーネの痕跡\",\"PlaceLine\":\"第 5 層　血染めの死海（階層ボス）\",\"Lead\":\"遺産を 3 つまで選んで受け取る。選ばなかったものはここで失われる。\",\"Note\":\"\",\"Candidates\":[{\"Id\":\"card:kansatsu\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"kansatsu\",\"Detail\":\"3 段目\",\"CardId\":\"kansatsu\",\"Rank\":3},{\"Id\":\"card:tsuki\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"tsuki\",\"Detail\":\"2 段目\",\"CardId\":\"tsuki\",\"Rank\":2},{\"Id\":\"card:harai\",\"Kind\":\"Card\",\"KindLabel\":\"技術\",\"Name\":\"harai\",\"Detail\":\"1 段目\",\"CardId\":\"harai\",\"Rank\":1},{\"Id\":\"memo\",\"Kind\":\"Scribble\",\"KindLabel\":\"走り書き\",\"Name\":\"走り書き（第 3 代 リーネ）\",\"Detail\":\"xxxxxxxxxxxxxxxxxxxx…\",\"Generation\":3,\"From\":\"リーネ\",\"Text\":\"xxxxxxxxxxxxxxxxxxxxxxxxx\"}],\"WithheldHeading\":\"\",\"Withheld\":[],\"MaxPicks\":3,\"CanTake\":true,\"Refusal\":\"\",\"TakeButton\":\"受け取る\",\"LeaveButton\":\"何も受け取らない\"}",
+ "text": {
+  "HallTitle": "継承の間",
+  "HallLead": "前の生から次の生へ渡すものを見る部屋。",
+  "HallEmpty": "最初の踏破者。継ぐものはまだ無い。",
+  "RoleName": "踏破者",
+  "StartButton": "出立の支度へ",
+  "ToHallButton": "継承の間へ",
+  "TraceHeading": "未回収の痕跡",
+  "NoTraces": "未回収の痕跡は無い。",
+  "PastLivesHeading": "これまでの踏破者",
+  "SurvivorHeading": "前回の生存者",
+  "NextHeirHeading": "次の踏破者",
+  "AttireHeading": "装束",
+  "TraceNodeTitle": "死亡地点の痕跡",
+  "TakeButton": "受け取る",
+  "LeaveButton": "何も受け取らない",
+  "AlreadyTaken": "この生ではもう遺産を受け取った。この痕跡は残り、後の生で受け取れる。",
+  "Appears": "この層の通常戦闘 1 つと入れ替わって現れる",
+  "Waits": "同じ層の古い痕跡を回収すると現れる",
+  "ClearedTraceNote": "歪みの根を倒した生の痕跡。札だけを残し、手記は生存者として渡った",
+  "WithheldHeading": "浅い層の死では残らなかった札",
+  "DungeonPageDetail": "手記の頁",
+  "TierFirst": "最初の踏破者。支給品は縁なし",
+  "NothingLeft": "遺産になるものは残らなかった",
+  "JournalPasses": "手記は丸ごと次の生へ渡る",
+  "SurvivorJournal": "手記を丸ごと受け継ぐ",
+  "TraceRules": [
+   "遺産の受け取りは、死亡地点を訪れたときに行う。ここでは候補を見るだけ。",
+   "1 つの生で受け取れる痕跡は 1 件（最初に訪れた痕跡）。",
+   "痕跡は回収されるまで残る。",
+   "習熟 2 段目以上の札は、第 3 層より浅い死では遺産に残らない。"
+  ],
+  "KindLabel": {
+   "Card": "技術",
+   "EnemyPage": "敵の頁",
+   "DungeonPage": "ダンジョンの頁",
+   "Scribble": "走り書き"
+  },
+  "EndingTitle": {
+   "MiasmaDeath": "瘴気死",
+   "Fallen": "倒れた",
+   "Completed": "踏破",
+   "Survived": "生存ルート"
+  },
+  "NodeKindLabel": {
+   "Battle": "通常戦闘",
+   "Elite": "精鋭",
+   "Boss": "階層ボス",
+   "Rest": "休息",
+   "Survey": "情報収集",
+   "Event": "イベント",
+   "Trace": "死亡地点の痕跡",
+   "Carving": "秘跡の彫り"
+  },
+  "GenerationLabel": "第 3 代",
+  "HeirTitle": "踏破者 ルカ",
+  "HeirLine": "第 3 代 踏破者 ルカ",
+  "LayerTitle": "第 2 層　■■の秘跡",
+  "RankDetail": "2 段目",
+  "DisclosureDetail": "開示度 1 / 2",
+  "ScribbleName": "走り書き（第 4 代 ルカ）",
+  "RarePageTitle": "希少な頁 7",
+  "WithheldReason": "3 段目。第 3 層より浅い死では残らない",
+  "PickLead": "遺産を 3 つまで選んで受け取る。選ばなかったものはここで失われる。",
+  "PickCount": "1 / 3",
+  "TraceOf": "第 2 代 踏破者 ルカの痕跡",
+  "CandidateCount": "遺産の候補：技術 1 ／ 頁 2 ／ 走り書き 3",
+  "TierReason": "前の生（第 2 代 ルカ）が第 5 層まで届いたため",
+  "TierCleared": "前の生（第 2 代 ルカ）が歪みの根を倒したため",
+  "EndingSentence": [
+   "瘴気が 100% に達し、第 6 層でこの生が終わった。",
+   "第 6 層の戦いで倒れた。",
+   "歪みの根を倒した。",
+   "生きたまま、第 6 層でこの生を閉じた。"
+  ],
+  "TraceLeft": "第 1 層　燦光の樹海に痕跡と手記が残った",
+  "TraceVisit": "次の踏破者が第 4 層を訪れると、3 つまで選んで受け取れる",
+  "WithheldLine": "浅い層の死では残らない札：a、b",
+  "ClearedTraceLeft": "Xに札の痕跡が残った（歪みの根の札を含む）",
+  "SurvivorBonusLine": [
+   "生存者ボーナス：ツール枠 +1 ／ デッキ上限 +5（次の 1 生）",
+   "生存者ボーナス：ツール枠 +1 ／ デッキ上限 +5（次の 2 生）"
+  ],
+  "SurvivorReplaced": "生存者は一人まで。第 1 代 ルカの分は退いた",
+  "NextHeirLine": "次の踏破者：第 5 代 ルカ",
+  "SurvivorTools": "ツール枠 +1（3 → 4）",
+  "SurvivorDeck": "デッキ上限 +5（40 → 45）",
+  "SurvivorDuration": [
+   "次の 1 生だけ",
+   "あと 3 生"
+  ],
+  "SurvivorSpent": "第 2 代 ルカの生でボーナスを使い終えた",
+  "SurvivorSpentLimits": "ツール枠 3 ／ デッキ上限 40 に戻った",
+  "TraceStatus": [
+   "痕跡なし（生きて閉じた）",
+   "痕跡：未回収",
+   "痕跡：第 2 代 ルカが受け取った"
+  ]
+ },
+ "attire": [
+  {
+   "Tier": 0,
+   "Name": "縁なし",
+   "Mask": "縁飾りなし",
+   "Lining": "鈍鋼の裏地",
+   "Clasp": "鉄の留め具",
+   "MaskColor": null,
+   "LiningColor": "#6d7787",
+   "ClaspColor": "#8a8f97"
+  },
+  {
+   "Tier": 1,
+   "Name": "鉄の縁",
+   "Mask": "鉄の細い縁",
+   "Lining": "藍鼠の裏地",
+   "Clasp": "真鍮の留め具",
+   "MaskColor": "#6d7787",
+   "LiningColor": "#4f5a6e",
+   "ClaspColor": "#b08d57"
+  },
+  {
+   "Tier": 2,
+   "Name": "銀の縁",
+   "Mask": "銀の縁",
+   "Lining": "紺の裏地",
+   "Clasp": "琥珀の留め具",
+   "MaskColor": "#aeb6c2",
+   "LiningColor": "#2b3552",
+   "ClaspColor": "#e8a84c"
+  },
+  {
+   "Tier": 3,
+   "Name": "白銀の縁",
+   "Mask": "白銀の二重の縁",
+   "Lining": "深い紺の裏地",
+   "Clasp": "琥珀を象嵌した留め具",
+   "MaskColor": "#dfe4ea",
+   "LiningColor": "#1c2238",
+   "ClaspColor": "#e8a84c"
+  },
+  {
+   "Tier": 4,
+   "Name": "灯芯の留め",
+   "Mask": "白銀の二重の縁",
+   "Lining": "銀糸を織った深い紺の裏地",
+   "Clasp": "灯芯色の玉の留め具",
+   "MaskColor": "#dfe4ea",
+   "LiningColor": "#1c2238",
+   "ClaspColor": "#ffd89a"
+  }
+ ],
+ "heirNames": [
+  "アルマ",
+  "イリス",
+  "ウルス",
+  "エルカ",
+  "オスカ",
+  "カイル",
+  "キリエ",
+  "クラウ",
+  "ケイト",
+  "コルネ",
+  "サリア",
+  "シオン",
+  "スヴェン",
+  "ソラ",
+  "タリス",
+  "ティモ",
+  "トーヴァ",
+  "ナディア",
+  "ニコ",
+  "ノエル",
+  "ハンナ",
+  "ヒルダ",
+  "フェン",
+  "ヘルガ",
+  "ホルン",
+  "マルタ",
+  "ミロ",
+  "ユリア",
+  "ヨハン",
+  "ラウル",
+  "リーネ",
+  "ルカ",
+  "レア",
+  "ロタ",
+  "ヴェラ",
+  "イーダ",
+  "エミル",
+  "オリヴ",
+  "カリナ",
+  "テオ"
+ ],
+ "hallSpent": "{\"Title\":\"継承の間\",\"Lead\":\"前の生から次の生へ渡すものを見る部屋。\",\"Empty\":\"\",\"NextHeirHeading\":\"次の踏破者\",\"NextHeir\":{\"Generation\":3,\"GenerationLabel\":\"第 3 代\",\"Name\":\"リーネ\",\"Title\":\"踏破者 リーネ\",\"Line\":\"第 3 代 踏破者 リーネ\",\"Tier\":0,\"TierName\":\"縁なし\",\"TierReason\":\"前の生（第 2 代 ヴェラ）が第 1 層まで届いたため\",\"Attire\":[{\"Part\":\"面の縁飾り\",\"Text\":\"縁飾りなし\",\"Color\":null},{\"Part\":\"マントの裏地\",\"Text\":\"鈍鋼の裏地\",\"Color\":\"#6d7787\"},{\"Part\":\"留め具\",\"Text\":\"鉄の留め具\",\"Color\":\"#8a8f97\"}]},\"PastLivesHeading\":\"これまでの踏破者\",\"PastLives\":[{\"Generation\":2,\"GenerationLabel\":\"第 2 代\",\"Name\":\"ヴェラ\",\"Line\":\"第 2 代 踏破者 ヴェラ\",\"TierName\":\"鉄の縁\",\"Ending\":\"Fallen\",\"EndingLabel\":\"倒れた\",\"EndingLine\":\"第 1 層の戦いで倒れた。\",\"PlaceLine\":\"第 1 層　燦光の樹海（通常戦闘）\",\"TraceLine\":\"痕跡：未回収\"},{\"Generation\":1,\"GenerationLabel\":\"第 1 代\",\"Name\":\"テオ\",\"Line\":\"第 1 代 踏破者 テオ\",\"TierName\":\"縁なし\",\"Ending\":\"Survived\",\"EndingLabel\":\"生存ルート\",\"EndingLine\":\"生きたまま、第 3 層でこの生を閉じた。\",\"PlaceLine\":\"第 3 層　大黒蛇の住処\",\"TraceLine\":\"痕跡なし（生きて閉じた）\"}],\"TraceHeading\":\"未回収の痕跡\",\"NoTraces\":\"\",\"Traces\":[{\"Id\":\"trace-2\",\"Generation\":2,\"HeirLine\":\"第 2 代 踏破者 ヴェラ\",\"Layer\":1,\"NodeId\":0,\"PlaceLine\":\"第 1 層　燦光の樹海（通常戦闘）\",\"EndingLabel\":\"倒れた\",\"Cleared\":false,\"Note\":\"\",\"Visible\":true,\"AppearsLine\":\"この層の通常戦闘 1 つと入れ替わって現れる\",\"CountLine\":\"遺産の候補：技術 0 ／ 頁 0 ／ 走り書き 0\",\"Candidates\":[],\"Withheld\":[]}],\"TraceRules\":[\"遺産の受け取りは、死亡地点を訪れたときに行う。ここでは候補を見るだけ。\",\"1 つの生で受け取れる痕跡は 1 件（最初に訪れた痕跡）。\",\"痕跡は回収されるまで残る。\",\"習熟 2 段目以上の札は、第 3 層より浅い死では遺産に残らない。\"],\"SurvivorHeading\":\"前回の生存者\",\"Survivor\":null,\"SurvivorSpent\":{\"Generation\":1,\"Line\":\"第 1 代 踏破者 テオ\",\"Lines\":[\"第 2 代 ヴェラの生でボーナスを使い終えた\",\"ツール枠 3 ／ デッキ上限 40 に戻った\"]},\"StartButton\":\"出立の支度へ\"}",
+ "hallSpentLineage": "{\"Version\":1,\"Seed\":\"42\",\"Lives\":[{\"Generation\":1,\"Name\":\"テオ\",\"Tier\":0,\"Seed\":\"1\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":\"Survived\",\"Layer\":3,\"NodeId\":2,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},{\"Generation\":2,\"Name\":\"ヴェラ\",\"Tier\":1,\"Seed\":\"2\",\"SurvivorBonus\":true,\"SurvivorFrom\":1,\"InheritedJournal\":true,\"TakenTraceId\":null,\"Ending\":\"Fallen\",\"Layer\":1,\"NodeId\":0,\"NodeKind\":\"Battle\",\"TraceId\":\"trace-2\",\"CollectedBy\":null,\"ReplacedSurvivor\":null}],\"Current\":null,\"Traces\":[{\"Id\":\"trace-2\",\"Generation\":2,\"Name\":\"ヴェラ\",\"Layer\":1,\"NodeId\":0,\"NodeKind\":\"Battle\",\"Ending\":\"Fallen\",\"Cleared\":false,\"Candidates\":[],\"Withheld\":[]}],\"Survivor\":null,\"Player\":{\"CarvingTaken\":false,\"RootDefeated\":false}}",
+ "hallEmpty": "{\"Title\":\"継承の間\",\"Lead\":\"前の生から次の生へ渡すものを見る部屋。\",\"Empty\":\"最初の踏破者。継ぐものはまだ無い。\",\"NextHeirHeading\":\"次の踏破者\",\"NextHeir\":{\"Generation\":1,\"GenerationLabel\":\"第 1 代\",\"Name\":\"テオ\",\"Title\":\"踏破者 テオ\",\"Line\":\"第 1 代 踏破者 テオ\",\"Tier\":0,\"TierName\":\"縁なし\",\"TierReason\":\"最初の踏破者。支給品は縁なし\",\"Attire\":[{\"Part\":\"面の縁飾り\",\"Text\":\"縁飾りなし\",\"Color\":null},{\"Part\":\"マントの裏地\",\"Text\":\"鈍鋼の裏地\",\"Color\":\"#6d7787\"},{\"Part\":\"留め具\",\"Text\":\"鉄の留め具\",\"Color\":\"#8a8f97\"}]},\"PastLivesHeading\":\"これまでの踏破者\",\"PastLives\":[],\"TraceHeading\":\"未回収の痕跡\",\"NoTraces\":\"未回収の痕跡は無い。\",\"Traces\":[],\"TraceRules\":[\"遺産の受け取りは、死亡地点を訪れたときに行う。ここでは候補を見るだけ。\",\"1 つの生で受け取れる痕跡は 1 件（最初に訪れた痕跡）。\",\"痕跡は回収されるまで残る。\",\"習熟 2 段目以上の札は、第 3 層より浅い死では遺産に残らない。\"],\"SurvivorHeading\":\"前回の生存者\",\"Survivor\":null,\"SurvivorSpent\":null,\"StartButton\":\"出立の支度へ\"}"
+}

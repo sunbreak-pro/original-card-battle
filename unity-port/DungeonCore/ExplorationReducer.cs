@@ -18,7 +18,7 @@ namespace DungeonCore
     /// 刻限 is the only thing that moves the gauge, and the gauge never gives 刻限 back
     /// (concept-v3.md §6).
     /// </summary>
-    public static class ExplorationReducer
+    public static partial class ExplorationReducer
     {
         /// <summary>休息: HP back by this share of the maximum (concept-v3.md §7).</summary>
         public const int RestHpPercent = 15;
@@ -35,7 +35,13 @@ namespace DungeonCore
         /// <summary>HP 階層間の休憩 gives back at this maximum, before the maximum clamps it.</summary>
         public static int InterludeHeal(int maxHp) => Share(maxHp, InterludeHpPercent);
 
-        /// <summary>Walks into a layer. The entry node is resolved on arrival and costs its 刻限.</summary>
+        /// <summary>
+        /// Walks into a layer. The entry node is resolved on arrival and costs its 刻限.
+        /// Trial extension: <paramref name="trial"/> (default false = the C#) turns the trial rules on for the
+        /// run — 刻限の砂's 刻限 is added here (tools_and_consumables_v4.md §2) and the state carries the flag to
+        /// every later call.
+        /// </summary>
+        // js: core/dungeon/ExplorationReducer.js:45
         public static ExplorationState Enter(
             LayerProfile profile,
             LayerMap map,
@@ -44,7 +50,8 @@ namespace DungeonCore
             int maxHp,
             int stamina,
             int miasmaPercent = 0,
-            int tempMaxStaminaMod = 0)
+            int tempMaxStaminaMod = 0,
+            bool trial = false)
         {
             if (profile == null) throw new ArgumentNullException(nameof(profile));
             if (map == null) throw new ArgumentNullException(nameof(map));
@@ -57,7 +64,7 @@ namespace DungeonCore
                 map,
                 map.EntryId,
                 new HashSet<int>(),
-                profile.TimeLimit,
+                profile.TimeLimit + (trial ? loadout.TimeBonus : 0),
                 miasmaPercent,
                 hp,
                 maxHp,
@@ -65,7 +72,8 @@ namespace DungeonCore
                 tempMaxStaminaMod,
                 trainingMarks: 0,
                 loadout,
-                RunPhase.Exploring);
+                RunPhase.Exploring,
+                trial);
 
             return Resolve(fresh, map.EntryId, RestChoice.Rest);
         }
@@ -101,14 +109,20 @@ namespace DungeonCore
             return "no 刻限 left to spend on a new node";
         }
 
-        /// <summary>Burns one consumable. Costs no 刻限, so it never moves the gauge upward.</summary>
+        /// <summary>
+        /// Burns one consumable. Costs no 刻限, so it never moves the gauge upward.
+        /// Trial extension: in trial mode every consumable acts (UseTrialConsumable); outside it only the gauge
+        /// moves, as in the C#.
+        /// </summary>
+        // js: core/dungeon/ExplorationReducer.js:100
         public static ExplorationState UseConsumable(ExplorationState state, int index)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (state.IsOver)
                 throw new ExplorationRuleException("the run is over");
 
-            var loadout = state.Loadout.Spend(index, out int relief);
+            var loadout = state.Loadout.Spend(index, out int relief, out ReliefItem item);
+            if (state.Trial) return UseTrialConsumable(state, loadout, relief, item);
             return state.With(
                 loadout: loadout,
                 miasmaPercent: Miasma.Relieve(state.MiasmaPercent, relief));
@@ -123,7 +137,9 @@ namespace DungeonCore
             if (!CanInterlude(state))
                 throw new ExplorationRuleException($"there is no interlude from {state.Phase}");
 
-            int healed = Math.Min(state.MaxHp, state.Hp + InterludeHeal(state.MaxHp));
+            // Trial extension (js: core/dungeon/ExplorationReducer.js:234): 30% + 灯芯の欠片 in trial mode.
+            int heal = state.Trial ? Share(state.MaxHp, InterludePercent(state)) : InterludeHeal(state.MaxHp);
+            int healed = Math.Min(state.MaxHp, state.Hp + heal);
             return state.With(
                 hp: healed,
                 stamina: state.MaxStamina,
@@ -156,7 +172,8 @@ namespace DungeonCore
                 state.MaxHp,
                 state.Stamina,
                 state.MiasmaPercent,
-                state.TempMaxStaminaMod);
+                state.TempMaxStaminaMod,
+                state.Trial);
         }
 
         /// <summary>

@@ -6,6 +6,10 @@
 // reward (#625: the pile's cards to pick one from, consumables, pages). It also spends the marks a
 // 習熟訓練 node earns on the card the player names. Pure C#; the View that loads the battle scene only
 // forwards the source and the end of each fight.
+//
+// The browser trial's extensions (src/bridge/exploration/Expedition.js, src/app/life.js; docs/EXTENSIONS.md,
+// docs/INHERITANCE.md) live in Expedition.Trial.cs and are opt-in through ExpeditionOptions: with no options every
+// call here behaves as before. The hooks in this file are marked 「Trial extension」.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +19,7 @@ using DungeonCore;
 
 namespace Exploration.Bridge
 {
-    public sealed class Expedition
+    public sealed partial class Expedition : IExplorationKeeper
     {
         /// <summary>concept-v3 §14 / swordsman_cards_v4 §2: the kinds every character owns from the start (#1〜#40).</summary>
         public static readonly IReadOnlyList<string> InitialKinds = CardCatalog.All.Take(40).Select(d => d.Id).ToList();
@@ -42,21 +46,38 @@ namespace Exploration.Bridge
         /// <param name="talent">才能: the card whose battle ticks count twice (§17.8), or null.</param>
         /// <param name="intel">What the exploration screen says about the enemy behind a node.</param>
         /// <param name="journal">The journal's 開示度 by enemy id as the life starts. An enemy not listed reads 0.</param>
+        /// <param name="options">
+        /// Trial extension (js: bridge/exploration/Expedition.js:55; <see cref="ExpeditionOptions"/>): the deck
+        /// limits, the trial rules, the carving the lineage knows, the pages the heir sets out with. Null plays the C#.
+        /// </param>
+        // js: bridge/exploration/Expedition.js:55
         public Expedition(
             RunStart start = null,
             IReadOnlyList<CardInstance> deck = null,
             IReadOnlyList<string> battleToolIds = null,
             string talent = null,
             IEnemyIntel intel = null,
-            IReadOnlyDictionary<string, int> journal = null)
+            IReadOnlyDictionary<string, int> journal = null,
+            ExpeditionOptions options = null)
         {
+            // Trial extension: the limits, the trial rules (options or RunStart.Trial) and the start they rewrite.
+            _limits = options?.Limits;
+            Trial = options?.Trial == true || start?.Trial == true;
+            start = TrialStart(start, options);
             _startDeck = (deck ?? PrototypeDeck.Build()).ToList();
-            DeckValidation validation = Cards.Validate(_startDeck);
+            DeckValidation validation = Cards.Validate(_startDeck, _limits);
             if (!validation.Ok) throw new ArgumentException("Expedition: the deck breaks §8 — " + string.Join(" / ", validation.Errors), nameof(deck));
             _startJournal = journal ?? new Dictionary<string, int>();
             _talent = talent;
             Tools = BattleTools(_startDeck, battleToolIds ?? Array.Empty<string>(), talent);
             Session = new ExplorationSession(start, intel);
+            // Trial extension (js: Expedition.js:105): the session hands what it finds outside its core to the
+            // expedition (a chest's cards and pages, the 写しの帳 pick, the journal's 開示度).
+            if (Trial) Session.Keeper = this;
+            // Trial extension (js: app/life.js:205-211): the pages the heir set out with, counted by BeginLife. Never
+            // under 0 (js: app/life.js:74 startPages reads anything but a positive count as 0).
+            _startPages = Math.Max(0, options?.StartPages ?? 0);
+            InheritedPages = _startPages;
             BeginLife();
         }
 
@@ -82,8 +103,11 @@ namespace Exploration.Bridge
             }
         }
 
-        /// <summary>This life's mastery (§3.2 / §17.8).</summary>
-        public MasteryBook Mastery { get; private set; }
+        /// <summary>
+        /// This life's mastery (§3.2 / §17.8). The setter is internal: the expedition's own calls move it, and the
+        /// EditMode tests set it the way the browser trial's tests do (its JS field is plain).
+        /// </summary>
+        public MasteryBook Mastery { get; internal set; }
 
         /// <summary>The in-battle tools (§9.1, #452) as amounts, with the deck and the talent the battles read.</summary>
         public Departure Tools { get; }
@@ -104,6 +128,8 @@ namespace Exploration.Bridge
         /// <summary>
         /// The consumables the battles of this life dropped, as catalogue ids in the order found. They do
         /// not reach the exploration's slots yet: RunLoadout holds only what relieves 瘴気.
+        /// Trial extension (js: Expedition.js:133): they do — Return hands them to ExplorationSession.Receive;
+        /// this list still records them.
         /// </summary>
         public IReadOnlyList<string> Consumables
         {
@@ -157,7 +183,7 @@ namespace Exploration.Bridge
             return new BattleHandIn(
                 layer, kind, encounter, cells,
                 state.Hp, state.MaxHp, state.Stamina, state.MaxStamina, state.MiasmaPercent,
-                disclosure, Mastery.MasteredDeck(_deck), Tools, seed);
+                disclosure, Mastery.MasteredDeck(_deck), Tools, seed, _limits); // Trial extension: the life's limits
         }
 
         /// <summary>Starts the battle of the node that waits on one. Null when none waits.</summary>
@@ -177,12 +203,20 @@ namespace Exploration.Bridge
         /// against it), and a won encounter's unique cards to the cards owned. A won encounter also
         /// draws the rest of its reward (§4.2) from the exploration's seed: the cards to pick one from
         /// wait in <see cref="Offer"/>, the consumables and pages are kept.
+        ///
+        /// Trial extension (js: Expedition.js:206-269): the consumables go into the exploration's slots
+        /// (ExplorationSession.Receive), and the result card waits on the player (<see cref="PendingResult"/>) with
+        /// what only the expedition knows: the enemies whose 開示度 rose, whether the card pile was spent, and the
+        /// learned cards a full deck kept out.
         /// </summary>
+        // js: bridge/exploration/Expedition.js:201
         public BattleReturn Return()
         {
             EncounterBattle battle = Battle ?? throw new InvalidOperationException("Expedition: no battle is being fought.");
             if (!battle.Over) throw new InvalidOperationException("Expedition: the encounter has fights left.");
             Battle = null;
+            // Trial extension: the 開示度 before the encounter, so the result card names only what rose.
+            Dictionary<string, int> was = Trial ? DisclosureBefore(battle) : null;
 
             var ranks = new List<RankUp>();
             var plays = new List<MasteryPlay>();
@@ -209,20 +243,32 @@ namespace Exploration.Bridge
             UniqueCardReward reward = battle.Won
                 ? UniqueCards.For(handIn.Kind, handIn.Encounter, _owned)
                 : UniqueCardReward.None;
-            foreach (string id in reward.Learned) Take(id);
+            var benched = new List<string>(); // Trial extension: Take tells whether a copy joined the deck
+            foreach (string id in reward.Learned)
+            {
+                if (!Take(id)) benched.Add(id);
+            }
             BattleReward rest = battle.Won
                 ? BattleRewards.Roll(handIn.Kind, handIn.Layer, handIn.Encounter, reward, _owned,
                     new DungeonCore.SeededRng(RewardSeed(Session.RunSeed, handIn.Layer, Session.PendingBattleNode)))
                 : BattleReward.None;
+            // Trial extension: the pile was spent when the roll wanted a card and none was dealt (§4.3).
+            bool pileSpent = Trial && battle.Won && rest.CardChoices.Count == 0 && PileWanted(handIn, reward);
             _offer = (reward.Offered.Count > 0 ? reward.Offered : rest.CardChoices).ToList();
             _consumables.AddRange(rest.Consumables);
             _pages += rest.Pages;
 
             Session.ReportBattle(battle.HpAfter, battle.StaminaAfter);
+            // Trial extension (js: Expedition.js:250): the battle's consumables go into the slots, or wait on a
+            // swap (encounters_and_rewards_v4.md §4.3, tools_and_consumables_v4.md §3).
+            if (Trial) Session.Receive(rest.Consumables);
 
-            return new BattleReturn(
+            var back = new BattleReturn(
                 battle.Won, battle.HpAfter, battle.StaminaAfter, MasteryTally.Of(plays), ranks,
                 disclosure, observed, reward.Learned, reward.Offered, rest);
+            // Trial extension (js: Expedition.js:258): the result card waits on the player until CloseResult.
+            if (Trial) KeepResult(battle, back, disclosure, was, pileSpent, benched);
+            return back;
         }
 
         /// <summary>
@@ -244,13 +290,16 @@ namespace Exploration.Bridge
         /// <summary>
         /// Picks one card of the offer — a real elite's or the card pile's (encounters_and_rewards_v4.md
         /// §4.2 / §4.3). False when it is not on offer.
+        /// Trial extension (js: Expedition.js:300): the pick is made on the result card, so the card is done with.
         /// </summary>
+        // js: bridge/exploration/Expedition.js:293
         public bool Learn(string cardId)
         {
             SyncLife();
             if (cardId == null || !_offer.Contains(cardId)) return false;
             Take(cardId);
             _offer.Clear();
+            if (Trial) LearnedOnResult();
             return true;
         }
 
@@ -272,13 +321,17 @@ namespace Exploration.Bridge
         /// <summary>
         /// A learned card is owned at once, and one copy goes into the deck when the deck has room
         /// (encounters_and_rewards_v4.md §4.3: 「デッキの上限の中ですぐ戦闘デッキに入ります」).
+        /// Trial extension (js: Expedition.js:322): the room is the life's DeckMax (ExpeditionOptions.Limits), and
+        /// the answer says whether a copy joined the deck.
         /// </summary>
-        private void Take(string cardId)
+        // js: bridge/exploration/Expedition.js:322
+        private bool Take(string cardId)
         {
             _owned.Add(cardId);
-            if (!DeckRules.CanAdd(_deck, cardId, _owned)) return;
+            if (!DeckRules.CanAdd(_deck, cardId, _owned, _limits)) return false;
             _learnedCopies++;
             _deck.Add(new CardInstance($"{cardId}-learned-{_learnedCopies}", CardCatalog.ById(cardId)));
+            return true;
         }
 
         /// <summary>A new life (ExplorationSession's 「新しい生」) starts from what the expedition set out with.</summary>
@@ -302,6 +355,7 @@ namespace Exploration.Bridge
             _learnedCopies = 0;
             Battle = null;
             Mastery = MasteryBook.Begin(_talent);
+            BeginLifeTrial(); // Trial extension: nothing pending, and the pages the heir set out with
         }
 
         /// <summary>The four in-battle tools, summed over the slots (the same tool may fill two), as a Departure the core reads.</summary>

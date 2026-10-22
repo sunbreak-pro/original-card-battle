@@ -18,6 +18,11 @@ namespace Exploration.Bridge
     /// </summary>
     public sealed class BattleHandIn
     {
+        /// <param name="limits">
+        /// Trial extension (js: bridge/exploration/EncounterBattle.js:24, docs/EXTENSIONS.md 「出立の枠（DeckLimits）」):
+        /// the life's deck limits, which <see cref="EncounterBattle.NextLaunch"/> hands to the launch. Null: §8's.
+        /// </param>
+        // js: bridge/exploration/EncounterBattle.js:24
         public BattleHandIn(
             int layer,
             NodeKind kind,
@@ -31,7 +36,8 @@ namespace Exploration.Bridge
             IReadOnlyDictionary<string, int> disclosure,
             IReadOnlyList<CardInstance> deck,
             Departure tools,
-            int seed)
+            int seed,
+            DeckLimits limits = null)
         {
             Encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
             FieldCells = fieldCells ?? throw new ArgumentNullException(nameof(fieldCells));
@@ -51,6 +57,7 @@ namespace Exploration.Bridge
             MaxStamina = maxStamina;
             MiasmaPercent = miasmaPercent;
             Seed = seed;
+            Limits = limits;
         }
 
         /// <summary>The floor: 1〜7.</summary>
@@ -87,6 +94,12 @@ namespace Exploration.Bridge
 
         /// <summary>The first fight's seed; each next fight takes one of its own from it.</summary>
         public int Seed { get; }
+
+        /// <summary>
+        /// Trial extension (js: bridge/exploration/EncounterBattle.js:58): the deck limits of the life, or null for
+        /// §8's constants. <see cref="EncounterBattle.NextLaunch"/> hands them to the BattleLaunch (as Limits).
+        /// </summary>
+        public DeckLimits Limits { get; }
     }
 
     /// <summary>
@@ -241,6 +254,9 @@ namespace Exploration.Bridge
                 BossWordWard = tools.BossWordWard,
                 ChainIndex = Index + 1,
                 ChainTotal = Count,
+                // Trial extension (js: bridge/exploration/EncounterBattle.js:211): a life's deck limits (a survivor's
+                // 45-card deck) ride to the launch, which holds the deck to them (BattleLaunch.BuildDeck). Null: §8's.
+                Limits = HandIn.Limits,
             };
         }
 

@@ -88,13 +88,15 @@ namespace BattleCore
         /// <summary>
         /// §8: <see cref="Cards.Validate"/>, and every kind owned. <paramref name="ownedKinds"/> are
         /// the card ids the character owns (at most 80 kinds: 40 to start, 40 learned).
+        /// Trial extension: <paramref name="limits"/> (<see cref="DeckLimits"/>; the constants when null) sets the deck's bounds.
         /// </summary>
-        public static DeckValidation ValidateDeck(IReadOnlyList<CardInstance> deck, IReadOnlyCollection<string> ownedKinds)
+        // js: core/battle/DeckRules.js:178
+        public static DeckValidation ValidateDeck(IReadOnlyList<CardInstance> deck, IReadOnlyCollection<string> ownedKinds, DeckLimits? limits = null)
         {
             if (deck == null) throw new ArgumentNullException(nameof(deck));
             if (ownedKinds == null) throw new ArgumentNullException(nameof(ownedKinds));
 
-            var errors = new List<string>(Cards.Validate(deck).Errors);
+            var errors = new List<string>(Cards.Validate(deck, DeckLimits.From(limits)).Errors);
             var owned = new HashSet<string>(ownedKinds, StringComparer.Ordinal);
             foreach (var id in deck.Select(c => c.Def.Id)
                          .Where(id => !owned.Contains(id))
@@ -109,34 +111,41 @@ namespace BattleCore
         /// <summary>
         /// Whether one more copy of <paramref name="id"/> may go into <paramref name="deck"/>: an owned
         /// kind, under three copies, and room under 40. The deck screen greys ＋ out on false.
+        /// Trial extension: <paramref name="limits"/> (<see cref="DeckLimits"/>) moves the room to its DeckMax
+        /// (45 with the survivor's bonus, L-4).
         /// </summary>
-        public static bool CanAdd(IReadOnlyList<CardInstance> deck, string id, IReadOnlyCollection<string> ownedKinds)
+        // js: core/battle/DeckRules.js:196
+        public static bool CanAdd(IReadOnlyList<CardInstance> deck, string id, IReadOnlyCollection<string> ownedKinds, DeckLimits? limits = null)
         {
             if (deck == null) throw new ArgumentNullException(nameof(deck));
             if (ownedKinds == null) throw new ArgumentNullException(nameof(ownedKinds));
             if (string.IsNullOrEmpty(id) || !ownedKinds.Contains(id)) return false;
-            return deck.Count < Constants.DeckMax && deck.Count(c => c.Def.Id == id) < Constants.CopiesMax;
+            return deck.Count < DeckLimits.From(limits).DeckMax && deck.Count(c => c.Def.Id == id) < Constants.CopiesMax;
         }
 
         /// <summary>
         /// The whole departure: the deck (<see cref="ValidateDeck"/>), the two kinds of slots, the
         /// start, and a talent among the deck's kinds. Empty errors when it may set out.
+        /// Trial extension: <paramref name="limits"/> (<see cref="DeckLimits"/>) sets the deck's bounds and the
+        /// two slot counts (4 tools with the survivor's bonus, L-5). Null is the constants.
         /// </summary>
-        public static DeckValidation Validate(Departure departure, IReadOnlyCollection<string> ownedKinds)
+        // js: core/battle/DeckRules.js:209
+        public static DeckValidation Validate(Departure departure, IReadOnlyCollection<string> ownedKinds, DeckLimits? limits = null)
         {
             if (departure == null) throw new ArgumentNullException(nameof(departure));
             if (departure.Tools == null) throw new ArgumentNullException(nameof(departure), "Tools is null.");
             if (departure.Consumables == null) throw new ArgumentNullException(nameof(departure), "Consumables is null.");
 
-            var errors = new List<string>(ValidateDeck(departure.Deck, ownedKinds).Errors);
+            DeckLimits bounds = DeckLimits.From(limits);
+            var errors = new List<string>(ValidateDeck(departure.Deck, ownedKinds, bounds).Errors);
 
-            if (departure.Tools.Count > ToolSlots)
+            if (departure.Tools.Count > bounds.ToolSlots)
             {
-                errors.Add($"{departure.Tools.Count} tools do not fit {ToolSlots} slots.");
+                errors.Add($"{departure.Tools.Count} tools do not fit {bounds.ToolSlots} slots.");
             }
-            if (departure.Consumables.Count > ConsumableSlots)
+            if (departure.Consumables.Count > bounds.ConsumableSlots)
             {
-                errors.Add($"{departure.Consumables.Count} consumables do not fit {ConsumableSlots} slots.");
+                errors.Add($"{departure.Consumables.Count} consumables do not fit {bounds.ConsumableSlots} slots.");
             }
             if (departure.StartCellsBack < 0)
             {
