@@ -1,6 +1,6 @@
 # 晶槍の竜兵（polearm_crystal）— 仕様カード
 
-- 作成日: 2026-10-04（#287。こうだいさんが Krita で作った待機の絵を Unity リポへ入れた）/ 更新: 2026-10-10（#287。幅の例外を規約に入れ、枠の幅（#302）と BattleCore の追加に進捗を合わせた）/ 2026-10-11（#287。予兆の札の大きさを実行時の 200 × 98 に直し、コードの行番号を今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵の参照を `battle_ui_ux_v2.md` §6.4 に替えた）/ 2026-10-12（#287。攻撃 4 つの威力をロースター v4.21 に合わせ、ずれたコードの行番号を今の行に直した）/ 工程: C0（`visual-production-pipeline character polearm_crystal`）
+- 作成日: 2026-10-04（#287。こうだいさんが Krita で作った待機の絵を Unity リポへ入れた）/ 更新: 2026-10-10（#287。幅の例外を規約に入れ、枠の幅（#302）と BattleCore の追加に進捗を合わせた）/ 2026-10-11（#287。予兆の札の大きさを実行時の 200 × 98 に直し、コードの行番号を今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵の参照を `battle_ui_ux_v2.md` §6.4 に替えた）/ 2026-10-12（#287。攻撃 4 つの威力をロースター v4.21 に合わせ、ずれたコードの行番号を今の行に直した）/ 2026-10-21（#287。画面での大きさを #455 の 226 px の描き方に直し、予兆の札と数字の位置を今の View に合わせた。BattleCore が #498 で威力に追従したこと、§9 の代役で四層の精鋭の枠にも出ること、`.meta` がコミット済みになったことを書いた。閉じた #79 を手触りの確認の参照から外し、ずれたコードの行番号を今の行に直した）/ 工程: C0（`visual-production-pipeline character polearm_crystal`）
 - 正本: `.claude/docs/enemy_document/enemy_roster_v4.md`（§2.7 晶槍の竜兵）/ `.claude/docs/vision/world-v1.md`（竜の系譜）/ `.claude/docs/art_document/style-guide.md`（原本の大きさ・指示文・帯び方）/ `.claude/docs/art_document/asset-intake.md`（書き出しと取り込み）/ `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs`（枠と配置）
 - 手順書: `docs/reports/2026-09-19-krita-ai-setup-guide.html` 4 章（待機の絵）/ `docs/reports/2026-10-03-enemy-motion.html`（攻撃と倒れの差分の作り方）
 - 内部 ID は `polearm_crystal` です。v4.6 で足した敵で、錆槍の竜兵の `polearm_warped` にそろえて `polearm_` で始めています（`enemy_roster_v4.md` §1.8）。ファイル名と asset id もこの ID を使います。`asset-intake.md` §4 も、2026-10-06 にロースターの内部 ID を使う形に直りました（#327）。
@@ -10,6 +10,8 @@
 階層 3〜4 の通常敵です。錆槍の竜兵の上位で、竜の系譜では同じ眷属の **竜人** です（`enemy_roster_v4.md` §1.8・§2.7）。ロースターの記述は「錆槍の竜兵と同じ種で、鱗の縁に結晶が育っている。槍の穂先が大きな結晶に育ち、体ごと前のめりに構える」です。名前の「晶」は、結晶が育った段の帯び方を指します（`style-guide.md` §15）。
 
 得意な間合いは 1〜2 です。届く間合い 1〜2 で重い突きを出すところは錆槍と同じで、間合いの動かし方が逆になります。錆槍は相手を押し返しますが、晶槍は相手を動かさず、攻撃のたびに自分が前後へ動きます。間合い 3 以上の相手には突き進みながら当てて 2 マス詰めます。隣のマス（間合い 0）の相手には、突いてから 2 マス退きます。HP 90 / 最大スタミナ 10 / 回復 2 / 大きさ 1 / 開始の間合い 3 で、状態は使いません。
+
+出現表（`enemy_roster_v4.md` §9）では、三層と四層の通常戦闘に出ます。四層の精鋭の枠は、通常 4 体から別の 2 体を選ぶ 2 連戦の代役で埋めます。このため、晶槍の竜兵は四層の精鋭のノードにも出ることがあります（v4.23、#464、`unity-port/DungeonCore/LayerEncounters.cs:219-220`）。
 
 絵では、長柄の武器を持っていることと、体ごと前のめりに構えて自分から間合いを詰めたり空けたりする槍兵であることを伝えます。錆槍と同じ種なので、二足・長柄・尻尾・角という影絵の基本形はそろえます。眷属なので翼は描きません。
 
@@ -21,12 +23,12 @@
 
 | 項目 | 値 | 出典 |
 | --- | --- | --- |
-| 表示枠 | 既定は 210 × 450（Canvas の参照単位で、比は 0.467）。この絵を着ると 234.4 × 450 に広がります（#302）。実画素は 1080p で 450、1440p で 600、4K で 900 です | `DepictionPrefabBuilder.cs:223`、`:479-481`（`ScaleWithScreenSize`、参照 1920 × 1080、`matchWidthOrHeight = 0.5`）、`FigureView.cs:292-310`（`FitFrame`）、`FigureMotion.cs:92-96`（`FigureFrame.Width`） |
-| 絵の収まり | `preserveAspect = true` です。800 × 1536（比 0.521）の絵は既定の枠より横長ですが、枠が絵の比に合わせて広がるので、高さ 450 いっぱいに足元の線から立ちます。#302 の前は幅 210 に合わせて縮み、高さ 403.2 で足元から 23.4 浮いていました | `DepictionPrefabBuilder.cs:226-227`、`FigureView.cs:292-310`（`FitFrame`）、#302 |
+| 表示枠 | 既定は 210 × 450（Canvas の参照単位で、比は 0.467）。この絵を着ると 234.4 × 450 に広がります（#302）。戦闘では枠を 226 / 450 に縮めて描くので、画面での大きさは高さ 226 × 幅 117.7 です（#455）。実画素は 1080p で 226、1440p で約 301、4K で約 452 です。通常の敵を一律 226 で描くかは #590 で決めます | `DepictionPrefabBuilder.cs:223`、`:479-481`（`ScaleWithScreenSize`、参照 1920 × 1080、`matchWidthOrHeight = 0.5`）、`FigureView.cs:423-445`（`FitFrame`）、`:166-174`（`StandTall`）、`FigureMotion.cs:95-99`（`FigureFrame.Width`）、`:119`（`StandardHeight = 226`）、`DepictionPlayer.cs:1702`、`battle-visual-v1.md` §4.3 |
+| 絵の収まり | `preserveAspect = true` です。800 × 1536（比 0.521）の絵は既定の枠より横長ですが、枠が絵の比に合わせて広がるので、高さ 450 いっぱいに足元の線から立ちます。#302 の前は幅 210 に合わせて縮み、高さ 403.2 で足元から 23.4 浮いていました | `DepictionPrefabBuilder.cs:226-227`、`FigureView.cs:423-445`（`FitFrame`）、#302 |
 | 基準点 | 足元の中央（枠の pivot は (0.5, 0)） | `DepictionPrefabBuilder.cs:223` |
-| 左右の向き | 左向きで描きます。Unity は反転せず、画面右（x = +400）から左のプレイヤーをそのまま向きます | `DepictionPrefabBuilder.cs:505`、`:509-510`、`FigureView.cs:58` |
-| 頭上の空き | 予兆の札は、実行時に 200 × 98 になり、枠の上端から約 29 単位上に出ます。枠の中は上端まで描いてかまいません | `OmenBadgeView.cs:29`、`:66`（札の大きさ。プレハブの 270 × 68（`DepictionPrefabBuilder.cs:368`）は実行時に置き換わる）、`DepictionPrefabBuilder.cs:513`（札の中心が y = 468）、`:496`（足元が y = −60） |
-| 数字と文字の位置 | 数字は足元から 310 単位（胸の 270 + 40）、ラベルは 440 単位（頭の 470 − 30）に出ます | `DepictionPrefabBuilder.cs:228-229`、`DepictionPlayer.cs:785-786` |
+| 左右の向き | 左向きで描きます。Unity は反転しません。実戦では床の敵のマスに立ち（撮影用のプレハブでは画面右の x = +400）、左のプレイヤーをそのまま向きます | `FigureMotion.cs:62-67`（`FigureFacing.HomeScaleX`）、`FigureView.cs:64-68`、`DepictionPlayer.cs:521`、`DepictionPrefabBuilder.cs:508`、`:512-513` |
+| 頭上の空き | 予兆の札は、実行時に 200 × 98 になります。床を出す実戦では、札の下端が人型の頭（足元から 226）の 14 単位上に来ます。枠の中は上端まで描いてかまいません | `OmenBadgeView.cs:32`、`:141`（札の大きさ。プレハブの 270 × 68（`DepictionPrefabBuilder.cs:368`）は実行時に置き換わる）、`DepictionPlayer.cs:552-554`、`:619`（`OmenOverHead = 14`）、`battle-visual-v1.md` §4.3 |
+| 数字と文字の位置 | 浮かぶ数字は、人型の胸（足元から高さの 65%、226 の人型で約 147）から頭（84%、約 190）へ上がり、予兆の札には入りません（`battle_ui_ux_v2.md` §5.0）。いまの View は、数字を足元から約 176（胸の点 270 × 226 / 450 + 40）から出して 96 上げるので、§5.0 とずれています（2026-10-21 に main へ申し送り）。ラベルは足元から約 206（頭の点 470 × 226 / 450 − 30）に出ます | `battle_ui_ux_v2.md` §5.0、`DepictionPrefabBuilder.cs:228-229`、`DepictionPlayer.cs:817-818`、`DepictionFx.cs:214`（`rise = 96`） |
 | 原本の大きさ | **800 × 1536** です。決まりの 640 × 1536 より 160 広く、書き出しも 800 × 1536 のままです。800 は 4 の倍数なので BC7 が効きます | `style-guide.md` §2、`asset-intake.md` §1.2・§3 |
 
 幅の例外（晶槍の竜兵の 800 と不退の槍竜の 900）は、`style-guide.md` §2 と `asset-intake.md` §1.2 に書きました（2026-10-10、#287）。
@@ -37,7 +39,7 @@
 
 影絵を高さ 450 px に縮めて確かめた値は次のとおりです。穂先は上端から 8 px（原本で 27 px）、下の刃は左端から 12 px（原本で 41 px）の内側にあります。尾の棘は原本で x = 797 まで届きます。右端との空きは原本で 2 px、450 px では 1 px 未満で、ほぼ接します。同じ縮尺（450 / 1536）で影絵の高さは 442 px で、錆槍の竜兵は 446 px です。
 
-**接地**: 絵を 13 px 下、18 px 右へ動かしました。下の穂先と、その下に描かれた地面の線が最下行（y = 1535）に乗っています。爪の裏は最下行の約 12 px 上で終わり、足の下の影は下 8 行が切れています。爪を最下行に置かなかったのは、置くと穂先が約 9 px 欠けるためです。足の中心は x = 378 前後で、キャンバスの中央（400）から 22 px 左にあります。`asset-intake.md` §1.2 は足の裏を最下行に接地させ、足の中心をキャンバスの中央に置くと決めていますが、この絵はどちらも満たしません。尾の棘が右端に届いているので、これ以上右へは寄せられません。#302 は枠の幅を広げただけで、足の左右のずれは扱っていません。ずれは高さ 450 で約 6.4 単位（22 × 450 / 1536）で、マスの中で足が少し左へ寄って見えます。直すかは画面で見てから決めます。
+**接地**: 絵を 13 px 下、18 px 右へ動かしました。下の穂先と、その下に描かれた地面の線が最下行（y = 1535）に乗っています。爪の裏は最下行の約 12 px 上で終わり、足の下の影は下 8 行が切れています。爪を最下行に置かなかったのは、置くと穂先が約 9 px 欠けるためです。足の中心は x = 378 前後で、キャンバスの中央（400）から 22 px 左にあります。`asset-intake.md` §1.2 は足の裏を最下行に接地させ、足の中心をキャンバスの中央に置くと決めていますが、この絵はどちらも満たしません。尾の棘が右端に届いているので、これ以上右へは寄せられません。#302 は枠の幅を広げただけで、足の左右のずれは扱っていません。ずれは画面の高さ 226 で約 3.2 単位（22 × 226 / 1536）で、マスの中で足が少し左へ寄って見えます。直すかは画面で見てから決めます。
 
 ## 3. 行動と、絵が要る場面
 
@@ -53,9 +55,9 @@
 
 前へ 2 と後ろへ 2 は、画面の側で人型をマスごと動かして見せます（`battle_ui_ux_v2.md` §5.7）。移動だけの絵は作りません。
 
-2026-10-12 に、攻撃 4 つの威力を 13・5・5・4 から 15・6・6・5 に直しました。ロースター v4.19（#353）が、通常敵 7 体の攻撃を約 7 割へ上げたためです（`enemy_roster_v4.md:889`）。BattleCore の `Enemies.cs:282`、`:286`、`:291`、`:296` はまだ 13・5・5・4 で、追従は #498 です。威力が上がっても構えと動きは変わらないので、下の差分の案はそのまま使えます。
+2026-10-12 に、攻撃 4 つの威力を 13・5・5・4 から 15・6・6・5 に直しました。ロースター v4.19（#353）が、通常敵 7 体の攻撃を約 7 割へ上げたためです（`enemy_roster_v4.md:1044`）。BattleCore も #498（2026-10-17 に閉じた）で追従し、`Enemies.cs:282`、`:286`、`:291`、`:296` は 15・6・6・5 です。威力が上がっても構えと動きは変わらないので、下の差分の案はそのまま使えます。
 
-待機は `chr.polearm_crystal.idle.stand`、被弾・倒れは `chr.polearm_crystal.react.*` です。ファイル名は `Assets/Art/Characters/polearm_crystal/chr_polearm_crystal_<category>_<label>.png` です（`asset-intake.md` §4、`FigureMotion.cs:38-42`）。View の口は待機 / 行動 / 被弾 / 倒れの 4 つで、崩れの口はありません（`FigureMotion.cs:15-21` の `FigurePose`、`battle_ui_ux_v2.md` §6.4）。保留の崩れの名前は、口が入るときに決めます。
+待機は `chr.polearm_crystal.idle.stand`、被弾・倒れは `chr.polearm_crystal.react.*` です。ファイル名は `Assets/Art/Characters/polearm_crystal/chr_polearm_crystal_<category>_<label>.png` です（`asset-intake.md` §4、`FigureMotion.cs:40-43`）。View の口は待機 / 行動 / 被弾 / 倒れの 4 つで、崩れの口はありません（`FigureMotion.cs:15-21` の `FigurePose`、`battle_ui_ux_v2.md` §6.4）。保留の崩れの名前は、口が入るときに決めます。
 
 **差分は攻撃 1 枚と倒れ 1 枚から作ります**（`docs/reports/2026-10-03-enemy-motion.html` の 2 段目）。行動の絵は、`act_` で始まるファイルのうち名前順で最初の 1 枚が全ての行動に出ます（`battle_ui_ux_v2.md` §6.4、`FigureArtCollector.cs` の `FirstAct`）。そこで 1 枚で 5 行動を代表させます。`act_crystal_rush` は名前順で `act_great_thrust` より前なので、View が行動（または系統）ごとに絵を引くようになるまで Unity に置きません（§6.4 の「いま Unity に置かない絵」）。
 
@@ -64,7 +66,7 @@
 | 1 | 攻撃 | `chr.polearm_crystal.act.great_thrust` | `chr_polearm_crystal_act_great_thrust.png` | 大穂の突き。前のめりの体から、穂先を画面左へ真っ直ぐ伸ばす |
 | 2 | 倒れ | `chr.polearm_crystal.react.down` | `chr_polearm_crystal_react_down.png` | 膝をつき、上体が前へ倒れ込み、槍が手から離れて床に落ちる |
 
-被弾（`react.hit`）と、残りの行動の差分（`act_crystal_rush` を除く）は、手触りの確認（#79・#60）で 1 枚で足りるかを見てから足します。差分は待機の絵と同じ 800 × 1536 で作り、足の位置も待機の絵にそろえます。絵が切り替わったときに足元が跳ねないようにするためです。突きの穂先が左端からはみ出しそうなら、穂先をやや下へ向けて枠の中に収めます。
+被弾（`react.hit`）と、残りの行動の差分（`act_crystal_rush` を除く）は、手触りの確認（#60）で 1 枚で足りるかを見てから足します。差分は待機の絵と同じ 800 × 1536 で作り、足の位置も待機の絵にそろえます。絵が切り替わったときに足元が跳ねないようにするためです。突きの穂先が左端からはみ出しそうなら、穂先をやや下へ向けて枠の中に収めます。
 
 **絵柄**: 線・塗り・色・光と、瘴気の帯び方（晶）・竜の系譜の段（眷属・竜人）の描き分けは、`art_document/style-guide.md` の第 2 部（§12〜§19）に従います。影絵は同 §17 の関門を通してから差分の生成へ進みます。
 
@@ -126,8 +128,8 @@
 | C5 | 一部 | 背景の灰色と、右下の角の薄い灰色のにじみを抜いた。類似確認（台帳の `similarity_check`）はまだ |
 | C6 | 未着手 | 加筆はせずに待機の絵を先に入れた。結晶を足すかはこうだいさんが決める（§1）。差分（攻撃・倒れ）は待機の絵が画面に入ってから |
 | C7 | 未着手 | — |
-| C8 | 一部 | 待機の絵（800 × 1536、左向き、背景透明）を Unity リポに置いた（RPG-by-card PR #9）。枠の幅は #302 で入った。Preset は RPG-by-card#10 で登録済みで、この PNG にはまだ `.meta` が無いので、Unity が次に取り込むときに Preset が当たる（`asset-intake.md` §5.2）。`.meta` のコミット、Figure の絵の棚への登録（`Tools > Depiction > Upgrade Prefabs`）、Unity Editor での確認はまだ |
+| C8 | 一部 | 待機の絵（800 × 1536、左向き、背景透明）を Unity リポに置いた（RPG-by-card PR #9）。枠の幅は #302 で入った。Unity が書いた `.meta` は 2026-10-19 に Unity リポへコミットした（RPG-by-card `41ce6ef4`）。中身は `asset-intake.md` §3 の値（Pivot (0.5, 0)、Full Rect、ミップマップ on、Trilinear、Windows の BC7 の上書き on）と一致する（2026-10-21 に確かめた）。Figure の絵の棚への登録（`Tools > Depiction > Upgrade Prefabs`）と、Unity Editor での確認はまだ。いまの `Figure.prefab` の棚は `polearm_warped` だけ |
 
-**人に渡したもの**: Unity リポの PR #9（https://github.com/sunbreak-pro/RPG-by-card/pull/9。待機の絵・台帳・生成条件の写し）。**次に人がすること**: こうだいさんがメインの作業場所で Unity を開き、Unity が書いた `chr_polearm_crystal_idle_stand.png.meta` に `asset-intake.md` §3 の値が入っているかを Inspector で見ます。続けて `Tools > Depiction > Upgrade Prefabs` で Figure の絵の棚に `polearm_crystal` を載せ、`.meta` と `Figure.prefab` を Unity リポにコミットします。敵は BattleCore に入ったので（`unity-port/BattleCore/Enemies.cs:272`）、`Battle.unity` の `BattleBootstrap` の敵 id を `polearm_crystal` にすれば、晶槍の竜兵と戦って見え方を確かめられます。映ったら、差分（攻撃・倒れ）を §3 の順で Krita で作ります。
+**人に渡したもの**: Unity リポの PR #9（https://github.com/sunbreak-pro/RPG-by-card/pull/9。待機の絵・台帳・生成条件の写し）。**次に人がすること**: こうだいさんがメインの作業場所で Unity を開き、`Tools > Depiction > Upgrade Prefabs` で Figure の絵の棚に `polearm_crystal` を載せ、`Figure.prefab` を Unity リポにコミットします。`.meta` はコミット済みで、`asset-intake.md` §3 の値が入っています。敵は BattleCore に入ったので（`unity-port/BattleCore/Enemies.cs:272`）、`Battle.unity` の `BattleBootstrap` の敵 id を `polearm_crystal` にすれば、晶槍の竜兵と戦って見え方を確かめられます。映ったら、差分（攻撃・倒れ）を §3 の順で Krita で作ります。
 
 **前提**: 絵柄の規約（`style-guide.md`）と取り込み規約（`asset-intake.md`）はあります。#287 の本文にある「右向きに反転する」は、2026-10-03 の決定（#287 のコメント、#85）で外れました。敵は左向きのまま使います。
