@@ -35,10 +35,27 @@ namespace Exploration
         public static RunLoadout TrialLoadout()
         {
             var mask = ItemCatalogue.Tool("bosho_no_men");
-            var incense = ItemCatalogue.Consumable("joka_no_ko");
             return new RunLoadout(
                 new[] { ReliefItem.Density(mask.Id, mask.Amount) },
-                new[] { ReliefItem.Gauge(incense.Id, incense.Amount), ReliefItem.Gauge(incense.Id, incense.Amount) });
+                new[] { Consumable("joka_no_ko"), Consumable("joka_no_ko") });
+        }
+
+        /// <summary>
+        /// A catalogue consumable (tools_and_consumables_v4.md §3) as the exploration core carries it:
+        /// the effect and its amount, from the catalogue.
+        /// </summary>
+        public static ReliefItem Consumable(string id)
+        {
+            var item = ItemCatalogue.Consumable(id);
+            return item.Effect switch
+            {
+                ItemEffect.MiasmaGauge => ReliefItem.Gauge(item.Id, item.Amount),
+                ItemEffect.HealHp => ReliefItem.HealHp(item.Id, item.Amount),
+                ItemEffect.MaxStamina => ReliefItem.MaxStamina(item.Id, item.Amount),
+                ItemEffect.RefillStamina => ReliefItem.RefillStamina(item.Id),
+                ItemEffect.Teleport => ReliefItem.Teleport(item.Id),
+                _ => throw new ArgumentOutOfRangeException(nameof(id), id, $"the exploration core has no slot effect for {item.Effect}"),
+            };
         }
     }
 
@@ -116,6 +133,12 @@ namespace Exploration
 
         public bool CanUseConsumables => !State.IsOver && IsIdle;
 
+        /// <summary>
+        /// The item in this slot can be used now. 標の石 never can yet: the screen that picks the node
+        /// to jump to does not exist.
+        /// </summary>
+        public bool CanUseConsumable(int index) => CanUseConsumables && ExplorationReducer.CanUseConsumable(State, index);
+
         /// <summary>This frame of the screen.</summary>
         public ExplorationScreen Screen() => ExplorationScreenBuilder.Build(this);
 
@@ -141,13 +164,25 @@ namespace Exploration
             return true;
         }
 
-        /// <summary>Burns the consumable in this slot. Costs no 刻限.</summary>
+        /// <summary>Burns the consumable in this slot. Costs no 刻限. False for an empty slot and for 標の石.</summary>
         public bool UseConsumable(int index)
         {
-            if (!CanUseConsumables) return false;
-            if (index < 0 || index >= State.Loadout.Consumables.Count) return false;
+            if (!CanUseConsumable(index)) return false;
 
             State = ExplorationReducer.UseConsumable(State, index);
+            return true;
+        }
+
+        /// <summary>
+        /// Puts a consumable found on the way into the slots (ExplorationReducer.TakeConsumable): a free
+        /// slot, or the one named in <paramref name="replaceSlot"/> when every slot is full. A full
+        /// loadout with no slot named throws. False once the life is over.
+        /// </summary>
+        public bool TakeConsumable(ReliefItem item, int replaceSlot = -1)
+        {
+            if (State.IsOver) return false;
+
+            State = ExplorationReducer.TakeConsumable(State, item, replaceSlot);
             return true;
         }
 
