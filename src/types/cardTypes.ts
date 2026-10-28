@@ -15,7 +15,6 @@ import type { ElementType, CardCharacterClass } from './characterTypes';
 // ============================================================
 
 export type Depth = 1 | 2 | 3 | 4 | 5;
-export type DepthCurveType = "shallow" | "neutral" | "deep" | "madness" | "adversity";
 
 /**
  * Card Tag System

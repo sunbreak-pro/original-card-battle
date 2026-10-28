@@ -14,23 +14,6 @@ export function isCardForClass(card: Card, characterClass: "swordsman" | "mage")
 }
 
 /**
- * Check if card is class-specific
- */
-export function isClassSpecificCard(card: Card): boolean {
-  return card.characterClass === "swordsman" || card.characterClass === "mage";
-}
-
-/**
- * Get cards filtered by class
- */
-export function filterCardsByClass(
-  cards: Card[],
-  characterClass: "swordsman" | "mage"
-): Card[] {
-  return cards.filter(card => isCardForClass(card, characterClass));
-}
-
-/**
  * Check if card is a base card (not derived from another card)
  */
 export function isBaseCard(card: Card): boolean {
@@ -49,14 +32,4 @@ export function isCardUnlocked(
   if (!card.derivedFrom || card.unlockMasteryLevel === undefined) return true;
   const parentMastery = masteryStore[card.derivedFrom] ?? 0;
   return parentMastery >= card.unlockMasteryLevel;
-}
-
-/**
- * Filter cards to only those that are unlocked
- */
-export function getUnlockedCards(
-  allCards: Card[],
-  masteryStore: Record<string, MasteryLevel>,
-): Card[] {
-  return allCards.filter(card => isCardUnlocked(card, masteryStore));
 }
