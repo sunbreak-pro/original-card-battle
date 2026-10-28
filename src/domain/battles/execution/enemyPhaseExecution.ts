@@ -75,13 +75,6 @@ export interface EnemyAttackResult {
     reflectDamage: number;
 }
 
-export interface EnemyActionResult {
-    attackResult: EnemyAttackResult | null;
-    guardGain: number;
-    debuffsToApply: BuffDebuffState[];
-    bleedDamage: number;
-}
-
 // ============================================================================
 // Functions
 // ============================================================================

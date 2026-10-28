@@ -6,9 +6,5 @@
  */
 
 export {
-  getAllCards,
   getCardsByClass,
-  createCardEncyclopediaEntries,
-  getCardStats,
-  getAllTags,
 } from "../camps/CardEncyclopediaData";

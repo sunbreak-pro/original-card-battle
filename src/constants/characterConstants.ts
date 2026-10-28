@@ -5,21 +5,9 @@
  * class abilities, and elemental system.
  */
 
-import type { Difficulty } from '@/types/characterTypes';
 import type { ResonanceLevel, ElementType } from '@/types/characterTypes';
 import type { ResonanceEffectConfig } from '@/types/characterTypes';
 export type { ResonanceEffectConfig } from '@/types/characterTypes';
-
-// ============================================================
-// Lives System Constants
-// ============================================================
-
-/** Maximum lives by difficulty level */
-export const LIVES_BY_DIFFICULTY: Record<Difficulty, number> = {
-  easy: 3,
-  normal: 3,
-  hard: 2,
-};
 
 // ============================================================
 // Mage / Elemental Constants

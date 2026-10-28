@@ -217,56 +217,6 @@ export const saveManager = {
 };
 
 /**
- * Create default save data structure
- * Used when starting a new game
- */
-export function createDefaultSaveData(): Omit<SaveData, "version" | "timestamp"> {
-  return {
-    player: {
-      name: "Adventurer",
-      playerClass: "swordsman",
-      classGrade: "E",
-      level: 1,
-      hp: 100,
-      maxHp: 100,
-      ap: 20,
-      maxAp: 20,
-      speed: 40,
-      deckCardIds: [],
-    },
-    resources: {
-      baseCampGold: 0,
-      baseCampMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
-      explorationGold: 0,
-      explorationMagicStones: { small: 0, medium: 0, large: 0, huge: 0 },
-      explorationLimit: { current: 0, max: 10 },
-    },
-    inventory: {
-      storageItems: [],
-      equipmentSlots: {
-        weapon: null,
-        armor: null,
-        helmet: null,
-        boots: null,
-        accessory1: null,
-        accessory2: null,
-      },
-      inventoryItems: [],
-      equipmentInventoryItems: [],
-    },
-    progression: {
-      sanctuaryProgress: {
-        currentRunSouls: 0,
-        totalSouls: 0,
-        unlockedNodes: [],
-        explorationLimitBonus: 0,
-      },
-      unlockedDepths: [1],
-    },
-  };
-}
-
-/**
  * Format timestamp for display
  * @param timestamp - Unix timestamp
  * @returns Formatted date string

@@ -31,15 +31,6 @@ export interface EventEntry {
 }
 
 /**
- * Event encyclopedia entry with runtime state
- */
-export interface EventEncyclopediaEntry {
-  event: EventEntry;
-  isDiscovered: boolean;
-  discoveredAt?: string;
-}
-
-/**
  * All predefined events in the game
  */
 export const GAME_EVENTS: EventEntry[] = [
@@ -192,29 +183,6 @@ export function getAllEvents(): EventEntry[] {
 }
 
 /**
- * Get events by category
- */
-export function getEventsByCategory(category: EventCategory | null): EventEntry[] {
-  if (category === null) {
-    return GAME_EVENTS;
-  }
-  return GAME_EVENTS.filter((event) => event.category === category);
-}
-
-/**
- * Create encyclopedia entries with discovery awareness
- */
-export function createEventEncyclopediaEntries(
-  discoveredIds?: Set<string>
-): EventEncyclopediaEntry[] {
-  return GAME_EVENTS.map((event) => ({
-    event,
-    isDiscovered: !discoveredIds || discoveredIds.has(event.id),
-    discoveredAt: undefined,
-  }));
-}
-
-/**
  * Get event statistics
  */
 export function getEventStats(discoveredIds?: Set<string>): {
@@ -244,25 +212,6 @@ export function getEventStats(discoveredIds?: Set<string>): {
     discovered: totalDiscovered,
     byCategory,
   };
-}
-
-/**
- * Search events by title or description
- */
-export function searchEvents(searchText: string): EventEntry[] {
-  const lowerSearch = searchText.toLowerCase();
-
-  if (!searchText) {
-    return GAME_EVENTS;
-  }
-
-  return GAME_EVENTS.filter(
-    (event) =>
-      event.title.toLowerCase().includes(lowerSearch) ||
-      event.titleJa.includes(searchText) ||
-      event.description.toLowerCase().includes(lowerSearch) ||
-      event.descriptionJa.includes(searchText)
-  );
 }
 
 /**

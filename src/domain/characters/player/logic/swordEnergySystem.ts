@@ -235,14 +235,6 @@ export function calculateSwordEnergyBleedChance(swordEnergy: number): number {
 }
 
 /**
- * Sword energy effect summary
- */
-export interface SwordEnergyEffects {
-  bleedChance: number;
-  isMaxEnergy: boolean;
-}
-
-/**
  * Get bleed chance from sword energy state
  */
 export function getSwordEnergyBleedChance(state: SwordEnergyState): number {

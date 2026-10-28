@@ -6,4 +6,3 @@ export type { Card, Depth, CardTag, MasteryLevel, GemLevel } from '@/types/cardT
 export type { CardCharacterClass } from '@/types/characterTypes';
 export type { CardBuffSpec } from '@/types/battleTypes';
 export { MASTERY_THRESHOLDS, MASTERY_BONUSES } from '@/constants/cardConstants';
-export { isCardForClass } from '../logic/cardUtils';

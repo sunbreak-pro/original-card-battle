@@ -9,8 +9,6 @@
 
 import type { Item } from './itemTypes';
 import type { EquipmentSlot, EquipmentQuality } from './itemTypes';
-import type { Card, CardTag } from './cardTypes';
-import type { Depth } from './cardTypes';
 import type { ElementType } from './characterTypes';
 
 // Re-export Depth from cardTypes for convenience
@@ -73,26 +71,6 @@ export interface ResourceTracking {
   magicStones: { small: number; medium: number; large: number; };
   explorationMagicStones: { small: number; medium: number; large: number; };
   baseCampMagicStones: { small: number; medium: number; large: number; };
-}
-
-export interface PlayerStatistics {
-  totalExplorations: number;
-  survivalCount: number;
-  deathCount: number;
-  deepestDepth: Depth;
-  totalSoulsGained: number;
-  avgSoulsPerRun: number;
-  totalGoldEarned: number;
-  totalMonstersDefeated: number;
-}
-
-export interface FacilityUnlockState {
-  guild: boolean;
-  shop: boolean;
-  blacksmith: boolean;
-  sanctuary: boolean;
-  storage: boolean;
-  dungeon: boolean;
 }
 
 // ============================================================
@@ -223,14 +201,6 @@ export interface Quest {
   isActive: boolean;
   isCompleted: boolean;
   expiresAt?: Date;
-}
-
-export interface GuildState {
-  activeRumors: string[];
-  acceptedQuests: string[];
-  completedQuests: string[];
-  availableExam: PromotionExam | null;
-  lastQuestRefresh?: Date;
 }
 
 // ============================================================
@@ -383,12 +353,6 @@ export interface SurvivalMultipliers {
 
 export type GuildTab = "promotion" | "rumors" | "quests" | "storage";
 export type PreparationTab = "deck" | "inventory" | "equipment";
-export interface CardEncyclopediaEntry {
-  card: Card;
-  isUnlocked: boolean;
-  timesUsed: number;
-  firstObtainedDate?: string;
-}
 
 export interface EnemyEncyclopediaEntry {
   enemy: import('./characterTypes').EnemyDefinition;
@@ -405,22 +369,6 @@ export interface GameTip {
   title: string;
   content: string;
   isUnlocked: boolean;
-}
-
-export interface CardFilterOptions {
-  element: ElementType | null;
-  characterClass: string | null;
-  searchText: string;
-  tag: CardTag | null;
-  costMin: number | null;
-  costMax: number | null;
-  showUnknown: boolean;
-}
-
-export interface EnemyFilterOptions {
-  depth: number | null;
-  isBoss: boolean | null;
-  searchText: string;
 }
 
 // ============================================================
@@ -497,4 +445,3 @@ export type ItemSortCriteria =
   | "name"
   | "type"
   | "recent";
-

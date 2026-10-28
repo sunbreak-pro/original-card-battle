@@ -1,3 +1,9 @@
+/**
+ * Enemy Utility Functions
+ *
+ * Helper functions for enemy state management.
+ */
+
 import { generateId } from '@/utils/idGenerator';
 
 /**

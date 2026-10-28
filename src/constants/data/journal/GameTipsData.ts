@@ -8,8 +8,5 @@
 export {
   GAME_TIPS,
   getAllTips,
-  getTipsByCategory,
-  searchTips,
-  getTipStats,
   CATEGORY_NAMES,
 } from "../camps/GameTipsData";
