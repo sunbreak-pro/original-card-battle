@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BattleCore
 {
     /// <summary>
-    /// Moves and hits (#584): a mover's own move (<see cref="MoveSelf"/>), what the one hit does back
-    /// (見切り and the OnHit stances), the order a push takes its foes in, and who fell.
+    /// Moves and hits (#584): a mover's own move (<see cref="MoveSelf"/>), the push or pull of the
+    /// foes a face hit and the order it takes them in, what the one hit does back (見切り and the
+    /// OnHit stances), and who fell.
     /// </summary>
     public static partial class TurnLoop
     {
@@ -59,6 +61,71 @@ namespace BattleCore
                     if (bind.Def.Hook != StanceHook.BreakOnFoeMove || bind.Def.Break <= 0 || bind.StoppedIn(state.Turn)) continue;
                     events.Add(new StanceFired(Actor.Player, bind.Source, StanceHook.BreakOnFoeMove) { Unit = unit });
                     state = Break(state, Actor.Player, Actor.Enemy, unit, bind.Def.Break, unit, events);
+                }
+            }
+            return state;
+        }
+
+        /// <summary>
+        /// §7.3: the push or pull of a face, on each foe it hit, in <see cref="PushOrder"/>. The
+        /// caller has checked the face pushes and hit someone. Over is true when wall damage ended
+        /// the battle; the caller stops resolving.
+        /// </summary>
+        private static BattleState PushFoes(BattleState state, Resolution r, List<BattleEvent> events, out bool over)
+        {
+            over = false;
+            Actor actor = r.Actor;
+            Actor foeSide = r.FoeSide;
+            int push = r.Face.Push;
+
+            // §7.3: push (away) / pull (in) the opponent; Guard does not stop it. A large opponent
+            // refuses it, and so does one standing in 錨の構え. The cells a push could not take
+            // become wall damage; a pull just stops.
+            int cells = Combat.CellsAfterSlow(Math.Abs(push), Get(state, actor, r.Unit).Statuses);
+            bool blockedBySlow = false;
+            foreach (int foe in PushOrder(state, foeSide, r.Hit, push))
+            {
+                if (!r.Stands(state, foe)) continue;
+                var other = Get(state, foeSide, foe);
+                int eventUnit = r.EventUnit(foe);
+                if (other.Size >= 2)
+                {
+                    events.Add(new PushRefused(foeSide, other.Size) { Unit = eventUnit });
+                    continue;
+                }
+                var immune = other.StanceList.FirstOrDefault(entry => entry.Def.Hook == StanceHook.PushImmune && !entry.StoppedIn(state.Turn));
+                if (immune != null)
+                {
+                    events.Add(new StanceFired(foeSide, immune.Source, StanceHook.PushImmune) { Unit = eventUnit });
+                    events.Add(new PushRefused(foeSide, other.Size) { Unit = eventUnit, ByStance = true });
+                    continue;
+                }
+                if (cells == 0)
+                {
+                    if (!blockedBySlow) events.Add(new MoveBlocked(actor, StatusKind.Slow) { Unit = r.Unit });
+                    blockedBySlow = true;
+                    continue;
+                }
+
+                // A positive Push sends the opponent away from us, which is "away" from their foe (−).
+                var shift = Field.Move(state, foeSide, -Math.Sign(push) * cells, foe);
+                if (shift.To != shift.From)
+                {
+                    other = other with { Cell = shift.To };
+                    state = Set(state, foeSide, foe, other);
+                    events.Add(new CellsMoved(foeSide, shift.From, shift.To, Pushed: true) { Unit = foe });
+                }
+                if (push > 0 && shift.Blocked > 0)
+                {
+                    state = RaiseScale(state, foeSide, events);
+                    other = Get(state, foeSide, foe);
+                    int raw = Field.WallDamage(shift.Blocked);
+                    var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw, other.Guard);
+                    other = other with { Guard = guardAfter, Hp = Math.Max(0, other.Hp - damage) };
+                    state = Set(state, foeSide, foe, other);
+                    events.Add(new WallHit(foeSide, shift.Blocked, raw, absorbed, damage, other.Guard, other.Hp) { Unit = foe });
+                    state = OnFall(state, foeSide, foe, events, out over);
+                    if (over) return state;
                 }
             }
             return state;

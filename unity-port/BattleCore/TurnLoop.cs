@@ -168,9 +168,8 @@ namespace BattleCore
 
             // The discount comes off before Resolve pays: the cost it was saving was at least 1
             // after the trait, so Resolve's own floor never swallows it.
-            state = Resolve(
-                state, Actor.Player, read, foes, def.Id, def.Name, def.Attributes, def.Column, def.Face,
-                def.AllTraits, def.Targets, discount >= 0 ? def.Cost - 1 : def.Cost, context, rng, events);
+            var source = CardSource(def, discount >= 0 ? def.Cost - 1 : def.Cost);
+            state = Resolve(state, new Play(Actor.Player, read, foes, source, context), rng, events);
 
             // §2.3 playedAttributes: what this card was, for the cards after it this turn.
             state = RecordPlayed(state, Actor.Player, 0, def.Attribute);
@@ -349,10 +348,8 @@ namespace BattleCore
         {
             events.Add(new ActionExecuted(Actor.Enemy, action, state.GapTo(unit)) { Unit = unit });
             var context = EnemyContext(state, unit, action);
-            state = Resolve(
-                state, Actor.Enemy, unit, Array.Empty<int>(), action.Id, action.Name, action.Attributes,
-                action.Column, EnemyAi.FaceAt(action, state.GapTo(unit)), TraitsOf(action.Trait), action.Targets, action.Cost,
-                context, rng, events);
+            var source = ActionSource(action, EnemyAi.FaceAt(action, state.GapTo(unit)));
+            state = Resolve(state, new Play(Actor.Enemy, unit, Array.Empty<int>(), source, context), rng, events);
             fell = !state.Enemies[unit].Alive;
             var taken = new List<string>(state.Enemies[unit].ExecutedActions) { action.Id };
             state = state.WithUnit(unit, state.Enemies[unit] with { Executed = taken });

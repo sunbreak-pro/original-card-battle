@@ -169,9 +169,7 @@ namespace BattleCore
             copy = copy with { Hand = hand };
 
             var events = new List<BattleEvent>();
-            Resolve(
-                copy, Actor.Player, read, foes, def.Id, def.Name, def.Attributes, def.Column, def.Face,
-                def.AllTraits, def.Targets, def.Cost, context, new SeededRng(0), events);
+            Resolve(copy, new Play(Actor.Player, read, foes, CardSource(def, def.Cost), context), new SeededRng(0), events);
             return Landed(events, Actor.Player, Actor.Enemy, read);
         }
 
@@ -255,10 +253,8 @@ namespace BattleCore
             copy = KeepStanding(copy, Actor.Player, 0);
 
             events.Clear();
-            Resolve(
-                copy, Actor.Enemy, unit, Array.Empty<int>(), action.Id, action.Name, action.Attributes,
-                action.Column, EnemyAi.FaceAt(action, copy.GapTo(unit)), TraitsOf(action.Trait), action.Targets, action.Cost,
-                EnemyContext(copy, unit, action), new SeededRng(0), events);
+            var source = ActionSource(action, EnemyAi.FaceAt(action, copy.GapTo(unit)));
+            Resolve(copy, new Play(Actor.Enemy, unit, Array.Empty<int>(), source, EnemyContext(copy, unit, action)), new SeededRng(0), events);
             var (total, damage) = Landed(events, Actor.Enemy, Actor.Player, unit);
             return new OmenPreview(total, damage, lands, Rests: false);
         }
