@@ -14,9 +14,9 @@
 // positive) are written as CSS rotate(−deg) (UiNode.Rotate is the CSS angle).
 //
 // Several enemies (scene addition with the JS writer's extension, docs/port-notes/depiction-multi-enemy.md; Unity draws
-// Enemies[0] only): every enemy of DepictionFrame.Enemies has its own figure, standing on its own Cell. Every method that
-// takes a side takes an optional enemy `unit` last (Cue.Unit / UnitFrame.Unit, −1 = the JS undefined); without one, 'Enemy'
-// is the frame's focus enemy (Frame.Enemy, the first standing in the line), as before.
+// Enemies[0] only): every enemy of DepictionFrame.Enemies (#589's EnemyFrame) has its own figure, standing on its own Cell.
+// Every method that takes a side takes an optional enemy `unit` last (enemy k is DepictionFrame.Enemies[k]; −1 = the JS
+// undefined); without one, 'Enemy' is the frame's focus enemy (Frame.Enemy, the first standing in the line), as before.
 //
 // Parts: BattleBackdrop (layer backdrop), FieldFloor (layer field), FieldFx (layers fx / float), FieldFreeStep (layer marks),
 // FieldArt (silhouettes, tokens). Fills env.Geom.Figure / Receiver / Receivers / FreeStepBoxes / CellBox.
@@ -221,7 +221,7 @@ namespace Trial.Battle
         /// <summary>unit → the enemy's figure (scene addition: one per DepictionFrame.Enemies entry), and their creation order (the JS Map's).</summary>
         private readonly Dictionary<int, Fig> _foes = new Dictionary<int, Fig>();
         private readonly List<Fig> _foeList = new List<Fig>();
-        /// <summary>The frame's focus enemy (Frame.Enemy.Unit): the one 'Enemy' means when no unit is named.</summary>
+        /// <summary>The frame's focus enemy (the k whose share holds Frame.Enemy): the one 'Enemy' means when no unit is named.</summary>
         private int _focus;
 
         /// <summary>§5.18 順 7 (review 21): the next enemy of a chain comes out of the haze — every enemy figure's opacity (1 at rest).</summary>
@@ -765,15 +765,14 @@ namespace Trial.Battle
         private static Func<int, bool> UnreadOf(DepictionFrame frame)
         {
             var omens = new List<OmenFrame>();
-            if (frame != null && frame.Omens != null && frame.Omens.Count > 0) omens.AddRange(frame.Omens);
+            bool listed = frame != null && frame.Enemies != null && frame.Enemies.Count > 0;
+            if (listed) foreach (EnemyFrame e in frame.Enemies) omens.Add(e?.Omen);
             else if (frame != null && frame.Omen != null) omens.Add(frame.Omen);
             bool Low(OmenFrame o) => o != null && o.Disclosure < 1;
             return unit =>
             {
                 if (unit < 0) return Low(frame?.Omen);
-                OmenFrame found = null;
-                foreach (OmenFrame x in omens)
-                    if (x != null && x.Unit == unit) { found = x; break; }
+                OmenFrame found = listed && unit < omens.Count ? omens[unit] : null;
                 return Low(found ?? (omens.Count == 1 ? omens[0] : null));
             };
         }
@@ -799,32 +798,44 @@ namespace Trial.Battle
         // js: scenes/battle/field.js:474
         private static List<FrameEnemy> EnemiesOf(DepictionFrame frame, FloorFrame fl)
         {
-            var list = new List<UnitFrame>();
-            if (frame.Enemies != null && frame.Enemies.Count > 0) list.AddRange(frame.Enemies);
-            else list.Add(frame.Enemy);
-            var o = new List<FrameEnemy>(list.Count);
-            for (int k = 0; k < list.Count; k++)
+            var o = new List<FrameEnemy>();
+            if (frame.Enemies != null && frame.Enemies.Count > 0)
             {
-                UnitFrame u = list[k];
-                int unit = u != null && u.Unit >= 0 ? u.Unit : k;
-                bool isFocus = u == frame.Enemy || list.Count == 1;
-                int focusSize = isFocus && fl != null ? fl.EnemySize : 1;
-                int size = Math.Max(1, u != null && u.Size != 0 ? u.Size : focusSize != 0 ? focusSize : 1);
-                int cell = u != null && u.Cell > 0 ? u.Cell : isFocus && fl != null ? fl.EnemyCell : 0;
-                o.Add(new FrameEnemy(unit, u ?? new UnitFrame(), size, cell));
+                for (int k = 0; k < frame.Enemies.Count; k++)
+                {
+                    EnemyFrame e = frame.Enemies[k];
+                    UnitFrame u = e?.Unit;
+                    bool isFocus = u == frame.Enemy || frame.Enemies.Count == 1;
+                    int focusSize = isFocus && fl != null ? fl.EnemySize : 1;
+                    int size = Math.Max(1, e != null && e.Size != 0 ? e.Size : focusSize != 0 ? focusSize : 1);
+                    int cell = e != null && e.Cell > 0 ? e.Cell : isFocus && fl != null ? fl.EnemyCell : 0;
+                    o.Add(new FrameEnemy(k, u ?? new UnitFrame(), size, cell));
+                }
+                return o;
             }
+            // A source that keeps one enemy (the filming script): the frame's enemy on the floor's enemy cells.
+            int oneSize = Math.Max(1, fl != null && fl.EnemySize != 0 ? fl.EnemySize : 1);
+            int oneCell = fl != null ? fl.EnemyCell : 0;
+            o.Add(new FrameEnemy(0, frame.Enemy ?? new UnitFrame(), oneSize, oneCell));
             return o;
+        }
+
+        /// <summary>The k whose share in `frame` holds Frame.Enemy (the focus enemy), or −1.</summary>
+        private static int FocusOf(DepictionFrame frame)
+        {
+            if (frame == null || frame.Enemies == null || frame.Enemy == null) return -1;
+            return frame.Enemies.FindIndex(e => e != null && e.Unit == frame.Enemy);
         }
 
         /// <summary>
         /// The enemy a RangeSwitch cue moves, and its cell after (MoveOnFloor / SnapOnFloor). Several enemies (review fix: a card
         /// that killed the front enemy and then moved slid the dead enemy onto the next one): only Cue.Unit with its
-        /// UnitCellAfter moves an enemy (−1 when the player moved). One enemy: the frame's enemy and EnemyCellAfter, as Unity.
+        /// UnitCellAfter moves an enemy (0 when the player moved). One enemy: the frame's enemy and EnemyCellAfter, as Unity.
         /// </summary>
         // js: scenes/battle/field.js:492
         private (Fig E, int ECell) MovedEnemyOf(Cue cue)
         {
-            bool named = cue.Unit >= 0 && _foes.ContainsKey(cue.Unit);
+            bool named = cue.UnitCellAfter > 0 && _foes.ContainsKey(cue.Unit);
             if (named)
             {
                 int cell = cue.UnitCellAfter > 0 ? cue.UnitCellAfter : _multi ? 0 : cue.EnemyCellAfter;
@@ -856,7 +867,7 @@ namespace Trial.Battle
             if (frame == null) return;
             FloorFrame fl = frame.Floor;
             _lastFrame = frame;
-            _floor.Bind(fl, new FloorBindOpts { Unread = UnreadOf(frame) });
+            _floor.Bind(fl, new FloorBindOpts { Enemies = frame.Enemies, Unread = UnreadOf(frame) });
             if (_gapUnit != null) ShowGapTo(_gapUnit.Value);
             _sizePlayer = fl != null ? Math.Max(1, fl.PlayerSize != 0 ? fl.PlayerSize : 1) : 1;
             _sizeEnemy = fl != null ? Math.Max(1, fl.EnemySize != 0 ? fl.EnemySize : 1) : 1;
@@ -870,7 +881,8 @@ namespace Trial.Battle
             p.X = p.HomeX;
             List<FrameEnemy> list = EnemiesOf(frame, fl);
             _multi = list.Count > 1;
-            _focus = frame.Enemy != null && frame.Enemy.Unit >= 0 ? frame.Enemy.Unit : list[0].Unit;
+            int focus = FocusOf(frame);
+            _focus = focus >= 0 ? focus : list[0].Unit;
             foreach (FrameEnemy e in list)
             {
                 Fig f = FoeFig(e.Unit);
@@ -895,7 +907,7 @@ namespace Trial.Battle
 
         /// <summary>
         /// battle-visual-v1 §4.2 間合いの数字 with several enemies (port notes, "The one N"): while a held card frames enemy
-        /// `unit`, the floor's one number is that enemy's N (UnitFrame.Gap) over the empty cells up to its Cell; −1 puts the
+        /// `unit`, the floor's one number is that enemy's N (EnemyFrame.Gap) over the empty cells up to its Cell; −1 puts the
         /// frame's own back (Floor.Gap, the nearest standing enemy). With one enemy nothing changes.
         /// </summary>
         // js: scenes/battle/field.js:552
@@ -905,12 +917,10 @@ namespace Trial.Battle
             DepictionFrame fr = _lastFrame;
             if (fr == null || fr.Floor == null || !_floor.Shown || !_multi) return;
             FloorFrame fl = fr.Floor;
-            UnitFrame u = null;
-            if (_gapUnit != null && fr.Enemies != null)
-                foreach (UnitFrame e in fr.Enemies)
-                    if (e != null && e.Unit == _gapUnit.Value) { u = e; break; }
+            EnemyFrame u = null;
+            if (_gapUnit != null && fr.Enemies != null && _gapUnit.Value < fr.Enemies.Count) u = fr.Enemies[_gapUnit.Value];
             int playerSize = Math.Max(1, fl.PlayerSize != 0 ? fl.PlayerSize : 1);
-            if (u != null && !u.Down && u.Gap >= 0) _floor.SetGap(u.Gap, fl.PlayerCell, playerSize, u.Cell);
+            if (u != null && !u.Unit.Down && u.Gap >= 0) _floor.SetGap(u.Gap, fl.PlayerCell, playerSize, u.Cell);
             else _floor.SetGap(fl.Gap, fl.PlayerCell, playerSize, fl.EnemyCell);
         }
 
@@ -942,6 +952,7 @@ namespace Trial.Battle
             if (frame == null || frame.Floor == null) return Promise.Resolved();
             _floor.Bind(frame.Floor, new FloorBindOpts
             {
+                Enemies = frame.Enemies,
                 Reveal = new FloorReveal { Unit = unit, Ms = now ? 0f : (float?)null },
                 Unread = UnreadOf(frame),
             });
@@ -1526,10 +1537,8 @@ namespace Trial.Battle
             if (side == UnitSide.Player) cell = fl != null ? fl.PlayerCell : 0;
             else
             {
-                UnitFrame mine = null;
-                if (_lastFrame != null && _lastFrame.Enemies != null)
-                    foreach (UnitFrame e in _lastFrame.Enemies)
-                        if (e != null && e.Unit == f.Unit) { mine = e; break; }
+                EnemyFrame mine = _lastFrame != null && _lastFrame.Enemies != null && f.Unit >= 0 && f.Unit < _lastFrame.Enemies.Count
+                    ? _lastFrame.Enemies[f.Unit] : null;
                 cell = mine != null && mine.Cell != 0 ? mine.Cell : fl != null ? fl.EnemyCell : 0;
             }
             int size = Math.Max(1, f.Size != 0 ? f.Size : 1);

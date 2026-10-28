@@ -8,8 +8,8 @@
 //   the nominal ms it is handed, and `ms = 0` (an effect switched off) puts the end state at once and resolves.
 // - After the scene is destroyed, pending promises never resolve (the clock is stopped without resolving them).
 // - A unit argument of −1 stands for the JS `undefined` (or null): the player, or the frame's focus / leading enemy, or
-//   "none". It never names an enemy: the modules key their enemies by unit ≥ 0 (UnitFrame.Unit, else the frame's index,
-//   hud.js / field.js enemiesOf), so a lookup of −1 falls back exactly where the JS lookup of undefined does.
+//   "none". It never names an enemy: the modules key their enemies by unit ≥ 0 (the index k of DepictionFrame.Enemies[k],
+//   #589; hud.js / field.js enemiesOf), so a lookup of −1 falls back exactly where the JS lookup of undefined does.
 // - Stage px, y down (StagePoint / StageBox, BattleEnv.cs). Missing data never throws: a null frame field draws nothing.
 // - The modules never read ctx.source and never call each other: geometry goes through env.Geom, input up through the
 //   callbacks in their options.
@@ -979,9 +979,12 @@ namespace Trial.Battle
         // js: scenes/battle/hud/omen.js:154
         void Bind(OmenFrame o);
 
-        /// <summary>setSwatchShown(on, aimed) (several enemies): the hatch swatch stands on the badge while `aimed`.</summary>
+        /// <summary>
+        /// setSwatchShown(on, aimed) (several enemies): the hatch swatch stands on the badge while `aimed`, turned the way of
+        /// `stripe` (its enemy's EnemyFrame.StripeDirection, #589; the JS read it off the omen as OmenFrame.Hatch).
+        /// </summary>
         // js: scenes/battle/hud/omen.js:169
-        void SetSwatchShown(bool on, bool aimed);
+        void SetSwatchShown(bool on, bool aimed, int stripe = 0);
 
         /// <summary>setTail(dx): the ▼ under the badge at dx px from its left edge (its enemy's head), or null for none.</summary>
         // js: scenes/battle/hud/omen.js:181

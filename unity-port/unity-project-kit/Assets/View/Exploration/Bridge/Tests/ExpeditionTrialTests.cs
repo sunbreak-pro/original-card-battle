@@ -386,7 +386,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(run.Tools.Select(t => (t.Id, t.Kind, t.Amount)),
                 Is.EqualTo(new[] { (Mask, ReliefKind.Density, 1), (Sand, ReliefKind.Time, 1), (Book, ReliefKind.Survey, 1), (Wick, ReliefKind.Interlude, 15) }));
             Assert.That(run.Consumables.Select(t => (t.Id, t.Kind, t.Amount)),
-                Is.EqualTo(new[] { ("joka_no_ko", ReliefKind.Gauge, 10), ("yakuso", ReliefKind.Heal, 20), ("shirube_no_ishi", ReliefKind.Teleport, 1) }));
+                Is.EqualTo(new[] { ("joka_no_ko", ReliefKind.Gauge, 10), ("yakuso", ReliefKind.HealHp, 20), ("shirube_no_ishi", ReliefKind.Teleport, 1) }));
             Assert.That(run.ToolSlotCount, Is.EqualTo(4));
             Assert.That(run.Trial, Is.True);
             RunLoadout battle = Loadouts.ToRunLoadout(Loadout.Of(new[] { "maai_no_kutsu", Flute, "ryurin_no_kakera", "ryugo_no_fu" }, null, 4), 4);

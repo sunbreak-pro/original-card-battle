@@ -9,31 +9,6 @@ namespace DungeonCore
     public static partial class ExplorationReducer
     {
         /// <summary>
-        /// Trial extension (tools_and_consumables_v4.md §3): every consumable acts — 薬草 gives back Amount% of the HP
-        /// maximum, 濃い干し肉 raises max stamina by Amount inside the ±4 of the temporary changes, 忘れ水 fills
-        /// current stamina, 浄化の香 pulls the gauge back as in the C#. 標の石 is spent by Teleport, which needs the
-        /// node it jumps to.
-        /// </summary>
-        // js: core/dungeon/ExplorationReducer.js:112
-        private static ExplorationState UseTrialConsumable(ExplorationState state, RunLoadout loadout, int relief, ReliefItem item)
-        {
-            switch (item.Kind)
-            {
-                case ReliefKind.Heal:
-                    return state.With(loadout: loadout, hp: Math.Min(state.MaxHp, state.Hp + Share(state.MaxHp, item.Amount)));
-                case ReliefKind.MaxStamina:
-                    // 「最大スタミナ +1（±4 の枠内）」: the same temporary change a rest makes (miasma_and_battle_v4.md §5).
-                    return state.With(loadout: loadout, tempMaxStaminaMod: Clamp(state.TempMaxStaminaMod + item.Amount));
-                case ReliefKind.Refill:
-                    return state.With(loadout: loadout, stamina: state.MaxStamina);
-                case ReliefKind.Teleport:
-                    throw new ExplorationRuleException("標の石 jumps to a node: use Teleport");
-                default:
-                    return state.With(loadout: loadout, miasmaPercent: Miasma.Relieve(state.MiasmaPercent, relief));
-            }
-        }
-
-        /// <summary>
         /// Trial extension: 標の石 — 「同じ層の未踏ノードへ 1 度だけ跳ぶ」, and 「跳んだ先のノードは新しいノードなので、
         /// 普通に刻限 1 と瘴気がかかります」 (tools_and_consumables_v4.md §3). The item in <paramref name="index"/> is spent
         /// and <paramref name="nodeId"/> is resolved exactly as a step into it would be (a rest takes <paramref name="choice"/>).
@@ -126,18 +101,6 @@ namespace DungeonCore
         /// <summary>Trial extension: HP a 特殊な食事 takes, before the floor of 1.</summary>
         // js: core/dungeon/ExplorationReducer.js:205
         public static int MealCost(ExplorationState state) => Share(state.MaxHp, LayerEvents.MealHpPercent);
-
-        /// <summary>
-        /// Trial extension: a consumable found on the way goes into the slots — after the others, or in place of
-        /// <paramref name="replaceSlot"/> when the three are full (tools_and_consumables_v4.md §3). Costs no 刻限.
-        /// </summary>
-        // js: core/dungeon/ExplorationReducer.js:211
-        public static ExplorationState TakeConsumable(ExplorationState state, ReliefItem item, int replaceSlot = -1)
-        {
-            if (state == null) throw new ArgumentNullException(nameof(state));
-            if (state.IsOver) throw new ExplorationRuleException("the run is over");
-            return state.With(loadout: state.Loadout.Take(item, replaceSlot));
-        }
 
         /// <summary>
         /// Trial extension: the share of the HP maximum 階層間の休憩 gives back on this state — 30%, and 45% with

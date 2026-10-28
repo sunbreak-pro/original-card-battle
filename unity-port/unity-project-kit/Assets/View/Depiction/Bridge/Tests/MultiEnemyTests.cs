@@ -29,16 +29,16 @@ namespace Depiction.Bridge.Tests
 {
     public class MultiEnemyTests
     {
-        /// <summary>Every member the extension adds (depiction-multi-enemy.md), as Type.Member.</summary>
+        /// <summary>
+        /// Every member added since the one-enemy snapshot, as Type.Member: #589's DepictionFrame.Enemies
+        /// (EnemyFrame, the per-enemy share) and Cue.Unit, and the extension's (depiction-multi-enemy.md).
+        /// </summary>
         private static readonly string[] NewMembers =
         {
             "CardFace.CostOn", "CardFace.ReachOn", "CardFace.StanceHintAfterPayOn", "CardFace.TargetUnit",
             "Cue.Unit", "Cue.UnitCellAfter", "Cue.UnitGapAfter",
             "DepictionEvent.Unit",
-            "DepictionFrame.Enemies", "DepictionFrame.Omens", "DepictionFrame.SwatchesShown",
-            "FloorFrame.Enemies",
-            "OmenFrame.Hatch", "OmenFrame.Unit",
-            "UnitFrame.Cell", "UnitFrame.Gap", "UnitFrame.GapGlyph", "UnitFrame.Hatch", "UnitFrame.Size", "UnitFrame.Unit",
+            "DepictionFrame.Enemies",
         };
 
         // ======================================================================= 1. one enemy, as before
@@ -104,11 +104,11 @@ namespace Depiction.Bridge.Tests
             Fight ctx = FightToTheEnd(source, "slice|3");
             Assert.That(ctx.N, Is.EqualTo(1));
             DepictionFrame frame = source.Frame;
-            Assert.That(frame.SwatchesShown, Is.False);
             Assert.That(frame.Enemies.Count, Is.EqualTo(1));
-            Assert.That(frame.Enemy, Is.SameAs(frame.Enemies[0]), "Frame.Enemy is the one enemy");
-            Assert.That(frame.Omen, Is.SameAs(frame.Omens[0]));
-            Assert.That(frame.Enemy.Unit, Is.EqualTo(0));
+            Assert.That(frame.Enemies[0].Swatch, Is.False);
+            Assert.That(frame.Enemies[0].StripeDirection, Is.EqualTo(0));
+            Assert.That(frame.Enemy, Is.SameAs(frame.Enemies[0].Unit), "Frame.Enemy is the one enemy");
+            Assert.That(frame.Omen, Is.SameAs(frame.Enemies[0].Omen));
         }
 
         // ======================================================================= 2. two and three enemies
@@ -158,18 +158,16 @@ namespace Depiction.Bridge.Tests
             CoreBattleSource source = Launch(Pair, 1, PairCells);
             DepictionFrame opening = source.Frame;
             Assert.That(opening.Enemies.Count, Is.EqualTo(2));
-            Assert.That(opening.SwatchesShown, Is.True);
-            Assert.That(opening.Enemies.Select(u => u.Unit + "," + u.ArtId + "," + u.Cell + "," + u.Gap + "," + u.Hatch).ToList(),
-                Is.EqualTo(new[] { "0,polearm_warped,6,3,0", "1,crossbow_hunter,7,4,1" }), "battle_core_v4 §7.4: 開始の間合いは 3 と 4");
-            Assert.That(opening.Enemy, Is.SameAs(opening.Enemies[0]), "the one in front is the frame's enemy");
-            Assert.That(opening.Floor.Enemies.Select(f => f.Unit + "," + f.Cell + "," + f.Hatch + "," + f.Down).ToList(),
-                Is.EqualTo(new[] { "0,6,0,False", "1,7,1,False" }));
-            Assert.That(opening.Omens.All(o => !o.Visible), Is.True, "the first omens wait for turn 1");
+            Assert.That(opening.Enemies.All(e => e.Swatch), Is.True);
+            Assert.That(opening.Enemies.Select((e, k) => k + "," + e.Unit.ArtId + "," + e.Cell + "," + e.Gap + "," + e.StripeDirection + "," + e.Unit.Down).ToList(),
+                Is.EqualTo(new[] { "0,polearm_warped,6,3,0,False", "1,crossbow_hunter,7,4,1,False" }), "battle_core_v4 §7.4: 開始の間合いは 3 と 4");
+            Assert.That(opening.Enemy, Is.SameAs(opening.Enemies[0].Unit), "the one in front is the frame's enemy");
+            Assert.That(opening.Enemies.All(e => !e.Omen.Visible), Is.True, "the first omens wait for turn 1");
             DepictionEvent turn = source.AdvanceAuto();
             Assert.That(turn.Kind, Is.EqualTo(DepictionEventKind.TurnStart));
             Assert.That(turn.Cues.Where(c => c.Kind == CueKind.OmenShow).Select(c => c.Unit).ToList(), Is.EqualTo(new[] { 0, 1 }),
                 "step 5 shows both omens");
-            List<OmenFrame> omens = turn.After.Omens;
+            List<OmenFrame> omens = turn.After.Enemies.Select(e => e.Omen).ToList();
             Assert.That(omens[0].Visible && omens[1].Visible, Is.True);
             // The bug the one-enemy writer had: the crossbow's omen read against the polearm's actions. Here each is its own.
             BattleState state = source.State;
@@ -179,7 +177,7 @@ namespace Depiction.Bridge.Tests
                 Assert.That(omens[k].KindLabel, Is.EqualTo(own.KindLabel));
                 Assert.That(omens[k].Icon, Is.EqualTo(own.Icon));
             }
-            Assert.That(turn.After.Floor.Enemies[1].AimCells.Count > 0 || omens[1].SideGlyph == "", Is.True, "the crossbow aims at its own cells");
+            Assert.That(turn.After.Enemies[1].AimCells.Count > 0 || omens[1].SideGlyph == "", Is.True, "the crossbow aims at its own cells");
         }
 
         // js: test/depiction/MultiEnemy.test.mjs:148
@@ -469,37 +467,30 @@ namespace Depiction.Bridge.Tests
 
         // js: test/depiction/MultiEnemy.test.mjs:366
         [Test]
-        public void EnemyHatch_TurnsEachEnemysStripesItsOwnWay()
+        public void EachEnemysStripes_TurnTheirOwnWay()
         {
-            Assert.That(new[] { 0, 1, 2 }.Select(EnemyHatch.AngleOf).ToList(), Is.EqualTo(new[] { 45, -45, 90 }));
-            Assert.That(EnemyHatch.Count, Is.EqualTo(Constants.EnemiesMax));
-            var floor = new FloorEnemy();
-            Assert.That(new object[] { floor.Unit, floor.Hatch, floor.Cell, floor.Size, floor.Gap, floor.Down },
-                Is.EqualTo(new object[] { 0, 0, 0, 1, -1, false }));
-            Assert.That(floor.AimCells, Is.Empty);
-            Assert.That(floor.DenseCells, Is.Empty);
-            Assert.That(floor.MoveCells, Is.Empty);
+            Assert.That(Enumerable.Range(0, Constants.EnemiesMax).Select(EnemyFrame.DirectionOf).ToList(), Is.EqualTo(new[] { 0, 1, 2 }));
+            Assert.That(new[] { 0, 1, 2 }.Select(EnemyFrame.AngleOf).ToList(), Is.EqualTo(new[] { 45, -45, 90 }));
+            var enemy = new EnemyFrame();
+            Assert.That(new object[] { enemy.Cell, enemy.Size, enemy.Gap, enemy.StripeDirection, enemy.Swatch, enemy.Unit.Down },
+                Is.EqualTo(new object[] { 0, 1, -1, 0, false, false }));
+            Assert.That(enemy.AimCells, Is.Empty);
+            Assert.That(enemy.DenseCells, Is.Empty);
+            Assert.That(enemy.MoveCells, Is.Empty);
         }
 
         /// <summary>
-        /// The defaults of the members the extension adds, which a source that writes none (the fixed script)
-        /// leaves: unit −1 on events, cues and the player's frame, the player's own N −1.
+        /// The defaults of the members added, which a source that writes none (the fixed script) leaves: no
+        /// enemy on an event (−1), #589's 0 on a cue, no enemy moved, and no per-enemy share.
         /// </summary>
         [Test]
         public void TheAddedMembers_DefaultToNoEnemy()
         {
             Assert.That(new DepictionEvent().Unit, Is.EqualTo(-1));
             var cue = new Cue();
-            Assert.That(new[] { cue.Unit, cue.UnitCellAfter, cue.UnitGapAfter }, Is.EqualTo(new[] { -1, 0, 0 }));
-            var unit = new UnitFrame();
-            Assert.That(new object[] { unit.Unit, unit.Cell, unit.Size, unit.Gap, unit.GapGlyph, unit.Hatch }, Is.EqualTo(new object[] { -1, 0, 0, -1, "", -1 }));
-            var omen = new OmenFrame();
-            Assert.That(new[] { omen.Unit, omen.Hatch }, Is.EqualTo(new[] { 0, 0 }));
+            Assert.That(new[] { cue.Unit, cue.UnitCellAfter, cue.UnitGapAfter }, Is.EqualTo(new[] { 0, 0, 0 }));
             var frame = new DepictionFrame();
             Assert.That(frame.Enemies, Is.Empty);
-            Assert.That(frame.Omens, Is.Empty);
-            Assert.That(frame.SwatchesShown, Is.False);
-            Assert.That(frame.Floor.Enemies, Is.Empty);
         }
 
         // ======================================================================= the source's own extension tests
@@ -522,13 +513,12 @@ namespace Depiction.Bridge.Tests
             }
             DepictionFrame frame = source.Frame;
             Assert.That(frame.Enemies.Count, Is.EqualTo(2));
-            Assert.That(frame.Omens.Select(o => o.Unit).ToList(), Is.EqualTo(new[] { 0, 1 }));
             BattleState state = source.State;
             int read = 0;
             foreach (int k in new[] { 0, 1 })
             {
-                if (!state.Enemies[k].Alive || !frame.Omens[k].Visible) continue;
-                Assert.That(frame.Omens[k].KindLabel, Is.EqualTo(CoreText.OmenOf(state.Enemies[k].Omen, state.Enemies[k].Def).KindLabel), "unit " + k + "'s own omen");
+                if (!state.Enemies[k].Alive || !frame.Enemies[k].Omen.Visible) continue;
+                Assert.That(frame.Enemies[k].Omen.KindLabel, Is.EqualTo(CoreText.OmenOf(state.Enemies[k].Omen, state.Enemies[k].Def).KindLabel), "unit " + k + "'s own omen");
                 read++;
             }
             Assert.That(read, Is.GreaterThan(0), "an omen was on screen to read");
@@ -795,15 +785,11 @@ namespace Depiction.Bridge.Tests
             foreach (Cue cue in ev.Cues)
             {
                 string what = at + " cue " + cue.Kind;
-                Assert.That(cue.Unit >= -1 && cue.Unit < ctx.N, Is.True, what + ": Unit " + cue.Unit);
-                bool enemyCue = cue.Kind == CueKind.Defeat || cue.Kind == CueKind.OmenShow || cue.Kind == CueKind.EnemyWindup
-                    || cue.Kind == CueKind.SideBonusMiss || cue.Kind == CueKind.Slash || cue.Kind == CueKind.GuardBlock || cue.Kind == CueKind.Hit
-                    || (cue.Target == UnitSide.Enemy && cue.Kind != CueKind.RangeSwitch);
-                if (enemyCue) Assert.That(cue.Unit, Is.GreaterThanOrEqualTo(0), what + ": names its enemy");
-                else if (cue.Kind != CueKind.RangeSwitch) Assert.That(cue.Unit, Is.EqualTo(-1), what + ": the player's alone");
-                if (cue.Kind == CueKind.RangeSwitch && cue.Unit >= 0)
+                // #589: every cue names the enemy on its enemy end (0 for the player alone in a one-enemy battle).
+                Assert.That(cue.Unit >= 0 && cue.Unit < ctx.N, Is.True, what + ": Unit " + cue.Unit);
+                if (cue.Kind == CueKind.RangeSwitch && cue.UnitCellAfter > 0)
                 {
-                    Assert.That(cue.UnitCellAfter, Is.GreaterThanOrEqualTo(1), what + ": the moved enemy's cell");
+                    // An enemy moved: the one the cue names, where it stands now and its own N.
                     Assert.That(cue.UnitGapAfter, Is.EqualTo(Field.Gap(cue.PlayerCellAfter, ev.After.Floor.PlayerSize, cue.UnitCellAfter)), what + ": its N");
                 }
                 if (cue.Kind == CueKind.Slash && cue.Source == UnitSide.Player) ctx.HitBy.Add(cue.Unit);
@@ -812,7 +798,7 @@ namespace Depiction.Bridge.Tests
             if (ev.Kind == DepictionEventKind.Defeat)
             {
                 Assert.That(ctx.Down[ev.Unit], Is.False, at + ": an enemy falls once");
-                Assert.That(ev.After.Enemies[ev.Unit].Down, Is.True, at + ": and is down from its beat on");
+                Assert.That(ev.After.Enemies[ev.Unit].Unit.Down, Is.True, at + ": and is down from its beat on");
                 ctx.Defeats.Add(ev.Unit);
             }
             CheckFrame(ev.After, ctx, at);
@@ -822,77 +808,73 @@ namespace Depiction.Bridge.Tests
         private static void CheckFrame(DepictionFrame frame, Fight ctx, string at)
         {
             int n = ctx.N;
-            Assert.That(frame.Enemies.Count, Is.EqualTo(n), at + ": one frame per enemy");
-            Assert.That(frame.Omens.Count, Is.EqualTo(n), at + ": one omen per enemy");
-            Assert.That(frame.Floor.Enemies.Count, Is.EqualTo(n), at + ": one floor entry per enemy");
-            Assert.That(frame.SwatchesShown, Is.EqualTo(n >= 2), at);
+            Assert.That(frame.Enemies.Count, Is.EqualTo(n), at + ": one share per enemy");
             int focus = -1;
             var falling = new List<int>();
             for (int k = 0; k < n; k++)
             {
-                UnitFrame unit = frame.Enemies[k];
-                OmenFrame omen = frame.Omens[k];
-                FloorEnemy floor = frame.Floor.Enemies[k];
-                Assert.That(new[] { unit.Unit, unit.Hatch, omen.Unit, omen.Hatch, floor.Unit, floor.Hatch }, Is.EqualTo(new[] { k, k, k, k, k, k }), at);
-                Assert.That(floor.Cell, Is.EqualTo(unit.Cell), at);
-                Assert.That(floor.Size, Is.EqualTo(unit.Size), at);
-                Assert.That(floor.Down, Is.EqualTo(unit.Down), at);
-                Assert.That(floor.Gap, Is.EqualTo(unit.Gap), at);
+                EnemyFrame enemy = frame.Enemies[k];
+                UnitFrame unit = enemy.Unit;
+                OmenFrame omen = enemy.Omen;
+                Assert.That(enemy.StripeDirection, Is.EqualTo(EnemyFrame.DirectionOf(k)), at);
+                Assert.That(enemy.Swatch, Is.EqualTo(n >= 2), at);
                 if (ctx.Down[k]) Assert.That(unit.Down, Is.True, at + ": unit " + k + " stays down");
                 if (unit.Down)
                 {
                     Assert.That(omen.Visible, Is.False, at + ": a fallen enemy shows no omen");
                     Assert.That(omen.PlanVisible, Is.False, at + ": nor a plan");
-                    Assert.That(floor.AimCells, Is.Empty, at + ": nor aims");
-                    Assert.That(unit.Gap, Is.EqualTo(-1), at);
-                    Assert.That(unit.GapGlyph, Is.EqualTo(""), at);
+                    Assert.That(enemy.AimCells, Is.Empty, at + ": nor aims");
+                    Assert.That(enemy.Gap, Is.EqualTo(-1), at);
                 }
-                else if (unit.Gap == -1)
+                else if (enemy.Gap == -1)
                 {
                     // Fallen in the core, its Defeat beat still to play: no N, and not the frame's enemy.
                     Assert.That(unit.Hp, Is.EqualTo(0), at + ": only a fallen enemy has no N");
-                    Assert.That(unit.GapGlyph, Is.EqualTo(""), at);
                     falling.Add(k);
                 }
                 else
                 {
-                    Assert.That(unit.Gap, Is.EqualTo(Field.Gap(frame.Floor.PlayerCell, frame.Floor.PlayerSize, unit.Cell)), at + ": unit " + k + "'s own N");
-                    Assert.That(unit.GapGlyph, Is.EqualTo(unit.Gap.ToString()), at);
-                    if (focus < 0 || unit.Cell < frame.Enemies[focus].Cell) focus = k;
+                    Assert.That(enemy.Gap, Is.EqualTo(Field.Gap(frame.Floor.PlayerCell, frame.Floor.PlayerSize, enemy.Cell)), at + ": unit " + k + "'s own N");
+                    if (focus < 0 || enemy.Cell < frame.Enemies[focus].Cell) focus = k;
                 }
-                if (!omen.Visible) Assert.That(floor.AimCells, Is.Empty, at + ": a hidden omen aims at nothing");
+                if (!omen.Visible) Assert.That(enemy.AimCells, Is.Empty, at + ": a hidden omen aims at nothing");
             }
-            for (int k = 0; k < n; k++) ctx.Down[k] = frame.Enemies[k].Down;
+            for (int k = 0; k < n; k++) ctx.Down[k] = frame.Enemies[k].Unit.Down;
             // Standing enemies never share a cell (battle_core_v4 §7.1).
-            List<UnitFrame> standing = frame.Enemies.Where(u => !u.Down && u.Hp > 0).ToList();
-            foreach (UnitFrame a in standing)
+            List<int> standing = Enumerable.Range(0, n).Where(k => !frame.Enemies[k].Unit.Down && frame.Enemies[k].Unit.Hp > 0).ToList();
+            foreach (int ia in standing)
             {
-                foreach (UnitFrame b in standing)
+                foreach (int ib in standing)
                 {
-                    if (a == b) continue;
-                    Assert.That(a.Cell + a.Size - 1 < b.Cell || b.Cell + b.Size - 1 < a.Cell, Is.True, at + ": units " + a.Unit + " and " + b.Unit + " share a cell");
+                    if (ia == ib) continue;
+                    EnemyFrame a = frame.Enemies[ia];
+                    EnemyFrame b = frame.Enemies[ib];
+                    Assert.That(a.Cell + a.Size - 1 < b.Cell || b.Cell + b.Size - 1 < a.Cell, Is.True, at + ": units " + ia + " and " + ib + " share a cell");
                 }
             }
             if (focus < 0 && falling.Count > 0) focus = falling.Aggregate((a, b) => frame.Enemies[b].Cell < frame.Enemies[a].Cell ? b : a);
             if (focus >= 0)
             {
-                Assert.That(frame.Enemy, Is.SameAs(frame.Enemies[focus]), at + ": Frame.Enemy is the first standing in the line");
-                Assert.That(frame.Omen, Is.SameAs(frame.Omens[focus]), at);
+                Assert.That(frame.Enemy, Is.SameAs(frame.Enemies[focus].Unit), at + ": Frame.Enemy is the first standing in the line");
+                Assert.That(frame.Omen, Is.SameAs(frame.Enemies[focus].Omen), at);
             }
             else
             {
                 Assert.That(frame.Enemy.Down, Is.True, at + ": none stands");
-                Assert.That(frame.Enemies.Contains(frame.Enemy), Is.True, at);
-                Assert.That(frame.Omen, Is.SameAs(frame.Omens[frame.Enemy.Unit]), at);
+                focus = frame.Enemies.FindIndex(e => e.Unit == frame.Enemy);
+                Assert.That(focus, Is.GreaterThanOrEqualTo(0), at);
+                Assert.That(frame.Omen, Is.SameAs(frame.Enemies[focus].Omen), at);
             }
-            // The single-valued members describe Frame.Enemy.
-            UnitFrame shown = frame.Enemy;
+            // The single-valued members describe Frame.Enemy's share, the same lists (#589).
+            EnemyFrame shown = frame.Enemies[focus];
             Assert.That(frame.Floor.EnemyCell, Is.EqualTo(shown.Cell), at + ": Floor.EnemyCell");
             Assert.That(frame.Floor.EnemySize, Is.EqualTo(shown.Size), at);
             Assert.That(frame.Floor.Gap, Is.EqualTo(Field.Gap(frame.Floor.PlayerCell, frame.Floor.PlayerSize, shown.Cell)), at);
             Assert.That(frame.Player.RangeGlyph, Is.EqualTo(frame.Floor.Gap.ToString()), at);
-            if (!shown.Down && shown.Hp > 0) Assert.That(frame.Floor.Gap, Is.GreaterThanOrEqualTo(0), at + ": the N shown is never negative");
-            Assert.That(frame.Floor.AimCells, Is.EqualTo(frame.Omen.Visible ? frame.Floor.Enemies[shown.Unit].AimCells : new List<int>()), at);
+            if (!shown.Unit.Down && shown.Unit.Hp > 0) Assert.That(frame.Floor.Gap, Is.GreaterThanOrEqualTo(0), at + ": the N shown is never negative");
+            Assert.That(frame.Floor.AimCells, Is.SameAs(shown.AimCells), at);
+            Assert.That(frame.Floor.DenseCells, Is.SameAs(shown.DenseCells), at);
+            Assert.That(frame.Floor.MoveCells, Is.SameAs(shown.MoveCells), at);
             foreach (CardFace face in frame.Hand)
             {
                 Assert.That(face.TargetUnit >= -1 && face.TargetUnit < n, Is.True, at + ": " + face.Id + "'s target");
@@ -900,7 +882,7 @@ namespace Depiction.Bridge.Tests
                 if (face.TargetUnit >= 0) Assert.That(face.Aim, Is.EqualTo(CardAim.Single), at);
                 for (int k = 0; k < face.ReachOn.Count; k++)
                 {
-                    if (face.ReachOn[k]) Assert.That(frame.Enemies[k].Down, Is.False, at + ": " + face.Id + " reaches a standing enemy");
+                    if (face.ReachOn[k]) Assert.That(frame.Enemies[k].Unit.Down, Is.False, at + ": " + face.Id + " reaches a standing enemy");
                 }
             }
         }
@@ -920,7 +902,8 @@ namespace Depiction.Bridge.Tests
             {
                 EnemyUnit unit = state.Enemies[k];
                 CombatantState body = unit.Body;
-                UnitFrame shown = frame.Enemies[k];
+                EnemyFrame share = frame.Enemies[k];
+                UnitFrame shown = share.Unit;
                 string of = at + ": unit " + k + " (" + unit.Def.Id + ")";
                 Assert.That(shown.ArtId, Is.EqualTo(unit.Def.Id), of);
                 Assert.That(shown.Hp, Is.EqualTo(body.Hp), of + " HP");
@@ -932,11 +915,11 @@ namespace Depiction.Bridge.Tests
                 if (state.Result != GameResult.Lost) Assert.That(shown.Down, Is.EqualTo(!unit.Alive), of + " down ⇔ fallen in the core");
                 else if (shown.Down) Assert.That(unit.Alive, Is.False, of + " down only when fallen");
                 if (!unit.Alive) continue;
-                Assert.That(shown.Cell, Is.EqualTo(body.Cell), of + " cell");
-                Assert.That(shown.Gap, Is.EqualTo(state.GapTo(k)), of + " N");
+                Assert.That(share.Cell, Is.EqualTo(body.Cell), of + " cell");
+                Assert.That(share.Gap, Is.EqualTo(state.GapTo(k)), of + " N");
                 if (!ongoing || state.Turn < 1) continue;
                 // The omen and the plan on screen are this enemy's own, read against its own actions.
-                OmenFrame omen = frame.Omens[k];
+                OmenFrame omen = share.Omen;
                 OmenFrame own = CoreText.OmenOf(unit.Omen, unit.Def);
                 Assert.That(omen.Visible, Is.True, of + " omen shown");
                 Assert.That(omen.KindLabel, Is.EqualTo(own.KindLabel), of + " omen kind");
@@ -947,10 +930,9 @@ namespace Depiction.Bridge.Tests
                     Assert.That(omen.PlanVisible, Is.EqualTo(unit.Plan != null), of + " plan shown");
                     if (unit.Plan != null) Assert.That(omen.PlanKindLabel, Is.EqualTo(CoreText.OmenKindWord(unit.Plan.Label.Kind)), of + " plan kind");
                 }
-                FloorEnemy floor = frame.Floor.Enemies[k];
-                Assert.That(floor.AimCells, Is.EqualTo(FloorCells.AimOf(unit.Omen, body, body.Cell)), of + " aimed cells");
-                Assert.That(floor.DenseCells, Is.EqualTo(FloorCells.DenseOf(state, k)), of + " dense cells");
-                Assert.That(floor.MoveCells, Is.EqualTo(FloorCells.MoveOf(state, k)), of + " move cells");
+                Assert.That(share.AimCells, Is.EqualTo(FloorCells.AimOf(unit.Omen, body, body.Cell)), of + " aimed cells");
+                Assert.That(share.DenseCells, Is.EqualTo(FloorCells.DenseOf(state, k)), of + " dense cells");
+                Assert.That(share.MoveCells, Is.EqualTo(FloorCells.MoveOf(state, k)), of + " move cells");
             }
         }
 
@@ -1033,7 +1015,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(frame.Outcome, Is.EqualTo(state.Result == GameResult.Won ? BattleOutcome.Won : BattleOutcome.Lost), ctx.Label);
             if (state.Result == GameResult.Won)
             {
-                Assert.That(frame.Enemies.All(u => u.Down), Is.True, ctx.Label + ": won only when every enemy is down");
+                Assert.That(frame.Enemies.All(e => e.Unit.Down), Is.True, ctx.Label + ": won only when every enemy is down");
                 Assert.That(ctx.Defeats.OrderBy(k => k).ToList(), Is.EqualTo(Enumerable.Range(0, ctx.N).ToList()), ctx.Label + ": each enemy fell once");
             }
             else

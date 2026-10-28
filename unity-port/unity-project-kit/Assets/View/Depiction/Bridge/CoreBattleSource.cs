@@ -11,7 +11,7 @@
 // js: src/bridge/depiction/CoreBattleSource.js). The source used to name no target, so TurnLoop read its
 // default 0: the first enemy, also once it had fallen (and then every card aimed at one enemy was
 // refused). Inspect, TryPlay, PreviewFor and RefusalText now also take the enemy the card is released on
-// (its index in the core's enemy list, as DepictionFrame.Enemies[k].Unit), and without one the card goes
+// (its index in the core's enemy list, k of DepictionFrame.Enemies[k]), and without one the card goes
 // where TargetFor sends it — the target every number on its face was read against. With one enemy both
 // are 0, as before.
 //
@@ -368,7 +368,7 @@ namespace Depiction.Bridge
         /// index in the core's enemy list); a negative one names none, and the line is about the one TryPlay
         /// sends it to (CardFace.TargetUnit). Both numbers the line quotes are that enemy's, as the frame
         /// gives them: the cost of the card on it (CardFace.CostFor — 石礫 costs 1 less on an enemy at N 2
-        /// or more) and its N (DepictionFrame.Enemies[k].GapGlyph; Player.RangeGlyph for a card aimed at
+        /// or more) and its N (DepictionFrame.Enemies[k].Gap; Player.RangeGlyph for a card aimed at
         /// nobody or an enemy that does not stand). OutOfRange is written whenever it is asked for, also
         /// while another enemy is inside the card's reach: §5.1's "どの敵にも届かないときだけ" is the hover
         /// panel's rule (CardFace.ReachHint), not this line's. A one-enemy battle answers as before.
@@ -395,24 +395,13 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// js: CoreBattleSource.js:335 — the N of enemy <paramref name="unit"/> as the frame shows it (its
-        /// GapGlyph), or Player.RangeGlyph (the focus enemy's, as before) when <paramref name="unit"/> is −1
+        /// EnemyFrame.Gap), or Player.RangeGlyph (the focus enemy's, as before) when <paramref name="unit"/> is −1
         /// or does not stand.
         /// </summary>
         private string ShownGapGlyph(int unit)
         {
-            UnitFrame enemy = null;
-            if (unit >= 0)
-            {
-                foreach (UnitFrame u in Frame.Enemies)
-                {
-                    if (u.Unit == unit)
-                    {
-                        enemy = u;
-                        break;
-                    }
-                }
-            }
-            return enemy != null && enemy.Gap >= 0 ? enemy.GapGlyph : Frame.Player.RangeGlyph;
+            EnemyFrame enemy = unit >= 0 && unit < Frame.Enemies.Count ? Frame.Enemies[unit] : null;
+            return enemy != null && enemy.Gap >= 0 ? CoreText.GapGlyph(enemy.Gap) : Frame.Player.RangeGlyph;
         }
 
         /// <summary>The enemy a call is about: <paramref name="target"/>, or <see cref="TargetFor"/>'s when it names none (negative; the JS's `target ?? this.TargetFor(cardId)`).</summary>

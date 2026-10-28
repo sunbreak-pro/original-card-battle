@@ -195,7 +195,7 @@ namespace Exploration
                 {
                     if (!HasPendingFound) return false;
                     bool integer = SlotOf(arg, out int slot);
-                    bool full = !State.Loadout.HasFreeSlot;
+                    bool full = State.Loadout.ConsumableSlotsFull;
                     if (full && (!integer || slot < 0 || slot >= State.Loadout.Consumables.Count)) return false;
                     string id = PendingFound[0];
                     PendingFound = PendingFound.Skip(1).ToList();
@@ -371,7 +371,7 @@ namespace Exploration
             foreach (string id in consumableIds ?? NoIds)
             {
                 if (State.IsOver) return;
-                if (State.Loadout.HasFreeSlot && !HasPendingFound)
+                if (!State.Loadout.ConsumableSlotsFull && !HasPendingFound)
                 {
                     State = ExplorationReducer.TakeConsumable(State, TrialItems.Consumable(id));
                 }

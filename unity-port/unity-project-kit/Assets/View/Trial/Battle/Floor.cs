@@ -36,10 +36,15 @@ namespace Trial.Battle
         public float? Ms;
     }
 
-    /// <summary>floor.bind's o: { reveal, unread }.</summary>
+    /// <summary>floor.bind's o: { reveal, unread }, and the frame's enemies.</summary>
     // js: scenes/battle/field/floor.js:215
     public sealed class FloorBindOpts
     {
+        /// <summary>
+        /// The frame's enemies (#589's DepictionFrame.Enemies: each one's cells, its own N and the cells its shown omen aims
+        /// at), which the JS writer kept on the floor (FloorFrame.Enemies). Null or empty: the floor's one enemy.
+        /// </summary>
+        public IReadOnlyList<EnemyFrame> Enemies;
         public FloorReveal Reveal;
         /// <summary>unread(unit) → the enemy is read to 開示度 0 (its cells are not drawn); −1 asks for the frame's one omen.</summary>
         public Func<int, bool> Unread;
@@ -162,7 +167,49 @@ namespace Trial.Battle
             public bool Faded;
         }
 
-        /// <summary>An enemy as bind reads it (a FloorEnemy, or the one enemy of a frame with no FloorFrame.Enemies: Unit −1).</summary>
+        /// <summary>
+        /// One enemy on the floor (the JS writer's FloorEnemy): enemy `Unit` of the frame's EnemyFrame list (#589), its stripe
+        /// direction, its cells, its own N (−1 once it has fallen in the core), whether it is down, and its shown omen's cells.
+        /// </summary>
+        private sealed class EnemyCells
+        {
+            public int Unit;
+            public int Hatch;
+            public int Cell;
+            public int Size = 1;
+            public int Gap = -1;
+            public bool Down;
+            public List<int> AimCells = NoCells;
+            public List<int> DenseCells = NoCells;
+            public List<int> MoveCells = NoCells;
+        }
+
+        /// <summary>The frame's enemies as the floor reads them: enemy k is the k-th share.</summary>
+        private static List<EnemyCells> CellsOf(IReadOnlyList<EnemyFrame> enemies)
+        {
+            var list = new List<EnemyCells>(enemies != null ? enemies.Count : 0);
+            if (enemies == null) return list;
+            for (int k = 0; k < enemies.Count; k++)
+            {
+                EnemyFrame e = enemies[k];
+                if (e == null) { list.Add(null); continue; }
+                list.Add(new EnemyCells
+                {
+                    Unit = k,
+                    Hatch = e.StripeDirection,
+                    Cell = e.Cell,
+                    Size = e.Size,
+                    Gap = e.Gap,
+                    Down = e.Unit != null && e.Unit.Down,
+                    AimCells = e.AimCells ?? NoCells,
+                    DenseCells = e.DenseCells ?? NoCells,
+                    MoveCells = e.MoveCells ?? NoCells,
+                });
+            }
+            return list;
+        }
+
+        /// <summary>An enemy as bind reads it (an EnemyCells entry, or the one enemy of a frame with no enemy list: Unit −1).</summary>
         private sealed class Foe
         {
             public int Unit = -1;
@@ -185,6 +232,8 @@ namespace Trial.Battle
         private GapState? _gapState;
         private int _recount;
         private FloorFrame _lastFloor;
+        /// <summary>The enemies the last bind drew from (after the reveal kept the others' cells), beside _lastFloor.</summary>
+        private List<EnemyCells> _lastEnemies = new List<EnemyCells>();
         /// <summary>focusUnit: the enemy whose aimed cells alone stay lit (its omen badge is hovered), or null.</summary>
         private int? _focusUnit;
         /// <summary>gapHidden: the battle is over: the gap number is put away (review fix: it measured to a fallen enemy's empty cell).</summary>
@@ -201,14 +250,14 @@ namespace Trial.Battle
         /// retiredUnits / soloRetired: battle_ui_ux_v2 §5.15 順 5 (review fix: a fallen enemy's aimed cells stayed striped through
         /// its whole fall, a second after its badge had gone): the enemies whose omen went with their fall (retireUnit). Their
         /// aimed, dense and move cells leave the floor as the fall starts (the 120 ms fade of §5.8), and stay off whatever a later
-        /// frame says. `soloRetired`: the same for the one enemy of a frame that carries no FloorFrame.Enemies.
+        /// frame says. `soloRetired`: the same for the one enemy of a frame that carries no enemy list.
         /// </summary>
         private readonly HashSet<int> _retiredUnits = new HashSet<int>();
         private bool _soloRetired;
         /// <summary>
         /// unreadOf: battle_ui_ux_v2 §7 / §5.8 提示 「斜線…（開示度 1 以上）」 (review 21): which enemies are read to 0 — their omen
         /// shows the kind alone, so their aimed, dense and move cells are not drawn. A function (unit → bool; the one enemy of a
-        /// frame with no FloorFrame.Enemies asks with −1), kept from the last bind that gave one.
+        /// frame with no enemy list asks with −1), kept from the last bind that gave one.
         /// </summary>
         private Func<int, bool> _unreadOf = _ => false;
 
@@ -379,10 +428,10 @@ namespace Trial.Battle
             bool broken = false;
             int first = g.Pc + g.Ps;
             int last = g.Ec - 1;
-            if (last >= first && _lastFloor != null && _lastFloor.Enemies != null && _lastFloor.Enemies.Count > 1)
+            if (last >= first && _lastFloor != null && _lastEnemies.Count > 1)
             {
                 var taken = new HashSet<int>();
-                foreach (FloorEnemy e in _lastFloor.Enemies)
+                foreach (EnemyCells e in _lastEnemies)
                 {
                     // Review fix: an enemy whose fall is still to play (HP 0, not yet Down) has already left its cells in the core —
                     // its Gap is −1 and N is read past it (port notes) — so its cell counts as empty, as N counts it.
@@ -555,37 +604,43 @@ namespace Trial.Battle
         // js: scenes/battle/field/floor.js:215
         public void Bind(FloorFrame floor, FloorBindOpts o = null)
         {
+            BindCells(floor, CellsOf(o != null ? o.Enemies : null), o);
+        }
+
+        /// <summary>Bind with the enemies already read (a rebind of the last floor passes the last enemies as they were drawn).</summary>
+        private void BindCells(FloorFrame floor, List<EnemyCells> enemies, FloorBindOpts o)
+        {
             if (_destroyed || !_root) return;
             FloorReveal reveal = o != null ? o.Reveal : null;
             if (o != null && o.Unread != null) _unreadOf = o.Unread;
             // §5.8 提示 (review 21: with two or three enemies the first omen drew every enemy's new stripes, the back enemy's 240 ms
             // before its own badge dropped): an omen shown for enemy `reveal.unit` draws that enemy's new cells only; the others
             // keep the cells they showed until their own omen comes in (or the event's frame lands).
-            if (reveal != null && reveal.Unit >= 0 && floor != null && floor.Enemies != null && floor.Enemies.Count > 1
-                && _lastFloor != null && _lastFloor.Enemies != null)
+            if (reveal != null && reveal.Unit >= 0 && floor != null && enemies.Count > 1 && _lastFloor != null)
             {
-                List<FloorEnemy> was = _lastFloor.Enemies;
-                var enemies = new List<FloorEnemy>(floor.Enemies.Count);
-                foreach (FloorEnemy e in floor.Enemies)
+                List<EnemyCells> was = _lastEnemies;
+                var kept = new List<EnemyCells>(enemies.Count);
+                foreach (EnemyCells e in enemies)
                 {
-                    if (e == null || e.Unit == reveal.Unit) { enemies.Add(e); continue; }
-                    FloorEnemy p = was.Find(x => x != null && x.Unit == e.Unit);
-                    enemies.Add(p != null ? CopyEnemy(e, p.AimCells, p.DenseCells, p.MoveCells) : e);
+                    if (e == null || e.Unit == reveal.Unit) { kept.Add(e); continue; }
+                    EnemyCells p = was.Find(x => x != null && x.Unit == e.Unit);
+                    kept.Add(p != null ? CopyEnemy(e, p.AimCells, p.DenseCells, p.MoveCells) : e);
                 }
-                floor = CopyFloor(floor, enemies);
+                enemies = kept;
             }
             _lastFloor = floor;
+            _lastEnemies = enemies;
             int n = floor != null && floor.Cells > 0 ? floor.Cells : 0;
             SetRootDisplay(n > 0);
             if (n != _cells) Build(n);
             if (n == 0) return;
             var drawn = new List<(TileState T, int Mine)>();
-            // battle-visual-v1 §4.2 (several enemies, the JS writer's FloorFrame.Enemies): each standing enemy's
-            // aimed cells in its own direction (EnemyHatch), crossing where two overlap; else the one enemy's at 45°.
-            // Review 19: a one-enemy frame carries FloorFrame.Enemies too, so the fallen one's cells went with `soloRetired`
+            // battle-visual-v1 §4.2 (several enemies, #589's DepictionFrame.Enemies): each standing enemy's aimed cells in its
+            // own direction (EnemyFrame.StripeDirection), crossing where two overlap; else the one enemy's at 45°.
+            // Review 19: a one-enemy frame carries its one share too, so the fallen one's cells went with `soloRetired`
             // nowhere and stayed striped through its whole fall.
-            bool several = floor.Enemies != null && floor.Enemies.Count > 1;
-            List<Foe> foes = FoesOf(floor, several);
+            bool several = enemies.Count > 1;
+            List<Foe> foes = FoesOf(floor, enemies, several);
             for (int i = 0; i < _tiles.Count; i++)
             {
                 TileState t = _tiles[i];
@@ -687,23 +742,23 @@ namespace Trial.Battle
         }
 
         /// <summary>
-        /// The standing enemies bind draws (floor.js:244-246): none once the aim is retired; each FloorFrame.Enemies entry that is
+        /// The standing enemies bind draws (floor.js:244-246): none once the aim is retired; each enemy of the frame's list that is
         /// not down nor retired (nor the retired one enemy of a one-enemy list); else the frame's one enemy at 45°, unless it is
         /// retired. An unread enemy (unreadFoe) keeps no aimed, dense or move cells.
         /// </summary>
         // js: scenes/battle/field/floor.js:242
-        private List<Foe> FoesOf(FloorFrame floor, bool several)
+        private List<Foe> FoesOf(FloorFrame floor, List<EnemyCells> enemies, bool several)
         {
             var foes = new List<Foe>();
             if (_aimRetired)
             {
                 // aimRetired: []
             }
-            else if (floor.Enemies != null && floor.Enemies.Count > 0)
+            else if (enemies.Count > 0)
             {
-                foreach (FloorEnemy e in floor.Enemies)
+                foreach (EnemyCells e in enemies)
                 {
-                    if (e == null || e.Down || _retiredUnits.Contains(e.Unit) || (_soloRetired && floor.Enemies.Count == 1)) continue;
+                    if (e == null || e.Down || _retiredUnits.Contains(e.Unit) || (_soloRetired && enemies.Count == 1)) continue;
                     foes.Add(new Foe
                     {
                         Unit = e.Unit,
@@ -775,7 +830,7 @@ namespace Trial.Battle
             _focusUnit = u;
             if (_lastFloor == null || _cells == 0) return;
             GapState? keep = _gapState;
-            Bind(_lastFloor);
+            BindCells(_lastFloor, _lastEnemies, null);
             if (keep != null) { _gapState = keep; PlaceGap(_gapState); }
         }
 
@@ -897,7 +952,7 @@ namespace Trial.Battle
 
         /// <summary>
         /// retireUnit(unit, solo) (§5.15 順 5): enemy `unit` falls — its cells go now (`solo`: the battle's one enemy, whose frame
-        /// may or may not carry FloorFrame.Enemies), with its omen badge (§5.8's 120 ms fade for cells it alone marked), instead of
+        /// may or may not carry its enemy list), with its omen badge (§5.8's 120 ms fade for cells it alone marked), instead of
         /// with the next frame a second later; the gap number is left as it is.
         /// </summary>
         // js: scenes/battle/field/floor.js:399
@@ -910,7 +965,7 @@ namespace Trial.Battle
             if (_retiredUnits.Count + (_soloRetired ? 1 : 0) == before) return;
             if (_lastFloor == null || _cells == 0) return;
             GapState? keep = _gapState;
-            Bind(_lastFloor);
+            BindCells(_lastFloor, _lastEnemies, null);
             if (keep != null) { _gapState = keep; PlaceGap(_gapState); }
         }
 
@@ -971,8 +1026,8 @@ namespace Trial.Battle
         /// <summary>The value a style write of toFixed(3) reads back as.</summary>
         private static float Round3(float v) => (float)Math.Round(v, 3, MidpointRounding.AwayFromZero);
 
-        /// <summary>Object.assign(Object.create(proto), e, { AimCells, DenseCells, MoveCells }): a FloorEnemy with another omen's cells.</summary>
-        private static FloorEnemy CopyEnemy(FloorEnemy e, List<int> aim, List<int> dense, List<int> move) => new FloorEnemy
+        /// <summary>Object.assign(Object.create(proto), e, { AimCells, DenseCells, MoveCells }): an enemy with another omen's cells.</summary>
+        private static EnemyCells CopyEnemy(EnemyCells e, List<int> aim, List<int> dense, List<int> move) => new EnemyCells
         {
             Unit = e.Unit,
             Hatch = e.Hatch,
@@ -983,21 +1038,6 @@ namespace Trial.Battle
             AimCells = aim,
             DenseCells = dense,
             MoveCells = move,
-        };
-
-        /// <summary>Object.assign(Object.create(proto), floor, { Enemies }): the frame's floor with another enemy list.</summary>
-        private static FloorFrame CopyFloor(FloorFrame f, List<FloorEnemy> enemies) => new FloorFrame
-        {
-            Cells = f.Cells,
-            PlayerCell = f.PlayerCell,
-            PlayerSize = f.PlayerSize,
-            EnemyCell = f.EnemyCell,
-            EnemySize = f.EnemySize,
-            Gap = f.Gap,
-            AimCells = f.AimCells,
-            DenseCells = f.DenseCells,
-            MoveCells = f.MoveCells,
-            Enemies = enemies,
         };
     }
 }

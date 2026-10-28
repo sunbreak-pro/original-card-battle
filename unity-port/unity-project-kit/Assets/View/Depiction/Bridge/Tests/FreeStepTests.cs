@@ -61,10 +61,11 @@ namespace Depiction.Bridge.Tests
             DepictionFrame f = source.Frame;
             Assert.That(f.Floor.PlayerCell, Is.EqualTo(s.Player.Cell), "Floor.PlayerCell");
             Assert.That(f.Floor.Gap, Is.EqualTo(s.GapTo(s.Nearest)), "Floor.Gap is N to the nearest standing enemy");
-            foreach (UnitFrame uf in f.Enemies)
+            for (int k = 0; k < f.Enemies.Count; k++)
             {
-                Assert.That(uf.Cell, Is.EqualTo(s.Enemies[uf.Unit].Body.Cell), "enemy " + uf.Unit + " cell");
-                if (!uf.Down) Assert.That(uf.Gap, Is.EqualTo(s.GapTo(uf.Unit)), "enemy " + uf.Unit + " N");
+                EnemyFrame ef = f.Enemies[k];
+                Assert.That(ef.Cell, Is.EqualTo(s.Enemies[k].Body.Cell), "enemy " + k + " cell");
+                if (!ef.Unit.Down) Assert.That(ef.Gap, Is.EqualTo(s.GapTo(k)), "enemy " + k + " N");
             }
             Assert.That(f.Hand.Select(c => c.Id).ToList(), Is.EqualTo(s.Hand.Select(c => c.InstanceId).ToList()), "the hand");
             StatusChip chip = f.Player.Statuses.FirstOrDefault(c => c.Label == "俊敏");
@@ -144,7 +145,7 @@ namespace Depiction.Bridge.Tests
             Cue cue = moves[0];
             Assert.That(cue.Pushed, Is.False);
             Assert.That(cue.CellsMoved, Is.EqualTo(1));
-            Assert.That(cue.Unit, Is.EqualTo(-1), "the player moved");
+            Assert.That(cue.UnitCellAfter, Is.EqualTo(0), "the player moved, no enemy");
             Assert.That(cue.PlayerCellAfter, Is.EqualTo(source.State.Player.Cell));
             Assert.That(cue.GapAfter, Is.EqualTo(source.State.GapTo(source.State.Nearest)));
             Assert.That(EffectPlan.StepsOf(ev).Select(s => s.Id + " x" + s.Count).ToList(),

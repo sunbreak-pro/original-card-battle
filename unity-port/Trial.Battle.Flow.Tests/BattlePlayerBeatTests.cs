@@ -137,12 +137,11 @@ namespace Trial.Battle.Flow.Tests
         private static DepictionFrame TwoEnemies(int turn, params CardFace[] hand)
         {
             DepictionFrame f = WithHand(Frame(turn: turn), hand);
-            f.Enemies = new List<UnitFrame>
+            f.Enemies = new List<EnemyFrame>
             {
-                new UnitFrame { Unit = 0, Hp = 40, HpMax = 40, ArtId = "polearm_warped" },
-                new UnitFrame { Unit = 1, Hp = 30, HpMax = 30, ArtId = "crossbow_hunter" },
+                new EnemyFrame { Unit = new UnitFrame { Hp = 40, HpMax = 40, ArtId = "polearm_warped" }, Omen = new OmenFrame { Visible = true }, StripeDirection = 0 },
+                new EnemyFrame { Unit = new UnitFrame { Hp = 30, HpMax = 30, ArtId = "crossbow_hunter" }, Omen = new OmenFrame { Visible = true }, StripeDirection = 1 },
             };
-            f.Omens = new List<OmenFrame> { new OmenFrame { Unit = 0, Visible = true }, new OmenFrame { Unit = 1, Visible = true } };
             return f;
         }
 

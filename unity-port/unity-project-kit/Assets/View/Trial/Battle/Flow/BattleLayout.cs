@@ -266,7 +266,8 @@ namespace Trial.Battle
         }
 
         /// <summary>
-        /// The design system's hatch angle for enemy hatch `hatch` (EnemyHatch.AngleOf: 45 / −45 / 90). OCB.hatch draws a
+        /// The design system's hatch angle for stripe direction `hatch` (EnemyFrame.StripeDirection → EnemyFrame.AngleOf: 45 /
+        /// −45 / 90). OCB.hatch draws a
         /// vertical bar rotated by its angle, so 90 comes out as horizontal stripes, and 0 falls back to 45 through its
         /// `angle || 45`. battle_ui_ux_v2 §1.4 (「3 体目 縦」) and battle-visual-v1 §4.2 want the third enemy's stripes upright:
         /// 90° is handed to the DS as 180 (the same upright bar). Every hatch of the scene goes through this: the floor's
@@ -275,7 +276,7 @@ namespace Trial.Battle
         // js: scenes/battle/layout.js:189
         public static int HatchAngle(int hatch)
         {
-            int a = EnemyHatch.AngleOf(hatch);
+            int a = EnemyFrame.AngleOf(hatch);
             return a == 90 ? 180 : a;
         }
 
@@ -303,7 +304,7 @@ namespace Trial.Battle
         // js: scenes/battle/layout.js:209
         public static string HatchGlyph(int hatch)
         {
-            int a = EnemyHatch.AngleOf(hatch);
+            int a = EnemyFrame.AngleOf(hatch);
             return a == 90 ? "｜" : a < 0 ? "＼" : "／";
         }
     }

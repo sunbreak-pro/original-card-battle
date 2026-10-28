@@ -5,8 +5,8 @@ using System.Linq;
 namespace DungeonCore
 {
     /// <summary>
-    /// What a relief carried into the dungeon actually does. The exploration core only needs
-    /// the shape; which items exist and what they are called is #100's job.
+    /// What a carried item actually does. The exploration core only needs the shape; which items
+    /// exist and what they are called is #100's job (DungeonContent.ItemCatalogue).
     /// </summary>
     public enum ReliefKind
     {
@@ -16,9 +16,25 @@ namespace DungeonCore
         /// <summary>Pulls the gauge back down once, then the item is gone (浄化の香).</summary>
         Gauge,
 
-        // Trial extension (docs/EXTENSIONS.md 「探索の持ち物とイベント」): the rest of the departure's items, so the
-        // exploration can carry every tool and consumable of tools_and_consumables_v4.md §2 / §3. Only a trial
-        // RunLoadout holds tools of these kinds; the C# shape (Density tools, any consumable) is unchanged.
+        /// <summary>HP back by Amount percent of the maximum, never past it (薬草).</summary>
+        HealHp,
+
+        /// <summary>Max stamina up by Amount, inside the ±4 clamp the temporaries share (濃い干し肉).</summary>
+        MaxStamina,
+
+        /// <summary>Current stamina back to the maximum (忘れ水).</summary>
+        RefillStamina,
+
+        /// <summary>
+        /// A jump to an unresolved node of the layer (標の石). It needs a node to jump to, which no
+        /// screen picks yet: it rides in a slot but cannot be used. Trial extension: the trial's map
+        /// picks the node, and ExplorationReducer.Teleport spends it there, paying the node's 刻限.
+        /// </summary>
+        Teleport,
+
+        // Trial extension (docs/EXTENSIONS.md 「探索の持ち物とイベント」): the rest of the departure's tools, so the
+        // exploration can carry every tool of tools_and_consumables_v4.md §2. Only a trial RunLoadout holds tools
+        // of these kinds; the C# shape (Density tools, any consumable) is unchanged.
 
         /// <summary>刻限の砂: every layer's 刻限 + Amount (§2).</summary>
         Time,
@@ -31,26 +47,22 @@ namespace DungeonCore
 
         /// <summary>間合いの履 / 息継ぎの笛 / 竜鱗の欠片 / 竜語の符: acts in battle only; carried for the slot count.</summary>
         Battle,
-
-        /// <summary>薬草: HP back by Amount% of the maximum (§3).</summary>
-        Heal,
-
-        /// <summary>濃い干し肉: max stamina + Amount, a temporary change inside ±4 (§3).</summary>
-        MaxStamina,
-
-        /// <summary>忘れ水: current stamina full (§3).</summary>
-        Refill,
-
-        /// <summary>標の石: jump to an unresolved node of the layer, paying its 刻限 (§3).</summary>
-        Teleport,
     }
 
-    /// <summary>One carried item, reduced to its effect on 瘴気. Name and art live elsewhere.</summary>
+    /// <summary>One carried item, reduced to its effect on the run. Name and art live elsewhere.</summary>
     public sealed record ReliefItem(string Id, ReliefKind Kind, int Amount)
     {
         public static ReliefItem Density(string id, int amount) => new ReliefItem(id, ReliefKind.Density, amount);
 
         public static ReliefItem Gauge(string id, int amount) => new ReliefItem(id, ReliefKind.Gauge, amount);
+
+        public static ReliefItem HealHp(string id, int percent) => new ReliefItem(id, ReliefKind.HealHp, percent);
+
+        public static ReliefItem MaxStamina(string id, int amount) => new ReliefItem(id, ReliefKind.MaxStamina, amount);
+
+        public static ReliefItem RefillStamina(string id) => new ReliefItem(id, ReliefKind.RefillStamina, 0);
+
+        public static ReliefItem Teleport(string id) => new ReliefItem(id, ReliefKind.Teleport, 0);
     }
 
     /// <summary>
@@ -136,47 +148,44 @@ namespace DungeonCore
         // js: core/dungeon/RunLoadout.js:108
         public int SumOf(ReliefKind kind) => Tools.Where(t => t.Kind == kind).Sum(t => t.Amount);
 
-        /// <summary>A consumable slot can take one more item. (Trial extension.)</summary>
-        // js: core/dungeon/RunLoadout.js:111
-        public bool HasFreeSlot => _consumables.Count < ConsumableSlots;
+        /// <summary>Every consumable slot holds an item: picking one more up means swapping.</summary>
+        public bool ConsumableSlotsFull => _consumables.Count >= ConsumableSlots;
 
-        /// <summary>
-        /// Trial extension: picks a consumable up (encounters_and_rewards_v4.md §4.3,
-        /// tools_and_consumables_v4.md §3: 「枠が埋まっているときは、その場で入れ替えるか諦めます」). With a free
-        /// slot it goes in after the others; with none it replaces the item in <paramref name="replaceSlot"/>.
-        /// The same rule as DungeonContent.Loadout.Take, on the core's items.
-        /// </summary>
-        // js: core/dungeon/RunLoadout.js:119
-        public RunLoadout Take(ReliefItem item, int replaceSlot = -1)
-        {
-            if (item == null) throw new ArgumentNullException(nameof(item), "a consumable to take");
-            var next = _consumables.ToList();
-            if (next.Count < ConsumableSlots) next.Add(item);
-            else if (replaceSlot < 0 || replaceSlot >= next.Count)
-                throw new ArgumentOutOfRangeException(nameof(replaceSlot), replaceSlot, "the consumable slots are full; name the slot to swap");
-            else next[replaceSlot] = item;
-            return new RunLoadout(Tools, next, ToolSlotCount, Trial);
-        }
-
-        /// <summary>Spends one consumable and reports what it pulls off the gauge.</summary>
-        public RunLoadout Spend(int index, out int gaugeRelief) => Spend(index, out gaugeRelief, out _);
-
-        /// <summary>
-        /// Spends one consumable and reports what it pulls off the gauge, and (trial extension) the item spent,
-        /// for the trial effects.
-        /// </summary>
-        // js: core/dungeon/RunLoadout.js:133
-        public RunLoadout Spend(int index, out int gaugeRelief, out ReliefItem item)
+        /// <summary>Spends one consumable and reports which item it was.</summary>
+        public RunLoadout Spend(int index, out ReliefItem used)
         {
             if (index < 0 || index >= _consumables.Count)
                 throw new ArgumentOutOfRangeException(nameof(index), index, "no consumable in that slot");
 
-            item = _consumables[index];
-            gaugeRelief = item.Kind == ReliefKind.Gauge ? item.Amount : 0;
+            used = _consumables[index];
 
             var rest = _consumables.ToList();
             rest.RemoveAt(index);
             return new RunLoadout(Tools, rest, ToolSlotCount, Trial);
+        }
+
+        /// <summary>
+        /// Picks a consumable up (tools_and_consumables_v4.md §3). With a free slot it goes in and
+        /// <paramref name="replaceSlot"/> is not read; with none, it takes the place of the item in
+        /// <paramref name="replaceSlot"/>. A swap that names no slot is refused: which item is given
+        /// up is the player's to say. The same rule as DungeonContent.Loadout.Take. A trial loadout stays one.
+        /// </summary>
+        public RunLoadout Take(ReliefItem item, int replaceSlot = -1)
+        {
+            if (item == null) throw new ArgumentNullException(nameof(item));
+
+            var next = _consumables.ToList();
+            if (!ConsumableSlotsFull)
+            {
+                next.Add(item);
+                return new RunLoadout(Tools, next, ToolSlotCount, Trial);
+            }
+
+            if (replaceSlot < 0 || replaceSlot >= next.Count)
+                throw new ExplorationRuleException("the consumable slots are full: name the slot to swap");
+
+            next[replaceSlot] = item;
+            return new RunLoadout(Tools, next, ToolSlotCount, Trial);
         }
 
         /// <summary>Nothing carried. The baseline a bare run starts from.</summary>

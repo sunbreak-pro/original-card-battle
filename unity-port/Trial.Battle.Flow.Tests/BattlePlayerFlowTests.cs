@@ -167,7 +167,7 @@ namespace Trial.Battle.Flow.Tests
                 }
                 float b = EffectPlan.BlockingMs(ev, switches);
                 foreach (Cue c in ev.Cues)
-                    if (c.Kind == CueKind.Defeat && c.Target == UnitSide.Enemy && multi && ev.After.Enemies.Any(uf => !uf.Down && uf.Unit != Math.Max(-1, c.Unit)))
+                    if (c.Kind == CueKind.Defeat && c.Target == UnitSide.Enemy && multi && ev.After.Enemies.Where((e, k) => !e.Unit.Down && k != c.Unit).Any())
                         b += L.FallFootMs + L.FallGreyMs;
                 bool continues = prevHeld && auto && Continues(heldTitle, heldUnit, ev);
                 bool held = IsHeld(ev);

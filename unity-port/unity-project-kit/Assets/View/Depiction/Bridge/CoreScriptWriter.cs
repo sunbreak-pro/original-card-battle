@@ -11,10 +11,11 @@
 // _enemy, one _omen that took every OmenSet whichever enemy it was about) and threw
 // KeyNotFoundException in the two-enemy battle the exploration hands in on layers 2〜3. It now keeps
 // what it kept of that one enemy once per enemy (EnemyTrack), reads each event's enemy from its Unit,
-// and writes every enemy into the frame (DepictionFrame.Enemies / Omens, FloorFrame.Enemies, Cue.Unit,
-// DepictionEvent.Unit). The single-valued members (Frame.Enemy, Frame.Omen, Floor.EnemyCell …) describe
-// the first enemy standing in the line; in a one-enemy battle every member written before comes out
-// exactly as it did (MultiEnemyTests replays a golden of the one-enemy output taken before the change).
+// and writes every enemy into the frame in #589's shape (DepictionFrame.Enemies as EnemyFrame, Cue.Unit),
+// with the extension's DepictionEvent.Unit and Cue.UnitCellAfter / UnitGapAfter. The single-valued members
+// (Frame.Enemy, Frame.Omen, Floor.EnemyCell …) are the first enemy's share while it stands first in the
+// line, and then the first enemy standing in the line; in a one-enemy battle every member written before
+// comes out exactly as it did (MultiEnemyTests replays a golden of the one-enemy output taken before the change).
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -450,17 +451,21 @@ namespace Depiction.Bridge
             return ev;
         }
 
-        /// <summary>The enemy a cue about <paramref name="side"/>'s numbers concerns: <paramref name="unit"/> for an enemy, −1 for the player.</summary>
-        // js: CoreScriptWriter.js:77 holderUnit
-        private static int HolderUnit(Actor side, int unit)
-        {
-            return side == Actor.Enemy ? unit : -1;
-        }
-
         // ---- one core event → its beats -----------------------------------------------------
 
-        // js: CoreScriptWriter.js:493
+        /// <summary>
+        /// One core event's beats. #589: each beat says which enemy it is about, the event's own enemy end
+        /// (BattleEvent.Unit: the enemy acting, or the one a card read or hit; 0 for the player alone).
+        /// </summary>
         internal void Apply(BattleEvent e, DepictionEvent ev)
+        {
+            int before = ev.Cues.Count;
+            ApplyEvent(e, ev);
+            for (int i = before; i < ev.Cues.Count; i++) ev.Cues[i].Unit = e.Unit;
+        }
+
+        // js: CoreScriptWriter.js:493
+        private void ApplyEvent(BattleEvent e, DepictionEvent ev)
         {
             switch (e)
             {
@@ -473,7 +478,7 @@ namespace Depiction.Bridge
                         ev.Cues.Add(new Cue
                         {
                             Kind = CueKind.GuardReset, Target = CoreText.Side(cleared.Actor), GuardAfter = 0,
-                            Unit = HolderUnit(cleared.Actor, cleared.Unit),
+                            Unit = cleared.Unit,
                         });
                     }
                     break;
@@ -629,7 +634,7 @@ namespace Depiction.Bridge
                 {
                     Unit(guard.Actor, guard.Unit).Guard = guard.GuardAfter;
                     Cue cue = GuardGain(guard.Actor, guard.Amount, guard.GuardAfter);
-                    cue.Unit = HolderUnit(guard.Actor, guard.Unit);
+                    cue.Unit = guard.Unit;
                     ev.Cues.Add(Grammar(ev, cue, FxSystem.Shield));
                     break;
                 }
@@ -674,7 +679,7 @@ namespace Depiction.Bridge
                         ev.Cues.Add(new Cue
                         {
                             Kind = CueKind.TraitFire, Target = CoreText.Side(blocked.Actor), Text = line,
-                            Unit = HolderUnit(blocked.Actor, blocked.Unit),
+                            Unit = blocked.Unit,
                         });
                     }
                     break;
@@ -741,7 +746,7 @@ namespace Depiction.Bridge
                     ev.Cues.Add(Grammar(ev, new Cue
                     {
                         Kind = CueKind.TraitFire, Target = CoreText.Side(set.Actor), Text = "構え・" + set.Name,
-                        Unit = HolderUnit(set.Actor, set.Unit),
+                        Unit = set.Unit,
                     }, FxSystem.Form));
                     break;
 
@@ -751,7 +756,7 @@ namespace Depiction.Bridge
                     {
                         Kind = CueKind.TraitFire, Target = CoreText.Side(stopped.Actor),
                         Text = CoreText.StanceStoppedLine(StanceName(stopped.SourceId, DefOf(stopped.Unit))),
-                        Unit = HolderUnit(stopped.Actor, stopped.Unit),
+                        Unit = stopped.Unit,
                     });
                     break;
 
@@ -760,7 +765,7 @@ namespace Depiction.Bridge
                     {
                         Kind = CueKind.TraitFire, Target = CoreText.Side(resumed.Actor),
                         Text = CoreText.StanceResumedLine(StanceName(resumed.SourceId, DefOf(resumed.Unit))),
-                        Unit = HolderUnit(resumed.Actor, resumed.Unit),
+                        Unit = resumed.Unit,
                     });
                     break;
 
@@ -786,7 +791,7 @@ namespace Depiction.Bridge
             UnitSide side = CoreText.Side(trait.Actor);
             if (trait.Outcome.Triggered)
             {
-                ev.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = side, Text = CoreText.TraitLine(trait.Trait), Unit = HolderUnit(trait.Actor, trait.Unit) });
+                ev.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = side, Text = CoreText.TraitLine(trait.Trait), Unit = trait.Unit });
                 return;
             }
 
@@ -961,7 +966,7 @@ namespace Depiction.Bridge
             var cue = new Cue
             {
                 Kind = CueKind.StatusChange, Target = CoreText.Side(holder),
-                Amount = change, Text = kind.ToLabel(), StacksAfter = stacksAfter, Unit = HolderUnit(holder, unitIndex),
+                Amount = change, Text = kind.ToLabel(), StacksAfter = stacksAfter, Unit = unitIndex,
             };
             ev.Cues.Add(cue);
             return cue;
@@ -975,7 +980,7 @@ namespace Depiction.Bridge
             var cue = new Cue
             {
                 Kind = CueKind.HpChange, Target = CoreText.Side(actor),
-                Amount = amount, HpAfter = hpAfter, Text = cause, Unit = HolderUnit(actor, unitIndex),
+                Amount = amount, HpAfter = hpAfter, Text = cause, Unit = unitIndex,
             };
             ev.Cues.Add(cue);
             return cue;
@@ -1172,51 +1177,57 @@ namespace Depiction.Bridge
             };
             int focus = FocusUnit;
             frame.Player = UnitOf(_player, showStamina: true, gap: GapTo(focus));
-            // Every enemy and its omen; Frame.Enemy / Frame.Omen are the focus enemy's.
+            // #589: every enemy's share — its number panel, omen, cells and stripes. Frame.Enemy, Frame.Omen
+            // and the floor's enemy cells are the focus enemy's share, the same objects (FloorOf).
+            BattleState shown = null;
             for (int k = 0; k < _tracks.Count; k++)
             {
                 EnemyTrack track = _tracks[k];
                 // battle-visual-v1 §4.5 (#455): the enemy's stamina is on its number panel (a dot and the number).
-                frame.Enemies.Add(UnitOf(track.Model, showStamina: true, gap: null));
-                OmenFrame omen = WithPlan(k, track.OmenVisible ? OmenFrameOf(after, k) : new OmenFrame { Visible = false });
-                omen.Unit = k;
-                omen.Hatch = k;
-                frame.Omens.Add(omen);
-            }
-            frame.Enemy = frame.Enemies[focus];
-            frame.Omen = frame.Omens[focus];
-            for (int k = 0; k < _tracks.Count; k++)
-            {
-                EnemyTrack track = _tracks[k];
-                UnitFrame enemy = frame.Enemies[k];
+                UnitFrame unit = UnitOf(track.Model, showStamina: true, gap: null);
                 // #288: the figure wears the art filed under the enemy's id; the View only looks it up.
-                enemy.ArtId = track.Def.Id;
+                unit.ArtId = track.Def.Id;
                 // §4.5 構えの盾: solid while the stamina it holds meets 構え's threshold (残り 3 以上), the
                 // rule's own Combat.ReserveGuard; an elite's panel takes the phosphor frame.
-                enemy.ReserveLikely = !track.Model.Down && Combat.ReserveGuard(track.Model.Stamina) > 0;
-                enemy.Elite = track.Def.Rank == EnemyRank.Elite;
-                // Which enemy, where it stands, its own N and its hatch.
-                enemy.Unit = k;
-                enemy.Cell = track.Model.Cell;
-                enemy.Size = Math.Max(1, track.Model.Size);
-                enemy.Gap = Fallen(k) ? -1 : GapTo(k);
-                enemy.GapGlyph = enemy.Gap >= 0 ? CoreText.GapGlyph(enemy.Gap) : "";
-                enemy.Hatch = k;
+                unit.ReserveLikely = !track.Model.Down && Combat.ReserveGuard(track.Model.Stamina) > 0;
+                unit.Elite = track.Def.Rank == EnemyRank.Elite;
+                var enemy = new EnemyFrame
+                {
+                    Unit = unit,
+                    Omen = WithPlan(k, track.OmenVisible ? OmenFrameOf(after, k) : new OmenFrame { Visible = false }),
+                    // Where it stands and its own N.
+                    Cell = track.Model.Cell,
+                    Size = Math.Max(1, track.Model.Size),
+                    Gap = Fallen(k) ? -1 : GapTo(k),
+                    // battle_ui_ux_v2 §1.4: 45°, −45°, upright, and the swatch once there are two or more.
+                    StripeDirection = EnemyFrame.DirectionOf(k),
+                    Swatch = _tracks.Count >= 2,
+                };
+                if (track.OmenVisible && after.Enemies.Count > k)
+                {
+                    enemy.AimCells = FloorCells.AimOf(track.Omen, after.Enemies[k].Body, track.Model.Cell);
+                    // #455: the thick stripes and the move's frame are the core's, read on the board as shown.
+                    if (shown == null) shown = AsShown(after);
+                    enemy.DenseCells = FloorCells.DenseOf(shown, k);
+                    enemy.MoveCells = FloorCells.MoveOf(shown, k);
+                }
+                frame.Enemies.Add(enemy);
             }
-            frame.SwatchesShown = _tracks.Count >= 2;
+            frame.Enemy = frame.Enemies[focus].Unit;
+            frame.Omen = frame.Enemies[focus].Omen;
             // battle-visual-v1 §4.7 (#455): the dashed dots, the core's estimate of the next recovery.
             frame.Player.NextRecovery = TurnLoop.PreviewRecovery(AsShown(after));
-            frame.Floor = FloorOf(after, focus);
+            frame.Floor = FloorOf(after, frame.Enemies[focus], focus);
             // battle-visual-v1 §4.7 (#455): the piles' counts, as the move left them.
             frame.Piles = new PileFrame { Shown = true, Draw = after.DrawPile.Count, Discard = after.DiscardPile.Count, Exile = after.Exiled.Count };
             // battle_ui_ux_v2 §1.1 C4 (#455): what each pile holds, for the list a click on it opens.
             PileCards.Fill(frame.Piles, after);
             // battle-visual-v1 §4.6 (#455): both sides' stance lists, from the stances the models hold.
             frame.StanceListsShown = true;
-            for (int k = 0; k < frame.Omens.Count; k++)
+            for (int k = 0; k < frame.Enemies.Count; k++)
             {
-                OmenFrame omen = frame.Omens[k];
-                if (omen.Visible) omen.Hit = HitMark(k, frame.Floor.Enemies[k].AimCells);
+                OmenFrame omen = frame.Enemies[k].Omen;
+                if (omen.Visible) omen.Hit = HitMark(k, frame.Enemies[k].AimCells);
                 OmenDisclosure.Apply(omen, Disclosure);
             }
             bool waiting = _playerActs && after.Result == GameResult.Ongoing;
@@ -1285,48 +1296,23 @@ namespace Depiction.Bridge
         /// <summary>
         /// js: CoreScriptWriter.js:1144 — battle-visual-v1 §4.2 (#242): the floor as the models stand —
         /// the line's width, both figures' cells, N, and the cells the omen on screen aims at (none while
-        /// it is hidden). The same for every enemy (FloorFrame.Enemies); the single-valued members are the
-        /// focus enemy's.
+        /// it is hidden). The enemy members are <paramref name="focus"/>'s share (#589: the same lists);
+        /// every enemy's own cells are its EnemyFrame.
         /// </summary>
-        private FloorFrame FloorOf(BattleState after, int focus)
+        private FloorFrame FloorOf(BattleState after, EnemyFrame focus, int unit)
         {
-            UnitModel shownEnemy = _tracks[focus].Model;
-            var floor = new FloorFrame
+            return new FloorFrame
             {
                 Cells = after.FieldCells,
                 PlayerCell = _player.Cell,
                 PlayerSize = Math.Max(1, _player.Size),
-                EnemyCell = shownEnemy.Cell,
-                EnemySize = Math.Max(1, shownEnemy.Size),
-                Gap = GapTo(focus),
+                EnemyCell = focus.Cell,
+                EnemySize = focus.Size,
+                Gap = GapTo(unit),
+                AimCells = focus.AimCells,
+                DenseCells = focus.DenseCells,
+                MoveCells = focus.MoveCells,
             };
-            BattleState shown = null;
-            for (int k = 0; k < _tracks.Count; k++)
-            {
-                EnemyTrack track = _tracks[k];
-                var enemy = new FloorEnemy
-                {
-                    Unit = k, Hatch = k, Cell = track.Model.Cell, Size = Math.Max(1, track.Model.Size),
-                    Gap = Fallen(k) ? -1 : GapTo(k), Down = track.Model.Down,
-                };
-                if (track.OmenVisible && after.Enemies.Count > k)
-                {
-                    enemy.AimCells = FloorCells.AimOf(track.Omen, after.Enemies[k].Body, track.Model.Cell);
-                    // #455: the thick stripes and the move's frame are the core's, read on the board as shown.
-                    if (shown == null) shown = AsShown(after);
-                    enemy.DenseCells = FloorCells.DenseOf(shown, k);
-                    enemy.MoveCells = FloorCells.MoveOf(shown, k);
-                }
-                floor.Enemies.Add(enemy);
-            }
-            if (_tracks[focus].OmenVisible && after.Enemies.Count > 0)
-            {
-                FloorEnemy aimed = floor.Enemies[focus];
-                floor.AimCells = new List<int>(aimed.AimCells);
-                floor.DenseCells = new List<int>(aimed.DenseCells);
-                floor.MoveCells = new List<int>(aimed.MoveCells);
-            }
-            return floor;
         }
 
         /// <summary>

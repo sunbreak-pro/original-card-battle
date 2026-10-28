@@ -410,55 +410,6 @@ namespace Depiction
         /// on one row). Drawn at the unit's edge when <see cref="DepictionFrame.StanceListsShown"/>.
         /// </summary>
         public List<StanceRow> Stances = new List<StanceRow>();
-
-        // ---- JS extension: several enemies (depiction-multi-enemy.md, js: DepictionTypes.js:408). ----
-
-        /// <summary>
-        /// Which enemy this is: its index in the core's enemy list (BattleState.Enemies, the Unit every
-        /// BattleEvent and Cue carries), fixed for the whole battle. −1 on the player's frame.
-        /// </summary>
-        public int Unit = -1;
-        /// <summary>Where the enemy stands: its lowest cell (<see cref="FloorFrame"/> counts) and how many cells it takes. 0 on the player's frame.</summary>
-        public int Cell;
-        public int Size;
-        /// <summary>
-        /// battle_core_v4 §7.2: this enemy's own N to the player (the empty cells between them). −1 once
-        /// it has fallen in the core (also while its Defeat beat is still to play: the core has taken its
-        /// cells, and the player may already stand past them), and on the player's frame. The screen
-        /// prints one N (<see cref="RangeGlyph"/> of the player, the nearest enemy's); this is the one it
-        /// shows while a held card frames this enemy.
-        /// </summary>
-        public int Gap = -1;
-        /// <summary><see cref="Gap"/> as the floor's number prints it ("2"); empty when <see cref="Gap"/> is −1.</summary>
-        public string GapGlyph = "";
-        /// <summary>
-        /// battle-visual-v1 §4.2: the enemy's hatch — the direction of its red stripes on the floor and of
-        /// its swatch on the HP row, the omen plate and the stance frame (<see cref="EnemyHatch.AngleOf"/>:
-        /// 0 = 45°, 1 = −45°, 2 = 90°). The enemy's <see cref="Unit"/>. −1 on the player's frame.
-        /// </summary>
-        public int Hatch = -1;
-    }
-
-    /// <summary>
-    /// JS extension (depiction-multi-enemy.md, js: DepictionTypes.js:443): battle-visual-v1 §3.2 / §4.2 斜線 —
-    /// the red stripes of each enemy's aimed cells and swatch turn a different way, 45° / −45° / 90°, so
-    /// two or three enemies' aims are told apart by direction alone and cross where they overlap.
-    /// </summary>
-    public static class EnemyHatch
-    {
-        /// <summary>One hatch per enemy: battle_core_v4 §7.4 ENEMIES_MAX.</summary>
-        public const int Count = 3;
-
-        /// <summary>The angle of hatch <paramref name="hatch"/> in degrees, as §3.2 lists them; 45 for one outside 0..2.</summary>
-        public static int AngleOf(int hatch)
-        {
-            switch (hatch)
-            {
-                case 1: return -45;
-                case 2: return 90;
-                default: return 45;
-            }
-        }
     }
 
     /// <summary>One stance on a side's list (#455): its name and how many times it is held (1 prints no "×1").</summary>
@@ -532,13 +483,6 @@ namespace Depiction
         /// <summary>True on the frames after a 予定変更, so the badge can mark the plan as changed.</summary>
         public bool PlanChanged;
 
-        // ---- JS extension: several enemies (depiction-multi-enemy.md, js: DepictionTypes.js:528). ----
-
-        /// <summary>Whose omen this is: the enemy's index in the core's enemy list (<see cref="UnitFrame.Unit"/>).</summary>
-        public int Unit;
-        /// <summary>battle-visual-v1 §4.4: the swatch at the right end of the plate's first row — the enemy's hatch (<see cref="UnitFrame.Hatch"/>).</summary>
-        public int Hatch;
-
         /// <summary>The tag on the plan badge: 予定, or 予定変更 once the plan was replaced (#50).</summary>
         public string PlanTag => PlanChanged ? DepictionText.PlanChangedTag : DepictionText.PlanTag;
     }
@@ -595,29 +539,68 @@ namespace Depiction
         /// v4.2 sources leave it false.
         /// </summary>
         public bool EnemyTurn;
+        /// <summary>
+        /// battle_ui_ux_v2 §2.2 / battle-visual-v1 §4.2 (#589): every enemy of the battle, in the core's
+        /// order (the first acts first). The first is <see cref="Enemy"/>, <see cref="Omen"/> and the
+        /// floor's enemy cells and aimed cells, the same objects, so a View that reads only those still
+        /// shows it. Empty from a source that keeps one enemy (the filming script): the single-enemy
+        /// fields stand alone.
+        ///
+        /// Once the first has fallen, or another stands ahead of it in the line (§7.1), those single-enemy
+        /// fields and the player's range follow the first enemy standing in the line (the lowest cell; once
+        /// none stands, the one that fell last), so a one-enemy View keeps showing an enemy to fight
+        /// (depiction-multi-enemy.md). Enemies[k] is enemy k for the whole battle; a fallen one stays,
+        /// with <see cref="UnitFrame.Down"/> set.
+        /// </summary>
+        public List<EnemyFrame> Enemies = new List<EnemyFrame>();
+    }
 
-        // ---- JS extension: several enemies (depiction-multi-enemy.md, js: DepictionTypes.js:594). ----
-        //
-        // Enemy, Omen, Floor's enemy members and Player's range describe one enemy: the first one standing
-        // in the line (the lowest cell; once none stands, the one that fell last) — in a one-enemy battle,
-        // the enemy, as before. Enemy is the very object Enemies holds for it, and Omen the one Omens holds.
+    /// <summary>
+    /// One enemy's share of the screen when the battle has several (#589): its number panel and stance
+    /// list (<see cref="Unit"/>), its omen badge, where it stands, the cells its shown omen aims at, and
+    /// the stripes that tell its cells from the others'.
+    /// </summary>
+    public sealed class EnemyFrame
+    {
+        public UnitFrame Unit = new UnitFrame();
+        public OmenFrame Omen = new OmenFrame();
+        /// <summary>Its lowest cell and how many cells it takes (2 for a large elite), as the floor draws them.</summary>
+        public int Cell;
+        public int Size = 1;
+        /// <summary>
+        /// battle_core_v4 §7.2: its own N to the player (the empty cells between them), the number the
+        /// floor shows while a held card frames this enemy. −1 once it has fallen in the core (also while
+        /// its fall is still to play: the core has taken its cells). Depiction-multi-enemy.md.
+        /// </summary>
+        public int Gap = -1;
+        /// <summary>The cells its shown omen reaches, as <see cref="FloorFrame.AimCells"/> holds them for the first enemy.</summary>
+        public List<int> AimCells = new List<int>();
+        /// <summary>Of <see cref="AimCells"/>, the ones that meet the boundary its action reads (<see cref="FloorFrame.DenseCells"/>).</summary>
+        public List<int> DenseCells = new List<int>();
+        /// <summary>The cells it would stand on after the move its shown omen makes (<see cref="FloorFrame.MoveCells"/>).</summary>
+        public List<int> MoveCells = new List<int>();
+        /// <summary>
+        /// battle_ui_ux_v2 §1.4 / battle-visual-v1 §4.2: the direction of its red stripes on the floor —
+        /// 0 is 45° (the first enemy), 1 is −45° (the second), 2 is upright (the third). The View's
+        /// stripe art takes the same numbers.
+        /// </summary>
+        public int StripeDirection;
+        /// <summary>
+        /// battle-visual-v1 §4.4 / §4.5 / §4.6: the swatch of <see cref="StripeDirection"/> beside its omen,
+        /// on its HP row and on its stance frame. Only a battle of two or more enemies draws it; one enemy
+        /// needs nothing to tell its cells apart.
+        /// </summary>
+        public bool Swatch;
+
+        /// <summary>battle_ui_ux_v2 §1.4: the stripe direction of the enemy at <paramref name="index"/> (0, 1, 2; a fourth and on repeat upright).</summary>
+        public static int DirectionOf(int index) => index <= 0 ? 0 : index >= 2 ? 2 : 1;
 
         /// <summary>
-        /// Every enemy of the battle, one frame each, in the core's enemy order (BattleState.Enemies:
-        /// definition order, which is the phase order and the line front to back as the battle starts,
-        /// battle_core_v4 §7.4). Enemies[k].Unit is k for the whole battle; a fallen enemy stays with
-        /// <see cref="UnitFrame.Down"/> set. Enemies may pass each other later (§7.1), so a figure stands
-        /// at its <see cref="UnitFrame.Cell"/>, not at its place in this list.
+        /// battle-visual-v1 §3.2 斜線: the angle in degrees of stripe direction <paramref name="direction"/>
+        /// (<see cref="StripeDirection"/>) — 45, −45, 90 — so two or three enemies' aims are told apart by
+        /// direction alone and cross where they overlap. 45 for one outside 0..2.
         /// </summary>
-        public List<UnitFrame> Enemies = new List<UnitFrame>();
-        /// <summary>Each enemy's omen badge, in the order of <see cref="Enemies"/> (Omens[k].Unit is k), read against that enemy's own actions.</summary>
-        public List<OmenFrame> Omens = new List<OmenFrame>();
-        /// <summary>
-        /// battle-visual-v1 §4.2 / §4.4 / §4.5 / §4.6: the battle has two or more enemies, so each one's
-        /// HP row, omen plate and stance frame carry its hatch swatch (<see cref="UnitFrame.Hatch"/>).
-        /// False in a one-enemy battle. It holds for the whole battle, also once one enemy is left standing.
-        /// </summary>
-        public bool SwatchesShown;
+        public static int AngleOf(int direction) => direction == 1 ? -45 : direction == 2 ? 90 : 45;
     }
 
     /// <summary>
@@ -747,43 +730,6 @@ namespace Depiction
         /// would stand on after the move its shown omen makes (菫の破線の枠, no stripes). Empty when the
         /// omen does not move it, or is hidden.
         /// </summary>
-        public List<int> MoveCells = new List<int>();
-
-        // ---- JS extension: several enemies (depiction-multi-enemy.md, js: DepictionTypes.js:751). ----
-
-        /// <summary>
-        /// battle-visual-v1 §4.2: every enemy's cells and the cells its own shown omen aims at, in the
-        /// order of <see cref="DepictionFrame.Enemies"/>. The single-valued members above (EnemyCell, Gap,
-        /// AimCells …) are the one enemy <see cref="DepictionFrame.Enemy"/> describes; these are all of them.
-        /// </summary>
-        public List<FloorEnemy> Enemies = new List<FloorEnemy>();
-    }
-
-    /// <summary>
-    /// JS extension (depiction-multi-enemy.md, js: DepictionTypes.js:769): one enemy on the floor
-    /// (battle-visual-v1 §4.2) — where it stands and what its shown omen aims at. Every cell is the
-    /// core's, read as for the one enemy of <see cref="FloorFrame"/>. The View hatches
-    /// <see cref="AimCells"/> in the direction of <see cref="Hatch"/>; where two enemies' AimCells share
-    /// a cell the two directions cross.
-    /// </summary>
-    public sealed class FloorEnemy
-    {
-        /// <summary>The enemy's index in the core's enemy list (<see cref="UnitFrame.Unit"/>).</summary>
-        public int Unit;
-        /// <summary>The direction of its stripes (<see cref="UnitFrame.Hatch"/>, <see cref="EnemyHatch.AngleOf"/>).</summary>
-        public int Hatch;
-        /// <summary>Its lowest cell and how many cells it takes.</summary>
-        public int Cell;
-        public int Size = 1;
-        /// <summary>Its N to the player; −1 once it has fallen in the core (<see cref="UnitFrame.Gap"/>).</summary>
-        public int Gap = -1;
-        /// <summary>It has fallen (<see cref="UnitFrame.Down"/>): its figure and its cells are gone, and it aims at nothing.</summary>
-        public bool Down;
-        /// <summary>The cells its shown omen reaches (赤の斜線). Empty when that aims at nobody or is hidden.</summary>
-        public List<int> AimCells = new List<int>();
-        /// <summary>Of <see cref="AimCells"/>, the ones meeting the boundary its action reads (stripes 6 px apart).</summary>
-        public List<int> DenseCells = new List<int>();
-        /// <summary>The cells it would stand on after the move its shown omen makes (菫の破線の枠).</summary>
         public List<int> MoveCells = new List<int>();
     }
 
@@ -941,22 +887,16 @@ namespace Depiction
         /// moved went, so the walk takes 160 ms a cell. 0 when the source draws no floor.
         /// </summary>
         public int CellsMoved;
-
-        // ---- JS extension: several enemies (depiction-multi-enemy.md, js: DepictionTypes.js:929). ----
-
         /// <summary>
-        /// Which enemy the cue is about (its index in the core's enemy list), or −1 when it concerns the
-        /// player alone. Slash, GuardBlock and Hit — a blow, a wall, a 見切り return — carry the enemy of
-        /// the exchange, the one struck or the one striking. GuardReset, GuardGain, StatusChange,
-        /// HpChange and TraitFire carry their holder when it is an enemy; OmenShow, EnemyWindup,
-        /// SideBonusMiss and Defeat their enemy. RangeSwitch carries the enemy that moved (by itself or
-        /// pushed), −1 when the player moved. A one-enemy battle writes 0 or −1.
+        /// #589: which enemy (its index in <see cref="DepictionFrame.Enemies"/>) is on the enemy end of the
+        /// beat — the enemy that acts, or the one a card struck. 0 in a one-enemy battle and for a beat
+        /// about the player alone.
         /// </summary>
-        public int Unit = -1;
+        public int Unit;
         /// <summary>
-        /// RangeSwitch with <see cref="Unit"/> ≥ 0 only: that enemy's lowest cell and its N after the move.
-        /// <see cref="PlayerCellAfter"/> / <see cref="EnemyCellAfter"/> / <see cref="GapAfter"/> describe the
-        /// enemy <see cref="DepictionFrame.Enemy"/> does.
+        /// RangeSwitch only, when an enemy moved (by itself or pushed; depiction-multi-enemy.md): that
+        /// enemy's (<see cref="Unit"/>) lowest cell and its N after the move. 0 when the player moved.
+        /// <see cref="EnemyCellAfter"/> / <see cref="GapAfter"/> describe the enemy <see cref="DepictionFrame.Enemy"/> does.
         /// </summary>
         public int UnitCellAfter;
         public int UnitGapAfter;
@@ -1090,7 +1030,7 @@ namespace Depiction
     ///
     /// JS extension (depiction-multi-enemy.md, js: DepictionTypes.js:1090): CoreBattleSource's Inspect,
     /// TryPlay, PreviewFor and RefusalText also take the enemy a card is released on (its index in the
-    /// core's enemy list, DepictionFrame.Enemies[k].Unit), and TargetFor(cardId) names the one it goes to
+    /// core's enemy list, k of DepictionFrame.Enemies[k]), and TargetFor(cardId) names the one it goes to
     /// when none is given (Depiction.Bridge's ITrialSource). This interface is unchanged.
     /// </summary>
     public interface IDepictionSource

@@ -71,8 +71,8 @@ namespace Trial.Battle.Flow.Tests.Fakes
         {
             if (frame == null) return;
             if (frame.Enemies != null)
-                foreach (UnitFrame uf in frame.Enemies)
-                    if (uf.Down) _down.Add((UnitSide.Enemy, Math.Max(0, uf.Unit)));
+                for (int k = 0; k < frame.Enemies.Count; k++)
+                    if (frame.Enemies[k].Unit.Down) _down.Add((UnitSide.Enemy, k));
         }
 
         public void ShowGapTo(int unit) => GapsShown.Add(unit);

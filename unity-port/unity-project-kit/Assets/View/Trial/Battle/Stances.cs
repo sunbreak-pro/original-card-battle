@@ -158,6 +158,8 @@ namespace Trial.Battle
             /// <summary>s.args = [unit, swatchAngle, merged].</summary>
             public bool HasArgs;
             public UnitFrame ArgUnit;
+            /// <summary>Which enemy ArgUnit is (its index in DepictionFrame.Enemies, #589); −1 for the player's.</summary>
+            public int ArgUnitNo = -1;
             public float? ArgSwatch;
             public List<Row> ArgMerged;
             public int RowsCount;
@@ -402,20 +404,28 @@ namespace Trial.Battle
         // js: scenes/battle/hud/stances.js:119
         private List<Row> MergedRows(DepictionFrame frame, bool first)
         {
-            List<UnitFrame> list = frame.Enemies != null && frame.Enemies.Count > 0
-                ? frame.Enemies
-                : frame.Enemy != null ? new List<UnitFrame> { frame.Enemy } : new List<UnitFrame>();
-            var standing = new List<UnitFrame>();
-            foreach (UnitFrame u in list) if (u != null && !u.Down) standing.Add(u);
-            List<UnitFrame> from = standing.Count > 0 ? standing : list; // all fallen (a won battle): the list fades as it stood
+            // Each enemy with its index in DepictionFrame.Enemies (#589's EnemyFrame: its panel, stripe direction, swatch).
+            var list = new List<(int Unit, EnemyFrame E)>();
+            if (frame.Enemies != null && frame.Enemies.Count > 0)
+            {
+                for (int k = 0; k < frame.Enemies.Count; k++) list.Add((k, frame.Enemies[k]));
+            }
+            else if (frame.Enemy != null)
+            {
+                list.Add((0, new EnemyFrame { Unit = frame.Enemy }));
+            }
+            var standing = new List<(int Unit, EnemyFrame E)>();
+            foreach (var x in list) if (x.E != null && x.E.Unit != null && !x.E.Unit.Down) standing.Add(x);
+            List<(int Unit, EnemyFrame E)> from = standing.Count > 0 ? standing : list; // all fallen (a won battle): the list fades as it stood
             var rows = new List<Row>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
             for (int k = 0; k < from.Count; k++)
             {
-                UnitFrame u = from[k];
+                EnemyFrame e = from[k].E;
+                UnitFrame u = e?.Unit;
                 if (u == null) continue;
-                int unit = u.Unit >= 0 ? u.Unit : k;
-                float? angle = frame.SwatchesShown ? BattleLayout.HatchAngle(u.Hatch) : (float?)null;
+                int unit = from[k].Unit;
+                float? angle = e.Swatch ? BattleLayout.HatchAngle(e.StripeDirection) : (float?)null;
                 if (u.Stances == null) continue;
                 foreach (StanceRow r in u.Stances)
                 {
@@ -440,7 +450,7 @@ namespace Trial.Battle
         }
 
         // js: scenes/battle/hud/stances.js:141
-        private void BindSide(UnitSide side, UnitFrame unit, float? swatchAngle, bool first, List<Row> merged)
+        private void BindSide(UnitSide side, UnitFrame unit, int unitNo, float? swatchAngle, bool first, List<Row> merged)
         {
             Side s = SideOf(side);
             // rows: { Name, Count, [unitFrame], [angle] } oldest first; `merged` carries the enemies' own.
@@ -464,6 +474,7 @@ namespace Trial.Battle
             s.Unit = unit;
             s.HasArgs = true;
             s.ArgUnit = unit;
+            s.ArgUnitNo = unitNo;
             s.ArgSwatch = swatchAngle;
             s.ArgMerged = merged;
             s.RowsCount = rows.Count;
@@ -472,7 +483,7 @@ namespace Trial.Battle
             // A stance was put down (the list holds more than it did, or a newer stamp leads it): the newest frame lights once.
             int held = 0;
             foreach (Row r in rows) held += r.Count;
-            string who = merged != null ? "merged" : unit != null ? "u" + unit.Unit.ToString(CultureInfo.InvariantCulture) : null;
+            string who = merged != null ? "merged" : unit != null ? "u" + unitNo.ToString(CultureInfo.InvariantCulture) : null;
             int? newest = merged != null && rows.Count > 0 ? rows[rows.Count - 1].Stamp : (int?)null;
             bool grew = !first && s.Held.HasValue && s.Who == who && (held > s.Held.Value || (newest.HasValue && newest.Value > (s.Newest ?? 0)));
             s.Held = held;
@@ -601,7 +612,7 @@ namespace Trial.Battle
             s.High = high;
             _tip?.Hide(s);
             s.Key = null;
-            if (s.HasArgs) BindSide(side, s.ArgUnit, s.ArgSwatch, true, s.ArgMerged);
+            if (s.HasArgs) BindSide(side, s.ArgUnit, s.ArgUnitNo, s.ArgSwatch, true, s.ArgMerged);
             if (!s.El || _env == null) return;
             // On real time, as the drawers' slide that moves the figures (the journal holds the scene clock still).
             UiNode n = UiNode.Of(s.El);
@@ -636,10 +647,13 @@ namespace Trial.Battle
                 }
                 return;
             }
-            BindSide(UnitSide.Player, frame.Player, null, first, null);
-            float? swatch = frame.SwatchesShown && frame.Enemy != null ? BattleLayout.HatchAngle(frame.Enemy.Hatch) : (float?)null;
+            BindSide(UnitSide.Player, frame.Player, -1, null, first, null);
+            // The frame's enemy is the focus enemy's share (#589): its swatch, when the battle draws them.
+            int focus = frame.Enemies != null && frame.Enemy != null ? frame.Enemies.FindIndex(e => e != null && e.Unit == frame.Enemy) : -1;
+            EnemyFrame share = focus >= 0 ? frame.Enemies[focus] : null;
+            float? swatch = share != null && share.Swatch ? BattleLayout.HatchAngle(share.StripeDirection) : (float?)null;
             bool several = frame.Enemies != null && frame.Enemies.Count > 1;
-            BindSide(UnitSide.Enemy, frame.Enemy, swatch, first, several ? MergedRows(frame, first) : null);
+            BindSide(UnitSide.Enemy, frame.Enemy, focus, swatch, first, several ? MergedRows(frame, first) : null);
         }
 
         /// <summary>boxOf(side): `side`'s list over every frame it shows (the empty one too), at rest or high; null when hidden.</summary>

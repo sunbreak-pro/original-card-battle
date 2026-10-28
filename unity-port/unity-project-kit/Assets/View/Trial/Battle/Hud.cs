@@ -16,9 +16,9 @@
 // L. Every length runs on env.Clock with the nominal ms handed in.
 //
 // Several enemies (scene addition; Unity draws Enemies[0] only): when the frame carries more than one enemy
-// (DepictionFrame.Enemies / Omens, the JS writer's extension), each standing enemy gets its own number panel and omen
-// badge, under and over its cells. Status(Enemy) and Omen are the frame's enemy (Frame.Enemy, the first standing in the
-// line); Status(Enemy, unit) and OmenOf(unit) reach any one of them.
+// (#589's DepictionFrame.Enemies: each one's EnemyFrame), each standing enemy gets its own number panel and omen badge,
+// under and over its cells. Status(Enemy) and Omen are the frame's enemy (Frame.Enemy, the first standing in the line);
+// Status(Enemy, unit) and OmenOf(unit) reach any one of them (enemy k is DepictionFrame.Enemies[k]).
 //
 // Unity differences kept to the JS: the window / root listeners (pointermove, pointerdown capture, contextmenu) are routed
 // by the scene (BattleInput) to OnPointerMove / OnPinDown / OnPinContext. The omen flight's copy of the badge
@@ -77,6 +77,8 @@ namespace Trial.Battle
             public HudStatusPanel Status;
             public HudOmenBadge Omen;
             public UnitFrame Frame;
+            /// <summary>Its EnemyFrame (#589: its cells); null for the one enemy of a frame that carries no list.</summary>
+            public EnemyFrame Share;
             public bool Shown = true;
             /// <summary>v.disclosure: the 開示度 its badge last showed (null before the first omen).</summary>
             public int? Disclosure;
@@ -94,12 +96,15 @@ namespace Trial.Battle
             public readonly int Unit;
             public readonly UnitFrame UnitFrame;
             public readonly OmenFrame OmenFrame;
+            /// <summary>The enemy's EnemyFrame (#589); null for the one enemy of a frame that carries no list.</summary>
+            public readonly EnemyFrame Share;
 
-            public EnemyEntry(int unit, UnitFrame unitFrame, OmenFrame omenFrame)
+            public EnemyEntry(int unit, UnitFrame unitFrame, OmenFrame omenFrame, EnemyFrame share)
             {
                 Unit = unit;
                 UnitFrame = unitFrame;
                 OmenFrame = omenFrame;
+                Share = share;
             }
         }
 
@@ -147,7 +152,10 @@ namespace Trial.Battle
             public void Bind(OmenFrame o)
             {
                 if (o == null) return;
-                EnemyView target = _hud._multi && o.Unit >= 0 && _hud._enemies.ContainsKey(o.Unit) ? _hud._enemies[o.Unit] : _hud.PrimaryView();
+                // The omen's enemy: the share of the last frame that holds it (#589: DepictionFrame.Enemies[k].Omen).
+                DepictionFrame last = _hud._lastFrame;
+                int unit = last != null && last.Enemies != null ? last.Enemies.FindIndex(e => e != null && e.Omen == o) : -1;
+                EnemyView target = _hud._multi && unit >= 0 && _hud._enemies.ContainsKey(unit) ? _hud._enemies[unit] : _hud.PrimaryView();
                 target.Omen.Bind(o);
             }
 
@@ -425,19 +433,21 @@ namespace Trial.Battle
         // js: scenes/battle/hud.js:176
         private static List<EnemyEntry> EnemiesOf(DepictionFrame f)
         {
-            IReadOnlyList<UnitFrame> list = f.Enemies != null && f.Enemies.Count > 0 ? f.Enemies : (IReadOnlyList<UnitFrame>)new[] { f.Enemy };
-            List<OmenFrame> omens = f.Omens != null && f.Omens.Count == list.Count ? f.Omens : null;
-            var rows = new List<EnemyEntry>(list.Count);
-            for (int k = 0; k < list.Count; k++)
+            if (f.Enemies == null || f.Enemies.Count == 0) return new List<EnemyEntry> { new EnemyEntry(0, f.Enemy, f.Omen, null) };
+            var rows = new List<EnemyEntry>(f.Enemies.Count);
+            for (int k = 0; k < f.Enemies.Count; k++)
             {
-                UnitFrame u = list[k];
-                rows.Add(new EnemyEntry(
-                    u != null && u.Unit >= 0 ? u.Unit : k,
-                    u,
-                    omens != null ? omens[k] : ReferenceEquals(u, f.Enemy) ? f.Omen : null));
+                EnemyFrame e = f.Enemies[k];
+                rows.Add(new EnemyEntry(k, e?.Unit, e?.Omen, e));
             }
             return rows;
         }
+
+        /// <summary>
+        /// battle-visual-v1 §4.4〜§4.6: the battle has two or more enemies, so each one's HP row, omen plate and stance frame
+        /// carry its stripe direction's swatch (#589's EnemyFrame.Swatch, the same on every enemy of the battle).
+        /// </summary>
+        private static bool SwatchesOf(DepictionFrame f) => f != null && f.Enemies != null && f.Enemies.Count > 0 && f.Enemies[0] != null && f.Enemies[0].Swatch;
 
         /// <summary>
         /// The way enemy `e`'s move omen goes on screen (battle-visual-v1 §4.4): its destination cells as the frame's floor
@@ -448,39 +458,25 @@ namespace Trial.Battle
         {
             FloorFrame fl = f.Floor;
             if (fl == null) return 0;
-            List<int> cells = fl.MoveCells;
-            if (fl.Enemies != null && fl.Enemies.Count > 0)
-            {
-                FloorEnemy fe = FloorEnemyOf(fl, e.Unit);
-                cells = fe != null ? fe.MoveCells : null;
-            }
-            int cell = e.UnitFrame != null && e.UnitFrame.Cell > 0 ? e.UnitFrame.Cell : fl.EnemyCell;
+            List<int> cells = e.Share != null ? e.Share.MoveCells : fl.MoveCells;
+            int cell = e.Share != null && e.Share.Cell > 0 ? e.Share.Cell : fl.EnemyCell;
             if (cells == null || cells.Count == 0 || !(cell > 0)) return 0;
             int min = int.MaxValue;
             foreach (int c in cells) if (c < min) min = c;
             return min < cell ? -1 : 1;
         }
 
-        /// <summary>Whether enemy `e`'s shown omen hatches cells on the frame's floor (FloorFrame.Enemies[k].AimCells / AimCells).</summary>
+        /// <summary>Whether enemy `e`'s shown omen hatches cells on the frame's floor (EnemyFrame.AimCells / FloorFrame.AimCells).</summary>
         // js: scenes/battle/hud.js:205
         private static bool AimsOf(DepictionFrame f, EnemyEntry e)
         {
             FloorFrame fl = f.Floor;
             if (fl == null) return false;
-            if (fl.Enemies != null && fl.Enemies.Count > 0)
+            if (e.Share != null)
             {
-                FloorEnemy fe = FloorEnemyOf(fl, e.Unit);
-                return fe != null && !fe.Down && fe.AimCells != null && fe.AimCells.Count > 0;
+                return !(e.UnitFrame != null && e.UnitFrame.Down) && e.Share.AimCells != null && e.Share.AimCells.Count > 0;
             }
             return fl.AimCells != null && fl.AimCells.Count > 0;
-        }
-
-        /// <summary>fl.Enemies.find((x) => x &amp;&amp; x.Unit === unit).</summary>
-        private static FloorEnemy FloorEnemyOf(FloorFrame fl, int unit)
-        {
-            foreach (FloorEnemy x in fl.Enemies)
-                if (x != null && x.Unit == unit) return x;
-            return null;
         }
 
         // js: scenes/battle/hud.js:215
@@ -499,17 +495,20 @@ namespace Trial.Battle
             _player.Bind(f.Player);
             List<EnemyEntry> list = EnemiesOf(f);
             _multi = list.Count > 1;
-            _primary = f.Enemy != null && f.Enemy.Unit >= 0 ? f.Enemy.Unit : list.Count > 0 ? list[0].Unit : 0;
+            int focus = f.Enemies != null && f.Enemy != null ? f.Enemies.FindIndex(x => x != null && x.Unit == f.Enemy) : -1;
+            _primary = focus >= 0 ? focus : list.Count > 0 ? list[0].Unit : 0;
+            bool swatches = SwatchesOf(f);
             var listed = new HashSet<int>();
             foreach (EnemyEntry e in list)
             {
                 EnemyView v = EnemyViewOf(e.Unit);
                 listed.Add(e.Unit);
                 v.Frame = e.UnitFrame;
+                v.Share = e.Share;
                 if (e.UnitFrame != null) v.Status.Bind(e.UnitFrame);
                 v.Omen.SetMoveDir(MoveDirOf(f, e));
                 // §4.4 (several enemies): the badge's swatch ties it to its enemy's red cells on the floor, while it has some.
-                v.Omen.SetSwatchShown(f.SwatchesShown, AimsOf(f, e));
+                v.Omen.SetSwatchShown(swatches, AimsOf(f, e), e.Share != null ? e.Share.StripeDirection : 0);
                 // Review 21: the badge of an action held across its events keeps what it shows (player.applyFrame's keepOmen).
                 bool keep = keepOmen >= 0 && keepOmen == e.Unit && v.Omen.Visible;
                 if (e.OmenFrame != null && !keep)
@@ -524,7 +523,7 @@ namespace Trial.Battle
                 v.Shown = true;
                 v.Status.SetDown(e.UnitFrame != null && e.UnitFrame.Down);
                 v.Status.SetSolid(_multi);
-                v.Status.SetSwatch(f.SwatchesShown && e.UnitFrame != null ? BattleLayout.HatchAngle(e.UnitFrame.Hatch) : (float?)null);
+                v.Status.SetSwatch(swatches && e.Share != null ? BattleLayout.HatchAngle(e.Share.StripeDirection) : (float?)null);
             }
             foreach (EnemyView v in _order)
             {
@@ -572,8 +571,8 @@ namespace Trial.Battle
                 }
                 else
                 {
-                    int size = isPrimary ? Math.Max(1, o.EnemySize) : Math.Max(1, v.Frame != null ? v.Frame.Size : 0);
-                    row.X = isPrimary || cells <= 0 || v.Frame == null ? o.EnemyX : FloorSpec.FeetX(cells, v.Frame.Cell, size);
+                    int size = isPrimary ? Math.Max(1, o.EnemySize) : Math.Max(1, v.Share != null ? v.Share.Size : 0);
+                    row.X = isPrimary || cells <= 0 || v.Share == null ? o.EnemyX : FloorSpec.FeetX(cells, v.Share.Cell, size);
                     row.Top = isPrimary ? o.EnemyTop : L.FeetY - FigureFrame.HeightFor(size);
                     row.W = StatusPanelLayout.EnemyPanelWidth(cells, size);
                     row.Walking = false;
@@ -1004,10 +1003,10 @@ namespace Trial.Battle
             EnemyEntry e = list[at];
             if (!_enemies.TryGetValue(e.Unit, out EnemyView v)) return;
             v.Omen.SetMoveDir(MoveDirOf(frame, e));
-            v.Omen.SetSwatchShown(frame.SwatchesShown, AimsOf(frame, e));
+            v.Omen.SetSwatchShown(SwatchesOf(frame), AimsOf(frame, e), e.Share != null ? e.Share.StripeDirection : 0);
         }
 
-        /// <summary>The badge of enemy `unit` (Cue.Unit / OmenFrame.Unit); the leader's when unknown.</summary>
+        /// <summary>The badge of enemy `unit` (Cue.Unit, the index in DepictionFrame.Enemies); the leader's when unknown.</summary>
         // js: scenes/battle/hud.js:570
         public IOmenBadge OmenOf(int unit = -1) =>
             unit >= 0 && _enemies.TryGetValue(unit, out EnemyView v) ? v.Omen : PrimaryView().Omen;

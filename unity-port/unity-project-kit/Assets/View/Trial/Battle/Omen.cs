@@ -156,6 +156,8 @@ namespace Trial.Battle
         private int _moveDir;
         private bool _swatches;
         private bool _aimed;
+        /// <summary>The way this badge's swatch turns: its enemy's EnemyFrame.StripeDirection (#589).</summary>
+        private int _stripe;
         private float? _tailAt;
         private float _drop;
         private bool _behind;
@@ -447,7 +449,7 @@ namespace Trial.Battle
 
             // §4.4: the swatch at the top right ties the badge to this enemy's red stripes on the floor; it stands with the hit
             // mark (OmenBadgeView.BuildHitParts: 22×22, 12 px from the right, 14 from the top). With several enemies it stands
-            // whenever this enemy's omen hatches cells on the floor (FloorEnemy.AimCells). Review 16: the DS OmenPlate's
+            // whenever this enemy's omen hatches cells on the floor (EnemyFrame.AimCells). Review 16: the DS OmenPlate's
             // 「移動の行動に赤の色見本を付けないでください」 (angle null for an action that aims at no cell) and battle-visual-v1 §2.3
             // keep the red to the cells an action reaches, so a move omen (its cells are the violet dashed frame) and a rest
             // carry none; the badge's ▼ and the panels' swatches say whose it is. battle_ui_ux_v2 §7 (review 21): an enemy read
@@ -456,7 +458,7 @@ namespace Trial.Battle
             bool unread = o.Disclosure < 1;
             if (!unread && (marked || (_swatches && _aimed && !rests)))
             {
-                OcbElement sw = Ocb.Swatch(_badge, BattleLayout.HatchAngle(o.Hatch), SwatchPx);
+                OcbElement sw = Ocb.Swatch(_badge, BattleLayout.HatchAngle(_stripe), SwatchPx);
                 Ocb.Absolute(sw.Root);
                 // position: absolute; right: 12px; top: 14px (from the padding box)
                 sw.Node.Place(BadgeW - bw.Right - 12f - SwatchPx, bw.Top + 14f);
@@ -543,8 +545,6 @@ namespace Trial.Battle
             PlanStatuses = o.PlanStatuses,
             PlanSideGlyph = o.PlanSideGlyph,
             PlanChanged = o.PlanChanged,
-            Unit = o.Unit,
-            Hatch = o.Hatch,
         };
 
         // ---- api (omen.js:151) ------------------------------------------------------------------------------------------
@@ -565,15 +565,17 @@ namespace Trial.Battle
         }
 
         /// <summary>
-        /// Several enemies (SwatchesShown): the swatch stands on the badge while `aimed` — this enemy's omen hatches cells on
-        /// the floor (FloorEnemy.AimCells); never on a move (DS OmenPlate) or a rest.
+        /// Several enemies (EnemyFrame.Swatch): the swatch stands on the badge while `aimed` — this enemy's omen hatches cells
+        /// on the floor (EnemyFrame.AimCells); never on a move (DS OmenPlate) or a rest. `stripe` is the enemy's
+        /// EnemyFrame.StripeDirection, the way the swatch turns.
         /// </summary>
         // js: scenes/battle/hud/omen.js:169
-        public void SetSwatchShown(bool on, bool aimed)
+        public void SetSwatchShown(bool on, bool aimed, int stripe = 0)
         {
-            if (on == _swatches && aimed == _aimed) return;
+            if (on == _swatches && aimed == _aimed && stripe == _stripe) return;
             _swatches = on;
             _aimed = aimed;
+            _stripe = stripe;
             if (_frame != null) DrawBadge(_frame);
         }
 

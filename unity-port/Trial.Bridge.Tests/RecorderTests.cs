@@ -125,12 +125,17 @@ namespace Trial.Bridge.Tests
                 "S.LayerSeed", "S.EncounterSeed", "S.EventSeed", "S.LayerEnemies", "S.CarvingKnownAt",
                 "E.RewardSeed",
                 "C.Slice",            // statics
+                "S.CanUseConsumable", // #651: the C# slot's read (trial screens read CanUseSlot)
             };
             var internalCalls = new HashSet<string>(StringComparer.Ordinal)
             {
                 "E.TakeChest", "E.TakeSurvey",                                   // the session's Keeper
                 "S.ReportBattle", "S.SpendTrainingMark", "S.Receive", "S.TurnDownFind", // the Expedition's own calls on its session
                 "B.TryFinish",                                                   // RecordedBattle.TryFinish logs it as B.Finish
+                "S.TakeConsumable",                                              // #651: the Expedition's own call (Stow / SwapConsumable)
+                // #651: a found consumable waiting outside trial mode; the trial session asks for the swap itself
+                // (S.Act TakeFound / LeaveFound), so nothing waits here and no trial screen makes these.
+                "E.SwapConsumable", "E.DiscardConsumable",
             };
             var types = new (string Tag, Type Type)[]
             {

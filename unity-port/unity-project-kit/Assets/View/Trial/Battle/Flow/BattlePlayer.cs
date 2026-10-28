@@ -11,7 +11,8 @@
 // Several enemies (scene addition with the writer's extension, docs/port-notes/depiction-multi-enemy.md): each cue plays
 // on the enemy its Cue.Unit names — its figure (field, the trailing `unit` argument), its number panel (hud.Status(side,
 // unit)) and its omen badge (hud.OmenOf(unit)); a card released over enemy k goes to ctx.Source.TryPlay(id, zone, k).
-// With one enemy every call is the one Unity makes (no target argument reaches the source).
+// With one enemy every call is the one Unity makes (no target argument reaches the source). Enemy k is
+// DepictionFrame.Enemies[k] (#589's EnemyFrame: its number panel, omen, cells and stripes).
 //
 // The JS `undefined` unit (one enemy / "the leader") is −1 here, as in the module contracts; a JS `null` "none" state
 // (the acting unit, the Tab's enemy, the last enemy's phase) is an int?.
@@ -636,38 +637,61 @@ namespace Trial.Battle
         private DepictionFrame FrameNow => Src.Frame; // js: scenes/battle/player.js:272
         private float Ms(EffectId id) => _switches.Ms(id); // js: scenes/battle/player.js:220
 
-        /// <summary>The enemy a cue is about (Cue.Unit), or −1 (the JS undefined: the player alone / a one-enemy source).</summary>
+        /// <summary>
+        /// The enemy a cue is about, or −1 (the JS undefined: the player alone / a one-enemy source). #589's Cue.Unit names the
+        /// enemy on the beat's enemy end even on a beat about the player's own numbers, so this reads it the way the JS
+        /// writer wrote it: a blow, a wall, a 見切り return (Slash / GuardBlock / Hit), an omen, a windup, a struck-off bonus
+        /// and a fall name their enemy; a RangeSwitch names the enemy that moved (UnitCellAfter), else none; any other cue
+        /// names its holder when that is an enemy.
+        /// </summary>
         // js: scenes/battle/player.js:274
-        private static int UnitOf(Cue x) => x != null && x.Unit >= 0 ? x.Unit : -1;
+        private static int UnitOf(Cue x)
+        {
+            if (x == null) return -1;
+            switch (x.Kind)
+            {
+                case CueKind.Slash:
+                case CueKind.GuardBlock:
+                case CueKind.Hit:
+                case CueKind.OmenShow:
+                case CueKind.EnemyWindup:
+                case CueKind.SideBonusMiss:
+                case CueKind.Defeat:
+                    return x.Unit;
+                case CueKind.RangeSwitch:
+                    return x.UnitCellAfter > 0 ? x.Unit : -1;
+                default:
+                    return x.Target == UnitSide.Enemy ? x.Unit : -1;
+            }
+        }
 
         // js: scenes/battle/player.js:274
         private static int UnitOf(DepictionEvent x) => x != null && x.Unit >= 0 ? x.Unit : -1;
 
-        /// <summary>Every enemy frame of `frame`, in the core's order (one-enemy sources: the one).</summary>
+        /// <summary>
+        /// Every enemy's share of `frame` (#589's EnemyFrame), in the core's order: enemy k is the k-th. A source that keeps
+        /// one enemy (the filming script) writes none, so its one enemy and omen stand alone, as one share.
+        /// </summary>
         // js: scenes/battle/player.js:276
-        private static IReadOnlyList<UnitFrame> EnemyFrames(DepictionFrame frame)
+        private static IReadOnlyList<EnemyFrame> EnemyShares(DepictionFrame frame)
         {
             if (frame != null && frame.Enemies != null && frame.Enemies.Count > 0) return frame.Enemies;
-            if (frame != null && frame.Enemy != null) return new[] { frame.Enemy };
-            return Array.Empty<UnitFrame>();
+            if (frame != null && frame.Enemy != null) return new[] { new EnemyFrame { Unit = frame.Enemy, Omen = frame.Omen ?? new OmenFrame() } };
+            return Array.Empty<EnemyFrame>();
         }
 
-        // js: scenes/battle/player.js:277
-        private static int UnitNo(UnitFrame uf, int k) => uf != null && uf.Unit >= 0 ? uf.Unit : k;
+        /// <summary>Every enemy's number panel of `frame`, in the core's order (one-enemy sources: the one).</summary>
+        private static IReadOnlyList<UnitFrame> EnemyFrames(DepictionFrame frame) => EnemyShares(frame).Select(e => e.Unit).ToList();
 
         /// <summary>The battle has two or more enemies: only then does a target reach the source.</summary>
         // js: scenes/battle/player.js:279
         private bool MultiNow() => EnemyFrames(FrameNow).Count > 1;
 
-        /// <summary>Enemy `unit`'s omen in `frame` (Frame.Omens[k]); the frame's one omen otherwise.</summary>
+        /// <summary>Enemy `unit`'s omen in `frame` (Frame.Enemies[unit].Omen); the frame's one omen otherwise.</summary>
         // js: scenes/battle/player.js:281
         private static OmenFrame OmenFrameOf(DepictionFrame frame, int unit)
         {
-            if (frame != null && frame.Omens != null && frame.Omens.Count > 0 && unit >= 0)
-            {
-                OmenFrame o = frame.Omens.Find(x => x != null && x.Unit == unit);
-                if (o != null) return o;
-            }
+            if (frame != null && frame.Enemies != null && unit >= 0 && unit < frame.Enemies.Count) return frame.Enemies[unit].Omen;
             return frame?.Omen;
         }
 
@@ -947,17 +971,15 @@ namespace Trial.Battle
         private string LogWho(UnitSide side, int unit, DepictionFrame frame)
         {
             if (side != UnitSide.Enemy) return LogWhoOf(side);
-            IReadOnlyList<UnitFrame> list = EnemyFrames(frame ?? FrameNow);
+            IReadOnlyList<EnemyFrame> list = EnemyShares(frame ?? FrameNow);
             if (list.Count < 2) return LogWhoOf(UnitSide.Enemy);
-            UnitFrame uf = null;
-            for (int k = 0; k < list.Count; k++)
-                if (UnitNo(list[k], k) == unit) { uf = list[k]; break; }
-            string name = uf != null ? BattleLayout.EnemyNameOf(uf.ArtId) : "";
+            EnemyFrame uf = unit >= 0 && unit < list.Count ? list[unit] : null;
+            string name = uf != null ? BattleLayout.EnemyNameOf(uf.Unit.ArtId) : "";
             if (string.IsNullOrEmpty(name)) return LogWhoOf(UnitSide.Enemy);
             bool twin = false;
             for (int k = 0; k < list.Count; k++)
-                if (UnitNo(list[k], k) != unit && BattleLayout.EnemyNameOf(list[k].ArtId) == name) { twin = true; break; }
-            return twin ? name + BattleLayout.HatchGlyph(uf.Hatch) : name;
+                if (k != unit && BattleLayout.EnemyNameOf(list[k].Unit.ArtId) == name) { twin = true; break; }
+            return twin ? name + BattleLayout.HatchGlyph(uf.StripeDirection) : name;
         }
 
         /// <summary>How many of stance `name` the unit a cue is about holds in `frame` (its StanceRow.Count; 1 when unknown).</summary>
@@ -972,7 +994,7 @@ namespace Trial.Battle
                 uf = null;
                 IReadOnlyList<UnitFrame> list = EnemyFrames(frame);
                 for (int k = 0; k < list.Count; k++)
-                    if (UnitNo(list[k], k) == UnitOf(cue)) { uf = list[k]; break; }
+                    if (k == UnitOf(cue)) { uf = list[k]; break; }
                 uf = uf ?? frame.Enemy;
             }
             StanceRow row = uf != null && uf.Stances != null ? uf.Stances.Find(r => r.Name == name) : null;
@@ -994,7 +1016,7 @@ namespace Trial.Battle
             for (int j = 0; j < i; j++)
             {
                 Cue c = ev.Cues[j];
-                if (c.Kind == CueKind.RangeSwitch && c.Unit >= 0 && c.Unit == cue.Unit && c.UnitCellAfter > 0) { push = c; break; }
+                if (c.Kind == CueKind.RangeSwitch && UnitOf(c) >= 0 && UnitOf(c) == UnitOf(cue)) { push = c; break; }
             }
             if (push == null) return null;
             bool pulls = _eventFace != null && _eventFace.Values != null && _eventFace.Values.Any(v => v.Kind == CardValueKind.Pull);
@@ -1174,7 +1196,7 @@ namespace Trial.Battle
                 ApplyStanceGlow(UnitSide.Player, frame.Player, -1);
                 IReadOnlyList<UnitFrame> list = EnemyFrames(frame);
                 for (int k = 0; k < list.Count; k++)
-                    if (!list[k].Down) ApplyStanceGlow(UnitSide.Enemy, list[k], UnitNo(list[k], k));
+                    if (!list[k].Down) ApplyStanceGlow(UnitSide.Enemy, list[k], k);
             }
             // §3.5 集中 / 威圧, §5.10 強化 (review 21): the statuses the player holds mark the cards they act on.
             _hand.SetStatusMarks(StatusMarksOf(frame.Player));
@@ -1265,7 +1287,7 @@ namespace Trial.Battle
             {
                 bool stands = false;
                 for (int k = 0; k < list.Count; k++)
-                    if (UnitNo(list[k], k) == _restingGapUnit.Value && !list[k].Down) { stands = true; break; }
+                    if (k == _restingGapUnit.Value && !list[k].Down) { stands = true; break; }
                 if (!stands) _restingGapUnit = null;
             }
             _field.ShowGapTo(list.Count > 1 ? (aimed ? framed : _restingGapUnit ?? -1) : -1);
@@ -1278,7 +1300,7 @@ namespace Trial.Battle
             }
             for (int k = 0; k < list.Count; k++)
             {
-                int u = UnitNo(list[k], k);
+                int u = k;
                 int n = _heldFace != null && (!aimed || u == framed) ? _heldFace.HpLossFor(u) : 0;
                 _hud.Status(UnitSide.Enemy, u).ShowHpLoss(n);
             }
@@ -1331,14 +1353,14 @@ namespace Trial.Battle
             FigureGeom e = Figure(UnitSide.Enemy);
             if (p == null || e == null) return;
             var units = new List<FollowUnit>();
-            IReadOnlyList<UnitFrame> list = EnemyFrames(frame);
+            IReadOnlyList<EnemyFrame> list = EnemyShares(frame);
             for (int k = 0; k < list.Count; k++)
             {
-                UnitFrame uf = list[k];
-                int u = UnitNo(uf, k);
+                EnemyFrame uf = list[k];
+                int u = k;
                 FigureGeom g = Figure(UnitSide.Enemy, u);
                 if (g != null)
-                    units.Add(new FollowUnit { Unit = u, X = FollowX(g), Top = L.FeetY - g.Height, Size = Math.Max(1, uf.Size > 0 ? uf.Size : 1), Down = uf.Down || g.Down, Walking = g.Walking });
+                    units.Add(new FollowUnit { Unit = u, X = FollowX(g), Top = L.FeetY - g.Height, Size = Math.Max(1, uf.Size > 0 ? uf.Size : 1), Down = uf.Unit.Down || g.Down, Walking = g.Walking });
             }
             _hud.Follow(new FollowArgs
             {
@@ -1381,7 +1403,7 @@ namespace Trial.Battle
             {
                 IReadOnlyList<UnitFrame> list = EnemyFrames(ev.After);
                 for (int k = 0; k < list.Count; k++)
-                    if (UnitNo(list[k], k) == u) { uf = list[k]; break; }
+                    if (k == u) { uf = list[k]; break; }
             }
             else uf = ev.After.Enemy;
             ApplyStanceGlow(UnitSide.Enemy, uf ?? ev.After.Enemy, u);
@@ -1573,16 +1595,16 @@ namespace Trial.Battle
             }
             // §4.2: with a floor, home is each enemy's cell after the event, so the step back carries it there.
             bool floorShown = ev.After != null && ev.After.Floor != null && ev.After.Floor.Cells > 0;
-            IReadOnlyList<UnitFrame> after = EnemyFrames(ev.After);
-            var list = new List<(int U, UnitFrame Uf)>();
-            if (after.Count > 1) for (int k = 0; k < after.Count; k++) list.Add((UnitNo(after[k], k), after[k]));
+            IReadOnlyList<EnemyFrame> after = EnemyShares(ev.After);
+            var list = new List<(int U, EnemyFrame Uf)>();
+            if (after.Count > 1) for (int k = 0; k < after.Count; k++) list.Add((k, after[k]));
             else list.Add((-1, after.Count > 0 ? after[0] : null));
             foreach (var (u, uf) in list)
             {
                 if (floorShown)
                 {
                     if (u == -1) _field.SetEnemyHomeCell(ev.After.Floor.EnemyCell, ev.After.Floor.EnemySize);
-                    else if (uf != null && !uf.Down) _field.SetEnemyHomeCell(uf.Cell, uf.Size, u);
+                    else if (uf != null && !uf.Unit.Down) _field.SetEnemyHomeCell(uf.Cell, uf.Size, u);
                 }
                 // Review 21: an enemy whose action is held stays where its blow left it until the next event says whether it goes on.
                 if (IsHeld(u)) continue;
@@ -1616,7 +1638,7 @@ namespace Trial.Battle
         {
             var popping = new HashSet<int>(ev.Cues.Where(c => c.Kind == CueKind.OmenShow).Select(c => UnitOf(c) >= 0 ? UnitOf(c) : 0));
             IReadOnlyList<OmenFrame> omens = ev.After != null
-                ? (ev.After.Omens != null && ev.After.Omens.Count > 0 ? (IReadOnlyList<OmenFrame>)ev.After.Omens : new[] { ev.After.Omen })
+                ? (ev.After.Enemies != null && ev.After.Enemies.Count > 0 ? (IReadOnlyList<OmenFrame>)ev.After.Enemies.Select(e => e.Omen).ToList() : new[] { ev.After.Omen })
                 : Array.Empty<OmenFrame>();
             bool anyShown = ev.Cues.Any(c => c.Kind == CueKind.OmenShow);
             int blinkAt = 0;
@@ -1624,7 +1646,7 @@ namespace Trial.Battle
             {
                 OmenFrame o = omens[k];
                 if (o == null || !o.Visible) continue;
-                int u = o.Unit >= 0 && omens.Count > 1 ? o.Unit : k;
+                int u = k;
                 if (omens.Count > 1 ? popping.Contains(u) : anyShown) continue;
                 float delay = blinkAt * L.OmenBlinkStaggerMs;
                 blinkAt += 1;
@@ -1836,7 +1858,7 @@ namespace Trial.Battle
                         _field.RetireAimOf(foe);
                     }
                     // §5.15 順 5 (scene addition): one enemy falls while others stand — 倒れ 800 → the foot light 300 → grey 300.
-                    bool othersStand = T == UnitSide.Enemy && MultiNow() && EnemyFrames(ev.After).Where((uf, k) => !uf.Down && UnitNo(uf, k) != foe).Any();
+                    bool othersStand = T == UnitSide.Enemy && MultiNow() && EnemyFrames(ev.After).Where((uf, k) => !uf.Down && k != foe).Any();
                     if (!othersStand)
                     {
                         await HoldBeat(EffectId.Defeat, () => _field.Fall(T, Ms(EffectId.Defeat), tu), () => _field.SetDown(T, true, tu));
@@ -2015,11 +2037,10 @@ namespace Trial.Battle
             int i = ev.Cues.IndexOf(cue);
             for (int j = i + 1; j < ev.Cues.Count; j++)
                 if (ev.Cues[j].Kind == CueKind.RangeSwitch && EffectPlan.MovesOnFloor(ev.Cues[j])) return own;
-            IReadOnlyList<UnitFrame> list = EnemyFrames(ev.After);
-            UnitFrame uf = null;
-            for (int k = 0; k < list.Count; k++)
-                if (UnitNo(list[k], k) == _restingGapUnit.Value) { uf = list[k]; break; }
-            return uf != null && !uf.Down && uf.Gap >= 0 && uf.Cell > 0 ? (uf.Gap, uf.Cell) : own;
+            IReadOnlyList<EnemyFrame> list = EnemyShares(ev.After);
+            int at = _restingGapUnit.Value;
+            EnemyFrame uf = at >= 0 && at < list.Count ? list[at] : null;
+            return uf != null && !uf.Unit.Down && uf.Gap >= 0 && uf.Cell > 0 ? (uf.Gap, uf.Cell) : own;
         }
 
         /// <summary>
@@ -2029,8 +2050,8 @@ namespace Trial.Battle
         // js: scenes/battle/player.js:1366
         private (StagePoint At, string Word, FloatOpts O) PushedFloat(Cue cue, StagePoint labelAt, FloatOpts under)
         {
-            bool enemyMoved = cue.Unit >= 0 && cue.UnitCellAfter > 0;
-            int u = MultiNow() && cue.Unit >= 0 ? cue.Unit : -1;
+            bool enemyMoved = UnitOf(cue) >= 0;
+            int u = MultiNow() ? UnitOf(cue) : -1;
             FigureGeom hero = Figure(UnitSide.Player);
             FigureGeom foe = Figure(UnitSide.Enemy, u);
             if (!enemyMoved) return (labelAt, MovedWord(hero, cue.PlayerCellAfter, foe), Copy(under));
@@ -2278,7 +2299,7 @@ namespace Trial.Battle
             int want = v != null ? ParseIntJs(v.Number) : 0;
             if (!(want > 0)) return null;
             int dir = v.Kind == CardValueKind.Close ? 1 : -1;
-            List<Cue> own = ev.Cues.Where(c => c.Kind == CueKind.RangeSwitch && !c.Pushed && !(c.Unit >= 0 && c.UnitCellAfter > 0) && EffectPlan.MovesOnFloor(c)).ToList();
+            List<Cue> own = ev.Cues.Where(c => c.Kind == CueKind.RangeSwitch && !c.Pushed && UnitOf(c) < 0 && EffectPlan.MovesOnFloor(c)).ToList();
             if (own.Count == 0) return null;
             int moved = own.Sum(c => EffectPlan.CellsOf(c));
             Cue last = own[own.Count - 1];
@@ -3067,7 +3088,7 @@ namespace Trial.Battle
             _field.SetStanceGlow(UnitSide.Player, StanceGlow.IsOn(frame.Player));
             ApplyFrame(frame, true);
             IReadOnlyList<UnitFrame> enemies = EnemyFrames(frame);
-            for (int k = 0; k < enemies.Count; k++) _field.SnapHome(UnitSide.Enemy, enemies.Count > 1 ? UnitNo(enemies[k], k) : -1);
+            for (int k = 0; k < enemies.Count; k++) _field.SnapHome(UnitSide.Enemy, enemies.Count > 1 ? k : -1);
             ShowSpeed();
             return ChainOpening().Then((Func<Promise>)(() => _alive ? RunAutomaticEvents() : null)).Catch(LogError);
         }
@@ -3083,10 +3104,10 @@ namespace Trial.Battle
         // js: scenes/battle/player.js:2227
         public bool CycleGapFocus(int dir)
         {
-            IReadOnlyList<UnitFrame> frames = EnemyFrames(FrameNow);
-            var list = new List<(int U, UnitFrame Uf)>();
+            IReadOnlyList<EnemyFrame> frames = EnemyShares(FrameNow);
+            var list = new List<(int U, EnemyFrame Uf)>();
             for (int k = 0; k < frames.Count; k++)
-                if (!frames[k].Down) list.Add((UnitNo(frames[k], k), frames[k]));
+                if (!frames[k].Unit.Down) list.Add((k, frames[k]));
             if (list.Count < 2) return false;
             float GeomX(int u)
             {
@@ -3118,7 +3139,7 @@ namespace Trial.Battle
                 if (_restingGapUnit == null) return -1;
                 IReadOnlyList<UnitFrame> list = EnemyFrames(FrameNow);
                 for (int k = 0; k < list.Count; k++)
-                    if (UnitNo(list[k], k) == _restingGapUnit.Value && !list[k].Down) return _restingGapUnit.Value;
+                    if (k == _restingGapUnit.Value && !list[k].Down) return _restingGapUnit.Value;
                 return -1;
             }
         }

@@ -306,6 +306,7 @@ namespace Trial.Bridge
         public IReadOnlyList<string> Offer => Raw.Offer;
         public IReadOnlyList<bool> OfferFits => Raw.OfferFits;
         public IReadOnlyList<string> Consumables => Raw.Consumables;
+        public IReadOnlyList<string> WaitingConsumables => Raw.WaitingConsumables;
         public int Pages => Raw.Pages;
         public int FoundPages => Raw.FoundPages;
         public int InheritedPages => Raw.InheritedPages;
@@ -442,6 +443,7 @@ namespace Trial.Bridge
         public ExplorationScreen Screen() => Raw.Screen();
         public bool CanOpen(Overlay overlay) => Raw.CanOpen(overlay);
         public bool CanUseSlot(int index) => Raw.CanUseSlot(index);
+        public bool CanUseConsumable(int index) => Raw.CanUseConsumable(index);
         public ExplorationState TryDescend() => Raw.TryDescend();
         public EventKind? EventAt(int nodeId) => Raw.EventAt(nodeId);
         public LayerMap MapOf(LayerProfile profile, ulong seed) => Raw.MapOf(profile, seed);

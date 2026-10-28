@@ -1,7 +1,7 @@
 // Trial extension (port of the browser trial's src/bridge/exploration/Loadouts.js; docs/EXTENSIONS.md 「探索の持ち物と
 // イベント」). The C# leaves the step from the departure's choice to the exploration's loadout to #104
-// (DungeonContent/Loadout.cs: 「#104 is where a chosen Loadout becomes a RunLoadout」), and its RunLoadout holds only
-// what relieves 瘴気. This is that step for the trial: every tool and consumable the departure chose rides along as the
+// (DungeonContent/Loadout.cs: 「#104 is where a chosen Loadout becomes a RunLoadout」), and its RunLoadout holds density
+// tools only (and, since #651, the consumables). This is that step for the trial: every tool and consumable the departure chose rides along as the
 // core item that says what it does (Exploration.TrialItems), so trial mode (RunStart.Trial / ExpeditionOptions.Trial)
 // can act on each (tools_and_consumables_v4.md §2〜§3).
 using System;
@@ -24,7 +24,7 @@ namespace Exploration.Bridge
         /// empty trial RunLoadout.
         ///
         /// Outside trial mode the core reads this RunLoadout exactly as the C# would: only the density tools lower
-        /// the density and only 浄化の香 moves the gauge.
+        /// the density, and each consumable acts as #651 has it.
         /// </summary>
         // js: bridge/exploration/Loadouts.js:19
         public static RunLoadout ToRunLoadout(Loadout loadout, int? toolSlots = null)
@@ -38,8 +38,8 @@ namespace Exploration.Bridge
 
         /// <summary>
         /// A RunLoadout as plain data for a save: <c>{ tools: [[id, kind, amount]…], consumables: […], slots, trial }</c>
-        /// (the JS's keys and order; the kind is the ReliefKind's name). The trial flag rides along, so a trial
-        /// loadout's tools load again.
+        /// (the JS's keys and order; the kind is the ReliefKind's name as the JS spells it: #651's HealHp and
+        /// RefillStamina are the JS's Heal and Refill). The trial flag rides along, so a trial loadout's tools load again.
         /// </summary>
         // js: bridge/exploration/Loadouts.js:32
         public static JsonObject RunLoadoutToData(RunLoadout runLoadout)
@@ -68,7 +68,18 @@ namespace Exploration.Bridge
             return new RunLoadout(Items(o["tools"], "tools"), Items(o["consumables"], "consumables"), slots, Equals(o["trial"], true));
         }
 
-        private static object Row(ReliefItem item) => new List<object> { item.Id, item.Kind.ToString(), item.Amount };
+        private static object Row(ReliefItem item) => new List<object> { item.Id, NameOf(item.Kind), item.Amount };
+
+        /// <summary>The kind's name in a save: the JS's (js: core/dungeon/RunLoadout.js:12-26), where #651 named two otherwise.</summary>
+        private static string NameOf(ReliefKind kind)
+        {
+            switch (kind)
+            {
+                case ReliefKind.HealHp: return "Heal";
+                case ReliefKind.RefillStamina: return "Refill";
+                default: return kind.ToString();
+            }
+        }
 
         private static List<ReliefItem> Items(object list, string key)
         {
@@ -85,6 +96,8 @@ namespace Exploration.Bridge
 
         private static ReliefKind KindOf(object value, string key)
         {
+            if (value is string js && js == "Heal") return ReliefKind.HealHp;
+            if (value is string js2 && js2 == "Refill") return ReliefKind.RefillStamina;
             if (value is string name && Enum.IsDefined(typeof(ReliefKind), name)) return (ReliefKind)Enum.Parse(typeof(ReliefKind), name);
             throw new ArgumentException($"Loadouts: an unknown kind in {key}", nameof(value));
         }

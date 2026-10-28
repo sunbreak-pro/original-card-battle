@@ -54,14 +54,15 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void ACSharpSession_BurnsANonGaugeConsumable_WithoutEffect_AsTheCSharpDoes()
+        public void ACSharpSession_UsesAConsumable_AsATrialOneDoes()
         {
-            // js: test/ext/world.test.mjs:143
+            // js: test/ext/world.test.mjs:143 said a C# session burnt 薬草 without effect; since #651 the C# session gives
+            // every consumable its effect too (ExplorationReducer.UseConsumable).
             var lo = new RunLoadout(null, new[] { TrialItems.Consumable("yakuso") }, 3, trial: true);
             var s = new ExplorationSession(new RunStart { Seed = 1, Loadout = lo, Hp = 20 });
             s.Act(ScreenAction.WinBattle);
             Assert.That(s.UseConsumable(0), Is.True);
-            Assert.That(s.State.Hp, Is.EqualTo(20));
+            Assert.That(s.State.Hp, Is.GreaterThan(20).And.LessThanOrEqualTo(s.State.MaxHp), "薬草 gives back a share of the maximum");
             Assert.That(s.State.Loadout.Consumables, Is.Empty);
         }
 
@@ -77,8 +78,8 @@ namespace Exploration.Tests
             var consumables = new[] { "joka_no_ko", "yakuso", "shirube_no_ishi", "koi_hoshiniku", "wasuremizu" }.Select(TrialItems.Consumable).ToList();
             Assert.That(consumables.Select(t => (t.Id, t.Kind, t.Amount)), Is.EqualTo(new[]
             {
-                ("joka_no_ko", ReliefKind.Gauge, 10), ("yakuso", ReliefKind.Heal, 20), ("shirube_no_ishi", ReliefKind.Teleport, 1),
-                ("koi_hoshiniku", ReliefKind.MaxStamina, 1), ("wasuremizu", ReliefKind.Refill, 1),
+                ("joka_no_ko", ReliefKind.Gauge, 10), ("yakuso", ReliefKind.HealHp, 20), ("shirube_no_ishi", ReliefKind.Teleport, 1),
+                ("koi_hoshiniku", ReliefKind.MaxStamina, 1), ("wasuremizu", ReliefKind.RefillStamina, 1),
             }));
             var battle = new[] { "maai_no_kutsu", "ikitsugi_no_fue", "ryurin_no_kakera", "ryugo_no_fu" }.Select(TrialItems.Tool).ToList();
             Assert.That(battle.All(t => t.Kind == ReliefKind.Battle), Is.True);

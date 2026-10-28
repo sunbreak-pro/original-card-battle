@@ -17,9 +17,9 @@ namespace DungeonCore.Tests
         private static readonly ReliefItem Wick = new ReliefItem("toshin_no_kakera", ReliefKind.Interlude, 15);
         private static readonly ReliefItem Flute = new ReliefItem("ikitsugi_no_fue", ReliefKind.Battle, 3);
         private static readonly ReliefItem Incense = ReliefItem.Gauge("joka_no_ko", 10);
-        private static readonly ReliefItem Herb = new ReliefItem("yakuso", ReliefKind.Heal, 20);
+        private static readonly ReliefItem Herb = new ReliefItem("yakuso", ReliefKind.HealHp, 20);
         private static readonly ReliefItem Meat = new ReliefItem("koi_hoshiniku", ReliefKind.MaxStamina, 1);
-        private static readonly ReliefItem Water = new ReliefItem("wasuremizu", ReliefKind.Refill, 1);
+        private static readonly ReliefItem Water = new ReliefItem("wasuremizu", ReliefKind.RefillStamina, 1);
         private static readonly ReliefItem Stone = new ReliefItem("shirube_no_ishi", ReliefKind.Teleport, 1);
 
         private static RunLoadout Trial(ReliefItem[]? tools = null, ReliefItem[]? consumables = null) =>
@@ -64,12 +64,13 @@ namespace DungeonCore.Tests
         }
 
         [Test]
-        public void ACSharpState_BurnsANonGaugeConsumable_WithoutEffect_AsTheCSharpDoes()
+        public void ACSharpState_UsesAConsumable_AsATrialOneDoes()
         {
-            // js: test/ext/world.test.mjs:143 (the core half)
+            // js: test/ext/world.test.mjs:143 (the core half) said a C# state burnt 薬草 without effect; since #651
+            // the C# reducer gives every consumable its effect, so the trial and the C# heal alike.
             var state = Enter(1, new RunLoadout(null, new[] { Herb }), trial: false, hp: 20);
             var after = ExplorationReducer.UseConsumable(state, 0);
-            Assert.That(after.Hp, Is.EqualTo(20));
+            Assert.That(after.Hp, Is.EqualTo(30), "20% of 50");
             Assert.That(after.Loadout.Consumables, Is.Empty);
         }
 
@@ -77,17 +78,17 @@ namespace DungeonCore.Tests
         public void TheTrialLoadout_TakesAFind_IntoAFreeSlotOrInPlaceOfANamedOne_AndKeepsItsFlag()
         {
             var lo = Trial(null, new[] { Herb, Water });
-            Assert.That(lo.HasFreeSlot, Is.True);
+            Assert.That(lo.ConsumableSlotsFull, Is.False);
             var three = lo.Take(Meat);
             Assert.That(three.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "yakuso", "wasuremizu", "koi_hoshiniku" }));
-            Assert.That(three.HasFreeSlot, Is.False);
+            Assert.That(three.ConsumableSlotsFull, Is.True);
             Assert.That(three.Trial, Is.True);
-            Assert.Throws<ArgumentOutOfRangeException>(() => three.Take(Stone));
-            Assert.Throws<ArgumentOutOfRangeException>(() => three.Take(Stone, 3));
+            Assert.Throws<ExplorationRuleException>(() => three.Take(Stone));
+            Assert.Throws<ExplorationRuleException>(() => three.Take(Stone, 3));
             var swapped = three.Take(Stone, 1);
+            Assert.That(swapped.Trial, Is.True, "a swap keeps the trial flag");
             Assert.That(swapped.Consumables.Select(c => c.Id), Is.EqualTo(new[] { "yakuso", "shirube_no_ishi", "koi_hoshiniku" }));
-            var spent = swapped.Spend(1, out int relief, out var item);
-            Assert.That(relief, Is.EqualTo(0));
+            var spent = swapped.Spend(1, out var item);
             Assert.That(item, Is.EqualTo(Stone));
             Assert.That(spent.Trial, Is.True, "spending keeps the trial flag");
             Assert.That(spent.Consumables.Count, Is.EqualTo(2));

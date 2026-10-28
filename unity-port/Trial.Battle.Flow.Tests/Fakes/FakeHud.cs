@@ -90,7 +90,7 @@ namespace Trial.Battle.Flow.Tests.Fakes
         public readonly List<string> TraitWords = new List<string>();
 
         public void Bind(OmenFrame o) { if (o != null) Bound = o; }
-        public void SetSwatchShown(bool on, bool aimed) { }
+        public void SetSwatchShown(bool on, bool aimed, int stripe = 0) { }
         public void SetTail(float? dx) { }
         public void SetBehind(bool on) { }
         public void SetMoveDir(int dir) { }
@@ -181,6 +181,9 @@ namespace Trial.Battle.Flow.Tests.Fakes
         public bool Drawer;
         public int KeptOmen = -2;
 
+        /// <summary>The frame ApplyFrame took last: hud.omen.Bind finds an omen's enemy in it (#589: Enemies[k].Omen).</summary>
+        private DepictionFrame _lastFrame;
+
         public FakeStatus StatusOf(UnitSide side, int unit = -1)
         {
             if (side == UnitSide.Player) return _player;
@@ -201,16 +204,20 @@ namespace Trial.Battle.Flow.Tests.Fakes
             if (frame == null) return;
             KeptOmen = keepOmen;
             _player.Hp = frame.Player.Hp;
+            _lastFrame = frame;
             if (frame.Enemies != null && frame.Enemies.Count > 0)
             {
-                for (int k = 0; k < frame.Enemies.Count; k++) StatusOf(UnitSide.Enemy, frame.Enemies[k].Unit >= 0 ? frame.Enemies[k].Unit : k).Hp = frame.Enemies[k].Hp;
+                for (int k = 0; k < frame.Enemies.Count; k++)
+                {
+                    StatusOf(UnitSide.Enemy, k).Hp = frame.Enemies[k].Unit.Hp;
+                    BadgeOf(k).Bind(frame.Enemies[k].Omen);
+                }
             }
-            else StatusOf(UnitSide.Enemy).Hp = frame.Enemy.Hp;
-            if (frame.Omens != null && frame.Omens.Count > 0)
+            else
             {
-                for (int k = 0; k < frame.Omens.Count; k++) BadgeOf(frame.Omens[k].Unit).Bind(frame.Omens[k]);
+                StatusOf(UnitSide.Enemy).Hp = frame.Enemy.Hp;
+                BadgeOf(0).Bind(frame.Omen);
             }
-            else BadgeOf(0).Bind(frame.Omen);
         }
 
         public void Follow(FollowArgs o) { }
@@ -285,7 +292,11 @@ namespace Trial.Battle.Flow.Tests.Fakes
 
         // ---- hud.omen: the leader's badge, except Bind (by the omen's Unit) and SetActing(false) (every badge) ----
 
-        void IOmenFacade.Bind(OmenFrame o) => BadgeOf(o != null ? o.Unit : 0).Bind(o);
+        void IOmenFacade.Bind(OmenFrame o)
+        {
+            int unit = o != null && _lastFrame != null && _lastFrame.Enemies != null ? _lastFrame.Enemies.FindIndex(e => e.Omen == o) : -1;
+            BadgeOf(Math.Max(0, unit)).Bind(o);
+        }
         Promise IOmenFacade.PopIn(float ms) => BadgeOf(0).PopIn(ms);
         Promise IOmenFacade.Blink(float ms) => BadgeOf(0).Blink(ms);
         Promise IOmenFacade.Flare(float ms) => BadgeOf(0).Flare(ms);

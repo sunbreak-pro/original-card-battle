@@ -142,10 +142,10 @@ namespace Trial.Battle.Flow.Tests
         [Test]
         public void HatchAngleAndGlyph_ReadTheOneEnemyHatchOfDepictionScript()
         {
-            // layout.js imports EnemyHatch from DepictionTypes.js: one source for the angles.
-            for (int h = -3; h <= EnemyHatch.Count + 2; h++)
+            // layout.js imports EnemyHatch from DepictionTypes.js: one source for the angles (#589's EnemyFrame here).
+            for (int h = -3; h <= BattleCore.Constants.EnemiesMax + 2; h++)
             {
-                int a = EnemyHatch.AngleOf(h);
+                int a = EnemyFrame.AngleOf(h);
                 Assert.That(BattleLayout.HatchAngle(h), Is.EqualTo(a == 90 ? 180 : a), h.ToString());
                 Assert.That(BattleLayout.HatchGlyph(h), Is.EqualTo(a == 90 ? "｜" : a < 0 ? "＼" : "／"), h.ToString());
             }

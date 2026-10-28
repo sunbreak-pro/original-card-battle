@@ -110,22 +110,54 @@ namespace DungeonCore
         }
 
         /// <summary>
-        /// Burns one consumable. Costs no 刻限, so it never moves the gauge upward.
-        /// Trial extension: in trial mode every consumable acts (UseTrialConsumable); outside it only the gauge
-        /// moves, as in the C#.
+        /// Burns one consumable (tools_and_consumables_v4.md §3). Costs no 刻限, so it never moves the
+        /// gauge upward. 浄化の香 pulls the gauge down, 薬草 gives back a share of the HP maximum,
+        /// 濃い干し肉 raises max stamina inside the ±4 clamp, 忘れ水 fills stamina to the maximum.
+        /// 標の石 needs a node to jump to and is refused (<see cref="CanUseConsumable"/>); in trial mode the
+        /// map picks that node and <see cref="Teleport"/> spends the stone there (trial extension).
         /// </summary>
-        // js: core/dungeon/ExplorationReducer.js:100
         public static ExplorationState UseConsumable(ExplorationState state, int index)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (state.IsOver)
                 throw new ExplorationRuleException("the run is over");
+            var carried = state.Loadout.Consumables;
+            if (index >= 0 && index < carried.Count && carried[index].Kind == ReliefKind.Teleport)
+                throw new ExplorationRuleException("a jump needs a node to jump to, and none is picked yet");
 
-            var loadout = state.Loadout.Spend(index, out int relief, out ReliefItem item);
-            if (state.Trial) return UseTrialConsumable(state, loadout, relief, item);
-            return state.With(
-                loadout: loadout,
-                miasmaPercent: Miasma.Relieve(state.MiasmaPercent, relief));
+            var loadout = state.Loadout.Spend(index, out ReliefItem used);
+            return used.Kind switch
+            {
+                ReliefKind.Gauge => state.With(loadout: loadout, miasmaPercent: Miasma.Relieve(state.MiasmaPercent, used.Amount)),
+                ReliefKind.HealHp => state.With(loadout: loadout, hp: Math.Min(state.MaxHp, state.Hp + Share(state.MaxHp, used.Amount))),
+                ReliefKind.MaxStamina => state.With(loadout: loadout, tempMaxStaminaMod: Clamp(state.TempMaxStaminaMod + used.Amount)),
+                ReliefKind.RefillStamina => state.With(loadout: loadout, stamina: state.MaxStamina),
+                _ => state.With(loadout: loadout),
+            };
+        }
+
+        /// <summary>
+        /// Whether <see cref="UseConsumable"/> takes this slot: the run goes on, the slot holds an
+        /// item, and the item is not a jump waiting for a node to jump to.
+        /// </summary>
+        public static bool CanUseConsumable(ExplorationState state, int index)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            var carried = state.Loadout.Consumables;
+            return !state.IsOver && index >= 0 && index < carried.Count && carried[index].Kind != ReliefKind.Teleport;
+        }
+
+        /// <summary>
+        /// Picks a consumable up (tools_and_consumables_v4.md §3): into a free slot, or in place of the
+        /// one in <paramref name="replaceSlot"/> when every slot is full (RunLoadout.Take). Costs no 刻限.
+        /// </summary>
+        public static ExplorationState TakeConsumable(ExplorationState state, ReliefItem item, int replaceSlot = -1)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (state.IsOver)
+                throw new ExplorationRuleException("the run is over");
+
+            return state.With(loadout: state.Loadout.Take(item, replaceSlot));
         }
 
         /// <summary>
