@@ -37,7 +37,7 @@ namespace Depiction.View
         private int _hp;
         private int _hpLoss;
         private Image _hpWick;
-        /// <summary>The chips as shown, in order: the stances (lasting) first, then the status words.</summary>
+        /// <summary>The chips as shown, in order: the status words (the stances are on their frames, #605).</summary>
         private readonly List<StatusChip> _statuses = new List<StatusChip>();
 
         // ---- battle-visual-v1 §7.3 / §4.5 (#242) ----------------------------------------------------
@@ -324,14 +324,11 @@ namespace Depiction.View
 
         private static StatusChip Copy(StatusChip chip)
         {
-            // A source from before #242 marks a stance as a chip with no stacks and no family.
-            bool lasting = chip.Kind == ChipKind.Lasting
-                || (chip.Stacks <= 0 && chip.Label != null && chip.Label.StartsWith("構え・", System.StringComparison.Ordinal));
             return new StatusChip
             {
                 Label = chip.Label,
                 Stacks = chip.Stacks,
-                Kind = lasting ? ChipKind.Lasting : chip.Kind,
+                Kind = chip.Kind,
                 Title = chip.Title,
                 Group = chip.Group,
                 Effect = chip.Effect,
@@ -419,15 +416,13 @@ namespace Depiction.View
             view.Label.rectTransform.sizeDelta = new Vector2(width, ChipHeight);
         }
 
-        /// <summary>The chip's own words: "出血 2", a stance "岩の構え ∞ ×2" (no "×1"), or "+n".</summary>
+        /// <summary>
+        /// The chip's own words: "出血 2", or "+n". The stances are not chips (§4.6, #605); their frames
+        /// at the screen's edge carry the name and "×2" (StanceListView).
+        /// </summary>
         private static string ChipText(StatusChip chip)
         {
             string label = chip.Label ?? "";
-            if (chip.Kind == ChipKind.Lasting)
-            {
-                string name = label.StartsWith("構え・", System.StringComparison.Ordinal) ? label.Substring("構え・".Length) : label;
-                return name + " ∞" + (chip.Stacks > 1 ? " ×" + chip.Stacks : "");
-            }
             if (label.StartsWith("+", System.StringComparison.Ordinal)) return label;
             return label + " " + chip.Stacks;
         }
@@ -531,7 +526,7 @@ namespace Depiction.View
             else if (i >= 0)
             {
                 _statuses[i].Stacks = stacks;
-                if (_statuses[i].Kind != ChipKind.Lasting) _statuses[i].Title = label + " " + stacks;
+                _statuses[i].Title = label + " " + stacks;
             }
             else
             {

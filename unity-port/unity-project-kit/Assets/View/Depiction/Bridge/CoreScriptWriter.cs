@@ -1248,10 +1248,9 @@ namespace Depiction.Bridge
                 frame.Range = CoreText.SideOf(gap.Value);
                 frame.RangeGlyph = CoreText.GapGlyph(gap.Value);
             }
-            // §4: the stances held lead the chips, one chip per stance (a repeat is one chip with its count).
-            frame.Statuses.AddRange(CoreText.StanceChips(unit.Stances));
-            // battle-visual-v1 §4.6 (#455): the same stances as the list at the unit's edge.
-            frame.Stances = StanceList.Rows(unit.Stances);
+            // battle-visual-v1 §4.6 (#455, #605): the stances held are the list at the unit's edge, each
+            // row with its hover panel text; none of them is a status chip.
+            frame.Stances = StatusChipText.StanceRows(unit.Stances);
             foreach (KeyValuePair<StatusKind, int> pair in unit.Statuses)
             {
                 frame.Statuses.Add(StatusChipText.Chip(pair.Key, pair.Value));

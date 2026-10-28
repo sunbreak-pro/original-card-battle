@@ -31,9 +31,10 @@ namespace Depiction.Bridge
         }
 
         /// <summary>
-        /// §7.3 永続の状態: one chip per stance held; the same stance held <paramref name="count"/> times
-        /// is one chip that works that many times ("×2" from two on). Its 効き方 is the stance's own
-        /// clause when the card catalog knows the name, else the general one.
+        /// §7.3 永続の状態: the panel text of one stance held <paramref name="count"/> times, which works
+        /// that many times ("×2" from two on). Its 効き方 is the stance's own clause when the card catalog
+        /// knows the name, else the general one. It is not a status chip (#605): <see cref="StanceRows"/>
+        /// copies its text onto the stance frame's row.
         /// </summary>
         public static StatusChip StanceChip(string name, int count)
         {
@@ -42,7 +43,7 @@ namespace Depiction.Bridge
             return new StatusChip
             {
                 Label = "構え・" + name,
-                // StatusBarView reads a chip with no stacks as the stance line; a repeat keeps its count.
+                // A repeat keeps its count; one stance has none to print.
                 Stacks = count > 1 ? count : 0,
                 Kind = ChipKind.Lasting,
                 Title = name + (count > 1 ? " ×" + count : ""),
@@ -151,28 +152,33 @@ namespace Depiction.Bridge
             }
         }
 
-        /// <summary>The chips of one unit: the stances first, one chip per distinct stance, then the words in their fixed order.</summary>
-        public static List<StatusChip> Chips(StatusSet statuses, IReadOnlyList<string> stanceNames)
+        /// <summary>
+        /// The chips of one unit: the status words in their fixed order. The stances are not chips
+        /// (battle-visual-v1 §4.5 / §4.6, #605): the stance frames at the screen's edge carry them
+        /// (<see cref="StanceRows"/>).
+        /// </summary>
+        public static List<StatusChip> Chips(StatusSet statuses)
         {
-            List<StatusChip> chips = StanceChips(stanceNames);
+            var chips = new List<StatusChip>();
             foreach (StatusKind kind in statuses.Kinds) chips.Add(Chip(kind, statuses.Stacks(kind)));
             return chips;
         }
 
-        /// <summary>One chip per distinct stance name in the order first held, with the times it is held.</summary>
-        public static List<StatusChip> StanceChips(IReadOnlyList<string> stanceNames)
+        /// <summary>
+        /// §4.6 / §7.3 永続の状態 (#605): a side's stance list (StanceList.Rows: the order put down, a
+        /// repeat counted on one row) with each row's hover panel text, 効き方 and 減り方, from
+        /// <see cref="StanceChip"/>.
+        /// </summary>
+        public static List<StanceRow> StanceRows(IReadOnlyList<string> stanceNames)
         {
-            var chips = new List<StatusChip>();
-            var order = new List<string>();
-            var count = new Dictionary<string, int>();
-            foreach (string name in stanceNames)
+            List<StanceRow> rows = StanceList.Rows(stanceNames);
+            foreach (StanceRow row in rows)
             {
-                if (string.IsNullOrEmpty(name)) continue;
-                if (!count.ContainsKey(name)) { order.Add(name); count[name] = 0; }
-                count[name]++;
+                StatusChip text = StanceChip(row.Name, row.Count);
+                row.Effect = text.Effect;
+                row.Decay = text.Decay;
             }
-            foreach (string name in order) chips.Add(StanceChip(name, count[name]));
-            return chips;
+            return rows;
         }
 
         /// <summary>1.5 as "1.5" whatever the machine's culture (a comma would read as a list).</summary>

@@ -282,8 +282,9 @@ namespace Depiction
 
     /// <summary>
     /// Which family a status chip belongs to (battle-visual-v1 §7.3). The View draws the corner from it:
-    /// a square chip for the words put on the opponent, a round one for the words put on oneself, ∞ for
-    /// a lasting stance, the boss colour's double frame for a boss's word.
+    /// a square chip for the words put on the opponent, a round one for the words put on oneself, the
+    /// boss colour's double frame for a boss's word. Lasting is a stance's family: its panel text is the
+    /// stance frame's (§4.6, #605), and no chip of it stands in the status row.
     /// </summary>
     public enum ChipKind
     {
@@ -296,7 +297,7 @@ namespace Depiction
     public sealed class StatusChip
     {
         public string Label;
-        /// <summary>The stacks; for a <see cref="ChipKind.Lasting"/> chip the times the same stance is held (1 prints no "×1").</summary>
+        /// <summary>The stacks; for a stance's <see cref="ChipKind.Lasting"/> text the times it is held (1 prints no "×1").</summary>
         public int Stacks;
         public ChipKind Kind = ChipKind.OnFoe;
         /// <summary>§7.3 説明パネルの見出し: "鈍足 2", "岩の構え ×2".</summary>
@@ -358,6 +359,13 @@ namespace Depiction
     {
         public string Name = "";
         public int Count = 1;
+        /// <summary>
+        /// battle-visual-v1 §4.6 / §7.3 永続の状態 (#605): the hover panel's 効き方, the stance's effect
+        /// and that it works as many times as it is held. The bridge writes it; the frame only prints it.
+        /// </summary>
+        public string Effect = "";
+        /// <summary>§7.3 減り方 of a stance: "減らない（永続）".</summary>
+        public string Decay = "";
     }
 
     public sealed class OmenFrame
