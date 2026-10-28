@@ -24,21 +24,19 @@ namespace Depiction.View
         public static DepartureBuilder NewBuilder() => new DepartureBuilder(Tools, Consumables);
 
         /// <summary>
-        /// One item as the battle reads it (tools_and_consumables_v4.md §2, battle_core_v4 §9.1), each by
-        /// its Amount: WiderStart moves the start back, OpeningStamina adds stamina at the start,
-        /// OpeningGuard is the Guard before the first enemy blow, BluntBossState the stacks the boss-only
-        /// words sit lower. The exploration effects do not reach the battle.
+        /// One item as the battle reads it (tools_and_consumables_v4.md §2, battle_core_v4 §9.1): the
+        /// four numbers come from DungeonContent.BattleToolAmounts, the one mapping the exploration's
+        /// hand-over reads too (#648). The exploration effects do not reach the battle.
         /// </summary>
         public static SupplyOption Of(ItemDef item)
         {
+            BattleToolAmounts amounts = BattleToolAmounts.Of(item);
             return new SupplyOption(item.Id, item.Name, item.Note,
-                startCellsBack: AmountIf(item, ItemEffect.WiderStart),
-                startStaminaBonus: AmountIf(item, ItemEffect.OpeningStamina),
-                firstHitGuard: AmountIf(item, ItemEffect.OpeningGuard),
-                bossWordWard: AmountIf(item, ItemEffect.BluntBossState));
+                startCellsBack: amounts.StartCellsBack,
+                startStaminaBonus: amounts.StartStamina,
+                firstHitGuard: amounts.OpeningGuard,
+                bossWordWard: amounts.BossWordWard);
         }
-
-        private static int AmountIf(ItemDef item, ItemEffect effect) => item.Effect == effect ? item.Amount : 0;
 
         private static IReadOnlyList<SupplyOption> Map(IReadOnlyList<ItemDef> items)
         {
