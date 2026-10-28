@@ -37,9 +37,9 @@ namespace Exploration.Tests
             JournalPage read = EnemyJournal.Page("polearm_warped", 2);
 
             Assert.That(unread.Rows.Select(unread.TextOf).Distinct(), Is.EqualTo(new[] { JournalRow.Hidden }));
-            Assert.That(met.Rows.Take(3).Select(met.TextOf), Does.Not.Contain(JournalRow.Hidden));
+            Assert.That(met.Rows.Take(3).Select(met.TextOf), Has.No.Member(JournalRow.Hidden));
             Assert.That(met.Rows.Skip(3).Select(met.TextOf).Distinct(), Is.EqualTo(new[] { JournalRow.Hidden }));
-            Assert.That(read.Rows.Select(read.TextOf), Does.Not.Contain(JournalRow.Hidden));
+            Assert.That(read.Rows.Select(read.TextOf), Has.No.Member(JournalRow.Hidden));
             Assert.That(read.Title, Is.EqualTo("錆槍の竜兵"));
             Assert.That(read.Id, Is.EqualTo("enemy-polearm_warped"));
             Assert.That(read.DisclosureLabel, Is.EqualTo("開示度 2 / 2"));
@@ -149,7 +149,7 @@ namespace Exploration.Tests
             var lines = JournalLines.Candidates(id => enemies.TryGetValue(id, out int l) ? l : 0, id => id == chest ? 1 : 0, memo);
 
             Assert.That(lines.Select(l => l.PageId), Is.EqualTo(new[] { "enemy-polearm_warped", "enemy-abyss_angler", "dungeon-7", "memo-1" }));
-            Assert.That(lines.Select(l => l.Tab), Does.Not.Contain(JournalTab.Terms));
+            Assert.That(lines.Select(l => l.Tab), Has.No.Member(JournalTab.Terms));
         }
 
         // ---- the life's journal on a session ----
