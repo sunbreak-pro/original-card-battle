@@ -3,7 +3,9 @@
 // journal has learned of each enemy. It hands a combat node's battle in (EncounterBattle) and takes
 // its result back: HP and stamina into the exploration core, the ticks into the mastery book, the
 // 開示度 into the journal, the unique cards into the cards owned and the deck, and the rest of the
-// reward (#625: the pile's cards to pick one from, consumables, pages). A consumable found goes into a
+// reward (#625: the pile's cards to pick one from, consumables, pages). A page is read into the journal
+// at once (#107: one of the layer's dungeon entries in full), or turns into a card when the layer has
+// nothing left to tell. A consumable found goes into a
 // free slot of the exploration (#651), or waits for the player to swap it in or give it up. It also
 // spends the marks a 習熟訓練 node earns on the card the player names. Pure C#; the View that loads the battle scene only
 // forwards the source and the end of each fight.
@@ -33,6 +35,9 @@ namespace Exploration.Bridge
         private int _life;
         private int _learnedCopies;
         private int _pages;
+        private int _pileDeals;
+        private int _pileLayer;
+        private DungeonCore.IRng _pileRng;
 
         /// <param name="start">How the exploration starts (seed, HP, stamina, gauge, exploration tools).</param>
         /// <param name="deck">The deck the life sets out with; null for the slice's prototype deck.</param>
@@ -142,8 +147,9 @@ namespace Exploration.Bridge
         }
 
         /// <summary>
-        /// The rare journal pages the battles of this life dropped. What a page tells is
-        /// LifeJournal.DrawRarePage's (dungeon_exploration_v4.md §6.11); the draw is not made here yet.
+        /// The rare journal pages the battles of this life dropped and the journal read: each told one
+        /// of its layer's dungeon entries in full (LifeJournal.DrawRarePage, dungeon_exploration_v4.md
+        /// §6.11). A page whose layer had nothing left to tell turned into a card and is not counted.
         /// </summary>
         public int Pages
         {
@@ -213,7 +219,10 @@ namespace Exploration.Bridge
         /// against it), and a won encounter's unique cards to the cards owned. A won encounter also
         /// draws the rest of its reward (§4.2) from the exploration's seed: the cards to pick one from
         /// wait in <see cref="Offer"/>, the consumables go into the exploration's free slots (the rest wait
-        /// in <see cref="WaitingConsumables"/>) and the pages are kept.
+        /// in <see cref="WaitingConsumables"/>) and each page is read into the journal: it tells one entry
+        /// of the layer not yet known in full (LifeJournal.DrawRarePage). A page whose layer has nothing
+        /// left to tell turns into a card (encounters_and_rewards_v4.md §4.3): the pile's three to pick
+        /// one from, laid out once no other pick waits, or a consumable when the piles are spent.
         /// </summary>
         public BattleReturn Return()
         {
@@ -253,14 +262,35 @@ namespace Exploration.Bridge
                 : BattleReward.None;
             _offer = (reward.Offered.Count > 0 ? reward.Offered : rest.CardChoices).ToList();
             _consumables.AddRange(rest.Consumables);
-            _pages += rest.Pages;
+
+            var pagesRead = new List<string>();
+            int pagesTurned = 0;
+            var pageRng = new DungeonCore.SeededRng(PageSeed(Session.RunSeed, handIn.Layer, Session.PendingBattleNode));
+            for (int i = 0; i < rest.Pages; i++)
+            {
+                string told = Journal.DrawRarePage(handIn.Layer, pageRng);
+                if (told != null) pagesRead.Add(told);
+                else pagesTurned++;
+            }
+            _pages += pagesRead.Count;
 
             Session.ReportBattle(battle.HpAfter, battle.StaminaAfter);
             foreach (string id in rest.Consumables) Stow(id);
 
+            bool pickWaited = _offer.Count > 0;
+            int foundBefore = _consumables.Count;
+            _pileDeals = pagesTurned;
+            _pileLayer = handIn.Layer;
+            _pileRng = pageRng;
+            DealTurnedPages();
+            var brought = new BattleReward(
+                pickWaited ? rest.CardChoices : _offer.ToList(),
+                rest.Consumables.Concat(_consumables.Skip(foundBefore)).ToList(),
+                pagesRead.Count);
+
             return new BattleReturn(
                 battle.Won, battle.HpAfter, battle.StaminaAfter, MasteryTally.Of(plays), ranks,
-                disclosure, observed, reward.Learned, reward.Offered, rest);
+                disclosure, observed, reward.Learned, reward.Offered, brought, pagesRead, pagesTurned);
         }
 
         /// <summary>
@@ -269,6 +299,13 @@ namespace Exploration.Bridge
         /// </summary>
         public static ulong RewardSeed(ulong runSeed, int layer, int nodeId) =>
             ExplorationSession.EncounterSeed(runSeed, layer, nodeId) ^ 0xD1B54A32D192ED03UL;
+
+        /// <summary>
+        /// The seed a won node's pages are read from (and the cards a page turns into are dealt from),
+        /// salted apart from the reward's own draw.
+        /// </summary>
+        private static ulong PageSeed(ulong runSeed, int layer, int nodeId) =>
+            RewardSeed(runSeed, layer, nodeId) ^ 0x632BE59BD9B4E019UL;
 
         /// <summary>
         /// The battle could not be shown (the View found no battle scene to play it in): it is dropped
@@ -289,6 +326,7 @@ namespace Exploration.Bridge
             if (cardId == null || !_offer.Contains(cardId)) return false;
             Take(cardId);
             _offer.Clear();
+            DealTurnedPages();
             return true;
         }
 
@@ -340,6 +378,29 @@ namespace Exploration.Bridge
             _deck.Add(new CardInstance($"{cardId}-learned-{_learnedCopies}", CardCatalog.ById(cardId)));
         }
 
+        /// <summary>
+        /// The cards the last won encounter's pages turned into (§4.3), one pick at a time: while no other
+        /// pick waits, the next one lays the pile's three out in <see cref="Offer"/>. The pile is dealt
+        /// only then, so it leaves out the card just picked. When every pile up to the layer is spent, the
+        /// card becomes a consumable, as a card the reward cannot deal does (BattleRewards.Roll).
+        /// </summary>
+        private void DealTurnedPages()
+        {
+            while (_pileDeals > 0 && _offer.Count == 0)
+            {
+                _pileDeals--;
+                IReadOnlyList<string> cards = CardPile.Deal(_pileLayer, _owned, _pileRng);
+                if (cards.Count > 0)
+                {
+                    _offer = cards.ToList();
+                    continue;
+                }
+                string consumable = BattleRewards.DrawConsumable(_pileLayer, _pileRng);
+                _consumables.Add(consumable);
+                Stow(consumable);
+            }
+        }
+
         /// <summary>A consumable found: into a free slot, or onto the list waiting for a swap.</summary>
         private void Stow(string consumableId)
         {
@@ -367,6 +428,8 @@ namespace Exploration.Bridge
             _consumables.Clear();
             _waiting.Clear();
             _pages = 0;
+            _pileDeals = 0;
+            _pileRng = null;
             _learnedCopies = 0;
             Battle = null;
             Mastery = MasteryBook.Begin(_talent);
