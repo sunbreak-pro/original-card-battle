@@ -218,6 +218,124 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void ATraitsStaminaPoint_PlaysAfterTheBlow_NotBeforeIt()
+        {
+            // battle_ui_ux_v2 §5.9 (#588): the core gives the pip back as soon as the trait is judged; the
+            // screen shows it after every face. 小手打ち at gap 0: pay 1, the cue, the cut, then +1.
+            var (state, writer) = Begin(0, CardCatalog.WristCut, CardCatalog.WristCut);
+            StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            writer.Write(begin.Events, begin.State);
+
+            StepResult play = TurnLoop.PlayCard(begin.State, InHand(begin.State, "wrist_cut"), NoShuffle);
+            DepictionEvent ev = writer.Write(play.Events, play.State).Single();
+
+            Assert.That(Kinds(ev), Is.EqualTo(new[] { CueKind.StaminaChange, CueKind.TraitFire, CueKind.Slash, CueKind.StaminaChange }));
+            Assert.That(ev.Cues[0].Amount, Is.EqualTo(-1));
+            Assert.That(ev.Cues[0].StaminaAfter, Is.EqualTo(9));
+            Cue gain = ev.Cues[3];
+            Assert.That(gain.Amount, Is.EqualTo(1));
+            Assert.That(gain.StaminaAfter, Is.EqualTo(10), "the core's settled value, copied as it was");
+            Assert.That(gain.Fx, Is.EqualTo(FxSystem.Breath), "the trait's 息 (§5.9 順 2)");
+            Assert.That(ev.After.Player.Stamina, Is.EqualTo(10));
+
+            List<EffectId> steps = EffectPlan.StepsOf(ev).Select(s => s.Id).ToList();
+            Assert.That(steps.Last(), Is.EqualTo(EffectId.StaminaRecover), "the pip lights once the cut has played out");
+            Assert.That(steps.IndexOf(EffectId.StaminaRecover), Is.GreaterThan(steps.IndexOf(EffectId.HpDrain)));
+        }
+
+        /// <summary>A beat of a face (§2.2's Attack → Move → Guard → Skill → Stance), apart from the stamina a face gives.</summary>
+        private static bool IsFaceBeat(Cue cue)
+        {
+            switch (cue.Kind)
+            {
+                case CueKind.Slash:
+                case CueKind.GuardBlock:
+                case CueKind.Hit:
+                case CueKind.GuardGain:
+                case CueKind.RangeSwitch:
+                case CueKind.StatusChange:
+                case CueKind.HpChange:
+                    return true;
+                case CueKind.TraitFire:
+                    return cue.Text != null && cue.Text.StartsWith("構え・"); // the stance face (StanceSet)
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// The card's play from the first board on which its stamina trait fires and a face plays, or null: gaps 0〜4 in turn,
+        /// each as the turn's first card, as its third after two attacks (初手 / 決め / 連動 攻撃), and with
+        /// 再生 already on the player (息継ぎ's 再生中).
+        /// </summary>
+        private static DepictionEvent PlayWithStaminaTraitFired(CardDef card)
+        {
+            var boards = new System.Func<CombatantState, CombatantState>[]
+            {
+                p => p,
+                p => p with { Played = new[] { BattleAttribute.Attack, BattleAttribute.Attack } },
+                p => p with { Statuses = StatusSet.Of((StatusKind.Regen, 2)) },
+            };
+            for (int gap = 0; gap <= GrammarSamples.MaxGap; gap++)
+            {
+                foreach (var board in boards)
+                {
+                    var (state, writer) = Begin(gap, Enumerable.Repeat(card, Constants.HandDraw + 2).ToArray()); // a draw face has a card to draw
+                    StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+                    writer.Write(begin.Events, begin.State);
+                    BattleState ready = begin.State with { Player = board(begin.State.Player) };
+                    string id = InHand(ready, card.Id);
+                    if (TurnLoop.CanPlay(ready, id) != PlayRefusal.None) continue;
+                    StepResult play = TurnLoop.PlayCard(ready, id, NoShuffle);
+                    bool fired = play.Events.OfType<TraitEvaluated>()
+                        .Any(t => t.Trait.Effect == TraitEffect.StaminaGain && t.Outcome.Triggered);
+                    if (!fired) continue;
+                    DepictionEvent ev = writer.Write(play.Events, play.State).Single(e => e.Kind == DepictionEventKind.PlayCard);
+                    if (ev.Cues.Any(IsFaceBeat)) return ev; // 足運び at gap 0 has nowhere to step
+                }
+            }
+            return null;
+        }
+
+        [Test]
+        public void EveryCardWithAStaminaTrait_ShowsTheTraitsPipAfterAllItsFaces()
+        {
+            // §5.9 (#588): read off the cards themselves, so a card that gains the trait later is held too.
+            List<CardDef> cards = CardCatalog.All
+                .Where(d => d.AllTraits.Any(t => t.Effect == TraitEffect.StaminaGain))
+                .ToList();
+            Assert.That(cards, Has.Count.EqualTo(8), "the swordsman's eight (5 initial, 3 learned) when #588 was filed");
+
+            var report = new System.Text.StringBuilder();
+            foreach (CardDef card in cards)
+            {
+                DepictionEvent ev = PlayWithStaminaTraitFired(card);
+                Assert.That(ev, Is.Not.Null, card.Name + ": no board 0〜" + GrammarSamples.MaxGap + " fires its trait");
+                int trait = ev.Cues.FindIndex(c => c.Kind == CueKind.TraitFire && !IsFaceBeat(c));
+                int firstGain = ev.Cues.FindIndex(c => c.Kind == CueKind.StaminaChange && c.Amount > 0);
+                int lastFace = ev.Cues.FindLastIndex(IsFaceBeat);
+                Assert.That(ev.Cues[0].Kind, Is.EqualTo(CueKind.StaminaChange), card.Name + ": the cost first");
+                Assert.That(ev.Cues[0].Amount, Is.LessThan(0), card.Name + ": the cost first");
+                Assert.That(trait, Is.EqualTo(1), card.Name + ": the trait's cue right after the cost");
+                Assert.That(lastFace, Is.GreaterThan(trait), card.Name + ": the card has a face beat");
+                Assert.That(firstGain, Is.GreaterThan(lastFace), card.Name + ": every stamina gain after the last face (" + string.Join(", ", Kinds(ev)) + ")");
+                int draw = ev.Cues.FindIndex(c => c.Kind == CueKind.DrawHand);
+                if (draw >= 0) Assert.That(draw, Is.GreaterThan(firstGain), card.Name + ": §5.9's later group in its table's order, the pip and then the draw");
+                // The pips step up by the core's own numbers, in the core's order.
+                int pips = ev.Cues[0].StaminaAfter;
+                foreach (Cue gain in ev.Cues.Where(c => c.Kind == CueKind.StaminaChange && c.Amount > 0))
+                {
+                    Assert.That(gain.StaminaAfter, Is.EqualTo(pips + gain.Amount), card.Name + ": the pips never step back");
+                    pips = gain.StaminaAfter;
+                }
+                Assert.That(ev.After.Player.Stamina, Is.EqualTo(pips), card.Name);
+                Assert.That(EffectPlan.BlockingMs(ev, EffectSwitches.AllOn()), Is.LessThan(2000f), card.Name + ": §5.0's 2.0 s");
+                report.Append(card.Name).Append(": ").Append(string.Join(", ", Kinds(ev))).Append('\n');
+            }
+            TestContext.Out.Write(report.ToString());
+        }
+
+        [Test]
         public void AStatus_GetsItsOwnBeat_AndAChipOnTheFrame()
         {
             var (state, writer) = Begin(0, FiveCards);
