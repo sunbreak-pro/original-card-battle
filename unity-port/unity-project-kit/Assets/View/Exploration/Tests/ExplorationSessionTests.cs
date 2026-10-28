@@ -245,8 +245,9 @@ namespace Exploration.Tests
             Assert.That(session.State.Profile.Layer, Is.EqualTo(1));
             Assert.That(session.State.Phase, Is.EqualTo(RunPhase.Exploring));
             Assert.That(session.State.Hp, Is.EqualTo(RunStart.DefaultMaxHp));
+            // The fall left a trace on layer 1 (#106), so the new life's layer 1 is drawn with it.
             Assert.That(session.State.Map.Fingerprint(),
-                Is.EqualTo(SevenLayers.Of(1).Map(ExplorationSession.LayerSeed(6UL, 1)).Fingerprint()));
+                Is.EqualTo(MapGenerator.Generate(Heritage.WithTrace(SevenLayers.Of(1).MapSpec), ExplorationSession.LayerSeed(6UL, 1)).Fingerprint()));
         }
 
         [Test]

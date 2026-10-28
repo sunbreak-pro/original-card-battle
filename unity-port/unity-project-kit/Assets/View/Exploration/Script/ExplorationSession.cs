@@ -28,6 +28,9 @@ namespace Exploration
 
         public RunLoadout Loadout { get; set; } = RunLoadout.Empty;
 
+        /// <summary>The traces earlier lives left and nobody collected (#106). Empty for a first life; a save (#109) hands its own in.</summary>
+        public TraceLedger Traces { get; set; } = TraceLedger.Empty;
+
         /// <summary>
         /// A loadout for trying the screen: 防瘴の面 and two 浄化の香 — the carried items whose
         /// effect the exploration core already honours. Amounts come from the catalogue.
@@ -69,10 +72,26 @@ namespace Exploration
         {
             _start = start ?? new RunStart();
             Intel = intel ?? new NoEnemyIntel();
+            Traces = _start.Traces ?? TraceLedger.Empty;
             Begin(_start.Seed);
         }
 
         public IEnemyIntel Intel { get; }
+
+        /// <summary>
+        /// The traces left by every life of this session and the ones handed in at the start, and what the
+        /// life now in the lair has done about them (#106). It outlives 「新しい生」.
+        /// </summary>
+        public TraceLedger Traces { get; private set; }
+
+        /// <summary>Who says what a dying life leaves (Exploration.Bridge.Expedition). Null: a trace with no candidates.</summary>
+        public ILegacySource LegacySource { get; set; }
+
+        /// <summary>The trace this life stepped on first and has not chosen from yet, or null (#106).</summary>
+        public DeathTrace PendingTrace => Traces.Pending;
+
+        // A life leaves one trace: the death is settled once, on the state that ended it.
+        private bool _traceLeft;
 
         /// <summary>The seed this life was started from. Each layer's map is drawn from it.</summary>
         public ulong RunSeed { get; private set; }
@@ -197,6 +216,19 @@ namespace Exploration
             return true;
         }
 
+        /// <summary>
+        /// Chooses from <see cref="PendingTrace"/> (#106): the trace is collected, and what it hands on
+        /// comes back for the layer that holds the cards and the journal to take in. Null when no trace
+        /// waits, the life is over, or the choice breaks the rules (DungeonCore.Heritage.CanChoose).
+        /// </summary>
+        public Bequest TakeLegacy(System.Collections.Generic.IReadOnlyCollection<string> keys)
+        {
+            DeathTrace trace = PendingTrace;
+            if (trace == null || State.IsOver || !Heritage.CanChoose(trace, keys)) return null;
+            Traces = Traces.Collect(keys, out Bequest bequest);
+            return bequest;
+        }
+
         /// <summary>A button on a card, or 「この生を終える」. False when the action does not apply now.</summary>
         public bool Act(ScreenAction action)
         {
@@ -281,6 +313,7 @@ namespace Exploration
             State = ExplorationReducer.ReportBattle(State, hpAfter, staminaAfter);
             PendingBattleNode = None;
             PendingEncounter = null;
+            LeaveTraceIfDead();
             return true;
         }
 
@@ -332,7 +365,7 @@ namespace Exploration
         {
             if (State.Phase != RunPhase.Interlude || State.Profile.IsLast) return null;
             var next = SevenLayers.Of(State.Profile.Layer + 1);
-            return ExplorationReducer.Descend(State, next, next.Map(LayerSeed(RunSeed, next.Layer)));
+            return ExplorationReducer.Descend(State, next, Traces.MapFor(next, LayerSeed(RunSeed, next.Layer)));
         }
 
         /// <summary>A layer's map seed, drawn from the life's seed so a life replays from one number.</summary>
@@ -358,11 +391,13 @@ namespace Exploration
             ConfirmingEndLife = false;
             ConfirmingDescend = false;
             InterludeHealed = 0;
+            Traces = Traces.BeginLife();
+            _traceLeft = false;
 
             var first = SevenLayers.Of(1);
             State = ExplorationReducer.Enter(
                 first,
-                first.Map(LayerSeed(seed, first.Layer)),
+                Traces.MapFor(first, LayerSeed(seed, first.Layer)),
                 _start.Loadout ?? RunLoadout.Empty,
                 _start.Hp,
                 _start.MaxHp,
@@ -371,6 +406,7 @@ namespace Exploration
 
             // The entry node is resolved on arrival, and it is always a battle (dungeon_exploration_v4.md §4.1).
             Arrived(State.CurrentNodeId);
+            LeaveTraceIfDead();
         }
 
         private void Descended(ExplorationState below)
@@ -378,6 +414,7 @@ namespace Exploration
             State = below;
             Surveyed = false;
             Arrived(State.CurrentNodeId);
+            LeaveTraceIfDead();
         }
 
         private void Apply(int nodeId, RestChoice choice)
@@ -385,6 +422,19 @@ namespace Exploration
             bool fresh = !State.HasResolved(nodeId);
             State = ExplorationReducer.Step(State, nodeId, choice);
             if (fresh) Arrived(nodeId);
+            LeaveTraceIfDead();
+        }
+
+        /// <summary>
+        /// Settles a death the moment the state reaches one, by either cause (#106): the trace goes into
+        /// the ledger with what <see cref="LegacySource"/> says the life leaves. Once per life.
+        /// </summary>
+        private void LeaveTraceIfDead()
+        {
+            if (_traceLeft || !Heritage.IsDeath(State)) return;
+            _traceLeft = true;
+            ILegacySource source = LegacySource;
+            Traces = Traces.Leave(State, Life, source?.Name, source?.Cards, source?.Pages);
         }
 
         /// <summary>What resolving a node means for the screen, on top of what the core already did.</summary>
@@ -393,6 +443,8 @@ namespace Exploration
             var kind = State.Map.Node(nodeId).Kind;
             if (kind == NodeKind.Carving) CarvingTaken = true;
             if (kind == NodeKind.Survey) Surveyed = true;
+            // The first trace a life steps on is the one it receives from (#106). A death on the step claims nothing.
+            if (kind == NodeKind.Trace && !State.IsOver) Traces = Traces.Visit(State.Profile.Layer);
             // 瘴気死 ends the life on the node before any fight starts.
             if (kind.IsCombat() && State.Phase != RunPhase.MiasmaDeath)
             {
