@@ -37,6 +37,9 @@ namespace Exploration.View
         // The shade is drawn into a texture this small and stretched over the screen: it is a smooth falloff.
         private const int ShadeWidth = 64;
         private const int ShadeHeight = 36;
+        // The breath's clock moves at most this much in one Tick, so a pause (a battle on top) resumes it
+        // where it stopped instead of jumping.
+        private const double MaxBreathStepMs = 100.0;
 
         private readonly Action<int, RestChoice> _step;
         private readonly Action<ScreenAction> _act;
@@ -80,6 +83,12 @@ namespace Exploration.View
         private int _gaugeTo = -1;
         private int _gaugeNext;
         private double _gaugeSince;
+        // The breath keeps its own phase (cycles done, 0 to 1), advanced by the elapsed time over the period
+        // of the reading it follows. Reading MiasmaLook.Breath on the absolute clock would jump whenever the
+        // period changes, and strobe through a rise, whose reading changes every frame.
+        private double _breathPhase;
+        private double _breathAt = -1.0;
+        private int _breathPercent = MiasmaLook.BreathFrom;
         private Image _shade;
         private Image _seep;
         private Color32[] _shadePixels;
@@ -261,15 +270,48 @@ namespace Exploration.View
             float shown = MiasmaLook.Rise(_gaugeFrom, _gaugeTo, now - _gaugeSince);
             float fill = Mathf.Clamp01(shown / MiasmaLook.DeathAt);
             float next = Mathf.Clamp01(_gaugeNext / (float)MiasmaLook.DeathAt);
+            float breath = AdvanceBreath(now);
 
+            // The fill's alpha and the shade's inner edge breathe as MiasmaLook.FillAlpha and
+            // MiasmaLook.ShadeAt(percent, ms) do, but on the view's own phase-continuous breath.
             Color colour = ExplorationPalette.Of(MiasmaLook.FillAt(Mathf.RoundToInt(shown)));
-            colour.a *= MiasmaLook.FillAlpha(shown, now);
+            colour.a *= 1f - MiasmaLook.BreathDepth * breath;
             _gaugeFill.color = colour;
             _gaugeFill.rectTransform.anchorMax = new Vector2(fill, 1f);
             _gaugeAhead.rectTransform.anchorMin = new Vector2(fill, 0f);
             _gaugeAhead.rectTransform.anchorMax = new Vector2(Mathf.Max(fill, next), 1f);
 
-            DrawShade(MiasmaLook.ShadeAt(shown, now));
+            MiasmaShade still = MiasmaLook.ShadeAt(shown);
+            DrawShade(new MiasmaShade(still.Strength, still.VeilAlpha, still.EdgeAlpha,
+                still.InnerRadius - MiasmaLook.ShadeBreathRadius * breath, still.SeepAlpha));
+        }
+
+        /// <summary>
+        /// Moves the breath on to <paramref name="now"/> and returns it (0 at rest, 1 at the bottom of a breath).
+        /// It follows the settled reading, not the one easing up, so a rise only changes its pace. A breath starts
+        /// from rest when the reading reaches 80%, and one under way when it falls below 80% finishes at its last
+        /// pace instead of snapping back.
+        /// </summary>
+        private float AdvanceBreath(double now)
+        {
+            double elapsed = _breathAt < 0.0 ? 0.0 : Math.Min(Math.Max(now - _breathAt, 0.0), MaxBreathStepMs);
+            _breathAt = now;
+            bool breathing = _gaugeTo >= MiasmaLook.BreathFrom;
+            if (breathing) _breathPercent = _gaugeTo;
+            else if (_breathPhase <= 0.0) return 0f;
+
+            int period = MiasmaLook.BreathPeriodMs(_breathPercent);
+            _breathPhase += elapsed / period;
+            if (_breathPhase >= 1.0)
+            {
+                if (!breathing)
+                {
+                    _breathPhase = 0.0;
+                    return 0f;
+                }
+                _breathPhase -= Math.Floor(_breathPhase);
+            }
+            return MiasmaLook.Breath(_breathPercent, _breathPhase * period);
         }
 
         /// <summary>The track, the fill, the share ahead and the nine ticks, made once; Tick moves them.</summary>
