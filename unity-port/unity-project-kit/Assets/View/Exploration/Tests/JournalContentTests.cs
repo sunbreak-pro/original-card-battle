@@ -57,6 +57,29 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void ABossPage_AddsItsAdaptationConditions_AtTwo()
+        {
+            // roster §1.5: 開示度 2 writes each adaptation's condition on the page, one row per row of the
+            // tables of §4.4 / §5.4 / §6.4 / §7.11.
+            var expected = new Dictionary<string, int> { ["miasma_priest"] = 4, ["abyss_angler"] = 4, ["distortion_root"] = 7, ["dragon_god"] = 4 };
+            foreach (EnemyJournalEntry entry in EnemyJournal.All)
+            {
+                int count = expected.TryGetValue(entry.Id, out int n) ? n : 0;
+                Assert.That(entry.Adaptations.Count, Is.EqualTo(count), entry.Id);
+                Assert.That(entry.Adaptations, Has.No.Member(""), entry.Id);
+            }
+
+            JournalPage met = EnemyJournal.Page("miasma_priest", 1);
+            JournalPage read = EnemyJournal.Page("miasma_priest", 2);
+            var adaptations = read.Rows.Skip(5).ToList();
+            Assert.That(adaptations.Select(r => r.Label), Is.EqualTo(new[] { "適応 1", "適応 2", "適応 3", "適応 4" }));
+            Assert.That(read.TextOf(adaptations[0]), Is.EqualTo("アタックを 3 回続けて受けると、とぐろを締めて帳を張り直す"));
+            Assert.That(read.TextOf(adaptations[1]), Is.EqualTo("Guard を 9 以上で 2 ターン受け続けると、崩しを狙う"));
+            Assert.That(met.Rows.Skip(5).Select(met.TextOf).Distinct(), Is.EqualTo(new[] { JournalRow.Hidden }), "the conditions wait for 2");
+            Assert.That(EnemyJournal.Page("polearm_warped", 2).Rows.Select(r => r.Label), Has.No.Member("適応 1"));
+        }
+
+        [Test]
         public void TheTendencyLine_WaitsForTwo()
         {
             Assert.That(EnemyJournal.Tendency("crossbow_hunter", 1), Is.Empty);
@@ -178,6 +201,28 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void ATwoEnemyNode_JoinsTheNames_AndShowsTheLowestLevel()
+        {
+            var levels = new Dictionary<string, int> { ["polearm_warped"] = 1 };
+            var journal = new LifeJournal(id => levels.TryGetValue(id, out int l) ? l : 0);
+            var session = new ExplorationSession(new RunStart { Seed = 3 }, journal);
+            journal.Follow(session);
+            MapNode elite = session.State.Map.Nodes.First(n => n.Kind == NodeKind.Elite);
+
+            // Layer 1's elite slot is the one chain 錆槍 → 瘴牙 (encounters_and_rewards_v4.md §2).
+            NodeIntel chain = journal.ForNode(elite, 1, false);
+            Assert.That(chain.EnemyName, Is.EqualTo("錆槍の竜兵 → ？"));
+            Assert.That(chain.Disclosure, Is.Zero);
+
+            // Layer 2's elite slot is the one pair 錆槍 + 灰弩, so any elite node draws it.
+            levels["crossbow_hunter"] = 2;
+            NodeIntel pair = journal.ForNode(elite, 2, false);
+            Assert.That(pair.EnemyName, Is.EqualTo("錆槍の竜兵 + 灰弩の竜兵"));
+            Assert.That(pair.Disclosure, Is.EqualTo(1));
+            Assert.That(pair.Lines, Is.EqualTo(new[] { EnemyJournal.Tendency("crossbow_hunter", 2) }));
+        }
+
+        [Test]
         public void TheNodePreview_NamesTheEnemyTheStepWillMeet()
         {
             var journal = new LifeJournal(_ => 1);
@@ -208,6 +253,7 @@ namespace Exploration.Tests
             string boss = LifeJournal.SurveyTarget(1);
             Assert.That(boss, Is.EqualTo("shadow_hound"), "layer 1's boss slot (encounters_and_rewards_v4.md §2)");
             Assert.That(journal.DisclosureOf(boss), Is.Zero);
+            Assert.That(journal.DisclosureOf("distortion_root"), Is.Zero, "layer 7 has no survey, and its boss starts at 0 like the rest (§6.11)");
 
             WalkTo(session, NodeKind.Survey);
             Assert.That(session.HasSurveyed(1), Is.True);
