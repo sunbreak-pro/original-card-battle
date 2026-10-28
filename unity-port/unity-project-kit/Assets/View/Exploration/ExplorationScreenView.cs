@@ -231,10 +231,10 @@ namespace Exploration.View
                 Vector2.zero, new Vector2(Mathf.Clamp01(gauge.NextFill), 1f));
             UiKit.Image(_gauge, "Fill", ProceduralArt.White, ExplorationPalette.Accent,
                 Vector2.zero, new Vector2(Mathf.Clamp01(gauge.Fill), 1f));
-            foreach (int line in gauge.StepLines)
+            for (int i = 0; i < gauge.StepLines.Count; i++)
             {
-                float at = line / 100f;
-                Image mark = UiKit.Image(_gauge, "Line" + line, ProceduralArt.White, ExplorationPalette.Line,
+                float at = gauge.StepLineFills[i];
+                Image mark = UiKit.Image(_gauge, "Line" + gauge.StepLines[i], ProceduralArt.White, ExplorationPalette.Line,
                     new Vector2(at, 0f), new Vector2(at, 1f));
                 mark.rectTransform.offsetMin = new Vector2(-1f, 0f);
                 mark.rectTransform.offsetMax = new Vector2(1f, 0f);
