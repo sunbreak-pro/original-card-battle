@@ -5,14 +5,6 @@ import { BUFF_EFFECTS } from "@/constants/data/battles/buffData";
 // Buff Query and Factory Functions (moved from baffType.ts)
 // ============================================================
 
-export function getBuffValue(type: BuffDebuffType): number {
-  return BUFF_EFFECTS[type].value;
-}
-
-export function isStackable(type: BuffDebuffType): boolean {
-  return BUFF_EFFECTS[type].stackable;
-}
-
 export function createBuffState(
   buff: CardBuffSpec,
   source?: string,
@@ -70,15 +62,6 @@ export const addOrUpdateBuffDebuff = (
       appliedBy,
     });
   }
-  return newMap;
-};
-
-export const removeBuffDebuff = (
-  map: BuffDebuffMap,
-  type: BuffDebuffType
-): BuffDebuffMap => {
-  const newMap = new Map(map);
-  newMap.delete(type);
   return newMap;
 };
 
