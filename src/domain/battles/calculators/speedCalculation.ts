@@ -17,12 +17,6 @@ export {
   createInitialSpeedRandomState,
 } from "./phaseCalculation";
 
-// Speed bonus type for UI display (kept for backwards compatibility)
-export interface SpeedBonus {
-  name: string;
-  value: number;
-}
-
 export function calculatePlayerSpeed(buffs: BuffDebuffMap): number {
   let speed = BASE_PLAYER_SPEED;
 
@@ -74,12 +68,4 @@ export function calculateEnemySpeed(
   }
 
   return Math.max(0, speed);
-}
-
-// Keep for backwards compatibility
-export function determineTurnOrder(
-  playerSpeed: number,
-  enemySpeed: number
-): "player" | "enemy" {
-  return playerSpeed >= enemySpeed ? "player" : "enemy";
 }
