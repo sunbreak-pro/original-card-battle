@@ -27,15 +27,19 @@ namespace Depiction.Bridge
             return attributes.HasFlag(BattleAttribute.Stance) ? CardKind.Stance : CardKind.Skill;
         }
 
+        /// <summary>
+        /// The attribute word of a card's colour role (#575): the four words of CardFaceText.AttributeWord.
+        /// No core card counts as ムーブ (battle-visual-v1 decision 15: movement is in the value columns).
+        /// </summary>
         public static string KindWord(CardKind kind)
         {
             switch (kind)
             {
-                case CardKind.Attack: return "攻撃";
-                case CardKind.Guard: return "防御";
-                case CardKind.Move: return "ムーブ";
-                case CardKind.Skill: return "技";
-                default: return "構え";
+                case CardKind.Attack: return CardFaceText.AttributeWord(BattleAttribute.Attack);
+                case CardKind.Guard: return CardFaceText.AttributeWord(BattleAttribute.Guard);
+                case CardKind.Skill: return CardFaceText.AttributeWord(BattleAttribute.Skill);
+                case CardKind.Stance: return CardFaceText.AttributeWord(BattleAttribute.Stance);
+                default: throw new System.ArgumentOutOfRangeException(nameof(kind), kind, "No attribute word for the card kind " + kind);
             }
         }
 
@@ -270,30 +274,11 @@ namespace Depiction.Bridge
             return condition.Length == 0 ? effect : condition + " " + effect;
         }
 
-        /// <summary>The condition half of <see cref="TraitLine"/> ("間合い0", "残4", "予兆攻撃").</summary>
+        /// <summary>The condition half of <see cref="TraitLine"/> ("間合い0", "残4", "予兆攻撃"): the short form of CardFaceText's table (#575).</summary>
         public static string ConditionWord(Trait trait)
         {
-            switch (trait.Condition)
-            {
-                case BattleCore.TraitCondition.GapAtMost:
-                    return trait.Threshold == 0 ? "間合い0" : "間合い" + trait.Threshold + "以下";
-                case BattleCore.TraitCondition.GapAtLeast:
-                    return "間合い" + trait.Threshold + "以上";
-                case BattleCore.TraitCondition.Unguarded: return "無防備";
-                case BattleCore.TraitCondition.Reserve: return "残" + trait.Threshold;
-                case BattleCore.TraitCondition.Combo: return "連動" + AttributeWord(trait.Attribute);
-                case BattleCore.TraitCondition.Moved: return "移動後";
-                case BattleCore.TraitCondition.OmenIs: return "予兆" + (trait.Omen.HasValue ? OmenKindWord(trait.Omen.Value) : "");
-                case BattleCore.TraitCondition.Desperate: return "死力";
-                case BattleCore.TraitCondition.FirstPlay: return "初手";
-                case BattleCore.TraitCondition.Finisher: return "締め";
-                case BattleCore.TraitCondition.Broken: return "崩し後";
-                case BattleCore.TraitCondition.Chain: return "連打";
-                case BattleCore.TraitCondition.Thin: return "手薄";
-                case BattleCore.TraitCondition.FoeHas: return "相手" + (trait.Watch.HasValue ? trait.Watch.Value.ToLabel() : "");
-                case BattleCore.TraitCondition.SelfHas: return "自分" + (trait.Watch.HasValue ? trait.Watch.Value.ToLabel() : "");
-                default: throw new System.ArgumentOutOfRangeException(nameof(trait), trait.Condition, "No lamp word for the trait condition " + trait.Condition);
-            }
+            if (trait == null) throw new System.ArgumentNullException(nameof(trait));
+            return CardFaceText.ConditionWords.Of(trait.Condition).Short(trait);
         }
 
         /// <summary>The effect half of <see cref="TraitLine"/> ("+5", "Guard+3", "重撃").</summary>
@@ -315,15 +300,6 @@ namespace Depiction.Bridge
                 case TraitEffect.BreakBonus: return "崩し+" + trait.Amount;
                 default: throw new System.ArgumentOutOfRangeException(nameof(trait), trait.Effect, "No lamp word for the trait effect " + trait.Effect);
             }
-        }
-
-        private static string AttributeWord(BattleAttribute attribute)
-        {
-            if (attribute.HasFlag(BattleAttribute.Attack)) return "(攻)";
-            if (attribute.HasFlag(BattleAttribute.Guard)) return "(防)";
-            if (attribute.HasFlag(BattleAttribute.Skill)) return "(技)";
-            if (attribute.HasFlag(BattleAttribute.Stance)) return "(構)";
-            return "";
         }
 
         // ---- the boss words that stop a move (#335) -------------------------------------------
@@ -353,21 +329,13 @@ namespace Depiction.Bridge
         // ---- omen ---------------------------------------------------------------------------
 
         /// <summary>
-        /// The omen's kind as a word: the words of battle-visual-v1 4.4, which #243 brought the
-        /// roster to as well (防御 / 移動). BattleCore's EnemyAi.ToText reads the same words (#357).
+        /// The omen's kind as a word: the words of battle-visual-v1 4.4 (攻撃 / 防御 / 移動 / 技 / 構え /
+        /// 休み). #575: read off BattleCore's own table, EnemyAi.ToText, which words an omen with no
+        /// reach as its kind alone, so the core and the screen keep one list of the words.
         /// </summary>
         public static string OmenKindWord(OmenKind kind)
         {
-            switch (kind)
-            {
-                case OmenKind.Attack: return "攻撃";
-                case OmenKind.Guard: return "防御";
-                case OmenKind.Move: return "移動";
-                case OmenKind.Skill: return "技";
-                case OmenKind.Stance: return "構え";
-                case OmenKind.Rest: return "休み";
-                default: throw new System.ArgumentOutOfRangeException(nameof(kind), kind, "No word for the omen kind " + kind);
-            }
+            return new OmenLabel(kind).ToText();
         }
 
         /// <summary>
