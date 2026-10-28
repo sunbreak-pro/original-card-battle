@@ -77,6 +77,8 @@ namespace Exploration.Tests
             WalkTo(session, NodeKind.Trace);
             Assert.That(session.PendingTrace?.Id, Is.EqualTo(1));
             Assert.That(session.MapIsLive, Is.True, "the choice waits beside the map, like a card offer");
+            Assert.That(TraceNodeLines(session), Is.EqualTo(new[] { "この生が受け取る痕跡はここ", "遺産を選ぶ画面はまだ出ない" }),
+                "the screen is not wired yet (§7.7), so the node says so");
 
             var four = new[] { "card:thrust", "card:kesa_cut", "page:p1", "page:p2" };
             Assert.That(session.TakeLegacy(four), Is.Null, "more than three is refused");
@@ -88,6 +90,21 @@ namespace Exploration.Tests
             Assert.That(bequest.Pages.Select(p => p.PageId), Is.EqualTo(new[] { "p2" }));
             Assert.That(session.Traces.Traces, Is.Empty, "collected");
             Assert.That(session.PendingTrace, Is.Null);
+            Assert.That(TraceNodeLines(session), Is.EqualTo(new[] { "この生は既に遺産を受け取った" }));
+        }
+
+        [Test]
+        public void AnUnclaimedTrace_SaysWhatItHolds_WithoutPromisingTheScreen()
+        {
+            var session = Explorable(new ExplorationSession(new RunStart { Seed = 4, Traces = Ledger(1) }));
+            WalkTo(session, NodeKind.Trace, stopShort: true);
+            Assert.That(session.Screen().Node(TraceNodeId(session)).Standing, Is.EqualTo(NodeStanding.Reachable));
+            Assert.That(TraceNodeLines(session), Is.EqualTo(new[]
+            {
+                "前の生の遺産が残っている",
+                "最初に踏んだ痕跡だけを受け取れる（1 つの生で 1 件）",
+                "遺産を選ぶ画面はまだ出ない",
+            }));
         }
 
         [Test]
@@ -99,15 +116,17 @@ namespace Exploration.Tests
 
             WalkToLayer(session, 2);
             Assert.That(session.State.Map.CountOf(NodeKind.Trace), Is.EqualTo(1), "layer 2 still shows its trace");
-            if (session.State.Map.Nodes.Any(n => n.Kind == NodeKind.Trace && !session.State.HasResolved(n.Id))) WalkTo(session, NodeKind.Trace);
+            WalkTo(session, NodeKind.Trace);
+            Assert.That(session.State.HasResolved(TraceNodeId(session)), Is.True, "layer 2's trace was stepped on");
             Assert.That(session.PendingTrace, Is.Null, "one trace per life");
+            Assert.That(TraceNodeLines(session), Is.EqualTo(new[] { "この生は既に遺産を受け取った" }));
             Assert.That(session.Traces.Traces.Select(t => t.Place.Layer), Is.EqualTo(new[] { 2 }), "the other trace stays for a later life");
 
             Assert.That(session.Act(ScreenAction.AskEndLife), Is.True);
             Assert.That(session.Act(ScreenAction.ConfirmEndLife), Is.True);
             Assert.That(session.Act(ScreenAction.NewLife), Is.True);
             WalkToLayer(session, 2);
-            if (session.State.Map.Nodes.Any(n => n.Kind == NodeKind.Trace && !session.State.HasResolved(n.Id))) WalkTo(session, NodeKind.Trace);
+            WalkTo(session, NodeKind.Trace);
             Assert.That(session.PendingTrace?.Place.Layer, Is.EqualTo(2), "the next life may take it");
         }
 
@@ -128,8 +147,17 @@ namespace Exploration.Tests
             return ledger;
         }
 
-        /// <summary>Walks the shortest way to the nearest unresolved node of this kind, winning every battle on the way.</summary>
-        internal static void WalkTo(ExplorationSession session, NodeKind kind)
+        private static int TraceNodeId(ExplorationSession session) =>
+            session.State.Map.Nodes.Single(n => n.Kind == NodeKind.Trace).Id;
+
+        private static IReadOnlyList<string> TraceNodeLines(ExplorationSession session) =>
+            session.Screen().Node(TraceNodeId(session)).Lines;
+
+        /// <summary>
+        /// Walks the shortest way to the nearest unresolved node of this kind, winning every battle on the way.
+        /// With <paramref name="stopShort"/>, it stops on the node just before it.
+        /// </summary>
+        internal static void WalkTo(ExplorationSession session, NodeKind kind, bool stopShort = false)
         {
             ExplorationState state = session.State;
             LayerMap map = state.Map;
@@ -156,6 +184,7 @@ namespace Exploration.Tests
             var path = new List<int>();
             for (int node = target; node != state.CurrentNodeId; node = from[node]) path.Add(node);
             path.Reverse();
+            if (stopShort) path.RemoveAt(path.Count - 1);
             foreach (int node in path) Step(session, node);
         }
 

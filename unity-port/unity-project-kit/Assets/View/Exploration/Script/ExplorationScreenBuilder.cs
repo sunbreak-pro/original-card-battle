@@ -198,8 +198,7 @@ namespace Exploration
                     break;
 
                 case NodeKind.Trace:
-                    lines.Add("前の生の遺産を受け取れる");
-                    lines.Add("受け取れるのは 1 つの生で 1 件");
+                    lines.AddRange(TraceLines(session));
                     break;
 
                 case NodeKind.Carving:
@@ -209,6 +208,35 @@ namespace Exploration
             }
             return lines;
         }
+
+        /// <summary>
+        /// What a 死亡地点の痕跡 promises, read from the ledger (dungeon_exploration_v4.md §6.3, §7.5). The choosing
+        /// screen is not wired into the Unity exploration screen yet (§7.7), so the lines say so instead of
+        /// promising a legacy the screen cannot hand over.
+        /// </summary>
+        private static IEnumerable<string> TraceLines(ExplorationSession session)
+        {
+            TraceLedger ledger = session.Traces;
+            if (ledger.HasReceived)
+            {
+                yield return "この生は既に遺産を受け取った";
+                yield break;
+            }
+            if (ledger.Pending != null)
+            {
+                yield return ledger.Pending.Place.Layer == session.State.Profile.Layer
+                    ? "この生が受け取る痕跡はここ"
+                    : "この生が受け取る痕跡は既に決まっている";
+                yield return TraceScreenNotWired;
+                yield break;
+            }
+            yield return "前の生の遺産が残っている";
+            yield return "最初に踏んだ痕跡だけを受け取れる（1 つの生で 1 件）";
+            yield return TraceScreenNotWired;
+        }
+
+        /// <summary>Shown until the choosing screen is wired into the Unity exploration screen (§7.7).</summary>
+        private const string TraceScreenNotWired = "遺産を選ぶ画面はまだ出ない";
 
         private static IReadOnlyList<StepOption> Options(ExplorationState state, MapNode node, NodeStanding standing)
         {
