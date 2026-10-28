@@ -464,6 +464,102 @@ namespace Depiction.Bridge.Tests
             Assert.That(next.After.Omen.ValueText, Is.EqualTo("9"));
         }
 
+        // ---- an enemy that strikes and then moves itself (#587) ----
+
+        /// <summary>Every enemy action that strikes and then moves its own cells (§5.4 順 2: 退き撃ち and the like), read off the roster.</summary>
+        private static List<(EnemyDef Enemy, EnemyActionDef Action)> StrikeThenMove()
+        {
+            var found = new List<(EnemyDef, EnemyActionDef)>();
+            foreach (EnemyDef enemy in Enemies.All)
+            {
+                foreach (EnemyActionDef action in enemy.Actions.Values)
+                {
+                    if (action.Face.Power > 0 && action.Face.Move != 0) found.Add((enemy, action));
+                }
+            }
+            return found;
+        }
+
+        /// <summary>
+        /// The enemy carries out <paramref name="action"/> against a player holding <paramref name="guard"/>, from
+        /// the first gap in its reach where it moves after the blow; the event its blow plays in, or null.
+        /// The player ends the turn with no stamina, so 構え adds no Guard of its own.
+        /// </summary>
+        private static DepictionEvent StrikeThenMoveEvent(EnemyDef enemy, EnemyActionDef action, int guard)
+        {
+            Reach reach = action.Face.ReachOrDefault;
+            for (int gap = reach.Min; gap <= reach.Max; gap++)
+            {
+                var setup = new BattleSetup(enemy, Cards.BuildDeck(new[] { CardCatalog.Brace }, Constants.HandDraw * 2),
+                    Constants.FieldCellsMax, StartGap: gap);
+                BattleState state = TurnLoop.Start(setup, NoShuffle).State;
+                if (state.Gap != gap) continue;
+                var writer = new CoreScriptWriter(setup.Enemy);
+                writer.Opening(state);
+                StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+                writer.Write(begin.Events, begin.State);
+
+                EnemyUnit unit = begin.State.Enemies[0];
+                BattleState ready = begin.State with { Player = begin.State.Player with { Stamina = 0, Guard = guard } };
+                ready = ready.WithUnit(0, unit with { Omen = new Omen(action.Id, EnemyAi.LabelOf(action)) });
+                StepResult end = TurnLoop.EndTurn(ready, NoShuffle);
+                bool moved = end.Events.OfType<CellsMoved>().Any(m => m.Actor == Actor.Enemy && !m.Pushed);
+                if (!moved) continue;
+                return writer.Write(end.Events, end.State)
+                    .FirstOrDefault(e => e.Cues.Any(c => c.Kind == CueKind.Slash && c.Source == UnitSide.Enemy) && e.Title == action.Name);
+            }
+            return null;
+        }
+
+        [Test]
+        public void AnEnemyThatStrikesThenMoves_GoesStraightIntoTheMove_WithNoReturn()
+        {
+            // §5.4 順 2 (#587): no §5.5 順 8 return; the move starts on the number + 80, in the blow's own event.
+            List<(EnemyDef Enemy, EnemyActionDef Action)> actions = StrikeThenMove();
+            Assert.That(actions.Select(a => a.Action.Id), Is.EquivalentTo(new[]
+            {
+                "lunge_in", "press", "backstep", "step_slash", "crystal_rush", "recoil_thrust", "push_shield", "pounce",
+            }), "the eight of #587");
+
+            var report = new System.Text.StringBuilder();
+            foreach (var (enemy, action) in actions)
+            {
+                string name = enemy.Name + " " + action.Name;
+                // Guard 0: swing, wound, move. A little Guard: swing, shield, wound, move.
+                foreach (int guard in new[] { 0, 2 })
+                {
+                    DepictionEvent ev = StrikeThenMoveEvent(enemy, action, guard);
+                    Assert.That(ev, Is.Not.Null, name + " Guard " + guard + ": never moves after its blow");
+                    int hit = ev.Cues.FindIndex(c => c.Kind == CueKind.Hit && c.Target == UnitSide.Player);
+                    Assert.That(hit, Is.GreaterThan(0), name + " Guard " + guard + ": a wound");
+                    if (guard > 0) Assert.That(ev.Cues[hit - 1].Kind, Is.EqualTo(CueKind.GuardBlock), name + ": the shield before the wound");
+                    Assert.That(ev.Cues[hit + 1].Kind, Is.EqualTo(CueKind.RangeSwitch), name + " Guard " + guard + ": the move in the same event, right after the wound");
+                    Assert.That(ev.Cues[hit + 1].Pushed, Is.False, name);
+                    Assert.That(EffectPlan.EnemyMoveFollows(ev, ev.Cues[hit]), Is.True, name);
+
+                    List<EffectStep> steps = EffectPlan.StepsOf(ev);
+                    Assert.That(steps.Select(s => s.Id), Has.No.Member(EffectId.EnemyReturn), name + " Guard " + guard);
+                    Assert.That(steps.Single(s => s.Id == EffectId.HpDrain).LeadMs, Is.EqualTo(EffectPlan.NextFaceLeadMs), name + " Guard " + guard);
+                    float ms = EffectPlan.BlockingMs(ev, EffectSwitches.AllOn());
+                    Assert.That(ms, Is.LessThan(2000f), name + " Guard " + guard + ": §5.0's 2.0 s for the 1 手");
+                    report.Append(name).Append(" Guard ").Append(guard).Append(": ").Append(string.Join(", ", Kinds(ev)))
+                        .Append(" = ").Append(ms).Append(" ms\n");
+                }
+
+                // Guard takes all of it: the shield, then the move from where the enemy struck — no return to wait for.
+                DepictionEvent blocked = StrikeThenMoveEvent(enemy, action, 99);
+                Assert.That(blocked, Is.Not.Null, name + " Guard 99");
+                int block = blocked.Cues.FindIndex(c => c.Kind == CueKind.GuardBlock);
+                Assert.That(block, Is.GreaterThan(0), name + " Guard 99: the shield");
+                Assert.That(blocked.Cues.Any(c => c.Kind == CueKind.Hit), Is.False, name + " Guard 99: no wound");
+                Assert.That(blocked.Cues[block + 1].Kind, Is.EqualTo(CueKind.RangeSwitch), name + " Guard 99: the move right after the shield");
+                Assert.That(EffectPlan.StepsOf(blocked).Select(s => s.Id), Has.No.Member(EffectId.EnemyReturn), name + " Guard 99");
+                Assert.That(EffectPlan.BlockingMs(blocked, EffectSwitches.AllOn()), Is.LessThan(2000f), name + " Guard 99");
+                report.Append(name).Append(" Guard 99: ").Append(string.Join(", ", Kinds(blocked))).Append('\n');
+            }
+            TestContext.Out.Write(report.ToString());
+        }
+
         [Test]
         public void ASweepThatFindsThePlayerAtGapOne_StrikesItsBonusOff()
         {

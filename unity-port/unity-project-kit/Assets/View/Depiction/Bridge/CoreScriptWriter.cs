@@ -189,8 +189,8 @@ namespace Depiction.Bridge
         /// event each; EndTurn is three for the slice (turn end, the enemy's action, the next omen),
         /// the same beats the screen already knows. A few moments take a beat of their own so each
         /// event stays inside the 2.0 s it may take: the enemy's push driving the player into the
-        /// wall, and (#189) an enemy turn start that did something, an elite's second action, the
-        /// second blow of 二段斬り and the step an enemy takes after its blow.
+        /// wall, and (#189) an enemy turn start that did something, an elite's second action and the
+        /// second blow of 二段斬り. The step an enemy takes after its blow stays in the blow's event (#587).
         ///
         /// <paramref name="after"/> is the state the move left. It is only asked what the cards still
         /// in the hand and the omen on screen would do (the lamp, the omen's number), never for a
@@ -302,12 +302,9 @@ namespace Depiction.Bridge
                     && current.Cues.Exists(c => c.Kind == CueKind.GuardGain || c.Kind == CueKind.HpChange):
                     return NewEvent(DepictionEventKind.EnemyAction, first.Action.Name);
 
-                // §2.2 (#189): an enemy that strikes and then steps in (飛びかかり, 当ててから前へ 2) takes
-                // the step as its own beat once the blow has landed.
-                case CellsMoved step when step.Actor == Actor.Enemy && !step.Pushed && current != null
-                    && current.Kind == DepictionEventKind.EnemyAction
-                    && current.Cues.Exists(c => c.Kind == CueKind.Hit || c.Kind == CueKind.GuardBlock):
-                    return NewEvent(DepictionEventKind.EnemyAction, current.Title + (step.To < step.From ? "（詰める）" : "（下がる）"));
+                // §5.4 順 2 (#587): an enemy that strikes and then moves itself (退き撃ち, 踏み込み斬り) keeps
+                // the move in the blow's event, so the move can start on the number + 80 with no return
+                // first (EffectPlan.EnemyMoveFollows). The whole 1 手 stays inside the 2.0 s (§5.0).
 
                 // §2.4 hits (#189): the second blow of an enemy face is a beat of its own (二段斬り),
                 // opened where the 脆化 its first blow left is spent for it.
