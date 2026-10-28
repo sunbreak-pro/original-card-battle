@@ -23,7 +23,6 @@ namespace Depiction.Bridge.Tests
             "Depiction/DemoFlow.cs",
             "Depiction/DemoScreens.cs",
             "Depiction/DepartureScreen.cs",
-            "Exploration/ExplorationBootstrap.cs",
         };
 
         /// <summary>BattleCore's rule classes. A View file calling one of them is computing.</summary>

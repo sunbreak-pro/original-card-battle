@@ -11,7 +11,6 @@
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using System.Collections.Generic;
-using BattleCore;
 using Depiction.Bridge;
 using Depiction.View;
 using DungeonCore;
@@ -52,6 +51,9 @@ namespace Exploration.View
         private ExplorationScreenView _view;
         private GameObject _canvas;
         private bool _inBattle;
+        // Set when a battle could not be shown: every combat node after it takes the stand-in card.
+        // Kept apart from realBattles, which stays what the Inspector set.
+        private bool _standInOnly;
 
         private void Start()
         {
@@ -116,7 +118,7 @@ namespace Exploration.View
         {
             _view.Render(_session.Screen());
             _view.ShowPick(CardPicks.For(_expedition));
-            if (realBattles && !_inBattle && _session.HasPendingBattle && _expedition.Battle == null) StartCoroutine(FightPendingBattle());
+            if (realBattles && !_standInOnly && !_inBattle && _session.HasPendingBattle && _expedition.Battle == null) StartCoroutine(FightPendingBattle());
         }
 
         // ---- the battle scene (#99) ----
@@ -145,9 +147,10 @@ namespace Exploration.View
                     BattleBootstrap.HandIn(null);
                     Debug.LogError("[ExplorationBootstrap] the battle scene " + battleScenePath + " is not in Build Settings; the stand-in card stays.");
                     Show(hidden);
+                    Debug.LogWarning("[ExplorationBootstrap] the battle scene could not be loaded: every combat node from here takes the stand-in card.");
                     _expedition.Abandon();
                     _inBattle = false;
-                    realBattles = false;
+                    _standInOnly = true;
                     Render();
                     yield break;
                 }
@@ -169,16 +172,16 @@ namespace Exploration.View
                 }
                 Show(hidden);
 
-                if (source.State.Result == GameResult.Ongoing)
+                if (!battle.TryFinish(source))
                 {
                     // The battle never reached its end (no player to play it): the node waits on the stand-in card.
+                    Debug.LogWarning("[ExplorationBootstrap] the battle ended before its result (no DepictionPlayer, or it was stopped or disabled): every combat node from here takes the stand-in card.");
                     _expedition.Abandon();
                     _inBattle = false;
-                    realBattles = false;
+                    _standInOnly = true;
                     Render();
                     yield break;
                 }
-                battle.Finish(source);
             }
 
             BattleReturn back = _expedition.Return();

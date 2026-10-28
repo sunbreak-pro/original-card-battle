@@ -480,6 +480,49 @@ namespace Depiction
         /// v4.2 sources leave it false.
         /// </summary>
         public bool EnemyTurn;
+        /// <summary>
+        /// battle_ui_ux_v2 §2.2 / battle-visual-v1 §4.2 (#589): every enemy of the battle, in the core's
+        /// order (the first acts first). The first is <see cref="Enemy"/>, <see cref="Omen"/> and the
+        /// floor's enemy cells and aimed cells, the same objects, so a View that reads only those still
+        /// shows it. Empty from a source that keeps one enemy (the filming script): the single-enemy
+        /// fields stand alone.
+        /// </summary>
+        public List<EnemyFrame> Enemies = new List<EnemyFrame>();
+    }
+
+    /// <summary>
+    /// One enemy's share of the screen when the battle has several (#589): its number panel and stance
+    /// list (<see cref="Unit"/>), its omen badge, where it stands, the cells its shown omen aims at, and
+    /// the stripes that tell its cells from the others'.
+    /// </summary>
+    public sealed class EnemyFrame
+    {
+        public UnitFrame Unit = new UnitFrame();
+        public OmenFrame Omen = new OmenFrame();
+        /// <summary>Its lowest cell and how many cells it takes (2 for a large elite), as the floor draws them.</summary>
+        public int Cell;
+        public int Size = 1;
+        /// <summary>The cells its shown omen reaches, as <see cref="FloorFrame.AimCells"/> holds them for the first enemy.</summary>
+        public List<int> AimCells = new List<int>();
+        /// <summary>Of <see cref="AimCells"/>, the ones that meet the boundary its action reads (<see cref="FloorFrame.DenseCells"/>).</summary>
+        public List<int> DenseCells = new List<int>();
+        /// <summary>The cells it would stand on after the move its shown omen makes (<see cref="FloorFrame.MoveCells"/>).</summary>
+        public List<int> MoveCells = new List<int>();
+        /// <summary>
+        /// battle_ui_ux_v2 §1.4 / battle-visual-v1 §4.2: the direction of its red stripes on the floor —
+        /// 0 is 45° (the first enemy), 1 is −45° (the second), 2 is upright (the third). The View's
+        /// stripe art takes the same numbers.
+        /// </summary>
+        public int StripeDirection;
+        /// <summary>
+        /// battle-visual-v1 §4.4 / §4.5 / §4.6: the swatch of <see cref="StripeDirection"/> beside its omen,
+        /// on its HP row and on its stance frame. Only a battle of two or more enemies draws it; one enemy
+        /// needs nothing to tell its cells apart.
+        /// </summary>
+        public bool Swatch;
+
+        /// <summary>battle_ui_ux_v2 §1.4: the stripe direction of the enemy at <paramref name="index"/> (0, 1, 2; a fourth and on repeat upright).</summary>
+        public static int DirectionOf(int index) => index <= 0 ? 0 : index >= 2 ? 2 : 1;
     }
 
     /// <summary>
@@ -758,6 +801,12 @@ namespace Depiction
         /// moved went, so the walk takes 160 ms a cell. 0 when the source draws no floor.
         /// </summary>
         public int CellsMoved;
+        /// <summary>
+        /// #589: which enemy (its index in <see cref="DepictionFrame.Enemies"/>) is on the enemy end of the
+        /// beat — the enemy that acts, or the one a card struck. 0 in a one-enemy battle and for a beat
+        /// about the player alone.
+        /// </summary>
+        public int Unit;
     }
 
     public sealed class DepictionEvent

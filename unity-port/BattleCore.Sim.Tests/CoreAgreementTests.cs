@@ -65,4 +65,52 @@ public class CoreAgreementTests
     {
         Assert.That(SevenLayers.All.Select(layer => layer.Density), Is.EqualTo(ChainOrder.Densities));
     }
+
+    /// <summary>
+    /// The exploration core's battle-width table copies the line's bounds and the cells before the first
+    /// enemy from the battle core (#99). A change on the battle side only would hand a too-short line.
+    /// </summary>
+    [Test]
+    public void TheBattleFieldBoundsAndOpeningCells_AreTheSameOnBothSides()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(BattleField.MinCells, Is.EqualTo(Constants.FieldCellsMin));
+            Assert.That(BattleField.MaxCells, Is.EqualTo(Constants.FieldCellsMax));
+            Assert.That(BattleField.CellsBeforeEnemies, Is.EqualTo(Constants.PlayerStartCell + Constants.StartGap));
+        });
+    }
+
+    /// <summary>
+    /// Field.EnemyStartCell shrinks the opening gap without an error when the line is too short, so every
+    /// line the exploration hands across must hold the full gap.
+    /// </summary>
+    [Test]
+    public void EveryLineTheExplorationHands_KeepsTheFullOpeningGap()
+    {
+        int expected = Constants.PlayerStartCell + 1 + Constants.StartGap;
+        int checkedCount = 0;
+        for (int layer = 1; layer <= 7; layer++)
+        {
+            foreach (var kind in new[] { NodeKind.Battle, NodeKind.Elite, NodeKind.Boss })
+            {
+                for (int size = 1; size <= 3; size++)
+                {
+                    int cells;
+                    try
+                    {
+                        cells = BattleField.CellsFor(layer, kind, size);
+                    }
+                    catch (ArgumentException)
+                    {
+                        continue;
+                    }
+                    int start = Field.EnemyStartCell(cells, Constants.PlayerStartCell, 1, size, Constants.StartGap);
+                    Assert.That(start, Is.EqualTo(expected), $"layer {layer}, {kind}, enemy size {size}, {cells} cells");
+                    checkedCount++;
+                }
+            }
+        }
+        Assert.That(checkedCount, Is.GreaterThan(0));
+    }
 }

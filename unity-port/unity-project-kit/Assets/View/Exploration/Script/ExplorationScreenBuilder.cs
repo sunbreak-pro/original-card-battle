@@ -322,7 +322,7 @@ namespace Exploration
                 if (i < carried.Count)
                 {
                     string id = carried[i].Id;
-                    slots.Add(new SlotCard(i, ExplorationText.ItemName(id), ExplorationText.ItemNote(id), session.CanUseConsumables));
+                    slots.Add(new SlotCard(i, ExplorationText.ItemName(id), ExplorationText.ItemNote(id), session.CanUseConsumable(i)));
                 }
                 else
                 {
