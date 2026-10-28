@@ -29,6 +29,7 @@ namespace Exploration.Bridge
         private List<CardInstance> _deck;
         private readonly List<string> _consumables = new List<string>();
         private readonly List<string> _waiting = new List<string>();
+        private readonly List<LegacyPage> _inheritedPages = new List<LegacyPage>();
         private List<string> _offer = new List<string>();
         private int _life;
         private int _learnedCopies;
@@ -59,10 +60,43 @@ namespace Exploration.Bridge
             _talent = talent;
             Tools = BattleTools(_startDeck, battleToolIds ?? Array.Empty<string>(), talent);
             Session = new ExplorationSession(start, intel);
+            Legacy = new ExpeditionLegacy(this);
+            Session.LegacySource = Legacy;
             BeginLife();
         }
 
         public ExplorationSession Session { get; }
+
+        /// <summary>What this expedition's lives leave at death (#106): the grown cards and the journal's filled pages.</summary>
+        public ExpeditionLegacy Legacy { get; }
+
+        /// <summary>The pages this life received from a trace (#106), for the journal (#107) to take in.</summary>
+        public IReadOnlyList<LegacyPage> InheritedPages
+        {
+            get
+            {
+                SyncLife();
+                return _inheritedPages;
+            }
+        }
+
+        /// <summary>
+        /// Takes in what a trace hands on (#106, Session.TakeLegacy): each card is owned with the step it had
+        /// (Legacies.WithRank), and goes into the deck when the deck holds none of its kind and has room. The
+        /// pages wait in <see cref="InheritedPages"/>.
+        /// </summary>
+        public void Inherit(Bequest bequest)
+        {
+            if (bequest == null) throw new ArgumentNullException(nameof(bequest));
+            SyncLife();
+            foreach (LegacyCard card in bequest.Cards)
+            {
+                if (_deck.Any(c => c.Def.Id == card.CardId)) _owned.Add(card.CardId);
+                else Take(card.CardId);
+                Mastery = Legacies.WithRank(Mastery, card.CardId, card.Rank);
+            }
+            _inheritedPages.AddRange(bequest.Pages);
+        }
 
         /// <summary>The deck each battle is shuffled from, as set out with plus the cards learned on the way.</summary>
         public IReadOnlyList<CardInstance> Deck
@@ -329,7 +363,7 @@ namespace Exploration.Bridge
         }
 
         /// <summary>A new life (ExplorationSession's 「新しい生」) starts from what the expedition set out with.</summary>
-        private void SyncLife()
+        internal void SyncLife()
         {
             if (_life != Session.Life) BeginLife();
         }
@@ -346,6 +380,7 @@ namespace Exploration.Bridge
             _offer = new List<string>();
             _consumables.Clear();
             _waiting.Clear();
+            _inheritedPages.Clear();
             _pages = 0;
             _learnedCopies = 0;
             Battle = null;
