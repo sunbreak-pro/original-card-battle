@@ -110,6 +110,16 @@ namespace Depiction.Bridge
         /// <summary>#57 (§5.9 J2): a trait of the card or action being written fired, so its blows carry the short cue.</summary>
         private bool _traitLit;
 
+        /// <summary>The core event read just before the one being read is a trait's judgement (#588).</summary>
+        private bool _afterTraits;
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.9 (#588): the pips a fired trait gives back. The core adds them as soon as
+        /// the traits are judged, before any face; the screen shows them after the faces, so the beat
+        /// waits here until the card's faces are written (<see cref="ReleaseTraitStamina"/>).
+        /// </summary>
+        private Cue _traitStaminaHeld;
+
         /// <summary>The enemy has carried out an action in this phase already (#189: an elite's second one opens a beat of its own).</summary>
         private bool _enemyActed;
 
@@ -199,6 +209,7 @@ namespace Depiction.Bridge
                 DepictionEvent opened = OpenIfBoundary(e, current);
                 if (opened != null)
                 {
+                    ReleaseTraitStamina(current);
                     Close(current, after);
                     current = opened;
                     written.Add(current);
@@ -210,11 +221,13 @@ namespace Depiction.Bridge
                 // #589: each beat says which enemy it is about, so a screen with several can point at it.
                 for (int i = before; i < current.Cues.Count; i++) current.Cues[i].Unit = e.Unit;
                 _unit = 0;
+                _afterTraits = e is TraitEvaluated;
             }
 
             // A held enemy 構え plays at the head of the last event: the next omen, or — when the
             // battle ended and no omen follows — the enemy's own action.
             if (current != null) FlushHeldReserve(current);
+            ReleaseTraitStamina(current);
             Close(current, after);
 
             // #288: the fall is a beat of its own after everything the move did, so the 800 ms never
@@ -349,8 +362,19 @@ namespace Depiction.Bridge
                     break;
 
                 case StaminaGained gained:
-                    Grammar(ev, SetStamina(ev, gained.Actor, gained.Amount, gained.StaminaAfter), FxSystem.Breath);
+                {
+                    Cue gain = Grammar(ev, SetStamina(ev, gained.Actor, gained.Amount, gained.StaminaAfter), FxSystem.Breath);
+                    // §5.9 (#588): a fired trait's stamina +1 is shown after all the faces, not where the
+                    // core adds it (straight after the traits are judged). The model already holds it, so
+                    // the frame is right whenever the beat plays.
+                    if (gain != null && _afterTraits)
+                    {
+                        ev.Cues.Remove(gain);
+                        gain.Unit = _unit;
+                        _traitStaminaHeld = gain;
+                    }
                     break;
+                }
 
                 case StatusTicked ticked:
                     SetStatus(ev, ticked.Actor, ticked.Kind, -1, ticked.StacksAfter);
@@ -379,6 +403,8 @@ namespace Depiction.Bridge
 
                 case Drawn drawn:
                 {
+                    // §5.9's later group in its table's order: the trait's stamina +1, then the draw.
+                    ReleaseTraitStamina(ev);
                     _hand.Add(drawn.Card);
                     // A hand of six is six core events and one beat on screen.
                     Cue last = ev.Cues.Count > 0 ? ev.Cues[ev.Cues.Count - 1] : null;
@@ -840,6 +866,9 @@ namespace Depiction.Bridge
             // but it settles with the event's frame: battle_ui_ux_v2 §5.5 順 0 (its pips going by the cost
             // before the blow) is not played yet.
             if (actor != Actor.Player || amount == 0) return null;
+            // #588: a held trait gain the core settled before this change plays first, so the pips
+            // never step back (息継ぎ's own +1 lands after the trait's).
+            ReleaseTraitStamina(ev);
             var cue = new Cue
             {
                 Kind = CueKind.StaminaChange, Target = UnitSide.Player,
@@ -847,6 +876,18 @@ namespace Depiction.Bridge
             };
             ev.Cues.Add(cue);
             return cue;
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.9 (#588): plays the held trait stamina beat at the end of the cues written so
+        /// far. Called when the card's event closes, and before the next beat that has to come after it:
+        /// a draw (the later group's next row) or another stamina change (the pips keep the core's order).
+        /// </summary>
+        private void ReleaseTraitStamina(DepictionEvent ev)
+        {
+            if (_traitStaminaHeld == null || ev == null) return;
+            ev.Cues.Add(_traitStaminaHeld);
+            _traitStaminaHeld = null;
         }
 
         private Cue SetStatus(DepictionEvent ev, Actor holder, StatusKind kind, int change, int stacksAfter)
