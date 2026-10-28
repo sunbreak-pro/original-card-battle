@@ -501,6 +501,8 @@ namespace Exploration
                 .Where(k => state.Map.CountOf(k) > 0)
                 .Select(k => $"{ExplorationText.KindLabel(k)} {state.Map.CountOf(k)}");
 
+            // #107: a journal that keeps more than the enemies adds the layer's dungeon entries and the memo.
+            var more = session.Intel as IJournalPages;
             pages.Add(new JournalPage($"dungeon-{layer}", JournalTab.Dungeon,
                 ExplorationText.LayerTitle(layer, profile.DisplayName(session.CarvingTaken)),
                 new[]
@@ -509,9 +511,9 @@ namespace Exploration
                     new JournalRow("刻限", $"{profile.TimeLimit}（寄り道なしの踏破は {state.Map.ShortestPathCost}）"),
                     new JournalRow("ノード", string.Join("・", counts)),
                     new JournalRow("情報収集", session.Surveyed ? "済ませた。この層の敵 1 種が開示度 2 になった" : "まだ"),
-                }));
+                }.Concat(more?.DungeonRows(layer) ?? System.Array.Empty<JournalRow>()).ToList()));
 
-            pages.Add(new JournalPage("memo", JournalTab.Memo, "メモ",
+            pages.Add(more?.MemoPage() ?? new JournalPage("memo", JournalTab.Memo, "メモ",
                 new[] { new JournalRow("", "メモはまだありません。") }));
 
             pages.Add(JournalTerms.Page());

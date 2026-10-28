@@ -42,7 +42,10 @@ namespace Exploration.Bridge
         /// <see cref="RunStart.Loadout"/>; turning one chosen loadout into both is 出立's (#104).
         /// </param>
         /// <param name="talent">才能: the card whose battle ticks count twice (§17.8), or null.</param>
-        /// <param name="intel">What the exploration screen says about the enemy behind a node.</param>
+        /// <param name="intel">
+        /// What the exploration screen says about the enemy behind a node. Null: this expedition's own
+        /// <see cref="Journal"/>, which reads the 開示度 the battles leave here (#107).
+        /// </param>
         /// <param name="journal">The journal's 開示度 by enemy id as the life starts. An enemy not listed reads 0.</param>
         public Expedition(
             RunStart start = null,
@@ -58,11 +61,19 @@ namespace Exploration.Bridge
             _startJournal = journal ?? new Dictionary<string, int>();
             _talent = talent;
             Tools = BattleTools(_startDeck, battleToolIds ?? Array.Empty<string>(), talent);
-            Session = new ExplorationSession(start, intel);
+            Journal = new LifeJournal(Learned);
+            Session = new ExplorationSession(start, intel ?? Journal);
+            Journal.Follow(Session);
             BeginLife();
         }
 
         public ExplorationSession Session { get; }
+
+        /// <summary>
+        /// This life's journal (#107): the enemy pages cut by 開示度, the dungeon entries, the memo and the
+        /// lines for the legacy list. It adds the survey's 2 on top of what the battles taught.
+        /// </summary>
+        public LifeJournal Journal { get; }
 
         /// <summary>The deck each battle is shuffled from, as set out with plus the cards learned on the way.</summary>
         public IReadOnlyList<CardInstance> Deck
@@ -130,7 +141,10 @@ namespace Exploration.Bridge
             }
         }
 
-        /// <summary>The rare journal pages the battles of this life dropped. What a page holds is #107's.</summary>
+        /// <summary>
+        /// The rare journal pages the battles of this life dropped. What a page tells is
+        /// LifeJournal.DrawRarePage's (dungeon_exploration_v4.md §6.11); the draw is not made here yet.
+        /// </summary>
         public int Pages
         {
             get
@@ -143,8 +157,14 @@ namespace Exploration.Bridge
         /// <summary>The encounter being fought, or null.</summary>
         public EncounterBattle Battle { get; private set; }
 
-        /// <summary>The journal's 開示度 for an enemy: 0 until it is met, 1 after a battle with it, 2 after it is observed.</summary>
-        public int DisclosureOf(string enemyId)
+        /// <summary>
+        /// The journal's 開示度 for an enemy: 0 until it is met, 1 after a battle with it, 2 after it is
+        /// observed or once a 情報収集 named it (#107, LifeJournal.SurveyTarget).
+        /// </summary>
+        public int DisclosureOf(string enemyId) => Journal.DisclosureOf(enemyId);
+
+        /// <summary>What the battles of this life taught of an enemy, without the survey.</summary>
+        private int Learned(string enemyId)
         {
             SyncLife();
             return enemyId != null && _journal.TryGetValue(enemyId, out int level) ? level : 0;

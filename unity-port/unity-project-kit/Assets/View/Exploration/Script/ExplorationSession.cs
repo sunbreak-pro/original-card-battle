@@ -65,6 +65,9 @@ namespace Exploration
 
         private readonly RunStart _start;
 
+        // The layers whose 情報収集 node this life has resolved (#107: a survey's 開示度 lasts the life).
+        private readonly System.Collections.Generic.HashSet<int> _surveyedLayers = new System.Collections.Generic.HashSet<int>();
+
         public ExplorationSession(RunStart start = null, IEnemyIntel intel = null)
         {
             _start = start ?? new RunStart();
@@ -87,6 +90,12 @@ namespace Exploration
 
         /// <summary>This layer's 情報収集 node has been resolved.</summary>
         public bool Surveyed { get; private set; }
+
+        /// <summary>
+        /// That layer's 情報収集 node has been resolved in this life. Unlike <see cref="Surveyed"/>, it stays
+        /// true after the descent: the journal keeps what the survey taught for the rest of the life (#107).
+        /// </summary>
+        public bool HasSurveyed(int layer) => _surveyedLayers.Contains(layer);
 
         /// <summary>The combat node waiting on its battle's result, or −1.</summary>
         public int PendingBattleNode { get; private set; } = None;
@@ -352,6 +361,7 @@ namespace Exploration
             Life += 1;
             CarvingTaken = false;
             Surveyed = false;
+            _surveyedLayers.Clear();
             PendingBattleNode = None;
             PendingEncounter = null;
             PendingStepNode = None;
@@ -392,7 +402,11 @@ namespace Exploration
         {
             var kind = State.Map.Node(nodeId).Kind;
             if (kind == NodeKind.Carving) CarvingTaken = true;
-            if (kind == NodeKind.Survey) Surveyed = true;
+            if (kind == NodeKind.Survey)
+            {
+                Surveyed = true;
+                _surveyedLayers.Add(State.Profile.Layer);
+            }
             // 瘴気死 ends the life on the node before any fight starts.
             if (kind.IsCombat() && State.Phase != RunPhase.MiasmaDeath)
             {
