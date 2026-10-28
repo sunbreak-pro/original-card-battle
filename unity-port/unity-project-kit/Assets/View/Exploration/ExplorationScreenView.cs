@@ -6,9 +6,14 @@
 // The look is a stand-in: grey squares with one character for the kind, shades of grey and a single
 // accent colour (§6.10). The design lane and #90 own the real look; replacing it touches this file
 // and ExplorationPalette only.
+//
+// #626: the pick screen (an elite's two cards, the card pile's three, a 習熟訓練 mark's card) is drawn
+// from the CardPick Exploration.Bridge built, each card the battle's own CardView bound to its face.
 #if UNITY_2021_2_OR_NEWER
 using System;
+using Depiction.View;
 using DungeonCore;
+using Exploration.Bridge;
 using Journal.View;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -23,11 +28,16 @@ namespace Exploration.View
         private const float MapHeight = 700f;
         private const float NodeSize = 116f;
         private const float LinkThickness = 6f;
+        // The pick screen lays its cards out at most this many to a row, under a caption this tall.
+        private const int PickColumns = 6;
+        private const float PickCaption = 40f;
+        private const float PickGap = 24f;
 
         private readonly Action<int, RestChoice> _step;
         private readonly Action<ScreenAction> _act;
         private readonly Action<int> _useConsumable;
         private readonly Action<Overlay> _toggle;
+        private readonly Action<string> _pickCard;
 
         private readonly Text _layerTitle;
         private readonly Text _timeLabel;
@@ -53,6 +63,7 @@ namespace Exploration.View
         private readonly RectTransform _cardLayer;
         private readonly Button _cardsButton;
         private readonly Button _settingsButton;
+        private readonly RectTransform _pickLayer;
         private readonly RectTransform _overlayLayer;
         private readonly JournalDrawerView _journal;
 
@@ -66,13 +77,15 @@ namespace Exploration.View
         /// <param name="act">A card button or 「この生を終える」.</param>
         /// <param name="useConsumable">Burn the consumable in a slot.</param>
         /// <param name="toggle">A band button or a close button: open or close that screen.</param>
+        /// <param name="pickCard">A card pressed on the pick screen (#626), by its id.</param>
         public ExplorationScreenView(RectTransform canvas, Action<int, RestChoice> step, Action<ScreenAction> act, Action<int> useConsumable,
-            Action<Overlay> toggle)
+            Action<Overlay> toggle, Action<string> pickCard)
         {
             _step = step;
             _act = act;
             _useConsumable = useConsumable;
             _toggle = toggle;
+            _pickCard = pickCard;
 
             RectTransform root = UiKit.Box(canvas, "Exploration", 0f, 0f, 1f, 1f);
             UiKit.Fill(root, "Ground", ExplorationPalette.Ground);
@@ -140,6 +153,10 @@ namespace Exploration.View
             // ---- the survivor route (§6.6) ----
             _endLife = UiKit.Button(root, "EndLife", ExplorationText.EndLifeButton, () => _act(ScreenAction.AskEndLife),
                 ExplorationPalette.Button, ExplorationPalette.Ink, 24, new Vector2(0.015f, 0.02f), new Vector2(0.2f, 0.095f));
+
+            // ---- the pick screen (#626): over the map, the card and the carried items; under 所持カード
+            // so the cards owned can be read before one is picked ----
+            _pickLayer = UiKit.Box(root, "Pick", 0f, 0f, 1f, 1f);
 
             // ---- 所持カード / 設定・セーブ, under the band so its buttons stay pressable ----
             _overlayLayer = UiKit.Box(root, "Overlay", 0f, 0f, 1f, 1f);
@@ -385,6 +402,83 @@ namespace Exploration.View
                     i == 0 ? ExplorationPalette.InkOnAccent : ExplorationPalette.Ink, 24,
                     new Vector2(i * width, 0f), new Vector2((i + 1) * width - 0.02f, 1f));
             }
+        }
+
+        // ---- the pick screen (#626) ----
+
+        /// <summary>Shows the pick screen, or clears it when <paramref name="pick"/> is not shown.</summary>
+        public void ShowPick(CardPick pick)
+        {
+            UiKit.ClearChildren(_pickLayer);
+            if (pick == null || !pick.IsShown) return;
+
+            Image dim = UiKit.Fill(_pickLayer, "Dim", ExplorationPalette.Dim);
+            dim.raycastTarget = true;
+
+            RectTransform plate = UiKit.Box(_pickLayer, "Plate", 0.04f, 0.04f, 0.96f, 0.89f);
+            UiKit.Fill(plate, "Back", ExplorationPalette.Band);
+            UiKit.Frame(plate, ExplorationPalette.Accent, 3f);
+            UiKit.Text(UiKit.Box(plate, "Title", 0.03f, 0.89f, 0.97f, 0.98f), "Text", 36, TextAnchor.MiddleLeft, ExplorationPalette.Ink, pick.Title);
+            UiKit.Text(UiKit.Box(plate, "Prompt", 0.03f, 0.82f, 0.97f, 0.89f), "Text", 22, TextAnchor.MiddleLeft, ExplorationPalette.InkSoft, pick.Prompt);
+
+            RectTransform area = UiKit.Box(plate, "Cards", 0.02f, 0.03f, 0.98f, 0.80f);
+            Canvas.ForceUpdateCanvases();
+            Rect room = area.rect;
+            int count = pick.Choices.Count;
+            int columns = Math.Max(1, Math.Min(PickColumns, count));
+            int rows = Math.Max(1, (count + columns - 1) / columns);
+            Vector2 cell = new Vector2(CardView.Size.x + PickGap, CardView.Size.y + PickCaption + PickGap);
+            float scale = Mathf.Min(1f, Mathf.Min(room.width / (columns * cell.x), room.height / (rows * cell.y)));
+            Vector2 step = cell * scale;
+
+            for (int i = 0; i < count; i++)
+            {
+                int row = i / columns;
+                int inRow = Math.Min(columns, count - row * columns);
+                float x = ((i % columns) - (inRow - 1) * 0.5f) * step.x;
+                float y = ((rows - 1) * 0.5f - row) * step.y;
+                DrawPickCard(area, pick.Choices[i], scale, new Vector2(x, y), step);
+            }
+        }
+
+        private void DrawPickCard(RectTransform area, PickChoice choice, float scale, Vector2 at, Vector2 step)
+        {
+            RectTransform cell = UiKit.Point(area, "Choice_" + choice.CardId, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), step, at);
+            CardView card = NewCard(cell);
+            RectTransform rect = card.Rect;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.localScale = Vector3.one * scale;
+            card.Bind(choice.Face);
+            card.SetDimmed(false);
+            card.Interactable = false;
+
+            string id = choice.CardId;
+            var press = card.gameObject.AddComponent<Button>();
+            press.targetGraphic = card.background;
+            press.onClick.AddListener(() => _pickCard(id));
+
+            if (choice.Caption.Length == 0) return;
+            RectTransform caption = UiKit.Point(cell, "Caption", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+                new Vector2(step.x, PickCaption * scale), new Vector2(0f, PickGap * 0.5f * scale));
+            UiKit.Text(caption, "Text", 20, TextAnchor.MiddleCenter, ExplorationPalette.Ink, choice.Caption);
+        }
+
+        /// <summary>
+        /// A hand card made in code, as the battle's prefab would make it: the scene has no Card prefab, so
+        /// the ground the press lands on is made here and CardView lays out the rest (CardView.EnsureParts).
+        /// </summary>
+        private static CardView NewCard(RectTransform parent)
+        {
+            var go = new GameObject("Card", typeof(RectTransform));
+            go.SetActive(false);
+            go.transform.SetParent(parent, false);
+            var card = go.AddComponent<CardView>();
+            card.group = go.AddComponent<CanvasGroup>();
+            card.background = UiKit.Image((RectTransform)go.transform, "Background", ProceduralArt.White, Color.white, Vector2.zero, Vector2.one);
+            card.background.raycastTarget = true;
+            go.SetActive(true);
+            return card;
         }
 
         // ---- 所持カード / 設定・セーブ ----

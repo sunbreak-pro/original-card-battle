@@ -67,7 +67,7 @@ namespace Exploration.View
             _session = _expedition.Session;
 
             EnsureEventSystem();
-            _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable, Toggle);
+            _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable, Toggle, PickCard);
             Render();
             Debug.Log("[ExplorationBootstrap] seed " + used);
         }
@@ -108,9 +108,16 @@ namespace Exploration.View
             if (_session.Toggle(overlay)) Render();
         }
 
+        // #626: a card pressed on the pick screen goes to Expedition.Learn or Train, as CardPicks decides.
+        private void PickCard(string cardId)
+        {
+            if (CardPicks.Choose(_expedition, cardId)) Render();
+        }
+
         private void Render()
         {
             _view.Render(_session.Screen());
+            _view.ShowPick(CardPicks.For(_expedition));
             if (realBattles && !_standInOnly && !_inBattle && _session.HasPendingBattle && _expedition.Battle == null) StartCoroutine(FightPendingBattle());
         }
 
