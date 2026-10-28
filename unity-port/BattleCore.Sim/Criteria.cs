@@ -31,9 +31,9 @@ public sealed record FirstThree(
 {
     public double CostOneLead => CostOneWinRate - TypeAverageWinRate;
 
-    public bool CostOnePasses => CostOneLead < 10;
+    public bool CostOnePasses => CostOneLead < Criteria.CostOneLeadPt;
 
-    public bool PlaysPass => PlaysPerTurnMedian >= 2;
+    public bool PlaysPass => PlaysPerTurnMedian >= Criteria.PlaysPerTurnMin;
 
     public bool BlowPasses => ObservedMaxBlow <= SingleHitLimit;
 }
@@ -45,6 +45,62 @@ public sealed record FirstThree(
 /// </summary>
 public static class Criteria
 {
+    // The lines of §13, one name per row (pt = percentage points, % = a win rate or a share). The
+    // same number stands for different rows (15 is 7, 10 and 13), so no row borrows another's name.
+
+    /// <summary>Criterion 1: the normal battles' median turns, 6〜10.</summary>
+    public const int NormalTurnsMin = 6;
+    public const int NormalTurnsMax = 10;
+
+    /// <summary>Criterion 2: the boss battles' median turns, 12〜18.</summary>
+    public const int BossTurnsMin = 12;
+    public const int BossTurnsMax = 18;
+
+    /// <summary>Criterion 3: the cost-1 deck leads the types' average by less than 10 pt.</summary>
+    public const int CostOneLeadPt = 10;
+
+    /// <summary>Criterion 4: 2 plays a turn or more (median).</summary>
+    public const int PlaysPerTurnMin = 2;
+
+    /// <summary>Criterion 6: the strongest type − the weakest, 25 pt or less.</summary>
+    public const int TypeSpreadPt = 25;
+
+    /// <summary>Criterion 7: the best no-stance deck at the strongest − 15 pt or more; no twin 15 pt or more below its type.</summary>
+    public const int NoStanceGapPt = 15;
+
+    /// <summary>Criterion 8: the normal battles' win rate at max stamina 6, 50% or more.</summary>
+    public const int LowStaminaWinRatePct = 50;
+
+    /// <summary>Criterion 9: the win rate of two battles with HP carried, 40% or more.</summary>
+    public const int PairWinRatePct = 40;
+
+    /// <summary>Criterion 10: an enemy counts when the three policies move its win rate 15 pt or more.</summary>
+    public const int PolicySwingPt = 15;
+
+    /// <summary>Criterion 11: no movement card in the opening hand, 25% or less.</summary>
+    public const int NoMoverHandPct = 25;
+
+    /// <summary>Criterion 12: turns with nothing in reach, 1 a battle or fewer (median).</summary>
+    public const int NoReachTurnsMax = 1;
+
+    /// <summary>Criterion 13: staying at 2 or more leads the other policies' average by less than 15 pt.</summary>
+    public const int KeepTwoLeadPt = 15;
+
+    /// <summary>Criterion S13: turns of 3 plays or more, 2 a battle or more (median).</summary>
+    public const int ThreePlayTurnsMin = 2;
+
+    /// <summary>Criterion S14: a battle with 2 movement plays or more ...</summary>
+    public const int ManyMovementPlays = 2;
+
+    /// <summary>Criterion S14: ... wins less than 10 pt below one with 1 or fewer.</summary>
+    public const int MovementDeficitPt = 10;
+
+    /// <summary>Criterion S16: each stance type's median stance plays a battle, 1〜2.</summary>
+    public const int StancePlaysMin = 1;
+    public const int StancePlaysMax = 2;
+
+    private const string SkippedNote = "--only first3 では回していない";
+
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     public static string Pct(double value) => value.ToString("0.0", Inv) + "%";
@@ -112,173 +168,253 @@ public static class Criteria
     {
         var archetypes = Sim.Decks.Archetypes;
         var typeIds = archetypes.Select(d => d.Id).ToHashSet();
-        var typed = results.Main.Where(r => typeIds.Contains(r.DeckId)).ToList();
-        var rates = RatesByDeck(results.Main);
         var costOne = Sim.Decks.CostOneOnly();
         var first = ComputeFirstThree(results.Main, archetypes, costOne.Id, CardCatalog.All, Enemies.All);
-        bool full = !results.Options.OnlyFirstThree;
-        const string SkippedNote = "--only first3 では回していない";
-        var rows = new List<CriterionRow>();
+        var run = new Run(
+            results, archetypes, results.Main.Where(r => typeIds.Contains(r.DeckId)).ToList(), RatesByDeck(results.Main),
+            costOne, first, DeckName(results.Decks, first.ObservedMaxBlowDeck));
 
-        // 1 / 2: battle length.
-        var normalTurns = typed.Where(r => r.Rank == EnemyRank.Normal).Select(r => r.Turns).ToList();
-        double normalMedian = Median(normalTurns);
-        rows.Add(new CriterionRow("1", "通常戦のターン数（中央値）", "6〜10", Num(normalMedian),
-            normalMedian >= 6 && normalMedian <= 10 ? Verdict.Pass : Verdict.Fail,
-            $"型 6 種 × 通常 {Enemies.All.Count(e => e.Rank == EnemyRank.Normal)} 体、勝ち負けを問わず終わったターン{StallText(typed.Where(r => r.Rank == EnemyRank.Normal))}。"
+        return new List<CriterionRow>
+        {
+            NormalTurns(run),
+            BossTurns(run),
+            CostOneDeck(run),
+            PlaysPerTurn(run),
+            StackedBlow(run),
+            TypeSpread(run),
+            NoStance(run.Rates, archetypes), // main battles, so --only first3 has them too
+            LowStamina(run),
+            CarriedPair(run),
+            PolicySwing(run),
+            NoMoverInHand(run),
+            NoReach(run),
+            KeepTwo(run),
+            JudgmentTime(),
+            ThreePlayTurns(run),
+            ManyMoves(run),
+            SingleBlow(run),
+            StancePlays(run.Typed, archetypes),
+            MasteryTicks(),
+        };
+    }
+
+    /// <summary>
+    /// What the rows of <see cref="Compute"/> share: the six types' main battles, every main deck's win
+    /// rate, the first three and the name of the deck that dealt the largest blow.
+    /// </summary>
+    private sealed record Run(
+        BenchResults Results, IReadOnlyList<SimDeck> Archetypes, IReadOnlyList<BattleRecord> Typed,
+        IReadOnlyDictionary<string, double> Rates, SimDeck CostOne, FirstThree First, string BlowDeck)
+    {
+        /// <summary>Not --only first3: 8〜11 and 13 have their battles.</summary>
+        public bool Full => !Results.Options.OnlyFirstThree;
+
+        public int NormalCount => Enemies.All.Count(e => e.Rank == EnemyRank.Normal);
+    }
+
+    /// <summary>Criterion 1: battle length against the normal enemies.</summary>
+    private static CriterionRow NormalTurns(Run run)
+    {
+        var typed = run.Typed;
+        double median = Median(typed.Where(r => r.Rank == EnemyRank.Normal).Select(r => r.Turns));
+        return new CriterionRow("1", "通常戦のターン数（中央値）", "6〜10", Num(median),
+            median >= NormalTurnsMin && median <= NormalTurnsMax ? Verdict.Pass : Verdict.Fail,
+            $"型 6 種 × 通常 {run.NormalCount} 体、勝ち負けを問わず終わったターン{StallText(typed.Where(r => r.Rank == EnemyRank.Normal))}。"
             + $"精鋭は {Num(Median(typed.Where(r => r.Rank == EnemyRank.Elite).Select(r => r.Turns)))}",
-            normalMedian));
-        var bossRuns = typed.Where(r => r.Rank == EnemyRank.Boss).ToList();
-        double bossMedian = Median(bossRuns.Select(r => r.Turns));
-        rows.Add(new CriterionRow("2", "ボス戦のターン数", "12〜18", Num(bossMedian),
-            bossMedian >= 12 && bossMedian <= 18 ? Verdict.Pass : Verdict.Fail,
-            $"型 6 種 × ボス {Enemies.All.Count(e => e.Rank == EnemyRank.Boss)} 体の中央値（勝ち負けを問わない{StallText(bossRuns)}）", bossMedian));
+            median);
+    }
 
-        // 3 / 4 / 5: the first three.
-        rows.Add(new CriterionRow("3", "コスト 1 だけで組んだデッキの勝率", "型 6 種の平均を 10 pt 以上上回らない",
+    /// <summary>Criterion 2: battle length against the bosses.</summary>
+    private static CriterionRow BossTurns(Run run)
+    {
+        var bossRuns = run.Typed.Where(r => r.Rank == EnemyRank.Boss).ToList();
+        double median = Median(bossRuns.Select(r => r.Turns));
+        return new CriterionRow("2", "ボス戦のターン数", "12〜18", Num(median),
+            median >= BossTurnsMin && median <= BossTurnsMax ? Verdict.Pass : Verdict.Fail,
+            $"型 6 種 × ボス {Enemies.All.Count(e => e.Rank == EnemyRank.Boss)} 体の中央値（勝ち負けを問わない{StallText(bossRuns)}）", median);
+    }
+
+    /// <summary>Criterion 3 (first three): the cost-1 deck against the types' average.</summary>
+    private static CriterionRow CostOneDeck(Run run)
+    {
+        var first = run.First;
+        return new CriterionRow("3", "コスト 1 だけで組んだデッキの勝率", "型 6 種の平均を 10 pt 以上上回らない",
             $"{Pct(first.CostOneWinRate)}（平均 {Pct(first.TypeAverageWinRate)}、{Pt(first.CostOneLead)}）",
             first.CostOnePasses ? Verdict.Pass : Verdict.Fail,
-            $"{costOne.Basis}。全 {Enemies.All.Count} 体の平均。精鋭とボスだけなら {Pct(WinRate(results.Main.Where(r => r.DeckId == costOne.Id && r.Rank != EnemyRank.Normal)))}"
-            + $" / 型の平均 {Pct(archetypes.Average(d => WinRate(typed.Where(r => r.DeckId == d.Id && r.Rank != EnemyRank.Normal))))}",
-            first.CostOneLead));
-        rows.Add(new CriterionRow("4", "1 ターンのプレイ枚数（中央値）", "2 以上", Num(first.PlaysPerTurnMedian),
+            $"{run.CostOne.Basis}。全 {Enemies.All.Count} 体の平均。精鋭とボスだけなら {Pct(WinRate(run.Results.Main.Where(r => r.DeckId == run.CostOne.Id && r.Rank != EnemyRank.Normal)))}"
+            + $" / 型の平均 {Pct(run.Archetypes.Average(d => WinRate(run.Typed.Where(r => r.DeckId == d.Id && r.Rank != EnemyRank.Normal))))}",
+            first.CostOneLead);
+    }
+
+    /// <summary>Criterion 4 (first three): plays a turn.</summary>
+    private static CriterionRow PlaysPerTurn(Run run)
+    {
+        var first = run.First;
+        return new CriterionRow("4", "1 ターンのプレイ枚数（中央値）", "2 以上", Num(first.PlaysPerTurnMedian),
             first.PlaysPass ? Verdict.Pass : Verdict.Fail,
-            $"型 6 種 × 全敵の全ターン。平均 {Num(typed.SelectMany(r => r.PlaysPerTurn).DefaultIfEmpty(0).Average())}。{CapText(results.Options.MaxPlays)}",
-            first.PlaysPerTurnMedian));
-        string blowDeck = DeckName(results.Decks, first.ObservedMaxBlowDeck);
-        string blowNote = $"上限 = 通常敵の最大 HP {first.NormalMaxHp} × 0.6 = {first.SingleHitLimit}。"
-            + $"試験台の値は主な戦闘の全てのデッキ（{results.Decks.Count} 種、--only first3 でも同じ）の全試行の最大で、最大を出したのは「{blowDeck}」。"
+            $"型 6 種 × 全敵の全ターン。平均 {Num(run.Typed.SelectMany(r => r.PlaysPerTurn).DefaultIfEmpty(0).Average())}。{CapText(run.Results.Options.MaxPlays)}",
+            first.PlaysPerTurnMedian);
+    }
+
+    /// <summary>Criterion 5 (first three): the largest stacked blow.</summary>
+    private static CriterionRow StackedBlow(Run run)
+    {
+        var first = run.First;
+        string note = $"上限 = 通常敵の最大 HP {first.NormalMaxHp} × 0.6 = {first.SingleHitLimit}。"
+            + $"試験台の値は主な戦闘の全てのデッキ（{run.Results.Decks.Count} 種、--only first3 でも同じ）の全試行の最大で、最大を出したのは「{run.BlowDeck}」。"
             + $"机上: {first.DeskCanon.CardName} {first.DeskCanon.Formula}"
             + $"（{(first.DeskCanon.Canon <= first.SingleHitLimit ? "超えない" : "超える")}）、特性込み {first.DeskWithTrait.CardName} {first.DeskWithTrait.WithTrait}";
-        rows.Add(new CriterionRow("5", "重ねた 1 撃の最大値", "通常敵の HP の 6 割を超えない",
-            $"試験台 {first.ObservedMaxBlow}（{blowDeck}）/ 机上 {first.DeskCanon.Canon}",
-            first.BlowPasses ? Verdict.Pass : Verdict.Fail, blowNote, first.ObservedMaxBlow));
+        return new CriterionRow("5", "重ねた 1 撃の最大値", "通常敵の HP の 6 割を超えない",
+            $"試験台 {first.ObservedMaxBlow}（{run.BlowDeck}）/ 机上 {first.DeskCanon.Canon}",
+            first.BlowPasses ? Verdict.Pass : Verdict.Fail, note, first.ObservedMaxBlow);
+    }
 
-        // 6: spread of the six types.
-        var typeRates = archetypes.Select(d => (d.Name, Rate: RateOf(rates, d.Id))).ToList();
+    /// <summary>Criterion 6: spread of the six types.</summary>
+    private static CriterionRow TypeSpread(Run run)
+    {
+        var typeRates = run.Archetypes.Select(d => (d.Name, Rate: RateOf(run.Rates, d.Id))).ToList();
         var strongest = typeRates.OrderByDescending(t => t.Rate).First();
         var weakest = typeRates.OrderBy(t => t.Rate).First();
         double spread = strongest.Rate - weakest.Rate;
-        rows.Add(new CriterionRow("6", "デッキの型 6 種の勝率差（最強 − 最弱）", "25 pt 以下",
+        return new CriterionRow("6", "デッキの型 6 種の勝率差（最強 − 最弱）", "25 pt 以下",
             $"{spread.ToString("0.0", Inv)} pt（{strongest.Name} {Pct(strongest.Rate)} − {weakest.Name} {Pct(weakest.Rate)}）",
-            spread <= 25 ? Verdict.Pass : Verdict.Fail, "§19.8 の 6 型（§13 の「型 5 種」を 6 型と読む）", spread));
+            spread <= TypeSpreadPt ? Verdict.Pass : Verdict.Fail, "§19.8 の 6 型（§13 の「型 5 種」を 6 型と読む）", spread);
+    }
 
-        // 7: no-stance decks (main battles, so --only first3 has them too).
-        rows.Add(NoStance(rates, archetypes));
+    /// <summary>Criterion 8: max stamina 6.</summary>
+    private static CriterionRow LowStamina(Run run)
+    {
+        if (!run.Full) return Skipped("8", "最大スタミナ 6（瘴気 80%）での通常戦勝率", "50% 以上", SkippedNote);
+        var results = run.Results;
+        double low = WinRate(results.LowStamina);
+        return new CriterionRow("8", "最大スタミナ 6（瘴気 80%）での通常戦勝率", "50% 以上", Pct(low),
+            low >= LowStaminaWinRatePct ? Verdict.Pass : Verdict.Fail,
+            $"BattleSetup.PlayerMaxStamina = {LowMaxStaminaText}。型 6 種 × 通常 {run.NormalCount} 体（満タンでは {Pct(WinRate(run.Typed.Where(r => r.Rank == EnemyRank.Normal)))}）{StallText(results.LowStamina, "は勝てなかった戦闘に数える")}", low);
+    }
 
-        // 8: max stamina 6.
-        if (full)
+    /// <summary>Criterion 9: two battles with HP carried.</summary>
+    private static CriterionRow CarriedPair(Run run)
+    {
+        if (!run.Full) return Skipped("9", "HP 持ち越しの 2 連戦の勝率", "40% 以上", SkippedNote);
+        var pairs = run.Results.Pairs;
+        double pair = pairs.Count == 0 ? 0 : 100.0 * pairs.Count(p => p.Won) / pairs.Count;
+        return new CriterionRow("9", "HP 持ち越しの 2 連戦の勝率", "40% 以上", Pct(pair),
+            pair >= PairWinRatePct ? Verdict.Pass : Verdict.Fail,
+            $"型 6 種 × 通常 {run.NormalCount} 体を次の 1 体と組んだ {Bench.NormalPairs().Count} 組。休憩なしで HP とスタミナを持ち越す"
+            + (pairs.Any(p => p.Outcome == Outcome.Stalled) ? $"。詰まり {pairs.Count(p => p.Outcome == Outcome.Stalled)} 組は勝ちに数えない" : ""), pair);
+    }
+
+    /// <summary>Criterion 10: positioning policies.</summary>
+    private static CriterionRow PolicySwing(Run run)
+    {
+        if (!run.Full) return Skipped("10", "間合いの方針の差", "勝率が 15 pt 以上動く敵が、敵の 3 分の 2 以上", SkippedNote);
+        var policies = run.Results.Policies;
+        var three = new[] { Positioning.Close, Positioning.Away, Positioning.InOut };
+        int moved = 0;
+        foreach (var enemy in Enemies.All)
         {
-            double low = WinRate(results.LowStamina);
-            rows.Add(new CriterionRow("8", "最大スタミナ 6（瘴気 80%）での通常戦勝率", "50% 以上", Pct(low),
-                low >= 50 ? Verdict.Pass : Verdict.Fail,
-                $"BattleSetup.PlayerMaxStamina = {LowMaxStaminaText}。型 6 種 × 通常 {Enemies.All.Count(e => e.Rank == EnemyRank.Normal)} 体（満タンでは {Pct(WinRate(typed.Where(r => r.Rank == EnemyRank.Normal)))}）{StallText(results.LowStamina, "は勝てなかった戦闘に数える")}", low));
+            var per = three.Select(p => WinRate(policies[p].Where(r => r.EnemyId == enemy.Id))).ToList();
+            if (per.Max() - per.Min() >= PolicySwingPt) moved++;
         }
-        else rows.Add(Skipped("8", "最大スタミナ 6（瘴気 80%）での通常戦勝率", "50% 以上", SkippedNote));
+        int total = Enemies.All.Count;
+        int needed = (total * 2 + 2) / 3; // two thirds, rounded up (§13, #403)
+        return new CriterionRow("10", "間合いの方針の差", "詰め続ける / 離れ続ける / 出入りする で勝率が 15 pt 以上動く敵が、敵の 3 分の 2 以上",
+            $"{moved} / {total} 体（合格は {needed} 体以上）", moved >= needed ? Verdict.Pass : Verdict.Fail,
+            $"合格の線は敵の数の 3 分の 2 以上（端数は切り上げ）で、コアの敵は今 {total} 体なので {needed} 体以上。"
+            + "敵ごとに型 6 種をまとめた勝率の最大 − 最小で数える。全敵の勝率は "
+            + string.Join("、", three.Select(p => $"{PolicyName(p)} {Pct(WinRate(policies[p]))}"))
+            + StallText(three.SelectMany(p => policies[p]), "は勝てなかった戦闘に数える"), moved);
+    }
 
-        // 9: two battles with HP carried.
-        if (full)
-        {
-            double pair = results.Pairs.Count == 0 ? 0 : 100.0 * results.Pairs.Count(p => p.Won) / results.Pairs.Count;
-            rows.Add(new CriterionRow("9", "HP 持ち越しの 2 連戦の勝率", "40% 以上", Pct(pair),
-                pair >= 40 ? Verdict.Pass : Verdict.Fail,
-                $"型 6 種 × 通常 {Enemies.All.Count(e => e.Rank == EnemyRank.Normal)} 体を次の 1 体と組んだ {Bench.NormalPairs().Count} 組。休憩なしで HP とスタミナを持ち越す"
-                + (results.Pairs.Any(p => p.Outcome == Outcome.Stalled) ? $"。詰まり {results.Pairs.Count(p => p.Outcome == Outcome.Stalled)} 組は勝ちに数えない" : ""), pair));
-        }
-        else rows.Add(Skipped("9", "HP 持ち越しの 2 連戦の勝率", "40% 以上", SkippedNote));
+    /// <summary>Criterion 11: no movement card in the hand.</summary>
+    private static CriterionRow NoMoverInHand(Run run)
+    {
+        var results = run.Results;
+        if (!run.Full || results.OpeningHands.Count == 0)
+            return Skipped("11", "移動の効果を持つ札が手札に来ない率", $"{Constants.HandDraw} 枚に 1 枚も無い確率が 25% を超えない（初期デッキで実測）", SkippedNote);
+        var forty = Sim.Decks.InitialForty();
+        var proto = Sim.Decks.Initial();
+        var fortyDeal = results.OpeningHands.Single(h => h.DeckId == forty.Id);
+        var protoDeal = results.OpeningHands.Single(h => h.DeckId == proto.Id);
+        var (fortyCards, fortyMovers) = Movers(forty);
+        var (protoCards, protoMovers) = Movers(proto);
+        double fortyDesk = 100 * DeskCalc.NoneInHand(fortyCards, fortyMovers, Constants.HandDraw);
+        double protoDesk = 100 * DeskCalc.NoneInHand(protoCards, protoMovers, Constants.HandDraw);
+        double none = fortyDeal.Rate;
+        return new CriterionRow("11", "移動の効果を持つ札が手札に来ない率", $"{Constants.HandDraw} 枚に 1 枚も無い確率が 25% を超えない（初期デッキで実測）",
+            $"{Pct(none)}（初期 40 種 × 1、最初の手札 {fortyDeal.Hands} 回）", none <= NoMoverHandPct ? Verdict.Pass : Verdict.Fail,
+            $"{forty.Basis}。{fortyCards} 枚中 {fortyMovers} 枚が移動の効果を持つ。試験台の種で TurnLoop.Start と BeginPlayerTurn に最初の手札（{Constants.HandDraw} 枚 = Constants.HandDraw）を配らせて数えた。"
+            + $"机上 C({fortyCards - fortyMovers},{Constants.HandDraw}) / C({fortyCards},{Constants.HandDraw}) = {Pct(fortyDesk)}。"
+            + $"戦闘中の全ての手札では {Pct(InBattle(results.Main, forty.Id))}。"
+            + $"試運転のデッキ（PrototypeDeck、{protoCards} 枚中 {protoMovers} 枚）は最初の手札 {Pct(protoDeal.Rate)}、戦闘中の全ての手札 {Pct(InBattle(results.Main, proto.Id))}、机上 {Pct(protoDesk)}",
+            none);
+    }
 
-        // 10: positioning policies.
-        if (full)
-        {
-            var three = new[] { Positioning.Close, Positioning.Away, Positioning.InOut };
-            int moved = 0;
-            foreach (var enemy in Enemies.All)
-            {
-                var per = three.Select(p => WinRate(results.Policies[p].Where(r => r.EnemyId == enemy.Id))).ToList();
-                if (per.Max() - per.Min() >= 15) moved++;
-            }
-            int total = Enemies.All.Count;
-            int needed = (total * 2 + 2) / 3; // two thirds, rounded up (§13, #403)
-            rows.Add(new CriterionRow("10", "間合いの方針の差", "詰め続ける / 離れ続ける / 出入りする で勝率が 15 pt 以上動く敵が、敵の 3 分の 2 以上",
-                $"{moved} / {total} 体（合格は {needed} 体以上）", moved >= needed ? Verdict.Pass : Verdict.Fail,
-                $"合格の線は敵の数の 3 分の 2 以上（端数は切り上げ）で、コアの敵は今 {total} 体なので {needed} 体以上。"
-                + "敵ごとに型 6 種をまとめた勝率の最大 − 最小で数える。全敵の勝率は "
-                + string.Join("、", three.Select(p => $"{PolicyName(p)} {Pct(WinRate(results.Policies[p]))}"))
-                + StallText(three.SelectMany(p => results.Policies[p]), "は勝てなかった戦闘に数える"), moved));
-        }
-        else rows.Add(Skipped("10", "間合いの方針の差", "勝率が 15 pt 以上動く敵が、敵の 3 分の 2 以上", SkippedNote));
+    /// <summary>Criterion 12: turns with nothing in reach.</summary>
+    private static CriterionRow NoReach(Run run)
+    {
+        double noReach = Median(run.Typed.Select(r => r.NoReachTurns));
+        return new CriterionRow("12", "届く札が無くて何も当てられないターン", "1 戦に 1 回以下（中央値）", Num(noReach),
+            noReach <= NoReachTurnsMax ? Verdict.Pass : Verdict.Fail,
+            $"相手向きの札を持つのにターン開始で 1 枚も届かず、そのターンに相手向きの札を 1 枚も出せなかったターン。平均 {Num(run.Typed.Select(r => r.NoReachTurns).DefaultIfEmpty(0).Average())}",
+            noReach);
+    }
 
-        // 11: no movement card in the hand.
-        if (full && results.OpeningHands.Count > 0)
-        {
-            var forty = Sim.Decks.InitialForty();
-            var proto = Sim.Decks.Initial();
-            var fortyDeal = results.OpeningHands.Single(h => h.DeckId == forty.Id);
-            var protoDeal = results.OpeningHands.Single(h => h.DeckId == proto.Id);
-            var (fortyCards, fortyMovers) = Movers(forty);
-            var (protoCards, protoMovers) = Movers(proto);
-            double fortyDesk = 100 * DeskCalc.NoneInHand(fortyCards, fortyMovers, Constants.HandDraw);
-            double protoDesk = 100 * DeskCalc.NoneInHand(protoCards, protoMovers, Constants.HandDraw);
-            double none = fortyDeal.Rate;
-            rows.Add(new CriterionRow("11", "移動の効果を持つ札が手札に来ない率", $"{Constants.HandDraw} 枚に 1 枚も無い確率が 25% を超えない（初期デッキで実測）",
-                $"{Pct(none)}（初期 40 種 × 1、最初の手札 {fortyDeal.Hands} 回）", none <= 25 ? Verdict.Pass : Verdict.Fail,
-                $"{forty.Basis}。{fortyCards} 枚中 {fortyMovers} 枚が移動の効果を持つ。試験台の種で TurnLoop.Start と BeginPlayerTurn に最初の手札（{Constants.HandDraw} 枚 = Constants.HandDraw）を配らせて数えた。"
-                + $"机上 C({fortyCards - fortyMovers},{Constants.HandDraw}) / C({fortyCards},{Constants.HandDraw}) = {Pct(fortyDesk)}。"
-                + $"戦闘中の全ての手札では {Pct(InBattle(results.Main, forty.Id))}。"
-                + $"試運転のデッキ（PrototypeDeck、{protoCards} 枚中 {protoMovers} 枚）は最初の手札 {Pct(protoDeal.Rate)}、戦闘中の全ての手札 {Pct(InBattle(results.Main, proto.Id))}、机上 {Pct(protoDesk)}",
-                none));
-        }
-        else rows.Add(Skipped("11", "移動の効果を持つ札が手札に来ない率", $"{Constants.HandDraw} 枚に 1 枚も無い確率が 25% を超えない（初期デッキで実測）", SkippedNote));
+    /// <summary>Criterion 13: staying at 2 or more.</summary>
+    private static CriterionRow KeepTwo(Run run)
+    {
+        if (!run.Full) return Skipped("13", "離れて削る型の勝率", "間合い 2 以上に居続ける方針が、ほかの方針の平均を 15 pt 以上上回らない", SkippedNote);
+        var policies = run.Results.Policies;
+        double keep = WinRate(policies[Positioning.KeepTwo]);
+        double others = new[] { Positioning.Close, Positioning.Away, Positioning.InOut }.Average(p => WinRate(policies[p]));
+        return new CriterionRow("13", "離れて削る型の勝率", "間合い 2 以上に居続ける方針が、ほかの方針の平均を 15 pt 以上上回らない",
+            $"{Pct(keep)}（ほか {Pct(others)}、{Pt(keep - others)}）", keep - others < KeepTwoLeadPt ? Verdict.Pass : Verdict.Fail,
+            "ほかの方針 = 詰め続ける / 離れ続ける / 出入りする。型 6 種 × 全敵"
+            + StallText(policies[Positioning.KeepTwo], "（間合い 2 以上に居続ける方針）は勝てなかった戦闘に数える"), keep - others);
+    }
 
-        // 12: turns with nothing in reach.
-        double noReach = Median(typed.Select(r => r.NoReachTurns));
-        rows.Add(new CriterionRow("12", "届く札が無くて何も当てられないターン", "1 戦に 1 回以下（中央値）", Num(noReach),
-            noReach <= 1 ? Verdict.Pass : Verdict.Fail,
-            $"相手向きの札を持つのにターン開始で 1 枚も届かず、そのターンに相手向きの札を 1 枚も出せなかったターン。平均 {Num(typed.Select(r => r.NoReachTurns).DefaultIfEmpty(0).Average())}",
-            noReach));
+    /// <summary>Criterion 14: a person's judgment time, which a bot cannot measure.</summary>
+    private static CriterionRow JudgmentTime() =>
+        new CriterionRow("14", "1 ターンの判断時間（人手、中央値）", "20 秒以下", "—", Verdict.NotMeasurable,
+            "人が遊んで測る値で、打ち手では測れない");
 
-        // 13: staying at 2 or more.
-        if (full)
-        {
-            double keep = WinRate(results.Policies[Positioning.KeepTwo]);
-            double others = new[] { Positioning.Close, Positioning.Away, Positioning.InOut }.Average(p => WinRate(results.Policies[p]));
-            rows.Add(new CriterionRow("13", "離れて削る型の勝率", "間合い 2 以上に居続ける方針が、ほかの方針の平均を 15 pt 以上上回らない",
-                $"{Pct(keep)}（ほか {Pct(others)}、{Pt(keep - others)}）", keep - others < 15 ? Verdict.Pass : Verdict.Fail,
-                "ほかの方針 = 詰め続ける / 離れ続ける / 出入りする。型 6 種 × 全敵"
-                + StallText(results.Policies[Positioning.KeepTwo], "（間合い 2 以上に居続ける方針）は勝てなかった戦闘に数える"), keep - others));
-        }
-        else rows.Add(Skipped("13", "離れて削る型の勝率", "間合い 2 以上に居続ける方針が、ほかの方針の平均を 15 pt 以上上回らない", SkippedNote));
+    /// <summary>Criterion S13: turns of 3 plays or more.</summary>
+    private static CriterionRow ThreePlayTurns(Run run)
+    {
+        int maxPlays = run.Results.Options.MaxPlays;
+        double three = Median(run.Typed.Select(r => r.TurnsOfThreeOrMore));
+        return new CriterionRow("S13", "1 戦のうち 3 枚以上出したターンの回数", "2 回以上。0 回なら回復 3 か手薄の定義を見直す", Num(three),
+            three >= ThreePlayTurnsMin ? Verdict.Pass : Verdict.Fail,
+            $"1 戦ごとに数えた中央値。平均 {Num(run.Typed.Select(r => r.TurnsOfThreeOrMore).DefaultIfEmpty(0).Average())}。{CapText(maxPlays)}"
+            + (maxPlays is > 0 and < 3 ? "上限が 3 未満なので、3 枚以上のターンは仕組みの上で起きない" : ""), three);
+    }
 
-        rows.Add(new CriterionRow("14", "1 ターンの判断時間（人手、中央値）", "20 秒以下", "—", Verdict.NotMeasurable,
-            "人が遊んで測る値で、打ち手では測れない"));
-
-        // S13〜S17.
-        double three3 = Median(typed.Select(r => r.TurnsOfThreeOrMore));
-        rows.Add(new CriterionRow("S13", "1 戦のうち 3 枚以上出したターンの回数", "2 回以上。0 回なら回復 3 か手薄の定義を見直す", Num(three3),
-            three3 >= 2 ? Verdict.Pass : Verdict.Fail,
-            $"1 戦ごとに数えた中央値。平均 {Num(typed.Select(r => r.TurnsOfThreeOrMore).DefaultIfEmpty(0).Average())}。{CapText(results.Options.MaxPlays)}"
-            + (results.Options.MaxPlays is > 0 and < 3 ? "上限が 3 未満なので、3 枚以上のターンは仕組みの上で起きない" : ""), three3));
-
-        var many = typed.Where(r => r.MovementPlays >= 2).ToList();
-        var few = typed.Where(r => r.MovementPlays <= 1).ToList();
+    /// <summary>Criterion S14: battles with many movement plays against those with few.</summary>
+    private static CriterionRow ManyMoves(Run run)
+    {
+        var many = run.Typed.Where(r => r.MovementPlays >= ManyMovementPlays).ToList();
+        var few = run.Typed.Where(r => r.MovementPlays < ManyMovementPlays).ToList();
         double manyRate = WinRate(many), fewRate = WinRate(few);
         bool movesKnown = many.Count > 0 && few.Count > 0;
-        rows.Add(new CriterionRow("S14", "移動の効果を 2 回以上出した戦いの勝率", "1 回以下の勝率を 10 pt 以上下回らない",
+        return new CriterionRow("S14", "移動の効果を 2 回以上出した戦いの勝率", "1 回以下の勝率を 10 pt 以上下回らない",
             $"{Pct(manyRate)}（{many.Count} 戦）/ 1 回以下 {Pct(fewRate)}（{few.Count} 戦）",
-            !movesKnown ? Verdict.NotMeasurable : manyRate - fewRate > -10 ? Verdict.Pass : Verdict.Fail,
-            "移動の効果 = 前へ / 後ろへ / 押す / 引く を持つ札（俊敏の無料の 1 マスは数えない）", manyRate - fewRate));
-
-        rows.Add(new CriterionRow("S15", "1 撃の最大値", $"通常敵 HP の 6 割（{first.SingleHitLimit}）以下",
-            $"試験台 {first.ObservedMaxBlow}（{blowDeck}）/ 机上 {first.DeskCanon.Canon}", first.BlowPasses ? Verdict.Pass : Verdict.Fail,
-            "5 と同じ値（倍率 1 つの規則で測る。主な戦闘の全てのデッキの全試行の最大）", first.ObservedMaxBlow));
-
-        rows.Add(StancePlays(typed, archetypes));
-
-        rows.Add(new CriterionRow("S17", "1 戦の刻み（中央値）", "才能の札で 4 以上、ほかの札で 2 以上", "—", Verdict.NotMeasurable,
-            "習熟（刻み）は BattleCore にまだ無い"));
-
-        return rows;
+            !movesKnown ? Verdict.NotMeasurable : manyRate - fewRate > -MovementDeficitPt ? Verdict.Pass : Verdict.Fail,
+            "移動の効果 = 前へ / 後ろへ / 押す / 引く を持つ札（俊敏の無料の 1 マスは数えない）", manyRate - fewRate);
     }
+
+    /// <summary>Criterion S15: 5's blow, read by the one-multiplier rule.</summary>
+    private static CriterionRow SingleBlow(Run run)
+    {
+        var first = run.First;
+        return new CriterionRow("S15", "1 撃の最大値", $"通常敵 HP の 6 割（{first.SingleHitLimit}）以下",
+            $"試験台 {first.ObservedMaxBlow}（{run.BlowDeck}）/ 机上 {first.DeskCanon.Canon}", first.BlowPasses ? Verdict.Pass : Verdict.Fail,
+            "5 と同じ値（倍率 1 つの規則で測る。主な戦闘の全てのデッキの全試行の最大）", first.ObservedMaxBlow);
+    }
+
+    /// <summary>Criterion S17: the mastery ticks, which BattleCore does not carry yet.</summary>
+    private static CriterionRow MasteryTicks() =>
+        new CriterionRow("S17", "1 戦の刻み（中央値）", "才能の札で 4 以上、ほかの札で 2 以上", "—", Verdict.NotMeasurable,
+            "習熟（刻み）は BattleCore にまだ無い");
 
     /// <summary>
     /// 7, read as how much the stances add, not as how weak a type is. Both readings must pass:
@@ -307,10 +443,10 @@ public static class Criteria
         var bestNoStance = gaps.Select(g => (g.Name, Rate: g.Twin))
             .Concat(archetypes.Where(d => !d.HasStance).Select(d => (d.Name, Rate: Rate(d.Id))))
             .OrderByDescending(t => t.Rate).First();
-        double floor = strongest.Rate - 15;
+        double floor = strongest.Rate - NoStanceGapPt;
         bool literal = bestNoStance.Rate >= floor;
         var worstGap = gaps.OrderBy(g => g.Gap).First();
-        bool perType = worstGap.Gap > -15;
+        bool perType = worstGap.Gap > -NoStanceGapPt;
         return new CriterionRow("7", Criterion, Target,
             $"スタンス無しの最良 {Pct(bestNoStance.Rate)}（{bestNoStance.Name}）/ 下限 {Pct(floor)}（最強 {strongest.Name} {Pct(strongest.Rate)} − 15 pt）。"
             + $"元の型との差の最小 {Pt(worstGap.Gap)}（{worstGap.TypeName}）",
@@ -341,7 +477,7 @@ public static class Criteria
         if (medians.Count == 0) return new CriterionRow("S16", Criterion, Target, "—", Verdict.NotMeasurable, "スタンスの札を持つ型が無い");
         var ids = holders.Select(d => d.Id).ToHashSet();
         double pooled = Median(records.Where(r => ids.Contains(r.DeckId)).Select(r => r.StancePlays));
-        var outside = medians.Where(m => m.Median < 1 || m.Median > 2).ToList();
+        var outside = medians.Where(m => m.Median < StancePlaysMin || m.Median > StancePlaysMax).ToList();
         return new CriterionRow("S16", Criterion, Target,
             string.Join(" / ", medians.Select(m => $"{m.Name} {Num(m.Median)}")),
             outside.Count == 0 ? Verdict.Pass : Verdict.Fail,
