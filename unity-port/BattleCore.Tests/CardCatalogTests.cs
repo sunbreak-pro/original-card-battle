@@ -179,7 +179,7 @@ namespace BattleCore.Tests
             {
                 Assert.That(attacks.Count, Is.EqualTo(36));
                 Assert.That(attacks.Sum(c => c.Face.Power), Is.EqualTo(390));
-                Assert.That(CardCatalog.All.Take(40).Where(c => c.Attribute == BattleAttribute.Attack).Sum(c => c.Face.Power), Is.EqualTo(220));
+                Assert.That(CardCatalog.Initial.Where(c => c.Attribute == BattleAttribute.Attack).Sum(c => c.Face.Power), Is.EqualTo(220));
                 Assert.That(CardCatalog.All.Skip(40).Where(c => c.Attribute == BattleAttribute.Attack).Sum(c => c.Face.Power), Is.EqualTo(170));
             });
         }
