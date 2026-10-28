@@ -7,17 +7,6 @@ namespace Depiction.Bridge
 {
     public static class CoreText
     {
-        /// <summary>
-        /// v4.3 (#162) on the v4.2 screen: the script still knows two standing slots (near / far),
-        /// so the gap N is shown on the player's tag as a number and the slot is picked by N — 0〜1
-        /// stands in the near slot, 2 and more in the far one. The cells on the floor, the lit reach
-        /// and the aimed cells are #163's, and this mapping goes with them.
-        /// </summary>
-        public static RangeSide SideOf(int gap)
-        {
-            return gap <= 1 ? RangeSide.Near : RangeSide.Far;
-        }
-
         /// <summary>The one glyph on the player's tag: N itself ("0", "2").</summary>
         public static string GapGlyph(int gap)
         {
@@ -111,9 +100,8 @@ namespace Depiction.Bridge
                 ValueText = ValueOf(def.Face, def.Attributes),
                 TraitText = TraitLines(def),
                 TraitLit = def.Trait != null && preview != null && preview.TraitHolds,
-                // §2.4: the reach is printed on the card; the two-valued RequiredRange cannot hold it,
-                // so the core's CanPlay (OutOfReach) is what refuses the card, not the script.
-                RequiredRange = null,
+                // §2.4: the reach is printed on the card; the core's CanPlay (OutOfReach) is what
+                // refuses the card, not the script.
                 RequiredRangeGlyph = ReachText(def.Attributes, def.Face, def.Targets),
                 ReachHint = outOfReach ? ReachHint(def.Attributes, def.Face, def.Targets) : "",
             };

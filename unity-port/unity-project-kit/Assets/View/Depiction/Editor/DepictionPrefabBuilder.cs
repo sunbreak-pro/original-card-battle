@@ -497,8 +497,6 @@ namespace Depiction.View
 
             RectTransform arena = UiKit.Rect(canvas, "Arena", Vector2.zero, Vector2.one);
             const float feetY = -60f;
-            player.playerNearSlot = UiKit.Point(arena, "PlayerNearSlot", Half, Half, Vector2.zero, new Vector2(-260f, feetY));
-            player.playerFarSlot = UiKit.Point(arena, "PlayerFarSlot", Half, Half, Vector2.zero, new Vector2(-520f, feetY));
 
             player.playerFigure = Place<FigureView>("Figure", arena, Half, new Vector2(-260f, feetY));
             player.playerFigure.name = "PlayerFigure";
