@@ -109,7 +109,7 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
-        public void AnExpeditionsDeath_LeavesItsGrownCardsAndFilledPages()
+        public void AnExpeditionsDeath_TakesItsPagesFromTheJournalPluggedIn()
         {
             var expedition = new Expedition(new RunStart { Seed = 4 });
             expedition.Legacy.Journal = new Pages(new LegacyPage("enemy:x", "x の頁"));
@@ -124,6 +124,46 @@ namespace Exploration.Bridge.Tests
 
             Assert.That(expedition.Session.Act(ScreenAction.NewLife), Is.True);
             Assert.That(expedition.Session.State.Map.CountOf(NodeKind.Trace), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AnExpeditionsDeath_LeavesItsGrownCardsAndTheEnemyPagesItsJournalFilled()
+        {
+            var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) });
+            WalkTo(expedition, NodeKind.Trace);
+            Assert.That(HeritagePicks.Confirm(expedition, new[] { "card:" + CardCatalog.Thrust.Id }), Is.True);
+            WalkTo(expedition, NodeKind.Battle, winLast: false);
+
+            var pages = Enemies.All
+                .Where(e => expedition.DisclosureOf(e.Id) >= 1)
+                .Select(e => "page:" + DisclosedEnemyPages.PageIdOf(e.Id))
+                .ToList();
+            Assert.That(pages, Is.Not.Empty, "the battles on the way filled the journal");
+            Assert.That(expedition.Session.Act(ScreenAction.FallInBattle), Is.True);
+
+            DeathTrace trace = expedition.Session.Traces.Traces.Single();
+            Assert.That(trace.Candidates.Select(c => c.Key),
+                Is.EqualTo(new[] { "card:" + CardCatalog.Thrust.Id }.Concat(pages).ToList()),
+                "the card the life took in at step 1, then a page for each enemy met");
+            Assert.That(trace.Candidates.First(c => c.Kind == LegacyKind.Page).Title, Does.EndWith("の頁"));
+        }
+
+        [Test]
+        public void ADeathAsANewLifeEnters_LeavesNothingOfTheLifeBefore()
+        {
+            var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) });
+            WalkTo(expedition, NodeKind.Trace);
+            Assert.That(HeritagePicks.Confirm(expedition, new[] { "card:" + CardCatalog.Thrust.Id }), Is.True);
+            WalkTo(expedition, NodeKind.Battle, winLast: false);
+            Assert.That(expedition.Session.Act(ScreenAction.FallInBattle), Is.True);
+            Assert.That(expedition.Session.Traces.Traces.Single().Candidates, Is.Not.Empty);
+
+            // The new life falls on its entry battle before anything asks the expedition about it.
+            Assert.That(expedition.Session.Act(ScreenAction.NewLife), Is.True);
+            Assert.That(expedition.Session.Act(ScreenAction.FallInBattle), Is.True);
+
+            DeathTrace second = expedition.Session.Traces.Traces.Single(t => t.Life == 2);
+            Assert.That(second.Candidates, Is.Empty, "the book and the journal are the new life's, which has grown nothing");
         }
 
         [Test]
@@ -211,8 +251,11 @@ namespace Exploration.Bridge.Tests
             expedition.Return();
         }
 
-        /// <summary>Walks the shortest way to the nearest unresolved node of this kind, winning every battle on the way.</summary>
-        private static void WalkTo(Expedition expedition, NodeKind kind)
+        /// <summary>
+        /// Walks the shortest way to the nearest unresolved node of this kind, winning every battle on the
+        /// way. With <paramref name="winLast"/> false, the battle on the node reached is left waiting.
+        /// </summary>
+        private static void WalkTo(Expedition expedition, NodeKind kind, bool winLast = true)
         {
             ExplorationSession session = expedition.Session;
             if (session.HasPendingBattle) WinPending(expedition);
@@ -245,7 +288,7 @@ namespace Exploration.Bridge.Tests
             {
                 Assert.That(session.Step(node), Is.True, $"step to {node}");
                 if (session.HasPendingStep) Assert.That(session.Act(ScreenAction.ConfirmStep), Is.True);
-                if (session.HasPendingBattle) WinPending(expedition);
+                if (session.HasPendingBattle && (winLast || node != target)) WinPending(expedition);
             }
         }
     }

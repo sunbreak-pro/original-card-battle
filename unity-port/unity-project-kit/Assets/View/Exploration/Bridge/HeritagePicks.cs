@@ -19,7 +19,7 @@ namespace Exploration.Bridge
 {
     /// <summary>
     /// What an expedition's dying life leaves (#106): every card the mastery book holds at 習熟 1 段 or more
-    /// with the name it bears at that step, and the journal's filled pages. DungeonCore.Heritage applies the
+    /// with the name it bears at that step, and the journal's filled pages (<see cref="Journal"/>). DungeonCore.Heritage applies the
     /// shallow-death rule on top.
     /// </summary>
     public sealed class ExpeditionLegacy : ILegacySource
@@ -29,12 +29,16 @@ namespace Exploration.Bridge
         public ExpeditionLegacy(Expedition expedition)
         {
             _expedition = expedition ?? throw new ArgumentNullException(nameof(expedition));
+            Journal = new DisclosedEnemyPages(expedition);
         }
 
         /// <summary>Null: the stand-in name (Heritage.StandInName) until #110 names the generations.</summary>
         public string Name => null;
 
-        /// <summary>The journal's filled pages (#107 plugs its journal in here). Null: no page.</summary>
+        /// <summary>
+        /// The journal's filled pages. <see cref="DisclosedEnemyPages"/> until #107 plugs its journal in
+        /// here. Null: no page.
+        /// </summary>
         public ILegacyPages Journal { get; set; }
 
         public IReadOnlyList<LegacyCard> Cards
@@ -47,6 +51,30 @@ namespace Exploration.Bridge
         }
 
         public IReadOnlyList<LegacyPage> Pages => Journal?.FilledPages() ?? Array.Empty<LegacyPage>();
+    }
+
+    /// <summary>
+    /// The filled pages until #107's journal plugs in (dungeon_exploration_v4.md §7.3): one page for each
+    /// enemy of the roster that this life's journal holds at 開示度 1 or more, in roster order, titled
+    /// 「錆槍の竜兵の頁」.
+    /// </summary>
+    public sealed class DisclosedEnemyPages : ILegacyPages
+    {
+        private readonly Expedition _expedition;
+
+        public DisclosedEnemyPages(Expedition expedition)
+        {
+            _expedition = expedition ?? throw new ArgumentNullException(nameof(expedition));
+        }
+
+        /// <summary>The page id of an enemy's page: 「enemy:」 and the roster id.</summary>
+        public static string PageIdOf(string enemyId) => "enemy:" + enemyId;
+
+        public IReadOnlyList<LegacyPage> FilledPages() =>
+            Enemies.All
+                .Where(e => _expedition.DisclosureOf(e.Id) >= 1)
+                .Select(e => new LegacyPage(PageIdOf(e.Id), $"{e.Name}の頁"))
+                .ToList();
     }
 
     /// <summary>The mastery side of a legacy: what a book leaves, and a book taking a step in.</summary>
