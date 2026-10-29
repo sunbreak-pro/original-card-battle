@@ -189,8 +189,8 @@ namespace Depiction.Bridge
         /// event each; EndTurn is three for the slice (turn end, the enemy's action, the next omen),
         /// the same beats the screen already knows. A few moments take a beat of their own so each
         /// event stays inside the 2.0 s it may take: the enemy's push driving the player into the
-        /// wall, and (#189) an enemy turn start that did something, an elite's second action, the
-        /// second blow of 二段斬り and the step an enemy takes after its blow.
+        /// wall, and (#189) an enemy turn start that did something, an elite's second action and the
+        /// second blow of 二段斬り. The step an enemy takes after its blow stays in the blow's event (#587).
         ///
         /// <paramref name="after"/> is the state the move left. It is only asked what the cards still
         /// in the hand and the omen on screen would do (the lamp, the omen's number), never for a
@@ -302,12 +302,9 @@ namespace Depiction.Bridge
                     && current.Cues.Exists(c => c.Kind == CueKind.GuardGain || c.Kind == CueKind.HpChange):
                     return NewEvent(DepictionEventKind.EnemyAction, first.Action.Name);
 
-                // §2.2 (#189): an enemy that strikes and then steps in (飛びかかり, 当ててから前へ 2) takes
-                // the step as its own beat once the blow has landed.
-                case CellsMoved step when step.Actor == Actor.Enemy && !step.Pushed && current != null
-                    && current.Kind == DepictionEventKind.EnemyAction
-                    && current.Cues.Exists(c => c.Kind == CueKind.Hit || c.Kind == CueKind.GuardBlock):
-                    return NewEvent(DepictionEventKind.EnemyAction, current.Title + (step.To < step.From ? "（詰める）" : "（下がる）"));
+                // §5.4 順 2 (#587): an enemy that strikes and then moves itself (退き撃ち, 踏み込み斬り) keeps
+                // the move in the blow's event, so the move can start on the number + 80 with no return
+                // first (EffectPlan.EnemyMoveFollows). The whole 1 手 stays inside the 2.0 s (§5.0).
 
                 // §2.4 hits (#189): the second blow of an enemy face is a beat of its own (二段斬り),
                 // opened where the 脆化 its first blow left is spent for it.
@@ -544,14 +541,13 @@ namespace Depiction.Bridge
                     break;
 
                 case CellsMoved moved:
-                    // Whichever side moved, the screen has one thing to show for it: the new N on the
-                    // player's tag, and the player's figure in the slot N maps to (CoreText.SideOf).
-                    // Moving the enemy figure waits for the floor cells (#163).
+                    // Whichever side moved, the screen shows the walk on the floor: both figures to the
+                    // cells they stand on after it, and the new N.
                     Unit(moved.Actor).Cell = moved.To;
                     ev.Cues.Add(new Cue
                     {
                         Kind = CueKind.RangeSwitch, Target = UnitSide.Player, Pushed = moved.Pushed,
-                        RangeAfter = CoreText.SideOf(Gap), RangeGlyphAfter = CoreText.GapGlyph(Gap),
+                        RangeGlyphAfter = CoreText.GapGlyph(Gap),
                         // battle-visual-v1 §4.2 (#242): where both stand after the move, for the floor.
                         PlayerCellAfter = _player.Cell, EnemyCellAfter = _enemy.Cell, GapAfter = Gap,
                         // battle_ui_ux_v2 §5.7 順 1 (#586): the walk takes 160 ms a cell.
@@ -1243,11 +1239,7 @@ namespace Depiction.Bridge
                 ShowStamina = showStamina, Stamina = unit.Stamina, StaminaMax = unit.StaminaMax,
                 HasRange = gap.HasValue, Down = unit.Down,
             };
-            if (gap.HasValue)
-            {
-                frame.Range = CoreText.SideOf(gap.Value);
-                frame.RangeGlyph = CoreText.GapGlyph(gap.Value);
-            }
+            if (gap.HasValue) frame.RangeGlyph = CoreText.GapGlyph(gap.Value);
             // §4: the stances held lead the chips, one chip per stance (a repeat is one chip with its count).
             frame.Statuses.AddRange(CoreText.StanceChips(unit.Stances));
             // battle-visual-v1 §4.6 (#455): the same stances as the list at the unit's edge.

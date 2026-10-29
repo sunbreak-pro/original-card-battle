@@ -28,8 +28,6 @@ namespace Depiction.View
         public CornerInfoView cornerInfo;
         public FigureView playerFigure;
         public FigureView enemyFigure;
-        public RectTransform playerNearSlot;
-        public RectTransform playerFarSlot;
         public StatusBarView playerStatus;
         public StatusBarView enemyStatus;
         public OmenBadgeView omenBadge;
@@ -148,6 +146,8 @@ namespace Depiction.View
         private CardView _reachFor;
         /// <summary>battle-visual-v1 §4.7 (#455): the draw, discard and exile piles under the stamina tag.</summary>
         private PilesView _piles;
+        /// <summary>#606: the layered backdrop (battle-visual-v1 §2.4) this battle hands its layer to, once found.</summary>
+        private Backdrop.View.BackdropView _backdropView;
         /// <summary>battle_ui_ux_v2 §1.1 C4 (#455): the drawer a click on a pile opens with its list.</summary>
         private PileListView _pileList;
         /// <summary>battle-visual-v1 §4.6 (#455): each side's stance list at its edge.</summary>
@@ -349,6 +349,8 @@ namespace Depiction.View
             DebugGate = "";
             ApplyTweenSpeed(); // also clears a 0 a debug gate left behind when domain reload is off
             if (showSpeedButton && !filming) BuildSpeedButton(); // before the demo flow's early return, so its battles get it too
+            // Layer 1's gradient stays under the layered backdrop: it is what shows where BackdropView has
+            // not attached (or has no art), so the battle never stands on a blank image (#606).
             if (backdrop && backdrop.sprite == null)
             {
                 BattleTheme.FloorPalette palette = BattleTheme.Floor(1);
@@ -888,21 +890,21 @@ namespace Depiction.View
                 {
                     // Moved by the other side (the polearm's shove): a knock-back, and the muted label says so.
                     if (cue.Pushed) FloatEffect(EffectId.PushMark, labelAt, DepictionText.Pushed, BattleTheme.Ink2, 36);
-                    if (OnFloor(cue))
+                    // §5.7 順 1〜2 (#586): the walk, 160 a cell, then the gap number counted again on arrival.
+                    // Every source draws the floor since the near / far slots went (#577).
+                    int cells = EffectPlan.CellsOf(cue);
+                    if (!OnFloor(cue))
                     {
-                        // §5.7 順 1〜2 (#586): the walk, 160 a cell, then the gap number counted again on arrival.
-                        int cells = EffectPlan.CellsOf(cue);
-                        yield return HoldBeat(EffectId.FloorMove, MoveOnFloor(target, cue, cells), () => SnapOnFloor(target, cue), cells);
-                        yield return HoldBeat(EffectId.GapRecount,
-                            _floor.RecountGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter, _effects.Ms(EffectId.GapRecount)),
-                            () => _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter));
+                        // A script bug: the frame shows no floor to walk on. The plan's waits are still held.
+                        Debug.LogError("[Depiction] event " + ev.Order + " " + ev.Title + ": a move with no floor shown");
+                        yield return HoldBeat(EffectId.FloorMove, UiTween.Wait(_effects.WaitMs(EffectId.FloorMove, cells)), null, cells);
+                        yield return HoldBeat(EffectId.GapRecount, UiTween.Wait(_effects.Ms(EffectId.GapRecount)), null);
                         break;
                     }
-                    yield return HoldBeat(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.Pushed),
-                        () => SnapRange(target, cue.RangeAfter));
-                    // #495: without a floor the tag at the feet flips to the new glyph, its own beat as in EffectPlan.
-                    yield return HoldBeat(EffectId.RangeTagFlip, target.FlipRangeTag(cue.RangeGlyphAfter, _effects.Ms(EffectId.RangeTagFlip)),
-                        () => target.SetRange(true, cue.RangeGlyphAfter));
+                    yield return HoldBeat(EffectId.FloorMove, MoveOnFloor(target, cue, cells), () => SnapOnFloor(target, cue), cells);
+                    yield return HoldBeat(EffectId.GapRecount,
+                        _floor.RecountGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter, _effects.Ms(EffectId.GapRecount)),
+                        () => _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter));
                     break;
                 }
 
@@ -949,17 +951,16 @@ namespace Depiction.View
                     status.SetGuard(cue.GuardAfter);
                     if (cue.GuardAfter == 0) StartCoroutine(Effect(EffectId.GuardBreak, status.CrackGuard(_effects.Ms(EffectId.GuardBreak)), null));
                     else if (status.guardBadge) StartCoroutine(UiTween.Pop(status.guardBadge, 260f));
-                    FloatEffect(EffectId.GuardNumber, numberAt + new Vector2(-60f, 0f), "Guard −" + cue.Amount, BattleTheme.Guard, 44);
+                    FloatHit(EffectId.GuardNumber, ev, cue, target, FloatNumberKind.GuardLoss, "");
                     yield return HoldBeat(EffectId.GuardBlock, DepictionFx.ShieldBlock(this, fxLayer, chest, cue.Amount.ToString(), () => Gate(ev.Order + "-block")), null);
                     break;
                 }
 
                 case CueKind.HpChange:
                 {
-                    // 出血 / 再生 / a heal / a 見切り return (#188): the cause and the number, then the bar.
-                    string sign = cue.Amount > 0 ? "+" : "";
-                    FloatEffect(EffectId.DamageNumber, numberAt, cue.Text + " " + sign + cue.Amount,
-                        cue.Amount > 0 ? BattleTheme.Accent : BattleTheme.Omen, 40);
+                    // 出血 / 再生 / a heal / a 見切り return (#188): the number with its cause beside it
+                    // (battle_ui_ux_v2 §5.0 脇ラベル), then the bar.
+                    FloatHit(EffectId.DamageNumber, ev, cue, target, FloatNumberSpec.OfHpChange(cue.Amount), cue.Text);
                     yield return DrainHp(status, cue.HpAfter);
                     break;
                 }
@@ -967,7 +968,7 @@ namespace Depiction.View
                 case CueKind.Hit:
                 {
                     bool strong = EffectStrength.IsStrong(cue.Intensity);
-                    FloatEffect(EffectId.DamageNumber, numberAt, cue.Amount.ToString(), BattleTheme.Omen, DepictionFx.NumberFont(cue.Intensity));
+                    FloatHit(EffectId.DamageNumber, ev, cue, target, FloatNumberKind.HpLoss, "");
                     StartCoroutine(Effect(EffectId.HitFlash, target.Flash(BattleTheme.Omen, _effects.Ms(EffectId.HitFlash)), null));
                     StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
                     if (strong) StartCoroutine(Effect(EffectId.ScreenShake, ShakeArena(), null));
@@ -980,7 +981,17 @@ namespace Depiction.View
                         // The blow that lands on the player is the enemy's own: its omen is spent and
                         // it draws back. A blow the player lands does neither.
                         yield return HoldBeat(EffectId.OmenSpend, omenBadge.FadeOut(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideNow);
-                        yield return HoldBeat(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome));
+                        // §5.4 順 2 (#587): the enemy's own move next (退き撃ち) carries it on from the
+                        // lunge; the omen fades beside the move (the plan gives OmenSpend no wait), and
+                        // the figure walks in its standing pose, as the return would have left it.
+                        if (EffectPlan.EnemyMoveFollows(ev, cue))
+                        {
+                            if (enemyFigure) enemyFigure.SetPose(FigurePose.Idle);
+                        }
+                        else
+                        {
+                            yield return HoldBeat(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome));
+                        }
                     }
                     break;
                 }
@@ -1017,13 +1028,13 @@ namespace Depiction.View
             if (cue.HpAfter == Cue.Unchanged) yield break;
 
             DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Omen, 200f + 60f * cue.Intensity);
-            FloatEffect(EffectId.DamageNumber, chest + new Vector2(0f, 40f), cue.Amount.ToString(), BattleTheme.Ink, DepictionFx.NumberFont(cue.Intensity));
+            FloatHit(EffectId.DamageNumber, ev, cue, target, FloatNumberKind.HpLoss, "");
             StartCoroutine(Effect(EffectId.HitFlash, target.Flash(BattleTheme.White, _effects.Ms(EffectId.HitFlash)), null));
             StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
             yield return DrainHp(status, cue.HpAfter);
             yield return Gate(ev.Order + "-impact");
             // §5.4 順 2 / §5.5 順 8 (#499): a move right after the blow carries the player on from the
-            // lunge (MoveOnFloor and SwitchRange start where the figure stands), so there is no step back first; the
+            // lunge (MoveOnFloor starts where the figure stands), so there is no step back first; the
             // figure walks in its standing pose, as the return would have left it.
             if (byPlayer && !EffectPlan.MoveFollows(ev, cue))
             {
@@ -1289,6 +1300,27 @@ namespace Depiction.View
             DepictionFx.FloatText(this, fxLayer, at, text, color, fontSize);
         }
 
+        /// <summary>
+        /// battle-visual-v1 §5.5 / battle_ui_ux_v2 §5.0, §5.6 順 2〜3 (#455): a hit's number on its plate,
+        /// rising from the chest to the head of <paramref name="target"/>. The amount is the cue's; the
+        /// pair (Guard left, HP right, 24 px apart) is read off the order the script wrote the cues in.
+        /// </summary>
+        private void FloatHit(EffectId id, DepictionEvent ev, Cue cue, FigureView target, FloatNumberKind kind, string label)
+        {
+            if (!_effects.IsOn(id))
+            {
+                Trace?.Skip(id, CurrentOrder);
+                return;
+            }
+            if (Trace != null) StartCoroutine(TraceFor(id, _effects.Ms(id)));
+            int index = ev.Cues.IndexOf(cue);
+            bool paired = kind == FloatNumberKind.GuardLoss
+                ? FloatNumberSpec.GuardPairsWithHp(ev.Cues, index)
+                : FloatNumberSpec.HpPairsWithGuard(ev.Cues, index);
+            DepictionFx.FloatPlate(this, fxLayer, DepictionFx.PointOn(fxLayer, target.transform), target.Height, paired,
+                kind, cue.Amount, label, _effects.Ms(id));
+        }
+
         private IEnumerator TraceFor(EffectId id, float ms)
         {
             int handle = Trace.Begin(id, CurrentOrder);
@@ -1304,14 +1336,6 @@ namespace Depiction.View
             Vector2 to = from + new Vector2(pixels * direction, 0f);
             figure.SetPose(FigurePose.Act);
             yield return UiTween.Move(figure.Rect, from, to, ms, Ease.Out);
-        }
-
-        /// <summary>The move's end state at once, without a floor. The tag's glyph is the flip's to settle (EffectId.RangeTagFlip, #495).</summary>
-        private void SnapRange(FigureView figure, RangeSide range)
-        {
-            RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
-            if (slot) figure.transform.position = slot.position;
-            SetPlayerHome(figure);
         }
 
         /// <summary>
@@ -1331,8 +1355,7 @@ namespace Depiction.View
 
         /// <summary>
         /// The move is drawn on the floor: one is shown and the cue says where both stand after it
-        /// (EffectPlan.MovesOnFloor, which also decides that the walk and the recount are waited for
-        /// instead of the move to a slot and the tag's flip).
+        /// (EffectPlan.MovesOnFloor). Every source draws the floor (#577), so this only fails on a script bug.
         /// </summary>
         private bool OnFloor(Cue cue)
         {
@@ -1354,29 +1377,17 @@ namespace Depiction.View
             Vector2 enemyFrom = enemyFigure ? enemyFigure.Rect.anchoredPosition : Vector2.zero;
             Vector2 enemyTo = enemyFigure && cue.EnemyCellAfter > 0 ? AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize)) : enemyFrom;
             bool enemyMoves = enemyFigure && (enemyTo - _enemyHome).sqrMagnitude > 0.25f;
+            // §5.4 順 2 (#587): the enemy's own move after its blow starts 80 ms after the number, while
+            // the struck player still reels (TargetRecoil); a player whose cell stays is left to it.
+            bool playerStays = enemyMoves && !cue.Pushed && _playerHomeSet && to == _playerHome;
             if (enemyMoves) _enemyHome = enemyTo;
             SetPlayerHome(figure, to); // the panels set off for the new cells as the figures do
             // 160 ms a cell (EffectSpec.TotalMs of FloorMove); a push starts fast and settles.
             yield return UiTween.Run(_effects.WaitMs(EffectId.FloorMove, cells), cue.Pushed ? Ease.Out : Ease.InOut, t =>
             {
-                if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
+                if (figure && !playerStays) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
                 if (enemyMoves && enemyFigure) enemyFigure.Rect.anchoredPosition = Vector2.LerpUnclamped(enemyFrom, enemyTo, t);
             });
-        }
-
-        /// <summary>
-        /// The move alone without a floor (EffectId.RangeSwitch): into the slot N maps to. The tag's
-        /// flip follows as its own beat (EffectId.RangeTagFlip, #495).
-        /// </summary>
-        private IEnumerator SwitchRange(FigureView figure, RangeSide range, bool pushed)
-        {
-            RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
-            Vector3 from = figure.transform.position;
-            Vector3 to = slot ? slot.position : from;
-            SetPlayerHome(figure, to);
-            // 320 ms to move (battle_ui_ux_v2 §10.6). A push is a knock-back: it starts fast and settles,
-            // where a step of one's own eases in and out.
-            yield return UiTween.Run(_effects.Ms(EffectId.RangeSwitch), pushed ? Ease.Out : Ease.InOut, t => { if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t); });
         }
 
         /// <summary>
@@ -1689,9 +1700,23 @@ namespace Depiction.View
 
         // ---- frame -> screen ------------------------------------------------------------------
 
+        /// <summary>
+        /// #606: hands the script's layer to the backdrop (battle-visual-v1 §2.4), so it no longer has to
+        /// read the corner info's text back. BackdropView attaches itself after the scene loads (#89), so the
+        /// first frames may come before it: it is looked for again until it is there. Show ignores the
+        /// layer it already shows, so every frame may call it.
+        /// </summary>
+        private void ShowBackdropLayer(int layer)
+        {
+            if (layer < 1 || !backdrop) return;
+            if (!_backdropView) _backdropView = FindAnyObjectByType<Backdrop.View.BackdropView>();
+            if (_backdropView) _backdropView.Show(layer);
+        }
+
         private void ApplyFrame(DepictionFrame frame)
         {
             if (cornerInfo) cornerInfo.Bind(frame.Corner);
+            ShowBackdropLayer(frame.Corner.Floor);
             // #288: the art is the script's to name; the figure looks it up and keeps it while the id stays.
             playerFigure.ShowArt(frame.Player.ArtId);
             enemyFigure.ShowArt(frame.Enemy.ArtId);
@@ -1709,10 +1734,8 @@ namespace Depiction.View
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);
             enemyFigure.SetRange(frame.Enemy.HasRange, frame.Enemy.RangeGlyph);
-            RectTransform slot = frame.Player.Range == RangeSide.Near ? playerNearSlot : playerFarSlot;
-            if (slot) playerFigure.transform.position = slot.position;
             SetPlayerHome(playerFigure);
-            ApplyFloor(frame); // §4.2: with a floor, the figures stand on their cells instead of the slots
+            ApplyFloor(frame); // §4.2: the figures stand on their cells (#577: every source draws the floor)
             omenBadge.Bind(frame.Omen);
             bool hasHint = !string.IsNullOrEmpty(frame.StanceHint);
             if (stanceHintText) stanceHintText.text = frame.StanceHint;

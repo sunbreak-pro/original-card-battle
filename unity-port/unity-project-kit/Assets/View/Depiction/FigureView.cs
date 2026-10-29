@@ -87,6 +87,12 @@ namespace Depiction.View
         private Image _stanceGlow;
         private float _height = FigureFrame.StandardHeight;
 
+        /// <summary>
+        /// How tall the figure stands on the screen (§4.3: 226, or 264 on two cells). The hit numbers
+        /// rise from 65% to 84% of it above the feet (battle_ui_ux_v2 §5.0, FloatNumberSpec).
+        /// </summary>
+        public float Height => _height;
+
         /// <summary>True while the stance light (§5.11 順 2) is on, or fading in.</summary>
         public bool StanceGlowShown { get; private set; }
 

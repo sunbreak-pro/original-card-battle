@@ -14,24 +14,6 @@ export interface DeathResult {
 }
 
 /**
- * Handle Player Death - Returns partial updates to apply to PlayerData
- *
- * NEW Lives System Behavior:
- * - LOST: All inventory items, all equipment inventory items, all equipped items, exploration resources
- * - KEPT: Storage items, base camp resources
- * - SOULS: 100% of current run souls are transferred to totalSouls (残滓システム)
- *
- * Note: Lives are managed separately in RuntimeBattleState (not in PlayerData)
- *
- * @param playerData - Current player data
- * @returns DeathResult with updates and transferred souls count
- */
-export function handlePlayerDeath(playerData: PlayerData): Partial<PlayerData> {
-  const result = handlePlayerDeathWithDetails(playerData);
-  return result.updates;
-}
-
-/**
  * Handle Player Death with detailed result
  * Use this when you need to display the souls transferred amount
  */

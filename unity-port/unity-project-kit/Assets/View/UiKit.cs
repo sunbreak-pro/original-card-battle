@@ -5,6 +5,9 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem.UI;
+#endif
 
 public static class UiKit
 {
@@ -51,6 +54,99 @@ public static class UiKit
         return slot;
     }
 
+    // ---- the screen's base ---------------------------------------------------------------
+
+    /// <summary>
+    /// A top-level overlay canvas that scales with the screen from <see cref="BattleTheme.RefWidth"/> ×
+    /// <see cref="BattleTheme.RefHeight"/> (matched halfway between width and height). A caller that needs a
+    /// sorting order sets it on the returned canvas.
+    /// </summary>
+    public static Canvas ScreenCanvas(string name)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        var canvas = go.GetComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        var scaler = go.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(BattleTheme.RefWidth, BattleTheme.RefHeight);
+        scaler.matchWidthOrHeight = 0.5f;
+        return canvas;
+    }
+
+    /// <summary>Makes the input receiver the UI needs, unless the scene already has one.</summary>
+    public static void EnsureEventSystem()
+    {
+        if (UnityEngine.Object.FindAnyObjectByType<EventSystem>() != null) return;
+#if ENABLE_INPUT_SYSTEM
+        new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+#else
+        new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+#endif
+    }
+
+    // ---- where something sits, and how its text looks -----------------------------------
+
+    /// <summary>The numbers that place a rect in its parent, kept together so a call passes one value, not four.</summary>
+    public readonly struct Place
+    {
+        public readonly Vector2 AnchorMin;
+        public readonly Vector2 AnchorMax;
+        public readonly Vector2 Pivot;
+        public readonly Vector2 Size;
+        public readonly Vector2 Offset;
+
+        private Place(Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 size, Vector2 offset)
+        {
+            AnchorMin = anchorMin;
+            AnchorMax = anchorMax;
+            Pivot = pivot;
+            Size = size;
+            Offset = offset;
+        }
+
+        /// <summary>A fixed-size rect hung on one anchor point (the arguments of <see cref="UiKit.Point(RectTransform, string, Vector2, Vector2, Vector2, Vector2)"/>).</summary>
+        public static Place At(Vector2 anchor, Vector2 pivot, Vector2 size, Vector2 offset)
+        {
+            return new Place(anchor, anchor, pivot, size, offset);
+        }
+
+        /// <summary>A rect stretched between two anchors with no margin (the arguments of <see cref="UiKit.Rect"/>).</summary>
+        public static Place Stretch(Vector2 anchorMin, Vector2 anchorMax)
+        {
+            return new Place(anchorMin, anchorMax, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        }
+    }
+
+    /// <summary>A label's size, alignment and colour.</summary>
+    public readonly struct TextStyle
+    {
+        public readonly int Size;
+        public readonly TextAnchor Anchor;
+        public readonly Color Color;
+
+        public TextStyle(int size, TextAnchor anchor, Color color)
+        {
+            Size = size;
+            Anchor = anchor;
+            Color = color;
+        }
+    }
+
+    /// <summary>A button's fill, its label's colour and the label's size.</summary>
+    public readonly struct ButtonLook
+    {
+        public readonly Color Background;
+        public readonly Color Foreground;
+        public readonly int FontSize;
+
+        public ButtonLook(Color background, Color foreground, int fontSize)
+        {
+            Background = background;
+            Foreground = foreground;
+            FontSize = fontSize;
+        }
+    }
+
     public static RectTransform Rect(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax)
     {
         var go = new GameObject(name, typeof(RectTransform));
@@ -76,6 +172,15 @@ public static class UiKit
         rt.pivot = pivot;
         rt.sizeDelta = size;
         rt.anchoredPosition = offset;
+        return rt;
+    }
+
+    public static RectTransform Point(RectTransform parent, string name, Place place)
+    {
+        var rt = Rect(parent, name, place.AnchorMin, place.AnchorMax);
+        rt.pivot = place.Pivot;
+        rt.sizeDelta = place.Size;
+        rt.anchoredPosition = place.Offset;
         return rt;
     }
 
@@ -138,27 +243,25 @@ public static class UiKit
 
     public static Text Text(RectTransform parent, string name, int size, TextAnchor anchor, Color color, string text = "")
     {
-        EnsureFont();
         var rt = Rect(parent, name, Vector2.zero, Vector2.one);
         rt.offsetMin = new Vector2(10f, 6f);
         rt.offsetMax = new Vector2(-10f, -6f);
-        var t = rt.gameObject.AddComponent<Text>();
-        t.font = Font;
-        t.fontSize = size;
-        t.alignment = anchor;
-        t.color = color;
-        t.text = text;
-        t.horizontalOverflow = HorizontalWrapMode.Wrap;
-        t.verticalOverflow = VerticalWrapMode.Overflow;
-        t.raycastTarget = false;
-        t.supportRichText = false;
-        return t;
+        return AddText(rt, size, anchor, color, text);
     }
 
     public static Text Label(RectTransform parent, string name, int size, TextAnchor anchor, Color color, Vector2 anchorPoint, Vector2 pivot, Vector2 size2, Vector2 offset, string text = "")
     {
+        return Label(parent, name, new TextStyle(size, anchor, color), Place.At(anchorPoint, pivot, size2, offset), text);
+    }
+
+    public static Text Label(RectTransform parent, string name, TextStyle style, Place place, string text = "")
+    {
+        return AddText(Point(parent, name, place), style.Size, style.Anchor, style.Color, text);
+    }
+
+    private static Text AddText(RectTransform rt, int size, TextAnchor anchor, Color color, string text)
+    {
         EnsureFont();
-        var rt = Point(parent, name, anchorPoint, pivot, size2, offset);
         var t = rt.gameObject.AddComponent<Text>();
         t.font = Font;
         t.fontSize = size;
@@ -175,10 +278,15 @@ public static class UiKit
     public static Button Button(RectTransform parent, string name, string label, Action onClick, Color bg, Color fg, int fontSize,
         Vector2 anchorMin, Vector2 anchorMax)
     {
-        var rt = Rect(parent, name, anchorMin, anchorMax);
+        return Button(parent, name, Place.Stretch(anchorMin, anchorMax), label, onClick, new ButtonLook(bg, fg, fontSize));
+    }
+
+    public static Button Button(RectTransform parent, string name, Place place, string label, Action onClick, ButtonLook look)
+    {
+        var rt = Point(parent, name, place);
         var img = rt.gameObject.AddComponent<Image>();
         img.sprite = ProceduralArt.White;
-        img.color = bg;
+        img.color = look.Background;
         img.raycastTarget = true;
         var button = rt.gameObject.AddComponent<Button>();
         button.targetGraphic = img;
@@ -188,7 +296,7 @@ public static class UiKit
         colors.disabledColor = new Color(0.55f, 0.55f, 0.55f, 0.6f);
         button.colors = colors;
         if (onClick != null) button.onClick.AddListener(() => onClick());
-        Text(rt, "Label", fontSize, TextAnchor.MiddleCenter, fg, label);
+        Text(rt, "Label", look.FontSize, TextAnchor.MiddleCenter, look.Foreground, label);
         return button;
     }
 

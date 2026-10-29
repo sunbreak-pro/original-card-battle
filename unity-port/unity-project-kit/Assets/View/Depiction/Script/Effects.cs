@@ -478,7 +478,9 @@ namespace Depiction
 
         /// <summary>
         /// A RangeSwitch drawn on the floor (battle-visual-v1 §4.2): the source gave the cells after the
-        /// move, so the figure walks to its cell and the gap number changes with no tag to flip.
+        /// move, so the figure walks to its cell and the gap number changes with no tag to flip. Every
+        /// source draws the floor since the near / far slots went (#577); a move without it is a script
+        /// bug, and <see cref="CellsOf"/> stops on it.
         /// </summary>
         public static bool MovesOnFloor(Cue cue)
         {
@@ -520,6 +522,26 @@ namespace Depiction
             if (ev == null) throw new ArgumentNullException(nameof(ev));
             int index = ev.Cues.IndexOf(blow);
             return index >= 0 && index + 1 < ev.Cues.Count && ev.Cues[index + 1].Kind == CueKind.RangeSwitch;
+        }
+
+        /// <summary>
+        /// §5.4 順 2 (#587): the enemy's own move right after its blow on the player (退き撃ち, 踏み込み斬り,
+        /// 飛びかかり …): the cue right after the blow's Hit is a RangeSwitch that is not a push or a pull.
+        /// The enemy does not draw back first (§5.5 順 8's return is left out): the move carries the
+        /// figure on from where the lunge left it, and starts <see cref="NextFaceLeadMs"/> after the
+        /// number. The omen fades beside the move. A push or a pull moves the player, not the enemy, so
+        /// the enemy still draws back before it. The screen (DepictionPlayer's Hit beat) and the plan
+        /// both ask here.
+        /// </summary>
+        public static bool EnemyMoveFollows(DepictionEvent ev, Cue blow)
+        {
+            if (ev == null) throw new ArgumentNullException(nameof(ev));
+            if (blow == null) throw new ArgumentNullException(nameof(blow));
+            if (blow.Target != UnitSide.Player) return false;
+            int index = ev.Cues.IndexOf(blow);
+            if (index < 0 || index + 1 >= ev.Cues.Count) return false;
+            Cue next = ev.Cues[index + 1];
+            return next.Kind == CueKind.RangeSwitch && !next.Pushed;
         }
 
         /// <summary>How long the flow is held at one step with these switches: the one wait both the screen and the tests use.</summary>
@@ -622,17 +644,9 @@ namespace Depiction
                     break;
                 case CueKind.RangeSwitch:
                     // §5.7 順 1〜2 (#586): on the floor, 160 a cell, then the gap number is counted again
-                    // for 150. Without a floor, the move to the slot and the tag's flip (#495).
-                    if (MovesOnFloor(cue))
-                    {
-                        steps.Add(new EffectStep(EffectId.FloorMove, CellsOf(cue)));
-                        steps.Add(new EffectStep(EffectId.GapRecount, 1));
-                    }
-                    else
-                    {
-                        steps.Add(new EffectStep(EffectId.RangeSwitch, 1));
-                        steps.Add(new EffectStep(EffectId.RangeTagFlip, 1));
-                    }
+                    // for 150. Every source draws the floor (#577): CellsOf stops on a move without one.
+                    steps.Add(new EffectStep(EffectId.FloorMove, CellsOf(cue)));
+                    steps.Add(new EffectStep(EffectId.GapRecount, 1));
                     break;
                 case CueKind.StanceCue:
                     // §5.13 順 1-2 (#501): the pips 1-3 glow (構え's 息), then the shield and "+3".
@@ -651,13 +665,16 @@ namespace Depiction
                 case CueKind.Hit:
                 {
                     // The player's blow Guard took part of: a move right after it starts on the number too.
-                    bool movesOn = cue.Target == UnitSide.Enemy && MoveFollows(ev, cue);
+                    // So does the enemy's own move after its blow on the player (#587).
+                    bool enemyMoves = EnemyMoveFollows(ev, cue);
+                    bool movesOn = (cue.Target == UnitSide.Enemy && MoveFollows(ev, cue)) || enemyMoves;
                     steps.Add(new EffectStep(EffectId.HpDrain, 1, movesOn ? NextFaceLeadMs : (float?)null));
                     if (cue.Target == UnitSide.Player)
                     {
                         // The blow on the player is the enemy's own: its omen is spent and it draws back.
-                        steps.Add(new EffectStep(EffectId.OmenSpend, 1));
-                        steps.Add(new EffectStep(EffectId.EnemyReturn, 1));
+                        // With its own move next, the omen fades beside the move and there is no return (#587).
+                        steps.Add(new EffectStep(EffectId.OmenSpend, 1, enemyMoves ? 0f : (float?)null));
+                        if (!enemyMoves) steps.Add(new EffectStep(EffectId.EnemyReturn, 1));
                     }
                     break;
                 }

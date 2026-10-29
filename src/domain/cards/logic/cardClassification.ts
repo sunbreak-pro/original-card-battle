@@ -39,40 +39,10 @@ export function classifyCards(cards: Card[]): ClassifiedCards {
 }
 
 /**
- * Check if a card is a base card
- * @param card - Card to check
- * @returns true if it's a base card
- */
-export function isBaseCard(card: Card): boolean {
-  return !card.derivedFrom && !card.isTalentCard;
-}
-
-/**
- * Check if a card is a derived card
- * @param card - Card to check
- * @returns true if it's a derived card
- */
-export function isDerivedCard(card: Card): boolean {
-  return !!card.derivedFrom && !card.isTalentCard;
-}
-
-/**
  * Check if a card is a talent card
  * @param card - Card to check
  * @returns true if it's a talent card
  */
 export function isTalentCard(card: Card): boolean {
   return !!card.isTalentCard;
-}
-
-/**
- * Sort cards by cost, then by name
- */
-export function sortCardsByCostAndName(cards: Card[]): Card[] {
-  return [...cards].sort((a, b) => {
-    if (a.cost !== b.cost) {
-      return a.cost - b.cost;
-    }
-    return a.name.localeCompare(b.name, "ja");
-  });
 }

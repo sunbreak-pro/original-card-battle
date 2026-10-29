@@ -30,8 +30,8 @@ namespace Depiction
         public string ValueText = "";
         public string TraitText = "";
         public TraitCondition Trait = TraitCondition.None;
-        /// <summary>The range side the card may be played from; null when either side works.</summary>
-        public RangeSide? RequiredRange;
+        /// <summary>The reach printed on the card ("近", as the slice was recorded); empty when it reads none.</summary>
+        public string RequiredRangeGlyph = "";
     }
 
     public static class DemoDeck
@@ -42,6 +42,9 @@ namespace Depiction
         public const string TetsuNoUke = "tetsu-no-uke";
         public const string Kansatsu = "kansatsu";
 
+        /// <summary>The reach the recorded slice printed on its three near cards (v4.2's 近, N 0〜1 since v4.3).</summary>
+        public const string NearGlyph = "近";
+
         public static readonly IList<DemoCard> All = new List<DemoCard>
         {
             new DemoCard
@@ -49,13 +52,13 @@ namespace Depiction
                 DefId = Kesagiri, Name = "袈裟斬り", Cost = 1, Kind = CardKind.Attack, Aim = CardAim.Single,
                 TypeLabel = "攻撃・敵単体", Description = "敵に 6 ダメージ。ターン最初なら +3。",
                 ValueText = "6", TraitText = "初手 +3", Trait = TraitCondition.FirstCardOfTurn,
-                RequiredRange = RangeSide.Near,
+                RequiredRangeGlyph = NearGlyph,
             },
             new DemoCard
             {
                 DefId = Daijodan, Name = "大上段", Cost = 2, Kind = CardKind.Attack, Aim = CardAim.Single,
                 TypeLabel = "攻撃・敵単体", Description = "敵に 13 ダメージ。振りかぶる一撃。",
-                ValueText = "13", RequiredRange = RangeSide.Near,
+                ValueText = "13", RequiredRangeGlyph = NearGlyph,
             },
             new DemoCard
             {
@@ -63,7 +66,7 @@ namespace Depiction
                 Affects = UnitSide.Player,
                 TypeLabel = "ムーブ・自分", Description = "遠間へ下がる。Guard 4 を得る。予兆が攻撃なら +3。",
                 ValueText = "4", TraitText = "予兆 +3", Trait = TraitCondition.AgainstAttackOmen,
-                RequiredRange = RangeSide.Near,
+                RequiredRangeGlyph = NearGlyph,
             },
             new DemoCard
             {
@@ -87,12 +90,6 @@ namespace Depiction
             return hash < 0 ? instanceId : instanceId.Substring(0, hash);
         }
 
-        /// <summary>How a range side is printed. The View prints the string as given.</summary>
-        public static string Glyph(RangeSide range)
-        {
-            return range == RangeSide.Near ? "近" : "遠";
-        }
-
         /// <summary>
         /// The face of one dealt card. <paramref name="instanceId"/> tells copies apart, so the hand
         /// can hold two of a kind and the screen still knows which one was dragged.
@@ -112,8 +109,7 @@ namespace Depiction
                 ValueText = def.ValueText,
                 TraitText = def.TraitText,
                 TraitLit = traitLit && def.Trait != TraitCondition.None,
-                RequiredRange = def.RequiredRange,
-                RequiredRangeGlyph = def.RequiredRange.HasValue ? Glyph(def.RequiredRange.Value) : "",
+                RequiredRangeGlyph = def.RequiredRangeGlyph,
             };
         }
     }

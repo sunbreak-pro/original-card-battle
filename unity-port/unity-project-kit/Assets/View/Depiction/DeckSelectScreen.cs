@@ -26,6 +26,7 @@ namespace Depiction.View
         private DeckBuilder _deck;
         private int _page;
         private CardDef _selected;
+        // Logged on every random deck (#579), so a deck worth keeping can be dealt again from its seed.
         private int _randomSeed = Environment.TickCount;
 
         private readonly RectTransform _filterRow;
@@ -75,7 +76,7 @@ namespace Depiction.View
 
             RectTransform presets = UiKit.Box(_root, "Presets", 0.64f, 0.10f, 0.98f, 0.155f);
             UiKit.Button(presets, "Prototype", "試作デッキ", () => Replace(DeckBuilder.Prototype()), BattleTheme.Panel, BattleTheme.Ink, 24, new Vector2(0f, 0f), new Vector2(0.32f, 1f));
-            UiKit.Button(presets, "Random", "ランダム", () => Replace(DeckBuilder.Random(_randomSeed++)), BattleTheme.Panel, BattleTheme.Ink, 24, new Vector2(0.34f, 0f), new Vector2(0.66f, 1f));
+            UiKit.Button(presets, "Random", "ランダム", RandomDeck, BattleTheme.Panel, BattleTheme.Ink, 24, new Vector2(0.34f, 0f), new Vector2(0.66f, 1f));
             UiKit.Button(presets, "Clear", "空にする", () => Replace(new DeckBuilder()), BattleTheme.Panel, BattleTheme.Ink, 24, new Vector2(0.68f, 0f), new Vector2(1f, 1f));
 
             RectTransform go = UiKit.Box(_root, "Go", 0.64f, 0.02f, 0.98f, 0.085f);
@@ -96,6 +97,13 @@ namespace Depiction.View
         {
             _page += by;
             Refresh();
+        }
+
+        private void RandomDeck()
+        {
+            int seed = _randomSeed++;
+            Debug.Log("[DeckSelectScreen] random deck / seed " + seed);
+            Replace(DeckBuilder.Random(seed));
         }
 
         private void Replace(DeckBuilder deck)

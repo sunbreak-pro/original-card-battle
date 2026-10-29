@@ -5,12 +5,14 @@
 //
 // The look is a stand-in: grey squares with one character for the kind, shades of grey and a single
 // accent colour (§6.10). The design lane and #90 own the real look; replacing it touches this file
-// and ExplorationPalette only.
+// and ExplorationPalette only. The 瘴気 gauge and the shade that closes in on the screen are already the
+// real look (battle-visual-v1 §2.5, #613): every colour, alpha and timing is Backdrop.MiasmaLook's.
 //
 // #626: the pick screen (an elite's two cards, the card pile's three, a 習熟訓練 mark's card) is drawn
 // from the CardPick Exploration.Bridge built, each card the battle's own CardView bound to its face.
 #if UNITY_2021_2_OR_NEWER
 using System;
+using Backdrop;
 using Depiction.View;
 using DungeonCore;
 using Exploration.Bridge;
@@ -32,6 +34,12 @@ namespace Exploration.View
         private const int PickColumns = 6;
         private const float PickCaption = 40f;
         private const float PickGap = 24f;
+        // The shade is drawn into a texture this small and stretched over the screen: it is a smooth falloff.
+        private const int ShadeWidth = 64;
+        private const int ShadeHeight = 36;
+        // The breath's clock moves at most this much in one Tick, so a pause (a battle on top) resumes it
+        // where it stopped instead of jumping.
+        private const double MaxBreathStepMs = 100.0;
 
         private readonly Action<int, RestChoice> _step;
         private readonly Action<ScreenAction> _act;
@@ -67,6 +75,28 @@ namespace Exploration.View
         private readonly RectTransform _overlayLayer;
         private readonly JournalDrawerView _journal;
 
+        // The 瘴気 gauge (§6.2) and the shade (battle-visual-v1 §2.5), moved every frame by Tick.
+        private readonly RectTransform _root;
+        private Image _gaugeAhead;
+        private Image _gaugeFill;
+        private int _gaugeFrom;
+        private int _gaugeTo = -1;
+        private int _gaugeNext;
+        private double _gaugeSince;
+        // The breath keeps its own phase (cycles done, 0 to 1), advanced by the elapsed time over the period
+        // of the reading it follows. Reading MiasmaLook.Breath on the absolute clock would jump whenever the
+        // period changes, and strobe through a rise, whose reading changes every frame.
+        private double _breathPhase;
+        private double _breathAt = -1.0;
+        private int _breathPercent = MiasmaLook.BreathFrom;
+        private Image _shade;
+        private Image _seep;
+        private Color32[] _shadePixels;
+        private Color32[] _seepPixels;
+        private float _shadeAspect;
+        private float _shadeRadius = -1f;
+        private float _shadeStrength = -1f;
+
         private ExplorationScreen _screen;
         private int _pinned = -1;
         private int _hovered = -1;
@@ -88,6 +118,7 @@ namespace Exploration.View
             _pickCard = pickCard;
 
             RectTransform root = UiKit.Box(canvas, "Exploration", 0f, 0f, 1f, 1f);
+            _root = root;
             UiKit.Fill(root, "Ground", ExplorationPalette.Ground);
 
             // Sibling order is draw order. The map and the detail go first, then the card layer that
@@ -97,8 +128,11 @@ namespace Exploration.View
             // 設定・セーブ cover all of that but the band, whose buttons switch between them.
 
             // ---- the map ----
+            // The map's ground is its own sibling so the shade lies between it and the map's nodes, under
+            // the band and the right column (battle-visual-v1 §2.5).
+            UiKit.Fill(UiKit.Box(root, "MapBack", 0.015f, 0.11f, 0.665f, 0.89f), "Back", ExplorationPalette.Panel);
+            BuildShade(root);
             _mapPanel = UiKit.Box(root, "Map", 0.015f, 0.11f, 0.665f, 0.89f);
-            UiKit.Fill(_mapPanel, "Back", ExplorationPalette.Panel);
             _mapArea = UiKit.Point(_mapPanel, "Area", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(MapWidth, MapHeight), Vector2.zero);
             _links = UiKit.Rect(_mapArea, "Links", Vector2.zero, Vector2.one);
@@ -128,6 +162,7 @@ namespace Exploration.View
             _miasmaLabel = UiKit.Text(UiKit.Box(miasma, "Label", 0f, 0.45f, 0.4f, 1f), "Text", 24, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
             _miasmaForecast = UiKit.Text(UiKit.Box(miasma, "Forecast", 0.4f, 0.45f, 1f, 1f), "Text", 18, TextAnchor.MiddleRight, ExplorationPalette.InkSoft);
             _gauge = UiKit.Box(miasma, "Gauge", 0.02f, 0.14f, 0.98f, 0.40f);
+            BuildGauge();
 
             // Three short lines: HP and the training marks, stamina, and how max stamina is made up.
             RectTransform body = UiKit.Box(band, "Body", 0.54f, 0f, 0.77f, 1f);
@@ -183,7 +218,7 @@ namespace Exploration.View
             DrawPips(screen.TimeLeft, screen.TimeLimit);
             _miasmaLabel.text = screen.Miasma.Label;
             _miasmaForecast.text = screen.Miasma.ForecastLabel;
-            DrawGauge(screen.Miasma);
+            SetGauge(screen.Miasma);
             _hpLabel.text = screen.HpLabel;
             _staminaLabel.text = screen.StaminaLabel;
             _maxStaminaLabel.text = screen.MaxStaminaLabel;
@@ -223,22 +258,158 @@ namespace Exploration.View
             }
         }
 
-        private void DrawGauge(MiasmaGauge gauge)
+        // ---- the 瘴気 gauge and the shade (battle-visual-v1 §2.5, #613) ----
+
+        private static double NowMs => Time.unscaledTimeAsDouble * 1000.0;
+
+        /// <summary>Moves the gauge's rise and breath and the shade to this frame. Call once a frame.</summary>
+        public void Tick()
         {
-            UiKit.ClearChildren(_gauge);
-            UiKit.Fill(_gauge, "Back", ExplorationPalette.Empty);
-            UiKit.Image(_gauge, "Next", ProceduralArt.White, ExplorationPalette.AccentGhost,
-                Vector2.zero, new Vector2(Mathf.Clamp01(gauge.NextFill), 1f));
-            UiKit.Image(_gauge, "Fill", ProceduralArt.White, ExplorationPalette.Accent,
-                Vector2.zero, new Vector2(Mathf.Clamp01(gauge.Fill), 1f));
-            for (int i = 0; i < gauge.StepLines.Count; i++)
+            if (_gaugeTo < 0) return;
+            double now = NowMs;
+            float shown = MiasmaLook.Rise(_gaugeFrom, _gaugeTo, now - _gaugeSince);
+            float fill = Mathf.Clamp01(shown / MiasmaLook.DeathAt);
+            float next = Mathf.Clamp01(_gaugeNext / (float)MiasmaLook.DeathAt);
+            float breath = AdvanceBreath(now);
+
+            // The fill's alpha and the shade's inner edge breathe as MiasmaLook.FillAlpha and
+            // MiasmaLook.ShadeAt(percent, ms) do, but on the view's own phase-continuous breath.
+            Color colour = ExplorationPalette.Of(MiasmaLook.FillAt(Mathf.RoundToInt(shown)));
+            colour.a *= 1f - MiasmaLook.BreathDepth * breath;
+            _gaugeFill.color = colour;
+            _gaugeFill.rectTransform.anchorMax = new Vector2(fill, 1f);
+            _gaugeAhead.rectTransform.anchorMin = new Vector2(fill, 0f);
+            _gaugeAhead.rectTransform.anchorMax = new Vector2(Mathf.Max(fill, next), 1f);
+
+            MiasmaShade still = MiasmaLook.ShadeAt(shown);
+            DrawShade(new MiasmaShade(still.Strength, still.VeilAlpha, still.EdgeAlpha,
+                still.InnerRadius - MiasmaLook.ShadeBreathRadius * breath, still.SeepAlpha));
+        }
+
+        /// <summary>
+        /// Moves the breath on to <paramref name="now"/> and returns it (0 at rest, 1 at the bottom of a breath).
+        /// It follows the settled reading, not the one easing up, so a rise only changes its pace. A breath starts
+        /// from rest when the reading reaches 80%, and one under way when it falls below 80% finishes at its last
+        /// pace instead of snapping back.
+        /// </summary>
+        private float AdvanceBreath(double now)
+        {
+            double elapsed = _breathAt < 0.0 ? 0.0 : Math.Min(Math.Max(now - _breathAt, 0.0), MaxBreathStepMs);
+            _breathAt = now;
+            bool breathing = _gaugeTo >= MiasmaLook.BreathFrom;
+            if (breathing) _breathPercent = _gaugeTo;
+            else if (_breathPhase <= 0.0) return 0f;
+
+            int period = MiasmaLook.BreathPeriodMs(_breathPercent);
+            _breathPhase += elapsed / period;
+            if (_breathPhase >= 1.0)
             {
-                float at = gauge.StepLineFills[i];
-                Image mark = UiKit.Image(_gauge, "Line" + gauge.StepLines[i], ProceduralArt.White, ExplorationPalette.Line,
-                    new Vector2(at, 0f), new Vector2(at, 1f));
+                if (!breathing)
+                {
+                    _breathPhase = 0.0;
+                    return 0f;
+                }
+                _breathPhase -= Math.Floor(_breathPhase);
+            }
+            return MiasmaLook.Breath(_breathPercent, _breathPhase * period);
+        }
+
+        /// <summary>The track, the fill, the share ahead and the nine ticks, made once; Tick moves them.</summary>
+        private void BuildGauge()
+        {
+            UiKit.Fill(_gauge, "Track", ExplorationPalette.Of(MiasmaLook.Track));
+            _gaugeAhead = UiKit.Image(_gauge, "Ahead", ProceduralArt.White, Color.clear, Vector2.zero, new Vector2(0f, 1f));
+            _gaugeFill = UiKit.Image(_gauge, "Fill", ProceduralArt.White, Color.clear, Vector2.zero, new Vector2(0f, 1f));
+            Color tickColour = ExplorationPalette.Of(MiasmaLook.Tick);
+            foreach (GaugeTick tick in MiasmaLook.Ticks())
+            {
+                // Full height at the 20% lines, 4/10 between, standing on the track's floor.
+                float at = tick.Percent / (float)MiasmaLook.DeathAt;
+                Image mark = UiKit.Image(_gauge, "Tick" + tick.Percent, ProceduralArt.White, tickColour,
+                    new Vector2(at, 0f), new Vector2(at, tick.Height));
                 mark.rectTransform.offsetMin = new Vector2(-1f, 0f);
                 mark.rectTransform.offsetMax = new Vector2(1f, 0f);
             }
+            UiKit.Frame(_gauge, ExplorationPalette.Of(MiasmaLook.Frame), 1f);
+        }
+
+        /// <summary>Takes a new reading: the fill climbs (or falls) to it over MiasmaLook.RiseMs from where it is drawn now.</summary>
+        private void SetGauge(MiasmaGauge gauge)
+        {
+            double now = NowMs;
+            if (_gaugeTo < 0)
+            {
+                _gaugeFrom = gauge.Percent;
+                _gaugeTo = gauge.Percent;
+                _gaugeSince = now - MiasmaLook.RiseMs;
+            }
+            else if (gauge.Percent != _gaugeTo)
+            {
+                _gaugeFrom = Mathf.RoundToInt(MiasmaLook.Rise(_gaugeFrom, _gaugeTo, now - _gaugeSince));
+                _gaugeTo = gauge.Percent;
+                _gaugeSince = now;
+            }
+            _gaugeNext = gauge.NextPercent;
+            _gaugeAhead.color = ExplorationPalette.Of(MiasmaLook.AheadColor(gauge.Percent, gauge.NextPercent));
+            Tick();
+        }
+
+        /// <summary>
+        /// The shade over the whole screen: the dark (MiasmaLook.ShadeColor) and the violet seep on top,
+        /// each a small texture stretched over the screen. Their pixels are redrawn only when the shade moves.
+        /// </summary>
+        private void BuildShade(RectTransform root)
+        {
+            _shadePixels = new Color32[ShadeWidth * ShadeHeight];
+            _seepPixels = new Color32[ShadeWidth * ShadeHeight];
+            _shade = UiKit.Image(root, "MiasmaShade", ShadeSprite(), Color.white, Vector2.zero, Vector2.one);
+            _seep = UiKit.Image(root, "MiasmaSeep", ShadeSprite(), Color.white, Vector2.zero, Vector2.one);
+        }
+
+        private static Sprite ShadeSprite()
+        {
+            var texture = new Texture2D(ShadeWidth, ShadeHeight, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            return Sprite.Create(texture, new Rect(0, 0, ShadeWidth, ShadeHeight), new Vector2(0.5f, 0.5f), 100f);
+        }
+
+        private void DrawShade(MiasmaShade shade)
+        {
+            Rect area = _root.rect;
+            float aspect = area.height > 0f ? area.width / area.height : 16f / 9f;
+            if (Mathf.Abs(aspect - _shadeAspect) < 0.001f
+                && Mathf.Abs(shade.InnerRadius - _shadeRadius) < 0.0005f
+                && Mathf.Abs(shade.Strength - _shadeStrength) < 0.0005f) return;
+            _shadeAspect = aspect;
+            _shadeRadius = shade.InnerRadius;
+            _shadeStrength = shade.Strength;
+
+            Color32 dark = ExplorationPalette.Of(MiasmaLook.ShadeColor);
+            Color32 seep = ExplorationPalette.Of(MiasmaLook.SeepColor);
+            for (int y = 0; y < ShadeHeight; y++)
+            {
+                for (int x = 0; x < ShadeWidth; x++)
+                {
+                    float distance = MiasmaLook.CornerDistance((x + 0.5f) / ShadeWidth, (y + 0.5f) / ShadeHeight, aspect);
+                    int i = y * ShadeWidth + x;
+                    dark.a = (byte)Mathf.RoundToInt(255f * MiasmaLook.ShadeAlphaAt(shade, distance));
+                    seep.a = (byte)Mathf.RoundToInt(255f * shade.SeepAlpha * MiasmaLook.EdgeFalloff(shade, distance));
+                    _shadePixels[i] = dark;
+                    _seepPixels[i] = seep;
+                }
+            }
+            Upload(_shade, _shadePixels);
+            Upload(_seep, _seepPixels);
+        }
+
+        private static void Upload(Image image, Color32[] pixels)
+        {
+            Texture2D texture = image.sprite.texture;
+            texture.SetPixels32(pixels);
+            texture.Apply();
         }
 
         // ---- the map ----

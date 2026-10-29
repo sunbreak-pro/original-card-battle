@@ -402,6 +402,30 @@ public class CriteriaTests
         Assert.That(DeskCalc.NoneInHand(20, 15, 6), Is.EqualTo(0));
     }
 
+    /// <summary>#582: the named lines are battle_core_v4 §13's numbers; a line moves only when the canon does.</summary>
+    [Test]
+    public void TheNamedLines_AreSection13sNumbers()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That((Criteria.NormalTurnsMin, Criteria.NormalTurnsMax), Is.EqualTo((6, 10)), "1");
+            Assert.That((Criteria.BossTurnsMin, Criteria.BossTurnsMax), Is.EqualTo((12, 18)), "2");
+            Assert.That(Criteria.CostOneLeadPt, Is.EqualTo(10), "3");
+            Assert.That(Criteria.PlaysPerTurnMin, Is.EqualTo(2), "4");
+            Assert.That(Criteria.TypeSpreadPt, Is.EqualTo(25), "6");
+            Assert.That(Criteria.NoStanceGapPt, Is.EqualTo(15), "7");
+            Assert.That(Criteria.LowStaminaWinRatePct, Is.EqualTo(50), "8");
+            Assert.That(Criteria.PairWinRatePct, Is.EqualTo(40), "9");
+            Assert.That(Criteria.PolicySwingPt, Is.EqualTo(15), "10");
+            Assert.That(Criteria.NoMoverHandPct, Is.EqualTo(25), "11");
+            Assert.That(Criteria.NoReachTurnsMax, Is.EqualTo(1), "12");
+            Assert.That(Criteria.KeepTwoLeadPt, Is.EqualTo(15), "13");
+            Assert.That(Criteria.ThreePlayTurnsMin, Is.EqualTo(2), "S13");
+            Assert.That((Criteria.ManyMovementPlays, Criteria.MovementDeficitPt), Is.EqualTo((2, 10)), "S14");
+            Assert.That((Criteria.StancePlaysMin, Criteria.StancePlaysMax), Is.EqualTo((1, 2)), "S16");
+        });
+    }
+
     [Test]
     public void TheTable_HasNineteenRows_AndMarksWhatABotCannotMeasure()
     {

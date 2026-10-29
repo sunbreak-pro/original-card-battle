@@ -76,13 +76,3 @@ export function getDerivationsForClass(
 ): DerivationEntry[] {
   return DERIVATION_REGISTRY[classType] ?? [];
 }
-
-/**
- * Get all derivation entries across all classes
- */
-export function getAllDerivations(): DerivationEntry[] {
-  return [
-    ...SWORDSMAN_DERIVATIONS,
-    ...MAGE_DERIVATIONS,
-  ];
-}

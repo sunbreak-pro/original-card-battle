@@ -19,14 +19,15 @@ namespace Depiction
         /// <summary>What a list with no card in it reads.</summary>
         public const string Empty = "なし";
 
-        /// <summary>C4's tabs: 山札 / 捨札 / 除外.</summary>
+        /// <summary>C4's tabs: 山札 / 捨札 / 除外. A pile kind with no word stops here rather than reading 山札 (#654).</summary>
         public static string TabLabel(PileKind pile)
         {
             switch (pile)
             {
+                case PileKind.Draw: return "山札";
                 case PileKind.Discard: return "捨札";
                 case PileKind.Exile: return "除外";
-                default: return "山札";
+                default: throw new System.ArgumentOutOfRangeException(nameof(pile), pile, "No tab word for the pile " + pile);
             }
         }
 
