@@ -6,21 +6,11 @@
  */
 
 import type { MasteryLevel, CardTag } from '@/types/cardTypes';
-import type { Depth } from '@/types/campTypes';
 import type { ElementType } from '@/types/characterTypes';
 
 // ============================================================
 // Magic & Mastery Constants
 // ============================================================
-
-/** Magic power multipliers by depth */
-export const MAGIC_MULTIPLIERS: Record<Depth, number> = {
-  1: 1,
-  2: 2,
-  3: 4,
-  4: 8,
-  5: 16,
-};
 
 /** Use count thresholds for mastery level progression */
 export const MASTERY_THRESHOLDS = {
@@ -44,67 +34,9 @@ export const MASTERY_BONUSES: Record<MasteryLevel, number> = {
 // Element Constants
 // ============================================================
 
-/** Element Japanese display names */
-export const ELEMENT_LABEL_MAP: Record<ElementType, string> = {
-  physics: "物理",
-  slash: "斬撃",
-  impact: "打撃",
-  guard: "防御",
-  fire: "火",
-  ice: "氷",
-  lightning: "雷",
-  dark: "闇",
-  light: "光",
-  buff: "バフ",
-  debuff: "デバフ",
-  heal: "回復",
-  attack: "攻撃",
-  classAbility: "固有技",
-  chain: "連鎖",
-};
-
-/** Element CSS colors */
-export const ELEMENT_COLOR_MAP: Record<ElementType, string> = {
-  physics: "#c0c0c0",
-  slash: "#e0e0e0",
-  impact: "#a0a0a0",
-  guard: "#4682b4",
-  fire: "#ff4500",
-  ice: "#00bfff",
-  lightning: "#ffd700",
-  dark: "#6a0dad",
-  light: "#fffacd",
-  buff: "#32cd32",
-  debuff: "#dc143c",
-  heal: "#00fa9a",
-  attack: "#ff6b6b",
-  classAbility: "#ffd93d",
-  chain: "#6bcb77",
-};
-
 /** Magic elements that can trigger Mage resonance chain */
 export const MAGIC_ELEMENTS: ReadonlySet<ElementType> = new Set([
   "fire", "ice", "lightning", "dark", "light",
-]);
-
-/** Physical elements used by Swordsman class */
-export const PHYSICAL_ELEMENTS: ReadonlySet<ElementType> = new Set([
-  "physics", "guard",
-]);
-
-/** Utility elements (non-combat element types) */
-export const UTILITY_ELEMENTS: ReadonlySet<ElementType> = new Set([
-  "buff", "debuff", "heal",
-]);
-
-/** Functional elements used for card effect classification */
-export const FUNCTIONAL_ELEMENTS: ReadonlySet<ElementType> = new Set([
-  "attack", "guard", "buff", "debuff", "heal",
-]);
-
-/** Class ability elements */
-export const CLASS_ABILITY_ELEMENTS: ReadonlySet<ElementType> = new Set([
-  "classAbility", "chain",
 ]);
 
 // ============================================================

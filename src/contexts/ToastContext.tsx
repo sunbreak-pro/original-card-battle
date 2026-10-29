@@ -175,30 +175,3 @@ export const useToast = () => {
   }
   return context;
 };
-
-// ============================================================================
-// Helper Hook for Achievement Toasts
-// ============================================================================
-
-/**
- * Hook to easily show achievement toasts
- */
-// eslint-disable-next-line react-refresh/only-export-components
-export const useAchievementToast = () => {
-  const { addToast } = useToast();
-
-  const showAchievement = useCallback(
-    (name: string, description: string, icon?: string) => {
-      return addToast({
-        type: 'achievement',
-        title: name,
-        message: description,
-        icon: icon || '🏆',
-        duration: 5000,
-      });
-    },
-    [addToast],
-  );
-
-  return { showAchievement };
-};

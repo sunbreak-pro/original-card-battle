@@ -68,12 +68,6 @@ export const BLEED_DAMAGE_RATE = 0.05;
 // Encounter Constants
 // ============================================================
 
-/** Boss encounter index */
-export const BOSS_ENCOUNTER_INDEX = 7;
-
-/** Group encounter interval */
-export const GROUP_ENCOUNTER_INTERVAL = 3;
-
 /** Maximum turn order display count */
 export const MAX_TURN_ORDER_DISPLAY = 4;
 

@@ -10,7 +10,7 @@ import type {
   PlayerResources,
 } from '@/types/characterTypes';
 import type { MagicStones } from '@/types/itemTypes';
-import type { ExplorationLimit, SanctuaryProgress } from '@/types/campTypes';
+import type { SanctuaryProgress } from '@/types/campTypes';
 
 /** Maximum lives by difficulty level */
 export const LIVES_BY_DIFFICULTY: Record<Difficulty, number> = {
@@ -56,16 +56,6 @@ export function createEmptyMagicStones(): MagicStones {
     medium: 0,
     large: 0,
     huge: 0,
-  };
-}
-
-/**
- * Create default exploration limit
- */
-export function createDefaultExplorationLimit(): ExplorationLimit {
-  return {
-    current: 0,
-    max: 10,
   };
 }
 

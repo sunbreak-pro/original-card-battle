@@ -36,28 +36,3 @@ export interface Achievement {
   hidden?: boolean;       // Hidden until unlocked
   condition?: string;     // Display condition text
 }
-
-// ============================================================================
-// Achievement State
-// ============================================================================
-
-export interface AchievementUnlock {
-  achievementId: string;
-  unlockedAt: number;     // Timestamp
-}
-
-export interface AchievementProgress {
-  unlockedAchievements: AchievementUnlock[];
-}
-
-// ============================================================================
-// Achievement Context Types
-// ============================================================================
-
-export interface AchievementContextValue {
-  unlockedIds: Set<string>;
-  isUnlocked: (id: string) => boolean;
-  unlockAchievement: (id: string) => void;
-  getUnlockDate: (id: string) => number | null;
-  getProgress: () => AchievementProgress;
-}
