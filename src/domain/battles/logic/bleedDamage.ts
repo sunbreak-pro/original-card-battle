@@ -12,7 +12,3 @@ export function calculateBleedDamage(
   const bleedDamage = Math.floor(maxHp * BLEED_DAMAGE_RATE) * stacks;
   return bleedDamage;
 }
-
-export function hasBleed(buffDebuffs: BuffDebuffMap): boolean {
-  return buffDebuffs.has("bleed");
-}

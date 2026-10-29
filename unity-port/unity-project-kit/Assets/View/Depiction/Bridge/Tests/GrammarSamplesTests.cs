@@ -31,7 +31,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void EverySample_IsOneOfTheInitialForty_AndPlaysItsSystemAlone()
         {
-            var initial = new HashSet<string>(CardCatalog.All.Take(40).Select(d => d.Id));
+            var initial = new HashSet<string>(CardCatalog.Initial.Select(d => d.Id));
             foreach (GrammarSample sample in GrammarSamples.All)
             {
                 Assert.That(initial.Contains(sample.Card.Id), Is.True, sample.Label + ": a card a run starts with (§2)");

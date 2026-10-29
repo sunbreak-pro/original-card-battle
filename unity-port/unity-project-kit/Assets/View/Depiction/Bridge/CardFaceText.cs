@@ -222,27 +222,8 @@ namespace Depiction.Bridge
         /// <summary>§6.1: the condition in the short words ("間合い 2 以上", "敵が出血中", "連動 スタンス").</summary>
         public static string Condition(Trait trait, CardDef def)
         {
-            switch (trait.Condition)
-            {
-                case BattleCore.TraitCondition.GapAtMost:
-                    return trait.Threshold == 0 ? "間合い 0" : "間合い " + trait.Threshold + " 以下";
-                case BattleCore.TraitCondition.GapAtLeast: return "間合い " + trait.Threshold + " 以上";
-                case BattleCore.TraitCondition.Unguarded: return "敵の Guard 0";
-                case BattleCore.TraitCondition.Reserve: return "温存 残り " + trait.Threshold + " 以上";
-                case BattleCore.TraitCondition.Combo: return "連動 " + AttributeWord(trait.Attribute);
-                case BattleCore.TraitCondition.Moved: return "移動後";
-                case BattleCore.TraitCondition.OmenIs:
-                    return (IsStance(def) ? "置く時 " : "") + "予兆が" + OmenWord(trait.Omen);
-                case BattleCore.TraitCondition.Desperate: return "死力";
-                case BattleCore.TraitCondition.FirstPlay: return "初手";
-                case BattleCore.TraitCondition.Finisher: return "締め";
-                case BattleCore.TraitCondition.Broken: return "崩し後";
-                case BattleCore.TraitCondition.Chain: return "連打";
-                case BattleCore.TraitCondition.Thin: return "手薄";
-                case BattleCore.TraitCondition.FoeHas: return "敵が" + WatchWord(trait) + "中";
-                case BattleCore.TraitCondition.SelfHas: return "自分が" + WatchWord(trait) + "中";
-                default: throw new ArgumentOutOfRangeException(nameof(trait), trait.Condition, "No short words for the trait condition " + trait.Condition);
-            }
+            if (trait == null) throw new ArgumentNullException(nameof(trait));
+            return ConditionWords.Of(trait.Condition).Box(trait, def);
         }
 
         /// <summary>§6.1: the effect after the arrow ("威力 +5", "敵に脆化 2", "重撃").</summary>
@@ -296,32 +277,8 @@ namespace Depiction.Bridge
         /// <summary>§9: the condition as the clause before the comma ("隣り合っていれば", "いちばん近い敵の予兆が攻撃なら").</summary>
         public static string ConditionClause(Trait trait, CardDef def)
         {
-            switch (trait.Condition)
-            {
-                case BattleCore.TraitCondition.GapAtMost:
-                    return trait.Threshold == 0 ? "隣り合っていれば" : "間合い " + trait.Threshold + " 以下なら";
-                case BattleCore.TraitCondition.GapAtLeast: return "間合い " + trait.Threshold + " 以上なら";
-                case BattleCore.TraitCondition.Unguarded: return "敵の Guard が 0 なら";
-                case BattleCore.TraitCondition.Reserve: return "出した後スタミナが " + trait.Threshold + " 以上残れば";
-                case BattleCore.TraitCondition.Combo: return "このターンに" + AttributeWord(trait.Attribute) + "の札を出していれば";
-                case BattleCore.TraitCondition.Moved: return "このターンにもう動いていれば";
-                case BattleCore.TraitCondition.OmenIs:
-                {
-                    string kind = OmenWord(trait.Omen);
-                    if (IsStance(def)) return "置くときに敵の予兆が" + kind + "なら";
-                    if (!Directed(def)) return "いちばん近い敵の予兆が" + kind + "なら";
-                    return "敵の予兆が" + kind + "なら";
-                }
-                case BattleCore.TraitCondition.Desperate: return "出す前のスタミナが " + Constants.DesperateThreshold + " 以下なら";
-                case BattleCore.TraitCondition.FirstPlay: return "このターン最初に出す札なら";
-                case BattleCore.TraitCondition.Finisher: return "このターン " + Constants.FinisherPlayNumber + " 枚目以降に出すなら";
-                case BattleCore.TraitCondition.Broken: return "敵のスタミナが " + Constants.BrokenBelow + " 未満なら";
-                case BattleCore.TraitCondition.Chain: return "このターン直前に出した札も" + AttributeWord(def.Attribute) + "なら";
-                case BattleCore.TraitCondition.Thin: return "出した直後の手札が " + Constants.ThinHandMax + " 枚以下なら";
-                case BattleCore.TraitCondition.FoeHas: return "敵が" + WatchWord(trait) + "中なら";
-                case BattleCore.TraitCondition.SelfHas: return "自分が" + WatchWord(trait) + "中なら";
-                default: throw new ArgumentOutOfRangeException(nameof(trait), trait.Condition, "No clause for the trait condition " + trait.Condition);
-            }
+            if (trait == null) throw new ArgumentNullException(nameof(trait));
+            return ConditionWords.Of(trait.Condition).Clause(trait, def);
         }
 
         /// <summary>§9: what the trait does to the card's printed values ("この札の威力 13 → 18").</summary>
@@ -439,22 +396,11 @@ namespace Depiction.Bridge
             if (!words.Contains(word)) words.Add(word);
         }
 
+        /// <summary>The glossary word a condition is underlined as (§7.5), or "" when its term is none (間合い, 予兆, 敵の状態 …).</summary>
         private static string TermOfCondition(BattleCore.TraitCondition condition)
         {
-            switch (condition)
-            {
-                case BattleCore.TraitCondition.Reserve: return "温存";
-                case BattleCore.TraitCondition.Combo: return "連動";
-                case BattleCore.TraitCondition.Moved: return "移動後";
-                case BattleCore.TraitCondition.Desperate: return "死力";
-                case BattleCore.TraitCondition.FirstPlay: return "初手";
-                case BattleCore.TraitCondition.Finisher: return "締め";
-                case BattleCore.TraitCondition.Broken: return "崩し後";
-                case BattleCore.TraitCondition.Chain: return "連打";
-                case BattleCore.TraitCondition.Thin: return "手薄";
-                // Empty is right here: the other conditions (間合い, 予兆, 相手の状態...) are no glossary word.
-                default: return "";
-            }
+            ConditionWords words = ConditionWords.Of(condition);
+            return words.Glossed ? words.Term : "";
         }
 
         /// <summary>
@@ -578,7 +524,11 @@ namespace Depiction.Bridge
             return def.Attribute.HasFlag(BattleAttribute.Stance);
         }
 
-        /// <summary>battle-visual-v1 §2.2: the four attributes as the screen names them.</summary>
+        /// <summary>
+        /// battle-visual-v1 §2.2 (#575): the four attributes as the screen names them. The one place the
+        /// words are written: the card's kind line, the deck screen, the result screen's breakdown and
+        /// the trait's short line all read them here.
+        /// </summary>
         public static string AttributeWord(BattleAttribute attribute)
         {
             if (attribute.HasFlag(BattleAttribute.Attack)) return "攻撃";
@@ -596,6 +546,168 @@ namespace Depiction.Bridge
         private static string WatchWord(Trait trait)
         {
             return trait.Watch.HasValue ? trait.Watch.Value.ToLabel() : "";
+        }
+
+        // ---- the words of a trait condition (#575) ---------------------------------------------
+
+        /// <summary>
+        /// One trait condition in each of the forms the screen words it (#575): the short line of a
+        /// fired trait and the hand's trait text (CoreText.ConditionWord, "間合い0"), the trait box
+        /// (§6.1, "間合い 0"), the hover and detail clause (§9, "隣り合っていれば"), and the word the
+        /// condition is known by (<see cref="Term"/>). One row a condition in <see cref="Table"/>, so a
+        /// condition added to BattleCore without a row stops at <see cref="Of"/> instead of leaving one
+        /// of the forms empty.
+        /// </summary>
+        public sealed class ConditionWords
+        {
+            public ConditionWords(Func<Trait, string> shortForm, Func<Trait, CardDef, string> box,
+                Func<Trait, CardDef, string> clause, string term, bool glossed)
+            {
+                Short = shortForm;
+                Box = box;
+                Clause = clause;
+                Term = term;
+                Glossed = glossed;
+            }
+
+            /// <summary>The fired trait's line and the hand's trait text, with no spaces ("間合い2以上", "残4").</summary>
+            public Func<Trait, string> Short { get; }
+
+            /// <summary>§6.1 the trait box ("間合い 2 以上", "温存 残り 4 以上").</summary>
+            public Func<Trait, CardDef, string> Box { get; }
+
+            /// <summary>§9 the clause before the comma ("間合い 2 以上なら").</summary>
+            public Func<Trait, CardDef, string> Clause { get; }
+
+            /// <summary>The word the condition is known by ("間合い", "温存").</summary>
+            public string Term { get; }
+
+            /// <summary>The term is a §7.5 glossary word: underlined on the card and listed in the detail.</summary>
+            public bool Glossed { get; }
+
+            /// <summary>The row of <paramref name="condition"/>. A condition BattleCore added without a row stops here.</summary>
+            public static ConditionWords Of(BattleCore.TraitCondition condition)
+            {
+                ConditionWords words;
+                if (Table.TryGetValue(condition, out words)) return words;
+                throw new ArgumentOutOfRangeException(nameof(condition), condition, "No words for the trait condition " + condition);
+            }
+
+            /// <summary>The attribute in the short line: the same word as everywhere, in brackets ("(攻撃)").</summary>
+            private static string Bracketed(BattleAttribute attribute) => "(" + AttributeWord(attribute) + ")";
+
+            /// <summary>Every condition BattleCore knows, one row each.</summary>
+            public static readonly IReadOnlyDictionary<BattleCore.TraitCondition, ConditionWords> Table =
+                new Dictionary<BattleCore.TraitCondition, ConditionWords>
+                {
+                    {
+                        BattleCore.TraitCondition.GapAtMost, new ConditionWords(
+                            t => t.Threshold == 0 ? "間合い0" : "間合い" + t.Threshold + "以下",
+                            (t, d) => t.Threshold == 0 ? "間合い 0" : "間合い " + t.Threshold + " 以下",
+                            (t, d) => t.Threshold == 0 ? "隣り合っていれば" : "間合い " + t.Threshold + " 以下なら",
+                            "間合い", glossed: false)
+                    },
+                    {
+                        BattleCore.TraitCondition.GapAtLeast, new ConditionWords(
+                            t => "間合い" + t.Threshold + "以上",
+                            (t, d) => "間合い " + t.Threshold + " 以上",
+                            (t, d) => "間合い " + t.Threshold + " 以上なら",
+                            "間合い", glossed: false)
+                    },
+                    {
+                        BattleCore.TraitCondition.Unguarded, new ConditionWords(
+                            t => "無防備",
+                            (t, d) => "敵の Guard 0",
+                            (t, d) => "敵の Guard が 0 なら",
+                            "無防備", glossed: false)
+                    },
+                    {
+                        BattleCore.TraitCondition.Reserve, new ConditionWords(
+                            t => "残" + t.Threshold,
+                            (t, d) => "温存 残り " + t.Threshold + " 以上",
+                            (t, d) => "出した後スタミナが " + t.Threshold + " 以上残れば",
+                            "温存", glossed: true)
+                    },
+                    {
+                        BattleCore.TraitCondition.Combo, new ConditionWords(
+                            t => "連動" + Bracketed(t.Attribute),
+                            (t, d) => "連動 " + AttributeWord(t.Attribute),
+                            (t, d) => "このターンに" + AttributeWord(t.Attribute) + "の札を出していれば",
+                            "連動", glossed: true)
+                    },
+                    {
+                        BattleCore.TraitCondition.Moved, new ConditionWords(
+                            t => "移動後",
+                            (t, d) => "移動後",
+                            (t, d) => "このターンにもう動いていれば",
+                            "移動後", glossed: true)
+                    },
+                    {
+                        BattleCore.TraitCondition.OmenIs, new ConditionWords(
+                            t => "予兆" + OmenWord(t.Omen),
+                            (t, d) => (IsStance(d) ? "置く時 " : "") + "予兆が" + OmenWord(t.Omen),
+                            (t, d) => (IsStance(d) ? "置くときに敵の"
+                                : !Directed(d) ? "いちばん近い敵の"
+                                : "敵の") + "予兆が" + OmenWord(t.Omen) + "なら",
+                            "予兆", glossed: false)
+                    },
+                    {
+                        BattleCore.TraitCondition.Desperate, new ConditionWords(
+                            t => "死力",
+                            (t, d) => "死力",
+                            (t, d) => "出す前のスタミナが " + Constants.DesperateThreshold + " 以下なら",
+                            "死力", glossed: true)
+                    },
+                    {
+                        BattleCore.TraitCondition.FirstPlay, new ConditionWords(
+                            t => "初手",
+                            (t, d) => "初手",
+                            (t, d) => "このターン最初に出す札なら",
+                            "初手", glossed: true)
+                    },
+                    {
+                        BattleCore.TraitCondition.Finisher, new ConditionWords(
+                            t => "締め",
+                            (t, d) => "締め",
+                            (t, d) => "このターン " + Constants.FinisherPlayNumber + " 枚目以降に出すなら",
+                            "締め", glossed: true)
+                    },
+                    {
+                        BattleCore.TraitCondition.Broken, new ConditionWords(
+                            t => "崩し後",
+                            (t, d) => "崩し後",
+                            (t, d) => "敵のスタミナが " + Constants.BrokenBelow + " 未満なら",
+                            "崩し後", glossed: true)
+                    },
+                    {
+                        BattleCore.TraitCondition.Chain, new ConditionWords(
+                            t => "連打",
+                            (t, d) => "連打",
+                            (t, d) => "このターン直前に出した札も" + AttributeWord(d.Attribute) + "なら",
+                            "連打", glossed: true)
+                    },
+                    {
+                        BattleCore.TraitCondition.Thin, new ConditionWords(
+                            t => "手薄",
+                            (t, d) => "手薄",
+                            (t, d) => "出した直後の手札が " + Constants.ThinHandMax + " 枚以下なら",
+                            "手薄", glossed: true)
+                    },
+                    {
+                        BattleCore.TraitCondition.FoeHas, new ConditionWords(
+                            t => "相手" + WatchWord(t),
+                            (t, d) => "敵が" + WatchWord(t) + "中",
+                            (t, d) => "敵が" + WatchWord(t) + "中なら",
+                            "敵の状態", glossed: false)
+                    },
+                    {
+                        BattleCore.TraitCondition.SelfHas, new ConditionWords(
+                            t => "自分" + WatchWord(t),
+                            (t, d) => "自分が" + WatchWord(t) + "中",
+                            (t, d) => "自分が" + WatchWord(t) + "中なら",
+                            "自分の状態", glossed: false)
+                    },
+                };
         }
     }
 }

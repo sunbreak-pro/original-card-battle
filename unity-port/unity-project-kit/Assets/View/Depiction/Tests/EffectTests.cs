@@ -155,6 +155,49 @@ namespace Depiction.Tests
         }
 
         [Test]
+        public void AnEnemyBlowItsOwnMoveFollows_LeavesOutTheReturn_AndTheOmenFadesBesideTheMove()
+        {
+            // §5.4 順 2 (#587): 退き撃ち hits, then backs off one. No §5.5 順 8 return: the move starts on the
+            // number + 80 from where the lunge left the enemy, and the omen fades beside it.
+            var backstep = new DepictionEvent { Kind = DepictionEventKind.EnemyAction, After = new DepictionFrame() };
+            backstep.Cues.Add(new Cue { Kind = CueKind.EnemyWindup, Target = UnitSide.Enemy, System = StrikeSystem.Thrust });
+            backstep.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Enemy, Target = UnitSide.Player, Intensity = 2 });
+            var wound = new Cue { Kind = CueKind.Hit, Target = UnitSide.Player, Amount = 6, Intensity = 2, HpAfter = 44 };
+            backstep.Cues.Add(wound);
+            backstep.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 2, EnemyCellAfter = 5, GapAfter = 2, CellsMoved = 1 });
+            Assert.That(EffectPlan.EnemyMoveFollows(backstep, wound), Is.True);
+            Assert.That(EffectPlan.MoveFollows(backstep, wound), Is.True, "the player's rule reads any move next");
+            Assert.That(Steps(backstep), Is.EqualTo(new[]
+            {
+                (EffectId.EnemyMotion, 1), (EffectId.EnemyLunge, 1), (EffectId.StrikeShape, 1), (EffectId.HitStop, 1),
+                (EffectId.HpDrain, 1), (EffectId.OmenSpend, 1), (EffectId.FloorMove, 1), (EffectId.GapRecount, 1),
+            }));
+            List<EffectStep> steps = EffectPlan.StepsOf(backstep);
+            Assert.That(steps.Single(s => s.Id == EffectId.HpDrain).LeadMs, Is.EqualTo(EffectPlan.NextFaceLeadMs));
+            Assert.That(steps.Single(s => s.Id == EffectId.OmenSpend).LeadMs, Is.EqualTo(0f), "beside the move, not before it");
+            Assert.That(EffectPlan.BlockingMs(backstep, EffectSwitches.AllOn()), Is.EqualTo(220f + 100f + 120f + 30f + 80f + 160f + 150f));
+
+            // A push moves the player, not the enemy: the enemy still spends its omen and draws back first.
+            var shove = new DepictionEvent { Kind = DepictionEventKind.EnemyAction, After = new DepictionFrame() };
+            shove.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Enemy, Target = UnitSide.Player, Intensity = 2 });
+            var shoved = new Cue { Kind = CueKind.Hit, Target = UnitSide.Player, Amount = 3, Intensity = 2, HpAfter = 47 };
+            shove.Cues.Add(shoved);
+            shove.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, Pushed = true, PlayerCellAfter = 1, EnemyCellAfter = 3, GapAfter = 1, CellsMoved = 1 });
+            Assert.That(EffectPlan.EnemyMoveFollows(shove, shoved), Is.False);
+            List<EffectStep> pushSteps = EffectPlan.StepsOf(shove);
+            Assert.That(pushSteps.Select(s => s.Id), Does.Contain(EffectId.EnemyReturn));
+            Assert.That(pushSteps.Single(s => s.Id == EffectId.HpDrain).LeadMs, Is.Null);
+            Assert.That(pushSteps.Single(s => s.Id == EffectId.OmenSpend).LeadMs, Is.Null);
+
+            // The player's blow on the enemy is not the enemy's: the rule asks only about a blow on the player.
+            var feint = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
+            var cut = new Cue { Kind = CueKind.Hit, Target = UnitSide.Enemy, Amount = 5, Intensity = 2, HpAfter = 45 };
+            feint.Cues.Add(cut);
+            feint.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, PlayerCellAfter = 1, EnemyCellAfter = 4, GapAfter = 2, CellsMoved = 1 });
+            Assert.That(EffectPlan.EnemyMoveFollows(feint, cut), Is.False);
+        }
+
+        [Test]
         public void ATraitBeforeTheFirstFace_ShowsBesideTheRelease()
         {
             // §5.4 順 0 / §5.9 順 1 (#499): the trait's cue starts as the card is released, so the release
@@ -416,18 +459,24 @@ namespace Depiction.Tests
         }
 
         [Test]
-        public void AMoveWithoutAFloor_Waits320_AndFlipsTheTagFor150()
+        public void AMoveWithoutAFloor_IsAScriptBug_AndStops()
         {
+            // The lengths of the move without a floor stay in the catalog as they were (#577 left them).
             Assert.That(EffectCatalog.Of(EffectId.RangeSwitch).Ms, Is.EqualTo(320f));
             Assert.That(EffectCatalog.Of(EffectId.RangeTagFlip).Ms, Is.EqualTo(150f));
             Assert.That(EffectCatalog.Of(EffectId.RangeTagFlip).Blocking, Is.True);
 
-            // The fixed slice draws no floor: the figure moves to its slot, then the tag flips.
+            // #577: the near / far slots are gone and every source draws the floor (the fixed slice too),
+            // so a move that names no cells has nowhere to go: the plan stops on it.
             var slot = new DepictionEvent { Kind = DepictionEventKind.PlayCard, After = new DepictionFrame() };
-            slot.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, RangeAfter = RangeSide.Far, RangeGlyphAfter = "遠" });
+            slot.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, RangeGlyphAfter = "2" });
             Assert.That(EffectPlan.MovesOnFloor(slot.Cues[0]), Is.False);
-            Assert.That(Steps(slot), Is.EqualTo(new[] { (EffectId.CardRelease, 1), (EffectId.RangeSwitch, 1), (EffectId.RangeTagFlip, 1) }));
-            Assert.That(EffectPlan.BlockingMs(slot, EffectSwitches.AllOn()), Is.EqualTo(160f + 320f + 150f));
+            Assert.Throws<ArgumentException>(() => EffectPlan.StepsOf(slot));
+
+            // The fixed slice's step back walks one cell on the floor, then counts N again.
+            DepictionEvent step = TurnSliceScript.Build().Events[3];
+            Assert.That(Steps(step), Does.Contain((EffectId.FloorMove, 1)));
+            Assert.That(Steps(step), Does.Contain((EffectId.GapRecount, 1)));
         }
 
         [Test]
@@ -492,7 +541,16 @@ namespace Depiction.Tests
             foreach (CueKind kind in Enum.GetValues(typeof(CueKind)))
             {
                 var ev = new DepictionEvent { Kind = DepictionEventKind.EnemyAction, After = new DepictionFrame() };
-                ev.Cues.Add(new Cue { Kind = kind, Source = UnitSide.Enemy, Target = UnitSide.Player, Amount = 1, Intensity = 1 });
+                var cue = new Cue { Kind = kind, Source = UnitSide.Enemy, Target = UnitSide.Player, Amount = 1, Intensity = 1 };
+                if (kind == CueKind.RangeSwitch)
+                {
+                    // A move always names the cells it walks to (#577: every source draws the floor).
+                    cue.PlayerCellAfter = 2;
+                    cue.EnemyCellAfter = 4;
+                    cue.GapAfter = 1;
+                    cue.CellsMoved = 1;
+                }
+                ev.Cues.Add(cue);
                 Assert.DoesNotThrow(() => EffectPlan.StepsOf(ev), kind.ToString());
             }
         }

@@ -5,7 +5,7 @@
  * When a card reaches a certain mastery level, it can unlock derived cards.
  */
 
-import type { Card, MasteryLevel } from "@/types/cardTypes";
+import type { Card } from "@/types/cardTypes";
 
 /**
  * Result of checking derivation unlocks after a battle
@@ -77,57 +77,4 @@ export function checkAllDerivationUnlocks(
   }
 
   return allUnlocks;
-}
-
-/**
- * Get the derivation chain for a card (ancestors and descendants)
- * @param cardTypeId - The card type ID to trace
- * @param allCards - All available card definitions
- * @returns Array of card type IDs in the derivation chain
- */
-export function getDerivationChain(
-  cardTypeId: string,
-  allCards: Record<string, Card>
-): string[] {
-  const chain: string[] = [];
-  const card = allCards[cardTypeId];
-  if (!card) return chain;
-
-  // Trace ancestors
-  let current = card;
-  while (current.derivedFrom) {
-    chain.unshift(current.derivedFrom);
-    const parent = allCards[current.derivedFrom];
-    if (!parent) break;
-    current = parent;
-  }
-
-  // Add self
-  chain.push(cardTypeId);
-
-  // Add descendants (breadth-first)
-  const queue = [cardTypeId];
-  while (queue.length > 0) {
-    const currentId = queue.shift()!;
-    const currentCard = allCards[currentId];
-    if (currentCard?.derivesInto) {
-      for (const childId of currentCard.derivesInto) {
-        if (!chain.includes(childId)) {
-          chain.push(childId);
-          queue.push(childId);
-        }
-      }
-    }
-  }
-
-  return chain;
-}
-
-/**
- * Get the mastery level required to unlock a derived card
- */
-export function getRequiredMasteryForDerivation(
-  derivedCard: Card
-): MasteryLevel {
-  return derivedCard.unlockMasteryLevel ?? 2;
 }

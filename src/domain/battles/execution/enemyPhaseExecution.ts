@@ -17,7 +17,6 @@ import {
     addOrUpdateBuffDebuff,
 } from "../logic/buffLogic";
 import { calculateDamage, applyDamageAllocation } from "../calculators/damageCalculation";
-import { calculateBleedDamage } from "../logic/bleedDamage";
 import { enemyAction } from "../../characters/enemy/logic/enemyAI";
 import { GUARD_INIT_MULTIPLIER } from "../../../constants";
 
@@ -74,13 +73,6 @@ export interface EnemyAttackResult {
     hpDamage: number;
     isCritical: boolean;
     reflectDamage: number;
-}
-
-export interface EnemyActionResult {
-    attackResult: EnemyAttackResult | null;
-    guardGain: number;
-    debuffsToApply: BuffDebuffState[];
-    bleedDamage: number;
 }
 
 // ============================================================================
@@ -178,48 +170,6 @@ export function calculateEnemyAttackDamage(
 }
 
 /**
- * Process a single enemy action and return all effects
- *
- * @param attacker - BattleStats of the attacking enemy
- * @param defender - BattleStats of the defending player
- * @param action - Enemy action to execute
- * @param enemyMaxHp - Maximum HP of the enemy (for bleed calculation)
- * @param enemyBuffs - Current buffs/debuffs on the enemy
- */
-export function processEnemyAction(
-    attacker: BattleStats,
-    defender: BattleStats,
-    action: EnemyAction,
-    enemyMaxHp: number,
-    enemyBuffs: BuffDebuffMap
-): EnemyActionResult {
-    if (isGuardOnlyAction(action)) {
-        return {
-            attackResult: null,
-            guardGain: action.guardGain ?? 0,
-            debuffsToApply: [],
-            bleedDamage: 0,
-        };
-    }
-
-    // Calculate attack damage
-    const attackResult = calculateEnemyAttackDamage(attacker, defender, action);
-
-    // Collect debuffs to apply
-    const debuffsToApply = action.applyDebuffs || [];
-
-    // Calculate bleed damage
-    const bleedDamage = calculateBleedDamage(enemyMaxHp, enemyBuffs);
-
-    return {
-        attackResult,
-        guardGain: action.guardGain || 0,
-        debuffsToApply,
-        bleedDamage,
-    };
-}
-
-/**
  * Apply debuffs from enemy action to player
  */
 export function applyEnemyDebuffsToPlayer(
@@ -247,11 +197,4 @@ export function applyEnemyDebuffsToPlayer(
     });
 
     return newBuffs;
-}
-
-/**
- * Check if enemy can act (not stunned)
- */
-export function canEnemyAct(enemyBuffs: BuffDebuffMap): boolean {
-    return canAct(enemyBuffs);
 }

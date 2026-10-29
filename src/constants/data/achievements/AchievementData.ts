@@ -238,35 +238,3 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: '1ターンで敵を倒す',
   },
 ];
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Get achievement by ID
- */
-export function getAchievementById(id: string): Achievement | undefined {
-  return ACHIEVEMENTS.find(a => a.id === id);
-}
-
-/**
- * Get achievements by category
- */
-export function getAchievementsByCategory(category: Achievement['category']): Achievement[] {
-  return ACHIEVEMENTS.filter(a => a.category === category);
-}
-
-/**
- * Get achievements by rarity
- */
-export function getAchievementsByRarity(rarity: Achievement['rarity']): Achievement[] {
-  return ACHIEVEMENTS.filter(a => a.rarity === rarity);
-}
-
-/**
- * Get total achievement count
- */
-export function getTotalAchievementCount(): number {
-  return ACHIEVEMENTS.length;
-}

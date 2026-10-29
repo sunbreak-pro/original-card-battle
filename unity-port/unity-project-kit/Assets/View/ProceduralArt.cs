@@ -24,44 +24,44 @@ public static class ProceduralArt
     private static Sprite _figureSpear;
     private static readonly Sprite[] Icons = new Sprite[4];
 
-    public static Sprite White => Cached(ref _white, () => Make(4, 4, (x, y) => Color.white));
+    public static Sprite White => Cached(ref _white, () => MakeSprite(4, 4, (x, y) => Color.white));
 
-    public static Sprite Circle => Cached(ref _circle, () => Make(64, 64, (x, y) =>
+    public static Sprite Circle => Cached(ref _circle, () => MakeSprite(64, 64, (x, y) =>
     {
-        float d = Dist(x, y, 32f, 32f) / 30f;
+        float d = Distance(x, y, 32f, 32f) / 30f;
         return Alpha(Mathf.Clamp01((1f - d) * 6f));
     }));
 
-    public static Sprite SoftCircle => Cached(ref _softCircle, () => Make(64, 64, (x, y) =>
+    public static Sprite SoftCircle => Cached(ref _softCircle, () => MakeSprite(64, 64, (x, y) =>
     {
-        float d = Dist(x, y, 32f, 32f) / 32f;
+        float d = Distance(x, y, 32f, 32f) / 32f;
         return Alpha(Mathf.Clamp01(1f - d * d));
     }));
 
     /// <summary>Radial lantern glow: alpha = (1 − r)².</summary>
-    public static Sprite Glow => Cached(ref _glow, () => Make(128, 128, (x, y) =>
+    public static Sprite Glow => Cached(ref _glow, () => MakeSprite(128, 128, (x, y) =>
     {
-        float d = Mathf.Clamp01(Dist(x, y, 64f, 64f) / 64f);
+        float d = Mathf.Clamp01(Distance(x, y, 64f, 64f) / 64f);
         float a = (1f - d) * (1f - d);
         return Alpha(a);
     }));
 
-    public static Sprite Shield => Cached(ref _shield, () => Make(64, 72, (x, y) =>
+    public static Sprite Shield => Cached(ref _shield, () => MakeSprite(64, 72, (x, y) =>
         Alpha(InsideShield(x / 64f, 1f - y / 72f, 0f) ? 1f : 0f)));
 
-    public static Sprite Figure => Cached(ref _figure, () => Make(140, 300, (x, y) => Alpha(InsideFigure(x, y, false) ? 1f : 0f)));
+    public static Sprite Figure => Cached(ref _figure, () => MakeSprite(140, 300, (x, y) => Alpha(InsideFigure(x, y, false) ? 1f : 0f)));
 
-    public static Sprite FigureWithSpear => Cached(ref _figureSpear, () => Make(140, 300, (x, y) => Alpha(InsideFigure(x, y, true) ? 1f : 0f)));
+    public static Sprite FigureWithSpear => Cached(ref _figureSpear, () => MakeSprite(140, 300, (x, y) => Alpha(InsideFigure(x, y, true) ? 1f : 0f)));
 
     public static Sprite Icon(IconKind kind)
     {
-        return Cached(ref Icons[(int)kind], () => Make(32, 32, (x, y) => Alpha(InsideIcon(kind, x, y) ? 1f : 0f)));
+        return Cached(ref Icons[(int)kind], () => MakeSprite(32, 32, (x, y) => Alpha(InsideIcon(kind, x, y) ? 1f : 0f)));
     }
 
     /// <summary>1×64 vertical gradient, top colour at the top.</summary>
     public static Sprite VerticalGradient(Color top, Color bottom)
     {
-        return Make(2, 64, (x, y) => Color.Lerp(bottom, top, y / 63f), FilterMode.Bilinear);
+        return MakeSprite(2, 64, (x, y) => Color.Lerp(bottom, top, y / 63f), FilterMode.Bilinear);
     }
 
     // ---- shape tests --------------------------------------------------------------
@@ -79,25 +79,25 @@ public static class ProceduralArt
     {
         // 140×300, y from the bottom (feet at y ≈ 0).
         float cx = 70f;
-        if (Ellipse(x, y, cx, 262f, 23f, 25f)) return true;                    // head
-        if (Rect(x, y, cx - 7f, 226f, cx + 7f, 244f)) return true;              // neck
+        if (InsideEllipse(x, y, cx, 262f, 23f, 25f)) return true;                    // head
+        if (InsideRect(x, y, cx - 7f, 226f, cx + 7f, 244f)) return true;              // neck
         float torsoHalf = Mathf.Lerp(34f, 26f, (y - 150f) / 80f);              // shoulders wider than waist
         if (y >= 148f && y <= 232f && Mathf.Abs(x - cx) <= torsoHalf) return true;
-        if (Rect(x, y, cx - 30f, 6f, cx - 8f, 152f)) return true;               // left leg
-        if (Rect(x, y, cx + 8f, 6f, cx + 30f, 152f)) return true;               // right leg
-        if (Rect(x, y, cx - 44f, 0f, cx - 6f, 10f)) return true;                // feet
-        if (Rect(x, y, cx + 6f, 0f, cx + 46f, 10f)) return true;
-        if (Line(x, y, cx - 32f, 226f, cx - 52f, 150f, 9f)) return true;       // left arm
+        if (InsideRect(x, y, cx - 30f, 6f, cx - 8f, 152f)) return true;               // left leg
+        if (InsideRect(x, y, cx + 8f, 6f, cx + 30f, 152f)) return true;               // right leg
+        if (InsideRect(x, y, cx - 44f, 0f, cx - 6f, 10f)) return true;                // feet
+        if (InsideRect(x, y, cx + 6f, 0f, cx + 46f, 10f)) return true;
+        if (InsideSegment(x, y, cx - 32f, 226f, cx - 52f, 150f, 9f)) return true;       // left arm
         if (spear)
         {
-            if (Line(x, y, cx + 32f, 226f, cx + 56f, 176f, 9f)) return true;   // right arm holding
-            if (Line(x, y, cx + 62f, 20f, cx + 44f, 298f, 3f)) return true;    // spear shaft
-            if (Ellipse(x, y, cx + 42f, 292f, 5f, 12f)) return true;           // spear head
+            if (InsideSegment(x, y, cx + 32f, 226f, cx + 56f, 176f, 9f)) return true;   // right arm holding
+            if (InsideSegment(x, y, cx + 62f, 20f, cx + 44f, 298f, 3f)) return true;    // spear shaft
+            if (InsideEllipse(x, y, cx + 42f, 292f, 5f, 12f)) return true;           // spear head
         }
         else
         {
-            if (Line(x, y, cx + 32f, 226f, cx + 52f, 150f, 9f)) return true;   // right arm
-            if (Line(x, y, cx + 52f, 150f, cx + 70f, 118f, 4f)) return true;   // short blade
+            if (InsideSegment(x, y, cx + 32f, 226f, cx + 52f, 150f, 9f)) return true;   // right arm
+            if (InsideSegment(x, y, cx + 52f, 150f, cx + 70f, 118f, 4f)) return true;   // short blade
         }
         return false;
     }
@@ -107,13 +107,13 @@ public static class ProceduralArt
         switch (kind)
         {
             case IconKind.Sword:
-                return Line(x, y, 6f, 6f, 25f, 25f, 2.2f) || Line(x, y, 9f, 13f, 13f, 9f, 2f) || Line(x, y, 4f, 4f, 8f, 8f, 3f);
+                return InsideSegment(x, y, 6f, 6f, 25f, 25f, 2.2f) || InsideSegment(x, y, 9f, 13f, 13f, 9f, 2f) || InsideSegment(x, y, 4f, 4f, 8f, 8f, 3f);
             case IconKind.Shield:
                 return InsideShield(x / 32f, 1f - y / 32f, 0f) && !InsideShield(x / 32f, 1f - y / 32f, 0.16f);
             case IconKind.Footprint:
-                return Ellipse(x, y, 11f, 12f, 4.5f, 7f) || Ellipse(x, y, 21f, 20f, 4.5f, 7f);
+                return InsideEllipse(x, y, 11f, 12f, 4.5f, 7f) || InsideEllipse(x, y, 21f, 20f, 4.5f, 7f);
             case IconKind.Heal:
-                return Rect(x, y, 13f, 5f, 19f, 27f) || Rect(x, y, 5f, 13f, 27f, 19f);
+                return InsideRect(x, y, 13f, 5f, 19f, 27f) || InsideRect(x, y, 5f, 13f, 27f, 19f);
         }
         return false;
     }
@@ -130,35 +130,44 @@ public static class ProceduralArt
     }
 
     // ---- primitives -----------------------------------------------------------------
+    // Public so every screen draws with the same shape tests and texture builder instead of a private copy (#618).
 
-    private static float Dist(float x, float y, float cx, float cy)
+    public static float Distance(float x, float y, float cx, float cy)
     {
         float dx = x - cx, dy = y - cy;
         return Mathf.Sqrt(dx * dx + dy * dy);
     }
 
-    private static bool Ellipse(float x, float y, float cx, float cy, float rx, float ry)
+    /// <summary>The distance from the point (<paramref name="px"/>, <paramref name="py"/>) to the nearest point of the segment (x0, y0)–(x1, y1).</summary>
+    public static float DistanceToSegment(float px, float py, float x0, float y0, float x1, float y1)
+    {
+        float vx = x1 - x0, vy = y1 - y0;
+        float len2 = vx * vx + vy * vy;
+        float t = len2 <= 0f ? 0f : Mathf.Clamp01(((px - x0) * vx + (py - y0) * vy) / len2);
+        return Distance(px, py, x0 + vx * t, y0 + vy * t);
+    }
+
+    public static bool InsideEllipse(float x, float y, float cx, float cy, float rx, float ry)
     {
         float dx = (x - cx) / rx, dy = (y - cy) / ry;
         return dx * dx + dy * dy <= 1f;
     }
 
-    private static bool Rect(float x, float y, float x0, float y0, float x1, float y1)
+    public static bool InsideRect(float x, float y, float x0, float y0, float x1, float y1)
     {
         return x >= x0 && x <= x1 && y >= y0 && y <= y1;
     }
 
-    private static bool Line(float px, float py, float x0, float y0, float x1, float y1, float halfWidth)
+    /// <summary>Whether the point is within <paramref name="halfWidth"/> of the segment (x0, y0)–(x1, y1).</summary>
+    public static bool InsideSegment(float px, float py, float x0, float y0, float x1, float y1, float halfWidth)
     {
-        float vx = x1 - x0, vy = y1 - y0;
-        float len2 = vx * vx + vy * vy;
-        float t = len2 <= 0f ? 0f : Mathf.Clamp01(((px - x0) * vx + (py - y0) * vy) / len2);
-        return Dist(px, py, x0 + vx * t, y0 + vy * t) <= halfWidth;
+        return DistanceToSegment(px, py, x0, y0, x1, y1) <= halfWidth;
     }
 
     private static Color Alpha(float a) => new Color(1f, 1f, 1f, a);
 
-    private static Sprite Make(int w, int h, Func<int, int, Color> pixel, FilterMode filter = FilterMode.Bilinear)
+    /// <summary>A w×h sprite whose pixel at (x, y) is <paramref name="pixel"/>(x, y); y runs from the bottom.</summary>
+    public static Sprite MakeSprite(int w, int h, Func<int, int, Color> pixel, FilterMode filter = FilterMode.Bilinear)
     {
         var tex = new Texture2D(w, h, TextureFormat.RGBA32, false)
         {

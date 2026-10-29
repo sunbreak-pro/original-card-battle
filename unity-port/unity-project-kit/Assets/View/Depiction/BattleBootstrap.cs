@@ -3,6 +3,9 @@
 // deck. It decides nothing itself: the Inspector fields are copied into a BattleLaunch (pure C#,
 // tested under `dotnet test`), which builds the source.
 //
+// When the exploration scene loads this one on top of itself (#99), it hands its battle in first
+// (HandIn); that battle plays in place of the Inspector's and the demo flow's, once.
+//
 // BattleDepiction.unity (the filming scene) has no bootstrap: it replays the fixed script
 // (DepictionPlayer.scriptedPlayback, #571).
 #if UNITY_2021_2_OR_NEWER
@@ -19,8 +22,8 @@ namespace Depiction.View
         public DepictionPlayer player;
 
         [Header("Battle")]
-        [Tooltip("Roster id of the enemy (enemy_roster_v4). The slice knows one: polearm_warped.")]
-        public string enemyId = "polearm_warped";
+        [Tooltip("Roster id of the enemy (enemy_roster_v4): any of BattleCore's Enemies.All. The slice starts on polearm_warped.")]
+        public string enemyId = BattleLaunch.DefaultEnemyId;
         [Tooltip("Fixes every shuffle. The same seed deals the same hands here and under dotnet test.")]
         public int seed = BattleLaunch.DefaultSeed;
         [Tooltip("Draws a fresh seed on every Play and logs it, so a fight worth replaying can be typed back in.")]
@@ -55,6 +58,9 @@ namespace Depiction.View
         /// Awake plays it in place of the Inspector's battle and the demo flow, once.
         /// </summary>
         public static void HandIn(CoreBattleSource source) => s_handedIn = source;
+
+        /// <summary>Takes back a battle handed in but never loaded, so the next Play starts the scene's own.</summary>
+        public static void ClearHandIn() => s_handedIn = null;
 
         // Awake, not Start: every Awake in the scene runs before any Start, and the player reads its
         // source in Start.

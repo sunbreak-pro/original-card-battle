@@ -111,31 +111,6 @@ export function getCardDataByClass(classType: CharacterClass): Record<string, Ca
 }
 
 /**
- * Get starter deck card stacks for display in character selection
- * Groups cards by type for a cleaner display
- */
-export function getStarterDeckStacks(
-  classType: CharacterClass
-): { card: Card; count: number }[] {
-  const deckCounts = INITIAL_DECK_BY_CLASS[classType];
-  if (!deckCounts || Object.keys(deckCounts).length === 0) {
-    return [];
-  }
-
-  const stacks: { card: Card; count: number }[] = [];
-  const cardData = getCardDataByClass(classType);
-
-  for (const [cardTypeId, count] of Object.entries(deckCounts)) {
-    const cardTemplate = cardData[cardTypeId];
-    if (cardTemplate) {
-      stacks.push({ card: cardTemplate, count });
-    }
-  }
-
-  return stacks;
-}
-
-/**
  * Character class data for all playable classes
  */
 export const CHARACTER_CLASS_DATA: Record<CharacterClass, CharacterClassInfo> =
@@ -189,15 +164,6 @@ export function getCharacterClassInfo(
   classType: CharacterClass
 ): CharacterClassInfo {
   return CHARACTER_CLASS_DATA[classType];
-}
-
-/**
- * Get all available character classes
- */
-export function getAvailableClasses(): CharacterClassInfo[] {
-  return Object.values(CHARACTER_CLASS_DATA).filter(
-    (classInfo) => classInfo.isAvailable
-  );
 }
 
 /**

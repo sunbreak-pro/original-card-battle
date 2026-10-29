@@ -23,14 +23,14 @@ function generateNodeId(row: number, column: number): string {
 /**
  * Generate a unique ID for dungeon runs
  */
-export function generateRunId(): string {
+function generateRunId(): string {
   return generateId('run');
 }
 
 /**
  * Determine node type based on row position and randomness
  */
-export function getNodeTypeForRow(
+function getNodeTypeForRow(
   row: number,
   totalRows: number,
   config: MapGenerationConfig = DEFAULT_MAP_CONFIG
@@ -167,13 +167,6 @@ export function generateFloorMap(
 }
 
 /**
- * Get all available nodes that can be selected
- */
-export function getAvailableNodes(floor: DungeonFloor): DungeonNode[] {
-  return floor.nodes.filter((node) => node.status === "available");
-}
-
-/**
  * Get a specific node by ID
  */
 export function getNodeById(
@@ -301,16 +294,6 @@ export function getFloorProgress(floor: DungeonFloor): number {
   ).length;
   const totalNodes = floor.nodes.length;
   return Math.round((completedNodes / totalNodes) * 100);
-}
-
-/**
- * Check if the floor can be continued (has available nodes or current node)
- */
-export function canContinueFloor(floor: DungeonFloor): boolean {
-  if (floor.isCompleted) return false;
-  const hasAvailable = floor.nodes.some((node) => node.status === "available");
-  const hasCurrent = floor.nodes.some((node) => node.status === "current");
-  return hasAvailable || hasCurrent;
 }
 
 /**

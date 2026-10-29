@@ -104,12 +104,3 @@ export const RUMORS: Rumor[] = [
 export function getRumorById(id: string): Rumor | undefined {
   return RUMORS.find((r) => r.id === id);
 }
-
-/**
- * Get rumors filtered by rarity
- */
-export function getRumorsByRarity(
-  rarity: "common" | "rare" | "epic"
-): Rumor[] {
-  return RUMORS.filter((r) => r.rarity === rarity);
-}

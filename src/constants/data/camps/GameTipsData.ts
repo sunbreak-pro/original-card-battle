@@ -149,53 +149,6 @@ export function getAllTips(): GameTip[] {
 }
 
 /**
- * Get tips filtered by category
- */
-export function getTipsByCategory(category: string | null): GameTip[] {
-  if (!category) {
-    return GAME_TIPS;
-  }
-
-  return GAME_TIPS.filter((tip) => tip.category === category);
-}
-
-/**
- * Search tips by title or content
- */
-export function searchTips(searchText: string): GameTip[] {
-  const lowerSearch = searchText.toLowerCase();
-
-  if (!searchText) {
-    return GAME_TIPS;
-  }
-
-  return GAME_TIPS.filter(
-    (tip) =>
-      tip.title.toLowerCase().includes(lowerSearch) ||
-      tip.content.toLowerCase().includes(lowerSearch)
-  );
-}
-
-/**
- * Get tip statistics
- */
-export function getTipStats(): {
-  total: number;
-  byCategory: Record<string, number>;
-} {
-  const byCategory: Record<string, number> = {};
-
-  GAME_TIPS.forEach((tip) => {
-    byCategory[tip.category] = (byCategory[tip.category] || 0) + 1;
-  });
-
-  return {
-    total: GAME_TIPS.length,
-    byCategory,
-  };
-}
-
-/**
  * Category display names
  */
 export const CATEGORY_NAMES: Record<string, string> = {
