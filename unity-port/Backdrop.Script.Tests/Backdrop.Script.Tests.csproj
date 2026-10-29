@@ -22,10 +22,12 @@
 
   <ItemGroup>
     <Compile Include="..\unity-project-kit\Assets\View\Backdrop\Tests\*.cs" LinkBase="Tests" />
+    <Compile Include="CopiedValuesTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Backdrop.Script\Backdrop.Script.csproj" />
+    <ProjectReference Include="..\DungeonCore\DungeonCore.csproj" />
   </ItemGroup>
 
 </Project>
