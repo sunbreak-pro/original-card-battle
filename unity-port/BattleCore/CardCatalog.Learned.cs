@@ -120,7 +120,7 @@ namespace BattleCore
             AtMost(0, TraitEffect.PowerBonus, 5),
             Description: "牙のように飛びかかる");
 
-        // ---- Elite 3 ----
+        // ---- Elite: 不退の槍竜 (#55 #57) / decided with the 100% version (#54 #56) ----
 
         /// <summary>#54. A heavy blow after a move this turn.</summary>
         public static readonly CardDef Whirlwind = new CardDef(
@@ -137,8 +137,6 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "手が尽きても受けて返す");
 
-        // ---- Elite 4 ----
-
         /// <summary>#56. Marks the foe fragile at 0〜2 and steps back one; draws if it already was.</summary>
         public static readonly CardDef HunterMark = new CardDef(
             "hunter_mark", "狩人の印", BattleAttribute.Skill, 1,
@@ -154,7 +152,7 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "触れた者を刺す受け");
 
-        // ---- Exploration: floor 1 ----
+        // ---- Exploration: 一層 ----
 
         /// <summary>#58. Adjacent only: Guard and a push of one cell; a stamina point as the third play or later.</summary>
         public static readonly CardDef ShieldPush = new CardDef(
@@ -179,6 +177,8 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "斬ってから跳んで退く");
 
+        // ---- Exploration: 二層 ----
+
         /// <summary>#61. Hits, then steps in one; +3 as the first play.</summary>
         public static readonly CardDef RisingCut = new CardDef(
             "rising_cut", "斬り上げ", BattleAttribute.Attack, 3,
@@ -193,8 +193,6 @@ namespace BattleCore
             FoeHas(StatusKind.Slow, TraitEffect.HeavyBlow),
             Description: "足の止まった相手を払う");
 
-        // ---- Exploration: floor 2 ----
-
         /// <summary>#63. Dashes forward two and regains a stamina point; draws from a gap of 2 or more.</summary>
         public static readonly CardDef DashIn = new CardDef(
             "dash_in", "駆け込み", BattleAttribute.None, 1,
@@ -202,6 +200,8 @@ namespace BattleCore
             AtLeast(2, TraitEffect.Draw, 1),
             Targets: TargetKind.Self,
             Description: "遠くから駆けて視野を広げる");
+
+        // ---- Exploration: 三層 ----
 
         /// <summary>#64. Guard while stepping in one; +3 on a chain.</summary>
         public static readonly CardDef GuardWalk = new CardDef(
@@ -226,14 +226,14 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "受けながら次の一手を溜める");
 
+        // ---- Exploration: 四層 ----
+
         /// <summary>#67. Guard with intimidate and fatigue at 0〜1; +3 Guard when adjacent.</summary>
         public static readonly CardDef Deflect = new CardDef(
             "deflect", "弾き", BattleAttribute.Guard | BattleAttribute.Skill, 2,
             new Face(Guard: 6, Statuses: new[] { Foe(StatusKind.Intimidate, 2), Foe(StatusKind.Fatigue, 2) }),
             AtMost(0, TraitEffect.GuardBonus, 3),
             Description: "間近で弾いて手を鈍らせる");
-
-        // ---- Exploration: floor 3 ----
 
         /// <summary>#68. Attack and Guard; as the third play or later, half the Guard joins the power.</summary>
         public static readonly CardDef CrescentCut = new CardDef(
@@ -248,6 +248,8 @@ namespace BattleCore
             new Face(Power: 11, Reach: Reach.Only(0), Statuses: new[] { Foe(StatusKind.Intimidate, 2), Foe(StatusKind.Fatigue, 2) }),
             When(TraitCondition.Chain, TraitEffect.PowerBonus, 3),
             Description: "続けざまに柄頭で顔を打つ");
+
+        // ---- Exploration: 五層 ----
 
         /// <summary>#70. Stance: 3 Guard and +2 recovery after turns ended at a gap of 2 or more; +1 recovery next turn after a skill.</summary>
         public static readonly CardDef MistStep = new CardDef(
@@ -273,7 +275,7 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "追い詰められて腹を括り、受け止める");
 
-        // ---- Exploration: floor 4 ----
+        // ---- Exploration: 六層 ----
 
         /// <summary>#73. The one card reaching 2〜3 (two faces, width 3: 14, not the 16 of 0〜1): hits, then dashes in two; a stamina point from a gap of 3.</summary>
         public static readonly CardDef GaleThrust = new CardDef(
@@ -304,7 +306,7 @@ namespace BattleCore
             OmenIs(OmenKind.Attack, TraitEffect.Convert),
             Description: "躱した分を刃に変える");
 
-        // ---- Exploration: floor 5 ----
+        // ---- Exploration: 七層 ----
 
         /// <summary>#77. Reaches 0〜2 (two faces, width 3: 8, not the 10 of 0〜1) with bleed 2, one more stack from a gap of 2 or more.</summary>
         public static readonly CardDef BloodDance = new CardDef(
