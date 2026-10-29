@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateBleedDamage, hasBleed } from "../bleedDamage";
+import { calculateBleedDamage } from "../bleedDamage";
 import { calculateEndPhaseDamage } from "../../calculators/buffCalculation";
 import type {
   BuffDebuffMap,
@@ -43,13 +43,6 @@ describe("calculateBleedDamage", () => {
     // maxHp 30 → floor(30 * 0.05) = floor(1.5) = 1 per stack.
     const map = makeMap([["bleed", buff("bleed", 4, 0)]]);
     expect(calculateBleedDamage(30, map)).toBe(1 * 4);
-  });
-});
-
-describe("hasBleed", () => {
-  it("detects presence/absence of bleed", () => {
-    expect(hasBleed(makeMap([["bleed", buff("bleed", 1, 0)]]))).toBe(true);
-    expect(hasBleed(makeMap([]))).toBe(false);
   });
 });
 

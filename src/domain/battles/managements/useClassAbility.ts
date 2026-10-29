@@ -27,9 +27,6 @@ import {
   createInitialSwordEnergy,
 } from "../../characters/player/logic/swordEnergySystem";
 
-// Elemental Chain System
-import { useElementalChain } from "./useElementalChain";
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -248,26 +245,6 @@ export function useClassAbility<T extends ClassAbilityState>(
     getAbilityUI,
     resetAbility,
   };
-}
-
-// ============================================================================
-// Factory Function
-// ============================================================================
-
-/**
- * Create appropriate class ability hook based on character class
- */
-export function createClassAbilityHook(
-  characterClass: "swordsman" | "mage",
-): () => UseClassAbilityReturn<ClassAbilityState> {
-  switch (characterClass) {
-    case "swordsman":
-      return useSwordEnergy as () => UseClassAbilityReturn<ClassAbilityState>;
-    case "mage":
-      return useElementalChain as () => UseClassAbilityReturn<ClassAbilityState>;
-    default:
-      return useSwordEnergy as () => UseClassAbilityReturn<ClassAbilityState>;
-  }
 }
 
 // ============================================================================

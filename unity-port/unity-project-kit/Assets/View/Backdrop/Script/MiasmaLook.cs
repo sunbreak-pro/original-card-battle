@@ -113,7 +113,7 @@ namespace Backdrop
             return BackdropSpec.Mix(FillThin, FillThick, Clamp01(percent / (float)DeathAt));
         }
 
-        /// <summary>What the share from <paramref name="percent"/> to <paramref name="nextPercent"/> warns of.</summary>
+        /// <summary>What the share from <paramref name="percent"/> to <paramref name="nextPercent"/> warns of. Meant for the forecast of the next single step only: crossing a line is not always a drop in max stamina (a rest raises it), so do not use it for an action that raises max stamina.</summary>
         public static MiasmaWarning Warning(int percent, int nextPercent)
         {
             if (nextPercent <= percent) return MiasmaWarning.None;
@@ -207,7 +207,7 @@ namespace Backdrop
         public const float ShadeSeepMax = 0.20f;
         /// <summary>How far the inner edge of the shade moves in and out at the bottom of a breath.</summary>
         public const float ShadeBreathRadius = 0.03f;
-        /// <summary>The curve of the strength: below 1, so the first 20% already shows and the end does not jump.</summary>
+        /// <summary>The curve of the strength: above 1, so the first 20% is only a faint tint (about 0.1) and the shade closes in gradually (battle-visual-v1 §2.5).</summary>
         public const double ShadeCurve = 1.4;
 
         /// <summary>The shade at <paramref name="percent"/> (a reading easing up with <see cref="Rise"/> may fall between whole numbers).</summary>

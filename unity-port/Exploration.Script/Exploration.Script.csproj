@@ -20,6 +20,7 @@
     <ProjectReference Include="..\DungeonCore\DungeonCore.csproj" />
     <ProjectReference Include="..\DungeonContent\DungeonContent.csproj" />
     <ProjectReference Include="..\Journal.Script\Journal.Script.csproj" />
+    <ProjectReference Include="..\Backdrop.Script\Backdrop.Script.csproj" />
   </ItemGroup>
 
 </Project>

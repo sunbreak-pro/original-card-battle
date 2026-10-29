@@ -13,7 +13,6 @@ import type { BuffDebuffMap, BuffDebuffState, BuffDebuffType } from './battleTyp
 import type { ExplorationLimit, SanctuaryProgress, Depth, ShopStockState } from './campTypes';
 import type { MagicStones } from './itemTypes';
 import type { EquipmentSlots, InventoryState, StorageState, EquipmentInventoryState } from './campTypes';
-import type { DeckState } from '../domain/cards/decks/deckReducter';
 import type React from "react";
 
 // ============================================================
@@ -275,18 +274,6 @@ export interface PlayerData {
   resources: PlayerResources;
   inventory: PlayerInventory;
   progression: PlayerProgression;
-}
-
-/**
- * Player Battle State
- */
-export interface PlayerBattleState extends BattleStats {
-  cardEnergy: number;
-  maxCardEnergy: number;
-  classAbility: ClassAbilityState;
-  currentDeck: DeckState;
-  equipmentAtkPercent: number;
-  equipmentDefPercent: number;
 }
 
 // ============================================================

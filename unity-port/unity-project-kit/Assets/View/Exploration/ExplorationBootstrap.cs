@@ -73,9 +73,11 @@ namespace Exploration.View
         }
 
         // J, C and Esc do what the band's three buttons do; Esc's order is the session's (§6.2).
+        // Every frame the 瘴気 gauge and the shade move on (their rise and breath, #613).
         private void Update()
         {
             if (_view == null || _inBattle) return;
+            _view.Tick();
             if (Pressed(KeyCode.J)) Toggle(Overlay.Journal);
             if (Pressed(KeyCode.C)) Toggle(Overlay.Cards);
             if (Pressed(KeyCode.Escape) && _session.Escape()) Render();

@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BattleCore;
+using Depiction;
 using DungeonContent;
 using DungeonCore;
 
@@ -19,7 +20,16 @@ namespace Exploration.Bridge
     public sealed class Expedition
     {
         /// <summary>concept-v3 §14 / swordsman_cards_v4 §2: the kinds every character owns from the start (#1〜#40).</summary>
-        public static readonly IReadOnlyList<string> InitialKinds = CardCatalog.All.Take(40).Select(d => d.Id).ToList();
+        public static readonly IReadOnlyList<string> InitialKinds = CardCatalog.Initial.Select(d => d.Id).ToList();
+
+        /// <summary>
+        /// The 開示度 a battle leaves the journal at for every enemy fought, and for one a 観察 was played
+        /// against (concept-v3.md §14). Named by OmenDisclosure because that is the scale the battle
+        /// reads the level back on (BattleHandIn → the omen badge), and it names both steps.
+        /// </summary>
+        private const int FoughtDisclosure = OmenDisclosure.Partial;
+
+        private const int ObservedDisclosure = OmenDisclosure.Full;
 
         private readonly IReadOnlyList<CardInstance> _startDeck;
         private readonly IReadOnlyDictionary<string, int> _startJournal;
@@ -249,10 +259,10 @@ namespace Exploration.Bridge
                 foreach (string id in fought.Fight.EnemyIds)
                 {
                     int before = DisclosureOf(id);
-                    int after = Math.Max(before, fought.Observed ? 2 : 1);
+                    int after = Math.Max(before, fought.Observed ? ObservedDisclosure : FoughtDisclosure);
                     _journal[id] = after;
                     disclosure[id] = after;
-                    if (fought.Observed && before < 2 && !observed.Contains(id)) observed.Add(id);
+                    if (fought.Observed && before < ObservedDisclosure && !observed.Contains(id)) observed.Add(id);
                 }
             }
 
@@ -387,25 +397,24 @@ namespace Exploration.Bridge
             Mastery = MasteryBook.Begin(_talent);
         }
 
-        /// <summary>The four in-battle tools, summed over the slots (the same tool may fill two), as a Departure the core reads.</summary>
+        /// <summary>
+        /// The in-battle tools, summed over the slots (the same tool may fill two), as a Departure the
+        /// core reads. Each tool's four numbers come from DungeonContent.BattleToolAmounts, the one
+        /// mapping the departure screen reads too (#648).
+        /// </summary>
         private static Departure BattleTools(IReadOnlyList<CardInstance> deck, IReadOnlyList<string> toolIds, string talent)
         {
-            int cellsBack = 0, stamina = 0, guard = 0, ward = 0;
+            BattleToolAmounts sum = BattleToolAmounts.None;
             foreach (string id in toolIds)
             {
                 ItemDef tool = ItemCatalogue.Tool(id);
-                switch (tool.Effect)
-                {
-                    case ItemEffect.WiderStart: cellsBack += tool.Amount; break;
-                    case ItemEffect.OpeningStamina: stamina += tool.Amount; break;
-                    case ItemEffect.OpeningGuard: guard += tool.Amount; break;
-                    case ItemEffect.BluntBossState: ward += tool.Amount; break;
-                    default:
-                        throw new ArgumentException(
-                            $"Expedition: {tool.Name} acts on the exploration; it goes in RunStart.Loadout", nameof(toolIds));
-                }
+                if (tool.Side != EffectSide.Battle)
+                    throw new ArgumentException(
+                        $"Expedition: {tool.Name} acts on the exploration; it goes in RunStart.Loadout", nameof(toolIds));
+                sum = sum.Plus(BattleToolAmounts.Of(tool));
             }
-            return new Departure(deck, toolIds.ToList(), Array.Empty<string>(), cellsBack, talent, stamina, guard, ward);
+            return new Departure(deck, toolIds.ToList(), Array.Empty<string>(),
+                sum.StartCellsBack, talent, sum.StartStamina, sum.OpeningGuard, sum.BossWordWard);
         }
     }
 }

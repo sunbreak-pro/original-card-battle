@@ -4,6 +4,7 @@
 // forecast and the step taken can never disagree.
 using System.Collections.Generic;
 using System.Linq;
+using Backdrop;
 using DungeonCore;
 using Journal;
 
@@ -310,6 +311,10 @@ namespace Exploration
                 next = below.MiasmaPercent;
                 forecast = $"降りると +{below.MiasmaPercent - percent}%";
             }
+            // battle-visual-v1 §2.5: a step whose share ahead is drawn in 注意 (a 20% line crossed, or
+            // death reached) says so with △ too. Only this forecast of the next step: a 休息 that crosses
+            // a line may still lift max stamina, which StepForecast judges on the maximum itself.
+            if (forecast.Length > 0) forecast = MiasmaLook.ForecastMark(percent, next) + forecast;
 
             var stepLines = new List<int>();
             for (int line = Miasma.StepPercent; line < Miasma.DeathAt; line += Miasma.StepPercent) stepLines.Add(line);

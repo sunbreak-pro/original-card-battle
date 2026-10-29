@@ -56,9 +56,6 @@ export const REFLECT_BUFFS: BuffDebuffType[] = ["reflect"];
 /** Buffs that heal based on damage dealt */
 export const LIFESTEAL_BUFFS: BuffDebuffType[] = ["lifesteal"];
 
-/** Buffs that increase energy regeneration */
-export const ENERGY_REGEN_BUFFS: BuffDebuffType[] = ["energyRegen"];
-
 /** Buffs that modify card draw count */
 export const DRAW_MODIFIER_BUFFS: BuffDebuffType[] = ["drawPower"];
 

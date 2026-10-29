@@ -7,10 +7,7 @@
 
 export {
   getAllEnemies,
-  getEnemiesByDepth,
   createEnemyEncyclopediaEntries,
   isBossEnemy,
-  getEnemiesByBossStatus,
-  searchEnemies,
   getEnemyStats,
 } from "../camps/EnemyEncyclopediaData";

@@ -17,10 +17,6 @@ export function calculateMasteryLevel(useCount: number): MasteryLevel {
   return 0;
 }
 
-export function canBecomeTalent(card: Card): boolean {
-  return card.useCount >= MASTERY_THRESHOLDS[4] && card.masteryLevel < 4;
-}
-
 export function incrementUseCount(card: Card): Card {
   const newUseCount = card.useCount + 1;
   const newMasteryLevel = calculateMasteryLevel(newUseCount);

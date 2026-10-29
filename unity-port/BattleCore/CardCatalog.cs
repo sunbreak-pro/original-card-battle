@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BattleCore
 {
@@ -47,7 +48,14 @@ namespace BattleCore
                 KeenEye, Resolve, GaleThrust, AnchorStance, VitalThrust,
                 EvadeCut, BloodDance, WolfStance, ShadowLunge, LastStand,
             };
+            Initial = All.Take(40).ToList();
         }
+
+        /// <summary>
+        /// §2: the initial forty (#1-#40), the kinds every character owns from the start, in canon
+        /// order. The one place the forty is counted (#648).
+        /// </summary>
+        public static readonly IReadOnlyList<CardDef> Initial;
 
         public static CardDef ById(string id)
         {

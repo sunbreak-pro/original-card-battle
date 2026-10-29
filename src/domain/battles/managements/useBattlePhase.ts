@@ -15,16 +15,6 @@ import {
     createInitialSpeedRandomState,
 } from "../calculators/speedCalculation";
 
-export interface PhaseState {
-    phaseQueue: PhaseQueue | null;
-    currentPhaseIndex: number;
-    phaseCount: number;
-    isPlayerPhase: boolean;
-    isEnemyPhase: boolean;
-    playerSpeed: number;
-    enemySpeed: number;
-}
-
 export interface UseBattlePhaseReturn {
     // State
     phaseQueue: PhaseQueue | null;
