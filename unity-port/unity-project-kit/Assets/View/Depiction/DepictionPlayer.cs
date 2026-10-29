@@ -980,7 +980,17 @@ namespace Depiction.View
                         // The blow that lands on the player is the enemy's own: its omen is spent and
                         // it draws back. A blow the player lands does neither.
                         yield return HoldBeat(EffectId.OmenSpend, omenBadge.FadeOut(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideNow);
-                        yield return HoldBeat(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome));
+                        // §5.4 順 2 (#587): the enemy's own move next (退き撃ち) carries it on from the
+                        // lunge; the omen fades beside the move (the plan gives OmenSpend no wait), and
+                        // the figure walks in its standing pose, as the return would have left it.
+                        if (EffectPlan.EnemyMoveFollows(ev, cue))
+                        {
+                            if (enemyFigure) enemyFigure.SetPose(FigurePose.Idle);
+                        }
+                        else
+                        {
+                            yield return HoldBeat(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome));
+                        }
                     }
                     break;
                 }
@@ -1354,12 +1364,15 @@ namespace Depiction.View
             Vector2 enemyFrom = enemyFigure ? enemyFigure.Rect.anchoredPosition : Vector2.zero;
             Vector2 enemyTo = enemyFigure && cue.EnemyCellAfter > 0 ? AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize)) : enemyFrom;
             bool enemyMoves = enemyFigure && (enemyTo - _enemyHome).sqrMagnitude > 0.25f;
+            // §5.4 順 2 (#587): the enemy's own move after its blow starts 80 ms after the number, while
+            // the struck player still reels (TargetRecoil); a player whose cell stays is left to it.
+            bool playerStays = enemyMoves && !cue.Pushed && _playerHomeSet && to == _playerHome;
             if (enemyMoves) _enemyHome = enemyTo;
             SetPlayerHome(figure, to); // the panels set off for the new cells as the figures do
             // 160 ms a cell (EffectSpec.TotalMs of FloorMove); a push starts fast and settles.
             yield return UiTween.Run(_effects.WaitMs(EffectId.FloorMove, cells), cue.Pushed ? Ease.Out : Ease.InOut, t =>
             {
-                if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
+                if (figure && !playerStays) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
                 if (enemyMoves && enemyFigure) enemyFigure.Rect.anchoredPosition = Vector2.LerpUnclamped(enemyFrom, enemyTo, t);
             });
         }

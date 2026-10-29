@@ -522,6 +522,26 @@ namespace Depiction
             return index >= 0 && index + 1 < ev.Cues.Count && ev.Cues[index + 1].Kind == CueKind.RangeSwitch;
         }
 
+        /// <summary>
+        /// §5.4 順 2 (#587): the enemy's own move right after its blow on the player (退き撃ち, 踏み込み斬り,
+        /// 飛びかかり …): the cue right after the blow's Hit is a RangeSwitch that is not a push or a pull.
+        /// The enemy does not draw back first (§5.5 順 8's return is left out): the move carries the
+        /// figure on from where the lunge left it, and starts <see cref="NextFaceLeadMs"/> after the
+        /// number. The omen fades beside the move. A push or a pull moves the player, not the enemy, so
+        /// the enemy still draws back before it. The screen (DepictionPlayer's Hit beat) and the plan
+        /// both ask here.
+        /// </summary>
+        public static bool EnemyMoveFollows(DepictionEvent ev, Cue blow)
+        {
+            if (ev == null) throw new ArgumentNullException(nameof(ev));
+            if (blow == null) throw new ArgumentNullException(nameof(blow));
+            if (blow.Target != UnitSide.Player) return false;
+            int index = ev.Cues.IndexOf(blow);
+            if (index < 0 || index + 1 >= ev.Cues.Count) return false;
+            Cue next = ev.Cues[index + 1];
+            return next.Kind == CueKind.RangeSwitch && !next.Pushed;
+        }
+
         /// <summary>How long the flow is held at one step with these switches: the one wait both the screen and the tests use.</summary>
         public static float WaitMs(EffectStep step, EffectSwitches switches)
         {
@@ -651,13 +671,16 @@ namespace Depiction
                 case CueKind.Hit:
                 {
                     // The player's blow Guard took part of: a move right after it starts on the number too.
-                    bool movesOn = cue.Target == UnitSide.Enemy && MoveFollows(ev, cue);
+                    // So does the enemy's own move after its blow on the player (#587).
+                    bool enemyMoves = EnemyMoveFollows(ev, cue);
+                    bool movesOn = (cue.Target == UnitSide.Enemy && MoveFollows(ev, cue)) || enemyMoves;
                     steps.Add(new EffectStep(EffectId.HpDrain, 1, movesOn ? NextFaceLeadMs : (float?)null));
                     if (cue.Target == UnitSide.Player)
                     {
                         // The blow on the player is the enemy's own: its omen is spent and it draws back.
-                        steps.Add(new EffectStep(EffectId.OmenSpend, 1));
-                        steps.Add(new EffectStep(EffectId.EnemyReturn, 1));
+                        // With its own move next, the omen fades beside the move and there is no return (#587).
+                        steps.Add(new EffectStep(EffectId.OmenSpend, 1, enemyMoves ? 0f : (float?)null));
+                        if (!enemyMoves) steps.Add(new EffectStep(EffectId.EnemyReturn, 1));
                     }
                     break;
                 }
