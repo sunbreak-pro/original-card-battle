@@ -384,11 +384,11 @@ namespace Depiction.Bridge.Tests
         // ---- X-17 the attribute words the screens print ----
 
         [Test]
-        public void X17_TheDeckBuilderPrintsTheBattlesAttributeWords_ItsOwnWordsStay()
+        public void X17_TheDeckBuilderPrintsTheBattlesAttributeWords()
         {
             Assert.That(DeckBuilder.ShownAttributeOptions.Select(o => o.Key).ToArray(), Is.EqualTo(new[] { "全て", "攻撃", "防御", "スキル", "スタンス" }));
             Assert.That(DeckBuilder.ShownAttributeOptions.Select(o => o.Value).ToArray(), Is.EqualTo(DeckBuilder.AttributeOptions.Select(o => o.Value).ToArray()));
-            Assert.That(DeckBuilder.AttributeOptions.Select(o => o.Key).ToArray(), Is.EqualTo(new[] { "全て", "攻撃", "防御", "技", "構え" }));
+            Assert.That(DeckBuilder.AttributeOptions.Select(o => o.Key).ToArray(), Is.EqualTo(new[] { "全て", "攻撃", "防御", "スキル", "スタンス" }), "#575: AttributeOptions already prints the battle's words");
             foreach (BattleAttribute flag in new[] { BattleAttribute.Attack, BattleAttribute.Guard, BattleAttribute.Skill, BattleAttribute.Stance })
             {
                 Assert.That(DeckBuilder.ShownAttributeWords(flag), Is.EqualTo(CardFaceText.AttributeWord(flag)), "the battle's word");

@@ -28,8 +28,6 @@ namespace Depiction.View
         public CornerInfoView cornerInfo;
         public FigureView playerFigure;
         public FigureView enemyFigure;
-        public RectTransform playerNearSlot;
-        public RectTransform playerFarSlot;
         public StatusBarView playerStatus;
         public StatusBarView enemyStatus;
         public OmenBadgeView omenBadge;
@@ -888,21 +886,21 @@ namespace Depiction.View
                 {
                     // Moved by the other side (the polearm's shove): a knock-back, and the muted label says so.
                     if (cue.Pushed) FloatEffect(EffectId.PushMark, labelAt, DepictionText.Pushed, BattleTheme.Ink2, 36);
-                    if (OnFloor(cue))
+                    // §5.7 順 1〜2 (#586): the walk, 160 a cell, then the gap number counted again on arrival.
+                    // Every source draws the floor since the near / far slots went (#577).
+                    int cells = EffectPlan.CellsOf(cue);
+                    if (!OnFloor(cue))
                     {
-                        // §5.7 順 1〜2 (#586): the walk, 160 a cell, then the gap number counted again on arrival.
-                        int cells = EffectPlan.CellsOf(cue);
-                        yield return HoldBeat(EffectId.FloorMove, MoveOnFloor(target, cue, cells), () => SnapOnFloor(target, cue), cells);
-                        yield return HoldBeat(EffectId.GapRecount,
-                            _floor.RecountGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter, _effects.Ms(EffectId.GapRecount)),
-                            () => _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter));
+                        // A script bug: the frame shows no floor to walk on. The plan's waits are still held.
+                        Debug.LogError("[Depiction] event " + ev.Order + " " + ev.Title + ": a move with no floor shown");
+                        yield return HoldBeat(EffectId.FloorMove, UiTween.Wait(_effects.WaitMs(EffectId.FloorMove, cells)), null, cells);
+                        yield return HoldBeat(EffectId.GapRecount, UiTween.Wait(_effects.Ms(EffectId.GapRecount)), null);
                         break;
                     }
-                    yield return HoldBeat(EffectId.RangeSwitch, SwitchRange(target, cue.RangeAfter, cue.Pushed),
-                        () => SnapRange(target, cue.RangeAfter));
-                    // #495: without a floor the tag at the feet flips to the new glyph, its own beat as in EffectPlan.
-                    yield return HoldBeat(EffectId.RangeTagFlip, target.FlipRangeTag(cue.RangeGlyphAfter, _effects.Ms(EffectId.RangeTagFlip)),
-                        () => target.SetRange(true, cue.RangeGlyphAfter));
+                    yield return HoldBeat(EffectId.FloorMove, MoveOnFloor(target, cue, cells), () => SnapOnFloor(target, cue), cells);
+                    yield return HoldBeat(EffectId.GapRecount,
+                        _floor.RecountGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter, _effects.Ms(EffectId.GapRecount)),
+                        () => _floor.SetGap(cue.GapAfter, cue.PlayerCellAfter, PlayerSize, cue.EnemyCellAfter));
                     break;
                 }
 
@@ -980,7 +978,17 @@ namespace Depiction.View
                         // The blow that lands on the player is the enemy's own: its omen is spent and
                         // it draws back. A blow the player lands does neither.
                         yield return HoldBeat(EffectId.OmenSpend, omenBadge.FadeOut(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideNow);
-                        yield return HoldBeat(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome));
+                        // §5.4 順 2 (#587): the enemy's own move next (退き撃ち) carries it on from the
+                        // lunge; the omen fades beside the move (the plan gives OmenSpend no wait), and
+                        // the figure walks in its standing pose, as the return would have left it.
+                        if (EffectPlan.EnemyMoveFollows(ev, cue))
+                        {
+                            if (enemyFigure) enemyFigure.SetPose(FigurePose.Idle);
+                        }
+                        else
+                        {
+                            yield return HoldBeat(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome));
+                        }
                     }
                     break;
                 }
@@ -1023,7 +1031,7 @@ namespace Depiction.View
             yield return DrainHp(status, cue.HpAfter);
             yield return Gate(ev.Order + "-impact");
             // §5.4 順 2 / §5.5 順 8 (#499): a move right after the blow carries the player on from the
-            // lunge (MoveOnFloor and SwitchRange start where the figure stands), so there is no step back first; the
+            // lunge (MoveOnFloor starts where the figure stands), so there is no step back first; the
             // figure walks in its standing pose, as the return would have left it.
             if (byPlayer && !EffectPlan.MoveFollows(ev, cue))
             {
@@ -1306,14 +1314,6 @@ namespace Depiction.View
             yield return UiTween.Move(figure.Rect, from, to, ms, Ease.Out);
         }
 
-        /// <summary>The move's end state at once, without a floor. The tag's glyph is the flip's to settle (EffectId.RangeTagFlip, #495).</summary>
-        private void SnapRange(FigureView figure, RangeSide range)
-        {
-            RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
-            if (slot) figure.transform.position = slot.position;
-            SetPlayerHome(figure);
-        }
-
         /// <summary>
         /// The walk's end state at once, on the floor: both figures on their cells. The gap number is
         /// the recount's to settle (EffectId.GapRecount, #586).
@@ -1331,8 +1331,7 @@ namespace Depiction.View
 
         /// <summary>
         /// The move is drawn on the floor: one is shown and the cue says where both stand after it
-        /// (EffectPlan.MovesOnFloor, which also decides that the walk and the recount are waited for
-        /// instead of the move to a slot and the tag's flip).
+        /// (EffectPlan.MovesOnFloor). Every source draws the floor (#577), so this only fails on a script bug.
         /// </summary>
         private bool OnFloor(Cue cue)
         {
@@ -1354,29 +1353,17 @@ namespace Depiction.View
             Vector2 enemyFrom = enemyFigure ? enemyFigure.Rect.anchoredPosition : Vector2.zero;
             Vector2 enemyTo = enemyFigure && cue.EnemyCellAfter > 0 ? AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize)) : enemyFrom;
             bool enemyMoves = enemyFigure && (enemyTo - _enemyHome).sqrMagnitude > 0.25f;
+            // §5.4 順 2 (#587): the enemy's own move after its blow starts 80 ms after the number, while
+            // the struck player still reels (TargetRecoil); a player whose cell stays is left to it.
+            bool playerStays = enemyMoves && !cue.Pushed && _playerHomeSet && to == _playerHome;
             if (enemyMoves) _enemyHome = enemyTo;
             SetPlayerHome(figure, to); // the panels set off for the new cells as the figures do
             // 160 ms a cell (EffectSpec.TotalMs of FloorMove); a push starts fast and settles.
             yield return UiTween.Run(_effects.WaitMs(EffectId.FloorMove, cells), cue.Pushed ? Ease.Out : Ease.InOut, t =>
             {
-                if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
+                if (figure && !playerStays) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
                 if (enemyMoves && enemyFigure) enemyFigure.Rect.anchoredPosition = Vector2.LerpUnclamped(enemyFrom, enemyTo, t);
             });
-        }
-
-        /// <summary>
-        /// The move alone without a floor (EffectId.RangeSwitch): into the slot N maps to. The tag's
-        /// flip follows as its own beat (EffectId.RangeTagFlip, #495).
-        /// </summary>
-        private IEnumerator SwitchRange(FigureView figure, RangeSide range, bool pushed)
-        {
-            RectTransform slot = range == RangeSide.Near ? playerNearSlot : playerFarSlot;
-            Vector3 from = figure.transform.position;
-            Vector3 to = slot ? slot.position : from;
-            SetPlayerHome(figure, to);
-            // 320 ms to move (battle_ui_ux_v2 §10.6). A push is a knock-back: it starts fast and settles,
-            // where a step of one's own eases in and out.
-            yield return UiTween.Run(_effects.Ms(EffectId.RangeSwitch), pushed ? Ease.Out : Ease.InOut, t => { if (figure) figure.transform.position = Vector3.LerpUnclamped(from, to, t); });
         }
 
         /// <summary>
@@ -1709,10 +1696,8 @@ namespace Depiction.View
             enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);
             enemyFigure.SetRange(frame.Enemy.HasRange, frame.Enemy.RangeGlyph);
-            RectTransform slot = frame.Player.Range == RangeSide.Near ? playerNearSlot : playerFarSlot;
-            if (slot) playerFigure.transform.position = slot.position;
             SetPlayerHome(playerFigure);
-            ApplyFloor(frame); // §4.2: with a floor, the figures stand on their cells instead of the slots
+            ApplyFloor(frame); // §4.2: the figures stand on their cells (#577: every source draws the floor)
             omenBadge.Bind(frame.Omen);
             bool hasHint = !string.IsNullOrEmpty(frame.StanceHint);
             if (stanceHintText) stanceHintText.text = frame.StanceHint;

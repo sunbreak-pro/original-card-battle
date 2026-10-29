@@ -1,18 +1,13 @@
-// Display data for the v4.2 battle depiction. Pure C#: no UnityEngine, no BattleCore.
+// Display data for the battle depiction. Pure C#: no UnityEngine, no BattleCore.
 // The screen never computes a rule — every number, label and "did the condition hold"
-// comes from these types. Today a hand-written script fills them (TurnSliceScript);
-// later the v4.2 core's output is mapped into the same types.
+// comes from these types. A played battle has them written from the BattleCore rules
+// (Bridge/CoreScriptWriter, through CoreBattleSource); the filming scene replays the one
+// turn written by hand in TurnSliceScript. Both stand the figures on the floor's cells.
 using System;
 using System.Collections.Generic;
 
 namespace Depiction
 {
-    public enum RangeSide
-    {
-        Near,
-        Far,
-    }
-
     public enum UnitSide
     {
         Player,
@@ -117,12 +112,9 @@ namespace Depiction
         /// <summary>True when the trait's condition holds right now (lamp lit).</summary>
         public bool TraitLit;
         /// <summary>
-        /// The range side the card may be played from, or null when either side works. The fixed
-        /// script prints it and never looks at it; a core battle refuses by reach instead
-        /// (<see cref="PlayVerdict.OutOfRange"/>).
+        /// The reach the card is played from, as printed ("0〜1"). Empty when the card reads no reach.
+        /// The screen only prints it; a core battle refuses by reach (<see cref="PlayVerdict.OutOfRange"/>).
         /// </summary>
-        public RangeSide? RequiredRange;
-        /// <summary>The glyph of <see cref="RequiredRange"/> as printed ("近"). Empty when the card has none.</summary>
         public string RequiredRangeGlyph = "";
         /// <summary>
         /// The line the hover panel beside the card prints when the card aims at the opponent and no
@@ -391,10 +383,9 @@ namespace Depiction
         public bool ReserveLikely;
         /// <summary>battle-visual-v1 §4.5 (#455): an elite's number panel has a phosphor frame.</summary>
         public bool Elite;
-        /// <summary>Only bosses, elites and the player hold a range side (battle_core_v4 §17.3).</summary>
+        /// <summary>The unit carries the gap tag (the player). With a floor the floor's one number says it instead.</summary>
         public bool HasRange;
-        public RangeSide Range;
-        /// <summary>The one glyph on the tag at the unit's feet ("近" / "遠"). Required when <see cref="HasRange"/>.</summary>
+        /// <summary>The gap N on the tag at the unit's feet ("2"). Required when <see cref="HasRange"/>.</summary>
         public string RangeGlyph = "";
         public List<StatusChip> Statuses = new List<StatusChip>();
         /// <summary>
@@ -848,8 +839,7 @@ namespace Depiction
         public int StaminaAfter = Unchanged;
         /// <summary>StaminaChange only: how many pips the unit has, so the View never looks outside the cue.</summary>
         public int StaminaMax = Unchanged;
-        public RangeSide RangeAfter;
-        /// <summary>RangeSwitch only: the glyph the tag flips to ("遠").</summary>
+        /// <summary>RangeSwitch only: the gap N after the move, as the tag prints it ("2").</summary>
         public string RangeGlyphAfter = "";
         /// <summary>StatusChange only: the stacks left of the word named in <see cref="Text"/> (0 = gone).</summary>
         public int StacksAfter = Unchanged;

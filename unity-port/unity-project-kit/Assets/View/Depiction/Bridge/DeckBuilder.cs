@@ -347,8 +347,9 @@ namespace Depiction.Bridge
         /// <summary>
         /// Trial extension (docs/EXTENSIONS.md X-17): the attribute words the screens print — the battle's
         /// (CardFaceText.AttributeWord: 「攻撃」「防御」「スキル」「スタンス」, battle-visual-v1 §15 / battle_ui_ux_v2 §1.1 B6),
-        /// which the card hover, the 連動 trait, the 用語 page and the result card all use. This class's own words
-        /// (<see cref="AttributeWords"/>: 技 / 構え) stay as they are; 構え is the end-of-turn Guard rule on every other screen.
+        /// which the card hover, the 連動 trait, the 用語 page and the result card all use. Since #575
+        /// <see cref="AttributeWords"/> and <see cref="AttributeOptions"/> print the same words, so these three stay only
+        /// as the names the trial screens call.
         /// </summary>
         // js: bridge/depiction/DeckBuilder.js:293
         public static string ShownAttributeWords(BattleAttribute attributes)
@@ -390,14 +391,17 @@ namespace Depiction.Bridge
             return lines;
         }
 
-        /// <summary>The word for the attribute a card counts as (§2.1, v4.4): 「攻撃」「防御」「技」「構え」.</summary>
+        /// <summary>
+        /// The word for the attribute a card counts as (§2.1, v4.4): 「攻撃」「防御」「スキル」「スタンス」,
+        /// CardFaceText's words (#575).
+        /// </summary>
         public static string AttributeWords(BattleAttribute attributes)
         {
             var words = new List<string>();
-            if (attributes.HasFlag(BattleAttribute.Attack)) words.Add("攻撃");
-            if (attributes.HasFlag(BattleAttribute.Guard)) words.Add("防御");
-            if (attributes.HasFlag(BattleAttribute.Skill)) words.Add("技");
-            if (attributes.HasFlag(BattleAttribute.Stance)) words.Add("構え");
+            foreach (BattleAttribute one in new[] { BattleAttribute.Attack, BattleAttribute.Guard, BattleAttribute.Skill, BattleAttribute.Stance })
+            {
+                if (attributes.HasFlag(one)) words.Add(CardFaceText.AttributeWord(one));
+            }
             return string.Join("＋", words);
         }
 

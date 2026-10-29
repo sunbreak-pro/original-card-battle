@@ -337,7 +337,7 @@ namespace Depiction.Bridge
             return screen;
         }
 
-        /// <summary>「攻撃 9・ムーブ 4・防御 3」 in §2.2 order, attributes not used left out.</summary>
+        /// <summary>「攻撃 9・防御 3・スキル 2」 in §2.2 order, attributes not used left out (CardFaceText's words, #575).</summary>
         public static string Breakdown(BattleTally tally)
         {
             if (tally == null) throw new ArgumentNullException(nameof(tally));

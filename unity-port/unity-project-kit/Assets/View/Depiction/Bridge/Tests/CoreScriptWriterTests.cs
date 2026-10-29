@@ -50,7 +50,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(frame.Player.Stamina, Is.EqualTo(10));
             Assert.That(frame.Player.HasRange, Is.True);
             Assert.That(frame.Player.RangeGlyph, Is.EqualTo("3"), "the gap N on the player's tag (§7.2), START_GAP 3");
-            Assert.That(frame.Player.Range, Is.EqualTo(RangeSide.Far), "gap 2 and up stand in the far slot until #163");
+            Assert.That(frame.Floor.Gap, Is.EqualTo(3), "#577: the figures stand on the floor's cells, N apart");
             Assert.That(frame.Enemy.Hp, Is.EqualTo(60));
             Assert.That(frame.Enemy.HasRange, Is.False, "one tag says it all");
             Assert.That(frame.Enemy.ShowStamina, Is.True, "battle-visual-v1 §4.5 (#455): on the enemy's number panel");
@@ -119,7 +119,6 @@ namespace Depiction.Bridge.Tests
             Assert.That(kesa.ValueText, Is.EqualTo("15"));
             Assert.That(kesa.TraitText, Is.EqualTo("間合い0 +5"));
             Assert.That(kesa.TraitLit, Is.True, "the player stands adjacent");
-            Assert.That(kesa.RequiredRange, Is.Null);
             Assert.That(kesa.RequiredRangeGlyph, Is.EqualTo("0〜1"), "the reach, as printed (§2.4)");
 
             CardFace brace = frame.Hand.First(c => c.Name == "呼吸を整える");
@@ -210,11 +209,130 @@ namespace Depiction.Bridge.Tests
             }));
             Cue move = ev.Cues[3];
             Assert.That(move.Target, Is.EqualTo(UnitSide.Player));
-            Assert.That(move.RangeAfter, Is.EqualTo(RangeSide.Near), "gap 1 still stands in the near slot");
+            Assert.That(move.GapAfter, Is.EqualTo(1), "#577: the move is drawn on the floor, N 1 after it");
+            Assert.That(EffectPlan.MovesOnFloor(move), Is.True);
             Assert.That(move.RangeGlyphAfter, Is.EqualTo("1"));
             Cue guard = ev.Cues[4];
             Assert.That(guard.Amount, Is.EqualTo(3));
             Assert.That(guard.GuardAfter, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void ATraitsStaminaPoint_PlaysAfterTheBlow_NotBeforeIt()
+        {
+            // battle_ui_ux_v2 §5.9 (#588): the core gives the pip back as soon as the trait is judged; the
+            // screen shows it after every face. 小手打ち at gap 0: pay 1, the cue, the cut, then +1.
+            var (state, writer) = Begin(0, CardCatalog.WristCut, CardCatalog.WristCut);
+            StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            writer.Write(begin.Events, begin.State);
+
+            StepResult play = TurnLoop.PlayCard(begin.State, InHand(begin.State, "wrist_cut"), NoShuffle);
+            DepictionEvent ev = writer.Write(play.Events, play.State).Single();
+
+            Assert.That(Kinds(ev), Is.EqualTo(new[] { CueKind.StaminaChange, CueKind.TraitFire, CueKind.Slash, CueKind.StaminaChange }));
+            Assert.That(ev.Cues[0].Amount, Is.EqualTo(-1));
+            Assert.That(ev.Cues[0].StaminaAfter, Is.EqualTo(9));
+            Cue gain = ev.Cues[3];
+            Assert.That(gain.Amount, Is.EqualTo(1));
+            Assert.That(gain.StaminaAfter, Is.EqualTo(10), "the core's settled value, copied as it was");
+            Assert.That(gain.Fx, Is.EqualTo(FxSystem.Breath), "the trait's 息 (§5.9 順 2)");
+            Assert.That(ev.After.Player.Stamina, Is.EqualTo(10));
+
+            List<EffectId> steps = EffectPlan.StepsOf(ev).Select(s => s.Id).ToList();
+            Assert.That(steps.Last(), Is.EqualTo(EffectId.StaminaRecover), "the pip lights once the cut has played out");
+            Assert.That(steps.IndexOf(EffectId.StaminaRecover), Is.GreaterThan(steps.IndexOf(EffectId.HpDrain)));
+        }
+
+        /// <summary>A beat of a face (§2.2's Attack → Move → Guard → Skill → Stance), apart from the stamina a face gives.</summary>
+        private static bool IsFaceBeat(Cue cue)
+        {
+            switch (cue.Kind)
+            {
+                case CueKind.Slash:
+                case CueKind.GuardBlock:
+                case CueKind.Hit:
+                case CueKind.GuardGain:
+                case CueKind.RangeSwitch:
+                case CueKind.StatusChange:
+                case CueKind.HpChange:
+                    return true;
+                case CueKind.TraitFire:
+                    return cue.Text != null && cue.Text.StartsWith("構え・"); // the stance face (StanceSet)
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// The card's play from the first board on which its stamina trait fires and a face plays, or null: gaps 0〜4 in turn,
+        /// each as the turn's first card, as its third after two attacks (初手 / 決め / 連動 攻撃), and with
+        /// 再生 already on the player (息継ぎ's 再生中).
+        /// </summary>
+        private static DepictionEvent PlayWithStaminaTraitFired(CardDef card)
+        {
+            var boards = new System.Func<CombatantState, CombatantState>[]
+            {
+                p => p,
+                p => p with { Played = new[] { BattleAttribute.Attack, BattleAttribute.Attack } },
+                p => p with { Statuses = StatusSet.Of((StatusKind.Regen, 2)) },
+            };
+            for (int gap = 0; gap <= GrammarSamples.MaxGap; gap++)
+            {
+                foreach (var board in boards)
+                {
+                    var (state, writer) = Begin(gap, Enumerable.Repeat(card, Constants.HandDraw + 2).ToArray()); // a draw face has a card to draw
+                    StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+                    writer.Write(begin.Events, begin.State);
+                    BattleState ready = begin.State with { Player = board(begin.State.Player) };
+                    string id = InHand(ready, card.Id);
+                    if (TurnLoop.CanPlay(ready, id) != PlayRefusal.None) continue;
+                    StepResult play = TurnLoop.PlayCard(ready, id, NoShuffle);
+                    bool fired = play.Events.OfType<TraitEvaluated>()
+                        .Any(t => t.Trait.Effect == TraitEffect.StaminaGain && t.Outcome.Triggered);
+                    if (!fired) continue;
+                    DepictionEvent ev = writer.Write(play.Events, play.State).Single(e => e.Kind == DepictionEventKind.PlayCard);
+                    if (ev.Cues.Any(IsFaceBeat)) return ev; // 足運び at gap 0 has nowhere to step
+                }
+            }
+            return null;
+        }
+
+        [Test]
+        public void EveryCardWithAStaminaTrait_ShowsTheTraitsPipAfterAllItsFaces()
+        {
+            // §5.9 (#588): read off the cards themselves, so a card that gains the trait later is held too.
+            List<CardDef> cards = CardCatalog.All
+                .Where(d => d.AllTraits.Any(t => t.Effect == TraitEffect.StaminaGain))
+                .ToList();
+            Assert.That(cards, Has.Count.EqualTo(8), "the swordsman's eight (5 initial, 3 learned) when #588 was filed");
+
+            var report = new System.Text.StringBuilder();
+            foreach (CardDef card in cards)
+            {
+                DepictionEvent ev = PlayWithStaminaTraitFired(card);
+                Assert.That(ev, Is.Not.Null, card.Name + ": no board 0〜" + GrammarSamples.MaxGap + " fires its trait");
+                int trait = ev.Cues.FindIndex(c => c.Kind == CueKind.TraitFire && !IsFaceBeat(c));
+                int firstGain = ev.Cues.FindIndex(c => c.Kind == CueKind.StaminaChange && c.Amount > 0);
+                int lastFace = ev.Cues.FindLastIndex(IsFaceBeat);
+                Assert.That(ev.Cues[0].Kind, Is.EqualTo(CueKind.StaminaChange), card.Name + ": the cost first");
+                Assert.That(ev.Cues[0].Amount, Is.LessThan(0), card.Name + ": the cost first");
+                Assert.That(trait, Is.EqualTo(1), card.Name + ": the trait's cue right after the cost");
+                Assert.That(lastFace, Is.GreaterThan(trait), card.Name + ": the card has a face beat");
+                Assert.That(firstGain, Is.GreaterThan(lastFace), card.Name + ": every stamina gain after the last face (" + string.Join(", ", Kinds(ev)) + ")");
+                int draw = ev.Cues.FindIndex(c => c.Kind == CueKind.DrawHand);
+                if (draw >= 0) Assert.That(draw, Is.GreaterThan(firstGain), card.Name + ": §5.9's later group in its table's order, the pip and then the draw");
+                // The pips step up by the core's own numbers, in the core's order.
+                int pips = ev.Cues[0].StaminaAfter;
+                foreach (Cue gain in ev.Cues.Where(c => c.Kind == CueKind.StaminaChange && c.Amount > 0))
+                {
+                    Assert.That(gain.StaminaAfter, Is.EqualTo(pips + gain.Amount), card.Name + ": the pips never step back");
+                    pips = gain.StaminaAfter;
+                }
+                Assert.That(ev.After.Player.Stamina, Is.EqualTo(pips), card.Name);
+                Assert.That(EffectPlan.BlockingMs(ev, EffectSwitches.AllOn()), Is.LessThan(2000f), card.Name + ": §5.0's 2.0 s");
+                report.Append(card.Name).Append(": ").Append(string.Join(", ", Kinds(ev))).Append('\n');
+            }
+            TestContext.Out.Write(report.ToString());
         }
 
         [Test]
@@ -346,6 +464,102 @@ namespace Depiction.Bridge.Tests
             Assert.That(next.After.Omen.ValueText, Is.EqualTo("9"));
         }
 
+        // ---- an enemy that strikes and then moves itself (#587) ----
+
+        /// <summary>Every enemy action that strikes and then moves its own cells (§5.4 順 2: 退き撃ち and the like), read off the roster.</summary>
+        private static List<(EnemyDef Enemy, EnemyActionDef Action)> StrikeThenMove()
+        {
+            var found = new List<(EnemyDef, EnemyActionDef)>();
+            foreach (EnemyDef enemy in Enemies.All)
+            {
+                foreach (EnemyActionDef action in enemy.Actions.Values)
+                {
+                    if (action.Face.Power > 0 && action.Face.Move != 0) found.Add((enemy, action));
+                }
+            }
+            return found;
+        }
+
+        /// <summary>
+        /// The enemy carries out <paramref name="action"/> against a player holding <paramref name="guard"/>, from
+        /// the first gap in its reach where it moves after the blow; the event its blow plays in, or null.
+        /// The player ends the turn with no stamina, so 構え adds no Guard of its own.
+        /// </summary>
+        private static DepictionEvent StrikeThenMoveEvent(EnemyDef enemy, EnemyActionDef action, int guard)
+        {
+            Reach reach = action.Face.ReachOrDefault;
+            for (int gap = reach.Min; gap <= reach.Max; gap++)
+            {
+                var setup = new BattleSetup(enemy, Cards.BuildDeck(new[] { CardCatalog.Brace }, Constants.HandDraw * 2),
+                    Constants.FieldCellsMax, StartGap: gap);
+                BattleState state = TurnLoop.Start(setup, NoShuffle).State;
+                if (state.Gap != gap) continue;
+                var writer = new CoreScriptWriter(setup.Enemy);
+                writer.Opening(state);
+                StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+                writer.Write(begin.Events, begin.State);
+
+                EnemyUnit unit = begin.State.Enemies[0];
+                BattleState ready = begin.State with { Player = begin.State.Player with { Stamina = 0, Guard = guard } };
+                ready = ready.WithUnit(0, unit with { Omen = new Omen(action.Id, EnemyAi.LabelOf(action)) });
+                StepResult end = TurnLoop.EndTurn(ready, NoShuffle);
+                bool moved = end.Events.OfType<CellsMoved>().Any(m => m.Actor == Actor.Enemy && !m.Pushed);
+                if (!moved) continue;
+                return writer.Write(end.Events, end.State)
+                    .FirstOrDefault(e => e.Cues.Any(c => c.Kind == CueKind.Slash && c.Source == UnitSide.Enemy) && e.Title == action.Name);
+            }
+            return null;
+        }
+
+        [Test]
+        public void AnEnemyThatStrikesThenMoves_GoesStraightIntoTheMove_WithNoReturn()
+        {
+            // §5.4 順 2 (#587): no §5.5 順 8 return; the move starts on the number + 80, in the blow's own event.
+            List<(EnemyDef Enemy, EnemyActionDef Action)> actions = StrikeThenMove();
+            Assert.That(actions.Select(a => a.Action.Id), Is.EquivalentTo(new[]
+            {
+                "lunge_in", "press", "backstep", "step_slash", "crystal_rush", "recoil_thrust", "push_shield", "pounce",
+            }), "the eight of #587");
+
+            var report = new System.Text.StringBuilder();
+            foreach (var (enemy, action) in actions)
+            {
+                string name = enemy.Name + " " + action.Name;
+                // Guard 0: swing, wound, move. A little Guard: swing, shield, wound, move.
+                foreach (int guard in new[] { 0, 2 })
+                {
+                    DepictionEvent ev = StrikeThenMoveEvent(enemy, action, guard);
+                    Assert.That(ev, Is.Not.Null, name + " Guard " + guard + ": never moves after its blow");
+                    int hit = ev.Cues.FindIndex(c => c.Kind == CueKind.Hit && c.Target == UnitSide.Player);
+                    Assert.That(hit, Is.GreaterThan(0), name + " Guard " + guard + ": a wound");
+                    if (guard > 0) Assert.That(ev.Cues[hit - 1].Kind, Is.EqualTo(CueKind.GuardBlock), name + ": the shield before the wound");
+                    Assert.That(ev.Cues[hit + 1].Kind, Is.EqualTo(CueKind.RangeSwitch), name + " Guard " + guard + ": the move in the same event, right after the wound");
+                    Assert.That(ev.Cues[hit + 1].Pushed, Is.False, name);
+                    Assert.That(EffectPlan.EnemyMoveFollows(ev, ev.Cues[hit]), Is.True, name);
+
+                    List<EffectStep> steps = EffectPlan.StepsOf(ev);
+                    Assert.That(steps.Select(s => s.Id), Has.No.Member(EffectId.EnemyReturn), name + " Guard " + guard);
+                    Assert.That(steps.Single(s => s.Id == EffectId.HpDrain).LeadMs, Is.EqualTo(EffectPlan.NextFaceLeadMs), name + " Guard " + guard);
+                    float ms = EffectPlan.BlockingMs(ev, EffectSwitches.AllOn());
+                    Assert.That(ms, Is.LessThan(2000f), name + " Guard " + guard + ": §5.0's 2.0 s for the 1 手");
+                    report.Append(name).Append(" Guard ").Append(guard).Append(": ").Append(string.Join(", ", Kinds(ev)))
+                        .Append(" = ").Append(ms).Append(" ms\n");
+                }
+
+                // Guard takes all of it: the shield, then the move from where the enemy struck — no return to wait for.
+                DepictionEvent blocked = StrikeThenMoveEvent(enemy, action, 99);
+                Assert.That(blocked, Is.Not.Null, name + " Guard 99");
+                int block = blocked.Cues.FindIndex(c => c.Kind == CueKind.GuardBlock);
+                Assert.That(block, Is.GreaterThan(0), name + " Guard 99: the shield");
+                Assert.That(blocked.Cues.Any(c => c.Kind == CueKind.Hit), Is.False, name + " Guard 99: no wound");
+                Assert.That(blocked.Cues[block + 1].Kind, Is.EqualTo(CueKind.RangeSwitch), name + " Guard 99: the move right after the shield");
+                Assert.That(EffectPlan.StepsOf(blocked).Select(s => s.Id), Has.No.Member(EffectId.EnemyReturn), name + " Guard 99");
+                Assert.That(EffectPlan.BlockingMs(blocked, EffectSwitches.AllOn()), Is.LessThan(2000f), name + " Guard 99");
+                report.Append(name).Append(" Guard 99: ").Append(string.Join(", ", Kinds(blocked))).Append('\n');
+            }
+            TestContext.Out.Write(report.ToString());
+        }
+
         [Test]
         public void ASweepThatFindsThePlayerAtGapOne_StrikesItsBonusOff()
         {
@@ -377,7 +591,7 @@ namespace Depiction.Bridge.Tests
             StepResult play = TurnLoop.PlayCard(begin.State, InHand(begin.State, "boar_rush"), NoShuffle);
             DepictionFrame afterRush = writer.Write(play.Events, play.State)[0].After;
             Assert.That(afterRush.Player.RangeGlyph, Is.EqualTo("0"));
-            Assert.That(afterRush.Player.Range, Is.EqualTo(RangeSide.Near));
+            Assert.That(afterRush.Floor.Gap, Is.EqualTo(0));
 
             StepResult end = TurnLoop.EndTurn(play.State, NoShuffle);
             List<DepictionEvent> events = writer.Write(end.Events, end.State);
@@ -392,10 +606,10 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void TheEnemysStep_MovesThePlayersTag_UntilTheFloorHasCells()
+        public void TheEnemysStep_IsDrawnOnTheFloor_AndCountsTheGapAgain()
         {
-            // Gap 3: the polearm steps in. The screen has no enemy slot yet (#163), so the one thing
-            // that changes is N on the player's tag — and the slot it maps to.
+            // Gap 3: the polearm steps in. The move is drawn on the floor (#577): the enemy's cell moves,
+            // the player's stays, and N is counted again.
             var (state, writer) = Begin(3, FiveCards);
             StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
             writer.Write(begin.Events, begin.State);
@@ -407,8 +621,12 @@ namespace Depiction.Bridge.Tests
             Assert.That(Kinds(step), Is.EqualTo(new[] { CueKind.EnemyWindup, CueKind.RangeSwitch, CueKind.GuardGain }));
             Assert.That(step.Cues[1].Target, Is.EqualTo(UnitSide.Player));
             Assert.That(step.Cues[1].RangeGlyphAfter, Is.EqualTo("2"));
-            Assert.That(step.Cues[1].RangeAfter, Is.EqualTo(RangeSide.Far));
+            Assert.That(step.Cues[1].GapAfter, Is.EqualTo(2));
+            Assert.That(step.Cues[1].PlayerCellAfter, Is.EqualTo(begin.State.Player.Cell), "the player stands where it stood");
+            Assert.That(step.Cues[1].EnemyCellAfter, Is.EqualTo(begin.State.Enemy.Cell - 1), "the enemy one cell in");
+            Assert.That(step.Cues[1].CellsMoved, Is.EqualTo(1));
             Assert.That(step.After.Player.RangeGlyph, Is.EqualTo("2"));
+            Assert.That(step.After.Floor.Gap, Is.EqualTo(2));
         }
 
         [Test]

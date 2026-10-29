@@ -131,6 +131,16 @@ namespace Depiction.Bridge
         /// <summary>#57 (§5.9 J2): a trait of the card or action being written fired, so its blows carry the short cue.</summary>
         private bool _traitLit;
 
+        /// <summary>The core event read just before the one being read is a trait's judgement (#588).</summary>
+        private bool _afterTraits;
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.9 (#588): the pips a fired trait gives back. The core adds them as soon as
+        /// the traits are judged, before any face; the screen shows them after the faces, so the beat
+        /// waits here until the card's faces are written (<see cref="ReleaseTraitStamina"/>).
+        /// </summary>
+        private Cue _traitStaminaHeld;
+
         /// <summary>
         /// The enemy whose phase is being written has carried out an action in it already (#189: an
         /// elite's second one opens a beat of its own). Enemies take their phases one by one (§7.4), so
@@ -259,7 +269,7 @@ namespace Depiction.Bridge
         /// enemy's action, the next omen), the same beats the screen already knows. A few moments take a
         /// beat of their own so each event stays inside the 2.0 s it may take: the enemy's push driving
         /// the player into the wall, and (#189) an enemy turn start that did something, an elite's second
-        /// action, the second blow of 二段斬り and the step an enemy takes after its blow.
+        /// action, the second blow of 二段斬り. The step an enemy takes after its blow stays in the blow's event (#587).
         ///
         /// With several enemies EndTurn plays each enemy's phase in turn: its 敵の番 beat, its action's
         /// beats and its next omen. An enemy that falls while others stand falls as a beat of its own
@@ -283,6 +293,7 @@ namespace Depiction.Bridge
                 DepictionEvent opened = OpenIfBoundary(e, current);
                 if (opened != null)
                 {
+                    ReleaseTraitStamina(current);
                     Close(current, after);
                     // (#288 for several enemies) an enemy that fell in the beat just closed, with others
                     // still standing (EnemyDefeated), falls before the next beat, so its figure and omen
@@ -304,11 +315,13 @@ namespace Depiction.Bridge
                 }
                 if (current == null) continue; // TurnLoop.Start's first omen: folded into Opening, not played.
                 Apply(e, current);
+                _afterTraits = e is TraitEvaluated;
             }
 
             // A held enemy 構え plays at the head of the last event: the next omen, or — when the
             // battle ended and no omen follows — the enemy's own action.
             if (current != null) FlushHeldReserves(current);
+            ReleaseTraitStamina(current);
             Close(current, after);
 
             // #288: the fall is a beat of its own after everything the move did, so the 800 ms never
@@ -412,12 +425,9 @@ namespace Depiction.Bridge
                     && current.Cues.Exists(c => c.Kind == CueKind.GuardGain || c.Kind == CueKind.HpChange):
                     return About(NewEvent(DepictionEventKind.EnemyAction, first.Action.Name), first.Unit);
 
-                // §2.2 (#189): an enemy that strikes and then steps in (飛びかかり, 当ててから前へ 2) takes
-                // the step as its own beat once the blow has landed.
-                case CellsMoved step when step.Actor == Actor.Enemy && !step.Pushed && current != null
-                    && current.Kind == DepictionEventKind.EnemyAction
-                    && current.Cues.Exists(c => c.Kind == CueKind.Hit || c.Kind == CueKind.GuardBlock):
-                    return About(NewEvent(DepictionEventKind.EnemyAction, current.Title + (step.To < step.From ? "（詰める）" : "（下がる）")), step.Unit);
+                // §5.4 順 2 (#587): an enemy that strikes and then moves itself (退き撃ち, 踏み込み斬り) keeps
+                // the move in the blow's event, so the move can start on the number + 80 with no return
+                // first (EffectPlan.EnemyMoveFollows). The whole 1 手 stays inside the 2.0 s (§5.0).
 
                 // §2.4 hits (#189): the second blow of an enemy face is a beat of its own (二段斬り),
                 // opened where the 脆化 its first blow left is spent for it.
@@ -493,8 +503,19 @@ namespace Depiction.Bridge
                     break;
 
                 case StaminaGained gained:
-                    Grammar(ev, SetStamina(ev, gained.Actor, gained.Unit, gained.Amount, gained.StaminaAfter), FxSystem.Breath);
+                {
+                    Cue gain = Grammar(ev, SetStamina(ev, gained.Actor, gained.Unit, gained.Amount, gained.StaminaAfter), FxSystem.Breath);
+                    // §5.9 (#588): a fired trait's stamina +1 is shown after all the faces, not where the
+                    // core adds it (straight after the traits are judged). The model already holds it, so
+                    // the frame is right whenever the beat plays.
+                    if (gain != null && _afterTraits)
+                    {
+                        ev.Cues.Remove(gain);
+                        gain.Unit = gained.Unit;
+                        _traitStaminaHeld = gain;
+                    }
                     break;
+                }
 
                 case StatusTicked ticked:
                     SetStatus(ev, ticked.Actor, ticked.Unit, ticked.Kind, -1, ticked.StacksAfter);
@@ -526,6 +547,8 @@ namespace Depiction.Bridge
 
                 case Drawn drawn:
                 {
+                    // §5.9's later group in its table's order: the trait's stamina +1, then the draw.
+                    ReleaseTraitStamina(ev);
                     _hand.Add(drawn.Card);
                     // A hand of six is six core events and one beat on screen.
                     Cue last = ev.Cues.Count > 0 ? ev.Cues[ev.Cues.Count - 1] : null;
@@ -641,15 +664,14 @@ namespace Depiction.Bridge
 
                 case CellsMoved moved:
                 {
-                    // Whichever side moved, the screen has one thing to show for it: the new N on the
-                    // player's tag, and the player's figure in the slot N maps to (CoreText.SideOf).
-                    // Moving the enemy figure waits for the floor cells (#163).
+                    // Whichever side moved, the screen shows the walk on the floor: both figures to the
+                    // cells they stand on after it, and the new N.
                     Unit(moved.Actor, moved.Unit).Cell = moved.To;
                     int focus = FocusUnit;
                     var cue = new Cue
                     {
                         Kind = CueKind.RangeSwitch, Target = UnitSide.Player, Pushed = moved.Pushed,
-                        RangeAfter = CoreText.SideOf(Gap), RangeGlyphAfter = CoreText.GapGlyph(Gap),
+                        RangeGlyphAfter = CoreText.GapGlyph(Gap),
                         // battle-visual-v1 §4.2 (#242): where both stand after the move, for the floor.
                         PlayerCellAfter = _player.Cell, EnemyCellAfter = _tracks[focus].Model.Cell, GapAfter = Gap,
                         // battle_ui_ux_v2 §5.7 順 1 (#586): the walk takes 160 ms a cell.
@@ -948,6 +970,9 @@ namespace Depiction.Bridge
             // but it settles with the event's frame: battle_ui_ux_v2 §5.5 順 0 (its pips going by the cost
             // before the blow) is not played yet.
             if (actor != Actor.Player || amount == 0) return null;
+            // #588: a held trait gain the core settled before this change plays first, so the pips
+            // never step back (息継ぎ's own +1 lands after the trait's).
+            ReleaseTraitStamina(ev);
             var cue = new Cue
             {
                 Kind = CueKind.StaminaChange, Target = UnitSide.Player,
@@ -955,6 +980,18 @@ namespace Depiction.Bridge
             };
             ev.Cues.Add(cue);
             return cue;
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.9 (#588): plays the held trait stamina beat at the end of the cues written so
+        /// far. Called when the card's event closes, and before the next beat that has to come after it:
+        /// a draw (the later group's next row) or another stamina change (the pips keep the core's order).
+        /// </summary>
+        private void ReleaseTraitStamina(DepictionEvent ev)
+        {
+            if (_traitStaminaHeld == null || ev == null) return;
+            ev.Cues.Add(_traitStaminaHeld);
+            _traitStaminaHeld = null;
         }
 
         // js: CoreScriptWriter.js:841
@@ -1409,11 +1446,7 @@ namespace Depiction.Bridge
                 ShowStamina = showStamina, Stamina = unit.Stamina, StaminaMax = unit.StaminaMax,
                 HasRange = gap.HasValue, Down = unit.Down,
             };
-            if (gap.HasValue)
-            {
-                frame.Range = CoreText.SideOf(gap.Value);
-                frame.RangeGlyph = CoreText.GapGlyph(gap.Value);
-            }
+            if (gap.HasValue) frame.RangeGlyph = CoreText.GapGlyph(gap.Value);
             // §4: the stances held lead the chips, one chip per stance (a repeat is one chip with its count).
             frame.Statuses.AddRange(CoreText.StanceChips(unit.Stances));
             // battle-visual-v1 §4.6 (#455): the same stances as the list at the unit's edge.

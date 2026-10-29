@@ -354,7 +354,7 @@ namespace Depiction.Bridge.Tests
         {
             var tally = new BattleTally("polearm_warped", GameResult.Won, 7, 30, 50, 9,
                 new Dictionary<BattleAttribute, int> { [BattleAttribute.Guard] = 3, [BattleAttribute.Attack] = 6, [BattleAttribute.Skill] = 2 }, 4);
-            Assert.That(DemoSession.Breakdown(tally), Is.EqualTo("攻撃 6・防御 3・技 2"));
+            Assert.That(DemoSession.Breakdown(tally), Is.EqualTo("攻撃 6・防御 3・スキル 2"), "#575: the card's own attribute words");
             Assert.That(DemoSession.Breakdown(new BattleTally("x", GameResult.Lost, 1, 0, 50, 0, new Dictionary<BattleAttribute, int>(), 0)), Is.EqualTo("なし"));
             Assert.That(DemoSession.EnemyLine(Enemies.AbyssAngler), Is.EqualTo("獄竜 ガルド（ボス・HP 180）"));
         }

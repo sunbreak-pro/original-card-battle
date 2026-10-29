@@ -1993,7 +1993,10 @@ namespace Trial.Battle
                         {
                             IOmenBadge badge = _hud.OmenOf(foe);
                             await HoldBeat(EffectId.OmenSpend, () => badge.FadeOut(Ms(EffectId.OmenSpend)), () => badge.HideNow());
-                            await HoldBeat(EffectId.EnemyReturn, () => _field.ReturnHome(UnitSide.Enemy, Ms(EffectId.EnemyReturn), foe), () => _field.SnapHome(UnitSide.Enemy, foe));
+                            // §5.4 順 2 (#587): the enemy's own move next (退き撃ち) carries it on from the lunge, so it does not
+                            // draw back first; it walks in its standing pose, as the return would have left it.
+                            if (EffectPlan.EnemyMoveFollows(ev, cue)) _field.SetPose(UnitSide.Enemy, FigurePose.Idle, foe);
+                            else await HoldBeat(EffectId.EnemyReturn, () => _field.ReturnHome(UnitSide.Enemy, Ms(EffectId.EnemyReturn), foe), () => _field.SnapHome(UnitSide.Enemy, foe));
                         }
                     }
                     break;
