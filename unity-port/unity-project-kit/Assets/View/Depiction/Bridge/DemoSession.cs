@@ -62,7 +62,7 @@ namespace Depiction.Bridge
         /// <summary>
         /// §12's default three, on the v4.3 ids: 錆槍の竜兵 → 瘴牙の走竜 → 鉄壁の門竜.
         /// </summary>
-        public static readonly IReadOnlyList<string> DefaultChain = new[] { "polearm_warped", "shadow_hound", "armored_warden" };
+        public static readonly IReadOnlyList<string> DefaultChain = new[] { Enemies.PolearmWarpedId, Enemies.ShadowHound.Id, Enemies.ArmoredWarden.Id };
 
         private readonly int _seed;
         private readonly List<BattleTally> _tallies = new List<BattleTally>();
@@ -337,7 +337,7 @@ namespace Depiction.Bridge
             return screen;
         }
 
-        /// <summary>「攻撃 9・ムーブ 4・防御 3」 in §2.2 order, attributes not used left out.</summary>
+        /// <summary>「攻撃 9・防御 3・スキル 2」 in §2.2 order, attributes not used left out (CardFaceText's words, #575).</summary>
         public static string Breakdown(BattleTally tally)
         {
             if (tally == null) throw new ArgumentNullException(nameof(tally));

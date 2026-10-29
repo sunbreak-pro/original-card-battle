@@ -277,14 +277,17 @@ namespace Depiction.Bridge
             return lines;
         }
 
-        /// <summary>The word for the attribute a card counts as (§2.1, v4.4): 「攻撃」「防御」「技」「構え」.</summary>
+        /// <summary>
+        /// The word for the attribute a card counts as (§2.1, v4.4): 「攻撃」「防御」「スキル」「スタンス」,
+        /// CardFaceText's words (#575).
+        /// </summary>
         public static string AttributeWords(BattleAttribute attributes)
         {
             var words = new List<string>();
-            if (attributes.HasFlag(BattleAttribute.Attack)) words.Add("攻撃");
-            if (attributes.HasFlag(BattleAttribute.Guard)) words.Add("防御");
-            if (attributes.HasFlag(BattleAttribute.Skill)) words.Add("技");
-            if (attributes.HasFlag(BattleAttribute.Stance)) words.Add("構え");
+            foreach (BattleAttribute one in new[] { BattleAttribute.Attack, BattleAttribute.Guard, BattleAttribute.Skill, BattleAttribute.Stance })
+            {
+                if (attributes.HasFlag(one)) words.Add(CardFaceText.AttributeWord(one));
+            }
             return string.Join("＋", words);
         }
 

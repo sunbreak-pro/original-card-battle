@@ -120,19 +120,6 @@ export interface DamageAllocation {
   hpDamage: number;
 }
 
-/**
- * Process player card damage against enemy
- */
-export interface PlayerCardDamageResult {
-  totalDamage: number;
-  guardDamage: number;
-  apDamage: number;
-  hpDamage: number;
-  isCritical: boolean;
-  lifestealAmount: number;
-  reflectDamage: number;
-}
-
 // ============================================================
 // Phase Types
 // ============================================================
@@ -229,20 +216,4 @@ export interface CardEffectPreview {
   playerBuffs: string[];
   /** Debuffs that will be applied to enemy */
   enemyDebuffs: string[];
-}
-
-/**
- * Context required for card execution
- */
-export interface CardExecutionContext {
-  /** Current player HP */
-  playerHp: number;
-  /** Player max HP */
-  playerMaxHp: number;
-  /** Current player guard */
-  playerGuard: number;
-  /** Current player energy */
-  playerEnergy: number;
-  /** Whether it's player's phase */
-  isPlayerPhase: boolean;
 }

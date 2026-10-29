@@ -4,7 +4,8 @@
   "references": [
     "DungeonCore",
     "DungeonContent",
-    "Journal.Script"
+    "Journal.Script",
+    "Backdrop.Script"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

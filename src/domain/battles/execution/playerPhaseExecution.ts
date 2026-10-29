@@ -131,13 +131,6 @@ export function calculatePlayerPhaseEnd(
 }
 
 /**
- * Check if player can act (not stunned)
- */
-export function canPlayerAct(playerBuffs: BuffDebuffMap): boolean {
-    return !playerBuffs.has("stun");
-}
-
-/**
  * Apply heal with max HP cap
  */
 export function applyHealWithCap(

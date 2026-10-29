@@ -43,10 +43,3 @@ export const INITIAL_DECK_BY_CLASS: Record<CharacterClass, Record<string, number
 export function getInitialDeckCounts(classType: CharacterClass): Record<string, number> {
     return INITIAL_DECK_BY_CLASS[classType] ?? INITIAL_DECK_BY_CLASS.swordsman;
 }
-
-/**
- * Legacy alias for backward compatibility
- * Uses swordsman deck as default
- * @deprecated Use getInitialDeckCounts(classType) instead
- */
-export const INITIAL_DECK_COUNTS: Record<string, number> = INITIAL_DECK_BY_CLASS.swordsman;

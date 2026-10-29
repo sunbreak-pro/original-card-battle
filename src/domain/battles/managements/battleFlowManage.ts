@@ -22,7 +22,7 @@ export { createEnemyStateFromDefinition } from "../logic/enemyStateLogic";
 
 // Re-export individual hooks for advanced usage
 export { useBattleState, type UseBattleStateReturn, type PlayerState, type InitialPlayerState } from "./useBattleState";
-export { useBattlePhase, type UseBattlePhaseReturn, type PhaseState } from "./useBattlePhase";
+export { useBattlePhase, type UseBattlePhaseReturn } from "./useBattlePhase";
 export { useCardExecution, type UseCardExecutionReturn } from "./useCardExecution";
 
 export {

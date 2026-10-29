@@ -8,7 +8,7 @@
 export * from "./battleConstants";
 export * from "./cardConstants";
 export * from "./campConstants";
-export { LIVES_BY_DIFFICULTY, MAX_RESONANCE_LEVEL, RESONANCE_MULTIPLIER, RESONANCE_EFFECTS } from "./characterConstants";
+export { MAX_RESONANCE_LEVEL, RESONANCE_MULTIPLIER, RESONANCE_EFFECTS } from "./characterConstants";
 export type { ResonanceEffectConfig } from "./characterConstants";
 export * from "./dungeonConstants";
 export * from "./itemConstants";

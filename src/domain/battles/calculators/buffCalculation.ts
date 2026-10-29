@@ -14,7 +14,6 @@ import {
     END_PHASE_DAMAGE_BUFFS,
     REFLECT_BUFFS,
     LIFESTEAL_BUFFS,
-    ENERGY_REGEN_BUFFS,
     DRAW_MODIFIER_BUFFS,
     VULNERABILITY_MITIGATION_BUFFS,
 } from "@/constants/data/battles/buffData";
@@ -161,18 +160,6 @@ export const canAct = (map: BuffDebuffMap): boolean => {
     return !DISABLING_DEBUFFS.some(d => map.has(d));
 };
 
-export const energyRegenBuff = (map: BuffDebuffMap): number => {
-    let modifier = 0;
-
-    for (const type of ENERGY_REGEN_BUFFS) {
-        const buff = map.get(type);
-        if (buff) {
-            modifier += buff.value * buff.stacks;
-        }
-    }
-    return modifier;
-};
-
 export const calculateDrawModifier = (map: BuffDebuffMap): number => {
     let modifier = 0;
 
@@ -185,4 +172,3 @@ export const calculateDrawModifier = (map: BuffDebuffMap): number => {
 
     return modifier;
 };
-

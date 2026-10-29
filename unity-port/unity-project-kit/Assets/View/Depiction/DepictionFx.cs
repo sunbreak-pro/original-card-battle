@@ -227,6 +227,76 @@ namespace Depiction.View
             host.StartCoroutine(FloatRoutine(label, at, rise));
         }
 
+        /// <summary>
+        /// battle-visual-v1 §5.5 / battle_ui_ux_v2 §5.0 (#455): a hit's number on its small black 80%
+        /// plate — the shield and the Guard colour at 34 px for Guard lost, the heart and the HP ink at
+        /// 48 px for HP — with the cause beside it at 16 px. Its centre rises from the chest to the head
+        /// of a figure <paramref name="height"/> px tall standing on <paramref name="feet"/>, then fades.
+        /// <paramref name="paired"/> sets it beside the other number of the same blow (FloatNumberSpec.CentreX).
+        /// Never blocks the caller.
+        /// </summary>
+        public static void FloatPlate(MonoBehaviour host, RectTransform layer, Vector2 feet, float height, bool paired,
+            FloatNumberKind kind, int amount, string label, float ms)
+        {
+            Color ink = BattleTheme.Hex(FloatNumberSpec.ColorHex(kind));
+            int font = FloatNumberSpec.FontPx(kind);
+            RectTransform plate = UiKit.Point(layer, "FloatPlate", Half, Half, Vector2.zero, Vector2.zero);
+            UiKit.Image(plate, "Back", VisualArt.Rounded(FloatNumberSpec.PlateCorner),
+                BattleTheme.WithAlpha(Color.black, FloatNumberSpec.PlateAlpha), Vector2.zero, Vector2.one).type = Image.Type.Sliced;
+
+            Text number = UiKit.Label(plate, "Number", font, TextAnchor.MiddleCenter, ink, new Vector2(0f, 0.5f), Half,
+                new Vector2(10f, font * 1.25f), Vector2.zero, FloatNumberSpec.NumberText(kind, amount));
+            number.font = UiKit.NumberFont;
+            number.fontStyle = FontStyle.Bold;
+            number.horizontalOverflow = HorizontalWrapMode.Overflow;
+            Text side = null;
+            if (!string.IsNullOrEmpty(label))
+            {
+                side = UiKit.Label(plate, "Label", FloatNumberSpec.LabelFontPx, TextAnchor.MiddleCenter,
+                    BattleTheme.Hex(FloatNumberSpec.LabelInkHex), new Vector2(0f, 0.5f), Half,
+                    new Vector2(10f, FloatNumberSpec.LabelFontPx * 1.5f), Vector2.zero, label);
+                side.font = UiKit.BodyBoldFont;
+                side.horizontalOverflow = HorizontalWrapMode.Overflow;
+            }
+
+            FloatPlateLayout layout = FloatNumberSpec.Layout(kind, number.preferredWidth, side ? side.preferredWidth : 0f);
+            plate.sizeDelta = new Vector2(layout.Width, layout.Height);
+            int iconPx = FloatNumberSpec.IconPx(kind);
+            Sprite icon = FloatNumberSpec.LeadsWithShield(kind) ? ProceduralArt.Shield : VisualArt.Heart;
+            Image mark = UiKit.Sprite(plate, "Icon", icon, ink, new Vector2(0f, 0.5f), Half,
+                new Vector2(iconPx, iconPx), new Vector2(layout.IconCentre, 0f));
+            mark.preserveAspect = true;
+            mark.raycastTarget = false;
+            number.rectTransform.sizeDelta = new Vector2(number.preferredWidth, number.rectTransform.sizeDelta.y);
+            number.rectTransform.anchoredPosition = new Vector2(layout.NumberCentre, 0f);
+            if (side)
+            {
+                side.rectTransform.sizeDelta = new Vector2(side.preferredWidth, side.rectTransform.sizeDelta.y);
+                side.rectTransform.anchoredPosition = new Vector2(layout.LabelCentre, 0f);
+            }
+
+            float centreX = FloatNumberSpec.CentreX(kind, paired, layout.Width);
+            Vector2 from = feet + new Vector2(centreX, FloatNumberSpec.StartAbove(height));
+            Vector2 to = feet + new Vector2(centreX, FloatNumberSpec.EndAbove(height));
+            host.StartCoroutine(PlateRoutine(plate, from, to, ms));
+        }
+
+        private static IEnumerator PlateRoutine(RectTransform rt, Vector2 from, Vector2 to, float ms)
+        {
+            CanvasGroup group = UiKit.Group(rt);
+            group.blocksRaycasts = false;
+            rt.anchoredPosition = from;
+            yield return UiTween.Run(ms, Ease.Out, t =>
+            {
+                if (!rt) return;
+                rt.anchoredPosition = Vector2.Lerp(from, to, t);
+                float pop = t < 0.18f ? Mathf.Lerp(1.2f, 1f, t / 0.18f) : 1f;
+                rt.localScale = new Vector3(pop, pop, 1f);
+                group.alpha = t < 0.6f ? 1f : 1f - (t - 0.6f) / 0.4f;
+            });
+            if (rt) Object.Destroy(rt.gameObject);
+        }
+
         private static IEnumerator FloatRoutine(Text label, Vector2 at, float rise)
         {
             RectTransform rt = label.rectTransform;

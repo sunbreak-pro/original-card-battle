@@ -134,7 +134,8 @@ namespace Depiction.Bridge
                 case StatusKind.Rooting:
                     return "2 ターン続けて同じマスで終えると、次のターン開始に HP −" + Statuses.RootingHpPerStack + "×スタック";
                 case StatusKind.Withering:
-                    return "ターン開始のスタミナ回復が スタック 1 につき 1 減る";
+                    // roster §6.2 (#575): 疲労 included, the recovery never goes below the floor.
+                    return "ターン開始のスタミナ回復が スタック 1 につき 1 減る（疲労と重なっても " + Statuses.WitheringRecoveryFloor + " より下がらない）";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(kind), kind, "No panel text for the status " + kind);
             }

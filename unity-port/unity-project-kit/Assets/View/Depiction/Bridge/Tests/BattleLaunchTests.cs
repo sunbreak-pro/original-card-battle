@@ -48,6 +48,7 @@ namespace Depiction.Bridge.Tests
             BattleSetup setup = launch.BuildSetup();
 
             Assert.That(launch.EnemyId, Is.EqualTo("polearm_warped"));
+            Assert.That(BattleLaunch.DefaultEnemyId, Is.EqualTo(Enemies.PolearmWarpedId), "#576: the bootstrap's default is BattleCore's own id");
             Assert.That(launch.Seed, Is.EqualTo(20260921));
             Assert.That(launch.AutoPlay, Is.False);
             Assert.That(launch.StopAfterTurns, Is.EqualTo(0));

@@ -191,6 +191,19 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void TheGaugeForecastOfAStepAcrossALineStartsWithTheCautionMark()
+        {
+            // battle-visual-v1 §2.5: the share ahead is drawn in 注意 when it crosses a 20% line, and 注意 comes with △.
+            var crossing = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 18 })).Screen().Miasma;
+            Assert.That(crossing.Percent, Is.EqualTo(19));
+            Assert.That(crossing.NextPercent, Is.EqualTo(20));
+            Assert.That(crossing.ForecastLabel, Is.EqualTo($"△ 次の 1 歩で +{SevenLayers.Of(1).Density}%"));
+
+            var plain = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 10 })).Screen().Miasma;
+            Assert.That(plain.ForecastLabel, Does.Not.StartWith("△"));
+        }
+
+        [Test]
         public void RestingAcrossALineWarnsOnlyWhenTheMaximumReallyFalls()
         {
             // A 休息 lifts max stamina by 2, so crossing 20% on 「休む」 still raises it: no warning.
