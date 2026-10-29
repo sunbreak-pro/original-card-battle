@@ -336,7 +336,7 @@ namespace Depiction.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（80 種から 20〜40 枚、1 種 3 枚まで）"));
-                Assert.That(DeckBuilder.AttributeOptions.Select(o => o.Key), Is.EqualTo(new[] { "全て", "攻撃", "防御", "技", "構え" }));
+                Assert.That(DeckBuilder.AttributeOptions.Select(o => o.Key), Is.EqualTo(new[] { "全て", "攻撃", "防御", "スキル", "スタンス" }), "#575: battle-visual-v1 decision 15");
                 Assert.That(DeckBuilder.AttributeOptions.First().Value, Is.EqualTo(BattleAttribute.None));
                 Assert.That(DeckBuilder.CostOptions.Select(o => o.Key), Is.EqualTo(new[] { "全コスト", "コスト 1", "コスト 2", "コスト 3" }));
                 Assert.That(DeckBuilder.CostOptions.Select(o => o.Value), Is.EqualTo(new[] { 0, 1, 2, 3 }));
