@@ -146,6 +146,8 @@ namespace Depiction.View
         private CardView _reachFor;
         /// <summary>battle-visual-v1 §4.7 (#455): the draw, discard and exile piles under the stamina tag.</summary>
         private PilesView _piles;
+        /// <summary>#606: the layered backdrop (battle-visual-v1 §2.4) this battle hands its layer to, once found.</summary>
+        private Backdrop.View.BackdropView _backdropView;
         /// <summary>battle_ui_ux_v2 §1.1 C4 (#455): the drawer a click on a pile opens with its list.</summary>
         private PileListView _pileList;
         /// <summary>battle-visual-v1 §4.6 (#455): each side's stance list at its edge.</summary>
@@ -347,6 +349,8 @@ namespace Depiction.View
             DebugGate = "";
             ApplyTweenSpeed(); // also clears a 0 a debug gate left behind when domain reload is off
             if (showSpeedButton && !filming) BuildSpeedButton(); // before the demo flow's early return, so its battles get it too
+            // Layer 1's gradient stays under the layered backdrop: it is what shows where BackdropView has
+            // not attached (or has no art), so the battle never stands on a blank image (#606).
             if (backdrop && backdrop.sprite == null)
             {
                 BattleTheme.FloorPalette palette = BattleTheme.Floor(1);
@@ -1696,9 +1700,23 @@ namespace Depiction.View
 
         // ---- frame -> screen ------------------------------------------------------------------
 
+        /// <summary>
+        /// #606: hands the script's layer to the backdrop (battle-visual-v1 §2.4), so it no longer has to
+        /// read the corner info's text back. BackdropView attaches itself after the scene loads (#89), so the
+        /// first frames may come before it: it is looked for again until it is there. Show ignores the
+        /// layer it already shows, so every frame may call it.
+        /// </summary>
+        private void ShowBackdropLayer(int layer)
+        {
+            if (layer < 1 || !backdrop) return;
+            if (!_backdropView) _backdropView = FindAnyObjectByType<Backdrop.View.BackdropView>();
+            if (_backdropView) _backdropView.Show(layer);
+        }
+
         private void ApplyFrame(DepictionFrame frame)
         {
             if (cornerInfo) cornerInfo.Bind(frame.Corner);
+            ShowBackdropLayer(frame.Corner.Floor);
             // #288: the art is the script's to name; the figure looks it up and keeps it while the id stays.
             playerFigure.ShowArt(frame.Player.ArtId);
             enemyFigure.ShowArt(frame.Enemy.ArtId);
