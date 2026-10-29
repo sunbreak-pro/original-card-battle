@@ -1049,6 +1049,3 @@ export const SWORDSMAN_CARDS: Record<string, Card> = {
   },
 };
 export const SWORDSMAN_CARDS_ARRAY: Card[] = Object.values(SWORDSMAN_CARDS);
-export function getSwordsmanCard(id: string): Card | undefined {
-  return SWORDSMAN_CARDS[id];
-}

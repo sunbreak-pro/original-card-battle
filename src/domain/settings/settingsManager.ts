@@ -182,10 +182,3 @@ export const settingsManager = {
     };
   },
 };
-
-/**
- * Create default settings data structure
- */
-export function createDefaultSettings(): Omit<SettingsData, 'version' | 'timestamp'> {
-  return { ...DEFAULT_SETTINGS };
-}

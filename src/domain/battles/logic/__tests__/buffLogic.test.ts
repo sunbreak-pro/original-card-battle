@@ -1,10 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   addOrUpdateBuffDebuff,
-  removeBuffDebuff,
   decreaseBuffDebuffDurationForPhase,
-  getBuffValue,
-  isStackable,
   removeNDebuffs,
 } from '../buffLogic';
 import type { BuffDebuffMap } from '@/types/battleTypes';
@@ -49,25 +46,6 @@ describe('buffLogic', () => {
     });
   });
 
-  describe('removeBuffDebuff', () => {
-    it('should remove an existing buff', () => {
-      const map = createEmptyBuffMap();
-      const mapWithBuff = addOrUpdateBuffDebuff(map, 'atkUpMinor', 3, 10, 1, false, undefined, 'player');
-
-      expect(mapWithBuff.has('atkUpMinor')).toBe(true);
-
-      const result = removeBuffDebuff(mapWithBuff, 'atkUpMinor');
-      expect(result.has('atkUpMinor')).toBe(false);
-    });
-
-    it('should return same map content when removing non-existent buff', () => {
-      const map = createEmptyBuffMap();
-      const result = removeBuffDebuff(map, 'atkUpMinor');
-
-      expect(result.size).toBe(0);
-    });
-  });
-
   describe('decreaseBuffDebuffDurationForPhase', () => {
     it('should reduce durations and remove expired buffs', () => {
       let map = createEmptyBuffMap();
@@ -89,31 +67,6 @@ describe('buffLogic', () => {
       const result = decreaseBuffDebuffDurationForPhase(map, 'player');
 
       expect(result.has('atkUpMinor')).toBe(true);
-    });
-  });
-
-  describe('getBuffValue', () => {
-    it('should return the correct value for a buff type', () => {
-      // atkUpMinor should have value 15 defined in BUFF_EFFECTS
-      const value = getBuffValue('atkUpMinor');
-      expect(value).toBe(15);
-    });
-
-    it('should return the correct value for bleed', () => {
-      const value = getBuffValue('bleed');
-      expect(value).toBe(3);
-    });
-  });
-
-  describe('isStackable', () => {
-    it('should return true for stackable debuffs like bleed', () => {
-      const result = isStackable('bleed');
-      expect(result).toBe(true);
-    });
-
-    it('should return false for non-stackable buffs like atkUpMinor', () => {
-      const result = isStackable('atkUpMinor');
-      expect(result).toBe(false);
     });
   });
 
