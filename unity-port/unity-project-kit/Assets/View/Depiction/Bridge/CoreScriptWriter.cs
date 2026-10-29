@@ -541,14 +541,13 @@ namespace Depiction.Bridge
                     break;
 
                 case CellsMoved moved:
-                    // Whichever side moved, the screen has one thing to show for it: the new N on the
-                    // player's tag, and the player's figure in the slot N maps to (CoreText.SideOf).
-                    // Moving the enemy figure waits for the floor cells (#163).
+                    // Whichever side moved, the screen shows the walk on the floor: both figures to the
+                    // cells they stand on after it, and the new N.
                     Unit(moved.Actor).Cell = moved.To;
                     ev.Cues.Add(new Cue
                     {
                         Kind = CueKind.RangeSwitch, Target = UnitSide.Player, Pushed = moved.Pushed,
-                        RangeAfter = CoreText.SideOf(Gap), RangeGlyphAfter = CoreText.GapGlyph(Gap),
+                        RangeGlyphAfter = CoreText.GapGlyph(Gap),
                         // battle-visual-v1 §4.2 (#242): where both stand after the move, for the floor.
                         PlayerCellAfter = _player.Cell, EnemyCellAfter = _enemy.Cell, GapAfter = Gap,
                         // battle_ui_ux_v2 §5.7 順 1 (#586): the walk takes 160 ms a cell.
@@ -1240,11 +1239,7 @@ namespace Depiction.Bridge
                 ShowStamina = showStamina, Stamina = unit.Stamina, StaminaMax = unit.StaminaMax,
                 HasRange = gap.HasValue, Down = unit.Down,
             };
-            if (gap.HasValue)
-            {
-                frame.Range = CoreText.SideOf(gap.Value);
-                frame.RangeGlyph = CoreText.GapGlyph(gap.Value);
-            }
+            if (gap.HasValue) frame.RangeGlyph = CoreText.GapGlyph(gap.Value);
             // §4: the stances held lead the chips, one chip per stance (a repeat is one chip with its count).
             frame.Statuses.AddRange(CoreText.StanceChips(unit.Stances));
             // battle-visual-v1 §4.6 (#455): the same stances as the list at the unit's edge.

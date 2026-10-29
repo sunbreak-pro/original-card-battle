@@ -25,7 +25,8 @@ namespace Depiction.Tests
             Assert.That(runner.Frame.Player.Stamina, Is.EqualTo(6));
 
             Play(runner, TurnSliceScript.Ushirotobi, DropZone.AboveThrowLine, 4);
-            Assert.That(runner.Frame.Player.Range, Is.EqualTo(RangeSide.Far));
+            Assert.That(runner.Frame.Floor.PlayerCell, Is.EqualTo(TurnSliceScript.PlayerCellAfterStep), "one cell back (#577)");
+            Assert.That(runner.Frame.Floor.Gap, Is.EqualTo(2));
             Assert.That(runner.Frame.Player.Guard, Is.EqualTo(7));
             Assert.That(runner.Frame.Player.Stamina, Is.EqualTo(5));
 
@@ -139,25 +140,32 @@ namespace Depiction.Tests
         }
 
         [Test]
-        public void EveryUnitWithARangeSideCarriesItsGlyph()
+        public void EveryFrameStandsTheFiguresOnTheFloor_AndTheGlyphIsItsGap()
         {
+            // #577: the slice is written on the floor's cells and N, not on the near / far slots.
             DepictionScript script = TurnSliceScript.Build();
-            AssertRangeGlyphs(script.Opening, "opening");
+            AssertOnTheFloor(script.Opening, "opening");
             foreach (DepictionEvent ev in script.Events)
             {
-                AssertRangeGlyphs(ev.After, "event " + ev.Order);
+                AssertOnTheFloor(ev.After, "event " + ev.Order);
                 foreach (Cue cue in ev.Cues)
                 {
-                    if (cue.Kind == CueKind.RangeSwitch) Assert.That(cue.RangeGlyphAfter, Is.Not.Empty, "event " + ev.Order);
+                    if (cue.Kind != CueKind.RangeSwitch) continue;
+                    Assert.That(EffectPlan.MovesOnFloor(cue), Is.True, "event " + ev.Order);
+                    Assert.That(cue.RangeGlyphAfter, Is.EqualTo(cue.GapAfter.ToString()), "event " + ev.Order);
+                    Assert.That(cue.PlayerCellAfter, Is.EqualTo(ev.After.Floor.PlayerCell), "event " + ev.Order);
+                    Assert.That(cue.EnemyCellAfter, Is.EqualTo(ev.After.Floor.EnemyCell), "event " + ev.Order);
                 }
             }
 
-            Assert.That(script.Opening.Player.RangeGlyph, Is.EqualTo("近"));
+            Assert.That(script.Opening.Player.RangeGlyph, Is.EqualTo("1"));
+            Assert.That(script.Opening.Floor.Gap, Is.EqualTo(1));
             Cue rangeSwitch = script.Events[3].Cues.Find(c => c.Kind == CueKind.RangeSwitch);
             Assert.That(rangeSwitch, Is.Not.Null, "event 4 has no RangeSwitch cue");
-            Assert.That(rangeSwitch.RangeAfter, Is.EqualTo(RangeSide.Far));
-            Assert.That(rangeSwitch.RangeGlyphAfter, Is.EqualTo("遠"));
-            Assert.That(script.Events[3].After.Player.RangeGlyph, Is.EqualTo("遠"));
+            Assert.That(rangeSwitch.GapAfter, Is.EqualTo(2));
+            Assert.That(rangeSwitch.CellsMoved, Is.EqualTo(1));
+            Assert.That(rangeSwitch.RangeGlyphAfter, Is.EqualTo("2"));
+            Assert.That(script.Events[3].After.Player.RangeGlyph, Is.EqualTo("2"));
         }
 
         [Test]
@@ -221,13 +229,16 @@ namespace Depiction.Tests
             return throwLineCards;
         }
 
-        private static void AssertRangeGlyphs(DepictionFrame frame, string where)
+        private static void AssertOnTheFloor(DepictionFrame frame, string where)
         {
+            FloorFrame floor = frame.Floor;
+            Assert.That(floor.Cells, Is.GreaterThan(0), where + ": the floor is drawn");
+            Assert.That(floor.Gap, Is.EqualTo(floor.EnemyCell - floor.PlayerCell - floor.PlayerSize), where + ": N is the empty cells between");
             foreach (UnitFrame unit in new[] { frame.Player, frame.Enemy })
             {
                 if (!unit.HasRange) continue;
-                // The glyph and the side are written separately; they must never disagree.
-                Assert.That(unit.RangeGlyph, Is.EqualTo(unit.Range == RangeSide.Near ? "近" : "遠"), where);
+                // The glyph and the floor are written separately; they must never disagree.
+                Assert.That(unit.RangeGlyph, Is.EqualTo(floor.Gap.ToString()), where);
             }
         }
 

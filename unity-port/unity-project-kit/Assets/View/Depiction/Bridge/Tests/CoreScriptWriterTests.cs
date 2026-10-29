@@ -50,7 +50,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(frame.Player.Stamina, Is.EqualTo(10));
             Assert.That(frame.Player.HasRange, Is.True);
             Assert.That(frame.Player.RangeGlyph, Is.EqualTo("3"), "the gap N on the player's tag (§7.2), START_GAP 3");
-            Assert.That(frame.Player.Range, Is.EqualTo(RangeSide.Far), "gap 2 and up stand in the far slot until #163");
+            Assert.That(frame.Floor.Gap, Is.EqualTo(3), "#577: the figures stand on the floor's cells, N apart");
             Assert.That(frame.Enemy.Hp, Is.EqualTo(60));
             Assert.That(frame.Enemy.HasRange, Is.False, "one tag says it all");
             Assert.That(frame.Enemy.ShowStamina, Is.True, "battle-visual-v1 §4.5 (#455): on the enemy's number panel");
@@ -119,7 +119,6 @@ namespace Depiction.Bridge.Tests
             Assert.That(kesa.ValueText, Is.EqualTo("15"));
             Assert.That(kesa.TraitText, Is.EqualTo("間合い0 +5"));
             Assert.That(kesa.TraitLit, Is.True, "the player stands adjacent");
-            Assert.That(kesa.RequiredRange, Is.Null);
             Assert.That(kesa.RequiredRangeGlyph, Is.EqualTo("0〜1"), "the reach, as printed (§2.4)");
 
             CardFace brace = frame.Hand.First(c => c.Name == "呼吸を整える");
@@ -210,7 +209,8 @@ namespace Depiction.Bridge.Tests
             }));
             Cue move = ev.Cues[3];
             Assert.That(move.Target, Is.EqualTo(UnitSide.Player));
-            Assert.That(move.RangeAfter, Is.EqualTo(RangeSide.Near), "gap 1 still stands in the near slot");
+            Assert.That(move.GapAfter, Is.EqualTo(1), "#577: the move is drawn on the floor, N 1 after it");
+            Assert.That(EffectPlan.MovesOnFloor(move), Is.True);
             Assert.That(move.RangeGlyphAfter, Is.EqualTo("1"));
             Cue guard = ev.Cues[4];
             Assert.That(guard.Amount, Is.EqualTo(3));
@@ -591,7 +591,7 @@ namespace Depiction.Bridge.Tests
             StepResult play = TurnLoop.PlayCard(begin.State, InHand(begin.State, "boar_rush"), NoShuffle);
             DepictionFrame afterRush = writer.Write(play.Events, play.State)[0].After;
             Assert.That(afterRush.Player.RangeGlyph, Is.EqualTo("0"));
-            Assert.That(afterRush.Player.Range, Is.EqualTo(RangeSide.Near));
+            Assert.That(afterRush.Floor.Gap, Is.EqualTo(0));
 
             StepResult end = TurnLoop.EndTurn(play.State, NoShuffle);
             List<DepictionEvent> events = writer.Write(end.Events, end.State);
@@ -606,10 +606,10 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void TheEnemysStep_MovesThePlayersTag_UntilTheFloorHasCells()
+        public void TheEnemysStep_IsDrawnOnTheFloor_AndCountsTheGapAgain()
         {
-            // Gap 3: the polearm steps in. The screen has no enemy slot yet (#163), so the one thing
-            // that changes is N on the player's tag — and the slot it maps to.
+            // Gap 3: the polearm steps in. The move is drawn on the floor (#577): the enemy's cell moves,
+            // the player's stays, and N is counted again.
             var (state, writer) = Begin(3, FiveCards);
             StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
             writer.Write(begin.Events, begin.State);
@@ -621,8 +621,12 @@ namespace Depiction.Bridge.Tests
             Assert.That(Kinds(step), Is.EqualTo(new[] { CueKind.EnemyWindup, CueKind.RangeSwitch, CueKind.GuardGain }));
             Assert.That(step.Cues[1].Target, Is.EqualTo(UnitSide.Player));
             Assert.That(step.Cues[1].RangeGlyphAfter, Is.EqualTo("2"));
-            Assert.That(step.Cues[1].RangeAfter, Is.EqualTo(RangeSide.Far));
+            Assert.That(step.Cues[1].GapAfter, Is.EqualTo(2));
+            Assert.That(step.Cues[1].PlayerCellAfter, Is.EqualTo(begin.State.Player.Cell), "the player stands where it stood");
+            Assert.That(step.Cues[1].EnemyCellAfter, Is.EqualTo(begin.State.Enemy.Cell - 1), "the enemy one cell in");
+            Assert.That(step.Cues[1].CellsMoved, Is.EqualTo(1));
             Assert.That(step.After.Player.RangeGlyph, Is.EqualTo("2"));
+            Assert.That(step.After.Floor.Gap, Is.EqualTo(2));
         }
 
         [Test]

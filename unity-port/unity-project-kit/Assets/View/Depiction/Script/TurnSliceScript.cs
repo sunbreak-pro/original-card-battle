@@ -4,6 +4,9 @@
 // View could re-run.
 // The filmed hand stays at five cards, the rule before #351 (six since 2026-10-06): this is a
 // record of the recorded slice, not the current rule. The core deals six.
+// The figures stand on the floor's cells and the gap is N (v4.3, #577): the slice's 近 is N 1 and
+// its 遠 is N 2, one cell further back. The printed text (近 on the cards and the omen) is kept as
+// it was recorded.
 using System.Collections.Generic;
 
 namespace Depiction
@@ -18,12 +21,20 @@ namespace Depiction
         /// <summary>Stamina left at the turn's end that still earned the stance shield in the recorded slice.</summary>
         public const int StanceThreshold = 3;
 
+        /// <summary>The slice's line: six cells, the player on cell 2 and the enemy on cell 4 (N 1).</summary>
+        public const int FloorCells = 6;
+        public const int PlayerCell = 2;
+        public const int EnemyCell = 4;
+
+        /// <summary>Where 後ろ跳び leaves the player: one cell back, N 2.</summary>
+        public const int PlayerCellAfterStep = 1;
+
         public static DepictionScript Build()
         {
             var script = new DepictionScript();
 
-            // Turn 2 opens: HP 50/50, stamina 6/10, near. Enemy 錆槍の竜兵 HP 60/60, no range side.
-            DepictionFrame opening = Snapshot(playerHp: 50, playerGuard: 0, stamina: 6, range: RangeSide.Near,
+            // Turn 2 opens: HP 50/50, stamina 6/10, N 1. Enemy 錆槍の竜兵 HP 60/60, no gap tag of its own.
+            DepictionFrame opening = Snapshot(playerHp: 50, playerGuard: 0, stamina: 6, playerCell: PlayerCell,
                 enemyHp: 60, hand: new List<CardFace>(), omen: new OmenFrame { Visible = false });
             script.Opening = opening;
 
@@ -32,7 +43,7 @@ namespace Depiction
             var turnStart = new DepictionEvent
             {
                 Order = 1, Kind = DepictionEventKind.TurnStart, Title = "ターン開始",
-                After = Snapshot(50, 0, 9, RangeSide.Near, 60, FullHand(), attackNear),
+                After = Snapshot(50, 0, 9, PlayerCell, 60, FullHand(), attackNear),
             };
             turnStart.Cues.Add(new Cue { Kind = CueKind.GuardReset, Target = UnitSide.Player, GuardAfter = 0 });
             turnStart.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = 3, StaminaAfter = 9, StaminaMax = 10 });
@@ -45,7 +56,7 @@ namespace Depiction
             {
                 Order = 2, Kind = DepictionEventKind.PlayCard, Title = "袈裟斬り",
                 CardId = Kesagiri, Aim = CardAim.Single, PreviewText = "9",
-                After = Snapshot(50, 0, 8, RangeSide.Near, 51, HandWithout(Kesagiri), attackNear),
+                After = Snapshot(50, 0, 8, PlayerCell, 51, HandWithout(Kesagiri), attackNear),
             };
             kesagiri.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -1, StaminaAfter = 8, StaminaMax = 10 });
             kesagiri.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = UnitSide.Player, Text = "初手 +3" });
@@ -57,21 +68,26 @@ namespace Depiction
             {
                 Order = 3, Kind = DepictionEventKind.PlayCard, Title = "大上段",
                 CardId = Daijodan, Aim = CardAim.Single, PreviewText = "13",
-                After = Snapshot(50, 0, 6, RangeSide.Near, 38, HandWithout(Kesagiri, Daijodan), attackNear),
+                After = Snapshot(50, 0, 6, PlayerCell, 38, HandWithout(Kesagiri, Daijodan), attackNear),
             };
             daijodan.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -2, StaminaAfter = 6, StaminaMax = 10 });
             daijodan.Cues.Add(new Cue { Kind = CueKind.Slash, Source = UnitSide.Player, Target = UnitSide.Enemy, Amount = 13, Intensity = EffectStrength.Uniform, HpAfter = 38 });
             script.Events.Add(daijodan);
 
-            // 4. 後ろ跳び (cost 1): switch to far, Guard 4, trait 予兆(攻撃) Guard +3 fires -> Guard 7, stamina 6 -> 5.
+            // 4. 後ろ跳び (cost 1): one cell back to N 2, Guard 4, trait 予兆(攻撃) Guard +3 fires -> Guard 7, stamina 6 -> 5.
             var ushirotobi = new DepictionEvent
             {
                 Order = 4, Kind = DepictionEventKind.PlayCard, Title = "後ろ跳び",
                 CardId = Ushirotobi, Aim = CardAim.Self, PreviewText = "7",
-                After = Snapshot(50, 7, 5, RangeSide.Far, 38, HandWithout(Kesagiri, Daijodan, Ushirotobi), attackNear),
+                After = Snapshot(50, 7, 5, PlayerCellAfterStep, 38, HandWithout(Kesagiri, Daijodan, Ushirotobi), attackNear),
             };
             ushirotobi.Cues.Add(new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = -1, StaminaAfter = 5, StaminaMax = 10 });
-            ushirotobi.Cues.Add(new Cue { Kind = CueKind.RangeSwitch, Target = UnitSide.Player, RangeAfter = RangeSide.Far, RangeGlyphAfter = GlyphOf(RangeSide.Far) });
+            ushirotobi.Cues.Add(new Cue
+            {
+                Kind = CueKind.RangeSwitch, Target = UnitSide.Player, RangeGlyphAfter = GlyphOf(PlayerCellAfterStep),
+                PlayerCellAfter = PlayerCellAfterStep, EnemyCellAfter = EnemyCell, GapAfter = GapOf(PlayerCellAfterStep),
+                CellsMoved = PlayerCell - PlayerCellAfterStep,
+            });
             ushirotobi.Cues.Add(new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 4, Intensity = EffectStrength.Uniform, GuardAfter = 4 });
             ushirotobi.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = UnitSide.Player, Text = "予兆 +3" });
             ushirotobi.Cues.Add(new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 3, Intensity = EffectStrength.Uniform, GuardAfter = 7 });
@@ -81,17 +97,17 @@ namespace Depiction
             var turnEnd = new DepictionEvent
             {
                 Order = 5, Kind = DepictionEventKind.TurnEnd, Title = "ターン終了",
-                After = Snapshot(50, 10, 5, RangeSide.Far, 38, new List<CardFace>(), attackNear, stanceHint: ""),
+                After = Snapshot(50, 10, 5, PlayerCellAfterStep, 38, new List<CardFace>(), attackNear, stanceHint: ""),
             };
             turnEnd.Cues.Add(new Cue { Kind = CueKind.StanceCue, Target = UnitSide.Player, Amount = 3, Text = "+3", GuardAfter = 10 });
             turnEnd.Cues.Add(new Cue { Kind = CueKind.DiscardHand, Target = UnitSide.Player, Amount = 2 });
             script.Events.Add(turnEnd);
 
-            // 6. Enemy attacks as foretold: 13. The near +5 misses. 13 - 10 = 3, HP 50 -> 47.
+            // 6. Enemy attacks as foretold: 13. The near +5 misses at N 2. 13 - 10 = 3, HP 50 -> 47.
             var enemyAction = new DepictionEvent
             {
                 Order = 6, Kind = DepictionEventKind.EnemyAction, Title = "敵の攻撃",
-                After = Snapshot(47, 0, 5, RangeSide.Far, 38, new List<CardFace>(), new OmenFrame { Visible = false }, stanceHint: ""),
+                After = Snapshot(47, 0, 5, PlayerCellAfterStep, 38, new List<CardFace>(), new OmenFrame { Visible = false }, stanceHint: ""),
             };
             enemyAction.Cues.Add(new Cue { Kind = CueKind.EnemyWindup, Target = UnitSide.Enemy });
             enemyAction.Cues.Add(new Cue { Kind = CueKind.SideBonusMiss, Target = UnitSide.Enemy, Amount = 5, Text = "+5" });
@@ -104,7 +120,7 @@ namespace Depiction
             var nextOmen = new DepictionEvent
             {
                 Order = 7, Kind = DepictionEventKind.NextOmen, Title = "次の予兆",
-                After = Snapshot(47, 0, 5, RangeSide.Far, 38, new List<CardFace>(),
+                After = Snapshot(47, 0, 5, PlayerCellAfterStep, 38, new List<CardFace>(),
                     new OmenFrame { Visible = true, Icon = OmenIcon.Guard, KindLabel = "防御", ValueText = "9" }, stanceHint: ""),
             };
             nextOmen.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy });
@@ -113,17 +129,22 @@ namespace Depiction
             return script;
         }
 
-        private static DepictionFrame Snapshot(int playerHp, int playerGuard, int stamina, RangeSide range, int enemyHp,
+        private static DepictionFrame Snapshot(int playerHp, int playerGuard, int stamina, int playerCell, int enemyHp,
             List<CardFace> hand, OmenFrame omen, string stanceHint = "+3")
         {
             return new DepictionFrame
             {
+                Floor = new FloorFrame
+                {
+                    Cells = FloorCells, PlayerCell = playerCell, PlayerSize = 1,
+                    EnemyCell = EnemyCell, EnemySize = 1, Gap = GapOf(playerCell),
+                },
                 Corner = new CornerFrame { Turn = 2, Floor = 1, ChainIndex = 1, ChainTotal = 3, MiasmaPercent = 0 },
                 Player = new UnitFrame
                 {
                     Hp = playerHp, HpMax = 50, Guard = playerGuard,
                     ShowStamina = true, Stamina = stamina, StaminaMax = 10,
-                    HasRange = true, Range = range, RangeGlyph = GlyphOf(range),
+                    HasRange = true, RangeGlyph = GlyphOf(playerCell),
                 },
                 Enemy = new UnitFrame { Hp = enemyHp, HpMax = 60, Guard = 0, ShowStamina = false, HasRange = false },
                 Omen = omen,
@@ -133,10 +154,16 @@ namespace Depiction
             };
         }
 
-        /// <summary>The script decides how a range side is printed; the View prints the string as given.</summary>
-        private static string GlyphOf(RangeSide range)
+        /// <summary>N with the player on <paramref name="playerCell"/>: the empty cells up to the enemy.</summary>
+        private static int GapOf(int playerCell)
         {
-            return DemoDeck.Glyph(range);
+            return EnemyCell - playerCell - 1;
+        }
+
+        /// <summary>The script decides how N is printed; the View prints the string as given.</summary>
+        private static string GlyphOf(int playerCell)
+        {
+            return GapOf(playerCell).ToString();
         }
 
         /// <summary>

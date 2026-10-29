@@ -478,7 +478,9 @@ namespace Depiction
 
         /// <summary>
         /// A RangeSwitch drawn on the floor (battle-visual-v1 §4.2): the source gave the cells after the
-        /// move, so the figure walks to its cell and the gap number changes with no tag to flip.
+        /// move, so the figure walks to its cell and the gap number changes with no tag to flip. Every
+        /// source draws the floor since the near / far slots went (#577); a move without it is a script
+        /// bug, and <see cref="CellsOf"/> stops on it.
         /// </summary>
         public static bool MovesOnFloor(Cue cue)
         {
@@ -642,17 +644,9 @@ namespace Depiction
                     break;
                 case CueKind.RangeSwitch:
                     // §5.7 順 1〜2 (#586): on the floor, 160 a cell, then the gap number is counted again
-                    // for 150. Without a floor, the move to the slot and the tag's flip (#495).
-                    if (MovesOnFloor(cue))
-                    {
-                        steps.Add(new EffectStep(EffectId.FloorMove, CellsOf(cue)));
-                        steps.Add(new EffectStep(EffectId.GapRecount, 1));
-                    }
-                    else
-                    {
-                        steps.Add(new EffectStep(EffectId.RangeSwitch, 1));
-                        steps.Add(new EffectStep(EffectId.RangeTagFlip, 1));
-                    }
+                    // for 150. Every source draws the floor (#577): CellsOf stops on a move without one.
+                    steps.Add(new EffectStep(EffectId.FloorMove, CellsOf(cue)));
+                    steps.Add(new EffectStep(EffectId.GapRecount, 1));
                     break;
                 case CueKind.StanceCue:
                     // §5.13 順 1-2 (#501): the pips 1-3 glow (構え's 息), then the shield and "+3".
