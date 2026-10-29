@@ -83,7 +83,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void TheCoresFirstForty_AreTheCanonsInitialForty_InCanonOrder()
         {
-            Assert.That(CardCatalog.All.Take(40).Select(d => d.Id), Is.EqualTo(InitialForty));
+            Assert.That(CardCatalog.Initial.Select(d => d.Id), Is.EqualTo(InitialForty));
         }
 
         [Test]
