@@ -125,6 +125,21 @@ namespace Depiction.Tests
             }
         }
 
+        // §5.3 / §5.9 順 1 (#57): the lengths the grammar's own shapes play for, beside the beats. A blow's
+        // shape is the attack beat's StrikeShape, one 120 ms for all four blow systems (#76, held in
+        // EffectTests): the per-system lengths in §5.3's table are the design to come back to with the
+        // four strengths (#30).
+        [TestCase(EffectId.GrammarMark, 300f)]
+        [TestCase(EffectId.TraitAccent, 150f)]
+        [TestCase(EffectId.BreathHeave, 400f)]
+        public void TheGrammarsShapes_PlayForTheLengthsTheCanonWrites(EffectId id, float ms)
+        {
+            EffectSpec spec = EffectCatalog.Of(id);
+            Assert.That(spec.Ms, Is.EqualTo(ms));
+            Assert.That(spec.StaggerMs, Is.EqualTo(0f));
+            Assert.That(spec.Blocking, Is.False);
+        }
+
         [Test]
         public void TheGrammarsEffects_RunBesideTheBeats_SoNoEventWaitsLonger()
         {
