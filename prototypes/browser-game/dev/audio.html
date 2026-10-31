@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>音の確かめ</title>
+<link rel="icon" href="data:,">
+<!-- Dev page for src/scenes/audio/Audio.js. ES modules do not load from file://; serve the scratchpad root,
+     e.g. `python3 -m http.server` in the folder that holds game/ and ds/, then open /game/dev/audio.html. -->
+<script src="../../ds/project/components/bundle.js"></script>
+<style>
+  :root {
+    --ground: #10141d; --panel-solid: #141925; --card: #171c28; --ink: #ecebf2; --ink-muted: #a9adbd;
+    --rule: rgba(157,166,186,.26); --steel: #6d7787; --amber: #e8a84c; --wick: #ffd89a; --violet: #8b6fd0; --phosphor: #b9a3ff;
+    --font-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 15px/1.6 var(--font-body); }
+  .ocbg-audio-dev { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+  .ocbg-audio-dev h1 { font: 600 28px/1.3 var(--font-display); margin: 0 0 4px; letter-spacing: .04em; }
+  .ocbg-audio-dev h2 { font: 600 19px/1.3 var(--font-display); margin: 0 0 12px; letter-spacing: .04em; }
+  .ocbg-audio-dev .lead { color: var(--ink-muted); margin: 0 0 16px; }
+  .ocbg-audio-dev .status { display: inline-flex; gap: 8px; align-items: center; padding: 6px 12px; border: 1px solid var(--rule); border-radius: 5px; background: var(--panel-solid); }
+  .ocbg-audio-dev .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--steel); display: inline-block; }
+  .ocbg-audio-dev .status.on i { background: var(--amber); box-shadow: 0 0 8px rgba(232,168,76,.6); }
+  .ocbg-audio-dev section { background: var(--panel-solid); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; margin-top: 16px; }
+  .ocbg-audio-dev .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+  .ocbg-audio-dev button { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--rule); border-radius: 5px; padding: 8px 12px; cursor: pointer; text-align: left; }
+  .ocbg-audio-dev button:hover { border-color: var(--steel); }
+  .ocbg-audio-dev button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+  .ocbg-audio-dev button.on { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
+  .ocbg-audio-dev button .name { font: 12px var(--font-mono); color: var(--ink-muted); }
+  .ocbg-audio-dev button small { display: block; color: var(--ink-muted); font-size: 13px; }
+  .ocbg-audio-dev .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .ocbg-audio-dev .sliders { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px 24px; }
+  .ocbg-audio-dev label { display: grid; gap: 4px; color: var(--ink-muted); font-size: 14px; }
+  .ocbg-audio-dev label b { color: var(--ink); font-weight: 500; font-family: var(--font-mono); }
+  .ocbg-audio-dev input[type=range] { width: 100%; accent-color: var(--amber); }
+  .ocbg-audio-dev pre { margin: 12px 0 0; padding: 8px 12px; background: var(--card); border-radius: 5px; color: var(--ink-muted); font: 13px var(--font-mono); overflow-x: auto; }
+  .ocbg-audio-dev .nodes { display: flex; gap: 16px; flex-wrap: wrap; margin: 4px 0 12px; }
+  .ocbg-audio-dev .node { width: 64px; height: 64px; display: grid; place-items: center; font: 600 22px var(--font-display); text-align: center; padding: 0; }
+  .ocbg-audio-dev .node.walked { opacity: .55; }
+  .ocbg-audio-dev .node.here { border: 3px solid var(--amber); }
+  .ocbg-audio-dev .gauge { height: 10px; background: var(--card); border: 1px solid var(--rule); border-radius: 3px; position: relative; width: 320px; max-width: 100%; }
+  .ocbg-audio-dev .gauge span { position: absolute; inset: 0 auto 0 0; background: var(--violet); }
+  .ocbg-audio-dev .gauge i { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ink-muted); }
+  .ocbg-audio-dev .log { margin-top: 12px; color: var(--ink-muted); font-size: 14px; min-height: 1.6em; }
+  .ocbg-audio-dev .warn { color: var(--wick); }
+  @media (max-width: 560px) { .ocbg-audio-dev .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main class="ocbg-audio-dev">
+  <h1>音の確かめ</h1>
+  <p class="lead">探索・報酬・生と継承・操作の効果音、場所ごとの環境音、戦闘の効果音（デザインシステム）を鳴らして確かめます。音は全て WebAudio で作り、音声ファイルは使いません。</p>
+  <p class="status" id="status"><i></i><span>画面のどこかを押すと音が鳴り始めます</span></p>
+  <p class="warn" id="nobundle" hidden>デザインシステムの bundle.js を読めませんでした。戦闘の音は鳴りません。</p>
+
+  <section>
+    <h2>設定</h2>
+    <div class="sliders">
+      <label>全体の音量 <b id="v-master"></b><input type="range" id="s-master" min="0" max="1" step="0.01"></label>
+      <label>効果音 <b id="v-effects"></b><input type="range" id="s-effects" min="0" max="1" step="0.01"></label>
+      <label>環境音 <b id="v-ambience"></b><input type="range" id="s-ambience" min="0" max="1" step="0.01"></label>
+      <label>湿り（効果音の残響） <b id="v-reverb"></b><input type="range" id="s-reverb" min="0" max="0.6" step="0.01"></label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button type="button" id="mute">ミュート</button>
+      <button type="button" id="defaults">既定に戻す</button>
+    </div>
+    <pre id="settings-json" aria-label="保存される設定"></pre>
+  </section>
+
+  <section>
+    <h2>環境音</h2>
+    <div class="row" style="margin-bottom:12px">
+      <label style="min-width:240px">切り替えの長さ <b id="v-fade"></b><input type="range" id="s-fade" min="0" max="5000" step="100" value="1800"></label>
+      <button type="button" id="amb-stop">止める</button>
+      <button type="button" id="amb-duck">戦闘中のように小さくする</button>
+    </div>
+    <div class="grid" id="amb"></div>
+  </section>
+
+  <section>
+    <h2>1 歩</h2>
+    <p class="lead" style="margin:0 0 8px">ノードに乗せるとホバーの音、押すと 1 歩です。踏んだノードへは柔らかい足音で戻ります。足音は環境音の場所の地面で変わります。瘴気は試しの値で、新しいノードで +9% です。</p>
+    <div class="nodes" id="nodes"></div>
+    <div class="row">
+      <div class="gauge" id="gauge" aria-label="瘴気"><span></span></div>
+      <b id="miasma" style="font-family:var(--font-mono)"></b>
+      <button type="button" id="map-reset">やり直す</button>
+    </div>
+    <div class="grid" style="margin-top:12px" id="steps"></div>
+  </section>
+
+  <section id="groups"></section>
+
+  <section>
+    <h2>戦闘の音（デザインシステム）</h2>
+    <div class="grid" id="battle"></div>
+  </section>
+
+  <section>
+    <h2>通しで聞く</h2>
+    <p class="lead" style="margin:0 0 8px">タイトルから継承の間、第 1 層、階層間の休憩、第 2 層へ降りるまでを 40 秒ほどで流します。</p>
+    <div class="row"><button type="button" id="run">流す</button><button type="button" id="run-stop">止める</button></div>
+    <div class="log" id="run-log"></div>
+  </section>
+</main>
+
+<script type="module">
+import {
+  createAudio, META_SOUND_DEFAULTS, META_GROUPS, META_TIMBRES, AMBIENCE_DEFS, AMBIENCE_IDS, SURFACES, SOUND_SETTINGS_DEFAULTS
+} from '../src/scenes/audio/Audio.js';
+
+const OCB = window.OCB;
+const KEY = 'ocbg-audio-dev';
+const $ = (id) => document.getElementById(id);
+function el(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const k in props || {}) {
+    if (k === 'class') e.className = props[k];
+    else if (k === 'text') e.textContent = props[k];
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), props[k]);
+    else e.setAttribute(k, props[k]);
+  }
+  for (const c of kids) if (c != null) e.append(c);
+  return e;
+}
+function loadSettings() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+function saveSettings(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { /* private window */ } }
+
+if (!OCB) $('nobundle').hidden = false;
+const audio = createAudio(OCB, loadSettings(), { onChange: (s) => { saveSettings(s); showSettings(s); } });
+window.ocbAudio = audio; // for the console
+
+function unlock() {
+  if (audio.unlock()) { $('status').classList.add('on'); $('status').lastChild.textContent = '音が鳴ります'; }
+  else $('status').lastChild.textContent = 'このブラウザでは WebAudio が使えません';
+}
+document.addEventListener('pointerdown', unlock, { capture: true, once: true });
+document.addEventListener('keydown', unlock, { capture: true, once: true });
+
+// ---------------------------------------------------------------- settings
+const SL = ['master', 'effects', 'ambience', 'reverb'];
+const SET = { master: (v) => audio.setMaster(v), effects: (v) => audio.setEffects(v), ambience: (v) => audio.setAmbienceVolume(v), reverb: (v) => audio.setReverb(v) };
+function showSettings(s) {
+  for (const k of SL) { $('s-' + k).value = s[k]; $('v-' + k).textContent = Number(s[k]).toFixed(2); }
+  $('mute').textContent = s.muted ? 'ミュートを解く' : 'ミュート';
+  $('mute').classList.toggle('on', s.muted);
+  $('settings-json').textContent = JSON.stringify(s);
+}
+for (const k of SL) $('s-' + k).addEventListener('input', (e) => SET[k](Number(e.target.value)));
+$('mute').addEventListener('click', () => audio.toggleMute());
+$('defaults').addEventListener('click', () => audio.applySettings(SOUND_SETTINGS_DEFAULTS));
+showSettings(audio.settings);
+
+// ---------------------------------------------------------------- ambience
+const fade = () => Number($('s-fade').value);
+$('s-fade').addEventListener('input', () => { $('v-fade').textContent = fade() + ' ms'; });
+$('v-fade').textContent = fade() + ' ms';
+const ambButtons = {};
+function markAmbience() { for (const id in ambButtons) ambButtons[id].classList.toggle('on', audio.ambience === id); }
+for (const id of AMBIENCE_IDS) {
+  const d = AMBIENCE_DEFS[id];
+  ambButtons[id] = el('button', { type: 'button', onclick: () => { unlock(); audio.setAmbience(id, fade()); markAmbience(); paintNodes(); } },
+    d.label + (d.place !== d.label ? '　' + d.place : '') + ' ', el('span', { class: 'name', text: id }),
+    el('small', { text: d.desc }), el('small', { text: '足音: ' + SURFACES[d.surface].label }));
+  $('amb').append(ambButtons[id]);
+}
+$('amb-stop').addEventListener('click', () => { audio.setAmbience(null, fade()); markAmbience(); });
+let ducked = false;
+$('amb-duck').addEventListener('click', () => { ducked = !ducked; audio.duckAmbience(ducked ? 0.45 : 1, 600); $('amb-duck').classList.toggle('on', ducked); });
+
+// ---------------------------------------------------------------- the step strip (a demo, not the game's rules)
+const KINDS = [['戦', null], ['調', 'infoGained'], ['事', 'eventResolve'], ['休', null], ['痕', 'traceTake'], ['戦', null], ['主', null]];
+let walked = new Set([0]), here = 0, miasma = 12;
+function paintNodes() {
+  const box = $('nodes'); box.textContent = '';
+  KINDS.forEach(([k], i) => {
+    const b = el('button', { type: 'button', class: 'node' + (walked.has(i) ? ' walked' : '') + (i === here ? ' here' : ''), 'aria-label': 'ノード ' + (i + 1) + ' ' + k, text: k });
+    b.addEventListener('pointerenter', () => audio.play('nodeHover'));
+    b.addEventListener('click', () => stepOnto(i));
+    box.append(b);
+  });
+  const g = $('gauge'); g.firstChild.style.width = Math.min(100, miasma) + '%';
+  g.querySelectorAll('i').forEach((x) => x.remove());
+  for (const p of [20, 40, 60, 80]) { const t = el('i'); t.style.left = p + '%'; g.append(t); }
+  $('miasma').textContent = '瘴気 ' + miasma + '%';
+}
+function stepOnto(i) {
+  unlock();
+  if (i === here || miasma >= 100) return;
+  const fresh = !walked.has(i);
+  let line = 0, death = false;
+  if (fresh) {
+    const before = miasma; miasma = Math.min(100, miasma + 9);
+    death = miasma >= 100;
+    for (const p of [20, 40, 60, 80]) if (before < p && miasma >= p) line = p;
+  }
+  const plan = audio.stepTo({ fresh, line, miasmaDeath: death, result: fresh ? KINDS[i][1] : null });
+  walked.add(i); here = i; paintNodes();
+  $('run-log').textContent = '';
+  $('miasma').title = plan.join(' → ');
+}
+$('map-reset').addEventListener('click', () => { walked = new Set([0]); here = 0; miasma = 12; paintNodes(); });
+paintNodes();
+const STEPS = [
+  ['新しいノードへ', { fresh: true }],
+  ['踏んだノードへ戻る', { fresh: false }],
+  ['1 歩 ＋ 情報を得る', { fresh: true, result: 'infoGained' }],
+  ['1 歩 ＋ イベント', { fresh: true, result: 'eventResolve' }],
+  ['1 歩 ＋ 痕跡', { fresh: true, result: 'traceTake' }],
+  ['1 歩 ＋ 瘴気 20% の線', { fresh: true, line: 20 }],
+  ['1 歩 ＋ 瘴気 40% の線', { fresh: true, line: 40 }],
+  ['1 歩 ＋ 瘴気 60% の線', { fresh: true, line: 60 }],
+  ['1 歩 ＋ 瘴気 80% の線', { fresh: true, line: 80 }],
+  ['1 歩 ＋ 瘴気死', { fresh: true, miasmaDeath: true }]
+];
+for (const [label, s] of STEPS) {
+  $('steps').append(el('button', { type: 'button', onclick: () => { unlock(); audio.stepTo(s); } }, label, el('small', { text: JSON.stringify(s) })));
+}
+
+// ---------------------------------------------------------------- one button per meta event, by group
+function presetButton(name, p, timbreLabel) {
+  return el('button', { type: 'button', onclick: () => { unlock(); audio.play(name); } },
+    p.label + ' ', el('span', { class: 'name', text: name }),
+    el('small', { text: timbreLabel + ' ・ ' + p.role + ' ・ 音量 ' + p.vol + ' ・ ' + p.pitch + ' Hz ・ ' + p.dur + ' ms' }));
+}
+for (const g in META_GROUPS) {
+  const grid = el('div', { class: 'grid' });
+  for (const name of audio.metaNames) {
+    const p = audio.presets[name];
+    if (META_SOUND_DEFAULTS[name].group === g) grid.append(presetButton(name, p, META_TIMBRES[p.timbre] || p.timbre));
+  }
+  $('groups').append(el('h2', { text: META_GROUPS[g], style: 'margin-top:8px' }), grid);
+}
+const BT = (OCB && OCB.TIMBRES) || {};
+for (const name of audio.battleNames) $('battle').append(presetButton(name, audio.presets[name], BT[audio.presets[name].timbre] || audio.presets[name].timbre));
+if (!audio.battleNames.length) $('battle').append(el('p', { class: 'warn', text: 'bundle.js が無いので戦闘の音はありません。' }));
+
+// ---------------------------------------------------------------- the run-through
+let runTimers = [];
+function at(ms, text, fn) { runTimers.push(setTimeout(() => { $('run-log').textContent = text; fn(); }, ms)); }
+function stopRun() { runTimers.forEach(clearTimeout); runTimers = []; }
+$('run-stop').addEventListener('click', () => { stopRun(); $('run-log').textContent = ''; });
+$('run').addEventListener('click', () => {
+  unlock(); stopRun();
+  at(0, 'タイトル', () => { audio.setAmbience('title', 1200); markAmbience(); });
+  at(2500, 'タイトルから入る', () => audio.play('titleEnter'));
+  at(5200, '継承の間に着く', () => { audio.setAmbience('hall', 2000); markAmbience(); audio.play('hallArrive'); });
+  at(8000, '襲名', () => audio.play('heirNamed'));
+  at(10200, '出立を決める', () => audio.play('uiConfirm'));
+  at(11200, '第 1 層　燦光の樹海', () => { audio.setAmbience('layer1', 2500); markAmbience(); paintNodes(); });
+  at(13500, '1 歩', () => audio.stepTo({ fresh: true }));
+  at(14700, '1 歩 ＋ 情報を得る', () => audio.stepTo({ fresh: true, result: 'infoGained' }));
+  at(16200, '手記を開く', () => audio.play('journalOpen'));
+  at(17600, '手記を閉じる', () => audio.play('journalClose'));
+  at(18600, '1 歩 ＋ 瘴気 40% の線', () => audio.stepTo({ fresh: true, line: 40 }));
+  at(21400, '休む', () => audio.play('rest'));
+  at(23000, '戻る', () => audio.stepTo({ fresh: false }));
+  at(24200, '層の主を倒した', () => audio.play('layerCleared'));
+  at(26800, '報酬が並ぶ → 選ぶ → デッキに入る', () => { audio.play('rewardReveal'); audio.play('rewardPick', 900); audio.play('cardAdded', 1300); });
+  at(29000, '階層間の休憩', () => { audio.setAmbience('interlude', 2500); markAmbience(); audio.play('interlude'); });
+  at(32500, '次の層へ降りる', () => audio.play('descend'));
+  at(34000, '第 2 層　■■の秘跡', () => { audio.setAmbience('layer2', 3500); markAmbience(); paintNodes(); });
+  at(37000, '1 歩', () => audio.stepTo({ fresh: true }));
+  at(38200, '1 歩', () => audio.stepTo({ fresh: true }));
+  at(40000, 'ここまで', () => {});
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Parity oracle (docs/PARITY.md): replays fixed scenarios on the C# cores and writes JSON
+       that the JS port is diffed against (test/parity/run.mjs). Reads unity-port; never edits it. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Oracle</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CS8632;CS0618</NoWarn>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <U>$(MSBuildThisFileDirectory)../../../unity-port</U>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src/**/*.cs" />
+    <!-- BattleCore.Sim is an exe, so its two files are linked rather than referenced. -->
+    <Compile Include="$(U)/BattleCore.Sim/GreedyPlayer.cs" Link="Sim/GreedyPlayer.cs" />
+    <Compile Include="$(U)/BattleCore.Sim/Decks.cs" Link="Sim/Decks.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(U)/BattleCore/BattleCore.csproj" />
+    <ProjectReference Include="$(U)/DungeonCore/DungeonCore.csproj" />
+    <ProjectReference Include="$(U)/DungeonContent/DungeonContent.csproj" />
+    <ProjectReference Include="$(U)/Exploration.Bridge/Exploration.Bridge.csproj" />
+    <ProjectReference Include="$(U)/Exploration.Script/Exploration.Script.csproj" />
+    <ProjectReference Include="$(U)/Depiction.Bridge/Depiction.Bridge.csproj" />
+    <ProjectReference Include="$(U)/Depiction.Script/Depiction.Script.csproj" />
+    <ProjectReference Include="$(U)/Backdrop.Script/Backdrop.Script.csproj" />
+    <ProjectReference Include="$(U)/Journal.Script/Journal.Script.csproj" />
+  </ItemGroup>
+
+</Project>

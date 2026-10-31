@@ -1,0 +1,7 @@
+node_modules/
+oracle/bin/
+oracle/obj/
+oracle/out/
+dev/out/
+dev/shots/
+test/parity/report.json
