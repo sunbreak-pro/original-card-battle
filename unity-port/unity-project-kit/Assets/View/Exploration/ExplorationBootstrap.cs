@@ -16,12 +16,7 @@ using Depiction.View;
 using DungeonCore;
 using Exploration.Bridge;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem.UI;
-#endif
 
 namespace Exploration.View
 {
@@ -66,7 +61,7 @@ namespace Exploration.View
             });
             _session = _expedition.Session;
 
-            EnsureEventSystem();
+            UiKit.EnsureEventSystem();
             _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable, Toggle, PickCard);
             Render();
             Debug.Log("[ExplorationBootstrap] seed " + used);
@@ -241,13 +236,7 @@ namespace Exploration.View
 
         private RectTransform BuildCanvas()
         {
-            _canvas = new GameObject("ExplorationCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            var canvas = _canvas.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            var scaler = _canvas.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
+            _canvas = UiKit.ScreenCanvas("ExplorationCanvas").gameObject;
             return (RectTransform)_canvas.transform;
         }
 
@@ -265,16 +254,6 @@ namespace Exploration.View
             };
 #else
             return Input.GetKeyDown(key);
-#endif
-        }
-
-        private static void EnsureEventSystem()
-        {
-            if (FindAnyObjectByType<EventSystem>() != null) return;
-#if ENABLE_INPUT_SYSTEM
-            new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
-#else
-            new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 #endif
         }
     }
