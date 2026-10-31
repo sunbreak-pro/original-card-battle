@@ -54,6 +54,7 @@ namespace Exploration
 
             return new ExplorationScreen(
                 ExplorationText.LayerTitle(state.Profile.Layer, state.Profile.DisplayName(session.CarvingTaken)),
+                state.Profile.Layer,
                 $"刻限 {state.TimeLeft} / {state.Profile.TimeLimit}",
                 state.TimeLeft,
                 state.Profile.TimeLimit,

@@ -27,6 +27,20 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void TheScreenNamesTheLayerItsBackdropIsDrawnFor()
+        {
+            // The view lays ExplorationBackdropSpec.For(screen.Layer) behind the map (#614), so the number
+            // must follow the descent, not stay on layer one.
+            var session = new ExplorationSession();
+            Assert.That(session.Screen().Layer, Is.EqualTo(1));
+
+            WalkToLayer(session, 3);
+            var screen = session.Screen();
+
+            Assert.That(screen.Layer, Is.EqualTo(3));
+        }
+
+        [Test]
         public void TheEntryBattleCoversTheMapUntilItIsReported()
         {
             // The entry is always a battle (§4.1), so a life opens on the stand-in battle (§6.8).
