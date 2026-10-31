@@ -146,6 +146,8 @@ namespace Depiction.View
         private CardView _reachFor;
         /// <summary>battle-visual-v1 §4.7 (#455): the draw, discard and exile piles under the stamina tag.</summary>
         private PilesView _piles;
+        /// <summary>#606: the layered backdrop (battle-visual-v1 §2.4) this battle hands its layer to, once found.</summary>
+        private Backdrop.View.BackdropView _backdropView;
         /// <summary>battle_ui_ux_v2 §1.1 C4 (#455): the drawer a click on a pile opens with its list.</summary>
         private PileListView _pileList;
         /// <summary>battle-visual-v1 §4.6 (#455): each side's stance list at its edge.</summary>
@@ -347,6 +349,8 @@ namespace Depiction.View
             DebugGate = "";
             ApplyTweenSpeed(); // also clears a 0 a debug gate left behind when domain reload is off
             if (showSpeedButton && !filming) BuildSpeedButton(); // before the demo flow's early return, so its battles get it too
+            // Layer 1's gradient stays under the layered backdrop: it is what shows where BackdropView has
+            // not attached (or has no art), so the battle never stands on a blank image (#606).
             if (backdrop && backdrop.sprite == null)
             {
                 BattleTheme.FloorPalette palette = BattleTheme.Floor(1);
@@ -947,17 +951,16 @@ namespace Depiction.View
                     status.SetGuard(cue.GuardAfter);
                     if (cue.GuardAfter == 0) StartCoroutine(Effect(EffectId.GuardBreak, status.CrackGuard(_effects.Ms(EffectId.GuardBreak)), null));
                     else if (status.guardBadge) StartCoroutine(UiTween.Pop(status.guardBadge, 260f));
-                    FloatEffect(EffectId.GuardNumber, numberAt + new Vector2(-60f, 0f), "Guard −" + cue.Amount, BattleTheme.Guard, 44);
+                    FloatHit(EffectId.GuardNumber, ev, cue, target, FloatNumberKind.GuardLoss, "");
                     yield return HoldBeat(EffectId.GuardBlock, DepictionFx.ShieldBlock(this, fxLayer, chest, cue.Amount.ToString(), () => Gate(ev.Order + "-block")), null);
                     break;
                 }
 
                 case CueKind.HpChange:
                 {
-                    // 出血 / 再生 / a heal / a 見切り return (#188): the cause and the number, then the bar.
-                    string sign = cue.Amount > 0 ? "+" : "";
-                    FloatEffect(EffectId.DamageNumber, numberAt, cue.Text + " " + sign + cue.Amount,
-                        cue.Amount > 0 ? BattleTheme.Accent : BattleTheme.Omen, 40);
+                    // 出血 / 再生 / a heal / a 見切り return (#188): the number with its cause beside it
+                    // (battle_ui_ux_v2 §5.0 脇ラベル), then the bar.
+                    FloatHit(EffectId.DamageNumber, ev, cue, target, FloatNumberSpec.OfHpChange(cue.Amount), cue.Text);
                     yield return DrainHp(status, cue.HpAfter);
                     break;
                 }
@@ -965,7 +968,7 @@ namespace Depiction.View
                 case CueKind.Hit:
                 {
                     bool strong = EffectStrength.IsStrong(cue.Intensity);
-                    FloatEffect(EffectId.DamageNumber, numberAt, cue.Amount.ToString(), BattleTheme.Omen, DepictionFx.NumberFont(cue.Intensity));
+                    FloatHit(EffectId.DamageNumber, ev, cue, target, FloatNumberKind.HpLoss, "");
                     StartCoroutine(Effect(EffectId.HitFlash, target.Flash(BattleTheme.Omen, _effects.Ms(EffectId.HitFlash)), null));
                     StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
                     if (strong) StartCoroutine(Effect(EffectId.ScreenShake, ShakeArena(), null));
@@ -1025,7 +1028,7 @@ namespace Depiction.View
             if (cue.HpAfter == Cue.Unchanged) yield break;
 
             DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Omen, 200f + 60f * cue.Intensity);
-            FloatEffect(EffectId.DamageNumber, chest + new Vector2(0f, 40f), cue.Amount.ToString(), BattleTheme.Ink, DepictionFx.NumberFont(cue.Intensity));
+            FloatHit(EffectId.DamageNumber, ev, cue, target, FloatNumberKind.HpLoss, "");
             StartCoroutine(Effect(EffectId.HitFlash, target.Flash(BattleTheme.White, _effects.Ms(EffectId.HitFlash)), null));
             StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
             yield return DrainHp(status, cue.HpAfter);
@@ -1295,6 +1298,27 @@ namespace Depiction.View
             }
             if (Trace != null) StartCoroutine(TraceFor(id, _effects.Ms(id)));
             DepictionFx.FloatText(this, fxLayer, at, text, color, fontSize);
+        }
+
+        /// <summary>
+        /// battle-visual-v1 §5.5 / battle_ui_ux_v2 §5.0, §5.6 順 2〜3 (#455): a hit's number on its plate,
+        /// rising from the chest to the head of <paramref name="target"/>. The amount is the cue's; the
+        /// pair (Guard left, HP right, 24 px apart) is read off the order the script wrote the cues in.
+        /// </summary>
+        private void FloatHit(EffectId id, DepictionEvent ev, Cue cue, FigureView target, FloatNumberKind kind, string label)
+        {
+            if (!_effects.IsOn(id))
+            {
+                Trace?.Skip(id, CurrentOrder);
+                return;
+            }
+            if (Trace != null) StartCoroutine(TraceFor(id, _effects.Ms(id)));
+            int index = ev.Cues.IndexOf(cue);
+            bool paired = kind == FloatNumberKind.GuardLoss
+                ? FloatNumberSpec.GuardPairsWithHp(ev.Cues, index)
+                : FloatNumberSpec.HpPairsWithGuard(ev.Cues, index);
+            DepictionFx.FloatPlate(this, fxLayer, DepictionFx.PointOn(fxLayer, target.transform), target.Height, paired,
+                kind, cue.Amount, label, _effects.Ms(id));
         }
 
         private IEnumerator TraceFor(EffectId id, float ms)
@@ -1676,9 +1700,23 @@ namespace Depiction.View
 
         // ---- frame -> screen ------------------------------------------------------------------
 
+        /// <summary>
+        /// #606: hands the script's layer to the backdrop (battle-visual-v1 §2.4), so it no longer has to
+        /// read the corner info's text back. BackdropView attaches itself after the scene loads (#89), so the
+        /// first frames may come before it: it is looked for again until it is there. Show ignores the
+        /// layer it already shows, so every frame may call it.
+        /// </summary>
+        private void ShowBackdropLayer(int layer)
+        {
+            if (layer < 1 || !backdrop) return;
+            if (!_backdropView) _backdropView = FindAnyObjectByType<Backdrop.View.BackdropView>();
+            if (_backdropView) _backdropView.Show(layer);
+        }
+
         private void ApplyFrame(DepictionFrame frame)
         {
             if (cornerInfo) cornerInfo.Bind(frame.Corner);
+            ShowBackdropLayer(frame.Corner.Floor);
             // #288: the art is the script's to name; the figure looks it up and keeps it while the id stays.
             playerFigure.ShowArt(frame.Player.ArtId);
             enemyFigure.ShowArt(frame.Enemy.ArtId);

@@ -18,8 +18,11 @@ namespace Depiction.Bridge
         /// <summary>battle_core_v4 §7.3 `START_GAP` (3 since 2026-09-23, #169).</summary>
         public const int DefaultStartGap = Constants.StartGap;
 
-        /// <summary>The roster id of the enemy to fight. The slice knows one: polearm_warped.</summary>
-        public string EnemyId = Enemies.PolearmWarpedId;
+        /// <summary>The slice's enemy, 錆槍の竜兵. The bootstrap's Inspector reads it here, so the View spells no id itself (#576).</summary>
+        public const string DefaultEnemyId = Enemies.PolearmWarpedId;
+
+        /// <summary>The roster id of the enemy to fight: any of BattleCore's Enemies.All (an unknown one is refused when the battle is built).</summary>
+        public string EnemyId = DefaultEnemyId;
 
         /// <summary>Fixes every shuffle. The same seed deals the same hands here and under `dotnet test`.</summary>
         public int Seed = DefaultSeed;

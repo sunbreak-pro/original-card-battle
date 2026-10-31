@@ -39,6 +39,7 @@ namespace Depiction.Bridge.Tests
             "Cue.Unit", "Cue.UnitCellAfter", "Cue.UnitGapAfter",
             "DepictionEvent.Unit",
             "DepictionFrame.Enemies",
+            "StanceRow.Decay", "StanceRow.Effect", // #605: the stance frame's hover panel
         };
 
         // ======================================================================= 1. one enemy, as before

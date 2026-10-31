@@ -27,6 +27,20 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void TheScreenNamesTheLayerItsBackdropIsDrawnFor()
+        {
+            // The view lays ExplorationBackdropSpec.For(screen.Layer) behind the map (#614), so the number
+            // must follow the descent, not stay on layer one.
+            var session = new ExplorationSession();
+            Assert.That(session.Screen().Layer, Is.EqualTo(1));
+
+            WalkToLayer(session, 3);
+            var screen = session.Screen();
+
+            Assert.That(screen.Layer, Is.EqualTo(3));
+        }
+
+        [Test]
         public void TheEntryBattleCoversTheMapUntilItIsReported()
         {
             // The entry is always a battle (§4.1), so a life opens on the stand-in battle (§6.8).
@@ -176,6 +190,20 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void TheGaugeHoldsItsReadingsAsFractionsOfTheDeathLine()
+        {
+            var session = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 18 }));
+            var gauge = session.Screen().Miasma;
+
+            Assert.That(gauge.Percent, Is.EqualTo(19));
+            Assert.That(gauge.Fill, Is.EqualTo(0.19f).Within(1e-6f));
+            Assert.That(gauge.NextFill, Is.EqualTo((float)gauge.NextPercent / Miasma.DeathAt).Within(1e-6f));
+            Assert.That(gauge.StepLineFills.Count, Is.EqualTo(gauge.StepLines.Count));
+            for (int i = 0; i < gauge.StepLines.Count; i++)
+                Assert.That(gauge.StepLineFills[i], Is.EqualTo(0.2f * (i + 1)).Within(1e-6f));
+        }
+
+        [Test]
         public void CrossingATwentyPercentLineIsWarned()
         {
             var session = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 18 }));
@@ -188,6 +216,19 @@ namespace Exploration.Tests
             Assert.That(forecast.MaxStaminaAfter, Is.EqualTo(forecast.MaxStaminaBefore - 1));
             Assert.That(forecast.Warnings, Has.Member("瘴気が 20% を越え、最大スタミナが 10 から 9 に下がります"));
             Assert.That(forecast.IsLethal, Is.False);
+        }
+
+        [Test]
+        public void TheGaugeForecastOfAStepAcrossALineStartsWithTheCautionMark()
+        {
+            // battle-visual-v1 §2.5: the share ahead is drawn in 注意 when it crosses a 20% line, and 注意 comes with △.
+            var crossing = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 18 })).Screen().Miasma;
+            Assert.That(crossing.Percent, Is.EqualTo(19));
+            Assert.That(crossing.NextPercent, Is.EqualTo(20));
+            Assert.That(crossing.ForecastLabel, Is.EqualTo($"△ 次の 1 歩で +{SevenLayers.Of(1).Density}%"));
+
+            var plain = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 10 })).Screen().Miasma;
+            Assert.That(plain.ForecastLabel, Does.Not.StartWith("△"));
         }
 
         [Test]

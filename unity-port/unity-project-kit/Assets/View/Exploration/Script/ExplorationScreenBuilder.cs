@@ -4,6 +4,7 @@
 // forecast and the step taken can never disagree.
 using System.Collections.Generic;
 using System.Linq;
+using Backdrop;
 using DungeonCore;
 using Journal;
 
@@ -64,6 +65,7 @@ namespace Exploration
 
             return new ExplorationScreen(
                 ExplorationText.LayerTitle(state.Profile.Layer, state.Profile.DisplayName(session.CarvingTaken)),
+                state.Profile.Layer,
                 $"刻限 {state.TimeLeft} / {state.TimeLimit}",
                 state.TimeLeft,
                 state.TimeLimit,
@@ -192,7 +194,7 @@ namespace Exploration
                     }
                     else
                     {
-                        lines.Add($"敵: {intel.EnemyName}（開示度 {intel.Disclosure} / {JournalPage.MaxDisclosure}）");
+                        lines.Add($"敵: {intel.EnemyName}（{JournalPage.DisclosureText(intel.Disclosure)}）");
                         lines.AddRange(intel.Lines);
                     }
                     break;
@@ -288,7 +290,7 @@ namespace Exploration
             var warnings = new List<string>();
             if (after.Phase == RunPhase.MiasmaDeath)
             {
-                warnings.Add("ここで瘴気が 100% に達し、この生が終わります");
+                warnings.Add($"ここで瘴気が {Miasma.DeathAt}% に達し、この生が終わります");
             }
             else
             {
@@ -324,6 +326,10 @@ namespace Exploration
                 // — its density, as the map's 「次の 1 歩で +N%」 does — not the gap to the 100% cap.
                 forecast = $"降りると +{(session.Trial ? below.EffectiveDensity : below.MiasmaPercent - percent)}%";
             }
+            // battle-visual-v1 §2.5: a step whose share ahead is drawn in 注意 (a 20% line crossed, or
+            // death reached) says so with △ too. Only this forecast of the next step: a 休息 that crosses
+            // a line may still lift max stamina, which StepForecast judges on the maximum itself.
+            if (forecast.Length > 0) forecast = MiasmaLook.ForecastMark(percent, next) + forecast;
 
             var stepLines = new List<int>();
             for (int line = Miasma.StepPercent; line < Miasma.DeathAt; line += Miasma.StepPercent) stepLines.Add(line);
@@ -403,7 +409,7 @@ namespace Exploration
 
             if (session.HasPendingStep)
             {
-                return new ScreenCard(CardKind.ConfirmStep, "瘴気が 100% に達します",
+                return new ScreenCard(CardKind.ConfirmStep, $"瘴気が {Miasma.DeathAt}% に達します",
                     new[] { "このノードへ入ると、瘴気死でこの生が終わります。" },
                     new[]
                     {
@@ -414,8 +420,8 @@ namespace Exploration
 
             if (session.ConfirmingDescend)
             {
-                return new ScreenCard(CardKind.ConfirmDescend, "瘴気が 100% に達します",
-                    new[] { "次の層へ降りると、入口で瘴気が 100% に達し、この生が終わります。" },
+                return new ScreenCard(CardKind.ConfirmDescend, $"瘴気が {Miasma.DeathAt}% に達します",
+                    new[] { $"次の層へ降りると、入口で瘴気が {Miasma.DeathAt}% に達し、この生が終わります。" },
                     new[]
                     {
                         new CardButton("それでも降りる", ScreenAction.ConfirmDescend),
@@ -433,7 +439,7 @@ namespace Exploration
                     },
                     new[]
                     {
-                        new CardButton("この生を終える", ScreenAction.ConfirmEndLife),
+                        new CardButton(ExplorationText.EndLifeButton, ScreenAction.ConfirmEndLife),
                         new CardButton("やめる", ScreenAction.Cancel),
                     });
             }
@@ -475,7 +481,7 @@ namespace Exploration
                     return InterludeCardOf(session);
 
                 case RunPhase.MiasmaDeath:
-                    return EndCard(CardKind.MiasmaDeath, "瘴気死", $"瘴気が 100% に達し、第 {layer} 層でこの生が終わった。", state);
+                    return EndCard(CardKind.MiasmaDeath, "瘴気死", $"瘴気が {Miasma.DeathAt}% に達し、第 {layer} 層でこの生が終わった。", state);
 
                 case RunPhase.Fallen:
                     return EndCard(CardKind.Fallen, "倒れた", $"第 {layer} 層の戦いで倒れた。", state);
@@ -522,12 +528,12 @@ namespace Exploration
                     : $"{next.TimeLimit}";
                 // The name the life knows (DisplayName) — the same as Name in the C#, where the layer-two carving is
                 // never read before its own layer; a lineage that read it in an earlier life knows it from the start (R-20).
-                lines.Add($"次は第 {next.Layer} 層　{next.DisplayName(session.CarvingTaken)}: 1 歩ごとに瘴気 +{density}%、刻限 {time}");
+                lines.Add($"次は第 {next.Layer} 層　{next.DisplayName(session.CarvingTaken)}: 1 刻限ごとに増える瘴気 +{density}%、刻限 {time}");
                 if (session.TryDescend().Phase == RunPhase.MiasmaDeath)
-                    lines.Add("！ 降りると入口で瘴気が 100% に達し、この生が終わります");
+                    lines.Add($"！ 降りると入口で瘴気が {Miasma.DeathAt}% に達し、この生が終わります");
                 buttons.Add(new CardButton("次の層へ降りる", ScreenAction.Descend));
             }
-            buttons.Add(new CardButton("この生を終える", ScreenAction.AskEndLife));
+            buttons.Add(new CardButton(ExplorationText.EndLifeButton, ScreenAction.AskEndLife));
             return new ScreenCard(CardKind.Interlude, "階層間の休憩", lines, buttons);
         }
 
@@ -568,6 +574,8 @@ namespace Exploration
                 .Where(k => state.Map.CountOf(k) > 0)
                 .Select(k => $"{ExplorationText.KindLabel(k)} {state.Map.CountOf(k)}");
 
+            // #107: a journal that keeps more than the enemies adds the layer's dungeon entries and the memo.
+            var more = session.Intel as IJournalPages;
             var rows = new List<JournalRow>
             {
                 new JournalRow("瘴気の濃さ", density),
@@ -584,6 +592,7 @@ namespace Exploration
                     ? ExplorationText.NoEvents
                     : string.Join(" ／ ", here.Select(e => ExplorationText.EventRecord(e.Name, e.Accepted, e.Summary)))));
             }
+            rows.AddRange(more?.DungeonRows(layer) ?? System.Array.Empty<JournalRow>());
             pages.Add(new JournalPage($"dungeon-{layer}", JournalTab.Dungeon,
                 ExplorationText.LayerTitle(layer, profile.DisplayName(session.CarvingTaken)), rows));
             // Trial extension (js: ExplorationScreenBuilder.js:661): reading the layer-two carving adds a page
@@ -594,7 +603,7 @@ namespace Exploration
                     ExplorationText.CarvingPageRows.Select(row => new JournalRow(row.Label, row.Text)).ToList()));
             }
 
-            pages.Add(new JournalPage("memo", JournalTab.Memo, "メモ",
+            pages.Add(more?.MemoPage() ?? new JournalPage("memo", JournalTab.Memo, "メモ",
                 new[] { new JournalRow("", "メモはまだありません。") }));
 
             pages.Add(JournalTerms.Page());

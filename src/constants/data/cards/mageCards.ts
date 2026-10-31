@@ -660,7 +660,3 @@ export const MAGE_CARDS: Record<string, Card> = {
 };
 
 export const MAGE_CARDS_ARRAY: Card[] = Object.values(MAGE_CARDS);
-
-export function getMageCard(id: string): Card | undefined {
-  return MAGE_CARDS[id];
-}

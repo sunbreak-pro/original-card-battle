@@ -318,6 +318,7 @@ namespace Trial.Bridge
         public LegacyReceipt PendingTaken => Raw.PendingTaken;
         public IReadOnlyList<EventOutcome> Events => Raw.Events;
         public IReadOnlyDictionary<string, int> JournalLevels => Raw.JournalLevels;
+        public LifeJournal Journal => Raw.Journal;
         public int DisclosureOf(string enemyId) => Raw.DisclosureOf(enemyId);
         public BattleHandIn HandIn() => Raw.HandIn();
 
@@ -444,6 +445,7 @@ namespace Trial.Bridge
         public bool CanOpen(Overlay overlay) => Raw.CanOpen(overlay);
         public bool CanUseSlot(int index) => Raw.CanUseSlot(index);
         public bool CanUseConsumable(int index) => Raw.CanUseConsumable(index);
+        public bool HasSurveyed(int layer) => Raw.HasSurveyed(layer);
         public ExplorationState TryDescend() => Raw.TryDescend();
         public EventKind? EventAt(int nodeId) => Raw.EventAt(nodeId);
         public LayerMap MapOf(LayerProfile profile, ulong seed) => Raw.MapOf(profile, seed);

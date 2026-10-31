@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import type { BattlePixiProps } from "../types/pixiTypes";
-import type { PixiEffectBridge } from "../battle/PixiEffectBridge";
 
 /**
  * Phase 1 foundation tests.
@@ -17,7 +16,7 @@ import type { PixiEffectBridge } from "../battle/PixiEffectBridge";
  * What this suite asserts:
  *  - the layer components are valid React component functions (no @pixi/react
  *    reconciler import at module load — only JSX intrinsics),
- *  - the typed contracts (BattlePixiProps / PixiEffectBridge) are stable.
+ *  - the typed contract (BattlePixiProps) is stable.
  */
 describe("PixiJS Phase 1 foundation", () => {
   it("exposes layer components as functions", async () => {
@@ -47,17 +46,5 @@ describe("PixiJS Phase 1 foundation", () => {
     };
     expect(props.playerHp).toBe(30);
     expect(props.isPlayerPhase).toBe(true);
-  });
-
-  it("PixiEffectBridge contract is structurally satisfiable", () => {
-    const calls: string[] = [];
-    const bridge: PixiEffectBridge = {
-      playDamageEffect: () => calls.push("damage"),
-      playHealEffect: () => calls.push("heal"),
-      playShieldEffect: () => calls.push("shield"),
-      playTestParticle: () => calls.push("test"),
-    };
-    bridge.playTestParticle(10, 20, 0x66ccff);
-    expect(calls).toEqual(["test"]);
   });
 });

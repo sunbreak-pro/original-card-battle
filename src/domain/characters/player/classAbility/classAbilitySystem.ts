@@ -105,32 +105,3 @@ export interface ClassAbilitySystem<T extends ClassAbilityState> {
    */
   getStateDescription(state: T): string;
 }
-
-// ============================================================
-// Helper Functions
-// ============================================================
-
-/**
- * Combine multiple damage modifiers
- *
- * Flat bonuses are added, multipliers are multiplied,
- * crit and penetration bonuses are added (capped at 1.0)
- */
-export function combineDamageModifiers(...modifiers: DamageModifier[]): DamageModifier {
-  return modifiers.reduce(
-    (combined, modifier) => ({
-      flatBonus: combined.flatBonus + modifier.flatBonus,
-      percentMultiplier: combined.percentMultiplier * modifier.percentMultiplier,
-      critBonus: Math.min(1.0, combined.critBonus + modifier.critBonus),
-      penetration: Math.min(1.0, combined.penetration + modifier.penetration),
-    }),
-    { ...DEFAULT_DAMAGE_MODIFIER }
-  );
-}
-
-/**
- * Apply damage modifier to base damage
- */
-export function applyDamageModifier(baseDamage: number, modifier: DamageModifier): number {
-  return Math.floor((baseDamage + modifier.flatBonus) * modifier.percentMultiplier);
-}

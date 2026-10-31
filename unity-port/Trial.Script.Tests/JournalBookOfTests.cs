@@ -16,8 +16,9 @@ namespace Trial.Script.Tests
     /// </summary>
     public class JournalBookOfTests
     {
+        // NoEnemyIntel: the JS's life without an intel. Given none, an Expedition reads its own LifeJournal (#107).
         private static Expedition LifeWith(ulong seed, Dictionary<string, int> journal = null) =>
-            new Expedition(new RunStart { Seed = seed }, journal: journal);
+            new Expedition(new RunStart { Seed = seed }, intel: new NoEnemyIntel(), journal: journal);
 
         private static List<(string, bool)> Labels(JournalBook book) =>
             JournalBookOf.TabsOf(book, book.First).Select(t => (t.Label, t.Open)).ToList();

@@ -169,9 +169,6 @@ export const INVENTORY_MAX_CAPACITY = 20;
 /** Equipment inventory maximum count */
 export const EQUIPMENT_INVENTORY_MAX = 3;
 
-/** Default exploration limit */
-export const DEFAULT_EXPLORATION_LIMIT = 10;
-
 // ============================================================
 // Isometric Layout Constants
 // ============================================================

@@ -3,9 +3,9 @@
 // and the same places the screen draws.
 //
 // v4.4 has no single slot: every stance put down joins a list with no cap, and the same stance put
-// down again works twice. battle-visual-v1 §4.6 still draws one 250×52 frame per side, so until
-// design settles the list's shape (the conflict handed off as 2026-10-11-battle-conflict-stance-list-
-// shape) each stance takes one such frame, stacked upward from the slot §4.6 gives.
+// down again works twice. battle-visual-v1 §4.6 (v1.5, #505) gives each stance one 250×52 frame,
+// stacked upward from the slot at y 470. A frame's hover panel carries the stance's effect, which the
+// status chips no longer do (#605).
 using System;
 using System.Collections.Generic;
 
@@ -84,6 +84,66 @@ namespace Depiction
             return count > 1 ? "×" + count : "";
         }
 
+        /// <summary>§4.6 / §7.3: the word on the right of a stance frame's hover panel.</summary>
+        public const string PanelGroup = "永続";
+
+        /// <summary>§7.3 説明パネル: 340 px wide.</summary>
+        public const float PanelWidth = 340f;
+
+        /// <summary>The space between a frame and its panel: 8 px from the §3.2 spacing scale.</summary>
+        public const float PanelGap = 8f;
+
+        /// <summary>How close the panel may come to the screen's top and bottom edges (as the status chips' panel keeps).</summary>
+        public const float PanelMargin = 16f;
+
+        /// <summary>
+        /// §4.6: the left edge of the hover panel of <paramref name="side"/>'s frames — beside the frame,
+        /// on the right for the player and on the left for the enemy, so it never covers the list.
+        /// </summary>
+        public static float PanelLeft(UnitSide side)
+        {
+            return side == UnitSide.Player
+                ? LeftOf(side) + Width + PanelGap
+                : LeftOf(side) - PanelGap - PanelWidth;
+        }
+
+        /// <summary>
+        /// The top of the hover panel of the frame <paramref name="fromBottom"/>: level with the frame's
+        /// top, raised when a tall panel (a long "+n" list) would run past the screen's bottom.
+        /// </summary>
+        public static float PanelTop(int fromBottom, float panelHeight)
+        {
+            float top = TopOf(fromBottom);
+            float lowest = RefHeight - PanelMargin - panelHeight;
+            return Math.Max(PanelMargin, Math.Min(top, lowest));
+        }
+
+        /// <summary>§4.6: the hover panel's heading beside the flag, "岩の構え ×2" ("岩の構え" for one).</summary>
+        public static string PanelTitle(StanceRow row)
+        {
+            string count = CountText(row.Count);
+            return count.Length > 0 ? row.Name + " " + count : row.Name;
+        }
+
+        /// <summary>§7.3: the panel's two lines, 効き方 and 減り方, as the bridge wrote them on the row (#605).</summary>
+        public static string PanelBody(StanceRow row)
+        {
+            return "効き方　" + row.Effect + "\n減り方　" + row.Decay;
+        }
+
+        /// <summary>
+        /// §4.6 畳み方: the panel of the "+n" frame lists the folded stances, the oldest
+        /// <paramref name="folded"/> rows, in the order put down, one line each as 「名前 ×数：効き方」.
+        /// </summary>
+        public static List<string> FoldedLines(IReadOnlyList<StanceRow> rows, int folded)
+        {
+            var lines = new List<string>();
+            if (rows == null) return lines;
+            for (int i = 0; i < folded && i < rows.Count; i++) lines.Add(PanelTitle(rows[i]) + "：" + rows[i].Effect);
+            return lines;
+        }
+
         private const float RefWidth = 1920f;
+        private const float RefHeight = 1080f;
     }
 }
