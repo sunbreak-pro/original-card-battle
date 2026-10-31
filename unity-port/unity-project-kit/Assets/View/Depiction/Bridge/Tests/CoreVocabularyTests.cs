@@ -56,7 +56,7 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void AStance_FiresItsNameOnce_AndLeadsTheChips()
+        public void AStance_FiresItsNameOnce_AndJoinsTheListNotTheChips()
         {
             BattleState state = TurnLoop.Start(BattleSetup.Slice(), NoShuffle).State;
             var writer = new CoreScriptWriter(state.EnemyDef);
@@ -74,14 +74,16 @@ namespace Depiction.Bridge.Tests
             Assert.That(ev.Cues.Where(c => c.Kind == CueKind.TraitFire).Select(c => c.Text), Is.EqualTo(new[] { "構え・岩の構え" }));
             Assert.That(ev.Cues.Where(c => c.Kind == CueKind.StatusChange).Select(c => (c.Amount, c.StacksAfter)),
                 Is.EqualTo(new[] { (2, 2), (-1, 1) }));
-            Assert.That(ev.After.Player.Statuses.Select(c => c.Label + c.Stacks), Is.EqualTo(new[] { "構え・岩の構え0", "強化1" }));
+            // battle-visual-v1 §4.6 (#605): the stance is on the list at the edge, not among the chips.
+            Assert.That(ev.After.Player.Stances.Select(r => r.Name + "×" + r.Count), Is.EqualTo(new[] { "岩の構え×1" }));
+            Assert.That(ev.After.Player.Statuses.Select(c => c.Label + c.Stacks), Is.EqualTo(new[] { "強化1" }));
         }
 
         [Test]
         public void TheRootsBreath_StopsTheStanceForATurn_AndTheScreenSaysWhenItStopsAndComesBack()
         {
             // #334 (roster §6.4 root_st): 岩の構え placed in turn 1, stopped by the breath in turn 2,
-            // back at the start of turn 4. The chip stays; the two lines say what happened.
+            // back at the start of turn 4. The frame stays; the two lines say what happened.
             var deck = new List<CardInstance> { new CardInstance("rock_stance-0", CardCatalog.RockStance) };
             for (int i = deck.Count; i < Constants.DeckMin; i++) deck.Add(new CardInstance("thrust-" + i, CardCatalog.Thrust));
             BattleState state = TurnLoop.Start(new BattleSetup(Enemies.DistortionRoot, deck, 8, StartGap: 3), NoShuffle).State;
@@ -280,7 +282,11 @@ namespace Depiction.Bridge.Tests
                     Assert.That(frame.Enemy.Stamina, Is.EqualTo(state.Enemy.Stamina), at);
                     Assert.That(frame.Player.RangeGlyph, Is.EqualTo(state.Gap.ToString()), at);
                     Assert.That(frame.Player.Statuses.Select(c => c.Label + c.Stacks),
-                        Is.EqualTo(CoreText.Chips(state.Player.Statuses, state.Player.StanceList.Select(e => NameOf(e.Source)).ToList()).Select(c => c.Label + c.Stacks)), at);
+                        Is.EqualTo(CoreText.Chips(state.Player.Statuses).Select(c => c.Label + c.Stacks)), at);
+                    // #605: the stances held are the list's rows, one per name with its count.
+                    List<string> held = state.Player.StanceList.Select(e => NameOf(e.Source)).Where(n => n.Length > 0).ToList();
+                    Assert.That(frame.Player.Stances.Sum(r => r.Count), Is.EqualTo(held.Count), at);
+                    Assert.That(frame.Player.Stances.Select(r => r.Name), Is.EquivalentTo(held.Distinct()), at);
                     Assert.That(frame.Enemy.Statuses.Select(c => c.Label + c.Stacks),
                         Is.EqualTo(CoreText.Chips(state.Enemy.Statuses).Select(c => c.Label + c.Stacks)), at);
                     Assert.That(frame.Hand.Select(c => c.Id), Is.EqualTo(state.Hand.Select(c => c.InstanceId)), at);

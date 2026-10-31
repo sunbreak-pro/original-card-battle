@@ -5,14 +5,17 @@
 //
 // The look is a stand-in: grey squares with one character for the kind, shades of grey and a single
 // accent colour (§6.10). The design lane and #90 own the real look; replacing it touches this file
-// and ExplorationPalette only. The 瘴気 gauge and the shade that closes in on the screen are already the
-// real look (battle-visual-v1 §2.5, #613): every colour, alpha and timing is Backdrop.MiasmaLook's.
+// and ExplorationPalette only. The backdrop of each layer with its veil, the 瘴気 gauge and the shade
+// that closes in on the screen are already the real look (battle-visual-v1 §2.5, #614 and #613): the
+// backdrop is Backdrop.View.BackdropLayers, the veil is Backdrop.ExplorationBackdropSpec's, and every
+// colour, alpha and timing of the gauge and the shade is Backdrop.MiasmaLook's.
 //
 // #626: the pick screen (an elite's two cards, the card pile's three, a 習熟訓練 mark's card) is drawn
 // from the CardPick Exploration.Bridge built, each card the battle's own CardView bound to its face.
 #if UNITY_2021_2_OR_NEWER
 using System;
 using Backdrop;
+using Backdrop.View;
 using Depiction.View;
 using DungeonCore;
 using Exploration.Bridge;
@@ -75,6 +78,15 @@ namespace Exploration.View
         private readonly RectTransform _overlayLayer;
         private readonly JournalDrawerView _journal;
 
+        // The backdrop behind the map and the veil over it (battle-visual-v1 §2.5, #614). The veil's alpha
+        // differs by layer, so it crossfades with the backdrop: Tick moves it from _veilFrom to _veilTo.
+        private readonly RectTransform _backdropHost;
+        private readonly Image _veil;
+        private BackdropLayers _backdrop;
+        private Color _veilFrom;
+        private Color _veilTo;
+        private double _veilSince;
+
         // The 瘴気 gauge (§6.2) and the shade (battle-visual-v1 §2.5), moved every frame by Tick.
         private readonly RectTransform _root;
         private Image _gaugeAhead;
@@ -121,6 +133,13 @@ namespace Exploration.View
             _root = root;
             UiKit.Fill(root, "Ground", ExplorationPalette.Ground);
 
+            // Back to front: the layer's backdrop, the veil of the ground colour over it, the miasma's shade,
+            // then everything the screen is for (battle-visual-v1 §2.5). The backdrop is made by the first
+            // Render, once the screen says which layer it is on.
+            _backdropHost = UiKit.Box(root, "Backdrop", 0f, 0f, 1f, 1f);
+            _veil = UiKit.Fill(root, "Veil", Color.clear);
+            BuildShade(root);
+
             // Sibling order is draw order. The map and the detail go first, then the card layer that
             // covers them; the band, the carried items and 「この生を終える」 sit above a card so the
             // gauge stays readable and an item can still be used at the interlude. Whether those
@@ -128,16 +147,15 @@ namespace Exploration.View
             // 設定・セーブ cover all of that but the band, whose buttons switch between them.
 
             // ---- the map ----
-            // The map's ground is its own sibling so the shade lies between it and the map's nodes, under
-            // the band and the right column (battle-visual-v1 §2.5).
-            UiKit.Fill(UiKit.Box(root, "MapBack", 0.015f, 0.11f, 0.665f, 0.89f), "Back", ExplorationPalette.Panel);
-            BuildShade(root);
+            // The map, its links and its labels are drawn straight on the veiled backdrop, not on a panel
+            // (battle-visual-v1 §2.5), over the shade and under the band and the right column.
             _mapPanel = UiKit.Box(root, "Map", 0.015f, 0.11f, 0.665f, 0.89f);
             _mapArea = UiKit.Point(_mapPanel, "Area", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(MapWidth, MapHeight), Vector2.zero);
             _links = UiKit.Rect(_mapArea, "Links", Vector2.zero, Vector2.one);
             _nodes = UiKit.Rect(_mapArea, "Nodes", Vector2.zero, Vector2.one);
-            _hint = UiKit.Text(UiKit.Box(root, "Hint", 0.21f, 0.02f, 0.665f, 0.10f), "Text", 20, TextAnchor.MiddleLeft, ExplorationPalette.InkSoft);
+            // The hint sits on the backdrop, so it takes the body colour the veil was sized for (§2.5).
+            _hint = UiKit.Text(UiKit.Box(root, "Hint", 0.21f, 0.02f, 0.665f, 0.10f), "Text", 20, TextAnchor.MiddleLeft, ExplorationPalette.Ink);
 
             // ---- the node detail ----
             RectTransform detail = UiKit.Box(root, "Detail", 0.68f, 0.36f, 0.985f, 0.89f);
@@ -204,6 +222,7 @@ namespace Exploration.View
         public void Render(ExplorationScreen screen)
         {
             _screen = screen;
+            DrawBackdrop(screen.Layer);
             if (screen.CurrentNodeId != _lastCurrent)
             {
                 // After a step the detail follows the player to where they now stand.
@@ -241,6 +260,38 @@ namespace Exploration.View
             else if (!journal && _journal.IsOpen) _journal.Close();
         }
 
+        // ---- the backdrop and its veil (battle-visual-v1 §2.5, #614) ----
+
+        /// <summary>
+        /// Lays the backdrop of <paramref name="layer"/> behind the map. A new layer crossfades over
+        /// BackdropSpec.CrossfadeMs, the veil's alpha with it, so the map never jumps between two veils.
+        /// </summary>
+        private void DrawBackdrop(int layer)
+        {
+            int at = BackdropSpec.Clamp(layer);
+            Color veil = ExplorationPalette.Of(ExplorationBackdropSpec.For(at).Veil);
+            if (_backdrop == null)
+            {
+                // The backdrop sizes its hazes from the area's rect, which a new canvas has not laid out yet.
+                Canvas.ForceUpdateCanvases();
+                _backdrop = BackdropLayers.Create(_backdropHost, at);
+                _veilFrom = _veilTo = veil;
+                _veil.color = veil;
+                return;
+            }
+            if (at == _backdrop.Layer) return;
+            _veilFrom = _veil.color;
+            _veilTo = veil;
+            _veilSince = NowMs;
+            _backdrop.Show(at);
+        }
+
+        private void FadeVeil()
+        {
+            if (_backdrop == null) return;
+            _veil.color = Color.Lerp(_veilFrom, _veilTo, BackdropMotion.Crossfade(NowMs - _veilSince));
+        }
+
         // ---- top band ----
 
         private void DrawPips(int left, int limit)
@@ -265,6 +316,7 @@ namespace Exploration.View
         /// <summary>Moves the gauge's rise and breath and the shade to this frame. Call once a frame.</summary>
         public void Tick()
         {
+            FadeVeil();
             if (_gaugeTo < 0) return;
             double now = NowMs;
             float shown = MiasmaLook.Rise(_gaugeFrom, _gaugeTo, now - _gaugeSince);

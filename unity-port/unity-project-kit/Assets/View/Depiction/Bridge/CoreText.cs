@@ -457,36 +457,17 @@ namespace Depiction.Bridge
         // ---- units --------------------------------------------------------------------------
 
         /// <summary>
-        /// The chips under a gauge: the stance in the slot first (§4, #188; it has no stacks to count),
-        /// then the status words in their fixed order.
+        /// The chips under a gauge: the status words in their fixed order. The stances held are not
+        /// chips; the stance frames carry them (battle-visual-v1 §4.6, #605; StatusChipText.StanceRows).
         /// </summary>
-        public static List<StatusChip> Chips(StatusSet statuses, string stanceName = "")
+        public static List<StatusChip> Chips(StatusSet statuses)
         {
-            return Chips(statuses, string.IsNullOrEmpty(stanceName) ? new string[0] : new[] { stanceName });
-        }
-
-        /// <summary>
-        /// The chips under a gauge (v4.4): the stances held first, one chip per stance, then the status
-        /// words in their fixed order. The same stance twice is one chip with a count of 2, since it
-        /// works twice (<see cref="StanceChips"/>).
-        /// </summary>
-        public static List<StatusChip> Chips(StatusSet statuses, IReadOnlyList<string> stanceNames)
-        {
-            return StatusChipText.Chips(statuses, stanceNames);
-        }
-
-        /// <summary>
-        /// One chip per distinct stance name in the order first held; a stance held more than once
-        /// shows its count in Stacks, a single one shows none. The panel text is StatusChipText's (#242).
-        /// </summary>
-        public static List<StatusChip> StanceChips(IReadOnlyList<string> stanceNames)
-        {
-            return StatusChipText.StanceChips(stanceNames);
+            return StatusChipText.Chips(statuses);
         }
 
         /// <summary>
         /// #334 (roster §6.4 root_st): the line shown when a permanent effect stops for a turn, and the
-        /// one shown when it works again. The stance keeps its chip the while; only these lines say so.
+        /// one shown when it works again. The stance keeps its frame the while; only these lines say so.
         /// </summary>
         public static string StanceStoppedLine(string stanceName) => "構え停止・" + stanceName;
 
