@@ -8,7 +8,8 @@
     "Journal.Script",
     "BattleCore",
     "Depiction.Script",
-    "Depiction.Bridge"
+    "Depiction.Bridge",
+    "InheritanceCore"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

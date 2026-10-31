@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- dotnet-only tests of InheritanceCore (they are not copied into Unity). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CS4014</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+    <PackageReference Include="NUnit" Version="4.3.2" />
+    <PackageReference Include="NUnit.Analyzers" Version="4.7.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InheritanceCore\InheritanceCore.csproj" />
+  </ItemGroup>
+
+  <!-- What the JS gives (Fixtures/js-oracle.mjs and js-fuzz.mjs write them): JsParityTests, JsonTests and
+       FuzzParityTests compare with them. -->
+  <ItemGroup>
+    <None Include="Fixtures\js-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\js-fuzz.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -64,6 +64,14 @@ namespace Depiction.Bridge
         /// </summary>
         public List<CardInstance> Deck;
 
+        /// <summary>
+        /// Trial extension (docs/EXTENSIONS.md 「出立の枠（DeckLimits）」): the life's deck limits the deck is held
+        /// to (a survivor's deck may hold 45, concept-v3.md §14 生存者ボーナス), set by EncounterBattle.NextLaunch.
+        /// Null: §8's bounds (20〜40), as before.
+        /// </summary>
+        // js: bridge/depiction/BattleLaunch.js:87
+        public DeckLimits Limits;
+
         // ---- What the exploration hands in (#99). The defaults are a fresh battle, as before. ----
 
         /// <summary>
@@ -99,10 +107,11 @@ namespace Depiction.Bridge
         public int ChainIndex = 1;
         public int ChainTotal = 1;
 
+        // js: bridge/depiction/BattleLaunch.js:132
         public List<CardInstance> BuildDeck()
         {
             if (Deck == null) return PrototypeDeck.Build();
-            DeckValidation validation = Cards.Validate(Deck);
+            DeckValidation validation = Cards.Validate(Deck, Limits);
             if (!validation.Ok)
             {
                 throw new ArgumentException("BattleLaunch: the deck breaks §8 — " + string.Join(" / ", validation.Errors));

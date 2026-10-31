@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Compiles the trial's Promise, microtask queue, eases and scene clock, which live in the Unity kit under
+         Assets/View/Trial/Async/ and are mirrored into the Unity project by `npm run unity:sync`.
+         This project adds no source of its own: it lets `dotnet test` hold the same files Unity's
+         Trial.Async assembly holds. netstandard2.1 + C# 9 is what Unity compiles them as. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Trial</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Trial\Async\**\*.cs" LinkBase="Async" />
+  </ItemGroup>
+
+</Project>
