@@ -214,7 +214,7 @@ namespace BattleCore
         public static StepResult TakeFreeStep(BattleState state, int direction)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            if (direction != 1 && direction != -1)
+            if (direction != Statuses.SwiftFreeCells && direction != -Statuses.SwiftFreeCells)
             {
                 throw new ArgumentOutOfRangeException(nameof(direction), direction, "The free step is one cell: +1 (forward) or -1 (back).");
             }

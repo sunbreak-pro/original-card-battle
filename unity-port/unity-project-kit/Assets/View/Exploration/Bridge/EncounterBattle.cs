@@ -106,8 +106,11 @@ namespace Exploration.Bridge
             IReadOnlyList<string> observed,
             IReadOnlyList<string> learned,
             IReadOnlyList<string> offered,
-            BattleReward reward = null)
+            BattleReward reward = null,
+            IReadOnlyList<string> pagesRead = null,
+            int pagesTurned = 0)
         {
+            if (pagesTurned < 0) throw new ArgumentOutOfRangeException(nameof(pagesTurned));
             Won = won;
             Hp = hp;
             Stamina = stamina;
@@ -118,6 +121,8 @@ namespace Exploration.Bridge
             Learned = learned ?? Array.Empty<string>();
             Offered = offered ?? Array.Empty<string>();
             Reward = reward ?? BattleReward.None;
+            PagesRead = pagesRead ?? Array.Empty<string>();
+            PagesTurned = pagesTurned;
         }
 
         /// <summary>Every fight of the encounter was won.</summary>
@@ -150,9 +155,23 @@ namespace Exploration.Bridge
 
         /// <summary>
         /// The rest of a won encounter's reward (encounters_and_rewards_v4.md §4.2): the pile's cards to
-        /// pick one from (Expedition.Learn), consumables and pages. None for a lost encounter.
+        /// pick one from (Expedition.Learn), consumables and pages. None for a lost encounter. It is what
+        /// the encounter brought after the pages were read: Pages counts the pages read into the journal,
+        /// and a page that turned into a card shows as the card laid out (or the consumable it became).
         /// </summary>
         public BattleReward Reward { get; }
+
+        /// <summary>
+        /// The dungeon entries the pages told in full (Journal.DungeonJournal ids, now at 開示度 2), in the
+        /// order read (dungeon_exploration_v4.md §6.11).
+        /// </summary>
+        public IReadOnlyList<string> PagesRead { get; }
+
+        /// <summary>
+        /// Pages whose layer had nothing left to tell, each turned into a card (§4.3). A card waiting
+        /// behind another pick is laid out in Expedition.Offer once that pick is made.
+        /// </summary>
+        public int PagesTurned { get; }
     }
 
     /// <summary>One fight as it ended: its enemies, the final state and every event it emitted.</summary>
