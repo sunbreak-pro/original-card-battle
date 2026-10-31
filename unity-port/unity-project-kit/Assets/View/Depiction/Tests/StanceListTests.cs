@@ -63,5 +63,47 @@ namespace Depiction.Tests
             Assert.That(StanceList.CountText(1), Is.EqualTo(""));
             Assert.That(StanceList.CountText(2), Is.EqualTo("×2"));
         }
+
+        // ---- the hover panel (§4.6 / §7.3 永続の状態, #605) ----
+
+        private static StanceRow Row(string name, int count, string effect) =>
+            new StanceRow { Name = name, Count = count, Effect = effect, Decay = "減らない（永続）" };
+
+        [Test]
+        public void ThePanel_HeadsWithTheNameAndCount_AndWritesTheRowsText()
+        {
+            Assert.That(StanceList.PanelTitle(Row("岩の構え", 2, "")), Is.EqualTo("岩の構え ×2"));
+            Assert.That(StanceList.PanelTitle(Row("岩の構え", 1, "")), Is.EqualTo("岩の構え"), "no ×1");
+            Assert.That(StanceList.PanelGroup, Is.EqualTo("永続"));
+            Assert.That(StanceList.PanelBody(Row("岩の構え", 1, "毎ターン開始に Guard +3")),
+                Is.EqualTo("効き方　毎ターン開始に Guard +3\n減り方　減らない（永続）"));
+        }
+
+        [Test]
+        public void TheFoldedPanel_ListsTheFoldedStances_InTheOrderPutDown()
+        {
+            var rows = new List<StanceRow>
+            {
+                Row("岩の構え", 2, "A"), Row("水の構え", 1, "B"), Row("流れの構え", 1, "C"), Row("霞み足", 1, "D"),
+            };
+            int folded = StanceList.Folded(rows.Count);
+            Assert.That(StanceList.FoldedLines(rows, folded), Is.EqualTo(new[] { "岩の構え ×2：A", "水の構え：B" }));
+            Assert.That(StanceList.FoldedLines(rows, 0), Is.Empty);
+            Assert.That(StanceList.FoldedLines(null, 2), Is.Empty);
+        }
+
+        [Test]
+        public void ThePanel_StandsBesideTheFrame_InsideTheScreen()
+        {
+            // The player's to the right of its frames, the enemy's to the left, 8 px apart.
+            Assert.That(StanceList.PanelLeft(UnitSide.Player), Is.EqualTo(24f + 250f + 8f));
+            Assert.That(StanceList.PanelLeft(UnitSide.Enemy) + StanceList.PanelWidth, Is.EqualTo(StanceList.LeftOf(UnitSide.Enemy) - 8f));
+            Assert.That(StanceList.PanelLeft(UnitSide.Enemy), Is.GreaterThanOrEqualTo(0f));
+            // Level with the frame's top while it fits ...
+            for (int i = 0; i < StanceList.MaxRows; i++) Assert.That(StanceList.PanelTop(i, 120f), Is.EqualTo(StanceList.TopOf(i)));
+            // ... and raised so a long "+n" list still ends 16 px above the screen's bottom.
+            Assert.That(StanceList.PanelTop(0, 800f) + 800f, Is.EqualTo(1080f - 16f));
+            Assert.That(StanceList.PanelTop(0, 2000f), Is.EqualTo(16f), "never above the top");
+        }
     }
 }

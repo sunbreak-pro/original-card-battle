@@ -30,7 +30,9 @@ namespace Depiction.Bridge.Tests
             List<DepictionEvent> enemyBeats = events.Where(e => e.Kind == DepictionEventKind.EnemyAction).ToList();
             Assert.That(enemyBeats.Select(e => e.Title), Is.EqualTo(new[] { "鉄壁", "盾を掲げて前進" }));
             Assert.That(enemyBeats.All(e => e.Cues.Count(c => c.Kind == CueKind.EnemyWindup) == 1), Is.True);
-            Assert.That(source.Frame.Enemy.Statuses.First().Label, Is.EqualTo("構え・鉄壁"), "the enemy's stance leads its chips");
+            // battle-visual-v1 §4.6 (#605): the enemy's stance is the newest row of its list, not a chip.
+            Assert.That(source.Frame.Enemy.Stances.Last().Name, Is.EqualTo("鉄壁"), "the enemy's stance joins its list");
+            Assert.That(source.Frame.Enemy.Statuses.Select(c => c.Label), Has.None.StartsWith("構え・"), "and is not among its chips");
         }
 
         [TestCaseSource(nameof(AllIds))]

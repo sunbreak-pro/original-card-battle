@@ -87,5 +87,38 @@ namespace Depiction.Bridge.Tests
             DepictionFrame last = writer.Write(end.Events, end.State).Last().After;
             Assert.That(Names(last.Player), Is.EqualTo(new[] { "岩の構え×1" }), "a stance lasts the battle (§4)");
         }
+
+        [Test]
+        public void TheStancesHeld_AreNotStatusChips()
+        {
+            // battle-visual-v1 §4.5 / §4.6 (#605): the stance frames carry the stances, so the number
+            // panel's status row keeps its places for the words (no ChipKind.Lasting chip).
+            var (writer, state) = Begun();
+            var (_, s1) = Play(writer, state, "rock-0");
+            var (_, s2) = Play(writer, s1, "water-0");
+            var (frame, _) = Play(writer, s2, "rock-1");
+            Assert.That(frame.Player.Stances, Is.Not.Empty);
+            foreach (UnitFrame unit in new[] { frame.Player, frame.Enemy })
+            {
+                Assert.That(unit.Statuses.Select(c => c.Kind), Has.None.EqualTo(ChipKind.Lasting));
+                Assert.That(unit.Statuses.Select(c => c.Label), Has.None.StartsWith("構え・"));
+            }
+        }
+
+        [Test]
+        public void EachRow_CarriesItsHoverPanelText()
+        {
+            // §4.6 / §7.3 永続の状態 (#605): the bridge writes 効き方 and 減り方 on the row; the frame only prints them.
+            var (writer, state) = Begun();
+            var (_, s1) = Play(writer, state, "rock-0");
+            var (_, s2) = Play(writer, s1, "water-0");
+            var (frame, _) = Play(writer, s2, "rock-1");
+            StanceRow water = frame.Player.Stances.Single(r => r.Name == "水の構え");
+            StanceRow rock = frame.Player.Stances.Single(r => r.Name == "岩の構え");
+            Assert.That(water.Effect, Is.EqualTo(StatusChipText.StanceChip("水の構え", 1).Effect));
+            Assert.That(rock.Effect, Is.EqualTo(StatusChipText.StanceChip("岩の構え", 2).Effect));
+            Assert.That(rock.Effect, Does.Contain("2 倍効く"), "a stance held twice says it works twice");
+            Assert.That(frame.Player.Stances.Select(r => r.Decay), Has.All.EqualTo("減らない（永続）"));
+        }
     }
 }
