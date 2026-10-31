@@ -47,6 +47,13 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void TheDisclosureWordsArePutTogetherInOnePlace()
+        {
+            Assert.That(JournalPage.DisclosureText(2), Is.EqualTo("開示度 2 / 2"));
+            Assert.That(Enemy(1).DisclosureLabel, Is.EqualTo(JournalPage.DisclosureText(1)));
+        }
+
+        [Test]
         public void InBattleOnlyTheEnemyPagesAndTheTermsOpen()
         {
             var pages = new[] { Enemy(1), Dungeon(), Memo(), JournalTerms.Page() };

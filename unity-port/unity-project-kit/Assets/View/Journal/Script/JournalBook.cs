@@ -92,7 +92,13 @@ namespace Journal
         /// enemy page at 0: a real page exists only after an encounter, so 0 is a stand-in.
         /// </summary>
         public string DisclosureLabel =>
-            Tab == JournalTab.Enemy && Disclosure > 0 ? $"開示度 {Disclosure} / {MaxDisclosure}" : "";
+            Tab == JournalTab.Enemy && Disclosure > 0 ? DisclosureText(Disclosure) : "";
+
+        /// <summary>
+        /// 「開示度 1 / 2」: the one place the words are put together, for the drawer's label and for
+        /// any other screen that names an enemy's disclosure (the exploration map's combat nodes).
+        /// </summary>
+        public static string DisclosureText(int disclosure) => $"開示度 {disclosure} / {MaxDisclosure}";
 
         public bool IsHidden(JournalRow row) => row != null && row.NeedsDisclosure > Disclosure;
 
