@@ -746,6 +746,12 @@ namespace Depiction
         public UnitSide? Source;
         public int Amount;
         public string Text = "";
+        /// <summary>
+        /// Slash and Hit only (battle_ui_ux_v2 §5.0 脇ラベル, #455): what rode on the blow, written by the
+        /// script — the trait's add and its condition ("+5 間合い"), then the status that multiplied it
+        /// ("×1.5 脆化"). Empty when nothing did. The View prints it beside the number and adds nothing.
+        /// </summary>
+        public string SideLabel = "";
         /// <summary>Strength of the effect, 1..4, decided by whoever writes the script (for now always <see cref="EffectStrength.Uniform"/>, §5.3 / #30).</summary>
         public int Intensity = 1;
         public int HpAfter = Unchanged;
