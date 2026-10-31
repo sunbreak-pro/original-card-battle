@@ -248,16 +248,26 @@ namespace Exploration
             Label = label;
             ForecastLabel = forecastLabel;
             StepLines = stepLines;
+            Fill = FillOf(percent);
+            NextFill = FillOf(nextPercent);
+            var fills = new float[stepLines.Count];
+            for (int i = 0; i < fills.Length; i++) fills[i] = FillOf(stepLines[i]);
+            StepLineFills = fills;
         }
+
+        /// <summary>A reading as a fraction of the whole gauge, which ends at 瘴気死 (Miasma.DeathAt).</summary>
+        private static float FillOf(int percent) => (float)percent / Miasma.DeathAt;
 
         public int Percent { get; }
 
         /// <summary>The reading after one more new node. Equal to Percent when no step is possible.</summary>
         public int NextPercent { get; }
 
-        public float Fill => Percent / 100f;
+        /// <summary>Percent as 0..1 of the gauge.</summary>
+        public float Fill { get; }
 
-        public float NextFill => NextPercent / 100f;
+        /// <summary>NextPercent as 0..1 of the gauge.</summary>
+        public float NextFill { get; }
 
         public string Label { get; }
 
@@ -266,6 +276,9 @@ namespace Exploration
 
         /// <summary>The readings where max stamina drops by one (20, 40, 60, 80).</summary>
         public IReadOnlyList<int> StepLines { get; }
+
+        /// <summary>Each of StepLines as 0..1 of the gauge, in the same order.</summary>
+        public IReadOnlyList<float> StepLineFills { get; }
     }
 
     /// <summary>One consumable slot.</summary>

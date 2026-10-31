@@ -190,6 +190,20 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void TheGaugeHoldsItsReadingsAsFractionsOfTheDeathLine()
+        {
+            var session = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 18 }));
+            var gauge = session.Screen().Miasma;
+
+            Assert.That(gauge.Percent, Is.EqualTo(19));
+            Assert.That(gauge.Fill, Is.EqualTo(0.19f).Within(1e-6f));
+            Assert.That(gauge.NextFill, Is.EqualTo((float)gauge.NextPercent / Miasma.DeathAt).Within(1e-6f));
+            Assert.That(gauge.StepLineFills.Count, Is.EqualTo(gauge.StepLines.Count));
+            for (int i = 0; i < gauge.StepLines.Count; i++)
+                Assert.That(gauge.StepLineFills[i], Is.EqualTo(0.2f * (i + 1)).Within(1e-6f));
+        }
+
+        [Test]
         public void CrossingATwentyPercentLineIsWarned()
         {
             var session = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 18 }));
