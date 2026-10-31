@@ -107,7 +107,7 @@ namespace Depiction.Bridge
                 case StatusKind.Fragile:
                     return "次に受ける攻撃の威力が " + Mult(Constants.FragileMult) + " 倍（Guard で引く前の値）";
                 case StatusKind.Slow:
-                    return "次のターン、自分が動くマスと、自分が押す / 引くマスが 1 減る";
+                    return "次のターン、自分が動くマスと、自分が押す / 引くマスが " + Statuses.SlowCellsPerMove + " 減る";
                 case StatusKind.Intimidate:
                     return "次の行動の威力と Guard が −" + Constants.IntimidatePenalty;
                 case StatusKind.Fatigue:
@@ -119,22 +119,22 @@ namespace Depiction.Bridge
                 case StatusKind.Parry:
                     return "次に攻撃を受けたとき、Guard で防いだ分の半分を相手に返す";
                 case StatusKind.Swift:
-                    return "ターン開始に、1 マスだけ無料で前か後ろへ動ける";
+                    return "ターン開始に、" + Statuses.SwiftFreeCells + " マスだけ無料で前か後ろへ動ける";
                 case StatusKind.Regen:
                     return "ターン開始に HP +" + Constants.RegenPerStack + "×スタック（いまは +" + Constants.RegenPerStack * stacks + "）";
                 case StatusKind.MiasmaShroud:
-                    return "最大スタミナが スタック 1 につき 1 下がる";
+                    return "最大スタミナが スタック 1 につき " + Statuses.MiasmaShroudMaxStaminaPerStack + " 下がる";
                 case StatusKind.Binding:
                     return "自分で動く効果が起きない。移動だけの札は出せない";
                 case StatusKind.Hook:
                     return "自分で後ろへ下がれない（前へは動ける）";
                 case StatusKind.Depths:
-                    return "間合い 0 でターンを始めると、スタミナ回復が スタック 1 につき 1 減る";
+                    return "間合い 0 でターンを始めると、スタミナ回復が スタック 1 につき " + Statuses.DepthsRecoveryPerStack + " 減る";
                 case StatusKind.Rooting:
                     return "2 ターン続けて同じマスで終えると、次のターン開始に HP −" + Statuses.RootingHpPerStack + "×スタック";
                 case StatusKind.Withering:
                     // roster §6.2 (#575): 疲労 included, the recovery never goes below the floor.
-                    return "ターン開始のスタミナ回復が スタック 1 につき 1 減る（疲労と重なっても " + Statuses.WitheringRecoveryFloor + " より下がらない）";
+                    return "ターン開始のスタミナ回復が スタック 1 につき " + Statuses.WitheringRecoveryPerStack + " 減る（疲労と重なっても " + Statuses.WitheringRecoveryFloor + " より下がらない）";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(kind), kind, "No panel text for the status " + kind);
             }
