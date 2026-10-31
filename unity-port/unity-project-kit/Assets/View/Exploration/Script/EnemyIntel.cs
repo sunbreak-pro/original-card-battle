@@ -1,6 +1,7 @@
 // The socket the enemy data plugs into (dungeon_exploration_v4.md §6.3). Which enemy stands behind a
-// combat node is the spawn tables' (#102) and what the journal knows about it is #107's; until they
-// land, NoEnemyIntel answers "nothing known" and the screen prints 「？」. Swapping the source in
+// combat node is the spawn tables' (#102) and what the journal knows about it is the life's journal's
+// (LifeJournal, #107), which Exploration.Bridge.Expedition plugs in. A session started without one
+// gets NoEnemyIntel, which answers "nothing known" so the screen prints 「？」. Swapping the source in
 // changes nothing on the screen's side.
 using System;
 using System.Collections.Generic;
@@ -41,7 +42,7 @@ namespace Exploration
         IReadOnlyList<JournalPage> Pages(int layer, bool surveyed);
     }
 
-    /// <summary>The stand-in until #102 and #107: no enemy is known, no enemy page exists.</summary>
+    /// <summary>The source of a session with no journal: no enemy is known, no enemy page exists.</summary>
     public sealed class NoEnemyIntel : IEnemyIntel
     {
         public NodeIntel ForNode(MapNode node, int layer, bool surveyed) => null;
