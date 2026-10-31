@@ -349,6 +349,7 @@ namespace Exploration
     {
         public ExplorationScreen(
             string layerTitle,
+            int layer,
             string timeLabel,
             int timeLeft,
             int timeLimit,
@@ -374,6 +375,7 @@ namespace Exploration
             OverlayPage settings)
         {
             LayerTitle = layerTitle;
+            Layer = layer;
             TimeLabel = timeLabel;
             TimeLeft = timeLeft;
             TimeLimit = timeLimit;
@@ -401,6 +403,9 @@ namespace Exploration
 
         /// <summary>「第 2 層　■■の秘跡」.</summary>
         public string LayerTitle { get; }
+
+        /// <summary>The layer the map is on (1〜7): the view lays that layer's backdrop behind the map (battle-visual-v1 §2.5).</summary>
+        public int Layer { get; }
 
         /// <summary>「刻限 7 / 10」.</summary>
         public string TimeLabel { get; }
