@@ -165,7 +165,8 @@ namespace Exploration.Bridge
         /// - A stand-in boss that is an elite (layers 4〜5): a consumable and a page on top of its cards.
         /// - Any other stand-in boss (layers 1〜2): a card from the pile, a consumable, and a page at 50%.
         ///
-        /// A card the piles can no longer deal becomes a consumable (§4.3).
+        /// A card the piles can no longer deal becomes a consumable (§4.3). A kind that holds no fight
+        /// (NodeKind.IsCombat, the one place that decides) has no reward.
         /// </summary>
         public static BattleReward Roll(
             NodeKind kind,
@@ -181,6 +182,22 @@ namespace Exploration.Bridge
             if (owned == null) throw new ArgumentNullException(nameof(owned));
             if (rng == null) throw new ArgumentNullException(nameof(rng));
 
+            if (!kind.IsCombat()) return BattleReward.None;
+            return RollCombat(kind, layer, encounter, unique, owned, rng);
+        }
+
+        /// <summary>
+        /// The table above, for a kind that holds a fight. A kind with no row in it throws, so a new kind of fight
+        /// (NodeKind.IsCombat) stops here until its reward is written instead of paying nothing.
+        /// </summary>
+        internal static BattleReward RollCombat(
+            NodeKind kind,
+            int layer,
+            Encounter encounter,
+            UniqueCardReward unique,
+            IReadOnlyCollection<string> owned,
+            DungeonCore.IRng rng)
+        {
             var draw = new Draw(layer, owned, rng);
             switch (kind)
             {
@@ -213,7 +230,7 @@ namespace Exploration.Bridge
                     draw.Page(StandInBossPagePercent);
                     break;
                 default:
-                    return BattleReward.None;
+                    throw new InvalidOperationException($"BattleRewards: no reward row for a fight on a {kind} node.");
             }
             return draw.Result();
         }
