@@ -125,14 +125,17 @@ namespace Exploration
             LayerEnemies(layer)
                 .Select(id => (id, level: Level(id, layer, surveyed)))
                 .Where(p => p.level >= EnemyJournal.MovesDisclosure && EnemyJournal.Find(p.id) != null)
-                .Select(p => EnemyJournal.Page(p.id, p.level))
+                .Select(p => EnemyJournal.Page(p.id, p.level, Memo.About(p.id)))
                 .ToList();
 
-        /// <summary>Every enemy page of this life at 開示度 1 or more, in the roster's order.</summary>
-        public IReadOnlyList<JournalPage> EnemyPages() =>
+        /// <summary>
+        /// Every enemy page of this life at 開示度 1 or more, in the roster's order, each ending on the notes about
+        /// that enemy (#713). In a battle the notes' row says they cannot be written there.
+        /// </summary>
+        public IReadOnlyList<JournalPage> EnemyPages(JournalContext context = JournalContext.Exploration) =>
             EnemyJournal.All
                 .Where(e => DisclosureOf(e.Id) >= EnemyJournal.MovesDisclosure)
-                .Select(e => EnemyJournal.Page(e.Id, DisclosureOf(e.Id)))
+                .Select(e => EnemyJournal.Page(e.Id, DisclosureOf(e.Id), Memo.About(e.Id), context))
                 .ToList();
 
         // ---- the dungeon entries ----
