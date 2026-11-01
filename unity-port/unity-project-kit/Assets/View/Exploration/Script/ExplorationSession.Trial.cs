@@ -303,13 +303,13 @@ namespace Exploration
             CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.SpaceSeparator;
 
         /// <summary>
-        /// A layer's map. RunStart.MapFor(profile, seed), when the game sets one, draws it instead of
-        /// profile.Map(seed) — the lineage's trace node and the known carving (Trial.Bridge's Life,
-        /// Inheritance.MapSpecFor). Without it this is exactly the C#.
+        /// A layer's map. RunStart.MapFor(profile, seed), when the game sets one, draws it instead of the
+        /// ledger's map — the lineage's trace node and the known carving (Trial.Bridge's Life,
+        /// Inheritance.MapSpecFor). Without it this is exactly the C#: the layer's own, with its trace (#106).
         /// </summary>
         // js: bridge/explorationScript/ExplorationSession.js:503
         public LayerMap MapOf(LayerProfile profile, ulong seed) =>
-            _start.MapFor != null ? _start.MapFor(profile, seed) : profile.Map(seed);
+            _start.MapFor != null ? _start.MapFor(profile, seed) : Traces.MapFor(profile, seed);
 
         /// <summary>
         /// The seed an イベント node's kind is drawn from — the node's encounter seed, salted so it does not replay the

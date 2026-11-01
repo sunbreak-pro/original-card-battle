@@ -49,7 +49,7 @@ namespace DungeonCore.Tests
                     Assert.That(table.PoolFor(kind).Count > 0, Is.EqualTo(kind.IsCombat()), $"layer {table.Layer} {kind}");
                 }
             }
-            Assert.That(NodeKind.Trace.IsCombat(), Is.False, "a 死亡地点の痕跡 holds no fight until #106 decides");
+            Assert.That(NodeKind.Trace.IsCombat(), Is.False, "a 死亡地点の痕跡 holds no fight (#106)");
         }
 
         private static ExplorationState Enter(int layer, ulong seed)

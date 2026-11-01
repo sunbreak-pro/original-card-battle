@@ -137,6 +137,8 @@ namespace Trial.Bridge.Tests
                 // #651: a found consumable waiting outside trial mode; the trial session asks for the swap itself
                 // (S.Act TakeFound / LeaveFound), so nothing waits here and no trial screen makes these.
                 "E.SwapConsumable", "E.DiscardConsumable",
+                // #106: the C#'s own ledger; the trial's lineage takes its trace through E.Inherit, so no trial screen makes it.
+                "S.TakeLegacy",
             };
             var types = new (string Tag, Type Type)[]
             {

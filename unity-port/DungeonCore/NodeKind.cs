@@ -30,6 +30,7 @@ namespace DungeonCore
         /// <summary>
         /// 死亡地点の痕跡. The previous life's estate. Present only when the run carries
         /// one; a layer holds at most one, and only one is collected per life (concept-v3 §8.3).
+        /// It holds no fight (#106): stepping on it opens the trace (TraceLedger.Visit).
         /// </summary>
         Trace,
 
@@ -66,8 +67,8 @@ namespace DungeonCore
 
         /// <summary>
         /// Kinds that hold a fight: arriving starts a battle drawn from the layer's pool
-        /// (LayerEncounters.PoolFor). The one place this is decided; whether a 死亡地点の痕跡
-        /// joins them is #106's.
+        /// (LayerEncounters.PoolFor). The one place this is decided. A 死亡地点の痕跡 does not
+        /// join them (#106): the dead one's place is visited, not fought over.
         /// </summary>
         public static bool IsCombat(this NodeKind kind) =>
             kind == NodeKind.Battle || kind == NodeKind.Elite || kind == NodeKind.Boss;

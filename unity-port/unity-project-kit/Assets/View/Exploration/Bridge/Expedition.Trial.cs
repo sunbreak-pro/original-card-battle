@@ -304,6 +304,7 @@ namespace Exploration.Bridge
             Stamina = start.Stamina,
             MiasmaPercent = start.MiasmaPercent,
             Loadout = start.Loadout,
+            Traces = start.Traces,
             Trial = start.Trial,
             CarvingKnown = start.CarvingKnown,
             MapFor = start.MapFor,

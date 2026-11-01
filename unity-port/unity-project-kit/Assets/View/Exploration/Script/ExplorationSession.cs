@@ -28,6 +28,9 @@ namespace Exploration
 
         public RunLoadout Loadout { get; set; } = RunLoadout.Empty;
 
+        /// <summary>The traces earlier lives left and nobody collected (#106). Empty for a first life; a save (#109) hands its own in.</summary>
+        public TraceLedger Traces { get; set; } = TraceLedger.Empty;
+
         /// <summary>
         /// A loadout for trying the screen: 防瘴の面 and two 浄化の香 — the carried items whose
         /// effect the exploration core already honours. Amounts come from the catalogue.
@@ -72,11 +75,27 @@ namespace Exploration
         {
             _start = start ?? new RunStart();
             Intel = intel ?? new NoEnemyIntel();
+            Traces = _start.Traces ?? TraceLedger.Empty;
             Trial = _start.Trial; // Trial extension (js: ExplorationSession.js:113), read once like the JS
             Begin(_start.Seed);
         }
 
         public IEnemyIntel Intel { get; }
+
+        /// <summary>
+        /// The traces left by every life of this session and the ones handed in at the start, and what the
+        /// life now in the lair has done about them (#106). It outlives 「新しい生」.
+        /// </summary>
+        public TraceLedger Traces { get; private set; }
+
+        /// <summary>Who says what a dying life leaves (Exploration.Bridge.Expedition). Null: a trace with no candidates.</summary>
+        public ILegacySource LegacySource { get; set; }
+
+        /// <summary>The trace this life stepped on first and has not chosen from yet, or null (#106).</summary>
+        public DeathTrace PendingTrace => Traces.Pending;
+
+        // A life leaves one trace: the death is settled once, on the state that ended it.
+        private bool _traceLeft;
 
         /// <summary>The seed this life was started from. Each layer's map is drawn from it.</summary>
         public ulong RunSeed { get; private set; }
@@ -244,6 +263,19 @@ namespace Exploration
         }
 
         /// <summary>
+        /// Chooses from <see cref="PendingTrace"/> (#106): the trace is collected, and what it hands on
+        /// comes back for the layer that holds the cards and the journal to take in. Null when no trace
+        /// waits, the life is over, or the choice breaks the rules (DungeonCore.Heritage.CanChoose).
+        /// </summary>
+        public Bequest TakeLegacy(System.Collections.Generic.IReadOnlyCollection<string> keys)
+        {
+            DeathTrace trace = PendingTrace;
+            if (trace == null || State.IsOver || !Heritage.CanChoose(trace, keys)) return null;
+            Traces = Traces.Collect(keys, out Bequest bequest);
+            return bequest;
+        }
+
+        /// <summary>
         /// A button on a card, or 「この生を終える」. False when the action does not apply now.
         /// Trial extension (js: ExplorationSession.js:320): <paramref name="arg"/> carries what the button names
         /// (CardButton.Arg) — the slot of TakeFound (an invariant-culture integer), the enemy id of ChooseSurvey. The
@@ -345,6 +377,7 @@ namespace Exploration
             State = ExplorationReducer.ReportBattle(State, hpAfter, staminaAfter);
             PendingBattleNode = None;
             PendingEncounter = null;
+            LeaveTraceIfDead();
             return true;
         }
 
@@ -423,6 +456,8 @@ namespace Exploration
             ConfirmingEndLife = false;
             ConfirmingDescend = false;
             InterludeHealed = 0;
+            Traces = Traces.BeginLife();
+            _traceLeft = false;
             BeginTrial(); // Trial extension: a new life starts with nothing waiting and no events behind it
 
             var first = SevenLayers.Of(1);
@@ -439,6 +474,7 @@ namespace Exploration
 
             // The entry node is resolved on arrival, and it is always a battle (dungeon_exploration_v4.md §4.1).
             Arrived(State.CurrentNodeId);
+            LeaveTraceIfDead();
         }
 
         private void Descended(ExplorationState below)
@@ -447,6 +483,7 @@ namespace Exploration
             Surveyed = false;
             DescendedTrial(); // Trial extension: the survey's target, the aim and the training wait are per layer
             Arrived(State.CurrentNodeId);
+            LeaveTraceIfDead();
         }
 
         private void Apply(int nodeId, RestChoice choice)
@@ -456,6 +493,21 @@ namespace Exploration
             State = ExplorationReducer.Step(State, nodeId, choice);
             if (Trial && State.TrainingMarks > marks) TrainingWaiting = true; // Trial extension: the training card opens
             if (fresh) Arrived(nodeId);
+            LeaveTraceIfDead();
+        }
+
+        /// <summary>
+        /// Settles a death the moment the state reaches one, by either cause (#106): the trace goes into
+        /// the ledger with what <see cref="LegacySource"/> says the life leaves. Once per life.
+        /// Trial extension: the browser trial's lineage settles its deaths itself (Trial.Bridge's Life), so nothing
+        /// goes into this ledger and its maps stay the ones the trial draws.
+        /// </summary>
+        private void LeaveTraceIfDead()
+        {
+            if (Trial || _traceLeft || !Heritage.IsDeath(State)) return;
+            _traceLeft = true;
+            ILegacySource source = LegacySource;
+            Traces = Traces.Leave(State, Life, source?.Name, source?.Cards, source?.Pages);
         }
 
         /// <summary>What resolving a node means for the screen, on top of what the core already did.</summary>
@@ -468,6 +520,8 @@ namespace Exploration
                 Surveyed = true;
                 _surveyedLayers.Add(State.Profile.Layer);
             }
+            // The first trace a life steps on is the one it receives from (#106). A death on the step claims nothing.
+            if (kind == NodeKind.Trace && !State.IsOver) Traces = Traces.Visit(State.Profile.Layer);
             // 瘴気死 ends the life on the node before any fight starts.
             if (kind.IsCombat() && State.Phase != RunPhase.MiasmaDeath)
             {

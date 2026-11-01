@@ -319,6 +319,8 @@ namespace Trial.Bridge
         public IReadOnlyList<EventOutcome> Events => Raw.Events;
         public IReadOnlyDictionary<string, int> JournalLevels => Raw.JournalLevels;
         public LifeJournal Journal => Raw.Journal;
+        public ExpeditionLegacy Legacy => Raw.Legacy;
+        public IReadOnlyList<LegacyPage> InheritedLegacyPages => Raw.InheritedLegacyPages;
         public int DisclosureOf(string enemyId) => Raw.DisclosureOf(enemyId);
         public BattleHandIn HandIn() => Raw.HandIn();
 
@@ -410,6 +412,9 @@ namespace Trial.Bridge
         public ulong RunSeed => Raw.RunSeed;
         public IEnemyIntel Intel => Raw.Intel;
         public IExplorationKeeper Keeper => Raw.Keeper;
+        public TraceLedger Traces => Raw.Traces;
+        public ILegacySource LegacySource => Raw.LegacySource;
+        public DeathTrace PendingTrace => Raw.PendingTrace;
         public bool CarvingTaken => Raw.CarvingTaken;
         public bool Surveyed => Raw.Surveyed;
         public int PendingBattleNode => Raw.PendingBattleNode;
