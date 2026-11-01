@@ -667,6 +667,7 @@ namespace Exploration.Tests
         [TestCase("2.0000000000000001", 2)]
         [TestCase("9007199254740993", -1)]
         [TestCase("1e400", -1)]
+        [TestCase("-1e400", -1)]
         public void TakeFound_ReadsItsSlot_WithJsNumbersRules(string arg, int slot)
         {
             // js: ExplorationSession.js:399 (Number(arg)); the cases are the browser's own answers.
