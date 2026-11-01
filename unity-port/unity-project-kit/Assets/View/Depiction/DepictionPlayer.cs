@@ -968,7 +968,7 @@ namespace Depiction.View
                 case CueKind.Hit:
                 {
                     bool strong = EffectStrength.IsStrong(cue.Intensity);
-                    FloatHit(EffectId.DamageNumber, ev, cue, target, FloatNumberKind.HpLoss, "");
+                    FloatHit(EffectId.DamageNumber, ev, cue, target, FloatNumberKind.HpLoss, cue.SideLabel);
                     StartCoroutine(Effect(EffectId.HitFlash, target.Flash(BattleTheme.Omen, _effects.Ms(EffectId.HitFlash)), null));
                     StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
                     if (strong) StartCoroutine(Effect(EffectId.ScreenShake, ShakeArena(), null));
@@ -1028,7 +1028,7 @@ namespace Depiction.View
             if (cue.HpAfter == Cue.Unchanged) yield break;
 
             DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Omen, 200f + 60f * cue.Intensity);
-            FloatHit(EffectId.DamageNumber, ev, cue, target, FloatNumberKind.HpLoss, "");
+            FloatHit(EffectId.DamageNumber, ev, cue, target, FloatNumberKind.HpLoss, cue.SideLabel);
             StartCoroutine(Effect(EffectId.HitFlash, target.Flash(BattleTheme.White, _effects.Ms(EffectId.HitFlash)), null));
             StartCoroutine(Effect(EffectId.TargetRecoil, Recoil(target, strong), null));
             yield return DrainHp(status, cue.HpAfter);

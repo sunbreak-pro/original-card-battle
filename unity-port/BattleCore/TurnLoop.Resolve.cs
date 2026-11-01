@@ -227,15 +227,18 @@ namespace BattleCore
 
                     // §19.5 S13: one multiplier per blow, 脆化 first.
                     double mult = 1.0;
+                    StatusKind? multiplier = null;
                     if (other.Statuses.Has(StatusKind.Fragile))
                     {
                         mult = Constants.FragileMult;
+                        multiplier = StatusKind.Fragile;
                         state = Consume(state, foeSide, foe, StatusKind.Fragile, events);
                         other = Get(state, foeSide, foe);
                     }
                     else if (empowered)
                     {
                         mult = Constants.EmpowerMult;
+                        multiplier = StatusKind.Empower;
                         empowerUsed = true;
                     }
 
@@ -245,7 +248,7 @@ namespace BattleCore
                     var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw, other.Guard);
                     other = other with { Guard = guardAfter, Hp = Math.Max(0, other.Hp - damage) };
                     state = Set(state, foeSide, foe, other);
-                    events.Add(new DamageDealt(actor, foeSide, raw, absorbed, damage, other.Guard, other.Hp) { Unit = r.EventUnit(foe) });
+                    events.Add(new DamageDealt(actor, foeSide, raw, absorbed, damage, other.Guard, other.Hp) { Unit = r.EventUnit(foe), Multiplier = multiplier });
 
                     if (!Combat.IsDefeated(other.Hp))
                     {

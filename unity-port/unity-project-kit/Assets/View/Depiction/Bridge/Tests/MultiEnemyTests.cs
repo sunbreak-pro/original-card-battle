@@ -40,6 +40,7 @@ namespace Depiction.Bridge.Tests
             "DepictionEvent.Unit",
             "DepictionFrame.Enemies",
             "StanceRow.Decay", "StanceRow.Effect", // #605: the stance frame's hover panel
+            "Cue.SideLabel", // #455: what rode on a blow, beside its floating number
         };
 
         // ======================================================================= 1. one enemy, as before

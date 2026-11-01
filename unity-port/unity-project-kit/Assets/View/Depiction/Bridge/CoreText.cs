@@ -281,6 +281,27 @@ namespace Depiction.Bridge
             return CardFaceText.ConditionWords.Of(trait.Condition).Short(trait);
         }
 
+        /// <summary>
+        /// battle_ui_ux_v2 §5.0 脇ラベル (#455): what rode on one blow, in the order 特性 → 状態 — the
+        /// power a trait added with its condition's word ("+5 間合い"), then the multiplying status
+        /// ("×1.5 脆化"). Empty when neither rode on it.
+        /// </summary>
+        public static string HitLabel(int traitPower, Trait trait, StatusKind? multiplier)
+        {
+            string label = "";
+            if (traitPower > 0 && trait != null)
+            {
+                label = "+" + traitPower + " " + CardFaceText.ConditionWords.Of(trait.Condition).Term;
+            }
+            if (multiplier.HasValue)
+            {
+                double mult = multiplier.Value == StatusKind.Fragile ? Constants.FragileMult : Constants.EmpowerMult;
+                string status = "×" + mult.ToString(System.Globalization.CultureInfo.InvariantCulture) + " " + multiplier.Value.ToLabel();
+                label = label.Length == 0 ? status : label + " " + status;
+            }
+            return label;
+        }
+
         /// <summary>The effect half of <see cref="TraitLine"/> ("+5", "Guard+3", "重撃").</summary>
         public static string EffectWord(Trait trait)
         {

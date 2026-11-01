@@ -331,7 +331,7 @@ namespace BattleCore.Tests
                 Assert.That(guard.State.Player.Statuses.Stacks(StatusKind.Empower), Is.EqualTo(1));
 
                 Assert.That(preview.RawPower, Is.EqualTo(8));
-                Assert.That(first.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 8, 0, 8, 0, 52)));
+                Assert.That(first.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 8, 0, 8, 0, 52) { Multiplier = StatusKind.Empower }));
                 Assert.That(first.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Player, StatusKind.Empower, 0)));
                 Assert.That(first.State.Player.Statuses.Has(StatusKind.Empower), Is.False);
 
@@ -350,7 +350,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(first.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 15, 0, 15, 0, 45)));
+                Assert.That(first.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 15, 0, 15, 0, 45) { Multiplier = StatusKind.Fragile }));
                 Assert.That(first.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Enemy, StatusKind.Fragile, 0)));
                 Assert.That(first.State.Enemy.Statuses.Has(StatusKind.Fragile), Is.False);
                 Assert.That(second.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(10));
@@ -368,7 +368,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(end.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 8, 0, 8, 0, 42)));
+                Assert.That(end.Events.OfType<DamageDealt>().Single(), Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 8, 0, 8, 0, 42) { Multiplier = StatusKind.Fragile }));
                 Assert.That(end.Events.OfType<StatusConsumed>().Single(), Is.EqualTo(new StatusConsumed(Actor.Player, StatusKind.Fragile, 1)));
                 Assert.That(end.State.Player.Statuses.Stacks(StatusKind.Fragile), Is.EqualTo(1));
             });
@@ -1788,7 +1788,7 @@ namespace BattleCore.Tests
                 Assert.That(play.Events.OfType<DamageDealt>(), Is.EqualTo(new[]
                 {
                     new DamageDealt(Actor.Player, Actor.Enemy, 6, 0, 6, 0, 54),
-                    new DamageDealt(Actor.Player, Actor.Enemy, 9, 0, 9, 0, 45),
+                    new DamageDealt(Actor.Player, Actor.Enemy, 9, 0, 9, 0, 45) { Multiplier = StatusKind.Fragile },
                 }));
                 Assert.That(play.Events.OfType<StanceFired>(), Is.EqualTo(new[] { fired, fired }));
                 Assert.That(play.Events.OfType<StatusApplied>(), Is.EqualTo(new[] { applied, applied }));

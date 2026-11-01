@@ -130,6 +130,9 @@ namespace Depiction.Bridge
 
         /// <summary>#57 (§5.9 J2): a trait of the card or action being written fired, so its blows carry the short cue.</summary>
         private bool _traitLit;
+        /// <summary>The power the trait of the card or action in play added to each blow, and that trait (#455); 0 and null when none did.</summary>
+        private int _traitPower;
+        private Trait _traitOfPower;
 
         /// <summary>The core event read just before the one being read is a trait's judgement (#588).</summary>
         private bool _afterTraits;
@@ -598,6 +601,8 @@ namespace Depiction.Bridge
                     _hand.Remove(played.Card);
                     _strike = CoreText.SystemOf(played.Card.Def);
                     _traitLit = false;
+                    _traitPower = 0;
+                    _traitOfPower = null;
                     ev.Systems.Clear();
                     ev.Systems.AddRange(CardSystems.Of(played.Card.Def));
                     _playedPower = -1;
@@ -635,6 +640,8 @@ namespace Depiction.Bridge
                     ev.Title = executed.Action.Name;
                     _strike = CoreText.SystemOf(executed.Action);
                     _traitLit = false;
+                    _traitPower = 0;
+                    _traitOfPower = null;
                     ev.Systems.Clear();
                     ev.Systems.AddRange(CardSystems.Of(executed.Action));
                     ev.Cues.Add(new Cue { Kind = CueKind.EnemyWindup, Target = UnitSide.Enemy, System = _strike, Unit = executed.Unit });
@@ -813,6 +820,8 @@ namespace Depiction.Bridge
             UnitSide side = CoreText.Side(trait.Actor);
             if (trait.Outcome.Triggered)
             {
+                _traitPower = trait.Outcome.PowerBonus;
+                _traitOfPower = trait.Trait;
                 ev.Cues.Add(new Cue { Kind = CueKind.TraitFire, Target = side, Text = CoreText.TraitLine(trait.Trait), Unit = trait.Unit });
                 return;
             }
@@ -854,6 +863,7 @@ namespace Depiction.Bridge
                 ev.PreviewText = _playedPower.ToString();
             }
 
+            string sideLabel = CoreText.HitLabel(_traitPower, _traitOfPower, damage.Multiplier);
             bool splits = damage.Absorbed > 0 || damage.Actor == Actor.Enemy;
             if (!splits)
             {
@@ -862,6 +872,7 @@ namespace Depiction.Bridge
                     Kind = CueKind.Slash, Source = source, Target = target, System = _strike,
                     Fx = EffectGrammar.FromStrike(_strike), TraitAccent = _traitLit,
                     Amount = damage.Raw, Intensity = EffectStrength.Uniform, HpAfter = damage.TargetHpAfter, Unit = damage.Unit,
+                    SideLabel = sideLabel,
                 });
                 return;
             }
@@ -886,6 +897,7 @@ namespace Depiction.Bridge
                 {
                     Kind = CueKind.Hit, Target = target,
                     Amount = damage.Damage, Intensity = EffectStrength.Uniform, HpAfter = damage.TargetHpAfter, Unit = damage.Unit,
+                    SideLabel = sideLabel,
                 });
             }
         }
