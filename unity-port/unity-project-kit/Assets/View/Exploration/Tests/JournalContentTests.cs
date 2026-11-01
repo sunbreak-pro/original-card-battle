@@ -139,6 +139,95 @@ namespace Exploration.Tests
             Assert.That(memo.Write("次"), Is.Not.EqualTo(first), "an erased note's id is not given again");
         }
 
+        // ---- a note about an enemy (#713) ----
+
+        [Test]
+        public void ANoteAboutAnEnemy_EndsThatEnemysPage_AndNoOther()
+        {
+            var memo = new JournalMemo();
+            memo.Write("押し込みの前に下がる", "polearm_warped");
+            memo.Write("二度目: 鈍足が効く", "polearm_warped");
+            memo.Write("泉は右の列");
+
+            JournalPage about = EnemyJournal.Page("polearm_warped", 1, memo.About("polearm_warped"));
+            JournalPage other = EnemyJournal.Page("shadow_hound", 1, memo.About("shadow_hound"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(about.Rows.Last().Label, Is.EqualTo(EnemyJournal.MemoLabel));
+                Assert.That(about.TextOf(about.Rows.Last()), Is.EqualTo("押し込みの前に下がる\n二度目: 鈍足が効く"));
+                Assert.That(other.Rows.Select(r => r.Label), Has.No.Member(EnemyJournal.MemoLabel));
+                Assert.That(memo.About(null), Is.Empty, "a note about no enemy belongs to no enemy's page");
+            });
+        }
+
+        [Test]
+        public void ANoteOnAPage_IsThePlayersOwn_SoItReadsAtAnyDisclosure()
+        {
+            var memo = new JournalMemo();
+            memo.Write("噛みつきは下がる", "shadow_hound");
+            JournalPage page = EnemyJournal.Page("shadow_hound", 0, memo.About("shadow_hound"));
+
+            Assert.That(page.TextOf(page.Rows.Last()), Is.EqualTo("噛みつきは下がる"));
+            Assert.That(page.TextOf(page.Rows.First()), Is.EqualTo(JournalRow.Hidden));
+        }
+
+        [Test]
+        public void ABlankNote_AddsNoRowToAnEnemysPage()
+        {
+            var memo = new JournalMemo();
+            memo.Write("  ", "shadow_hound");
+            Assert.That(EnemyJournal.Page("shadow_hound", 1, memo.About("shadow_hound")).Rows.Select(r => r.Label), Has.No.Member(EnemyJournal.MemoLabel));
+        }
+
+        [Test]
+        public void InABattle_TheNotesRowEndsOnThatItCannotBeWritten()
+        {
+            var memo = new JournalMemo();
+            memo.Write("押し込みの前に下がる", "polearm_warped");
+            JournalPage battle = EnemyJournal.Page("polearm_warped", 1, memo.About("polearm_warped"), JournalContext.Battle);
+            JournalPage exploring = EnemyJournal.Page("polearm_warped", 1, memo.About("polearm_warped"));
+
+            Assert.That(battle.TextOf(battle.Rows.Last()), Is.EqualTo("押し込みの前に下がる\n" + EnemyJournal.MemoLocked));
+            Assert.That(exploring.TextOf(exploring.Rows.Last()), Does.Not.Contain(EnemyJournal.MemoLocked));
+        }
+
+        [Test]
+        public void TheMemoPage_StillListsEveryNote_NamingTheEnemyOfOneAboutAnEnemy()
+        {
+            var memo = new JournalMemo();
+            string first = memo.Write("押し込みの前に下がる", "polearm_warped");
+            memo.Write("泉は右の列");
+            memo.Write("名前の無い敵", "no_such_enemy");
+
+            Assert.That(memo.Page().Rows.Select(r => r.Label), Is.EqualTo(new[] { "メモ 1（錆槍の竜兵）", "メモ 2", "メモ 3" }));
+            Assert.That(memo.Notes[0].Title, Is.EqualTo("メモ 1"), "the legacy list's name stays the same");
+
+            Assert.That(memo.Rewrite(first, "鈍足が効く"), Is.True);
+            Assert.That(memo.About("polearm_warped").Single().Text, Is.EqualTo("鈍足が効く"), "a rewrite keeps the enemy");
+            Assert.That(memo.Erase(first), Is.True);
+            Assert.That(memo.About("polearm_warped"), Is.Empty);
+        }
+
+        [Test]
+        public void TheDrawersEnemyPage_ShowsTheNotes_AndANewLifeForgetsThem()
+        {
+            var journal = new LifeJournal(_ => EnemyJournal.MovesDisclosure);
+            var session = new ExplorationSession(new RunStart { Seed = 3 }, journal);
+            journal.Follow(session);
+            string enemy = session.Screen().Journal.Pages.First(p => p.Tab == JournalTab.Enemy).Id.Substring("enemy-".Length);
+            journal.Memo.Write("押し込みの前に下がる", enemy);
+
+            JournalPage page = session.Screen().Journal.Pages.First(p => p.Id == EnemyJournal.PageId(enemy));
+            Assert.That(page.TextOf(page.Rows.Last()), Is.EqualTo("押し込みの前に下がる"));
+            JournalPage listed = journal.EnemyPages(JournalContext.Battle).First(p => p.Id == EnemyJournal.PageId(enemy));
+            Assert.That(listed.TextOf(listed.Rows.Last()), Does.EndWith(EnemyJournal.MemoLocked));
+
+            Assert.That(session.Act(ScreenAction.FallInBattle), Is.True);
+            Assert.That(session.Act(ScreenAction.NewLife), Is.True);
+            page = session.Screen().Journal.Pages.First(p => p.Id == EnemyJournal.PageId(enemy));
+            Assert.That(page.Rows.Select(r => r.Label), Has.No.Member(EnemyJournal.MemoLabel));
+        }
+
         // ---- one line per page ----
 
         [Test]
