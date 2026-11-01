@@ -13,6 +13,7 @@
 // #626: the pick screen (an elite's two cards, the card pile's three, a 習熟訓練 mark's card) is drawn
 // from the CardPick Exploration.Bridge built, each card the battle's own CardView bound to its face.
 // #717: the choosing screen at a 死亡地点の痕跡 is drawn the same way from the HeritagePick.
+// #719: the swap screen for a consumable found with the slots full, from the ConsumableSwap.
 #if UNITY_2021_2_OR_NEWER
 using System;
 using System.Linq;
@@ -63,6 +64,8 @@ namespace Exploration.View
         private readonly Action<string> _pickCard;
         private readonly Action<string> _toggleLegacy;
         private readonly Action _confirmLegacy;
+        private readonly Action<int> _swapFound;
+        private readonly Action _discardFound;
 
         private readonly Text _layerTitle;
         private readonly Text _timeLabel;
@@ -89,6 +92,7 @@ namespace Exploration.View
         private readonly Button _cardsButton;
         private readonly Button _settingsButton;
         private readonly RectTransform _pickLayer;
+        private readonly RectTransform _swapLayer;
         private readonly RectTransform _heritageLayer;
         private readonly RectTransform _overlayLayer;
         private readonly JournalDrawerView _journal;
@@ -137,8 +141,10 @@ namespace Exploration.View
         /// <param name="pickCard">A card pressed on the pick screen (#626), by its id.</param>
         /// <param name="toggleLegacy">A choice pressed on the choosing screen at a trace (#717), by its key.</param>
         /// <param name="confirmLegacy">The choosing screen's confirm button.</param>
+        /// <param name="swapFound">A slot pressed on the swap screen (#719), by its index.</param>
+        /// <param name="discardFound">The swap screen's 「諦める」.</param>
         public ExplorationScreenView(RectTransform canvas, Action<int, RestChoice> step, Action<ScreenAction> act, Action<int> useConsumable,
-            Action<Overlay> toggle, Action<string> pickCard, Action<string> toggleLegacy, Action confirmLegacy)
+            Action<Overlay> toggle, Action<string> pickCard, Action<string> toggleLegacy, Action confirmLegacy, Action<int> swapFound, Action discardFound)
         {
             _step = step;
             _act = act;
@@ -147,6 +153,8 @@ namespace Exploration.View
             _pickCard = pickCard;
             _toggleLegacy = toggleLegacy;
             _confirmLegacy = confirmLegacy;
+            _swapFound = swapFound;
+            _discardFound = discardFound;
 
             RectTransform root = UiKit.Box(canvas, "Exploration", 0f, 0f, 1f, 1f);
             _root = root;
@@ -229,6 +237,9 @@ namespace Exploration.View
             // ---- the pick screen (#626): over the map, the card and the carried items; under 所持カード
             // so the cards owned can be read before one is picked ----
             _pickLayer = UiKit.Box(root, "Pick", 0f, 0f, 1f, 1f);
+
+            // ---- the swap screen (#719): ConsumableSwaps shows it only once no card waits ----
+            _swapLayer = UiKit.Box(root, "Swap", 0f, 0f, 1f, 1f);
 
             // ---- the choosing screen at a trace (#717): over the pick screen, so a card offer that waits
             // too comes after it ----
@@ -720,6 +731,35 @@ namespace Exploration.View
             UiKit.Text(UiKit.Box(plate, "Count", 0.03f, 0.02f, 0.68f, HeritageFoot - 0.01f), "Text", 24, TextAnchor.MiddleRight, ExplorationPalette.Ink, pick.CountLine);
             UiKit.Button(plate, "Confirm", pick.ConfirmLabel, () => _confirmLegacy(), ExplorationPalette.Accent, ExplorationPalette.InkOnAccent, 26,
                 new Vector2(0.70f, 0.02f), new Vector2(0.97f, HeritageFoot - 0.01f));
+        }
+
+        // ---- the swap screen (#719, tools_and_consumables_v4.md §3) ----
+
+        /// <summary>
+        /// Shows the swap screen, or clears it when <paramref name="swap"/> is not shown: the item found, a
+        /// button for each slot with what it holds, and 「諦める」.
+        /// </summary>
+        public void ShowSwap(ConsumableSwap swap)
+        {
+            UiKit.ClearChildren(_swapLayer);
+            if (swap == null || !swap.IsShown) return;
+
+            RectTransform plate = Plate(_swapLayer, swap.Title, swap.Prompt);
+            UiKit.Text(UiKit.Box(plate, "Item", 0.03f, 0.66f, 0.97f, 0.80f), "Text", 26, TextAnchor.MiddleLeft, ExplorationPalette.Ink, swap.ItemLine);
+
+            RectTransform slots = UiKit.Box(plate, "Slots", 0.03f, 0.28f, 0.97f, 0.62f);
+            float width = 1f / Math.Max(1, swap.Slots.Count);
+            for (int i = 0; i < swap.Slots.Count; i++)
+            {
+                SwapSlot slot = swap.Slots[i];
+                int index = slot.Index;
+                string label = slot.Note.Length == 0 ? slot.Label : slot.Label + "\n" + slot.Note;
+                UiKit.Button(slots, "Slot" + i, label, () => _swapFound(index), ExplorationPalette.Accent, ExplorationPalette.InkOnAccent, 20,
+                    new Vector2(i * width, 0f), new Vector2((i + 1) * width - 0.01f, 1f));
+            }
+
+            UiKit.Button(plate, "Discard", swap.DiscardLabel, () => _discardFound(), ExplorationPalette.Button, ExplorationPalette.Ink, 24,
+                new Vector2(0.35f, 0.07f), new Vector2(0.65f, 0.20f));
         }
 
         // ---- what the pick screens share ----

@@ -67,7 +67,7 @@ namespace Exploration.View
             _session = _expedition.Session;
 
             UiKit.EnsureEventSystem();
-            _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable, Toggle, PickCard, ToggleLegacy, ConfirmLegacy);
+            _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable, Toggle, PickCard, ToggleLegacy, ConfirmLegacy, SwapFound, DiscardFound);
             Render();
             Debug.Log("[ExplorationBootstrap] seed " + used);
         }
@@ -128,10 +128,22 @@ namespace Exploration.View
             if (HeritagePicks.Confirm(_expedition, _legacyChoice)) Render();
         }
 
+        // #719: a slot pressed on the swap screen, and its 「諦める」; ConsumableSwaps decides what they do.
+        private void SwapFound(int slot)
+        {
+            if (ConsumableSwaps.Swap(_expedition, slot)) Render();
+        }
+
+        private void DiscardFound()
+        {
+            if (ConsumableSwaps.Discard(_expedition)) Render();
+        }
+
         private void Render()
         {
             _view.Render(_session.Screen());
             _view.ShowPick(CardPicks.For(_expedition));
+            _view.ShowSwap(ConsumableSwaps.For(_expedition));
             HeritagePick heritage = HeritagePicks.For(_expedition, _legacyChoice);
             // The marks last only as long as the screen: a later life's trace starts with none marked.
             if (!heritage.IsShown) _legacyChoice = System.Array.Empty<string>();
