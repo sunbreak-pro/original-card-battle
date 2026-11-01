@@ -174,23 +174,24 @@ namespace Depiction.Bridge
             return string.Join("", sentences);
         }
 
-        /// <summary>§4: what a stance does while it stands, as one clause ("毎ターン開始に Guard +3").</summary>
+        /// <summary>§4: what a stance does while it stands, as one clause ("ターン開始 Guard +3"). The clause is also the card's lasting row, so #722 keeps the rows short enough for 16 px.</summary>
         public static string StanceText(StanceDef stance)
         {
             if (stance == null) return "";
             switch (stance.Hook)
             {
                 case StanceHook.TurnStart:
+                    if (stance.When == StanceWhen.Always && stance.Guard > 0 && stance.Recovery == 0) return "ターン開始 Guard +" + stance.Guard;
                     return Spaced(WhenWord(stance, "始まるターンに"), Gains(stance.Guard, stance.Recovery, 0));
                 case StanceHook.TurnEnd:
                     return Spaced(WhenWord(stance, "終えたターンに"), Gains(stance.Guard, 0, stance.NextRecovery));
                 case StanceHook.AttackBonus:
                     switch (stance.When)
                     {
-                        case StanceWhen.MovedThisTurn: return "移動したターン、アタック +" + stance.Power;
+                        case StanceWhen.MovedThisTurn: return "移動後の攻撃 威力 +" + stance.Power;
                         case StanceWhen.GapAtMost: return "間合い " + stance.Threshold + " の相手へのアタック +" + stance.Power;
                         case StanceWhen.TargetHasStatus:
-                            return (stance.Status.HasValue ? stance.Status.Value.ToLabel() : "") + "中の敵へのアタック +" + stance.Power;
+                            return (stance.Status.HasValue ? stance.Status.Value.ToLabel() : "") + "中の敵へ 威力 +" + stance.Power;
                         default: return "アタック +" + stance.Power;
                     }
                 case StanceHook.OnHit:
@@ -202,7 +203,7 @@ namespace Depiction.Bridge
                     return "被弾のたび" + (stance.OncePerTurn ? "（ターン 1 回）" : "") + string.Join("、", parts);
                 }
                 case StanceHook.PushImmune: return "押す / 引くを受けない";
-                case StanceHook.BreakOnFoeMove: return "敵が自分で動くたび崩し " + stance.Break;
+                case StanceHook.BreakOnFoeMove: return "敵が自ら動くと崩し " + stance.Break;
                 case StanceHook.StatusOnAttack:
                     // #253: once a blow, so a face of two blows gives it twice.
                     return "アタックのたび敵に" + (stance.Status.HasValue ? stance.Status.Value.ToLabel() : "") + " " + stance.StatusStacks;

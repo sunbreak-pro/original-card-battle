@@ -201,7 +201,7 @@ namespace Depiction.Bridge.Tests
 
             Assert.That(face.Values, Is.Empty);
             Assert.That(face.Lasting, Is.True);
-            Assert.That(face.TextLines, Is.EqualTo(new[] { "毎ターン開始に Guard +3" }));
+            Assert.That(face.TextLines, Is.EqualTo(new[] { "ターン開始 Guard +3" }));
         }
 
         [Test]
@@ -339,7 +339,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(rows, Has.Count.EqualTo(1));
             Assert.That(rows[0].Count, Is.EqualTo(2));
             Assert.That(StanceList.PanelTitle(rows[0]), Is.EqualTo("岩の構え ×2"));
-            Assert.That(rows[0].Effect, Does.StartWith("毎ターン開始に Guard +3"));
+            Assert.That(rows[0].Effect, Does.StartWith("ターン開始 Guard +3"));
             Assert.That(rows[0].Effect, Does.EndWith("（2 枚ぶん、2 倍効く）"));
             Assert.That(rows[0].Decay, Is.EqualTo("減らない（永続）"));
             Assert.That(StatusChipText.StanceChip("岩の構え", 2).Title, Is.EqualTo("岩の構え ×2"), "the bridge's own title agrees");
