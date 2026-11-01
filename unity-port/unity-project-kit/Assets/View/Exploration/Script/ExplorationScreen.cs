@@ -55,6 +55,25 @@ namespace Exploration
 
         /// <summary>Starts a fresh run from layer one with a new seed (§6.9).</summary>
         NewLife,
+
+        // Trial extension (js: ExplorationScreen.js:52 TrialAction; docs/EXTENSIONS.md 「探索の持ち物とイベント」): the
+        // buttons of the trial cards, answered by ExplorationSession.Act(action, arg). The browser trial keeps them in a
+        // separate enum; here they follow the C#'s members, whose values and order stay as they were.
+
+        /// <summary>「受ける」 on a 重い宝箱 or 特殊な食事 (encounters_and_rewards_v4.md §5).</summary>
+        AcceptEvent,
+
+        /// <summary>「受けない」 on a 重い宝箱 or 特殊な食事.</summary>
+        DeclineEvent,
+
+        /// <summary>A found consumable takes the slot named by the argument (0〜2) when the three are full (§4.3).</summary>
+        TakeFound,
+
+        /// <summary>「諦める」: the found consumable is left behind (tools_and_consumables_v4.md §3).</summary>
+        LeaveFound,
+
+        /// <summary>写しの帳: the enemy id the argument names is the 情報収集 target (tools_and_consumables_v4.md §2.2).</summary>
+        ChooseSurvey,
     }
 
     /// <summary>Which card sits over the map, if any.</summary>
@@ -72,6 +91,17 @@ namespace Exploration
         Fallen,
         Completed,
         Survived,
+
+        // Trial extension (js: ExplorationScreen.js:75 TrialCardKind): the cards over the map that wait on a choice.
+
+        /// <summary>受ける / 受けない on a 重い宝箱 or 特殊な食事.</summary>
+        EventChoice,
+
+        /// <summary>A found consumable and full slots: swap or give up.</summary>
+        Swap,
+
+        /// <summary>写しの帳's pick of the 情報収集 target.</summary>
+        SurveyChoice,
     }
 
     /// <summary>
@@ -136,11 +166,12 @@ namespace Exploration
     /// <summary>One way into a node: 「進む」, 「休む」, 「訓練する」 or 「移る」.</summary>
     public sealed class StepOption
     {
-        public StepOption(string label, RestChoice choice, StepForecast forecast)
+        public StepOption(string label, RestChoice choice, StepForecast forecast, bool jump = false)
         {
             Label = label;
             Choice = choice;
             Forecast = forecast;
+            Jump = jump;
         }
 
         public string Label { get; }
@@ -149,6 +180,12 @@ namespace Exploration
 
         /// <summary>Null for walking back over a resolved node: nothing changes but where the player stands.</summary>
         public StepForecast Forecast { get; }
+
+        /// <summary>
+        /// Trial extension (js: ExplorationScreen.js:140): the way in is 標の石's jump (ExplorationSession.Jump),
+        /// not a step (tools_and_consumables_v4.md §3).
+        /// </summary>
+        public bool Jump { get; }
 
         /// <summary>Stepping here ends the life, so the button asks first.</summary>
         public bool NeedsConfirm => Forecast != null && Forecast.IsLethal;
@@ -284,12 +321,17 @@ namespace Exploration
     /// <summary>One consumable slot.</summary>
     public sealed class SlotCard
     {
-        public SlotCard(int index, string name, string note, bool canUse)
+        public SlotCard(int index, string name, string note, bool canUse,
+            IReadOnlyList<string> forecast = null, string reason = "", bool aiming = false, string id = null)
         {
             Index = index;
             Name = name;
             Note = note;
             CanUse = canUse;
+            Forecast = forecast;
+            Reason = reason ?? "";
+            Aiming = aiming;
+            Id = id;
         }
 
         public int Index { get; }
@@ -300,18 +342,41 @@ namespace Exploration
         public string Note { get; }
 
         public bool CanUse { get; }
+
+        /// <summary>Trial extension (js: ExplorationScreen.js:257): what using it changes, tried on the state (「HP 30 → 40」), or null.</summary>
+        public IReadOnlyList<string> Forecast { get; }
+
+        /// <summary>Trial extension: why it cannot be used now, or "".</summary>
+        public string Reason { get; }
+
+        /// <summary>Trial extension: this 標の石 is being aimed — the map picks where it lands.</summary>
+        public bool Aiming { get; }
+
+        /// <summary>Trial extension: the catalogue id of the item in the slot, or null when empty.</summary>
+        public string Id { get; }
     }
 
     public sealed class CardButton
     {
-        public CardButton(string label, ScreenAction action)
+        public CardButton(string label, ScreenAction action, string arg = null, string note = "")
         {
             Label = label;
             Action = action;
+            Arg = arg;
+            Note = note ?? "";
         }
 
         public string Label { get; }
         public ScreenAction Action { get; }
+
+        /// <summary>
+        /// Trial extension (js: ExplorationScreen.js:275): the argument ExplorationSession.Act takes with the action —
+        /// a slot (an invariant-culture integer string) or an enemy id — or null.
+        /// </summary>
+        public string Arg { get; }
+
+        /// <summary>Trial extension: one line under the button (what the choice changes), or "".</summary>
+        public string Note { get; }
     }
 
     /// <summary>The card over the map: a stand-in battle, a confirmation, a layer's end or a life's end.</summary>
@@ -338,6 +403,88 @@ namespace Exploration
         /// <summary>A card that waits for a yes or a no. Esc answers no before it does anything else (§6.2).</summary>
         public bool IsConfirmation =>
             Kind == CardKind.ConfirmStep || Kind == CardKind.ConfirmDescend || Kind == CardKind.ConfirmEndLife;
+
+        /// <summary>Trial extension (js: ExplorationScreen.js:305): a card that waits for one of its buttons (an event, a swap, a survey pick).</summary>
+        public bool IsChoice =>
+            Kind == CardKind.EventChoice || Kind == CardKind.Swap || Kind == CardKind.SurveyChoice;
+    }
+
+    /// <summary>
+    /// Trial extension (js: ExplorationScreen.js:326): one carried tool as the inventory shows it — its name, the
+    /// catalogue's note, and whether it acts on the exploration or in battle (tools_and_consumables_v4.md §2).
+    /// </summary>
+    public sealed class ToolCard
+    {
+        public ToolCard(string id, string name, string note, string side, string effect)
+        {
+            Id = id;
+            Name = name;
+            Note = note;
+            Side = side;
+            Effect = effect;
+        }
+
+        public string Id { get; }
+        public string Name { get; }
+        public string Note { get; }
+
+        /// <summary>「探索」 or 「戦闘」.</summary>
+        public string Side { get; }
+
+        /// <summary>What it does on this layer, in numbers (「刻限 +1」), or "" for a battle tool.</summary>
+        public string Effect { get; }
+    }
+
+    /// <summary>
+    /// Trial extension (js: ExplorationScreen.js:342): what one イベント did (encounters_and_rewards_v4.md §5), kept
+    /// for the result card and the journal's dungeon page (「起きたイベントは、手記のダンジョンの頁に…残します」).
+    /// </summary>
+    public sealed class EventOutcome
+    {
+        public EventOutcome(int layer, int nodeId, EventKind kind, string name, bool accepted, IReadOnlyList<string> lines,
+            IReadOnlyList<string> cards, IReadOnlyList<string> consumables, int pages, IReadOnlyList<string> record = null)
+        {
+            Layer = layer;
+            NodeId = nodeId;
+            Kind = kind;
+            Name = name;
+            Accepted = accepted;
+            Lines = lines;
+            Cards = cards ?? new string[0];
+            Consumables = consumables ?? new string[0];
+            Pages = pages;
+            Record = record ?? lines;
+        }
+
+        public int Layer { get; }
+        public int NodeId { get; }
+
+        /// <summary>LayerEvents' EventKind.</summary>
+        public EventKind Kind { get; }
+
+        /// <summary>「泉」 and the like.</summary>
+        public string Name { get; }
+
+        /// <summary>The player took it (a 泉 always does).</summary>
+        public bool Accepted { get; }
+
+        /// <summary>What changed, line by line (「HP 30 → 40」).</summary>
+        public IReadOnlyList<string> Lines { get; }
+
+        /// <summary>A chest's cards laid out to pick one from (Expedition.Learn), as ids.</summary>
+        public IReadOnlyList<string> Cards { get; }
+
+        /// <summary>A chest's consumables, as catalogue ids.</summary>
+        public IReadOnlyList<string> Consumables { get; }
+
+        /// <summary>A chest's rare pages.</summary>
+        public int Pages { get; }
+
+        /// <summary>The short lines the journal keeps (what changed and what was found), or the result lines.</summary>
+        public IReadOnlyList<string> Record { get; }
+
+        /// <summary>The one-line summary the journal's dungeon page shows.</summary>
+        public string Summary => string.Join("・", Record);
     }
 
     /// <summary>A screen the top band opens over the map: 所持カード or 設定・セーブ (§6.2).</summary>
@@ -385,7 +532,12 @@ namespace Exploration
             bool canOpenCards,
             bool canOpenSettings,
             OverlayPage cards,
-            OverlayPage settings)
+            OverlayPage settings,
+            IReadOnlyList<ToolCard> toolCards = null,
+            string timeBonusLabel = "",
+            string reliefLabel = "",
+            bool aiming = false,
+            IReadOnlyList<EventOutcome> events = null)
         {
             LayerTitle = layerTitle;
             Layer = layer;
@@ -412,6 +564,11 @@ namespace Exploration
             CanOpenSettings = canOpenSettings;
             Cards = cards;
             Settings = settings;
+            ToolCards = toolCards ?? new ToolCard[0];
+            TimeBonusLabel = timeBonusLabel ?? "";
+            ReliefLabel = reliefLabel ?? "";
+            Aiming = aiming;
+            Events = events ?? new EventOutcome[0];
         }
 
         /// <summary>「第 2 層　■■の秘跡」.</summary>
@@ -479,6 +636,21 @@ namespace Exploration
 
         /// <summary>The 設定・セーブ screen. Settings and saving are not wired yet; it is a stand-in.</summary>
         public OverlayPage Settings { get; }
+
+        /// <summary>Trial extension (js: ExplorationScreen.js:455): every carried tool with its note. Empty outside trial.</summary>
+        public IReadOnlyList<ToolCard> ToolCards { get; }
+
+        /// <summary>Trial extension: 「刻限の砂 +1」 beside the 刻限 in the band, or "".</summary>
+        public string TimeBonusLabel { get; }
+
+        /// <summary>Trial extension: 「防瘴の面 濃さ 2 → 1」 beside the gauge, or "".</summary>
+        public string ReliefLabel { get; }
+
+        /// <summary>Trial extension: a 標の石 is being aimed; the nodes it can land on carry jump options.</summary>
+        public bool Aiming { get; }
+
+        /// <summary>Trial extension: every event of this life so far, oldest first.</summary>
+        public IReadOnlyList<EventOutcome> Events { get; }
 
         /// <summary>
         /// The map takes input only while no card covers it. The carried items, the band and

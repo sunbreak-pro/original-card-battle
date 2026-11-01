@@ -8,7 +8,7 @@ using DungeonCore;
 
 namespace Exploration
 {
-    public static class ExplorationText
+    public static partial class ExplorationText
     {
         /// <summary>The one-character stand-in for a node's icon until #90's art arrives.</summary>
         public static string Glyph(NodeKind kind) => kind switch

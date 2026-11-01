@@ -24,6 +24,10 @@ const FONTS_COMMIT = "47d54ca1ebb14fd864695f1d39dc734f39017c33";
 /** [family folder in google/fonts ofl/, file, SHA-256 or null for the licence text]. */
 const FONT_FILES = [
   ["shipporimincho", "ShipporiMincho-Bold.ttf", "63bc4eddc74793f671c3ab827c5175e773ffbe569d0bf50ee65375ea9e3bc286"],
+  // The trial screens (View/Trial) also draw the display face at 400 and 800 and the numbers at 400.
+  ["shipporimincho", "ShipporiMincho-Regular.ttf", "769b5269f0f9bc6534b352c0e6bd856a566e03ff788f107191c2d835863570b2"],
+  ["shipporimincho", "ShipporiMincho-ExtraBold.ttf", "bdb787644b4b347e9a7efdd576f0d16ee4528cc9b5c86d23e06fa1a14ae0444c"],
+  ["ibmplexmono", "IBMPlexMono-Regular.ttf", "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46"],
   ["zenkakugothicnew", "ZenKakuGothicNew-Regular.ttf", "b840cd07a67d89cacca44249ae49aa99ee7640eb5ce623be8d8983d6aabac801"],
   ["zenkakugothicnew", "ZenKakuGothicNew-Bold.ttf", "0081cedabc4921982fcd061f845a005664ac7fb642af2dd34b4007bc63ccd235"],
   ["ibmplexmono", "IBMPlexMono-SemiBold.ttf", "d3c38e55c78f5b0f28009fddba4834ec503278936a5986032424c9bd2d23aa46"],

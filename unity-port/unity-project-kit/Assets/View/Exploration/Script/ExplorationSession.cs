@@ -10,7 +10,7 @@ using DungeonCore;
 namespace Exploration
 {
     /// <summary>How a run starts. The exploration screen's own stand-ins until 出立 (#104) hands a real one in.</summary>
-    public sealed class RunStart
+    public sealed partial class RunStart
     {
         /// <summary>The battle core's PLAYER_MAX_HP (BattleCore.Constants). #99 hands it to every battle as the maximum.</summary>
         public const int DefaultMaxHp = 50;
@@ -59,7 +59,7 @@ namespace Exploration
         }
     }
 
-    public sealed class ExplorationSession
+    public sealed partial class ExplorationSession
     {
         private const int None = -1;
 
@@ -72,6 +72,7 @@ namespace Exploration
         {
             _start = start ?? new RunStart();
             Intel = intel ?? new NoEnemyIntel();
+            Trial = _start.Trial; // Trial extension (js: ExplorationSession.js:113), read once like the JS
             Begin(_start.Seed);
         }
 
@@ -83,7 +84,11 @@ namespace Exploration
         /// <summary>How many lives this session has started, counting the first.</summary>
         public int Life { get; private set; }
 
-        public ExplorationState State { get; private set; }
+        /// <summary>
+        /// The core's state. The setter is internal: the session's own calls move it, and the EditMode tests set it the
+        /// way the browser trial's tests do (its JS field is plain).
+        /// </summary>
+        public ExplorationState State { get; internal set; }
 
         /// <summary>The layer-two carving has been read, so that layer shows its true name.</summary>
         public bool CarvingTaken { get; private set; }
@@ -124,8 +129,12 @@ namespace Exploration
 
         public bool HasPendingStep => PendingStepNode != None;
 
-        /// <summary>Nothing waits on the player but the map.</summary>
-        public bool IsIdle => !HasPendingBattle && !HasPendingStep && !ConfirmingEndLife && !ConfirmingDescend;
+        /// <summary>
+        /// Nothing waits on the player but the map. (Trial extension, js: ExplorationSession.js:176: nor a trial choice —
+        /// always none outside trial.)
+        /// </summary>
+        public bool IsIdle => !HasPendingBattle && !HasPendingStep && !ConfirmingEndLife && !ConfirmingDescend &&
+            !HasPendingEvent && !HasPendingFound && !HasPendingSurvey;
 
         /// <summary>
         /// The map takes steps: the layer is being explored, and neither a card nor a screen opened
@@ -159,6 +168,7 @@ namespace Exploration
         public bool Step(int nodeId, RestChoice choice = RestChoice.Rest)
         {
             if (!MapIsLive) return false;
+            if (IsAiming) return false; // Trial extension: a 標の石 being aimed takes Jump, not a step
             if (!ExplorationReducer.CanStep(State, nodeId)) return false;
 
             bool fresh = !State.HasResolved(nodeId);
@@ -173,10 +183,36 @@ namespace Exploration
             return true;
         }
 
-        /// <summary>Burns the consumable in this slot. Costs no 刻限. False for an empty slot and for 標の石.</summary>
+        /// <summary>
+        /// Burns the consumable in this slot. Costs no 刻限. False for an empty slot and, outside trial, for 標の石.
+        /// Trial extension (js: ExplorationSession.js:224): every consumable acts (ExplorationReducer.UseConsumable),
+        /// one that would change nothing now is refused (CanUseSlot), and a 標の石 starts aiming instead — the map then
+        /// offers Jump to the nodes it can land on. Using the aimed slot again stops aiming; using another slot that
+        /// can be used stops it too. A refused call changes nothing — an aimed 標の石 stays aimed.
+        /// </summary>
         public bool UseConsumable(int index)
         {
-            if (!CanUseConsumable(index)) return false;
+            if (Trial)
+            {
+                if (!CanUseConsumables) return false;
+                if (index < 0 || index >= State.Loadout.Consumables.Count) return false;
+                if (IsAiming && AimingSlot == index)
+                {
+                    AimingSlot = None;
+                    return true;
+                }
+                if (!CanUseSlot(index)) return false;
+                AimingSlot = None;
+                if (State.Loadout.Consumables[index].Kind == ReliefKind.Teleport)
+                {
+                    AimingSlot = index;
+                    return true;
+                }
+            }
+            else if (!CanUseConsumable(index))
+            {
+                return false;
+            }
 
             State = ExplorationReducer.UseConsumable(State, index);
             return true;
@@ -203,11 +239,17 @@ namespace Exploration
         {
             if (State.IsOver || !IsIdle || State.TrainingMarks <= 0) return false;
             State = ExplorationReducer.SpendTrainingMark(State);
+            if (State.TrainingMarks <= 0) TrainingWaiting = false; // Trial extension: no mark left to wait on
             return true;
         }
 
-        /// <summary>A button on a card, or 「この生を終える」. False when the action does not apply now.</summary>
-        public bool Act(ScreenAction action)
+        /// <summary>
+        /// A button on a card, or 「この生を終える」. False when the action does not apply now.
+        /// Trial extension (js: ExplorationSession.js:320): <paramref name="arg"/> carries what the button names
+        /// (CardButton.Arg) — the slot of TakeFound (an invariant-culture integer), the enemy id of ChooseSurvey. The
+        /// C#'s actions ignore it.
+        /// </summary>
+        public bool Act(ScreenAction action, string arg = null)
         {
             switch (action)
             {
@@ -223,6 +265,7 @@ namespace Exploration
                     int hpBefore = State.Hp;
                     State = ExplorationReducer.Interlude(State);
                     InterludeHealed = State.Hp - hpBefore;
+                    if (Trial) InterludeState = State; // Trial extension: the rest's own result, for its card
                     return true;
 
                 case ScreenAction.Descend:
@@ -247,6 +290,7 @@ namespace Exploration
                 case ScreenAction.AskEndLife:
                     if (!CanEndLife) return false;
                     ConfirmingEndLife = true;
+                    AimingSlot = None; // Trial extension: the card covers the map, so an aimed 標の石 stops (as Cancel does)
                     return true;
 
                 case ScreenAction.ConfirmEndLife:
@@ -259,15 +303,26 @@ namespace Exploration
                     if (!HasPendingStep) return false;
                     int node = PendingStepNode;
                     PendingStepNode = None;
-                    Apply(node, PendingStepChoice);
+                    if (PendingJumpSlot != None) ApplyJump(PendingJumpSlot, node, PendingStepChoice);
+                    else Apply(node, PendingStepChoice);
                     return true;
 
                 case ScreenAction.Cancel:
-                    if (!ConfirmingEndLife && !HasPendingStep && !ConfirmingDescend) return false;
+                    if (!ConfirmingEndLife && !HasPendingStep && !ConfirmingDescend && !IsAiming) return false;
                     ConfirmingEndLife = false;
                     ConfirmingDescend = false;
                     PendingStepNode = None;
+                    AimingSlot = None; // Trial extension: Esc or 「やめる」 also stops aiming a 標の石
+                    PendingJumpSlot = None;
                     return true;
+
+                // ---- Trial extension (js: ExplorationSession.js:388-426) ----
+                case ScreenAction.AcceptEvent:
+                case ScreenAction.DeclineEvent:
+                case ScreenAction.TakeFound:
+                case ScreenAction.LeaveFound:
+                case ScreenAction.ChooseSurvey:
+                    return ActTrial(action, arg);
 
                 case ScreenAction.NewLife:
                     if (!State.IsOver || !IsIdle) return false;
@@ -324,7 +379,7 @@ namespace Exploration
         /// </summary>
         public bool Escape()
         {
-            if (HasPendingStep || ConfirmingDescend || ConfirmingEndLife) return Act(ScreenAction.Cancel);
+            if (HasPendingStep || ConfirmingDescend || ConfirmingEndLife || IsAiming) return Act(ScreenAction.Cancel);
             if (OpenOverlay == Overlay.Journal || OpenOverlay == Overlay.Cards)
             {
                 OpenOverlay = Overlay.None;
@@ -341,7 +396,7 @@ namespace Exploration
         {
             if (State.Phase != RunPhase.Interlude || State.Profile.IsLast) return null;
             var next = SevenLayers.Of(State.Profile.Layer + 1);
-            return ExplorationReducer.Descend(State, next, next.Map(LayerSeed(RunSeed, next.Layer)));
+            return ExplorationReducer.Descend(State, next, MapOf(next, LayerSeed(RunSeed, next.Layer)));
         }
 
         /// <summary>A layer's map seed, drawn from the life's seed so a life replays from one number.</summary>
@@ -359,7 +414,7 @@ namespace Exploration
         {
             RunSeed = seed;
             Life += 1;
-            CarvingTaken = false;
+            CarvingTaken = CarvingKnownAt(seed); // Trial extension: false in the C# (and outside trial)
             Surveyed = false;
             _surveyedLayers.Clear();
             PendingBattleNode = None;
@@ -368,16 +423,19 @@ namespace Exploration
             ConfirmingEndLife = false;
             ConfirmingDescend = false;
             InterludeHealed = 0;
+            BeginTrial(); // Trial extension: a new life starts with nothing waiting and no events behind it
 
             var first = SevenLayers.Of(1);
             State = ExplorationReducer.Enter(
                 first,
-                first.Map(LayerSeed(seed, first.Layer)),
+                MapOf(first, LayerSeed(seed, first.Layer)),
                 _start.Loadout ?? RunLoadout.Empty,
                 _start.Hp,
                 _start.MaxHp,
                 _start.Stamina,
-                _start.MiasmaPercent);
+                _start.MiasmaPercent,
+                0,
+                Trial);
 
             // The entry node is resolved on arrival, and it is always a battle (dungeon_exploration_v4.md §4.1).
             Arrived(State.CurrentNodeId);
@@ -387,13 +445,16 @@ namespace Exploration
         {
             State = below;
             Surveyed = false;
+            DescendedTrial(); // Trial extension: the survey's target, the aim and the training wait are per layer
             Arrived(State.CurrentNodeId);
         }
 
         private void Apply(int nodeId, RestChoice choice)
         {
             bool fresh = !State.HasResolved(nodeId);
+            int marks = State.TrainingMarks;
             State = ExplorationReducer.Step(State, nodeId, choice);
+            if (Trial && State.TrainingMarks > marks) TrainingWaiting = true; // Trial extension: the training card opens
             if (fresh) Arrived(nodeId);
         }
 
@@ -414,6 +475,9 @@ namespace Exploration
                 int layer = State.Profile.Layer;
                 PendingEncounter = LayerEncounters.Pick(kind, layer, new SeededRng(EncounterSeed(RunSeed, layer, nodeId)));
             }
+            ArrivedTrial(nodeId, kind); // Trial extension: events, 写しの帳 and the layer's survey target
+            // Trial extension (js: app/intel.js:67): an intel that wants every resolved node is told last.
+            if (Intel is IArrivalIntel arrival) arrival.Arrived(nodeId);
         }
     }
 }

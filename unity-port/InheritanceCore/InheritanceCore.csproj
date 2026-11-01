@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The inheritance rules (lineage, death, traces, survivor, heirs): port of the browser trial's
+         core/inheritance/Inheritance.js. Engine-free like DungeonCore; copied flat into Assets/InheritanceCore. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BattleCore\BattleCore.csproj" />
+    <ProjectReference Include="..\DungeonCore\DungeonCore.csproj" />
+  </ItemGroup>
+
+</Project>

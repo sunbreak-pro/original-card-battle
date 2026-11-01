@@ -42,6 +42,28 @@ namespace Exploration
         IReadOnlyList<JournalPage> Pages(int layer, bool surveyed);
     }
 
+    /// <summary>
+    /// Trial extension (docs/EXTENSIONS.md J-10, W-4): an intel that names the layer's 情報収集 target. In trial mode,
+    /// without 写しの帳, ExplorationSession asks it when a 情報収集 node resolves and raises the answer to 開示度 2
+    /// through its Keeper (js: ExplorationSession.js:755, where the browser trial checks
+    /// <c>typeof Intel.SurveyTarget === 'function'</c>). An intel that does not implement it is never asked.
+    /// </summary>
+    public interface ISurveyIntel
+    {
+        /// <summary>The enemy this layer's survey raises, or null when nothing is left below 開示度 2.</summary>
+        string SurveyTarget(int layer, LayerMap map);
+    }
+
+    /// <summary>
+    /// Trial extension (js: app/intel.js:62, the hook <c>JournalIntel.bind</c> puts on the session's Arrived): an
+    /// intel told about every node the session resolves, at the end of the session's own Arrived, so what it does
+    /// happens inside the logged call that resolved the node. An intel that does not implement it is never told.
+    /// </summary>
+    public interface IArrivalIntel
+    {
+        void Arrived(int nodeId);
+    }
+
     /// <summary>The source of a session with no journal: no enemy is known, no enemy page exists.</summary>
     public sealed class NoEnemyIntel : IEnemyIntel
     {

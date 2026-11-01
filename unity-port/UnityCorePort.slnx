@@ -20,4 +20,18 @@
   <Project Path="Journal.Script/Journal.Script.csproj" />
   <Project Path="UiArt.Script.Tests/UiArt.Script.Tests.csproj" />
   <Project Path="UiArt.Script/UiArt.Script.csproj" />
+  <Project Path="Trial.Async/Trial.Async.csproj" />
+  <Project Path="Trial.Async.Tests/Trial.Async.Tests.csproj" />
+  <Project Path="Trial.Geometry/Trial.Geometry.csproj" />
+  <Project Path="Trial.Geometry.Tests/Trial.Geometry.Tests.csproj" />
+  <Project Path="Trial.Audio.Synth/Trial.Audio.Synth.csproj" />
+  <Project Path="Trial.Audio.Synth.Tests/Trial.Audio.Synth.Tests.csproj" />
+  <Project Path="Trial.Bridge/Trial.Bridge.csproj" />
+  <Project Path="Trial.Bridge.Tests/Trial.Bridge.Tests.csproj" />
+  <Project Path="Trial.Script/Trial.Script.csproj" />
+  <Project Path="Trial.Script.Tests/Trial.Script.Tests.csproj" />
+  <Project Path="Trial.Battle.Flow/Trial.Battle.Flow.csproj" />
+  <Project Path="Trial.Battle.Flow.Tests/Trial.Battle.Flow.Tests.csproj" />
+  <Project Path="InheritanceCore/InheritanceCore.csproj" />
+  <Project Path="InheritanceCore.Tests/InheritanceCore.Tests.csproj" />
 </Solution>

@@ -67,7 +67,8 @@ namespace DungeonCore
             int tempMaxStaminaMod,
             int trainingMarks,
             RunLoadout loadout,
-            RunPhase phase)
+            RunPhase phase,
+            bool trial = false)
         {
             Profile = profile ?? throw new ArgumentNullException(nameof(profile));
             Map = map ?? throw new ArgumentNullException(nameof(map));
@@ -82,6 +83,7 @@ namespace DungeonCore
             TempMaxStaminaMod = tempMaxStaminaMod;
             TrainingMarks = trainingMarks;
             Phase = phase;
+            Trial = trial;
         }
 
         public LayerProfile Profile { get; }
@@ -112,6 +114,23 @@ namespace DungeonCore
         public RunLoadout Loadout { get; }
 
         public RunPhase Phase { get; }
+
+        /// <summary>
+        /// Trial extension (docs/EXTENSIONS.md 「探索の持ち物とイベント」): the run plays the trial rules — every
+        /// carried item acts and イベント nodes resolve (ExplorationReducer.Enter's <c>trial</c>). False is the C#.
+        /// </summary>
+        public bool Trial { get; }
+
+        /// <summary>
+        /// Trial extension: the layer's 刻限 with 刻限の砂 counted — 「どの層でも刻限 +1」
+        /// (tools_and_consumables_v4.md §2). Outside trial this is the profile's.
+        /// </summary>
+        // js: core/dungeon/ExplorationState.js:89
+        public int TimeLimit => Profile.TimeLimit + TimeBonus;
+
+        /// <summary>Trial extension: 刻限 刻限の砂 adds to every layer (0 outside trial).</summary>
+        // js: core/dungeon/ExplorationState.js:92
+        public int TimeBonus => Trial ? Loadout.TimeBonus : 0;
 
         /// <summary>What one 刻限 in this layer costs after the run's tools are counted.</summary>
         public int EffectiveDensity => Miasma.EffectiveDensity(Profile.Density, Loadout.DensityRelief);
@@ -145,7 +164,8 @@ namespace DungeonCore
             int? tempMaxStaminaMod = null,
             int? trainingMarks = null,
             RunLoadout? loadout = null,
-            RunPhase? phase = null) =>
+            RunPhase? phase = null,
+            bool? trial = null) =>
             new ExplorationState(
                 profile ?? Profile,
                 map ?? Map,
@@ -159,6 +179,7 @@ namespace DungeonCore
                 tempMaxStaminaMod ?? TempMaxStaminaMod,
                 trainingMarks ?? TrainingMarks,
                 loadout ?? Loadout,
-                phase ?? Phase);
+                phase ?? Phase,
+                trial ?? Trial);
     }
 }

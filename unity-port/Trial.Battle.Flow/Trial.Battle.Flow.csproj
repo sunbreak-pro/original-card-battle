@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Engine-free battle flow: the port of player.js, the battle clock, layout constants, env and the module contracts.
+         The files live in the Unity kit under Assets/View/Trial/Battle/Flow/ and are mirrored by `npm run unity:sync`;
+         this project only lets `dotnet test` compile the same files. netstandard2.1 + C# 9 is what Unity compiles. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Trial.Battle</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);CS4014</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Trial\Battle\Flow\**\*.cs" LinkBase="Battle\Flow" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Trial.Async\Trial.Async.csproj" />
+    <ProjectReference Include="..\Trial.Script\Trial.Script.csproj" />
+    <ProjectReference Include="..\Trial.Bridge\Trial.Bridge.csproj" />
+    <ProjectReference Include="..\BattleCore\BattleCore.csproj" />
+    <ProjectReference Include="..\Depiction.Script\Depiction.Script.csproj" />
+    <ProjectReference Include="..\Depiction.Bridge\Depiction.Bridge.csproj" />
+    <ProjectReference Include="..\Backdrop.Script\Backdrop.Script.csproj" />
+    <ProjectReference Include="..\Journal.Script\Journal.Script.csproj" />
+  </ItemGroup>
+
+</Project>
