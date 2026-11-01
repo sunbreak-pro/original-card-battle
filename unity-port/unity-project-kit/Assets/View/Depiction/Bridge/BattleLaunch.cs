@@ -46,6 +46,12 @@ namespace Depiction.Bridge
         /// </summary>
         public int Disclosure = DefaultDisclosure;
 
+        /// <summary>
+        /// #589: the journal's 開示度 per enemy (<see cref="EnemyId"/> first, then <see cref="MoreEnemyIds"/>), for a
+        /// battle that knows each. Null, or an enemy past its end, reads <see cref="Disclosure"/>.
+        /// </summary>
+        public List<int> Disclosures;
+
         /// <summary>battle_ui_ux_v2 §7: 開示度 2, everything the omen has.</summary>
         public const int DefaultDisclosure = OmenDisclosure.Full;
 
@@ -168,12 +174,26 @@ namespace Depiction.Bridge
 
         public CoreBattleSource CreateSource()
         {
-            if (Disclosure < LowestDisclosure || Disclosure > OmenDisclosure.Full)
+            CheckDisclosure(Disclosure, nameof(Disclosure));
+            List<int> perEnemy = null;
+            if (Disclosures != null)
             {
-                throw new ArgumentOutOfRangeException(
-                    nameof(Disclosure), Disclosure, LowestDisclosure + ".." + OmenDisclosure.Full + " (battle_ui_ux_v2 §7).");
+                perEnemy = new List<int>();
+                foreach (int level in Disclosures)
+                {
+                    CheckDisclosure(level, nameof(Disclosures));
+                    perEnemy.Add(OmenDisclosure.Clamp(level));
+                }
             }
-            return new CoreBattleSource(BuildSetup(), Seed, AutoPlay, StopAfterTurns, ChainIndex, ChainTotal, OmenDisclosure.Clamp(Disclosure));
+            return new CoreBattleSource(BuildSetup(), Seed, AutoPlay, StopAfterTurns, ChainIndex, ChainTotal, OmenDisclosure.Clamp(Disclosure), perEnemy);
+        }
+
+        private static void CheckDisclosure(int level, string name)
+        {
+            if (level < LowestDisclosure || level > OmenDisclosure.Full)
+            {
+                throw new ArgumentOutOfRangeException(name, level, LowestDisclosure + ".." + OmenDisclosure.Full + " (battle_ui_ux_v2 §7).");
+            }
         }
     }
 }

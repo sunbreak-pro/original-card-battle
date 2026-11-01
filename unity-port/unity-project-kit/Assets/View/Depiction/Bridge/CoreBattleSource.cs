@@ -99,15 +99,19 @@ namespace Depiction.Bridge
         /// battle-visual-v1 §4.4 (#455): the journal's 開示度 for this enemy (0〜2); below 2 the omen shows
         /// no numbers. Read once here, as the battle starts (#500): BattleLaunch and DemoSession hand it in.
         /// </param>
+        /// <param name="disclosures">
+        /// #589: the 開示度 per enemy, in the core's enemy order. Null, or an enemy past its end, reads
+        /// <paramref name="disclosure"/>, as the battle has always read its one level.
+        /// </param>
         public CoreBattleSource(BattleSetup setup, int seed, bool suggestCards = false, int stopAfterTurns = 0, int chainIndex = 1, int chainTotal = 1,
-            int disclosure = OmenDisclosure.Full)
+            int disclosure = OmenDisclosure.Full, IReadOnlyList<int> disclosures = null)
         {
             if (setup == null) throw new ArgumentNullException(nameof(setup));
             if (stopAfterTurns < 0) throw new ArgumentOutOfRangeException(nameof(stopAfterTurns), stopAfterTurns, "0 or more.");
             _suggestCards = suggestCards;
             _stopAfterTurns = stopAfterTurns;
             _rng = new SeededRng(seed);
-            _writer = new CoreScriptWriter(setup.Enemy) { ChainIndex = chainIndex, ChainTotal = chainTotal, Disclosure = disclosure };
+            _writer = new CoreScriptWriter(setup.Enemy) { ChainIndex = chainIndex, ChainTotal = chainTotal, Disclosure = disclosure, Disclosures = disclosures };
             StepResult start = TurnLoop.Start(setup, _rng);
             _state = start.State;
             _history.AddRange(start.Events);
