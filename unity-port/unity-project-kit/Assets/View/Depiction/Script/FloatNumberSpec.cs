@@ -90,6 +90,9 @@ namespace Depiction
         /// <summary>§5.0: and ends at the head, 84%.</summary>
         public const float RiseToRatio = 0.84f;
 
+        /// <summary>A Guard gain's number by the cue's strength 1..4. Every cue writes EffectStrength.Uniform for now (#30).</summary>
+        private static readonly int[] GainFontPxByStrength = { 56, 72, 88, 108 };
+
         public static int FontPx(FloatNumberKind kind) => kind == FloatNumberKind.GuardLoss ? GuardFontPx : HpFontPx;
 
         /// <summary>The icon is as tall as the number it leads (§5.5 「盾と Guard の色の 34 px」).</summary>
@@ -153,6 +156,19 @@ namespace Depiction
 
         /// <summary>§5.0: how far above the feet it ends.</summary>
         public static float EndAbove(float height) => Math.Max(0f, height) * RiseToRatio;
+
+        /// <summary>§5.0: how far it travels on a figure <paramref name="height"/> px tall, chest to head (19%).</summary>
+        public static float RiseBy(float height) => EndAbove(height) - StartAbove(height);
+
+        /// <summary>
+        /// How far above the feet the top of a number <paramref name="tall"/> px tall stands when it stops.
+        /// §5.0 keeps this under <see cref="FigureFrame.OmenBottomAbove"/> on a figure of any height.
+        /// </summary>
+        public static float EndTopAbove(float height, float tall) => EndAbove(height) + Math.Max(0f, tall) / 2f;
+
+        /// <summary>The font of a Guard gain's number at the cue's strength (1..4, clamped).</summary>
+        public static int GainFontPx(int strength) =>
+            GainFontPxByStrength[Math.Min(Math.Max(strength, 1), GainFontPxByStrength.Length) - 1];
 
         /// <summary>
         /// §5.6 順 2〜3: the Guard number at <paramref name="index"/> pairs with an HP number when the

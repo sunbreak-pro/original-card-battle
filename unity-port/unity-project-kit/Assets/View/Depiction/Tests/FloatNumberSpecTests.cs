@@ -64,6 +64,43 @@ namespace Depiction.Tests
             Assert.That(feetY - FloatNumberSpec.EndAbove(264f) - FloatNumberSpec.HpFontPx / 2f, Is.GreaterThan(292f));
         }
 
+        [TestCase(FigureFrame.StandardHeight)]
+        [TestCase(FigureFrame.LargeHeight)]
+        public void TheRise_IsAShareOfTheFiguresHeight(float height)
+        {
+            Assert.That(FloatNumberSpec.StartAbove(height), Is.EqualTo(height * 0.65f).Within(1e-3f));
+            Assert.That(FloatNumberSpec.RiseBy(height), Is.EqualTo(height * 0.19f).Within(1e-3f));
+            Assert.That(FloatNumberSpec.StartAbove(height) + FloatNumberSpec.RiseBy(height),
+                Is.EqualTo(FloatNumberSpec.EndAbove(height)).Within(1e-3f));
+        }
+
+        [Test]
+        public void TheRise_OnTheStandardFigure_IsAbout43Px()
+        {
+            Assert.That(FloatNumberSpec.RiseBy(FigureFrame.StandardHeight), Is.EqualTo(43f).Within(0.5f));
+        }
+
+        [TestCase(FigureFrame.StandardHeight)]
+        [TestCase(FigureFrame.LargeHeight)]
+        public void EveryRisingNumber_StopsUnderTheOmenBadge(float height)
+        {
+            float omen = FigureFrame.OmenBottomAbove(height);
+            float hpPlate = FloatNumberSpec.Layout(FloatNumberKind.HpLoss, 60f, 0f).Height;
+            float guardPlate = FloatNumberSpec.Layout(FloatNumberKind.GuardLoss, 40f, 0f).Height;
+            float guardGain = FloatNumberSpec.GainFontPx(EffectStrength.Uniform);
+            Assert.That(FloatNumberSpec.EndTopAbove(height, hpPlate), Is.LessThan(omen), "the HP plate");
+            Assert.That(FloatNumberSpec.EndTopAbove(height, guardPlate), Is.LessThan(omen), "the Guard plate");
+            Assert.That(FloatNumberSpec.EndTopAbove(height, guardGain), Is.LessThan(omen), "the Guard gain at the cues' strength");
+        }
+
+        [Test]
+        public void TheGainFont_ClampsItsStrength()
+        {
+            Assert.That(FloatNumberSpec.GainFontPx(0), Is.EqualTo(FloatNumberSpec.GainFontPx(1)));
+            Assert.That(FloatNumberSpec.GainFontPx(9), Is.EqualTo(FloatNumberSpec.GainFontPx(4)));
+            Assert.That(FloatNumberSpec.GainFontPx(EffectStrength.Uniform), Is.EqualTo(72));
+        }
+
         [Test]
         public void ThePlate_HoldsTheIconTheNumberAndTheLabelInARow()
         {

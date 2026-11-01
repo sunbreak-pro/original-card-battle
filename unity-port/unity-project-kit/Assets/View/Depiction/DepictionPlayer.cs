@@ -553,7 +553,7 @@ namespace Depiction.View
                 {
                     KeepX(omenBadge.Rect, root, enemyX);
                     float head = RefScreen.Of(root, enemyHome).y - FigureFrame.HeightFor(EnemySize);
-                    KeepBottom(omenBadge.Rect, root, head - OmenOverHead);
+                    KeepBottom(omenBadge.Rect, root, head - FigureFrame.OmenOverHead);
                 }
                 if (receiver) KeepX((RectTransform)receiver.transform, root, enemyX);
             }
@@ -616,9 +616,6 @@ namespace Depiction.View
 
         /// <summary>Moves <paramref name="rt"/> so its middle stands on screen x <paramref name="x"/>, its whole width 24 px inside the edges.</summary>
         private static readonly Vector3[] Corners = new Vector3[4];
-
-        /// <summary>battle-visual-v1 §4.4: the omen badge sits 14 px above the head.</summary>
-        private const float OmenOverHead = 14f;
 
         /// <summary>
         /// Moves <paramref name="rt"/> up or down so its bottom edge stands on screen y <paramref name="bottom"/>.
@@ -814,9 +811,10 @@ namespace Depiction.View
             StatusBarView status = cue.Target == UnitSide.Player ? playerStatus : enemyStatus;
             Vector2 chest = DepictionFx.PointOn(fxLayer, target.chest);
             Vector2 head = DepictionFx.PointOn(fxLayer, target.head);
-            // Numbers start at the chest and labels just under the head, so neither climbs into the
-            // omen badge or off the top edge.
-            Vector2 numberAt = chest + new Vector2(0f, 40f);
+            // §5.0: a number's centre goes from the chest to the head of this figure, whatever its height,
+            // so it stops under the omen badge. Labels start just under the head.
+            Vector2 numberAt = DepictionFx.PointOn(fxLayer, target.transform) + new Vector2(0f, FloatNumberSpec.StartAbove(target.Height));
+            float numberRise = FloatNumberSpec.RiseBy(target.Height);
             Vector2 labelAt = head + new Vector2(0f, -30f);
             // §5.3 (#57): a beat of a play draws its system's shape beside it; a blow draws its own in Attack,
             // and 息 is the pips lighting, with the chest rising only on a heal.
@@ -883,7 +881,7 @@ namespace Depiction.View
                     break;
 
                 case CueKind.GuardGain:
-                    yield return HoldBeat(EffectId.GuardGain, GainGuard(cue, status, chest, numberAt), () => status.SetGuard(cue.GuardAfter));
+                    yield return HoldBeat(EffectId.GuardGain, GainGuard(cue, status, chest, numberAt, numberRise), () => status.SetGuard(cue.GuardAfter));
                     break;
 
                 case CueKind.RangeSwitch:
@@ -911,7 +909,7 @@ namespace Depiction.View
                 case CueKind.StanceCue:
                     // §5.13 順 1 (#501): pips 1-3 glow first (構え's 息), then the shield and "+3" (順 2).
                     yield return HoldBeat(EffectId.ReservePips, GlowReservePips(cue.Target, _effects.Ms(EffectId.ReservePips)), null);
-                    yield return HoldBeat(EffectId.StanceCue, Reserve(cue, status, chest, numberAt), () => status.SetGuard(cue.GuardAfter));
+                    yield return HoldBeat(EffectId.StanceCue, Reserve(cue, status, chest, numberAt, numberRise), () => status.SetGuard(cue.GuardAfter));
                     yield return Gate(ev.Order + "-impact");
                     break;
 
@@ -1148,18 +1146,18 @@ namespace Depiction.View
             figure.SetPose(FigurePose.Idle);
         }
 
-        private IEnumerator GainGuard(Cue cue, StatusBarView status, Vector2 chest, Vector2 numberAt)
+        private IEnumerator GainGuard(Cue cue, StatusBarView status, Vector2 chest, Vector2 numberAt, float numberRise)
         {
             DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Guard, 220f + 40f * cue.Intensity);
-            DepictionFx.FloatText(this, fxLayer, numberAt, "+" + cue.Amount, BattleTheme.Guard, DepictionFx.NumberFont(cue.Intensity));
+            DepictionFx.FloatText(this, fxLayer, numberAt, "+" + cue.Amount, BattleTheme.Guard, FloatNumberSpec.GainFontPx(cue.Intensity), rise: numberRise);
             yield return status.PopGuard(cue.GuardAfter, _effects.Ms(EffectId.GuardGain));
         }
 
-        private IEnumerator Reserve(Cue cue, StatusBarView status, Vector2 chest, Vector2 numberAt)
+        private IEnumerator Reserve(Cue cue, StatusBarView status, Vector2 chest, Vector2 numberAt, float numberRise)
         {
             if (endTurn) yield return UiTween.Pop(endTurn, 200f);
             DepictionFx.Burst(this, fxLayer, chest, BattleTheme.Guard, 300f);
-            DepictionFx.FloatText(this, fxLayer, numberAt, cue.Text, BattleTheme.Guard, 48);
+            DepictionFx.FloatText(this, fxLayer, numberAt, cue.Text, BattleTheme.Guard, 48, rise: numberRise);
             yield return status.PopGuard(cue.GuardAfter);
         }
 
