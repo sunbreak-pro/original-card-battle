@@ -83,6 +83,8 @@ namespace Depiction.View
         private bool _frameTaken;
         private Vector2 _restFrame;
         private Image _footLight;
+        /// <summary>§5.15 順 5 (#589): made the first time a fall keeps the foot light, so a figure that never does has none.</summary>
+        private CanvasGroup _footGroup;
         private Outline _edgeLight;
         private Image _stanceGlow;
         private float _height = FigureFrame.StandardHeight;
@@ -339,8 +341,10 @@ namespace Depiction.View
         /// <summary>
         /// The fall (EffectId.Defeat, battle_ui_ux_v2 §2.2 の 6): the figure tilts about its feet, sinks
         /// and darkens, then fades out, and is gone with its cell empty. DefeatShape gives every number.
+        /// With <paramref name="keepFoot"/> (§5.15 順 5, #589: others still stand) the foot light stays lit
+        /// where it was, the cell is not emptied yet, and <see cref="FadeFoot"/> finishes it.
         /// </summary>
-        public IEnumerator Fall(float ms)
+        public IEnumerator Fall(float ms, bool keepFoot = false)
         {
             // The killing blow's flash and recoil may still be running (they run beside the flow): the
             // fall starts from the body at rest, not from a tint or a lean caught half-way.
@@ -353,18 +357,57 @@ namespace Depiction.View
             CanvasGroup group = UiKit.Group(rt);
             Vector2 from = rt.anchoredPosition;
             Color color = BodyHomeColor;
+            if (keepFoot) HoldFootLight();
             yield return UiTween.Run(ms, Ease.Linear, t =>
             {
                 if (!rt) return;
                 rt.localRotation = Quaternion.Euler(0f, 0f, DefeatShape.Tilt(side, t));
                 rt.anchoredPosition = from + new Vector2(0f, DefeatShape.Sink(t));
                 if (group) group.alpha = DefeatShape.Alpha(t);
+                if (keepFoot) CounterFootLight(DefeatShape.Tilt(side, t), DefeatShape.Sink(t));
                 if (!body) return;
                 float b = DefeatShape.Brightness(t);
                 body.color = new Color(color.r * b, color.g * b, color.b * b, color.a);
             });
             if (rt) rt.anchoredPosition = from;
+            if (keepFoot) CounterFootLight(DefeatShape.Tilt(side, 1f), 0f);
+            else SetDown(true);
+        }
+
+        /// <summary>
+        /// §5.15 順 5 (#589): after a <see cref="Fall"/> that kept it, the foot light goes out over
+        /// <paramref name="ms"/>, and the cell is empty.
+        /// </summary>
+        public IEnumerator FadeFoot(float ms)
+        {
+            if (_footGroup)
+            {
+                yield return UiTween.Run(ms, Ease.Linear, t =>
+                {
+                    if (_footGroup) _footGroup.alpha = 1f - t;
+                });
+            }
             SetDown(true);
+        }
+
+        /// <summary>The foot light stops following the figure's fade: its own group ignores the figure's.</summary>
+        private void HoldFootLight()
+        {
+            if (!_footLight) return;
+            if (!_footGroup) _footGroup = UiKit.Group(_footLight.rectTransform);
+            _footGroup.ignoreParentGroups = true;
+            _footGroup.blocksRaycasts = false;
+            _footGroup.alpha = 1f;
+        }
+
+        /// <summary>The foot light stays lying on the floor while the figure tilts and sinks about its feet: both are counted back out of it.</summary>
+        private void CounterFootLight(float tilt, float sink)
+        {
+            if (!_footLight) return;
+            RectTransform light = _footLight.rectTransform;
+            Quaternion upright = Quaternion.Euler(0f, 0f, -tilt);
+            light.localRotation = upright;
+            light.anchoredPosition = upright * new Vector2(0f, -sink * FigureFrame.Counter(Rect.localScale.y));
         }
 
         /// <summary>
@@ -381,7 +424,8 @@ namespace Depiction.View
 
         /// <summary>
         /// Clears whatever a stopped effect left on the figure (a new battle stops every coroutine
-        /// mid-way): the flash, the fall's tilt and fade, and the body's move. Position is the caller's.
+        /// mid-way): the flash, the fall's tilt and fade, the foot light it kept, and the body's move.
+        /// Position is the caller's.
         /// </summary>
         public void Settle()
         {
@@ -391,6 +435,13 @@ namespace Depiction.View
             Rect.localRotation = Quaternion.identity;
             CanvasGroup group = GetComponent<CanvasGroup>();
             if (group) group.alpha = 1f;
+            if (_footGroup)
+            {
+                _footGroup.ignoreParentGroups = false;
+                _footGroup.alpha = 1f;
+                _footLight.rectTransform.localRotation = Quaternion.identity;
+                _footLight.rectTransform.anchoredPosition = Vector2.zero;
+            }
             RestBody();
         }
 

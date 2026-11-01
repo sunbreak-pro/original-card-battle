@@ -222,6 +222,15 @@ namespace Depiction
         /// <summary>How dark the body ends: its colour is multiplied by this.</summary>
         public const float DarkTo = 0.35f;
 
+        /// <summary>battle_ui_ux_v2 §5.15 順 5 (#589): with others standing, the foot light goes out over 300 ms after the 800 of the fall, and the cell is free.</summary>
+        public const float FootLightMs = 300f;
+
+        /// <summary>§5.15 順 5: then the number panel turns grey over 300 ms.</summary>
+        public const float PanelGreyMs = 300f;
+
+        /// <summary>§2.2 の 6: how far a fallen enemy's grey panel fades, as a played-out part does (0.55, the trial's --opacity-unplayed).</summary>
+        public const float PanelFallenAlpha = 0.55f;
+
         /// <summary>
         /// The tilt in degrees about the feet. The enemy faces left and falls back to the right
         /// (clockwise, negative); the player the other way.

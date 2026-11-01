@@ -320,6 +320,71 @@ namespace Depiction.View
             _statuses.Clear();
             foreach (StatusChip chip in unit.Statuses) _statuses.Add(Copy(chip));
             RenderChips();
+            if (_fallen) PaintGrey(1f); // the bind just gave the parts their colours back
+        }
+
+        // ---- battle_ui_ux_v2 §2.2 の 6 / §5.15 順 5 (#589): a fallen enemy's panel stays, grey --------------
+
+        private bool _fallen;
+        /// <summary>The token of the grey-out running, so a set or a newer run stops it where it is.</summary>
+        private int _greyRun;
+        /// <summary>Each part's colour as the bind left it. Filled the first time the panel greys, so a panel that never does keeps nothing.</summary>
+        private readonly Dictionary<Graphic, Color> _colorsBeforeGrey = new Dictionary<Graphic, Color>();
+
+        /// <summary>
+        /// Grey at once, or back as it was bound (a new battle stands the panel up again). The panel keeps
+        /// its place, since §2.2 の 6 leaves it under the emptied cell.
+        /// </summary>
+        public void SetFallen(bool fallen)
+        {
+            if (fallen == _fallen && (fallen || _colorsBeforeGrey.Count == 0)) return;
+            _greyRun++;
+            _fallen = fallen;
+            if (fallen)
+            {
+                ShowHpLoss(0);
+                PaintGrey(1f);
+                return;
+            }
+            foreach (KeyValuePair<Graphic, Color> part in _colorsBeforeGrey)
+            {
+                if (part.Key) part.Key.color = part.Value;
+            }
+            _colorsBeforeGrey.Clear();
+            UiKit.Group(Rect).alpha = 1f;
+        }
+
+        /// <summary>§5.15 順 5: the panel turns grey over <paramref name="ms"/> (linear), and is then fallen.</summary>
+        public IEnumerator GreyOut(float ms)
+        {
+            if (_fallen) yield break;
+            int mine = ++_greyRun;
+            ShowHpLoss(0);
+            yield return UiTween.Run(ms, Ease.Linear, t =>
+            {
+                if (mine == _greyRun) PaintGrey(t);
+            });
+            if (mine == _greyRun) SetFallen(true);
+        }
+
+        /// <summary>
+        /// Every part of the panel <paramref name="amount"/> of the way to its own luminance, and the panel to
+        /// DefeatShape.PanelFallenAlpha. uGUI has no grey filter without a shader of our own, so the colours
+        /// are moved. A part the panel made since the last call (a chip) is taken as it stands.
+        /// </summary>
+        private void PaintGrey(float amount)
+        {
+            foreach (Graphic part in GetComponentsInChildren<Graphic>(true))
+            {
+                if (!_colorsBeforeGrey.TryGetValue(part, out Color was))
+                {
+                    was = part.color;
+                    _colorsBeforeGrey[part] = was;
+                }
+                float luminance = was.grayscale;
+                part.color = Color.Lerp(was, new Color(luminance, luminance, luminance, was.a), amount);
+            }
+            UiKit.Group(Rect).alpha = Mathf.Lerp(1f, DefeatShape.PanelFallenAlpha, amount);
         }
 
         private static StatusChip Copy(StatusChip chip)

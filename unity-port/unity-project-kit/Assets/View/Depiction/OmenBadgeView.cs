@@ -29,9 +29,9 @@ namespace Depiction.View
         private static readonly Color Phosphor = BattleTheme.Phosphor;
         private static readonly Color GuardInk = BattleTheme.Guard;
 
-        private static readonly Vector2 BadgeSize = new Vector2(200f, 98f);
-        private static readonly Vector2 PlanSize = new Vector2(170f, 66f);
-        private const float PlanGap = 8f;
+        private static readonly Vector2 BadgeSize = new Vector2(OmenRowLayout.BadgeWidth, OmenRowLayout.BadgeHeight);
+        private static readonly Vector2 PlanSize = new Vector2(OmenRowLayout.PlanWidth, OmenRowLayout.PlanHeight);
+        private const float PlanGap = OmenRowLayout.PlanGap;
         private const float PlanAlpha = 0.62f;
         /// <summary>§4.4 敵の番: the violet light reaches 30 px out from the acting badge.</summary>
         private const int ActingGlow = 30;

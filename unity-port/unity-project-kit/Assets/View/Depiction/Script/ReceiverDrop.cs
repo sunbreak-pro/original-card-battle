@@ -4,6 +4,7 @@
 // pointer carries it, before the snap draws it in, and the receiver's invisible square. The hot light,
 // the snap's pull and the release all ask this one function, so what lights is what plays.
 using System;
+using System.Collections.Generic;
 
 namespace Depiction
 {
@@ -31,6 +32,47 @@ namespace Depiction
         public static bool Takes(ScreenBox card, ScreenBox receiver, float pointerX, float pointerY)
         {
             if (Share(card, receiver) >= TakeShare) return true;
+            return Inside(receiver, pointerX, pointerY);
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §3.9 (#589): which of several receivers takes the card, or −1. Neighbours' receivers
+        /// overlap (a receiver is wider than a cell), so the choice stays one: among those the pointer is
+        /// inside, the one whose middle is nearest it; with the pointer inside none, the one holding the most
+        /// of the card, if that is half or more. The first given wins a tie.
+        /// </summary>
+        public static int Pick(ScreenBox card, IReadOnlyList<ScreenBox> receivers, float pointerX, float pointerY)
+        {
+            if (receivers == null) throw new ArgumentNullException(nameof(receivers));
+            int nearest = -1;
+            float nearestBy = float.MaxValue;
+            int fullest = -1;
+            float fullestBy = 0f;
+            for (int i = 0; i < receivers.Count; i++)
+            {
+                ScreenBox receiver = receivers[i];
+                if (Inside(receiver, pointerX, pointerY))
+                {
+                    float by = Math.Abs(receiver.X + receiver.Width * 0.5f - pointerX);
+                    if (by < nearestBy)
+                    {
+                        nearest = i;
+                        nearestBy = by;
+                    }
+                }
+                float share = Share(card, receiver);
+                if (share >= TakeShare && share > fullestBy)
+                {
+                    fullest = i;
+                    fullestBy = share;
+                }
+            }
+            return nearest >= 0 ? nearest : fullest;
+        }
+
+        /// <summary>The pointer counts on the left and top edges and not on the right and bottom ones, as Unity's Rect.Contains does.</summary>
+        private static bool Inside(ScreenBox receiver, float pointerX, float pointerY)
+        {
             return pointerX >= receiver.X && pointerX < receiver.Right && pointerY >= receiver.Y && pointerY < receiver.Bottom;
         }
     }

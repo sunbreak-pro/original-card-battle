@@ -228,8 +228,24 @@ namespace Depiction
                 centres[i + 1] = FloorSpec.FeetX(cells, enemyCells[i], enemySizes[i]);
                 widths[i + 1] = EnemyPanelWidth(cells, enemySizes[i]);
             }
+            float[] lefts = PlaceByX(centres, widths);
+            var boxes = new ScreenBox[count];
+            for (int i = 0; i < count; i++) boxes[i] = new ScreenBox(lefts[i], Top, widths[i], height);
+            return boxes;
+        }
 
-            // Left to right by where each figure stands; the player first on a tie (it stands left).
+        /// <summary>
+        /// #589: <see cref="PlaceRow"/> for boxes given in any order, laid out left to right by where each
+        /// one's middle stands (the one given first goes first on a tie: the player stands left), with the
+        /// left edges handed back in the order given. The screen reads the x from the figures' homes, which
+        /// set off for their new cells before the frame says so; <see cref="OnFloor(int, int, int, int[], int[], float)"/> reads them from the cells.
+        /// </summary>
+        public static float[] PlaceByX(float[] centres, float[] widths)
+        {
+            if (centres == null) throw new ArgumentNullException(nameof(centres));
+            if (widths == null) throw new ArgumentNullException(nameof(widths));
+            if (centres.Length != widths.Length) throw new ArgumentException("One width per box.", nameof(widths));
+            int count = centres.Length;
             var order = new int[count];
             for (int i = 0; i < count; i++) order[i] = i;
             Array.Sort(order, (a, b) => centres[a] != centres[b] ? centres[a].CompareTo(centres[b]) : a.CompareTo(b));
@@ -240,11 +256,10 @@ namespace Depiction
                 sortedCentres[i] = centres[order[i]];
                 sortedWidths[i] = widths[order[i]];
             }
-            float[] lefts = PlaceRow(sortedCentres, sortedWidths);
-
-            var boxes = new ScreenBox[count];
-            for (int i = 0; i < count; i++) boxes[order[i]] = new ScreenBox(lefts[i], Top, sortedWidths[i], height);
-            return boxes;
+            float[] sorted = PlaceRow(sortedCentres, sortedWidths);
+            var lefts = new float[count];
+            for (int i = 0; i < count; i++) lefts[order[i]] = sorted[i];
+            return lefts;
         }
 
         /// <summary>The width a run of panels from <paramref name="first"/> to <paramref name="last"/> takes, <see cref="MinGap"/> between each.</summary>

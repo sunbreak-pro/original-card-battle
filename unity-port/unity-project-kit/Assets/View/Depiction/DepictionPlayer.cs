@@ -6,9 +6,17 @@
 // objects at run time, so prefab instances can be moved in the Editor freely. How long an event
 // holds the flow is EffectPlan's (Script/Effects.cs, #495): HoldBeat waits each step the plan lists, so
 // the EditMode tests that sum the plan measure the screen's own waits.
+//
+// Several enemies (battle_ui_ux_v2 §2.2, §3.9, §5.15, #589). Every enemy has its parts on the screen: a
+// figure, a number panel, an omen badge and a home (EnemyParts, index k matching DepictionFrame.Enemies[k]).
+// Enemy 0 wears the scene's own instances. The scene belongs to the Unity project, so the others are copies
+// made at run time from templates taken before anything has laid itself out (Awake). A cue goes to the enemy
+// it names, and which enemy that is, like every layout, is worked out in Script/ (EnemyScreen, OmenRowLayout,
+// StatusPanelLayout, ReceiverDrop). With one enemy no copy is made and every path is as it was.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using System.Collections.Generic;
+using Depiction.Bridge;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -18,6 +26,9 @@ using UnityEngine.InputSystem.UI;
 
 namespace Depiction.View
 {
+    // Before the views' Awakes: the templates of a second enemy's parts are copies of parts that have not
+    // yet laid themselves out (TakeEnemyTemplates).
+    [DefaultExecutionOrder(-200)]
     public class DepictionPlayer : MonoBehaviour
     {
         [Header("Prefabs")]
@@ -133,9 +144,38 @@ namespace Depiction.View
         /// <summary>How far a held card is drawn toward the dish once it is over it (EffectId.ReceiverSnap).</summary>
         private const float SnapPull = 0.35f;
         private static readonly Vector2 Half = new Vector2(0.5f, 0.5f);
-        /// <summary>Where the enemy figure stands between its moves; every motion returns it here.</summary>
-        private Vector2 _enemyHome;
         private GameObject _resultCard;
+
+        // ---- battle_ui_ux_v2 §2.2 (#589): one enemy's parts --------------------------------------------
+
+        /// <summary>One enemy's parts on the screen: enemy k of DepictionFrame.Enemies is the k-th.</summary>
+        private sealed class EnemyParts
+        {
+            public FigureView Figure;
+            public StatusBarView Status;
+            public OmenBadgeView Badge;
+            /// <summary>Where the figure stands between its moves; every motion returns it here.</summary>
+            public Vector2 Home;
+            /// <summary>The panel's left edge on the 1920 screen now, eased toward StatusPanelLayout's.</summary>
+            public float PanelLeft;
+            /// <summary>§5.8: how far the badge stands off the head now, eased toward OmenRowLayout's.</summary>
+            public float BadgeSlide;
+        }
+
+        /// <summary>The parts of every enemy made so far. The first is the scene's own; a battle with fewer enemies hides the rest.</summary>
+        private readonly List<EnemyParts> _enemies = new List<EnemyParts>();
+        /// <summary>How many of <see cref="_enemies"/> the battle on screen uses, at least one.</summary>
+        private int _enemyCount = 1;
+        /// <summary>Copies of the scene's parts, taken before their Awakes and kept under an inactive holder, so a further enemy's parts lay themselves out as the first's did.</summary>
+        private FigureView _figureTemplate;
+        private StatusBarView _statusTemplate;
+        private OmenBadgeView _badgeTemplate;
+        /// <summary>§3.9: the enemy the held card is over now (the one a release plays it on), or −1.</summary>
+        private int _pickedUnit = -1;
+        /// <summary>The enemy the receiver stands over: the last one the held card was over, or the one it would go to unnamed; −1 is the focus enemy.</summary>
+        private int _aimedUnit = -1;
+        /// <summary>The next placing puts the badges straight on their places (a battle's first frame).</summary>
+        private bool _snapBadges = true;
 
         // ---- battle-visual-v1 §4.2 / §4.7 (#242): parts made at run time --------------------------
         /// <summary>The floor of cells under the figures; drawn when the script gives one (DepictionFrame.Floor).</summary>
@@ -169,7 +209,6 @@ namespace Depiction.View
         private bool _playerHomeSet;
         /// <summary>The panels' left edges on the 1920 screen now, eased toward StatusPanelLayout's.</summary>
         private float _playerPanelLeft;
-        private float _enemyPanelLeft;
         /// <summary>The next placing puts the panels straight on their places (a battle's first frame).</summary>
         private bool _snapPanels = true;
         /// <summary>How fast a panel closes on its place, per second: a 320 ms step is about done when the figure lands.</summary>
@@ -225,7 +264,9 @@ namespace Depiction.View
             HideHoverPanels();
             HideTargetMarks();
             ShowHpLoss(null);
-            if (omenBadge) omenBadge.SetActing(false); // a battle stopped on the enemy's turn
+            SetActingExcept(-1); // a battle stopped on the enemy's turn
+            _pickedUnit = -1;
+            _aimedUnit = -1;
             Finished = false;
             EventSeconds.Clear();
             if (_resultCard)
@@ -234,10 +275,13 @@ namespace Depiction.View
                 _resultCard = null;
             }
             ClearHand();
-            if (enemyFigure) SnapHome(enemyFigure, _enemyHome);
+            SnapEnemiesHome();
             // The last battle's effects were stopped mid-way: no flash, tilt or stretch is left over.
             if (playerFigure) playerFigure.Settle();
-            if (enemyFigure) enemyFigure.Settle();
+            foreach (EnemyParts foe in _enemies)
+            {
+                if (foe.Figure) foe.Figure.Settle();
+            }
             _hoverHandle = -1;
             _snapHandle = -1;
             _planned.Clear(); // the last battle's event was stopped mid-way: its plan goes with it
@@ -245,9 +289,12 @@ namespace Depiction.View
             Trace = new EffectTrace(() => Time.unscaledTimeAsDouble) { Speed = _speed };
             _source = source;
             _snapPanels = true;
+            _snapBadges = true;
+            _stanceLists?.ResetOrder();
+            EnsureEnemies(EnemyScreen.CountOf(_source.Frame));
             SnapStanceGlows(_source.Frame);
             ApplyFrame(_source.Frame);
-            if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
+            SnapEnemiesHome(); // onto their cells, when the floor placed them
             RefreshPlayableLook(); // the last battle's outcome line goes with it
             StartCoroutine(RunAutomaticEvents());
         }
@@ -360,7 +407,11 @@ namespace Depiction.View
             if (stanceHintIcon && stanceHintIcon.sprite == null) stanceHintIcon.sprite = ProceduralArt.Shield;
             StyleEndTurn();
 
-            if (enemyFigure) _enemyHome = enemyFigure.Rect.anchoredPosition;
+            _enemies.Add(new EnemyParts
+            {
+                Figure = enemyFigure, Status = enemyStatus, Badge = omenBadge,
+                Home = enemyFigure ? enemyFigure.Rect.anchoredPosition : Vector2.zero,
+            });
             BuildVisualParts();
             _started = true;
             if (_givenSource == null && _hold)
@@ -380,10 +431,134 @@ namespace Depiction.View
                 enabled = false;
                 return;
             }
+            EnsureEnemies(EnemyScreen.CountOf(_source.Frame));
             SnapStanceGlows(_source.Frame);
             ApplyFrame(_source.Frame);
-            if (enemyFigure) SnapHome(enemyFigure, _enemyHome); // onto its cell, when the floor placed it
+            SnapEnemiesHome(); // onto their cells, when the floor placed them
             StartCoroutine(RunAutomaticEvents());
+        }
+
+        private void Awake()
+        {
+            TakeEnemyTemplates();
+        }
+
+        // ---- battle_ui_ux_v2 §2.2 (#589): the enemies' parts ----------------------------------------------
+
+        /// <summary>
+        /// Takes copies of the enemy's parts before the parts lay themselves out. Each view builds its
+        /// children once, in its Awake, and keeps them in fields no copy gets, so a copy of a live part would
+        /// build them all a second time on top of the first. This runs first (DefaultExecutionOrder), and
+        /// under an inactive holder a copy wakes nothing until it is moved out.
+        /// </summary>
+        private void TakeEnemyTemplates()
+        {
+            if (!enemyFigure || !enemyStatus || !omenBadge) return;
+            var holder = new GameObject("EnemyTemplates");
+            holder.SetActive(false);
+            holder.transform.SetParent(transform, false);
+            _figureTemplate = Instantiate(enemyFigure, holder.transform);
+            _statusTemplate = Instantiate(enemyStatus, holder.transform);
+            _badgeTemplate = Instantiate(omenBadge, holder.transform);
+        }
+
+        /// <summary>
+        /// Readies the parts for a battle of <paramref name="count"/> enemies: further parts are copied from the
+        /// templates, and those beyond the count go hidden until a battle needs them again. The next bind
+        /// brings a figure back (FigureView.SetDown stands up whatever is not active).
+        /// </summary>
+        private void EnsureEnemies(int count)
+        {
+            while (_enemies.Count < count)
+            {
+                if (!_figureTemplate)
+                {
+                    Debug.LogError("[Depiction] the scene has no enemy parts to copy for a battle of " + count + " enemies; only the first is shown");
+                    break;
+                }
+                _enemies.Add(CopyEnemy(_enemies.Count));
+            }
+            int shown = Mathf.Clamp(count, 1, _enemies.Count);
+            if (shown == _enemyCount && _enemies.Count == shown) return;
+            for (int k = 1; k < _enemies.Count; k++)
+            {
+                bool used = k < shown;
+                if (!used) _enemies[k].Figure.gameObject.SetActive(false);
+                _enemies[k].Status.gameObject.SetActive(used);
+                _enemies[k].Badge.gameObject.SetActive(used);
+            }
+            if (shown != _enemyCount)
+            {
+                _snapPanels = true;
+                _snapBadges = true;
+            }
+            _enemyCount = shown;
+        }
+
+        private EnemyParts CopyEnemy(int k)
+        {
+            return new EnemyParts
+            {
+                Figure = CopyPart(_figureTemplate, enemyFigure.transform, "EnemyFigure" + (k + 1)),
+                Status = CopyPart(_statusTemplate, enemyStatus.transform, "EnemyStatus" + (k + 1)),
+                Badge = CopyPart(_badgeTemplate, omenBadge.transform, "OmenBadge" + (k + 1)),
+                Home = enemyFigure.Rect.anchoredPosition,
+            };
+        }
+
+        /// <summary>A copy of <paramref name="template"/> beside the scene's own: moved out from under the inactive holder, it wakes and lays itself out.</summary>
+        private static T CopyPart<T>(T template, Transform scenePart, string partName) where T : Component
+        {
+            T copy = Instantiate(template, template.transform.parent);
+            copy.name = partName;
+            copy.transform.SetParent(scenePart.parent, false);
+            copy.transform.SetSiblingIndex(scenePart.GetSiblingIndex() + 1);
+            return copy;
+        }
+
+        /// <summary>The enemy <paramref name="k"/>'s parts; the first's for one the screen does not draw.</summary>
+        private EnemyParts EnemyAt(int k)
+        {
+            return k >= 0 && k < _enemyCount ? _enemies[k] : _enemies[0];
+        }
+
+        /// <summary>The enemy a cue goes to (Cue.Unit, EnemyScreen).</summary>
+        private EnemyParts EnemyOf(Cue cue) => EnemyAt(EnemyScreen.IndexOf(cue, _enemyCount));
+
+        private bool SeveralEnemies => _enemyCount > 1;
+
+        /// <summary>The frame the screen stands on, or null before a battle.</summary>
+        private DepictionFrame FrameNow => _source != null ? _source.Frame : null;
+
+        private void SnapEnemiesHome()
+        {
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                if (_enemies[k].Figure) SnapHome(_enemies[k].Figure, _enemies[k].Home);
+            }
+        }
+
+        /// <summary>§4.4 敵の番: only <paramref name="acting"/>'s omen may keep the acting light; −1 puts them all out.</summary>
+        private void SetActingExcept(int acting)
+        {
+            for (int k = 0; k < _enemies.Count; k++)
+            {
+                if (k != acting && _enemies[k].Badge) _enemies[k].Badge.SetActing(false);
+            }
+        }
+
+        /// <summary>§2.2 の 1: the figure nearer the player is drawn in front. The figures trade the places they already hold among the siblings.</summary>
+        private void DrawNearerInFront(DepictionFrame frame)
+        {
+            int[] order = EnemyScreen.BackToFront(frame);
+            var places = new int[order.Length];
+            for (int i = 0; i < order.Length; i++) places[i] = _enemies[order[i]].Figure.transform.GetSiblingIndex();
+            System.Array.Sort(places);
+            for (int i = 0; i < order.Length; i++)
+            {
+                Transform figure = _enemies[order[i]].Figure.transform;
+                if (figure.GetSiblingIndex() != places[i]) figure.SetSiblingIndex(places[i]);
+            }
         }
 
         private void OnEnable()
@@ -473,19 +648,23 @@ namespace Depiction.View
         private void ShowReserveHint(CardView held)
         {
             if (_reserveHint == null) return;
-            string afterPay = held && held.Face != null ? held.Face.StanceHintAfterPay : null;
+            string afterPay = !held || held.Face == null ? null
+                : SeveralEnemies ? held.Face.StanceHintAfterPayFor(EnemyScreen.FramedUnit(held.Face, _pickedUnit))
+                : held.Face.StanceHintAfterPay;
             _reserveHint.Show(afterPay ?? _frameStanceHint);
         }
 
         /// <summary>
         /// battle-visual-v1 §4.5 / §5.2 HP の減る分 (#455): while a card is held, the HP it would take
-        /// off the enemy the screen draws (CardFace.HpLossFor(0), the script's) shows as wick stripes on
-        /// that enemy's HP bar; with no card held, or a loss of 0, there are none.
+        /// off each enemy (CardFace.HpLossFor(k), the script's) shows as wick stripes on that enemy's HP
+        /// bar (battle_ui_ux_v2 §2.2 の 4); with no card held, or a loss of 0, there are none.
         /// </summary>
         private void ShowHpLoss(CardView held)
         {
-            if (!enemyStatus) return;
-            enemyStatus.ShowHpLoss(held && held.Face != null ? held.Face.HpLossFor(0) : 0);
+            for (int k = 0; k < _enemyCount && k < _enemies.Count; k++)
+            {
+                if (_enemies[k].Status) _enemies[k].Status.ShowHpLoss(held && held.Face != null ? held.Face.HpLossFor(k) : 0);
+            }
         }
 
         /// <summary>
@@ -505,7 +684,7 @@ namespace Depiction.View
 
         /// <summary>
         /// §4.2 / §4.3: the floor of <paramref name="frame"/>, with the player standing on its cells now
-        /// and the enemy's home on its own (the enemy is moved there by the next return or snap, so a
+        /// and each enemy's home on its own (an enemy is moved there by the next return or snap, so a
         /// return already under way is not cut short). With a floor the one gap number is the floor's,
         /// so the figure's own tag stays down.
         /// </summary>
@@ -520,7 +699,17 @@ namespace Depiction.View
             playerFigure.SetRange(false, "");
             playerFigure.transform.position = _floor.FeetOf(floor.PlayerCell, floor.PlayerSize);
             SetPlayerHome(playerFigure);
-            if (enemyFigure) _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(floor.EnemyCell, floor.EnemySize));
+            SetEnemyHomes(frame);
+        }
+
+        /// <summary>Each enemy's home is its cell in <paramref name="frame"/>.</summary>
+        private void SetEnemyHomes(DepictionFrame frame)
+        {
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                EnemyParts foe = _enemies[k];
+                if (foe.Figure) foe.Home = AnchoredAt(foe.Figure.Rect, _floor.FeetOf(EnemyScreen.CellOf(frame, k), EnemyScreen.SizeOf(frame, k)));
+            }
         }
 
         /// <summary>The anchored position that puts <paramref name="rt"/>'s pivot on the world point <paramref name="world"/>.</summary>
@@ -534,31 +723,79 @@ namespace Depiction.View
         }
 
         /// <summary>
-        /// With a floor, the parts tied to the enemy keep to its x: the omen badge and the release zone
+        /// With a floor, the parts tied to an enemy keep to its x: the omen badge and the release zone
         /// over the enemy's home, kept 24 px inside the screen's edges. The badge's bottom also stands
         /// 14 px over the enemy's head (§4.4, #455: the figure is 226 or 264 px tall since §4.3); the
-        /// release zone's height stays where the scene put it. The two number panels follow their
-        /// figures with or without a floor (§4.5).
+        /// release zone's height stays where the scene put it. The number panels follow their
+        /// figures with or without a floor (§4.5). With several enemies the badges share one row (§5.16)
+        /// and slide apart (§5.8), and the release zone stands over the enemy a held card is aimed at.
         /// </summary>
         private void FollowFigures()
         {
-            if (!enemyFigure || !playerFigure) return;
+            if (!enemyFigure || !playerFigure || _enemies.Count == 0) return;
             RectTransform root = RefScreen.Root(enemyFigure.transform);
             if (!root) return;
-            Vector3 enemyHome = enemyFigure.Rect.parent.TransformPoint(EnemyHomeLocal());
-            float enemyX = RefScreen.Of(root, enemyHome).x;
             if (_floor != null && _floor.Shown)
             {
-                if (omenBadge)
+                if (SeveralEnemies) PlaceBadgeRow(root);
+                else if (omenBadge)
                 {
-                    KeepX(omenBadge.Rect, root, enemyX);
-                    float head = RefScreen.Of(root, enemyHome).y - FigureFrame.HeightFor(EnemySize);
+                    Vector2 home = EnemyHomeOnScreen(root, _enemies[0]);
+                    KeepX(omenBadge.Rect, root, home.x);
+                    float head = home.y - FigureFrame.HeightFor(EnemySizeOf(0));
                     KeepBottom(omenBadge.Rect, root, head - FigureFrame.OmenOverHead);
                 }
-                if (receiver) KeepX((RectTransform)receiver.transform, root, enemyX);
+                if (receiver) KeepX((RectTransform)receiver.transform, root, EnemyHomeOnScreen(root, ReceiverEnemy()).x);
             }
             float playerX = RefScreen.Of(root, _playerHomeSet ? _playerHome : playerFigure.transform.position).x;
-            FollowPanels(root, playerX, enemyX);
+            FollowPanels(root, playerX);
+        }
+
+        /// <summary>The enemy the release zone stands over.</summary>
+        private EnemyParts ReceiverEnemy()
+        {
+            if (_aimedUnit >= 0) return EnemyAt(_aimedUnit);
+            return EnemyAt(FrameNow != null ? EnemyScreen.FocusOf(FrameNow) : 0);
+        }
+
+        /// <summary>
+        /// §2.2 の 2 / §5.8 / §5.16 (#589): each standing enemy's badge over its head, on one row 14 px over
+        /// the highest head, slid apart where two would overlap (OmenRowLayout). The slide eases out over
+        /// 200 ms, so an enemy that walks next to another has its badge make room as it arrives. A fallen
+        /// enemy's badge is hidden and takes no place.
+        /// </summary>
+        private void PlaceBadgeRow(RectTransform root)
+        {
+            DepictionFrame frame = FrameNow;
+            if (frame == null) return;
+            var standing = new List<int>();
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                if (EnemyScreen.Stands(frame, k) && _enemies[k].Badge) standing.Add(k);
+            }
+            if (standing.Count == 0) return;
+            var centres = new float[standing.Count];
+            var heights = new float[standing.Count];
+            float feetY = 0f;
+            for (int i = 0; i < standing.Count; i++)
+            {
+                Vector2 home = EnemyHomeOnScreen(root, _enemies[standing[i]]);
+                centres[i] = home.x;
+                heights[i] = FigureFrame.HeightFor(EnemySizeOf(standing[i]));
+                feetY = home.y;
+            }
+            float[] lefts = OmenRowLayout.Lefts(centres);
+            float bottom = OmenRowLayout.RowBottom(feetY, heights);
+            float share = 1f - Mathf.Exp(-3f * FrameMotionSpeed * Time.unscaledDeltaTime * 1000f / OmenRowLayout.SlideMs);
+            for (int i = 0; i < standing.Count; i++)
+            {
+                EnemyParts foe = _enemies[standing[i]];
+                float slide = OmenRowLayout.Slide(lefts[i], centres[i]);
+                foe.BadgeSlide = _snapBadges || Mathf.Abs(slide - foe.BadgeSlide) < 0.25f ? slide : Mathf.Lerp(foe.BadgeSlide, slide, share);
+                KeepX(foe.Badge.Rect, root, centres[i] + foe.BadgeSlide);
+                KeepBottom(foe.Badge.Rect, root, bottom);
+            }
+            _snapBadges = false;
         }
 
         /// <summary>The figure's place between its motions is where it stands now (<paramref name="figure"/> the player's only).</summary>
@@ -576,42 +813,73 @@ namespace Depiction.View
 
         /// <summary>
         /// battle-visual-v1 §4.5 (#455): each number panel at y 614 under its figure's home, 300 wide for
-        /// the player and as wide as the enemy's cells allow (StatusPanelLayout), pushed apart where they
-        /// would meet. They ease toward their places, both by the same share each frame, so two panels
-        /// apart before and apart after are never over each other on the way.
+        /// the player and as wide as each enemy's cells allow (StatusPanelLayout), pushed apart where they
+        /// would meet. They ease toward their places, all by the same share each frame, so panels
+        /// apart before and apart after are never over each other on the way. A fallen enemy's grey panel
+        /// keeps its place in the row, under its emptied cell (§2.2 の 6).
         /// </summary>
-        private void FollowPanels(RectTransform root, float playerX, float enemyX)
+        private void FollowPanels(RectTransform root, float playerX)
         {
             if (!playerStatus || !enemyStatus) return;
-            FloorFrame floor = _source != null && _source.Frame != null ? _source.Frame.Floor : null;
+            FloorFrame floor = FrameNow != null ? FrameNow.Floor : null;
             int cells = _floor != null && _floor.Shown && floor != null ? floor.Cells : 0;
-            float enemyWidth = StatusPanelLayout.EnemyPanelWidth(cells, EnemySize);
-            if (!Mathf.Approximately(enemyWidth, enemyStatus.LaidOutWidth)) _snapPanels = true; // a new line: no easing across widths
             playerStatus.SetWidth(StatusPanelLayout.PlayerWidth);
-            enemyStatus.SetWidth(enemyWidth);
-            StatusPanelLayout.Place(playerX, StatusPanelLayout.PlayerWidth, enemyX, enemyWidth, out float playerLeft, out float enemyLeft);
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                float width = StatusPanelLayout.EnemyPanelWidth(cells, EnemySizeOf(k));
+                if (!Mathf.Approximately(width, _enemies[k].Status.LaidOutWidth)) _snapPanels = true; // a new line: no easing across widths
+                _enemies[k].Status.SetWidth(width);
+            }
+            float[] lefts = PanelPlaces(root, playerX);
             if (_snapPanels)
             {
-                _playerPanelLeft = playerLeft;
-                _enemyPanelLeft = enemyLeft;
+                _playerPanelLeft = lefts[0];
+                for (int k = 0; k < _enemyCount; k++) _enemies[k].PanelLeft = lefts[k + 1];
                 _snapPanels = false;
             }
             else
             {
                 float share = 1f - Mathf.Exp(-PanelFollowRate * FrameMotionSpeed * Time.unscaledDeltaTime);
-                _playerPanelLeft = Mathf.Abs(playerLeft - _playerPanelLeft) < 0.25f ? playerLeft : Mathf.Lerp(_playerPanelLeft, playerLeft, share);
-                _enemyPanelLeft = Mathf.Abs(enemyLeft - _enemyPanelLeft) < 0.25f ? enemyLeft : Mathf.Lerp(_enemyPanelLeft, enemyLeft, share);
+                _playerPanelLeft = Mathf.Abs(lefts[0] - _playerPanelLeft) < 0.25f ? lefts[0] : Mathf.Lerp(_playerPanelLeft, lefts[0], share);
+                for (int k = 0; k < _enemyCount; k++)
+                {
+                    EnemyParts foe = _enemies[k];
+                    foe.PanelLeft = Mathf.Abs(lefts[k + 1] - foe.PanelLeft) < 0.25f ? lefts[k + 1] : Mathf.Lerp(foe.PanelLeft, lefts[k + 1], share);
+                }
             }
             playerStatus.PlaceAt(root, new Vector2(_playerPanelLeft, StatusPanelLayout.Top));
-            enemyStatus.PlaceAt(root, new Vector2(_enemyPanelLeft, StatusPanelLayout.Top));
+            for (int k = 0; k < _enemyCount; k++) _enemies[k].Status.PlaceAt(root, new Vector2(_enemies[k].PanelLeft, StatusPanelLayout.Top));
+        }
+
+        /// <summary>Where the panels belong now: the player's first, then each enemy's (StatusPanelLayout, from the figures' homes).</summary>
+        private float[] PanelPlaces(RectTransform root, float playerX)
+        {
+            var centres = new float[_enemyCount + 1];
+            var widths = new float[_enemyCount + 1];
+            centres[0] = playerX;
+            widths[0] = StatusPanelLayout.PlayerWidth;
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                centres[k + 1] = EnemyHomeOnScreen(root, _enemies[k]).x;
+                widths[k + 1] = _enemies[k].Status.LaidOutWidth;
+            }
+            if (SeveralEnemies) return StatusPanelLayout.PlaceByX(centres, widths);
+            StatusPanelLayout.Place(centres[0], widths[0], centres[1], widths[1], out float playerLeft, out float enemyLeft);
+            return new[] { playerLeft, enemyLeft };
+        }
+
+        /// <summary>Where an enemy's home is on the reference screen.</summary>
+        private static Vector2 EnemyHomeOnScreen(RectTransform root, EnemyParts foe)
+        {
+            return RefScreen.Of(root, foe.Figure.Rect.parent.TransformPoint(EnemyHomeLocal(foe)));
         }
 
         /// <summary>The enemy's home in its parent's local space (its anchored position, back through its anchors).</summary>
-        private Vector3 EnemyHomeLocal()
+        private static Vector3 EnemyHomeLocal(EnemyParts foe)
         {
-            RectTransform rt = enemyFigure.Rect;
+            RectTransform rt = foe.Figure.Rect;
             Vector2 now = rt.anchoredPosition;
-            return rt.localPosition + (Vector3)(_enemyHome - now);
+            return rt.localPosition + (Vector3)(foe.Home - now);
         }
 
         /// <summary>Moves <paramref name="rt"/> so its middle stands on screen x <paramref name="x"/>, its whole width 24 px inside the edges.</summary>
@@ -758,8 +1026,10 @@ namespace Depiction.View
             float startedAt = Time.unscaledTime;
             BeginPlan(ev);
             // §4.4 敵の番 (#455): the acting omen's light lasts through the enemy's beats and goes out
-            // with the first event that is not one of them (the next omen, the turn start, a fall).
-            if (ev.Kind != DepictionEventKind.EnemyAction && omenBadge) omenBadge.SetActing(false);
+            // with the first event that is not one of them (the next omen, the turn start, a fall), or
+            // with the beat of another enemy.
+            if (ev.Kind != DepictionEventKind.EnemyAction) SetActingExcept(-1);
+            else if (SeveralEnemies) SetActingExcept(ev.Unit);
             // §5.5 (#455): the screen comes back up as the event that ends the enemy's turn starts (the
             // turn start's banner), not after it has played; it sinks when the turn end's frame lands.
             if (ev.After != null && !ev.After.EnemyTurn) ShowEnemyTurn(false);
@@ -767,9 +1037,12 @@ namespace Depiction.View
             {
                 yield return HoldBeat(EffectId.TurnBanner, Banner(DepictionText.YourTurn, BattleTheme.Accent, _effects.Ms(EffectId.TurnBanner)), null);
                 // An omen already standing since the enemy's phase blinks once; a new one drops in with its cue.
-                if (ev.After.Omen.Visible && !ev.Cues.Exists(c => c.Kind == CueKind.OmenShow))
+                for (int k = 0; k < _enemyCount; k++)
                 {
-                    StartCoroutine(Effect(EffectId.OmenBlink, omenBadge.Blink(_effects.Ms(EffectId.OmenBlink)), null));
+                    int unit = k;
+                    if (!EnemyScreen.OmenOf(ev.After, k).Visible) continue;
+                    if (ev.Cues.Exists(c => c.Kind == CueKind.OmenShow && EnemyScreen.IndexOf(c, _enemyCount) == unit)) continue;
+                    StartCoroutine(Effect(EffectId.OmenBlink, _enemies[k].Badge.Blink(_effects.Ms(EffectId.OmenBlink)), null));
                 }
             }
             foreach (Cue cue in ev.Cues)
@@ -782,20 +1055,24 @@ namespace Depiction.View
             }
             // §4.2 (#242): with a floor, home is the enemy's cell after the event, so the step back
             // below also carries it onto a cell it was moved to.
-            if (_floor != null && _floor.Shown && enemyFigure && ev.After != null && ev.After.Floor.Cells > 0)
+            if (_floor != null && _floor.Shown && ev.After != null && ev.After.Floor.Cells > 0) SetEnemyHomes(ev.After);
+            for (int k = 0; k < _enemyCount; k++)
             {
-                _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(ev.After.Floor.EnemyCell, ev.After.Floor.EnemySize));
+                EnemyParts foe = _enemies[k];
+                if (!foe.Figure) continue;
+                // With others standing a fallen enemy's figure is gone, and has nowhere to step back to.
+                if (SeveralEnemies && ev.After != null && EnemyScreen.UnitOf(ev.After, k).Down) continue;
+                // An enemy whose blow was all taken by Guard (or who only guarded) is still leaning in:
+                // it steps back beside the next event instead of holding this one up.
+                if (foe.Figure.Rect.anchoredPosition != foe.Home)
+                {
+                    StartCoroutine(Effect(EffectId.EnemyReturn, ReturnHome(foe.Figure, foe.Home, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(foe.Figure, foe.Home)));
+                }
+                // A move that ends where it began (盾 reaches 0) never returns, and a blow Guard took part of
+                // (or one a move follows, #499) skips the player's return: neither may keep its action
+                // picture into the next event.
+                else foe.Figure.SetPose(FigurePose.Idle);
             }
-            // An enemy whose blow was all taken by Guard (or who only guarded) is still leaning in:
-            // it steps back beside the next event instead of holding this one up.
-            if (enemyFigure && enemyFigure.Rect.anchoredPosition != _enemyHome)
-            {
-                StartCoroutine(Effect(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome)));
-            }
-            // A move that ends where it began (盾 reaches 0) never returns, and a blow Guard took part of
-            // (or one a move follows, #499) skips the player's return: neither may keep its action
-            // picture into the next event.
-            else if (enemyFigure) enemyFigure.SetPose(FigurePose.Idle);
             if (playerFigure) playerFigure.SetPose(FigurePose.Idle);
             EndPlan();
             ApplyFrame(ev.After);
@@ -807,8 +1084,11 @@ namespace Depiction.View
 
         private IEnumerator PlayCue(DepictionEvent ev, Cue cue)
         {
-            FigureView target = cue.Target == UnitSide.Player ? playerFigure : enemyFigure;
-            StatusBarView status = cue.Target == UnitSide.Player ? playerStatus : enemyStatus;
+            // #589: an enemy's end of the beat is the enemy the cue names.
+            EnemyParts foe = EnemyOf(cue);
+            OmenBadgeView badge = foe.Badge;
+            FigureView target = cue.Target == UnitSide.Player ? playerFigure : foe.Figure;
+            StatusBarView status = cue.Target == UnitSide.Player ? playerStatus : foe.Status;
             Vector2 chest = DepictionFx.PointOn(fxLayer, target.chest);
             Vector2 head = DepictionFx.PointOn(fxLayer, target.head);
             // §5.0: a number's centre goes from the chest to the head of this figure, whatever its height,
@@ -868,8 +1148,8 @@ namespace Depiction.View
                     break;
 
                 case CueKind.OmenShow:
-                    omenBadge.Bind(ev.After.Omen);
-                    yield return HoldBeat(EffectId.OmenShow, omenBadge.PopIn(_effects.Ms(EffectId.OmenShow)), () => omenBadge.Rect.localScale = Vector3.one);
+                    badge.Bind(EnemyScreen.OmenOf(ev.After, EnemyScreen.IndexOf(cue, _enemyCount)));
+                    yield return HoldBeat(EffectId.OmenShow, badge.PopIn(_effects.Ms(EffectId.OmenShow)), () => badge.Rect.localScale = Vector3.one);
                     break;
 
                 case CueKind.TraitFire:
@@ -877,7 +1157,7 @@ namespace Depiction.View
                     break;
 
                 case CueKind.Slash:
-                    yield return Attack(ev, cue, target, status, chest);
+                    yield return Attack(ev, cue, target, foe.Figure, status, chest);
                     break;
 
                 case CueKind.GuardGain:
@@ -921,8 +1201,8 @@ namespace Depiction.View
                     SetHandInteractable(false);
                     // The moment the enemy does what it foretold: the omen lights up (§4.4 敵の番) and
                     // flares beside its move.
-                    omenBadge.SetActing(true);
-                    StartCoroutine(Effect(EffectId.OmenExecute, omenBadge.Flare(_effects.Ms(EffectId.OmenExecute)), null));
+                    badge.SetActing(true);
+                    StartCoroutine(Effect(EffectId.OmenExecute, badge.Flare(_effects.Ms(EffectId.OmenExecute)), null));
                     yield return HoldBeat(EffectId.EnemyMotion, EnemyMotion(target, cue.System, _effects.Ms(EffectId.EnemyMotion)),
                         () => target.SetPose(FigurePose.Act));
                     break;
@@ -931,16 +1211,27 @@ namespace Depiction.View
                 {
                     // #288: the fallen enemy's omen goes with it (the frame after the beat keeps it hidden).
                     // #349: and so does an elite's plan, which a plain FadeOut leaves up.
-                    if (cue.Target == UnitSide.Enemy && omenBadge)
+                    if (cue.Target == UnitSide.Enemy && badge)
                     {
-                        StartCoroutine(Effect(EffectId.OmenSpend, omenBadge.FadeOutAll(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideAllNow));
+                        StartCoroutine(Effect(EffectId.OmenSpend, badge.FadeOutAll(_effects.Ms(EffectId.OmenSpend)), badge.HideAllNow));
                     }
-                    yield return HoldBeat(EffectId.Defeat, target.Fall(_effects.Ms(EffectId.Defeat)), () => target.SetDown(true));
+                    // §5.15 順 5 (#589): one enemy falls while others stand. After the fall's 800 the foot
+                    // light goes out (300) and the panel turns grey (300). The event's plan lists the 800 only:
+                    // EffectPlan is shared with the trial, and its screen holds these two past the plan as well.
+                    bool othersStand = cue.Target == UnitSide.Enemy && SeveralEnemies && EnemyScreen.OthersStand(ev.After, EnemyScreen.IndexOf(cue, _enemyCount));
+                    yield return HoldBeat(EffectId.Defeat, target.Fall(_effects.Ms(EffectId.Defeat), othersStand), () => target.SetDown(true));
+                    if (!othersStand) break;
+                    if (_effects.IsOn(EffectId.Defeat))
+                    {
+                        yield return target.FadeFoot(DefeatShape.FootLightMs);
+                        yield return status.GreyOut(DefeatShape.PanelGreyMs);
+                    }
+                    else status.SetFallen(true);
                     break;
                 }
 
                 case CueKind.SideBonusMiss:
-                    yield return HoldBeat(EffectId.SideBonusMiss, StrikeOffBonus(cue), omenBadge.StrikeSideNow);
+                    yield return HoldBeat(EffectId.SideBonusMiss, StrikeOffBonus(cue, badge), badge.StrikeSideNow);
                     break;
 
                 case CueKind.GuardBlock:
@@ -978,17 +1269,17 @@ namespace Depiction.View
                     {
                         // The blow that lands on the player is the enemy's own: its omen is spent and
                         // it draws back. A blow the player lands does neither.
-                        yield return HoldBeat(EffectId.OmenSpend, omenBadge.FadeOut(_effects.Ms(EffectId.OmenSpend)), omenBadge.HideNow);
+                        yield return HoldBeat(EffectId.OmenSpend, badge.FadeOut(_effects.Ms(EffectId.OmenSpend)), badge.HideNow);
                         // §5.4 順 2 (#587): the enemy's own move next (退き撃ち) carries it on from the
                         // lunge; the omen fades beside the move (the plan gives OmenSpend no wait), and
                         // the figure walks in its standing pose, as the return would have left it.
                         if (EffectPlan.EnemyMoveFollows(ev, cue))
                         {
-                            if (enemyFigure) enemyFigure.SetPose(FigurePose.Idle);
+                            if (foe.Figure) foe.Figure.SetPose(FigurePose.Idle);
                         }
                         else
                         {
-                            yield return HoldBeat(EffectId.EnemyReturn, ReturnHome(enemyFigure, _enemyHome, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(enemyFigure, _enemyHome));
+                            yield return HoldBeat(EffectId.EnemyReturn, ReturnHome(foe.Figure, foe.Home, _effects.Ms(EffectId.EnemyReturn)), () => SnapHome(foe.Figure, foe.Home));
                         }
                     }
                     break;
@@ -998,7 +1289,7 @@ namespace Depiction.View
 
         // ---- beats --------------------------------------------------------------------------
 
-        private IEnumerator Attack(DepictionEvent ev, Cue cue, FigureView target, StatusBarView status, Vector2 chest)
+        private IEnumerator Attack(DepictionEvent ev, Cue cue, FigureView target, FigureView enemy, StatusBarView status, Vector2 chest)
         {
             // The script must name the attacker. A missing one is a script bug: say so, then fall back
             // to the opposite of the target so the beat still plays (EffectPlan.AttackerOf, which the plan reads too).
@@ -1006,7 +1297,7 @@ namespace Depiction.View
             UnitSide source = EffectPlan.AttackerOf(cue);
             bool byPlayer = source == UnitSide.Player;
             bool strong = EffectStrength.IsStrong(cue.Intensity);
-            FigureView attacker = byPlayer ? playerFigure : enemyFigure;
+            FigureView attacker = byPlayer ? playerFigure : enemy;
             Vector2 attackerHome = attacker.Rect.anchoredPosition;
             // #288: both sides step in before the blow. The enemy draws back with EnemyReturn once the
             // blow has landed, or beside the next event when Guard took all of it.
@@ -1181,7 +1472,7 @@ namespace Depiction.View
         private void ApplyStanceGlows(DepictionFrame frame)
         {
             ApplyStanceGlow(playerFigure, frame.Player);
-            ApplyStanceGlow(enemyFigure, frame.Enemy);
+            for (int k = 0; k < _enemyCount; k++) ApplyStanceGlow(_enemies[k].Figure, EnemyScreen.UnitOf(frame, k));
         }
 
         private void ApplyStanceGlow(FigureView figure, UnitFrame unit)
@@ -1197,7 +1488,10 @@ namespace Depiction.View
         private void SnapStanceGlows(DepictionFrame frame)
         {
             if (playerFigure) playerFigure.SetStanceGlow(StanceGlow.IsOn(frame.Player));
-            if (enemyFigure) enemyFigure.SetStanceGlow(StanceGlow.IsOn(frame.Enemy));
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                if (_enemies[k].Figure) _enemies[k].Figure.SetStanceGlow(StanceGlow.IsOn(EnemyScreen.UnitOf(frame, k)));
+            }
         }
 
         /// <summary>
@@ -1207,7 +1501,7 @@ namespace Depiction.View
         private void LightStanceGlowWithCrest(DepictionEvent ev, Cue cue, FigureView target)
         {
             if (!target || cue.Fx != FxSystem.Form || ev.After == null) return;
-            UnitFrame unit = cue.Target == UnitSide.Player ? ev.After.Player : ev.After.Enemy;
+            UnitFrame unit = cue.Target == UnitSide.Player ? ev.After.Player : EnemyScreen.UnitOf(ev.After, EnemyScreen.IndexOf(cue, _enemyCount));
             ApplyStanceGlow(target, unit);
         }
 
@@ -1218,11 +1512,11 @@ namespace Depiction.View
             yield return UiTween.Wait(_effects.Ms(EffectId.TraitFire));
         }
 
-        private IEnumerator StrikeOffBonus(Cue cue)
+        private IEnumerator StrikeOffBonus(Cue cue, OmenBadgeView badge)
         {
-            DepictionFx.FloatText(this, fxLayer, DepictionFx.PointOn(fxLayer, omenBadge.transform) + new Vector2(0f, -64f),
+            DepictionFx.FloatText(this, fxLayer, DepictionFx.PointOn(fxLayer, badge.transform) + new Vector2(0f, -64f),
                 cue.Text, BattleTheme.Whiff, 40, struck: true, rise: -50f);
-            yield return omenBadge.StrikeSide(_effects.Ms(EffectId.SideBonusMiss));
+            yield return badge.StrikeSide(_effects.Ms(EffectId.SideBonusMiss));
         }
 
         // ---- status and turn beats (#77) -------------------------------------------------------
@@ -1344,11 +1638,12 @@ namespace Depiction.View
         {
             figure.transform.position = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
             SetPlayerHome(figure);
-            if (enemyFigure && cue.EnemyCellAfter > 0)
-            {
-                _enemyHome = AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize));
-                SnapHome(enemyFigure, _enemyHome);
-            }
+            int moved = EnemyScreen.MovedUnit(cue, _enemyCount, out int cell);
+            if (moved < 0) return;
+            EnemyParts foe = EnemyAt(moved);
+            if (!foe.Figure) return;
+            foe.Home = AnchoredAt(foe.Figure.Rect, _floor.FeetOf(cell, EnemySizeOf(moved)));
+            SnapHome(foe.Figure, foe.Home);
         }
 
         /// <summary>
@@ -1361,30 +1656,35 @@ namespace Depiction.View
         }
 
         private int PlayerSize => _source != null && _source.Frame != null ? Mathf.Max(1, _source.Frame.Floor.PlayerSize) : 1;
-        private int EnemySize => _source != null && _source.Frame != null ? Mathf.Max(1, _source.Frame.Floor.EnemySize) : 1;
+
+        /// <summary>How many cells enemy <paramref name="k"/> takes (the script's), at least one.</summary>
+        private int EnemySizeOf(int k) => FrameNow != null ? EnemyScreen.SizeOf(FrameNow, k) : 1;
 
         /// <summary>
-        /// §4.2 (#242) / §5.7 順 1 (#586): a move on the floor — the player walks to its new cell, an
-        /// enemy that moved (a push, a pull, its own step) slides to its own, 160 ms a cell
-        /// (EffectId.FloorMove). The gap number is counted again after it (EffectId.GapRecount).
+        /// §4.2 (#242) / §5.7 順 1 (#586): a move on the floor — the player walks to its new cell, the
+        /// enemy that moved (a push, a pull, its own step; EnemyScreen.MovedUnit) slides to its own, 160 ms
+        /// a cell (EffectId.FloorMove). The gap number is counted again after it (EffectId.GapRecount).
         /// </summary>
         private IEnumerator MoveOnFloor(FigureView figure, Cue cue, int cells)
         {
             Vector3 from = figure.transform.position;
             Vector3 to = _floor.FeetOf(cue.PlayerCellAfter, PlayerSize);
-            Vector2 enemyFrom = enemyFigure ? enemyFigure.Rect.anchoredPosition : Vector2.zero;
-            Vector2 enemyTo = enemyFigure && cue.EnemyCellAfter > 0 ? AnchoredAt(enemyFigure.Rect, _floor.FeetOf(cue.EnemyCellAfter, EnemySize)) : enemyFrom;
-            bool enemyMoves = enemyFigure && (enemyTo - _enemyHome).sqrMagnitude > 0.25f;
+            int moved = EnemyScreen.MovedUnit(cue, _enemyCount, out int cell);
+            EnemyParts foe = moved >= 0 ? EnemyAt(moved) : null;
+            FigureView walker = foe != null ? foe.Figure : null;
+            Vector2 enemyFrom = walker ? walker.Rect.anchoredPosition : Vector2.zero;
+            Vector2 enemyTo = walker ? AnchoredAt(walker.Rect, _floor.FeetOf(cell, EnemySizeOf(moved))) : enemyFrom;
+            bool enemyMoves = walker && (enemyTo - foe.Home).sqrMagnitude > 0.25f;
             // §5.4 順 2 (#587): the enemy's own move after its blow starts 80 ms after the number, while
             // the struck player still reels (TargetRecoil); a player whose cell stays is left to it.
             bool playerStays = enemyMoves && !cue.Pushed && _playerHomeSet && to == _playerHome;
-            if (enemyMoves) _enemyHome = enemyTo;
+            if (enemyMoves) foe.Home = enemyTo;
             SetPlayerHome(figure, to); // the panels set off for the new cells as the figures do
             // 160 ms a cell (EffectSpec.TotalMs of FloorMove); a push starts fast and settles.
             yield return UiTween.Run(_effects.WaitMs(EffectId.FloorMove, cells), cue.Pushed ? Ease.Out : Ease.InOut, t =>
             {
                 if (figure && !playerStays) figure.transform.position = Vector3.LerpUnclamped(from, to, t);
-                if (enemyMoves && enemyFigure) enemyFigure.Rect.anchoredPosition = Vector2.LerpUnclamped(enemyFrom, enemyTo, t);
+                if (enemyMoves && walker) walker.Rect.anchoredPosition = Vector2.LerpUnclamped(enemyFrom, enemyTo, t);
             });
         }
 
@@ -1715,26 +2015,38 @@ namespace Depiction.View
         {
             if (cornerInfo) cornerInfo.Bind(frame.Corner);
             ShowBackdropLayer(frame.Corner.Floor);
+            EnsureEnemies(EnemyScreen.CountOf(frame));
             // #288: the art is the script's to name; the figure looks it up and keeps it while the id stays.
             playerFigure.ShowArt(frame.Player.ArtId);
-            enemyFigure.ShowArt(frame.Enemy.ArtId);
             playerFigure.SetDown(frame.Player.Down);
-            enemyFigure.SetDown(frame.Enemy.Down);
             // §4.3 (#455): 226 px tall, 264 for an elite on two cells (the script's sizes).
             playerFigure.StandTall(FigureFrame.HeightFor(frame.Floor.PlayerSize));
-            enemyFigure.StandTall(FigureFrame.HeightFor(frame.Floor.EnemySize));
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                UnitFrame unit = EnemyScreen.UnitOf(frame, k);
+                _enemies[k].Figure.ShowArt(unit.ArtId);
+                _enemies[k].Figure.SetDown(unit.Down);
+                _enemies[k].Figure.StandTall(FigureFrame.HeightFor(EnemyScreen.SizeOf(frame, k)));
+            }
             _staminaTag?.SetDivider(frame.StanceDivider); // before the bind below shows the stamina
             _staminaTag?.SetNextRecovery(frame.Player.NextRecovery); // §4.7 (#455): the dashed dots
             ApplyPiles(frame.Piles);
             _stanceLists?.Bind(frame); // §4.6 (#455)
             ApplyStanceGlows(frame); // §5.11 順 2 (#501): the body's light while the list holds a stance
             playerStatus.Bind(frame.Player);
-            enemyStatus.Bind(frame.Enemy);
             playerFigure.SetRange(frame.Player.HasRange, frame.Player.RangeGlyph);
-            enemyFigure.SetRange(frame.Enemy.HasRange, frame.Enemy.RangeGlyph);
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                UnitFrame unit = EnemyScreen.UnitOf(frame, k);
+                _enemies[k].Status.Bind(unit);
+                // §2.2 の 6 (#589): the panel of an enemy that fell while others stood stays, grey.
+                _enemies[k].Status.SetFallen(SeveralEnemies && unit.Down);
+                _enemies[k].Figure.SetRange(unit.HasRange, unit.RangeGlyph);
+            }
             SetPlayerHome(playerFigure);
             ApplyFloor(frame); // §4.2: the figures stand on their cells (#577: every source draws the floor)
-            omenBadge.Bind(frame.Omen);
+            for (int k = 0; k < _enemyCount; k++) _enemies[k].Badge.Bind(EnemyScreen.OmenOf(frame, k));
+            if (SeveralEnemies) DrawNearerInFront(frame);
             bool hasHint = !string.IsNullOrEmpty(frame.StanceHint);
             if (stanceHintText) stanceHintText.text = frame.StanceHint;
             if (stanceHintIcon) stanceHintIcon.enabled = hasHint;
@@ -2098,10 +2410,12 @@ namespace Depiction.View
         }
 
         /// <summary>Says why a released card went back to the hand, then returns to the guide line.</summary>
-        private void ShowRefusal(CardView card, PlayVerdict verdict)
+        private void ShowRefusal(CardView card, PlayVerdict verdict, int target)
         {
             if ((!handGuide && _refusalLine == null) || _source == null) return;
-            string text = _source.RefusalText(card.CardId, verdict);
+            string text = target >= 0 && TargetedSource != null
+                ? TargetedSource.RefusalText(card.CardId, verdict, target)
+                : _source.RefusalText(card.CardId, verdict);
             if (string.IsNullOrEmpty(text)) return;
             if (_refusal != null) StopCoroutine(_refusal);
             _refusal = StartCoroutine(Refusal(text));
@@ -2170,6 +2484,8 @@ namespace Depiction.View
         private void BeginHold(CardView card)
         {
             _dragging = card;
+            _pickedUnit = -1;
+            _aimedUnit = card.Face.TargetUnit;
             // The card may be lifted by the hover; it must come back to its resting place, not to there.
             Vector3 held = card.transform.position;
             PlaceAtHome(card, _hand.IndexOf(card));
@@ -2186,12 +2502,12 @@ namespace Depiction.View
             card.group.alpha = 0.92f;
             HideHoverPanels();
             // §4.7 / §5.2: the stamina it would pay turns to rings, and "▸ n" shows.
-            _staminaTag?.ShowCost(card.Face.Cost);
+            _staminaTag?.ShowCost(HeldCost(card));
             ShowReserveHint(card); // §4.9 / §5.3 (#455): the 構えの予告 after this card is paid for
             ShowHpLoss(card); // §4.5 / §5.2 (#455): the wick stripe on the enemy's HP bar
-            // §6.3: a card aimed at one enemy is judged again on the enemy it frames (the one enemy
-            // the screen draws). The verdict is the script's (CardFace.LitFor); the View only shows it.
-            if (card.Face.Aim == CardAim.Single) card.ShowLamp(card.Face.LitFor(0));
+            // §6.3: a card aimed at one enemy is judged again on the enemy it frames. The verdict is the
+            // script's (CardFace.LitFor); the View only shows it.
+            if (card.Face.Aim == CardAim.Single) card.ShowLamp(card.Face.LitFor(EnemyScreen.FramedUnit(card.Face, _pickedUnit)));
             // EffectId.CardGrab: a held card stands upright. §0.1 decision 7: its size and shadow stay.
             Quaternion tilt = card.Rect.localRotation;
             Vector3 scaleFrom = card.Rect.localScale;
@@ -2212,6 +2528,7 @@ namespace Depiction.View
             if (_zoneFade != null) StopCoroutine(_zoneFade);
             if (card.Face.Aim == CardAim.Single)
             {
+                KeepReceiverOnAimed();
                 receiver.Show(PreviewFor(card));
                 _zoneFade = StartCoroutine(Effect(EffectId.ReceiverShow, receiver.FadeIn(_effects.Ms(EffectId.ReceiverShow)), null));
             }
@@ -2227,38 +2544,79 @@ namespace Depiction.View
         /// battle-visual-v1 §5.2 / §5.3 (#242): the four hooks around the figure the card lands on, with
         /// the one predicted value on the top edge. A card aimed at one enemy frames the enemy (steel and
         /// no number when the script says nobody is in reach: CardFace.ReachHint); a self card frames
-        /// the figure the script names (CardFace.Affects).
+        /// the figure the script names (CardFace.Affects). With several enemies a card aimed at one frames
+        /// every standing one (<see cref="ShowTargetMarks"/>), and the one it lands on without aiming is
+        /// the focus enemy.
         /// </summary>
         private void ShowTargetMark(CardView card)
         {
+            if (card.Face.Aim == CardAim.Single && SeveralEnemies)
+            {
+                ShowTargetMarks(card);
+                return;
+            }
             FigureView figure;
             bool reaches = true;
             if (card.Face.Aim == CardAim.Single)
             {
                 figure = enemyFigure;
-                reaches = string.IsNullOrEmpty(card.Face.ReachHint);
+                reaches = EnemyScreen.Reaches(card.Face, 0, _enemyCount);
             }
             else if (!card.Face.Affects.HasValue)
             {
                 Debug.LogError("[Depiction] card " + card.CardId + " is a throw-line card but the script gave no Affects");
                 return;
             }
-            else figure = card.Face.Affects.Value == UnitSide.Player ? playerFigure : enemyFigure;
+            else figure = card.Face.Affects.Value == UnitSide.Player ? playerFigure : EnemyAt(EnemyScreen.FocusOf(_source.Frame)).Figure;
             if (!figure || !figure.targetMark)
             {
                 Debug.LogError("[Depiction] " + (figure ? figure.name : "a figure") + " has no targetMark; run Tools > Depiction > Upgrade Prefabs");
                 return;
             }
-            CardValueKind kind = card.Face.Values != null && card.Face.Values.Count > 0
+            CardValueKind kind = ValueKindOf(card);
+            figure.targetMark.Show(reaches, BattleTheme.Wick, PreviewFor(card), VisualArt.ValueIcon(kind), VisualArt.ValueColor(kind));
+        }
+
+        private static CardValueKind ValueKindOf(CardView card)
+        {
+            return card.Face.Values != null && card.Face.Values.Count > 0
                 ? card.Face.Values[0].Kind
                 : card.Face.Kind == CardKind.Guard ? CardValueKind.Guard : CardValueKind.Power;
-            figure.targetMark.Show(reaches, BattleTheme.Wick, PreviewFor(card), VisualArt.ValueIcon(kind), VisualArt.ValueColor(kind));
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §2.2 の 5 / §3.9 (#589): every standing enemy's figure gets its frame. One in the
+        /// card's reach shows the value on that enemy (the source's, read per enemy); one out of it shows
+        /// steel hooks and no number (CardFace.ReachOn). A fallen enemy shows none: its figure is gone.
+        /// </summary>
+        private void ShowTargetMarks(CardView card)
+        {
+            CardValueKind kind = ValueKindOf(card);
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                TargetMarkView mark = _enemies[k].Figure ? _enemies[k].Figure.targetMark : null;
+                if (!mark)
+                {
+                    Debug.LogError("[Depiction] enemy " + k + "'s figure has no targetMark; run Tools > Depiction > Upgrade Prefabs");
+                    continue;
+                }
+                if (!EnemyScreen.Stands(_source.Frame, k))
+                {
+                    mark.Hide();
+                    continue;
+                }
+                bool reaches = EnemyScreen.Reaches(card.Face, k, _enemyCount);
+                mark.Show(reaches, BattleTheme.Wick, reaches ? PreviewOn(card, k) : "", VisualArt.ValueIcon(kind), VisualArt.ValueColor(kind));
+            }
         }
 
         private void HideTargetMarks()
         {
             if (playerFigure && playerFigure.targetMark) playerFigure.targetMark.Hide();
-            if (enemyFigure && enemyFigure.targetMark) enemyFigure.targetMark.Hide();
+            foreach (EnemyParts foe in _enemies)
+            {
+                if (foe.Figure && foe.Figure.targetMark) foe.Figure.targetMark.Hide();
+            }
         }
 
         private void SetZoneHot(CardView card, bool hot)
@@ -2266,18 +2624,64 @@ namespace Depiction.View
             if (card.Face.Aim == CardAim.Single)
             {
                 receiver.SetHot(hot);
-                if (enemyFigure.targetMark) enemyFigure.targetMark.SetHot(hot);
+                // §5.15 順 1: only the enemy the card is over answers.
+                int framed = EnemyScreen.FramedUnit(card.Face, _pickedUnit);
+                for (int k = 0; k < _enemyCount; k++)
+                {
+                    TargetMarkView mark = _enemies[k].Figure ? _enemies[k].Figure.targetMark : null;
+                    if (mark) mark.SetHot(hot && (!SeveralEnemies || k == framed));
+                }
                 return;
             }
             throwLine.SetHot(hot);
             if (playerFigure.targetMark) playerFigure.targetMark.SetHot(hot);
-            if (enemyFigure.targetMark) enemyFigure.targetMark.SetHot(hot);
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                TargetMarkView mark = _enemies[k].Figure ? _enemies[k].Figure.targetMark : null;
+                if (mark) mark.SetHot(hot);
+            }
+        }
+
+        /// <summary>The stamina a held card would pay: on the enemy it frames, with several (CardFace.CostFor).</summary>
+        private int HeldCost(CardView card)
+        {
+            return SeveralEnemies ? card.Face.CostFor(EnemyScreen.FramedUnit(card.Face, _pickedUnit)) : card.Face.Cost;
+        }
+
+        /// <summary>
+        /// §6.3 (#589): the held card has come over another enemy, or off the last one. The numbers read on the
+        /// enemy it frames follow: the lamp, the stamina it would pay and the 構えの予告.
+        /// </summary>
+        private void PickEnemy(CardView card, int unit)
+        {
+            if (unit == _pickedUnit) return;
+            _pickedUnit = unit;
+            if (unit >= 0) _aimedUnit = unit;
+            card.ShowLamp(card.Face.LitFor(EnemyScreen.FramedUnit(card.Face, unit)));
+            _staminaTag?.ShowCost(HeldCost(card));
+            ShowReserveHint(card);
+        }
+
+        /// <summary>The release zone goes over the enemy the held card is aimed at at once, for what reads its place this frame.</summary>
+        private void KeepReceiverOnAimed()
+        {
+            RectTransform root = RefScreen.Root(receiver.transform);
+            if (SeveralEnemies && root) KeepX(receiver.Rect, root, EnemyHomeOnScreen(root, ReceiverEnemy()).x);
         }
 
         /// <summary>The one predicted value comes from the source; a card it would refuse shows none.</summary>
         private string PreviewFor(CardView card)
         {
             return _source == null ? "" : _source.PreviewFor(card.CardId);
+        }
+
+        /// <summary>The source that answers for a named enemy (CoreBattleSource), or null for one that keeps one enemy.</summary>
+        private ITrialSource TargetedSource => _source as ITrialSource;
+
+        /// <summary>The predicted value read on enemy <paramref name="unit"/>.</summary>
+        private string PreviewOn(CardView card, int unit)
+        {
+            return TargetedSource != null ? TargetedSource.PreviewFor(card.CardId, unit) : PreviewFor(card);
         }
 
         private DropZone ZoneAt(CardView card, Vector2 screenPoint)
@@ -2298,7 +2702,19 @@ namespace Depiction.View
             ScreenBox dish = BoxOn(root, receiver.Rect, Vector3.zero);
             ScreenBox held = BoxOn(root, card.Rect, _dragPointerWorld + _grabOffset - card.transform.position);
             Vector2 pointer = RefScreen.Of(root, _dragPointerWorld);
-            return ReceiverDrop.Takes(held, dish, pointer.x, pointer.y);
+            if (!SeveralEnemies) return ReceiverDrop.Takes(held, dish, pointer.x, pointer.y);
+            // §3.9 (#589): one receiver per standing enemy, as tall as the scene's and over that enemy's home.
+            var units = new List<int>();
+            var dishes = new List<ScreenBox>();
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                if (!EnemyScreen.Stands(_source.Frame, k)) continue;
+                units.Add(k);
+                dishes.Add(new ScreenBox(EnemyHomeOnScreen(root, _enemies[k]).x - dish.Width * 0.5f, dish.Y, dish.Width, dish.Height));
+            }
+            int picked = ReceiverDrop.Pick(held, dishes, pointer.x, pointer.y);
+            PickEnemy(card, picked >= 0 ? units[picked] : -1);
+            return picked >= 0;
         }
 
         /// <summary>The box <paramref name="rt"/> covers on the reference screen once moved by <paramref name="shift"/> (world units); a tilted card counts its whole outline.</summary>
@@ -2368,6 +2784,7 @@ namespace Depiction.View
             CardView held = _dragging;
             _dragging = null;
             _dragSource = null;
+            _pickedUnit = -1;
             _zoneHot = false;
             _snapWeight = 0f;
             _snapHandle = -1;
@@ -2392,6 +2809,9 @@ namespace Depiction.View
 
         private void Release(CardView card, DropZone zone)
         {
+            // §3.9 (#589): the enemy it was released over; −1 lets the source send it where its face was read.
+            int target = _pickedUnit;
+            _pickedUnit = -1;
             _dragging = null;
             _zoneHot = false;
             _snapWeight = 0f;
@@ -2407,11 +2827,14 @@ namespace Depiction.View
             _staminaTag?.ShowCost(0);
             ShowReserveHint(null);
             ShowHpLoss(null);
-            PlayVerdict verdict = _source.TryPlay(card.CardId, zone, out DepictionEvent played);
+            DepictionEvent played;
+            PlayVerdict verdict = target >= 0 && TargetedSource != null
+                ? TargetedSource.TryPlay(card.CardId, zone, target, out played)
+                : _source.TryPlay(card.CardId, zone, out played);
             if (verdict == PlayVerdict.Accepted) StartCoroutine(PlayAccepted(card, played));
             else
             {
-                ShowRefusal(card, verdict);
+                ShowRefusal(card, verdict, target);
                 // A card released on a zone it belongs to was refused by a rule: shake it. One released
                 // on the wrong zone just slides home.
                 StartCoroutine(ReturnToHand(card, shake: verdict != PlayVerdict.WrongZone && zone != DropZone.None));

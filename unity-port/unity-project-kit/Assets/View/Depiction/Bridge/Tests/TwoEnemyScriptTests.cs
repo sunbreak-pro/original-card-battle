@@ -143,5 +143,155 @@ namespace Depiction.Bridge.Tests
                 Assert.That(enemy.Cell, Is.EqualTo(body.Cell), who);
             }
         }
+
+        // ---- what the screen acts on (Script/EnemyScreen.cs), read from a fought battle (#589) ----
+
+        /// <summary>
+        /// §5.15 順 5 / §2.2 の 6: the fall of an enemy that leaves another standing is a beat naming that enemy,
+        /// with no cue added for the screen: the writer has written it since the extension, and the trial
+        /// plays the same beat. Enemy k keeps its panel in Enemies[k], Down, and the last fall stands alone.
+        /// </summary>
+        [Test]
+        public void AFall_NamesItsEnemy_AndTheScreenCanTellWhetherOthersStand()
+        {
+            int nonLastFalls = 0;
+            int lastFalls = 0;
+            for (int seed = 1; seed <= 60; seed++)
+            {
+                CoreBattleSource source = Pair(seed);
+                foreach (DepictionEvent ev in FightOut(source))
+                {
+                    if (ev.Kind != DepictionEventKind.Defeat) continue;
+                    Cue fall = ev.Cues.Single(c => c.Kind == CueKind.Defeat);
+                    int unit = EnemyScreen.IndexOf(fall, 2);
+                    Assert.That(unit, Is.EqualTo(ev.Unit), "the fall goes to the enemy the event names");
+                    Assert.That(ev.After.Enemies[unit].Unit.Down, Is.True, "the frame after it shows that enemy down");
+                    Assert.That(EnemyScreen.Stands(ev.After, unit), Is.False);
+                    if (EnemyScreen.OthersStand(ev.After, unit))
+                    {
+                        nonLastFalls++;
+                        Assert.That(ev.After.Enemies[1 - unit].Unit.Down, Is.False);
+                        Assert.That(ev.After.Outcome, Is.EqualTo(BattleOutcome.Ongoing), "the battle goes on");
+                    }
+                    else lastFalls++;
+                }
+            }
+            Assert.That(nonLastFalls, Is.GreaterThan(0), "some fight has one enemy fall while the other stands");
+            Assert.That(lastFalls, Is.GreaterThan(0), "some fight ends on a fall");
+        }
+
+        /// <summary>A move walks the enemy that moved and no other: the cell the cue names is that enemy's in the event's frame, its N the cue's.</summary>
+        [Test]
+        public void AnEnemysMove_WalksThatEnemy_AndThePlayersMove_WalksNoEnemy()
+        {
+            int enemyMoves = 0;
+            int playerMoves = 0;
+            for (int seed = 1; seed <= 20; seed++)
+            {
+                foreach (DepictionEvent ev in FightOut(Pair(seed)))
+                {
+                    List<Cue> moves = ev.Cues.Where(c => c.Kind == CueKind.RangeSwitch).ToList();
+                    foreach (Cue move in moves)
+                    {
+                        int unit = EnemyScreen.MovedUnit(move, 2, out int cell);
+                        if (unit < 0)
+                        {
+                            Assert.That(move.UnitCellAfter, Is.EqualTo(0));
+                            playerMoves++;
+                            continue;
+                        }
+                        enemyMoves++;
+                        Assert.That(cell, Is.EqualTo(move.UnitCellAfter));
+                        Assert.That(unit, Is.EqualTo(move.Unit));
+                        if (moves.Count(m => m.Unit == unit && m.UnitCellAfter > 0) == 1)
+                        {
+                            Assert.That(ev.After.Enemies[unit].Cell, Is.EqualTo(cell), "the frame stands the enemy where the move left it");
+                        }
+                    }
+                }
+            }
+            Assert.That(enemyMoves, Is.GreaterThan(0), "the enemies walk");
+            Assert.That(playerMoves, Is.GreaterThan(0), "the player walks");
+        }
+
+        /// <summary>§2.2 の 5: a held card's frame on each enemy reads that enemy, from the source and the script alone.</summary>
+        [Test]
+        public void AHeldCard_ReadsEachEnemy_OnItsOwn()
+        {
+            CoreBattleSource source = Pair(5);
+            while (!source.WaitingForPlayer) source.AdvanceAuto();
+            DepictionFrame frame = source.Frame;
+            bool someCardReachesOneOnly = false;
+            foreach (CardFace face in frame.Hand)
+            {
+                if (face.Aim != CardAim.Single) continue;
+                Assert.That(face.ReachOn.Count, Is.EqualTo(2), face.Id);
+                for (int k = 0; k < 2; k++)
+                {
+                    Assert.That(EnemyScreen.Reaches(face, k, 2), Is.EqualTo(face.ReachOn[k]), face.Id);
+                    if (!face.ReachOn[k]) Assert.That(source.PreviewFor(face.Id, k), Is.Empty, face.Id + ": nothing to preview out of reach");
+                }
+                if (face.ReachOn[0] != face.ReachOn[1]) someCardReachesOneOnly = true;
+            }
+            Assert.That(someCardReachesOneOnly, Is.True, "the enemy behind stands out of some card's reach");
+        }
+
+        /// <summary>A card released on a named enemy goes to it, and the event says so.</summary>
+        [Test]
+        public void ACardReleasedOnAnEnemy_IsPlayedOnThatEnemy()
+        {
+            for (int seed = 1; seed <= 40; seed++)
+            {
+                // Side by side with the player, so a card of some reach has both enemies to choose from.
+                CoreBattleSource source = Pair(seed, startGap: 0);
+                while (!source.WaitingForPlayer) source.AdvanceAuto();
+                foreach (CardFace face in source.Frame.Hand)
+                {
+                    if (face.Aim != CardAim.Single) continue;
+                    for (int k = 0; k < 2; k++)
+                    {
+                        if (source.Inspect(face.Id, k) != PlayVerdict.Accepted || k == face.TargetUnit) continue;
+                        Assert.That(source.TryPlay(face.Id, DropZone.Receiver, k, out DepictionEvent played), Is.EqualTo(PlayVerdict.Accepted));
+                        Assert.That(played.Unit, Is.EqualTo(k), face.Id);
+                        return;
+                    }
+                }
+            }
+            Assert.Fail("no hand had a card playable on an enemy other than the one it would go to unnamed");
+        }
+
+        private static CoreBattleSource Pair(int seed, int startGap = BattleLaunch.DefaultStartGap)
+        {
+            return new BattleLaunch
+            {
+                EnemyId = Enemies.PolearmWarped.Id,
+                MoreEnemyIds = new List<string> { Enemies.CrossbowHunter.Id },
+                FieldCells = 8,
+                StartGap = startGap,
+                Seed = seed,
+                AutoPlay = true,
+            }.CreateSource();
+        }
+
+        /// <summary>Every event of the unattended fight, the turn starts and the enemy's beats and the cards alike.</summary>
+        private static IEnumerable<DepictionEvent> FightOut(CoreBattleSource source)
+        {
+            for (int guard = 0; guard < 2000 && !source.Finished; guard++)
+            {
+                if (!source.WaitingForPlayer)
+                {
+                    yield return source.AdvanceAuto();
+                    continue;
+                }
+                string id = source.SuggestedCardId;
+                if (id.Length == 0)
+                {
+                    yield return source.EndTurn();
+                    continue;
+                }
+                source.TryPlay(id, DepictionText.RequiredZone(DepictionText.Find(source.Frame.Hand, id).Aim), out DepictionEvent played);
+                yield return played;
+            }
+        }
     }
 }
