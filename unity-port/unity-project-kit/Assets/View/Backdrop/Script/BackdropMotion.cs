@@ -9,6 +9,15 @@ namespace Backdrop
         public const int FlashMs = 140;
 
         /// <summary>
+        /// The one shape of a breath, for the lights, the specks and the miasma alike: 0 at the start of a
+        /// cycle, 1 halfway through and 0 again after a whole one, on a cosine so it never jumps.
+        /// </summary>
+        public static double CosineDip(double cycles)
+        {
+            return 0.5 - 0.5 * System.Math.Cos(cycles * 2.0 * System.Math.PI);
+        }
+
+        /// <summary>
         /// The share of a haze's alpha lit at <paramref name="ms"/>: 1 at the top of a breath, 1 − depth
         /// at the bottom, on a cosine so it never jumps. A flash is lit only in its first
         /// <see cref="FlashMs"/>, falling from full to nothing; the rest of the period it is 1 − depth.
@@ -23,8 +32,7 @@ namespace Backdrop
                 if (lit >= FlashMs) return 1f - flicker.Depth;
                 return 1f - flicker.Depth * (float)(lit / FlashMs);
             }
-            double dip = 0.5 - 0.5 * System.Math.Cos(phase * 2.0 * System.Math.PI);
-            return 1f - flicker.Depth * (float)dip;
+            return 1f - flicker.Depth * (float)CosineDip(phase);
         }
 
         /// <summary>
@@ -45,8 +53,7 @@ namespace Backdrop
         {
             if (motes.Twinkle <= 0f) return 1f;
             double beat = 1.5 + Hash(index, 4) * 2.5; // seconds per twinkle
-            double dip = 0.5 - 0.5 * System.Math.Cos((ms / 1000.0 / beat + Hash(index, 5)) * 2.0 * System.Math.PI);
-            return 1f - motes.Twinkle * (float)dip;
+            return 1f - motes.Twinkle * (float)CosineDip(ms / 1000.0 / beat + Hash(index, 5));
         }
 
         /// <summary>

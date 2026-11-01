@@ -178,19 +178,48 @@ namespace Backdrop
             return (int)System.Math.Round(BreathSlowMs + (BreathFastMs - BreathSlowMs) * t);
         }
 
-        /// <summary>The breath at <paramref name="ms"/>: 0 at rest, 1 at the bottom of a breath, on a cosine so it never jumps.</summary>
+        /// <summary>
+        /// The breath at <paramref name="ms"/>: 0 at rest, 1 at the bottom of a breath, on a cosine. It is
+        /// smooth only while <paramref name="percent"/> holds: the phase comes from the absolute clock, so a
+        /// new reading jumps it and a reading easing up strobes. A screen whose reading moves keeps a
+        /// <see cref="MiasmaBreath"/> instead.
+        /// </summary>
         public static float Breath(float percent, double ms)
         {
             int period = BreathPeriodMs(percent);
             if (period <= 0) return 0f;
-            double phase = ms / period - System.Math.Floor(ms / period);
-            return (float)(0.5 - 0.5 * System.Math.Cos(phase * 2.0 * System.Math.PI));
+            return BreathAtPhase(ms / period - System.Math.Floor(ms / period));
         }
 
-        /// <summary>The share of the fill's alpha lit at <paramref name="ms"/>: 1 below 80%, dipping by <see cref="BreathDepth"/> from there.</summary>
+        /// <summary>The breath at <paramref name="phase"/>, in cycles: 0 at rest, 1 halfway through a cycle.</summary>
+        public static float BreathAtPhase(double phase)
+        {
+            return (float)BackdropMotion.CosineDip(phase);
+        }
+
+        /// <summary>
+        /// The phase <paramref name="elapsedMs"/> after <paramref name="phase"/>, at the pace of
+        /// <paramref name="percent"/>, wrapped to 0 up to 1. Changing the reading changes only the pace from
+        /// here on, so the breath carries on unbroken. Below 80% there is no pace and the phase stays put.
+        /// </summary>
+        public static double AdvanceBreath(double phase, double elapsedMs, float percent)
+        {
+            int period = BreathPeriodMs(percent);
+            if (period <= 0) return phase;
+            double next = phase + elapsedMs / period;
+            return next - System.Math.Floor(next);
+        }
+
+        /// <summary>The share of the fill's alpha lit at <paramref name="ms"/>: 1 below 80%, dipping by <see cref="BreathDepth"/> from there. The clock's caveat is <see cref="Breath"/>'s.</summary>
         public static float FillAlpha(float percent, double ms)
         {
-            return 1f - BreathDepth * Breath(percent, ms);
+            return FillAlphaOf(Breath(percent, ms));
+        }
+
+        /// <summary>The share of the fill's alpha lit at <paramref name="breath"/>.</summary>
+        public static float FillAlphaOf(float breath)
+        {
+            return 1f - BreathDepth * breath;
         }
 
         // ---- the shade over the screen ----
@@ -222,11 +251,16 @@ namespace Backdrop
                 ShadeSeepMax * s);
         }
 
-        /// <summary>The shade at <paramref name="percent"/> at <paramref name="ms"/>: from 80% its inner edge breathes in step with the gauge.</summary>
+        /// <summary>The shade at <paramref name="percent"/> at <paramref name="ms"/>: from 80% its inner edge breathes in step with the gauge. The clock's caveat is <see cref="Breath"/>'s.</summary>
         public static MiasmaShade ShadeAt(float percent, double ms)
         {
+            return ShadeBreathing(percent, Breath(percent, ms));
+        }
+
+        /// <summary>The shade at <paramref name="percent"/> with its inner edge drawn in by <paramref name="breath"/>.</summary>
+        public static MiasmaShade ShadeBreathing(float percent, float breath)
+        {
             MiasmaShade still = ShadeAt(percent);
-            float breath = Breath(percent, ms);
             if (breath <= 0f) return still;
             return new MiasmaShade(still.Strength, still.VeilAlpha, still.EdgeAlpha,
                 still.InnerRadius - ShadeBreathRadius * breath, still.SeepAlpha);
