@@ -1,6 +1,6 @@
 # 晶槍の竜兵（polearm_crystal）— 仕様カード
 
-- 作成日: 2026-10-04（#287。こうだいさんが Krita で作った待機の絵を Unity リポへ入れた）/ 更新: 2026-10-10（#287。幅の例外を規約に入れ、枠の幅（#302）と BattleCore の追加に進捗を合わせた）/ 2026-10-11（#287。予兆の札の大きさを実行時の 200 × 98 に直し、コードの行番号を今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵の参照を `battle_ui_ux_v2.md` §6.4 に替えた）/ 2026-10-12（#287。攻撃 4 つの威力をロースター v4.21 に合わせ、ずれたコードの行番号を今の行に直した）/ 2026-10-21（#287。画面での大きさを #455 の 226 px の描き方に直し、予兆の札と数字の位置を今の View に合わせた。BattleCore が #498 で威力に追従したこと、§9 の代役で四層の精鋭の枠にも出ること、`.meta` がコミット済みになったことを書いた。閉じた #79 を手触りの確認の参照から外し、ずれたコードの行番号を今の行に直した）/ 2026-10-31（#287。DepictionPlayer.cs と FigureView.cs の行番号を今の行に直した。値と内容は変えていない）/ 工程: C0（`visual-production-pipeline character polearm_crystal`）
+- 作成日: 2026-10-04（#287。こうだいさんが Krita で作った待機の絵を Unity リポへ入れた）/ 更新: 2026-10-10（#287。幅の例外を規約に入れ、枠の幅（#302）と BattleCore の追加に進捗を合わせた）/ 2026-10-11（#287。予兆の札の大きさを実行時の 200 × 98 に直し、コードの行番号を今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵の参照を `battle_ui_ux_v2.md` §6.4 に替えた）/ 2026-10-12（#287。攻撃 4 つの威力をロースター v4.21 に合わせ、ずれたコードの行番号を今の行に直した）/ 2026-10-21（#287。画面での大きさを #455 の 226 px の描き方に直し、予兆の札と数字の位置を今の View に合わせた。BattleCore が #498 で威力に追従したこと、§9 の代役で四層の精鋭の枠にも出ること、`.meta` がコミット済みになったことを書いた。閉じた #79 を手触りの確認の参照から外し、ずれたコードの行番号を今の行に直した）/ 2026-10-31（#287。DepictionPlayer.cs と FigureView.cs の行番号を今の行に直した。値と内容は変えていない）/ 2026-11-01（#287。Figure の絵の棚に載せる PR を出し、待機の絵で `style-guide.md` §17 の条件 3〜6 を測り、この絵が映る画面を §6 に書いた）/ 工程: C0（`visual-production-pipeline character polearm_crystal`）
 - 正本: `.claude/docs/enemy_document/enemy_roster_v4.md`（§2.7 晶槍の竜兵）/ `.claude/docs/vision/world-v1.md`（竜の系譜）/ `.claude/docs/art_document/style-guide.md`（原本の大きさ・指示文・帯び方）/ `.claude/docs/art_document/asset-intake.md`（書き出しと取り込み）/ `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs`（枠と配置）
 - 手順書: `docs/reports/2026-09-19-krita-ai-setup-guide.html` 4 章（待機の絵）/ `docs/reports/2026-10-03-enemy-motion.html`（攻撃と倒れの差分の作り方）
 - 内部 ID は `polearm_crystal` です。v4.6 で足した敵で、錆槍の竜兵の `polearm_warped` にそろえて `polearm_` で始めています（`enemy_roster_v4.md` §1.8）。ファイル名と asset id もこの ID を使います。`asset-intake.md` §4 も、2026-10-06 にロースターの内部 ID を使う形に直りました（#327）。
@@ -121,15 +121,28 @@
 | 工程 | 状態 | 備考 |
 | --- | --- | --- |
 | C0 | 済み | このファイル（2026-10-04、#287）。2026-10-12 に攻撃 4 つの威力をロースター v4.21 に合わせた（#287） |
-| C1 | 一部 | SVG の影絵は作っていない。待機の絵を黒で塗って高さ 450 px で見て、穂先は上端から 8 px、下の刃は左端から 12 px の内側にあり、尾の棘は右端にほぼ接する（原本で 2 px）と確かめた（2026-10-04） |
+| C1 | 一部 | SVG の影絵は作っていない。待機の絵を黒で塗って高さ 450 px で見て、穂先は上端から 8 px、下の刃は左端から 12 px の内側にあり、尾の棘は右端にほぼ接する（原本で 2 px）と確かめた（2026-10-04）。§17 の関門のほかの条件は下の「影絵の関門の結果」に書いた（2026-11-01）。条件 1 は未確認で、条件 4 は満たさない |
 | C2 | 済み | 錆槍の竜兵の指示文をそのまま使った（§4）。台帳 `Docs/art/asset-ledger.csv` に行を足した（RPG-by-card PR #9） |
 | C3 | 済み | こうだいさんが Krita で生成した（`竜の上級槍兵.kra`、生成のレイヤー 1 枚） |
 | C4 | 済み | こうだいさんがこの絵を #286 の通常の上位に当てた（2026-10-03、#287） |
 | C5 | 一部 | 背景の灰色と、右下の角の薄い灰色のにじみを抜いた。類似確認（台帳の `similarity_check`）はまだ |
 | C6 | 未着手 | 加筆はせずに待機の絵を先に入れた。結晶を足すかはこうだいさんが決める（§1）。差分（攻撃・倒れ）は待機の絵が画面に入ってから |
 | C7 | 未着手 | — |
-| C8 | 一部 | 待機の絵（800 × 1536、左向き、背景透明）を Unity リポに置いた（RPG-by-card PR #9）。枠の幅は #302 で入った。Unity が書いた `.meta` は 2026-10-19 に Unity リポへコミットした（RPG-by-card `41ce6ef4`）。中身は `asset-intake.md` §3 の値（Pivot (0.5, 0)、Full Rect、ミップマップ on、Trilinear、Windows の BC7 の上書き on）と一致する（2026-10-21 に確かめた）。Figure の絵の棚への登録（`Tools > Depiction > Upgrade Prefabs`）と、Unity Editor での確認はまだ。いまの `Figure.prefab` の棚は `polearm_warped` だけ |
+| C8 | 一部 | 待機の絵（800 × 1536、左向き、背景透明）を Unity リポに置いた（RPG-by-card PR #9）。枠の幅は #302 で入った。Unity が書いた `.meta` は 2026-10-19 に Unity リポへコミットした（RPG-by-card `41ce6ef4`）。中身は `asset-intake.md` §3 の値（Pivot (0.5, 0)、Full Rect、ミップマップ on、Trilinear、Windows の BC7 の上書き on）と一致する（2026-10-21 に確かめた）。Figure の絵の棚への登録は RPG-by-card#15 で PR にした（2026-11-01、open。Editor を開かず YAML を書いたので、Unity Editor での確認はまだ）。main の `Figure.prefab` の棚は、この PR が merge されるまで `polearm_warped` だけ |
 
-**人に渡したもの**: Unity リポの PR #9（https://github.com/sunbreak-pro/RPG-by-card/pull/9。待機の絵・台帳・生成条件の写し）。**次に人がすること**: こうだいさんがメインの作業場所で Unity を開き、`Tools > Depiction > Upgrade Prefabs` で Figure の絵の棚に `polearm_crystal` を載せ、`Figure.prefab` を Unity リポにコミットします。`.meta` はコミット済みで、`asset-intake.md` §3 の値が入っています。敵は BattleCore に入ったので（`unity-port/BattleCore/Enemies.cs:272`）、`Battle.unity` の `BattleBootstrap` の敵 id を `polearm_crystal` にすれば、晶槍の竜兵と戦って見え方を確かめられます。映ったら、差分（攻撃・倒れ）を §3 の順で Krita で作ります。
+**影絵の関門の結果（2026-11-01）**: Unity リポの `chr_polearm_crystal_idle_stand.png` を、不透明度 50% 以上の画素を影絵として測りました。Krita の目視ではなくスクリプトの実測です（`style-guide.md` §17 の表の測り方とは別の手段です）。
+
+| # | 条件 | 結果 | 値 |
+| --- | --- | --- | --- |
+| 1 | 影絵だけで段と持ち物を言い当てられる | 未確認 | 名前を伏せて人に見せる条件なので、Claude だけでは判定できません |
+| 2 | 同じ段の敵と区別でき、持ち物か角が外周にはみ出す | 満たす（Claude の目視） | 前のめりの体と背の棘で錆槍の竜兵と分かれます。下の穂先、角、尾の棘が外周へ出ています |
+| 3 | 抜けが原本で 20 px 以上 | 満たす | 閉じた抜けの最大は 133 px です（1080p の枠 450 で 39 px） |
+| 4 | 突起の太さが原本で 10 px 以上 | 満たさない | 角・穂先・爪は先へ細くなるので、先端は必ず 10 px を割ります。体で割る区間が目立つのは尾の棘で、原本で高さ 84 px です |
+| 5 | 体の基本の段が L\* 35 以上 | 満たす | L\* 20 以上の画素の中央値は 51.2、下位 25% の値は 38.7 です。3 体で最も暗い絵で、L\* 20 未満の黒が影絵の 71% を占めます。黒の扱いは、暗い層の地で見て判断します |
+| 6 | 武器と顔がプレイヤーの側を向く | 満たす（Claude の目視） | 顔、下の穂先、伸ばした爪が左を向いています |
+
+**この絵が映る画面（2026-11-01 に確かめた）**: 映るのは `Battle.unity` と `BattleDepiction.unity` の人型（`FigureView`）だけです。試遊版の Unity 版（`Assets/View/Trial/`、Unity リポの `Trial.unity`）は、人型を `Trial/Battle/FieldArt.cs` のベクターの影絵で描き、`Assets/Art/Characters/` を読みません。**絵の行き先（2026-11-01 こうだいさん決定）**: 立ち絵を試遊版の人型へ差し込みます（申し送り `2026-11-01-design-trial-art-insert.md`）。差分は、差し込みが入ってから作ります。差し込みが入るまで、絵が映るのは上の 2 つのシーンだけです。
+
+**人に渡したもの**: Unity リポの PR #9（https://github.com/sunbreak-pro/RPG-by-card/pull/9。待機の絵・台帳・生成条件の写し）と PR #15（https://github.com/sunbreak-pro/RPG-by-card/pull/15。Figure の絵の棚への登録）。**次に人がすること**: こうだいさんがメインの作業場所で Unity を開き、PR #15 のブランチで `Tools > Depiction > Collect Character Art` を実行して `Figure.prefab` に差分が出ないことを確かめ、merge します。`.meta` はコミット済みで、`asset-intake.md` §3 の値が入っています。敵は BattleCore に入ったので（`unity-port/BattleCore/Enemies.cs:272`）、`Battle.unity` の `BattleBootstrap` の敵 id を `polearm_crystal` にすれば、晶槍の竜兵と戦って見え方を確かめられます。映ったら、試遊版への差し込みが入ってから、差分（攻撃・倒れ）を §3 の順で Krita で作ります。
 
 **前提**: 絵柄の規約（`style-guide.md`）と取り込み規約（`asset-intake.md`）はあります。#287 の本文にある「右向きに反転する」は、2026-10-03 の決定（#287 のコメント、#85）で外れました。敵は左向きのまま使います。
