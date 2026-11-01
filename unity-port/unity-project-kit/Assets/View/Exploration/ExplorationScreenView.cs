@@ -12,10 +12,13 @@
 //
 // #626: the pick screen (an elite's two cards, the card pile's three, a 習熟訓練 mark's card) is drawn
 // from the CardPick Exploration.Bridge built, each card the battle's own CardView bound to its face.
+// #717: the choosing screen at a 死亡地点の痕跡 is drawn the same way from the HeritagePick.
 #if UNITY_2021_2_OR_NEWER
 using System;
+using System.Linq;
 using Backdrop;
 using Backdrop.View;
+using Depiction;
 using Depiction.View;
 using DungeonCore;
 using Exploration.Bridge;
@@ -37,6 +40,15 @@ namespace Exploration.View
         private const int PickColumns = 6;
         private const float PickCaption = 40f;
         private const float PickGap = 24f;
+        // The choosing screen at a trace (#717), in fractions of its plate: the foot holds the count and the
+        // confirm button, a row of pages takes HeritagePageRow, and with cards above, the pages stop at
+        // HeritagePagesWithCards. A chosen card wears a frame this thick.
+        private const int HeritagePageColumns = 3;
+        private const float HeritageTop = 0.80f;
+        private const float HeritageFoot = 0.12f;
+        private const float HeritagePageRow = 0.085f;
+        private const float HeritagePagesWithCards = 0.26f;
+        private const float HeritageMark = 6f;
         // The shade is drawn into a texture this small and stretched over the screen: it is a smooth falloff.
         private const int ShadeWidth = 64;
         private const int ShadeHeight = 36;
@@ -49,6 +61,8 @@ namespace Exploration.View
         private readonly Action<int> _useConsumable;
         private readonly Action<Overlay> _toggle;
         private readonly Action<string> _pickCard;
+        private readonly Action<string> _toggleLegacy;
+        private readonly Action _confirmLegacy;
 
         private readonly Text _layerTitle;
         private readonly Text _timeLabel;
@@ -75,6 +89,7 @@ namespace Exploration.View
         private readonly Button _cardsButton;
         private readonly Button _settingsButton;
         private readonly RectTransform _pickLayer;
+        private readonly RectTransform _heritageLayer;
         private readonly RectTransform _overlayLayer;
         private readonly JournalDrawerView _journal;
 
@@ -120,14 +135,18 @@ namespace Exploration.View
         /// <param name="useConsumable">Burn the consumable in a slot.</param>
         /// <param name="toggle">A band button or a close button: open or close that screen.</param>
         /// <param name="pickCard">A card pressed on the pick screen (#626), by its id.</param>
+        /// <param name="toggleLegacy">A choice pressed on the choosing screen at a trace (#717), by its key.</param>
+        /// <param name="confirmLegacy">The choosing screen's confirm button.</param>
         public ExplorationScreenView(RectTransform canvas, Action<int, RestChoice> step, Action<ScreenAction> act, Action<int> useConsumable,
-            Action<Overlay> toggle, Action<string> pickCard)
+            Action<Overlay> toggle, Action<string> pickCard, Action<string> toggleLegacy, Action confirmLegacy)
         {
             _step = step;
             _act = act;
             _useConsumable = useConsumable;
             _toggle = toggle;
             _pickCard = pickCard;
+            _toggleLegacy = toggleLegacy;
+            _confirmLegacy = confirmLegacy;
 
             RectTransform root = UiKit.Box(canvas, "Exploration", 0f, 0f, 1f, 1f);
             _root = root;
@@ -210,6 +229,10 @@ namespace Exploration.View
             // ---- the pick screen (#626): over the map, the card and the carried items; under 所持カード
             // so the cards owned can be read before one is picked ----
             _pickLayer = UiKit.Box(root, "Pick", 0f, 0f, 1f, 1f);
+
+            // ---- the choosing screen at a trace (#717): over the pick screen, so a card offer that waits
+            // too comes after it ----
+            _heritageLayer = UiKit.Box(root, "Heritage", 0f, 0f, 1f, 1f);
 
             // ---- 所持カード / 設定・セーブ, under the band so its buttons stay pressable ----
             _overlayLayer = UiKit.Box(root, "Overlay", 0f, 0f, 1f, 1f);
@@ -635,19 +658,91 @@ namespace Exploration.View
             UiKit.ClearChildren(_pickLayer);
             if (pick == null || !pick.IsShown) return;
 
-            Image dim = UiKit.Fill(_pickLayer, "Dim", ExplorationPalette.Dim);
+            RectTransform plate = Plate(_pickLayer, pick.Title, pick.Prompt);
+            RectTransform area = UiKit.Box(plate, "Cards", 0.02f, 0.03f, 0.98f, 0.80f);
+            LayOutCards(area, pick.Choices.Count, (i, scale, at, step) =>
+            {
+                PickChoice choice = pick.Choices[i];
+                string id = choice.CardId;
+                DrawCardCell(area, "Choice_" + id, choice.Face, choice.Caption, scale, at, step, () => _pickCard(id));
+            });
+        }
+
+        // ---- the choosing screen at a 死亡地点の痕跡 (#717, dungeon_exploration_v4.md §7.7) ----
+
+        /// <summary>
+        /// Shows the choosing screen, or clears it when <paramref name="pick"/> is not shown: the cards on
+        /// top with their face at the step they are handed on with, each page as its one line under them,
+        /// and the count and the confirm button at the foot. What is chosen is marked; pressing a choice
+        /// again takes it back off.
+        /// </summary>
+        public void ShowHeritage(HeritagePick pick)
+        {
+            UiKit.ClearChildren(_heritageLayer);
+            if (pick == null || !pick.IsShown) return;
+
+            RectTransform plate = Plate(_heritageLayer, pick.Title, pick.Prompt);
+            var cards = pick.Choices.Where(c => c.Kind == LegacyKind.Card).ToList();
+            var pages = pick.Choices.Where(c => c.Kind == LegacyKind.Page).ToList();
+
+            int rows = (pages.Count + HeritagePageColumns - 1) / HeritagePageColumns;
+            float pagesHeight = Mathf.Min(rows * HeritagePageRow, cards.Count > 0 ? HeritagePagesWithCards : HeritageTop - HeritageFoot);
+            float pagesTop = HeritageFoot + pagesHeight;
+            if (cards.Count > 0)
+            {
+                RectTransform area = UiKit.Box(plate, "Cards", 0.02f, pagesTop, 0.98f, HeritageTop);
+                LayOutCards(area, cards.Count, (i, scale, at, step) =>
+                {
+                    HeritageChoice choice = cards[i];
+                    string key = choice.Key;
+                    CardView card = DrawCardCell(area, "Choice_" + key, choice.Face, choice.Caption, scale, at, step, () => _toggleLegacy(key));
+                    if (choice.Selected) UiKit.Frame(card.Rect, ExplorationPalette.Accent, HeritageMark);
+                });
+            }
+            if (pages.Count > 0)
+            {
+                RectTransform lines = UiKit.Box(plate, "Pages", 0.02f, HeritageFoot, 0.98f, pagesTop);
+                float width = 1f / HeritagePageColumns;
+                float height = 1f / rows;
+                for (int i = 0; i < pages.Count; i++)
+                {
+                    HeritageChoice choice = pages[i];
+                    string key = choice.Key;
+                    int row = i / HeritagePageColumns;
+                    int column = i % HeritagePageColumns;
+                    UiKit.Button(lines, "Choice_" + key, choice.Title + "\n" + choice.Caption, () => _toggleLegacy(key),
+                        choice.Selected ? ExplorationPalette.Accent : ExplorationPalette.Button,
+                        choice.Selected ? ExplorationPalette.InkOnAccent : ExplorationPalette.Ink, 18,
+                        new Vector2(column * width, 1f - (row + 1) * height + 0.01f), new Vector2((column + 1) * width - 0.01f, 1f - row * height));
+                }
+            }
+
+            UiKit.Text(UiKit.Box(plate, "Count", 0.03f, 0.02f, 0.68f, HeritageFoot - 0.01f), "Text", 24, TextAnchor.MiddleRight, ExplorationPalette.Ink, pick.CountLine);
+            UiKit.Button(plate, "Confirm", pick.ConfirmLabel, () => _confirmLegacy(), ExplorationPalette.Accent, ExplorationPalette.InkOnAccent, 26,
+                new Vector2(0.70f, 0.02f), new Vector2(0.97f, HeritageFoot - 0.01f));
+        }
+
+        // ---- what the pick screens share ----
+
+        /// <summary>The dim that stops the presses reaching the map, and the plate with the title and the prompt.</summary>
+        private static RectTransform Plate(RectTransform layer, string title, string prompt)
+        {
+            Image dim = UiKit.Fill(layer, "Dim", ExplorationPalette.Dim);
             dim.raycastTarget = true;
 
-            RectTransform plate = UiKit.Box(_pickLayer, "Plate", 0.04f, 0.04f, 0.96f, 0.89f);
+            RectTransform plate = UiKit.Box(layer, "Plate", 0.04f, 0.04f, 0.96f, 0.89f);
             UiKit.Fill(plate, "Back", ExplorationPalette.Band);
             UiKit.Frame(plate, ExplorationPalette.Accent, 3f);
-            UiKit.Text(UiKit.Box(plate, "Title", 0.03f, 0.89f, 0.97f, 0.98f), "Text", 36, TextAnchor.MiddleLeft, ExplorationPalette.Ink, pick.Title);
-            UiKit.Text(UiKit.Box(plate, "Prompt", 0.03f, 0.82f, 0.97f, 0.89f), "Text", 22, TextAnchor.MiddleLeft, ExplorationPalette.InkSoft, pick.Prompt);
+            UiKit.Text(UiKit.Box(plate, "Title", 0.03f, 0.89f, 0.97f, 0.98f), "Text", 36, TextAnchor.MiddleLeft, ExplorationPalette.Ink, title);
+            UiKit.Text(UiKit.Box(plate, "Prompt", 0.03f, 0.82f, 0.97f, 0.89f), "Text", 22, TextAnchor.MiddleLeft, ExplorationPalette.InkSoft, prompt);
+            return plate;
+        }
 
-            RectTransform area = UiKit.Box(plate, "Cards", 0.02f, 0.03f, 0.98f, 0.80f);
+        /// <summary>Lays <paramref name="count"/> cells out in centred rows, scaled to fit the area. Each cell is drawn by <paramref name="draw"/>: its index, scale, place and size.</summary>
+        private static void LayOutCards(RectTransform area, int count, Action<int, float, Vector2, Vector2> draw)
+        {
             Canvas.ForceUpdateCanvases();
             Rect room = area.rect;
-            int count = pick.Choices.Count;
             int columns = Math.Max(1, Math.Min(PickColumns, count));
             int rows = Math.Max(1, (count + columns - 1) / columns);
             Vector2 cell = new Vector2(CardView.Size.x + PickGap, CardView.Size.y + PickCaption + PickGap);
@@ -660,31 +755,31 @@ namespace Exploration.View
                 int inRow = Math.Min(columns, count - row * columns);
                 float x = ((i % columns) - (inRow - 1) * 0.5f) * step.x;
                 float y = ((rows - 1) * 0.5f - row) * step.y;
-                DrawPickCard(area, pick.Choices[i], scale, new Vector2(x, y), step);
+                draw(i, scale, new Vector2(x, y), step);
             }
         }
 
-        private void DrawPickCard(RectTransform area, PickChoice choice, float scale, Vector2 at, Vector2 step)
+        private static CardView DrawCardCell(RectTransform area, string name, CardFace face, string captionText, float scale, Vector2 at, Vector2 step, Action press)
         {
-            RectTransform cell = UiKit.Point(area, "Choice_" + choice.CardId, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), step, at);
+            RectTransform cell = UiKit.Point(area, name, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), step, at);
             CardView card = NewCard(cell);
             RectTransform rect = card.Rect;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
             rect.anchoredPosition = Vector2.zero;
             rect.localScale = Vector3.one * scale;
-            card.Bind(choice.Face);
+            card.Bind(face);
             card.SetDimmed(false);
             card.Interactable = false;
 
-            string id = choice.CardId;
-            var press = card.gameObject.AddComponent<Button>();
-            press.targetGraphic = card.background;
-            press.onClick.AddListener(() => _pickCard(id));
+            var button = card.gameObject.AddComponent<Button>();
+            button.targetGraphic = card.background;
+            button.onClick.AddListener(() => press());
 
-            if (choice.Caption.Length == 0) return;
+            if (captionText.Length == 0) return card;
             RectTransform caption = UiKit.Point(cell, "Caption", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(step.x, PickCaption * scale), new Vector2(0f, PickGap * 0.5f * scale));
-            UiKit.Text(caption, "Text", 20, TextAnchor.MiddleCenter, ExplorationPalette.Ink, choice.Caption);
+            UiKit.Text(caption, "Text", 20, TextAnchor.MiddleCenter, ExplorationPalette.Ink, captionText);
+            return card;
         }
 
         /// <summary>
