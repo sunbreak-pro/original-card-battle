@@ -191,7 +191,7 @@ namespace Depiction.Bridge.Tests
                     Is.EqualTo("自分に集中を 2 付与する。自分に強化を 2 付与する。カードを 1 枚引く。"));
                 Assert.That(CoreText.Describe(CardCatalog.FlatStrike.Face, CardCatalog.FlatStrike.Attributes), Is.EqualTo("敵に 7 ダメージ。崩し 1。"));
                 Assert.That(CoreText.Describe(CardCatalog.FirstAid.Face, CardCatalog.FirstAid.Attributes), Is.EqualTo("HP を 15 回復する。"));
-                Assert.That(CoreText.Describe(CardCatalog.RockStance.Face, CardCatalog.RockStance.Attributes), Is.EqualTo("構え: 毎ターン開始に Guard +3。"));
+                Assert.That(CoreText.Describe(CardCatalog.RockStance.Face, CardCatalog.RockStance.Attributes), Is.EqualTo("構え: ターン開始 Guard +3。"));
                 Assert.That(CoreText.StanceText(CardCatalog.WaterStance.Face.Stance), Is.EqualTo("間合い 2 以上で始まるターンに回復 +2"));
                 Assert.That(CoreText.StanceText(CardCatalog.MistStep.Face.Stance), Is.EqualTo("間合い 2 以上で終えたターンに Guard +3、次の回復 +2"));
                 Assert.That(CoreText.StanceText(CardCatalog.PriestPrayer.Face.Stance), Is.EqualTo("被弾のたび（ターン 1 回）スタミナ +1、Guard +3"));
