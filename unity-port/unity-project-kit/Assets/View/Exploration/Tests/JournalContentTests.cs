@@ -151,13 +151,10 @@ namespace Exploration.Tests
 
             JournalPage about = EnemyJournal.Page("polearm_warped", 1, memo.About("polearm_warped"));
             JournalPage other = EnemyJournal.Page("shadow_hound", 1, memo.About("shadow_hound"));
-            Assert.Multiple(() =>
-            {
-                Assert.That(about.Rows.Last().Label, Is.EqualTo(EnemyJournal.MemoLabel));
-                Assert.That(about.TextOf(about.Rows.Last()), Is.EqualTo("押し込みの前に下がる\n二度目: 鈍足が効く"));
-                Assert.That(other.Rows.Select(r => r.Label), Has.No.Member(EnemyJournal.MemoLabel));
-                Assert.That(memo.About(null), Is.Empty, "a note about no enemy belongs to no enemy's page");
-            });
+            Assert.That(about.Rows.Last().Label, Is.EqualTo(EnemyJournal.MemoLabel));
+            Assert.That(about.TextOf(about.Rows.Last()), Is.EqualTo("押し込みの前に下がる\n二度目: 鈍足が効く"));
+            Assert.That(other.Rows.Select(r => r.Label), Has.No.Member(EnemyJournal.MemoLabel));
+            Assert.That(memo.About(null), Is.Empty, "a note about no enemy belongs to no enemy's page");
         }
 
         [Test]
