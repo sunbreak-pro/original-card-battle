@@ -92,12 +92,12 @@ namespace Exploration
 
         /// <summary>
         /// The event a step onto this node resolves on arrival without asking — a 泉 — so the forecast can count it
-        /// (dungeon_exploration_v4.md §6.4: 「変わるときだけ…HP 30 → 38 を足します」). Null outside trial.
+        /// (dungeon_exploration_v4.md §6.4: 「変わるときだけ…HP 30 → 38 を足します」). Null when the session resolves no event.
         /// </summary>
         // js: bridge/explorationScript/ExplorationScreenBuilder.js:216
         private static EventKind? ArrivalEvent(ExplorationSession session, MapNode node)
         {
-            if (!session.Trial || node.Kind != NodeKind.Event || session.State.HasResolved(node.Id)) return null;
+            if (!session.ResolvesEvents || node.Kind != NodeKind.Event || session.State.HasResolved(node.Id)) return null;
             var kind = session.EventAt(node.Id);
             return kind == EventKind.Spring ? kind : null;
         }
@@ -238,7 +238,7 @@ namespace Exploration
             {
                 var waiting = session.PendingEvent;
                 string name = ExplorationText.EventName(waiting.Kind);
-                var accepted = ExplorationReducer.ResolveEvent(state, waiting.Kind, true);
+                var accepted = ExplorationReducer.ApplyEvent(state, waiting.Kind, true);
                 var node = state.Map.Node(waiting.NodeId);
                 var lines = new List<string> { ExplorationText.EventLead(name) };
                 lines.AddRange(TrialEventLines(session, node).Where(l => l != ExplorationText.EventChoiceNote));

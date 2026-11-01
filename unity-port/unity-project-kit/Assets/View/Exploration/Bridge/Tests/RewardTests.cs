@@ -202,6 +202,36 @@ namespace Exploration.Bridge.Tests
             Assert.That(BattleRewards.ConsumableIds, Is.EquivalentTo(ItemCatalogue.Consumables.Select(c => c.Id)));
         }
 
+        // ---- which kinds pay (#723): NodeKind.IsCombat decides, in one place ----
+
+        [Test]
+        public void EveryKindThatHoldsAFight_HasARewardRow()
+        {
+            foreach (NodeKind kind in Enum.GetValues(typeof(NodeKind)).Cast<NodeKind>().Where(k => k.IsCombat()))
+            {
+                Assert.DoesNotThrow(() => Roll(kind, 2, Normal(), new DungeonCore.SeededRng(1UL)), kind.ToString());
+            }
+        }
+
+        [Test]
+        public void AKindThatHoldsNoFight_PaysNothing_AndDrawsNothing()
+        {
+            foreach (NodeKind kind in Enum.GetValues(typeof(NodeKind)).Cast<NodeKind>().Where(k => !k.IsCombat()))
+            {
+                var owned = new HashSet<string>();
+                BattleReward reward = BattleRewards.Roll(kind, 2, Normal(), UniqueCardReward.None, owned, new NoDraw());
+                Assert.That(reward, Is.SameAs(BattleReward.None), kind.ToString());
+            }
+        }
+
+        [Test]
+        public void AFightOnAKindWithNoRewardRow_Throws()
+        {
+            var owned = new HashSet<string>();
+            Assert.Throws<InvalidOperationException>(() =>
+                BattleRewards.RollCombat(NodeKind.Trace, 2, Normal(), UniqueCardReward.None, owned, new DungeonCore.SeededRng(1UL)));
+        }
+
         // ---- helpers ----
 
         private static double Percent(int count) => count * 100.0 / Draws;
@@ -216,6 +246,12 @@ namespace Exploration.Bridge.Tests
         {
             var owned = new HashSet<string>();
             return BattleRewards.Roll(kind, layer, encounter, UniqueCards.For(kind, encounter, owned), owned, rng);
+        }
+
+        /// <summary>Fails the test if anything is drawn from it.</summary>
+        private sealed class NoDraw : DungeonCore.IRng
+        {
+            public double NextDouble() => throw new InvalidOperationException("nothing should be drawn");
         }
 
         /// <summary>Always draws the same value, to land a roll on a table's edge.</summary>

@@ -18,6 +18,9 @@ namespace Depiction.Bridge
 
         public const int MaxLastingLines = 4;
 
+        /// <summary>#722: three statuses on one row only print below 16 px, so the third opens a row of its own.</summary>
+        public const int MaxStatusesPerRow = 2;
+
         /// <summary>§6.1 素直な札の特性の箱.</summary>
         public const string PlainTop = "素直な札";
 
@@ -169,10 +172,8 @@ namespace Depiction.Bridge
         public static List<string> TextLines(Face face, BattleAttribute attributes)
         {
             var lines = new List<string>();
-            string foe = StatusRow(face, onSelf: false);
-            string self = StatusRow(face, onSelf: true);
-            if (foe.Length > 0) lines.Add("敵に " + foe);
-            if (self.Length > 0) lines.Add("自分に " + self);
+            lines.AddRange(StatusRows(face, onSelf: false, head: "敵に "));
+            lines.AddRange(StatusRows(face, onSelf: true, head: "自分に "));
             if (face.Break > 0) lines.Add("崩し " + face.Break);
             if (face.StaminaGain > 0) lines.Add("スタミナ +" + face.StaminaGain);
             List<CardValue> all = AllValues(face, attributes);
@@ -180,14 +181,20 @@ namespace Depiction.Bridge
             return lines.Count > MaxTextLines ? lines.GetRange(0, MaxTextLines) : lines;
         }
 
-        private static string StatusRow(Face face, bool onSelf)
+        private static List<string> StatusRows(Face face, bool onSelf, string head)
         {
+            var rows = new List<string>();
             var parts = new List<string>();
             foreach (StatusGrant grant in face.StatusList)
             {
-                if (grant.OnSelf == onSelf) parts.Add(grant.Kind.ToLabel() + " " + grant.Stacks);
+                if (grant.OnSelf != onSelf) continue;
+                parts.Add(grant.Kind.ToLabel() + " " + grant.Stacks);
+                if (parts.Count < MaxStatusesPerRow) continue;
+                rows.Add(head + string.Join("・", parts));
+                parts.Clear();
             }
-            return string.Join("・", parts);
+            if (parts.Count > 0) rows.Add(head + string.Join("・", parts));
+            return rows;
         }
 
         /// <summary>§6.1 スタンスの札: one lasting effect per row; the View puts ∞ at the head of each.</summary>

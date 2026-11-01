@@ -9,6 +9,9 @@
 // (dungeon_exploration_v4.md §6.11): an encounter (開示度 1) opens the three range rows, the moves the
 // player has seen; observation or the survey (開示度 2) adds the favoured range, the weakness and a
 // boss's adaptation conditions, which are the reading of those moves. At 開示度 0 every row reads 「？」.
+//
+// #713: the player's notes about the enemy come last, read only (battle_ui_ux_v2.md §2.4). They are the player's
+// own, so they read at any 開示度; in a battle the row ends on 「戦闘中は書けない」.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -71,6 +74,12 @@ namespace Journal
         public const string FavouredGapLabel = "得意な間合い";
 
         public const string WeaknessLabel = "弱点";
+
+        /// <summary>The last row of a page: the player's notes about the enemy, read only.</summary>
+        public const string MemoLabel = "自分のメモ";
+
+        /// <summary>battle_ui_ux_v2.md §2.4: how the notes' row ends in a battle.</summary>
+        public const string MemoLocked = "戦闘中は書けない";
 
         /// <summary>An adaptation row reads 「適応 1」「適応 2」…, in the roster's order.</summary>
         public const string AdaptationLabel = "適応";
@@ -205,7 +214,7 @@ namespace Journal
         /// 1, the favoured range, the weakness and a boss's adaptation conditions from 2. Rows the level
         /// does not reach read 「？」.
         /// </summary>
-        public static JournalPage Page(string enemyId, int disclosure)
+        public static JournalPage Page(string enemyId, int disclosure, IReadOnlyList<MemoNote> memos = null, JournalContext context = JournalContext.Exploration)
         {
             EnemyJournalEntry entry = Of(enemyId);
             var rows = new List<JournalRow>
@@ -218,6 +227,8 @@ namespace Journal
             };
             for (int i = 0; i < entry.Adaptations.Count; i++)
                 rows.Add(new JournalRow($"{AdaptationLabel} {i + 1}", entry.Adaptations[i], WeaknessDisclosure));
+            string notes = string.Join("\n", (memos ?? Array.Empty<MemoNote>()).Where(n => !string.IsNullOrWhiteSpace(n.Text)).Select(n => n.Text));
+            if (notes.Length > 0) rows.Add(new JournalRow(MemoLabel, context == JournalContext.Battle ? notes + "\n" + MemoLocked : notes));
             return new JournalPage(PageId(entry.Id), JournalTab.Enemy, entry.Name, rows, Clamp(disclosure));
         }
 

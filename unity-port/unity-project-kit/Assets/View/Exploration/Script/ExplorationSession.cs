@@ -32,6 +32,12 @@ namespace Exploration
         public TraceLedger Traces { get; set; } = TraceLedger.Empty;
 
         /// <summary>
+        /// An イベント node resolves on arrival (encounters_and_rewards_v4.md §5, #718): the exploration screen turns
+        /// this on. Trial mode always does, whatever this says. Off, the node only says what may happen.
+        /// </summary>
+        public bool ResolvesEvents { get; set; }
+
+        /// <summary>
         /// A loadout for trying the screen: 防瘴の面 and two 浄化の香 — the carried items whose
         /// effect the exploration core already honours. Amounts come from the catalogue.
         /// </summary>
@@ -70,6 +76,15 @@ namespace Exploration
 
         // The layers whose 情報収集 node this life has resolved (#107: a survey's 開示度 lasts the life).
         private readonly System.Collections.Generic.HashSet<int> _surveyedLayers = new System.Collections.Generic.HashSet<int>();
+
+        /// <summary>An イベント node resolves on arrival: trial mode, or RunStart.ResolvesEvents (#718).</summary>
+        internal bool ResolvesEvents => Trial || _start.ResolvesEvents;
+
+        /// <summary>
+        /// An event of this life happened outside trial, on this layer, answered either way (#718): the journal
+        /// keeps it (LifeJournal.Follow). The trial's lineage reads <see cref="Events"/> instead.
+        /// </summary>
+        public event Action<int, EventKind> EventHappened;
 
         public ExplorationSession(RunStart start = null, IEnemyIntel intel = null)
         {

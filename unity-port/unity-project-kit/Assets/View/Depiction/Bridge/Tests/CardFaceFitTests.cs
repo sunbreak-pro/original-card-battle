@@ -126,12 +126,8 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void TheLongDescriptions_ShrinkOrWrap_AsPinned()
+        public void TheLongDescriptions_Wrap_AsPinned()
         {
-            // Shrunk on one line.
-            Assert.That(DescriptionOf(CardCatalog.ById("flow_stance")).Size, Is.EqualTo(12));
-            Assert.That(DescriptionOf(CardCatalog.ById("wolf_stance")).Size, Is.EqualTo(13));
-            Assert.That(DescriptionOf(CardCatalog.ById("twist_away")).Size, Is.EqualTo(14));
             // Too long for one line even at 12: wrapped at 16 inside a lasting card's four lines.
             TextFit abyss = DescriptionOf(CardCatalog.ById("abyss_stance"));
             Assert.That(abyss.Text, Is.EqualTo("∞ 間合い 0 の相手への\nアタック +5"));
@@ -139,6 +135,22 @@ namespace Depiction.Bridge.Tests
             TextFit mist = DescriptionOf(CardCatalog.ById("mist_step"));
             Assert.That(mist.Text.Split('\n').Length, Is.EqualTo(3));
             Assert.That(mist.Size, Is.EqualTo(16));
+        }
+
+        // #722: the five cards the #567 measure printed below 16 px (12, 13, 14, 14 and 14) now hold the
+        // full size. battle-visual-v1 §3.1 keeps the shrinking as a guard, not as these cards' size.
+        [TestCase("flow_stance", "∞ 移動後の攻撃 威力 +5")]
+        [TestCase("wolf_stance", "∞ 出血中の敵へ 威力 +3")]
+        [TestCase("rock_stance", "∞ ターン開始 Guard +3")]
+        [TestCase("root_bind", "∞ 敵が自ら動くと崩し 1")]
+        [TestCase("twist_away", "敵に 鈍足 2・疲労 2\n敵に 威圧 2")]
+        public void TheFiveShortenedDescriptions_FitAt16Px(string id, string printed)
+        {
+            TextFit fit = DescriptionOf(CardCatalog.ById(id));
+
+            Assert.That(fit.Fits, Is.True);
+            Assert.That(fit.Size, Is.EqualTo(16));
+            Assert.That(fit.Text, Is.EqualTo(printed));
         }
 
         // The deck screen prints the catalog with the hand's face (no dealt instance behind it).

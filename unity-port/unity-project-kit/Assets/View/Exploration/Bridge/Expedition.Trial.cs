@@ -92,8 +92,28 @@ namespace Exploration.Bridge
             }
             for (int i = 0; i < contents.Consumables; i++) consumables.Add(BattleRewards.DrawConsumable(layer, rng));
             if (cards.Count > 0) _offer = cards.ToList();
-            _pages += contents.Pages;
+            if (Trial) _pages += contents.Pages;
+            else KeepChestOutsideTrial(layer, consumables, contents.Pages, rng);
             return new ChestFind(cards, consumables, contents.Pages, spent);
+        }
+
+        /// <summary>
+        /// What a chest holds outside trial (#718) goes where a won battle's reward goes (<see cref="Return"/>): a
+        /// consumable into a free slot or onto the waiting list, a page into the journal, or into a card from the pile
+        /// when the layer has nothing left to tell.
+        /// </summary>
+        private void KeepChestOutsideTrial(int layer, IReadOnlyList<string> consumables, int pages, DungeonCore.IRng rng)
+        {
+            _consumables.AddRange(consumables);
+            foreach (string id in consumables) Stow(id);
+            for (int i = 0; i < pages; i++)
+            {
+                if (Journal.DrawRarePage(layer, rng) != null) _pages++;
+                else _pileDeals++;
+            }
+            _pileLayer = layer;
+            _pileRng = rng;
+            DealTurnedPages();
         }
 
         /// <summary>
@@ -303,6 +323,7 @@ namespace Exploration.Bridge
             Hp = start.Hp,
             Stamina = start.Stamina,
             MiasmaPercent = start.MiasmaPercent,
+            ResolvesEvents = start.ResolvesEvents,
             Loadout = start.Loadout,
             Traces = start.Traces,
             Trial = start.Trial,
