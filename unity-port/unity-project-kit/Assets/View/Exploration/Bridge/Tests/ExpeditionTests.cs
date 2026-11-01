@@ -10,6 +10,7 @@ using Depiction;
 using Depiction.Bridge;
 using DungeonContent;
 using DungeonCore;
+using Journal;
 using NUnit.Framework;
 
 namespace Exploration.Bridge.Tests
@@ -444,6 +445,86 @@ namespace Exploration.Bridge.Tests
             WalkTo(expedition, NodeKind.Rest, RestChoice.Train);
             Assert.That(expedition.Train(CardCatalog.LastStand.Id), Is.False, "#80 is not owned at the start");
             Assert.That(expedition.Session.State.TrainingMarks, Is.EqualTo(1));
+        }
+
+        // ---- the pages (#107, dungeon_exploration_v4.md §6.11 / encounters_and_rewards_v4.md §4.3) ----
+
+        [Test]
+        public void ARealBossesPage_TellsOneEntryOfItsLayerInFull()
+        {
+            // Layer 3's boss is a real boss: its three cards and a rare page, always (§4.2).
+            var expedition = new Expedition(new RunStart { Seed = 3 });
+            WalkToLayer(expedition, 3);
+            int before = expedition.Pages;
+            WalkToBossAndWin(expedition, out BattleReturn atBoss);
+
+            Assert.That(atBoss.PagesRead.Count, Is.EqualTo(1), "the layer's pile still holds entries");
+            string told = atBoss.PagesRead[0];
+            Assert.Multiple(() =>
+            {
+                Assert.That(DungeonJournal.Find(told).Layer, Is.EqualTo(3), "a page tells an entry of its own layer");
+                Assert.That(expedition.Journal.EntryLevel(told), Is.EqualTo(DungeonJournal.FullDisclosure));
+                Assert.That(atBoss.PagesTurned, Is.Zero);
+                Assert.That(atBoss.Reward.Pages, Is.EqualTo(1));
+                Assert.That(expedition.Pages, Is.GreaterThan(before));
+                Assert.That(expedition.Journal.DungeonRows(3).Any(r => r.Text != JournalRow.Hidden), Is.True, "the row no longer reads 「？」");
+                Assert.That(expedition.Journal.LegacyLines().Any(l => l.PageId == DungeonJournal.PageId(3)), Is.True,
+                    "the layer's dungeon page joins the legacy list");
+            });
+        }
+
+        [Test]
+        public void APageOfALayerWithNothingToTell_TurnsIntoTheCardPilesThree()
+        {
+            // Layer 4 holds no dungeon entry (§6.11), and its stand-in boss drops a page always (§4.2).
+            var expedition = new Expedition(new RunStart { Seed = 3 });
+            WalkToLayer(expedition, 4);
+            Assert.That(expedition.Journal.RarePile(4), Is.Empty);
+            int before = expedition.Pages;
+            WalkToBossAndWin(expedition, out BattleReturn atBoss);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(atBoss.PagesRead, Is.Empty);
+                Assert.That(atBoss.PagesTurned, Is.EqualTo(1));
+                Assert.That(atBoss.Reward.Pages, Is.Zero, "the page became a card");
+                Assert.That(atBoss.Reward.CardChoices.Count, Is.EqualTo(CardPile.Choices));
+                Assert.That(atBoss.Reward.CardChoices.All(CardPile.Of(4).Concat(CardPile.Of(3)).Contains), Is.True);
+                Assert.That(expedition.Offer, Is.EqualTo(atBoss.Reward.CardChoices));
+                Assert.That(expedition.Pages, Is.EqualTo(before));
+            });
+        }
+
+        [Test]
+        public void ATurnedPage_WaitsBehindTheElitesPick_AndIsDealtAfterIt()
+        {
+            // Seed 1, taking each layer's elite before its boss: layer 5's elite is a real one whose two
+            // cards are not owned, and its 40% page lands on a layer with nothing to tell.
+            var expedition = new Expedition(new RunStart { Seed = 1 });
+            for (int layer = 1; layer <= 4; layer++)
+            {
+                WalkToAndWin(expedition, NodeKind.Elite);
+                WalkToBossAndWin(expedition, out _);
+                Assert.That(expedition.Session.Act(ScreenAction.GoToInterlude), Is.True);
+                Assert.That(expedition.Session.Act(ScreenAction.Descend), Is.True);
+            }
+            BattleReturn elite = WalkToAndWin(expedition, NodeKind.Elite);
+
+            Assert.That(elite.Offered.Count, Is.EqualTo(2), "a real elite offers its two cards");
+            Assert.That(elite.PagesTurned, Is.EqualTo(1));
+            Assert.That(elite.Reward.CardChoices, Is.Empty, "the turned card waits behind the elite's pick");
+            Assert.That(expedition.Offer, Is.EqualTo(elite.Offered));
+
+            string picked = elite.Offered[0];
+            Assert.That(expedition.Learn(picked), Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(expedition.Offer.Count, Is.EqualTo(CardPile.Choices), "the pile's three come next");
+                Assert.That(expedition.Offer.All(CardPile.Of(5).Concat(CardPile.Of(4)).Concat(CardPile.Of(3)).Contains), Is.True);
+                Assert.That(expedition.Offer, Has.No.Member(picked));
+            });
+            Assert.That(expedition.Learn(expedition.Offer[0]), Is.True);
+            Assert.That(expedition.Offer, Is.Empty, "one card for one page");
         }
 
         // ---- helpers ----

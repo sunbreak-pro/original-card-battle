@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Engine-free WebAudio subset and the trial sound presets and ambience, rendered to PCM.
+         The files live in the Unity kit under Assets/View/Trial/Audio/Synth/ and are mirrored by `npm run unity:sync`;
+         this project only lets `dotnet test` compile the same files. netstandard2.1 + C# 9 is what Unity compiles. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Trial.Audio.Synth</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);CS4014</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Trial\Audio\Synth\**\*.cs" LinkBase="Audio\Synth" />
+  </ItemGroup>
+
+</Project>

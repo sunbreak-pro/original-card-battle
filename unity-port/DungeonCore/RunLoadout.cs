@@ -27,9 +27,26 @@ namespace DungeonCore
 
         /// <summary>
         /// A jump to an unresolved node of the layer (標の石). It needs a node to jump to, which no
-        /// screen picks yet: it rides in a slot but cannot be used.
+        /// screen picks yet: it rides in a slot but cannot be used. Trial extension: the trial's map
+        /// picks the node, and ExplorationReducer.Teleport spends it there, paying the node's 刻限.
         /// </summary>
         Teleport,
+
+        // Trial extension (docs/EXTENSIONS.md 「探索の持ち物とイベント」): the rest of the departure's tools, so the
+        // exploration can carry every tool of tools_and_consumables_v4.md §2. Only a trial RunLoadout holds tools
+        // of these kinds; the C# shape (Density tools, any consumable) is unchanged.
+
+        /// <summary>刻限の砂: every layer's 刻限 + Amount (§2).</summary>
+        Time,
+
+        /// <summary>写しの帳: the player picks the 情報収集 target (§2.2).</summary>
+        Survey,
+
+        /// <summary>灯芯の欠片: 階層間の休憩 heals Amount more points of the maximum (§2).</summary>
+        Interlude,
+
+        /// <summary>間合いの履 / 息継ぎの笛 / 竜鱗の欠片 / 竜語の符: acts in battle only; carried for the slot count.</summary>
+        Battle,
     }
 
     /// <summary>One carried item, reduced to its effect on the run. Name and art live elsewhere.</summary>
@@ -61,12 +78,21 @@ namespace DungeonCore
         public const int ConsumableSlots = 3;
         public const int SurvivorBonusToolSlots = ToolSlots + 1;
 
+        /// <summary>The tool kinds a trial RunLoadout may hold (ReliefKind's trial extension).</summary>
+        private static readonly ReliefKind[] TrialToolKinds =
+            { ReliefKind.Density, ReliefKind.Time, ReliefKind.Survey, ReliefKind.Interlude, ReliefKind.Battle };
+
         private readonly List<ReliefItem> _consumables;
 
+        /// <param name="trial">
+        /// Trial extension (js: core/dungeon/RunLoadout.js:63): a trial loadout may also carry the tools of kind
+        /// Time / Survey / Interlude / Battle. False keeps the C# rule that every tool lowers density.
+        /// </param>
         public RunLoadout(
             IReadOnlyList<ReliefItem>? tools = null,
             IReadOnlyList<ReliefItem>? consumables = null,
-            int toolSlots = ToolSlots)
+            int toolSlots = ToolSlots,
+            bool trial = false)
         {
             var toolList = tools ?? Array.Empty<ReliefItem>();
             var consumableList = consumables ?? Array.Empty<ReliefItem>();
@@ -77,12 +103,15 @@ namespace DungeonCore
             if (consumableList.Count > ConsumableSlots)
                 throw new ArgumentException(
                     $"{consumableList.Count} consumables do not fit in {ConsumableSlots} slots", nameof(consumables));
-            if (toolList.Any(t => t.Kind != ReliefKind.Density))
+            if (!trial && toolList.Any(t => t.Kind != ReliefKind.Density))
                 throw new ArgumentException("a tool thins the air for the whole life, so it lowers density", nameof(tools));
+            if (trial && toolList.Any(t => Array.IndexOf(TrialToolKinds, t.Kind) < 0))
+                throw new ArgumentException("a trial tool is one of the eight tools of tools_and_consumables_v4.md §2", nameof(tools));
 
             Tools = toolList;
             ToolSlotCount = toolSlots;
             _consumables = consumableList.ToList();
+            Trial = trial;
         }
 
         public IReadOnlyList<ReliefItem> Tools { get; }
@@ -91,8 +120,33 @@ namespace DungeonCore
 
         public IReadOnlyList<ReliefItem> Consumables => _consumables;
 
-        /// <summary>How much every layer's density drops for this life.</summary>
-        public int DensityRelief => Tools.Sum(t => t.Amount);
+        /// <summary>Trial extension: this loadout carries the trial items (see the constructor).</summary>
+        public bool Trial { get; }
+
+        /// <summary>
+        /// How much every layer's density drops for this life. A C# loadout holds density tools only, so its
+        /// sum is over every tool; a trial loadout counts its density tools.
+        /// </summary>
+        // js: core/dungeon/RunLoadout.js:92
+        public int DensityRelief => Trial ? SumOf(ReliefKind.Density) : Tools.Sum(t => t.Amount);
+
+        // ---- Trial extension: what the other exploration tools add (tools_and_consumables_v4.md §2).
+
+        /// <summary>刻限の砂: 刻限 every layer gains. Copies stack, like Loadout.TimeLimitBonus. 0 outside trial.</summary>
+        // js: core/dungeon/RunLoadout.js:99
+        public int TimeBonus => Trial ? SumOf(ReliefKind.Time) : 0;
+
+        /// <summary>灯芯の欠片: points of the HP maximum 階層間の休憩 heals on top of its 30%. 0 outside trial.</summary>
+        // js: core/dungeon/RunLoadout.js:102
+        public int InterludeBonus => Trial ? SumOf(ReliefKind.Interlude) : 0;
+
+        /// <summary>写しの帳 is carried: the player picks the 情報収集 target (§2.2). False outside trial.</summary>
+        // js: core/dungeon/RunLoadout.js:105
+        public bool ChoosesSurvey => Trial && Tools.Any(t => t.Kind == ReliefKind.Survey);
+
+        /// <summary>The tools of one kind summed. (Trial extension.)</summary>
+        // js: core/dungeon/RunLoadout.js:108
+        public int SumOf(ReliefKind kind) => Tools.Where(t => t.Kind == kind).Sum(t => t.Amount);
 
         /// <summary>Every consumable slot holds an item: picking one more up means swapping.</summary>
         public bool ConsumableSlotsFull => _consumables.Count >= ConsumableSlots;
@@ -107,14 +161,14 @@ namespace DungeonCore
 
             var rest = _consumables.ToList();
             rest.RemoveAt(index);
-            return new RunLoadout(Tools, rest, ToolSlotCount);
+            return new RunLoadout(Tools, rest, ToolSlotCount, Trial);
         }
 
         /// <summary>
         /// Picks a consumable up (tools_and_consumables_v4.md §3). With a free slot it goes in and
         /// <paramref name="replaceSlot"/> is not read; with none, it takes the place of the item in
         /// <paramref name="replaceSlot"/>. A swap that names no slot is refused: which item is given
-        /// up is the player's to say. The same rule as DungeonContent.Loadout.Take.
+        /// up is the player's to say. The same rule as DungeonContent.Loadout.Take. A trial loadout stays one.
         /// </summary>
         public RunLoadout Take(ReliefItem item, int replaceSlot = -1)
         {
@@ -124,14 +178,14 @@ namespace DungeonCore
             if (!ConsumableSlotsFull)
             {
                 next.Add(item);
-                return new RunLoadout(Tools, next, ToolSlotCount);
+                return new RunLoadout(Tools, next, ToolSlotCount, Trial);
             }
 
             if (replaceSlot < 0 || replaceSlot >= next.Count)
                 throw new ExplorationRuleException("the consumable slots are full: name the slot to swap");
 
             next[replaceSlot] = item;
-            return new RunLoadout(Tools, next, ToolSlotCount);
+            return new RunLoadout(Tools, next, ToolSlotCount, Trial);
         }
 
         /// <summary>Nothing carried. The baseline a bare run starts from.</summary>

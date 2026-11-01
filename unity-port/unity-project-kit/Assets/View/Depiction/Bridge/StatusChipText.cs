@@ -31,9 +31,10 @@ namespace Depiction.Bridge
         }
 
         /// <summary>
-        /// §7.3 永続の状態: one chip per stance held; the same stance held <paramref name="count"/> times
-        /// is one chip that works that many times ("×2" from two on). Its 効き方 is the stance's own
-        /// clause when the card catalog knows the name, else the general one.
+        /// §7.3 永続の状態: the panel text of one stance held <paramref name="count"/> times, which works
+        /// that many times ("×2" from two on). Its 効き方 is the stance's own clause when the card catalog
+        /// knows the name, else the general one. It is not a status chip (#605): <see cref="StanceRows"/>
+        /// copies its text onto the stance frame's row.
         /// </summary>
         public static StatusChip StanceChip(string name, int count)
         {
@@ -42,7 +43,7 @@ namespace Depiction.Bridge
             return new StatusChip
             {
                 Label = "構え・" + name,
-                // StatusBarView reads a chip with no stacks as the stance line; a repeat keeps its count.
+                // A repeat keeps its count; one stance has none to print.
                 Stacks = count > 1 ? count : 0,
                 Kind = ChipKind.Lasting,
                 Title = name + (count > 1 ? " ×" + count : ""),
@@ -107,7 +108,7 @@ namespace Depiction.Bridge
                 case StatusKind.Fragile:
                     return "次に受ける攻撃の威力が " + Mult(Constants.FragileMult) + " 倍（Guard で引く前の値）";
                 case StatusKind.Slow:
-                    return "次のターン、自分が動くマスと、自分が押す / 引くマスが 1 減る";
+                    return "次のターン、自分が動くマスと、自分が押す / 引くマスが " + Statuses.SlowCellsPerMove + " 減る";
                 case StatusKind.Intimidate:
                     return "次の行動の威力と Guard が −" + Constants.IntimidatePenalty;
                 case StatusKind.Fatigue:
@@ -119,22 +120,22 @@ namespace Depiction.Bridge
                 case StatusKind.Parry:
                     return "次に攻撃を受けたとき、Guard で防いだ分の半分を相手に返す";
                 case StatusKind.Swift:
-                    return "ターン開始に、1 マスだけ無料で前か後ろへ動ける";
+                    return "ターン開始に、" + Statuses.SwiftFreeCells + " マスだけ無料で前か後ろへ動ける";
                 case StatusKind.Regen:
                     return "ターン開始に HP +" + Constants.RegenPerStack + "×スタック（いまは +" + Constants.RegenPerStack * stacks + "）";
                 case StatusKind.MiasmaShroud:
-                    return "最大スタミナが スタック 1 につき 1 下がる";
+                    return "最大スタミナが スタック 1 につき " + Statuses.MiasmaShroudMaxStaminaPerStack + " 下がる";
                 case StatusKind.Binding:
                     return "自分で動く効果が起きない。移動だけの札は出せない";
                 case StatusKind.Hook:
                     return "自分で後ろへ下がれない（前へは動ける）";
                 case StatusKind.Depths:
-                    return "間合い 0 でターンを始めると、スタミナ回復が スタック 1 につき 1 減る";
+                    return "間合い 0 でターンを始めると、スタミナ回復が スタック 1 につき " + Statuses.DepthsRecoveryPerStack + " 減る";
                 case StatusKind.Rooting:
                     return "2 ターン続けて同じマスで終えると、次のターン開始に HP −" + Statuses.RootingHpPerStack + "×スタック";
                 case StatusKind.Withering:
                     // roster §6.2 (#575): 疲労 included, the recovery never goes below the floor.
-                    return "ターン開始のスタミナ回復が スタック 1 につき 1 減る（疲労と重なっても " + Statuses.WitheringRecoveryFloor + " より下がらない）";
+                    return "ターン開始のスタミナ回復が スタック 1 につき " + Statuses.WitheringRecoveryPerStack + " 減る（疲労と重なっても " + Statuses.WitheringRecoveryFloor + " より下がらない）";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(kind), kind, "No panel text for the status " + kind);
             }
@@ -152,28 +153,33 @@ namespace Depiction.Bridge
             }
         }
 
-        /// <summary>The chips of one unit: the stances first, one chip per distinct stance, then the words in their fixed order.</summary>
-        public static List<StatusChip> Chips(StatusSet statuses, IReadOnlyList<string> stanceNames)
+        /// <summary>
+        /// The chips of one unit: the status words in their fixed order. The stances are not chips
+        /// (battle-visual-v1 §4.5 / §4.6, #605): the stance frames at the screen's edge carry them
+        /// (<see cref="StanceRows"/>).
+        /// </summary>
+        public static List<StatusChip> Chips(StatusSet statuses)
         {
-            List<StatusChip> chips = StanceChips(stanceNames);
+            var chips = new List<StatusChip>();
             foreach (StatusKind kind in statuses.Kinds) chips.Add(Chip(kind, statuses.Stacks(kind)));
             return chips;
         }
 
-        /// <summary>One chip per distinct stance name in the order first held, with the times it is held.</summary>
-        public static List<StatusChip> StanceChips(IReadOnlyList<string> stanceNames)
+        /// <summary>
+        /// §4.6 / §7.3 永続の状態 (#605): a side's stance list (StanceList.Rows: the order put down, a
+        /// repeat counted on one row) with each row's hover panel text, 効き方 and 減り方, from
+        /// <see cref="StanceChip"/>.
+        /// </summary>
+        public static List<StanceRow> StanceRows(IReadOnlyList<string> stanceNames)
         {
-            var chips = new List<StatusChip>();
-            var order = new List<string>();
-            var count = new Dictionary<string, int>();
-            foreach (string name in stanceNames)
+            List<StanceRow> rows = StanceList.Rows(stanceNames);
+            foreach (StanceRow row in rows)
             {
-                if (string.IsNullOrEmpty(name)) continue;
-                if (!count.ContainsKey(name)) { order.Add(name); count[name] = 0; }
-                count[name]++;
+                StatusChip text = StanceChip(row.Name, row.Count);
+                row.Effect = text.Effect;
+                row.Decay = text.Decay;
             }
-            foreach (string name in order) chips.Add(StanceChip(name, count[name]));
-            return chips;
+            return rows;
         }
 
         /// <summary>1.5 as "1.5" whatever the machine's culture (a comma would read as a list).</summary>

@@ -181,8 +181,23 @@ namespace BattleCore
         public static int MoveReduction(StatusSet statuses)
         {
             if (statuses == null) throw new ArgumentNullException(nameof(statuses));
-            return statuses.Has(StatusKind.Slow) ? 1 : 0;
+            return statuses.Has(StatusKind.Slow) ? SlowCellsPerMove : 0;
         }
+
+        /// <summary>§5 鈍足: the cells it takes off every cell change its holder causes (#575: the panel text reads this too).</summary>
+        public const int SlowCellsPerMove = 1;
+
+        /// <summary>§5 俊敏: the cells of the free step at the turn start, forward or back (#575: the panel text reads this too).</summary>
+        public const int SwiftFreeCells = 1;
+
+        /// <summary>§6.2 瘴気纏い: the maximum stamina each stack takes off (#575: the panel text reads this too).</summary>
+        public const int MiasmaShroudMaxStaminaPerStack = 1;
+
+        /// <summary>roster §5.1 深み: the recovery each stack takes off while the holder starts the turn at N 0 (#575: the panel text reads this too).</summary>
+        public const int DepthsRecoveryPerStack = 1;
+
+        /// <summary>roster §6.2 枯らし: the recovery each stack takes off at the turn start (#575: the panel text reads this too).</summary>
+        public const int WitheringRecoveryPerStack = 1;
 
         // ---- The boss-only words (#51) ----
 
@@ -208,8 +223,8 @@ namespace BattleCore
         public const int WitheringRecoveryFloor = 1;
 
         /// <summary>
-        /// roster §5.1 深み and §6.2 枯らし: what the turn-start recovery loses. 枯らし takes 1 a stack
-        /// always; 深み 1 a stack when the holder starts the turn adjacent (N 0) to the nearest enemy.
+        /// roster §5.1 深み and §6.2 枯らし: what the turn-start recovery loses. 枯らし takes
+        /// <see cref="WitheringRecoveryPerStack"/> a stack always; 深み <see cref="DepthsRecoveryPerStack"/> a stack when the holder starts the turn adjacent (N 0) to the nearest enemy.
         /// 疲労 is not counted here (battle_core_v4 §5: −1 while held); it is already out of
         /// <paramref name="recoveryBefore"/>, the recovery the turn would give without these two words.
         ///
@@ -222,8 +237,8 @@ namespace BattleCore
         public static int RecoveryLoss(StatusSet statuses, bool adjacent, int recoveryBefore)
         {
             if (statuses == null) throw new ArgumentNullException(nameof(statuses));
-            int withering = Math.Min(statuses.Stacks(StatusKind.Withering), Math.Max(0, recoveryBefore - WitheringRecoveryFloor));
-            return withering + (adjacent ? statuses.Stacks(StatusKind.Depths) : 0);
+            int withering = Math.Min(statuses.Stacks(StatusKind.Withering) * WitheringRecoveryPerStack, Math.Max(0, recoveryBefore - WitheringRecoveryFloor));
+            return withering + (adjacent ? statuses.Stacks(StatusKind.Depths) * DepthsRecoveryPerStack : 0);
         }
 
         /// <summary>

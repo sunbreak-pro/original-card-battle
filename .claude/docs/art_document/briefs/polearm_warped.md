@@ -1,6 +1,6 @@
 # 錆槍の竜兵（polearm_warped）— 仕様カード
 
-- 作成日: 2026-09-20 / 更新: 2026-09-23（#146。寸法・生成時間・指示文を直し、題材を #128 の竜人へ寄せた）/ 2026-10-03（#85。向きを左向きに変え、待機の絵を Unity リポへ入れた）/ 2026-10-04（#85。行動をロースター v4.6 の 5 つに揃え、間合いをマスの語に直し、差分の指示文を足した）/ 2026-10-10（#85。取り込み設定と画面での確認が済んだので、進捗を差分の作成待ちに直した）/ 2026-10-11（#85。技名をロースター v4.7 の言い換えに、行動と階層を v4.16 に合わせ、枠の幅（#302）と予兆の札の大きさを今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵と踏み込みの扱いを `battle_ui_ux_v2.md` §6.4 に合わせた）/ 2026-10-12（#85。攻撃 3 つの威力をロースター v4.21 に合わせ、ずれたコードとロースターの行番号を今の行に直した）/ 2026-10-21（#85。#455 で人型が画面で高さ 226 px に縮んだことを §2 の大きさ・予兆の札・数字の位置に入れ、BattleCore の威力が 9・6・5 に追従したこと（#498）と、2 体の組が精鋭の枠にだけ出ること（ロースター v4.23）を書き、ずれたコードとロースターの行番号を今の行に直した）/ 工程: C0（`visual-production-pipeline character polearm_warped`）
+- 作成日: 2026-09-20 / 更新: 2026-09-23（#146。寸法・生成時間・指示文を直し、題材を #128 の竜人へ寄せた）/ 2026-10-03（#85。向きを左向きに変え、待機の絵を Unity リポへ入れた）/ 2026-10-04（#85。行動をロースター v4.6 の 5 つに揃え、間合いをマスの語に直し、差分の指示文を足した）/ 2026-10-10（#85。取り込み設定と画面での確認が済んだので、進捗を差分の作成待ちに直した）/ 2026-10-11（#85。技名をロースター v4.7 の言い換えに、行動と階層を v4.16 に合わせ、枠の幅（#302）と予兆の札の大きさを今のコードに合わせた）/ 2026-10-11（#447。崩れの差分を保留に直し、行動の絵と踏み込みの扱いを `battle_ui_ux_v2.md` §6.4 に合わせた）/ 2026-10-12（#85。攻撃 3 つの威力をロースター v4.21 に合わせ、ずれたコードとロースターの行番号を今の行に直した）/ 2026-10-21（#85。#455 で人型が画面で高さ 226 px に縮んだことを §2 の大きさ・予兆の札・数字の位置に入れ、BattleCore の威力が 9・6・5 に追従したこと（#498）と、2 体の組が精鋭の枠にだけ出ること（ロースター v4.23）を書き、ずれたコードとロースターの行番号を今の行に直した）/ 2026-10-31（#85。DepictionPlayer.cs・FigureView.cs・CoreScriptWriter.cs の行番号を今の行に直した。値と内容は変えていない）/ 工程: C0（`visual-production-pipeline character polearm_warped`）
 - 正本: `.claude/docs/enemy_document/enemy_roster_v4.md`（錆槍の竜兵の節）/ `.claude/docs/vision/world-v1.md`（竜の系譜）/ `.claude/docs/battle_document/battle_core_v4.md` §7（マスと間合い）/ `.claude/docs/battle_document/battle_ui_ux_v2.md`（床のマス・届くマス・狙うマス）/ `.claude/docs/art_document/style-guide.md`（原本の大きさと指示文）/ `.claude/docs/art_document/asset-intake.md`（書き出しと取り込み）/ `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs`（枠と配置）/ `unity-port/unity-project-kit/Assets/View/Depiction/Script/FigureMotion.cs`（差分の絵の名前と動き）
 - 手順書: `docs/reports/2026-09-19-krita-ai-setup-guide.html` 4 章（待機）/ `docs/reports/2026-10-03-enemy-motion.html`（差分）
 - 内部 ID は `polearm_warped` のままです。ロースターが ID を替えないと決めているので、ファイル名と asset id もこの ID を使います（`enemy_roster_v4.md` §1.8）。
@@ -17,13 +17,13 @@
 
 | 項目 | 値 | 出典 |
 | --- | --- | --- |
-| 表示枠 | 210 × 450（Canvas の参照単位で、比は 0.467）。枠は絵を着ると「高さ 450 × 絵の幅 ÷ 1536」まで横へ広がりますが（#302）、640 × 1536 の絵では 187.5 で 210 を下回るので、210 のままです | `DepictionPrefabBuilder.cs:223`、`:479-481`（`ScaleWithScreenSize`、参照 1920 × 1080、`matchWidthOrHeight = 0.5`）。幅の決め方は `FigureMotion.cs:95-99`（`FigureFrame.Width`）と `FigureView.cs:423-445`（`FitFrame`） |
-| 画面での高さ | 枠は足元を軸に 226 ÷ 450（約 0.50）倍に縮めて描きます（#455）。人型の高さは、参照の 1920 × 1080 で 226 単位です。実画素は 1080p で 226、1440p で約 301、4K で約 452 です。原本の 1536 px は、1080p で約 6.8 分の 1 に縮んで映ります | `battle-visual-v1.md` §4.3、`FigureMotion.cs:119`（`StandardHeight`）、`FigureView.cs:166-174`（`StandTall`）、`DepictionPlayer.cs:1702` |
+| 表示枠 | 210 × 450（Canvas の参照単位で、比は 0.467）。枠は絵を着ると「高さ 450 × 絵の幅 ÷ 1536」まで横へ広がりますが（#302）、640 × 1536 の絵では 187.5 で 210 を下回るので、210 のままです | `DepictionPrefabBuilder.cs:223`、`:479-481`（`ScaleWithScreenSize`、参照 1920 × 1080、`matchWidthOrHeight = 0.5`）。幅の決め方は `FigureMotion.cs:95-99`（`FigureFrame.Width`）と `FigureView.cs:423-451`（`FitFrame`） |
+| 画面での高さ | 枠は足元を軸に 226 ÷ 450（約 0.50）倍に縮めて描きます（#455）。人型の高さは、参照の 1920 × 1080 で 226 単位です。実画素は 1080p で 226、1440p で約 301、4K で約 452 です。原本の 1536 px は、1080p で約 6.8 分の 1 に縮んで映ります | `battle-visual-v1.md` §4.3、`FigureMotion.cs:119`（`StandardHeight`）、`FigureView.cs:166-174`（`StandTall`）、`DepictionPlayer.cs:1726-1727` |
 | 絵の収まり | `preserveAspect = true` です。640 × 1536（比 0.417）の絵は高さいっぱいに収まり、幅は約 188 単位になります | `DepictionPrefabBuilder.cs:227` |
 | 基準点 | 足元の中央（pivot は (0.5, 0)） | `DepictionPrefabBuilder.cs:223` |
 | 左右の向き | 左向きで描きます。Unity は反転せず、画面右から左のプレイヤーをそのまま向きます。プレハブの置き場は x = +400 で、床のマスを出す戦闘では立っているマスの中心に立ちます | `DepictionPrefabBuilder.cs:508`、`:512-513`、`battle-visual-v1.md` §4.3。向きは `FigureFacing`（`FigureMotion.cs:57-67`）が決めます（#288、PR #293） |
-| 頭上の空き | 予兆の札は、実行時に 200 × 98 になります。床のマスを出す戦闘では、札の下端が人型の頭の 14 単位上に来ます。頭は足元から 226 単位なので、札は枠の外に出ます。枠の中は上端まで描いてかまいません | `battle-visual-v1.md` §4.4、`OmenBadgeView.cs:32`、`:141`（札の大きさ。プレハブの 270 × 68 は実行時に置き換わる。`DepictionPrefabBuilder.cs:368`）、`DepictionPlayer.cs:553-554`、`:619`（`OmenOverHead`） |
-| 数字と文字の位置 | 数字は胸の点の 40 単位上、ラベルは頭の点の 30 単位下に出ます。胸と頭の点は枠の 270 と 470 単位にあり、枠ごと約 0.50 倍に縮むので、足元から約 136 と約 236 単位です。数字は足元から約 176 単位、ラベルは約 206 単位に出ます | `DepictionPrefabBuilder.cs:228-229`、`DepictionPlayer.cs:817-818` |
+| 頭上の空き | 予兆の札は、実行時に 200 × 98 になります。床のマスを出す戦闘では、札の下端が人型の頭の 14 単位上に来ます。頭は足元から 226 単位なので、札は枠の外に出ます。枠の中は上端まで描いてかまいません | `battle-visual-v1.md` §4.4、`OmenBadgeView.cs:32`、`:141`（札の大きさ。プレハブの 270 × 68 は実行時に置き換わる。`DepictionPrefabBuilder.cs:368`）、`DepictionPlayer.cs:555-556`、`:621`（`OmenOverHead`） |
+| 数字と文字の位置 | 数字は胸の点の 40 単位上、ラベルは頭の点の 30 単位下に出ます。胸と頭の点は枠の 270 と 470 単位にあり、枠ごと約 0.50 倍に縮むので、足元から約 136 と約 236 単位です。数字は足元から約 176 単位、ラベルは約 206 単位に出ます | `DepictionPrefabBuilder.cs:228-229`、`DepictionPlayer.cs:819-820` |
 | 原本の大きさ | **640 × 1536** の文書です。書き出しも 640 × 1536 のままにして、縮小しません | `style-guide.md` §2、`asset-intake.md` §1.2 |
 
 **利き手**: 武器が画面左（プレイヤー側）へ来るように描きます。原本と画面で向きは同じです。
@@ -71,7 +71,7 @@
 
 - **順 1 は 2 枚です。** 攻撃 1 枚と倒れ 1 枚を先に作り、1 枚で足りるかを手触りの確認で見てから増やします（`docs/reports/2026-10-03-enemy-motion.html`）。作り始めるのは、待機の絵が `Battle.unity` に映ったのを確かめてからです（§6）。
 - **View の口は 4 つです。** 待機 / 行動 / 被弾 / 倒れで、崩れの口はありません（`FigureMotion.cs:15-21` の `FigurePose`、`battle_ui_ux_v2.md` §6.4）。保留のあいだ、崩れは絵を替えず、いまの絵を傾ける動きだけで見せます（§6.4）。崩れの名前（`react.` の後ろ）は、View に崩れの口が入るときに、`asset-intake.md` §4 の付け方で決めます。
-- **行動の口は 1 つだけです。** `chr_polearm_warped_act_*.png` のうち、名前順で最初の 1 枚を全ての行動に使います（`battle_ui_ux_v2.md` §6.4、`FigureArtCollector.cs` の `FirstAct`）。敵が予兆を実行する瞬間は、受けと踏み込みも行動の絵に替わります（`DepictionPlayer.cs:926-927`、`:1092` の `EnemyMotion`）。台本は、敵の全ての行動の実行に `EnemyWindup` の拍を書きます（`Bridge/CoreScriptWriter.cs:427`）。
+- **行動の口は 1 つだけです。** `chr_polearm_warped_act_*.png` のうち、名前順で最初の 1 枚を全ての行動に使います（`battle_ui_ux_v2.md` §6.4、`FigureArtCollector.cs` の `FirstAct`）。敵が予兆を実行する瞬間は、受けと踏み込みも行動の絵に替わります（`DepictionPlayer.cs:928`、`:1103` の `EnemyMotion`）。台本は、敵の全ての行動の実行に `EnemyWindup` の拍を書きます（`Bridge/CoreScriptWriter.cs:522`）。
 - **順 3 の 3 枚は、View が行動（または系統）ごとに絵を引くようになるまで Unity に置きません**（`battle_ui_ux_v2.md` §6.4 の「いま Unity に置かない絵」）。`act_guard_up` / `act_reach_thrust` / `act_shove` はどれも名前順で `act_sweep` より前なので、1 枚でも置くとその絵が全ての行動に出ます。
 - **踏み込みには、置いた 1 枚の払い斬りの絵が出ます。** 踏み込み（`step_forward`）は差分を描かない移動の行動です。踏み込み用の絵（`act_default` など）は描かず、払い斬りの絵を、踏み込みに出ても読める構えにします。
 

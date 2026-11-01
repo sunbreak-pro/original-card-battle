@@ -29,7 +29,7 @@ namespace Exploration.Tests
             var interlude = session.Screen();
             Assert.That(interlude.Card.Kind, Is.EqualTo(CardKind.Interlude));
             Assert.That(interlude.Card.Buttons.Select(b => b.Action), Is.EqualTo(new[] { ScreenAction.Descend, ScreenAction.AskEndLife }));
-            Assert.That(interlude.Card.Lines.Last(), Is.EqualTo("次は第 2 層　■■の秘跡: 1 歩ごとに瘴気 +1%、刻限 10"));
+            Assert.That(interlude.Card.Lines.Last(), Is.EqualTo("次は第 2 層　■■の秘跡: 1 刻限ごとに増える瘴気 +1%、刻限 10"));
             Assert.That(interlude.Miasma.ForecastLabel, Is.EqualTo("降りると +1%"));
 
             int miasma = session.State.MiasmaPercent;

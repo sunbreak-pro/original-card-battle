@@ -331,16 +331,21 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void TheSameStanceTwice_IsOneLastingChip_ThatSaysItWorksTwice()
+        public void TheSameStanceTwice_IsOneRow_WhosePanelSaysItWorksTwice()
         {
-            List<StatusChip> chips = StatusChipText.StanceChips(new[] { "岩の構え", "岩の構え" });
+            // §4.6 / §7.3 永続の状態 (#605): the stance frame's row carries the panel text.
+            List<StanceRow> rows = StatusChipText.StanceRows(new[] { "岩の構え", "岩の構え" });
 
-            Assert.That(chips, Has.Count.EqualTo(1));
-            Assert.That(chips[0].Kind, Is.EqualTo(ChipKind.Lasting));
-            Assert.That(chips[0].Title, Is.EqualTo("岩の構え ×2"));
-            Assert.That(chips[0].Effect, Does.StartWith("毎ターン開始に Guard +3"));
-            Assert.That(chips[0].Decay, Is.EqualTo("減らない（永続）"));
-            Assert.That(StatusChipText.StanceChips(new[] { "岩の構え" })[0].Title, Is.EqualTo("岩の構え"), "once prints no ×1");
+            Assert.That(rows, Has.Count.EqualTo(1));
+            Assert.That(rows[0].Count, Is.EqualTo(2));
+            Assert.That(StanceList.PanelTitle(rows[0]), Is.EqualTo("岩の構え ×2"));
+            Assert.That(rows[0].Effect, Does.StartWith("毎ターン開始に Guard +3"));
+            Assert.That(rows[0].Effect, Does.EndWith("（2 枚ぶん、2 倍効く）"));
+            Assert.That(rows[0].Decay, Is.EqualTo("減らない（永続）"));
+            Assert.That(StatusChipText.StanceChip("岩の構え", 2).Title, Is.EqualTo("岩の構え ×2"), "the bridge's own title agrees");
+            List<StanceRow> once = StatusChipText.StanceRows(new[] { "岩の構え" });
+            Assert.That(StanceList.PanelTitle(once[0]), Is.EqualTo("岩の構え"), "once prints no ×1");
+            Assert.That(once[0].Effect, Does.Not.Contain("倍効く"));
         }
 
         [Test]

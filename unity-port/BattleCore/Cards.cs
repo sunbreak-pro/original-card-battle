@@ -209,20 +209,27 @@ namespace BattleCore
         /// §8: a deck holds 20 to 40 cards and at most 3 of any one kind. There is no limit on stance
         /// cards (v4.4; §19.6 S15's three-card cap is gone). Columns are checked too, because a card
         /// outside 1..4 has no cost, and so is the multi-hit rule (#253) and the stance standing alone (§4).
+        ///
+        /// Trial extension (docs/EXTENSIONS.md 「出立の枠（DeckLimits）」 L-3): <paramref name="limits"/>' DeckMin /
+        /// DeckMax replace the 20 and 40 — concept-v3.md §14 生存者ボーナス 「デッキ上限 +5」 lets a survivor's
+        /// heir set out with up to 45. Left out (null) they are the constants, as before.
         /// </summary>
-        public static DeckValidation Validate(IReadOnlyList<CardInstance> deck)
+        // js: core/battle/Cards.js:263
+        public static DeckValidation Validate(IReadOnlyList<CardInstance> deck, DeckLimits? limits = null)
         {
             if (deck == null) throw new ArgumentNullException(nameof(deck));
 
             var errors = new List<string>();
+            int deckMin = limits?.DeckMin ?? Constants.DeckMin;
+            int deckMax = limits?.DeckMax ?? Constants.DeckMax;
 
-            if (deck.Count < Constants.DeckMin)
+            if (deck.Count < deckMin)
             {
-                errors.Add($"Deck has {deck.Count} cards; the minimum is {Constants.DeckMin}.");
+                errors.Add($"Deck has {deck.Count} cards; the minimum is {deckMin}.");
             }
-            else if (deck.Count > Constants.DeckMax)
+            else if (deck.Count > deckMax)
             {
-                errors.Add($"Deck has {deck.Count} cards; the maximum is {Constants.DeckMax}.");
+                errors.Add($"Deck has {deck.Count} cards; the maximum is {deckMax}.");
             }
 
             foreach (var group in deck.GroupBy(c => c.Def.Id).OrderBy(g => g.Key, StringComparer.Ordinal))

@@ -27,6 +27,20 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void TheScreenNamesTheLayerItsBackdropIsDrawnFor()
+        {
+            // The view lays ExplorationBackdropSpec.For(screen.Layer) behind the map (#614), so the number
+            // must follow the descent, not stay on layer one.
+            var session = new ExplorationSession();
+            Assert.That(session.Screen().Layer, Is.EqualTo(1));
+
+            WalkToLayer(session, 3);
+            var screen = session.Screen();
+
+            Assert.That(screen.Layer, Is.EqualTo(3));
+        }
+
+        [Test]
         public void TheEntryBattleCoversTheMapUntilItIsReported()
         {
             // The entry is always a battle (§4.1), so a life opens on the stand-in battle (§6.8).
@@ -173,6 +187,20 @@ namespace Exploration.Tests
             Assert.That(gauge.NextPercent, Is.EqualTo(gauge.Percent + SevenLayers.Of(1).Density));
             Assert.That(gauge.ForecastLabel, Is.EqualTo($"次の 1 歩で +{SevenLayers.Of(1).Density}%"));
             Assert.That(gauge.StepLines, Is.EqualTo(new[] { 20, 40, 60, 80 }));
+        }
+
+        [Test]
+        public void TheGaugeHoldsItsReadingsAsFractionsOfTheDeathLine()
+        {
+            var session = Explorable(new ExplorationSession(new RunStart { MiasmaPercent = 18 }));
+            var gauge = session.Screen().Miasma;
+
+            Assert.That(gauge.Percent, Is.EqualTo(19));
+            Assert.That(gauge.Fill, Is.EqualTo(0.19f).Within(1e-6f));
+            Assert.That(gauge.NextFill, Is.EqualTo((float)gauge.NextPercent / Miasma.DeathAt).Within(1e-6f));
+            Assert.That(gauge.StepLineFills.Count, Is.EqualTo(gauge.StepLines.Count));
+            for (int i = 0; i < gauge.StepLines.Count; i++)
+                Assert.That(gauge.StepLineFills[i], Is.EqualTo(0.2f * (i + 1)).Within(1e-6f));
         }
 
         [Test]

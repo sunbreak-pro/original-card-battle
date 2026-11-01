@@ -18,6 +18,11 @@ namespace Exploration.Bridge
     /// </summary>
     public sealed class BattleHandIn
     {
+        /// <param name="limits">
+        /// Trial extension (js: bridge/exploration/EncounterBattle.js:24, docs/EXTENSIONS.md 「出立の枠（DeckLimits）」):
+        /// the life's deck limits, which <see cref="EncounterBattle.NextLaunch"/> hands to the launch. Null: §8's.
+        /// </param>
+        // js: bridge/exploration/EncounterBattle.js:24
         public BattleHandIn(
             int layer,
             NodeKind kind,
@@ -31,7 +36,8 @@ namespace Exploration.Bridge
             IReadOnlyDictionary<string, int> disclosure,
             IReadOnlyList<CardInstance> deck,
             Departure tools,
-            int seed)
+            int seed,
+            DeckLimits limits = null)
         {
             Encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
             FieldCells = fieldCells ?? throw new ArgumentNullException(nameof(fieldCells));
@@ -51,6 +57,7 @@ namespace Exploration.Bridge
             MaxStamina = maxStamina;
             MiasmaPercent = miasmaPercent;
             Seed = seed;
+            Limits = limits;
         }
 
         /// <summary>The floor: 1〜7.</summary>
@@ -87,6 +94,12 @@ namespace Exploration.Bridge
 
         /// <summary>The first fight's seed; each next fight takes one of its own from it.</summary>
         public int Seed { get; }
+
+        /// <summary>
+        /// Trial extension (js: bridge/exploration/EncounterBattle.js:58): the deck limits of the life, or null for
+        /// §8's constants. <see cref="EncounterBattle.NextLaunch"/> hands them to the BattleLaunch (as Limits).
+        /// </summary>
+        public DeckLimits Limits { get; }
     }
 
     /// <summary>
@@ -106,8 +119,11 @@ namespace Exploration.Bridge
             IReadOnlyList<string> observed,
             IReadOnlyList<string> learned,
             IReadOnlyList<string> offered,
-            BattleReward reward = null)
+            BattleReward reward = null,
+            IReadOnlyList<string> pagesRead = null,
+            int pagesTurned = 0)
         {
+            if (pagesTurned < 0) throw new ArgumentOutOfRangeException(nameof(pagesTurned));
             Won = won;
             Hp = hp;
             Stamina = stamina;
@@ -118,6 +134,8 @@ namespace Exploration.Bridge
             Learned = learned ?? Array.Empty<string>();
             Offered = offered ?? Array.Empty<string>();
             Reward = reward ?? BattleReward.None;
+            PagesRead = pagesRead ?? Array.Empty<string>();
+            PagesTurned = pagesTurned;
         }
 
         /// <summary>Every fight of the encounter was won.</summary>
@@ -150,9 +168,23 @@ namespace Exploration.Bridge
 
         /// <summary>
         /// The rest of a won encounter's reward (encounters_and_rewards_v4.md §4.2): the pile's cards to
-        /// pick one from (Expedition.Learn), consumables and pages. None for a lost encounter.
+        /// pick one from (Expedition.Learn), consumables and pages. None for a lost encounter. It is what
+        /// the encounter brought after the pages were read: Pages counts the pages read into the journal,
+        /// and a page that turned into a card shows as the card laid out (or the consumable it became).
         /// </summary>
         public BattleReward Reward { get; }
+
+        /// <summary>
+        /// The dungeon entries the pages told in full (Journal.DungeonJournal ids, now at 開示度 2), in the
+        /// order read (dungeon_exploration_v4.md §6.11).
+        /// </summary>
+        public IReadOnlyList<string> PagesRead { get; }
+
+        /// <summary>
+        /// Pages whose layer had nothing left to tell, each turned into a card (§4.3). A card waiting
+        /// behind another pick is laid out in Expedition.Offer once that pick is made.
+        /// </summary>
+        public int PagesTurned { get; }
     }
 
     /// <summary>One fight as it ended: its enemies, the final state and every event it emitted.</summary>
@@ -241,6 +273,9 @@ namespace Exploration.Bridge
                 BossWordWard = tools.BossWordWard,
                 ChainIndex = Index + 1,
                 ChainTotal = Count,
+                // Trial extension (js: bridge/exploration/EncounterBattle.js:211): a life's deck limits (a survivor's
+                // 45-card deck) ride to the launch, which holds the deck to them (BattleLaunch.BuildDeck). Null: §8's.
+                Limits = HandIn.Limits,
             };
         }
 

@@ -1,6 +1,7 @@
 // The socket the enemy data plugs into (dungeon_exploration_v4.md §6.3). Which enemy stands behind a
-// combat node is the spawn tables' (#102) and what the journal knows about it is #107's; until they
-// land, NoEnemyIntel answers "nothing known" and the screen prints 「？」. Swapping the source in
+// combat node is the spawn tables' (#102) and what the journal knows about it is the life's journal's
+// (LifeJournal, #107), which Exploration.Bridge.Expedition plugs in. A session started without one
+// gets NoEnemyIntel, which answers "nothing known" so the screen prints 「？」. Swapping the source in
 // changes nothing on the screen's side.
 using System;
 using System.Collections.Generic;
@@ -41,7 +42,29 @@ namespace Exploration
         IReadOnlyList<JournalPage> Pages(int layer, bool surveyed);
     }
 
-    /// <summary>The stand-in until #102 and #107: no enemy is known, no enemy page exists.</summary>
+    /// <summary>
+    /// Trial extension (docs/EXTENSIONS.md J-10, W-4): an intel that names the layer's 情報収集 target. In trial mode,
+    /// without 写しの帳, ExplorationSession asks it when a 情報収集 node resolves and raises the answer to 開示度 2
+    /// through its Keeper (js: ExplorationSession.js:755, where the browser trial checks
+    /// <c>typeof Intel.SurveyTarget === 'function'</c>). An intel that does not implement it is never asked.
+    /// </summary>
+    public interface ISurveyIntel
+    {
+        /// <summary>The enemy this layer's survey raises, or null when nothing is left below 開示度 2.</summary>
+        string SurveyTarget(int layer, LayerMap map);
+    }
+
+    /// <summary>
+    /// Trial extension (js: app/intel.js:62, the hook <c>JournalIntel.bind</c> puts on the session's Arrived): an
+    /// intel told about every node the session resolves, at the end of the session's own Arrived, so what it does
+    /// happens inside the logged call that resolved the node. An intel that does not implement it is never told.
+    /// </summary>
+    public interface IArrivalIntel
+    {
+        void Arrived(int nodeId);
+    }
+
+    /// <summary>The source of a session with no journal: no enemy is known, no enemy page exists.</summary>
     public sealed class NoEnemyIntel : IEnemyIntel
     {
         public NodeIntel ForNode(MapNode node, int layer, bool surveyed) => null;

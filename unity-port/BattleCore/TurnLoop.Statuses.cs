@@ -170,12 +170,12 @@ namespace BattleCore
                 state = state with { PlayerHistory = state.History.WithInfliction(state.Turn) };
             }
 
-            // #51 (battle_core_v4 §6.2 瘴気纏い): each stack lowers the holder's maximum stamina by 1, and
+            // #51 (battle_core_v4 §6.2 瘴気纏い): each stack lowers the holder's maximum stamina by Statuses.MiasmaShroudMaxStaminaPerStack, and
             // what it holds is cut to the new maximum.
             if (kind == StatusKind.MiasmaShroud && after.Stacks(kind) > before)
             {
                 var holder = Get(state, target, targetUnit);
-                int lowered = after.Stacks(kind) - before;
+                int lowered = (after.Stacks(kind) - before) * Statuses.MiasmaShroudMaxStaminaPerStack;
                 int maxAfter = Math.Max(Constants.MaxStaminaFloor, holder.MaxStamina - lowered);
                 int staminaAfter = Math.Min(holder.Stamina, maxAfter);
                 events.Add(new MaxStaminaChanged(target, maxAfter - holder.MaxStamina, maxAfter, staminaAfter) { Unit = eventUnit });

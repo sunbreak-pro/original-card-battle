@@ -1,0 +1,17 @@
+{
+    "name": "Trial.Audio",
+    "rootNamespace": "Trial.Audio",
+    "references": [
+        "Trial.Async",
+        "Trial.Audio.Synth"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

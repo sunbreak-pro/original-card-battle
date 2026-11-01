@@ -7,6 +7,15 @@
 // This assembly does not reference DungeonContent: the View hands them in as SupplyOptions
 // (DepartureSupplies), carrying only what the battle reads: how many cells a tool moves the start,
 // and the amounts of 息継ぎの笛 / 竜鱗の欠片 / 竜語の符 (battle_core_v4 §9.1).
+//
+// Trial extension (port of the browser trial's DepartureBuilder.js, docs/EXTENSIONS.md 「出立の枠（DeckLimits）」
+// L-7): `new DepartureBuilder(tools, consumables, limits)` holds the slots to a DeckLimits (`Limits`):
+// CanAddTool / CanAddConsumable, Validate / CanSetOut, ToolsLine / ConsumablesLine and the instance
+// LifeTitle / LifeToolHeading / LifeConsumableHeading (static TitleFor / ToolHeadingFor / ConsumableHeadingFor)
+// read it. Left out (null) it is DeckLimits.Default (3 and 3) and the class is what it was; the static Title /
+// ToolHeading / ConsumableHeading stay as they were (the JS's instance getters of those names are Life* here,
+// since C# cannot hold a static and an instance member of one name). concept-v3.md §14 生存者ボーナス: a
+// survivor's heir has 4 tool slots.
 using System;
 using System.Collections.Generic;
 using BattleCore;
@@ -56,15 +65,21 @@ namespace Depiction.Bridge
         private readonly List<string> _tools = new List<string>();
         private readonly List<string> _consumables = new List<string>();
 
-        public DepartureBuilder(IReadOnlyList<SupplyOption> tools, IReadOnlyList<SupplyOption> consumables)
+        /// <param name="limits">Trial extension: the DeckLimits the slots are held to; null is the constants' 3 and 3.</param>
+        // js: bridge/depiction/DepartureBuilder.js:64
+        public DepartureBuilder(IReadOnlyList<SupplyOption> tools, IReadOnlyList<SupplyOption> consumables, DeckLimits limits = null)
         {
             ToolOptions = tools ?? throw new ArgumentNullException(nameof(tools));
             ConsumableOptions = consumables ?? throw new ArgumentNullException(nameof(consumables));
+            Limits = DeckLimits.From(limits);
         }
 
         public IReadOnlyList<SupplyOption> ToolOptions { get; }
 
         public IReadOnlyList<SupplyOption> ConsumableOptions { get; }
+
+        /// <summary>Trial extension: the slot counts (DeckLimits.Default is 3 tools and 3 consumables).</summary>
+        public DeckLimits Limits { get; }
 
         /// <summary>The ids in the tool slots, in the order they went in. The same tool may fill two.</summary>
         public IReadOnlyList<string> Tools => _tools;
@@ -80,9 +95,12 @@ namespace Depiction.Bridge
 
         public int ConsumableCount(string id) => Count(_consumables, id);
 
-        public bool CanAddTool(string id) => _tools.Count < DeckRules.ToolSlots && Find(ToolOptions, id) != null;
+        /// <summary>(Trial: the slot count is Limits.ToolSlots — 4 with the survivor's bonus, concept-v3.md §14.)</summary>
+        // js: bridge/depiction/DepartureBuilder.js:89
+        public bool CanAddTool(string id) => _tools.Count < Limits.ToolSlots && Find(ToolOptions, id) != null;
 
-        public bool CanAddConsumable(string id) => _consumables.Count < DeckRules.ConsumableSlots && Find(ConsumableOptions, id) != null;
+        // js: bridge/depiction/DepartureBuilder.js:91
+        public bool CanAddConsumable(string id) => _consumables.Count < Limits.ConsumableSlots && Find(ConsumableOptions, id) != null;
 
         public bool AddTool(string id)
         {
@@ -204,21 +222,96 @@ namespace Depiction.Bridge
                 StartStaminaBonus, FirstHitGuard, BossWordWard);
         }
 
+        /// <summary>
+        /// (Trial: DeckRules.Validate with limits made of the deck builder's bounds — the same ones its IsValid
+        /// reads, so StatusText and CanSetOut agree — and this builder's slots. Both default to the constants.)
+        /// </summary>
+        // js: bridge/depiction/DepartureBuilder.js:200
         public DeckValidation Validate(DeckBuilder deck)
         {
             if (deck == null) throw new ArgumentNullException(nameof(deck));
-            return DeckRules.Validate(Build(deck), deck.Owned);
+            return DeckRules.Validate(Build(deck), deck.Owned, LimitsWith(deck));
+        }
+
+        /// <summary>Trial extension: the deck's DeckMin / DeckMax with this builder's slots.</summary>
+        // js: bridge/depiction/DepartureBuilder.js:206
+        private DeckLimits LimitsWith(DeckBuilder deck)
+        {
+            // The JS falls back to this builder's limits when the deck carries none; a C# DeckBuilder always does.
+            DeckLimits own = deck.Limits ?? Limits;
+            if (ReferenceEquals(own, Limits)) return Limits;
+            return Limits.With(deckMin: own.DeckMin, deckMax: own.DeckMax);
         }
 
         public bool CanSetOut(DeckBuilder deck) => Validate(deck).Ok;
 
         // ---- what the screen prints ----
 
-        public static string Title => "出立の支度（ツール " + DeckRules.ToolSlots + " 枠・消耗品 " + DeckRules.ConsumableSlots + " 枠・才能 1 枚）";
+        // js: bridge/depiction/DepartureBuilder.js:216
+        public static string Title => TitleFor(DeckLimits.Default);
 
-        public static string ToolHeading => "ツール（探索と戦闘で共通の " + DeckRules.ToolSlots + " 枠。同じものを 2 つ持てます）";
+        // js: bridge/depiction/DepartureBuilder.js:218
+        public static string ToolHeading => ToolHeadingFor(DeckLimits.Default);
 
-        public static string ConsumableHeading => "消耗品（" + DeckRules.ConsumableSlots + " 枠。拠点へは持ち帰りません）";
+        // js: bridge/depiction/DepartureBuilder.js:220
+        public static string ConsumableHeading => ConsumableHeadingFor(DeckLimits.Default);
+
+        /// <summary>Trial extension: 「出立の支度（ツール 4 枠・消耗品 3 枠・才能 1 枚）」 for some limits.</summary>
+        // js: bridge/depiction/DepartureBuilder.js:223
+        public static string TitleFor(DeckLimits limits)
+        {
+            DeckLimits l = DeckLimits.From(limits);
+            return "出立の支度（ツール " + l.ToolSlots + " 枠・消耗品 " + l.ConsumableSlots + " 枠・才能 1 枚）";
+        }
+
+        /// <summary>Trial extension: 「ツール（探索と戦闘で共通の 4 枠。同じものを 2 つ持てます）」 for some limits.</summary>
+        // js: bridge/depiction/DepartureBuilder.js:229
+        public static string ToolHeadingFor(DeckLimits limits) =>
+            "ツール（探索と戦闘で共通の " + DeckLimits.From(limits).ToolSlots + " 枠。同じものを 2 つ持てます）";
+
+        /// <summary>Trial extension: 「消耗品（3 枠。拠点へは持ち帰りません）」 for some limits.</summary>
+        // js: bridge/depiction/DepartureBuilder.js:234
+        public static string ConsumableHeadingFor(DeckLimits limits) =>
+            "消耗品（" + DeckLimits.From(limits).ConsumableSlots + " 枠。拠点へは持ち帰りません）";
+
+        /// <summary>Trial extension: this builder's title (TitleFor(Limits)); the JS's instance `Title`.</summary>
+        // js: bridge/depiction/DepartureBuilder.js:239
+        public string LifeTitle => TitleFor(Limits);
+
+        /// <summary>Trial extension: this builder's tool heading; the JS's instance `ToolHeading`.</summary>
+        // js: bridge/depiction/DepartureBuilder.js:242
+        public string LifeToolHeading => ToolHeadingFor(Limits);
+
+        /// <summary>Trial extension: this builder's consumable heading; the JS's instance `ConsumableHeading`.</summary>
+        // js: bridge/depiction/DepartureBuilder.js:245
+        public string LifeConsumableHeading => ConsumableHeadingFor(Limits);
+
+        /// <summary>
+        /// Trial extension: the label over what the limits raise (concept-v3.md §14 生存者ボーナス; the hall's
+        /// InheritanceText says the same word). Showing it at 出立 is 試作で決めたこと 6 in docs/EXTENSIONS.md
+        /// 「出立の枠」: the documents show the bonus in 継承の間 (CAMP_FACILITIES_DESIGN.md §3.1).
+        /// </summary>
+        // js: bridge/depiction/DepartureBuilder.js:252
+        public static string BonusLabel => "生存者ボーナス";
+
+        /// <summary>
+        /// Trial extension: the tool slots the limits add over the constants' 3, in the hall's words
+        /// (InheritanceText.SurvivorTools): 「ツール枠 +1（3 → 4）」. "" when the slots are the constants'.
+        /// </summary>
+        // js: bridge/depiction/DepartureBuilder.js:258
+        public string RaisedLine
+        {
+            get
+            {
+                int from = DeckLimits.Default.ToolSlots;
+                int to = Limits.ToolSlots;
+                return to > from ? "ツール枠 +" + (to - from) + "（" + from + " → " + to + "）" : "";
+            }
+        }
+
+        /// <summary>Trial extension: whether tool slot <paramref name="index"/> (0-based) is one the limits add (the survivor's 4th).</summary>
+        // js: bridge/depiction/DepartureBuilder.js:265
+        public bool IsBonusToolSlot(int index) => index >= DeckLimits.Default.ToolSlots && index < Limits.ToolSlots;
 
         public static string TalentHeading => "才能（デッキの札から 1 枚。その札だけ習熟が 2 倍で溜まります）";
 
@@ -227,9 +320,11 @@ namespace Depiction.Bridge
         public static string BackLabel => "デッキに戻る";
 
         /// <summary>「ツール 2 / 3: 間合いの履、防瘴の面」, or 「ツール 0 / 3: なし」.</summary>
-        public string ToolsLine => SlotsLine("ツール", _tools, ToolOptions, DeckRules.ToolSlots);
+        // js: bridge/depiction/DepartureBuilder.js:276
+        public string ToolsLine => SlotsLine("ツール", _tools, ToolOptions, Limits.ToolSlots);
 
-        public string ConsumablesLine => SlotsLine("消耗品", _consumables, ConsumableOptions, DeckRules.ConsumableSlots);
+        // js: bridge/depiction/DepartureBuilder.js:278
+        public string ConsumablesLine => SlotsLine("消耗品", _consumables, ConsumableOptions, Limits.ConsumableSlots);
 
         /// <summary>The line an option has on the screen: its name and note, and a word when this demo's battles do not feel it.</summary>
         public static string LineOf(SupplyOption option)

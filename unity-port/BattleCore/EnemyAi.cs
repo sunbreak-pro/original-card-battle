@@ -247,8 +247,8 @@ namespace BattleCore
             if (action == null) return 0;
             if (!IsOpponentDirected(action.Attributes, action.Face, action.Targets)) return 0;
             var reach = action.Face.ReachOrDefault;
-            if (gap > reach.Max) return 1;
-            if (gap < reach.Min) return -1;
+            if (gap > reach.Max) return Statuses.SwiftFreeCells;
+            if (gap < reach.Min) return -Statuses.SwiftFreeCells;
             return 0;
         }
 
