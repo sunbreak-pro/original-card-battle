@@ -13,7 +13,8 @@
 - **#85（PR #742）**: `briefs/polearm_warped.md` §6 に、影絵の関門の実測と、絵が映る画面を書きました。
 - **#287（PR #743、RPG-by-card#15）**: Unity 側で `Figure.prefab` の棚に 2 体を足しました。Editor を開かず YAML を書いたので、Unity では未確認です。2 枚の仕様カードの §6 を合わせました。`polearm_unyielding` に離れた点が 94 個あることも書きました。
 - **検証**: 4 本とも `npm run build` / `lint` / `test:run` / `dotnet test` が exit 0 です。`npm run unity:check` は `origin/main` と同じ 162 件で exit 1 です。Unity の前回のコンパイルが古いためで、`BackdropView.cs` は Unity のコンパイラに個別に通してエラー 0 件でした。
-- **申し送り**: `2026-11-01-design-trial-art-destination.md`（`kind: conflict`）、`2026-11-01-design-silhouette-gate-size.md`、`2026-11-01-design-camp-legacy-wording.md` の 3 件です。
+- **決定**: こうだいさんが、立ち絵を試遊版の人型へ差し込むと決めました。差分はそれが入ってから作ります。仕様カード 3 枚と PR #742 / #743 をこの形に直しました。
+- **申し送り**: `2026-11-01-design-trial-art-destination.md`（`kind: conflict`）、`2026-11-01-design-trial-art-insert.md`、`2026-11-01-design-silhouette-gate-size.md`、`2026-11-01-design-camp-legacy-wording.md` の 4 件です。
 
 ### 2026-10-21 - design 宛ての 4 件を 1 件 1 PR で進める（#623 / #85 / #287 / #244）
 
