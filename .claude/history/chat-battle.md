@@ -1,5 +1,30 @@
 # HISTORY (chat-battle)
 
+### 2026-11-01 - #589 の残り 2 本と #715 / #712 / #714 を 5 本の PR へ
+
+#### 概要
+
+battle 宛ての 4 件を、origin/main（9e2a44e2）を基準に 5 本の PR にした。#589 は 2 本目と 3 本目を分け、同じファイルを触る PR の上に積んだ。5 本とも open で、merge は人の作業。build / lint / test:run / dotnet test は 5 本とも exit 0。
+
+#### 変更点
+
+- **#714（PR #733）**: `battle_core_v4.md` §3.2 の表の見出しから「battle レーンの叩き台」を外し、決定の 1 文を足した
+- **#712（PR #734）**: `battle_ui_ux_v2.md` §7 の手記の列を `dungeon_exploration_v4.md` §6.11 に合わせ、§6.4 の技の名前を「払い斬り」に直した
+- **#715（PR #738）**: 被弾の数字は #688 で割合になっていたので、残りの `GainGuard` と `Reserve` を `FloatNumberSpec` の割合へ移した
+- **#589 の 2 本目（PR #749、Refs）**: 敵ごとの人型・数値パネル・予兆の札・立ち位置、`Cue.Unit` の振り分け、札のずらし、敵ごとの対象の枠と落とす先、2 体目以降の撃破（§5.15 の順 5）、敵ごとの開示度。#738 と #734 の上に積んだ
+- **#589 の 3 本目（PR #750、Closes）**: 敵ごとの斜線の向きと交差、色見本（予兆の札 22 px、HP の行とスタンス枠 16 px）。#749 の上に積んだ
+- **申し送り 6 件**: 語が予兆の札に届く件、Tab と予兆の札のホバー、探索から敵ごとの開示度を渡す件、敵 1 体で開示度 0 の狙うマスが出る件、CLAUDE.md の段落、斜線を引いて消す演出
+
+#### 実測・知見
+
+- **`npm run unity:check` は exit 1**。162 件はすべて `View/Exploration`（160）と `View/Trial/Bridge`（2）で、`View/Depiction` と `BattleCore` は 0 件。手元の Library がリポジトリの新しいファイルを知らないために出る。#589 の完了条件のこの 1 行は満たせていない
+- **#589 の撃破の拍は台本に足さずに済んだ**。書き手が敵ごとに `CueKind.Defeat` と `Cue.Unit` を書いていて、View がほかの敵の立ち具合をフレームから読む。300 + 300 ms は `EffectPlan` の外なので、実測のログは計画より 600 ms 長く出る
+- **複製はシーンの部品の Awake より前に取る**。各 View が組み立てた子を複製に写らないフィールドで持つので、動いている部品を複製すると子が二重にできる
+
+#### 次
+
+- メインのチャットが PR の merge の後に `npm run unity:sync` と Unity Editor で 2 体の画面を確かめる。部品が二重にならないこと、灰のパネル、札の滑り、交差した斜線、16 px の色見本、スタンス枠のずれを見る
+
 ### 2026-10-28 - battle 宛ての Issue 12 件を 12 本の PR へ
 
 #### 概要
@@ -98,28 +123,3 @@ battle 宛ての open Issue 20 件を、Issue ごとのブランチと PR にし
 #### 次
 
 - PR #435 の merge の後、メインのチャットで `Battle.unity` の見た目を確かめる
-
-### 2026-09-27 - Unity の BattleCore の警告 CS8632 と CS0618 を PR へ（#209）
-
-#### 概要
-
-Unity が BattleCore とそのテストを nullable の文脈なしでコンパイルしていたため、`string?` の注釈が 1 つずつ CS8632 になっていた。asmdef の隣に `csc.rsp` を置いて文脈を揃え、PlayMode テスト 1 本の廃止 API を外した。PR #236 は open で、merge は人の手番。
-
-#### 変更点
-
-- **`csc.rsp`**: `unity-port/unity-project-kit/Assets/Core/csc.rsp`（`-nullable:enable` の 1 行）を足した。`unity-port/.gitignore:90` の `*.rsp` に当たるので `git add -f` で入れた
-- **同期**: `sync-unity-project.mjs` が同じファイルを `Assets/Core/csc.rsp` と `Assets/Tests/csc.rsp` へ写す。`BattleCore.Tests.csproj` も nullable 有効なので、テスト側にも同じ文脈を渡した
-- **CS0618**: `BattlePlaybackTests.cs:94` を `FindObjectsByType<MonoBehaviour>()` へ。`DemoFlowPlaybackTests.cs` と同じ形
-- **起票**: #235（`Assets/View/Depiction/` に残る CS0618 4 件。design レーンの作り直しの後）
-
-#### 実測・知見
-
-- **asmdef の隣の `csc.rsp` はそのアセンブリにだけ効き、`Assets/csc.rsp` を置き換える**。Unity 6000.5.5f1 の `ScriptCompilationBuildProgram.exe` と `UnityEditor.CoreModule.dll` を逆コンパイルして確かめた。rsp は空白と CR / LF で区切るので CRLF でも読めるが、`#` のコメントは扱わない
-- **Unity の生成した rsp（`Library/Bee/artifacts/*/*.rsp`）を Unity 同梱の csc に渡すと、Editor を起動せずに Unity と同じ警告が出る**。CS8632 は エディタ用 57（BattleCore 43、BattleCore.Tests 14）→ 0、プレイヤー用 43 → 0。新しい警告は出なかった
-- **Issue の 86 件はプレイヤー用の 43 件をログが 2 回ずつ書いたものと推定**。Unity のログは同じ警告を 2 回書く（`Logs/Editor-prev.log` 291〜314 行）
-- **CS0618 は Issue の見立てより多い**。`FindFirstObjectByType` も廃止で、`BattleBootstrap.cs:49` はプレイヤー用のビルドにも入る
-- `npm run build` / `lint` / `test:run` / `dotnet test` / `unity:sync -- --dry-run` は exit 0
-
-#### 次
-
-- メインのチャットが `npm run unity:sync` の後に Console で CS8632 が 0 件かを見て、Unity リポに `csc.rsp` 2 つと `.meta` をコミットする

@@ -1,5 +1,30 @@
 # HISTORY archive (chat-battle, 2026-09)
 
+### 2026-09-27 - Unity の BattleCore の警告 CS8632 と CS0618 を PR へ（#209）
+
+#### 概要
+
+Unity が BattleCore とそのテストを nullable の文脈なしでコンパイルしていたため、`string?` の注釈が 1 つずつ CS8632 になっていた。asmdef の隣に `csc.rsp` を置いて文脈を揃え、PlayMode テスト 1 本の廃止 API を外した。PR #236 は open で、merge は人の手番。
+
+#### 変更点
+
+- **`csc.rsp`**: `unity-port/unity-project-kit/Assets/Core/csc.rsp`（`-nullable:enable` の 1 行）を足した。`unity-port/.gitignore:90` の `*.rsp` に当たるので `git add -f` で入れた
+- **同期**: `sync-unity-project.mjs` が同じファイルを `Assets/Core/csc.rsp` と `Assets/Tests/csc.rsp` へ写す。`BattleCore.Tests.csproj` も nullable 有効なので、テスト側にも同じ文脈を渡した
+- **CS0618**: `BattlePlaybackTests.cs:94` を `FindObjectsByType<MonoBehaviour>()` へ。`DemoFlowPlaybackTests.cs` と同じ形
+- **起票**: #235（`Assets/View/Depiction/` に残る CS0618 4 件。design レーンの作り直しの後）
+
+#### 実測・知見
+
+- **asmdef の隣の `csc.rsp` はそのアセンブリにだけ効き、`Assets/csc.rsp` を置き換える**。Unity 6000.5.5f1 の `ScriptCompilationBuildProgram.exe` と `UnityEditor.CoreModule.dll` を逆コンパイルして確かめた。rsp は空白と CR / LF で区切るので CRLF でも読めるが、`#` のコメントは扱わない
+- **Unity の生成した rsp（`Library/Bee/artifacts/*/*.rsp`）を Unity 同梱の csc に渡すと、Editor を起動せずに Unity と同じ警告が出る**。CS8632 は エディタ用 57（BattleCore 43、BattleCore.Tests 14）→ 0、プレイヤー用 43 → 0。新しい警告は出なかった
+- **Issue の 86 件はプレイヤー用の 43 件をログが 2 回ずつ書いたものと推定**。Unity のログは同じ警告を 2 回書く（`Logs/Editor-prev.log` 291〜314 行）
+- **CS0618 は Issue の見立てより多い**。`FindFirstObjectByType` も廃止で、`BattleBootstrap.cs:49` はプレイヤー用のビルドにも入る
+- `npm run build` / `lint` / `test:run` / `dotnet test` / `unity:sync -- --dry-run` は exit 0
+
+#### 次
+
+- メインのチャットが `npm run unity:sync` の後に Console で CS8632 が 0 件かを見て、Unity リポに `csc.rsp` 2 つと `.meta` をコミットする
+
 ### 2026-09-26 - デモの使い勝手と §5 / §19 の本文入れ 5 件を PR へ（#203 / #206 / #205 / #207 / #211）
 
 #### 概要
