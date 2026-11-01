@@ -49,6 +49,17 @@ namespace DungeonCore.Tests
         }
 
         [Test]
+        public void ApplyEvent_ResolvesOutsideTrial_ByTheSameRules()
+        {
+            var plain = Enter(1, RunLoadout.Empty, trial: false, hp: 20);
+            Assert.That(ExplorationReducer.ApplyEvent(plain, EventKind.Spring, true).Hp, Is.EqualTo(30), "layer 1's 泉 gives back 20% of 50");
+            Assert.That(ExplorationReducer.ApplyEvent(plain, EventKind.HeavyChest, true).TempMaxStaminaMod, Is.EqualTo(-LayerEvents.ChestStaminaCost));
+            Assert.That(ExplorationReducer.ApplyEvent(plain, EventKind.StrangeMeal, true).TempMaxStaminaMod, Is.EqualTo(LayerEvents.MealStaminaGain));
+            Assert.That(ExplorationReducer.ApplyEvent(plain, EventKind.HeavyChest, false), Is.SameAs(plain));
+            Assert.Throws<ExplorationRuleException>(() => ExplorationReducer.ApplyEvent(ExplorationReducer.EndLife(plain), EventKind.Spring, true));
+        }
+
+        [Test]
         public void ACSharpRunLoadout_StillRefusesANonDensityTool_ATrialOneTakesEveryTool()
         {
             // js: test/ext/world.test.mjs:132

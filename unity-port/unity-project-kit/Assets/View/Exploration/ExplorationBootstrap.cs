@@ -63,6 +63,7 @@ namespace Exploration.View
                 Seed = (ulong)used,
                 Loadout = trialLoadout ? RunStart.TrialLoadout() : RunLoadout.Empty,
                 MiasmaPercent = startMiasma,
+                ResolvesEvents = true,
             });
             _session = _expedition.Session;
 

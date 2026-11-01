@@ -222,7 +222,7 @@ namespace Exploration
                     break;
 
                 case NodeKind.Event:
-                    if (session.Trial) lines.AddRange(TrialEventLines(session, node));
+                    if (session.ResolvesEvents) lines.AddRange(TrialEventLines(session, node));
                     else lines.Add("泉 / 重い宝箱 / 特殊な食事 のどれかが起きる");
                     break;
 
@@ -300,7 +300,7 @@ namespace Exploration
                 ? ExplorationReducer.Teleport(before, jumpSlot, nodeId, choice)
                 : ExplorationReducer.Step(before, nodeId, choice);
             // Trial extension: a 泉 heals on arrival, so its step's forecast counts the HP.
-            if (arrivalEvent != null && !after.IsOver) after = ExplorationReducer.ResolveEvent(after, arrivalEvent.Value, true);
+            if (arrivalEvent != null && !after.IsOver) after = ExplorationReducer.ApplyEvent(after, arrivalEvent.Value, true);
 
             var lines = new List<string>
             {
@@ -472,8 +472,8 @@ namespace Exploration
             }
 
             // Trial extension (js: ExplorationScreenBuilder.js:510): an event, a survey pick or a swap waits before the
-            // layer's end.
-            if (session.Trial)
+            // layer's end. Outside trial only the event's own card can wait here (#718).
+            if (session.ResolvesEvents)
             {
                 var trial = TrialCard(session);
                 if (trial != null) return trial;

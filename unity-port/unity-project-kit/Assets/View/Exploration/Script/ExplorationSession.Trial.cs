@@ -428,7 +428,7 @@ namespace Exploration
         {
             var before = State;
             int layer = before.Profile.Layer;
-            State = ExplorationReducer.ResolveEvent(before, kind, accept);
+            State = ExplorationReducer.ApplyEvent(before, kind, accept);
             var after = State;
 
             var found = ChestFind.None;
@@ -481,6 +481,7 @@ namespace Exploration
             }).ToList();
             Receive(found.Consumables, Events.Count - 1);
             EventState = State;
+            if (!Trial) EventHappened?.Invoke(layer, kind);
         }
 
         /// <summary>
@@ -537,20 +538,21 @@ namespace Exploration
         }
 
         /// <summary>
-        /// Arrived's trial part: an event happens (泉) or waits on 受ける / 受けない; 写しの帳 asks for the survey's
-        /// target, or the intel names it (ISurveyIntel) and the Keeper raises it. Like a fight, nothing happens on the
-        /// node that ended the life by 瘴気.
+        /// Arrived's trial part: an event happens (泉) or waits on 受ける / 受けない, also outside trial when the
+        /// session resolves events (#718); 写しの帳 asks for the survey's target, or the intel names it (ISurveyIntel)
+        /// and the Keeper raises it. Like a fight, nothing happens on the node that ended the life by 瘴気.
         /// </summary>
         // js: bridge/explorationScript/ExplorationSession.js:745
         private void ArrivedTrial(int nodeId, NodeKind kind)
         {
-            if (!Trial || State.Phase == RunPhase.MiasmaDeath) return;
+            if (!ResolvesEvents || State.Phase == RunPhase.MiasmaDeath) return;
             if (kind == NodeKind.Event)
             {
                 var happening = EventAt(nodeId);
                 if (happening != null && LayerEvents.HasChoice(happening.Value)) PendingEvent = new PendingEventInfo(nodeId, happening.Value);
                 else if (happening != null) ResolveEvent(nodeId, happening.Value, true);
             }
+            if (!Trial) return;
             if (kind == NodeKind.Survey && State.Loadout.ChoosesSurvey)
             {
                 var keeper = Keeper;

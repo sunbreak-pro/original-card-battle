@@ -7,7 +7,8 @@
 // What the battles teach (1 for every enemy fought, 2 once a 観察 was played) is kept where the battle's
 // result comes back (Exploration.Bridge.Expedition.Return); this class reads it through a delegate and
 // adds the survey (情報収集) on top: a layer's survey reads that layer's boss at 2 for the rest of the
-// life (§6.11). The dungeon entries and the memo belong to the life: a new life starts them empty.
+// life (§6.11). The dungeon entries and the memo belong to the life: a new life starts them empty. An event
+// the session resolves reads 1 here (#718).
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,13 +47,27 @@ namespace Exploration
         /// <summary>
         /// The session whose life this journal keeps: its seed names the enemy behind each node, its
         /// surveys raise a boss to 2, and its new life empties the dungeon entries and the memo. Until a
-        /// session is followed, no node names an enemy and no survey counts.
+        /// session is followed, no node names an enemy and no survey counts. An event it resolves is met here (#718).
         /// </summary>
         public void Follow(ExplorationSession session)
         {
-            _session = session ?? throw new ArgumentNullException(nameof(session));
+            if (session == null) throw new ArgumentNullException(nameof(session));
+            if (_session != null) _session.EventHappened -= EventHappened;
+            _session = session;
             _life = session.Life;
+            _session.EventHappened += EventHappened;
         }
+
+        /// <summary>The token DungeonJournal.EventId names an event by.</summary>
+        public static string EventToken(EventKind kind) => kind switch
+        {
+            EventKind.Spring => "spring",
+            EventKind.HeavyChest => "heavy_chest",
+            EventKind.StrangeMeal => "strange_meal",
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+        };
+
+        private void EventHappened(int layer, EventKind kind) => Meet(DungeonJournal.EventId(layer, EventToken(kind)));
 
         /// <summary>
         /// The enemy a layer's survey reads at 2: the layer's boss slot (encounters_and_rewards_v4.md §2,
