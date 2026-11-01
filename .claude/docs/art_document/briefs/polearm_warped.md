@@ -227,6 +227,6 @@ View は倒れの 800 ms で、絵ごと足元を軸に右（後ろ）へ 24° �
 
 **人に渡したもの**: Unity リポの RPG-by-card#8（待機の絵・台帳・生成条件の写し）と RPG-by-card#10（取り込み設定・Preset・絵の棚。どちらも merge 済み）、§4.2 の差分の指示文です。
 
-**次に人がすること**: こうだいさんが、§4.2 の 1 と 2（払い斬り・倒れ）を Krita で作ります。待機の絵と同じ 640 × 1536 で、足の位置も待機の絵にそろえます。できた差分は Claude が受け取り、背景を抜いて Unity リポの `Assets/Art/Characters/polearm_warped/` に入れます。差分の PNG には、登録済みの Preset が初回の取り込みで自動で当たります（`asset-intake.md` §5）。
+**次に人がすること**: 試遊版への差し込みが入ったら、こうだいさんが、§4.2 の 1 と 2（払い斬り・倒れ）を Krita で作ります。待機の絵と同じ 640 × 1536 で、足の位置も待機の絵にそろえます。できた差分は Claude が受け取り、背景を抜いて Unity リポの `Assets/Art/Characters/polearm_warped/` に入れます。差分の PNG には、登録済みの Preset が初回の取り込みで自動で当たります（`asset-intake.md` §5）。
 
 **前提**: 絵柄の規約（`style-guide.md`）と取り込み規約（`asset-intake.md`）はあります。Unity リポの台帳 `Docs/art/asset-ledger.csv` は RPG-by-card#8 で `.claude/docs/art_document/asset-ledger.template.csv` から置きました。列の定義は `asset-intake.md` §7 です。
