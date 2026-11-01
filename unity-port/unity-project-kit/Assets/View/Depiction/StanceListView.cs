@@ -63,6 +63,7 @@ namespace Depiction.View
         private readonly RectTransform _root;
         private readonly Side _player;
         private readonly Side _enemy;
+        private readonly EnemyStanceRows _enemyRows = new EnemyStanceRows();
         private RectTransform _panel;
         private Image _panelFlag;
         private Text _panelTitle;
@@ -94,15 +95,23 @@ namespace Depiction.View
                 Hover(null);
                 return;
             }
-            BindSide(_player, frame.Player);
-            BindSide(_enemy, frame.Enemy);
+            BindSide(_player, RowsOf(frame.Player));
+            // §4.6 (#589): with several enemies every standing one's stances share the enemy side's list.
+            BindSide(_enemy, frame.Enemies.Count > 1 ? _enemyRows.Of(frame.Enemies) : RowsOf(frame.Enemy));
             // A frame that lands under the pointer keeps its panel, with the new rows' text.
             Hover(_hovered);
         }
 
-        private void BindSide(Side side, UnitFrame unit)
+        /// <summary>A new battle: the order across the enemies starts over.</summary>
+        public void ResetOrder() => _enemyRows.Reset();
+
+        private static List<StanceRow> RowsOf(UnitFrame unit)
         {
-            List<StanceRow> rows = unit != null && unit.Stances != null ? unit.Stances : new List<StanceRow>();
+            return unit != null && unit.Stances != null ? unit.Stances : new List<StanceRow>();
+        }
+
+        private void BindSide(Side side, List<StanceRow> rows)
+        {
             int frames = StanceList.Frames(rows.Count);
             int folded = StanceList.Folded(rows.Count);
             for (int i = 0; i < side.Frames.Count; i++)

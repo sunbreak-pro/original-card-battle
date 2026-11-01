@@ -63,5 +63,50 @@ namespace Depiction.Tests
             Assert.That(ReceiverDrop.Takes(away, Receiver, 1530f, 300f), Is.False);
             Assert.That(ReceiverDrop.Takes(away, Receiver, 1300f, 510f), Is.False);
         }
+
+        // ---- §3.9 (#589): a receiver per standing enemy ------------------------------------------------
+
+        /// <summary>Two receivers over neighbours on 8 cells (165 px apart), so they overlap by 175.</summary>
+        private static readonly ScreenBox[] TwoReceivers =
+        {
+            new ScreenBox(1000f, 170f, 340f, 340f),
+            new ScreenBox(1165f, 170f, 340f, 340f),
+        };
+
+        [TestCase(1100f, 0)] // inside the first only
+        [TestCase(1200f, 0)] // inside both, nearer the first's middle (1170)
+        [TestCase(1300f, 1)] // inside both, nearer the second's middle (1335)
+        [TestCase(1400f, 1)] // inside the second only
+        public void ThePointer_PicksTheReceiverWhoseMiddleIsNearest(float pointerX, int expected)
+        {
+            Assert.That(ReceiverDrop.Pick(CardAt(0f, 0f), TwoReceivers, pointerX, 300f), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void WithThePointerOutside_TheCardGoesWhereMostOfItLies()
+        {
+            // The pointer is below both; the card lies wholly on the second and half on the first.
+            ScreenBox card = CardAt(1232f, 180f);
+            Assert.That(ReceiverDrop.Pick(card, TwoReceivers, 1300f, 600f), Is.EqualTo(1));
+            // Mostly off to the left, half on the first and not on the second.
+            ScreenBox left = CardAt(892f, 180f);
+            Assert.That(ReceiverDrop.Pick(left, TwoReceivers, 900f, 600f), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void OffEveryReceiver_NoEnemyIsPicked()
+        {
+            Assert.That(ReceiverDrop.Pick(CardAt(100f, 180f), TwoReceivers, 100f, 600f), Is.EqualTo(-1));
+            Assert.That(ReceiverDrop.Pick(CardAt(1000f, 180f), new ScreenBox[0], 1100f, 300f), Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void TheFallen_OffTheList_CannotBePicked()
+        {
+            // The first fell: only the second's receiver is offered, so a pointer over the first's place takes none.
+            var standing = new[] { TwoReceivers[1] };
+            Assert.That(ReceiverDrop.Pick(CardAt(0f, 0f), standing, 1100f, 300f), Is.EqualTo(-1));
+            Assert.That(ReceiverDrop.Pick(CardAt(0f, 0f), standing, 1300f, 300f), Is.EqualTo(0));
+        }
     }
 }

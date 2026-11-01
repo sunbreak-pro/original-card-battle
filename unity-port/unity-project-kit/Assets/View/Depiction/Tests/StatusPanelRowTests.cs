@@ -110,5 +110,34 @@ namespace Depiction.Tests
             }
             Assert.That(lefts[3] + 210f, Is.LessThanOrEqualTo(CornerLayout.CanvasWidth - StatusPanelLayout.EdgeInset + 0.001f));
         }
+
+        [Test]
+        public void PlaceByX_HandsTheLeftsBack_InTheOrderGiven()
+        {
+            // The enemies given with the further one first: the player left, then the nearer enemy.
+            float[] lefts = StatusPanelLayout.PlaceByX(new[] { 500f, 1400f, 1000f }, new[] { 300f, 210f, 210f });
+
+            Assert.That(lefts[0], Is.EqualTo(350f));
+            Assert.That(lefts[1], Is.EqualTo(1295f));
+            Assert.That(lefts[2], Is.EqualTo(895f));
+        }
+
+        [Test]
+        public void PlaceByX_AgreesWithOnFloor_OnEveryStanding()
+        {
+            foreach ((int cells, int playerCell, int[] enemyCells, int[] enemySizes) in ThreeStandings())
+            {
+                ScreenBox[] boxes = StatusPanelLayout.OnFloor(cells, playerCell, 1, enemyCells, enemySizes, 100f);
+                float[] centres =
+                {
+                    FloorSpec.FeetX(cells, playerCell, 1),
+                    FloorSpec.FeetX(cells, enemyCells[0], enemySizes[0]),
+                    FloorSpec.FeetX(cells, enemyCells[1], enemySizes[1]),
+                };
+                float[] widths = { boxes[0].Width, boxes[1].Width, boxes[2].Width };
+                float[] lefts = StatusPanelLayout.PlaceByX(centres, widths);
+                for (int i = 0; i < 3; i++) Assert.That(lefts[i], Is.EqualTo(boxes[i].X));
+            }
+        }
     }
 }

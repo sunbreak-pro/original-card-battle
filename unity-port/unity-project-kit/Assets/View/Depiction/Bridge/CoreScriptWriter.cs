@@ -166,9 +166,22 @@ namespace Depiction.Bridge
         /// battle-visual-v1 §4.4 (#455): how far the journal has read this enemy (開示度 0〜2). Below 2 the
         /// omen's numbers and statuses are left off the script, and at 0 its plan (OmenDisclosure). CoreBattleSource sets
         /// it once as the battle starts (#500); left unset it is 2, everything shown. One level for every
-        /// enemy of the battle (EncounterBattle hands in the lowest of them).
+        /// enemy of the battle unless <see cref="Disclosures"/> says otherwise (EncounterBattle hands in the
+        /// lowest of them).
         /// </summary>
         public int Disclosure { get; set; } = OmenDisclosure.Full;
+
+        /// <summary>
+        /// #589: the journal's 開示度 per enemy, in the core's enemy order, so each enemy's omen shows what the
+        /// journal has read of that enemy. Null, or an enemy past its end, reads <see cref="Disclosure"/>.
+        /// </summary>
+        public IReadOnlyList<int> Disclosures { get; set; }
+
+        /// <summary>#589: how far the journal has read enemy <paramref name="unit"/>.</summary>
+        private int DisclosureOf(int unit)
+        {
+            return Disclosures != null && unit >= 0 && unit < Disclosures.Count ? Disclosures[unit] : Disclosure;
+        }
 
         /// <param name="enemyDef">The first enemy's definition (track 0's). The tracks of the enemies behind it are read off the state.</param>
         public CoreScriptWriter(EnemyDef enemyDef)
@@ -446,7 +459,7 @@ namespace Depiction.Bridge
 
                 // #50: a 予定変更 is a beat of its own, shown before the second action acts. An enemy read
                 // to 0 shows no plan (#455), so its change has no beat and costs no gap between events.
-                case PlanChanged changed when current != null && OmenDisclosure.ShowsPlan(Disclosure):
+                case PlanChanged changed when current != null && OmenDisclosure.ShowsPlan(DisclosureOf(changed.Unit)):
                     return About(NewEvent(DepictionEventKind.EnemyAction, DepictionText.PlanChangedTag), changed.Unit);
 
                 case OmenSet omen when omen.Decided && _order > 0:
@@ -627,7 +640,7 @@ namespace Depiction.Bridge
                     track.PlanVisible = true;
                     track.PlanChanged = true;
                     // #455: an enemy read to 0 shows no plan (battle_ui_ux_v2 §7), so its change has nothing to pop.
-                    if (OmenDisclosure.ShowsPlan(Disclosure))
+                    if (OmenDisclosure.ShowsPlan(DisclosureOf(changed.Unit)))
                     {
                         ev.Cues.Add(new Cue { Kind = CueKind.OmenShow, Target = UnitSide.Enemy, Text = DepictionText.PlanChangedTag, Unit = changed.Unit });
                     }
@@ -1277,7 +1290,7 @@ namespace Depiction.Bridge
             {
                 OmenFrame omen = frame.Enemies[k].Omen;
                 if (omen.Visible) omen.Hit = HitMark(k, frame.Enemies[k].AimCells);
-                OmenDisclosure.Apply(omen, Disclosure);
+                OmenDisclosure.Apply(omen, DisclosureOf(k));
             }
             bool waiting = _playerActs && after.Result == GameResult.Ongoing;
             // battle-visual-v1 §4.9 (#455): the attributes the player has played this turn, as the core
