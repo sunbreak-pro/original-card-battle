@@ -88,8 +88,7 @@ namespace Exploration.Tests
             WalkTo(session, NodeKind.Trace);
             Assert.That(session.PendingTrace?.Id, Is.EqualTo(1));
             Assert.That(session.MapIsLive, Is.True, "the choice waits beside the map, like a card offer");
-            Assert.That(TraceNodeLines(session), Is.EqualTo(new[] { "この生が受け取る痕跡はここ", "遺産を選ぶ画面はまだ出ない" }),
-                "the screen is not wired yet (§7.7), so the node says so");
+            Assert.That(TraceNodeLines(session), Is.EqualTo(new[] { "この生が受け取る痕跡はここ" }));
 
             var four = new[] { "card:thrust", "card:kesa_cut", "page:p1", "page:p2" };
             Assert.That(session.TakeLegacy(four), Is.Null, "more than three is refused");
@@ -105,7 +104,7 @@ namespace Exploration.Tests
         }
 
         [Test]
-        public void AnUnclaimedTrace_SaysWhatItHolds_WithoutPromisingTheScreen()
+        public void AnUnclaimedTrace_SaysWhatItHolds()
         {
             var session = Explorable(new ExplorationSession(new RunStart { Seed = 4, Traces = Ledger(1) }));
             WalkTo(session, NodeKind.Trace, stopShort: true);
@@ -114,7 +113,6 @@ namespace Exploration.Tests
             {
                 "前の生の遺産が残っている",
                 "最初に踏んだ痕跡だけを受け取れる（1 つの生で 1 件）",
-                "遺産を選ぶ画面はまだ出ない",
             }));
         }
 
