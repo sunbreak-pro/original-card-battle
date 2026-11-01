@@ -221,7 +221,9 @@ View は倒れの 800 ms で、絵ごと足元を軸に右（後ろ）へ 24° �
 | 5 | 体の基本の段が L\* 35 以上 | 満たす | L\* 20 以上の画素の中央値は 65.7、下位 25% の値は 48.5 です。L\* 20 未満の黒が影絵の 58% を占めます。黒の扱いは、暗い層の地で見て判断します |
 | 6 | 武器と顔がプレイヤーの側を向く | 満たす（Claude の目視） | 顔と下の刃が左を向いています |
 
-**この絵が映る画面（2026-11-01 に確かめた）**: 映るのは `Battle.unity` と `BattleDepiction.unity` の人型（`FigureView`）だけです。試遊版の Unity 版（`Assets/View/Trial/`、Unity リポの `Trial.unity`）は、人型を `Trial/Battle/FieldArt.cs` のベクターの影絵で描き、`Assets/Art/Characters/` を読みません。`.claude/CLAUDE.md` は試遊版を今後の基本の形としています。差分を作る前に、絵の行き先の決定が要ります（申し送り `2026-11-01-design-trial-art-destination.md`）。決まるまで、この仕様カードは #85 の完了条件のとおり `Battle.unity` を表示先とします。
+**この絵が映る画面（2026-11-01 に確かめた）**: 映るのは `Battle.unity` と `BattleDepiction.unity` の人型（`FigureView`）だけです。試遊版の Unity 版（`Assets/View/Trial/`、Unity リポの `Trial.unity`）は、人型を `Trial/Battle/FieldArt.cs` のベクターの影絵で描き、`Assets/Art/Characters/` を読みません。`.claude/CLAUDE.md` は試遊版を今後の基本の形としています。
+
+**絵の行き先（2026-11-01 こうだいさん決定）**: 立ち絵を試遊版の人型へ差し込みます（申し送り `2026-11-01-design-trial-art-insert.md`）。差分は、差し込みが入ってから作ります。差し込みが入るまで、絵が映るのは上の 2 つのシーンだけです。
 
 **人に渡したもの**: Unity リポの RPG-by-card#8（待機の絵・台帳・生成条件の写し）と RPG-by-card#10（取り込み設定・Preset・絵の棚。どちらも merge 済み）、§4.2 の差分の指示文です。
 
