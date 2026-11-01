@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The engine-free vector kit: paths, meshes, colours, CSS boxes, gradients, hatching, text maths, flex/grid, CSS parsing, icon and figure data.
+         The files live in the Unity kit under Assets/View/Trial/Geometry/ and are mirrored by `npm run unity:sync`;
+         this project only lets `dotnet test` compile the same files. netstandard2.1 + C# 9 is what Unity compiles. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>Trial.Geometry</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);CS4014</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\unity-project-kit\Assets\View\Trial\Geometry\**\*.cs" LinkBase="Geometry" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Trial.Async\Trial.Async.csproj" />
+  </ItemGroup>
+
+</Project>

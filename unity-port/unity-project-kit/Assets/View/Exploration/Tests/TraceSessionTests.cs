@@ -54,6 +54,17 @@ namespace Exploration.Tests
         }
 
         [Test]
+        public void ATrialSession_LeavesNothingInTheLedger_AndItsNextMapHoldsNoTrace()
+        {
+            var session = new ExplorationSession(new RunStart { Seed = 4, Trial = true });
+            Assert.That(session.Act(ScreenAction.FallInBattle), Is.True);
+            Assert.That(session.Traces.Traces, Is.Empty, "the browser trial's lineage settles its deaths itself");
+
+            Assert.That(session.Act(ScreenAction.NewLife), Is.True);
+            Assert.That(session.State.Map.CountOf(NodeKind.Trace), Is.EqualTo(0));
+        }
+
+        [Test]
         public void ADeathAsksTheSourceOnce_ForWhatTheLifeLeaves()
         {
             var source = new CountingSource();

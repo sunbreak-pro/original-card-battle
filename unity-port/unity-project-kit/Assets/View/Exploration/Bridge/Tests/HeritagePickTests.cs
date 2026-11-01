@@ -23,6 +23,15 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
+        public void AStartTheOptionsRewrite_KeepsItsLedger()
+        {
+            var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) },
+                options: new ExpeditionOptions { Trial = true, CarvingKnown = true });
+            Assert.That(expedition.Session.CarvingTaken, Is.True, "the start was rewritten");
+            Assert.That(expedition.Session.Traces.Traces.Count, Is.EqualTo(1));
+        }
+
+        [Test]
         public void SteppingOnTheTrace_LaysOutEveryCandidate_CardsWithTheirFaceAtTheirStep()
         {
             var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) });
@@ -90,7 +99,7 @@ namespace Exploration.Bridge.Tests
                 Assert.That(expedition.Mastery.RankOf(fang), Is.EqualTo(1));
                 Assert.That(expedition.Mastery.RankOf(thrust), Is.EqualTo(1));
                 Assert.That(expedition.Mastery.Mastered(CardCatalog.Thrust).Name, Is.EqualTo("鋭い突き"));
-                Assert.That(expedition.InheritedPages.Select(p => p.PageId), Is.EqualTo(new[] { "p2" }));
+                Assert.That(expedition.InheritedLegacyPages.Select(p => p.PageId), Is.EqualTo(new[] { "p2" }));
                 Assert.That(expedition.Session.Traces.Traces, Is.Empty);
                 Assert.That(HeritagePicks.For(expedition).IsShown, Is.False);
                 Assert.That(HeritagePicks.Confirm(expedition, Array.Empty<string>()), Is.False, "one trace per life");

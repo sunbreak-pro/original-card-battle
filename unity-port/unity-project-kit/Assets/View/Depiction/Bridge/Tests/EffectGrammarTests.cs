@@ -287,11 +287,32 @@ namespace Depiction.Bridge.Tests
             TestContext.Out.Write(report.ToString());
         }
 
+        /// <summary>§5.0: a card with two faces, or an attack face with a move, plays within 1.5 times an attack-only card.</summary>
+        private const float OneAndAHalfAttacksMs = 1545f;
+
+        /// <summary>
+        /// §5.0 (#348): the 1545 ms cap at a battle speed. Like the 2.0 s cap (BattleSpeed.EventCapMsAt),
+        /// it holds as written at 1.25 and 1.5 times and is stretched by the same factor, to 1931 ms, at
+        /// 1.0 times.
+        /// </summary>
+        private static float OneAndAHalfAttacksAt(BattleSpeedStep speed) =>
+            BattleSpeed.Multiplier(speed) >= BattleSpeed.BaseMultiplier ? OneAndAHalfAttacksMs : BattleSpeed.WallMs(OneAndAHalfAttacksMs, speed);
+
+        [TestCase(BattleSpeedStep.Slow, 1931.25f)]
+        [TestCase(BattleSpeedStep.Normal, 1545f)]
+        [TestCase(BattleSpeedStep.Fast, 1545f)]
+        public void TheOneAndAHalfCap_IsStretchedOnlyAtTheSlowSpeed_LikeTheTwoSecondCap(BattleSpeedStep speed, float expected)
+        {
+            Assert.That(OneAndAHalfAttacksAt(speed), Is.EqualTo(expected).Within(0.01f));
+            Assert.That(OneAndAHalfAttacksAt(speed) / OneAndAHalfAttacksMs,
+                Is.EqualTo(BattleSpeed.EventCapMsAt(speed) / BattleSpeed.EventCapMs).Within(1e-4f), "the same stretch as the 2.0 s cap");
+        }
+
         [Test]
         public void ACardOfTwoSystems_StaysInsideOneAndAHalfAttacks()
         {
-            // §5.0: a card with two faces plays its two systems within 1.5 times an attack-only card (1545 ms).
-            const float TwoFacesCapMs = 1545f;
+            // §5.0: a card with two faces plays its two systems within 1.5 times an attack-only card (1545 ms),
+            // and within the cap of each battle speed (#348).
             var on = EffectSwitches.AllOn();
             int checkedCards = 0;
             foreach (CardDef def in CardCatalog.All.Where(d => CardSystems.Table[d.Id].Count == 2))
@@ -299,7 +320,12 @@ namespace Depiction.Bridge.Tests
                 DepictionEvent ev = Play(def);
                 if (ev == null) continue;
                 checkedCards += 1;
-                Assert.That(EffectPlan.BlockingMs(ev, on), Is.LessThanOrEqualTo(TwoFacesCapMs), def.Name);
+                Assert.That(EffectPlan.BlockingMs(ev, on), Is.LessThanOrEqualTo(OneAndAHalfAttacksMs), def.Name);
+                foreach (BattleSpeedStep speed in BattleSpeed.Steps)
+                {
+                    Assert.That(EffectPlan.BlockingMs(ev, on, speed), Is.LessThanOrEqualTo(OneAndAHalfAttacksAt(speed)),
+                        def.Name + " at " + BattleSpeed.Label(speed));
+                }
             }
             Assert.That(checkedCards, Is.GreaterThan(0));
         }
@@ -349,7 +375,8 @@ namespace Depiction.Bridge.Tests
             // A blow Guard takes only part of is three beats on the script (§5.5: Slash, GuardBlock, Hit);
             // those plays are held to 1545 too: the move starts on the number + 80 (§5.4 順 2) and a trait
             // fired before the first face shows beside the release (§5.4 順 0).
-            const float AttackAndMoveCapMs = 1545f;
+            // Each play is held to the cap of every battle speed too (#348).
+            const float AttackAndMoveCapMs = OneAndAHalfAttacksMs;
             var on = EffectSwitches.AllOn();
             List<CardDef> cards = CardCatalog.All.Where(AttacksAndMoves).ToList();
             Assert.That(cards, Is.Not.Empty, "the swordsman has cards that attack and move");
@@ -368,6 +395,11 @@ namespace Depiction.Bridge.Tests
                     string where = def.Name + " at " + label + ": "
                         + string.Join(" + ", EffectPlan.StepsOf(ev).Select(s => s.Id + " " + EffectPlan.WaitMs(s, on).ToString("0")));
                     Assert.That(ms, Is.LessThanOrEqualTo(AttackAndMoveCapMs), where);
+                    foreach (BattleSpeedStep speed in BattleSpeed.Steps)
+                    {
+                        Assert.That(EffectPlan.BlockingMs(ev, on, speed), Is.LessThanOrEqualTo(OneAndAHalfAttacksAt(speed)),
+                            where + " at " + BattleSpeed.Label(speed));
+                    }
                     if (ms > worst)
                     {
                         worst = ms;

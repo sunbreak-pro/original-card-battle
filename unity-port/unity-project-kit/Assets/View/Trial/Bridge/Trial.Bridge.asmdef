@@ -1,0 +1,26 @@
+{
+    "name": "Trial.Bridge",
+    "rootNamespace": "Trial.Bridge",
+    "references": [
+        "Trial.Async",
+        "BattleCore",
+        "DungeonCore",
+        "DungeonContent",
+        "InheritanceCore",
+        "Depiction.Script",
+        "Depiction.Bridge",
+        "Exploration.Script",
+        "Exploration.Bridge",
+        "Journal.Script",
+        "Backdrop.Script"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

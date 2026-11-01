@@ -1,0 +1,16 @@
+{
+    "name": "Trial.Geometry",
+    "rootNamespace": "Trial.Geometry",
+    "references": [
+        "Trial.Async"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
