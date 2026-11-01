@@ -2038,9 +2038,12 @@ namespace Depiction.View
             for (int k = 0; k < _enemyCount; k++)
             {
                 UnitFrame unit = EnemyScreen.UnitOf(frame, k);
+                // §2.2 の 6 (#589): the panel of an enemy that fell while others stood stays, grey. One that
+                // stands takes back its colours before the bind, so this frame's lie over the last battle's.
+                bool fallen = SeveralEnemies && unit.Down;
+                if (!fallen) _enemies[k].Status.SetFallen(false);
                 _enemies[k].Status.Bind(unit);
-                // §2.2 の 6 (#589): the panel of an enemy that fell while others stood stays, grey.
-                _enemies[k].Status.SetFallen(SeveralEnemies && unit.Down);
+                if (fallen) _enemies[k].Status.SetFallen(true);
                 _enemies[k].Figure.SetRange(unit.HasRange, unit.RangeGlyph);
             }
             SetPlayerHome(playerFigure);

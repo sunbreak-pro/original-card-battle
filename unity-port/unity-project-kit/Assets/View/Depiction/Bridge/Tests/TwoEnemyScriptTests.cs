@@ -171,13 +171,36 @@ namespace Depiction.Bridge.Tests
                     {
                         nonLastFalls++;
                         Assert.That(ev.After.Enemies[1 - unit].Unit.Down, Is.False);
-                        Assert.That(ev.After.Outcome, Is.EqualTo(BattleOutcome.Ongoing), "the battle goes on");
+                        // Unless the other's fall is the one still to play (the next test).
+                        if (EnemyScreen.Stands(ev.After, 1 - unit)) Assert.That(ev.After.Outcome, Is.EqualTo(BattleOutcome.Ongoing), "the battle goes on");
                     }
                     else lastFalls++;
                 }
             }
             Assert.That(nonLastFalls, Is.GreaterThan(0), "some fight has one enemy fall while the other stands");
             Assert.That(lastFalls, Is.GreaterThan(0), "some fight ends on a fall");
+        }
+
+        /// <summary>
+        /// §5.15 順 5 / 順 7: one move fells both (TurnLoop.OnFall reports the first, BattleEnded the last). The
+        /// second figure is still on screen while the first falls, so only the second's beat is the last fall.
+        /// </summary>
+        [Test]
+        public void AMoveThatFellsBoth_PlaysTheFirstAmongOthers_AndOnlyTheSecondAsTheLast()
+        {
+            var (state, writer, _) = RustAndAsh();
+            var stream = new List<BattleEvent>
+            {
+                new GuardCleared(Actor.Enemy, 0), // opens a beat: a stream with none opens nothing to fall after
+                new EnemyDefeated(Actor.Enemy) { Unit = 0 },
+                new BattleEnded(Actor.Enemy, GameResult.Won),
+            };
+            List<DepictionEvent> falls = writer.Write(stream, state).Where(ev => ev.Kind == DepictionEventKind.Defeat).ToList();
+
+            Assert.That(falls.Select(ev => ev.Unit), Is.EqualTo(new[] { 0, 1 }));
+            Assert.That(EnemyScreen.Stands(falls[0].After, 1), Is.False, "the core has it off the line: no target frame");
+            Assert.That(EnemyScreen.OthersStand(falls[0].After, 0), Is.True, "its figure is still up");
+            Assert.That(EnemyScreen.OthersStand(falls[1].After, 1), Is.False, "the last fall");
         }
 
         /// <summary>A move walks the enemy that moved and no other: the cell the cue names is that enemy's in the event's frame, its N the cue's.</summary>

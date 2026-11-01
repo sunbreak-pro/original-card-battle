@@ -113,8 +113,16 @@ namespace Depiction.Tests
             Assert.That(EnemyScreen.Stands(frame, 1), Is.True);
             Assert.That(EnemyScreen.OthersStand(frame, 0), Is.True, "the second stands: this fall is not the last");
             Assert.That(EnemyScreen.OthersStand(frame, 1), Is.False);
-            DepictionFrame stillToFall = TwoEnemies(Enemy(4, gap: -1), Enemy(6, gap: -1));
-            Assert.That(EnemyScreen.OthersStand(stillToFall, 0), Is.False, "both fell in one move: neither stands for the other");
+        }
+
+        /// <summary>§5.15 順 5 / 順 7: a move fells two. The second figure is on screen until its own fall plays, so only that fall is the last.</summary>
+        [Test]
+        public void AFigureWhoseFallIsStillToPlay_StandsForTheFallBeforeIt_ButTakesNoFrame()
+        {
+            DepictionFrame stillToFall = TwoEnemies(Enemy(4, down: true, gap: -1), Enemy(6, gap: -1));
+            Assert.That(EnemyScreen.Stands(stillToFall, 1), Is.False, "the core has taken it off the line: no target frame");
+            Assert.That(EnemyScreen.OthersStand(stillToFall, 0), Is.True, "its figure is still up: the first fall is not the last");
+            Assert.That(EnemyScreen.OthersStand(stillToFall, 1), Is.False, "the first has played: this one is the last");
         }
 
         [Test]

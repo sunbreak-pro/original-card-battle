@@ -5,8 +5,8 @@
 //
 // It only reads the scene: DepictionPlayer and CardView are not changed (#585, #589, #606, #612, #619
 // touch them). The held card comes from DepictionPlayer's private _dragging field when it is there, else
-// from the drag events; the pointer from the drag events; the lit receiver from the two target marks
-// (alpha 1 = hot, TargetMarkView.SetHot); the lit cells from the floor's Cell<n>/ReachFill images; the
+// from the drag events; the pointer from the drag events; the lit receiver from the target marks
+// on the figures (alpha 1 = hot, TargetMarkView.SetHot); the lit cells from the floor's Cell<n>/ReachFill images; the
 // pay from the stamina tag's "▸ n" label. DragTrace (Script/) formats the line.
 //
 // Start and stop it from `uloop execute-dynamic-code`:
@@ -35,6 +35,7 @@ namespace Depiction.View
         private readonly List<string> _lines = new List<string>();
         private readonly HashSet<CardView> _watched = new HashSet<CardView>();
         private readonly List<int> _reach = new List<int>();
+        private readonly List<FigureView> _figures = new List<FigureView>();
         private string _path;
         private bool _recording;
         private DepictionPlayer _player;
@@ -215,9 +216,24 @@ namespace Depiction.View
         private DragReceiver LitReceiver()
         {
             if (!_player) return DragReceiver.None;
-            if (Hot(_player.enemyFigure)) return DragReceiver.Enemy;
+            if (AnEnemyHot()) return DragReceiver.Enemy;
             if (Hot(_player.playerFigure)) return DragReceiver.Self;
             return DragReceiver.None;
+        }
+
+        // #589: a battle of several copies the scene's enemy figure beside it, and a single-target card
+        // lights only the enemy it is over. Inactive copies are the ones this battle does not use.
+        private bool AnEnemyHot()
+        {
+            FigureView scenes = _player.enemyFigure;
+            if (Hot(scenes)) return true;
+            if (!scenes || !scenes.Rect.parent) return false;
+            scenes.Rect.parent.GetComponentsInChildren(_figures);
+            foreach (FigureView figure in _figures)
+            {
+                if (figure.side == UnitSide.Enemy && Hot(figure)) return true;
+            }
+            return false;
         }
 
         // TargetMarkView.SetHot: 1 while releasing would play the card, 0.75 shown but cold, 0 hidden.

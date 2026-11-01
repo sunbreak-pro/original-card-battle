@@ -66,13 +66,17 @@ namespace Depiction
             return !InList(frame, k) || frame.Enemies[k].Gap >= 0;
         }
 
-        /// <summary>§5.15 順 5: another enemy stands, so enemy <paramref name="k"/>'s fall is not the battle's last.</summary>
+        /// <summary>
+        /// §5.15 順 5: another enemy's figure is still up, so enemy <paramref name="k"/>'s fall is not the last
+        /// to play (順 7). This reads the screen and not the core: one whose fall is still to play counts, so
+        /// when a move fells two, the first plays 順 5 beside the second figure and the second plays 順 7.
+        /// </summary>
         public static bool OthersStand(DepictionFrame frame, int k)
         {
             int count = CountOf(frame);
             for (int other = 0; other < count; other++)
             {
-                if (other != k && Stands(frame, other)) return true;
+                if (other != k && !UnitOf(frame, other).Down) return true;
             }
             return false;
         }

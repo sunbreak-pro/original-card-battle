@@ -333,7 +333,8 @@ namespace Depiction.View
 
         /// <summary>
         /// Grey at once, or back as it was bound (a new battle stands the panel up again). The panel keeps
-        /// its place, since §2.2 の 6 leaves it under the emptied cell.
+        /// its place, since §2.2 の 6 leaves it under the emptied cell. Standing it up writes the colours saved
+        /// when it greyed over every part, so call that before <see cref="Bind"/>, not after.
         /// </summary>
         public void SetFallen(bool fallen)
         {
