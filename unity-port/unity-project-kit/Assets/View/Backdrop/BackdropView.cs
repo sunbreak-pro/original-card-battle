@@ -4,9 +4,8 @@
 //
 // No scene or prefab change is needed: after a scene loads, a DepictionPlayer with a backdrop image gets
 // one BackdropView, which builds its layers just above that image, behind everything else on the canvas.
-// The layer follows the number the corner info shows (CornerFrame.Floor), so a battle on layer 4 turns
-// the backdrop to layer 4 with the 400 ms crossfade of battle_ui_ux_v2 §4.3, with no change on the
-// battle's side. Show(layer) does the same for a caller that knows the layer itself.
+// The battle hands over its layer through Show(layer) (DepictionPlayer.ShowBackdropLayer, #606), so a
+// battle on layer 4 turns the backdrop to layer 4 with the 400 ms crossfade of battle_ui_ux_v2 §4.3.
 //
 // BackdropView is the battle's alone: Attach does nothing while one is in the scene, and the battle scene
 // loads over the hidden exploration scene (#99), so the exploration screen uses BackdropLayers instead.
@@ -24,8 +23,6 @@ namespace Backdrop.View
         [Tooltip("The layer drawn before the battle shows one (1〜7).")]
         [Range(1, BackdropSpec.Layers)]
         public int layer = 1;
-        [Tooltip("Follow the layer the corner info shows. Off, only Show(layer) changes it.")]
-        public bool followCornerInfo = true;
 
         /// <summary>Where the art of layer n is looked for under Resources (n = 1〜7).</summary>
         public const string ArtPath = BackdropLayers.ArtPath;
@@ -72,19 +69,6 @@ namespace Backdrop.View
             Transform under = player.backdrop.transform;
             _layers = BackdropLayers.Create((RectTransform)under.parent, layer);
             _layers.transform.SetSiblingIndex(under.GetSiblingIndex() + 1); // just above the plain backdrop, behind the rest
-        }
-
-        private void Update()
-        {
-            if (_layers && followCornerInfo) Show(ShownLayer());
-        }
-
-        /// <summary>The layer the corner info shows now, or the current one while it shows none.</summary>
-        private int ShownLayer()
-        {
-            CornerInfoView corner = player ? player.cornerInfo : null;
-            if (corner && corner.floorText && int.TryParse(corner.floorText.text, out int shown) && shown > 0) return shown;
-            return layer;
         }
     }
 }
