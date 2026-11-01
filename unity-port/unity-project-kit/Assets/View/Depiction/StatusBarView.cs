@@ -7,7 +7,8 @@
 // (DepictionPrefabBuilder) needs the Unity Editor, so the panel is laid out again here at run time
 // (#455), as OmenBadgeView does with its badge: 300 wide for the player and 210 for an enemy (the
 // width is handed in, StatusPanelLayout), hanging from its top-left corner, the rows inside 8 / 10 /
-// 10 px of padding. Where it stands on the screen is DepictionPlayer's to say (PlaceAt).
+// 10 px of padding. Where it stands on the screen is DepictionPlayer's to say (PlaceAt). With several
+// enemies an enemy's HP row starts with its swatch (§4.5, #589; StatusPanelLayout holds the arithmetic).
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using System.Collections.Generic;
@@ -91,16 +92,18 @@ namespace Depiction.View
         private RectTransform Rect => (RectTransform)transform;
 
         // ---- battle-visual-v1 §4.5 (#455): the panel laid out at run time --------------------------------
-        /// <summary>The HP number's slot: three digits at 24 px.</summary>
-        private const float HpNumberWidth = 44f;
-        /// <summary>The space between the parts of a row.</summary>
-        private const float PartGap = 6f;
+        private const float HpNumberWidth = StatusPanelLayout.HpNumberWidth;
+        private const float PartGap = StatusPanelLayout.PartGap;
         /// <summary>The enemy's stamina number's slot: two digits at 24 px.</summary>
         private const float StaminaNumberWidth = 30f;
 
         private bool _built;
         private float _width;
         private Image _panelEdge;
+        private RectTransform _heart;
+        private RectTransform _swatch;
+        private Image _swatchStripes;
+        private bool _swatchShown;
         private RectTransform _hpBar;
         private RectTransform _reserveGroup;
         private Text _staminaText;
@@ -142,13 +145,13 @@ namespace Depiction.View
             _panelEdge.transform.SetSiblingIndex(1);
 
             // 1 行目: the heart, the number in body ink, the bar.
-            UiKit.Sprite(rt, "Heart", VisualArt.Heart, BattleTheme.Scarlet, new Vector2(0f, 1f), new Vector2(0f, 0.5f),
-                new Vector2(20f, 20f), new Vector2(StatusPanelLayout.PadSide, HpRowY));
+            _heart = UiKit.Sprite(rt, "Heart", VisualArt.Heart, BattleTheme.Scarlet, new Vector2(0f, 1f), new Vector2(0f, 0.5f),
+                new Vector2(StatusPanelLayout.HeartSize, StatusPanelLayout.HeartSize), new Vector2(StatusPanelLayout.HeartLeft(false), HpRowY)).rectTransform;
             if (hpText)
             {
                 hpText.rectTransform.SetParent(rt, false);
                 Place(hpText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(HpNumberWidth, StatusPanelLayout.HpRowHeight + 6f),
-                    new Vector2(StatusPanelLayout.PadSide + 20f + PartGap, HpRowY));
+                    new Vector2(StatusPanelLayout.HpNumberLeft(false), HpRowY));
                 hpText.fontSize = 24;
                 hpText.fontStyle = FontStyle.Bold;
                 hpText.color = BattleTheme.Ink;
@@ -227,18 +230,45 @@ namespace Depiction.View
             if (Mathf.Approximately(width, _width)) return;
             _width = width;
             Rect.sizeDelta = new Vector2(_width, Rect.sizeDelta.y);
-            if (_hpBar)
-            {
-                float barLeft = StatusPanelLayout.PadSide + 20f + PartGap + HpNumberWidth + PartGap;
-                Place(_hpBar, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(Mathf.Max(8f, _width - StatusPanelLayout.PadSide - barLeft), 14f),
-                    new Vector2(barLeft, HpRowY));
-            }
+            PlaceHpRow();
             if (_chipRow)
             {
                 Place(_chipRow, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(RowWidth, 0f),
                     new Vector2(StatusPanelLayout.PadSide, -StatusPanelLayout.ChipRowTop));
             }
             RenderChips();
+        }
+
+        /// <summary>The heart, the number and the bar, after the swatch when the row has one (StatusPanelLayout).</summary>
+        private void PlaceHpRow()
+        {
+            if (_heart) _heart.anchoredPosition = new Vector2(StatusPanelLayout.HeartLeft(_swatchShown), HpRowY);
+            if (hpText) hpText.rectTransform.anchoredPosition = new Vector2(StatusPanelLayout.HpNumberLeft(_swatchShown), HpRowY);
+            if (_hpBar)
+            {
+                Place(_hpBar, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(StatusPanelLayout.HpBarWidth(_width, _swatchShown), 14f),
+                    new Vector2(StatusPanelLayout.HpBarLeft(_swatchShown), HpRowY));
+            }
+        }
+
+        /// <summary>
+        /// §4.5 (#589): the 16 px swatch of stripe <paramref name="direction"/> at the left end of the HP row.
+        /// The rest of the row moves right to make room and the bar gives it up, so the panel keeps its width.
+        /// </summary>
+        public void SetSwatch(bool shown, int direction)
+        {
+            EnsureLayout();
+            if (shown && !_swatch)
+            {
+                var size = new Vector2(EnemySwatch.PanelSize, EnemySwatch.PanelSize);
+                _swatch = UiKit.Point(Rect, "Swatch", new Vector2(0f, 1f), new Vector2(0f, 0.5f), size, new Vector2(StatusPanelLayout.PadSide, HpRowY));
+                _swatchStripes = VisualArt.Swatch(_swatch, VisualArt.SwatchStripes(direction, EnemySwatch.PanelSize));
+            }
+            if (_swatch) _swatch.gameObject.SetActive(shown);
+            if (shown) _swatchStripes.sprite = VisualArt.SwatchStripes(direction, EnemySwatch.PanelSize);
+            if (shown == _swatchShown) return;
+            _swatchShown = shown;
+            PlaceHpRow();
         }
 
         /// <summary>Puts the panel's top-left corner on the screen point <paramref name="topLeft"/> (battle-visual-v1 §4 coordinates).</summary>

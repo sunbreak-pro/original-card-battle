@@ -19,6 +19,30 @@ namespace Depiction.Tests
         private static List<string> Names(List<StanceRow> rows) => rows.Select(r => r.Name + "×" + r.Count).ToList();
 
         [Test]
+        public void EachRow_KnowsTheSwatchOfTheEnemyHoldingIt()
+        {
+            EnemyFrame first = Holding(false, ("岩の構え", 1));
+            EnemyFrame second = Holding(false, ("岩の構え", 1), ("水の構え", 2));
+            first.Swatch = second.Swatch = true;
+            first.StripeDirection = 0;
+            second.StripeDirection = 1;
+            var rows = new EnemyStanceRows();
+            List<EnemyStanceRow> owned = rows.Owned(new[] { first, second });
+            Assert.That(owned.Select(r => r.Row.Name + ":" + r.StripeDirection), Is.EqualTo(new[] { "岩の構え:0", "岩の構え:1", "水の構え:1" }));
+            Assert.That(owned.All(r => r.Swatch), Is.True);
+        }
+
+        [Test]
+        public void Of_AndOwned_ListTheSameRows_WithNoNewStamps()
+        {
+            EnemyFrame first = Holding(false, ("岩の構え", 1));
+            EnemyFrame second = Holding(false, ("水の構え", 1));
+            var rows = new EnemyStanceRows();
+            List<StanceRow> listed = rows.Of(new[] { first, second });
+            Assert.That(rows.Owned(new[] { first, second }).Select(r => r.Row), Is.EqualTo(listed));
+        }
+
+        [Test]
         public void EachEnemysStance_HasItsOwnFrame_AlsoWhenTheNameIsTheSame()
         {
             var rows = new EnemyStanceRows();

@@ -42,6 +42,33 @@ namespace Depiction
         /// <summary>1 行目: the HP number is 24 px, the tallest thing on the row (heart 20, bar 14).</summary>
         public const float HpRowHeight = 24f;
 
+        // §4.5 1 行目, left to right: the swatch (an enemy's, in a battle of several), the heart, the number, the bar.
+        public const float HeartSize = 20f;
+
+        /// <summary>The HP number's slot: three digits at 24 px.</summary>
+        public const float HpNumberWidth = 44f;
+
+        /// <summary>The space between the parts of a row: 6 px from the §3.2 spacing scale.</summary>
+        public const float PartGap = 6f;
+
+        /// <summary>The narrowest HP bar drawn.</summary>
+        public const float HpBarMinWidth = 8f;
+
+        /// <summary>How far the swatch at the row's left end pushes the row's other parts to the right (#589).</summary>
+        public static float HpRowShift(bool swatch) => swatch ? EnemySwatch.PanelSize + PartGap : 0f;
+
+        public static float HeartLeft(bool swatch) => PadSide + HpRowShift(swatch);
+
+        public static float HpNumberLeft(bool swatch) => HeartLeft(swatch) + HeartSize + PartGap;
+
+        public static float HpBarLeft(bool swatch) => HpNumberLeft(swatch) + HpNumberWidth + PartGap;
+
+        /// <summary>
+        /// The bar takes what the row's other parts leave inside the padding, so the swatch comes out of the
+        /// bar and a panel of <paramref name="panelWidth"/> keeps its width.
+        /// </summary>
+        public static float HpBarWidth(float panelWidth, bool swatch) => Math.Max(HpBarMinWidth, panelWidth - PadSide - HpBarLeft(swatch));
+
         /// <summary>2 行目: the Guard shield is 28 px, the tallest thing on the row.</summary>
         public const float GuardRowHeight = 28f;
 

@@ -2,8 +2,9 @@
 // aims at in red stripes (#350) — 6 px apart on those that meet the boundary its action reads, and
 // a violet dashed frame on the cell a moving omen takes the enemy to (#455) — the cells a hovered or
 // held card reaches in amber, and the one gap number between the player and the enemy. Every cell comes from the script (DepictionFrame.Floor,
-// CardFace.ReachCells); this only draws them and says where a cell stands on the screen, so the
-// figures can stand on theirs.
+// DepictionFrame.Enemies, CardFace.ReachCells); this only draws them and says where a cell stands on the
+// screen, so the figures can stand on theirs. With several enemies (#589) each enemy's stripes run in its
+// own direction and cross where two overlap, under one frame and one light (FloorStripes says which).
 //
 // The scene belongs to the Unity project, so the floor is made at run time under the figures'
 // parent, behind them. It spans x 300〜1620 as §4.2 gives it. Its top sits 10 px above the player's
@@ -42,12 +43,15 @@ namespace Depiction.View
             public Image Tile;
             public Image Edge;
             public Image ReachFill;
+            /// <summary>The first enemy's stripes on this cell, and every enemy's after it, made when first needed (#589).</summary>
             public Image Stripes;
+            public readonly List<Image> MoreStripes = new List<Image>();
             public Image AimFrame;
+            public RectTransform MoveRoot;
             public Image[] MoveFrame;
+            /// <summary>The panel-coloured band under a move's dashes on a cell another enemy aims at.</summary>
+            public Image[] MoveKeyline;
             public Image ReachTop;
-            /// <summary>Which stripes the cell holds now, so the sprite is only swapped when it changes.</summary>
-            public bool Dense;
         }
 
         private readonly RectTransform _root;
@@ -91,12 +95,14 @@ namespace Depiction.View
         }
 
         /// <summary>
-        /// Draws <paramref name="floor"/>: the cells, the aimed ones (dense where they meet the omen's
-        /// boundary), the cells a moving omen lands on, and the gap. The floor's top goes
+        /// Draws the floor of <paramref name="frame"/>: the cells, the aimed ones (dense where they meet the
+        /// omen's boundary), the cells a moving omen lands on, and the gap. The floor's top goes
         /// 10 px above <paramref name="playerFeet"/> (a world point). A floor with no cells hides it all.
         /// </summary>
-        public void Bind(FloorFrame floor, Vector3 playerFeet, int layer)
+        public void Bind(DepictionFrame frame, Vector3 playerFeet)
         {
+            FloorFrame floor = frame.Floor;
+            int layer = frame.Corner.Floor;
             _floor = floor;
             bool shown = _canvas && floor != null && floor.Cells > 0;
             _root.gameObject.SetActive(shown);
@@ -118,20 +124,13 @@ namespace Depiction.View
                 RefScreen.Place(cell.Root, _canvas, new Vector2(FloorSpec.TileLeft(floor.Cells, i + 1), _top),
                     new Vector2(FloorSpec.TileWidth(floor.Cells), BandHeight));
                 cell.Tile.color = _tile;
-                bool aimed = floor.AimCells.Contains(i + 1);
-                cell.Stripes.enabled = aimed;
-                cell.AimFrame.enabled = aimed;
-                cell.AimLight.enabled = aimed;
-                // §4.2 境目を満たすマス: the same red stripes, 6 px apart instead of 11 (#455).
-                bool dense = aimed && floor.DenseCells.Contains(i + 1);
-                if (dense != cell.Dense)
-                {
-                    cell.Dense = dense;
-                    cell.Stripes.sprite = VisualArt.Stripes(0, dense);
-                }
+                IReadOnlyList<StripeMark> marks = FloorStripes.Of(frame, i + 1);
+                ShowStripes(cell, marks);
+                // §4.2: one frame and one light, however many enemies aim at the cell.
+                cell.AimFrame.enabled = marks.Count > 0;
+                cell.AimLight.enabled = marks.Count > 0;
                 // 敵が動く予兆の移る先: a violet dashed frame, never stripes (battle_ui_ux_v2 §5.8, #455).
-                bool moveTo = floor.MoveCells.Contains(i + 1);
-                foreach (Image edge in cell.MoveFrame) edge.enabled = moveTo;
+                ShowMoveFrame(cell, FloorStripes.MoveTo(frame, i + 1), FloorStripes.MoveInset(frame, i + 1));
             }
             HideReach();
             SetGap(floor.Gap, floor.PlayerCell, floor.PlayerSize, floor.EnemyCell);
@@ -139,6 +138,43 @@ namespace Depiction.View
             _bracketLeft.transform.SetAsLastSibling();
             _bracketRight.transform.SetAsLastSibling();
             _tag.SetAsLastSibling();
+        }
+
+        /// <summary>
+        /// §4.2: each enemy's stripes in its own direction, crossing where two overlap. 境目を満たすマス: the
+        /// same red stripes, 6 px apart instead of 11 (#455), enemy by enemy.
+        /// </summary>
+        private static void ShowStripes(Cell cell, IReadOnlyList<StripeMark> marks)
+        {
+            cell.Stripes.enabled = marks.Count > 0;
+            if (marks.Count > 0) cell.Stripes.sprite = VisualArt.Stripes(marks[0].Direction, marks[0].Dense);
+            while (cell.MoreStripes.Count < marks.Count - 1) cell.MoreStripes.Add(MakeStripes(cell));
+            for (int k = 0; k < cell.MoreStripes.Count; k++)
+            {
+                Image stripes = cell.MoreStripes[k];
+                bool used = k + 1 < marks.Count;
+                stripes.enabled = used;
+                if (used) stripes.sprite = VisualArt.Stripes(marks[k + 1].Direction, marks[k + 1].Dense);
+            }
+        }
+
+        private static void ShowMoveFrame(Cell cell, bool shown, float inset)
+        {
+            foreach (Image edge in cell.MoveFrame) edge.enabled = shown;
+            foreach (Image edge in cell.MoveKeyline) edge.enabled = shown && inset > 0f;
+            cell.MoveRoot.offsetMin = new Vector2(inset, inset);
+            cell.MoveRoot.offsetMax = new Vector2(-inset, -inset);
+        }
+
+        /// <summary>§4.2: the stripes and the frame at 100%; the cell's inside is never filled red (§2.3). Just over the stripes made before it, under the frame.</summary>
+        private static Image MakeStripes(Cell cell)
+        {
+            Image stripes = UiKit.Image(cell.Root, "Stripes", VisualArt.Stripes(0, false), BattleTheme.AimRed, Vector2.zero, Vector2.one);
+            stripes.type = Image.Type.Tiled;
+            stripes.rectTransform.offsetMin = new Vector2(2f, 2f);
+            stripes.rectTransform.offsetMax = new Vector2(-2f, -2f);
+            if (cell.AimFrame) stripes.transform.SetSiblingIndex(cell.AimFrame.transform.GetSiblingIndex());
+            return stripes;
         }
 
         /// <summary>§4.2 届くマスの光: lights <paramref name="cells"/> while an enemy-aimed card is hovered or held.</summary>
@@ -257,15 +293,15 @@ namespace Depiction.View
             cell.Tile = VisualArt.Panel(cell.Root, "Tile", _tile, 6);
             cell.Edge = VisualArt.Ring(cell.Root, "Edge", BattleTheme.Line, 6, 1);
             cell.ReachFill = UiKit.Image(cell.Root, "ReachFill", VisualArt.Fade, BattleTheme.WithAlpha(BattleTheme.Amber, 0.55f), Vector2.zero, Vector2.one);
-            // §4.2: the stripes and the frame at 100%; the cell's inside is never filled red (§2.3).
-            cell.Stripes = UiKit.Image(cell.Root, "Stripes", VisualArt.Stripes(0, false), BattleTheme.AimRed, Vector2.zero, Vector2.one);
-            cell.Stripes.type = Image.Type.Tiled;
-            cell.Stripes.rectTransform.offsetMin = new Vector2(2f, 2f);
-            cell.Stripes.rectTransform.offsetMax = new Vector2(-2f, -2f);
+            cell.Stripes = MakeStripes(cell);
             cell.AimFrame = VisualArt.Ring(cell.Root, "AimFrame", BattleTheme.AimRed, 6, 2);
             // §3.2 破線 (3 px dashes 3 px apart) at the 2 px of a frame, in violet: where a moving omen lands.
-            cell.MoveFrame = VisualArt.DashedFrame(cell.Root, BattleTheme.Violet, 2f);
-            foreach (Image edge in cell.MoveFrame) edge.enabled = false;
+            // Over a cell another enemy aims at it steps inside the red frame on a band of the panel colour,
+            // 2 px either side of the dashes (Trial/Battle/Floor.cs MoveOverCss), so the red never hides it.
+            cell.MoveRoot = UiKit.Rect(cell.Root, "MoveFrame", Vector2.zero, Vector2.one);
+            cell.MoveKeyline = UiKit.Frame(cell.MoveRoot, BattleTheme.PanelOpaque, 6f, -2f);
+            cell.MoveFrame = VisualArt.DashedFrame(cell.MoveRoot, BattleTheme.Violet, 2f);
+            ShowMoveFrame(cell, false, 0f);
             cell.ReachTop = UiKit.Image(cell.Root, "ReachTop", ProceduralArt.White, BattleTheme.Amber, new Vector2(0f, 1f), new Vector2(1f, 1f));
             cell.ReachTop.rectTransform.offsetMin = new Vector2(4f, -3f);
             cell.ReachTop.rectTransform.offsetMax = new Vector2(-4f, 0f);

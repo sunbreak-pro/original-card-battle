@@ -691,7 +691,7 @@ namespace Depiction.View
         private void ApplyFloor(DepictionFrame frame)
         {
             if (_floor == null || !playerFigure) return;
-            _floor.Bind(frame.Floor, playerFigure.transform.position, frame.Corner.Floor);
+            _floor.Bind(frame, playerFigure.transform.position);
             _reachFor = null; // Bind put the reach out; the next Update lights it again for the card still hovered
 
             if (!_floor.Shown) return;
@@ -1148,7 +1148,7 @@ namespace Depiction.View
                     break;
 
                 case CueKind.OmenShow:
-                    badge.Bind(EnemyScreen.OmenOf(ev.After, EnemyScreen.IndexOf(cue, _enemyCount)));
+                    BindBadge(badge, ev.After, EnemyScreen.IndexOf(cue, _enemyCount));
                     yield return HoldBeat(EffectId.OmenShow, badge.PopIn(_effects.Ms(EffectId.OmenShow)), () => badge.Rect.localScale = Vector3.one);
                     break;
 
@@ -2011,6 +2011,12 @@ namespace Depiction.View
             if (_backdropView) _backdropView.Show(layer);
         }
 
+        /// <summary>Enemy <paramref name="k"/>'s omen in <paramref name="frame"/>, with its swatch (§4.4, #589).</summary>
+        private static void BindBadge(OmenBadgeView badge, DepictionFrame frame, int k)
+        {
+            badge.Bind(EnemyScreen.OmenOf(frame, k), EnemySwatch.OnBadge(frame, k), EnemySwatch.DirectionOf(frame, k));
+        }
+
         private void ApplyFrame(DepictionFrame frame)
         {
             if (cornerInfo) cornerInfo.Bind(frame.Corner);
@@ -2042,13 +2048,14 @@ namespace Depiction.View
                 // stands takes back its colours before the bind, so this frame's lie over the last battle's.
                 bool fallen = SeveralEnemies && unit.Down;
                 if (!fallen) _enemies[k].Status.SetFallen(false);
+                _enemies[k].Status.SetSwatch(EnemySwatch.OnPanel(frame, k), EnemySwatch.DirectionOf(frame, k)); // §4.5 (#589)
                 _enemies[k].Status.Bind(unit);
                 if (fallen) _enemies[k].Status.SetFallen(true);
                 _enemies[k].Figure.SetRange(unit.HasRange, unit.RangeGlyph);
             }
             SetPlayerHome(playerFigure);
             ApplyFloor(frame); // §4.2: the figures stand on their cells (#577: every source draws the floor)
-            for (int k = 0; k < _enemyCount; k++) _enemies[k].Badge.Bind(EnemyScreen.OmenOf(frame, k));
+            for (int k = 0; k < _enemyCount; k++) BindBadge(_enemies[k].Badge, frame, k);
             if (SeveralEnemies) DrawNearerInFront(frame);
             bool hasHint = !string.IsNullOrEmpty(frame.StanceHint);
             if (stanceHintText) stanceHintText.text = frame.StanceHint;

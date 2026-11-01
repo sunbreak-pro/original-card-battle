@@ -31,6 +31,34 @@ namespace Depiction.Tests
         }
 
         [Test]
+        public void WithoutASwatch_TheHpRow_StandsWhereItAlwaysDid()
+        {
+            Assert.That(StatusPanelLayout.HeartLeft(false), Is.EqualTo(10f));
+            Assert.That(StatusPanelLayout.HpNumberLeft(false), Is.EqualTo(10f + 20f + 6f));
+            Assert.That(StatusPanelLayout.HpBarLeft(false), Is.EqualTo(10f + 20f + 6f + 44f + 6f));
+            Assert.That(StatusPanelLayout.HpBarWidth(StatusPanelLayout.PlayerWidth, false), Is.EqualTo(300f - 10f - 86f));
+            Assert.That(StatusPanelLayout.HpBarWidth(0f, false), Is.EqualTo(8f), "the narrowest bar it ever drew");
+        }
+
+        [Test]
+        public void TheSwatch_StandsAtTheRowsLeftEnd_AndComesOutOfTheBar_OnEveryPanelTheFloorGives()
+        {
+            foreach (int cells in Lines)
+            {
+                for (int size = 1; size <= 2; size++)
+                {
+                    float width = StatusPanelLayout.EnemyPanelWidth(cells, size);
+                    string at = cells + " cells, size " + size;
+                    Assert.That(StatusPanelLayout.HeartLeft(true), Is.EqualTo(StatusPanelLayout.PadSide + EnemySwatch.PanelSize + StatusPanelLayout.PartGap), at);
+                    float right = StatusPanelLayout.HpBarLeft(true) + StatusPanelLayout.HpBarWidth(width, true);
+                    Assert.That(right, Is.EqualTo(width - StatusPanelLayout.PadSide), at + ": the panel keeps its width");
+                    Assert.That(StatusPanelLayout.HpBarWidth(width, true), Is.EqualTo(StatusPanelLayout.HpBarWidth(width, false) - (EnemySwatch.PanelSize + StatusPanelLayout.PartGap)), at);
+                    Assert.That(StatusPanelLayout.HpBarWidth(width, true), Is.GreaterThan(StatusPanelLayout.HpBarMinWidth), at + ": the bar still reads");
+                }
+            }
+        }
+
+        [Test]
         public void ThreePanels_NeverOverlap_AndStayInside_WhereverTheThreeStand()
         {
             int checkedCount = 0;
