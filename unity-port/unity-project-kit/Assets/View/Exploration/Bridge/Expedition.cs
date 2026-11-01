@@ -98,8 +98,9 @@ namespace Exploration.Bridge
             Legacy = new ExpeditionLegacy(this);
             Session.LegacySource = Legacy;
             // Trial extension (js: Expedition.js:105): the session hands what it finds outside its core to the
-            // expedition (a chest's cards and pages, the 写しの帳 pick, the journal's 開示度).
-            if (Trial) Session.Keeper = this;
+            // expedition (a chest's cards and pages, the 写しの帳 pick, the journal's 開示度). A session that resolves
+            // events outside trial hands it a chest's finds too (#718).
+            if (Trial || start?.ResolvesEvents == true) Session.Keeper = this;
             // Trial extension (js: app/life.js:205-211): the pages the heir set out with, counted by BeginLife. Never
             // under 0 (js: app/life.js:74 startPages reads anything but a positive count as 0).
             _startPages = Math.Max(0, options?.StartPages ?? 0);

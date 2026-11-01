@@ -2,7 +2,8 @@
 // 「探索の持ち物とイベント」): what an イベント node holds. Designed from encounters_and_rewards_v4.md §5 (the
 // three kinds, their effects and their weights per layer) and dungeon_exploration_v4.md §2.1 (イベント 3 種).
 // The C# DungeonCore stops at NodeKind.Event (「泉 / 重い宝箱 / 特殊な食事 のどれかが起きる」); trial mode
-// (RunStart.Trial) draws the kind here and ExplorationReducer.ResolveEvent applies it. Like LayerEncounters,
+// (RunStart.Trial) and the exploration screen (RunStart.ResolvesEvents, #718) draw the kind here and
+// ExplorationReducer.ApplyEvent applies it. Like LayerEncounters,
 // the draw is seeded from the node, so a life replays the same events on the same nodes.
 using System;
 using System.Collections.Generic;
