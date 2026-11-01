@@ -222,7 +222,7 @@ namespace Exploration
                     break;
 
                 case NodeKind.Event:
-                    if (session.Trial) lines.AddRange(TrialEventLines(session, node));
+                    if (session.ResolvesEvents) lines.AddRange(TrialEventLines(session, node));
                     else lines.Add("泉 / 重い宝箱 / 特殊な食事 のどれかが起きる");
                     break;
 
@@ -248,9 +248,7 @@ namespace Exploration
         }
 
         /// <summary>
-        /// What a 死亡地点の痕跡 promises, read from the ledger (dungeon_exploration_v4.md §6.3, §7.5). The choosing
-        /// screen is not wired into the Unity exploration screen yet (§7.7), so the lines say so instead of
-        /// promising a legacy the screen cannot hand over.
+        /// What a 死亡地点の痕跡 promises, read from the ledger (dungeon_exploration_v4.md §6.3, §7.5).
         /// </summary>
         private static IEnumerable<string> TraceLines(ExplorationSession session)
         {
@@ -265,16 +263,11 @@ namespace Exploration
                 yield return ledger.Pending.Place.Layer == session.State.Profile.Layer
                     ? "この生が受け取る痕跡はここ"
                     : "この生が受け取る痕跡は既に決まっている";
-                yield return TraceScreenNotWired;
                 yield break;
             }
             yield return "前の生の遺産が残っている";
             yield return "最初に踏んだ痕跡だけを受け取れる（1 つの生で 1 件）";
-            yield return TraceScreenNotWired;
         }
-
-        /// <summary>Shown until the choosing screen is wired into the Unity exploration screen (§7.7).</summary>
-        private const string TraceScreenNotWired = "遺産を選ぶ画面はまだ出ない";
 
         // js: bridge/explorationScript/ExplorationScreenBuilder.js:242
         private static IReadOnlyList<StepOption> Options(ExplorationState state, MapNode node, NodeStanding standing, EventKind? arrivalEvent = null)
@@ -307,7 +300,7 @@ namespace Exploration
                 ? ExplorationReducer.Teleport(before, jumpSlot, nodeId, choice)
                 : ExplorationReducer.Step(before, nodeId, choice);
             // Trial extension: a 泉 heals on arrival, so its step's forecast counts the HP.
-            if (arrivalEvent != null && !after.IsOver) after = ExplorationReducer.ResolveEvent(after, arrivalEvent.Value, true);
+            if (arrivalEvent != null && !after.IsOver) after = ExplorationReducer.ApplyEvent(after, arrivalEvent.Value, true);
 
             var lines = new List<string>
             {
@@ -479,8 +472,8 @@ namespace Exploration
             }
 
             // Trial extension (js: ExplorationScreenBuilder.js:510): an event, a survey pick or a swap waits before the
-            // layer's end.
-            if (session.Trial)
+            // layer's end. Outside trial only the event's own card can wait here (#718).
+            if (session.ResolvesEvents)
             {
                 var trial = TrialCard(session);
                 if (trial != null) return trial;

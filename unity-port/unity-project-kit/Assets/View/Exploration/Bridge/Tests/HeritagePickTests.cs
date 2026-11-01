@@ -107,6 +107,45 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
+        public void TheScreen_MarksWhatIsChosen_AndLastsUntilItIsConfirmed()
+        {
+            var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) });
+            WalkTo(expedition, NodeKind.Trace);
+
+            IReadOnlyList<string> chosen = HeritagePicks.Toggle(expedition, Array.Empty<string>(), "page:p1");
+            HeritagePick pick = HeritagePicks.For(expedition, chosen);
+            Assert.Multiple(() =>
+            {
+                Assert.That(pick.Choices.Where(c => c.Selected).Select(c => c.Key), Is.EqualTo(new[] { "page:p1" }));
+                Assert.That(pick.CountLine, Is.EqualTo("選んだ数 1 / 3"));
+                Assert.That(pick.ConfirmLabel, Is.EqualTo(HeritagePicks.ConfirmLabel));
+                Assert.That(expedition.Session.MapIsLive, Is.True, "the screen covers the map; the rule does not stop it (§7.5)");
+                Assert.That(expedition.Session.Traces.Traces.Count, Is.EqualTo(1), "marking collects nothing");
+            });
+
+            Assert.That(HeritagePicks.Confirm(expedition, chosen), Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(HeritagePicks.For(expedition, chosen).IsShown, Is.False);
+                Assert.That(expedition.InheritedLegacyPages.Select(p => p.PageId), Is.EqualTo(new[] { "p1" }));
+            });
+        }
+
+        [Test]
+        public void ChoosingNothing_StillCollectsTheTrace()
+        {
+            var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) });
+            WalkTo(expedition, NodeKind.Trace);
+
+            Assert.That(HeritagePicks.Confirm(expedition, Array.Empty<string>()), Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(expedition.Session.Traces.Traces, Is.Empty, "what was not chosen is lost with the trace (§7.3)");
+                Assert.That(HeritagePicks.For(expedition).IsShown, Is.False);
+            });
+        }
+
+        [Test]
         public void ARefusedChoice_ChangesNothing()
         {
             var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) });

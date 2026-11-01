@@ -1,5 +1,20 @@
 # HISTORY (chat-design)
 
+### 2026-11-01 - design 宛ての 4 件を 1 件 1 PR で進める（#711 / #608 / #85 / #287）
+
+#### 概要
+
+4 件をそれぞれ `origin/main` から切ったブランチで PR にしました。#711 と #608 は Issue を閉じる PR で、#85 と #287 は差分の絵が無いので参照だけの PR です。PR はすべて open で、merge はこうだいさんの作業です。
+
+#### 変更点
+
+- **#711（PR #736）**: `CAMP_FACILITIES_DESIGN.md` の §3.3 と §3.1 を、死亡地点での受け取りと、ノードの種類に直しました。
+- **#608（PR #741）**: `BackdropView.cs` から `followCornerInfo`、`ShownLayer`、`Update` を消しました。最初のフレームで階層が届くことはコードの順番で確かめました。
+- **#85（PR #742）**: `briefs/polearm_warped.md` §6 に、影絵の関門の実測と、絵が映る画面を書きました。
+- **#287（PR #743、RPG-by-card#15）**: Unity 側で `Figure.prefab` の棚に 2 体を足しました。Editor を開かず YAML を書いたので、Unity では未確認です。2 枚の仕様カードの §6 を合わせました。`polearm_unyielding` に離れた点が 94 個あることも書きました。
+- **検証**: 4 本とも `npm run build` / `lint` / `test:run` / `dotnet test` が exit 0 です。`npm run unity:check` は `origin/main` と同じ 162 件で exit 1 です。Unity の前回のコンパイルが古いためで、`BackdropView.cs` は Unity のコンパイラに個別に通してエラー 0 件でした。
+- **申し送り**: `2026-11-01-design-trial-art-destination.md`（`kind: conflict`）、`2026-11-01-design-silhouette-gate-size.md`、`2026-11-01-design-camp-legacy-wording.md` の 3 件です。
+
 ### 2026-10-21 - design 宛ての 4 件を 1 件 1 PR で進める（#623 / #85 / #287 / #244）
 
 #### 概要

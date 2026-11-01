@@ -1,6 +1,7 @@
 // Trial extension of the exploration reducer (port of the browser trial's src/core/dungeon/ExplorationReducer.js;
 // docs/EXTENSIONS.md 「探索の持ち物とイベント」 and 「探索の結果と再開」). Everything here acts only on a state whose
-// Trial flag is on (ExplorationReducer.Enter(..., trial: true)); with it off the reducer is the C# as it was.
+// Trial flag is on (ExplorationReducer.Enter(..., trial: true)); with it off the reducer is the C# as it was. The one exception is
+// ApplyEvent (#718): the exploration screen resolves events without the trial's other rules (RunStart.ResolvesEvents).
 using System;
 using System.Linq;
 
@@ -44,7 +45,18 @@ namespace DungeonCore
         }
 
         /// <summary>
-        /// Trial extension: an イベント node's effect on the run (encounters_and_rewards_v4.md §5). The node's 刻限
+        /// Trial extension: <see cref="ApplyEvent"/>, on a trial state only. A state outside trial is refused.
+        /// </summary>
+        // js: core/dungeon/ExplorationReducer.js:169
+        public static ExplorationState ResolveEvent(ExplorationState state, EventKind kind, bool accept)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (!state.Trial) throw new ExplorationRuleException("events resolve in trial mode only");
+            return ApplyEvent(state, kind, accept);
+        }
+
+        /// <summary>
+        /// An イベント node's effect on the run (encounters_and_rewards_v4.md §5). The node's 刻限
         /// and 瘴気 were paid by the step; this applies what the event does once the player has answered
         /// (泉 always 「受ける」):
         /// 泉: HP back by the layer's share of the maximum.
@@ -54,11 +66,9 @@ namespace DungeonCore
         /// (試作で決めたこと: §5 does not say a meal may kill).
         /// 受けない: nothing.
         /// </summary>
-        // js: core/dungeon/ExplorationReducer.js:169
-        public static ExplorationState ResolveEvent(ExplorationState state, EventKind kind, bool accept)
+        public static ExplorationState ApplyEvent(ExplorationState state, EventKind kind, bool accept)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            if (!state.Trial) throw new ExplorationRuleException("events resolve in trial mode only");
             if (state.IsOver) throw new ExplorationRuleException("the run is over");
             if (!accept) return state;
             switch (kind)

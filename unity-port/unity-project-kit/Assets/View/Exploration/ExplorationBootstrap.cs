@@ -8,6 +8,9 @@
 // hidden, so the exploration keeps its state in memory and the battle scene stays as the Unity repo
 // authored it. Expedition (pure C#) builds what goes in and takes what comes back; this class only
 // loads, waits and unloads.
+//
+// #717: the choosing screen at a 死亡地点の痕跡. This class only holds what is chosen so far: HeritagePicks
+// says what the screen shows, toggles a choice and confirms.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using System.Collections.Generic;
@@ -49,6 +52,8 @@ namespace Exploration.View
         // Set when a battle could not be shown: every combat node after it takes the stand-in card.
         // Kept apart from realBattles, which stays what the Inspector set.
         private bool _standInOnly;
+        // What the choosing screen at a trace has marked so far (#717), by key.
+        private IReadOnlyList<string> _legacyChoice = System.Array.Empty<string>();
 
         private void Start()
         {
@@ -58,11 +63,12 @@ namespace Exploration.View
                 Seed = (ulong)used,
                 Loadout = trialLoadout ? RunStart.TrialLoadout() : RunLoadout.Empty,
                 MiasmaPercent = startMiasma,
+                ResolvesEvents = true,
             });
             _session = _expedition.Session;
 
             UiKit.EnsureEventSystem();
-            _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable, Toggle, PickCard);
+            _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable, Toggle, PickCard, ToggleLegacy, ConfirmLegacy, SwapFound, DiscardFound);
             Render();
             Debug.Log("[ExplorationBootstrap] seed " + used);
         }
@@ -111,10 +117,38 @@ namespace Exploration.View
             if (CardPicks.Choose(_expedition, cardId)) Render();
         }
 
+        // #717: a choice pressed on the choosing screen at a trace, and its confirm button.
+        private void ToggleLegacy(string key)
+        {
+            _legacyChoice = HeritagePicks.Toggle(_expedition, _legacyChoice, key);
+            Render();
+        }
+
+        private void ConfirmLegacy()
+        {
+            if (HeritagePicks.Confirm(_expedition, _legacyChoice)) Render();
+        }
+
+        // #719: a slot pressed on the swap screen, and its 「諦める」; ConsumableSwaps decides what they do.
+        private void SwapFound(int slot)
+        {
+            if (ConsumableSwaps.Swap(_expedition, slot)) Render();
+        }
+
+        private void DiscardFound()
+        {
+            if (ConsumableSwaps.Discard(_expedition)) Render();
+        }
+
         private void Render()
         {
             _view.Render(_session.Screen());
             _view.ShowPick(CardPicks.For(_expedition));
+            _view.ShowSwap(ConsumableSwaps.For(_expedition));
+            HeritagePick heritage = HeritagePicks.For(_expedition, _legacyChoice);
+            // The marks last only as long as the screen: a later life's trace starts with none marked.
+            if (!heritage.IsShown) _legacyChoice = System.Array.Empty<string>();
+            _view.ShowHeritage(heritage);
             if (realBattles && !_standInOnly && !_inBattle && _session.HasPendingBattle && _expedition.Battle == null) StartCoroutine(FightPendingBattle());
         }
 
