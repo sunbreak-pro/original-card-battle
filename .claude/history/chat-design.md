@@ -1,5 +1,20 @@
 # HISTORY (chat-design)
 
+### 2026-11-02 - 瘴気の息づきが % の変化で途切れない形を出す（#728）
+
+#### 概要
+
+息づきの位相を持ち越す `MiasmaBreath` 型を `Backdrop.Script` に足し、旧い探索画面を乗り換えました。PR #757 は書いた時点で open で、merge はこうだいさんの作業です。
+
+#### 変更点
+
+- **`MiasmaLook`**: `AdvanceBreath`、`BreathAtPhase`、`FillAlphaOf`、`ShadeBreathing` を足しました。`Breath` の説明に、% を変えながら呼ぶと位相が飛ぶことを書きました。
+- **`MiasmaBreath`**: 探索の画面の `AdvanceBreath` の中身を移しました。テストを `MiasmaBreathTests.cs` に 10 件足しました。
+- **`BackdropMotion`**: 息づきの余弦の式を `CosineDip` の 1 か所にまとめました。値は変わりません。
+- **検証**: `npm run build` / `lint` / `test:run` / `unity:check` と `dotnet test` が exit 0 です。Unity Editor での見た目は未確認です。
+- **完了条件の読み替え**: Issue の `grep -n "Math.Cos"` は `View/Trial` の図形と音声にも当たるので、息づきの式に絞って `View/Backdrop` と `View/Exploration` で 1 か所を確かめました。
+- **申し送り**: `2026-11-02-design-trial-miasma-breath-jump.md`（試遊版の探索画面に同じ飛びが残る件）です。
+
 ### 2026-11-01 - design 宛ての 4 件を 1 件 1 PR で進める（#711 / #608 / #85 / #287）
 
 #### 概要
@@ -65,17 +80,3 @@ design 宛ての open Issue 4 件を、1 Issue 1 ブランチで PR まで進め
 - **レポート**: `docs/reports/2026-09-27-battle-visual-finalized.html`（Artifact で発行）
 - **検証**: `npm run sources -- --check` が exit 0。Claude Design の画面の撮影は Chrome が固まって断念し、値はファイルの中身から取った
 - **乖離**: Scope の外は触っていない。Claude Design のファイルは直していない（貼る依頼文をレポートに置いた）
-
-### 2026-09-26 - 戦闘の手札で札の名前と特性の行を札に収める（#210）
-
-#### 概要
-
-手札の札で、名前が 4 字で折り返して種別の行に重なり、特性の行が右隣の札の下に隠れていた。`CardView.cs` が両方を枠に収まる一番大きい文字サイズまで縮めるようにし、PR #214（open）まで進めた。プレハブの修正は要らない。
-
-#### 変更点
-
-- **CardView**: 名前は 1 行のまま名前の欄（100 × 40 px）に収める。特性の行は `traitVisibleRight`（札の左端から 150 px、右隣の札が約 155 px から重なる）の手前で終える。2 行のほうが大きく出せるときだけ 2 行にし、12 px でも収まらない文字は折り返して枠の外を描かない。幅は Unity の `Text.preferredWidth` / `preferredHeight` で測る
-- **CardTextFit（Script/）**: 大きさと行数を決める計算を Unity の型なしで置き、`dotnet test` で確かめられるようにした
-- **テスト**: 計算のテスト 6 本と、80 種の名前と特性の行をプレハブの枠に通すテスト 5 本。広めの見積もりで名前は 16〜24 px、特性の行は 15〜22 px（72 枚のうち 36 枚が 2 行）
-- **食い違い**: 画面の設計書 §3.6 は特性を 1 枚に 1 つまで、カードの設計書は背水の陣に 2 つ。カードの設計書に従い、#213 に残した
-- **検証**: `npm run build` / `lint` / `test:run` / `dotnet test` が exit 0。`CardView.cs` は Unity 6000.5.5f1 の DLL を参照する作業用のプロジェクトでコンパイルを確かめた。修正前の画面は `Logs/DemoShots/03-battle.png` を拡大して確かめた
