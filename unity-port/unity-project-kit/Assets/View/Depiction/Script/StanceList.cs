@@ -22,6 +22,29 @@ namespace Depiction
         /// <summary>The gap between two stacked frames: 6 px from the §3.2 spacing scale.</summary>
         public const float RowGap = 6f;
 
+        // Inside a frame, left to right (§4.6): the swatch (an enemy's, in a battle of several), the 24 px
+        // flag, the name, the 40 px count 12 px from the right edge.
+        public const float PadLeft = 12f;
+        public const float PadRight = 12f;
+        public const float FlagSize = 24f;
+        public const float FlagGap = 8f;
+        public const float CountWidth = 40f;
+
+        /// <summary>§4.6 gives the swatch no size, so it takes §4.5's 16 px, the number panel's.</summary>
+        public const float SwatchSize = EnemySwatch.PanelSize;
+
+        /// <summary>The space after the swatch: 6 px from the §3.2 spacing scale.</summary>
+        public const float SwatchGap = 6f;
+
+        /// <summary>The flag's left edge in a frame; the swatch at <see cref="PadLeft"/> pushes it right (#589).</summary>
+        public static float FlagLeft(bool swatch) => PadLeft + (swatch ? SwatchSize + SwatchGap : 0f);
+
+        /// <summary>The name's left edge in a frame.</summary>
+        public static float NameLeft(bool swatch) => FlagLeft(swatch) + FlagSize + FlagGap;
+
+        /// <summary>The name's slot: what the flag and the count leave, so the frame keeps its §4.6 width.</summary>
+        public static float NameWidth(bool swatch) => Width - NameLeft(swatch) - PadRight - CountWidth;
+
         /// <summary>
         /// At most this many frames per side (the top one at y 354). A longer list folds its oldest
         /// stances into one "+n" frame on top, as the status chips fold theirs (§7.3), so the newest

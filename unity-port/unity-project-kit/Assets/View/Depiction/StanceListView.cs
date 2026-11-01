@@ -5,7 +5,9 @@
 // violet frame and a phosphor flag. A stance held twice shows "×2" beside its name. A side holding
 // none shows the empty frame: no fill, a steel dashed edge and a steel flag. A list longer than the
 // frames folds its oldest stances into a "+n" frame on top. No lamp is drawn (§4.6: a trait is judged
-// once, when the stance is put down).
+// once, when the stance is put down). With several enemies an enemy's frame starts with the swatch of the
+// enemy holding it (§4.6, #589), its flag and name moved right to make room; the "+n" frame, which can fold
+// several enemies' stances, and the empty frame have none, as §4.6 writes them.
 //
 // #605: a frame takes the hover and shows the §7.3 説明パネル beside it (the player's on its right,
 // the enemy's on its left): the flag and "岩の構え ×2" as the heading, "永続" on the right, and the
@@ -23,13 +25,11 @@ namespace Depiction.View
 {
     public sealed class StanceListView
     {
-        private const float PadLeft = 12f;
-        private const float PadRight = 12f;
-        private const float FlagSize = 24f;
-        private const float FlagGap = 8f;
+        private const float PadRight = StanceList.PadRight;
+        private const float FlagSize = StanceList.FlagSize;
         private const int NameSize = 20;
         private const int CountSize = 16;
-        private const float CountWidth = 40f;
+        private const float CountWidth = StanceList.CountWidth;
         private const float PanelPad = 16f;
         private const float PanelTitleHeight = 26f;
         private const float PanelIcon = 20f;
@@ -44,6 +44,9 @@ namespace Depiction.View
             public Image Flag;
             public Text Name;
             public Text Count;
+            /// <summary>The swatch at the frame's left end, made when first needed (#589).</summary>
+            public RectTransform Swatch;
+            public Image SwatchStripes;
             public UnitSide Unit;
             public int FromBottom;
             /// <summary>The stance this frame shows, or null for the "+n" and the empty frame.</summary>
@@ -95,9 +98,14 @@ namespace Depiction.View
                 Hover(null);
                 return;
             }
-            BindSide(_player, RowsOf(frame.Player));
+            BindSide(_player, RowsOf(frame.Player), null);
             // §4.6 (#589): with several enemies every standing one's stances share the enemy side's list.
-            BindSide(_enemy, frame.Enemies.Count > 1 ? _enemyRows.Of(frame.Enemies) : RowsOf(frame.Enemy));
+            if (frame.Enemies.Count > 1)
+            {
+                List<EnemyStanceRow> owned = _enemyRows.Owned(frame.Enemies);
+                BindSide(_enemy, owned.ConvertAll(entry => entry.Row), owned);
+            }
+            else BindSide(_enemy, RowsOf(frame.Enemy), null);
             // A frame that lands under the pointer keeps its panel, with the new rows' text.
             Hover(_hovered);
         }
@@ -110,7 +118,8 @@ namespace Depiction.View
             return unit != null && unit.Stances != null ? unit.Stances : new List<StanceRow>();
         }
 
-        private void BindSide(Side side, List<StanceRow> rows)
+        /// <summary>Draws <paramref name="rows"/>; <paramref name="owned"/>, when given, says whose each one is, row for row.</summary>
+        private void BindSide(Side side, List<StanceRow> rows, List<EnemyStanceRow> owned)
         {
             int frames = StanceList.Frames(rows.Count);
             int folded = StanceList.Folded(rows.Count);
@@ -122,6 +131,7 @@ namespace Depiction.View
                 f.Row = null;
                 f.Folded = null;
                 if (!used) continue;
+                ShowSwatch(f, false, 0);
                 if (rows.Count == 0)
                 {
                     ShowEmpty(f);
@@ -136,9 +146,11 @@ namespace Depiction.View
                 }
                 else
                 {
-                    StanceRow row = rows[rows.Count - 1 - i];
+                    int at = rows.Count - 1 - i;
+                    StanceRow row = rows[at];
                     f.Row = row;
                     ShowRow(side.Unit, f, row.Name, StanceList.CountText(row.Count));
+                    if (owned != null && owned[at].Swatch) ShowSwatch(f, true, owned[at].StripeDirection);
                 }
             }
         }
@@ -154,6 +166,25 @@ namespace Depiction.View
             f.Name.text = name;
             f.Count.text = count;
             f.Count.enabled = count.Length > 0;
+        }
+
+        /// <summary>
+        /// §4.6: the swatch of stripe <paramref name="direction"/> at the frame's left end, the flag and the
+        /// name moved right of it, or the frame as it stands with none.
+        /// </summary>
+        private static void ShowSwatch(Frame f, bool shown, int direction)
+        {
+            if (shown && !f.Swatch)
+            {
+                var size = new Vector2(StanceList.SwatchSize, StanceList.SwatchSize);
+                f.Swatch = UiKit.Point(f.Root, "Swatch", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), size, new Vector2(StanceList.PadLeft, 0f));
+                f.SwatchStripes = VisualArt.Swatch(f.Swatch, VisualArt.SwatchStripes(direction, StanceList.SwatchSize));
+            }
+            if (f.Swatch) f.Swatch.gameObject.SetActive(shown);
+            if (shown) f.SwatchStripes.sprite = VisualArt.SwatchStripes(direction, StanceList.SwatchSize);
+            f.Flag.rectTransform.anchoredPosition = new Vector2(StanceList.FlagLeft(shown), 0f);
+            f.Name.rectTransform.anchoredPosition = new Vector2(StanceList.NameLeft(shown), 0f);
+            f.Name.rectTransform.sizeDelta = new Vector2(StanceList.NameWidth(shown), StanceList.RowHeight);
         }
 
         /// <summary>§4.6 空きの枠: no fill, a steel dashed frame and a steel flag only.</summary>
@@ -189,12 +220,11 @@ namespace Depiction.View
             // §3.2 破線 for 空き, in steel, 2 px like a frame.
             f.Dashed = VisualArt.DashedFrame(f.Root, BattleTheme.Steel, 2f);
             f.Flag = UiKit.Sprite(f.Root, "Flag", OmenIconArt.Of(OmenIcon.Stance), BattleTheme.HpInk, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(FlagSize, FlagSize), new Vector2(PadLeft, 0f));
+                new Vector2(FlagSize, FlagSize), new Vector2(StanceList.FlagLeft(false), 0f));
             f.Flag.preserveAspect = true;
-            float nameLeft = PadLeft + FlagSize + FlagGap;
             // Shippori Mincho 700 at 20 px in §4.6; the built-in font stands in until the fonts arrive.
             f.Name = UiKit.Label(f.Root, "Name", NameSize, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(StanceList.Width - nameLeft - PadRight - CountWidth, StanceList.RowHeight), new Vector2(nameLeft, 0f));
+                new Vector2(StanceList.NameWidth(false), StanceList.RowHeight), new Vector2(StanceList.NameLeft(false), 0f));
             f.Name.fontStyle = FontStyle.Bold;
             f.Name.horizontalOverflow = HorizontalWrapMode.Overflow;
             // §7.3 永続: the count as "×2", IBM Plex Mono at 16 px, in body ink (text under 24 px).

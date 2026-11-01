@@ -7,7 +7,8 @@
 // the builder's until the builder follows (#242). While the enemy carries the omen out, the badge
 // wears a phosphor edge and a violet light (§4.4 敵の番, #455). A 状態付与 omen wears the stamp and
 // shows the statuses it puts on where the number would stand (§4.4, #455); what the journal has not
-// read is already off the script (OmenDisclosure).
+// read is already off the script (OmenDisclosure). The swatch at the first row's right end is in its
+// enemy's direction (§4.4, #589); EnemySwatch says when it stands.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using UnityEngine;
@@ -42,6 +43,7 @@ namespace Depiction.View
         private Image _actingEdge;
         private Image[] _restFrame = new Image[0];
         private RectTransform _swatch;
+        private Image _swatchStripes;
         private RectTransform _hit;
         private Image _hitSolid;
         private Image[] _hitDashed = new Image[0];
@@ -228,11 +230,8 @@ namespace Depiction.View
         /// </summary>
         private void BuildHitParts()
         {
-            _swatch = UiKit.Point(Rect, "Swatch", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(22f, 22f), new Vector2(-12f, -14f));
-            VisualArt.Panel(_swatch, "Back", BattleTheme.PanelOpaque, 3);
-            Image stripes = UiKit.Image(_swatch, "Stripes", VisualArt.Stripes(0, false), BattleTheme.AimRed, Vector2.zero, Vector2.one);
-            stripes.type = Image.Type.Tiled;
-            VisualArt.Ring(_swatch, "Edge", BattleTheme.AimRed, 3, 1);
+            _swatch = UiKit.Point(Rect, "Swatch", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(EnemySwatch.BadgeSize, EnemySwatch.BadgeSize), new Vector2(-12f, -14f));
+            _swatchStripes = VisualArt.Swatch(_swatch, VisualArt.SwatchStripes(0, EnemySwatch.BadgeSize));
             _swatch.gameObject.SetActive(false);
 
             _hit = UiKit.Point(Rect, "Hit", new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(30f, 26f), new Vector2(-10f, 6f));
@@ -249,7 +248,6 @@ namespace Depiction.View
             if (!_hit) return;
             bool marked = omen.Hit != OmenHit.None;
             _hit.gameObject.SetActive(marked);
-            if (_swatch) _swatch.gameObject.SetActive(marked);
             if (!marked) return;
             // The mark takes the place the reach glyph had on the v4.2 screen.
             if (sideChip) sideChip.gameObject.SetActive(false);
@@ -270,9 +268,15 @@ namespace Depiction.View
             rt.anchoredPosition = offset;
         }
 
-        public void Bind(OmenFrame omen)
+        /// <summary>
+        /// Shows <paramref name="omen"/>, with the swatch of stripe <paramref name="direction"/> at the first
+        /// row's right end when <paramref name="swatch"/> (EnemySwatch.OnBadge, EnemySwatch.DirectionOf).
+        /// </summary>
+        public void Bind(OmenFrame omen, bool swatch, int direction)
         {
             EnsureParts();
+            if (_swatch) _swatch.gameObject.SetActive(swatch);
+            if (_swatchStripes) _swatchStripes.sprite = VisualArt.SwatchStripes(direction, EnemySwatch.BadgeSize);
             _shown = omen.Visible;
             if (group) group.alpha = omen.Visible ? 1f : 0f;
             if (kindText) kindText.text = omen.KindLabel;

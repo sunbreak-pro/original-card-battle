@@ -105,6 +105,95 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void TwoEnemies_TheFloorsStripes_AreEachEnemysOwnDirection_AndTheirSwatchesStand()
+        {
+            var (state, writer, _) = RustAndAsh();
+            var seen = new HashSet<int>();
+            var frames = new List<DepictionFrame>();
+            for (int turn = 0; turn < 6 && state.Result == GameResult.Ongoing; turn++)
+            {
+                StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+                frames.AddRange(writer.Write(begin.Events, begin.State).Select(ev => ev.After));
+                StepResult end = TurnLoop.EndTurn(begin.State, NoShuffle);
+                frames.AddRange(writer.Write(end.Events, end.State).Select(ev => ev.After));
+                state = end.State;
+            }
+            foreach (DepictionFrame frame in frames)
+            {
+                EnemyFrame rust = frame.Enemies[0], ash = frame.Enemies[1];
+                Assert.That(rust.StripeDirection, Is.Not.EqualTo(ash.StripeDirection));
+                for (int cell = 1; cell <= frame.Floor.Cells; cell++)
+                {
+                    var expected = new List<StripeMark>();
+                    if (rust.AimCells.Contains(cell)) expected.Add(new StripeMark(0, rust.DenseCells.Contains(cell)));
+                    if (ash.AimCells.Contains(cell)) expected.Add(new StripeMark(1, ash.DenseCells.Contains(cell)));
+                    Assert.That(FloorStripes.Of(frame, cell), Is.EqualTo(expected), "cell " + cell);
+                    foreach (StripeMark mark in expected) seen.Add(mark.Direction);
+                }
+                foreach (int k in new[] { 0, 1 })
+                {
+                    Assert.That(EnemySwatch.OnPanel(frame, k), Is.True, "enemy " + k);
+                    Assert.That(EnemySwatch.DirectionOf(frame, k), Is.EqualTo(k));
+                    if (frame.Enemies[k].AimCells.Count > 0) Assert.That(EnemySwatch.OnBadge(frame, k), Is.True, "enemy " + k + " aims");
+                }
+            }
+            Assert.That(seen, Is.EquivalentTo(new[] { 0, 1 }), "both enemies aimed in the turns played");
+        }
+
+        [Test]
+        public void AnEnemyReadToZero_DrawsNoStripesAndNoBadgeSwatch_WhileTheOtherStillDoes()
+        {
+            var (state, writer, _) = RustAndAsh();
+            writer.Disclosures = new[] { OmenDisclosure.Unread, OmenDisclosure.Full };
+            StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            DepictionFrame frame = Last(writer.Write(begin.Events, begin.State));
+
+            Assert.That(EnemySwatch.OnBadge(frame, 0), Is.False);
+            Assert.That(EnemySwatch.OnBadge(frame, 1), Is.True);
+            Assert.That(EnemySwatch.OnPanel(frame, 0), Is.True, "the panel says whose it is at any level");
+            for (int cell = 1; cell <= frame.Floor.Cells; cell++)
+            {
+                var directions = FloorStripes.Of(frame, cell).Select(mark => mark.Direction).ToList();
+                Assert.That(directions.Contains(0), Is.False, "cell " + cell);
+                Assert.That(directions.Contains(1), Is.EqualTo(frame.Enemies[1].AimCells.Contains(cell)), "cell " + cell);
+            }
+        }
+
+        [Test]
+        public void OneEnemy_TheFloorsStripes_ReadAsTheFloorFrameDoes_TurnAfterTurn()
+        {
+            BattleState state = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(Hand, 2), 8), NoShuffle).State;
+            var writer = new CoreScriptWriter(state.EnemyDef);
+            var frames = new List<DepictionFrame> { writer.Opening(state) };
+            for (int turn = 0; turn < 6 && state.Result == GameResult.Ongoing; turn++)
+            {
+                StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+                frames.AddRange(writer.Write(begin.Events, begin.State).Select(ev => ev.After));
+                StepResult end = TurnLoop.EndTurn(begin.State, NoShuffle);
+                frames.AddRange(writer.Write(end.Events, end.State).Select(ev => ev.After));
+                state = end.State;
+            }
+
+            int aimed = 0;
+            foreach (DepictionFrame frame in frames)
+            {
+                FloorFrame floor = frame.Floor;
+                for (int cell = 1; cell <= floor.Cells; cell++)
+                {
+                    var expected = new List<StripeMark>();
+                    if (floor.AimCells.Contains(cell)) expected.Add(new StripeMark(0, floor.DenseCells.Contains(cell)));
+                    Assert.That(FloorStripes.Of(frame, cell), Is.EqualTo(expected), "cell " + cell);
+                    Assert.That(FloorStripes.MoveTo(frame, cell), Is.EqualTo(floor.MoveCells.Contains(cell)), "cell " + cell);
+                    Assert.That(FloorStripes.MoveInset(frame, cell), Is.EqualTo(0f), "cell " + cell);
+                    aimed += expected.Count;
+                }
+                Assert.That(EnemySwatch.OnPanel(frame, 0), Is.False);
+                Assert.That(EnemySwatch.OnBadge(frame, 0), Is.EqualTo(frame.Omen.Hit != OmenHit.None), "the badge keeps the rule it had");
+            }
+            Assert.That(aimed, Is.GreaterThan(0), "the battle did aim");
+        }
+
+        [Test]
         public void TheSecondEnemysEvents_GoToItsOwnNumbers_TurnAfterTurn()
         {
             var (state, writer, _) = RustAndAsh();

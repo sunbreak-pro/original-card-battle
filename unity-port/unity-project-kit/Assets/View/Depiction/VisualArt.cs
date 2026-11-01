@@ -388,6 +388,29 @@ namespace Depiction.View
             return made;
         }
 
+        /// <summary>
+        /// §4.2 / §4.4 / §4.5 / §4.6 色見本: a small tile of an enemy's red stripes, on the opaque panel with a
+        /// 1 px red edge, filling <paramref name="root"/>. Returns the stripes, for <see cref="SwatchStripes"/>.
+        /// </summary>
+        public static Image Swatch(RectTransform root, Sprite stripes)
+        {
+            Panel(root, "Back", BattleTheme.PanelOpaque, 3);
+            Image image = UiKit.Image(root, "Stripes", stripes, BattleTheme.AimRed, Vector2.zero, Vector2.one);
+            image.type = Image.Type.Tiled;
+            Ring(root, "Edge", BattleTheme.AimRed, 3, 1);
+            return image;
+        }
+
+        /// <summary>
+        /// The stripes of a swatch <paramref name="size"/> px wide. The badge's 22 px holds §3.2's 11 px
+        /// spacing; 16 px would hold one or two lines of it, too few to read as a direction, so the small
+        /// ones take the 6 px spacing, as Trial's swatch does at every size (Ocb.Swatch).
+        /// </summary>
+        public static Sprite SwatchStripes(int direction, float size)
+        {
+            return Stripes(direction, size < EnemySwatch.BadgeSize);
+        }
+
         private static Sprite _wickStripes;
 
         /// <summary>

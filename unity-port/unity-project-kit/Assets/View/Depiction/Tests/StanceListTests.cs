@@ -45,6 +45,30 @@ namespace Depiction.Tests
         }
 
         [Test]
+        public void AFrameWithoutASwatch_StandsAsItAlwaysDid()
+        {
+            Assert.That(StanceList.FlagLeft(false), Is.EqualTo(12f));
+            Assert.That(StanceList.NameLeft(false), Is.EqualTo(12f + 24f + 8f));
+            Assert.That(StanceList.NameWidth(false), Is.EqualTo(250f - 44f - 12f - 40f));
+        }
+
+        [Test]
+        public void TheSwatch_StandsAtTheLeftEnd_InsideThePadding_AndNothingOverlaps()
+        {
+            Assert.That(StanceList.PadLeft + StanceList.SwatchSize, Is.LessThanOrEqualTo(StanceList.FlagLeft(true)), "the flag starts after it");
+            Assert.That(StanceList.FlagLeft(true) + StanceList.FlagSize, Is.LessThanOrEqualTo(StanceList.NameLeft(true)));
+            Assert.That(StanceList.NameLeft(true) + StanceList.NameWidth(true), Is.EqualTo(StanceList.Width - StanceList.PadRight - StanceList.CountWidth), "the name stops where the count starts");
+            Assert.That((StanceList.RowHeight - StanceList.SwatchSize) * 0.5f, Is.GreaterThan(0f), "it stands inside the frame's height");
+        }
+
+        [Test]
+        public void TheNameSlotBesideASwatch_HoldsSixCharactersAt20Px()
+        {
+            // An enemy's stance names run to five characters (狩りの構え), a card's to six (不動岩の構え).
+            Assert.That(StanceList.NameWidth(true), Is.GreaterThanOrEqualTo(6 * 20f));
+        }
+
+        [Test]
         public void TheFrames_StandOnTheSection46Slot_AndStackUpward()
         {
             Assert.That(StanceList.LeftOf(UnitSide.Player), Is.EqualTo(24f));

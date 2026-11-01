@@ -7,12 +7,21 @@
 //
 // The script gives each enemy's list in the order put down, but no order across enemies, so this keeps
 // one: a stance new to the list, or put down again (its count rose), goes to the newest place (§3.7), and
-// the others keep theirs. Pure C#, so the EditMode tests hold it.
+// the others keep theirs. Each row keeps whose it is, for the swatch at the frame's left end (§4.6). Pure
+// C#, so the EditMode tests hold it.
 using System;
 using System.Collections.Generic;
 
 namespace Depiction
 {
+    /// <summary>One row of the enemy side's list and the swatch of the enemy holding it (EnemyFrame.Swatch, StripeDirection).</summary>
+    public sealed class EnemyStanceRow
+    {
+        public StanceRow Row;
+        public bool Swatch;
+        public int StripeDirection;
+    }
+
     public sealed class EnemyStanceRows
     {
         private sealed class Stamp
@@ -37,6 +46,15 @@ namespace Depiction
         /// </summary>
         public List<StanceRow> Of(IReadOnlyList<EnemyFrame> enemies)
         {
+            List<EnemyStanceRow> owned = Owned(enemies);
+            var rows = new List<StanceRow>(owned.Count);
+            foreach (EnemyStanceRow entry in owned) rows.Add(entry.Row);
+            return rows;
+        }
+
+        /// <summary><see cref="Of"/>, each row with the swatch of the enemy holding it.</summary>
+        public List<EnemyStanceRow> Owned(IReadOnlyList<EnemyFrame> enemies)
+        {
             if (enemies == null) throw new ArgumentNullException(nameof(enemies));
             bool anyStands = false;
             foreach (EnemyFrame enemy in enemies)
@@ -44,7 +62,7 @@ namespace Depiction
                 if (!enemy.Unit.Down) anyStands = true;
             }
             var seen = new HashSet<string>();
-            var listed = new List<(int Order, int Listed, StanceRow Row)>();
+            var listed = new List<(int Order, int Listed, EnemyStanceRow Row)>();
             for (int k = 0; k < enemies.Count; k++)
             {
                 UnitFrame unit = enemies[k].Unit;
@@ -63,7 +81,7 @@ namespace Depiction
                         stamp.Order = _next++;
                         stamp.Count = row.Count;
                     }
-                    listed.Add((stamp.Order, listed.Count, row));
+                    listed.Add((stamp.Order, listed.Count, new EnemyStanceRow { Row = row, Swatch = enemies[k].Swatch, StripeDirection = enemies[k].StripeDirection }));
                 }
             }
             var gone = new List<string>();
@@ -73,8 +91,8 @@ namespace Depiction
             }
             foreach (string id in gone) _stamps.Remove(id);
             listed.Sort((a, b) => a.Order != b.Order ? a.Order.CompareTo(b.Order) : a.Listed.CompareTo(b.Listed));
-            var rows = new List<StanceRow>(listed.Count);
-            foreach ((int Order, int Listed, StanceRow Row) entry in listed) rows.Add(entry.Row);
+            var rows = new List<EnemyStanceRow>(listed.Count);
+            foreach ((int Order, int Listed, EnemyStanceRow Row) entry in listed) rows.Add(entry.Row);
             return rows;
         }
     }
