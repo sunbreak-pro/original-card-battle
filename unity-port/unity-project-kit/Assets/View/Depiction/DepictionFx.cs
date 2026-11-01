@@ -14,9 +14,6 @@ namespace Depiction.View
     {
         private static readonly float[] SlashLength = { 300f, 380f, 460f, 560f };
         private static readonly float[] SlashThickness = { 8f, 12f, 16f, 22f };
-        private static readonly int[] NumberSize = { 56, 72, 88, 108 };
-
-        public static int NumberFont(int tier) => NumberSize[Index(tier)];
 
         private static int Index(int tier) => Mathf.Clamp(tier, 1, 4) - 1;
 

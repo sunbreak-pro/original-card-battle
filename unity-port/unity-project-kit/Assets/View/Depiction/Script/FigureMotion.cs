@@ -121,6 +121,12 @@ namespace Depiction
         /// <summary>§4.3: an elite that takes two cells stands 264 px tall.</summary>
         public const float LargeHeight = 264f;
 
+        /// <summary>§4.4: the omen badge's bottom edge sits 14 px above the head.</summary>
+        public const float OmenOverHead = 14f;
+
+        /// <summary>How far above the feet the bottom of the omen badge stands, over a figure <paramref name="height"/> px tall.</summary>
+        public static float OmenBottomAbove(float height) => height + OmenOverHead;
+
         /// <summary>§4.3 足元の灯り: an ellipse under the feet, 60 px tall and twice as wide as the figure.</summary>
         public const float FootLightHeight = 60f;
 
