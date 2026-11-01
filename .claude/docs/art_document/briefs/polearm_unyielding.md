@@ -138,7 +138,9 @@
 | 5 | 体の基本の段が L\* 35 以上 | 満たす | L\* 20 以上の画素の中央値は 66.5、下位 25% の値は 53.7 です。L\* 20 未満の黒が影絵の 66% を占めます。黒の扱いは、暗い層の地で見て判断します |
 | 6 | 武器と顔がプレイヤーの側を向く | 満たす（Claude の目視） | 顔、下の刃、伸ばした爪が左を向いています。穂先だけは体の後ろで右上にあります（§2） |
 
-**この絵が映る画面（2026-11-01 に確かめた）**: 映るのは `Battle.unity` と `BattleDepiction.unity` の人型（`FigureView`）だけです。試遊版の Unity 版（`Assets/View/Trial/`、Unity リポの `Trial.unity`）は、人型を `Trial/Battle/FieldArt.cs` のベクターの影絵で描き、`Assets/Art/Characters/` を読みません。**絵の行き先（2026-11-01 こうだいさん決定）**: 立ち絵を試遊版の人型へ差し込みます（申し送り `2026-11-01-design-trial-art-insert.md`）。差分は、差し込みが入ってから作ります。差し込みが入るまで、絵が映るのは上の 2 つのシーンだけです。
+**この絵が映る画面（2026-11-01 に確かめた）**: 映るのは `Battle.unity` と `BattleDepiction.unity` の人型（`FigureView`）だけです。試遊版の Unity 版（`Assets/View/Trial/`、Unity リポの `Trial.unity`）は、人型を `Trial/Battle/FieldArt.cs` のベクターの影絵で描き、`Assets/Art/Characters/` を読みません。
+
+**絵の行き先（2026-11-01 こうだいさん決定）**: 立ち絵を試遊版の人型へ差し込みます（申し送り `2026-11-01-design-trial-art-insert.md`）。差分は、差し込みが入ってから作ります。差し込みが入るまで、絵が映るのは上の 2 つのシーンだけです。
 
 **人に渡したもの**: Unity リポの PR #9（https://github.com/sunbreak-pro/RPG-by-card/pull/9。待機の絵・台帳・生成条件の写し）と PR #15（https://github.com/sunbreak-pro/RPG-by-card/pull/15。Figure の絵の棚への登録）。**次に人がすること**: こうだいさんがメインの作業場所で Unity を開き、PR #15 のブランチで `Tools > Depiction > Collect Character Art` を実行して `Figure.prefab` に差分が出ないことを確かめ、merge します。`.meta` はコミット済みで、`asset-intake.md` §3 の値が入っています。敵は BattleCore に入ったので（`unity-port/BattleCore/Enemies.cs:396`）、`Battle.unity` の `BattleBootstrap` の敵 id を `polearm_unyielding` にすれば、不退の槍竜と戦って見え方を確かめられます。映ったら、試遊版への差し込みが入ってから、差分（攻撃・倒れ）を §3 の順で Krita で作ります。
 
