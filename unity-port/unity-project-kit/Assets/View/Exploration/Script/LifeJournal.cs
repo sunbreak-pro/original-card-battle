@@ -100,8 +100,9 @@ namespace Exploration
         /// <summary>
         /// The enemies behind a combat node, drawn the way the session draws them on arrival, so the
         /// preview and the fight agree. Fights in order joined by 「 → 」, enemies of one fight by 「 + 」;
-        /// an enemy below 開示度 1 reads 「？」. The 開示度 shown is the lowest of the node's enemies (the
-        /// omen reads the lower of two the same way, §6.8). Null when every enemy is unknown.
+        /// an enemy below 開示度 1 reads 「？」. The 開示度 shown is the lowest of the node's enemies, so the
+        /// map never promises more than the least-read one; the omen reads each enemy at its own (§6.8, #763).
+        /// Null when every enemy is unknown.
         /// </summary>
         public NodeIntel ForNode(MapNode node, int layer, bool surveyed)
         {

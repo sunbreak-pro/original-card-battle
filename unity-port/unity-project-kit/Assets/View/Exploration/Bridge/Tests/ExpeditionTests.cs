@@ -257,7 +257,7 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
-        public void ThePair_StandsOnOneLine_AndTheOmenReadsTheLowerLevel()
+        public void ThePair_StandsOnOneLine_AndEachOmenReadsItsOwnLevel()
         {
             var encounter = new Encounter(new[] { new Fight(new[] { "polearm_warped", "crossbow_hunter" }) }, isStandIn: true);
             var levels = new Dictionary<string, int> { ["polearm_warped"] = 2, ["crossbow_hunter"] = 1 };
@@ -265,11 +265,46 @@ namespace Exploration.Bridge.Tests
 
             BattleLaunch launch = battle.NextLaunch();
             Assert.That(launch.MoreEnemyIds, Is.EqualTo(new[] { "crossbow_hunter" }));
-            Assert.That(launch.Disclosure, Is.EqualTo(1));
+            Assert.That(launch.Disclosures, Is.EqualTo(new[] { 2, 1 }), "one level per enemy, in the fight's order");
+            Assert.That(launch.Disclosure, Is.EqualTo(1), "the one level stays the lowest, for a reader without the list");
 
-            BattleState state = launch.CreateSource().State;
+            CoreBattleSource source = launch.CreateSource();
+            BattleState state = source.State;
             Assert.That(state.Enemies.Select(e => e.Def.Id), Is.EqualTo(new[] { "polearm_warped", "crossbow_hunter" }));
             Assert.That(state.FieldCells, Is.EqualTo(7));
+        }
+
+        [TestCase(2, 1)]
+        [TestCase(1, 2)]
+        [TestCase(0, 2)]
+        public void ThePairReadToDifferentLevels_ShowsEachOmenAtItsOwnDetail(int polearm, int crossbow)
+        {
+            var encounter = new Encounter(new[] { new Fight(new[] { "polearm_warped", "crossbow_hunter" }) }, isStandIn: true);
+            var levels = new Dictionary<string, int> { ["polearm_warped"] = polearm, ["crossbow_hunter"] = crossbow };
+            var battle = new EncounterBattle(HandIn(encounter, NodeKind.Elite, levels, cells: 8));
+
+            DepictionFrame frame = FirstFrameWaitingForThePlayer(battle.StartNext());
+            Assert.Multiple(() =>
+            {
+                Assert.That(frame.Enemies.Count, Is.EqualTo(2));
+                Assert.That(frame.Enemies[0].Omen.Disclosure, Is.EqualTo(polearm), "錆槍の竜兵 at its own level");
+                Assert.That(frame.Enemies[1].Omen.Disclosure, Is.EqualTo(crossbow), "灰弩の竜兵 at its own level");
+                for (int i = 0; i < 2; i++)
+                {
+                    if (frame.Enemies[i].Omen.Disclosure < OmenDisclosure.Full)
+                        Assert.That(frame.Enemies[i].Omen.ValueText, Is.Empty, "below 2 the omen shows no number");
+                }
+            });
+        }
+
+        private static DepictionFrame FirstFrameWaitingForThePlayer(CoreBattleSource source)
+        {
+            for (int guard = 0; guard < 40 && !source.Finished; guard++)
+            {
+                if (source.WaitingForPlayer) return source.Frame;
+                source.AdvanceAuto();
+            }
+            throw new InvalidOperationException("the battle never came to the player");
         }
 
         // ---- unique cards ----

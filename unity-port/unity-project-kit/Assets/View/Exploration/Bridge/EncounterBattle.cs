@@ -245,9 +245,11 @@ namespace Exploration.Bridge
         public bool Won => _fought.Count == Count && !Lost;
 
         /// <summary>
-        /// The next fight as the battle scene is started with it. <see cref="BattleLaunch.Disclosure"/>
-        /// is the journal's 開示度 handed to the omen (#500): for a fight of two enemies the lower of
-        /// the two, so the omen never shows a number the journal has not learned for either.
+        /// The next fight as the battle scene is started with it. <see cref="BattleLaunch.Disclosures"/>
+        /// is the journal's 開示度 handed to the omen (#500), one per enemy in the fight's order (#763),
+        /// so each enemy's omen shows what the journal has learned of that enemy and no more.
+        /// <see cref="BattleLaunch.Disclosure"/> stays the lowest of the fight, for a reader that takes
+        /// one level for the whole battle.
         /// </summary>
         public BattleLaunch NextLaunch()
         {
@@ -263,6 +265,7 @@ namespace Exploration.Bridge
                 PlayerStartCell = tools.PlayerStartCell,
                 StartGap = tools.StartGap,
                 Disclosure = fight.EnemyIds.Min(id => HandIn.Disclosure[id]),
+                Disclosures = fight.EnemyIds.Select(id => HandIn.Disclosure[id]).ToList(),
                 Deck = new List<CardInstance>(HandIn.Deck),
                 PlayerMaxHp = HandIn.MaxHp,
                 MaxStamina = HandIn.MaxStamina,
