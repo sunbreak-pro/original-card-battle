@@ -360,8 +360,8 @@ namespace Trial.Explore
         }
 
         // js: scenes/explore/ExploreScene.js:422
-        /// <summary>paintGauge(now): the fill rises (MiasmaLook.Rise) and breathes; the ahead bar shows the next step.</summary>
-        private void PaintGauge(float now)
+        /// <summary>paintGauge(now): the fill rises (MiasmaLook.Rise) and breathes by <paramref name="breath"/>; the ahead bar shows the next step.</summary>
+        private void PaintGauge(float now, float breath)
         {
             if (!BandGaugeFill || !BandGaugeAhead) return;
             float shown = GaugeRise(GaugeFrom, GaugeTo, now - GaugeAt);
@@ -371,7 +371,7 @@ namespace Trial.Explore
                 BandFillW = fw;
                 Ui.Size(BandGaugeFill.rectTransform, fw, GaugeInnerH);
             }
-            Rgba tint = BandRgba(GaugeFillAt(shown), MiasmaLook.FillAlpha(GaugeTo, now));
+            Rgba tint = BandRgba(GaugeFillAt(shown), MiasmaLook.FillAlphaOf(breath));
             if (!tint.Equals(BandFillTint))
             {
                 BandFillTint = tint;

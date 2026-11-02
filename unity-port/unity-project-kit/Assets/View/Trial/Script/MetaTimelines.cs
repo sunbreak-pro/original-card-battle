@@ -63,7 +63,7 @@ namespace Trial.Script
         /// </summary>
         public static double Breath(double nowMs, double periodMs, double phaseMs = 0)
         {
-            return 0.5 - 0.5 * Math.Cos(((nowMs + phaseMs) / periodMs) * 2 * Math.PI);
+            return global::Backdrop.BackdropMotion.CosineDip((nowMs + phaseMs) / periodMs);
         }
 
         /// <summary>The heir's foot light on the title breathes with the spring: opacity 0.55〜0.90, every 4200 ms.</summary>
