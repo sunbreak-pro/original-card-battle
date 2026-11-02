@@ -9,6 +9,10 @@ in the Unity Editor at the same quality; it becomes the base form of the game.
   delay, sounds, keys). **The C# cores win for rules.** The JS core is a 1:1 port of the C#; where the JS added rules
   the C# lacks (inheritance, trial items and events, journal intel, deck limits, multi-enemy fixes, free step), they
   are ported to C# as **opt-in** extensions: with the option off, every existing C# behaviour and test stays as is.
+- **One deliberate departure from the JS lengths (Koudai-san, 2026-11-02):** the battle's stance, guard and movement
+  beats play 0.2–0.4 s slower in Unity. Every such length lives in `$KV/Battle/Flow/BattlePacing.cs`, which gives the
+  Trial's own `EffectSwitches` their lengths (`EffectSwitches.SetLength`, opt-in). The catalog and `Battle.unity` keep
+  the old lengths. Add any later departure there, not in the ported files.
 - The existing Unity views (`View/Depiction`, `View/Exploration`, `View/Journal`) are not changed by this work; they
   keep serving `Battle.unity` and `BattleDepiction.unity`. Their pure C# (`Script/`, `Bridge/`) is reused.
 
@@ -45,6 +49,13 @@ The dotnet vessel projects are `unity-port/<assembly>/<assembly>.csproj` (they o
 `unity-port/<assembly>.Tests/`. Tests are not copied into Unity. Existing assemblies that the rule extensions touch:
 `BattleCore`, `DungeonCore`, `Depiction.Script`, `Depiction.Bridge`, `Exploration.Script`, `Exploration.Bridge`
 (which now references `InheritanceCore`).
+
+## Where this port departs from the JS
+
+Only Koudai-san's decisions go here; everything else follows the JS.
+
+- **Character art (2026-11-01, #772).** A figure that has a standing picture (立ち絵, `Assets/Art/Characters/<id>/chr_<id>_idle_stand.png`) shows the picture; a figure without one keeps the JS vector silhouette (`FieldArt`). The picture wins over the JS for the figure only.
+- **Miasma breath (2026-11-02, #773).** The breath phase is carried by `Backdrop.Script.MiasmaBreath` instead of being derived from the clock and the percent, because the JS formula jumps whenever the percent changes. The look at a steady percent is the same. This takes effect when #773 lands.
 
 ## Porting conventions (JS → C#)
 

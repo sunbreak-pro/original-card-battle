@@ -15,6 +15,7 @@
 | [001](./001-resonance-debuff-card-lag.md) | Resonance debuff の 1-card-lag 非対称 | Battle / Class Ability | Open |
 | [002](./002-nunit-implicit-using-unity.md) | NUnit 暗黙 using 依存で Unity asmdef ビルド失敗 | Unity Port / Build | Fixed |
 | [003](./003-md-table-padding-conflicts.md) | 並行 PR が docs で必ずコンフリクトする（表の桁揃え・台帳の版） | Tooling / Git | Mitigated |
+| [004](./004-session-start-stale-worktree-warnings.md) | SessionStart の警告が、放置 worktree と古い .session-name を毎回指す | Tooling / Harness | Mitigated |
 | LESSONS_LEARNED #1 | CSS クラス名衝突（親スコープ必須） | CSS | 知見 |
 | LESSONS_LEARNED #2 | Context Provider スコープ | React | 知見 |
 | LESSONS_LEARNED #3 | React Hooks ルール違反 | React | 知見 |

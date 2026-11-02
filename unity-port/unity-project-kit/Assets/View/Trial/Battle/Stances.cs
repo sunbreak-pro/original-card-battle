@@ -64,7 +64,8 @@ namespace Trial.Battle
         // ---- stances.js:20-41 -------------------------------------------------------------------------------------------
 
         // js: scenes/battle/hud/stances.js:20
-        private const string LastingPrefix = "構え・";
+        /// <summary>The family word the panel's head prints at the right (StatusChipText.LastingGroup); a stance no longer carries a chip to read it from (#726).</summary>
+        private const string LastingGroup = "永続";
         /// <summary>The 説明 beside a frame: 340 wide (the chips' panel), 12 px off the frame (DS renderStances).</summary>
         // js: scenes/battle/hud/stances.js:22
         private const float TipWidth = 340f;
@@ -134,6 +135,9 @@ namespace Trial.Battle
             public string Name;
             public int Count;
             public UnitFrame UnitFrame;
+            /// <summary>StanceRow.Effect / Decay (#605, #726): the hover panel's 効き方 and 減り方, which the bridge writes onto the row.</summary>
+            public string Effect = "";
+            public string Decay = "";
             /// <summary>`r.angle !== undefined`: a merged row carries its own enemy's swatch angle (null for none).</summary>
             public bool HasAngle;
             public float? Angle;
@@ -237,17 +241,6 @@ namespace Trial.Battle
         private Vector2 FrameAt(UnitSide side, int i) =>
             SideOf(side).High ? new Vector2(HighLeft(side), HighTop()) : new Vector2(StanceList.LeftOf(side), StanceList.TopOf(i));
 
-        /// <summary>The lasting chip the unit carries for the stance `name` (「構え・name」 or `name`), or null.</summary>
-        // js: scenes/battle/hud/stances.js:60
-        private static StatusChip ChipFor(UnitFrame unit, string name)
-        {
-            List<StatusChip> list = unit != null ? unit.Statuses : null;
-            if (list == null) return null;
-            foreach (StatusChip c in list)
-                if (c != null && c.Kind == ChipKind.Lasting && (c.Label == LastingPrefix + name || c.Label == name)) return c;
-            return null;
-        }
-
         // js: scenes/battle/hud/stances.js:64
         private void ShowTip(UnitSide side, int i, UnitFrame unit, Row row, List<Row> folded, bool pin)
         {
@@ -255,7 +248,7 @@ namespace Trial.Battle
             RectTransform over = _env.Layer.Over;
             if (!over) return;
             bool foe = side == UnitSide.Enemy;
-            RectTransform node = folded != null ? FoldedTip(over, folded, unit) : RowTip(over, unit, row, foe);
+            RectTransform node = folded != null ? FoldedTip(over, folded) : RowTip(over, row, foe);
             Vector2 at = FrameAt(side, i);
             Side s = SideOf(side);
             bool high = s.High;
@@ -285,30 +278,31 @@ namespace Trial.Battle
         /// the panel then says what the frame has — the name and ×n (StanceList.CountText).
         /// </summary>
         // js: scenes/battle/hud/stances.js:75
-        private static RectTransform RowTip(RectTransform over, UnitFrame unit, Row row, bool foe)
+        private static RectTransform RowTip(RectTransform over, Row row, bool foe)
         {
-            StatusChip c = row != null ? ChipFor(unit, row.Name) : null;
             string count = StanceList.CountText(row != null ? row.Count : 0);
             string name = row != null ? row.Name : "";
-            string title = c != null && !string.IsNullOrEmpty(c.Title) ? c.Title : name + (count.Length > 0 ? " " + count : "");
+            string title = name + (count.Length > 0 ? " " + count : "");
+            string effect = row != null ? row.Effect : "";
+            string decay = row != null ? row.Decay : "";
             var rows = new List<string>();
             string bold = BoldOpen();
             float spanGap = SpanGap();
-            if (c != null && !string.IsNullOrEmpty(c.Effect)) rows.Add(bold + Esc(EffectHead) + "</font><space=" + Ocb.Num(spanGap) + ">" + Esc(c.Effect));
-            if (c != null && !string.IsNullOrEmpty(c.Decay)) rows.Add(bold + Esc(DecayHead) + "</font><space=" + Ocb.Num(spanGap) + ">" + Esc(c.Decay));
-            return TipNode(over, true, foe ? DsTokens.Phosphor : DsTokens.HpText, title, c != null && !string.IsNullOrEmpty(c.Group) ? c.Group : null, rows);
+            if (!string.IsNullOrEmpty(effect)) rows.Add(bold + Esc(EffectHead) + "</font><space=" + Ocb.Num(spanGap) + ">" + Esc(effect));
+            if (!string.IsNullOrEmpty(decay)) rows.Add(bold + Esc(DecayHead) + "</font><space=" + Ocb.Num(spanGap) + ">" + Esc(decay));
+            // The 永続 family word sat on the lasting chip; the row now carries the text, so the word comes from the same table.
+            return TipNode(over, true, foe ? DsTokens.Phosphor : DsTokens.HpText, title, !string.IsNullOrEmpty(effect) ? LastingGroup : null, rows);
         }
 
         /// <summary>The 説明 of a 「+n」 frame: one p per folded stance, 「name ×n：effect」.</summary>
         // js: scenes/battle/hud/stances.js:68
-        private static RectTransform FoldedTip(RectTransform over, List<Row> folded, UnitFrame unit)
+        private static RectTransform FoldedTip(RectTransform over, List<Row> folded)
         {
             var rows = new List<string>();
             foreach (Row r in folded)
             {
-                StatusChip c = ChipFor(r.UnitFrame ?? unit, r.Name);
                 string count = StanceList.CountText(r.Count);
-                rows.Add(Esc(r.Name + (count.Length > 0 ? " " + count : "") + (c != null && !string.IsNullOrEmpty(c.Effect) ? "：" + c.Effect : "")));
+                rows.Add(Esc(r.Name + (count.Length > 0 ? " " + count : "") + (!string.IsNullOrEmpty(r.Effect) ? "：" + r.Effect : "")));
             }
             return TipNode(over, false, default, null, null, rows);
         }
@@ -438,7 +432,7 @@ namespace Trial.Battle
                     rows.Add(new Row
                     {
                         Name = r.Name, Count = r.Count, UnitFrame = u, HasAngle = true, Angle = angle,
-                        Stamp = _stamps[id].Value, Order = rows.Count,
+                        Effect = r.Effect, Decay = r.Decay, Stamp = _stamps[id].Value, Order = rows.Count,
                     });
                 }
             }
@@ -460,7 +454,7 @@ namespace Trial.Battle
                 rows = new List<Row>();
                 if (unit != null && unit.Stances != null)
                     foreach (StanceRow r in unit.Stances)
-                        if (r != null) rows.Add(new Row { Name = r.Name, Count = r.Count });
+                        if (r != null) rows.Add(new Row { Name = r.Name, Count = r.Count, Effect = r.Effect, Decay = r.Decay });
             }
             float? AngleOf(Row r) => r != null && r.HasAngle ? r.Angle : swatchAngle;
             var key = new System.Text.StringBuilder();

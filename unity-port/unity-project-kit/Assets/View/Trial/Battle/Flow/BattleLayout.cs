@@ -65,7 +65,7 @@ namespace Trial.Battle
         /// <summary>PRED_TAG_H — TargetFrame / battle-visual-v1 §5.2: the prediction tag is 60 px tall.</summary>
         public const float PredTagH = 60f; // js: scenes/battle/layout.js:37
         /// <summary>STANCE_FLY_MS — battle_ui_ux_v2 §5.11 順 1 / 順 8: a stance card (an enemy's stance omen) flies to the end of the stance list over this (out).</summary>
-        public const float StanceFlyMs = 300f; // js: scenes/battle/layout.js:39
+        public const float StanceFlyMs = BattlePacing.StanceFlyMs; // js: scenes/battle/layout.js:39 (300; Unity 2026-11-02: BattlePacing)
         /// <summary>TRAIT_WORD_MS — §5.9 順 12: an enemy's fired trait's condition word swells in at the right end of its badge over this (out).</summary>
         public const float TraitWordMs = 150f; // js: scenes/battle/layout.js:41
 

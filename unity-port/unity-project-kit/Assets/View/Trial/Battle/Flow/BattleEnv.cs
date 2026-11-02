@@ -551,7 +551,7 @@ namespace Trial.Battle
         {
             Settings = settings ?? new BattleSettings();
             Clock = new BattleClock(Settings);
-            Fx = new BattleFx(EffectSwitches.AllOn());
+            Fx = new BattleFx(BattlePacing.Switches()); // Unity (2026-11-02): the slower stance / guard / move lengths
             Geom = new BattleGeom();
             Audio = new SafeAudio(audio, Clock);
             LayerNo = LayerNoOf(layer);
