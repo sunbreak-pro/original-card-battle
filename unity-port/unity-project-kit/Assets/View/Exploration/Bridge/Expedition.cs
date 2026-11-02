@@ -569,7 +569,8 @@ namespace Exploration.Bridge
                 sum = sum.Plus(BattleToolAmounts.Of(tool));
             }
             return new Departure(deck, toolIds.ToList(), Array.Empty<string>(),
-                sum.StartCellsBack, talent, sum.StartStamina, sum.OpeningGuard, sum.BossWordWard);
+                StartCellsBack: sum.StartCellsBack, TalentCardId: talent,
+                StartStaminaBonus: sum.StartStaminaBonus, FirstHitGuard: sum.FirstHitGuard, BossWordWard: sum.BossWordWard);
         }
     }
 }

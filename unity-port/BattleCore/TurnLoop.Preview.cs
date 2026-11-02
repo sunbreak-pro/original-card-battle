@@ -246,7 +246,7 @@ namespace BattleCore
                 int cell = CellInReach(copy, unit, reach);
                 if (cell < 0)
                 {
-                    return FaceAlone(action, copy.Player.Guard + copy.Tools.ScaleGuard);
+                    return FaceAlone(action, copy.Player.Guard + copy.Tools.FirstHitGuard);
                 }
                 copy = copy with { Player = copy.Player with { Cell = cell } };
             }

@@ -863,13 +863,13 @@ namespace BattleCore
     /// as amounts. 息継ぎの笛 is spent at the start (<see cref="BattleSetup.StartStamina"/>) and is
     /// not kept here.
     ///
-    /// ScaleGuard is 竜鱗の欠片: the Guard the player gains just before the first enemy blow or wall
+    /// FirstHitGuard is 竜鱗の欠片: the Guard the player gains just before the first enemy blow or wall
     /// damage that reaches them this battle; 0 once it has been given (or without the tool).
     /// BossWordWard is 竜語の符: how many stacks lower the boss-only words sit on the player.
     /// Warded counts, per 戦闘終了まで word (瘴気纏い / 深み / 根張り / 枯らし), the stacks the ward
     /// has already kept off, so that the word sits exactly BossWordWard lower than it would.
     /// </summary>
-    public sealed record CarriedTools(int ScaleGuard = 0, int BossWordWard = 0, StatusSet? Warded = null)
+    public sealed record CarriedTools(int FirstHitGuard = 0, int BossWordWard = 0, StatusSet? Warded = null)
     {
         public static readonly CarriedTools None = new CarriedTools();
 

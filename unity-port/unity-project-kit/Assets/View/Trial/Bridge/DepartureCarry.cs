@@ -93,10 +93,10 @@ namespace Trial.Bridge
         public static SupplyOption Of(ItemDef item)
         {
             return new SupplyOption(item.Id, item.Name, item.Note,
-                AmountIf(item, ItemEffect.WiderStart),
-                AmountIf(item, ItemEffect.OpeningStamina),
-                AmountIf(item, ItemEffect.OpeningGuard),
-                AmountIf(item, ItemEffect.BluntBossState));
+                startCellsBack: AmountIf(item, ItemEffect.WiderStart),
+                startStaminaBonus: AmountIf(item, ItemEffect.OpeningStamina),
+                firstHitGuard: AmountIf(item, ItemEffect.OpeningGuard),
+                bossWordWard: AmountIf(item, ItemEffect.BluntBossState));
         }
     }
 }
