@@ -408,12 +408,15 @@ namespace Exploration.Bridge
             return back;
         }
 
+        /// <summary>The salt that keeps a reward's draw apart from the draw that picked the encounter (#727).</summary>
+        private const ulong RewardSalt = 0xD1B54A32D192ED03UL;
+
         /// <summary>
         /// The seed a won node's reward is drawn from: the node's encounter seed, salted so the reward
         /// does not replay the draw that picked the encounter.
         /// </summary>
         public static ulong RewardSeed(ulong runSeed, int layer, int nodeId) =>
-            ExplorationSession.EncounterSeed(runSeed, layer, nodeId) ^ 0xD1B54A32D192ED03UL;
+            ExplorationSession.EncounterSeed(runSeed, layer, nodeId) ^ RewardSalt;
 
         /// <summary>
         /// The seed a won node's pages are read from (and the cards a page turns into are dealt from),

@@ -86,6 +86,12 @@ namespace Exploration.Bridge
     /// <summary>§4.2: the reward of a won encounter on a combat node, around its unique cards.</summary>
     public static class BattleRewards
     {
+        /// <summary>Every chance in this table is counted in percent; this is the whole (#727).</summary>
+        private const int Percent = 100;
+
+        /// <summary>True with a chance of <paramref name="percent"/> out of <see cref="Percent"/>.</summary>
+        private static bool Chance(DungeonCore.IRng rng, int percent) => rng.NextChance(percent / (double)Percent);
+
         // §4.2 通常戦闘, layers 1〜6: the chance in percent of a card, a consumable and a page. Each row adds to 100.
         private static readonly int[][] NormalPercent =
         {
@@ -202,15 +208,15 @@ namespace Exploration.Bridge
             switch (kind)
             {
                 case NodeKind.Battle when layer == SevenLayers.Count:
-                    draw.Page(100);
-                    if (rng.NextChance(LastLayerCardPercent / 100.0)) draw.Card();
+                    draw.Page(Percent);
+                    if (Chance(rng, LastLayerCardPercent)) draw.Card();
                     break;
                 case NodeKind.Battle:
                     int[] percent = NormalPercent[layer - 1];
-                    int roll = rng.NextInt(0, 100);
+                    int roll = rng.NextInt(0, Percent);
                     if (roll < percent[0]) draw.Card();
                     else if (roll < percent[0] + percent[1]) draw.Consumable();
-                    else draw.Page(100);
+                    else draw.Page(Percent);
                     break;
                 case NodeKind.Elite:
                     if (unique.Offered.Count == 0) draw.Card();
@@ -218,11 +224,11 @@ namespace Exploration.Bridge
                     draw.Page(ElitePagePercent[layer - 1]);
                     break;
                 case NodeKind.Boss when !encounter.IsStandIn:
-                    draw.Page(100);
+                    draw.Page(Percent);
                     break;
                 case NodeKind.Boss when IsEliteStandIn(encounter):
                     draw.Consumable();
-                    draw.Page(100);
+                    draw.Page(Percent);
                     break;
                 case NodeKind.Boss:
                     draw.Card();
@@ -284,7 +290,7 @@ namespace Exploration.Bridge
 
             public void Page(int percent)
             {
-                if (_rng.NextChance(percent / 100.0)) _pages++;
+                if (Chance(_rng, percent)) _pages++;
             }
 
             public BattleReward Result() => new BattleReward(_cards, _consumables, _pages);

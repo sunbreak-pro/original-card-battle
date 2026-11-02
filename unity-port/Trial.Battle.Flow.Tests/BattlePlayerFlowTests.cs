@@ -135,7 +135,7 @@ namespace Trial.Battle.Flow.Tests
         {
             var events = rig.Source.Events;
             Assert.That(rig.EventEnds.Count, Is.EqualTo(events.Count));
-            var switches = EffectSwitches.AllOn();
+            var switches = BattlePacing.Switches(); // the Trial plays at its own pacing (BattlePacing)
             int? lastEnemy = null;
             int pauses = 0;
             string heldTitle = null;

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BattleCore;
+using Depiction;
 using Depiction.Bridge;
 using DungeonCore;
 using NUnit.Framework;
@@ -121,6 +122,44 @@ namespace Exploration.Bridge.Tests
             if (session.HasPendingStep) Assert.That(session.Act(ScreenAction.ConfirmStep), Is.True);
             expedition.StartEncounter();
             Assert.That(CardPicks.For(expedition).IsShown, Is.False);
+        }
+
+        // #729: the View redraws on every Render, and rebuilds the cards only when SameAs says the screen changed.
+
+        [Test]
+        public void TheSameOfferAskedTwice_IsTheSameScreen_SoTheCardsAreNotRebuilt()
+        {
+            Expedition expedition = WinUntilACardIsOffered();
+            CardPick first = CardPicks.For(expedition);
+            CardPick again = CardPicks.For(expedition);
+            Assert.Multiple(() =>
+            {
+                Assert.That(again, Is.Not.SameAs(first), "For builds a new pick each frame");
+                Assert.That(again.SameAs(first), Is.True);
+                Assert.That(first.SameAs(again), Is.True);
+                Assert.That(first.SameAs(CardPick.None), Is.False, "an offer is not the empty screen");
+                Assert.That(CardPick.None.SameAs(first), Is.False);
+                Assert.That(CardPick.None.SameAs(null), Is.True, "null is taken as no screen");
+                Assert.That(CardPick.None.SameAs(CardPicks.For(new Expedition(new RunStart { Seed = 3 }))), Is.True);
+            });
+        }
+
+        [Test]
+        public void ADifferentCaptionOrderOrPrompt_IsAnotherScreen()
+        {
+            CardFace thrust = CoreText.FaceOf(CardCatalog.Thrust);
+            CardFace stand = CoreText.FaceOf(CardCatalog.LastStand);
+            CardPick Pick(string prompt, params PickChoice[] choices) =>
+                new CardPick(PickKind.Training, CardPicks.TrainingTitle, prompt, choices);
+            CardPick shown = Pick("a", new PickChoice(thrust.Id, thrust, "刻み 0"), new PickChoice(stand.Id, stand, "刻み 2"));
+            Assert.Multiple(() =>
+            {
+                Assert.That(Pick("a", new PickChoice(thrust.Id, thrust, "刻み 0"), new PickChoice(stand.Id, stand, "刻み 2")).SameAs(shown), Is.True);
+                Assert.That(Pick("a", new PickChoice(thrust.Id, thrust, "刻み 4"), new PickChoice(stand.Id, stand, "刻み 2")).SameAs(shown), Is.False, "a caption moved");
+                Assert.That(Pick("a", new PickChoice(stand.Id, stand, "刻み 2"), new PickChoice(thrust.Id, thrust, "刻み 0")).SameAs(shown), Is.False, "the order moved");
+                Assert.That(Pick("b", new PickChoice(thrust.Id, thrust, "刻み 0"), new PickChoice(stand.Id, stand, "刻み 2")).SameAs(shown), Is.False, "the prompt moved");
+                Assert.That(Pick("a", new PickChoice(thrust.Id, thrust, "刻み 0")).SameAs(shown), Is.False, "a card left");
+            });
         }
 
         // ---- helpers ----

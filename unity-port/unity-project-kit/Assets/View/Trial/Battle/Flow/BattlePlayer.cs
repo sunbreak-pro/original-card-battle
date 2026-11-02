@@ -581,7 +581,8 @@ namespace Trial.Battle
             _ctx = ctx ?? throw new ArgumentNullException(nameof(ctx));
             _clock = env.Clock;
             _real = env.Real;
-            _switches = EffectSwitches.AllOn();
+            // Unity (2026-11-02): the Trial's slower stance / guard / move lengths (BattlePacing), on the same switches as env.fx.
+            _switches = env.Fx.Switches;
 
             // js: scenes/battle/player.js:2129 (per frame)
             _offFrame = _clock.OnFrame((dt, dtReal) =>
@@ -1682,7 +1683,7 @@ namespace Trial.Battle
                 case FxMark.Shape:
                 {
                     bool crestLight = StanceGlow.CrestCarriesLight(_field.StanceGlowShown(T, tu));
-                    Effect(EffectId.GrammarMark, () => _field.Mark(T, new MarkOpts { Fx = cue.Fx, Intensity = cue.Intensity, Ms = Ms(EffectId.GrammarMark), CrestLight = crestLight, Unit = tu })).Forget();
+                    Effect(EffectId.GrammarMark, () => _field.Mark(T, new MarkOpts { Fx = cue.Fx, Intensity = cue.Intensity, Ms = BattlePacing.MarkMs(cue.Fx, Ms(EffectId.GrammarMark)), CrestLight = crestLight, Unit = tu })).Forget();
                     LightStanceGlowWithCrest(ev, cue);
                     break;
                 }
@@ -1820,10 +1821,11 @@ namespace Trial.Battle
                     SfxBudget("reserve");
                     await HoldBeat(EffectId.StanceCue, async () =>
                     {
-                        await _hud.EndTurn.Pop(200);
+                        await _hud.EndTurn.Pop(BattlePacing.StanceCuePopMs);
                         _field.Burst(chest, FxRole.Guard, 300);
                         Unawaited(_field.FloatText(numberAt, cue.Text, FxRole.Guard, 48, under));
-                        await S.PopGuard(cue.GuardAfter, 260);
+                        // Unity (2026-11-02, BattlePacing): the badge's pop takes what the slower beat leaves after the button's (JS 260).
+                        await S.PopGuard(cue.GuardAfter, Math.Max(260f, Ms(EffectId.StanceCue) - BattlePacing.StanceCuePopMs));
                     }, () => S.SetGuard(cue.GuardAfter));
                     // battle-visual-v1 §4.9 (review 19): the 構えの予告 has been granted — it goes now, not after the banner.
                     if (T == UnitSide.Player) _hud.ReserveHint("");
@@ -2253,7 +2255,9 @@ namespace Trial.Battle
         private async Promise GhostToPile(Func<StagePoint> from, PileKind pile, CardFace face, Action onStart = null)
         {
             bool exiled = pile == PileKind.Exile;
-            if (exiled) await _clock.Wait(Math.Max(0f, EffectCatalog.CardToExileDelayMs - Ms(EffectId.CardRelease)));
+            // Unity (2026-11-02, BattlePacing): a stance card rests in its slot after the slower flight before it leaves.
+            float exileDelay = face != null && face.Kind == CardKind.Stance ? BattlePacing.StanceExileDelayMs : EffectCatalog.CardToExileDelayMs;
+            if (exiled) await _clock.Wait(Math.Max(0f, exileDelay - Ms(EffectId.CardRelease)));
             StagePoint at = from();
             onStart?.Invoke();
             EffectId id = exiled ? EffectId.CardToExile : EffectId.CardToDiscard;

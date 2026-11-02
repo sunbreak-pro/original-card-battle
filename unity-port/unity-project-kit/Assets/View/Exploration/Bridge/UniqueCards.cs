@@ -34,17 +34,17 @@ namespace Exploration.Bridge
         /// <summary>§4.2: a real boss teaches its three cards (roster §4.5 / §5.5 / §6.6 「撃破で 3 種を習得」).</summary>
         private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> BossCards = new Dictionary<string, IReadOnlyList<string>>
         {
-            ["miasma_priest"] = Ids(CardCatalog.MiasmaBlade, CardCatalog.PriestPrayer, CardCatalog.PurgeFlash),   // 大黒蛇 セルク #41〜#43
-            ["abyss_angler"] = Ids(CardCatalog.LineLash, CardCatalog.AbyssStance, CardCatalog.HaulStep),         // 獄竜 ガルド #44〜#46
-            ["distortion_root"] = Ids(CardCatalog.RootStride, CardCatalog.ThornShot, CardCatalog.RootBind),     // 歪みの根 #47〜#49
+            [Enemies.MiasmaPriest.Id] = Ids(CardCatalog.MiasmaBlade, CardCatalog.PriestPrayer, CardCatalog.PurgeFlash),   // 大黒蛇 セルク #41〜#43
+            [Enemies.AbyssAngler.Id] = Ids(CardCatalog.LineLash, CardCatalog.AbyssStance, CardCatalog.HaulStep),         // 獄竜 ガルド #44〜#46
+            [Enemies.DistortionRoot.Id] = Ids(CardCatalog.RootStride, CardCatalog.ThornShot, CardCatalog.RootBind),     // 歪みの根 #47〜#49
         };
 
         /// <summary>§4.2: a real elite offers its two cards, one to pick.</summary>
         private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> EliteCards = new Dictionary<string, IReadOnlyList<string>>
         {
-            ["armored_warden"] = Ids(CardCatalog.Bulwark, CardCatalog.ShieldBash),             // 鉄壁の門竜 #50 / #51
-            ["pack_alpha"] = Ids(CardCatalog.PackHowl, CardCatalog.FangRush),                  // 統牙の長竜 #52 / #53
-            ["polearm_unyielding"] = Ids(CardCatalog.RiposteStance, CardCatalog.SpearWall),    // 不退の槍竜 #55 / #57
+            [Enemies.ArmoredWarden.Id] = Ids(CardCatalog.Bulwark, CardCatalog.ShieldBash),             // 鉄壁の門竜 #50 / #51
+            [Enemies.PackAlpha.Id] = Ids(CardCatalog.PackHowl, CardCatalog.FangRush),                  // 統牙の長竜 #52 / #53
+            [Enemies.PolearmUnyielding.Id] = Ids(CardCatalog.RiposteStance, CardCatalog.SpearWall),    // 不退の槍竜 #55 / #57
         };
 
         /// <summary>The cards a boss teaches, or an empty list for an enemy that teaches none.</summary>

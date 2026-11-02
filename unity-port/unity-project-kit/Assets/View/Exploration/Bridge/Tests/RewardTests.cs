@@ -155,6 +155,23 @@ namespace Exploration.Bridge.Tests
             });
         }
 
+        // swordsman_cards_v4.md §3: 探索の発見 23 枚 (#58〜#80) — layers 1〜5 take three cards each in number order,
+        // layers 6 and 7 take four. Written out by card, so a layer's pile that moves in BattleRewards fails here.
+        [Test]
+        public void ThePile_HoldsTheCardsOfEveryLayer()
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(CardPile.Of(1), Is.EqualTo(new[] { CardCatalog.ShieldPush.Id, CardCatalog.SnapGuard.Id, CardCatalog.LeapBack.Id }), "layer 1: #58〜#60");
+                Assert.That(CardPile.Of(2), Is.EqualTo(new[] { CardCatalog.RisingCut.Id, CardCatalog.LegSweep.Id, CardCatalog.DashIn.Id }), "layer 2: #61〜#63");
+                Assert.That(CardPile.Of(3), Is.EqualTo(new[] { CardCatalog.GuardWalk.Id, CardCatalog.ThornCut.Id, CardCatalog.CalmGuard.Id }), "layer 3: #64〜#66");
+                Assert.That(CardPile.Of(4), Is.EqualTo(new[] { CardCatalog.Deflect.Id, CardCatalog.CrescentCut.Id, CardCatalog.PommelStrike.Id }), "layer 4: #67〜#69");
+                Assert.That(CardPile.Of(5), Is.EqualTo(new[] { CardCatalog.MistStep.Id, CardCatalog.KeenEye.Id, CardCatalog.Resolve.Id }), "layer 5: #70〜#72");
+                Assert.That(CardPile.Of(6), Is.EqualTo(new[] { CardCatalog.GaleThrust.Id, CardCatalog.AnchorStance.Id, CardCatalog.VitalThrust.Id, CardCatalog.EvadeCut.Id }), "layer 6: #73〜#76");
+                Assert.That(CardPile.Of(7), Is.EqualTo(new[] { CardCatalog.BloodDance.Id, CardCatalog.WolfStance.Id, CardCatalog.ShadowLunge.Id, CardCatalog.LastStand.Id }), "layer 7: #77〜#80");
+            });
+        }
+
         [Test]
         public void ThePile_DealsTheLayersOwnCardsFirst_ThenTheShallowerLayers()
         {
