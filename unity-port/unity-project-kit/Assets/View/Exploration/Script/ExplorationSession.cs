@@ -206,7 +206,7 @@ namespace Exploration
             if (!ExplorationReducer.CanStep(State, nodeId)) return false;
 
             bool fresh = !State.HasResolved(nodeId);
-            if (fresh &&ExplorationReducer.Step(State, nodeId, choice).Phase == RunPhase.MiasmaDeath)
+            if (fresh && ExplorationReducer.Step(State, nodeId, choice).Phase == RunPhase.MiasmaDeath)
             {
                 PendingStepNode = nodeId;
                 PendingStepChoice = choice;
@@ -449,14 +449,14 @@ namespace Exploration
 
         /// <summary>A layer's map seed, drawn from the life's seed so a life replays from one number.</summary>
         public static ulong LayerSeed(ulong runSeed, int layer) =>
-            unchecked(runSeed * 0x9E3779B97F4A7C15UL + (ulong)layer);
+            unchecked(runSeed * SeededRng.Gamma + (ulong)layer);
 
         /// <summary>
         /// The seed a combat node's encounter is drawn from: the layer's map seed and the node, so the
         /// same life meets the same enemies on the same nodes.
         /// </summary>
         public static ulong EncounterSeed(ulong runSeed, int layer, int nodeId) =>
-            unchecked(LayerSeed(runSeed, layer) * 0xBF58476D1CE4E5B9UL + (ulong)(nodeId + 1));
+            unchecked(LayerSeed(runSeed, layer) * SeededRng.Mix1 + (ulong)(nodeId + 1));
 
         private void Begin(ulong seed)
         {

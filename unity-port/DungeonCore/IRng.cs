@@ -21,8 +21,15 @@ namespace DungeonCore
     /// </summary>
     public sealed class SeededRng : IRng
     {
-        private const ulong Gamma = 0x9E3779B97F4A7C15UL;
-        private const ulong Mix1 = 0xBF58476D1CE4E5B9UL;
+        /// <summary>
+        /// SplitMix64's golden-ratio increment. The exploration seeds (layer, encounter) mix with the same
+        /// number, so it is named here once and read from here (#727).
+        /// </summary>
+        public const ulong Gamma = 0x9E3779B97F4A7C15UL;
+
+        /// <summary>SplitMix64's first multiplier; the encounter seed mixes the node in with it (#727).</summary>
+        public const ulong Mix1 = 0xBF58476D1CE4E5B9UL;
+
         private const ulong Mix2 = 0x94D049BB133111EBUL;
 
         /// <summary>2^53, the number of doubles SplitMix64's top 53 bits can address.</summary>
