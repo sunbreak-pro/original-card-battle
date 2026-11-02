@@ -186,13 +186,19 @@ namespace Depiction.Bridge
                 case StanceHook.TurnEnd:
                     return Spaced(WhenWord(stance, "終えたターンに"), Gains(stance.Guard, 0, stance.NextRecovery));
                 case StanceHook.AttackBonus:
+                    // #725: every `when` an AttackBonus stance can wait for has its own case; one with no
+                    // words here throws instead of printing the bonus without its condition.
                     switch (stance.When)
                     {
+                        case StanceWhen.Always: return "アタック +" + stance.Power;
                         case StanceWhen.MovedThisTurn: return "移動後の攻撃 威力 +" + stance.Power;
                         case StanceWhen.GapAtMost: return "間合い " + stance.Threshold + " の相手へのアタック +" + stance.Power;
+                        // The enemy's 間合い 1 以上 stance (Enemies.cs) reads as an unconditional bonus, as it did
+                        // before #725; its words are not decided yet.
+                        case StanceWhen.GapAtLeast: return "アタック +" + stance.Power;
                         case StanceWhen.TargetHasStatus:
                             return (stance.Status.HasValue ? stance.Status.Value.ToLabel() : "") + "中の敵へ 威力 +" + stance.Power;
-                        default: return "アタック +" + stance.Power;
+                        default: throw new System.ArgumentOutOfRangeException(nameof(stance), stance.When, "No clause for the attack-bonus condition " + stance.When);
                     }
                 case StanceHook.OnHit:
                 {
@@ -214,14 +220,20 @@ namespace Depiction.Bridge
             }
         }
 
+        /// <summary>
+        /// The condition of a TurnStart / TurnEnd stance as the head of its clause. #725: a `when` with no
+        /// words here (MovedThisTurn and TargetHasStatus belong to the blow-watching hooks) throws
+        /// instead of falling into 毎ターン開始に.
+        /// </summary>
         private static string WhenWord(StanceDef stance, string tail)
         {
             switch (stance.When)
             {
+                case StanceWhen.Always: return "毎ターン開始に";
                 case StanceWhen.GapAtLeast: return "間合い " + stance.Threshold + " 以上で" + tail;
                 case StanceWhen.GapAtMost: return "間合い " + stance.Threshold + " 以下で" + tail;
                 case StanceWhen.OmenAttack: return "予兆が攻撃のターン開始に";
-                default: return "毎ターン開始に";
+                default: throw new System.ArgumentOutOfRangeException(nameof(stance), stance.When, "No words for the stance condition " + stance.When);
             }
         }
 
@@ -374,6 +386,7 @@ namespace Depiction.Bridge
                 case OmenKind.Move: return OmenIcon.Move;
                 case OmenKind.Stance: return OmenIcon.Stance;
                 case OmenKind.Rest: return OmenIcon.Rest;
+                // None is the screen's "no icon": every OmenKind has a case above.
                 default: return OmenIcon.None;
             }
         }
@@ -423,6 +436,7 @@ namespace Depiction.Bridge
                 case StatusKind.Slow: return StatusGlyph.Slow;
                 case StatusKind.Intimidate: return StatusGlyph.Intimidate;
                 case StatusKind.Fatigue: return StatusGlyph.Fatigue;
+                // None is right here: 付録 A draws no icon for the other words, and the badge writes their name.
                 default: return StatusGlyph.None;
             }
         }
@@ -441,6 +455,7 @@ namespace Depiction.Bridge
                     return preview != null ? preview.RawPower.ToString() : FacePower(action.Face).ToString();
                 case OmenKind.Guard:
                     return action.Face.Guard > 0 ? action.Face.Guard.ToString() : "";
+                // Empty is right here: only an attack and a guard show a number beside the icon.
                 default:
                     return "";
             }
