@@ -1199,7 +1199,8 @@ namespace Trial.Battle
                 crack.Opacity = 0f;
             }
             Burst(at, "guard", 220f).Forget();
-            float pop = Math.Min(240f, ms);
+            // Unity (2026-11-02, BattlePacing): the pop keeps 3/4 of the beat (240 of the JS 320), so a slower beat slows the pop too.
+            float pop = ms * 0.75f;
             float rest = Math.Max(0f, ms - pop);
             return Clock.Run(pop, Ease.Out, t =>
             {

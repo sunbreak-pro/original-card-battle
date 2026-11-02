@@ -71,9 +71,17 @@ namespace Trial.Battle.Flow.Tests
             foreach (var (js, value) in JsL)
             {
                 object got = FieldOf(js).GetValue(null);
-                Assert.That(Convert.ToDouble(got, CultureInfo.InvariantCulture), Is.EqualTo(value).Within(1e-6), js);
+                // The one deliberate departure (Koudai-san 2026-11-02): the Unity build flies a stance card slower (BattlePacing).
+                double want = UnityDeparts.TryGetValue(js, out double unity) ? unity : value;
+                Assert.That(Convert.ToDouble(got, CultureInfo.InvariantCulture), Is.EqualTo(want).Within(1e-6), js);
             }
         }
+
+        /// <summary>The constants the Unity build plays differently from the JS on purpose, with the Unity value.</summary>
+        private static readonly Dictionary<string, double> UnityDeparts = new Dictionary<string, double>
+        {
+            { "STANCE_FLY_MS", BattlePacing.StanceFlyMs },
+        };
 
         [Test]
         public void L_HoldsNothingTheJsDoesNot()
