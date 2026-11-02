@@ -28,9 +28,9 @@ namespace Depiction.Tests
         }
 
         /// <summary>A frame of one enemy as the writer leaves it: the floor and the one share hold the same lists.</summary>
-        private static DepictionFrame One(int[] aim, int[] dense = null, int[] move = null, bool visible = true)
+        private static DepictionFrame One(int[] aim, int[] dense = null, int[] move = null, bool visible = true, int disclosure = OmenDisclosure.Full)
         {
-            EnemyFrame enemy = Aiming(0, aim, dense, move, visible);
+            EnemyFrame enemy = Aiming(0, aim, dense, move, visible, disclosure);
             enemy.Swatch = false;
             return new DepictionFrame
             {
@@ -97,6 +97,21 @@ namespace Depiction.Tests
             Assert.That(FloorStripes.Of(frame, 4), Is.Empty, "battle_ui_ux_v2 §7: 開示度 0 is the kind alone");
             Assert.That(FloorStripes.MoveTo(frame, 6), Is.False);
             Assert.That(FloorStripes.Of(frame, 5), Is.EqualTo(new[] { new StripeMark(1, false) }), "from 開示度 1");
+        }
+
+        [Test]
+        public void OneEnemyReadToZero_DrawsNoCells_AndFromOneItDoes()
+        {
+            DepictionFrame unread = One(new[] { 3, 4 }, dense: new[] { 4 }, move: new[] { 6 }, disclosure: OmenDisclosure.Unread);
+            for (int cell = 1; cell <= unread.Floor.Cells; cell++)
+            {
+                Assert.That(FloorStripes.Of(unread, cell), Is.Empty, "battle_ui_ux_v2 §7: 開示度 0 is the kind alone, cell " + cell);
+                Assert.That(FloorStripes.MoveTo(unread, cell), Is.False, "cell " + cell);
+            }
+            DepictionFrame partial = One(new[] { 3, 4 }, dense: new[] { 4 }, move: new[] { 6 }, disclosure: OmenDisclosure.Partial);
+            Assert.That(FloorStripes.Of(partial, 3), Is.EqualTo(new[] { new StripeMark(0, false) }), "§5.8 提示: from 開示度 1");
+            Assert.That(FloorStripes.Of(partial, 4), Is.EqualTo(new[] { new StripeMark(0, true) }));
+            Assert.That(FloorStripes.MoveTo(partial, 6), Is.True);
         }
 
         [Test]

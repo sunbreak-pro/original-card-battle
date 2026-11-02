@@ -35,8 +35,9 @@ namespace Depiction
 
         /// <summary>
         /// The stripes on <paramref name="cell"/> (1-based), in the enemies' order. Empty when nobody aims
-        /// at it. A hidden omen aims at nothing. With several enemies, neither does one read to 開示度 0
-        /// (battle_ui_ux_v2 §7, §5.8 提示).
+        /// at it. A hidden omen aims at nothing, and neither does one read to 開示度 0, alone or among
+        /// several (battle_ui_ux_v2 §7, §5.8 提示; the one-enemy case is #765). The writer still writes
+        /// AimCells at 0, since the omen's hit mark reads them; the floor alone leaves them off.
         /// </summary>
         public static IReadOnlyList<StripeMark> Of(DepictionFrame frame, int cell)
         {
@@ -44,7 +45,7 @@ namespace Depiction
             if (!Several(frame))
             {
                 FloorFrame floor = frame.Floor;
-                if (!frame.Omen.Visible || !floor.AimCells.Contains(cell)) return None;
+                if (!frame.Omen.Visible || !ShowsCells(frame.Omen) || !floor.AimCells.Contains(cell)) return None;
                 return new[] { new StripeMark(0, floor.DenseCells.Contains(cell)) };
             }
             List<StripeMark> marks = null;
@@ -61,7 +62,7 @@ namespace Depiction
         public static bool MoveTo(DepictionFrame frame, int cell)
         {
             if (frame == null) throw new ArgumentNullException(nameof(frame));
-            if (!Several(frame)) return frame.Floor.MoveCells.Contains(cell);
+            if (!Several(frame)) return ShowsCells(frame.Omen) && frame.Floor.MoveCells.Contains(cell);
             foreach (EnemyFrame enemy in frame.Enemies)
             {
                 if (Reads(enemy) && enemy.MoveCells.Contains(cell)) return true;
@@ -81,6 +82,8 @@ namespace Depiction
 
         private static bool Several(DepictionFrame frame) => frame.Enemies.Count > 1;
 
-        private static bool Reads(EnemyFrame enemy) => enemy.Omen.Visible && enemy.Omen.Disclosure >= OmenDisclosure.Partial;
+        private static bool Reads(EnemyFrame enemy) => enemy.Omen.Visible && ShowsCells(enemy.Omen);
+
+        private static bool ShowsCells(OmenFrame omen) => omen.Disclosure >= OmenDisclosure.Partial;
     }
 }
