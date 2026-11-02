@@ -1,5 +1,29 @@
 # HISTORY archive (chat-battle) 2026-10
 
+### 2026-10-28 - Unity 移植の戦闘まわりの残り 4 件を 4 本の積んだ PR へ
+
+#### 概要
+
+メインから渡された 5 件のうち 4 件を、Issue ごとのブランチと PR にした。4 本は同じファイルを触るので、#675 → #676 → #677 → #678 の順に積んだ。#575 は状態の説明の数字が BattleCore の定数待ちで `Refs`。#589 の 2 本目と 3 本目は台本の型が 2 通りあるため着手せず、申し送りにした。merge は人の作業。
+
+#### 変更点
+
+- **#588（PR #675）**: 特性のスタミナ +1 の合図を `CoreScriptWriter` が取り置き、全ての面の後（ドローの前、別のスタミナの拍の前、出来事が閉じるとき）に出す。小手打ちは「支払い、特性の合図、一撃、+1」。特性のスタミナを持つ 8 枚をデータから選んで並びを確かめる
+- **#587（PR #676）**: 敵が撃ってから自分で動く 8 つの行動で、移動を撃った出来事に入れ、`EffectPlan.EnemyMoveFollows` で戻りを出さず結果の拍 + 80 ms から移動する。予兆の消え方は移動と並行。押す・引くは今までどおり戻る。最長は退き撃ちの Guard 一部吸収で 1640 ms
+- **#577（PR #677）**: `RangeSide`、近 / 遠の欄、`CoreText.SideOf`、立ち位置 2 つと `SnapRange` / `SwitchRange` を消した。固定台本 `TurnSliceScript` は 6 マスの床に立ち、後ろ跳びで N 1 → N 2。全ての台本源が床を持つので、マスを持たない `RangeSwitch` は `CellsOf` が止める
+- **#575（PR #678）**: 属性の語を `CardFaceText.AttributeWord`（攻撃・防御・スキル・スタンス）に寄せた。予兆の種別の語は `OmenLabel.ToText()` を間合いなしで呼んで BattleCore の 1 か所にした。特性の条件は `CardFaceText.ConditionWords` の表（短い形・枠・文・用語）から引く。枯らしの説明に回復の下限
+
+#### 実測・知見
+
+- **`npm run unity:check` は origin/main でも exit 1**。Unity のプロジェクトに trial の作業場所（`feat/main-trial-port-20261022`、未 push）の `Assets/View/Trial/` が同期されていて、7 アセンブリで 86 件。この 4 本が触った `Depiction.*` と `Assembly-CSharp` は 0 errors
+- trial の作業場所は、#667 より前から分かれ、敵 2 体以上の台本の型を別の形（`Enemies` が `UnitFrame`、`Omens`、`FloorEnemy`、`EnemyHatch`）で持つ。#667 の `EnemyFrame` とコンパイラの上でぶつかっている
+- Unity の NUnit 3.5 では `Does.Not.Contain(列挙値)` がコンパイルできない（文字列だけ）。`Has.No.Member` を使う
+
+#### 次
+
+- 申し送り 2 件: `2026-10-28-battle-589-two-multi-enemy-models.md`（どちらの型に寄せるか）、`2026-10-28-battle-575-status-numbers-core-constants.md`（BattleCore に状態の定数を足す）
+- merge の後、メインのチャットが `unity:sync` と、#577 の Gate（固定台本が床のマスに立つ）、#587 と #588 の見た目を Unity で確かめる
+
 ### 2026-10-21 - battle 宛ての Issue 4 件を 4 本の PR へ
 
 #### 概要
