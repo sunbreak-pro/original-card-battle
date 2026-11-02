@@ -15,13 +15,9 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      // Multi-page build: the main app plus the engine bake-off entries.
-      // Without an explicit input map Vite would only build index.html.
+      // The main app is the only entry (the web prototypes were retired in #533; tag archive/web-v1-prototypes).
       input: {
         main: path.resolve(__dirname, "index.html"),
-        prototype: path.resolve(__dirname, "prototype.html"),
-        pixiBakeoff: path.resolve(__dirname, "pixi-bakeoff.html"),
-        phaserBakeoff: path.resolve(__dirname, "phaser-bakeoff.html"),
       },
     },
   },
