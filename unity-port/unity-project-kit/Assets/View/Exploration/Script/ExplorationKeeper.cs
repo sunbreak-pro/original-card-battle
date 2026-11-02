@@ -38,8 +38,8 @@ namespace Exploration
 
     /// <summary>
     /// What a 重い宝箱 gave (js: ExplorationSession.js:608 「{ Cards, Consumables, Pages, PileSpent }」). A record, as the
-    /// contract names it (the plan's §6.5), with get-only members: Exploration.Script carries no IsExternalInit, so
-    /// there is no <c>with</c> on its members, but it deconstructs and compares like the positional record.
+    /// contract names it (the plan's §6.5), with get-only members, so there is no <c>with</c> on its members, but it
+    /// deconstructs and compares like the positional record.
     /// </summary>
     public sealed record ChestFind
     {
