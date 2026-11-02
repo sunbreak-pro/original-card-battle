@@ -746,7 +746,7 @@ namespace Exploration.View
         private static CardView DrawCardCell(RectTransform area, string name, CardFace face, string captionText, float scale, Vector2 at, Vector2 step, Action press)
         {
             RectTransform cell = UiKit.Point(area, name, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), step, at);
-            CardView card = NewCard(cell);
+            CardView card = CardView.Create(cell);
             RectTransform rect = card.Rect;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
             rect.anchoredPosition = Vector2.zero;
@@ -763,23 +763,6 @@ namespace Exploration.View
             RectTransform caption = UiKit.Point(cell, "Caption", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(step.x, PickCaption * scale), new Vector2(0f, PickGap * 0.5f * scale));
             UiKit.Text(caption, "Text", 20, TextAnchor.MiddleCenter, ExplorationPalette.Ink, captionText);
-            return card;
-        }
-
-        /// <summary>
-        /// A hand card made in code, as the battle's prefab would make it: the scene has no Card prefab, so
-        /// the ground the press lands on is made here and CardView lays out the rest (CardView.EnsureParts).
-        /// </summary>
-        private static CardView NewCard(RectTransform parent)
-        {
-            var go = new GameObject("Card", typeof(RectTransform));
-            go.SetActive(false);
-            go.transform.SetParent(parent, false);
-            var card = go.AddComponent<CardView>();
-            card.group = go.AddComponent<CanvasGroup>();
-            card.background = UiKit.Image((RectTransform)go.transform, "Background", ProceduralArt.White, Color.white, Vector2.zero, Vector2.one);
-            card.background.raycastTarget = true;
-            go.SetActive(true);
             return card;
         }
 
