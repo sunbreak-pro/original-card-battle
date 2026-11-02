@@ -46,6 +46,13 @@ The dotnet vessel projects are `unity-port/<assembly>/<assembly>.csproj` (they o
 `BattleCore`, `DungeonCore`, `Depiction.Script`, `Depiction.Bridge`, `Exploration.Script`, `Exploration.Bridge`
 (which now references `InheritanceCore`).
 
+## Where this port departs from the JS
+
+Only Koudai-san's decisions go here; everything else follows the JS.
+
+- **Character art (2026-11-01, #772).** A figure that has a standing picture (立ち絵, `Assets/Art/Characters/<id>/chr_<id>_idle_stand.png`) shows the picture; a figure without one keeps the JS vector silhouette (`FieldArt`). The picture wins over the JS for the figure only.
+- **Miasma breath (2026-11-02, #773).** The breath phase is carried by `Backdrop.Script.MiasmaBreath` instead of being derived from the clock and the percent, because the JS formula jumps whenever the percent changes. The look at a steady percent is the same. This takes effect when #773 lands.
+
 ## Porting conventions (JS → C#)
 
 1. **One C# file per JS module**, same function names in PascalCase (`runAutomaticEvents` → `RunAutomaticEvents`,
