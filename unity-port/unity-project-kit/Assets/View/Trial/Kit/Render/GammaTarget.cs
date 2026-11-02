@@ -170,7 +170,9 @@ namespace Trial.Kit
             ReleaseTargets();
             _w = w;
             _h = h;
-            Target = new RenderTexture(new RenderTextureDescriptor(w, h, GraphicsFormat.R8G8B8A8_UNorm, GraphicsFormat.None))
+            // The camera's output needs a depth buffer under URP's render graph: without one URP logs three errors every
+            // frame (#800), which costs the Editor a log entry and its stack trace each. The canvas never reads it.
+            Target = new RenderTexture(new RenderTextureDescriptor(w, h, GraphicsFormat.R8G8B8A8_UNorm, SystemInfo.GetGraphicsFormat(DefaultFormat.DepthStencil)))
             {
                 name = "TrialGammaTarget",
                 hideFlags = HideFlags.DontSave,
