@@ -93,6 +93,40 @@ namespace Depiction.Tests
             Assert.That(FloatNumberSpec.EndTopAbove(height, guardGain), Is.LessThan(omen), "the Guard gain at the cues' strength");
         }
 
+        [TestCase(FigureFrame.StandardHeight, FloatNumberSpec.TraitLabelFontPx)]
+        [TestCase(FigureFrame.StandardHeight, FloatNumberSpec.PushLabelFontPx)]
+        [TestCase(FigureFrame.LargeHeight, FloatNumberSpec.TraitLabelFontPx)]
+        [TestCase(FigureFrame.LargeHeight, FloatNumberSpec.PushLabelFontPx)]
+        public void ARisingWord_StopsUnderTheOmenBadge(float height, int fontPx)
+        {
+            // #764: a trait's fire and 「押し出し」 used to rise 70 and 96 px and end inside the badge.
+            float omen = FigureFrame.OmenBottomAbove(height);
+            float rise = FloatNumberSpec.LabelRiseBy(height, fontPx);
+            Assert.That(FloatNumberSpec.LabelStartAbove(height) + fontPx / 2f, Is.LessThan(omen), "the word starts under the badge");
+            Assert.That(FloatNumberSpec.LabelEndTopAbove(height, fontPx), Is.LessThan(omen), "and its top stops under it");
+            Assert.That(FloatNumberSpec.LabelEndTopAbove(height, fontPx),
+                Is.EqualTo(omen - FloatNumberSpec.LabelOmenGap).Within(1e-3f), "just under it, not short of it");
+            Assert.That(rise, Is.GreaterThan(0f), "it still rises");
+        }
+
+        [TestCase(FigureFrame.StandardHeight)]
+        [TestCase(FigureFrame.LargeHeight)]
+        public void ARisingWord_StartsAboveTheNumbersPath(float height)
+        {
+            // Option 2 of #764: the words keep their own height, over where an HP number stops.
+            Assert.That(FloatNumberSpec.LabelStartAbove(height), Is.GreaterThan(FloatNumberSpec.EndAbove(height)));
+        }
+
+        [Test]
+        public void ARisingWord_OnTheStandardFigure_StartsOnY364AndStopsWithItsTopOnY334()
+        {
+            // battle_ui_ux_v2 §5.0's layout: feet on y 570, a 226 px figure, the badge's bottom on y 330.
+            const float feetY = 570f;
+            Assert.That(feetY - FloatNumberSpec.LabelStartAbove(226f), Is.EqualTo(364f).Within(0.5f));
+            Assert.That(feetY - FloatNumberSpec.LabelEndTopAbove(226f, FloatNumberSpec.TraitLabelFontPx), Is.EqualTo(334f).Within(0.5f));
+            Assert.That(FloatNumberSpec.LabelRiseBy(0f, FloatNumberSpec.TraitLabelFontPx), Is.GreaterThanOrEqualTo(0f), "never downwards");
+        }
+
         [Test]
         public void TheGainFont_ClampsItsStrength()
         {

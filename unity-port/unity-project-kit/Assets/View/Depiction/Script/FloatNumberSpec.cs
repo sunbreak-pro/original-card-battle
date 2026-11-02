@@ -7,6 +7,8 @@
 // takes both, the HP number stands 24 px to the right of the Guard one — one pair for one blow.
 // §5.0: the number's centre rises from the chest (65% of the figure's height above its feet) to the
 // head (84%), and a cause rides beside the number as a 16 px label in the body ink ("−2 出血").
+// The words that rise on their own (a trait's fire, 「押し出し」) start just under the head and stop
+// under the omen badge's bottom edge (#764), above the numbers' path.
 //
 // The amounts are the script's (Cue.Amount): nothing here counts damage. Which cue pairs with which
 // is read off the order the script wrote them in.
@@ -90,6 +92,24 @@ namespace Depiction
         /// <summary>§5.0: and ends at the head, 84%.</summary>
         public const float RiseToRatio = 0.84f;
 
+        /// <summary>A trait's fire rises off the figure as a 40 px word in the warm ink.</summary>
+        public const int TraitLabelFontPx = 40;
+
+        /// <summary>「押し出し」 rises off a figure the other side moved, at 36 px in the muted ink.</summary>
+        public const int PushLabelFontPx = 36;
+
+        /// <summary>
+        /// A word's centre starts this far under the head (the figure's top): where it started when it
+        /// hung off the frame's head point, which stands a little over the top.
+        /// </summary>
+        public const float LabelUnderHead = 20f;
+
+        /// <summary>
+        /// The room a word keeps under the omen badge's bottom edge when it stops (#764): its rise is
+        /// cut to this rather than to the numbers' path, so a word and a number of one beat stay apart.
+        /// </summary>
+        public const float LabelOmenGap = 4f;
+
         /// <summary>A Guard gain's number by the cue's strength 1..4. Every cue writes EffectStrength.Uniform for now (#30).</summary>
         private static readonly int[] GainFontPxByStrength = { 56, 72, 88, 108 };
 
@@ -165,6 +185,23 @@ namespace Depiction
         /// §5.0 keeps this under <see cref="FigureFrame.OmenBottomAbove"/> on a figure of any height.
         /// </summary>
         public static float EndTopAbove(float height, float tall) => EndAbove(height) + Math.Max(0f, tall) / 2f;
+
+        /// <summary>How far above the feet a rising word's centre starts, on a figure <paramref name="height"/> px tall.</summary>
+        public static float LabelStartAbove(float height) => Math.Max(0f, Math.Max(0f, height) - LabelUnderHead);
+
+        /// <summary>
+        /// How far a word <paramref name="fontPx"/> tall rises (#764): until its top is
+        /// <see cref="LabelOmenGap"/> under the omen badge's bottom edge, never downwards.
+        /// </summary>
+        public static float LabelRiseBy(float height, int fontPx)
+        {
+            float stopTop = FigureFrame.OmenBottomAbove(Math.Max(0f, height)) - LabelOmenGap;
+            return Math.Max(0f, stopTop - Math.Max(0, fontPx) / 2f - LabelStartAbove(height));
+        }
+
+        /// <summary>How far above the feet the top of that word stands when it stops.</summary>
+        public static float LabelEndTopAbove(float height, int fontPx) =>
+            LabelStartAbove(height) + LabelRiseBy(height, fontPx) + Math.Max(0, fontPx) / 2f;
 
         /// <summary>The font of a Guard gain's number at the cue's strength (1..4, clamped).</summary>
         public static int GainFontPx(int strength) =>
