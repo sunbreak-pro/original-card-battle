@@ -242,7 +242,7 @@ namespace Trial.Explore
 
         // js: scenes/explore/ExploreScene.js:327
         /// <summary>drawLegend(node): the keys of what can be done now (labels from the bridge where it has them).</summary>
-        private void DrawLegend(NodeCard node)
+        private void DrawLegend(NodePanel node)
         {
             LegendNodeCard = node;
             // Reading the focus may blur a button that stopped being focusable, which redraws the legend from inside this
@@ -268,7 +268,7 @@ namespace Trial.Explore
             }
         }
 
-        private void DrawLegendOnce(NodeCard node)
+        private void DrawLegendOnce(NodePanel node)
         {
             // A button Tab moved the focus to takes Enter and Space first (X-8): the legend names that button for Enter,
             // and leaves out the screen's own Enter / Space, which would not act.
@@ -478,7 +478,7 @@ namespace Trial.Explore
 
         private void PlaceWalkerOnCurrent()
         {
-            NodeCard cur = Screen.Node(Screen.CurrentNodeId);
+            NodePanel cur = Screen.Node(Screen.CurrentNodeId);
             if (cur == null) return;
             Vector2 p = NodePos(cur);
             SetWalker(p.x, p.y);
@@ -537,7 +537,7 @@ namespace Trial.Explore
             {
                 // a key presses the slot's button, so it does nothing where the button is disabled
                 int at = k[0] - '1';
-                SlotCard slot = at < Screen.Consumables.Count ? Screen.Consumables[at] : null;
+                SlotPanel slot = at < Screen.Consumables.Count ? Screen.Consumables[at] : null;
                 if (slot != null && (slot.CanUse || slot.Aiming)) UseConsumable(slot.Index);
                 return true;
             }
@@ -558,7 +558,7 @@ namespace Trial.Explore
             }
             if (k == "Enter" || k == " ")
             {
-                NodeCard node = Screen.Node(Pinned);
+                NodePanel node = Screen.Node(Pinned);
                 if (node != null && node.Options.Count > 0) TakeOption(node, e.ShiftKey && node.Options.Count > 1 ? 1 : 0);
                 return true;
             }

@@ -87,6 +87,16 @@ unity-port/
 
 **`DungeonContent` はどのコアも参照しません**（2026-09-21、Issue #100）。持ち物の目録はデータだけなので、探索コアからも戦闘コアからも出立の画面からも、余計なものを引き連れずに読めます。効果を実際に適用するのは読む側です。
 
+**戦闘と探索で、型の書き方は分けたままにします**（2026-11-02、Issue #598）。戦闘の核は状態を `sealed record` と `with` で作ります。探索の核の `ExplorationState` は、`get` だけの `sealed class` に手書きの `With` を足しています。`With` は必ずコンストラクタを通るので、地図や持ち物が null になる状態を作れません。record の `with` はコンストラクタを通らないので、この検査が外れます。探索の核でも、比べるだけの小さな値（`MapNode` `Fight` `Encounter` `LegacyPage` など）は record で書きます。2 つの核は互いを参照しないので（#97）、書き方の違いは `Exploration.Bridge` の外へ出ません。規則違反の知らせ方も分けたままです。探索は、呼び出し側の誤りを専用の `ExplorationRuleException` で止めます。戦闘は、プレイヤーが打てない札を `PlayRefusal` で返し、呼び出し側の誤りは標準の例外で止めます。打てない札は遊びの中で起きる入力で、誤りではないからです。
+
+同じものに見える名前のうち、次のものは別のものを指すので、そろえていません。
+
+- **出立の中身**: 戦闘の `Departure`（`BattleCore/DeckRules.cs`、デッキと戦闘のツール）、探索の核の `RunLoadout`（ツール 3 枠と消耗品 3 枠）、探索の画面の `RunStart`（1 つの生の始まり。種・HP・持ち物を含む）の 3 つがあります。探索から戦闘へ入るときは、`Exploration.Bridge` の `Expedition` が `RunLoadout` から `Departure` を組みます（#99）。
+- **習熟の刻み**: 探索の `ExplorationState.TrainingMarks` は、この層の訓練のノードで刻んだ合計です。戦闘の `Constants.TrainingTicks` は、1 回の訓練で刻む数（1）の定数です。
+- **同じ語**: 探索の `NodeKind.Battle` と戦闘の `EnemyRank.Normal` は、どちらも通常戦です。探索の休息のノード `NodeKind.Rest` と、戦闘の払えない予兆の休み `OmenKind.Rest` は、同じ語で別のものです。
+
+探索の画面の部品は、地図の上のノードを `NodePanel`、消耗品の枠を `SlotPanel` と呼びます。カードはデッキの札だけを指し、戦闘の台本にも別の `CardKind` があるためです（#598）。地図の上に重ねる札（`ScreenCard` `CardButton` `CardKind`）は、設計書が「札」と呼ぶもの（`dungeon_exploration_v4.md` §6.8）なので、名前を残しています。
+
 `BattleCore` は Unity 2021.2+ がそのままコンパイルできる設定（netstandard2.1 / LangVersion 9.0 / ImplicitUsings disable / Nullable enable）で書いています。将来 `Assets/Core/` へコピーしても無改変で通ることを狙っています。`BattleStore` / `IBattleView` も MonoBehaviour 非依存の純 C# なので、この dotnet ライブラリで型・テストごと検証できます。
 
 ## 骨の並び（#72 時点）

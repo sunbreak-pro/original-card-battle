@@ -438,7 +438,7 @@ namespace Exploration.View
 
         // ---- the map ----
 
-        private static Vector2 Place(NodeCard node) =>
+        private static Vector2 Place(NodePanel node) =>
             new Vector2((node.X - 0.5f) * MapWidth, (node.Y - 0.5f) * MapHeight);
 
         private void DrawMap(ExplorationScreen screen)
@@ -459,7 +459,7 @@ namespace Exploration.View
                 link.rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(span.y, span.x) * Mathf.Rad2Deg);
             }
 
-            foreach (NodeCard node in screen.Nodes) DrawNode(node, screen.MapIsLive);
+            foreach (NodePanel node in screen.Nodes) DrawNode(node, screen.MapIsLive);
         }
 
         /// <summary>
@@ -474,7 +474,7 @@ namespace Exploration.View
             _mapArea.localScale = new Vector3(scale, scale, 1f);
         }
 
-        private void DrawNode(NodeCard node, bool live)
+        private void DrawNode(NodePanel node, bool live)
         {
             RectTransform rt = UiKit.Point(_nodes, "Node" + node.Id, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(NodeSize, NodeSize), Place(node));
@@ -524,7 +524,7 @@ namespace Exploration.View
 
             // Hovering reads a node; only the pinned (clicked) one gets buttons.
             bool hovering = _hovered >= 0 && _hovered != _pinned;
-            NodeCard node = _screen.Node(hovering ? _hovered : _pinned);
+            NodePanel node = _screen.Node(hovering ? _hovered : _pinned);
             if (node == null)
             {
                 _detailTitle.text = "";
@@ -557,7 +557,7 @@ namespace Exploration.View
             float width = 1f / Math.Max(1, screen.Consumables.Count);
             for (int i = 0; i < screen.Consumables.Count; i++)
             {
-                SlotCard slot = screen.Consumables[i];
+                SlotPanel slot = screen.Consumables[i];
                 int index = slot.Index;
                 Button button = UiKit.Button(_slots, "Slot" + i, slot.Name, () => _actions.UseConsumable(index),
                     ExplorationPalette.Button, ExplorationPalette.Ink, 20,
