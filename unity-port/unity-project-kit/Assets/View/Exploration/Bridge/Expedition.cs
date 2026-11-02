@@ -119,7 +119,7 @@ namespace Exploration.Bridge
         /// <summary>What this expedition's lives leave at death (#106): the grown cards and the journal's filled pages.</summary>
         public ExpeditionLegacy Legacy { get; }
 
-        /// <summary>The pages this life received from a trace (#106), for the journal (#107) to take in.</summary>
+        /// <summary>The pages this life received from a trace (#106). The journal holds them from then on (<see cref="Inherit"/>).</summary>
         public IReadOnlyList<LegacyPage> InheritedLegacyPages
         {
             get
@@ -132,7 +132,9 @@ namespace Exploration.Bridge
         /// <summary>
         /// Takes in what a trace hands on (#106, Session.TakeLegacy): each card is owned with the step it had
         /// (Legacies.WithRank), and goes into the deck when the deck holds none of its kind and has room. The
-        /// pages wait in <see cref="InheritedLegacyPages"/>.
+        /// pages go into this life's journal (#708): an enemy page raises that enemy's 開示度 (the higher stays), a
+        /// dungeon page raises its entries, a memo note is written again. They are also listed in
+        /// <see cref="InheritedLegacyPages"/>.
         /// </summary>
         public void Inherit(Bequest bequest)
         {
@@ -144,7 +146,15 @@ namespace Exploration.Bridge
                 else Take(card.CardId);
                 Mastery = Legacies.WithRank(Mastery, card.CardId, card.Rank);
             }
-            _inheritedPages.AddRange(bequest.Pages);
+            foreach (LegacyPage page in bequest.Pages)
+            {
+                _inheritedPages.Add(page);
+                foreach (KeyValuePair<string, int> pair in LifeJournal.EnemyLevelsOf(page))
+                {
+                    if (pair.Value > DisclosureOf(pair.Key)) _journal[pair.Key] = pair.Value;
+                }
+                Journal.Take(page);
+            }
         }
 
         /// <summary>The deck each battle is shuffled from, as set out with plus the cards learned on the way.</summary>
