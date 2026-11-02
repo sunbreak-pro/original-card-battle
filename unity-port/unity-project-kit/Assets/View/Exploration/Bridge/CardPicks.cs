@@ -71,6 +71,26 @@ namespace Exploration.Bridge
 
         /// <summary>The cards to pick one from, in the order they are laid out.</summary>
         public IReadOnlyList<PickChoice> Choices { get; }
+
+        /// <summary>
+        /// True when <paramref name="other"/> draws the same screen: the same kind, title and prompt, and
+        /// the same cards with the same captions in the same order. A card's face is printed from its id
+        /// alone (CoreText.FaceOf), so the id stands for the face. Null is taken as <see cref="None"/>.
+        /// The View asks this before rebuilding the cards (#729).
+        /// </summary>
+        public bool SameAs(CardPick other)
+        {
+            other ??= None;
+            if (ReferenceEquals(this, other)) return true;
+            if (Kind != other.Kind || Title != other.Title || Prompt != other.Prompt || Choices.Count != other.Choices.Count) return false;
+            for (int i = 0; i < Choices.Count; i++)
+            {
+                PickChoice mine = Choices[i];
+                PickChoice theirs = other.Choices[i];
+                if (mine.CardId != theirs.CardId || mine.Caption != theirs.Caption) return false;
+            }
+            return true;
+        }
     }
 
     public static class CardPicks

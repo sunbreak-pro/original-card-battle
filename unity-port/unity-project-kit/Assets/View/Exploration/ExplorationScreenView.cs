@@ -54,15 +54,7 @@ namespace Exploration.View
         private const int ShadeWidth = 64;
         private const int ShadeHeight = 36;
 
-        private readonly Action<int, RestChoice> _step;
-        private readonly Action<ScreenAction> _act;
-        private readonly Action<int> _useConsumable;
-        private readonly Action<Overlay> _toggle;
-        private readonly Action<string> _pickCard;
-        private readonly Action<string> _toggleLegacy;
-        private readonly Action _confirmLegacy;
-        private readonly Action<int> _swapFound;
-        private readonly Action _discardFound;
+        private readonly IExplorationActions _actions;
 
         private readonly Text _layerTitle;
         private readonly Text _timeLabel;
@@ -125,29 +117,14 @@ namespace Exploration.View
         private int _pinned = -1;
         private int _hovered = -1;
         private int _lastCurrent = -1;
+        // The pick screen as last drawn: ShowPick rebuilds the cards only when the pick differs (#729).
+        private CardPick _shownPick = CardPick.None;
 
         /// <param name="canvas">A full-screen rect on a top-level canvas.</param>
-        /// <param name="step">Walk to a node with a choice (the choice only matters on a 休息 node).</param>
-        /// <param name="act">A card button or 「この生を終える」.</param>
-        /// <param name="useConsumable">Burn the consumable in a slot.</param>
-        /// <param name="toggle">A band button or a close button: open or close that screen.</param>
-        /// <param name="pickCard">A card pressed on the pick screen (#626), by its id.</param>
-        /// <param name="toggleLegacy">A choice pressed on the choosing screen at a trace (#717), by its key.</param>
-        /// <param name="confirmLegacy">The choosing screen's confirm button.</param>
-        /// <param name="swapFound">A slot pressed on the swap screen (#719), by its index.</param>
-        /// <param name="discardFound">The swap screen's 「諦める」.</param>
-        public ExplorationScreenView(RectTransform canvas, Action<int, RestChoice> step, Action<ScreenAction> act, Action<int> useConsumable,
-            Action<Overlay> toggle, Action<string> pickCard, Action<string> toggleLegacy, Action confirmLegacy, Action<int> swapFound, Action discardFound)
+        /// <param name="actions">Where every press on the screen goes (#729).</param>
+        public ExplorationScreenView(RectTransform canvas, IExplorationActions actions)
         {
-            _step = step;
-            _act = act;
-            _useConsumable = useConsumable;
-            _toggle = toggle;
-            _pickCard = pickCard;
-            _toggleLegacy = toggleLegacy;
-            _confirmLegacy = confirmLegacy;
-            _swapFound = swapFound;
-            _discardFound = discardFound;
+            _actions = actions ?? throw new ArgumentNullException(nameof(actions));
 
             RectTransform root = UiKit.Box(canvas, "Exploration", 0f, 0f, 1f, 1f);
             _root = root;
@@ -210,11 +187,11 @@ namespace Exploration.View
             _maxStaminaLabel = UiKit.Text(UiKit.Box(body, "MaxStamina", 0f, 0f, 1f, 0.34f), "Text", 16, TextAnchor.MiddleLeft, ExplorationPalette.InkSoft);
 
             // Left to right: journal, cards, and the gear at the very end, away from 「この生を終える」 (§6.2).
-            UiKit.Button(band, "Journal", ExplorationText.JournalButton, () => _toggle(Overlay.Journal),
+            UiKit.Button(band, "Journal", ExplorationText.JournalButton, () => _actions.Toggle(Overlay.Journal),
                 ExplorationPalette.Button, ExplorationPalette.Ink, 18, new Vector2(0.78f, 0.18f), new Vector2(0.845f, 0.82f));
-            _cardsButton = UiKit.Button(band, "Cards", ExplorationText.CardsButton, () => _toggle(Overlay.Cards),
+            _cardsButton = UiKit.Button(band, "Cards", ExplorationText.CardsButton, () => _actions.Toggle(Overlay.Cards),
                 ExplorationPalette.Button, ExplorationPalette.Ink, 18, new Vector2(0.85f, 0.18f), new Vector2(0.925f, 0.82f));
-            _settingsButton = UiKit.Button(band, "Settings", ExplorationText.SettingsButton, () => _toggle(Overlay.Settings),
+            _settingsButton = UiKit.Button(band, "Settings", ExplorationText.SettingsButton, () => _actions.Toggle(Overlay.Settings),
                 ExplorationPalette.Button, ExplorationPalette.Ink, 18, new Vector2(0.93f, 0.18f), new Vector2(0.99f, 0.82f));
 
             // ---- what is carried ----
@@ -224,7 +201,7 @@ namespace Exploration.View
             _slots = UiKit.Box(carried, "Slots", 0.03f, 0.08f, 0.97f, 0.58f);
 
             // ---- the survivor route (§6.6) ----
-            _endLife = UiKit.Button(root, "EndLife", ExplorationText.EndLifeButton, () => _act(ScreenAction.AskEndLife),
+            _endLife = UiKit.Button(root, "EndLife", ExplorationText.EndLifeButton, () => _actions.Act(ScreenAction.AskEndLife),
                 ExplorationPalette.Button, ExplorationPalette.Ink, 24, new Vector2(0.015f, 0.02f), new Vector2(0.2f, 0.095f));
 
             // ---- the pick screen (#626): over the map, the card and the carried items; under 所持カード
@@ -243,7 +220,7 @@ namespace Exploration.View
             band.SetAsLastSibling();
 
             // The journal may be read at any time, so it opens above everything.
-            _journal = new JournalDrawerView(root, () => _toggle(Overlay.Journal));
+            _journal = new JournalDrawerView(root, () => _actions.Toggle(Overlay.Journal));
         }
 
         public void Render(ExplorationScreen screen)
@@ -565,7 +542,7 @@ namespace Exploration.View
                 StepOption option = node.Options[i];
                 int id = node.Id;
                 RestChoice choice = option.Choice;
-                UiKit.Button(_detailButtons, "Option" + i, option.Label, () => _step(id, choice),
+                UiKit.Button(_detailButtons, "Option" + i, option.Label, () => _actions.Step(id, choice),
                     option.NeedsConfirm ? ExplorationPalette.Warning : ExplorationPalette.Accent, ExplorationPalette.InkOnAccent, 24,
                     new Vector2(i * width, 0f), new Vector2((i + 1) * width - 0.02f, 1f));
             }
@@ -582,7 +559,7 @@ namespace Exploration.View
             {
                 SlotCard slot = screen.Consumables[i];
                 int index = slot.Index;
-                Button button = UiKit.Button(_slots, "Slot" + i, slot.Name, () => _useConsumable(index),
+                Button button = UiKit.Button(_slots, "Slot" + i, slot.Name, () => _actions.UseConsumable(index),
                     ExplorationPalette.Button, ExplorationPalette.Ink, 20,
                     new Vector2(i * width, 0f), new Vector2((i + 1) * width - 0.02f, 1f));
                 button.interactable = slot.CanUse;
@@ -615,7 +592,7 @@ namespace Exploration.View
             {
                 CardButton button = card.Buttons[i];
                 ScreenAction action = button.Action;
-                UiKit.Button(buttons, "Button" + i, button.Label, () => _act(action),
+                UiKit.Button(buttons, "Button" + i, button.Label, () => _actions.Act(action),
                     i == 0 ? ExplorationPalette.Accent : ExplorationPalette.Button,
                     i == 0 ? ExplorationPalette.InkOnAccent : ExplorationPalette.Ink, 24,
                     new Vector2(i * width, 0f), new Vector2((i + 1) * width - 0.02f, 1f));
@@ -624,11 +601,17 @@ namespace Exploration.View
 
         // ---- the pick screen (#626) ----
 
-        /// <summary>Shows the pick screen, or clears it when <paramref name="pick"/> is not shown.</summary>
+        /// <summary>
+        /// Shows the pick screen, or clears it when <paramref name="pick"/> is not shown. Every Render calls
+        /// this; when the pick draws the same screen as the one shown (CardPick.SameAs), nothing is rebuilt (#729).
+        /// </summary>
         public void ShowPick(CardPick pick)
         {
+            pick ??= CardPick.None;
+            if (pick.SameAs(_shownPick)) return;
+            _shownPick = pick;
             UiKit.ClearChildren(_pickLayer);
-            if (pick == null || !pick.IsShown) return;
+            if (!pick.IsShown) return;
 
             RectTransform plate = Plate(_pickLayer, pick.Title, pick.Prompt);
             RectTransform area = UiKit.Box(plate, "Cards", 0.02f, 0.03f, 0.98f, 0.80f);
@@ -636,7 +619,7 @@ namespace Exploration.View
             {
                 PickChoice choice = pick.Choices[i];
                 string id = choice.CardId;
-                DrawCardCell(area, "Choice_" + id, choice.Face, choice.Caption, scale, at, step, () => _pickCard(id));
+                DrawCardCell(area, "Choice_" + id, choice.Face, choice.Caption, scale, at, step, () => _actions.PickCard(id));
             });
         }
 
@@ -667,7 +650,7 @@ namespace Exploration.View
                 {
                     HeritageChoice choice = cards[i];
                     string key = choice.Key;
-                    CardView card = DrawCardCell(area, "Choice_" + key, choice.Face, choice.Caption, scale, at, step, () => _toggleLegacy(key));
+                    CardView card = DrawCardCell(area, "Choice_" + key, choice.Face, choice.Caption, scale, at, step, () => _actions.ToggleLegacy(key));
                     if (choice.Selected) UiKit.Frame(card.Rect, ExplorationPalette.Accent, HeritageMark);
                 });
             }
@@ -682,7 +665,7 @@ namespace Exploration.View
                     string key = choice.Key;
                     int row = i / HeritagePageColumns;
                     int column = i % HeritagePageColumns;
-                    UiKit.Button(lines, "Choice_" + key, choice.Title + "\n" + choice.Caption, () => _toggleLegacy(key),
+                    UiKit.Button(lines, "Choice_" + key, choice.Title + "\n" + choice.Caption, () => _actions.ToggleLegacy(key),
                         choice.Selected ? ExplorationPalette.Accent : ExplorationPalette.Button,
                         choice.Selected ? ExplorationPalette.InkOnAccent : ExplorationPalette.Ink, 18,
                         new Vector2(column * width, 1f - (row + 1) * height + 0.01f), new Vector2((column + 1) * width - 0.01f, 1f - row * height));
@@ -690,7 +673,7 @@ namespace Exploration.View
             }
 
             UiKit.Text(UiKit.Box(plate, "Count", 0.03f, 0.02f, 0.68f, HeritageFoot - 0.01f), "Text", 24, TextAnchor.MiddleRight, ExplorationPalette.Ink, pick.CountLine);
-            UiKit.Button(plate, "Confirm", pick.ConfirmLabel, () => _confirmLegacy(), ExplorationPalette.Accent, ExplorationPalette.InkOnAccent, 26,
+            UiKit.Button(plate, "Confirm", pick.ConfirmLabel, () => _actions.ConfirmLegacy(), ExplorationPalette.Accent, ExplorationPalette.InkOnAccent, 26,
                 new Vector2(0.70f, 0.02f), new Vector2(0.97f, HeritageFoot - 0.01f));
         }
 
@@ -715,11 +698,11 @@ namespace Exploration.View
                 SwapSlot slot = swap.Slots[i];
                 int index = slot.Index;
                 string label = slot.Note.Length == 0 ? slot.Label : slot.Label + "\n" + slot.Note;
-                UiKit.Button(slots, "Slot" + i, label, () => _swapFound(index), ExplorationPalette.Accent, ExplorationPalette.InkOnAccent, 20,
+                UiKit.Button(slots, "Slot" + i, label, () => _actions.SwapFound(index), ExplorationPalette.Accent, ExplorationPalette.InkOnAccent, 20,
                     new Vector2(i * width, 0f), new Vector2((i + 1) * width - 0.01f, 1f));
             }
 
-            UiKit.Button(plate, "Discard", swap.DiscardLabel, () => _discardFound(), ExplorationPalette.Button, ExplorationPalette.Ink, 24,
+            UiKit.Button(plate, "Discard", swap.DiscardLabel, () => _actions.DiscardFound(), ExplorationPalette.Button, ExplorationPalette.Ink, 24,
                 new Vector2(0.35f, 0.07f), new Vector2(0.65f, 0.20f));
         }
 
@@ -816,7 +799,7 @@ namespace Exploration.View
             UiKit.Fill(plate, "Back", ExplorationPalette.Band);
             UiKit.Frame(plate, ExplorationPalette.Accent, 3f);
             UiKit.Text(UiKit.Box(plate, "Title", 0.04f, 0.86f, 0.70f, 0.97f), "Text", 34, TextAnchor.MiddleLeft, ExplorationPalette.Ink, page.Title);
-            UiKit.Button(plate, "Close", page.CloseLabel, () => _toggle(open), ExplorationPalette.Button, ExplorationPalette.Ink, 20,
+            UiKit.Button(plate, "Close", page.CloseLabel, () => _actions.Toggle(open), ExplorationPalette.Button, ExplorationPalette.Ink, 20,
                 new Vector2(0.72f, 0.875f), new Vector2(0.96f, 0.955f));
             UiKit.Text(UiKit.Box(plate, "Lines", 0.04f, 0.05f, 0.96f, 0.83f), "Text", 22, TextAnchor.UpperLeft, ExplorationPalette.Ink,
                 string.Join("\n", page.Lines));

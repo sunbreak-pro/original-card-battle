@@ -23,7 +23,7 @@ using UnityEngine.SceneManagement;
 
 namespace Exploration.View
 {
-    public class ExplorationBootstrap : MonoBehaviour
+    public class ExplorationBootstrap : MonoBehaviour, IExplorationActions
     {
         [Header("Run")]
         [Tooltip("Fixes every layer's map. The same seed draws the same maps here and under dotnet test.")]
@@ -68,7 +68,7 @@ namespace Exploration.View
             _session = _expedition.Session;
 
             UiKit.EnsureEventSystem();
-            _view = new ExplorationScreenView(BuildCanvas(), Step, Act, UseConsumable, Toggle, PickCard, ToggleLegacy, ConfirmLegacy, SwapFound, DiscardFound);
+            _view = new ExplorationScreenView(BuildCanvas(), this);
             Render();
             Debug.Log("[ExplorationBootstrap] seed " + used);
         }
@@ -89,53 +89,53 @@ namespace Exploration.View
             if (_canvas) Destroy(_canvas);
         }
 
-        private void Step(int nodeId, RestChoice choice)
+        public void Step(int nodeId, RestChoice choice)
         {
             if (_session.Step(nodeId, choice)) Render();
         }
 
-        private void Act(ScreenAction action)
+        public void Act(ScreenAction action)
         {
             if (!_session.Act(action)) return;
             if (action == ScreenAction.NewLife) Debug.Log("[ExplorationBootstrap] new life " + _session.Life + " / seed " + _session.RunSeed);
             Render();
         }
 
-        private void UseConsumable(int index)
+        public void UseConsumable(int index)
         {
             if (_session.UseConsumable(index)) Render();
         }
 
-        private void Toggle(Overlay overlay)
+        public void Toggle(Overlay overlay)
         {
             if (_session.Toggle(overlay)) Render();
         }
 
         // #626: a card pressed on the pick screen goes to Expedition.Learn or Train, as CardPicks decides.
-        private void PickCard(string cardId)
+        public void PickCard(string cardId)
         {
             if (CardPicks.Choose(_expedition, cardId)) Render();
         }
 
         // #717: a choice pressed on the choosing screen at a trace, and its confirm button.
-        private void ToggleLegacy(string key)
+        public void ToggleLegacy(string key)
         {
             _legacyChoice = HeritagePicks.Toggle(_expedition, _legacyChoice, key);
             Render();
         }
 
-        private void ConfirmLegacy()
+        public void ConfirmLegacy()
         {
             if (HeritagePicks.Confirm(_expedition, _legacyChoice)) Render();
         }
 
         // #719: a slot pressed on the swap screen, and its 「諦める」; ConsumableSwaps decides what they do.
-        private void SwapFound(int slot)
+        public void SwapFound(int slot)
         {
             if (ConsumableSwaps.Swap(_expedition, slot)) Render();
         }
 
-        private void DiscardFound()
+        public void DiscardFound()
         {
             if (ConsumableSwaps.Discard(_expedition)) Render();
         }
