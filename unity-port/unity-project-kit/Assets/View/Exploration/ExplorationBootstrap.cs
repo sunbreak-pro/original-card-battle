@@ -175,7 +175,7 @@ namespace Exploration.View
                 AsyncOperation load = LoadBattleScene();
                 if (load == null)
                 {
-                    BattleBootstrap.HandIn(null);
+                    BattleBootstrap.ClearHandIn();
                     Debug.LogError("[ExplorationBootstrap] the battle scene " + battleScenePath + " is not in Build Settings; the stand-in card stays.");
                     Show(hidden);
                     Debug.LogWarning("[ExplorationBootstrap] the battle scene could not be loaded: every combat node from here takes the stand-in card.");
