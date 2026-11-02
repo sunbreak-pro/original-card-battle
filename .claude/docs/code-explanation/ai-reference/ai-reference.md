@@ -1,5 +1,7 @@
 # AI Reference Document
 
+> **注記（2026-11-02、#731）**: #514 で消した Web 版のファイル（`useEscapeLogic` `useItemUsage` `talentCardUnlock` `useDerivationCheck` `elementUtils` `PixiEffectBridge` `phaseLogic.ts` など）の名前を含む、当時の記録です。今のコードとは一致しません。
+
 ## Section 1: File Registry
 
 | Path | Lines | System | Role |

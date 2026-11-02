@@ -1,5 +1,7 @@
 # Battle Orchestration System
 
+> **注記（2026-11-02、#731）**: #514 で消した Web 版のファイル（`useEscapeLogic` `useItemUsage` `talentCardUnlock` `useDerivationCheck` `elementUtils` `PixiEffectBridge` `phaseLogic.ts` など）の名前を含む、当時の記録です。今のコードとは一致しません。
+
 ## Overview
 
 `useBattleOrchestrator` is the main entry point for all battle logic. It composes 8+ hooks into a unified interface that manages player/enemy state, phase queue, card execution, class abilities, animations, and battle flow.

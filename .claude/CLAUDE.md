@@ -170,7 +170,7 @@ Battle flow: Init phase queue (speed-sorted) → Player phase (draw, buffs, wait
 | --- | --- | --- |
 | **Battle** | `domain/battles/managements/useBattleOrchestrator.ts` | Turn-based card combat with phase queue |
 | **Cards** | `domain/cards/decks/deck.ts`, `deckReducer.ts` | Deck shuffle/draw/discard (IMMUTABLE) |
-| **Mastery** | `domain/cards/state/masteryManager.ts` | Card use tracking, derived card unlocks |
+| **Mastery** | `unity-port/BattleCore/Mastery.cs` | Mastery tally and rank (`MasteryTally` `RankFor`)。戦闘コアの正は C#。Web 版 `src/` は旧ループで凍結 |
 | **Class Abilities** | `domain/characters/player/` | Sword Energy (swordsman), Elemental Resonance (mage) |
 | **Enemy AI** | `domain/characters/enemy/enemyAI.ts` | Energy-based action selection |
 | **Dungeon** | `domain/dungeon/logic/dungeonLogic.ts` | Procedural map generation (5 depths × 5 floors) |

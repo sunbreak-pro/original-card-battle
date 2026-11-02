@@ -1,5 +1,7 @@
 # Card, Deck & Mastery System
 
+> **注記（2026-11-02、#731）**: #514 で消した Web 版のファイル（`useEscapeLogic` `useItemUsage` `talentCardUnlock` `useDerivationCheck` `elementUtils` `PixiEffectBridge` `phaseLogic.ts` など）の名前を含む、当時の記録です。今のコードとは一致しません。
+
 ## Overview
 
 The card system defines ~81 cards across two classes (Swordsman 41, Mage 40) with per-card stats (damage, cost, element, buffs/debuffs). Decks are managed via an immutable `deckReducer` (draw/discard/shuffle) with a `DeckState` tracking drawPile, discardPile, and hand. Card mastery increases with use, providing stat bonuses through `cardDerivation`. The `deck.ts` and `deckReducer.ts` files are marked IMMUTABLE and must not be modified.

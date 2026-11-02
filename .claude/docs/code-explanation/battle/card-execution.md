@@ -1,5 +1,7 @@
 # Card Execution System
 
+> **注記（2026-11-02、#731）**: #514 で消した Web 版のファイル（`useEscapeLogic` `useItemUsage` `talentCardUnlock` `useDerivationCheck` `elementUtils` `PixiEffectBridge` `phaseLogic.ts` など）の名前を含む、当時の記録です。今のコードとは一致しません。
+
 ## Overview
 
 Card execution pipeline from click to effect application, covering energy cost, damage/guard/heal resolution, sword energy processing, buff/debuff application, deck management (draw/discard/shuffle), mastery tracking, card derivation, and item effect execution.
