@@ -243,8 +243,7 @@ namespace Depiction.View
 
             Text number = UiKit.Label(plate, "Number", font, TextAnchor.MiddleCenter, ink, new Vector2(0f, 0.5f), Half,
                 new Vector2(10f, font * 1.25f), Vector2.zero, FloatNumberSpec.NumberText(kind, amount));
-            number.font = UiKit.NumberFont;
-            number.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(number, FloatNumberSpec.LeadsWithShield(kind) ? BattleFonts.StaminaNumber : BattleFonts.OmenNumber);
             number.horizontalOverflow = HorizontalWrapMode.Overflow;
             Text side = null;
             if (!string.IsNullOrEmpty(label))
@@ -252,7 +251,7 @@ namespace Depiction.View
                 side = UiKit.Label(plate, "Label", FloatNumberSpec.LabelFontPx, TextAnchor.MiddleCenter,
                     BattleTheme.Hex(FloatNumberSpec.LabelInkHex), new Vector2(0f, 0.5f), Half,
                     new Vector2(10f, FloatNumberSpec.LabelFontPx * 1.5f), Vector2.zero, label);
-                side.font = UiKit.BodyBoldFont;
+                BattleFonts.Use(side, BattleFonts.BodyStrong);
                 side.horizontalOverflow = HorizontalWrapMode.Overflow;
             }
 
@@ -314,7 +313,7 @@ namespace Depiction.View
         {
             Image shield = UiKit.Sprite(layer, "ShieldBlock", ProceduralArt.Shield, BattleTheme.WithAlpha(BattleTheme.Guard, 0.92f), Half, Half, new Vector2(150f, 170f), at);
             Text number = UiKit.Text(shield.rectTransform, "Blocked", 56, TextAnchor.MiddleCenter, BattleTheme.InkBlack, blocked);
-            number.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(number, BattleFonts.OmenNumber);
             Burst(host, layer, at, BattleTheme.Guard, 320f);
             yield return UiTween.Pop(shield.rectTransform, 240f);
             yield return UiTween.Wait(80f);

@@ -3,6 +3,7 @@
 // other four are drawn here after battle-visual-v1 付録 A, in white, so the badge tints them.
 #if UNITY_2021_2_OR_NEWER
 using System;
+using UiArt.View;
 using UnityEngine;
 
 namespace Depiction.View
@@ -12,22 +13,30 @@ namespace Depiction.View
         private const int Size = 32;
         private static readonly Sprite[] Shapes = new Sprite[Enum.GetValues(typeof(OmenIcon)).Length];
 
-        /// <summary>The sprite for an omen icon, or null for <see cref="OmenIcon.None"/>.</summary>
+        /// <summary>
+        /// The sprite for an omen icon, or null for <see cref="OmenIcon.None"/>. The four attributes take
+        /// their §11 art once it is in (UiArtShelf); 移動 and 休み stay code.
+        /// </summary>
         public static Sprite Of(OmenIcon icon)
         {
             switch (icon)
             {
                 case OmenIcon.None: return null;
-                case OmenIcon.Attack: return ProceduralArt.Icon(ProceduralArt.IconKind.Sword);
-                case OmenIcon.Guard: return ProceduralArt.Icon(ProceduralArt.IconKind.Shield);
-                // 付録 A 状態付与 (印): the line icon VisualArt draws (#455).
+                case OmenIcon.Attack: return UiArtShelf.Icon("attack", ProceduralArt.Icon(ProceduralArt.IconKind.Sword));
+                case OmenIcon.Guard: return UiArtShelf.Icon("defense", ProceduralArt.Icon(ProceduralArt.IconKind.Shield));
+                // 付録 A 状態付与 (印): the line icon VisualArt draws (#455), which takes the stamp's art itself.
                 case OmenIcon.Seal: return VisualArt.Icon(VisualIcon.Seal);
             }
             int slot = (int)icon;
             // Domain reload on entering Play Mode is off, so the statics outlive the sprites that
             // stopping Play Mode destroys; Unity's own null check sees through that (ProceduralArt.Cached).
             if (!Shapes[slot] || !Shapes[slot].texture) Shapes[slot] = Make((x, y) => Inside(icon, x, y));
-            return Shapes[slot];
+            switch (icon)
+            {
+                case OmenIcon.Status: return UiArtShelf.Icon("skill", Shapes[slot]);
+                case OmenIcon.Stance: return UiArtShelf.Icon("stance", Shapes[slot]);
+                default: return Shapes[slot];
+            }
         }
 
         // ---- shapes (32×32, y counted from the bottom) ----------------------------------

@@ -71,6 +71,7 @@ namespace Depiction.View
             labelRect.anchorMax = new Vector2(1f, 1f);
             labelRect.offsetMin = new Vector2(CornerLayout.SpeedPadding + CornerLayout.SpeedIconSize + CornerLayout.SpeedIconGap, 0f);
             labelRect.offsetMax = new Vector2(-CornerLayout.SpeedPadding, 0f);
+            BattleFonts.Use(_label, BattleFonts.CornerNumber);
             _label.alignment = TextAnchor.MiddleLeft;
             _label.horizontalOverflow = HorizontalWrapMode.Overflow;
 
@@ -117,6 +118,7 @@ namespace Depiction.View
             Rounded(frame, RoundedArt.Ring);
 
             Text line = UiKit.Text(tip, "Text", TooltipSize, TextAnchor.MiddleCenter, Ink, BattleSpeed.Tooltip);
+            BattleFonts.Use(line, BattleFonts.Body);
             line.horizontalOverflow = HorizontalWrapMode.Overflow;
             line.rectTransform.offsetMin = new Vector2(CornerLayout.SpeedTooltipPadX, CornerLayout.SpeedTooltipPadY);
             line.rectTransform.offsetMax = new Vector2(-CornerLayout.SpeedTooltipPadX, -CornerLayout.SpeedTooltipPadY);

@@ -76,6 +76,34 @@ namespace Depiction
         public const float ChipHeight = 30f;
         public const float ChipGap = 5f;
 
+        // §7.3 inside a chip, left to right: 6 px padding, the 18 px icon, the name at 16 px, the stacks at
+        // 16 px (monospaced), 8 px padding. The parts are 4 px apart, the §3.2 step under 6.
+        public const float ChipPadLeft = 6f;
+        public const float ChipPadRight = 8f;
+        public const float ChipIconSize = 18f;
+        public const float ChipPartGap = 4f;
+
+        /// <summary>
+        /// §7.3 (#612): where a chip's parts start and how wide the chip is, from the printed widths of its
+        /// name and its stacks (0 for a part it does not print). <paramref name="icon"/> is false while the
+        /// status has no art: the chip is then words only, as before the icons. A chip is never narrower
+        /// than it is tall.
+        /// </summary>
+        public static ChipParts Chip(bool icon, float nameWidth, float stacksWidth)
+        {
+            nameWidth = Math.Max(0f, nameWidth);
+            stacksWidth = Math.Max(0f, stacksWidth);
+            float x = ChipPadLeft;
+            float iconLeft = x;
+            if (icon) x += ChipIconSize + (nameWidth > 0f || stacksWidth > 0f ? ChipPartGap : 0f);
+            float nameLeft = x;
+            x += nameWidth;
+            if (nameWidth > 0f && stacksWidth > 0f) x += ChipPartGap;
+            float stacksLeft = x;
+            x += stacksWidth + ChipPadRight;
+            return new ChipParts(iconLeft, nameLeft, stacksLeft, Math.Max(ChipHeight, x));
+        }
+
         /// <summary>
         /// The width of an enemy's panel: 210, or 272 for an enemy that takes two cells or more, and
         /// never more than its cells' width on a line of <paramref name="cells"/> less 10 px. With no
@@ -314,6 +342,23 @@ namespace Depiction
         {
             if (max < min) return min;
             return value < min ? min : value > max ? max : value;
+        }
+    }
+
+    /// <summary>A status chip's parts (<see cref="StatusPanelLayout.Chip"/>): each one's left edge from the chip's left, and the chip's width.</summary>
+    public readonly struct ChipParts
+    {
+        public readonly float IconLeft;
+        public readonly float NameLeft;
+        public readonly float StacksLeft;
+        public readonly float Width;
+
+        public ChipParts(float iconLeft, float nameLeft, float stacksLeft, float width)
+        {
+            IconLeft = iconLeft;
+            NameLeft = nameLeft;
+            StacksLeft = stacksLeft;
+            Width = width;
         }
     }
 }

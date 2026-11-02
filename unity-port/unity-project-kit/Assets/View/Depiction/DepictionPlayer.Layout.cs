@@ -491,7 +491,7 @@ namespace Depiction.View
             if (label)
             {
                 label.fontSize = 24;
-                label.fontStyle = FontStyle.Bold;
+                BattleFonts.Use(label, BattleFonts.PanelWord);
                 label.color = BattleTheme.Ink;
             }
         }

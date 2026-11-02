@@ -222,15 +222,15 @@ namespace Depiction.View
             f.Flag = UiKit.Sprite(f.Root, "Flag", OmenIconArt.Of(OmenIcon.Stance), BattleTheme.HpInk, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(FlagSize, FlagSize), new Vector2(StanceList.FlagLeft(false), 0f));
             f.Flag.preserveAspect = true;
-            // Shippori Mincho 700 at 20 px in §4.6; the built-in font stands in until the fonts arrive.
+            // Shippori Mincho 700 at 20 px (§4.6 / §3.1).
             f.Name = UiKit.Label(f.Root, "Name", NameSize, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(StanceList.NameWidth(false), StanceList.RowHeight), new Vector2(StanceList.NameLeft(false), 0f));
-            f.Name.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(f.Name, BattleFonts.StanceName);
             f.Name.horizontalOverflow = HorizontalWrapMode.Overflow;
             // §7.3 永続: the count as "×2", IBM Plex Mono at 16 px, in body ink (text under 24 px).
             f.Count = UiKit.Label(f.Root, "Count", CountSize, TextAnchor.MiddleRight, BattleTheme.Ink, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                 new Vector2(CountWidth, StanceList.RowHeight), new Vector2(-PadRight, 0f));
-            f.Count.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(f.Count, BattleFonts.Stacks);
             f.Count.horizontalOverflow = HorizontalWrapMode.Overflow;
             UiKit.OnPointer(f.Root.gameObject, UnityEngine.EventSystems.EventTriggerType.PointerEnter, _ => Hover(f));
             UiKit.OnPointer(f.Root.gameObject, UnityEngine.EventSystems.EventTriggerType.PointerExit, _ =>
@@ -295,12 +295,14 @@ namespace Depiction.View
             float titleLeft = PanelPad + PanelIcon + 6f;
             _panelTitle = UiKit.Label(_panel, "Title", 18, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(StanceList.PanelWidth - titleLeft - PanelPad - PanelGroupWidth, PanelTitleHeight), new Vector2(titleLeft, -12f));
-            _panelTitle.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_panelTitle, BattleFonts.TipHeading);
             _panelGroup = UiKit.Label(_panel, "Group", 14, TextAnchor.MiddleRight, BattleTheme.Ink2, new Vector2(1f, 1f), new Vector2(1f, 1f),
                 new Vector2(PanelGroupWidth, PanelTitleHeight), new Vector2(-PanelPad, -12f));
+            BattleFonts.Use(_panelGroup, BattleFonts.Fine);
             // 効き方 / 減り方 at 16 px.
             _panelBody = UiKit.Label(_panel, "Body", 16, TextAnchor.UpperLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(StanceList.PanelWidth - 2f * PanelPad, 60f), new Vector2(PanelPad, -12f - PanelTitleHeight - 8f));
+            BattleFonts.Use(_panelBody, BattleFonts.Body);
             _panel.gameObject.SetActive(false);
         }
     }
