@@ -33,7 +33,7 @@ namespace Trial.Battle.Flow.Tests
             Microtasks.Reset();
         }
 
-        private static readonly EffectSwitches Switches = EffectSwitches.AllOn();
+        private static readonly EffectSwitches Switches = BattlePacing.Switches();
 
         private static DepictionFrame Frame(int playerHp = 50, int enemyHp = 40, int turn = 1)
         {
@@ -304,8 +304,9 @@ namespace Trial.Battle.Flow.Tests
             float released = rig.Env.Clock.Now;
             rig.Input(() => rig.Player.HandCallbacks.OnRelease(stance.Id, DropZone.AboveThrowLine, -1));
             Assert.That(rig.RunUntil(() => rig.Player.State == BattlePlayerState.Idle, 10_000f), Is.True);
-            float leaves = released + Switches.WaitMs(EffectId.CardRelease) + Math.Max(0f, EffectCatalog.CardToExileDelayMs - Switches.Ms(EffectId.CardRelease));
-            rig.Run(EffectCatalog.CardToExileDelayMs + 10);
+            // The Trial's stance card rests at its list after its slower flight (BattlePacing.StanceExileDelayMs, catalog 600).
+            float leaves = released + Switches.WaitMs(EffectId.CardRelease) + Math.Max(0f, BattlePacing.StanceExileDelayMs - Switches.Ms(EffectId.CardRelease));
+            rig.Run(BattlePacing.StanceExileDelayMs + 10);
             Assert.That(rig.Hand.DropTimes.Single().Id, Is.EqualTo(stance.Id));
             Assert.That(rig.Hand.DropTimes.Single().At, Is.EqualTo(leaves).Within(0.01f), "the card stays at the stance list until its ghost leaves");
             Assert.That(rig.Field.Ghosts.Single().Kind, Is.EqualTo(GhostKind.Exile));

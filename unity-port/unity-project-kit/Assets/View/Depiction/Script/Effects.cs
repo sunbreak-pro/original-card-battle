@@ -357,6 +357,7 @@ namespace Depiction
     public sealed class EffectSwitches
     {
         private readonly HashSet<EffectId> _off = new HashSet<EffectId>();
+        private readonly Dictionary<EffectId, (float Ms, float StaggerMs)> _lengths = new Dictionary<EffectId, (float Ms, float StaggerMs)>();
 
         public static EffectSwitches AllOn() => new EffectSwitches();
 
@@ -395,14 +396,34 @@ namespace Depiction
             else _off.Add(id);
         }
 
-        /// <summary>How long to animate one item: the catalog length when on, 0 when off.</summary>
-        public float Ms(EffectId id) => IsOn(id) ? EffectCatalog.Of(id).Ms : 0f;
+        /// <summary>
+        /// Opt-in: plays <paramref name="id"/> over its own length instead of the catalog's (the Trial battle's pacing,
+        /// 2026-11-02). An effect never given one keeps the catalog length, so a caller that never calls this sees no change.
+        /// </summary>
+        public EffectSwitches SetLength(EffectId id, float ms, float staggerMs = 0f)
+        {
+            if (!(ms >= 0f)) throw new ArgumentOutOfRangeException(nameof(ms));
+            if (!(staggerMs >= 0f)) throw new ArgumentOutOfRangeException(nameof(staggerMs));
+            _lengths[id] = (ms, staggerMs);
+            return this;
+        }
 
-        /// <summary>How long to wait between items: the catalog stagger when on, 0 when off.</summary>
-        public float StaggerMs(EffectId id) => IsOn(id) ? EffectCatalog.Of(id).StaggerMs : 0f;
+        private float BaseMs(EffectId id) => _lengths.TryGetValue(id, out var l) ? l.Ms : EffectCatalog.Of(id).Ms;
+
+        private float BaseStaggerMs(EffectId id) => _lengths.TryGetValue(id, out var l) ? l.StaggerMs : EffectCatalog.Of(id).StaggerMs;
+
+        /// <summary>How long to animate one item: the catalog length (or the one set) when on, 0 when off.</summary>
+        public float Ms(EffectId id) => IsOn(id) ? BaseMs(id) : 0f;
+
+        /// <summary>How long to wait between items: the catalog stagger (or the one set) when on, 0 when off.</summary>
+        public float StaggerMs(EffectId id) => IsOn(id) ? BaseStaggerMs(id) : 0f;
 
         /// <summary>How long the flow waits for <paramref name="count"/> items of the effect.</summary>
-        public float WaitMs(EffectId id, int count = 1) => IsOn(id) ? EffectCatalog.Of(id).TotalMs(count) : 0f;
+        public float WaitMs(EffectId id, int count = 1)
+        {
+            if (!IsOn(id) || count <= 0) return 0f;
+            return BaseMs(id) + BaseStaggerMs(id) * (count - 1);
+        }
     }
 
     /// <summary>One effect an event waits for, with how many items it plays.</summary>
