@@ -5,6 +5,7 @@
 - **Task**: Unity Editor の実際の画面で動作が少し重い。原因を探り、滑らかに動かすための実装計画を作る（こうだいさん依頼）
 - **Project**: `C:\Users\user\orca\original-card-battle`（対象は `unity-port/unity-project-kit/Assets/View/Trial/`、Unity リポは `C:\Users\user\Unity\RPG-by-card`）
 - **計画書**: `.claude/docs/vision/plans/2026-11-02-trial-frame-smoothness.md`
+- **Issue**: Step 0 = #789、Step 1 = #790、Step 2 = #791、Step 3 = #792、Step 4 = #793、Step 5 = #794、Step 6 = #795、Step 7 = #796
 - **関連**: 戦闘の動きを 0.2〜0.4 s 遅くした PR #787（同じ依頼の後半。重さとは別の話）
 
 > 以下のパスは `View/Trial/` からの相対で書く（`T/` と略す）。原因はコードを読んで見つけたもので、Profiler ではまだ測っていない。重さの順位は推定であり、Step 0 の計測で並べ直す。
