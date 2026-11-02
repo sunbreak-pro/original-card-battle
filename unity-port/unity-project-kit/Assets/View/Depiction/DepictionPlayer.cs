@@ -178,6 +178,10 @@ namespace Depiction.View
         private int _pickedUnit = -1;
         /// <summary>The enemy the receiver stands over: the last one the held card was over, or the one it would go to unnamed; −1 is the focus enemy.</summary>
         private int _aimedUnit = -1;
+        /// <summary>§3.4 Tab (#762): the enemy the floor's gap number counts to at rest, or −1 for the nearest.</summary>
+        private int _chosenUnit = -1;
+        /// <summary>§2.2 の 2 (#762): the enemy whose omen badge the pointer is on, or −1.</summary>
+        private int _badgeHovered = -1;
         /// <summary>The next placing puts the badges straight on their places (a battle's first frame).</summary>
         private bool _snapBadges = true;
 
@@ -271,6 +275,8 @@ namespace Depiction.View
             SetActingExcept(-1); // a battle stopped on the enemy's turn
             _pickedUnit = -1;
             _aimedUnit = -1;
+            _chosenUnit = -1;
+            _badgeHovered = -1;
             Finished = false;
             EventSeconds.Clear();
             if (_resultCard)
@@ -471,6 +477,7 @@ namespace Depiction.View
             UpdateSnap();
             UpdateEndTurn();
             UpdateFloorReach();
+            UpdateFloorFocus();
             FollowFigures();
         }
 
