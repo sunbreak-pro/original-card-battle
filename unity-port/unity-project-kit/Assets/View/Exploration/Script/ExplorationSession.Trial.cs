@@ -275,8 +275,16 @@ namespace Exploration
             }
             if (!JsDecimal.IsMatch(s)) return double.NaN;
             if (s.EndsWith("Infinity", StringComparison.Ordinal)) return s[0] == '-' ? double.NegativeInfinity : double.PositiveInfinity;
-            return double.Parse(s, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent,
-                CultureInfo.InvariantCulture);
+            try
+            {
+                return double.Parse(s, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent,
+                    CultureInfo.InvariantCulture);
+            }
+            catch (OverflowException)
+            {
+                // Unity's Mono throws where .NET 5+ and JS's Number() give an infinity ("1e400").
+                return s[0] == '-' ? double.NegativeInfinity : double.PositiveInfinity;
+            }
         }
 
         private static double RadixValue(string s, int from, int radix)
