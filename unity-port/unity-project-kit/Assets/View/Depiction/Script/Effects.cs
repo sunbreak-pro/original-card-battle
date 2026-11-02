@@ -207,6 +207,14 @@ namespace Depiction
 
         /// <summary>A fallen unit tilts, sinks, darkens and is gone; its cell is left empty (#288).</summary>
         Defeat,
+
+        // ---- The floor's stripes (#766, battle_ui_ux_v2 §5.8). Appended, so the ids before keep their values ----
+
+        /// <summary>提示: the stripes of the aimed cells are drawn in, left to right, one cell a stagger after the other.</summary>
+        StripeDraw,
+
+        /// <summary>実行の後: the stripes of the cells the spent omen aimed at fade away.</summary>
+        StripeFade,
     }
 
     /// <summary>
@@ -343,6 +351,11 @@ namespace Depiction
 
                 // #288: its own beat, so the blow that fells the enemy keeps its 2.0 s.
                 new EffectSpec(EffectId.Defeat, 800f, 0f, blocking: true, "battle_ui_ux_v2 §2.2 の 6 / §5.18 倒れ（800。薄れて消えるまでを含む）"),
+
+                // #766: both run beside the beats, so the stripes add no wait to any event. A cell is drawn
+                // in its 30 and the next starts as it ends, so TotalMs(cells) = 30 × cells.
+                new EffectSpec(EffectId.StripeDraw, 30f, 30f, blocking: false, "battle_ui_ux_v2 §5.8 提示 床の狙うマスに斜線が左から右へ 1 マス 30 ずつ引かれる（札が降りる 260 と並行）"),
+                new EffectSpec(EffectId.StripeFade, 120f, 0f, blocking: false, "battle_ui_ux_v2 §5.8 実行 / battle-visual-v1 の色の表 実行の後、斜線は 120 で消える"),
             };
             var map = new Dictionary<EffectId, EffectSpec>();
             foreach (EffectSpec spec in list) map.Add(spec.Id, spec);
@@ -597,6 +610,45 @@ namespace Depiction
             float at = Math.Max(0, index) * switches.StaggerMs(EffectId.CardDraw);
             if (rebuildAfter >= 0 && index >= rebuildAfter) at += switches.WaitMs(EffectId.PileRebuild);
             return at;
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.8 提示 (#766): when the stripes of the <paramref name="order"/>-th cell to be
+        /// drawn in (0 = the leftmost, StripeSweep.DrawnIn's order) start, counted from the omen's drop.
+        /// The cells keep one stagger apart, so the stripes run from left to right.
+        /// </summary>
+        public static float StripeDrawStartMs(int order, EffectSwitches switches)
+        {
+            if (switches == null) throw new ArgumentNullException(nameof(switches));
+            return Math.Max(0, order) * switches.StaggerMs(EffectId.StripeDraw);
+        }
+
+        /// <summary>
+        /// §5.8 提示 (#766): how much of the <paramref name="order"/>-th cell's stripes is drawn
+        /// <paramref name="elapsedMs"/> after the omen's drop: 0 before its start, 1 once its StripeDraw
+        /// length has passed. Switched off, every cell is drawn at once.
+        /// </summary>
+        public static float StripeDrawShare(int order, float elapsedMs, EffectSwitches switches)
+        {
+            if (switches == null) throw new ArgumentNullException(nameof(switches));
+            float ms = switches.Ms(EffectId.StripeDraw);
+            if (ms <= 0f) return 1f;
+            float share = (elapsedMs - StripeDrawStartMs(order, switches)) / ms;
+            return share < 0f ? 0f : share > 1f ? 1f : share;
+        }
+
+        /// <summary>§5.8 提示 (#766): from the omen's drop until the last of <paramref name="cells"/> cells is drawn.</summary>
+        public static float StripeDrawMs(int cells, EffectSwitches switches)
+        {
+            if (switches == null) throw new ArgumentNullException(nameof(switches));
+            return switches.WaitMs(EffectId.StripeDraw, cells);
+        }
+
+        /// <summary>§5.8 実行 (#766): from the end of the enemy's action until its stripes are gone.</summary>
+        public static float StripeFadeMs(EffectSwitches switches)
+        {
+            if (switches == null) throw new ArgumentNullException(nameof(switches));
+            return switches.Ms(EffectId.StripeFade);
         }
 
         public static List<EffectStep> StepsOf(DepictionEvent ev)

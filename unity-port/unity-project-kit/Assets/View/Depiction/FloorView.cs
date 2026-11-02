@@ -52,7 +52,17 @@ namespace Depiction.View
             /// <summary>The panel-coloured band under a move's dashes on a cell another enemy aims at.</summary>
             public Image[] MoveKeyline;
             public Image ReachTop;
+            /// <summary>The stripes the cell shows, or is drawing in or fading towards (#766).</summary>
+            public IReadOnlyList<StripeMark> Marks = NoMarks;
+            /// <summary>Whether a draw-in or a fade is taking the cell to <see cref="Marks"/>; a Bind to the same marks leaves it running.</summary>
+            public bool Sweeping;
+            /// <summary>Bumped whenever the cell is set anew, so a sweep that no longer owns the cell stops touching it.</summary>
+            public int Token;
         }
+
+        private static readonly StripeMark[] NoMarks = new StripeMark[0];
+        // §4.2: the stripes and the frame at 100%, the light outside at red 30%; a sweep scales all three.
+        private static readonly Color AimLightColor = BattleTheme.WithAlpha(BattleTheme.AimRed, 0.30f);
 
         private readonly RectTransform _root;
         private readonly RectTransform _canvas;
@@ -125,10 +135,8 @@ namespace Depiction.View
                     new Vector2(FloorSpec.TileWidth(floor.Cells), BandHeight));
                 cell.Tile.color = _tile;
                 IReadOnlyList<StripeMark> marks = FloorStripes.Of(frame, i + 1);
-                ShowStripes(cell, marks);
-                // §4.2: one frame and one light, however many enemies aim at the cell.
-                cell.AimFrame.enabled = marks.Count > 0;
-                cell.AimLight.enabled = marks.Count > 0;
+                // #766: a draw-in or a fade already heading to these stripes plays on; anything else is set at once.
+                if (!(cell.Sweeping && SameMarks(cell.Marks, marks))) SetAim(cell, marks, 1f);
                 // 敵が動く予兆の移る先: a violet dashed frame, never stripes (battle_ui_ux_v2 §5.8, #455).
                 ShowMoveFrame(cell, FloorStripes.MoveTo(frame, i + 1), FloorStripes.MoveInset(frame, i + 1));
             }
@@ -156,6 +164,145 @@ namespace Depiction.View
                 stripes.enabled = used;
                 if (used) stripes.sprite = VisualArt.Stripes(marks[k + 1].Direction, marks[k + 1].Dense);
             }
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.8 提示 (#766): the cells that gain stripes in <paramref name="after"/> are set to
+        /// them unseen now, and the returned play draws them in from the left, each cell one
+        /// EffectId.StripeDraw stagger after the one before (EffectPlan.StripeDrawStartMs). The cells are
+        /// taken at once, so a Bind to <paramref name="after"/> before the play ends leaves it running.
+        /// Not played (the effect switched off), <see cref="SettleStripes"/> shows them.
+        /// </summary>
+        public IEnumerator DrawStripesIn(DepictionFrame after, EffectSwitches effects, out int drawnCells)
+        {
+            drawnCells = 0;
+            if (!Shown || after == null || effects == null) return Nothing();
+            List<int> drawn = StripeSweep.DrawnIn(Holding(), after);
+            if (drawn.Count == 0) return Nothing();
+            var cells = new List<Cell>();
+            var tokens = new List<int>();
+            foreach (int number in drawn)
+            {
+                if (number > _cells.Count) break;
+                Cell cell = _cells[number - 1];
+                SetAim(cell, FloorStripes.Of(after, number), 0f);
+                cell.Sweeping = true;
+                cells.Add(cell);
+                tokens.Add(cell.Token);
+            }
+            drawnCells = cells.Count;
+            float totalMs = EffectPlan.StripeDrawMs(cells.Count, effects);
+            return Sweep(cells, tokens, totalMs, elapsed =>
+            {
+                for (int k = 0; k < cells.Count; k++)
+                {
+                    if (cells[k].Token == tokens[k]) SetAimAlpha(cells[k], EffectPlan.StripeDrawShare(k, elapsed, effects));
+                }
+            });
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.8 実行 (#766): the cells that lose every stripe in <paramref name="after"/> keep
+        /// theirs for now, and the returned play fades them out together over EffectId.StripeFade. Called
+        /// before the Bind of <paramref name="after"/>, which then leaves the fade running.
+        /// Not played (the effect switched off), <see cref="SettleStripes"/> takes them away.
+        /// </summary>
+        public IEnumerator FadeStripesOut(DepictionFrame after, EffectSwitches effects, out int fadedCells)
+        {
+            fadedCells = 0;
+            if (!Shown || after == null || effects == null) return Nothing();
+            List<int> faded = StripeSweep.FadedOut(Holding(), after);
+            if (faded.Count == 0) return Nothing();
+            var cells = new List<Cell>();
+            var tokens = new List<int>();
+            foreach (int number in faded)
+            {
+                if (number > _cells.Count) break;
+                Cell cell = _cells[number - 1];
+                cell.Marks = NoMarks;
+                cell.Sweeping = true;
+                cell.Token++;
+                cells.Add(cell);
+                tokens.Add(cell.Token);
+            }
+            fadedCells = cells.Count;
+            float fadeMs = EffectPlan.StripeFadeMs(effects);
+            return Sweep(cells, tokens, fadeMs, elapsed =>
+            {
+                float left = fadeMs > 0f ? 1f - Mathf.Clamp01(elapsed / fadeMs) : 0f;
+                for (int k = 0; k < cells.Count; k++)
+                {
+                    if (cells[k].Token == tokens[k]) SetAimAlpha(cells[k], left);
+                }
+            });
+        }
+
+        /// <summary>Ends every draw-in and fade where it was heading: the settle of both effects.</summary>
+        public void SettleStripes()
+        {
+            foreach (Cell cell in _cells)
+            {
+                if (cell.Sweeping) SetAim(cell, cell.Marks, 1f);
+            }
+        }
+
+        private IEnumerator Sweep(List<Cell> cells, List<int> tokens, float totalMs, System.Action<float> atMs)
+        {
+            yield return UiTween.Run(totalMs, Ease.Linear, t =>
+            {
+                if (!_root) return;
+                atMs(t * totalMs);
+            });
+            if (!_root) yield break;
+            for (int k = 0; k < cells.Count; k++)
+            {
+                if (cells[k].Token == tokens[k]) SetAim(cells[k], cells[k].Marks, 1f);
+            }
+        }
+
+        /// <summary>Whether each cell of the floor shown holds stripes now, or is drawing them in; a fading cell holds none.</summary>
+        private List<bool> Holding()
+        {
+            var holding = new List<bool>();
+            for (int i = 0; i < _floor.Cells && i < _cells.Count; i++) holding.Add(_cells[i].Marks.Count > 0);
+            return holding;
+        }
+
+        private static IEnumerator Nothing()
+        {
+            yield break;
+        }
+
+        /// <summary>Sets the cell's stripes, its one frame and its one light (§4.2) to <paramref name="marks"/> at once, at <paramref name="alpha"/>.</summary>
+        private static void SetAim(Cell cell, IReadOnlyList<StripeMark> marks, float alpha)
+        {
+            cell.Token++;
+            cell.Sweeping = false;
+            cell.Marks = marks;
+            ShowStripes(cell, marks);
+            // §4.2: one frame and one light, however many enemies aim at the cell.
+            cell.AimFrame.enabled = marks.Count > 0;
+            cell.AimLight.enabled = marks.Count > 0;
+            SetAimAlpha(cell, alpha);
+        }
+
+        private static void SetAimAlpha(Cell cell, float alpha)
+        {
+            Color red = BattleTheme.WithAlpha(BattleTheme.AimRed, BattleTheme.AimRed.a * alpha);
+            cell.Stripes.color = red;
+            foreach (Image stripes in cell.MoreStripes) stripes.color = red;
+            cell.AimFrame.color = red;
+            cell.AimLight.color = BattleTheme.WithAlpha(AimLightColor, AimLightColor.a * alpha);
+        }
+
+        private static bool SameMarks(IReadOnlyList<StripeMark> a, IReadOnlyList<StripeMark> b)
+        {
+            if (a.Count != b.Count) return false;
+            for (int k = 0; k < a.Count; k++)
+            {
+                if (a[k].Direction != b[k].Direction || a[k].Dense != b[k].Dense) return false;
+            }
+            return true;
         }
 
         private static void ShowMoveFrame(Cell cell, bool shown, float inset)

@@ -1,5 +1,6 @@
 // DepictionPlayer's parts: each enemy's parts, the parts made at run time, and what keeps them beside the figures (#585).
 #if UNITY_2021_2_OR_NEWER
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -238,6 +239,29 @@ namespace Depiction.View
             playerFigure.transform.position = _floor.FeetOf(floor.PlayerCell, floor.PlayerSize);
             SetPlayerHome(playerFigure);
             SetEnemyHomes(frame);
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.8 提示 (#766): the cells the omen just shown aims at are drawn in from the left
+        /// beside the badge's drop. It holds nothing up: the frame's Bind at the event's end lets it run on.
+        /// </summary>
+        private void DrawOmenStripes(DepictionFrame after)
+        {
+            if (_floor == null || after == null) return;
+            IEnumerator play = _floor.DrawStripesIn(after, _effects, out int cells);
+            if (cells > 0) StartCoroutine(Effect(EffectId.StripeDraw, play, _floor.SettleStripes, cells));
+        }
+
+        /// <summary>
+        /// battle_ui_ux_v2 §5.8 実行 (#766): after the event's beats, the stripes of an omen that is gone
+        /// (spent, rested or fallen with its enemy) fade out instead of going with the frame. Called just
+        /// before the frame is applied, so its Bind lets the fade run on.
+        /// </summary>
+        private void FadeSpentStripes(DepictionFrame after)
+        {
+            if (_floor == null || after == null) return;
+            IEnumerator play = _floor.FadeStripesOut(after, _effects, out int cells);
+            if (cells > 0) StartCoroutine(Effect(EffectId.StripeFade, play, _floor.SettleStripes));
         }
 
         /// <summary>Each enemy's home is its cell in <paramref name="frame"/>.</summary>

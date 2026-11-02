@@ -437,6 +437,7 @@ namespace Depiction.View
             // may not keep its action picture into the next event.
             if (playerFigure) playerFigure.SetPose(FigurePose.Idle);
             EndPlan();
+            FadeSpentStripes(ev.After);
             ApplyFrame(ev.After);
             float seconds = Time.unscaledTime - startedAt;
             EventSeconds.Add(seconds);
