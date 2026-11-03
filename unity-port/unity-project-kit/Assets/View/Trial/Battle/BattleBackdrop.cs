@@ -24,6 +24,8 @@
 // a far view drawn in code until the painted art lands, and more sets of specks): each group of BackdropScenery is one
 // static mesh over the stage between the sky and the earth, where the layer's art will go (battle-visual-v1 §2.4), and
 // every set of BackdropSpec.Specks drifts as the JS's one set of motes does (the first set is LayerBackdrop.Motes, as before).
+// Once a layer's art is painted (#858, Resources/Backdrops/layer-n, BackdropArt), it takes the far view's place over the
+// sky, and the earth, the hazes and the specks stay on top of it; without the art the backdrop is drawn as before.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -122,7 +124,7 @@ namespace Trial.Battle
         // js: scenes/battle/field/backdrop.js:31
         public static BattleBackdrop Create(BattleViewEnv env, int layerNo) => new BattleBackdrop(env, layerNo);
 
-        /// <summary>The sky, the far view (a Unity addition), the earth, the hazes, the motes and the horizon, bottom → top.</summary>
+        /// <summary>The sky, the layer's art or the far view (Unity additions), the earth, the hazes, the motes and the horizon, bottom → top.</summary>
         // js: scenes/battle/field/backdrop.js:41
         private void Build(LayerBackdrop spec)
         {
@@ -131,13 +133,18 @@ namespace Trial.Battle
             foreach (SkyStop s in spec.Sky ?? Array.Empty<SkyStop>()) stops.Add(RgbaCss(s.Color) + " " + Fixed(s.At * 100f, 2) + "%");
             NoFringe(GradientGraphic.Css(_root, "linear-gradient(180deg, " + string.Join(", ", stops) + ")", 0f, 0f, W, H, false, "ocbg-battle-sky"));
 
-            // ---- the far view (Unity addition of 2026-11-03, こうだいさん's request: a far view drawn in code; the JS has none) ----
+            // ---- the layer's art, or while it has none the far view (Unity additions of 2026-11-03, こうだいさん's
+            // requests: a far view drawn in code, and a slot for the painted art, #858; the JS has neither) ----
             // A group that fails is logged like a spec that fails, and the backdrop draws on without the rest of the far view.
-            try
+            bool hasArt = LayArt(_root, spec);
+            if (BackdropArt.DrawsFarView(hasArt))
             {
-                foreach (SceneryMesh mesh in BackdropScenery.Meshes(spec)) SceneryElement(_root, mesh);
+                try
+                {
+                    foreach (SceneryMesh mesh in BackdropScenery.Meshes(spec)) SceneryElement(_root, mesh);
+                }
+                catch (Exception e) { _env?.Log.Error(null, e); }
             }
-            catch (Exception e) { _env?.Log.Error(null, e); }
 
             // ---- the earth (DS addition): dark from the horizon down ----
             NoFringe(GradientGraphic.Css(_root, EarthImage, 0f, EarthTop, W, EarthH, false, "ocbg-battle-earth"));
@@ -168,6 +175,18 @@ namespace Trial.Battle
 
             // ---- the horizon (layout.md: y 556) ----
             BoxGraphic.Make(_root, HorizonCss, 0f, HorizonTop, W, 1f, "ocbg-battle-horizon");
+        }
+
+        /// <summary>
+        /// The layer's painted art (Resources/Backdrops/layer-n, the path the old battle screen reads too) over the whole
+        /// stage, cropped to fill it; false while the layer has none. The earth, the hazes and the specks go on top of it.
+        /// </summary>
+        private static bool LayArt(RectTransform root, LayerBackdrop spec)
+        {
+            Sprite art = ArtImage.Load(BackdropArt.ResourcePath(spec.Layer));
+            if (!art) return false;
+            ArtCrop c = BackdropArt.Cover(art.rect.width, art.rect.height, W, H);
+            return ArtImage.Lay(root, art, 0f, 0f, W, H, c.X, c.Y, c.W, c.H, "ocbg-battle-art") != null;
         }
 
         /// <summary>A full-width fill: no anti-aliased fringe (CSS draws a pixel-aligned box edge hard).</summary>

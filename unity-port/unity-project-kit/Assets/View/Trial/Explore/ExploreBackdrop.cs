@@ -16,7 +16,8 @@
 // - The veil and the lull are the explore.css rules, with their CSS transitions run by the kit's CssStates.
 // - Unity additions of 2026-11-03 (こうだいさん's request; the JS has neither): the layer's far view (BackdropScenery)
 //   between the sky and the hazes, of the slot and of the strip, and every set of specks of BackdropSpec.Specks in the
-//   slot, not only the layer's Motes.
+//   slot, not only the layer's Motes. Once a layer's art is painted (#858, Resources/Backdrops/layer-n, BackdropArt), it
+//   takes the far view's place in the slot and the strip, and the hazes, the motes, the veil and the shade stay on top.
 // The meshes: gradients along one axis are split at their stops (exact), radial ones are fans of 128 segments whose
 // colour runs linearly along each radius (the canvas gradient's), so no mesh refinement is needed for the large hazes.
 using System;
@@ -26,7 +27,9 @@ using Trial.Geometry;
 using Trial.Kit;
 using UnityEngine;
 using UnityEngine.UI;
+using ArtCrop = global::Backdrop.ArtCrop;
 using BdRgba = global::Backdrop.Rgba;
+using BackdropArt = global::Backdrop.BackdropArt;
 using BackdropMotion = global::Backdrop.BackdropMotion;
 using BackdropScenery = global::Backdrop.BackdropScenery;
 using BackdropSpec = global::Backdrop.BackdropSpec;
@@ -231,9 +234,9 @@ namespace Trial.Explore
             // sky
             AddSky(s.Root, spec, W, H);
 
-            // the far view, static, crossfaded by the slot's alpha with the rest (Unity addition of 2026-11-03,
-            // こうだいさん's request: the JS draws none)
-            AddScenery(s.Root, spec, W, H);
+            // the layer's art, or while it has none the far view; static, crossfaded by the slot's alpha with the rest
+            // (Unity additions of 2026-11-03, こうだいさん's requests, #858: the JS draws neither)
+            AddArtOrScenery(s.Root, spec, W, H);
 
             // haze (each graphic is built at the top of its breath; the breath is its opacity)
             foreach (Haze haze in spec.Hazes ?? Array.Empty<Haze>())
@@ -518,8 +521,8 @@ namespace Trial.Explore
             c.gameObject.AddComponent<RectMask2D>();
             LayerBackdrop spec = BackdropSpec.For(layer);
             AddSky(c, spec, w, ht);
-            // the far view as the slot has it, x × w and y × ht (Unity addition of 2026-11-03, こうだいさん's request)
-            AddScenery(c, spec, w, ht);
+            // the art or the far view as the slot has it, over w × ht (Unity additions of 2026-11-03, こうだいさん's requests, #858)
+            AddArtOrScenery(c, spec, w, ht);
             foreach (Haze haze in spec.Hazes ?? Array.Empty<Haze>())
             {
                 if (haze.Shape == HazeShape.Radial)
@@ -563,6 +566,22 @@ namespace Trial.Explore
                 cols[i] = RgbaOf(sky[i].Color);
             }
             return VectorGraphic.Draw(parent, 0f, 0f, w, ht, (mb, box, f) => Bands(mb, box, true, ts, cols), "sky");
+        }
+
+        /// <summary>
+        /// The layer's painted art (Resources/Backdrops/layer-n, the path the battle screens read too) over w × ht, cropped
+        /// to fill it without stretching (a strip shows the picture's middle band); while the layer has none, its far view.
+        /// </summary>
+        private static void AddArtOrScenery(RectTransform parent, LayerBackdrop spec, float w, float ht)
+        {
+            Sprite art = ArtImage.Load(BackdropArt.ResourcePath(spec.Layer));
+            bool hasArt = false;
+            if (art)
+            {
+                ArtCrop c = BackdropArt.Cover(art.rect.width, art.rect.height, w, ht);
+                hasArt = ArtImage.Lay(parent, art, 0f, 0f, w, ht, c.X, c.Y, c.W, c.H, "art") != null;
+            }
+            if (BackdropArt.DrawsFarView(hasArt)) AddScenery(parent, spec, w, ht);
         }
 
         /// <summary>
