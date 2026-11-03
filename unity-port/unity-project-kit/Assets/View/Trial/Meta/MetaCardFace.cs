@@ -112,8 +112,8 @@ namespace Trial.Meta
 
         // js: scenes/meta/cardFace.js:50
         /// <summary>
-        /// cardEl(face, { lit, unpayable }): one card at full size (216×304) at (0, 0) of parent. The plain card keeps the
-        /// bridge's own two rows (CardFaceText.PlainTop / PlainBottom) in the dashed box.
+        /// cardEl(face, { lit, unpayable }): one card at full size (216×304) at (0, 0) of parent. The plain card has no trait
+        /// box (#827), so its TraitRows are empty.
         /// </summary>
         public static OcbCard CardEl(RectTransform parent, CardFace face, bool lit = false, bool unpayable = false)
         {
