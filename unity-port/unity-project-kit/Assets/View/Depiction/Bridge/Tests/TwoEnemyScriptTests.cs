@@ -193,6 +193,40 @@ namespace Depiction.Bridge.Tests
             Assert.That(aimed, Is.GreaterThan(0), "the battle did aim");
         }
 
+        /// <summary>
+        /// #765: one enemy read to 開示度 0 shows no cell on the floor in any frame of a fought battle, though
+        /// the writer still writes its AimCells (the omen's hit mark reads them).
+        /// </summary>
+        [Test]
+        public void OneEnemyReadToZero_TheFloorShowsNoCell_TurnAfterTurn()
+        {
+            BattleState state = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(Hand, 2), 8), NoShuffle).State;
+            var writer = new CoreScriptWriter(state.EnemyDef) { Disclosure = OmenDisclosure.Unread };
+            var frames = new List<DepictionFrame> { writer.Opening(state) };
+            for (int turn = 0; turn < 6 && state.Result == GameResult.Ongoing; turn++)
+            {
+                StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+                frames.AddRange(writer.Write(begin.Events, begin.State).Select(ev => ev.After));
+                StepResult end = TurnLoop.EndTurn(begin.State, NoShuffle);
+                frames.AddRange(writer.Write(end.Events, end.State).Select(ev => ev.After));
+                state = end.State;
+            }
+
+            int written = 0;
+            foreach (DepictionFrame frame in frames)
+            {
+                Assert.That(frame.Enemies.Count, Is.EqualTo(1));
+                Assert.That(frame.Omen.Disclosure, Is.EqualTo(OmenDisclosure.Unread));
+                written += frame.Floor.AimCells.Count;
+                for (int cell = 1; cell <= frame.Floor.Cells; cell++)
+                {
+                    Assert.That(FloorStripes.Of(frame, cell), Is.Empty, "cell " + cell);
+                    Assert.That(FloorStripes.MoveTo(frame, cell), Is.False, "cell " + cell);
+                }
+            }
+            Assert.That(written, Is.GreaterThan(0), "the writer still wrote the aim, so the floor is what leaves it off");
+        }
+
         [Test]
         public void TheSecondEnemysEvents_GoToItsOwnNumbers_TurnAfterTurn()
         {
