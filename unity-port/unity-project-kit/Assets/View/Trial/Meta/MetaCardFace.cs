@@ -187,14 +187,18 @@ namespace Trial.Meta
         {
             if (!p || marks == null || marks.Count == 0) return;
             LabelState st = Label.StateOf(p);
-            if ((st.Text ?? p.text) != text) return;
-            var kept = new List<TermMark>();
+            // #828: the row prints its attribute words as icon slots (Ocb.Card's TraitPart), so the marks are moved onto them
+            AttrIconText split = AttrIconText.Of(text);
+            if ((st.Text ?? p.text) != split.Printed) return;
+            var kept = new List<(TermMark Mark, int Start, int Length)>();
             int at = 0;
             foreach (TermMark m in marks.OrderBy(m => m.Start))
             {
                 if (m.Start < at) continue;
-                Ocb.TermUnderline(p, m.Start, m.Length);
-                kept.Add(m);
+                split.MapRange(m.Start, m.Length, out int start, out int length);
+                if (length <= 0) continue;
+                Ocb.TermUnderline(p, start, length);
+                kept.Add((m, start, length));
                 at = m.Start + m.Length;
             }
             if (kept.Count == 0) return;
@@ -203,8 +207,8 @@ namespace Trial.Meta
                 if (e == null) return null;
                 int i = TMP_TextUtilities.FindIntersectingCharacter(p, e.position, e.enterEventCamera, true);
                 if (i < 0) return null;
-                foreach (TermMark m in kept)
-                    if (i >= m.Start && i < m.Start + m.Length) return m.Word + "：" + m.Meaning;
+                foreach ((TermMark m, int start, int length) in kept)
+                    if (i >= start && i < start + length) return m.Word + "：" + m.Meaning;
                 return null;
             });
         }
