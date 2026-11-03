@@ -517,7 +517,10 @@ namespace Trial.Battle
         private static void TraitRow(TextMeshProUGUI p, string text, TermRow row, CardFace face, bool bold, bool plain, List<CardTerm> terms)
         {
             text = text ?? "";
-            TextFit fit = CardTextFit.Name(text, TextSize, TraitMinFont, plain ? TraitTextW + 14f : TraitTextW, 22f,
+            // #828: the attribute words print as their icons; the row is fitted, underlined and boxed as it prints
+            AttrIconText split = AttrIconText.Of(text);
+            string shown = split.Display;
+            TextFit fit = CardTextFit.Name(shown, TextSize, TraitMinFont, plain ? TraitTextW + 14f : TraitTextW, 22f,
                 bold ? Fonts().TraitBottom : Fonts().TraitTop);
             TextStyle style = Label.StyleOf(p)?.Clone() ?? Ocb.TextOf(Ocb.TraitCss + Ocb.TraitPCss);
             if (fit.Size != TextSize)
@@ -526,8 +529,7 @@ namespace Trial.Battle
                 style.Size = fit.Size;
                 Label.Apply(p, style);
             }
-            LabelState ls = Label.StateOf(p);
-            if ((ls.Text ?? p.text) != text) Label.SetText(p, text);
+            Ocb.PrintAttrIcons(p, shown, split.Attrs);
             List<TermMark> marks = (face.Terms ?? new List<TermMark>())
                 .Where(m => m != null && m.Row == row && m.Start >= 0 && m.Length > 0 && m.Start + m.Length <= text.Length)
                 .OrderBy(m => m.Start)
@@ -536,9 +538,11 @@ namespace Trial.Battle
             foreach (TermMark m in marks)
             {
                 if (m.Start < at) continue;
+                split.MapRange(m.Start, m.Length, out int start, out int length);
+                if (length <= 0) continue;
                 // .ocb-term.ocbg-battle-term: underline dotted --ink-muted 2px, offset 4px (hand.css:20)
-                Ocb.TermUnderline(p, m.Start, m.Length);
-                terms.Add(new CardTerm { Mark = m, Rect = TermBox(p, style, text, m.Start, m.Length) });
+                Ocb.TermUnderline(p, start, length);
+                terms.Add(new CardTerm { Mark = m, Rect = TermBox(p, style, shown, start, length) });
                 at = m.Start + m.Length;
             }
         }
