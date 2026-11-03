@@ -408,8 +408,8 @@ namespace Depiction.View
             Image plate = UiKit.Sprite(fxLayer, "Banner", ProceduralArt.White, BattleTheme.WithAlpha(BattleTheme.InkBlack, 0.55f),
                 Half, Half, new Vector2(1920f, 120f), new Vector2(0f, 80f));
             plate.raycastTarget = false;
-            Text label = UiKit.Text(plate.rectTransform, "Text", 56, TextAnchor.MiddleCenter, color, text);
-            label.fontStyle = FontStyle.Bold;
+            Text label = UiKit.Text(plate.rectTransform, "Text", 64, TextAnchor.MiddleCenter, color, text);
+            BattleFonts.Use(label, BattleFonts.Banner);
             label.raycastTarget = false;
             CanvasGroup group = UiKit.Group(plate.rectTransform);
             group.alpha = 0f;
@@ -449,7 +449,7 @@ namespace Depiction.View
             plate.raycastTarget = false;
             Color color = outcome == BattleOutcome.Won ? BattleTheme.Warm : BattleTheme.Omen;
             Text label = UiKit.Text(plate.rectTransform, "Outcome", 72, TextAnchor.MiddleCenter, color, DepictionText.OutcomeText(outcome));
-            label.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(label, BattleFonts.Banner);
             label.raycastTarget = false;
             _resultCard = plate.gameObject;
             CanvasGroup group = UiKit.Group(plate.rectTransform);

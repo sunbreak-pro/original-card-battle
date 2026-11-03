@@ -67,7 +67,7 @@ namespace Depiction.View
             _tagIcon.preserveAspect = true;
             _tagText = UiKit.Label(_tag, "Value", 48, TextAnchor.MiddleLeft, BattleTheme.Wick, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(110f, TagHeight), new Vector2(54f, 0f));
-            _tagText.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_tagText, BattleFonts.OmenNumber);
             _tagText.horizontalOverflow = HorizontalWrapMode.Overflow;
             _tag.gameObject.SetActive(false);
         }

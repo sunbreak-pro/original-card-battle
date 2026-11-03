@@ -95,6 +95,7 @@ namespace Depiction.View
                     _inner[i] = VisualArt.Ring(slot, "Inner", BattleTheme.Boss, 3, 1, -3f);
                     _names[i] = UiKit.Label(slot, "Name", 16, TextAnchor.MiddleCenter, BattleTheme.Ink, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                         new Vector2(size, size), Vector2.zero);
+                    BattleFonts.Use(_names[i], BattleFonts.Body);
                     _names[i].horizontalOverflow = HorizontalWrapMode.Overflow;
                     _slots[i] = slot;
                 }
@@ -113,7 +114,9 @@ namespace Depiction.View
                     if (!on) continue;
                     OmenStatus status = statuses[i];
                     Sprite icon = VisualArt.StatusIcon(status.Glyph);
-                    bool named = icon == null;
+                    // A boss's word has no 付録 A icon; its art (§11) stands in for the name once it is in.
+                    if (!icon) icon = VisualArt.StatusArt(status.Label);
+                    bool named = !icon;
                     _icons[i].sprite = icon;
                     _icons[i].enabled = !named;
                     _outer[i].enabled = _inner[i].enabled = named;
@@ -175,6 +178,7 @@ namespace Depiction.View
             {
                 Place(kindText.rectTransform, new Vector2(0f, 0f), new Vector2(110f, 26f), new Vector2(14f, 6f));
                 kindText.fontSize = 16;
+                BattleFonts.Use(kindText, BattleFonts.Body);
                 kindText.alignment = TextAnchor.MiddleLeft;
             }
             _icon = UiKit.Sprite(Rect, "Icon", null, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -185,6 +189,7 @@ namespace Depiction.View
             {
                 Place(valueText.rectTransform, new Vector2(0f, 1f), new Vector2(120f, 56f), new Vector2(54f, -4f));
                 valueText.fontSize = 48;
+                BattleFonts.Use(valueText, BattleFonts.OmenNumber);
                 valueText.alignment = TextAnchor.MiddleLeft;
             }
             // §4.4 状態付与 (#455): the statuses at 28 px where the 48 px number would stand, on its middle.
@@ -212,14 +217,16 @@ namespace Depiction.View
             _planIcon.enabled = false;
             _planValue = UiKit.Label(_plan, "Value", 28, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(90f, 36f), new Vector2(40f, -2f));
-            _planValue.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_planValue, BattleFonts.SmallNumber);
             // §4.4: the plan's statuses at 20 px where its 28 px number would stand.
             _planStatuses = new StatusRow(_plan, "Statuses", PlanStatusIconSize, new Vector2(40f, -2f - (36f - PlanStatusIconSize) * 0.5f));
             _planKind = UiKit.Label(_plan, "Kind", 16, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0f), new Vector2(0f, 0f),
                 new Vector2(100f, 22f), new Vector2(10f, 4f));
+            BattleFonts.Use(_planKind, BattleFonts.Body);
             // battle-visual-v1 2.1: text under 24 px is written in body ink.
             _planTag = UiKit.Label(_plan, "Tag", 14, TextAnchor.MiddleRight, BattleTheme.Ink, new Vector2(1f, 0f), new Vector2(1f, 0f),
                 new Vector2(80f, 20f), new Vector2(-8f, 4f));
+            BattleFonts.Use(_planTag, BattleFonts.Fine);
         }
 
         /// <summary>

@@ -55,6 +55,7 @@ namespace Depiction.View
             _hoverDot = UiKit.Sprite(_hover, "Dot", ProceduralArt.Circle, BattleTheme.Steel, new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(12f, 12f), new Vector2(20f, 0f));
             _hoverText = UiKit.Label(_hover, "Text", 18, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(HoverWidth - 36f - 12f, HoverMinHeight), new Vector2(36f, 0f));
+            BattleFonts.Use(_hoverText, BattleFonts.Body);
             _hover.gameObject.SetActive(false);
 
             _reach = UiKit.Point(_layer, "ReachHint", new Vector2(0.5f, 0.5f), new Vector2(0f, 1f), ReachSize, Vector2.zero);
@@ -63,6 +64,7 @@ namespace Depiction.View
             UiKit.Sprite(_reach, "Icon", VisualArt.Icon(VisualIcon.Range), BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(22f, 22f), new Vector2(16f, 0f));
             _reachText = UiKit.Label(_reach, "Text", 18, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(ReachSize.x - 50f - 16f, ReachSize.y - 24f), new Vector2(50f, 0f));
+            BattleFonts.Use(_reachText, BattleFonts.Body);
             _reachText.lineSpacing = 26f / (18f * 1.15f);
             _reach.gameObject.SetActive(false);
 
@@ -75,16 +77,19 @@ namespace Depiction.View
             float textWidth = DetailSize.x - textLeft - DetailPad;
             _detailName = UiKit.Label(_detail, "Name", 24, TextAnchor.UpperLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(textWidth, 32f), new Vector2(textLeft, -DetailPad));
-            _detailName.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_detailName, BattleFonts.CardName);
             _detailKind = UiKit.Label(_detail, "Kind", 16, TextAnchor.UpperLeft, BattleTheme.Ink2, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(textWidth, 22f), new Vector2(textLeft, -DetailPad - 34f));
+            BattleFonts.Use(_detailKind, BattleFonts.Body);
             _detailBody = UiKit.Label(_detail, "Body", 16, TextAnchor.UpperLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(textWidth, 104f), new Vector2(textLeft, -DetailPad - 60f));
+            BattleFonts.Use(_detailBody, BattleFonts.Body);
             _detailBody.verticalOverflow = VerticalWrapMode.Truncate;
             // The terms the card uses, in a black 35% box along the bottom.
             _detailTerms = UiKit.Point(_detail, "Terms", new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(textWidth, 82f), new Vector2(textLeft, DetailPad));
             UiKit.Image(_detailTerms, "Back", VisualArt.Rounded(4), BattleTheme.WithAlpha(Color.black, 0.35f), Vector2.zero, Vector2.one).type = Image.Type.Sliced;
             _detailTermsText = UiKit.Text(_detailTerms, "Text", 16, TextAnchor.UpperLeft, BattleTheme.Ink);
+            BattleFonts.Use(_detailTermsText, BattleFonts.Body);
             _detailTermsText.verticalOverflow = VerticalWrapMode.Truncate;
             _detail.gameObject.SetActive(false);
         }
@@ -112,9 +117,10 @@ namespace Depiction.View
             float inner = TermWidth - TermPadX * 2f;
             _termTitle = UiKit.Label(_term, "Word", 18, TextAnchor.UpperLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(inner, TermTitleHeight), new Vector2(TermPadX, -TermPadY));
-            _termTitle.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_termTitle, BattleFonts.TipHeading);
             _termBody = UiKit.Label(_term, "Meaning", 16, TextAnchor.UpperLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(inner, 22f), new Vector2(TermPadX, -TermPadY - TermTitleHeight - TermLineGap));
+            BattleFonts.Use(_termBody, BattleFonts.Body);
             _term.gameObject.SetActive(false);
         }
 

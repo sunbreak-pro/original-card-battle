@@ -59,7 +59,11 @@ namespace Depiction.View
             public Image Back;
             public Image Frame;
             public Image Inner;
+            /// <summary>§7.3 the 18 px icon: the status's art from UiArtShelf, hidden while it has none.</summary>
+            public Image Icon;
             public Text Label;
+            /// <summary>The stacks in their own Text: IBM Plex Mono has no Japanese glyphs for the name.</summary>
+            public Text Stacks;
             public StatusChip Chip;
             /// <summary>The "+n" chip: the chips it gathers, for its panel.</summary>
             public List<StatusChip> Rest;
@@ -153,7 +157,7 @@ namespace Depiction.View
                 Place(hpText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(HpNumberWidth, StatusPanelLayout.HpRowHeight + 6f),
                     new Vector2(StatusPanelLayout.HpNumberLeft(false), HpRowY));
                 hpText.fontSize = 24;
-                hpText.fontStyle = FontStyle.Bold;
+                BattleFonts.Use(hpText, BattleFonts.PanelNumber);
                 hpText.color = BattleTheme.Ink;
                 hpText.alignment = TextAnchor.MiddleLeft;
                 hpText.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -188,6 +192,7 @@ namespace Depiction.View
             {
                 Place(guardText.rectTransform, new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(48f, StatusPanelLayout.GuardRowHeight + 6f), new Vector2(PartGap, 0f));
                 guardText.fontSize = 24;
+                BattleFonts.Use(guardText, BattleFonts.PanelNumber);
                 guardText.alignment = TextAnchor.MiddleLeft;
                 guardText.horizontalOverflow = HorizontalWrapMode.Overflow;
             }
@@ -201,7 +206,7 @@ namespace Depiction.View
             _reserveShield.preserveAspect = true;
             _staminaText = UiKit.Label(_reserveGroup, "Stamina", 24, TextAnchor.MiddleRight, BattleTheme.Ink, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                 new Vector2(StaminaNumberWidth, StatusPanelLayout.GuardRowHeight + 6f), new Vector2(-(24f + PartGap), 0f));
-            _staminaText.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_staminaText, BattleFonts.PanelNumber);
             _staminaText.horizontalOverflow = HorizontalWrapMode.Overflow;
             UiKit.Sprite(_reserveGroup, "Dot", ProceduralArt.Circle, BattleTheme.Ink2, new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
                 new Vector2(16f, 16f), new Vector2(-(24f + PartGap + StaminaNumberWidth + PartGap), 0f));
@@ -485,9 +490,19 @@ namespace Depiction.View
             view.Inner.type = Image.Type.Sliced;
             view.Inner.rectTransform.offsetMin = new Vector2(3f, 3f);
             view.Inner.rectTransform.offsetMax = new Vector2(-3f, -3f);
+            float iconSize = StatusPanelLayout.ChipIconSize;
+            view.Icon = UiKit.Sprite(view.Root, "Icon", null, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                new Vector2(iconSize, iconSize), new Vector2(StatusPanelLayout.ChipPadLeft, 0f));
+            view.Icon.preserveAspect = true;
+            view.Icon.enabled = false;
             view.Label = UiKit.Label(view.Root, "Label", 16, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
-                new Vector2(60f, ChipHeight), new Vector2(6f, 0f));
+                new Vector2(60f, ChipHeight), new Vector2(StatusPanelLayout.ChipPadLeft, 0f));
+            BattleFonts.Use(view.Label, BattleFonts.Body);
             view.Label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            view.Stacks = UiKit.Label(view.Root, "Stacks", 16, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                new Vector2(20f, ChipHeight), new Vector2(StatusPanelLayout.ChipPadLeft, 0f));
+            BattleFonts.Use(view.Stacks, BattleFonts.Stacks);
+            view.Stacks.horizontalOverflow = HorizontalWrapMode.Overflow;
             UiKit.OnPointer(view.Root.gameObject, UnityEngine.EventSystems.EventTriggerType.PointerEnter, _ => Hover(view, true));
             UiKit.OnPointer(view.Root.gameObject, UnityEngine.EventSystems.EventTriggerType.PointerExit, _ => Hover(view, false));
             return view;
@@ -497,7 +512,12 @@ namespace Depiction.View
         {
             view.Chip = chip;
             view.Rest = rest;
-            view.Label.text = ChipText(chip);
+            bool gathering = rest != null;
+            view.Label.text = gathering ? "" : chip.Label ?? "";
+            view.Stacks.text = gathering ? chip.Label ?? "" : chip.Stacks.ToString();
+            Sprite art = gathering ? null : VisualArt.StatusArt(chip.Label);
+            view.Icon.sprite = art;
+            view.Icon.enabled = art;
             // §7.3: the corner tells the family — 3 px for a word put on the opponent, 15 px for one put on oneself.
             int radius = chip.Kind == ChipKind.OnFoe || chip.Kind == ChipKind.Boss ? 3 : 15;
             view.Back.sprite = VisualArt.Rounded(radius);
@@ -507,9 +527,15 @@ namespace Depiction.View
             // ボス専用の状態: the boss colour's double frame.
             view.Inner.sprite = VisualArt.RoundedRing(radius, 1);
             view.Inner.enabled = chip.Kind == ChipKind.Boss;
-            float width = 6f + view.Label.preferredWidth + 8f;
-            view.Root.sizeDelta = new Vector2(Mathf.Max(ChipHeight, width), ChipHeight);
-            view.Label.rectTransform.sizeDelta = new Vector2(width, ChipHeight);
+            float nameWidth = view.Label.text.Length > 0 ? view.Label.preferredWidth : 0f;
+            float stacksWidth = view.Stacks.text.Length > 0 ? view.Stacks.preferredWidth : 0f;
+            ChipParts parts = StatusPanelLayout.Chip(view.Icon.enabled, nameWidth, stacksWidth);
+            view.Root.sizeDelta = new Vector2(parts.Width, ChipHeight);
+            view.Icon.rectTransform.anchoredPosition = new Vector2(parts.IconLeft, 0f);
+            view.Label.rectTransform.anchoredPosition = new Vector2(parts.NameLeft, 0f);
+            view.Label.rectTransform.sizeDelta = new Vector2(nameWidth, ChipHeight);
+            view.Stacks.rectTransform.anchoredPosition = new Vector2(parts.StacksLeft, 0f);
+            view.Stacks.rectTransform.sizeDelta = new Vector2(stacksWidth, ChipHeight);
         }
 
         /// <summary>
@@ -603,11 +629,13 @@ namespace Depiction.View
             VisualArt.Ring(_panel, "Edge", BattleTheme.Steel, 6, 1);
             _panelTitle = UiKit.Label(_panel, "Title", 18, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(PanelWidth - 32f - 110f, 26f), new Vector2(16f, -12f));
-            _panelTitle.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_panelTitle, BattleFonts.TipHeading);
             _panelGroup = UiKit.Label(_panel, "Group", 14, TextAnchor.MiddleRight, BattleTheme.Ink2, new Vector2(1f, 1f), new Vector2(1f, 1f),
                 new Vector2(110f, 26f), new Vector2(-16f, -12f));
+            BattleFonts.Use(_panelGroup, BattleFonts.Fine);
             _panelBody = UiKit.Label(_panel, "Body", 16, TextAnchor.UpperLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(PanelWidth - 32f, 60f), new Vector2(16f, -46f));
+            BattleFonts.Use(_panelBody, BattleFonts.Body);
             _panel.gameObject.SetActive(false);
         }
 

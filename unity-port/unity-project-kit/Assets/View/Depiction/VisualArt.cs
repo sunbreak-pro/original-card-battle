@@ -4,6 +4,8 @@
 #if UNITY_2021_2_OR_NEWER
 using System;
 using System.Collections.Generic;
+using UiArt;
+using UiArt.View;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -517,12 +519,47 @@ namespace Depiction.View
 
         // ---- 付録 A line icons ---------------------------------------------------------------------
 
-        /// <summary>The sprite of a 付録 A icon, white so the Image tints it.</summary>
+        /// <summary>
+        /// The sprite of a 付録 A icon, white so the Image tints it: the drawn part of §11 once its art is in
+        /// (UiArtShelf), the line drawn here until then and for the icons §11 keeps as code.
+        /// </summary>
         public static Sprite Icon(VisualIcon icon)
         {
             int slot = (int)icon;
             if (!Icons[slot] || !Icons[slot].texture) Icons[slot] = DrawIcon(Segments(icon), Rings(icon));
-            return Icons[slot];
+            string art = ArtId(icon);
+            return art != null ? UiArtShelf.Icon(art, Icons[slot]) : Icons[slot];
+        }
+
+        /// <summary>The UiArtCatalog part that replaces a line icon (§11), or null for one that stays code.</summary>
+        private static string ArtId(VisualIcon icon)
+        {
+            switch (icon)
+            {
+                case VisualIcon.Seal: return "inflict";
+                case VisualIcon.Bleed: return "bleed";
+                case VisualIcon.Fragile: return "brittle";
+                case VisualIcon.Slow: return "slow";
+                case VisualIcon.Intimidate: return "intimidate";
+                case VisualIcon.Fatigue: return "fatigue";
+                default: return null;
+            }
+        }
+
+        /// <summary>
+        /// §7.3 / §11 (#612): the art of the status a chip names (the core's word, which is the part's name in
+        /// UiArtCatalog), or null while it has none. The chips have no line icon to fall back on, so a chip
+        /// without art stays words only.
+        /// </summary>
+        public static Sprite StatusArt(string label)
+        {
+            if (string.IsNullOrEmpty(label)) return null;
+            foreach (UiArtPart part in UiArtCatalog.Parts)
+            {
+                if (part.Name != label || (part.Kind != UiArtKind.Status && part.Kind != UiArtKind.BossStatus)) continue;
+                return UiArtShelf.Icon(part.Id, null);
+            }
+            return null;
         }
 
         /// <summary>The segments of each icon in 付録 A's 24 grid (x right, y down).</summary>
@@ -699,15 +736,15 @@ namespace Depiction.View
             }
         }
 
-        /// <summary>§6.1 属性アイコン: sword, shield, star, flag.</summary>
+        /// <summary>§6.1 属性アイコン: sword, shield, star, flag; the §11 attribute art once it is in.</summary>
         public static Sprite KindIcon(CardKind kind)
         {
             switch (kind)
             {
-                case CardKind.Attack: return ProceduralArt.Icon(ProceduralArt.IconKind.Sword);
-                case CardKind.Guard: return ProceduralArt.Icon(ProceduralArt.IconKind.Shield);
-                case CardKind.Stance: return OmenIconArt.Of(OmenIcon.Stance);
-                default: return OmenIconArt.Of(OmenIcon.Status);
+                case CardKind.Attack: return UiArtShelf.Icon("attack", ProceduralArt.Icon(ProceduralArt.IconKind.Sword));
+                case CardKind.Guard: return UiArtShelf.Icon("defense", ProceduralArt.Icon(ProceduralArt.IconKind.Shield));
+                case CardKind.Stance: return UiArtShelf.Icon("stance", OmenIconArt.Of(OmenIcon.Stance));
+                default: return UiArtShelf.Icon("skill", OmenIconArt.Of(OmenIcon.Status));
             }
         }
     }

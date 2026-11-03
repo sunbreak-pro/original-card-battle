@@ -186,7 +186,7 @@ namespace Depiction.View
             if (!nameText) nameText = UiKit.Label(root, "Name", NameSize, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.zero, Vector2.zero);
             Place(nameText.rectTransform, NameAt, new Vector2(Size.x - NameAt.x - 12f, NameHeight));
             nameText.fontSize = NameSize;
-            nameText.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(nameText, BattleFonts.CardName);
             nameText.alignment = TextAnchor.MiddleLeft;
             nameText.color = BattleTheme.Ink;
 
@@ -199,6 +199,7 @@ namespace Depiction.View
             if (!descriptionText) descriptionText = UiKit.Label(root, "Description", TextSize, TextAnchor.UpperLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.zero, Vector2.zero);
             Place(descriptionText.rectTransform, TextAt, new Vector2(Size.x - TextAt.x - 12f, TextLine * 3f));
             descriptionText.fontSize = TextSize;
+            BattleFonts.Use(descriptionText, BattleFonts.Body);
             descriptionText.alignment = TextAnchor.UpperLeft;
             descriptionText.color = BattleTheme.Ink;
             descriptionText.lineSpacing = TextLine / (TextSize * 1.15f);
@@ -239,7 +240,7 @@ namespace Depiction.View
             costText.rectTransform.sizeDelta = new Vector2(CostSize, CostSize);
             costText.rectTransform.anchoredPosition = Vector2.zero;
             costText.fontSize = 28;
-            costText.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(costText, BattleFonts.SmallNumber);
             costText.transform.SetAsLastSibling();
 
             // ▼1: the tag at the circle's lower right when a discount took a cost off.
@@ -247,6 +248,7 @@ namespace Depiction.View
             VisualArt.Panel(_costDrop, "Back", BattleTheme.PanelOpaque, 3);
             VisualArt.Ring(_costDrop, "Edge", BattleTheme.Amber, 3, 1);
             _costDropText = UiKit.Label(_costDrop, "Text", 14, TextAnchor.MiddleCenter, BattleTheme.Ink, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(30f, 18f), Vector2.zero);
+            BattleFonts.Use(_costDropText, BattleFonts.Fine); // "▼" is not in IBM Plex Mono
             _costDrop.gameObject.SetActive(false);
         }
 
@@ -264,6 +266,7 @@ namespace Depiction.View
             _reachText.horizontalOverflow = HorizontalWrapMode.Overflow;
             _reachSelf = UiKit.Label(_reach, "Self", 14, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(40f, ReachHeight), new Vector2(34f, 0f), "自分");
+            BattleFonts.Use(_reachSelf, BattleFonts.Fine);
         }
 
         private ValueSlot BuildValue(RectTransform root, int index)
@@ -275,10 +278,11 @@ namespace Depiction.View
             slot.Icon.preserveAspect = true;
             slot.Number = UiKit.Label(slot.Root, "Number", 36, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(ValueColumn - 28f, 40f), new Vector2(28f, 0f));
-            slot.Number.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(slot.Number, BattleFonts.CardValue);
             slot.Number.horizontalOverflow = HorizontalWrapMode.Overflow;
             slot.Word = UiKit.Label(slot.Root, "Word", 16, TextAnchor.UpperLeft, BattleTheme.Ink2, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(ValueColumn, 20f), new Vector2(28f, -40f));
+            BattleFonts.Use(slot.Word, BattleFonts.Body);
             slot.Word.horizontalOverflow = HorizontalWrapMode.Overflow;
             slot.Root.gameObject.SetActive(false);
             return slot;
@@ -331,12 +335,13 @@ namespace Depiction.View
             top.sizeDelta = new Vector2(textWidth, 26f);
             top.anchoredPosition = new Vector2(textLeft, -6f);
             traitText.fontSize = TextSize;
+            BattleFonts.Use(traitText, BattleFonts.Body);
             traitText.alignment = TextAnchor.MiddleLeft;
             traitText.horizontalOverflow = HorizontalWrapMode.Overflow;
             traitText.verticalOverflow = VerticalWrapMode.Overflow;
             _traitBottom = UiKit.Label(box, "TraitEffect", TextSize, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(textWidth, 26f), new Vector2(textLeft, -32f));
-            _traitBottom.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_traitBottom, BattleFonts.BodyStrong);
             _traitBottom.horizontalOverflow = HorizontalWrapMode.Overflow;
         }
 
@@ -488,13 +493,14 @@ namespace Depiction.View
             {
                 traitText.text = top ?? "";
                 traitText.color = plain ? BattleTheme.Ink2 : BattleTheme.Ink;
-                traitText.fontStyle = FontStyle.Normal;
+                BattleFonts.Use(traitText, BattleFonts.Body);
             }
             if (_traitBottom)
             {
                 _traitBottom.text = bottom ?? "";
                 _traitBottom.color = plain ? BattleTheme.Ink2 : BattleTheme.Ink;
-                _traitBottom.fontStyle = plain ? FontStyle.Normal : FontStyle.Bold;
+                // The effect row stands out in the 700 face, not in a synthetic bold.
+                BattleFonts.Use(_traitBottom, plain ? BattleFonts.Body : BattleFonts.BodyStrong);
             }
             BindTerms(face);
         }

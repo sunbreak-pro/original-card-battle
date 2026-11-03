@@ -99,7 +99,7 @@ namespace Depiction.View
             UiKit.Sprite(_tag, "Icon", VisualArt.Icon(VisualIcon.Range), BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(22f, 22f), new Vector2(10f, 0f));
             _tagText = UiKit.Label(_tag, "Number", 28, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(48f, TagHeight), new Vector2(38f, 0f));
-            _tagText.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_tagText, BattleFonts.SmallNumber);
             _tagText.horizontalOverflow = HorizontalWrapMode.Overflow;
             _root.gameObject.SetActive(false);
         }
