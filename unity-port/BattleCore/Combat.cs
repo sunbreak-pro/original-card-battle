@@ -83,7 +83,7 @@ namespace BattleCore
             return raw > Constants.HandDrawMax ? Constants.HandDrawMax : raw;
         }
 
-        /// <summary>§1: max stamina stays within 3..14 for the whole battle.</summary>
+        /// <summary>§1: max stamina stays within 3..20 for the whole battle (#822).</summary>
         public static int ClampMaxStamina(int value)
         {
             if (value < Constants.MaxStaminaFloor) return Constants.MaxStaminaFloor;

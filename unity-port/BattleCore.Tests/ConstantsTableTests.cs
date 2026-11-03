@@ -36,6 +36,8 @@ namespace BattleCore.Tests
             ["COST_MIN / MAX"] = Join(Constants.CostMin, Constants.CostMax),
             ["STAMINA_RECOVERY"] = Join(Constants.StaminaRecovery),
             ["BASE_MAX_STAMINA"] = Join(Constants.BaseMaxStamina),
+            ["MAX_STAMINA_FLOOR / CEIL"] = Join(Constants.MaxStaminaFloor, Constants.MaxStaminaCeil),
+            ["START_STAMINA_CEIL"] = Join(Constants.StartStaminaCeil),
             ["PLAYER_MAX_HP"] = Join(Constants.PlayerMaxHp),
             ["RESERVE_THRESHOLD"] = Join(Constants.ReserveThreshold),
             ["RESERVE_GUARD"] = Join(Constants.ReserveGuard),

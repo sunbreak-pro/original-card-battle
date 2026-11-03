@@ -4,10 +4,12 @@
 // held card would pay as amber rings, the stamina the next turn start brings back as amber dashed
 // rings (#455), the rest as steel rings. It shows the numbers it is handed (UnitFrame / StaminaChange
 // cue through StatusBarView, UnitFrame.NextRecovery, the held card's CardFace.Cost) and works out
-// nothing.
+// nothing. Ten dots to a row (#822): from the 11th on they take a second row and the tag grows 20 px
+// upward; stamina above the maximum (息継ぎの笛) gets wick-coloured dots after the maximum's (#508).
+// Which dot is which is Depiction.StaminaPips'.
 //
 // The scene belongs to the Unity project, so the tag is made at run time on the canvas, at x 32,
-// y 846, 236×84 as §4.7 gives it.
+// y 846, 236×84 as §4.7 gives it (y 826, 236×104 with two rows).
 #if UNITY_2021_2_OR_NEWER
 using System.Collections;
 using System.Collections.Generic;
@@ -28,6 +30,7 @@ namespace Depiction.View
         private int _dividerAfter;
 
         private readonly RectTransform _root;
+        private readonly RectTransform _canvasRoot;
         private readonly Text _number;
         private readonly Text _pay;
         private readonly RectTransform _row;
@@ -41,6 +44,7 @@ namespace Depiction.View
         public StaminaTagView(RectTransform canvasRoot, int siblingIndex)
         {
             UiKit.EnsureFont();
+            _canvasRoot = canvasRoot;
             _root = UiKit.Point(canvasRoot, "StaminaTag", new Vector2(0.5f, 0.5f), new Vector2(0f, 1f), Size, Vector2.zero);
             if (siblingIndex >= 0) _root.SetSiblingIndex(siblingIndex);
             RefScreen.Place(_root, canvasRoot, At, Size);
@@ -146,46 +150,56 @@ namespace Depiction.View
             _number.text = _stamina.ToString();
             _pay.enabled = _cost > 0;
             _pay.text = "▸ " + _cost;
-            while (_dots.Count < _max) _dots.Add(UiKit.Sprite(_row, "Dot" + _dots.Count, ProceduralArt.Circle, BattleTheme.Amber,
+            int count = Depiction.StaminaPips.Count(_stamina, _max);
+            bool twoRows = Depiction.StaminaPips.TwoRows(_stamina, _max);
+            // §4.7: a second row grows the tag 20 px upward, so the first row and the number stay over the piles' gap.
+            float raise = Depiction.StaminaPips.TagRaise(_stamina, _max);
+            RefScreen.Place(_root, _canvasRoot, At - new Vector2(0f, raise), Size + new Vector2(0f, raise));
+            _row.anchoredPosition = new Vector2(PadX, PadY + (twoRows ? Depiction.StaminaPips.RowPitch : 0f));
+            while (_dots.Count < count) _dots.Add(UiKit.Sprite(_row, "Dot" + _dots.Count, ProceduralArt.Circle, BattleTheme.Amber,
                 new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(DotSize, DotSize), Vector2.zero));
-            int paying = Mathf.Min(_cost, _stamina);
             float x = 0f;
             for (int i = 0; i < _dots.Count; i++)
             {
                 Image dot = _dots[i];
-                bool used = i < _max;
+                bool used = i < count;
                 dot.gameObject.SetActive(used);
                 if (!used) continue;
-                if (_dividerAfter > 0 && i == _dividerAfter)
+                int row = Depiction.StaminaPips.RowOf(i);
+                if (i % Depiction.StaminaPips.PerRow == 0) x = 0f;
+                if (row == 0 && _dividerAfter > 0 && i == _dividerAfter)
                 {
                     // The divider stands in the gap after the third dot, the gap widened to hold it.
                     _divider.rectTransform.anchoredPosition = new Vector2(x + DotGap * 0.5f, 0f);
                     x += DotGap + 2f;
                 }
-                dot.rectTransform.anchoredPosition = new Vector2(x, 0f);
+                dot.rectTransform.anchoredPosition = new Vector2(x, -row * Depiction.StaminaPips.RowPitch);
                 x += DotSize + DotGap;
-                if (i < _stamina - paying)
+                switch (Depiction.StaminaPips.ShapeAt(i, _stamina, _max, _cost, _next))
                 {
-                    dot.sprite = ProceduralArt.Circle; // there now: an amber fill
-                    dot.color = BattleTheme.Amber;
-                }
-                else if (i < _stamina)
-                {
-                    dot.sprite = VisualArt.CircleRing(3f); // to be paid: an amber 3 px ring
-                    dot.color = BattleTheme.Amber;
-                }
-                else if (i < _stamina + _next)
-                {
-                    dot.sprite = VisualArt.DashedCircleRing(2f); // back next turn: an amber 2 px dashed ring
-                    dot.color = BattleTheme.Amber;
-                }
-                else
-                {
-                    dot.sprite = VisualArt.CircleRing(2f); // empty: a steel 2 px ring
-                    dot.color = BattleTheme.Steel;
+                    case Depiction.PipShape.Have:
+                        dot.sprite = ProceduralArt.Circle; // there now: an amber fill
+                        dot.color = BattleTheme.Amber;
+                        break;
+                    case Depiction.PipShape.Over:
+                        dot.sprite = ProceduralArt.Circle; // above the maximum (息継ぎの笛, #508): a wick fill
+                        dot.color = BattleTheme.Wick;
+                        break;
+                    case Depiction.PipShape.Pay:
+                        dot.sprite = VisualArt.CircleRing(3f); // to be paid: an amber 3 px ring
+                        dot.color = BattleTheme.Amber;
+                        break;
+                    case Depiction.PipShape.Next:
+                        dot.sprite = VisualArt.DashedCircleRing(2f); // back next turn: an amber 2 px dashed ring
+                        dot.color = BattleTheme.Amber;
+                        break;
+                    default:
+                        dot.sprite = VisualArt.CircleRing(2f); // empty: a steel 2 px ring
+                        dot.color = BattleTheme.Steel;
+                        break;
                 }
             }
-            _divider.enabled = _dividerAfter > 0 && _max > _dividerAfter;
+            _divider.enabled = Depiction.StaminaPips.DividerShown(_dividerAfter, _stamina, _max);
         }
     }
 }

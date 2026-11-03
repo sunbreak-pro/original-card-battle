@@ -100,11 +100,14 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void ClampMaxStamina_StaysWithinThreeAndFourteen()
+        public void ClampMaxStamina_StaysWithinThreeAndTwenty()
         {
+            // battle_core_v4 §1 (#822): the ceiling went from 14 to 20.
             Assert.That(Combat.ClampMaxStamina(1), Is.EqualTo(3));
             Assert.That(Combat.ClampMaxStamina(10), Is.EqualTo(10));
-            Assert.That(Combat.ClampMaxStamina(20), Is.EqualTo(14));
+            Assert.That(Combat.ClampMaxStamina(14), Is.EqualTo(14));
+            Assert.That(Combat.ClampMaxStamina(20), Is.EqualTo(20));
+            Assert.That(Combat.ClampMaxStamina(25), Is.EqualTo(20));
         }
 
         [Test]
