@@ -16,7 +16,8 @@
 ## 予定
 
 - 🔜 **PR #844 → #851 の merge と、Unity Editor での背景の確認（こうだいさんとメインのチャット）** — #851 は #844 の上に積んである。merge 後に `npm run unity:sync` で写し、`Trial.unity` で 7 層の戦闘・探索・タイトルを見る
-- 🔜 **試遊版の Unity 版に背景の絵の受け口を作るか（こうだいさんの判断）** — いまは旧い `Battle.unity` の `BackdropLayers` にしかない。Krita の背景の指示文（手引き §4）は実機で未試行
+- 🔜 **試遊版の Unity 版に背景の絵の受け口を作る** — 2026-11-03 こうだいさん決定。Issue は main が作る（申し送り `2026-11-03-design-trial-backdrop-art-slot.md`）。Krita の背景の指示文（手引き §4）は実機で未試行
+- 🔜 **`style-guide.md` §17 の条件 5 を決め直す** — 暗い層の地の明るさが前提で、3 層が明るい層になり 5 層も中くらいの明るさになった（2026-11-03）
 - 🔜 **立ち絵を試遊版の人型へ差し込む** — 2026-11-01 こうだいさん決定。Issue は main が作る（申し送り `2026-11-01-design-trial-art-insert.md`）。差分（#85、#287）はこれが入ってから作る
 - 🔜 **#608 の merge 後の確認（メインのチャット）** — PR #741 は merge 済み。Unity でコンパイルしてから `unity:check` と階層 4 の背景を見る
 - 🔜 **PR #752 と RPG-by-card#15 の merge（こうだいさんの作業）** — RPG-by-card#15 は `Collect Character Art` で差分が出ないことを見てから merge する
