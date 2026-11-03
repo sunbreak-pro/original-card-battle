@@ -366,18 +366,18 @@ namespace Backdrop.Tests
         [Test]
         public void TheContrastChecks_ReadTheFarView()
         {
-            // A pale band across the dark layer 3, from the top of the screen into the floor's band: the checks that keep
+            // A pale band across the dark layer 7, from the top of the screen into the floor's band: the checks that keep
             // the red and the text readable must see it, or a far shape could hide under them.
-            LayerBackdrop three = BackdropSpec.For(3);
-            LayerBackdrop pale = Copy(three);
+            LayerBackdrop seven = BackdropSpec.For(7);
+            LayerBackdrop pale = Copy(seven);
             pale.Scenery = new[]
             {
                 new Scenery { Kind = SceneryKind.Ridge, Color = new Rgba(0.92f, 0.9f, 0.86f, 0.9f), Foot = new Rgba(0.92f, 0.9f, 0.86f, 0.9f), Count = 3, X0 = 0f, X1 = 1f, Top = 0.05f, Base = 0.6f, Vary = 0f },
             };
-            Assert.That(BackdropSpec.ReachRedContrast(pale), Is.LessThan(BackdropSpec.ReachRedContrast(three) - 0.5));
-            var veil = ExplorationBackdropSpec.For(3).Veil;
-            var bare = new ExplorationBackdrop { Layer = 3, Place = three, Veil = veil };
-            var lit = new ExplorationBackdrop { Layer = 3, Place = pale, Veil = veil };
+            Assert.That(BackdropSpec.ReachRedContrast(pale), Is.LessThan(BackdropSpec.ReachRedContrast(seven) - 0.5));
+            var veil = ExplorationBackdropSpec.For(7).Veil;
+            var bare = new ExplorationBackdrop { Layer = 7, Place = seven, Veil = veil };
+            var lit = new ExplorationBackdrop { Layer = 7, Place = pale, Veil = veil };
             Assert.That(ExplorationBackdropSpec.LowestContrast(lit, ExplorationBackdropSpec.Ink),
                 Is.LessThan(ExplorationBackdropSpec.LowestContrast(bare, ExplorationBackdropSpec.Ink) - 1.0));
             Assert.That(ExplorationBackdropSpec.PeakLuminance(lit), Is.GreaterThan(ExplorationBackdropSpec.PeakLuminance(bare)));
@@ -430,13 +430,13 @@ namespace Backdrop.Tests
             // Two translucent pale groups on the same places: the stage shows them stacked, and the checks must too.
             var pale = new Rgba(0.9f, 0.88f, 0.8f, 0.5f);
             Scenery Group() => new Scenery { Kind = SceneryKind.Crystals, Color = pale, Foot = pale, Light = pale, Count = 5, Seed = 3, X0 = 0.1f, X1 = 0.9f, Top = 0.1f, Base = 0.5f, Size = 0.05f, Vary = 0.2f };
-            LayerBackdrop one = Copy(BackdropSpec.For(3));
+            LayerBackdrop one = Copy(BackdropSpec.For(7));
             one.Scenery = new[] { Group() };
-            LayerBackdrop two = Copy(BackdropSpec.For(3));
+            LayerBackdrop two = Copy(BackdropSpec.For(7));
             two.Scenery = new[] { Group(), Group() };
-            var veil = ExplorationBackdropSpec.For(3).Veil;
-            double peakOne = ExplorationBackdropSpec.PeakLuminance(new ExplorationBackdrop { Layer = 3, Place = one, Veil = veil });
-            double peakTwo = ExplorationBackdropSpec.PeakLuminance(new ExplorationBackdrop { Layer = 3, Place = two, Veil = veil });
+            var veil = ExplorationBackdropSpec.For(7).Veil;
+            double peakOne = ExplorationBackdropSpec.PeakLuminance(new ExplorationBackdrop { Layer = 7, Place = one, Veil = veil });
+            double peakTwo = ExplorationBackdropSpec.PeakLuminance(new ExplorationBackdrop { Layer = 7, Place = two, Veil = veil });
             Assert.That(peakTwo, Is.GreaterThan(peakOne * 1.15));
         }
 

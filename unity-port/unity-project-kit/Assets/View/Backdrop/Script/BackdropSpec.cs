@@ -2,12 +2,13 @@
 // it, the light that breathes in the haze, the motes that drift through it, and the floor tile drawn
 // on top. Pure C#, so `dotnet test` holds the values the screen draws.
 //
-// Only the backdrop changes with the layer; the UI keeps its colours (world-v1 §6). The light source and the
-// brightness of each layer come from world-v1 §3-§4. The colours are 2026-11-03's (こうだいさん asked for a colour of
-// its own on every layer, layer 1 brighter, a pale-yellow layer and a starry layer 7; #89): lime, lemon cream, teal,
-// a white prism, crimson, cobalt and a nebula, chosen from three proposals by their renders. Each layer also stands a
-// far view drawn in code (Scenery, BackdropScenery) where the painted art for the layer will go, between the sky and
-// the haze, so the haze and the specks stay when the art lands.
+// Only the backdrop changes with the layer; the UI keeps its colours (world-v1 §6). The light source of each layer
+// comes from world-v1 §3-§4. The colours and the brightness are 2026-11-03's (こうだいさん asked for a colour of its own
+// on every layer, one more bright layer in the upper part, a brighter layer 1, a pale-yellow layer and a starry layer 7;
+// #89): lime, lemon cream, aqua, a white prism, crimson, cobalt and a nebula, chosen from proposals by their renders.
+// Layers 1, 2 and 3 are bright, 4 the brightest, then darker down to 7. Each layer also stands a far view drawn in code
+// (Scenery, BackdropScenery) where the painted art for the layer will go, between the sky and the haze, so the haze
+// and the specks stay when the art lands.
 namespace Backdrop
 {
     /// <summary>A colour in sRGB, 0〜1 per channel, with its alpha. The mockups blend in sRGB, so this does too.</summary>
@@ -273,59 +274,61 @@ namespace Backdrop
                 },
                 Tile = Rgba.Bytes(20, 18, 12, 0.88f),
             },
-            // 3 大黒蛇の住処: the one dim upper layer, indigo above and deep teal below. A black serpent coils out of the left wall
-            // along the cave roof, and the violet crystals on its back are the only light, so a violet haze hangs round them; a
-            // teal glow low in the cave keeps the figures readable. Two ranges of rock stand in the dark behind.
+            // 3 大黒蛇の住処, bright: a luminous grotto of aqua above and deep teal-green below. A black serpent coils out of the
+            // left wall along the cave roof and rises again on the right, and the violet crystals on its back are the layer's
+            // light: their lilac glow blooms round the coils and fills the cave with a pale aqua air. Two ranges of teal rock
+            // stand pale in that air behind. Aqua and violet only, never amber (world-v1 §3 rule 4).
             new LayerBackdrop
             {
                 Layer = 3,
                 Name = "大黒蛇の住処",
                 Sky = new[]
                 {
-                    new SkyStop(0f, Rgba.Hex("#0e0c28")), new SkyStop(0.3f, Rgba.Hex("#141e48")), new SkyStop(0.5f, Rgba.Hex("#18465e")),
-                    new SkyStop(0.7f, Rgba.Hex("#0f2a3e")), new SkyStop(1f, Rgba.Hex("#060c18")),
+                    new SkyStop(0f, Rgba.Hex("#bafcf3")), new SkyStop(0.25f, Rgba.Hex("#86f2e4")), new SkyStop(0.5f, Rgba.Hex("#58d8c6")),
+                    new SkyStop(0.75f, Rgba.Hex("#32b09e")), new SkyStop(1f, Rgba.Hex("#1a8270")),
                 },
                 Hazes = new[]
                 {
-                    new Haze { Shape = HazeShape.TopGlow, Color = Violet.WithAlpha(0.12f), Size = 0.38f },
-                    new Haze { Shape = HazeShape.Band, Color = Phosphor.WithAlpha(0.08f), Y = 0.1f, Size = 0.2f, Flicker = new Flicker(4600, 0.35f) },
-                    new Haze { Shape = HazeShape.Radial, Color = Phosphor.WithAlpha(0.14f), X = 0.6f, Y = 0.14f, Size = 0.5f, Flicker = new Flicker(3200, 0.4f) },
-                    new Haze { Shape = HazeShape.Band, Color = Rgba.Hex("#2f8a9a", 0.16f), Y = 0.44f, Size = 0.26f, Flicker = new Flicker(8000, 0.25f) },
+                    new Haze { Shape = HazeShape.Radial, Color = Rgba.Hex("#e6fffb", 0.26f), X = 0.5f, Y = 0.31f, Size = 0.5f, Flicker = new Flicker(9000, 0.2f) },
+                    new Haze { Shape = HazeShape.Radial, Color = Rgba.Hex("#d4c4ff", 0.36f), X = 0.43f, Y = 0.21f, Size = 0.3f, Flicker = new Flicker(3600, 0.4f) },
+                    new Haze { Shape = HazeShape.Radial, Color = Rgba.Hex("#d4c4ff", 0.2f), X = 0.9f, Y = 0.24f, Size = 0.24f, Flicker = new Flicker(4800, 0.35f) },
+                    new Haze { Shape = HazeShape.Radial, Color = Rgba.Hex("#dccfff", 0.24f), X = 0.68f, Y = 0.02f, Size = 0.22f, Flicker = new Flicker(5200, 0.4f) },
                 },
-                Motes = new Motes { Count = 16, Color = Phosphor.WithAlpha(0.55f), SizePx = 3f, SpeedX = -3f, SpeedY = -6f, Twinkle = 0.8f },
+                Motes = new Motes { Count = 30, Color = Rgba.Hex("#9a7ef4", 0.85f), SizePx = 3.5f, SpeedX = -3f, SpeedY = -6f, Twinkle = 0.8f },
                 MoreMotes = new[]
                 {
-                    new Motes { Count = 14, Color = Rgba.Hex("#7fd0d8", 0.25f), SizePx = 2f, SpeedX = 4f, SpeedY = -2f, Twinkle = 0.5f, Seed = 3 },
+                    new Motes { Count = 24, Color = Rgba.Hex("#ffffff", 0.8f), SizePx = 2.5f, SpeedX = 4f, SpeedY = -2f, Twinkle = 0.6f, Seed = 3 },
+                    new Motes { Count = 14, Color = Rgba.Hex("#b8a2ff", 0.6f), SizePx = 5f, SpeedX = 1f, SpeedY = -4f, Twinkle = 0.7f, Seed = 31 },
                 },
                 Scenery = new[]
                 {
                     new Scenery
                     {
                         Kind = SceneryKind.Ridge, Count = 6, Seed = 301, X0 = 0f, X1 = 1f, Top = 0.2f, Base = 0.53f, Vary = 0.7f, Rough = 0.75f,
-                        Color = Rgba.Hex("#1a1c44", 0.6f), Foot = Rgba.Hex("#14223e", 0.7f),
+                        Color = Rgba.Hex("#9ce6dc", 0.5f), Foot = Rgba.Hex("#74d0c2", 0.55f),
                     },
                     new Scenery
                     {
                         Kind = SceneryKind.Ridge, Count = 9, Seed = 41, X0 = 0f, X1 = 1f, Top = 0.3f, Base = 0.52f, Vary = 0.65f, Rough = 1f,
-                        Color = Rgba.Hex("#123048", 0.55f), Foot = Rgba.Hex("#1a4a5e", 0.45f),
+                        Color = Rgba.Hex("#4cbcae", 0.55f), Foot = Rgba.Hex("#56cfbe", 0.6f),
                     },
                     new Scenery
                     {
-                        Kind = SceneryKind.Wall, Count = 4, Seed = 43, X0 = 0f, X1 = 0.2f, Top = -0.03f, Base = 0.53f, Vary = 0.8f, Rough = 0.7f,
-                        Color = Rgba.Hex("#081224", 0.95f), Foot = Rgba.Hex("#0e2232", 0.9f),
+                        Kind = SceneryKind.Wall, Count = 3, Seed = 43, X0 = 0f, X1 = 0.2f, Top = -0.03f, Base = 0.53f, Vary = 0.75f, Rough = 0.35f,
+                        Color = Rgba.Hex("#164844", 0.95f), Foot = Rgba.Hex("#1f5e56", 0.92f),
                     },
                     new Scenery
                     {
                         Kind = SceneryKind.Coil, Count = 1, Seed = 326, X0 = 0.78f, X1 = 1f, Top = 0.24f, Base = 0.53f, Size = 0.032f, Vary = 0.5f,
-                        Color = Rgba.Hex("#04060c", 0.97f), Foot = Rgba.Hex("#060a14", 0.97f), Light = Rgba.Hex("#8c70e8", 0.85f),
+                        Color = Rgba.Hex("#04060c", 0.97f), Foot = Rgba.Hex("#060a14", 0.97f), Light = Rgba.Hex("#8c70e8", 0.95f),
                     },
                     new Scenery
                     {
                         Kind = SceneryKind.Coil, Count = 2, Seed = 44, X0 = 0f, X1 = 0.92f, Top = -0.01f, Base = 0.18f, Size = 0.04f, Vary = 0.6f,
-                        Color = Rgba.Hex("#04060c", 0.97f), Foot = Rgba.Hex("#060a14", 0.97f), Light = Rgba.Hex("#8c70e8", 0.88f),
+                        Color = Rgba.Hex("#04060c", 0.97f), Foot = Rgba.Hex("#060a14", 0.97f), Light = Rgba.Hex("#8c70e8", 0.95f),
                     },
                 },
-                Tile = Rgba.Bytes(10, 16, 28, 0.80f),
+                Tile = Rgba.Bytes(8, 20, 22, 0.88f),
             },
             // 4 輝晶の間, the brightest: white with lavender and aqua prism tints. Crystal pillars stand everywhere, far and near,
             // and hang from the roof; two great lilac clusters stand at the edges and their light bleeds into the ground. Light

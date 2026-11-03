@@ -1,7 +1,7 @@
 // #90: the exploration screen's backdrop (battle-visual-v1 §2.5). It is the battle's place of the same
-// layer under a veil, the map's text and the amber accent read on every layer, and the veil keeps
-// world-v1 §3's rule 3 (4 the brightest, 3 darker than 1, 2 and 4). Since 2026-11-03 the veil is a dark shade of
-// each layer's own hue, so the place keeps its colour under the map.
+// layer under a veil, the map's text and the amber accent read on every layer, and the veil keeps the layer order
+// (4 the brightest, 5, 6 and 7 darker in turn). Since 2026-11-03 the veil is a dark shade of each layer's own hue,
+// so the place keeps its colour under the map, and layer 3 is a bright layer too.
 using NUnit.Framework;
 
 namespace Backdrop.Tests
@@ -75,14 +75,14 @@ namespace Backdrop.Tests
         [Test]
         public void TheBrightLayers_NeedTheThickVeil()
         {
-            // Without a veil, the text would not read on 1, 2 and 4: that is what the veil is for.
-            foreach (int layer in new[] { 1, 2, 4 })
+            // Without a veil, the text would not read on the bright layers 1 to 4: that is what the veil is for.
+            foreach (int layer in new[] { 1, 2, 3, 4 })
             {
                 var bare = new ExplorationBackdrop { Layer = layer, Place = BackdropSpec.For(layer), Veil = ExplorationBackdropSpec.Ground.WithAlpha(0f) };
                 Assert.That(ExplorationBackdropSpec.LowestContrast(bare, ExplorationBackdropSpec.Ink),
                     Is.LessThan(ExplorationBackdropSpec.InkMinContrast), "layer " + layer);
                 Assert.That(ExplorationBackdropSpec.For(layer).Veil.A,
-                    Is.GreaterThan(ExplorationBackdropSpec.For(3).Veil.A), "layer " + layer);
+                    Is.GreaterThan(ExplorationBackdropSpec.For(6).Veil.A), "layer " + layer);
             }
         }
 
@@ -97,13 +97,5 @@ namespace Backdrop.Tests
             }
         }
 
-        [Test]
-        public void Layer3_StaysDarkerThan1_2And4_UnderTheVeil()
-        {
-            double three = ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(3));
-            Assert.That(three, Is.LessThan(ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(1))));
-            Assert.That(three, Is.LessThan(ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(2))));
-            Assert.That(three, Is.LessThan(ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(4))));
-        }
     }
 }

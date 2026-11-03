@@ -1,7 +1,8 @@
 // #89: the seven layers' backdrops (battle-visual-v1 §2.4). The values §2.4 writes stay, every layer keeps
-// the reach red readable on its floor tile (§2.3), and the brightness follows world-v1 §3's rule 3
-// (1 and 2 bright, 3 dark, 4 the brightest, then darker down to 7). #609 made layer 1 bright; 2026-11-03
-// (こうだいさん's request) gave every layer its own colour, layer 1 brighter still and layer 7 a starry sky.
+// the reach red readable on its floor tile (§2.3), and the brightness follows the layer order. #609 made layer 1
+// bright; 2026-11-03 (こうだいさん's request) gave every layer its own colour, layer 1 brighter still, layer 3 a
+// bright layer too (one more bright layer in the upper part) and layer 7 a starry sky: 1, 2 and 3 bright, 4 the
+// brightest, then darker down to 7.
 using System.Collections.Generic;
 using NUnit.Framework;
 
@@ -37,7 +38,7 @@ namespace Backdrop.Tests
         {
             [1] = new[] { ("#fafde0", 0f), ("#ebf8ac", 0.22f), ("#c4e878", 0.48f), ("#96ce56", 0.75f), ("#62a242", 1f) },
             [2] = new[] { ("#fbf8e2", 0f), ("#ebe5bb", 0.35f), ("#cfc999", 0.7f), ("#9a9268", 1f) },
-            [3] = new[] { ("#0e0c28", 0f), ("#141e48", 0.3f), ("#18465e", 0.5f), ("#0f2a3e", 0.7f), ("#060c18", 1f) },
+            [3] = new[] { ("#bafcf3", 0f), ("#86f2e4", 0.25f), ("#58d8c6", 0.5f), ("#32b09e", 0.75f), ("#1a8270", 1f) },
             [4] = new[] { ("#ffffff", 0f), ("#f1ecff", 0.25f), ("#dcd4f6", 0.5f), ("#c4e4ee", 0.7f), ("#8d9ccc", 1f) },
             [5] = new[] { ("#2e0d18", 0f), ("#6a1f2e", 0.4f), ("#8a3040", 0.62f), ("#2a0a12", 1f) },
             [6] = new[] { ("#04061c", 0f), ("#0c1450", 0.35f), ("#181a70", 0.5f), ("#0a0e3a", 0.7f), ("#020310", 1f) },
@@ -48,7 +49,7 @@ namespace Backdrop.Tests
         {
             [1] = ("#0a140c", 0.88f),
             [2] = ("#14120c", 0.88f),
-            [3] = ("#0a101c", 0.8f),
+            [3] = ("#081416", 0.88f),
             [4] = ("#0e101c", 0.84f),
             [5] = ("#14080c", 0.82f),
             [6] = ("#080814", 0.84f),
@@ -97,7 +98,7 @@ namespace Backdrop.Tests
         }
 
         [Test]
-        public void TheBrightness_FollowsWorldRule3()
+        public void TheBrightness_FollowsTheLayerOrder()
         {
             double[] l = new double[BackdropSpec.Layers + 1];
             for (int layer = 1; layer <= BackdropSpec.Layers; layer++) l[layer] = MeanLuminance(BackdropSpec.For(layer));
@@ -106,8 +107,11 @@ namespace Backdrop.Tests
             {
                 if (layer != 4) Assert.That(l[4], Is.GreaterThan(l[layer]), "4 is the brightest, above " + layer);
             }
-            Assert.That(l[1], Is.GreaterThan(l[3]), "1 is bright, above 3");
-            Assert.That(l[2], Is.GreaterThan(l[3]), "3 drops after 2");
+            foreach (int layer in new[] { 1, 2, 3 })
+            {
+                Assert.That(l[layer], Is.GreaterThanOrEqualTo(0.40), layer + " is a bright layer");
+                Assert.That(l[layer], Is.GreaterThan(l[5]), layer + " is brighter than the deep layers");
+            }
             Assert.That(l[5], Is.LessThan(l[4]));
             Assert.That(l[6], Is.LessThan(l[5]), "5 onward goes darker");
             Assert.That(l[7], Is.LessThan(l[6]), "7 is the darkest");
