@@ -35,7 +35,8 @@ namespace BattleCore
 
         public const int ColumnCount = 4;
         public const int CostMin = 1;
-        public const int CostMax = 3;
+        /// <summary>§3 (#823): raised from 3 so that a card can be authored into column 4 at cost 4.</summary>
+        public const int CostMax = 4;
 
         // ---- Stamina and HP (§3.1 / §9) ----
 

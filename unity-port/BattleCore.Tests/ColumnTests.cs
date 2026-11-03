@@ -10,10 +10,22 @@ namespace BattleCore.Tests
         [TestCase(1, 1)]
         [TestCase(2, 2)]
         [TestCase(3, 3)]
-        [TestCase(4, 3)]
-        public void CostOf_IsTheColumnNumber_ExceptColumnFourWhichStaysAtThree(int column, int expected)
+        [TestCase(4, 4)]
+        public void CostOf_IsTheColumnNumber_ColumnFourIncluded(int column, int expected)
         {
+            // #823: column 4 costs 4 (it cost 3 until then).
             Assert.That(Columns.CostOf(column), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void CostRange_IsOneToFour_OneCostPerColumn()
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(Constants.CostMin, Is.EqualTo(1));
+                Assert.That(Constants.CostMax, Is.EqualTo(4));
+                Assert.That(Columns.CostOf(Columns.Max), Is.EqualTo(Constants.CostMax));
+            });
         }
 
         [TestCase(0)]
