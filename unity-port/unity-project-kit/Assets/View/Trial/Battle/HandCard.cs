@@ -13,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using Depiction;
 using TMPro;
 using Trial.Geometry;
@@ -54,6 +53,8 @@ namespace Trial.Battle
         public bool Lit;
         /// <summary>The source's prediction ('' for none).</summary>
         public string Preview = "";
+        /// <summary>Unity (#820): the power before the enemy's Guard and the Guard, for a blow it takes part of; null otherwise.</summary>
+        public GuardSplit Split;
         /// <summary>The status marks that apply (modsOf).</summary>
         public IReadOnlyList<CardMod> Mods = Array.Empty<CardMod>();
     }
@@ -869,16 +870,10 @@ namespace Trial.Battle
             CardValue printed = face.Values != null && face.Values.Count > 0 ? face.Values[0] : null;
             if (extra != null && !string.IsNullOrEmpty(extra.Preview))
             {
-                var parts = new StringBuilder(extra.Preview);
-                if (printed != null && (printed.Number ?? "") != extra.Preview)
-                {
-                    IReadOnlyList<CardMod> mods = extra.Mods ?? Array.Empty<CardMod>();
-                    parts.Append("（表の値 ").Append(printed.Number ?? "")
-                        .Append(mods.Count > 0 ? "・" + string.Join("・", mods.Select(m => m.Word + " " + m.Text)) : "")
-                        .Append(extra.Lit ? "・特性" : "")
-                        .Append("）");
-                }
-                rows.Add(new KeyValuePair<string, string>("予測値", parts.ToString()));
+                IReadOnlyList<CardMod> mods = extra.Mods ?? Array.Empty<CardMod>();
+                string row = BattlePlayer.DetailText.Predicted(extra.Preview, extra.Split, printed != null ? printed.Number ?? "" : null,
+                    mods.Select(m => m.Word + " " + m.Text).ToList(), extra.Lit);
+                rows.Add(new KeyValuePair<string, string>("予測値", row));
             }
             return rows.Count > 0 ? rows : null;
         }

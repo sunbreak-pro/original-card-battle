@@ -117,8 +117,24 @@ namespace Trial.Battle
         public Action<CardFace, int> OnTarget;
         /// <summary>preview(cardId, unit) → string: the one predicted value against enemy `unit` ('' for a refused card).</summary>
         public Func<string, int, string> Preview;
+        /// <summary>
+        /// previewGuard(cardId, unit) → the power before the Guard and the Guard of enemy `unit`, for a blow the enemy's Guard takes
+        /// part of; null otherwise. Unity (#820): the detail's 「予測値」 row shows it beside the HP the tag promises.
+        /// </summary>
+        public Func<string, int, GuardSplit> PreviewGuard;
         /// <summary>restingUnit() → the enemy a Tab at rest chose (−1 for none): a selection starts framed on it.</summary>
         public Func<int> RestingUnit;
+    }
+
+    /// <summary>
+    /// Unity (#820): a held blow's power before the enemy's Guard (the source's PreviewFor) and that Guard (the frame's). The tag
+    /// shows only what gets past (battle_ui_ux_v2 §3.2), so without these a fired 重撃 that the Guard swallows reads as the printed
+    /// value going through untouched.
+    /// </summary>
+    public sealed class GuardSplit
+    {
+        public string Raw = "";
+        public int Guard;
     }
 
     /// <summary>hand.setStatusMarks(marks): the player's 集中 / 強化 / 威圧 (review 21) — their marks beside the card values.</summary>

@@ -298,6 +298,33 @@ namespace Trial.Battle
             public static string Fell(string side) => "　" + side + "が倒れた";
         }
 
+        /// <summary>scene text (battle_ui_ux_v2 §3.13: the detail's 「今の判定と予測値の内訳」).</summary>
+        public static class DetailText
+        {
+            /// <summary>
+            /// The 「予測値」 row: the tag's number, then what makes it — the power before the enemy's Guard and the Guard when one
+            /// takes part of a blow (Unity, #820), and the printed value with the marks and the trait when the power differs from
+            /// it. `printed` null is a card with no value; `mods` are the marks' words (「強化 ×1.5」). Empty with no prediction.
+            /// </summary>
+            public static string Predicted(string preview, GuardSplit split, string printed, IReadOnlyList<string> mods, bool lit)
+            {
+                if (string.IsNullOrEmpty(preview)) return "";
+                var parts = new List<string>();
+                bool guarded = split != null && split.Guard > 0 && !string.IsNullOrEmpty(split.Raw) && split.Raw != preview;
+                if (guarded) parts.Add("威力 " + split.Raw + " − Guard " + Str(split.Guard));
+                // Against the power, not the HP: a fired bonus the Guard swallows whole leaves the HP equal to the printed value.
+                string power = guarded ? split.Raw : preview;
+                if (printed != null && printed != power)
+                {
+                    var basis = new List<string> { "表の値 " + printed };
+                    if (mods != null) basis.AddRange(mods);
+                    if (lit) basis.Add("特性");
+                    parts.Add(string.Join("・", basis));
+                }
+                return parts.Count == 0 ? preview : preview + "（" + string.Join("・", parts) + "）";
+            }
+        }
+
         /// <summary>scene text: who a log line's number is about (with two or three enemies, each by its name: LogWho).</summary>
         // js: scenes/battle/player.js:166
         private static string LogWhoOf(UnitSide side) => side == UnitSide.Player ? "自分" : side == UnitSide.Enemy ? "敵" : "";
@@ -623,6 +650,7 @@ namespace Trial.Battle
                     LiftOmenForHeld();
                 },
                 Preview = PreviewOf,
+                PreviewGuard = PreviewGuardOf,
                 OnTarget = (face, unit) =>
                 {
                     if (unit >= 0) _heldUnit = unit;
@@ -3041,12 +3069,35 @@ namespace Trial.Battle
             string raw = (target < 0 || !(_ctx.Source is ITrialSource trial) ? _ctx.Source.PreviewFor(cardId) : trial.PreviewFor(cardId, target)) ?? "";
             if (raw.Length == 0) return "";
             CardFace face = DepictionText.Find(FrameNow.Hand, cardId);
-            bool blow = face != null && face.Aim == CardAim.Single && face.HpLossOn != null && face.HpLossOn.Count > 0
-                && face.Values != null && face.Values.Any(v => v.Kind == CardValueKind.Power);
-            if (!blow) return raw;
-            int u = unit >= 0 ? unit : face.TargetUnit >= 0 ? face.TargetUnit : 0;
-            return Str(face.HpLossFor(u));
+            if (!IsBlow(face)) return raw;
+            return Str(face.HpLossFor(BlowUnit(face, unit)));
         }
+
+        /// <summary>
+        /// Unity (#820): for a blow the enemy's Guard takes part of, the power before that Guard and the Guard, both as the core
+        /// and the frame give them; null otherwise. The tag's number alone hides the bonus a Guard of the same size swallows.
+        /// </summary>
+        private GuardSplit PreviewGuardOf(string cardId, int unit)
+        {
+            if (!_alive) return null;
+            CardFace face = DepictionText.Find(FrameNow.Hand, cardId);
+            if (!IsBlow(face)) return null;
+            int target = TargetFor(unit);
+            string raw = (target < 0 || !(_ctx.Source is ITrialSource trial) ? _ctx.Source.PreviewFor(cardId) : trial.PreviewFor(cardId, target)) ?? "";
+            if (raw.Length == 0) return null;
+            int u = BlowUnit(face, unit);
+            IReadOnlyList<UnitFrame> foes = EnemyFrames(FrameNow);
+            int guard = u < foes.Count && foes[u] != null ? foes[u].Guard : 0;
+            return guard > 0 ? new GuardSplit { Raw = raw, Guard = guard } : null;
+        }
+
+        /// <summary>A card aimed at one enemy with a power value and an HP loss: its predicted value is the HP it takes, not its power.</summary>
+        private static bool IsBlow(CardFace face) =>
+            face != null && face.Aim == CardAim.Single && face.HpLossOn != null && face.HpLossOn.Count > 0
+            && face.Values != null && face.Values.Any(v => v.Kind == CardValueKind.Power);
+
+        /// <summary>The enemy a blow's numbers are read on: the one named, else the card's own target, else the first.</summary>
+        private static int BlowUnit(CardFace face, int unit) => unit >= 0 ? unit : face.TargetUnit >= 0 ? face.TargetUnit : 0;
 
         // ---- the api (player.js:2192-2328) ----------------------------------------------------------------
 
