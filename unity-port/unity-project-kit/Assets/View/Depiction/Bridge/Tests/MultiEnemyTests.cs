@@ -182,44 +182,91 @@ namespace Depiction.Bridge.Tests
             Assert.That(turn.After.Enemies[1].AimCells.Count > 0 || omens[1].SideGlyph == "", Is.True, "the crossbow aims at its own cells");
         }
 
-        // js: test/depiction/MultiEnemy.test.mjs:148
+        /// <summary>
+        /// js: test/depiction/MultiEnemy.test.mjs:148, one case per two-enemy line that fits (#755): the
+        /// line a+b and every three-enemy line a+b+c that fits, each under <see cref="SweepSeeds"/> seeds.
+        /// Together the cases play every line the roster can make, as the single test did; split, each
+        /// case is ~20 battles (Unity's per-test timeout applies to each, where the whole sweep of 1764
+        /// battles ran past 180 s under Mono), and a failure names the line's first two enemies.
+        /// A three-enemy line whose first two do not fit cannot fit, so no line is left out
+        /// (<see cref="EveryLineTheRosterCanMake_IsInOneCase_EveryPairButTwoLarge_EveryThreeOfOneCell"/>).
+        /// </summary>
+        [TestCaseSource(nameof(PairsThatFit))]
+        public void EveryTwoAndThreeEnemyLine_TheRosterCanMake_PlaysToTheEnd(string front, string second)
+        {
+            List<KeyValuePair<string[], int>> lines = LinesBeginningWith(front, second);
+            Assert.That(lines.Count, Is.GreaterThan(0), front + "+" + second + " fits");
+            int ended = 0;
+            int seeds = SweepSeeds;
+            foreach (KeyValuePair<string[], int> line in lines)
+            {
+                for (int seed = 1; seed <= seeds; seed++)
+                {
+                    CoreBattleSource source = Launch(line.Key, seed, line.Value);
+                    FightToTheEnd(source, string.Join("+", line.Key) + "@" + line.Value + "|" + seed);
+                    if (source.State.Result != GameResult.Ongoing) ended++;
+                }
+            }
+            Assert.That(ended, Is.EqualTo(lines.Count * seeds));
+        }
+
+        /// <summary>
+        /// The count the single sweep asserted before #755 split it, read without playing: the cases of
+        /// <see cref="EveryTwoAndThreeEnemyLine_TheRosterCanMake_PlaysToTheEnd"/> together hold every
+        /// two- and three-enemy line that fits, each once.
+        /// </summary>
         [Test]
-        public void EveryTwoAndThreeEnemyLine_TheRosterCanMake_PlaysToTheEnd()
+        public void EveryLineTheRosterCanMake_IsInOneCase_EveryPairButTwoLarge_EveryThreeOfOneCell()
         {
             List<string> ids = Enemies.All.Select(d => d.Id).ToList();
-            var lines = new List<string[]>();
-            foreach (string a in ids)
-            {
-                foreach (string b in ids) lines.Add(new[] { a, b });
-            }
+            int fitted = 0;
+            int threes = 0;
             foreach (string a in ids)
             {
                 foreach (string b in ids)
                 {
-                    foreach (string c in ids) lines.Add(new[] { a, b, c });
-                }
-            }
-            int fitted = 0;
-            int threes = 0;
-            int ended = 0;
-            int seeds = SweepSeeds;
-            foreach (string[] line in lines)
-            {
-                int cells = FieldFor(line);
-                if (cells < 0) continue;
-                fitted += 1;
-                if (line.Length == 3) threes += 1;
-                for (int seed = 1; seed <= seeds; seed++)
-                {
-                    CoreBattleSource source = Launch(line, seed, cells);
-                    FightToTheEnd(source, string.Join("+", line) + "@" + cells + "|" + seed);
-                    if (source.State.Result != GameResult.Ongoing) ended++;
+                    if (FieldFor(new[] { a, b }) >= 0) fitted += 1;
+                    foreach (string c in ids)
+                    {
+                        if (FieldFor(new[] { a, b, c }) < 0) continue;
+                        fitted += 1;
+                        threes += 1;
+                    }
                 }
             }
             // 13 × 13 ordered pairs less the 16 of two large enemies; the nine one-cell enemies in threes.
             Assert.That(fitted, Is.EqualTo(13 * 13 - 16 + 9 * 9 * 9));
             Assert.That(threes, Is.EqualTo(9 * 9 * 9));
-            Assert.That(ended, Is.EqualTo(fitted * seeds));
+            List<string[]> cases = PairsThatFit().Select(c => new[] { (string)c.Arguments[0], (string)c.Arguments[1] }).ToList();
+            Assert.That(cases.Count, Is.EqualTo(13 * 13 - 16), "one case per two-enemy line that fits");
+            Assert.That(cases.Sum(c => LinesBeginningWith(c[0], c[1]).Count), Is.EqualTo(fitted), "the cases play every line that fits");
+        }
+
+        /// <summary>The cases of the sweep: every ordered pair of the roster that fits on a line.</summary>
+        private static IEnumerable<TestCaseData> PairsThatFit()
+        {
+            List<string> ids = Enemies.All.Select(d => d.Id).ToList();
+            foreach (string a in ids)
+            {
+                foreach (string b in ids)
+                {
+                    if (FieldFor(new[] { a, b }) >= 0) yield return new TestCaseData(a, b);
+                }
+            }
+        }
+
+        /// <summary>The line front+second and every front+second+c, each that fits, with the narrowest field it fits on.</summary>
+        private static List<KeyValuePair<string[], int>> LinesBeginningWith(string front, string second)
+        {
+            var lines = new List<string[]> { new[] { front, second } };
+            foreach (EnemyDef c in Enemies.All) lines.Add(new[] { front, second, c.Id });
+            var fitted = new List<KeyValuePair<string[], int>>();
+            foreach (string[] line in lines)
+            {
+                int cells = FieldFor(line);
+                if (cells >= 0) fitted.Add(new KeyValuePair<string[], int>(line, cells));
+            }
+            return fitted;
         }
 
         // js: test/depiction/MultiEnemy.test.mjs:173
@@ -698,9 +745,12 @@ namespace Depiction.Bridge.Tests
         /// <summary>What the source still holds back (the JS reads source._pending directly).</summary>
         private static int PendingCount(CoreBattleSource source)
         {
-            FieldInfo field = typeof(CoreBattleSource).GetField("_pending", BindingFlags.NonPublic | BindingFlags.Instance);
-            return ((ICollection)field.GetValue(source)).Count;
+            return ((ICollection)PendingField.GetValue(source)).Count;
         }
+
+        /// <summary>Looked up once: FightToTheEnd reads it after every event.</summary>
+        private static readonly FieldInfo PendingField =
+            typeof(CoreBattleSource).GetField("_pending", BindingFlags.NonPublic | BindingFlags.Instance);
 
         /// <summary>The 開示度 the source's writer reads (the JS reads source._writer.Disclosure).</summary>
         private static int DisclosureOf(CoreBattleSource source)
