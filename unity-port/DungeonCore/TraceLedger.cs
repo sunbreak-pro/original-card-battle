@@ -13,6 +13,11 @@ namespace DungeonCore
     /// - A life receives from one trace only: the first one it steps on. Stepping on a second one opens
     ///   nothing, and that trace stays for a later life.
     /// - A layer's map holds one trace at a time: the oldest one left on that layer.
+    ///
+    /// The ledger is not saved and lives for one exploration session (the older View/Exploration screens hand it in
+    /// through RunStart.Traces). The saved record of the traces is the trial's lineage (InheritanceCore.Lineage): its
+    /// traces, generations and names outlive the session (Koudai-san 2026-11-03, #109). So the ledger keeps no next
+    /// generation number: DeathTrace.Life counts from 1 in each session, and nothing hands a saved trace back in here.
     /// </summary>
     public sealed class TraceLedger
     {

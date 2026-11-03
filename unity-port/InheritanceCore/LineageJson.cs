@@ -99,11 +99,16 @@ namespace InheritanceCore
                 Js.OptionalInt(Js.Get(l, "ReplacedSurvivor")));
         }
 
-        /// <summary>A saved lineage back, checked. Throws InheritanceRuleException on a save it cannot read.</summary>
+        /// <summary>
+        /// A saved lineage back, checked. An older version is converted through LineageMigrations.Steps first. Throws
+        /// InheritanceRuleException on a save it cannot read (a newer version among them).
+        /// </summary>
         // js: core/inheritance/Inheritance.js:1171
         public static Lineage FromJson(object? data)
         {
             if (!Js.IsObject(data)) throw new InheritanceRuleException("bad save: not an object");
+            // An older save is converted first, a newer one refused (LineageMigrations, #109).
+            if (data is JsonObject saved) data = LineageMigrations.Upgrade(saved);
             var version = Js.Get(data, "Version");
             if (!(Json.IsNumber(version) && Json.ToDouble(version) == SaveVersion))
                 throw new InheritanceRuleException($"bad save: version {Js.Display(version)}");
