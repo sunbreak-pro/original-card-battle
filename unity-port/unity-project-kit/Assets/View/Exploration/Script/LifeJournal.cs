@@ -27,7 +27,7 @@ namespace Exploration
         JournalPage MemoPage();
     }
 
-    public sealed class LifeJournal : IEnemyIntel, IJournalPages
+    public sealed class LifeJournal : IEnemyIntel, IJournalPages, ILegacyPages
     {
         private readonly Func<string, int> _learned;
         private readonly Dictionary<string, int> _entries = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -207,6 +207,84 @@ namespace Exploration
         /// legacy candidates shows. The page of terms and statuses is never on it.
         /// </summary>
         public IReadOnlyList<JournalLine> LegacyLines() => JournalLines.Candidates(DisclosureOf, EntryLevel, Memo);
+
+        /// <summary>
+        /// The filled pages a dying life leaves (dungeon_exploration_v4.md §7.3): <see cref="LegacyLines"/>, each
+        /// with the line as its title (<see cref="JournalLine.Text"/>) and what it holds, so <see cref="Take"/> can put
+        /// it back in a later life (#708).
+        /// </summary>
+        public IReadOnlyList<LegacyPage> FilledPages()
+        {
+            var pages = new List<LegacyPage>();
+            foreach (JournalLine line in LegacyLines())
+            {
+                LegacyPage page = PageOf(line);
+                if (page != null) pages.Add(page);
+            }
+            return pages;
+        }
+
+        /// <summary>
+        /// The enemies a legacy page puts back, with their 開示度 (1 or 2): an enemy page holds its one enemy. Empty for
+        /// any other page. The enemy's level belongs to the expedition's record of the battles, so the expedition
+        /// takes it in; <see cref="Take"/> does the rest of the page.
+        /// </summary>
+        public static IReadOnlyDictionary<string, int> EnemyLevelsOf(LegacyPage page)
+        {
+            var levels = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (page?.Levels == null || !EnemyJournal.All.Any(e => EnemyJournal.PageId(e.Id) == page.PageId)) return levels;
+            foreach (KeyValuePair<string, int> pair in page.Levels)
+            {
+                int level = EnemyJournal.Clamp(pair.Value);
+                if (EnemyJournal.Find(pair.Key) != null && level >= EnemyJournal.MovesDisclosure) levels[pair.Key] = level;
+            }
+            return levels;
+        }
+
+        /// <summary>
+        /// Puts a page a trace handed on into this life: a dungeon page raises each of its entries to the level it
+        /// held (the higher of the two stays), a memo note is written again with its words and its enemy. An enemy
+        /// page is the expedition's (<see cref="EnemyLevelsOf"/>), and a page this journal does not know changes
+        /// nothing.
+        /// </summary>
+        public void Take(LegacyPage page)
+        {
+            if (page == null) throw new ArgumentNullException(nameof(page));
+            if (DungeonJournal.All.Select(e => e.Layer).Distinct().Any(layer => DungeonJournal.PageId(layer) == page.PageId))
+            {
+                if (page.Levels == null) return;
+                foreach (KeyValuePair<string, int> pair in page.Levels)
+                {
+                    if (pair.Value >= DungeonJournal.MetDisclosure) Raise(pair.Key, Math.Min(pair.Value, DungeonJournal.FullDisclosure));
+                }
+                return;
+            }
+            if (EnemyJournal.All.Any(e => EnemyJournal.PageId(e.Id) == page.PageId)) return;
+            if (!string.IsNullOrWhiteSpace(page.Text)) Memo.Write(page.Text, EnemyJournal.Find(page.About) != null ? page.About : null);
+        }
+
+        private LegacyPage PageOf(JournalLine line)
+        {
+            switch (line.Tab)
+            {
+                case JournalTab.Enemy:
+                    EnemyJournalEntry enemy = EnemyJournal.All.FirstOrDefault(e => EnemyJournal.PageId(e.Id) == line.PageId);
+                    if (enemy == null) return null;
+                    return new LegacyPage(line.PageId, line.Text, new Dictionary<string, int>(StringComparer.Ordinal) { [enemy.Id] = DisclosureOf(enemy.Id) });
+                case JournalTab.Dungeon:
+                    int layer = DungeonJournal.All.Select(e => e.Layer).Distinct().FirstOrDefault(l => DungeonJournal.PageId(l) == line.PageId);
+                    if (layer == 0) return null;
+                    var entries = DungeonJournal.OfLayer(layer)
+                        .Where(e => EntryLevel(e.Id) >= DungeonJournal.MetDisclosure)
+                        .ToDictionary(e => e.Id, e => EntryLevel(e.Id), StringComparer.Ordinal);
+                    return new LegacyPage(line.PageId, line.Text, entries);
+                case JournalTab.Memo:
+                    MemoNote note = Memo.Notes.FirstOrDefault(n => n.Id == line.PageId);
+                    return note == null ? null : new LegacyPage(line.PageId, line.Text, null, note.Text, note.EnemyId);
+                default:
+                    return null;
+            }
+        }
 
         // ---- helpers ----
 

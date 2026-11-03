@@ -36,13 +36,23 @@ namespace DungeonCore
     public sealed record LegacyCard(string CardId, int Rank, string Name);
 
     /// <summary>
-    /// A filled journal page, as the trace keeps it: an id and the one line the legacy list prints. The
-    /// page's content stays the journal's (#107); the exploration core only carries the id and the line.
+    /// A filled journal page, as the trace keeps it: an id and the one line the legacy list prints. What the
+    /// page holds stays the journal's (#107, #708); the exploration core only carries it, so the life that
+    /// collects the trace can put the page back. It reads none of the three fields below.
     /// </summary>
-    public sealed record LegacyPage(string PageId, string Title);
+    /// <param name="PageId">The page's id in the journal.</param>
+    /// <param name="Title">The one line the legacy list prints.</param>
+    /// <param name="Levels">
+    /// How far the page is filled, by what it tells of and its 開示度: an enemy page holds its enemy, a dungeon
+    /// page each entry it knows. Null for a page with no levels (a memo note).
+    /// </param>
+    /// <param name="Text">A memo note's words as written; null for a page that holds none.</param>
+    /// <param name="About">The roster id of the enemy a memo note is about; null for none.</param>
+    public sealed record LegacyPage(
+        string PageId, string Title, IReadOnlyDictionary<string, int>? Levels = null, string? Text = null, string? About = null);
 
-    /// <summary>One line of a trace's candidate list.</summary>
-    public sealed record LegacyCandidate(LegacyKind Kind, string Id, int Rank, string Title)
+    /// <summary>One line of a trace's candidate list. A page's candidate keeps the page, so choosing it hands the whole page on.</summary>
+    public sealed record LegacyCandidate(LegacyKind Kind, string Id, int Rank, string Title, LegacyPage? Page = null)
     {
         /// <summary>The key the choice names this candidate by. A card and a page never share one.</summary>
         public string Key => Heritage.KeyOf(Kind, Id);
@@ -189,7 +199,7 @@ namespace DungeonCore
             foreach (LegacyPage page in pages ?? Enumerable.Empty<LegacyPage>())
             {
                 if (page != null && seen.Add(KeyOf(LegacyKind.Page, page.PageId)))
-                    list.Add(new LegacyCandidate(LegacyKind.Page, page.PageId, 0, page.Title));
+                    list.Add(new LegacyCandidate(LegacyKind.Page, page.PageId, 0, page.Title, page));
             }
 
             return list;
@@ -234,7 +244,7 @@ namespace DungeonCore
             {
                 if (!chosen.Contains(candidate.Key)) continue;
                 if (candidate.Kind == LegacyKind.Card) cards.Add(new LegacyCard(candidate.Id, candidate.Rank, candidate.Title));
-                else pages.Add(new LegacyPage(candidate.Id, candidate.Title));
+                else pages.Add(candidate.Page ?? new LegacyPage(candidate.Id, candidate.Title));
             }
             return new Bequest(trace.Id, cards, pages);
         }

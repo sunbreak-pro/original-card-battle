@@ -136,6 +136,24 @@ namespace DungeonCore.Tests
         }
 
         [Test]
+        public void ChoosingAPage_HandsOnWhatItHolds_NotOnlyItsLine()
+        {
+            var held = new LegacyPage("enemy-x", "敵｜x｜開示度 2", new Dictionary<string, int> { ["x"] = 2 });
+            var note = new LegacyPage("memo-1", "メモ｜メモ 1｜罠", null, "罠に注意", "x");
+            ExplorationState fallen = ExplorationReducer.ReportBattle(Enter(2, 7UL), 0, 0);
+            DeathTrace trace = Heritage.Leave(fallen, 1, 1, null, new LegacyCard[0], new[] { held, note });
+
+            Bequest bequest = Heritage.Choose(trace, new[] { "page:memo-1", "page:enemy-x" });
+            Assert.Multiple(() =>
+            {
+                Assert.That(bequest.Pages, Is.EqualTo(new[] { held, note }), "in the list's order, the same pages");
+                Assert.That(bequest.Pages[0].Levels["x"], Is.EqualTo(2));
+                Assert.That(bequest.Pages[1].Text, Is.EqualTo("罠に注意"));
+                Assert.That(bequest.Pages[1].About, Is.EqualTo("x"));
+            });
+        }
+
+        [Test]
         public void Choosing_RefusesMoreThanThree_UnknownKeys_AndTwiceTheSame()
         {
             DeathTrace trace = DeepTrace();
