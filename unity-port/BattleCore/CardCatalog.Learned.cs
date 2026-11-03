@@ -1,9 +1,10 @@
 namespace BattleCore
 {
     /// <summary>
-    /// swordsman_cards_v4.md §3: the learned forty (#41-#80), in canon order, grouped by where they
-    /// are found (boss 9 / elite 8 / exploration 23). None of them is 素直: every one carries a trait,
-    /// and #80 背水の陣 is the one card with two.
+    /// swordsman_cards_v4.md §3: the learned thirty-six (#41-#79 less the four v4.10 dropped, #824),
+    /// in canon order, grouped by where they are found (boss 8 / elite 7 / exploration 21). None of
+    /// them is 素直: every one carries a trait. The two stances v4.10 added (#84 背水の陣, #85 覚醒)
+    /// come with their rules in #826.
     /// </summary>
     public static partial class CardCatalog
     {
@@ -26,7 +27,7 @@ namespace BattleCore
 
         /// <summary>#43. Stance: 3 Guard on turns that start at a gap of 2 or more; a follow-up into an attack omen.</summary>
         public static readonly CardDef PurgeFlash = new CardDef(
-            "purge_flash", "浄化の一閃", BattleAttribute.Stance, 2,
+            "purge_flash", "遠間の構え", BattleAttribute.Stance, 2,
             new Face(Stance: new StanceDef(StanceHook.TurnStart, StanceWhen.GapAtLeast, Threshold: 2, Guard: 3)),
             OmenIs(OmenKind.Attack, TraitEffect.FollowUp, Constants.FollowUpPower),
             Targets: TargetKind.Self,
@@ -46,18 +47,11 @@ namespace BattleCore
         /// 威力 +3 that had no attack face left to land on).
         /// </summary>
         public static readonly CardDef AbyssStance = new CardDef(
-            "abyss_stance", "深淵の構え", BattleAttribute.Stance, 3,
+            "abyss_stance", "変幻の構え", BattleAttribute.Stance, 3,
             new Face(Stance: new StanceDef(StanceHook.AttackBonus, StanceWhen.GapAtMost, Threshold: 0, Power: 5)),
             AtMost(0, TraitEffect.FollowUp, Constants.FollowUpPower),
             Targets: TargetKind.Self,
             Description: "引きずり込んだ間合いで押し切る型");
-
-        /// <summary>#46. Hits at 1〜2 and pulls the foe one cell in; +5 once it is broken.</summary>
-        public static readonly CardDef HaulStep = new CardDef(
-            "haul_step", "手繰りの歩み", BattleAttribute.Attack, 1,
-            new Face(Power: 5, Push: -1, Reach: new Reach(1, 2)),
-            When(TraitCondition.Broken, TraitEffect.PowerBonus, 5),
-            Description: "崩れた相手を手繰り寄せて潰す");
 
         // ---- Boss: 歪みの根 ----
 
@@ -112,13 +106,6 @@ namespace BattleCore
             new Face(Reach: new Reach(0, 2), Statuses: new[] { Self(StatusKind.Empower, 2), Foe(StatusKind.Fatigue, 2) }),
             SelfHas(StatusKind.Empower, TraitEffect.FollowUp, Constants.FollowUpPower),
             Description: "咆哮で己を奮わせ相手を疲れさせる");
-
-        /// <summary>#53. Hits at 0〜2 (two faces, width 3: 8), then steps in one; +5 when adjacent.</summary>
-        public static readonly CardDef FangRush = new CardDef(
-            "fang_rush", "牙の突進", BattleAttribute.Attack, 2,
-            new Face(Power: 8, Move: 1, Reach: new Reach(0, 2)),
-            AtMost(0, TraitEffect.PowerBonus, 5),
-            Description: "牙のように飛びかかる");
 
         // ---- Elite: 不退の槍竜 (#55 #57) / decided with the 100% version (#54 #56) ----
 
@@ -211,13 +198,6 @@ namespace BattleCore
             Targets: TargetKind.Self,
             Description: "受けを固めて歩み寄る");
 
-        /// <summary>#65. Bleed 1 on the hit, one more stack once the foe is broken.</summary>
-        public static readonly CardDef ThornCut = new CardDef(
-            "thorn_cut", "棘斬り", BattleAttribute.Attack | BattleAttribute.Skill, 1,
-            new Face(Power: 5, Statuses: new[] { Foe(StatusKind.Bleed, 1) }),
-            When(TraitCondition.Broken, TraitEffect.Status, grant: Foe(StatusKind.Bleed, 1)),
-            Description: "崩れた相手を深く裂く");
-
         /// <summary>#66. Guard with focus and regen; +1 recovery next turn while focused.</summary>
         public static readonly CardDef CalmGuard = new CardDef(
             "calm_guard", "静の受け", BattleAttribute.Guard | BattleAttribute.Skill, 3,
@@ -235,12 +215,12 @@ namespace BattleCore
             AtMost(0, TraitEffect.GuardBonus, 3),
             Description: "間近で弾いて手を鈍らせる");
 
-        /// <summary>#68. Attack and Guard; as the third play or later, half the Guard joins the power.</summary>
+        /// <summary>#68. Attack only since v4.10 (#824): a 転換 needs a Guard face, so the finisher became a heavy blow.</summary>
         public static readonly CardDef CrescentCut = new CardDef(
-            "crescent_cut", "三日月斬り", BattleAttribute.Attack | BattleAttribute.Guard, 2,
-            new Face(Power: 10, Guard: 6),
-            When(TraitCondition.Finisher, TraitEffect.Convert),
-            Description: "手を尽くした後、受けを刃に変える");
+            "crescent_cut", "三日月斬り", BattleAttribute.Attack, 2,
+            new Face(Power: 15),
+            When(TraitCondition.Finisher, TraitEffect.HeavyBlow),
+            Description: "手を尽くした後、弧を描いて大きく振り抜く");
 
         /// <summary>#69. Adjacent only (width 1, so 11, not the 10 of 0〜1) with intimidate and fatigue; +3 on a chain.</summary>
         public static readonly CardDef PommelStrike = new CardDef(
@@ -320,7 +300,7 @@ namespace BattleCore
         /// the 重撃 that had no attack face left to land on).
         /// </summary>
         public static readonly CardDef WolfStance = new CardDef(
-            "wolf_stance", "狼の構え", BattleAttribute.Stance, 2,
+            "wolf_stance", "大狼の構え", BattleAttribute.Stance, 2,
             new Face(Stance: new StanceDef(StanceHook.AttackBonus, StanceWhen.TargetHasStatus, Status: StatusKind.Bleed, Power: 3)),
             SelfHas(StatusKind.Empower, TraitEffect.FollowUp, Constants.FollowUpPower),
             Targets: TargetKind.Self,
@@ -332,13 +312,5 @@ namespace BattleCore
             new Face(Power: 12, Move: 1, Reach: new Reach(1, 2)),
             OmenIs(OmenKind.Move, TraitEffect.PowerBonus, 5),
             Description: "動こうとした影を踏んで斬る");
-
-        /// <summary>#80. The one card with two traits: +5 at a gap of 2 or more, and +3 more when desperate. Keeps §17.4's 8 rather than the band table's 7.</summary>
-        public static readonly CardDef LastStand = new CardDef(
-            "last_stand", "背水の陣", BattleAttribute.Attack, 1,
-            new Face(Power: 8, Reach: new Reach(1, 2)),
-            AtLeast(2, TraitEffect.PowerBonus, 5),
-            Description: "退いて追い詰められてこそ伸びる一撃",
-            ExtraTrait: When(TraitCondition.Desperate, TraitEffect.PowerBonus, 3));
     }
 }

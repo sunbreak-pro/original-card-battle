@@ -92,7 +92,7 @@ namespace Depiction.Bridge.Tests
         /// </summary>
         public const string ReplayDeck =
             "overhead:1,flat_strike:1,reach_thrust:1,brace:1,iron_block:2,deep_breath:1,first_aid:1,observe:1," +
-            "back_leap:1,slide_step:1,stone_throw:2,parry_cut:1,twist_away:1,abyss_stance:1,haul_step:1,bulwark:2," +
+            "back_leap:1,slide_step:1,stone_throw:2,guard_thrust:1,twist_away:1,abyss_stance:1,line_lash:1,bulwark:2," +
             "whirlwind:1,snap_guard:1,deflect:1,pommel_strike:1,keen_eye:1,resolve:1,gale_thrust:2,anchor_stance:1,vital_thrust:1";
 
         [Test]

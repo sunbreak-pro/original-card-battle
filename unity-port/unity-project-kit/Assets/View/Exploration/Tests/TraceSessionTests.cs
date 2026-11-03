@@ -74,7 +74,7 @@ namespace Exploration.Tests
             DeathTrace trace = session.Traces.Traces.Single();
             Assert.That(source.Asked, Is.EqualTo(1));
             Assert.That(trace.Name, Is.EqualTo("ソラ"));
-            Assert.That(trace.Candidates.Select(c => c.Key), Is.EqualTo(new[] { "card:thrust", "page:p1" }),
+            Assert.That(trace.Candidates.Select(c => c.Key), Is.EqualTo(new[] { "card:side_sweep", "page:p1" }),
                 "a death on layer 1 keeps step 1 only");
         }
 
@@ -90,13 +90,13 @@ namespace Exploration.Tests
             Assert.That(session.MapIsLive, Is.True, "the choice waits beside the map, like a card offer");
             Assert.That(TraceNodeLines(session), Is.EqualTo(new[] { "この生が受け取る痕跡はここ" }));
 
-            var four = new[] { "card:thrust", "card:kesa_cut", "page:p1", "page:p2" };
+            var four = new[] { "card:side_sweep", "card:kesa_cut", "page:p1", "page:p2" };
             Assert.That(session.TakeLegacy(four), Is.Null, "more than three is refused");
             Assert.That(session.PendingTrace?.Id, Is.EqualTo(1), "and the trace still waits");
 
-            Bequest bequest = session.TakeLegacy(new[] { "page:p2", "card:thrust" });
+            Bequest bequest = session.TakeLegacy(new[] { "page:p2", "card:side_sweep" });
             Assert.That(bequest, Is.Not.Null);
-            Assert.That(bequest.Cards.Select(c => c.CardId), Is.EqualTo(new[] { "thrust" }));
+            Assert.That(bequest.Cards.Select(c => c.CardId), Is.EqualTo(new[] { "side_sweep" }));
             Assert.That(bequest.Pages.Select(p => p.PageId), Is.EqualTo(new[] { "p2" }));
             Assert.That(session.Traces.Traces, Is.Empty, "collected");
             Assert.That(session.PendingTrace, Is.Null);
@@ -121,7 +121,7 @@ namespace Exploration.Tests
         {
             var session = Explorable(new ExplorationSession(new RunStart { Seed = 4, Traces = Ledger(1, 2) }));
             WalkTo(session, NodeKind.Trace);
-            Assert.That(session.TakeLegacy(new[] { "card:thrust" }), Is.Not.Null);
+            Assert.That(session.TakeLegacy(new[] { "card:side_sweep" }), Is.Not.Null);
 
             WalkToLayer(session, 2);
             Assert.That(session.State.Map.CountOf(NodeKind.Trace), Is.EqualTo(1), "layer 2 still shows its trace");
@@ -148,7 +148,7 @@ namespace Exploration.Tests
             for (int i = 0; i < layers.Length; i++)
             {
                 var candidates = Heritage.Candidates(layers[i],
-                    new[] { new LegacyCard("thrust", 1, "鋭い突き"), new LegacyCard("kesa_cut", 1, "深袈裟") },
+                    new[] { new LegacyCard("side_sweep", 1, "大横薙ぎ"), new LegacyCard("kesa_cut", 1, "深袈裟") },
                     new[] { new LegacyPage("p1", "頁 1"), new LegacyPage("p2", "頁 2") });
                 ledger = ledger.Add(new DeathTrace(i + 1, i + 1, Heritage.StandInName(i + 1),
                     new DeathPlace(layers[i], NodeKind.Battle), DeathCause.Fallen, candidates));
@@ -208,7 +208,7 @@ namespace Exploration.Tests
                 get
                 {
                     Asked++;
-                    return new[] { new LegacyCard("thrust", 1, "鋭い突き"), new LegacyCard("overhead", 2, "雷落とし") };
+                    return new[] { new LegacyCard("side_sweep", 1, "大横薙ぎ"), new LegacyCard("overhead", 2, "雷落とし") };
                 }
             }
 

@@ -44,7 +44,7 @@ namespace Depiction.Bridge.Tests
             writer.Opening(state);
             var events = new List<BattleEvent>
             {
-                new CardPlayed(Actor.Player, new CardInstance("thrust-0", CardCatalog.Thrust), 0),
+                new CardPlayed(Actor.Player, new CardInstance("side_sweep-0", CardCatalog.SideSweep), 0),
                 new Reflected(Actor.Enemy, Actor.Player, 5, 2, 3, 0, 47),
             };
             List<Cue> cues = writer.Write(events, state)[0].Cues;
@@ -61,31 +61,32 @@ namespace Depiction.Bridge.Tests
             BattleState state = TurnLoop.Start(BattleSetup.Slice(), NoShuffle).State;
             var writer = new CoreScriptWriter(state.EnemyDef);
             writer.Opening(state);
-            StanceDef rock = CardCatalog.RockStance.Face.Stance;
+            StanceDef far = CardCatalog.PurgeFlash.Face.Stance;
             var events = new List<BattleEvent>
             {
-                new CardPlayed(Actor.Player, new CardInstance("rock_stance-0", CardCatalog.RockStance), 3),
-                new StanceSet(Actor.Player, "rock_stance", "岩の構え", rock),
+                new CardPlayed(Actor.Player, new CardInstance("purge_flash-0", CardCatalog.PurgeFlash), 3),
+                new StanceSet(Actor.Player, "purge_flash", "遠間の構え", far),
                 new StatusApplied(Actor.Player, Actor.Player, StatusKind.Empower, 2, 2, false),
                 new StatusConsumed(Actor.Player, StatusKind.Empower, 1),
             };
             DepictionEvent ev = writer.Write(events, state)[0];
 
-            Assert.That(ev.Cues.Where(c => c.Kind == CueKind.TraitFire).Select(c => c.Text), Is.EqualTo(new[] { "構え・岩の構え" }));
+            Assert.That(ev.Cues.Where(c => c.Kind == CueKind.TraitFire).Select(c => c.Text), Is.EqualTo(new[] { "構え・遠間の構え" }));
             Assert.That(ev.Cues.Where(c => c.Kind == CueKind.StatusChange).Select(c => (c.Amount, c.StacksAfter)),
                 Is.EqualTo(new[] { (2, 2), (-1, 1) }));
             // battle-visual-v1 §4.6 (#605): the stance is on the list at the edge, not among the chips.
-            Assert.That(ev.After.Player.Stances.Select(r => r.Name + "×" + r.Count), Is.EqualTo(new[] { "岩の構え×1" }));
+            Assert.That(ev.After.Player.Stances.Select(r => r.Name + "×" + r.Count), Is.EqualTo(new[] { "遠間の構え×1" }));
             Assert.That(ev.After.Player.Statuses.Select(c => c.Label + c.Stacks), Is.EqualTo(new[] { "強化1" }));
         }
 
         [Test]
         public void TheRootsBreath_StopsTheStanceForATurn_AndTheScreenSaysWhenItStopsAndComesBack()
         {
-            // #334 (roster §6.4 root_st): 岩の構え placed in turn 1, stopped by the breath in turn 2,
-            // back at the start of turn 4. The frame stays; the two lines say what happened.
-            var deck = new List<CardInstance> { new CardInstance("rock_stance-0", CardCatalog.RockStance) };
-            for (int i = deck.Count; i < Constants.DeckMin; i++) deck.Add(new CardInstance("thrust-" + i, CardCatalog.Thrust));
+            // #334 (roster §6.4 root_st): 遠間の構え (Guard at the start of a turn begun at gap 2 or more)
+            // placed in turn 1, stopped by the breath in turn 2, back at the start of turn 4. The frame
+            // stays; the two lines say what happened.
+            var deck = new List<CardInstance> { new CardInstance("purge_flash-0", CardCatalog.PurgeFlash) };
+            for (int i = deck.Count; i < Constants.DeckMin; i++) deck.Add(new CardInstance("side_sweep-" + i, CardCatalog.SideSweep));
             BattleState state = TurnLoop.Start(new BattleSetup(Enemies.DistortionRoot, deck, 8, StartGap: 3), NoShuffle).State;
             var writer = new CoreScriptWriter(state.EnemyDef);
             writer.Opening(state);
@@ -100,14 +101,14 @@ namespace Depiction.Bridge.Tests
             }
 
             Step(TurnLoop.BeginPlayerTurn(state, NoShuffle));
-            Step(TurnLoop.PlayCard(state, "rock_stance-0", NoShuffle));
+            Step(TurnLoop.PlayCard(state, "purge_flash-0", NoShuffle));
             for (int turn = 1; turn <= 3; turn++)
             {
                 Step(TurnLoop.EndTurn(state, NoShuffle));
                 Step(TurnLoop.BeginPlayerTurn(state, NoShuffle));
             }
 
-            Assert.That(lines.Where(t => t.StartsWith("構え")), Is.EqualTo(new[] { "構え・岩の構え", "構え停止・岩の構え", "構え復帰・岩の構え" }));
+            Assert.That(lines.Where(t => t.StartsWith("構え")), Is.EqualTo(new[] { "構え・遠間の構え", "構え停止・遠間の構え", "構え復帰・遠間の構え" }));
         }
 
         [Test]
@@ -181,17 +182,21 @@ namespace Depiction.Bridge.Tests
         {
             Assert.Multiple(() =>
             {
-                Assert.That(CoreText.TraitLines(CardCatalog.LastStand), Is.EqualTo("間合い2以上 +5 ／ 死力 +3"));
+                // A card with two traits (none in the catalog since v4.10 dropped #80 背水の陣, #824).
+                var twoTraits = new CardDef("two_traits", "二つの特性", BattleAttribute.Attack, 1, new Face(Power: 8, Reach: new Reach(1, 2)),
+                    new BattleCore.Trait(BattleCore.TraitCondition.GapAtLeast, BattleCore.TraitEffect.PowerBonus, 5, Threshold: 2),
+                    ExtraTrait: new BattleCore.Trait(BattleCore.TraitCondition.Desperate, BattleCore.TraitEffect.PowerBonus, 3));
+                Assert.That(CoreText.TraitLines(twoTraits), Is.EqualTo("間合い2以上 +5 ／ 死力 +3"));
                 Assert.That(CoreText.TraitLines(CardCatalog.WaterStance), Is.EqualTo("移動後 コスト-1"));
                 Assert.That(CoreText.TraitLines(CardCatalog.SpiritRoar), Is.EqualTo("相手出血 脆化+2"));
                 Assert.That(CoreText.TraitLines(CardCatalog.Resolve), Is.EqualTo("死力 自分再生+1"));
                 Assert.That(CoreText.TraitLines(CardCatalog.PurgeFlash), Is.EqualTo("予兆攻撃 追撃"));
-                Assert.That(CoreText.TraitLines(CardCatalog.Thrust), Is.EqualTo(""), "素直");
+                Assert.That(CoreText.TraitLines(CardCatalog.SideSweep), Is.EqualTo(""), "素直");
                 Assert.That(CoreText.Describe(CardCatalog.Focus.Face, CardCatalog.Focus.Attributes),
                     Is.EqualTo("自分に集中を 2 付与する。自分に強化を 2 付与する。カードを 1 枚引く。"));
                 Assert.That(CoreText.Describe(CardCatalog.FlatStrike.Face, CardCatalog.FlatStrike.Attributes), Is.EqualTo("敵に 7 ダメージ。崩し 1。"));
                 Assert.That(CoreText.Describe(CardCatalog.FirstAid.Face, CardCatalog.FirstAid.Attributes), Is.EqualTo("HP を 15 回復する。"));
-                Assert.That(CoreText.Describe(CardCatalog.RockStance.Face, CardCatalog.RockStance.Attributes), Is.EqualTo("構え: ターン開始 Guard +3。"));
+                Assert.That(CoreText.Describe(new Face(Stance: new StanceDef(StanceHook.TurnStart, Guard: 3)), BattleAttribute.Stance), Is.EqualTo("構え: ターン開始 Guard +3。"));
                 Assert.That(CoreText.StanceText(CardCatalog.WaterStance.Face.Stance), Is.EqualTo("間合い 2 以上で始まるターンに回復 +2"));
                 Assert.That(CoreText.StanceText(CardCatalog.MistStep.Face.Stance), Is.EqualTo("間合い 2 以上で終えたターンに Guard +3、次の回復 +2"));
                 Assert.That(CoreText.StanceText(CardCatalog.PriestPrayer.Face.Stance), Is.EqualTo("被弾のたび（ターン 1 回）スタミナ +1、Guard +3"));
@@ -204,10 +209,8 @@ namespace Depiction.Bridge.Tests
         }
 
         // #769: the face column of swordsman_cards_v4 §3, copied word for word, so the table and the
-        // card read the same. #83 鱗立ての構え is in the table but not in the catalog yet.
+        // card read the same. #83 竜鱗の構え and v4.10's #84 / #85 are in the table but not in the catalog yet.
         [TestCase("water_stance", "間合い 2 以上で始まるターンに回復 +2")]
-        [TestCase("rock_stance", "ターン開始 Guard +3")]
-        [TestCase("flow_stance", "移動後の攻撃 威力 +5")]
         [TestCase("iron_wall", "毎ターン 1 回、防御のカードのコスト −1")]
         [TestCase("priest_prayer", "被弾のたび（ターン 1 回）スタミナ +1、Guard +3")]
         [TestCase("purge_flash", "間合い 2 以上で始まるターンに Guard +3")]
@@ -234,7 +237,7 @@ namespace Depiction.Bridge.Tests
             }
             Assert.That(stances, Is.EquivalentTo(new[]
             {
-                "water_stance", "rock_stance", "flow_stance", "iron_wall", "priest_prayer", "purge_flash", "abyss_stance",
+                "water_stance", "iron_wall", "priest_prayer", "purge_flash", "abyss_stance",
                 "root_stride", "root_bind", "spear_wall", "mist_step", "keen_eye", "anchor_stance", "wolf_stance",
             }));
         }

@@ -14,10 +14,10 @@ namespace Depiction.Bridge.Tests
 
         private static readonly CardDef[] Kinds =
         {
-            CardCatalog.RockStance, CardCatalog.Brace, CardCatalog.KesaCut, CardCatalog.Feint, CardCatalog.ReachThrust,
+            CardCatalog.PurgeFlash, CardCatalog.Brace, CardCatalog.KesaCut, CardCatalog.Feint, CardCatalog.ReachThrust,
         };
 
-        /// <summary>20 cards, dealt in this order (NoShuffle): the first hand holds 岩の構え and 呼吸を整える (a card on oneself, so the gap does not matter).</summary>
+        /// <summary>20 cards, dealt in this order (NoShuffle): the first hand holds 遠間の構え and 呼吸を整える (a card on oneself, so the gap does not matter).</summary>
         private static List<CardInstance> Deck() => Cards.BuildDeck(Kinds, 4);
 
         private static (CoreScriptWriter Writer, BattleState State, DepictionFrame Opening) Opened()
@@ -64,9 +64,9 @@ namespace Depiction.Bridge.Tests
             writer.Write(begin.Events, begin.State);
             BattleState now = begin.State;
 
-            CardInstance stance = now.Hand.FirstOrDefault(c => c.Def == CardCatalog.RockStance);
-            CardInstance other = now.Hand.FirstOrDefault(c => c.Def != CardCatalog.RockStance && c.Def.Cost <= now.Player.Stamina);
-            Assert.That(stance, Is.Not.Null, "the deck is dealt unshuffled, 岩の構え first");
+            CardInstance stance = now.Hand.FirstOrDefault(c => c.Def == CardCatalog.PurgeFlash);
+            CardInstance other = now.Hand.FirstOrDefault(c => c.Def != CardCatalog.PurgeFlash && c.Def.Cost <= now.Player.Stamina);
+            Assert.That(stance, Is.Not.Null, "the deck is dealt unshuffled, 遠間の構え first");
             Assert.That(other, Is.Not.Null, "and the self card after it");
 
             StepResult played = TurnLoop.PlayCard(now, other.InstanceId, NoShuffle);
@@ -84,7 +84,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(afterStance.Piles.Exile, Is.EqualTo(1), "a stance card stays out of this battle");
             // battle_ui_ux_v2 §5.11 順 4 (#455): the core's CardExiled sends the card's ghost to the exile pile.
             Assert.That(stanceEvents.Single(e => e.Kind == DepictionEventKind.PlayCard).PlayedTo, Is.EqualTo(PileKind.Exile));
-            Assert.That(afterStance.Piles.ExileCards.Select(c => c.RowText), Is.EqualTo(new[] { CardCatalog.RockStance.Name + " 1 / 4" }));
+            Assert.That(afterStance.Piles.ExileCards.Select(c => c.RowText), Is.EqualTo(new[] { CardCatalog.PurgeFlash.Name + " 1 / 4" }));
         }
 
         [Test]

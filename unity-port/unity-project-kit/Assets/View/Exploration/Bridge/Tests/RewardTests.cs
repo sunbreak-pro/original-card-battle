@@ -150,13 +150,14 @@ namespace Exploration.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(CardPile.Of(1), Is.EqualTo(new[] { CardCatalog.ShieldPush.Id, CardCatalog.SnapGuard.Id, CardCatalog.LeapBack.Id }), "#58〜#60");
-                Assert.That(CardPile.Of(7).Last(), Is.EqualTo(CardCatalog.LastStand.Id), "#80");
-                Assert.That(Enumerable.Range(1, 7).SelectMany(CardPile.Of).Count(), Is.EqualTo(23), "#58〜#80");
+                Assert.That(CardPile.Of(7).Last(), Is.EqualTo(CardCatalog.ShadowLunge.Id), "#79");
+                Assert.That(Enumerable.Range(1, 7).SelectMany(CardPile.Of).Count(), Is.EqualTo(21), "#58〜#79 less #65");
             });
         }
 
-        // swordsman_cards_v4.md §3: 探索の発見 23 枚 (#58〜#80) — layers 1〜5 take three cards each in number order,
-        // layers 6 and 7 take four. Written out by card, so a layer's pile that moves in BattleRewards fails here.
+        // swordsman_cards_v4.md §3 (v4.10, #824): 探索の発見 — layers 1〜5 take three cards each in number order
+        // and layer 6 four; v4.10 dropped #65 (layer 3) and #80 (layer 7), and #84 背水の陣 joins layer 7 with
+        // #826. Written out by card, so a layer's pile that moves in BattleRewards fails here.
         [Test]
         public void ThePile_HoldsTheCardsOfEveryLayer()
         {
@@ -164,21 +165,22 @@ namespace Exploration.Bridge.Tests
             {
                 Assert.That(CardPile.Of(1), Is.EqualTo(new[] { CardCatalog.ShieldPush.Id, CardCatalog.SnapGuard.Id, CardCatalog.LeapBack.Id }), "layer 1: #58〜#60");
                 Assert.That(CardPile.Of(2), Is.EqualTo(new[] { CardCatalog.RisingCut.Id, CardCatalog.LegSweep.Id, CardCatalog.DashIn.Id }), "layer 2: #61〜#63");
-                Assert.That(CardPile.Of(3), Is.EqualTo(new[] { CardCatalog.GuardWalk.Id, CardCatalog.ThornCut.Id, CardCatalog.CalmGuard.Id }), "layer 3: #64〜#66");
+                Assert.That(CardPile.Of(3), Is.EqualTo(new[] { CardCatalog.GuardWalk.Id, CardCatalog.CalmGuard.Id }), "layer 3: #64 / #66");
                 Assert.That(CardPile.Of(4), Is.EqualTo(new[] { CardCatalog.Deflect.Id, CardCatalog.CrescentCut.Id, CardCatalog.PommelStrike.Id }), "layer 4: #67〜#69");
                 Assert.That(CardPile.Of(5), Is.EqualTo(new[] { CardCatalog.MistStep.Id, CardCatalog.KeenEye.Id, CardCatalog.Resolve.Id }), "layer 5: #70〜#72");
                 Assert.That(CardPile.Of(6), Is.EqualTo(new[] { CardCatalog.GaleThrust.Id, CardCatalog.AnchorStance.Id, CardCatalog.VitalThrust.Id, CardCatalog.EvadeCut.Id }), "layer 6: #73〜#76");
-                Assert.That(CardPile.Of(7), Is.EqualTo(new[] { CardCatalog.BloodDance.Id, CardCatalog.WolfStance.Id, CardCatalog.ShadowLunge.Id, CardCatalog.LastStand.Id }), "layer 7: #77〜#80");
+                Assert.That(CardPile.Of(7), Is.EqualTo(new[] { CardCatalog.BloodDance.Id, CardCatalog.WolfStance.Id, CardCatalog.ShadowLunge.Id }), "layer 7: #77〜#79");
             });
         }
 
         [Test]
         public void ThePile_DealsTheLayersOwnCardsFirst_ThenTheShallowerLayers()
         {
-            var owned = new HashSet<string>(CardPile.Of(3).Take(2));
+            // Layer 3 holds two cards since v4.10 dropped #65 (#824).
+            var owned = new HashSet<string>(CardPile.Of(3).Take(1));
             IReadOnlyList<string> dealt = CardPile.Deal(3, owned, new DungeonCore.SeededRng(9UL));
             Assert.That(dealt.Count, Is.EqualTo(CardPile.Choices));
-            Assert.That(dealt[0], Is.EqualTo(CardPile.Of(3)[2]), "the one card layer 3 has left");
+            Assert.That(dealt[0], Is.EqualTo(CardPile.Of(3)[1]), "the one card layer 3 has left");
             Assert.That(dealt.Skip(1).All(CardPile.Of(2).Contains), Is.True, "layer 2 fills the rest");
             Assert.That(dealt.Distinct().Count(), Is.EqualTo(dealt.Count));
         }

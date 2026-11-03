@@ -13,12 +13,12 @@ namespace Depiction.Bridge.Tests
     {
         private static readonly IRng NoShuffle = new FixedRng(0.9999999);
 
-        /// <summary>Dealt from the front (NoShuffle): two 呼吸を整える (防御, cost 2), 岩の構え (スタンス), 袈裟斬り (攻撃) and two more.</summary>
+        /// <summary>Dealt from the front (NoShuffle): two 呼吸を整える (防御, cost 2), 遠間の構え (スタンス), 袈裟斬り (攻撃) and two more.</summary>
         private static List<CardInstance> Deck() => new List<CardInstance>
         {
             new CardInstance("brace-0", CardCatalog.Brace),
             new CardInstance("brace-1", CardCatalog.Brace),
-            new CardInstance("rock-0", CardCatalog.RockStance),
+            new CardInstance("rock-0", CardCatalog.PurgeFlash),
             new CardInstance("kesa-0", CardCatalog.KesaCut),
             new CardInstance("feint-0", CardCatalog.Feint),
             new CardInstance("reach-0", CardCatalog.ReachThrust),

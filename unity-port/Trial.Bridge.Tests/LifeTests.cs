@@ -134,12 +134,12 @@ namespace Trial.Bridge.Tests
             // js: app/life.js:30
             LifeStart ls = Inheritance.StartLife(Inheritance.NewLineage(5));
             DepartureChoice choice = Departure(ls, 1);
-            choice.Talent = "thrust";
+            choice.Talent = "side_sweep";
             ChoiceData data = Life.ChoiceToData(choice, ls.ToolSlots);
             Assert.That(data.Deck.Select(r => r.InstanceId), Is.EqualTo(choice.Deck.Select(c => c.InstanceId)), "instance ids and order kept exactly");
             Assert.That(data.Deck.Select(r => r.DefId), Is.EqualTo(choice.Deck.Select(c => c.Def.Id)));
             Assert.That(data.BattleToolIds, Is.EqualTo(new[] { "ikitsugi_no_fue" }));
-            Assert.That(data.Talent, Is.EqualTo("thrust"));
+            Assert.That(data.Talent, Is.EqualTo("side_sweep"));
             Assert.That(data.ToolIds, Is.Empty);
             Assert.That(Json.Stringify(data.Loadout), Is.EqualTo(Json.Stringify(Loadouts.RunLoadoutToData(Loadouts.ToRunLoadout(choice.Loadout, ls.ToolSlots)))));
             RunLoadout back = Loadouts.RunLoadoutFromData(Json.Parse(Json.Stringify(data.Loadout)));
@@ -373,7 +373,7 @@ namespace Trial.Bridge.Tests
         private const string FirstMemo = "一代目のメモ";
 
         /// <summary>
-        /// gen 1 dies on layer 3 with feint and thrust at 3 段, kesa_cut at 2, brace at 1, three enemies known, 2 rare pages
+        /// gen 1 dies on layer 3 with feint and side_sweep at 3 段, kesa_cut at 2, brace at 1, three enemies known, 2 rare pages
         /// and a memo; gen 2 survives with 4 pages and two enemies known; gen 3 is the heir (js: inherit-gains.test.mjs:32).
         /// </summary>
         private static Lineage GainsLineage()
@@ -381,7 +381,7 @@ namespace Trial.Bridge.Tests
             Lineage l = Inheritance.NewLineage(77);
             LifeStart s = Inheritance.StartLife(l, 1);
             l = Inheritance.RecordDeath(s.Lineage, s.Life, new LifePlace(3, 4, NodeKind.Battle, RunPhase.Fallen),
-                new List<CardEntry> { new CardEntry("thrust", 3), new CardEntry("feint", 3), new CardEntry("kesa_cut", 2), new CardEntry("brace", 1) },
+                new List<CardEntry> { new CardEntry("side_sweep", 3), new CardEntry("feint", 3), new CardEntry("kesa_cut", 2), new CardEntry("brace", 1) },
                 LifeJournalData.WithPageCount(2, new[]
                 {
                     new KeyValuePair<string, int>("polearm_warped", 2), new KeyValuePair<string, int>("shadow_hound", 1), new KeyValuePair<string, int>("rusted_revenant", 1),
@@ -485,9 +485,9 @@ namespace Trial.Bridge.Tests
         public void Names_CardAtItsRank_EnemyName_AndTheClearedLifesRootCards()
         {
             // js: app/names.js:23 / :30 / :39
-            MasteryProfile thrust = MasteryProfiles.Find("thrust");
-            Assert.That(Names.CardName("thrust"), Is.EqualTo(CardCatalog.ById("thrust").Name));
-            Assert.That(Names.CardName("thrust", 2), Is.EqualTo(thrust?.NameAt(2) ?? CardCatalog.ById("thrust").Name));
+            MasteryProfile sweep = MasteryProfiles.Find("side_sweep");
+            Assert.That(Names.CardName("side_sweep"), Is.EqualTo(CardCatalog.ById("side_sweep").Name));
+            Assert.That(Names.CardName("side_sweep", 2), Is.EqualTo(sweep?.NameAt(2) ?? CardCatalog.ById("side_sweep").Name));
             Assert.That(Names.CardName("no_such_card", 1), Is.EqualTo("no_such_card"));
             Assert.That(Names.CardName(null), Is.Null);
             Assert.That(Names.EnemyName("abyss_angler"), Is.EqualTo("獄竜 ガルド"));
@@ -497,7 +497,7 @@ namespace Trial.Bridge.Tests
             var ex = new Expedition(new RunStart { Seed = 3 });
             EndOptions dead = Names.EndOptions(ex, ex.Session.State);
             Assert.That(dead.RootCards, Is.Null);
-            Assert.That(dead.CardName("thrust", 0), Is.EqualTo(Names.CardName("thrust")));
+            Assert.That(dead.CardName("side_sweep", 0), Is.EqualTo(Names.CardName("side_sweep")));
             Assert.That(dead.EnemyName("shadow_hound"), Is.EqualTo("瘴牙の走竜"));
             ExplorationState done = ex.Session.State.With(phase: RunPhase.Completed);
             EndOptions cleared = Names.EndOptions(ex, done);

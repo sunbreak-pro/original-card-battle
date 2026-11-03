@@ -282,7 +282,7 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// §2.3: one card or action carries at most one trait (背水の陣 is the one card with two, see
+    /// §2.3: one card or action carries at most one trait (the v4.9 背水の陣 was the one card with two, see
     /// <see cref="CardDef.ExtraTrait"/>), and a trait is one condition paired with one effect.
     /// Threshold is the gap for 間合い and the stamina bar for 温存. Attribute is 連動's, Omen
     /// 予兆's, Watch the word 相手の状態 / 自分の状態 look for, and Grant the status the Status
@@ -356,10 +356,10 @@ namespace BattleCore
         /// <summary>A standing enemy's omen is an attack (見切りの目). Player only.</summary>
         OmenAttack,
 
-        /// <summary>The holder's own cell changed earlier this turn (流れの構え; 移動後, §2.3).</summary>
+        /// <summary>The holder's own cell changed earlier this turn (移動後, §2.3; the v4.9 流れの構え read it, no card since v4.10).</summary>
         MovedThisTurn,
 
-        /// <summary>The foe hit holds <see cref="StanceDef.Status"/> (狼の構え).</summary>
+        /// <summary>The foe hit holds <see cref="StanceDef.Status"/> (大狼の構え).</summary>
         TargetHasStatus,
     }
 
@@ -383,7 +383,7 @@ namespace BattleCore
     /// §4: the stance a stance face puts on the holder's list of permanent effects. The numbers are
     /// the card's own (its column already decided them), and the list keeps them until the battle
     /// ends. Nothing replaces a stance and there is no cap: the same stance twice is two entries and
-    /// works twice (v4.4, #258). Status is the word 狼の構え watches, the word 槍衾 gives the
+    /// works twice (v4.4, #258). Status is the word 大狼の構え watches, the word 槍衾 gives the
     /// attacker, or the word a StatusOnAttack stance gives the foe it hits; OncePerTurn limits an
     /// OnHit stance to one reaction per turn (司祭の祈り). Attribute is the one a CostDiscount
     /// stance discounts (鉄壁の構え: 防御), null for every other hook.
@@ -494,8 +494,9 @@ namespace BattleCore
     /// §3: a card picks one column of 1-4 up front. The column number is the cost and that column's
     /// values are the effect, so there is no invest choice at play time any more.
     ///
-    /// ExtraTrait is the second trait of 背水の陣 (#80), the one card the canon lets carry two
-    /// (swordsman_cards_v4 §3). Both are judged at once and their bonuses add up.
+    /// ExtraTrait was the second trait of the v4.9 背水の陣 (#80), the one card the canon let carry two;
+    /// no catalog card carries one since v4.10 dropped it (#824). The core still reads one: both
+    /// traits are judged at once and their bonuses add up.
     ///
     /// FixedCost is set only by mastery (§3.2, #59): 伸び moves the faces (and Column) right while
     /// the cost stays, and 軽さ takes the cost down to as low as 0. Null is the column's own cost.
@@ -530,7 +531,7 @@ namespace BattleCore
         }
     }
 
-    /// <summary>A card in a deck: definition plus a unique instance id (thrust-0).</summary>
+    /// <summary>A card in a deck: definition plus a unique instance id (kesa_cut-0).</summary>
     public sealed record CardInstance(string InstanceId, CardDef Def);
 
     /// <summary>

@@ -14,7 +14,7 @@ namespace Depiction.Bridge.Tests
 
         private static readonly CardDef[] Hand =
         {
-            CardCatalog.KesaCut, CardCatalog.ReachThrust, CardCatalog.Brace, CardCatalog.BackLeap, CardCatalog.RockStance,
+            CardCatalog.KesaCut, CardCatalog.ReachThrust, CardCatalog.Brace, CardCatalog.BackLeap, CardCatalog.PurgeFlash,
         };
 
         /// <summary>Two 瘴牙の走竜 on an 8-cell line, the first <paramref name="gap"/> away, and the writer past the opening.</summary>

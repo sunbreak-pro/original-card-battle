@@ -25,9 +25,9 @@ namespace Exploration.Bridge.Tests
         {
             // js: test/ext/last-round.test.mjs:26
             MasteryBook book = MasteryBook.Begin(null);
-            Assert.That(MasteryView.NameAtRank(book, "thrust", 0), Is.EqualTo(CardCatalog.ById("thrust").Name));
-            Assert.That(MasteryView.NameAtRank(book, "thrust", 1), Is.EqualTo("鋭い突き"));
-            Assert.That(MasteryView.NameAtRank(book, "thrust", 2), Is.EqualTo("穿ち突き"));
+            Assert.That(MasteryView.NameAtRank(book, "side_sweep", 0), Is.EqualTo(CardCatalog.ById("side_sweep").Name));
+            Assert.That(MasteryView.NameAtRank(book, "side_sweep", 1), Is.EqualTo("大横薙ぎ"));
+            Assert.That(MasteryView.NameAtRank(book, "side_sweep", 2), Is.EqualTo("渦薙ぎ"));
             Assert.That(MasteryView.NameAtRank(book, "no_such_card", 1), Is.EqualTo("no_such_card"));
         }
 
@@ -47,7 +47,7 @@ namespace Exploration.Bridge.Tests
             }
             Assert.That(still, Is.Not.Null, "some card has no profile");
             Assert.That(MasteryView.NameAtRank(book, still, 2), Is.EqualTo(CardCatalog.ById(still).Name));
-            Assert.That(MasteryView.NameAtRank(null, "thrust", 2), Is.EqualTo(CardCatalog.ById("thrust").Name), "no book: no profile to read");
+            Assert.That(MasteryView.NameAtRank(null, "side_sweep", 2), Is.EqualTo(CardCatalog.ById("side_sweep").Name), "no book: no profile to read");
         }
 
         [Test]
@@ -57,16 +57,16 @@ namespace Exploration.Bridge.Tests
             IReadOnlyList<int> thresholds = Constants.MasteryThresholds;
             int t1 = thresholds[0];
             int t2 = thresholds[1];
-            MasteryProgressInfo fresh = MasteryView.MasteryProgress(MasteryBook.Begin(null), "thrust");
+            MasteryProgressInfo fresh = MasteryView.MasteryProgress(MasteryBook.Begin(null), "side_sweep");
             Assert.That(new object[] { fresh.Rank, fresh.Ticks, fresh.Need, fresh.Grows, fresh.Top, fresh.Capped },
                 Is.EqualTo(new object[] { 0, 0, t1, true, false, false }));
             Assert.That(fresh.Name, Is.EqualTo(fresh.BaseName));
-            Assert.That(fresh.NextName, Is.EqualTo("鋭い突き"));
-            MasteryProgressInfo one = MasteryView.MasteryProgress(Trained(("thrust", t1 + 1)), "thrust");
+            Assert.That(fresh.NextName, Is.EqualTo("大横薙ぎ"));
+            MasteryProgressInfo one = MasteryView.MasteryProgress(Trained(("side_sweep", t1 + 1)), "side_sweep");
             Assert.That(new object[] { one.Rank, one.Ticks, one.Need }, Is.EqualTo(new object[] { 1, t1 + 1, t2 }));
-            Assert.That(one.Name, Is.EqualTo("鋭い突き"));
-            Assert.That(one.BaseName, Is.EqualTo(CardCatalog.ById("thrust").Name));
-            Assert.That(one.NextName, Is.EqualTo("穿ち突き"));
+            Assert.That(one.Name, Is.EqualTo("大横薙ぎ"));
+            Assert.That(one.BaseName, Is.EqualTo(CardCatalog.ById("side_sweep").Name));
+            Assert.That(one.NextName, Is.EqualTo("渦薙ぎ"));
         }
 
         [Test]
@@ -74,9 +74,9 @@ namespace Exploration.Bridge.Tests
         {
             // js: test/ext/last-round.test.mjs:47
             int top = Constants.MasteryThresholds[2];
-            MasteryBook book = Trained(("thrust", top), ("kesa_cut", top));
+            MasteryBook book = Trained(("side_sweep", top), ("kesa_cut", top));
             string holder = book.TopRankHolder;
-            string other = holder == "thrust" ? "kesa_cut" : "thrust";
+            string other = holder == "side_sweep" ? "kesa_cut" : "side_sweep";
             MasteryProgressInfo held = MasteryView.MasteryProgress(book, holder);
             Assert.That(held.Rank, Is.EqualTo(3));
             Assert.That(held.Top, Is.True);

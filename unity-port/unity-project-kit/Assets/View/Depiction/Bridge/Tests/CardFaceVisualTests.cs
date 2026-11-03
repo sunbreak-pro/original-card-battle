@@ -16,7 +16,7 @@ namespace Depiction.Bridge.Tests
 
         private static readonly CardDef[] Hand =
         {
-            CardCatalog.KesaCut, CardCatalog.ReachThrust, CardCatalog.Brace, CardCatalog.BackLeap, CardCatalog.RockStance,
+            CardCatalog.KesaCut, CardCatalog.ReachThrust, CardCatalog.Brace, CardCatalog.BackLeap, CardCatalog.PurgeFlash,
         };
 
         /// <summary>Two 瘴牙の走竜 side by side past turn 1's start, the first one <paramref name="gap"/> away.</summary>
@@ -107,11 +107,11 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void ACardWithNoTrait_IsNeverLit()
         {
-            var setup = new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(new[] { CardCatalog.Thrust, CardCatalog.KesaCut }, 3),
+            var setup = new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(new[] { CardCatalog.SideSweep, CardCatalog.KesaCut }, 3),
                 BattleSetup.SliceFieldCells, StartGap: 0);
             BattleState state = TurnLoop.BeginPlayerTurn(TurnLoop.Start(setup, NoShuffle).State, NoShuffle).State;
 
-            Assert.That(Lit(state, CardCatalog.Thrust, out List<bool> perEnemy), Is.False);
+            Assert.That(Lit(state, CardCatalog.SideSweep, out List<bool> perEnemy), Is.False);
             Assert.That(perEnemy, Is.Empty);
         }
 
@@ -136,7 +136,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void APlainCard_PrintsThePlainBox_AndSaysWhereItsTwoWent()
         {
-            CardFace face = CoreText.FaceOf(CardCatalog.Thrust);
+            CardFace face = CoreText.FaceOf(CardCatalog.SideSweep);
 
             Assert.That(face.Plain, Is.True);
             Assert.That(new[] { face.TraitTop, face.TraitBottom }, Is.EqualTo(new[] { "素直な札", "特性なし（+2 込み）" }));
@@ -147,7 +147,7 @@ namespace Depiction.Bridge.Tests
         [TestCase("kesa_cut", "間合い 0", "→ 威力 +5", "隣り合っていれば、この札の威力 15 → 20")]
         [TestCase("reach_thrust", "間合い 2 以上", "→ 威力 +5", "間合い 2 以上なら、この札の威力 15 → 20")]
         [TestCase("brace", "温存 残り 6 以上", "→ 次ターン回復 +1", "出した後スタミナが 6 以上残れば、次ターンの回復 3 → 4")]
-        [TestCase("rock_stance", "置く時 予兆が攻撃", "→ Guard +3（1 回）", "置くときに敵の予兆が攻撃なら、その場で Guard +3（1 回だけ）")]
+        [TestCase("keen_eye", "置く時 予兆が攻撃", "→ ドロー +1", "置くときに敵の予兆が攻撃なら、さらに 1 枚引く")]
         [TestCase("war_cry", "連打", "→ 敵に脆化 2", "このターン直前に出した札もスキルなら、敵に脆化 2 も付ける")]
         [TestCase("back_leap", "予兆が攻撃", "→ Guard +3", "いちばん近い敵の予兆が攻撃なら、この札の Guard 4 → 7")]
         [TestCase("body_check", "間合い 0", "→ 重撃", "隣り合っていれば、威力 5 → 11。ただし次ターンの回復 3 → 2")]
@@ -166,7 +166,11 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void TheCardWithTwoTraits_PutsOneTraitOnEachRow()
         {
-            CardFace face = CoreText.FaceOf(CardCatalog.ById("last_stand"));
+            // No catalog card carries two traits since v4.10 dropped #80 背水の陣 (#824); the core still can.
+            var twoTraits = new CardDef("two_traits", "二つの特性", BattleAttribute.Attack, 1, new Face(Power: 8, Reach: new Reach(1, 2)),
+                new BattleCore.Trait(BattleCore.TraitCondition.GapAtLeast, BattleCore.TraitEffect.PowerBonus, 5, Threshold: 2),
+                ExtraTrait: new BattleCore.Trait(BattleCore.TraitCondition.Desperate, BattleCore.TraitEffect.PowerBonus, 3));
+            CardFace face = CoreText.FaceOf(twoTraits);
 
             Assert.That(new[] { face.TraitTop, face.TraitBottom }, Is.EqualTo(new[] { "間合い2以上→威力+5", "死力→威力+3" }));
             Assert.That(face.HoverLine, Does.Contain("。"), "two sentences, one per trait");
@@ -197,11 +201,11 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void AStanceCard_HasNoValues_AndItsRowsAreLasting()
         {
-            CardFace face = CoreText.FaceOf(CardCatalog.RockStance);
+            CardFace face = CoreText.FaceOf(CardCatalog.PurgeFlash);
 
             Assert.That(face.Values, Is.Empty);
             Assert.That(face.Lasting, Is.True);
-            Assert.That(face.TextLines, Is.EqualTo(new[] { "ターン開始 Guard +3" }));
+            Assert.That(face.TextLines, Is.EqualTo(new[] { "間合い 2 以上で始まるターンに Guard +3" }));
         }
 
         [Test]
@@ -334,17 +338,17 @@ namespace Depiction.Bridge.Tests
         public void TheSameStanceTwice_IsOneRow_WhosePanelSaysItWorksTwice()
         {
             // §4.6 / §7.3 永続の状態 (#605): the stance frame's row carries the panel text.
-            List<StanceRow> rows = StatusChipText.StanceRows(new[] { "岩の構え", "岩の構え" });
+            List<StanceRow> rows = StatusChipText.StanceRows(new[] { "遠間の構え", "遠間の構え" });
 
             Assert.That(rows, Has.Count.EqualTo(1));
             Assert.That(rows[0].Count, Is.EqualTo(2));
-            Assert.That(StanceList.PanelTitle(rows[0]), Is.EqualTo("岩の構え ×2"));
-            Assert.That(rows[0].Effect, Does.StartWith("ターン開始 Guard +3"));
+            Assert.That(StanceList.PanelTitle(rows[0]), Is.EqualTo("遠間の構え ×2"));
+            Assert.That(rows[0].Effect, Does.StartWith("間合い 2 以上で始まるターンに Guard +3"));
             Assert.That(rows[0].Effect, Does.EndWith("（2 枚ぶん、2 倍効く）"));
             Assert.That(rows[0].Decay, Is.EqualTo("減らない（永続）"));
-            Assert.That(StatusChipText.StanceChip("岩の構え", 2).Title, Is.EqualTo("岩の構え ×2"), "the bridge's own title agrees");
-            List<StanceRow> once = StatusChipText.StanceRows(new[] { "岩の構え" });
-            Assert.That(StanceList.PanelTitle(once[0]), Is.EqualTo("岩の構え"), "once prints no ×1");
+            Assert.That(StatusChipText.StanceChip("遠間の構え", 2).Title, Is.EqualTo("遠間の構え ×2"), "the bridge's own title agrees");
+            List<StanceRow> once = StatusChipText.StanceRows(new[] { "遠間の構え" });
+            Assert.That(StanceList.PanelTitle(once[0]), Is.EqualTo("遠間の構え"), "once prints no ×1");
             Assert.That(once[0].Effect, Does.Not.Contain("倍効く"));
         }
 

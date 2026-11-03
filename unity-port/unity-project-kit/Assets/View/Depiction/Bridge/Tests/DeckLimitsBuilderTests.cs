@@ -21,8 +21,8 @@ namespace Depiction.Bridge.Tests
     {
         private static readonly DeckLimits Survivor = new DeckLimits(deckMax: 45, toolSlots: 4);
 
-        /// <summary>The first forty kinds of the catalog: what Exploration.Bridge's Expedition.InitialKinds holds.</summary>
-        private static readonly IReadOnlyList<string> InitialKinds = CardCatalog.All.Take(40).Select(d => d.Id).ToList();
+        /// <summary>The initial kinds of the catalog (35 since v4.10): what Exploration.Bridge's Expedition.InitialKinds holds.</summary>
+        private static readonly IReadOnlyList<string> InitialKinds = CardCatalog.All.Take(CardCatalog.InitialCount).Select(d => d.Id).ToList();
 
         /// <summary>A builder holding <paramref name="n"/> cards (three of a kind, canon order).</summary>
         private static DeckBuilder Filled(int n, DeckLimits limits = null)
@@ -60,7 +60,7 @@ namespace Depiction.Bridge.Tests
             var b = new DeckBuilder();
             Assert.That(b.Limits, Is.SameAs(DeckLimits.Default));
             Assert.That(b.LifeTitle, Is.EqualTo(DeckBuilder.Title));
-            Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（80 種から 20〜40 枚、1 種 3 枚まで）"));
+            Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（71 種から 20〜40 枚、1 種 3 枚まで）"));
             Assert.That(DeckBuilder.TitleFor(null), Is.EqualTo(DeckBuilder.Title));
             Assert.That(Filled(40).StatusText, Is.EqualTo("40 枚です。20〜40 枚、1 種 3 枚を満たしています"));
             Assert.That(Filled(40).CanAdd("kesa_cut"), Is.False, "the 41st");
@@ -93,9 +93,9 @@ namespace Depiction.Bridge.Tests
             Assert.That(b.IsValid, Is.True);
             Assert.That(b.StatusText, Is.EqualTo("45 枚です。20〜45 枚、1 種 3 枚を満たしています"));
             Assert.That(Filled(19, Survivor).StatusText, Is.EqualTo("19 枚です。あと 1 枚入れると戦えます"));
-            Assert.That(b.LifeTitle, Is.EqualTo("デッキを組む（80 種から 20〜45 枚、1 種 3 枚まで）"));
+            Assert.That(b.LifeTitle, Is.EqualTo("デッキを組む（71 種から 20〜45 枚、1 種 3 枚まで）"));
             Assert.That(DeckBuilder.TitleFor(Survivor), Is.EqualTo(b.LifeTitle));
-            Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（80 種から 20〜40 枚、1 種 3 枚まで）"), "the static Title stays");
+            Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（71 種から 20〜40 枚、1 種 3 枚まで）"), "the static Title stays");
             Assert.That(b.RaisedLine, Is.EqualTo("デッキ上限 +5（40 → 45）"));
             Assert.That(Filled(41, Survivor).Validate().Ok, Is.True);
         }
@@ -138,7 +138,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(plain.Limits, Is.SameAs(Survivor));
             Assert.That(plain.Total, Is.EqualTo(20));
             Assert.That(DeckBuilder.LoadOrPrototype(false, null).Limits, Is.SameAs(DeckLimits.Default));
-            Assert.That(Read("thrust:2,???", Survivor, out _).Limits, Is.SameAs(Survivor), "an empty deck from a broken string keeps the limits");
+            Assert.That(Read("side_sweep:2,???", Survivor, out _).Limits, Is.SameAs(Survivor), "an empty deck from a broken string keeps the limits");
         }
 
         [Test]
@@ -152,7 +152,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(notice, Is.EqualTo("生存者ボーナスが終わり、デッキ上限が 40 枚に戻りました。保存したデッキ 45 枚から、外す 5 枚を選んでください"));
             Assert.That(r.IsValid, Is.False);
             Assert.That(r.StatusText, Is.EqualTo("45 枚です。あと 5 枚外すと戦えます"));
-            Assert.That(r.CanAdd("thrust"), Is.False, "＋ stays greyed out over the cap");
+            Assert.That(r.CanAdd("side_sweep"), Is.False, "＋ stays greyed out over the cap");
             // the cards come out one by one; at the cap the deck is what it was without limits
             List<string> ids = r.Build().Select(c => c.Def.Id).Reverse().ToList();
             for (int i = 0; i < 4; i++) Assert.That(r.Remove(ids[i]), Is.True);
@@ -161,7 +161,7 @@ namespace Depiction.Bridge.Tests
             r.Remove(ids[4]);
             Assert.That(r.IsValid, Is.True);
             Assert.That(r.StatusText, Is.EqualTo("40 枚です。20〜40 枚、1 種 3 枚を満たしています"));
-            Assert.That(r.CanAdd("thrust"), Is.False, "thrust already holds 3");
+            Assert.That(r.CanAdd("side_sweep"), Is.False, "side_sweep already holds 3");
         }
 
         [Test]
@@ -171,13 +171,13 @@ namespace Depiction.Bridge.Tests
             {
                 new KeyValuePair<string, DeckLimits>("", DeckLimits.Default),
                 new KeyValuePair<string, DeckLimits>(null, Survivor),
-                new KeyValuePair<string, DeckLimits>("thrust:2,kesa_cut:3", DeckLimits.Default),
+                new KeyValuePair<string, DeckLimits>("side_sweep:2,kesa_cut:3", DeckLimits.Default),
                 new KeyValuePair<string, DeckLimits>(Filled(45, Survivor).Save(), Survivor),
                 new KeyValuePair<string, DeckLimits>(Filled(40).Save(), DeckLimits.Default),
-                new KeyValuePair<string, DeckLimits>("thrust:4", DeckLimits.Default),
-                new KeyValuePair<string, DeckLimits>("thrust:2,???", Survivor),
+                new KeyValuePair<string, DeckLimits>("side_sweep:4", DeckLimits.Default),
+                new KeyValuePair<string, DeckLimits>("side_sweep:2,???", Survivor),
                 new KeyValuePair<string, DeckLimits>("no_such_card:1", DeckLimits.Default),
-                new KeyValuePair<string, DeckLimits>("thrust:2,thrust:1", DeckLimits.Default),
+                new KeyValuePair<string, DeckLimits>("side_sweep:2,side_sweep:1", DeckLimits.Default),
             };
             foreach (KeyValuePair<string, DeckLimits> each in cases)
             {
@@ -265,7 +265,7 @@ namespace Depiction.Bridge.Tests
             Assert.That(d.ConsumablesLine, Is.EqualTo("消耗品 3 / 3: 薬草、薬草、薬草"));
             // set out with a 45-card deck and four tools
             DeckBuilder deck = Filled(45, Survivor);
-            Assert.That(d.ChooseTalent(deck, "thrust"), Is.True);
+            Assert.That(d.ChooseTalent(deck, "side_sweep"), Is.True);
             Assert.That(d.Validate(deck).Errors, Is.Empty);
             Assert.That(d.CanSetOut(deck), Is.True);
             Assert.That(d.StatusText(deck), Is.EqualTo("出立できます"));
@@ -283,7 +283,7 @@ namespace Depiction.Bridge.Tests
             // says), the 4th tool is still refused.
             DeckBuilder deck = Filled(45, Survivor);
             DepartureBuilder d = Supplies();
-            d.ChooseTalent(deck, "thrust");
+            d.ChooseTalent(deck, "side_sweep");
             Assert.That(deck.IsValid, Is.True);
             Assert.That(d.CanSetOut(deck), Is.True);
             Assert.That(d.StatusText(deck), Is.EqualTo("出立できます"));
@@ -293,7 +293,7 @@ namespace Depiction.Bridge.Tests
             // and the other way: a deck builder without limits under a survivor's departure is held to 40
             DeckBuilder plainDeck = Filled(40);
             DepartureBuilder s = Supplies(Survivor);
-            s.ChooseTalent(plainDeck, "thrust");
+            s.ChooseTalent(plainDeck, "side_sweep");
             Assert.That(s.CanSetOut(plainDeck), Is.True);
             Assert.That(plainDeck.CanAdd("observe"), Is.False);
         }
@@ -305,15 +305,15 @@ namespace Depiction.Bridge.Tests
             // 1〜5 sets out with 3 cards under a departure builder made without limits, as its own IsValid says.
             var tight = new DeckLimits(deckMin: 1, deckMax: 5);
             var deck = new DeckBuilder(null, tight);
-            for (int i = 0; i < 3; i++) Assert.That(deck.Add("thrust"), Is.True);
+            for (int i = 0; i < 3; i++) Assert.That(deck.Add("side_sweep"), Is.True);
             Assert.That(deck.IsValid, Is.True);
             DepartureBuilder d = Supplies();
-            Assert.That(d.ChooseTalent(deck, "thrust"), Is.True);
+            Assert.That(d.ChooseTalent(deck, "side_sweep"), Is.True);
             Assert.That(d.Validate(deck).Errors, Is.Empty);
             Assert.That(d.StatusText(deck), Is.EqualTo("出立できます"));
             // The same 3 cards on a builder without limits: the 20 floor, in the deck and in the departure.
             var plain = new DeckBuilder();
-            for (int i = 0; i < 3; i++) plain.Add("thrust");
+            for (int i = 0; i < 3; i++) plain.Add("side_sweep");
             Assert.That(d.Validate(plain).Errors, Is.EqualTo(new[] { "Deck has 3 cards; the minimum is 20." }));
         }
 
@@ -367,9 +367,9 @@ namespace Depiction.Bridge.Tests
             Assert.That(outside, Is.EqualTo(new[] { "shield_bash" }), "盾打ち (#51) is the prototype's one kind outside the forty");
             Assert.That(adopt(DeckBuilder.Prototype(), forty, null).Total, Is.EqualTo(18), "the bug: two 盾打ち refused");
             List<string> owned = DeckBuilder.WithPrototypeKinds(forty);
-            Assert.That(owned.Count, Is.EqualTo(41));
-            Assert.That(owned.Take(40).ToList(), Is.EqualTo(forty), "the forty first, in their order");
-            Assert.That(owned[40], Is.EqualTo("shield_bash"));
+            Assert.That(owned.Count, Is.EqualTo(36));
+            Assert.That(owned.Take(CardCatalog.InitialCount).ToList(), Is.EqualTo(forty), "the forty first, in their order");
+            Assert.That(owned[CardCatalog.InitialCount], Is.EqualTo("shield_bash"));
             Assert.That(DeckBuilder.WithPrototypeKinds(owned), Is.EqualTo(owned), "idempotent");
             Assert.That(DeckBuilder.WithPrototypeKinds(null), Is.EqualTo(PrototypeDeck.Kinds.Select(d => d.Id).ToList()));
             foreach (DeckLimits limits in new[] { null, Survivor })

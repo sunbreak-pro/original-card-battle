@@ -58,7 +58,7 @@ namespace Trial.Bridge.Tests
             Lineage l = Inheritance.NewLineage(20261020);
             LifeStart s1 = Inheritance.StartLife(l);
             l = Inheritance.RecordDeath(s1.Lineage, null, new LifePlace(3, 14, NodeKind.Boss, RunPhase.Fallen),
-                new List<CardEntry> { new CardEntry("thrust", 1) }, InheritanceCore.Journal.WithPageCount(0));
+                new List<CardEntry> { new CardEntry("side_sweep", 1) }, InheritanceCore.Journal.WithPageCount(0));
             LifeStart s2 = Inheritance.StartLife(l);
             return Inheritance.RecordSurvival(s2.Lineage, null, new LifePlace(4, 9, NodeKind.Rest, RunPhase.Survived),
                 new List<CardEntry> { new CardEntry("reach_thrust", 1) }, InheritanceCore.Journal.WithPageCount(0));
@@ -174,7 +174,7 @@ namespace Trial.Bridge.Tests
                 Assert.That(sup.AddTool("bosho_no_men"), Is.True);
                 Assert.That(sup.AddTool("bosho_no_men"), Is.False, "the C#'s 3 slots");
                 sup.AddConsumable("joka_no_ko");
-                sup.ChooseTalent(deck, "thrust");
+                sup.ChooseTalent(deck, "side_sweep");
                 Departure departure = sup.Build(deck);
                 CarriedSupplies carry = DepartureCarry.Carry(departure);
                 Assert.That(carry.Loadout.ToolSlotCount, Is.EqualTo(3));

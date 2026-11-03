@@ -55,7 +55,7 @@ namespace BattleCore
 
         public IReadOnlyList<StatusGrant> GrantList => Grants ?? Array.Empty<StatusGrant>();
 
-        /// <summary>Two outcomes added up (背水の陣 carries two traits, both judged at once).</summary>
+        /// <summary>Two outcomes added up (a card with an ExtraTrait has both judged at once).</summary>
         public TraitOutcome Plus(TraitOutcome other)
         {
             if (other == null) throw new ArgumentNullException(nameof(other));

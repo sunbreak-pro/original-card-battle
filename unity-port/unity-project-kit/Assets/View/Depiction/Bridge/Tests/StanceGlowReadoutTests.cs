@@ -14,10 +14,10 @@ namespace Depiction.Bridge.Tests
     {
         private static readonly IRng NoShuffle = new FixedRng(0.9999999);
 
-        /// <summary>Dealt from the front (NoShuffle): 岩の構え, 水の構え, then cards to fill the hand.</summary>
+        /// <summary>Dealt from the front (NoShuffle): 遠間の構え, 水の構え, then cards to fill the hand.</summary>
         private static List<CardInstance> Deck() => new List<CardInstance>
         {
-            new CardInstance("rock-0", CardCatalog.RockStance),
+            new CardInstance("rock-0", CardCatalog.PurgeFlash),
             new CardInstance("water-0", CardCatalog.WaterStance),
             new CardInstance("kesa-0", CardCatalog.KesaCut),
             new CardInstance("feint-0", CardCatalog.Feint),

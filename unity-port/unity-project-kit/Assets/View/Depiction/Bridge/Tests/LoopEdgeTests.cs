@@ -30,7 +30,7 @@ namespace Depiction.Bridge.Tests
         public void ATurnWithNothingToPlay_EndsAndTheBattleGoesOn()
         {
             // Twenty 突き (cost 3, reach 0〜1) at the opening gap of 3: nothing reaches.
-            var source = new CoreBattleSource(new BattleSetup(Enemies.PolearmWarped, Copies(CardCatalog.Thrust, 20), 6), 1, suggestCards: true);
+            var source = new CoreBattleSource(new BattleSetup(Enemies.PolearmWarped, Copies(CardCatalog.SideSweep, 20), 6), 1, suggestCards: true);
             ToThePlayer(source);
 
             Assert.Multiple(() =>

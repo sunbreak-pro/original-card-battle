@@ -2,14 +2,14 @@ namespace BattleCore.Sim;
 
 /// <summary>
 /// One deck the bench fights with. Rows are card ids of <see cref="CardCatalog"/> and their copies,
-/// so the bench measures whatever numbers the catalog holds today (swordsman_cards_v4 v4.6 at the
-/// time of writing). Basis says why the deck is built this way.
+/// so the bench measures whatever numbers the catalog holds today (swordsman_cards_v4 v4.10 at the
+/// time of writing; #825 swapped out the nine cards it dropped). Basis says why the deck is built this way.
 /// </summary>
 public sealed record SimDeck(string Id, string Name, IReadOnlyList<(string CardId, int Copies)> Rows, string Basis)
 {
     public int Count => Rows.Sum(r => r.Copies);
 
-    /// <summary>The deck as card instances ("thrust-0", "thrust-1", …), in row order. TurnLoop.Start shuffles it.</summary>
+    /// <summary>The deck as card instances ("side_sweep-0", "side_sweep-1", …), in row order. TurnLoop.Start shuffles it.</summary>
     public List<CardInstance> Build()
     {
         var deck = new List<CardInstance>(Count);
@@ -31,7 +31,7 @@ public sealed record SimDeck(string Id, string Name, IReadOnlyList<(string CardI
 /// kind, so <see cref="Cards.Validate"/> passes. The greedy player does not plan a type's two-turn
 /// rhythm on purpose; the type is what the deck holds, and the bench reads how that deck fares.
 ///
-/// Roles are v4.5's (swordsman_cards_v4, #333 / #363): the fourteen stance cards are stance only
+/// Roles are v4.5's (swordsman_cards_v4, #333 / #363): the stance cards are stance only
 /// (they carry nothing but the stance face), and 観察 / 間合い切り / 覚悟 count as 防御 (§2.1's fold:
 /// they carry a Guard).
 /// </summary>
@@ -51,19 +51,21 @@ public static class Decks
             ("observe", 2), ("riposte_guard", 2), ("footwork", 2), ("break_off", 1),
         }, "§19.8-1: 温存で溜め、締め / 手薄 / 連打 / 連動 で放つ"),
 
-        // §19.8-2 振り子: guard far, strike close. The close attacks read 間合い 0 (袈裟斬り / 牙の突進 /
-        // 体当たり); 伸び突き / 猪突猛進 pay at 2 or more; the movement cards (S10) carry the swing both
+        // §19.8-2 振り子: guard far, strike close. The close attacks read 間合い 0 (袈裟斬り / 盾打ち /
+        // 体当たり; 盾打ち took the place of 牙の突進, which v4.10 dropped); 伸び突き / 猪突猛進 pay at 2
+        // or more; the movement cards (S10) carry the swing both
         // ways, and 水の構え (stance only: +2 recovery on turns that start at 2 or more) pays for the
         // turns that start far.
         new SimDeck("pendulum", "振り子", new[]
         {
-            ("kesa_cut", 3), ("fang_rush", 2), ("body_check", 2), ("reach_thrust", 2), ("boar_rush", 1),
+            ("kesa_cut", 3), ("shield_bash", 2), ("body_check", 2), ("reach_thrust", 2), ("boar_rush", 1),
             ("back_leap", 3), ("slide_step", 2), ("footwork", 2), ("step_in_guard", 1), ("step_out_guard", 1),
             ("water_stance", 1),
         }, "§19.8-2: 溜めで離れ、放ちで詰める。間合いの境目の札と移動の札"),
 
         // §19.8-3 研ぎ: stack 強化 / 集中 / 見切り on the charge turn and spend them on column-3 attacks
-        // (集中 moves 突き / 横薙ぎ to column 4). 集中 / 鬨の声 / 覚悟 / 群れの咆哮 empower (覚悟 is 防御
+        // (集中 moves 横薙ぎ / 斬り上げ to column 4; 斬り上げ took 突き's place, which v4.10 dropped).
+        // 集中 / 鬨の声 / 覚悟 / 群れの咆哮 empower (覚悟 is 防御
         // since v4.5: Guard 3 with its 強化), 静の受け focuses, 返しの構え parries (防御 + スキル, not a
         // stance card despite its name, so the type holds no stance). 足運び / 摺り足 close in: a deck
         // with no step forward cannot reach an enemy that keeps its distance (大黒蛇 セルク stays at 3
@@ -71,42 +73,44 @@ public static class Decks
         new SimDeck("whetstone", "研ぎ", new[]
         {
             ("focus", 3), ("war_cry", 2), ("resolve", 2), ("pack_howl", 2), ("calm_guard", 2),
-            ("riposte_stance", 1), ("thrust", 3), ("side_sweep", 2), ("footwork", 2), ("slide_step", 1),
+            ("riposte_stance", 1), ("side_sweep", 3), ("rising_cut", 2), ("footwork", 2), ("slide_step", 1),
         }, "§19.8-3: 強化 / 集中 / 見切りを積み、列 3 の攻撃で使い切る"),
 
-        // §19.8-4 血路: 出血 and 脆化, then the cards that read them (§19.8 names 裂き斬り / 棘斬り / 血の舞 /
-        // 槍衾). 裂き斬り / 棘斬り / 血の舞 put 出血 on; 裂き斬り and 気迫 read 相手の状態(出血). The two
-        // stances are stance only since v4.4: 槍衾 bleeds whoever hits the player (and its +3 Guard reads
-        // 出血 when it is put down), 狼の構え adds +3 to attacks on a bleeding foe. 棘斬り reads 崩し後, so
-        // 急所突き breaks for it. 石礫 / 狩人の印 put 脆化 on; 足運び closes in.
+        // §19.8-4 血路: 出血 and 脆化, then the cards that read them (§19.8 names 皮裂き / 棘斬り / 血の舞 /
+        // 槍衾; v4.10 dropped 棘斬り, and its three copies went to 気迫 / 槍衾 / 狩人の印). 皮裂き / 血の舞
+        // put 出血 on; 皮裂き and 気迫 read 相手の状態(出血). The two stances are stance only since v4.4:
+        // 槍衾 bleeds whoever hits the player (and its +3 Guard reads 出血 when it is put down), 大狼の構え
+        // adds +3 to attacks on a bleeding foe. 急所突き breaks. 石礫 / 狩人の印 put 脆化 on; 足運び closes in.
         new SimDeck("blood_road", "血路", new[]
         {
-            ("rend", 3), ("thorn_cut", 3), ("blood_dance", 3), ("spear_wall", 1), ("spirit_roar", 2),
-            ("wolf_stance", 1), ("stone_throw", 2), ("hunter_mark", 1), ("vital_thrust", 2), ("footwork", 2),
+            ("rend", 3), ("blood_dance", 3), ("spear_wall", 2), ("spirit_roar", 3),
+            ("wolf_stance", 1), ("stone_throw", 2), ("hunter_mark", 2), ("vital_thrust", 2), ("footwork", 2),
         }, "§19.8-4: 出血と脆化を積み、相手の状態(出血) の札を連ねる"),
 
         // §19.8-5 一型: a stance on turn 1 and the turn-start / conditional bonus from then on, the rest
-        // column-1 cards played 2〜3 a turn without charging. 岩の構え gives 3 Guard each turn start,
-        // 流れの構え pays after a move (足運び / 間合い切り), and 鉄壁の構え (v4.5) takes 1 off one 防御
-        // card each turn. 鉄壁 only pays when a 防御 card is in the hand, and the v4.4 deck held four,
+        // column-1 cards played 2〜3 a turn without charging. 見切りの目 gives 3 Guard at turn starts
+        // under an attack omen, 水の構え pays on turns that start far (and costs 1 less after a move),
+        // and 鉄壁の構え (v4.5) takes 1 off one 防御 card each turn; v4.10 dropped the 岩の構え and
+        // 流れの構え the deck held before. 鉄壁 only pays when a 防御 card is in the hand, and the v4.4 deck held four,
         // all of cost 1 (返しの構え / 間合い切り), so it saved 1 on about four turns in five. 受け太刀 × 2
         // takes the place of 峰打ち × 2 (whose 鈍足 condition nothing in the deck put on): a column-2
         // guard that 鉄壁 brings to 1 and that grows +3 after the column-1 attacks the turn opens with.
         // Six 防御 cards of 20 put one in about 92% of the hands.
         new SimDeck("one_stance", "一型", new[]
         {
-            ("rock_stance", 2), ("iron_wall", 1), ("flow_stance", 1), ("wrist_cut", 3), ("riposte_guard", 2),
+            ("keen_eye", 2), ("iron_wall", 1), ("water_stance", 1), ("wrist_cut", 3), ("riposte_guard", 2),
             ("pierce", 2), ("vital_thrust", 3), ("riposte_stance", 2), ("footwork", 2), ("break_off", 2),
         }, "§19.8-5: 1 ターン目にスタンス、残りは列 1 の安い札。鉄壁の構えの割引が効くよう防御の札を 6 枚"),
 
         // §19.8-6 背水: run stamina dry and strike from 2 or more with the cards that grow there and under
-        // 死力 — 背水の陣 / 伸び突き / 覚悟 (§19.8's 背水の型 is not in the catalog; 覚悟 is 防御 since v4.5
-        // and gives 再生 under 死力). 投げ刃 / 探り突き / 石礫 strike from afar; 後ろ跳び / 間合い切り /
-        // 跳び退り keep the gap and one 足運び steps back into 1〜2 when the enemy keeps to 3 or more.
+        // 死力 — 伸び突き / 覚悟 (覚悟 is 防御 since v4.5 and gives 再生 under 死力). v4.10 dropped the
+        // attack card 背水の陣 (#80), and its three copies went to 投げ刃 / 探り突き / 石礫, which strike
+        // from afar; 後ろ跳び / 間合い切り / 跳び退り keep the gap and one 足運び steps back into 1〜2 when
+        // the enemy keeps to 3 or more.
         new SimDeck("back_to_water", "背水", new[]
         {
-            ("last_stand", 3), ("reach_thrust", 3), ("resolve", 2), ("throw_blade", 2), ("probe_thrust", 2),
-            ("back_leap", 2), ("break_off", 2), ("leap_back", 1), ("footwork", 1), ("stone_throw", 2),
+            ("reach_thrust", 3), ("resolve", 2), ("throw_blade", 3), ("probe_thrust", 3),
+            ("back_leap", 2), ("break_off", 2), ("leap_back", 1), ("footwork", 1), ("stone_throw", 3),
         }, "§19.8-6: 遠間 × 死力 で伸びる札。後ろへ動く札で間合いを保つ"),
     };
 
@@ -133,30 +137,32 @@ public static class Decks
             "試運転のデッキ（PrototypeDeck、10 種 × 2）");
 
     /// <summary>
-    /// swordsman_cards_v4 §2's initial forty, #1〜#40, named one by one so that a change to the
-    /// catalog's order cannot change the deck. battle_core_v4 §14-4 reasons about this deck
-    /// (「初期 40 種を 1 枚ずつ入れたデッキ」, ten of them moving), so §13 基準 11 is judged on it.
+    /// swordsman_cards_v4 §2's initial kinds (thirty-five since v4.10, #824), named one by one so that a
+    /// change to the catalog's order cannot change the deck. battle_core_v4 §14-4 reasons about this
+    /// deck (「初期 40 種を 1 枚ずつ入れたデッキ」 when it was written), so §13 基準 11 is judged on it.
+    /// The id stays "initial_forty" so the bench's JSON keeps its key.
     /// </summary>
     public static readonly IReadOnlyList<string> InitialFortyIds = new[]
     {
-        "thrust", "kesa_cut", "overhead", "wrist_cut", "side_sweep",
+        "kesa_cut", "overhead", "wrist_cut", "side_sweep",
         "flat_strike", "probe_thrust", "pierce", "throw_blade", "reach_thrust",
         "brace", "iron_block", "low_guard", "riposte_guard", "deep_breath",
-        "water_stance", "rock_stance", "flow_stance", "first_aid", "spirit_roar",
+        "water_stance", "first_aid", "spirit_roar",
         "focus", "observe", "war_cry", "second_wind", "footwork",
-        "back_leap", "slide_step", "break_off", "lunge", "feint",
-        "boar_rush", "rend", "body_check", "stone_throw", "parry_cut",
+        "back_leap", "slide_step", "break_off", "feint",
+        "boar_rush", "rend", "body_check", "stone_throw",
         "guard_thrust", "step_in_guard", "step_out_guard", "iron_wall", "twist_away",
     };
 
-    /// <summary>The initial forty × 1 (<see cref="InitialFortyIds"/>): §13 基準 11's deck.</summary>
+    /// <summary>The initial kinds × 1 (<see cref="InitialFortyIds"/>): §13 基準 11's deck.</summary>
     public static SimDeck InitialForty() =>
-        new SimDeck("initial_forty", "初期 40 種 × 1", InitialFortyIds.Select(id => (CardId: id, Copies: 1)).ToList(),
-            "swordsman_cards_v4 §2 の #1〜#40 を 1 枚ずつ（battle_core_v4 §14-4 のデッキ）");
+        new SimDeck("initial_forty", "初期 35 種 × 1", InitialFortyIds.Select(id => (CardId: id, Copies: 1)).ToList(),
+            "swordsman_cards_v4 §2 の初期 35 種を 1 枚ずつ（battle_core_v4 §14-4 のデッキ）");
 
     /// <summary>
     /// swordsman_cards_v4 §5-5: every 素直 card (no trait, not a stance) × 3. A reference row, not a
-    /// §13 criterion.
+    /// §13 criterion. Since v4.10 (#824) the six plain kinds make 18 cards, under §8's floor of 20, as
+    /// §5-5 writes it; the report marks the deck invalid and the bench still fights it.
     /// </summary>
     public static SimDeck Plain()
     {
@@ -170,9 +176,10 @@ public static class Decks
 
     /// <summary>
     /// The plain column-3 cards a stance card is swapped for in a no-stance twin, in this order:
-    /// the canon's two plain attacks and two plain guards (swordsman_cards_v4 §2 #1 / #5 / #12 / #15).
+    /// the canon's plain attack and two plain guards (swordsman_cards_v4 §2 #5 / #12 / #15; v4.10
+    /// dropped the other plain attack, #1 突き).
     /// </summary>
-    public static readonly IReadOnlyList<string> StanceSubstitutes = new[] { "thrust", "iron_block", "side_sweep", "deep_breath" };
+    public static readonly IReadOnlyList<string> StanceSubstitutes = new[] { "side_sweep", "iron_block", "deep_breath" };
 
     /// <summary>
     /// §13 「スタンス無しデッキ」: the deck with every stance card swapped for a plain card

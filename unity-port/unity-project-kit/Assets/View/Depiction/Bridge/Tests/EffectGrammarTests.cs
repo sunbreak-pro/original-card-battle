@@ -56,16 +56,13 @@ namespace Depiction.Bridge.Tests
             Assert.That(played, Is.EquivalentTo(EffectGrammar.Systems), "every system has a card that shows it");
         }
 
-        [TestCase("thrust", FxSystem.Thrust)]       // 突き
         [TestCase("kesa_cut", FxSystem.Slash)]      // 袈裟斬り: no other word, so 斬
         [TestCase("side_sweep", FxSystem.Sweep)]    // 横薙ぎ
         [TestCase("flat_strike", FxSystem.Strike)]  // 峰打ち
-        [TestCase("pierce", FxSystem.Thrust)]       // 貫き
+        [TestCase("pierce", FxSystem.Slash)]        // 体幹崩し (v4.10, #824): no 突 / 打 word, so 斬
         [TestCase("throw_blade", FxSystem.Thrust)]  // 投げ
         [TestCase("stone_throw", FxSystem.Strike)]  // 石礫: 礫 is a 打 word
         [TestCase("boar_rush", FxSystem.Thrust)]    // 猪突猛進: 突 is read first
-        [TestCase("lunge", FxSystem.Slash)]         // 踏み込み斬り
-        [TestCase("haul_step", FxSystem.Strike)]    // 手繰りの歩み: a pull is 打 before any word
         public void AnAttack_TakesItsSystemFromItsName(string id, FxSystem expected)
         {
             CardDef def = CardCatalog.ById(id);
@@ -496,7 +493,7 @@ namespace Depiction.Bridge.Tests
         }
 
         /// <summary>
-        /// Turn 2 of a fight against two enemies at a gap of 3: the player holds 岩の構え twice and 水の構え,
+        /// Turn 2 of a fight against two enemies at a gap of 3: the player holds 遠間の構え twice and 水の構え,
         /// carries 再生 and 出血 below full HP (so both move the bar), and the deal runs the pile out (#832).
         /// </summary>
         private static DepictionEvent StanceAndStatusTurnStart()
@@ -514,8 +511,8 @@ namespace Depiction.Bridge.Tests
             state = end.State;
             List<CardInstance> cards = state.DrawPile.Concat(state.DiscardPile).Concat(state.Hand).ToList();
             CombatantState player = state.Player
-                .WithStance(CardCatalog.RockStance.Face.Stance!, "rock")
-                .WithStance(CardCatalog.RockStance.Face.Stance!, "rock")
+                .WithStance(CardCatalog.PurgeFlash.Face.Stance!, "rock")
+                .WithStance(CardCatalog.PurgeFlash.Face.Stance!, "rock")
                 .WithStance(CardCatalog.WaterStance.Face.Stance!, "water");
             state = state with
             {
@@ -542,7 +539,7 @@ namespace Depiction.Bridge.Tests
             List<EffectStep> steps = EffectPlan.StepsOf(turn);
             Assert.That(turn.Kind, Is.EqualTo(DepictionEventKind.TurnStart));
             Assert.That(steps.Single(s => s.Id == EffectId.StaminaRecover).Count, Is.EqualTo(5), "recovery 3 + 水の構え 2");
-            Assert.That(steps.Count(s => s.Id == EffectId.GuardGain), Is.EqualTo(2), "岩の構え ×2 each grant Guard");
+            Assert.That(steps.Count(s => s.Id == EffectId.GuardGain), Is.EqualTo(2), "遠間の構え ×2 each grant Guard");
             Assert.That(steps.Count(s => s.Id == EffectId.StatusTick || s.Id == EffectId.StatusVanish), Is.EqualTo(2), "再生 and 出血 tick");
             Assert.That(turn.Cues.Count(c => c.Kind == CueKind.HpChange), Is.EqualTo(2), "再生 and 出血 both move the HP");
             Assert.That(steps.Any(s => s.Id == EffectId.PileRebuild), Is.True, "the deal runs the pile out");

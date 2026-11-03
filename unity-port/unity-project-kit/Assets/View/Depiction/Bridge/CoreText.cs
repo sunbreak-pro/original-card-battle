@@ -272,7 +272,7 @@ namespace Depiction.Bridge
             return face.Power * System.Math.Max(1, face.Hits);
         }
 
-        /// <summary>Every trait of the card on one lamp line; 背水の陣's two read "間合い2以上 +5 ／ 死力 +3".</summary>
+        /// <summary>Every trait of the card on one lamp line; two traits read "間合い2以上 +5 ／ 死力 +3".</summary>
         public static string TraitLines(CardDef def)
         {
             var lines = new List<string>();

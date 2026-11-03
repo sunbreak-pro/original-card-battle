@@ -230,7 +230,7 @@ namespace Depiction.Bridge.Tests
         {
             CoreBattleSource source = CoreBattleSource.Slice(Seed);
             DepictionEvent ignored;
-            Assert.That(source.Inspect("thrust-0"), Is.EqualTo(PlayVerdict.NotWaiting));
+            Assert.That(source.Inspect("side_sweep-0"), Is.EqualTo(PlayVerdict.NotWaiting));
 
             source.AdvanceAuto();
             Assert.That(source.Inspect("no-such-card"), Is.EqualTo(PlayVerdict.NotInHand));

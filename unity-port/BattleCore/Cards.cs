@@ -25,7 +25,7 @@ namespace BattleCore
     public static class Cards
     {
         /// <summary>
-        /// Lays out copies of each definition in order, with instance ids of the form "thrust-0".
+        /// Lays out copies of each definition in order, with instance ids of the form "kesa_cut-0".
         /// Order is deterministic; shuffling is a separate step so a test can skip it.
         /// </summary>
         public static List<CardInstance> BuildDeck(IReadOnlyList<CardDef> defs, int copies)

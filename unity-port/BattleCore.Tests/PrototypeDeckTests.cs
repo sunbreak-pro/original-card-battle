@@ -13,7 +13,7 @@ namespace BattleCore.Tests
         // ---- The canon rows ----
 
         //        id                name            column power guard
-        [TestCase("thrust",         "突き",         3,     23,   0)]
+        [TestCase("side_sweep",         "横薙ぎ",         3,     23,   0)]
         [TestCase("kesa_cut",       "袈裟斬り",     2,     15,   0)]
         [TestCase("reach_thrust",   "伸び突き",     2,     15,   0)]
         [TestCase("body_check",     "体当たり",     1,     5,    0)]
@@ -45,7 +45,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.Thrust.Attributes, Is.EqualTo(A));
+                Assert.That(CardCatalog.SideSweep.Attributes, Is.EqualTo(A));
                 Assert.That(CardCatalog.KesaCut.Attributes, Is.EqualTo(A));
                 Assert.That(CardCatalog.ReachThrust.Attributes, Is.EqualTo(A));
                 Assert.That(CardCatalog.BodyCheck.Attributes, Is.EqualTo(A | Sk));
@@ -64,7 +64,7 @@ namespace BattleCore.Tests
         {
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.Thrust.Trait, Is.Null, "素直");
+                Assert.That(CardCatalog.SideSweep.Trait, Is.Null, "素直");
                 Assert.That(CardCatalog.StepInGuard.Trait, Is.Null, "素直");
                 Assert.That(CardCatalog.StepOutGuard.Trait, Is.Null, "素直");
 
@@ -109,10 +109,10 @@ namespace BattleCore.Tests
         public void Reaches_AreTheCanonOnes_AndNoneExceedsTheCommonBand()
         {
             // §7.2: the common N is 0〜3; §2.4: the default reach is 0〜1. v4.5 (#352) widened the
-            // thrust to 0〜2 and the boar rush to 1〜3.
+            // sweep to 0〜2 and the boar rush to 1〜3.
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.Thrust.Face.ReachOrDefault, Is.EqualTo(new Reach(0, 2)));
+                Assert.That(CardCatalog.SideSweep.Face.ReachOrDefault, Is.EqualTo(new Reach(0, 2)));
                 Assert.That(CardCatalog.KesaCut.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
                 Assert.That(CardCatalog.Feint.Face.ReachOrDefault, Is.EqualTo(Reach.Default));
                 Assert.That(CardCatalog.ReachThrust.Face.ReachOrDefault, Is.EqualTo(new Reach(1, 2)));
@@ -133,8 +133,8 @@ namespace BattleCore.Tests
             // #364, #451), not §3.1's attack row, which is the width-2 row. A card that drifts off them is a typo.
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.Thrust.Face.Power, Is.EqualTo(Columns.Value(Columns.SingleAttackPower, 3) + 2), "width 3 is 集中's base row");
-                Assert.That(CardCatalog.Thrust.Face.Power, Is.EqualTo(Bands.Single(3, 3) + 2));
+                Assert.That(CardCatalog.SideSweep.Face.Power, Is.EqualTo(Columns.Value(Columns.SingleAttackPower, 3) + 2), "width 3 is 集中's base row");
+                Assert.That(CardCatalog.SideSweep.Face.Power, Is.EqualTo(Bands.Single(3, 3) + 2));
                 Assert.That(CardCatalog.KesaCut.Face.Power, Is.EqualTo(Bands.Single(2, 2)));
                 Assert.That(CardCatalog.ReachThrust.Face.Power, Is.EqualTo(Bands.Single(2, 2)));
                 Assert.That(CardCatalog.Brace.Face.Guard, Is.EqualTo(Columns.Value(Columns.SingleGuard, 2)));
@@ -250,7 +250,7 @@ namespace BattleCore.Tests
         public void AMove_GoesAsFarAsTheLineAllows_AndStaysPutAtTheEdge()
         {
             // Player on 2, enemy on 5 (gap 2): the feint steps back to 1; from 1 it cannot step back
-            // at all; the boar rush closes two to 4; a plain thrust moves nobody.
+            // at all; the boar rush closes two to 4; a plain sweep moves nobody.
             var state = TurnLoop.Start(BattleSetup.Slice(), new FixedRng(0.5)).State;
             Assert.Multiple(() =>
             {
@@ -258,7 +258,7 @@ namespace BattleCore.Tests
                 var atEdge = state with { Player = state.Player with { Cell = 1 } };
                 Assert.That(Field.Move(atEdge, Actor.Player, CardCatalog.Feint.Face.Move), Is.EqualTo(new Shift(1, 1, 1)));
                 Assert.That(Field.Move(state, Actor.Player, CardCatalog.BoarRush.Face.Move), Is.EqualTo(new Shift(2, 4, 0)));
-                Assert.That(Field.Move(state, Actor.Player, CardCatalog.Thrust.Face.Move), Is.EqualTo(new Shift(2, 2, 0)));
+                Assert.That(Field.Move(state, Actor.Player, CardCatalog.SideSweep.Face.Move), Is.EqualTo(new Shift(2, 2, 0)));
             });
         }
 

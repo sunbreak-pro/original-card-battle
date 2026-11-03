@@ -28,8 +28,8 @@ namespace BattleCore
         public const int DeckMax = 40;
         public const int CopiesMax = 3;
 
-        /// <summary>§8: the kinds one character may own (40 to start, 40 learned).</summary>
-        public const int OwnedKindsMax = 80;
+        /// <summary>§8: the kinds one character may own (35 to start, 38 learned; swordsman_cards_v4 v4.10, #824).</summary>
+        public const int OwnedKindsMax = 73;
 
         // ---- Cost and columns (§3) ----
 
@@ -68,10 +68,10 @@ namespace BattleCore
 
         public const int TraitEffects = 10;
 
-        /// <summary>§10: cards whose condition is a gap threshold (4 cells of the grid × 4).</summary>
-        public const int PositionTraitCards = 16;
+        /// <summary>§10: cards whose condition is a gap threshold (4 cells of the grid × 4 until v4.10 left two cells one short, #825).</summary>
+        public const int PositionTraitCards = 14;
 
-        /// <summary>§7.2: at most 4 of the 80 kinds may scale with N ("N 1 につき +x").</summary>
+        /// <summary>§7.2: at most 4 of the kinds may scale with N ("N 1 につき +x").</summary>
         public const int GapScalingCardsMax = 4;
 
         /// <summary>§3.1: a card with no trait takes +2 on every column (素直な札).</summary>

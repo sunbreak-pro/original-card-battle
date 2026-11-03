@@ -9,6 +9,31 @@ namespace BattleCore.Tests
     /// </summary>
     internal static class Fixtures
     {
+        // ---- Shapes the catalog dropped in swordsman_cards_v4 v4.10 (#824) ----
+        // The rules they exercised stay in the core (a stance that guards every turn start, 移動後
+        // on a stance, a card with two traits), so the tests keep them as stand-ins (#825).
+
+        /// <summary>The v4.9 #17 岩の構え: stance, 3 Guard at every turn start; +3 Guard now into an attack omen.</summary>
+        public static readonly CardDef TurnGuardStance = new CardDef(
+            "turn_guard_stance", "試しの受けの構え", BattleAttribute.Stance, 2,
+            new Face(Stance: new StanceDef(StanceHook.TurnStart, Guard: 3)),
+            new Trait(TraitCondition.OmenIs, TraitEffect.GuardBonus, 3, Omen: OmenKind.Attack),
+            Targets: TargetKind.Self);
+
+        /// <summary>The v4.9 #18 流れの構え: stance, +5 on attacks in a turn something moved; draws after a move.</summary>
+        public static readonly CardDef MovedPowerStance = new CardDef(
+            "moved_power_stance", "試しの動きの構え", BattleAttribute.Stance, 3,
+            new Face(Stance: new StanceDef(StanceHook.AttackBonus, StanceWhen.MovedThisTurn, Power: 5)),
+            new Trait(TraitCondition.Moved, TraitEffect.Draw, 1),
+            Targets: TargetKind.Self);
+
+        /// <summary>The v4.9 #80 背水の陣 (attack): +5 at a gap of 2 or more, and +3 more when desperate.</summary>
+        public static readonly CardDef TwoTraitAttack = new CardDef(
+            "two_trait_attack", "試しの二つの特性", BattleAttribute.Attack, 1,
+            new Face(Power: 8, Reach: new Reach(1, 2)),
+            new Trait(TraitCondition.GapAtLeast, TraitEffect.PowerBonus, 5, Threshold: 2),
+            ExtraTrait: new Trait(TraitCondition.Desperate, TraitEffect.PowerBonus, 3));
+
         public static CardDef Card(
             string id,
             int column = 1,

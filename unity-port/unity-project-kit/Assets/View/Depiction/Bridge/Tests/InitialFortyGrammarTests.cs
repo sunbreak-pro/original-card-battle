@@ -13,16 +13,16 @@ namespace Depiction.Bridge.Tests
 {
     public class InitialFortyGrammarTests
     {
-        /// <summary>swordsman_cards_v4 §2 「初期 40 種」, #1 to #40, by id.</summary>
+        /// <summary>swordsman_cards_v4 §2 「初期 35 種」 (v4.10, #824), #2 to #40, by id.</summary>
         private static readonly string[] InitialForty =
         {
-            "thrust", "kesa_cut", "overhead", "wrist_cut", "side_sweep",
+            "kesa_cut", "overhead", "wrist_cut", "side_sweep",
             "flat_strike", "probe_thrust", "pierce", "throw_blade", "reach_thrust",
             "brace", "iron_block", "low_guard", "riposte_guard", "deep_breath",
-            "water_stance", "rock_stance", "flow_stance", "first_aid", "spirit_roar",
+            "water_stance", "first_aid", "spirit_roar",
             "focus", "observe", "war_cry", "second_wind", "footwork",
-            "back_leap", "slide_step", "break_off", "lunge", "feint",
-            "boar_rush", "rend", "body_check", "stone_throw", "parry_cut",
+            "back_leap", "slide_step", "break_off", "feint",
+            "boar_rush", "rend", "body_check", "stone_throw",
             "guard_thrust", "step_in_guard", "step_out_guard", "iron_wall", "twist_away",
         };
 

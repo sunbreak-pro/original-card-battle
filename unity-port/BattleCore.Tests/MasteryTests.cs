@@ -275,9 +275,9 @@ namespace BattleCore.Tests
         [Test]
         public void Extend_OnACostThreeCard_GivesTheColumnFourValue_AtCostThree()
         {
-            // 突き (#1): cost 3, 0〜2 (width 3), 23 = 21 + 素直 2. Column 4 of width 3 is 30, so 32.
-            var thrust = CardCatalog.Thrust;
-            var extended = Mastery.Master(thrust, 1, Profile(thrust.Id, MasteryKind.Extend));
+            // 横薙ぎ (#5): cost 3, 0〜2 (width 3), 23 = 21 + 素直 2. Column 4 of width 3 is 30, so 32.
+            var sweep = CardCatalog.SideSweep;
+            var extended = Mastery.Master(sweep, 1, Profile(sweep.Id, MasteryKind.Extend));
 
             // 柄当て (#36): two faces, cost 3, 18 / Guard 10. Column 4 of a two-face card is +6 / +4.
             var guardThrust = CardCatalog.GuardThrust;
@@ -285,19 +285,19 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(thrust.Cost, Is.EqualTo(3));
+                Assert.That(sweep.Cost, Is.EqualTo(3));
                 Assert.That(extended.Column, Is.EqualTo(4));
                 Assert.That(extended.Face.Power, Is.EqualTo(Columns.Value(Columns.SingleAttackPower, 4) + Constants.PlainCardBonus));
                 Assert.That(extended.Face.Power, Is.EqualTo(32));
                 Assert.That(extended.Cost, Is.EqualTo(3), "伸び keeps the cost");
-                Assert.That(extended.Face.Reach, Is.EqualTo(thrust.Face.Reach));
+                Assert.That(extended.Face.Reach, Is.EqualTo(sweep.Face.Reach));
 
                 Assert.That(both.Face.Power, Is.EqualTo(24));
                 Assert.That(both.Face.Guard, Is.EqualTo(14));
                 Assert.That(both.Cost, Is.EqualTo(3));
 
                 // Column 4 is the last: a further step adds nothing, and 集中 on it adds nothing either.
-                Assert.That(Mastery.Master(thrust, 2, Profile(thrust.Id, MasteryKind.Extend)).Face.Power, Is.EqualTo(32));
+                Assert.That(Mastery.Master(sweep, 2, Profile(sweep.Id, MasteryKind.Extend)).Face.Power, Is.EqualTo(32));
                 Assert.That(FocusStep.Of(extended.Attributes, extended.Column, extended.Face), Is.EqualTo(FocusStep.None));
             });
         }

@@ -47,9 +47,9 @@ namespace Exploration.Bridge.Tests
                 Assert.That(pick.Prompt, Is.EqualTo("1 代目は第 1 層の通常戦闘で倒れた。3 つまで継げます。選ばなかったものは失われます。"));
                 Assert.That(pick.Choices.Select(c => c.Key), Is.EqualTo(new[]
                 {
-                    "card:" + CardCatalog.Thrust.Id, "card:" + CardCatalog.FangRush.Id, "page:p1", "page:p2",
+                    "card:" + CardCatalog.SideSweep.Id, "card:" + CardCatalog.SnapGuard.Id, "page:p1", "page:p2",
                 }));
-                Assert.That(pick.Choices[0].Face.Name, Is.EqualTo("鋭い突き"), "the face at step 1");
+                Assert.That(pick.Choices[0].Face.Name, Is.EqualTo("大横薙ぎ"), "the face at step 1");
                 Assert.That(pick.Choices[0].Caption, Is.EqualTo("習熟 1 段目"));
                 Assert.That(pick.Choices[2].Face, Is.Null, "a page has no card face");
                 Assert.That(pick.Choices[2].Caption, Is.EqualTo(HeritagePicks.PageCaption));
@@ -67,15 +67,15 @@ namespace Exploration.Bridge.Tests
 
             IReadOnlyList<string> selected = Array.Empty<string>();
             foreach (HeritageChoice choice in HeritagePicks.For(expedition).Choices) selected = HeritagePicks.Toggle(expedition, selected, choice.Key);
-            Assert.That(selected, Is.EqualTo(new[] { "card:" + CardCatalog.Thrust.Id, "card:" + CardCatalog.FangRush.Id, "page:p1" }), "the fourth is refused");
+            Assert.That(selected, Is.EqualTo(new[] { "card:" + CardCatalog.SideSweep.Id, "card:" + CardCatalog.SnapGuard.Id, "page:p1" }), "the fourth is refused");
 
-            selected = HeritagePicks.Toggle(expedition, selected, "card:" + CardCatalog.FangRush.Id);
+            selected = HeritagePicks.Toggle(expedition, selected, "card:" + CardCatalog.SnapGuard.Id);
             selected = HeritagePicks.Toggle(expedition, selected, "page:p2");
             selected = HeritagePicks.Toggle(expedition, selected, "card:nothing");
             HeritagePick pick = HeritagePicks.For(expedition, selected);
             Assert.Multiple(() =>
             {
-                Assert.That(selected, Is.EqualTo(new[] { "card:" + CardCatalog.Thrust.Id, "page:p1", "page:p2" }));
+                Assert.That(selected, Is.EqualTo(new[] { "card:" + CardCatalog.SideSweep.Id, "page:p1", "page:p2" }));
                 Assert.That(pick.SelectedCount, Is.EqualTo(3));
                 Assert.That(pick.Choices.Where(c => c.Selected).Select(c => c.Key), Is.EqualTo(selected));
             });
@@ -86,8 +86,8 @@ namespace Exploration.Bridge.Tests
         {
             var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) });
             WalkTo(expedition, NodeKind.Trace);
-            string fang = CardCatalog.FangRush.Id;
-            string thrust = CardCatalog.Thrust.Id;
+            string fang = CardCatalog.SnapGuard.Id;
+            string thrust = CardCatalog.SideSweep.Id;
             int thrustCopies = expedition.Deck.Count(c => c.Def.Id == thrust);
             Assert.That(expedition.Owned.Contains(fang), Is.False, "a learned card nobody taught this life");
 
@@ -99,7 +99,7 @@ namespace Exploration.Bridge.Tests
                 Assert.That(expedition.Deck.Count(c => c.Def.Id == thrust), Is.EqualTo(thrustCopies), "a kind the deck holds gets no copy");
                 Assert.That(expedition.Mastery.RankOf(fang), Is.EqualTo(1));
                 Assert.That(expedition.Mastery.RankOf(thrust), Is.EqualTo(1));
-                Assert.That(expedition.Mastery.Mastered(CardCatalog.Thrust).Name, Is.EqualTo("鋭い突き"));
+                Assert.That(expedition.Mastery.Mastered(CardCatalog.SideSweep).Name, Is.EqualTo("大横薙ぎ"));
                 Assert.That(expedition.InheritedLegacyPages.Select(p => p.PageId), Is.EqualTo(new[] { "p2" }));
                 Assert.That(expedition.Session.Traces.Traces, Is.Empty);
                 Assert.That(HeritagePicks.For(expedition).IsShown, Is.False);
@@ -154,7 +154,7 @@ namespace Exploration.Bridge.Tests
             var four = HeritagePicks.For(expedition).Choices.Select(c => c.Key).ToList();
             Assert.That(HeritagePicks.Confirm(expedition, four), Is.False);
             Assert.That(HeritagePicks.For(expedition).IsShown, Is.True, "the trace still waits");
-            Assert.That(expedition.Owned.Contains(CardCatalog.FangRush.Id), Is.False);
+            Assert.That(expedition.Owned.Contains(CardCatalog.SnapGuard.Id), Is.False);
         }
 
         [Test]
@@ -180,7 +180,7 @@ namespace Exploration.Bridge.Tests
         {
             var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) });
             WalkTo(expedition, NodeKind.Trace);
-            Assert.That(HeritagePicks.Confirm(expedition, new[] { "card:" + CardCatalog.Thrust.Id }), Is.True);
+            Assert.That(HeritagePicks.Confirm(expedition, new[] { "card:" + CardCatalog.SideSweep.Id }), Is.True);
             WalkTo(expedition, NodeKind.Battle, winLast: false);
 
             var pages = EnemyJournal.All
@@ -195,7 +195,7 @@ namespace Exploration.Bridge.Tests
 
             DeathTrace trace = expedition.Session.Traces.Traces.Single();
             Assert.That(trace.Candidates.Select(c => c.Key),
-                Is.EqualTo(new[] { "card:" + CardCatalog.Thrust.Id }.Concat(pages).Concat(new[] { "page:" + DungeonJournal.PageId(1), "page:memo-1" }).ToList()),
+                Is.EqualTo(new[] { "card:" + CardCatalog.SideSweep.Id }.Concat(pages).Concat(new[] { "page:" + DungeonJournal.PageId(1), "page:memo-1" }).ToList()),
                 "the card the life took in at step 1, then the enemy pages, a layer's dungeon page and the note; the page of terms is never on it");
             Assert.That(trace.Candidates.Where(c => c.Kind == LegacyKind.Page).Select(c => c.Title),
                 Is.EqualTo(expedition.Journal.LegacyLines().Select(l => l.Text).ToList()), "each page is its journal line (§6.11)");
@@ -291,7 +291,7 @@ namespace Exploration.Bridge.Tests
         {
             var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) });
             WalkTo(expedition, NodeKind.Trace);
-            Assert.That(HeritagePicks.Confirm(expedition, new[] { "card:" + CardCatalog.Thrust.Id }), Is.True);
+            Assert.That(HeritagePicks.Confirm(expedition, new[] { "card:" + CardCatalog.SideSweep.Id }), Is.True);
             WalkTo(expedition, NodeKind.Battle, winLast: false);
             Assert.That(expedition.Session.Act(ScreenAction.FallInBattle), Is.True);
             Assert.That(expedition.Session.Traces.Traces.Single().Candidates, Is.Not.Empty);
@@ -308,10 +308,10 @@ namespace Exploration.Bridge.Tests
         public void CardsOf_ListsEveryCardAtStepOneOrMore_WithItsNameThere()
         {
             MasteryBook book = MasteryBook.Begin(null);
-            for (int i = 0; i < Constants.MasteryThresholds[0]; i++) book = book.Train(CardCatalog.Thrust.Id).Book;
+            for (int i = 0; i < Constants.MasteryThresholds[0]; i++) book = book.Train(CardCatalog.SideSweep.Id).Book;
             book = book.Train(CardCatalog.KesaCut.Id).Book;
 
-            Assert.That(Legacies.CardsOf(book), Is.EqualTo(new[] { new LegacyCard(CardCatalog.Thrust.Id, 1, "鋭い突き") }),
+            Assert.That(Legacies.CardsOf(book), Is.EqualTo(new[] { new LegacyCard(CardCatalog.SideSweep.Id, 1, "大横薙ぎ") }),
                 "a card with ticks but no step is not left");
             Assert.That(Legacies.CardsOf(MasteryBook.Begin(null)), Is.Empty);
         }
@@ -319,7 +319,7 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void WithRank_SetsTheStepAndItsTicks_KeepsAHigherOne_AndHonoursTheOneTopCard()
         {
-            string thrust = CardCatalog.Thrust.Id;
+            string thrust = CardCatalog.SideSweep.Id;
             string overhead = CardCatalog.Overhead.Id;
             MasteryBook book = Legacies.WithRank(MasteryBook.Begin(null), thrust, 2);
             Assert.Multiple(() =>
@@ -352,8 +352,8 @@ namespace Exploration.Bridge.Tests
                 var candidates = Heritage.Candidates(layers[i],
                     new[]
                     {
-                        new LegacyCard(CardCatalog.Thrust.Id, 1, "鋭い突き"),
-                        new LegacyCard(CardCatalog.FangRush.Id, 1, "牙の強襲"),
+                        new LegacyCard(CardCatalog.SideSweep.Id, 1, "大横薙ぎ"),
+                        new LegacyCard(CardCatalog.SnapGuard.Id, 1, "瞬の受け"),
                     },
                     new[] { new LegacyPage("p1", "頁 1"), new LegacyPage("p2", "頁 2") });
                 ledger = ledger.Add(new DeathTrace(i + 1, i + 1, Heritage.StandInName(i + 1),
