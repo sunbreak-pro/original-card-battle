@@ -82,7 +82,6 @@ namespace InheritanceCore.Tests
                 ["AlreadyTaken"] = InheritanceText.AlreadyTaken,
                 ["Appears"] = InheritanceText.Appears,
                 ["Waits"] = InheritanceText.Waits,
-                ["ClearedTraceNote"] = InheritanceText.ClearedTraceNote,
                 ["WithheldHeading"] = InheritanceText.WithheldHeading,
                 ["DungeonPageDetail"] = InheritanceText.DungeonPageDetail,
                 ["TierFirst"] = InheritanceText.TierFirst,
@@ -116,6 +115,9 @@ namespace InheritanceCore.Tests
                 ["SurvivorSpentLimits"] = InheritanceText.SurvivorSpentLimits(3, 40),
             };
             foreach (var pair in consts) Assert.That(pair.Value, Is.EqualTo((string)t[pair.Key]!), pair.Key);
+            // The one departure from the JS table (#108, concept-v3 §8.1): a cleared life's journal no longer passes on.
+            Assert.That((string)t["ClearedTraceNote"]!, Is.EqualTo("歪みの根を倒した生の痕跡。札だけを残し、手記は生存者として渡った"));
+            Assert.That(InheritanceText.ClearedTraceNote, Is.EqualTo("歪みの根を倒した生の痕跡。札だけを残し、手記は残らなかった"));
             Assert.That(InheritanceText.TraceRules, Is.EqualTo((List<object?>)t["TraceRules"]!));
             foreach (CandidateKind k in Enum.GetValues(typeof(CandidateKind)))
                 Assert.That(InheritanceText.KindLabel(k), Is.EqualTo(((JsonObject)t["KindLabel"]!)[k.ToString()]), k.ToString());
@@ -191,13 +193,19 @@ namespace InheritanceCore.Tests
         }
 
         [Test]
-        public void AClearedLineage_ItsHallAndEnding_AreTheJs()
+        public void AClearedLineage_IsTheJsLessTheSurvivor()
         {
+            // Departure (#108, concept-v3 §8.1, Koudai-san 2026-11-03): the JS made a cleared life the survivor. The C#
+            // keeps everything else the JS wrote byte for byte (the life, its card-only trace, RootDefeated) and leaves
+            // the survivor as it was, here none. The JS hall and ending showed that survivor, so they are not compared.
             var opts = new EndOptions { ExtraBossWon = true, RootCards = new List<CardEntry> { "ne_watari", "ne_shibari", new CardEntry("tsuki", 0) } };
             var c = SurviveAt(Inheritance.NewLineage(42), 7, opts: opts, ending: RunPhase.Completed);
-            Assert.That(S(c), Is.EqualTo(O("cleared")));
-            Assert.That(Json.Stringify(Inheritance.HallView(c).ToJson()), Is.EqualTo(O("clearedHall")));
-            Assert.That(Json.Stringify(Inheritance.EndingView(c).ToJson()), Is.EqualTo(O("clearedEnding")));
+            var js = (JsonObject)Json.Parse(O("cleared"))!;
+            Assert.That(js["Survivor"], Is.Not.Null, "the JS oracle still has the old rule");
+            js["Survivor"] = null;
+            Assert.That(S(c), Is.EqualTo(Json.Stringify(js)));
+            Assert.That(Inheritance.HallView(c).Survivor, Is.Null);
+            Assert.That(Inheritance.EndingView(c).Lines, Does.Contain(InheritanceText.ClearedNoSurvivor));
         }
 
         [Test]

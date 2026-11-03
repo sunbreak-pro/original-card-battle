@@ -826,11 +826,13 @@ namespace InheritanceCore
 
         /// <summary>
         /// The heir closed the life alive: 「この生を終える」 (RunPhase.Survived) or 歪みの根 defeated
-        /// (RunPhase.Completed). The heir becomes the one survivor (§8.2: a new survivor replaces the previous one,
-        /// tier1 R1-13): the whole journal passes to the next life, and the 生存者ボーナス (tool slots +1, deck cap +5)
-        /// holds for the next life only (§14) — two after the extra boss (§15.2, opts.ExtraBossWon). A cleared life
-        /// also leaves a trace on its layer with its mastered cards and 歪みの根's cards (opts.RootCards; roster §6.6 /
-        /// §7.4: they pass only as legacy) — 試作で決めたこと 10.
+        /// (RunPhase.Completed). A survived heir becomes the one survivor (§8.2: a new survivor replaces the previous
+        /// one, tier1 R1-13): the whole journal passes to the next life, and the 生存者ボーナス (tool slots +1, deck cap
+        /// +5) holds for the next life only (§14) — two after the extra boss (§15.2, opts.ExtraBossWon).
+        /// A cleared life (踏破) is no survivor (concept-v3 §8.1, Koudai-san 2026-11-03, #108; the browser trial made it
+        /// one): the previous survivor stays as it was and the journal passes to nobody. It leaves a trace on its
+        /// layer with its mastered cards and 歪みの根's cards only (opts.RootCards; roster §6.6 / §7.4: they pass only as
+        /// legacy) — 試作で決めたこと 10, kept by the same decision.
         /// </summary>
         // js: core/inheritance/Inheritance.js:772
         public static Lineage RecordSurvival(Lineage lineage, LifeRecord? life, LifePlace place, LifeDeck? deck, Journal? journal, EndOptions? opts = null) =>
@@ -867,15 +869,20 @@ namespace InheritanceCore
                 });
             }
 
-            int? replaced = lineage.Survivor?.Generation;
-            var closed = current.Closed(where.Ending, where.Layer, where.NodeId, where.NodeKind, traceId).WithReplacedSurvivor(replaced);
+            var closed = current.Closed(where.Ending, where.Layer, where.NodeId, where.NodeKind, traceId);
+            Survivor? survivor = lineage.Survivor;
+            if (!cleared)
+            {
+                closed = closed.WithReplacedSurvivor(lineage.Survivor?.Generation);
+                survivor = new Survivor(current.Generation, current.Name, lives, lives, book);
+            }
             return new Lineage(
                 lineage.Version,
                 lineage.Seed,
                 lineage.Lives.Concat(new[] { closed }),
                 null,
                 traces,
-                new Survivor(current.Generation, current.Name, lives, lives, book),
+                survivor,
                 PlayerAfter(lineage, journal, rootDefeated: cleared));
         }
 

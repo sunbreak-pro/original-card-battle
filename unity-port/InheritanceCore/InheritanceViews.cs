@@ -711,11 +711,19 @@ namespace InheritanceCore
                 }
                 if (trace != null && trace.Withheld.Count > 0) lines.Add(InheritanceText.WithheldLine(trace.Withheld.Select(w => w.Name)));
             }
+            else if (ending == LifeEnding.Completed)
+            {
+                // 踏破 is no survivor (concept-v3 §8.1, #108): the cards stay as a trace, the journal passes to nobody,
+                // and whoever was the survivor before stays so.
+                if (trace != null) lines.Add(InheritanceText.ClearedTraceLeft(layerTitle));
+                lines.Add(InheritanceText.ClearedNoSurvivor);
+                var kept = lineage.Survivor;
+                if (kept != null && kept.BonusLivesLeft > 0) lines.Add(InheritanceText.SurvivorKept(kept.Generation, kept.Name));
+            }
             else
             {
                 lines.Add(InheritanceText.JournalPasses);
                 lines.Add(InheritanceText.SurvivorBonusLine(lineage.Survivor != null ? lineage.Survivor.BonusLives : InheritanceRules.SurvivorBonusLives));
-                if (ending == LifeEnding.Completed && trace != null) lines.Add(InheritanceText.ClearedTraceLeft(layerTitle));
                 if (life.ReplacedSurvivor != null)
                 {
                     var old = lineage.Lives.FirstOrDefault(l => l.Generation == life.ReplacedSurvivor);
