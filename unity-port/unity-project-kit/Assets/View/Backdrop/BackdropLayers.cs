@@ -9,7 +9,8 @@
 // screen lays its veil (ExplorationBackdropSpec.Veil) over this as a full-screen Image of its own.
 //
 // The art for a layer goes in Resources/Backdrops/layer-<n> (a Sprite, opaque, 1920×1080). Without it the
-// code-only backdrop is the whole picture; with it the art sits over the sky and under the haze.
+// code-only backdrop is the whole picture; with it the art sits over the sky and under the haze. The path is
+// BackdropArt's, which the trial's battle, exploration and meta screens read too (#858), so one picture reaches them all.
 #if UNITY_2021_2_OR_NEWER
 using System.Collections.Generic;
 using UnityEngine;
@@ -20,7 +21,7 @@ namespace Backdrop.View
     public class BackdropLayers : MonoBehaviour
     {
         /// <summary>Where the art of layer n is looked for under Resources (n = 1〜7).</summary>
-        public const string ArtPath = "Backdrops/layer-";
+        public const string ArtPath = BackdropArt.ResourcePrefix;
 
         private sealed class Slot
         {
@@ -111,7 +112,8 @@ namespace Backdrop.View
             Vector2 size = _root.rect.size;
 
             UiKit.Image(slot.Root, "Sky", SkySprite(spec), Color.white, Vector2.zero, Vector2.one);
-            Sprite art = Resources.Load<Sprite>(ArtPath + spec.Layer);
+            string artPath = BackdropArt.ResourcePath(spec.Layer);
+            Sprite art = artPath != null ? Resources.Load<Sprite>(artPath) : null;
             if (art) UiKit.Image(slot.Root, "Art", art, Color.white, Vector2.zero, Vector2.one);
 
             foreach (Haze haze in spec.Hazes)

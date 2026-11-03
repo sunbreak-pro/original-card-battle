@@ -14,12 +14,16 @@
 // Unity additions of 2026-11-03, which the JS does not have (こうだいさん's request, a deliberate departure from the JS look:
 // a far view drawn in code until the painted art lands, and more sets of specks): each group of BackdropScenery is one
 // static mesh over the screen between the sky and the hazes, and every set of BackdropSpec.Specks is painted as the JS
-// paints its one set of specks (the first set is LayerBackdrop.Motes, as before).
+// paints its one set of specks (the first set is LayerBackdrop.Motes, as before). Once a layer's art is painted (#858,
+// Resources/Backdrops/layer-n, BackdropArt), it takes the far view's place over the sky, and the hazes, the specks, the
+// veil and the vignette stay on top; without the art the backdrop is painted as before.
 using System;
 using System.Collections.Generic;
 using Trial.Geometry;
 using Trial.Kit;
 using UnityEngine;
+using ArtCrop = global::Backdrop.ArtCrop;
+using BackdropArt = global::Backdrop.BackdropArt;
 using BRgba = global::Backdrop.Rgba;
 using Haze = global::Backdrop.Haze;
 using HazeShape = global::Backdrop.HazeShape;
@@ -128,7 +132,7 @@ namespace Trial.Meta
         }
 
         // js: scenes/meta/backdrop.js:57
-        /// <summary>build(): the sky, the far view (a Unity addition), the hazes, the specks, the veil and the vignette, in that order.</summary>
+        /// <summary>build(): the sky, the layer's art or the far view (Unity additions), the hazes, the specks, the veil and the vignette, in that order.</summary>
         private void Build()
         {
             Ui.Clear(Canvas);
@@ -141,13 +145,17 @@ namespace Trial.Meta
                 sky.Add(GradientStop.At(MetaUtil.RgbaOf(stop.Color), Math.Max(0f, Math.Min(1f, stop.At))));
             if (sky.Count > 0) Fill("sky", LinearGradient.Points(new Vec2(0f, 0f), new Vec2(0f, H), sky.ToArray()));
 
-            // the far view (Unity addition of 2026-11-03, こうだいさん's request: a far view drawn in code; the JS has none).
-            // A group that fails is logged, and the backdrop paints on without the rest of the far view.
-            try
+            // the layer's art, or while it has none the far view (Unity additions of 2026-11-03, こうだいさん's requests:
+            // a far view drawn in code, and a slot for the painted art, #858; the JS has neither). The hall's room is not a
+            // layer, so it takes no art. A group that fails is logged, and the backdrop paints on without the rest of the far view.
+            if (BackdropArt.DrawsFarView(LayArt()))
             {
-                foreach (SceneryMesh mesh in global::Backdrop.BackdropScenery.Meshes(_current)) Scenery(mesh);
+                try
+                {
+                    foreach (SceneryMesh mesh in global::Backdrop.BackdropScenery.Meshes(_current)) Scenery(mesh);
+                }
+                catch (Exception e) { Debug.LogException(e); }
             }
-            catch (Exception e) { Debug.LogException(e); }
 
             foreach (Haze haze in _current.Hazes ?? Array.Empty<Haze>())
             {
@@ -188,6 +196,18 @@ namespace Trial.Meta
                 Fill("vignette", RadialGradient.Points(new Vec2(W / 2f, H / 2f), H * 0.35f, W * 0.62f,
                     GradientStop.At(MetaUtil.RgbaOf(_ground, 0f), 0f), GradientStop.At(MetaUtil.RgbaOf(_ground, _opts.Vignette), 1f)));
             }
+        }
+
+        /// <summary>
+        /// The painted art of the spec's layer (Resources/Backdrops/layer-n, the path the battle screens read too) over the
+        /// whole screen, cropped to fill it; false while the layer has none.
+        /// </summary>
+        private bool LayArt()
+        {
+            Sprite art = ArtImage.Load(BackdropArt.ResourcePath(_current.Layer));
+            if (!art) return false;
+            ArtCrop c = BackdropArt.Cover(art.rect.width, art.rect.height, W, H);
+            return ArtImage.Lay(Canvas, art, 0f, 0f, W, H, c.X, c.Y, c.W, c.H, "art") != null;
         }
 
         private GradientGraphic Fill(string name, Paint paint)
