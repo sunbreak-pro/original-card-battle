@@ -68,11 +68,11 @@ namespace BattleCore.Tests
                 Assert.That(Cards.Validate(deck, DeckLimits.Default).Errors, Is.EqualTo(plain.Errors), "Validate " + n);
                 Assert.That(Cards.Validate(deck, null).Errors, Is.EqualTo(plain.Errors));
                 Assert.That(DeckRules.ValidateDeck(deck, AllKinds, DeckLimits.Default).Errors, Is.EqualTo(DeckRules.ValidateDeck(deck, AllKinds).Errors));
-                Assert.That(DeckRules.CanAdd(deck, "thrust", AllKinds, DeckLimits.Default), Is.EqualTo(DeckRules.CanAdd(deck, "thrust", AllKinds)));
-                Assert.That(DeckRules.CanAdd(deck, "thrust", AllKinds, null), Is.EqualTo(DeckRules.CanAdd(deck, "thrust", AllKinds)));
+                Assert.That(DeckRules.CanAdd(deck, "side_sweep", AllKinds, DeckLimits.Default), Is.EqualTo(DeckRules.CanAdd(deck, "side_sweep", AllKinds)));
+                Assert.That(DeckRules.CanAdd(deck, "side_sweep", AllKinds, null), Is.EqualTo(DeckRules.CanAdd(deck, "side_sweep", AllKinds)));
                 foreach (string[] tools in new[] { new string[0], new[] { "a", "b", "c" }, new[] { "a", "b", "c", "d" } })
                 {
-                    var departure = new Departure(deck, tools, new[] { "x", "y", "z", "w" }.Take(tools.Length).ToArray(), 0, "thrust");
+                    var departure = new Departure(deck, tools, new[] { "x", "y", "z", "w" }.Take(tools.Length).ToArray(), 0, "side_sweep");
                     DeckValidation explicitDefault = DeckRules.Validate(departure, AllKinds, DeckLimits.Default);
                     DeckValidation left = DeckRules.Validate(departure, AllKinds);
                     Assert.That(explicitDefault.Ok, Is.EqualTo(left.Ok));
@@ -115,8 +115,8 @@ namespace BattleCore.Tests
             Assert.That(DeckRules.ValidateDeck(DeckOf(45), AllKinds, Survivor).Ok, Is.True);
             Assert.That(DeckRules.ValidateDeck(DeckOf(45), AllKinds).Errors, Is.EqualTo(new[] { "Deck has 45 cards; the maximum is 40." }));
             // the other §8 rules do not move: three of a kind
-            var four = DeckOf(40).Concat(new[] { new CardInstance("thrust-9", CardCatalog.ById("thrust")) }).ToList();
-            Assert.That(Cards.Validate(four, Survivor).Errors, Is.EqualTo(new[] { "Deck holds 4 copies of \"thrust\"; the maximum is 3." }));
+            var four = DeckOf(40).Concat(new[] { new CardInstance("side_sweep-9", CardCatalog.ById("side_sweep")) }).ToList();
+            Assert.That(Cards.Validate(four, Survivor).Errors, Is.EqualTo(new[] { "Deck holds 4 copies of \"side_sweep\"; the maximum is 3." }));
         }
 
         // ---- L-4 CanAdd ----
@@ -131,8 +131,8 @@ namespace BattleCore.Tests
                 Assert.That(DeckRules.CanAdd(forty, "observe", AllKinds, Survivor), Is.True);
                 Assert.That(DeckRules.CanAdd(DeckOf(44), "observe", AllKinds, Survivor), Is.True);
                 Assert.That(DeckRules.CanAdd(DeckOf(45), "observe", AllKinds, Survivor), Is.False);
-                Assert.That(DeckRules.CanAdd(forty, "thrust", AllKinds, Survivor), Is.False, "still three of a kind");
-                Assert.That(DeckRules.CanAdd(forty, "observe", new[] { "thrust" }, Survivor), Is.False, "still owned kinds only");
+                Assert.That(DeckRules.CanAdd(forty, "side_sweep", AllKinds, Survivor), Is.False, "still three of a kind");
+                Assert.That(DeckRules.CanAdd(forty, "observe", new[] { "side_sweep" }, Survivor), Is.False, "still owned kinds only");
             });
         }
 
@@ -142,11 +142,11 @@ namespace BattleCore.Tests
         public void L5_Validate_AFourthToolFitsOnlyWithTheBonus_TheConsumablesStayThree()
         {
             List<CardInstance> deck = DeckOf(45);
-            var four = new Departure(deck, new[] { "a", "b", "c", "d" }, new[] { "x", "y", "z" }, 0, "thrust");
+            var four = new Departure(deck, new[] { "a", "b", "c", "d" }, new[] { "x", "y", "z" }, 0, "side_sweep");
             Assert.That(DeckRules.Validate(four, AllKinds, Survivor).Errors, Is.Empty);
             Assert.That(DeckRules.Validate(four, AllKinds).Errors,
                 Is.EqualTo(new[] { "Deck has 45 cards; the maximum is 40.", "4 tools do not fit 3 slots." }));
-            var five = new Departure(deck, new[] { "a", "b", "c", "d", "e" }, new[] { "x", "y", "z", "w" }, 0, "thrust");
+            var five = new Departure(deck, new[] { "a", "b", "c", "d", "e" }, new[] { "x", "y", "z", "w" }, 0, "side_sweep");
             Assert.That(DeckRules.Validate(five, AllKinds, Survivor).Errors,
                 Is.EqualTo(new[] { "5 tools do not fit 4 slots.", "4 consumables do not fit 3 slots." }));
         }

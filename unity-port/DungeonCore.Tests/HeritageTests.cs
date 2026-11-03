@@ -14,7 +14,7 @@ namespace DungeonCore.Tests
     {
         private const int PlayerMaxHp = 50;
 
-        private static readonly LegacyCard StepOne = new LegacyCard("thrust", 1, "鋭い突き");
+        private static readonly LegacyCard StepOne = new LegacyCard("side_sweep", 1, "大横薙ぎ");
         private static readonly LegacyCard StepTwo = new LegacyCard("kesa_cut", 2, "重ね袈裟");
         private static readonly LegacyCard StepThree = new LegacyCard("overhead", 3, "天墜");
         private static readonly LegacyCard StepZero = new LegacyCard("pierce", 0, "貫き");
@@ -34,7 +34,7 @@ namespace DungeonCore.Tests
                 Assert.That(trace.Cause, Is.EqualTo(DeathCause.Fallen));
                 Assert.That(trace.Place, Is.EqualTo(new DeathPlace(2, NodeKind.Battle)), "the entry is always a battle");
                 Assert.That(trace.Name, Is.EqualTo("1 代目"), "a stand-in until #110 names the generations");
-                Assert.That(trace.Candidates.Select(c => c.Key), Is.EqualTo(new[] { "card:thrust", "page:enemy:rust_spear" }));
+                Assert.That(trace.Candidates.Select(c => c.Key), Is.EqualTo(new[] { "card:side_sweep", "page:enemy:rust_spear" }));
             });
         }
 
@@ -80,10 +80,10 @@ namespace DungeonCore.Tests
             var cards = new[] { StepZero, StepOne, StepTwo, StepThree };
             Assert.Multiple(() =>
             {
-                Assert.That(Heritage.Candidates(1, cards, null).Select(c => c.Id), Is.EqualTo(new[] { "thrust" }));
-                Assert.That(Heritage.Candidates(Heritage.DeepLayer - 1, cards, null).Select(c => c.Id), Is.EqualTo(new[] { "thrust" }));
+                Assert.That(Heritage.Candidates(1, cards, null).Select(c => c.Id), Is.EqualTo(new[] { "side_sweep" }));
+                Assert.That(Heritage.Candidates(Heritage.DeepLayer - 1, cards, null).Select(c => c.Id), Is.EqualTo(new[] { "side_sweep" }));
                 Assert.That(Heritage.Candidates(Heritage.DeepLayer, cards, null).Select(c => c.Id),
-                    Is.EqualTo(new[] { "overhead", "kesa_cut", "thrust" }), "deepest step first");
+                    Is.EqualTo(new[] { "overhead", "kesa_cut", "side_sweep" }), "deepest step first");
                 Assert.That(Heritage.Candidates(7, cards, null).Select(c => c.Rank), Is.EqualTo(new[] { 3, 2, 1 }));
             });
         }
@@ -113,9 +113,9 @@ namespace DungeonCore.Tests
             {
                 Assert.That(list.Select(c => c.Key), Is.EqualTo(new[]
                 {
-                    "card:kesa_cut", "card:thrust", "page:enemy:rust_spear", "page:dungeon:1",
+                    "card:kesa_cut", "card:side_sweep", "page:enemy:rust_spear", "page:dungeon:1",
                 }));
-                Assert.That(list.Select(c => c.Title), Is.EqualTo(new[] { "重ね袈裟", "鋭い突き", "錆槍の竜兵の頁", "燦光の樹海の頁" }));
+                Assert.That(list.Select(c => c.Title), Is.EqualTo(new[] { "重ね袈裟", "大横薙ぎ", "錆槍の竜兵の頁", "燦光の樹海の頁" }));
                 Assert.That(list.Where(c => c.Kind == LegacyKind.Page).All(c => c.Rank == 0), Is.True);
             });
         }
@@ -126,7 +126,7 @@ namespace DungeonCore.Tests
         public void Choosing_HandsOnUpToThree_CardsKeepTheirStep()
         {
             DeathTrace trace = DeepTrace();
-            Bequest bequest = Heritage.Choose(trace, new[] { "page:dungeon:1", "card:overhead", "card:thrust" });
+            Bequest bequest = Heritage.Choose(trace, new[] { "page:dungeon:1", "card:overhead", "card:side_sweep" });
             Assert.Multiple(() =>
             {
                 Assert.That(bequest.TraceId, Is.EqualTo(trace.Id));
@@ -164,8 +164,8 @@ namespace DungeonCore.Tests
                 Assert.That(Heritage.CanChoose(trace, four), Is.False);
                 Assert.Throws<ExplorationRuleException>(() => Heritage.Choose(trace, four));
                 Assert.Throws<ExplorationRuleException>(() => Heritage.Choose(trace, new[] { "card:nothing" }));
-                Assert.Throws<ExplorationRuleException>(() => Heritage.Choose(trace, new[] { "card:thrust", "card:thrust" }));
-                Assert.Throws<ExplorationRuleException>(() => Heritage.Choose(trace, new[] { "page:thrust" }), "a card's id is not a page's key");
+                Assert.Throws<ExplorationRuleException>(() => Heritage.Choose(trace, new[] { "card:side_sweep", "card:side_sweep" }));
+                Assert.Throws<ExplorationRuleException>(() => Heritage.Choose(trace, new[] { "page:side_sweep" }), "a card's id is not a page's key");
                 Assert.Throws<ExplorationRuleException>(() => Heritage.Choose(trace, null));
             });
         }
@@ -220,7 +220,7 @@ namespace DungeonCore.Tests
                 Assert.That(ledger.Visit(5).ClaimedTraceId, Is.Null, "a layer with no trace claims nothing");
             });
 
-            TraceLedger collected = visited.Collect(new[] { "card:thrust" }, out Bequest bequest);
+            TraceLedger collected = visited.Collect(new[] { "card:side_sweep" }, out Bequest bequest);
             Assert.Multiple(() =>
             {
                 Assert.That(bequest.TraceId, Is.EqualTo(1));

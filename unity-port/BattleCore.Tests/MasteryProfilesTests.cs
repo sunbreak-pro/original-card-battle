@@ -8,38 +8,39 @@ using BattleCore;
 namespace BattleCore.Tests
 {
     /// <summary>
-    /// #504: the sixty mastery profiles against swordsman_cards_v4.md §4.6 (v4.7, #449) — each card's
+    /// #504: the fifty-three mastery profiles against swordsman_cards_v4.md's 習熟の段 table (§4.7 in
+    /// v4.10, #824; #825 followed it) — each card's
     /// kind, its names at steps 1-3, and for 型替え the condition at each step along battle_core_v4
     /// §19.3 S7 as #504 reads it — and 伸び on the five movement-centred cards (§3.2).
     ///
-    /// The table test reads §4.6 out of the canon itself, so a row changed on either side alone fails
+    /// The table test reads that table out of the canon itself, so a row changed on either side alone fails
     /// here. The copy Unity runs (Assets/Tests) has no canon beside it, so there that test is skipped.
     /// </summary>
     public class MasteryProfilesTests
     {
         private const string CanonPath = ".claude/docs/card_document/swordsman_cards_v4.md";
 
-        // ---- The sixty, without the table ----
+        // ---- The fifty-three, without the table ----
 
         [Test]
-        public void TheProfiles_AreSixtyCardsOfTheCatalog_InCanonOrder()
+        public void TheProfiles_AreFiftyThreeCardsOfTheCatalog_InCanonOrder()
         {
             var ids = MasteryProfiles.All.Select(p => p.CardId).ToList();
             var order = ids.Select(id => IndexOf(id)).ToList();
 
             Assert.Multiple(() =>
             {
-                Assert.That(ids.Count, Is.EqualTo(60));
-                Assert.That(ids.Distinct().Count(), Is.EqualTo(60));
+                Assert.That(ids.Count, Is.EqualTo(53));
+                Assert.That(ids.Distinct().Count(), Is.EqualTo(53));
                 Assert.That(order, Is.All.GreaterThanOrEqualTo(0), "every profile is a catalog card");
                 Assert.That(order, Is.Ordered, "canon order");
                 Assert.That(MasteryProfiles.Find("observe"), Is.SameAs(MasteryProfiles.Observe));
             });
         }
 
-        /// <summary>§4.6's tally: the kinds by column (軽さ never on column 1, §19.3 S5).</summary>
-        [TestCase(MasteryKind.Extend, 10, 12, 8)]
-        [TestCase(MasteryKind.Lighten, 0, 3, 11)]
+        /// <summary>§4.7's tally: the kinds by column (軽さ never on column 1, §19.3 S5).</summary>
+        [TestCase(MasteryKind.Extend, 9, 11, 7)]
+        [TestCase(MasteryKind.Lighten, 0, 2, 8)]
         [TestCase(MasteryKind.Reform, 8, 6, 2)]
         public void TheKinds_ByColumn_MatchTheCanonTally(MasteryKind kind, int one, int two, int three)
         {
@@ -82,21 +83,24 @@ namespace BattleCore.Tests
             });
         }
 
-        // ---- Against §4.6 ----
+        // ---- Against the canon's table ----
 
         [Test]
-        public void TheProfiles_MatchTheTableOfSection46()
+        public void TheProfiles_MatchTheCanonTable()
         {
             string? path = FindCanon();
             if (path == null) Assert.Ignore("swordsman_cards_v4.md is not beside this copy of the tests (Unity).");
 
             var rows = ReadTable(path!);
-            Assert.That(rows.Count, Is.EqualTo(60), "§4.6 has sixty rows");
+            Assert.That(rows.Count, Is.EqualTo(53), "the table has fifty-three rows");
             Assert.Multiple(() =>
             {
                 foreach (var row in rows)
                 {
-                    var card = CardCatalog.All[row.Number - 1];
+                    // v4.10 kept the canon numbers and dropped nine, so a row finds its card by name.
+                    var card = CardCatalog.All.FirstOrDefault(c => c.Name == row.Name);
+                    Assert.That(card, Is.Not.Null, $"#{row.Number} {row.Name} is a catalog card");
+                    if (card == null) continue;
                     string at = $"#{row.Number} {row.Name}";
                     var profile = MasteryProfiles.Find(card.Id);
 
@@ -113,10 +117,10 @@ namespace BattleCore.Tests
                     Assert.That(conditions, Is.EqualTo(row.Conditions), at);
                 }
 
-                var listed = new HashSet<string>(rows.Select(r => CardCatalog.All[r.Number - 1].Id));
+                var listed = new HashSet<string>(rows.Select(r => r.Name));
                 foreach (var profile in MasteryProfiles.All)
                 {
-                    Assert.That(listed.Contains(profile.CardId), Is.True, $"{profile.CardId} has a profile, §4.6 has no row for it");
+                    Assert.That(listed.Contains(CardCatalog.ById(profile.CardId).Name), Is.True, $"{profile.CardId} has a profile, the table has no row for it");
                 }
             });
         }
@@ -205,7 +209,7 @@ namespace BattleCore.Tests
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
 
-        /// <summary>A condition as §4.6 writes it (§1.2's words).</summary>
+        /// <summary>A condition as the table writes it (§1.2's words).</summary>
         private static string ConditionWord(Trait trait) => trait.Condition switch
         {
             TraitCondition.Broken => "崩し後",
@@ -215,7 +219,7 @@ namespace BattleCore.Tests
             TraitCondition.Reserve => $"温存(残 ≥ {trait.Threshold})",
             TraitCondition.OmenIs => $"予兆({OmenWord(trait.Omen)})",
             TraitCondition.Combo => $"連動({AttributeWord(trait.Attribute)})",
-            _ => throw new ArgumentOutOfRangeException(nameof(trait), trait.Condition, "§4.6 does not loosen to this condition."),
+            _ => throw new ArgumentOutOfRangeException(nameof(trait), trait.Condition, "The table does not loosen to this condition."),
         };
 
         private static string OmenWord(OmenKind? omen) => omen switch
@@ -257,14 +261,18 @@ namespace BattleCore.Tests
             return null;
         }
 
-        /// <summary>The rows of §4.6's first table: # / 名前 / 列 / 型 / 段 1 / 段 2 / 段 3 / 型替えの条件.</summary>
+        /// <summary>
+        /// The rows of the 習熟の段 section's first table: # / 名前 / 列 / 型 / 段 1 / 段 2 / 段 3 / 型替えの条件.
+        /// Found by its title, not its number: v4.10 put it at §4.7 beside §4.6's record of the v4.9
+        /// table (習熟の段の記録), and the cards lane renumbers it to §4.6 once the record goes.
+        /// </summary>
         private static List<Row> ReadTable(string path)
         {
             var rows = new List<Row>();
             bool inside = false;
             foreach (string line in File.ReadLines(path))
             {
-                if (line.StartsWith("### 4.6", StringComparison.Ordinal)) { inside = true; continue; }
+                if (line.StartsWith("### 4.", StringComparison.Ordinal) && line.Contains(" 習熟の段（")) { inside = true; continue; }
                 if (!inside) continue;
                 if (line.StartsWith("## ", StringComparison.Ordinal) || line.StartsWith("### ", StringComparison.Ordinal)) break;
                 if (!line.StartsWith("|", StringComparison.Ordinal)) continue;

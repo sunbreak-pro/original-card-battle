@@ -5,18 +5,20 @@ using System.Linq;
 namespace BattleCore
 {
     /// <summary>
-    /// Card data, written as records from card_document/swordsman_cards_v4.md v4.6 (2026-10-08,
-    /// #401: v4.5 of #352 with #5 横薙ぎ at 0〜2 and 23). The numbers are the canon's and are not derived here: the 素直 +2 and the band table
+    /// Card data, written as records from card_document/swordsman_cards_v4.md v4.10 (2026-11-03,
+    /// #824, followed by #825). The numbers are the canon's and are not derived here: the 素直 +2 and the band table
     /// of §1.4 (the attack power by column and reach width) are already inside them.
     ///
-    /// The core carries all eighty swordsman cards (#188): the initial forty (§2, #1-#40) live in
-    /// CardCatalog.Initial.cs and the learned forty (§3, #41-#80) in CardCatalog.Learned.cs. This
-    /// file keeps the shorthands those two are written with, the canon-order list and the lookup.
+    /// The core carries the swordsman cards (#188) the canon keeps: the initial thirty-five (§2) live in
+    /// CardCatalog.Initial.cs and the learned thirty-six (§3) in CardCatalog.Learned.cs. The canon's
+    /// seventy-three counts the two stances #826 adds (#84 背水の陣, #85 覚醒). The canon numbers are
+    /// kept, so the list skips the nine v4.10 dropped. This file keeps the shorthands those two are
+    /// written with, the canon-order list and the lookup.
     /// </summary>
     public static partial class CardCatalog
     {
         /// <summary>
-        /// Every card the core knows, in canon order (#1 first, #80 last).
+        /// Every card the core knows, in canon order (#2 first, #79 last).
         ///
         /// Assigned in the static constructor, not by a field initializer: the order the field
         /// initializers of partial files run in is undefined, but all of them have run before the
@@ -28,34 +30,79 @@ namespace BattleCore
         {
             All = new[]
             {
-                // §2: the initial forty.
-                Thrust, KesaCut, Overhead, WristCut, SideSweep,
+                // §2: the initial thirty-five (v4.10 dropped #1, #17, #18, #29, #35).
+                KesaCut, Overhead, WristCut, SideSweep,
                 FlatStrike, ProbeThrust, Pierce, ThrowBlade, ReachThrust,
                 Brace, IronBlock, LowGuard, RiposteGuard, DeepBreath,
-                WaterStance, RockStance, FlowStance, FirstAid, SpiritRoar,
+                WaterStance, FirstAid, SpiritRoar,
                 Focus, Observe, WarCry, SecondWind, Footwork,
-                BackLeap, SlideStep, BreakOff, Lunge, Feint,
-                BoarRush, Rend, BodyCheck, StoneThrow, ParryCut,
+                BackLeap, SlideStep, BreakOff, Feint,
+                BoarRush, Rend, BodyCheck, StoneThrow,
                 GuardThrust, StepInGuard, StepOutGuard, IronWall, TwistAway,
 
-                // §3: the learned forty.
+                // §3: the learned thirty-six (v4.10 dropped #46, #53, #65, #80).
                 MiasmaBlade, PriestPrayer, PurgeFlash, LineLash, AbyssStance,
-                HaulStep, RootStride, ThornShot, RootBind, Bulwark,
-                ShieldBash, PackHowl, FangRush, Whirlwind, RiposteStance,
+                RootStride, ThornShot, RootBind, Bulwark,
+                ShieldBash, PackHowl, Whirlwind, RiposteStance,
                 HunterMark, SpearWall, ShieldPush, SnapGuard, LeapBack,
-                RisingCut, LegSweep, DashIn, GuardWalk, ThornCut,
+                RisingCut, LegSweep, DashIn, GuardWalk,
                 CalmGuard, Deflect, CrescentCut, PommelStrike, MistStep,
                 KeenEye, Resolve, GaleThrust, AnchorStance, VitalThrust,
-                EvadeCut, BloodDance, WolfStance, ShadowLunge, LastStand,
+                EvadeCut, BloodDance, WolfStance, ShadowLunge,
             };
-            Initial = All.Take(40).ToList();
+            Initial = All.Take(InitialCount).ToList();
+
+            var numbers = new List<int>();
+            for (int n = 1; n <= LastNumber; n++)
+            {
+                if (Array.IndexOf(DroppedNumbers, n) < 0) numbers.Add(n);
+            }
+            if (numbers.Count != All.Count) throw new InvalidOperationException("The canon numbers do not match the catalog.");
+            Numbers = numbers;
+        }
+
+        /// <summary>The highest canon number the catalog holds (#79; #80 left in v4.10).</summary>
+        private const int LastNumber = 80;
+
+        /// <summary>The canon numbers v4.10 dropped (#824). The rest keep their number, so the list has gaps.</summary>
+        private static readonly int[] DroppedNumbers = { 1, 17, 18, 29, 35, 46, 53, 65, 80 };
+
+        /// <summary>The canon number of each card of <see cref="All"/>, at the same index.</summary>
+        private static readonly IReadOnlyList<int> Numbers;
+
+        /// <summary>
+        /// The card with this canon number (swordsman_cards_v4 §2 / §3), or null for a number the catalog
+        /// does not hold: one v4.10 dropped, or one past the catalog (#81〜#85 come later). Since v4.10 a
+        /// number is not an index into <see cref="All"/> (#825).
+        /// </summary>
+        public static CardDef? ByNumber(int number)
+        {
+            for (int i = 0; i < Numbers.Count; i++)
+            {
+                if (Numbers[i] == number) return All[i];
+            }
+            return null;
+        }
+
+        /// <summary>The canon number of a catalog card.</summary>
+        public static int NumberOf(CardDef def)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            for (int i = 0; i < All.Count; i++)
+            {
+                if (ReferenceEquals(All[i], def)) return Numbers[i];
+            }
+            throw new KeyNotFoundException($"\"{def.Id}\" is not a catalog card.");
         }
 
         /// <summary>
-        /// §2: the initial forty (#1-#40), the kinds every character owns from the start, in canon
-        /// order. The one place the forty is counted (#648).
+        /// §2: the initial thirty-five (#2-#40), the kinds every character owns from the start, in
+        /// canon order. Counted by <see cref="InitialCount"/> alone (#648).
         /// </summary>
         public static readonly IReadOnlyList<CardDef> Initial;
+
+        /// <summary>§2's count of the initial kinds (v4.10, #824).</summary>
+        public const int InitialCount = 35;
 
         public static CardDef ById(string id)
         {
@@ -124,7 +171,8 @@ namespace BattleCore
     /// <summary>
     /// The player deck the slice fights the polearm with: ten kinds × 2 = 20 cards, the floor of §8.
     /// Why these ten is written on #71 and in the PR that added this file. They are named one by one
-    /// because <see cref="CardCatalog.All"/> holds all eighty since #188.
+    /// because <see cref="CardCatalog.All"/> holds every kind since #188. #1 突き left the canon in
+    /// v4.10 (#824), so its twin #5 横薙ぎ (column 3, 0〜2, 23, 素直) took its seat (#825).
     /// </summary>
     public static class PrototypeDeck
     {
@@ -132,7 +180,7 @@ namespace BattleCore
 
         public static IReadOnlyList<CardDef> Kinds { get; } = new[]
         {
-            CardCatalog.Thrust,
+            CardCatalog.SideSweep,
             CardCatalog.KesaCut,
             CardCatalog.ReachThrust,
             CardCatalog.Brace,

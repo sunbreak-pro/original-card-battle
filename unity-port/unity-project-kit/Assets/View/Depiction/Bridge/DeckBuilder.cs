@@ -168,7 +168,7 @@ namespace Depiction.Bridge
             return true;
         }
 
-        /// <summary>The deck laid out in canon order, instance ids "thrust-0", "thrust-1".</summary>
+        /// <summary>The deck laid out in canon order, instance ids "kesa_cut-0", "kesa_cut-1".</summary>
         public List<CardInstance> Build()
         {
             var deck = new List<CardInstance>();
@@ -255,12 +255,15 @@ namespace Depiction.Bridge
         // js: bridge/depiction/DeckBuilder.js:214
         public static string Title => TitleFor(DeckLimits.Default);
 
-        /// <summary>Trial extension: the title for some limits: 「デッキを組む（80 種から 20〜45 枚、1 種 3 枚まで）」.</summary>
+        /// <summary>
+        /// Trial extension: the title for some limits: 「デッキを組む（71 種から 20〜45 枚、1 種 3 枚まで）」. The
+        /// kinds are the catalog's, not OwnedKindsMax: the cap counts #84 / #85 before #826 brings them (#825).
+        /// </summary>
         // js: bridge/depiction/DeckBuilder.js:219
         public static string TitleFor(DeckLimits limits)
         {
             DeckLimits l = DeckLimits.From(limits);
-            return "デッキを組む（" + Constants.OwnedKindsMax + " 種から " + l.DeckMin + "〜" + l.DeckMax
+            return "デッキを組む（" + CardCatalog.All.Count + " 種から " + l.DeckMin + "〜" + l.DeckMax
                 + " 枚、1 種 " + Constants.CopiesMax + " 枚まで）";
         }
 
@@ -510,7 +513,7 @@ namespace Depiction.Bridge
 
         // ---- the saved string ----
 
-        /// <summary>"thrust:2,kesa_cut:3" in canon order. The screen stores it (PlayerPrefs); this class reads it back.</summary>
+        /// <summary>"kesa_cut:3,side_sweep:2" in canon order. The screen stores it (PlayerPrefs); this class reads it back.</summary>
         public string Save()
         {
             var text = new StringBuilder();

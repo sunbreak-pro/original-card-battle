@@ -13,10 +13,10 @@ namespace Exploration.Bridge.Tests
     public class ExpeditionSourcesTests
     {
         [Test]
-        public void TheInitialKinds_AreTheCatalogsInitialForty()
+        public void TheInitialKinds_AreTheCatalogsInitialKinds()
         {
             Assert.That(Expedition.InitialKinds, Is.EqualTo(CardCatalog.Initial.Select(d => d.Id)));
-            Assert.That(Expedition.InitialKinds.Count, Is.EqualTo(40));
+            Assert.That(Expedition.InitialKinds.Count, Is.EqualTo(35), "swordsman_cards_v4 v4.10 (#824)");
         }
 
         [Test]

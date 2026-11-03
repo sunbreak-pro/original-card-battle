@@ -42,23 +42,24 @@ namespace Exploration.Bridge
         /// <summary>§4.3: how many cards are laid out to pick one from.</summary>
         public const int Choices = 3;
 
-        // §4.3's table as canon numbers (swordsman_cards_v4.md §3), layer 1 first.
+        // §4.3's table as canon numbers (swordsman_cards_v4.md §3), layer 1 first. The card table owns
+        // the layers; v4.10 (#824) dropped #65 and #80, and #84 背水の陣 joins layer 7 with #826.
         private static readonly int[][] Numbers =
         {
             new[] { 58, 59, 60 },
             new[] { 61, 62, 63 },
-            new[] { 64, 65, 66 },
+            new[] { 64, 66 },
             new[] { 67, 68, 69 },
             new[] { 70, 71, 72 },
             new[] { 73, 74, 75, 76 },
-            new[] { 77, 78, 79, 80 },
+            new[] { 77, 78, 79 },
         };
 
         /// <summary>The card ids of a layer's pile, in canon order.</summary>
         public static IReadOnlyList<string> Of(int layer)
         {
             BattleRewards.CheckLayer(layer);
-            return Numbers[layer - 1].Select(n => CardCatalog.All[n - 1].Id).ToList();
+            return Numbers[layer - 1].Select(n => CardCatalog.ByNumber(n)!.Id).ToList();
         }
 
         /// <summary>

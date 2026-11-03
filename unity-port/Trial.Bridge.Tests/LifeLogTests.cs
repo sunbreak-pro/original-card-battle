@@ -57,14 +57,14 @@ namespace Trial.Bridge.Tests
         {
             var log = new LifeLog();
             var taken = new JsonObject { ["TraceId"] = "t-1", ["Cards"] = new List<object>() };
-            log.Push("C", "TryPlay", "thrust-1", DropZone.Receiver);
+            log.Push("C", "TryPlay", "side_sweep-1", DropZone.Receiver);
             log.Push("B", "StartNext", false);
             log.Push("B", "Finish", LifeLog.SourceMarker);
             log.Push("C", "TakeFreeStep", -1);
             log.Push("E", "Inherit", taken);
             log.Push("S", "Act", ScreenAction.ConfirmStep, null);
             Assert.That(Json.Stringify(log.ToJson()), Is.EqualTo(
-                "[[\"C\",\"TryPlay\",[\"thrust-1\",\"Receiver\"]],[\"B\",\"StartNext\",[false]],[\"B\",\"Finish\",[\"$source\"]]," +
+                "[[\"C\",\"TryPlay\",[\"side_sweep-1\",\"Receiver\"]],[\"B\",\"StartNext\",[false]],[\"B\",\"Finish\",[\"$source\"]]," +
                 "[\"C\",\"TakeFreeStep\",[-1]],[\"E\",\"Inherit\",[{\"TraceId\":\"t-1\",\"Cards\":[]}]],[\"S\",\"Act\",[\"ConfirmStep\",null]]]"));
             Assert.That(log[0].Args[1], Is.EqualTo("Receiver"));
             Assert.That(log[1].Args[0], Is.EqualTo(false));
@@ -87,13 +87,13 @@ namespace Trial.Bridge.Tests
             log.Push("B", "StartNext", false);
             log.Push("C", "AdvanceAuto");
             log.Push("C", "AdvanceAuto");
-            log.Push("C", "TryPlay", "thrust-1", DropZone.Receiver);
+            log.Push("C", "TryPlay", "side_sweep-1", DropZone.Receiver);
             string text = Json.Stringify(log.ToJson());
             LifeLog back = LifeLog.FromJson(Json.Parse(text));
             Assert.That(Json.Stringify(back.ToJson()), Is.EqualTo(text));
             Assert.That(back[2].Count, Is.EqualTo(2));
 
-            back.Push("C", "TryPlay", "thrust-2", DropZone.Receiver);
+            back.Push("C", "TryPlay", "side_sweep-2", DropZone.Receiver);
             back.Push("C", "AdvanceAuto");
             back.Push("C", "AdvanceAuto");
             Assert.That(back.Last.Count, Is.EqualTo(2), "a log read back goes on the same way");

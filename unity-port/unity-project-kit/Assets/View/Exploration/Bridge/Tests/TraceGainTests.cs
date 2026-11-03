@@ -53,7 +53,7 @@ namespace Exploration.Bridge.Tests
             // js: test/ext/explore-results.test.mjs:496 — a 3 段 already held elsewhere caps the inherited 3 段 at 2; a card
             // held at its 段 adds none; the deck has room
             var cards = new[] { new TraceCard("feint", 3), new TraceCard("brace", 2), new TraceCard("kesa_cut", 1) };
-            Expedition ex = WithRanks(Trial(3), ("thrust", 3), ("brace", 2));
+            Expedition ex = WithRanks(Trial(3), ("side_sweep", 3), ("brace", 2));
             IReadOnlyList<InheritedCard> preview = TraceGain.InheritPreview(ex, cards);
             Assert.That(preview.Select(r => (r.CardId, r.From, r.To, r.Joins)),
                 Is.EqualTo(new[] { ("feint", 0, 2, true), ("brace", 2, 2, true), ("kesa_cut", 0, 1, true) }));
@@ -96,7 +96,7 @@ namespace Exploration.Bridge.Tests
         public void X11_TheOneCardRuleOnThreeDan_IsNamed_BeforeAndAfter()
         {
             // js: test/ext/explore-results.test.mjs:527
-            Expedition ex = WithRanks(Trial(3), ("thrust", 3), ("feint", 2));
+            Expedition ex = WithRanks(Trial(3), ("side_sweep", 3), ("feint", 2));
             var rows = new[] { CardRow("feint", 3) };
             IReadOnlyDictionary<string, TraceGainRow> before = TraceGain.TraceGains(ex, rows, new string[0]);
             // the row is printed at this heir's 段 and name; a first line says what the trace held
@@ -198,7 +198,7 @@ namespace Exploration.Bridge.Tests
             levels.ToDictionary(l => l.Id, l => l.Level, StringComparer.Ordinal);
 
         /// <summary>
-        /// gen 1 dies on layer 3 with feint and thrust at 3 段, kesa_cut at 2, brace at 1, three enemies known, 2 rare
+        /// gen 1 dies on layer 3 with feint and side_sweep at 3 段, kesa_cut at 2, brace at 1, three enemies known, 2 rare
         /// pages and a memo; gen 2 survives with 4 pages and two enemies known; gen 3 is the heir: the survivor's journal
         /// and gen 1's trace on layer 3 (js: test/app/inherit-gains.test.mjs:32).
         /// </summary>
@@ -207,7 +207,7 @@ namespace Exploration.Bridge.Tests
             Lineage l = Inheritance.NewLineage(77);
             LifeStart s = Inheritance.StartLife(l, 1);
             l = Inheritance.RecordDeath(s.Lineage, s.Life, new LifePlace(3, 4, NodeKind.Battle, RunPhase.Fallen),
-                new[] { new CardEntry("thrust", 3), new CardEntry("feint", 3), new CardEntry("kesa_cut", 2), new CardEntry("brace", 1) },
+                new[] { new CardEntry("side_sweep", 3), new CardEntry("feint", 3), new CardEntry("kesa_cut", 2), new CardEntry("brace", 1) },
                 InheritanceCore.Journal.WithPageCount(2, Levels(("polearm_warped", 2), ("shadow_hound", 1), ("rusted_revenant", 1)), Memo), Opts());
             s = Inheritance.StartLife(l, 2);
             return Inheritance.RecordSurvival(s.Lineage, s.Life, new LifePlace(2, 3, NodeKind.Rest, RunPhase.Survived), new CardEntry[0],
@@ -304,7 +304,7 @@ namespace Exploration.Bridge.Tests
             Assert.That(rusted.Nothing, Is.True);
             Assert.That(rusted.Notes, Is.EqualTo(new[] { TraceGainText.PageInTrace(1), TraceGainText.Nothing(TraceGainText.PageAlready(2), true) }));
             Assert.That(after["enemy:polearm_warped"].Notes, Is.EqualTo(new[] { TraceGainText.PageRaised(1, 2) }));
-            Assert.That(after.ContainsKey("card:thrust"), Is.False, "the receipt lists the picks only");
+            Assert.That(after.ContainsKey("card:side_sweep"), Is.False, "the receipt lists the picks only");
         }
 
         [Test]
@@ -415,14 +415,14 @@ namespace Exploration.Bridge.Tests
             var ranks = new[]
             {
                 new (string, int)[0],
-                new[] { ("thrust", 3), ("brace", 2) },
-                new[] { ("feint", 2), ("kesa_cut", 1), ("rend", 3) },
+                new[] { ("side_sweep", 3), ("brace", 2) },
+                new[] { ("feint", 2), ("kesa_cut", 1), ("body_check", 3) },
             };
             var picks = new[]
             {
                 new string[0],
                 new[] { "card:feint" },
-                new[] { "card:thrust", "card:feint", "enemy:shadow_hound" },
+                new[] { "card:side_sweep", "card:feint", "enemy:shadow_hound" },
                 new[] { "card:no_such_card", "card:boar_rush", "scribble:0" },
                 new[] { "card:feint", "card:feint", "memo", "page:page-1", "enemy:polearm_warped" },
             };
@@ -461,7 +461,7 @@ namespace Exploration.Bridge.Tests
         /// <summary>The trace rows of the grid (TraceGain.parity.mjs candidates()): typed rows and rows with the Detail only.</summary>
         private static IReadOnlyList<CandidateView> ParityRows()
         {
-            string[] cards = { "thrust", "feint", "brace", "kesa_cut", "boar_rush", "rend", "no_such_card" };
+            string[] cards = { "side_sweep", "feint", "brace", "kesa_cut", "boar_rush", "body_check", "no_such_card" };
             var enemies = new[] { ("shadow_hound", 1), ("polearm_warped", 2), ("rusted_revenant", 1) };
             var rows = new List<CandidateView>();
             for (int i = 0; i < cards.Length; i++)

@@ -1028,7 +1028,7 @@ namespace BattleCore.Tests
         [Test]
         public void TwoOutcomes_AddUp_FieldByField()
         {
-            // §2.3 / swordsman_cards_v4 §3 (背水の陣): two traits judged at once add their bonuses.
+            // §2.3 (CardDef.ExtraTrait): two traits judged at once add their bonuses.
             var bleed = new StatusGrant(StatusKind.Bleed, 1);
             var regen = new StatusGrant(StatusKind.Regen, 1, OnSelf: true);
             var a = new TraitOutcome(true, PowerBonus: 5, StaminaGain: 1, Grants: new[] { bleed }, FollowUp: 5);
@@ -1058,14 +1058,14 @@ namespace BattleCore.Tests
         [TestCase(2, 3, 5)]
         [TestCase(1, 2, 3)]
         [TestCase(1, 3, 0)]
-        public void LastStand_JudgesBothTraits_AndAddsThem(int gap, int staminaBefore, int bonus)
+        public void ACardWithTwoTraits_JudgesBoth_AndAddsThem(int gap, int staminaBefore, int bonus)
         {
-            // swordsman_cards_v4 #80 / §2.3: 間合い 2 以上 +5 and 死力 +3, judged on the same board.
-            var outcome = Traits.EvaluateAll(CardCatalog.LastStand.AllTraits, new TraitContext(Gap: gap, StaminaBefore: staminaBefore));
+            // §2.3, on the shape of the v4.9 #80 (間合い 2 以上 +5 and 死力 +3): both judged on the same board.
+            var outcome = Traits.EvaluateAll(Fixtures.TwoTraitAttack.AllTraits, new TraitContext(Gap: gap, StaminaBefore: staminaBefore));
 
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.LastStand.AllTraits, Has.Count.EqualTo(2));
+                Assert.That(Fixtures.TwoTraitAttack.AllTraits, Has.Count.EqualTo(2));
                 Assert.That(outcome.PowerBonus, Is.EqualTo(bonus));
                 Assert.That(outcome.Triggered, Is.EqualTo(bonus > 0));
             });
@@ -1166,13 +1166,16 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void Convert_OnCrescentCut_AsTheThirdPlay_AddsHalfItsGuardToItsPower()
+        public void Convert_OnAFinisher_AsTheThirdPlay_AddsHalfItsGuardToItsPower()
         {
             // §2.3 締め → 転換: 10 + ceil(6 / 2) = 13 as the third play, a plain 10 as the first; the Guard face still lands.
-            var s = Opened(1, Idle, Block, Block, CardCatalog.CrescentCut);
+            // The shape is the v4.9 #68 三日月斬り's; v4.10 made it attack only with 締め: 重撃 (#824).
+            var finisher = Fixtures.Card("finisher_convert", column: 2, face: new Face(Power: 10, Guard: 6),
+                attributes: BattleAttribute.Attack | BattleAttribute.Guard, trait: new Trait(TraitCondition.Finisher, TraitEffect.Convert));
+            var s = Opened(1, Idle, Block, Block, finisher);
 
-            var first = Play(s, "crescent_cut");
-            var third = Play(Play(Play(s, "block").State, "block").State, "crescent_cut");
+            var first = Play(s, "finisher_convert");
+            var third = Play(Play(Play(s, "block").State, "block").State, "finisher_convert");
 
             Assert.Multiple(() =>
             {
@@ -1180,6 +1183,23 @@ namespace BattleCore.Tests
                 Assert.That(third.Events.OfType<TraitEvaluated>().Single().Outcome.Convert, Is.True);
                 Assert.That(third.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(13));
                 Assert.That(third.Events.OfType<GuardGained>().Single(), Is.EqualTo(new GuardGained(Actor.Player, 6, 14)));
+            });
+        }
+
+        [Test]
+        public void HeavyBlow_OnCrescentCut_AsTheThirdPlay_AddsSix()
+        {
+            // swordsman_cards_v4 v4.10 #68 (#824): 15 alone, 締め: 重撃 adds 6 from the third play on.
+            var s = Opened(1, Idle, Block, Block, CardCatalog.CrescentCut);
+
+            var first = Play(s, "crescent_cut");
+            var third = Play(Play(Play(s, "block").State, "block").State, "crescent_cut");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(first.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(15));
+                Assert.That(third.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(15 + Constants.HeavyBlowPower));
+                Assert.That(third.Events.OfType<GuardGained>(), Is.Empty, "no Guard face any more");
             });
         }
 
@@ -1293,9 +1313,9 @@ namespace BattleCore.Tests
         public void AStanceFace_JoinsTheList_ASecondJoinsToo_AndBothCardsAreExiled()
         {
             // §4 (v4.4): a stance joins the list of permanent effects and nothing ends; a stance card goes to the exile pile, never the discard pile.
-            var s = Opened(1, Idle, CardCatalog.RockStance, CardCatalog.WaterStance);
+            var s = Opened(1, Idle, Fixtures.TurnGuardStance, CardCatalog.WaterStance);
 
-            var rock = Play(s, "rock_stance");
+            var rock = Play(s, "turn_guard_stance");
             var water = Play(rock.State, "water_stance");
             var end = End(water.State);
             var next = Begin(end.State);
@@ -1303,21 +1323,21 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(rock.Events.OfType<StanceSet>().Single(), Is.EqualTo(new StanceSet(
-                    Actor.Player, "rock_stance", CardCatalog.RockStance.Name, CardCatalog.RockStance.Face.Stance!)));
+                    Actor.Player, "turn_guard_stance", Fixtures.TurnGuardStance.Name, Fixtures.TurnGuardStance.Face.Stance!)));
                 Assert.That(rock.State.Player.StanceList.Select(e => (e.Def, e.Source)),
-                    Is.EqualTo(new[] { (CardCatalog.RockStance.Face.Stance!, "rock_stance") }));
-                Assert.That(rock.Events.OfType<CardExiled>().Single().Card.Def.Id, Is.EqualTo("rock_stance"));
-                Assert.That(rock.State.Exiled.Select(c => c.Def.Id), Is.EqualTo(new[] { "rock_stance" }));
+                    Is.EqualTo(new[] { (Fixtures.TurnGuardStance.Face.Stance!, "turn_guard_stance") }));
+                Assert.That(rock.Events.OfType<CardExiled>().Single().Card.Def.Id, Is.EqualTo("turn_guard_stance"));
+                Assert.That(rock.State.Exiled.Select(c => c.Def.Id), Is.EqualTo(new[] { "turn_guard_stance" }));
                 Assert.That(rock.State.DiscardPile, Is.Empty);
 
                 Assert.That(water.Events.OfType<StanceSet>().Single(), Is.EqualTo(new StanceSet(
                     Actor.Player, "water_stance", CardCatalog.WaterStance.Name, CardCatalog.WaterStance.Face.Stance!)));
                 Assert.That(water.State.Player.StanceList.Select(e => (e.Def, e.Source)), Is.EqualTo(new[]
                 {
-                    (CardCatalog.RockStance.Face.Stance!, "rock_stance"),
+                    (Fixtures.TurnGuardStance.Face.Stance!, "turn_guard_stance"),
                     (CardCatalog.WaterStance.Face.Stance!, "water_stance"),
                 }), "the first is not pushed out");
-                Assert.That(water.State.Exiled.Select(c => c.Def.Id), Is.EqualTo(new[] { "rock_stance", "water_stance" }));
+                Assert.That(water.State.Exiled.Select(c => c.Def.Id), Is.EqualTo(new[] { "turn_guard_stance", "water_stance" }));
 
                 // The rest of the hand goes to the discard pile; the stance cards stay out of the deck.
                 Assert.That(end.State.DiscardPile.Select(c => c.Def.Id), Is.All.EqualTo("filler"));
@@ -1331,23 +1351,23 @@ namespace BattleCore.Tests
         [Test]
         public void TheSameStanceTwice_WorksTwice_AndOnlyThePlayedCopyLeavesTheDeck()
         {
-            // §4 (v4.4): stacking. Two 岩の構え give Guard +3 twice at the next turn start. A copy that
+            // §4 (v4.4): stacking. Two turn-start guard stances give Guard +3 twice at the next turn start. A copy that
             // was not played stays where it was — the exile takes the one instance, not the kind.
-            var s = Opened(1, Idle, CardCatalog.RockStance, CardCatalog.RockStance, CardCatalog.RockStance);
+            var s = Opened(1, Idle, Fixtures.TurnGuardStance, Fixtures.TurnGuardStance, Fixtures.TurnGuardStance);
 
-            var first = Play(s, "rock_stance");
-            var second = Play(first.State, "rock_stance");
+            var first = Play(s, "turn_guard_stance");
+            var second = Play(first.State, "turn_guard_stance");
             var end = End(second.State);
             var next = Begin(end.State);
 
             Assert.Multiple(() =>
             {
                 Assert.That(first.State.Player.StanceList, Has.Count.EqualTo(1));
-                Assert.That(first.State.Hand.Count(c => c.Def.Id == "rock_stance"), Is.EqualTo(2), "the other copies are still in the hand");
-                Assert.That(first.State.Exiled.Select(c => c.InstanceId), Is.EqualTo(new[] { "rock_stance-0" }));
-                Assert.That(second.State.Player.StanceList.Select(e => e.Source), Is.EqualTo(new[] { "rock_stance", "rock_stance" }));
+                Assert.That(first.State.Hand.Count(c => c.Def.Id == "turn_guard_stance"), Is.EqualTo(2), "the other copies are still in the hand");
+                Assert.That(first.State.Exiled.Select(c => c.InstanceId), Is.EqualTo(new[] { "turn_guard_stance-0" }));
+                Assert.That(second.State.Player.StanceList.Select(e => e.Source), Is.EqualTo(new[] { "turn_guard_stance", "turn_guard_stance" }));
                 Assert.That(second.State.Exiled, Has.Count.EqualTo(2));
-                Assert.That(end.State.DiscardPile.Any(c => c.Def.Id == "rock_stance"), Is.True, "the unplayed third copy is discarded like any card");
+                Assert.That(end.State.DiscardPile.Any(c => c.Def.Id == "turn_guard_stance"), Is.True, "the unplayed third copy is discarded like any card");
                 Assert.That(next.Events.OfType<StanceFired>().Count(), Is.EqualTo(2));
                 Assert.That(next.Events.OfType<GuardGained>().Select(g => g.Amount), Is.EqualTo(new[] { 3, 3 }));
                 Assert.That(next.State.Player.Guard, Is.EqualTo(6), "two entries, two times the effect");
@@ -1357,11 +1377,11 @@ namespace BattleCore.Tests
         [Test]
         public void ThereIsNoCapOnTheList_AndItEmptiesWhenTheNextBattleStarts()
         {
-            var s = Opened(1, Idle, CardCatalog.RockStance, CardCatalog.WaterStance, CardCatalog.FlowStance);
+            var s = Opened(1, Idle, Fixtures.TurnGuardStance, CardCatalog.WaterStance, Fixtures.MovedPowerStance);
             s = s with { Player = s.Player with { Stamina = 10 } };
             for (int i = 0; i < 3; i++)
             {
-                s = Play(s, new[] { "rock_stance", "water_stance", "flow_stance" }[i]).State;
+                s = Play(s, new[] { "turn_guard_stance", "water_stance", "moved_power_stance" }[i]).State;
             }
             var again = TurnLoop.Start(new BattleSetup(Idle, Deck(new[] { Filler }), Cells, StartGap: 1), NoRng).State;
 
@@ -1436,19 +1456,19 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void RockStance_GivesThreeGuard_AtTheNextTurnStart_AfterTheGuardIsCleared()
+        public void ATurnStartGuardStance_GivesThreeGuard_AtTheNextTurnStart_AfterTheGuardIsCleared()
         {
             // §4 ターン開始付与 / §9 steps 1-3: Guard goes to 0 first, then the stance's +3.
-            var s = Opened(1, Idle, CardCatalog.RockStance);
+            var s = Opened(1, Idle, Fixtures.TurnGuardStance);
 
-            var end = End(Play(s, "rock_stance").State);
+            var end = End(Play(s, "turn_guard_stance").State);
             var next = Begin(end.State);
 
             Assert.Multiple(() =>
             {
                 Assert.That(end.State.Player.Guard, Is.EqualTo(3), "構え");
                 Assert.That(next.Events.OfType<GuardCleared>().Single(), Is.EqualTo(new GuardCleared(Actor.Player, 3)));
-                Assert.That(next.Events.OfType<StanceFired>().Single(), Is.EqualTo(new StanceFired(Actor.Player, "rock_stance", StanceHook.TurnStart)));
+                Assert.That(next.Events.OfType<StanceFired>().Single(), Is.EqualTo(new StanceFired(Actor.Player, "turn_guard_stance", StanceHook.TurnStart)));
                 Assert.That(next.Events.OfType<GuardGained>().Single(), Is.EqualTo(new GuardGained(Actor.Player, 3, 3)));
                 AssertInOrder(next.Events, typeof(GuardCleared), typeof(StanceFired), typeof(GuardGained), typeof(Drawn));
                 Assert.That(next.State.Player.Guard, Is.EqualTo(3));
@@ -1502,12 +1522,12 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void FlowStance_AddsFive_OnlyAfterAMoveCardThisTurn()
+        public void AMovedStance_AddsFive_OnlyAfterAMoveCardThisTurn()
         {
-            // §4 条件付き加算 (流れの構え: when = a move was played earlier this turn).
-            var s = Opened(1, Idle, CardCatalog.FlowStance, Jab(10), StepIn, Jab(10));
+            // §4 条件付き加算 (when = a move was played earlier this turn; the v4.9 流れの構え's shape).
+            var s = Opened(1, Idle, Fixtures.MovedPowerStance, Jab(10), StepIn, Jab(10));
 
-            var flow = Play(s, "flow_stance");
+            var flow = Play(s, "moved_power_stance");
             var still = Play(flow.State, "jab10");
             var stepped = Play(still.State, "step_in");
             var preview = TurnLoop.Preview(stepped.State, InHand(stepped.State, "jab10"))!;
@@ -1519,7 +1539,7 @@ namespace BattleCore.Tests
                 Assert.That(still.Events.OfType<StanceFired>(), Is.Empty);
                 Assert.That(preview.RawPower, Is.EqualTo(15));
                 Assert.That(moved.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(15));
-                Assert.That(moved.Events.OfType<StanceFired>().Single(), Is.EqualTo(new StanceFired(Actor.Player, "flow_stance", StanceHook.AttackBonus)));
+                Assert.That(moved.Events.OfType<StanceFired>().Single(), Is.EqualTo(new StanceFired(Actor.Player, "moved_power_stance", StanceHook.AttackBonus)));
             });
         }
 
@@ -1706,7 +1726,7 @@ namespace BattleCore.Tests
         public void IronWall_DiscountsOnlyCardsThatCountAsGuard()
         {
             // §2.1: the folded attribute decides. 観察 (G + Sk) and 後ろ跳び (movement with a Guard) count
-            // as 防御; 盾打ち (A + G) counts as 攻撃; 集中 is スキル and 岩の構え スタンス.
+            // as 防御; 盾打ち (A + G) counts as 攻撃; 集中 is スキル and 水の構え スタンス.
             var walled = Play(Opened(0, Idle, CardCatalog.IronWall), "iron_wall").State;
 
             Assert.Multiple(() =>
@@ -1716,7 +1736,7 @@ namespace BattleCore.Tests
                 Assert.That(TurnLoop.CostNow(walled, CardCatalog.Brace), Is.EqualTo(1));
                 Assert.That(TurnLoop.CostNow(walled, CardCatalog.ShieldBash), Is.EqualTo(2));
                 Assert.That(TurnLoop.CostNow(walled, CardCatalog.Focus), Is.EqualTo(3));
-                Assert.That(TurnLoop.CostNow(walled, CardCatalog.RockStance), Is.EqualTo(2));
+                Assert.That(TurnLoop.CostNow(walled, CardCatalog.WaterStance), Is.EqualTo(2));
                 Assert.That(TurnLoop.CostNow(walled, CardCatalog.IronWall), Is.EqualTo(2));
             });
         }

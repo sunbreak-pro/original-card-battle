@@ -108,8 +108,8 @@ namespace Trial.Bridge.Tests
             Assert.That(Save.SaveText(new TrialSave(lineage, null, "")), Is.EqualTo("{\"v\":1,\"lineage\":" + lin + ",\"life\":null,\"deckSave\":null}"),
                 "no stamp: no rev and tab; an empty deck string is null (deckSave || null)");
             var life = LifeSave.Departing(lineage.ToJson());
-            Assert.That(Save.SaveText(new TrialSave(lineage, life, "thrust:2"), new Stamp(5, "x")),
-                Is.EqualTo("{\"v\":1,\"rev\":5,\"tab\":\"x\",\"lineage\":" + lin + ",\"life\":{\"before\":" + lin + "},\"deckSave\":\"thrust:2\"}"));
+            Assert.That(Save.SaveText(new TrialSave(lineage, life, "side_sweep:2"), new Stamp(5, "x")),
+                Is.EqualTo("{\"v\":1,\"rev\":5,\"tab\":\"x\",\"lineage\":" + lin + ",\"life\":{\"before\":" + lin + "},\"deckSave\":\"side_sweep:2\"}"));
             Assert.That(Save.WriteSave(new MemoryKeyValueStore(), new TrialSave(null)), Is.False, "a save without its lineage is not written");
             Assert.That(Save.WriteSave(new MemoryKeyValueStore(), null), Is.False);
         }
@@ -211,7 +211,7 @@ namespace Trial.Bridge.Tests
             "{\"v\":1,\"generation\":3,\"name\":\"灯の三代\",\"seed\":\"12345678901234567890\",\"toolSlots\":3,\"deckMax\":40," +
             "\"survivorBonus\":false,\"traceLayers\":[2,5],\"carvingKnown\":false," +
             "\"journal\":{\"Disclosure\":{\"polearm_warped\":1},\"Pages\":[{\"Id\":\"page-1\",\"Title\":\"一\"}],\"Memo\":\"\",\"Scribbles\":[{\"Generation\":2,\"Name\":\"二\",\"Text\":\"右へ\"}]}," +
-            "\"choice\":{\"deck\":[[\"thrust-1\",\"thrust\"],[\"thrust-2\",\"thrust\"]],\"battleToolIds\":[\"ikitsugi_no_fue\"]," +
+            "\"choice\":{\"deck\":[[\"side_sweep-1\",\"side_sweep\"],[\"side_sweep-2\",\"side_sweep\"]],\"battleToolIds\":[\"ikitsugi_no_fue\"]," +
             "\"loadout\":{\"tools\":[[\"bosho_no_men\",\"Density\",1]],\"consumables\":[[\"yakuso\",\"Heal\",20]],\"slots\":3,\"trial\":true}," +
             "\"talent\":null,\"toolIds\":[],\"consumableIds\":[\"yakuso\"]}}";
 
@@ -229,8 +229,8 @@ namespace Trial.Bridge.Tests
                 Assert.That(s.DeckMax, Is.EqualTo(40));
                 Assert.That(s.TraceLayers, Is.EqualTo(new[] { 2, 5 }));
                 Assert.That(s.Choice.Deck.Count, Is.EqualTo(2));
-                Assert.That(s.Choice.Deck[1].InstanceId, Is.EqualTo("thrust-2"));
-                Assert.That(s.Choice.Deck[1].DefId, Is.EqualTo("thrust"));
+                Assert.That(s.Choice.Deck[1].InstanceId, Is.EqualTo("side_sweep-2"));
+                Assert.That(s.Choice.Deck[1].DefId, Is.EqualTo("side_sweep"));
                 Assert.That(s.Choice.BattleToolIds, Is.EqualTo(new[] { "ikitsugi_no_fue" }));
                 Assert.That(s.Choice.ConsumableIds, Is.EqualTo(new[] { "yakuso" }));
                 Assert.That(s.Choice.Talent, Is.Null);

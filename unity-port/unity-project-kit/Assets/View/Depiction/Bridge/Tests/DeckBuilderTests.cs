@@ -58,12 +58,12 @@ namespace Depiction.Bridge.Tests
         public void TheFourthCopy_IsRefused_AndAnUnknownIdToo()
         {
             var deck = new DeckBuilder();
-            for (int i = 0; i < 3; i++) Assert.That(deck.Add("thrust"), Is.True);
+            for (int i = 0; i < 3; i++) Assert.That(deck.Add("side_sweep"), Is.True);
             Assert.Multiple(() =>
             {
-                Assert.That(deck.Add("thrust"), Is.False);
-                Assert.That(deck.CountOf("thrust"), Is.EqualTo(3));
-                Assert.That(deck.CountText("thrust"), Is.EqualTo("×3"));
+                Assert.That(deck.Add("side_sweep"), Is.False);
+                Assert.That(deck.CountOf("side_sweep"), Is.EqualTo(3));
+                Assert.That(deck.CountText("side_sweep"), Is.EqualTo("×3"));
                 Assert.That(deck.Add("nothing"), Is.False);
                 Assert.That(deck.Add(null), Is.False);
             });
@@ -75,7 +75,7 @@ namespace Depiction.Bridge.Tests
             // §4 (v4.4): the three-card cap of §19.6 S15 is gone. Ten stance cards across four kinds go in;
             // a fourth copy of one kind is still refused.
             var deck = new DeckBuilder();
-            foreach (string id in new[] { "water_stance", "water_stance", "water_stance", "rock_stance", "rock_stance", "rock_stance", "flow_stance", "flow_stance", "flow_stance", "iron_wall" })
+            foreach (string id in new[] { "water_stance", "water_stance", "water_stance", "keen_eye", "keen_eye", "keen_eye", "mist_step", "mist_step", "mist_step", "iron_wall" })
             {
                 Assert.That(deck.Add(id), Is.True, id);
             }
@@ -84,7 +84,7 @@ namespace Depiction.Bridge.Tests
                 Assert.That(deck.StanceCount, Is.EqualTo(10));
                 Assert.That(deck.CanAdd("water_stance"), Is.False, "a fourth copy of one kind");
                 Assert.That(deck.CanAdd("priest_prayer"), Is.True, "another stance kind");
-                Assert.That(deck.CanAdd("thrust"), Is.True);
+                Assert.That(deck.CanAdd("side_sweep"), Is.True);
             });
         }
 
@@ -107,22 +107,22 @@ namespace Depiction.Bridge.Tests
         public void ASavedDeckWithManyStanceCards_LoadsWholeNow()
         {
             // Four stance cards in a saved deck were refused while the cap stood (§19.6 S15); now they load.
-            Assert.That(DeckBuilder.Load("water_stance:2,rock_stance:2").Total, Is.EqualTo(4));
+            Assert.That(DeckBuilder.Load("water_stance:2,keen_eye:2").Total, Is.EqualTo(4));
         }
 
         [Test]
         public void Removing_TakesOneCopy_AndNothingFromAnEmptyKind()
         {
             var deck = new DeckBuilder();
-            deck.Add("thrust");
-            deck.Add("thrust");
+            deck.Add("side_sweep");
+            deck.Add("side_sweep");
             Assert.Multiple(() =>
             {
-                Assert.That(deck.Remove("thrust"), Is.True);
-                Assert.That(deck.CountOf("thrust"), Is.EqualTo(1));
+                Assert.That(deck.Remove("side_sweep"), Is.True);
+                Assert.That(deck.CountOf("side_sweep"), Is.EqualTo(1));
                 Assert.That(deck.Remove("kesa_cut"), Is.False);
-                Assert.That(deck.Remove("thrust"), Is.True);
-                Assert.That(deck.CountText("thrust"), Is.EqualTo(""));
+                Assert.That(deck.Remove("side_sweep"), Is.True);
+                Assert.That(deck.CountText("side_sweep"), Is.EqualTo(""));
             });
         }
 
@@ -131,22 +131,22 @@ namespace Depiction.Bridge.Tests
         {
             var deck = new DeckBuilder();
             deck.Add("kesa_cut");
-            deck.Add("thrust");
+            deck.Add("side_sweep");
             deck.Add("kesa_cut");
-            Assert.That(deck.Build().Select(c => c.InstanceId), Is.EqualTo(new[] { "thrust-0", "kesa_cut-0", "kesa_cut-1" }));
-            Assert.That(deck.DeckLines(), Is.EqualTo(new[] { "突き ×1", "袈裟斬り ×2" }));
+            Assert.That(deck.Build().Select(c => c.InstanceId), Is.EqualTo(new[] { "kesa_cut-0", "kesa_cut-1", "side_sweep-0" }));
+            Assert.That(deck.DeckLines(), Is.EqualTo(new[] { "袈裟斬り ×2", "横薙ぎ ×1" }));
         }
 
         // ---- filters and pages ----
 
-        [TestCase(BattleAttribute.None, 0, 80)]
-        [TestCase(BattleAttribute.Attack, 0, 36)]
+        [TestCase(BattleAttribute.None, 0, 71)]
+        [TestCase(BattleAttribute.Attack, 0, 29)]
         [TestCase(BattleAttribute.Guard, 0, 19)]
         [TestCase(BattleAttribute.Skill, 0, 11)]
-        [TestCase(BattleAttribute.Stance, 0, 14)]
-        [TestCase(BattleAttribute.None, 1, 25)]
-        [TestCase(BattleAttribute.None, 2, 31)]
-        [TestCase(BattleAttribute.None, 3, 24)]
+        [TestCase(BattleAttribute.Stance, 0, 12)]
+        [TestCase(BattleAttribute.None, 1, 22)]
+        [TestCase(BattleAttribute.None, 2, 29)]
+        [TestCase(BattleAttribute.None, 3, 20)]
         public void AFilter_KeepsTheCardsCountedAsTheAttribute_AndTheCost(BattleAttribute attribute, int cost, int kept)
         {
             // swordsman_cards_v4 v4.5 §4.1 / §4.4, folded by battle_core_v4 §2.1: 攻撃 36 / 防御 19 / スキル 11 /
@@ -169,11 +169,11 @@ namespace Depiction.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(first.Count, Is.EqualTo(4));
-                Assert.That(first.Text, Is.EqualTo("1 / 4 ページ（80 種）"));
+                Assert.That(first.Text, Is.EqualTo("1 / 4 ページ（71 種）"));
                 Assert.That(last.Index, Is.EqualTo(3));
                 Assert.That(before.Index, Is.EqualTo(0));
                 Assert.That(all, Is.EqualTo(CardCatalog.All));
-                Assert.That(deck.Page(new DeckFilter { Attribute = BattleAttribute.Stance }, 0, 20).Text, Is.EqualTo("1 / 1 ページ（14 種）"));
+                Assert.That(deck.Page(new DeckFilter { Attribute = BattleAttribute.Stance }, 0, 20).Text, Is.EqualTo("1 / 1 ページ（12 種）"));
             });
         }
 
@@ -188,7 +188,7 @@ namespace Depiction.Bridge.Tests
                 {
                     "袈裟斬り", "コスト 2　攻撃　届く間合い 0〜1", "敵に 15 ダメージ。", "特性: 間合い0 +5", "「肩口から斬り下ろす」",
                 }));
-                Assert.That(DeckBuilder.DetailOf(CardCatalog.Thrust)[3], Is.EqualTo("特性: なし（素直な札）"));
+                Assert.That(DeckBuilder.DetailOf(CardCatalog.SideSweep)[3], Is.EqualTo("特性: なし（素直な札）"));
                 Assert.That(DeckBuilder.DetailOf(CardCatalog.Brace)[1], Is.EqualTo("コスト 2　防御　自分向き"));
                 Assert.That(CardCatalog.All.All(c => DeckBuilder.DetailOf(c).All(l => l.Length > 0)), Is.True);
             });
@@ -237,22 +237,22 @@ namespace Depiction.Bridge.Tests
             {
                 Assert.That(loaded.Save(), Is.EqualTo(saved));
                 Assert.That(loaded.Build().Select(c => c.InstanceId), Is.EqualTo(deck.Build().Select(c => c.InstanceId)));
-                Assert.That(DeckBuilder.Prototype().Save(), Does.StartWith("thrust:2,kesa_cut:2,"));
+                Assert.That(DeckBuilder.Prototype().Save(), Does.StartWith("kesa_cut:2,side_sweep:2,"));
             });
         }
 
         [TestCase(null)]
         [TestCase("")]
-        [TestCase("thrust:2,nothing:1")]
-        [TestCase("thrust:4")]
-        [TestCase("thrust:0")]
-        [TestCase("thrust:-1")]
-        [TestCase("thrust")]
-        [TestCase("thrust:2:1")]
-        [TestCase("thrust:2,thrust:1")]
-        [TestCase("thrust:two")]
+        [TestCase("side_sweep:2,nothing:1")]
+        [TestCase("side_sweep:4")]
+        [TestCase("side_sweep:0")]
+        [TestCase("side_sweep:-1")]
+        [TestCase("side_sweep")]
+        [TestCase("side_sweep:2:1")]
+        [TestCase("side_sweep:2,side_sweep:1")]
+        [TestCase("side_sweep:two")]
         [TestCase("<garbage>")]
-        [TestCase("thrust:2,,kesa_cut:1")]
+        [TestCase("side_sweep:2,,kesa_cut:1")]
         public void ABrokenString_GivesAnEmptyDeck(string saved)
         {
             Assert.That(DeckBuilder.Load(saved).Total, Is.EqualTo(0));
@@ -265,23 +265,23 @@ namespace Depiction.Bridge.Tests
             {
                 Assert.That(DeckBuilder.LoadOrPrototype(false, "").Save(), Is.EqualTo(DeckBuilder.Prototype().Save()), "the first Play");
                 Assert.That(DeckBuilder.LoadOrPrototype(true, "").Total, Is.EqualTo(0), "the player emptied it");
-                Assert.That(DeckBuilder.LoadOrPrototype(true, "thrust:9").Total, Is.EqualTo(0), "a broken string starts empty");
-                Assert.That(DeckBuilder.LoadOrPrototype(true, "thrust:2").CountOf("thrust"), Is.EqualTo(2));
+                Assert.That(DeckBuilder.LoadOrPrototype(true, "side_sweep:9").Total, Is.EqualTo(0), "a broken string starts empty");
+                Assert.That(DeckBuilder.LoadOrPrototype(true, "side_sweep:2").CountOf("side_sweep"), Is.EqualTo(2));
             });
         }
 
-        [TestCase("thrust")]
-        [TestCase("thrust:0")]
-        [TestCase("thrust:two")]
-        [TestCase("thrust:2:1")]
-        [TestCase("thrust:2,thrust:1")]
-        [TestCase("thrust:2,,kesa_cut:1")]
+        [TestCase("side_sweep")]
+        [TestCase("side_sweep:0")]
+        [TestCase("side_sweep:two")]
+        [TestCase("side_sweep:2:1")]
+        [TestCase("side_sweep:2,side_sweep:1")]
+        [TestCase("side_sweep:2,,kesa_cut:1")]
         [TestCase("<garbage>")]
         [TestCase(":2")]
         // Stray text shaped like "id:count" is not named as a card: only an entry that reads is.
         [TestCase("<garbage>:1")]
         [TestCase("old_thrust:abc")]
-        [TestCase("{\"thrust\":2}")]
+        [TestCase("{\"side_sweep\":2}")]
         public void AnUnreadableSavedString_IsSaidInOneLine(string saved)
         {
             // #211: the deck still starts empty rather than a guess, and the screen now says why.
@@ -293,16 +293,16 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void ARenamedCard_IsNamedInTheLine()
         {
-            DeckBuilder deck = DeckBuilder.LoadOrPrototype(true, "thrust:2,old_thrust:1", out string notice);
+            DeckBuilder deck = DeckBuilder.LoadOrPrototype(true, "side_sweep:2,old_thrust:1", out string notice);
             Assert.That(deck.Total, Is.EqualTo(0));
             Assert.That(notice, Is.EqualTo("保存したデッキに知らないカード「old_thrust」があったため、空のデッキから始めます"));
         }
 
-        [TestCase("thrust:4")]
-        [TestCase("thrust:9")]
+        [TestCase("side_sweep:4")]
+        [TestCase("side_sweep:9")]
         // Forty-two cards, like AStringPastFortyCards_GivesAnEmptyDeck: the first fourteen kinds, three each.
-        [TestCase("thrust:3,kesa_cut:3,overhead:3,wrist_cut:3,side_sweep:3,flat_strike:3,probe_thrust:3,"
-            + "pierce:3,throw_blade:3,reach_thrust:3,brace:3,iron_block:3,low_guard:3,riposte_guard:3")]
+        [TestCase("kesa_cut:3,overhead:3,wrist_cut:3,side_sweep:3,flat_strike:3,probe_thrust:3,pierce:3,"
+            + "throw_blade:3,reach_thrust:3,brace:3,iron_block:3,low_guard:3,riposte_guard:3,deep_breath:3")]
         public void ASavedDeckPastTheRules_IsSaidWithoutNamingTheRule(string saved)
         {
             // Every entry reads, but Add refuses a card on the way. The line names no rule, so it stays
@@ -318,7 +318,7 @@ namespace Depiction.Bridge.Tests
             DeckBuilder.LoadOrPrototype(false, "", out string firstPlay);
             DeckBuilder.LoadOrPrototype(true, "", out string emptied);
             DeckBuilder clean = DeckBuilder.LoadOrPrototype(true, DeckBuilder.Random(3).Save(), out string read);
-            DeckBuilder building = DeckBuilder.LoadOrPrototype(true, "thrust:2", out string underTwenty);
+            DeckBuilder building = DeckBuilder.LoadOrPrototype(true, "side_sweep:2", out string underTwenty);
             Assert.Multiple(() =>
             {
                 Assert.That(firstPlay, Is.Empty, "the first Play");
@@ -335,7 +335,7 @@ namespace Depiction.Bridge.Tests
         {
             Assert.Multiple(() =>
             {
-                Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（80 種から 20〜40 枚、1 種 3 枚まで）"));
+                Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（71 種から 20〜40 枚、1 種 3 枚まで）"));
                 Assert.That(DeckBuilder.AttributeOptions.Select(o => o.Key), Is.EqualTo(new[] { "全て", "攻撃", "防御", "スキル", "スタンス" }), "#575: battle-visual-v1 decision 15");
                 Assert.That(DeckBuilder.AttributeOptions.First().Value, Is.EqualTo(BattleAttribute.None));
                 // #823: COST_MAX is 4, so the filter offers コスト 4 as well.
@@ -387,7 +387,7 @@ namespace Depiction.Bridge.Tests
         {
             // v4.4: the stance cap of §19.6 S15 is gone, so the launch check lets four stance cards through.
             var plain = CardCatalog.All.Where(c => !Cards.IsStanceCard(c)).Take(8).ToList();
-            var deck = Cards.BuildDeck(plain, 2).Concat(Cards.BuildDeck(new[] { CardCatalog.WaterStance, CardCatalog.RockStance }, 2)).ToList();
+            var deck = Cards.BuildDeck(plain, 2).Concat(Cards.BuildDeck(new[] { CardCatalog.WaterStance, CardCatalog.PurgeFlash }, 2)).ToList();
             Assert.DoesNotThrow(() => new BattleLaunch { Deck = deck }.BuildSetup());
         }
 

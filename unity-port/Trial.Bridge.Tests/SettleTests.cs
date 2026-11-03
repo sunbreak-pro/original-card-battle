@@ -168,8 +168,8 @@ namespace Trial.Bridge.Tests
             Assert.That(view.Source.Frame, Is.Not.Null);
             Assert.That(view.Source.Finished, Is.False);
             int logged = fresh.Battle.Fought.Count;
-            Assert.That(view.Source.Inspect("thrust-1"), Is.EqualTo(PlayVerdict.NotWaiting), "a read goes through");
-            view.Source.PreviewFor("thrust-1");
+            Assert.That(view.Source.Inspect("side_sweep-1"), Is.EqualTo(PlayVerdict.NotWaiting), "a read goes through");
+            view.Source.PreviewFor("side_sweep-1");
             Assert.That(view.Settled, Is.False, "a new fight is not decided");
             Assert.That(fresh.Battle.Fought.Count, Is.EqualTo(logged), "a read finishes nothing");
         }

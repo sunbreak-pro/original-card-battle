@@ -94,7 +94,7 @@ namespace Trial.Meta
             Lineage L = Inheritance.NewLineage(20261020UL);
             LifeStart s1 = Inheritance.StartLife(L);
             L = Inheritance.RecordDeath(s1.Lineage, null, new LifePlace(3, 14, NodeKind.Boss, RunPhase.Fallen),
-                new List<CardEntry> { new CardEntry("thrust", 2), new CardEntry("kesa_cut", 1), new CardEntry("brace", 1), new CardEntry("observe", 1), new CardEntry("rock_stance", 0) },
+                new List<CardEntry> { new CardEntry("side_sweep", 2), new CardEntry("kesa_cut", 1), new CardEntry("brace", 1), new CardEntry("observe", 1), new CardEntry("water_stance", 0) },
                 Book(1, "大黒蛇は懐に入ると締め付けてくる。間合い 2 で待つこと。", ("miasma_priest", 2), ("shadow_hound", 1)), NameOpts());
             _afterDeath = L;
             LifeStart s2 = Inheritance.StartLife(L);
@@ -113,9 +113,9 @@ namespace Trial.Meta
                 LifeStart s = Inheritance.StartLife(L);
                 L = Inheritance.RecordDeath(s.Lineage, null, new LifePlace(layer, null, kind, ending), deck, journal, NameOpts());
             }
-            Die(2, NodeKind.Battle, RunPhase.Fallen, new List<CardEntry> { new CardEntry("thrust", 1), new CardEntry("brace", 2) }, Book(0, "", ("polearm_warped", 1)));
+            Die(2, NodeKind.Battle, RunPhase.Fallen, new List<CardEntry> { new CardEntry("side_sweep", 1), new CardEntry("brace", 2) }, Book(0, "", ("polearm_warped", 1)));
             Die(2, NodeKind.Event, RunPhase.Fallen, new List<CardEntry> { new CardEntry("observe", 1) }, Book(0, ""));
-            Die(5, NodeKind.Elite, RunPhase.MiasmaDeath, new List<CardEntry> { new CardEntry("kesa_cut", 2), new CardEntry("lunge", 1), new CardEntry("focus", 1) },
+            Die(5, NodeKind.Elite, RunPhase.MiasmaDeath, new List<CardEntry> { new CardEntry("kesa_cut", 2), new CardEntry("feint", 1), new CardEntry("focus", 1) },
                 Book(2, "門竜は 3 ターン目に必ず構える。", ("armored_warden", 2)));
             return L;
         }
@@ -126,7 +126,7 @@ namespace Trial.Meta
             Lineage L = Inheritance.NewLineage(5UL);
             LifeStart s1 = Inheritance.StartLife(L);
             return Inheritance.RecordSurvival(s1.Lineage, null, new LifePlace(7, 30, NodeKind.Boss, RunPhase.Completed),
-                new List<CardEntry> { new CardEntry("thrust", 3) }, Book(0, ""), NameOpts());
+                new List<CardEntry> { new CardEntry("side_sweep", 3) }, Book(0, ""), NameOpts());
         }
 
         // js: dev/meta.js:59
@@ -162,7 +162,7 @@ namespace Trial.Meta
             if (_expedition != null) return _expedition;
             try
             {
-                _expedition = new Expedition(new RunStart { Seed = 20261020UL }, null, null, "thrust", null,
+                _expedition = new Expedition(new RunStart { Seed = 20261020UL }, null, null, "side_sweep", null,
                     new Dictionary<string, int>(StringComparer.Ordinal) { ["armored_warden"] = 1, ["polearm_warped"] = 2 });
             }
             catch (Exception e)
@@ -180,15 +180,15 @@ namespace Trial.Meta
             _crowded = CrowdedLineage();
             _first = Inheritance.NewLineage(7UL);
             _lifeStart = Inheritance.StartLife(_lineage);
-            // The kinds a character owns from the start (#1〜#40), and three learned on the way (dev/meta.js:52).
-            _owned = BattleCore.CardCatalog.All.Take(40).Select(d => d.Id).Concat(new[] { "dash_in", "gale_thrust", "wolf_stance" }).ToList();
+            // The kinds a character owns from the start (the initial thirty-five), and three learned on the way (dev/meta.js:52).
+            _owned = BattleCore.CardCatalog.Initial.Select(d => d.Id).Concat(new[] { "dash_in", "gale_thrust", "wolf_stance" }).ToList();
             var records = Inheritance.MergeMastery((IReadOnlyDictionary<string, BattleCore.CardMastery>)null, new[]
             {
-                new BattleCore.CardMastery("thrust", 11, 2), new BattleCore.CardMastery("kesa_cut", 5, 1), new BattleCore.CardMastery("water_stance", 4, 1),
+                new BattleCore.CardMastery("side_sweep", 11, 2), new BattleCore.CardMastery("kesa_cut", 5, 1), new BattleCore.CardMastery("water_stance", 4, 1),
                 new BattleCore.CardMastery("observe", 12, 3), new BattleCore.CardMastery("footwork", 2, 0), new BattleCore.CardMastery("brace", 3, 1),
             });
-            _book = new BattleCore.MasteryBook("thrust", records, null);
-            _deckIds = new List<string> { "thrust", "kesa_cut", "water_stance", "observe", "brace", "footwork", "reach_thrust", "rock_stance", "lunge", "back_leap" };
+            _book = new BattleCore.MasteryBook("side_sweep", records, null);
+            _deckIds = new List<string> { "side_sweep", "kesa_cut", "water_stance", "observe", "brace", "footwork", "reach_thrust", "iron_wall", "feint", "back_leap" };
         }
 
         // ---------------------------------------------------------------- page
@@ -544,14 +544,14 @@ namespace Trial.Meta
                 wb.Click += () => Log("washi");
 
                 // the meta card faces: full size, the deck grid's .72 and the owned grid's .68, plain, stance, movement
-                string[] ids = { "thrust", "rock_stance", "back_leap", "kesa_cut", "brace" };
+                string[] ids = { "side_sweep", "water_stance", "back_leap", "kesa_cut", "brace" };
                 float x = 720f;
                 foreach (string id in ids)
                 {
                     try
                     {
                         global::Depiction.CardFace face = MetaCardFace.FaceOf(BattleCore.CardCatalog.ById(id));
-                        RectTransform slot = MetaCardFace.ScaledCard(_root, face, id == "thrust" ? 1f : 0.72f, lit: id == "kesa_cut");
+                        RectTransform slot = MetaCardFace.ScaledCard(_root, face, id == "side_sweep" ? 1f : 0.72f, lit: id == "kesa_cut");
                         Ui.Place(slot, x, 160f);
                         x += UiNode.Of(slot).W + 24f;
                     }

@@ -213,7 +213,7 @@ namespace BattleCore.Tests
         {
             // boar_rush is Attack + Move with a trait: trait → attack → move. At gap 2 the trait holds
             // (11 + 6) and the two-cell move then closes to gap 0.
-            var state = StartUnshuffled(CardCatalog.BoarRush, CardCatalog.Thrust, CardCatalog.Brace,
+            var state = StartUnshuffled(CardCatalog.BoarRush, CardCatalog.SideSweep, CardCatalog.Brace,
                 CardCatalog.KesaCut, CardCatalog.Feint).State;
             state = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
@@ -237,11 +237,11 @@ namespace BattleCore.Tests
         [Test]
         public void ACardWithoutATrait_EmitsNoTraitEvaluated()
         {
-            var state = StartUnshuffledAt(1, CardCatalog.Thrust, CardCatalog.Brace, CardCatalog.KesaCut,
+            var state = StartUnshuffledAt(1, CardCatalog.SideSweep, CardCatalog.Brace, CardCatalog.KesaCut,
                 CardCatalog.Feint, CardCatalog.BoarRush).State;
             state = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
-            var play = TurnLoop.PlayCard(state, InHand(state, "thrust"), NoRng);
+            var play = TurnLoop.PlayCard(state, InHand(state, "side_sweep"), NoRng);
             Assert.That(play.Events.OfType<TraitEvaluated>(), Is.Empty);
         }
 
@@ -251,7 +251,7 @@ namespace BattleCore.Tests
         public void ACardOutOfReach_IsRefused_AndThePreviewSaysSo()
         {
             // Gap 2: the kesa cut (0〜1) cannot be released; the reach thrust (1〜2) and, since v4.5,
-            // the thrust (0〜2) can; a Guard card reads no reach.
+            // the sweep (0〜2) can; a Guard card reads no reach.
             var s = StartUnshuffled(PrototypeDeck.Kinds.ToArray()).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
@@ -259,7 +259,7 @@ namespace BattleCore.Tests
             {
                 Assert.That(TurnLoop.CanPlay(s, InHand(s, "kesa_cut")), Is.EqualTo(PlayRefusal.OutOfReach));
                 Assert.That(TurnLoop.CanPlay(s, InHand(s, "reach_thrust")), Is.EqualTo(PlayRefusal.None));
-                Assert.That(TurnLoop.CanPlay(s, InHand(s, "thrust")), Is.EqualTo(PlayRefusal.None));
+                Assert.That(TurnLoop.CanPlay(s, InHand(s, "side_sweep")), Is.EqualTo(PlayRefusal.None));
                 Assert.That(TurnLoop.CanPlay(s, InHand(s, "brace")), Is.EqualTo(PlayRefusal.None));
                 Assert.That(TurnLoop.Preview(s, InHand(s, "kesa_cut"))!.InReach, Is.False);
                 Assert.That(TurnLoop.Preview(s, InHand(s, "reach_thrust"))!.InReach, Is.True);
@@ -275,7 +275,7 @@ namespace BattleCore.Tests
         public void AnEnemyBlow_WhiffsWhenThePlayerLeftItsReach_AndTheCostIsStillPaid()
         {
             // The sweep (1〜2) is declared at gap 2; the boar rush closes to gap 0 before it lands.
-            var s = StartUnshuffled(CardCatalog.BoarRush, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var s = StartUnshuffled(CardCatalog.BoarRush, CardCatalog.SideSweep, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.Feint).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
             s = TurnLoop.PlayCard(s, InHand(s, "boar_rush"), NoRng).State;
@@ -356,7 +356,7 @@ namespace BattleCore.Tests
 
             // Spend 3 + 2, end the turn, and the next turn gives the 3 back.
             var s = begin.State;
-            s = TurnLoop.PlayCard(s, InHand(s, "thrust"), NoRng).State;
+            s = TurnLoop.PlayCard(s, InHand(s, "side_sweep"), NoRng).State;
             s = TurnLoop.PlayCard(s, InHand(s, "kesa_cut"), NoRng).State;
             var end = TurnLoop.EndTurn(s, NoRng);
 
@@ -380,8 +380,8 @@ namespace BattleCore.Tests
             var state = StartUnshuffledAt(1, PrototypeDeck.Kinds.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
 
-            // Deck order: thrust(3) kesa_cut(2) reach_thrust(2) brace(2) feint(2) boar_rush(3).
-            var played = new[] { "thrust", "kesa_cut", "brace" };
+            // Deck order: side_sweep(3) kesa_cut(2) reach_thrust(2) brace(2) feint(2) boar_rush(3).
+            var played = new[] { "side_sweep", "kesa_cut", "brace" };
             foreach (var id in played) s = TurnLoop.PlayCard(s, InHand(s, id), NoRng).State;
 
             Assert.That(s.Player.Stamina, Is.EqualTo(10 - (3 + 2 + 2)));
@@ -394,7 +394,7 @@ namespace BattleCore.Tests
         {
             var state = StartUnshuffledAt(1, PrototypeDeck.Kinds.ToArray()).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
-            foreach (var id in new[] { "thrust", "kesa_cut", "reach_thrust", "brace" })
+            foreach (var id in new[] { "side_sweep", "kesa_cut", "reach_thrust", "brace" })
             {
                 s = TurnLoop.PlayCard(s, InHand(s, id), NoRng).State;
             }
@@ -414,7 +414,7 @@ namespace BattleCore.Tests
 
             // 10 − 3 − 2 − 2 = 3 left → Guard +3.
             var rich = s;
-            foreach (var id in new[] { "thrust", "kesa_cut", "reach_thrust" }) rich = TurnLoop.PlayCard(rich, InHand(rich, id), NoRng).State;
+            foreach (var id in new[] { "side_sweep", "kesa_cut", "reach_thrust" }) rich = TurnLoop.PlayCard(rich, InHand(rich, id), NoRng).State;
             var richEnd = TurnLoop.EndTurn(rich, NoRng);
             Assert.That(richEnd.Events.OfType<ReserveChecked>().First(),
                 Is.EqualTo(new ReserveChecked(Actor.Player, 3, 3, 3)));
@@ -461,7 +461,7 @@ namespace BattleCore.Tests
             Assert.That(twelve, Is.EqualTo(new DamageDealt(Actor.Enemy, Actor.Player, 12, 3, 9, 0, 41)));
 
             // Stepping in one with step_in_guard: the committed sweep still comes, still reaches, without its +3.
-            var deck = Cards.BuildDeck(new[] { CardCatalog.StepInGuard, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var deck = Cards.BuildDeck(new[] { CardCatalog.StepInGuard, CardCatalog.SideSweep, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.Feint }, 1);
             var s = TurnLoop.Start(AtGap(2, deck), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
@@ -518,7 +518,7 @@ namespace BattleCore.Tests
         public void Number7_Damage_IsFacePlusTraitMinusGuard_AndNeverBelowZero()
         {
             // Six cards a turn (#351): shield_bash fills the sixth slot so boar_rush stays for turn 2.
-            var state = StartUnshuffledAt(0, CardCatalog.Thrust, CardCatalog.KesaCut, CardCatalog.ReachThrust,
+            var state = StartUnshuffledAt(0, CardCatalog.SideSweep, CardCatalog.KesaCut, CardCatalog.ReachThrust,
                 CardCatalog.Brace, CardCatalog.Feint, CardCatalog.ShieldBash, CardCatalog.BoarRush,
                 CardCatalog.BodyCheck, CardCatalog.StepInGuard, CardCatalog.StepOutGuard).State;
             var s = TurnLoop.BeginPlayerTurn(state, NoRng).State;
@@ -528,9 +528,9 @@ namespace BattleCore.Tests
             Assert.That(kesa.Events.OfType<DamageDealt>().Single(),
                 Is.EqualTo(new DamageDealt(Actor.Player, Actor.Enemy, 20, 0, 20, 0, 40)));
 
-            // Gap 0: the thrust gets its plain 23; the reach thrust cannot be released at all.
-            var thrust = TurnLoop.PlayCard(s, InHand(s, "thrust"), NoRng);
-            Assert.That(thrust.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(23));
+            // Gap 0: the sweep gets its plain 23; the reach thrust cannot be released at all.
+            var sweep = TurnLoop.PlayCard(s, InHand(s, "side_sweep"), NoRng);
+            Assert.That(sweep.Events.OfType<DamageDealt>().Single().Raw, Is.EqualTo(23));
             Assert.That(TurnLoop.CanPlay(s, InHand(s, "reach_thrust")), Is.EqualTo(PlayRefusal.OutOfReach));
 
             // Turn 2: nothing was played, so 構え 3 soaks 3 of the shove's 6 and the wall takes 3 more.
@@ -549,7 +549,7 @@ namespace BattleCore.Tests
         [Test]
         public void Number7_GuardSoaksFirst_ThenHp()
         {
-            var deck = Cards.BuildDeck(new[] { CardCatalog.BodyCheck, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var deck = Cards.BuildDeck(new[] { CardCatalog.BodyCheck, CardCatalog.SideSweep, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.Feint, CardCatalog.ShieldBash, CardCatalog.ReachThrust,
                 CardCatalog.BoarRush, CardCatalog.StepInGuard, CardCatalog.StepOutGuard }, 1);
             var s = TurnLoop.Start(AtGap(ScenarioGap, deck), NoRng).State;
@@ -619,7 +619,7 @@ namespace BattleCore.Tests
         [Test]
         public void Slow_LandsOnThePolearm_TicksAtItsTurnStart_AndShortensTheShove()
         {
-            var deck = Cards.BuildDeck(new[] { CardCatalog.BodyCheck, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var deck = Cards.BuildDeck(new[] { CardCatalog.BodyCheck, CardCatalog.SideSweep, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.Feint }, 1);
             var s = TurnLoop.Start(AtGap(0, deck), NoRng).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
@@ -648,7 +648,7 @@ namespace BattleCore.Tests
         [Test]
         public void ASlowedPlayer_PlaysTheMoveCard_ButDoesNotMove()
         {
-            var s = StartUnshuffledAt(1, CardCatalog.Feint, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var s = StartUnshuffledAt(1, CardCatalog.Feint, CardCatalog.SideSweep, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.BoarRush).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
             s = s with { Player = s.Player with { Statuses = StatusSet.Of((StatusKind.Slow, 1)) } };
@@ -664,7 +664,7 @@ namespace BattleCore.Tests
         [Test]
         public void AMoveIntoTheEnemy_StopsShort_AndEmitsNoCellsMoved()
         {
-            var s = StartUnshuffledAt(0, CardCatalog.StepInGuard, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var s = StartUnshuffledAt(0, CardCatalog.StepInGuard, CardCatalog.SideSweep, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.BoarRush).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
@@ -679,7 +679,7 @@ namespace BattleCore.Tests
         public void AGuardTrait_LandsAsGuard_OnACardWithoutAGuardFace()
         {
             // feint is Attack + Move; its 温存 (残 ≥ 4) gives Guard +3 all the same.
-            var s = StartUnshuffledAt(1, CardCatalog.Feint, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var s = StartUnshuffledAt(1, CardCatalog.Feint, CardCatalog.SideSweep, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.BoarRush).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
 
@@ -718,7 +718,7 @@ namespace BattleCore.Tests
         [Test]
         public void TheBattleEnds_TheMomentTheEnemyReachesZero()
         {
-            var s = StartUnshuffled(CardCatalog.BoarRush, CardCatalog.Thrust, CardCatalog.KesaCut,
+            var s = StartUnshuffled(CardCatalog.BoarRush, CardCatalog.SideSweep, CardCatalog.KesaCut,
                 CardCatalog.Brace, CardCatalog.Feint).State;
             s = TurnLoop.BeginPlayerTurn(s, NoRng).State;
             s = s.WithEnemy(s.Enemy with { Hp = 10 });
@@ -737,7 +737,7 @@ namespace BattleCore.Tests
                 Assert.That(play.Events.Last(), Is.EqualTo(new BattleEnded(Actor.Player, GameResult.Won)));
             });
 
-            Assert.That(TurnLoop.CanPlay(play.State, InHand(play.State, "thrust")), Is.EqualTo(PlayRefusal.BattleOver));
+            Assert.That(TurnLoop.CanPlay(play.State, InHand(play.State, "side_sweep")), Is.EqualTo(PlayRefusal.BattleOver));
             Assert.That(() => TurnLoop.EndTurn(play.State, NoRng), Throws.InvalidOperationException);
             Assert.That(() => TurnLoop.BeginPlayerTurn(play.State, NoRng), Throws.InvalidOperationException);
         }
@@ -788,7 +788,7 @@ namespace BattleCore.Tests
 
             var open = TurnLoop.BeginPlayerTurn(start, NoRng).State;
             Assert.That(() => TurnLoop.BeginPlayerTurn(open, NoRng), Throws.InvalidOperationException);
-            Assert.That(TurnLoop.CanPlay(start, "thrust-0"), Is.EqualTo(PlayRefusal.NotPlayerTurn));
+            Assert.That(TurnLoop.CanPlay(start, "side_sweep-0"), Is.EqualTo(PlayRefusal.NotPlayerTurn));
         }
 
         [Test]
@@ -916,7 +916,7 @@ namespace BattleCore.Tests
         private static readonly string[] PinnedHands =
         {
             "shield_bash,body_check,step_out_guard,step_in_guard,step_out_guard,body_check",
-            "kesa_cut,brace,boar_rush,thrust,reach_thrust,feint",
+            "kesa_cut,brace,boar_rush,side_sweep,reach_thrust,feint",
             "feint,kesa_cut,reach_thrust,step_in_guard,shield_bash,boar_rush",
         };
 

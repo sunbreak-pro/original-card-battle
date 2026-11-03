@@ -210,7 +210,7 @@ namespace Depiction.Bridge
 
         /// <summary>
         /// The two rows of the trait box. One trait: the condition in §6.1's short words, then
-        /// "→ effect". Two traits (背水の陣, #213): one trait per row, condition and effect run together
+        /// "→ effect". Two traits (the v4.9 背水の陣, #213): one trait per row, condition and effect run together
         /// ("間合い2以上→威力+5"). No trait: the plain card's two rows.
         /// </summary>
         public static string[] TraitRows(CardDef def)

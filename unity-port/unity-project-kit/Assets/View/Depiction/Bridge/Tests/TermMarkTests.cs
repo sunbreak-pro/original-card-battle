@@ -41,18 +41,18 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void Lunge_UnderlinesCombo_UnderItsGlossaryWord()
+        public void RiposteGuard_UnderlinesCombo_UnderItsGlossaryWord()
         {
-            CardFace face = FaceOf(CardCatalog.Lunge);
+            CardFace face = FaceOf(CardCatalog.RiposteGuard);
             TermMark combo = face.Terms.Single(m => m.Word == "連動 X");
-            Assert.That(Printed(face, combo), Is.EqualTo("連動"), "§7.5 連動 X is printed 連動 スタンス");
+            Assert.That(Printed(face, combo), Is.EqualTo("連動"), "§7.5 連動 X is printed 連動 攻撃");
             Assert.That(combo.Meaning, Does.Contain("属性 X"));
         }
 
         [Test]
         public void APlainCard_UnderlinesItsName_InTheBox()
         {
-            CardFace face = FaceOf(CardCatalog.Thrust);
+            CardFace face = FaceOf(CardCatalog.SideSweep);
             Assert.That(face.Plain, Is.True);
             TermMark plain = face.Terms.Single();
             Assert.That(plain.Word, Is.EqualTo("素直な札"));
@@ -62,7 +62,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void AStanceCard_WithNoTermInItsBox_MarksNothingThere()
         {
-            CardFace face = FaceOf(CardCatalog.RockStance);
+            CardFace face = FaceOf(CardCatalog.PurgeFlash);
             foreach (TermMark mark in face.Terms)
             {
                 Assert.That(Printed(face, mark), Is.Not.Empty);

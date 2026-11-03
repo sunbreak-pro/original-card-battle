@@ -37,7 +37,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void EveryName_FitsOnOneLine_AboveTheTypeLine()
         {
-            Assert.That(CardCatalog.All.Count, Is.EqualTo(80));
+            Assert.That(CardCatalog.All.Count, Is.EqualTo(71));
             var misfits = new List<string>();
             foreach (CardDef def in CardCatalog.All)
             {
@@ -72,9 +72,13 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void LastStand_PrintsItsTwoTraits_OnePerLine()
+        public void ACardWithTwoTraits_PrintsThem_OnePerLine()
         {
-            TextFit fit = CardTextFit.Trait(CoreText.TraitLines(CardCatalog.ById("last_stand")), TraitSize, MinSize, TraitWidth, TraitHeight, StandIn);
+            // No catalog card carries two traits since v4.10 dropped #80 背水の陣 (#824); the core still can.
+            var twoTraits = new CardDef("two_traits", "二つの特性", BattleAttribute.Attack, 1, new Face(Power: 8, Reach: new Reach(1, 2)),
+                new BattleCore.Trait(BattleCore.TraitCondition.GapAtLeast, BattleCore.TraitEffect.PowerBonus, 5, Threshold: 2),
+                ExtraTrait: new BattleCore.Trait(BattleCore.TraitCondition.Desperate, BattleCore.TraitEffect.PowerBonus, 3));
+            TextFit fit = CardTextFit.Trait(CoreText.TraitLines(twoTraits), TraitSize, MinSize, TraitWidth, TraitHeight, StandIn);
 
             Assert.That(fit.Text, Is.EqualTo("間合い2以上 +5\n死力 +3"));
         }
@@ -111,7 +115,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void EveryDescription_FitsItsBox_WithNoLineOpeningOnPunctuation()
         {
-            Assert.That(CardCatalog.All.Count, Is.EqualTo(80));
+            Assert.That(CardCatalog.All.Count, Is.EqualTo(71));
             var misfits = new List<string>();
             foreach (CardDef def in CardCatalog.All)
             {
@@ -139,10 +143,9 @@ namespace Depiction.Bridge.Tests
         }
 
         // #722: the five cards the #567 measure printed below 16 px (12, 13, 14, 14 and 14) now hold the
-        // full size. battle-visual-v1 §3.1 keeps the shrinking as a guard, not as these cards' size.
-        [TestCase("flow_stance", "∞ 移動後の攻撃 威力 +5")]
+        // full size; three are left since v4.10 dropped 流れの構え and 岩の構え (#824). battle-visual-v1
+        // §3.1 keeps the shrinking as a guard, not as these cards' size.
         [TestCase("wolf_stance", "∞ 出血中の敵へ 威力 +3")]
-        [TestCase("rock_stance", "∞ ターン開始 Guard +3")]
         [TestCase("root_bind", "∞ 敵が自ら動くと崩し 1")]
         [TestCase("twist_away", "敵に 鈍足 2・疲労 2\n敵に 威圧 2")]
         public void TheFiveShortenedDescriptions_FitAt16Px(string id, string printed)

@@ -19,13 +19,14 @@ namespace Exploration.Bridge.Tests
         {
             var expedition = new Expedition(new RunStart { Seed = 3 });
             Assert.That(CardPicks.For(expedition).IsShown, Is.False, "the entry battle waits; nothing is offered yet");
-            Assert.That(CardPicks.Choose(expedition, CardCatalog.Thrust.Id), Is.False);
+            Assert.That(CardPicks.Choose(expedition, CardCatalog.SideSweep.Id), Is.False);
         }
 
         [Test]
-        public void ARealElite_LaysOutItsTwoCards_AndTheOnePickedIsOwnedAndInTheDeck()
+        public void ARealElite_LaysOutItsCards_AndTheOnePickedIsOwnedAndInTheDeck()
         {
-            // Layer 7's elite is always 統牙の長竜, and no boss before it teaches its cards.
+            // Layer 7's elite is always 統牙の長竜, and no boss before it teaches its cards. Since v4.10
+            // dropped #53 牙の突進 (#824) it lays out its one card, #52 群れの咆哮.
             var expedition = new Expedition(new RunStart { Seed = 5 });
             WalkToLayer(expedition, 7);
             WalkToAndWin(expedition, NodeKind.Elite);
@@ -41,12 +42,12 @@ namespace Exploration.Bridge.Tests
                 Assert.That(pick.Choices.Select(c => c.Face.Name), Is.EqualTo(ids.Select(id => CardCatalog.ById(id).Name)));
             });
 
-            Assert.That(CardPicks.Choose(expedition, ids[1]), Is.True);
+            Assert.That(ids, Is.EqualTo(new[] { CardCatalog.PackHowl.Id }));
+            Assert.That(CardPicks.Choose(expedition, ids[0]), Is.True);
             Assert.Multiple(() =>
             {
-                Assert.That(expedition.Owned.Contains(ids[1]), Is.True);
-                Assert.That(expedition.Deck.Any(c => c.Def.Id == ids[1]), Is.True);
-                Assert.That(expedition.Owned.Contains(ids[0]), Is.False, "one of the two");
+                Assert.That(expedition.Owned.Contains(ids[0]), Is.True);
+                Assert.That(expedition.Deck.Any(c => c.Def.Id == ids[0]), Is.True);
                 Assert.That(CardPicks.For(expedition).Kind, Is.Not.EqualTo(PickKind.EliteCard), "the offer is spent");
             });
         }
@@ -79,7 +80,7 @@ namespace Exploration.Bridge.Tests
         public void ACardNotLaidOut_IsNotTaken()
         {
             Expedition expedition = WinUntilACardIsOffered();
-            Assert.That(CardPicks.Choose(expedition, CardCatalog.LastStand.Id), Is.False, "#80 is not in layer 1's pile");
+            Assert.That(CardPicks.Choose(expedition, CardCatalog.ShadowLunge.Id), Is.False, "#79 is not in layer 1's pile");
             Assert.That(CardPicks.For(expedition).Kind, Is.EqualTo(PickKind.PileCard), "the offer still waits");
         }
 
@@ -147,8 +148,8 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void ADifferentCaptionOrderOrPrompt_IsAnotherScreen()
         {
-            CardFace thrust = CoreText.FaceOf(CardCatalog.Thrust);
-            CardFace stand = CoreText.FaceOf(CardCatalog.LastStand);
+            CardFace thrust = CoreText.FaceOf(CardCatalog.SideSweep);
+            CardFace stand = CoreText.FaceOf(CardCatalog.ShadowLunge);
             CardPick Pick(string prompt, params PickChoice[] choices) =>
                 new CardPick(PickKind.Training, CardPicks.TrainingTitle, prompt, choices);
             CardPick shown = Pick("a", new PickChoice(thrust.Id, thrust, "刻み 0"), new PickChoice(stand.Id, stand, "刻み 2"));

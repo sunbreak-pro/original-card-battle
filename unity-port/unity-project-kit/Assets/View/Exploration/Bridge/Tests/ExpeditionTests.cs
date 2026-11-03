@@ -150,11 +150,11 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void TheMasteryTicks_GoToTheBook_WhenTheBattleEnds()
         {
-            var expedition = new Expedition(new RunStart { Seed = 3 }, talent: "thrust");
+            var expedition = new Expedition(new RunStart { Seed = 3 }, talent: "side_sweep");
             EncounterBattle battle = expedition.StartEncounter();
             var plays = new[]
             {
-                new MasteryPlay("thrust", MasteryContext.Gap | MasteryContext.Omen),
+                new MasteryPlay("side_sweep", MasteryContext.Gap | MasteryContext.Omen),
                 new MasteryPlay("brace", MasteryContext.Trait),
             };
 
@@ -163,9 +163,9 @@ namespace Exploration.Bridge.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(back.Ticks.TicksOf("thrust"), Is.EqualTo(2));
+                Assert.That(back.Ticks.TicksOf("side_sweep"), Is.EqualTo(2));
                 Assert.That(back.Ticks.TicksOf("brace"), Is.EqualTo(1));
-                Assert.That(expedition.Mastery.TicksOf("thrust"), Is.EqualTo(2 * Constants.TalentTickMultiplier), "才能 doubles the talent card");
+                Assert.That(expedition.Mastery.TicksOf("side_sweep"), Is.EqualTo(2 * Constants.TalentTickMultiplier), "才能 doubles the talent card");
                 Assert.That(expedition.Mastery.TicksOf("brace"), Is.EqualTo(1));
             });
         }
@@ -209,12 +209,12 @@ namespace Exploration.Bridge.Tests
             var expedition = new Expedition(new RunStart { Seed = 3 });
             EncounterBattle battle = expedition.StartEncounter();
             string enemy = battle.HandIn.Encounter.Fights[0].EnemyIds[0];
-            EndEveryFight(battle, GameResult.Lost, hp: 0, plays: new[] { new MasteryPlay("thrust", MasteryContext.Gap) });
+            EndEveryFight(battle, GameResult.Lost, hp: 0, plays: new[] { new MasteryPlay("side_sweep", MasteryContext.Gap) });
             expedition.Return();
 
             Assert.That(expedition.Session.Act(ScreenAction.NewLife), Is.True);
             Assert.That(expedition.DisclosureOf(enemy), Is.EqualTo(0));
-            Assert.That(expedition.Mastery.TicksOf("thrust"), Is.EqualTo(0));
+            Assert.That(expedition.Mastery.TicksOf("side_sweep"), Is.EqualTo(0));
             Assert.That(expedition.HandIn(), Is.Not.Null, "the new life's entry battle waits");
         }
 
@@ -352,19 +352,20 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void ACardAlreadyOwned_IsNotTaughtAgain()
         {
-            var owned = new HashSet<string> { CardCatalog.FangRush.Id };
-            UniqueCardReward reward = UniqueCards.For(NodeKind.Elite, Single("pack_alpha", false), owned);
-            Assert.That(reward.Offered, Is.EqualTo(new[] { CardCatalog.PackHowl.Id }));
+            var owned = new HashSet<string> { CardCatalog.Bulwark.Id };
+            UniqueCardReward reward = UniqueCards.For(NodeKind.Elite, Single("armored_warden", false), owned);
+            Assert.That(reward.Offered, Is.EqualTo(new[] { CardCatalog.ShieldBash.Id }));
         }
 
         [Test]
         public void EveryCardTheTableNames_IsALearnedCard()
         {
-            var learned = CardCatalog.All.Skip(40).Select(d => d.Id).ToList();
+            var learned = CardCatalog.All.Skip(CardCatalog.InitialCount).Select(d => d.Id).ToList();
             var named = new[] { "miasma_priest", "abyss_angler", "distortion_root" }.SelectMany(UniqueCards.OfBoss)
                 .Concat(new[] { "armored_warden", "pack_alpha", "polearm_unyielding" }.SelectMany(UniqueCards.OfElite))
                 .ToList();
-            Assert.That(named.Count, Is.EqualTo(15));
+            // v4.10 (#824): ガルド's #46 and 統牙の長竜's #53 left; ガルド's #85 覚醒 joins with #826.
+            Assert.That(named.Count, Is.EqualTo(13));
             Assert.That(named.All(learned.Contains), Is.True);
         }
 
@@ -418,22 +419,23 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void ARealElitesCard_PickedWithLearn_IsOwnedAndInTheDeck()
         {
-            // Layer 7's elite is always 統牙の長竜, and no boss before it teaches its cards.
+            // Layer 7's elite is always 統牙の長竜, and no boss before it teaches its cards. Since v4.10
+            // dropped #53 牙の突進 (#824) it offers its one card, #52 群れの咆哮.
             var expedition = new Expedition(new RunStart { Seed = 5 });
             WalkToLayer(expedition, 7);
             BattleReturn back = WalkToAndWin(expedition, NodeKind.Elite);
 
-            Assert.That(back.Offered, Is.EqualTo(UniqueCards.OfElite("pack_alpha")), "a real elite offers its two cards");
+            Assert.That(back.Offered, Is.EqualTo(UniqueCards.OfElite("pack_alpha")), "a real elite offers its cards");
+            Assert.That(back.Offered, Is.EqualTo(new[] { CardCatalog.PackHowl.Id }));
             Assert.That(expedition.Offer, Is.EqualTo(back.Offered));
             Assert.That(back.Reward.CardChoices, Is.Empty, "the elite's cards are the card");
             Assert.That(back.Reward.Consumables.Count, Is.EqualTo(1), "§4.2: an elite always drops a consumable");
 
-            string card = back.Offered[1];
+            string card = back.Offered[0];
             Assert.That(expedition.Learn(card), Is.True);
             Assert.That(expedition.Owned.Contains(card), Is.True);
             Assert.That(expedition.Deck.Any(c => c.Def.Id == card), Is.True);
-            Assert.That(expedition.Owned.Contains(back.Offered[0]), Is.False, "one of the two");
-            Assert.That(expedition.Learn(back.Offered[0]), Is.False, "the offer is spent");
+            Assert.That(expedition.Learn(card), Is.False, "the offer is spent");
         }
 
         [Test]
@@ -461,7 +463,7 @@ namespace Exploration.Bridge.Tests
             WalkTo(expedition, NodeKind.Rest, RestChoice.Train);
             Assert.That(session.State.TrainingMarks, Is.EqualTo(1));
 
-            string card = CardCatalog.Thrust.Id;
+            string card = CardCatalog.SideSweep.Id;
             int before = expedition.Mastery.TicksOf(card);
             Assert.That(expedition.Train(card), Is.True);
             Assert.Multiple(() =>
@@ -478,7 +480,7 @@ namespace Exploration.Bridge.Tests
             var expedition = new Expedition(new RunStart { Seed = 3 });
             WinPending(expedition);
             WalkTo(expedition, NodeKind.Rest, RestChoice.Train);
-            Assert.That(expedition.Train(CardCatalog.LastStand.Id), Is.False, "#80 is not owned at the start");
+            Assert.That(expedition.Train(CardCatalog.ShadowLunge.Id), Is.False, "#79 is not owned at the start");
             Assert.That(expedition.Session.State.TrainingMarks, Is.EqualTo(1));
         }
 
@@ -533,8 +535,8 @@ namespace Exploration.Bridge.Tests
         [Test]
         public void ATurnedPage_WaitsBehindTheElitesPick_AndIsDealtAfterIt()
         {
-            // Seed 1, taking each layer's elite before its boss: layer 5's elite is a real one whose two
-            // cards are not owned, and its 40% page lands on a layer with nothing to tell.
+            // Seed 1, taking each layer's elite before its boss: layer 5's elite is 統牙の長竜, whose card
+            // is not owned, and its 40% page lands on a layer with nothing to tell.
             var expedition = new Expedition(new RunStart { Seed = 1 });
             for (int layer = 1; layer <= 4; layer++)
             {
@@ -545,7 +547,7 @@ namespace Exploration.Bridge.Tests
             }
             BattleReturn elite = WalkToAndWin(expedition, NodeKind.Elite);
 
-            Assert.That(elite.Offered.Count, Is.EqualTo(2), "a real elite offers its two cards");
+            Assert.That(elite.Offered, Is.EqualTo(UniqueCards.OfElite("pack_alpha")), "統牙の長竜 offers its one card since v4.10 (#824)");
             Assert.That(elite.PagesTurned, Is.EqualTo(1));
             Assert.That(elite.Reward.CardChoices, Is.Empty, "the turned card waits behind the elite's pick");
             Assert.That(expedition.Offer, Is.EqualTo(elite.Offered));

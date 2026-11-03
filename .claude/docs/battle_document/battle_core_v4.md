@@ -486,7 +486,7 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | デッキ枚数 | **20〜40** | 20 未満は出立で弾く |
 | 同種の上限 | 3 | 習得した瞬間に 3 枚使える。所持は「種類」で持つ |
 | 山札切れ | 捨札を再シャッフル | 除外（出したスタンスの札）は戻らない。同じ札の写しは戻る（§4） |
-| 所持上限 | 80 種 | 初期 40 種、習得 40 種 |
+| 所持上限 | 73 種 | 初期 35 種、習得 38 種（`swordsman_cards_v4.md` v4.10、#824） |
 
 出立では、デッキのほかにツール 3 枠と消耗品 3 枠を選び、才能にする札を 1 枚決めます（`vision/concept-v3.md` §14）。デッキに入れられるのは、そのキャラクターが持っている種類だけです。才能はデッキに入っている種類から選びます。戦闘コアが読むのはデッキと開始のマスと才能で、ツールと消耗品の中身は探索側の目録が持ちます。
 
@@ -561,7 +561,7 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | HAND_LIMIT | 8 | 超過は捨札へ |
 | DECK_MIN / MAX | 20 / 40 | v4.1 の 15 / 80 を置き換える |
 | COPIES_MAX | 3 | 同種の上限 |
-| OWNED_KINDS_MAX | 80 | |
+| OWNED_KINDS_MAX | 73 | 2026-11-03 に 80 から（#825）。札の数は `swordsman_cards_v4.md` が持つ |
 | COLUMN_COUNT | 4 | 列 1〜4 |
 | COST_MIN / MAX | 1 / 4 | 2026-11-03 に上限を 3 から（#823）。列 4 のコストは 4。0 は習熟でだけ |
 | STAMINA_RECOVERY | 3 | プレイヤーの毎ターン固定（§18 K1）。敵は敵ごとの値（`enemy_roster_v4.md` §0） |
@@ -571,7 +571,7 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | RESERVE_GUARD | 3 | 構えで付く Guard |
 | DESPERATE_THRESHOLD | 2 | 死力の条件（倍率は持たない） |
 | TRAIT_CONDITIONS / EFFECTS | 13 / 10 | 移動後が加わった（v4.4。連動(ムーブ) を置き換えた） |
-| POSITION_TRAIT_CARDS | 16 | 間合いの境目を条件にする札（4 マス × 4） |
+| POSITION_TRAIT_CARDS | 14 | 間合いの境目を条件にする札（4 マス × 4 の 16 から、v4.10 で札を消して 2 マスが 1 枚ずつ欠けた。#825） |
 | FIELD_CELLS | 戦闘ごと | 場のマスの数。既定値は持たず戦闘の開始時に受け取る。5〜8（§7.1、#168） |
 | CELL_CAPACITY | 1 | 1 マスに入れる敵の数（2026-09-23）。プレイヤーとは同居しない |
 | ENEMY_SIZE_MAX | 3 | 大きな敵が使うマスの数の上限 |
@@ -615,7 +615,7 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | Combat.cs | §5.1 のダメージ式（`ComputeRawPower`）、Guard と構えの計算、スタミナの回復とドロー枚数の上限。面ごとの解決は `TurnLoop.cs`、特性の評価（面より前）は `Traits.cs` の `Traits.Evaluate`、状態の 2 型の減り方は `Statuses.cs` が持ちます |
 | TurnLoop.cs | §9 のターン進行、全捨て + 6 枚、回復 3 固定、敵ごとのフェーズ、精鋭の 2 行動、払えない予兆は休み。札と敵の行動の面ごとの解決も持ちます |
 | Enemies.cs / EnemyAi.cs | `Enemies.cs` が決定木を `enemy_roster_v4.md` から写します。`EnemyAi.cs` が予兆を決めます。間合いの帯 0 / 1〜2 / 3 以上の 3 枝、実行の時点の空振り、ボスの適応の判定（`TreeSwitch`）です |
-| CardCatalog.cs | `swordsman_cards_v4.md` の 80 種。初期 40 は `CardCatalog.Initial.cs`、習得 40 は `CardCatalog.Learned.cs` にあります |
+| CardCatalog.cs | `swordsman_cards_v4.md` の札。初期 35 は `CardCatalog.Initial.cs`、習得は `CardCatalog.Learned.cs` にあります（v4.10 の習得 38 のうち、#84 / #85 は #826 で足します） |
 | Cards.cs | 山札の組み立て・シャッフル・ドロー・全捨てと、デッキの検査（`Validate`） |
 | DeckRules.cs | 出立の検証（#58）。20〜40、同種 3、持っている種類だけ（カード単位の規則は `Cards.cs` の `Validate`）。出したスタンスの札の除外（§4）は戦闘中の扱いで、`TurnLoop.cs` が持ちます。ツール 3 枠・消耗品 3 枠、開始のマス（§7.3）、才能の札 1 枚。出立の結果は `Departure` で、戦闘ごとの `BattleSetup` を作る。戦闘に効くツールの量（§9.1）も `Departure` が運び、戦闘中の竜鱗の欠片と竜語の符は `BattleState.Tools`（`CarriedTools`）が持つ |
 | Mastery.cs | §3.2 の習熟。プレイごとの文脈（`MasteryContext`、`TurnLoop.PlayCard` が `BattleHistory.MasteryPlays` に書き留める）、戦闘の刻みの集計（`MasteryTally`）、1 つの生の記録（`MasteryBook`。才能、戦闘の終わりの `AfterBattle`、習熟訓練の `Train`、3 段目は 1 枚）、段の型（`MasteryKind`）と段ごとの札（`Mastery.Master`。`CardDef.FixedCost` でコストを固定する）。1 枚ずつの割り当ては `MasteryProfiles` で、`swordsman_cards_v4.md` §4.6 の 60 種を写している（#504）。移動が中心の札の伸び（§3.2）は `Mastery.MovementGuardByRank` と `Mastery.MovementExtraByRank` |
@@ -713,6 +713,7 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 
 ## 15. 変更履歴
 
+- 2026-11-03（#825）: `swordsman_cards_v4.md` v4.10（#824）で札が 80 種から 73 種になったのに合わせて、§8 の所持上限と §10 の OWNED_KINDS_MAX を 80 から 73 に、POSITION_TRAIT_CARDS を 16 から 14 にした。§11 の CardCatalog.cs の行も直した。規則は変えていない。
 - 2026-11-03（#823）: 1 枚のコストの上限を 3 から 4 に上げた（COST_MAX 3 → 4。こうだいさんの依頼）。列 4 のコストを 3 から 4 にし、§3 の列の説明と §10 の行を直した。集中と習熟の伸びで列 4 に上がった札のコストは変えないことを、§3 と §3.2 に書いた。集中は札の列を動かさず、伸びは元のコストを札に留める（`CardDef.FixedCost`）。`BattleCore` はもとからこの読み方で、テストで固めた。列 4 の札の上に登る列は作らない。今の札と敵の行動はどれも列 1〜3 で、コストは変わらない。`swordsman_cards_v4.md` と `battle-visual-v1.md` に残る「列 4 のコストは 3」は、持ち主のレーンへ申し送った。§0 と §18 K8 の記録は直していない。
 - 2026-11-01（#714）: §3.2 の習熟の 4 文脈の表を決定にし、見出しの「battle レーンの叩き台」を外した（こうだいさんの決定、#460）。表の中身と `Mastery.cs` は変えていない。§17.8 の 2026-10-08 の記録の文はそのまま残した。
 - 2026-10-17（#518）: §11 の連戦モードの行と §12 の実装の行を、画面の連戦 `DemoSession` の 1 通りに書き直した（こうだいさんの決定）。画面の無い `ChainRun` と `ChainLog` を消し、並びの `ChainOrder` を `ChainOrder.cs` に移した。`-chain`・瘴気の蓄積と瘴気死・ログファイルは実装が無いと書いた。規則は変えていない。

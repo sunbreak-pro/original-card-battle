@@ -786,7 +786,7 @@ namespace Exploration.Bridge.Tests
             // the loadout keeps the 3 tools, the battle tools also go to the battles; the save's round trip is in
             // TraceGainTests, which reads InheritanceCore's JSON)
             IReadOnlyList<CardInstance> deck = PrototypeDeck.Build();
-            Assert.That(deck.Any(c => c.Def.Id == "thrust"), Is.True, "the talent is a card of the deck");
+            Assert.That(deck.Any(c => c.Def.Id == "side_sweep"), Is.True, "the talent is a card of the deck");
             int slots = DeckLimits.Default.ToolSlots;
             foreach (ItemDef tool in ItemCatalogue.Tools)
             {
@@ -794,7 +794,7 @@ namespace Exploration.Bridge.Tests
                 Assert.That(runLoadout.ToolSlotCount, Is.EqualTo(3), tool.Id);
                 Assert.That(runLoadout.Tools.Count, Is.EqualTo(3), tool.Id);
                 string[] battleToolIds = tool.Side == EffectSide.Battle ? new[] { tool.Id, tool.Id } : new string[0];
-                var ex = new Expedition(new RunStart { Seed = 7, Loadout = runLoadout }, deck, battleToolIds, "thrust");
+                var ex = new Expedition(new RunStart { Seed = 7, Loadout = runLoadout }, deck, battleToolIds, "side_sweep");
                 Assert.That(ex.Deck.Count, Is.EqualTo(20), tool.Id);
             }
         }

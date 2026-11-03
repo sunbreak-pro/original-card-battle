@@ -13,12 +13,12 @@ namespace Depiction.Bridge.Tests
     {
         private static readonly IRng NoShuffle = new FixedRng(0.9999999);
 
-        /// <summary>Dealt from the front (NoShuffle): 岩の構え, 水の構え, 岩の構え, then three cards to fill the hand.</summary>
+        /// <summary>Dealt from the front (NoShuffle): 遠間の構え, 水の構え, 遠間の構え, then three cards to fill the hand.</summary>
         private static List<CardInstance> Deck() => new List<CardInstance>
         {
-            new CardInstance("rock-0", CardCatalog.RockStance),
+            new CardInstance("rock-0", CardCatalog.PurgeFlash),
             new CardInstance("water-0", CardCatalog.WaterStance),
-            new CardInstance("rock-1", CardCatalog.RockStance),
+            new CardInstance("rock-1", CardCatalog.PurgeFlash),
             new CardInstance("kesa-0", CardCatalog.KesaCut),
             new CardInstance("feint-0", CardCatalog.Feint),
             new CardInstance("brace-0", CardCatalog.Brace),
@@ -60,9 +60,9 @@ namespace Depiction.Bridge.Tests
         {
             var (writer, state) = Begun();
             var (afterRock, s1) = Play(writer, state, "rock-0");
-            Assert.That(Names(afterRock.Player), Is.EqualTo(new[] { "岩の構え×1" }));
+            Assert.That(Names(afterRock.Player), Is.EqualTo(new[] { "遠間の構え×1" }));
             var (afterWater, _) = Play(writer, s1, "water-0");
-            Assert.That(Names(afterWater.Player), Is.EqualTo(new[] { "岩の構え×1", "水の構え×1" }), "the newest last");
+            Assert.That(Names(afterWater.Player), Is.EqualTo(new[] { "遠間の構え×1", "水の構え×1" }), "the newest last");
             Assert.That(afterWater.Enemy.Stances, Is.Empty, "the player's stances stay on the player's side");
         }
 
@@ -74,7 +74,7 @@ namespace Depiction.Bridge.Tests
             var (_, s2) = Play(writer, s1, "water-0");
             var (frame, s3) = Play(writer, s2, "rock-1");
             Assert.That(s3.Player.StanceList.Count, Is.EqualTo(3), "the core holds the repeat as a second entry (§4)");
-            Assert.That(Names(frame.Player), Is.EqualTo(new[] { "水の構え×1", "岩の構え×2" }),
+            Assert.That(Names(frame.Player), Is.EqualTo(new[] { "水の構え×1", "遠間の構え×2" }),
                 "battle_ui_ux_v2 §3.7: the repeat is not listed twice; it moves to the end with ×2");
         }
 
@@ -85,7 +85,7 @@ namespace Depiction.Bridge.Tests
             var (_, s1) = Play(writer, state, "rock-0");
             StepResult end = TurnLoop.EndTurn(s1, NoShuffle);
             DepictionFrame last = writer.Write(end.Events, end.State).Last().After;
-            Assert.That(Names(last.Player), Is.EqualTo(new[] { "岩の構え×1" }), "a stance lasts the battle (§4)");
+            Assert.That(Names(last.Player), Is.EqualTo(new[] { "遠間の構え×1" }), "a stance lasts the battle (§4)");
         }
 
         [Test]
@@ -114,9 +114,9 @@ namespace Depiction.Bridge.Tests
             var (_, s2) = Play(writer, s1, "water-0");
             var (frame, _) = Play(writer, s2, "rock-1");
             StanceRow water = frame.Player.Stances.Single(r => r.Name == "水の構え");
-            StanceRow rock = frame.Player.Stances.Single(r => r.Name == "岩の構え");
+            StanceRow rock = frame.Player.Stances.Single(r => r.Name == "遠間の構え");
             Assert.That(water.Effect, Is.EqualTo(StatusChipText.StanceChip("水の構え", 1).Effect));
-            Assert.That(rock.Effect, Is.EqualTo(StatusChipText.StanceChip("岩の構え", 2).Effect));
+            Assert.That(rock.Effect, Is.EqualTo(StatusChipText.StanceChip("遠間の構え", 2).Effect));
             Assert.That(rock.Effect, Does.Contain("2 倍効く"), "a stance held twice says it works twice");
             Assert.That(frame.Player.Stances.Select(r => r.Decay), Has.All.EqualTo("減らない（永続）"));
         }

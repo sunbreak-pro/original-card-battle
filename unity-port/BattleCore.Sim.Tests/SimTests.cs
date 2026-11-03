@@ -159,7 +159,7 @@ public class LegalPlayTests
 
         CardInstance Card(string id, int copy = 0) => new CardInstance($"{id}-x{copy}", CardCatalog.ById(id));
         var footwork = Card("footwork");
-        var hand = new[] { footwork, Card("thrust"), Card("brace") };
+        var hand = new[] { footwork, Card("side_sweep"), Card("brace") };
         var pile = new[] { Card("throw_blade"), Card("iron_block"), Card("iron_block", 1), Card("deep_breath") };
         var one = start with { Hand = hand, DrawPile = pile, DiscardPile = Array.Empty<CardInstance>() };
         var two = one with { DrawPile = pile.Reverse().ToArray() };
@@ -203,8 +203,18 @@ public class DeckTests
         var deck = Bench.MainDecks().Single(d => d.Id == deckId);
         var built = deck.Build();
         var check = Cards.Validate(built);
-        Assert.That(check.Ok, Is.True, string.Join("; ", check.Errors));
-        Assert.That(built.Count, Is.InRange(Constants.DeckMin, Constants.DeckMax));
+        if (deck.Id == "plain")
+        {
+            // swordsman_cards_v4 §5-5 (v4.10) measures 「素直な札だけの 6 種 × 3 = 18 枚」, under §8's floor
+            // of 20: the one rule this reference row breaks, and the report marks it invalid (#825).
+            Assert.That(built, Has.Count.EqualTo(18));
+            Assert.That(check.Errors, Is.EqualTo(new[] { $"Deck has 18 cards; the minimum is {Constants.DeckMin}." }));
+        }
+        else
+        {
+            Assert.That(check.Ok, Is.True, string.Join("; ", check.Errors));
+            Assert.That(built.Count, Is.InRange(Constants.DeckMin, Constants.DeckMax));
+        }
         Assert.That(deck.Rows.Max(r => r.Copies), Is.LessThanOrEqualTo(Constants.CopiesMax));
         Assert.That(deck.Rows.Select(r => r.CardId), Is.Unique);
     }
@@ -248,15 +258,16 @@ public class DeckTests
     }
 
     [Test]
-    public void TheInitialForty_IsFortyKindsOnceEach_TenOfThemMoving()
+    public void TheInitialKinds_AreThirtyFiveOnceEach_NineOfThemMoving()
     {
         var deck = Decks.InitialForty();
         var built = deck.Build();
         Assert.That(Decks.InitialFortyIds, Is.Unique);
-        Assert.That(built, Has.Count.EqualTo(40));
+        Assert.That(Decks.InitialFortyIds, Is.EqualTo(CardCatalog.Initial.Select(c => c.Id)));
+        Assert.That(built, Has.Count.EqualTo(35));
         Assert.That(deck.Rows.Select(r => r.Copies), Is.All.EqualTo(1));
-        // battle_core_v4 §14-4: 「移動の効果は初期 40 種中 10 種」.
-        Assert.That(built.Count(c => AttributeRule.HasMovement(c.Def.Face)), Is.EqualTo(10));
+        // swordsman_cards_v4 §4.4 (v4.10): 移動の効果を持つカードは「初期は 9」 (#29 踏み込み斬り left).
+        Assert.That(built.Count(c => AttributeRule.HasMovement(c.Def.Face)), Is.EqualTo(9));
     }
 
     [Test]
@@ -312,8 +323,8 @@ public class CriteriaTests
     {
         var types = new[]
         {
-            new SimDeck("t1", "型 1", new[] { ("thrust", 1) }, ""),
-            new SimDeck("t2", "型 2", new[] { ("thrust", 1) }, ""),
+            new SimDeck("t1", "型 1", new[] { ("side_sweep", 1) }, ""),
+            new SimDeck("t2", "型 2", new[] { ("side_sweep", 1) }, ""),
         };
         var main = new List<BattleRecord>
         {
@@ -359,7 +370,7 @@ public class CriteriaTests
     [Test]
     public void ADeckIdWithNoBattles_Throws_InsteadOfEnteringTheVerdictsAt0Percent()
     {
-        var types = new[] { new SimDeck("t1", "型 1", new[] { ("thrust", 1) }, "") };
+        var types = new[] { new SimDeck("t1", "型 1", new[] { ("side_sweep", 1) }, "") };
         var main = new List<BattleRecord> { Rec("t1", true, 6, new[] { 2 }), Rec("ones", true, 6, new[] { 2 }) };
         var rates = Criteria.RatesByDeck(main);
 
@@ -369,7 +380,7 @@ public class CriteriaTests
             var missing = Assert.Throws<KeyNotFoundException>(() => Criteria.RateOf(rates, "no_such_deck"));
             Assert.That(missing!.Message, Does.Contain("no_such_deck").And.Contain("t1").And.Contain("ones"));
             Assert.Throws<KeyNotFoundException>(() => Criteria.ComputeFirstThree(main, types, "no_such_deck", CardCatalog.All, Enemies.All));
-            var typo = new[] { new SimDeck("t9", "型 9", new[] { ("thrust", 1) }, "") };
+            var typo = new[] { new SimDeck("t9", "型 9", new[] { ("side_sweep", 1) }, "") };
             Assert.Throws<KeyNotFoundException>(() => Criteria.ComputeFirstThree(main, typo, "ones", CardCatalog.All, Enemies.All));
         });
     }

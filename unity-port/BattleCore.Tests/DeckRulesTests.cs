@@ -149,7 +149,7 @@ namespace BattleCore.Tests
         [Test]
         public void TheDrawPileHoldsTheChosenDeck()
         {
-            var deck = Cards.BuildDeck(new[] { CardCatalog.All[13], CardCatalog.All[41], CardCatalog.All[77] }, 3)
+            var deck = Cards.BuildDeck(new[] { CardCatalog.All[13], CardCatalog.All[41], CardCatalog.All[70] }, 3)
                 .Concat(Deck(6, 2)).ToList(); // 21 cards
             var state = TurnLoop.Start(Ready(deck).SetupFor(Enemies.PolearmWarped, 6), new SystemRng(5)).State;
 

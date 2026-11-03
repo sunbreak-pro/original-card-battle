@@ -1123,16 +1123,16 @@ namespace Depiction.Bridge.Tests
             return Path.Combine(Path.GetDirectoryName(here) ?? "", GoldenName);
         }
 
-        /// <summary>swordsman_cards_v4 §2's initial forty (BattleCore.Sim's Decks.InitialFortyIds).</summary>
+        /// <summary>swordsman_cards_v4 §2's initial thirty-five, v4.10 (BattleCore.Sim's Decks.InitialFortyIds).</summary>
         private static readonly string[] InitialFortyIds =
         {
-            "thrust", "kesa_cut", "overhead", "wrist_cut", "side_sweep",
+            "kesa_cut", "overhead", "wrist_cut", "side_sweep",
             "flat_strike", "probe_thrust", "pierce", "throw_blade", "reach_thrust",
             "brace", "iron_block", "low_guard", "riposte_guard", "deep_breath",
-            "water_stance", "rock_stance", "flow_stance", "first_aid", "spirit_roar",
+            "water_stance", "first_aid", "spirit_roar",
             "focus", "observe", "war_cry", "second_wind", "footwork",
-            "back_leap", "slide_step", "break_off", "lunge", "feint",
-            "boar_rush", "rend", "body_check", "stone_throw", "parry_cut",
+            "back_leap", "slide_step", "break_off", "feint",
+            "boar_rush", "rend", "body_check", "stone_throw",
             "guard_thrust", "step_in_guard", "step_out_guard", "iron_wall", "twist_away",
         };
 
@@ -1608,10 +1608,15 @@ namespace Depiction.Bridge.Tests
             }
         }
 
-        /// <summary>js: _singleEnemyRuns.mjs:259 main — writes the golden from the code as it stands.</summary>
+        /// <summary>
+        /// js: _singleEnemyRuns.mjs:259 main — writes the golden from the code as it stands. A golden
+        /// already there keeps its keys, so a rewrite after a deliberate change to the battle (the card
+        /// table of #825) still leaves out the members the multi-enemy extension added (NewMembers).
+        /// </summary>
         public static void WriteGolden(string path, List<Spec> specs, string dump)
         {
-            var canon = new Canon(null);
+            Dictionary<string, HashSet<string>> kept = File.Exists(path) ? Golden.Read(path).Keys : null;
+            var canon = new Canon(kept);
             var lines = new List<string>();
             int records = 0;
             for (int s = 0; s < specs.Count; s++)
@@ -1627,9 +1632,19 @@ namespace Depiction.Bridge.Tests
                 "# extension: MultiEnemyTests.cs, SingleEnemyRuns. " + specs.Count + " scenarios, " + records + " records.",
                 "# Regenerate from the code before a deliberate one-enemy change: DEPICTION_SINGLE_GOLDEN=write.",
             };
-            foreach (KeyValuePair<string, SortedSet<string>> pair in canon.Seen)
+            if (kept != null)
             {
-                head.Add("key " + pair.Key + " " + string.Join(" ", pair.Value));
+                foreach (KeyValuePair<string, HashSet<string>> pair in kept.OrderBy(p => p.Key, StringComparer.Ordinal))
+                {
+                    head.Add("key " + pair.Key + " " + string.Join(" ", pair.Value.OrderBy(m => m, StringComparer.Ordinal)));
+                }
+            }
+            else
+            {
+                foreach (KeyValuePair<string, SortedSet<string>> pair in canon.Seen)
+                {
+                    head.Add("key " + pair.Key + " " + string.Join(" ", pair.Value));
+                }
             }
             head.AddRange(lines);
             File.WriteAllText(path, string.Join("\n", head) + "\n", new UTF8Encoding(false));

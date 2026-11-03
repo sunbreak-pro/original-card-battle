@@ -35,7 +35,8 @@ namespace Exploration.Bridge
         private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> BossCards = new Dictionary<string, IReadOnlyList<string>>
         {
             [Enemies.MiasmaPriest.Id] = Ids(CardCatalog.MiasmaBlade, CardCatalog.PriestPrayer, CardCatalog.PurgeFlash),   // 大黒蛇 セルク #41〜#43
-            [Enemies.AbyssAngler.Id] = Ids(CardCatalog.LineLash, CardCatalog.AbyssStance, CardCatalog.HaulStep),         // 獄竜 ガルド #44〜#46
+            // 獄竜 ガルド #44 / #45. v4.10 (#824) swapped #46 手繰りの歩み for #85 覚醒, which joins the catalog in #826.
+            [Enemies.AbyssAngler.Id] = Ids(CardCatalog.LineLash, CardCatalog.AbyssStance),
             [Enemies.DistortionRoot.Id] = Ids(CardCatalog.RootStride, CardCatalog.ThornShot, CardCatalog.RootBind),     // 歪みの根 #47〜#49
         };
 
@@ -43,7 +44,7 @@ namespace Exploration.Bridge
         private static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> EliteCards = new Dictionary<string, IReadOnlyList<string>>
         {
             [Enemies.ArmoredWarden.Id] = Ids(CardCatalog.Bulwark, CardCatalog.ShieldBash),             // 鉄壁の門竜 #50 / #51
-            [Enemies.PackAlpha.Id] = Ids(CardCatalog.PackHowl, CardCatalog.FangRush),                  // 統牙の長竜 #52 / #53
+            [Enemies.PackAlpha.Id] = Ids(CardCatalog.PackHowl),                                        // 統牙の長竜 #52 (v4.10 dropped #53 牙の突進)
             [Enemies.PolearmUnyielding.Id] = Ids(CardCatalog.RiposteStance, CardCatalog.SpearWall),    // 不退の槍竜 #55 / #57
         };
 

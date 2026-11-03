@@ -23,16 +23,16 @@ const { traceGains } = await load('src/bridge/exploration/TraceGain.js');
 
 // ---- the grid (TraceGainTests.cs ParityGrid) ----
 const CAPS = [null, 20, 21];
-const RANKS = [[], [['thrust', 3], ['brace', 2]], [['feint', 2], ['kesa_cut', 1], ['rend', 3]]];
+const RANKS = [[], [['side_sweep', 3], ['brace', 2]], [['feint', 2], ['kesa_cut', 1], ['body_check', 3]]];
 const PICKS = [
   [],
   ['card:feint'],
-  ['card:thrust', 'card:feint', 'enemy:shadow_hound'],
+  ['card:side_sweep', 'card:feint', 'enemy:shadow_hound'],
   ['card:no_such_card', 'card:boar_rush', 'scribble:0'],
   ['card:feint', 'card:feint', 'memo', 'page:page-1', 'enemy:polearm_warped'],
 ];
 const MODES = ['preview', 'done', 'take'];
-const CARDS = ['thrust', 'feint', 'brace', 'kesa_cut', 'boar_rush', 'rend', 'no_such_card'];
+const CARDS = ['side_sweep', 'feint', 'brace', 'kesa_cut', 'boar_rush', 'body_check', 'no_such_card'];
 const ENEMIES = [['shadow_hound', 1], ['polearm_warped', 2], ['rusted_revenant', 1]];
 
 function candidates() {

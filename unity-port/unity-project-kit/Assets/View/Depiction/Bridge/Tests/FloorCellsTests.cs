@@ -57,7 +57,7 @@ namespace Depiction.Bridge.Tests
         public void TheAimedCells_AreTheCoresTargetCells_FromWhereTheEnemyStands()
         {
             BattleState state = Begin(3).State;
-            var omen = new Omen("thrust", new OmenLabel(OmenKind.Attack, new Reach(0, 1)));
+            var omen = new Omen("side_sweep", new OmenLabel(OmenKind.Attack, new Reach(0, 1)));
 
             // The enemy on cell 6: gap 0 is cell 5, gap 1 is cell 4, lowest first.
             Assert.That(FloorCells.AimOf(omen, state.Enemy, 6), Is.EqualTo(new[] { 4, 5 }));
@@ -69,7 +69,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void TheHitMark_SaysWhetherThePlayerStandsInTheAimedCells()
         {
-            var omen = new Omen("thrust", new OmenLabel(OmenKind.Attack, new Reach(0, 1)));
+            var omen = new Omen("side_sweep", new OmenLabel(OmenKind.Attack, new Reach(0, 1)));
             int[] aim = { 4, 5 };
 
             Assert.That(FloorCells.HitOf(omen, aim, 4, 1), Is.EqualTo(OmenHit.Lands));

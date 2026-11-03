@@ -51,7 +51,7 @@ namespace Depiction.PlayModeTests
             {
                 // #211: a card renamed since the deck was saved. The deck screen says so, and the string
                 // stays saved until 「出立の支度へ」 saves a deck over it.
-                const string broken = "thrust:2,old_thrust:1";
+                const string broken = "side_sweep:2,old_thrust:1";
                 PlayerPrefs.SetString(SavedDeckKey, broken);
                 yield return EditorSceneManager.LoadSceneAsyncInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
                 yield return null;
@@ -68,7 +68,7 @@ namespace Depiction.PlayModeTests
                 yield return Shot("01-deck");
                 Press("ToBattle");
                 yield return null;
-                Assert.That(PlayerPrefs.GetString(SavedDeckKey), Does.StartWith("thrust:2,kesa_cut:2,"), "出立の支度へ did not save the prototype deck");
+                Assert.That(PlayerPrefs.GetString(SavedDeckKey), Does.StartWith("side_sweep:2,kesa_cut:2,"), "出立の支度へ did not save the prototype deck");
 
                 // #58: the departure screen. No talent yet, so it cannot set out; the first kind of the
                 // deck becomes the talent, and 間合いの履 (the fifth tool) moves the start to cell 1.

@@ -563,7 +563,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void ASweepThatFindsThePlayerAtGapOne_StrikesItsBonusOff()
         {
-            var kinds = new[] { CardCatalog.StepInGuard, CardCatalog.KesaCut, CardCatalog.Brace, CardCatalog.Feint, CardCatalog.Thrust };
+            var kinds = new[] { CardCatalog.StepInGuard, CardCatalog.KesaCut, CardCatalog.Brace, CardCatalog.Feint, CardCatalog.SideSweep };
             var (state, writer) = Begin(2, kinds);
             StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
             writer.Write(begin.Events, begin.State);
@@ -584,7 +584,7 @@ namespace Depiction.Bridge.Tests
         public void ASweepThatWhiffs_StrikesItsWholeNumberOff_AndHitsNobody()
         {
             // Declared at gap 2; the boar rush closes to gap 0, outside the sweep's 1〜2 (§6).
-            var kinds = new[] { CardCatalog.BoarRush, CardCatalog.KesaCut, CardCatalog.Brace, CardCatalog.Feint, CardCatalog.Thrust };
+            var kinds = new[] { CardCatalog.BoarRush, CardCatalog.KesaCut, CardCatalog.Brace, CardCatalog.Feint, CardCatalog.SideSweep };
             var (state, writer) = Begin(2, kinds);
             StepResult begin = TurnLoop.BeginPlayerTurn(state, NoShuffle);
             writer.Write(begin.Events, begin.State);
@@ -637,7 +637,7 @@ namespace Depiction.Bridge.Tests
             writer.Write(begin.Events, begin.State);
             // Spend 7 so that turn 2 has a real recovery to show.
             BattleState s = begin.State;
-            foreach (string id in new[] { "thrust", "kesa_cut", "brace" })
+            foreach (string id in new[] { "side_sweep", "kesa_cut", "brace" })
             {
                 StepResult play = TurnLoop.PlayCard(s, InHand(s, id), NoShuffle);
                 writer.Write(play.Events, play.State);

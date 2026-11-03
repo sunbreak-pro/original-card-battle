@@ -52,11 +52,11 @@ namespace BattleCore.Tests
         public void TheNextBattle_StartsFromAFreshShuffle_WithNoStanceStatusOrGuard()
         {
             // Fight a turn with a stance and a status on, then carry into the next battle.
-            var deck = Cards.BuildDeck(new[] { CardCatalog.RockStance, CardCatalog.Focus }, 1);
+            var deck = Cards.BuildDeck(new[] { Fixtures.TurnGuardStance, CardCatalog.Focus }, 1);
             for (int i = 0; i < 18; i++) deck.Add(new CardInstance("brace-" + i, CardCatalog.Brace));
             var state = TurnLoop.Start(new BattleSetup(Enemies.PolearmWarped, deck, 6), NoShuffle).State;
             state = TurnLoop.BeginPlayerTurn(state, NoShuffle).State;
-            state = TurnLoop.PlayCard(state, "rock_stance-0", NoShuffle).State;
+            state = TurnLoop.PlayCard(state, "turn_guard_stance-0", NoShuffle).State;
             state = TurnLoop.PlayCard(state, "focus-0", NoShuffle).State;
             Assert.That(state.Player.StanceList, Has.Count.EqualTo(1));
             Assert.That(state.Exiled, Has.Count.EqualTo(1));
