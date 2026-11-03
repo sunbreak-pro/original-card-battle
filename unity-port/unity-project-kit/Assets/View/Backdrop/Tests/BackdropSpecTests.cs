@@ -1,6 +1,8 @@
-// #89: the seven layers' backdrops (battle-visual-v1 §2.4). The values §2.4 fixes stay, every layer keeps
+// #89: the seven layers' backdrops (battle-visual-v1 §2.4). The values §2.4 writes stay, every layer keeps
 // the reach red readable on its floor tile (§2.3), and the brightness follows world-v1 §3's rule 3
-// (1 and 2 bright, 3 dark, 4 the brightest, then darker down to 7). #609 made layer 1 bright.
+// (1 and 2 bright, 3 dark, 4 the brightest, then darker down to 7). #609 made layer 1 bright; 2026-11-03
+// (こうだいさん's request) gave every layer its own colour, layer 1 brighter still and layer 7 a starry sky.
+using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace Backdrop.Tests
@@ -30,21 +32,45 @@ namespace Backdrop.Tests
             Assert.That(BackdropSpec.For(asked).Layer, Is.EqualTo(drawn));
         }
 
-        [Test]
-        public void Layers1_4_5_KeepTheValuesSection24Fixes()
+        // battle-visual-v1 §2.4: each layer's sky, top (0) to bottom (1), and its floor tile.
+        private static readonly Dictionary<int, (string Hex, float At)[]> SectionSky = new Dictionary<int, (string, float)[]>
         {
-            // 1 is #609's young grass and sun; 4 and 5 are the values fixed before #89.
-            AssertHex(BackdropSpec.For(1).Sky[0].Color, "#d6e8a4");
-            AssertHex(BackdropSpec.For(1).Sky[1].Color, "#7cab4a");
-            AssertHex(BackdropSpec.For(1).Sky[2].Color, "#22391c");
-            AssertHex(BackdropSpec.For(4).Sky[0].Color, "#e4e6f2");
-            AssertHex(BackdropSpec.For(4).Sky[1].Color, "#b7bbd6");
-            AssertHex(BackdropSpec.For(4).Sky[2].Color, "#7d82a8");
-            AssertHex(BackdropSpec.For(5).Sky[0].Color, "#1a0e12");
-            AssertHex(BackdropSpec.For(5).Sky[1].Color, "#070507");
-            Assert.That(BackdropSpec.For(1).Tile.A, Is.EqualTo(0.82f));
-            Assert.That(BackdropSpec.For(4).Tile.A, Is.EqualTo(0.82f));
-            Assert.That(BackdropSpec.For(5).Tile.A, Is.EqualTo(0.80f));
+            [1] = new[] { ("#fafde0", 0f), ("#ebf8ac", 0.22f), ("#c4e878", 0.48f), ("#96ce56", 0.75f), ("#62a242", 1f) },
+            [2] = new[] { ("#fbf8e2", 0f), ("#ebe5bb", 0.35f), ("#cfc999", 0.7f), ("#9a9268", 1f) },
+            [3] = new[] { ("#0e0c28", 0f), ("#141e48", 0.3f), ("#18465e", 0.5f), ("#0f2a3e", 0.7f), ("#060c18", 1f) },
+            [4] = new[] { ("#ffffff", 0f), ("#f1ecff", 0.25f), ("#dcd4f6", 0.5f), ("#c4e4ee", 0.7f), ("#8d9ccc", 1f) },
+            [5] = new[] { ("#2e0d18", 0f), ("#6a1f2e", 0.4f), ("#8a3040", 0.62f), ("#2a0a12", 1f) },
+            [6] = new[] { ("#04061c", 0f), ("#0c1450", 0.35f), ("#181a70", 0.5f), ("#0a0e3a", 0.7f), ("#020310", 1f) },
+            [7] = new[] { ("#05061a", 0f), ("#0a0b26", 0.5f), ("#04040f", 1f) },
+        };
+
+        private static readonly Dictionary<int, (string Hex, float A)> SectionTile = new Dictionary<int, (string, float)>
+        {
+            [1] = ("#0a140c", 0.88f),
+            [2] = ("#14120c", 0.88f),
+            [3] = ("#0a101c", 0.8f),
+            [4] = ("#0e101c", 0.84f),
+            [5] = ("#14080c", 0.82f),
+            [6] = ("#080814", 0.84f),
+            [7] = ("#060610", 0.84f),
+        };
+
+        [Test]
+        public void EveryLayer_KeepsTheValuesSection24Writes()
+        {
+            for (int layer = 1; layer <= BackdropSpec.Layers; layer++)
+            {
+                LayerBackdrop backdrop = BackdropSpec.For(layer);
+                (string Hex, float At)[] want = SectionSky[layer];
+                Assert.That(backdrop.Sky, Has.Length.EqualTo(want.Length), "layer " + layer);
+                for (int i = 0; i < want.Length; i++)
+                {
+                    AssertHex(backdrop.Sky[i].Color, want[i].Hex);
+                    Assert.That(backdrop.Sky[i].At, Is.EqualTo(want[i].At).Within(1e-4f), "layer " + layer + " stop " + i);
+                }
+                AssertHex(backdrop.Tile, SectionTile[layer].Hex);
+                Assert.That(backdrop.Tile.A, Is.EqualTo(SectionTile[layer].A).Within(1e-4f), "layer " + layer + " tile");
+            }
         }
 
         [Test]
@@ -95,11 +121,17 @@ namespace Backdrop.Tests
         public void TheSky_RunsStraightBetweenItsStops()
         {
             LayerBackdrop four = BackdropSpec.For(4);
-            AssertHex(BackdropSpec.SkyAt(four, 0f), "#e4e6f2");
-            AssertHex(BackdropSpec.SkyAt(four, 0.5f), "#b7bbd6");
-            AssertHex(BackdropSpec.SkyAt(four, 1f), "#7d82a8");
-            Rgba quarter = BackdropSpec.SkyAt(four, 0.25f);
-            Assert.That(quarter.R, Is.EqualTo((0xe4 + 0xb7) / 2f / 255f).Within(1e-4f));
+            foreach (SkyStop stop in four.Sky) AssertHex(BackdropSpec.SkyAt(four, stop.At), ToHex(stop.Color));
+            SkyStop a = four.Sky[0], b = four.Sky[1];
+            Rgba middle = BackdropSpec.SkyAt(four, (a.At + b.At) / 2f);
+            Assert.That(middle.R, Is.EqualTo((a.Color.R + b.Color.R) / 2f).Within(1e-4f));
+            Assert.That(middle.B, Is.EqualTo((a.Color.B + b.Color.B) / 2f).Within(1e-4f));
+        }
+
+        private static string ToHex(Rgba c)
+        {
+            static int Byte(float v) => (int)System.Math.Floor(v * 255.0 + 0.5);
+            return "#" + Byte(c.R).ToString("x2") + Byte(c.G).ToString("x2") + Byte(c.B).ToString("x2");
         }
 
         [Test]

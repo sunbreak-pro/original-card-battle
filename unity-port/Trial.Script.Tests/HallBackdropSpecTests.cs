@@ -6,7 +6,8 @@ namespace Trial.Script.Tests
 {
     /// <summary>
     /// The hall's room (hall.js hallBackdropSpec) against what the JS gives: the floats node printed for strength 1
-    /// and 0.5 are compared exactly as float32, and the strata's sky percents against hall.js skyCss.
+    /// and 0.5 are compared exactly as float32. The strata's skies follow the layer skies, which depart from the JS
+    /// since 2026-11-03 (unity-port/TRIAL-PORT.md, #89): they are written as hall.js skyCss would write those skies.
     /// </summary>
     public class HallBackdropSpecTests
     {
@@ -86,20 +87,33 @@ namespace Trial.Script.Tests
             Assert.That(a.Hazes, Is.Not.SameAs(b.Hazes));
         }
 
-        // hall.js skyCss(layer) as node printed it (rgbaCss: Math.round(channel × 255), alpha toFixed(3)).
-        private static readonly string[] JsSkyCss =
+        // hall.js skyCss(layer) over the layer skies of 2026-11-03 (rgbaCss: Math.round(channel × 255), alpha toFixed(3),
+        // Math.round(At × 100) percent), as node would print it.
+        private static readonly string[] SkyCss =
         {
-            "linear-gradient(180deg, rgba(214,232,164,1.000) 0%, rgba(124,171,74,1.000) 40%, rgba(34,57,28,1.000) 100%)",
-            "linear-gradient(180deg, rgba(184,166,132,1.000) 0%, rgba(138,122,94,1.000) 50%, rgba(74,64,52,1.000) 100%)",
-            "linear-gradient(180deg, rgba(30,26,58,1.000) 0%, rgba(11,10,24,1.000) 100%)",
-            "linear-gradient(180deg, rgba(228,230,242,1.000) 0%, rgba(183,187,214,1.000) 50%, rgba(125,130,168,1.000) 100%)",
-            "linear-gradient(180deg, rgba(26,14,18,1.000) 0%, rgba(7,5,7,1.000) 100%)",
-            "linear-gradient(180deg, rgba(18,11,28,1.000) 0%, rgba(4,2,8,1.000) 100%)",
-            "linear-gradient(180deg, rgba(8,10,26,1.000) 0%, rgba(2,3,9,1.000) 100%)",
+            "linear-gradient(180deg, rgba(250,253,224,1.000) 0%, rgba(235,248,172,1.000) 22%, rgba(196,232,120,1.000) 48%, rgba(150,206,86,1.000) 75%, rgba(98,162,66,1.000) 100%)",
+            "linear-gradient(180deg, rgba(251,248,226,1.000) 0%, rgba(235,229,187,1.000) 35%, rgba(207,201,153,1.000) 70%, rgba(154,146,104,1.000) 100%)",
+            "linear-gradient(180deg, rgba(14,12,40,1.000) 0%, rgba(20,30,72,1.000) 30%, rgba(24,70,94,1.000) 50%, rgba(15,42,62,1.000) 70%, rgba(6,12,24,1.000) 100%)",
+            "linear-gradient(180deg, rgba(255,255,255,1.000) 0%, rgba(241,236,255,1.000) 25%, rgba(220,212,246,1.000) 50%, rgba(196,228,238,1.000) 70%, rgba(141,156,204,1.000) 100%)",
+            "linear-gradient(180deg, rgba(46,13,24,1.000) 0%, rgba(106,31,46,1.000) 40%, rgba(138,48,64,1.000) 62%, rgba(42,10,18,1.000) 100%)",
+            "linear-gradient(180deg, rgba(4,6,28,1.000) 0%, rgba(12,20,80,1.000) 35%, rgba(24,26,112,1.000) 50%, rgba(10,14,58,1.000) 70%, rgba(2,3,16,1.000) 100%)",
+            "linear-gradient(180deg, rgba(5,6,26,1.000) 0%, rgba(10,11,38,1.000) 50%, rgba(4,4,15,1.000) 100%)",
+        };
+
+        // Math.round(At × 100) of each sky stop, by layer (hall.js skyCss).
+        private static readonly System.Collections.Generic.Dictionary<int, int[]> StratumPercents = new System.Collections.Generic.Dictionary<int, int[]>
+        {
+            [1] = new[] { 0, 22, 48, 75, 100 },
+            [2] = new[] { 0, 35, 70, 100 },
+            [3] = new[] { 0, 30, 50, 70, 100 },
+            [4] = new[] { 0, 25, 50, 70, 100 },
+            [5] = new[] { 0, 40, 62, 100 },
+            [6] = new[] { 0, 35, 50, 70, 100 },
+            [7] = new[] { 0, 50, 100 },
         };
 
         [Test]
-        public void TheStrata_Skies_WriteTheJsCss_ByteForByte()
+        public void TheStrata_Skies_WriteHallsCss_ByteForByte()
         {
             static int Byte(float v) => (int)System.Math.Floor(v * 255.0 + 0.5);
             static string Stop(StratumStop s) => string.Format(System.Globalization.CultureInfo.InvariantCulture,
@@ -107,14 +121,14 @@ namespace Trial.Script.Tests
             for (int layer = 1; layer <= 7; layer++)
             {
                 string css = "linear-gradient(180deg, " + string.Join(", ", HallBackdropSpec.StratumSky(layer).Select(Stop)) + ")";
-                Assert.That(css, Is.EqualTo(JsSkyCss[layer - 1]), "layer " + layer);
+                Assert.That(css, Is.EqualTo(SkyCss[layer - 1]), "layer " + layer);
             }
         }
 
         [Test]
-        public void TheStrata_SkyPercents_AreHallJsSkyCss()
+        public void TheStrata_SkyPercents_AreHallsSkyCss()
         {
-            foreach (var pair in JsMetaText.StratumPercents)
+            foreach (var pair in StratumPercents)
             {
                 var stops = HallBackdropSpec.StratumSky(pair.Key);
                 Assert.That(stops.Select(s => s.Percent), Is.EqualTo(pair.Value), "layer " + pair.Key);

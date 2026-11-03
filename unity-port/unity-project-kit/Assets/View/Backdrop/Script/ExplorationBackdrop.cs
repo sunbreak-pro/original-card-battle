@@ -1,5 +1,5 @@
 // The exploration screen's backdrop for each layer (battle-visual-v1 §2.5, #90): the same place the battle
-// stands in (BackdropSpec's sky, haze and motes), with a veil of the ground colour laid over it so the
+// stands in (BackdropSpec's sky, haze and motes), with a dark veil in the layer's own hue laid over it so the
 // map, its links and its labels — drawn straight on the backdrop, not on panels — read on every layer.
 // Pure C#, so `dotnet test` holds the values the screen draws.
 //
@@ -14,13 +14,13 @@ namespace Backdrop
         public int Layer;
         /// <summary>The place itself: the battle's backdrop of the same layer (§2.4).</summary>
         public LayerBackdrop Place;
-        /// <summary>The ground colour laid over the whole place, under the map and the panels.</summary>
+        /// <summary>The veil laid over the whole place, under the map and the panels: a dark shade of the layer's hue.</summary>
         public Rgba Veil;
     }
 
     public static class ExplorationBackdropSpec
     {
-        /// <summary>地 (battle-visual-v1 §2.1): the veil's colour.</summary>
+        /// <summary>地 (battle-visual-v1 §2.1): the ground colour. Each layer's veil is a shade of its own hue no brighter than 1.6 times this.</summary>
         public static readonly Rgba Ground = Rgba.Hex("#10141d");
 
         /// <summary>本文 (§2.1): the map's labels and the node letters on the ground.</summary>
@@ -31,9 +31,23 @@ namespace Backdrop
         public static readonly Rgba Amber = Rgba.Hex("#e8a84c");
         public const float AmberMinContrast = 3f;
 
+        // The veil's colour by layer (index 0 is layer 1): a dark shade of the layer's own hue, so the place keeps its colour
+        // under the map instead of turning grey. Each stays within 1.6 times the luminance of Ground, so it darkens as
+        // the ground colour does.
+        private static readonly Rgba[] VeilColor =
+        {
+            Rgba.Hex("#0d1f10"), // 1 deep green
+            Rgba.Hex("#1c1a11"), // 2 deep warm neutral
+            Rgba.Hex("#091d20"), // 3 deep teal
+            Rgba.Hex("#1a1638"), // 4 deep indigo-lilac
+            Rgba.Hex("#2c0a16"), // 5 deep wine
+            Rgba.Hex("#0c1436"), // 6 deep cobalt
+            Rgba.Hex("#140e34"), // 7 deep navy-violet
+        };
+
         // The veil's alpha by layer (index 0 is layer 1). 1, 2 and 4 are the bright layers of world-v1 §3
         // rule 3; layer 4 stays the brightest after the veil.
-        private static readonly float[] VeilAlpha = { 0.72f, 0.68f, 0.35f, 0.70f, 0.35f, 0.35f, 0.35f };
+        private static readonly float[] VeilAlpha = { 0.70f, 0.70f, 0.30f, 0.70f, 0.48f, 0.30f, 0.30f };
 
         /// <summary>The exploration backdrop of <paramref name="layer"/>; anything outside 1〜7 is held to the nearest end.</summary>
         public static ExplorationBackdrop For(int layer)
@@ -43,7 +57,7 @@ namespace Backdrop
             {
                 Layer = at,
                 Place = BackdropSpec.For(at),
-                Veil = Ground.WithAlpha(VeilAlpha[at - 1]),
+                Veil = VeilColor[at - 1].WithAlpha(VeilAlpha[at - 1]),
             };
         }
 

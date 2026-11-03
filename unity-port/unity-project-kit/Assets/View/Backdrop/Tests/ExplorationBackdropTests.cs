@@ -1,6 +1,7 @@
 // #90: the exploration screen's backdrop (battle-visual-v1 §2.5). It is the battle's place of the same
 // layer under a veil, the map's text and the amber accent read on every layer, and the veil keeps
-// world-v1 §3's rule 3 (4 the brightest, 3 darker than 1, 2 and 4).
+// world-v1 §3's rule 3 (4 the brightest, 3 darker than 1, 2 and 4). Since 2026-11-03 the veil is a dark shade of
+// each layer's own hue, so the place keeps its colour under the map.
 using NUnit.Framework;
 
 namespace Backdrop.Tests
@@ -27,15 +28,28 @@ namespace Backdrop.Tests
         }
 
         [Test]
-        public void TheVeil_IsTheGroundColour()
+        public void TheVeil_IsADarkShadeOfItsLayer()
         {
+            double ground = BackdropSpec.Luminance(ExplorationBackdropSpec.Ground);
+            var seen = new System.Collections.Generic.HashSet<(float, float, float)>();
             for (int layer = 1; layer <= BackdropSpec.Layers; layer++)
             {
                 Rgba veil = ExplorationBackdropSpec.For(layer).Veil;
-                Rgba ground = ExplorationBackdropSpec.Ground;
-                Assert.That(new[] { veil.R, veil.G, veil.B }, Is.EqualTo(new[] { ground.R, ground.G, ground.B }), "layer " + layer);
+                Assert.That(BackdropSpec.Luminance(veil.WithAlpha(1f)), Is.LessThanOrEqualTo(ground * 1.6), "layer " + layer + " is a dark shade");
                 Assert.That(veil.A, Is.InRange(0.3f, 0.75f), "layer " + layer);
+                Assert.That(seen.Add((veil.R, veil.G, veil.B)), Is.True, "layer " + layer + " has a hue of its own");
             }
+        }
+
+        [Test]
+        public void TheDeepLayers_DarkenInTurn_UnderTheVeil()
+        {
+            // world-v1 §3 rule 3: from 5 down the light drains away, in exploration as in battle.
+            double five = ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(5));
+            double six = ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(6));
+            double seven = ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(7));
+            Assert.That(six, Is.LessThan(five));
+            Assert.That(seven, Is.LessThan(six));
         }
 
         [Test]
