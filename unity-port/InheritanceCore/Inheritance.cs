@@ -55,6 +55,12 @@ namespace InheritanceCore
 
         /// <summary>journal disclosure runs 0..2 (JournalPage.MaxDisclosure, concept-v3 §14).</summary>
         public const int MaxDisclosure = 2;
+
+        /// <summary>
+        /// The longest name the player can give the next heir, in letters (#105). The hall prints the name at 72 px and
+        /// shrinks it to fit its column; eight letters is where it still reads as a name beside the 襲名 seal.
+        /// </summary>
+        public const int HeirNameMaxLength = 8;
     }
 
     /// <summary>
@@ -206,6 +212,30 @@ namespace InheritanceCore
                 }
             }
             return names[index];
+        }
+
+        /// <summary>
+        /// The name the heir sets out with (concept-v3 §16.1, 2026-11-03, #105): what the player typed over the drawn
+        /// name, or the drawn name when nothing is typed. Control characters go, the ends are trimmed as JS trims, and
+        /// the name is cut to InheritanceRules.HeirNameMaxLength letters (a letter is a text element: a surrogate pair
+        /// or a letter with its marks is never split). Nothing left: <paramref name="drawn"/>.
+        /// </summary>
+        public static string ChosenHeirName(string? typed, string drawn)
+        {
+            if (drawn == null) throw new ArgumentNullException(nameof(drawn));
+            if (typed == null) return drawn;
+            var kept = new System.Text.StringBuilder(typed.Length);
+            foreach (char c in typed)
+            {
+                if (char.IsControl(c) || c == '\u2028' || c == '\u2029') continue;
+                kept.Append(c);
+            }
+            string name = JsText.Trim(kept.ToString());
+            if (name.Length == 0) return drawn;
+            var letters = new StringInfo(name);
+            return letters.LengthInTextElements > InheritanceRules.HeirNameMaxLength
+                ? JsText.Trim(letters.SubstringByTextElements(0, InheritanceRules.HeirNameMaxLength))
+                : name;
         }
 
         /// <summary><see cref="HeirName(ulong,int)"/> for a lineage seed kept as decimal text.</summary>
@@ -653,10 +683,11 @@ namespace InheritanceCore
         /// <paramref name="seed"/> is the life's run seed (ExplorationSession's RunStart.Seed); null draws it from the
         /// lineage seed. Returns the new lineage and what 出立 adds: tool slots and deck cap (生存者ボーナス, §14), the
         /// journal the heir starts with (a survivor's whole journal, §8.2, or nothing), an empty RunLoadout with the
-        /// right slot count, and the layers that hold a trace.
+        /// right slot count, and the layers that hold a trace. <paramref name="name"/> is what the player typed over the
+        /// drawn name in the hall (#105, through ChosenHeirName); null keeps the drawn one (NextHeir's).
         /// </summary>
         // js: core/inheritance/Inheritance.js:627
-        public static LifeStart StartLife(Lineage lineage, ulong? seed = null)
+        public static LifeStart StartLife(Lineage lineage, ulong? seed = null, string? name = null)
         {
             if (lineage.Current != null)
                 throw new InheritanceRuleException(Invariant($"generation {lineage.Current.Generation} is still in progress"));
@@ -678,7 +709,7 @@ namespace InheritanceCore
             int tier = TierAfter(previous);
             var life = new LifeRecord(
                 generation,
-                HeirName(lineage.Seed, generation),
+                ChosenHeirName(name, HeirName(lineage.Seed, generation)),
                 tier,
                 Ulong(runSeed),
                 bonus,
@@ -994,6 +1025,15 @@ namespace InheritanceCore
         /// <c>s.trim().length === 0</c>: JS's trim removes WhiteSpace and LineTerminator (U+FEFF yes, U+0085 no,
         /// unlike char.IsWhiteSpace).
         /// </summary>
+        /// <summary><c>s.trim()</c> with JS's whitespace (see <see cref="IsBlank"/>).</summary>
+        public static string Trim(string s)
+        {
+            int start = 0, end = s.Length;
+            while (start < end && IsJsSpace(s[start])) start++;
+            while (end > start && IsJsSpace(s[end - 1])) end--;
+            return s.Substring(start, end - start);
+        }
+
         public static bool IsBlank(string s)
         {
             foreach (char c in s)

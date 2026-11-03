@@ -73,6 +73,13 @@ namespace Trial.Meta
         private int _sel;
         private HallTraceBody _traceBody;
         private TextMeshProUGUI _keys;
+
+        // The next heir's name (#105): the field the player writes it in (null while a life is in progress: its heir is
+        // named already), the row that shows it, and where that row sits in the heir's box.
+        private readonly HeirNameField _nameField;
+        private RectTransform _nameRow;
+        private float _nameRowY;
+        private string _shownName;
         private readonly Styler _fade;
         private readonly Action _popKeys;
         private bool _alive = true;
@@ -224,7 +231,18 @@ namespace Trial.Meta
             hy += UiNode.Of(gen).H + heirGap;
             (RectTransform nameRow, List<RectTransform> nameChars, RectTransform seal) = HallParts.NameRow(heirBox, heir.Name, HeirW);
             UiNode.Of(nameRow).Place(0f, hy);
+            _nameRow = nameRow;
+            _nameRowY = hy;
+            _shownName = heir.Name;
             hy += UiNode.Of(nameRow).H + heirGap;
+            if (_lineage.Current == null)
+            {
+                // concept-v3 §16.1 (2026-11-03): the drawn name is the default, and the player may write over it. The
+                // field takes the 装束 column's width so the figure keeps its place on the right.
+                _nameField = HeirNameField.Create(heirBox, heir.Name, HallParts.AttireWidth, OnNameTyped);
+                UiNode.Of(_nameField.Root).Place(0f, hy);
+                hy += UiNode.Of(_nameField.Root).H + heirGap;
+            }
             RectTransform attire = HallParts.Attire(heirBox, heir);
             UiNode.Of(attire).Place(0f, hy);
             hy += UiNode.Of(attire).H;
@@ -274,6 +292,7 @@ namespace Trial.Meta
             _clock.Tween(pd, new[] { ("o", 1f), ("x", 0f) }, 500f, Ease.Out, 900f);
             MetaUtil.RiseIn(_clock, new[] { heirHead, gen }, delay: 1000f, step: 80f);
             var attireIn = new List<RectTransform> { attire, fig };
+            if (_nameField != null) attireIn.Insert(0, _nameField.Root);
             if (survivor) attireIn.Add(survivor);
             foreach (RectTransform el in attireIn) Styler.Of(el, o: 0f);
             for (int i = 0; i < nameChars.Count; i++)
@@ -290,6 +309,8 @@ namespace Trial.Meta
                 {
                     if (!_alive) return;
                     _sound.Play("heirNamed");
+                    // the name can be written over once it is stamped: the naming's letters and seal are done with
+                    if (_nameField != null) _nameField.Interactable = true;
                     // seal.classList.add('is-stamped'): the ring spreads (@keyframes ocbg-meta-stamp, .7s ease-out)
                     CssAnimator.Play(seal, HallParts.SealStampedAnimation);
                     for (int i = 0; i < attireIn.Count; i++)
@@ -312,6 +333,26 @@ namespace Trial.Meta
 
             _popKeys = KeyStack.Push(OnKey);
             _mounting = false;
+        }
+
+        /// <summary>
+        /// The player wrote in the name field: the row shows the name the life will start with (the drawn one while the
+        /// field holds nothing usable), already stamped.
+        /// </summary>
+        private void OnNameTyped(string typed)
+        {
+            if (!_alive) return;
+            string name = Inheritance.ChosenHeirName(typed, _view.NextHeir.Name);
+            if (name == _shownName) return;
+            _shownName = name;
+            RectTransform parent = (RectTransform)_nameRow.parent;
+            int at = _nameRow.GetSiblingIndex();
+            Ui.Remove(_nameRow);
+            (RectTransform row, _, RectTransform seal) = HallParts.NameRow(parent, name, HeirW);
+            row.SetSiblingIndex(at);
+            UiNode.Of(row).Place(0f, _nameRowY);
+            Styler.Of(seal, r: -4f);   // the stamp's resting tilt
+            _nameRow = row;
         }
 
         // js: scenes/meta/hall.js:77
@@ -447,7 +488,8 @@ namespace Trial.Meta
             if (_busy) return;
             _busy = true;
             _sound.Play("uiConfirm");
-            LifeStart lifeStart = _lineage.Current != null ? null : Inheritance.StartLife(_lineage, _ctx.Seed);
+            _nameField?.Blur();
+            LifeStart lifeStart = _lineage.Current != null ? null : Inheritance.StartLife(_lineage, _ctx.Seed, _nameField?.Value);
             _clock.Tween(_backdrop, "v", 0.35f, 700f, Ease.InOut).Forget();
             await _clock.Tween(_fade, "o", 1f, 650f, Ease.In, 150f);
             if (_alive) _ctx.OnDepart?.Invoke(lifeStart);
@@ -457,6 +499,17 @@ namespace Trial.Meta
         private bool OnKey(KeyEvent e)
         {
             if (_busy) return false;
+            if (_nameField != null)
+            {
+                // The field keeps every key but Escape while it has the keyboard (KeyStack). Esc gives the keyboard back
+                // (the IME's own Esc cancels its composition); the Enter that ended the editing is not also 出立.
+                if (e.Key == "Escape" && (_nameField.Focused || _nameField.Selected))
+                {
+                    if (!_nameField.Composing && !e.Repeat) _nameField.Blur();
+                    return true;
+                }
+                if (e.Key == "Enter" && (_nameField.Focused || _nameField.JustSubmitted)) return true;
+            }
             int n = _view.Traces.Count;
             // ←→ go from trace to trace; ↑↓ and PgUp PgDn read the selected trace's list when it runs past the panel.
             if (e.Key == "ArrowRight") { if (n > 0) Select((_sel + 1) % n, false); return true; }
@@ -491,6 +544,7 @@ namespace Trial.Meta
         public void Destroy()
         {
             _alive = false;
+            _nameField?.Dispose();
             _popKeys?.Invoke();
             _clock.Stop();
             _backdrop.Destroy();
