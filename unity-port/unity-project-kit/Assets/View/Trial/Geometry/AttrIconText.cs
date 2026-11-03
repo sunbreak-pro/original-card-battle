@@ -25,9 +25,11 @@ namespace Trial.Geometry
             new KeyValuePair<string, string>("スタンス", "stance"),
         };
 
-        // TMP hides a character only through rich text; the slot keeps its advance, so widths do not change.
-        private const string HideOpen = "<alpha=#00>";
-        private const string HideClose = "</alpha>";
+        // TMP hides a character only through rich text; the slot keeps its advance, so widths do not change. A clear
+        // colour rather than <alpha>: TMP has no </alpha> (it would print as eight literal characters and leave the rest
+        // of the label at alpha 0), and </color> pops back to the label's own colour, so a translucent label stays so.
+        private const string HideOpen = "<color=#00000000>";
+        private const string HideClose = "</color>";
 
         private readonly int[] _map;
 

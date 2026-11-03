@@ -5,6 +5,7 @@ namespace Trial.Geometry.Tests
     public class AttrIconTextTests
     {
         private const string S = "〓";
+        private const string Hidden = "<color=#00000000>" + S + "</color>";
 
         [TestCase("連動 攻撃", "連動 " + S, new[] { "attack" })]
         [TestCase("連動 防御", "連動 " + S, new[] { "defense" })]
@@ -82,14 +83,23 @@ namespace Trial.Geometry.Tests
         [Test]
         public void Rich_HidesEachSlotAndKeepsTheRest()
         {
-            Assert.That(AttrIconText.Of("連動 攻撃").Printed, Is.EqualTo("連動 <alpha=#00>" + S + "</alpha>"));
-            Assert.That(AttrIconText.Rich("a" + S + "\nb" + S), Is.EqualTo("a<alpha=#00>" + S + "</alpha>\nb<alpha=#00>" + S + "</alpha>"));
+            Assert.That(AttrIconText.Of("連動 攻撃").Printed, Is.EqualTo("連動 " + Hidden));
+            Assert.That(AttrIconText.Rich("a" + S + "\nb" + S), Is.EqualTo("a" + Hidden + "\nb" + Hidden));
+        }
+
+        [Test]
+        public void Rich_ShowsTheTextAfterASlotAgain()
+        {
+            // TMP has no </alpha>: the hiding must close with a tag TMP pops, or everything after the first icon vanishes.
+            string printed = AttrIconText.Of("このターンに防御の札を出していれば、この札の威力 13 → 18").Printed;
+            Assert.That(printed, Is.EqualTo("このターンに" + Hidden + "の札を出していれば、この札の威力 13 → 18"));
+            Assert.That(printed, Does.Not.Contain("alpha"));
         }
 
         [Test]
         public void Rich_KeepsALessThanSignAsText()
         {
-            Assert.That(AttrIconText.Rich("a<b" + S), Is.EqualTo("<noparse>a<b</noparse><alpha=#00>" + S + "</alpha>"));
+            Assert.That(AttrIconText.Rich("a<b" + S), Is.EqualTo("<noparse>a<b</noparse>" + Hidden));
         }
 
         [Test]
