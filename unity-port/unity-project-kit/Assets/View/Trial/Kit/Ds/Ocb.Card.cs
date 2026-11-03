@@ -571,7 +571,8 @@ namespace Trial.Kit
                 fitText = st.Desc ?? (string.IsNullOrEmpty(def.Desc) ? "" : def.Desc);   // st.desc != null ? st.desc : (def.desc || '')
                 card.DescPart(fitText);
             }
-            card.TraitPart(def.Trait, st.Lamp);
+            // #827 (こうだいさん, 2026-11-03): a plain card shows no trait box at all; the DS's .is-plain box is not drawn.
+            if (def.Trait != null) card.TraitPart(def.Trait, st.Lamp);
             card.DimPart(st.Unpayable);
             card.EdgePart();
             if (!string.IsNullOrEmpty(st.Fit))

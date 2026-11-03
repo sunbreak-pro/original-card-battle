@@ -571,6 +571,8 @@ namespace Trial.Battle
         // js: scenes/battle/hand-card.js:236
         private static OcbElement TraitPart(OcbCard card, CardFace face, List<CardTerm> terms)
         {
+            // #827 (こうだいさん, 2026-11-03): a plain card shows no trait box at all (no lamp, so nothing reads it).
+            if (face.Plain) return null;
             string top = face.TraitTop;
             string bottom = face.TraitBottom;
             // A v4.2 source writes the trait as one line (CardView.BindTrait).
