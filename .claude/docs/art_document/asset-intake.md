@@ -288,7 +288,7 @@ model_id, weights_file, sha256, license, terms_url, terms_checked_on, notes
 
 - **§1〜§11 は立ち絵だけを扱います。** 背景は不透明なので BC7（8 bpp）ではなく DXT1/BC1（4 bpp）が正解になり、答えが変わります。背景は §13、UI の部材は §12 で決めました。カードの絵は別です。
 - **背景のミップマップを off にしました**（§13.3）。絵は基準の画面でほぼ 1 対 1 に出るためです。実画面で確かめていません。
-- **ミップマップを on にしました。** 1536 の絵を最大 900 の実画素で出す縮小に、バイリニアだけでは足りないと見たためです。**1 体目で on / off のスクリーンショットを見比べて確かめます。** 見て違いが無ければ off に戻し、容量を 25 MiB から 18.8 MiB に下げます。
+- **立ち絵のミップマップを on にしました。** 1536 の絵を最大 900 の実画素で出す縮小に、バイリニアだけでは足りないと見たためです。**1 体目で on / off のスクリーンショットを見比べて確かめます。** 見て違いが無ければ off に戻し、容量を 25 MiB から 18.8 MiB に下げます。
 - **Max Size を 4096 にしました**（2026-11-03、#840。それまでは既定の 2048）。大型の敵の原本が高さ 4096 まであるためです。#840 の決定は「大型の絵は Max Size 4096」で、全ての立ち絵を 4096 にするかまでは言っていません。大型の敵だけ別の Preset にすると当て忘れの事故が起きるので、立ち絵の Preset 1 つを 4096 にしました。640 × 1536 の絵の取り込みは変わりません。1024 を保険に置くと、大きく書き出した絵を 4 の倍数でない寸法へ落として圧縮を壊します。
 - **台帳を Unity リポに置いたままにしました。** 既存の 4 箇所（スキル 2 箇所、`briefs/` 2 本）が同じパスを指しているためです。こちらへ移すなら 4 箇所を同時に直す必要があり、どれも本 Issue の書き込み範囲の外です。
 
@@ -386,7 +386,7 @@ Unity 6 の項目名で書きます。括弧内は `.meta` のキーです。立
 | Sprite Mode | Single（`spriteMode: 1`） | 1 ファイルに 1 枚です |
 | Mesh Type | Full Rect（`spriteMeshType: 0`） | 全面の長方形 1 枚だからです |
 | Pivot | **Center**（`alignment: 0`） | 足元の基準点が要りません |
-| Generate Physics Shape | off | 当たり判定を使いません |
+| Generate Physics Shape | off（`spriteGenerateFallbackPhysicsShape: 0`） | 当たり判定を使いません |
 | Generate Mipmap | **off**（`enableMipMap: 0`） | 絵は基準の画面でほぼ 1 対 1 に出ます。縮むのは小さい画面だけで、容量 +33% に見合いません。縮んだ画面で縞が出たら on に上げます |
 | Filter Mode | **Bilinear**（`filterMode: 1`） | ミップマップが無いので、Trilinear は働きません |
 | Wrap Mode | Clamp（`wrapU: 1`, `wrapV: 1`） | 端の画素を繰り返させないためです |
@@ -394,14 +394,14 @@ Unity 6 の項目名で書きます。括弧内は `.meta` のキーです。立
 | Alpha Source | **None**（`alphaUsage: 0`） | アルファの無い絵だからです |
 | Alpha Is Transparency | **off**（`alphaIsTransparency: 0`） | 透明の縁が無いので、色を広げる処理が要りません |
 | Read/Write | off（`isReadable: 0`） | CPU 側の複製でメモリが倍になります |
-| Max Size | **2048**（`maxTextureSize: 2048`） | 1920 は 2048 に収まり、縮小が起きません。1024 にすると 960 × 540 に落ちます |
+| Max Size | **2048**（`maxTextureSize: 2048`） | 1920 は 2048 に収まり、縮小が起きません。1024 にすると 1024 × 576 に縮められ、基準の画面で絵が荒れます |
 
 Windows / standalone の上書きは次のとおりです。
 
 | 項目 | 値 | 理由 |
 | --- | --- | --- |
 | Override | on（`overridden: 1`） | 忘れると上書きが丸ごと無効になります。§3.3 と同じく、`.meta` の diff で最初に見ます |
-| Max Size | 2048 | Default と揃えます |
+| Max Size | **2048** | Default と揃えます |
 | Format | **RGB Compressed DXT1**（BC1。`textureFormat: 10`） | 不透明なので 4 bpp で足ります。立ち絵の BC7（8 bpp）の半分の容量です |
 | Use Crunch Compression | off（`crunchedCompression: 0`） | 7 枚では意味がなく、取り込みが遅くなります |
 
@@ -415,12 +415,12 @@ Windows / standalone の上書きは次のとおりです。
 
 1. §13.3 の値で 1 枚目を設定し、`Assets/Art/Backdrops/BackdropSprite.preset` として保存します。`Resources` の中に置くとビルドに入るので、外に置きます。
 2. `m_SpriteSheet.*` / `m_UserData` / `m_AssetBundleName` / `m_AssetBundleVariant` を Exclude Property で外します（§5.1 の 3 と同じです）。
-3. Preset Manager に Texture Importer の既定として足し、Filter に `glob:"Assets/Resources/Backdrops/**.png"` と書きます。立ち絵の行より下に置きます。
+3. Preset Manager に Texture Importer の既定として足し、Filter に `glob:"Assets/Resources/Backdrops/**.png"` と書きます。一般の Sprite 用の行があるなら、その下に置きます（§5.1 の 6）。立ち絵の行とは絞る場所が重ならないので、前後は問いません。
 4. 登録は PNG を入れる前に済ませます（§5.2）。`BackdropSprite.preset`、その `.meta`、`ProjectSettings/PresetManager.asset` の 3 つを一緒にコミットします。
 
 ### 13.5 台帳
 
-台帳は立ち絵と同じ `Docs/art/asset-ledger.csv` に、同じ列（§7.1）で 1 行ずつ足します。`asset_id` は `bg.layer-<n>`、`file` は `Assets/Resources/Backdrops/layer-<n>.png` です。透明の画素が無いので、書き出しの列に `save-merged` の区別は要りません。
+台帳は立ち絵と同じ `Docs/art/asset-ledger.csv` に、同じ列（§7.1）で 1 行ずつ足します。`asset_id` は `bg.layer-<n>`、`file` は `Assets/Resources/Backdrops/layer-<n>.png` です。透明の画素が無いので、`export` の列は `export` と書きます（`save-merged` は要りません）。
 
 ### 13.6 絵を入れた後にやること
 
