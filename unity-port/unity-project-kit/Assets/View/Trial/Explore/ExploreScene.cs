@@ -185,9 +185,11 @@ namespace Trial.Explore
         private void OnClockFrame(float now)
         {
             if (InBattle || !Alive) return;
-            Backdrop?.Frame(now);
+            // The breath follows the settled reading, not the one easing up, so a rise only changes its pace.
+            float breath = MiasmaBreathing.Advance(now, GaugeTo);
+            Backdrop?.Frame(now, breath);
             foreach (RollLabel r in Rollers.ToArray()) r.Tick(now);
-            PaintGauge(now);
+            PaintGauge(now, breath);
             WalkerAnim?.Invoke(now);
         }
 

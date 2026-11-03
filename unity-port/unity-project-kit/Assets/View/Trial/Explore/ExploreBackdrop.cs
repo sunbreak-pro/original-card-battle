@@ -320,10 +320,10 @@ namespace Trial.Explore
         }
 
         // js: scenes/explore/backdrop.js:145
-        /// <summary>drawShade(percent, now): the shade at the reading, redrawn only when its strength or inner edge moved.</summary>
-        private void DrawShade(float percent, float now)
+        /// <summary>drawShade(percent, now): the shade at the reading, its inner edge drawn in by <paramref name="breath"/>, redrawn only when its strength or inner edge moved.</summary>
+        private void DrawShade(float percent, float breath)
         {
-            MiasmaShade sh = MiasmaLook.ShadeAt(percent, now);
+            MiasmaShade sh = MiasmaLook.ShadeBreathing(percent, breath);
             string key = sh.Strength.ToString("F4", Inv) + "/" + sh.InnerRadius.ToString("F4", Inv);
             if (key == _lastShadeKey) return;
             _lastShadeKey = key;
@@ -403,8 +403,8 @@ namespace Trial.Explore
         }
 
         // js: scenes/explore/backdrop.js:185
-        /// <summary>frame(now): one frame of the place (the leaving layer at 1, the shown one fading in over it) and the shade.</summary>
-        public void Frame(float now)
+        /// <summary>frame(now): one frame of the place (the leaving layer at 1, the shown one fading in over it) and the shade at <paramref name="breath"/> (the scene's MiasmaBreath, shared with the gauge).</summary>
+        public void Frame(float now, float breath)
         {
             if (_destroyed || _shown == null) return;
             float a = _sw.Tick(now);
@@ -415,7 +415,7 @@ namespace Trial.Explore
             }
             if (_leaving != null) DrawSlot(_leaving, 1f, now);
             DrawSlot(_shown, _leaving != null ? a : 1f, now);
-            DrawShade(MiasmaNow(now), now);
+            DrawShade(MiasmaNow(now), breath);
         }
 
         // js: scenes/explore/backdrop.js:193
