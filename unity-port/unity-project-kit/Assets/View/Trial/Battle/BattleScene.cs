@@ -221,6 +221,7 @@ namespace Trial.Battle
                 OnHoldEnd = face => PlayerCore?.HandCallbacks.OnHoldEnd?.Invoke(face),
                 OnTarget = (face, unit) => PlayerCore?.HandCallbacks.OnTarget?.Invoke(face, unit),
                 Preview = (id, unit) => PlayerCore != null && PlayerCore.HandCallbacks.Preview != null ? PlayerCore.HandCallbacks.Preview(id, unit) ?? "" : "",
+                PreviewGuard = (id, unit) => PlayerCore != null && PlayerCore.HandCallbacks.PreviewGuard != null ? PlayerCore.HandCallbacks.PreviewGuard(id, unit) : null,
                 // §1.4 / §3.4: the enemy a Tab at rest chose (the floor's N) is where a selection starts (−1: the card's own target).
                 RestingUnit = () => PlayerCore != null ? PlayerCore.RestingUnit : -1,
             });

@@ -513,7 +513,9 @@ namespace Trial.Battle
                 if (_hover == null || _hover.Text != face.HoverLine || _hover.Lit != lit || _hover.Plain != face.Plain)
                 {
                     if (_hover != null) Ui.Remove(_hover.El);
-                    RectTransform el = BuildHoverLine(Layer(BattleLayer.Over), HandCard.WrapLine(face.HoverLine, HoverTextW, 18f), lit, face.Plain);
+                    // #828: the attribute words print as their icons, so the line is wrapped as it prints
+                    AttrIconText split = AttrIconText.Of(face.HoverLine);
+                    RectTransform el = BuildHoverLine(Layer(BattleLayer.Over), HandCard.WrapLine(split.Display, HoverTextW, 18f), split.Attrs, lit, face.Plain);
                     float h = UiNode.Of(el).H;
                     _hover = new HoverPart { El = el, Text = face.HoverLine, Lit = lit, Plain = face.Plain, Height = h > 0f ? h : 48f };
                 }
@@ -552,7 +554,7 @@ namespace Trial.Battle
         /// text's widest line is wider than the row (Ocb.HoverLine's rule).
         /// </summary>
         // js: scenes/battle/hand-panels.js:288 (vendor/ds/bundle.js:528)
-        private static RectTransform BuildHoverLine(RectTransform parent, string text, bool lit, bool plain)
+        private static RectTransform BuildHoverLine(RectTransform parent, string text, IReadOnlyList<string> attrs, bool lit, bool plain)
         {
             string css = Ocb.HoverLineCss + HoverLineCss;
             RectTransform el = Ocb.El(parent, "ocb-hoverline ocbg-battle-hoverline", css);
@@ -581,7 +583,8 @@ namespace Trial.Battle
             node.H = h;
             float cy = bw.Top + pad.Top, ch = h - bw.Vertical - pad.Vertical;
             ln.Place(bw.Left + pad.Left, cy + (ch - ln.H) * 0.5f, lampW, ln.H);
-            Label.Make(el, text, ts, bw.Left + pad.Left + lampW + gap, cy + (ch - th) * 0.5f, tw + 0.01f, th, "span");
+            TextMeshProUGUI span = Label.Make(el, text, ts, bw.Left + pad.Left + lampW + gap, cy + (ch - th) * 0.5f, tw + 0.01f, th, "span");
+            Ocb.PrintAttrIcons(span, text, attrs);
             if (plain) ln.Visible = false; // dot.style.visibility = 'hidden'
             return el;
         }

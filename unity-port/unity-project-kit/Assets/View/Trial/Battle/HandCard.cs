@@ -13,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using Depiction;
 using TMPro;
 using Trial.Geometry;
@@ -54,6 +53,8 @@ namespace Trial.Battle
         public bool Lit;
         /// <summary>The source's prediction ('' for none).</summary>
         public string Preview = "";
+        /// <summary>Unity (#820): the power before the enemy's Guard and the Guard, for a blow it takes part of; null otherwise.</summary>
+        public GuardSplit Split;
         /// <summary>The status marks that apply (modsOf).</summary>
         public IReadOnlyList<CardMod> Mods = Array.Empty<CardMod>();
     }
@@ -517,7 +518,10 @@ namespace Trial.Battle
         private static void TraitRow(TextMeshProUGUI p, string text, TermRow row, CardFace face, bool bold, bool plain, List<CardTerm> terms)
         {
             text = text ?? "";
-            TextFit fit = CardTextFit.Name(text, TextSize, TraitMinFont, plain ? TraitTextW + 14f : TraitTextW, 22f,
+            // #828: the attribute words print as their icons; the row is fitted, underlined and boxed as it prints
+            AttrIconText split = AttrIconText.Of(text);
+            string shown = split.Display;
+            TextFit fit = CardTextFit.Name(shown, TextSize, TraitMinFont, plain ? TraitTextW + 14f : TraitTextW, 22f,
                 bold ? Fonts().TraitBottom : Fonts().TraitTop);
             TextStyle style = Label.StyleOf(p)?.Clone() ?? Ocb.TextOf(Ocb.TraitCss + Ocb.TraitPCss);
             if (fit.Size != TextSize)
@@ -526,8 +530,7 @@ namespace Trial.Battle
                 style.Size = fit.Size;
                 Label.Apply(p, style);
             }
-            LabelState ls = Label.StateOf(p);
-            if ((ls.Text ?? p.text) != text) Label.SetText(p, text);
+            Ocb.PrintAttrIcons(p, shown, split.Attrs);
             List<TermMark> marks = (face.Terms ?? new List<TermMark>())
                 .Where(m => m != null && m.Row == row && m.Start >= 0 && m.Length > 0 && m.Start + m.Length <= text.Length)
                 .OrderBy(m => m.Start)
@@ -536,9 +539,11 @@ namespace Trial.Battle
             foreach (TermMark m in marks)
             {
                 if (m.Start < at) continue;
+                split.MapRange(m.Start, m.Length, out int start, out int length);
+                if (length <= 0) continue;
                 // .ocb-term.ocbg-battle-term: underline dotted --ink-muted 2px, offset 4px (hand.css:20)
-                Ocb.TermUnderline(p, m.Start, m.Length);
-                terms.Add(new CardTerm { Mark = m, Rect = TermBox(p, style, text, m.Start, m.Length) });
+                Ocb.TermUnderline(p, start, length);
+                terms.Add(new CardTerm { Mark = m, Rect = TermBox(p, style, shown, start, length) });
                 at = m.Start + m.Length;
             }
         }
@@ -571,6 +576,8 @@ namespace Trial.Battle
         // js: scenes/battle/hand-card.js:236
         private static OcbElement TraitPart(OcbCard card, CardFace face, List<CardTerm> terms)
         {
+            // #827 (こうだいさん, 2026-11-03): a plain card shows no trait box at all (no lamp, so nothing reads it).
+            if (face.Plain) return null;
             string top = face.TraitTop;
             string bottom = face.TraitBottom;
             // A v4.2 source writes the trait as one line (CardView.BindTrait).
@@ -869,16 +876,10 @@ namespace Trial.Battle
             CardValue printed = face.Values != null && face.Values.Count > 0 ? face.Values[0] : null;
             if (extra != null && !string.IsNullOrEmpty(extra.Preview))
             {
-                var parts = new StringBuilder(extra.Preview);
-                if (printed != null && (printed.Number ?? "") != extra.Preview)
-                {
-                    IReadOnlyList<CardMod> mods = extra.Mods ?? Array.Empty<CardMod>();
-                    parts.Append("（表の値 ").Append(printed.Number ?? "")
-                        .Append(mods.Count > 0 ? "・" + string.Join("・", mods.Select(m => m.Word + " " + m.Text)) : "")
-                        .Append(extra.Lit ? "・特性" : "")
-                        .Append("）");
-                }
-                rows.Add(new KeyValuePair<string, string>("予測値", parts.ToString()));
+                IReadOnlyList<CardMod> mods = extra.Mods ?? Array.Empty<CardMod>();
+                string row = BattlePlayer.DetailText.Predicted(extra.Preview, extra.Split, printed != null ? printed.Number ?? "" : null,
+                    mods.Select(m => m.Word + " " + m.Text).ToList(), extra.Lit);
+                rows.Add(new KeyValuePair<string, string>("予測値", row));
             }
             return rows.Count > 0 ? rows : null;
         }

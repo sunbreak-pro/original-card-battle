@@ -440,7 +440,10 @@ namespace Trial.Battle
             string preview;
             try { preview = _opts.Preview != null ? _opts.Preview(c.Id, -1) ?? "" : ""; }
             catch (Exception) { preview = ""; }
-            return new DetailExtra { Lit = c.View != null && c.View.Lit, Preview = preview, Mods = HandCard.ModsOf(c.Face, _statusMarks) };
+            GuardSplit split;
+            try { split = _opts.PreviewGuard != null ? _opts.PreviewGuard(c.Id, -1) : null; }
+            catch (Exception) { split = null; }
+            return new DetailExtra { Lit = c.View != null && c.View.Lit, Preview = preview, Split = split, Mods = HandCard.ModsOf(c.Face, _statusMarks) };
         }
 
         /// <summary>ShowLamp: the face's lamp, or the framed enemy's verdict (CardFace.LitFor(unit)) while a single-target card is up.</summary>

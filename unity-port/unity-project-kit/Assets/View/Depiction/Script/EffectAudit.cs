@@ -265,6 +265,12 @@ namespace Depiction
                     "勝ち負けを知らせる唯一の札です。戦闘の最後に 1 度だけ出て、並行で待ち時間はありません。"),
                 new EffectAuditEntry(EffectId.Defeat, StatusTurn, Carries.TurnOrResult, N, Sc,
                     "敵が倒れてマスが空いたことを示します。切ると人型が一瞬で消え、何が起きたか読めません。勝利の札はこの後に出ます（§2.2 の 6）。"),
+
+                // ---- The floor's stripes (#766) ----
+                new EffectAuditEntry(EffectId.StripeDraw, Beats, Carries.Intent, N, H,
+                    "予兆の札が降りるのと同時に、狙うマスへ目を運びます。札と並行で待ち時間はありません。切ると斜線が一度に出ます。目を運べるかは試運転で確かめます。"),
+                new EffectAuditEntry(EffectId.StripeFade, Beats, Carries.Intent, D, H,
+                    "予兆が使われたことは、札の消え方が言っています。並行で待ち時間はありません。切ると斜線が一度に消えます。"),
             };
             var map = new Dictionary<EffectId, EffectAuditEntry>();
             foreach (EffectAuditEntry entry in list) map.Add(entry.Id, entry);

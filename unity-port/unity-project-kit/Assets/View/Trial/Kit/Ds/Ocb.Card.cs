@@ -438,7 +438,8 @@ namespace Trial.Kit
             string bottom = plain ? "特性なし（+2 込み）" : trait.Eff ?? "";
             TextMeshProUGUI r1 = Ocb.Text(rows, top, s1, "p");
             TextMeshProUGUI r2 = Ocb.Text(rows, bottom, s2, "p");
-            float w = Math.Max(Ocb.TextWidth(top, s1), Ocb.TextWidth(bottom, s2));
+            // #828: the attribute words print as their icons, and the rows are as wide as they print
+            float w = Math.Max(Ocb.TextWidth(Ocb.PrintAttrIcons(r1, top).Display, s1), Ocb.TextWidth(Ocb.PrintAttrIcons(r2, bottom).Display, s2));
             Ui.Place(r1.rectTransform, 0f, 0f);
             Ui.Place(r2.rectTransform, 0f, s1.LineHeightPx);
             UiNode.Of(rows).Place(0f, 0f, w, s1.LineHeightPx + s2.LineHeightPx);
@@ -571,7 +572,8 @@ namespace Trial.Kit
                 fitText = st.Desc ?? (string.IsNullOrEmpty(def.Desc) ? "" : def.Desc);   // st.desc != null ? st.desc : (def.desc || '')
                 card.DescPart(fitText);
             }
-            card.TraitPart(def.Trait, st.Lamp);
+            // #827 (こうだいさん, 2026-11-03): a plain card shows no trait box at all; the DS's .is-plain box is not drawn.
+            if (def.Trait != null) card.TraitPart(def.Trait, st.Lamp);
             card.DimPart(st.Unpayable);
             card.EdgePart();
             if (!string.IsNullOrEmpty(st.Fit))
