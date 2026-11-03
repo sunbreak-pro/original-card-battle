@@ -57,7 +57,7 @@ namespace BattleCore
         /// <summary>
         /// The stamina the player opens with: the carried stamina kept to 0..max (full without one),
         /// then 息継ぎの笛's bonus on top (§9.1, #452). The bonus may take it past the maximum, never
-        /// past <see cref="Constants.MaxStaminaCeil"/>. Recovery and gains add nothing to stamina at
+        /// past <see cref="Constants.StartStaminaCeil"/>. Recovery and gains add nothing to stamina at
         /// or above the maximum (<see cref="Combat.RecoverStamina"/>), so the extra is only spent.
         /// </summary>
         public int StartStamina
@@ -66,7 +66,7 @@ namespace BattleCore
             {
                 int carried = PlayerStartStamina.HasValue ? Math.Max(0, Math.Min(PlayerMaxStamina, PlayerStartStamina.Value)) : PlayerMaxStamina;
                 int bonus = Math.Max(0, PlayerStartStaminaBonus);
-                return bonus == 0 ? carried : Math.Min(Math.Max(carried, Constants.MaxStaminaCeil), carried + bonus);
+                return bonus == 0 ? carried : Math.Min(Math.Max(carried, Constants.StartStaminaCeil), carried + bonus);
             }
         }
 

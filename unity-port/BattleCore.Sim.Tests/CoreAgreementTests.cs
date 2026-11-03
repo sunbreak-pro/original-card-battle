@@ -22,7 +22,10 @@ public class CoreAgreementTests
         {
             Assert.That(Miasma.BaseMaxStamina, Is.EqualTo(Constants.BaseMaxStamina));
             Assert.That(Miasma.MaxStaminaFloor, Is.EqualTo(Constants.MaxStaminaFloor));
-            Assert.That(Miasma.MaxStaminaCeil, Is.EqualTo(Constants.MaxStaminaCeil));
+            // #822 raised the battle's ceiling to 20. The exploration's stays 14 (its temporary
+            // modifiers stop at +4), so every maximum it hands a battle is one the battle takes.
+            Assert.That(Miasma.MaxStaminaCeil, Is.LessThanOrEqualTo(Constants.MaxStaminaCeil));
+            Assert.That(Miasma.MaxStamina(Miasma.TempModClamp, 0), Is.LessThanOrEqualTo(Constants.MaxStaminaCeil));
         });
     }
 

@@ -6,6 +6,10 @@
 // rest as steel rings. It shows the numbers it is handed. In layer.hud. Port of scenes/battle/hud/stamina.js (+ hud.css:96-99);
 // it is hud.stamina's { showCost, glowReserve } too.
 //
+// Unity only (#822, the JS has one row): ten dots to a row (battle-visual-v1 §4.7 決定 21). From the 11th dot on they take a
+// second row under the first, and the tag grows 20 px upward (y 826, 236×104); the divider stays on the first row. Stamina
+// above the maximum (息継ぎの笛) gets wick-filled dots after the maximum's (#508). Depiction.StaminaPips says which dot is which.
+//
 // The DS rules (.ocb-stamina, .ocb-st-row1, .ocb-pips, .ocb-pip.is-*) are Ocb.*Css verbatim; the two flex rows run through the
 // kit's flex solver (Ocb.Flow). The JS keeps its dot elements and re-appends the first `max` of them on every render (an inline
 // scale / box-shadow survives a class change); here the same pips are kept, shown in order or hidden, and an inline shadow is
@@ -45,6 +49,8 @@ namespace Trial.Battle
         private const string PipCss = "box-sizing: border-box; transform-origin: 50% 50%;";
         /// <summary>hud.css:29 .ocbg-battle-dot</summary>
         private const string DotCss = "display: block; flex: none; border-radius: 50%;";
+        /// <summary>#508: a point above the maximum (息継ぎの笛), filled in wick beside the amber of the points within it.</summary>
+        private const string PipOverCss = "background: var(--wick);";
 
         private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
@@ -66,6 +72,8 @@ namespace Trial.Battle
         private readonly TextMeshProUGUI _pay;
         private readonly UiNode _payNode;
         private readonly RectTransform _pips;
+        /// <summary>#822: the second row, the 11th dot and after.</summary>
+        private readonly RectTransform _pips2;
         private readonly RectTransform _divider;
         // js: scenes/battle/hud/stamina.js:36
         private readonly List<Pip> _dots = new List<Pip>();
@@ -106,6 +114,8 @@ namespace Trial.Battle
             _divider = Ocb.El(_pips, "ocb-pip-div", Ocb.PipDivCss);
             Ocb.NoShrink(_divider);
             UiNode.Of(_divider).Visible = false;
+            _pips2 = Ocb.El(_el, "ocb-pips", Ocb.PipsCss);
+            UiNode.Of(_pips2).Visible = false;
             LayoutRows();
         }
 
@@ -121,26 +131,29 @@ namespace Trial.Battle
             Label.SetText(_pay, PayMark + _cost.ToString(Inv));
             // pay.classList.toggle('is-on', st.cost > 0): .ocb-st-pay.is-on { opacity: 1 }
             _payNode.Opacity = _cost > 0 ? (Ocb.Rule(Ocb.StPayCss + Ocb.StPayOnCss).Opacity ?? 1f) : (Ocb.Rule(Ocb.StPayCss).Opacity ?? 0f);
-            while (_dots.Count < _max) _dots.Add(MakePip());
+            int count = Depiction.StaminaPips.Count(_stamina, _max);
+            while (_dots.Count < count) _dots.Add(MakePip());
             // pips.innerHTML = ''
             UiNode.Of(_divider).Visible = false;
             foreach (Pip d in _dots) if (d.El) d.Node.Visible = false;
-            int paying = Math.Min(_cost, _stamina);
             int order = 0;
-            for (int i = 0; i < _max; i++)
+            for (int i = 0; i < count; i++)
             {
-                // The divider stands in the gap after the stamina 構え needs, only when there are dots beyond it.
-                if (_dividerAfter > 0 && i == _dividerAfter)
+                // The divider stands in the gap after the stamina 構え needs, only when there are dots beyond it on the first row.
+                if (i == _dividerAfter && Depiction.StaminaPips.DividerShown(_dividerAfter, _stamina, _max))
                 {
                     UiNode.Of(_divider).Visible = true;
                     _divider.SetSiblingIndex(order++);
                 }
                 Pip dot = _dots[i];
-                string cls = i < _stamina - paying ? "is-have" : i < _stamina ? "is-pay" : i < _stamina + _next ? "is-next" : "is-empty";
-                SetClass(dot, cls);
+                if (i == Depiction.StaminaPips.PerRow) order = 0;
+                RectTransform row = Depiction.StaminaPips.RowOf(i) == 0 ? _pips : _pips2;
+                if (dot.El.parent != row) dot.El.SetParent(row, false);
+                SetClass(dot, ClassOf(Depiction.StaminaPips.ShapeAt(i, _stamina, _max, _cost, _next)));
                 dot.Node.Visible = true;
                 dot.El.SetSiblingIndex(order++);
             }
+            UiNode.Of(_pips2).Visible = Depiction.StaminaPips.TwoRows(_stamina, _max);
             LayoutRows();
         }
 
@@ -163,12 +176,26 @@ namespace Trial.Battle
             ApplyShadow(dot);
         }
 
-        /// <summary>The DS rule of a pip's class (bundle.css:131-134).</summary>
+        /// <summary>The pip class of a shape: the DS's four (bundle.css:131-134) and #508's is-over.</summary>
+        private static string ClassOf(Depiction.PipShape shape)
+        {
+            switch (shape)
+            {
+                case Depiction.PipShape.Have: return "is-have";
+                case Depiction.PipShape.Over: return "is-over";
+                case Depiction.PipShape.Pay: return "is-pay";
+                case Depiction.PipShape.Next: return "is-next";
+                default: return "is-empty";
+            }
+        }
+
+        /// <summary>The DS rule of a pip's class (bundle.css:131-134), and #508's is-over.</summary>
         private static string ClassCss(string cls)
         {
             switch (cls)
             {
                 case "is-have": return Ocb.PipHaveCss;
+                case "is-over": return PipOverCss;
                 case "is-pay": return Ocb.PipPayCss;
                 case "is-next": return Ocb.PipNextCss;
                 default: return Ocb.PipEmptyCss;
@@ -199,6 +226,9 @@ namespace Trial.Battle
             BoxStyle bs = box ? box.Style : Ocb.BoxOf(Ocb.StaminaCss + TagCss);
             Insets bw = bs.BorderWidths, pad = bs.Padding;
             UiNode el = UiNode.Of(_el);
+            // §4.7 (#822): a second row grows the tag 20 px upward, the bottom kept on the piles' line.
+            float raise = Depiction.StaminaPips.TagRaise(_stamina, _max);
+            el.Place(L.Stamina.X, L.Stamina.Y - raise, L.Stamina.W, L.Stamina.H + raise);
             float innerW = el.W - bw.Horizontal - pad.Horizontal;
             float x = bw.Left + pad.Left, y = bw.Top + pad.Top;
             Remeasure(_num);
@@ -209,6 +239,11 @@ namespace Trial.Battle
             Ocb.Flow(_pips, Ocb.PipsCss);
             float marginTop = Ocb.Px(Ocb.Rule(Ocb.PipsCss).Layout.MarginTop) ?? 8f;
             UiNode.Of(_pips).Place(x, y + row1.H + marginTop);
+            if (_pips2)
+            {
+                Ocb.Flow(_pips2, Ocb.PipsCss);
+                UiNode.Of(_pips2).Place(x, y + row1.H + marginTop + Depiction.StaminaPips.RowPitch);
+            }
         }
 
         /// <summary>A label measured again from its text before a flex layout (the solver fixed its last box).</summary>

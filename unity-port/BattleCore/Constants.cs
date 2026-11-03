@@ -43,9 +43,17 @@ namespace BattleCore
         /// <summary>§9 step 2: the player recovers a flat 3 every turn. Enemies use their own value.</summary>
         public const int StaminaRecovery = 3;
 
+        /// <summary>§1 (#822): the maximum is 10 unless a special event or trait raises it, and never more than 20.</summary>
         public const int BaseMaxStamina = 10;
         public const int MaxStaminaFloor = 3;
-        public const int MaxStaminaCeil = 14;
+        public const int MaxStaminaCeil = 20;
+
+        /// <summary>
+        /// §9.1: 息継ぎの笛 may open a battle above the maximum, never past 14. It was the ceiling of the
+        /// maximum until #822 raised that to 20; the flute keeps its 14 (two flutes: 16 stops at 14).
+        /// </summary>
+        public const int StartStaminaCeil = 14;
+
         public const int PlayerMaxHp = 50;
 
         /// <summary>構え (§9 step 7): Guard +3 when at least 3 stamina is left at turn end.</summary>

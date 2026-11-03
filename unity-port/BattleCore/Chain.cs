@@ -96,7 +96,7 @@ namespace BattleCore
 
         /// <summary>
         /// concept-v3 §6 / battle_core_v4 §1: the max stamina a battle starts from at this gauge —
-        /// BASE_MAX_STAMINA less 1 per full 20% (at most 4), kept to 3〜14. The same rule as the
+        /// BASE_MAX_STAMINA less 1 per full 20% (at most 4), kept to 3〜20 (#822). The same rule as the
         /// exploration side's (DungeonCore.Miasma.MaxStamina with no temporary modifier).
         /// </summary>
         public static int MaxStaminaAt(int miasmaPercent)

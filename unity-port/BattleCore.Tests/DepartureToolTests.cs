@@ -84,7 +84,8 @@ namespace BattleCore.Tests
             {
                 Assert.That(Setup(Striker, staminaBonus: 3, startStamina: 4).StartStamina, Is.EqualTo(7), "§12: carried 4, then +3");
                 Assert.That(Setup(Striker, staminaBonus: 3, startStamina: 12).StartStamina, Is.EqualTo(13), "carried is cut to the maximum first");
-                Assert.That(Setup(Striker, staminaBonus: 6).StartStamina, Is.EqualTo(Constants.MaxStaminaCeil), "two flutes: 16 stops at 14");
+                Assert.That(Setup(Striker, staminaBonus: 6).StartStamina, Is.EqualTo(Constants.StartStaminaCeil), "two flutes: 16 stops at 14");
+                Assert.That(Constants.StartStaminaCeil, Is.EqualTo(14), "#822 raised the maximum's ceiling, not the flute's");
                 Assert.That(Setup(Striker).StartStamina, Is.EqualTo(10));
             });
         }
