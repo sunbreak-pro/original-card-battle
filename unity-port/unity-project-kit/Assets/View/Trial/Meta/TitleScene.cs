@@ -156,7 +156,7 @@ namespace Trial.Meta
             _ctx = ctx ?? throw new ArgumentNullException(nameof(ctx));
             _sound = MetaUtil.SoundOf(ctx);
             _root = MetaUtil.SceneRoot(host, "title");
-            _backdrop = MetaBackdrop.Create(_root, MetaBackdrop.LayerBackdrop(global::Trial.Script.TitleBackdropSpec.Layer),new MetaBackdrop.Options { Vignette = 0.55f, MoteSpeed = 0.7f });
+            _backdrop = MetaBackdrop.Create(_root, MetaBackdrop.LayerBackdrop(global::Trial.Script.TitleBackdropSpec.Layer), new MetaBackdrop.Options { Vignette = 0.55f, MoteSpeed = 0.7f });
             _clock = MetaUtil.SceneClock((dt, now) => { _backdrop.Paint(now); Breathe(now); }, ctx.Stage);
 
             // ---- the heir at the edge of the spring (title.js:22-30): the ground, then the figure over it ----
