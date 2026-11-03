@@ -243,6 +243,15 @@ namespace Trial.Kit
             return new FontMetrics(asc, desc, gap, table.UnderlinePosEm, table.UnderlineThicknessEm);
         }
 
+        /// <summary>The tallest content area (ascent + descent, em) among a face and its fallback chain: TMP raises a line to the tallest face in it.</summary>
+        public static float TallestContentEm(Family family, int weight)
+        {
+            float tallest = MetricsOf(family, weight).ContentEm;
+            foreach (var (cf, cw) in ChainOf(family, ResolveWeight(family, weight)))
+                tallest = Math.Max(tallest, MetricsOf(cf, cw).ContentEm);
+            return tallest;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {

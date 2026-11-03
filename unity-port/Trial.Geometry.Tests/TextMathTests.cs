@@ -52,6 +52,78 @@ namespace Trial.Geometry.Tests
             Assert.That(TextMath.CssBaselineFromTop(28f, 22f, 1.16f, 0.288f), Is.EqualTo((28f - 1.448f * 22f) / 2f + 1.16f * 22f).Within(1e-4f));
         }
 
+        // TMP's height test for a clipped label: the glyph boxes of n lines (pitch L) against the box less the margins.
+        private static bool TmpKeepsLines(FontSpec f, int lines, float boxH, float room, float tallestEm = 0f)
+        {
+            FontMetrics m = f.Metrics;
+            float glyphs = (lines - 1) * f.LineHeightPx + Math.Max(tallestEm, m.ContentEm) * f.Size;
+            float marginH = boxH - TextMath.HalfLeading(f) + room;
+            return glyphs <= marginH + 1e-4f;
+        }
+
+        [Test]
+        public void ClipRoom_CardDescriptionModeC()
+        {
+            // Ocb.Card 'c' mode at 16 px: body 16/22 in a 22 px box; the glyphs (23.168) overflow the box less the
+            // half-leading (22.584), so TMP's Ellipsis dropped the line
+            FontSpec f = TextMath.ParseFont("400 16px/22px var(--font-body)");
+            Assert.That(TmpKeepsLines(f, 1, 22f, 0f), Is.False);
+            float room = TextMath.ClipRoomPx(f.LineHeightPx, f.Size, f.Metrics.ContentEm);
+            Assert.That(room, Is.EqualTo(23.168f - 22.584f + 0.05f * 16f).Within(1e-3f));
+            Assert.That(TmpKeepsLines(f, 1, 22f, room), Is.True);
+            Assert.That(TmpKeepsLines(f, 2, 22f, room), Is.False, "the room must not fit a second line");
+        }
+
+        [Test]
+        public void ClipRoom_KitGalleryEllipsisSample()
+        {
+            // KitGallery's sample: Shippori 700 22/28 in a 28 px box; glyphs 31.856 against 29.928
+            FontSpec f = TextMath.ParseFont("700 22px/28px var(--font-display)");
+            Assert.That(TmpKeepsLines(f, 1, 28f, 0f), Is.False);
+            float room = TextMath.ClipRoomPx(f.LineHeightPx, f.Size, f.Metrics.ContentEm);
+            Assert.That(room, Is.EqualTo(31.856f - 29.928f + 0.05f * 22f).Within(1e-3f));
+            Assert.That(TmpKeepsLines(f, 1, 28f, room), Is.True);
+            Assert.That(TmpKeepsLines(f, 2, 28f, room), Is.False);
+        }
+
+        [Test]
+        public void ClipRoom_LineClampKeepsItsLines()
+        {
+            // -webkit-line-clamp: 2 on body 16/22 (box 44): both lines show, the third still ellipsises
+            FontSpec f = TextMath.ParseFont("400 16px/22px var(--font-body)");
+            float room = TextMath.ClipRoomPx(f.LineHeightPx, f.Size, f.Metrics.ContentEm);
+            Assert.That(TmpKeepsLines(f, 2, 44f, 0f), Is.False);
+            Assert.That(TmpKeepsLines(f, 2, 44f, room), Is.True);
+            Assert.That(TmpKeepsLines(f, 3, 44f, room), Is.False);
+        }
+
+        [Test]
+        public void ClipRoom_CoversTheFallbackFace()
+        {
+            // 「×n」 (Plex 600 16/1): Plex alone needs (20.8 − 16)/2, a Zen Kaku fallback glyph (1.448 em) more
+            FontSpec f = TextMath.ParseFont("600 16px/1 var(--font-mono)");
+            float own = TextMath.ClipRoomPx(f.LineHeightPx, f.Size, f.Metrics.ContentEm);
+            Assert.That(own, Is.EqualTo(2.4f + 0.8f).Within(1e-3f));
+            float withFallback = TextMath.ClipRoomPx(f.LineHeightPx, f.Size, f.Metrics.ContentEm, 1.448f);
+            Assert.That(TmpKeepsLines(f, 1, 16f, own, 1.448f), Is.False);
+            Assert.That(TmpKeepsLines(f, 1, 16f, withFallback, 1.448f), Is.True);
+            Assert.That(TmpKeepsLines(f, 2, 16f, withFallback), Is.False);
+            // a fallback shorter than the own face changes nothing
+            Assert.That(TextMath.ClipRoomPx(f.LineHeightPx, f.Size, f.Metrics.ContentEm, 1f), Is.EqualTo(own));
+        }
+
+        [TestCase("400 16px/24px var(--font-body)")]
+        [TestCase("400 15px/22px var(--font-body)")] // the 'c' mode once it shrinks to 15 px
+        [TestCase("700 22px/32px var(--font-display)")]
+        [TestCase("600 20px/30px var(--font-mono)")]
+        [TestCase("400 16px var(--font-body)")] // line-height normal: the glyph box is the line box
+        public void ClipRoom_IsZeroWhenTheLineFits(string css)
+        {
+            FontSpec f = TextMath.ParseFont(css);
+            Assert.That(TextMath.ClipRoomPx(f.LineHeightPx, f.Size, f.Metrics.ContentEm), Is.EqualTo(0f));
+            Assert.That(TextMath.ClipRoomPx(f.LineHeightPx, 0f, f.Metrics.ContentEm), Is.EqualTo(0f));
+        }
+
         [Test]
         public void LetterSpacing_IsHundredthsOfAnEm()
         {
