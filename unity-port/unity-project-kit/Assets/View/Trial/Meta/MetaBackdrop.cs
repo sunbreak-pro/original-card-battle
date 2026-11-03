@@ -10,6 +10,11 @@
 // haze's colours are linear in it), each speck's place and twinkle — and the root's CanvasGroup carries the alpha
 // (uGUI multiplies it into every graphic, as globalAlpha multiplies every draw). The backdrop sits in a canvas of its
 // own, so the specks moving every frame rebatch only it. It takes no pointer events (.ocbg-meta-backdrop).
+//
+// Unity additions of 2026-11-03, which the JS does not have (こうだいさん's request, a deliberate departure from the JS look:
+// a far view drawn in code until the painted art lands, and more sets of specks): each group of BackdropScenery is one
+// static mesh over the screen between the sky and the hazes, and every set of BackdropSpec.Specks is painted as the JS
+// paints its one set of specks (the first set is LayerBackdrop.Motes, as before).
 using System;
 using System.Collections.Generic;
 using Trial.Geometry;
@@ -20,6 +25,8 @@ using Haze = global::Backdrop.Haze;
 using HazeShape = global::Backdrop.HazeShape;
 using LayerSpec = global::Backdrop.LayerBackdrop;
 using Motes = global::Backdrop.Motes;
+using SceneryMesh = global::Backdrop.SceneryMesh;
+using SceneryVertex = global::Backdrop.SceneryVertex;
 
 namespace Trial.Meta
 {
@@ -56,13 +63,20 @@ namespace Trial.Meta
         /// <summary>Samples of a vertical haze's alpha.</summary>
         public const int Samples = 32;
 
+        /// <summary>One set of specks, its dots and half their diameter (Unity addition of 2026-11-03: the JS paints spec.Motes alone).</summary>
+        private sealed class SpeckSet
+        {
+            public Motes Motes;
+            public float Half;
+            public readonly List<GradientGraphic> Dots = new List<GradientGraphic>();
+        }
+
         private readonly Options _opts;
         private readonly BRgba _ground;
         private LayerSpec _current;
         private float _alpha = 1f;
         private readonly List<(Haze Haze, List<VectorGraphic> Parts)> _hazes = new List<(Haze, List<VectorGraphic>)>();
-        private readonly List<GradientGraphic> _motes = new List<GradientGraphic>();
-        private float _half;
+        private readonly List<SpeckSet> _specks = new List<SpeckSet>();
 
         /// <summary>The backdrop element (backdrop.canvas): 1920×1080 at (0, 0) of its host.</summary>
         public RectTransform Canvas { get; }
@@ -114,18 +128,26 @@ namespace Trial.Meta
         }
 
         // js: scenes/meta/backdrop.js:57
-        /// <summary>build(): the sky, the hazes, the specks, the veil and the vignette, in that order.</summary>
+        /// <summary>build(): the sky, the far view (a Unity addition), the hazes, the specks, the veil and the vignette, in that order.</summary>
         private void Build()
         {
             Ui.Clear(Canvas);
             _hazes.Clear();
-            _motes.Clear();
+            _specks.Clear();
 
             // the sky: a vertical gradient through the spec's stops (each At clamped to 0..1)
             var sky = new List<GradientStop>();
             foreach (global::Backdrop.SkyStop stop in _current.Sky ?? Array.Empty<global::Backdrop.SkyStop>())
                 sky.Add(GradientStop.At(MetaUtil.RgbaOf(stop.Color), Math.Max(0f, Math.Min(1f, stop.At))));
             if (sky.Count > 0) Fill("sky", LinearGradient.Points(new Vec2(0f, 0f), new Vec2(0f, H), sky.ToArray()));
+
+            // the far view (Unity addition of 2026-11-03, こうだいさん's request: a far view drawn in code; the JS has none).
+            // A group that fails is logged, and the backdrop paints on without the rest of the far view.
+            try
+            {
+                foreach (SceneryMesh mesh in global::Backdrop.BackdropScenery.Meshes(_current)) Scenery(mesh);
+            }
+            catch (Exception e) { Debug.LogException(e); }
 
             foreach (Haze haze in _current.Hazes ?? Array.Empty<Haze>())
             {
@@ -136,12 +158,13 @@ namespace Trial.Meta
                 _hazes.Add((haze, parts));
             }
 
-            Motes m = _current.Motes;
-            if (m != null && m.Count > 0)
+            // Unity addition of 2026-11-03 (こうだいさん's request: more sets of specks; the JS paints spec.Motes alone): every
+            // set of BackdropSpec.Specks, each painted as the JS paints its one.
+            foreach (Motes m in global::Backdrop.BackdropSpec.Specks(_current))
             {
                 // js: scenes/meta/backdrop.js:18 softDot(color, size)
                 float px = Math.Max(4f, (float)Math.Ceiling(m.SizePx * 2f));
-                _half = px / 2f;
+                var set = new SpeckSet { Motes = m, Half = px / 2f };
                 Rgba solid = MetaUtil.RgbaOf(m.Color.WithAlpha(1f));
                 Rgba clear = MetaUtil.RgbaOf(m.Color.WithAlpha(0f));
                 RadialGradient dot = RadialGradient.Points(new Vec2(px / 2f, px / 2f), 0f, px / 2f,
@@ -152,8 +175,9 @@ namespace Trial.Meta
                     g.Shape = GradientGraphic.ShapeKind.Ellipse;
                     g.Fringe = false;
                     g.SetPaint(dot);
-                    _motes.Add(g);
+                    set.Dots.Add(g);
                 }
+                _specks.Add(set);
             }
 
             if (_opts.Veil.HasValue)
@@ -172,6 +196,38 @@ namespace Trial.Meta
             g.Fringe = false;
             g.SetPaint(paint);
             return g;
+        }
+
+        /// <summary>
+        /// One group of BackdropScenery as a static graphic over the screen (Unity addition of 2026-11-03; the JS has none):
+        /// its corners scaled from fractions of the screen to px, each in its own colour as the canvas fill gets it
+        /// (MetaUtil.RgbaOf), laid straight over what is under it.
+        /// </summary>
+        private void Scenery(SceneryMesh mesh)
+        {
+            SceneryVertex[] vs = mesh?.Vertices ?? Array.Empty<SceneryVertex>();
+            int[] tris = mesh?.Triangles ?? Array.Empty<int>();
+            if (vs.Length == 0 || tris.Length < 3) return;
+            // converted once here, so a rebuild of the geometry (the stage resized) only copies them
+            var pos = new Vec2[vs.Length];
+            var col = new Rgba[vs.Length];
+            for (int i = 0; i < vs.Length; i++)
+            {
+                pos[i] = new Vec2(vs[i].X * W, vs[i].Y * H);
+                col[i] = MetaUtil.RgbaOf(vs[i].Color);
+            }
+            VectorGraphic.Draw(Canvas, 0f, 0f, W, H, (mb, box, feather) =>
+            {
+                int b = mb.VertexCount;
+                for (int i = 0; i < pos.Length; i++) mb.AddVertex(pos[i], col[i]);
+                // VectorGraphic drops only an index past the end; a negative one would reach uGUI, so a corner the mesh lacks drops its triangle here
+                for (int t = 0; t + 2 < tris.Length; t += 3)
+                {
+                    int p = tris[t], q = tris[t + 1], r = tris[t + 2];
+                    if ((uint)p >= (uint)pos.Length || (uint)q >= (uint)pos.Length || (uint)r >= (uint)pos.Length) continue;
+                    mb.AddTri(b + p, b + q, b + r);
+                }
+            }, "scenery");
         }
 
         // js: scenes/meta/backdrop.js:69
@@ -239,16 +295,16 @@ namespace Trial.Meta
                 float lit = global::Backdrop.BackdropMotion.FlickerAlpha(haze.Flicker, ms);
                 foreach (VectorGraphic p in parts) if (p) p.Opacity = lit;
             }
-            Motes m = _current.Motes;
-            if (_motes.Count > 0 && m != null)
+            double t = ms * _opts.MoteSpeed;
+            foreach (SpeckSet set in _specks)
             {
-                double t = ms * _opts.MoteSpeed;
-                for (int i = 0; i < _motes.Count; i++)
+                Motes m = set.Motes;
+                for (int i = 0; i < set.Dots.Count; i++)
                 {
-                    GradientGraphic g = _motes[i];
+                    GradientGraphic g = set.Dots[i];
                     if (!g) continue;
                     global::Backdrop.BackdropMotion.MoteAt(m, i, t, W, H, out float x, out float y);
-                    Ui.Place(g.rectTransform, x - _half, y - _half);
+                    Ui.Place(g.rectTransform, x - set.Half, y - set.Half);
                     g.Opacity = m.Color.A * global::Backdrop.BackdropMotion.MoteAlpha(m, i, t);
                 }
             }
