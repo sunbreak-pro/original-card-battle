@@ -8,8 +8,9 @@ namespace BattleCore
     ///
     /// The old tier table used to be a range the player picked at play time. It is now a design-time
     /// ruler: a card is written into one column, the column number is its cost, and that column's
-    /// value is its effect. Column 4 is the exception — it still costs 3, so that 集中 and 習熟 have
-    /// a rung above a cost-3 card to climb to.
+    /// value is its effect, column 4 included (cost 4 since #823). 集中 and 習熟's 伸び still climb a
+    /// cost-3 card into column 4, but neither touches the cost: 集中 leaves the card's column alone
+    /// and only reads the next column's values, and 伸び pins the cost it had (CardDef.FixedCost).
     ///
     /// The heal scales came in with the eighty cards (#188), the 出血 / 再生 stack scale with #48:
     /// 集中 reads them to find the column to the right. The stance step-up stays on the cards
@@ -67,10 +68,12 @@ namespace BattleCore
         /// <summary>§3.1: how many status kinds a single-attribute skill face applies. Column 4 also draws 1.</summary>
         public static readonly IReadOnlyList<int> SingleSkillKinds = new[] { 1, 2, 3, 3 };
 
-        /// <summary>§3: the column number is the cost, except that column 4 still costs 3.</summary>
+        /// <summary>§3: the column number is the cost.</summary>
         public static int CostOf(int column)
         {
             Validate(column);
+            // The clamp is a no-op while CostMax == ColumnCount; it keeps the cost inside §10's range
+            // should the two ever part again (column 4 cost 3 until #823).
             return Math.Min(column, Constants.CostMax);
         }
 
