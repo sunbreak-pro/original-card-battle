@@ -42,18 +42,26 @@ namespace Backdrop
         /// </summary>
         public static void MoteAt(Motes motes, int index, double ms, float width, float height, out float x, out float y)
         {
+            int k = Keyed(motes, index);
             double seconds = ms / 1000.0;
-            double sway = System.Math.Sin(seconds * 0.6 + Hash(index, 3) * 6.283) * 12.0;
-            x = (float)Wrap(Hash(index, 1) * width + motes.SpeedX * seconds + sway, width);
-            y = (float)Wrap(Hash(index, 2) * height + motes.SpeedY * seconds, height);
+            double sway = motes.Still ? 0.0 : System.Math.Sin(seconds * 0.6 + Hash(k, 3) * 6.283) * 12.0;
+            x = (float)Wrap(Hash(k, 1) * width + motes.SpeedX * seconds + sway, width);
+            y = (float)Wrap(Hash(k, 2) * height + motes.SpeedY * seconds, height);
         }
 
         /// <summary>The share of speck <paramref name="index"/>'s alpha lit at <paramref name="ms"/>, each speck on its own beat.</summary>
         public static float MoteAlpha(Motes motes, int index, double ms)
         {
             if (motes.Twinkle <= 0f) return 1f;
-            double beat = 1.5 + Hash(index, 4) * 2.5; // seconds per twinkle
-            return 1f - motes.Twinkle * (float)CosineDip(ms / 1000.0 / beat + Hash(index, 5));
+            int k = Keyed(motes, index);
+            double beat = 1.5 + Hash(k, 4) * 2.5; // seconds per twinkle
+            return 1f - motes.Twinkle * (float)CosineDip(ms / 1000.0 / beat + Hash(k, 5));
+        }
+
+        /// <summary>The index the hash reads for speck <paramref name="index"/> of <paramref name="motes"/>: the index itself when the seed is 0, as before there were several sets.</summary>
+        private static int Keyed(Motes motes, int index)
+        {
+            return unchecked(index + motes.Seed * 100003);
         }
 
         /// <summary>

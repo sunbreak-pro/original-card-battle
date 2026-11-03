@@ -122,6 +122,13 @@ namespace Backdrop
         public float SpeedY;
         /// <summary>How far each speck's alpha dips as it twinkles, 0 (steady) to 1.</summary>
         public float Twinkle;
+        /// <summary>
+        /// Picks the specks' places and beats. A layer with more than one set gives each its own seed, so the sets
+        /// never land on the same places; 0 keeps the places every layer had before there were several.
+        /// </summary>
+        public int Seed;
+        /// <summary>The specks hold their places and only twinkle (a field of stars): no sway. Their speed should be 0.</summary>
+        public bool Still;
 
         public static readonly Motes None = new Motes();
     }
@@ -135,6 +142,10 @@ namespace Backdrop
         public SkyStop[] Sky;
         public Haze[] Hazes;
         public Motes Motes = Motes.None;
+        /// <summary>Further sets of specks, drawn after <see cref="Motes"/> (the stars of layer 7, the pollen of layer 1).</summary>
+        public Motes[] MoreMotes = System.Array.Empty<Motes>();
+        /// <summary>The far view drawn in code, back to front, between the sky and the haze (BackdropScenery).</summary>
+        public Scenery[] Scenery = System.Array.Empty<Scenery>();
         /// <summary>床のタイル: the fill of a floor cell, drawn by the floor over the backdrop.</summary>
         public Rgba Tile;
     }
@@ -276,6 +287,19 @@ namespace Backdrop
             return layer > Layers ? Layers : layer;
         }
 
+        /// <summary>Every set of specks <paramref name="backdrop"/> draws, in drawing order: <see cref="LayerBackdrop.Motes"/>, then <see cref="LayerBackdrop.MoreMotes"/>. Empty sets are left out.</summary>
+        public static Motes[] Specks(LayerBackdrop backdrop)
+        {
+            var all = new System.Collections.Generic.List<Motes>();
+            if (backdrop == null) return all.ToArray();
+            if (backdrop.Motes != null && backdrop.Motes.Count > 0) all.Add(backdrop.Motes);
+            foreach (Motes m in backdrop.MoreMotes ?? System.Array.Empty<Motes>())
+            {
+                if (m != null && m.Count > 0) all.Add(m);
+            }
+            return all.ToArray();
+        }
+
         /// <summary>The sky's colour at <paramref name="y"/> (0 top, 1 bottom), straight between its stops.</summary>
         public static Rgba SkyAt(LayerBackdrop backdrop, float y)
         {
@@ -323,9 +347,29 @@ namespace Backdrop
         /// <summary>The brightest the backdrop gets at height <paramref name="y"/>: the sky with every haze laid on at its densest.</summary>
         public static Rgba BrightestAt(LayerBackdrop backdrop, float y)
         {
-            Rgba under = SkyAt(backdrop, y);
-            foreach (Haze haze in backdrop.Hazes) under = Over(haze.Color.WithAlpha(HazeAlphaAt(haze, y)), under);
+            return BrightestOver(backdrop, SkyAt(backdrop, y), y);
+        }
+
+        /// <summary>
+        /// The opaque <paramref name="under"/> (the sky, or a far shape laid on it) with every haze of
+        /// <paramref name="backdrop"/> laid on at its densest at height <paramref name="y"/>, as the haze lays over
+        /// whatever stands under it.
+        /// </summary>
+        public static Rgba BrightestOver(LayerBackdrop backdrop, Rgba under, float y)
+        {
+            foreach (Haze haze in backdrop.Hazes ?? System.Array.Empty<Haze>()) under = Over(haze.Color.WithAlpha(HazeAlphaAt(haze, y)), under);
             return under;
+        }
+
+        /// <summary>
+        /// The brightest the backdrop gets where a far shape draws <paramref name="point"/>: the point's colour laid on
+        /// the sky at its height, every haze laid over that at its densest. The contrast checks read the far view
+        /// through this, so a glowing crystal may shine above the sky as long as the text and the red still read on it.
+        /// </summary>
+        public static Rgba BrightestWith(LayerBackdrop backdrop, SceneryVertex point)
+        {
+            float y = point.Y < 0f ? 0f : point.Y > 1f ? 1f : point.Y;
+            return BrightestOver(backdrop, Over(point.Color, SkyAt(backdrop, y)), y);
         }
 
         /// <summary><paramref name="top"/> laid over the opaque <paramref name="under"/> at the top's alpha (sRGB, as the mockups do).</summary>
@@ -356,7 +400,8 @@ namespace Backdrop
 
         /// <summary>
         /// The lowest contrast the reach red gets on <paramref name="backdrop"/>'s floor tile, over the
-        /// floor's band from top to bottom, with every haze at its densest (battle-visual-v1 §2.3).
+        /// floor's band from top to bottom, with every haze at its densest (battle-visual-v1 §2.3), over the far
+        /// view too where it reaches into the band.
         /// </summary>
         public static double ReachRedContrast(LayerBackdrop backdrop)
         {
@@ -366,6 +411,11 @@ namespace Backdrop
                 float y = FloorTop + (FloorBottom - FloorTop) * step / 8f;
                 Rgba tile = Over(backdrop.Tile, BrightestAt(backdrop, y));
                 lowest = System.Math.Min(lowest, Contrast(ReachRed, tile));
+            }
+            foreach (SceneryVertex p in BackdropScenery.Samples(backdrop))
+            {
+                if (p.Y < FloorTop || p.Y > FloorBottom) continue;
+                lowest = System.Math.Min(lowest, Contrast(ReachRed, Over(backdrop.Tile, BrightestWith(backdrop, p))));
             }
             return lowest;
         }

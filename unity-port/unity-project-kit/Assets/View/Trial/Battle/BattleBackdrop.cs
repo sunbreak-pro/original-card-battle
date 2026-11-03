@@ -19,6 +19,11 @@
 // (MeshBuilder.ApplyAlphaRamp, the canvas's destination-in) and cut at it; a radial haze is a fan of its closest-side
 // radial gradient (alpha linear in r: exact along every spoke) instead of the kit's 6 px refinement, which would put tens
 // of thousands of vertices into a haze 970 px across. Only opacities and the motes' places change per frame.
+//
+// Unity additions of 2026-11-03, which the JS does not have (こうだいさん's request, a deliberate departure from the JS look:
+// a far view drawn in code until the painted art lands, and more sets of specks): each group of BackdropScenery is one
+// static mesh over the stage between the sky and the earth, where the layer's art will go (battle-visual-v1 §2.4), and
+// every set of BackdropSpec.Specks drifts as the JS's one set of motes does (the first set is LayerBackdrop.Motes, as before).
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -78,11 +83,17 @@ namespace Trial.Battle
             public float? Drawn;
         }
 
+        /// <summary>One set of specks and its elements (Unity addition of 2026-11-03: the JS draws LayerBackdrop.Motes alone).</summary>
+        private sealed class SpeckSet
+        {
+            public Motes Motes;
+            public readonly List<GradientGraphic> Els = new List<GradientGraphic>();
+        }
+
         private readonly BattleViewEnv _env;
         private RectTransform _root;
         private readonly List<HazeEl> _hazes = new List<HazeEl>();
-        private readonly List<GradientGraphic> _motes = new List<GradientGraphic>();
-        private Motes _m;
+        private readonly List<SpeckSet> _specks = new List<SpeckSet>();
         private bool _drawnStill;
         private Action _off;
 
@@ -111,7 +122,7 @@ namespace Trial.Battle
         // js: scenes/battle/field/backdrop.js:31
         public static BattleBackdrop Create(BattleViewEnv env, int layerNo) => new BattleBackdrop(env, layerNo);
 
-        /// <summary>The sky, the earth, the hazes, the motes and the horizon, bottom → top.</summary>
+        /// <summary>The sky, the far view (a Unity addition), the earth, the hazes, the motes and the horizon, bottom → top.</summary>
         // js: scenes/battle/field/backdrop.js:41
         private void Build(LayerBackdrop spec)
         {
@@ -119,6 +130,14 @@ namespace Trial.Battle
             var stops = new List<string>();
             foreach (SkyStop s in spec.Sky ?? Array.Empty<SkyStop>()) stops.Add(RgbaCss(s.Color) + " " + Fixed(s.At * 100f, 2) + "%");
             NoFringe(GradientGraphic.Css(_root, "linear-gradient(180deg, " + string.Join(", ", stops) + ")", 0f, 0f, W, H, false, "ocbg-battle-sky"));
+
+            // ---- the far view (Unity addition of 2026-11-03, こうだいさん's request: a far view drawn in code; the JS has none) ----
+            // A group that fails is logged like a spec that fails, and the backdrop draws on without the rest of the far view.
+            try
+            {
+                foreach (SceneryMesh mesh in BackdropScenery.Meshes(spec)) SceneryElement(_root, mesh);
+            }
+            catch (Exception e) { _env?.Log.Error(null, e); }
 
             // ---- the earth (DS addition): dark from the horizon down ----
             NoFringe(GradientGraphic.Css(_root, EarthImage, 0f, EarthTop, W, EarthH, false, "ocbg-battle-earth"));
@@ -131,17 +150,20 @@ namespace Trial.Battle
             }
 
             // ---- the specks (BackdropMotion.MoteAt / MoteAlpha) ----
-            _m = spec.Motes;
-            if (_m != null && _m.Count > 0)
+            // Unity addition of 2026-11-03 (こうだいさん's request: more sets of specks; the JS draws spec.Motes alone): every
+            // set of BackdropSpec.Specks, each drawn as the JS draws its one.
+            foreach (Motes m in BackdropSpec.Specks(spec))
             {
-                float size = _m.SizePx;
-                string image = "radial-gradient(closest-side, " + RgbaCss(_m.Color) + ", " + RgbaCss(_m.Color, 0.6f) + " 60%, transparent)";
-                for (int i = 0; i < _m.Count; i++)
+                var set = new SpeckSet { Motes = m };
+                float size = m.SizePx;
+                string image = "radial-gradient(closest-side, " + RgbaCss(m.Color) + ", " + RgbaCss(m.Color, 0.6f) + " 60%, transparent)";
+                for (int i = 0; i < m.Count; i++)
                 {
                     // .ocbg-battle-mote: border-radius 50%, margin −size/2 (the transform places its middle)
                     GradientGraphic el = GradientGraphic.Css(_root, image, -size / 2f, -size / 2f, size, size, true, "ocbg-battle-mote");
-                    _motes.Add(el);
+                    set.Els.Add(el);
                 }
+                _specks.Add(set);
             }
 
             // ---- the horizon (layout.md: y 556) ----
@@ -179,16 +201,20 @@ namespace Trial.Battle
                 hz.Drawn = a;
                 if (hz.El) hz.El.Opacity = Round(a, 3);
             }
-            for (int i = 0; i < _motes.Count; i++)
+            double t = still ? 0.0 : now;
+            foreach (SpeckSet set in _specks)
             {
-                GradientGraphic el = _motes[i];
-                if (!el) continue;
-                double t = still ? 0.0 : now;
-                BackdropMotion.MoteAt(_m, i, t, W, H, out float x, out float y);
-                // transform: translate(x.toFixed(1)px, y.toFixed(1)px) over margin −size/2
-                float half = _m.SizePx / 2f;
-                el.rectTransform.anchoredPosition = new Vector2(Round(x, 1) - half, -(Round(y, 1) - half));
-                el.Opacity = Round(BackdropMotion.MoteAlpha(_m, i, t), 3);
+                Motes m = set.Motes;
+                float half = m.SizePx / 2f;
+                for (int i = 0; i < set.Els.Count; i++)
+                {
+                    GradientGraphic el = set.Els[i];
+                    if (!el) continue;
+                    BackdropMotion.MoteAt(m, i, t, W, H, out float x, out float y);
+                    // transform: translate(x.toFixed(1)px, y.toFixed(1)px) over margin −size/2
+                    el.rectTransform.anchoredPosition = new Vector2(Round(x, 1) - half, -(Round(y, 1) - half));
+                    el.Opacity = Round(BackdropMotion.MoteAlpha(m, i, t), 3);
+                }
             }
         }
 
@@ -209,7 +235,7 @@ namespace Trial.Battle
             if (_root) Ui.Remove(_root);
             _root = null;
             _hazes.Clear();
-            _motes.Clear();
+            _specks.Clear();
         }
 
         // ---- the hazes ---------------------------------------------------------------------------------------
@@ -339,6 +365,39 @@ namespace Trial.Battle
                 mb.AddVertex(new Vec2(cx + rx * (float)Math.Cos(a), cy + ry * (float)Math.Sin(a)), rim);
             }
             for (int k = 0; k < RadialSpokes; k++) mb.AddTri(mid, first + k, first + (k + 1) % RadialSpokes);
+        }
+
+        // ---- the far view (Unity addition of 2026-11-03; the JS has none) ------------------------------------
+
+        /// <summary>
+        /// One group of BackdropScenery as a static graphic over the stage: its corners scaled from fractions of the stage to
+        /// px, each in its own colour (rgba(c) parsed, as the hazes take theirs), laid straight over what is under it.
+        /// </summary>
+        private static void SceneryElement(RectTransform root, SceneryMesh mesh)
+        {
+            SceneryVertex[] vs = mesh?.Vertices ?? Array.Empty<SceneryVertex>();
+            int[] tris = mesh?.Triangles ?? Array.Empty<int>();
+            if (vs.Length == 0 || tris.Length < 3) return;
+            // converted once here, so a rebuild of the geometry (the stage resized) only copies them
+            var pos = new Vec2[vs.Length];
+            var col = new GRgba[vs.Length];
+            for (int i = 0; i < vs.Length; i++)
+            {
+                pos[i] = new Vec2(vs[i].X * W, vs[i].Y * H);
+                col[i] = CssColor.Parse(RgbaCss(vs[i].Color));
+            }
+            VectorGraphic.Draw(root, 0f, 0f, W, H, (mb, box, feather) =>
+            {
+                int b = mb.VertexCount;
+                for (int i = 0; i < pos.Length; i++) mb.AddVertex(pos[i], col[i]);
+                // VectorGraphic drops only an index past the end; a negative one would reach uGUI, so a corner the mesh lacks drops its triangle here
+                for (int t = 0; t + 2 < tris.Length; t += 3)
+                {
+                    int p = tris[t], q = tris[t + 1], r = tris[t + 2];
+                    if ((uint)p >= (uint)pos.Length || (uint)q >= (uint)pos.Length || (uint)r >= (uint)pos.Length) continue;
+                    mb.AddTri(b + p, b + q, b + r);
+                }
+            }, "ocbg-battle-scenery");
         }
 
         // ---- helpers ---------------------------------------------------------------------------------------

@@ -53,7 +53,10 @@ namespace Backdrop
             return BackdropSpec.Over(backdrop.Veil, BackdropSpec.BrightestAt(backdrop.Place, y));
         }
 
-        /// <summary>The lowest contrast <paramref name="ink"/> gets on the veiled backdrop, top to bottom, every haze at its densest.</summary>
+        /// <summary>
+        /// The lowest contrast <paramref name="ink"/> gets on the veiled backdrop, top to bottom, every haze at its
+        /// densest, and on every point of the far view (the map's labels may stand anywhere on it).
+        /// </summary>
         public static double LowestContrast(ExplorationBackdrop backdrop, Rgba ink)
         {
             double lowest = double.MaxValue;
@@ -62,16 +65,24 @@ namespace Backdrop
                 Rgba under = BrightestAt(backdrop, step / (float)Steps);
                 lowest = System.Math.Min(lowest, BackdropSpec.Contrast(ink, under));
             }
+            foreach (SceneryVertex p in BackdropScenery.Samples(backdrop.Place))
+            {
+                lowest = System.Math.Min(lowest, BackdropSpec.Contrast(ink, BackdropSpec.Over(backdrop.Veil, BackdropSpec.BrightestWith(backdrop.Place, p))));
+            }
             return lowest;
         }
 
-        /// <summary>The brightest luminance the veiled backdrop reaches anywhere, for comparing layers.</summary>
+        /// <summary>The brightest luminance the veiled backdrop reaches anywhere, the far view included, for comparing layers.</summary>
         public static double PeakLuminance(ExplorationBackdrop backdrop)
         {
             double peak = 0;
             for (int step = 0; step <= Steps; step++)
             {
                 peak = System.Math.Max(peak, BackdropSpec.Luminance(BrightestAt(backdrop, step / (float)Steps)));
+            }
+            foreach (SceneryVertex p in BackdropScenery.Samples(backdrop.Place))
+            {
+                peak = System.Math.Max(peak, BackdropSpec.Luminance(BackdropSpec.Over(backdrop.Veil, BackdropSpec.BrightestWith(backdrop.Place, p))));
             }
             return peak;
         }
