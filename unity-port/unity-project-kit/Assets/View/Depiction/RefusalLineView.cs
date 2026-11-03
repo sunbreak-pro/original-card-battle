@@ -31,6 +31,7 @@ namespace Depiction.View
                 new Vector2(RefusalLineLayout.DotSize, RefusalLineLayout.DotSize), new Vector2(RefusalLineLayout.Pad, 0f));
             _text = UiKit.Label(_root, "Text", RefusalLineLayout.TextSize, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(0f, RefusalLineLayout.Height), new Vector2(RefusalLineLayout.Pad + RefusalLineLayout.DotSize + RefusalLineLayout.DotGap, 0f));
+            BattleFonts.Use(_text, BattleFonts.Body);
             _text.horizontalOverflow = HorizontalWrapMode.Overflow;
             _root.gameObject.SetActive(false);
         }

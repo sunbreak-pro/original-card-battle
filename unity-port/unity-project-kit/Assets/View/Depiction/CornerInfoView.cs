@@ -14,6 +14,15 @@ namespace Depiction.View
         public Text chainText;
         public Text miasmaText;
 
+        private void Awake()
+        {
+            // §3.1 20 px: the numbers in IBM Plex Mono 600. The chain's ● / ○ are not in that face, so the
+            // chain keeps the default one.
+            BattleFonts.Use(turnText, BattleFonts.CornerNumber);
+            BattleFonts.Use(floorText, BattleFonts.CornerNumber);
+            BattleFonts.Use(miasmaText, BattleFonts.CornerNumber);
+        }
+
         public void Bind(CornerFrame corner)
         {
             if (turnText) turnText.text = corner.Turn.ToString();

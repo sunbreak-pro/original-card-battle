@@ -7,6 +7,7 @@ using System.Linq;
 using BattleCore;
 using Depiction.Bridge;
 using DungeonCore;
+using Journal;
 using NUnit.Framework;
 
 namespace Exploration.Bridge.Tests
@@ -175,25 +176,114 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
-        public void AnExpeditionsDeath_LeavesItsGrownCardsAndTheEnemyPagesItsJournalFilled()
+        public void AnExpeditionsDeath_LeavesItsGrownCardsAndTheJournalsFilledPages()
         {
             var expedition = new Expedition(new RunStart { Seed = 4, Traces = Ledger(1) });
             WalkTo(expedition, NodeKind.Trace);
             Assert.That(HeritagePicks.Confirm(expedition, new[] { "card:" + CardCatalog.Thrust.Id }), Is.True);
             WalkTo(expedition, NodeKind.Battle, winLast: false);
 
-            var pages = Enemies.All
+            var pages = EnemyJournal.All
                 .Where(e => expedition.DisclosureOf(e.Id) >= 1)
-                .Select(e => "page:" + DisclosedEnemyPages.PageIdOf(e.Id))
+                .Select(e => "page:" + EnemyJournal.PageId(e.Id))
                 .ToList();
             Assert.That(pages, Is.Not.Empty, "the battles on the way filled the journal");
+            string enemy = EnemyJournal.All.First(e => expedition.DisclosureOf(e.Id) >= 1).Id;
+            expedition.Journal.Meet(DungeonJournal.EventId(1, "spring"));
+            expedition.Journal.Memo.Write("罠に注意", enemy);
             Assert.That(expedition.Session.Act(ScreenAction.FallInBattle), Is.True);
 
             DeathTrace trace = expedition.Session.Traces.Traces.Single();
             Assert.That(trace.Candidates.Select(c => c.Key),
-                Is.EqualTo(new[] { "card:" + CardCatalog.Thrust.Id }.Concat(pages).ToList()),
-                "the card the life took in at step 1, then a page for each enemy met");
-            Assert.That(trace.Candidates.First(c => c.Kind == LegacyKind.Page).Title, Does.EndWith("の頁"));
+                Is.EqualTo(new[] { "card:" + CardCatalog.Thrust.Id }.Concat(pages).Concat(new[] { "page:" + DungeonJournal.PageId(1), "page:memo-1" }).ToList()),
+                "the card the life took in at step 1, then the enemy pages, a layer's dungeon page and the note; the page of terms is never on it");
+            Assert.That(trace.Candidates.Where(c => c.Kind == LegacyKind.Page).Select(c => c.Title),
+                Is.EqualTo(expedition.Journal.LegacyLines().Select(l => l.Text).ToList()), "each page is its journal line (§6.11)");
+        }
+
+        [Test]
+        public void APageChosen_GoesIntoTheNextLivesJournal_AtTheLevelItHeld()
+        {
+            string enemy = EnemyJournal.All[0].Id;
+            string other = EnemyJournal.All[1].Id;
+            string spring = DungeonJournal.EventId(1, "spring");
+            var pages = new[]
+            {
+                new LegacyPage(EnemyJournal.PageId(enemy), "敵", new Dictionary<string, int> { [enemy] = 2 }),
+                new LegacyPage(DungeonJournal.PageId(1), "ダンジョン", new Dictionary<string, int> { [spring] = 2 }),
+                new LegacyPage("memo-1", "メモ", null, "罠に注意", other),
+            };
+            var expedition = new Expedition(new RunStart { Seed = 4, Traces = LedgerOf(1, pages) });
+            WalkTo(expedition, NodeKind.Trace);
+            Assert.That(expedition.DisclosureOf(enemy), Is.EqualTo(0), "the life has not met it");
+            Assert.That(expedition.Journal.EntryLevel(spring), Is.EqualTo(0));
+
+            Assert.That(HeritagePicks.Confirm(expedition, pages.Select(p => "page:" + p.PageId).ToList()), Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(expedition.DisclosureOf(enemy), Is.EqualTo(2));
+                Assert.That(expedition.Journal.EnemyPages().Select(p => p.Id), Does.Contain(EnemyJournal.PageId(enemy)));
+                Assert.That(expedition.Journal.EntryLevel(spring), Is.EqualTo(2));
+                MemoNote note = expedition.Journal.Memo.Notes.Single();
+                Assert.That(note.Text, Is.EqualTo("罠に注意"));
+                Assert.That(note.EnemyId, Is.EqualTo(other));
+                Assert.That(expedition.InheritedLegacyPages.Select(p => p.PageId), Is.EqualTo(pages.Select(p => p.PageId)));
+            });
+        }
+
+        [Test]
+        public void APageHoldingLess_NeverLowersWhatTheLifeKnows()
+        {
+            string enemy = EnemyJournal.All[0].Id;
+            string spring = DungeonJournal.EventId(1, "spring");
+            var pages = new[]
+            {
+                new LegacyPage(EnemyJournal.PageId(enemy), "敵", new Dictionary<string, int> { [enemy] = 1 }),
+                new LegacyPage(DungeonJournal.PageId(1), "ダンジョン", new Dictionary<string, int> { [spring] = 1 }),
+                new LegacyPage("p9", "a page this journal does not know"),
+            };
+            var expedition = new Expedition(new RunStart { Seed = 4, Traces = LedgerOf(1, pages) },
+                journal: new Dictionary<string, int> { [enemy] = 2 });
+            WalkTo(expedition, NodeKind.Trace);
+            expedition.Journal.Read(spring);
+
+            Assert.That(HeritagePicks.Confirm(expedition, pages.Select(p => "page:" + p.PageId).ToList()), Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(expedition.DisclosureOf(enemy), Is.EqualTo(2));
+                Assert.That(expedition.Journal.EntryLevel(spring), Is.EqualTo(2));
+                Assert.That(expedition.Journal.Memo.Notes, Is.Empty, "a page with no words is no note");
+            });
+        }
+
+        [Test]
+        public void ADeadLifesJournal_ComesBackThroughTheTraceItLeft()
+        {
+            var first = new Expedition(new RunStart { Seed = 4 });
+            WalkTo(first, NodeKind.Battle, winLast: false);
+            string enemy = EnemyJournal.All.First(e => first.DisclosureOf(e.Id) >= 1).Id;
+            var levels = EnemyJournal.All.ToDictionary(e => e.Id, e => first.DisclosureOf(e.Id));
+            first.Journal.Meet(DungeonJournal.EventId(1, "spring"));
+            first.Journal.Memo.Write("罠に注意", enemy);
+            Assert.That(first.Session.Act(ScreenAction.FallInBattle), Is.True);
+            DeathTrace trace = first.Session.Traces.Traces.Single();
+
+            var second = new Expedition(new RunStart { Seed = 5, Traces = TraceLedger.Empty.Add(trace) });
+            WalkTo(second, NodeKind.Trace);
+            var keys = trace.Candidates.Where(c => c.Kind == LegacyKind.Page).Select(c => c.Key).ToList();
+            Assert.That(keys.Count, Is.GreaterThanOrEqualTo(3), "the enemy page, the dungeon page and the note");
+            keys = keys.Skip(keys.Count - 3).ToList();
+            Assert.That(HeritagePicks.Confirm(second, keys), Is.True);
+            Assert.Multiple(() =>
+            {
+                Assert.That(second.Journal.EntryLevel(DungeonJournal.EventId(1, "spring")), Is.EqualTo(1));
+                Assert.That(second.Journal.Memo.Notes.Select(n => (n.Text, n.EnemyId)), Is.EqualTo(new[] { ("罠に注意", enemy) }));
+                foreach (string key in keys.Where(k => k.StartsWith("page:enemy-", StringComparison.Ordinal)))
+                {
+                    string id = key.Substring("page:enemy-".Length);
+                    Assert.That(second.DisclosureOf(id), Is.EqualTo(levels[id]), id);
+                }
+            });
         }
 
         [Test]
@@ -271,6 +361,11 @@ namespace Exploration.Bridge.Tests
             }
             return ledger;
         }
+
+        /// <summary>A ledger with one trace on a layer that offers these pages and no card.</summary>
+        private static TraceLedger LedgerOf(int layer, params LegacyPage[] pages) =>
+            TraceLedger.Empty.Add(new DeathTrace(1, 1, Heritage.StandInName(1), new DeathPlace(layer, NodeKind.Battle),
+                DeathCause.Fallen, Heritage.Candidates(layer, Array.Empty<LegacyCard>(), pages)));
 
         private sealed class Pages : ILegacyPages
         {

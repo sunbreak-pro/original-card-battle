@@ -63,13 +63,17 @@ namespace Exploration
 
         public const string FarNode = "遠いノードは種別しか分かりません";
 
-        /// <summary>An item's name from the catalogue, or its id when the catalogue does not know it.</summary>
-        public static string ItemName(string id) =>
-            ItemCatalogue.All.FirstOrDefault(i => i.Id == id)?.Name ?? id;
+        /// <summary>An item's name from the catalogue. An id the catalogue does not know throws.</summary>
+        public static string ItemName(string id) => Item(id).Name;
 
-        /// <summary>The catalogue's note without the design-document pointers it carries for the team.</summary>
-        public static string ItemNote(string id) =>
-            DocPointer.Replace(ItemCatalogue.All.FirstOrDefault(i => i.Id == id)?.Note ?? "", "").Trim();
+        /// <summary>The catalogue's note without the design-document pointers it carries for the team. An unknown id throws.</summary>
+        public static string ItemNote(string id) => DocPointer.Replace(Item(id).Note ?? "", "").Trim();
+
+        // Every id the screen holds comes from ItemCatalogue, so an unknown one is a bug upstream: it stops here, as
+        // ItemCatalogue.Tool and Consumable do, rather than printing the raw id on screen (#598).
+        private static ItemDef Item(string id) =>
+            ItemCatalogue.All.FirstOrDefault(i => i.Id == id)
+            ?? throw new ArgumentOutOfRangeException(nameof(id), id, "no such item in ItemCatalogue");
 
         private static readonly Regex DocPointer = new Regex(@"（[^（）]*\.md[^（）]*）");
 

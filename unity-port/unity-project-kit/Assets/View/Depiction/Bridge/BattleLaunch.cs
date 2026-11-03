@@ -149,7 +149,8 @@ namespace Depiction.Bridge
             }
             if (PlayerStartCell < 1) throw new ArgumentOutOfRangeException(nameof(PlayerStartCell), PlayerStartCell, "cell 1 or further right.");
             return new BattleSetup(enemy, BuildDeck(), FieldCells, StartGap, PlayerStartCell, PlayerMaxHp, MaxStamina, more,
-                StartHp, StartStamina, StartStaminaBonus, FirstHitGuard, BossWordWard);
+                PlayerStartHp: StartHp, PlayerStartStamina: StartStamina,
+                PlayerStartStaminaBonus: StartStaminaBonus, FirstHitGuard: FirstHitGuard, BossWordWard: BossWordWard);
         }
 
         /// <summary>

@@ -59,7 +59,7 @@ namespace Depiction.View
             VisualArt.Ring(_followUp, "Edge", BattleTheme.Line, 6, 1);
             _followUpText = UiKit.Label(_followUp, "Text", PlayedLayout.FollowUpText, TextAnchor.MiddleCenter, BattleTheme.Phosphor,
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), size, Vector2.zero);
-            _followUpText.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_followUpText, BattleFonts.PanelNumber);
             _followUpText.horizontalOverflow = HorizontalWrapMode.Overflow;
             _followUp.gameObject.SetActive(false);
             _root.gameObject.SetActive(false);
@@ -153,7 +153,7 @@ namespace Depiction.View
             slot.BadgeEdge.type = Image.Type.Sliced;
             slot.BadgeText = UiKit.Label(slot.Badge, "Text", PlayedLayout.BadgeText, TextAnchor.MiddleCenter, BattleTheme.Ink, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 badgeSize, Vector2.zero);
-            slot.BadgeText.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(slot.BadgeText, BattleFonts.Fine);
             slot.BadgeText.horizontalOverflow = HorizontalWrapMode.Overflow;
             slot.Badge.gameObject.SetActive(false);
 
@@ -189,7 +189,7 @@ namespace Depiction.View
             _text = UiKit.Label(_root, "Text", ReserveHintLayout.TextSize, TextAnchor.MiddleLeft, BattleTheme.Guard, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(ReserveHintLayout.TextWidth, ReserveHintLayout.Height),
                 new Vector2(ReserveHintLayout.Pad + ReserveHintLayout.ShieldSize + ReserveHintLayout.TextGap, 0f));
-            _text.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_text, BattleFonts.PanelNumber);
             _text.horizontalOverflow = HorizontalWrapMode.Overflow;
             _root.gameObject.SetActive(false);
         }

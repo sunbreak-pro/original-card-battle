@@ -31,8 +31,8 @@ namespace Exploration.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(departure.StartCellsBack, Is.EqualTo(expected.StartCellsBack));
-                Assert.That(departure.StartStaminaBonus, Is.EqualTo(expected.StartStamina));
-                Assert.That(departure.FirstHitGuard, Is.EqualTo(expected.OpeningGuard));
+                Assert.That(departure.StartStaminaBonus, Is.EqualTo(expected.StartStaminaBonus));
+                Assert.That(departure.FirstHitGuard, Is.EqualTo(expected.FirstHitGuard));
                 Assert.That(departure.BossWordWard, Is.EqualTo(expected.BossWordWard));
                 Assert.That(departure.BossWordWard, Is.EqualTo(2), "the same tool in two slots counts twice");
             });

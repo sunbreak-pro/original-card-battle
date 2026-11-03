@@ -150,7 +150,7 @@ namespace Trial.Explore
         {
             if (Screen == null) return;
             bool hovering = Hovered >= 0 && Hovered != Pinned;
-            NodeCard node = Screen.Node(hovering ? Hovered : Pinned);
+            NodePanel node = Screen.Node(hovering ? Hovered : Pinned);
             string key = (node != null ? node.Id : -1) + "|" + hovering + "|" + Busy + "|" + (Plate != null);
             if (Screen == DetailScreen && key == DetailKey) return;
             DrawLegend(hovering ? Screen.Node(Pinned) : node);
@@ -184,7 +184,7 @@ namespace Trial.Explore
         /// Builds the panel's content at a fit level (0, 1 = is-tight, 2 = is-tight is-tighter) and returns its
         /// scrollHeight: the flow from the padding box's top to its bottom padding, or the watermark's bottom when lower.
         /// </summary>
-        private float LayOutDetail(NodeCard node, IReadOnlyList<StepOption> options, bool far, int level)
+        private float LayOutDetail(NodePanel node, IReadOnlyList<StepOption> options, bool far, int level)
         {
             bool tight = level >= 1, tighter = level >= 2;
             RectTransform body = DetailBody;
@@ -268,7 +268,7 @@ namespace Trial.Explore
             260f + (22f - TextMath.CssBaselineFromTop(new FontSpec(Family.Body, 400, 16f, 22f)));
 
         /// <summary>The head (grid 72 | 1fr | auto, centred; the pill top-aligned). Returns its height.</summary>
-        private float DetailHead(RectTransform body, NodeCard node, float x0, float y, float w, bool tighter)
+        private float DetailHead(RectTransform body, NodePanel node, float x0, float y, float w, bool tighter)
         {
             float tok = tighter ? 56f : 72f;
             TextStyle pill = PanelText(PillCss);
@@ -313,7 +313,7 @@ namespace Trial.Explore
         }
 
         /// <summary>The lines (column, top rule): "key: value" in two columns on a shared baseline, the rest full width. Returns the block's height.</summary>
-        private float DetailLines(RectTransform body, NodeCard node, float x0, float y, float w, bool tight, bool tighter)
+        private float DetailLines(RectTransform body, NodePanel node, float x0, float y, float w, bool tight, bool tighter)
         {
             BoxGraphic block = BoxGraphic.Make(body, DetailLinesCss + (tight ? DetailLinesTightCss : ""), x0, y, w, 0f, "ocbg-explore-detail-lines");
             RectTransform rt = block.rectTransform;
@@ -361,7 +361,7 @@ namespace Trial.Explore
         /// returns the column's natural height. With parent, builds it at (x, y) colW × rowH (the grid's row: the foot
         /// sits at the bottom, margin-top: auto).
         /// </summary>
-        private float DetailOption(RectTransform parent, NodeCard node, StepOption opt, int index, float x, float y, float colW, float? rowH, int level)
+        private float DetailOption(RectTransform parent, NodePanel node, StepOption opt, int index, float x, float y, float colW, float? rowH, int level)
         {
             bool tight = level >= 1, tighter = level >= 2;
             bool bare = opt.Forecast == null;

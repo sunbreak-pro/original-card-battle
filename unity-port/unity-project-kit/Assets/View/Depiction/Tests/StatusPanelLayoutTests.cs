@@ -122,5 +122,37 @@ namespace Depiction.Tests
             StatusPanelLayout.Place(1000f, 300f, 900f, 210f, out float playerLeft, out float enemyLeft);
             Assert.That(enemyLeft - (playerLeft + 300f), Is.GreaterThanOrEqualTo(StatusPanelLayout.MinGap - 0.001f));
         }
+
+        // ---- §7.3 a chip's parts (#612) ----------------------------------------------------------------
+
+        [Test]
+        public void AChipWithItsIcon_PutsThe18pxIconThenTheNameThenTheStacks()
+        {
+            // "出血 2": a 32 px name and a 10 px number.
+            ChipParts parts = StatusPanelLayout.Chip(true, 32f, 10f);
+            Assert.That(parts.IconLeft, Is.EqualTo(6f));
+            Assert.That(parts.NameLeft, Is.EqualTo(6f + 18f + 4f));
+            Assert.That(parts.StacksLeft, Is.EqualTo(6f + 18f + 4f + 32f + 4f));
+            Assert.That(parts.Width, Is.EqualTo(6f + 18f + 4f + 32f + 4f + 10f + 8f));
+        }
+
+        [Test]
+        public void AChipWithNoArtYet_IsWordsOnly()
+        {
+            ChipParts parts = StatusPanelLayout.Chip(false, 32f, 10f);
+            Assert.That(parts.NameLeft, Is.EqualTo(StatusPanelLayout.ChipPadLeft));
+            Assert.That(parts.StacksLeft, Is.EqualTo(6f + 32f + 4f));
+            Assert.That(parts.Width, Is.EqualTo(6f + 32f + 4f + 10f + 8f));
+        }
+
+        [Test]
+        public void TheGatheringChip_PrintsItsNumberAloneAndIsNeverNarrowerThanTall()
+        {
+            // "+3" has no name: no gap before the number.
+            ChipParts plus = StatusPanelLayout.Chip(false, 0f, 20f);
+            Assert.That(plus.StacksLeft, Is.EqualTo(StatusPanelLayout.ChipPadLeft));
+            Assert.That(plus.Width, Is.EqualTo(6f + 20f + 8f));
+            Assert.That(StatusPanelLayout.Chip(false, 0f, 8f).Width, Is.EqualTo(StatusPanelLayout.ChipHeight), "6 + 8 + 8 is under the 30 px height");
+        }
     }
 }

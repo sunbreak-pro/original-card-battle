@@ -152,6 +152,12 @@ namespace Trial.Explore
         private float GaugeAt;
         private float GaugeNext;
 
+        /// <summary>
+        /// The miasma's breath the gauge and the shade share (#773): its phase is carried from frame to frame, so a
+        /// new reading only changes the pace. The JS reads the phase off the clock, which jumps when the percent moves.
+        /// </summary>
+        private readonly global::Backdrop.MiasmaBreath MiasmaBreathing = new global::Backdrop.MiasmaBreath();
+
         private bool FirstRender = true;
         private string HintOverride;
 
@@ -183,7 +189,7 @@ namespace Trial.Explore
         private ExplorationScreen DetailScreen;
 
         /// <summary>drawLegend's node (ExploreScene.js:326 legendNode).</summary>
-        private NodeCard LegendNodeCard;
+        private NodePanel LegendNodeCard;
 
         /// <summary>The scene clock (createClock): backdrop, roll labels, gauge, walker; and the JS timers (Timeout).</summary>
         private TrialClock Clock;
@@ -605,7 +611,7 @@ namespace Trial.Explore
     public sealed class ExploreStepInfo
     {
         public ExplorationScreen Before;
-        public NodeCard Node;
+        public NodePanel Node;
         public RestChoice Choice;
         public bool Jump;
     }

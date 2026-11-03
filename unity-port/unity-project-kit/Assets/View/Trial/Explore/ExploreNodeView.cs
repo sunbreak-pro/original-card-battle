@@ -141,7 +141,7 @@ namespace Trial.Explore
         /// The node of buildMap at (x, y) (its box's top-left: the centre minus NODE / 2) under the nodes layer: the box,
         /// the lift, the face (empty until the first SetStanding draws its icon), the ripple ring, the label.
         /// </summary>
-        public static ExploreNodeView Make(RectTransform parent, NodeCard n, float x, float y)
+        public static ExploreNodeView Make(RectTransform parent, NodePanel n, float x, float y)
         {
             if (n == null) throw new ArgumentNullException(nameof(n));
             const float node = ExploreStyle.Node;
@@ -197,7 +197,7 @@ namespace Trial.Explore
         /// colour. The class reset also drops is-arrived (a ripple stops) and is-live / is-pinned / is-jump, which the caller
         /// sets again before Commit (as updateMap toggles them right after).
         /// </summary>
-        public void SetStanding(NodeCard n, Rgba iconColor)
+        public void SetStanding(NodePanel n, Rgba iconColor)
         {
             if (n == null || !El) return;
             Standing = n.Standing;

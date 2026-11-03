@@ -1,5 +1,54 @@
 # HISTORY (chat-battle)
 
+### 2026-11-02 - battle 宛ての Issue 7 件（#57 / #762 / #764 / #765 / #612 / #766 / #780）を 7 本の PR へ
+
+#### 概要
+
+7 件を、Issue ごとに origin/main（cf72295f）から切ったブランチと PR にしました。#765 はこのレーンで直接直し、残りの 6 件は別の作業場所で Issue ごとに 1 体が実装し、別の 1 体が見直しました。見直しで直しが要ったものはありません。7 本とも build / lint / test:run / unity:check / dotnet test が、このレーンで exit 0 です。7 本とも `Closes` で、merge は人の作業です。
+
+#### 変更点
+
+- **#765（PR #805）**: `FloorStripes.Of` と `MoveTo` の敵 1 体の経路が、開示度 0 の予兆のマスを床に出さなくなりました。書き手は `AimCells` を書いたままです（予兆の当たりの印が読むため）
+- **#57（PR #814）**: 8 系統の文法・特性の合図・強さの定数・40 種の見分けの試験は既に main にありました。試験の無かった時間の予算 2 つだけを足しました（§5.1 の最悪のターン開始 2100 ms、スタンスが単独で出ること）
+- **#762（PR #815）**: 敵 2 体以上で、Tab の焦点、予兆の札のホバー、掴んだ札の下の敵との N を床に出す表示を作りました。計算は `Script/FloorFocus.cs` です。ホバー中の他の敵の薄さ 0.3 は仮の値です
+- **#764（PR #816）**: 特性の発火の語と「押し出し」の語の道筋を `FloatNumberSpec` で人型の高さから計算し、札の下端の 4 px 下で止めました
+- **#612（PR #817）**: `Depiction/BattleFonts.cs` を足し、§3.1 の行ごとに書体を当てました。アイコンの入口 3 つが `UiArtShelf.Icon` を通り、状態チップに 18 px の印の Image が付きました。`UiKit.cs` と `UiArt/` は触っていません
+- **#766（PR #818）**: 床の斜線を左から 1 マス 30 ms ずつ引き、実行の後 120 ms で消すようにしました。計算は `Script/StripeSweep.cs` です
+- **#780（PR #819）**: カードの土台を `CardView.Create` の 1 か所で作るようにし、戦闘のプレハブの組み立てと探索の札えらびの両方がそれを使います
+- **申し送り 8 件**: `handoff/2026-11-02-battle-*.md`（ターン開始が許容を超える形、ホバーの薄さの値、Tab と移動の数え直し、§5.0 の語の道筋、`UiArtShelf.cs` の古いコメント、§3.1 の表に無い文字、敵ごとの斜線の引き方、狙うマスを 150 ms でずらす動き）
+
+#### 実測・知見
+
+- 7 本の組ごとに `git merge-tree` で確かめると、衝突するのは #762 と #766（`FloorView.cs`）だけでした。後に merge する側で、main を取り込んで手で解きます
+- 6 体の実装は同時に 5 体までに絞って回し、作業場所の作成の失敗は起きませんでした
+
+#### 次
+
+- merge の後、メインのチャットが `unity:sync` と Unity Editor で確かめます。対象は、#57 の 8 系統の撮影、#762 の Tab とホバー、#764 の語の高さ、#612 の書体の収まり、#766 の斜線の引き方、#780 の `CardGroundTests`（EditMode）です
+
+### 2026-11-02 - battle 宛ての Issue 4 件（#580 / #724 / #725 / #755）を 4 本の PR へ
+
+#### 概要
+
+4 件を、Issue ごとに origin/main（4d28b7b8）から切ったブランチと PR にしました。実装は別の作業場所で Issue ごとに 1 体が受け持ち、別の 1 体が見直しました。4 本とも build / lint / test:run / unity:check / dotnet test が exit 0 です。4 本とも `Closes` で、merge は人の作業です。
+
+#### 変更点
+
+- **#580（PR #782）**: `CoreScriptWriter.cs`（着手時 1497 行）を partial の 7 ファイルに分けました。最大は `.Apply.cs` の 414 行です。振り分け `ApplyEvent` は 335 行から 98 行になり、デモの語彙の case は `ApplyDemoVocabulary` へ移しました。試験の名前の一覧は前後で同じ 512 行です
+- **#724（PR #783）**: `BattleToolAmounts.StartStamina` を `StartStaminaBonus` に、`OpeningGuard` と `CarriedTools.ScaleGuard` を `FirstHitGuard` にしました。`Expedition` `DepartureBuilder` `BattleLaunch` `DepartureCarry` の呼び出しは名前つき引数にしました。探索側の 2 ファイルも、台帳に持ち主が無いので同じ PR に入れています
+- **#725（PR #784）**: `CoreText` の `WhenWord` と `AttackBonus` は、文の無い `StanceWhen` で例外を投げます。今ある札と敵の文は変わりません。試験を 1 件足しました
+- **#755（PR #785）**: 全敵の組み合わせの試験を、先頭 2 体ごとの 153 case に分けました。戦う並び 882 と戦闘 1764 回はそのままです。dotnet での最長は 54 秒から 1.79 秒になりました
+- **申し送り 1 件**: 敵の構え「穂先を据える」の文に、間合い 1 以上の条件が入らない件（`2026-11-02-battle-stance-gap-at-least-words.md`）
+
+#### 実測・知見
+
+- **`npm run unity:check` は origin/main でも 4 本でも exit 0** でした。10-28 と 11-01 の exit 1 は解消しています
+- Mono と dotnet の速さの比は、#755 の試験で約 3.7 倍でした（202 秒 / 54 秒）。dotnet で 48 秒を超える試験は、Unity の 180 秒の上限に当たる見込みです
+
+#### 次
+
+- merge の後、メインの Unity で #785 の EditMode を回します。#782 の新しい 6 ファイルの `.meta` は、Unity のリポで保存します
+
 ### 2026-11-02 - #585 DepictionPlayer を partial で分ける
 
 #### 概要
@@ -71,50 +120,3 @@ battle 宛ての 4 件を、origin/main（9e2a44e2）を基準に 5 本の PR �
 - 同じ文書の冒頭の Status に、#605 / #611 / #57 の 3 本が 1 項目ずつ足す。後から merge する側で両方の項目を残す
 - `isolation: worktree` のサブエージェントは、同時に 5 体を起こすと 1 体が作業場所の作成で失敗することがある。1 体が終わってから起こし直せば通る
 
-### 2026-10-28 - Unity 移植の戦闘まわりの残り 4 件を 4 本の積んだ PR へ
-
-#### 概要
-
-メインから渡された 5 件のうち 4 件を、Issue ごとのブランチと PR にした。4 本は同じファイルを触るので、#675 → #676 → #677 → #678 の順に積んだ。#575 は状態の説明の数字が BattleCore の定数待ちで `Refs`。#589 の 2 本目と 3 本目は台本の型が 2 通りあるため着手せず、申し送りにした。merge は人の作業。
-
-#### 変更点
-
-- **#588（PR #675）**: 特性のスタミナ +1 の合図を `CoreScriptWriter` が取り置き、全ての面の後（ドローの前、別のスタミナの拍の前、出来事が閉じるとき）に出す。小手打ちは「支払い、特性の合図、一撃、+1」。特性のスタミナを持つ 8 枚をデータから選んで並びを確かめる
-- **#587（PR #676）**: 敵が撃ってから自分で動く 8 つの行動で、移動を撃った出来事に入れ、`EffectPlan.EnemyMoveFollows` で戻りを出さず結果の拍 + 80 ms から移動する。予兆の消え方は移動と並行。押す・引くは今までどおり戻る。最長は退き撃ちの Guard 一部吸収で 1640 ms
-- **#577（PR #677）**: `RangeSide`、近 / 遠の欄、`CoreText.SideOf`、立ち位置 2 つと `SnapRange` / `SwitchRange` を消した。固定台本 `TurnSliceScript` は 6 マスの床に立ち、後ろ跳びで N 1 → N 2。全ての台本源が床を持つので、マスを持たない `RangeSwitch` は `CellsOf` が止める
-- **#575（PR #678）**: 属性の語を `CardFaceText.AttributeWord`（攻撃・防御・スキル・スタンス）に寄せた。予兆の種別の語は `OmenLabel.ToText()` を間合いなしで呼んで BattleCore の 1 か所にした。特性の条件は `CardFaceText.ConditionWords` の表（短い形・枠・文・用語）から引く。枯らしの説明に回復の下限
-
-#### 実測・知見
-
-- **`npm run unity:check` は origin/main でも exit 1**。Unity のプロジェクトに trial の作業場所（`feat/main-trial-port-20261022`、未 push）の `Assets/View/Trial/` が同期されていて、7 アセンブリで 86 件。この 4 本が触った `Depiction.*` と `Assembly-CSharp` は 0 errors
-- trial の作業場所は、#667 より前から分かれ、敵 2 体以上の台本の型を別の形（`Enemies` が `UnitFrame`、`Omens`、`FloorEnemy`、`EnemyHatch`）で持つ。#667 の `EnemyFrame` とコンパイラの上でぶつかっている
-- Unity の NUnit 3.5 では `Does.Not.Contain(列挙値)` がコンパイルできない（文字列だけ）。`Has.No.Member` を使う
-
-#### 次
-
-- 申し送り 2 件: `2026-10-28-battle-589-two-multi-enemy-models.md`（どちらの型に寄せるか）、`2026-10-28-battle-575-status-numbers-core-constants.md`（BattleCore に状態の定数を足す）
-- merge の後、メインのチャットが `unity:sync` と、#577 の Gate（固定台本が床のマスに立つ）、#587 と #588 の見た目を Unity で確かめる
-
-### 2026-10-21 - battle 宛ての Issue 4 件を 4 本の PR へ
-
-#### 概要
-
-battle 宛ての open Issue 4 件を、Issue ごとのブランチと PR にした。4 本とも build / lint / test:run / dotnet test が exit 0 で、merge は人の作業。#589 は 3 本に分ける Issue の 1 本目で、Issue は開いたまま。
-
-#### 変更点
-
-- **#646（PR #658）**: `MasteryProfilesTests` の `Has.Count` 1 行を `RankTraits!.Count` に。Unity の NUnit 3.5 で配列に `Count` が無く落ちていた
-- **#615（PR #664）**: `unity:check` が古い写しで exit 3、未コンパイルのアセンブリで exit 4 を返す。`--allow-leftovers` / `--allow-unbuilt` で従来の 0。持ち場のフォルダを `unity-sync-plan.mjs` の `OWNED_ROOTS` に 1 か所で並べ、`unity:sync --prune` で古い写しと `.meta` を消す
-- **#643（PR #665）**: 札のドラッグをフレームごとに JSON 1 行で記録する `DragTraceRecorder`（新規）と、行を作る純 C# の `DragTrace`。`DepictionPlayer.cs` と `CardView.cs` は無変更。掴んだ札は private の `_dragging` をリフレクションで読む
-- **#589 の 1 本目（PR #667）**: `DepictionFrame.Enemies`（敵ごとの数値パネル・スタンス一覧・予兆・マス・斜線の向き・色見本の印）と `Cue.Unit`。`CoreScriptWriter` がコアのイベントを `BattleEvent.Unit` で振り分ける。数値パネル 3 枚以上を重ねない `StatusPanelLayout.PlaceRow`
-
-#### 実測・知見
-
-- **2 体の戦闘では、これまで 2 体目のイベントが 1 体目の数字と予兆に入っていた**。探索から 2 体の組に入ると、予兆の札が 2 体目のもので上書きされていた（PR #667 で台本側は直った。画面は 1 体ぶんのまま）
-- **本物の Unity プロジェクトの古い写しは 0 件**、`unity:check` は 20 アセンブリで exit 0（2026-10-21）。`Exploration.Bridge` も Unity でコンパイル済みだった
-- `unity:sync` の書き込みは、merge 前のコードをメインの Unity に置かないよう、4 本とも `--dry-run` だけにした
-
-#### 次
-
-- #589 の 2 本目（画面の部品）と 3 本目（斜線の向きと色見本）。`DepictionPlayer.cs` を触る #585 / #606 / #612 / #619 が落ち着いてから main で切る
-- merge の後、メインのチャットが `unity:sync` と Unity の EditMode（#646）、ドラッグの記録（#643）を確かめる

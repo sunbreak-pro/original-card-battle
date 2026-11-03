@@ -9,13 +9,15 @@
 
 ## 直近の完了
 
+- battle 宛ての Issue 7 件を 7 本の PR へ ✅（2026-11-02）— #765 → PR #805、#57 → #814、#762 → #815、#764 → #816、#612 → #817、#766 → #818、#780 → #819。7 本とも open で、build / lint / test:run / unity:check / dotnet test は exit 0。申し送り 8 件
+- battle 宛ての Issue 4 件を 4 本の PR へ ✅（2026-11-02）— #580 → PR #782、#724 → #783、#725 → #784、#755 → #785。4 本とも open で、build / lint / test:run / unity:check / dotnet test は exit 0。申し送り 1 件
 - #585 `DepictionPlayer` を 7 ファイルの partial に分け、`PlayCue` を 90 行にする ✅（2026-11-02）— PR #759 が open。build / lint / test:run / unity:check / dotnet test は exit 0。PlayMode テストと `Battle.unity` の通し確認はこうだいさんのメインの Unity で行う
-- #589 の残り 2 本と #715 / #712 / #714 を 5 本の PR へ ✅（2026-11-01）— #714 → PR #733、#712 → #734、#715 → #738、#589 の 2 本目 → #749（Refs）、3 本目 → #750（Closes）。5 本とも open で、build / lint / test:run / dotnet test は exit 0。`unity:check` は `View/Exploration` と `View/Trial/Bridge` の 162 件で exit 1。申し送り 6 件
-- battle 宛ての Issue 12 件を 12 本の PR へ ✅（2026-10-28）— #654 → PR #682、#599 → #684、#605 → #685、#576 → #686、#455 → #688（Refs）、#579 → #689、#584 → #691、#611 → #692、#57 → #693（Refs）、#582 → #694、#606 → #695、#514 → #696。12 本とも open で、build / lint / test:run / dotnet test は exit 0。申し送り 5 件
 
 ## 予定
 
-- 🔜 **PR #759（#585）の merge 待ち** — merge の前後に、メインの Unity で PlayMode テスト 3 本と `Battle.unity` の 1 戦を通し、`unity:sync` で写る 6 ファイルの `.meta` を Unity のリポで保存する
+- 🔜 **PR #805・#814〜#819 の merge 待ち** — 7 本とも origin/main から切ってある。衝突するのは #762（#815）と #766（#818）の `FloorView.cs` だけで、後に merge する側で main を取り込んで手で解く。merge の後にメインのチャットが `unity:sync` と Unity Editor で、#57 の 8 系統の撮影、#762 の Tab とホバー、#764 の語の高さ、#612 の書体の収まり、#766 の斜線の引き方、#780 の `CardGroundTests`（EditMode）を確かめる。新しいファイル（`FloorFocus.cs` `StripeSweep.cs` `BattleFonts.cs` ほか）の `.meta` は Unity のリポで保存する
+- 🔜 **PR #782〜#785 の merge 待ち** — 4 本とも origin/main から切ってあり、触るファイルは重ならない。#785（#755）は、メインの Unity で EditMode の試験が通るのを確かめてから merge する。#782（#580）は、`unity:sync` で写る新しい 6 ファイルの `.meta` を Unity のリポで保存する。残りは申し送り `2026-11-02-battle-stance-gap-at-least-words.md`
+- 🔜 **PR #759（#585）の merge 後の確認**（2026-11-02 に merge 済み） — merge の前後に、メインの Unity で PlayMode テスト 3 本と `Battle.unity` の 1 戦を通し、`unity:sync` で写る 6 ファイルの `.meta` を Unity のリポで保存する
 - 🔜 **PR #733 / #734 / #738 / #749 / #750 の merge 後の確認** — 5 本とも merge 済み（2026-11-02 に `gh pr view` で確認）。メインのチャットが `npm run unity:sync` と Unity Editor で 2 体の画面を確かめる（部品の複製、灰のパネル、札の滑り、交差した斜線、16 px の色見本）。残りは申し送り `2026-11-01-battle-589-tab-and-omen-hover.md`、`2026-11-01-battle-floor-aim-disclosure-0-one-enemy.md`、`2026-11-01-battle-stripe-draw-in-out.md`、`2026-11-01-battle-float-labels-reach-omen.md`
 - 🔜 **PR #682〜#696 の merge 待ち（12 本）** — どれも origin/main から切ってある。`battle_ui_ux_v2.md` の Status に #685 / #692 / #693 が 1 項目ずつ足すので、後の側で両方を残す。`DepictionPlayer.cs` は #676〜#678 と #688 / #695 が触る。merge の後にメインのチャットが `unity:sync`、新しいファイルの `.meta` の保存（#584 の 9 ファイル、#654 / #455 の試験）、スタンス枠のホバー（#605）、階層 4 の背景（#606）、浮かぶ数字（#455）、8 系統の撮影（#57）を確かめる
 - 🔜 **PR #675〜#678 の merge 待ち** — 積んだ順（#675 → #676 → #677 → #678）に merge する。merge の後にメインのチャットが `unity:sync` と、`BattleDepiction.unity` の固定台本が床のマスに立つこと（#577 の Gate）、退き撃ちが戻らず下がること（#587）、特性のピップが一撃の後に灯ること（#588）を確かめる。#575 の残り（状態の説明の数字を BattleCore の定数から）は申し送り `2026-10-28-battle-575-status-numbers-core-constants.md`

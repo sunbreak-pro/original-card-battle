@@ -108,7 +108,11 @@ namespace DungeonCore
         /// <summary>Heavy packs, strange meals, a rest. Clamped to ±4 when max stamina is read.</summary>
         public int TempMaxStaminaMod { get; }
 
-        /// <summary>Notches earned at 習熟訓練 nodes this layer.</summary>
+        /// <summary>
+        /// Notches earned at 習熟訓練 nodes this layer: a running total. Not BattleCore's Constants.TrainingTicks,
+        /// which is how many one training gives (1); the two keep different names because they count different
+        /// things (#598).
+        /// </summary>
         public int TrainingMarks { get; }
 
         public RunLoadout Loadout { get; }

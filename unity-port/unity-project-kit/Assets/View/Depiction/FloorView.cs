@@ -5,6 +5,8 @@
 // DepictionFrame.Enemies, CardFace.ReachCells); this only draws them and says where a cell stands on the
 // screen, so the figures can stand on theirs. With several enemies (#589) each enemy's stripes run in its
 // own direction and cross where two overlap, under one frame and one light (FloorStripes says which).
+// A hover on one enemy's omen badge fades the others' (#762), and the gap number counts to the enemy
+// FloorFocus names: the one a held card is over, the one Tab chose, or the nearest.
 //
 // The scene belongs to the Unity project, so the floor is made at run time under the figures'
 // parent, behind them. It spans x 300〜1620 as §4.2 gives it. Its top sits 10 px above the player's
@@ -26,6 +28,7 @@ namespace Depiction.View
         private const float FeetBelowTop = FloorSpec.FeetBelowTop;
         // §4.2 狙うマス: a 2 px red frame and an 8 px light of red 30% outside it.
         private const float AimGlow = 8f;
+        private const float AimLightAlpha = 0.30f;
         // §4.2 届くマスの光: a 3 px amber line along the top and a 22 px amber light outside.
         private const float ReachGlow = 22f;
         // §4.2 間合いの数字: a tag 34 px tall, 3 px below the floor's top; 100 px wide at gap 0.
@@ -54,6 +57,10 @@ namespace Depiction.View
             public Image ReachTop;
             /// <summary>The stripes the cell shows, or is drawing in or fading towards (#766).</summary>
             public IReadOnlyList<StripeMark> Marks = NoMarks;
+            /// <summary>The stripes the cell's images hold now: <see cref="Marks"/>, save while a fade takes the old ones out.</summary>
+            public IReadOnlyList<StripeMark> Shown = NoMarks;
+            /// <summary>How far a draw-in or a fade has got, 0〜1; 1 when the cell is set.</summary>
+            public float Share = 1f;
             /// <summary>Whether a draw-in or a fade is taking the cell to <see cref="Marks"/>; a Bind to the same marks leaves it running.</summary>
             public bool Sweeping;
             /// <summary>Bumped whenever the cell is set anew, so a sweep that no longer owns the cell stops touching it.</summary>
@@ -61,8 +68,6 @@ namespace Depiction.View
         }
 
         private static readonly StripeMark[] NoMarks = new StripeMark[0];
-        // §4.2: the stripes and the frame at 100%, the light outside at red 30%; a sweep scales all three.
-        private static readonly Color AimLightColor = BattleTheme.WithAlpha(BattleTheme.AimRed, 0.30f);
 
         private readonly RectTransform _root;
         private readonly RectTransform _canvas;
@@ -72,6 +77,13 @@ namespace Depiction.View
         private readonly Image _bracketLeft;
         private readonly Image _bracketRight;
         private FloorFrame _floor;
+        private DepictionFrame _frame;
+        /// <summary>The enemy whose aims a badge hover keeps, or −1 (FloorStripes.Hovered).</summary>
+        private int _hovered = -1;
+        /// <summary>Whose gap the tag shows: an enemy, −1 for the floor's own, or <see cref="GapByHand"/>.</summary>
+        private int _gapUnit = GapByHand;
+        /// <summary>The tag was last set from a cue's numbers (a move's recount), not from an enemy's.</summary>
+        private const int GapByHand = int.MinValue;
         private float _top;
         private bool _placed;
         private Color _tile = BattleTheme.Floor(1).Tile;
@@ -99,7 +111,7 @@ namespace Depiction.View
             UiKit.Sprite(_tag, "Icon", VisualArt.Icon(VisualIcon.Range), BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(22f, 22f), new Vector2(10f, 0f));
             _tagText = UiKit.Label(_tag, "Number", 28, TextAnchor.MiddleLeft, BattleTheme.Ink, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(48f, TagHeight), new Vector2(38f, 0f));
-            _tagText.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_tagText, BattleFonts.SmallNumber);
             _tagText.horizontalOverflow = HorizontalWrapMode.Overflow;
             _root.gameObject.SetActive(false);
         }
@@ -108,12 +120,16 @@ namespace Depiction.View
         /// Draws the floor of <paramref name="frame"/>: the cells, the aimed ones (dense where they meet the
         /// omen's boundary), the cells a moving omen lands on, and the gap. The floor's top goes
         /// 10 px above <paramref name="playerFeet"/> (a world point). A floor with no cells hides it all.
+        /// The gap counts to enemy <paramref name="gapUnit"/> (FloorFocus.GapUnit), and a hover on enemy
+        /// <paramref name="hovered"/>'s badge fades the others' aims.
         /// </summary>
-        public void Bind(DepictionFrame frame, Vector3 playerFeet)
+        public void Bind(DepictionFrame frame, Vector3 playerFeet, int gapUnit = -1, int hovered = -1)
         {
             FloorFrame floor = frame.Floor;
             int layer = frame.Corner.Floor;
             _floor = floor;
+            _frame = frame;
+            _hovered = FloorStripes.Hovered(frame, hovered);
             bool shown = _canvas && floor != null && floor.Cells > 0;
             _root.gameObject.SetActive(shown);
             if (!shown) return;
@@ -134,14 +150,11 @@ namespace Depiction.View
                 RefScreen.Place(cell.Root, _canvas, new Vector2(FloorSpec.TileLeft(floor.Cells, i + 1), _top),
                     new Vector2(FloorSpec.TileWidth(floor.Cells), BandHeight));
                 cell.Tile.color = _tile;
-                IReadOnlyList<StripeMark> marks = FloorStripes.Of(frame, i + 1);
-                // #766: a draw-in or a fade already heading to these stripes plays on; anything else is set at once.
-                if (!(cell.Sweeping && SameMarks(cell.Marks, marks))) SetAim(cell, marks, 1f);
-                // 敵が動く予兆の移る先: a violet dashed frame, never stripes (battle_ui_ux_v2 §5.8, #455).
-                ShowMoveFrame(cell, FloorStripes.MoveTo(frame, i + 1), FloorStripes.MoveInset(frame, i + 1));
+                PaintAims(cell, i + 1);
             }
             HideReach();
-            SetGap(floor.Gap, floor.PlayerCell, floor.PlayerSize, floor.EnemyCell);
+            _gapUnit = GapByHand; // a new frame: the gap is drawn again, whoever it counts to
+            ShowGapOf(gapUnit);
             // The gap and its brackets sit over the cells.
             _bracketLeft.transform.SetAsLastSibling();
             _bracketRight.transform.SetAsLastSibling();
@@ -149,20 +162,70 @@ namespace Depiction.View
         }
 
         /// <summary>
+        /// battle_ui_ux_v2 §2.2 の 2 (#762): a hover on enemy <paramref name="hovered"/>'s omen badge keeps its
+        /// aimed cells and fades every other enemy's; −1 shows them all again. The floor keeps the frame
+        /// it was last bound to, so the hover can come and go between frames.
+        /// </summary>
+        public void ShowHovered(int hovered)
+        {
+            if (!Shown) return;
+            hovered = FloorStripes.Hovered(_frame, hovered);
+            if (hovered == _hovered) return;
+            _hovered = hovered;
+            for (int i = 0; i < _cells.Count && i < _floor.Cells; i++) PaintAims(_cells[i], i + 1);
+        }
+
+        /// <summary>
+        /// §2.2 の 3 / §1.4 (#762): the gap number counts to enemy <paramref name="unit"/> (FloorFocus.GapUnit;
+        /// −1 is the floor's own, the nearest). Nothing changes while it already does.
+        /// </summary>
+        public void ShowGapOf(int unit)
+        {
+            if (!Shown || unit == _gapUnit) return;
+            _gapUnit = unit;
+            GapReading gap = FloorFocus.GapOf(_frame, unit);
+            DrawGap(gap.Gap, gap.PlayerCell, gap.PlayerSize, gap.EnemyCell);
+        }
+
+        /// <summary>
+        /// The aims on cell <paramref name="number"/> (1-based) of the bound frame, under the badge hover:
+        /// §4.2 one frame and one light however many enemies aim at it, and a moving omen's violet frame.
+        /// </summary>
+        private void PaintAims(Cell cell, int number)
+        {
+            IReadOnlyList<StripeMark> marks = FloorStripes.Of(_frame, number, _hovered);
+            // #766: a draw-in or a fade already heading to these stripes plays on, and a badge hover only
+            // re-tints a draw-in at its share; anything else is set at once.
+            if (cell.Sweeping && SameMarks(cell.Marks, marks))
+            {
+                if (marks.Count > 0)
+                {
+                    cell.Marks = cell.Shown = marks;
+                    TintAims(cell, cell.Share);
+                }
+            }
+            else SetAim(cell, marks, 1f);
+            // 敵が動く予兆の移る先: a violet dashed frame, never stripes (battle_ui_ux_v2 §5.8, #455).
+            ShowMoveFrame(cell, FloorStripes.MoveTo(_frame, number), FloorStripes.MoveInset(_frame, number),
+                FloorStripes.MoveFaint(_frame, number, _hovered) ? FloorStripes.FaintAlpha : 1f);
+        }
+
+        /// <summary>
         /// §4.2: each enemy's stripes in its own direction, crossing where two overlap. 境目を満たすマス: the
-        /// same red stripes, 6 px apart instead of 11 (#455), enemy by enemy.
+        /// same red stripes, 6 px apart instead of 11 (#455), enemy by enemy. Their colour is
+        /// <see cref="TintAims"/>'s, which also fades another enemy's under a badge hover (#762).
         /// </summary>
         private static void ShowStripes(Cell cell, IReadOnlyList<StripeMark> marks)
         {
             cell.Stripes.enabled = marks.Count > 0;
-            if (marks.Count > 0) cell.Stripes.sprite = VisualArt.Stripes(marks[0].Direction, marks[0].Dense);
+            if (marks.Count > 0) PaintStripes(cell.Stripes, marks[0]);
             while (cell.MoreStripes.Count < marks.Count - 1) cell.MoreStripes.Add(MakeStripes(cell));
             for (int k = 0; k < cell.MoreStripes.Count; k++)
             {
                 Image stripes = cell.MoreStripes[k];
                 bool used = k + 1 < marks.Count;
                 stripes.enabled = used;
-                if (used) stripes.sprite = VisualArt.Stripes(marks[k + 1].Direction, marks[k + 1].Dense);
+                if (used) PaintStripes(stripes, marks[k + 1]);
             }
         }
 
@@ -185,7 +248,7 @@ namespace Depiction.View
             {
                 if (number > _cells.Count) break;
                 Cell cell = _cells[number - 1];
-                SetAim(cell, FloorStripes.Of(after, number), 0f);
+                SetAim(cell, FloorStripes.Of(after, number, FloorStripes.Hovered(after, _hovered)), 0f);
                 cell.Sweeping = true;
                 cells.Add(cell);
                 tokens.Add(cell.Token);
@@ -196,7 +259,7 @@ namespace Depiction.View
             {
                 for (int k = 0; k < cells.Count; k++)
                 {
-                    if (cells[k].Token == tokens[k]) SetAimAlpha(cells[k], EffectPlan.StripeDrawShare(k, elapsed, effects));
+                    if (cells[k].Token == tokens[k]) TintAims(cells[k], EffectPlan.StripeDrawShare(k, elapsed, effects));
                 }
             });
         }
@@ -232,7 +295,7 @@ namespace Depiction.View
                 float left = fadeMs > 0f ? 1f - Mathf.Clamp01(elapsed / fadeMs) : 0f;
                 for (int k = 0; k < cells.Count; k++)
                 {
-                    if (cells[k].Token == tokens[k]) SetAimAlpha(cells[k], left);
+                    if (cells[k].Token == tokens[k]) TintAims(cells[k], left);
                 }
             });
         }
@@ -278,23 +341,34 @@ namespace Depiction.View
         {
             cell.Token++;
             cell.Sweeping = false;
-            cell.Marks = marks;
+            cell.Marks = cell.Shown = marks;
             ShowStripes(cell, marks);
             // §4.2: one frame and one light, however many enemies aim at the cell.
             cell.AimFrame.enabled = marks.Count > 0;
             cell.AimLight.enabled = marks.Count > 0;
-            SetAimAlpha(cell, alpha);
+            TintAims(cell, alpha);
         }
 
-        private static void SetAimAlpha(Cell cell, float alpha)
+        /// <summary>
+        /// Colours the stripes, the frame and the light the cell shows: a faint enemy's at
+        /// FloorStripes.FaintAlpha under a badge hover (#762), and all of it times <paramref name="share"/>,
+        /// how far a draw-in or a fade has got (#766).
+        /// </summary>
+        private static void TintAims(Cell cell, float share)
         {
-            Color red = BattleTheme.WithAlpha(BattleTheme.AimRed, BattleTheme.AimRed.a * alpha);
-            cell.Stripes.color = red;
-            foreach (Image stripes in cell.MoreStripes) stripes.color = red;
-            cell.AimFrame.color = red;
-            cell.AimLight.color = BattleTheme.WithAlpha(AimLightColor, AimLightColor.a * alpha);
+            cell.Share = share;
+            IReadOnlyList<StripeMark> shown = cell.Shown;
+            if (shown.Count > 0) cell.Stripes.color = StripeRed(shown[0], share);
+            for (int k = 0; k < cell.MoreStripes.Count && k + 1 < shown.Count; k++) cell.MoreStripes[k].color = StripeRed(shown[k + 1], share);
+            float aimAlpha = (FloorStripes.AimFaint(shown) ? FloorStripes.FaintAlpha : 1f) * share;
+            cell.AimFrame.color = BattleTheme.WithAlpha(BattleTheme.AimRed, aimAlpha);
+            cell.AimLight.color = BattleTheme.WithAlpha(BattleTheme.AimRed, AimLightAlpha * aimAlpha);
         }
 
+        private static Color StripeRed(StripeMark mark, float share) =>
+            BattleTheme.WithAlpha(BattleTheme.AimRed, (mark.Faint ? FloorStripes.FaintAlpha : 1f) * share);
+
+        /// <summary>The same stripes by direction and density; a hover's faintness only re-tints them, so it does not end a sweep.</summary>
         private static bool SameMarks(IReadOnlyList<StripeMark> a, IReadOnlyList<StripeMark> b)
         {
             if (a.Count != b.Count) return false;
@@ -305,10 +379,23 @@ namespace Depiction.View
             return true;
         }
 
-        private static void ShowMoveFrame(Cell cell, bool shown, float inset)
+        private static void PaintStripes(Image stripes, StripeMark mark)
         {
-            foreach (Image edge in cell.MoveFrame) edge.enabled = shown;
-            foreach (Image edge in cell.MoveKeyline) edge.enabled = shown && inset > 0f;
+            stripes.sprite = VisualArt.Stripes(mark.Direction, mark.Dense);
+        }
+
+        private static void ShowMoveFrame(Cell cell, bool shown, float inset, float alpha = 1f)
+        {
+            foreach (Image edge in cell.MoveFrame)
+            {
+                edge.enabled = shown;
+                edge.color = BattleTheme.WithAlpha(BattleTheme.Violet, alpha);
+            }
+            foreach (Image edge in cell.MoveKeyline)
+            {
+                edge.enabled = shown && inset > 0f;
+                edge.color = BattleTheme.WithAlpha(BattleTheme.PanelOpaque, alpha);
+            }
             cell.MoveRoot.offsetMin = new Vector2(inset, inset);
             cell.MoveRoot.offsetMax = new Vector2(-inset, -inset);
         }
@@ -354,6 +441,12 @@ namespace Depiction.View
         public void SetGap(int gap, int playerCell, int playerSize, int enemyCell)
         {
             if (!Shown) return;
+            _gapUnit = GapByHand; // a cue's numbers: the next ShowGapOf draws its enemy's again
+            DrawGap(gap, playerCell, playerSize, enemyCell);
+        }
+
+        private void DrawGap(int gap, int playerCell, int playerSize, int enemyCell)
+        {
             _tagText.text = gap.ToString();
             FloorSpec.GapSpan(_floor.Cells, playerCell, playerSize, enemyCell, out float spanLeft, out float spanRight);
             float middle = (spanLeft + spanRight) * 0.5f;
@@ -379,10 +472,11 @@ namespace Depiction.View
         public IEnumerator RecountGap(int gap, int playerCell, int playerSize, int enemyCell, float ms)
         {
             if (!Shown) yield break;
+            _gapUnit = GapByHand;
             string before = _tagText.text;
             Vector3 fromPosition = _tag.position;
             Vector2 fromSize = _tag.sizeDelta;
-            SetGap(gap, playerCell, playerSize, enemyCell); // the end state, read back to tween towards
+            DrawGap(gap, playerCell, playerSize, enemyCell); // the end state, read back to tween towards
             string after = _tagText.text;
             Vector3 toPosition = _tag.position;
             Vector2 toSize = _tag.sizeDelta;
@@ -436,7 +530,7 @@ namespace Depiction.View
             cell.Root = UiKit.Point(_root, "Cell" + (index + 1), new Vector2(0.5f, 0.5f), new Vector2(0f, 1f), new Vector2(100f, BandHeight), Vector2.zero);
             // Lights first, then (§4.2's order when they meet) tile, amber fill, red stripes, red frame, amber top line.
             cell.ReachLight = Outset(cell.Root, "ReachLight", ProceduralArt.Glow, BattleTheme.WithAlpha(BattleTheme.Amber, 0.45f), ReachGlow);
-            cell.AimLight = Outset(cell.Root, "AimLight", ProceduralArt.Glow, BattleTheme.WithAlpha(BattleTheme.AimRed, 0.30f), AimGlow);
+            cell.AimLight = Outset(cell.Root, "AimLight", ProceduralArt.Glow, BattleTheme.WithAlpha(BattleTheme.AimRed, AimLightAlpha), AimGlow);
             cell.Tile = VisualArt.Panel(cell.Root, "Tile", _tile, 6);
             cell.Edge = VisualArt.Ring(cell.Root, "Edge", BattleTheme.Line, 6, 1);
             cell.ReachFill = UiKit.Image(cell.Root, "ReachFill", VisualArt.Fade, BattleTheme.WithAlpha(BattleTheme.Amber, 0.55f), Vector2.zero, Vector2.one);

@@ -191,36 +191,19 @@ namespace Exploration
         public bool NeedsConfirm => Forecast != null && Forecast.IsLethal;
     }
 
-    /// <summary>One node on the map.</summary>
-    public sealed class NodeCard
+    /// <summary>
+    /// One node on the map. The node itself fixes where it sits on the grid; everything else is named
+    /// in an object initializer, so two of its strings cannot trade places unnoticed (#597). A panel, not
+    /// a card: a card in this game is one of the deck's, and the battle's script has its own CardKind (#598).
+    /// </summary>
+    public sealed class NodePanel
     {
-        public NodeCard(
-            MapNode node,
-            float x,
-            float y,
-            string glyph,
-            string kindLabel,
-            NodeStanding standing,
-            IReadOnlyList<string> lines,
-            IReadOnlyList<StepOption> options,
-            string note,
-            string title,
-            IReadOnlyList<string> detail)
+        public NodePanel(MapNode node)
         {
             Id = node.Id;
             Row = node.Row;
             Column = node.Column;
             Kind = node.Kind;
-            X = x;
-            Y = y;
-            Glyph = glyph;
-            KindLabel = kindLabel;
-            Standing = standing;
-            Lines = lines;
-            Options = options;
-            Note = note;
-            Title = title;
-            Detail = detail;
         }
 
         public int Id { get; }
@@ -229,35 +212,35 @@ namespace Exploration
         public NodeKind Kind { get; }
 
         /// <summary>0 = left edge of the map area, 1 = right edge.</summary>
-        public float X { get; }
+        public float X { get; init; }
 
         /// <summary>0 = bottom of the map area, 1 = top. The entry sits on top, the boss at the bottom.</summary>
-        public float Y { get; }
+        public float Y { get; init; }
 
         /// <summary>The one-character stand-in for the node's icon (戦・精・主・休・調・事・痕・彫).</summary>
-        public string Glyph { get; }
+        public string Glyph { get; init; }
 
-        public string KindLabel { get; }
+        public string KindLabel { get; init; }
 
-        public NodeStanding Standing { get; }
+        public NodeStanding Standing { get; init; }
 
         /// <summary>What is inside. Empty for a far node, which shows its kind only (§6.3).</summary>
-        public IReadOnlyList<string> Lines { get; }
+        public IReadOnlyList<string> Lines { get; init; }
 
         /// <summary>The buttons the detail panel offers. Empty unless the node can be walked to now.</summary>
-        public IReadOnlyList<StepOption> Options { get; }
+        public IReadOnlyList<StepOption> Options { get; init; }
 
         /// <summary>A short line on where the node stands (「入ると刻限を 1 使う」 and the like).</summary>
-        public string Note { get; }
+        public string Note { get; init; }
 
         /// <summary>The detail panel's heading: the glyph and the kind.</summary>
-        public string Title { get; }
+        public string Title { get; init; }
 
         /// <summary>
         /// The detail panel's text, line by line: the note, what is inside, then one line per way in
         /// with its forecast (「【休む】刻限 9 → 8　瘴気 1% → 2%」) and its warnings.
         /// </summary>
-        public IReadOnlyList<string> Detail { get; }
+        public IReadOnlyList<string> Detail { get; init; }
     }
 
     /// <summary>A link between two nodes. Lit when it leads from where the player stands to somewhere they can go.</summary>
@@ -318,10 +301,10 @@ namespace Exploration
         public IReadOnlyList<float> StepLineFills { get; }
     }
 
-    /// <summary>One consumable slot.</summary>
-    public sealed class SlotCard
+    /// <summary>One consumable slot. A panel, not a card, for the same reason as NodePanel (#598).</summary>
+    public sealed class SlotPanel
     {
-        public SlotCard(int index, string name, string note, bool canUse,
+        public SlotPanel(int index, string name, string note, bool canUse,
             IReadOnlyList<string> forecast = null, string reason = "", bool aiming = false, string id = null)
         {
             Index = index;
@@ -504,153 +487,98 @@ namespace Exploration
         public string CloseLabel { get; }
     }
 
-    /// <summary>One frame of the exploration screen.</summary>
+    /// <summary>
+    /// One frame of the exploration screen. It has no constructor: ExplorationScreenBuilder names every
+    /// member in an object initializer, so the band's labels — eight strings side by side — cannot trade
+    /// places unnoticed the way positional arguments could (#597). The trial's members default to empty.
+    /// </summary>
     public sealed class ExplorationScreen
     {
-        public ExplorationScreen(
-            string layerTitle,
-            int layer,
-            string timeLabel,
-            int timeLeft,
-            int timeLimit,
-            MiasmaGauge miasma,
-            string hpLabel,
-            string staminaLabel,
-            string maxStaminaLabel,
-            string marksLabel,
-            IReadOnlyList<NodeCard> nodes,
-            IReadOnlyList<EdgeLine> edges,
-            int currentNodeId,
-            string hint,
-            string toolsLabel,
-            IReadOnlyList<SlotCard> consumables,
-            bool canEndLife,
-            bool showsEndLife,
-            ScreenCard card,
-            JournalBook journal,
-            Overlay openOverlay,
-            bool canOpenCards,
-            bool canOpenSettings,
-            OverlayPage cards,
-            OverlayPage settings,
-            IReadOnlyList<ToolCard> toolCards = null,
-            string timeBonusLabel = "",
-            string reliefLabel = "",
-            bool aiming = false,
-            IReadOnlyList<EventOutcome> events = null)
-        {
-            LayerTitle = layerTitle;
-            Layer = layer;
-            TimeLabel = timeLabel;
-            TimeLeft = timeLeft;
-            TimeLimit = timeLimit;
-            Miasma = miasma;
-            HpLabel = hpLabel;
-            StaminaLabel = staminaLabel;
-            MaxStaminaLabel = maxStaminaLabel;
-            MarksLabel = marksLabel;
-            Nodes = nodes;
-            Edges = edges;
-            CurrentNodeId = currentNodeId;
-            Hint = hint;
-            ToolsLabel = toolsLabel;
-            Consumables = consumables;
-            CanEndLife = canEndLife;
-            ShowsEndLife = showsEndLife;
-            Card = card;
-            Journal = journal;
-            OpenOverlay = openOverlay;
-            CanOpenCards = canOpenCards;
-            CanOpenSettings = canOpenSettings;
-            Cards = cards;
-            Settings = settings;
-            ToolCards = toolCards ?? new ToolCard[0];
-            TimeBonusLabel = timeBonusLabel ?? "";
-            ReliefLabel = reliefLabel ?? "";
-            Aiming = aiming;
-            Events = events ?? new EventOutcome[0];
-        }
+        private readonly IReadOnlyList<ToolCard> _toolCards = new ToolCard[0];
+        private readonly string _timeBonusLabel = "";
+        private readonly string _reliefLabel = "";
+        private readonly IReadOnlyList<EventOutcome> _events = new EventOutcome[0];
 
         /// <summary>「第 2 層　■■の秘跡」.</summary>
-        public string LayerTitle { get; }
+        public string LayerTitle { get; init; }
 
         /// <summary>The layer the map is on (1〜7): the view lays that layer's backdrop behind the map (battle-visual-v1 §2.5).</summary>
-        public int Layer { get; }
+        public int Layer { get; init; }
 
         /// <summary>「刻限 7 / 10」.</summary>
-        public string TimeLabel { get; }
+        public string TimeLabel { get; init; }
 
         /// <summary>How many of the TimeLimit pips are still lit.</summary>
-        public int TimeLeft { get; }
+        public int TimeLeft { get; init; }
 
-        public int TimeLimit { get; }
+        public int TimeLimit { get; init; }
 
-        public MiasmaGauge Miasma { get; }
+        public MiasmaGauge Miasma { get; init; }
 
-        public string HpLabel { get; }
+        public string HpLabel { get; init; }
 
-        public string StaminaLabel { get; }
+        public string StaminaLabel { get; init; }
 
         /// <summary>「最大 9 = 10 − 瘴気 1」, with a temporary modifier added when there is one.</summary>
-        public string MaxStaminaLabel { get; }
+        public string MaxStaminaLabel { get; init; }
 
-        public string MarksLabel { get; }
+        public string MarksLabel { get; init; }
 
-        public IReadOnlyList<NodeCard> Nodes { get; }
+        public IReadOnlyList<NodePanel> Nodes { get; init; }
 
-        public IReadOnlyList<EdgeLine> Edges { get; }
+        public IReadOnlyList<EdgeLine> Edges { get; init; }
 
-        public int CurrentNodeId { get; }
+        public int CurrentNodeId { get; init; }
 
         /// <summary>One line under the map on how to read it.</summary>
-        public string Hint { get; }
+        public string Hint { get; init; }
 
         /// <summary>「ツール: 防瘴の面（1 / 3）」.</summary>
-        public string ToolsLabel { get; }
+        public string ToolsLabel { get; init; }
 
-        public IReadOnlyList<SlotCard> Consumables { get; }
+        public IReadOnlyList<SlotPanel> Consumables { get; init; }
 
         /// <summary>The 「この生を終える」 button is live (§6.6).</summary>
-        public bool CanEndLife { get; }
+        public bool CanEndLife { get; init; }
 
         /// <summary>The button is on screen at all. It goes once the life has ended (§6.2).</summary>
-        public bool ShowsEndLife { get; }
+        public bool ShowsEndLife { get; init; }
 
-        public ScreenCard Card { get; }
+        public ScreenCard Card { get; init; }
 
-        public JournalBook Journal { get; }
+        public JournalBook Journal { get; init; }
 
         /// <summary>What is open over the screen from the top band, if anything.</summary>
-        public Overlay OpenOverlay { get; }
+        public Overlay OpenOverlay { get; init; }
 
         /// <summary>
         /// The band's 所持カード button is live. Like the gear, it goes dead while the stand-in battle
         /// card is up, which counts as being in battle (§6.2). The journal's button never does.
         /// </summary>
-        public bool CanOpenCards { get; }
+        public bool CanOpenCards { get; init; }
 
-        public bool CanOpenSettings { get; }
+        public bool CanOpenSettings { get; init; }
 
         /// <summary>The 所持カード screen. Its contents wait for #244; until then it is a stand-in.</summary>
-        public OverlayPage Cards { get; }
+        public OverlayPage Cards { get; init; }
 
         /// <summary>The 設定・セーブ screen. Settings and saving are not wired yet; it is a stand-in.</summary>
-        public OverlayPage Settings { get; }
+        public OverlayPage Settings { get; init; }
 
         /// <summary>Trial extension (js: ExplorationScreen.js:455): every carried tool with its note. Empty outside trial.</summary>
-        public IReadOnlyList<ToolCard> ToolCards { get; }
+        public IReadOnlyList<ToolCard> ToolCards { get => _toolCards; init => _toolCards = value ?? new ToolCard[0]; }
 
         /// <summary>Trial extension: 「刻限の砂 +1」 beside the 刻限 in the band, or "".</summary>
-        public string TimeBonusLabel { get; }
+        public string TimeBonusLabel { get => _timeBonusLabel; init => _timeBonusLabel = value ?? ""; }
 
         /// <summary>Trial extension: 「防瘴の面 濃さ 2 → 1」 beside the gauge, or "".</summary>
-        public string ReliefLabel { get; }
+        public string ReliefLabel { get => _reliefLabel; init => _reliefLabel = value ?? ""; }
 
         /// <summary>Trial extension: a 標の石 is being aimed; the nodes it can land on carry jump options.</summary>
-        public bool Aiming { get; }
+        public bool Aiming { get; init; }
 
         /// <summary>Trial extension: every event of this life so far, oldest first.</summary>
-        public IReadOnlyList<EventOutcome> Events { get; }
+        public IReadOnlyList<EventOutcome> Events { get => _events; init => _events = value ?? new EventOutcome[0]; }
 
         /// <summary>
         /// The map takes input only while no card covers it. The carried items, the band and
@@ -658,7 +586,7 @@ namespace Exploration
         /// </summary>
         public bool MapIsLive => !Card.IsShown;
 
-        public NodeCard Node(int id)
+        public NodePanel Node(int id)
         {
             foreach (var node in Nodes)
             {

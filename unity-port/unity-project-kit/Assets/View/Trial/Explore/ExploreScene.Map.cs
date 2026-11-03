@@ -167,7 +167,7 @@ namespace Trial.Explore
 
         // js: scenes/explore/ExploreScene.js:409
         /// <summary>nodePos(n): the node's centre in stage px.</summary>
-        private Vector2 NodePos(NodeCard n) => new Vector2(ExploreStyle.NodeX(n.X), ExploreStyle.NodeY(n.Y));
+        private Vector2 NodePos(NodePanel n) => new Vector2(ExploreStyle.NodeX(n.X), ExploreStyle.NodeY(n.Y));
 
         // js: scenes/explore/ExploreScene.js:417
         /// <summary>
@@ -201,7 +201,7 @@ namespace Trial.Explore
         }
 
         // js: scenes/explore/ExploreScene.js:441
-        private static Rgba NodeIconColor(NodeCard n) => n.Standing == NodeStanding.Far ? ExploreStyle.Steel : KindColor(n.Kind);
+        private static Rgba NodeIconColor(NodePanel n) => n.Standing == NodeStanding.Far ? ExploreStyle.Steel : KindColor(n.Kind);
 
         /// <summary>Math.hypot(dx, dy).</summary>
         private static float Hypot(float dx, float dy) => (float)Math.Sqrt((double)dx * dx + (double)dy * dy);
@@ -226,8 +226,8 @@ namespace Trial.Explore
 
             foreach (EdgeLine e in scr.Edges)
             {
-                NodeCard na = scr.Node(e.From);
-                NodeCard nb = scr.Node(e.To);
+                NodePanel na = scr.Node(e.From);
+                NodePanel nb = scr.Node(e.To);
                 if (na == null || nb == null) continue;
                 Vector2 a = NodePos(na);
                 Vector2 b = NodePos(nb);
@@ -263,7 +263,7 @@ namespace Trial.Explore
             }
 
             bool interlude = HasRootClass(".is-interlude");
-            foreach (NodeCard n in scr.Nodes)
+            foreach (NodePanel n in scr.Nodes)
             {
                 Vector2 p = NodePos(n);
                 ExploreNodeView rec = ExploreNodeView.Make(NodesLayer, n, p.x - ExploreStyle.Node / 2f, p.y - ExploreStyle.Node / 2f);
@@ -301,7 +301,7 @@ namespace Trial.Explore
         private void UpdateMap(ExplorationScreen scr)
         {
             if (scr == null) return;
-            foreach (NodeCard n in scr.Nodes)
+            foreach (NodePanel n in scr.Nodes)
             {
                 if (!NodeEls.TryGetValue(n.Id, out ExploreNodeView rec) || !rec.Alive) continue;
                 if (rec.Standing != n.Standing) rec.SetStanding(n, NodeIconColor(n));
@@ -317,8 +317,8 @@ namespace Trial.Explore
             foreach (EdgeLine edge in scr.Edges)
             {
                 if (!byKey.TryGetValue(EdgeKey(edge.From, edge.To), out ExploreEdgeView rec) || !rec.Alive) continue;
-                NodeCard a = scr.Node(edge.From);
-                NodeCard b = scr.Node(edge.To);
+                NodePanel a = scr.Node(edge.From);
+                NodePanel b = scr.Node(edge.To);
                 if (a == null || b == null) continue;
                 bool lit = edge.Lit && scr.MapIsLive && !Busy && !scr.Aiming;
                 rec.SetClass(lit ? ExploreEdgeView.ClsLit : Walked(a.Standing) && Walked(b.Standing) ? ExploreEdgeView.ClsWalked : ExploreEdgeView.ClsNone);
@@ -326,7 +326,7 @@ namespace Trial.Explore
                 if (lit) rec.FlowFrom(a.Standing == NodeStanding.Current);
             }
 
-            NodeCard pn = scr.Node(Pinned);
+            NodePanel pn = scr.Node(Pinned);
             bool fresh = SelFresh;
             SelFresh = false;
             if (pn != null)
@@ -345,7 +345,7 @@ namespace Trial.Explore
         /// <summary>Walked: both ends were stood on (Current / Revisit / Resolved).</summary>
         private static bool Walked(NodeStanding s) => s == NodeStanding.Current || s == NodeStanding.Revisit || s == NodeStanding.Resolved;
 
-        private static bool HasJump(NodeCard n)
+        private static bool HasJump(NodePanel n)
         {
             foreach (StepOption o in n.Options) if (o.Jump) return true;
             return false;
@@ -373,7 +373,7 @@ namespace Trial.Explore
         private void OnNodeClick(int id)
         {
             if (Screen == null || !Screen.MapIsLive || Busy || Plate != null) return;
-            NodeCard node = Screen.Node(id);
+            NodePanel node = Screen.Node(id);
             if (node == null) return;
             if (Pinned == id && node.Options.Count > 0)
             {
@@ -394,12 +394,12 @@ namespace Trial.Explore
         private void MoveSelection(int dx, int dy)
         {
             if (Screen == null) return;
-            NodeCard from = Screen.Node(Pinned) ?? Screen.Node(Screen.CurrentNodeId);
+            NodePanel from = Screen.Node(Pinned) ?? Screen.Node(Screen.CurrentNodeId);
             if (from == null) return;
             Vector2 p0 = NodePos(from);
-            NodeCard best = null;
+            NodePanel best = null;
             float bestScore = float.PositiveInfinity;
-            foreach (NodeCard n in Screen.Nodes)
+            foreach (NodePanel n in Screen.Nodes)
             {
                 if (n.Id == from.Id) continue;
                 Vector2 p = NodePos(n);
@@ -427,7 +427,7 @@ namespace Trial.Explore
         // ------------------------------------------------------------------ steps
 
         // js: scenes/explore/ExploreScene.js:1241
-        private void TakeOption(NodeCard node, int index)
+        private void TakeOption(NodePanel node, int index)
         {
             if (Screen == null || !Screen.MapIsLive || Busy || Plate != null || ConfirmOpen) return;
             if (node == null || index < 0 || index >= node.Options.Count) return;
@@ -447,7 +447,7 @@ namespace Trial.Explore
 
         // js: scenes/explore/ExploreScene.js:1252
         /// <summary>afterMove(before, node, choice, jump): the walk (or leap), its sounds, the arrival, then proceed().</summary>
-        private async Promise AfterMove(ExplorationScreen before, NodeCard node, RestChoice choice, bool jump = false)
+        private async Promise AfterMove(ExplorationScreen before, NodePanel node, RestChoice choice, bool jump = false)
         {
             if (node == null)
             {
@@ -456,7 +456,7 @@ namespace Trial.Explore
             }
             // The step is in the session already: save it now, so a reload during the walk keeps it (tier1 R1-16).
             Persist();
-            NodeCard fromNode = (before != null ? before.Node(before.CurrentNodeId) : null) ?? node;
+            NodePanel fromNode = (before != null ? before.Node(before.CurrentNodeId) : null) ?? node;
             StepOption opt = null;
             foreach (StepOption o in node.Options)
                 if (o.Choice == choice && o.Jump == jump) { opt = o; break; }
@@ -542,7 +542,7 @@ namespace Trial.Explore
         /// lands (render at t ≥ .7). ms = dur(min(820, 420 + len·0.9)), EASE.inout; perch: smooth over the first and last
         /// 24 %; hop sin(πt)·10.
         /// </summary>
-        private Promise Walk(NodeCard fromNode, NodeCard toNode)
+        private Promise Walk(NodePanel fromNode, NodePanel toNode)
         {
             var done = new PromiseSource();
             Vector2 a = NodePos(fromNode);
@@ -644,7 +644,7 @@ namespace Trial.Explore
         /// Trial: 標の石 — the walker fades where it stood (is-leaping: opacity 240ms) and, after dur(320), appears on the node
         /// it jumped to (render, fade back in, the landing squash); resolves dur(260) later.
         /// </summary>
-        private Promise Leap(NodeCard fromNode, NodeCard toNode)
+        private Promise Leap(NodePanel fromNode, NodePanel toNode)
         {
             var done = new PromiseSource();
             Vector2 b = NodePos(toNode);

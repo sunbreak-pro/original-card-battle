@@ -218,8 +218,9 @@ namespace Depiction.Bridge
         public Departure Build(DeckBuilder deck)
         {
             if (deck == null) throw new ArgumentNullException(nameof(deck));
-            return new Departure(deck.Build(), _tools.ToArray(), _consumables.ToArray(), StartCellsBack, TalentIn(deck),
-                StartStaminaBonus, FirstHitGuard, BossWordWard);
+            return new Departure(deck.Build(), _tools.ToArray(), _consumables.ToArray(),
+                StartCellsBack: StartCellsBack, TalentCardId: TalentIn(deck),
+                StartStaminaBonus: StartStaminaBonus, FirstHitGuard: FirstHitGuard, BossWordWard: BossWordWard);
         }
 
         /// <summary>

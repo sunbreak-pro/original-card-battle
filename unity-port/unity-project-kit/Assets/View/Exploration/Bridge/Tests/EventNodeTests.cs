@@ -59,7 +59,7 @@ namespace Exploration.Bridge.Tests
             int node = EventNode(session, EventKind.Spring);
             WalkTo(expedition, node, stopShort: true);
 
-            NodeCard card = session.Screen().Node(node);
+            NodePanel card = session.Screen().Node(node);
             Assert.Multiple(() =>
             {
                 Assert.That(card.Lines[0], Does.StartWith("泉"));

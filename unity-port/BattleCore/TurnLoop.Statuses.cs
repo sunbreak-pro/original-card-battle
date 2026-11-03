@@ -241,11 +241,11 @@ namespace BattleCore
         private static BattleState RaiseScale(BattleState state, Actor victim, List<BattleEvent> events)
         {
             if (victim != Actor.Player) return state;
-            int scale = state.Tools.ScaleGuard;
+            int scale = state.Tools.FirstHitGuard;
             if (scale <= 0) return state;
             var player = state.Player with { Guard = state.Player.Guard + scale };
             events.Add(new GuardGained(Actor.Player, scale, player.Guard));
-            return state with { Player = player, PlayerTools = state.Tools with { ScaleGuard = 0 } };
+            return state with { Player = player, PlayerTools = state.Tools with { FirstHitGuard = 0 } };
         }
     }
 }

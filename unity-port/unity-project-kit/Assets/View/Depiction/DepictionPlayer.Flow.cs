@@ -142,10 +142,11 @@ namespace Depiction.View
             Vector2 chest = DepictionFx.PointOn(fxLayer, target.chest);
             Vector2 head = DepictionFx.PointOn(fxLayer, target.head);
             // §5.0: a number's centre goes from the chest to the head of this figure, whatever its height,
-            // so it stops under the omen badge. Labels start just under the head.
-            Vector2 numberAt = DepictionFx.PointOn(fxLayer, target.transform) + new Vector2(0f, FloatNumberSpec.StartAbove(target.Height));
+            // so it stops under the omen badge. Words start just under the head and stop under it too (#764).
+            Vector2 feet = DepictionFx.PointOn(fxLayer, target.transform);
+            Vector2 numberAt = feet + new Vector2(0f, FloatNumberSpec.StartAbove(target.Height));
             float numberRise = FloatNumberSpec.RiseBy(target.Height);
-            Vector2 labelAt = head + new Vector2(0f, -30f);
+            Vector2 labelAt = feet + new Vector2(0f, FloatNumberSpec.LabelStartAbove(target.Height));
             PlayMark(ev, cue, target, chest, head);
 
             switch (cue.Kind)
@@ -175,7 +176,7 @@ namespace Depiction.View
                     break;
 
                 case CueKind.TraitFire:
-                    yield return HoldBeat(EffectId.TraitFire, FireTrait(labelAt, cue.Text), null);
+                    yield return HoldBeat(EffectId.TraitFire, FireTrait(labelAt, cue.Text, target.Height), null);
                     break;
 
                 case CueKind.Slash:

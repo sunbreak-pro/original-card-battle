@@ -229,7 +229,7 @@ namespace Trial.Bridge.Tests
                 Assert.That(s.UseConsumable(i), Is.True);
                 if (teleport && s.IsAiming)
                 {
-                    NodeCard target = s.Screen().Nodes.FirstOrDefault(n => n.Options.Any(o => o.Jump));
+                    NodePanel target = s.Screen().Nodes.FirstOrDefault(n => n.Options.Any(o => o.Jump));
                     if (target != null) s.Jump(target.Id, target.Options.First(o => o.Jump).Choice);
                     else s.Escape();
                 }

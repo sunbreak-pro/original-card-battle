@@ -55,11 +55,11 @@ namespace Depiction.View
             UiKit.Sprite(_root, "Dot", ProceduralArt.Circle, BattleTheme.Amber, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(18f, 18f), new Vector2(PadX, -PadY - 20f));
             _number = UiKit.Label(_root, "Number", 34, TextAnchor.MiddleLeft, BattleTheme.Amber, new Vector2(0f, 1f), new Vector2(0f, 0.5f),
                 new Vector2(90f, 40f), new Vector2(PadX + 18f + 8f, -PadY - 20f));
-            _number.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_number, BattleFonts.StaminaNumber);
             _number.horizontalOverflow = HorizontalWrapMode.Overflow;
             _pay = UiKit.Label(_root, "Pay", 24, TextAnchor.MiddleRight, BattleTheme.Wick, new Vector2(1f, 1f), new Vector2(1f, 0.5f),
                 new Vector2(90f, 40f), new Vector2(-PadX, -PadY - 20f));
-            _pay.fontStyle = FontStyle.Bold;
+            BattleFonts.Use(_pay, BattleFonts.PanelNumber);
             _pay.horizontalOverflow = HorizontalWrapMode.Overflow;
             _pay.enabled = false;
 

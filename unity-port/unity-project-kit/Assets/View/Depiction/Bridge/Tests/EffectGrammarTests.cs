@@ -412,6 +412,88 @@ namespace Depiction.Bridge.Tests
             TestContext.Out.Write(report.ToString());
         }
 
+        [Test]
+        public void AStanceCard_PlaysFormAlone_SoNoPlayPutsAStanceOnAnAttack()
+        {
+            // #57 listed a 2.4 s budget for an attack with a stance. Since battle_core_v4 §2.1 (v4.4, #258)
+            // a stance stands alone, so 型 never shares a row and that budget has no play left to hold.
+            int stances = 0;
+            foreach (CardDef def in CardCatalog.All)
+            {
+                IReadOnlyList<FxSystem> row = CardSystems.Table[def.Id];
+                if (!row.Contains(FxSystem.Form)) continue;
+                stances += 1;
+                Assert.That(row, Is.EqualTo(new[] { FxSystem.Form }), def.Name);
+            }
+            Assert.That(stances, Is.GreaterThan(0), "the swordsman has stance cards");
+        }
+
+        /// <summary>
+        /// §5.0 / §5.1 (#453): the worst turn start may run to 2100 ms at 1.25 and 1.5 times, and to the
+        /// same allowance stretched by the slow step's factor (2625 ms) at 1.0 times, like the 2.0 s cap.
+        /// </summary>
+        private const float TurnStartAllowanceMs = 2100f;
+
+        private static float TurnStartAllowanceAt(BattleSpeedStep speed) =>
+            BattleSpeed.Multiplier(speed) >= BattleSpeed.BaseMultiplier ? TurnStartAllowanceMs : BattleSpeed.WallMs(TurnStartAllowanceMs, speed);
+
+        [TestCase(BattleSpeedStep.Slow, 2625f)]
+        [TestCase(BattleSpeedStep.Normal, 2100f)]
+        [TestCase(BattleSpeedStep.Fast, 2100f)]
+        public void TheTurnStartAllowance_IsStretchedOnlyAtTheSlowSpeed_LikeTheTwoSecondCap(BattleSpeedStep speed, float expected)
+        {
+            Assert.That(TurnStartAllowanceAt(speed), Is.EqualTo(expected).Within(0.01f));
+            Assert.That(TurnStartAllowanceAt(speed) / TurnStartAllowanceMs,
+                Is.EqualTo(BattleSpeed.EventCapMsAt(speed) / BattleSpeed.EventCapMs).Within(1e-4f), "the same stretch as the 2.0 s cap");
+        }
+
+        [Test]
+        public void TheWorstTurnStartTheCanonCounts_StaysInsideItsAllowance_AtEverySpeed()
+        {
+            // §5.1's worst: recovery 5, the deal run past the pile's end, two enemies. 水の構え at a gap of 2
+            // or more gives the 5 (3 + 2). The core deals Combat.DrawCount() (6), not the 8 §5.1 allows for,
+            // so the deal is the one the core can write. Turn 2, so the omens are already standing and only
+            // blink (§5.1 順 8), which runs beside the flow.
+            var setup = new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(new[] { CardCatalog.Brace }, 12), 8,
+                StartGap: 3, MoreEnemies: new[] { Enemies.PolearmWarped });
+            BattleState state = TurnLoop.Start(setup, NoShuffle).State;
+            var writer = new CoreScriptWriter(setup.Enemy);
+            writer.Opening(state);
+            StepResult first = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            writer.Write(first.Events, first.State);
+            StepResult end = TurnLoop.EndTurn(first.State, NoShuffle);
+            writer.Write(end.Events, end.State);
+
+            state = end.State;
+            List<CardInstance> cards = state.DrawPile.Concat(state.DiscardPile).Concat(state.Hand).ToList();
+            state = state with
+            {
+                Player = state.Player.WithStance(CardCatalog.WaterStance.Face.Stance!, "water") with { Stamina = 0 },
+                Hand = new List<CardInstance>(),
+                DrawPile = cards.Take(2).ToList(),
+                DiscardPile = cards.Skip(2).ToList(),
+            };
+            StepResult second = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            DepictionEvent turn = writer.Write(second.Events, second.State).Single();
+
+            List<EffectStep> steps = EffectPlan.StepsOf(turn);
+            Assert.That(turn.Kind, Is.EqualTo(DepictionEventKind.TurnStart));
+            Assert.That(steps.Single(s => s.Id == EffectId.StaminaRecover).Count, Is.EqualTo(5), "recovery 3 + 水の構え 2");
+            Assert.That(steps.Any(s => s.Id == EffectId.PileRebuild), Is.True, "the deal runs the pile out");
+            Assert.That(steps.Single(s => s.Id == EffectId.CardDraw).Count, Is.EqualTo(Combat.DrawCount()));
+            Assert.That(turn.Systems, Is.Empty, "the grammar adds nothing to a turn start");
+            Assert.That(turn.Cues.All(c => !c.Fx.HasValue), Is.True);
+
+            var on = EffectSwitches.AllOn();
+            string where = string.Join(" + ", steps.Select(s => s.Id + " " + EffectPlan.WaitMs(s, on).ToString("0")));
+            foreach (BattleSpeedStep speed in BattleSpeed.Steps)
+            {
+                Assert.That(EffectPlan.BlockingMs(turn, on, speed), Is.LessThanOrEqualTo(TurnStartAllowanceAt(speed)),
+                    where + " at " + BattleSpeed.Label(speed));
+            }
+            TestContext.Out.WriteLine(EffectPlan.BlockingMs(turn, on).ToString("0") + " ms: " + where);
+        }
+
         private static Cue Strip(Cue cue)
         {
             return new Cue

@@ -206,7 +206,7 @@ namespace Trial.Explore
             sb.Append(trial ? '1' : '0').Append(sep).Append(Screen.ToolsLabel).Append(sep);
             foreach (ToolCard t in Screen.ToolCards) sb.Append(t.Name).Append(sep).Append(t.Side).Append(sep).Append(t.Effect).Append(sep).Append(t.Note).Append(sep);
             sb.Append('|');
-            foreach (SlotCard s in Screen.Consumables)
+            foreach (SlotPanel s in Screen.Consumables)
             {
                 sb.Append(s.Index).Append(sep).Append(s.Name).Append(sep).Append(s.Note).Append(sep).Append(s.CanUse ? '1' : '0').Append(s.Aiming ? '1' : '0').Append(sep);
                 sb.Append(s.Forecast != null ? "F" + string.Join("\u0002", s.Forecast) : "-").Append(sep).Append(s.Reason).Append(sep).Append(SlotItemId(s)).Append(sep);
@@ -281,7 +281,7 @@ namespace Trial.Explore
         }
 
         /// <summary>The id whose icon a slot shows: slot.Id, or the loadout's item in that slot; null when empty.</summary>
-        private string SlotItemId(SlotCard slot)
+        private string SlotItemId(SlotPanel slot)
         {
             if (slot.Name == ExplorationText.EmptySlot) return null;
             if (!string.IsNullOrEmpty(slot.Id)) return slot.Id;
@@ -292,7 +292,7 @@ namespace Trial.Explore
         /// <summary>What one slot holds and how tall its content is (measured before the grid's row is known).</summary>
         private sealed class ExSlotPlan
         {
-            public SlotCard Slot;
+            public SlotPanel Slot;
             public bool Empty;
             public string Id;
             /// <summary>trial: what using it changes (one line per change) or why not; "" otherwise.</summary>
@@ -338,11 +338,11 @@ namespace Trial.Explore
         /// <summary>The slots (grid of 3, gap 12; a trial row as tall as its tallest slot, min 120). Returns the grid's height.</summary>
         private float CarriedSlotGrid(float x0, float y, float cw, bool trial)
         {
-            IReadOnlyList<SlotCard> slots = Screen.Consumables;
+            IReadOnlyList<SlotPanel> slots = Screen.Consumables;
             float slotW = (cw - 2f * 12f) / 3f;
             float inner = slotW - 2f * 2f - 2f * 8f;
             var plans = new List<ExSlotPlan>(slots.Count);
-            foreach (SlotCard slot in slots) plans.Add(SlotPlan(slot, trial, inner));
+            foreach (SlotPanel slot in slots) plans.Add(SlotPlan(slot, trial, inner));
             float gy = 0f;
             for (int row = 0; row * 3 < plans.Count; row++)
             {
@@ -357,7 +357,7 @@ namespace Trial.Explore
             return gy;
         }
 
-        private ExSlotPlan SlotPlan(SlotCard slot, bool trial, float inner)
+        private ExSlotPlan SlotPlan(SlotPanel slot, bool trial, float inner)
         {
             var p = new ExSlotPlan { Slot = slot, Empty = slot.Name == ExplorationText.EmptySlot };
             p.Id = SlotItemId(slot);
@@ -407,7 +407,7 @@ namespace Trial.Explore
         /// </summary>
         private void BuildSlot(ExSlotPlan p, bool trial, float x, float y, float w, float h, float inner)
         {
-            SlotCard slot = p.Slot;
+            SlotPanel slot = p.Slot;
             bool usable = slot.CanUse, aiming = slot.Aiming;
             bool disabled = !(usable || aiming);
             ExPanelButton b = ExPanelButton.Make(Carried, "ocbg-explore-slot", PanelBoxCss(SlotCss), x, y, w, h);
