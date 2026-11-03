@@ -521,12 +521,14 @@ namespace Trial.Battle
                 if (slot.NameLabel)
                 {
                     Label.Apply(slot.NameLabel, Ocb.TextOf(slotCss + StanceSpanCss));
+                    KeepLineInBox(slot.NameLabel);
                     FlexBox.Attrs(slot.NameLabel.rectTransform).MinMain = 0f;
                 }
                 if (slot.CountLabel)
                 {
                     // the 「×n」 span is a `> span` too: overflow hidden makes its min-width 0, so it shrinks with the name
                     Label.Apply(slot.CountLabel, Ocb.TextOf(slotCss + StanceSpanCss + Ocb.StanceXCss));
+                    KeepLineInBox(slot.CountLabel);
                     FlexBox.Attrs(slot.CountLabel.rectTransform).MinMain = 0f;
                 }
                 Vector2 at = FrameAt(side, i);
@@ -547,6 +549,22 @@ namespace Trial.Battle
                 s.Frames.Add(view);
             }
             if (grew) RingNewest(side);
+        }
+
+        /// <summary>
+        /// TMP's Ellipsis mode cuts at the box's height as well as its width, and when even the first line is taller than
+        /// the box it drops the whole text. CSS lets the glyphs overflow a line box shorter than the face (Shippori is
+        /// 1.448 em tall, 29 px in the name's 26 px line; Plex 1.3 em, 21 px in 「×n」's 16 px), so the frame showed only its
+        /// flag (#821). A negative bottom margin gives TMP one em more height without moving the top-aligned line; the
+        /// span is nowrap, so no second line can appear in that room. Label.Apply resets the margin: call after it.
+        /// </summary>
+        private static void KeepLineInBox(TMP_Text t)
+        {
+            TextStyle style = Label.StyleOf(t);
+            if (style == null) return;
+            Vector4 m = t.margin;
+            m.w = -style.Size;
+            t.margin = m;
         }
 
         /// <summary>A frame's listeners (.ocbg-battle-hit): mouseenter / mouseleave (.is-hover and the 説明), contextmenu (the pinned 説明).</summary>
