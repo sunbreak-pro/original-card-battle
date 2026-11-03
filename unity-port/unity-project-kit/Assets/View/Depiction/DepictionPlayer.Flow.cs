@@ -124,6 +124,7 @@ namespace Depiction.View
             }
             if (playerFigure) playerFigure.SetPose(FigurePose.Idle);
             EndPlan();
+            FadeSpentStripes(ev.After);
             ApplyFrame(ev.After);
             float seconds = Time.unscaledTime - startedAt;
             EventSeconds.Add(seconds);
@@ -170,6 +171,7 @@ namespace Depiction.View
 
                 case CueKind.OmenShow:
                     BindBadge(badge, ev.After, EnemyScreen.IndexOf(cue, _enemyCount));
+                    DrawOmenStripes(ev.After);
                     yield return HoldBeat(EffectId.OmenShow, badge.PopIn(_effects.Ms(EffectId.OmenShow)), () => badge.Rect.localScale = Vector3.one);
                     break;
 
