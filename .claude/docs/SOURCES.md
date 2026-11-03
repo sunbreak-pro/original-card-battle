@@ -56,10 +56,10 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 | 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
 | --- | --- | --- | --- | --- |
-| 探索（刻限・瘴気・ノード） | `.claude/docs/danjeon_document/dungeon_exploration_v4.md` | dungeon | PROPOSED | design |
+| 探索（刻限・瘴気・ノード） | `.claude/docs/danjeon_document/dungeon_exploration_v4.md` | dungeon | PROPOSED（#884 の暦への置き換えが未反映） | design |
 | concept-v3 の未確定の棚卸し | `.claude/docs/danjeon_document/concept_v3_open_items.md` | dungeon | PROPOSED（決定ではない） | design |
-| 七層の瘴気と刻限（層ごとの数値） | `.claude/docs/danjeon_document/seven_layers_v4.md` | dungeon | PROPOSED | battle, cards |
-| 探索の瘴気と戦闘の数値の突き合わせ | `.claude/docs/danjeon_document/miasma_and_battle_v4.md` | dungeon | PROPOSED | battle |
+| 七層の瘴気と刻限（層ごとの数値） | `.claude/docs/danjeon_document/seven_layers_v4.md` | dungeon | PROPOSED（#884 の暦への置き換えが未反映） | battle, cards |
+| 探索の瘴気と戦闘の数値の突き合わせ | `.claude/docs/danjeon_document/miasma_and_battle_v4.md` | dungeon | PROPOSED（#884 の暦への置き換えが未反映） | battle |
 | ツールと消耗品（出立の枠の中身） | `.claude/docs/danjeon_document/tools_and_consumables_v4.md` | dungeon | PROPOSED | battle |
 | 層ごとの出会い・報酬・イベント | `.claude/docs/danjeon_document/encounters_and_rewards_v4.md` | dungeon | PROPOSED | battle, cards |
 
