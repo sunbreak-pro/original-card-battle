@@ -161,7 +161,7 @@ namespace Trial.Bridge
         /// <summary>
         /// The enemy behind a combat node (dungeon_exploration_v4.md §6.3 通常戦闘 / 精鋭 / 階層ボス): null until one of its
         /// enemies has 開示度 1 (the screen prints 「敵: ？」). Its name is every enemy of the encounter, 「？」 for one not
-        /// met yet; its 開示度 is the lowest of them (§6.8 「2 体が並ぶ戦闘では…低いほう」); each enemy at 開示度 2 adds its
+        /// met yet; its 開示度 is the lowest of them (§6.11 「地図が出す開示度はノードの敵のうち最も低い値」); each enemy at 開示度 2 adds its
         /// 傾向 line. <paramref name="surveyed"/> (IEnemyIntel) needs no reading here: the surveyed enemy is in the journal
         /// at 2 from the survey on.
         /// </summary>
