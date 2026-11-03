@@ -146,6 +146,7 @@ namespace InheritanceCore.Tests
             var root = Load();
             var failures = new List<string>();
             int steps = 0;
+            int compared = 0, departed = 0;
             var scenarios = (List<object?>)root["scenarios"]!;
             for (int n = 0; n < scenarios.Count; n++)
             {
@@ -224,6 +225,15 @@ namespace InheritanceCore.Tests
                         got = new JsonObject { ["error"] = ErrorOf(e) };
                     }
 
+                    // Departure (#108, concept-v3 §8.1): the JS made a cleared life (歪みの根 defeated) the survivor, the C#
+                    // does not. Once the JS recorded one, its lineage differs from there on, so the rest of the scenario is
+                    // not compared. A clearing the JS refused is still compared (the refusals are the same).
+                    if (op == "end" && !step.ContainsKey("error") && IsClearing(step))
+                    {
+                        departed += list.Count - i;
+                        break;
+                    }
+                    compared++;
                     foreach (var key in new[] { "error", "start", "result", "lineage", "hall", "ending", "nodes", "layers", "heir" })
                     {
                         if (!step.TryGet(key, out var expected)) continue;
@@ -237,8 +247,13 @@ namespace InheritanceCore.Tests
                 }
             }
             Assert.That(steps, Is.GreaterThan(0));
-            Assert.That(failures, Is.Empty, string.Join("\n", failures.Take(12)) + $"\n({failures.Count} differences in {steps} steps)");
+            Assert.That(compared, Is.GreaterThan(steps / 2), $"{departed} steps fall after a clearing and are not compared");
+            Assert.That(failures, Is.Empty, string.Join("\n", failures.Take(12)) + $"\n({failures.Count} differences in {compared} compared steps)");
         }
+
+        /// <summary>An end op whose place closes the life by 歪みの根 defeated (a death op never does).</summary>
+        private static bool IsClearing(JsonObject step) =>
+            (string?)step["kind"] != "death" && step["place"] is JsonObject p && (string?)p["Ending"] == "Completed";
 
         [Test]
         public void RandomJournalsAndRecords_MergeAsTheJsMerges()

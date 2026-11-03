@@ -154,12 +154,13 @@ namespace Trial.Script.Tests
         public void WithWaitingTrace_IsTheJs_ForAClearedLifeBehindTwo_AMiasmaDeath_AndAnotherLayer()
         {
             Lineage cleared = ClearAt(DieAt(DieAt(Inheritance.NewLineage(7UL), 7), 7));
+            // The JS printed the survivor's two lines first; a cleared life is no survivor since #108 (concept-v3 §8.1),
+            // so its ending says the journal passes to nobody instead. The wait still follows the trace's line.
             Assert.That(MetaLines.WithWaitingTrace(Inheritance.EndingView(cleared), cleared).Lines, Is.EqualTo(new[]
             {
-                "手記は丸ごと次の生へ渡る",
-                "生存者ボーナス：ツール枠 +1 ／ デッキ上限 +5（次の 1 生）",
                 "第 7 層　果てなき世界に札の痕跡が残った（歪みの根の札を含む）",
                 "第 7 層には古い痕跡が 2 件ある。それらが回収されると現れる",
+                "踏破した生は生存者にならず、手記は次の生へ渡らない",
             }));
 
             Lineage alone = ClearAt(Inheritance.NewLineage(7UL));
