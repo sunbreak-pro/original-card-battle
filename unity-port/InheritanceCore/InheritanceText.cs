@@ -42,7 +42,7 @@ namespace InheritanceCore
         public const string AlreadyTaken = "この生ではもう遺産を受け取った。この痕跡は残り、後の生で受け取れる。";
         public const string Appears = "この層の通常戦闘 1 つと入れ替わって現れる";
         public const string Waits = "同じ層の古い痕跡を回収すると現れる";
-        public const string ClearedTraceNote = "歪みの根を倒した生の痕跡。札だけを残し、手記は生存者として渡った";
+        public const string ClearedTraceNote = "歪みの根を倒した生の痕跡。札だけを残し、手記は残らなかった";
         public const string WithheldHeading = "浅い層の死では残らなかった札";
 
         public static string KindLabel(CandidateKind kind) => kind switch
@@ -138,6 +138,12 @@ namespace InheritanceCore
         public const string JournalPasses = "手記は丸ごと次の生へ渡る";
 
         public static string ClearedTraceLeft(string layerTitle) => $"{layerTitle}に札の痕跡が残った（歪みの根の札を含む）";
+
+        /// <summary>The ending of a cleared life (#108): it is no survivor, so the journal goes nowhere.</summary>
+        public const string ClearedNoSurvivor = "踏破した生は生存者にならず、手記は次の生へ渡らない";
+
+        /// <summary>The ending of a cleared life when a survivor's bonus is still to come: that survivor stays.</summary>
+        public static string SurvivorKept(int generation, string name) => Invariant($"生存者は第 {generation} 代 {name}のまま残る");
 
         public static string SurvivorBonusLine(int lives) =>
             $"生存者ボーナス：ツール枠 +1 ／ デッキ上限 +5（{(lives == 1 ? "次の 1 生" : Invariant($"次の {lives} 生"))}）";
