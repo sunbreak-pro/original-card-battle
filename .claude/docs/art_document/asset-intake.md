@@ -1,7 +1,7 @@
 # 素材の取り込み規約 — 置き場・命名・Unity の設定・台帳
 
-> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。2026-10-10 に、Preset Manager のフィルタが `Assets/` から始まる形で当たると確かめた結果を §5.2 と §10 に入れました（#85。登録は RPG-by-card#10）。同じ日に、上級の槍の竜兵 2 枚の幅の例外（800 と 900）を §0・§1.2・§3.3 に足しました（#287）。2026-10-17 に、UI の部材と書体の取り込みと、書体のライセンスの記録を §12 に足しました（#92）。2026-10-19 に、数字の 600 に使う `IBMPlexMono-SemiBold.ttf` を §12.2 の表に足しました（#610）。2026-11-03 に、画面での高さが 400 px（案）を超える大型の敵の書き出しを §0・§1.2 に足し、立ち絵の Max Size を 2048 から 4096 に上げました（#840）。
-> **役割**: 作った絵を Unity に入れるまでの規約を決めます。**立ち絵（キャラクター）だけを対象にします。** 背景・カードの絵・UI の部材は不透明度も圧縮形式も違うので、別の節が要ります（→ §9）。
+> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。2026-10-10 に、Preset Manager のフィルタが `Assets/` から始まる形で当たると確かめた結果を §5.2 と §10 に入れました（#85。登録は RPG-by-card#10）。同じ日に、上級の槍の竜兵 2 枚の幅の例外（800 と 900）を §0・§1.2・§3.3 に足しました（#287）。2026-10-17 に、UI の部材と書体の取り込みと、書体のライセンスの記録を §12 に足しました（#92）。2026-10-19 に、数字の 600 に使う `IBMPlexMono-SemiBold.ttf` を §12.2 の表に足しました（#610）。2026-11-03 に、画面での高さが 400 px（案）を超える大型の敵の書き出しを §0・§1.2 に足し、立ち絵の Max Size を 2048 から 4096 に上げました（#840）。同じ日に、背景の絵の取り込みの決まりを §13 に足しました。置き場は旧い戦闘画面と同じ `Resources/Backdrops/layer-<n>` です（#859）。
+> **役割**: 作った絵を Unity に入れるまでの規約を決めます。§1〜§11 は**立ち絵（キャラクター）だけを対象にします。** 背景・カードの絵・UI の部材は不透明度も圧縮形式も違うので、節を分けます。UI の部材と書体は §12、背景は §13 です。カードの絵は `card-art-policy.md` が元になる文書です。
 > **正本**: `.claude/docs/vision/world-v1.md`（世界の正典 v4）／ `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md`（道具と前提）
 > **読む用**: `docs/reports/2026-09-21-asset-intake-rules.html`
 > **隣**: `style-guide.md`（#37。原本の大きさはあちらが正本）／ `card-art-policy.md`（#91）
@@ -19,6 +19,8 @@
 | 4 | 命名は `chr_<subject>_<category>_<label>.png`、asset id は `chr.<subject>.<category>.<label>` |
 | 5 | 取り込み設定は 1 枚の Preset にまとめ、Preset Manager にフォルダ絞りで登録します |
 | 6 | 台帳は Unity リポの `Docs/art/asset-ledger.csv`。**列の正本は本書 §7** です |
+| 7 | 背景の絵は 1 層に 1 枚、**1920 × 1080 の不透明な PNG** です。Unity の `Resources/Backdrops/layer-<n>`（n は 1〜7）に置きます（→ §13） |
+| 8 | 背景は **RGB Compressed DXT1（BC1、4 bpp）**、ミップマップなし、Max Size 2048 で取り込みます（→ §13.3） |
 
 ---
 
@@ -281,7 +283,8 @@ model_id, weights_file, sha256, license, terms_url, terms_checked_on, notes
 
 ## 9. 置いた仮定
 
-- **本書は立ち絵だけを扱います。** 背景は不透明なので BC7（8 bpp）ではなく DXT1/BC1（4 bpp）が正解になり、答えが変わります。カードの絵と UI の部材も別です。
+- **§1〜§11 は立ち絵だけを扱います。** 背景は不透明なので BC7（8 bpp）ではなく DXT1/BC1（4 bpp）が正解になり、答えが変わります。背景は §13、UI の部材は §12 で決めました。カードの絵は別です。
+- **背景のミップマップを off にしました**（§13.3）。絵は基準の画面でほぼ 1 対 1 に出るためです。実画面で確かめていません。
 - **ミップマップを on にしました。** 1536 の絵を最大 900 の実画素で出す縮小に、バイリニアだけでは足りないと見たためです。**1 体目で on / off のスクリーンショットを見比べて確かめます。** 見て違いが無ければ off に戻し、容量を 25 MiB から 18.8 MiB に下げます。
 - **Max Size を 4096 にしました**（2026-11-03、#840。それまでは既定の 2048）。大型の敵の原本が高さ 4096 まであるためです。#840 の決定は「大型の絵は Max Size 4096」で、全ての立ち絵を 4096 にするかまでは言っていません。大型の敵だけ別の Preset にすると当て忘れの事故が起きるので、立ち絵の Preset 1 つを 4096 にしました。640 × 1536 の絵の取り込みは変わりません。1024 を保険に置くと、大きく書き出した絵を 4 の倍数でない寸法へ落として圧縮を壊します。
 - **台帳を Unity リポに置いたままにしました。** 既存の 4 箇所（スキル 2 箇所、`briefs/` 2 本）が同じパスを指しているためです。こちらへ移すなら 4 箇所を同時に直す必要があり、どれも本 Issue の書き込み範囲の外です。
@@ -293,6 +296,8 @@ model_id, weights_file, sha256, license, terms_url, terms_checked_on, notes
 - ミップマップの on / off の見え方（→ §9）。
 - Unity 6 が高さ 4096 の Sprite を BC7 で取り込むときの時間と、実行時のメモリ（#840）。
 - Unity リポの `CharacterSprite.preset` の `maxTextureSize` を 4096 に直したか。2048 のままだと、大型の敵の絵だけが黙って縮みます。`.meta` の diff で確かめます（§6）。
+- DXT1 が、背景の空のグラデーションに帯を出さないか（§13.3）。1 枚目を入れたら、実画面で空の暗い所を拡大して確かめます。
+- 背景の PNG を置く `Resources` のフォルダが `Assets/Resources/Backdrops/` でよいか。Unity リポの既存の `Resources` は `Assets/View/Resources`（書体）だけです。どちらでも、読み込みの名前 `Backdrops/layer-<n>` は変わりません。
 - `EditorSettings.asset` の `m_SpritePackerMode: 5` が何を指すか。atlas を使わないので実害はありませんが、未確認です。
 - 台帳 1 行を埋める実時間。`card-art-policy.md` の「1 枚 20〜40 分」は未実測です。15 列でも重いなら、`ai_role` と `similarity_check` を後追いの別ファイルへ逃がす余地があります。
 - 禁止モデル（Illustrious / NoobAI 系、MAT）が混ざっていないことを、台帳でどう示すか。checkpoint 名は `.kra` と `workflow.json` に残りますが、Krita 側でどのボタンを押したかは残りません。いまは `notes` 頼みです。
@@ -331,3 +336,91 @@ model_id, weights_file, sha256, license, terms_url, terms_checked_on, notes
 - ファイルは約 13 MB あるので git に入れず、`npm run fonts:fetch` で `unity-port/unity-project-kit/Assets/View/Resources/Fonts/` に取得し、`npm run unity:sync` で Unity の `Assets/View/Resources/Fonts/` へ写します。
 - Unity の Font の取り込みは既定（Dynamic）のままにします。TextMeshPro の SDF アトラスは使いません（`battle_ui_ux_v2.md` §8 で残り 20% に置いた作業です）。
 - 版を上げるときは、`fetch-fonts.mjs` のコミットとハッシュと、この表を同じコミットで直します。
+
+---
+
+## 13. 背景の絵（#859）
+
+背景の絵の取り込みをここで決めます。何を描くかは `battle-visual-v1.md` §2.4 が元になる文書です。絵を読んで画面に出すコード（受け口）は、旧い戦闘画面の `Assets/View/Backdrop/BackdropLayers.cs` にあります。試遊版の Unity 版の受け口は #858（battle）で作ります。この節はそれと対になります。
+
+### 13.1 描く絵
+
+| 項目 | 値 | 理由 |
+| --- | --- | --- |
+| 枚数 | 1 層に 1 枚、7 層で 7 枚 | 受け口が層の番号（1〜7）ごとに 1 枚を探します |
+| 大きさ | **1920 × 1080**。縮小しません | 基準の画面の大きさです。絵は画面いっぱいに引き伸ばして出すので、16:9 でないと歪みます。両辺が 4 の倍数（1920 = 4 × 480、1080 = 4 × 270）なので DXT1 が効きます |
+| 不透明度 | **不透明**。アルファチャンネルを持たない PNG | 空のグラデーションを全面で覆って敷く絵だからです。アルファを持たせると、圧縮が 8 bpp に上がります |
+| 書き出しかた | 画像を統合し、アルファチャンネルを保存しない PNG で書き出す | 透明の画素が無いので、立ち絵の Split Alpha（§1.2）は要りません |
+| 描く範囲 | 遠景と地面だけ描きます。靄の光の筋と粒は描きません | 靄と粒は、コードが絵の上に重ねて動かします。絵に焼き込むと二重になります |
+
+重なる順は、下から 空のグラデーション、絵、靄、粒 です（`BackdropLayers.cs`）。絵を入れた層では、絵がコードで描く遠景（`BackdropScenery.cs`）の代わりになります。遠景は絵が入るまでの代わりなので、絵には遠景に当たる木・柱・岩・結晶の連なりも含めて描きます。
+
+描くときは、次の 3 点に気をつけます。
+
+- **試遊版では、y 556 より下を暗い地面が覆います**（`View/Trial/Battle/BattleBackdrop.cs` の `EarthTop`）。地面は ground の色の 80%（地平線）から 92%（下端）です。探索の画面では、その上に層ごとの暗い幕（`battle-visual-v1.md` §2.5）も重なります。見せたい形は y 556 より上に置きます。
+- **人型の立つ帯（x 15〜85%、y 25〜52%）の後ろは、明るさの差を小さくします。** 濃い形は、画面の端か上に置きます。コードの遠景と同じ決まりです（`battle-visual-v1.md` §2.4）。
+- **層の色は `battle-visual-v1.md` §2.4 の値に合わせます。** 絵が層の明るさを変えると、床の赤のコントラスト（同 §2.3）が崩れます。
+
+### 13.2 置き場と名前
+
+```
+ファイル : Assets/Resources/Backdrops/layer-<n>.png   （n = 1〜7）
+asset id : bg.layer-<n>
+読み込み : Resources.Load<Sprite>("Backdrops/layer-" + n)
+```
+
+名前は、コードの定数 `BackdropLayers.ArtPath`（`"Backdrops/layer-"`）に合わせて固定します。読み込みの名前には拡張子を付けません。立ち絵の `chr_` の接頭辞は使いません。旧い画面と試遊版で読み込みの口を 1 つにするため、試遊版も同じ名前で読みます（#858）。
+
+原本（`.kra`）は `%USERPROFILE%\OneDrive\art\backdrops\layer-<n>\layer-<n>.kra` に置き、どちらの git にも入れません。理由は §1.1 と同じです。PNG と `.meta` の正本は Unity リポ（`RPG-by-card`）です（§2）。
+
+### 13.3 Unity の取り込み設定
+
+Unity 6 の項目名で書きます。括弧内は `.meta` のキーです。立ち絵（§3）と違う項目は太字にしました。
+
+| 項目 | 値 | 理由 |
+| --- | --- | --- |
+| Texture Type | Sprite (2D and UI)（`textureType: 8`） | 受け口が `Resources.Load<Sprite>` で読むためです |
+| Sprite Mode | Single（`spriteMode: 1`） | 1 ファイルに 1 枚です |
+| Mesh Type | Full Rect（`spriteMeshType: 0`） | 全面の長方形 1 枚だからです |
+| Pivot | **Center**（`alignment: 0`） | 足元の基準点が要りません |
+| Generate Physics Shape | off | 当たり判定を使いません |
+| Generate Mipmap | **off**（`enableMipMap: 0`） | 絵は基準の画面でほぼ 1 対 1 に出ます。縮むのは小さい画面だけで、容量 +33% に見合いません。縮んだ画面で縞が出たら on に上げます |
+| Filter Mode | **Bilinear**（`filterMode: 1`） | ミップマップが無いので、Trilinear は働きません |
+| Wrap Mode | Clamp（`wrapU: 1`, `wrapV: 1`） | 端の画素を繰り返させないためです |
+| sRGB (Color Texture) | on（`sRGBTexture: 1`） | 色の絵だからです |
+| Alpha Source | **None**（`alphaUsage: 0`） | アルファの無い絵だからです |
+| Alpha Is Transparency | **off**（`alphaIsTransparency: 0`） | 透明の縁が無いので、色を広げる処理が要りません |
+| Read/Write | off（`isReadable: 0`） | CPU 側の複製でメモリが倍になります |
+| Max Size | **2048**（`maxTextureSize: 2048`） | 1920 は 2048 に収まり、縮小が起きません。1024 にすると 960 × 540 に落ちます |
+
+Windows / standalone の上書きは次のとおりです。
+
+| 項目 | 値 | 理由 |
+| --- | --- | --- |
+| Override | on（`overridden: 1`） | 忘れると上書きが丸ごと無効になります。§3.3 と同じく、`.meta` の diff で最初に見ます |
+| Max Size | 2048 | Default と揃えます |
+| Format | **RGB Compressed DXT1**（BC1。`textureFormat: 10`） | 不透明なので 4 bpp で足ります。立ち絵の BC7（8 bpp）の半分の容量です |
+| Use Crunch Compression | off（`crunchedCompression: 0`） | 7 枚では意味がなく、取り込みが遅くなります |
+
+**容量**: 1920 × 1080 は 2,073,600 texel で、DXT1 は 4 bpp なので 1 枚約 0.99 MiB、7 枚で約 6.9 MiB です。BC7 なら 7 枚で約 13.8 MiB、非圧縮の RGBA32 なら 7 枚で約 55 MiB になります。
+
+**DXT1 は、4 × 4 の画素ごとに 4 色しか持ちません。** 空のなめらかなグラデーションに帯が出ることがあります。1 枚だけ帯が見えたら、その 1 枚を BC7（`textureFormat: 25`）に上げて、理由を台帳の `notes` に書きます。
+
+### 13.4 設定を自動で当てる
+
+§5 と同じく、Preset と Preset Manager で当てます。立ち絵の Preset とは別に、背景用の Preset を 1 つ作ります。
+
+1. §13.3 の値で 1 枚目を設定し、`Assets/Art/Backdrops/BackdropSprite.preset` として保存します。`Resources` の中に置くとビルドに入るので、外に置きます。
+2. `m_SpriteSheet.*` / `m_UserData` / `m_AssetBundleName` / `m_AssetBundleVariant` を Exclude Property で外します（§5.1 の 3 と同じです）。
+3. Preset Manager に Texture Importer の既定として足し、Filter に `glob:"Assets/Resources/Backdrops/**.png"` と書きます。立ち絵の行より下に置きます。
+4. 登録は PNG を入れる前に済ませます（§5.2）。`BackdropSprite.preset`、その `.meta`、`ProjectSettings/PresetManager.asset` の 3 つを一緒にコミットします。
+
+### 13.5 台帳
+
+台帳は立ち絵と同じ `Docs/art/asset-ledger.csv` に、同じ列（§7.1）で 1 行ずつ足します。`asset_id` は `bg.layer-<n>`、`file` は `Assets/Resources/Backdrops/layer-<n>.png` です。透明の画素が無いので、書き出しの列に `save-merged` の区別は要りません。
+
+### 13.6 絵を入れた後にやること
+
+- 絵を入れた層は、床の赤のコントラストを測り直します（`battle-visual-v1.md` §2.3）。いまの値は、絵が無いときの空と遠景で測った値だからです。
+- 探索の画面の幕（`battle-visual-v1.md` §2.5）の上の、本文と琥珀のコントラストも測り直します。
+- 試遊版の地面が絵の下半分を覆ってよいかは、1 枚目を画面で見て決めます。
