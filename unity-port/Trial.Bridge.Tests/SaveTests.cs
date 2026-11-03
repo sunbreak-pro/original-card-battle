@@ -496,5 +496,25 @@ namespace Trial.Bridge.Tests
             Assert.That(SaveKeeper.NewLineageSeed(1761140000123, 0.123456789), Is.EqualTo(64138208u));
             Assert.That(SaveKeeper.HallLineageSeed(1761140000123), Is.EqualTo(203408763u));
         }
+
+        // #105: the name the player wrote over the drawn one is the one the save keeps, in the life in progress and after.
+        [Test]
+        public void ANameThePlayerWrote_OutlivesTheSave()
+        {
+            var st = new MemoryKeyValueStore();
+            LifeStart start = Inheritance.StartLife(NewLineage(5), 1, "ミナ");
+            Save.WriteSave(st, new TrialSave(start.Lineage));
+            Lineage open = Save.OpenSave(st).Save.Lineage;
+            Assert.That(open.Current.Name, Is.EqualTo("ミナ"));
+            Assert.That(Inheritance.NextHeir(open).Name, Is.EqualTo("ミナ"), "つづきから comes back to the same heir");
+
+            Lineage died = Inheritance.RecordDeath(open, null, new LifePlace(2, 1, null, DungeonCore.RunPhase.Fallen),
+                new LifeDeck(new[] { new CardEntry("tsuki", 1) }), null);
+            Save.WriteSave(st, new TrialSave(died));
+            Lineage back = Save.OpenSave(st).Save.Lineage;
+            Assert.That(back.Lives[0].Name, Is.EqualTo("ミナ"));
+            Assert.That(back.Traces[0].Name, Is.EqualTo("ミナ"));
+            Assert.That(Inheritance.EndingView(back).HeirLine, Does.Contain("ミナ"));
+        }
     }
 }

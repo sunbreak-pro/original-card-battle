@@ -222,6 +222,9 @@ namespace Trial.Meta
         /// <summary>meta.css:125 .ocbg-meta-heir-name.</summary>
         internal const string NameCss = "font: 800 72px/1 var(--font-display); letter-spacing: .14em; white-space: nowrap; text-shadow: 0 0 34px color-mix(in srgb, var(--amber) 32%, transparent);";
 
+        /// <summary>The smallest a written name shrinks to in the name row (#105): eight letters still fit beside the seal.</summary>
+        internal const float NameMinSize = 34f;
+
         /// <summary>meta.css:126 .ocbg-meta-heir-name span.</summary>
         internal const string NameSpanCss = "display: inline-block;";
 
@@ -233,6 +236,9 @@ namespace Trial.Meta
 
         /// <summary>meta.css:130 .ocbg-meta-heir-attire.</summary>
         internal const string AttireCss = "width: 262px; display: flex; flex-direction: column; gap: 6px;";
+
+        /// <summary>The 装束 column's width (AttireCss): the name field (#105) keeps to it, left of the figure.</summary>
+        internal static float AttireWidth => Ocb.Px(Ocb.Rule(AttireCss).Layout.Width) ?? 262f;
 
         /// <summary>meta.css:131 .ocbg-meta-heir-attire h4.</summary>
         internal const string AttireH4Css = "font: 700 18px/1 var(--font-body); letter-spacing: .2em;";
@@ -935,6 +941,16 @@ namespace Trial.Meta
             RectTransform row = El(box, "ocbg-meta-heir-namerow", NameRowCss);
             RectTransform nameEl = El(row, "ocbg-meta-heir-name", NameCss);
             TextStyle s = MetaStyle.Text(NameCss + NameSpanCss);
+            // A name the player wrote (#105) can run past the drawn names' four or five letters: it shrinks to the room
+            // the seal leaves, as the JS's nowrap row would have overflowed instead.
+            float room = w - (Ocb.Px(Ocb.Rule(SealCss).Layout.Width) ?? 0f) - ColGap(NameRowCss);
+            float full = 0f;
+            foreach (string ch in MetaTimelines.Chars(name)) full += TextMeasure.Width(ch, s);
+            if (full > room && full > 0f)
+            {
+                s.Size = Math.Max(NameMinSize, (float)Math.Floor(s.Size * room / full));
+                s.LineHeight = s.Size;
+            }
             var chars = new List<RectTransform>();
             float x = 0f;
             foreach (string ch in MetaTimelines.Chars(name))
