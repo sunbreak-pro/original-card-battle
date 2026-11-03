@@ -9,12 +9,14 @@
 
 ## 直近の完了
 
+- 7 層の背景を層ごとの色とコードで描く遠景に描き直し、Krita の指示文の手引きを作る（#89）✅（2026-11-03）— こうだいさんの依頼。PR #851（Refs、`docs/design-829` の上に積んだ。書いた時点で open）。報告書は https://claude.ai/artifact/1kyJZVAt6rSUGM7sCXfjec と https://claude.ai/artifact/Q2TauXF6hDfUJ4zpc5hiQQ。申し送り `2026-11-03-design-world-layer-colours.md`（world-v1 の色の食い違い）
 - 瘴気の息づきが % の変化で途切れない形を出す（#728）✅（2026-11-02）— `MiasmaBreath` 型を `Backdrop.Script` に足し、旧い探索画面を乗り換えた（PR #757、Closes。書いた時点で open）。余弦の式は `BackdropMotion.CosineDip` にまとめた。試遊版の探索画面は同じ飛びが残るので申し送り `2026-11-02-design-trial-miasma-breath-jump.md` を回した
 - design 宛ての 4 件を 1 件 1 PR で進める（#711 / #608 / #85 / #287）✅（2026-11-01）— #711 は手記の説明を死亡地点での受け取りに直した（PR #736、Closes）。#608 は `BackdropView` の読み返しを消した（PR #741、Closes。`unity:check` は main と同じ 162 件で exit 1）。#85・#287 は待機の絵の影絵の関門を測って仕様カードに書いた（PR #742 / #743、Refs）。2 体を絵の棚に載せる Unity 側の PR は RPG-by-card#15。#736〜#744 は merge 済み、後追いの #752 と RPG-by-card#15 は open。申し送り 4 件（試遊版と立ち絵の食い違い、試遊版への差し込み、§17 の判定の大きさ、拠点の §1 の言い回し）
-- design 宛ての 4 件を 1 件 1 PR で進める（#623 / #85 / #287 / #244）✅（2026-10-21）— #623 は `battle-visual-v1.md` v1.10 に技名と説明を 12 px まで縮める例外を書いた（PR #662、Closes）。#85・#287 の仕様カード 3 枚を、#455 の人型 226 px とロースター v4.23 に合わせた（PR #671 / #672）。#244 の依頼文を v1.9 に上げ、勝ったときの結果画面を頼む項目を足した（PR #673）。PR はすべて open。申し送り 3 件（cards 宛て 1、battle 宛ての食い違い 2）
 
 ## 予定
 
+- 🔜 **PR #844 → #851 の merge と、Unity Editor での背景の確認（こうだいさんとメインのチャット）** — #851 は #844 の上に積んである。merge 後に `npm run unity:sync` で写し、`Trial.unity` で 7 層の戦闘・探索・タイトルを見る
+- 🔜 **試遊版の Unity 版に背景の絵の受け口を作るか（こうだいさんの判断）** — いまは旧い `Battle.unity` の `BackdropLayers` にしかない。Krita の背景の指示文（手引き §4）は実機で未試行
 - 🔜 **立ち絵を試遊版の人型へ差し込む** — 2026-11-01 こうだいさん決定。Issue は main が作る（申し送り `2026-11-01-design-trial-art-insert.md`）。差分（#85、#287）はこれが入ってから作る
 - 🔜 **#608 の merge 後の確認（メインのチャット）** — PR #741 は merge 済み。Unity でコンパイルしてから `unity:check` と階層 4 の背景を見る
 - 🔜 **PR #752 と RPG-by-card#15 の merge（こうだいさんの作業）** — RPG-by-card#15 は `Collect Character Art` で差分が出ないことを見てから merge する
