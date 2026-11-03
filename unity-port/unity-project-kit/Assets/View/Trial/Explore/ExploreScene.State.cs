@@ -189,7 +189,7 @@ namespace Trial.Explore
         private ExplorationScreen DetailScreen;
 
         /// <summary>drawLegend's node (ExploreScene.js:326 legendNode).</summary>
-        private NodeCard LegendNodeCard;
+        private NodePanel LegendNodeCard;
 
         /// <summary>The scene clock (createClock): backdrop, roll labels, gauge, walker; and the JS timers (Timeout).</summary>
         private TrialClock Clock;
@@ -611,7 +611,7 @@ namespace Trial.Explore
     public sealed class ExploreStepInfo
     {
         public ExplorationScreen Before;
-        public NodeCard Node;
+        public NodePanel Node;
         public RestChoice Choice;
         public bool Jump;
     }

@@ -16,7 +16,7 @@ namespace Exploration
         {
             var state = session.State;
             bool mapLive = session.MapIsLive;
-            var nodes = NodeCards(session);
+            var nodes = NodePanels(session);
 
             // Trial extension (js: ExplorationScreenBuilder.js:717): 刻限の砂 and 防瘴の面 shown where their numbers are
             // (the band), and the aim's hint. state.TimeLimit is the profile's outside trial.
@@ -61,13 +61,13 @@ namespace Exploration
             };
         }
 
-        private static List<NodeCard> NodeCards(ExplorationSession session)
+        private static List<NodePanel> NodePanels(ExplorationSession session)
         {
             var state = session.State;
             var map = state.Map;
             bool mapLive = session.MapIsLive;
 
-            var nodes = new List<NodeCard>();
+            var nodes = new List<NodePanel>();
             foreach (var node in map.Nodes.OrderBy(n => n.Id))
             {
                 var standing = StandingOf(state, node.Id);
@@ -79,7 +79,7 @@ namespace Exploration
                 var jumps = mapLive && session.IsAiming ? JumpOptions(session, node, session.AimingSlot, standing) : null;
                 var options = jumps ?? (mapLive ? Options(state, node, standing, ArrivalEvent(session, node)) : new StepOption[0]);
                 string note = jumps != null && jumps.Count > 0 ? ExplorationText.JumpNote : NoteOf(standing);
-                nodes.Add(new NodeCard(node)
+                nodes.Add(new NodePanel(node)
                 {
                     X = (node.Column + 0.5f) / rowWidth,
                     Y = map.RowCount == 1 ? 0.5f : 1f - (float)node.Row / (map.RowCount - 1),
@@ -96,7 +96,7 @@ namespace Exploration
             return nodes;
         }
 
-        private static List<EdgeLine> Edges(ExplorationState state, IReadOnlyList<NodeCard> nodes)
+        private static List<EdgeLine> Edges(ExplorationState state, IReadOnlyList<NodePanel> nodes)
         {
             var edges = new List<EdgeLine>();
             foreach (var node in state.Map.Nodes.OrderBy(n => n.Id))
@@ -171,7 +171,7 @@ namespace Exploration
             return detail;
         }
 
-        private static bool Lit(ExplorationState state, IReadOnlyList<NodeCard> nodes, int from, int to)
+        private static bool Lit(ExplorationState state, IReadOnlyList<NodePanel> nodes, int from, int to)
         {
             int other;
             if (from == state.CurrentNodeId) other = to;
@@ -401,21 +401,21 @@ namespace Exploration
             return $"ツール: {names}（{loadout.Tools.Count} / {loadout.ToolSlotCount}）";
         }
 
-        private static IReadOnlyList<SlotCard> Slots(ExplorationSession session)
+        private static IReadOnlyList<SlotPanel> Slots(ExplorationSession session)
         {
             if (session.Trial) return TrialSlots(session); // Trial extension
             var carried = session.State.Loadout.Consumables;
-            var slots = new List<SlotCard>();
+            var slots = new List<SlotPanel>();
             for (int i = 0; i < RunLoadout.ConsumableSlots; i++)
             {
                 if (i < carried.Count)
                 {
                     string id = carried[i].Id;
-                    slots.Add(new SlotCard(i, ExplorationText.ItemName(id), ExplorationText.ItemNote(id), session.CanUseConsumable(i)));
+                    slots.Add(new SlotPanel(i, ExplorationText.ItemName(id), ExplorationText.ItemNote(id), session.CanUseConsumable(i)));
                 }
                 else
                 {
-                    slots.Add(new SlotCard(i, ExplorationText.EmptySlot, "", false));
+                    slots.Add(new SlotPanel(i, ExplorationText.EmptySlot, "", false));
                 }
             }
             return slots;

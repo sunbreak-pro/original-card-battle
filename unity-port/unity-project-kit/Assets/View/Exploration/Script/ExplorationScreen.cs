@@ -193,11 +193,12 @@ namespace Exploration
 
     /// <summary>
     /// One node on the map. The node itself fixes where it sits on the grid; everything else is named
-    /// in an object initializer, so two of its strings cannot trade places unnoticed (#597).
+    /// in an object initializer, so two of its strings cannot trade places unnoticed (#597). A panel, not
+    /// a card: a card in this game is one of the deck's, and the battle's script has its own CardKind (#598).
     /// </summary>
-    public sealed class NodeCard
+    public sealed class NodePanel
     {
-        public NodeCard(MapNode node)
+        public NodePanel(MapNode node)
         {
             Id = node.Id;
             Row = node.Row;
@@ -300,10 +301,10 @@ namespace Exploration
         public IReadOnlyList<float> StepLineFills { get; }
     }
 
-    /// <summary>One consumable slot.</summary>
-    public sealed class SlotCard
+    /// <summary>One consumable slot. A panel, not a card, for the same reason as NodePanel (#598).</summary>
+    public sealed class SlotPanel
     {
-        public SlotCard(int index, string name, string note, bool canUse,
+        public SlotPanel(int index, string name, string note, bool canUse,
             IReadOnlyList<string> forecast = null, string reason = "", bool aiming = false, string id = null)
         {
             Index = index;
@@ -523,7 +524,7 @@ namespace Exploration
 
         public string MarksLabel { get; init; }
 
-        public IReadOnlyList<NodeCard> Nodes { get; init; }
+        public IReadOnlyList<NodePanel> Nodes { get; init; }
 
         public IReadOnlyList<EdgeLine> Edges { get; init; }
 
@@ -535,7 +536,7 @@ namespace Exploration
         /// <summary>「ツール: 防瘴の面（1 / 3）」.</summary>
         public string ToolsLabel { get; init; }
 
-        public IReadOnlyList<SlotCard> Consumables { get; init; }
+        public IReadOnlyList<SlotPanel> Consumables { get; init; }
 
         /// <summary>The 「この生を終える」 button is live (§6.6).</summary>
         public bool CanEndLife { get; init; }
@@ -585,7 +586,7 @@ namespace Exploration
         /// </summary>
         public bool MapIsLive => !Card.IsShown;
 
-        public NodeCard Node(int id)
+        public NodePanel Node(int id)
         {
             foreach (var node in Nodes)
             {

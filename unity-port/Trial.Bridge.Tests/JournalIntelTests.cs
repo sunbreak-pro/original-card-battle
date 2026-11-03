@@ -46,7 +46,7 @@ namespace Trial.Bridge.Tests
             levels.ToDictionary(l => l.Id, l => l.Level, StringComparer.Ordinal);
 
         /// <summary>js: journal.test.mjs:68 enemyLines: the combat nodes the screen does not draw far, with their lines.</summary>
-        private static List<NodeCard> EnemyLines(ExplorationScreen screen) =>
+        private static List<NodePanel> EnemyLines(ExplorationScreen screen) =>
             screen.Nodes.Where(n => n.Kind.IsCombat() && n.Standing != NodeStanding.Far).ToList();
 
         private static List<JournalPage> EnemyPagesOf(ExplorationSession session) =>
@@ -78,7 +78,7 @@ namespace Trial.Bridge.Tests
             // On the screen (dungeon_exploration_v4.md §6.3): 「敵: 名前（開示度 n / 2）」, then the 傾向 line.
             IntelLife life = LifeWith(5, Levels(("polearm_warped", 1), ("shadow_hound", 2)));
             ExplorationSession session = life.Session;
-            foreach (NodeCard n in EnemyLines(session.Screen()))
+            foreach (NodePanel n in EnemyLines(session.Screen()))
             {
                 Encounter enc = JournalIntel.EncounterAt(session.RunSeed, session.State.Map.Node(n.Id), 1);
                 if (enc.Fights.Count == 1 && enc.EnemyIds.First() == "polearm_warped")
@@ -326,9 +326,9 @@ namespace Trial.Bridge.Tests
         public void J12_WithoutAJournalIntel_OrBeforeBind_TheScreenIsTheCSharps()
         {
             ExplorationSession plain = Explorable(new ExplorationSession(new RunStart { Seed = 5 }));
-            List<NodeCard> lines = EnemyLines(plain.Screen());
+            List<NodePanel> lines = EnemyLines(plain.Screen());
             Assert.That(lines.Count, Is.GreaterThan(0));
-            foreach (NodeCard n in lines) Assert.That(n.Lines, Does.Contain("敵: ？"));
+            foreach (NodePanel n in lines) Assert.That(n.Lines, Does.Contain("敵: ？"));
             JournalPage page = plain.Screen().Journal.Pages[0];
             Assert.That(page.Id, Is.EqualTo("enemy-none"));
             Assert.That(page.Disclosure, Is.EqualTo(0));

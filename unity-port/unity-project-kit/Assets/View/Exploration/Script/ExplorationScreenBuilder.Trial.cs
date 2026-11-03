@@ -148,16 +148,16 @@ namespace Exploration
         /// forecast is), or why it cannot.
         /// </summary>
         // js: bridge/explorationScript/ExplorationScreenBuilder.js:338
-        private static IReadOnlyList<SlotCard> TrialSlots(ExplorationSession session)
+        private static IReadOnlyList<SlotPanel> TrialSlots(ExplorationSession session)
         {
             var state = session.State;
             var carried = state.Loadout.Consumables;
-            var slots = new List<SlotCard>();
+            var slots = new List<SlotPanel>();
             for (int i = 0; i < RunLoadout.ConsumableSlots; i++)
             {
                 if (i >= carried.Count)
                 {
-                    slots.Add(new SlotCard(i, ExplorationText.EmptySlot, "", false));
+                    slots.Add(new SlotPanel(i, ExplorationText.EmptySlot, "", false));
                     continue;
                 }
                 var item = carried[i];
@@ -178,7 +178,7 @@ namespace Exploration
                         reason = ExplorationText.NoEffectNow;
                     }
                 }
-                slots.Add(new SlotCard(i, ExplorationText.ItemName(item.Id), ExplorationText.PlayerNote(item.Id), canUse, forecast, reason,
+                slots.Add(new SlotPanel(i, ExplorationText.ItemName(item.Id), ExplorationText.PlayerNote(item.Id), canUse, forecast, reason,
                     session.AimingSlot == i, item.Id));
             }
             return slots;
