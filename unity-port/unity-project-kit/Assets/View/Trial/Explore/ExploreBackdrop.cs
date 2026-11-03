@@ -14,6 +14,9 @@
 // - The shade canvas (240 × 135, scaled to the stage) is a Texture2D of the same size on a RawImage, filtered bilinear,
 //   redrawn only when (Strength, InnerRadius) changes, as the JS does.
 // - The veil and the lull are the explore.css rules, with their CSS transitions run by the kit's CssStates.
+// - Unity additions of 2026-11-03 (こうだいさん's request; the JS has neither): the layer's far view (BackdropScenery)
+//   between the sky and the hazes, of the slot and of the strip, and every set of specks of BackdropSpec.Specks in the
+//   slot, not only the layer's Motes.
 // The meshes: gradients along one axis are split at their stops (exact), radial ones are fans of 128 segments whose
 // colour runs linearly along each radius (the canvas gradient's), so no mesh refinement is needed for the large hazes.
 using System;
@@ -25,6 +28,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using BdRgba = global::Backdrop.Rgba;
 using BackdropMotion = global::Backdrop.BackdropMotion;
+using BackdropScenery = global::Backdrop.BackdropScenery;
 using BackdropSpec = global::Backdrop.BackdropSpec;
 using BackdropSwitch = global::Backdrop.BackdropSwitch;
 using ExplorationBackdropSpec = global::Backdrop.ExplorationBackdropSpec;
@@ -34,6 +38,8 @@ using LayerBackdrop = global::Backdrop.LayerBackdrop;
 using MiasmaLook = global::Backdrop.MiasmaLook;
 using MiasmaShade = global::Backdrop.MiasmaShade;
 using Motes = global::Backdrop.Motes;
+using SceneryMesh = global::Backdrop.SceneryMesh;
+using SceneryVertex = global::Backdrop.SceneryVertex;
 using SkyStop = global::Backdrop.SkyStop;
 
 namespace Trial.Explore
@@ -118,9 +124,19 @@ namespace Trial.Explore
             public CanvasGroup Group;
             public float Alpha = -1f;
             public readonly List<HazeParts> Hazes = new List<HazeParts>();
+            public readonly List<SpeckSet> Specks = new List<SpeckSet>();
+        }
+
+        /// <summary>
+        /// One set of a slot's specks and the dots that draw it, Size stage px across. Unity addition of 2026-11-03
+        /// (こうだいさん's request): the JS slot has the layer's one set of motes.
+        /// </summary>
+        private sealed class SpeckSet
+        {
+            public Motes Motes;
+            public float Size;
             public readonly List<RectTransform> Dots = new List<RectTransform>();
-            public readonly List<VectorGraphic> DotGraphics = new List<VectorGraphic>();
-            public float DotSize;
+            public readonly List<VectorGraphic> Graphics = new List<VectorGraphic>();
         }
 
         private sealed class HazeParts
@@ -215,6 +231,10 @@ namespace Trial.Explore
             // sky
             AddSky(s.Root, spec, W, H);
 
+            // the far view, static, crossfaded by the slot's alpha with the rest (Unity addition of 2026-11-03,
+            // こうだいさん's request: the JS draws none)
+            AddScenery(s.Root, spec, W, H);
+
             // haze (each graphic is built at the top of its breath; the breath is its opacity)
             foreach (Haze haze in spec.Hazes ?? Array.Empty<Haze>())
             {
@@ -244,15 +264,20 @@ namespace Trial.Explore
                 s.Hazes.Add(hp);
             }
 
-            // motes (BackdropMotion.MoteAt / MoteAlpha), SizePx × 2.2 stage px across
-            Motes motes = spec.Motes ?? Motes.None;
-            s.DotSize = motes.SizePx * MoteScale;
-            for (int i = 0; i < motes.Count; i++)
+            // motes (BackdropMotion.MoteAt / MoteAlpha), SizePx × 2.2 stage px across; every set of BackdropSpec.Specks
+            // in drawing order, the layer's Motes first (Unity addition of 2026-11-03, こうだいさん's request: the JS
+            // draws the one set)
+            foreach (Motes motes in BackdropSpec.Specks(spec))
             {
-                VectorGraphic dot = SoftDot(s.Root, motes.Color, s.DotSize);
-                dot.Opacity = 0f;
-                s.Dots.Add(dot.rectTransform);
-                s.DotGraphics.Add(dot);
+                var set = new SpeckSet { Motes = motes, Size = motes.SizePx * MoteScale };
+                for (int i = 0; i < motes.Count; i++)
+                {
+                    VectorGraphic dot = SoftDot(s.Root, motes.Color, set.Size);
+                    dot.Opacity = 0f;
+                    set.Dots.Add(dot.rectTransform);
+                    set.Graphics.Add(dot);
+                }
+                s.Specks.Add(set);
             }
             return s;
         }
@@ -308,14 +333,18 @@ namespace Trial.Explore
                 hp.Lit = lit;
                 foreach (VectorGraphic g in hp.Parts) g.Opacity = lit;
             }
-            // motes (BackdropMotion.MoteAt / MoteAlpha), in reference pixels
-            Motes motes = s.Spec.Motes ?? Motes.None;
-            float half = s.DotSize / 2f;
-            for (int i = 0; i < motes.Count && i < s.Dots.Count; i++)
+            // motes (BackdropMotion.MoteAt / MoteAlpha), in reference pixels; each set of the slot on its own (Unity
+            // addition of 2026-11-03, こうだいさん's request: the JS moves the one set)
+            foreach (SpeckSet set in s.Specks)
             {
-                BackdropMotion.MoteAt(motes, i, now, W, H, out float x, out float y);
-                s.Dots[i].anchoredPosition = new Vector2(x - half, -(y - half));
-                s.DotGraphics[i].Opacity = motes.Color.A * BackdropMotion.MoteAlpha(motes, i, now);
+                Motes motes = set.Motes;
+                float half = set.Size / 2f;
+                for (int i = 0; i < motes.Count && i < set.Dots.Count; i++)
+                {
+                    BackdropMotion.MoteAt(motes, i, now, W, H, out float x, out float y);
+                    set.Dots[i].anchoredPosition = new Vector2(x - half, -(y - half));
+                    set.Graphics[i].Opacity = motes.Color.A * BackdropMotion.MoteAlpha(motes, i, now);
+                }
             }
         }
 
@@ -480,7 +509,8 @@ namespace Trial.Explore
         /// a w × ht element at (0, 0) of parent, clipped to itself as the canvas is. No motes and no breath; radial hazes are
         /// Size·ht/2 across, shafts max(4, Size·w) wide and 2·ht tall with a 0 → full → 0 ramp, the top glow and band in 11
         /// stops; then the layer's veil at 0.6× its alpha. The window's drift (explore.css:359 ocbg-explore-window) is the
-        /// caller's, on the element returned.
+        /// caller's, on the element returned. Unity addition of 2026-11-03 (こうだいさん's request): the layer's far view,
+        /// scaled into the strip, between the sky and the haze.
         /// </summary>
         public static RectTransform SkyStrip(RectTransform parent, int layer, float w, float ht)
         {
@@ -488,6 +518,8 @@ namespace Trial.Explore
             c.gameObject.AddComponent<RectMask2D>();
             LayerBackdrop spec = BackdropSpec.For(layer);
             AddSky(c, spec, w, ht);
+            // the far view as the slot has it, x × w and y × ht (Unity addition of 2026-11-03, こうだいさん's request)
+            AddScenery(c, spec, w, ht);
             foreach (Haze haze in spec.Hazes ?? Array.Empty<Haze>())
             {
                 if (haze.Shape == HazeShape.Radial)
@@ -531,6 +563,52 @@ namespace Trial.Explore
                 cols[i] = RgbaOf(sky[i].Color);
             }
             return VectorGraphic.Draw(parent, 0f, 0f, w, ht, (mb, box, f) => Bands(mb, box, true, ts, cols), "sky");
+        }
+
+        /// <summary>
+        /// The layer's far view (BackdropScenery.Meshes): each group one static graphic over w × ht, back to front, every
+        /// corner in its own colour. Unity addition of 2026-11-03 (こうだいさん's request): the JS draws no far view. Meshes
+        /// that cannot be built leave the view out with the exception logged, so the sky, the haze and the specks still draw.
+        /// </summary>
+        private static void AddScenery(RectTransform parent, LayerBackdrop spec, float w, float ht)
+        {
+            SceneryMesh[] meshes;
+            try
+            {
+                meshes = BackdropScenery.Meshes(spec);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e, parent);
+                return;
+            }
+            foreach (SceneryMesh mesh in meshes ?? Array.Empty<SceneryMesh>())
+            {
+                SceneryVertex[] verts = mesh?.Vertices;
+                int[] tris = mesh?.Triangles;
+                if (verts == null || verts.Length == 0 || tris == null || tris.Length < 3) continue;
+                var cols = new Rgba[verts.Length];
+                for (int i = 0; i < verts.Length; i++) cols[i] = RgbaOf(verts[i].Color);
+                VectorGraphic.Draw(parent, 0f, 0f, w, ht, (mb, box, f) => SceneryPaint(mb, box, verts, cols, tris), "scenery");
+            }
+        }
+
+        /// <summary>
+        /// One far-view group in the box: a corner at stage fraction (x, y) goes to (box.X + x·W, box.Y + y·H); a triangle
+        /// naming a corner the group does not have is left out.
+        /// </summary>
+        private static void SceneryPaint(MeshBuilder mb, RectF box, SceneryVertex[] verts, Rgba[] cols, int[] tris)
+        {
+            int start = mb.VertexCount;
+            int n = verts.Length;
+            for (int i = 0; i < n; i++)
+                mb.AddVertex(new Vec2(box.X + verts[i].X * box.W, box.Y + verts[i].Y * box.H), cols[i]);
+            for (int t = 0; t + 2 < tris.Length; t += 3)
+            {
+                int a = tris[t], b = tris[t + 1], c = tris[t + 2];
+                if ((uint)a >= (uint)n || (uint)b >= (uint)n || (uint)c >= (uint)n) continue;
+                mb.AddTri(start + a, start + b, start + c);
+            }
         }
 
         /// <summary>A top glow or a band: a vertical gradient of `steps` + 1 stops of BackdropSpec.HazeAlphaAt on the haze's colour at alpha 1.</summary>

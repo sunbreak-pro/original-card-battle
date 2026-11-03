@@ -516,5 +516,84 @@ namespace Trial.Bridge.Tests
             Assert.That(back.Traces[0].Name, Is.EqualTo("ミナ"));
             Assert.That(Inheritance.EndingView(back).HeirLine, Does.Contain("ミナ"));
         }
+
+        // ---- the version policy (#109, dungeon_exploration_v4.md §7.9) ----
+
+        [Test]
+        public void ASaveOfANewerBuild_DoesNotLoad_AndIsKeptAsideUntilThePlayerStartsAnew()
+        {
+            Quietly(() =>
+            {
+                var st = new MemoryKeyValueStore();
+                Save.WriteSave(st, new TrialSave(NewLineage(4)));
+                var parsed = (JsonObject)Json.Parse(st.Read(Save.SaveKey));
+                parsed["v"] = Save.Version + 1;
+                string newer = Json.Stringify(parsed);
+                st.Write(Save.SaveKey, newer);
+                OpenedSave r = Save.OpenSave(st);
+                Assert.That(r.Save, Is.Null);
+                Assert.That(r.Unreadable.Error.Message, Does.Contain("is newer than this build reads"));
+                Assert.That(r.Unreadable.Kept, Is.True);
+                Assert.That(Save.ReadBrokenSave(st), Is.EqualTo(newer));
+                Assert.That(st.Read(Save.SaveKey), Is.EqualTo(newer), "nothing is overwritten");
+
+                foreach (object bad in new object[] { 0, 1.5, "1" })
+                {
+                    parsed["v"] = bad;
+                    st.Write(Save.SaveKey, Json.Stringify(parsed));
+                    Assert.That(Save.OpenSave(st).Save, Is.Null, Json.Stringify(bad));
+                }
+            });
+        }
+
+        [Test]
+        public void ASaveWithoutItsVersion_ReadsAsVersion1()
+        {
+            var st = new MemoryKeyValueStore();
+            var lineage = NewLineage(6);
+            st.Write(Save.SaveKey, Json.Stringify(new JsonObject { ["lineage"] = lineage.ToJson(), ["life"] = null }));
+            OpenedSave r = Save.OpenSave(st);
+            Assert.That(r.Unreadable, Is.Null);
+            Assert.That(Serialize(r.Save.Lineage), Is.EqualTo(Serialize(lineage)));
+            Assert.That(Save.SaveText(r.Save), Does.StartWith("{\"v\":" + Save.Version + ","));
+        }
+
+        [Test]
+        public void ALineageOfANewerBuild_DoesNotLoad()
+        {
+            Quietly(() =>
+            {
+                var st = new MemoryKeyValueStore();
+                var lin = Inheritance.ToJson(NewLineage(8));
+                lin["Version"] = Inheritance.SaveVersion + 1;
+                st.Write(Save.SaveKey, Json.Stringify(new JsonObject { ["v"] = Save.Version, ["lineage"] = lin, ["life"] = null }));
+                OpenedSave r = Save.OpenSave(st);
+                Assert.That(r.Save, Is.Null);
+                Assert.That(r.Unreadable.Error.Message, Does.Contain("is newer than this build reads"));
+                Assert.That(r.Unreadable.Kept, Is.True);
+            });
+        }
+
+        [Test]
+        public void ALifeOfAnotherVersion_IsNotConverted_ItDoesNotReplay()
+        {
+            var good = LifeSave.FromJson(Json.Parse("{\"start\":{\"v\":1,\"seed\":\"1\",\"choice\":{\"deck\":[]}},\"log\":[]}"));
+            Assert.That(good.ReadStart().V, Is.EqualTo(LifeStartData.Version));
+            foreach (int v in new[] { LifeStartData.Version + 1, 0 })
+            {
+                var other = LifeSave.FromJson(Json.Parse("{\"start\":{\"v\":" + v + ",\"seed\":\"1\",\"choice\":{\"deck\":[]}},\"log\":[]}"));
+                var e = Assert.Throws<SaveFormatException>(() => other.ReadStart());
+                Assert.That(e.Message, Does.Contain("this build replays version " + LifeStartData.Version + " only"), v.ToString());
+            }
+            // A save holding such a life still opens: only the life fails, when it is resumed (Main.ResumeLife offers to
+            // give it up and goes back to the lineage before that departure).
+            var st = new MemoryKeyValueStore();
+            var lineage = NewLineage(2);
+            var life = LifeSave.FromJson(Json.Parse("{\"start\":{\"v\":2,\"seed\":\"1\"},\"log\":[],\"before\":" + Serialize(lineage) + "}"));
+            Save.WriteSave(st, new TrialSave(lineage, life));
+            OpenedSave r = Save.OpenSave(st);
+            Assert.That(r.Unreadable, Is.Null);
+            Assert.That(Serialize(Inheritance.FromJson(r.Save.Life.Before)), Is.EqualTo(Serialize(lineage)));
+        }
     }
 }

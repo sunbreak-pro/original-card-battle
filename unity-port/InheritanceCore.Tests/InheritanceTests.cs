@@ -530,7 +530,7 @@ namespace InheritanceCore.Tests
         [Test]
         public void R15_ThePreviousSurvivorsRemainingLivesAreDroppedWhenANewOneSurvives()
         {
-            var l = SurviveAt(Inheritance.NewLineage(Seed), 7, opts: new EndOptions { ExtraBossWon = true }, ending: RunPhase.Completed);
+            var l = SurviveAt(Inheritance.NewLineage(Seed), 7, opts: new EndOptions { ExtraBossWon = true });
             Assert.That(l.Survivor!.BonusLivesLeft, Is.EqualTo(2));
             l = SurviveAt(l, 1);
             Assert.That(l.Survivor!.Generation, Is.EqualTo(2));
@@ -560,10 +560,67 @@ namespace InheritanceCore.Tests
             Assert.That(h.Traces.Count, Is.EqualTo(1));
         }
 
+        /// <summary>
+        /// The three model lives of dungeon_exploration_v4 §7.8 (#108): what the next heir gets by the survival route and
+        /// by a death at the same place. The survival route carries the whole journal and the slots, never a card; a
+        /// death carries mastered cards, the 2nd and 3rd 段 only from layer 3 down. Neither side wins every row.
+        /// </summary>
+        [TestCase(2, 3, 1, 0, 4, 2, 7, TestName = "Balance_AShallowLife_SurvivalWins_DeathLeavesNoCardAbove1")]
+        [TestCase(3, 4, 2, 1, 8, 3, 12, TestName = "Balance_AMiddleLife_OnlyADeathCarriesItsRank3Card")]
+        [TestCase(5, 5, 3, 1, 11, 5, 17, TestName = "Balance_ADeepLife_OnlyADeathCarriesItsRank3Card")]
+        public void Balance_SurvivalCarriesKnowledgeAndSlots_DeathCarriesMastery(
+            int layer, int rank1, int rank2, int rank3, int enemies, int dungeonPages, int pages)
+        {
+            var deck = new List<CardEntry>();
+            for (int i = 0; i < rank1; i++) deck.Add(new CardEntry($"r1-{i}", 1));
+            for (int i = 0; i < rank2; i++) deck.Add(new CardEntry($"r2-{i}", 2));
+            for (int i = 0; i < rank3; i++) deck.Add(new CardEntry($"r3-{i}", 3));
+            deck.Add(new CardEntry("unmastered", 0));
+            var journal = new Journal(
+                Enumerable.Range(0, enemies).Select(i => new KeyValuePair<string, int>($"e{i:D2}", 1 + i % 2)).ToList(),
+                Enumerable.Range(0, dungeonPages).Select(i => new JournalPage($"d{i}", $"頁 {i}", "分かったこと")).ToList(),
+                "メモ");
+            var start = Inheritance.StartLife(Inheritance.NewLineage(Seed), 1);
+            var place = new LifePlace(layer, 2, NodeKind.Battle, RunPhase.Fallen);
+
+            var survived = Inheritance.RecordSurvival(start.Lineage, start.Life, new LifePlace(layer, 2, null, RunPhase.Survived), deck, journal);
+            var afterSurvival = Inheritance.StartLife(survived, 1);
+            Assert.That(afterSurvival.ToolSlots, Is.EqualTo(RunLoadout.ToolSlots + 1));
+            Assert.That(afterSurvival.DeckMax, Is.EqualTo(Constants.DeckMax + InheritanceRules.SurvivorDeckBonus));
+            Assert.That(afterSurvival.Journal.Disclosure.Count + afterSurvival.Journal.Pages.Count + 1, Is.EqualTo(pages),
+                "every page passes (the memo becomes the survivor's 走り書き)");
+            Assert.That(J(afterSurvival.Journal), Is.EqualTo(J(Inheritance.NormalizeJournal(journal))));
+            Assert.That(survived.Traces, Is.Empty, "the survival route leaves no card anywhere");
+
+            var died = Inheritance.RecordDeath(start.Lineage, start.Life, place, deck, journal);
+            var trace = died.Traces.Single();
+            var cards = trace.Candidates.Where(c => c.Kind == CandidateKind.Card).ToList();
+            Assert.That(trace.Candidates.Count(c => c.Kind != CandidateKind.Card), Is.EqualTo(pages), "every page is a candidate");
+            var afterDeath = Inheritance.StartLife(died, 1);
+            Assert.That(afterDeath.ToolSlots, Is.EqualTo(RunLoadout.ToolSlots));
+            Assert.That(afterDeath.DeckMax, Is.EqualTo(Constants.DeckMax));
+            Assert.That(J(afterDeath.Journal), Is.EqualTo(J(Inheritance.EmptyJournal())), "the journal stays at the place of death");
+            Assert.That(afterDeath.TraceLayers, Is.EqualTo(new[] { layer }), "the heir has to reach the layer to take anything");
+
+            var best = cards.OrderByDescending(c => c.Rank).Take(InheritanceRules.LegacyPicks).Select(c => c.Id).ToList();
+            var taken = Inheritance.TakeTrace(afterDeath.Lineage, trace.Id, best, layer).Taken;
+            if (layer < InheritanceRules.DeepLayer)
+            {
+                Assert.That(cards.Select(c => c.Rank), Is.All.EqualTo(1));
+                Assert.That(trace.Withheld.Count, Is.EqualTo(rank2 + rank3), "a shallow death keeps the 2nd and 3rd 段 out");
+            }
+            else
+            {
+                Assert.That(cards.Count, Is.EqualTo(rank1 + rank2 + rank3));
+                Assert.That(taken.Cards.Select(c => c.Rank), Is.EqualTo(new[] { 3, 2, 2 }), "the 3rd 段 passes by a death only");
+            }
+        }
+
         [Test]
         public void R17_AWonExtraBossStretchesTheSurvivorBonusToTwoLives_TheJournalStillPassesOnce()
         {
-            var l = SurviveAt(Inheritance.NewLineage(Seed), 7, opts: new EndOptions { ExtraBossWon = true }, ending: RunPhase.Completed);
+            // concept-v3 §15.1: the life that fought the extra boss closes by the survival route
+            var l = SurviveAt(Inheritance.NewLineage(Seed), 7, opts: new EndOptions { ExtraBossWon = true });
             Assert.That(Inheritance.HallView(l).Survivor!.DurationLine, Is.EqualTo("あと 2 生"));
             var a = Inheritance.StartLife(l, 1);
             Assert.That(a.SurvivorBonus, Is.True);
@@ -588,13 +645,14 @@ namespace InheritanceCore.Tests
         // ---- R-18: 踏破 ---------------------------------------------------------------------------------------
 
         [Test]
-        public void R18_Touha_TheHeirSurvives_TheRootIsRecorded_AndACardTraceStaysOnLayer7WithTheRootsCards()
+        public void R18_Touha_IsNoSurvivor_TheRootIsRecorded_AndACardTraceStaysOnLayer7WithTheRootsCards()
         {
             var opts = new EndOptions { RootCards = new List<CardEntry> { "ne_watari", "ne_shibari", new CardEntry("tsuki", 0) } };
-            var l = SurviveAt(Inheritance.NewLineage(Seed), 7, opts: opts, ending: RunPhase.Completed);
+            var l = SurviveAt(Inheritance.NewLineage(Seed), 7, new Journal(memo: "踏破した生の手記"), opts, RunPhase.Completed);
             Assert.That(l.Player.RootDefeated, Is.True);
-            Assert.That(l.Survivor!.Generation, Is.EqualTo(1));
+            Assert.That(l.Survivor, Is.Null, "concept-v3 §8.1 (#108): a cleared life is no survivor");
             Assert.That(l.Lives[0].Ending, Is.EqualTo(LifeEnding.Completed));
+            Assert.That(l.Lives[0].ReplacedSurvivor, Is.Null);
             var t = l.Traces[0];
             Assert.That(t.Cleared, Is.True);
             Assert.That(t.Layer, Is.EqualTo(7));
@@ -602,14 +660,59 @@ namespace InheritanceCore.Tests
             {
                 ((string?)"kansatsu", (int?)3), ("tsuki", 2), ("harai", 1), ("ne_shibari", 0), ("ne_watari", 0),
             }), "mastered cards, then the root's cards at any rank; a card already listed is not repeated");
-            Assert.That(t.Candidates.All(c => c.Kind == CandidateKind.Card), Is.True, "the pages went with the survivor");
+            Assert.That(t.Candidates.All(c => c.Kind == CandidateKind.Card), Is.True, "a cleared life leaves its cards only, no page");
             var s = Inheritance.StartLife(l, 1);
             Assert.That(s.Life.Tier, Is.EqualTo(InheritanceRules.ClearedTier));
             Assert.That(s.TraceLayers, Is.EqualTo(new[] { 7 }));
+            Assert.That(s.SurvivorBonus, Is.False);
+            Assert.That(s.ToolSlots, Is.EqualTo(RunLoadout.ToolSlots));
+            Assert.That(s.DeckMax, Is.EqualTo(Constants.DeckMax));
+            Assert.That(s.JournalFrom, Is.Null);
+            Assert.That(J(s.Journal), Is.EqualTo(J(Inheritance.EmptyJournal())), "the journal passes to nobody");
+            Assert.That(Inheritance.HallView(l).Survivor, Is.Null);
             var e = Inheritance.EndingView(l);
             Assert.That(e.Title, Is.EqualTo("踏破"));
             Assert.That(e.Sentence, Is.EqualTo("歪みの根を倒した。"));
-            Assert.That(e.Lines, Does.Contain(InheritanceText.ClearedTraceLeft(InheritanceText.LayerTitle(7, "果てなき世界"))));
+            Assert.That(e.Lines, Is.EqualTo(new[]
+            {
+                InheritanceText.ClearedTraceLeft(InheritanceText.LayerTitle(7, "果てなき世界")),
+                InheritanceText.ClearedNoSurvivor,
+            }));
+            Assert.That(Json.Stringify(Inheritance.HallView(l).ToJson()), Does.Contain(InheritanceText.ClearedTraceNote));
+        }
+
+        [Test]
+        public void R18_Touha_KeepsThePreviousSurvivorAndItsRemainingBonus()
+        {
+            var l = SurviveAt(Inheritance.NewLineage(Seed), 7, new Journal(memo: "竜を退けた"), new EndOptions { ExtraBossWon = true });
+            var a = Inheritance.StartLife(l, 1);
+            Assert.That(a.Lineage.Survivor!.BonusLivesLeft, Is.EqualTo(1));
+            var cleared = Inheritance.RecordSurvival(a.Lineage, a.Life, new LifePlace(7, 2, NodeKind.Boss, RunPhase.Completed), FullDeck,
+                new Journal(memo: "踏破"), new EndOptions());
+            Assert.That(Json.Stringify(cleared.Survivor!.ToJson()), Is.EqualTo(Json.Stringify(a.Lineage.Survivor.ToJson())),
+                "generation 1 stays the survivor, untouched");
+            Assert.That(cleared.Lives[1].ReplacedSurvivor, Is.Null);
+            Assert.That(Inheritance.EndingView(cleared).Lines, Does.Contain(InheritanceText.SurvivorKept(1, l.Lives[0].Name)));
+            var b = Inheritance.StartLife(cleared, 1);
+            Assert.That(b.SurvivorBonus, Is.True, "the survivor's second life of bonus is still to come");
+            Assert.That(b.Life.SurvivorFrom, Is.EqualTo(1));
+            Assert.That(b.JournalFrom, Is.Null, "the survivor's journal passed once, to generation 2; the cleared life passes none");
+            Assert.That(b.Journal.Memo, Is.Empty);
+            Assert.That(b.Lineage.Survivor, Is.Null);
+        }
+
+        [Test]
+        public void R18_Touha_AfterTheSurvivorsBonusIsSpent_LeavesNoSurvivor()
+        {
+            var l = SurviveAt(Inheritance.NewLineage(Seed), 3);
+            var a = Inheritance.StartLife(l, 1);
+            Assert.That(a.Lineage.Survivor, Is.Null, "generation 2 used generation 1's one life of bonus");
+            var cleared = Inheritance.RecordSurvival(a.Lineage, a.Life, new LifePlace(7, 2, NodeKind.Boss, RunPhase.Completed), FullDeck, null);
+            Assert.That(cleared.Survivor, Is.Null);
+            Assert.That(Inheritance.EndingView(cleared).Lines.Any(x => x.StartsWith("生存者は第", StringComparison.Ordinal)), Is.False);
+            Assert.That(Inheritance.StartLife(cleared, 1).SurvivorBonus, Is.False);
+            Assert.That(Inheritance.RecordEnd(a.Lineage, a.Life, new LifePlace(7, 2, NodeKind.Boss, RunPhase.Completed), FullDeck, null).Survivor,
+                Is.Null, "RecordEnd takes the same path");
         }
 
         // ---- R-19: 装束 tier ------------------------------------------------------------------------------------
