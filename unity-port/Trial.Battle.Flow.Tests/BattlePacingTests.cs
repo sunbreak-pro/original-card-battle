@@ -66,6 +66,27 @@ namespace Trial.Battle.Flow.Tests
         }
 
         [Test]
+        public void TheTrialsTurnStart_PlaysItsRowsEndToEnd_WhileTheCatalogsSwitchesPlayThemTogether()
+        {
+            // #832: the turn start's rows (§5.1) play together only on the old Depiction view.
+            Assert.That(BattlePacing.Switches().TurnStartEndToEnd, Is.True);
+            Assert.That(EffectSwitches.AllOn().TurnStartEndToEnd, Is.False);
+            var ev = new DepictionEvent
+            {
+                Kind = DepictionEventKind.TurnStart,
+                Cues = new System.Collections.Generic.List<Cue>
+                {
+                    new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = 3, StaminaAfter = 3, StaminaMax = 10 },
+                    new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 3, GuardAfter = 3 },
+                },
+            };
+            var paced = BattlePacing.Switches();
+            float endToEnd = paced.WaitMs(EffectId.TurnBanner) + paced.WaitMs(EffectId.StaminaRecover, 3) + paced.WaitMs(EffectId.GuardGain);
+            Assert.That(EffectPlan.BlockingMs(ev, paced), Is.EqualTo(endToEnd));
+            Assert.That(EffectPlan.StepsOf(ev).TrueForAll(s => !EffectPlan.Leads(s, paced) && !EffectPlan.Joins(s, paced)), Is.True);
+        }
+
+        [Test]
         public void TheStanceCardFliesSlowerAndStillRestsInItsSlot()
         {
             Assert.That(L.StanceFlyMs - 300f, Is.InRange(200f, 400f));

@@ -1,6 +1,7 @@
 // #57: the effect grammar on the core's cards. Every card the core knows has a row of systems, the
 // writer puts that row and each beat's system on the script, and the grammar adds no wait to any
 // event. Runs under `dotnet test` (Depiction.Bridge.Tests.csproj) and in Unity's EditMode runner.
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -492,6 +493,111 @@ namespace Depiction.Bridge.Tests
                     where + " at " + BattleSpeed.Label(speed));
             }
             TestContext.Out.WriteLine(EffectPlan.BlockingMs(turn, on).ToString("0") + " ms: " + where);
+        }
+
+        /// <summary>
+        /// Turn 2 of a fight against two enemies at a gap of 3: the player holds 岩の構え twice and 水の構え,
+        /// carries 再生 and 出血 below full HP (so both move the bar), and the deal runs the pile out (#832).
+        /// </summary>
+        private static DepictionEvent StanceAndStatusTurnStart()
+        {
+            var setup = new BattleSetup(Enemies.PolearmWarped, Cards.BuildDeck(new[] { CardCatalog.Brace }, 12), 8,
+                StartGap: 3, MoreEnemies: new[] { Enemies.PolearmWarped });
+            BattleState state = TurnLoop.Start(setup, NoShuffle).State;
+            var writer = new CoreScriptWriter(setup.Enemy);
+            writer.Opening(state);
+            StepResult first = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            writer.Write(first.Events, first.State);
+            StepResult end = TurnLoop.EndTurn(first.State, NoShuffle);
+            writer.Write(end.Events, end.State);
+
+            state = end.State;
+            List<CardInstance> cards = state.DrawPile.Concat(state.DiscardPile).Concat(state.Hand).ToList();
+            CombatantState player = state.Player
+                .WithStance(CardCatalog.RockStance.Face.Stance!, "rock")
+                .WithStance(CardCatalog.RockStance.Face.Stance!, "rock")
+                .WithStance(CardCatalog.WaterStance.Face.Stance!, "water");
+            state = state with
+            {
+                Player = player with
+                {
+                    Stamina = 0,
+                    Hp = player.MaxHp - 10,
+                    Statuses = player.Statuses.Add(StatusKind.Regen, 2).Add(StatusKind.Bleed, 1),
+                },
+                Hand = new List<CardInstance>(),
+                DrawPile = cards.Take(2).ToList(),
+                DiscardPile = cards.Skip(2).ToList(),
+            };
+            StepResult second = TurnLoop.BeginPlayerTurn(state, NoShuffle);
+            return writer.Write(second.Events, second.State).Single();
+        }
+
+        [Test]
+        public void ATurnStartWithStancesAndStatuses_StaysInsideItsAllowance_AtEverySpeed()
+        {
+            // §5.1 (#832): the stances' Guard (順 4) plays beside the recovery pips (順 3), and the status
+            // ticks (順 5) beside the deal (順 6), so this turn start is no longer the beats laid end to end.
+            DepictionEvent turn = StanceAndStatusTurnStart();
+            List<EffectStep> steps = EffectPlan.StepsOf(turn);
+            Assert.That(turn.Kind, Is.EqualTo(DepictionEventKind.TurnStart));
+            Assert.That(steps.Single(s => s.Id == EffectId.StaminaRecover).Count, Is.EqualTo(5), "recovery 3 + 水の構え 2");
+            Assert.That(steps.Count(s => s.Id == EffectId.GuardGain), Is.EqualTo(2), "岩の構え ×2 each grant Guard");
+            Assert.That(steps.Count(s => s.Id == EffectId.StatusTick || s.Id == EffectId.StatusVanish), Is.EqualTo(2), "再生 and 出血 tick");
+            Assert.That(turn.Cues.Count(c => c.Kind == CueKind.HpChange), Is.EqualTo(2), "再生 and 出血 both move the HP");
+            Assert.That(steps.Any(s => s.Id == EffectId.PileRebuild), Is.True, "the deal runs the pile out");
+            Assert.That(turn.After.Enemies.Count, Is.EqualTo(2));
+
+            var on = EffectSwitches.AllOn();
+            var endToEnd = EffectSwitches.AllOn().SetTurnStartEndToEnd(true);
+            string where = string.Join(" + ", steps.Select(s => s.Id
+                + (EffectPlan.Leads(s, on) ? " (beside)" : EffectPlan.Joins(s, on) ? " (joins)" : "") + " " + EffectPlan.WaitMs(s, on).ToString("0")));
+
+            // 順 3 with 順 4: the pips and both Guard pops start together and end with the longest.
+            float recovery = on.WaitMs(EffectId.StaminaRecover, 5);
+            float guard = on.WaitMs(EffectId.GuardGain);
+            // 順 5 with 順 6: the two HP drains one after the other, the chips beside them, all beside the deal.
+            float ticks = 2 * on.WaitMs(EffectId.HpDrain);
+            float deal = on.WaitMs(EffectId.PileRebuild) + on.WaitMs(EffectId.CardDraw, Combat.DrawCount());
+            float expected = on.WaitMs(EffectId.TurnBanner) + Math.Max(recovery, guard) + on.WaitMs(EffectId.HpDrain) + Math.Max(ticks - on.WaitMs(EffectId.HpDrain), deal);
+            Assert.That(EffectPlan.BlockingMs(turn, on), Is.EqualTo(expected).Within(0.01f), where);
+            Assert.That(EffectPlan.BlockingMs(turn, on), Is.LessThan(EffectPlan.BlockingMs(turn, endToEnd)), "played together, the rows take less than end to end");
+            Assert.That(EffectPlan.BlockingMs(turn, endToEnd), Is.EqualTo(steps.Sum(s => endToEnd.WaitMs(s.Id, s.Count))).Within(0.01f),
+                "end to end, every wait is held whole");
+
+            foreach (BattleSpeedStep speed in BattleSpeed.Steps)
+            {
+                Assert.That(EffectPlan.BlockingMs(turn, on, speed), Is.LessThanOrEqualTo(TurnStartAllowanceAt(speed)),
+                    where + " at " + BattleSpeed.Label(speed));
+            }
+            TestContext.Out.WriteLine(EffectPlan.BlockingMs(turn, on).ToString("0") + " ms (end to end " + EffectPlan.BlockingMs(turn, endToEnd).ToString("0") + " ms): " + where);
+        }
+
+        [Test]
+        public void ARowPlayedTogether_EndsWithItsLongestBeat_EvenWhenALeadOutlastsTheJoin()
+        {
+            // §5.1 (#832): one stance's Guard (260) beside recovery 5 (400): the pop that joins ends first,
+            // so the flow stays until the pips have lit.
+            var ev = new DepictionEvent
+            {
+                Kind = DepictionEventKind.TurnStart,
+                Cues = new List<Cue>
+                {
+                    new Cue { Kind = CueKind.StaminaChange, Target = UnitSide.Player, Amount = 5, StaminaAfter = 5, StaminaMax = 10 },
+                    new Cue { Kind = CueKind.GuardGain, Target = UnitSide.Player, Amount = 3, GuardAfter = 3 },
+                },
+            };
+            var on = EffectSwitches.AllOn();
+            List<EffectStep> steps = EffectPlan.StepsOf(ev);
+            Assert.That(EffectPlan.Leads(steps[1], on), Is.True, "the pips play beside the pop");
+            Assert.That(EffectPlan.Joins(steps[2], on), Is.True, "the pop closes the row");
+            Assert.That(EffectPlan.BlockingMs(ev, on),
+                Is.EqualTo(on.WaitMs(EffectId.TurnBanner) + Math.Max(on.WaitMs(EffectId.StaminaRecover, 5), on.WaitMs(EffectId.GuardGain))));
+
+            // Switched off, the pips hold nothing, and the row is the pop alone.
+            var pipsOff = EffectSwitches.AllOn();
+            pipsOff.Set(EffectId.StaminaRecover, false);
+            Assert.That(EffectPlan.BlockingMs(ev, pipsOff), Is.EqualTo(on.WaitMs(EffectId.TurnBanner) + on.WaitMs(EffectId.GuardGain)));
         }
 
         private static Cue Strip(Cue cue)

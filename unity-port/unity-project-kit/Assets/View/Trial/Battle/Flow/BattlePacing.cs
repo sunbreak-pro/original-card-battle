@@ -56,7 +56,10 @@ namespace Trial.Battle
         public static EffectSwitches Apply(EffectSwitches switches)
         {
             if (switches == null) throw new ArgumentNullException(nameof(switches));
+            // #832: the old Depiction view plays §5.1's turn-start rows together; the Trial keeps the JS
+            // trial's turn start, every beat after the one before.
             return switches
+                .SetTurnStartEndToEnd(true)
                 .SetLength(EffectId.FloorMove, FloorMoveMs, FloorMoveStaggerMs)
                 .SetLength(EffectId.GuardGain, GuardGainMs)
                 .SetLength(EffectId.GuardBlock, GuardBlockMs)
