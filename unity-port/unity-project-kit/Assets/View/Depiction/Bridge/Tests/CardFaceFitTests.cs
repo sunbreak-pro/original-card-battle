@@ -128,10 +128,11 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void TheLongDescriptions_Wrap_AsPinned()
         {
-            // Too long for one line even at 12: wrapped at 16 inside a lasting card's four lines.
+            // #769: 深淵の構え now reads on one line at the full size.
             TextFit abyss = DescriptionOf(CardCatalog.ById("abyss_stance"));
-            Assert.That(abyss.Text, Is.EqualTo("∞ 間合い 0 の相手への\nアタック +5"));
+            Assert.That(abyss.Text, Is.EqualTo("∞ 間合い 0 で 威力 +5"));
             Assert.That(abyss.Size, Is.EqualTo(16));
+            // Too long for one line even at 12: wrapped at 16 inside a lasting card's four lines.
             TextFit mist = DescriptionOf(CardCatalog.ById("mist_step"));
             Assert.That(mist.Text.Split('\n').Length, Is.EqualTo(3));
             Assert.That(mist.Size, Is.EqualTo(16));

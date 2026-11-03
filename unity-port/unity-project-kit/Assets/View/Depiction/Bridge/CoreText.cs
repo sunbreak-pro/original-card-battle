@@ -192,7 +192,9 @@ namespace Depiction.Bridge
                     {
                         case StanceWhen.Always: return "アタック +" + stance.Power;
                         case StanceWhen.MovedThisTurn: return "移動後の攻撃 威力 +" + stance.Power;
-                        case StanceWhen.GapAtMost: return "間合い " + stance.Threshold + " の相手へのアタック +" + stance.Power;
+                        // #769: short enough for one line at 16 px. 相手への攻撃 威力 +n wrapped and split 攻撃, and
+                        // 間合い 0 の敵へ 威力 +n needed 15 px.
+                        case StanceWhen.GapAtMost: return "間合い " + stance.Threshold + " で 威力 +" + stance.Power;
                         // The enemy's 間合い 1 以上 stance (Enemies.cs) reads as an unconditional bonus, as it did
                         // before #725; its words are not decided yet.
                         case StanceWhen.GapAtLeast: return "アタック +" + stance.Power;
