@@ -1188,7 +1188,7 @@ namespace Trial.Battle
                 return;
             }
             float waitMs = EffectPlan.WaitMs(step, _switches);
-            if (step.LeadMs.HasValue)
+            if (EffectPlan.Leads(step, _switches))
             {
                 Safe(play).Then(() => { if (_alive) played?.Invoke(); }).Forget();
                 await _clock.Wait(waitMs);

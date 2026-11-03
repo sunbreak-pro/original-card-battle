@@ -437,17 +437,34 @@ namespace Depiction
             if (!IsOn(id) || count <= 0) return 0f;
             return BaseMs(id) + BaseStaggerMs(id) * (count - 1);
         }
+
+        /// <summary>
+        /// Opt-in (#832): the turn start's rows play one after another, as before §5.1's rows were played
+        /// together. The Trial battle keeps the JS trial's turn start this way (BattlePacing); a caller that
+        /// never sets it plays the rows together.
+        /// </summary>
+        public bool TurnStartEndToEnd { get; private set; }
+
+        public EffectSwitches SetTurnStartEndToEnd(bool endToEnd)
+        {
+            TurnStartEndToEnd = endToEnd;
+            return this;
+        }
     }
 
     /// <summary>One effect an event waits for, with how many items it plays.</summary>
     public sealed class EffectStep
     {
-        public EffectStep(EffectId id, int count, float? leadMs = null)
+        public EffectStep(EffectId id, int count, float? leadMs = null, bool joinsLeads = false, bool turnStartRow = false)
         {
             if (leadMs < 0f) throw new ArgumentOutOfRangeException(nameof(leadMs));
+            // A step that plays on beside the flow cannot also hold the flow until the others have played out.
+            if (leadMs.HasValue && joinsLeads) throw new ArgumentException("A step with a lead does not join the leads.", nameof(joinsLeads));
             Id = id;
             Count = count;
             LeadMs = leadMs;
+            JoinsLeads = joinsLeads;
+            TurnStartRow = turnStartRow;
         }
 
         public EffectId Id { get; }
@@ -459,6 +476,19 @@ namespace Depiction
         /// Null holds the whole effect.
         /// </summary>
         public float? LeadMs { get; }
+
+        /// <summary>
+        /// §5.1 (#832): after its own wait, the flow stays here until every step with a lead since the
+        /// last join (or the event's start) has played out, so rows that play together end with the
+        /// longest of them. See <see cref="EffectPlan.Joins"/>.
+        /// </summary>
+        public bool JoinsLeads { get; }
+
+        /// <summary>
+        /// §5.1 (#832): the lead or the join comes from the turn start's rows that play together, which
+        /// <see cref="EffectSwitches.TurnStartEndToEnd"/> can lay end to end again.
+        /// </summary>
+        public bool TurnStartRow { get; }
     }
 
     /// <summary>§5.10: which of the four chip beats a StatusChange cue is, read off its change and what is left.</summary>
@@ -584,7 +614,23 @@ namespace Depiction
             if (step == null) throw new ArgumentNullException(nameof(step));
             if (switches == null) throw new ArgumentNullException(nameof(switches));
             float whole = switches.WaitMs(step.Id, step.Count);
-            return step.LeadMs.HasValue ? Math.Min(whole, step.LeadMs.Value) : whole;
+            return Leads(step, switches) ? Math.Min(whole, step.LeadMs.Value) : whole;
+        }
+
+        /// <summary>Whether the step holds the flow for its lead only and plays on beside what follows (EffectStep.LeadMs).</summary>
+        public static bool Leads(EffectStep step, EffectSwitches switches)
+        {
+            if (step == null) throw new ArgumentNullException(nameof(step));
+            if (switches == null) throw new ArgumentNullException(nameof(switches));
+            return step.LeadMs.HasValue && !(step.TurnStartRow && switches.TurnStartEndToEnd);
+        }
+
+        /// <summary>Whether the flow, after this step's wait, stays until the steps with a lead before it have played out (EffectStep.JoinsLeads).</summary>
+        public static bool Joins(EffectStep step, EffectSwitches switches)
+        {
+            if (step == null) throw new ArgumentNullException(nameof(step));
+            if (switches == null) throw new ArgumentNullException(nameof(switches));
+            return step.JoinsLeads && !(step.TurnStartRow && switches.TurnStartEndToEnd);
         }
 
         /// <summary>
@@ -655,9 +701,16 @@ namespace Depiction
         {
             if (ev == null) throw new ArgumentNullException(nameof(ev));
             var steps = new List<EffectStep>();
+            // The cue each step was planned for (null for the banners), so the turn start can find its rows.
+            var owners = new List<Cue>();
             if (ev.Kind == DepictionEventKind.PlayCard) steps.Add(new EffectStep(EffectId.CardRelease, 1));
             if (ev.Kind == DepictionEventKind.TurnStart) steps.Add(new EffectStep(EffectId.TurnBanner, 1));
-            foreach (Cue cue in ev.Cues) AddSteps(steps, ev, cue);
+            while (owners.Count < steps.Count) owners.Add(null);
+            foreach (Cue cue in ev.Cues)
+            {
+                AddSteps(steps, ev, cue);
+                while (owners.Count < steps.Count) owners.Add(cue);
+            }
             if (ev.Kind == DepictionEventKind.TurnEnd) steps.Add(new EffectStep(EffectId.EnemyTurnBanner, 1));
             // §5.4 順 0 / §5.9 順 1 (#499): a trait that fires before the first face is shown as the card
             // is released, beside the card's flight, so the release holds nothing of its own.
@@ -665,8 +718,62 @@ namespace Depiction
             {
                 steps[0] = new EffectStep(EffectId.CardRelease, 1, leadMs: 0f);
             }
+            if (ev.Kind == DepictionEventKind.TurnStart) PlayRowsTogether(steps, owners);
             return steps;
         }
+
+        /// <summary>
+        /// §5.1 (#832): 順 4 (the stances' turn-start Guard) starts with 順 3 (the recovery pips), and 順 5
+        /// (the status ticks) with 順 6 (the deal). Each pair's beats but the last start at once (lead 0),
+        /// and the last joins them, so the pair ends with its longest beat instead of their sum.
+        /// </summary>
+        private static void PlayRowsTogether(List<EffectStep> steps, List<Cue> owners)
+        {
+            int first = owners.FindIndex(IsRecoveryOrStanceGuard);
+            if (first >= 0)
+            {
+                int end = first;
+                while (end < steps.Count && IsRecoveryOrStanceGuard(owners[end])) end++;
+                bool guards = false;
+                for (int k = first; k < end; k++) guards |= owners[k].Kind == CueKind.GuardGain;
+                if (guards && end - first >= 2)
+                {
+                    // Every stance lights at once (§5.1 順 4 一斉に), so the Guard pops start together too.
+                    for (int k = first; k < end - 1; k++) steps[k] = Together(steps[k]);
+                    steps[end - 1] = Joining(steps[end - 1]);
+                }
+            }
+
+            int deal = owners.FindIndex(c => c != null && c.Kind == CueKind.DrawHand);
+            if (deal < 0) return; // 出血 took the last HP (§5.1 順 5): nothing is dealt for the ticks to play beside
+            int ticks = deal;
+            while (ticks > 0 && IsTurnStartTick(owners[ticks - 1])) ticks--;
+            if (ticks == deal) return;
+            for (int k = ticks; k < deal; k++)
+            {
+                // Two HP changes (再生 and 出血) drain the same bar under the same figure's number, so each
+                // but the last keeps its whole wait; the chips are each their own and start together.
+                bool anotherHpLater = false;
+                if (owners[k].Kind == CueKind.HpChange)
+                {
+                    for (int j = k + 1; j < deal; j++) anotherHpLater |= owners[j].Kind == CueKind.HpChange;
+                }
+                if (!anotherHpLater) steps[k] = Together(steps[k]);
+            }
+            int lastOfDeal = owners.FindLastIndex(c => ReferenceEquals(c, owners[deal]));
+            steps[lastOfDeal] = Joining(steps[lastOfDeal]);
+        }
+
+        private static bool IsRecoveryOrStanceGuard(Cue cue) =>
+            cue != null && cue.Target == UnitSide.Player
+            && ((cue.Kind == CueKind.StaminaChange && cue.Amount > 0) || cue.Kind == CueKind.GuardGain);
+
+        private static bool IsTurnStartTick(Cue cue) =>
+            cue != null && (cue.Kind == CueKind.HpChange || cue.Kind == CueKind.StatusChange);
+
+        private static EffectStep Together(EffectStep step) => new EffectStep(step.Id, step.Count, 0f, turnStartRow: true);
+
+        private static EffectStep Joining(EffectStep step) => new EffectStep(step.Id, step.Count, joinsLeads: true, turnStartRow: true);
 
         private static void AddSteps(List<EffectStep> steps, DepictionEvent ev, Cue cue)
         {
@@ -768,12 +875,26 @@ namespace Depiction
             }
         }
 
-        /// <summary>The time the event waits on its effects with these switches.</summary>
+        /// <summary>
+        /// The time the event waits on its effects with these switches: the waits one after another,
+        /// except that a step that joins (§5.1, #832) holds until the steps with a lead before it have
+        /// played out, so rows played together count as their longest beat.
+        /// </summary>
         public static float BlockingMs(DepictionEvent ev, EffectSwitches switches)
         {
             if (switches == null) throw new ArgumentNullException(nameof(switches));
             float ms = 0f;
-            foreach (EffectStep step in StepsOf(ev)) ms += WaitMs(step, switches);
+            float besideEndsAt = 0f;
+            foreach (EffectStep step in StepsOf(ev))
+            {
+                if (Leads(step, switches)) besideEndsAt = Math.Max(besideEndsAt, ms + switches.WaitMs(step.Id, step.Count));
+                ms += WaitMs(step, switches);
+                if (Joins(step, switches))
+                {
+                    ms = Math.Max(ms, besideEndsAt);
+                    besideEndsAt = 0f;
+                }
+            }
             return ms;
         }
 

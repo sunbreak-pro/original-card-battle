@@ -222,6 +222,7 @@ namespace Depiction.View
         private void BeginPlan(DepictionEvent ev)
         {
             _planned.Clear();
+            _beside.Clear();
             _plannedEvent = ev;
             foreach (EffectStep step in EffectPlan.StepsOf(ev)) _planned.Enqueue(step);
         }
@@ -266,7 +267,8 @@ namespace Depiction.View
         /// when it runs a frame or so past the wait (UiTween ends on the first frame after its length),
         /// the flow lets it finish, so nothing on screen is cut short. A step the plan gives a lead
         /// (EffectStep.LeadMs, §5.4, #499) holds the flow for the lead only and plays on beside what
-        /// follows. Off, the beat settles at once and holds nothing up, like <see cref="Effect"/>.
+        /// follows. A step that joins (EffectStep.JoinsLeads, §5.1, #832) then holds the flow until those
+        /// beats have played out. Off, the beat settles at once and holds nothing up, like <see cref="Effect"/>.
         /// <paramref name="played"/> runs once the beat has played out (or settled), lead or not.
         /// Beats that run beside the flow keep using Effect.
         /// </summary>
@@ -278,12 +280,15 @@ namespace Depiction.View
                 settle?.Invoke();
                 Trace?.Skip(id, CurrentOrder);
                 played?.Invoke();
+                if (EffectPlan.Joins(step, _effects)) yield return JoinBeside();
                 yield break;
             }
             int handle = Trace != null ? Trace.Begin(id, CurrentOrder, step.Count) : -1;
-            if (step.LeadMs.HasValue)
+            if (EffectPlan.Leads(step, _effects))
             {
-                StartCoroutine(PlayOn(play, handle, played));
+                var beside = new BesideBeat();
+                _beside.Add(beside);
+                StartCoroutine(PlayOn(play, handle, played, beside));
                 yield return UiTween.Wait(EffectPlan.WaitMs(step, _effects));
                 yield break;
             }
@@ -293,14 +298,31 @@ namespace Depiction.View
             while (!waited) yield return null;
             if (handle >= 0) Trace.End(handle);
             played?.Invoke();
+            if (EffectPlan.Joins(step, _effects)) yield return JoinBeside();
+        }
+
+        /// <summary>A beat with a lead still playing beside the flow, until a step that joins (§5.1, #832) waits it out.</summary>
+        private sealed class BesideBeat
+        {
+            public bool Done;
+        }
+
+        /// <summary>The beats with a lead since the event began or the last join, so a join waits for exactly the ones EffectPlan.BlockingMs counts.</summary>
+        private readonly List<BesideBeat> _beside = new List<BesideBeat>();
+
+        private IEnumerator JoinBeside()
+        {
+            while (_beside.Exists(b => !b.Done)) yield return null;
+            _beside.Clear();
         }
 
         /// <summary>The rest of a beat with a lead, beside the flow: it plays out, then is timed and handed on.</summary>
-        private IEnumerator PlayOn(IEnumerator play, int handle, System.Action played)
+        private IEnumerator PlayOn(IEnumerator play, int handle, System.Action played, BesideBeat beside)
         {
             yield return play;
             if (handle >= 0) Trace.End(handle);
             played?.Invoke();
+            beside.Done = true;
         }
 
         private static IEnumerator WaitThen(float ms, System.Action done)
