@@ -56,7 +56,9 @@ namespace Depiction.View
         private IEnumerator MoveBeat(DepictionEvent ev, Cue cue, FigureView target, Vector2 labelAt)
         {
             // Moved by the other side (the polearm's shove): a knock-back, and the muted label says so.
-            if (cue.Pushed) FloatEffect(EffectId.PushMark, labelAt, DepictionText.Pushed, BattleTheme.Ink2, 36);
+            if (cue.Pushed)
+                FloatEffect(EffectId.PushMark, labelAt, DepictionText.Pushed, BattleTheme.Ink2, FloatNumberSpec.PushLabelFontPx,
+                    FloatNumberSpec.LabelRiseBy(target.Height, FloatNumberSpec.PushLabelFontPx));
             // §5.7 順 1〜2 (#586): the walk, 160 a cell, then the gap number counted again on arrival.
             // Every source draws the floor since the near / far slots went (#577).
             int cells = EffectPlan.CellsOf(cue);
@@ -382,10 +384,11 @@ namespace Depiction.View
             ApplyStanceGlow(target, unit);
         }
 
-        private IEnumerator FireTrait(Vector2 labelAt, string text)
+        private IEnumerator FireTrait(Vector2 labelAt, string text, float figureHeight)
         {
             DepictionFx.Burst(this, fxLayer, labelAt, BattleTheme.Warm, 260f);
-            DepictionFx.FloatText(this, fxLayer, labelAt, text, BattleTheme.Warm, 40, rise: 70f);
+            DepictionFx.FloatText(this, fxLayer, labelAt, text, BattleTheme.Warm, FloatNumberSpec.TraitLabelFontPx,
+                rise: FloatNumberSpec.LabelRiseBy(figureHeight, FloatNumberSpec.TraitLabelFontPx));
             yield return UiTween.Wait(_effects.Ms(EffectId.TraitFire));
         }
 
@@ -458,7 +461,7 @@ namespace Depiction.View
         /// A rising number, as an effect: it runs on its own for its length, and the trace notes it,
         /// or notes that it was switched off.
         /// </summary>
-        private void FloatEffect(EffectId id, Vector2 at, string text, Color color, int fontSize)
+        private void FloatEffect(EffectId id, Vector2 at, string text, Color color, int fontSize, float rise)
         {
             if (!_effects.IsOn(id))
             {
@@ -466,7 +469,7 @@ namespace Depiction.View
                 return;
             }
             if (Trace != null) StartCoroutine(TraceFor(id, _effects.Ms(id)));
-            DepictionFx.FloatText(this, fxLayer, at, text, color, fontSize);
+            DepictionFx.FloatText(this, fxLayer, at, text, color, fontSize, rise: rise);
         }
 
         /// <summary>
