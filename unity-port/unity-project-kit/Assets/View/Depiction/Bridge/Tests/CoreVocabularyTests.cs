@@ -203,6 +203,42 @@ namespace Depiction.Bridge.Tests
             });
         }
 
+        // #769: the face column of swordsman_cards_v4 §3, copied word for word, so the table and the
+        // card read the same. #83 鱗立ての構え is in the table but not in the catalog yet.
+        [TestCase("water_stance", "間合い 2 以上で始まるターンに回復 +2")]
+        [TestCase("rock_stance", "ターン開始 Guard +3")]
+        [TestCase("flow_stance", "移動後の攻撃 威力 +5")]
+        [TestCase("iron_wall", "毎ターン 1 回、防御のカードのコスト −1")]
+        [TestCase("priest_prayer", "被弾のたび（ターン 1 回）スタミナ +1、Guard +3")]
+        [TestCase("purge_flash", "間合い 2 以上で始まるターンに Guard +3")]
+        [TestCase("abyss_stance", "間合い 0 で 威力 +5")]
+        [TestCase("root_stride", "間合い 2 以上で終えたターンに Guard +5")]
+        [TestCase("root_bind", "敵が自ら動くと崩し 1")]
+        [TestCase("spear_wall", "被弾のたび敵に出血 1")]
+        [TestCase("mist_step", "間合い 2 以上で終えたターンに Guard +3、次の回復 +2")]
+        [TestCase("keen_eye", "予兆が攻撃のターン開始に Guard +3")]
+        [TestCase("anchor_stance", "押す / 引くを受けない")]
+        [TestCase("wolf_stance", "出血中の敵へ 威力 +3")]
+        public void EveryStanceCard_ReadsAsTheTableFace(string id, string tableFace)
+        {
+            Assert.That(CoreText.StanceText(CardCatalog.ById(id).Face.Stance), Is.EqualTo(tableFace));
+        }
+
+        [Test]
+        public void TheStanceTableCases_CoverEveryStanceCard()
+        {
+            var stances = new List<string>();
+            foreach (CardDef def in CardCatalog.All)
+            {
+                if (def.Attributes == BattleAttribute.Stance) stances.Add(def.Id);
+            }
+            Assert.That(stances, Is.EquivalentTo(new[]
+            {
+                "water_stance", "rock_stance", "flow_stance", "iron_wall", "priest_prayer", "purge_flash", "abyss_stance",
+                "root_stride", "root_bind", "spear_wall", "mist_step", "keen_eye", "anchor_stance", "wolf_stance",
+            }));
+        }
+
         [Test]
         public void EveryCard_HasTextForEveryFace_AndATraitLine()
         {
