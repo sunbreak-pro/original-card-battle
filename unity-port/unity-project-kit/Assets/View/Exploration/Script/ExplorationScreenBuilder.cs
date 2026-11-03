@@ -15,45 +15,8 @@ namespace Exploration
         public static ExplorationScreen Build(ExplorationSession session)
         {
             var state = session.State;
-            var map = state.Map;
             bool mapLive = session.MapIsLive;
-
-            var nodes = new List<NodeCard>();
-            foreach (var node in map.Nodes.OrderBy(n => n.Id))
-            {
-                var standing = StandingOf(state, node.Id);
-                int rowWidth = map.Row(node.Row).Count;
-                float x = (node.Column + 0.5f) / rowWidth;
-                float y = map.RowCount == 1 ? 0.5f : 1f - (float)node.Row / (map.RowCount - 1);
-
-                var lines = standing == NodeStanding.Far ? new string[0] : ContentLines(session, node);
-                // Trial extension (js: ExplorationScreenBuilder.js:692): while a 標の石 is aimed, the nodes it can land
-                // on take its jump instead.
-                var jumps = mapLive && session.IsAiming ? JumpOptions(session, node, session.AimingSlot, standing) : null;
-                var options = jumps ?? (mapLive ? Options(state, node, standing, ArrivalEvent(session, node)) : new StepOption[0]);
-                string note = jumps != null && jumps.Count > 0 ? ExplorationText.JumpNote : NoteOf(standing);
-                nodes.Add(new NodeCard(
-                    node,
-                    x,
-                    y,
-                    ExplorationText.Glyph(node.Kind),
-                    ExplorationText.KindLabel(node.Kind),
-                    standing,
-                    lines,
-                    options,
-                    note,
-                    $"{ExplorationText.Glyph(node.Kind)}　{ExplorationText.KindLabel(node.Kind)}",
-                    Detail(note, lines, options)));
-            }
-
-            var edges = new List<EdgeLine>();
-            foreach (var node in map.Nodes.OrderBy(n => n.Id))
-            {
-                foreach (int to in map.Successors(node.Id).OrderBy(id => id))
-                {
-                    edges.Add(new EdgeLine(node.Id, to, Lit(state, nodes, node.Id, to)));
-                }
-            }
+            var nodes = NodeCards(session);
 
             // Trial extension (js: ExplorationScreenBuilder.js:717): 刻限の砂 and 防瘴の面 shown where their numbers are
             // (the band), and the aim's hint. state.TimeLimit is the profile's outside trial.
@@ -63,37 +26,87 @@ namespace Exploration
             string hint = !mapLive ? "" : session.IsAiming ? ExplorationText.AimHint
                 : "明るい枠のノードへ進めます。踏んだノードへは刻限を使わずに移れます。";
 
-            return new ExplorationScreen(
-                ExplorationText.LayerTitle(state.Profile.Layer, state.Profile.DisplayName(session.CarvingTaken)),
-                state.Profile.Layer,
-                $"刻限 {state.TimeLeft} / {state.TimeLimit}",
-                state.TimeLeft,
-                state.TimeLimit,
-                Gauge(session),
-                $"HP {state.Hp} / {state.MaxHp}",
-                $"スタミナ {state.Stamina} / {state.MaxStamina}",
-                MaxStaminaLabel(state),
-                $"訓練の刻み {state.TrainingMarks}",
-                nodes,
-                edges,
-                state.CurrentNodeId,
-                hint,
-                ToolsLabel(state.Loadout),
-                Slots(session),
-                session.CanEndLife,
-                !state.IsOver,
-                Card(session),
-                Book(session),
-                session.OpenOverlay,
-                session.CanOpen(Overlay.Cards),
-                session.CanOpen(Overlay.Settings),
-                CardsPage,
-                SettingsPage,
-                ToolCards(session),
-                timeBonusLabel,
-                reliefLabel,
-                session.IsAiming,
-                session.Events);
+            return new ExplorationScreen
+            {
+                LayerTitle = ExplorationText.LayerTitle(state.Profile.Layer, state.Profile.DisplayName(session.CarvingTaken)),
+                Layer = state.Profile.Layer,
+                TimeLabel = $"刻限 {state.TimeLeft} / {state.TimeLimit}",
+                TimeLeft = state.TimeLeft,
+                TimeLimit = state.TimeLimit,
+                Miasma = Gauge(session),
+                HpLabel = $"HP {state.Hp} / {state.MaxHp}",
+                StaminaLabel = $"スタミナ {state.Stamina} / {state.MaxStamina}",
+                MaxStaminaLabel = MaxStaminaLabel(state),
+                MarksLabel = $"訓練の刻み {state.TrainingMarks}",
+                Nodes = nodes,
+                Edges = Edges(state, nodes),
+                CurrentNodeId = state.CurrentNodeId,
+                Hint = hint,
+                ToolsLabel = ToolsLabel(state.Loadout),
+                Consumables = Slots(session),
+                CanEndLife = session.CanEndLife,
+                ShowsEndLife = !state.IsOver,
+                Card = Card(session),
+                Journal = Book(session),
+                OpenOverlay = session.OpenOverlay,
+                CanOpenCards = session.CanOpen(Overlay.Cards),
+                CanOpenSettings = session.CanOpen(Overlay.Settings),
+                Cards = CardsPage,
+                Settings = SettingsPage,
+                ToolCards = ToolCards(session),
+                TimeBonusLabel = timeBonusLabel,
+                ReliefLabel = reliefLabel,
+                Aiming = session.IsAiming,
+                Events = session.Events,
+            };
+        }
+
+        private static List<NodeCard> NodeCards(ExplorationSession session)
+        {
+            var state = session.State;
+            var map = state.Map;
+            bool mapLive = session.MapIsLive;
+
+            var nodes = new List<NodeCard>();
+            foreach (var node in map.Nodes.OrderBy(n => n.Id))
+            {
+                var standing = StandingOf(state, node.Id);
+                int rowWidth = map.Row(node.Row).Count;
+
+                var lines = standing == NodeStanding.Far ? new string[0] : ContentLines(session, node);
+                // Trial extension (js: ExplorationScreenBuilder.js:692): while a 標の石 is aimed, the nodes it can land
+                // on take its jump instead.
+                var jumps = mapLive && session.IsAiming ? JumpOptions(session, node, session.AimingSlot, standing) : null;
+                var options = jumps ?? (mapLive ? Options(state, node, standing, ArrivalEvent(session, node)) : new StepOption[0]);
+                string note = jumps != null && jumps.Count > 0 ? ExplorationText.JumpNote : NoteOf(standing);
+                nodes.Add(new NodeCard(node)
+                {
+                    X = (node.Column + 0.5f) / rowWidth,
+                    Y = map.RowCount == 1 ? 0.5f : 1f - (float)node.Row / (map.RowCount - 1),
+                    Glyph = ExplorationText.Glyph(node.Kind),
+                    KindLabel = ExplorationText.KindLabel(node.Kind),
+                    Standing = standing,
+                    Lines = lines,
+                    Options = options,
+                    Note = note,
+                    Title = $"{ExplorationText.Glyph(node.Kind)}　{ExplorationText.KindLabel(node.Kind)}",
+                    Detail = Detail(note, lines, options),
+                });
+            }
+            return nodes;
+        }
+
+        private static List<EdgeLine> Edges(ExplorationState state, IReadOnlyList<NodeCard> nodes)
+        {
+            var edges = new List<EdgeLine>();
+            foreach (var node in state.Map.Nodes.OrderBy(n => n.Id))
+            {
+                foreach (int to in state.Map.Successors(node.Id).OrderBy(id => id))
+                {
+                    edges.Add(new EdgeLine(node.Id, to, Lit(state, nodes, node.Id, to)));
+                }
+            }
+            return edges;
         }
 
         /// <summary>
@@ -407,167 +420,6 @@ namespace Exploration
             }
             return slots;
         }
-
-        /// <summary>The card over the map. Waiting inputs come first, then the layer's or the life's end.</summary>
-        private static ScreenCard Card(ExplorationSession session)
-        {
-            var state = session.State;
-            int layer = state.Profile.Layer;
-
-            if (session.HasPendingBattle)
-            {
-                var kind = state.Map.Node(session.PendingBattleNode).Kind;
-                string title = kind == NodeKind.Boss ? "階層ボスとの戦闘（仮）"
-                    : kind == NodeKind.Elite ? "精鋭との戦闘（仮）"
-                    : "戦闘（仮）";
-                return new ScreenCard(CardKind.Battle, title,
-                    new[]
-                    {
-                        "探索と戦闘はまだつながっていません。結果を選んで探索へ戻ります。",
-                        "勝ったことにする: HP とスタミナはそのまま",
-                        "倒れたことにする: HP 0 でこの生が終わる",
-                    },
-                    new[]
-                    {
-                        new CardButton("勝ったことにする", ScreenAction.WinBattle),
-                        new CardButton("倒れたことにする", ScreenAction.FallInBattle),
-                    });
-            }
-
-            if (session.HasPendingStep)
-            {
-                return new ScreenCard(CardKind.ConfirmStep, $"瘴気が {Miasma.DeathAt}% に達します",
-                    new[] { "このノードへ入ると、瘴気死でこの生が終わります。" },
-                    new[]
-                    {
-                        new CardButton("それでも進む", ScreenAction.ConfirmStep),
-                        new CardButton("やめる", ScreenAction.Cancel),
-                    });
-            }
-
-            if (session.ConfirmingDescend)
-            {
-                return new ScreenCard(CardKind.ConfirmDescend, $"瘴気が {Miasma.DeathAt}% に達します",
-                    new[] { $"次の層へ降りると、入口で瘴気が {Miasma.DeathAt}% に達し、この生が終わります。" },
-                    new[]
-                    {
-                        new CardButton("それでも降りる", ScreenAction.ConfirmDescend),
-                        new CardButton("やめる", ScreenAction.Cancel),
-                    });
-            }
-
-            if (session.ConfirmingEndLife)
-            {
-                return new ScreenCard(CardKind.ConfirmEndLife, "この生を終えますか",
-                    new[]
-                    {
-                        "生きたまま次の生へ移ります。手記は丸ごと次の生へ渡ります。",
-                        $"いまの到達: 第 {layer} 層、瘴気 {state.MiasmaPercent}%",
-                    },
-                    new[]
-                    {
-                        new CardButton(ExplorationText.EndLifeButton, ScreenAction.ConfirmEndLife),
-                        new CardButton("やめる", ScreenAction.Cancel),
-                    });
-            }
-
-            // Trial extension (js: ExplorationScreenBuilder.js:510): an event, a survey pick or a swap waits before the
-            // layer's end. Outside trial only the event's own card can wait here (#718).
-            if (session.ResolvesEvents)
-            {
-                var trial = TrialCard(session);
-                if (trial != null) return trial;
-            }
-
-            // What the interlude will give, tried on the state the way a step's forecast is.
-            int interludeGain = ExplorationReducer.CanInterlude(state) ? ExplorationReducer.Interlude(state).Hp - state.Hp : 0;
-            string interludeLine = ExplorationReducer.CanInterlude(state)
-                ? $"階層間の休憩: HP +{interludeGain}" +
-                  $"{InterludeShare(state, interludeGain < ExplorationReducer.InterludeHealOf(state))}・スタミナ全回復・瘴気はたまらない"
-                : "";
-            var toInterlude = new[] { new CardButton("階層間の休憩へ", ScreenAction.GoToInterlude) };
-
-            switch (state.Phase)
-            {
-                case RunPhase.LayerCleared:
-                    return new ScreenCard(CardKind.LayerCleared, "階層ボスを倒した",
-                        new[] { $"第 {layer} 層を抜けます。", interludeLine }, toInterlude);
-
-                case RunPhase.PushedOut:
-                    return new ScreenCard(CardKind.PushedOut, "刻限が尽きた",
-                        new[]
-                        {
-                            state.Profile.IsLast
-                                ? "この層の行動は終わりです。これより下の層はありません。"
-                                : "この層の行動は終わりです。階層間の休憩を経て、次の層へ押し出されます。",
-                            interludeLine,
-                        },
-                        toInterlude);
-
-                case RunPhase.Interlude:
-                    return InterludeCardOf(session);
-
-                case RunPhase.MiasmaDeath:
-                    return EndCard(CardKind.MiasmaDeath, "瘴気死", $"瘴気が {Miasma.DeathAt}% に達し、第 {layer} 層でこの生が終わった。", state);
-
-                case RunPhase.Fallen:
-                    return EndCard(CardKind.Fallen, "倒れた", $"第 {layer} 層の戦いで倒れた。", state);
-
-                case RunPhase.Completed:
-                    return EndCard(CardKind.Completed, "踏破", "歪みの根を倒した。", state);
-
-                case RunPhase.Survived:
-                    return EndCard(CardKind.Survived, "生存ルート", $"生きたまま、第 {layer} 層でこの生を閉じた。", state);
-
-                default:
-                    return ScreenCard.None;
-            }
-        }
-
-        // js: bridge/explorationScript/ExplorationScreenBuilder.js:558
-        private static ScreenCard InterludeCardOf(ExplorationSession session)
-        {
-            var state = session.State;
-            // Trial extension: the rest's own lines read the state the rest left (session.InterludeState), so a
-            // consumable used at the interlude (§6.5 「休憩の間も消耗品は使える」) changes the band and the slots, not what
-            // the rest is said to have given. The C# reads the state itself.
-            var rest = session.Trial && session.InterludeState != null ? session.InterludeState : state;
-            var lines = new List<string>
-            {
-                $"HP +{session.InterludeHealed}{InterludeShare(rest, session.Trial && session.InterludeHealed < ExplorationReducer.InterludeHealOf(rest))}で HP {rest.Hp} / {rest.MaxHp}",
-                $"スタミナが全回復した（{rest.Stamina} / {rest.MaxStamina}）",
-                $"瘴気はたまらない（{rest.MiasmaPercent}%）",
-            };
-            var buttons = new List<CardButton>();
-
-            if (state.Profile.IsLast)
-            {
-                lines.Add("これより下の層はありません。");
-            }
-            else
-            {
-                var next = SevenLayers.Of(state.Profile.Layer + 1);
-                int density = Miasma.EffectiveDensity(next.Density, state.Loadout.DensityRelief);
-                // A hidden name stays hidden until its own carving is read, so the next layer shows its first name.
-                // Trial extension: 刻限の砂 adds to the next layer's 刻限 too.
-                string time = state.TimeBonus > 0
-                    ? $"{next.TimeLimit + state.TimeBonus}（{ExplorationText.TimeBonus(ToolNames(state.Loadout, ReliefKind.Time), state.TimeBonus)}）"
-                    : $"{next.TimeLimit}";
-                // The name the life knows (DisplayName) — the same as Name in the C#, where the layer-two carving is
-                // never read before its own layer; a lineage that read it in an earlier life knows it from the start (R-20).
-                lines.Add($"次は第 {next.Layer} 層　{next.DisplayName(session.CarvingTaken)}: 1 刻限ごとに増える瘴気 +{density}%、刻限 {time}");
-                if (session.TryDescend().Phase == RunPhase.MiasmaDeath)
-                    lines.Add($"！ 降りると入口で瘴気が {Miasma.DeathAt}% に達し、この生が終わります");
-                buttons.Add(new CardButton("次の層へ降りる", ScreenAction.Descend));
-            }
-            buttons.Add(new CardButton(ExplorationText.EndLifeButton, ScreenAction.AskEndLife));
-            return new ScreenCard(CardKind.Interlude, "階層間の休憩", lines, buttons);
-        }
-
-        private static ScreenCard EndCard(CardKind kind, string title, string line, ExplorationState state) =>
-            new ScreenCard(kind, title,
-                new[] { line, $"瘴気 {state.MiasmaPercent}% ／ HP {state.Hp} / {state.MaxHp}" },
-                new[] { new CardButton("新しい生で潜り直す", ScreenAction.NewLife) });
 
         /// <summary>The journal the drawer shows while exploring (dungeon_exploration_v4.md §6.7).</summary>
         private static JournalBook Book(ExplorationSession session)
