@@ -378,6 +378,8 @@ namespace Depiction.View
             // §3.9 (#589): the enemy it was released over; −1 lets the source send it where its face was read.
             int target = _pickedUnit;
             _pickedUnit = -1;
+            // §2.2 の 3 (#762): the gap number goes back as the card leaves the hand, before the play makes the screen busy.
+            if (_floor != null && FrameNow != null) _floor.ShowGapOf(FloorFocus.GapUnit(FrameNow, -1, _chosenUnit));
             _dragging = null;
             _zoneHot = false;
             _snapWeight = 0f;

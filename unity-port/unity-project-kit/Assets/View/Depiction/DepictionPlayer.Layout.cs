@@ -229,7 +229,7 @@ namespace Depiction.View
         private void ApplyFloor(DepictionFrame frame)
         {
             if (_floor == null || !playerFigure) return;
-            _floor.Bind(frame, playerFigure.transform.position);
+            _floor.Bind(frame, playerFigure.transform.position, FloorFocus.GapUnit(frame, _pickedUnit, _chosenUnit), _badgeHovered);
             _reachFor = null; // Bind put the reach out; the next Update lights it again for the card still hovered
 
             if (!_floor.Shown) return;
@@ -465,6 +465,61 @@ namespace Depiction.View
             _reachFor = card;
             if (card) _floor.ShowReach(card.Face.ReachCells);
             else _floor.HideReach();
+        }
+
+        // ---- battle_ui_ux_v2 §2.2 の 2 / の 3 / §3.4 (#762): whose gap, whose aims ---------------------
+
+        private readonly List<ScreenBox> _badgeBoxes = new List<ScreenBox>();
+        private readonly List<int> _badgeUnits = new List<int>();
+
+        /// <summary>
+        /// With several enemies: Tab moves the gap number to the next standing enemy, a held card over an
+        /// enemy shows that enemy's N until it is let go, and a pointer on an omen badge keeps that enemy's
+        /// aimed cells and fades the others'. Whose number and which aims are FloorFocus's and FloorStripes'
+        /// answers. While an event plays its cues own the gap tag (a move counts it again), so it waits.
+        /// </summary>
+        private void UpdateFloorFocus()
+        {
+            DepictionFrame frame = FrameNow;
+            if (_floor == null || !_floor.Shown || frame == null) return;
+            if (SeveralEnemies && TryTab()) _chosenUnit = FloorFocus.NextTab(frame, FloorFocus.GapUnit(frame, -1, _chosenUnit));
+            _badgeHovered = BadgeUnderPointer(frame);
+            _floor.ShowHovered(_badgeHovered);
+            if (!_busy) _floor.ShowGapOf(FloorFocus.GapUnit(frame, _pickedUnit, _chosenUnit));
+        }
+
+        /// <summary>The standing enemy whose omen badge is under the pointer, or −1. A held card owns the pointer.</summary>
+        private int BadgeUnderPointer(DepictionFrame frame)
+        {
+            if (!SeveralEnemies || _dragging != null || !TryPointer(out Vector2 pointer)) return -1;
+            RectTransform root = RefScreen.Root(enemyFigure ? enemyFigure.transform : transform);
+            if (!root) return -1;
+            Canvas canvas = root.GetComponent<Canvas>();
+            Camera camera = canvas && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+            if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(root, pointer, camera, out Vector3 world)) return -1;
+            Vector2 at = RefScreen.Of(root, world);
+            _badgeBoxes.Clear();
+            _badgeUnits.Clear();
+            for (int k = 0; k < _enemyCount; k++)
+            {
+                OmenBadgeView badge = _enemies[k].Badge;
+                if (!badge || !badge.isActiveAndEnabled || !EnemyScreen.Stands(frame, k)) continue;
+                _badgeBoxes.Add(BoxOn(root, badge.Rect, Vector3.zero));
+                _badgeUnits.Add(k);
+            }
+            int hit = FloorFocus.BoxAt(_badgeBoxes, at.x, at.y);
+            return hit >= 0 ? _badgeUnits[hit] : -1;
+        }
+
+        /// <summary>True on the frame Tab went down (§3.4: 相手を切り替え).</summary>
+        private static bool TryTab()
+        {
+#if ENABLE_INPUT_SYSTEM
+            UnityEngine.InputSystem.Keyboard keyboard = UnityEngine.InputSystem.Keyboard.current;
+            return keyboard != null && keyboard.tabKey.wasPressedThisFrame;
+#else
+            return Input.GetKeyDown(KeyCode.Tab);
+#endif
         }
 
         /// <summary>

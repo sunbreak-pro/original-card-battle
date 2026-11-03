@@ -15,6 +15,7 @@ namespace Depiction.Tests
             {
                 StripeDirection = direction,
                 Swatch = true,
+                Gap = 1, // standing: a hover reads only a standing enemy (#762)
                 AimCells = new List<int>(aim),
                 DenseCells = new List<int>(dense ?? new int[0]),
                 MoveCells = new List<int>(move ?? new int[0]),
@@ -131,6 +132,66 @@ namespace Depiction.Tests
             Assert.That(FloorStripes.MoveInset(frame, 4), Is.EqualTo(FloorStripes.MoveInsetOverAim));
             Assert.That(FloorStripes.MoveInset(frame, 5), Is.EqualTo(0f), "alone on the cell it keeps the cell's edge");
             Assert.That(FloorStripes.MoveInset(One(new[] { 4 }, move: new[] { 4 }), 4), Is.EqualTo(0f), "one enemy draws as it always has");
+        }
+
+        // ---- a hover on an omen badge (battle_ui_ux_v2 §2.2 の 2, #762) ----------------------------
+
+        [Test]
+        public void AHoverOnABadge_KeepsThatEnemysCells_AndFadesTheOthers()
+        {
+            DepictionFrame frame = Several(Aiming(0, new[] { 3, 4 }), Aiming(1, new[] { 4, 5 }, dense: new[] { 5 }));
+            Assert.That(FloorStripes.Of(frame, 3, 1), Is.EqualTo(new[] { new StripeMark(0, false, faint: true) }));
+            Assert.That(FloorStripes.Of(frame, 4, 1), Is.EqualTo(new[] { new StripeMark(0, false, faint: true), new StripeMark(1, false) }));
+            Assert.That(FloorStripes.Of(frame, 5, 1), Is.EqualTo(new[] { new StripeMark(1, true) }));
+            Assert.That(FloorStripes.Of(frame, 4, -1), Is.EqualTo(FloorStripes.Of(frame, 4)), "no hover fades nothing");
+        }
+
+        [Test]
+        public void TheCellsFrameAndLight_FadeOnlyWhereNoSetIsTheHoveredEnemys()
+        {
+            DepictionFrame frame = Several(Aiming(0, new[] { 3, 4 }), Aiming(1, new[] { 4 }));
+            Assert.That(FloorStripes.AimFaint(FloorStripes.Of(frame, 3, 1)), Is.True);
+            Assert.That(FloorStripes.AimFaint(FloorStripes.Of(frame, 4, 1)), Is.False, "the hovered enemy aims here too");
+            Assert.That(FloorStripes.AimFaint(FloorStripes.Of(frame, 6, 1)), Is.False, "nobody aims: nothing to fade");
+            Assert.That(FloorStripes.AimFaint(FloorStripes.Of(frame, 3)), Is.False);
+        }
+
+        [Test]
+        public void AHoverFades_TheOtherEnemysMoveFrames_ButNotItsOwn()
+        {
+            DepictionFrame frame = Several(Aiming(0, new int[0], move: new[] { 3 }), Aiming(1, new[] { 5 }, move: new[] { 6 }));
+            Assert.That(FloorStripes.MoveFaint(frame, 3, 1), Is.True);
+            Assert.That(FloorStripes.MoveFaint(frame, 6, 1), Is.False);
+            Assert.That(FloorStripes.MoveFaint(frame, 3, -1), Is.False);
+            Assert.That(FloorStripes.MoveFaint(frame, 4, 1), Is.False, "no frame there");
+        }
+
+        [Test]
+        public void AHoverChangesNothing_OnOneEnemy_NorOnAnEnemyWhoseCellsAreNotDrawn()
+        {
+            Assert.That(FloorStripes.Hovered(One(new[] { 4 }), 0), Is.EqualTo(-1), "one enemy has nobody to fade");
+            DepictionFrame unread = Several(Aiming(0, new[] { 3 }, disclosure: OmenDisclosure.Unread), Aiming(1, new[] { 4 }));
+            Assert.That(FloorStripes.Hovered(unread, 0), Is.EqualTo(-1), "開示度 0 draws no cells");
+            Assert.That(FloorStripes.Of(unread, 4, 0), Is.EqualTo(new[] { new StripeMark(1, false) }));
+            DepictionFrame hidden = Several(Aiming(0, new[] { 3 }, visible: false), Aiming(1, new[] { 4 }));
+            Assert.That(FloorStripes.Hovered(hidden, 0), Is.EqualTo(-1));
+            Assert.That(FloorStripes.Hovered(hidden, 1), Is.EqualTo(1));
+            Assert.That(FloorStripes.Hovered(hidden, 5), Is.EqualTo(-1), "outside the list");
+        }
+
+        [Test]
+        public void AHoverOnAFallenEnemy_FadesNothing()
+        {
+            EnemyFrame fallen = Aiming(1, new[] { 4 });
+            fallen.Unit.Down = true;
+            DepictionFrame frame = Several(Aiming(0, new[] { 3 }), fallen);
+            Assert.That(FloorStripes.Hovered(frame, 1), Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void TheFadedShare_KeepsTheOthersSeen()
+        {
+            Assert.That(FloorStripes.FaintAlpha, Is.GreaterThan(0f).And.LessThan(1f));
         }
 
         // ---- the swatches -----------------------------------------------------------------------
