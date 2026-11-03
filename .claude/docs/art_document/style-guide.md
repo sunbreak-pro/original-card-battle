@@ -66,7 +66,7 @@
 
 原本の縮小率を標準の人型と同じ 0.147（226 ÷ 1536）に保つと、§13.2 の線の太さと §17 の関門の原本での値を、そのまま使えます。そこで、原本の高さを画面での高さに比例させます。
 
-- **高さ**: 画面での高さ × 1536 ÷ 226 を、16 の倍数へ切り上げます。画面での高さが 400 px なら 2720、500 px なら 3408、600 px なら 4080 です。
+- **高さ**: 画面での高さ × 1536 ÷ 226 を、16 の倍数へ切り上げます。画面での高さが 410 px なら 2800、500 px なら 3408、600 px なら 4080 です。400 px ちょうどの敵は例外の外なので、原本は 1536 のままです。
 - **上限**: 4096 です（`asset-intake.md` の大型の敵の Max Size）。画面での高さが 602 px を超える敵は、原本が 4096 で頭打ちになります。頭打ちの絵だけは、§13.2 と §17 の原本での値に「4096 ÷（画面での高さ × 1536 ÷ 226）」を掛けて小さくします。
 - **幅**: 絵の縦横比のまま、4096 までにします。両辺とも 4 の倍数にします。BC7 が効くのは 4 の倍数のときだけだからです。
 - **判定**: `scripts/silhouette.py` に `--height <画面での高さ>` を渡します。Krita の確認倍率は 14.7% のままです。
@@ -97,7 +97,7 @@
 | 7 | 四足・翼・とぐろの構造 | **できません。** `quadruped` は Danbooru に 0 件で、四足を指すタグがありません。翼 2 対も分布の外です | 先に線画を描いて Line Art コントロールに入れ、生成は色と陰影だけにする |
 | 8 | 彩度が高い・暖色が混じる | 寄せるだけならできます。`limited palette`（26,553）/ `muted colors`（9,226）/ `purple theme`（13,771）/ `blue theme`（39,969）。縛れはしません | Cross-channel Color Adjustment（Saturation を Hue で駆動）で H = 15〜65 と H ≥ 345 の彩度を落とす |
 | 9 | 切り抜きの縁に灰色が残る | **できません。** | Split Alpha ▸ Alpha into Mask → Select Opaque → Shrink 1 px → Write as Alpha → **Split Alpha ▸ Save Merged…** で書き出す（通常の Export は完全透明画素の色を黒で潰します） |
-| 10 | 超解像モデルの質感が全面に乗る | **原本を 640 × 1536 にすれば経路ごと消えます**（→ §2） | — |
+| 10 | 超解像モデルの質感が全面に乗る | **原本を 640 × 1536 にすれば経路ごと消えます**（→ §2）。大型の敵は §2 の高さの例外で拡大を使うので、拡大の後に領域ごとに描き直して質感を消します | — |
 
 **光の向きは指示文では決まりません。** 方向を指すタグは `backlighting`（45,817）/ `sidelighting`（13,276）/ `underlighting`（1,302）/ `overlighting`（528）の 4 つだけで、左右の別もありません。**敵の立ち絵は中立光で生成し、層ごとの光は Krita で載せます。** 例外は、光源が体そのものにある 2 体（セルクの背の結晶、ガルドの雷の縁）だけです。
 
@@ -283,7 +283,7 @@ UI のどこにあるかも書いておきます。`cfg_scale` と `sampler_step
 | C. 再現性 | 同じ種で 2 枚 | 2 | Krita で差分合成して真っ黒になるか | 未 |
 | D. Refine | 0.25 / 0.35 / 0.50 | 3 | 艶が増えるか、手が直るか | 未 |
 | E. 竜人の register | `dragon boy` を入れる / 入れない | 2 | 萌えの人物像に寄るか、眷属に見えるか | 未 |
-| F. 書き出しの検算 | — | 0 | `logs/workflow.json` の `EmptyLatentImage` が 640×1536 で、超解像ノードが無いこと | 未 |
+| F. 書き出しの検算 | — | 0 | `logs/workflow.json` の `EmptyLatentImage` が 640×1536 で、超解像ノードが無いこと。大型の敵は §2 の高さの例外に従います | 未 |
 
 記録する値は `logs/workflow.json` から写します。`RandomNoise.noise_seed`、`BasicScheduler.scheduler` `.steps` `.denoise`、`KSamplerSelect.sampler_name`、`CFGGuider.cfg`、`EmptyLatentImage.width` `.height`、`CheckpointLoaderSimple.ckpt_name`、`CLIPTextEncode` の正負の文面です。強度を下げたときは `SplitSigmas.step` も要ります。**`KSamplerAdvanced` は本経路に現れません。**
 
