@@ -67,6 +67,20 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
+        public void AnUnknownStanceWhen_Throws_NamingTheValue()
+        {
+            // #725: a `when` with no words stops loudly instead of dropping its condition from the clause.
+            Assert.Multiple(() =>
+            {
+                foreach (StanceHook hook in new[] { StanceHook.TurnStart, StanceHook.TurnEnd, StanceHook.AttackBonus })
+                {
+                    var stance = new StanceDef(hook, (StanceWhen)999, Threshold: 1, Guard: 2, Recovery: 1, NextRecovery: 1, Power: 2);
+                    Assert.That(Assert.Throws<ArgumentOutOfRangeException>(() => CoreText.StanceText(stance)).Message, Does.Contain("999"), hook.ToString());
+                }
+            });
+        }
+
+        [Test]
         public void EveryOmenKind_HasAWord()
         {
             foreach (OmenKind kind in Enum.GetValues(typeof(OmenKind)))
