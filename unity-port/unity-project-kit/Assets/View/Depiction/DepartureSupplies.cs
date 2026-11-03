@@ -33,8 +33,8 @@ namespace Depiction.View
             BattleToolAmounts amounts = BattleToolAmounts.Of(item);
             return new SupplyOption(item.Id, item.Name, item.Note,
                 startCellsBack: amounts.StartCellsBack,
-                startStaminaBonus: amounts.StartStamina,
-                firstHitGuard: amounts.OpeningGuard,
+                startStaminaBonus: amounts.StartStaminaBonus,
+                firstHitGuard: amounts.FirstHitGuard,
                 bossWordWard: amounts.BossWordWard);
         }
 

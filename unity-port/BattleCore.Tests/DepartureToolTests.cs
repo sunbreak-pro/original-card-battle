@@ -113,7 +113,7 @@ namespace BattleCore.Tests
                 Assert.That(plain.State.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp - 9));
                 Assert.That(scaled.State.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp - 4), "9 meets Guard 5 first");
                 Assert.That(scaled.Events.OfType<GuardGained>().Single(g => g.Actor == Actor.Player), Is.EqualTo(new GuardGained(Actor.Player, 5, 5)));
-                Assert.That(scaled.State.Tools.ScaleGuard, Is.EqualTo(0), "once a battle");
+                Assert.That(scaled.State.Tools.FirstHitGuard, Is.EqualTo(0), "once a battle");
                 Assert.That(second.State.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp - 4 - 9), "the next blow meets no scale");
                 Assert.That(second.Events.OfType<GuardGained>().Any(g => g.Actor == Actor.Player), Is.False);
             });
@@ -134,11 +134,11 @@ namespace BattleCore.Tests
             }
             Assert.That(s.Gap, Is.EqualTo(0));
             Assert.That(s.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp), "no blow yet");
-            Assert.That(s.Tools.ScaleGuard, Is.EqualTo(5));
+            Assert.That(s.Tools.FirstHitGuard, Is.EqualTo(5));
 
             var bitten = EndSpent(s);
             Assert.That(bitten.State.Player.Hp, Is.EqualTo(Constants.PlayerMaxHp - 2), "7 meets Guard 5");
-            Assert.That(bitten.State.Tools.ScaleGuard, Is.EqualTo(0));
+            Assert.That(bitten.State.Tools.FirstHitGuard, Is.EqualTo(0));
         }
 
         [Test]

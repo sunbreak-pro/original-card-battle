@@ -19,22 +19,28 @@ namespace DungeonContent
     {
         public static readonly BattleToolAmounts None = new BattleToolAmounts(0, 0, 0, 0);
 
-        public BattleToolAmounts(int startCellsBack, int startStamina, int openingGuard, int bossWordWard)
+        public BattleToolAmounts(int startCellsBack, int startStaminaBonus, int firstHitGuard, int bossWordWard)
         {
             StartCellsBack = startCellsBack;
-            StartStamina = startStamina;
-            OpeningGuard = openingGuard;
+            StartStaminaBonus = startStaminaBonus;
+            FirstHitGuard = firstHitGuard;
             BossWordWard = bossWordWard;
         }
 
         /// <summary><see cref="ItemEffect.WiderStart"/>: cells the player's start moves back.</summary>
         public int StartCellsBack { get; }
 
-        /// <summary><see cref="ItemEffect.OpeningStamina"/>: stamina added at the start of a battle.</summary>
-        public int StartStamina { get; }
+        /// <summary>
+        /// <see cref="ItemEffect.OpeningStamina"/> (息継ぎの笛): the stamina added at the start of a battle, the
+        /// same name as Departure.StartStaminaBonus. Not the total at the start (BattleSetup.StartStamina).
+        /// </summary>
+        public int StartStaminaBonus { get; }
 
-        /// <summary><see cref="ItemEffect.OpeningGuard"/>: the Guard before the first enemy blow.</summary>
-        public int OpeningGuard { get; }
+        /// <summary>
+        /// <see cref="ItemEffect.OpeningGuard"/> (竜鱗の欠片): the Guard before the first enemy blow, the same
+        /// name as Departure.FirstHitGuard and CarriedTools.FirstHitGuard.
+        /// </summary>
+        public int FirstHitGuard { get; }
 
         /// <summary><see cref="ItemEffect.BluntBossState"/>: the stacks the boss-only words sit lower.</summary>
         public int BossWordWard { get; }
@@ -67,10 +73,10 @@ namespace DungeonContent
         /// <summary>Two sets of amounts added together (the same tool may fill two slots).</summary>
         public BattleToolAmounts Plus(BattleToolAmounts other) => new BattleToolAmounts(
             StartCellsBack + other.StartCellsBack,
-            StartStamina + other.StartStamina,
-            OpeningGuard + other.OpeningGuard,
+            StartStaminaBonus + other.StartStaminaBonus,
+            FirstHitGuard + other.FirstHitGuard,
             BossWordWard + other.BossWordWard);
 
-        public override string ToString() => $"(back {StartCellsBack}, stamina {StartStamina}, guard {OpeningGuard}, ward {BossWordWard})";
+        public override string ToString() => $"(back {StartCellsBack}, stamina {StartStaminaBonus}, guard {FirstHitGuard}, ward {BossWordWard})";
     }
 }

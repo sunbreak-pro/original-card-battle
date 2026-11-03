@@ -12,7 +12,7 @@ namespace DungeonContent.Tests
         private static IEnumerable<ItemEffect> AllEffects() => Enum.GetValues(typeof(ItemEffect)).Cast<ItemEffect>();
 
         private static int[] Numbers(BattleToolAmounts a) =>
-            new[] { a.StartCellsBack, a.StartStamina, a.OpeningGuard, a.BossWordWard };
+            new[] { a.StartCellsBack, a.StartStaminaBonus, a.FirstHitGuard, a.BossWordWard };
 
         [Test]
         public void EveryBattleSideEffect_MapsToExactlyOneOfTheFourNumbers_AtItsAmount()

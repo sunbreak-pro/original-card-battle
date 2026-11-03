@@ -73,7 +73,7 @@ namespace BattleCore
         /// <summary>§9.1 (#452): what the tools hold for the battle (竜鱗の欠片 and 竜語の符); null without them.</summary>
         public CarriedTools? Tools =>
             FirstHitGuard > 0 || BossWordWard > 0
-                ? new CarriedTools(ScaleGuard: Math.Max(0, FirstHitGuard), BossWordWard: Math.Max(0, BossWordWard))
+                ? new CarriedTools(FirstHitGuard: Math.Max(0, FirstHitGuard), BossWordWard: Math.Max(0, BossWordWard))
                 : null;
 
         /// <summary>The width the vertical slice is fought on until the dungeon hands one in (#168).</summary>
