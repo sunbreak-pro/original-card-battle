@@ -121,6 +121,35 @@ namespace Depiction.View
             if (shade) _shadeAlpha = shade.color.a;
         }
 
+        /// <summary>
+        /// The one place a card's ground is made (#780): the root with its CanvasGroup, the Background the
+        /// press and the drag land on, and the dimming Shade. These are the parts EnsureParts cannot make;
+        /// it lays out everything else. The battle's Card prefab (DepictionPrefabBuilder.BuildCard) and a
+        /// card made in code (the exploration's card pick) both start here, so a part added to the ground
+        /// reaches both. A new part the prefab needs and EnsureParts cannot make belongs here.
+        /// </summary>
+        public static CardView Create(RectTransform parent, string name = "Card")
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            // Inactive while the ground is put together: Awake (EnsureParts) must find it already there.
+            go.SetActive(false);
+            var root = (RectTransform)go.transform;
+            if (parent) root.SetParent(parent, false);
+            root.anchorMin = root.anchorMax = root.pivot = new Vector2(0.5f, 0.5f);
+            root.sizeDelta = Size;
+
+            var card = go.AddComponent<CardView>();
+            card.group = go.AddComponent<CanvasGroup>();
+            // No sprite: the prefab builder saves this ground as an asset, and a sprite made at run time
+            // cannot be saved with it. EnsureParts gives both their rounded sprites in play.
+            card.background = UiKit.Image(root, "Background", null, BattleTheme.CardGround, Vector2.zero, Vector2.one);
+            card.background.raycastTarget = true;
+            card.shade = UiKit.Image(root, "Shade", null, BattleTheme.WithAlpha(BattleTheme.InkBlack, 0.55f), Vector2.zero, Vector2.one);
+            card.shade.enabled = false;
+            go.SetActive(true);
+            return card;
+        }
+
         /// <summary>Lays the face out as §6.1 draws it. Safe to call again; the parts are made once.</summary>
         public void EnsureParts()
         {

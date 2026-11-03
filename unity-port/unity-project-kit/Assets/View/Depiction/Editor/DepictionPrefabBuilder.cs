@@ -22,7 +22,6 @@ namespace Depiction.View
         public const string ScenePath = "Assets/Scenes/BattleDepiction.unity";
 
         private static readonly Vector2 Half = new Vector2(0.5f, 0.5f);
-        private static readonly Color CardBack = BattleTheme.CardGround; // battle-visual-v1 §2.1 (#242)
         private static readonly Color PanelBack = BattleTheme.Panel;
 
         [MenuItem("Tools/Depiction/Build Prefabs And Scene")]
@@ -178,12 +177,10 @@ namespace Depiction.View
             // CardView.EnsureParts moves them to their §6.1 places and makes the rest (frame, bands,
             // reach tag, value columns, the trait box's second row) at run time, so a prefab built
             // before #242 and one built now look the same in play.
-            RectTransform root = Root("Card", CardView.Size, Half);
-            var view = root.gameObject.AddComponent<CardView>();
-            view.group = root.gameObject.AddComponent<CanvasGroup>();
-
-            view.background = Img(root, "Background", CardBack, Vector2.zero, Vector2.one);
-            view.background.raycastTarget = true; // the drag handle
+            // The ground (CanvasGroup, Background, Shade) comes from CardView.Create, the same place the
+            // exploration's card pick makes its cards (#780).
+            CardView view = CardView.Create(null);
+            RectTransform root = view.Rect;
             Frame(root, BattleTheme.Line, 2f);
 
             view.kindStripe = Img(root, "KindStripe", BattleTheme.Omen, new Vector2(0f, 1f), new Vector2(1f, 1f));
@@ -214,7 +211,7 @@ namespace Depiction.View
             view.traitLamp.raycastTarget = false;
             view.traitText = UiKit.Label(trait, "TraitText", 22, TextAnchor.MiddleLeft, BattleTheme.Warm, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
                 new Vector2(140f, 36f), new Vector2(32f, 0f), "初手 +3");
-            AddCardShade(view, root); // last, so it covers the trait box too
+            view.shade.transform.SetAsLastSibling(); // so it covers the trait box too
             return root.gameObject;
         }
 
