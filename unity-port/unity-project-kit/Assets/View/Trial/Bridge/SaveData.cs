@@ -222,6 +222,11 @@ namespace Trial.Bridge
     /// </summary>
     public sealed class LifeStartData
     {
+        /// <summary>
+        /// The version of a life's start and log. A life in progress is never converted (#109, dungeon_exploration_v4.md
+        /// §7.9): its log replays only on the rules of the build that recorded it, so a start of another version does not
+        /// load and the app offers to give the life up (Main.ResumeLife).
+        /// </summary>
         public const int Version = 1;
 
         public int V { get; set; } = Version;
@@ -282,6 +287,9 @@ namespace Trial.Bridge
             if (!(json is JsonObject o)) throw new SaveFormatException("bad save: the life has no start");
             var s = new LifeStartData();
             if (JsonNumber.TryInt(o["v"], out int v)) s.V = v;
+            if (s.V != Version)
+                throw new SaveFormatException("bad save: the life is version " + s.V.ToString(CultureInfo.InvariantCulture)
+                    + "; this build replays version " + Version.ToString(CultureInfo.InvariantCulture) + " only");
             s.Generation = OptionalInt(o, "generation");
             s.Name = o["name"] as string ?? "";
             s.Seed = SeedText(o["seed"]);

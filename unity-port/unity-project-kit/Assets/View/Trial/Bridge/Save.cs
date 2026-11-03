@@ -190,6 +190,14 @@ namespace Trial.Bridge
     public static class Save
     {
         public const string SaveKey = "ocb.save.v1";
+
+        /// <summary>
+        /// The version of the stored object around the lineage and the life ({ v, rev, tab, lineage, life, deckSave }).
+        /// The key keeps its name when it changes. A newer one is refused (and kept aside); the parts inside carry
+        /// their own versions: the lineage is converted (InheritanceCore.LineageMigrations), the life in progress is not
+        /// (LifeStartData.Version). The policy is dungeon_exploration_v4.md §7.9 (#109).
+        /// </summary>
+        public const int Version = 1;
         public const string SettingsKey = "ocb.settings.v1";
 
         /// <summary>A save whose life would not replay, kept before it is dropped.</summary>
@@ -248,6 +256,7 @@ namespace Trial.Bridge
                 object data = Revive(Json.Parse(text));
                 // writeSave never stores a save without its lineage: one without it is broken, not empty.
                 if (!(data is JsonObject o) || !JsonNumber.Truthy(o["lineage"])) throw new SaveFormatException("bad save: no lineage");
+                CheckVersion(o["v"]);
                 Lineage lineage = LineageCodec.Read(o["lineage"]);
                 LifeSave life = LifeSave.FromJson(o["life"]);   // data.life || null
                 return new OpenedSave(new TrialSave(lineage, life, o["deckSave"] as string), null, stamp);
@@ -258,6 +267,20 @@ namespace Trial.Bridge
                 Warn?.Invoke("save could not be read; it is " + (kept ? "kept under " + BrokenKey : "not copied (storage refused)") + " until the player starts anew", e);
                 return new OpenedSave(null, new Unreadable(e, kept), stamp);
             }
+        }
+
+        /// <summary>
+        /// The stored object's version: none reads as 1 (the JS never read it); a newer one than <see cref="Version"/>,
+        /// or one that is not an integer of 1 or more, does not load (#109).
+        /// </summary>
+        private static void CheckVersion(object v)
+        {
+            if (v == null) return;
+            if (!JsonNumber.TryInt(v, out int version) || version < 1)
+                throw new SaveFormatException("bad save: version " + Json.Stringify(v));
+            if (version > Version)
+                throw new SaveFormatException("bad save: version " + version.ToString(CultureInfo.InvariantCulture)
+                    + " is newer than this build reads (" + Version.ToString(CultureInfo.InvariantCulture) + ")");
         }
 
         // js: app/save.js:96
@@ -287,7 +310,7 @@ namespace Trial.Bridge
         {
             if (save == null || save.Lineage == null) throw new ArgumentException("Save: a save without its lineage is not written.", nameof(save));
             var o = new JsonObject();
-            o["v"] = 1;
+            o["v"] = Version;
             if (stamp != null)
             {
                 o["rev"] = unchecked((int)stamp.Rev);   // JS stamp.rev | 0

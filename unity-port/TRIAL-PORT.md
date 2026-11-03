@@ -59,6 +59,8 @@ Only Koudai-san's decisions go here; everything else follows the JS.
 
 - **踏破 is no survivor (2026-11-03, #108).** A life that defeats 歪みの根 (`LifeEnding.Completed`) no longer becomes the survivor: the previous survivor stays as it was and the journal passes to nobody (`concept-v3.md` §8.1). Its card-only trace stays as the JS left it. `Inheritance.RecordSurvival` holds the rule, `InheritanceText.ClearedTraceNote` and the ending's lines say so. The JS parity tests compare the JS's cleared lineage less its survivor, and the random op sequences stop comparing a scenario at its first clearing (`FuzzParityTests`).
 
+- **Save versions (2026-11-03, #109).** The JS checked only the lineage's version and set any other aside. The C# converts an older lineage through `InheritanceCore.LineageMigrations` (one step per version, none yet), refuses a newer one, and also refuses a newer save object (`Save.Version`, its `v`) and a life whose start has another version (`LifeStartData.Version`): a life in progress is never converted, it goes the way of a life that does not replay. The policy is `dungeon_exploration_v4.md` §7.9.
+
 ## Porting conventions (JS → C#)
 
 1. **One C# file per JS module**, same function names in PascalCase (`runAutomaticEvents` → `RunAutomaticEvents`,
