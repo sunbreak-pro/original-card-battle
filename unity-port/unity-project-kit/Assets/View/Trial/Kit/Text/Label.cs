@@ -8,6 +8,8 @@
 // - white-space: normal / nowrap collapse spaces and newlines, pre-line keeps newlines, pre / pre-wrap keep all;
 //   nowrap / pre do not wrap.
 // - overflow: ellipsis → TMP Ellipsis; clip → Truncate; -webkit-line-clamp n → the box n lines tall with Ellipsis.
+//   Those modes also cut at the height by the glyph box, not the line box: a negative bottom margin
+//   (TextMath.ClipRoomPx) keeps every line whose line box fits.
 // - a box without a width is as wide as its text (max-content); without a height it is lines × L tall.
 // - text-shadow: blur ≤ 3 px as the face's underlay (TextShadows); larger ones are left for TextGlow (GlowShadows).
 // - colour goes through Materials.Vertex (the gamma target) and follows the CSS filter of the ancestors (LabelState).
@@ -119,6 +121,13 @@ namespace Trial.Kit
                 t.maxVisibleLines = 99999;
                 t.overflowMode = style.Overflow == TextOverflow.Ellipsis ? TextOverflowModes.Ellipsis
                     : style.Overflow == TextOverflow.Clip ? TextOverflowModes.Truncate : TextOverflowModes.Overflow;
+            }
+            // TMP's Ellipsis / Truncate cut at the box's height too, and drop the whole text when the first line's glyphs
+            // are taller than the box; CSS draws a line whose line box fits even when its glyphs overflow (#821, #855).
+            if (t.overflowMode != TextOverflowModes.Overflow)
+            {
+                float room = TextMath.ClipRoomPx(lh, style.Size, m.ContentEm, TrialFonts.TallestContentEm(style.Family, style.Weight));
+                t.margin = new Vector4(0f, halfLeading, st.MarginRight, -room);
             }
 
             st.Glow = TextShadows.Apply(t, style.Shadows);

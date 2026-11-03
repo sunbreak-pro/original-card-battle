@@ -242,6 +242,33 @@ namespace Trial.Geometry
             return HalfLeading(f.LineHeightPx, f.Size, m.AscentEm, m.DescentEm);
         }
 
+        // TMP scales the face metrics in float: a glyph box that fits the room exactly can still miss TMP's 1e-4 px
+        // tolerance and drop the text. Far below a line, so the room never makes space for another line.
+        private const float ClipRoomSlackEm = 0.05f;
+
+        /// <summary>
+        /// The room (px, ≥ 0) a clipped label (TMP Ellipsis / Truncate) needs below its box: give it as a negative
+        /// bottom margin. TMP keeps a line only while its glyph box (ascent + descent of the tallest face on the line)
+        /// fits the box less the margins, and drops the whole text when the first line does not; CSS keeps every line
+        /// whose line box fits and lets the glyphs overflow it. With the top margin at the half-leading, n line boxes
+        /// then hold n glyph boxes: tallest·size − (L + own·size)/2, plus a slack. 0 when the glyph box fits the line
+        /// box. tallestContentEm is the tallest content area among the label's face and its fallbacks (a Japanese glyph
+        /// in a Mono label is Zen Kaku's 1.448 em); it is never taken below the own face's.
+        /// </summary>
+        public static float ClipRoomPx(float lineHeightPx, float sizePx, float contentEm, float tallestContentEm)
+        {
+            if (sizePx <= 0f) return 0f;
+            float own = Math.Abs(contentEm) * sizePx;
+            float tallest = Math.Max(Math.Abs(tallestContentEm) * sizePx, own);
+            float shortfall = tallest - (lineHeightPx + own) * 0.5f;
+            // line-height: normal makes the shortfall float noise around 0: that line already fits
+            return shortfall > 1e-3f ? shortfall + ClipRoomSlackEm * sizePx : 0f;
+        }
+
+        /// <summary>ClipRoomPx for a label whose lines use only its own face.</summary>
+        public static float ClipRoomPx(float lineHeightPx, float sizePx, float contentEm) =>
+            ClipRoomPx(lineHeightPx, sizePx, contentEm, contentEm);
+
         /// <summary>The underline's top below the baseline: |underline position| × size + text-underline-offset (kit.md §4.9).</summary>
         public static float UnderlineBelowBaseline(FontSpec f, float offsetPx) => Math.Abs(f.Metrics.UnderlinePosEm) * f.Size + offsetPx;
 
