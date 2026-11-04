@@ -223,6 +223,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | worktree / レーン / ブランチ切替 | `worktree-policy` |
 | 課題を Issue として起票（main だけ。レーンは `.claude/comm/handoff/` に申し送り） | `issue-dispatch` |
 | 次に着手する Issue を決める | `issue-prompter` |
+| open PR をまとめて merge する（main だけ。こうだいさんの起動が承認） | `merge-round` |
 | open Issue を仕分ける | `/loop-triage` |
 | Issue 1 件を commit まで実装 | `/loop-implement` |
 | 検証ゲートを通して原因を切り分ける | `/loop-verify` |
@@ -240,7 +241,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 - **スコープの境界**: Issue は**プロダクトの課題専用**。Claude Code 環境やハーネス起因の問題は `docs/known-issues/` に置き、Issue にしない
 - **優先順位は必須**: Issue には `prio:1`〜`prio:4` を必ず 1 つ付ける（1 = いま着手 / 2 = 次 / 3 = その後 / 4 = いつか）。`sev:` は影響の大きさ、`prio:` は着手の順番で、別の軸。次にやることは `npm run issues:next`（`prio` → `sev` → 番号の順。依存先が open の Issue は待ちに回る）。付け忘れは `npm run issues:next -- --check` が検出する。見直すのは親 Issue を閉じたときと、縦切りや束の振り返りのとき
 - **着手前に必ず open を見る**: `gh issue list --label type:bug`。重複起票を避ける
-- **1 Issue = 1 ブランチ = 1 PR**。PR 本文に `Closes #<n>` を書く。**merge は常に人**（`gh pr merge` は settings.json の `ask` で止まる）
+- **1 Issue = 1 ブランチ = 1 PR**。PR 本文に `Closes #<n>` を書く。**merge は常に人**。こうだいさんが chat-main で `merge-round` スキルを起動したら、それがその回の承認で、事前確認を通った PR は `hooks/merge-gate.mjs` が確認なしで通す（2026-11-04 こうだいさん依頼、life-editor から移植）。レーンからの `gh pr merge` は同じ hook が deny し、回の外の merge は確認を出す
 
 ### 進行役（pdca-harness）の PR とラベルは、起票と merge の決まりの例外
 
@@ -283,12 +284,13 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 | PreToolUse(Bash) | `pre-commit-index-guard.sh` | 生成物 `INDEX.md` の commit 混入を自動除外 |
 | PreToolUse(Bash) | `pre-commit-tracker-guard.sh` | tracker と実装の同梱コミットをブロック |
 | PreToolUse(Bash) | `pre-issue-create-guard.sh` | `.session-name` が `main` でないチャットの `gh issue create` をブロック |
+| PreToolUse(Bash) | `merge-gate.mjs` | `gh pr merge` を振り分ける。worktree からは deny、chat-main の `merge-round` の回で `check` を通った PR だけ allow、それ以外は ask |
 
 実体は `$HOME/dev/Claude/hooks-lib/` を優先し、無ければ `.claude/scripts/hooks-lib/` の同梱版に落ちる。
 
 ### 禁止コマンド（`.claude/settings.json` の `deny`）
 
-main / master への直接 push、force push、`git reset --hard`、`git branch -D`、`rm -rf .git`。**`gh pr merge` は `ask`** で必ず人に聞く。
+main / master への直接 push、force push、`git reset --hard`、`git branch -D`、`rm -rf .git`。**`gh pr merge` は settings に allow も ask も置かず、`merge-gate.mjs` が振り分ける**（ask を置くと hook の allow が効かないため）。
 
 ### 並行作業は worktree のレーン
 
@@ -329,7 +331,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 | `memory/chat-<self>.md` | タスクトラッカー — 進行中 / 直近の完了 / 予定（per-chat） |
 | `history/chat-<self>.md` | 変更履歴（降順、概要+変更点。per-chat） |
 | `.github/ISSUE_TEMPLATE/` | Issue テンプレート 3 種（Known Issue / Roadmap Item / Human Task） |
-| `.claude/hooks/` | SessionStart と PreToolUse の hook 6 本 |
+| `.claude/hooks/` | SessionStart と PreToolUse の hook 7 本 |
 | `README.md` | プロジェクト概要・Development History（完了履歴の要約） |
 | `.claude/docs/SOURCES.md` | 正本の台帳（主題 → 正本 → 持ち主のレーン、旧版、食い違いの手順） |
 | `.claude/docs/INDEX.md` | ドキュメント索引（標準構造 + ゲーム設計書） |

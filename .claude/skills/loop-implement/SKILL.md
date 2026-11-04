@@ -58,7 +58,7 @@ Unity の EditMode / PlayMode テストは Editor 経由（`unity-editor-mcp` �
 
 ## 環境の事実（推論では埋まらないので明記する）
 
-- **`git push origin main*` 系と force push は `deny`**、**`gh pr merge` は `ask`**（実体 = `.claude/settings.json`）。だから本ループの完了条件は commit までで、PR 作成と merge は人間の手番に残してある
+- **`git push origin main*` 系と force push は `deny`**（実体 = `.claude/settings.json`）、**`gh pr merge` は `hooks/merge-gate.mjs` がレーンでは deny、chat-main の `merge-round` の外では ask**。だから本ループの完了条件は commit までで、PR 作成と merge は人間の手番に残してある
 - **tracker（`memory/` + `history/`）を実装コミットに載せない**。`pre-commit-tracker-guard.sh` が exit 2 で止める。記録は別コミットにし、PR 本文側に要約を書く
 - **`INDEX.md` を `git add` しない**。生成物で、`pre-commit-index-guard.sh` が自動 unstage する
 - **戦闘コアの正は `unity-port/BattleCore/`（C#）**。TS の `src/ui/battle-lab/core/` は凍結。両方直そうとしない

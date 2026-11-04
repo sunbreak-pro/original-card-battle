@@ -113,7 +113,7 @@ done
 
 **Issue が名指しする設計書の持ち主と `lane:` が食い違うときは配りません。** 台帳 §2 の持ち主と違うレーンに書かせると one writer per artifact が崩れます。采配欄へ回します。
 
-**実装レーンの終端は「PR を開くまで」で切ります。** merge と Issue の close はこうだいさんの手番（`settings.json` の `ask` で `gh pr merge` が止まる）なので、そこを条件に入れると人待ちで永久に達成されません。
+**実装レーンの終端は「PR を開くまで」で切ります。** merge と Issue の close はこうだいさんの手番（`hooks/merge-gate.mjs` がレーンからの `gh pr merge` を deny し、merge は chat-main の `merge-round` で行う）なので、そこを条件に入れると人待ちで永久に達成されません。
 
 #### モデルの判定
 
