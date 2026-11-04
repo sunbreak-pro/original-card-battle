@@ -116,7 +116,7 @@ namespace DungeonCore
             new LayerProfile(4, "輝晶の間", null, density: 3, timeLimit: 7,
                 Narrow(4, battles: 2, rests: 2, surveys: 1)),
 
-            new LayerProfile(5, "血染めの死海", null, density: 4, timeLimit: 7,
+            new LayerProfile(5, "暗き死海", null, density: 4, timeLimit: 7,
                 Narrow(5, battles: 2, rests: 2, surveys: 1)),
 
             // A second rest widens the third row to three, so every layer offers two nodes that

@@ -11,7 +11,7 @@ namespace DungeonCore.Tests
             Assert.That(SevenLayers.All.Count, Is.EqualTo(7));
             Assert.That(SevenLayers.All.Select(l => l.Name), Is.EqualTo(new[]
             {
-                "燦光の樹海", "■■の秘跡", "大黒蛇の住処", "輝晶の間", "血染めの死海", "獄雷峡", "果てなき世界",
+                "燦光の樹海", "■■の秘跡", "大黒蛇の住処", "輝晶の間", "暗き死海", "獄雷峡", "果てなき世界",
             }));
         }
 

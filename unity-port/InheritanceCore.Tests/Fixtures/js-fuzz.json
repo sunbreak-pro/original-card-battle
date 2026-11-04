@@ -738,7 +738,7 @@
       "enemyName": "fmt"
      },
      "lineage": "sha:ed6af1844a01c697",
-     "hall": "sha:67b247537ea5ab12",
+     "hall": "sha:b77fa87b96b6b530",
      "layers": [
       5
      ],
@@ -747,15 +747,15 @@
       "Name": "ヴェラ",
       "Tier": 2
      },
-     "ending": "sha:12b842ee7f561f2b",
-     "nodes": "sha:1020b9ba079983fa"
+     "ending": "sha:2d2de3ed83e73b60",
+     "nodes": "sha:9077115eb09443e5"
     },
     {
      "op": "start",
      "seed": "600020",
      "start": "{\"Life\":{\"Generation\":2,\"Name\":\"ヴェラ\",\"Tier\":2,\"Seed\":\"600020\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"600020\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[5],\"CarvingKnown\":false,\"Attire\":2}",
      "lineage": "sha:956249ccf3c39111",
-     "hall": "sha:67b247537ea5ab12",
+     "hall": "sha:b77fa87b96b6b530",
      "layers": [
       5
      ],
@@ -765,7 +765,7 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:8bb6816d8975ce46"
+     "nodes": "sha:daa15124b31c1f10"
     },
     {
      "op": "end",
@@ -811,7 +811,7 @@
      },
      "opts": {},
      "lineage": "sha:18da1f81f8ab4b62",
-     "hall": "sha:e0d2684fcd305519",
+     "hall": "sha:90968e8566d6dfe6",
      "layers": [
       2,
       5
@@ -822,14 +822,14 @@
       "Tier": 1
      },
      "ending": "sha:a4964d10b021431d",
-     "nodes": "sha:bb8ca973a2390ea7"
+     "nodes": "sha:8e4860c4ed079fac"
     },
     {
      "op": "start",
      "seed": "140234",
      "start": "{\"Life\":{\"Generation\":3,\"Name\":\"クラウ\",\"Tier\":1,\"Seed\":\"140234\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"140234\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[2,5],\"CarvingKnown\":true,\"Attire\":1}",
      "lineage": "sha:01ddae37004910de",
-     "hall": "sha:e0d2684fcd305519",
+     "hall": "sha:90968e8566d6dfe6",
      "layers": [
       2,
       5
@@ -840,7 +840,7 @@
       "Tier": 1
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:042d7b4bf7ba2c10"
+     "nodes": "sha:6c495fd266952e13"
     },
     {
      "op": "end",
@@ -898,7 +898,7 @@
       "enemyName": "fmt"
      },
      "lineage": "sha:a785e28133dc5684",
-     "hall": "sha:13a6206421efb878",
+     "hall": "sha:24bd78b3fffb2e1b",
      "layers": [
       2,
       5
@@ -909,14 +909,14 @@
       "Tier": 2
      },
      "ending": "sha:d16aea12bd87bf4b",
-     "nodes": "sha:bb8ca973a2390ea7"
+     "nodes": "sha:8e4860c4ed079fac"
     },
     {
      "op": "start",
      "seed": "638651",
      "start": "{\"Life\":{\"Generation\":4,\"Name\":\"サリア\",\"Tier\":2,\"Seed\":\"638651\",\"SurvivorBonus\":true,\"SurvivorFrom\":3,\"InheritedJournal\":true,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"638651\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{\"01\":1},\"Pages\":[{\"Id\":\"q2\",\"Title\":\"希少な頁 1\"},{\"Id\":\"p3\",\"Title\":\"希少な頁 2\"},{\"Id\":\"q7\",\"Title\":\"希少な頁 3\",\"Text\":\"文\"},{\"Id\":\"q6\",\"Title\":\"希少な頁 4\",\"Text\":\"\"}],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":{\"Generation\":3,\"Name\":\"クラウ\"},\"SurvivorBonus\":true,\"TraceLayers\":[2,5],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:c940177b98b160b2",
-     "hall": "sha:c42a8062a9b90452",
+     "hall": "sha:17f8c9144e015ef2",
      "layers": [
       2,
       5
@@ -927,7 +927,7 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:042d7b4bf7ba2c10"
+     "nodes": "sha:6c495fd266952e13"
     },
     {
      "op": "end",
@@ -957,7 +957,7 @@
       "cardName": "null"
      },
      "lineage": "sha:d118a7cee2a66559",
-     "hall": "sha:b500e3b91a4271fe",
+     "hall": "sha:4056f78b5462f927",
      "layers": [
       2,
       5,
@@ -969,7 +969,7 @@
       "Tier": 3
      },
      "ending": "sha:7e5c7f7bf091ad29",
-     "nodes": "sha:99fd32f466f6e9e1"
+     "nodes": "sha:fa8443c2afeeeb0b"
     }
    ]
   },
@@ -1876,7 +1876,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:d2da16b35897f057",
-     "hall": "sha:0d787d7071294499",
+     "hall": "sha:19033686c22e6a91",
      "layers": [],
      "heir": {
       "Generation": 2,
@@ -1891,7 +1891,7 @@
      "seed": "267292",
      "start": "{\"Life\":{\"Generation\":2,\"Name\":\"ヒルダ\",\"Tier\":2,\"Seed\":\"267292\",\"SurvivorBonus\":true,\"SurvivorFrom\":1,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"267292\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":{\"Generation\":1,\"Name\":\"アルマ\"},\"SurvivorBonus\":true,\"TraceLayers\":[],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:bc018cf17157a15a",
-     "hall": "sha:672fbdf80df7f21b",
+     "hall": "sha:4f044a20e4c39f2f",
      "layers": [],
      "heir": {
       "Generation": 2,
@@ -1932,7 +1932,7 @@
      "journal": null,
      "opts": {},
      "lineage": "sha:6b2fe06905343aaf",
-     "hall": "sha:9acaa96eed1aea31",
+     "hall": "sha:4fd461e3bb9286d9",
      "layers": [
       6
      ],
@@ -1949,7 +1949,7 @@
      "seed": "788529",
      "start": "{\"Life\":{\"Generation\":3,\"Name\":\"イーダ\",\"Tier\":3,\"Seed\":\"788529\",\"SurvivorBonus\":true,\"SurvivorFrom\":1,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"788529\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":true,\"TraceLayers\":[6],\"CarvingKnown\":true,\"Attire\":3}",
      "lineage": "sha:db3be5fe97123957",
-     "hall": "sha:a01d2425f59a63fe",
+     "hall": "sha:4bbe5ff6fe781602",
      "layers": [
       6
      ],
@@ -2023,7 +2023,7 @@
      },
      "opts": {},
      "lineage": "sha:fa5687005236f321",
-     "hall": "sha:ba95973295819d06",
+     "hall": "sha:75ce54aee35a1cf8",
      "layers": [
       6
      ],
@@ -2054,7 +2054,7 @@
      "seed": "138305",
      "start": "{\"Life\":{\"Generation\":4,\"Name\":\"マルタ\",\"Tier\":0,\"Seed\":\"138305\",\"SurvivorBonus\":true,\"SurvivorFrom\":3,\"InheritedJournal\":true,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"138305\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{\"10\":1,\"01\":2,\"Z\":2},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[{\"Generation\":1,\"Name\":\"\",\"Text\":\"古い\"},{\"Generation\":2,\"Name\":\"ルカ\",\"Text\":\"古い\"}]},\"JournalFrom\":{\"Generation\":3,\"Name\":\"イーダ\"},\"SurvivorBonus\":true,\"TraceLayers\":[6],\"CarvingKnown\":true,\"Attire\":0}",
      "lineage": "sha:4029c36aefd2f359",
-     "hall": "sha:263942c5f04fb174",
+     "hall": "sha:19ca01dcf42f091d",
      "layers": [
       6
      ],
@@ -2072,7 +2072,7 @@
      "picks": [],
      "result": "{\"TraceId\":\"trace-2\",\"Cards\":[],\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"Lost\":1}",
      "lineage": "sha:4f670264e92d158e",
-     "hall": "sha:2cde611f707d2ac2",
+     "hall": "sha:918e811f1bcac2ea",
      "layers": [],
      "heir": {
       "Generation": 4,
@@ -2085,7 +2085,7 @@
     {
      "op": "carving",
      "lineage": "sha:4f670264e92d158e",
-     "hall": "sha:2cde611f707d2ac2",
+     "hall": "sha:918e811f1bcac2ea",
      "layers": [],
      "heir": {
       "Generation": 4,
@@ -2099,7 +2099,7 @@
      "op": "heirJournal",
      "result": "{\"Disclosure\":{\"10\":1,\"01\":2,\"Z\":2},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[{\"Generation\":1,\"Name\":\"\",\"Text\":\"古い\"},{\"Generation\":2,\"Name\":\"ルカ\",\"Text\":\"古い\"}]}",
      "lineage": "sha:4f670264e92d158e",
-     "hall": "sha:2cde611f707d2ac2",
+     "hall": "sha:918e811f1bcac2ea",
      "layers": [],
      "heir": {
       "Generation": 4,
@@ -2164,7 +2164,7 @@
      },
      "opts": {},
      "lineage": "sha:aaf6291ce0c138c3",
-     "hall": "sha:c64ec0d83a081c18",
+     "hall": "sha:d30f51da74d43e77",
      "layers": [
       2
      ],
@@ -2181,7 +2181,7 @@
      "seed": null,
      "start": "{\"Life\":{\"Generation\":5,\"Name\":\"ヨハン\",\"Tier\":1,\"Seed\":\"12518482020909861016\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"12518482020909861016\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[2],\"CarvingKnown\":true,\"Attire\":1}",
      "lineage": "sha:c9dbc403e27357e9",
-     "hall": "sha:c64ec0d83a081c18",
+     "hall": "sha:d30f51da74d43e77",
      "layers": [
       2
      ],
@@ -2745,7 +2745,7 @@
      },
      "opts": {},
      "lineage": "sha:536868be3254c7df",
-     "hall": "sha:02123e770b281de6",
+     "hall": "sha:56af37429f383a8c",
      "layers": [],
      "heir": {
       "Generation": 2,
@@ -2760,7 +2760,7 @@
      "seed": null,
      "start": "{\"Life\":{\"Generation\":2,\"Name\":\"ソラ\",\"Tier\":2,\"Seed\":\"10509975519274271279\",\"SurvivorBonus\":true,\"SurvivorFrom\":1,\"InheritedJournal\":true,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"10509975519274271279\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{},\"Pages\":[{\"Id\":\"q6\",\"Title\":\"題\",\"Text\":\"文\"},{\"Id\":\"p4\",\"Title\":\"希少な頁 2\"}],\"Memo\":\"ああああああああああああああああああああああああああああああ\",\"Scribbles\":[]},\"JournalFrom\":{\"Generation\":1,\"Name\":\"クラウ\"},\"SurvivorBonus\":true,\"TraceLayers\":[],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:13d97c2f812f35af",
-     "hall": "sha:e106fbce895b4a11",
+     "hall": "sha:9dff501b120e9458",
      "layers": [],
      "heir": {
       "Generation": 2,
@@ -2773,7 +2773,7 @@
     {
      "op": "reload",
      "lineage": "sha:13d97c2f812f35af",
-     "hall": "sha:e106fbce895b4a11",
+     "hall": "sha:9dff501b120e9458",
      "layers": [],
      "heir": {
       "Generation": 2,
@@ -2820,7 +2820,7 @@
       "enemyName": "null"
      },
      "lineage": "sha:c38872a00d92c204",
-     "hall": "sha:2be170f41a905373",
+     "hall": "sha:6e5bb3569565831f",
      "layers": [
       2
      ],
@@ -2837,7 +2837,7 @@
      "seed": null,
      "start": "{\"Life\":{\"Generation\":3,\"Name\":\"コルネ\",\"Tier\":1,\"Seed\":\"2381028749267401074\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"2381028749267401074\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[2],\"CarvingKnown\":true,\"Attire\":1}",
      "lineage": "sha:e4491c2e6cb2bb0b",
-     "hall": "sha:2be170f41a905373",
+     "hall": "sha:6e5bb3569565831f",
      "layers": [
       2
      ],
@@ -2881,7 +2881,7 @@
       "enemyName": "null"
      },
      "lineage": "sha:91a2a556d711dffb",
-     "hall": "sha:20f86397377aebbf",
+     "hall": "sha:d2c52e56bbc95bd7",
      "layers": [
       2,
       5
@@ -2891,15 +2891,15 @@
       "Name": "レア",
       "Tier": 2
      },
-     "ending": "sha:38d286a7b0148c07",
-     "nodes": "sha:f9748c06af81a789"
+     "ending": "sha:1183ad1dc8ebac38",
+     "nodes": "sha:a1fbcd37b42d982e"
     },
     {
      "op": "start",
      "seed": "882889",
      "start": "{\"Life\":{\"Generation\":4,\"Name\":\"レア\",\"Tier\":2,\"Seed\":\"882889\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"882889\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[2,5],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:232906e39f9acd59",
-     "hall": "sha:20f86397377aebbf",
+     "hall": "sha:d2c52e56bbc95bd7",
      "layers": [
       2,
       5
@@ -2910,7 +2910,7 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:62ac4ab097ec4c1f"
+     "nodes": "sha:4bf1ccab68962810"
     },
     {
      "op": "end",
@@ -3002,7 +3002,7 @@
       ]
      },
      "lineage": "sha:fbbf81bd0dcc6553",
-     "hall": "sha:c2f3d657b1744a73",
+     "hall": "sha:0365c9c2bd240b02",
      "layers": [
       2,
       5,
@@ -3014,14 +3014,14 @@
       "Tier": 3
      },
      "ending": "sha:bbb1f6e18e3aafb5",
-     "nodes": "sha:825df8ba8d769b50"
+     "nodes": "sha:c2e0c8f97b74118f"
     },
     {
      "op": "start",
      "seed": null,
      "start": "{\"Life\":{\"Generation\":5,\"Name\":\"オスカ\",\"Tier\":3,\"Seed\":\"3575265694253814445\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"3575265694253814445\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[2,5,6],\"CarvingKnown\":true,\"Attire\":3}",
      "lineage": "sha:41333e64253ae027",
-     "hall": "sha:c2f3d657b1744a73",
+     "hall": "sha:0365c9c2bd240b02",
      "layers": [
       2,
       5,
@@ -3033,12 +3033,12 @@
       "Tier": 3
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:f2f76a74ecbd3d00"
+     "nodes": "sha:2efb86eed7c96f7f"
     },
     {
      "op": "reload",
      "lineage": "sha:41333e64253ae027",
-     "hall": "sha:c2f3d657b1744a73",
+     "hall": "sha:0365c9c2bd240b02",
      "layers": [
       2,
       5,
@@ -3050,7 +3050,7 @@
       "Tier": 3
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:f2f76a74ecbd3d00"
+     "nodes": "sha:2efb86eed7c96f7f"
     },
     {
      "op": "end",
@@ -3092,7 +3092,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:137450901ba5ffeb",
-     "hall": "sha:5e8890da4e3e2ea4",
+     "hall": "sha:b2d6d7d3f9c57334",
      "layers": [
       2,
       5,
@@ -3104,14 +3104,14 @@
       "Tier": 3
      },
      "ending": "sha:be90255f6bd43279",
-     "nodes": "sha:825df8ba8d769b50"
+     "nodes": "sha:c2e0c8f97b74118f"
     },
     {
      "op": "start",
      "seed": null,
      "start": "{\"Life\":{\"Generation\":6,\"Name\":\"リーネ\",\"Tier\":3,\"Seed\":\"459068760202370575\",\"SurvivorBonus\":true,\"SurvivorFrom\":5,\"InheritedJournal\":true,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"459068760202370575\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{\"2\":1,\"10\":2,\"01\":2,\"a\":2,\"sabiyari\":1},\"Pages\":[{\"Id\":\"page-1\",\"Title\":\"希少な頁 1\"},{\"Id\":\"page-2\",\"Title\":\"希少な頁 2\"},{\"Id\":\"page-3\",\"Title\":\"希少な頁 3\"}],\"Memo\":\"  \",\"Scribbles\":[]},\"JournalFrom\":{\"Generation\":5,\"Name\":\"オスカ\"},\"SurvivorBonus\":true,\"TraceLayers\":[2,5,6],\"CarvingKnown\":true,\"Attire\":3}",
      "lineage": "sha:ee4425ac161dfd14",
-     "hall": "sha:c9898821a6bfffa7",
+     "hall": "sha:266d50a4e1130dc5",
      "layers": [
       2,
       5,
@@ -3123,7 +3123,7 @@
       "Tier": 3
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:f2f76a74ecbd3d00"
+     "nodes": "sha:2efb86eed7c96f7f"
     },
     {
      "op": "end",
@@ -3151,7 +3151,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:bf0b00f4469d5f90",
-     "hall": "sha:ac843b62929e070e",
+     "hall": "sha:4a08bcab4e7d10d9",
      "layers": [
       2,
       5,
@@ -3163,7 +3163,7 @@
       "Tier": 3
      },
      "ending": "sha:838d6b19cbabe2da",
-     "nodes": "sha:825df8ba8d769b50"
+     "nodes": "sha:c2e0c8f97b74118f"
     }
    ]
   },
@@ -3634,7 +3634,7 @@
       "enemyName": "null"
      },
      "lineage": "sha:00bfcca91342d29d",
-     "hall": "sha:accd1be9fc3d3d6c",
+     "hall": "sha:650e34eec834c914",
      "layers": [
       6,
       7
@@ -3652,7 +3652,7 @@
      "seed": null,
      "start": "{\"Life\":{\"Generation\":4,\"Name\":\"サリア\",\"Tier\":2,\"Seed\":\"2884669074019896124\",\"SurvivorBonus\":true,\"SurvivorFrom\":3,\"InheritedJournal\":true,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"2884669074019896124\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{},\"Pages\":[{\"Id\":\"page-1\",\"Title\":\"希少な頁 1\"},{\"Id\":\"page-2\",\"Title\":\"希少な頁 2\"}],\"Memo\":\"  \",\"Scribbles\":[]},\"JournalFrom\":{\"Generation\":3,\"Name\":\"クラウ\"},\"SurvivorBonus\":true,\"TraceLayers\":[6,7],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:d05a48e39ab9f760",
-     "hall": "sha:473d0da8b85eea11",
+     "hall": "sha:fcba69a9c9c7c19a",
      "layers": [
       6,
       7
@@ -3689,7 +3689,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:9deb6ee478f38271",
-     "hall": "sha:80bff6e227d6562d",
+     "hall": "sha:0c05f7df31486554",
      "layers": [
       4,
       6,
@@ -3708,7 +3708,7 @@
      "seed": null,
      "start": "{\"Life\":{\"Generation\":5,\"Name\":\"カリナ\",\"Tier\":2,\"Seed\":\"14288350625698372975\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"14288350625698372975\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[4,6,7],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:c35b201452ddea96",
-     "hall": "sha:80bff6e227d6562d",
+     "hall": "sha:0c05f7df31486554",
      "layers": [
       4,
       6,
@@ -3792,7 +3792,7 @@
       "enemyName": "null"
      },
      "lineage": "sha:07ddf399090c7370",
-     "hall": "sha:c4d976a25fe25523",
+     "hall": "sha:c53f342224e3da45",
      "layers": [
       4,
       6,
@@ -3811,7 +3811,7 @@
      "seed": null,
      "start": "{\"Life\":{\"Generation\":6,\"Name\":\"カイル\",\"Tier\":4,\"Seed\":\"7996022661295210066\",\"SurvivorBonus\":true,\"SurvivorFrom\":5,\"InheritedJournal\":true,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"7996022661295210066\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{},\"Pages\":[{\"Id\":\"q1\",\"Title\":\"題\",\"Text\":\"大穴の下は陽が届く\"},{\"Id\":\"q8\",\"Title\":\"希少な頁 2\"}],\"Memo\":\"  \",\"Scribbles\":[{\"Generation\":2,\"Name\":\"\",\"Text\":\"\"},{\"Generation\":1,\"Name\":\"\",\"Text\":\"あああああああああああああああああああああああああ\"},{\"Generation\":1,\"Name\":\"\",\"Text\":\"古い\"}]},\"JournalFrom\":{\"Generation\":5,\"Name\":\"カリナ\"},\"SurvivorBonus\":true,\"TraceLayers\":[4,6,7],\"CarvingKnown\":true,\"Attire\":4}",
      "lineage": "sha:799ad74cf11bad05",
-     "hall": "sha:ad7443221171e1c2",
+     "hall": "sha:08865ba38a6fae33",
      "layers": [
       4,
       6,
@@ -3833,7 +3833,7 @@
      ],
      "result": "{\"TraceId\":\"trace-2\",\"Cards\":[],\"Journal\":{\"Disclosure\":{\"Z\":1},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"Lost\":4}",
      "lineage": "sha:d01dd912c85f7c13",
-     "hall": "sha:affef54e2daaa9ae",
+     "hall": "sha:ba0c1952623dd61b",
      "layers": [],
      "heir": {
       "Generation": 6,
@@ -3846,7 +3846,7 @@
     {
      "op": "carving",
      "lineage": "sha:d01dd912c85f7c13",
-     "hall": "sha:affef54e2daaa9ae",
+     "hall": "sha:ba0c1952623dd61b",
      "layers": [],
      "heir": {
       "Generation": 6,
@@ -3900,7 +3900,7 @@
       "cardName": "null"
      },
      "lineage": "sha:079886970a7288db",
-     "hall": "sha:16912e62a01dee74",
+     "hall": "sha:e3a17551a2cf4448",
      "layers": [
       4,
       6,
@@ -3919,7 +3919,7 @@
      "seed": null,
      "start": "{\"Life\":{\"Generation\":7,\"Name\":\"エルカ\",\"Tier\":3,\"Seed\":\"2325494507792890004\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"2325494507792890004\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[4,6,7],\"CarvingKnown\":true,\"Attire\":3}",
      "lineage": "sha:b59692e44819382f",
-     "hall": "sha:16912e62a01dee74",
+     "hall": "sha:e3a17551a2cf4448",
      "layers": [
       4,
       6,
@@ -4393,7 +4393,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:e449df76921b10ae",
-     "hall": "sha:1bae847e0705fc78",
+     "hall": "sha:ce65b014246fe410",
      "layers": [
       5
      ],
@@ -4402,8 +4402,8 @@
       "Name": "ヴェラ",
       "Tier": 2
      },
-     "ending": "sha:2fa9961743a38980",
-     "nodes": "sha:f7499903f7df9263"
+     "ending": "sha:4cd648deb249a1a7",
+     "nodes": "sha:8806c96ccf189342"
     },
     {
      "op": "end",
@@ -4440,7 +4440,7 @@
      "seed": "845221",
      "start": "{\"Life\":{\"Generation\":2,\"Name\":\"ヴェラ\",\"Tier\":2,\"Seed\":\"845221\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"845221\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[5],\"CarvingKnown\":false,\"Attire\":2}",
      "lineage": "sha:5f7bf6460b3833ba",
-     "hall": "sha:1bae847e0705fc78",
+     "hall": "sha:ce65b014246fe410",
      "layers": [
       5
      ],
@@ -4450,7 +4450,7 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:8d44416b1f1bfd80"
+     "nodes": "sha:3f08d09a75a131ee"
     },
     {
      "op": "end",
@@ -4480,7 +4480,7 @@
       "enemyName": "fmt"
      },
      "lineage": "sha:ae2480ac60b82df3",
-     "hall": "sha:1304b12a15a57061",
+     "hall": "sha:3a5d488912f12a1a",
      "layers": [
       5
      ],
@@ -4489,8 +4489,8 @@
       "Name": "リーネ",
       "Tier": 2
      },
-     "ending": "sha:77cd0aa0e8142a55",
-     "nodes": "sha:f7499903f7df9263"
+     "ending": "sha:9a972d3735b7f2fe",
+     "nodes": "sha:8806c96ccf189342"
     }
    ]
   },
@@ -5540,7 +5540,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:8bdb083212c579f8",
-     "hall": "sha:17d943130efa7992",
+     "hall": "sha:add32089546cba3b",
      "layers": [
       3,
       5
@@ -5550,8 +5550,8 @@
       "Name": "サリア",
       "Tier": 2
      },
-     "ending": "sha:6a546354304cd623",
-     "nodes": "sha:62c9f55ab2b1f9dc"
+     "ending": "sha:25d710fc86dcbaf1",
+     "nodes": "sha:331ce95515a046fa"
     }
    ]
   },
@@ -7038,7 +7038,7 @@
       ]
      },
      "lineage": "sha:1f0d2d22fa582036",
-     "hall": "sha:4236bcb0027d790d",
+     "hall": "sha:6a87b1bd982534cc",
      "layers": [
       4
      ],
@@ -7053,7 +7053,7 @@
     {
      "op": "carving",
      "lineage": "sha:1f0d2d22fa582036",
-     "hall": "sha:4236bcb0027d790d",
+     "hall": "sha:6a87b1bd982534cc",
      "layers": [
       4
      ],
@@ -7070,7 +7070,7 @@
      "seed": null,
      "start": "{\"Life\":{\"Generation\":4,\"Name\":\"マルタ\",\"Tier\":2,\"Seed\":\"4161519656568339165\",\"SurvivorBonus\":true,\"SurvivorFrom\":3,\"InheritedJournal\":true,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"4161519656568339165\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{\"10\":2,\"b\":1,\"sabiyari\":1},\"Pages\":[{\"Id\":\"page-1\",\"Title\":\"希少な頁 1\"},{\"Id\":\"page-2\",\"Title\":\"希少な頁 2\"}],\"Memo\":\"門竜は押すと崩れる\",\"Scribbles\":[{\"Generation\":2,\"Name\":\"X\",\"Text\":\"古い\"}]},\"JournalFrom\":{\"Generation\":3,\"Name\":\"イーダ\"},\"SurvivorBonus\":true,\"TraceLayers\":[4],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:8ecb9db8fb0a1074",
-     "hall": "sha:506d05632e457d01",
+     "hall": "sha:83ddef2386dcd7b6",
      "layers": [
       4
      ],
@@ -7139,7 +7139,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:cec13fd8fcfca24a",
-     "hall": "sha:38714feef543f28b",
+     "hall": "sha:7a65b8d24b4d34a9",
      "layers": [
       5
      ],
@@ -7148,8 +7148,8 @@
       "Name": "ヴェラ",
       "Tier": 2
      },
-     "ending": "sha:d0069458ee032753",
-     "nodes": "sha:6cbb5c639c7131fb"
+     "ending": "sha:9544a58250e9ff99",
+     "nodes": "sha:b7a1def76dbdfad8"
     },
     {
      "op": "end",
@@ -7169,7 +7169,7 @@
      "seed": "519576",
      "start": "{\"Life\":{\"Generation\":2,\"Name\":\"ヴェラ\",\"Tier\":2,\"Seed\":\"519576\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"519576\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[5],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:7b64f5103f49d80c",
-     "hall": "sha:38714feef543f28b",
+     "hall": "sha:7a65b8d24b4d34a9",
      "layers": [
       5
      ],
@@ -7179,7 +7179,7 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:627a134b81d1c851"
+     "nodes": "sha:9304cd26a1001851"
     },
     {
      "op": "take",
@@ -7243,7 +7243,7 @@
       "cardName": "null"
      },
      "lineage": "sha:4075f2aa027c4695",
-     "hall": "sha:336005c649bc1738",
+     "hall": "sha:87d3724e4eaefaff",
      "layers": [
       2,
       5
@@ -7254,14 +7254,14 @@
       "Tier": 1
      },
      "ending": "sha:f38e117a2cf3db8f",
-     "nodes": "sha:0c33d505c12945bf"
+     "nodes": "sha:c145f19cc863b5bf"
     },
     {
      "op": "start",
      "seed": "669469",
      "start": "{\"Life\":{\"Generation\":3,\"Name\":\"クラウ\",\"Tier\":1,\"Seed\":\"669469\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"669469\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[2,5],\"CarvingKnown\":true,\"Attire\":1}",
      "lineage": "sha:8a7b8176d66934ea",
-     "hall": "sha:336005c649bc1738",
+     "hall": "sha:87d3724e4eaefaff",
      "layers": [
       2,
       5
@@ -7272,7 +7272,7 @@
       "Tier": 1
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:911fc9baf2a98d58"
+     "nodes": "sha:1bd055fec186b787"
     },
     {
      "op": "end",
@@ -7314,7 +7314,7 @@
       ]
      },
      "lineage": "sha:3fe7da1d967b911b",
-     "hall": "sha:416a0b9b5f07fd49",
+     "hall": "sha:a37cfa358ed8c9bc",
      "layers": [
       2,
       5
@@ -7325,14 +7325,14 @@
       "Tier": 1
      },
      "ending": "sha:3681262266130e23",
-     "nodes": "sha:0c33d505c12945bf"
+     "nodes": "sha:c145f19cc863b5bf"
     },
     {
      "op": "start",
      "seed": null,
      "start": "{\"Life\":{\"Generation\":4,\"Name\":\"サリア\",\"Tier\":1,\"Seed\":\"2884669074019896124\",\"SurvivorBonus\":true,\"SurvivorFrom\":3,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"2884669074019896124\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":{\"Generation\":3,\"Name\":\"クラウ\"},\"SurvivorBonus\":true,\"TraceLayers\":[2,5],\"CarvingKnown\":true,\"Attire\":1}",
      "lineage": "sha:95f59aafc18aa20b",
-     "hall": "sha:e2a9c330144a6e7b",
+     "hall": "sha:2e3fc071ee5cbb1e",
      "layers": [
       2,
       5
@@ -7343,12 +7343,12 @@
       "Tier": 1
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:911fc9baf2a98d58"
+     "nodes": "sha:1bd055fec186b787"
     },
     {
      "op": "carving",
      "lineage": "sha:95f59aafc18aa20b",
-     "hall": "sha:e2a9c330144a6e7b",
+     "hall": "sha:2e3fc071ee5cbb1e",
      "layers": [
       2,
       5
@@ -7359,7 +7359,7 @@
       "Tier": 1
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:911fc9baf2a98d58"
+     "nodes": "sha:1bd055fec186b787"
     }
    ]
   },
@@ -8708,7 +8708,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:31dc99e0e09809c7",
-     "hall": "sha:7139a70d98f8a09b",
+     "hall": "sha:23778505b68d96b8",
      "layers": [
       5
      ],
@@ -8717,15 +8717,15 @@
       "Name": "オリヴ",
       "Tier": 2
      },
-     "ending": "sha:8d0b0145a25c0345",
-     "nodes": "sha:fec0555b1121a1b4"
+     "ending": "sha:75c4971301c7568c",
+     "nodes": "sha:8db23a3d8b1adc13"
     },
     {
      "op": "start",
      "seed": null,
      "start": "{\"Life\":{\"Generation\":3,\"Name\":\"オリヴ\",\"Tier\":2,\"Seed\":\"16907653000758050637\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"16907653000758050637\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[5],\"CarvingKnown\":false,\"Attire\":2}",
      "lineage": "sha:55df958990d9c0a0",
-     "hall": "sha:7139a70d98f8a09b",
+     "hall": "sha:23778505b68d96b8",
      "layers": [
       5
      ],
@@ -8735,12 +8735,12 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:c2f10a52e4e15e47"
+     "nodes": "sha:13ed68896cf2e56b"
     },
     {
      "op": "carving",
      "lineage": "sha:b4d7b35804cc767d",
-     "hall": "sha:7139a70d98f8a09b",
+     "hall": "sha:23778505b68d96b8",
      "layers": [
       5
      ],
@@ -8750,7 +8750,7 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:c2f10a52e4e15e47"
+     "nodes": "sha:13ed68896cf2e56b"
     }
    ]
   },
@@ -8968,7 +8968,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:3f9cbc4862d1c07e",
-     "hall": "sha:80fee1c12d4e93ff",
+     "hall": "sha:3b766af5521e5d9b",
      "layers": [
       5
      ],
@@ -8977,15 +8977,15 @@
       "Name": "ヴェラ",
       "Tier": 2
      },
-     "ending": "sha:c931ff617519d486",
-     "nodes": "sha:5633ce2027fd6ece"
+     "ending": "sha:8bb086cdc7e7d58b",
+     "nodes": "sha:ef504ff69b9d0dfb"
     },
     {
      "op": "start",
      "seed": null,
      "start": "{\"Life\":{\"Generation\":2,\"Name\":\"ヴェラ\",\"Tier\":2,\"Seed\":\"727590445041181892\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"727590445041181892\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[5],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:d00ff1b1e2f00fbd",
-     "hall": "sha:80fee1c12d4e93ff",
+     "hall": "sha:3b766af5521e5d9b",
      "layers": [
       5
      ],
@@ -8995,7 +8995,7 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:2993fe1a7352882c"
+     "nodes": "sha:3f50693d35365d03"
     },
     {
      "op": "end",
@@ -9074,7 +9074,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:d6d43bb69b5d1d12",
-     "hall": "sha:3a0369fc3ee9f122",
+     "hall": "sha:3b82d9cf5c4541de",
      "layers": [
       5,
       7
@@ -9085,14 +9085,14 @@
       "Tier": 3
      },
      "ending": "sha:ae57b87818fc9252",
-     "nodes": "sha:6114f23cb55240e7"
+     "nodes": "sha:92a529052ef677b5"
     },
     {
      "op": "start",
      "seed": null,
      "start": "{\"Life\":{\"Generation\":3,\"Name\":\"リーネ\",\"Tier\":3,\"Seed\":\"13242932063682629818\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"13242932063682629818\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[5,7],\"CarvingKnown\":true,\"Attire\":3}",
      "lineage": "sha:73bbbccc5316c1a1",
-     "hall": "sha:3a0369fc3ee9f122",
+     "hall": "sha:3b82d9cf5c4541de",
      "layers": [
       5,
       7
@@ -9103,7 +9103,7 @@
       "Tier": 3
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:eccf42c3fa4335ff"
+     "nodes": "sha:7af276d787d6c9c4"
     },
     {
      "op": "end",
@@ -9178,7 +9178,7 @@
       "enemyName": "null"
      },
      "lineage": "sha:f21d32908682e57b",
-     "hall": "sha:69785f8212fc1416",
+     "hall": "sha:6d15d81673338d18",
      "layers": [
       4,
       5,
@@ -9190,14 +9190,14 @@
       "Tier": 2
      },
      "ending": "sha:2bd815acb11f8ff1",
-     "nodes": "sha:d71a495b73a795df"
+     "nodes": "sha:0c052280640b2305"
     },
     {
      "op": "start",
      "seed": "624231",
      "start": "{\"Life\":{\"Generation\":4,\"Name\":\"カリナ\",\"Tier\":2,\"Seed\":\"624231\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"624231\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[4,5,7],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:fc81858f715f4495",
-     "hall": "sha:69785f8212fc1416",
+     "hall": "sha:6d15d81673338d18",
      "layers": [
       4,
       5,
@@ -9209,7 +9209,7 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:c6c741b02ceffa91"
+     "nodes": "sha:ec64c80c42a9e021"
     },
     {
      "op": "take",
@@ -9219,7 +9219,7 @@
      ],
      "result": "{\"TraceId\":\"trace-2\",\"Cards\":[],\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[{\"Generation\":3,\"Name\":\"ルカ\",\"Text\":\"古い\"}]},\"Lost\":7}",
      "lineage": "sha:ae5e8feb0ba10bec",
-     "hall": "sha:28be0c9b9c9d194a",
+     "hall": "sha:ae51db44664e5d1b",
      "layers": [],
      "heir": {
       "Generation": 4,
@@ -9227,7 +9227,7 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:b1f12b79f9d8d5f8"
+     "nodes": "sha:7213f7cc44aeb25d"
     }
    ]
   },
@@ -9792,7 +9792,7 @@
       "ExtraBossWon": true
      },
      "lineage": "sha:15448ab12e779186",
-     "hall": "sha:7bbd4944feb712ae",
+     "hall": "sha:97f4d3c4c7154fe9",
      "layers": [
       5,
       7
@@ -9802,15 +9802,15 @@
       "Name": "オリヴ",
       "Tier": 2
      },
-     "ending": "sha:ad7ab2a3fb216424",
-     "nodes": "sha:cf8c40a0c027cbcf"
+     "ending": "sha:2ecb29b5240026b4",
+     "nodes": "sha:646f567cb239fec4"
     },
     {
      "op": "start",
      "seed": "349744",
      "start": "{\"Life\":{\"Generation\":3,\"Name\":\"オリヴ\",\"Tier\":2,\"Seed\":\"349744\",\"SurvivorBonus\":true,\"SurvivorFrom\":1,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"349744\",\"ToolSlots\":4,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":45,\"Slots\":4,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":true,\"TraceLayers\":[5,7],\"CarvingKnown\":true,\"Attire\":2}",
      "lineage": "sha:59e9bf1f787459e9",
-     "hall": "sha:f92a9cf3b8ecaa3a",
+     "hall": "sha:80d147a6834e338e",
      "layers": [
       5,
       7
@@ -9821,7 +9821,7 @@
       "Tier": 2
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:a38ba0625340ffb3"
+     "nodes": "sha:f1c8543ee7c275fc"
     },
     {
      "op": "end",
@@ -9878,7 +9878,7 @@
       ]
      },
      "lineage": "sha:143578d4c1aef77d",
-     "hall": "sha:bb090d3ec8abe20a",
+     "hall": "sha:23c9a167ca4e5c6b",
      "layers": [
       1,
       5,
@@ -9890,14 +9890,14 @@
       "Tier": 0
      },
      "ending": "sha:7983d1939394c1db",
-     "nodes": "sha:ed6b5cd8119fcedc"
+     "nodes": "sha:11063ea92559ac6a"
     },
     {
      "op": "start",
      "seed": null,
      "start": "{\"Life\":{\"Generation\":4,\"Name\":\"ロタ\",\"Tier\":0,\"Seed\":\"17844387661160381909\",\"SurvivorBonus\":false,\"SurvivorFrom\":null,\"InheritedJournal\":false,\"TakenTraceId\":null,\"Ending\":null,\"Layer\":null,\"NodeId\":null,\"NodeKind\":null,\"TraceId\":null,\"CollectedBy\":null,\"ReplacedSurvivor\":null},\"Seed\":\"17844387661160381909\",\"ToolSlots\":3,\"ConsumableSlots\":3,\"DeckMin\":20,\"DeckMax\":40,\"Slots\":3,\"Journal\":{\"Disclosure\":{},\"Pages\":[],\"Memo\":\"\",\"Scribbles\":[]},\"JournalFrom\":null,\"SurvivorBonus\":false,\"TraceLayers\":[1,5,7],\"CarvingKnown\":true,\"Attire\":0}",
      "lineage": "sha:1c903069eab74f91",
-     "hall": "sha:bb090d3ec8abe20a",
+     "hall": "sha:23c9a167ca4e5c6b",
      "layers": [
       1,
       5,
@@ -9909,7 +9909,7 @@
       "Tier": 0
      },
      "ending": "ERR no closed life to show",
-     "nodes": "sha:c814cc77fb2da5ee"
+     "nodes": "sha:a3e60a2f20e19579"
     }
    ]
   },
