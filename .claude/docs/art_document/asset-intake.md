@@ -1,6 +1,6 @@
 # 素材の取り込み規約 — 置き場・命名・Unity の設定・台帳
 
-> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。2026-10-10 に、Preset Manager のフィルタが `Assets/` から始まる形で当たると確かめた結果を §5.2 と §10 に入れました（#85。登録は RPG-by-card#10）。同じ日に、上級の槍の竜兵 2 枚の幅の例外（800 と 900）を §0・§1.2・§3.3 に足しました（#287）。2026-10-17 に、UI の部材と書体の取り込みと、書体のライセンスの記録を §12 に足しました（#92）。2026-10-19 に、数字の 600 に使う `IBMPlexMono-SemiBold.ttf` を §12.2 の表に足しました（#610）。2026-11-03 に、画面での高さが 400 px を超える大型の敵の書き出しを §0・§1.2 に足し、立ち絵の Max Size を 2048 から 4096 に上げました（#840）。同じ日に、背景の絵の取り込みの決まりを §13 に足しました。置き場は旧い戦闘画面と同じ `Resources/Backdrops/layer-<n>` です（#859）。
+> **Status**: DRAFT v1（2026-09-21）。Issue #93。親は #81。最初の 1 体（#85）を入れる前に要る決めごとです。2026-10-06 に、絵のファイル名の id をロースターの内部 ID に決めました（#327）。#128 を待つ記述は外しました。2026-10-10 に、Preset Manager のフィルタが `Assets/` から始まる形で当たると確かめた結果を §5.2 と §10 に入れました（#85。登録は RPG-by-card#10）。同じ日に、上級の槍の竜兵 2 枚の幅の例外（800 と 900）を §0・§1.2・§3.3 に足しました（#287）。2026-10-17 に、UI の部材と書体の取り込みと、書体のライセンスの記録を §12 に足しました（#92）。2026-10-19 に、数字の 600 に使う `IBMPlexMono-SemiBold.ttf` を §12.2 の表に足しました（#610）。2026-11-03 に、画面での高さが 400 px を超える大型の敵の書き出しを §0・§1.2 に足し、立ち絵の Max Size を 2048 から 4096 に上げました（#840）。同じ日に、背景の絵の取り込みの決まりを §13 に足しました。置き場は旧い戦闘画面と同じ `Resources/Backdrops/layer-<n>` です（#859）。2026-11-04 に、§13 を試遊版の受け口（#858）が入った今の形に直し、Sprite と sRGB の行に両方の画面での読まれ方を書きました（#905）。
 > **役割**: 作った絵を Unity に入れるまでの規約を決めます。§1〜§11 は**立ち絵（キャラクター）だけを対象にします。** 背景・カードの絵・UI の部材は不透明度も圧縮形式も違うので、節を分けます。UI の部材と書体は §12、背景は §13 です。カードの絵は `card-art-policy.md` が元になる文書です。
 > **正本**: `.claude/docs/vision/world-v1.md`（世界の正典 v4）／ `.claude/skills/visual-production-pipeline/references/tools-and-prerequisites.md`（道具と前提）
 > **読む用**: `docs/reports/2026-09-21-asset-intake-rules.html`
@@ -344,7 +344,7 @@ model_id, weights_file, sha256, license, terms_url, terms_checked_on, notes
 
 ## 13. 背景の絵（#859）
 
-背景の絵の取り込みをここで決めます。何を描くかは `battle-visual-v1.md` §2.4 が元になる文書です。絵を読んで画面に出すコード（受け口）は、旧い戦闘画面の `Assets/View/Backdrop/BackdropLayers.cs` にあります。試遊版の Unity 版の受け口は #858（battle）で作ります。この節はそれと対になります。
+背景の絵の取り込みをここで決めます。何を描くかは `battle-visual-v1.md` §2.4 が元になる文書です。絵を読んで画面に出すコード（受け口）は、旧い戦闘画面の `Assets/View/Backdrop/BackdropLayers.cs` と、試遊版の Unity 版の `View/Trial` の `BattleBackdrop.cs`・`ExploreBackdrop.cs`・`MetaBackdrop.cs` です（#858）。どれも `Backdrop/Script/BackdropArt.cs` の同じ名前で読むので、1 枚置けば全ての画面に出ます。この節はそれと対になります。
 
 ### 13.1 描く絵
 
@@ -372,7 +372,7 @@ asset id : bg.layer-<n>
 読み込み : Resources.Load<Sprite>("Backdrops/layer-" + n)
 ```
 
-名前は、コードの定数 `BackdropLayers.ArtPath`（`"Backdrops/layer-"`）に合わせて固定します。読み込みの名前には拡張子を付けません。立ち絵の `chr_` の接頭辞は使いません。旧い画面と試遊版で読み込みの口を 1 つにするため、試遊版も同じ名前で読みます（#858）。
+名前は、コードの定数 `BackdropArt.ResourcePrefix`（`"Backdrops/layer-"`。`BackdropLayers.ArtPath` も同じ値を指します）に合わせて固定します。読み込みの名前には拡張子を付けません。立ち絵の `chr_` の接頭辞は使いません。旧い画面と試遊版で読み込みの口を 1 つにするため、試遊版も同じ名前で読みます（#858）。
 
 原本（`.kra`）は `%USERPROFILE%\OneDrive\art\backdrops\layer-<n>\layer-<n>.kra` に置き、どちらの git にも入れません。理由は §1.1 と同じです。PNG と `.meta` の正本は Unity リポ（`RPG-by-card`）です（§2）。
 
@@ -382,7 +382,7 @@ Unity 6 の項目名で書きます。括弧内は `.meta` のキーです。立
 
 | 項目 | 値 | 理由 |
 | --- | --- | --- |
-| Texture Type | Sprite (2D and UI)（`textureType: 8`） | 受け口が `Resources.Load<Sprite>` で読むためです |
+| Texture Type | Sprite (2D and UI)（`textureType: 8`） | 受け口が `Resources.Load<Sprite>` で読むためです。Default のまま取り込むと読み込みが null になり、どの画面も警告を出さずにコードの遠景に戻ります |
 | Sprite Mode | Single（`spriteMode: 1`） | 1 ファイルに 1 枚です |
 | Mesh Type | Full Rect（`spriteMeshType: 0`） | 全面の長方形 1 枚だからです |
 | Pivot | **Center**（`alignment: 0`） | 足元の基準点が要りません |
@@ -390,7 +390,7 @@ Unity 6 の項目名で書きます。括弧内は `.meta` のキーです。立
 | Generate Mipmap | **off**（`enableMipMap: 0`） | 絵は基準の画面でほぼ 1 対 1 に出ます。縮むのは小さい画面だけで、容量 +33% に見合いません。縮んだ画面で縞が出たら on に上げます |
 | Filter Mode | **Bilinear**（`filterMode: 1`） | ミップマップが無いので、Trilinear は働きません |
 | Wrap Mode | Clamp（`wrapU: 1`, `wrapV: 1`） | 端の画素を繰り返させないためです |
-| sRGB (Color Texture) | on（`sRGBTexture: 1`） | 色の絵だからです |
+| sRGB (Color Texture) | on（`sRGBTexture: 1`） | 色の絵だからです。試遊版は gamma の出力先で描くので、sRGB の絵をそのまま出すと暗くなります。そこで試遊版は、同じ中身を linear として読む写しを作って出します（`Trial/Kit/Graphics/ArtImage.cs`）。旧い戦闘画面は gamma の出力先を使わず、プロジェクトの色空間（Linear）のまま正しく読みます。off にすると、試遊版はそのまま出しますが、旧い戦闘画面では色が白っぽく浮きます。両方の画面で同じ色に出るのは on です（`battle-visual-v1.md` §2.4） |
 | Alpha Source | **None**（`alphaUsage: 0`） | アルファの無い絵だからです |
 | Alpha Is Transparency | **off**（`alphaIsTransparency: 0`） | 透明の縁が無いので、色を広げる処理が要りません |
 | Read/Write | off（`isReadable: 0`） | CPU 側の複製でメモリが倍になります |
