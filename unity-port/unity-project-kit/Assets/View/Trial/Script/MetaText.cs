@@ -180,7 +180,7 @@ namespace Trial.Script
         /// <summary>The 用語 page's stance row (X-17): the attribute 「スタンス」 said apart from the rule 「構え」.</summary>
         public const string StanceTerm = "スタンス";
 
-        public const string StanceTermText = "置くと戦闘のあいだ効き続ける札の属性（水の構え・岩の構え など）。上の「構え」の規則とは別";
+        public const string StanceTermText = "置くと戦闘のあいだ効き続ける札の属性（水の構え・鉄壁の構え など）。上の「構え」の規則とは別";
         public const string JournalKeys = "←→ 頁　J か Esc で閉じる";
         public const string MemoMine = "自分のメモ";
         public const string MemoInherited = "受け継いだ走り書き";
