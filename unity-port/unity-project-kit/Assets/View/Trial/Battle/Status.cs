@@ -372,7 +372,7 @@ namespace Trial.Battle
             };
         }
 
-        /// <summary>chipText(c) = StatusBarView.ChipText: "出血 2", a stance "岩の構え ∞ ×2" (no "×1"), or "+n".</summary>
+        /// <summary>chipText(c) = StatusBarView.ChipText: "出血 2", a stance "水の構え ∞ ×2" (no "×1"), or "+n".</summary>
         // js: scenes/battle/hud/status.js:58
         public static string ChipText(StatusChip c)
         {
