@@ -1,7 +1,7 @@
 // #90: the exploration screen's backdrop (battle-visual-v1 §2.5). It is the battle's place of the same
 // layer under a veil, the map's text and the amber accent read on every layer, and the veil keeps the layer order
-// (4 the brightest, 5, 6 and 7 darker in turn). Since 2026-11-03 the veil is a dark shade of each layer's own hue,
-// so the place keeps its colour under the map, and layer 3 is a bright layer too.
+// (since 2026-11-04, #916: layer 7 the only dark layer). Since 2026-11-03 the veil is a dark shade of each layer's own
+// hue, so the place keeps its colour under the map; layers 1 to 6 are bright and take the thick veil.
 using NUnit.Framework;
 
 namespace Backdrop.Tests
@@ -42,14 +42,25 @@ namespace Backdrop.Tests
         }
 
         [Test]
-        public void TheDeepLayers_DarkenInTurn_UnderTheVeil()
+        public void TheStarrySky_StaysTheDarkest_UnderTheVeil()
         {
-            // world-v1 §3 rule 3: from 5 down the light drains away, in exploration as in battle.
-            double five = ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(5));
-            double six = ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(6));
-            double seven = ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(7));
-            Assert.That(six, Is.LessThan(five));
-            Assert.That(seven, Is.LessThan(six));
+            // world-v1 §3 rule 3 (v5.2, #916): layer 7 is the only dark layer, in exploration as in battle. Measured on the
+            // sky's mean, as §2.4 measures the battle: the peak of layer 7 is a lone star, not the place.
+            double seven = VeiledSkyMean(ExplorationBackdropSpec.For(7));
+            for (int layer = 1; layer < BackdropSpec.Layers; layer++)
+            {
+                Assert.That(VeiledSkyMean(ExplorationBackdropSpec.For(layer)), Is.GreaterThan(seven), "layer " + layer);
+            }
+        }
+
+        private static double VeiledSkyMean(ExplorationBackdrop backdrop)
+        {
+            double sum = 0;
+            for (int step = 0; step <= 20; step++)
+            {
+                sum += BackdropSpec.Luminance(BackdropSpec.Over(backdrop.Veil, BackdropSpec.SkyAt(backdrop.Place, step / 20f)));
+            }
+            return sum / 21;
         }
 
         [Test]
@@ -75,25 +86,14 @@ namespace Backdrop.Tests
         [Test]
         public void TheBrightLayers_NeedTheThickVeil()
         {
-            // Without a veil, the text would not read on the bright layers 1 to 4: that is what the veil is for.
-            foreach (int layer in new[] { 1, 2, 3, 4 })
+            // Without a veil, the text would not read on the bright layers 1 to 6: that is what the veil is for.
+            foreach (int layer in new[] { 1, 2, 3, 4, 5, 6 })
             {
                 var bare = new ExplorationBackdrop { Layer = layer, Place = BackdropSpec.For(layer), Veil = ExplorationBackdropSpec.Ground.WithAlpha(0f) };
                 Assert.That(ExplorationBackdropSpec.LowestContrast(bare, ExplorationBackdropSpec.Ink),
                     Is.LessThan(ExplorationBackdropSpec.InkMinContrast), "layer " + layer);
                 Assert.That(ExplorationBackdropSpec.For(layer).Veil.A,
-                    Is.GreaterThan(ExplorationBackdropSpec.For(6).Veil.A), "layer " + layer);
-            }
-        }
-
-        [Test]
-        public void Layer4_StaysTheBrightest_UnderTheVeil()
-        {
-            double four = ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(4));
-            for (int layer = 1; layer <= BackdropSpec.Layers; layer++)
-            {
-                if (layer == 4) continue;
-                Assert.That(ExplorationBackdropSpec.PeakLuminance(ExplorationBackdropSpec.For(layer)), Is.LessThan(four), "layer " + layer);
+                    Is.GreaterThan(ExplorationBackdropSpec.For(7).Veil.A), "layer " + layer);
             }
         }
 

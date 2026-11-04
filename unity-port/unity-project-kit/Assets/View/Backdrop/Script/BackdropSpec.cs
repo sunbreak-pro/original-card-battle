@@ -6,7 +6,8 @@
 // comes from world-v1 §3-§4. The colours and the brightness are 2026-11-03's (こうだいさん asked for a colour of its own
 // on every layer, one more bright layer in the upper part, a brighter layer 1, a pale-yellow layer and a starry layer 7;
 // #89): lime, lemon cream, aqua, a white prism, crimson, cobalt and a nebula, chosen from proposals by their renders.
-// Layers 1, 2 and 3 are bright, 4 the brightest, then darker down to 7. Each layer also stands a far view drawn in code
+// 2026-11-04 (こうだいさん, world-v1 v5.2 §3 rule 3, #916): only layer 7, the starry sky, is dark. Layer 4 is as bright as
+// layer 1, and layers 5 and 6 sit a little below layer 3, keeping their hues. Each layer also stands a far view drawn in code
 // (Scenery, BackdropScenery) where the painted art for the layer will go, between the sky and the haze, so the haze
 // and the specks stay when the art lands.
 namespace Backdrop
@@ -330,7 +331,7 @@ namespace Backdrop
                 },
                 Tile = Rgba.Bytes(8, 20, 22, 0.88f),
             },
-            // 4 輝晶の間, the brightest: white with lavender and aqua prism tints. Crystal pillars stand everywhere, far and near,
+            // 4 輝晶の間, as bright as layer 1 (#916): white with lavender and aqua prism tints. Crystal pillars stand everywhere, far and near,
             // and hang from the roof; two great lilac clusters stand at the edges and their light bleeds into the ground. Light
             // comes from every side (world-v1 §4), so the figures stand black against it.
             new LayerBackdrop
@@ -339,8 +340,8 @@ namespace Backdrop
                 Name = "輝晶の間",
                 Sky = new[]
                 {
-                    new SkyStop(0f, Rgba.Hex("#ffffff")), new SkyStop(0.25f, Rgba.Hex("#f1ecff")), new SkyStop(0.5f, Rgba.Hex("#dcd4f6")),
-                    new SkyStop(0.7f, Rgba.Hex("#c4e4ee")), new SkyStop(1f, Rgba.Hex("#8d9ccc")),
+                    new SkyStop(0f, Rgba.Hex("#ffffff")), new SkyStop(0.25f, Rgba.Hex("#ece6fc")), new SkyStop(0.5f, Rgba.Hex("#d4cbf0")),
+                    new SkyStop(0.7f, Rgba.Hex("#b9d8e4")), new SkyStop(1f, Rgba.Hex("#8090c2")),
                 },
                 Hazes = new[]
                 {
@@ -382,24 +383,25 @@ namespace Backdrop
                 },
                 Tile = Rgba.Bytes(14, 16, 28, 0.84f),
             },
-            // 5 血染めの死海, middle brightness: crimson (never orange) scattered light over a dried sea bed. A giant pair of ribs
+            // 5 暗き死海 (renamed from 血染めの死海 in world-v1 v5.3; its colours stay), a little below layer 3 (#916): crimson (never
+            // orange) scattered light over a dried sea bed, salt white at the horizon. A giant pair of ribs
             // arches over the floor like a gate, faint ribs stand far off in the haze, a soft salt flat lies along the shore and its
             // salt crusts white along the horizon.
             new LayerBackdrop
             {
                 Layer = 5,
-                Name = "血染めの死海",
+                Name = "暗き死海",
                 Sky = new[]
                 {
-                    new SkyStop(0f, Rgba.Hex("#2e0d18")), new SkyStop(0.4f, Rgba.Hex("#6a1f2e")),
-                    new SkyStop(0.62f, Rgba.Hex("#8a3040")), new SkyStop(1f, Rgba.Hex("#2a0a12")),
+                    new SkyStop(0f, Rgba.Hex("#ba505f")), new SkyStop(0.25f, Rgba.Hex("#e9939d")), new SkyStop(0.5f, Rgba.Hex("#fde9e7")),
+                    new SkyStop(0.75f, Rgba.Hex("#f4bec3")), new SkyStop(1f, Rgba.Hex("#ca6b78")),
                 },
                 Hazes = new[]
                 {
                     new Haze { Shape = HazeShape.Band, Color = Rgba.Bytes(170, 42, 60, 0.32f), Y = 0.45f, Size = 0.6f, Flicker = new Flicker(8000, 0.25f) },
                     new Haze { Shape = HazeShape.Band, Color = Rgba.Hex("#d84860", 0.16f), Y = 0.5f, Size = 0.24f, Flicker = new Flicker(10000, 0.2f) },
                     new Haze { Shape = HazeShape.Band, Color = Rgba.Hex("#f0dfe2", 0.08f), Y = 0.5f, Size = 0.12f },
-                    new Haze { Shape = HazeShape.TopGlow, Color = Rgba.Hex("#12040a", 0.4f), Size = 0.3f },
+                    new Haze { Shape = HazeShape.TopGlow, Color = Rgba.Hex("#8a2a3a", 0.3f), Size = 0.3f },
                 },
                 Motes = new Motes { Count = 26, Color = Rgba.Hex("#f3ece8", 0.35f), SizePx = 3f, SpeedX = 8f, SpeedY = -4f, Twinkle = 0.3f },
                 MoreMotes = new[]
@@ -416,7 +418,7 @@ namespace Backdrop
                 },
                 Tile = Rgba.Bytes(20, 8, 12, 0.82f),
             },
-            // 6 獄雷峡: deep cobalt and violet. Canyon walls rise on both sides with violet and electric-blue rims where the black
+            // 6 獄雷峡, a little below layer 5 (#916): cobalt and violet. Deep cobalt canyon walls rise on both sides with violet and electric-blue rims where the black
             // lightning's edge lights them, and a range of spires stands far down the canyon. The lightning shows only by its violet
             // edge round a black core, as a rare flash, not a glow (world-v1 §4.1).
             new LayerBackdrop
@@ -425,8 +427,8 @@ namespace Backdrop
                 Name = "獄雷峡",
                 Sky = new[]
                 {
-                    new SkyStop(0f, Rgba.Hex("#04061c")), new SkyStop(0.35f, Rgba.Hex("#0c1450")), new SkyStop(0.5f, Rgba.Hex("#181a70")),
-                    new SkyStop(0.7f, Rgba.Hex("#0a0e3a")), new SkyStop(1f, Rgba.Hex("#020310")),
+                    new SkyStop(0f, Rgba.Hex("#5470da")), new SkyStop(0.25f, Rgba.Hex("#94aef6")), new SkyStop(0.5f, Rgba.Hex("#ccd8ff")),
+                    new SkyStop(0.75f, Rgba.Hex("#acc2f8")), new SkyStop(1f, Rgba.Hex("#728cde")),
                 },
                 Hazes = new[]
                 {
@@ -445,7 +447,7 @@ namespace Backdrop
                     new Scenery
                     {
                         Kind = SceneryKind.Ridge, Count = 7, Seed = 601, X0 = 0f, X1 = 1f, Top = 0.14f, Base = 0.53f, Vary = 0.8f, Rough = 0.9f,
-                        Color = Rgba.Hex("#0a0e34", 0.6f), Foot = Rgba.Hex("#10164a", 0.6f),
+                        Color = Rgba.Hex("#5a72cc", 0.55f), Foot = Rgba.Hex("#4c62bc", 0.55f),
                     },
                     new Scenery
                     {
@@ -455,7 +457,7 @@ namespace Backdrop
                     new Scenery
                     {
                         Kind = SceneryKind.Wall, Count = 8, Seed = 71, X0 = 0f, X1 = 0.265f, Top = -0.03f, Base = 0.53f, Vary = 0.6f, Rough = 0.6f,
-                        Color = Rgba.Hex("#03040e", 0.96f), Foot = Rgba.Hex("#080b26", 0.94f),
+                        Color = Rgba.Hex("#141c52", 0.96f), Foot = Rgba.Hex("#1c2664", 0.94f),
                     },
                     new Scenery
                     {
@@ -465,7 +467,7 @@ namespace Backdrop
                     new Scenery
                     {
                         Kind = SceneryKind.Wall, Count = 8, Seed = 72, X0 = 0.735f, X1 = 1f, Top = -0.03f, Base = 0.53f, Vary = 0.6f, Rough = 0.6f,
-                        Color = Rgba.Hex("#03040e", 0.96f), Foot = Rgba.Hex("#080b26", 0.94f),
+                        Color = Rgba.Hex("#141c52", 0.96f), Foot = Rgba.Hex("#1c2664", 0.94f),
                     },
                 },
                 Tile = Rgba.Bytes(8, 8, 20, 0.84f),
