@@ -1,5 +1,21 @@
 # HISTORY (chat-design)
 
+### 2026-11-04 - design 宛ての 6 件を 1 件 1 PR で進める（#916 / #905 / #906 / #287 / #85 / #891）
+
+#### 概要
+
+`/goal` で渡された 6 件を、1 件 1 ブランチで PR まで進めました。同じ文書を触る組は積みました（#923 → #926、#928 → #930）。PR はすべて書いた時点で open で、merge はこうだいさんの作業です。
+
+#### 変更点
+
+- **#916（PR #923、Closes）**: 暗い層を星空の 7 層だけにしました。空の平均の明るさは 4 層 0.721 → 0.669、5 層 0.035 → 0.488、6 層 0.008 → 0.456 です。探索の幕は 5 層 62%、6 層 63% に厚くしました。赤の斜線のコントラストは 7 層すべて 3 以上です。`battle-visual-v1.md` v1.18。
+- **#905（PR #926、Closes）**: 見本の札を v4.11 の札に替え、体幹崩しの演出（突、こうだいさん決定）を §5.7 に書き、背景の絵の受け口を試遊版も読む形に直しました。`EffectGrammar` の直しは battle への申し送りにしました。
+- **#906（PR #927、Closes）**: 試遊版の用語の説明と部品の見本から岩の構えと踏み込み斬りを外しました。JS の元は試遊版のブランチにあるので、`MetaTextTests.UnityDepartures` で 1 行だけ突き合わせから外しました。
+- **#287（PR #928、Refs）・#85（PR #929、Refs）**: §17 の条件 5 を 7 層だけの条件にし（`style-guide.md` v1.10）、3 枚の仕様カードを正典 v5 に合わせました。待機の絵 3 枚の色を測り、銅色から赤茶で「竜は藍紫」と合わないことを書きました。
+- **#891（PR #930、Refs）**: `style-guide.md` v1.11 で 3 系統の描き分けを入れ、王・龍神・新しい層などの案を報告書にしました（https://claude.ai/artifact/XR9Sh4RCuSwnJmd4R8QZn6）。
+- **検証**: 6 本とも `npm run build` / `lint` / `test:run` / `sources -- --check` は exit 0 です。`dotnet test` は 6 本とも exit 1 で、落ちるのは origin/main でも落ちる `TheProfiles_MatchTheCanonTable` の 1 件だけです（#830 への追従待ち、#898）。
+- **申し送り**: `2026-11-04-design-905-pierce-thrust-effect.md`、`2026-11-04-design-891-dragon-body-colour.md`（`kind: conflict`）、`2026-11-04-design-891-canon-look-proposals.md`、`2026-11-04-design-trial-audio-dead-sea-name.md` の 4 件です。
+
 ### 2026-11-03 - 上級の槍 2 体と錆槍の穂先の幅を試遊版でも切らない決まりにする（#287 / #85）
 
 #### 概要
@@ -62,20 +78,3 @@ design 宛ての #287 と #85 を、1 Issue 1 ブランチで PR まで進めた
 - **検証**: 4 本とも `npm run build` / `lint` / `test:run` / `dotnet test` が exit 0 です。`npm run unity:check` は `origin/main` と同じ 162 件で exit 1 です。Unity の前回のコンパイルが古いためで、`BackdropView.cs` は Unity のコンパイラに個別に通してエラー 0 件でした。
 - **決定**: こうだいさんが、立ち絵を試遊版の人型へ差し込むと決めました。差分はそれが入ってから作ります。仕様カード 3 枚と PR #742 / #743 をこの形に直しました。
 - **申し送り**: `2026-11-01-design-trial-art-destination.md`（`kind: conflict`）、`2026-11-01-design-trial-art-insert.md`、`2026-11-01-design-silhouette-gate-size.md`、`2026-11-01-design-camp-legacy-wording.md` の 4 件です。
-
-### 2026-10-21 - design 宛ての 4 件を 1 件 1 PR で進める（#623 / #85 / #287 / #244）
-
-#### 概要
-
-`/goal` で渡された 4 件を、origin/main から切ったブランチ 1 本ずつで PR まで進めた。PR #662 / #671 / #672 / #673 はすべて open。#623 だけ Closes で、ほかの 3 件はこうだいさんの作業（差分の絵・案づくり）が残るので Refs にした。
-
-#### 変更点
-
-- **#623（PR #662）**: `battle-visual-v1.md` v1.10。§3.1 に、カードの技名（22 px から）と説明（16 px から）が枠に収まらないときだけ 12 px まで縮める例外を書き、`CardView.cs` の `MinFontSize = 12` にそろえた。特性の箱は今のコードが縮めないので 16 px のまま。12 px は最後の守りとし、16 px 未満で出る 5 枚の文を短くする件は cards へ申し送った
-- **#85（PR #671）**: `briefs/polearm_warped.md` を #455 の人型 226 px（`StandardHeight`）とロースター v4.23 に合わせた。予兆の札・数字の高さ、#498 の追従、2 体の組の出る枠、ずれた行番号
-- **#287（PR #672）**: `briefs/polearm_crystal.md` と `polearm_unyielding.md` を同じく直した。#349 の 2 段目の札、`.meta` のコミット、v4.23 の代役の枠も入れた
-- **#244（PR #673）**: 依頼文を `battle-visual-v1.md` v1.9 と今のコードに合わせ、勝ったときの結果画面（段が上がった札）を頼む項目を足した
-- **申し送り（`.claude/comm/handoff/`）**: cards 宛て「説明が 16 px 未満で出る 5 枚の文を短くする」、battle 宛ての食い違い 2 件（`battle_ui_ux_v2.md:1187` の技の前の名前、浮かぶ数字の高さの §5.0 と View）
-- **検証**: 4 本のブランチの先頭で `npm run build` / `lint` / `test:run`（204 件）/ `dotnet test`（10 プロジェクト）/ `npm run sources -- --check` が exit 0
-- **乖離**: #85 の commit を一度、既にあった `docs/design-85` の名前で切り損ねて #623 のブランチに積んだ。push 前に soft reset で外し、`docs/design-85-v423` に積み直した。`style-guide.md` §2 と `asset-intake.md` §3 の 450 px 前提は範囲外として予定に回した
-
