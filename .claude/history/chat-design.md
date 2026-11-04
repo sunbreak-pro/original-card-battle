@@ -13,7 +13,7 @@
 - **#906（PR #927、Closes）**: 試遊版の用語の説明と部品の見本から岩の構えと踏み込み斬りを外しました。JS の元は試遊版のブランチにあるので、`MetaTextTests.UnityDepartures` で 1 行だけ突き合わせから外しました。
 - **#287（PR #928、Refs）・#85（PR #929、Refs）**: §17 の条件 5 を 7 層だけの条件にし（`style-guide.md` v1.10）、3 枚の仕様カードを正典 v5 に合わせました。待機の絵 3 枚の色を測り、銅色から赤茶で「竜は藍紫」と合わないことを書きました。
 - **#891（PR #930、Refs）**: `style-guide.md` v1.11 で 3 系統の描き分けを入れ、王・龍神・新しい層などの案を報告書にしました（https://claude.ai/artifact/XR9Sh4RCuSwnJmd4R8QZn6）。
-- **決定（2026-11-04 こうだいさん）**: 系統は色ではなく形と姿で見せ、色は比較的自由に描く。竜の待機の絵 3 枚の銅色はそのまま使います（`style-guide.md` §14.1 と仕様カード 3 枚を直した）。第 7 層は「三王の座」、寄生の 2 層は星空より明るく置きます。
+- **決定（2026-11-04 こうだいさん）**: 系統は色ではなく形と姿で見せ、色は比較的自由に描く。竜の待機の絵 3 枚の銅色はそのまま使います（`style-guide.md` §14.1 と仕様カード 3 枚を直した）。第 7 層は「三王の座」、寄生の 2 層は星空より明るく置きます。同じ日に、王 3 体・龍神・還らずの英雄の見せ方、暗き死海の骨、残りの日数の色も推奨案に決まりました（#891 の 10 項目がすべて決着）。
 - **検証**: 6 本とも `npm run build` / `lint` / `test:run` / `sources -- --check` は exit 0 です。`dotnet test` は 6 本とも exit 1 で、落ちるのは origin/main でも落ちる `TheProfiles_MatchTheCanonTable` の 1 件だけです（#830 への追従待ち、#898）。
 - **申し送り**: `2026-11-04-design-905-pierce-thrust-effect.md`、`2026-11-04-design-891-dragon-body-colour.md`（`kind: conflict`）、`2026-11-04-design-891-canon-look-proposals.md`、`2026-11-04-design-trial-audio-dead-sea-name.md` の 4 件です。
 
