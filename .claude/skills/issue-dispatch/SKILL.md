@@ -34,7 +34,7 @@ description: プロダクトの課題を GitHub Issue として起票し、ラ�
 | `prio:3` | その後 | 設計や判断だけ並行で進められるものを含む |
 | `prio:4` | いつか | 前提が遠い。着手時に見直す |
 
-起票するときに必ず 1 つ付けます。迷ったら「依存先の `prio:` より小さい数字を付けない」を基準にします。付け忘れは `npm run issues:next -- --check` と `.github/workflows/issue-priority.yml` が検出します。**見直す時機**は、親 Issue を閉じたときと、縦切りや束の振り返りのときです。
+起票するときに必ず 1 つ付けます。迷ったら「依存先の `prio:` より小さい数字を付けない」を基準にします。付け忘れは `npm run issues:next -- --check` が検出し、`npm run issues:prio -- --apply` が付与と注意コメントを入れます（Actions は使いません。2026-11-05 から billing のロックで動かないため、手元で実行します）。**見直す時機**は、親 Issue を閉じたときと、縦切りや束の振り返りのときです。
 
 **`area:world` は世界観・設定・用語・敵の系譜**です。持ち主は main なので `lane:` を付けず、chat-main の采配に落とします（2026-09-21。正典は `docs/vision/world-v1.md`）。敵の数値とロースターは `area:enemy`（`cards` レーン）のままにします。
 
