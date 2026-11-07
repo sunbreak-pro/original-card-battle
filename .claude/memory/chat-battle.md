@@ -9,12 +9,14 @@
 
 ## 直近の完了
 
+- battle 宛ての Issue 4 件を 4 本の PR へ ✅（2026-11-07）— #899 → PR #938、#914 → #939（#938 に積む）、#909 → #940、#910 → #941（#939 に積む）。4 本とも open。build / lint / test:run / unity:check / sources --check は exit 0。dotnet test は main と同じ 1 件（`TheProfiles_MatchTheCanonTable`、#898 待ち）だけ赤。申し送り 6 件
 - battle 宛ての Issue 7 件を 7 本の PR へ ✅（2026-11-02）— #765 → PR #805、#57 → #814、#762 → #815、#764 → #816、#612 → #817、#766 → #818、#780 → #819。7 本とも open で、build / lint / test:run / unity:check / dotnet test は exit 0。申し送り 8 件
 - battle 宛ての Issue 4 件を 4 本の PR へ ✅（2026-11-02）— #580 → PR #782、#724 → #783、#725 → #784、#755 → #785。4 本とも open で、build / lint / test:run / unity:check / dotnet test は exit 0。申し送り 1 件
-- #585 `DepictionPlayer` を 7 ファイルの partial に分け、`PlayCue` を 90 行にする ✅（2026-11-02）— PR #759 が open。build / lint / test:run / unity:check / dotnet test は exit 0。PlayMode テストと `Battle.unity` の通し確認はこうだいさんのメインの Unity で行う
 
 ## 予定
 
+- 🔜 **PR #938 → #939 → #941 を積んだ順に merge、#940 は単独** — #939 と #941 は前の PR の上に積んであり、前が merge されたら差分は自分の分だけになる。#941（#910）は、メインの Unity で勝ちの結果の札の欄（札の顔の縮み・2 行の折り返し・紙の伸び・「次へ」）を見てから merge する。新しいファイル `Trial/Bridge/RaisedCards.cs` の `.meta` は Unity のリポで保存する。dotnet test の赤 1 件は PR #943（#898 のうち習熟の段の表だけを先に直す。2026-11-07 こうだいさん判断）の merge で直る
+- 🔜 **申し送りの回答 3 件を main が回収** — `2026-11-07-battle-answers.md`。探索の階層間の休憩は残す。遭遇の 2 戦目に 1 戦目の段を乗せる直しは、main が Issue にしてから battle が書く
 - 🔜 **PR #805・#814〜#819 の merge 待ち** — 7 本とも origin/main から切ってある。衝突するのは #762（#815）と #766（#818）の `FloorView.cs` だけで、後に merge する側で main を取り込んで手で解く。merge の後にメインのチャットが `unity:sync` と Unity Editor で、#57 の 8 系統の撮影、#762 の Tab とホバー、#764 の語の高さ、#612 の書体の収まり、#766 の斜線の引き方、#780 の `CardGroundTests`（EditMode）を確かめる。新しいファイル（`FloorFocus.cs` `StripeSweep.cs` `BattleFonts.cs` ほか）の `.meta` は Unity のリポで保存する
 - 🔜 **PR #782〜#785 の merge 待ち** — 4 本とも origin/main から切ってあり、触るファイルは重ならない。#785（#755）は、メインの Unity で EditMode の試験が通るのを確かめてから merge する。#782（#580）は、`unity:sync` で写る新しい 6 ファイルの `.meta` を Unity のリポで保存する。残りは申し送り `2026-11-02-battle-stance-gap-at-least-words.md`
 - 🔜 **PR #759（#585）の merge 後の確認**（2026-11-02 に merge 済み） — merge の前後に、メインの Unity で PlayMode テスト 3 本と `Battle.unity` の 1 戦を通し、`unity:sync` で写る 6 ファイルの `.meta` を Unity のリポで保存する

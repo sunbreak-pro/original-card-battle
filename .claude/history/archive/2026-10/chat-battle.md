@@ -1,5 +1,33 @@
 # HISTORY archive (chat-battle) 2026-10
 
+### 2026-10-28 - battle 宛ての Issue 12 件を 12 本の PR へ
+
+#### 概要
+
+メインから渡された 12 件を、Issue ごとに origin/main（ddf2f320）から切ったブランチと PR にした。大きい 5 件（#584 / #514 / #605 / #455 と #57 / #582）は別の作業場所のサブエージェントに任せ、小さい 6 件は battle の作業場所で進めた。12 本とも build / lint / test:run / dotnet test は exit 0。#455 と #57 は残りが Editor と決定待ちなので `Refs`、ほかの 10 本は `Closes`。merge は人の作業。
+
+#### 変更点
+
+- **#654（PR #682）**: `PileList.TabLabel` が知らない種類で例外を投げる。`PileListTests` を足した
+- **#599（PR #684）**: `CardCatalog.Learned.cs` の見出しを、精鋭（不退の槍竜 / 100% 版で決める）と探索の一層〜七層に直した。コメントだけ
+- **#576（PR #686）**: 既定の敵 id を `BattleLaunch.DefaultEnemyId` と `Enemies` から読む。`BattleBootstrap.ClearHandIn()` を足した。探索の `UniqueCards.cs` の直書きと `HandIn(null)` の置き換えは申し送り
+- **#579（PR #689）**: `battle_core_v4.md` §11 の表を今のファイル名と型（`TurnLoop.cs`・`Enemies.cs` / `EnemyAi.cs`・`Traits.Evaluate`・`EnemyDef.Rank`）に直し、ランダムのデッキの種を `Debug.Log` に出す
+- **#611（PR #692）**: `battle_ui_ux_v2.md` §6.4 の書体の段を 5 つのファイルと警告の扱いに合わせた
+- **#606（PR #695）**: `DepictionPlayer.ApplyFrame` が `BackdropView.Show(frame.Corner.Floor)` を呼ぶ。1 層のグラデーションは下敷きとして残した
+- **#605（PR #685）**: スタンスを状態チップから外し、`StanceRow` に効き方と減り方を持たせ、スタンス枠のホバーで説明パネルと「+n」の一覧を出す。`battle_ui_ux_v2.md` §2.1 / §3.7 も直した
+- **#584（PR #691）**: `TurnLoop` を partial の 9 ファイルに分け、`Resolve` を段ごとの関数にした。公開の入口と試験台の出力は前後で同じ。最大 433 行
+- **#582（PR #694）**: `Criteria.cs` の §13 の線を定数 19 個にし、`Compute` を 171 行から 33 行にした。試験台の出力はバイト単位で同じ
+- **#514（PR #696）**: Web 版の使われていないファイル 16 本と宣言約 100 個を消した。分類 D（テストだけが使う）も消したので、テストは 204 件から 181 件（Issue の DoD どおり件数を本文に記載）
+- **#455（PR #688、Refs）**: 被弾の浮かぶ数字（§5.5。Guard は盾と数、HP はハートと数を小札に載せる）
+- **#57（PR #693、Refs）**: 二属性の上限 1545 ms を 3 つの速さで確かめる試験と、`battle_ui_ux_v2.md` §5.3 / §8 の追従
+- **申し送り 5 件**: #576 の探索側の 2 行、#605 の試遊版 `Stances.cs`、#584 の `unity-port/README.md`、#514 の CLAUDE.md の Mastery の行、#514 で消したファイルを名指しする文書 9 本
+
+#### 実測・知見
+
+- `npm run unity:check` は origin/main でも exit 1（試遊版の 7 アセンブリで 86 件）。12 本とも、このリポの組み立て単位と `Assembly-CSharp` は 0 件
+- 同じ文書の冒頭の Status に、#605 / #611 / #57 の 3 本が 1 項目ずつ足す。後から merge する側で両方の項目を残す
+- `isolation: worktree` のサブエージェントは、同時に 5 体を起こすと 1 体が作業場所の作成で失敗することがある。1 体が終わってから起こし直せば通る
+
 ### 2026-10-28 - Unity 移植の戦闘まわりの残り 4 件を 4 本の積んだ PR へ
 
 #### 概要
