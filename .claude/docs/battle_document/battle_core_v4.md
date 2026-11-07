@@ -626,7 +626,7 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 | CardCatalog.cs | `swordsman_cards_v4.md` の札。初期 35 は `CardCatalog.Initial.cs`、習得は `CardCatalog.Learned.cs` にあります（v4.10 の習得 38 のうち、#84 / #85 は #826 で足します） |
 | Cards.cs | 山札の組み立て・シャッフル・ドロー・全捨てと、デッキの検査（`Validate`） |
 | DeckRules.cs | 出立の検証（#58）。20〜40、同種 3、持っている種類だけ（カード単位の規則は `Cards.cs` の `Validate`）。出したスタンスの札の除外（§4）は戦闘中の扱いで、`TurnLoop.cs` が持ちます。ツール 3 枠・消耗品 3 枠、開始のマス（§7.3）、才能の札 1 枚。出立の結果は `Departure` で、戦闘ごとの `BattleSetup` を作る。戦闘に効くツールの量（§9.1）も `Departure` が運び、戦闘中の竜鱗の欠片と竜語の符は `BattleState.Tools`（`CarriedTools`）が持つ |
-| Mastery.cs | §3.2 の習熟。プレイごとの文脈（`MasteryContext`、`TurnLoop.PlayCard` が `BattleHistory.MasteryPlays` に書き留める）、戦闘の刻みの集計（`MasteryTally`）、1 つの生の記録（`MasteryBook`。才能、戦闘の終わりの `AfterBattle`、習熟訓練の `Train`、3 段目は 1 枚）、段の型（`MasteryKind`）と段ごとの札（`Mastery.Master`。`CardDef.FixedCost` でコストを固定する）。1 枚ずつの割り当ては `MasteryProfiles` で、`swordsman_cards_v4.md` §4.6 の 60 種を写している（#504）。移動が中心の札の伸び（§3.2）は `Mastery.MovementGuardByRank` と `Mastery.MovementExtraByRank` |
+| Mastery.cs | §3.2 の習熟。プレイごとの文脈（`MasteryContext`、`TurnLoop.PlayCard` が `BattleHistory.MasteryPlays` に書き留める）、戦闘の刻みの集計（`MasteryTally`）、1 つの生の記録（`MasteryBook`。才能、戦闘の終わりの `AfterBattle`、習熟訓練の `Train`、3 段目は 1 枚）、段の型（`MasteryKind`）と段ごとの札（`Mastery.Master`。`CardDef.FixedCost` でコストを固定する）。1 枚ずつの割り当ては `MasteryProfiles` で、`swordsman_cards_v4.md` §4.7 の 47 種を写している（#504、v4.11 は #898）。移動が中心の札の伸び（§3.2）は `Mastery.MovementGuardByRank` と `Mastery.MovementExtraByRank` |
 | 試験台 | `BattleCore.Sim`（コンソール）。デッキの型 × 敵 × 貪欲な打ち手。基準 12 項目を出す（§13） |
 | 連戦モード | §12。画面の連戦は `Depiction.Bridge.DemoSession` の 1 通り（並び・持ち越し・休憩・もう一度）。並びは `ChainOrder.cs`、持ち越しと休憩の規則は `Chain.cs`。`-chain` の指定・瘴気の蓄積と瘴気死・ログファイルは実装が無い（#518） |
 | View | 受け皿と投げ上げ線、状態チップ（自分 6 種）、永続の効果の一覧、6 枚の扇（6〜8 枚は `battle-visual-v1.md` §4.8 の間隔で詰める）、床のマス・届くマスの光・狙うマス（#163）、山札 / 捨札（`battle_ui_ux_v2.md` §11） |
@@ -721,6 +721,7 @@ v3 §3.1「戦闘中に最大値は変わらない」の唯一の例外が、ボ
 
 ## 15. 変更履歴
 
+- 2026-11-07（#898 の一部）: §11 の Mastery.cs の行を、`MasteryProfiles` が `swordsman_cards_v4.md` v4.11 §4.7 の 47 種を写す形に直した。v4.11 で消えた札のうち段を持っていた 6 枚（#7 / #15 / #20 / #59 / #62 / #70）は、カード表にはまだ残り、段は上がらない。カード表の追従は #898 の残り（#934 待ち）。規則は変えていない。
 - 2026-11-03（#822）: 最大スタミナの範囲の上限を 14 から 20 にした（こうだいさんの依頼）。基本は 10 のままで、10 を超えるのは特殊なイベントか特性を持つときだけとし、§1 にその経路を書いた。§10 に MAX_STAMINA_FLOOR / CEIL と START_STAMINA_CEIL の行を足した。息継ぎの笛の上限は 14 のまま残した（§9.1）。
 - 2026-11-03（#825）: `swordsman_cards_v4.md` v4.10（#824）で札が 80 種から 73 種になったのに合わせて、§8 の所持上限と §10 の OWNED_KINDS_MAX を 80 から 73 に、POSITION_TRAIT_CARDS を 16 から 14 にした。§11 の CardCatalog.cs の行も直した。規則は変えていない。
 - 2026-11-03（#823）: 1 枚のコストの上限を 3 から 4 に上げた（COST_MAX 3 → 4。こうだいさんの依頼）。列 4 のコストを 3 から 4 にし、§3 の列の説明と §10 の行を直した。集中と習熟の伸びで列 4 に上がった札のコストは変えないことを、§3 と §3.2 に書いた。集中は札の列を動かさず、伸びは元のコストを札に留める（`CardDef.FixedCost`）。`BattleCore` はもとからこの読み方で、テストで固めた。列 4 の札の上に登る列は作らない。今の札と敵の行動はどれも列 1〜3 で、コストは変わらない。`swordsman_cards_v4.md` と `battle-visual-v1.md` に残る「列 4 のコストは 3」は、持ち主のレーンへ申し送った。§0 と §18 K8 の記録は直していない。

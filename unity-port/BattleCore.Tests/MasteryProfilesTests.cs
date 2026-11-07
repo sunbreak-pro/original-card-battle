@@ -8,8 +8,8 @@ using BattleCore;
 namespace BattleCore.Tests
 {
     /// <summary>
-    /// #504: the fifty-three mastery profiles against swordsman_cards_v4.md's 習熟の段 table (§4.7 in
-    /// v4.10, #824; #825 followed it) — each card's
+    /// #504: the forty-seven mastery profiles against swordsman_cards_v4.md's 習熟の段 table (§4.7 in
+    /// v4.11, #830; #898 follows it) — each card's
     /// kind, its names at steps 1-3, and for 型替え the condition at each step along battle_core_v4
     /// §19.3 S7 as #504 reads it — and 伸び on the five movement-centred cards (§3.2).
     ///
@@ -20,7 +20,7 @@ namespace BattleCore.Tests
     {
         private const string CanonPath = ".claude/docs/card_document/swordsman_cards_v4.md";
 
-        // ---- The fifty-three, without the table ----
+        // ---- The forty-seven, without the table ----
 
         [Test]
         public void TheProfiles_AreFiftyThreeCardsOfTheCatalog_InCanonOrder()
@@ -30,8 +30,8 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(ids.Count, Is.EqualTo(53));
-                Assert.That(ids.Distinct().Count(), Is.EqualTo(53));
+                Assert.That(ids.Count, Is.EqualTo(47));
+                Assert.That(ids.Distinct().Count(), Is.EqualTo(47));
                 Assert.That(order, Is.All.GreaterThanOrEqualTo(0), "every profile is a catalog card");
                 Assert.That(order, Is.Ordered, "canon order");
                 Assert.That(MasteryProfiles.Find("observe"), Is.SameAs(MasteryProfiles.Observe));
@@ -39,9 +39,9 @@ namespace BattleCore.Tests
         }
 
         /// <summary>§4.7's tally: the kinds by column (軽さ never on column 1, §19.3 S5).</summary>
-        [TestCase(MasteryKind.Extend, 9, 11, 7)]
-        [TestCase(MasteryKind.Lighten, 0, 2, 8)]
-        [TestCase(MasteryKind.Reform, 8, 6, 2)]
+        [TestCase(MasteryKind.Extend, 9, 10, 5)]
+        [TestCase(MasteryKind.Lighten, 0, 2, 7)]
+        [TestCase(MasteryKind.Reform, 6, 6, 2)]
         public void TheKinds_ByColumn_MatchTheCanonTally(MasteryKind kind, int one, int two, int three)
         {
             var columns = MasteryProfiles.All.Where(p => p.Kind == kind).Select(p => CardCatalog.ById(p.CardId).Column).ToList();
@@ -62,7 +62,7 @@ namespace BattleCore.Tests
 
             Assert.Multiple(() =>
             {
-                Assert.That(reforms.Count, Is.EqualTo(16));
+                Assert.That(reforms.Count, Is.EqualTo(14));
                 foreach (var profile in reforms)
                 {
                     var own = CardCatalog.ById(profile.CardId).Trait!;
@@ -92,7 +92,7 @@ namespace BattleCore.Tests
             if (path == null) Assert.Ignore("swordsman_cards_v4.md is not beside this copy of the tests (Unity).");
 
             var rows = ReadTable(path!);
-            Assert.That(rows.Count, Is.EqualTo(53), "the table has fifty-three rows");
+            Assert.That(rows.Count, Is.EqualTo(47), "the table has forty-seven rows");
             Assert.Multiple(() =>
             {
                 foreach (var row in rows)
