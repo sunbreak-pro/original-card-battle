@@ -162,20 +162,21 @@ namespace Depiction.PlayModeTests
                 yield return null; // the single battle's buttons, cleared by Show, live until the frame ends
                 Assert.That(Active("ChooseEnemy"), Is.Null, "a chain's end screen offers to choose one enemy");
 
-                // A win offers the rest; take it and see the second battle start. A loss (what the
-                // unattended run gets) ends the chain.
-                if (Active("Rest") != null)
+                // A win offers the way on (no rest heals between, #914); take it and see the second
+                // battle start. A loss (what the unattended run gets) ends the chain.
+                if (Active("GoOn") != null)
                 {
-                    Press("Rest");
+                    Assert.That(Active("Rest"), Is.Null, "a won chain still offers a rest");
+                    Press("GoOn");
                     yield return null;
-                    Assert.That(Active("Again"), Is.Null, "the end screen stayed up after resting");
+                    Assert.That(Active("Again"), Is.Null, "the end screen stayed up after going on");
                     Assert.That(Get(player, "Finished"), Is.EqualTo(false), "the second battle of the chain did not start");
                     yield return new WaitForSecondsRealtime(3f);
                     yield return Shot("06-chain-second");
                 }
                 else
                 {
-                    Assert.That(Active("GoOn"), Is.Null, "a lost chain still offers to go on");
+                    Assert.That(Active("Rest"), Is.Null, "a lost chain offers a rest");
                 }
             }
             finally
