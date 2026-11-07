@@ -1,8 +1,8 @@
 // battle_core_v4 §3.2 / §17.8 習熟 (#59). The ledger here (MasteryTally, CardMastery, RankUp,
-// Mastery.Master, RankFor, CountOf, and the mastery constants in Constants.cs) is read by the tests
-// alone for now: TurnLoop writes BattleHistory.MasteryPlays and nothing on the screen reads it yet.
-// It is kept on purpose, not dead code (#518, 2026-10-17): the mastery follow-ups #449 and #460 are
-// to wire it to the screen.
+// Mastery.Master, RankFor, CountOf, and the mastery constants in Constants.cs) is the screens' too:
+// TurnLoop writes BattleHistory.MasteryPlays, the exploration bridge (Exploration.Bridge.Expedition)
+// keeps one life's MasteryBook, and the trial's screens read it — the exploration's results board, the
+// win result card's raised cards (#910) and the cards' faces at their 段.
 using System;
 using System.Collections.Generic;
 using System.Linq;

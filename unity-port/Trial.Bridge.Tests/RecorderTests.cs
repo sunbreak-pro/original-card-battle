@@ -127,6 +127,7 @@ namespace Trial.Bridge.Tests
                 "C.Slice",            // statics
                 "S.CanUseConsumable", // #651: the C# slot's read (trial screens read CanUseSlot)
                 "S.HasSurveyed",      // #107: LifeJournal's read of the session (trial screens read Surveyed)
+                "E.RankUpsByFight", "E.RankUpsOfLastFight", // #910: the win result card reads the 段 before Return writes them
             };
             var internalCalls = new HashSet<string>(StringComparer.Ordinal)
             {

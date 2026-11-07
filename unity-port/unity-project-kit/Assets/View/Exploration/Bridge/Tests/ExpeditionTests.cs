@@ -171,6 +171,31 @@ namespace Exploration.Bridge.Tests
         }
 
         [Test]
+        public void EachFightsRankUps_AreReadBeforeReturn_AndAreWhatReturnWrites()
+        {
+            // #910: the win result card names the 段 its fight raised while the encounter is still out.
+            var expedition = new Expedition(new RunStart { Seed = 3 }, talent: "side_sweep");
+            Assert.That(expedition.RankUpsOfLastFight(), Is.Empty, "no encounter yet");
+            EncounterBattle battle = expedition.StartEncounter();
+            Assert.That(expedition.RankUpsOfLastFight(), Is.Empty, "no fight has ended");
+            // 2 contexts, doubled by 才能: 4 刻み passes the first threshold (3).
+            EndEveryFight(battle, GameResult.Won, plays: new[] { new MasteryPlay("side_sweep", MasteryContext.Gap | MasteryContext.Omen) });
+
+            IReadOnlyList<IReadOnlyList<RankUp>> byFight = expedition.RankUpsByFight();
+            IReadOnlyList<RankUp> last = expedition.RankUpsOfLastFight();
+            int rankBefore = expedition.Mastery.RankOf("side_sweep");
+            BattleReturn back = expedition.Return();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(rankBefore, Is.EqualTo(0), "reading the 段 writes nothing");
+                Assert.That(last, Is.EqualTo(new[] { new RankUp("side_sweep", 0, 1) }));
+                Assert.That(byFight.SelectMany(r => r), Is.EqualTo(back.RankUps), "the fights' 段 add up to what Return writes");
+                Assert.That(expedition.Mastery.RankOf("side_sweep"), Is.EqualTo(1));
+            });
+        }
+
+        [Test]
         public void ALostBattle_EndsTheLife()
         {
             var expedition = new Expedition(new RunStart { Seed = 3 });
