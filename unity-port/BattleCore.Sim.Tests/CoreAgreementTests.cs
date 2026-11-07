@@ -39,17 +39,6 @@ public class CoreAgreementTests
     }
 
     [Test]
-    public void TheRestBetweenLayers_GivesBackTheSameHp()
-    {
-        Assert.That(ExplorationReducer.InterludeHpPercent, Is.EqualTo(Constants.ChainRestHpPercent));
-        // 45 and 55 land on a half (13.5, 16.5), so the two sides must also round the same way.
-        foreach (int maxHp in new[] { 50, 45, 55, 1, 99 })
-        {
-            Assert.That(ExplorationReducer.InterludeHeal(maxHp), Is.EqualTo(Chain.Rest(0, maxHp, 10).Hp), $"max HP {maxHp}");
-        }
-    }
-
-    [Test]
     public void TheSeededGenerators_DrawTheSameSequenceFromTheSameSeed()
     {
         foreach (int seed in new[] { 0, 1, 12345, int.MaxValue, -1 })

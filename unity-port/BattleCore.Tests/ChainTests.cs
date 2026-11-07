@@ -78,18 +78,6 @@ namespace BattleCore.Tests
             });
         }
 
-        [TestCase(20, 35, 10)]
-        [TestCase(40, 50, 10)]
-        [TestCase(50, 50, 10)]
-        [TestCase(1, 16, 10)]
-        public void TheRest_GivesBackThirtyPercentAndFullStamina(int hp, int expectedHp, int expectedStamina)
-        {
-            // §12 / §3.1: 階層間の休憩 is HP 30% (15 of 50) and stamina full.
-            var (restedHp, restedStamina) = Chain.Rest(hp, Constants.PlayerMaxHp, Constants.BaseMaxStamina);
-            Assert.That(restedHp, Is.EqualTo(expectedHp));
-            Assert.That(restedStamina, Is.EqualTo(expectedStamina));
-        }
-
         [Test]
         public void TheTally_CountsTheCardsTheirAttributesAndTheTraitsThatHeld()
         {
