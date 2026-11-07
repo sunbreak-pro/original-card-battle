@@ -192,6 +192,8 @@ namespace Depiction.Tests
         public void TheFadedShare_KeepsTheOthersSeen()
         {
             Assert.That(FloorStripes.FaintAlpha, Is.GreaterThan(0f).And.LessThan(1f));
+            // battle-visual-v1 §4.2 (#835) settled 30%; the trial's floor (Trial.Battle.Floor.UnfocusedAlpha) reads this value (#909).
+            Assert.That(FloorStripes.FaintAlpha, Is.EqualTo(0.3f));
         }
 
         // ---- the swatches -----------------------------------------------------------------------
