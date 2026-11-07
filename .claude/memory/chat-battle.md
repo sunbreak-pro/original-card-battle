@@ -15,7 +15,8 @@
 
 ## 予定
 
-- 🔜 **PR #938 → #939 → #941 を積んだ順に merge、#940 は単独** — #939 と #941 は前の PR の上に積んであり、前が merge されたら差分は自分の分だけになる。#941（#910）は、メインの Unity で勝ちの結果の札の欄（札の顔の縮み・2 行の折り返し・紙の伸び・「次へ」）を見てから merge する。新しいファイル `Trial/Bridge/RaisedCards.cs` の `.meta` は Unity のリポで保存する。dotnet test の赤 1 件は #898（#934 待ち）で直る
+- 🔜 **PR #938 → #939 → #941 を積んだ順に merge、#940 は単独** — #939 と #941 は前の PR の上に積んであり、前が merge されたら差分は自分の分だけになる。#941（#910）は、メインの Unity で勝ちの結果の札の欄（札の顔の縮み・2 行の折り返し・紙の伸び・「次へ」）を見てから merge する。新しいファイル `Trial/Bridge/RaisedCards.cs` の `.meta` は Unity のリポで保存する。dotnet test の赤 1 件は PR #943（#898 のうち習熟の段の表だけを先に直す。2026-11-07 こうだいさん判断）の merge で直る
+- 🔜 **申し送りの回答 3 件を main が回収** — `2026-11-07-battle-answers.md`。探索の階層間の休憩は残す。遭遇の 2 戦目に 1 戦目の段を乗せる直しは、main が Issue にしてから battle が書く
 - 🔜 **PR #805・#814〜#819 の merge 待ち** — 7 本とも origin/main から切ってある。衝突するのは #762（#815）と #766（#818）の `FloorView.cs` だけで、後に merge する側で main を取り込んで手で解く。merge の後にメインのチャットが `unity:sync` と Unity Editor で、#57 の 8 系統の撮影、#762 の Tab とホバー、#764 の語の高さ、#612 の書体の収まり、#766 の斜線の引き方、#780 の `CardGroundTests`（EditMode）を確かめる。新しいファイル（`FloorFocus.cs` `StripeSweep.cs` `BattleFonts.cs` ほか）の `.meta` は Unity のリポで保存する
 - 🔜 **PR #782〜#785 の merge 待ち** — 4 本とも origin/main から切ってあり、触るファイルは重ならない。#785（#755）は、メインの Unity で EditMode の試験が通るのを確かめてから merge する。#782（#580）は、`unity:sync` で写る新しい 6 ファイルの `.meta` を Unity のリポで保存する。残りは申し送り `2026-11-02-battle-stance-gap-at-least-words.md`
 - 🔜 **PR #759（#585）の merge 後の確認**（2026-11-02 に merge 済み） — merge の前後に、メインの Unity で PlayMode テスト 3 本と `Battle.unity` の 1 戦を通し、`unity:sync` で写る 6 ファイルの `.meta` を Unity のリポで保存する
