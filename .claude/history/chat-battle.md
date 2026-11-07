@@ -12,7 +12,8 @@
 - **#914 → PR #939（#938 に積む）**: `Chain.Rest` と `ChainRestHpPercent` を消し、画面の連戦は勝った後に「次へ」だけを出す。2 本の文書から休憩と「全勝時は結果画面を出さない」を外し、§5.19 に勝ちの結果の札の順を書いた。探索の階層間の休憩（30%）は触っていない
 - **#909 → PR #940**: 試遊版の `Floor.UnfocusedAlpha` を Depiction の `FloorStripes.FaintAlpha`（0.3）から読む形にし、`TRIAL-PORT.md` に記録した。`.claude/CLAUDE.md` の 1 行は main の文書なので申し送りにした
 - **#910 → PR #941（#939 に積む）**: `Expedition.RankUpsByFight` / `RankUpsOfLastFight` で戦闘ごとの段を `Return` の前に読み、`Trial.Bridge.RaisedCards` で札の顔と名前を組み、勝ちの札に §5.6 の欄を足した。段が上がった札があるときだけ「次へ」を押すまで待つ
-- **申し送り 6 件**: main の dotnet test が #830 以後 1 件赤い件 / 敵の一覧 §9 と tier2 の連戦の休憩（正本の食い違い）/ 探索の階層間の休憩を残すか / CLAUDE.md への 1 行 / 遭遇の 2 戦目に 1 戦目の段が乗らない件
+- **#898 の一部 → PR #943**: こうだいさんの判断で、v4.11 で消えた札 6 枚の段の表を外し、`MasteryProfilesTests` を §4.7 の 47 行に合わせた。このブランチで dotnet test は exit 0
+- **申し送り 7 件**（回答の控え `2026-11-07-battle-answers.md` を含む）: main の dotnet test が #830 以後 1 件赤い件 / 敵の一覧 §9 と tier2 の連戦の休憩（正本の食い違い）/ 探索の階層間の休憩を残すか / CLAUDE.md への 1 行 / 遭遇の 2 戦目に 1 戦目の段が乗らない件
 
 ### 2026-11-02 - battle 宛ての Issue 7 件（#57 / #762 / #764 / #765 / #612 / #766 / #780）を 7 本の PR へ
 
