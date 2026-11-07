@@ -326,6 +326,12 @@ namespace Trial.Bridge
 
         /// <summary>A read (the JS logs it when called through its Proxy, so its screens read it on the raw Expedition).</summary>
         public string EnemyName(string enemyId) => Raw.EnemyName(enemyId);
+
+        /// <summary>#910: the 段 each fight of the encounter raises, read before Return writes them (a read, not logged).</summary>
+        public IReadOnlyList<IReadOnlyList<RankUp>> RankUpsByFight() => Raw.RankUpsByFight();
+
+        /// <summary>#910: the 段 the fight that ended last raises (a read, not logged).</summary>
+        public IReadOnlyList<RankUp> RankUpsOfLastFight() => Raw.RankUpsOfLastFight();
     }
 
     /// <summary>The Expedition's ExplorationSession, recorded (tag S). Reads go through to <see cref="Raw"/>.</summary>

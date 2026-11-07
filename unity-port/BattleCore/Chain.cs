@@ -30,12 +30,13 @@ namespace BattleCore
     }
 
     /// <summary>
-    /// §12 連戦モード, the demo's first shape (#191): what carries from one battle to the next, the
-    /// rest that may come between, and the tally of each battle. The order of the battles and the
-    /// choices are the demo flow's (Depiction.Bridge.DemoSession); this holds the rules.
+    /// §12 連戦モード, the demo's first shape (#191): what carries from one battle to the next and the
+    /// tally of each battle. The order of the battles is the demo flow's (Depiction.Bridge.DemoSession);
+    /// this holds the rules.
     ///
-    /// Carried: HP and current stamina. Not carried (2026-09-23): the order of the draw and discard
-    /// piles — the deck is shuffled afresh each battle — nor statuses, Guard or the stance slot.
+    /// Carried: HP and current stamina, as the battle left them — nothing heals between battles
+    /// (2026-11-04, #914). Not carried (2026-09-23): the order of the draw and discard piles — the deck
+    /// is shuffled afresh each battle — nor statuses, Guard or the stance slot.
     /// </summary>
     public static class Chain
     {
@@ -44,16 +45,6 @@ namespace BattleCore
         {
             if (finished == null) throw new ArgumentNullException(nameof(finished));
             return (finished.Player.Hp, finished.Player.Stamina);
-        }
-
-        /// <summary>
-        /// §12 / §3.1 階層間の休憩: HP back by 30% of the maximum (rounded away from zero) up to the
-        /// maximum, and stamina full.
-        /// </summary>
-        public static (int Hp, int Stamina) Rest(int hp, int maxHp, int maxStamina)
-        {
-            int gain = (int)Math.Round(maxHp * Constants.ChainRestHpPercent / 100.0, MidpointRounding.AwayFromZero);
-            return (Math.Min(maxHp, hp + gain), maxStamina);
         }
 
         /// <summary>

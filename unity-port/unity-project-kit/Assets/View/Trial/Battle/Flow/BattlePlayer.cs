@@ -137,6 +137,11 @@ namespace Trial.Battle
         public Action OnFinished;
         /// <summary>ctx.auto (dev / tests): the player plays itself.</summary>
         public BattleAuto Auto;
+        /// <summary>
+        /// Unity addition (#910): the cards whose 習熟の段 the fight just won raised (Trial.Bridge.RaisedCards), read once
+        /// as the win result card is built; null or empty for none.
+        /// </summary>
+        public Func<IReadOnlyList<Trial.Bridge.RaisedCard>> RaisedOnWin;
     }
 
     /// <summary>scenes/battle/player.js createPlayer(env, view, ctx).</summary>
@@ -358,6 +363,19 @@ namespace Trial.Battle
             public static string WonLine(int turn, int hp, int max) => "ターン " + Str(turn) + " ・ 残りの HP " + Str(hp) + " / " + Str(max);
             public static string ChainAt(BattleChain chain) => Str(chain.Index) + " / " + Str(chain.Total) + " 戦目";
             public static string SwitchTitle(int index) => Str(index) + " 戦目";
+            // Unity addition (#910, battle-visual-v1 §5.6): the win card's 「習熟が上がった札」, worded as the exploration's
+            // results board words it (ExploreText.RankUps / RankUpNames / RankUpSteps).
+            public const string RaisedHead = "習熟が上がった札";
+            /// <summary>「1 → 2」: the numbers of 「1 → 2 段目」, set in the mono face; <see cref="RaisedStepsUnit"/> follows in the body face.</summary>
+            public static string RaisedSteps(int from, int to) => Str(from) + " → " + Str(to);
+            public const string RaisedStepsUnit = " 段目";
+            /// <summary>「旧名 → 新名」, or null when the 段 kept the name.</summary>
+            public static string RaisedNames(string was, string name) => !string.IsNullOrEmpty(was) && was != name ? was + " → " + name : null;
+            /// <summary>The cards past the faces, named only: 「A・B　ほか 2 枚」.</summary>
+            public static string RaisedRest(IReadOnlyList<string> names, int more) =>
+                string.Join("・", names ?? Array.Empty<string>()) + (more > 0 ? "　ほか " + Str(more) + " 枚" : "");
+            /// <summary>The win card's button when it lists raised cards: it waits to be read (§5.19 の勝ちの順).</summary>
+            public const string GoOn = "次へ";
         }
 
         /// <summary>§2.5: the four attributes' bars on the result screen (a move card is a skill).</summary>
@@ -2851,7 +2869,8 @@ namespace Trial.Battle
                 string names = string.Join("・", DistinctInOrder(EnemyFrames(f).Select(uf => BattleLayout.EnemyNameOf(uf.ArtId)).Where(s => s.Length > 0)));
                 var lines = new List<string> { ResultText.Beat(names), ResultText.WonLine(turns, Math.Max(0, p.Hp), p.HpMax) };
                 if (chain.Total > 1) lines.Add(ResultText.ChainAt(chain));
-                return new Trial.Battle.ResultInfo { Lines = lines };
+                IReadOnlyList<Trial.Bridge.RaisedCard> raised = RaisedOnWin();
+                return new Trial.Battle.ResultInfo { Lines = lines, Raised = raised, Button = raised.Count > 0 ? ResultText.GoOn : null };
             }
             return new Trial.Battle.ResultInfo
             {
@@ -2862,6 +2881,23 @@ namespace Trial.Battle
                 Stats = new[] { ResultText.Traits(_tallyTraits), ResultText.Turns(turns) },
                 Button = ResultText.ToJournal,
             };
+        }
+
+        /// <summary>
+        /// Unity addition (#910): the cards the won fight raised (ctx.RaisedOnWin). A failure to read them is logged and the
+        /// card shows none, so the win still reaches its next screen.
+        /// </summary>
+        private IReadOnlyList<Trial.Bridge.RaisedCard> RaisedOnWin()
+        {
+            try
+            {
+                return _ctx.RaisedOnWin?.Invoke() ?? Array.Empty<Trial.Bridge.RaisedCard>();
+            }
+            catch (Exception err)
+            {
+                LogError(err);
+                return Array.Empty<Trial.Bridge.RaisedCard>();
+            }
         }
 
         /// <summary>[...new Set(list)]: the first of each, in order.</summary>
@@ -2962,8 +2998,9 @@ namespace Trial.Battle
             if (!_alive) return;
             _resultUpAt = _real.Now;
             // A loss waits for 「手記へ」 (or a click, Enter, Space or Esc: SkipResult); a win — and the auto play — goes on
-            // after RESULT_HOLD_MS, as Unity's DemoFlow does.
-            bool waits = outcome == BattleOutcome.Lost && _ctx.Auto == null;
+            // after RESULT_HOLD_MS, as Unity's DemoFlow does. Unity addition (#910, battle_ui_ux_v2 §5.19): a win that lists
+            // raised cards waits for 「次へ」 the same way, because 1.2 s is too short to read the names and the 段.
+            bool waits = (outcome == BattleOutcome.Lost || info.Raised.Count > 0) && _ctx.Auto == null;
             Promise hold = waits ? Promise.Never() : HoldUnpaused(L.ResultHoldMs);
             var skipped = new PromiseSource();
             _resultSkip = () => skipped.TryResolve();

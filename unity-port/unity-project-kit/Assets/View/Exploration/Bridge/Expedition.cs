@@ -318,6 +318,33 @@ namespace Exploration.Bridge
         /// whose 開示度 rose, whether the card pile was spent, and the learned cards a full deck kept out. Every page is
         /// only counted, as in the browser trial: none is read into <see cref="Journal"/> or turned into a card.
         /// </summary>
+        /// <summary>
+        /// The 段 each fight of the encounter under way raises, in the order fought, worked out on the mastery book the
+        /// way <see cref="Return"/> writes it: fight by fight from the book the encounter began with (battle_core_v4
+        /// §3.2: 段 go up at a battle's end). Nothing is written here: the win result card reads the last fight's before
+        /// the encounter is brought back (#910). Empty when no encounter is under way or no fight has ended.
+        /// </summary>
+        public IReadOnlyList<IReadOnlyList<RankUp>> RankUpsByFight()
+        {
+            if (Battle == null) return Array.Empty<IReadOnlyList<RankUp>>();
+            var byFight = new List<IReadOnlyList<RankUp>>();
+            MasteryBook book = Mastery;
+            foreach (FoughtBattle fought in Battle.Fought)
+            {
+                MasteryResult result = book.AfterBattle(fought.State);
+                book = result.Book;
+                byFight.Add(result.RankUps);
+            }
+            return byFight;
+        }
+
+        /// <summary>The 段 the fight that ended last raises (<see cref="RankUpsByFight"/>); empty when none has ended.</summary>
+        public IReadOnlyList<RankUp> RankUpsOfLastFight()
+        {
+            IReadOnlyList<IReadOnlyList<RankUp>> byFight = RankUpsByFight();
+            return byFight.Count == 0 ? Array.Empty<RankUp>() : byFight[byFight.Count - 1];
+        }
+
         // js: bridge/exploration/Expedition.js:201
         public BattleReturn Return()
         {

@@ -100,6 +100,23 @@ namespace Trial.Battle.Flow.Tests
         }
 
         [Test]
+        public void TheRaisedCardsWords_AreTheResultsBoardsWords()
+        {
+            // #910 / battle-visual-v1 §5.6: the win card words its raised cards as the exploration's results board does.
+            Assert.Multiple(() =>
+            {
+                Assert.That(BattlePlayer.ResultText.RaisedHead, Is.EqualTo("習熟が上がった札"));
+                Assert.That(BattlePlayer.ResultText.RaisedSteps(1, 2) + BattlePlayer.ResultText.RaisedStepsUnit, Is.EqualTo("1 → 2 段目"));
+                Assert.That(BattlePlayer.ResultText.RaisedNames("横薙ぎ", "大横薙ぎ"), Is.EqualTo("横薙ぎ → 大横薙ぎ"));
+                Assert.That(BattlePlayer.ResultText.RaisedNames(null, "大横薙ぎ"), Is.Null, "a 段 that keeps the name prints no second line");
+                Assert.That(BattlePlayer.ResultText.RaisedNames("大横薙ぎ", "大横薙ぎ"), Is.Null);
+                Assert.That(BattlePlayer.ResultText.RaisedRest(new[] { "観察", "鉄の受け" }, 0), Is.EqualTo("観察・鉄の受け"));
+                Assert.That(BattlePlayer.ResultText.RaisedRest(new[] { "観察" }, 2), Is.EqualTo("観察　ほか 2 枚"));
+                Assert.That(BattlePlayer.ResultText.GoOn, Is.EqualTo("次へ"));
+            });
+        }
+
+        [Test]
         public void TheConditionNames_AreTheJsNames()
         {
             string[] words = { "間合い0", "残4", "連動(攻)", "予兆", "相手出血", "自分強化", "初手", "残" };

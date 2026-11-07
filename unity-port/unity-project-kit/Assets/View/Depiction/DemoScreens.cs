@@ -106,12 +106,12 @@ namespace Depiction.View
         private readonly Text _title;
         private readonly Text _lines;
         private readonly RectTransform _buttons;
-        private readonly Action<bool> _goOn;
+        private readonly Action _goOn;
         private readonly Action _again;
         private readonly Action _chooseEnemy;
         private readonly Action _back;
 
-        public EndScreen(RectTransform parent, Action<bool> goOn, Action again, Action chooseEnemy, Action back)
+        public EndScreen(RectTransform parent, Action goOn, Action again, Action chooseEnemy, Action back)
         {
             _goOn = goOn;
             _again = again;
@@ -143,14 +143,12 @@ namespace Depiction.View
             UiKit.ClearChildren(_buttons);
             if (screen.CanGoOn)
             {
-                UiKit.Button(_buttons, "Rest", screen.RestLabel, () => _goOn(true), BattleTheme.Accent, BattleTheme.InkBlack, 26,
-                    new Vector2(0f, 0.52f), new Vector2(0.49f, 1f));
-                UiKit.Button(_buttons, "GoOn", screen.GoOnLabel, () => _goOn(false), BattleTheme.Panel, BattleTheme.Ink, 26,
-                    new Vector2(0.51f, 0.52f), new Vector2(1f, 1f));
+                UiKit.Button(_buttons, "GoOn", screen.GoOnLabel, () => _goOn(), BattleTheme.Accent, BattleTheme.InkBlack, 26,
+                    new Vector2(0f, 0.52f), new Vector2(1f, 1f));
             }
             else if (screen.CanChooseEnemy)
             {
-                // A single battle's end (#211): the top row, which only a chain's rest uses.
+                // A single battle's end (#211): the top row, which only a chain's way on uses.
                 UiKit.Button(_buttons, "ChooseEnemy", screen.ChooseEnemyLabel, () => _chooseEnemy(), BattleTheme.Accent, BattleTheme.InkBlack, 26,
                     new Vector2(0f, 0.52f), new Vector2(1f, 1f));
             }

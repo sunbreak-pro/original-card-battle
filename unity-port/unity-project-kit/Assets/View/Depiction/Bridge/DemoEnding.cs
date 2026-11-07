@@ -50,7 +50,7 @@ namespace Depiction.Bridge
         /// <summary>
         /// The end screen when the battle could not be tallied or its words could not be made: no
         /// result, and only the ways that start afresh — the mode screen (same deck) and the deck
-        /// screen. 「もう一度」 and the chain's rest stay away: they would step a run left half-done.
+        /// screen. 「もう一度」 and the chain's way on stay away: they would step a run left half-done.
         /// </summary>
         public static DemoEndScreen Fallback()
         {
