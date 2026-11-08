@@ -12,6 +12,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { hookContext } from "./lib/hook-context.mjs";
 
 // このリポジトリは merge commit で履歴を残す（squash ではない）ので、形も --merge に固定する
 const SHAPE = /^\s*gh\s+pr\s+merge\s+(\d+)\s+-R\s+sunbreak-pro\/original-card-battle\s+--merge\s*$/;
@@ -34,6 +35,13 @@ const command = String(input?.tool_input?.command ?? "");
 if (!/\bgh\s+pr\s+merge\b/.test(command)) process.exit(0);
 
 try {
+  // input.cwd is the main checkout for chat-main's subagents too, so the worktree check below misses
+  // them; agent_id and the `cd` in front of the command catch them (issue-workflow trial, 2026-11-08).
+  const ctx = hookContext(input, "pr-merge", process.cwd());
+  if (ctx.agent) decide("deny", "サブエージェントは merge しません。merge は chat-main の merge-round スキルが行います。");
+  if (ctx.known && ctx.linked && ctx.sessionName !== "main")
+    decide("deny", "作業レーン（worktree）の中からは merge しません。merge は chat-main の merge-round スキルが行います。");
+
   const cwd = input.cwd || process.cwd();
   const git = (...args) =>
     execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();

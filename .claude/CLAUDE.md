@@ -282,9 +282,11 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 | SessionStart | `session-start-check.sh` | `.session-name` / `.session-branch` の宣言整合を検査（警告のみ） |
 | PreToolUse(Bash) | `pre-commit-mcp-check.sh` | `.mcp.json` のトークン平文化を commit 前に検出 |
 | PreToolUse(Bash) | `pre-commit-index-guard.sh` | 生成物 `INDEX.md` の commit 混入を自動除外 |
-| PreToolUse(Bash) | `pre-commit-tracker-guard.sh` | tracker と実装の同梱コミットをブロック |
-| PreToolUse(Bash) | `pre-issue-create-guard.sh` | `.session-name` が `main` でないチャットの `gh issue create` をブロック |
-| PreToolUse(Bash) | `merge-gate.mjs` | `gh pr merge` を振り分ける。worktree からは deny、chat-main の `merge-round` の回で `check` を通った PR だけ allow、それ以外は ask |
+| PreToolUse(Bash) | `pre-commit-tracker-guard.sh` | tracker と実装の同梱コミットをブロック。index は、コマンドが `cd` か `git -C` で指した repo のものを見る |
+| PreToolUse(Bash) | `pre-issue-create-guard.sh` | `.session-name` が `main` でないチャットの `gh issue create` をブロック。サブエージェント（hook の入力に `agent_id` がある）と、`cd` でレーンの worktree に入ってから打つものもブロック |
+| PreToolUse(Bash) | `merge-gate.mjs` | `gh pr merge` を振り分ける。worktree・サブエージェント・`cd` でレーンに入ったコマンドからは deny、chat-main の `merge-round` の回で `check` を通った PR だけ allow、それ以外は ask |
+
+3 つの hook がコマンドの `cd` を読むのは、Workflow のエージェントが main の checkout から Bash を始め、`cd <worktree> && ...` で作業フォルダに移るためです（2026-11-08 の issue-workflow の試験）。読む部品は `.claude/hooks/lib/hook-context.mjs`、テストは `node --test ".claude/hooks/__tests__/*.test.mjs"` です。
 
 実体は `$HOME/dev/Claude/hooks-lib/` を優先し、無ければ `.claude/scripts/hooks-lib/` の同梱版に落ちる。
 
