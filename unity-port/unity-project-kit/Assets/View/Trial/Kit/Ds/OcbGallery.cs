@@ -145,18 +145,20 @@ namespace Trial.Kit
                         Values = { new OcbCardValue("back", 2, "離れる"), new OcbCardValue("shield", 4, "Guard") }, Desc = "",
                         Trait = new OcbCardTrait("予兆が攻撃", "→ Guard +3"), Terms = terms,
                         Detail = "2 マス離れ、Guard 4 を得る。いちばん近い敵の予兆が攻撃なら、Guard がさらに 3 増えて 7。" };
-                case "iwanokamae":
+                // The two samples below follow battle-visual-v1 §9 (v1.19, #906): cards of the v4.11 table, in place of the
+                // stance and the attack the table dropped.
+                case "mikirinome":
                     terms.Add(new KeyValuePair<string, string>("永続", "消えずに残る。重ねると重ねた数のぶん効く"));
-                    return new OcbCardDef { Name = "岩の構え", Attr = "stance", Cost = 2, ReachSelf = true, Lines = { "ターン開始 Guard +3" },
-                        Trait = new OcbCardTrait("置く時 予兆が攻撃", "→ Guard +3（1 回）"), Terms = terms,
-                        Detail = "スタンス。置いている間、自分のターン開始に Guard を 3 得る。置くときに敵の予兆が攻撃なら、その場で Guard +3（1 回だけ）。" };
-                default:   // fumikomi
-                    terms.Add(new KeyValuePair<string, string>("連動 X", "このターンに属性 X のカードをもう出している"));
+                    return new OcbCardDef { Name = "見切りの目", Attr = "stance", Cost = 2, ReachSelf = true, Lines = { "攻撃の予兆に Guard +3" },
+                        Trait = new OcbCardTrait("置く時 予兆が攻撃", "→ ドロー +1（1 回）"), Terms = terms,
+                        Detail = "スタンス。置いている間、敵の予兆が攻撃のターンの開始に Guard を 3 得る。置くときにいちばん近い敵の予兆が攻撃なら、その場でカードを 1 枚引く（1 回だけ）。" };
+                default:   // kiriage
+                    terms.Add(new KeyValuePair<string, string>("初手", "このターン最初に出す札"));
                     terms.Add(new KeyValuePair<string, string>("詰める", "自分が動いて、相手との間合いを縮める"));
-                    return new OcbCardDef { Name = "踏み込み斬り", Attr = "attack", Cost = 3,
+                    return new OcbCardDef { Name = "斬り上げ", Attr = "attack", Cost = 3,
                         Values = { new OcbCardValue("sword", 16, "威力"), new OcbCardValue("forward", 1, "詰める") }, Desc = "",
-                        Trait = new OcbCardTrait("連動 スタンス", "→ 威力 +3"), Terms = terms,
-                        Detail = "敵に 16 ダメージを与え、そのあと 1 マス詰める。連動 スタンス：このターンにスタンス札をもう出していれば、威力 +3 で 19。" }.WithReach(1, 2);
+                        Trait = new OcbCardTrait("初手 なら", "→ 威力 +3"), Terms = terms,
+                        Detail = "敵に 16 ダメージを与え、そのあと 1 マス詰める。初手：このターン最初に出す札なら、威力 +3 で 19。" }.WithReach(0, 1);
             }
         }
 
@@ -193,7 +195,7 @@ namespace Trial.Kit
             At(Ocb.ReserveOmen(pg, new OcbOmenData { Kind = "移動", Value = "1" }), ex + 116f, DsLayout.FootY - ef.H - DsLayout.OmenGap - 66f);
 
             // stance slots, status panels
-            At(Ocb.StanceSlot(pg, new OcbStanceData { Name = "岩の構え", Count = 1 }), DsLayout.Edge, DsLayout.StanceY);
+            At(Ocb.StanceSlot(pg, new OcbStanceData { Name = "水の構え", Count = 1 }), DsLayout.Edge, DsLayout.StanceY);
             At(Ocb.StanceSlot(pg, new OcbStanceData { Foe = true, Empty = true }), DsLayout.W - DsLayout.Edge - DsLayout.StanceW, DsLayout.StanceY);
             At(Ocb.StatusPanel(pg, new OcbStatusPanelData { Side = "self", Hp = 50, MaxHp = 50, Guard = 3, Chips = { new OcbChipData("focus", 1) } }),
                 px - DsLayout.PanelSelfW * 0.5f, DsLayout.PanelY);
@@ -221,7 +223,7 @@ namespace Trial.Kit
                 At(Ocb.Pile(pg, piles[i], counts[i]), DsLayout.Piles.X + i * (DsLayout.Piles.W + DsLayout.Piles.Gap), DsLayout.Piles.Y);
 
             // HandFan({ cards: 5, hover: 1 }) (bundle.js:2855)
-            string[] hand = { "ishitsubute", "nobizuki", "kesagiri", "kokyu", "iwanokamae" };
+            string[] hand = { "ishitsubute", "nobizuki", "kesagiri", "kokyu", "mikirinome" };
             int n = hand.Length, hover = 1;
             float sp = n <= 5 ? 160f : n == 6 ? 150f : n == 7 ? 140f : 126f;
             OcbCard hovered = null;
@@ -262,8 +264,8 @@ namespace Trial.Kit
             At(Ocb.Card(pg, Sample("ishitsubute"), new OcbCardState { Cost = 1 }), x + 264f, y);
             At(Ocb.Card(pg, Sample("kokyu")), x + 528f, y);
             At(Ocb.Card(pg, Sample("ushirotobi"), new OcbCardState { Unpayable = true }), x + 792f, y);
-            At(Ocb.Card(pg, Sample("iwanokamae")), x + 1056f, y);
-            At(Ocb.Card(pg, Sample("fumikomi")), x + 1320f, y);
+            At(Ocb.Card(pg, Sample("mikirinome")), x + 1056f, y);
+            At(Ocb.Card(pg, Sample("kiriage")), x + 1320f, y);
             OcbCardDef plain = Sample("kesagiri");
             plain.Name = "素振り";
             plain.Trait = null;
@@ -276,12 +278,12 @@ namespace Trial.Kit
             y = 380f;
             Note(pg, "CardDetail(def): 560×280, the card at .8, name / meta / full / terms", x, y - 24f, 900f);
             At(Ocb.CardDetail(pg, Sample("nobizuki")), x, y);
-            At(Ocb.CardDetail(pg, Sample("iwanokamae")), x + 600f, y);
+            At(Ocb.CardDetail(pg, Sample("mikirinome")), x + 600f, y);
             At(Ocb.CardDetail(pg, Sample("ishitsubute"), new OcbCardState { Cost = 1 }), x + 1200f, y);
 
             y = 720f;
             Note(pg, "scale .72 (the departure grid) and .5", x, y - 24f, 600f);
-            string[] ids = { "nobizuki", "kokyu", "iwanokamae", "fumikomi" };
+            string[] ids = { "nobizuki", "kokyu", "mikirinome", "kiriage" };
             for (int i = 0; i < ids.Length; i++)
             {
                 OcbCard c = Ocb.Card(pg, Sample(ids[i]));
@@ -356,7 +358,7 @@ namespace Trial.Kit
             y = 110f;
             Note(pg, "StatusTip, StanceTip", x, y - 22f);
             At(Ocb.StatusTip(pg, "insight", "1"), x, y);
-            At(Ocb.StanceTip(pg, "岩の構え", 2, "自分のターン開始に Guard +3"), x + 360f, y);
+            At(Ocb.StanceTip(pg, "水の構え", 2, "間合い 2 以上で始まるターンに回復 +2"), x + 360f, y);
 
             Note(pg, "StatusPanel self (7 chips → +n), foe elite with a swatch, foe at Guard 0", x + 720f, y - 22f, 800f);
             At(Ocb.StatusPanel(pg, new OcbStatusPanelData
@@ -411,7 +413,7 @@ namespace Trial.Kit
             At(Ocb.DrawerTabs(pg, new[] { "山札", "捨札", "除外" }, 0), x + 1400f, y);
             At(Ocb.DrawerRow(pg, 420f, DsTokens.Violet, "伸び突き", "2 / 3"), x + 1400f, y + 48f);
             At(Ocb.DrawerRow(pg, 420f, DsTokens.Guard, "呼吸を整える", "1 / 2"), x + 1400f, y + 88f);
-            At(Ocb.DrawerRow(pg, 420f, DsTokens.Crimson, "岩の構え", "0 / 1"), x + 1400f, y + 128f);
+            At(Ocb.DrawerRow(pg, 420f, DsTokens.Crimson, "水の構え", "0 / 1"), x + 1400f, y + 128f);
 
             y = 880f;
             Note(pg, "FloatNum (damage + label, guard, heal, miss), placed at its centre", x, y - 22f, 700f);

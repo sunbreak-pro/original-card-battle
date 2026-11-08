@@ -17,6 +17,14 @@ namespace Trial.Script.Tests
                 .Where(f => f.FieldType == typeof(string))
                 .Select(f => f.Name);
 
+        // Where the C# text departs from text.js on purpose (TRIAL-PORT.md "Where this port departs from the JS"). The JS
+        // lives on the trial's own branch, outside this repo's main, so these strings cannot follow it there.
+        // #906: the stance example named 岩の構え, a card the v4.11 table dropped.
+        private static readonly Dictionary<string, string> UnityDepartures = new Dictionary<string, string>
+        {
+            ["StanceTermText"] = "置くと戦闘のあいだ効き続ける札の属性（水の構え・鉄壁の構え など）。上の「構え」の規則とは別",
+        };
+
         [Test]
         public void EveryStringMember_IsTheJs()
         {
@@ -24,9 +32,23 @@ namespace Trial.Script.Tests
             {
                 FieldInfo field = typeof(MetaText).GetField(pair.Key, BindingFlags.Public | BindingFlags.Static);
                 Assert.That(field, Is.Not.Null, pair.Key);
+                if (UnityDepartures.ContainsKey(pair.Key)) continue;
                 Assert.That(field.GetValue(null), Is.EqualTo(pair.Value), pair.Key);
             }
             Assert.That(CSharpStrings(), Is.EquivalentTo(JsMetaText.Strings.Keys), "no string the JS lacks");
+        }
+
+        [Test]
+        public void EveryDeparture_HoldsItsOwnText_AndStillDiffersFromTheJs()
+        {
+            foreach (var pair in UnityDepartures)
+            {
+                FieldInfo field = typeof(MetaText).GetField(pair.Key, BindingFlags.Public | BindingFlags.Static);
+                Assert.That(field, Is.Not.Null, pair.Key);
+                Assert.That(field.GetValue(null), Is.EqualTo(pair.Value), pair.Key);
+                // When text.js catches up and JsMetaText is regenerated, the departure is no longer one: drop it.
+                Assert.That(JsMetaText.Strings[pair.Key], Is.Not.EqualTo(pair.Value), pair.Key + " is the JS again");
+            }
         }
 
         [Test]
