@@ -223,7 +223,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | worktree / レーン / ブランチ切替 | `worktree-policy` |
 | 課題を Issue として起票（main だけ。レーンは `.claude/comm/handoff/` に申し送り） | `issue-dispatch` |
 | 次に着手する Issue を選んで実装・確認・PR まで回す（main だけ。設定は `.claude/issue-workflow.md`） | `issue-workflow`（グローバル） |
-| open PR をまとめて merge する（main だけ。こうだいさんの起動が承認） | `merge-round` |
+| open PR をまとめて merge する（main だけ。こうだいさんの起動が承認。`issue-workflow` で「merge-round まで回す」を選んだ回は仕上げ役が回す） | `merge-round` |
 | open Issue を仕分ける | `/loop-triage` |
 | Issue 1 件を commit まで実装 | `/loop-implement` |
 | 検証ゲートを通して原因を切り分ける | `/loop-verify` |
@@ -241,13 +241,13 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 - **スコープの境界**: Issue は**プロダクトの課題専用**。Claude Code 環境やハーネス起因の問題は `docs/known-issues/` に置き、Issue にしない
 - **優先順位は必須**: Issue には `prio:1`〜`prio:4` を必ず 1 つ付ける（1 = いま着手 / 2 = 次 / 3 = その後 / 4 = いつか）。`sev:` は影響の大きさ、`prio:` は着手の順番で、別の軸。次にやることは `npm run issues:next`（`prio` → `sev` → 番号の順。依存先が open の Issue は待ちに回る）。付け忘れは `npm run issues:next -- --check` が検出する。見直すのは親 Issue を閉じたときと、縦切りや束の振り返りのとき
 - **着手前に必ず open を見る**: `gh issue list --label type:bug`。重複起票を避ける
-- **1 Issue = 1 ブランチ = 1 PR**。PR 本文に `Closes #<n>` を書く。**merge は常に人**。こうだいさんが chat-main で `merge-round` スキルを起動したら、それがその回の承認で、事前確認を通った PR は `hooks/merge-gate.mjs` が確認なしで通す（2026-11-04 こうだいさん依頼、life-editor から移植）。レーンからの `gh pr merge` は同じ hook が deny し、回の外の merge は確認を出す
+- **1 Issue = 1 ブランチ = 1 PR**。PR 本文に `Closes #<n>` を書く。**merge は常に人**。こうだいさんが chat-main で `merge-round` スキルを起動したら、それがその回の承認で（`issue-workflow` の起動前の確認で「merge-round まで回す」を選んだ回も同じ扱いで、仕上げ役が回す。`merge-round` の「work-finishers が回すとき」）、事前確認を通った PR は `hooks/merge-gate.mjs` が確認なしで通す（2026-11-04 こうだいさん依頼、life-editor から移植）。レーンからの `gh pr merge` は同じ hook が deny し、回の外の merge は確認を出す
 
 ### 進行役（pdca-harness）の PR とラベルは、起票と merge の決まりの例外
 
 定時に動く進行役（`~/dev/pdca-harness`）が、`pdca:auto` の付いた open Issue を 1 件 1 PR にします（2026-10-12 こうだいさん決定）。
 
-- **例外にするもの:** 進行役が作る `pdca/*` ブランチの PR と、`state:*` `goal:*` のラベルです。進行役は Issue を作らず、merge もしません。merge は常に人です
+- **例外にするもの:** 進行役が作る `pdca/*` ブランチの PR と、`state:*` `goal:*` のラベルです。進行役は Issue を作らず、merge もしません。merge は常に人です（人が承認した回の中だけ。`merge-round` の「work-finishers が回すとき」）
 - **`pdca:auto` を付けるのは chat-main だけ**です。こうだいさんの指示があるときか、`issue-dispatch` の判断で付けます。付いた Issue は、同じ Issue を 2 者が実装しないように、`issue-workflow` で回しません（グローバルの `issue-workflow` スキルが、`pdca:auto` と `state:*` のラベルを見て共通の除外で外します）
 - **拾われない Issue:** 本文が `.claude/` のパスを挙げるもの、除外ラベル（`type:human` `area:art` `area:world` `status:frozen` など）が付いたもの、題が判断を求めるもの、子 Issue を持つ親です。進行役は `.claude/` と `.github/` に書けません
 - **判断が要るとき:** 進行役は `state:needs-human` を付け、Gmail で知らせます
@@ -284,7 +284,7 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 | PreToolUse(Bash) | `pre-commit-index-guard.sh` | 生成物 `INDEX.md` の commit 混入を自動除外 |
 | PreToolUse(Bash) | `pre-commit-tracker-guard.sh` | tracker と実装の同梱コミットをブロック。index は、コマンドが `cd` か `git -C` で指した repo のものを見る |
 | PreToolUse(Bash) | `pre-issue-create-guard.sh` | `.session-name` が `main` でないチャットの `gh issue create` をブロック。サブエージェント（hook の入力に `agent_id` がある）と、`cd` でレーンの worktree に入ってから打つものもブロック |
-| PreToolUse(Bash) | `merge-gate.mjs` | `gh pr merge` を振り分ける。worktree・サブエージェント・`cd` でレーンに入ったコマンドからは deny、chat-main の `merge-round` の回で `check` を通った PR だけ allow、それ以外は ask |
+| PreToolUse(Bash) | `merge-gate.mjs` | `gh pr merge` を振り分ける。worktree・サブエージェント（`agent_type` が `work-finishers` で、6 時間以内の承認の印 `.git/merge-round/finisher-approved.json` があるものを除く）・`cd` でレーンに入ったコマンドからは deny、chat-main の `merge-round` の回で `check` を通った PR だけ allow、それ以外は ask |
 
 3 つの hook がコマンドの `cd` を読むのは、Workflow のエージェントが main の checkout から Bash を始め、`cd <worktree> && ...` で作業フォルダに移るためです（2026-11-08 の issue-workflow の試験）。読む部品は `.claude/hooks/lib/hook-context.mjs`、テストは `node --test ".claude/hooks/__tests__/*.test.mjs"` です。
 
@@ -311,7 +311,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 - **宛先ラベルは `lane:<slug>`**。付けなければ `issue-workflow` が上の `area:` から既定のレーンを決める（決め方は `.claude/issue-workflow.md` の「選び方」）
 - **世界観の正本は main（chat-main）**（2026-09-21 こうだいさん決定）。正典は `docs/vision/world-v1.md` で、**舞台は龍神の封印の地、敵は竜・寄生・亡霊の 3 系統、崩壊まで約 1 年**（v5、2026-11-03 #884）。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main の采配に落とす。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
 - **`audit` は読み取り専用**。整合監査の結果は申し送りにして main へ回し、修正は main が Issue にして担当レーンへ配る
-- **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで
+- **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで。例外は chat-main の `issue-workflow` の仕上げ役（`work-finishers`）だけで、動作確認のために `wf-*` の worktree で Vite の dev サーバーを 1 本ずつ、固定のポート 5273 で起動し、終わったら止める（`.claude/issue-workflow.md` の「動作確認」）。Unity Editor はメインだけのまま
 - **one writer per artifact**。同じファイルを 2 レーンに触らせない
 - **`.claude/comm/.session-name` と `.session-branch` を必ず書く**。ブランチを切り替えるたびに `.session-branch` を更新する（省略すると hook が無音スキップする）
 

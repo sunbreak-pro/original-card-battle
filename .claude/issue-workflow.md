@@ -15,7 +15,7 @@
   "maxIssuesPerRun": 8,
   "minFreeGb": 6,
   "baselineFailures": "allow",
-  "mergePolicy": "merge するのはこうだいさんが chat-main で merge-round を起動した回だけです。hooks/merge-gate.mjs が回の外の gh pr merge に確認を出します。実装役と確認役は merge しません。"
+  "mergePolicy": "merge するのは merge-round の回の中だけです。回を始めるのは、こうだいさんが chat-main で merge-round を起動したときか、issue-workflow の起動前の確認で「merge-round まで回す」を選んだ回の仕上げ役（work-finishers）です。hooks/merge-gate.mjs が回の外の gh pr merge に確認を出します。実装役と確認役は merge しません。"
 }
 ```
 
@@ -91,7 +91,7 @@
 - `.claude/comm/outbox/` と `.claude/comm/decisions/`。
 - `.mcp.json`。
 
-**画面を動かす確認はしません。** `npm run dev`・ブラウザ・Unity Editor は使わず、試運転は chat-main が merge の後にします。`npm run unity:sync` も打ちません。同期先の Unity プロジェクトは全員で 1 つなので、並行して写すと互いの変更を上書きするためです。
+**画面を動かす確認はしません。** `npm run dev`・ブラウザ・Unity Editor は使いません。Vite の画面の動作確認は全体確認の後に仕上げ役（work-finishers）がし、Unity Editor での試運転は chat-main が merge の後にします。`npm run unity:sync` も打ちません。同期先の Unity プロジェクトは全員で 1 つなので、並行して写すと互いの変更を上書きするためです。
 
 **`node_modules` は worktree ごとに要ります。** TypeScript か `vitest` を使う変更なら、最初に `cd {{worktree}} && npm ci` を打ちます。
 
@@ -153,6 +153,8 @@
 
 ## PR の決まり
 
+全体確認を通ったブランチで、仕上げ役（work-finishers）が次のとおりに push して PR を開きます。確認役は push しません。ここでは merge しません。merge は下の「仕上げ」の回の中だけで起きます。
+
 **push は資格情報の指定を付けて打ちます。** コマンドは `cd {{worktree}} && git -c credential.helper= -c "credential.helper=!gh auth git-credential" push -u origin {{branch}}` です。既定の資格情報マネージャーが止まることがあるためです。
 
 **Issue との結び付けは、Issue の Gate と Definition of Done から決めます。** `gh issue view {{n}} -R {{repo}}` で読み、試運転・実機・Unity Editor・画面での確認が要るなら `Refs #{{n}}`、要らなければ `Closes #{{n}}` にします（`.claude/CLAUDE.md` の「1 Issue = 1 ブランチ = 1 PR」）。どちらにしたかの理由を、本文に 1 行で書きます。
@@ -168,16 +170,108 @@
 
 **PR は `gh pr create -R {{repo}} --base main --head {{branch}} --title "<commit の題>" --body-file /tmp/pr-body-{{n}}.md` で開きます。** 題は英語です。
 
+## 動作確認
+
+起動前の確認で `runtime: true` にした Issue だけを、PR を開いた後に仕上げ役が確かめます。この節は、このリポジトリの Vite の Web アプリ（React）の決まりです。Unity Editor での手触りの確認はここでせず、chat-main が merge の後にします（`.claude/CLAUDE.md` の「試運転はメインだけ」の例外は Vite だけです）。
+
+**確かめるのは、Vite の画面に届く変更だけです。** `git -C {{worktree}} diff --name-only origin/main...HEAD` に次のどれかがあれば確かめます。
+
+- `src/` の下のファイル（`__tests__/` の下と `src/test/` を除く）
+- `index.html`、`public/`、`vite.config.ts`
+
+どれも無いブランチ（`unity-port/` の C#・`docs/`・`.claude/`・`scripts/` とテストだけ）は、dev サーバーを起動しません。PR に「Vite の画面に届く変更が無いので動作確認をしていません」とコメントし、C# の変更なら「Unity Editor での確認は chat-main に残します」と添えます。
+
+**ポートは 5273 に固定します。** chat-main の `npm run dev` が 5173 を使い、5173 がふさがると Vite は 5174、5175 と順に逃げます。5273 はその並びから離れていて、`vite preview` の 4173 とも重なりません。
+
+**起動する前に、5273 が空いているかを確かめます。** 次のコマンドで何か出たら、ほかの動作確認か前の回の残りがつかんでいます。止めずに、動作確認をせずに PR に「ポート 5273 がふさがっていたので動作確認をしていません」とコメントし、報告に書きます。だれのプロセスか分からないものを止めないためです。ふさがっていた回は dev サーバーを起動していないので、何も止めません。
+
+```bash
+C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 5273 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess"
+```
+
+**dev サーバーは {{worktree}} で、バックグラウンドで起動します。** `node_modules` が無ければ先に `cd {{worktree}} && npm ci` を打ちます。
+
+```bash
+cd {{worktree}} && npm run dev -- --host 127.0.0.1 --port 5273 --strictPort
+```
+
+`--strictPort` を付けるのは、5273 がふさがっていたときに別のポートへ逃げず、起動に失敗させるためです。`--host 127.0.0.1` を付けるのは、Windows で `localhost` が IPv6 の `::1` に向くと、ブラウザと待ち合わせのコマンドがつながらないことがあるためです。
+
+**答えるまで待ってから、ブラウザを開きます。** 次のコマンドは最大 60 秒待ち、答えれば exit 0 で返ります。0 以外なら起動に失敗したので、上の「空いているか」のコマンドを打ちます。PID が出たらそれを記録して下の止め方で止め、出なければ止めるものはありません。dev サーバーの出力を PR のコメントに写して、動作確認を見送り（skipped）にします。全体確認の `npm run build` は通っているので、起動の失敗は環境のせいのことが多く、PR を止める理由にはしないためです。
+
+```bash
+curl -sf -o /dev/null --retry 60 --retry-delay 1 --retry-connrefused http://127.0.0.1:5273/
+```
+
+**答えたらすぐ、5273 で待ち受けている PID を記録します。** 次のコマンドで出た PID（Vite を動かす `node`）を控えます。
+
+```bash
+C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 5273 -State Listen | Select-Object -ExpandProperty OwningProcess -Unique"
+```
+
+止めるときはこの PID だけを止めます。確かめている間に別のプロセスが 5273 を取っても、それを止めないためです。
+
+**画面は `http://127.0.0.1:5273/` から開きます。** URL で画面を切り替える仕組みは無く、ゲームはキャラクター選択から始まります。拠点・ギルド・店・鍛冶屋・聖域・ダンジョンの入口・探索・戦闘へは、画面の操作で進みます。手記と設定は `localStorage` に残るので、Playwright の新しいブラウザでは毎回まっさらな状態から始まります。
+
+**確かめ終えたら、必ず dev サーバーを止めます。** 失敗したときも、途中でやめたときも止めます。止めるのは、記録した PID だけです。`<pid>` に控えた番号を入れて打ちます。
+
+```bash
+C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Stop-Process -Id <pid> -Force"
+```
+
+打ったあと、上の「空いているか」のコマンドで何も出なくなったことを確かめ、PR のコメントに 1 行書きます。まだ何か出たら、それは記録した PID とは別のプロセスなので止めずに、PID を報告に書きます。
+
+`npm run dev` は npm を親にして `node` を起動します。待ち受けている `node` を止めると、npm の親もそこで終わります。バックグラウンドで起動した Bash がまだ残っていても、その Bash の呼び出しが終わるときに一緒に終わります。
+
+**BLOCKING にするのは、次のどれかに当たるときです。**
+
+- 画面が真っ白か、エラーの画面（`ErrorBoundary`）になる。
+- Issue の完了条件のうち、Vite の画面で確かめられる項目が満たされていない。
+- 変更した画面へ、画面の操作でたどり着けない。
+- 変更した画面を開いたときか操作したときに、ブラウザのコンソールに捕まえられていないエラーが出る。
+
+見た目の小さなずれ、変更していない画面の警告、Unity Editor でしか確かめられない完了条件は BLOCKING にしません。コメントに書き、Unity の分は「chat-main に残します」と書きます。
+
+## 仕上げ
+
+起動前の確認で、こうだいさんが「merge-round まで回す」を選んだ回だけ、すべてのブランチが終わった後に仕上げ役が 1 度だけ回します。手順は `merge-round` スキルの「work-finishers が回すとき」で、ここにはこのリポジトリの決まりを書きます。
+
+**承認の印がある回だけ回します。** chat-main は、こうだいさんが「merge-round まで回す」を選んだ回だけ、`issue-workflow` の手順 8 で `{{main}}/.git/merge-round/finisher-approved.json`（`{"approvedAt":"<ISO の時刻>"}`）を書きます。`hooks/merge-gate.mjs` は、印が無いか、読めないか、6 時間より古いと、work-finishers の `gh pr merge` を deny します。印は仕上げ役が書きません。
+
+**{{main}} で、`main` にいることを確かめてから始めます。** `cd {{main}} && git branch --show-current` が `main` でなければ、何もせずに報告します。続けて `git pull --ff-only` を打ちます。
+
+**plan はこの回の PR だけに絞ります。** `cd {{main}} && node .claude/scripts/merge-round.mjs plan --only {{prs}}` です。
+
+**merge は、`check` の直後に次の形を単独で打ちます。** 1 行目と 2 行目は別々の Bash で打ち、1 行目が exit 0 のときだけ 2 行目に進みます。
+
+```bash
+cd {{main}} && node .claude/scripts/merge-round.mjs check <n>
+gh pr merge <n> -R sunbreak-pro/original-card-battle --merge
+```
+
+`gh pr merge` の行は `cd` も `&&` も付けず、この形のまま打ちます。`hooks/merge-gate.mjs` が形の違うものに確認を出すためです。確認（ask）か拒否（deny）が返ったら、その PR は飛ばして理由を報告に書きます。打ち直しや、形を変えての回り道はしません。
+
+**`fixes` の前に、この回の PR を開いた `wf-*` の worktree を片付けます。** 対象は、{{prs}} のどれかの head のブランチを開いている `wf-*` です（`git -C {{main}} worktree list --porcelain` のブランチと `gh pr view <n> -R {{repo}} --json headRefName` を突き合わせます）。merge したものも、open のまま残ったものも含みます。
+
+1. 消す前に、その worktree の `.claude/comm/handoff/` を見ます。`ls <パス>/.claude/comm/handoff/ | grep -v '^_TEMPLATE\.md$'` で何か出たら、その worktree は消さずに残し、ファイル名を報告に並べます。申し送りは chat-main が Issue にします。仕上げ役は Issue を立てません。
+2. 何も出なければ `git -C C:/Users/user/orca/original-card-battle worktree remove <パス>` で消します。`--force` は付けません。失敗したら（追跡されないファイルが残っている・`Permission denied` など）、その出力を報告に書いて残します。
+
+{{prs}} に PR が無い `wf-*`（失敗した Issue の worktree）には触りません。直すか捨てるかは chat-main が決めます。
+
+申し送りがあって残した worktree は、`fixes` がレーンとして数えます。その PR が衝突していれば、出力の `/goal` はだれもいない worktree 宛てになり、4a の自動の直しからも外れます。報告では、その PR を「申し送りの回収後に chat-main が `fixes` を打ち直す」として並べます。
+
+**回を閉じたら、承認の印を消します。** `node .claude/scripts/merge-round.mjs finish` の後に `rm -f {{main}}/.git/merge-round/finisher-approved.json` を打ちます。`main` にいなかったときや、hook に止められて途中でやめたときも、報告の前に同じく消します。印が残ると、次の回の仕上げ役がこうだいさんの選択なしに merge できてしまうためです。
+
 ## 実行のあと
 
-chat-main が次の順に進めます。
+chat-main が次の順に進めます。仕上げ役が「仕上げ」を回した回では、4 のうち申し送りの無い worktree の片付けと、6 の merge を仕上げ役が済ませています。chat-main は残った分を進めます。
 
 1. **回の前に、全 worktree の申し送りを集めて Issue にしておきます。** 集め方は `.claude/comm/README.md` の「main がすること」です。集める前に回すと、まだ Issue になっていない課題がどの回にも載りません。
 2. **回の後にも、`wf-*` を含む全 worktree の申し送りを集めます。** 1 件ずつ `issue-dispatch` で Issue にするか既存の Issue にコメントし、処理したファイルを消します。
 3. **回の結果をこうだいさんに報告します。** 並べるのは、開いた PR、失敗した Issue とその理由、回さなかった Issue の内訳（chat-main 采配・audit・人手待ち・優先順位なし・親 Issue と、共通の除外の理由）です。
-4. **PR を開いた `wf-*` の worktree は、`merge-round` の `fixes` より前に必ず消します。** `handoff/` が空になったのを確かめてから、`git -C C:/Users/user/orca/original-card-battle worktree remove <パス>` で消します。ブランチは origin に残ります。
+4. **PR を開いた `wf-*` の worktree は、`merge-round` の `fixes` より前に必ず消します。** 仕上げ役が残した worktree（申し送りがあったもの）もここで扱います。`handoff/` が空になったのを確かめてから、`git -C C:/Users/user/orca/original-card-battle worktree remove <パス>` で消します。ブランチは origin に残ります。
 5. **失敗した `wf-*` は、直すか捨てるかを決めるまで残します。** 手元のブランチが残っているあいだ、その Issue は次の回で「着手済み（ブランチあり）」として外れます。
-6. **merge はこうだいさんが `merge-round` を起動したときに進めます。** `Refs` にした PR の Issue は、残った確認を chat-main が終えてから閉じます。
+6. **merge は `merge-round` の回で進めます。** 起動前の確認で「merge-round まで回す」を選んだ回は、仕上げ役が上の「仕上げ」で回します。選ばなかった回は、こうだいさんが `merge-round` を起動したときに進めます。`Refs` にした PR の Issue は、残った確認を chat-main が終えてから閉じます。
 7. **C# の変更が merge されたら、chat-main が main で `npm run unity:sync` を打ち、Unity Editor での手触りを確かめます。** 試運転はメインだけの決まりです。
 8. **回の記録は chat-main の tracker にまとめます。** ブランチは `chore/tracker-main-YYYYMMDD` で、1 commit にします。
 9. **merge 済みのブランチと残った worktree は、`finished-work` スキルでまとめて片付けます。**
