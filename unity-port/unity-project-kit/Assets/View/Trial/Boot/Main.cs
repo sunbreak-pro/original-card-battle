@@ -731,6 +731,9 @@ namespace Trial.Boot
                 },
                 OnError = err => BattleFailed(err),
                 OnFinished = onFinished,
+                // #910: the fight is settled the moment the core decides it (SettleWhenDecided), so by the win result card
+                // the encounter holds it and its 段 can be read before Return writes them.
+                RaisedOnWin = () => RaisedCards.OfLastFight(raw),
             };
         }
 

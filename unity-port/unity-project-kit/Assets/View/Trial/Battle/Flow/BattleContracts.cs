@@ -898,8 +898,13 @@ namespace Trial.Battle
         public string BarsLabel;
         public IReadOnlyList<ResultBar> Bars = Array.Empty<ResultBar>();
         public IReadOnlyList<string> Stats = Array.Empty<string>();
-        /// <summary>button: 手記へ (a loss); null for none.</summary>
+        /// <summary>button: 手記へ (a loss), 次へ (a win that raised a card's 段, #910); null for none.</summary>
         public string Button;
+        /// <summary>
+        /// A win's 「習熟が上がった札」 (battle-visual-v1 §5.6, #910): the cards the fight raised, in the order shown; empty
+        /// for none, and always for a loss (death takes the growth away).
+        /// </summary>
+        public IReadOnlyList<Trial.Bridge.RaisedCard> Raised = Array.Empty<Trial.Bridge.RaisedCard>();
     }
 
     /// <summary>

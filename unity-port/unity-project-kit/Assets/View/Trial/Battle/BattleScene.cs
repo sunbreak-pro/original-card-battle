@@ -64,6 +64,8 @@ namespace Trial.Battle
         public Action OnFinished;
         /// <summary>ctx.auto (dev / tests): the player plays itself.</summary>
         public BattleAuto Auto;
+        /// <summary>Unity addition (#910): the cards the fight just won raised, for the win result card (BattleCtx.RaisedOnWin).</summary>
+        public Func<IReadOnlyList<Trial.Bridge.RaisedCard>> RaisedOnWin;
         /// <summary>Where the scene's console.error goes (null: Debug.LogError / Debug.LogException).</summary>
         public IBattleLog Log;
 
@@ -375,6 +377,7 @@ namespace Trial.Battle
                 OnError = ctx.OnError,
                 OnFinished = ctx.OnFinished,
                 Auto = ctx.Auto,
+                RaisedOnWin = ctx.RaisedOnWin,
             };
         }
 

@@ -518,6 +518,24 @@ namespace Trial.Battle
         private const float PaperGap = 14f;
         private const float ButtonMarginTop = 18f;
 
+        // ---- Unity addition (#910): the win card's 「習熟が上がった札」 (battle-visual-v1 §5.6) ----
+        private const string RaisedHeadCss = "font: 700 18px/24px var(--font-body); color: #1d1a16; text-align: center;";
+        private const string RaisedStepsCss = "font: 700 24px/30px var(--font-mono); color: #1d1a16;";
+        private const string RaisedUnitCss = "font: 700 24px/30px var(--font-body); color: #1d1a16;";
+        private const string RaisedNamesCss = "font: 400 16px/22px var(--font-body); color: #1d1a16; text-align: center;";
+        private const string RaisedRestCss = "font: 400 16px/24px var(--font-body); color: #1d1a16; text-align: center;";
+        private const float RaisedMarginTop = 24f;
+        private const float RaisedHeadGap = 12f;
+        /// <summary>§5.6: the face at 80% (216×304 → 173×243), as §7.4's shrunk card.</summary>
+        private const float RaisedScale = 0.8f;
+        private const float RaisedFaceW = 173f;
+        private const float RaisedFaceH = 243f;
+        private const float RaisedFaceGap = 16f;
+        private const float RaisedUnderGap = 8f;
+        private const float RaisedRestGap = 12f;
+        /// <summary>§5.6 「多いとき」: the named-only cards take at most two lines; the rest is 「ほか n 枚」.</summary>
+        private const int RaisedRestLines = 2;
+
         private sealed class Fill
         {
             public UiNode Node;
@@ -582,6 +600,7 @@ namespace Trial.Battle
                 // .ocb-end takes no pointer (the layer's pointer-events: none); the paper does (pointer-events: auto)
                 if (end.Box) end.Box.raycastTarget = false;
                 if (end.Paper.Box) end.Paper.Box.raycastTarget = true;
+                if (i.Raised != null && i.Raised.Count > 0) AddRaised(end, i);
                 b.El = end.Root;
                 b.Paper = end.Paper.Node;
             }
@@ -702,22 +721,7 @@ namespace Trial.Battle
             // 手記へ
             if (!string.IsNullOrEmpty(i.Button))
             {
-                string css = Ocb.EndPaperButtonCss + ButtonCss;
-                RectTransform btn = Ocb.El(paper, "ocbg-battle-result-button ocbg-battle-hit", css);
-                BoxStyle bs = Ocb.BoxOf(css);
-                Insets bb = bs.BorderWidths, bp = bs.Padding;
-                TextStyle bt = Ocb.TextOf(inherit + css);
-                float tw = Ocb.TextWidth(i.Button, bt);
-                float w = tw + bp.Horizontal + bb.Horizontal, h = bt.LineHeightPx + bp.Vertical + bb.Vertical;
-                Label.Make(btn, i.Button, bt, bb.Left + bp.Left, bb.Top + bp.Top, null, null, "text");
-                // align-self: center
-                UiNode.Of(btn).Place(x0 + (innerW - w) * 0.5f, Start(ButtonMarginTop), w, h);
-                ClickArea area = ClickArea.On(btn);
-                BattleHitTag.Mark(btn);
-                area.Click += _ => _onButton?.Invoke();
-                // :focus-visible — Tab reaches it (see _scope); the press is btn.click()
-                _scope = Focus.PushScope("battle-result");
-                _scope.Add(btn, () => _onButton?.Invoke(), on => { if (btn) Ocb.Restyle(btn, css + (on ? ButtonFocusCss : "")); });
+                float h = Button(paper, i.Button, inherit, x0, innerW, Start(ButtonMarginTop), out RectTransform btn);
                 b.Items.Add(UiNode.Of(btn));
                 y += h;
             }
@@ -725,6 +729,139 @@ namespace Trial.Battle
             float paperH = Math.Max(LostH, y + pad.Bottom + bw.Bottom);
             // .ocb-end centres the paper
             UiNode.Of(paper).Place((L.W - LostW) * 0.5f, (L.H - paperH) * 0.5f, LostW, paperH);
+        }
+
+        /// <summary>
+        /// The paper's button (「手記へ」, or the win card's 「次へ」 #910) at <paramref name="y"/>, centred: a click or its
+        /// focus press calls onButton. Returns its height.
+        /// </summary>
+        private float Button(RectTransform paper, string label, string inherit, float x0, float innerW, float y, out RectTransform btn)
+        {
+            string css = Ocb.EndPaperButtonCss + ButtonCss;
+            RectTransform el = Ocb.El(paper, "ocbg-battle-result-button ocbg-battle-hit", css);
+            btn = el;
+            BoxStyle bs = Ocb.BoxOf(css);
+            Insets bb = bs.BorderWidths, bp = bs.Padding;
+            TextStyle bt = Ocb.TextOf(inherit + css);
+            float tw = Ocb.TextWidth(label, bt);
+            float w = tw + bp.Horizontal + bb.Horizontal, h = bt.LineHeightPx + bp.Vertical + bb.Vertical;
+            Label.Make(el, label, bt, bb.Left + bp.Left, bb.Top + bp.Top, null, null, "text");
+            // align-self: center
+            UiNode.Of(el).Place(x0 + (innerW - w) * 0.5f, y, w, h);
+            ClickArea area = ClickArea.On(el);
+            BattleHitTag.Mark(el);
+            area.Click += _ => _onButton?.Invoke();
+            // :focus-visible — Tab reaches it (see _scope); the press is btn.click()
+            _scope = Focus.PushScope("battle-result");
+            _scope.Add(el, () => _onButton?.Invoke(), on => { if (el) Ocb.Restyle(el, css + (on ? ButtonFocusCss : "")); });
+            return h;
+        }
+
+        /// <summary>
+        /// Unity addition (#910, battle-visual-v1 §5.6): under the win paper's lines, 「習熟が上がった札」 — up to
+        /// <see cref="Trial.Bridge.RaisedCards.FacesMax"/> faces at 80% with 「1 → 2 段目」 and 「旧名 → 新名」 under each, the
+        /// rest named in two lines at most — then 「次へ」, which the player waits on (battle_ui_ux_v2 §5.19). The paper grows
+        /// to hold it and stays centred.
+        /// </summary>
+        private void AddRaised(OcbEnd end, ResultInfo i)
+        {
+            RectTransform paper = end.Paper.Root;
+            BoxStyle ps = end.Paper.Box.Style;
+            Insets bw = ps.BorderWidths, pad = ps.Padding;
+            float innerW = end.Paper.W - bw.Horizontal - pad.Horizontal;
+            float x0 = bw.Left + pad.Left;
+            float y = bw.Top + pad.Top;
+            var texts = new List<TMP_Text>(end.Paragraphs) { end.Title };
+            foreach (TMP_Text t in texts)
+            {
+                if (!t) continue;
+                UiNode n = UiNode.Of(t.rectTransform);
+                y = Math.Max(y, n.Y + n.H);
+            }
+            string inherit = Ocb.EndPaperCss;
+
+            y += RaisedMarginTop;
+            TextStyle hs = Ocb.TextOf(inherit + RaisedHeadCss);
+            float hh = Ocb.TextHeight(BattlePlayer.ResultText.RaisedHead, hs, innerW);
+            Label.Make(paper, BattlePlayer.ResultText.RaisedHead, hs, x0, y, innerW, hh, "ocbg-battle-result-raised-head");
+            y += hh + RaisedHeadGap;
+
+            int faces = Math.Min(Trial.Bridge.RaisedCards.FacesMax, i.Raised.Count);
+            float rowW = faces * RaisedFaceW + (faces - 1) * RaisedFaceGap;
+            float fx = x0 + (innerW - rowW) * 0.5f;
+            TextStyle steps = Ocb.TextOf(inherit + RaisedStepsCss);
+            TextStyle unit = Ocb.TextOf(inherit + RaisedUnitCss);
+            TextStyle names = Ocb.TextOf(inherit + RaisedNamesCss);
+            float rowBottom = y;
+            for (int k = 0; k < faces; k++)
+            {
+                Trial.Bridge.RaisedCard card = i.Raised[k];
+                float cx = fx + k * (RaisedFaceW + RaisedFaceGap);
+                RectTransform slot = Ui.Div(paper, "ocbg-battle-result-raised-card", cx, y, RaisedFaceW, RaisedFaceH);
+                UiNode.Of(slot);
+                try
+                {
+                    CardFaceView face = HandCard.BuildCard(card.Face, slot);
+                    face.Node.SetOrigin(0f, 0f).Scale = RaisedScale;
+                }
+                catch (Exception e)
+                {
+                    // A face that cannot be drawn leaves its slot empty; the lines under it still name the card.
+                    Debug.LogException(e);
+                }
+                float ly = y + RaisedFaceH + RaisedUnderGap;
+                // 「1 → 2 段目」: the numbers in the mono face, 「段目」 in the body face, centred as one line
+                string numbers = BattlePlayer.ResultText.RaisedSteps(card.From, card.To);
+                string unitText = BattlePlayer.ResultText.RaisedStepsUnit;
+                float w1 = Ocb.TextWidth(numbers, steps), w2 = Ocb.TextWidth(unitText, unit);
+                float sx = cx + (RaisedFaceW - w1 - w2) * 0.5f;
+                Label.Make(paper, numbers, steps, sx, ly, w1, steps.LineHeightPx, "ocbg-battle-result-raised-steps");
+                Label.Make(paper, unitText, unit, sx + w1, ly, w2, unit.LineHeightPx, "ocbg-battle-result-raised-unit");
+                ly += steps.LineHeightPx;
+                string renamed = BattlePlayer.ResultText.RaisedNames(card.Was, card.Name);
+                if (renamed != null)
+                {
+                    // §5.6: a change of name too wide for the face breaks before the arrow
+                    if (Ocb.TextWidth(renamed, names) > RaisedFaceW) renamed = renamed.Replace(" → ", "\n→ ");
+                    float nh = Ocb.TextHeight(renamed, names, RaisedFaceW);
+                    Label.Make(paper, renamed, names, cx, ly, RaisedFaceW, nh, "ocbg-battle-result-raised-names");
+                    ly += nh;
+                }
+                rowBottom = Math.Max(rowBottom, ly);
+            }
+            y = rowBottom;
+
+            if (i.Raised.Count > faces)
+            {
+                TextStyle rs = Ocb.TextOf(inherit + RaisedRestCss);
+                var shown = new List<string>();
+                int left = i.Raised.Count - faces;
+                for (int k = faces; k < i.Raised.Count; k++)
+                {
+                    shown.Add(i.Raised[k].Name);
+                    string tryText = BattlePlayer.ResultText.RaisedRest(shown, left - 1);
+                    if (shown.Count > 1 && Ocb.TextHeight(tryText, rs, innerW) > rs.LineHeightPx * RaisedRestLines)
+                    {
+                        shown.RemoveAt(shown.Count - 1);
+                        break;
+                    }
+                    left--;
+                }
+                string rest = BattlePlayer.ResultText.RaisedRest(shown, left);
+                float rh = Ocb.TextHeight(rest, rs, innerW);
+                y += RaisedRestGap;
+                Label.Make(paper, rest, rs, x0, y, innerW, rh, "ocbg-battle-result-raised-rest");
+                y += rh;
+            }
+
+            if (!string.IsNullOrEmpty(i.Button))
+            {
+                y += ButtonMarginTop;
+                y += Button(paper, i.Button, inherit, x0, innerW, y, out _);
+            }
+
+            float paperH = y + pad.Bottom + bw.Bottom;
+            end.Paper.Node.Place((L.W - end.Paper.W) * 0.5f, (L.H - paperH) * 0.5f, null, paperH);
         }
 
         // js: scenes/battle/hud/chrome.js:325
