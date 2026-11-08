@@ -28,6 +28,28 @@ fi
 printf '%s' "$COMMAND" | grep -qE '(^|[;&|(])[[:space:]]*gh[[:space:]]([^;&|]*[[:space:]])?issue[[:space:]]+create([[:space:]]|$)' || exit 0
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+
+# The checks below read the session's own checkout. A subagent of chat-main (Agent tool or
+# Workflow) shares it and would pass, so stop it here by agent_id, and also stop a command that
+# cds into a lane worktree first (issue-workflow trial, 2026-11-08).
+if command -v node >/dev/null 2>&1; then
+  IFS=$'\x1f' read -r AGENT KNOWN _DIR _TOP LINKED AT_NAME < <(printf '%s' "$INPUT" | node "$(dirname "$0")/lib/hook-context.mjs" issue-create "$REPO_ROOT" 2>/dev/null || true)
+  if [ -n "${AGENT:-}" ]; then
+    {
+      echo "[pre-issue-create-guard] BLOCKED: サブエージェントは Issue を立てません。Issue を立てるのは chat-main だけです。"
+      echo "  Issue にしてほしい課題は、結果の notes に書いてメインのチャットに返してください。"
+    } >&2
+    exit 2
+  fi
+  if [ "${KNOWN:-0}" = "1" ] && [ "${LINKED:-0}" = "1" ] && [ "${AT_NAME:-}" != "main" ]; then
+    {
+      echo "[pre-issue-create-guard] BLOCKED: レーンの worktree（.session-name = '${AT_NAME:-未宣言}'）の中から Issue を立てようとしています。"
+      echo "  Issue を立てるのは chat-main だけです。chat-main なら cd を外して、自分の作業フォルダから打ってください。"
+    } >&2
+    exit 2
+  fi
+fi
+
 NAME="$(tr -d '[:space:]' < "$REPO_ROOT/.claude/comm/.session-name" 2>/dev/null || true)"
 [ "$NAME" = "main" ] && exit 0
 

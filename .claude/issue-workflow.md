@@ -14,6 +14,7 @@
   "maxImplementers": 3,
   "maxIssuesPerRun": 8,
   "minFreeGb": 6,
+  "baselineFailures": "allow",
   "mergePolicy": "merge するのはこうだいさんが chat-main で merge-round を起動した回だけです。hooks/merge-gate.mjs が回の外の gh pr merge に確認を出します。実装役と確認役は merge しません。"
 }
 ```
@@ -101,7 +102,8 @@
 | `src/` の TypeScript / TSX | `npm run build`、`npm run lint`、`npm run test:run -- --maxWorkers=2 <変えたディレクトリ>` |
 | `unity-port/` の C#（`.cs` `.asmdef`） | 変えたアセンブリのテスト `dotnet test unity-port/<名前>.Tests/<名前>.Tests.csproj -p:UseSharedCompilation=false --disable-build-servers`。テストの無いアセンブリ（`Journal.Script` など）は `dotnet build unity-port/<名前>/<名前>.csproj -p:UseSharedCompilation=false --disable-build-servers`。続けて `npm run unity:check -- --allow-leftovers --allow-unbuilt` |
 | `scripts/*.mjs` | `npm run issues:test` |
-| `.claude/scripts/*.mjs` `.claude/hooks/*.mjs` | `node --check <ファイル>`。テストは無いので、変えた分岐を手で 1 回動かして notes に書きます |
+| `.claude/scripts/*.mjs` | `node --check <ファイル>`。テストは無いので、変えた分岐を手で 1 回動かして notes に書きます |
+| `.claude/hooks/` | `node --test ".claude/hooks/__tests__/*.test.mjs"` |
 | Markdown | `npm run md:tables -- <変えた .md>` で表の空白を詰め、`npm run md:tables -- --check` |
 | `.claude/docs/SOURCES.md` か、正本の追加・退役・持ち主の変更 | `npm run sources -- --check` |
 
@@ -131,6 +133,7 @@
 6. `npm run md:tables -- --check`
 7. `npm run issues:test`
 8. ブランチが `unity-port/` の `.cs` か `.asmdef` を変えたときだけ、`npm run unity:check -- --allow-leftovers --allow-unbuilt`
+9. ブランチが `.claude/hooks/` を変えたときだけ、`node --test ".claude/hooks/__tests__/*.test.mjs"`
 
 8 を足すのは、Unity の NUnit 3.5 と netstandard2.1 にだけ無い API が、`dotnet test` では見つからないためです。
 
@@ -143,6 +146,8 @@
 `.claude/docs/SOURCES.md` と `.claude/docs/known-issues/` は、台帳の行に無いので上の突き合わせには引っかかりません。Issue が台帳の行の変更や既知の課題の記録を求めているときだけ、変えてよいものとします。Issue が求めていないのに変えていれば失敗です。
 
 **合格の条件は、上のコマンドがすべて exit 0 で、書き手の確認に引っかかるものが無いことです。** 例外は `unity:check` の exit 2（Unity のビルドの記録が無く確かめられない）で、合格に数えます。そのときは「Unity での確認は chat-main に残す」と理由を記録します。
+
+**origin/main でも同じく落ちる失敗は、PR を止めません。** 設定値の `baselineFailures` を `allow` にしているので、落ちたコマンドをすべて origin/main の使い捨ての worktree でも打ち、同じテスト名で落ちたものだけなら PR を開きます。本文には「Failing on origin/main too」の節を足します。2026-11-08 の試験で、main の `MasteryProfilesTests` の 1 件のために 3 本の PR がすべて止まったためです。
 
 この PC には dotnet SDK 10.0.302 が入っています（2026-11-08 に `dotnet --version` で確認）。`dotnet` が見つからない環境では、`dotnet test` を失敗に数え、`unity-port/README.md` の導入手順を報告に書きます。C# を変えていないブランチでも同じです。origin/main の C# がこのリポジトリの検証の土台だからです。
 
