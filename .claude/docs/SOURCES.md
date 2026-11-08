@@ -49,7 +49,7 @@ worktree ごとに設計書のコピーを持つので、main を取り込んで
 
 | 主題 | 正本 | 持ち主 | 状態 | 読むレーン |
 | --- | --- | --- | --- | --- |
-| カード（剣士 80 種） | `.claude/docs/card_document/swordsman_cards_v4.md` | cards | 現行 | battle, design |
+| カード（剣士） | `.claude/docs/card_document/swordsman_cards_v4.md` | cards | 現行 | battle, design |
 | 敵の数値とロースター | `.claude/docs/enemy_document/enemy_roster_v4.md` | cards | DRAFT | battle, design |
 
 ### dungeon が書く正本
