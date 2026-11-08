@@ -192,6 +192,7 @@ CI を設定したあとだけ起きる。`plan` が終了コード 3 で止ま�
 
 - GitHub の `mergeable` は merge の直後しばらく `UNKNOWN` になる。plan と fixes は手元の `git merge-tree` で衝突を決め、`check` だけが GitHub の値を最大 60 秒待つ。
 - merge 済みの判定は `gh pr view` の state で行う（`worktree-policy`）。
+- hook はコマンドとして打った `gh pr merge` だけを判定する（`lib/hook-context.mjs` の `runsTarget`）。2026-11-08 までは文字列のどこかに語があれば判定に入り、grep や報告書の HTML を書くコマンドにも「merge-round の形と違う」の確認を出していた（その日の確認 11 件はすべてこれだった）。`bash -c` `eval` `$(...)` の中と、`for` の `do` の後ろは読む。
 - レーンとして数える worktree は `C:\Users\user\orca\workspaces\original-card-battle\<slug>` だけ。リポジトリの中の `.claude/worktrees/`（サブエージェントと Workflow の一時 worktree）は数えない。
 - 状態は `.git/merge-round/` にあり、commit されない。回は 2 時間で切れ、切れた後の merge は hook が確認を出す。
 - settings.json には `gh pr merge` の allow も ask も置かない。ask を置くと hook の allow が効かず（Claude Code の仕様）、allow を置くと hook が落ちたときに素通りするためです。

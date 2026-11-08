@@ -24,6 +24,26 @@ export function toNativePath(p) {
   return p;
 }
 
+/**
+ * Drops heredoc bodies. A report or PR body written through `cat <<'EOF'` often quotes commands such as
+ * `gh pr merge`, and its lines would otherwise read as commands of their own.
+ */
+export function stripHeredocs(command) {
+  const out = [];
+  const pending = [];
+  for (const line of command.split("\n")) {
+    if (pending.length) {
+      if (line.trim() === pending[0]) pending.shift();
+      continue;
+    }
+    out.push(line);
+    const re = /(?<!<)<<-?\s*(['"]?)([A-Za-z_][\w-]*)\1/g;
+    let m;
+    while ((m = re.exec(line))) pending.push(m[2]);
+  }
+  return out.join("\n");
+}
+
 /** Splits on && || ; | & and newlines outside quotes. Rough on purpose: it only has to find cd and the target. */
 export function segments(command) {
   const out = [];
@@ -80,11 +100,78 @@ function gitSub(w) {
   return { sub: w[i], cDirs };
 }
 
+// Words that can stand in front of the real command of a segment: loop and if bodies, groups, and wrappers.
+const PREFIX_WORDS = new Set(["do", "then", "else", "{", "!", "time", "command", "exec", "nohup"]);
+
+/** words() of a segment without the shell keywords and wrappers in front, so `do gh pr merge $n` reads as gh. */
+export function commandWords(segment) {
+  const w = words(segment);
+  while (w.length && PREFIX_WORDS.has(w[0])) w.shift();
+  if (w.length && /^(\$\(|`)/.test(w[0])) w[0] = w[0].replace(/^(\$\(|`)+/, "");
+  return w.filter((x) => x !== "");
+}
+
 const TARGETS = {
   commit: (w) => w[0] === "git" && gitSub(w).sub === "commit",
   "issue-create": (w) => w[0] === "gh" && w.includes("issue") && w[w.indexOf("issue") + 1] === "create",
   "pr-merge": (w) => w[0] === "gh" && w.includes("pr") && w[w.indexOf("pr") + 1] === "merge",
 };
+
+const SHELLS = new Set(["bash", "sh", "zsh", "eval"]);
+
+/** The insides of $(...) and `...` that the shell runs: those outside single quotes. */
+function substitutions(text) {
+  const out = [];
+  let single = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === "'" && !single) {
+      // A ' inside "..." is literal; count double quotes before it to tell.
+      const before = text.slice(0, i).split('"').length - 1;
+      if (before % 2 === 0) single = true;
+      continue;
+    }
+    if (single) {
+      if (c === "'") single = false;
+      continue;
+    }
+    if (c === "$" && text[i + 1] === "(") {
+      let depth = 1;
+      let j = i + 2;
+      for (; j < text.length && depth; j++) {
+        if (text[j] === "(") depth++;
+        else if (text[j] === ")") depth--;
+      }
+      out.push(text.slice(i + 2, depth ? j : j - 1));
+      i = j - 1;
+    } else if (c === "`") {
+      const j = text.indexOf("`", i + 1);
+      out.push(text.slice(i + 1, j < 0 ? text.length : j));
+      i = j < 0 ? text.length : j;
+    }
+  }
+  return out;
+}
+
+/**
+ * Whether the command runs the target as a command, not as text. A grep pattern, a node -e script, an echo,
+ * a commit message or a heredoc body that only mentions `gh pr merge` does not count (merge-gate asked about
+ * 10 such commands on 2026-11-08). `bash -c "..."`, `eval` and `$(...)` are read inside, so wrapping the
+ * command does not slip past the guard.
+ */
+export function runsTarget(command, kind, depth = 0) {
+  const isTarget = TARGETS[kind];
+  if (!isTarget || depth > 3) return false;
+  const text = stripHeredocs(command);
+  if (substitutions(text).some((s) => runsTarget(s, kind, depth + 1))) return true;
+  for (const seg of segments(text)) {
+    const w = commandWords(seg);
+    if (!w.length) continue;
+    if (isTarget(w)) return true;
+    if (SHELLS.has(w[0]) && w.slice(1).some((x) => !x.startsWith("-") && runsTarget(x, kind, depth + 1))) return true;
+  }
+  return false;
+}
 
 function resolveDir(base, p) {
   if (p === undefined || /[$`*?]/.test(p)) return null;
@@ -101,8 +188,8 @@ export function effectiveDir(command, startDir, kind) {
   const isTarget = TARGETS[kind];
   let dir = startDir;
   let known = true;
-  for (const seg of segments(command)) {
-    const w = words(seg);
+  for (const seg of segments(stripHeredocs(command))) {
+    const w = commandWords(seg);
     if (!w.length) continue;
     if (isTarget && isTarget(w)) {
       if (w[0] === "git") {

@@ -284,7 +284,7 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 | PreToolUse(Bash) | `pre-commit-index-guard.sh` | 生成物 `INDEX.md` の commit 混入を自動除外 |
 | PreToolUse(Bash) | `pre-commit-tracker-guard.sh` | tracker と実装の同梱コミットをブロック。index は、コマンドが `cd` か `git -C` で指した repo のものを見る |
 | PreToolUse(Bash) | `pre-issue-create-guard.sh` | `.session-name` が `main` でないチャットの `gh issue create` をブロック。サブエージェント（hook の入力に `agent_id` がある）と、`cd` でレーンの worktree に入ってから打つものもブロック |
-| PreToolUse(Bash) | `merge-gate.mjs` | `gh pr merge` を振り分ける。worktree・サブエージェント・`cd` でレーンに入ったコマンドからは deny、chat-main の `merge-round` の回で `check` を通った PR だけ allow、それ以外は ask |
+| PreToolUse(Bash) | `merge-gate.mjs` | `gh pr merge` を振り分ける。worktree・サブエージェント・`cd` でレーンに入ったコマンドからは deny、chat-main の `merge-round` の回で `check` を通った PR だけ allow、それ以外は ask。コマンドとして打った `gh pr merge` だけを見て、grep・報告書・heredoc・コミットの文に語が出るだけのものは判定しない |
 
 3 つの hook がコマンドの `cd` を読むのは、Workflow のエージェントが main の checkout から Bash を始め、`cd <worktree> && ...` で作業フォルダに移るためです（2026-11-08 の issue-workflow の試験）。読む部品は `.claude/hooks/lib/hook-context.mjs`、テストは `node --test ".claude/hooks/__tests__/*.test.mjs"` です。
 

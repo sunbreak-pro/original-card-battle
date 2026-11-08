@@ -12,7 +12,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { hookContext } from "./lib/hook-context.mjs";
+import { hookContext, runsTarget } from "./lib/hook-context.mjs";
 
 // このリポジトリは merge commit で履歴を残す（squash ではない）ので、形も --merge に固定する
 const SHAPE = /^\s*gh\s+pr\s+merge\s+(\d+)\s+-R\s+sunbreak-pro\/original-card-battle\s+--merge\s*$/;
@@ -32,7 +32,16 @@ try {
   process.exit(0);
 }
 const command = String(input?.tool_input?.command ?? "");
-if (!/\bgh\s+pr\s+merge\b/.test(command)) process.exit(0);
+// Judge only commands that run `gh pr merge`. A plain text match asked about greps, reports and hook tests
+// that merely mention it, and every such prompt read "merge-round の形と違う" (2026-11-08, 10 of 10 asks).
+// If the parser throws, fall back to the text match so a merge is never waved through.
+let runs;
+try {
+  runs = runsTarget(command, "pr-merge");
+} catch {
+  runs = /\bgh\s+pr\s+merge\b/.test(command);
+}
+if (!runs) process.exit(0);
 
 try {
   // input.cwd is the main checkout for chat-main's subagents too, so the worktree check below misses
