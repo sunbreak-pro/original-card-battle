@@ -11,9 +11,9 @@ namespace BattleCore
     /// every battle is handed its width (<see cref="BattleSetup.FieldCells"/>).
     ///
     /// Gone from v3 and deliberately not replaced: T0_ATTACK_POWER, MIN_INVEST_ZERO_KINDS,
-    /// RANGE_MULT, STATUS_SLOTS, STATUS_STACK_MAX and DESPERATE_MULT (§10 廃止した定数). The miasma
-    /// max-stamina penalty left with them: it belongs to the exploration layer (#99) and the
-    /// in-battle exception is a boss status (#50).
+    /// RANGE_MULT, STATUS_SLOTS, STATUS_STACK_MAX and DESPERATE_MULT (§10 廃止した定数). The max
+    /// stamina has no gauge-based penalty (the miasma gauge was dropped, #889); the only in-battle
+    /// exception that lowers it is a boss status (#50).
     /// </summary>
     public static class Constants
     {

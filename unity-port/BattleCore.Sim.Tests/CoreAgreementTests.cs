@@ -30,15 +30,6 @@ public class CoreAgreementTests
     }
 
     [Test]
-    public void TheMaxStaminaAtEveryGauge_IsTheSameOnBothSides()
-    {
-        for (int percent = 0; percent <= 99; percent++)
-        {
-            Assert.That(Miasma.MaxStamina(0, percent), Is.EqualTo(Chain.MaxStaminaAt(percent)), $"瘴気 {percent}%");
-        }
-    }
-
-    [Test]
     public void TheSeededGenerators_DrawTheSameSequenceFromTheSameSeed()
     {
         foreach (int seed in new[] { 0, 1, 12345, int.MaxValue, -1 })
