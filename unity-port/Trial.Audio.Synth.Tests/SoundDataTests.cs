@@ -11,6 +11,14 @@ namespace Trial.Audio.Synth.Tests
 {
     public class SoundDataTests
     {
+        // Where the C# ambience text departs from the JS on purpose (TRIAL-PORT.md "Where this port departs from the JS"). The
+        // JS lives on the trial's own branch, outside this repo's main, so golden.json stays the JS's and these cells are held apart.
+        // #947: layer 5's place was renamed 血染めの死海 -> 暗き死海 in world-v1 v5.3.
+        private static readonly Dictionary<string, string> UnityPlaceDepartures = new Dictionary<string, string>
+        {
+            ["layer5"] = "暗き死海",
+        };
+
         [Test]
         public void NamesAndOrderEqualTheJs()
         {
@@ -139,9 +147,23 @@ namespace Trial.Audio.Synth.Tests
                 JsonElement j = p.Value;
                 AmbienceDef c = SoundData.AmbienceDefs[p.Name];
                 Assert.That(Keys(j), Is.EquivalentTo(new[] { "label", "place", "surface", "level", "room", "desc" }), p.Name);
-                Assert.That(new[] { c.Label, c.Place, c.Surface, c.Desc }, Is.EqualTo(new[] { "label", "place", "surface", "desc" }.Select(k => j.GetProperty(k).GetString()).ToArray()), p.Name);
+                string place = UnityPlaceDepartures.TryGetValue(p.Name, out string own) ? own : j.GetProperty("place").GetString();
+                Assert.That(new[] { c.Label, c.Place, c.Surface, c.Desc },
+                    Is.EqualTo(new[] { j.GetProperty("label").GetString(), place, j.GetProperty("surface").GetString(), j.GetProperty("desc").GetString() }), p.Name);
                 Assert.That(c.Level, Is.EqualTo(j.GetProperty("level").GetDouble()), p.Name + ".level");
                 Assert.That(c.Room, Is.EqualTo(j.GetProperty("room").GetDouble()), p.Name + ".room");
+            }
+        }
+
+        [Test]
+        public void EveryPlaceDeparture_HoldsItsOwnText_AndStillDiffersFromTheJs()
+        {
+            JsonElement defs = Data.GetProperty("ambienceDefs");
+            foreach (KeyValuePair<string, string> pair in UnityPlaceDepartures)
+            {
+                Assert.That(SoundData.AmbienceDefs[pair.Key].Place, Is.EqualTo(pair.Value), pair.Key);
+                // When the JS catches up and the golden is regenerated, the departure is no longer one: drop it.
+                Assert.That(defs.GetProperty(pair.Key).GetProperty("place").GetString(), Is.Not.EqualTo(pair.Value), pair.Key + " is the JS again");
             }
         }
 
