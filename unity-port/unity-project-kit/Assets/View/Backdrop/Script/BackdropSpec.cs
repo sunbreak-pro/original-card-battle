@@ -383,7 +383,7 @@ namespace Backdrop
                 },
                 Tile = Rgba.Bytes(14, 16, 28, 0.84f),
             },
-            // 5 暗き死海 (renamed from 血染めの死海 in world-v1 v5.3; its colours stay), a little below layer 3 (#916): crimson (never
+            // 5 暗き死海 (renamed in world-v1 v5.3; its colours stay), a little below layer 3 (#916): crimson (never
             // orange) scattered light over a dried sea bed, salt white at the horizon. A giant pair of ribs
             // arches over the floor like a gate, faint ribs stand far off in the haze, a soft salt flat lies along the shore and its
             // salt crusts white along the horizon.

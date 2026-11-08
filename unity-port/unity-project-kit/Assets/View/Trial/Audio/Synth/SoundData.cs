@@ -247,7 +247,7 @@ namespace Trial.Audio.Synth
             ["layer2"] = new AmbienceDef("第 2 層", "■■の秘跡", "sand", level: 0.87, room: 0.55, "柱列を抜ける風の共鳴、流れる砂、石の低い唸り、芽を出す結晶"),
             ["layer3"] = new AmbienceDef("第 3 層", "大黒蛇の住処", "damp", level: 0.5, room: 0.7, "大蛇の呼吸に合わせて膨らむ低い空気、湿った雫、とぐろが壁を擦る"),
             ["layer4"] = new AmbienceDef("第 4 層", "輝晶の間", "glass", level: 1.2, room: 0.6, "結晶のかすかな唸りの重なり、光の薄い擦れ、ゆっくり膨らむ結晶の音"),
-            ["layer5"] = new AmbienceDef("第 5 層", "血染めの死海", "salt", level: 0.81, room: 0.3, "干上がった海床の乾いた風、肋骨を抜ける笛のような風、塩の爆ぜ、遠い唸り"),
+            ["layer5"] = new AmbienceDef("第 5 層", "暗き死海", "salt", level: 0.81, room: 0.3, "干上がった海床の乾いた風、肋骨を抜ける笛のような風、塩の爆ぜ、遠い唸り"),
             ["layer6"] = new AmbienceDef("第 6 層", "獄雷峡", "gravel", level: 0.86, room: 0.5, "谷を下る風、崖を走る獄雷の爆ぜと遠い雷鳴、黒く低い響き"),
             ["layer7"] = new AmbienceDef("第 7 層", "果てなき世界", "void", level: 0.57, room: 0.8, "空洞の圧、うなりを持つ低い二音、湧き口の上下、沈んでいく瘴気の息"),
         };

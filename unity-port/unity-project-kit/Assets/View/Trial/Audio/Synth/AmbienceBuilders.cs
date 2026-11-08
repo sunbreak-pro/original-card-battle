@@ -334,7 +334,7 @@ namespace Trial.Audio.Synth
         }
 
         /// <summary>
-        /// js: scenes/audio/Audio.js:925 5 血染めの死海 — the dried red sea bed: dry gusts, wind whistling through the giant ribs, the
+        /// js: scenes/audio/Audio.js:925 5 暗き死海 (the JS names it otherwise; world-v1 v5.3 renamed it, #947) — the dried red sea bed: dry gusts, wind whistling through the giant ribs, the
         /// salt crust crackling, something huge groaning far away.
         /// </summary>
         public static void Layer5(AmbienceKit K)
