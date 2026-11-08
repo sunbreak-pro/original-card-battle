@@ -197,7 +197,7 @@ cd {{worktree}} && npm run dev -- --host 127.0.0.1 --port 5273 --strictPort
 
 `--strictPort` を付けるのは、5273 がふさがっていたときに別のポートへ逃げず、起動に失敗させるためです。`--host 127.0.0.1` を付けるのは、Windows で `localhost` が IPv6 の `::1` に向くと、ブラウザと待ち合わせのコマンドがつながらないことがあるためです。
 
-**答えるまで待ってから、ブラウザを開きます。** 次のコマンドは最大 60 秒待ち、答えれば exit 0 で返ります。0 以外なら起動に失敗したので、dev サーバーの出力を PR のコメントに写し、BLOCKING として扱います。
+**答えるまで待ってから、ブラウザを開きます。** 次のコマンドは最大 60 秒待ち、答えれば exit 0 で返ります。0 以外なら起動に失敗したので、dev サーバーを止め、その出力を PR のコメントに写して、動作確認を見送り（skipped）にします。全体確認の `npm run build` は通っているので、起動の失敗は環境のせいのことが多く、PR を止める理由にはしないためです。
 
 ```bash
 curl -sf -o /dev/null --retry 60 --retry-delay 1 --retry-connrefused http://127.0.0.1:5273/
@@ -208,12 +208,14 @@ curl -sf -o /dev/null --retry 60 --retry-delay 1 --retry-connrefused http://127.
 **確かめ終えたら、必ず dev サーバーを止めます。** 失敗したときも、途中でやめたときも止めます。止め方はポートで探して止める次のコマンドです。打ったあと、上の「空いているか」のコマンドで何も出なくなったことを確かめ、PR のコメントに 1 行書きます。
 
 ```bash
-C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 5273 -State Listen | Select-Object -ExpandProperty OwningProcess | Stop-Process -Force"
+C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 5273 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id \$_ -Force }"
 ```
+
+`Stop-Process` に PID を `-Id` で渡すのは、数のまま pipe でつなぐと `-InputObject` に結び付いて失敗するためです。
 
 **BLOCKING にするのは、次のどれかに当たるときです。**
 
-- dev サーバーが起動しない、または画面が真っ白か、エラーの画面（`ErrorBoundary`）になる。
+- 画面が真っ白か、エラーの画面（`ErrorBoundary`）になる。
 - Issue の完了条件のうち、Vite の画面で確かめられる項目が満たされていない。
 - 変更した画面へ、画面の操作でたどり着けない。
 - 変更した画面を開いたときか操作したときに、ブラウザのコンソールに捕まえられていないエラーが出る。
