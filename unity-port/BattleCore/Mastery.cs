@@ -100,16 +100,19 @@ namespace BattleCore
                 new Trait(TraitCondition.FirstPlay, TraitEffect.Draw, 1),
             });
 
-        /// <summary>The fifty-three profiles of swordsman_cards_v4.md §4.7 (v4.10, #824), in canon order (#2 first, #76 last).</summary>
+        /// <summary>
+        /// The forty-seven profiles of swordsman_cards_v4.md §4.7 (v4.11, #830), in canon order (#2 first, #76 last). The six
+        /// cards v4.11 dropped that had a profile (#7 / #15 / #20 / #59 / #62 / #70) are still in the catalogue until #898 takes
+        /// them out; they no longer rise.
+        /// </summary>
         public static readonly IReadOnlyList<MasteryProfile> All = new[]
         {
-            // §2: the initial thirty-five.
+            // §2: the initial thirty-two (the catalogue still holds thirty-five until #898).
             Extend(CardCatalog.KesaCut, "深袈裟", "重ね袈裟", "断ち袈裟"),
             Extend(CardCatalog.Overhead, "天上段", "雷落とし", "天墜"),
             Extend(CardCatalog.WristCut, "鋭い小手", "小手砕き", "腕断ち"),
             Extend(CardCatalog.SideSweep, "大横薙ぎ", "渦薙ぎ", "断界"),
             ReadingPath(CardCatalog.FlatStrike, "峰返し", "峰崩し", "峰砕き"),
-            Extend(CardCatalog.ProbeThrust, "読み突き", "見抜き突き", "先の突き"),
             Extend(CardCatalog.Pierce, "芯崩し", "軸砕き", "崩落"),
             Extend(CardCatalog.ThrowBlade, "飛刃", "双飛刃", "流星刃"),
             Extend(CardCatalog.ReachThrust, "長伸び突き", "遠当て突き", "千里突き"),
@@ -117,10 +120,8 @@ namespace BattleCore
             Extend(CardCatalog.IronBlock, "鋼の受け", "鉄城の受け", "不壊の受け"),
             Extend(CardCatalog.LowGuard, "沈みの構え", "地の構え", "根張りの構え"),
             Extend(CardCatalog.RiposteGuard, "返し受け", "巻き受け", "鉄心受け"),
-            Extend(CardCatalog.DeepBreath, "長い呼吸", "静かな呼吸", "不動の呼吸"),
             Lighten(CardCatalog.WaterStance, "流水の構え", "静水の構え", "止水の構え"),
             Lighten(CardCatalog.FirstAid, "早手当て", "熟し手当て", "一息手当て"),
-            ReadingPath(CardCatalog.SpiritRoar, "気当て", "威気", "覇気"),
             Lighten(CardCatalog.Focus, "一念", "専心", "無心"),
             Observe,
             Reform(CardCatalog.WarCry, "鬨の叫び", "鬨の轟き", "天地の鬨",
@@ -143,12 +144,10 @@ namespace BattleCore
             ResourcePath(CardCatalog.IronWall, "鉄城の構え", "金城の構え", "不落の構え"),
             Lighten(CardCatalog.TwistAway, "速翻し", "翻しの舞", "翻天"),
 
-            // §3: the eighteen learned cards that rename.
+            // §3: the fifteen learned cards that rename.
             CountPath(CardCatalog.ShieldPush, "盾突き", "盾崩し", "城盾"),
-            Extend(CardCatalog.SnapGuard, "瞬の受け", "反射の受け", "無意の受け"),
             Extend(CardCatalog.LeapBack, "鋭い跳び退り", "翻り退り", "風退り"),
             Lighten(CardCatalog.RisingCut, "昇り斬り", "逆巻き斬り", "天昇"),
-            ReadingPath(CardCatalog.LegSweep, "足刈り", "足崩し", "足封じ"),
             Extend(CardCatalog.DashIn, "疾駆", "迅駆け", "飛駆け"),
             Reform(CardCatalog.GuardWalk, "受け進み", "盾歩み", "鉄歩",
                 Loosened(CardCatalog.GuardWalk, TraitCondition.Combo, attribute: BattleAttribute.Guard),
@@ -158,7 +157,6 @@ namespace BattleCore
             Extend(CardCatalog.Deflect, "打ち弾き", "鉄弾き", "剛弾き"),
             CountPath(CardCatalog.CrescentCut, "半月斬り", "満月斬り", "月輪斬り"),
             Extend(CardCatalog.PommelStrike, "柄頭砕き", "重い柄頭", "鉄の柄頭"),
-            Lighten(CardCatalog.MistStep, "朧足", "霧足", "幻足"),
             Lighten(CardCatalog.KeenEye, "読みの目", "慧眼", "千里眼"),
             ResourcePath(CardCatalog.Resolve, "決死", "不屈", "泰然"),
             Extend(CardCatalog.GaleThrust, "迅風突き", "烈風突き", "天風突き"),
