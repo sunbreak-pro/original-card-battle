@@ -22,7 +22,7 @@ namespace Depiction.Bridge.Tests
                 Assert.That(screen.ChooseEnemyLabel, Does.Contain("選び直す"));
                 Assert.That(screen.BackLabel, Is.EqualTo("デッキ選択へ戻る"));
                 Assert.That(screen.CanAgain, Is.False, "「もう一度」 would step a run left half-done");
-                Assert.That(screen.CanGoOn, Is.False, "nor would the chain's rest");
+                Assert.That(screen.CanGoOn, Is.False, "nor would the chain's way on");
                 Assert.That(screen.Title, Is.Not.Empty);
                 Assert.That(screen.Lines, Is.Not.Empty);
             });
