@@ -1,6 +1,6 @@
 // The demo's run of battles (#191): one enemy on its own, or a chain (battle_core_v4 §12). Pure C#:
 // BattleCore only, no UnityEngine. It decides the order, the line each battle is fought on, what
-// carries between battles (BattleCore.Chain), the rest, a battle given up (#203), the end of the
+// carries between battles (BattleCore.Chain), a battle given up (#203), the end of the
 // run, and every word the mode screen, the end screen and the battle's one button print — so the
 // View (DemoFlow) only lays the words out and forwards the buttons.
 using System;
@@ -15,7 +15,7 @@ namespace Depiction.Bridge
         /// <summary>One enemy, then the end screen.</summary>
         Single,
 
-        /// <summary>§12: the enemies in order, HP and stamina carried, a rest offered between; a loss ends it.</summary>
+        /// <summary>§12: the enemies in order, HP and stamina carried with no rest between (#914); a loss ends it.</summary>
         Chain,
     }
 
@@ -28,7 +28,7 @@ namespace Depiction.Bridge
         /// <summary>A battle is being fought.</summary>
         Fighting,
 
-        /// <summary>A chained battle was won and another follows: rest or go on.</summary>
+        /// <summary>A chained battle was won and another follows: go on to it.</summary>
         BetweenBattles,
 
         /// <summary>Lost, or the last battle won. Again or back to the deck.</summary>
@@ -42,9 +42,8 @@ namespace Depiction.Bridge
         public bool Won;
         public readonly List<string> Lines = new List<string>();
 
-        /// <summary>A chained battle was won and another follows: the two ways on.</summary>
+        /// <summary>A chained battle was won and another follows: the one way on, with nothing healed (#914).</summary>
         public bool CanGoOn;
-        public string RestLabel = "";
         public string GoOnLabel = "";
 
         /// <summary>A single battle ended, fought out or given up: the mode screen again, to pick another enemy with the same deck (#211).</summary>
@@ -250,16 +249,10 @@ namespace Depiction.Bridge
             return tally;
         }
 
-        /// <summary>§12: between chained battles, rest (HP +30% of the maximum, stamina full) or go straight on.</summary>
-        public void GoOn(bool rest)
+        /// <summary>§12: on to the next chained battle with the HP and stamina the last one left — no rest heals between (2026-11-04, #914).</summary>
+        public void GoOn()
         {
             if (Stage != DemoStage.BetweenBattles) throw new InvalidOperationException("DemoSession: there is no next battle (" + Stage + ").");
-            if (rest)
-            {
-                var rested = RestAfter(_tallies[_tallies.Count - 1]);
-                _hp = rested.Hp;
-                _stamina = rested.Stamina;
-            }
             Index++;
             Stage = DemoStage.Ready;
         }
@@ -274,17 +267,6 @@ namespace Depiction.Bridge
             _tallies.Clear();
             Surrendered = false;
             Stage = DemoStage.Ready;
-        }
-
-        /// <summary>
-        /// §12's rest after the battle <paramref name="last"/> tallies: its HP left, back by 30% of its
-        /// maximum, and stamina full. The rest button's words and the rest itself both read this, so
-        /// the number printed is the number given (#211).
-        /// </summary>
-        public static (int Hp, int Stamina) RestAfter(BattleTally last)
-        {
-            if (last == null) throw new ArgumentNullException(nameof(last));
-            return BattleCore.Chain.Rest(last.HpLeft, last.MaxHp, Constants.BaseMaxStamina);
         }
 
         /// <summary>A chain won to the end.</summary>
@@ -323,9 +305,7 @@ namespace Depiction.Bridge
             if (Stage == DemoStage.BetweenBattles)
             {
                 screen.CanGoOn = true;
-                var rested = RestAfter(last);
-                screen.RestLabel = "休んで次へ（HP +" + (rested.Hp - last.HpLeft) + "、スタミナ全回復）";
-                screen.GoOnLabel = "そのまま次へ";
+                screen.GoOnLabel = "次へ";
                 screen.Lines.Add("次: " + Order[Index + 1].Name);
             }
             if (Mode == DemoMode.Single)

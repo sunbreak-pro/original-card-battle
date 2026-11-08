@@ -163,7 +163,7 @@ namespace Depiction.Bridge.Tests
                 Assert.That(session.Stage, Is.EqualTo(DemoStage.BetweenBattles));
                 int hp = first.State.Player.Hp;
                 int stamina = first.State.Player.Stamina;
-                session.GoOn(rest: false);
+                session.GoOn();
                 CoreBattleSource second = session.StartBattle();
                 BattleState state = second.State;
                 Assert.Multiple(() =>
@@ -182,31 +182,34 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void TheRest_GivesThirtyPercentAndFullStamina_BeforeTheNextBattle()
+        public void NothingHeals_BetweenChainedBattles()
         {
+            // #914 (2026-11-04): no rest between chained battles — a won battle's HP and stamina go into
+            // the next one as they are, and the end screen offers one way on.
             for (int seed = 1; seed < 40; seed++)
             {
                 var session = DemoSession.Chain(Deck(), seed);
                 CoreBattleSource first = session.StartBattle(suggestCards: true);
                 FightToTheEnd(first);
                 if (session.Finish(first).Result != GameResult.Won) continue;
-
                 int hp = first.State.Player.Hp;
+                int stamina = first.State.Player.Stamina;
+                // A battle that left the player whole proves nothing about healing.
+                if (hp >= Constants.PlayerMaxHp || stamina >= Constants.BaseMaxStamina) continue;
+
                 DemoEndScreen screen = session.EndScreen();
-                session.GoOn(rest: true);
+                session.GoOn();
                 BattleState state = session.StartBattle().State;
-                int expected = Math.Min(Constants.PlayerMaxHp, hp + 15);
                 Assert.Multiple(() =>
                 {
-                    Assert.That(state.Player.Hp, Is.EqualTo(expected));
-                    Assert.That(state.Player.Stamina, Is.EqualTo(Constants.BaseMaxStamina));
+                    Assert.That(state.Player.Hp, Is.EqualTo(hp), "HP is not healed");
+                    Assert.That(state.Player.Stamina, Is.EqualTo(stamina), "stamina is not refilled");
                     Assert.That(screen.CanGoOn, Is.True);
-                    Assert.That(screen.RestLabel, Is.EqualTo("休んで次へ（HP +" + (expected - hp) + "、スタミナ全回復）"));
-                    Assert.That(screen.GoOnLabel, Is.EqualTo("そのまま次へ"));
+                    Assert.That(screen.GoOnLabel, Is.EqualTo("次へ"));
                 });
                 return;
             }
-            Assert.Fail("no seed won the first battle");
+            Assert.Fail("no seed won the first battle short of full HP and stamina");
         }
 
         [Test]
@@ -225,7 +228,7 @@ namespace Depiction.Bridge.Tests
                 {
                     Assert.That(session.Stage, Is.EqualTo(DemoStage.Over));
                     Assert.That(session.AllWon, Is.False);
-                    Assert.That(() => session.GoOn(false), Throws.InvalidOperationException);
+                    Assert.That(() => session.GoOn(), Throws.InvalidOperationException);
                     Assert.That(() => session.StartBattle(), Throws.InvalidOperationException);
                     Assert.That(screen.Title, Is.EqualTo("1 戦目で力尽きました"));
                     Assert.That(screen.Won, Is.False);
@@ -335,21 +338,6 @@ namespace Depiction.Bridge.Tests
         }
 
         [Test]
-        public void TheRestsWords_AndTheRest_ReadTheBattlesOwnMaximum()
-        {
-            // #211: the rest button's number and the rest itself come from one place, the tally's maximum.
-            var low = new BattleTally("polearm_warped", GameResult.Won, 5, 10, 80, 0, new Dictionary<BattleAttribute, int>(), 0);
-            var high = new BattleTally("polearm_warped", GameResult.Won, 5, 70, 80, 0, new Dictionary<BattleAttribute, int>(), 0);
-            Assert.Multiple(() =>
-            {
-                Assert.That(DemoSession.RestAfter(low).Hp, Is.EqualTo(34), "10 + 80 × 30%, not 10 + 50 × 30%");
-                Assert.That(DemoSession.RestAfter(low).Stamina, Is.EqualTo(Constants.BaseMaxStamina));
-                Assert.That(DemoSession.RestAfter(high).Hp, Is.EqualTo(80), "no further than the maximum");
-                Assert.That(() => DemoSession.RestAfter(null), Throws.ArgumentNullException);
-            });
-        }
-
-        [Test]
         public void TheBreakdown_AndTheAverage_ReadInOrder()
         {
             var tally = new BattleTally("polearm_warped", GameResult.Won, 7, 30, 50, 9,
@@ -384,7 +372,7 @@ namespace Depiction.Bridge.Tests
                 }));
                 Assert.That(between.Title, Is.EqualTo("1 戦目に勝ちました"));
 
-                session.GoOn(rest: false);
+                session.GoOn();
                 CoreBattleSource second = session.StartBattle(suggestCards: true);
                 FightToTheEnd(second);
                 BattleTally two = session.Finish(second);
@@ -462,7 +450,7 @@ namespace Depiction.Bridge.Tests
                 FightToTheEnd(first);
                 if (session.Finish(first).Result != GameResult.Won) continue;
 
-                session.GoOn(rest: false);
+                session.GoOn();
                 CoreBattleSource second = session.StartBattle(suggestCards: true);
                 FightUntilTurn(second, 2);
                 if (second.State.Result != GameResult.Ongoing) continue;
@@ -480,7 +468,7 @@ namespace Depiction.Bridge.Tests
                     Assert.That(session.Surrendered, Is.True);
                     Assert.That(session.AllWon, Is.False);
                     Assert.That(session.Tallies.Select(t => t.Result), Is.EqualTo(new[] { GameResult.Won, GameResult.Lost }));
-                    Assert.That(() => session.GoOn(false), Throws.InvalidOperationException);
+                    Assert.That(() => session.GoOn(), Throws.InvalidOperationException);
                     Assert.That(() => session.StartBattle(), Throws.InvalidOperationException);
                     Assert.That(screen.Title, Is.EqualTo("2 戦目で降参しました"));
                     Assert.That(screen.Won, Is.False);

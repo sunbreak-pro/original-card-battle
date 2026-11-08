@@ -316,7 +316,7 @@ namespace Trial.Battle
             {
                 foreach (CardValueKind k in SelfOrder)
                     if (values.Any(v => v != null && v.Kind == k)) return k;
-                // A stance's number is the Guard its trait puts up (岩の構え: 置く時 予兆が攻撃 → Guard +3).
+                // A stance's number is the Guard its trait puts up (鉄壁の構え: 自分の状態(見切り) → Guard +3).
                 if (values.Count == 0) return CardValueKind.Guard;
             }
             else if (values.Any(v => v != null && v.Kind == CardValueKind.Power)) return CardValueKind.Power;

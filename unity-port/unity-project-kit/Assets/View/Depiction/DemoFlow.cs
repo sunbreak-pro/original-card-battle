@@ -144,7 +144,7 @@ namespace Depiction.View
         /// <summary>
         /// Starts the session's next battle, and only then takes the screens down and puts 「降参する」
         /// up (#211). A start that throws drops the run and puts the mode screen up, where every button
-        /// starts a run afresh: the end screen's 「休んで次へ」 or 「もう一度」 would find the run a step
+        /// starts a run afresh: the end screen's 「次へ」 or 「もう一度」 would find the run a step
         /// on (Ready for its next battle, or Fighting one never shown) and throw.
         /// </summary>
         private void NextBattle()
@@ -235,9 +235,9 @@ namespace Depiction.View
             Debug.LogException(e);
         }
 
-        private void GoOn(bool rest)
+        private void GoOn()
         {
-            _session.GoOn(rest);
+            _session.GoOn();
             NextBattle();
         }
 
