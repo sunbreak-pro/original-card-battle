@@ -284,7 +284,7 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 | PreToolUse(Bash) | `pre-commit-index-guard.sh` | 生成物 `INDEX.md` の commit 混入を自動除外 |
 | PreToolUse(Bash) | `pre-commit-tracker-guard.sh` | tracker と実装の同梱コミットをブロック。index は、コマンドが `cd` か `git -C` で指した repo のものを見る |
 | PreToolUse(Bash) | `pre-issue-create-guard.sh` | `.session-name` が `main` でないチャットの `gh issue create` をブロック。サブエージェント（hook の入力に `agent_id` がある）と、`cd` でレーンの worktree に入ってから打つものもブロック |
-| PreToolUse(Bash) | `merge-gate.mjs` | `gh pr merge` を振り分ける。worktree・サブエージェント・`cd` でレーンに入ったコマンドからは deny、chat-main の `merge-round` の回で `check` を通った PR だけ allow、それ以外は ask |
+| PreToolUse(Bash) | `merge-gate.mjs` | `gh pr merge` を振り分ける。worktree・サブエージェント（`agent_type` が `work-finishers` のものを除く）・`cd` でレーンに入ったコマンドからは deny、chat-main の `merge-round` の回で `check` を通った PR だけ allow、それ以外は ask |
 
 3 つの hook がコマンドの `cd` を読むのは、Workflow のエージェントが main の checkout から Bash を始め、`cd <worktree> && ...` で作業フォルダに移るためです（2026-11-08 の issue-workflow の試験）。読む部品は `.claude/hooks/lib/hook-context.mjs`、テストは `node --test ".claude/hooks/__tests__/*.test.mjs"` です。
 
@@ -311,7 +311,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 - **宛先ラベルは `lane:<slug>`**。付けなければ `issue-workflow` が上の `area:` から既定のレーンを決める（決め方は `.claude/issue-workflow.md` の「選び方」）
 - **世界観の正本は main（chat-main）**（2026-09-21 こうだいさん決定）。正典は `docs/vision/world-v1.md` で、**舞台は龍神の封印の地、敵は竜・寄生・亡霊の 3 系統、崩壊まで約 1 年**（v5、2026-11-03 #884）。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main の采配に落とす。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
 - **`audit` は読み取り専用**。整合監査の結果は申し送りにして main へ回し、修正は main が Issue にして担当レーンへ配る
-- **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで
+- **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで。例外は chat-main の `issue-workflow` の仕上げ役（`work-finishers`）だけで、動作確認のために `wf-*` の worktree で Vite の dev サーバーを 1 本ずつ、固定のポート 5273 で起動し、終わったら止める（`.claude/issue-workflow.md` の「動作確認」）。Unity Editor はメインだけのまま
 - **one writer per artifact**。同じファイルを 2 レーンに触らせない
 - **`.claude/comm/.session-name` と `.session-branch` を必ず書く**。ブランチを切り替えるたびに `.session-branch` を更新する（省略すると hook が無音スキップする）
 

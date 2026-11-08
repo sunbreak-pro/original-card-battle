@@ -145,6 +145,16 @@ merge した PR と merge commit を新しい順に表示し、`.git/merge-round
 
 レーンが直し終えたら、こうだいさんがもう一度このスキルを起動する。2 回目以降も手順は同じです。
 
+## work-finishers が回すとき
+
+`issue-workflow` の仕上げ役（サブエージェント `work-finishers`）が、その回の最後に 1 度だけこのスキルを回すことがある。手順は上と同じで、違うのは次のところだけ。このリポジトリの細かい決まりは `.claude/issue-workflow.md` の「仕上げ」にある。
+
+- 承認は、こうだいさんが `issue-workflow` の起動前の確認（chat-main の AskUserQuestion）で「merge-round まで回す」を選んだことで、その回に限る。これを人の起動に数える。選ばれていない回では回さない。
+- 手順 1 は `node .claude/scripts/merge-round.mjs plan --only <その回が開いた PR をカンマでつないだもの>` にする。ほかの open PR は一覧に入れない。
+- 手順 4a はサブエージェントを起動せず、自分で直す（サブエージェントはサブエージェントを起動できない）。`autofix-start <n>` の「サブエージェントへの指示」に自分で従い、一時 worktree で衝突を解いて merge の commit まで作る。push は `autofix-push <n>` に任せる。判断できない衝突は `autofix-abort <n>` で片付けて、`fixes` を打ち直す。
+- `gh pr merge` に hook が確認（ask）か拒否（deny）を返したら、その PR を飛ばして報告に書く。打ち直しも、形を変えた回り道もしない。hook は `work-finishers` に対してもサブエージェントの deny を外すだけで、ほかの判定は chat-main と同じに効く。
+- 報告は手順 6 の順で書き、chat-main に返す。4b の `/goal` は chat-main がレーンに貼る。
+
 ## 止める・戻す
 
 ### merge の前に止める
@@ -182,8 +192,8 @@ CI を設定したあとだけ起きる。`plan` が終了コード 3 で止ま�
 
 ## 安全則
 
-- 作業レーンでは使わない。レーンからの `gh pr merge` は hook が deny する。
-- 人の起動なしに回を始めない（定時実行・無人ループ・pdca-harness に載せない）。
+- 作業レーンでは使わない。レーンからの `gh pr merge` は hook が deny する。サブエージェントも、`work-finishers` のほかは deny する。
+- 人の起動なしに回を始めない（定時実行・無人ループ・pdca-harness に載せない）。人の起動に数えるのは、こうだいさんがこのスキルを起動したときと、`issue-workflow` の起動前の確認で「merge-round まで回す」を選んだその回だけ（上の「work-finishers が回すとき」）。
 - Issue の close はこのスキルで行わない（`Closes #n` による自動 close は除く）。
 - 回の一覧にない PR を merge したくなったら、plan からやり直して一覧に入れる。hook の確認ダイアログで押し通さない。
 - chat-main がレーンの PR のブランチへ push するのは `autofix-push` だけにする。fast-forward だけで、force push はしない。レーンが開いているブランチには push しない。

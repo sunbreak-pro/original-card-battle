@@ -3,12 +3,15 @@
 // life-editor の .claude/hooks/merge-gate.mjs（2026-11-02）をこのリポジトリに移植したもの（2026-11-04 こうだいさん依頼）。
 //
 // settings.json には gh pr merge の allow も ask も置かない。確認を消すのはこの hook の allow だけにする:
+//   - サブエージェントが打った → deny。例外は agent_type が work-finishers のものだけ（下記）
 //   - 作業レーン（git worktree）から打った → deny（レーンは merge しない）
 //   - chat-main だが main にいない / 形が決まりと違う / 回が始まっていない / 一覧に無い / check 前 → ask
 //   - chat-main・main・決まった形・進行中の回の一覧にあり check を通った PR → allow
 // 回の一覧と check の印は `.claude/scripts/merge-round.mjs` が .git/merge-round/active.json に書く。
 // ask ルールを置かないのは、settings の ask は hook の allow より強く、置くと allow が効かないため。
 // allow ルールを置かないのは、hook が落ちたときに素通りさせないため（落ちたら通常の権限判定に戻る）。
+// work-finishers は issue-workflow の仕上げ役で、こうだいさんが起動前の確認で「merge-round まで回す」を選んだ回だけ
+// merge-round を代わりに回す（2026-11-08）。外すのはサブエージェントの deny だけで、そのあとの判定はすべて chat-main と同じに効く。
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -38,7 +41,7 @@ try {
   // input.cwd is the main checkout for chat-main's subagents too, so the worktree check below misses
   // them; agent_id and the `cd` in front of the command catch them (issue-workflow trial, 2026-11-08).
   const ctx = hookContext(input, "pr-merge", process.cwd());
-  if (ctx.agent) decide("deny", "サブエージェントは merge しません。merge は chat-main の merge-round スキルが行います。");
+  if (ctx.agent && input.agent_type !== "work-finishers") decide("deny", "サブエージェントは merge しません。merge は chat-main の merge-round スキルが行います。");
   if (ctx.known && ctx.linked && ctx.sessionName !== "main")
     decide("deny", "作業レーン（worktree）の中からは merge しません。merge は chat-main の merge-round スキルが行います。");
 
