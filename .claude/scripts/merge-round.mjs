@@ -525,7 +525,7 @@ function fixes() {
   }
   if (unrouted.length) {
     console.log("## 宛先が決まらない\n");
-    for (const e of unrouted) console.log(`- #${e.number} ${e.branch}（どのレーンにもチェックアウトされておらず、Issue の lane: / area: ラベルからも決まらない。main が直すか、issue-prompter で配る）`);
+    for (const e of unrouted) console.log(`- #${e.number} ${e.branch}（どのレーンにもチェックアウトされておらず、Issue の lane: / area: ラベルからも決まらない。main が直す。一時 worktree のサブエージェントに任せてもよい）`);
   }
   writeJson(PROMPTED, { ...prompted, ...next });
 }

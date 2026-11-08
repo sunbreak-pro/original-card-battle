@@ -12,7 +12,7 @@ description: プロダクトの課題を GitHub Issue として起票し、ラ�
 - **起票 = chat-main だけ**（2026-10-06 こうだいさん決定、#367。life-editor の 2026-07-11 の決定を移植）。レーンのチャットでこのスキルが呼ばれたら起票せず、`.claude/comm/handoff/` に申し送りを書いて終えます（書式は `.claude/comm/README.md`）。`pre-issue-create-guard.sh` が main 以外の `gh issue create` を止めます
 - **正本 = GitHub Issues**（`gh -R sunbreak-pro/original-card-battle`）。`docs/vision/plans/` の計画書は大型仕様の詳細だけに使い、**作業分配・進捗追跡の台帳 .md は新規作成しない**
 - **消化 = `loop-triage` → `loop-implement`**。本スキルは実装しません
-- **並べ直し = `issue-prompter`**。本スキルは `prio:` を付けるところまでで、レーンへの配り方は決めません
+- **並べ直しと実装への回し方 = グローバルの `issue-workflow`**（設定は `.claude/issue-workflow.md`）。本スキルは `prio:` を付けるところまでで、どの Issue を回すかは決めません
 
 ## ラベル（`gh label list` が正本）
 
@@ -38,9 +38,9 @@ description: プロダクトの課題を GitHub Issue として起票し、ラ�
 
 **`area:world` は世界観・設定・用語・敵の系譜**です。持ち主は main なので `lane:` を付けず、chat-main の采配に落とします（2026-09-21。正典は `docs/vision/world-v1.md`）。敵の数値とロースターは `area:enemy`（`cards` レーン）のままにします。
 
-**`lane:` は worktree レーンの宛先**です。付けなければ `issue-prompter` が `area:` から既定のレーンに振ります（対応表はそちらが正本）。`area:` が複数レーンに跨るときと、既定と違うレーンに任せたいときだけ明示します。**`lane:audit` は読み取り専用のレーン**なので、コードの修正を含む Issue には付けません。
+**`lane:` は worktree レーンの宛先**です。付けなければ `issue-workflow` が `area:` から既定のレーンを決めます（対応表は `.claude/issue-workflow.md` の「選び方」が正本）。`area:` が複数レーンに跨るときと、既定と違うレーンに任せたいときだけ明示します。**`lane:audit` は読み取り専用のレーン**なので、コードの修正を含む Issue には付けません。
 
-**`type:human` は Claude が代われない作業**に付けます（実機の手触り、絵の選定、課金・認証）。`issue-prompter` はこれを `/goal` に混ぜず、こうだいさん宛の一覧に分けます。
+**`type:human` は Claude が代われない作業**に付けます（実機の手触り、絵の選定、課金・認証）。`issue-workflow` はこれを実装に回さず、「人手待ち」の一覧に分けます。
 
 ## スコープの境界
 
@@ -89,7 +89,7 @@ grep -rn "<keyword>" .claude/docs/known-issues/INDEX.md
 - **いま何が起きているか** — 原因の本質を `file:line` で示す。推測なら「未確認」と書く
 - **Scope** — 触ってよいパス。同じファイルを 2 件に触らせない
 - **Definition of Done** — 機械検証可能な形。`npm run build` exit 0 / `dotnet test` 緑 / 実測値
-- **依存** — 先に close されている必要がある Issue 番号。`issue-prompter` はここを読んで待ち行列を作る
+- **依存** — 先に close されている必要がある Issue 番号。`issue-workflow` はここを読んで待ち行列を作る
 - **Gate** — 人手の工程（実機の手触り、PR merge、絵の選定）が含まれるなら明記。Issue に書いても実行はこうだいさん
 
 ```bash
@@ -101,7 +101,7 @@ gh issue create -R sunbreak-pro/original-card-battle \
 
 ### 3.5 `pdca:auto` を付けるかを決める
 
-進行役（pdca-harness）に任せる Issue には `pdca:auto` を付けます。付けるのは chat-main だけで、レーンは付けません。付いた Issue は `issue-prompter` がレーンの `/goal` に配りません。
+進行役（pdca-harness）に任せる Issue には `pdca:auto` を付けます。付けるのは chat-main だけで、レーンは付けません。付いた Issue は `issue-workflow` が実装に回しません。
 
 付けてよい Issue は、コードだけで完結し、完了条件を `dotnet build` `dotnet test` `npm run lint` `npm run build` `npm run test:run` で確かめられるものです。次の Issue には付けません。
 

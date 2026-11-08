@@ -33,7 +33,7 @@ open Issue すべてに「着手可 / 保留（理由 1 行）」の判定をつ
 ## 使ってよい道具
 
 - `issue-dispatch` スキル — ラベルの意味・Issue と `docs/known-issues/` の境界の正本
-- `issue-prompter` スキル — 依存の読み取り方（本文の「依存」節）
+- `.claude/issue-workflow.md` の「選び方」 — 依存の読み取り方（本文の「依存」節）
 - `gh issue list` / `gh issue view`（`-R sunbreak-pro/original-card-battle`）— **読み取りのみ**
 - 書き込んでよいのは `.claude/comm/decisions/chat-<self>.md` と `.claude/comm/outbox/chat-<self>/` と `.claude/comm/handoff/` の 3 か所だけ
 

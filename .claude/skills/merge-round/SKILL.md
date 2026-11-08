@@ -169,7 +169,7 @@ main を書き換えない（`reset --hard` と force push は deny 済み）。
 
 3. chat-main に戻り、`plan --only <revert PR>` → `start` → `check` → `gh pr merge` → `finish` で merge する。
 4. 回ごと戻したときは、`git fetch origin` のあと `git diff <戻る地点> origin/main --stat` を打ち、差分が空か、戻した回より後に merge した PR の分だけになっているかを確かめる。
-5. 元の PR が `Closes #n` で Issue を閉じていたら、Issue を reopen して戻した理由をコメントし、直した PR を出し直すレーンへ `issue-prompter` で配り直す。
+5. 元の PR が `Closes #n` で Issue を閉じていたら、Issue を reopen して戻した理由をコメントし、直した PR は chat-main が `issue-workflow` の次の回で出し直す。戻した PR の merge commit は origin/main に残るが、`.claude/issue-workflow.md` の「選び方」が revert 済みの PR を着地済みに数えないので、reopen した Issue は候補に戻る。
 
 ### main が赤いとき
 
