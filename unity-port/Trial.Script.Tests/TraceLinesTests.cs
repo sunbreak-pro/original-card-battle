@@ -182,7 +182,7 @@ namespace Trial.Script.Tests
             Assert.That((fifthView.Title, MetaTimelines.Chars(fifthView.Sentence).Count), Is.EqualTo(("倒れた", 13)));
             Assert.That(fifthView.Lines, Is.EqualTo(new[]
             {
-                "第 5 層　血染めの死海に痕跡と手記が残った",
+                "第 5 層　暗き死海に痕跡と手記が残った",
                 "遺産の候補：技術 2 ／ 頁 1 ／ 走り書き 0",
                 "第 5 層には第 2 代 オスカの古い痕跡がある。それが回収されると現れる",
             }), "the older trace on layer 3 does not count");
