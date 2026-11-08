@@ -1,8 +1,8 @@
 // #89: the seven layers' backdrops (battle-visual-v1 §2.4). The values §2.4 writes stay, every layer keeps
 // the reach red readable on its floor tile (§2.3), and the brightness follows the layer order. #609 made layer 1
 // bright; 2026-11-03 (こうだいさん's request) gave every layer its own colour, layer 1 brighter still, layer 3 a
-// bright layer too (one more bright layer in the upper part) and layer 7 a starry sky: 1, 2 and 3 bright, 4 the
-// brightest, then darker down to 7.
+// bright layer too (one more bright layer in the upper part) and layer 7 a starry sky. 2026-11-04 (こうだいさん, world-v1
+// v5.2 §3 rule 3, #916): only layer 7 is dark; layer 4 is as bright as layer 1, and 5 and 6 sit a little below layer 3.
 using System.Collections.Generic;
 using NUnit.Framework;
 
@@ -39,9 +39,9 @@ namespace Backdrop.Tests
             [1] = new[] { ("#fafde0", 0f), ("#ebf8ac", 0.22f), ("#c4e878", 0.48f), ("#96ce56", 0.75f), ("#62a242", 1f) },
             [2] = new[] { ("#fbf8e2", 0f), ("#ebe5bb", 0.35f), ("#cfc999", 0.7f), ("#9a9268", 1f) },
             [3] = new[] { ("#bafcf3", 0f), ("#86f2e4", 0.25f), ("#58d8c6", 0.5f), ("#32b09e", 0.75f), ("#1a8270", 1f) },
-            [4] = new[] { ("#ffffff", 0f), ("#f1ecff", 0.25f), ("#dcd4f6", 0.5f), ("#c4e4ee", 0.7f), ("#8d9ccc", 1f) },
-            [5] = new[] { ("#2e0d18", 0f), ("#6a1f2e", 0.4f), ("#8a3040", 0.62f), ("#2a0a12", 1f) },
-            [6] = new[] { ("#04061c", 0f), ("#0c1450", 0.35f), ("#181a70", 0.5f), ("#0a0e3a", 0.7f), ("#020310", 1f) },
+            [4] = new[] { ("#ffffff", 0f), ("#ece6fc", 0.25f), ("#d4cbf0", 0.5f), ("#b9d8e4", 0.7f), ("#8090c2", 1f) },
+            [5] = new[] { ("#ba505f", 0f), ("#e9939d", 0.25f), ("#fde9e7", 0.5f), ("#f4bec3", 0.75f), ("#ca6b78", 1f) },
+            [6] = new[] { ("#5470da", 0f), ("#94aef6", 0.25f), ("#ccd8ff", 0.5f), ("#acc2f8", 0.75f), ("#728cde", 1f) },
             [7] = new[] { ("#05061a", 0f), ("#0a0b26", 0.5f), ("#04040f", 1f) },
         };
 
@@ -103,20 +103,20 @@ namespace Backdrop.Tests
             double[] l = new double[BackdropSpec.Layers + 1];
             for (int layer = 1; layer <= BackdropSpec.Layers; layer++) l[layer] = MeanLuminance(BackdropSpec.For(layer));
 
-            for (int layer = 1; layer <= BackdropSpec.Layers; layer++)
-            {
-                if (layer != 4) Assert.That(l[4], Is.GreaterThan(l[layer]), "4 is the brightest, above " + layer);
-            }
-            foreach (int layer in new[] { 1, 2, 3 })
-            {
-                Assert.That(l[layer], Is.GreaterThanOrEqualTo(0.40), layer + " is a bright layer");
-                Assert.That(l[layer], Is.GreaterThan(l[5]), layer + " is brighter than the deep layers");
-            }
-            Assert.That(l[5], Is.LessThan(l[4]));
-            Assert.That(l[6], Is.LessThan(l[5]), "5 onward goes darker");
-            Assert.That(l[7], Is.LessThan(l[6]), "7 is the darkest");
+            Assert.That(l[4], Is.EqualTo(l[1]).Within(0.03), "4 is as bright as 1 (#916)");
             for (int layer = 1; layer < BackdropSpec.Layers; layer++)
             {
+                Assert.That(l[layer], Is.GreaterThanOrEqualTo(0.40), layer + " is not a dark layer");
+            }
+            foreach (int layer in new[] { 5, 6 })
+            {
+                Assert.That(l[layer], Is.LessThan(l[3]), layer + " sits a little below layer 3 (#916)");
+                Assert.That(l[layer], Is.InRange(0.45, 0.50), layer + " stays near layer 3, not dark (#916)");
+            }
+            Assert.That(l[6], Is.LessThan(l[5]), "6 a little below 5");
+            for (int layer = 1; layer < BackdropSpec.Layers; layer++)
+            {
+                Assert.That(l[7], Is.LessThan(0.05), "7, the starry sky, is the only dark layer");
                 Assert.That(l[7], Is.LessThan(l[layer]), "7 is darker than " + layer);
             }
         }
