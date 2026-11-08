@@ -17,6 +17,7 @@ namespace Depiction.Tests
         [TestCase("一閃", FxSystem.Slash)]
         [TestCase("貫き", FxSystem.Thrust)]
         [TestCase("投げ刃", FxSystem.Thrust)]
+        [TestCase("体幹崩し", FxSystem.Thrust)]   // pierce: §5.7 exception, no 突 word in the name
         [TestCase("体当たり", FxSystem.Strike)]
         [TestCase("石礫", FxSystem.Strike)]
         [TestCase("圧殺", FxSystem.Strike)]
@@ -27,6 +28,15 @@ namespace Depiction.Tests
         public void TheBlow_ReadsTheNameInTheOrder_Thrust_Strike_Sweep_Slash(string name, FxSystem expected)
         {
             Assert.That(EffectGrammar.BlowOf(name, pushes: false), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void ThePierceCard_PlaysAsThrust_ThroughTheNameException()
+        {
+            var pierce = new FxFaces { Name = "体幹崩し", Attacks = true };
+            Assert.That(EffectGrammar.Of(pierce), Is.EqualTo(new[] { FxSystem.Thrust }));
+            // A push is still 打 first, even for a listed name.
+            Assert.That(EffectGrammar.BlowOf("体幹崩し", pushes: true), Is.EqualTo(FxSystem.Strike));
         }
 
         [Test]
