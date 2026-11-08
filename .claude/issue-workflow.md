@@ -26,7 +26,7 @@
 
 **`chore/tracker-*` ブランチの PR は数えません。** tracker の PR 本文は、その日に触った Issue を並べます。open PR や着地済み PR として数えると、未着手の Issue まで外れます。
 
-**revert の PR は `merge-round` の手順で作ります。** ブランチは `revert/pr-<元の PR>`、題は `revert: <元の題> (#<元の PR>)`、本文は `Reverts #<元の PR>. Refs #<Issue>` です。戻された元の PR は、本文の `Reverts #<元の PR>` で見分けます。
+**revert の PR は `merge-round` の手順で作ります。** ブランチは `revert/pr-<元の PR>`、題は `revert: <元の題> (#<元の PR>)`、本文は `Reverts #<元の PR>. Refs #<Issue>` です。戻された元の PR は、merge 済みの revert PR の本文にある `Reverts #<元の PR>` で見分けます。open のままの revert PR と、merge せずに閉じた revert PR は数えません。番号の後ろに数字が続くものは当たりにしません（正規表現なら `#<n>(?!\d)`）。
 
 **`type:human` の Issue は回しません。** 報告では「人手待ち」として番号を並べます。
 
@@ -105,7 +105,7 @@
 | Markdown | `npm run md:tables -- <変えた .md>` で表の空白を詰め、`npm run md:tables -- --check` |
 | `.claude/docs/SOURCES.md` か、正本の追加・退役・持ち主の変更 | `npm run sources -- --check` |
 
-**`dotnet` の常駐ビルドサーバーは使いません。** `-p:UseSharedCompilation=false --disable-build-servers` を必ず付け、`dotnet build-server shutdown` も打ちません。ほかの実装役と同じサーバーを使うと、片方の停止がもう片方のビルドを落とすためです。
+**`dotnet` の常駐ビルドサーバーは使いません。** `-p:UseSharedCompilation=false --disable-build-servers` を必ず付け、`dotnet build-server shutdown` も打ちません。`shutdown` は PC 上のすべての常駐ビルドサーバーを止めるので、ほかの実装役・確認役・chat-main・別のセッションのビルドを落とすためです。
 
 **`unity:check` の exit 2 は合格として扱います。** exit 2 は、Unity のビルドの記録が無く確かめられなかったという意味なので、その理由を notes に書きます。exit 1 はコンパイルの失敗なので直します。
 
@@ -126,7 +126,7 @@
 1. `npm run build`
 2. `npm run lint`（警告 2 件は origin/main からあるもので、exit 0 なら合格です）
 3. `npm run test:run -- --maxWorkers=4`
-4. `dotnet test unity-port/UnityCorePort.slnx`、続けて `dotnet build-server shutdown`
+4. `dotnet test unity-port/UnityCorePort.slnx -p:UseSharedCompilation=false --disable-build-servers`（`dotnet build-server shutdown` は打ちません。理由は実装役と同じです）
 5. `npm run sources -- --check`
 6. `npm run md:tables -- --check`
 7. `npm run issues:test`
@@ -170,7 +170,7 @@ chat-main が次の順に進めます。
 1. **回の前に、全 worktree の申し送りを集めて Issue にしておきます。** 集め方は `.claude/comm/README.md` の「main がすること」です。集める前に回すと、まだ Issue になっていない課題がどの回にも載りません。
 2. **回の後にも、`wf-*` を含む全 worktree の申し送りを集めます。** 1 件ずつ `issue-dispatch` で Issue にするか既存の Issue にコメントし、処理したファイルを消します。
 3. **回の結果をこうだいさんに報告します。** 並べるのは、開いた PR、失敗した Issue とその理由、回さなかった Issue の内訳（chat-main 采配・audit・人手待ち・優先順位なし・親 Issue と、共通の除外の理由）です。
-4. **PR を開いた `wf-*` の worktree は、`merge-round` の `fixes` より前に必ず消します。** `handoff/` が空になったのを確かめてから、`git -C {{main}} worktree remove <パス>` で消します。ブランチは origin に残ります。
+4. **PR を開いた `wf-*` の worktree は、`merge-round` の `fixes` より前に必ず消します。** `handoff/` が空になったのを確かめてから、`git -C C:/Users/user/orca/original-card-battle worktree remove <パス>` で消します。ブランチは origin に残ります。
 5. **失敗した `wf-*` は、直すか捨てるかを決めるまで残します。** 手元のブランチが残っているあいだ、その Issue は次の回で「着手済み（ブランチあり）」として外れます。
 6. **merge はこうだいさんが `merge-round` を起動したときに進めます。** `Refs` にした PR の Issue は、残った確認を chat-main が終えてから閉じます。
 7. **C# の変更が merge されたら、chat-main が main で `npm run unity:sync` を打ち、Unity Editor での手触りを確かめます。** 試運転はメインだけの決まりです。

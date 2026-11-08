@@ -248,7 +248,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 定時に動く進行役（`~/dev/pdca-harness`）が、`pdca:auto` の付いた open Issue を 1 件 1 PR にします（2026-10-12 こうだいさん決定）。
 
 - **例外にするもの:** 進行役が作る `pdca/*` ブランチの PR と、`state:*` `goal:*` のラベルです。進行役は Issue を作らず、merge もしません。merge は常に人です
-- **`pdca:auto` を付けるのは chat-main だけ**です。こうだいさんの指示があるときか、`issue-dispatch` の判断で付けます。付いた Issue は、同じ Issue を 2 者が実装しないように、`issue-workflow` で回しません（`.claude/issue-workflow.md` の「選び方」が「pdca 担当」に分けます）
+- **`pdca:auto` を付けるのは chat-main だけ**です。こうだいさんの指示があるときか、`issue-dispatch` の判断で付けます。付いた Issue は、同じ Issue を 2 者が実装しないように、`issue-workflow` で回しません（グローバルの `issue-workflow` スキルが、`pdca:auto` と `state:*` のラベルを見て共通の除外で外します）
 - **拾われない Issue:** 本文が `.claude/` のパスを挙げるもの、除外ラベル（`type:human` `area:art` `area:world` `status:frozen` など）が付いたもの、題が判断を求めるもの、子 Issue を持つ親です。進行役は `.claude/` と `.github/` に書けません
 - **判断が要るとき:** 進行役は `state:needs-human` を付け、Gmail で知らせます
 
