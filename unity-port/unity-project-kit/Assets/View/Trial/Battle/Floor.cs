@@ -68,9 +68,13 @@ namespace Trial.Battle
         /// <summary>AIM_ANGLE: §4.2: the stripes' direction for the enemy the frame draws (the first enemy: 45°).</summary>
         // js: scenes/battle/field/floor.js:19
         private const int AimAngle = 45;
-        /// <summary>UNFOCUSED_ALPHA: battle_ui_ux_v2 §2.2.2: while one enemy's omen badge is hovered, the other enemies' stripes stand at this.</summary>
+        /// <summary>
+        /// UNFOCUSED_ALPHA: battle_ui_ux_v2 §2.2.2: while one enemy's omen badge is hovered, the other enemies' stripes stand at this.
+        /// Departs from the JS's 0.2 (2026-11-03 Koudai-san, #909): battle-visual-v1 §4.2's 30%, the Depiction floor's own value,
+        /// because at 0.2 the stripes sink to about 1.16 against the floor of the brightest layer and the 3 px lines go unseen.
+        /// </summary>
         // js: scenes/battle/field/floor.js:21
-        private const float UnfocusedAlpha = 0.2f;
+        private const float UnfocusedAlpha = FloorStripes.FaintAlpha;
         /// <summary>REACH_IN_MS / REACH_OUT_MS: battle_ui_ux_v2 §5.2: the reach light comes up over 150 ms (out) and goes over 120 ms (linear).</summary>
         // js: scenes/battle/field/floor.js:23
         private const float ReachInMs = 150f;
