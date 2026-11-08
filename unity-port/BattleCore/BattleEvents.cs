@@ -101,6 +101,9 @@ namespace BattleCore
     /// Actor is the attacker. Raw − Absorbed = Damage; Absorbed is what the target's Guard soaked.
     /// Multiplier names the one status that multiplied this blow (脆化 on the target or 強化 on the
     /// attacker, §19.5 S13: one a blow, 脆化 first), or null when none did (#455: the floating number's side label).
+    /// PowerStance and TakenStance name the Multiplier stance (背水の陣, #826) that multiplied the blow
+    /// in its own slot — the attacker's ×n on its power, the target's ×n on what it takes — or null
+    /// when none did (#951: the side label says where a ×3 came from).
     /// </summary>
     public sealed record DamageDealt(
         Actor Actor,
@@ -112,7 +115,14 @@ namespace BattleCore
         int TargetHpAfter) : BattleEvent(Actor)
     {
         public StatusKind? Multiplier { get; init; }
+
+        public StanceTimes? PowerStance { get; init; }
+
+        public StanceTimes? TakenStance { get; init; }
     }
+
+    /// <summary>#951: a Multiplier stance that rode on one blow — the list entry's source id and its ×n.</summary>
+    public sealed record StanceTimes(string SourceId, int Times);
 
     public sealed record GuardGained(Actor Actor, int Amount, int GuardAfter) : BattleEvent(Actor);
 

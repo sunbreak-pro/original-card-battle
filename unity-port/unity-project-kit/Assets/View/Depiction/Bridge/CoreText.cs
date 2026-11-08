@@ -313,7 +313,16 @@ namespace Depiction.Bridge
         /// power a trait added with its condition's word ("+5 間合い"), then the multiplying status
         /// ("×1.5 脆化"). Empty when neither rode on it.
         /// </summary>
-        public static string HitLabel(int traitPower, Trait trait, StatusKind? multiplier)
+        public static string HitLabel(int traitPower, Trait trait, StatusKind? multiplier) =>
+            HitLabel(traitPower, trait, multiplier, null, null);
+
+        /// <summary>
+        /// <see cref="HitLabel(int, Trait, StatusKind?)"/>, then the Multiplier stances that rode on the
+        /// blow in their own slot (#951): the attacker's ×n on its power and the target's ×n on what it
+        /// takes, each with the stance's name ("×3 背水の陣", "×2 背水の陣"). A null pair adds nothing.
+        /// </summary>
+        public static string HitLabel(int traitPower, Trait trait, StatusKind? multiplier,
+            (int Times, string Name)? powerStance, (int Times, string Name)? takenStance)
         {
             string label = "";
             if (traitPower > 0 && trait != null)
@@ -326,7 +335,16 @@ namespace Depiction.Bridge
                 string status = "×" + mult.ToString(System.Globalization.CultureInfo.InvariantCulture) + " " + multiplier.Value.ToLabel();
                 label = label.Length == 0 ? status : label + " " + status;
             }
+            label = WithStanceTimes(label, powerStance);
+            label = WithStanceTimes(label, takenStance);
             return label;
+        }
+
+        private static string WithStanceTimes(string label, (int Times, string Name)? stance)
+        {
+            if (!stance.HasValue || stance.Value.Times <= 1) return label;
+            string part = "×" + stance.Value.Times + " " + stance.Value.Name;
+            return label.Length == 0 ? part : label + " " + part;
         }
 
         /// <summary>The effect half of <see cref="TraitLine"/> ("+5", "Guard+3", "重撃").</summary>

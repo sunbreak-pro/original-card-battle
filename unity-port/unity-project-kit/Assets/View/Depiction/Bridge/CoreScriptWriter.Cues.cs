@@ -56,7 +56,9 @@ namespace Depiction.Bridge
                 ev.PreviewText = _playedPower.ToString();
             }
 
-            string sideLabel = CoreText.HitLabel(_traitPower, _traitOfPower, damage.Multiplier);
+            string sideLabel = CoreText.HitLabel(_traitPower, _traitOfPower, damage.Multiplier,
+                StanceTimesOf(damage.PowerStance, damage.Actor, damage.Unit),
+                StanceTimesOf(damage.TakenStance, damage.Target, damage.Unit));
             bool splits = damage.Absorbed > 0 || damage.Actor == Actor.Enemy;
             if (!splits)
             {
@@ -252,6 +254,13 @@ namespace Depiction.Bridge
         }
 
         /// <summary>js: CoreScriptWriter.js:886 — the display name of a stance's source: a card for the player, an action of the enemy's.</summary>
+        /// <summary>#951: a blow's Multiplier stance as the side label names it; the enemy's comes from its own actions.</summary>
+        private (int Times, string Name)? StanceTimesOf(StanceTimes stance, Actor holder, int unit)
+        {
+            if (stance == null) return null;
+            return (stance.Times, StanceName(stance.SourceId, holder == Actor.Enemy ? DefOf(unit) : null));
+        }
+
         private static string StanceName(string sourceId, EnemyDef enemy)
         {
             if (string.IsNullOrEmpty(sourceId)) return "";
