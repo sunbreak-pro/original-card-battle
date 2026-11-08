@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>世界の未決 2 件の案</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* 左に追従する目次 + 右に 1 本の読み筋(題 → 結論 → 理由 → 根拠 → 参考)。
+     ライトが既定。ダークは右上のボタンで選んだときだけ使う(OS の設定には追従しない)。
+     色は :root とダークのブロックにだけ hex で書き、ほかはすべてトークン(var(--…))で当てる。 */
+  :root {
+    --ground: #f6f8f9; --panel: #ffffff; --ink: #1c2327; --muted: #56636b;
+    --line: #d9e0e3; --accent: #0e6b74; --accent-ink: #ffffff; --accent-soft: #e2f0f0;
+    --row: #f1f5f6; --ok: #2c7a4b; --warn: #966010; --stop: #a23c3c; --idle: #e3e8eb; --code-bg: #eef3f4;
+    --shadow: 0 1px 2px rgba(20, 40, 45, .05), 0 6px 18px rgba(20, 40, 45, .04);
+    --font-body: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+    --font-mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+    /* 余白のスケール */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 72px; --sp-9: 96px;
+    /* チャート: カテゴリ(系列そのものが主題のときだけ使う。ふつうは accent 1 本 + グレー) */
+    --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300;
+    /* チャート: 連続(1 色相。明るい → 濃い)と、各段に載せる文字の色 */
+    --seq-1: #cde2fb; --seq-2: #86b6ef; --seq-3: #3987e5; --seq-4: #1c5cab; --seq-5: #0d366b;
+    --seq-1-ink: #1c2327; --seq-2-ink: #1c2327; --seq-3-ink: #0b1114; --seq-4-ink: #ffffff; --seq-5-ink: #ffffff;
+    /* チャート: 罫線と軸(軸は棒の「その他」の塗りにも使う) */
+    --grid: #e4e9ec; --axis: #75848b;
+    color-scheme: light;
+  }
+  @media not print {
+    :root[data-theme="dark"] {
+      --ground: #111618; --panel: #1a2125; --ink: #e4e9eb; --muted: #99a6ad;
+      --line: #2c363b; --accent: #5fc4cc; --accent-ink: #0f1c1e; --accent-soft: #163338;
+      --row: #1e262a; --ok: #6fc48f; --warn: #e0a94a; --stop: #e07a7a; --idle: #2c363b; --code-bg: #0f1417;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35);
+      --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300;
+      --seq-1: #1f3a57; --seq-2: #2a5a92; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-5: #cde2fb;
+      --seq-1-ink: #e4e9eb; --seq-2-ink: #ffffff; --seq-3-ink: #0b1114; --seq-4-ink: #0b1114; --seq-5-ink: #0b1114;
+      --grid: #2a3439; --axis: #7f8d94;
+      color-scheme: dark;
+    }
+  }
+  :root { --gap-section: var(--sp-8); --gap-card: var(--sp-5); }
+  @media (max-width: 599px) { :root { --gap-section: var(--sp-7); --gap-card: var(--sp-4); } }
+
+  * { box-sizing: border-box; }
+  /* scroll-padding-top: 固定のテーマボタン(下端 56px)に、目次・脚注・Shift+Tab で飛んだ先を隠さない(節ごとの scroll-margin は持たない) */
+  html { scroll-behavior: smooth; scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-body);
+    font-size: 16px; line-height: 1.9; -webkit-font-smoothing: antialiased; }
+  code, pre, .mono { font-family: var(--font-mono); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+
+  /* テーマ切り替え(右上に固定。.page の上に 64px の予約余白を取って本文と重ねない)。
+     JS が data-theme を付けるまで出さない(JS が動かないとき、効かないボタンを残さない)。印刷では出さない */
+  .themeswitch { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: calc(env(safe-area-inset-right, 0px) + 16px); z-index: 50;
+    display: none; gap: 2px; padding: 3px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; box-shadow: var(--shadow); }
+  @media screen { :root[data-theme] .themeswitch { display: inline-flex; } }
+  .themeswitch button { appearance: none; font: inherit; font-size: 14px; line-height: 1; height: 36px; min-width: 64px; padding: 0 14px;
+    border: 0; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; }
+  .themeswitch button:hover { background: var(--row); color: var(--ink); }
+  .themeswitch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+
+  /* レイアウト: 目次 250px + 本文 最大 880px。本文の列は子の間を gap で空ける */
+  .page { max-width: 1226px; margin: 0 auto; padding: 64px 24px 96px; display: grid;
+    grid-template-columns: 250px minmax(0, 880px); gap: var(--sp-7); justify-content: center; }
+  .page.no-toc { grid-template-columns: minmax(0, 880px); }
+  .main { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-6); }
+  section { display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  /* 節と節の間 = main の gap(32px) + この margin = 72px(幅 600px 未満は 48px) */
+  .main > section { margin-top: calc(var(--gap-section) - var(--sp-6)); }
+  /* 幅 999px 以下は 1 列。並びは 題の面 → 結論カード → 目次 → 節(結論カードがない報告書は 題の面 → 目次 → 節) */
+  @media (max-width: 999px) {
+    .page { display: flex; flex-direction: column; gap: var(--sp-6); padding: 64px 16px 72px; }
+    .main { display: contents; }
+    .hero { order: -2; }
+    .main > :is(.verdicts, .tiles) { order: -1; }
+  }
+
+  /* 目次 */
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start;
+    max-height: calc(100vh - 48px); overflow-y: auto; font-size: 14px; }
+  .toc-title { font-size: 13px; font-weight: 700; color: var(--muted); margin: 0 0 var(--sp-2); }
+  .toc-progress { height: 3px; background: var(--idle); border-radius: 4px; overflow: hidden; margin: 0 0 var(--sp-3); }
+  .toc-progress > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s linear; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; padding: 8px 10px;
+    border-radius: 4px; color: var(--muted); text-decoration: none; line-height: 1.5; border-left: 3px solid transparent; }
+  .toc a:hover { background: var(--row); color: var(--ink); }
+  /* .toc は overflow-y: auto で横も切るので、焦点の輪は外ではなくリンクの内側に描く */
+  .toc a:focus-visible { outline-offset: -2px; }
+  .toc .lbl { display: block; font-size: 14px; }
+  .toc .toc-claim { display: block; font-size: 13px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+  .toc a[aria-current="location"] .toc-claim { color: var(--ink); }
+  .toc .no { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px;
+    font-weight: 700; font-family: var(--font-mono); background: var(--idle); color: var(--ink); }
+  .toc a.done .no { background: transparent; color: var(--ok); box-shadow: inset 0 0 0 1.5px var(--ok); }
+  .toc a.done .no::before { content: "✓"; font-family: var(--font-body); }
+  .toc a.done .no > span { display: none; }
+  .toc a[aria-current="location"] { background: var(--accent-soft); color: var(--accent); font-weight: 700; border-left-color: var(--accent); }
+  .toc a[aria-current="location"] .no { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+  @media (max-width: 999px) {
+    .toc { order: 0; position: static; max-height: none; align-self: stretch; }
+  }
+
+  /* 題の面 */
+  .hero { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: 40px 44px; display: flex; flex-direction: column; gap: var(--sp-4); }
+  @media (max-width: 599px) { .hero { padding: 24px 20px; } }
+  .eyebrow { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; font-size: 13px; color: var(--muted); font-weight: 700; margin: 0; }
+  h1 { font-size: clamp(26px, 3.4vw, 36px); line-height: 1.4; margin: 0; text-wrap: balance; font-weight: 700; letter-spacing: .01em; }
+  .lede { font-size: 17px; color: var(--muted); margin: 0; }
+  .meta { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--muted); list-style: none; }
+  .meta b { color: var(--ink); font-weight: 700; margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+  /* 見出しと本文。本文の 1 行は全角 40 字前後(40em)。図・表・カードは列の幅いっぱい */
+  .kicker { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--accent); font-weight: 700; margin: 0; max-width: none; }
+  .kicker .no { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  .kicker::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  h2 { font-size: 24px; line-height: 1.5; margin: 0; text-wrap: balance; }
+  /* 小さな分類名(kicker)と主張(h2)は近づけて 1 組に見せる。この 1 か所だけ負の margin で gap を詰める */
+  .kicker + h2 { margin-top: calc(var(--sp-3) - var(--sp-5)); }
+  h3 { font-size: 17px; line-height: 1.5; margin: 0; }
+  p { margin: 0; }
+  p, ul, ol { max-width: 40em; }
+  ul, ol { padding-left: 1.4em; margin: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
+  /* flex でない箱(.callout・.finding・li・td・dd)の中で段落や一覧が続くとき、間隔が 0 にならないようにする */
+  :is(.callout, .finding, li, td, dd) > :is(p, ul, ol) + :is(p, ul, ol) { margin-top: var(--sp-4); }
+  /* 日本語の折り返し: 見出し・リード文・カードの文は語や句の途中で割らない。段落の最終行を 1〜2 字にしない。
+     対応していないブラウザでは無視され、従来どおりに折り返す */
+  h1, h2, h3, .lede, .verdict p, .fig > figcaption, .compare figcaption, .hbar-label, .tile .l, .vhead p { word-break: auto-phrase; }
+  .page :is(p, li, td, dd, caption) { word-break: auto-phrase; }
+  p, li, td, dd, caption { text-wrap: pretty; }
+  /* 英単語・ファイル名・製品名を折り返させない(見出し・カード・図のラベルは全角 12 字以内にするか、これで守る) */
+  .nobr { white-space: nowrap; }
+  a { color: var(--accent); }
+  sup.ref { font-size: 13px; margin-left: 1px; line-height: 0; }
+  sup.ref a { text-decoration: none; }
+
+  /* 大きな塊(図・表・カード列・案パネル)の上下は、gap(24px) + この margin(8px) = 32px 以上 */
+  .fig, .tablewrap, .verdicts, .tiles, .compare, .split, .variants, .callout, .steps, pre { margin-block: var(--sp-2); }
+  .main > section > :last-child { margin-bottom: 0; }
+
+  /* 部品: 結論カード・チップ・数字タイル */
+  .verdicts, .tiles, .meta, .legend, .hbar, .steps, .refs, .toc ol { max-width: none; }
+  .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; break-inside: avoid; }
+  .verdict .tag { font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .verdict .tag::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .verdict.now .tag { color: var(--ok); } .verdict.later .tag { color: var(--warn); } .verdict.skip .tag { color: var(--stop); }
+  .verdict h3 { font-size: 18px; text-wrap: balance; }
+  .verdict p { color: var(--muted); font-size: 15px; line-height: 1.8; }
+  .chip { display: inline-block; border-radius: 4px; padding: 1px 8px; font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--accent-ink); white-space: nowrap; }
+  .chip.ok { background: var(--ok); } .chip.warn { background: var(--warn); } .chip.stop { background: var(--stop); }
+  .chip.idle { background: var(--idle); color: var(--ink); } .chip.kind { background: var(--accent); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--gap-card); padding: 0; list-style: none; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--idle); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-4) var(--sp-5) var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-1); }
+  .tile.ok { border-top-color: var(--ok); } .tile.warn { border-top-color: var(--warn); } .tile.stop { border-top-color: var(--stop); }
+  .tile .n { font-size: 32px; font-weight: 700; line-height: 1.3; font-family: var(--font-mono); display: block; white-space: nowrap; }
+  /* 数字の後ろの単位(36<span class="u">か月</span>)は小さく添える。数字と単位が別の行に割れない */
+  .tile .n .u { font: 700 16px var(--font-body); margin-left: 4px; }
+  .tile .l { font-size: 14px; line-height: 1.6; color: var(--muted); text-wrap: balance; }
+  .dist { display: flex; height: 10px; border-radius: 4px; overflow: hidden; background: var(--idle); gap: 2px; }
+  .dist > span { display: block; height: 100%; }
+  .dist .ok { background: var(--ok); } .dist .warn { background: var(--warn); } .dist .stop { background: var(--stop); } .dist .idle { background: var(--muted); }
+  /* 進捗バー(HTML)。svg の帯(rect.bar、.chart .bar)には当てない: CSS の height が rect の height 属性を上書きするため */
+  .bar:not(rect) { height: 8px; background: var(--idle); border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar:not(rect) > span { display: block; height: 100%; background: var(--accent); }
+  .compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--gap-card); }
+  .compare > figure { margin: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-3); }
+  .compare figcaption { font-size: 14px; font-weight: 700; color: var(--muted); }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: var(--sp-4) var(--sp-5); overflow-x: auto; font-size: 14px; line-height: 1.7; }
+  pre code { background: none; padding: 0; }
+  p code, li code, td code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: .9em; }
+  .callout { border: 1px solid var(--line); background: var(--accent-soft); padding: var(--sp-5); border-radius: 8px; font-size: 15px; line-height: 1.8; }
+  .callout strong { color: var(--accent); }
+  .finding { border-left: 3px solid var(--line); padding: var(--sp-1) 0 var(--sp-1) var(--sp-4); }
+  .finding.stop { border-left-color: var(--stop); } .finding.warn { border-left-color: var(--warn); } .finding.ok { border-left-color: var(--ok); }
+  .note { font-size: 14px; color: var(--muted); }
+
+  /* 表: セルの内側は 12px × 20px */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.7; font-variant-numeric: tabular-nums; }
+  caption { caption-side: top; text-align: left; font-weight: 700; font-size: 15px; line-height: 1.7; padding: var(--sp-4) 20px var(--sp-3); border-bottom: 1px solid var(--line); }
+  th, td { text-align: left; padding: 12px 20px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); background: var(--row); font-weight: 700; white-space: nowrap; }
+  tbody tr:nth-child(even) td { background: var(--row); }
+  th.num, td.num { text-align: right; white-space: nowrap; font-family: var(--font-mono); }
+  td.nowrap { white-space: nowrap; }
+  tr { break-inside: avoid; }
+  tr:last-child td { border-bottom: 0; }
+  td.state { white-space: nowrap; font-weight: 700; }
+  td.state.wrap { white-space: normal; } /* 結果が文のセル(td class="state wrap yes")。短い状態語は wrap なしで折り返さない */
+  td.state.yes { color: var(--ok); } td.state.no { color: var(--stop); } td.state.maybe { color: var(--warn); }
+  /* 3 列以上の表は、狭い幅で列が数文字に潰れないよう、表の枠の中で横に動かす。列が多いほど最小幅を広げる(後ろの規則が勝つ)。
+     :where() で詳しさを 0 にしてあるので、table.stack や印刷の min-width: 0 が素直に勝つ */
+  .tablewrap > table:where(:has(thead th:nth-child(3))) { min-width: 36em; }
+  .tablewrap > table:where(:has(thead th:nth-child(4))) { min-width: 44em; }
+  .tablewrap > table:where(:has(thead th:nth-child(5))) { min-width: 48em; }
+  /* 標題は、表が横に動いても枠の見えている幅に留めて左端に残す。幅は枠の幅(100cqw)で決める。
+     container query の単位が使えない古いブラウザでは、幅 999px 以下だけ画面の幅から近似する */
+  .tablewrap caption { position: sticky; left: 0; box-sizing: border-box; }
+  @media (max-width: 999px) { .tablewrap caption { width: min(100%, calc(100vw - 34px)); } }
+  @supports (width: 1cqw) {
+    .tablewrap { container-type: inline-size; }
+    .tablewrap caption { width: 100cqw; }
+  }
+  /* 文章が主体の表(table class="stack"。各 td に data-label="列の名前")。幅 599px 以下では、行を縦に積み、
+     セルの前に data-label の文字を出す。thead は見えない位置に置く(読み上げには残る)。
+     数字が主体の表と評価表(table.heat)には付けない */
+  @media (max-width: 599px) {
+    .tablewrap > table.stack { min-width: 0; }
+    table.stack colgroup { display: none; }
+    table.stack tbody, table.stack tr, table.stack td { display: block; }
+    table.stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    table.stack td { border-bottom: 0; padding: var(--sp-1) var(--sp-5); text-align: left; white-space: normal; }
+    table.stack td[data-label]::before { content: attr(data-label); display: block; font-size: 13px; line-height: 1.6; font-weight: 700; color: var(--muted); }
+    table.stack td:first-child { padding-top: var(--sp-3); font-weight: 700; }
+    table.stack td:last-child { padding-bottom: var(--sp-3); border-bottom: 1px solid var(--line); }
+    table.stack tbody tr:last-child td:last-child { border-bottom: 0; }
+  }
+
+  /* 図の枠: 図の主張(figcaption)を図の上に出す */
+  .fig { margin-inline: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow);
+    padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; overflow-x: auto; break-inside: avoid; }
+  .fig > figcaption { font-size: 16px; font-weight: 700; line-height: 1.6; color: var(--ink); }
+  .fig-note { font-size: 13px; line-height: 1.7; color: var(--muted); max-width: none; }
+  /* svg.chart は幅 640px 未満では横に動く。SVG だけを <div class="chartscroll"> で包み、図の主張(figcaption)・凡例・注記は動かさない。
+     動かせる側の端に影を出して知らせる(動かせるときだけ見える。白(--panel)の覆いが中身と一緒に動き、端まで来ると影を隠す)。
+     右端は初めに切れて見えるので、値は図の左側に置く。color-mix が効かないブラウザでは影を出さず、.fig の白がそのまま残る */
+  .chartscroll { overflow-x: auto; min-width: 0; }
+  @supports (background: color-mix(in srgb, red 50%, transparent)) {
+    .chartscroll {
+      background:
+        linear-gradient(to right, var(--panel) 40%, transparent) left center / 32px 100% no-repeat local,
+        linear-gradient(to left, var(--panel) 40%, transparent) right center / 32px 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) left center / 12px 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 24%, transparent), transparent) right center / 12px 100% no-repeat scroll,
+        var(--panel);
+    }
+  }
+
+  /* 横棒グラフ: 大きさの比較。値は右に文字でも書く。強調する 1 行だけ accent、ほかはグレー */
+  .hbar { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .hbar-row { display: grid; grid-template-columns: minmax(8em, 14em) minmax(0, 1fr) 4.5em; gap: var(--sp-2) var(--sp-4); align-items: center; }
+  .hbar-label { font-size: 15px; line-height: 1.6; min-width: 0; }
+  .hbar-track { display: block; height: 14px; background: var(--idle); border-radius: 4px; overflow: hidden; }
+  .hbar-fill { display: block; height: 100%; border-radius: 4px; background: var(--bar, var(--axis)); }
+  .hbar-val { font-family: var(--font-mono); font-size: 15px; text-align: right; font-variant-numeric: tabular-nums; }
+  .hbar .is-focus { --bar: var(--accent); }
+  .hbar-row.is-focus .hbar-label, .hbar-row.is-focus .hbar-val { font-weight: 700; }
+  .hbar .c1 { --bar: var(--c1); } .hbar .c2 { --bar: var(--c2); } .hbar .c3 { --bar: var(--c3); }
+  .hbar .c4 { --bar: var(--c4); } .hbar .c5 { --bar: var(--c5); } .hbar .c6 { --bar: var(--c6); }
+  @media (max-width: 599px) {
+    .hbar-row { grid-template-columns: minmax(0, 1fr) 4em; }
+    .hbar-label { grid-column: 1 / -1; }
+  }
+  /* 文と図の並び(.split)の中の横棒: 列が 325〜490px しかなく、既定のラベル列(最大 14em)だと棒が 0px になる。
+     ラベルを棒の上の行に出して、棒と値だけを並べる(幅 760px 未満は .split が 1 列になるので、既定の並びのまま) */
+  @media (min-width: 760px) {
+    .split .hbar-row { grid-template-columns: minmax(0, 1fr) 3.5em; gap: var(--sp-1) var(--sp-3); }
+    .split .hbar-label { grid-column: 1 / -1; }
+  }
+
+  /* 凡例: 2 系列以上のとき必須 */
+  .legend { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); font-size: 14px; line-height: 1.6; color: var(--muted); }
+  .legend li { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 4px; background: var(--axis); flex: none; }
+  .sw.c1 { background: var(--c1); } .sw.c2 { background: var(--c2); } .sw.c3 { background: var(--c3); }
+  .sw.c4 { background: var(--c4); } .sw.c5 { background: var(--c5); } .sw.c6 { background: var(--c6); }
+
+  /* SVG チャート: viewBox の幅は 640 にそろえる(最小幅 640px で等倍になり、文字は 13px を下回らない) */
+  svg.chart { display: block; width: 100%; min-width: 640px; height: auto; overflow: visible; }
+  .chart .grid { stroke: var(--grid); stroke-width: 1; fill: none; }
+  .chart .axis { stroke: var(--axis); stroke-width: 1.5; fill: none; }
+  .chart .tick { stroke: var(--axis); stroke-width: 1; fill: none; }
+  .chart .t { fill: var(--ink); font-family: var(--font-body); font-size: 13px; }
+  .chart .t-muted { fill: var(--muted); }
+  .chart .ln-1 { --series: var(--c1); } .chart .ln-2 { --series: var(--c2); }
+  .chart .ln-3 { --series: var(--c3); } .chart .ln-4 { --series: var(--c4); }
+  .chart .is-focus { --series: var(--accent); }
+  .chart .ln { fill: none; stroke: var(--series, var(--axis)); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .chart .area { fill: var(--series, var(--axis)); fill-opacity: .14; stroke: none; }
+  .chart .dot { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  /* 期間の帯(rect class="bar" に x・y・width・height を属性で書く)。重なる帯は --panel の縁で分ける */
+  .chart .bar { fill: var(--series, var(--axis)); stroke: var(--panel); stroke-width: 2; }
+  .chart .quad { fill: var(--row); stroke: var(--line); stroke-width: 1; }
+  .chart .quad.is-focus { fill: var(--accent-soft); stroke: var(--accent); }
+  .chart .node { fill: var(--panel); stroke: var(--axis); stroke-width: 1.5; }
+  .chart .node.is-focus { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  .chart .edge { fill: none; stroke: var(--axis); stroke-width: 1.5; }
+  .chart .arrowhead { fill: var(--axis); stroke: none; }
+  .chart .edge-label { fill: var(--muted); font-family: var(--font-body); font-size: 13px; paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
+
+  /* 評価表: 案 × 基準の点数を濃淡で見せる(数値は必ず文字で載せる) */
+  table.heat td, table.heat th { text-align: center; }
+  table.heat td { vertical-align: middle; }
+  table.heat th:first-child, table.heat td:first-child { text-align: left; min-width: 9em; }
+  table.heat td[data-l] { font-family: var(--font-mono); font-weight: 700; border-left: 1px solid var(--panel); }
+  table.heat td[data-l="1"] { background: var(--seq-1); color: var(--seq-1-ink); }
+  table.heat td[data-l="2"] { background: var(--seq-2); color: var(--seq-2-ink); }
+  table.heat td[data-l="3"] { background: var(--seq-3); color: var(--seq-3-ink); }
+  table.heat td[data-l="4"] { background: var(--seq-4); color: var(--seq-4-ink); }
+  table.heat td[data-l="5"] { background: var(--seq-5); color: var(--seq-5-ink); }
+  /* 幅 599px 以下で横に動かしても、先頭列(行の名前)は左に残す。固定した列の背景は行の色と同じにして、後ろのセルを隠す */
+  @media (max-width: 599px) {
+    table.heat th:first-child, table.heat td:first-child { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--line); }
+    table.heat tbody td:first-child { background: var(--panel); }
+    table.heat tbody tr:nth-child(even) td:first-child { background: var(--row); }
+  }
+
+  /* 手順: 順番に意味があるときだけ。番号は CSS カウンタ */
+  .steps { list-style: none; padding: 0; margin: 0; counter-reset: step; display: flex; flex-direction: column; gap: var(--sp-4); }
+  .steps > li { counter-increment: step; position: relative; padding: 2px 0 0 52px; min-height: 36px; }
+  .steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%;
+    display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+  .steps strong { display: block; }
+
+  /* 文と図の並び: 幅 760px 未満で縦積み */
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--sp-6); align-items: start; }
+  .split > div { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .split > .fig { margin-block: 0; }
+  .split.rev > :first-child { order: 2; }
+  @media (max-width: 759px) {
+    .split { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+    .split.rev > :first-child { order: 0; }
+  }
+
+  /* 参考 */
+  .refs { font-size: 14px; line-height: 1.8; color: var(--muted); padding: var(--sp-5) var(--sp-5) var(--sp-5) calc(var(--sp-5) + 1.6em);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .refs li { overflow-wrap: anywhere; }
+  .refs li:target { color: var(--ink); }
+
+  /* 切り替え式の案パネル(UI/UX 案)。JS が動くと .is-ready が付き、ボタンで 1 案ずつ見せる。
+     動かないときはタブを隠して全案を縦に並べる。全パネルを同じ grid セルに重ねるので、切り替えても高さは変わらない */
+  .variants { display: flex; flex-direction: column; gap: var(--sp-4); min-width: 0; }
+  .variants-tabs { display: none; }
+  .variants.is-ready .variants-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  @media (max-width: 699px) {
+    .variants.is-ready .variants-tabs { grid-auto-flow: row; grid-auto-columns: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    /* 案が奇数個のとき、最後の 1 つは 2 列ぶんの幅にして、左に 1 つだけ残らないようにする */
+    .variants.is-ready .variants-tabs > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
+  .variants-tabs .chip { margin-left: auto; }
+  .variants-tabs [role="tab"] { appearance: none; font: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; color: var(--ink); text-align: left;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-height: 44px; padding: 10px 14px 13px; cursor: pointer;
+    position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; align-content: center; gap: var(--sp-1) 10px; }
+  .variants-tabs [role="tab"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+  .variants-tabs [role="tab"]:hover { background: var(--row); }
+  .variants-tabs [role="tab"][aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  .variants-tabs [role="tab"][aria-selected="true"]::after { background: var(--accent); }
+  .vt-key { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 4px; background: var(--idle); color: var(--ink);
+    font-family: var(--font-mono); font-size: 13px; }
+  [aria-selected="true"] > .vt-key { background: var(--accent); color: var(--accent-ink); }
+  .vt-name { flex: 1 1 auto; min-width: 0; }
+  .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+  .variants.is-ready .variants-stage { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .vpanel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: var(--sp-5);
+    display: flex; flex-direction: column; gap: var(--sp-5); min-width: 0; }
+  .variants.is-ready .vpanel { grid-area: 1 / 1; visibility: hidden; opacity: 0; }
+  .variants.is-ready .vpanel.is-active { visibility: visible; opacity: 1; }
+  /* 切り替えのフェードは、利用者が最初に案を切り替えたとき(script が .is-live を付ける)から。
+     最初の描画で動かすと、スクリーンショットや印刷が途中の半透明の画面を写す */
+  .variants.is-live .vpanel { transition: opacity .12s ease, visibility 0s linear .12s; }
+  .variants.is-live .vpanel.is-active { transition: opacity .12s ease; }
+  /* 幅 700px 未満は、見せていない案を高さ 0 にたたむ(重ねたままだと、短い案の下に最も高い案ぶんの空白が残る)。
+     印刷は全案を並べるので、画面(screen)だけに効かせる */
+  @media screen and (max-width: 699px) {
+    .variants.is-ready .vpanel:not(.is-active) { max-height: 0; overflow: hidden; padding-block: 0; border-width: 0; box-shadow: none; }
+  }
+  .vhead { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .vhead h3 { font-size: 18px; }
+  .vhead p { color: var(--muted); }
+  .vnotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--sp-4) var(--sp-5); margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--line); }
+  .vnotes > div { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+  .vnotes dt { font-size: 13px; font-weight: 700; color: var(--muted); }
+  .vnotes dd { margin: 0; font-size: 15px; line-height: 1.8; }
+
+  /* モックアップの枠(案の中身は #mockup-styles が .mk-<記号> で持つ。レポートのトークンとは独立) */
+  .mock { container-type: inline-size; min-width: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+  /* container query が効かないブラウザでは、案が枠より広くなる。切り捨てず、枠の中で横に動かして読めるようにする */
+  @supports not (container-type: inline-size) { .mock { overflow-x: auto; } }
+  .mock-bar { display: flex; align-items: center; gap: var(--sp-3); padding: 10px 14px; background: var(--row); border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.4; color: var(--muted); }
+  .mock-dots { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--axis); margin-right: 40px; box-shadow: 16px 0 0 var(--axis), 32px 0 0 var(--axis); }
+  .mock-url { flex: 1; min-width: 0; padding: 2px 10px; border-radius: 4px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mock[data-device="phone"] { width: 100%; max-width: 390px; margin-inline: auto; border-width: 2px; border-radius: 28px; }
+  .mock[data-device="phone"] .mock-bar { display: none; }
+  .mocks { display: flex; flex-wrap: wrap; gap: var(--sp-5); align-items: flex-start; }
+  .mocks > .mock { flex: 1 1 320px; margin-inline: 0; }
+  .mocks > .mock[data-device="phone"] { flex: 0 1 390px; }
+  /* 広い画面とスマホ画面を縦に重ねるとき(.mocks に stack を付ける)。横に並べると広い画面が 416px 前後に狭まる */
+  .mocks.stack { flex-direction: column; align-items: stretch; }
+  .mocks.stack > .mock { flex: none; width: 100%; }
+  .mocks.stack > .mock[data-device="phone"] { width: min(100%, 390px); align-self: center; }
+
+  @media print {
+    :root { --shadow: none; }
+    /* 背景のグラフィックを刷らない設定(Chrome の既定)でも、評価表・チップ・棒グラフ・手順の番号の色を残す */
+    *, *::before, *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { background: var(--panel); }
+    .chartscroll { background: var(--panel); }
+    /* 印刷では表を横に動かせない。枠を切らず、最小幅を外して列を詰め、見出しも折り返して、右端の列(評価表の合計など)を失わない */
+    .tablewrap { overflow: visible; }
+    .tablewrap > table { min-width: 0; }
+    th { white-space: normal; word-break: auto-phrase; }
+    .themeswitch, .toc { display: none; }
+    .page { display: block; padding: 0; max-width: none; }
+    .main { display: flex; }
+    h2, .kicker, h3 { break-after: avoid; }
+    .refs a::after { content: " (" attr(href) ")"; }
+    .variants-tabs, .variants.is-ready .variants-tabs { display: none; }
+    .variants.is-ready .variants-stage { display: flex; flex-direction: column; gap: var(--sp-6); }
+    .variants.is-ready .vpanel { visibility: visible; opacity: 1; }
+  }
+</style>
+<!-- 案(UI/UX のモックアップ)が必要な報告書だけ、この直後に <style id="mockup-styles"> を足す。セレクタは必ず .mk-<案の記号> から始める。 -->
+</head>
+<body>
+<script>
+  /* テーマの初期化: 描画前に data-theme を決める。保存値(light / dark)があればそれ、なければ light。
+     本文の最初の要素に置く(Artifact で外枠を外しても動く)。localStorage が使えなくても止まらない */
+  (function () {
+    var t = 'light';
+    try {
+      var s = localStorage.getItem('html-report-theme');
+      if (s === 'light' || s === 'dark') t = s;
+    } catch (e) {}
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+
+<div class="themeswitch" role="group" aria-label="表示の明るさ">
+  <button type="button" data-theme-set="light" aria-pressed="true">ライト</button>
+  <button type="button" data-theme-set="dark" aria-pressed="false">ダーク</button>
+</div>
+
+<div class="page" lang="ja">
+  <nav class="toc" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <div class="toc-progress" aria-hidden="true"><span></span></div>
+    <ol>
+      <li><a href="#s-light" data-target="s-light"><span class="no"><span>1</span></span><span><span class="lbl">明るさの規則</span><span class="toc-claim">規則 3 を実測に合わせる</span></span></a></li>
+      <li><a href="#s-names" data-target="s-names"><span class="no"><span>2</span></span><span><span class="lbl">寄生の層の名前</span><span class="toc-claim">案 1 を勧めます</span></span></a></li>
+      <li><a href="#s-boss" data-target="s-boss"><span class="no"><span>3</span></span><span><span class="lbl">亡霊の中ボス</span><span class="toc-claim">渡し霊 ミレド</span></span></a></li>
+      <li><a href="#s-open" data-target="s-open"><span class="no"><span>4</span></span><span><span class="lbl">仮定と未確認</span><span class="toc-claim">背景は番号で引く</span></span></a></li>
+      <li><a href="#s-next" data-target="s-next"><span class="no"><span>5</span></span><span><span class="lbl">次に判断が要る点</span><span class="toc-claim">決めてほしい 4 点</span></span></a></li>
+      <li><a href="#s-refs" data-target="s-refs"><span class="no"><span>6</span></span><span><span class="lbl">参考</span><span class="toc-claim">出典 5 件</span></span></a></li>
+    </ol>
+  </nav>
+
+  <main class="main">
+    <header class="hero">
+      <p class="eyebrow"><span class="chip kind">判断</span><span>2026-11-04</span><span>世界の正典 v5.1 の未決の 2 件</span></p>
+      <h1>寄生の層名 2&nbsp;つと亡霊の中ボスの案を出し、明るさの規則は実測に合わせて書き直すことを勧めます</h1>
+      <p class="lede">世界の正典には、寄生の領域の層の名前、亡霊の中ボス、領域ごとの明るさの並びが未決のまま残っています<sup class="ref"><a href="#ref-4">[4]</a></sup><sup class="ref"><a href="#ref-5">[5]</a></sup>。今の背景を測ると、竜と亡霊の領域はすでに「入口は明るく、王の層で暗い」並びでした。寄生の領域もこの並びに揃える案を出します。</p>
+      <ul class="meta"><li><b>5</b>件の出典</li><li><b>約 5 分</b>で読めます(推定)</li></ul>
+    </header>
+
+    <ul class="tiles">
+      <li class="tile"><span class="n">4</span><span class="l">決めてほしい点</span></li>
+      <li class="tile"><span class="n">3</span><span class="l">層名と中ボスの案</span></li>
+      <li class="tile ok"><span class="n">0</span><span class="l">描き直す背景の枚数</span></li>
+    </ul>
+
+    <ul class="verdicts">
+      <li class="verdict now"><span class="tag">層の名前</span><h3>蔓絡みの獣窟と爛れ樹の根方</h3><p>王の名の「爛れた世界樹」に響き、1 層目が獣の巣、2 層目が王の根元だと名前だけで分かります。</p></li>
+      <li class="verdict now"><span class="tag">中ボス</span><h3>渡し霊 ミレド</h3><p>干上がった海床で渡る者を待つ霊です。血染めの死海の肋骨の出どころも、渡し舟の骨組みとして決まります。</p></li>
+      <li class="verdict later"><span class="tag">明るさ</span><h3>規則 3 を実測に合わせて書き直す</h3><p>寄生の入口の層は「中くらい」にして、領域の入口の明るさを亡霊、竜、寄生の順に段にします。</p></li>
+    </ul>
+
+    <section id="s-light">
+      <p class="kicker"><span class="no">01</span>明るさの規則</p>
+      <h2>竜と亡霊の領域は、すでに入口が明るく王の層が暗い並びです</h2>
+      <p>#861 のコメントは、竜の領域に暗い層が 2 つ続くと書いていました。これは設定書の古い色の話です。2026-11-03 の背景の決定で大黒蛇の住処は明るい青緑になり、空の平均の明るさは 0.534 です<sup class="ref"><a href="#ref-2">[2]</a></sup>。亡霊の領域も、輝晶の間が 0.721 で、次の血染めの死海が 0.035 です。</p>
+      <figure class="fig">
+        <figcaption>下の層に進むほど暗くなり、王の層の手前で一気に落ちています</figcaption>
+        <ul class="hbar" role="list">
+          <li class="hbar-row"><span class="hbar-label">1 燦光の樹海</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:92.7%"></span></span><span class="hbar-val">0.668</span></li>
+          <li class="hbar-row"><span class="hbar-label">2 ■■の秘跡</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:91.0%"></span></span><span class="hbar-val">0.656</span></li>
+          <li class="hbar-row"><span class="hbar-label">3 大黒蛇の住処</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:74.1%"></span></span><span class="hbar-val">0.534</span></li>
+          <li class="hbar-row is-focus"><span class="hbar-label">4 輝晶の間</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:100%"></span></span><span class="hbar-val">0.721</span></li>
+          <li class="hbar-row"><span class="hbar-label">5 血染めの死海</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:4.9%"></span></span><span class="hbar-val">0.035</span></li>
+          <li class="hbar-row"><span class="hbar-label">6 獄雷峡</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:1.1%"></span></span><span class="hbar-val">0.008</span></li>
+          <li class="hbar-row"><span class="hbar-label">7 果てなき世界</span><span class="hbar-track" aria-hidden="true"><span class="hbar-fill" style="width:0.5%"></span></span><span class="hbar-val">0.003</span></li>
+        </ul>
+        <p class="fig-note">空の平均の明るさ(WCAG の相対輝度)。番号は今の背景の層の番号です。出典 2 件目。</p>
+      </figure>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>竜と亡霊の領域は、入口より王の層が暗く、寄生の領域だけが未定です</caption>
+          <thead><tr><th>領域</th><th>入口の層</th><th>王の層</th><th>並びの読み方</th></tr></thead>
+          <tbody>
+            <tr><td data-label="領域">竜</td><td data-label="入口の層">大黒蛇の住処は 0.534 です。</td><td data-label="王の層">獄雷峡は 0.008 です。</td><td data-label="並びの読み方">明るい層のあとに暗い層が続き、規則 3 の狙いを満たしています。</td></tr>
+            <tr><td data-label="領域">亡霊</td><td data-label="入口の層">輝晶の間は 0.721 で、全層でいちばん明るい層です。</td><td data-label="王の層">血染めの死海は 0.035 です。</td><td data-label="並びの読み方">眩しい層から一気に赤く暗い層へ落ちます。</td></tr>
+            <tr><td data-label="領域">寄生</td><td data-label="入口の層">未定です。</td><td data-label="王の層">未定です。</td><td data-label="並びの読み方">下の 3 案から選びます。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>規則 3 の今の文は「明るい層のあいだに暗い層を 1 つ挟む」です<sup class="ref"><a href="#ref-1">[1]</a></sup>。1 層から 3 層が明るいと決まったので、この文はすでに合いません。実測に合う文は「領域の入口の層は明るく、王の層で暗くする。いちばん明るいのは輝晶の間 1 つにする」です。この文に寄生の領域も従わせます。</p>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>寄生の入口の層は「中くらい」にすると、3 つの領域が明るさでも見分けられます</caption>
+          <thead><tr><th>案</th><th class="num">入口の明るさ(推定)</th><th>起きること</th></tr></thead>
+          <tbody>
+            <tr><td data-label="案">明るい</td><td class="num" data-label="入口の明るさ(推定)">0.4 前後</td><td data-label="起きること">3 つの領域の入口が全部明るくなり、領域の違いは色だけで出ます。</td></tr>
+            <tr><td data-label="案"><strong>中くらい(推奨)</strong></td><td class="num" data-label="入口の明るさ(推定)">0.15 前後</td><td data-label="起きること">入口の明るさが亡霊、竜、寄生の順に下がり、明るさだけで今の領域が分かります。</td></tr>
+            <tr><td data-label="案">暗い</td><td class="num" data-label="入口の明るさ(推定)">0.04 前後</td><td data-label="起きること">共通の層との落差が最も大きくなりますが、「入口は明るい」という規則を寄生だけが破ります。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>王の層は、どの案でも 0.01 から 0.04 に収めます。竜の 0.008 と亡霊の 0.035 のあいだです。</p>
+    </section>
+
+    <section id="s-names">
+      <p class="kicker"><span class="no">02</span>寄生の層の名前</p>
+      <h2>寄生の領域の層名は、王の名に響く案 1 を勧めます</h2>
+      <p>層の名前は、今ある 5 つの名前の形に合わせます。「〜の住処」「〜峡」「〜の間」のように、場所の姿を言う名前です。敵の名前の規則とは別なので、層名に系統の字は要りません。</p>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>案 1 だけが、王の名と、1 層目と 2 層目の役割の両方に響きます</caption>
+          <thead><tr><th>案</th><th>1 層目</th><th>2 層目</th><th>選ぶ理由</th></tr></thead>
+          <tbody>
+            <tr><td data-label="案"><strong>案 1(推奨)</strong></td><td data-label="1 層目">蔓絡みの獣窟(つるがらみのじゅうくつ)</td><td data-label="2 層目">爛れ樹の根方(ただれきのねかた)</td><td data-label="選ぶ理由">「爛れ」が王の名「爛れた世界樹」と重なります。1 層目は宿られた獣の巣、2 層目は王の足元だと分かります。</td></tr>
+            <tr><td data-label="案">案 2</td><td data-label="1 層目">芽吹きの洞(めぶきのほら)</td><td data-label="2 層目">爛幹の座(らんかんのざ)</td><td data-label="選ぶ理由">2 層目が王の座だと分かります。1 層目の「芽吹き」は明るく聞こえ、獣の巣の暗さとずれます。</td></tr>
+            <tr><td data-label="案">案 3</td><td data-label="1 層目">根絡みの巣穴(ねがらみのすあな)</td><td data-label="2 層目">世界樹の根元(せかいじゅのねもと)</td><td data-label="選ぶ理由">いちばん素直です。「爛れ」を含まないので、寄生の領域らしさが名前から落ちます。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>層の見た目は、案が変わっても同じです。次の表は、世界の正典 §4 の置き場の説明を、色と光源まで広げた案です。色と光源の最終案は design が #891 で決めます。</p>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>1 層目は灰緑と濁った桃の中くらいの層、2 層目は幹の脈だけで見える暗い層です</caption>
+          <thead><tr><th>層</th><th>見えるもの</th><th>光源</th><th>主な色と明るさ</th></tr></thead>
+          <tbody>
+            <tr><td data-label="層">1 層目</td><td data-label="見えるもの">爛れた世界樹の枝と根が層を貫き、獣の巣が根に呑まれています。</td><td data-label="光源">根の隙間に滲む菫の瘴気と、芽の鈍い白緑の光です。</td><td data-label="主な色と明るさ">灰緑と濁った桃です。明るさは中くらいです。</td></tr>
+            <tr><td data-label="層">2 層目</td><td data-label="見えるもの">世界樹の幹の根元で、王がいます。</td><td data-label="光源">幹の割れ目で脈打つ桃紫の光だけです。</td><td data-label="主な色と明るさ">暗い桃紫と灰緑です。明るさは暗いです。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>琥珀は使いません(規則 4)。5 層の深紅とは、灰緑を混ぜた桃紫で分けます。</p>
+    </section>
+
+    <section id="s-boss">
+      <p class="kicker"><span class="no">03</span>亡霊の中ボス</p>
+      <h2>「渡し霊 ミレド」なら、血染めの死海の肋骨の出どころも決まります</h2>
+      <p>亡霊の系統は、王の死霊王の手前に中ボスを置く想定です。竜の獄竜 ガルドが、獄雷峡で竜王の手前に立つのと同じ位置です。名前の形は大物の形に合わせ、「肩書き」と「カタカナの固有名」にします。後ろの語には、亡霊を表す「霊」か「影」を入れます<sup class="ref"><a href="#ref-1">[1]</a></sup>。</p>
+      <div class="tablewrap">
+        <table class="stack">
+          <caption>3 案のうち、場所の姿と役が重なるのは渡し霊 ミレドだけです</caption>
+          <thead><tr><th>案</th><th>姿</th><th>置く場所</th><th>選ぶ理由</th></tr></thead>
+          <tbody>
+            <tr><td data-label="案"><strong>渡し霊 ミレド(推奨)</strong></td><td data-label="姿">長い竿を持つ半透明の人影で、肋骨の門の下に立ちます。</td><td data-label="置く場所">血染めの死海の、死霊王の手前です。</td><td data-label="選ぶ理由">干上がった海床で、渡る者を待つ霊です。「ターンごとに別のマスへ跳ぶ」という亡霊の戦い方に合います。</td></tr>
+            <tr><td data-label="案">塩影 ヴェスナ</td><td data-label="姿">塩で固まった人影で、割れ目から燐光が漏れます。</td><td data-label="置く場所">血染めの死海です。</td><td data-label="選ぶ理由">海床の塩の白と重なります。ただし、中ボスの役を姿から読み取りにくい名前です。</td></tr>
+            <tr><td data-label="案">祀り霊 オルダ</td><td data-label="姿">祭服を着た人影で、菫の灯を掲げます。</td><td data-label="置く場所">輝晶の間です。</td><td data-label="選ぶ理由">封印を祀った人の側の霊で、物語とつながります。物語は広げないと決めたので、設定を足しすぎます。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>読みは、わたしれい ミレド(8 音)、しおかげ ヴェスナ(7 音)、まつりれい オルダ(8 音)で、6〜8 音に収まります。</p>
+      <div class="callout"><strong>副産物</strong>: 渡し霊を選ぶと、血染めの死海の巨大な肋骨は「沈んだ渡し舟の肋材」と読めます。未決だった「肋骨と血の出どころ」<sup class="ref"><a href="#ref-1">[1]</a></sup>が、竜の骸と言わずに決まります。これは提案です。最終の絵は design が #891 で決めます。</div>
+    </section>
+
+    <section id="s-open">
+      <p class="kicker"><span class="no">04</span>仮定と未確認</p>
+      <h2>背景が層の番号で決まる作りは、領域に分けたあとに合わなくなります</h2>
+      <ul>
+        <li>仮定: 2026-11-03 の背景の色と明るさは動かしません。こうだいさんが、設定書を背景に合わせると決めたためです。</li>
+        <li>仮定: 後ろの語は、寄生が芽・根・蔓・爛、亡霊が霊・影で確定します。世界の正典 §7.2 の提案のままです。</li>
+        <li>未確認: 寄生の 2 層の明るさの数値は、段の見当です。背景を描いてから測り直します。</li>
+        <li>未確認: 背景は今、層の番号 1 から 7 で引きます<sup class="ref"><a href="#ref-3">[3]</a></sup>。領域に分けると、1 つの経路は共通の 2 層と領域の 2 層で 4 層になり、番号と背景が合いません。背景を層の名前で引く直しが、#887 と #888 に要ります。</li>
+      </ul>
+    </section>
+
+    <section id="s-next">
+      <p class="kicker"><span class="no">05</span>次に判断が要る点</p>
+      <h2>次の 4&nbsp;点を決めると、正典を書き換えて #891 に回せます</h2>
+      <ul>
+        <li>規則 3 を、上の新しい文に書き直してよいか。</li>
+        <li>寄生の入口の層を、明るい・中くらい・暗いのどれにするか。</li>
+        <li>寄生の層名を、案 1・2・3 のどれにするか。</li>
+        <li>亡霊の中ボスを、渡し霊 ミレド・塩影 ヴェスナ・祀り霊 オルダのどれにするか。</li>
+      </ul>
+      <p>決まったら、main が世界の正典の §3 と §4 と §8 に書き入れ、#861 と #892 を閉じます。#891 には、色と光源の案と、肋骨の読み方を回します。</p>
+    </section>
+
+    <section id="s-refs">
+      <p class="kicker"><span class="no">06</span>参考</p>
+      <ol class="refs">
+        <li id="ref-1">世界の正典 v5.1「全層に共通する 5 つの規則」「層と領域」「大物」「未確認のこと」(<span class="nobr">.claude/docs/vision/world-v1.md</span> §3・§4・§8・§10)</li>
+        <li id="ref-2">戦闘画面の見た目「階層ごとの背景」(<span class="nobr">.claude/docs/art_document/battle-visual-v1.md</span> §2.4)</li>
+        <li id="ref-3">背景の層の番号での引き方(<span class="nobr">Assets/View/Backdrop/Script/BackdropSpec.cs</span>、<span class="nobr">BackdropArt.cs</span>)</li>
+        <li id="ref-4">Issue #861(層の色と明るさ)のコメント 2026-11-03 と 2026-11-04。<a href="https://github.com/sunbreak-pro/original-card-battle/issues/861">https://github.com/sunbreak-pro/original-card-battle/issues/861</a></li>
+        <li id="ref-5">Issue #892(寄生の層の名前と亡霊の中ボス)。<a href="https://github.com/sunbreak-pro/original-card-battle/issues/892">https://github.com/sunbreak-pro/original-card-battle/issues/892</a></li>
+      </ol>
+    </section>
+  </main>
+</div>
+
+<script>
+  /* 目次: 現在地の強調(aria-current)、読み終えた節(.done)、上端の進捗バー。節が 3 つ以下で目次がなければ何もしない */
+  (() => {
+    const links = [...document.querySelectorAll('.toc a[data-target]')];
+    const sections = links.map(a => document.getElementById(a.dataset.target));
+    const bar = document.querySelector('.toc-progress > span');
+    if (!links.length || sections.some(s => !s)) return;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const root = document.documentElement;
+      const line = window.innerHeight * 0.3;
+      let idx = 0;
+      sections.forEach((s, i) => { if (s.getBoundingClientRect().top <= line) idx = i; });
+      const max = root.scrollHeight - window.innerHeight;
+      if (max > 0 && window.scrollY >= max - 4) idx = sections.length - 1;
+      links.forEach((a, i) => {
+        a.classList.toggle('done', i < idx);
+        if (i === idx) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+      });
+      if (bar) bar.style.width = (max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 100) + '%';
+      /* 目次が画面より高いとき(.toc は内側でスクロールする)、現在地のリンクを目次の見える範囲に入れる */
+      const box = links[idx].closest('.toc');
+      if (box && box.scrollHeight > box.clientHeight + 1) {
+        const b = box.getBoundingClientRect(), r = links[idx].getBoundingClientRect();
+        if (r.top < b.top) box.scrollTop -= b.top - r.top + 8;
+        else if (r.bottom > b.bottom) box.scrollTop += r.bottom - b.bottom + 8;
+      }
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', onScroll);
+    update();
+  })();
+
+  /* テーマ切り替え: data-theme と aria-pressed を更新し、選んだ値を保存する(保存できなくても切り替えは効く) */
+  (() => {
+    const root = document.documentElement;
+    const buttons = [...document.querySelectorAll('[data-theme-set]')];
+    if (!buttons.length) return;
+    const current = () => (root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    const paint = () => {
+      const now = current();
+      buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === now)));
+    };
+    buttons.forEach(b => b.addEventListener('click', () => {
+      const v = b.dataset.themeSet === 'dark' ? 'dark' : 'light';
+      root.setAttribute('data-theme', v);
+      try { localStorage.setItem('html-report-theme', v); } catch (e) {}
+      paint();
+    }));
+    if (root.getAttribute('data-theme') !== current()) root.setAttribute('data-theme', current());
+    /* ホストが後から data-theme を外したら light を付け直す(付いていないと、切り替えボタンごと消える)。付けた値(dark など)には従う */
+    new MutationObserver(() => {
+      if (!root.hasAttribute('data-theme')) root.setAttribute('data-theme', 'light');
+      paint();
+    }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    paint();
+  })();
+
+  /* 印刷: ダークを選んでいても、印刷の間だけ light にして、印刷のあとで元に戻す(案の画面の暗い上書きも印刷に出さない)。
+     印刷の間に別の値へ変わっていたら、戻さない。利用者がボタンを押したら、控え(saved)を捨てる
+     (afterprint が来ない環境で、古い控えが残って次の印刷を素通りさせたり、選んだ値を戻したりしない)。
+     保存値(localStorage)は触らない。ボタンの押下表示は印刷の間だけ light になる */
+  (() => {
+    const root = document.documentElement;
+    let saved = null;
+    document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => { saved = null; }));
+    const toLight = () => {
+      if (saved !== null) return;
+      saved = root.getAttribute('data-theme') || 'light';
+      if (saved !== 'light') root.setAttribute('data-theme', 'light');
+    };
+    const restore = () => {
+      if (saved === null) return;
+      const back = saved;
+      saved = null;
+      if (root.getAttribute('data-theme') === 'light') root.setAttribute('data-theme', back);
+    };
+    addEventListener('beforeprint', toLight);
+    addEventListener('afterprint', restore);
+    try {
+      const mq = matchMedia('print');
+      const onChange = e => (e.matches ? toLight() : restore());
+      if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+    } catch (e) {}
+  })();
+
+  /* 切り替え式の案パネル: クリックと 矢印キー左右 / Home / End で案を切り替える(選んだタブだけ tabindex=0)。
+     見せない案には inert と aria-hidden を付ける。案の数に依存しない。JS が動かないときは .is-ready が付かず、全案が縦に並ぶ。
+     利用者が最初に切り替えたとき .is-live を付け、フェードはそこから動く(最初の描画では動かさない) */
+  (() => {
+    document.querySelectorAll('[data-variants]').forEach(root => {
+      const tabs = [...root.querySelectorAll('[role="tab"]')];
+      const panels = tabs.map(t => document.getElementById(t.getAttribute('aria-controls')));
+      if (!tabs.length || panels.some(p => !p)) return;
+      const select = (i, focus) => {
+        tabs.forEach((t, j) => {
+          const on = i === j;
+          t.setAttribute('aria-selected', String(on));
+          t.setAttribute('tabindex', on ? '0' : '-1');
+          panels[j].classList.toggle('is-active', on);
+          if (on) { panels[j].removeAttribute('inert'); panels[j].removeAttribute('aria-hidden'); }
+          else { panels[j].setAttribute('inert', ''); panels[j].setAttribute('aria-hidden', 'true'); }
+        });
+        if (focus) tabs[i].focus();
+      };
+      const live = () => root.classList.add('is-live');
+      tabs.forEach((t, i) => {
+        t.addEventListener('click', () => { live(); select(i, false); });
+        t.addEventListener('keydown', e => {
+          if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+          let next = -1;
+          if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+          else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+          else if (e.key === 'Home') next = 0;
+          else if (e.key === 'End') next = tabs.length - 1;
+          if (next < 0) return;
+          e.preventDefault();
+          live();
+          select(next, true);
+        });
+      });
+      const first = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+      select(first < 0 ? 0 : first, false);
+      root.classList.add('is-ready');
+    });
+  })();
+</script>
+</body>
+</html>
