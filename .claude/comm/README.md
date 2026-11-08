@@ -32,7 +32,7 @@
 
 ### main がすること
 
-作業の区切りと `issue-prompter` を回す前に、全 worktree の申し送りを集めます。
+作業の区切りと、`issue-workflow` を回す前と後に、全 worktree の申し送りを集めます。`issue-workflow` が作る `wf-*` の worktree も含みます。
 
 ```bash
 git worktree list --porcelain | sed -n 's/^worktree //p' | while read -r wt; do

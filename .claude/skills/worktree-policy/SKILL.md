@@ -121,7 +121,7 @@ Orca の GUI から作った worktree は `.session-name` / `.session-branch` �
 
 **Issue を立てるのは chat-main だけです**（2026-10-06、#367）。レーンは `gh issue create` を打たず、Issue にしてほしい課題を `.claude/comm/handoff/` に申し送りとして書きます（書式は `.claude/comm/README.md`）。`pre-issue-create-guard.sh` がレーンの `gh issue create` を止めます。
 
-chat-main が申し送りを回収して `issue-dispatch` で Issue を起票し、`lane:` ラベルで宛先を決めます。各レーンは自分宛の open Issue をタスクキューとして実行し、PR を開くまで担います（merge と close はこうだいさんの手番）。貼り付け用の `/goal` 文字列の組み立ては `issue-prompter` です。
+chat-main が申し送りを回収して `issue-dispatch` で Issue を起票し、`lane:` ラベルで宛先を決めます。Issue の実装は、chat-main がグローバルの `issue-workflow` スキルで回します（2026-11-08）。Issue ごとに origin/main から `wf-<n>` の worktree を作り、実装役のサブエージェントが PR を開くまで担います（merge と close はこうだいさんの手番）。`lane:` は、実装役が `npm run sources -- --lane <slug>` で書いてよい正本を知るために使います。このリポジトリでの選び方と決まりは `.claude/issue-workflow.md` です。
 
 ## 既知制約
 

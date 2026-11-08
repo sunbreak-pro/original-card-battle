@@ -222,7 +222,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | セッション開始 / `/clear` の後 | `session-loader` |
 | worktree / レーン / ブランチ切替 | `worktree-policy` |
 | 課題を Issue として起票（main だけ。レーンは `.claude/comm/handoff/` に申し送り） | `issue-dispatch` |
-| 次に着手する Issue を決める | `issue-prompter` |
+| 次に着手する Issue を選んで実装・確認・PR まで回す（main だけ。設定は `.claude/issue-workflow.md`） | `issue-workflow`（グローバル） |
 | open PR をまとめて merge する（main だけ。こうだいさんの起動が承認） | `merge-round` |
 | open Issue を仕分ける | `/loop-triage` |
 | Issue 1 件を commit まで実装 | `/loop-implement` |
@@ -248,7 +248,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 定時に動く進行役（`~/dev/pdca-harness`）が、`pdca:auto` の付いた open Issue を 1 件 1 PR にします（2026-10-12 こうだいさん決定）。
 
 - **例外にするもの:** 進行役が作る `pdca/*` ブランチの PR と、`state:*` `goal:*` のラベルです。進行役は Issue を作らず、merge もしません。merge は常に人です
-- **`pdca:auto` を付けるのは chat-main だけ**です。こうだいさんの指示があるときか、`issue-dispatch` の判断で付けます。付いた Issue は、同じ Issue を 2 者が実装しないように、レーンの `/goal` に配りません（`issue-prompter` が「pdca 担当」に分けます）
+- **`pdca:auto` を付けるのは chat-main だけ**です。こうだいさんの指示があるときか、`issue-dispatch` の判断で付けます。付いた Issue は、同じ Issue を 2 者が実装しないように、`issue-workflow` で回しません（グローバルの `issue-workflow` スキルが、`pdca:auto` と `state:*` のラベルを見て共通の除外で外します）
 - **拾われない Issue:** 本文が `.claude/` のパスを挙げるもの、除外ラベル（`type:human` `area:art` `area:world` `status:frozen` など）が付いたもの、題が判断を求めるもの、子 Issue を持つ親です。進行役は `.claude/` と `.github/` に書けません
 - **判断が要るとき:** 進行役は `state:needs-human` を付け、Gmail で知らせます
 
@@ -306,7 +306,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 | `dungeon` | 探索プログラム。刻限 / 瘴気 / ノード | `dungeon` |
 | `audit` | 監査。設計書と実装の整合、既知課題の棚卸し | `docs` `tooling` |
 
-- **宛先ラベルは `lane:<slug>`**。付けなければ `issue-prompter` が上の `area:` から既定のレーンへ振る
+- **宛先ラベルは `lane:<slug>`**。付けなければ `issue-workflow` が上の `area:` から既定のレーンを決める（決め方は `.claude/issue-workflow.md` の「選び方」）
 - **世界観の正本は main（chat-main）**（2026-09-21 こうだいさん決定）。正典は `docs/vision/world-v1.md` で、**舞台は龍神の封印の地、敵は竜・寄生・亡霊の 3 系統、崩壊まで約 1 年**（v5、2026-11-03 #884）。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main の采配に落とす。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
 - **`audit` は読み取り専用**。整合監査の結果は申し送りにして main へ回し、修正は main が Issue にして担当レーンへ配る
 - **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで

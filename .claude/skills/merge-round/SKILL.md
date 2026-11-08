@@ -77,6 +77,8 @@ gh pr merge <n> -R sunbreak-pro/original-card-battle --merge
 node .claude/scripts/merge-round.mjs fixes
 ```
 
+`fixes` の前に、`issue-workflow` が作った `wf-*` の worktree のうち PR を開いたものを、申し送りを集めてから消しておく（`.claude/issue-workflow.md` の「実行のあと」）。`fixes` は `workspaces/` の下の worktree をすべてレーンとして数える。`wf-<n>` が残っていると、だれもいない worktree 宛ての `/goal` を出し、そのブランチは「レーンが開いている」扱いで 4a の自動の直しからも外れる。
+
 最新の main に対して全 open PR を `git merge-tree` で確かめ、衝突した PR と CI が赤い PR を 2 つに分ける。
 
 - **chat-main が直す**: 衝突が文書（`.md`）と lockfile だけで、CI は赤くなく、どのレーンもそのブランチを開いていない PR。手順 4a で直す。task-tracker の記録（`.claude/memory/chat-*.md` `.claude/history/chat-*.md`）の衝突はほぼここに入る。
@@ -169,7 +171,10 @@ main を書き換えない（`reset --hard` と force push は deny 済み）。
 
 3. chat-main に戻り、`plan --only <revert PR>` → `start` → `check` → `gh pr merge` → `finish` で merge する。
 4. 回ごと戻したときは、`git fetch origin` のあと `git diff <戻る地点> origin/main --stat` を打ち、差分が空か、戻した回より後に merge した PR の分だけになっているかを確かめる。
-5. 元の PR が `Closes #n` で Issue を閉じていたら、Issue を reopen して戻した理由をコメントし、直した PR を出し直すレーンへ `issue-prompter` で配り直す。
+5. 元の PR が `Closes #n` で Issue を閉じていたら、Issue を reopen して戻した理由をコメントする。直した PR は chat-main が `issue-workflow` の次の回で出し直す。
+6. 元の PR のブランチを消す。`git push origin --delete <元のブランチ>` と `git branch -d <元のブランチ>` を打つ（merge 済みなので `-d` で消せる）。
+
+`issue-workflow` は revert の PR（ブランチ `revert/pr-*`）を着地の照合から外し、本文の `Reverts #<n>` で戻された元の PR も着地に数えない。ただし元の PR のブランチが origin か手元に残っていると、reopen した Issue は「着手済み（ブランチあり）」で外れる。6 でブランチを消すと、Issue は次の回の候補に戻る。
 
 ### main が赤いとき
 
