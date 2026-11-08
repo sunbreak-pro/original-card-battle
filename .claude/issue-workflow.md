@@ -183,7 +183,7 @@
 
 **ポートは 5273 に固定します。** chat-main の `npm run dev` が 5173 を使い、5173 がふさがると Vite は 5174、5175 と順に逃げます。5273 はその並びから離れていて、`vite preview` の 4173 とも重なりません。
 
-**起動する前に、5273 が空いているかを確かめます。** 次のコマンドで何か出たら、ほかの動作確認か前の回の残りがつかんでいます。止めずに、動作確認をせずに PR に「ポート 5273 がふさがっていたので動作確認をしていません」とコメントし、報告に書きます。だれのプロセスか分からないものを止めないためです。
+**起動する前に、5273 が空いているかを確かめます。** 次のコマンドで何か出たら、ほかの動作確認か前の回の残りがつかんでいます。止めずに、動作確認をせずに PR に「ポート 5273 がふさがっていたので動作確認をしていません」とコメントし、報告に書きます。だれのプロセスか分からないものを止めないためです。ふさがっていた回は dev サーバーを起動していないので、何も止めません。
 
 ```bash
 C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 5273 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess"
@@ -197,21 +197,31 @@ cd {{worktree}} && npm run dev -- --host 127.0.0.1 --port 5273 --strictPort
 
 `--strictPort` を付けるのは、5273 がふさがっていたときに別のポートへ逃げず、起動に失敗させるためです。`--host 127.0.0.1` を付けるのは、Windows で `localhost` が IPv6 の `::1` に向くと、ブラウザと待ち合わせのコマンドがつながらないことがあるためです。
 
-**答えるまで待ってから、ブラウザを開きます。** 次のコマンドは最大 60 秒待ち、答えれば exit 0 で返ります。0 以外なら起動に失敗したので、dev サーバーを止め、その出力を PR のコメントに写して、動作確認を見送り（skipped）にします。全体確認の `npm run build` は通っているので、起動の失敗は環境のせいのことが多く、PR を止める理由にはしないためです。
+**答えるまで待ってから、ブラウザを開きます。** 次のコマンドは最大 60 秒待ち、答えれば exit 0 で返ります。0 以外なら起動に失敗したので、上の「空いているか」のコマンドを打ちます。PID が出たらそれを記録して下の止め方で止め、出なければ止めるものはありません。dev サーバーの出力を PR のコメントに写して、動作確認を見送り（skipped）にします。全体確認の `npm run build` は通っているので、起動の失敗は環境のせいのことが多く、PR を止める理由にはしないためです。
 
 ```bash
 curl -sf -o /dev/null --retry 60 --retry-delay 1 --retry-connrefused http://127.0.0.1:5273/
 ```
 
-**画面は `http://127.0.0.1:5273/` から開きます。** URL で画面を切り替える仕組みは無く、ゲームはキャラクター選択から始まります。拠点・ギルド・店・鍛冶屋・聖域・ダンジョンの入口・探索・戦闘へは、画面の操作で進みます。手記と設定は `localStorage` に残るので、Playwright の新しいブラウザでは毎回まっさらな状態から始まります。
-
-**確かめ終えたら、必ず dev サーバーを止めます。** 失敗したときも、途中でやめたときも止めます。止め方はポートで探して止める次のコマンドです。打ったあと、上の「空いているか」のコマンドで何も出なくなったことを確かめ、PR のコメントに 1 行書きます。
+**答えたらすぐ、5273 で待ち受けている PID を記録します。** 次のコマンドで出た PID（Vite を動かす `node`）を控えます。
 
 ```bash
-C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 5273 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id \$_ -Force }"
+C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 5273 -State Listen | Select-Object -ExpandProperty OwningProcess -Unique"
 ```
 
-`Stop-Process` に PID を `-Id` で渡すのは、数のまま pipe でつなぐと `-InputObject` に結び付いて失敗するためです。
+止めるときはこの PID だけを止めます。確かめている間に別のプロセスが 5273 を取っても、それを止めないためです。
+
+**画面は `http://127.0.0.1:5273/` から開きます。** URL で画面を切り替える仕組みは無く、ゲームはキャラクター選択から始まります。拠点・ギルド・店・鍛冶屋・聖域・ダンジョンの入口・探索・戦闘へは、画面の操作で進みます。手記と設定は `localStorage` に残るので、Playwright の新しいブラウザでは毎回まっさらな状態から始まります。
+
+**確かめ終えたら、必ず dev サーバーを止めます。** 失敗したときも、途中でやめたときも止めます。止めるのは、記録した PID だけです。`<pid>` に控えた番号を入れて打ちます。
+
+```bash
+C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Stop-Process -Id <pid> -Force"
+```
+
+打ったあと、上の「空いているか」のコマンドで何も出なくなったことを確かめ、PR のコメントに 1 行書きます。まだ何か出たら、それは記録した PID とは別のプロセスなので止めずに、PID を報告に書きます。
+
+`npm run dev` は npm を親にして `node` を起動します。待ち受けている `node` を止めると、npm の親もそこで終わります。バックグラウンドで起動した Bash がまだ残っていても、その Bash の呼び出しが終わるときに一緒に終わります。
 
 **BLOCKING にするのは、次のどれかに当たるときです。**
 
@@ -225,6 +235,8 @@ C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "G
 ## 仕上げ
 
 起動前の確認で、こうだいさんが「merge-round まで回す」を選んだ回だけ、すべてのブランチが終わった後に仕上げ役が 1 度だけ回します。手順は `merge-round` スキルの「work-finishers が回すとき」で、ここにはこのリポジトリの決まりを書きます。
+
+**承認の印がある回だけ回します。** chat-main は、こうだいさんが「merge-round まで回す」を選んだ回だけ、`issue-workflow` の手順 8 で `{{main}}/.git/merge-round/finisher-approved.json`（`{"approvedAt":"<ISO の時刻>"}`）を書きます。`hooks/merge-gate.mjs` は、印が無いか、読めないか、6 時間より古いと、work-finishers の `gh pr merge` を deny します。印は仕上げ役が書きません。
 
 **{{main}} で、`main` にいることを確かめてから始めます。** `cd {{main}} && git branch --show-current` が `main` でなければ、何もせずに報告します。続けて `git pull --ff-only` を打ちます。
 
@@ -247,6 +259,8 @@ gh pr merge <n> -R sunbreak-pro/original-card-battle --merge
 {{prs}} に PR が無い `wf-*`（失敗した Issue の worktree）には触りません。直すか捨てるかは chat-main が決めます。
 
 申し送りがあって残した worktree は、`fixes` がレーンとして数えます。その PR が衝突していれば、出力の `/goal` はだれもいない worktree 宛てになり、4a の自動の直しからも外れます。報告では、その PR を「申し送りの回収後に chat-main が `fixes` を打ち直す」として並べます。
+
+**回を閉じたら、承認の印を消します。** `node .claude/scripts/merge-round.mjs finish` の後に `rm -f {{main}}/.git/merge-round/finisher-approved.json` を打ちます。`main` にいなかったときや、hook に止められて途中でやめたときも、報告の前に同じく消します。印が残ると、次の回の仕上げ役がこうだいさんの選択なしに merge できてしまうためです。
 
 ## 実行のあと
 

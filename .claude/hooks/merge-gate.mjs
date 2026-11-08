@@ -4,6 +4,7 @@
 //
 // settings.json には gh pr merge の allow も ask も置かない。確認を消すのはこの hook の allow だけにする:
 //   - サブエージェントが打った → deny。例外は agent_type が work-finishers のものだけ（下記）
+//   - work-finishers だが、承認の印が無い / 読めない / 6 時間より古い → deny
 //   - 作業レーン（git worktree）から打った → deny（レーンは merge しない）
 //   - chat-main だが main にいない / 形が決まりと違う / 回が始まっていない / 一覧に無い / check 前 → ask
 //   - chat-main・main・決まった形・進行中の回の一覧にあり check を通った PR → allow
@@ -12,6 +13,8 @@
 // allow ルールを置かないのは、hook が落ちたときに素通りさせないため（落ちたら通常の権限判定に戻る）。
 // work-finishers は issue-workflow の仕上げ役で、こうだいさんが起動前の確認で「merge-round まで回す」を選んだ回だけ
 // merge-round を代わりに回す（2026-11-08）。外すのはサブエージェントの deny だけで、そのあとの判定はすべて chat-main と同じに効く。
+// その選択は chat-main が .git/merge-round/finisher-approved.json（{"approvedAt": ISO}）に書く。印で見るのは、
+// 「人が始めた回」を agent_type の自己申告ではなく、こうだいさんの選択の記録で確かめるため。
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -20,6 +23,7 @@ import { hookContext } from "./lib/hook-context.mjs";
 // このリポジトリは merge commit で履歴を残す（squash ではない）ので、形も --merge に固定する
 const SHAPE = /^\s*gh\s+pr\s+merge\s+(\d+)\s+-R\s+sunbreak-pro\/original-card-battle\s+--merge\s*$/;
 const ROUND_TTL_MS = 2 * 60 * 60 * 1000;
+const APPROVAL_TTL_MS = 6 * 60 * 60 * 1000;
 
 function decide(permissionDecision, permissionDecisionReason) {
   process.stdout.write(
@@ -41,7 +45,8 @@ try {
   // input.cwd is the main checkout for chat-main's subagents too, so the worktree check below misses
   // them; agent_id and the `cd` in front of the command catch them (issue-workflow trial, 2026-11-08).
   const ctx = hookContext(input, "pr-merge", process.cwd());
-  if (ctx.agent && input.agent_type !== "work-finishers") decide("deny", "サブエージェントは merge しません。merge は chat-main の merge-round スキルが行います。");
+  const finisher = Boolean(ctx.agent) && input.agent_type === "work-finishers";
+  if (ctx.agent && !finisher) decide("deny", "サブエージェントは merge しません。merge は chat-main の merge-round スキルが行います。");
   if (ctx.known && ctx.linked && ctx.sessionName !== "main")
     decide("deny", "作業レーン（worktree）の中からは merge しません。merge は chat-main の merge-round スキルが行います。");
 
@@ -54,6 +59,17 @@ try {
 
   if (gitDir !== common)
     decide("deny", "作業レーン（worktree）からは merge しません。merge は chat-main の merge-round スキルが行います。");
+
+  if (finisher) {
+    const approval = join(git("rev-parse", "--path-format=absolute", "--git-common-dir"), "merge-round", "finisher-approved.json");
+    let approvedAt = NaN;
+    try {
+      approvedAt = Date.parse(JSON.parse(readFileSync(approval, "utf8")).approvedAt);
+    } catch {}
+    const age = Date.now() - approvedAt;
+    if (!(age >= 0 && age <= APPROVAL_TTL_MS))
+      decide("deny", "起動前の確認で merge-round まで回すが選ばれていない回なので、work-finishers は merge しません（承認の印が無いか、6 時間より古い）。");
+  }
 
   const branch = git("branch", "--show-current");
   if (branch !== "main") decide("ask", `chat-main が main にいません（いま ${branch || "detached"}）。merge してよいか確認します。`);

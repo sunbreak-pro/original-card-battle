@@ -1,11 +1,11 @@
 ---
 name: merge-round
-description: chat-main 専用。open PR を事前確認してから順番に merge し、文書・lockfile だけの衝突は chat-main が一時 worktree で直し、残りの衝突と CI の赤はレーンごとの /goal 指示文にまとめ、回を閉じて戻す地点を記録する。merge 後に戻す手順も持つ。作業レーンでの merge と Issue の close には使わない。Triggers include "merge して", "まとめて merge", "PR を片付けて", "merge-round", "マージの回", "revert したい", "merge を戻したい".
+description: chat-main 専用（例外は issue-workflow で「merge-round まで回す」を選んだ回の work-finishers）。open PR を事前確認してから順番に merge し、文書・lockfile だけの衝突は chat-main が一時 worktree で直し、残りの衝突と CI の赤はレーンごとの /goal 指示文にまとめ、回を閉じて戻す地点を記録する。merge 後に戻す手順も持つ。作業レーンでの merge と Issue の close には使わない。Triggers include "merge して", "まとめて merge", "PR を片付けて", "merge-round", "マージの回", "revert したい", "merge を戻したい".
 ---
 
 # merge-round — chat-main の merge を 1 回ぶんまとめる
 
-life-editor の merge-round（2026-11-02）をこのリポジトリに写したもの（2026-11-04 こうだいさん依頼）。こうだいさんがこのスキルを起動したら、それがその回の merge の承認になる。事前確認を通った PR は確認ダイアログなしで merge する。`hooks/merge-gate.mjs` が、回の一覧にある PR の決まった形の merge だけを通す。
+life-editor の merge-round（2026-11-02）をこのリポジトリに写したもの（2026-11-04 こうだいさん依頼）。こうだいさんがこのスキルを起動したら、それがその回の merge の承認になる。`issue-workflow` の起動前の確認で「merge-round まで回す」を選んだ回も承認に数え、仕上げ役の `work-finishers` が回す（下の「work-finishers が回すとき」）。事前確認を通った PR は確認ダイアログなしで merge する。`hooks/merge-gate.mjs` が、回の一覧にある PR の決まった形の merge だけを通す。
 
 宅配便の集荷にたとえると、積める荷物を全部積んでから、積めなかった荷物の送り主にまとめて連絡するやり方です。1 本 merge するたびに止まって聞くことはしない。
 
@@ -149,7 +149,7 @@ merge した PR と merge commit を新しい順に表示し、`.git/merge-round
 
 `issue-workflow` の仕上げ役（サブエージェント `work-finishers`）が、その回の最後に 1 度だけこのスキルを回すことがある。手順は上と同じで、違うのは次のところだけ。このリポジトリの細かい決まりは `.claude/issue-workflow.md` の「仕上げ」にある。
 
-- 承認は、こうだいさんが `issue-workflow` の起動前の確認（chat-main の AskUserQuestion）で「merge-round まで回す」を選んだことで、その回に限る。これを人の起動に数える。選ばれていない回では回さない。
+- 承認は、こうだいさんが `issue-workflow` の起動前の確認（chat-main の AskUserQuestion）で「merge-round まで回す」を選んだことで、その回に限る。これを人の起動に数える。選ばれていない回では回さない。選んだ記録は chat-main が `.git/merge-round/finisher-approved.json` に書き、hook は印が無いか 6 時間より古いと `work-finishers` の merge を deny する。手順 5 の `finish` の後と、途中でやめたときに、`work-finishers` が印を消す。
 - 手順 1 は `node .claude/scripts/merge-round.mjs plan --only <その回が開いた PR をカンマでつないだもの>` にする。ほかの open PR は一覧に入れない。
 - 手順 4a はサブエージェントを起動せず、自分で直す（サブエージェントはサブエージェントを起動できない）。`autofix-start <n>` の「サブエージェントへの指示」に自分で従い、一時 worktree で衝突を解いて merge の commit まで作る。push は `autofix-push <n>` に任せる。判断できない衝突は `autofix-abort <n>` で片付けて、`fixes` を打ち直す。
 - `gh pr merge` に hook が確認（ask）か拒否（deny）を返したら、その PR を飛ばして報告に書く。打ち直しも、形を変えた回り道もしない。hook は `work-finishers` に対してもサブエージェントの deny を外すだけで、ほかの判定は chat-main と同じに効く。

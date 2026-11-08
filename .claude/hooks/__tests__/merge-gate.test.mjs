@@ -48,6 +48,14 @@ function writeRound(round) {
   );
 }
 
+function writeApproval(ageMs = 0) {
+  mkdirSync(join(main, ".git", "merge-round"), { recursive: true });
+  writeFileSync(
+    join(main, ".git", "merge-round", "finisher-approved.json"),
+    JSON.stringify({ approvedAt: new Date(Date.now() - ageMs).toISOString() }),
+  );
+}
+
 function runGate(input) {
   const r = spawnSync("node", [join(main, ".claude", "hooks", "merge-gate.mjs")], {
     input: JSON.stringify(input),
@@ -70,7 +78,21 @@ const finisher = (command, extra = {}) => ({
   ...extra,
 });
 
-test("work-finishers passes the subagent deny and still gets ask when no round is active", () => {
+test("work-finishers without the approval marker is denied", () => {
+  const r = runGate(finisher(CMD));
+  assert.equal(r.decision, "deny");
+  assert.match(r.reason, /merge-round まで回す/);
+});
+
+test("work-finishers with a stale or unreadable approval marker is denied", () => {
+  writeApproval(7 * 60 * 60 * 1000);
+  assert.equal(runGate(finisher(CMD)).decision, "deny", "7 hours old");
+  writeFileSync(join(main, ".git", "merge-round", "finisher-approved.json"), "not json");
+  assert.equal(runGate(finisher(CMD)).decision, "deny", "unreadable");
+});
+
+test("work-finishers with a fresh marker passes the subagent deny and still gets ask when no round is active", () => {
+  writeApproval();
   const r = runGate(finisher(CMD));
   assert.equal(r.decision, "ask");
   assert.match(r.reason, /回が始まっていない/);
@@ -84,7 +106,8 @@ test("any other agent_type, or none, is still denied as a subagent", () => {
   }
 });
 
-test('agent_type "work-finishers" alone does not make an allow', () => {
+test('agent_type "work-finishers" with a fresh marker still does not make an allow by itself', () => {
+  writeApproval();
   assert.equal(runGate(finisher(`cd ${wt} && ${CMD}`)).decision, "deny", "from a lane worktree");
   assert.equal(runGate(finisher(`${CMD} --delete-branch`)).decision, "ask", "wrong command shape");
 
@@ -98,8 +121,10 @@ test('agent_type "work-finishers" alone does not make an allow', () => {
   assert.equal(runGate(finisher(CMD)).decision, "ask", "round older than 2 hours");
 });
 
-test("work-finishers gets allow only for a checked PR of the active round, like chat-main", () => {
+test("work-finishers gets allow only with a fresh marker and a checked PR of the active round, like chat-main", () => {
   writeRound({ checked: { 1: "abc" } });
+  assert.equal(runGate(finisher(CMD)).decision, "deny", "no marker");
+  writeApproval();
   assert.equal(runGate(finisher(CMD)).decision, "allow");
   assert.equal(runGate({ cwd: main, tool_input: { command: CMD } }).decision, "allow", "chat-main itself");
   assert.equal(runGate({ cwd: main, agent_id: "a1", agent_type: "general-purpose", tool_input: { command: CMD } }).decision, "deny");
