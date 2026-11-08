@@ -37,7 +37,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void EveryName_FitsOnOneLine_AboveTheTypeLine()
         {
-            Assert.That(CardCatalog.All.Count, Is.EqualTo(71));
+            Assert.That(CardCatalog.All.Count, Is.EqualTo(73));
             var misfits = new List<string>();
             foreach (CardDef def in CardCatalog.All)
             {
@@ -115,7 +115,7 @@ namespace Depiction.Bridge.Tests
         [Test]
         public void EveryDescription_FitsItsBox_WithNoLineOpeningOnPunctuation()
         {
-            Assert.That(CardCatalog.All.Count, Is.EqualTo(71));
+            Assert.That(CardCatalog.All.Count, Is.EqualTo(73));
             var misfits = new List<string>();
             foreach (CardDef def in CardCatalog.All)
             {

@@ -10,15 +10,15 @@ namespace BattleCore
     /// of §1.4 (the attack power by column and reach width) are already inside them.
     ///
     /// The core carries the swordsman cards (#188) the canon keeps: the initial thirty-five (§2) live in
-    /// CardCatalog.Initial.cs and the learned thirty-six (§3) in CardCatalog.Learned.cs. The canon's
-    /// seventy-three counts the two stances #826 adds (#84 背水の陣, #85 覚醒). The canon numbers are
-    /// kept, so the list skips the nine v4.10 dropped. This file keeps the shorthands those two are
-    /// written with, the canon-order list and the lookup.
+    /// CardCatalog.Initial.cs and the learned thirty-eight (§3) in CardCatalog.Learned.cs, the canon's
+    /// seventy-three with the two stances #826 added (#84 背水の陣, #85 覚醒). The canon numbers are
+    /// kept, so the list skips the nine v4.10 dropped and the dragon god's #81〜#83. This file keeps
+    /// the shorthands those two are written with, the canon-order list and the lookup.
     /// </summary>
     public static partial class CardCatalog
     {
         /// <summary>
-        /// Every card the core knows, in canon order (#2 first, #79 last).
+        /// Every card the core knows, in canon order (#2 first, #85 last).
         ///
         /// Assigned in the static constructor, not by a field initializer: the order the field
         /// initializers of partial files run in is undefined, but all of them have run before the
@@ -40,7 +40,7 @@ namespace BattleCore
                 BoarRush, Rend, BodyCheck, StoneThrow,
                 GuardThrust, StepInGuard, StepOutGuard, IronWall, TwistAway,
 
-                // §3: the learned thirty-six (v4.10 dropped #46, #53, #65, #80).
+                // §3: the learned thirty-eight (v4.10 dropped #46, #53, #65, #80; #826 added #84, #85).
                 MiasmaBlade, PriestPrayer, PurgeFlash, LineLash, AbyssStance,
                 RootStride, ThornShot, RootBind, Bulwark,
                 ShieldBash, PackHowl, Whirlwind, RiposteStance,
@@ -49,6 +49,7 @@ namespace BattleCore
                 CalmGuard, Deflect, CrescentCut, PommelStrike, MistStep,
                 KeenEye, Resolve, GaleThrust, AnchorStance, VitalThrust,
                 EvadeCut, BloodDance, WolfStance, ShadowLunge,
+                Backwater, Awakening,
             };
             Initial = All.Take(InitialCount).ToList();
 
@@ -61,18 +62,22 @@ namespace BattleCore
             Numbers = numbers;
         }
 
-        /// <summary>The highest canon number the catalog holds (#79; #80 left in v4.10).</summary>
-        private const int LastNumber = 80;
+        /// <summary>The highest canon number the catalog holds (#85 覚醒, #826).</summary>
+        private const int LastNumber = 85;
 
-        /// <summary>The canon numbers v4.10 dropped (#824). The rest keep their number, so the list has gaps.</summary>
-        private static readonly int[] DroppedNumbers = { 1, 17, 18, 29, 35, 46, 53, 65, 80 };
+        /// <summary>
+        /// The canon numbers up to <see cref="LastNumber"/> the catalog does not hold: the nine v4.10
+        /// dropped (#824), and the dragon god's three (#81〜#83, §3.1), which the core does not carry
+        /// yet. The rest keep their number, so the list has gaps.
+        /// </summary>
+        private static readonly int[] DroppedNumbers = { 1, 17, 18, 29, 35, 46, 53, 65, 80, 81, 82, 83 };
 
         /// <summary>The canon number of each card of <see cref="All"/>, at the same index.</summary>
         private static readonly IReadOnlyList<int> Numbers;
 
         /// <summary>
         /// The card with this canon number (swordsman_cards_v4 §2 / §3), or null for a number the catalog
-        /// does not hold: one v4.10 dropped, or one past the catalog (#81〜#85 come later). Since v4.10 a
+        /// does not hold: one v4.10 dropped, the dragon god's #81〜#83, or one past #85. Since v4.10 a
         /// number is not an index into <see cref="All"/> (#825).
         /// </summary>
         public static CardDef? ByNumber(int number)

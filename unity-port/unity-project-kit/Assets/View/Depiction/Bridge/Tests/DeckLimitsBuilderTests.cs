@@ -60,7 +60,7 @@ namespace Depiction.Bridge.Tests
             var b = new DeckBuilder();
             Assert.That(b.Limits, Is.SameAs(DeckLimits.Default));
             Assert.That(b.LifeTitle, Is.EqualTo(DeckBuilder.Title));
-            Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（71 種から 20〜40 枚、1 種 3 枚まで）"));
+            Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（73 種から 20〜40 枚、1 種 3 枚まで）"));
             Assert.That(DeckBuilder.TitleFor(null), Is.EqualTo(DeckBuilder.Title));
             Assert.That(Filled(40).StatusText, Is.EqualTo("40 枚です。20〜40 枚、1 種 3 枚を満たしています"));
             Assert.That(Filled(40).CanAdd("kesa_cut"), Is.False, "the 41st");
@@ -93,9 +93,9 @@ namespace Depiction.Bridge.Tests
             Assert.That(b.IsValid, Is.True);
             Assert.That(b.StatusText, Is.EqualTo("45 枚です。20〜45 枚、1 種 3 枚を満たしています"));
             Assert.That(Filled(19, Survivor).StatusText, Is.EqualTo("19 枚です。あと 1 枚入れると戦えます"));
-            Assert.That(b.LifeTitle, Is.EqualTo("デッキを組む（71 種から 20〜45 枚、1 種 3 枚まで）"));
+            Assert.That(b.LifeTitle, Is.EqualTo("デッキを組む（73 種から 20〜45 枚、1 種 3 枚まで）"));
             Assert.That(DeckBuilder.TitleFor(Survivor), Is.EqualTo(b.LifeTitle));
-            Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（71 種から 20〜40 枚、1 種 3 枚まで）"), "the static Title stays");
+            Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（73 種から 20〜40 枚、1 種 3 枚まで）"), "the static Title stays");
             Assert.That(b.RaisedLine, Is.EqualTo("デッキ上限 +5（40 → 45）"));
             Assert.That(Filled(41, Survivor).Validate().Ok, Is.True);
         }

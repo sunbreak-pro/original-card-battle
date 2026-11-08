@@ -139,14 +139,14 @@ namespace Depiction.Bridge.Tests
 
         // ---- filters and pages ----
 
-        [TestCase(BattleAttribute.None, 0, 71)]
+        [TestCase(BattleAttribute.None, 0, 73)]
         [TestCase(BattleAttribute.Attack, 0, 29)]
         [TestCase(BattleAttribute.Guard, 0, 19)]
         [TestCase(BattleAttribute.Skill, 0, 11)]
-        [TestCase(BattleAttribute.Stance, 0, 12)]
+        [TestCase(BattleAttribute.Stance, 0, 14)]
         [TestCase(BattleAttribute.None, 1, 22)]
         [TestCase(BattleAttribute.None, 2, 29)]
-        [TestCase(BattleAttribute.None, 3, 20)]
+        [TestCase(BattleAttribute.None, 3, 21)]
         public void AFilter_KeepsTheCardsCountedAsTheAttribute_AndTheCost(BattleAttribute attribute, int cost, int kept)
         {
             // swordsman_cards_v4 v4.5 §4.1 / §4.4, folded by battle_core_v4 §2.1: 攻撃 36 / 防御 19 / スキル 11 /
@@ -169,11 +169,11 @@ namespace Depiction.Bridge.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(first.Count, Is.EqualTo(4));
-                Assert.That(first.Text, Is.EqualTo("1 / 4 ページ（71 種）"));
+                Assert.That(first.Text, Is.EqualTo("1 / 4 ページ（73 種）"));
                 Assert.That(last.Index, Is.EqualTo(3));
                 Assert.That(before.Index, Is.EqualTo(0));
                 Assert.That(all, Is.EqualTo(CardCatalog.All));
-                Assert.That(deck.Page(new DeckFilter { Attribute = BattleAttribute.Stance }, 0, 20).Text, Is.EqualTo("1 / 1 ページ（12 種）"));
+                Assert.That(deck.Page(new DeckFilter { Attribute = BattleAttribute.Stance }, 0, 20).Text, Is.EqualTo("1 / 1 ページ（14 種）"));
             });
         }
 
@@ -335,7 +335,7 @@ namespace Depiction.Bridge.Tests
         {
             Assert.Multiple(() =>
             {
-                Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（71 種から 20〜40 枚、1 種 3 枚まで）"));
+                Assert.That(DeckBuilder.Title, Is.EqualTo("デッキを組む（73 種から 20〜40 枚、1 種 3 枚まで）"));
                 Assert.That(DeckBuilder.AttributeOptions.Select(o => o.Key), Is.EqualTo(new[] { "全て", "攻撃", "防御", "スキル", "スタンス" }), "#575: battle-visual-v1 decision 15");
                 Assert.That(DeckBuilder.AttributeOptions.First().Value, Is.EqualTo(BattleAttribute.None));
                 // #823: COST_MAX is 4, so the filter offers コスト 4 as well.

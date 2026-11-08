@@ -19,19 +19,29 @@ namespace BattleCore
         ///
         /// §19.5 S13: one multiplier per blow, 脆化 before 強化. The turn loop picks it for each blow
         /// (TurnLoop.Resolve and TurnLoop.Preview) and hands it in as <paramref name="blowMult"/> —
-        /// 脆化's or 強化's, or 1.0 when neither applies. There is one slot, so two multipliers can
+        /// 脆化's or 強化's, or 1.0 when neither applies. There is one slot, so 脆化 and 強化 can
         /// never be stacked on the same blow.
+        ///
+        /// #826 is the one exception: 背水の陣's ×3 (<paramref name="stanceTimes"/>) is a slot of its
+        /// own and multiplies on top of that one, before the single rounding (10 × 1.5 × 3 = 45).
         /// </summary>
         public static int ComputeRawPower(
             int face,
             int traitBonus = 0,
             int followUp = 0,
             int conversion = 0,
-            double blowMult = 1.0)
+            double blowMult = 1.0,
+            int stanceTimes = 1)
         {
-            double raw = (face + traitBonus + followUp + conversion) * blowMult;
+            double raw = (face + traitBonus + followUp + conversion) * blowMult * stanceTimes;
             return Math.Max(0, (int)Math.Round(raw, MidpointRounding.AwayFromZero));
         }
+
+        /// <summary>
+        /// #826 背水の陣 「受けるダメージ ×2」: the attacker's raw, already rounded, times what the one
+        /// struck takes it at. Guard comes off after this (<see cref="ApplyGuard"/>): 8 → 16 − Guard.
+        /// </summary>
+        public static int TakenRaw(int raw, int takenTimes) => raw * Math.Max(1, takenTimes);
 
         /// <summary>
         /// Guard soaks the hit before HP does: damage = max(0, raw − guard), and the Guard that

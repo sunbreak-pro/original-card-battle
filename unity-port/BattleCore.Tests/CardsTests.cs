@@ -229,7 +229,7 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheTwelveStanceCards_CountAsStance_AndEachStandsAlone()
+        public void TheFourteenStanceCards_CountAsStance_AndEachStandsAlone()
         {
             // v4.4 (#257, written by #333): the ten that carried another face are stance only now, so
             // every stance card passes the standing-alone check on its own and aims at nobody.
@@ -244,7 +244,7 @@ namespace BattleCore.Tests
             {
                 Assert.That(Cards.IsStanceCard(CardCatalog.IronWall), Is.True);
                 Assert.That(Cards.IsStanceCard(CardCatalog.SideSweep), Is.False);
-                Assert.That(stances.Count, Is.EqualTo(12), "v4.10's 14 less #84 / #85 (#826)");
+                Assert.That(stances.Count, Is.EqualTo(14), "v4.10's 14 with #84 / #85 (#826)");
                 Assert.That(rewritten.All(id => stances.Any(c => c.Id == id)), Is.True, "the ten #257 rewrote are among them");
                 Assert.That(stances.Where(c => !AttributeRule.StanceStandsAlone(c.Attributes, c.Face)).Select(c => c.Id), Is.Empty);
                 Assert.That(stances.Where(c => c.Attributes != BattleAttribute.Stance).Select(c => c.Id), Is.Empty, "a stance declares nothing else");
@@ -296,19 +296,19 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheCards_FoldToTwentyNineNineteenElevenTwelve()
+        public void TheCards_FoldToTwentyNineNineteenElevenFourteen()
         {
             // swordsman_cards_v4 §4.1 (v4.10, #824), worked out by the rule and not by hand: 攻撃 29 / 防御 19 /
-            // スキル 11 / スタンス 14 less #84 / #85 (#826). 観察・間合い切り・覚悟 moved from スキル to 防御 (#352).
+            // スキル 11 / スタンス 14 with #84 / #85 (#826). 観察・間合い切り・覚悟 moved from スキル to 防御 (#352).
             var counts = CardCatalog.All.GroupBy(c => c.Attribute).ToDictionary(g => g.Key, g => g.Count());
 
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.All.Count, Is.EqualTo(71));
+                Assert.That(CardCatalog.All.Count, Is.EqualTo(73));
                 Assert.That(counts[BattleAttribute.Attack], Is.EqualTo(29));
                 Assert.That(counts[BattleAttribute.Guard], Is.EqualTo(19));
                 Assert.That(counts[BattleAttribute.Skill], Is.EqualTo(11));
-                Assert.That(counts[BattleAttribute.Stance], Is.EqualTo(12));
+                Assert.That(counts[BattleAttribute.Stance], Is.EqualTo(14));
                 Assert.That(counts.ContainsKey(BattleAttribute.None), Is.False, "no card folds to nothing");
             });
         }

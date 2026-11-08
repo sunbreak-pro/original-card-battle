@@ -39,9 +39,11 @@ namespace BattleCore
         /// judged. Hit holds the units the opponent-directed faces land on: the enemies for a player's
         /// card, the acting unit for an enemy's action (its foe is always the player), none on a whiff.
         /// Focus and Intimidate are what 集中 and 威圧 put on this card; both are already spent.
+        /// Boost is what the one acting's 覚醒 adds to it (#826), read before its own stance joins.
         /// </summary>
         private sealed record Resolution(
-            Play Play, IReadOnlyList<int> Hit, TraitOutcome Outcome, FocusStep Focus, int Intimidate, bool Attacks, int GuardBase)
+            Play Play, IReadOnlyList<int> Hit, TraitOutcome Outcome, FocusStep Focus, int Intimidate, bool Attacks, int GuardBase,
+            CardBoostAmounts Boost)
         {
             public Actor Actor => Play.Actor;
             public int Unit => Play.Unit;
@@ -177,7 +179,11 @@ namespace BattleCore
                 state = Consume(state, actor, unit, StatusKind.Focus, events);
             }
             bool attacks = source.Attributes.HasFlag(BattleAttribute.Attack) && hit.Count > 0;
-            int guardBase = face.Guard + focus.Guard + outcome.GuardBonus;
+
+            // #826 覚醒: read before this card's own stance joins the list, so 覚醒 does not boost itself.
+            var boost = CardBoostOf(state, actor, unit, source.Attributes, face);
+            AnnounceCardBoost(state, actor, unit, boost, events);
+            int guardBase = face.Guard + focus.Guard + outcome.GuardBonus + boost.Guard;
             int intimidate = 0;
             if (Get(state, actor, unit).Statuses.Has(StatusKind.Intimidate) && (attacks || guardBase > 0))
             {
@@ -185,7 +191,7 @@ namespace BattleCore
                 state = Consume(state, actor, unit, StatusKind.Intimidate, events);
             }
 
-            resolution = new Resolution(play, hit, outcome, focus, intimidate, attacks, guardBase);
+            resolution = new Resolution(play, hit, outcome, focus, intimidate, attacks, guardBase, boost);
             return state;
         }
 
@@ -214,7 +220,11 @@ namespace BattleCore
             {
                 if (!r.Stands(state, foe)) continue;
 
-                int stanceBonus = StanceAttackBonus(state, actor, unit, foeSide, foe, events);
+                // 覚醒's +n rides every blow, like a stance's 条件付き加算 (#826).
+                int stanceBonus = StanceAttackBonus(state, actor, unit, foeSide, foe, events) + r.Boost.Power;
+                var powerEntry = MultiplierEntry(state, actor, unit, taken: false);
+                int powerTimes = powerEntry?.Def.PowerTimes ?? 1;
+                if (powerEntry != null) events.Add(new StanceFired(actor, powerEntry.Source, StanceHook.Multiplier) { Unit = r.EventUnit(foe) });
 
                 // §2.4 hits (#189): each blow meets Guard on its own. §17.6 F6: 追撃 rides the
                 // first blow only and the trait's +n every blow; 強化 rides only the blows 脆化
@@ -244,7 +254,15 @@ namespace BattleCore
 
                     int raw = Combat.ComputeRawPower(
                         face.Power + r.Focus.Power - r.Intimidate, r.Outcome.PowerBonus + stanceBonus,
-                        blow == 0 ? followUp : 0, conversion, mult);
+                        blow == 0 ? followUp : 0, conversion, mult, powerTimes);
+
+                    // #826 背水の陣 受けるダメージ ×2: on the attacker's raw, before Guard.
+                    var takenEntry = MultiplierEntry(state, foeSide, foe, taken: true);
+                    if (takenEntry != null)
+                    {
+                        raw = Combat.TakenRaw(raw, takenEntry.Def.TakenTimes);
+                        events.Add(new StanceFired(foeSide, takenEntry.Source, StanceHook.Multiplier) { Unit = r.EventUnit(foe) });
+                    }
                     var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw, other.Guard);
                     other = other with { Guard = guardAfter, Hp = Math.Max(0, other.Hp - damage) };
                     state = Set(state, foeSide, foe, other);
@@ -317,7 +335,7 @@ namespace BattleCore
             {
                 events.Add(new FaceResolved(r.Actor, r.Source.Id, FaceKind.Move) { Unit = r.Unit });
             }
-            if (r.Face.Move != 0) state = MoveSelf(state, r.Actor, r.Unit, r.Face.Move, events);
+            if (r.Face.Move != 0) state = MoveSelf(state, r.Actor, r.Unit, BoostedMove(r.Face.Move, r.Boost.Move), events);
             if (r.Face.Push == 0 || r.Hit.Count == 0) return state;
             return PushFoes(state, r, events, out over);
         }
