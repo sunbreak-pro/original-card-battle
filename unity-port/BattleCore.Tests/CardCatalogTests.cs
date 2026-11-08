@@ -20,12 +20,12 @@ namespace BattleCore.Tests
         // ---- The catalog ----
 
         [Test]
-        public void TheCatalog_HoldsSeventyOneKinds_WithUniqueIds()
+        public void TheCatalog_HoldsSeventyThreeKinds_WithUniqueIds()
         {
             Assert.Multiple(() =>
             {
-                Assert.That(CardCatalog.All.Count, Is.EqualTo(Constants.OwnedKindsMax - 2), "the canon's 73 less #84 / #85 (#826)");
-                Assert.That(CardCatalog.All.Select(c => c.Id).Distinct().Count(), Is.EqualTo(71));
+                Assert.That(CardCatalog.All.Count, Is.EqualTo(Constants.OwnedKindsMax), "the canon's 73 with #84 / #85 (#826)");
+                Assert.That(CardCatalog.All.Select(c => c.Id).Distinct().Count(), Is.EqualTo(73));
                 Assert.That(CardCatalog.Initial.Count, Is.EqualTo(CardCatalog.InitialCount));
                 Assert.That(CardCatalog.All.All(c => c != null), Is.True, "a field read before it was set");
                 foreach (var card in CardCatalog.All) Assert.That(CardCatalog.ById(card.Id), Is.SameAs(card), card.Id);
@@ -33,7 +33,7 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheCanonOrder_StartsWithKesaCut_AndEndsWithShadowLunge()
+        public void TheCanonOrder_StartsWithKesaCut_AndEndsWithAwakening()
         {
             int initial = CardCatalog.InitialCount;
             Assert.Multiple(() =>
@@ -42,7 +42,13 @@ namespace BattleCore.Tests
                 Assert.That(CardCatalog.All[0].Id, Is.EqualTo("kesa_cut"), "#2: v4.10 dropped #1 突き");
                 Assert.That(CardCatalog.All[initial - 1].Id, Is.EqualTo("twist_away"), "#40, the last of the initial thirty-five");
                 Assert.That(CardCatalog.All[initial].Id, Is.EqualTo("miasma_blade"), "#41, the first learned card");
-                Assert.That(CardCatalog.All[CardCatalog.All.Count - 1].Id, Is.EqualTo("shadow_lunge"), "#79: v4.10 dropped #80 背水の陣");
+                Assert.That(CardCatalog.All[CardCatalog.All.Count - 3].Id, Is.EqualTo("shadow_lunge"), "#79: v4.10 dropped #80 背水の陣");
+                Assert.That(CardCatalog.All[CardCatalog.All.Count - 2].Id, Is.EqualTo("backwater"), "#84, after the dragon god's #81〜#83");
+                Assert.That(CardCatalog.All[CardCatalog.All.Count - 1].Id, Is.EqualTo("awakening"), "#85");
+                Assert.That(CardCatalog.ByNumber(84), Is.SameAs(CardCatalog.Backwater));
+                Assert.That(CardCatalog.ByNumber(85), Is.SameAs(CardCatalog.Awakening));
+                Assert.That(CardCatalog.ByNumber(81), Is.Null, "the dragon god's three are not in the core");
+                Assert.That(CardCatalog.ByNumber(86), Is.Null);
             });
         }
 
@@ -79,14 +85,14 @@ namespace BattleCore.Tests
 
         /// <summary>
         /// §4.1: the attribute patterns of the canon, initial + learned (v4.5: 観察 and 覚悟 moved from Sk
-        /// to G+Sk; v4.10: St is the canon's 14 less #84 / #85). "M" is the movement effect in v4.4: it is no attribute, so it is read off the face,
+        /// to G+Sk; v4.10: St is the canon's 14 with #84 / #85, #826). "M" is the movement effect in v4.4: it is no attribute, so it is read off the face,
         /// not off the declared flags. The canon's table still lists the faces the ten stance cards had
         /// before #257 (A+St 3 / G+St 3 / Sk+St 2 / St+M 2); they are stance only now, so the catalog
         /// declares all fourteen as St and none of those four patterns is left.
         /// </summary>
         [TestCase("A", 14)]
         [TestCase("G", 7)]
-        [TestCase("St", 12)]
+        [TestCase("St", 14)]
         [TestCase("Sk", 6)]
         [TestCase("M", 6)]
         [TestCase("A+M", 5)]
@@ -119,26 +125,26 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheCosts_AreTwentyTwoTwentyNineTwenty_AndNoCardStartsInColumnFour()
+        public void TheCosts_AreTwentyTwoTwentyNineTwentyOneOne_AndOnlyAwakeningStartsInColumnFour()
         {
-            // §4.4 (v4.10): cost 1 / 2 / 3 / 4 = 22 / 29 / 21 / 1, less #84 (cost 3) and #85 (cost 4,
-            // the one card that starts in column 4) until #826. Otherwise column 4 is where 集中 and
-            // 習熟 lead (K8).
+            // §4.4 (v4.10): cost 1 / 2 / 3 / 4 = 22 / 29 / 21 / 1. #85 覚醒 is the one card that starts in
+            // column 4 (#826); for every other card column 4 is where 集中 and 習熟 lead (K8).
             Assert.Multiple(() =>
             {
                 Assert.That(CardCatalog.All.Count(c => c.Cost == 1), Is.EqualTo(22));
                 Assert.That(CardCatalog.All.Count(c => c.Cost == 2), Is.EqualTo(29));
-                Assert.That(CardCatalog.All.Count(c => c.Cost == 3), Is.EqualTo(20));
-                Assert.That(CardCatalog.All.Any(c => c.Column == 4), Is.False);
+                Assert.That(CardCatalog.All.Count(c => c.Cost == 3), Is.EqualTo(21));
+                Assert.That(CardCatalog.All.Count(c => c.Cost == 4), Is.EqualTo(1));
+                Assert.That(CardCatalog.All.Where(c => c.Column == 4).Select(c => c.Id), Is.EqualTo(new[] { "awakening" }));
             });
         }
 
-        /// <summary>§4.1 (v4.10): the cost × attribute table (the 計 of 初期 / 習得 / 計), スタンス less #84 at cost 3.</summary>
-        [TestCase(BattleAttribute.Attack, 8, 16, 5)]
-        [TestCase(BattleAttribute.Guard, 6, 5, 8)]
-        [TestCase(BattleAttribute.Skill, 5, 2, 4)]
-        [TestCase(BattleAttribute.Stance, 3, 6, 3)]
-        public void TheCostsByAttribute_MatchTheCanonTable(BattleAttribute attribute, int one, int two, int three)
+        /// <summary>§4.1 (v4.10): the cost × attribute table (the 計 of 初期 / 習得 / 計); スタンス holds #84 at cost 3 and #85 at 4.</summary>
+        [TestCase(BattleAttribute.Attack, 8, 16, 5, 0)]
+        [TestCase(BattleAttribute.Guard, 6, 5, 8, 0)]
+        [TestCase(BattleAttribute.Skill, 5, 2, 4, 0)]
+        [TestCase(BattleAttribute.Stance, 3, 6, 4, 1)]
+        public void TheCostsByAttribute_MatchTheCanonTable(BattleAttribute attribute, int one, int two, int three, int four)
         {
             var counted = CardCatalog.All.Where(c => c.Attribute == attribute).ToList();
             Assert.Multiple(() =>
@@ -146,6 +152,7 @@ namespace BattleCore.Tests
                 Assert.That(counted.Count(c => c.Cost == 1), Is.EqualTo(one));
                 Assert.That(counted.Count(c => c.Cost == 2), Is.EqualTo(two));
                 Assert.That(counted.Count(c => c.Cost == 3), Is.EqualTo(three));
+                Assert.That(counted.Count(c => c.Cost == 4), Is.EqualTo(four));
             });
         }
 
@@ -241,12 +248,12 @@ namespace BattleCore.Tests
         [Test]
         public void TheTraits_MatchTheCanonTally()
         {
-            // §4.2 / §4.4 (v4.10): 65 cards carry a trait, the six plain ones (素直) none, and no card has
-            // a second since #80 背水の陣 left.
+            // §4.2 / §4.4 (v4.10): 65 cards carry a trait; the six plain ones (素直) and the stances #84 /
+            // #85 none, and no card has a second since #80 背水の陣 left.
             Assert.Multiple(() =>
             {
                 Assert.That(CardCatalog.All.Count(c => c.Trait != null), Is.EqualTo(65));
-                Assert.That(CardCatalog.All.Count(c => c.Trait == null), Is.EqualTo(6));
+                Assert.That(CardCatalog.All.Count(c => c.Trait == null), Is.EqualTo(8));
                 Assert.That(CardCatalog.All.Count(c => c.ExtraTrait != null), Is.EqualTo(0));
                 Assert.That(CardCatalog.All.Where(c => c.Trait != null).Any(c => c.Trait!.Condition == TraitCondition.Unguarded),
                     Is.False, "無防備 is the enemy-side word (§17.6 F1)");
@@ -381,7 +388,7 @@ namespace BattleCore.Tests
         public void TheReaches_MatchTheCanonTable()
         {
             // §4.5 (v4.10): 0 → 4, 0〜1 → 16, 1〜2 → 2, 0〜2 → 9, 2〜3 → 1, 1〜3 → 1, 0〜3 → 3, and 37 aim
-            // at nobody (35 here: #84 / #85 come with #826). The N they reach add up to 84 (32 / 31 /
+            // at nobody (#84 / #85 came with #826). The N they reach add up to 84 (32 / 31 /
             // 16 / 5 at N 0 / 1 / 2 / 3).
             var directed = CardCatalog.All.Where(c => EnemyAi.IsOpponentDirected(c.Attributes, c.Face, c.Targets)).ToList();
             int Count(int min, int max) => directed.Count(c => c.Face.ReachOrDefault.Equals(new Reach(min, max)));
@@ -389,7 +396,7 @@ namespace BattleCore.Tests
             Assert.Multiple(() =>
             {
                 Assert.That(directed, Has.Count.EqualTo(36));
-                Assert.That(CardCatalog.All.Count(c => c.Targets == TargetKind.Self), Is.EqualTo(35));
+                Assert.That(CardCatalog.All.Count(c => c.Targets == TargetKind.Self), Is.EqualTo(37));
                 Assert.That(Count(0, 0), Is.EqualTo(4));
                 Assert.That(Count(0, 1), Is.EqualTo(16));
                 Assert.That(Count(1, 2), Is.EqualTo(2));
@@ -407,14 +414,14 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void TheStanceCards_AreTwelve_AndEachSetsAStance()
+        public void TheStanceCards_AreFourteen_AndEachSetsAStance()
         {
-            // §4.1 (v4.10): the two that were stance only from the start and the ten #257 rewrote (A+St 3 /
-            // G+St 3 / Sk+St 2 / St+M 2 before it); #84 / #85 make the canon's 14 with #826.
+            // §4.1 (v4.10): the two that were stance only from the start, the ten #257 rewrote (A+St 3 /
+            // G+St 3 / Sk+St 2 / St+M 2 before it), and #84 / #85 (#826).
             var stances = CardCatalog.All.Where(c => c.Attributes.HasFlag(BattleAttribute.Stance)).ToList();
             Assert.Multiple(() =>
             {
-                Assert.That(stances, Has.Count.EqualTo(12));
+                Assert.That(stances, Has.Count.EqualTo(14));
                 foreach (var card in stances) Assert.That(card.Face.Stance, Is.Not.Null, card.Id);
                 Assert.That(CardCatalog.All.Where(c => !c.Attributes.HasFlag(BattleAttribute.Stance)).All(c => c.Face.Stance == null), Is.True);
             });

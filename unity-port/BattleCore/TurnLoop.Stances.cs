@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace BattleCore
@@ -161,6 +162,89 @@ namespace BattleCore
             if (actor == Actor.Enemy) return state.GapTo(unit);
             int nearest = state.Nearest;
             return nearest < 0 ? 0 : state.GapTo(nearest);
+        }
+
+        /// <summary>
+        /// #826 背水の陣: the Multiplier entry of the holder's list that works now with the largest
+        /// ×n — PowerTimes when <paramref name="taken"/> is false, TakenTimes when it is true — or null
+        /// when none multiplies. Only one counts, so two 背水の陣 are ×3 and not ×9 (2026-11-03
+        /// こうだいさん決定).
+        /// </summary>
+        private static StanceEntry? MultiplierEntry(BattleState state, Actor holder, int unit, bool taken)
+        {
+            StanceEntry? best = null;
+            int bestTimes = 1;
+            foreach (var entry in Get(state, holder, unit).StanceList)
+            {
+                var stance = entry.Def;
+                if (stance.Hook != StanceHook.Multiplier || entry.StoppedIn(state.Turn) || !StanceHolds(state, holder, unit, stance)) continue;
+                int times = taken ? stance.TakenTimes : stance.PowerTimes;
+                if (times <= bestTimes) continue;
+                best = entry;
+                bestTimes = times;
+            }
+            return best;
+        }
+
+        /// <summary>#826: the ×n the holder's attack blows are multiplied by (背水の陣's 3), 1 for none.</summary>
+        private static int PowerTimes(BattleState state, Actor holder, int unit) =>
+            MultiplierEntry(state, holder, unit, taken: false)?.Def.PowerTimes ?? 1;
+
+        /// <summary>#826: the ×n the attack blows the holder takes are multiplied by (背水の陣's 2), 1 for none.</summary>
+        private static int TakenTimes(BattleState state, Actor holder, int unit) =>
+            MultiplierEntry(state, holder, unit, taken: true)?.Def.TakenTimes ?? 1;
+
+        /// <summary>
+        /// #826 覚醒: what the holder's CardBoost entries add to the card it plays, summed over the
+        /// entries that work now — Power on each attack blow, Guard when the card carries one, Move on
+        /// its own move. Each part is 0 when the card has nothing for it to add to.
+        /// </summary>
+        private static CardBoostAmounts CardBoostOf(BattleState state, Actor holder, int unit, BattleAttribute attributes, Face face)
+        {
+            int power = 0, guard = 0, move = 0;
+            foreach (var entry in Get(state, holder, unit).StanceList)
+            {
+                var stance = entry.Def;
+                if (stance.Hook != StanceHook.CardBoost || entry.StoppedIn(state.Turn) || !StanceHolds(state, holder, unit, stance)) continue;
+                power += stance.Power;
+                guard += stance.Guard;
+                move += stance.Move;
+            }
+            bool attacks = attributes.HasFlag(BattleAttribute.Attack);
+            bool guards = attributes.HasFlag(BattleAttribute.Guard) || face.Guard > 0;
+            return new CardBoostAmounts(attacks ? power : 0, guards ? guard : 0, face.Move != 0 ? move : 0);
+        }
+
+        /// <summary>#826 覚醒: the StanceFired of each CardBoost entry that adds to this card.</summary>
+        private static void AnnounceCardBoost(BattleState state, Actor holder, int unit, CardBoostAmounts boost, List<BattleEvent> events)
+        {
+            if (boost.IsNone) return;
+            foreach (var entry in Get(state, holder, unit).StanceList)
+            {
+                if (entry.Def.Hook != StanceHook.CardBoost || entry.StoppedIn(state.Turn) || !StanceHolds(state, holder, unit, entry.Def)) continue;
+                events.Add(new StanceFired(holder, entry.Source, StanceHook.CardBoost) { Unit = unit });
+            }
+        }
+
+        /// <summary>
+        /// #826 覚醒 移動 +1: the cells the holder's own move covers once the boost is on, at most
+        /// <see cref="Constants.AwakenedMoveStepMax"/> (a move already past it is not cut back). Signed
+        /// like <paramref name="move"/>; 鈍足 comes off later, in <see cref="MoveSelf"/>.
+        /// </summary>
+        private static int BoostedMove(int move, int boost)
+        {
+            if (move == 0 || boost <= 0) return move;
+            int cells = Math.Abs(move);
+            int boosted = Math.Max(cells, Math.Min(cells + boost, Constants.AwakenedMoveStepMax));
+            return Math.Sign(move) * boosted;
+        }
+
+        /// <summary>#826 覚醒: what the CardBoost entries add to one card (see <see cref="CardBoostOf"/>).</summary>
+        private sealed record CardBoostAmounts(int Power, int Guard, int Move)
+        {
+            public static readonly CardBoostAmounts None = new CardBoostAmounts(0, 0, 0);
+
+            public bool IsNone => Power == 0 && Guard == 0 && Move == 0;
         }
     }
 }

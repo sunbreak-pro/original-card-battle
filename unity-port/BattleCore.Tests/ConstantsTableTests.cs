@@ -50,6 +50,7 @@ namespace BattleCore.Tests
             ["START_GAP"] = Join(Constants.StartGap),
             ["REACH_DEFAULT"] = Reach.Default.ToText(),
             ["MOVE_STEP_MAX"] = Join(Constants.MoveStepMax),
+            ["AWAKENED_MOVE_STEP_MAX"] = Join(Constants.AwakenedMoveStepMax),
             ["WALL_DAMAGE"] = Join(Constants.WallDamage),
             ["GAP_SCALING_CARDS_MAX"] = Join(Constants.GapScalingCardsMax),
             ["PLAIN_CARD_BONUS"] = "+" + Constants.PlainCardBonus,

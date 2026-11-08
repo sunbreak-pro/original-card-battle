@@ -340,6 +340,23 @@ namespace BattleCore
         /// The player's cards only: an enemy action pays its column (no enemy carries one).
         /// </summary>
         CostDiscount,
+
+        /// <summary>
+        /// 背水の陣 (#826): the holder's attack blows ×<see cref="StanceDef.PowerTimes"/> and the attack
+        /// blows it takes ×<see cref="StanceDef.TakenTimes"/>. The first is a slot of its own, put on
+        /// after the 脆化 / 強化 one (§5.1, the exception to S13's one multiplier per blow); the second
+        /// multiplies the attacker's raw before Guard. Unlike every other hook, a second entry adds
+        /// nothing: the largest of each number works, once (2026-11-03 こうだいさん決定).
+        /// </summary>
+        Multiplier,
+
+        /// <summary>
+        /// 覚醒 (#826): every card the holder plays afterwards gains <see cref="StanceDef.Power"/> on each
+        /// attack blow, <see cref="StanceDef.Guard"/> when it carries a Guard and
+        /// <see cref="StanceDef.Move"/> cells on its own move. Two entries add twice (§4), but the
+        /// move stops at <see cref="Constants.AwakenedMoveStepMax"/> cells.
+        /// </summary>
+        CardBoost,
     }
 
     /// <summary>§4 `when`: the condition a stance effect waits for.</summary>
@@ -386,7 +403,9 @@ namespace BattleCore
     /// works twice (v4.4, #258). Status is the word 大狼の構え watches, the word 槍衾 gives the
     /// attacker, or the word a StatusOnAttack stance gives the foe it hits; OncePerTurn limits an
     /// OnHit stance to one reaction per turn (司祭の祈り). Attribute is the one a CostDiscount
-    /// stance discounts (鉄壁の構え: 防御), null for every other hook.
+    /// stance discounts (鉄壁の構え: 防御), null for every other hook. PowerTimes and TakenTimes are
+    /// a Multiplier stance's (背水の陣: 3 and 2; 1 changes nothing), Move a CardBoost stance's cells
+    /// (覚醒: 1).
     /// </summary>
     public sealed record StanceDef(
         StanceHook Hook,
@@ -401,7 +420,10 @@ namespace BattleCore
         int StatusStacks = 0,
         int Break = 0,
         bool OncePerTurn = false,
-        BattleAttribute? Attribute = null);
+        BattleAttribute? Attribute = null,
+        int PowerTimes = 1,
+        int TakenTimes = 1,
+        int Move = 0);
 
     /// <summary>
     /// §2.4 / §7.2: the gaps a face lands at, both ends inclusive. A card cannot be played at an

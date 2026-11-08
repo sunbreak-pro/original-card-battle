@@ -127,7 +127,8 @@ namespace BattleCore
             var focus = self.Statuses.Has(StatusKind.Focus) ? FocusStep.Of(def.Attributes, def.Column, def.Face) : FocusStep.None;
 
             bool attacks = def.Attributes.HasFlag(BattleAttribute.Attack);
-            int guardBase = def.Face.Guard + focus.Guard + outcome.GuardBonus;
+            var boost = CardBoostOf(state, Actor.Player, 0, def.Attributes, def.Face);
+            int guardBase = def.Face.Guard + focus.Guard + outcome.GuardBonus + boost.Guard;
             int intimidate = self.Statuses.Has(StatusKind.Intimidate) && (attacks || guardBase > 0)
                 ? Constants.IntimidatePenalty : 0;
 
@@ -141,7 +142,7 @@ namespace BattleCore
             }
             else if (attacks)
             {
-                (raw, damage) = OneBlow(state, def, read, outcome, focus, intimidate);
+                (raw, damage) = OneBlow(state, def, read, outcome, focus, intimidate, boost.Power);
             }
             int guardGain = Math.Max(0, guardBase - (guardBase > 0 ? intimidate : 0));
             return new PlayPreview(
@@ -175,10 +176,11 @@ namespace BattleCore
 
         /// <summary>
         /// The one blow a card out of reach would deal, worked out without resolving: it cannot be
-        /// resolved there (<see cref="Resolve"/> refuses a player card out of reach).
+        /// resolved there (<see cref="Resolve"/> refuses a player card out of reach). 覚醒's +n
+        /// (<paramref name="boostPower"/>) and 背水の陣's ×3 / ×2 count as they would (#826).
         /// </summary>
         private static (int Raw, int Damage) OneBlow(
-            BattleState state, CardDef def, int read, TraitOutcome outcome, FocusStep focus, int intimidate)
+            BattleState state, CardDef def, int read, TraitOutcome outcome, FocusStep focus, int intimidate, int boostPower)
         {
             var foe = state.Enemies[read].Body;
             var self = state.Player;
@@ -188,8 +190,9 @@ namespace BattleCore
                 : 1.0;
             int raw = Combat.ComputeRawPower(
                 def.Face.Power + focus.Power - intimidate,
-                outcome.PowerBonus + StanceAttackBonus(state, Actor.Player, 0, Actor.Enemy, read),
-                self.FollowUp, conversion, mult);
+                outcome.PowerBonus + StanceAttackBonus(state, Actor.Player, 0, Actor.Enemy, read) + boostPower,
+                self.FollowUp, conversion, mult, PowerTimes(state, Actor.Player, 0));
+            raw = Combat.TakenRaw(raw, TakenTimes(state, Actor.Enemy, read));
             return (raw, Combat.ApplyGuard(raw, foe.Guard).Damage);
         }
 
@@ -246,7 +249,7 @@ namespace BattleCore
                 int cell = CellInReach(copy, unit, reach);
                 if (cell < 0)
                 {
-                    return FaceAlone(action, copy.Player.Guard + copy.Tools.FirstHitGuard);
+                    return FaceAlone(action, copy.Player.Guard + copy.Tools.FirstHitGuard, TakenTimes(copy, Actor.Player, 0));
                 }
                 copy = copy with { Player = copy.Player with { Cell = cell } };
             }
@@ -371,18 +374,20 @@ namespace BattleCore
 
         /// <summary>
         /// An omen that can reach the player from no cell: the attack face alone, each blow meeting
-        /// <paramref name="guard"/> on its own as it would (§2.4 hits), with nothing the board adds.
+        /// <paramref name="guard"/> on its own as it would (§2.4 hits), with nothing the board adds
+        /// but the player's 背水の陣 (#826: <paramref name="takenTimes"/>), which the number must not hide.
         /// </summary>
-        private static OmenPreview FaceAlone(EnemyActionDef action, int guard)
+        private static OmenPreview FaceAlone(EnemyActionDef action, int guard, int takenTimes)
         {
             if (!action.Attributes.HasFlag(BattleAttribute.Attack)) return new OmenPreview(0, 0, Lands: false, Rests: false);
             int raw = 0;
             int damage = 0;
+            int power = Combat.TakenRaw(action.Face.Power, takenTimes);
             for (int blow = 0; blow < Math.Max(1, action.Face.Hits); blow++)
             {
-                var hit = Combat.ApplyGuard(action.Face.Power, guard);
+                var hit = Combat.ApplyGuard(power, guard);
                 guard = hit.GuardAfter;
-                raw += action.Face.Power;
+                raw += power;
                 damage += hit.Damage;
             }
             return new OmenPreview(raw, damage, Lands: false, Rests: false);

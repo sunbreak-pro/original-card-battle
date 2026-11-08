@@ -1,10 +1,9 @@
 namespace BattleCore
 {
     /// <summary>
-    /// swordsman_cards_v4.md §3: the learned thirty-six (#41-#79 less the four v4.10 dropped, #824),
-    /// in canon order, grouped by where they are found (boss 8 / elite 7 / exploration 21). None of
-    /// them is 素直: every one carries a trait. The two stances v4.10 added (#84 背水の陣, #85 覚醒)
-    /// come with their rules in #826.
+    /// swordsman_cards_v4.md §3: the learned thirty-eight (#41-#79 less the four v4.10 dropped, #824,
+    /// then #84 背水の陣 and #85 覚醒 with their rules, #826), in canon order, grouped by where they
+    /// are found. None of them is 素直; all but #84 and #85 carry a trait.
     /// </summary>
     public static partial class CardCatalog
     {
@@ -312,5 +311,28 @@ namespace BattleCore
             new Face(Power: 12, Move: 1, Reach: new Reach(1, 2)),
             OmenIs(OmenKind.Move, TraitEffect.PowerBonus, 5),
             Description: "動こうとした影を踏んで斬る");
+
+        // ---- v4.10 (#824): the two stances whose rules #826 wrote, after the dragon god's three (#81〜#83, not in the core) ----
+
+        /// <summary>
+        /// #84 (探索: 七層). Stance: attack blows ×3 and attack blows taken ×2; a second copy adds
+        /// nothing (#826). No trait: the effect is large enough to measure on its own first (§5 の 18).
+        /// </summary>
+        public static readonly CardDef Backwater = new CardDef(
+            "backwater", "背水の陣", BattleAttribute.Stance, 3,
+            new Face(Stance: new StanceDef(StanceHook.Multiplier, PowerTimes: 3, TakenTimes: 2)),
+            Targets: TargetKind.Self,
+            Description: "退路を断ち、受ける傷と引き換えに斬る型");
+
+        /// <summary>
+        /// #85 (ボス: 獄竜 ガルド). Stance, the one card that starts in column 4: every later card +5 on
+        /// each attack blow, +5 Guard when it guards, +1 cell on its own move (3 at most); a second
+        /// copy adds again (#826).
+        /// </summary>
+        public static readonly CardDef Awakening = new CardDef(
+            "awakening", "覚醒", BattleAttribute.Stance, 4,
+            new Face(Stance: new StanceDef(StanceHook.CardBoost, Guard: 5, Power: 5, Move: 1)),
+            Targets: TargetKind.Self,
+            Description: "眠っていた力が目を覚ます型");
     }
 }

@@ -222,6 +222,8 @@ namespace Depiction.Bridge.Tests
         [TestCase("keen_eye", "予兆が攻撃のターン開始に Guard +3")]
         [TestCase("anchor_stance", "押す / 引くを受けない")]
         [TestCase("wolf_stance", "出血中の敵へ 威力 +3")]
+        [TestCase("backwater", "攻撃の威力 ×3、受けるダメージ ×2")]
+        [TestCase("awakening", "以後に出す札の威力 +5、Guard +5、移動 +1")]
         public void EveryStanceCard_ReadsAsTheTableFace(string id, string tableFace)
         {
             Assert.That(CoreText.StanceText(CardCatalog.ById(id).Face.Stance), Is.EqualTo(tableFace));
@@ -239,6 +241,7 @@ namespace Depiction.Bridge.Tests
             {
                 "water_stance", "iron_wall", "priest_prayer", "purge_flash", "abyss_stance",
                 "root_stride", "root_bind", "spear_wall", "mist_step", "keen_eye", "anchor_stance", "wolf_stance",
+                "backwater", "awakening",
             }));
         }
 

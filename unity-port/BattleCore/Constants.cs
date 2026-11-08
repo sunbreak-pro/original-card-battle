@@ -191,6 +191,12 @@ namespace BattleCore
         /// <summary>§7.3: a move face, a push or a pull covers at most 2 cells at once.</summary>
         public const int MoveStepMax = 2;
 
+        /// <summary>
+        /// §4 覚醒 (#826): the cells one of the holder's own moves may cover while a CardBoost stance
+        /// adds to it. Two 覚醒 still stop here.
+        /// </summary>
+        public const int AwakenedMoveStepMax = 3;
+
         /// <summary>§7.3: damage per cell a pushed side could not move (叩き台). Guard reduces it.</summary>
         public const int WallDamage = 3;
 

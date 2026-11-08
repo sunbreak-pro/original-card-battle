@@ -218,6 +218,18 @@ namespace Depiction.Bridge
                 case StanceHook.CostDiscount:
                     // §4 コストの割引 (鉄壁の構え, #333), in the attribute words the deck screen uses.
                     return "毎ターン 1 回、" + (stance.Attribute.HasValue ? DeckBuilder.AttributeWords(stance.Attribute.Value) : "") + "のカードのコスト −1";
+                case StanceHook.Multiplier:
+                    // #826 背水の陣, in the words of swordsman_cards_v4 #84.
+                    return "攻撃の威力 ×" + stance.PowerTimes + "、受けるダメージ ×" + stance.TakenTimes;
+                case StanceHook.CardBoost:
+                {
+                    // #826 覚醒, in the words of swordsman_cards_v4 #85.
+                    var parts = new List<string>();
+                    if (stance.Power > 0) parts.Add("威力 +" + stance.Power);
+                    if (stance.Guard > 0) parts.Add("Guard +" + stance.Guard);
+                    if (stance.Move > 0) parts.Add("移動 +" + stance.Move);
+                    return "以後に出す札の" + string.Join("、", parts);
+                }
                 default: throw new System.ArgumentOutOfRangeException(nameof(stance), stance.Hook, "No clause for the stance hook " + stance.Hook);
             }
         }
