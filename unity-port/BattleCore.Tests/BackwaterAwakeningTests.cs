@@ -166,6 +166,31 @@ namespace BattleCore.Tests
         }
 
         [Test]
+        public void TheBlow_NamesTheStanceThatMultipliedIt()
+        {
+            // #951: the side label reads where the ×3 / ×2 came from off the event.
+            var s = Holding(Opened(Idle, 1, Ten), BackwaterStance);
+            var power = TurnLoop.PlayCard(s, InHand(s, "ten"), NoRng).Events.OfType<DamageDealt>().Single();
+
+            var hit = Fixtures.EnemyAction("eight", face: new Face(Power: 8));
+            var t = Holding(Opened(Fixtures.Enemy("eight_fixture", atZero: hit, atOneToTwo: hit), 1), BackwaterStance);
+            t = t with { Player = t.Player with { Stamina = 0 } };
+            var taken = TurnLoop.EndTurn(t, NoRng).Events.OfType<DamageDealt>().Single(d => d.Target == Actor.Player);
+
+            var bare = Opened(Idle, 1, Ten);
+            var plain = TurnLoop.PlayCard(bare, InHand(bare, "ten"), NoRng).Events.OfType<DamageDealt>().Single();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(power.PowerStance, Is.EqualTo(new StanceTimes("stance-0", 3)));
+                Assert.That(power.TakenStance, Is.Null);
+                Assert.That(taken.TakenStance, Is.EqualTo(new StanceTimes("stance-0", 2)));
+                Assert.That(taken.PowerStance, Is.Null);
+                Assert.That((plain.PowerStance, plain.TakenStance), Is.EqualTo(((StanceTimes?)null, (StanceTimes?)null)));
+            });
+        }
+
+        [Test]
         public void AStoppedBackwater_MultipliesNothing()
         {
             // #334: a stopped entry does nothing for its turns.

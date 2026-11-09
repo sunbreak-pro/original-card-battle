@@ -266,7 +266,13 @@ namespace BattleCore
                     var (damage, guardAfter, absorbed) = Combat.ApplyGuard(raw, other.Guard);
                     other = other with { Guard = guardAfter, Hp = Math.Max(0, other.Hp - damage) };
                     state = Set(state, foeSide, foe, other);
-                    events.Add(new DamageDealt(actor, foeSide, raw, absorbed, damage, other.Guard, other.Hp) { Unit = r.EventUnit(foe), Multiplier = multiplier });
+                    events.Add(new DamageDealt(actor, foeSide, raw, absorbed, damage, other.Guard, other.Hp)
+                    {
+                        Unit = r.EventUnit(foe),
+                        Multiplier = multiplier,
+                        PowerStance = powerEntry == null ? null : new StanceTimes(powerEntry.Source, powerTimes),
+                        TakenStance = takenEntry == null ? null : new StanceTimes(takenEntry.Source, takenEntry.Def.TakenTimes),
+                    });
 
                     if (!Combat.IsDefeated(other.Hp))
                     {
