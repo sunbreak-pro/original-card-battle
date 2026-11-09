@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { after, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { effectiveDir, segments, toNativePath } from "../lib/hook-context.mjs";
+import { effectiveDir, runsTarget, segments, stripHeredocs, toNativePath } from "../lib/hook-context.mjs";
 
 const HOOKS = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -40,6 +40,47 @@ test("effectiveDir finds gh issue create and gh pr merge after cd", () => {
   const base = resolve("/base");
   assert.equal(effectiveDir("cd wt && gh issue create -t x", base, "issue-create").dir, resolve(base, "wt"));
   assert.equal(effectiveDir("cd wt && gh pr merge 3 --merge", base, "pr-merge").dir, resolve(base, "wt"));
+});
+
+test("stripHeredocs drops the body of each heredoc and keeps the rest", () => {
+  const cmd = "cat > /tmp/b.md <<'EOF'\ngh pr merge 1 -R x --merge\nEOF\necho done";
+  assert.equal(stripHeredocs(cmd), "cat > /tmp/b.md <<'EOF'\necho done");
+  assert.equal(stripHeredocs("a <<-END\n  gh pr merge 1\n  END\nb"), "a <<-END\nb");
+  assert.equal(stripHeredocs("cat <<< 'gh pr merge 1'"), "cat <<< 'gh pr merge 1'");
+});
+
+// The shapes merge-gate asked about on 2026-11-08 although none of them merged anything.
+test("runsTarget ignores commands that only mention gh pr merge", () => {
+  for (const cmd of [
+    'grep -rn "gh pr merge" --include=*.md .',
+    "cd /x && grep -l \"gh pr merge 952\\|gh pr merge 941\" */*.jsonl | head",
+    "node -e 'if(/gh\\s+pr\\s+merge/.test(c)) console.log(c)'",
+    "printf '{\"tool_input\":{\"command\":\"gh pr merge 1 -R a/b --merge\"}}' | node merge-gate.mjs",
+    "echo gh pr merge 3",
+    'git commit -m "docs: run gh pr merge only from merge-round"',
+    "cat > r.html <<'EOF'\n<p>打つのは</p>\ngh pr merge 5 -R sunbreak-pro/original-card-battle --merge\nEOF",
+    'cd docs && body=$(cat <<\'EOF\'\n<div>gh pr merge</div>\nEOF\n) && echo "$body" > r.html',
+    "node -e 'console.log(`gh pr merge ${n} --merge`)'",
+  ]) {
+    assert.equal(runsTarget(cmd, "pr-merge"), false, cmd);
+  }
+});
+
+test("runsTarget finds gh pr merge in command position, loops and wrappers", () => {
+  for (const cmd of [
+    "gh pr merge 3 -R sunbreak-pro/original-card-battle --merge",
+    "cd wt && gh pr merge 3 --merge",
+    "FOO=1 gh pr merge 3",
+    "for n in 1 2; do gh pr merge $n --merge; done",
+    "if true; then gh pr merge 3; fi",
+    'bash -c "gh pr merge 3 --merge"',
+    "eval 'gh pr merge 3'",
+    "x=$(gh pr merge 3 --merge)",
+    "echo `gh pr merge 3`",
+    "(gh pr merge 3)",
+  ]) {
+    assert.equal(runsTarget(cmd, "pr-merge"), true, cmd);
+  }
 });
 
 test("toNativePath turns Git Bash drive paths into drive letters on Windows", { skip: process.platform !== "win32" }, () => {
@@ -124,4 +165,18 @@ test("merge-gate denies a subagent and a merge from inside a lane worktree", () 
   assert.equal(runHook("merge-gate.mjs", { cwd: main, agent_id: "a1", tool_input: { command: cmd } }).decision, "deny");
   assert.equal(runHook("merge-gate.mjs", { cwd: main, tool_input: { command: `cd ${wt} && ${cmd}` } }).decision, "deny");
   assert.equal(runHook("merge-gate.mjs", { cwd: main, tool_input: { command: cmd } }).decision, "ask");
+});
+
+test("merge-gate stays silent for a command that only mentions gh pr merge", () => {
+  for (const command of ['grep -rn "gh pr merge" .', "cat > r.md <<'EOF'\ngh pr merge 1 -R sunbreak-pro/original-card-battle --merge\nEOF"]) {
+    const r = runHook("merge-gate.mjs", { cwd: main, tool_input: { command } });
+    assert.equal(r.code, 0, r.stderr);
+    assert.equal(r.decision, "", command);
+  }
+  // A subagent mentioning it in a PR body is not a merge either, so it is not denied.
+  const body = runHook("merge-gate.mjs", { cwd: main, agent_id: "a1", tool_input: { command: "cat > /tmp/b.md <<'EOF'\nNever run gh pr merge.\nEOF" } });
+  assert.equal(body.decision, "");
+  // Wrapping the merge still reaches the guard.
+  assert.equal(runHook("merge-gate.mjs", { cwd: main, agent_id: "a1", tool_input: { command: 'bash -c "gh pr merge 1 --merge"' } }).decision, "deny");
+  assert.equal(runHook("merge-gate.mjs", { cwd: main, tool_input: { command: "for n in 1; do gh pr merge $n -R sunbreak-pro/original-card-battle --merge; done" } }).decision, "ask");
 });
