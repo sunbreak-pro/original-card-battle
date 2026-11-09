@@ -59,7 +59,7 @@ namespace Depiction.Bridge.Tests
         [TestCase("kesa_cut", FxSystem.Slash)]      // 袈裟斬り: no other word, so 斬
         [TestCase("side_sweep", FxSystem.Sweep)]    // 横薙ぎ
         [TestCase("flat_strike", FxSystem.Strike)]  // 峰打ち
-        [TestCase("pierce", FxSystem.Slash)]        // 体幹崩し (v4.10, #824): no 突 / 打 word, so 斬
+        [TestCase("pierce", FxSystem.Thrust)]       // 体幹崩し: no 突 word, but battle-visual-v1 §5.7 lists it as 突 (#946)
         [TestCase("throw_blade", FxSystem.Thrust)]  // 投げ
         [TestCase("stone_throw", FxSystem.Strike)]  // 石礫: 礫 is a 打 word
         [TestCase("boar_rush", FxSystem.Thrust)]    // 猪突猛進: 突 is read first

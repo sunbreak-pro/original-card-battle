@@ -104,6 +104,15 @@ namespace Depiction
         private static readonly string[] StrikeWords = { "打", "当", "礫", "圧殺", "押し込み" };
         private static readonly string[] SweepWords = { "薙", "払", "牽制" };
 
+        // battle-visual-v1 §5.7: a card whose name's words give the wrong system plays as the one listed here.
+        // It is keyed by name because FxFaces carries no card id (CardSystems lives in Bridge/); a rename of
+        // the card must change this row too, and the 体幹崩し row of EffectGrammarRuleTests catches a miss.
+        private static readonly Dictionary<string, FxSystem> BlowByName = new Dictionary<string, FxSystem>
+        {
+            // pierce (#8): "崩れた相手の芯を突いて崩す". v4.10's name 貫き held 貫 and was 突 by its word (#946).
+            { "体幹崩し", FxSystem.Thrust },
+        };
+
         /// <summary>
         /// §5.3 / §5.4: the systems one card or action plays, in the order it resolves its faces —
         /// attack, (move, which has none), guard, skill, stance. A movement-only card has none.
@@ -123,12 +132,14 @@ namespace Depiction
 
         /// <summary>
         /// §5.3: the system of an attack face. A push or pull is what the blow is for, so it is 打
-        /// before any word is read; then the name's words in the order 突 → 打 → 払, and 斬 when none.
+        /// before any word is read; then the name's exception row (§5.7), then the name's words in the
+        /// order 突 → 打 → 払, and 斬 when none.
         /// </summary>
         public static FxSystem BlowOf(string name, bool pushes)
         {
             if (pushes) return FxSystem.Strike;
             name = name ?? "";
+            if (BlowByName.TryGetValue(name, out FxSystem listed)) return listed;
             if (HasAny(name, ThrustWords)) return FxSystem.Thrust;
             if (HasAny(name, StrikeWords)) return FxSystem.Strike;
             if (HasAny(name, SweepWords)) return FxSystem.Sweep;
