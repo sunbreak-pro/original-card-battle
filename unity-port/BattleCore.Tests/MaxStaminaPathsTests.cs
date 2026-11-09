@@ -44,16 +44,9 @@ namespace BattleCore.Tests
         }
 
         [Test]
-        public void ThePlayersMaximum_IsTen_AndNoGaugeRaisesIt()
+        public void ThePlayersMaximum_IsTen()
         {
-            Assert.Multiple(() =>
-            {
-                Assert.That(BattleSetup.Slice().PlayerMaxStamina, Is.EqualTo(Constants.BaseMaxStamina));
-                for (int percent = 0; percent < 100; percent++)
-                {
-                    Assert.That(Chain.MaxStaminaAt(percent), Is.LessThanOrEqualTo(Constants.BaseMaxStamina), percent + "%");
-                }
-            });
+            Assert.That(BattleSetup.Slice().PlayerMaxStamina, Is.EqualTo(Constants.BaseMaxStamina));
         }
 
         [TestCase(0, 10)]

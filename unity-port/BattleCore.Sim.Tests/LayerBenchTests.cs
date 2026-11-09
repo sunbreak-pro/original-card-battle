@@ -69,14 +69,13 @@ public class LayerBenchTests
     }
 
     [Test]
-    public void TheMaxStamina_IsSection6s_EntryForNormals_BeforeTheBossForTheRest()
+    public void TheMaxStamina_IsTheBase_InEveryLayer()
     {
-        Assert.That(LayerBench.Layers.Select(l => l.NormalFights[0].MaxStamina), Is.EqualTo(new[] { 10, 10, 10, 9, 9, 8, 7 }));
-        Assert.That(LayerBench.Layers.Select(l => l.BossFight.MaxStamina), Is.EqualTo(new[] { 10, 10, 9, 9, 8, 7, 6 }));
+        // #889: no 瘴気 gauge lowers it, so the deep layers fight with the same max as the first.
         foreach (var spec in LayerBench.Layers)
-        foreach (var fight in spec.ChainFights)
+        foreach (var fight in spec.NormalFights.Append(spec.BossFight).Concat(spec.ChainFights))
         {
-            Assert.That(fight.MiasmaPercent, Is.EqualTo(fight.Kind == NodeFight.Normal ? spec.EntryMiasma : spec.BossMiasma), $"layer {spec.Layer} {fight.Name}");
+            Assert.That(fight.MaxStamina, Is.EqualTo(Constants.BaseMaxStamina), $"layer {spec.Layer} {fight.Kind} {fight.Name}");
         }
     }
 

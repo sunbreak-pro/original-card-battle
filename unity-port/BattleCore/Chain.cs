@@ -74,29 +74,6 @@ namespace BattleCore
             return new BattleTally("", last.Result, turns, last.HpLeft, last.MaxHp, played, attributes, fired);
         }
 
-        // ---- 瘴気 and the max stamina (concept-v3 §6) ----
-
-        /// <summary>concept-v3 §6: 100% is 瘴気死, the end of the life. The gauge never reads more.</summary>
-        public const int MiasmaMax = 100;
-
-        /// <summary>concept-v3 §6: one point of max stamina per full 20%.</summary>
-        public const int MiasmaStepPercent = 20;
-
-        /// <summary>battle_core_v4 §13: the penalty stops at −4 (max stamina 6 at 80%).</summary>
-        public const int MiasmaMaxPenalty = 4;
-
-        /// <summary>
-        /// concept-v3 §6 / battle_core_v4 §1: the max stamina a battle starts from at this gauge —
-        /// BASE_MAX_STAMINA less 1 per full 20% (at most 4), kept to 3〜20 (#822). The same rule as the
-        /// exploration side's (DungeonCore.Miasma.MaxStamina with no temporary modifier).
-        /// </summary>
-        public static int MaxStaminaAt(int miasmaPercent)
-        {
-            int clamped = Math.Max(0, Math.Min(MiasmaMax - 1, miasmaPercent));
-            int penalty = Math.Min(MiasmaMaxPenalty, clamped / MiasmaStepPercent);
-            return Math.Max(Constants.MaxStaminaFloor, Math.Min(Constants.MaxStaminaCeil, Constants.BaseMaxStamina - penalty));
-        }
-
         /// <summary>The tally of one battle, from its final state and every event it emitted.</summary>
         public static BattleTally Tally(BattleState finished, IEnumerable<BattleEvent> events)
         {

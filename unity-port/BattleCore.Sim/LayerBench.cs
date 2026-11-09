@@ -16,19 +16,18 @@ public enum NodeFight
 /// and whether HP and stamina come in from the fight before (the layer chain carries them, with no
 /// rest between) or the fight starts at <see cref="LayerOptions.StartHpPercent"/>.
 /// </summary>
-public sealed record LayerFight(NodeFight Kind, IReadOnlyList<EnemyDef> Enemies, int FieldCells, int MiasmaPercent)
+public sealed record LayerFight(NodeFight Kind, IReadOnlyList<EnemyDef> Enemies, int FieldCells)
 {
-    /// <summary>§6: max stamina falls by 1 per full 20% of 瘴気 and stops at 6 (<see cref="Chain.MaxStaminaAt"/>).</summary>
-    public int MaxStamina => Chain.MaxStaminaAt(MiasmaPercent);
+    /// <summary>#889: no gauge lowers the max stamina any more, so every fight starts from the base.</summary>
+    public int MaxStamina => Constants.BaseMaxStamina;
 
     public string Name => string.Join("+", Enemies.Select(e => e.Id));
 }
 
 /// <summary>
 /// One layer's conditions, from encounters_and_rewards_v4: the normals of §2.1 (等確率, so each is
-/// measured on its own), the boss, the layer chain of §3, the line of §2.3 and the 瘴気 of §6
-/// (normals fight at the layer's entry, elites and the boss at the value before the boss), with the
-/// targets of §6's table.
+/// measured on its own), the boss, the layer chain of §3 and the line of §2.3, with the targets of
+/// §6's table. The 瘴気 columns of §6 are gone (#889): the max stamina no longer depends on the layer.
 /// </summary>
 public sealed record LayerSpec(
     int Layer,
@@ -39,8 +38,6 @@ public sealed record LayerSpec(
     int NormalCells,
     int EliteCells,
     int BossCells,
-    int EntryMiasma,
-    int BossMiasma,
     int M1Target,
     int M3Target,
     (int Min, int Max) M2NormalTarget,
@@ -53,11 +50,8 @@ public sealed record LayerSpec(
         _ => BossCells,
     };
 
-    /// <summary>§6: normal fights at the entry's 瘴気; elites and the boss, to be strict, at the value before the boss.</summary>
-    public int MiasmaFor(NodeFight kind) => kind == NodeFight.Normal ? EntryMiasma : BossMiasma;
-
     public LayerFight Fight(NodeFight kind, IReadOnlyList<string> enemyIds) =>
-        new LayerFight(kind, enemyIds.Select(Enemies.ById).ToList(), CellsFor(kind), MiasmaFor(kind));
+        new LayerFight(kind, enemyIds.Select(Enemies.ById).ToList(), CellsFor(kind));
 
     /// <summary>M1's fights: each normal of the layer alone.</summary>
     public IReadOnlyList<LayerFight> NormalFights => NormalIds.Select(id => Fight(NodeFight.Normal, new[] { id })).ToList();
@@ -65,7 +59,7 @@ public sealed record LayerSpec(
     /// <summary>M2's boss fight, from full conditions (not carried).</summary>
     public LayerFight BossFight => Fight(NodeFight.Boss, new[] { BossId });
 
-    /// <summary>M3's fights: §3's <c>-chain</c> order, each battle with the line and 瘴気 of its node kind.</summary>
+    /// <summary>M3's fights: §3's <c>-chain</c> order, each battle with the line of its node kind.</summary>
     public IReadOnlyList<LayerFight> ChainFights
     {
         get
@@ -120,7 +114,8 @@ public sealed record LayerRow(
 /// </summary>
 public static class LayerBench
 {
-    public const string Format = "battlecore-sim-layers/1";
+    // /2 (#889): the per-layer 瘴気 and max stamina keys left the report.
+    public const string Format = "battlecore-sim-layers/2";
 
     private static readonly (int, int) NormalTurns = (6, 10);
     private static readonly (int, int) RealBossTurns = (12, 18);
@@ -135,25 +130,25 @@ public static class LayerBench
     {
         new LayerSpec(1, new[] { "polearm_warped", "shadow_hound" }, "shadow_hound",
             "polearm_warped@1,polearm_warped@1,shadow_hound@1,shadow_hound@1", Four,
-            6, 7, 8, 1, 5, 90, 75, NormalTurns, NormalTurns),
+            6, 7, 8, 90, 75, NormalTurns, NormalTurns),
         new LayerSpec(2, new[] { "polearm_warped", "shadow_hound", "rusted_revenant", "crossbow_hunter" }, "rusted_revenant",
             "polearm_warped@2,polearm_warped+crossbow_hunter@2,rusted_revenant@2", Three,
-            6, 7, 8, 6, 10, 85, 75, NormalTurns, NormalTurns),
+            6, 7, 8, 85, 75, NormalTurns, NormalTurns),
         new LayerSpec(3, new[] { "rusted_revenant", "crossbow_hunter", "polearm_crystal" }, "miasma_priest",
             "rusted_revenant@3,polearm_warped+crossbow_hunter@3,miasma_priest@3", Three,
-            6, 7, 8, 12, 20, 80, 65, NormalTurns, RealBossTurns),
+            6, 7, 8, 80, 65, NormalTurns, RealBossTurns),
         new LayerSpec(4, new[] { "rusted_revenant", "mist_archer", "twin_blade_warped", "polearm_crystal" }, "armored_warden",
             "rusted_revenant@4,twin_blade_warped@4,polearm_crystal@4,armored_warden@4", Four,
-            7, 8, 8, 23, 32, 75, 55, NormalTurns, EliteStandInBossTurns),
+            7, 8, 8, 75, 55, NormalTurns, EliteStandInBossTurns),
         new LayerSpec(5, new[] { "mist_archer", "twin_blade_warped" }, "polearm_unyielding",
             "mist_archer@5,pack_alpha@5,polearm_unyielding@5", Three,
-            7, 8, 8, 36, 48, 65, 55, NormalTurns, EliteStandInBossTurns),
+            7, 8, 8, 65, 55, NormalTurns, EliteStandInBossTurns),
         new LayerSpec(6, new[] { "mist_archer", "twin_blade_warped" }, "abyss_angler",
             "mist_archer@6,pack_alpha@6,abyss_angler@6", Three,
-            7, 8, 8, 53, 68, 55, 45, NormalTurns, RealBossTurns),
+            7, 8, 8, 55, 45, NormalTurns, RealBossTurns),
         new LayerSpec(7, new[] { "twin_blade_warped" }, "distortion_root",
             "twin_blade_warped@7,pack_alpha@7,distortion_root@7", Three,
-            8, 8, 8, 75, 89, 50, 40, NormalTurns, RealBossTurns),
+            8, 8, 8, 50, 40, NormalTurns, RealBossTurns),
     };
 
     /// <summary>The setup of one fight: the first enemy and the rest in phase order, the line, the max stamina, and the HP and stamina it starts from.</summary>
@@ -262,10 +257,6 @@ public static class LayerBench
                 chain = l.ChainSpec,
                 chainKinds = l.ChainKinds.Select(k => k.ToString()),
                 fieldCells = new { normal = l.NormalCells, elite = l.EliteCells, boss = l.BossCells },
-                entryMiasma = l.EntryMiasma,
-                entryMaxStamina = Chain.MaxStaminaAt(l.EntryMiasma),
-                bossMiasma = l.BossMiasma,
-                bossMaxStamina = Chain.MaxStaminaAt(l.BossMiasma),
                 targets = new
                 {
                     m1 = l.M1Target,
