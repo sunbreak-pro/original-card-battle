@@ -30,6 +30,9 @@ const REPO_SLUG = "original-card-battle";
 const CI_WORKFLOW = null;
 const RECORD_BRANCH = /^chore\/tracker-/;
 const REVERT_BRANCH = /^revert\//;
+// CLAUDE.md keeps harness problems out of Issues, so a PR that only changes the harness under .claude/ has no
+// Issue to name. Design docs live in .claude/docs/ and stay product work that needs an Issue.
+const isHarnessFile = (f) => f.startsWith(".claude/") && !f.startsWith(".claude/docs/");
 const LOCKFILE = /(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|packages\.lock\.json)$/;
 const TEST = /(^|\/)(__tests__|tests?)\//;
 const CSHARP = /\.(cs|csproj)$/;
@@ -145,15 +148,22 @@ function issue(n) {
   return issueCache.get(n);
 }
 
+// A 依存 line may name a PR instead of an Issue (「#826（PR #948 の merge）」). If n is itself a merged PR, its own
+// merge commit decides; otherwise n is an Issue and a merged PR that refers to it decides. Ported from life-editor's
+// landedIn (2026-11-08): reading every number as an Issue held #954-#956 back on PRs #885 and #948, both merged.
+function landedIn(merged, n, isAncestor) {
+  const onMain = (pr) => Boolean(pr.mergeCommit?.oid) && isAncestor(pr.mergeCommit.oid);
+  const self = merged.find((pr) => pr.number === n);
+  if (self) return (self.baseRefName ?? "main") === "main" && onMain(self);
+  return merged.some((pr) => issueRefs(pr).includes(n) && onMain(pr));
+}
+
 let mergedCache = null;
 function landed(n) {
   mergedCache ??= ghJson(
-    "pr", "list", "-R", REPO, "--state", "merged", "--limit", "300", "--json", "number,headRefName,body,title,mergeCommit",
+    "pr", "list", "-R", REPO, "--state", "merged", "--limit", "300", "--json", "number,headRefName,baseRefName,body,title,mergeCommit",
   );
-  return mergedCache.some((pr) => {
-    if (!issueRefs(pr).includes(n) || !pr.mergeCommit?.oid) return false;
-    return tryRun("git", ["merge-base", "--is-ancestor", pr.mergeCommit.oid, "origin/main"]).code === 0;
-  });
+  return landedIn(mergedCache, n, (oid) => tryRun("git", ["merge-base", "--is-ancestor", oid, "origin/main"]).code === 0);
 }
 
 function worktrees() {
@@ -248,8 +258,9 @@ function plan(onlyArg) {
 
   const items = prs.map((pr) => {
     const labels = pr.labels.map((l) => l.name);
-    const kind = RECORD_BRANCH.test(pr.headRefName) ? "record" : REVERT_BRANCH.test(pr.headRefName) ? "revert" : "impl";
     const refs = issueRefs(pr);
+    const harness = refs.length === 0 && pr.files.length > 0 && pr.files.every((f) => isHarnessFile(f.path));
+    const kind = RECORD_BRANCH.test(pr.headRefName) ? "record" : REVERT_BRANCH.test(pr.headRefName) ? "revert" : harness ? "harness" : "impl";
     const issues = refs.map(issue);
     const lane = laneFor(pr, lanes, issues);
     const files = pr.files.map((f) => f.path);
@@ -260,7 +271,7 @@ function plan(onlyArg) {
       number: pr.number, title: pr.title, branch: pr.headRefName, headOid: pr.headRefOid, kind, refs, files,
       createdAt: pr.createdAt, ci: c, mergeable: pr.mergeable, conflicts,
       lane: lane ? { slug: lane.slug, path: lane.path, branch: lane.branch, dirty: lane.dirty, head: lane.head } : null,
-      deps: [], verdict: "merge", reason: "事前確認を通った",
+      deps: [], verdict: "merge", reason: kind === "harness" ? "事前確認を通った（.claude/ だけを変えるハーネスの PR で、Issue を持たない）" : "事前確認を通った",
     };
     const hold = (reason) => Object.assign(item, { verdict: "hold", reason });
     const fix = (reason) => Object.assign(item, { verdict: "fix", reason });
@@ -315,10 +326,12 @@ function plan(onlyArg) {
       if (it.verdict === "merge" && it.kind !== "revert")
         Object.assign(it, { verdict: "hold", reason: "main の CI が赤いので、revert 以外は見送り" });
 
-  // 順番: 依存の前後 → 実装・revert を先、記録を後 → 他の PR と同じファイルを触る数が少ない順 → 古い順
+  // 順番: 依存の前後 → ハーネスを先（後の merge が直した hook とスクリプトで進むように）、実装・revert、記録を後
+  // → 他の PR と同じファイルを触る数が少ない順 → 古い順
   const ready = items.filter((i) => i.verdict === "merge");
   const overlap = (it) => ready.filter((o) => o !== it && o.files.some((f) => it.files.includes(f))).length;
-  const key = (it) => [it.kind === "record" ? 1 : 0, overlap(it), Date.parse(it.createdAt)];
+  const rank = { harness: 0, impl: 1, revert: 1, record: 2 };
+  const key = (it) => [rank[it.kind] ?? 1, overlap(it), Date.parse(it.createdAt)];
   const cmp = (a, b) => {
     const ka = key(a), kb = key(b);
     for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i]) return ka[i] - kb[i];
