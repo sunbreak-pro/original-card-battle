@@ -31,11 +31,13 @@ node .claude/scripts/merge-round.mjs plan
 | --- | --- |
 | merge | 手元の `git merge-tree` で main と衝突せず、CI があれば通り、レーンの手元と PR の先頭が一致し、依存先が main に着地済みか今回の回で先に merge される |
 | 直してもらう | main と衝突している、または CI が赤い |
-| 今回は見送り | 下書き / `merge:hold` ラベル / `Closes #番号` も `Refs #番号` もブランチ名の番号も無い / Issue が `status:frozen` / CI 実行中 / レーンに未コミットの変更がある / 依存先が未着地 |
+| 今回は見送り | 下書き / `merge:hold` ラベル / `Closes #番号` も `Refs #番号` もブランチ名の番号も無く、`.claude/` の外も変えている / Issue が `status:frozen` / CI 実行中 / レーンに未コミットの変更がある / 依存先が未着地 |
 
-PR が片付ける Issue は、本文の `Closes #n`（CLAUDE.md の決まり）か `Refs #n`、無ければブランチ名の末尾の番号（`feat/battle-822` の 822）から読む。依存は Issue 本文の「## 依存」節から読む（`npm run issues:next` と同じ読み方）。
+PR が片付ける Issue は、本文の `Closes #n`（CLAUDE.md の決まり）か `Refs #n`、無ければブランチ名の末尾の番号（`feat/battle-822` の 822）から読む。依存は Issue 本文の「## 依存」節から読む（`npm run issues:next` と同じ読み方）。依存の番号が merge 済みの PR そのもの（「#826（PR #948 の merge）」の 948）なら、その PR の merge commit が main にあるかで決める。life-editor の `landedIn` と同じ読み方で、Issue としてだけ読んでいた 2026-11-08 までは #954〜#956 を誤って見送りにしていた。
 
-順番は、依存の前後を守ったうえで、実装と revert を先に、記録（`chore/tracker-*`）を後にする。同じ回の中では、他の PR と同じファイルを触る数が少ない PR から、古い PR から並べる。衝突しない PR を先に積み、衝突しうる PR を後ろに寄せるためです。
+Issue を持たない PR でも、変えたファイルがすべて `.claude/` の下（`.claude/docs/` を除く）なら、ハーネスの PR として「merge」にできる。CLAUDE.md がハーネスの問題を Issue にしないと決めているためで、これが無いあいだは hook の直し（#952）を merge-round で merge できなかった。`.claude/docs/` の設計書はプロダクトの作業なので、Issue が要る。
+
+順番は、依存の前後を守ったうえで、ハーネスの PR を最初に、実装と revert を次に、記録（`chore/tracker-*`）を最後にする。ハーネスを先にするのは、後の merge が直した hook とスクリプトで進むようにするためです。同じ回の中では、他の PR と同じファイルを触る数が少ない PR から、古い PR から並べる。衝突しない PR を先に積み、衝突しうる PR を後ろに寄せるためです。
 
 終了コード 3 は「main の CI が赤い」を表す（CI を設定したあとだけ起きる）。そのときは revert の PR（`revert/` で始まるブランチ）だけが「merge」になり、ほかは見送りになる。下の「main が赤いとき」に進む。
 
