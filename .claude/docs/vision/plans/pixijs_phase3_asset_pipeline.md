@@ -1,5 +1,7 @@
 # PixiJS統合 Phase 3: アセットパイプライン構築
 
+> **Status**: ON HOLD。未着手です。敵 50 体の画像、スプライトシート、パララックスの背景は、Web 版にはありません。Web 版 `src/` は旧ループのまま凍結していて、絵と描画は Unity 側で作っているためです。
+
 ## Change History
 
 | Date | Content |
