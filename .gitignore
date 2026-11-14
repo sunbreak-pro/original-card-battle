@@ -43,6 +43,8 @@ yarn-error.log*
 .claude/comm/handoff/*
 !.claude/comm/handoff/_TEMPLATE.md
 .claude/active-sessions/
+# 個人の設定。PC と人ごとに違うので追跡しない。
+.claude/settings.local.json
 # 生成物。.claude/hooks/regen-index.sh が SessionStart hook / task-tracker から決定論的に再生成する。
 # 追跡すると並行チャットが同じ行を書き換えて必ず衝突する。
 .claude/memory/INDEX.md
