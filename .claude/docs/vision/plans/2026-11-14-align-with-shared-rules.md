@@ -1,6 +1,6 @@
 # Plan: claude-dotfiles の共通の決まりに、このリポジトリを合わせる
 
-- **Status**: Draft（決めてもらう点の 3 つに答えが出ました。コードと設定は、まだ何も変えていません）
+- **Status**: IN PROGRESS（Step 1〜4 が終わりました。Step 6 は PR を作成済みで、merge 待ちです）
 - **Created**: 2026-11-14
 - **Task**: claude-dotfiles の共通の決まりと重なる決まり・道具をこのリポジトリから消し、文書の置き場を標準に合わせる
 - **Project**: original-card-battle
@@ -132,22 +132,23 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
 
 1 つの Step を 1 本の PR にします。作業は、入口の文書の決まりどおり、main の checkout ではなく worktree で行います。`.claude/` を変える PR は、共通の hook が承認の要る種類として扱うので、merge はメインのチャットが行います。
 
-1. [ ] Step 1（こうだいさんの確認が要る）: 始める条件を確かめます。
+1. [x] Step 1（こうだいさんの確認が要る）: 始める条件を確かめます。検査の基準（エラー 237 件、警告 3 件）を取りました。
    - claude-dotfiles の PR #106 と #107 の状態を、`gh pr view` の出力で確かめます。main に入っていなくても、Step 2〜4 と 6〜9 は進められます。
    - `node <claude-dotfiles>/check-project.mjs <このリポジトリ> --json` を実行し、件数を Worklog に書きます。これを、あとの Step の基準にします。
    - 決めてもらう点のうち、答えが出ていない 2 つ（語と番号をどこまで直すか、使われていない部品）は、Step 7 と 8 に着く前に聞きます。
    - PR #957 は、merge の決まりを共通の決まりに合わせる答えに沿って、Step 5 に取り込みます。
-2. [ ] Step 2: 個人の設定の追跡をやめます。
+2. [x] Step 2: 個人の設定の追跡をやめます。PR #965「chore(harness): stop tracking the personal Claude Code settings file」で、2026-11-14 に merge しました。
    - `git rm --cached .claude/settings.local.json` を実行し、`.gitignore` に 1 行足します。手元のファイルは消えません。
    - ほかの worktree では、この PR を取り込んだときに、ファイルが作業ツリーから消えます。必要な値は、取り込む前に控えます。PR の本文に、この注意を書きます。
-3. [ ] Step 3: `.claude/agents/` の symlink 3 本を片付けます（決めてもらう点「指す先の無いエージェント 3 本をどうするか」の答えに従います）。
+3. [x] Step 3: `.claude/agents/` の symlink 3 本を片付けます（決めてもらう点「指す先の無いエージェント 3 本をどうするか」の答えに従います）。PR #966「chore(harness): remove three agent links that point outside the repository」で、2026-11-14 に merge しました。
    - 3 本を消し、`git grep -n "card-battle-"` で拾った言及を直します。
-4. [ ] Step 4: `.claude/issue-workflow.md` に、共通の道具が読む値を足します。
+4. [x] Step 4: `.claude/issue-workflow.md` に、共通の道具が読む値を足します。PR #967「chore(harness): add the settings the shared merge-round and issue tools read」で、2026-11-14 に merge しました。
    - `## 設定値` に足す項目は、`mergeMethod`（`merge`）、`ciCommand` と `ciWorkflow`（どちらも `null`）、`harnessOnlyPaths`、`mechanicalFiles`、`areaWorkspaces`、`issueCreation`（`main-only`）です。値は「引き渡しの一覧」の案を使います。
    - この Step では、値を足すだけにします。いまの `issue-workflow` は、名前を挙げた項目だけを設定から読むので、増えた項目は読まれず、動きは変わりません。このリポジトリの merge の手順と hook は、自分の定数を使い続けます。
    - `mainCheckout` と `worktreeRoot` を相対パスに変える直し、`mergePolicy` の書き換え、「動作確認」と「仕上げ」の節は、Step 5 で行います。相対パスを絶対パスに直して渡す部品と、共通の merge の手順は、claude-dotfiles の PR #106 が main に入るまで使えないためです。先に書くと、`issue-workflow` が、まだ無い道具を呼びます。
 5. [ ] Step 5（こうだいさんの確認が要る）: 共通の道具と同じ名前のものと、hook の写しを消します。claude-dotfiles の PR #106 が main に入ったあとで、claude-dotfiles が 2 本の hook を登録する日と、同じ日に入れます。
    - `.claude/settings.json` の hook の登録 7 本を消します。
+   - 入口の文書の hook の表と、スキルの表の `merge-round`・`issue-dispatch`・`worktree-policy` の行を外します。Step 6 では、hook とスキルがまだ登録・配置されたままなので、これらの行を残しました。hook の表の `merge-gate.mjs` の行にある merge のコマンドの書き写し（警告 1 件）は、この Step で消えます。
    - `.claude/issue-workflow.md` の `mainCheckout` と `worktreeRoot` を、絶対パスから相対パス（`.` と `../workspaces/original-card-battle`）に変えます。個人の PC のパスを、設定から外すためです。
    - `mergePolicy` を、共通の決まりに合わせて書き換えます（こうだいさんの 2026-11-14 の答え）。「動作確認」と「仕上げ」の節を足します。「動作確認」は、開いている PR #957 の文をもとにします。「仕上げ」には merge のコマンドの形と承認の印を書きません。共通の `merge-round.mjs check` がコマンドを表示し、承認の印は、claude-dotfiles の PR #106 が main に入ったあとの共通の側には無いためです。#957 は、この Step の PR に取り込んだあとで閉じます。#957 がこのリポジトリの hook とスキルに足した直しは、消すファイルへの直しなので取り込みません。
    - 消すファイルは、`.claude/hooks/` の 7 本と `lib/hook-context.mjs` とそのテスト、`.claude/scripts/hooks-lib/` の 4 本、`.claude/scripts/merge-round.mjs`、`.claude/skills/merge-round/`、`.claude/skills/issue-dispatch/`、`.claude/skills/worktree-policy/` です。
@@ -155,11 +156,13 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - 共通の merge の手順は、PR が指す全部の Issue のラベルに、`areaWorkspaces` を上の行から順に当てます。このリポジトリのいまの手順は、Issue ごとに `lane:` を先に当てます。1 本の PR が複数の Issue を指し、ラベルの種類が違うときだけ、選ばれる担当が変わります。
    - 消す前に、共通の側に無い中身を移します。担当の区分の一覧・読み取り専用の区分・待機ブランチ・続きの PR を積む決まりは、入口の文書の「並行作業」の節に残します。`pdca:auto` を付ける判断・申し送りを集める手順・凍結した領域は、`.claude/comm/README.md` に移します。衝突に C# が混じるときに `dotnet test` を足す決まりは、`.claude/issue-workflow.md` の「全体確認」に書きます。
    - 入れたあとに、main の checkout で `gh issue create` と `gh pr merge` を、止まるはずの形で 1 回ずつ試し、hook が止めることを確かめます。止まらなければ、この PR を revert します。
-6. [ ] Step 6: 入口の文書から、経緯と、共通の決まりの書き写しを外します。
-   - 日付と「いつ誰が決めたか」の 19 個を、決めてもらう点「決定の経緯を置く場所」の答えの置き場へ移します。入口の文書には、今の決まりと理由だけを残します。
-   - 計画書の置き場と merge のコマンドの書き写し（エラー 2 件、警告 3 件）を、共通のスキルの名前を指す文に変えます。
-   - hook の表、禁止コマンドの節、Git の節のうち、共通の決まりと同じ内容の行を消します。このリポジトリだけの決まり（main の checkout は `main` だけ、ブランチ名の形）は残します。
-   - スキルの表から、消したスキルの行を外します。
+6. [ ] Step 6: 入口の文書から、経緯と、共通の決まりの書き写しを外します。PR を作成済みで、merge 待ちです（PR 番号は未記入）。
+   - 日付と「いつ誰が決めたか」の 19 個を、`.claude/decisions/`（新設）へ移します。入口の文書には、今の決まりと理由だけを残し、経緯が要る所に決定の記録を 1 つ指します。設計書の版の日付（`concept-v3.md`・`battle_core_v4.md` v4.3・`world-v1.md` v5）は、設計書の冒頭の Status が持っているので、入口の文書から消すだけにしました。
+   - 「ADR は作らない」の文を、「ゲームの設計の決定は設計書に入れる。進め方の決定だけ、決定の記録に置く」に書き換えます。
+   - 計画書の置き場と merge のコマンドの書き写し（エラー 2 件、警告 3 件）を、共通のスキルの名前を指す文に変えます。hook の表の中の 1 件（警告）は、開いている PR #957 と同じ行なので、Step 5 で表ごと外します。
+   - 禁止コマンドの節と Git の節のうち、共通の決まりと同じ内容の行を消します。このリポジトリだけの決まり（main の checkout は `main` だけ、ブランチ名の形、未マージの作業をタグで残してから消す手順、`git branch -D` を止める `deny`）は残します。
+   - 「README の Development History に 1 行足す」決まりを外します（Step 9 から移しました）。README にその節が無く、完了の記録は履歴のファイルが持っているためです。
+   - hook の表と、スキルの表の `merge-round`・`issue-dispatch`・`worktree-policy` の行は、この Step では残します。hook 7 本とスキル 3 本がまだ登録・配置されたままで、消すのは Step 5 だからです。
 7. [ ] Step 7: 文書の置き場を、標準に合わせます。
    - `.claude/feature_plans/` の 4 本を、`.claude/docs/vision/plans/` の同じ名前のファイルと比べます。中身が違う 3 本は、新しいほうを残します。そのうえで、フォルダを消します。
    - `.claude/docs/vision/plans/` の日付の無い 8 本は、実装が終わっているかをコードで確かめ、終わったものを `.claude/archive/` へ移します。残すものには、Status の欄を足します。
@@ -172,7 +175,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - 例外にするものは、claude-dotfiles の例外の一覧（`claude/docs/exceptions.md`）に足す行の案を作り、claude-dotfiles の側へ渡します。このリポジトリからは書きません。
 9. [ ] Step 9: `README.md` を書き直します。
    - Python 版の説明を消し、いまの構成（React と Vite の版、Unity への移植）、起動のコマンド、文書の入口への案内を、60 行以内で書きます。
-   - 入口の文書の「README の Development History に 1 行足す」決まりは、節が無いので外します。完了の記録は、履歴のファイルが持っています。
+   - 入口の文書の「README の Development History に 1 行足す」決まりを外す作業は、Step 6 へ移しました。
 10. [ ] Step 10（確かめる役）: 検査を取り直し、結果を報告します。
     - `check-project.mjs` のエラーが、例外の一覧に載せたものを除いて 0 件であることを確かめます。
     - `npm run build`・`npm run lint`・`npm run test:run` が通ることを確かめます。文書と設定だけの変更でも、hook の切り替えのあとなので 1 回回します。
@@ -219,4 +222,8 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
 
 ## Worklog
 
-<!-- 下書きの間は空けておきます。 -->
+### 2026-11-14
+
+- **Step 2〜4 の結果。** PR #965・#966・#967 が main に入りました。検査のエラーは 237 件から 233 件に減りました。警告は 3 件のままです。減った 4 件は、外を指す symlink の 3 件と、追跡された個人の設定の 1 件です。
+- **Step 6 でやったこと。** 入口の文書の日付 19 個を外し、16 個の経緯を `.claude/decisions/` の 13 本の決定の記録へ移しました。残りの 3 個は設計書の版の日付で、設計書の冒頭の Status が持っているので、消すだけにしました。入口の文書から決定の記録を指すときは、`.claude/decisions/*-<名前>.md` の形で、日付を除いた名前で指しました。Verification の「`grep -c "2026-"` が 0」を満たすためです。Git の節から、共通の `git-workflow` スキルと同じ内容の 5 行を消しました。禁止コマンドの節は、共通のスキルを指す文と、このリポジトリだけが `git branch -D` も止める点に書き換えました。README の Development History の決まりを外しました。入口の文書は 345 行から 342 行になりました。
+- **Step 6 の検査の前後。** エラーは 233 件から 230 件に、警告は 3 件から 1 件に減りました。入口の文書への書き写しは、エラー 2 件・警告 3 件から、警告 1 件になりました。残った 1 件は hook の表の `merge-gate.mjs` の行で、開いている PR #957 と同じ行なので、Step 5 で表ごと外します。内輪の語は 154 件から 153 件に減りました（消した Git の節の 1 行の分）。ほかの種類の件数は変わっていません。
