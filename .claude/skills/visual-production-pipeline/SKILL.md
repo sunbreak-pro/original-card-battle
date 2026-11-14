@@ -19,7 +19,7 @@ Skill の `args` の先頭語でモードを決めます。`<id>` は `enemy_ros
 | `background <階層>` | B1 | 背景と靄のタイル、縁のコントラスト表、台帳、Artifact、Note |
 | `ui <画面か部品>` | U0 → U8 | モックアップ、読みやすさの表、アイコンと書体、実装の依頼、実画面との差分、Artifact、Note |
 | `vfx <系統>` | V0 → V3 | 系統 × 段の表、系統素材、実装の依頼、時間の表、Artifact、Note |
-| 未指定 | — | `MEMORY.md` の進行中と `.claude/docs/art_document/briefs/*.md` の進捗欄から続きを選ぶ。何も無ければ `survey` |
+| 未指定 | — | `.claude/memory/chat-<self>.md` の進行中と `.claude/docs/art_document/briefs/*.md` の進捗欄から続きを選ぶ。何も無ければ `survey` |
 
 ## 着手時にすること
 
@@ -131,7 +131,7 @@ Skill の `args` の先頭語でモードを決めます。`<id>` は `enemy_ros
 
    出力が `url-in-body=yes` であることを確かめます。`NO` なら隠さずに報告します。
 
-4. **tracker**: `task-tracker` で `MEMORY.md` と `HISTORY.md` を更新します。
+4. **tracker**: `task-tracker` で `.claude/memory/chat-<self>.md` と `.claude/history/chat-<self>.md` を更新します。
 5. **報告**: 何をしたか / 結果 / 次に判断が要る点の 3 つに、Artifact の URL、レポートのパス、Note の id を添えます。
 
 ## やらないこと

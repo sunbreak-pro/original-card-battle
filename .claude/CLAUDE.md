@@ -268,7 +268,6 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 - **横断ビュー**: `.claude/memory/INDEX.md` / `.claude/history/INDEX.md` は **git 非追跡の生成物**。`.claude/hooks/regen-index.sh` が SessionStart と task-tracker から再生成する。手編集も `git add` もしない
 - **更新は task-tracker スキル経由**（手動編集しない）。開始時と完了時に書く中身は、task-tracker スキルが持ちます。計画書の置き場と、終わった計画書を移す先は、共通の `code-plan-editor` スキルに従います
 - **tracker の更新を実装コミットに混ぜない**。`pre-commit-tracker-guard.sh` が止める。意図的に同梱するときだけコマンドに `[tracker-ok]` を含める
-- `.claude/MEMORY.md` / `.claude/HISTORY.md` / `TODO.md` は移転前の後方互換ポインタ。更新しない
 
 ### hooks（`.claude/settings.json`）
 

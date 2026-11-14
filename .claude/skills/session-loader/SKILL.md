@@ -20,7 +20,6 @@ description: セッション開始時に original-card-battle のコンテキス
 - **per-chat モード**: `.claude/memory/INDEX.md`（全チャット集約ビュー）を Read。SSOT は各 `.claude/memory/chat-*.md`
 - `INDEX.md` は SessionStart hook と task-tracker が再生成する git 非追跡の派生ビュー。鮮度に不安があれば `.claude/memory/chat-*.md` を個別に Read
 - 自分のチャット名は `.claude/comm/.session-name`。未宣言なら `echo main > .claude/comm/.session-name` を促す
-- `.claude/MEMORY.md` / `.claude/HISTORY.md` は移転前のポインタ。読まない
 
 ## Step 2: 規約
 
