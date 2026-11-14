@@ -163,7 +163,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - 禁止コマンドの節と Git の節のうち、共通の決まりと同じ内容の行を消します。このリポジトリだけの決まり（main の checkout は `main` だけ、ブランチ名の形、未マージの作業をタグで残してから消す手順、`git branch -D` を止める `deny`）は残します。
    - 「README の Development History に 1 行足す」決まりを外します（Step 9 から移しました）。README にその節が無く、完了の記録は履歴のファイルが持っているためです。
    - hook の表と、スキルの表の `merge-round`・`issue-dispatch`・`worktree-policy` の行は、この Step では残します。hook 7 本とスキル 3 本がまだ登録・配置されたままで、消すのは Step 5 だからです。
-7. [ ] Step 7: 文書の置き場を、標準に合わせます。PR を作成済みで、merge 待ちです（PR 番号は未記入）。PR #969 の上に積みました。`.claude/comm/decisions/` は、決めてもらう点「使われていない部品を残すか」の答えが出ていないので、この PR では残しました。答えが出たら、別の PR で扱います。
+7. [ ] Step 7: 文書の置き場を、標準に合わせます。PR を作成済みで、merge 待ちです（#970「docs(harness): align document locations with the shared standard」。#969 の上に積んでいます）。PR #969 の上に積みました。`.claude/comm/decisions/` は、決めてもらう点「使われていない部品を残すか」の答えが出ていないので、この PR では残しました。答えが出たら、別の PR で扱います。
    - `.claude/feature_plans/` の 4 本を、`.claude/docs/vision/plans/` の同じ名前のファイルと比べます。中身が違う 3 本は、新しいほうを残します。そのうえで、フォルダを消します。
    - `.claude/docs/vision/plans/` の日付の無い 8 本は、実装が終わっているかをコードで確かめ、終わったものを `.claude/archive/` へ移します。残すものには、Status の欄を足します。
    - `.claude/MEMORY.md`・`.claude/HISTORY.md`・`TODO.md` を消し、指しているファイル（現行の文書 3 本ほか）を直します。過去の記録（`.claude/HISTORY-archive.md`・`.claude/archive/`・日付つきの資料）の中の言及は直しません。
