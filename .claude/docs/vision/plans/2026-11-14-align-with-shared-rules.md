@@ -144,13 +144,15 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - 3 本を消し、`git grep -n "card-battle-"` で拾った言及を直します。
 4. [ ] Step 4: `.claude/issue-workflow.md` に、共通の道具が読む値を足します。
    - `## 設定値` に足す項目は、`mergeMethod`（`merge`）、`ciCommand` と `ciWorkflow`（どちらも `null`）、`harnessOnlyPaths`、`mechanicalFiles`、`areaWorkspaces`、`issueCreation`（`main-only`）です。値は「引き渡しの一覧」の案を使います。
-   - この Step では、値を足すだけにします。いまの `issue-workflow` は設定の JSON をそのまま読むので、項目が増えても動きは変わりません。このリポジトリの merge の手順と hook は、自分の定数を使い続けます。
+   - この Step では、値を足すだけにします。いまの `issue-workflow` は、名前を挙げた項目だけを設定から読むので、増えた項目は読まれず、動きは変わりません。このリポジトリの merge の手順と hook は、自分の定数を使い続けます。
    - `mainCheckout` と `worktreeRoot` を相対パスに変える直し、`mergePolicy` の書き換え、「動作確認」と「仕上げ」の節は、Step 5 で行います。相対パスを絶対パスに直して渡す部品と、共通の merge の手順は、claude-dotfiles の PR #106 が main に入るまで使えないためです。先に書くと、`issue-workflow` が、まだ無い道具を呼びます。
 5. [ ] Step 5（こうだいさんの確認が要る）: 共通の道具と同じ名前のものと、hook の写しを消します。claude-dotfiles の PR #106 が main に入ったあとで、claude-dotfiles が 2 本の hook を登録する日と、同じ日に入れます。
    - `.claude/settings.json` の hook の登録 7 本を消します。
    - `.claude/issue-workflow.md` の `mainCheckout` と `worktreeRoot` を、絶対パスから相対パス（`.` と `../workspaces/original-card-battle`）に変えます。個人の PC のパスを、設定から外すためです。
-   - `mergePolicy` を、共通の決まりに合わせて書き換えます（こうだいさんの 2026-11-14 の答え）。「動作確認」と「仕上げ」の節を足します。「動作確認」は、開いている PR #957 の文をもとにします。「仕上げ」には merge のコマンドの形と承認の印を書きません。共通の `merge-round.mjs check` がコマンドを表示し、承認の印は共通の側でやめたためです。#957 は、この Step の PR に取り込んだあとで閉じます。#957 がこのリポジトリの hook とスキルに足した直しは、消すファイルへの直しなので取り込みません。
+   - `mergePolicy` を、共通の決まりに合わせて書き換えます（こうだいさんの 2026-11-14 の答え）。「動作確認」と「仕上げ」の節を足します。「動作確認」は、開いている PR #957 の文をもとにします。「仕上げ」には merge のコマンドの形と承認の印を書きません。共通の `merge-round.mjs check` がコマンドを表示し、承認の印は、claude-dotfiles の PR #106 が main に入ったあとの共通の側には無いためです。#957 は、この Step の PR に取り込んだあとで閉じます。#957 がこのリポジトリの hook とスキルに足した直しは、消すファイルへの直しなので取り込みません。
    - 消すファイルは、`.claude/hooks/` の 7 本と `lib/hook-context.mjs` とそのテスト、`.claude/scripts/hooks-lib/` の 4 本、`.claude/scripts/merge-round.mjs`、`.claude/skills/merge-round/`、`.claude/skills/issue-dispatch/`、`.claude/skills/worktree-policy/` です。
+   - 共通の `worktree-policy` が範囲の重なりを確かめる道具（`scope-overlap.mjs`）は、担当ごとの作業場所の対応表（設定の `workspaceMapPath`）が無いと止まります。このリポジトリには対応表が無いので、作るか、その道具を使わないと決めるかを、消す前に決めます。共通の側がその道具を必ず使うかは未確認です。
+   - 共通の merge の手順は、PR が指す全部の Issue のラベルに、`areaWorkspaces` を上の行から順に当てます。このリポジトリのいまの手順は、Issue ごとに `lane:` を先に当てます。1 本の PR が複数の Issue を指し、ラベルの種類が違うときだけ、選ばれる担当が変わります。
    - 消す前に、共通の側に無い中身を移します。担当の区分の一覧・読み取り専用の区分・待機ブランチ・続きの PR を積む決まりは、入口の文書の「並行作業」の節に残します。`pdca:auto` を付ける判断・申し送りを集める手順・凍結した領域は、`.claude/comm/README.md` に移します。衝突に C# が混じるときに `dotnet test` を足す決まりは、`.claude/issue-workflow.md` の「全体確認」に書きます。
    - 入れたあとに、main の checkout で `gh issue create` と `gh pr merge` を、止まるはずの形で 1 回ずつ試し、hook が止めることを確かめます。止まらなければ、この PR を revert します。
 6. [ ] Step 6: 入口の文書から、経緯と、共通の決まりの書き写しを外します。

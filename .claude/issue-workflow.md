@@ -37,7 +37,7 @@
 }
 ```
 
-`mergeMethod` から `issueCreation` までの 7 項目は、claude-dotfiles の共通の `merge-round`・`worktree-policy`・`issue-dispatch` と、共通の hook が読む値です。値は、このリポジトリの `.claude/scripts/merge-round.mjs` と `.claude/hooks/` が定数として持っている値と同じにしてあります。共通の道具に切り替えるまでは、このリポジトリの道具は自分の定数を使い、この 7 項目を読みません。`ciCommand` と `ciWorkflow` が `null` なのは、PR に走る CI が無いためです。
+`mergeMethod` から `issueCreation` までの 7 項目は、claude-dotfiles の共通の `merge-round`・`issue-dispatch` と、共通の hook が読む値です。値は、このリポジトリの `.claude/scripts/merge-round.mjs` と `.claude/hooks/` が定数として持っている値と同じにしてあります。共通の道具に切り替えるまでは、このリポジトリの道具は自分の定数を使い、この 7 項目を読みません。`ciCommand` と `ciWorkflow` が `null` なのは、PR に走る CI が無いためです。
 
 `branchPattern` の `{{prefix}}` は、このリポジトリのブランチ名の接頭辞です（`worktree-policy` の「ブランチ切替」）。下の「選び方」で Issue ごとに決めます。
 
