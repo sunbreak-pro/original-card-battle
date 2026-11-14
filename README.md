@@ -13,7 +13,7 @@
 | `unity-port/unity-project-kit/` | Unity プロジェクトへ渡す部品（asmdef・画面の雛形・`.gitignore`）です。 |
 | `unity-port/tools/` | コアを Unity プロジェクトへ同期する、C# がコンパイルできるかを検査するなどのスクリプトです。 |
 
-Unity のバージョンは 6000.5.5f1 です（`unity-port/unity-project-kit/README.md`）。Unity プロジェクトは別のリポジトリにあります。
+Unity のバージョンは 6000.5.5f1 です（`unity-port/unity-project-kit/README.md`）。Unity プロジェクトは別のリポジトリ（`sunbreak-pro/RPG-by-card`）にあります。
 
 ## コマンド
 
@@ -34,10 +34,9 @@ Unity 側のコマンドは次のとおりです。
 ```bash
 npm run unity:sync     # C# のコアと画面の部品を Unity プロジェクトへ同期する
 npm run unity:check    # Unity のエディタを開かずに、C# がコンパイルできるかを検査する
-npm run parity:check   # TypeScript の戦闘コアから正解データを作り直し、C# のテストを実行する
 ```
 
-C# 側のテストの実行方法は `unity-port/README.md` にあります。
+C# のテストは `dotnet test unity-port/UnityCorePort.slnx` で実行します。前提と手順は `unity-port/README.md` にあります。
 
 ## 文書の入口
 
