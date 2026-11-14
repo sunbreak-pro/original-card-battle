@@ -1,6 +1,6 @@
 # PixiJS統合 Phase 2: バトルエフェクト移行
 
-> **Status**: ON HOLD。未着手です。`src/ui/pixi/` には、基盤づくりの計画（`.claude/archive/pixijs_phase1_foundation_2026-02-22.md`）で入れた試験用の粒が 1 つあるだけで、この計画の演出はありません。Web 版 `src/` は旧ループのまま凍結していて、戦闘の描画は Unity 側で作っているためです。
+> **Status**: ON HOLD。未着手です。`src/ui/pixi/` には、基盤づくりの計画（`.claude/archive/2026-05-17-pixijs-phase1-code-level.md`、COMPLETED）で入れた試験用の粒が 1 つあるだけで、この計画の演出はありません。Web 版 `src/` は旧ループのまま凍結していて、戦闘の描画は Unity 側で作っているためです。
 
 > **注記（2026-11-02、#731）**: #514 で消した Web 版のファイル（`useEscapeLogic` `useItemUsage` `talentCardUnlock` `useDerivationCheck` `elementUtils` `PixiEffectBridge` `phaseLogic.ts` など）の名前を含む、当時の記録です。今のコードとは一致しません。
 

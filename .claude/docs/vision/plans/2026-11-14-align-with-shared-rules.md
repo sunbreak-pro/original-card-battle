@@ -163,7 +163,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - 禁止コマンドの節と Git の節のうち、共通の決まりと同じ内容の行を消します。このリポジトリだけの決まり（main の checkout は `main` だけ、ブランチ名の形、未マージの作業をタグで残してから消す手順、`git branch -D` を止める `deny`）は残します。
    - 「README の Development History に 1 行足す」決まりを外します（Step 9 から移しました）。README にその節が無く、完了の記録は履歴のファイルが持っているためです。
    - hook の表と、スキルの表の `merge-round`・`issue-dispatch`・`worktree-policy` の行は、この Step では残します。hook 7 本とスキル 3 本がまだ登録・配置されたままで、消すのは Step 5 だからです。
-7. [ ] Step 7: 文書の置き場を、標準に合わせます。PR を作成済みで、merge 待ちです（#970「docs(harness): align document locations with the shared standard」。#969 の上に積んでいます）。PR #969 の上に積みました。`.claude/comm/decisions/` は、決めてもらう点「使われていない部品を残すか」の答えが出ていないので、この PR では残しました。答えが出たら、別の PR で扱います。
+7. [ ] Step 7: 文書の置き場を、標準に合わせます。PR を作成済みで、merge 待ちです（#970「docs(harness): align document locations with the shared standard」。#969 の上に積んでいます）。`.claude/comm/decisions/` は、決めてもらう点「使われていない部品を残すか」の答えが出ていないので、この PR では残しました。答えが出たら、別の PR で扱います。
    - `.claude/feature_plans/` の 4 本を、`.claude/docs/vision/plans/` の同じ名前のファイルと比べます。中身が違う 3 本は、新しいほうを残します。そのうえで、フォルダを消します。
    - `.claude/docs/vision/plans/` の日付の無い 8 本は、実装が終わっているかをコードで確かめ、終わったものを `.claude/archive/` へ移します。残すものには、Status の欄を足します。
    - `.claude/MEMORY.md`・`.claude/HISTORY.md`・`TODO.md` を消し、指しているファイル（現行の文書 3 本ほか）を直します。過去の記録（`.claude/HISTORY-archive.md`・`.claude/archive/`・日付つきの資料）の中の言及は直しません。
@@ -230,7 +230,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
 
 ### 2026-11-15
 
-- **Step 7 の計画書の比べた結果。** `.claude/feature_plans/` の 4 本は、どれも `.claude/docs/vision/plans/` の側が新しい中身でした。`pixijs_phase3_asset_pipeline.md` は中身が同じでした。残りの 3 本は、2026-11-02 の注記（#731）と、`pixijs_phase4_polish.md` の計画書へのリンクの直しが、`vision/plans/` の側にだけありました。`feature_plans/` の側にしか無い中身は無かったので、フォルダを消しました。
+- **Step 7 の計画書の比べた結果。** `.claude/feature_plans/` の 4 本のうち、`pixijs_phase3_asset_pipeline.md` は `.claude/docs/vision/plans/` の側と同じ中身でした。残りの 3 本は `vision/plans/` の側が新しく、2026-11-02 の注記（#731）と、`pixijs_phase4_polish.md` の計画書へのリンクの直しが、`vision/plans/` の側にだけありました。`feature_plans/` の側にしか無い中身は無かったので、フォルダを消しました。
 - **日付の無い 8 本の判断。** 2 本が終わっていたので、archive に入れました。`pixijs_phase1_foundation.md` は、archive にあった同じ計画の古い写し（`.claude/archive/pixijs_phase1_foundation_2026-02-22.md`）に上書きしました。差は 2026-11-02 の注記だけです。コードの段階の計画（`.claude/archive/2026-05-17-pixijs-phase1-code-level.md`）は COMPLETED で、`src/ui/pixi/` に基盤があります。`quest_system.md` は、c7bfaf63 でデイリーとウィークリーのクエストが入っていて、archive に同じ中身の写しがあったので、`vision/plans/` の側を消しました。残りの 6 本（`dark_market`・`npc_conversation`・`title_system`・PixiJS の演出・素材・仕上げの 3 本）は、終わっていません。Web 版 `src/` が旧ループのまま凍結しているので、冒頭に「ON HOLD」の Status と理由を足しました。ファイル名は変えていません。
 - **案内だけのファイル 3 本。** `.claude/MEMORY.md`・`.claude/HISTORY.md`・`TODO.md` を消しました。hook・スクリプト・`package.json`・設定は、3 本を読んでいませんでした。共通の task-tracker は、`.claude/memory/` の有無で動き方を決めるので、3 本が無くても変わりません。現行の文書の言及は、入口の文書・`session-loader`・`visual-production-pipeline` の 4 か所を直しました。過去の記録の言及は残しました。
 - **索引。** `.claude/docs/INDEX.md` と入口の文書の参照の表で、計画書の置き場の説明を直し、`.claude/archive/` と `.claude/decisions/` を足しました。消えていた戦闘 v4 の計画書へのリンクは、今の計画書と archive の写しを指すように直しました。
