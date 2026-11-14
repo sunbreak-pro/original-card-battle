@@ -336,6 +336,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 | `.claude/docs/vision/core.md` | Vision・設計原則 |
 | `.claude/docs/*_document/` | Game design specs (battle, cards, camps, dungeon, enemies, items, journal) |
 | `.claude/docs/code-explanation/` | Code analysis, vulnerability tracker, testing analysis |
-| `.claude/docs/vision/plans/` | Active plans + future features (quest/title/NPC/dark market/PixiJS) |
+| `.claude/docs/vision/plans/` | 計画書。進行中の計画と、保留中の将来機能（title・NPC・dark market・PixiJS）を置きます |
+| `.claude/archive/` | 終えた計画書と過去の資料 |
 | `.claude/docs/known-issues/` | Root Cause + 再発防止知見（INDEX + LESSONS_LEARNED） |
 | `.claude/skills/` | プロジェクト固有スキル（Skills Quick Reference 参照） |
