@@ -6,7 +6,7 @@
 - **Project**: original-card-battle
 - **計画書**: `.claude/docs/vision/plans/2026-11-14-align-with-shared-rules.md`
 - **元になる計画**: claude-dotfiles の `claude/docs/plans/2026-11-11-project-rollout.md`（下位のプロジェクトを共通の決まりに合わせる計画）の Step 12
-- **作業の大きさ**: PR 9 本と、スキルの語を直す PR が数本の見込みです。こうだいさんの確認が要る Step は 1・4・8 の 3 個です
+- **作業の大きさ**: PR 9 本と、スキルの語を直す PR が数本の見込みです。こうだいさんの確認が要る Step は 1・5・8 の 3 個です
 
 ## Context
 
@@ -41,7 +41,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
 - **計画書。** `.claude/docs/vision/plans/` に 14 本、`.claude/feature_plans/` に 4 本あります。後者の 4 本は前者に同じ名前があり、1 本は中身が同じで、3 本は中身が違います。前者のうち日付の無い 8 本には、Status の欄がありません。
 - **hook（Claude Code 本体が決まった場面で自動で動かすスクリプト）。** `.claude/settings.json` に 7 本の登録があります。7 本とも、claude-dotfiles の 2 本（`bash-guards.mjs` と `project-session-start.mjs`）に置き換わります。4 本は `$HOME/dev/Claude/hooks-lib/` を先に読み、無ければ同梱の `.claude/scripts/hooks-lib/` を使います。
 - **README。** `README.md`（121 行）は、Python 版のころの説明（`python main.py` で起動）のままです。入口の文書が言う「Development History」の節はありません。
-- **開いている PR。** #957「chore(harness): let work-finishers publish, check screens and run merge-round」が開いています。`.claude/issue-workflow.md` に「動作確認」と「仕上げ」の節を足す PR で、この計画の Step 4 と同じファイルを触ります。
+- **開いている PR。** #957「chore(harness): let work-finishers publish, check screens and run merge-round」が開いています。`.claude/issue-workflow.md` に「動作確認」と「仕上げ」の節を足す PR で、この計画の Step 4・5 と同じファイルを触ります。このリポジトリの hook と merge の手順にも、仕上げ役のための直しを足しています。
 - **main の checkout の状態。** `.claude/settings.local.json` に未コミットの変更があり、`docs/reports/` に追跡されていない報告書が 2 本あります。この計画は、どちらも触りません。
 
 ### 前提になる claude-dotfiles の側の作業
@@ -67,7 +67,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
 **1. merge の決まりを、共通の決まりに合わせるか。**
 
 - **何が起きているか。** 入口の文書は「merge は常に人」と書いています。こうだいさんが merge の手順（`merge-round`）を起動した回だけ、確認なしで通します。共通の決まり（`claude/docs/development-flow.md` の「merge」）は、手順と検証の条件を満たした PR を、確認なしで merge してよいとしています。全プロジェクトに効く決まり・hook・設定・権限を変える PR だけ、こうだいさんの承認を待ちます。
-- **なぜ決める必要があるか。** 決めないと、Step 4 で `.claude/issue-workflow.md` の `mergePolicy` と「仕上げ」の節を書けません。開いている PR #957 を入れてよいかも決まりません。
+- **なぜ決める必要があるか。** 決めないと、Step 5 で `.claude/issue-workflow.md` の `mergePolicy` と「仕上げ」の節を書けません。開いている PR #957 を入れてよいかも決まりません。
 - **選ぶと何が起きるか。**
   - 共通の決まりに合わせると、仕上げ役が、条件を満たした PR を merge まで運びます。`.claude/**` や `.github/workflows/**` を変える PR は、hook が止めて、こうだいさんの確認に回します。
   - いまのまま（常に人）にすると、仕上げ役は PR を作るところで止まります。共通の決まりと違うので、例外の一覧に 1 行足します。
@@ -136,19 +136,20 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - claude-dotfiles の PR #106 と #107 の状態を、`gh pr view` の出力で確かめます。main に入っていなくても、Step 2〜4 と 6〜9 は進められます。
    - `node <claude-dotfiles>/check-project.mjs <このリポジトリ> --json` を実行し、件数を Worklog に書きます。これを、あとの Step の基準にします。
    - 決めてもらう点のうち、答えが出ていない 2 つ（語と番号をどこまで直すか、使われていない部品）は、Step 7 と 8 に着く前に聞きます。
-   - PR #957 は、merge の決まりを共通の決まりに合わせる答えに沿って、Step 4 に取り込みます。取り込み方（#957 を直して入れるか、Step 4 の PR に写して閉じるか）は、#957 の差分を読んで決めます。
+   - PR #957 は、merge の決まりを共通の決まりに合わせる答えに沿って、Step 5 に取り込みます。
 2. [ ] Step 2: 個人の設定の追跡をやめます。
    - `git rm --cached .claude/settings.local.json` を実行し、`.gitignore` に 1 行足します。手元のファイルは消えません。
    - ほかの worktree では、この PR を取り込んだときに、ファイルが作業ツリーから消えます。必要な値は、取り込む前に控えます。PR の本文に、この注意を書きます。
 3. [ ] Step 3: `.claude/agents/` の symlink 3 本を片付けます（決めてもらう点「指す先の無いエージェント 3 本をどうするか」の答えに従います）。
    - 3 本を消し、`git grep -n "card-battle-"` で拾った言及を直します。
-4. [ ] Step 4（こうだいさんの確認が要る）: `.claude/issue-workflow.md` に、共通の道具が読む値を足します。
+4. [ ] Step 4: `.claude/issue-workflow.md` に、共通の道具が読む値を足します。
    - `## 設定値` に足す項目は、`mergeMethod`（`merge`）、`ciCommand` と `ciWorkflow`（どちらも `null`）、`harnessOnlyPaths`、`mechanicalFiles`、`areaWorkspaces`、`issueCreation`（`main-only`）です。値は「引き渡しの一覧」の案を使います。
-   - `mainCheckout` と `worktreeRoot` を、絶対パスから相対パス（`.` と `../workspaces/original-card-battle`）に変えます。個人の PC のパスを、設定から外すためです。
-   - `mergePolicy` と「仕上げ」の節を、決めてもらう点「merge の決まり」の答えに合わせて書きます。節には merge のコマンドの形を書きません。共通の `merge-round.mjs check` が表示するためです。
-   - いまの issue-workflow が、知らない項目を足しても動くことを、`status` の表示で確かめます（未確認）。動かないなら、この Step を Step 5 と同じ PR にまとめます。
-5. [ ] Step 5: 共通の道具と同じ名前のものと、hook の写しを消します。claude-dotfiles の PR #106 が main に入ったあとで、claude-dotfiles が 2 本の hook を登録する日と、同じ日に入れます。
+   - この Step では、値を足すだけにします。いまの `issue-workflow` は設定の JSON をそのまま読むので、項目が増えても動きは変わりません。このリポジトリの merge の手順と hook は、自分の定数を使い続けます。
+   - `mainCheckout` と `worktreeRoot` を相対パスに変える直し、`mergePolicy` の書き換え、「動作確認」と「仕上げ」の節は、Step 5 で行います。相対パスを絶対パスに直して渡す部品と、共通の merge の手順は、claude-dotfiles の PR #106 が main に入るまで使えないためです。先に書くと、`issue-workflow` が、まだ無い道具を呼びます。
+5. [ ] Step 5（こうだいさんの確認が要る）: 共通の道具と同じ名前のものと、hook の写しを消します。claude-dotfiles の PR #106 が main に入ったあとで、claude-dotfiles が 2 本の hook を登録する日と、同じ日に入れます。
    - `.claude/settings.json` の hook の登録 7 本を消します。
+   - `.claude/issue-workflow.md` の `mainCheckout` と `worktreeRoot` を、絶対パスから相対パス（`.` と `../workspaces/original-card-battle`）に変えます。個人の PC のパスを、設定から外すためです。
+   - `mergePolicy` を、共通の決まりに合わせて書き換えます（こうだいさんの 2026-11-14 の答え）。「動作確認」と「仕上げ」の節を足します。「動作確認」は、開いている PR #957 の文をもとにします。「仕上げ」には merge のコマンドの形と承認の印を書きません。共通の `merge-round.mjs check` がコマンドを表示し、承認の印は共通の側でやめたためです。#957 は、この Step の PR に取り込んだあとで閉じます。#957 がこのリポジトリの hook とスキルに足した直しは、消すファイルへの直しなので取り込みません。
    - 消すファイルは、`.claude/hooks/` の 7 本と `lib/hook-context.mjs` とそのテスト、`.claude/scripts/hooks-lib/` の 4 本、`.claude/scripts/merge-round.mjs`、`.claude/skills/merge-round/`、`.claude/skills/issue-dispatch/`、`.claude/skills/worktree-policy/` です。
    - 消す前に、共通の側に無い中身を移します。担当の区分の一覧・読み取り専用の区分・待機ブランチ・続きの PR を積む決まりは、入口の文書の「並行作業」の節に残します。`pdca:auto` を付ける判断・申し送りを集める手順・凍結した領域は、`.claude/comm/README.md` に移します。衝突に C# が混じるときに `dotnet test` を足す決まりは、`.claude/issue-workflow.md` の「全体確認」に書きます。
    - 入れたあとに、main の checkout で `gh issue create` と `gh pr merge` を、止まるはずの形で 1 回ずつ試し、hook が止めることを確かめます。止まらなければ、この PR を revert します。
