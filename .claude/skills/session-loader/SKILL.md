@@ -20,7 +20,6 @@ description: セッション開始時に original-card-battle のコンテキス
 - **per-chat モード**: `.claude/memory/INDEX.md`（全チャット集約ビュー）を Read。SSOT は各 `.claude/memory/chat-*.md`
 - `INDEX.md` は SessionStart hook と task-tracker が再生成する git 非追跡の派生ビュー。鮮度に不安があれば `.claude/memory/chat-*.md` を個別に Read
 - 自分のチャット名は `.claude/comm/.session-name`。未宣言なら `echo main > .claude/comm/.session-name` を促す
-- `.claude/MEMORY.md` / `.claude/HISTORY.md` は移転前のポインタ。読まない
 
 ## Step 2: 規約
 
@@ -71,4 +70,4 @@ npm run sources -- --lane <自分の slug>   # 書く正本と読む正本。メ
 - **戦闘コアの正は `unity-port/BattleCore/`（C#）**。TS の `src/ui/battle-lab/core/` は凍結済みなので、実装の現状を掴むときに読まない
 - **Web 版（`src/`）は旧ループのまま**（キャンプ 5 施設 / ライフ制 / AP）。新ループは Unity 側で実装中。`src/` を読んで「いまの仕様」と誤解しない
 - 凍結範囲（アーマー / 装備・Gold・ソウル経済 / ショップ・鍛冶屋・サンクチュアリ）の文書を現行仕様として読まない
-- ADR は作らない。設計原則は `docs/vision/core.md` に集約
+- ゲームの設計の決定は設計書の本文に入れ、進め方の決定は `.claude/decisions/` に置きます。設計原則は `docs/vision/core.md` に集約

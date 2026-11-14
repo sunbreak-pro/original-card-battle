@@ -1,5 +1,7 @@
 # Title System - Future Feature
 
+> **Status**: ON HOLD。未着手です。実績の一覧（`src/constants/data/achievements/AchievementData.ts`）はありますが、称号の付与、選択、効果は実装していません。Web 版 `src/` は旧ループのまま凍結しているためです。新しいループで作るかは未確認です。
+
 ## Change History
 
 | Date | Content |

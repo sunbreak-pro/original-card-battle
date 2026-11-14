@@ -1,5 +1,7 @@
 # Dark Market - Future Feature
 
+> **Status**: ON HOLD。一部を実装しました。珍しい装備を高い値で売るショップのタブは、2026-02-05 に入りました（記録は `.claude/archive/dark_market_implementation_2026-02-05.md`）。隠れた欠点のある品、信用の仕組み、入場の条件は実装していません。ショップは凍結していて、Web 版 `src/` は旧ループのまま止まっているためです。
+
 ## Change History
 
 | Date | Content |

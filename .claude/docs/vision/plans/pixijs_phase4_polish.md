@@ -1,5 +1,7 @@
 # PixiJS統合 Phase 4: ポリッシュ・最適化・拡張判断
 
+> **Status**: ON HOLD。未着手です。この計画は、前の 3 本の計画が終わっていることを前提にしています。そのうち基盤づくりの計画（`.claude/archive/2026-05-17-pixijs-phase1-code-level.md`、COMPLETED）だけが終わり、残りの 2 本は未着手です。Web 版 `src/` は旧ループのまま凍結していて、戦闘の描画は Unity 側で作っているためです。
+
 > **注記（2026-11-02、#731）**: #514 で消した Web 版のファイル（`useEscapeLogic` `useItemUsage` `talentCardUnlock` `useDerivationCheck` `elementUtils` `PixiEffectBridge` `phaseLogic.ts` など）の名前を含む、当時の記録です。今のコードとは一致しません。
 
 ## Change History
@@ -451,6 +453,6 @@ Day 5:  品質・手間・パフォーマンスを評価し Go/No-Go 判断
 - Spine Essential: https://esotericsoftware.com/spine-purchase
 - spine-pixi-v8: https://github.com/EsotericSoftware/spine-runtimes
 - 既存バトル設計: `.claude/docs/battle_design.md`
-- Phase 1 計画: `.claude/docs/vision/plans/pixijs_phase1_foundation.md`
+- Phase 1 計画: `.claude/archive/2026-05-17-pixijs-phase1-code-level.md`（実装した計画。もとの抽象版は `.claude/archive/pixijs_phase1_foundation_2026-02-22.md`）
 - Phase 2 計画: `.claude/docs/vision/plans/pixijs_phase2_battle_effects.md`
 - Phase 3 計画: `.claude/docs/vision/plans/pixijs_phase3_asset_pipeline.md`

@@ -268,7 +268,6 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 - **横断ビュー**: `.claude/memory/INDEX.md` / `.claude/history/INDEX.md` は **git 非追跡の生成物**。`.claude/hooks/regen-index.sh` が SessionStart と task-tracker から再生成する。手編集も `git add` もしない
 - **更新は task-tracker スキル経由**（手動編集しない）。開始時と完了時に書く中身は、task-tracker スキルが持ちます。計画書の置き場と、終わった計画書を移す先は、共通の `code-plan-editor` スキルに従います
 - **tracker の更新を実装コミットに混ぜない**。`pre-commit-tracker-guard.sh` が止める。意図的に同梱するときだけコマンドに `[tracker-ok]` を含める
-- `.claude/MEMORY.md` / `.claude/HISTORY.md` / `TODO.md` は移転前の後方互換ポインタ。更新しない
 
 ### hooks（`.claude/settings.json`）
 
@@ -337,6 +336,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 | `.claude/docs/vision/core.md` | Vision・設計原則 |
 | `.claude/docs/*_document/` | Game design specs (battle, cards, camps, dungeon, enemies, items, journal) |
 | `.claude/docs/code-explanation/` | Code analysis, vulnerability tracker, testing analysis |
-| `.claude/docs/vision/plans/` | Active plans + future features (quest/title/NPC/dark market/PixiJS) |
+| `.claude/docs/vision/plans/` | 計画書。進行中の計画と、保留中の将来機能（title・NPC・dark market・PixiJS）を置きます |
+| `.claude/archive/` | 終えた計画書と過去の資料 |
 | `.claude/docs/known-issues/` | Root Cause + 再発防止知見（INDEX + LESSONS_LEARNED） |
 | `.claude/skills/` | プロジェクト固有スキル（Skills Quick Reference 参照） |

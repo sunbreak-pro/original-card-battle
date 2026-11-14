@@ -1,5 +1,7 @@
 # NPC Conversation System - Future Feature
 
+> **Status**: ON HOLD。未着手です。ギルドの噂のタブ（`src/ui/html/campsHtml/Guild/RumorsTab.tsx`）は、探索の効果を買う仕組みで、会話ではありません。Web 版 `src/` は旧ループのまま凍結していて、ギルドの設計書も `.claude/archive/camp_document/` へ移したためです。新しいループで作るかは未確認です。
+
 ## Change History
 
 | Date | Content |

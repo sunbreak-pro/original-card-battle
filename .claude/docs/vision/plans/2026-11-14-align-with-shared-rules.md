@@ -1,6 +1,6 @@
 # Plan: claude-dotfiles の共通の決まりに、このリポジトリを合わせる
 
-- **Status**: IN PROGRESS（Step 1〜4 が終わりました。Step 6 は PR を作成済みで、merge 待ちです）
+- **Status**: IN PROGRESS（Step 1〜4 が終わりました。Step 6・7・9 は PR を作成済みで、merge 待ちです）
 - **Created**: 2026-11-14
 - **Task**: claude-dotfiles の共通の決まりと重なる決まり・道具をこのリポジトリから消し、文書の置き場を標準に合わせる
 - **Project**: original-card-battle
@@ -163,7 +163,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - 禁止コマンドの節と Git の節のうち、共通の決まりと同じ内容の行を消します。このリポジトリだけの決まり（main の checkout は `main` だけ、ブランチ名の形、未マージの作業をタグで残してから消す手順、`git branch -D` を止める `deny`）は残します。
    - 「README の Development History に 1 行足す」決まりを外します（Step 9 から移しました）。README にその節が無く、完了の記録は履歴のファイルが持っているためです。
    - hook の表と、スキルの表の `merge-round`・`issue-dispatch`・`worktree-policy` の行は、この Step では残します。hook 7 本とスキル 3 本がまだ登録・配置されたままで、消すのは Step 5 だからです。
-7. [ ] Step 7: 文書の置き場を、標準に合わせます。
+7. [ ] Step 7: 文書の置き場を、標準に合わせます。PR を作成済みで、merge 待ちです（#970「docs(harness): align document locations with the shared standard」。#969 の上に積んでいます）。`.claude/comm/decisions/` は、決めてもらう点「使われていない部品を残すか」の答えが出ていないので、この PR では残しました。答えが出たら、別の PR で扱います。
    - `.claude/feature_plans/` の 4 本を、`.claude/docs/vision/plans/` の同じ名前のファイルと比べます。中身が違う 3 本は、新しいほうを残します。そのうえで、フォルダを消します。
    - `.claude/docs/vision/plans/` の日付の無い 8 本は、実装が終わっているかをコードで確かめ、終わったものを `.claude/archive/` へ移します。残すものには、Status の欄を足します。
    - `.claude/MEMORY.md`・`.claude/HISTORY.md`・`TODO.md` を消し、指しているファイル（現行の文書 3 本ほか）を直します。過去の記録（`.claude/HISTORY-archive.md`・`.claude/archive/`・日付つきの資料）の中の言及は直しません。
@@ -173,7 +173,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - 検査の指摘を、言い換えるもの・コードとして残すもの・例外にするもの、の 3 つに分けた一覧を作り、こうだいさんに見せてから直します。
    - 直す順は、入口の文書、`.claude/issue-workflow.md`、スキルです。スキルは 1 本ずつ PR にします。
    - 例外にするものは、claude-dotfiles の例外の一覧（`claude/docs/exceptions.md`）に足す行の案を作り、claude-dotfiles の側へ渡します。このリポジトリからは書きません。
-9. [ ] Step 9: `README.md` を書き直します。
+9. [ ] Step 9: `README.md` を書き直します。PR を作成済みで、merge 待ちです（#968「docs(readme): rewrite the README to match the React and Unity layout」）。
    - Python 版の説明を消し、いまの構成（React と Vite の版、Unity への移植）、起動のコマンド、文書の入口への案内を、60 行以内で書きます。
    - 入口の文書の「README の Development History に 1 行足す」決まりを外す作業は、Step 6 へ移しました。
 10. [ ] Step 10（確かめる役）: 検査を取り直し、結果を報告します。
@@ -227,3 +227,11 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
 - **Step 2〜4 の結果。** PR #965・#966・#967 が main に入りました。検査のエラーは 237 件から 233 件に減りました。警告は 3 件のままです。減った 4 件は、外を指す symlink の 3 件と、追跡された個人の設定の 1 件です。
 - **Step 6 でやったこと。** 入口の文書の日付 19 個を外し、16 個の経緯を `.claude/decisions/` の 13 本の決定の記録へ移しました。残りの 3 個は設計書の版の日付で、設計書の冒頭の Status が持っているので、消すだけにしました。入口の文書から決定の記録を指すときは、日付つきのファイル名で指しました。共通の決まりの文書と同じ指し方です。Verification の grep は、`decisions/2026-` を含む行を数えない形に直しました。claude-dotfiles の PR #106 と #107 は、この時点でどちらも OPEN です。Step 2〜4 と 6 は、待たずに進めました。Git の節から、共通の `git-workflow` スキルと同じ内容の 5 行を消しました。禁止コマンドの節は、共通のスキルを指す文と、このリポジトリだけが `git branch -D` も止める点に書き換えました。README の Development History の決まりを外しました。入口の文書は 345 行から 342 行になりました。
 - **Step 6 の検査の前後。** エラーは 233 件から 230 件に、警告は 3 件から 1 件に減りました。入口の文書への書き写しは、エラー 2 件・警告 3 件から、警告 1 件になりました。残った 1 件は hook の表の `merge-gate.mjs` の行で、開いている PR #957 と同じ行なので、Step 5 で表ごと外します。内輪の語は 154 件から 153 件に減りました（消した Git の節の 1 行の分）。ほかの種類の件数は変わっていません。
+
+### 2026-11-15
+
+- **Step 7 の計画書の比べた結果。** `.claude/feature_plans/` の 4 本のうち、`pixijs_phase3_asset_pipeline.md` は `.claude/docs/vision/plans/` の側と同じ中身でした。残りの 3 本は `vision/plans/` の側が新しく、2026-11-02 の注記（#731）と、`pixijs_phase4_polish.md` の計画書へのリンクの直しが、`vision/plans/` の側にだけありました。`feature_plans/` の側にしか無い中身は無かったので、フォルダを消しました。
+- **日付の無い 8 本の判断。** 2 本が終わっていたので、archive に入れました。`pixijs_phase1_foundation.md` は、archive にあった同じ計画の古い写し（`.claude/archive/pixijs_phase1_foundation_2026-02-22.md`）に上書きしました。差は 2026-11-02 の注記だけです。コードの段階の計画（`.claude/archive/2026-05-17-pixijs-phase1-code-level.md`）は COMPLETED で、`src/ui/pixi/` に基盤があります。`quest_system.md` は、c7bfaf63 でデイリーとウィークリーのクエストが入っていて、archive に同じ中身の写しがあったので、`vision/plans/` の側を消しました。残りの 6 本（`dark_market`・`npc_conversation`・`title_system`・PixiJS の演出・素材・仕上げの 3 本）は、終わっていません。Web 版 `src/` が旧ループのまま凍結しているので、冒頭に「ON HOLD」の Status と理由を足しました。ファイル名は変えていません。
+- **案内だけのファイル 3 本。** `.claude/MEMORY.md`・`.claude/HISTORY.md`・`TODO.md` を消しました。hook・スクリプト・`package.json`・設定は、3 本を読んでいませんでした。共通の task-tracker は、`.claude/memory/` の有無で動き方を決めるので、3 本が無くても変わりません。現行の文書の言及は、入口の文書・`session-loader`・`visual-production-pipeline` の 4 か所を直しました。過去の記録の言及は残しました。
+- **索引。** `.claude/docs/INDEX.md` と入口の文書の参照の表で、計画書の置き場の説明を直し、`.claude/archive/` と `.claude/decisions/` を足しました。消えていた戦闘 v4 の計画書へのリンクは、今の計画書と archive の写しを指すように直しました。
+- **Step 7 の検査の前後。** エラーは 230 件から 226 件に減りました。警告は 1 件のままです。減った 4 件は、計画書の置き場の 1 件と、案内だけの進捗のファイルの 3 件です。決定の記録の置き場の 1 件（`.claude/comm/decisions/`）は残っています。ほかの種類の件数は変わっていません。
