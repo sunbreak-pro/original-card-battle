@@ -220,10 +220,6 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 | 課題を Issue として起票（main だけ。レーンは `.claude/comm/handoff/` に申し送り） | `issue-dispatch` |
 | 次に着手する Issue を選んで実装・確認・PR まで回す（main だけ。設定は `.claude/issue-workflow.md`） | `issue-workflow`（グローバル） |
 | open PR をまとめて merge する（main だけ。こうだいさんの起動が承認） | `merge-round` |
-| open Issue を仕分ける | `/loop-triage` |
-| Issue 1 件を commit まで実装 | `/loop-implement` |
-| 検証ゲートを通して原因を切り分ける | `/loop-verify` |
-| 失敗から再発防止の 1 行を回収 | `/loop-postmortem` |
 
 ## Development Workflows
 
