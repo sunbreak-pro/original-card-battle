@@ -15,9 +15,29 @@
   "maxIssuesPerRun": 8,
   "minFreeGb": 6,
   "baselineFailures": "allow",
+  "mergeMethod": "merge",
+  "ciCommand": null,
+  "ciWorkflow": null,
+  "harnessOnlyPaths": [".claude/**", "!.claude/docs/**"],
+  "mechanicalFiles": ["**/*.md", "**/package-lock.json", "**/yarn.lock", "**/pnpm-lock.yaml", "**/packages.lock.json"],
+  "areaWorkspaces": {
+    "lane:*": "*",
+    "area:cards": "cards",
+    "area:enemy": "cards",
+    "area:ui": "design",
+    "area:art": "design",
+    "area:battle": "battle",
+    "area:unity": "battle",
+    "area:dungeon": "dungeon",
+    "area:docs": "audit",
+    "area:tooling": "audit"
+  },
+  "issueCreation": "main-only",
   "mergePolicy": "merge するのはこうだいさんが chat-main で merge-round を起動した回だけです。hooks/merge-gate.mjs が回の外の gh pr merge に確認を出します。実装役と確認役は merge しません。"
 }
 ```
+
+`mergeMethod` から `issueCreation` までの 7 項目は、claude-dotfiles の共通の `merge-round`・`issue-dispatch` と、共通の hook が読む値です。値は、このリポジトリの `.claude/scripts/merge-round.mjs` と `.claude/hooks/` が定数として持っている値と同じにしてあります。共通の道具に切り替えるまでは、このリポジトリの道具は自分の定数を使い、この 7 項目を読みません。`ciCommand` と `ciWorkflow` が `null` なのは、PR に走る CI が無いためです。
 
 `branchPattern` の `{{prefix}}` は、このリポジトリのブランチ名の接頭辞です（`worktree-policy` の「ブランチ切替」）。下の「選び方」で Issue ごとに決めます。
 
