@@ -343,4 +343,3 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 | `.claude/docs/vision/plans/` | Active plans + future features (quest/title/NPC/dark market/PixiJS) |
 | `.claude/docs/known-issues/` | Root Cause + 再発防止知見（INDEX + LESSONS_LEARNED） |
 | `.claude/skills/` | プロジェクト固有スキル（Skills Quick Reference 参照） |
-| `.claude/agents/` | プロジェクト固有エージェント（リンク実体は agents-lib） |
