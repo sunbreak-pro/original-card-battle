@@ -156,7 +156,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
    - 共通の merge の手順は、PR が指す全部の Issue のラベルに、`areaWorkspaces` を上の行から順に当てます。このリポジトリのいまの手順は、Issue ごとに `lane:` を先に当てます。1 本の PR が複数の Issue を指し、ラベルの種類が違うときだけ、選ばれる担当が変わります。
    - 消す前に、共通の側に無い中身を移します。担当の区分の一覧・読み取り専用の区分・待機ブランチ・続きの PR を積む決まりは、入口の文書の「並行作業」の節に残します。`pdca:auto` を付ける判断・申し送りを集める手順・凍結した領域は、`.claude/comm/README.md` に移します。衝突に C# が混じるときに `dotnet test` を足す決まりは、`.claude/issue-workflow.md` の「全体確認」に書きます。
    - 入れたあとに、main の checkout で `gh issue create` と `gh pr merge` を、止まるはずの形で 1 回ずつ試し、hook が止めることを確かめます。止まらなければ、この PR を revert します。
-6. [ ] Step 6: 入口の文書から、経緯と、共通の決まりの書き写しを外します。PR を作成済みで、merge 待ちです（PR 番号は未記入）。
+6. [ ] Step 6: 入口の文書から、経緯と、共通の決まりの書き写しを外します。PR を作成済みで、merge 待ちです（#969「docs(harness): move decision history out of the entry doc into decision records」）。
    - 日付と「いつ誰が決めたか」の 19 個を、`.claude/decisions/`（新設）へ移します。入口の文書には、今の決まりと理由だけを残し、経緯が要る所に決定の記録を 1 つ指します。設計書の版の日付（`concept-v3.md`・`battle_core_v4.md` v4.3・`world-v1.md` v5）は、設計書の冒頭の Status が持っているので、入口の文書から消すだけにしました。
    - 「ADR は作らない」の文を、「ゲームの設計の決定は設計書に入れる。進め方の決定だけ、決定の記録に置く」に書き換えます。
    - 計画書の置き場と merge のコマンドの書き写し（エラー 2 件、警告 3 件）を、共通のスキルの名前を指す文に変えます。hook の表の中の 1 件（警告）は、開いている PR #957 と同じ行なので、Step 5 で表ごと外します。
@@ -213,7 +213,7 @@ claude-dotfiles の `claude/CLAUDE.md`・`claude/rules/`・`claude/skills/` は 
 - [ ] `git ls-files -s | grep ^120000` が何も出さない（外を指す symlink が無い）。
 - [ ] `git ls-files | grep settings.local` が何も出さない。
 - [ ] `ls .claude/feature_plans` が「無い」と返し、計画書の置き場が `.claude/docs/vision/plans/` の 1 か所である。
-- [ ] `grep -c "2026-" .claude/CLAUDE.md` が 0 を返す。
+- [ ] `grep -v "decisions/2026-" .claude/CLAUDE.md | grep -c "2026-"` が 0 を返す（決定の記録のファイル名に入る日付は数えません。共通の決まりの文書も、決定の記録をファイル名で指しています）。
 - [ ] `.claude/settings.json` に、`.claude/hooks/` を指す行が無い。
 - [ ] うまくいかない場合の確認: main の checkout で、merge の手順の回の外の `gh pr merge <開いている PR の番号>` を打つと、共通の hook が止める。担当の worktree で `gh issue create` を打つと、同じく止まる。
 - [ ] `node ~/.claude/skills/merge-round/scripts/merge-round.mjs status` が、設定の不足を表示せずに終わる。
