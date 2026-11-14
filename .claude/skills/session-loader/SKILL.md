@@ -35,7 +35,6 @@ description: セッション開始時に original-card-battle のコンテキス
 
 - **次にやることは `npm run issues:next`**（`prio:1`〜`4` → `sev:` → 番号の順。`--lane <slug>` でレーンに絞る）
 - 過去の知見は `gh issue list --state closed --search <keyword>` と `.claude/docs/known-issues/INDEX.md` の grep の両輪
-- 判断待ちがあれば `.claude/comm/decisions/` と `ANSWERS.md`
 
 ## Step 4: 進行中タスクの関連ファイル
 
@@ -60,7 +59,6 @@ npm run sources -- --lane <自分の slug>   # 書く正本と読む正本。メ
 - 進行中: {memory の「進行中」を 1〜2 行}
 - open Issue: {件数}件（着手可 {n} / 人手待ち {n} / 依存待ち {n}）
 - ブランチ: {git branch --show-current}（.session-branch と一致するか）
-- 判断待ち: {decisions の未回答件数}
 - 申し送り: {main のときだけ。全 worktree の `.claude/comm/handoff/` の件数（`_TEMPLATE.md` を除く）。回収手順は issue-dispatch の手順 1}
 ```
 
