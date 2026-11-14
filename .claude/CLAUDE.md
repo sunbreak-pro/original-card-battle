@@ -6,10 +6,11 @@
 
 ## 0. Meta
 
-- **役割**: 現状の実装規約 / アーキテクチャ / 規約の参照点（400 行以下目標）。抽象構想は `docs/vision/core.md`（ADR は作らない）
+- **役割**: 現状の実装規約 / アーキテクチャ / 規約の参照点（400 行以下目標）。抽象構想は `docs/vision/core.md`
+- **決定の置き場**: ゲームの設計の決定は、設計書の本文に入れます。進め方の決定だけを、決定の記録（`.claude/decisions/`）に置きます。本ファイルには今の決まりと理由だけを書き、いつ誰が決めたかは決定の記録に書きます
 - **更新規則**: 実装変更はコードと同一コミットで本ファイルを更新。新機能の要件は `docs/requirements/`、設計原則は `docs/vision/core.md` へ
-- **タスク運用**: 進行中 / 予定は `memory/chat-<self>.md`、変更履歴は `history/chat-<self>.md`（いずれも task-tracker スキル経由で更新、手動編集しない）。**課題追跡の正は GitHub Issues**。`README.md` の Development History は完了履歴の要約
-- **関連**: `memory/`(タスク) / `history/`(履歴) / `docs/vision/core.md`(設計原則) / `docs/requirements/`(要件) / `docs/known-issues/`([INDEX](./docs/known-issues/INDEX.md)) / `docs/code-explanation/`(コード解析・脆弱性) / `archive/`(完了プラン)
+- **タスク運用**: 進行中 / 予定は `memory/chat-<self>.md`、変更履歴は `history/chat-<self>.md`（いずれも task-tracker スキル経由で更新、手動編集しない）。**課題追跡の正は GitHub Issues**
+- **関連**: `memory/`(タスク) / `history/`(履歴) / `decisions/`(進め方の決定の記録) / `docs/vision/core.md`(設計原則) / `docs/requirements/`(要件) / `docs/known-issues/`([INDEX](./docs/known-issues/INDEX.md)) / `docs/code-explanation/`(コード解析・脆弱性) / `archive/`(完了プラン)
 
 ---
 
@@ -32,13 +33,8 @@ npx vitest run src/domain/cards/decks/__tests__/deck.test.ts  # Single file
 
 ## Git / Branch Workflow
 
-ブランチ運用は GitHub Flow。詳細手順はグローバル `git-branch-flow` スキルに委譲し、本節は本リポの規約のみを持つ。
+ブランチの運用と、commit から merge までの手順は、共通の `git-workflow` スキルに従います。この節は、このリポジトリだけの決まりを持ちます。
 
-- **main + 短命 feature ブランチ**。長期作業ブランチを作らない（溜めると統合が重くなる。`docs/realism-concept-v2` が40コミット化した反省）
-- **命名**: `feat/` `fix/` `docs/` `chore/` + kebab-case（例: `feat/stamina-system`）。snake_case 禁止（旧 `battle_logic` 等）
-- **1 機能 = 1 ブランチ = 1 PR**。マージは PR 経由で履歴を残す
-- **PR マージ後はブランチ削除**（ローカル・リモート両方）
-- **main は常に origin/main 追従**（作業開始前に pull）
 - **不要な未マージ作業は `archive/<name>` タグで保全してから削除**（`git tag archive/<name> <branch>` → push → ブランチ削除。一覧を汚さず復元可能に）
 - **メイン（`C:\Users\user\orca\original-card-battle`）は `main` 専有**。feature 作業は worktree から行う。メインで `git checkout <feature>` をしない
 - **レーンのブランチは `<prefix>/<slug>-<issue>`**（例: `feat/battle-36`, `docs/cards-38`）。待機ブランチは `chore/lane-<slug>`、tracker 専用は `chore/tracker-<self>-YYYYMMDD`
@@ -188,7 +184,7 @@ Battle flow: Init phase queue (speed-sorted) → Player phase (draw, buffs, wait
 
 ### Game Loop Flow
 
-> 設計上の正本は `docs/vision/concept-v3.md`（2026-09-12「生と継承」）。下のループは設計の目標形。Web 版コード（`src/`）は旧ループ（キャンプ 5 施設 / ライフ制 / AP）のまま残っており、Unity 側で新ループを実装する。
+> 設計上の正本は `docs/vision/concept-v3.md`（「生と継承」）。下のループは設計の目標形。Web 版コード（`src/`）は旧ループ（キャンプ 5 施設 / ライフ制 / AP）のまま残っており、Unity 側で新ループを実装する。
 
 ```
 継承の間（遺産候補の確認 / 生存者ボーナス）→ 出立（ツール / 戦闘デッキ）→ ダンジョン（崩壊の暦 × 3 つの領域）→ 戦闘（間合い × スタミナ）
@@ -198,10 +194,10 @@ Battle flow: Init phase queue (speed-sorted) → Player phase (draw, buffs, wait
 
 - **生存ルート:** 生きたまま次のキャラクターへ。生存者は一人まで
 - **死亡:** 成長は消え、手記は死亡地点に残る。次のキャラクターが死亡地点を訪れ、遺産（技術 / 手記の頁）から数個だけ選ぶ。痕跡は回収まで残り、1 つの生で 1 件。浅層の意図的な死では高習熟カードは残らない
-- **実装の正:** 戦闘コアは `unity-port/BattleCore/`（C#）が正（2026-09-12）。TS の `src/ui/battle-lab/core/` は凍結。戦闘の規則は `docs/battle_document/battle_core_v4.md` v4.3（2026-09-22、横 1 列のマスの間合い N）で、コアの追従は #162
-- **戦闘描写（2026-09-20）:** 画面は `unity-port/unity-project-kit/Assets/View/Depiction/`（`Script/` は純 C# の台本と型、View は名前空間 `Depiction.View`）。C# はこのリポが正で `npm run unity:sync` で写す。プレハブ / シーン / `.meta` は Unity リポが正（`Assets/Prefabs/Depiction/`、撮影用の `Assets/Scenes/BattleDepiction.unity`、縦切りの実戦用 `Assets/Scenes/Battle.unity`）。**View は計算せず、値は全て台本から取る**。敵が 2 体以上のとき、`DepictionPlayer` は敵ごとに人型・数値パネル・予兆の札を持ちます。1 体目はシーンの部品で、2 体目以降は実行時の複製です。部品は `DepictionFrame.Enemies` の添字と揃い、配置と振り分けの計算は `Script/` の `EnemyScreen` `OmenRowLayout` `FloorStripes` `EnemySwatch` が持ちます（#589）。台本を出すのは `IDepictionSource` の実装で、実戦は v4.3 のコアで戦う `Bridge/` の `CoreBattleSource`（`BattleCore.TurnLoop` のイベント列を `CoreScriptWriter` が台本へ写す。`Battle.unity` では `BattleBootstrap` が Inspector の敵 id と乱数の種を `BattleLaunch` へ写し、`DepictionPlayer.UseSource` へ渡す）、撮影用は固定台本の `DepictionRunner`（`DepictionPlayer.scriptedPlayback`）です。手書きの規則を持つ旧い `LiveTurn` は、撮影用のシーンが今も使っていますが、使わなくします（2026-10-18 こうだいさん決定、#571）。戦闘の規則は BattleCore だけが持ちます。**View が BattleCore の型を持ってよいのは、計算せず受け渡すときだけ**で、View から `TurnLoop` などの規則を呼びません（2026-10-18 こうだいさん決定。検査は #572）。探索から入るときは、`ExplorationBootstrap` が `Exploration.Bridge` の `Expedition` で戦闘を組んで `BattleBootstrap.HandIn` に渡し、`Battle.unity` を探索のシーンに重ねて読み込みます（#99）。受け渡しの純 C# は `Assets/View/Exploration/Bridge/`（`unity-port/Exploration.Bridge*.csproj`）です。`Script/` `Bridge/` と EditMode テストは `unity-port/Depiction.Script*.csproj` `Depiction.Bridge*.csproj` 経由で `dotnet test` が回す
-- **試遊版の Unity 版（2026-10-22、こうだいさんの依頼で main が作成）:** ブラウザの試遊版（Artifact「Original Card Battle 試遊版」、元は `origin/claude/nifty-dirac-a99nv7` の `prototypes/browser-game/`）を、見た目・動き・音ごと `unity-port/unity-project-kit/Assets/View/Trial/` に写した。これを今後のゲームの基本の形とする。タイトル → 継承の間 → 出立 → 探索 ↔ 戦闘 → 終わり → 次の探索者まで、Unity リポの `Assets/Scenes/Trial.unity`（`TrialBoot` を 1 つ置くだけ）で遊べる。写し方の決まり・アセンブリの表・確かめ方は `unity-port/TRIAL-PORT.md` が持つ。見た目と手触りは試遊版の JS が正、規則は C# のコアが正。ただし人型の絵だけは、立ち絵ができた敵に限り立ち絵が勝ちます（2026-11-01 こうだいさん決定、#772。絵のない敵はベクターの影絵のままです）。戦闘の型・守り・移動の動きも、Unity では JS より 0.2〜0.4 s 遅くします（2026-11-02 こうだいさん依頼。長さは `View/Trial/Battle/Flow/BattlePacing.cs` だけが持ちます）。階層の背景も JS と変えています。層ごとに色を分け、コードで描く遠景（`Backdrop/Script/BackdropScenery.cs`）と星などの粒の組を足しました（2026-11-03 こうだいさん依頼、#89。値は `BackdropSpec.cs` が持ちます）。JS にしか無かった規則（継承 `InheritanceCore`、出立の枠 `DeckLimits`、探索の持ち物とイベント、手記の敵の頁、複数の敵、俊敏の一歩）は opt-in で C# に入れ、外したときの動きは従来の C# のまま。旧い `View/Depiction` `View/Exploration` の画面は触っていない（`Battle.unity` はそのまま動く）
-- **凍結（2026-09-12）:** アーマー（AP / 装備耐久 / 修理）、装備・Gold・ソウル経済、ショップ / 鍛冶屋 / サンクチュアリ。防御は Guard のみ
+- **実装の正:** 戦闘コアは `unity-port/BattleCore/`（C#）が正（経緯は `.claude/decisions/2026-09-12-battle-core-in-csharp.md`）。TS の `src/ui/battle-lab/core/` は凍結。戦闘の規則は `docs/battle_document/battle_core_v4.md` v4.3（横 1 列のマスの間合い N）で、コアの追従は #162
+- **戦闘描写（経緯は `.claude/decisions/2026-09-20-battle-depiction.md`）:** 画面は `unity-port/unity-project-kit/Assets/View/Depiction/`（`Script/` は純 C# の台本と型、View は名前空間 `Depiction.View`）。C# はこのリポが正で `npm run unity:sync` で写す。プレハブ / シーン / `.meta` は Unity リポが正（`Assets/Prefabs/Depiction/`、撮影用の `Assets/Scenes/BattleDepiction.unity`、縦切りの実戦用 `Assets/Scenes/Battle.unity`）。**View は計算せず、値は全て台本から取る**。敵が 2 体以上のとき、`DepictionPlayer` は敵ごとに人型・数値パネル・予兆の札を持ちます。1 体目はシーンの部品で、2 体目以降は実行時の複製です。部品は `DepictionFrame.Enemies` の添字と揃い、配置と振り分けの計算は `Script/` の `EnemyScreen` `OmenRowLayout` `FloorStripes` `EnemySwatch` が持ちます（#589）。台本を出すのは `IDepictionSource` の実装で、実戦は v4.3 のコアで戦う `Bridge/` の `CoreBattleSource`（`BattleCore.TurnLoop` のイベント列を `CoreScriptWriter` が台本へ写す。`Battle.unity` では `BattleBootstrap` が Inspector の敵 id と乱数の種を `BattleLaunch` へ写し、`DepictionPlayer.UseSource` へ渡す）、撮影用は固定台本の `DepictionRunner`（`DepictionPlayer.scriptedPlayback`）です。手書きの規則を持つ旧い `LiveTurn` は、撮影用のシーンが今も使っていますが、使わなくします（#571）。戦闘の規則は BattleCore だけが持ちます。**View が BattleCore の型を持ってよいのは、計算せず受け渡すときだけ**で、View から `TurnLoop` などの規則を呼びません（検査は #572。経緯は `.claude/decisions/2026-10-18-view-does-not-compute.md`）。探索から入るときは、`ExplorationBootstrap` が `Exploration.Bridge` の `Expedition` で戦闘を組んで `BattleBootstrap.HandIn` に渡し、`Battle.unity` を探索のシーンに重ねて読み込みます（#99）。受け渡しの純 C# は `Assets/View/Exploration/Bridge/`（`unity-port/Exploration.Bridge*.csproj`）です。`Script/` `Bridge/` と EditMode テストは `unity-port/Depiction.Script*.csproj` `Depiction.Bridge*.csproj` 経由で `dotnet test` が回す
+- **試遊版の Unity 版:** ブラウザの試遊版（Artifact「Original Card Battle 試遊版」、元は `origin/claude/nifty-dirac-a99nv7` の `prototypes/browser-game/`）を、見た目・動き・音ごと `unity-port/unity-project-kit/Assets/View/Trial/` に写した。これを今後のゲームの基本の形とする（経緯は `.claude/decisions/2026-10-22-trial-unity-port-as-base.md`）。タイトル → 継承の間 → 出立 → 探索 ↔ 戦闘 → 終わり → 次の探索者まで、Unity リポの `Assets/Scenes/Trial.unity`（`TrialBoot` を 1 つ置くだけ）で遊べる。写し方の決まり・アセンブリの表・確かめ方は `unity-port/TRIAL-PORT.md` が持つ。見た目と手触りは試遊版の JS が正、規則は C# のコアが正。ただし人型の絵だけは、立ち絵ができた敵に限り立ち絵が勝ちます（#772。絵のない敵はベクターの影絵のままです。経緯は `.claude/decisions/2026-11-01-trial-standing-portraits.md`）。戦闘の型・守り・移動の動きも、Unity では JS より 0.2〜0.4 s 遅くします（長さは `View/Trial/Battle/Flow/BattlePacing.cs` だけが持ちます。経緯は `.claude/decisions/2026-11-02-trial-battle-pacing.md`）。階層の背景も JS と変えています。層ごとに色を分け、コードで描く遠景（`Backdrop/Script/BackdropScenery.cs`）と星などの粒の組を足しました（#89。値は `BackdropSpec.cs` が持ちます。経緯は `.claude/decisions/2026-11-03-trial-layer-backdrops.md`）。JS にしか無かった規則（継承 `InheritanceCore`、出立の枠 `DeckLimits`、探索の持ち物とイベント、手記の敵の頁、複数の敵、俊敏の一歩）は opt-in で C# に入れ、外したときの動きは従来の C# のまま。旧い `View/Depiction` `View/Exploration` の画面は触っていない（`Battle.unity` はそのまま動く）
+- **凍結（経緯は `.claude/decisions/2026-09-12-battle-core-in-csharp.md`）:** アーマー（AP / 装備耐久 / 修理）、装備・Gold・ソウル経済、ショップ / 鍛冶屋 / サンクチュアリ。防御は Guard のみ
 
 ## Testing
 
@@ -231,21 +227,21 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 
 ## Development Workflows
 
-> 2026-09-20 に life-editor の開発環境を移植。手順はスキルへ委譲し、本節は本リポの規約だけを持つ。
+> 手順はスキルへ委譲し、本節は本リポの規約だけを持つ。この節の仕組みは life-editor の開発環境を移したものです（経緯は `.claude/decisions/2026-09-20-life-editor-workflow.md`）。
 
 ### 課題追跡は GitHub Issues が正
 
-- **Issue を立てるのは chat-main だけ**（2026-10-06 こうだいさん決定、#367。life-editor の「起票は chat-main 一元」の移植）。レーンは `gh issue create` を打たず、課題を申し送りとして `.claude/comm/handoff/` に 1 件 1 ファイルで書いて先へ進む。main が全 worktree の申し送りを回収し、重複を確かめて `issue-dispatch` で Issue にし、処理したファイルを消す。レーンに許すのは自分宛て Issue へのコメントと PR の `Closes #n` だけ。`pre-issue-create-guard.sh` が main 以外の `gh issue create` を止める。手順と書式は `.claude/comm/README.md`
+- **Issue を立てるのは chat-main だけ**（#367。経緯は `.claude/decisions/2026-10-06-issues-created-by-main-only.md`）。レーンは `gh issue create` を打たず、課題を申し送りとして `.claude/comm/handoff/` に 1 件 1 ファイルで書いて先へ進む。main が全 worktree の申し送りを回収し、重複を確かめて `issue-dispatch` で Issue にし、処理したファイルを消す。レーンに許すのは自分宛て Issue へのコメントと PR の `Closes #n` だけ。`pre-issue-create-guard.sh` が main 以外の `gh issue create` を止める。手順と書式は `.claude/comm/README.md`
 - **起票先**: `gh issue create -R sunbreak-pro/original-card-battle`（main だけ）。テンプレートは `.github/ISSUE_TEMPLATE/` の 3 種（Known Issue / Roadmap Item / Human Task）
 - **ラベル**: `type:` (bug / feature / task / human) × `prio:` (1 / 2 / 3 / 4) × `sev:` (blocking / important / minor) × `area:` (battle / cards / enemy / dungeon / world / ui / art / unity / docs / tooling) × `status:` (monitoring / workaround / frozen)
 - **スコープの境界**: Issue は**プロダクトの課題専用**。Claude Code 環境やハーネス起因の問題は `docs/known-issues/` に置き、Issue にしない
 - **優先順位は必須**: Issue には `prio:1`〜`prio:4` を必ず 1 つ付ける（1 = いま着手 / 2 = 次 / 3 = その後 / 4 = いつか）。`sev:` は影響の大きさ、`prio:` は着手の順番で、別の軸。次にやることは `npm run issues:next`（`prio` → `sev` → 番号の順。依存先が open の Issue は待ちに回る）。付け忘れは `npm run issues:next -- --check` が検出する。見直すのは親 Issue を閉じたときと、縦切りや束の振り返りのとき
 - **着手前に必ず open を見る**: `gh issue list --label type:bug`。重複起票を避ける
-- **1 Issue = 1 ブランチ = 1 PR**。PR 本文に `Closes #<n>` を書く。**merge は常に人**。こうだいさんが chat-main で `merge-round` スキルを起動したら、それがその回の承認で、事前確認を通った PR は `hooks/merge-gate.mjs` が確認なしで通す（2026-11-04 こうだいさん依頼、life-editor から移植）。レーンからの `gh pr merge` は同じ hook が deny し、回の外の merge は確認を出す
+- **1 Issue = 1 ブランチ = 1 PR**。PR 本文に `Closes #<n>` を書く。**merge は常に人**。こうだいさんが chat-main で `merge-round` スキルを起動したら、それがその回の承認で、事前確認を通った PR は `hooks/merge-gate.mjs` が確認なしで通す（経緯は `.claude/decisions/2026-11-04-merge-round-approval.md`）。レーンから打つ merge のコマンドは同じ hook が deny し、回の外の merge は確認を出す
 
 ### 進行役（pdca-harness）の PR とラベルは、起票と merge の決まりの例外
 
-定時に動く進行役（`~/dev/pdca-harness`）が、`pdca:auto` の付いた open Issue を 1 件 1 PR にします（2026-10-12 こうだいさん決定）。
+定時に動く進行役（`~/dev/pdca-harness`）が、`pdca:auto` の付いた open Issue を 1 件 1 PR にします（経緯は `.claude/decisions/2026-10-12-pdca-harness-exception.md`）。
 
 - **例外にするもの:** 進行役が作る `pdca/*` ブランチの PR と、`state:*` `goal:*` のラベルです。進行役は Issue を作らず、merge もしません。merge は常に人です
 - **`pdca:auto` を付けるのは chat-main だけ**です。こうだいさんの指示があるときか、`issue-dispatch` の判断で付けます。付いた Issue は、同じ Issue を 2 者が実装しないように、`issue-workflow` で回しません（グローバルの `issue-workflow` スキルが、`pdca:auto` と `state:*` のラベルを見て共通の除外で外します）
@@ -254,7 +250,7 @@ Tests live in `__tests__/` subdirectories adjacent to source files (e.g., `src/d
 
 ### 判断の控えは life-editor
 
-GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（何を作るか決めて記録する場所）。**Issue の代替にはしない**（2026-09-20 こうだいさん決定）。
+GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（何を作るか決めて記録する場所）。**Issue の代替にはしない**（経緯は `.claude/decisions/2026-09-20-life-editor-workflow.md`）。
 
 - **置くもの**: 判断の控えと調査結果（Note）／次にやること（Todo）。プロジェクトを跨いで見たいものだけを上げる
 - **置かないもの**: 課題の状態・担当・PR との結線。ステータスが 2 値しかなく、コメントが無く、後勝ち同期で記録が消えるため、正本は GitHub Issue のまま
@@ -270,7 +266,7 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 - **自分の名前**: `.claude/comm/.session-name`（git 非追跡）。`chat-` 接頭辞は付けない（例: `main`）
 - **進捗**: `.claude/memory/chat-<self>.md` / **履歴**: `.claude/history/chat-<self>.md`
 - **横断ビュー**: `.claude/memory/INDEX.md` / `.claude/history/INDEX.md` は **git 非追跡の生成物**。`.claude/hooks/regen-index.sh` が SessionStart と task-tracker から再生成する。手編集も `git add` もしない
-- **更新は task-tracker スキル経由**（手動編集しない）。**開始時**: 「進行中」へ起票（プランがあれば `docs/vision/plans/YYYY-MM-DD-<slug>.md` を作成しリンク）。**完了時**: (1) 進行中 → 直近の完了へ移動、(2) history 先頭に概要+変更点、(3) `README.md` Development History に 1 行要約、(4) 完了プランは `archive/` へ移動
+- **更新は task-tracker スキル経由**（手動編集しない）。開始時と完了時に書く中身は、task-tracker スキルが持ちます。計画書の置き場と、終わった計画書を移す先は、共通の `code-plan-editor` スキルに従います
 - **tracker の更新を実装コミットに混ぜない**。`pre-commit-tracker-guard.sh` が止める。意図的に同梱するときだけコマンドに `[tracker-ok]` を含める
 - `.claude/MEMORY.md` / `.claude/HISTORY.md` / `TODO.md` は移転前の後方互換ポインタ。更新しない
 
@@ -286,13 +282,13 @@ GitHub は在庫棚（課題の正確な台帳）、life-editor は献立表（�
 | PreToolUse(Bash) | `pre-issue-create-guard.sh` | `.session-name` が `main` でないチャットの `gh issue create` をブロック。サブエージェント（hook の入力に `agent_id` がある）と、`cd` でレーンの worktree に入ってから打つものもブロック |
 | PreToolUse(Bash) | `merge-gate.mjs` | `gh pr merge` を振り分ける。worktree・サブエージェント・`cd` でレーンに入ったコマンドからは deny、chat-main の `merge-round` の回で `check` を通った PR だけ allow、それ以外は ask。コマンドとして打った `gh pr merge` だけを見て、grep・報告書・heredoc・コミットの文に語が出るだけのものは判定しない |
 
-3 つの hook がコマンドの `cd` を読むのは、Workflow のエージェントが main の checkout から Bash を始め、`cd <worktree> && ...` で作業フォルダに移るためです（2026-11-08 の issue-workflow の試験）。読む部品は `.claude/hooks/lib/hook-context.mjs`、テストは `node --test ".claude/hooks/__tests__/*.test.mjs"` です。
+3 つの hook がコマンドの `cd` を読むのは、Workflow のエージェントが main の checkout から Bash を始め、`cd <worktree> && ...` で作業フォルダに移るためです（経緯は `.claude/decisions/2026-11-08-hooks-read-cd.md`）。読む部品は `.claude/hooks/lib/hook-context.mjs`、テストは `node --test ".claude/hooks/__tests__/*.test.mjs"` です。
 
 実体は `$HOME/dev/Claude/hooks-lib/` を優先し、無ければ `.claude/scripts/hooks-lib/` の同梱版に落ちる。
 
 ### 禁止コマンド（`.claude/settings.json` の `deny`）
 
-main / master への直接 push、force push、`git reset --hard`、`git branch -D`、`rm -rf .git`。**`gh pr merge` は settings に allow も ask も置かず、`merge-gate.mjs` が振り分ける**（ask を置くと hook の allow が効かないため）。
+共通の禁止は、`git-workflow` スキルの「破壊的コマンドのガードレール」に従います。このリポジトリの `deny` は、共通の決まりでは確認だけで済む `git branch -D` も止めます。**merge のコマンドは、settings に allow も ask も置かず、`merge-gate.mjs` が振り分けます**。ask を置くと、hook の allow が効かないためです。
 
 ### 並行作業は worktree のレーン
 
@@ -309,7 +305,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 | `audit` | 監査。設計書と実装の整合、既知課題の棚卸し | `docs` `tooling` |
 
 - **宛先ラベルは `lane:<slug>`**。付けなければ `issue-workflow` が上の `area:` から既定のレーンを決める（決め方は `.claude/issue-workflow.md` の「選び方」）
-- **世界観の正本は main（chat-main）**（2026-09-21 こうだいさん決定）。正典は `docs/vision/world-v1.md` で、**舞台は龍神の封印の地、敵は竜・寄生・亡霊の 3 系統、崩壊まで約 1 年**（v5、2026-11-03 #884）。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main の采配に落とす。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
+- **世界観の正本は main（chat-main）**（経緯は `.claude/decisions/2026-09-21-world-owned-by-main.md`）。正典は `docs/vision/world-v1.md` で、**舞台は龍神の封印の地、敵は竜・寄生・亡霊の 3 系統、崩壊まで約 1 年**（v5、#884）。`docs/vision/` `docs/Overall_document/` `docs/journal_document/` は main が書き、`area:world` の Issue は `lane:` を付けず main の采配に落とす。敵の数値とロースター（`docs/enemy_document/`）は `cards` のまま
 - **`audit` は読み取り専用**。整合監査の結果は申し送りにして main へ回し、修正は main が Issue にして担当レーンへ配る
 - **試運転はメインだけ**。`npm run dev`・実ブラウザ検証・Unity Editor での手触り確認はメインで行い、各レーンは `npm run build` / `npm run lint` / `npm run test:run` / `dotnet test` の静的検証まで
 - **one writer per artifact**。同じファイルを 2 レーンに触らせない
@@ -317,7 +313,7 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 
 ## Document System
 
-- **フロー**: Vision（`docs/vision/core.md`、ADR 不使用）→ 実装プラン（`docs/vision/plans/YYYY-MM-DD-<slug>.md`）→ 完了で `archive/` 移動・規約は本ファイルへ統合。進捗 / 履歴は per-chat（`memory/` `history/`、task-tracker 経由）
+- **フロー**: Vision（`docs/vision/core.md`）→ 実装プラン → 完了したら規約を本ファイルへ統合。計画書の置き場と完了後の移し先は、共通の `code-plan-editor` スキルに従います。進め方の決定は決定の記録（`.claude/decisions/`）に置きます。進捗 / 履歴は per-chat（`memory/` `history/`、task-tracker 経由）
 - **Known Issue**: `docs/known-issues/` に Root Cause + 再発防止を蓄積。発見時 `NNN-<slug>.md` 作成 + `INDEX.md` 更新、解決時 Status=Fixed。**類似バグはまず `INDEX.md` を grep**
 - **正本の台帳は `docs/SOURCES.md`**。主題ごとの正本・持ち主のレーン・旧版の一覧・食い違ったときに勝つ側を持つ。他の文書とスキルは同じ表を持たず、ここを指す。正本を足す / 退役させる / 持ち主を変えるコミットに台帳の行を含め、`npm run sources -- --check` を通す。版を上げるだけなら台帳は触らない（版は正本の冒頭の Status が持つ）
 - **Markdown の表は桁を揃えない**。1 マスが伸びるたびに表の全行が書き換わり、並行する PR がぶつかるため（known-issues 003）。`.md` は `.prettierrc.json` の `requirePragma` で prettier の対象から外し、表の空白は `npm run md:tables` で詰める。同じ正本を触る PR を続けて出すときは前の PR の上に積む（`worktree-policy`）
@@ -334,7 +330,8 @@ worktree はリポジトリの外、`C:\Users\user\orca\workspaces\original-card
 | `history/chat-<self>.md` | 変更履歴（降順、概要+変更点。per-chat） |
 | `.github/ISSUE_TEMPLATE/` | Issue テンプレート 3 種（Known Issue / Roadmap Item / Human Task） |
 | `.claude/hooks/` | SessionStart と PreToolUse の hook 7 本 |
-| `README.md` | プロジェクト概要・Development History（完了履歴の要約） |
+| `README.md` | プロジェクト概要 |
+| `.claude/decisions/` | 進め方の決定の記録（1 件 1 ファイル。ゲームの設計の決定は設計書の本文） |
 | `.claude/docs/SOURCES.md` | 正本の台帳（主題 → 正本 → 持ち主のレーン、旧版、食い違いの手順） |
 | `.claude/docs/INDEX.md` | ドキュメント索引（標準構造 + ゲーム設計書） |
 | `.claude/docs/vision/core.md` | Vision・設計原則 |
