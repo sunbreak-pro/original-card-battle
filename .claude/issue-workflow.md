@@ -41,7 +41,7 @@
 
 `mainCheckout` と `worktreeRoot` は、このファイルがある checkout から決める相対パスです。共通の道具は、`node ~/.claude/skills/issue-workflow/scripts/profile.mjs` で絶対パスに直してから使います。PC ごとのフォルダの場所を、設定に持たないためです。`profile.mjs` は main の checkout で打ちます。worktree の中で打つと、相対パスが worktree から決まり、違う場所を指すためです。
 
-担当ごとの作業場所と触るファイルの対応表（`workspaceMapPath`）は置きません。設計書の持ち主は `.claude/docs/SOURCES.md` の台帳（`npm run sources`）が決めていて、対応表を別に作ると、持ち主の元が 2 つになるためです。対応表が無いので、共通の `issue-workflow` と `issue-dispatch` は、重なりを Issue の Scope 欄で突き合わせます。このリポジトリでの比べ方は、下の「選び方」です。
+担当ごとの作業場所と触るファイルの対応表（`workspaceMapPath`）は置きません。設計書の持ち主は `.claude/docs/SOURCES.md` の元になる文書の一覧（`npm run sources`）が決めていて、対応表を別に作ると、持ち主の元が 2 つになるためです。対応表が無いので、共通の `issue-workflow` と `issue-dispatch` は、重なりを Issue の Scope 欄で突き合わせます。このリポジトリでの比べ方は、下の「選び方」です。
 
 `branchPattern` の `{{prefix}}` は、このリポジトリのブランチ名の接頭辞です（`.claude/CLAUDE.md` の「Git / Branch Workflow」）。下の「選び方」で Issue ごとに決めます。
 
