@@ -1,6 +1,6 @@
 # 踏破者（player_swordsman）— 仕様カード
 
-- 作成日: 2026-09-20 / 更新: 2026-09-23（#146。寸法と指示文を直した）/ 2026-10-11（#447。§4 の差分を `battle_ui_ux_v2.md` §6.4 と View の 4 つの口に合わせ、崩れを保留にした）/ 工程: C0（`visual-production-pipeline character player_swordsman`）
+- 作成日: 2026-09-20 / 更新: 2026-09-23（#146。寸法と指示文を直した）/ 2026-10-11（#447。§4 の差分を `battle_ui_ux_v2.md` §6.4 と View の 4 つの口に合わせ、崩れを保留にした）/ 工程: 仕様カード（`visual-production-pipeline character player_swordsman`）
 - 正本: `.claude/docs/vision/concept-v3.md` §16（襲名と装束）/ §1 / §14 / `.claude/docs/battle_document/battle_ui_ux_v2.md:1202-1206` / `.claude/docs/art_document/style-guide.md`（原本の大きさと指示文）/ `unity-port/unity-project-kit/Assets/View/Depiction/Editor/DepictionPrefabBuilder.cs`（枠と配置）
 - 手順書: `docs/reports/2026-09-19-krita-ai-setup-guide.html` 4 章
 
@@ -53,7 +53,7 @@
 | 待機 | | 1 |
 | 体勢 | 作らない（§6.4、2026-09-14 決定） | 0 |
 
-**C3 で作るのは待機 1 枚だけ**です。ファイル名は `Assets/Art/Characters/player_swordsman/chr_player_swordsman_<category>_<label>.png`、待機は `chr.player_swordsman.idle.stand`。
+**「生成と一次選別」の工程で作るのは待機 1 枚だけ**です。ファイル名は `Assets/Art/Characters/player_swordsman/chr_player_swordsman_<category>_<label>.png`、待機は `chr.player_swordsman.idle.stand`。
 
 **要判断**: `battle_ui_ux_v2.md` §6.4 はプレイヤーの Live2D パラメータを目・口の 2 としています。面で顔が隠れるので 目・口 は使えません。lean 1 に替えるか、面の角度を別パラメータに立てるかを決める必要があります（`concept-v3.md` §16.5-3）。
 
@@ -73,10 +73,10 @@
 
 | 工程 | 状態 | 備考 |
 | --- | --- | --- |
-| C0 | 下書き | このファイル。こうだいさんの承認待ち |
-| C1 | 未着手 | 影絵 SVG。フードとマントの横幅 130 px の判断はここで決める |
-| C2 | 一部 | 指示文は §5 にある。台帳の行はまだ（`Docs/art/asset-ledger.csv` が未設置） |
-| C3 | 人待ち | Krita で 8〜16 枚。指示文は §5 をそのまま貼る |
+| 仕様カード | 下書き | このファイル。こうだいさんの承認待ち |
+| 影絵 | 未着手 | 影絵 SVG。フードとマントの横幅 130 px の判断はここで決める |
+| 依頼パックと台帳 | 一部 | 指示文は §5 にある。台帳の行はまだ（`Docs/art/asset-ledger.csv` が未設置） |
+| 生成と一次選別 | 人待ち | Krita で 8〜16 枚。指示文は §5 をそのまま貼る |
 
 **次に人がすること**: Krita で候補を出し、2〜3 枚を Claude に渡す。
 
